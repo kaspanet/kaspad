@@ -47,11 +47,6 @@ func (s *server) broadcast(transactions [][]byte, isDomain bool) ([]string, erro
 		}
 
 		s.tracker.trackTransaction(tx)
-
-		for _, input := range tx.Inputs {
-			s.tracker.trackOutpointAsSent(input.PreviousOutpoint.Clone())
-			s.tracker.untrackOutpointAsReserved(input.PreviousOutpoint)
-		}
 	}
 
 	return txIDs, nil
