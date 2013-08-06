@@ -22,7 +22,8 @@ func (s *server) Broadcast(_ context.Context, request *pb.BroadcastRequest) (*pb
 }
 
 func (s *server) broadcast(transactions [][]byte, isDomain bool) ([]string, error) {
-
+	s.lock.Lock()
+	defer s.lock.Unlock()
 	txIDs := make([]string, len(transactions))
 	var tx *externalapi.DomainTransaction
 	var err error
@@ -42,11 +43,12 @@ func (s *server) broadcast(transactions [][]byte, isDomain bool) ([]string, erro
 		}
 
 		txIDs[i], err = sendTransaction(s.rpcClient, tx)
+		s.tracker.trackTransaction(tx)
 		if err != nil {
 			return nil, err
 		}
 
-		s.tracker.trackTransaction(tx)
+		//s.tracker.trackTransaction(tx)
 	}
 
 	return txIDs, nil
