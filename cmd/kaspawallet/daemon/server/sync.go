@@ -24,7 +24,10 @@ func (was walletAddressSet) strings() []string {
 }
 
 func (s *server) onChainChanged(notification *appmessage.VirtualSelectedParentChainChangedNotificationMessage) {
-	for _, transactionIDs := range notification.AcceptedTransactionIDs{
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	fmt.Println("chain changed", len(notification.AddedChainBlockHashes))
+	for _, transactionIDs := range notification.AcceptedTransactionIDs {
 		for _, transactionID := range transactionIDs.AcceptedTransactionIDs {
 			if s.tracker.isTransactionIDTracked(transactionID) {
 				s.tracker.untrackSentTransactionID(transactionID)
@@ -33,10 +36,7 @@ func (s *server) onChainChanged(notification *appmessage.VirtualSelectedParentCh
 	}
 }
 
-func (s *server) sync() error {
-	ticker := time.NewTicker(time.Second)
-	defer ticker.Stop()
-
+func (s *server) intialize() error {
 	err := s.collectRecentAddresses()
 	if err != nil {
 		return err
@@ -51,6 +51,22 @@ func (s *server) sync() error {
 	if err != nil {
 		return err
 	}
+
+	err = s.intializeMempool()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *server) sync() error {
+	err := s.intialize()
+	if err != nil {
+		return err
+	}
+
+	ticker := time.NewTicker(time.Second)
+	defer ticker.Stop()
 
 	for i := range ticker.C {
 		fmt.Println(i)
@@ -273,12 +289,36 @@ func (s *server) updateUTXOSet(entries []*appmessage.UTXOsByAddressesEntry) erro
 	fmt.Println("utxos total", len(s.utxosSortedByAmount))
 	fmt.Println("utxos available", len(s.availableUtxosSortedByAmount))
 	fmt.Println("utxos reserved", len(s.tracker.reservedOutpoints))
-	fmt.Println("transactions in mempool", len(s.tracker.sentTransactions))
+	fmt.Println("transactions", len(s.tracker.sentTransactions))
+	fmt.Println("utxos in mempool", s.tracker.countOutpointsInmempool())
 
-	s.tracker.untrackOutpointDifferenceViaWalletUTXOs(utxos) //clean up reserved tracker
+	//s.tracker.untrackOutpointDifferenceViaWalletUTXOs(utxos) //clean up reserved tracker
 
 	return nil
 }
+
+func (s *server) intializeMempool() error {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	getMempoolEntriesResponse, err := s.rpcClient.GetMempoolEntries()
+	if err != nil {
+		return err
+	}
+	if getMempoolEntriesResponse.Error != nil {
+		return errors.Errorf(getMempoolEntriesResponse.Error.Message)
+	}
+	for _, mempoolEntry := range getMempoolEntriesResponse.Entries {
+		transaction, err := appmessage.RPCTransactionToDomainTransaction(mempoolEntry.Transaction)
+		if err != nil {
+			return err
+		}
+		s.tracker.trackTransaction(transaction)
+	}
+	
+	return nil
+
+}
+
 
 func (s *server) refreshUTXOs() error {
 	getUTXOsByAddressesResponse, err := s.rpcClient.GetUTXOsByAddresses(s.addressSet.strings())

@@ -78,7 +78,6 @@ func (tr *Tracker) untrackExpiredOutpointsAsReserved() {
 	}
 }
 
-
 func (tr *Tracker) untrackSentTransactionID(transactionID string) {
 	delete(tr.sentTransactions, transactionID)
 }
@@ -97,4 +96,12 @@ func (tr *Tracker) trackTransaction(transaction *externalapi.DomainTransaction) 
 
 func (tr *Tracker) untrackOutpointAsReserved(outpoint externalapi.DomainOutpoint) {
 	delete(tr.reservedOutpoints, outpoint)
+}
+
+func (tr *Tracker) countOutpointsInmempool() int {
+	numOfOutpoints := 0
+	for _, value := range tr.sentTransactions {
+		numOfOutpoints = numOfOutpoints + len(value)
+	}
+	return numOfOutpoints
 }
