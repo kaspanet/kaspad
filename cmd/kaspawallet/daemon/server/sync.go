@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet"
-	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/pkg/errors"
@@ -24,6 +23,16 @@ func (was walletAddressSet) strings() []string {
 	return addresses
 }
 
+func (s *server) onChainChanged(notification *appmessage.VirtualSelectedParentChainChangedNotificationMessage) {
+	for _, transactionIDs := range notification.AcceptedTransactionIDs{
+		for _, transactionID := range transactionIDs.AcceptedTransactionIDs {
+			if s.tracker.isTransactionIDTracked(transactionID) {
+				s.tracker.untrackSentTransactionID(transactionID)
+			}
+		}
+	}
+}
+
 func (s *server) sync() error {
 	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()
@@ -34,6 +43,11 @@ func (s *server) sync() error {
 	}
 
 	err = s.refreshExistingUTXOsWithLock()
+	if err != nil {
+		return err
+	}
+
+	err = s.rpcClient.RegisterForVirtualSelectedParentChainChangedNotifications(true, s.onChainChanged)
 	if err != nil {
 		return err
 	}
@@ -216,41 +230,6 @@ func (s *server) updateUTXOSet(entries []*appmessage.UTXOsByAddressesEntry) erro
 
 	s.tracker.untrackExpiredOutpointsAsReserved() //untrack all stale reserved outpoints, before comparing in loop
 	availableUtxos := make([]*walletUTXO, 0)
-
-	getMemepoolEntriesResponse, err := s.rpcClient.GetMempoolEntries()
-	if err != nil {
-		return err
-	}
-
-	mempoolWalletAddressesOutpoints := make(mempoolOutpoints)
-	mempoolTransactions := make([]*externalapi.DomainTransaction, 0)
-
-	for _, memepoolEntry := range getMemepoolEntriesResponse.Entries {
-		transaction, err := appmessage.RPCTransactionToDomainTransaction(memepoolEntry.Transaction)
-		if err != nil {
-			return err
-		}
-		mempoolTransactions = append(
-			mempoolTransactions,
-			transaction,
-		)
-		if s.tracker.isTransactionTracked(transaction) {
-			for _, input := range transaction.Inputs {
-				scriptPubKey := input.UTXOEntry.ScriptPublicKey()
-				_, address, err := txscript.ExtractScriptPubKeyAddress(scriptPubKey, s.params)
-				if err != nil {
-					return err
-				}
-				if _, found := s.addressSet[address.String()]; found {
-					mempoolWalletAddressesOutpoints[input.PreviousOutpoint] = true
-				}
-			}
-		}
-	}
-
-	s.tracker.untrackTransactionDifference(mempoolTransactions)  //clean up transaction tracker
-	s.tracker.mempoolOutpoints = mempoolWalletAddressesOutpoints //clean up sent outpoint tracker
-
 	for i, entry := range entries {
 		outpoint, err := appmessage.RPCOutpointToDomainOutpoint(entry.Outpoint)
 		if err != nil {
@@ -293,7 +272,6 @@ func (s *server) updateUTXOSet(entries []*appmessage.UTXOsByAddressesEntry) erro
 
 	fmt.Println("utxos total", len(s.utxosSortedByAmount))
 	fmt.Println("utxos available", len(s.availableUtxosSortedByAmount))
-	fmt.Println("utxos mempool", len(s.tracker.mempoolOutpoints))
 	fmt.Println("utxos reserved", len(s.tracker.reservedOutpoints))
 	fmt.Println("transactions in mempool", len(s.tracker.sentTransactions))
 
