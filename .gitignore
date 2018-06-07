@@ -35,3 +35,6 @@ _testmain.go
  
 # IDE
 .idea
+.vscode
+debug
+debug.test

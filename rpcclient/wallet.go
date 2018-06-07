@@ -965,22 +965,6 @@ func (r FutureAddWitnessAddressResult) Receive() (btcutil.Address, error) {
 	return btcutil.DecodeAddress(addr, &chaincfg.MainNetParams)
 }
 
-// AddWitnessAddressAsync returns an instance of a type that can be used to get
-// the result of the RPC at some future time by invoking the Receive function on
-// the returned instance.
-//
-// See AddWitnessAddress for the blocking version and more details.
-func (c *Client) AddWitnessAddressAsync(address string) FutureAddWitnessAddressResult {
-	cmd := btcjson.NewAddWitnessAddressCmd(address)
-	return c.sendCmd(cmd)
-}
-
-// AddWitnessAddress adds a witness address for a script and returns the new
-// address (P2SH of the witness script).
-func (c *Client) AddWitnessAddress(address string) (btcutil.Address, error) {
-	return c.AddWitnessAddressAsync(address).Receive()
-}
-
 // FutureGetAccountAddressResult is a future promise to deliver the result of a
 // GetAccountAddressAsync RPC invocation (or an applicable error).
 type FutureGetAccountAddressResult chan *response
