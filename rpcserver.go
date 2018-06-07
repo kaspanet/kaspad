@@ -1695,7 +1695,7 @@ func (state *gbtWorkState) blockTemplateResult(useCoinbaseValue bool, submitOld 
 			Hash:    txHash.String(),
 			Depends: depends,
 			Fee:     template.Fees[i],
-			SigOps:  template.SigOpCosts[i],
+			SigOps:  template.SigOpCounts[i],
 		}
 		transactions = append(transactions, resultTx)
 	}
@@ -1754,7 +1754,7 @@ func (state *gbtWorkState) blockTemplateResult(useCoinbaseValue bool, submitOld 
 			Hash:    tx.TxHash().String(),
 			Depends: []int64{},
 			Fee:     template.Fees[0],
-			SigOps:  template.SigOpCosts[0],
+			SigOps:  template.SigOpCounts[0],
 		}
 
 		reply.CoinbaseTxn = &resultTx

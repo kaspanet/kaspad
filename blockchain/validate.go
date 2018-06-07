@@ -19,6 +19,10 @@ import (
 )
 
 const (
+	// MaxSigOpsPerBlock is the maximum number of signature operations
+	// allowed for a block.  It is a fraction of the max block payload size.
+	MaxSigOpsPerBlock = wire.MaxBlockPayload / 50
+
 	// MaxTimeOffsetSeconds is the maximum number of seconds a block time
 	// is allowed to be ahead of the current time.  This is currently 2
 	// hours.
