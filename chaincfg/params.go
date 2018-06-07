@@ -201,6 +201,9 @@ type Params struct {
 	// Mempool parameters
 	RelayNonStdTxs bool
 
+	// Human-readable part for Bech32 encoded addresses
+	Bech32HRP string
+
 	// Human-readable part for Bech32 encoded segwit addresses, as defined
 	// in BIP 173.
 	Bech32HRPSegwit string
@@ -301,6 +304,9 @@ var MainNetParams = Params{
 	// Mempool parameters
 	RelayNonStdTxs: false,
 
+	// Human-readable part for Bech32 encoded addresses
+	Bech32HRP: "dagcoin",
+
 	// Human-readable part for Bech32 encoded segwit addresses, as defined in
 	// BIP 173.
 	Bech32HRPSegwit: "bc", // always bc for main net
@@ -376,6 +382,9 @@ var RegressionNetParams = Params{
 
 	// Mempool parameters
 	RelayNonStdTxs: true,
+
+	// Human-readable part for Bech32 encoded addresses
+	Bech32HRP: "dagreg",
 
 	// Human-readable part for Bech32 encoded segwit addresses, as defined in
 	// BIP 173.
@@ -468,6 +477,9 @@ var TestNet3Params = Params{
 	// Mempool parameters
 	RelayNonStdTxs: true,
 
+	// Human-readable part for Bech32 encoded addresses
+	Bech32HRP: "dagtest",
+
 	// Human-readable part for Bech32 encoded segwit addresses, as defined in
 	// BIP 173.
 	Bech32HRPSegwit: "tb", // always tb for test net
@@ -547,6 +559,9 @@ var SimNetParams = Params{
 
 	// Mempool parameters
 	RelayNonStdTxs: true,
+
+	// Human-readable part for Bech32 encoded addresses
+	Bech32HRP: "dagsim",
 
 	// Human-readable part for Bech32 encoded segwit addresses, as defined in
 	// BIP 173.
