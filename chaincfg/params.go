@@ -312,8 +312,8 @@ var MainNetParams = Params{
 	Bech32HRPSegwit: "bc", // always bc for main net
 
 	// Address encoding magics
-	PubKeyHashAddrID:        0x00, // starts with 1
-	ScriptHashAddrID:        0x05, // starts with 3
+	PubKeyHashAddrID:        0x00, // starts with 0
+	ScriptHashAddrID:        0x08, // starts with 8
 	PrivateKeyID:            0x80, // starts with 5 (uncompressed) or K (compressed)
 	WitnessPubKeyHashAddrID: 0x06, // starts with p2
 	WitnessScriptHashAddrID: 0x0A, // starts with 7Xh
@@ -391,8 +391,8 @@ var RegressionNetParams = Params{
 	Bech32HRPSegwit: "bcrt", // always bcrt for reg test net
 
 	// Address encoding magics
-	PubKeyHashAddrID: 0x6f, // starts with m or n
-	ScriptHashAddrID: 0xc4, // starts with 2
+	PubKeyHashAddrID: 0x00, // starts with 0
+	ScriptHashAddrID: 0x08, // starts with 8
 	PrivateKeyID:     0xef, // starts with 9 (uncompressed) or c (compressed)
 
 	// BIP32 hierarchical deterministic extended key magics
@@ -485,8 +485,8 @@ var TestNet3Params = Params{
 	Bech32HRPSegwit: "tb", // always tb for test net
 
 	// Address encoding magics
-	PubKeyHashAddrID:        0x6f, // starts with m or n
-	ScriptHashAddrID:        0xc4, // starts with 2
+	PubKeyHashAddrID:        0x00, // starts with 0
+	ScriptHashAddrID:        0x08, // starts with 8
 	WitnessPubKeyHashAddrID: 0x03, // starts with QW
 	WitnessScriptHashAddrID: 0x28, // starts with T7n
 	PrivateKeyID:            0xef, // starts with 9 (uncompressed) or c (compressed)
@@ -568,8 +568,8 @@ var SimNetParams = Params{
 	Bech32HRPSegwit: "sb", // always sb for sim net
 
 	// Address encoding magics
-	PubKeyHashAddrID:        0x3f, // starts with S
-	ScriptHashAddrID:        0x7b, // starts with s
+	PubKeyHashAddrID:        0x00, // starts with 0
+	ScriptHashAddrID:        0x08, // starts with 8
 	PrivateKeyID:            0x64, // starts with 4 (uncompressed) or F (compressed)
 	WitnessPubKeyHashAddrID: 0x19, // starts with Gg
 	WitnessScriptHashAddrID: 0x28, // starts with ?
