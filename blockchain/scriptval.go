@@ -71,8 +71,7 @@ out:
 			sigScript := txIn.SignatureScript
 			pkScript := utxo.PkScript()
 			vm, err := txscript.NewEngine(pkScript, txVI.tx.MsgTx(),
-				txVI.txInIndex, v.flags, v.sigCache, &txscript.TxSigHashes{},
-				utxo.Amount())
+				txVI.txInIndex, v.flags, v.sigCache)
 			if err != nil {
 				str := fmt.Sprintf("failed to parse input "+
 					"%s:%d which references output %v - "+
