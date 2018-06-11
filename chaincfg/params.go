@@ -209,8 +209,6 @@ type Params struct {
 	Bech32HRPSegwit string
 
 	// Address encoding magics
-	PubKeyHashAddrID        byte // First byte of a P2PKH address
-	ScriptHashAddrID        byte // First byte of a P2SH address
 	PrivateKeyID            byte // First byte of a WIF private key
 	WitnessPubKeyHashAddrID byte // First byte of a P2WPKH address
 	WitnessScriptHashAddrID byte // First byte of a P2WSH address
@@ -312,8 +310,6 @@ var MainNetParams = Params{
 	Bech32HRPSegwit: "bc", // always bc for main net
 
 	// Address encoding magics
-	PubKeyHashAddrID:        0x00, // starts with 0
-	ScriptHashAddrID:        0x08, // starts with 8
 	PrivateKeyID:            0x80, // starts with 5 (uncompressed) or K (compressed)
 	WitnessPubKeyHashAddrID: 0x06, // starts with p2
 	WitnessScriptHashAddrID: 0x0A, // starts with 7Xh
@@ -391,9 +387,7 @@ var RegressionNetParams = Params{
 	Bech32HRPSegwit: "bcrt", // always bcrt for reg test net
 
 	// Address encoding magics
-	PubKeyHashAddrID: 0x00, // starts with 0
-	ScriptHashAddrID: 0x08, // starts with 8
-	PrivateKeyID:     0xef, // starts with 9 (uncompressed) or c (compressed)
+	PrivateKeyID: 0xef, // starts with 9 (uncompressed) or c (compressed)
 
 	// BIP32 hierarchical deterministic extended key magics
 	HDPrivateKeyID: [4]byte{0x04, 0x35, 0x83, 0x94}, // starts with tprv
@@ -485,8 +479,6 @@ var TestNet3Params = Params{
 	Bech32HRPSegwit: "tb", // always tb for test net
 
 	// Address encoding magics
-	PubKeyHashAddrID:        0x00, // starts with 0
-	ScriptHashAddrID:        0x08, // starts with 8
 	WitnessPubKeyHashAddrID: 0x03, // starts with QW
 	WitnessScriptHashAddrID: 0x28, // starts with T7n
 	PrivateKeyID:            0xef, // starts with 9 (uncompressed) or c (compressed)
@@ -568,8 +560,6 @@ var SimNetParams = Params{
 	Bech32HRPSegwit: "sb", // always sb for sim net
 
 	// Address encoding magics
-	PubKeyHashAddrID:        0x00, // starts with 0
-	ScriptHashAddrID:        0x08, // starts with 8
 	PrivateKeyID:            0x64, // starts with 4 (uncompressed) or F (compressed)
 	WitnessPubKeyHashAddrID: 0x19, // starts with Gg
 	WitnessScriptHashAddrID: 0x28, // starts with ?
@@ -597,8 +587,6 @@ var (
 
 var (
 	registeredNets       = make(map[wire.BitcoinNet]struct{})
-	pubKeyHashAddrIDs    = make(map[byte]struct{})
-	scriptHashAddrIDs    = make(map[byte]struct{})
 	bech32SegwitPrefixes = make(map[string]struct{})
 	hdPrivToPubKeyIDs    = make(map[[4]byte][]byte)
 )
@@ -622,8 +610,6 @@ func Register(params *Params) error {
 		return ErrDuplicateNet
 	}
 	registeredNets[params.Net] = struct{}{}
-	pubKeyHashAddrIDs[params.PubKeyHashAddrID] = struct{}{}
-	scriptHashAddrIDs[params.ScriptHashAddrID] = struct{}{}
 	hdPrivToPubKeyIDs[params.HDPrivateKeyID] = params.HDPublicKeyID[:]
 
 	// A valid Bech32 encoded segwit address always has as prefix the
@@ -638,28 +624,6 @@ func mustRegister(params *Params) {
 	if err := Register(params); err != nil {
 		panic("failed to register network: " + err.Error())
 	}
-}
-
-// IsPubKeyHashAddrID returns whether the id is an identifier known to prefix a
-// pay-to-pubkey-hash address on any default or registered network.  This is
-// used when decoding an address string into a specific address type.  It is up
-// to the caller to check both this and IsScriptHashAddrID and decide whether an
-// address is a pubkey hash address, script hash address, neither, or
-// undeterminable (if both return true).
-func IsPubKeyHashAddrID(id byte) bool {
-	_, ok := pubKeyHashAddrIDs[id]
-	return ok
-}
-
-// IsScriptHashAddrID returns whether the id is an identifier known to prefix a
-// pay-to-script-hash address on any default or registered network.  This is
-// used when decoding an address string into a specific address type.  It is up
-// to the caller to check both this and IsPubKeyHashAddrID and decide whether an
-// address is a pubkey hash address, script hash address, neither, or
-// undeterminable (if both return true).
-func IsScriptHashAddrID(id byte) bool {
-	_, ok := scriptHashAddrIDs[id]
-	return ok
 }
 
 // IsBech32SegwitPrefix returns whether the prefix is a known prefix for segwit

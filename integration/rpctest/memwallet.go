@@ -133,7 +133,7 @@ func newMemWallet(net *chaincfg.Params, harnessID uint32) (*memWallet, error) {
 	if err != nil {
 		return nil, err
 	}
-	coinbaseAddr, err := keyToAddr(coinbaseKey, net)
+	coinbaseAddr, err := keyToAddr(coinbaseKey)
 	if err != nil {
 		return nil, err
 	}
@@ -346,7 +346,7 @@ func (m *memWallet) newAddress() (btcutil.Address, error) {
 		return nil, err
 	}
 
-	addr, err := keyToAddr(privKey, m.net)
+	addr, err := keyToAddr(privKey)
 	if err != nil {
 		return nil, err
 	}
@@ -560,9 +560,9 @@ func (m *memWallet) ConfirmedBalance() btcutil.Amount {
 }
 
 // keyToAddr maps the passed private to corresponding p2pkh address.
-func keyToAddr(key *btcec.PrivateKey, net *chaincfg.Params) (btcutil.Address, error) {
+func keyToAddr(key *btcec.PrivateKey) (btcutil.Address, error) {
 	serializedKey := key.PubKey().SerializeCompressed()
-	pubKeyAddr, err := btcutil.NewAddressPubKey(serializedKey, net)
+	pubKeyAddr, err := btcutil.NewAddressPubKey(serializedKey)
 	if err != nil {
 		return nil, err
 	}
