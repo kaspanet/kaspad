@@ -134,11 +134,11 @@ var stringsToBech32Prefixes = map[string]Bech32Prefix{
 	"dagsim":  DagSim,
 }
 
-// Attempts to parse a Bech32 address prefix.
+// ParsePrefix attempts to parse a Bech32 address prefix.
 func ParsePrefix(prefixString string) (Bech32Prefix, error) {
 	prefix, ok := stringsToBech32Prefixes[prefixString]
 	if !ok {
-		return Unknown, errors.New(fmt.Sprintf("could not parse prefix %v", prefixString))
+		return Unknown, fmt.Errorf("could not parse prefix %v", prefixString)
 	}
 
 	return prefix, nil
