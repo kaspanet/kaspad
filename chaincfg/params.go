@@ -127,13 +127,11 @@ const (
 )
 
 // Map from strings to Bech32 address prefix constants for parsing purposes.
-var stringsToBech32Prefixes = make(map[string]Bech32Prefix)
-
-func init() {
-	stringsToBech32Prefixes["dagcoin"] = DagCoin
-	stringsToBech32Prefixes["dagreg"] = DagReg
-	stringsToBech32Prefixes["dagtest"] = DagTest
-	stringsToBech32Prefixes["dagsim"] = DagSim
+var stringsToBech32Prefixes = map[string]Bech32Prefix{
+	"dagcoin": DagCoin,
+	"dagreg":  DagReg,
+	"dagtest": DagTest,
+	"dagsim":  DagSim,
 }
 
 // Attempts to parse a Bech32 address prefix.
