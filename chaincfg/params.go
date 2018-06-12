@@ -13,6 +13,7 @@ import (
 
 	"github.com/daglabs/btcd/chaincfg/chainhash"
 	"github.com/daglabs/btcd/wire"
+	"fmt"
 )
 
 // These variables are the chain proof-of-work limit parameters for each default
@@ -102,6 +103,59 @@ const (
 	// DefinedDeployments is the number of currently defined deployments.
 	DefinedDeployments
 )
+
+// Bech32Prefix is the human-readable prefix for a Bech32 address.
+type Bech32Prefix int
+
+// Constants that define Bech32 address prefixes. Every network is assigned
+// a unique prefix.
+const (
+	// Unknown/Erroneous prefix
+	Unknown Bech32Prefix = iota
+
+	// Prefix for the main network.
+	DagCoin
+
+	// Prefix for the regression test network.
+	DagReg
+
+	// Prefix for the test network.
+	DagTest
+
+	// Prefix for the simulation network.
+	DagSim
+)
+
+// Map from strings to Bech32 address prefix constants for parsing purposes.
+var stringsToBech32Prefixes = make(map[string]Bech32Prefix)
+
+func init() {
+	stringsToBech32Prefixes["dagcoin"] = DagCoin
+	stringsToBech32Prefixes["dagreg"] = DagReg
+	stringsToBech32Prefixes["dagtest"] = DagTest
+	stringsToBech32Prefixes["dagsim"] = DagSim
+}
+
+// Attempts to parse a Bech32 address prefix.
+func ParsePrefix(prefixString string) (Bech32Prefix, error) {
+	prefix, ok := stringsToBech32Prefixes[prefixString]
+	if !ok {
+		return Unknown, errors.New(fmt.Sprintf("could not parse prefix %v", prefixString))
+	}
+
+	return prefix, nil
+}
+
+// Converts from Bech32 address prefixes to their string values
+func (prefix Bech32Prefix) String() string {
+	for key, value := range stringsToBech32Prefixes {
+		if prefix == value {
+			return key
+		}
+	}
+
+	return ""
+}
 
 // Params defines a Bitcoin network by its parameters.  These parameters may be
 // used by Bitcoin applications to differentiate networks as well as addresses
@@ -201,8 +255,8 @@ type Params struct {
 	// Mempool parameters
 	RelayNonStdTxs bool
 
-	// Human-readable part for Bech32 encoded addresses
-	Bech32HRP string
+	// Human-readable prefix for Bech32 encoded addresses
+	Prefix Bech32Prefix
 
 	// Human-readable part for Bech32 encoded segwit addresses, as defined
 	// in BIP 173.
@@ -303,7 +357,7 @@ var MainNetParams = Params{
 	RelayNonStdTxs: false,
 
 	// Human-readable part for Bech32 encoded addresses
-	Bech32HRP: "dagcoin",
+	Prefix: DagCoin,
 
 	// Human-readable part for Bech32 encoded segwit addresses, as defined in
 	// BIP 173.
@@ -380,7 +434,7 @@ var RegressionNetParams = Params{
 	RelayNonStdTxs: true,
 
 	// Human-readable part for Bech32 encoded addresses
-	Bech32HRP: "dagreg",
+	Prefix: DagReg,
 
 	// Human-readable part for Bech32 encoded segwit addresses, as defined in
 	// BIP 173.
@@ -472,7 +526,7 @@ var TestNet3Params = Params{
 	RelayNonStdTxs: true,
 
 	// Human-readable part for Bech32 encoded addresses
-	Bech32HRP: "dagtest",
+	Prefix: DagTest,
 
 	// Human-readable part for Bech32 encoded segwit addresses, as defined in
 	// BIP 173.
@@ -553,7 +607,7 @@ var SimNetParams = Params{
 	RelayNonStdTxs: true,
 
 	// Human-readable part for Bech32 encoded addresses
-	Bech32HRP: "dagsim",
+	Prefix: DagSim,
 
 	// Human-readable part for Bech32 encoded segwit addresses, as defined in
 	// BIP 173.
