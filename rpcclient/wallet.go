@@ -943,28 +943,6 @@ func (c *Client) GetRawChangeAddress(account string) (btcutil.Address, error) {
 	return c.GetRawChangeAddressAsync(account).Receive()
 }
 
-// FutureAddWitnessAddressResult is a future promise to deliver the result of
-// a AddWitnessAddressAsync RPC invocation (or an applicable error).
-type FutureAddWitnessAddressResult chan *response
-
-// Receive waits for the response promised by the future and returns the new
-// address.
-func (r FutureAddWitnessAddressResult) Receive() (btcutil.Address, error) {
-	res, err := receiveFuture(r)
-	if err != nil {
-		return nil, err
-	}
-
-	// Unmarshal result as a string.
-	var addr string
-	err = json.Unmarshal(res, &addr)
-	if err != nil {
-		return nil, err
-	}
-
-	return btcutil.DecodeAddress(addr, &chaincfg.MainNetParams)
-}
-
 // FutureGetAccountAddressResult is a future promise to deliver the result of a
 // GetAccountAddressAsync RPC invocation (or an applicable error).
 type FutureGetAccountAddressResult chan *response
