@@ -13,6 +13,7 @@ import (
 
 	"github.com/daglabs/btcd/chaincfg/chainhash"
 	"github.com/daglabs/btcd/wire"
+	"fmt"
 )
 
 // These variables are the chain proof-of-work limit parameters for each default
@@ -102,6 +103,57 @@ const (
 	// DefinedDeployments is the number of currently defined deployments.
 	DefinedDeployments
 )
+
+// Bech32Prefix is the human-readable prefix for a Bech32 address.
+type Bech32Prefix int
+
+// Constants that define Bech32 address prefixes. Every network is assigned
+// a unique prefix.
+const (
+	// Unknown/Erroneous prefix
+	Unknown Bech32Prefix = iota
+
+	// Prefix for the main network.
+	DagCoin
+
+	// Prefix for the regression test network.
+	DagReg
+
+	// Prefix for the test network.
+	DagTest
+
+	// Prefix for the simulation network.
+	DagSim
+)
+
+// Map from strings to Bech32 address prefix constants for parsing purposes.
+var stringsToBech32Prefixes = map[string]Bech32Prefix{
+	"dagcoin": DagCoin,
+	"dagreg":  DagReg,
+	"dagtest": DagTest,
+	"dagsim":  DagSim,
+}
+
+// ParsePrefix attempts to parse a Bech32 address prefix.
+func ParsePrefix(prefixString string) (Bech32Prefix, error) {
+	prefix, ok := stringsToBech32Prefixes[prefixString]
+	if !ok {
+		return Unknown, fmt.Errorf("could not parse prefix %v", prefixString)
+	}
+
+	return prefix, nil
+}
+
+// Converts from Bech32 address prefixes to their string values
+func (prefix Bech32Prefix) String() string {
+	for key, value := range stringsToBech32Prefixes {
+		if prefix == value {
+			return key
+		}
+	}
+
+	return ""
+}
 
 // Params defines a Bitcoin network by its parameters.  These parameters may be
 // used by Bitcoin applications to differentiate networks as well as addresses
@@ -201,13 +253,14 @@ type Params struct {
 	// Mempool parameters
 	RelayNonStdTxs bool
 
+	// Human-readable prefix for Bech32 encoded addresses
+	Prefix Bech32Prefix
+
 	// Human-readable part for Bech32 encoded segwit addresses, as defined
 	// in BIP 173.
 	Bech32HRPSegwit string
 
 	// Address encoding magics
-	PubKeyHashAddrID        byte // First byte of a P2PKH address
-	ScriptHashAddrID        byte // First byte of a P2SH address
 	PrivateKeyID            byte // First byte of a WIF private key
 	WitnessPubKeyHashAddrID byte // First byte of a P2WPKH address
 	WitnessScriptHashAddrID byte // First byte of a P2WSH address
@@ -301,13 +354,14 @@ var MainNetParams = Params{
 	// Mempool parameters
 	RelayNonStdTxs: false,
 
+	// Human-readable part for Bech32 encoded addresses
+	Prefix: DagCoin,
+
 	// Human-readable part for Bech32 encoded segwit addresses, as defined in
 	// BIP 173.
 	Bech32HRPSegwit: "bc", // always bc for main net
 
 	// Address encoding magics
-	PubKeyHashAddrID:        0x00, // starts with 1
-	ScriptHashAddrID:        0x05, // starts with 3
 	PrivateKeyID:            0x80, // starts with 5 (uncompressed) or K (compressed)
 	WitnessPubKeyHashAddrID: 0x06, // starts with p2
 	WitnessScriptHashAddrID: 0x0A, // starts with 7Xh
@@ -377,14 +431,15 @@ var RegressionNetParams = Params{
 	// Mempool parameters
 	RelayNonStdTxs: true,
 
+	// Human-readable part for Bech32 encoded addresses
+	Prefix: DagReg,
+
 	// Human-readable part for Bech32 encoded segwit addresses, as defined in
 	// BIP 173.
 	Bech32HRPSegwit: "bcrt", // always bcrt for reg test net
 
 	// Address encoding magics
-	PubKeyHashAddrID: 0x6f, // starts with m or n
-	ScriptHashAddrID: 0xc4, // starts with 2
-	PrivateKeyID:     0xef, // starts with 9 (uncompressed) or c (compressed)
+	PrivateKeyID: 0xef, // starts with 9 (uncompressed) or c (compressed)
 
 	// BIP32 hierarchical deterministic extended key magics
 	HDPrivateKeyID: [4]byte{0x04, 0x35, 0x83, 0x94}, // starts with tprv
@@ -468,13 +523,14 @@ var TestNet3Params = Params{
 	// Mempool parameters
 	RelayNonStdTxs: true,
 
+	// Human-readable part for Bech32 encoded addresses
+	Prefix: DagTest,
+
 	// Human-readable part for Bech32 encoded segwit addresses, as defined in
 	// BIP 173.
 	Bech32HRPSegwit: "tb", // always tb for test net
 
 	// Address encoding magics
-	PubKeyHashAddrID:        0x6f, // starts with m or n
-	ScriptHashAddrID:        0xc4, // starts with 2
 	WitnessPubKeyHashAddrID: 0x03, // starts with QW
 	WitnessScriptHashAddrID: 0x28, // starts with T7n
 	PrivateKeyID:            0xef, // starts with 9 (uncompressed) or c (compressed)
@@ -548,13 +604,14 @@ var SimNetParams = Params{
 	// Mempool parameters
 	RelayNonStdTxs: true,
 
+	// Human-readable part for Bech32 encoded addresses
+	Prefix: DagSim,
+
 	// Human-readable part for Bech32 encoded segwit addresses, as defined in
 	// BIP 173.
 	Bech32HRPSegwit: "sb", // always sb for sim net
 
 	// Address encoding magics
-	PubKeyHashAddrID:        0x3f, // starts with S
-	ScriptHashAddrID:        0x7b, // starts with s
 	PrivateKeyID:            0x64, // starts with 4 (uncompressed) or F (compressed)
 	WitnessPubKeyHashAddrID: 0x19, // starts with Gg
 	WitnessScriptHashAddrID: 0x28, // starts with ?
@@ -582,8 +639,6 @@ var (
 
 var (
 	registeredNets       = make(map[wire.BitcoinNet]struct{})
-	pubKeyHashAddrIDs    = make(map[byte]struct{})
-	scriptHashAddrIDs    = make(map[byte]struct{})
 	bech32SegwitPrefixes = make(map[string]struct{})
 	hdPrivToPubKeyIDs    = make(map[[4]byte][]byte)
 )
@@ -607,8 +662,6 @@ func Register(params *Params) error {
 		return ErrDuplicateNet
 	}
 	registeredNets[params.Net] = struct{}{}
-	pubKeyHashAddrIDs[params.PubKeyHashAddrID] = struct{}{}
-	scriptHashAddrIDs[params.ScriptHashAddrID] = struct{}{}
 	hdPrivToPubKeyIDs[params.HDPrivateKeyID] = params.HDPublicKeyID[:]
 
 	// A valid Bech32 encoded segwit address always has as prefix the
@@ -623,28 +676,6 @@ func mustRegister(params *Params) {
 	if err := Register(params); err != nil {
 		panic("failed to register network: " + err.Error())
 	}
-}
-
-// IsPubKeyHashAddrID returns whether the id is an identifier known to prefix a
-// pay-to-pubkey-hash address on any default or registered network.  This is
-// used when decoding an address string into a specific address type.  It is up
-// to the caller to check both this and IsScriptHashAddrID and decide whether an
-// address is a pubkey hash address, script hash address, neither, or
-// undeterminable (if both return true).
-func IsPubKeyHashAddrID(id byte) bool {
-	_, ok := pubKeyHashAddrIDs[id]
-	return ok
-}
-
-// IsScriptHashAddrID returns whether the id is an identifier known to prefix a
-// pay-to-script-hash address on any default or registered network.  This is
-// used when decoding an address string into a specific address type.  It is up
-// to the caller to check both this and IsPubKeyHashAddrID and decide whether an
-// address is a pubkey hash address, script hash address, neither, or
-// undeterminable (if both return true).
-func IsScriptHashAddrID(id byte) bool {
-	_, ok := scriptHashAddrIDs[id]
-	return ok
 }
 
 // IsBech32SegwitPrefix returns whether the prefix is a known prefix for segwit

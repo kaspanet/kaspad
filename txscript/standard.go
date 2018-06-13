@@ -300,15 +300,15 @@ func CalcScriptInfo(sigScript, pkScript []byte, witness wire.TxWitness,
 		// will fail).
 		si.NumInputs = len(sigPops)
 
-	// If segwit is active, and this is a regular p2wkh output, then we'll
-	// treat the script as a p2pkh output in essence.
+		// If segwit is active, and this is a regular p2wkh output, then we'll
+		// treat the script as a p2pkh output in essence.
 	case si.PkScriptClass == WitnessV0PubKeyHashTy && segwit:
 
 		si.SigOps = GetWitnessSigOpCount(sigScript, pkScript, witness)
 		si.NumInputs = len(witness)
 
-	// We'll attempt to detect the nested p2sh case so we can accurately
-	// count the signature operations involved.
+		// We'll attempt to detect the nested p2sh case so we can accurately
+		// count the signature operations involved.
 	case si.PkScriptClass == ScriptHashTy &&
 		IsWitnessProgram(sigScript[1:]) && bip16 && segwit:
 
@@ -327,8 +327,8 @@ func CalcScriptInfo(sigScript, pkScript []byte, witness wire.TxWitness,
 		si.NumInputs = len(witness)
 		si.NumInputs += len(sigPops)
 
-	// If segwit is active, and this is a p2wsh output, then we'll need to
-	// examine the witness script to generate accurate script info.
+		// If segwit is active, and this is a p2wsh output, then we'll need to
+		// examine the witness script to generate accurate script info.
 	case si.PkScriptClass == WitnessV0ScriptHashTy && segwit:
 		// The witness script is the final element of the witness
 		// stack.
@@ -564,7 +564,7 @@ func ExtractPkScriptAddrs(pkScript []byte, chainParams *chaincfg.Params) (Script
 		// Therefore the pubkey is the first item on the stack.
 		// Skip the pubkey if it's invalid for some reason.
 		requiredSigs = 1
-		addr, err := btcutil.NewAddressPubKey(pops[0].data, chainParams)
+		addr, err := btcutil.NewAddressPubKey(pops[0].data)
 		if err == nil {
 			addrs = append(addrs, addr)
 		}
@@ -605,8 +605,7 @@ func ExtractPkScriptAddrs(pkScript []byte, chainParams *chaincfg.Params) (Script
 		// Extract the public keys while skipping any that are invalid.
 		addrs = make([]btcutil.Address, 0, numPubKeys)
 		for i := 0; i < numPubKeys; i++ {
-			addr, err := btcutil.NewAddressPubKey(pops[i+1].data,
-				chainParams)
+			addr, err := btcutil.NewAddressPubKey(pops[i+1].data)
 			if err == nil {
 				addrs = append(addrs, addr)
 			}
