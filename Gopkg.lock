@@ -3,12 +3,6 @@
 
 [[projects]]
   branch = "master"
-  name = "github.com/aead/siphash"
-  packages = ["."]
-  revision = "e404fcfc888570cadd1610538e2dbc89f66af814"
-
-[[projects]]
-  branch = "master"
   name = "github.com/btcsuite/btclog"
   packages = ["."]
   revision = "84c8d2346e9fc8c7b947e243b9c24e6df9fd206a"
@@ -63,20 +57,6 @@
   version = "v1.0.0"
 
 [[projects]]
-  branch = "master"
-  name = "github.com/daglabs/btcutil"
-  packages = [
-    ".",
-    "base58",
-    "bech32",
-    "bloom",
-    "gcs",
-    "gcs/builder",
-    "hdkeychain"
-  ]
-  revision = "b4e6eb624c3db8fb260f6ce2200a4a135c466652"
-
-[[projects]]
   name = "github.com/davecgh/go-spew"
   packages = ["spew"]
   revision = "346938d642f2ec3594ed81d874461961cd0faa76"
@@ -96,12 +76,6 @@
 
 [[projects]]
   branch = "master"
-  name = "github.com/kkdai/bstream"
-  packages = ["."]
-  revision = "f71540b9dfdcfe64dbf2818e9b66423c6aafcacd"
-
-[[projects]]
-  branch = "master"
   name = "golang.org/x/crypto"
   packages = ["ripemd160"]
   revision = "b47b1587369238182299fe4dad77d05b8b461e06"
@@ -109,6 +83,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "939184fbaca652ccb2ada55cbf06b46a2e8aae3bc73d59206748889013761f19"
+  inputs-digest = "f6928f9045d39e392385664563e9e2ebad733056d5a2d28747dfbfbe19aa6ad2"
   solver-name = "gps-cdcl"
   solver-version = 1

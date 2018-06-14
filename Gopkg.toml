@@ -4,7 +4,6 @@
 # for detailed Gopkg.toml documentation.
 #
 # required = ["github.com/user/thing/cmd/thing"]
-# ignored = ["github.com/user/project/pkgX", "bitbucket.org/user/project/pkgA/pkgY"]
 #
 # [[constraint]]
 #   name = "github.com/user/project"
@@ -24,6 +23,7 @@
 #   go-tests = true
 #   unused-packages = true
 
+ignored = ["github.com/daglabs/btcutil*"]
 
 [[constraint]]
   branch = "master"
@@ -44,10 +44,6 @@
 [[constraint]]
   name = "github.com/btcsuite/winsvc"
   version = "1.0.0"
-
-[[constraint]]
-  branch = "master"
-  name = "github.com/daglabs/btcutil"
 
 [[constraint]]
   name = "github.com/davecgh/go-spew"
