@@ -27,8 +27,8 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/daglabs/btcd/blockchain"
-	"github.com/daglabs/btcd/blockchain/indexers"
+	"github.com/daglabs/btcd/blockdag"
+	"github.com/daglabs/btcd/blockdag/indexers"
 	"github.com/daglabs/btcd/btcec"
 	"github.com/daglabs/btcd/btcjson"
 	"github.com/daglabs/btcd/chaincfg"
@@ -334,12 +334,12 @@ type gbtWorkState struct {
 	minTimestamp  time.Time
 	template      *mining.BlockTemplate
 	notifyMap map[chainhash.Hash]map[int64]chan struct{}
-	timeSource blockchain.MedianTimeSource
+	timeSource blockdag.MedianTimeSource
 }
 
 // newGbtWorkState returns a new instance of a gbtWorkState with all internal
 // fields initialized and ready to use.
-func newGbtWorkState(timeSource blockchain.MedianTimeSource) *gbtWorkState {
+func newGbtWorkState(timeSource blockdag.MedianTimeSource) *gbtWorkState {
 	return &gbtWorkState{
 		notifyMap: make(map[chainhash.Hash]map[int64]chan struct{}),
 		timeSource: timeSource,
@@ -656,7 +656,7 @@ func witnessToHex(witness wire.TxWitness) []string {
 func createVinList(mtx *wire.MsgTx) []btcjson.Vin {
 	// Coinbase transactions only have a single txin by definition.
 	vinList := make([]btcjson.Vin, len(mtx.TxIn))
-	if blockchain.IsCoinBaseTx(mtx) {
+	if blockdag.IsCoinBaseTx(mtx) {
 		txIn := mtx.TxIn[0]
 		vinList[0].Coinbase = hex.EncodeToString(txIn.SignatureScript)
 		vinList[0].Sequence = txIn.Sequence
@@ -1046,8 +1046,8 @@ func getDifficultyRatio(bits uint32, params *chaincfg.Params) float64 {
 	// converted back to a number.  Note this is not the same as the proof of
 	// work limit directly because the block difficulty is encoded in a block
 	// with the compact form which loses precision.
-	max := blockchain.CompactToBig(params.PowLimitBits)
-	target := blockchain.CompactToBig(bits)
+	max := blockdag.CompactToBig(params.PowLimitBits)
+	target := blockdag.CompactToBig(bits)
 
 	difficulty := new(big.Rat).SetFrac(max, target)
 	outString := difficulty.FloatString(8)
@@ -1130,7 +1130,7 @@ func handleGetBlock(s *rpcServer, cmd interface{}, closeChan <-chan struct{}) (i
 		Height:        int64(blockHeight),
 		Size:          int32(len(blkBytes)),
 		StrippedSize:  int32(blk.MsgBlock().SerializeSizeStripped()),
-		Weight:        int32(blockchain.GetBlockWeight(blk)),
+		Weight:        int32(blockdag.GetBlockWeight(blk)),
 		Bits:          strconv.FormatInt(int64(blockHeader.Bits), 16),
 		Difficulty:    getDifficultyRatio(blockHeader.Bits, params),
 		NextHash:      nextHashString,
@@ -1164,17 +1164,17 @@ func handleGetBlock(s *rpcServer, cmd interface{}, closeChan <-chan struct{}) (i
 
 // softForkStatus converts a ThresholdState state into a human readable string
 // corresponding to the particular state.
-func softForkStatus(state blockchain.ThresholdState) (string, error) {
+func softForkStatus(state blockdag.ThresholdState) (string, error) {
 	switch state {
-	case blockchain.ThresholdDefined:
+	case blockdag.ThresholdDefined:
 		return "defined", nil
-	case blockchain.ThresholdStarted:
+	case blockdag.ThresholdStarted:
 		return "started", nil
-	case blockchain.ThresholdLockedIn:
+	case blockdag.ThresholdLockedIn:
 		return "lockedin", nil
-	case blockchain.ThresholdActive:
+	case blockdag.ThresholdActive:
 		return "active", nil
-	case blockchain.ThresholdFailed:
+	case blockdag.ThresholdFailed:
 		return "failed", nil
 	default:
 		return "", fmt.Errorf("unknown deployment state: %v", state)
@@ -1578,7 +1578,7 @@ func (state *gbtWorkState) updateBlockTemplate(s *rpcServer, useCoinbaseValue bo
 		template = blkTemplate
 		msgBlock = template.Block
 		targetDifficulty = fmt.Sprintf("%064x",
-			blockchain.CompactToBig(msgBlock.Header.Bits))
+			blockdag.CompactToBig(msgBlock.Header.Bits))
 
 		// Get the minimum allowed timestamp for the block based on the
 		// median timestamp of the last several blocks per the chain
@@ -1631,14 +1631,14 @@ func (state *gbtWorkState) updateBlockTemplate(s *rpcServer, useCoinbaseValue bo
 
 			// Update the merkle root.
 			block := btcutil.NewBlock(template.Block)
-			merkles := blockchain.BuildMerkleTreeStore(block.Transactions(), false)
+			merkles := blockdag.BuildMerkleTreeStore(block.Transactions(), false)
 			template.Block.Header.MerkleRoot = *merkles[len(merkles)-1]
 		}
 
 		// Set locals for convenience.
 		msgBlock = template.Block
 		targetDifficulty = fmt.Sprintf("%064x",
-			blockchain.CompactToBig(msgBlock.Header.Bits))
+			blockdag.CompactToBig(msgBlock.Header.Bits))
 
 		// Update the time of the block template to the current time
 		// while accounting for the median time of the past several
@@ -1668,7 +1668,7 @@ func (state *gbtWorkState) blockTemplateResult(useCoinbaseValue bool, submitOld 
 	msgBlock := template.Block
 	header := &msgBlock.Header
 	adjustedTime := state.timeSource.AdjustedTime()
-	maxTime := adjustedTime.Add(time.Second * blockchain.MaxTimeOffsetSeconds)
+	maxTime := adjustedTime.Add(time.Second * blockdag.MaxTimeOffsetSeconds)
 	if header.Timestamp.After(maxTime) {
 		return nil, &btcjson.RPCError{
 			Code: btcjson.ErrRPCOutOfRange,
@@ -1725,7 +1725,7 @@ func (state *gbtWorkState) blockTemplateResult(useCoinbaseValue bool, submitOld 
 			Depends: depends,
 			Fee:     template.Fees[i],
 			SigOps:  template.SigOpCosts[i],
-			Weight:  blockchain.GetTransactionWeight(bTx),
+			Weight:  blockdag.GetTransactionWeight(bTx),
 		}
 		transactions = append(transactions, resultTx)
 	}
@@ -1734,15 +1734,15 @@ func (state *gbtWorkState) blockTemplateResult(useCoinbaseValue bool, submitOld 
 	// implied by the included or omission of fields:
 	//  Including MinTime -> time/decrement
 	//  Omitting CoinbaseTxn -> coinbase, generation
-	targetDifficulty := fmt.Sprintf("%064x", blockchain.CompactToBig(header.Bits))
+	targetDifficulty := fmt.Sprintf("%064x", blockdag.CompactToBig(header.Bits))
 	templateID := encodeTemplateID(state.prevHash, state.lastGenerated)
 	reply := btcjson.GetBlockTemplateResult{
 		Bits:         strconv.FormatInt(int64(header.Bits), 16),
 		CurTime:      header.Timestamp.Unix(),
 		Height:       int64(template.Height),
 		PreviousHash: header.PrevBlock.String(),
-		WeightLimit:  blockchain.MaxBlockWeight,
-		SigOpLimit:   blockchain.MaxBlockSigOpsCost,
+		WeightLimit:  blockdag.MaxBlockWeight,
+		SigOpLimit:   blockdag.MaxBlockSigOpsCost,
 		SizeLimit:    wire.MaxBlockPayload,
 		Transactions: transactions,
 		Version:      header.Version,
@@ -1987,97 +1987,97 @@ func handleGetBlockTemplateRequest(s *rpcServer, request *btcjson.TemplateReques
 func chainErrToGBTErrString(err error) string {
 	// When the passed error is not a RuleError, just return a generic
 	// rejected string with the error text.
-	ruleErr, ok := err.(blockchain.RuleError)
+	ruleErr, ok := err.(blockdag.RuleError)
 	if !ok {
 		return "rejected: " + err.Error()
 	}
 
 	switch ruleErr.ErrorCode {
-	case blockchain.ErrDuplicateBlock:
+	case blockdag.ErrDuplicateBlock:
 		return "duplicate"
-	case blockchain.ErrBlockTooBig:
+	case blockdag.ErrBlockTooBig:
 		return "bad-blk-length"
-	case blockchain.ErrBlockWeightTooHigh:
+	case blockdag.ErrBlockWeightTooHigh:
 		return "bad-blk-weight"
-	case blockchain.ErrBlockVersionTooOld:
+	case blockdag.ErrBlockVersionTooOld:
 		return "bad-version"
-	case blockchain.ErrInvalidTime:
+	case blockdag.ErrInvalidTime:
 		return "bad-time"
-	case blockchain.ErrTimeTooOld:
+	case blockdag.ErrTimeTooOld:
 		return "time-too-old"
-	case blockchain.ErrTimeTooNew:
+	case blockdag.ErrTimeTooNew:
 		return "time-too-new"
-	case blockchain.ErrDifficultyTooLow:
+	case blockdag.ErrDifficultyTooLow:
 		return "bad-diffbits"
-	case blockchain.ErrUnexpectedDifficulty:
+	case blockdag.ErrUnexpectedDifficulty:
 		return "bad-diffbits"
-	case blockchain.ErrHighHash:
+	case blockdag.ErrHighHash:
 		return "high-hash"
-	case blockchain.ErrBadMerkleRoot:
+	case blockdag.ErrBadMerkleRoot:
 		return "bad-txnmrklroot"
-	case blockchain.ErrBadCheckpoint:
+	case blockdag.ErrBadCheckpoint:
 		return "bad-checkpoint"
-	case blockchain.ErrForkTooOld:
+	case blockdag.ErrForkTooOld:
 		return "fork-too-old"
-	case blockchain.ErrCheckpointTimeTooOld:
+	case blockdag.ErrCheckpointTimeTooOld:
 		return "checkpoint-time-too-old"
-	case blockchain.ErrNoTransactions:
+	case blockdag.ErrNoTransactions:
 		return "bad-txns-none"
-	case blockchain.ErrNoTxInputs:
+	case blockdag.ErrNoTxInputs:
 		return "bad-txns-noinputs"
-	case blockchain.ErrNoTxOutputs:
+	case blockdag.ErrNoTxOutputs:
 		return "bad-txns-nooutputs"
-	case blockchain.ErrTxTooBig:
+	case blockdag.ErrTxTooBig:
 		return "bad-txns-size"
-	case blockchain.ErrBadTxOutValue:
+	case blockdag.ErrBadTxOutValue:
 		return "bad-txns-outputvalue"
-	case blockchain.ErrDuplicateTxInputs:
+	case blockdag.ErrDuplicateTxInputs:
 		return "bad-txns-dupinputs"
-	case blockchain.ErrBadTxInput:
+	case blockdag.ErrBadTxInput:
 		return "bad-txns-badinput"
-	case blockchain.ErrMissingTxOut:
+	case blockdag.ErrMissingTxOut:
 		return "bad-txns-missinginput"
-	case blockchain.ErrUnfinalizedTx:
+	case blockdag.ErrUnfinalizedTx:
 		return "bad-txns-unfinalizedtx"
-	case blockchain.ErrDuplicateTx:
+	case blockdag.ErrDuplicateTx:
 		return "bad-txns-duplicate"
-	case blockchain.ErrOverwriteTx:
+	case blockdag.ErrOverwriteTx:
 		return "bad-txns-overwrite"
-	case blockchain.ErrImmatureSpend:
+	case blockdag.ErrImmatureSpend:
 		return "bad-txns-maturity"
-	case blockchain.ErrSpendTooHigh:
+	case blockdag.ErrSpendTooHigh:
 		return "bad-txns-highspend"
-	case blockchain.ErrBadFees:
+	case blockdag.ErrBadFees:
 		return "bad-txns-fees"
-	case blockchain.ErrTooManySigOps:
+	case blockdag.ErrTooManySigOps:
 		return "high-sigops"
-	case blockchain.ErrFirstTxNotCoinbase:
+	case blockdag.ErrFirstTxNotCoinbase:
 		return "bad-txns-nocoinbase"
-	case blockchain.ErrMultipleCoinbases:
+	case blockdag.ErrMultipleCoinbases:
 		return "bad-txns-multicoinbase"
-	case blockchain.ErrBadCoinbaseScriptLen:
+	case blockdag.ErrBadCoinbaseScriptLen:
 		return "bad-cb-length"
-	case blockchain.ErrBadCoinbaseValue:
+	case blockdag.ErrBadCoinbaseValue:
 		return "bad-cb-value"
-	case blockchain.ErrMissingCoinbaseHeight:
+	case blockdag.ErrMissingCoinbaseHeight:
 		return "bad-cb-height"
-	case blockchain.ErrBadCoinbaseHeight:
+	case blockdag.ErrBadCoinbaseHeight:
 		return "bad-cb-height"
-	case blockchain.ErrScriptMalformed:
+	case blockdag.ErrScriptMalformed:
 		return "bad-script-malformed"
-	case blockchain.ErrScriptValidation:
+	case blockdag.ErrScriptValidation:
 		return "bad-script-validate"
-	case blockchain.ErrUnexpectedWitness:
+	case blockdag.ErrUnexpectedWitness:
 		return "unexpected-witness"
-	case blockchain.ErrInvalidWitnessCommitment:
+	case blockdag.ErrInvalidWitnessCommitment:
 		return "bad-witness-nonce-size"
-	case blockchain.ErrWitnessCommitmentMismatch:
+	case blockdag.ErrWitnessCommitmentMismatch:
 		return "bad-witness-merkle-match"
-	case blockchain.ErrPreviousBlockUnknown:
+	case blockdag.ErrPreviousBlockUnknown:
 		return "prev-blk-not-found"
-	case blockchain.ErrInvalidAncestorBlock:
+	case blockdag.ErrInvalidAncestorBlock:
 		return "bad-prevblk"
-	case blockchain.ErrPrevBlockNotBest:
+	case blockdag.ErrPrevBlockNotBest:
 		return "inconclusive-not-best-prvblk"
 	}
 
@@ -2128,7 +2128,7 @@ func handleGetBlockTemplateProposal(s *rpcServer, request *btcjson.TemplateReque
 	}
 
 	if err := s.cfg.Chain.CheckConnectBlockTemplate(block); err != nil {
-		if _, ok := err.(blockchain.RuleError); !ok {
+		if _, ok := err.(blockdag.RuleError); !ok {
 			errStr := fmt.Sprintf("Failed to process block proposal: %v", err)
 			rpcsLog.Error(errStr)
 			return nil, &btcjson.RPCError{
@@ -2452,7 +2452,7 @@ func handleGetNetworkHashPS(s *rpcServer, cmd interface{}, closeChan <-chan stru
 			minTimestamp = header.Timestamp
 			maxTimestamp = minTimestamp
 		} else {
-			totalWork.Add(totalWork, blockchain.CalcWork(header.Bits))
+			totalWork.Add(totalWork, blockdag.CalcWork(header.Bits))
 
 			if minTimestamp.After(header.Timestamp) {
 				minTimestamp = header.Timestamp
@@ -2703,7 +2703,7 @@ func handleGetTxOut(s *rpcServer, cmd interface{}, closeChan <-chan struct{}) (i
 		confirmations = 0
 		value = txOut.Value
 		pkScript = txOut.PkScript
-		isCoinbase = blockchain.IsCoinBaseTx(mtx)
+		isCoinbase = blockdag.IsCoinBaseTx(mtx)
 	} else {
 		out := wire.OutPoint{Hash: *txHash, Index: c.Vout}
 		entry, err := s.cfg.Chain.FetchUtxoEntry(out)
@@ -2894,7 +2894,7 @@ func fetchInputTxos(s *rpcServer, tx *wire.MsgTx) (map[wire.OutPoint]wire.TxOut,
 // passed transaction.
 func createVinListPrevOut(s *rpcServer, mtx *wire.MsgTx, chainParams *chaincfg.Params, vinExtra bool, filterAddrMap map[string]struct{}) ([]btcjson.VinPrevOut, error) {
 	// Coinbase transactions only have a single txin by definition.
-	if blockchain.IsCoinBaseTx(mtx) {
+	if blockdag.IsCoinBaseTx(mtx) {
 		// Only include the transaction if the filter map is empty
 		// because a coinbase input has no addresses and so would never
 		// match a non-empty filter.
@@ -3442,7 +3442,7 @@ func handleSubmitBlock(s *rpcServer, cmd interface{}, closeChan <-chan struct{})
 
 	// Process this block using the same rules as blocks coming from other
 	// nodes.  This will in turn relay it to the network like normal.
-	_, err = s.cfg.SyncMgr.SubmitBlock(block, blockchain.BFNone)
+	_, err = s.cfg.SyncMgr.SubmitBlock(block, blockdag.BFNone)
 	if err != nil {
 		return fmt.Sprintf("rejected: %s", err.Error()), nil
 	}
@@ -3493,7 +3493,7 @@ func verifyChain(s *rpcServer, level, depth int32) error {
 
 		// Level 1 does basic chain sanity checks.
 		if level > 0 {
-			err := blockchain.CheckBlockSanity(block,
+			err := blockdag.CheckBlockSanity(block,
 				s.cfg.ChainParams.PowLimit, s.cfg.TimeSource)
 			if err != nil {
 				rpcsLog.Errorf("Verify is unable to validate "+
@@ -4207,7 +4207,7 @@ type rpcserverSyncManager interface {
 
 	// SubmitBlock submits the provided block to the network after
 	// processing it locally.
-	SubmitBlock(block *btcutil.Block, flags blockchain.BehaviorFlags) (bool, error)
+	SubmitBlock(block *btcutil.Block, flags blockdag.BehaviorFlags) (bool, error)
 
 	// Pause pauses the sync manager until the returned channel is closed.
 	Pause() chan<- struct{}
@@ -4246,8 +4246,8 @@ type rpcserverConfig struct {
 
 	// These fields allow the RPC server to interface with the local block
 	// chain data and state.
-	TimeSource  blockchain.MedianTimeSource
-	Chain       *blockchain.BlockChain
+	TimeSource  blockdag.MedianTimeSource
+	Chain       *blockdag.BlockChain
 	ChainParams *chaincfg.Params
 	DB          database.DB
 
@@ -4301,9 +4301,9 @@ func newRPCServer(config *rpcserverConfig) (*rpcServer, error) {
 
 // Callback for notifications from blockchain.  It notifies clients that are
 // long polling for changes or subscribed to websockets notifications.
-func (s *rpcServer) handleBlockchainNotification(notification *blockchain.Notification) {
+func (s *rpcServer) handleBlockchainNotification(notification *blockdag.Notification) {
 	switch notification.Type {
-	case blockchain.NTBlockAccepted:
+	case blockdag.NTBlockAccepted:
 		block, ok := notification.Data.(*btcutil.Block)
 		if !ok {
 			rpcsLog.Warnf("Chain accepted notification is not a block.")
@@ -4315,7 +4315,7 @@ func (s *rpcServer) handleBlockchainNotification(notification *blockchain.Notifi
 		// their old block template to become stale.
 		s.gbtWorkState.NotifyBlockConnected(block.Hash())
 
-	case blockchain.NTBlockConnected:
+	case blockdag.NTBlockConnected:
 		block, ok := notification.Data.(*btcutil.Block)
 		if !ok {
 			rpcsLog.Warnf("Chain connected notification is not a block.")
@@ -4325,7 +4325,7 @@ func (s *rpcServer) handleBlockchainNotification(notification *blockchain.Notifi
 		// Notify registered websocket clients of incoming block.
 		s.ntfnMgr.NotifyBlockConnected(block)
 
-	case blockchain.NTBlockDisconnected:
+	case blockdag.NTBlockDisconnected:
 		block, ok := notification.Data.(*btcutil.Block)
 		if !ok {
 			rpcsLog.Warnf("Chain disconnected notification is not a block.")
