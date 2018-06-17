@@ -8,12 +8,12 @@ import (
 	"errors"
 	"math"
 	"math/big"
-	"strings"
 	"time"
+
+	"fmt"
 
 	"github.com/daglabs/btcd/chaincfg/chainhash"
 	"github.com/daglabs/btcd/wire"
-	"fmt"
 )
 
 // These variables are the chain proof-of-work limit parameters for each default
@@ -91,11 +91,6 @@ const (
 	// soft-fork package. The CSV package includes the deployment of BIPS
 	// 68, 112, and 113.
 	DeploymentCSV
-
-	// DeploymentSegwit defines the rule change deployment ID for the
-	// Segregated Witness (segwit) soft-fork package. The segwit package
-	// includes the deployment of BIPS 141, 142, 144, 145, 147 and 173.
-	DeploymentSegwit
 
 	// NOTE: DefinedDeployments must always come last since it is used to
 	// determine how many defined deployments there currently are.
@@ -256,14 +251,8 @@ type Params struct {
 	// Human-readable prefix for Bech32 encoded addresses
 	Prefix Bech32Prefix
 
-	// Human-readable part for Bech32 encoded segwit addresses, as defined
-	// in BIP 173.
-	Bech32HRPSegwit string
-
 	// Address encoding magics
-	PrivateKeyID            byte // First byte of a WIF private key
-	WitnessPubKeyHashAddrID byte // First byte of a P2WPKH address
-	WitnessScriptHashAddrID byte // First byte of a P2WSH address
+	PrivateKeyID byte // First byte of a WIF private key
 
 	// BIP32 hierarchical deterministic extended key magics
 	HDPrivateKeyID [4]byte
@@ -344,11 +333,6 @@ var MainNetParams = Params{
 			StartTime:  1462060800, // May 1st, 2016
 			ExpireTime: 1493596800, // May 1st, 2017
 		},
-		DeploymentSegwit: {
-			BitNumber:  1,
-			StartTime:  1479168000, // November 15, 2016 UTC
-			ExpireTime: 1510704000, // November 15, 2017 UTC.
-		},
 	},
 
 	// Mempool parameters
@@ -357,14 +341,8 @@ var MainNetParams = Params{
 	// Human-readable part for Bech32 encoded addresses
 	Prefix: DagCoin,
 
-	// Human-readable part for Bech32 encoded segwit addresses, as defined in
-	// BIP 173.
-	Bech32HRPSegwit: "bc", // always bc for main net
-
 	// Address encoding magics
-	PrivateKeyID:            0x80, // starts with 5 (uncompressed) or K (compressed)
-	WitnessPubKeyHashAddrID: 0x06, // starts with p2
-	WitnessScriptHashAddrID: 0x0A, // starts with 7Xh
+	PrivateKeyID: 0x80, // starts with 5 (uncompressed) or K (compressed)
 
 	// BIP32 hierarchical deterministic extended key magics
 	HDPrivateKeyID: [4]byte{0x04, 0x88, 0xad, 0xe4}, // starts with xprv
@@ -421,11 +399,6 @@ var RegressionNetParams = Params{
 			StartTime:  0,             // Always available for vote
 			ExpireTime: math.MaxInt64, // Never expires
 		},
-		DeploymentSegwit: {
-			BitNumber:  1,
-			StartTime:  0,             // Always available for vote
-			ExpireTime: math.MaxInt64, // Never expires.
-		},
 	},
 
 	// Mempool parameters
@@ -433,10 +406,6 @@ var RegressionNetParams = Params{
 
 	// Human-readable part for Bech32 encoded addresses
 	Prefix: DagReg,
-
-	// Human-readable part for Bech32 encoded segwit addresses, as defined in
-	// BIP 173.
-	Bech32HRPSegwit: "bcrt", // always bcrt for reg test net
 
 	// Address encoding magics
 	PrivateKeyID: 0xef, // starts with 9 (uncompressed) or c (compressed)
@@ -513,11 +482,6 @@ var TestNet3Params = Params{
 			StartTime:  1456790400, // March 1st, 2016
 			ExpireTime: 1493596800, // May 1st, 2017
 		},
-		DeploymentSegwit: {
-			BitNumber:  1,
-			StartTime:  1462060800, // May 1, 2016 UTC
-			ExpireTime: 1493596800, // May 1, 2017 UTC.
-		},
 	},
 
 	// Mempool parameters
@@ -526,14 +490,8 @@ var TestNet3Params = Params{
 	// Human-readable part for Bech32 encoded addresses
 	Prefix: DagTest,
 
-	// Human-readable part for Bech32 encoded segwit addresses, as defined in
-	// BIP 173.
-	Bech32HRPSegwit: "tb", // always tb for test net
-
 	// Address encoding magics
-	WitnessPubKeyHashAddrID: 0x03, // starts with QW
-	WitnessScriptHashAddrID: 0x28, // starts with T7n
-	PrivateKeyID:            0xef, // starts with 9 (uncompressed) or c (compressed)
+	PrivateKeyID: 0xef, // starts with 9 (uncompressed) or c (compressed)
 
 	// BIP32 hierarchical deterministic extended key magics
 	HDPrivateKeyID: [4]byte{0x04, 0x35, 0x83, 0x94}, // starts with tprv
@@ -594,27 +552,14 @@ var SimNetParams = Params{
 			StartTime:  0,             // Always available for vote
 			ExpireTime: math.MaxInt64, // Never expires
 		},
-		DeploymentSegwit: {
-			BitNumber:  1,
-			StartTime:  0,             // Always available for vote
-			ExpireTime: math.MaxInt64, // Never expires.
-		},
 	},
 
 	// Mempool parameters
 	RelayNonStdTxs: true,
 
+	PrivateKeyID: 0x64, // starts with 4 (uncompressed) or F (compressed)
 	// Human-readable part for Bech32 encoded addresses
 	Prefix: DagSim,
-
-	// Human-readable part for Bech32 encoded segwit addresses, as defined in
-	// BIP 173.
-	Bech32HRPSegwit: "sb", // always sb for sim net
-
-	// Address encoding magics
-	PrivateKeyID:            0x64, // starts with 4 (uncompressed) or F (compressed)
-	WitnessPubKeyHashAddrID: 0x19, // starts with Gg
-	WitnessScriptHashAddrID: 0x28, // starts with ?
 
 	// BIP32 hierarchical deterministic extended key magics
 	HDPrivateKeyID: [4]byte{0x04, 0x20, 0xb9, 0x00}, // starts with sprv
@@ -638,9 +583,8 @@ var (
 )
 
 var (
-	registeredNets       = make(map[wire.BitcoinNet]struct{})
-	bech32SegwitPrefixes = make(map[string]struct{})
-	hdPrivToPubKeyIDs    = make(map[[4]byte][]byte)
+	registeredNets    = make(map[wire.BitcoinNet]struct{})
+	hdPrivToPubKeyIDs = make(map[[4]byte][]byte)
 )
 
 // String returns the hostname of the DNS seed in human-readable form.
@@ -664,9 +608,6 @@ func Register(params *Params) error {
 	registeredNets[params.Net] = struct{}{}
 	hdPrivToPubKeyIDs[params.HDPrivateKeyID] = params.HDPublicKeyID[:]
 
-	// A valid Bech32 encoded segwit address always has as prefix the
-	// human-readable part for the given net followed by '1'.
-	bech32SegwitPrefixes[params.Bech32HRPSegwit+"1"] = struct{}{}
 	return nil
 }
 
@@ -676,15 +617,6 @@ func mustRegister(params *Params) {
 	if err := Register(params); err != nil {
 		panic("failed to register network: " + err.Error())
 	}
-}
-
-// IsBech32SegwitPrefix returns whether the prefix is a known prefix for segwit
-// addresses on any default or registered network.  This is used when decoding
-// an address string into a specific address type.
-func IsBech32SegwitPrefix(prefix string) bool {
-	prefix = strings.ToLower(prefix)
-	_, ok := bech32SegwitPrefixes[prefix]
-	return ok
 }
 
 // HDPrivateKeyToPublicKeyID accepts a private hierarchical deterministic

@@ -19,6 +19,10 @@ import (
 )
 
 const (
+	// MaxSigOpsPerBlock is the maximum number of signature operations
+	// allowed for a block.  It is a fraction of the max block payload size.
+	MaxSigOpsPerBlock = wire.MaxBlockPayload / 50
+
 	// MaxTimeOffsetSeconds is the maximum number of seconds a block time
 	// is allowed to be ahead of the current time.  This is currently 2
 	// hours.
@@ -41,6 +45,10 @@ const (
 	// baseSubsidy is the starting subsidy amount for mined blocks.  This
 	// value is halved every SubsidyHalvingInterval blocks.
 	baseSubsidy = 50 * btcutil.SatoshiPerBitcoin
+
+	// MaxOutputsPerBlock is the maximum number of transaction outputs there
+	// can be in a block of max size.
+	MaxOutputsPerBlock = wire.MaxBlockPayload / wire.MinTxOutPayload
 )
 
 var (
@@ -216,10 +224,10 @@ func CheckTransactionSanity(tx *btcutil.Tx) error {
 
 	// A transaction must not exceed the maximum allowed block payload when
 	// serialized.
-	serializedTxSize := tx.MsgTx().SerializeSizeStripped()
-	if serializedTxSize > MaxBlockBaseSize {
+	serializedTxSize := tx.MsgTx().SerializeSize()
+	if serializedTxSize > wire.MaxBlockPayload {
 		str := fmt.Sprintf("serialized transaction is too big - got "+
-			"%d, max %d", serializedTxSize, MaxBlockBaseSize)
+			"%d, max %d", serializedTxSize, wire.MaxBlockPayload)
 		return ruleError(ErrTxTooBig, str)
 	}
 
@@ -480,19 +488,19 @@ func checkBlockSanity(block *btcutil.Block, powLimit *big.Int, timeSource Median
 	}
 
 	// A block must not have more transactions than the max block payload or
-	// else it is certainly over the weight limit.
-	if numTx > MaxBlockBaseSize {
+	// else it is certainly over the block size limit.
+	if numTx > wire.MaxBlockPayload {
 		str := fmt.Sprintf("block contains too many transactions - "+
-			"got %d, max %d", numTx, MaxBlockBaseSize)
+			"got %d, max %d", numTx, wire.MaxBlockPayload)
 		return ruleError(ErrBlockTooBig, str)
 	}
 
 	// A block must not exceed the maximum allowed block payload when
 	// serialized.
-	serializedSize := msgBlock.SerializeSizeStripped()
-	if serializedSize > MaxBlockBaseSize {
+	serializedSize := msgBlock.SerializeSize()
+	if serializedSize > wire.MaxBlockPayload {
 		str := fmt.Sprintf("serialized block is too big - got %d, "+
-			"max %d", serializedSize, MaxBlockBaseSize)
+			"max %d", serializedSize, wire.MaxBlockPayload)
 		return ruleError(ErrBlockTooBig, str)
 	}
 
@@ -527,7 +535,7 @@ func checkBlockSanity(block *btcutil.Block, powLimit *big.Int, timeSource Median
 	// checks.  Bitcoind builds the tree here and checks the merkle root
 	// after the following checks, but there is no reason not to check the
 	// merkle root matches here.
-	merkles := BuildMerkleTreeStore(block.Transactions(), false)
+	merkles := BuildMerkleTreeStore(block.Transactions())
 	calculatedMerkleRoot := merkles[len(merkles)-1]
 	if !header.MerkleRoot.IsEqual(calculatedMerkleRoot) {
 		str := fmt.Sprintf("block merkle root is invalid - block "+
@@ -557,11 +565,11 @@ func checkBlockSanity(block *btcutil.Block, powLimit *big.Int, timeSource Median
 		// We could potentially overflow the accumulator so check for
 		// overflow.
 		lastSigOps := totalSigOps
-		totalSigOps += (CountSigOps(tx) * WitnessScaleFactor)
-		if totalSigOps < lastSigOps || totalSigOps > MaxBlockSigOpsCost {
+		totalSigOps += CountSigOps(tx)
+		if totalSigOps < lastSigOps || totalSigOps > MaxSigOpsPerBlock {
 			str := fmt.Sprintf("block contains too many signature "+
 				"operations - got %v, max %v", totalSigOps,
-				MaxBlockSigOpsCost)
+				MaxSigOpsPerBlock)
 			return ruleError(ErrTooManySigOps, str)
 		}
 	}
@@ -775,42 +783,6 @@ func (b *BlockChain) checkBlockContext(block *btcutil.Block, prevNode *blockNode
 			err := checkSerializedHeight(coinbaseTx, blockHeight)
 			if err != nil {
 				return err
-			}
-		}
-
-		// Query for the Version Bits state for the segwit soft-fork
-		// deployment. If segwit is active, we'll switch over to
-		// enforcing all the new rules.
-		segwitState, err := b.deploymentState(prevNode,
-			chaincfg.DeploymentSegwit)
-		if err != nil {
-			return err
-		}
-
-		// If segwit is active, then we'll need to fully validate the
-		// new witness commitment for adherence to the rules.
-		if segwitState == ThresholdActive {
-			// Validate the witness commitment (if any) within the
-			// block.  This involves asserting that if the coinbase
-			// contains the special commitment output, then this
-			// merkle root matches a computed merkle root of all
-			// the wtxid's of the transactions within the block. In
-			// addition, various other checks against the
-			// coinbase's witness stack.
-			if err := ValidateWitnessCommitment(block); err != nil {
-				return err
-			}
-
-			// Once the witness commitment, witness nonce, and sig
-			// op cost have been validated, we can finally assert
-			// that the block's weight doesn't exceed the current
-			// consensus parameter.
-			blockWeight := GetBlockWeight(block)
-			if blockWeight > MaxBlockWeight {
-				str := fmt.Sprintf("block's weight metric is "+
-					"too high - got %v, max %v",
-					blockWeight, MaxBlockWeight)
-				return ruleError(ErrBlockWeightTooHigh, str)
 			}
 		}
 	}
@@ -1047,15 +1019,6 @@ func (b *BlockChain) checkConnectBlock(node *blockNode, block *btcutil.Block, vi
 	// https://en.bitcoin.it/wiki/BIP_0016 for more details.
 	enforceBIP0016 := node.timestamp >= txscript.Bip16Activation.Unix()
 
-	// Query for the Version Bits state for the segwit soft-fork
-	// deployment. If segwit is active, we'll switch over to enforcing all
-	// the new rules.
-	segwitState, err := b.deploymentState(node.parent, chaincfg.DeploymentSegwit)
-	if err != nil {
-		return err
-	}
-	enforceSegWit := segwitState == ThresholdActive
-
 	// The number of signature operations must be less than the maximum
 	// allowed per block.  Note that the preliminary sanity checks on a
 	// block also include a check similar to this one, but this check
@@ -1063,28 +1026,31 @@ func (b *BlockChain) checkConnectBlock(node *blockNode, block *btcutil.Block, vi
 	// signature operations in each of the input transaction public key
 	// scripts.
 	transactions := block.Transactions()
-	totalSigOpCost := 0
+	totalSigOps := 0
 	for i, tx := range transactions {
-		// Since the first (and only the first) transaction has
-		// already been verified to be a coinbase transaction,
-		// use i == 0 as an optimization for the flag to
-		// countP2SHSigOps for whether or not the transaction is
-		// a coinbase transaction rather than having to do a
-		// full coinbase check again.
-		sigOpCost, err := GetSigOpCost(tx, i == 0, view, enforceBIP0016,
-			enforceSegWit)
-		if err != nil {
-			return err
+		numsigOps := CountSigOps(tx)
+		if enforceBIP0016 {
+			// Since the first (and only the first) transaction has
+			// already been verified to be a coinbase transaction,
+			// use i == 0 as an optimization for the flag to
+			// countP2SHSigOps for whether or not the transaction is
+			// a coinbase transaction rather than having to do a
+			// full coinbase check again.
+			numP2SHSigOps, err := CountP2SHSigOps(tx, i == 0, view)
+			if err != nil {
+				return err
+			}
+			numsigOps += numP2SHSigOps
 		}
 
 		// Check for overflow or going over the limits.  We have to do
 		// this on every loop iteration to avoid overflow.
-		lastSigOpCost := totalSigOpCost
-		totalSigOpCost += sigOpCost
-		if totalSigOpCost < lastSigOpCost || totalSigOpCost > MaxBlockSigOpsCost {
+		lastSigops := totalSigOps
+		totalSigOps += numsigOps
+		if totalSigOps < lastSigops || totalSigOps > MaxSigOpsPerBlock {
 			str := fmt.Sprintf("block contains too many "+
 				"signature operations - got %v, max %v",
-				totalSigOpCost, MaxBlockSigOpsCost)
+				totalSigOps, MaxSigOpsPerBlock)
 			return ruleError(ErrTooManySigOps, str)
 		}
 	}
@@ -1212,20 +1178,12 @@ func (b *BlockChain) checkConnectBlock(node *blockNode, block *btcutil.Block, vi
 		}
 	}
 
-	// Enforce the segwit soft-fork package once the soft-fork has shifted
-	// into the "active" version bits state.
-	if enforceSegWit {
-		scriptFlags |= txscript.ScriptVerifyWitness
-		scriptFlags |= txscript.ScriptStrictMultiSig
-	}
-
 	// Now that the inexpensive checks are done and have passed, verify the
 	// transactions are actually allowed to spend the coins by running the
 	// expensive ECDSA signature check scripts.  Doing this last helps
 	// prevent CPU exhaustion attacks.
 	if runScripts {
-		err := checkBlockScripts(block, view, scriptFlags, b.sigCache,
-			b.hashCache)
+		err := checkBlockScripts(block, view, scriptFlags, b.sigCache)
 		if err != nil {
 			return err
 		}

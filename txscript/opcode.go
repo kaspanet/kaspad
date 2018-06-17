@@ -918,47 +918,6 @@ func opcodeNop(op *parsedOpcode, vm *Engine) error {
 	return nil
 }
 
-// popIfBool enforces the "minimal if" policy during script execution if the
-// particular flag is set.  If so, in order to eliminate an additional source
-// of nuisance malleability, post-segwit for version 0 witness programs, we now
-// require the following: for OP_IF and OP_NOT_IF, the top stack item MUST
-// either be an empty byte slice, or [0x01]. Otherwise, the item at the top of
-// the stack will be popped and interpreted as a boolean.
-func popIfBool(vm *Engine) (bool, error) {
-	// When not in witness execution mode, not executing a v0 witness
-	// program, or the minimal if flag isn't set pop the top stack item as
-	// a normal bool.
-	if !vm.isWitnessVersionActive(0) || !vm.hasFlag(ScriptVerifyMinimalIf) {
-		return vm.dstack.PopBool()
-	}
-
-	// At this point, a v0 witness program is being executed and the minimal
-	// if flag is set, so enforce additional constraints on the top stack
-	// item.
-	so, err := vm.dstack.PopByteArray()
-	if err != nil {
-		return false, err
-	}
-
-	// The top element MUST have a length of at least one.
-	if len(so) > 1 {
-		str := fmt.Sprintf("minimal if is active, top element MUST "+
-			"have a length of at least, instead length is %v",
-			len(so))
-		return false, scriptError(ErrMinimalIf, str)
-	}
-
-	// Additionally, if the length is one, then the value MUST be 0x01.
-	if len(so) == 1 && so[0] != 0x01 {
-		str := fmt.Sprintf("minimal if is active, top stack item MUST "+
-			"be an empty byte array or 0x01, is instead: %v",
-			so[0])
-		return false, scriptError(ErrMinimalIf, str)
-	}
-
-	return asBool(so), nil
-}
-
 // opcodeIf treats the top item on the data stack as a boolean and removes it.
 //
 // An appropriate entry is added to the conditional stack depending on whether
@@ -977,7 +936,8 @@ func popIfBool(vm *Engine) (bool, error) {
 func opcodeIf(op *parsedOpcode, vm *Engine) error {
 	condVal := OpCondFalse
 	if vm.isBranchExecuting() {
-		ok, err := popIfBool(vm)
+		ok, err := vm.dstack.PopBool()
+
 		if err != nil {
 			return err
 		}
@@ -1011,7 +971,7 @@ func opcodeIf(op *parsedOpcode, vm *Engine) error {
 func opcodeNotIf(op *parsedOpcode, vm *Engine) error {
 	condVal := OpCondFalse
 	if vm.isBranchExecuting() {
-		ok, err := popIfBool(vm)
+		ok, err := vm.dstack.PopBool()
 		if err != nil {
 			return err
 		}
@@ -2088,28 +2048,12 @@ func opcodeCheckSig(op *parsedOpcode, vm *Engine) error {
 	// Get script starting from the most recent OP_CODESEPARATOR.
 	subScript := vm.subScript()
 
+	// Remove the signature since there is no way for a signature
+	// to sign itself.
+	subScript = removeOpcodeByData(subScript, fullSigBytes)
+
 	// Generate the signature hash based on the signature hash type.
-	var hash []byte
-	if vm.isWitnessVersionActive(0) {
-		var sigHashes *TxSigHashes
-		if vm.hashCache != nil {
-			sigHashes = vm.hashCache
-		} else {
-			sigHashes = NewTxSigHashes(&vm.tx)
-		}
-
-		hash, err = calcWitnessSignatureHash(subScript, sigHashes, hashType,
-			&vm.tx, vm.txIdx, vm.inputAmount)
-		if err != nil {
-			return err
-		}
-	} else {
-		// Remove the signature since there is no way for a signature
-		// to sign itself.
-		subScript = removeOpcodeByData(subScript, fullSigBytes)
-
-		hash = calcSignatureHash(subScript, hashType, &vm.tx, vm.txIdx)
-	}
+	hash := calcSignatureHash(subScript, hashType, &vm.tx, vm.txIdx)
 
 	pubKey, err := btcec.ParsePubKey(pkBytes, btcec.S256())
 	if err != nil {
@@ -2275,12 +2219,9 @@ func opcodeCheckMultiSig(op *parsedOpcode, vm *Engine) error {
 	// Get script starting from the most recent OP_CODESEPARATOR.
 	script := vm.subScript()
 
-	// Remove the signature in pre version 0 segwit scripts since there is
-	// no way for a signature to sign itself.
-	if !vm.isWitnessVersionActive(0) {
-		for _, sigInfo := range signatures {
-			script = removeOpcodeByData(script, sigInfo.signature)
-		}
+	// Remove the signatures in scripts since there is no way for a signature to sign itself.
+	for _, sigInfo := range signatures {
+		script = removeOpcodeByData(script, sigInfo.signature)
 	}
 
 	success := true
@@ -2362,23 +2303,7 @@ func opcodeCheckMultiSig(op *parsedOpcode, vm *Engine) error {
 		}
 
 		// Generate the signature hash based on the signature hash type.
-		var hash []byte
-		if vm.isWitnessVersionActive(0) {
-			var sigHashes *TxSigHashes
-			if vm.hashCache != nil {
-				sigHashes = vm.hashCache
-			} else {
-				sigHashes = NewTxSigHashes(&vm.tx)
-			}
-
-			hash, err = calcWitnessSignatureHash(script, sigHashes, hashType,
-				&vm.tx, vm.txIdx, vm.inputAmount)
-			if err != nil {
-				return err
-			}
-		} else {
-			hash = calcSignatureHash(script, hashType, &vm.tx, vm.txIdx)
-		}
+		hash := calcSignatureHash(script, hashType, &vm.tx, vm.txIdx)
 
 		var valid bool
 		if vm.sigCache != nil {

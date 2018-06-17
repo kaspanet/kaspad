@@ -19,10 +19,6 @@ const (
 	// that are considered standard in a pay-to-script-hash script.
 	maxStandardP2SHSigOps = 15
 
-	// maxStandardTxCost is the max weight permitted by any transaction
-	// according to the current default policy.
-	maxStandardTxWeight = 400000
-
 	// maxStandardSigScriptSize is the maximum size allowed for a
 	// transaction input signature script to be considered standard.  This
 	// value allows for a 15-of-15 CHECKMULTISIG pay-to-script-hash with
@@ -41,6 +37,11 @@ const (
 	// adds a few extra bytes to provide a little buffer.
 	// (1 + 15*74 + 3) + (15*34 + 3) + 23 = 1650
 	maxStandardSigScriptSize = 1650
+
+	// MaxStandardTxSize is the maximum size allowed for transactions that
+	// are considered standard and will therefore be relayed and considered
+	// for mining.
+	MaxStandardTxSize = 100000
 
 	// DefaultMinRelayTxFee is the minimum fee in satoshi that is required
 	// for a transaction to be treated as free for relay and mining
@@ -215,18 +216,6 @@ func isDust(txOut *wire.TxOut, minRelayTxFee btcutil.Amount) bool {
 	//   36 prev outpoint, 1 script len, 73 script [1 OP_DATA_72,
 	//   72 sig], 4 sequence
 	//
-	// Pay-to-witness-pubkey-hash bytes breakdown:
-	//
-	//  Output to witness key hash (31 bytes);
-	//   8 value, 1 script len, 22 script [1 OP_0, 1 OP_DATA_20,
-	//   20 bytes hash160]
-	//
-	//  Input (67 bytes as the 107 witness stack is discounted):
-	//   36 prev outpoint, 1 script len, 0 script (not sigScript), 107
-	//   witness stack bytes [1 element length, 33 compressed pubkey,
-	//   element length 72 sig], 4 sequence
-	//
-	//
 	// Theoretically this could examine the script type of the output script
 	// and use a different size for the typical input script size for
 	// pay-to-pubkey vs pay-to-pubkey-hash inputs per the above breakdowns,
@@ -236,22 +225,8 @@ func isDust(txOut *wire.TxOut, minRelayTxFee btcutil.Amount) bool {
 	//
 	// The most common scripts are pay-to-pubkey-hash, and as per the above
 	// breakdown, the minimum size of a p2pkh input script is 148 bytes.  So
-	// that figure is used. If the output being spent is a witness program,
-	// then we apply the witness discount to the size of the signature.
-	//
-	// The segwit analogue to p2pkh is a p2wkh output. This is the smallest
-	// output possible using the new segwit features. The 107 bytes of
-	// witness data is discounted by a factor of 4, leading to a computed
-	// value of 67 bytes of witness data.
-	//
-	// Both cases share a 41 byte preamble required to reference the input
-	// being spent and the sequence number of the input.
-	totalSize := txOut.SerializeSize() + 41
-	if txscript.IsWitnessProgram(txOut.PkScript) {
-		totalSize += (107 / blockchain.WitnessScaleFactor)
-	} else {
-		totalSize += 107
-	}
+	// that figure is used.
+	totalSize := txOut.SerializeSize() + 148
 
 	// The output is considered dust if the cost to the network to spend the
 	// coins is more than 1/3 of the minimum free transaction relay fee.
@@ -299,10 +274,10 @@ func checkTransactionStandard(tx *btcutil.Tx, height int32,
 	// almost as much to process as the sender fees, limit the maximum
 	// size of a transaction.  This also helps mitigate CPU exhaustion
 	// attacks.
-	txWeight := blockchain.GetTransactionWeight(tx)
-	if txWeight > maxStandardTxWeight {
-		str := fmt.Sprintf("weight of transaction %v is larger than max "+
-			"allowed weight of %v", txWeight, maxStandardTxWeight)
+	serializedLen := msgTx.SerializeSize()
+	if serializedLen > MaxStandardTxSize {
+		str := fmt.Sprintf("transaction size of %v is larger than max "+
+			"allowed size of %v", serializedLen, MaxStandardTxSize)
 		return txRuleError(wire.RejectNonstandard, str)
 	}
 
@@ -366,17 +341,4 @@ func checkTransactionStandard(tx *btcutil.Tx, height int32,
 	}
 
 	return nil
-}
-
-// GetTxVirtualSize computes the virtual size of a given transaction. A
-// transaction's virtual size is based off its weight, creating a discount for
-// any witness data it contains, proportional to the current
-// blockchain.WitnessScaleFactor value.
-func GetTxVirtualSize(tx *btcutil.Tx) int64 {
-	// vSize := (weight(tx) + 3) / 4
-	//       := (((baseSize * 3) + totalSize) + 3) / 4
-	// We add 3 here as a way to compute the ceiling of the prior arithmetic
-	// to 4. The division by 4 creates a discount for wit witness data.
-	return (blockchain.GetTransactionWeight(tx) + (blockchain.WitnessScaleFactor - 1)) /
-		blockchain.WitnessScaleFactor
 }

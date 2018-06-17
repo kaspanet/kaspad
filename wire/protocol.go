@@ -68,10 +68,6 @@ const (
 	// filtering.
 	SFNodeBloom
 
-	// SFNodeWitness is a flag used to indicate a peer supports blocks
-	// and transactions including witness data (BIP0144).
-	SFNodeWitness
-
 	// SFNodeXthin is a flag used to indicate a peer supports xthin blocks.
 	SFNodeXthin
 
@@ -82,10 +78,6 @@ const (
 	// SFNodeCF is a flag used to indicate a peer supports committed
 	// filters (CFs).
 	SFNodeCF
-
-	// SFNode2X is a flag used to indicate a peer is running the Segwit2X
-	// software.
-	SFNode2X
 )
 
 // Map of service flags back to their constant names for pretty printing.
@@ -93,11 +85,9 @@ var sfStrings = map[ServiceFlag]string{
 	SFNodeNetwork: "SFNodeNetwork",
 	SFNodeGetUTXO: "SFNodeGetUTXO",
 	SFNodeBloom:   "SFNodeBloom",
-	SFNodeWitness: "SFNodeWitness",
 	SFNodeXthin:   "SFNodeXthin",
 	SFNodeBit5:    "SFNodeBit5",
 	SFNodeCF:      "SFNodeCF",
-	SFNode2X:      "SFNode2X",
 }
 
 // orderedSFStrings is an ordered list of service flags from highest to
@@ -106,11 +96,9 @@ var orderedSFStrings = []ServiceFlag{
 	SFNodeNetwork,
 	SFNodeGetUTXO,
 	SFNodeBloom,
-	SFNodeWitness,
 	SFNodeXthin,
 	SFNodeBit5,
 	SFNodeCF,
-	SFNode2X,
 }
 
 // String returns the ServiceFlag in human-readable form.
