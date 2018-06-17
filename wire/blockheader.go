@@ -20,9 +20,13 @@ import (
 // added to this value
 const BaseBlockHeaderPayload = 21 + (chainhash.HashSize)
 
+// MaxNumPrevBlocks is the maximum number of previous blocks a block can reference.
+// Currently set to 255 as the maximum number NumPrevBlocks can be due to it being a byte
+const MaxNumPrevBlocks = 255
+
 // MaxBlockHeaderPayload is the maximum number of bytes a block header can be.
-// BaseBlockHeaderPayload + up to 255 hashes of previous blocks
-const MaxBlockHeaderPayload = BaseBlockHeaderPayload + (255 * chainhash.HashSize)
+// BaseBlockHeaderPayload + up to MaxNumPrevBlocks hashes of previous blocks
+const MaxBlockHeaderPayload = BaseBlockHeaderPayload + (MaxNumPrevBlocks * chainhash.HashSize)
 
 // BlockHeader defines information about a block and is used in the bitcoin
 // block (MsgBlock) and headers (MsgHeader ) messages.
