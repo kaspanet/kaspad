@@ -11,8 +11,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/daglabs/btcd/blockchain"
-	"github.com/daglabs/btcd/blockchain/indexers"
+	"github.com/daglabs/btcd/blockdag"
+	"github.com/daglabs/btcd/blockdag/indexers"
 	"github.com/daglabs/btcd/chaincfg/chainhash"
 	"github.com/daglabs/btcd/database"
 	"github.com/daglabs/btcd/wire"
@@ -32,7 +32,7 @@ type importResults struct {
 // file to the block database.
 type blockImporter struct {
 	db                database.DB
-	chain             *blockchain.BlockChain
+	chain             *blockdag.BlockChain
 	r                 io.ReadSeeker
 	processQueue      chan []byte
 	doneChan          chan bool
@@ -130,7 +130,7 @@ func (bi *blockImporter) processBlock(serializedBlock []byte) (bool, error) {
 	// Ensure the blocks follows all of the chain rules and match up to the
 	// known checkpoints.
 	isMainChain, isOrphan, err := bi.chain.ProcessBlock(block,
-		blockchain.BFFastAdd)
+		blockdag.BFFastAdd)
 	if err != nil {
 		return false, err
 	}
@@ -325,15 +325,15 @@ func newBlockImporter(db database.DB, r io.ReadSeeker) (*blockImporter, error) {
 	}
 
 	// Create an index manager if any of the optional indexes are enabled.
-	var indexManager blockchain.IndexManager
+	var indexManager blockdag.IndexManager
 	if len(indexes) > 0 {
 		indexManager = indexers.NewManager(db, indexes)
 	}
 
-	chain, err := blockchain.New(&blockchain.Config{
+	chain, err := blockdag.New(&blockdag.Config{
 		DB:           db,
 		ChainParams:  activeNetParams,
-		TimeSource:   blockchain.NewMedianTime(),
+		TimeSource:   blockdag.NewMedianTime(),
 		IndexManager: indexManager,
 	})
 	if err != nil {
