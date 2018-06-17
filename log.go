@@ -11,8 +11,8 @@ import (
 	"path/filepath"
 
 	"github.com/daglabs/btcd/addrmgr"
-	"github.com/daglabs/btcd/blockchain"
-	"github.com/daglabs/btcd/blockchain/indexers"
+	"github.com/daglabs/btcd/blockdag"
+	"github.com/daglabs/btcd/blockdag/indexers"
 	"github.com/daglabs/btcd/connmgr"
 	"github.com/daglabs/btcd/database"
 	"github.com/daglabs/btcd/mempool"
@@ -76,7 +76,7 @@ func init() {
 	addrmgr.UseLogger(amgrLog)
 	connmgr.UseLogger(cmgrLog)
 	database.UseLogger(bcdbLog)
-	blockchain.UseLogger(chanLog)
+	blockdag.UseLogger(chanLog)
 	indexers.UseLogger(indxLog)
 	mining.UseLogger(minrLog)
 	cpuminer.UseLogger(minrLog)
