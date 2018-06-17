@@ -5,7 +5,7 @@
 package mempool
 
 import (
-	"github.com/daglabs/btcd/blockchain"
+	"github.com/daglabs/btcd/blockdag"
 	"github.com/daglabs/btcd/wire"
 )
 
@@ -52,7 +52,7 @@ func txRuleError(c wire.RejectCode, desc string) RuleError {
 
 // chainRuleError returns a RuleError that encapsulates the given
 // blockchain.RuleError.
-func chainRuleError(chainErr blockchain.RuleError) RuleError {
+func chainRuleError(chainErr blockdag.RuleError) RuleError {
 	return RuleError{
 		Err: chainErr,
 	}
@@ -68,26 +68,26 @@ func extractRejectCode(err error) (wire.RejectCode, bool) {
 	}
 
 	switch err := err.(type) {
-	case blockchain.RuleError:
+	case blockdag.RuleError:
 		// Convert the chain error to a reject code.
 		var code wire.RejectCode
 		switch err.ErrorCode {
 		// Rejected due to duplicate.
-		case blockchain.ErrDuplicateBlock:
+		case blockdag.ErrDuplicateBlock:
 			code = wire.RejectDuplicate
 
 		// Rejected due to obsolete version.
-		case blockchain.ErrBlockVersionTooOld:
+		case blockdag.ErrBlockVersionTooOld:
 			code = wire.RejectObsolete
 
 		// Rejected due to checkpoint.
-		case blockchain.ErrCheckpointTimeTooOld:
+		case blockdag.ErrCheckpointTimeTooOld:
 			fallthrough
-		case blockchain.ErrDifficultyTooLow:
+		case blockdag.ErrDifficultyTooLow:
 			fallthrough
-		case blockchain.ErrBadCheckpoint:
+		case blockdag.ErrBadCheckpoint:
 			fallthrough
-		case blockchain.ErrForkTooOld:
+		case blockdag.ErrForkTooOld:
 			code = wire.RejectCheckpoint
 
 		// Everything else is due to the block or transaction being invalid.

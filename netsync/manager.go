@@ -11,7 +11,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/daglabs/btcd/blockchain"
+	"github.com/daglabs/btcd/blockdag"
 	"github.com/daglabs/btcd/chaincfg"
 	"github.com/daglabs/btcd/chaincfg/chainhash"
 	"github.com/daglabs/btcd/database"
@@ -103,7 +103,7 @@ type processBlockResponse struct {
 // way to call ProcessBlock on the internal block chain instance.
 type processBlockMsg struct {
 	block *btcutil.Block
-	flags blockchain.BehaviorFlags
+	flags blockdag.BehaviorFlags
 	reply chan processBlockResponse
 }
 
@@ -147,7 +147,7 @@ type SyncManager struct {
 	peerNotifier   PeerNotifier
 	started        int32
 	shutdown       int32
-	chain          *blockchain.BlockChain
+	chain          *blockdag.BlockChain
 	txMemPool      *mempool.TxPool
 	chainParams    *chaincfg.Params
 	progressLogger *blockProgressLogger
@@ -542,13 +542,13 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 	// since it is needed to verify the next round of headers links
 	// properly.
 	isCheckpointBlock := false
-	behaviorFlags := blockchain.BFNone
+	behaviorFlags := blockdag.BFNone
 	if sm.headersFirstMode {
 		firstNodeEl := sm.headerList.Front()
 		if firstNodeEl != nil {
 			firstNode := firstNodeEl.Value.(*headerNode)
 			if blockHash.IsEqual(firstNode.hash) {
-				behaviorFlags |= blockchain.BFFastAdd
+				behaviorFlags |= blockdag.BFFastAdd
 				if firstNode.hash.IsEqual(sm.nextCheckpoint.Hash) {
 					isCheckpointBlock = true
 				} else {
@@ -572,7 +572,7 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 		// rejected as opposed to something actually going wrong, so log
 		// it as such.  Otherwise, something really did go wrong, so log
 		// it as an actual error.
-		if _, ok := err.(blockchain.RuleError); ok {
+		if _, ok := err.(blockdag.RuleError); ok {
 			log.Infof("Rejected block %v from %s: %v", blockHash,
 				peer, err)
 		} else {
@@ -611,9 +611,9 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 		// Extraction is only attempted if the block's version is
 		// high enough (ver 2+).
 		header := &bmsg.block.MsgBlock().Header
-		if blockchain.ShouldHaveSerializedBlockHeight(header) {
+		if blockdag.ShouldHaveSerializedBlockHeight(header) {
 			coinbaseTx := bmsg.block.Transactions()[0]
-			cbHeight, err := blockchain.ExtractCoinbaseHeight(coinbaseTx)
+			cbHeight, err := blockdag.ExtractCoinbaseHeight(coinbaseTx)
 			if err != nil {
 				log.Warnf("Unable to extract height from "+
 					"coinbase tx: %v", err)
@@ -684,7 +684,7 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 	prevHash := sm.nextCheckpoint.Hash
 	sm.nextCheckpoint = sm.findNextHeaderCheckpoint(prevHeight)
 	if sm.nextCheckpoint != nil {
-		locator := blockchain.BlockLocator([]*chainhash.Hash{prevHash})
+		locator := blockdag.BlockLocator([]*chainhash.Hash{prevHash})
 		err := peer.PushGetHeadersMsg(locator, sm.nextCheckpoint.Hash)
 		if err != nil {
 			log.Warnf("Failed to send getheaders message to "+
@@ -703,7 +703,7 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 	sm.headersFirstMode = false
 	sm.headerList.Init()
 	log.Infof("Reached the final checkpoint -- switching to normal mode")
-	locator := blockchain.BlockLocator([]*chainhash.Hash{blockHash})
+	locator := blockdag.BlockLocator([]*chainhash.Hash{blockHash})
 	err = peer.PushGetBlocksMsg(locator, &zeroHash)
 	if err != nil {
 		log.Warnf("Failed to send getblocks message to peer %s: %v",
@@ -865,7 +865,7 @@ func (sm *SyncManager) handleHeadersMsg(hmsg *headersMsg) {
 	// This header is not a checkpoint, so request the next batch of
 	// headers starting from the latest known header and ending with the
 	// next checkpoint.
-	locator := blockchain.BlockLocator([]*chainhash.Hash{finalHash})
+	locator := blockdag.BlockLocator([]*chainhash.Hash{finalHash})
 	err := peer.PushGetHeadersMsg(locator, sm.nextCheckpoint.Hash)
 	if err != nil {
 		log.Warnf("Failed to send getheaders message to "+
@@ -1221,11 +1221,11 @@ out:
 // handleBlockchainNotification handles notifications from blockchain.  It does
 // things such as request orphan block parents and relay accepted blocks to
 // connected peers.
-func (sm *SyncManager) handleBlockchainNotification(notification *blockchain.Notification) {
+func (sm *SyncManager) handleBlockchainNotification(notification *blockdag.Notification) {
 	switch notification.Type {
 	// A block has been accepted into the block chain.  Relay it to other
 	// peers.
-	case blockchain.NTBlockAccepted:
+	case blockdag.NTBlockAccepted:
 		// Don't relay if we are not current. Other peers that are
 		// current should already know about it.
 		if !sm.current() {
@@ -1243,7 +1243,7 @@ func (sm *SyncManager) handleBlockchainNotification(notification *blockchain.Not
 		sm.peerNotifier.RelayInventory(iv, block.MsgBlock().Header)
 
 	// A block has been connected to the main block chain.
-	case blockchain.NTBlockConnected:
+	case blockdag.NTBlockConnected:
 		block, ok := notification.Data.(*btcutil.Block)
 		if !ok {
 			log.Warnf("Chain connected notification is not a block.")
@@ -1281,7 +1281,7 @@ func (sm *SyncManager) handleBlockchainNotification(notification *blockchain.Not
 		}
 
 	// A block has been disconnected from the main block chain.
-	case blockchain.NTBlockDisconnected:
+	case blockdag.NTBlockDisconnected:
 		block, ok := notification.Data.(*btcutil.Block)
 		if !ok {
 			log.Warnf("Chain disconnected notification is not a block.")
@@ -1412,7 +1412,7 @@ func (sm *SyncManager) SyncPeerID() int32 {
 
 // ProcessBlock makes use of ProcessBlock on an internal instance of a block
 // chain.
-func (sm *SyncManager) ProcessBlock(block *btcutil.Block, flags blockchain.BehaviorFlags) (bool, error) {
+func (sm *SyncManager) ProcessBlock(block *btcutil.Block, flags blockdag.BehaviorFlags) (bool, error) {
 	reply := make(chan processBlockResponse, 1)
 	sm.msgChan <- processBlockMsg{block: block, flags: flags, reply: reply}
 	response := <-reply

@@ -20,7 +20,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/daglabs/btcd/blockchain"
+	"github.com/daglabs/btcd/blockdag"
 	"github.com/daglabs/btcd/chaincfg"
 	"github.com/daglabs/btcd/chaincfg/chainhash"
 	"github.com/daglabs/btcd/connmgr"
@@ -52,9 +52,9 @@ const (
 	defaultBlockMinWeight        = 0
 	defaultBlockMaxWeight        = 3000000
 	blockMaxSizeMin              = 1000
-	blockMaxSizeMax              = blockchain.MaxBlockBaseSize - 1000
+	blockMaxSizeMax              = blockdag.MaxBlockBaseSize - 1000
 	blockMaxWeightMin            = 4000
-	blockMaxWeightMax            = blockchain.MaxBlockWeight - 4000
+	blockMaxWeightMax            = blockdag.MaxBlockWeight - 4000
 	defaultGenerate              = false
 	defaultMaxOrphanTransactions = 100
 	defaultMaxOrphanTxSize       = 100000
@@ -806,14 +806,14 @@ func loadConfig() (*config, []string, error) {
 	case cfg.BlockMaxSize == defaultBlockMaxSize &&
 		cfg.BlockMaxWeight != defaultBlockMaxWeight:
 
-		cfg.BlockMaxSize = blockchain.MaxBlockBaseSize - 1000
+		cfg.BlockMaxSize = blockdag.MaxBlockBaseSize - 1000
 
 	// If the max block weight isn't set, but the block size is, then we'll
 	// scale the set weight accordingly based on the max block size value.
 	case cfg.BlockMaxSize != defaultBlockMaxSize &&
 		cfg.BlockMaxWeight == defaultBlockMaxWeight:
 
-		cfg.BlockMaxWeight = cfg.BlockMaxSize * blockchain.WitnessScaleFactor
+		cfg.BlockMaxWeight = cfg.BlockMaxSize * blockdag.WitnessScaleFactor
 	}
 
 	// Look for illegal characters in the user agent comments.

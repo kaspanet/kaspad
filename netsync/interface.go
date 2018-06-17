@@ -5,7 +5,7 @@
 package netsync
 
 import (
-	"github.com/daglabs/btcd/blockchain"
+	"github.com/daglabs/btcd/blockdag"
 	"github.com/daglabs/btcd/chaincfg"
 	"github.com/daglabs/btcd/chaincfg/chainhash"
 	"github.com/daglabs/btcd/mempool"
@@ -30,7 +30,7 @@ type PeerNotifier interface {
 // Config is a configuration struct used to initialize a new SyncManager.
 type Config struct {
 	PeerNotifier PeerNotifier
-	Chain        *blockchain.BlockChain
+	Chain        *blockdag.BlockChain
 	TxMemPool    *mempool.TxPool
 	ChainParams  *chaincfg.Params
 

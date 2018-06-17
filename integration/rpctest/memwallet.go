@@ -10,7 +10,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/daglabs/btcd/blockchain"
+	"github.com/daglabs/btcd/blockdag"
 	"github.com/daglabs/btcd/btcec"
 	"github.com/daglabs/btcd/chaincfg"
 	"github.com/daglabs/btcd/chaincfg/chainhash"
@@ -207,7 +207,7 @@ func (m *memWallet) ingestBlock(update *chainUpdate) {
 	}
 	for _, tx := range update.filteredTxns {
 		mtx := tx.MsgTx()
-		isCoinbase := blockchain.IsCoinBaseTx(mtx)
+		isCoinbase := blockdag.IsCoinBaseTx(mtx)
 		txHash := mtx.TxHash()
 		m.evalOutputs(mtx.TxOut, &txHash, isCoinbase, undo)
 		m.evalInputs(mtx.TxIn, undo)
