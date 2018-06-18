@@ -31,7 +31,7 @@ var genesisCoinbaseTx = wire.MsgTx{
 				0x6b, 0x20, 0x6f, 0x66, 0x20, 0x73, 0x65, 0x63, /* |k of sec|*/
 				0x6f, 0x6e, 0x64, 0x20, 0x62, 0x61, 0x69, 0x6c, /* |ond bail| */
 				0x6f, 0x75, 0x74, 0x20, 0x66, 0x6f, 0x72, 0x20, /* |out for |*/
-				0x62, 0x61, 0x6e, 0x6b, 0x73, /* |banks| */
+				0x62, 0x61, 0x6e, 0x6b, 0x73,                   /* |banks| */
 			},
 			Sequence: 0xffffffff,
 		},
@@ -48,7 +48,7 @@ var genesisCoinbaseTx = wire.MsgTx{
 				0x38, 0xc4, 0xf3, 0x55, 0x04, 0xe5, 0x1e, 0xc1, /* |8..U....| */
 				0x12, 0xde, 0x5c, 0x38, 0x4d, 0xf7, 0xba, 0x0b, /* |..\8M...| */
 				0x8d, 0x57, 0x8a, 0x4c, 0x70, 0x2b, 0x6b, 0xf1, /* |.W.Lp+k.| */
-				0x1d, 0x5f, 0xac, /* |._.| */
+				0x1d, 0x5f, 0xac,                               /* |._.| */
 			},
 		},
 	},
@@ -77,12 +77,13 @@ var genesisMerkleRoot = chainhash.Hash([chainhash.HashSize]byte{ // Make go vet 
 // public transaction ledger for the main network.
 var genesisBlock = wire.MsgBlock{
 	Header: wire.BlockHeader{
-		Version:    1,
-		PrevBlock:  chainhash.Hash{},         // 0000000000000000000000000000000000000000000000000000000000000000
-		MerkleRoot: genesisMerkleRoot,        // 4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b
-		Timestamp:  time.Unix(0x495fab29, 0), // 2009-01-03 18:15:05 +0000 UTC
-		Bits:       0x1d00ffff,               // 486604799 [00000000ffff0000000000000000000000000000000000000000000000000000]
-		Nonce:      0x7c2bac1d,               // 2083236893
+		Version:       1,
+		NumPrevBlocks: 0,
+		PrevBlocks:    []chainhash.Hash{},       // 0000000000000000000000000000000000000000000000000000000000000000
+		MerkleRoot:    genesisMerkleRoot,        // 4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b
+		Timestamp:     time.Unix(0x495fab29, 0), // 2009-01-03 18:15:05 +0000 UTC
+		Bits:          0x1d00ffff,               // 486604799 [00000000ffff0000000000000000000000000000000000000000000000000000]
+		Nonce:         0x7c2bac1d,               // 2083236893
 	},
 	Transactions: []*wire.MsgTx{&genesisCoinbaseTx},
 }
@@ -105,12 +106,13 @@ var regTestGenesisMerkleRoot = genesisMerkleRoot
 // as the public transaction ledger for the regression test network.
 var regTestGenesisBlock = wire.MsgBlock{
 	Header: wire.BlockHeader{
-		Version:    1,
-		PrevBlock:  chainhash.Hash{},         // 0000000000000000000000000000000000000000000000000000000000000000
-		MerkleRoot: regTestGenesisMerkleRoot, // 4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b
-		Timestamp:  time.Unix(1296688602, 0), // 2011-02-02 23:16:42 +0000 UTC
-		Bits:       0x207fffff,               // 545259519 [7fffff0000000000000000000000000000000000000000000000000000000000]
-		Nonce:      2,
+		Version:       1,
+		NumPrevBlocks: 0,
+		PrevBlocks:    []chainhash.Hash{},       // 0000000000000000000000000000000000000000000000000000000000000000
+		MerkleRoot:    regTestGenesisMerkleRoot, // 4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b
+		Timestamp:     time.Unix(1296688602, 0), // 2011-02-02 23:16:42 +0000 UTC
+		Bits:          0x207fffff,               // 545259519 [7fffff0000000000000000000000000000000000000000000000000000000000]
+		Nonce:         2,
 	},
 	Transactions: []*wire.MsgTx{&genesisCoinbaseTx},
 }
@@ -133,12 +135,13 @@ var testNet3GenesisMerkleRoot = genesisMerkleRoot
 // serves as the public transaction ledger for the test network (version 3).
 var testNet3GenesisBlock = wire.MsgBlock{
 	Header: wire.BlockHeader{
-		Version:    1,
-		PrevBlock:  chainhash.Hash{},          // 0000000000000000000000000000000000000000000000000000000000000000
-		MerkleRoot: testNet3GenesisMerkleRoot, // 4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b
-		Timestamp:  time.Unix(1296688602, 0),  // 2011-02-02 23:16:42 +0000 UTC
-		Bits:       0x1d00ffff,                // 486604799 [00000000ffff0000000000000000000000000000000000000000000000000000]
-		Nonce:      0x18aea41a,                // 414098458
+		Version:       1,
+		NumPrevBlocks: 0,
+		PrevBlocks:    []chainhash.Hash{},        // 0000000000000000000000000000000000000000000000000000000000000000
+		MerkleRoot:    testNet3GenesisMerkleRoot, // 4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b
+		Timestamp:     time.Unix(1296688602, 0),  // 2011-02-02 23:16:42 +0000 UTC
+		Bits:          0x1d00ffff,                // 486604799 [00000000ffff0000000000000000000000000000000000000000000000000000]
+		Nonce:         0x18aea41a,                // 414098458
 	},
 	Transactions: []*wire.MsgTx{&genesisCoinbaseTx},
 }
@@ -161,12 +164,13 @@ var simNetGenesisMerkleRoot = genesisMerkleRoot
 // as the public transaction ledger for the simulation test network.
 var simNetGenesisBlock = wire.MsgBlock{
 	Header: wire.BlockHeader{
-		Version:    1,
-		PrevBlock:  chainhash.Hash{},         // 0000000000000000000000000000000000000000000000000000000000000000
-		MerkleRoot: simNetGenesisMerkleRoot,  // 4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b
-		Timestamp:  time.Unix(1401292357, 0), // 2014-05-28 15:52:37 +0000 UTC
-		Bits:       0x207fffff,               // 545259519 [7fffff0000000000000000000000000000000000000000000000000000000000]
-		Nonce:      2,
+		Version:       1,
+		NumPrevBlocks: 0,
+		PrevBlocks:    []chainhash.Hash{},       // 0000000000000000000000000000000000000000000000000000000000000000
+		MerkleRoot:    simNetGenesisMerkleRoot,  // 4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b
+		Timestamp:     time.Unix(1401292357, 0), // 2014-05-28 15:52:37 +0000 UTC
+		Bits:          0x207fffff,               // 545259519 [7fffff0000000000000000000000000000000000000000000000000000000000]
+		Nonce:         2,
 	},
 	Transactions: []*wire.MsgTx{&genesisCoinbaseTx},
 }
