@@ -14,7 +14,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/daglabs/btcd/blockchain"
+	"github.com/daglabs/btcd/blockdag"
 	"github.com/daglabs/btcd/btcec"
 	"github.com/daglabs/btcd/chaincfg"
 	"github.com/daglabs/btcd/chaincfg/chainhash"
@@ -206,7 +206,7 @@ func TestBIP0113Activation(t *testing.T) {
 	}
 
 	assertChainHeight(r, t, 299)
-	assertSoftForkStatus(r, t, csvKey, blockchain.ThresholdActive)
+	assertSoftForkStatus(r, t, csvKey, blockdag.ThresholdActive)
 
 	// The timeLockDeltas slice represents a series of deviations from the
 	// current MTP which will be used to test border conditions w.r.t
@@ -286,7 +286,7 @@ func createCSVOutput(r *rpctest.Harness, t *testing.T,
 
 	// Convert the time-lock to the proper sequence lock based according to
 	// if the lock is seconds or time based.
-	sequenceLock := blockchain.LockTimeToSequence(isSeconds,
+	sequenceLock := blockdag.LockTimeToSequence(isSeconds,
 		uint32(timeLock))
 
 	// Our CSV script is simply: <sequenceLock> OP_CSV OP_DROP
@@ -414,7 +414,7 @@ func TestBIP0068AndBIP0112Activation(t *testing.T) {
 	}
 	defer r.TearDown()
 
-	assertSoftForkStatus(r, t, csvKey, blockchain.ThresholdStarted)
+	assertSoftForkStatus(r, t, csvKey, blockdag.ThresholdStarted)
 
 	harnessAddr, err := r.NewAddress()
 	if err != nil {
@@ -460,7 +460,7 @@ func TestBIP0068AndBIP0112Activation(t *testing.T) {
 		assertTxInBlock(r, t, blocks[0], &txid)
 
 		// Generate a custom transaction which spends the CSV output.
-		sequenceNum := blockchain.LockTimeToSequence(false, 10)
+		sequenceNum := blockdag.LockTimeToSequence(false, 10)
 		spendingTx, err := spendCSVOutput(redeemScript, testUTXO,
 			sequenceNum, sweepOutput, txVersion)
 		if err != nil {
@@ -501,7 +501,7 @@ func TestBIP0068AndBIP0112Activation(t *testing.T) {
 	}
 
 	assertChainHeight(r, t, 299)
-	assertSoftForkStatus(r, t, csvKey, blockchain.ThresholdActive)
+	assertSoftForkStatus(r, t, csvKey, blockdag.ThresholdActive)
 
 	// Knowing the number of outputs needed for the tests below, create a
 	// fresh output for use within each of the test-cases below.
@@ -591,7 +591,7 @@ func TestBIP0068AndBIP0112Activation(t *testing.T) {
 		// should be rejected as its version number is 1, and only tx
 		// of version > 2 will trigger the CSV behavior.
 		{
-			tx:     makeTxCase(blockchain.LockTimeToSequence(false, 100), 1),
+			tx:     makeTxCase(blockdag.LockTimeToSequence(false, 100), 1),
 			accept: false,
 		},
 		// A transaction of version 2 spending a single input. The
@@ -599,7 +599,7 @@ func TestBIP0068AndBIP0112Activation(t *testing.T) {
 		// bit it set. The transaction should be rejected as a result.
 		{
 			tx: makeTxCase(
-				blockchain.LockTimeToSequence(false, 1)|wire.SequenceLockTimeDisabled,
+				blockdag.LockTimeToSequence(false, 1)|wire.SequenceLockTimeDisabled,
 				2,
 			),
 			accept: false,
@@ -609,14 +609,14 @@ func TestBIP0068AndBIP0112Activation(t *testing.T) {
 		// but the CSV output requires a 10 block relative lock-time.
 		// Therefore, the transaction should be rejected.
 		{
-			tx:     makeTxCase(blockchain.LockTimeToSequence(false, 9), 2),
+			tx:     makeTxCase(blockdag.LockTimeToSequence(false, 9), 2),
 			accept: false,
 		},
 		// A v2 transaction with a single input having a 10 block
 		// relative time lock. The referenced input is 11 blocks old so
 		// the transaction should be accepted.
 		{
-			tx:     makeTxCase(blockchain.LockTimeToSequence(false, 10), 2),
+			tx:     makeTxCase(blockdag.LockTimeToSequence(false, 10), 2),
 			accept: true,
 		},
 		// A v2 transaction with a single input having a 11 block
@@ -624,14 +624,14 @@ func TestBIP0068AndBIP0112Activation(t *testing.T) {
 		// 11 and the CSV op-code requires 10 blocks to have passed, so
 		// this transaction should be accepted.
 		{
-			tx:     makeTxCase(blockchain.LockTimeToSequence(false, 11), 2),
+			tx:     makeTxCase(blockdag.LockTimeToSequence(false, 11), 2),
 			accept: true,
 		},
 		// A v2 transaction whose input has a 1000 blck relative time
 		// lock.  This should be rejected as the input's age is only 11
 		// blocks.
 		{
-			tx:     makeTxCase(blockchain.LockTimeToSequence(false, 1000), 2),
+			tx:     makeTxCase(blockdag.LockTimeToSequence(false, 1000), 2),
 			accept: false,
 		},
 		// A v2 transaction with a single input having a 512,000 second
@@ -639,14 +639,14 @@ func TestBIP0068AndBIP0112Activation(t *testing.T) {
 		// days worth of blocks haven't yet been mined. The referenced
 		// input doesn't have sufficient age.
 		{
-			tx:     makeTxCase(blockchain.LockTimeToSequence(true, 512000), 2),
+			tx:     makeTxCase(blockdag.LockTimeToSequence(true, 512000), 2),
 			accept: false,
 		},
 		// A v2 transaction whose single input has a 512 second
 		// relative time-lock. This transaction should be accepted as
 		// finalized.
 		{
-			tx:     makeTxCase(blockchain.LockTimeToSequence(true, 512), 2),
+			tx:     makeTxCase(blockdag.LockTimeToSequence(true, 512), 2),
 			accept: true,
 		},
 	}
