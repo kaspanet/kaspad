@@ -202,7 +202,7 @@ func (msg *MsgBlock) Serialize(w io.Writer) error {
 func (msg *MsgBlock) SerializeSize() int {
 	// Block header bytes + Serialized varint size for the number of
 	// transactions.
-	n := blockHeaderLen + VarIntSerializeSize(uint64(len(msg.Transactions)))
+	n := msg.Header.SerializeSize() + VarIntSerializeSize(uint64(len(msg.Transactions)))
 
 	for _, tx := range msg.Transactions {
 		n += tx.SerializeSize()
