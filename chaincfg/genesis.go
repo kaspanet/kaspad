@@ -58,10 +58,10 @@ var genesisCoinbaseTx = wire.MsgTx{
 // genesisHash is the hash of the first block in the block chain for the main
 // network (genesis block).
 var genesisHash = chainhash.Hash([chainhash.HashSize]byte{ // Make go vet happy.
-	0x6f, 0xe2, 0x8c, 0x0a, 0xb6, 0xf1, 0xb3, 0x72,
-	0xc1, 0xa6, 0xa2, 0x46, 0xae, 0x63, 0xf7, 0x4f,
-	0x93, 0x1e, 0x83, 0x65, 0xe1, 0x5a, 0x08, 0x9c,
-	0x68, 0xd6, 0x19, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x82, 0xdc, 0xbd, 0xe6, 0x88, 0x37, 0x74, 0x5b,
+	0x78, 0x6b, 0x03, 0x1d, 0xa3, 0x48, 0x3c, 0x45,
+	0x3f, 0xc3, 0x2e, 0xd4, 0x53, 0x5b, 0x6f, 0x26,
+	0x26, 0xb0, 0x48, 0x4f, 0x09, 0x00, 0x00, 0x00,
 })
 
 // genesisMerkleRoot is the hash of the first transaction in the genesis block
@@ -79,11 +79,11 @@ var genesisBlock = wire.MsgBlock{
 	Header: wire.BlockHeader{
 		Version:       1,
 		NumPrevBlocks: 0,
-		PrevBlocks:    []chainhash.Hash{},       // 0000000000000000000000000000000000000000000000000000000000000000
+		PrevBlocks:    []chainhash.Hash{},
 		MerkleRoot:    genesisMerkleRoot,        // 4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b
-		Timestamp:     time.Unix(0x495fab29, 0), // 2009-01-03 18:15:05 +0000 UTC
-		Bits:          0x1d00ffff,               // 486604799 [00000000ffff0000000000000000000000000000000000000000000000000000]
-		Nonce:         0x7c2bac1d,               // 2083236893
+		Timestamp:     time.Unix(0x5b28c4c8, 0), // 2018-06-19 08:54:32 +0000 UTC
+		Bits:          0x1e00ffff,               // 503382015 [000000ffff000000000000000000000000000000000000000000000000000000]
+		Nonce:         0xc0192550,               // 2148484547
 	},
 	Transactions: []*wire.MsgTx{&genesisCoinbaseTx},
 }
