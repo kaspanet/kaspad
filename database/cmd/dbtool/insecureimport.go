@@ -131,11 +131,11 @@ func (bi *blockImporter) processBlock(serializedBlock []byte) (bool, error) {
 	}
 
 	// Don't bother trying to process orphans.
-	prevHash := &block.MsgBlock().Header.PrevBlock
-	if !prevHash.IsEqual(&zeroHash) {
+	prevHashes := block.MsgBlock().Header.PrevBlocks
+	for _, prevHash := range prevHashes {
 		var exists bool
 		err := bi.db.View(func(tx database.Tx) error {
-			exists, err = tx.HasBlock(prevHash)
+			exists, err = tx.HasBlock(&prevHash)
 			return err
 		})
 		if err != nil {
