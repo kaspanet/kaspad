@@ -15,7 +15,7 @@ import (
 	"golang.org/x/crypto/ripemd160"
 
 	"github.com/daglabs/btcd/btcec"
-	"github.com/daglabs/btcd/chaincfg/chainhash"
+	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/wire"
 )
 
@@ -1975,7 +1975,7 @@ func opcodeHash256(op *parsedOpcode, vm *Engine) error {
 		return err
 	}
 
-	vm.dstack.PushByteArray(chainhash.DoubleHashB(buf))
+	vm.dstack.PushByteArray(daghash.DoubleHashB(buf))
 	return nil
 }
 
@@ -2076,7 +2076,7 @@ func opcodeCheckSig(op *parsedOpcode, vm *Engine) error {
 
 	var valid bool
 	if vm.sigCache != nil {
-		var sigHash chainhash.Hash
+		var sigHash daghash.Hash
 		copy(sigHash[:], hash)
 
 		valid = vm.sigCache.Exists(sigHash, signature, pubKey)
@@ -2307,7 +2307,7 @@ func opcodeCheckMultiSig(op *parsedOpcode, vm *Engine) error {
 
 		var valid bool
 		if vm.sigCache != nil {
-			var sigHash chainhash.Hash
+			var sigHash daghash.Hash
 			copy(sigHash[:], hash)
 
 			valid = vm.sigCache.Exists(sigHash, parsedSig, parsedPubKey)

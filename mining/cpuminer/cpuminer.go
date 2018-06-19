@@ -13,8 +13,8 @@ import (
 	"time"
 
 	"github.com/daglabs/btcd/blockdag"
-	"github.com/daglabs/btcd/chaincfg"
-	"github.com/daglabs/btcd/chaincfg/chainhash"
+	"github.com/daglabs/btcd/dagconfig"
+	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/mining"
 	"github.com/daglabs/btcd/wire"
 	"github.com/daglabs/btcutil"
@@ -51,7 +51,7 @@ var (
 type Config struct {
 	// ChainParams identifies which chain parameters the cpu miner is
 	// associated with.
-	ChainParams *chaincfg.Params
+	ChainParams *dagconfig.Params
 
 	// BlockTemplateGenerator identifies the instance to use in order to
 	// generate block templates that the miner will attempt to solve.
@@ -544,7 +544,7 @@ func (m *CPUMiner) NumWorkers() int32 {
 // detecting when it is performing stale work and reacting accordingly by
 // generating a new block template.  When a block is solved, it is submitted.
 // The function returns a list of the hashes of generated blocks.
-func (m *CPUMiner) GenerateNBlocks(n uint32) ([]*chainhash.Hash, error) {
+func (m *CPUMiner) GenerateNBlocks(n uint32) ([]*daghash.Hash, error) {
 	m.Lock()
 
 	// Respond with an error if server is already mining.
@@ -566,7 +566,7 @@ func (m *CPUMiner) GenerateNBlocks(n uint32) ([]*chainhash.Hash, error) {
 	log.Tracef("Generating %d blocks", n)
 
 	i := uint32(0)
-	blockHashes := make([]*chainhash.Hash, n)
+	blockHashes := make([]*daghash.Hash, n)
 
 	// Start a ticker which is used to signal checks for stale work and
 	// updates to the speed monitor.

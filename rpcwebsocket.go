@@ -24,8 +24,8 @@ import (
 
 	"github.com/daglabs/btcd/blockdag"
 	"github.com/daglabs/btcd/btcjson"
-	"github.com/daglabs/btcd/chaincfg"
-	"github.com/daglabs/btcd/chaincfg/chainhash"
+	"github.com/daglabs/btcd/dagconfig"
+	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/database"
 	"github.com/daglabs/btcd/txscript"
 	"github.com/daglabs/btcd/wire"
@@ -273,7 +273,7 @@ type wsClientFilter struct {
 // for a websocket client.
 //
 // NOTE: This extension was ported from github.com/decred/dcrd
-func newWSClientFilter(addresses []string, unspentOutPoints []wire.OutPoint, params *chaincfg.Params) *wsClientFilter {
+func newWSClientFilter(addresses []string, unspentOutPoints []wire.OutPoint, params *dagconfig.Params) *wsClientFilter {
 	filter := &wsClientFilter{
 		pubKeyHashes:        map[[ripemd160.Size]byte]struct{}{},
 		scriptHashes:        map[[ripemd160.Size]byte]struct{}{},
@@ -328,7 +328,7 @@ func (f *wsClientFilter) addAddress(a btcutil.Address) {
 // wsClientFilter using addAddress.
 //
 // NOTE: This extension was ported from github.com/decred/dcrd
-func (f *wsClientFilter) addAddressStr(s string, params *chaincfg.Params) {
+func (f *wsClientFilter) addAddressStr(s string, params *dagconfig.Params) {
 	// If address can't be decoded, no point in saving it since it should also
 	// impossible to create the address from an inspected transaction output
 	// script.
@@ -412,7 +412,7 @@ func (f *wsClientFilter) removeAddress(a btcutil.Address) {
 // wsClientFilter using removeAddress.
 //
 // NOTE: This extension was ported from github.com/decred/dcrd
-func (f *wsClientFilter) removeAddressStr(s string, params *chaincfg.Params) {
+func (f *wsClientFilter) removeAddressStr(s string, params *dagconfig.Params) {
 	a, err := btcutil.DecodeAddress(s, params)
 	if err == nil {
 		f.removeAddress(a)
@@ -903,7 +903,7 @@ func (m *wsNotificationManager) addSpentRequests(opMap map[wire.OutPoint]map[cha
 
 	// Check if any transactions spending these outputs already exists in
 	// the mempool, if so send the notification immediately.
-	spends := make(map[chainhash.Hash]*btcutil.Tx)
+	spends := make(map[daghash.Hash]*btcutil.Tx)
 	for _, op := range ops {
 		spend := m.server.cfg.TxMemPool.CheckSpend(*op)
 		if spend != nil {
@@ -1790,7 +1790,7 @@ func handleLoadTxFilter(wsc *wsClient, icmd interface{}) (interface{}, error) {
 
 	outPoints := make([]wire.OutPoint, len(cmd.OutPoints))
 	for i := range cmd.OutPoints {
-		hash, err := chainhash.NewHashFromStr(cmd.OutPoints[i].Hash)
+		hash, err := daghash.NewHashFromStr(cmd.OutPoints[i].Hash)
 		if err != nil {
 			return nil, &btcjson.RPCError{
 				Code:    btcjson.ErrRPCInvalidParameter,
@@ -1948,7 +1948,7 @@ func handleStopNotifyReceived(wsc *wsClient, icmd interface{}) (interface{}, err
 // string slice. It does this by attempting to decode each address using the
 // current active network parameters. If any single address fails to decode
 // properly, the function returns an error. Otherwise, nil is returned.
-func checkAddressValidity(addrs []string, params *chaincfg.Params) error {
+func checkAddressValidity(addrs []string, params *dagconfig.Params) error {
 	for _, addr := range addrs {
 		_, err := btcutil.DecodeAddress(addr, params)
 		if err != nil {
@@ -1966,7 +1966,7 @@ func checkAddressValidity(addrs []string, params *chaincfg.Params) error {
 func deserializeOutpoints(serializedOuts []btcjson.OutPoint) ([]*wire.OutPoint, error) {
 	outpoints := make([]*wire.OutPoint, 0, len(serializedOuts))
 	for i := range serializedOuts {
-		blockHash, err := chainhash.NewHashFromStr(serializedOuts[i].Hash)
+		blockHash, err := daghash.NewHashFromStr(serializedOuts[i].Hash)
 		if err != nil {
 			return nil, rpcDecodeHexError(serializedOuts[i].Hash)
 		}
@@ -2144,7 +2144,7 @@ func rescanBlock(wsc *wsClient, lookups *rescanKeys, blk *btcutil.Block) {
 // a string slice.
 //
 // NOTE: This extension is ported from github.com/decred/dcrd
-func rescanBlockFilter(filter *wsClientFilter, block *btcutil.Block, params *chaincfg.Params) []string {
+func rescanBlockFilter(filter *wsClientFilter, block *btcutil.Block, params *dagconfig.Params) []string {
 	var transactions []string
 
 	filter.mu.Lock()
@@ -2223,10 +2223,10 @@ func handleRescanBlocks(wsc *wsClient, icmd interface{}) (interface{}, error) {
 		}
 	}
 
-	blockHashes := make([]*chainhash.Hash, len(cmd.BlockHashes))
+	blockHashes := make([]*daghash.Hash, len(cmd.BlockHashes))
 
 	for i := range cmd.BlockHashes {
-		hash, err := chainhash.NewHashFromStr(cmd.BlockHashes[i])
+		hash, err := daghash.NewHashFromStr(cmd.BlockHashes[i])
 		if err != nil {
 			return nil, err
 		}
@@ -2239,7 +2239,7 @@ func handleRescanBlocks(wsc *wsClient, icmd interface{}) (interface{}, error) {
 	// contains relevant transactions, add it to the response.
 	bc := wsc.server.cfg.Chain
 	params := wsc.server.cfg.ChainParams
-	var lastBlockHash *chainhash.Hash
+	var lastBlockHash *daghash.Hash
 	for i := range blockHashes {
 		block, err := bc.BlockByHash(blockHashes[i])
 		if err != nil {
@@ -2275,7 +2275,7 @@ func handleRescanBlocks(wsc *wsClient, icmd interface{}) (interface{}, error) {
 // range of blocks.  If this condition does not hold true, the JSON-RPC error
 // for an unrecoverable reorganize is returned.
 func recoverFromReorg(chain *blockdag.BlockChain, minBlock, maxBlock int32,
-	lastBlock *chainhash.Hash) ([]chainhash.Hash, error) {
+	lastBlock *daghash.Hash) ([]daghash.Hash, error) {
 
 	hashList, err := chain.HeightRange(minBlock, maxBlock)
 	if err != nil {
@@ -2307,7 +2307,7 @@ func recoverFromReorg(chain *blockdag.BlockChain, minBlock, maxBlock int32,
 
 // descendantBlock returns the appropriate JSON-RPC error if a current block
 // fetched during a reorganize is not a direct child of the parent block hash.
-func descendantBlock(prevHash *chainhash.Hash, curBlock *btcutil.Block) error {
+func descendantBlock(prevHash *daghash.Hash, curBlock *btcutil.Block) error {
 	curHash := &curBlock.MsgBlock().Header.PrevBlock
 	if !prevHash.IsEqual(curHash) {
 		rpcsLog.Errorf("Stopping rescan for reorged block %v "+
@@ -2336,7 +2336,7 @@ func handleRescan(wsc *wsClient, icmd interface{}) (interface{}, error) {
 	outpoints := make([]*wire.OutPoint, 0, len(cmd.OutPoints))
 	for i := range cmd.OutPoints {
 		cmdOutpoint := &cmd.OutPoints[i]
-		blockHash, err := chainhash.NewHashFromStr(cmdOutpoint.Hash)
+		blockHash, err := daghash.NewHashFromStr(cmdOutpoint.Hash)
 		if err != nil {
 			return nil, rpcDecodeHexError(cmdOutpoint.Hash)
 		}
@@ -2412,7 +2412,7 @@ func handleRescan(wsc *wsClient, icmd interface{}) (interface{}, error) {
 
 	chain := wsc.server.cfg.Chain
 
-	minBlockHash, err := chainhash.NewHashFromStr(cmd.BeginBlock)
+	minBlockHash, err := daghash.NewHashFromStr(cmd.BeginBlock)
 	if err != nil {
 		return nil, rpcDecodeHexError(cmd.BeginBlock)
 	}
@@ -2426,7 +2426,7 @@ func handleRescan(wsc *wsClient, icmd interface{}) (interface{}, error) {
 
 	maxBlock := int32(math.MaxInt32)
 	if cmd.EndBlock != nil {
-		maxBlockHash, err := chainhash.NewHashFromStr(*cmd.EndBlock)
+		maxBlockHash, err := daghash.NewHashFromStr(*cmd.EndBlock)
 		if err != nil {
 			return nil, rpcDecodeHexError(*cmd.EndBlock)
 		}
@@ -2442,7 +2442,7 @@ func handleRescan(wsc *wsClient, icmd interface{}) (interface{}, error) {
 	// lastBlock and lastBlockHash track the previously-rescanned block.
 	// They equal nil when no previous blocks have been rescanned.
 	var lastBlock *btcutil.Block
-	var lastBlockHash *chainhash.Hash
+	var lastBlockHash *daghash.Hash
 
 	// A ticker is created to wait at least 10 seconds before notifying the
 	// websocket client of the current progress completed by the rescan.

@@ -7,7 +7,7 @@ package blockdag
 import (
 	"math"
 
-	"github.com/daglabs/btcd/chaincfg/chainhash"
+	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcutil"
 )
 
@@ -28,13 +28,13 @@ func nextPowerOfTwo(n int) int {
 // HashMerkleBranches takes two hashes, treated as the left and right tree
 // nodes, and returns the hash of their concatenation.  This is a helper
 // function used to aid in the generation of a merkle tree.
-func HashMerkleBranches(left *chainhash.Hash, right *chainhash.Hash) *chainhash.Hash {
+func HashMerkleBranches(left *daghash.Hash, right *daghash.Hash) *daghash.Hash {
 	// Concatenate the left and right nodes.
-	var hash [chainhash.HashSize * 2]byte
-	copy(hash[:chainhash.HashSize], left[:])
-	copy(hash[chainhash.HashSize:], right[:])
+	var hash [daghash.HashSize * 2]byte
+	copy(hash[:daghash.HashSize], left[:])
+	copy(hash[daghash.HashSize:], right[:])
 
-	newHash := chainhash.DoubleHashH(hash[:])
+	newHash := daghash.DoubleHashH(hash[:])
 	return &newHash
 }
 
@@ -66,12 +66,12 @@ func HashMerkleBranches(left *chainhash.Hash, right *chainhash.Hash) *chainhash.
 // are calculated by concatenating the left node with itself before hashing.
 // Since this function uses nodes that are pointers to the hashes, empty nodes
 // will be nil.
-func BuildMerkleTreeStore(transactions []*btcutil.Tx) []*chainhash.Hash {
+func BuildMerkleTreeStore(transactions []*btcutil.Tx) []*daghash.Hash {
 	// Calculate how many entries are required to hold the binary merkle
 	// tree as a linear array and create an array of that size.
 	nextPoT := nextPowerOfTwo(len(transactions))
 	arraySize := nextPoT*2 - 1
-	merkles := make([]*chainhash.Hash, arraySize)
+	merkles := make([]*daghash.Hash, arraySize)
 
 	// Create the base transaction hashes and populate the array with them.
 	for i, tx := range transactions {

@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/daglabs/btcd/chaincfg/chainhash"
+	"github.com/daglabs/btcd/dagconfig/daghash"
 )
 
 // MsgGetHeaders implements the Message interface and represents a bitcoin
@@ -29,12 +29,12 @@ import (
 // closer to the genesis block you get.
 type MsgGetHeaders struct {
 	ProtocolVersion    uint32
-	BlockLocatorHashes []*chainhash.Hash
-	HashStop           chainhash.Hash
+	BlockLocatorHashes []*daghash.Hash
+	HashStop           daghash.Hash
 }
 
 // AddBlockLocatorHash adds a new block locator hash to the message.
-func (msg *MsgGetHeaders) AddBlockLocatorHash(hash *chainhash.Hash) error {
+func (msg *MsgGetHeaders) AddBlockLocatorHash(hash *daghash.Hash) error {
 	if len(msg.BlockLocatorHashes)+1 > MaxBlockLocatorsPerMsg {
 		str := fmt.Sprintf("too many block locator hashes for message [max %v]",
 			MaxBlockLocatorsPerMsg)
@@ -66,8 +66,8 @@ func (msg *MsgGetHeaders) BtcDecode(r io.Reader, pver uint32) error {
 
 	// Create a contiguous slice of hashes to deserialize into in order to
 	// reduce the number of allocations.
-	locatorHashes := make([]chainhash.Hash, count)
-	msg.BlockLocatorHashes = make([]*chainhash.Hash, 0, count)
+	locatorHashes := make([]daghash.Hash, count)
+	msg.BlockLocatorHashes = make([]*daghash.Hash, 0, count)
 	for i := uint64(0); i < count; i++ {
 		hash := &locatorHashes[i]
 		err := readElement(r, hash)
@@ -123,14 +123,14 @@ func (msg *MsgGetHeaders) MaxPayloadLength(pver uint32) uint32 {
 	// Version 4 bytes + num block locator hashes (varInt) + max allowed block
 	// locators + hash stop.
 	return 4 + MaxVarIntPayload + (MaxBlockLocatorsPerMsg *
-		chainhash.HashSize) + chainhash.HashSize
+		daghash.HashSize) + daghash.HashSize
 }
 
 // NewMsgGetHeaders returns a new bitcoin getheaders message that conforms to
 // the Message interface.  See MsgGetHeaders for details.
 func NewMsgGetHeaders() *MsgGetHeaders {
 	return &MsgGetHeaders{
-		BlockLocatorHashes: make([]*chainhash.Hash, 0,
+		BlockLocatorHashes: make([]*daghash.Hash, 0,
 			MaxBlockLocatorsPerMsg),
 	}
 }

@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/daglabs/btcd/chaincfg/chainhash"
+	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/davecgh/go-spew/spew"
 )
 
@@ -49,7 +49,7 @@ func TestMerkleBlock(t *testing.T) {
 	data := make([]byte, 32)
 	for i := 0; i < maxTxPerBlock; i++ {
 		rand.Read(data)
-		hash, err := chainhash.NewHash(data)
+		hash, err := daghash.NewHash(data)
 		if err != nil {
 			t.Errorf("NewHash failed: %v\n", err)
 			return
@@ -63,7 +63,7 @@ func TestMerkleBlock(t *testing.T) {
 
 	// Add one more Tx to test failure.
 	rand.Read(data)
-	hash, err := chainhash.NewHash(data)
+	hash, err := daghash.NewHash(data)
 	if err != nil {
 		t.Errorf("NewHash failed: %v\n", err)
 		return
@@ -339,8 +339,8 @@ var merkleBlockOne = MsgMerkleBlock{
 	Header: BlockHeader{
 		Version:       1,
 		NumPrevBlocks: 2,
-		PrevBlocks:    []chainhash.Hash{mainNetGenesisHash, simNetGenesisHash},
-		MerkleRoot: chainhash.Hash([chainhash.HashSize]byte{ // Make go vet happy.
+		PrevBlocks:    []daghash.Hash{mainNetGenesisHash, simNetGenesisHash},
+		MerkleRoot: daghash.Hash([daghash.HashSize]byte{ // Make go vet happy.
 			0x98, 0x20, 0x51, 0xfd, 0x1e, 0x4b, 0xa7, 0x44,
 			0xbb, 0xbe, 0x68, 0x0e, 0x1f, 0xee, 0x14, 0x67,
 			0x7b, 0xa1, 0xa3, 0xc3, 0x54, 0x0b, 0xf7, 0xb1,
@@ -351,8 +351,8 @@ var merkleBlockOne = MsgMerkleBlock{
 		Nonce:     0x9962e301,               // 2573394689
 	},
 	Transactions: 1,
-	Hashes: []*chainhash.Hash{
-		(*chainhash.Hash)(&[chainhash.HashSize]byte{ // Make go vet happy.
+	Hashes: []*daghash.Hash{
+		(*daghash.Hash)(&[daghash.HashSize]byte{ // Make go vet happy.
 			0x98, 0x20, 0x51, 0xfd, 0x1e, 0x4b, 0xa7, 0x44,
 			0xbb, 0xbe, 0x68, 0x0e, 0x1f, 0xee, 0x14, 0x67,
 			0x7b, 0xa1, 0xa3, 0xc3, 0x54, 0x0b, 0xf7, 0xb1,

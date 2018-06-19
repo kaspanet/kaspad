@@ -8,13 +8,13 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/daglabs/btcd/chaincfg/chainhash"
+	"github.com/daglabs/btcd/dagconfig/daghash"
 )
 
 const (
 	// MaxCFHeaderPayload is the maximum byte size of a committed
 	// filter header.
-	MaxCFHeaderPayload = chainhash.HashSize
+	MaxCFHeaderPayload = daghash.HashSize
 
 	// MaxCFHeadersPerMsg is the maximum number of committed filter headers
 	// that can be in a single bitcoin cfheaders message.
@@ -28,13 +28,13 @@ const (
 // MsgGetCFHeaders for details on requesting the headers.
 type MsgCFHeaders struct {
 	FilterType       FilterType
-	StopHash         chainhash.Hash
-	PrevFilterHeader chainhash.Hash
-	FilterHashes     []*chainhash.Hash
+	StopHash         daghash.Hash
+	PrevFilterHeader daghash.Hash
+	FilterHashes     []*daghash.Hash
 }
 
 // AddCFHash adds a new filter hash to the message.
-func (msg *MsgCFHeaders) AddCFHash(hash *chainhash.Hash) error {
+func (msg *MsgCFHeaders) AddCFHash(hash *daghash.Hash) error {
 	if len(msg.FilterHashes)+1 > MaxCFHeadersPerMsg {
 		str := fmt.Sprintf("too many block headers in message [max %v]",
 			MaxBlockHeadersPerMsg)
@@ -82,9 +82,9 @@ func (msg *MsgCFHeaders) BtcDecode(r io.Reader, pver uint32) error {
 
 	// Create a contiguous slice of hashes to deserialize into in order to
 	// reduce the number of allocations.
-	msg.FilterHashes = make([]*chainhash.Hash, 0, count)
+	msg.FilterHashes = make([]*daghash.Hash, 0, count)
 	for i := uint64(0); i < count; i++ {
-		var cfh chainhash.Hash
+		var cfh daghash.Hash
 		err := readElement(r, &cfh)
 		if err != nil {
 			return err
@@ -167,7 +167,7 @@ func (msg *MsgCFHeaders) Command() string {
 func (msg *MsgCFHeaders) MaxPayloadLength(pver uint32) uint32 {
 	// Hash size + filter type + num headers (varInt) +
 	// (header size * max headers).
-	return 1 + chainhash.HashSize + chainhash.HashSize + MaxVarIntPayload +
+	return 1 + daghash.HashSize + daghash.HashSize + MaxVarIntPayload +
 		(MaxCFHeaderPayload * MaxCFHeadersPerMsg)
 }
 
@@ -175,6 +175,6 @@ func (msg *MsgCFHeaders) MaxPayloadLength(pver uint32) uint32 {
 // the Message interface. See MsgCFHeaders for details.
 func NewMsgCFHeaders() *MsgCFHeaders {
 	return &MsgCFHeaders{
-		FilterHashes: make([]*chainhash.Hash, 0, MaxCFHeadersPerMsg),
+		FilterHashes: make([]*daghash.Hash, 0, MaxCFHeadersPerMsg),
 	}
 }

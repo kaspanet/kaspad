@@ -13,7 +13,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/daglabs/btcd/chaincfg/chainhash"
+	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/davecgh/go-spew/spew"
 )
 
@@ -51,7 +51,7 @@ func TestMessage(t *testing.T) {
 	msgVerack := NewMsgVerAck()
 	msgGetAddr := NewMsgGetAddr()
 	msgAddr := NewMsgAddr()
-	msgGetBlocks := NewMsgGetBlocks(&chainhash.Hash{})
+	msgGetBlocks := NewMsgGetBlocks(&daghash.Hash{})
 	msgBlock := &blockOne
 	msgInv := NewMsgInv()
 	msgGetData := NewMsgGetData()
@@ -66,16 +66,16 @@ func TestMessage(t *testing.T) {
 	msgFilterAdd := NewMsgFilterAdd([]byte{0x01})
 	msgFilterClear := NewMsgFilterClear()
 	msgFilterLoad := NewMsgFilterLoad([]byte{0x01}, 10, 0, BloomUpdateNone)
-	bh := NewBlockHeader(1, []chainhash.Hash{mainNetGenesisHash, simNetGenesisHash}, &chainhash.Hash{}, 0, 0)
+	bh := NewBlockHeader(1, []daghash.Hash{mainNetGenesisHash, simNetGenesisHash}, &daghash.Hash{}, 0, 0)
 	msgMerkleBlock := NewMsgMerkleBlock(bh)
 	msgReject := NewMsgReject("block", RejectDuplicate, "duplicate block")
-	msgGetCFilters := NewMsgGetCFilters(GCSFilterExtended, 0, &chainhash.Hash{})
-	msgGetCFHeaders := NewMsgGetCFHeaders(GCSFilterExtended, 0, &chainhash.Hash{})
-	msgGetCFCheckpt := NewMsgGetCFCheckpt(GCSFilterExtended, &chainhash.Hash{})
-	msgCFilter := NewMsgCFilter(GCSFilterExtended, &chainhash.Hash{},
+	msgGetCFilters := NewMsgGetCFilters(GCSFilterExtended, 0, &daghash.Hash{})
+	msgGetCFHeaders := NewMsgGetCFHeaders(GCSFilterExtended, 0, &daghash.Hash{})
+	msgGetCFCheckpt := NewMsgGetCFCheckpt(GCSFilterExtended, &daghash.Hash{})
+	msgCFilter := NewMsgCFilter(GCSFilterExtended, &daghash.Hash{},
 		[]byte("payload"))
 	msgCFHeaders := NewMsgCFHeaders()
-	msgCFCheckpt := NewMsgCFCheckpt(GCSFilterExtended, &chainhash.Hash{}, 0)
+	msgCFCheckpt := NewMsgCFCheckpt(GCSFilterExtended, &daghash.Hash{}, 0)
 
 	tests := []struct {
 		in     Message    // Value to encode

@@ -9,7 +9,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/daglabs/btcd/chaincfg"
+	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcutil"
 )
 
@@ -45,7 +45,7 @@ func newAddressPubKey(serializedPubKey []byte) btcutil.Address {
 // as a helper since the only way it can fail is if there is an error in the
 // test source code.
 func newAddressPubKeyHash(pkHash []byte) btcutil.Address {
-	addr, err := btcutil.NewAddressPubKeyHash(pkHash, &chaincfg.MainNetParams)
+	addr, err := btcutil.NewAddressPubKeyHash(pkHash, &dagconfig.MainNetParams)
 	if err != nil {
 		panic("invalid public key hash in test source")
 	}
@@ -59,7 +59,7 @@ func newAddressPubKeyHash(pkHash []byte) btcutil.Address {
 // test source code.
 func newAddressScriptHash(scriptHash []byte) btcutil.Address {
 	addr, err := btcutil.NewAddressScriptHashFromHash(scriptHash,
-		&chaincfg.MainNetParams)
+		&dagconfig.MainNetParams)
 	if err != nil {
 		panic("invalid script hash in test source")
 	}
@@ -342,7 +342,7 @@ func TestExtractPkScriptAddrs(t *testing.T) {
 	t.Logf("Running %d tests.", len(tests))
 	for i, test := range tests {
 		class, addrs, reqSigs, err := ExtractPkScriptAddrs(
-			test.script, &chaincfg.MainNetParams)
+			test.script, &dagconfig.MainNetParams)
 		if err != nil {
 		}
 
@@ -498,7 +498,7 @@ func (b *bogusAddress) ScriptAddress() []byte {
 }
 
 // IsForNet lies blatantly to satisfy the btcutil.Address interface.
-func (b *bogusAddress) IsForNet(chainParams *chaincfg.Params) bool {
+func (b *bogusAddress) IsForNet(chainParams *dagconfig.Params) bool {
 	return true // why not?
 }
 
@@ -515,7 +515,7 @@ func TestPayToAddrScript(t *testing.T) {
 
 	// 1MirQ9bwyQcGVJPwKUgapu5ouK2E2Ey4gX
 	p2pkhMain, err := btcutil.NewAddressPubKeyHash(hexToBytes("e34cce70c86"+
-		"373273efcc54ce7d2a491bb4a0e84"), &chaincfg.MainNetParams)
+		"373273efcc54ce7d2a491bb4a0e84"), &dagconfig.MainNetParams)
 	if err != nil {
 		t.Fatalf("Unable to create public key hash address: %v", err)
 	}
@@ -523,7 +523,7 @@ func TestPayToAddrScript(t *testing.T) {
 	// Taken from transaction:
 	// b0539a45de13b3e0403909b8bd1a555b8cbe45fd4e3f3fda76f3a5f52835c29d
 	p2shMain, _ := btcutil.NewAddressScriptHashFromHash(hexToBytes("e8c300"+
-		"c87986efa84c37c0519929019ef86eb5b4"), &chaincfg.MainNetParams)
+		"c87986efa84c37c0519929019ef86eb5b4"), &dagconfig.MainNetParams)
 	if err != nil {
 		t.Fatalf("Unable to create script hash address: %v", err)
 	}

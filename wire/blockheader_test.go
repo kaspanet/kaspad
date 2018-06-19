@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/daglabs/btcd/chaincfg/chainhash"
+	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/davecgh/go-spew/spew"
 )
 
@@ -22,7 +22,7 @@ func TestBlockHeader(t *testing.T) {
 	}
 	nonce := uint32(nonce64)
 
-	hashes := []chainhash.Hash{mainNetGenesisHash, simNetGenesisHash}
+	hashes := []daghash.Hash{mainNetGenesisHash, simNetGenesisHash}
 
 	merkleHash := mainNetGenesisMerkleRoot
 	bits := uint32(0x1d00ffff)
@@ -58,7 +58,7 @@ func TestBlockHeaderWire(t *testing.T) {
 	baseBlockHdr := &BlockHeader{
 		Version:       1,
 		NumPrevBlocks: 2,
-		PrevBlocks:    []chainhash.Hash{mainNetGenesisHash, simNetGenesisHash},
+		PrevBlocks:    []daghash.Hash{mainNetGenesisHash, simNetGenesisHash},
 		MerkleRoot:    mainNetGenesisMerkleRoot,
 		Timestamp:     time.Unix(0x495fab29, 0), // 2009-01-03 12:15:05 -0600 CST
 		Bits:          bits,
@@ -197,7 +197,7 @@ func TestBlockHeaderSerialize(t *testing.T) {
 	baseBlockHdr := &BlockHeader{
 		Version:       1,
 		NumPrevBlocks: 2,
-		PrevBlocks:    []chainhash.Hash{mainNetGenesisHash, simNetGenesisHash},
+		PrevBlocks:    []daghash.Hash{mainNetGenesisHash, simNetGenesisHash},
 		MerkleRoot:    mainNetGenesisMerkleRoot,
 		Timestamp:     time.Unix(0x495fab29, 0), // 2009-01-03 12:15:05 -0600 CST
 		Bits:          bits,
@@ -277,7 +277,7 @@ func TestBlockHeaderSerializeSize(t *testing.T) {
 	baseBlockHdr := &BlockHeader{
 		Version:       1,
 		NumPrevBlocks: 2,
-		PrevBlocks:    []chainhash.Hash{mainNetGenesisHash, simNetGenesisHash},
+		PrevBlocks:    []daghash.Hash{mainNetGenesisHash, simNetGenesisHash},
 		MerkleRoot:    mainNetGenesisMerkleRoot,
 		Timestamp:     timestamp,
 		Bits:          bits,
@@ -287,7 +287,7 @@ func TestBlockHeaderSerializeSize(t *testing.T) {
 	genesisBlockHdr := &BlockHeader{
 		Version:       1,
 		NumPrevBlocks: 0,
-		PrevBlocks:    []chainhash.Hash{},
+		PrevBlocks:    []daghash.Hash{},
 		MerkleRoot:    mainNetGenesisMerkleRoot,
 		Timestamp:     timestamp,
 		Bits:          bits,

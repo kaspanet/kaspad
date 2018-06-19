@@ -32,8 +32,8 @@ import (
 	"github.com/daglabs/btcd/blockdag/indexers"
 	"github.com/daglabs/btcd/btcec"
 	"github.com/daglabs/btcd/btcjson"
-	"github.com/daglabs/btcd/chaincfg"
-	"github.com/daglabs/btcd/chaincfg/chainhash"
+	"github.com/daglabs/btcd/dagconfig"
+	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/database"
 	"github.com/daglabs/btcd/mempool"
 	"github.com/daglabs/btcd/mining"
@@ -318,7 +318,7 @@ func rpcDecodeHexError(gotHex string) *btcjson.RPCError {
 // rpcNoTxInfoError is a convenience function for returning a nicely formatted
 // RPC error which indicates there is no information available for the provided
 // transaction hash.
-func rpcNoTxInfoError(txHash *chainhash.Hash) *btcjson.RPCError {
+func rpcNoTxInfoError(txHash *daghash.Hash) *btcjson.RPCError {
 	return btcjson.NewRPCError(btcjson.ErrRPCNoTxInfo,
 		fmt.Sprintf("No information available about transaction %v",
 			txHash))
@@ -330,10 +330,10 @@ type gbtWorkState struct {
 	sync.Mutex
 	lastTxUpdate  time.Time
 	lastGenerated time.Time
-	prevHash      *chainhash.Hash
+	prevHash      *daghash.Hash
 	minTimestamp  time.Time
 	template      *mining.BlockTemplate
-	notifyMap map[chainhash.Hash]map[int64]chan struct{}
+	notifyMap map[daghash.Hash]map[int64]chan struct{}
 	timeSource blockdag.MedianTimeSource
 }
 
@@ -341,7 +341,7 @@ type gbtWorkState struct {
 // fields initialized and ready to use.
 func newGbtWorkState(timeSource blockdag.MedianTimeSource) *gbtWorkState {
 	return &gbtWorkState{
-		notifyMap: make(map[chainhash.Hash]map[int64]chan struct{}),
+		notifyMap: make(map[daghash.Hash]map[int64]chan struct{}),
 		timeSource: timeSource,
 	}
 }
@@ -525,7 +525,7 @@ func handleCreateRawTransaction(s *rpcServer, cmd interface{}, closeChan <-chan 
 	// some validity checks.
 	mtx := wire.NewMsgTx(wire.TxVersion)
 	for _, input := range c.Inputs {
-		txHash, err := chainhash.NewHashFromStr(input.Txid)
+		txHash, err := daghash.NewHashFromStr(input.Txid)
 		if err != nil {
 			return nil, rpcDecodeHexError(input.Txid)
 		}
@@ -667,7 +667,7 @@ func createVinList(mtx *wire.MsgTx) []btcjson.Vin {
 
 // createVoutList returns a slice of JSON objects for the outputs of the passed
 // transaction.
-func createVoutList(mtx *wire.MsgTx, chainParams *chaincfg.Params, filterAddrMap map[string]struct{}) []btcjson.Vout {
+func createVoutList(mtx *wire.MsgTx, chainParams *dagconfig.Params, filterAddrMap map[string]struct{}) []btcjson.Vout {
 	voutList := make([]btcjson.Vout, 0, len(mtx.TxOut))
 	for i, v := range mtx.TxOut {
 		// The disassembled string will contain [error] inline if the
@@ -719,7 +719,7 @@ func createVoutList(mtx *wire.MsgTx, chainParams *chaincfg.Params, filterAddrMap
 
 // createTxRawResult converts the passed transaction and associated parameters
 // to a raw transaction JSON object.
-func createTxRawResult(chainParams *chaincfg.Params, mtx *wire.MsgTx,
+func createTxRawResult(chainParams *dagconfig.Params, mtx *wire.MsgTx,
 	txHash string, blkHeader *wire.BlockHeader, blkHash string,
 	blkHeight int32, chainHeight int32) (*btcjson.TxRawResult, error) {
 
@@ -1018,7 +1018,7 @@ func handleGetBestBlockHash(s *rpcServer, cmd interface{}, closeChan <-chan stru
 
 // getDifficultyRatio returns the proof-of-work difficulty as a multiple of the
 // minimum difficulty using the passed bits field from the header of a block.
-func getDifficultyRatio(bits uint32, params *chaincfg.Params) float64 {
+func getDifficultyRatio(bits uint32, params *dagconfig.Params) float64 {
 	// The minimum difficulty is the max possible proof-of-work limit bits
 	// converted back to a number.  Note this is not the same as the proof of
 	// work limit directly because the block difficulty is encoded in a block
@@ -1041,7 +1041,7 @@ func handleGetBlock(s *rpcServer, cmd interface{}, closeChan <-chan struct{}) (i
 	c := cmd.(*btcjson.GetBlockCmd)
 
 	// Load the raw block bytes from the database.
-	hash, err := chainhash.NewHashFromStr(c.Hash)
+	hash, err := daghash.NewHashFromStr(c.Hash)
 	if err != nil {
 		return nil, rpcDecodeHexError(c.Hash)
 	}
@@ -1216,10 +1216,10 @@ func handleGetBlockChainInfo(s *rpcServer, cmd interface{}, closeChan <-chan str
 		// fork-name.
 		var forkName string
 		switch deployment {
-		case chaincfg.DeploymentTestDummy:
+		case dagconfig.DeploymentTestDummy:
 			forkName = "dummy"
 
-		case chaincfg.DeploymentCSV:
+		case dagconfig.DeploymentCSV:
 			forkName = "csv"
 
 		default:
@@ -1288,7 +1288,7 @@ func handleGetBlockHeader(s *rpcServer, cmd interface{}, closeChan <-chan struct
 	c := cmd.(*btcjson.GetBlockHeaderCmd)
 
 	// Fetch the header from chain.
-	hash, err := chainhash.NewHashFromStr(c.Hash)
+	hash, err := daghash.NewHashFromStr(c.Hash)
 	if err != nil {
 		return nil, rpcDecodeHexError(c.Hash)
 	}
@@ -1353,7 +1353,7 @@ func handleGetBlockHeader(s *rpcServer, cmd interface{}, closeChan <-chan struct
 
 // encodeTemplateID encodes the passed details into an ID that can be used to
 // uniquely identify a block template.
-func encodeTemplateID(prevHash *chainhash.Hash, lastGenerated time.Time) string {
+func encodeTemplateID(prevHash *daghash.Hash, lastGenerated time.Time) string {
 	return fmt.Sprintf("%s-%d", prevHash.String(), lastGenerated.Unix())
 }
 
@@ -1362,13 +1362,13 @@ func encodeTemplateID(prevHash *chainhash.Hash, lastGenerated time.Time) string 
 // that are using long polling for block templates.  The ID consists of the
 // previous block hash for the associated template and the time the associated
 // template was generated.
-func decodeTemplateID(templateID string) (*chainhash.Hash, int64, error) {
+func decodeTemplateID(templateID string) (*daghash.Hash, int64, error) {
 	fields := strings.Split(templateID, "-")
 	if len(fields) != 2 {
 		return nil, 0, errors.New("invalid longpollid format")
 	}
 
-	prevHash, err := chainhash.NewHashFromStr(fields[0])
+	prevHash, err := daghash.NewHashFromStr(fields[0])
 	if err != nil {
 		return nil, 0, errors.New("invalid longpollid format")
 	}
@@ -1384,7 +1384,7 @@ func decodeTemplateID(templateID string) (*chainhash.Hash, int64, error) {
 // notified when block templates are stale.
 //
 // This function MUST be called with the state locked.
-func (state *gbtWorkState) notifyLongPollers(latestHash *chainhash.Hash, lastGenerated time.Time) {
+func (state *gbtWorkState) notifyLongPollers(latestHash *daghash.Hash, lastGenerated time.Time) {
 	// Notify anything that is waiting for a block template update from a
 	// hash which is not the hash of the tip of the best chain since their
 	// work is now invalid.
@@ -1431,7 +1431,7 @@ func (state *gbtWorkState) notifyLongPollers(latestHash *chainhash.Hash, lastGen
 // NotifyBlockConnected uses the newly-connected block to notify any long poll
 // clients with a new block template when their existing block template is
 // stale due to the newly connected block.
-func (state *gbtWorkState) NotifyBlockConnected(blockHash *chainhash.Hash) {
+func (state *gbtWorkState) NotifyBlockConnected(blockHash *daghash.Hash) {
 	go func() {
 		state.Lock()
 		defer state.Unlock()
@@ -1470,7 +1470,7 @@ func (state *gbtWorkState) NotifyMempoolTx(lastUpdated time.Time) {
 // without requiring a different channel for each client.
 //
 // This function MUST be called with the state locked.
-func (state *gbtWorkState) templateUpdateChan(prevHash *chainhash.Hash, lastGenerated int64) chan struct{} {
+func (state *gbtWorkState) templateUpdateChan(prevHash *daghash.Hash, lastGenerated int64) chan struct{} {
 	// Either get the current list of channels waiting for updates about
 	// changes to block template for the previous hash or create a new one.
 	channels, ok := state.notifyMap[*prevHash]
@@ -1656,7 +1656,7 @@ func (state *gbtWorkState) blockTemplateResult(useCoinbaseValue bool, submitOld 
 	// the adjustments to the various lengths and indices.
 	numTx := len(msgBlock.Transactions)
 	transactions := make([]btcjson.GetBlockTemplateResultTx, 0, numTx-1)
-	txIndex := make(map[chainhash.Hash]int64, numTx)
+	txIndex := make(map[daghash.Hash]int64, numTx)
 	for i, tx := range msgBlock.Transactions {
 		txHash := tx.TxHash()
 		txIndex[txHash] = int64(i)
@@ -2137,7 +2137,7 @@ func handleGetCFilter(s *rpcServer, cmd interface{}, closeChan <-chan struct{}) 
 	}
 
 	c := cmd.(*btcjson.GetCFilterCmd)
-	hash, err := chainhash.NewHashFromStr(c.Hash)
+	hash, err := daghash.NewHashFromStr(c.Hash)
 	if err != nil {
 		return nil, rpcDecodeHexError(c.Hash)
 	}
@@ -2166,7 +2166,7 @@ func handleGetCFilterHeader(s *rpcServer, cmd interface{}, closeChan <-chan stru
 	}
 
 	c := cmd.(*btcjson.GetCFilterHeaderCmd)
-	hash, err := chainhash.NewHashFromStr(c.Hash)
+	hash, err := daghash.NewHashFromStr(c.Hash)
 	if err != nil {
 		return nil, rpcDecodeHexError(c.Hash)
 	}
@@ -2222,17 +2222,17 @@ func handleGetHeaders(s *rpcServer, cmd interface{}, closeChan <-chan struct{}) 
 
 	// Fetch the requested headers from chain while respecting the provided
 	// block locators and stop hash.
-	blockLocators := make([]*chainhash.Hash, len(c.BlockLocators))
+	blockLocators := make([]*daghash.Hash, len(c.BlockLocators))
 	for i := range c.BlockLocators {
-		blockLocator, err := chainhash.NewHashFromStr(c.BlockLocators[i])
+		blockLocator, err := daghash.NewHashFromStr(c.BlockLocators[i])
 		if err != nil {
 			return nil, rpcDecodeHexError(c.BlockLocators[i])
 		}
 		blockLocators[i] = blockLocator
 	}
-	var hashStop chainhash.Hash
+	var hashStop daghash.Hash
 	if c.HashStop != "" {
-		err := chainhash.Decode(&hashStop, c.HashStop)
+		err := daghash.Decode(&hashStop, c.HashStop)
 		if err != nil {
 			return nil, rpcDecodeHexError(c.HashStop)
 		}
@@ -2494,7 +2494,7 @@ func handleGetRawTransaction(s *rpcServer, cmd interface{}, closeChan <-chan str
 	c := cmd.(*btcjson.GetRawTransactionCmd)
 
 	// Convert the provided transaction hash hex to a Hash.
-	txHash, err := chainhash.NewHashFromStr(c.Txid)
+	txHash, err := daghash.NewHashFromStr(c.Txid)
 	if err != nil {
 		return nil, rpcDecodeHexError(c.Txid)
 	}
@@ -2507,7 +2507,7 @@ func handleGetRawTransaction(s *rpcServer, cmd interface{}, closeChan <-chan str
 	// Try to fetch the transaction from the memory pool and if that fails,
 	// try the block database.
 	var mtx *wire.MsgTx
-	var blkHash *chainhash.Hash
+	var blkHash *daghash.Hash
 	var blkHeight int32
 	tx, err := s.cfg.TxMemPool.FetchTransaction(txHash)
 	if err != nil {
@@ -2613,7 +2613,7 @@ func handleGetTxOut(s *rpcServer, cmd interface{}, closeChan <-chan struct{}) (i
 	c := cmd.(*btcjson.GetTxOutCmd)
 
 	// Convert the provided transaction hash hex to a Hash.
-	txHash, err := chainhash.NewHashFromStr(c.Txid)
+	txHash, err := daghash.NewHashFromStr(c.Txid)
 	if err != nil {
 		return nil, rpcDecodeHexError(c.Txid)
 	}
@@ -2775,7 +2775,7 @@ func handlePing(s *rpcServer, cmd interface{}, closeChan <-chan struct{}) (inter
 // possible.
 type retrievedTx struct {
 	txBytes []byte
-	blkHash *chainhash.Hash // Only set when transaction is in a block.
+	blkHash *daghash.Hash // Only set when transaction is in a block.
 	tx      *btcutil.Tx
 }
 
@@ -2847,7 +2847,7 @@ func fetchInputTxos(s *rpcServer, tx *wire.MsgTx) (map[wire.OutPoint]wire.TxOut,
 
 // createVinListPrevOut returns a slice of JSON objects for the inputs of the
 // passed transaction.
-func createVinListPrevOut(s *rpcServer, mtx *wire.MsgTx, chainParams *chaincfg.Params, vinExtra bool, filterAddrMap map[string]struct{}) ([]btcjson.VinPrevOut, error) {
+func createVinListPrevOut(s *rpcServer, mtx *wire.MsgTx, chainParams *dagconfig.Params, vinExtra bool, filterAddrMap map[string]struct{}) ([]btcjson.VinPrevOut, error) {
 	// Coinbase transactions only have a single txin by definition.
 	if blockdag.IsCoinBaseTx(mtx) {
 		// Only include the transaction if the filter map is empty
@@ -3511,7 +3511,7 @@ func handleVerifyMessage(s *rpcServer, cmd interface{}, closeChan <-chan struct{
 	var buf bytes.Buffer
 	wire.WriteVarString(&buf, 0, "Bitcoin Signed Message:\n")
 	wire.WriteVarString(&buf, 0, c.Message)
-	expectedMessageHash := chainhash.DoubleHashB(buf.Bytes())
+	expectedMessageHash := daghash.DoubleHashB(buf.Bytes())
 	pk, wasCompressed, err := btcec.RecoverCompact(btcec.S256(), sig,
 		expectedMessageHash)
 	if err != nil {
@@ -4171,7 +4171,7 @@ type rpcserverSyncManager interface {
 	// block in the provided locators until the provided stop hash or the
 	// current tip is reached, up to a max of wire.MaxBlockHeadersPerMsg
 	// hashes.
-	LocateHeaders(locators []*chainhash.Hash, hashStop *chainhash.Hash) []wire.BlockHeader
+	LocateHeaders(locators []*daghash.Hash, hashStop *daghash.Hash) []wire.BlockHeader
 }
 
 // rpcserverConfig is a descriptor containing the RPC server configuration.
@@ -4199,7 +4199,7 @@ type rpcserverConfig struct {
 	// chain data and state.
 	TimeSource  blockdag.MedianTimeSource
 	Chain       *blockdag.BlockChain
-	ChainParams *chaincfg.Params
+	ChainParams *dagconfig.Params
 	DB          database.DB
 
 	// TxMemPool defines the transaction memory pool to interact with.

@@ -9,7 +9,7 @@ import (
 	"math/rand"
 	"testing"
 
-	"github.com/daglabs/btcd/chaincfg/chainhash"
+	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/mining"
 	"github.com/daglabs/btcd/wire"
 	"github.com/daglabs/btcutil"
@@ -24,7 +24,7 @@ func newTestFeeEstimator(binSize, maxReplacements, maxRollback uint32) *FeeEstim
 		binSize:             int32(binSize),
 		minRegisteredBlocks: 0,
 		maxReplacements:     int32(maxReplacements),
-		observed:            make(map[chainhash.Hash]*observedTransaction),
+		observed:            make(map[daghash.Hash]*observedTransaction),
 		dropped:             make([]*registeredBlock, 0, maxRollback),
 	}
 }
@@ -32,7 +32,7 @@ func newTestFeeEstimator(binSize, maxReplacements, maxRollback uint32) *FeeEstim
 // lastBlock is a linked list of the block hashes which have been
 // processed by the test FeeEstimator.
 type lastBlock struct {
-	hash *chainhash.Hash
+	hash *daghash.Hash
 	prev *lastBlock
 }
 

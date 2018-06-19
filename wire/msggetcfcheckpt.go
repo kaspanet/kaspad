@@ -7,7 +7,7 @@ package wire
 import (
 	"io"
 
-	"github.com/daglabs/btcd/chaincfg/chainhash"
+	"github.com/daglabs/btcd/dagconfig/daghash"
 )
 
 // MsgGetCFCheckpt is a request for filter headers at evenly spaced intervals
@@ -15,7 +15,7 @@ import (
 // get headers in the chain of basic (0x00) or extended (0x01) headers.
 type MsgGetCFCheckpt struct {
 	FilterType FilterType
-	StopHash   chainhash.Hash
+	StopHash   daghash.Hash
 }
 
 // BtcDecode decodes r using the bitcoin protocol encoding into the receiver.
@@ -50,13 +50,13 @@ func (msg *MsgGetCFCheckpt) Command() string {
 // receiver.  This is part of the Message interface implementation.
 func (msg *MsgGetCFCheckpt) MaxPayloadLength(pver uint32) uint32 {
 	// Filter type + uint32 + block hash
-	return 1 + chainhash.HashSize
+	return 1 + daghash.HashSize
 }
 
 // NewMsgGetCFCheckpt returns a new bitcoin getcfcheckpt message that conforms
 // to the Message interface using the passed parameters and defaults for the
 // remaining fields.
-func NewMsgGetCFCheckpt(filterType FilterType, stopHash *chainhash.Hash) *MsgGetCFCheckpt {
+func NewMsgGetCFCheckpt(filterType FilterType, stopHash *daghash.Hash) *MsgGetCFCheckpt {
 	return &MsgGetCFCheckpt{
 		FilterType: filterType,
 		StopHash:   *stopHash,

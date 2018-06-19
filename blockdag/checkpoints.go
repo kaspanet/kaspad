@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/daglabs/btcd/chaincfg"
-	"github.com/daglabs/btcd/chaincfg/chainhash"
+	"github.com/daglabs/btcd/dagconfig"
+	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/txscript"
 	"github.com/daglabs/btcutil"
 )
@@ -19,11 +19,11 @@ import (
 const CheckpointConfirmations = 2016
 
 // newHashFromStr converts the passed big-endian hex string into a
-// chainhash.Hash.  It only differs from the one available in chainhash in that
+// daghash.Hash.  It only differs from the one available in daghash in that
 // it ignores the error since it will only (and must only) be called with
 // hard-coded, and therefore known good, hashes.
-func newHashFromStr(hexStr string) *chainhash.Hash {
-	hash, _ := chainhash.NewHashFromStr(hexStr)
+func newHashFromStr(hexStr string) *daghash.Hash {
+	hash, _ := daghash.NewHashFromStr(hexStr)
 	return hash
 }
 
@@ -32,7 +32,7 @@ func newHashFromStr(hexStr string) *chainhash.Hash {
 // nil.
 //
 // This function is safe for concurrent access.
-func (b *BlockChain) Checkpoints() []chaincfg.Checkpoint {
+func (b *BlockChain) Checkpoints() []dagconfig.Checkpoint {
 	return b.checkpoints
 }
 
@@ -48,7 +48,7 @@ func (b *BlockChain) HasCheckpoints() bool {
 // instance, it will return nil.
 //
 // This function is safe for concurrent access.
-func (b *BlockChain) LatestCheckpoint() *chaincfg.Checkpoint {
+func (b *BlockChain) LatestCheckpoint() *dagconfig.Checkpoint {
 	if !b.HasCheckpoints() {
 		return nil
 	}
@@ -58,7 +58,7 @@ func (b *BlockChain) LatestCheckpoint() *chaincfg.Checkpoint {
 // verifyCheckpoint returns whether the passed block height and hash combination
 // match the checkpoint data.  It also returns true if there is no checkpoint
 // data for the passed block height.
-func (b *BlockChain) verifyCheckpoint(height int32, hash *chainhash.Hash) bool {
+func (b *BlockChain) verifyCheckpoint(height int32, hash *daghash.Hash) bool {
 	if !b.HasCheckpoints() {
 		return true
 	}

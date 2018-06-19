@@ -13,7 +13,7 @@ import (
 	"fmt"
 
 	"github.com/daglabs/btcd/btcjson"
-	"github.com/daglabs/btcd/chaincfg/chainhash"
+	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/wire"
 	"github.com/daglabs/btcutil"
 )
@@ -152,7 +152,7 @@ type FutureGetBestBlockResult chan *response
 
 // Receive waits for the response promised by the future and returns the hash
 // and height of the block in the longest (best) chain.
-func (r FutureGetBestBlockResult) Receive() (*chainhash.Hash, int32, error) {
+func (r FutureGetBestBlockResult) Receive() (*daghash.Hash, int32, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return nil, 0, err
@@ -166,7 +166,7 @@ func (r FutureGetBestBlockResult) Receive() (*chainhash.Hash, int32, error) {
 	}
 
 	// Convert to hash from string.
-	hash, err := chainhash.NewHashFromStr(bestBlock.Hash)
+	hash, err := daghash.NewHashFromStr(bestBlock.Hash)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -190,7 +190,7 @@ func (c *Client) GetBestBlockAsync() FutureGetBestBlockResult {
 // chain.
 //
 // NOTE: This is a btcd extension.
-func (c *Client) GetBestBlock() (*chainhash.Hash, int32, error) {
+func (c *Client) GetBestBlock() (*daghash.Hash, int32, error) {
 	return c.GetBestBlockAsync().Receive()
 }
 
@@ -282,7 +282,7 @@ func (r FutureGetHeadersResult) Receive() ([]wire.BlockHeader, error) {
 //
 // NOTE: This is a btcsuite extension ported from
 // github.com/decred/dcrrpcclient.
-func (c *Client) GetHeadersAsync(blockLocators []chainhash.Hash, hashStop *chainhash.Hash) FutureGetHeadersResult {
+func (c *Client) GetHeadersAsync(blockLocators []daghash.Hash, hashStop *daghash.Hash) FutureGetHeadersResult {
 	locators := make([]string, len(blockLocators))
 	for i := range blockLocators {
 		locators[i] = blockLocators[i].String()
@@ -301,7 +301,7 @@ func (c *Client) GetHeadersAsync(blockLocators []chainhash.Hash, hashStop *chain
 //
 // NOTE: This is a btcsuite extension ported from
 // github.com/decred/dcrrpcclient.
-func (c *Client) GetHeaders(blockLocators []chainhash.Hash, hashStop *chainhash.Hash) ([]wire.BlockHeader, error) {
+func (c *Client) GetHeaders(blockLocators []daghash.Hash, hashStop *daghash.Hash) ([]wire.BlockHeader, error) {
 	return c.GetHeadersAsync(blockLocators, hashStop).Receive()
 }
 

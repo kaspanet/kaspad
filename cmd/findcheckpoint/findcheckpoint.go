@@ -10,8 +10,8 @@ import (
 	"path/filepath"
 
 	"github.com/daglabs/btcd/blockdag"
-	"github.com/daglabs/btcd/chaincfg"
-	"github.com/daglabs/btcd/chaincfg/chainhash"
+	"github.com/daglabs/btcd/dagconfig"
+	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/database"
 )
 
@@ -39,7 +39,7 @@ func loadBlockDB() (database.DB, error) {
 // candidates at the last checkpoint that is already hard coded into btcchain
 // since there is no point in finding candidates before already existing
 // checkpoints.
-func findCandidates(chain *blockdag.BlockChain, latestHash *chainhash.Hash) ([]*chaincfg.Checkpoint, error) {
+func findCandidates(chain *blockdag.BlockChain, latestHash *daghash.Hash) ([]*dagconfig.Checkpoint, error) {
 	// Start with the latest block of the main chain.
 	block, err := chain.BlockByHash(latestHash)
 	if err != nil {
@@ -51,7 +51,7 @@ func findCandidates(chain *blockdag.BlockChain, latestHash *chainhash.Hash) ([]*
 	if latestCheckpoint == nil {
 		// Set the latest checkpoint to the genesis block if there isn't
 		// already one.
-		latestCheckpoint = &chaincfg.Checkpoint{
+		latestCheckpoint = &dagconfig.Checkpoint{
 			Hash:   activeNetParams.GenesisHash,
 			Height: 0,
 		}
@@ -83,7 +83,7 @@ func findCandidates(chain *blockdag.BlockChain, latestHash *chainhash.Hash) ([]*
 	defer fmt.Println()
 
 	// Loop backwards through the chain to find checkpoint candidates.
-	candidates := make([]*chaincfg.Checkpoint, 0, cfg.NumCandidates)
+	candidates := make([]*dagconfig.Checkpoint, 0, cfg.NumCandidates)
 	numTested := int32(0)
 	for len(candidates) < cfg.NumCandidates && block.Height() > requiredHeight {
 		// Display progress.
@@ -100,7 +100,7 @@ func findCandidates(chain *blockdag.BlockChain, latestHash *chainhash.Hash) ([]*
 		// All checks passed, so this node seems like a reasonable
 		// checkpoint candidate.
 		if isCandidate {
-			checkpoint := chaincfg.Checkpoint{
+			checkpoint := dagconfig.Checkpoint{
 				Height: block.Height(),
 				Hash:   block.Hash(),
 			}
@@ -120,7 +120,7 @@ func findCandidates(chain *blockdag.BlockChain, latestHash *chainhash.Hash) ([]*
 // showCandidate display a checkpoint candidate using and output format
 // determined by the configuration parameters.  The Go syntax output
 // uses the format the btcchain code expects for checkpoints added to the list.
-func showCandidate(candidateNum int, checkpoint *chaincfg.Checkpoint) {
+func showCandidate(candidateNum int, checkpoint *dagconfig.Checkpoint) {
 	if cfg.UseGoOutput {
 		fmt.Printf("Candidate %d -- {%d, newShaHashFromStr(\"%v\")},\n",
 			candidateNum, checkpoint.Height, checkpoint.Hash)

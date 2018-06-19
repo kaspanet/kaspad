@@ -21,8 +21,8 @@ import (
 	"time"
 
 	"github.com/btcsuite/go-socks/socks"
-	"github.com/daglabs/btcd/chaincfg"
-	"github.com/daglabs/btcd/chaincfg/chainhash"
+	"github.com/daglabs/btcd/dagconfig"
+	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/connmgr"
 	"github.com/daglabs/btcd/database"
 	_ "github.com/daglabs/btcd/database/ffldb"
@@ -157,7 +157,7 @@ type config struct {
 	lookup               func(string) ([]net.IP, error)
 	oniondial            func(string, string, time.Duration) (net.Conn, error)
 	dial                 func(string, string, time.Duration) (net.Conn, error)
-	addCheckpoints       []chaincfg.Checkpoint
+	addCheckpoints       []dagconfig.Checkpoint
 	miningAddrs          []btcutil.Address
 	minRelayTxFee        btcutil.Amount
 	whitelists           []*net.IPNet
@@ -313,43 +313,43 @@ func normalizeAddresses(addrs []string, defaultPort string) []string {
 }
 
 // newCheckpointFromStr parses checkpoints in the '<height>:<hash>' format.
-func newCheckpointFromStr(checkpoint string) (chaincfg.Checkpoint, error) {
+func newCheckpointFromStr(checkpoint string) (dagconfig.Checkpoint, error) {
 	parts := strings.Split(checkpoint, ":")
 	if len(parts) != 2 {
-		return chaincfg.Checkpoint{}, fmt.Errorf("unable to parse "+
+		return dagconfig.Checkpoint{}, fmt.Errorf("unable to parse "+
 			"checkpoint %q -- use the syntax <height>:<hash>",
 			checkpoint)
 	}
 
 	height, err := strconv.ParseInt(parts[0], 10, 32)
 	if err != nil {
-		return chaincfg.Checkpoint{}, fmt.Errorf("unable to parse "+
+		return dagconfig.Checkpoint{}, fmt.Errorf("unable to parse "+
 			"checkpoint %q due to malformed height", checkpoint)
 	}
 
 	if len(parts[1]) == 0 {
-		return chaincfg.Checkpoint{}, fmt.Errorf("unable to parse "+
+		return dagconfig.Checkpoint{}, fmt.Errorf("unable to parse "+
 			"checkpoint %q due to missing hash", checkpoint)
 	}
-	hash, err := chainhash.NewHashFromStr(parts[1])
+	hash, err := daghash.NewHashFromStr(parts[1])
 	if err != nil {
-		return chaincfg.Checkpoint{}, fmt.Errorf("unable to parse "+
+		return dagconfig.Checkpoint{}, fmt.Errorf("unable to parse "+
 			"checkpoint %q due to malformed hash", checkpoint)
 	}
 
-	return chaincfg.Checkpoint{
+	return dagconfig.Checkpoint{
 		Height: int32(height),
 		Hash:   hash,
 	}, nil
 }
 
 // parseCheckpoints checks the checkpoint strings for valid syntax
-// ('<height>:<hash>') and parses them to chaincfg.Checkpoint instances.
-func parseCheckpoints(checkpointStrings []string) ([]chaincfg.Checkpoint, error) {
+// ('<height>:<hash>') and parses them to dagconfig.Checkpoint instances.
+func parseCheckpoints(checkpointStrings []string) ([]dagconfig.Checkpoint, error) {
 	if len(checkpointStrings) == 0 {
 		return nil, nil
 	}
-	checkpoints := make([]chaincfg.Checkpoint, len(checkpointStrings))
+	checkpoints := make([]dagconfig.Checkpoint, len(checkpointStrings))
 	for i, cpString := range checkpointStrings {
 		checkpoint, err := newCheckpointFromStr(cpString)
 		if err != nil {

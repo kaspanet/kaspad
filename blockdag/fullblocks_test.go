@@ -14,8 +14,8 @@ import (
 
 	"github.com/daglabs/btcd/blockdag"
 	"github.com/daglabs/btcd/blockdag/fullblocktests"
-	"github.com/daglabs/btcd/chaincfg"
-	"github.com/daglabs/btcd/chaincfg/chainhash"
+	"github.com/daglabs/btcd/dagconfig"
+	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/database"
 	_ "github.com/daglabs/btcd/database/ffldb"
 	"github.com/daglabs/btcd/txscript"
@@ -60,7 +60,7 @@ func isSupportedDbType(dbType string) bool {
 // chainSetup is used to create a new db and chain instance with the genesis
 // block already inserted.  In addition to the new chain instance, it returns
 // a teardown function the caller should invoke when done testing to clean up.
-func chainSetup(dbName string, params *chaincfg.Params) (*blockdag.BlockChain, func(), error) {
+func chainSetup(dbName string, params *dagconfig.Params) (*blockdag.BlockChain, func(), error) {
 	if !isSupportedDbType(testDbType) {
 		return nil, nil, fmt.Errorf("unsupported db type %v", testDbType)
 	}
@@ -139,7 +139,7 @@ func TestFullBlocks(t *testing.T) {
 
 	// Create a new database and chain instance to run tests against.
 	chain, teardownFunc, err := chainSetup("fullblocktest",
-		&chaincfg.RegressionNetParams)
+		&dagconfig.RegressionNetParams)
 	if err != nil {
 		t.Errorf("Failed to setup chain instance: %v", err)
 		return
@@ -222,7 +222,7 @@ func TestFullBlocks(t *testing.T) {
 		if headerLen > 80 {
 			headerLen = 80
 		}
-		blockHash := chainhash.DoubleHashH(item.RawBlock[0:headerLen])
+		blockHash := daghash.DoubleHashH(item.RawBlock[0:headerLen])
 		blockHeight := item.Height
 		t.Logf("Testing block %s (hash %s, height %d)", item.Name,
 			blockHash, blockHeight)

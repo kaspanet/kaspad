@@ -9,7 +9,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/daglabs/btcd/chaincfg/chainhash"
+	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/database"
 )
 
@@ -31,7 +31,7 @@ func (cmd *fetchBlockCmd) Execute(args []string) error {
 	if len(args) < 1 {
 		return errors.New("required block hash parameter not specified")
 	}
-	blockHash, err := chainhash.NewHashFromStr(args[0])
+	blockHash, err := daghash.NewHashFromStr(args[0])
 	if err != nil {
 		return err
 	}
