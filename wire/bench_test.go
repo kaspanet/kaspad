@@ -409,7 +409,8 @@ func BenchmarkDecodeGetHeaders(b *testing.B) {
 }
 
 // BenchmarkDecodeHeaders performs a benchmark on how long it takes to
-// decode a headers message with the maximum number of headers.
+// decode a headers message with the maximum number of headers and maximum number of
+// previous hashes per header.
 func BenchmarkDecodeHeaders(b *testing.B) {
 	// Create a message with the maximum number of headers.
 	pver := ProtocolVersion
@@ -419,7 +420,15 @@ func BenchmarkDecodeHeaders(b *testing.B) {
 		if err != nil {
 			b.Fatalf("NewHashFromStr: unexpected error: %v", err)
 		}
-		m.AddBlockHeader(NewBlockHeader(1, hash, hash, 0, uint32(i)))
+		prevBlocks := make([]chainhash.Hash, MaxNumPrevBlocks)
+		for j := byte(0); j < MaxNumPrevBlocks; j++ {
+			hash, err := chainhash.NewHashFromStr(fmt.Sprintf("%x%x", i, j))
+			if err != nil {
+				b.Fatalf("NewHashFromStr: unexpected error: %v", err)
+			}
+			prevBlocks[i] = *hash
+		}
+		m.AddBlockHeader(NewBlockHeader(1, prevBlocks, hash, 0, uint32(i)))
 	}
 
 	// Serialize it so the bytes are available to test the decode below.
@@ -565,7 +574,7 @@ func BenchmarkDecodeMerkleBlock(b *testing.B) {
 	if err != nil {
 		b.Fatalf("NewHashFromStr: unexpected error: %v", err)
 	}
-	m.Header = *NewBlockHeader(1, hash, hash, 0, uint32(10000))
+	m.Header = *NewBlockHeader(1, []chainhash.Hash{*hash}, hash, 0, uint32(10000))
 	for i := 0; i < 105; i++ {
 		hash, err := chainhash.NewHashFromStr(fmt.Sprintf("%x", i))
 		if err != nil {
