@@ -11,7 +11,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/daglabs/btcd/chaincfg/chainhash"
+	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/database"
 	"github.com/daglabs/btcd/wire"
 )
@@ -46,8 +46,8 @@ func interruptRequested(interrupted <-chan struct{}) bool {
 // chain. This is used by the block index migration to track block metadata that
 // will be written to disk.
 type blockChainContext struct {
-	parent    *chainhash.Hash
-	children  []*chainhash.Hash
+	parent    *daghash.Hash
+	children  []*daghash.Hash
 	height    int32
 	mainChain bool
 }
@@ -106,8 +106,8 @@ func migrateBlockIndex(db database.DB) error {
 			endOffset := blockHdrOffset + blockHdrSize
 			headerBytes := blockRow[blockHdrOffset:endOffset:endOffset]
 
-			var hash chainhash.Hash
-			copy(hash[:], hashBytes[0:chainhash.HashSize])
+			var hash daghash.Hash
+			copy(hash[:], hashBytes[0:daghash.HashSize])
 			chainContext := blocksMap[hash]
 
 			if chainContext.height == -1 {
@@ -149,8 +149,8 @@ func migrateBlockIndex(db database.DB) error {
 // each block to its parent block and all child blocks. This mapping represents
 // the full tree of blocks. This function does not populate the height or
 // mainChain fields of the returned blockChainContext values.
-func readBlockTree(v1BlockIdxBucket database.Bucket) (map[chainhash.Hash]*blockChainContext, error) {
-	blocksMap := make(map[chainhash.Hash]*blockChainContext)
+func readBlockTree(v1BlockIdxBucket database.Bucket) (map[daghash.Hash]*blockChainContext, error) {
+	blocksMap := make(map[daghash.Hash]*blockChainContext)
 	err := v1BlockIdxBucket.ForEach(func(_, blockRow []byte) error {
 		var header wire.BlockHeader
 		endOffset := blockHdrOffset + blockHdrSize
@@ -184,7 +184,7 @@ func readBlockTree(v1BlockIdxBucket database.Bucket) (map[chainhash.Hash]*blockC
 // breadth-first, assigning a height to every block with a path back to the
 // genesis block. This function modifies the height field on the blocksMap
 // entries.
-func determineBlockHeights(blocksMap map[chainhash.Hash]*blockChainContext) error {
+func determineBlockHeights(blocksMap map[daghash.Hash]*blockChainContext) error {
 	queue := list.New()
 
 	// The genesis block is included in blocksMap as a child of the zero hash
@@ -201,7 +201,7 @@ func determineBlockHeights(blocksMap map[chainhash.Hash]*blockChainContext) erro
 
 	for e := queue.Front(); e != nil; e = queue.Front() {
 		queue.Remove(e)
-		hash := e.Value.(*chainhash.Hash)
+		hash := e.Value.(*daghash.Hash)
 		height := blocksMap[*hash].height
 
 		// For each block with this one as a parent, assign it a height and
@@ -218,7 +218,7 @@ func determineBlockHeights(blocksMap map[chainhash.Hash]*blockChainContext) erro
 // determineMainChainBlocks traverses the block graph down from the tip to
 // determine which block hashes that are part of the main chain. This function
 // modifies the mainChain field on the blocksMap entries.
-func determineMainChainBlocks(blocksMap map[chainhash.Hash]*blockChainContext, tip *chainhash.Hash) {
+func determineMainChainBlocks(blocksMap map[daghash.Hash]*blockChainContext, tip *daghash.Hash) {
 	for nextHash := tip; *nextHash != zeroHash; nextHash = blocksMap[*nextHash].parent {
 		blocksMap[*nextHash].mainChain = true
 	}
@@ -476,7 +476,7 @@ func upgradeUtxoSetToV2(db database.DB, interrupt <-chan struct{}) error {
 
 			// Old key was the transaction hash.
 			oldKey := v1Cursor.Key()
-			var txHash chainhash.Hash
+			var txHash daghash.Hash
 			copy(txHash[:], oldKey)
 
 			// Deserialize the old entry which included all utxos

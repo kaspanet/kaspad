@@ -9,17 +9,17 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/daglabs/btcd/chaincfg"
-	"github.com/daglabs/btcd/chaincfg/chainhash"
+	"github.com/daglabs/btcd/dagconfig"
+	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/wire"
 )
 
 // newHashFromStr converts the passed big-endian hex string into a
-// wire.Hash.  It only differs from the one available in chainhash in that
+// wire.Hash.  It only differs from the one available in daghash in that
 // it panics on an error since it will only (and must only) be called with
 // hard-coded, and therefore known good, hashes.
-func newHashFromStr(hexStr string) *chainhash.Hash {
-	hash, err := chainhash.NewHashFromStr(hexStr)
+func newHashFromStr(hexStr string) *daghash.Hash {
+	hash, err := daghash.NewHashFromStr(hexStr)
 	if err != nil {
 		panic(err)
 	}
@@ -62,7 +62,7 @@ var (
 			Version: 1,
 			TxIn: []*wire.TxIn{{
 				PreviousOutPoint: wire.OutPoint{
-					Hash:  chainhash.Hash{},
+					Hash:  daghash.Hash{},
 					Index: 0xffffffff,
 				},
 				SignatureScript: fromHex("04ffff001d010445" +
@@ -89,10 +89,10 @@ var (
 // network.
 //
 // NOTE: The test generator intentionally does not use the existing definitions
-// in the chaincfg package since the intent is to be able to generate known
-// good tests which exercise that code.  Using the chaincfg parameters would
+// in the dagconfig package since the intent is to be able to generate known
+// good tests which exercise that code.  Using the dagconfig parameters would
 // allow them to change out from under the tests potentially invalidating them.
-var regressionNetParams = &chaincfg.Params{
+var regressionNetParams = &dagconfig.Params{
 	Name:        "regtest",
 	Net:         wire.TestNet,
 	DefaultPort: "18444",

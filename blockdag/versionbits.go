@@ -7,7 +7,7 @@ package blockdag
 import (
 	"math"
 
-	"github.com/daglabs/btcd/chaincfg"
+	"github.com/daglabs/btcd/dagconfig"
 )
 
 const (
@@ -124,7 +124,7 @@ func (c bitConditionChecker) Condition(node *blockNode) (bool, error) {
 // test a specific deployment rule.  This is required for properly detecting
 // and activating consensus rule changes.
 type deploymentChecker struct {
-	deployment *chaincfg.ConsensusDeployment
+	deployment *dagconfig.ConsensusDeployment
 	chain      *BlockChain
 }
 

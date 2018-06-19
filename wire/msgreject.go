@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/daglabs/btcd/chaincfg/chainhash"
+	"github.com/daglabs/btcd/dagconfig/daghash"
 )
 
 // RejectCode represents a numeric value by which a remote peer indicates
@@ -68,7 +68,7 @@ type MsgReject struct {
 
 	// Hash identifies a specific block or transaction that was rejected
 	// and therefore only applies the MsgBlock and MsgTx messages.
-	Hash chainhash.Hash
+	Hash daghash.Hash
 }
 
 // BtcDecode decodes r using the bitcoin protocol encoding into the receiver.

@@ -16,8 +16,8 @@ import (
 
 	"github.com/daglabs/btcd/blockdag"
 	"github.com/daglabs/btcd/btcec"
-	"github.com/daglabs/btcd/chaincfg"
-	"github.com/daglabs/btcd/chaincfg/chainhash"
+	"github.com/daglabs/btcd/dagconfig"
+	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/integration/rpctest"
 	"github.com/daglabs/btcd/txscript"
 	"github.com/daglabs/btcd/wire"
@@ -109,7 +109,7 @@ func TestBIP0113Activation(t *testing.T) {
 	t.Parallel()
 
 	btcdCfg := []string{"--rejectnonstd"}
-	r, err := rpctest.New(&chaincfg.SimNetParams, nil, btcdCfg)
+	r, err := rpctest.New(&dagconfig.SimNetParams, nil, btcdCfg)
 	if err != nil {
 		t.Fatal("unable to create primary harness: ", err)
 	}
@@ -363,8 +363,8 @@ func spendCSVOutput(redeemScript []byte, csvUTXO *wire.OutPoint,
 
 // assertTxInBlock asserts a transaction with the specified txid is found
 // within the block with the passed block hash.
-func assertTxInBlock(r *rpctest.Harness, t *testing.T, blockHash *chainhash.Hash,
-	txid *chainhash.Hash) {
+func assertTxInBlock(r *rpctest.Harness, t *testing.T, blockHash *daghash.Hash,
+	txid *daghash.Hash) {
 
 	block, err := r.Node.GetBlock(blockHash)
 	if err != nil {
@@ -405,7 +405,7 @@ func TestBIP0068AndBIP0112Activation(t *testing.T) {
 	// relative lock times.
 
 	btcdCfg := []string{"--rejectnonstd"}
-	r, err := rpctest.New(&chaincfg.SimNetParams, nil, btcdCfg)
+	r, err := rpctest.New(&dagconfig.SimNetParams, nil, btcdCfg)
 	if err != nil {
 		t.Fatal("unable to create primary harness: ", err)
 	}

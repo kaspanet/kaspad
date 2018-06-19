@@ -9,7 +9,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/daglabs/btcd/chaincfg/chainhash"
+	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/davecgh/go-spew/spew"
 )
 
@@ -40,7 +40,7 @@ func TestInvTypeStringer(t *testing.T) {
 // TestInvVect tests the InvVect API.
 func TestInvVect(t *testing.T) {
 	ivType := InvTypeBlock
-	hash := chainhash.Hash{}
+	hash := daghash.Hash{}
 
 	// Ensure we get the same payload and signature back out.
 	iv := NewInvVect(ivType, &hash)
@@ -60,7 +60,7 @@ func TestInvVect(t *testing.T) {
 func TestInvVectWire(t *testing.T) {
 	// Block 203707 hash.
 	hashStr := "3264bc2ac36a60840790ba1d475d01367e7c723da941069e9dc"
-	baseHash, err := chainhash.NewHashFromStr(hashStr)
+	baseHash, err := daghash.NewHashFromStr(hashStr)
 	if err != nil {
 		t.Errorf("NewHashFromStr: %v", err)
 	}
@@ -68,7 +68,7 @@ func TestInvVectWire(t *testing.T) {
 	// errInvVect is an inventory vector with an error.
 	errInvVect := InvVect{
 		Type: InvTypeError,
-		Hash: chainhash.Hash{},
+		Hash: daghash.Hash{},
 	}
 
 	// errInvVectEncoded is the wire encoded bytes of errInvVect.

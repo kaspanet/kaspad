@@ -14,7 +14,7 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/daglabs/btcd/chaincfg/chainhash"
+	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/database"
 	"github.com/daglabs/btcd/database/internal/treap"
 	"github.com/daglabs/btcd/wire"
@@ -945,7 +945,7 @@ func (b *bucket) Delete(key []byte) error {
 // pendingBlock houses a block that will be written to disk when the database
 // transaction is committed.
 type pendingBlock struct {
-	hash  *chainhash.Hash
+	hash  *daghash.Hash
 	bytes []byte
 }
 
@@ -963,7 +963,7 @@ type transaction struct {
 
 	// Blocks that need to be stored on commit.  The pendingBlocks map is
 	// kept to allow quick lookups of pending data by block hash.
-	pendingBlocks    map[chainhash.Hash]int
+	pendingBlocks    map[daghash.Hash]int
 	pendingBlockData []pendingBlock
 
 	// Keys that need to be stored or deleted on commit.
@@ -1125,7 +1125,7 @@ func (tx *transaction) Metadata() database.Bucket {
 }
 
 // hasBlock returns whether or not a block with the given hash exists.
-func (tx *transaction) hasBlock(hash *chainhash.Hash) bool {
+func (tx *transaction) hasBlock(hash *daghash.Hash) bool {
 	// Return true if the block is pending to be written on commit since
 	// it exists from the viewpoint of this transaction.
 	if _, exists := tx.pendingBlocks[*hash]; exists {
@@ -1177,7 +1177,7 @@ func (tx *transaction) StoreBlock(block *btcutil.Block) error {
 	// map so it is easy to determine the block is pending based on the
 	// block hash.
 	if tx.pendingBlocks == nil {
-		tx.pendingBlocks = make(map[chainhash.Hash]int)
+		tx.pendingBlocks = make(map[daghash.Hash]int)
 	}
 	tx.pendingBlocks[*blockHash] = len(tx.pendingBlockData)
 	tx.pendingBlockData = append(tx.pendingBlockData, pendingBlock{
@@ -1196,7 +1196,7 @@ func (tx *transaction) StoreBlock(block *btcutil.Block) error {
 //   - ErrTxClosed if the transaction has already been closed
 //
 // This function is part of the database.Tx interface implementation.
-func (tx *transaction) HasBlock(hash *chainhash.Hash) (bool, error) {
+func (tx *transaction) HasBlock(hash *daghash.Hash) (bool, error) {
 	// Ensure transaction state is valid.
 	if err := tx.checkClosed(); err != nil {
 		return false, err
@@ -1212,7 +1212,7 @@ func (tx *transaction) HasBlock(hash *chainhash.Hash) (bool, error) {
 //   - ErrTxClosed if the transaction has already been closed
 //
 // This function is part of the database.Tx interface implementation.
-func (tx *transaction) HasBlocks(hashes []chainhash.Hash) ([]bool, error) {
+func (tx *transaction) HasBlocks(hashes []daghash.Hash) ([]bool, error) {
 	// Ensure transaction state is valid.
 	if err := tx.checkClosed(); err != nil {
 		return nil, err
@@ -1228,7 +1228,7 @@ func (tx *transaction) HasBlocks(hashes []chainhash.Hash) ([]bool, error) {
 
 // fetchBlockRow fetches the metadata stored in the block index for the provided
 // hash.  It will return ErrBlockNotFound if there is no entry.
-func (tx *transaction) fetchBlockRow(hash *chainhash.Hash) ([]byte, error) {
+func (tx *transaction) fetchBlockRow(hash *daghash.Hash) ([]byte, error) {
 	blockRow := tx.blockIdxBucket.Get(hash[:])
 	if blockRow == nil {
 		str := fmt.Sprintf("block %s does not exist", hash)
@@ -1254,7 +1254,7 @@ func (tx *transaction) fetchBlockRow(hash *chainhash.Hash) ([]byte, error) {
 // implementations.
 //
 // This function is part of the database.Tx interface implementation.
-func (tx *transaction) FetchBlockHeader(hash *chainhash.Hash) ([]byte, error) {
+func (tx *transaction) FetchBlockHeader(hash *daghash.Hash) ([]byte, error) {
 	return tx.FetchBlockRegion(&database.BlockRegion{
 		Hash:   hash,
 		Offset: 0,
@@ -1277,7 +1277,7 @@ func (tx *transaction) FetchBlockHeader(hash *chainhash.Hash) ([]byte, error) {
 // allows support for memory-mapped database implementations.
 //
 // This function is part of the database.Tx interface implementation.
-func (tx *transaction) FetchBlockHeaders(hashes []chainhash.Hash) ([][]byte, error) {
+func (tx *transaction) FetchBlockHeaders(hashes []daghash.Hash) ([][]byte, error) {
 	regions := make([]database.BlockRegion, len(hashes))
 	for i := range hashes {
 		regions[i].Hash = &hashes[i]
@@ -1305,7 +1305,7 @@ func (tx *transaction) FetchBlockHeaders(hashes []chainhash.Hash) ([][]byte, err
 // allows support for memory-mapped database implementations.
 //
 // This function is part of the database.Tx interface implementation.
-func (tx *transaction) FetchBlock(hash *chainhash.Hash) ([]byte, error) {
+func (tx *transaction) FetchBlock(hash *daghash.Hash) ([]byte, error) {
 	// Ensure transaction state is valid.
 	if err := tx.checkClosed(); err != nil {
 		return nil, err
@@ -1352,7 +1352,7 @@ func (tx *transaction) FetchBlock(hash *chainhash.Hash) ([]byte, error) {
 // allows support for memory-mapped database implementations.
 //
 // This function is part of the database.Tx interface implementation.
-func (tx *transaction) FetchBlocks(hashes []chainhash.Hash) ([][]byte, error) {
+func (tx *transaction) FetchBlocks(hashes []daghash.Hash) ([][]byte, error) {
 	// Ensure transaction state is valid.
 	if err := tx.checkClosed(); err != nil {
 		return nil, err

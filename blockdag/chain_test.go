@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/daglabs/btcd/chaincfg"
-	"github.com/daglabs/btcd/chaincfg/chainhash"
+	"github.com/daglabs/btcd/dagconfig"
+	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/wire"
 	"github.com/daglabs/btcutil"
 )
@@ -37,7 +37,7 @@ func TestHaveBlock(t *testing.T) {
 
 	// Create a new database and chain instance to run tests against.
 	chain, teardownFunc, err := chainSetup("haveblock",
-		&chaincfg.MainNetParams)
+		&dagconfig.MainNetParams)
 	if err != nil {
 		t.Errorf("Failed to setup chain instance: %v", err)
 		return
@@ -79,7 +79,7 @@ func TestHaveBlock(t *testing.T) {
 		want bool
 	}{
 		// Genesis block should be present (in the main chain).
-		{hash: chaincfg.MainNetParams.GenesisHash.String(), want: true},
+		{hash: dagconfig.MainNetParams.GenesisHash.String(), want: true},
 
 		// Block 3a should be present (on a side chain).
 		{hash: "00000000474284d20067a4d33f6a02284e6ef70764a3a26d6a5b9df52ef663dd", want: true},
@@ -92,7 +92,7 @@ func TestHaveBlock(t *testing.T) {
 	}
 
 	for i, test := range tests {
-		hash, err := chainhash.NewHashFromStr(test.hash)
+		hash, err := daghash.NewHashFromStr(test.hash)
 		if err != nil {
 			t.Errorf("NewHashFromStr: %v", err)
 			continue
@@ -116,12 +116,12 @@ func TestHaveBlock(t *testing.T) {
 // combinations of inputs to the CalcSequenceLock function in order to ensure
 // the returned SequenceLocks are correct for each test instance.
 func TestCalcSequenceLock(t *testing.T) {
-	netParams := &chaincfg.SimNetParams
+	netParams := &dagconfig.SimNetParams
 
 	// We need to activate CSV in order to test the processing logic, so
 	// manually craft the block version that's used to signal the soft-fork
 	// activation.
-	csvBit := netParams.Deployments[chaincfg.DeploymentCSV].BitNumber
+	csvBit := netParams.Deployments[dagconfig.DeploymentCSV].BitNumber
 	blockVersion := int32(0x20000000 | (uint32(1) << csvBit))
 
 	// Generate enough synthetic blocks to activate CSV.
@@ -442,8 +442,8 @@ func TestCalcSequenceLock(t *testing.T) {
 // nodeHashes is a convenience function that returns the hashes for all of the
 // passed indexes of the provided nodes.  It is used to construct expected hash
 // slices in the tests.
-func nodeHashes(nodes []*blockNode, indexes ...int) []chainhash.Hash {
-	hashes := make([]chainhash.Hash, 0, len(indexes))
+func nodeHashes(nodes []*blockNode, indexes ...int) []daghash.Hash {
+	hashes := make([]daghash.Hash, 0, len(indexes))
 	for _, idx := range indexes {
 		hashes = append(hashes, nodes[idx].hash)
 	}
@@ -469,7 +469,7 @@ func TestLocateInventory(t *testing.T) {
 	// 	genesis -> 1 -> 2 -> ... -> 15 -> 16  -> 17  -> 18
 	// 	                              \-> 16a -> 17a
 	tip := tstTip
-	chain := newFakeChain(&chaincfg.MainNetParams)
+	chain := newFakeChain(&dagconfig.MainNetParams)
 	branch0Nodes := chainedNodes(chain.bestChain.Genesis(), 18)
 	branch1Nodes := chainedNodes(branch0Nodes[14], 2)
 	for _, node := range branch0Nodes {
@@ -493,17 +493,17 @@ func TestLocateInventory(t *testing.T) {
 	tests := []struct {
 		name       string
 		locator    BlockLocator       // locator for requested inventory
-		hashStop   chainhash.Hash     // stop hash for locator
+		hashStop   daghash.Hash       // stop hash for locator
 		maxAllowed uint32             // max to locate, 0 = wire const
 		headers    []wire.BlockHeader // expected located headers
-		hashes     []chainhash.Hash   // expected located hashes
+		hashes     []daghash.Hash     // expected located hashes
 	}{
 		{
 			// Empty block locators and unknown stop hash.  No
 			// inventory should be located.
 			name:     "no locators, no stop",
 			locator:  nil,
-			hashStop: chainhash.Hash{},
+			hashStop: daghash.Hash{},
 			headers:  nil,
 			hashes:   nil,
 		},
@@ -532,7 +532,7 @@ func TestLocateInventory(t *testing.T) {
 			// the main chain and the stop hash has no effect.
 			name:     "remote side chain, unknown stop",
 			locator:  remoteView.BlockLocator(nil),
-			hashStop: chainhash.Hash{0x01},
+			hashStop: daghash.Hash{0x01},
 			headers:  nodeHeaders(branch0Nodes, 15, 16, 17),
 			hashes:   nodeHashes(branch0Nodes, 15, 16, 17),
 		},
@@ -602,7 +602,7 @@ func TestLocateInventory(t *testing.T) {
 			// effect.
 			name:     "remote main chain past, unknown stop",
 			locator:  localView.BlockLocator(branch0Nodes[12]),
-			hashStop: chainhash.Hash{0x01},
+			hashStop: daghash.Hash{0x01},
 			headers:  nodeHeaders(branch0Nodes, 13, 14, 15, 16, 17),
 			hashes:   nodeHashes(branch0Nodes, 13, 14, 15, 16, 17),
 		},
@@ -672,7 +672,7 @@ func TestLocateInventory(t *testing.T) {
 			// located inventory.
 			name:     "remote main chain same, unknown stop",
 			locator:  localView.BlockLocator(nil),
-			hashStop: chainhash.Hash{0x01},
+			hashStop: daghash.Hash{0x01},
 			headers:  nil,
 			hashes:   nil,
 		},
@@ -696,7 +696,7 @@ func TestLocateInventory(t *testing.T) {
 			// block.
 			name:     "remote unrelated chain",
 			locator:  unrelatedView.BlockLocator(nil),
-			hashStop: chainhash.Hash{},
+			hashStop: daghash.Hash{},
 			headers: nodeHeaders(branch0Nodes, 0, 1, 2, 3, 4, 5, 6,
 				7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17),
 			hashes: nodeHashes(branch0Nodes, 0, 1, 2, 3, 4, 5, 6,
@@ -709,7 +709,7 @@ func TestLocateInventory(t *testing.T) {
 			// block limited by the max.
 			name:       "remote genesis",
 			locator:    locatorHashes(branch0Nodes, 0),
-			hashStop:   chainhash.Hash{},
+			hashStop:   daghash.Hash{},
 			maxAllowed: 3,
 			headers:    nodeHeaders(branch0Nodes, 1, 2, 3),
 			hashes:     nodeHashes(branch0Nodes, 1, 2, 3),
@@ -725,7 +725,7 @@ func TestLocateInventory(t *testing.T) {
 			// the fork point.
 			name:     "weak locator, single known side block",
 			locator:  locatorHashes(branch1Nodes, 1),
-			hashStop: chainhash.Hash{},
+			hashStop: daghash.Hash{},
 			headers: nodeHeaders(branch0Nodes, 0, 1, 2, 3, 4, 5, 6,
 				7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17),
 			hashes: nodeHashes(branch0Nodes, 0, 1, 2, 3, 4, 5, 6,
@@ -742,7 +742,7 @@ func TestLocateInventory(t *testing.T) {
 			// there are no more locators to find the fork point.
 			name:     "weak locator, multiple known side blocks",
 			locator:  locatorHashes(branch1Nodes, 1),
-			hashStop: chainhash.Hash{},
+			hashStop: daghash.Hash{},
 			headers: nodeHeaders(branch0Nodes, 0, 1, 2, 3, 4, 5, 6,
 				7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17),
 			hashes: nodeHashes(branch0Nodes, 0, 1, 2, 3, 4, 5, 6,
@@ -809,7 +809,7 @@ func TestHeightToHashRange(t *testing.T) {
 	// 	genesis -> 1 -> 2 -> ... -> 15 -> 16  -> 17  -> 18
 	// 	                              \-> 16a -> 17a -> 18a (unvalidated)
 	tip := tstTip
-	chain := newFakeChain(&chaincfg.MainNetParams)
+	chain := newFakeChain(&dagconfig.MainNetParams)
 	branch0Nodes := chainedNodes(chain.bestChain.Genesis(), 18)
 	branch1Nodes := chainedNodes(branch0Nodes[14], 3)
 	for _, node := range branch0Nodes {
@@ -826,10 +826,10 @@ func TestHeightToHashRange(t *testing.T) {
 
 	tests := []struct {
 		name        string
-		startHeight int32            // locator for requested inventory
-		endHash     chainhash.Hash   // stop hash for locator
-		maxResults  int              // max to locate, 0 = wire const
-		hashes      []chainhash.Hash // expected located hashes
+		startHeight int32          // locator for requested inventory
+		endHash     daghash.Hash   // stop hash for locator
+		maxResults  int            // max to locate, 0 = wire const
+		hashes      []daghash.Hash // expected located hashes
 		expectError bool
 	}{
 		{
@@ -901,7 +901,7 @@ func TestIntervalBlockHashes(t *testing.T) {
 	// 	genesis -> 1 -> 2 -> ... -> 15 -> 16  -> 17  -> 18
 	// 	                              \-> 16a -> 17a -> 18a (unvalidated)
 	tip := tstTip
-	chain := newFakeChain(&chaincfg.MainNetParams)
+	chain := newFakeChain(&dagconfig.MainNetParams)
 	branch0Nodes := chainedNodes(chain.bestChain.Genesis(), 18)
 	branch1Nodes := chainedNodes(branch0Nodes[14], 3)
 	for _, node := range branch0Nodes {
@@ -918,9 +918,9 @@ func TestIntervalBlockHashes(t *testing.T) {
 
 	tests := []struct {
 		name        string
-		endHash     chainhash.Hash
+		endHash     daghash.Hash
 		interval    int
-		hashes      []chainhash.Hash
+		hashes      []daghash.Hash
 		expectError bool
 	}{
 		{
@@ -940,7 +940,7 @@ func TestIntervalBlockHashes(t *testing.T) {
 			name:     "no results",
 			endHash:  branch0Nodes[17].hash,
 			interval: 20,
-			hashes:   []chainhash.Hash{},
+			hashes:   []daghash.Hash{},
 		},
 		{
 			name:        "unvalidated block",

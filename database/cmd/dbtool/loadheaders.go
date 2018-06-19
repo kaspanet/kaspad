@@ -7,7 +7,7 @@ package main
 import (
 	"time"
 
-	"github.com/daglabs/btcd/chaincfg/chainhash"
+	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/database"
 )
 
@@ -52,7 +52,7 @@ func (cmd *headersCmd) Execute(args []string) error {
 			numLoaded := 0
 			startTime := time.Now()
 			blockIdxBucket.ForEach(func(k, v []byte) error {
-				var hash chainhash.Hash
+				var hash daghash.Hash
 				copy(hash[:], k)
 				_, err := tx.FetchBlockHeader(&hash)
 				if err != nil {
@@ -71,9 +71,9 @@ func (cmd *headersCmd) Execute(args []string) error {
 	// Bulk load headers.
 	err = db.View(func(tx database.Tx) error {
 		blockIdxBucket := tx.Metadata().Bucket(blockIdxName)
-		hashes := make([]chainhash.Hash, 0, 500000)
+		hashes := make([]daghash.Hash, 0, 500000)
 		blockIdxBucket.ForEach(func(k, v []byte) error {
-			var hash chainhash.Hash
+			var hash daghash.Hash
 			copy(hash[:], k)
 			hashes = append(hashes, hash)
 			return nil

@@ -12,8 +12,8 @@ import (
 	"time"
 
 	"github.com/daglabs/btcd/blockdag"
-	"github.com/daglabs/btcd/chaincfg"
-	"github.com/daglabs/btcd/chaincfg/chainhash"
+	"github.com/daglabs/btcd/dagconfig"
+	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/txscript"
 	"github.com/daglabs/btcd/wire"
 	"github.com/daglabs/btcutil"
@@ -97,7 +97,7 @@ func standardCoinbaseScript(nextBlockHeight int32, extraNonce uint64) ([]byte, e
 // subsidy based on the passed block height to the provided address.
 func createCoinbaseTx(coinbaseScript []byte, nextBlockHeight int32,
 	addr btcutil.Address, mineTo []wire.TxOut,
-	net *chaincfg.Params) (*btcutil.Tx, error) {
+	net *dagconfig.Params) (*btcutil.Tx, error) {
 
 	// Create the script to pay to the provided payment address.
 	pkScript, err := txscript.PayToAddrScript(addr)
@@ -109,7 +109,7 @@ func createCoinbaseTx(coinbaseScript []byte, nextBlockHeight int32,
 	tx.AddTxIn(&wire.TxIn{
 		// Coinbase transactions have no inputs, so previous outpoint is
 		// zero hash and max index.
-		PreviousOutPoint: *wire.NewOutPoint(&chainhash.Hash{},
+		PreviousOutPoint: *wire.NewOutPoint(&daghash.Hash{},
 			wire.MaxPrevOutIndex),
 		SignatureScript: coinbaseScript,
 		Sequence:        wire.MaxTxInSequenceNum,
@@ -134,10 +134,10 @@ func createCoinbaseTx(coinbaseScript []byte, nextBlockHeight int32,
 // builds off of the genesis block for the specified chain.
 func CreateBlock(prevBlock *btcutil.Block, inclusionTxs []*btcutil.Tx,
 	blockVersion int32, blockTime time.Time, miningAddr btcutil.Address,
-	mineTo []wire.TxOut, net *chaincfg.Params) (*btcutil.Block, error) {
+	mineTo []wire.TxOut, net *dagconfig.Params) (*btcutil.Block, error) {
 
 	var (
-		prevHash      *chainhash.Hash
+		prevHash      *daghash.Hash
 		blockHeight   int32
 		prevBlockTime time.Time
 	)

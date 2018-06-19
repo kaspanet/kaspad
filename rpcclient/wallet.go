@@ -9,8 +9,8 @@ import (
 	"strconv"
 
 	"github.com/daglabs/btcd/btcjson"
-	"github.com/daglabs/btcd/chaincfg"
-	"github.com/daglabs/btcd/chaincfg/chainhash"
+	"github.com/daglabs/btcd/dagconfig"
+	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/wire"
 	"github.com/daglabs/btcutil"
 )
@@ -46,7 +46,7 @@ func (r FutureGetTransactionResult) Receive() (*btcjson.GetTransactionResult, er
 // the returned instance.
 //
 // See GetTransaction for the blocking version and more details.
-func (c *Client) GetTransactionAsync(txHash *chainhash.Hash) FutureGetTransactionResult {
+func (c *Client) GetTransactionAsync(txHash *daghash.Hash) FutureGetTransactionResult {
 	hash := ""
 	if txHash != nil {
 		hash = txHash.String()
@@ -59,7 +59,7 @@ func (c *Client) GetTransactionAsync(txHash *chainhash.Hash) FutureGetTransactio
 // GetTransaction returns detailed information about a wallet transaction.
 //
 // See GetRawTransaction to return the raw transaction instead.
-func (c *Client) GetTransaction(txHash *chainhash.Hash) (*btcjson.GetTransactionResult, error) {
+func (c *Client) GetTransaction(txHash *daghash.Hash) (*btcjson.GetTransactionResult, error) {
 	return c.GetTransactionAsync(txHash).Receive()
 }
 
@@ -269,7 +269,7 @@ func (r FutureListSinceBlockResult) Receive() (*btcjson.ListSinceBlockResult, er
 // the returned instance.
 //
 // See ListSinceBlock for the blocking version and more details.
-func (c *Client) ListSinceBlockAsync(blockHash *chainhash.Hash) FutureListSinceBlockResult {
+func (c *Client) ListSinceBlockAsync(blockHash *daghash.Hash) FutureListSinceBlockResult {
 	var hash *string
 	if blockHash != nil {
 		hash = btcjson.String(blockHash.String())
@@ -284,7 +284,7 @@ func (c *Client) ListSinceBlockAsync(blockHash *chainhash.Hash) FutureListSinceB
 // minimum confirmations as a filter.
 //
 // See ListSinceBlockMinConf to override the minimum number of confirmations.
-func (c *Client) ListSinceBlock(blockHash *chainhash.Hash) (*btcjson.ListSinceBlockResult, error) {
+func (c *Client) ListSinceBlock(blockHash *daghash.Hash) (*btcjson.ListSinceBlockResult, error) {
 	return c.ListSinceBlockAsync(blockHash).Receive()
 }
 
@@ -293,7 +293,7 @@ func (c *Client) ListSinceBlock(blockHash *chainhash.Hash) (*btcjson.ListSinceBl
 // function on the returned instance.
 //
 // See ListSinceBlockMinConf for the blocking version and more details.
-func (c *Client) ListSinceBlockMinConfAsync(blockHash *chainhash.Hash, minConfirms int) FutureListSinceBlockResult {
+func (c *Client) ListSinceBlockMinConfAsync(blockHash *daghash.Hash, minConfirms int) FutureListSinceBlockResult {
 	var hash *string
 	if blockHash != nil {
 		hash = btcjson.String(blockHash.String())
@@ -308,7 +308,7 @@ func (c *Client) ListSinceBlockMinConfAsync(blockHash *chainhash.Hash, minConfir
 // number of minimum confirmations as a filter.
 //
 // See ListSinceBlock to use the default minimum number of confirmations.
-func (c *Client) ListSinceBlockMinConf(blockHash *chainhash.Hash, minConfirms int) (*btcjson.ListSinceBlockResult, error) {
+func (c *Client) ListSinceBlockMinConf(blockHash *daghash.Hash, minConfirms int) (*btcjson.ListSinceBlockResult, error) {
 	return c.ListSinceBlockMinConfAsync(blockHash, minConfirms).Receive()
 }
 
@@ -387,7 +387,7 @@ func (r FutureListLockUnspentResult) Receive() ([]*wire.OutPoint, error) {
 	// Create a slice of outpoints from the transaction input structs.
 	ops := make([]*wire.OutPoint, len(inputs))
 	for i, input := range inputs {
-		sha, err := chainhash.NewHashFromStr(input.Txid)
+		sha, err := daghash.NewHashFromStr(input.Txid)
 		if err != nil {
 			return nil, err
 		}
@@ -448,7 +448,7 @@ type FutureSendToAddressResult chan *response
 
 // Receive waits for the response promised by the future and returns the hash
 // of the transaction sending the passed amount to the given address.
-func (r FutureSendToAddressResult) Receive() (*chainhash.Hash, error) {
+func (r FutureSendToAddressResult) Receive() (*daghash.Hash, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return nil, err
@@ -461,7 +461,7 @@ func (r FutureSendToAddressResult) Receive() (*chainhash.Hash, error) {
 		return nil, err
 	}
 
-	return chainhash.NewHashFromStr(txHash)
+	return daghash.NewHashFromStr(txHash)
 }
 
 // SendToAddressAsync returns an instance of a type that can be used to get the
@@ -483,7 +483,7 @@ func (c *Client) SendToAddressAsync(address btcutil.Address, amount btcutil.Amou
 //
 // NOTE: This function requires to the wallet to be unlocked.  See the
 // WalletPassphrase function for more details.
-func (c *Client) SendToAddress(address btcutil.Address, amount btcutil.Amount) (*chainhash.Hash, error) {
+func (c *Client) SendToAddress(address btcutil.Address, amount btcutil.Amount) (*daghash.Hash, error) {
 	return c.SendToAddressAsync(address, amount).Receive()
 }
 
@@ -514,7 +514,7 @@ func (c *Client) SendToAddressCommentAsync(address btcutil.Address,
 //
 // NOTE: This function requires to the wallet to be unlocked.  See the
 // WalletPassphrase function for more details.
-func (c *Client) SendToAddressComment(address btcutil.Address, amount btcutil.Amount, comment, commentTo string) (*chainhash.Hash, error) {
+func (c *Client) SendToAddressComment(address btcutil.Address, amount btcutil.Amount, comment, commentTo string) (*daghash.Hash, error) {
 	return c.SendToAddressCommentAsync(address, amount, comment,
 		commentTo).Receive()
 }
@@ -527,7 +527,7 @@ type FutureSendFromResult chan *response
 // Receive waits for the response promised by the future and returns the hash
 // of the transaction sending amount to the given address using the provided
 // account as a source of funds.
-func (r FutureSendFromResult) Receive() (*chainhash.Hash, error) {
+func (r FutureSendFromResult) Receive() (*daghash.Hash, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return nil, err
@@ -540,7 +540,7 @@ func (r FutureSendFromResult) Receive() (*chainhash.Hash, error) {
 		return nil, err
 	}
 
-	return chainhash.NewHashFromStr(txHash)
+	return daghash.NewHashFromStr(txHash)
 }
 
 // SendFromAsync returns an instance of a type that can be used to get the
@@ -563,7 +563,7 @@ func (c *Client) SendFromAsync(fromAccount string, toAddress btcutil.Address, am
 //
 // NOTE: This function requires to the wallet to be unlocked.  See the
 // WalletPassphrase function for more details.
-func (c *Client) SendFrom(fromAccount string, toAddress btcutil.Address, amount btcutil.Amount) (*chainhash.Hash, error) {
+func (c *Client) SendFrom(fromAccount string, toAddress btcutil.Address, amount btcutil.Amount) (*daghash.Hash, error) {
 	return c.SendFromAsync(fromAccount, toAddress, amount).Receive()
 }
 
@@ -588,7 +588,7 @@ func (c *Client) SendFromMinConfAsync(fromAccount string, toAddress btcutil.Addr
 //
 // NOTE: This function requires to the wallet to be unlocked.  See the
 // WalletPassphrase function for more details.
-func (c *Client) SendFromMinConf(fromAccount string, toAddress btcutil.Address, amount btcutil.Amount, minConfirms int) (*chainhash.Hash, error) {
+func (c *Client) SendFromMinConf(fromAccount string, toAddress btcutil.Address, amount btcutil.Amount, minConfirms int) (*daghash.Hash, error) {
 	return c.SendFromMinConfAsync(fromAccount, toAddress, amount,
 		minConfirms).Receive()
 }
@@ -621,7 +621,7 @@ func (c *Client) SendFromCommentAsync(fromAccount string,
 // WalletPassphrase function for more details.
 func (c *Client) SendFromComment(fromAccount string, toAddress btcutil.Address,
 	amount btcutil.Amount, minConfirms int,
-	comment, commentTo string) (*chainhash.Hash, error) {
+	comment, commentTo string) (*daghash.Hash, error) {
 
 	return c.SendFromCommentAsync(fromAccount, toAddress, amount,
 		minConfirms, comment, commentTo).Receive()
@@ -635,7 +635,7 @@ type FutureSendManyResult chan *response
 // Receive waits for the response promised by the future and returns the hash
 // of the transaction sending multiple amounts to multiple addresses using the
 // provided account as a source of funds.
-func (r FutureSendManyResult) Receive() (*chainhash.Hash, error) {
+func (r FutureSendManyResult) Receive() (*daghash.Hash, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return nil, err
@@ -648,7 +648,7 @@ func (r FutureSendManyResult) Receive() (*chainhash.Hash, error) {
 		return nil, err
 	}
 
-	return chainhash.NewHashFromStr(txHash)
+	return daghash.NewHashFromStr(txHash)
 }
 
 // SendManyAsync returns an instance of a type that can be used to get the
@@ -673,7 +673,7 @@ func (c *Client) SendManyAsync(fromAccount string, amounts map[btcutil.Address]b
 //
 // NOTE: This function requires to the wallet to be unlocked.  See the
 // WalletPassphrase function for more details.
-func (c *Client) SendMany(fromAccount string, amounts map[btcutil.Address]btcutil.Amount) (*chainhash.Hash, error) {
+func (c *Client) SendMany(fromAccount string, amounts map[btcutil.Address]btcutil.Amount) (*daghash.Hash, error) {
 	return c.SendManyAsync(fromAccount, amounts).Receive()
 }
 
@@ -706,7 +706,7 @@ func (c *Client) SendManyMinConfAsync(fromAccount string,
 // WalletPassphrase function for more details.
 func (c *Client) SendManyMinConf(fromAccount string,
 	amounts map[btcutil.Address]btcutil.Amount,
-	minConfirms int) (*chainhash.Hash, error) {
+	minConfirms int) (*daghash.Hash, error) {
 
 	return c.SendManyMinConfAsync(fromAccount, amounts, minConfirms).Receive()
 }
@@ -741,7 +741,7 @@ func (c *Client) SendManyCommentAsync(fromAccount string,
 // WalletPassphrase function for more details.
 func (c *Client) SendManyComment(fromAccount string,
 	amounts map[btcutil.Address]btcutil.Amount, minConfirms int,
-	comment string) (*chainhash.Hash, error) {
+	comment string) (*daghash.Hash, error) {
 
 	return c.SendManyCommentAsync(fromAccount, amounts, minConfirms,
 		comment).Receive()
@@ -771,7 +771,7 @@ func (r FutureAddMultisigAddressResult) Receive() (btcutil.Address, error) {
 		return nil, err
 	}
 
-	return btcutil.DecodeAddress(addr, &chaincfg.MainNetParams)
+	return btcutil.DecodeAddress(addr, &dagconfig.MainNetParams)
 }
 
 // AddMultisigAddressAsync returns an instance of a type that can be used to get
@@ -885,7 +885,7 @@ func (r FutureGetNewAddressResult) Receive() (btcutil.Address, error) {
 		return nil, err
 	}
 
-	return btcutil.DecodeAddress(addr, &chaincfg.MainNetParams)
+	return btcutil.DecodeAddress(addr, &dagconfig.MainNetParams)
 }
 
 // GetNewAddressAsync returns an instance of a type that can be used to get the
@@ -923,7 +923,7 @@ func (r FutureGetRawChangeAddressResult) Receive() (btcutil.Address, error) {
 		return nil, err
 	}
 
-	return btcutil.DecodeAddress(addr, &chaincfg.MainNetParams)
+	return btcutil.DecodeAddress(addr, &dagconfig.MainNetParams)
 }
 
 // GetRawChangeAddressAsync returns an instance of a type that can be used to
@@ -962,7 +962,7 @@ func (r FutureGetAccountAddressResult) Receive() (btcutil.Address, error) {
 		return nil, err
 	}
 
-	return btcutil.DecodeAddress(addr, &chaincfg.MainNetParams)
+	return btcutil.DecodeAddress(addr, &dagconfig.MainNetParams)
 }
 
 // GetAccountAddressAsync returns an instance of a type that can be used to get
@@ -1068,7 +1068,7 @@ func (r FutureGetAddressesByAccountResult) Receive() ([]btcutil.Address, error) 
 	addrs := make([]btcutil.Address, 0, len(addrStrings))
 	for _, addrStr := range addrStrings {
 		addr, err := btcutil.DecodeAddress(addrStr,
-			&chaincfg.MainNetParams)
+			&dagconfig.MainNetParams)
 		if err != nil {
 			return nil, err
 		}

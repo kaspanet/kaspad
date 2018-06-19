@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/daglabs/btcd/chaincfg/chainhash"
+	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/davecgh/go-spew/spew"
 )
 
@@ -72,13 +72,13 @@ func TestBlock(t *testing.T) {
 func TestBlockTxHashes(t *testing.T) {
 	// Block 1, transaction 1 hash.
 	hashStr := "0e3e2357e806b6cdb1f70b54c3a3a17b6714ee1f0e68bebb44a74b1efd512098"
-	wantHash, err := chainhash.NewHashFromStr(hashStr)
+	wantHash, err := daghash.NewHashFromStr(hashStr)
 	if err != nil {
 		t.Errorf("NewHashFromStr: %v", err)
 		return
 	}
 
-	wantHashes := []chainhash.Hash{*wantHash}
+	wantHashes := []daghash.Hash{*wantHash}
 	hashes, err := blockOne.TxHashes()
 	if err != nil {
 		t.Errorf("TxHashes: %v", err)
@@ -93,7 +93,7 @@ func TestBlockTxHashes(t *testing.T) {
 func TestBlockHash(t *testing.T) {
 	// Block 1 hash.
 	hashStr := "2357979742c556c68e90bf624a1139af8c85cafb4ac98d6d1dc367cd661ef67d"
-	wantHash, err := chainhash.NewHashFromStr(hashStr)
+	wantHash, err := daghash.NewHashFromStr(hashStr)
 	if err != nil {
 		t.Errorf("NewHashFromStr: %v", err)
 	}
@@ -492,8 +492,8 @@ var blockOne = MsgBlock{
 	Header: BlockHeader{
 		Version:       1,
 		NumPrevBlocks: 2,
-		PrevBlocks:    []chainhash.Hash{mainNetGenesisHash, simNetGenesisHash},
-		MerkleRoot:    chainhash.Hash(mainNetGenesisMerkleRoot),
+		PrevBlocks:    []daghash.Hash{mainNetGenesisHash, simNetGenesisHash},
+		MerkleRoot:    daghash.Hash(mainNetGenesisMerkleRoot),
 
 		Timestamp: time.Unix(0x4966bc61, 0), // 2009-01-08 20:54:25 -0600 CST
 		Bits:      0x1d00ffff,               // 486604799
@@ -505,7 +505,7 @@ var blockOne = MsgBlock{
 			TxIn: []*TxIn{
 				{
 					PreviousOutPoint: OutPoint{
-						Hash:  chainhash.Hash{},
+						Hash:  daghash.Hash{},
 						Index: 0xffffffff,
 					},
 					SignatureScript: []byte{

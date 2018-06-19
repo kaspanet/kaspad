@@ -9,7 +9,7 @@ import (
 	"fmt"
 
 	"github.com/daglabs/btcd/blockdag"
-	"github.com/daglabs/btcd/chaincfg/chainhash"
+	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/database"
 	"github.com/daglabs/btcd/wire"
 	"github.com/daglabs/btcutil"
@@ -30,16 +30,16 @@ var (
 //   [<block hash><block height>],...
 //
 //   Field           Type             Size
-//   block hash      chainhash.Hash   chainhash.HashSize
+//   block hash      daghash.Hash   daghash.HashSize
 //   block height    uint32           4 bytes
 // -----------------------------------------------------------------------------
 
 // dbPutIndexerTip uses an existing database transaction to update or add the
 // current tip for the given index to the provided values.
-func dbPutIndexerTip(dbTx database.Tx, idxKey []byte, hash *chainhash.Hash, height int32) error {
-	serialized := make([]byte, chainhash.HashSize+4)
+func dbPutIndexerTip(dbTx database.Tx, idxKey []byte, hash *daghash.Hash, height int32) error {
+	serialized := make([]byte, daghash.HashSize+4)
 	copy(serialized, hash[:])
-	byteOrder.PutUint32(serialized[chainhash.HashSize:], uint32(height))
+	byteOrder.PutUint32(serialized[daghash.HashSize:], uint32(height))
 
 	indexesBucket := dbTx.Metadata().Bucket(indexTipsBucketName)
 	return indexesBucket.Put(idxKey, serialized)
@@ -47,10 +47,10 @@ func dbPutIndexerTip(dbTx database.Tx, idxKey []byte, hash *chainhash.Hash, heig
 
 // dbFetchIndexerTip uses an existing database transaction to retrieve the
 // hash and height of the current tip for the provided index.
-func dbFetchIndexerTip(dbTx database.Tx, idxKey []byte) (*chainhash.Hash, int32, error) {
+func dbFetchIndexerTip(dbTx database.Tx, idxKey []byte) (*daghash.Hash, int32, error) {
 	indexesBucket := dbTx.Metadata().Bucket(indexTipsBucketName)
 	serialized := indexesBucket.Get(idxKey)
-	if len(serialized) < chainhash.HashSize+4 {
+	if len(serialized) < daghash.HashSize+4 {
 		return nil, 0, database.Error{
 			ErrorCode: database.ErrCorruption,
 			Description: fmt.Sprintf("unexpected end of data for "+
@@ -58,9 +58,9 @@ func dbFetchIndexerTip(dbTx database.Tx, idxKey []byte) (*chainhash.Hash, int32,
 		}
 	}
 
-	var hash chainhash.Hash
-	copy(hash[:], serialized[:chainhash.HashSize])
-	height := int32(byteOrder.Uint32(serialized[chainhash.HashSize:]))
+	var hash daghash.Hash
+	copy(hash[:], serialized[:daghash.HashSize])
+	height := int32(byteOrder.Uint32(serialized[daghash.HashSize:]))
 	return &hash, height, nil
 }
 
@@ -212,7 +212,7 @@ func (m *Manager) maybeCreateIndexes(dbTx database.Tx) error {
 
 		// Set the tip for the index to values which represent an
 		// uninitialized index.
-		err := dbPutIndexerTip(dbTx, idxKey, &chainhash.Hash{}, -1)
+		err := dbPutIndexerTip(dbTx, idxKey, &daghash.Hash{}, -1)
 		if err != nil {
 			return err
 		}
@@ -275,7 +275,7 @@ func (m *Manager) Init(chain *blockdag.BlockChain, interrupt <-chan struct{}) er
 
 		// Fetch the current tip for the index.
 		var height int32
-		var hash *chainhash.Hash
+		var hash *daghash.Hash
 		err := m.db.View(func(dbTx database.Tx) error {
 			idxKey := indexer.Key()
 			hash, height, err = dbFetchIndexerTip(dbTx, idxKey)
@@ -461,7 +461,7 @@ func indexNeedsInputs(index Indexer) bool {
 
 // dbFetchTx looks up the passed transaction hash in the transaction index and
 // loads it from the database.
-func dbFetchTx(dbTx database.Tx, hash *chainhash.Hash) (*wire.MsgTx, error) {
+func dbFetchTx(dbTx database.Tx, hash *daghash.Hash) (*wire.MsgTx, error) {
 	// Look up the location of the transaction.
 	blockRegion, err := dbFetchTxIndexEntry(dbTx, hash)
 	if err != nil {

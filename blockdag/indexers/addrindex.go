@@ -10,8 +10,8 @@ import (
 	"sync"
 
 	"github.com/daglabs/btcd/blockdag"
-	"github.com/daglabs/btcd/chaincfg"
-	"github.com/daglabs/btcd/chaincfg/chainhash"
+	"github.com/daglabs/btcd/dagconfig"
+	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/database"
 	"github.com/daglabs/btcd/txscript"
 	"github.com/daglabs/btcd/wire"
@@ -126,7 +126,7 @@ var (
 
 // fetchBlockHashFunc defines a callback function to use in order to convert a
 // serialized block ID to an associated block hash.
-type fetchBlockHashFunc func(serializedID []byte) (*chainhash.Hash, error)
+type fetchBlockHashFunc func(serializedID []byte) (*daghash.Hash, error)
 
 // serializeAddrIndexEntry serializes the provided block id and transaction
 // location according to the format described in detail above.
@@ -553,7 +553,7 @@ type AddrIndex struct {
 	// be changed afterwards, so there is no need to protect them with a
 	// separate mutex.
 	db          database.DB
-	chainParams *chaincfg.Params
+	chainParams *dagconfig.Params
 
 	// The following fields are used to quickly link transactions and
 	// addresses that have not been included into a block yet when an
@@ -569,8 +569,8 @@ type AddrIndex struct {
 	// This allows fairly efficient updates when transactions are removed
 	// once they are included into a block.
 	unconfirmedLock sync.RWMutex
-	txnsByAddr      map[[addrKeySize]byte]map[chainhash.Hash]*btcutil.Tx
-	addrsByTx       map[chainhash.Hash]map[[addrKeySize]byte]struct{}
+	txnsByAddr      map[[addrKeySize]byte]map[daghash.Hash]*btcutil.Tx
+	addrsByTx       map[daghash.Hash]map[[addrKeySize]byte]struct{}
 }
 
 // Ensure the AddrIndex type implements the Indexer interface.
@@ -770,7 +770,7 @@ func (idx *AddrIndex) TxRegionsForAddress(dbTx database.Tx, addr btcutil.Address
 	err = idx.db.View(func(dbTx database.Tx) error {
 		// Create closure to lookup the block hash given the ID using
 		// the database transaction.
-		fetchBlockHash := func(id []byte) (*chainhash.Hash, error) {
+		fetchBlockHash := func(id []byte) (*daghash.Hash, error) {
 			// Deserialize and populate the result.
 			return dbFetchBlockHashBySerializedID(dbTx, id)
 		}
@@ -808,7 +808,7 @@ func (idx *AddrIndex) indexUnconfirmedAddresses(pkScript []byte, tx *btcutil.Tx)
 		idx.unconfirmedLock.Lock()
 		addrIndexEntry := idx.txnsByAddr[addrKey]
 		if addrIndexEntry == nil {
-			addrIndexEntry = make(map[chainhash.Hash]*btcutil.Tx)
+			addrIndexEntry = make(map[daghash.Hash]*btcutil.Tx)
 			idx.txnsByAddr[addrKey] = addrIndexEntry
 		}
 		addrIndexEntry[*tx.Hash()] = tx
@@ -860,7 +860,7 @@ func (idx *AddrIndex) AddUnconfirmedTx(tx *btcutil.Tx, utxoView *blockdag.UtxoVi
 // (memory-only) address index.
 //
 // This function is safe for concurrent access.
-func (idx *AddrIndex) RemoveUnconfirmedTx(hash *chainhash.Hash) {
+func (idx *AddrIndex) RemoveUnconfirmedTx(hash *daghash.Hash) {
 	idx.unconfirmedLock.Lock()
 	defer idx.unconfirmedLock.Unlock()
 
@@ -914,12 +914,12 @@ func (idx *AddrIndex) UnconfirmedTxnsForAddress(addr btcutil.Address) []*btcutil
 // It implements the Indexer interface which plugs into the IndexManager that in
 // turn is used by the blockchain package.  This allows the index to be
 // seamlessly maintained along with the chain.
-func NewAddrIndex(db database.DB, chainParams *chaincfg.Params) *AddrIndex {
+func NewAddrIndex(db database.DB, chainParams *dagconfig.Params) *AddrIndex {
 	return &AddrIndex{
 		db:          db,
 		chainParams: chainParams,
-		txnsByAddr:  make(map[[addrKeySize]byte]map[chainhash.Hash]*btcutil.Tx),
-		addrsByTx:   make(map[chainhash.Hash]map[[addrKeySize]byte]struct{}),
+		txnsByAddr:  make(map[[addrKeySize]byte]map[daghash.Hash]*btcutil.Tx),
+		addrsByTx:   make(map[daghash.Hash]map[[addrKeySize]byte]struct{}),
 	}
 }
 

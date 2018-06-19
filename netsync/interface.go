@@ -6,8 +6,8 @@ package netsync
 
 import (
 	"github.com/daglabs/btcd/blockdag"
-	"github.com/daglabs/btcd/chaincfg"
-	"github.com/daglabs/btcd/chaincfg/chainhash"
+	"github.com/daglabs/btcd/dagconfig"
+	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/mempool"
 	"github.com/daglabs/btcd/peer"
 	"github.com/daglabs/btcd/wire"
@@ -20,7 +20,7 @@ import (
 type PeerNotifier interface {
 	AnnounceNewTransactions(newTxs []*mempool.TxDesc)
 
-	UpdatePeerHeights(latestBlkHash *chainhash.Hash, latestHeight int32, updateSource *peer.Peer)
+	UpdatePeerHeights(latestBlkHash *daghash.Hash, latestHeight int32, updateSource *peer.Peer)
 
 	RelayInventory(invVect *wire.InvVect, data interface{})
 
@@ -32,7 +32,7 @@ type Config struct {
 	PeerNotifier PeerNotifier
 	Chain        *blockdag.BlockChain
 	TxMemPool    *mempool.TxPool
-	ChainParams  *chaincfg.Params
+	ChainParams  *dagconfig.Params
 
 	DisableCheckpoints bool
 	MaxPeers           int

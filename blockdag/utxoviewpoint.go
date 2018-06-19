@@ -7,7 +7,7 @@ package blockdag
 import (
 	"fmt"
 
-	"github.com/daglabs/btcd/chaincfg/chainhash"
+	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/database"
 	"github.com/daglabs/btcd/txscript"
 	"github.com/daglabs/btcd/wire"
@@ -120,18 +120,18 @@ func (entry *UtxoEntry) Clone() *UtxoEntry {
 // script validation and double spend prevention.
 type UtxoViewpoint struct {
 	entries  map[wire.OutPoint]*UtxoEntry
-	bestHash chainhash.Hash
+	bestHash daghash.Hash
 }
 
 // BestHash returns the hash of the best block in the chain the view currently
 // respresents.
-func (view *UtxoViewpoint) BestHash() *chainhash.Hash {
+func (view *UtxoViewpoint) BestHash() *daghash.Hash {
 	return &view.bestHash
 }
 
 // SetBestHash sets the hash of the best block in the chain the view currently
 // respresents.
-func (view *UtxoViewpoint) SetBestHash(hash *chainhash.Hash) {
+func (view *UtxoViewpoint) SetBestHash(hash *daghash.Hash) {
 	view.bestHash = *hash
 }
 
@@ -281,7 +281,7 @@ func (view *UtxoViewpoint) connectTransactions(block *btcutil.Block, stxos *[]sp
 // fetchEntryByHash attempts to find any available utxo for the given hash by
 // searching the entire set of possible outputs for the given hash.  It checks
 // the view first and then falls back to the database if needed.
-func (view *UtxoViewpoint) fetchEntryByHash(db database.DB, hash *chainhash.Hash) (*UtxoEntry, error) {
+func (view *UtxoViewpoint) fetchEntryByHash(db database.DB, hash *daghash.Hash) (*UtxoEntry, error) {
 	// First attempt to find a utxo with the provided hash in the view.
 	prevOut := wire.OutPoint{Hash: *hash}
 	for idx := uint32(0); idx < MaxOutputsPerBlock; idx++ {
@@ -530,7 +530,7 @@ func (view *UtxoViewpoint) fetchInputUtxos(db database.DB, block *btcutil.Block)
 	// Build a map of in-flight transactions because some of the inputs in
 	// this block could be referencing other transactions earlier in this
 	// block which are not yet in the chain.
-	txInFlight := map[chainhash.Hash]int{}
+	txInFlight := map[daghash.Hash]int{}
 	transactions := block.Transactions()
 	for i, tx := range transactions {
 		txInFlight[*tx.Hash()] = i

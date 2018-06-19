@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/daglabs/btcd/chaincfg/chainhash"
+	"github.com/daglabs/btcd/dagconfig/daghash"
 )
 
 // maxFlagsPerMerkleBlock is the maximum number of flag bytes that could
@@ -24,12 +24,12 @@ const maxFlagsPerMerkleBlock = maxTxPerBlock / 8
 type MsgMerkleBlock struct {
 	Header       BlockHeader
 	Transactions uint32
-	Hashes       []*chainhash.Hash
+	Hashes       []*daghash.Hash
 	Flags        []byte
 }
 
 // AddTxHash adds a new transaction hash to the message.
-func (msg *MsgMerkleBlock) AddTxHash(hash *chainhash.Hash) error {
+func (msg *MsgMerkleBlock) AddTxHash(hash *daghash.Hash) error {
 	if len(msg.Hashes)+1 > maxTxPerBlock {
 		str := fmt.Sprintf("too many tx hashes for message [max %v]",
 			maxTxPerBlock)
@@ -72,8 +72,8 @@ func (msg *MsgMerkleBlock) BtcDecode(r io.Reader, pver uint32) error {
 
 	// Create a contiguous slice of hashes to deserialize into in order to
 	// reduce the number of allocations.
-	hashes := make([]chainhash.Hash, count)
-	msg.Hashes = make([]*chainhash.Hash, 0, count)
+	hashes := make([]daghash.Hash, count)
+	msg.Hashes = make([]*daghash.Hash, 0, count)
 	for i := uint64(0); i < count; i++ {
 		hash := &hashes[i]
 		err := readElement(r, hash)
@@ -153,7 +153,7 @@ func NewMsgMerkleBlock(bh *BlockHeader) *MsgMerkleBlock {
 	return &MsgMerkleBlock{
 		Header:       *bh,
 		Transactions: 0,
-		Hashes:       make([]*chainhash.Hash, 0),
+		Hashes:       make([]*daghash.Hash, 0),
 		Flags:        make([]byte, 0),
 	}
 }

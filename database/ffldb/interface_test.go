@@ -25,8 +25,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/daglabs/btcd/chaincfg"
-	"github.com/daglabs/btcd/chaincfg/chainhash"
+	"github.com/daglabs/btcd/dagconfig"
+	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/database"
 	"github.com/daglabs/btcd/wire"
 	"github.com/daglabs/btcutil"
@@ -63,7 +63,7 @@ func loadBlocks(t *testing.T, dataFile string, network wire.BitcoinNet) ([]*btcu
 
 	// Set the first block as the genesis block.
 	blocks := make([]*btcutil.Block, 0, 256)
-	genesis := btcutil.NewBlock(chaincfg.MainNetParams.GenesisBlock)
+	genesis := btcutil.NewBlock(dagconfig.MainNetParams.GenesisBlock)
 	blocks = append(blocks, genesis)
 
 	// Load the remaining blocks.
@@ -1117,7 +1117,7 @@ func testFetchBlockIOMissing(tc *testContext, tx database.Tx) bool {
 	// Test the individual block APIs one block at a time to ensure they
 	// return the expected error.  Also, build the data needed to test the
 	// bulk APIs below while looping.
-	allBlockHashes := make([]chainhash.Hash, len(tc.blocks))
+	allBlockHashes := make([]daghash.Hash, len(tc.blocks))
 	allBlockRegions := make([]database.BlockRegion, len(tc.blocks))
 	for i, block := range tc.blocks {
 		blockHash := block.Hash()
@@ -1222,7 +1222,7 @@ func testFetchBlockIO(tc *testContext, tx database.Tx) bool {
 
 	// Test the individual block APIs one block at a time.  Also, build the
 	// data needed to test the bulk APIs below while looping.
-	allBlockHashes := make([]chainhash.Hash, len(tc.blocks))
+	allBlockHashes := make([]daghash.Hash, len(tc.blocks))
 	allBlockBytes := make([][]byte, len(tc.blocks))
 	allBlockTxLocs := make([][]wire.TxLoc, len(tc.blocks))
 	allBlockRegions := make([]database.BlockRegion, len(tc.blocks))
@@ -1319,7 +1319,7 @@ func testFetchBlockIO(tc *testContext, tx database.Tx) bool {
 
 		// Ensure fetching a block that doesn't exist returns the
 		// expected error.
-		badBlockHash := &chainhash.Hash{}
+		badBlockHash := &daghash.Hash{}
 		testName := fmt.Sprintf("FetchBlock(%s) invalid block",
 			badBlockHash)
 		wantErrCode := database.ErrBlockNotFound
@@ -1462,9 +1462,9 @@ func testFetchBlockIO(tc *testContext, tx database.Tx) bool {
 	// Ensure fetching blocks for which one doesn't exist returns the
 	// expected error.
 	testName := "FetchBlocks invalid hash"
-	badBlockHashes := make([]chainhash.Hash, len(allBlockHashes)+1)
+	badBlockHashes := make([]daghash.Hash, len(allBlockHashes)+1)
 	copy(badBlockHashes, allBlockHashes)
-	badBlockHashes[len(badBlockHashes)-1] = chainhash.Hash{}
+	badBlockHashes[len(badBlockHashes)-1] = daghash.Hash{}
 	wantErrCode := database.ErrBlockNotFound
 	_, err = tx.FetchBlocks(badBlockHashes)
 	if !checkDbError(tc.t, testName, err, wantErrCode) {
@@ -1484,7 +1484,7 @@ func testFetchBlockIO(tc *testContext, tx database.Tx) bool {
 	testName = "FetchBlockRegions invalid hash"
 	badBlockRegions := make([]database.BlockRegion, len(allBlockRegions)+1)
 	copy(badBlockRegions, allBlockRegions)
-	badBlockRegions[len(badBlockRegions)-1].Hash = &chainhash.Hash{}
+	badBlockRegions[len(badBlockRegions)-1].Hash = &daghash.Hash{}
 	wantErrCode = database.ErrBlockNotFound
 	_, err = tx.FetchBlockRegions(badBlockRegions)
 	if !checkDbError(tc.t, testName, err, wantErrCode) {
@@ -1836,7 +1836,7 @@ func testClosedTxInterface(tc *testContext, tx database.Tx) bool {
 	// Test the individual block APIs one block at a time to ensure they
 	// return the expected error.  Also, build the data needed to test the
 	// bulk APIs below while looping.
-	allBlockHashes := make([]chainhash.Hash, len(tc.blocks))
+	allBlockHashes := make([]daghash.Hash, len(tc.blocks))
 	allBlockRegions := make([]database.BlockRegion, len(tc.blocks))
 	for i, block := range tc.blocks {
 		blockHash := block.Hash()

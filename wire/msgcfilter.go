@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/daglabs/btcd/chaincfg/chainhash"
+	"github.com/daglabs/btcd/dagconfig/daghash"
 )
 
 // FilterType is used to represent a filter type.
@@ -33,7 +33,7 @@ const (
 // getcfilters (MsgGetCFilters) message.
 type MsgCFilter struct {
 	FilterType FilterType
-	BlockHash  chainhash.Hash
+	BlockHash  daghash.Hash
 	Data       []byte
 }
 
@@ -107,12 +107,12 @@ func (msg *MsgCFilter) Command() string {
 // receiver.  This is part of the Message interface implementation.
 func (msg *MsgCFilter) MaxPayloadLength(pver uint32) uint32 {
 	return uint32(VarIntSerializeSize(MaxCFilterDataSize)) +
-		MaxCFilterDataSize + chainhash.HashSize + 1
+		MaxCFilterDataSize + daghash.HashSize + 1
 }
 
 // NewMsgCFilter returns a new bitcoin cfilter message that conforms to the
 // Message interface. See MsgCFilter for details.
-func NewMsgCFilter(filterType FilterType, blockHash *chainhash.Hash,
+func NewMsgCFilter(filterType FilterType, blockHash *daghash.Hash,
 	data []byte) *MsgCFilter {
 	return &MsgCFilter{
 		FilterType: filterType,

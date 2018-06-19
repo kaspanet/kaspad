@@ -10,8 +10,8 @@ import (
 	"time"
 
 	"github.com/daglabs/btcd/blockdag"
-	"github.com/daglabs/btcd/chaincfg"
-	"github.com/daglabs/btcd/chaincfg/chainhash"
+	"github.com/daglabs/btcd/dagconfig"
+	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/txscript"
 	"github.com/daglabs/btcd/wire"
 	"github.com/daglabs/btcutil"
@@ -68,7 +68,7 @@ type TxSource interface {
 
 	// HaveTransaction returns whether or not the passed transaction hash
 	// exists in the source pool.
-	HaveTransaction(hash *chainhash.Hash) bool
+	HaveTransaction(hash *daghash.Hash) bool
 }
 
 // txPrioItem houses a transaction along with extra information that allows the
@@ -84,7 +84,7 @@ type txPrioItem struct {
 	// on.  It will only be set when the transaction references other
 	// transactions in the source pool and hence must come after them in
 	// a block.
-	dependsOn map[chainhash.Hash]struct{}
+	dependsOn map[daghash.Hash]struct{}
 }
 
 // txPriorityQueueLessFunc describes a function that can be used as a compare
@@ -243,7 +243,7 @@ func standardCoinbaseScript(nextBlockHeight int32, extraNonce uint64) ([]byte, e
 //
 // See the comment for NewBlockTemplate for more information about why the nil
 // address handling is useful.
-func createCoinbaseTx(params *chaincfg.Params, coinbaseScript []byte, nextBlockHeight int32, addr btcutil.Address) (*btcutil.Tx, error) {
+func createCoinbaseTx(params *dagconfig.Params, coinbaseScript []byte, nextBlockHeight int32, addr btcutil.Address) (*btcutil.Tx, error) {
 	// Create the script to pay to the provided payment address if one was
 	// specified.  Otherwise create a script that allows the coinbase to be
 	// redeemable by anyone.
@@ -267,7 +267,7 @@ func createCoinbaseTx(params *chaincfg.Params, coinbaseScript []byte, nextBlockH
 	tx.AddTxIn(&wire.TxIn{
 		// Coinbase transactions have no inputs, so previous outpoint is
 		// zero hash and max index.
-		PreviousOutPoint: *wire.NewOutPoint(&chainhash.Hash{},
+		PreviousOutPoint: *wire.NewOutPoint(&daghash.Hash{},
 			wire.MaxPrevOutIndex),
 		SignatureScript: coinbaseScript,
 		Sequence:        wire.MaxTxInSequenceNum,
@@ -296,7 +296,7 @@ func spendTransaction(utxoView *blockdag.UtxoViewpoint, tx *btcutil.Tx, height i
 
 // logSkippedDeps logs any dependencies which are also skipped as a result of
 // skipping a transaction while generating a block template at the trace level.
-func logSkippedDeps(tx *btcutil.Tx, deps map[chainhash.Hash]*txPrioItem) {
+func logSkippedDeps(tx *btcutil.Tx, deps map[daghash.Hash]*txPrioItem) {
 	if deps == nil {
 		return
 	}
@@ -340,7 +340,7 @@ func medianAdjustedTime(chainState *blockdag.BestState, timeSource blockdag.Medi
 // are built on top of the current best chain and adhere to the consensus rules.
 type BlkTmplGenerator struct {
 	policy      *Policy
-	chainParams *chaincfg.Params
+	chainParams *dagconfig.Params
 	txSource    TxSource
 	chain       *blockdag.BlockChain
 	timeSource  blockdag.MedianTimeSource
@@ -353,7 +353,7 @@ type BlkTmplGenerator struct {
 // The additional state-related fields are required in order to ensure the
 // templates are built on top of the current best chain and adhere to the
 // consensus rules.
-func NewBlkTmplGenerator(policy *Policy, params *chaincfg.Params,
+func NewBlkTmplGenerator(policy *Policy, params *dagconfig.Params,
 	txSource TxSource, chain *blockdag.BlockChain,
 	timeSource blockdag.MedianTimeSource,
 	sigCache *txscript.SigCache) *BlkTmplGenerator {
@@ -478,7 +478,7 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress btcutil.Address) (*Bloc
 	// dependsOn map kept with each dependent transaction helps quickly
 	// determine which dependent transactions are now eligible for inclusion
 	// in the block once each transaction has been included.
-	dependers := make(map[chainhash.Hash]map[chainhash.Hash]*txPrioItem)
+	dependers := make(map[daghash.Hash]map[daghash.Hash]*txPrioItem)
 
 	// Create slices to hold the fees and number of signature operations
 	// for each of the selected transactions and add an entry for the
@@ -543,13 +543,13 @@ mempoolLoop:
 				// ordering dependency.
 				deps, exists := dependers[*originHash]
 				if !exists {
-					deps = make(map[chainhash.Hash]*txPrioItem)
+					deps = make(map[daghash.Hash]*txPrioItem)
 					dependers[*originHash] = deps
 				}
 				deps[*prioItem.tx.Hash()] = prioItem
 				if prioItem.dependsOn == nil {
 					prioItem.dependsOn = make(
-						map[chainhash.Hash]struct{})
+						map[daghash.Hash]struct{})
 				}
 				prioItem.dependsOn[*originHash] = struct{}{}
 

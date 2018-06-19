@@ -15,8 +15,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/daglabs/btcd/chaincfg"
-	"github.com/daglabs/btcd/chaincfg/chainhash"
+	"github.com/daglabs/btcd/dagconfig"
+	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/rpcclient"
 	"github.com/daglabs/btcd/wire"
 	"github.com/daglabs/btcutil"
@@ -76,7 +76,7 @@ type HarnessTestCase func(r *Harness, t *testing.T)
 type Harness struct {
 	// ActiveNet is the parameters of the blockchain the Harness belongs
 	// to.
-	ActiveNet *chaincfg.Params
+	ActiveNet *dagconfig.Params
 
 	Node     *rpcclient.Client
 	node     *node
@@ -97,7 +97,7 @@ type Harness struct {
 // used.
 //
 // NOTE: This function is safe for concurrent access.
-func New(activeNet *chaincfg.Params, handlers *rpcclient.NotificationHandlers,
+func New(activeNet *dagconfig.Params, handlers *rpcclient.NotificationHandlers,
 	extraArgs []string) (*Harness, error) {
 
 	harnessStateMtx.Lock()
@@ -351,7 +351,7 @@ func (h *Harness) ConfirmedBalance() btcutil.Amount {
 //
 // This function is safe for concurrent access.
 func (h *Harness) SendOutputs(targetOutputs []*wire.TxOut,
-	feeRate btcutil.Amount) (*chainhash.Hash, error) {
+	feeRate btcutil.Amount) (*daghash.Hash, error) {
 
 	return h.wallet.SendOutputs(targetOutputs, feeRate)
 }

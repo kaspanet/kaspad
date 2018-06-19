@@ -11,8 +11,8 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/daglabs/btcd/chaincfg"
-	"github.com/daglabs/btcd/chaincfg/chainhash"
+	"github.com/daglabs/btcd/dagconfig"
+	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/txscript"
 	"github.com/daglabs/btcd/wire"
 	"github.com/daglabs/btcutil"
@@ -52,10 +52,10 @@ const (
 )
 
 var (
-	// zeroHash is the zero value for a chainhash.Hash and is defined as
+	// zeroHash is the zero value for a daghash.Hash and is defined as
 	// a package level variable to avoid the need to create a new instance
 	// every time a check is needed.
-	zeroHash chainhash.Hash
+	zeroHash daghash.Hash
 
 	// block91842Hash is one of the two nodes which violate the rules
 	// set forth in BIP0030.  It is defined as a package level variable to
@@ -199,7 +199,7 @@ func isBIP0030Node(node *blockNode) bool {
 //
 // At the target block generation rate for the main network, this is
 // approximately every 4 years.
-func CalcBlockSubsidy(height int32, chainParams *chaincfg.Params) int64 {
+func CalcBlockSubsidy(height int32, chainParams *dagconfig.Params) int64 {
 	if chainParams.SubsidyReductionInterval == 0 {
 		return baseSubsidy
 	}
@@ -547,7 +547,7 @@ func checkBlockSanity(block *btcutil.Block, powLimit *big.Int, timeSource Median
 	// Check for duplicate transactions.  This check will be fairly quick
 	// since the transaction hashes are already cached due to building the
 	// merkle tree above.
-	existingTxHashes := make(map[chainhash.Hash]struct{})
+	existingTxHashes := make(map[daghash.Hash]struct{})
 	for _, tx := range transactions {
 		hash := tx.Hash()
 		if _, exists := existingTxHashes[*hash]; exists {
@@ -744,7 +744,7 @@ func (b *BlockChain) checkBlockContext(block *btcutil.Block, prevNode *blockNode
 		// Obtain the latest state of the deployed CSV soft-fork in
 		// order to properly guard the new validation behavior based on
 		// the current BIP 9 version bits state.
-		csvState, err := b.deploymentState(prevNode, chaincfg.DeploymentCSV)
+		csvState, err := b.deploymentState(prevNode, dagconfig.DeploymentCSV)
 		if err != nil {
 			return err
 		}
@@ -843,7 +843,7 @@ func (b *BlockChain) checkBIP0030(node *blockNode, block *btcutil.Block, view *U
 //
 // NOTE: The transaction MUST have already been sanity checked with the
 // CheckTransactionSanity function prior to calling this function.
-func CheckTransactionInputs(tx *btcutil.Tx, txHeight int32, utxoView *UtxoViewpoint, chainParams *chaincfg.Params) (int64, error) {
+func CheckTransactionInputs(tx *btcutil.Tx, txHeight int32, utxoView *UtxoViewpoint, chainParams *dagconfig.Params) (int64, error) {
 	// Coinbase transactions have no inputs.
 	if IsCoinBase(tx) {
 		return 0, nil
@@ -1141,7 +1141,7 @@ func (b *BlockChain) checkConnectBlock(node *blockNode, block *btcutil.Block, vi
 
 	// Enforce CHECKSEQUENCEVERIFY during all block validation checks once
 	// the soft-fork deployment is fully active.
-	csvState, err := b.deploymentState(node.parent, chaincfg.DeploymentCSV)
+	csvState, err := b.deploymentState(node.parent, dagconfig.DeploymentCSV)
 	if err != nil {
 		return err
 	}

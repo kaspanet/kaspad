@@ -14,7 +14,7 @@ import (
 	"time"
 
 	"github.com/daglabs/btcd/btcjson"
-	"github.com/daglabs/btcd/chaincfg/chainhash"
+	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/wire"
 	"github.com/daglabs/btcutil"
 )
@@ -96,7 +96,7 @@ type NotificationHandlers struct {
 	// function is non-nil.
 	//
 	// NOTE: Deprecated. Use OnFilteredBlockConnected instead.
-	OnBlockConnected func(hash *chainhash.Hash, height int32, t time.Time)
+	OnBlockConnected func(hash *daghash.Hash, height int32, t time.Time)
 
 	// OnFilteredBlockConnected is invoked when a block is connected to the
 	// longest (best) chain.  It will only be invoked if a preceding call to
@@ -112,7 +112,7 @@ type NotificationHandlers struct {
 	// function is non-nil.
 	//
 	// NOTE: Deprecated. Use OnFilteredBlockDisconnected instead.
-	OnBlockDisconnected func(hash *chainhash.Hash, height int32, t time.Time)
+	OnBlockDisconnected func(hash *daghash.Hash, height int32, t time.Time)
 
 	// OnFilteredBlockDisconnected is invoked when a block is disconnected
 	// from the longest (best) chain.  It will only be invoked if a
@@ -158,20 +158,20 @@ type NotificationHandlers struct {
 	// notifications after the rescan request has already returned.
 	//
 	// NOTE: Deprecated. Not used with RescanBlocks.
-	OnRescanFinished func(hash *chainhash.Hash, height int32, blkTime time.Time)
+	OnRescanFinished func(hash *daghash.Hash, height int32, blkTime time.Time)
 
 	// OnRescanProgress is invoked periodically when a rescan is underway.
 	// It will only be invoked if a preceding call to Rescan or
 	// RescanEndHeight has been made and the function is non-nil.
 	//
 	// NOTE: Deprecated. Not used with RescanBlocks.
-	OnRescanProgress func(hash *chainhash.Hash, height int32, blkTime time.Time)
+	OnRescanProgress func(hash *daghash.Hash, height int32, blkTime time.Time)
 
 	// OnTxAccepted is invoked when a transaction is accepted into the
 	// memory pool.  It will only be invoked if a preceding call to
 	// NotifyNewTransactions with the verbose flag set to false has been
 	// made to register for the notification and the function is non-nil.
-	OnTxAccepted func(hash *chainhash.Hash, amount btcutil.Amount)
+	OnTxAccepted func(hash *daghash.Hash, amount btcutil.Amount)
 
 	// OnTxAccepted is invoked when a transaction is accepted into the
 	// memory pool.  It will only be invoked if a preceding call to
@@ -485,7 +485,7 @@ func (e wrongNumParams) Error() string {
 
 // parseChainNtfnParams parses out the block hash and height from the parameters
 // of blockconnected and blockdisconnected notifications.
-func parseChainNtfnParams(params []json.RawMessage) (*chainhash.Hash,
+func parseChainNtfnParams(params []json.RawMessage) (*daghash.Hash,
 	int32, time.Time, error) {
 
 	if len(params) != 3 {
@@ -514,7 +514,7 @@ func parseChainNtfnParams(params []json.RawMessage) (*chainhash.Hash,
 	}
 
 	// Create hash from block hash string.
-	blockHash, err := chainhash.NewHashFromStr(blockHashStr)
+	blockHash, err := daghash.NewHashFromStr(blockHashStr)
 	if err != nil {
 		return nil, 0, time.Time{}, err
 	}
@@ -674,13 +674,13 @@ func parseChainTxNtfnParams(params []json.RawMessage) (*btcutil.Tx,
 
 	// TODO: Change recvtx and redeemingtx callback signatures to use
 	// nicer types for details about the block (block hash as a
-	// chainhash.Hash, block time as a time.Time, etc.).
+	// daghash.Hash, block time as a time.Time, etc.).
 	return btcutil.NewTx(&msgTx), block, nil
 }
 
 // parseRescanProgressParams parses out the height of the last rescanned block
 // from the parameters of rescanfinished and rescanprogress notifications.
-func parseRescanProgressParams(params []json.RawMessage) (*chainhash.Hash, int32, time.Time, error) {
+func parseRescanProgressParams(params []json.RawMessage) (*daghash.Hash, int32, time.Time, error) {
 	if len(params) != 3 {
 		return nil, 0, time.Time{}, wrongNumParams(len(params))
 	}
@@ -707,7 +707,7 @@ func parseRescanProgressParams(params []json.RawMessage) (*chainhash.Hash, int32
 	}
 
 	// Decode string encoding of block hash.
-	hash, err := chainhash.NewHashFromStr(hashStr)
+	hash, err := daghash.NewHashFromStr(hashStr)
 	if err != nil {
 		return nil, 0, time.Time{}, err
 	}
@@ -717,7 +717,7 @@ func parseRescanProgressParams(params []json.RawMessage) (*chainhash.Hash, int32
 
 // parseTxAcceptedNtfnParams parses out the transaction hash and total amount
 // from the parameters of a txaccepted notification.
-func parseTxAcceptedNtfnParams(params []json.RawMessage) (*chainhash.Hash,
+func parseTxAcceptedNtfnParams(params []json.RawMessage) (*daghash.Hash,
 	btcutil.Amount, error) {
 
 	if len(params) != 2 {
@@ -745,7 +745,7 @@ func parseTxAcceptedNtfnParams(params []json.RawMessage) (*chainhash.Hash,
 	}
 
 	// Decode string encoding of transaction sha.
-	txHash, err := chainhash.NewHashFromStr(txHashStr)
+	txHash, err := daghash.NewHashFromStr(txHashStr)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -1151,7 +1151,7 @@ func (r FutureRescanResult) Receive() error {
 // NOTE: This is a btcd extension and requires a websocket connection.
 //
 // NOTE: Deprecated. Use RescanBlocksAsync instead.
-func (c *Client) RescanAsync(startBlock *chainhash.Hash,
+func (c *Client) RescanAsync(startBlock *daghash.Hash,
 	addresses []btcutil.Address,
 	outpoints []*wire.OutPoint) FutureRescanResult {
 
@@ -1216,7 +1216,7 @@ func (c *Client) RescanAsync(startBlock *chainhash.Hash,
 // NOTE: This is a btcd extension and requires a websocket connection.
 //
 // NOTE: Deprecated. Use RescanBlocks instead.
-func (c *Client) Rescan(startBlock *chainhash.Hash,
+func (c *Client) Rescan(startBlock *daghash.Hash,
 	addresses []btcutil.Address,
 	outpoints []*wire.OutPoint) error {
 
@@ -1232,9 +1232,9 @@ func (c *Client) Rescan(startBlock *chainhash.Hash,
 // NOTE: This is a btcd extension and requires a websocket connection.
 //
 // NOTE: Deprecated. Use RescanBlocksAsync instead.
-func (c *Client) RescanEndBlockAsync(startBlock *chainhash.Hash,
+func (c *Client) RescanEndBlockAsync(startBlock *daghash.Hash,
 	addresses []btcutil.Address, outpoints []*wire.OutPoint,
-	endBlock *chainhash.Hash) FutureRescanResult {
+	endBlock *daghash.Hash) FutureRescanResult {
 
 	// Not supported in HTTP POST mode.
 	if c.config.HTTPPostMode {
@@ -1294,9 +1294,9 @@ func (c *Client) RescanEndBlockAsync(startBlock *chainhash.Hash,
 // NOTE: This is a btcd extension and requires a websocket connection.
 //
 // NOTE: Deprecated. Use RescanBlocks instead.
-func (c *Client) RescanEndHeight(startBlock *chainhash.Hash,
+func (c *Client) RescanEndHeight(startBlock *daghash.Hash,
 	addresses []btcutil.Address, outpoints []*wire.OutPoint,
-	endBlock *chainhash.Hash) error {
+	endBlock *daghash.Hash) error {
 
 	return c.RescanEndBlockAsync(startBlock, addresses, outpoints,
 		endBlock).Receive()

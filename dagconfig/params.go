@@ -2,7 +2,7 @@
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
-package chaincfg
+package dagconfig
 
 import (
 	"errors"
@@ -12,7 +12,7 @@ import (
 
 	"fmt"
 
-	"github.com/daglabs/btcd/chaincfg/chainhash"
+	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/wire"
 )
 
@@ -50,7 +50,7 @@ var (
 // selection criteria.
 type Checkpoint struct {
 	Height int32
-	Hash   *chainhash.Hash
+	Hash   *daghash.Hash
 }
 
 // DNSSeed identifies a DNS seed.
@@ -171,7 +171,7 @@ type Params struct {
 	GenesisBlock *wire.MsgBlock
 
 	// GenesisHash is the starting block hash.
-	GenesisHash *chainhash.Hash
+	GenesisHash *daghash.Hash
 
 	// PowLimit defines the highest allowed proof of work value for a block
 	// as a uint256.
@@ -638,11 +638,11 @@ func HDPrivateKeyToPublicKeyID(id []byte) ([]byte, error) {
 }
 
 // newHashFromStr converts the passed big-endian hex string into a
-// chainhash.Hash.  It only differs from the one available in chainhash in that
+// daghash.Hash.  It only differs from the one available in daghash in that
 // it panics on an error since it will only (and must only) be called with
 // hard-coded, and therefore known good, hashes.
-func newHashFromStr(hexStr string) *chainhash.Hash {
-	hash, err := chainhash.NewHashFromStr(hexStr)
+func newHashFromStr(hexStr string) *daghash.Hash {
+	hash, err := daghash.NewHashFromStr(hexStr)
 	if err != nil {
 		// Ordinarily I don't like panics in library code since it
 		// can take applications down without them having a chance to

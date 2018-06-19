@@ -11,7 +11,7 @@ import (
 	"path/filepath"
 
 	"github.com/daglabs/btcd/blockdag"
-	"github.com/daglabs/btcd/chaincfg"
+	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/database"
 	_ "github.com/daglabs/btcd/database/ffldb"
 	"github.com/daglabs/btcutil"
@@ -30,7 +30,7 @@ func ExampleBlockChain_ProcessBlock() {
 	// around.
 	dbPath := filepath.Join(os.TempDir(), "exampleprocessblock")
 	_ = os.RemoveAll(dbPath)
-	db, err := database.Create("ffldb", dbPath, chaincfg.MainNetParams.Net)
+	db, err := database.Create("ffldb", dbPath, dagconfig.MainNetParams.Net)
 	if err != nil {
 		fmt.Printf("Failed to create database: %v\n", err)
 		return
@@ -47,7 +47,7 @@ func ExampleBlockChain_ProcessBlock() {
 	// adjusted to be in agreement with other peers.
 	chain, err := blockdag.New(&blockdag.Config{
 		DB:          db,
-		ChainParams: &chaincfg.MainNetParams,
+		ChainParams: &dagconfig.MainNetParams,
 		TimeSource:  blockdag.NewMedianTime(),
 	})
 	if err != nil {
@@ -58,7 +58,7 @@ func ExampleBlockChain_ProcessBlock() {
 	// Process a block.  For this example, we are going to intentionally
 	// cause an error by trying to process the genesis block which already
 	// exists.
-	genesisBlock := btcutil.NewBlock(chaincfg.MainNetParams.GenesisBlock)
+	genesisBlock := btcutil.NewBlock(dagconfig.MainNetParams.GenesisBlock)
 	isMainChain, isOrphan, err := chain.ProcessBlock(genesisBlock,
 		blockdag.BFNone)
 	if err != nil {

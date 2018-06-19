@@ -8,7 +8,7 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/daglabs/btcd/chaincfg/chainhash"
+	"github.com/daglabs/btcd/dagconfig/daghash"
 )
 
 var (
@@ -21,9 +21,9 @@ var (
 	oneLsh256 = new(big.Int).Lsh(bigOne, 256)
 )
 
-// HashToBig converts a chainhash.Hash into a big.Int that can be used to
+// HashToBig converts a daghash.Hash into a big.Int that can be used to
 // perform math comparisons.
-func HashToBig(hash *chainhash.Hash) *big.Int {
+func HashToBig(hash *daghash.Hash) *big.Int {
 	// A Hash is in little-endian, but the big package wants the bytes in
 	// big-endian, so reverse them.
 	buf := *hash

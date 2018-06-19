@@ -9,16 +9,16 @@ import (
 	"io"
 	"time"
 
-	"github.com/daglabs/btcd/chaincfg/chainhash"
+	"github.com/daglabs/btcd/dagconfig/daghash"
 )
 
 // BaseBlockHeaderPayload is the base number of bytes a block header can be,
 // not including the list of previous block headers.
 // Version 4 bytes + Timestamp 4 bytes + Bits 4 bytes + Nonce 4 bytes +
 // + NumPrevBlocks 1 byte + MerkleRoot hash.
-// To get total size of block header len(PrevBlocks) * chainhash.HashSize should be
+// To get total size of block header len(PrevBlocks) * daghash.HashSize should be
 // added to this value
-const BaseBlockHeaderPayload = 17 + (chainhash.HashSize)
+const BaseBlockHeaderPayload = 17 + (daghash.HashSize)
 
 // MaxNumPrevBlocks is the maximum number of previous blocks a block can reference.
 // Currently set to 255 as the maximum number NumPrevBlocks can be due to it being a byte
@@ -26,7 +26,7 @@ const MaxNumPrevBlocks = 255
 
 // MaxBlockHeaderPayload is the maximum number of bytes a block header can be.
 // BaseBlockHeaderPayload + up to MaxNumPrevBlocks hashes of previous blocks
-const MaxBlockHeaderPayload = BaseBlockHeaderPayload + (MaxNumPrevBlocks * chainhash.HashSize)
+const MaxBlockHeaderPayload = BaseBlockHeaderPayload + (MaxNumPrevBlocks * daghash.HashSize)
 
 // BlockHeader defines information about a block and is used in the bitcoin
 // block (MsgBlock) and headers (MsgHeader) messages.
@@ -38,10 +38,10 @@ type BlockHeader struct {
 	NumPrevBlocks byte
 
 	// Hashes of the previous block headers in the blockDAG.
-	PrevBlocks []chainhash.Hash
+	PrevBlocks []daghash.Hash
 
 	// Merkle tree reference to hash of all transactions for the block.
-	MerkleRoot chainhash.Hash
+	MerkleRoot daghash.Hash
 
 	// Time the block was created.  This is, unfortunately, encoded as a
 	// uint32 on the wire and therefore is limited to 2106.
@@ -55,7 +55,7 @@ type BlockHeader struct {
 }
 
 // BlockHash computes the block identifier hash for the given block header.
-func (h *BlockHeader) BlockHash() chainhash.Hash {
+func (h *BlockHeader) BlockHash() daghash.Hash {
 	// Encode the header and double sha256 everything prior to the number of
 	// transactions.  Ignore the error returns since there is no way the
 	// encode could fail except being out of memory which would cause a
@@ -63,7 +63,7 @@ func (h *BlockHeader) BlockHash() chainhash.Hash {
 	buf := bytes.NewBuffer(make([]byte, 0, BaseBlockHeaderPayload+len(h.PrevBlocks)))
 	_ = writeBlockHeader(buf, 0, h)
 
-	return chainhash.DoubleHashH(buf.Bytes())
+	return daghash.DoubleHashH(buf.Bytes())
 }
 
 // BtcDecode decodes r using the bitcoin protocol encoding into the receiver.
@@ -105,13 +105,13 @@ func (h *BlockHeader) Serialize(w io.Writer) error {
 // SerializeSize returns the number of bytes it would take to serialize the
 // block header.
 func (h *BlockHeader) SerializeSize() int {
-	return BaseBlockHeaderPayload + int(h.NumPrevBlocks)*chainhash.HashSize
+	return BaseBlockHeaderPayload + int(h.NumPrevBlocks)*daghash.HashSize
 }
 
 // NewBlockHeader returns a new BlockHeader using the provided version, previous
 // block hash, merkle root hash, difficulty bits, and nonce used to generate the
 // block with defaults or calclulated values for the remaining fields.
-func NewBlockHeader(version int32, prevHashes []chainhash.Hash, merkleRootHash *chainhash.Hash,
+func NewBlockHeader(version int32, prevHashes []daghash.Hash, merkleRootHash *daghash.Hash,
 	bits uint32, nonce uint32) *BlockHeader {
 
 	// Limit the timestamp to one second precision since the protocol
@@ -136,7 +136,7 @@ func readBlockHeader(r io.Reader, pver uint32, bh *BlockHeader) error {
 		return err
 	}
 
-	bh.PrevBlocks = make([]chainhash.Hash, bh.NumPrevBlocks)
+	bh.PrevBlocks = make([]daghash.Hash, bh.NumPrevBlocks)
 	for i := byte(0); i < bh.NumPrevBlocks; i++ {
 		err := readElement(r, &bh.PrevBlocks[i])
 		if err != nil {

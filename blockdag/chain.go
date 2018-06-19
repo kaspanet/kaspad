@@ -10,8 +10,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/daglabs/btcd/chaincfg"
-	"github.com/daglabs/btcd/chaincfg/chainhash"
+	"github.com/daglabs/btcd/dagconfig"
+	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/database"
 	"github.com/daglabs/btcd/txscript"
 	"github.com/daglabs/btcd/wire"
@@ -38,7 +38,7 @@ const (
 //
 // The block locator for block 17a would be the hashes of blocks:
 // [17a 16a 15 14 13 12 11 10 9 8 7 6 4 genesis]
-type BlockLocator []*chainhash.Hash
+type BlockLocator []*daghash.Hash
 
 // orphanBlock represents a block that we don't yet have the parent for.  It
 // is a normal block plus an expiration time to prevent caching the orphan
@@ -58,13 +58,13 @@ type orphanBlock struct {
 // However, the returned snapshot must be treated as immutable since it is
 // shared by all callers.
 type BestState struct {
-	Hash       chainhash.Hash // The hash of the block.
-	Height     int32          // The height of the block.
-	Bits       uint32         // The difficulty bits of the block.
-	BlockSize  uint64         // The size of the block.
-	NumTxns    uint64         // The number of txns in the block.
-	TotalTxns  uint64         // The total number of txns in the chain.
-	MedianTime time.Time      // Median time as per CalcPastMedianTime.
+	Hash       daghash.Hash // The hash of the block.
+	Height     int32        // The height of the block.
+	Bits       uint32       // The difficulty bits of the block.
+	BlockSize  uint64       // The size of the block.
+	NumTxns    uint64       // The number of txns in the block.
+	TotalTxns  uint64       // The total number of txns in the chain.
+	MedianTime time.Time    // Median time as per CalcPastMedianTime.
 }
 
 // newBestState returns a new best stats instance for the given parameters.
@@ -90,10 +90,10 @@ type BlockChain struct {
 	// The following fields are set when the instance is created and can't
 	// be changed afterwards, so there is no need to protect them with a
 	// separate mutex.
-	checkpoints         []chaincfg.Checkpoint
-	checkpointsByHeight map[int32]*chaincfg.Checkpoint
+	checkpoints         []dagconfig.Checkpoint
+	checkpointsByHeight map[int32]*dagconfig.Checkpoint
 	db                  database.DB
-	chainParams         *chaincfg.Params
+	chainParams         *dagconfig.Params
 	timeSource          MedianTimeSource
 	sigCache            *txscript.SigCache
 	indexManager        IndexManager
@@ -125,13 +125,13 @@ type BlockChain struct {
 	// These fields are related to handling of orphan blocks.  They are
 	// protected by a combination of the chain lock and the orphan lock.
 	orphanLock   sync.RWMutex
-	orphans      map[chainhash.Hash]*orphanBlock
-	prevOrphans  map[chainhash.Hash][]*orphanBlock
+	orphans      map[daghash.Hash]*orphanBlock
+	prevOrphans  map[daghash.Hash][]*orphanBlock
 	oldestOrphan *orphanBlock
 
 	// These fields are related to checkpoint handling.  They are protected
 	// by the chain lock.
-	nextCheckpoint *chaincfg.Checkpoint
+	nextCheckpoint *dagconfig.Checkpoint
 	checkpointNode *blockNode
 
 	// The state is used as a fairly efficient way to cache information
@@ -187,7 +187,7 @@ type BlockChain struct {
 // be like part of the main chain, on a side chain, or in the orphan pool.
 //
 // This function is safe for concurrent access.
-func (b *BlockChain) HaveBlock(hash *chainhash.Hash) (bool, error) {
+func (b *BlockChain) HaveBlock(hash *daghash.Hash) (bool, error) {
 	exists, err := b.blockExists(hash)
 	if err != nil {
 		return false, err
@@ -205,7 +205,7 @@ func (b *BlockChain) HaveBlock(hash *chainhash.Hash) (bool, error) {
 // duplicate orphans and react accordingly.
 //
 // This function is safe for concurrent access.
-func (b *BlockChain) IsKnownOrphan(hash *chainhash.Hash) bool {
+func (b *BlockChain) IsKnownOrphan(hash *daghash.Hash) bool {
 	// Protect concurrent access.  Using a read lock only so multiple
 	// readers can query without blocking each other.
 	b.orphanLock.RLock()
@@ -219,7 +219,7 @@ func (b *BlockChain) IsKnownOrphan(hash *chainhash.Hash) bool {
 // map of orphan blocks.
 //
 // This function is safe for concurrent access.
-func (b *BlockChain) GetOrphanRoot(hash *chainhash.Hash) *chainhash.Hash {
+func (b *BlockChain) GetOrphanRoot(hash *daghash.Hash) *daghash.Hash {
 	// Protect concurrent access.  Using a read lock only so multiple
 	// readers can query without blocking each other.
 	b.orphanLock.RLock()
@@ -373,7 +373,7 @@ func (b *BlockChain) calcSequenceLock(node *blockNode, tx *btcutil.Tx, utxoView 
 		// Obtain the latest BIP9 version bits state for the
 		// CSV-package soft-fork deployment. The adherence of sequence
 		// locks depends on the current soft-fork state.
-		csvState, err := b.deploymentState(node.parent, chaincfg.DeploymentCSV)
+		csvState, err := b.deploymentState(node.parent, dagconfig.DeploymentCSV)
 		if err != nil {
 			return nil, err
 		}
@@ -1186,7 +1186,7 @@ func (b *BlockChain) BestSnapshot() *BestState {
 
 // FetchHeader returns the block header identified by the given hash or an error
 // if it doesn't exist.
-func (b *BlockChain) FetchHeader(hash *chainhash.Hash) (wire.BlockHeader, error) {
+func (b *BlockChain) FetchHeader(hash *daghash.Hash) (wire.BlockHeader, error) {
 	// Reconstruct the header from the block index if possible.
 	if node := b.index.LookupNode(hash); node != nil {
 		return node.Header(), nil
@@ -1209,7 +1209,7 @@ func (b *BlockChain) FetchHeader(hash *chainhash.Hash) (wire.BlockHeader, error)
 // the main chain.
 //
 // This function is safe for concurrent access.
-func (b *BlockChain) MainChainHasBlock(hash *chainhash.Hash) bool {
+func (b *BlockChain) MainChainHasBlock(hash *daghash.Hash) bool {
 	node := b.index.LookupNode(hash)
 	return node != nil && b.bestChain.Contains(node)
 }
@@ -1222,7 +1222,7 @@ func (b *BlockChain) MainChainHasBlock(hash *chainhash.Hash) bool {
 // the passed hash is not currently known.
 //
 // This function is safe for concurrent access.
-func (b *BlockChain) BlockLocatorFromHash(hash *chainhash.Hash) BlockLocator {
+func (b *BlockChain) BlockLocatorFromHash(hash *daghash.Hash) BlockLocator {
 	b.chainLock.RLock()
 	node := b.index.LookupNode(hash)
 	locator := b.bestChain.blockLocator(node)
@@ -1245,7 +1245,7 @@ func (b *BlockChain) LatestBlockLocator() (BlockLocator, error) {
 // main chain.
 //
 // This function is safe for concurrent access.
-func (b *BlockChain) BlockHeightByHash(hash *chainhash.Hash) (int32, error) {
+func (b *BlockChain) BlockHeightByHash(hash *daghash.Hash) (int32, error) {
 	node := b.index.LookupNode(hash)
 	if node == nil || !b.bestChain.Contains(node) {
 		str := fmt.Sprintf("block %s is not in the main chain", hash)
@@ -1259,7 +1259,7 @@ func (b *BlockChain) BlockHeightByHash(hash *chainhash.Hash) (int32, error) {
 // main chain.
 //
 // This function is safe for concurrent access.
-func (b *BlockChain) BlockHashByHeight(blockHeight int32) (*chainhash.Hash, error) {
+func (b *BlockChain) BlockHashByHeight(blockHeight int32) (*daghash.Hash, error) {
 	node := b.bestChain.NodeByHeight(blockHeight)
 	if node == nil {
 		str := fmt.Sprintf("no block at height %d exists", blockHeight)
@@ -1275,7 +1275,7 @@ func (b *BlockChain) BlockHashByHeight(blockHeight int32) (*chainhash.Hash, erro
 // height.  The end height will be limited to the current main chain height.
 //
 // This function is safe for concurrent access.
-func (b *BlockChain) HeightRange(startHeight, endHeight int32) ([]chainhash.Hash, error) {
+func (b *BlockChain) HeightRange(startHeight, endHeight int32) ([]daghash.Hash, error) {
 	// Ensure requested heights are sane.
 	if startHeight < 0 {
 		return nil, fmt.Errorf("start height of fetch range must not "+
@@ -1311,7 +1311,7 @@ func (b *BlockChain) HeightRange(startHeight, endHeight int32) ([]chainhash.Hash
 	}
 
 	// Fetch as many as are available within the specified range.
-	hashes := make([]chainhash.Hash, 0, endHeight-startHeight)
+	hashes := make([]daghash.Hash, 0, endHeight-startHeight)
 	for i := startHeight; i < endHeight; i++ {
 		hashes = append(hashes, b.bestChain.nodeByHeight(i).hash)
 	}
@@ -1325,7 +1325,7 @@ func (b *BlockChain) HeightRange(startHeight, endHeight int32) ([]chainhash.Hash
 //
 // This function is safe for concurrent access.
 func (b *BlockChain) HeightToHashRange(startHeight int32,
-	endHash *chainhash.Hash, maxResults int) ([]chainhash.Hash, error) {
+	endHash *daghash.Hash, maxResults int) ([]daghash.Hash, error) {
 
 	endNode := b.index.LookupNode(endHash)
 	if endNode == nil {
@@ -1352,7 +1352,7 @@ func (b *BlockChain) HeightToHashRange(startHeight int32,
 
 	// Walk backwards from endHeight to startHeight, collecting block hashes.
 	node := endNode
-	hashes := make([]chainhash.Hash, resultsLength)
+	hashes := make([]daghash.Hash, resultsLength)
 	for i := resultsLength - 1; i >= 0; i-- {
 		hashes[i] = node.hash
 		node = node.parent
@@ -1364,8 +1364,8 @@ func (b *BlockChain) HeightToHashRange(startHeight int32,
 // endHash where the block height is a positive multiple of interval.
 //
 // This function is safe for concurrent access.
-func (b *BlockChain) IntervalBlockHashes(endHash *chainhash.Hash, interval int,
-) ([]chainhash.Hash, error) {
+func (b *BlockChain) IntervalBlockHashes(endHash *daghash.Hash, interval int,
+) ([]daghash.Hash, error) {
 
 	endNode := b.index.LookupNode(endHash)
 	if endNode == nil {
@@ -1377,7 +1377,7 @@ func (b *BlockChain) IntervalBlockHashes(endHash *chainhash.Hash, interval int,
 	endHeight := endNode.height
 
 	resultsLength := int(endHeight) / interval
-	hashes := make([]chainhash.Hash, resultsLength)
+	hashes := make([]daghash.Hash, resultsLength)
 
 	b.bestChain.mtx.Lock()
 	defer b.bestChain.mtx.Unlock()
@@ -1415,7 +1415,7 @@ func (b *BlockChain) IntervalBlockHashes(endHash *chainhash.Hash, interval int,
 // functions.
 //
 // This function MUST be called with the chain state lock held (for reads).
-func (b *BlockChain) locateInventory(locator BlockLocator, hashStop *chainhash.Hash, maxEntries uint32) (*blockNode, uint32) {
+func (b *BlockChain) locateInventory(locator BlockLocator, hashStop *daghash.Hash, maxEntries uint32) (*blockNode, uint32) {
 	// There are no block locators so a specific block is being requested
 	// as identified by the stop hash.
 	stopNode := b.index.LookupNode(hashStop)
@@ -1469,7 +1469,7 @@ func (b *BlockChain) locateInventory(locator BlockLocator, hashStop *chainhash.H
 // See the comment on the exported function for more details on special cases.
 //
 // This function MUST be called with the chain state lock held (for reads).
-func (b *BlockChain) locateBlocks(locator BlockLocator, hashStop *chainhash.Hash, maxHashes uint32) []chainhash.Hash {
+func (b *BlockChain) locateBlocks(locator BlockLocator, hashStop *daghash.Hash, maxHashes uint32) []daghash.Hash {
 	// Find the node after the first known block in the locator and the
 	// total number of nodes after it needed while respecting the stop hash
 	// and max entries.
@@ -1479,7 +1479,7 @@ func (b *BlockChain) locateBlocks(locator BlockLocator, hashStop *chainhash.Hash
 	}
 
 	// Populate and return the found hashes.
-	hashes := make([]chainhash.Hash, 0, total)
+	hashes := make([]daghash.Hash, 0, total)
 	for i := uint32(0); i < total; i++ {
 		hashes = append(hashes, node.hash)
 		node = b.bestChain.Next(node)
@@ -1500,7 +1500,7 @@ func (b *BlockChain) locateBlocks(locator BlockLocator, hashStop *chainhash.Hash
 //   after the genesis block will be returned
 //
 // This function is safe for concurrent access.
-func (b *BlockChain) LocateBlocks(locator BlockLocator, hashStop *chainhash.Hash, maxHashes uint32) []chainhash.Hash {
+func (b *BlockChain) LocateBlocks(locator BlockLocator, hashStop *daghash.Hash, maxHashes uint32) []daghash.Hash {
 	b.chainLock.RLock()
 	hashes := b.locateBlocks(locator, hashStop, maxHashes)
 	b.chainLock.RUnlock()
@@ -1514,7 +1514,7 @@ func (b *BlockChain) LocateBlocks(locator BlockLocator, hashStop *chainhash.Hash
 // See the comment on the exported function for more details on special cases.
 //
 // This function MUST be called with the chain state lock held (for reads).
-func (b *BlockChain) locateHeaders(locator BlockLocator, hashStop *chainhash.Hash, maxHeaders uint32) []wire.BlockHeader {
+func (b *BlockChain) locateHeaders(locator BlockLocator, hashStop *daghash.Hash, maxHeaders uint32) []wire.BlockHeader {
 	// Find the node after the first known block in the locator and the
 	// total number of nodes after it needed while respecting the stop hash
 	// and max entries.
@@ -1545,7 +1545,7 @@ func (b *BlockChain) locateHeaders(locator BlockLocator, hashStop *chainhash.Has
 //   after the genesis block will be returned
 //
 // This function is safe for concurrent access.
-func (b *BlockChain) LocateHeaders(locator BlockLocator, hashStop *chainhash.Hash) []wire.BlockHeader {
+func (b *BlockChain) LocateHeaders(locator BlockLocator, hashStop *daghash.Hash) []wire.BlockHeader {
 	b.chainLock.RLock()
 	headers := b.locateHeaders(locator, hashStop, wire.MaxBlockHeadersPerMsg)
 	b.chainLock.RUnlock()
@@ -1591,7 +1591,7 @@ type Config struct {
 	// with.
 	//
 	// This field is required.
-	ChainParams *chaincfg.Params
+	ChainParams *dagconfig.Params
 
 	// Checkpoints hold caller-defined checkpoints that should be added to
 	// the default checkpoints in ChainParams.  Checkpoints must be sorted
@@ -1599,7 +1599,7 @@ type Config struct {
 	//
 	// This field can be nil if the caller does not wish to specify any
 	// checkpoints.
-	Checkpoints []chaincfg.Checkpoint
+	Checkpoints []dagconfig.Checkpoint
 
 	// TimeSource defines the median time source to use for things such as
 	// block processing and determining whether or not the chain is current.
@@ -1641,10 +1641,10 @@ func New(config *Config) (*BlockChain, error) {
 
 	// Generate a checkpoint by height map from the provided checkpoints
 	// and assert the provided checkpoints are sorted by height as required.
-	var checkpointsByHeight map[int32]*chaincfg.Checkpoint
+	var checkpointsByHeight map[int32]*dagconfig.Checkpoint
 	var prevCheckpointHeight int32
 	if len(config.Checkpoints) > 0 {
-		checkpointsByHeight = make(map[int32]*chaincfg.Checkpoint)
+		checkpointsByHeight = make(map[int32]*dagconfig.Checkpoint)
 		for i := range config.Checkpoints {
 			checkpoint := &config.Checkpoints[i]
 			if checkpoint.Height <= prevCheckpointHeight {
@@ -1674,10 +1674,10 @@ func New(config *Config) (*BlockChain, error) {
 		blocksPerRetarget:   int32(targetTimespan / targetTimePerBlock),
 		index:               newBlockIndex(config.DB, params),
 		bestChain:           newChainView(nil),
-		orphans:             make(map[chainhash.Hash]*orphanBlock),
-		prevOrphans:         make(map[chainhash.Hash][]*orphanBlock),
+		orphans:             make(map[daghash.Hash]*orphanBlock),
+		prevOrphans:         make(map[daghash.Hash][]*orphanBlock),
 		warningCaches:       newThresholdCaches(vbNumBits),
-		deploymentCaches:    newThresholdCaches(chaincfg.DefinedDeployments),
+		deploymentCaches:    newThresholdCaches(dagconfig.DefinedDeployments),
 	}
 
 	// Initialize the chain state from the passed database.  When the db

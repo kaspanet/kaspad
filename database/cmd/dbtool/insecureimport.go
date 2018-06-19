@@ -12,7 +12,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/daglabs/btcd/chaincfg/chainhash"
+	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/database"
 	"github.com/daglabs/btcd/wire"
 	"github.com/daglabs/btcutil"
@@ -33,7 +33,7 @@ var (
 
 	// zeroHash is a simply a hash with all zeros.  It is defined here to
 	// avoid creating it multiple times.
-	zeroHash = chainhash.Hash{}
+	zeroHash = daghash.Hash{}
 )
 
 // importResults houses the stats and result as an import operation.

@@ -17,7 +17,7 @@ import (
 	"path/filepath"
 	"sync"
 
-	"github.com/daglabs/btcd/chaincfg/chainhash"
+	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/database"
 	"github.com/daglabs/btcd/wire"
 )
@@ -505,7 +505,7 @@ func (s *blockStore) writeBlock(rawBlock []byte) (blockLocation, error) {
 // read from the file.
 //
 // Format: <network><block length><serialized block><checksum>
-func (s *blockStore) readBlock(hash *chainhash.Hash, loc blockLocation) ([]byte, error) {
+func (s *blockStore) readBlock(hash *daghash.Hash, loc blockLocation) ([]byte, error) {
 	// Get the referenced block file handle opening the file as needed.  The
 	// function also handles closing files as needed to avoid going over the
 	// max allowed open files.
