@@ -7,7 +7,7 @@ package wire
 import (
 	"io"
 
-	"github.com/daglabs/btcd/chaincfg/chainhash"
+	"github.com/daglabs/btcd/dagconfig/daghash"
 )
 
 // MaxGetCFiltersReqRange the maximum number of filters that may be requested in
@@ -20,7 +20,7 @@ const MaxGetCFiltersReqRange = 1000
 type MsgGetCFilters struct {
 	FilterType  FilterType
 	StartHeight uint32
-	StopHash    chainhash.Hash
+	StopHash    daghash.Hash
 }
 
 // BtcDecode decodes r using the bitcoin protocol encoding into the receiver.
@@ -65,14 +65,14 @@ func (msg *MsgGetCFilters) Command() string {
 // receiver.  This is part of the Message interface implementation.
 func (msg *MsgGetCFilters) MaxPayloadLength(pver uint32) uint32 {
 	// Filter type + uint32 + block hash
-	return 1 + 4 + chainhash.HashSize
+	return 1 + 4 + daghash.HashSize
 }
 
 // NewMsgGetCFilters returns a new bitcoin getcfilters message that conforms to
 // the Message interface using the passed parameters and defaults for the
 // remaining fields.
 func NewMsgGetCFilters(filterType FilterType, startHeight uint32,
-	stopHash *chainhash.Hash) *MsgGetCFilters {
+	stopHash *daghash.Hash) *MsgGetCFilters {
 	return &MsgGetCFilters{
 		FilterType:  filterType,
 		StartHeight: startHeight,

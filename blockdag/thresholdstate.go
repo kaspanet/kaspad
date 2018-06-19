@@ -7,7 +7,7 @@ package blockdag
 import (
 	"fmt"
 
-	"github.com/daglabs/btcd/chaincfg/chainhash"
+	"github.com/daglabs/btcd/dagconfig/daghash"
 )
 
 // ThresholdState define the various threshold states used when voting on
@@ -93,19 +93,19 @@ type thresholdConditionChecker interface {
 // thresholdStateCache provides a type to cache the threshold states of each
 // threshold window for a set of IDs.
 type thresholdStateCache struct {
-	entries map[chainhash.Hash]ThresholdState
+	entries map[daghash.Hash]ThresholdState
 }
 
 // Lookup returns the threshold state associated with the given hash along with
 // a boolean that indicates whether or not it is valid.
-func (c *thresholdStateCache) Lookup(hash *chainhash.Hash) (ThresholdState, bool) {
+func (c *thresholdStateCache) Lookup(hash *daghash.Hash) (ThresholdState, bool) {
 	state, ok := c.entries[*hash]
 	return state, ok
 }
 
 // Update updates the cache to contain the provided hash to threshold state
 // mapping.
-func (c *thresholdStateCache) Update(hash *chainhash.Hash, state ThresholdState) {
+func (c *thresholdStateCache) Update(hash *daghash.Hash, state ThresholdState) {
 	c.entries[*hash] = state
 }
 
@@ -115,7 +115,7 @@ func newThresholdCaches(numCaches uint32) []thresholdStateCache {
 	caches := make([]thresholdStateCache, numCaches)
 	for i := 0; i < len(caches); i++ {
 		caches[i] = thresholdStateCache{
-			entries: make(map[chainhash.Hash]ThresholdState),
+			entries: make(map[daghash.Hash]ThresholdState),
 		}
 	}
 	return caches

@@ -13,8 +13,8 @@ import (
 	"time"
 
 	"github.com/btcsuite/go-socks/socks"
-	"github.com/daglabs/btcd/chaincfg"
-	"github.com/daglabs/btcd/chaincfg/chainhash"
+	"github.com/daglabs/btcd/dagconfig"
+	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/peer"
 	"github.com/daglabs/btcd/wire"
 )
@@ -226,7 +226,7 @@ func TestPeerConnection(t *testing.T) {
 		UserAgentName:     "peer",
 		UserAgentVersion:  "1.0",
 		UserAgentComments: []string{"comment"},
-		ChainParams:       &chaincfg.MainNetParams,
+		ChainParams:       &dagconfig.MainNetParams,
 		ProtocolVersion:   wire.RejectVersion, // Configure with older version
 		Services:          0,
 	}
@@ -235,7 +235,7 @@ func TestPeerConnection(t *testing.T) {
 		UserAgentName:     "peer",
 		UserAgentVersion:  "1.0",
 		UserAgentComments: []string{"comment"},
-		ChainParams:       &chaincfg.MainNetParams,
+		ChainParams:       &dagconfig.MainNetParams,
 		Services:          wire.SFNodeNetwork,
 	}
 
@@ -436,7 +436,7 @@ func TestPeerListeners(t *testing.T) {
 		UserAgentName:     "peer",
 		UserAgentVersion:  "1.0",
 		UserAgentComments: []string{"comment"},
-		ChainParams:       &chaincfg.MainNetParams,
+		ChainParams:       &dagconfig.MainNetParams,
 		Services:          wire.SFNodeBloom,
 	}
 	inConn, outConn := pipe(
@@ -502,7 +502,7 @@ func TestPeerListeners(t *testing.T) {
 		{
 			"OnBlock",
 			wire.NewMsgBlock(wire.NewBlockHeader(1,
-				&chainhash.Hash{}, &chainhash.Hash{}, 1, 1)),
+				&daghash.Hash{}, &daghash.Hash{}, 1, 1)),
 		},
 		{
 			"OnInv",
@@ -522,7 +522,7 @@ func TestPeerListeners(t *testing.T) {
 		},
 		{
 			"OnGetBlocks",
-			wire.NewMsgGetBlocks(&chainhash.Hash{}),
+			wire.NewMsgGetBlocks(&daghash.Hash{}),
 		},
 		{
 			"OnGetHeaders",
@@ -530,19 +530,19 @@ func TestPeerListeners(t *testing.T) {
 		},
 		{
 			"OnGetCFilters",
-			wire.NewMsgGetCFilters(wire.GCSFilterRegular, 0, &chainhash.Hash{}),
+			wire.NewMsgGetCFilters(wire.GCSFilterRegular, 0, &daghash.Hash{}),
 		},
 		{
 			"OnGetCFHeaders",
-			wire.NewMsgGetCFHeaders(wire.GCSFilterRegular, 0, &chainhash.Hash{}),
+			wire.NewMsgGetCFHeaders(wire.GCSFilterRegular, 0, &daghash.Hash{}),
 		},
 		{
 			"OnGetCFCheckpt",
-			wire.NewMsgGetCFCheckpt(wire.GCSFilterRegular, &chainhash.Hash{}),
+			wire.NewMsgGetCFCheckpt(wire.GCSFilterRegular, &daghash.Hash{}),
 		},
 		{
 			"OnCFilter",
-			wire.NewMsgCFilter(wire.GCSFilterRegular, &chainhash.Hash{},
+			wire.NewMsgCFilter(wire.GCSFilterRegular, &daghash.Hash{},
 				[]byte("payload")),
 		},
 		{
@@ -568,7 +568,7 @@ func TestPeerListeners(t *testing.T) {
 		{
 			"OnMerkleBlock",
 			wire.NewMsgMerkleBlock(wire.NewBlockHeader(1,
-				&chainhash.Hash{}, &chainhash.Hash{}, 1, 1)),
+				&daghash.Hash{}, &daghash.Hash{}, 1, 1)),
 		},
 		// only one version message is allowed
 		// only one verack message is allowed
@@ -600,13 +600,13 @@ func TestPeerListeners(t *testing.T) {
 func TestOutboundPeer(t *testing.T) {
 
 	peerCfg := &peer.Config{
-		NewestBlock: func() (*chainhash.Hash, int32, error) {
+		NewestBlock: func() (*daghash.Hash, int32, error) {
 			return nil, 0, errors.New("newest block not found")
 		},
 		UserAgentName:     "peer",
 		UserAgentVersion:  "1.0",
 		UserAgentComments: []string{"comment"},
-		ChainParams:       &chaincfg.MainNetParams,
+		ChainParams:       &dagconfig.MainNetParams,
 		Services:          0,
 	}
 
@@ -641,7 +641,7 @@ func TestOutboundPeer(t *testing.T) {
 	}
 
 	// Test Queue Inv
-	fakeBlockHash := &chainhash.Hash{0: 0x00, 1: 0x01}
+	fakeBlockHash := &daghash.Hash{0: 0x00, 1: 0x01}
 	fakeInv := wire.NewInvVect(wire.InvTypeBlock, fakeBlockHash)
 
 	// Should be noops as the peer could not connect.
@@ -657,9 +657,9 @@ func TestOutboundPeer(t *testing.T) {
 	p.Disconnect()
 
 	// Test NewestBlock
-	var newestBlock = func() (*chainhash.Hash, int32, error) {
+	var newestBlock = func() (*daghash.Hash, int32, error) {
 		hashStr := "14a0810ac680a3eb3f82edc878cea25ec41d6b790744e5daeef"
-		hash, err := chainhash.NewHashFromStr(hashStr)
+		hash, err := daghash.NewHashFromStr(hashStr)
 		if err != nil {
 			return nil, 0, err
 		}
@@ -677,7 +677,7 @@ func TestOutboundPeer(t *testing.T) {
 	p1.AssociateConnection(c1)
 
 	// Test update latest block
-	latestBlockHash, err := chainhash.NewHashFromStr("1a63f9cdff1752e6375c8c76e543a71d239e1a2e5c6db1aa679")
+	latestBlockHash, err := daghash.NewHashFromStr("1a63f9cdff1752e6375c8c76e543a71d239e1a2e5c6db1aa679")
 	if err != nil {
 		t.Errorf("NewHashFromStr: unexpected err %v\n", err)
 		return
@@ -695,7 +695,7 @@ func TestOutboundPeer(t *testing.T) {
 	p1.Disconnect()
 
 	// Test regression
-	peerCfg.ChainParams = &chaincfg.RegressionNetParams
+	peerCfg.ChainParams = &dagconfig.RegressionNetParams
 	peerCfg.Services = wire.SFNodeBloom
 	r2, w2 := io.Pipe()
 	c2 := &conn{raddr: "10.0.0.1:8333", Writer: w2, Reader: r2}
@@ -716,11 +716,11 @@ func TestOutboundPeer(t *testing.T) {
 		t.Errorf("PushAddrMsg: unexpected err %v\n", err)
 		return
 	}
-	if err := p2.PushGetBlocksMsg(nil, &chainhash.Hash{}); err != nil {
+	if err := p2.PushGetBlocksMsg(nil, &daghash.Hash{}); err != nil {
 		t.Errorf("PushGetBlocksMsg: unexpected err %v\n", err)
 		return
 	}
-	if err := p2.PushGetHeadersMsg(nil, &chainhash.Hash{}); err != nil {
+	if err := p2.PushGetHeadersMsg(nil, &daghash.Hash{}); err != nil {
 		t.Errorf("PushGetHeadersMsg: unexpected err %v\n", err)
 		return
 	}
@@ -746,7 +746,7 @@ func TestUnsupportedVersionPeer(t *testing.T) {
 		UserAgentName:     "peer",
 		UserAgentVersion:  "1.0",
 		UserAgentComments: []string{"comment"},
-		ChainParams:       &chaincfg.MainNetParams,
+		ChainParams:       &dagconfig.MainNetParams,
 		Services:          0,
 	}
 

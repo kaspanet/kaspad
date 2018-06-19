@@ -1,11 +1,11 @@
-package chaincfg_test
+package dagconfig_test
 
 import (
 	"bytes"
 	"reflect"
 	"testing"
 
-	. "github.com/daglabs/btcd/chaincfg"
+	. "github.com/daglabs/btcd/dagconfig"
 )
 
 // Define some of the required parameters for a user-registered

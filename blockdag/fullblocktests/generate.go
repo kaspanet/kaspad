@@ -20,8 +20,8 @@ import (
 
 	"github.com/daglabs/btcd/blockdag"
 	"github.com/daglabs/btcd/btcec"
-	"github.com/daglabs/btcd/chaincfg"
-	"github.com/daglabs/btcd/chaincfg/chainhash"
+	"github.com/daglabs/btcd/dagconfig"
+	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/txscript"
 	"github.com/daglabs/btcd/wire"
 	"github.com/daglabs/btcutil"
@@ -179,17 +179,17 @@ func makeSpendableOut(block *wire.MsgBlock, txIndex, txOutIndex uint32) spendabl
 // that build from one another along with housing other useful things such as
 // available spendable outputs used throughout the tests.
 type testGenerator struct {
-	params       *chaincfg.Params
+	params       *dagconfig.Params
 	tip          *wire.MsgBlock
 	tipName      string
 	tipHeight    int32
-	blocks       map[chainhash.Hash]*wire.MsgBlock
+	blocks       map[daghash.Hash]*wire.MsgBlock
 	blocksByName map[string]*wire.MsgBlock
 	blockHeights map[string]int32
 
 	// Used for tracking spendable coinbase outputs.
 	spendableOuts     []spendableOut
-	prevCollectedHash chainhash.Hash
+	prevCollectedHash daghash.Hash
 
 	// Common key for any tests which require signed transactions.
 	privKey *btcec.PrivateKey
@@ -197,13 +197,13 @@ type testGenerator struct {
 
 // makeTestGenerator returns a test generator instance initialized with the
 // genesis block as the tip.
-func makeTestGenerator(params *chaincfg.Params) (testGenerator, error) {
+func makeTestGenerator(params *dagconfig.Params) (testGenerator, error) {
 	privKey, _ := btcec.PrivKeyFromBytes(btcec.S256(), []byte{0x01})
 	genesis := params.GenesisBlock
 	genesisHash := genesis.BlockHash()
 	return testGenerator{
 		params:       params,
-		blocks:       map[chainhash.Hash]*wire.MsgBlock{genesisHash: genesis},
+		blocks:       map[daghash.Hash]*wire.MsgBlock{genesisHash: genesis},
 		blocksByName: map[string]*wire.MsgBlock{"genesis": genesis},
 		blockHeights: map[string]int32{"genesis": 0},
 		tip:          genesis,
@@ -286,7 +286,7 @@ func (g *testGenerator) createCoinbaseTx(blockHeight int32) *wire.MsgTx {
 	tx.AddTxIn(&wire.TxIn{
 		// Coinbase transactions have no inputs, so previous outpoint is
 		// zero hash and max index.
-		PreviousOutPoint: *wire.NewOutPoint(&chainhash.Hash{},
+		PreviousOutPoint: *wire.NewOutPoint(&daghash.Hash{},
 			wire.MaxPrevOutIndex),
 		Sequence:        wire.MaxTxInSequenceNum,
 		SignatureScript: coinbaseScript,
@@ -300,9 +300,9 @@ func (g *testGenerator) createCoinbaseTx(blockHeight int32) *wire.MsgTx {
 
 // calcMerkleRoot creates a merkle tree from the slice of transactions and
 // returns the root of the tree.
-func calcMerkleRoot(txns []*wire.MsgTx) chainhash.Hash {
+func calcMerkleRoot(txns []*wire.MsgTx) daghash.Hash {
 	if len(txns) == 0 {
-		return chainhash.Hash{}
+		return daghash.Hash{}
 	}
 
 	utilTxns := make([]*btcutil.Tx, 0, len(txns))
@@ -553,7 +553,7 @@ func (g *testGenerator) nextBlock(blockName string, spend *spendableOut, mungers
 // map references to a block via its old hash and insert new ones for the new
 // block hash.  This is useful if the test code has to manually change a block
 // after 'nextBlock' has returned.
-func (g *testGenerator) updateBlockState(oldBlockName string, oldBlockHash chainhash.Hash, newBlockName string, newBlock *wire.MsgBlock) {
+func (g *testGenerator) updateBlockState(oldBlockName string, oldBlockHash daghash.Hash, newBlockName string, newBlock *wire.MsgBlock) {
 	// Look up the height from the existing entries.
 	blockHeight := g.blockHeights[oldBlockName]
 
@@ -736,7 +736,7 @@ func (g *testGenerator) assertTipBlockNumTxns(expected int) {
 
 // assertTipBlockHash panics if the current tip block associated with the
 // generator does not match the specified hash.
-func (g *testGenerator) assertTipBlockHash(expected chainhash.Hash) {
+func (g *testGenerator) assertTipBlockHash(expected daghash.Hash) {
 	hash := g.tip.BlockHash()
 	if hash != expected {
 		panic(fmt.Sprintf("block hash of block %q (height %d) is %v "+
@@ -747,7 +747,7 @@ func (g *testGenerator) assertTipBlockHash(expected chainhash.Hash) {
 
 // assertTipBlockMerkleRoot panics if the merkle root in header of the current
 // tip block associated with the generator does not match the specified hash.
-func (g *testGenerator) assertTipBlockMerkleRoot(expected chainhash.Hash) {
+func (g *testGenerator) assertTipBlockMerkleRoot(expected daghash.Hash) {
 	hash := g.tip.Header.MerkleRoot
 	if hash != expected {
 		panic(fmt.Sprintf("merkle root of block %q (height %d) is %v "+
@@ -1472,7 +1472,7 @@ func Generate(includeLargeReorg bool) (tests [][]TestInstance, err error) {
 	//                 \-> b48(14)
 	g.setTip("b43")
 	g.nextBlock("b48", outs[14], func(b *wire.MsgBlock) {
-		b.Header.MerkleRoot = chainhash.Hash{}
+		b.Header.MerkleRoot = daghash.Hash{}
 	})
 	rejected(blockdag.ErrBadMerkleRoot)
 

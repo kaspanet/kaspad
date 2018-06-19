@@ -9,17 +9,17 @@ import (
 	"testing"
 
 	"github.com/daglabs/btcd/blockdag"
-	"github.com/daglabs/btcd/chaincfg/chainhash"
+	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/wire"
 	"github.com/daglabs/btcutil"
 )
 
 // newHashFromStr converts the passed big-endian hex string into a
-// chainhash.Hash.  It only differs from the one available in chainhash in that
+// daghash.Hash.  It only differs from the one available in daghash in that
 // it panics on an error since it will only (and must only) be called with
 // hard-coded, and therefore known good, hashes.
-func newHashFromStr(hexStr string) *chainhash.Hash {
-	hash, err := chainhash.NewHashFromStr(hexStr)
+func newHashFromStr(hexStr string) *daghash.Hash {
+	hash, err := daghash.NewHashFromStr(hexStr)
 	if err != nil {
 		panic("invalid hash in source file: " + hexStr)
 	}
@@ -65,7 +65,7 @@ func TestCalcPriority(t *testing.T) {
 		Version: 1,
 		TxIn: []*wire.TxIn{{
 			PreviousOutPoint: wire.OutPoint{
-				Hash:  chainhash.Hash{},
+				Hash:  daghash.Hash{},
 				Index: wire.MaxPrevOutIndex,
 			},
 			SignatureScript: hexToBytes("04ffff001d0134"),

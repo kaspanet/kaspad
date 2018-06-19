@@ -10,7 +10,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/daglabs/btcd/chaincfg/chainhash"
+	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/davecgh/go-spew/spew"
 )
 
@@ -61,7 +61,7 @@ func TestHeaders(t *testing.T) {
 // TestHeadersWire tests the MsgHeaders wire encode and decode for various
 // numbers of headers and protocol versions.
 func TestHeadersWire(t *testing.T) {
-	hashes := []chainhash.Hash{mainNetGenesisHash, simNetGenesisHash}
+	hashes := []daghash.Hash{mainNetGenesisHash, simNetGenesisHash}
 	merkleHash := blockOne.Header.MerkleRoot
 	bits := uint32(0x1d00ffff)
 	nonce := uint32(0x9962e301)
@@ -223,7 +223,7 @@ func TestHeadersWireErrors(t *testing.T) {
 	pver := ProtocolVersion
 	wireErr := &MessageError{}
 
-	hashes := []chainhash.Hash{mainNetGenesisHash, simNetGenesisHash}
+	hashes := []daghash.Hash{mainNetGenesisHash, simNetGenesisHash}
 	merkleHash := blockOne.Header.MerkleRoot
 	bits := uint32(0x1d00ffff)
 	nonce := uint32(0x9962e301)

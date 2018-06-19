@@ -10,7 +10,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/daglabs/btcd/chaincfg/chainhash"
+	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/wire"
 )
 
@@ -342,7 +342,7 @@ func calcSignatureHash(script []parsedOpcode, hashType SigHashType, tx *wire.Msg
 	// cleverly construct transactions which can steal those coins provided
 	// they can reuse signatures.
 	if hashType&sigHashMask == SigHashSingle && idx >= len(tx.TxOut) {
-		var hash chainhash.Hash
+		var hash daghash.Hash
 		hash[0] = 0x01
 		return hash[:]
 	}
@@ -409,7 +409,7 @@ func calcSignatureHash(script []parsedOpcode, hashType SigHashType, tx *wire.Msg
 	wbuf := bytes.NewBuffer(make([]byte, 0, txCopy.SerializeSize()+4))
 	txCopy.Serialize(wbuf)
 	binary.Write(wbuf, binary.LittleEndian, hashType)
-	return chainhash.DoubleHashB(wbuf.Bytes())
+	return daghash.DoubleHashB(wbuf.Bytes())
 }
 
 // asSmallInt returns the passed opcode, which must be true according to

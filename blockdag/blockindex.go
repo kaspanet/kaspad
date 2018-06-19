@@ -10,8 +10,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/daglabs/btcd/chaincfg"
-	"github.com/daglabs/btcd/chaincfg/chainhash"
+	"github.com/daglabs/btcd/dagconfig"
+	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/database"
 	"github.com/daglabs/btcd/wire"
 )
@@ -75,7 +75,7 @@ type blockNode struct {
 	parent *blockNode
 
 	// hash is the double sha 256 of the block.
-	hash chainhash.Hash
+	hash daghash.Hash
 
 	// workSum is the total amount of work in the chain up to and including
 	// this node.
@@ -92,7 +92,7 @@ type blockNode struct {
 	bits       uint32
 	nonce      uint32
 	timestamp  int64
-	merkleRoot chainhash.Hash
+	merkleRoot daghash.Hash
 
 	// status is a bitfield representing the validation state of the block. The
 	// status field, unlike the other fields, may be written to and so should
@@ -227,21 +227,21 @@ type blockIndex struct {
 	// be changed afterwards, so there is no need to protect them with a
 	// separate mutex.
 	db          database.DB
-	chainParams *chaincfg.Params
+	chainParams *dagconfig.Params
 
 	sync.RWMutex
-	index map[chainhash.Hash]*blockNode
+	index map[daghash.Hash]*blockNode
 	dirty map[*blockNode]struct{}
 }
 
 // newBlockIndex returns a new empty instance of a block index.  The index will
 // be dynamically populated as block nodes are loaded from the database and
 // manually added.
-func newBlockIndex(db database.DB, chainParams *chaincfg.Params) *blockIndex {
+func newBlockIndex(db database.DB, chainParams *dagconfig.Params) *blockIndex {
 	return &blockIndex{
 		db:          db,
 		chainParams: chainParams,
-		index:       make(map[chainhash.Hash]*blockNode),
+		index:       make(map[daghash.Hash]*blockNode),
 		dirty:       make(map[*blockNode]struct{}),
 	}
 }
@@ -249,7 +249,7 @@ func newBlockIndex(db database.DB, chainParams *chaincfg.Params) *blockIndex {
 // HaveBlock returns whether or not the block index contains the provided hash.
 //
 // This function is safe for concurrent access.
-func (bi *blockIndex) HaveBlock(hash *chainhash.Hash) bool {
+func (bi *blockIndex) HaveBlock(hash *daghash.Hash) bool {
 	bi.RLock()
 	_, hasBlock := bi.index[*hash]
 	bi.RUnlock()
@@ -260,7 +260,7 @@ func (bi *blockIndex) HaveBlock(hash *chainhash.Hash) bool {
 // return nil if there is no entry for the hash.
 //
 // This function is safe for concurrent access.
-func (bi *blockIndex) LookupNode(hash *chainhash.Hash) *blockNode {
+func (bi *blockIndex) LookupNode(hash *daghash.Hash) *blockNode {
 	bi.RLock()
 	node := bi.index[*hash]
 	bi.RUnlock()

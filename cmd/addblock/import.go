@@ -13,13 +13,13 @@ import (
 
 	"github.com/daglabs/btcd/blockdag"
 	"github.com/daglabs/btcd/blockdag/indexers"
-	"github.com/daglabs/btcd/chaincfg/chainhash"
+	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/database"
 	"github.com/daglabs/btcd/wire"
 	"github.com/daglabs/btcutil"
 )
 
-var zeroHash = chainhash.Hash{}
+var zeroHash = daghash.Hash{}
 
 // importResults houses the stats and result as an import operation.
 type importResults struct {

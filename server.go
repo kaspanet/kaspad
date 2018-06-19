@@ -25,8 +25,8 @@ import (
 	"github.com/daglabs/btcd/addrmgr"
 	"github.com/daglabs/btcd/blockdag"
 	"github.com/daglabs/btcd/blockdag/indexers"
-	"github.com/daglabs/btcd/chaincfg"
-	"github.com/daglabs/btcd/chaincfg/chainhash"
+	"github.com/daglabs/btcd/dagconfig"
+	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/connmgr"
 	"github.com/daglabs/btcd/database"
 	"github.com/daglabs/btcd/mempool"
@@ -69,7 +69,7 @@ var (
 )
 
 // zeroHash is the zero value hash (all zeros).  It is defined as a convenience.
-var zeroHash chainhash.Hash
+var zeroHash daghash.Hash
 
 // onionAddr implements the net.Addr interface and represents a tor address.
 type onionAddr struct {
@@ -144,7 +144,7 @@ type relayMsg struct {
 // updates, peer heights will be kept up to date, allowing for fresh data when
 // selecting sync peer candidacy.
 type updatePeerHeightsMsg struct {
-	newHash    *chainhash.Hash
+	newHash    *daghash.Hash
 	newHeight  int32
 	originPeer *peer.Peer
 }
@@ -188,8 +188,8 @@ func (ps *peerState) forAllPeers(closure func(sp *serverPeer)) {
 // cfHeaderKV is a tuple of a filter header and its associated block hash. The
 // struct is used to cache cfcheckpt responses.
 type cfHeaderKV struct {
-	blockHash    chainhash.Hash
-	filterHeader chainhash.Hash
+	blockHash    daghash.Hash
+	filterHeader daghash.Hash
 }
 
 // server provides a bitcoin server for handling communications to and from
@@ -204,7 +204,7 @@ type server struct {
 	shutdownSched int32
 	startupTime   int64
 
-	chainParams          *chaincfg.Params
+	chainParams          *dagconfig.Params
 	addrManager          *addrmgr.AddrManager
 	connManager          *connmgr.ConnManager
 	sigCache             *txscript.SigCache
@@ -257,7 +257,7 @@ type serverPeer struct {
 	connReq        *connmgr.ConnReq
 	server         *server
 	persistent     bool
-	continueHash   *chainhash.Hash
+	continueHash   *daghash.Hash
 	relayMtx       sync.Mutex
 	disableRelayTx bool
 	sentAddrs      bool
@@ -287,7 +287,7 @@ func newServerPeer(s *server, isPersistent bool) *serverPeer {
 
 // newestBlock returns the current best block hash and height using the format
 // required by the configuration for the peer package.
-func (sp *serverPeer) newestBlock() (*chainhash.Hash, int32, error) {
+func (sp *serverPeer) newestBlock() (*daghash.Hash, int32, error) {
 	best := sp.server.chain.BestSnapshot()
 	return &best.Hash, best.Height, nil
 }
@@ -742,9 +742,9 @@ func (sp *serverPeer) OnGetCFilters(_ *peer.Peer, msg *wire.MsgGetCFilters) {
 		return
 	}
 
-	// Create []*chainhash.Hash from []chainhash.Hash to pass to
+	// Create []*daghash.Hash from []daghash.Hash to pass to
 	// FiltersByBlockHashes.
-	hashPtrs := make([]*chainhash.Hash, len(hashes))
+	hashPtrs := make([]*daghash.Hash, len(hashes))
 	for i := range hashes {
 		hashPtrs[i] = &hashes[i]
 	}
@@ -798,9 +798,9 @@ func (sp *serverPeer) OnGetCFHeaders(_ *peer.Peer, msg *wire.MsgGetCFHeaders) {
 		return
 	}
 
-	// Create []*chainhash.Hash from []chainhash.Hash to pass to
+	// Create []*daghash.Hash from []daghash.Hash to pass to
 	// FilterHeadersByBlockHashes.
-	hashPtrs := make([]*chainhash.Hash, len(hashList))
+	hashPtrs := make([]*daghash.Hash, len(hashList))
 	for i := range hashList {
 		hashPtrs[i] = &hashList[i]
 	}
@@ -853,7 +853,7 @@ func (sp *serverPeer) OnGetCFHeaders(_ *peer.Peer, msg *wire.MsgGetCFHeaders) {
 		}
 
 		// Deserialize the hash.
-		filterHash, err := chainhash.NewHash(hashBytes)
+		filterHash, err := daghash.NewHash(hashBytes)
 		if err != nil {
 			peerLog.Warnf("Committed filter hash deserialize "+
 				"failed: %v", err)
@@ -926,7 +926,7 @@ func (sp *serverPeer) OnGetCFCheckpt(_ *peer.Peer, msg *wire.MsgGetCFCheckpt) {
 	}
 
 	// Look up any filter headers that aren't cached.
-	blockHashPtrs := make([]*chainhash.Hash, 0, len(blockHashes)-forkIdx)
+	blockHashPtrs := make([]*daghash.Hash, 0, len(blockHashes)-forkIdx)
 	for i := forkIdx; i < len(blockHashes); i++ {
 		blockHashPtrs = append(blockHashPtrs, &blockHashes[i])
 	}
@@ -944,7 +944,7 @@ func (sp *serverPeer) OnGetCFCheckpt(_ *peer.Peer, msg *wire.MsgGetCFCheckpt) {
 			return
 		}
 
-		filterHeader, err := chainhash.NewHash(filterHeaderBytes)
+		filterHeader, err := daghash.NewHash(filterHeaderBytes)
 		if err != nil {
 			peerLog.Warnf("Committed filter header deserialize "+
 				"failed: %v", err)
@@ -1254,7 +1254,7 @@ func (s *server) TransactionConfirmed(tx *btcutil.Tx) {
 
 // pushTxMsg sends a tx message for the provided transaction hash to the
 // connected peer.  An error is returned if the transaction hash is not known.
-func (s *server) pushTxMsg(sp *serverPeer, hash *chainhash.Hash, doneChan chan<- struct{},
+func (s *server) pushTxMsg(sp *serverPeer, hash *daghash.Hash, doneChan chan<- struct{},
 	waitChan <-chan struct{}) error {
 
 	// Attempt to fetch the requested transaction from the pool.  A
@@ -1283,7 +1283,7 @@ func (s *server) pushTxMsg(sp *serverPeer, hash *chainhash.Hash, doneChan chan<-
 
 // pushBlockMsg sends a block message for the provided block hash to the
 // connected peer.  An error is returned if the block hash is not known.
-func (s *server) pushBlockMsg(sp *serverPeer, hash *chainhash.Hash, doneChan chan<- struct{},
+func (s *server) pushBlockMsg(sp *serverPeer, hash *daghash.Hash, doneChan chan<- struct{},
 	waitChan <-chan struct{}) error {
 
 	// Fetch the raw block bytes from the database.
@@ -1351,7 +1351,7 @@ func (s *server) pushBlockMsg(sp *serverPeer, hash *chainhash.Hash, doneChan cha
 // the connected peer.  Since a merkle block requires the peer to have a filter
 // loaded, this call will simply be ignored if there is no filter loaded.  An
 // error is returned if the block hash is not known.
-func (s *server) pushMerkleBlockMsg(sp *serverPeer, hash *chainhash.Hash,
+func (s *server) pushMerkleBlockMsg(sp *serverPeer, hash *daghash.Hash,
 	doneChan chan<- struct{}, waitChan <-chan struct{}) error {
 
 	// Do not send a response if the peer doesn't have a filter loaded.
@@ -2062,7 +2062,7 @@ func (s *server) NetTotals() (uint64, uint64) {
 // the latest connected main chain block, or a recognized orphan. These height
 // updates allow us to dynamically refresh peer heights, ensuring sync peer
 // selection has access to the latest block heights for each peer.
-func (s *server) UpdatePeerHeights(latestBlkHash *chainhash.Hash, latestHeight int32, updateSource *peer.Peer) {
+func (s *server) UpdatePeerHeights(latestBlkHash *daghash.Hash, latestHeight int32, updateSource *peer.Peer) {
 	s.peerHeightsUpdate <- updatePeerHeightsMsg{
 		newHash:    latestBlkHash,
 		newHeight:  latestHeight,
@@ -2393,7 +2393,7 @@ func setupRPCListeners() ([]net.Listener, error) {
 // newServer returns a new btcd server configured to listen on addr for the
 // bitcoin network type specified by chainParams.  Use start to begin accepting
 // connections from peers.
-func newServer(listenAddrs []string, db database.DB, chainParams *chaincfg.Params, interrupt <-chan struct{}) (*server, error) {
+func newServer(listenAddrs []string, db database.DB, chainParams *dagconfig.Params, interrupt <-chan struct{}) (*server, error) {
 	services := defaultServices
 	if cfg.NoPeerBloomFilters {
 		services &^= wire.SFNodeBloom
@@ -2476,7 +2476,7 @@ func newServer(listenAddrs []string, db database.DB, chainParams *chaincfg.Param
 	}
 
 	// Merge given checkpoints with the default ones unless they are disabled.
-	var checkpoints []chaincfg.Checkpoint
+	var checkpoints []dagconfig.Checkpoint
 	if !cfg.DisableCheckpoints {
 		checkpoints = mergeCheckpoints(s.chainParams.Checkpoints, cfg.addCheckpoints)
 	}
@@ -2932,7 +2932,7 @@ func isWhitelisted(addr net.Addr) bool {
 
 // checkpointSorter implements sort.Interface to allow a slice of checkpoints to
 // be sorted.
-type checkpointSorter []chaincfg.Checkpoint
+type checkpointSorter []dagconfig.Checkpoint
 
 // Len returns the number of checkpoints in the slice.  It is part of the
 // sort.Interface implementation.
@@ -2957,10 +2957,10 @@ func (s checkpointSorter) Less(i, j int) bool {
 // checkpoints contain a checkpoint with the same height as a checkpoint in the
 // default checkpoints, the additional checkpoint will take precedence and
 // overwrite the default one.
-func mergeCheckpoints(defaultCheckpoints, additional []chaincfg.Checkpoint) []chaincfg.Checkpoint {
+func mergeCheckpoints(defaultCheckpoints, additional []dagconfig.Checkpoint) []dagconfig.Checkpoint {
 	// Create a map of the additional checkpoints to remove duplicates while
 	// leaving the most recently-specified checkpoint.
-	extra := make(map[int32]chaincfg.Checkpoint)
+	extra := make(map[int32]dagconfig.Checkpoint)
 	for _, checkpoint := range additional {
 		extra[checkpoint.Height] = checkpoint
 	}
@@ -2968,7 +2968,7 @@ func mergeCheckpoints(defaultCheckpoints, additional []chaincfg.Checkpoint) []ch
 	// Add all default checkpoints that do not have an override in the
 	// additional checkpoints.
 	numDefault := len(defaultCheckpoints)
-	checkpoints := make([]chaincfg.Checkpoint, 0, numDefault+len(extra))
+	checkpoints := make([]dagconfig.Checkpoint, 0, numDefault+len(extra))
 	for _, checkpoint := range defaultCheckpoints {
 		if _, exists := extra[checkpoint.Height]; !exists {
 			checkpoints = append(checkpoints, checkpoint)

@@ -7,7 +7,7 @@ package blockdag
 import (
 	"testing"
 
-	"github.com/daglabs/btcd/chaincfg/chainhash"
+	"github.com/daglabs/btcd/dagconfig/daghash"
 )
 
 // TestThresholdStateStringer tests the stringized output for the
@@ -65,7 +65,7 @@ nextTest:
 	for _, test := range tests {
 		cache := &newThresholdCaches(1)[0]
 		for i := 0; i < test.numEntries; i++ {
-			var hash chainhash.Hash
+			var hash daghash.Hash
 			hash[0] = uint8(i + 1)
 
 			// Ensure the hash isn't available in the cache already.

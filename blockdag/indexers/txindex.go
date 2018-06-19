@@ -9,7 +9,7 @@ import (
 	"fmt"
 
 	"github.com/daglabs/btcd/blockdag"
-	"github.com/daglabs/btcd/chaincfg/chainhash"
+	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/database"
 	"github.com/daglabs/btcd/wire"
 	"github.com/daglabs/btcutil"
@@ -64,7 +64,7 @@ var (
 //   <hash> = <ID>
 //
 //   Field           Type              Size
-//   hash            chainhash.Hash    32 bytes
+//   hash            daghash.Hash    32 bytes
 //   ID              uint32            4 bytes
 //   -----
 //   Total: 36 bytes
@@ -74,7 +74,7 @@ var (
 //
 //   Field           Type              Size
 //   ID              uint32            4 bytes
-//   hash            chainhash.Hash    32 bytes
+//   hash            daghash.Hash    32 bytes
 //   -----
 //   Total: 36 bytes
 //
@@ -83,7 +83,7 @@ var (
 //   <txhash> = <block id><start offset><tx length>
 //
 //   Field           Type              Size
-//   txhash          chainhash.Hash    32 bytes
+//   txhash          daghash.Hash    32 bytes
 //   block id        uint32            4 bytes
 //   start offset    uint32          4 bytes
 //   tx length       uint32          4 bytes
@@ -94,7 +94,7 @@ var (
 // dbPutBlockIDIndexEntry uses an existing database transaction to update or add
 // the index entries for the hash to id and id to hash mappings for the provided
 // values.
-func dbPutBlockIDIndexEntry(dbTx database.Tx, hash *chainhash.Hash, id uint32) error {
+func dbPutBlockIDIndexEntry(dbTx database.Tx, hash *daghash.Hash, id uint32) error {
 	// Serialize the height for use in the index entries.
 	var serializedID [4]byte
 	byteOrder.PutUint32(serializedID[:], id)
@@ -113,7 +113,7 @@ func dbPutBlockIDIndexEntry(dbTx database.Tx, hash *chainhash.Hash, id uint32) e
 
 // dbRemoveBlockIDIndexEntry uses an existing database transaction remove index
 // entries from the hash to id and id to hash mappings for the provided hash.
-func dbRemoveBlockIDIndexEntry(dbTx database.Tx, hash *chainhash.Hash) error {
+func dbRemoveBlockIDIndexEntry(dbTx database.Tx, hash *daghash.Hash) error {
 	// Remove the block hash to ID mapping.
 	meta := dbTx.Metadata()
 	hashIndex := meta.Bucket(idByHashIndexBucketName)
@@ -132,7 +132,7 @@ func dbRemoveBlockIDIndexEntry(dbTx database.Tx, hash *chainhash.Hash) error {
 
 // dbFetchBlockIDByHash uses an existing database transaction to retrieve the
 // block id for the provided hash from the index.
-func dbFetchBlockIDByHash(dbTx database.Tx, hash *chainhash.Hash) (uint32, error) {
+func dbFetchBlockIDByHash(dbTx database.Tx, hash *daghash.Hash) (uint32, error) {
 	hashIndex := dbTx.Metadata().Bucket(idByHashIndexBucketName)
 	serializedID := hashIndex.Get(hash[:])
 	if serializedID == nil {
@@ -144,21 +144,21 @@ func dbFetchBlockIDByHash(dbTx database.Tx, hash *chainhash.Hash) (uint32, error
 
 // dbFetchBlockHashBySerializedID uses an existing database transaction to
 // retrieve the hash for the provided serialized block id from the index.
-func dbFetchBlockHashBySerializedID(dbTx database.Tx, serializedID []byte) (*chainhash.Hash, error) {
+func dbFetchBlockHashBySerializedID(dbTx database.Tx, serializedID []byte) (*daghash.Hash, error) {
 	idIndex := dbTx.Metadata().Bucket(hashByIDIndexBucketName)
 	hashBytes := idIndex.Get(serializedID)
 	if hashBytes == nil {
 		return nil, errNoBlockIDEntry
 	}
 
-	var hash chainhash.Hash
+	var hash daghash.Hash
 	copy(hash[:], hashBytes)
 	return &hash, nil
 }
 
 // dbFetchBlockHashByID uses an existing database transaction to retrieve the
 // hash for the provided block id from the index.
-func dbFetchBlockHashByID(dbTx database.Tx, id uint32) (*chainhash.Hash, error) {
+func dbFetchBlockHashByID(dbTx database.Tx, id uint32) (*daghash.Hash, error) {
 	var serializedID [4]byte
 	byteOrder.PutUint32(serializedID[:], id)
 	return dbFetchBlockHashBySerializedID(dbTx, serializedID[:])
@@ -177,7 +177,7 @@ func putTxIndexEntry(target []byte, blockID uint32, txLoc wire.TxLoc) {
 // dbPutTxIndexEntry uses an existing database transaction to update the
 // transaction index given the provided serialized data that is expected to have
 // been serialized putTxIndexEntry.
-func dbPutTxIndexEntry(dbTx database.Tx, txHash *chainhash.Hash, serializedData []byte) error {
+func dbPutTxIndexEntry(dbTx database.Tx, txHash *daghash.Hash, serializedData []byte) error {
 	txIndex := dbTx.Metadata().Bucket(txIndexKey)
 	return txIndex.Put(txHash[:], serializedData)
 }
@@ -186,7 +186,7 @@ func dbPutTxIndexEntry(dbTx database.Tx, txHash *chainhash.Hash, serializedData 
 // region for the provided transaction hash from the transaction index.  When
 // there is no entry for the provided hash, nil will be returned for the both
 // the region and the error.
-func dbFetchTxIndexEntry(dbTx database.Tx, txHash *chainhash.Hash) (*database.BlockRegion, error) {
+func dbFetchTxIndexEntry(dbTx database.Tx, txHash *daghash.Hash) (*database.BlockRegion, error) {
 	// Load the record from the database and return now if it doesn't exist.
 	txIndex := dbTx.Metadata().Bucket(txIndexKey)
 	serializedData := txIndex.Get(txHash[:])
@@ -214,7 +214,7 @@ func dbFetchTxIndexEntry(dbTx database.Tx, txHash *chainhash.Hash) (*database.Bl
 	}
 
 	// Deserialize the final entry.
-	region := database.BlockRegion{Hash: &chainhash.Hash{}}
+	region := database.BlockRegion{Hash: &daghash.Hash{}}
 	copy(region.Hash[:], hash[:])
 	region.Offset = byteOrder.Uint32(serializedData[4:8])
 	region.Len = byteOrder.Uint32(serializedData[8:12])
@@ -255,7 +255,7 @@ func dbAddTxIndexEntries(dbTx database.Tx, block *btcutil.Block, blockID uint32)
 
 // dbRemoveTxIndexEntry uses an existing database transaction to remove the most
 // recent transaction index entry for the given hash.
-func dbRemoveTxIndexEntry(dbTx database.Tx, txHash *chainhash.Hash) error {
+func dbRemoveTxIndexEntry(dbTx database.Tx, txHash *daghash.Hash) error {
 	txIndex := dbTx.Metadata().Bucket(txIndexKey)
 	serializedData := txIndex.Get(txHash[:])
 	if len(serializedData) == 0 {
@@ -432,7 +432,7 @@ func (idx *TxIndex) DisconnectBlock(dbTx database.Tx, block *btcutil.Block, view
 // will be returned for the both the entry and the error.
 //
 // This function is safe for concurrent access.
-func (idx *TxIndex) TxBlockRegion(hash *chainhash.Hash) (*database.BlockRegion, error) {
+func (idx *TxIndex) TxBlockRegion(hash *daghash.Hash) (*database.BlockRegion, error) {
 	var region *database.BlockRegion
 	err := idx.db.View(func(dbTx database.Tx) error {
 		var err error

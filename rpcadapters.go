@@ -8,7 +8,7 @@ import (
 	"sync/atomic"
 
 	"github.com/daglabs/btcd/blockdag"
-	"github.com/daglabs/btcd/chaincfg/chainhash"
+	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/mempool"
 	"github.com/daglabs/btcd/netsync"
 	"github.com/daglabs/btcd/peer"
@@ -274,6 +274,6 @@ func (b *rpcSyncMgr) SyncPeerID() int32 {
 //
 // This function is safe for concurrent access and is part of the
 // rpcserverSyncManager interface implementation.
-func (b *rpcSyncMgr) LocateHeaders(locators []*chainhash.Hash, hashStop *chainhash.Hash) []wire.BlockHeader {
+func (b *rpcSyncMgr) LocateHeaders(locators []*daghash.Hash, hashStop *daghash.Hash) []wire.BlockHeader {
 	return b.server.chain.LocateHeaders(locators, hashStop)
 }

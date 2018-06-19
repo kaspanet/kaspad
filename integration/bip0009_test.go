@@ -14,8 +14,8 @@ import (
 	"time"
 
 	"github.com/daglabs/btcd/blockdag"
-	"github.com/daglabs/btcd/chaincfg"
-	"github.com/daglabs/btcd/chaincfg/chainhash"
+	"github.com/daglabs/btcd/dagconfig"
+	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/integration/rpctest"
 )
 
@@ -32,7 +32,7 @@ const (
 // assertVersionBit gets the passed block hash from the given test harness and
 // ensures its version either has the provided bit set or unset per the set
 // flag.
-func assertVersionBit(r *rpctest.Harness, t *testing.T, hash *chainhash.Hash, bit uint8, set bool) {
+func assertVersionBit(r *rpctest.Harness, t *testing.T, hash *daghash.Hash, bit uint8, set bool) {
 	block, err := r.Node.GetBlock(hash)
 	if err != nil {
 		t.Fatalf("failed to retrieve block %v: %v", hash, err)
@@ -129,7 +129,7 @@ func assertSoftForkStatus(r *rpctest.Harness, t *testing.T, forkKey string, stat
 // specific soft fork deployment to test.
 func testBIP0009(t *testing.T, forkKey string, deploymentID uint32) {
 	// Initialize the primary mining node with only the genesis block.
-	r, err := rpctest.New(&chaincfg.RegressionNetParams, nil, nil)
+	r, err := rpctest.New(&dagconfig.RegressionNetParams, nil, nil)
 	if err != nil {
 		t.Fatalf("unable to create primary harness: %v", err)
 	}
@@ -298,7 +298,7 @@ func testBIP0009(t *testing.T, forkKey string, deploymentID uint32) {
 func TestBIP0009(t *testing.T) {
 	t.Parallel()
 
-	testBIP0009(t, "dummy", chaincfg.DeploymentTestDummy)
+	testBIP0009(t, "dummy", dagconfig.DeploymentTestDummy)
 }
 
 // TestBIP0009Mining ensures blocks built via btcd's CPU miner follow the rules
@@ -319,7 +319,7 @@ func TestBIP0009Mining(t *testing.T) {
 	t.Parallel()
 
 	// Initialize the primary mining node with only the genesis block.
-	r, err := rpctest.New(&chaincfg.SimNetParams, nil, nil)
+	r, err := rpctest.New(&dagconfig.SimNetParams, nil, nil)
 	if err != nil {
 		t.Fatalf("unable to create primary harness: %v", err)
 	}
@@ -336,7 +336,7 @@ func TestBIP0009Mining(t *testing.T) {
 	// Generate a block that extends the genesis block.  It should not have
 	// the test dummy bit set in the version since the first window is
 	// in the defined threshold state.
-	deployment := &r.ActiveNet.Deployments[chaincfg.DeploymentTestDummy]
+	deployment := &r.ActiveNet.Deployments[dagconfig.DeploymentTestDummy]
 	testDummyBitNum := deployment.BitNumber
 	hashes, err := r.Node.Generate(1)
 	if err != nil {

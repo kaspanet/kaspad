@@ -8,7 +8,7 @@
 package database
 
 import (
-	"github.com/daglabs/btcd/chaincfg/chainhash"
+	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcutil"
 )
 
@@ -198,7 +198,7 @@ type Bucket interface {
 // BlockRegion specifies a particular region of a block identified by the
 // specified hash, given an offset and length.
 type BlockRegion struct {
-	Hash   *chainhash.Hash
+	Hash   *daghash.Hash
 	Offset uint32
 	Len    uint32
 }
@@ -237,7 +237,7 @@ type Tx interface {
 	//   - ErrTxClosed if the transaction has already been closed
 	//
 	// Other errors are possible depending on the implementation.
-	HasBlock(hash *chainhash.Hash) (bool, error)
+	HasBlock(hash *daghash.Hash) (bool, error)
 
 	// HasBlocks returns whether or not the blocks with the provided hashes
 	// exist in the database.
@@ -247,7 +247,7 @@ type Tx interface {
 	//   - ErrTxClosed if the transaction has already been closed
 	//
 	// Other errors are possible depending on the implementation.
-	HasBlocks(hashes []chainhash.Hash) ([]bool, error)
+	HasBlocks(hashes []daghash.Hash) ([]bool, error)
 
 	// FetchBlockHeader returns the raw serialized bytes for the block
 	// header identified by the given hash.  The raw bytes are in the format
@@ -270,7 +270,7 @@ type Tx interface {
 	// has ended results in undefined behavior.  This constraint prevents
 	// additional data copies and allows support for memory-mapped database
 	// implementations.
-	FetchBlockHeader(hash *chainhash.Hash) ([]byte, error)
+	FetchBlockHeader(hash *daghash.Hash) ([]byte, error)
 
 	// FetchBlockHeaders returns the raw serialized bytes for the block
 	// headers identified by the given hashes.  The raw bytes are in the
@@ -297,7 +297,7 @@ type Tx interface {
 	// has ended results in undefined behavior.  This constraint prevents
 	// additional data copies and allows support for memory-mapped database
 	// implementations.
-	FetchBlockHeaders(hashes []chainhash.Hash) ([][]byte, error)
+	FetchBlockHeaders(hashes []daghash.Hash) ([][]byte, error)
 
 	// FetchBlock returns the raw serialized bytes for the block identified
 	// by the given hash.  The raw bytes are in the format returned by
@@ -314,7 +314,7 @@ type Tx interface {
 	// has ended results in undefined behavior.  This constraint prevents
 	// additional data copies and allows support for memory-mapped database
 	// implementations.
-	FetchBlock(hash *chainhash.Hash) ([]byte, error)
+	FetchBlock(hash *daghash.Hash) ([]byte, error)
 
 	// FetchBlocks returns the raw serialized bytes for the blocks
 	// identified by the given hashes.  The raw bytes are in the format
@@ -332,7 +332,7 @@ type Tx interface {
 	// has ended results in undefined behavior.  This constraint prevents
 	// additional data copies and allows support for memory-mapped database
 	// implementations.
-	FetchBlocks(hashes []chainhash.Hash) ([][]byte, error)
+	FetchBlocks(hashes []daghash.Hash) ([][]byte, error)
 
 	// FetchBlockRegion returns the raw serialized bytes for the given
 	// block region.

@@ -8,8 +8,8 @@ import (
 	"errors"
 
 	"github.com/daglabs/btcd/blockdag"
-	"github.com/daglabs/btcd/chaincfg"
-	"github.com/daglabs/btcd/chaincfg/chainhash"
+	"github.com/daglabs/btcd/dagconfig"
+	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/database"
 	"github.com/daglabs/btcd/wire"
 	"github.com/daglabs/btcutil"
@@ -53,26 +53,26 @@ var (
 
 	maxFilterType = uint8(len(cfHeaderKeys) - 1)
 
-	// zeroHash is the chainhash.Hash value of all zero bytes, defined here for
+	// zeroHash is the daghash.Hash value of all zero bytes, defined here for
 	// convenience.
-	zeroHash chainhash.Hash
+	zeroHash daghash.Hash
 )
 
 // dbFetchFilterIdxEntry retrieves a data blob from the filter index database.
 // An entry's absence is not considered an error.
-func dbFetchFilterIdxEntry(dbTx database.Tx, key []byte, h *chainhash.Hash) ([]byte, error) {
+func dbFetchFilterIdxEntry(dbTx database.Tx, key []byte, h *daghash.Hash) ([]byte, error) {
 	idx := dbTx.Metadata().Bucket(cfIndexParentBucketKey).Bucket(key)
 	return idx.Get(h[:]), nil
 }
 
 // dbStoreFilterIdxEntry stores a data blob in the filter index database.
-func dbStoreFilterIdxEntry(dbTx database.Tx, key []byte, h *chainhash.Hash, f []byte) error {
+func dbStoreFilterIdxEntry(dbTx database.Tx, key []byte, h *daghash.Hash, f []byte) error {
 	idx := dbTx.Metadata().Bucket(cfIndexParentBucketKey).Bucket(key)
 	return idx.Put(h[:], f)
 }
 
 // dbDeleteFilterIdxEntry deletes a data blob from the filter index database.
-func dbDeleteFilterIdxEntry(dbTx database.Tx, key []byte, h *chainhash.Hash) error {
+func dbDeleteFilterIdxEntry(dbTx database.Tx, key []byte, h *daghash.Hash) error {
 	idx := dbTx.Metadata().Bucket(cfIndexParentBucketKey).Bucket(key)
 	return idx.Delete(h[:])
 }
@@ -80,7 +80,7 @@ func dbDeleteFilterIdxEntry(dbTx database.Tx, key []byte, h *chainhash.Hash) err
 // CfIndex implements a committed filter (cf) by hash index.
 type CfIndex struct {
 	db          database.DB
-	chainParams *chaincfg.Params
+	chainParams *dagconfig.Params
 }
 
 // Ensure the CfIndex type implements the Indexer interface.
@@ -174,7 +174,7 @@ func storeFilter(dbTx database.Tx, block *btcutil.Block, f *gcs.Filter,
 	}
 
 	// Then fetch the previous block's filter header.
-	var prevHeader *chainhash.Hash
+	var prevHeader *daghash.Hash
 	ph := &block.MsgBlock().Header.PrevBlock
 	if ph.IsEqual(&zeroHash) {
 		prevHeader = &zeroHash
@@ -185,7 +185,7 @@ func storeFilter(dbTx database.Tx, block *btcutil.Block, f *gcs.Filter,
 		}
 
 		// Construct the new block's filter header, and store it.
-		prevHeader, err = chainhash.NewHash(pfh)
+		prevHeader, err = daghash.NewHash(pfh)
 		if err != nil {
 			return err
 		}
@@ -255,7 +255,7 @@ func (idx *CfIndex) DisconnectBlock(dbTx database.Tx, block *btcutil.Block,
 // entryByBlockHash fetches a filter index entry of a particular type
 // (eg. filter, filter header, etc) for a filter type and block hash.
 func (idx *CfIndex) entryByBlockHash(filterTypeKeys [][]byte,
-	filterType wire.FilterType, h *chainhash.Hash) ([]byte, error) {
+	filterType wire.FilterType, h *daghash.Hash) ([]byte, error) {
 
 	if uint8(filterType) > maxFilterType {
 		return nil, errors.New("unsupported filter type")
@@ -274,7 +274,7 @@ func (idx *CfIndex) entryByBlockHash(filterTypeKeys [][]byte,
 // entriesByBlockHashes batch fetches a filter index entry of a particular type
 // (eg. filter, filter header, etc) for a filter type and slice of block hashes.
 func (idx *CfIndex) entriesByBlockHashes(filterTypeKeys [][]byte,
-	filterType wire.FilterType, blockHashes []*chainhash.Hash) ([][]byte, error) {
+	filterType wire.FilterType, blockHashes []*daghash.Hash) ([][]byte, error) {
 
 	if uint8(filterType) > maxFilterType {
 		return nil, errors.New("unsupported filter type")
@@ -297,42 +297,42 @@ func (idx *CfIndex) entriesByBlockHashes(filterTypeKeys [][]byte,
 
 // FilterByBlockHash returns the serialized contents of a block's basic or
 // extended committed filter.
-func (idx *CfIndex) FilterByBlockHash(h *chainhash.Hash,
+func (idx *CfIndex) FilterByBlockHash(h *daghash.Hash,
 	filterType wire.FilterType) ([]byte, error) {
 	return idx.entryByBlockHash(cfIndexKeys, filterType, h)
 }
 
 // FiltersByBlockHashes returns the serialized contents of a block's basic or
 // extended committed filter for a set of blocks by hash.
-func (idx *CfIndex) FiltersByBlockHashes(blockHashes []*chainhash.Hash,
+func (idx *CfIndex) FiltersByBlockHashes(blockHashes []*daghash.Hash,
 	filterType wire.FilterType) ([][]byte, error) {
 	return idx.entriesByBlockHashes(cfIndexKeys, filterType, blockHashes)
 }
 
 // FilterHeaderByBlockHash returns the serialized contents of a block's basic
 // or extended committed filter header.
-func (idx *CfIndex) FilterHeaderByBlockHash(h *chainhash.Hash,
+func (idx *CfIndex) FilterHeaderByBlockHash(h *daghash.Hash,
 	filterType wire.FilterType) ([]byte, error) {
 	return idx.entryByBlockHash(cfHeaderKeys, filterType, h)
 }
 
 // FilterHeadersByBlockHashes returns the serialized contents of a block's basic
 // or extended committed filter header for a set of blocks by hash.
-func (idx *CfIndex) FilterHeadersByBlockHashes(blockHashes []*chainhash.Hash,
+func (idx *CfIndex) FilterHeadersByBlockHashes(blockHashes []*daghash.Hash,
 	filterType wire.FilterType) ([][]byte, error) {
 	return idx.entriesByBlockHashes(cfHeaderKeys, filterType, blockHashes)
 }
 
 // FilterHashByBlockHash returns the serialized contents of a block's basic
 // or extended committed filter hash.
-func (idx *CfIndex) FilterHashByBlockHash(h *chainhash.Hash,
+func (idx *CfIndex) FilterHashByBlockHash(h *daghash.Hash,
 	filterType wire.FilterType) ([]byte, error) {
 	return idx.entryByBlockHash(cfHashKeys, filterType, h)
 }
 
 // FilterHashesByBlockHashes returns the serialized contents of a block's basic
 // or extended committed filter hash for a set of blocks by hash.
-func (idx *CfIndex) FilterHashesByBlockHashes(blockHashes []*chainhash.Hash,
+func (idx *CfIndex) FilterHashesByBlockHashes(blockHashes []*daghash.Hash,
 	filterType wire.FilterType) ([][]byte, error) {
 	return idx.entriesByBlockHashes(cfHashKeys, filterType, blockHashes)
 }
@@ -344,7 +344,7 @@ func (idx *CfIndex) FilterHashesByBlockHashes(blockHashes []*chainhash.Hash,
 // It implements the Indexer interface which plugs into the IndexManager that
 // in turn is used by the blockchain package. This allows the index to be
 // seamlessly maintained along with the chain.
-func NewCfIndex(db database.DB, chainParams *chaincfg.Params) *CfIndex {
+func NewCfIndex(db database.DB, chainParams *dagconfig.Params) *CfIndex {
 	return &CfIndex{db: db, chainParams: chainParams}
 }
 

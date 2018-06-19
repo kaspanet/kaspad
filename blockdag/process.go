@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/daglabs/btcd/chaincfg/chainhash"
+	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/database"
 	"github.com/daglabs/btcutil"
 )
@@ -37,7 +37,7 @@ const (
 // the main chain or any side chains.
 //
 // This function is safe for concurrent access.
-func (b *BlockChain) blockExists(hash *chainhash.Hash) (bool, error) {
+func (b *BlockChain) blockExists(hash *daghash.Hash) (bool, error) {
 	// Check block index first (could be main chain or side chain blocks).
 	if b.index.HaveBlock(hash) {
 		return true, nil
@@ -80,11 +80,11 @@ func (b *BlockChain) blockExists(hash *chainhash.Hash) (bool, error) {
 // are needed to pass along to maybeAcceptBlock.
 //
 // This function MUST be called with the chain state lock held (for writes).
-func (b *BlockChain) processOrphans(hash *chainhash.Hash, flags BehaviorFlags) error {
+func (b *BlockChain) processOrphans(hash *daghash.Hash, flags BehaviorFlags) error {
 	// Start with processing at least the passed hash.  Leave a little room
 	// for additional orphan blocks that need to be processed without
 	// needing to grow the array in the common case.
-	processHashes := make([]*chainhash.Hash, 0, 10)
+	processHashes := make([]*daghash.Hash, 0, 10)
 	processHashes = append(processHashes, hash)
 	for len(processHashes) > 0 {
 		// Pop the first hash to process from the slice.
