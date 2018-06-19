@@ -18,7 +18,7 @@ import (
 	"time"
 
 	"github.com/btcsuite/go-socks/socks"
-	"github.com/daglabs/btcd/blockchain"
+	"github.com/daglabs/btcd/blockdag"
 	"github.com/daglabs/btcd/chaincfg"
 	"github.com/daglabs/btcd/chaincfg/chainhash"
 	"github.com/daglabs/btcd/wire"
@@ -904,7 +904,7 @@ func (p *Peer) PushAddrMsg(addresses []*wire.NetAddress) ([]*wire.NetAddress, er
 // and stop hash.  It will ignore back-to-back duplicate requests.
 //
 // This function is safe for concurrent access.
-func (p *Peer) PushGetBlocksMsg(locator blockchain.BlockLocator, stopHash *chainhash.Hash) error {
+func (p *Peer) PushGetBlocksMsg(locator blockdag.BlockLocator, stopHash *chainhash.Hash) error {
 	// Extract the begin hash from the block locator, if one was specified,
 	// to use for filtering duplicate getblocks requests.
 	var beginHash *chainhash.Hash
@@ -948,7 +948,7 @@ func (p *Peer) PushGetBlocksMsg(locator blockchain.BlockLocator, stopHash *chain
 // and stop hash.  It will ignore back-to-back duplicate requests.
 //
 // This function is safe for concurrent access.
-func (p *Peer) PushGetHeadersMsg(locator blockchain.BlockLocator, stopHash *chainhash.Hash) error {
+func (p *Peer) PushGetHeadersMsg(locator blockdag.BlockLocator, stopHash *chainhash.Hash) error {
 	// Extract the begin hash from the block locator, if one was specified,
 	// to use for filtering duplicate getheaders requests.
 	var beginHash *chainhash.Hash

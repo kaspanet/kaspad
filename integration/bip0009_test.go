@@ -13,7 +13,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/daglabs/btcd/blockchain"
+	"github.com/daglabs/btcd/blockdag"
 	"github.com/daglabs/btcd/chaincfg"
 	"github.com/daglabs/btcd/chaincfg/chainhash"
 	"github.com/daglabs/btcd/integration/rpctest"
@@ -66,17 +66,17 @@ func assertChainHeight(r *rpctest.Harness, t *testing.T, expectedHeight uint32) 
 
 // thresholdStateToStatus converts the passed threshold state to the equivalent
 // status string returned in the getblockchaininfo RPC.
-func thresholdStateToStatus(state blockchain.ThresholdState) (string, error) {
+func thresholdStateToStatus(state blockdag.ThresholdState) (string, error) {
 	switch state {
-	case blockchain.ThresholdDefined:
+	case blockdag.ThresholdDefined:
 		return "defined", nil
-	case blockchain.ThresholdStarted:
+	case blockdag.ThresholdStarted:
 		return "started", nil
-	case blockchain.ThresholdLockedIn:
+	case blockdag.ThresholdLockedIn:
 		return "lockedin", nil
-	case blockchain.ThresholdActive:
+	case blockdag.ThresholdActive:
 		return "active", nil
-	case blockchain.ThresholdFailed:
+	case blockdag.ThresholdFailed:
 		return "failed", nil
 	}
 
@@ -86,7 +86,7 @@ func thresholdStateToStatus(state blockchain.ThresholdState) (string, error) {
 // assertSoftForkStatus retrieves the current blockchain info from the given
 // test harness and ensures the provided soft fork key is both available and its
 // status is the equivalent of the passed state.
-func assertSoftForkStatus(r *rpctest.Harness, t *testing.T, forkKey string, state blockchain.ThresholdState) {
+func assertSoftForkStatus(r *rpctest.Harness, t *testing.T, forkKey string, state blockdag.ThresholdState) {
 	// Convert the expected threshold state into the equivalent
 	// getblockchaininfo RPC status string.
 	status, err := thresholdStateToStatus(state)
@@ -143,7 +143,7 @@ func testBIP0009(t *testing.T, forkKey string, deploymentID uint32) {
 	// Assert the chain height is the expected value and the soft fork
 	// status starts out as defined.
 	assertChainHeight(r, t, 0)
-	assertSoftForkStatus(r, t, forkKey, blockchain.ThresholdDefined)
+	assertSoftForkStatus(r, t, forkKey, blockdag.ThresholdDefined)
 
 	// *** ThresholdDefined part 2 - 1 block prior to ThresholdStarted ***
 	//
@@ -168,7 +168,7 @@ func testBIP0009(t *testing.T, forkKey string, deploymentID uint32) {
 		}
 	}
 	assertChainHeight(r, t, confirmationWindow-2)
-	assertSoftForkStatus(r, t, forkKey, blockchain.ThresholdDefined)
+	assertSoftForkStatus(r, t, forkKey, blockdag.ThresholdDefined)
 
 	// *** ThresholdStarted ***
 	//
@@ -181,7 +181,7 @@ func testBIP0009(t *testing.T, forkKey string, deploymentID uint32) {
 		t.Fatalf("failed to generated block: %v", err)
 	}
 	assertChainHeight(r, t, confirmationWindow-1)
-	assertSoftForkStatus(r, t, forkKey, blockchain.ThresholdStarted)
+	assertSoftForkStatus(r, t, forkKey, blockdag.ThresholdStarted)
 
 	// *** ThresholdStarted part 2 - Fail to achieve ThresholdLockedIn ***
 	//
@@ -212,7 +212,7 @@ func testBIP0009(t *testing.T, forkKey string, deploymentID uint32) {
 		}
 	}
 	assertChainHeight(r, t, (confirmationWindow*2)-1)
-	assertSoftForkStatus(r, t, forkKey, blockchain.ThresholdStarted)
+	assertSoftForkStatus(r, t, forkKey, blockdag.ThresholdStarted)
 
 	// *** ThresholdLockedIn ***
 	//
@@ -237,7 +237,7 @@ func testBIP0009(t *testing.T, forkKey string, deploymentID uint32) {
 		}
 	}
 	assertChainHeight(r, t, (confirmationWindow*3)-1)
-	assertSoftForkStatus(r, t, forkKey, blockchain.ThresholdLockedIn)
+	assertSoftForkStatus(r, t, forkKey, blockdag.ThresholdLockedIn)
 
 	// *** ThresholdLockedIn part 2 -- 1 block prior to ThresholdActive ***
 	//
@@ -255,7 +255,7 @@ func testBIP0009(t *testing.T, forkKey string, deploymentID uint32) {
 		}
 	}
 	assertChainHeight(r, t, (confirmationWindow*4)-2)
-	assertSoftForkStatus(r, t, forkKey, blockchain.ThresholdLockedIn)
+	assertSoftForkStatus(r, t, forkKey, blockdag.ThresholdLockedIn)
 
 	// *** ThresholdActive ***
 	//
@@ -269,7 +269,7 @@ func testBIP0009(t *testing.T, forkKey string, deploymentID uint32) {
 		t.Fatalf("failed to generated block: %v", err)
 	}
 	assertChainHeight(r, t, (confirmationWindow*4)-1)
-	assertSoftForkStatus(r, t, forkKey, blockchain.ThresholdActive)
+	assertSoftForkStatus(r, t, forkKey, blockdag.ThresholdActive)
 }
 
 // TestBIP0009 ensures the BIP0009 soft fork mechanism follows the state

@@ -9,8 +9,8 @@ import (
 	"path/filepath"
 	"runtime"
 
-	"github.com/daglabs/btcd/blockchain"
-	"github.com/daglabs/btcd/blockchain/indexers"
+	"github.com/daglabs/btcd/blockdag"
+	"github.com/daglabs/btcd/blockdag/indexers"
 	"github.com/daglabs/btcd/database"
 	"github.com/daglabs/btcd/limits"
 	"github.com/btcsuite/btclog"
@@ -73,7 +73,7 @@ func realMain() error {
 	defer os.Stdout.Sync()
 	log = backendLogger.Logger("MAIN")
 	database.UseLogger(backendLogger.Logger("BCDB"))
-	blockchain.UseLogger(backendLogger.Logger("CHAN"))
+	blockdag.UseLogger(backendLogger.Logger("CHAN"))
 	indexers.UseLogger(backendLogger.Logger("INDX"))
 
 	// Load the block database.

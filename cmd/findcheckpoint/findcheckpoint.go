@@ -9,7 +9,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/daglabs/btcd/blockchain"
+	"github.com/daglabs/btcd/blockdag"
 	"github.com/daglabs/btcd/chaincfg"
 	"github.com/daglabs/btcd/chaincfg/chainhash"
 	"github.com/daglabs/btcd/database"
@@ -39,7 +39,7 @@ func loadBlockDB() (database.DB, error) {
 // candidates at the last checkpoint that is already hard coded into btcchain
 // since there is no point in finding candidates before already existing
 // checkpoints.
-func findCandidates(chain *blockchain.BlockChain, latestHash *chainhash.Hash) ([]*chaincfg.Checkpoint, error) {
+func findCandidates(chain *blockdag.BlockChain, latestHash *chainhash.Hash) ([]*chaincfg.Checkpoint, error) {
 	// Start with the latest block of the main chain.
 	block, err := chain.BlockByHash(latestHash)
 	if err != nil {
@@ -59,7 +59,7 @@ func findCandidates(chain *blockchain.BlockChain, latestHash *chainhash.Hash) ([
 
 	// The latest known block must be at least the last known checkpoint
 	// plus required checkpoint confirmations.
-	checkpointConfirmations := int32(blockchain.CheckpointConfirmations)
+	checkpointConfirmations := int32(blockdag.CheckpointConfirmations)
 	requiredHeight := latestCheckpoint.Height + checkpointConfirmations
 	if block.Height() < requiredHeight {
 		return nil, fmt.Errorf("the block database is only at height "+
@@ -150,10 +150,10 @@ func main() {
 
 	// Setup chain.  Ignore notifications since they aren't needed for this
 	// util.
-	chain, err := blockchain.New(&blockchain.Config{
+	chain, err := blockdag.New(&blockdag.Config{
 		DB:          db,
 		ChainParams: activeNetParams,
-		TimeSource:  blockchain.NewMedianTime(),
+		TimeSource:  blockdag.NewMedianTime(),
 	})
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to initialize chain: %v\n", err)
