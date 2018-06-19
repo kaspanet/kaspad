@@ -137,7 +137,7 @@ var testNet3GenesisBlock = wire.MsgBlock{
 	Header: wire.BlockHeader{
 		Version:       1,
 		NumPrevBlocks: 0,
-		PrevBlocks:    []chainhash.Hash{},        // 0000000000000000000000000000000000000000000000000000000000000000
+		PrevBlocks:    []chainhash.Hash{},
 		MerkleRoot:    testNet3GenesisMerkleRoot, // 4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b
 		Timestamp:     time.Unix(0x5b28c706, 0),  // 2018-06-19 09:04:06 +0000 UTC
 		Bits:          0x1e00ffff,                // 503382015 [000000ffff000000000000000000000000000000000000000000000000000000]
@@ -166,7 +166,7 @@ var simNetGenesisBlock = wire.MsgBlock{
 	Header: wire.BlockHeader{
 		Version:       1,
 		NumPrevBlocks: 0,
-		PrevBlocks:    []chainhash.Hash{},       // 0000000000000000000000000000000000000000000000000000000000000000
+		PrevBlocks:    []chainhash.Hash{},
 		MerkleRoot:    simNetGenesisMerkleRoot,  // 4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b
 		Timestamp:     time.Unix(0x5b28c7ec, 0), // 2018-06-19 09:07:56 +0000 UTC
 		Bits:          0x207fffff,               // 545259519 [7fffff0000000000000000000000000000000000000000000000000000000000]
