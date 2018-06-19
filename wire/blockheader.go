@@ -18,7 +18,7 @@ import (
 // + NumPrevBlocks 1 byte + MerkleRoot hash.
 // To get total size of block header len(PrevBlocks) * chainhash.HashSize should be
 // added to this value
-const BaseBlockHeaderPayload = 21 + (chainhash.HashSize)
+const BaseBlockHeaderPayload = 17 + (chainhash.HashSize)
 
 // MaxNumPrevBlocks is the maximum number of previous blocks a block can reference.
 // Currently set to 255 as the maximum number NumPrevBlocks can be due to it being a byte
@@ -29,7 +29,7 @@ const MaxNumPrevBlocks = 255
 const MaxBlockHeaderPayload = BaseBlockHeaderPayload + (MaxNumPrevBlocks * chainhash.HashSize)
 
 // BlockHeader defines information about a block and is used in the bitcoin
-// block (MsgBlock) and headers (MsgHeader ) messages.
+// block (MsgBlock) and headers (MsgHeader) messages.
 type BlockHeader struct {
 	// Version of the block.  This is not the same as the protocol version.
 	Version int32
@@ -53,10 +53,6 @@ type BlockHeader struct {
 	// Nonce used to generate the block.
 	Nonce uint32
 }
-
-// blockHeaderLen is a constant that represents the number of bytes for a block
-// header.
-const blockHeaderLen = 80
 
 // BlockHash computes the block identifier hash for the given block header.
 func (h *BlockHeader) BlockHash() chainhash.Hash {
@@ -106,6 +102,12 @@ func (h *BlockHeader) Serialize(w io.Writer) error {
 	return writeBlockHeader(w, 0, h)
 }
 
+// SerializeSize returns the number of bytes it would take to serialize the
+// block header.
+func (h *BlockHeader) SerializeSize() int {
+	return BaseBlockHeaderPayload + int(h.NumPrevBlocks)*chainhash.HashSize
+}
+
 // NewBlockHeader returns a new BlockHeader using the provided version, previous
 // block hash, merkle root hash, difficulty bits, and nonce used to generate the
 // block with defaults or calclulated values for the remaining fields.
@@ -134,13 +136,12 @@ func readBlockHeader(r io.Reader, pver uint32, bh *BlockHeader) error {
 		return err
 	}
 
-	bh.NumPrevBlocks, err = binarySerializer.Uint8(r)
-	if err != nil {
-		return err
-	}
 	bh.PrevBlocks = make([]chainhash.Hash, bh.NumPrevBlocks)
 	for i := byte(0); i < bh.NumPrevBlocks; i++ {
-		readElement(r, &bh.PrevBlocks[i])
+		err := readElement(r, &bh.PrevBlocks[i])
+		if err != nil {
+			return err
+		}
 	}
 	return readElements(r, &bh.MerkleRoot, (*uint32Time)(&bh.Timestamp), &bh.Bits, &bh.Nonce)
 }
