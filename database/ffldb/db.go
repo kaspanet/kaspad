@@ -14,11 +14,6 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/daglabs/btcd/dagconfig/daghash"
-	"github.com/daglabs/btcd/database"
-	"github.com/daglabs/btcd/database/internal/treap"
-	"github.com/daglabs/btcd/wire"
-	"github.com/daglabs/btcutil"
 	"github.com/btcsuite/goleveldb/leveldb"
 	"github.com/btcsuite/goleveldb/leveldb/comparer"
 	ldberrors "github.com/btcsuite/goleveldb/leveldb/errors"
@@ -26,16 +21,16 @@ import (
 	"github.com/btcsuite/goleveldb/leveldb/iterator"
 	"github.com/btcsuite/goleveldb/leveldb/opt"
 	"github.com/btcsuite/goleveldb/leveldb/util"
+	"github.com/daglabs/btcd/dagconfig/daghash"
+	"github.com/daglabs/btcd/database"
+	"github.com/daglabs/btcd/database/internal/treap"
+	"github.com/daglabs/btcd/wire"
+	"github.com/daglabs/btcutil"
 )
 
 const (
 	// metadataDbName is the name used for the metadata database.
 	metadataDbName = "metadata"
-
-	// blockHdrSize is the size of a block header.  This is simply the
-	// constant from wire and is only provided here for convenience since
-	// wire.MaxBlockHeaderPayload is quite long.
-	blockHdrSize = wire.MaxBlockHeaderPayload
 
 	// blockHdrOffset defines the offsets into a block index row for the
 	// block header.
@@ -1238,6 +1233,25 @@ func (tx *transaction) fetchBlockRow(hash *daghash.Hash) ([]byte, error) {
 	return blockRow, nil
 }
 
+// The offset in a block header at which numPrevBlocks resides.
+const numPrevBlocksOffset = 4
+
+// fetchBlockHeaderSize fetches the numPrevBlocks field out of the block header
+// and uses it to compute the total size of the block header
+func (tx *transaction) fetchBlockHeaderSize(hash *daghash.Hash) (byte, error) {
+	r, err := tx.FetchBlockRegion(&database.BlockRegion{
+		Hash:   hash,
+		Offset: numPrevBlocksOffset,
+		Len:    1,
+	})
+	if err != nil {
+		return 0, err
+	}
+
+	numPrevBlocks := r[0]
+	return numPrevBlocks*daghash.HashSize + wire.BaseBlockHeaderPayload, nil
+}
+
 // FetchBlockHeader returns the raw serialized bytes for the block header
 // identified by the given hash.  The raw bytes are in the format returned by
 // Serialize on a wire.BlockHeader.
@@ -1255,11 +1269,39 @@ func (tx *transaction) fetchBlockRow(hash *daghash.Hash) ([]byte, error) {
 //
 // This function is part of the database.Tx interface implementation.
 func (tx *transaction) FetchBlockHeader(hash *daghash.Hash) ([]byte, error) {
+	headerSize, err := tx.fetchBlockHeaderSize(hash)
+	if err != nil {
+		return nil, err
+	}
+
 	return tx.FetchBlockRegion(&database.BlockRegion{
 		Hash:   hash,
 		Offset: 0,
-		Len:    blockHdrSize,
+		Len:    uint32(headerSize),
 	})
+}
+
+// fetchBlockHeadersSizes fetches the numPrevBlocks fields out of the block headers
+// and uses it to compute the total sizes of the block headers
+func (tx *transaction) fetchBlockHeadersSizes(hashes []daghash.Hash) ([]byte, error) {
+	regions := make([]database.BlockRegion, len(hashes))
+	for i := range hashes {
+		regions[i].Hash = &hashes[i]
+		regions[i].Offset = numPrevBlocksOffset
+		regions[i].Len = 1
+	}
+	rs, err := tx.FetchBlockRegions(regions)
+	if err != nil {
+		return nil, err
+	}
+
+	sizes := make([]byte, len(hashes))
+	for i, r := range rs {
+		numPrevBlocks := r[0]
+		sizes[i] = numPrevBlocks*daghash.HashSize + wire.BaseBlockHeaderPayload
+	}
+
+	return sizes, nil
 }
 
 // FetchBlockHeaders returns the raw serialized bytes for the block headers
@@ -1278,11 +1320,16 @@ func (tx *transaction) FetchBlockHeader(hash *daghash.Hash) ([]byte, error) {
 //
 // This function is part of the database.Tx interface implementation.
 func (tx *transaction) FetchBlockHeaders(hashes []daghash.Hash) ([][]byte, error) {
+	headerSizes, err := tx.fetchBlockHeadersSizes(hashes)
+	if err != nil {
+		return nil, err
+	}
+
 	regions := make([]database.BlockRegion, len(hashes))
 	for i := range hashes {
 		regions[i].Hash = &hashes[i]
 		regions[i].Offset = 0
-		regions[i].Len = blockHdrSize
+		regions[i].Len = uint32(headerSizes[i])
 	}
 	return tx.FetchBlockRegions(regions)
 }
