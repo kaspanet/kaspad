@@ -4,35 +4,35 @@
 // license that can be found in the LICENSE file.
 
 // NOTE: This file is intended to house the RPC websocket notifications that are
-// supported by a chain server.
+// supported by a dag server.
 
 package btcjson
 
 const (
 	// BlockConnectedNtfnMethod is the legacy, deprecated method used for
-	// notifications from the chain server that a block has been connected.
+	// notifications from the dag server that a block has been connected.
 	//
 	// NOTE: Deprecated. Use FilteredBlockConnectedNtfnMethod instead.
 	BlockConnectedNtfnMethod = "blockconnected"
 
 	// BlockDisconnectedNtfnMethod is the legacy, deprecated method used for
-	// notifications from the chain server that a block has been
+	// notifications from the dag server that a block has been
 	// disconnected.
 	//
 	// NOTE: Deprecated. Use FilteredBlockDisconnectedNtfnMethod instead.
 	BlockDisconnectedNtfnMethod = "blockdisconnected"
 
 	// FilteredBlockConnectedNtfnMethod is the new method used for
-	// notifications from the chain server that a block has been connected.
+	// notifications from the dag server that a block has been connected.
 	FilteredBlockConnectedNtfnMethod = "filteredblockconnected"
 
 	// FilteredBlockDisconnectedNtfnMethod is the new method used for
-	// notifications from the chain server that a block has been
+	// notifications from the dag server that a block has been
 	// disconnected.
 	FilteredBlockDisconnectedNtfnMethod = "filteredblockdisconnected"
 
 	// RecvTxNtfnMethod is the legacy, deprecated method used for
-	// notifications from the chain server that a transaction which pays to
+	// notifications from the dag server that a transaction which pays to
 	// a registered address has been processed.
 	//
 	// NOTE: Deprecated. Use RelevantTxAcceptedNtfnMethod and
@@ -40,7 +40,7 @@ const (
 	RecvTxNtfnMethod = "recvtx"
 
 	// RedeemingTxNtfnMethod is the legacy, deprecated method used for
-	// notifications from the chain server that a transaction which spends a
+	// notifications from the dag server that a transaction which spends a
 	// registered outpoint has been processed.
 	//
 	// NOTE: Deprecated. Use RelevantTxAcceptedNtfnMethod and
@@ -48,31 +48,31 @@ const (
 	RedeemingTxNtfnMethod = "redeemingtx"
 
 	// RescanFinishedNtfnMethod is the legacy, deprecated method used for
-	// notifications from the chain server that a legacy, deprecated rescan
+	// notifications from the dag server that a legacy, deprecated rescan
 	// operation has finished.
 	//
 	// NOTE: Deprecated. Not used with rescanblocks command.
 	RescanFinishedNtfnMethod = "rescanfinished"
 
 	// RescanProgressNtfnMethod is the legacy, deprecated method used for
-	// notifications from the chain server that a legacy, deprecated rescan
+	// notifications from the dag server that a legacy, deprecated rescan
 	// operation this is underway has made progress.
 	//
 	// NOTE: Deprecated. Not used with rescanblocks command.
 	RescanProgressNtfnMethod = "rescanprogress"
 
 	// TxAcceptedNtfnMethod is the method used for notifications from the
-	// chain server that a transaction has been accepted into the mempool.
+	// dag server that a transaction has been accepted into the mempool.
 	TxAcceptedNtfnMethod = "txaccepted"
 
 	// TxAcceptedVerboseNtfnMethod is the method used for notifications from
-	// the chain server that a transaction has been accepted into the
+	// the dag server that a transaction has been accepted into the
 	// mempool.  This differs from TxAcceptedNtfnMethod in that it provides
 	// more details in the notification.
 	TxAcceptedVerboseNtfnMethod = "txacceptedverbose"
 
 	// RelevantTxAcceptedNtfnMethod is the new method used for notifications
-	// from the chain server that inform a client that a transaction that
+	// from the dag server that inform a client that a transaction that
 	// matches the loaded filter was accepted by the mempool.
 	RelevantTxAcceptedNtfnMethod = "relevanttxaccepted"
 )

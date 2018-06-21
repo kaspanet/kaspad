@@ -3,7 +3,7 @@
 // license that can be found in the LICENSE file.
 
 // NOTE: This file is intended to house the RPC commands that are supported by
-// a chain server.
+// a dag server.
 
 package btcjson
 
@@ -147,13 +147,13 @@ func NewGetBlockCmd(hash string, verbose, verboseTx *bool) *GetBlockCmd {
 	}
 }
 
-// GetBlockChainInfoCmd defines the getblockchaininfo JSON-RPC command.
-type GetBlockChainInfoCmd struct{}
+// GetBlockDAGInfoCmd defines the getblockdaginfo JSON-RPC command.
+type GetBlockDAGInfoCmd struct{}
 
-// NewGetBlockChainInfoCmd returns a new instance which can be used to issue a
-// getblockchaininfo JSON-RPC command.
-func NewGetBlockChainInfoCmd() *GetBlockChainInfoCmd {
-	return &GetBlockChainInfoCmd{}
+// NewGetBlockDAGInfoCmd returns a new instance which can be used to issue a
+// getblockdaginfo JSON-RPC command.
+func NewGetBlockDAGInfoCmd() *GetBlockDAGInfoCmd {
+	return &GetBlockDAGInfoCmd{}
 }
 
 // GetBlockCountCmd defines the getblockcount JSON-RPC command.
@@ -312,13 +312,13 @@ func NewGetCFilterHeaderCmd(hash string,
 	}
 }
 
-// GetChainTipsCmd defines the getchaintips JSON-RPC command.
-type GetChainTipsCmd struct{}
+// GetDAGTipsCmd defines the getdagtips JSON-RPC command.
+type GetDAGTipsCmd struct{}
 
-// NewGetChainTipsCmd returns a new instance which can be used to issue a
-// getchaintips JSON-RPC command.
-func NewGetChainTipsCmd() *GetChainTipsCmd {
-	return &GetChainTipsCmd{}
+// NewGetDAGTipsCmd returns a new instance which can be used to issue a
+// getdagtips JSON-RPC command.
+func NewGetDAGTipsCmd() *GetDAGTipsCmd {
+	return &GetDAGTipsCmd{}
 }
 
 // GetConnectionCountCmd defines the getconnectioncount JSON-RPC command.
@@ -725,19 +725,19 @@ func NewValidateAddressCmd(address string) *ValidateAddressCmd {
 	}
 }
 
-// VerifyChainCmd defines the verifychain JSON-RPC command.
-type VerifyChainCmd struct {
+// VerifyDAGCmd defines the verifydag JSON-RPC command.
+type VerifyDAGCmd struct {
 	CheckLevel *int32 `jsonrpcdefault:"3"`
 	CheckDepth *int32 `jsonrpcdefault:"288"` // 0 = all
 }
 
-// NewVerifyChainCmd returns a new instance which can be used to issue a
-// verifychain JSON-RPC command.
+// NewVerifyDAGCmd returns a new instance which can be used to issue a
+// verifydag JSON-RPC command.
 //
 // The parameters which are pointers indicate they are optional.  Passing nil
 // for optional parameters will use the default value.
-func NewVerifyChainCmd(checkLevel, checkDepth *int32) *VerifyChainCmd {
-	return &VerifyChainCmd{
+func NewVerifyDAGCmd(checkLevel, checkDepth *int32) *VerifyDAGCmd {
+	return &VerifyDAGCmd{
 		CheckLevel: checkLevel,
 		CheckDepth: checkDepth,
 	}
@@ -784,14 +784,14 @@ func init() {
 	MustRegisterCmd("getaddednodeinfo", (*GetAddedNodeInfoCmd)(nil), flags)
 	MustRegisterCmd("getbestblockhash", (*GetBestBlockHashCmd)(nil), flags)
 	MustRegisterCmd("getblock", (*GetBlockCmd)(nil), flags)
-	MustRegisterCmd("getblockchaininfo", (*GetBlockChainInfoCmd)(nil), flags)
+	MustRegisterCmd("getblockdaginfo", (*GetBlockDAGInfoCmd)(nil), flags)
 	MustRegisterCmd("getblockcount", (*GetBlockCountCmd)(nil), flags)
 	MustRegisterCmd("getblockhash", (*GetBlockHashCmd)(nil), flags)
 	MustRegisterCmd("getblockheader", (*GetBlockHeaderCmd)(nil), flags)
 	MustRegisterCmd("getblocktemplate", (*GetBlockTemplateCmd)(nil), flags)
 	MustRegisterCmd("getcfilter", (*GetCFilterCmd)(nil), flags)
 	MustRegisterCmd("getcfilterheader", (*GetCFilterHeaderCmd)(nil), flags)
-	MustRegisterCmd("getchaintips", (*GetChainTipsCmd)(nil), flags)
+	MustRegisterCmd("getdagtips", (*GetDAGTipsCmd)(nil), flags)
 	MustRegisterCmd("getconnectioncount", (*GetConnectionCountCmd)(nil), flags)
 	MustRegisterCmd("getdifficulty", (*GetDifficultyCmd)(nil), flags)
 	MustRegisterCmd("getgenerate", (*GetGenerateCmd)(nil), flags)
@@ -822,7 +822,7 @@ func init() {
 	MustRegisterCmd("submitblock", (*SubmitBlockCmd)(nil), flags)
 	MustRegisterCmd("uptime", (*UptimeCmd)(nil), flags)
 	MustRegisterCmd("validateaddress", (*ValidateAddressCmd)(nil), flags)
-	MustRegisterCmd("verifychain", (*VerifyChainCmd)(nil), flags)
+	MustRegisterCmd("verifydag", (*VerifyDAGCmd)(nil), flags)
 	MustRegisterCmd("verifymessage", (*VerifyMessageCmd)(nil), flags)
 	MustRegisterCmd("verifytxoutproof", (*VerifyTxOutProofCmd)(nil), flags)
 }

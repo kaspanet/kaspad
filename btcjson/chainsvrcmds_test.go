@@ -15,11 +15,11 @@ import (
 	"github.com/daglabs/btcd/wire"
 )
 
-// TestChainSvrCmds tests all of the chain server commands marshal and unmarshal
+// TestDAGSvrCmds tests all of the dag server commands marshal and unmarshal
 // into valid results include handling of optional fields being omitted in the
 // marshalled command, while optional fields with defaults have the default
 // assigned on unmarshalled commands.
-func TestChainSvrCmds(t *testing.T) {
+func TestDAGSvrCmds(t *testing.T) {
 	t.Parallel()
 
 	testID := int(1)
@@ -189,15 +189,15 @@ func TestChainSvrCmds(t *testing.T) {
 			},
 		},
 		{
-			name: "getblockchaininfo",
+			name: "getblockdaginfo",
 			newCmd: func() (interface{}, error) {
-				return btcjson.NewCmd("getblockchaininfo")
+				return btcjson.NewCmd("getblockdaginfo")
 			},
 			staticCmd: func() interface{} {
-				return btcjson.NewGetBlockChainInfoCmd()
+				return btcjson.NewGetBlockDAGInfoCmd()
 			},
-			marshalled:   `{"jsonrpc":"1.0","method":"getblockchaininfo","params":[],"id":1}`,
-			unmarshalled: &btcjson.GetBlockChainInfoCmd{},
+			marshalled:   `{"jsonrpc":"1.0","method":"getblockdaginfo","params":[],"id":1}`,
+			unmarshalled: &btcjson.GetBlockDAGInfoCmd{},
 		},
 		{
 			name: "getblockcount",
@@ -351,15 +351,15 @@ func TestChainSvrCmds(t *testing.T) {
 			},
 		},
 		{
-			name: "getchaintips",
+			name: "getdagtips",
 			newCmd: func() (interface{}, error) {
-				return btcjson.NewCmd("getchaintips")
+				return btcjson.NewCmd("getdagtips")
 			},
 			staticCmd: func() interface{} {
-				return btcjson.NewGetChainTipsCmd()
+				return btcjson.NewGetDAGTipsCmd()
 			},
-			marshalled:   `{"jsonrpc":"1.0","method":"getchaintips","params":[],"id":1}`,
-			unmarshalled: &btcjson.GetChainTipsCmd{},
+			marshalled:   `{"jsonrpc":"1.0","method":"getdagtips","params":[],"id":1}`,
+			unmarshalled: &btcjson.GetDAGTipsCmd{},
 		},
 		{
 			name: "getconnectioncount",
@@ -1017,43 +1017,43 @@ func TestChainSvrCmds(t *testing.T) {
 			},
 		},
 		{
-			name: "verifychain",
+			name: "verifydag",
 			newCmd: func() (interface{}, error) {
-				return btcjson.NewCmd("verifychain")
+				return btcjson.NewCmd("verifydag")
 			},
 			staticCmd: func() interface{} {
-				return btcjson.NewVerifyChainCmd(nil, nil)
+				return btcjson.NewVerifyDAGCmd(nil, nil)
 			},
-			marshalled: `{"jsonrpc":"1.0","method":"verifychain","params":[],"id":1}`,
-			unmarshalled: &btcjson.VerifyChainCmd{
+			marshalled: `{"jsonrpc":"1.0","method":"verifydag","params":[],"id":1}`,
+			unmarshalled: &btcjson.VerifyDAGCmd{
 				CheckLevel: btcjson.Int32(3),
 				CheckDepth: btcjson.Int32(288),
 			},
 		},
 		{
-			name: "verifychain optional1",
+			name: "verifydag optional1",
 			newCmd: func() (interface{}, error) {
-				return btcjson.NewCmd("verifychain", 2)
+				return btcjson.NewCmd("verifydag", 2)
 			},
 			staticCmd: func() interface{} {
-				return btcjson.NewVerifyChainCmd(btcjson.Int32(2), nil)
+				return btcjson.NewVerifyDAGCmd(btcjson.Int32(2), nil)
 			},
-			marshalled: `{"jsonrpc":"1.0","method":"verifychain","params":[2],"id":1}`,
-			unmarshalled: &btcjson.VerifyChainCmd{
+			marshalled: `{"jsonrpc":"1.0","method":"verifydag","params":[2],"id":1}`,
+			unmarshalled: &btcjson.VerifyDAGCmd{
 				CheckLevel: btcjson.Int32(2),
 				CheckDepth: btcjson.Int32(288),
 			},
 		},
 		{
-			name: "verifychain optional2",
+			name: "verifydag optional2",
 			newCmd: func() (interface{}, error) {
-				return btcjson.NewCmd("verifychain", 2, 500)
+				return btcjson.NewCmd("verifydag", 2, 500)
 			},
 			staticCmd: func() interface{} {
-				return btcjson.NewVerifyChainCmd(btcjson.Int32(2), btcjson.Int32(500))
+				return btcjson.NewVerifyDAGCmd(btcjson.Int32(2), btcjson.Int32(500))
 			},
-			marshalled: `{"jsonrpc":"1.0","method":"verifychain","params":[2,500],"id":1}`,
-			unmarshalled: &btcjson.VerifyChainCmd{
+			marshalled: `{"jsonrpc":"1.0","method":"verifydag","params":[2,500],"id":1}`,
+			unmarshalled: &btcjson.VerifyDAGCmd{
 				CheckLevel: btcjson.Int32(2),
 				CheckDepth: btcjson.Int32(500),
 			},
@@ -1156,9 +1156,9 @@ func TestChainSvrCmds(t *testing.T) {
 	}
 }
 
-// TestChainSvrCmdErrors ensures any errors that occur in the command during
+// TestDAGSvrCmdErrors ensures any errors that occur in the command during
 // custom mashal and unmarshal are as expected.
-func TestChainSvrCmdErrors(t *testing.T) {
+func TestDAGSvrCmdErrors(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
