@@ -95,19 +95,19 @@ type Bip9SoftForkDescription struct {
 	Since     int32  `json:"since"`
 }
 
-// GetBlockChainInfoResult models the data returned from the getblockchaininfo
+// GetBlockDAGInfoResult models the data returned from the getblockdaginfo
 // command.
-type GetBlockChainInfoResult struct {
-	Chain                string                              `json:"chain"`
+type GetBlockDAGInfoResult struct {
+	DAG                  string                              `json:"dag"`
 	Blocks               int32                               `json:"blocks"`
 	Headers              int32                               `json:"headers"`
-	BestBlockHash        string                              `json:"bestblockhash"`
+	TipHashes            []string                            `json:"tiphashes"`
 	Difficulty           float64                             `json:"difficulty"`
 	MedianTime           int64                               `json:"mediantime"`
 	VerificationProgress float64                             `json:"verificationprogress,omitempty"`
 	Pruned               bool                                `json:"pruned"`
 	PruneHeight          int32                               `json:"pruneheight,omitempty"`
-	ChainWork            string                              `json:"chainwork,omitempty"`
+	DAGWork              string                              `json:"dagwork,omitempty"`
 	SoftForks            []*SoftForkDescription              `json:"softforks"`
 	Bip9SoftForks        map[string]*Bip9SoftForkDescription `json:"bip9_softforks"`
 }
@@ -423,8 +423,8 @@ type GetWorkResult struct {
 	Target   string `json:"target"`
 }
 
-// InfoChainResult models the data returned by the chain server getinfo command.
-type InfoChainResult struct {
+// InfoDAGResult models the data returned by the dag server getinfo command.
+type InfoDAGResult struct {
 	Version         int32   `json:"version"`
 	ProtocolVersion int32   `json:"protocolversion"`
 	Blocks          int32   `json:"blocks"`
@@ -479,9 +479,9 @@ type TxRawDecodeResult struct {
 	Vout     []Vout `json:"vout"`
 }
 
-// ValidateAddressChainResult models the data returned by the chain server
+// ValidateAddressResult models the data returned by the dag server
 // validateaddress command.
-type ValidateAddressChainResult struct {
+type ValidateAddressResult struct {
 	IsValid bool   `json:"isvalid"`
 	Address string `json:"address,omitempty"`
 }
