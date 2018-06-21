@@ -4,7 +4,7 @@
 // license that can be found in the LICENSE file.
 
 // NOTE: This file is intended to house the RPC commands that are supported by
-// a chain server, but are only available via websockets.
+// a dag server, but are only available via websockets.
 
 package btcjson
 

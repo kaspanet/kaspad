@@ -11,10 +11,10 @@ import (
 	"github.com/daglabs/btcd/btcjson"
 )
 
-// TestChainSvrCustomResults ensures any results that have custom marshalling
+// TestDAGSvrCustomResults ensures any results that have custom marshalling
 // work as inteded.
 // and unmarshal code of results are as expected.
-func TestChainSvrCustomResults(t *testing.T) {
+func TestDAGSvrCustomResults(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {

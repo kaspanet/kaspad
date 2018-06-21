@@ -14,7 +14,7 @@ import (
 	"github.com/daglabs/btcd/btcjson"
 )
 
-// TestWalletSvrWsNtfns tests all of the chain server websocket-specific
+// TestWalletSvrWsNtfns tests all of the dag server websocket-specific
 // notifications marshal and unmarshal into valid results include handling of
 // optional fields being omitted in the marshalled command, while optional
 // fields with defaults have the default assigned on unmarshalled commands.
