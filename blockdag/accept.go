@@ -28,7 +28,7 @@ func (b *BlockChain) maybeAcceptBlock(block *btcutil.Block, flags BehaviorFlags)
 	numPrevHashes := prevHeader.NumPrevBlocks
 	prevHashes := prevHeader.PrevBlocks
 
-	var isMainChain bool
+	nodes := make([]blockNode, numPrevHashes)
 	for i := byte(0); i < numPrevHashes; i++ {
 		prevHash := prevHashes[i]
 		node := b.index.LookupNode(&prevHash)
@@ -40,56 +40,55 @@ func (b *BlockChain) maybeAcceptBlock(block *btcutil.Block, flags BehaviorFlags)
 			return false, ruleError(ErrInvalidAncestorBlock, str)
 		}
 
-		blockHeight := node.height + 1
-		block.SetHeight(blockHeight)
+		nodes = append(nodes, *node)
+	}
 
-		// The block must pass all of the validation rules which depend on the
-		// position of the block within the block chain.
-		err := b.checkBlockContext(block, node, flags)
-		if err != nil {
-			return false, err
-		}
+	firstNode := nodes[0]
+	blockHeight := firstNode.height + 1
+	block.SetHeight(blockHeight)
 
-		// Insert the block into the database if it's not already there.  Even
-		// though it is possible the block will ultimately fail to connect, it
-		// has already passed all proof-of-work and validity tests which means
-		// it would be prohibitively expensive for an attacker to fill up the
-		// disk with a bunch of blocks that fail to connect.  This is necessary
-		// since it allows block download to be decoupled from the much more
-		// expensive connection logic.  It also has some other nice properties
-		// such as making blocks that never become part of the main chain or
-		// blocks that fail to connect available for further analysis.
-		err = b.db.Update(func(dbTx database.Tx) error {
-			return dbStoreBlock(dbTx, block)
-		})
-		if err != nil {
-			return false, err
-		}
+	// The block must pass all of the validation rules which depend on the
+	// position of the block within the block chain.
+	err := b.checkBlockContext(block, &firstNode, flags)
+	if err != nil {
+		return false, err
+	}
 
-		// Create a new block node for the block and add it to the node index. Even
-		// if the block ultimately gets connected to the main chain, it starts out
-		// on a side chain.
-		blockHeader := &block.MsgBlock().Header
-		newNode := newBlockNode(blockHeader, node)
-		newNode.status = statusDataStored
+	// Insert the block into the database if it's not already there.  Even
+	// though it is possible the block will ultimately fail to connect, it
+	// has already passed all proof-of-work and validity tests which means
+	// it would be prohibitively expensive for an attacker to fill up the
+	// disk with a bunch of blocks that fail to connect.  This is necessary
+	// since it allows block download to be decoupled from the much more
+	// expensive connection logic.  It also has some other nice properties
+	// such as making blocks that never become part of the main chain or
+	// blocks that fail to connect available for further analysis.
+	err = b.db.Update(func(dbTx database.Tx) error {
+		return dbStoreBlock(dbTx, block)
+	})
+	if err != nil {
+		return false, err
+	}
 
-		b.index.AddNode(newNode)
-		err = b.index.flushToDB()
-		if err != nil {
-			return false, err
-		}
+	// Create a new block node for the block and add it to the node index. Even
+	// if the block ultimately gets connected to the main chain, it starts out
+	// on a side chain.
+	blockHeader := &block.MsgBlock().Header
+	newNode := newBlockNode(blockHeader, nodes)
+	newNode.status = statusDataStored
 
-		// Connect the passed block to the chain while respecting proper chain
-		// selection according to the chain with the most proof of work.  This
-		// also handles validation of the transaction scripts.
-		isMainChain, err := b.connectBestChain(newNode, block, flags)
-		if err != nil {
-			return false, err
-		}
+	b.index.AddNode(newNode)
+	err = b.index.flushToDB()
+	if err != nil {
+		return false, err
+	}
 
-		if !isMainChain {
-			break
-		}
+	// Connect the passed block to the chain while respecting proper chain
+	// selection according to the chain with the most proof of work.  This
+	// also handles validation of the transaction scripts.
+	isMainChain, err := b.connectBestChain(newNode, block, flags)
+	if err != nil {
+		return false, err
 	}
 
 	// Notify the caller that the new block was accepted into the block
