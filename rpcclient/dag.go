@@ -20,7 +20,7 @@ import (
 type FutureGetBestBlockHashResult chan *response
 
 // Receive waits for the response promised by the future and returns the hash of
-// the best block in the longest block chain.
+// the best block in the longest block dag.
 func (r FutureGetBestBlockHashResult) Receive() (*daghash.Hash, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
@@ -47,7 +47,7 @@ func (c *Client) GetBestBlockHashAsync() FutureGetBestBlockHashResult {
 }
 
 // GetBestBlockHash returns the hash of the best block in the longest block
-// chain.
+// dag.
 func (c *Client) GetBestBlockHash() (*daghash.Hash, error) {
 	return c.GetBestBlockHashAsync().Receive()
 }
@@ -183,7 +183,7 @@ func (c *Client) GetBlockVerboseTx(blockHash *daghash.Hash) (*btcjson.GetBlockVe
 type FutureGetBlockCountResult chan *response
 
 // Receive waits for the response promised by the future and returns the number
-// of blocks in the longest block chain.
+// of blocks in the longest block dag.
 func (r FutureGetBlockCountResult) Receive() (int64, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
@@ -209,7 +209,7 @@ func (c *Client) GetBlockCountAsync() FutureGetBlockCountResult {
 	return c.sendCmd(cmd)
 }
 
-// GetBlockCount returns the number of blocks in the longest block chain.
+// GetBlockCount returns the number of blocks in the longest block dag.
 func (c *Client) GetBlockCount() (int64, error) {
 	return c.GetBlockCountAsync().Receive()
 }
@@ -251,40 +251,40 @@ func (c *Client) GetDifficulty() (float64, error) {
 	return c.GetDifficultyAsync().Receive()
 }
 
-// FutureGetBlockChainInfoResult is a promise to deliver the result of a
-// GetBlockChainInfoAsync RPC invocation (or an applicable error).
-type FutureGetBlockChainInfoResult chan *response
+// FutureGetBlockDAGInfoResult is a promise to deliver the result of a
+// GetBlockDAGInfoAsync RPC invocation (or an applicable error).
+type FutureGetBlockDAGInfoResult chan *response
 
-// Receive waits for the response promised by the future and returns chain info
+// Receive waits for the response promised by the future and returns dag info
 // result provided by the server.
-func (r FutureGetBlockChainInfoResult) Receive() (*btcjson.GetBlockChainInfoResult, error) {
+func (r FutureGetBlockDAGInfoResult) Receive() (*btcjson.GetBlockDAGInfoResult, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return nil, err
 	}
 
-	var chainInfo btcjson.GetBlockChainInfoResult
-	if err := json.Unmarshal(res, &chainInfo); err != nil {
+	var dagInfo btcjson.GetBlockDAGInfoResult
+	if err := json.Unmarshal(res, &dagInfo); err != nil {
 		return nil, err
 	}
-	return &chainInfo, nil
+	return &dagInfo, nil
 }
 
-// GetBlockChainInfoAsync returns an instance of a type that can be used to get
+// GetBlockDAGInfoAsync returns an instance of a type that can be used to get
 // the result of the RPC at some future time by invoking the Receive function
 // on the returned instance.
 //
-// See GetBlockChainInfo for the blocking version and more details.
-func (c *Client) GetBlockChainInfoAsync() FutureGetBlockChainInfoResult {
-	cmd := btcjson.NewGetBlockChainInfoCmd()
+// See GetBlockDAGInfo for the blocking version and more details.
+func (c *Client) GetBlockDAGInfoAsync() FutureGetBlockDAGInfoResult {
+	cmd := btcjson.NewGetBlockDAGInfoCmd()
 	return c.sendCmd(cmd)
 }
 
-// GetBlockChainInfo returns information related to the processing state of
-// various chain-specific details such as the current difficulty from the tip
-// of the main chain.
-func (c *Client) GetBlockChainInfo() (*btcjson.GetBlockChainInfoResult, error) {
-	return c.GetBlockChainInfoAsync().Receive()
+// GetBlockDAGInfo returns information related to the processing state of
+// various dag-specific details such as the current difficulty from the tip
+// of the main dag.
+func (c *Client) GetBlockDAGInfo() (*btcjson.GetBlockDAGInfoResult, error) {
+	return c.GetBlockDAGInfoAsync().Receive()
 }
 
 // FutureGetBlockHashResult is a future promise to deliver the result of a
@@ -292,7 +292,7 @@ func (c *Client) GetBlockChainInfo() (*btcjson.GetBlockChainInfoResult, error) {
 type FutureGetBlockHashResult chan *response
 
 // Receive waits for the response promised by the future and returns the hash of
-// the block in the best block chain at the given height.
+// the block in the best block dag at the given height.
 func (r FutureGetBlockHashResult) Receive() (*daghash.Hash, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
@@ -318,7 +318,7 @@ func (c *Client) GetBlockHashAsync(blockHeight int64) FutureGetBlockHashResult {
 	return c.sendCmd(cmd)
 }
 
-// GetBlockHash returns the hash of the block in the best block chain at the
+// GetBlockHash returns the hash of the block in the best block dag at the
 // given height.
 func (c *Client) GetBlockHash(blockHeight int64) (*daghash.Hash, error) {
 	return c.GetBlockHashAsync(blockHeight).Receive()
@@ -594,15 +594,15 @@ func (c *Client) EstimateFee(numBlocks int64) (float64, error) {
 	return c.EstimateFeeAsync(numBlocks).Receive()
 }
 
-// FutureVerifyChainResult is a future promise to deliver the result of a
-// VerifyChainAsync, VerifyChainLevelAsyncRPC, or VerifyChainBlocksAsync
+// FutureVerifyDAGResult is a future promise to deliver the result of a
+// VerifyDAGAsync, VerifyDAGLevelAsyncRPC, or VerifyDAGBlocksAsync
 // invocation (or an applicable error).
-type FutureVerifyChainResult chan *response
+type FutureVerifyDAGResult chan *response
 
 // Receive waits for the response promised by the future and returns whether
-// or not the chain verified based on the check level and number of blocks
+// or not the dag verified based on the check level and number of blocks
 // to verify specified in the original call.
-func (r FutureVerifyChainResult) Receive() (bool, error) {
+func (r FutureVerifyDAGResult) Receive() (bool, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return false, err
@@ -617,58 +617,58 @@ func (r FutureVerifyChainResult) Receive() (bool, error) {
 	return verified, nil
 }
 
-// VerifyChainAsync returns an instance of a type that can be used to get the
+// VerifyDAGAsync returns an instance of a type that can be used to get the
 // result of the RPC at some future time by invoking the Receive function on the
 // returned instance.
 //
-// See VerifyChain for the blocking version and more details.
-func (c *Client) VerifyChainAsync() FutureVerifyChainResult {
-	cmd := btcjson.NewVerifyChainCmd(nil, nil)
+// See VerifyDAG for the blocking version and more details.
+func (c *Client) VerifyDAGAsync() FutureVerifyDAGResult {
+	cmd := btcjson.NewVerifyDAGCmd(nil, nil)
 	return c.sendCmd(cmd)
 }
 
-// VerifyChain requests the server to verify the block chain database using
+// VerifyDAG requests the server to verify the block dag database using
 // the default check level and number of blocks to verify.
 //
-// See VerifyChainLevel and VerifyChainBlocks to override the defaults.
-func (c *Client) VerifyChain() (bool, error) {
-	return c.VerifyChainAsync().Receive()
+// See VerifyDAGLevel and VerifyDAGBlocks to override the defaults.
+func (c *Client) VerifyDAG() (bool, error) {
+	return c.VerifyDAGAsync().Receive()
 }
 
-// VerifyChainLevelAsync returns an instance of a type that can be used to get
+// VerifyDAGLevelAsync returns an instance of a type that can be used to get
 // the result of the RPC at some future time by invoking the Receive function on
 // the returned instance.
 //
-// See VerifyChainLevel for the blocking version and more details.
-func (c *Client) VerifyChainLevelAsync(checkLevel int32) FutureVerifyChainResult {
-	cmd := btcjson.NewVerifyChainCmd(&checkLevel, nil)
+// See VerifyDAGLevel for the blocking version and more details.
+func (c *Client) VerifyDAGLevelAsync(checkLevel int32) FutureVerifyDAGResult {
+	cmd := btcjson.NewVerifyDAGCmd(&checkLevel, nil)
 	return c.sendCmd(cmd)
 }
 
-// VerifyChainLevel requests the server to verify the block chain database using
+// VerifyDAGLevel requests the server to verify the block dag database using
 // the passed check level and default number of blocks to verify.
 //
 // The check level controls how thorough the verification is with higher numbers
 // increasing the amount of checks done as consequently how long the
 // verification takes.
 //
-// See VerifyChain to use the default check level and VerifyChainBlocks to
+// See VerifyDAG to use the default check level and VerifyDAGBlocks to
 // override the number of blocks to verify.
-func (c *Client) VerifyChainLevel(checkLevel int32) (bool, error) {
-	return c.VerifyChainLevelAsync(checkLevel).Receive()
+func (c *Client) VerifyDAGLevel(checkLevel int32) (bool, error) {
+	return c.VerifyDAGLevelAsync(checkLevel).Receive()
 }
 
-// VerifyChainBlocksAsync returns an instance of a type that can be used to get
+// VerifyDAGBlocksAsync returns an instance of a type that can be used to get
 // the result of the RPC at some future time by invoking the Receive function on
 // the returned instance.
 //
-// See VerifyChainBlocks for the blocking version and more details.
-func (c *Client) VerifyChainBlocksAsync(checkLevel, numBlocks int32) FutureVerifyChainResult {
-	cmd := btcjson.NewVerifyChainCmd(&checkLevel, &numBlocks)
+// See VerifyDAGBlocks for the blocking version and more details.
+func (c *Client) VerifyDAGBlocksAsync(checkLevel, numBlocks int32) FutureVerifyDAGResult {
+	cmd := btcjson.NewVerifyDAGCmd(&checkLevel, &numBlocks)
 	return c.sendCmd(cmd)
 }
 
-// VerifyChainBlocks requests the server to verify the block chain database
+// VerifyDAGBlocks requests the server to verify the block dag database
 // using the passed check level and number of blocks to verify.
 //
 // The check level controls how thorough the verification is with higher numbers
@@ -676,11 +676,11 @@ func (c *Client) VerifyChainBlocksAsync(checkLevel, numBlocks int32) FutureVerif
 // verification takes.
 //
 // The number of blocks refers to the number of blocks from the end of the
-// current longest chain.
+// current longest dag.
 //
-// See VerifyChain and VerifyChainLevel to use defaults.
-func (c *Client) VerifyChainBlocks(checkLevel, numBlocks int32) (bool, error) {
-	return c.VerifyChainBlocksAsync(checkLevel, numBlocks).Receive()
+// See VerifyDAG and VerifyDAGLevel to use defaults.
+func (c *Client) VerifyDAGBlocks(checkLevel, numBlocks int32) (bool, error) {
+	return c.VerifyDAGBlocksAsync(checkLevel, numBlocks).Receive()
 }
 
 // FutureGetTxOutResult is a future promise to deliver the result of a
@@ -779,7 +779,7 @@ func (c *Client) RescanBlocksAsync(blockHashes []daghash.Hash) FutureRescanBlock
 
 // RescanBlocks rescans the blocks identified by blockHashes, in order, using
 // the client's loaded transaction filter.  The blocks do not need to be on the
-// main chain, but they do need to be adjacent to each other.
+// main dag, but they do need to be adjacent to each other.
 //
 // NOTE: This is a btcsuite extension ported from
 // github.com/decred/dcrrpcclient.
