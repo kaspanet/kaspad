@@ -1226,6 +1226,7 @@ func testFetchBlockIO(tc *testContext, tx database.Tx) bool {
 	allBlockBytes := make([][]byte, len(tc.blocks))
 	allBlockTxLocs := make([][]wire.TxLoc, len(tc.blocks))
 	allBlockRegions := make([]database.BlockRegion, len(tc.blocks))
+	allBlockHeaderSizes := make([]int, len(tc.blocks))
 	for i, block := range tc.blocks {
 		blockHash := block.Hash()
 		allBlockHashes[i] = *blockHash
@@ -1237,6 +1238,8 @@ func testFetchBlockIO(tc *testContext, tx database.Tx) bool {
 			return false
 		}
 		allBlockBytes[i] = blockBytes
+
+		allBlockHeaderSizes[i] = block.MsgBlock().Header.SerializeSize()
 
 		txLocs, err := block.TxLoc()
 		if err != nil {
@@ -1260,9 +1263,7 @@ func testFetchBlockIO(tc *testContext, tx database.Tx) bool {
 			return false
 		}
 
-		// Ensure the block header fetched from the database matches the
-		// expected bytes.
-		wantHeaderBytes := blockBytes[0:wire.MaxBlockHeaderPayload]
+		wantHeaderBytes := blockBytes[0:allBlockHeaderSizes[i]]
 		gotHeaderBytes, err := tx.FetchBlockHeader(blockHash)
 		if err != nil {
 			tc.t.Errorf("FetchBlockHeader(%s): unexpected error: %v",
@@ -1405,7 +1406,7 @@ func testFetchBlockIO(tc *testContext, tx database.Tx) bool {
 	}
 	for i := 0; i < len(blockHeaderData); i++ {
 		blockHash := allBlockHashes[i]
-		wantHeaderBytes := allBlockBytes[i][0:wire.MaxBlockHeaderPayload]
+		wantHeaderBytes := allBlockBytes[i][0:allBlockHeaderSizes[i]]
 		gotHeaderBytes := blockHeaderData[i]
 		if !bytes.Equal(gotHeaderBytes, wantHeaderBytes) {
 			tc.t.Errorf("FetchBlockHeaders(%s): bytes mismatch: "+
