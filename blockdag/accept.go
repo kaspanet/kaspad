@@ -24,32 +24,18 @@ import (
 func (b *BlockChain) maybeAcceptBlock(block *btcutil.Block, flags BehaviorFlags) (bool, error) {
 	// The height of this block is one more than the referenced previous
 	// block.
-	prevHeader := &block.MsgBlock().Header
-	numPrevHashes := prevHeader.NumPrevBlocks
-	prevHashes := prevHeader.PrevBlocks
-
-	nodes := make([]blockNode, numPrevHashes)
-	for i := byte(0); i < numPrevHashes; i++ {
-		prevHash := prevHashes[i]
-		node := b.index.LookupNode(&prevHash)
-		if node == nil {
-			str := fmt.Sprintf("previous block %s is unknown", prevHashes)
-			return false, ruleError(ErrPreviousBlockUnknown, str)
-		} else if b.index.NodeStatus(node).KnownInvalid() {
-			str := fmt.Sprintf("previous block %s is known to be invalid", prevHashes)
-			return false, ruleError(ErrInvalidAncestorBlock, str)
-		}
-
-		nodes = append(nodes, *node)
+	nodes, err := lookupPreviousNodes(block, b)
+	if err != nil {
+		return false, err
 	}
 
-	firstNode := nodes[0]
+	firstNode := nodes[0] // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
 	blockHeight := firstNode.height + 1
 	block.SetHeight(blockHeight)
 
 	// The block must pass all of the validation rules which depend on the
 	// position of the block within the block chain.
-	err := b.checkBlockContext(block, &firstNode, flags)
+	err = b.checkBlockContext(block, firstNode, flags)
 	if err != nil {
 		return false, err
 	}
@@ -99,4 +85,25 @@ func (b *BlockChain) maybeAcceptBlock(block *btcutil.Block, flags BehaviorFlags)
 	b.chainLock.Lock()
 
 	return isMainChain, nil
+}
+
+func lookupPreviousNodes(block *btcutil.Block, blockChain *BlockChain) ([]*blockNode, error) {
+	header := block.MsgBlock().Header
+	prevHashes := header.PrevBlocks
+
+	nodes := make([]*blockNode, len(prevHashes))
+	for _, prevHash := range prevHashes {
+		node := blockChain.index.LookupNode(&prevHash)
+		if node == nil {
+			str := fmt.Sprintf("previous block %s is unknown", prevHashes)
+			return nil, ruleError(ErrPreviousBlockUnknown, str)
+		} else if blockChain.index.NodeStatus(node).KnownInvalid() {
+			str := fmt.Sprintf("previous block %s is known to be invalid", prevHashes)
+			return nil, ruleError(ErrInvalidAncestorBlock, str)
+		}
+
+		nodes = append(nodes, node)
+	}
+
+	return nodes, nil
 }

@@ -373,7 +373,7 @@ func (b *BlockChain) calcSequenceLock(node *blockNode, tx *btcutil.Tx, utxoView 
 		// Obtain the latest BIP9 version bits state for the
 		// CSV-package soft-fork deployment. The adherence of sequence
 		// locks depends on the current soft-fork state.
-		csvState, err := b.deploymentState(&node.parents[0], dagconfig.DeploymentCSV) // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
+		csvState, err := b.deploymentState(node.parents[0], dagconfig.DeploymentCSV) // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
 		if err != nil {
 			return nil, err
 		}
@@ -502,7 +502,7 @@ func (b *BlockChain) getReorganizeNodes(node *blockNode) (*list.List, *list.List
 	// Do not reorganize to a known invalid chain. Ancestors deeper than the
 	// direct parent are checked below but this is a quick check before doing
 	// more unnecessary work.
-	if b.index.NodeStatus(&node.parents[0]).KnownInvalid() { // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
+	if b.index.NodeStatus(node.parents[0]).KnownInvalid() { // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
 		b.index.SetStatusFlags(node, statusInvalidAncestor)
 		return detachNodes, attachNodes
 	}
@@ -513,7 +513,7 @@ func (b *BlockChain) getReorganizeNodes(node *blockNode) (*list.List, *list.List
 	// later.
 	forkNode := b.bestChain.FindFork(node)
 	invalidChain := false
-	for n := node; n != nil && n != forkNode; n = &n.parents[0] { // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
+	for n := node; n != nil && n != forkNode; n = n.parents[0] { // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
 		if b.index.NodeStatus(n).KnownInvalid() {
 			invalidChain = true
 			break
@@ -536,7 +536,7 @@ func (b *BlockChain) getReorganizeNodes(node *blockNode) (*list.List, *list.List
 	// Start from the end of the main chain and work backwards until the
 	// common ancestor adding each block to the list of nodes to detach from
 	// the main chain.
-	for n := b.bestChain.Tip(); n != nil && n != forkNode; n = &n.parents[0] { // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
+	for n := b.bestChain.Tip(); n != nil && n != forkNode; n = n.parents[0] { // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
 		detachNodes.PushBack(n)
 	}
 
@@ -684,7 +684,7 @@ func (b *BlockChain) disconnectBlock(node *blockNode, block *btcutil.Block, view
 	}
 
 	// Load the previous block since some details for it are needed below.
-	prevNode := &node.parents[0] // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
+	prevNode := node.parents[0] // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
 	var prevBlock *btcutil.Block
 	err := b.db.View(func(dbTx database.Tx) error {
 		var err error
@@ -762,7 +762,7 @@ func (b *BlockChain) disconnectBlock(node *blockNode, block *btcutil.Block, view
 	view.commit()
 
 	// This node's parent is now the end of the best chain.
-	b.bestChain.SetTip(&node.parents[0]) // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
+	b.bestChain.SetTip(node.parents[0]) // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
 
 	// Update the state for the best block.  Notice how this replaces the
 	// entire struct instead of updating the existing one.  This effectively
@@ -1355,7 +1355,7 @@ func (b *BlockChain) HeightToHashRange(startHeight int32,
 	hashes := make([]daghash.Hash, resultsLength)
 	for i := resultsLength - 1; i >= 0; i-- {
 		hashes[i] = node.hash
-		node = &node.parents[0] // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
+		node = node.parents[0] // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
 	}
 	return hashes, nil
 }

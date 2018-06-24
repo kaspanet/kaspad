@@ -71,11 +71,8 @@ type blockNode struct {
 	// hundreds of thousands of these in memory, so a few extra bytes of
 	// padding adds up.
 
-	// numParents is the amount of parent blocks for this node.
-	numParents byte
-
 	// parents is the parent blocks for this node.
-	parents []blockNode
+	parents []*blockNode
 
 	// hash is the double sha 256 of the block.
 	hash daghash.Hash
@@ -108,12 +105,11 @@ type blockNode struct {
 // calculating the height and workSum from the respective fields on the first parent.
 // This function is NOT safe for concurrent access.  It must only be called when
 // initially creating a node.
-func initBlockNode(node *blockNode, blockHeader *wire.BlockHeader, parents []blockNode) {
+func initBlockNode(node *blockNode, blockHeader *wire.BlockHeader, parents []*blockNode) {
 	numParents := byte(len(parents))
 	*node = blockNode{
 		hash:       blockHeader.BlockHash(),
 		parents:    parents,
-		numParents: numParents,
 		workSum:    CalcWork(blockHeader.Bits),
 		version:    blockHeader.Version,
 		bits:       blockHeader.Bits,
@@ -131,7 +127,7 @@ func initBlockNode(node *blockNode, blockHeader *wire.BlockHeader, parents []blo
 // newBlockNode returns a new block node for the given block header and parent
 // nodes, calculating the height and workSum from the respective fields on the
 // parent. This function is NOT safe for concurrent access.
-func newBlockNode(blockHeader *wire.BlockHeader, parents []blockNode) *blockNode {
+func newBlockNode(blockHeader *wire.BlockHeader, parents []*blockNode) *blockNode {
 	var node blockNode
 	initBlockNode(&node, blockHeader, parents)
 	return &node
@@ -142,14 +138,11 @@ func newBlockNode(blockHeader *wire.BlockHeader, parents []blockNode) *blockNode
 // This function is safe for concurrent access.
 func (node *blockNode) Header() wire.BlockHeader {
 	// No lock is needed because all accessed fields are immutable.
-	prevHashes := make([]daghash.Hash, node.numParents)
-	for _, parent := range node.parents {
-		prevHashes = append(prevHashes, parent.hash)
-	}
+	prevHashes := node.prevHashes()
 
 	return wire.BlockHeader{
 		Version:       node.version,
-		NumPrevBlocks: node.numParents,
+		NumPrevBlocks: byte(len(node.parents)),
 		PrevBlocks:    prevHashes,
 		MerkleRoot:    node.merkleRoot,
 		Timestamp:     time.Unix(node.timestamp, 0),
@@ -170,7 +163,7 @@ func (node *blockNode) Ancestor(height int32) *blockNode {
 	}
 
 	n := node
-	for ; n != nil && n.height != height; n = &n.parents[0] {
+	for ; n != nil && n.height != height; n = n.parents[0] {
 		// Intentionally left blank
 	}
 
@@ -200,7 +193,7 @@ func (node *blockNode) CalcPastMedianTime() time.Time {
 		timestamps[i] = iterNode.timestamp
 		numNodes++
 
-		iterNode = &iterNode.parents[0]
+		iterNode = iterNode.parents[0]
 	}
 
 	// Prune the slice to the actual number of available timestamps which
@@ -223,6 +216,15 @@ func (node *blockNode) CalcPastMedianTime() time.Time {
 	// even number, this code will be wrong.
 	medianTimestamp := timestamps[numNodes/2]
 	return time.Unix(medianTimestamp, 0)
+}
+
+func (node *blockNode) prevHashes() []daghash.Hash {
+	prevHashes := make([]daghash.Hash, len(node.parents))
+	for _, parent := range node.parents {
+		prevHashes = append(prevHashes, parent.hash)
+	}
+
+	return prevHashes
 }
 
 // blockIndex provides facilities for keeping track of an in-memory index of the

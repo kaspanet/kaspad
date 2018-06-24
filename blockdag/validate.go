@@ -1141,7 +1141,7 @@ func (b *BlockChain) checkConnectBlock(node *blockNode, block *btcutil.Block, vi
 
 	// Enforce CHECKSEQUENCEVERIFY during all block validation checks once
 	// the soft-fork deployment is fully active.
-	csvState, err := b.deploymentState(&node.parents[0], dagconfig.DeploymentCSV) // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
+	csvState, err := b.deploymentState(node.parents[0], dagconfig.DeploymentCSV) // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
 	if err != nil {
 		return err
 	}
@@ -1232,6 +1232,6 @@ func (b *BlockChain) CheckConnectBlockTemplate(block *btcutil.Block) error {
 	// is not needed and thus extra work can be avoided.
 	view := NewUtxoViewpoint()
 	view.SetBestHash(&tip.hash)
-	newNode := newBlockNode(&header, []blockNode{*tip}) // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
+	newNode := newBlockNode(&header, []*blockNode{tip}) // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
 	return b.checkConnectBlock(newNode, block, view, nil)
 }

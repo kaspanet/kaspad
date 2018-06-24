@@ -1162,7 +1162,7 @@ func (b *BlockChain) initChainState() error {
 			// Initialize the block node for the block, connect it,
 			// and add it to the block index.
 			node := &blockNodes[i]
-			initBlockNode(node, header, []blockNode{*parent}) // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
+			initBlockNode(node, header, []*blockNode{parent}) // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
 			node.status = status
 			b.index.addNode(node)
 

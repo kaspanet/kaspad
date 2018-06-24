@@ -211,11 +211,8 @@ func (b *BlockChain) ProcessBlock(block *btcutil.Block, flags BehaviorFlags) (bo
 	}
 
 	// Handle orphan blocks.
-	numPrevHashes := blockHeader.NumPrevBlocks
-	prevHashes := blockHeader.PrevBlocks
 	allPrevHashesExist := true
-	for i := byte(0); i < numPrevHashes; i++ {
-		prevHash := prevHashes[i]
+	for _, prevHash := range blockHeader.PrevBlocks {
 		prevHashExists, err := b.blockExists(&prevHash)
 		if err != nil {
 			return false, false, err

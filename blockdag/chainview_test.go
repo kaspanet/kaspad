@@ -31,7 +31,7 @@ func chainedNodes(parent *blockNode, numNodes int) []*blockNode {
 		if tip != nil {
 			header.PrevBlocks = []daghash.Hash{tip.hash} // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
 		}
-		nodes[i] = newBlockNode(&header, []blockNode{*tip}) // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
+		nodes[i] = newBlockNode(&header, []*blockNode{tip}) // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
 		tip = nodes[i]
 	}
 	return nodes
