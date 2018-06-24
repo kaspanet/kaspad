@@ -69,7 +69,7 @@ type BestState struct {
 
 // newBestState returns a new best stats instance for the given parameters.
 func newBestState(node *blockNode, blockSize, numTxns,
-totalTxns uint64, medianTime time.Time) *BestState {
+	totalTxns uint64, medianTime time.Time) *BestState {
 
 	return &BestState{
 		Hash:       node.hash,
@@ -556,7 +556,7 @@ func (b *BlockChain) getReorganizeNodes(node *blockNode) (*list.List, *list.List
 // This function MUST be called with the chain state lock held (for writes).
 func (b *BlockChain) connectBlock(node *blockNode, block *btcutil.Block, view *UtxoViewpoint, stxos []spentTxOut) error {
 	// Make sure it's extending the end of the best chain.
-	prevHash := &block.MsgBlock().Header.PrevBlocks[0] // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
+	prevHash := &block.MsgBlock().Header.PrevBlocks[0]  // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
 	if !prevHash.IsEqual(&b.bestChain.Tips()[0].hash) { // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
 		return AssertError("connectBlock must be called with a block " +
 			"that extends the main chain")

@@ -211,22 +211,22 @@ func (b *BlockChain) ProcessBlock(block *btcutil.Block, flags BehaviorFlags) (bo
 	}
 
 	// Handle orphan blocks.
-	allPrevHashesExist := true
-	for _, prevHash := range blockHeader.PrevBlocks {
-		prevHashExists, err := b.blockExists(&prevHash)
+	allPrevBlocksExist := true
+	for _, prevBlock := range blockHeader.PrevBlocks {
+		prevBlockExists, err := b.blockExists(&prevBlock)
 		if err != nil {
 			return false, false, err
 		}
 
-		if !prevHashExists {
-			log.Infof("Adding orphan block %v with parent %v", blockHash, prevHash)
+		if !prevBlockExists {
+			log.Infof("Adding orphan block %v with parent %v", blockHash, prevBlock)
 			b.addOrphanBlock(block)
 
-			allPrevHashesExist = false
+			allPrevBlocksExist = false
 		}
 	}
 
-	if !allPrevHashesExist {
+	if !allPrevBlocksExist {
 		return false, true, nil
 	}
 

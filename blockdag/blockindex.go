@@ -106,7 +106,6 @@ type blockNode struct {
 // This function is NOT safe for concurrent access.  It must only be called when
 // initially creating a node.
 func initBlockNode(node *blockNode, blockHeader *wire.BlockHeader, parents []*blockNode) {
-	numParents := byte(len(parents))
 	*node = blockNode{
 		hash:       blockHeader.BlockHash(),
 		parents:    parents,
@@ -117,8 +116,8 @@ func initBlockNode(node *blockNode, blockHeader *wire.BlockHeader, parents []*bl
 		timestamp:  blockHeader.Timestamp.Unix(),
 		merkleRoot: blockHeader.MerkleRoot,
 	}
-	if numParents > 0 {
-		parent := parents[0]
+	if len(parents) > 0 {
+		parent := parents[0] // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
 		node.height = parent.height + 1
 		node.workSum = node.workSum.Add(parent.workSum, node.workSum)
 	}
@@ -138,12 +137,10 @@ func newBlockNode(blockHeader *wire.BlockHeader, parents []*blockNode) *blockNod
 // This function is safe for concurrent access.
 func (node *blockNode) Header() wire.BlockHeader {
 	// No lock is needed because all accessed fields are immutable.
-	prevHashes := node.prevHashes()
-
 	return wire.BlockHeader{
 		Version:       node.version,
 		NumPrevBlocks: byte(len(node.parents)),
-		PrevBlocks:    prevHashes,
+		PrevBlocks:    node.PrevHashes(),
 		MerkleRoot:    node.merkleRoot,
 		Timestamp:     time.Unix(node.timestamp, 0),
 		Bits:          node.bits,
@@ -218,7 +215,7 @@ func (node *blockNode) CalcPastMedianTime() time.Time {
 	return time.Unix(medianTimestamp, 0)
 }
 
-func (node *blockNode) prevHashes() []daghash.Hash {
+func (node *blockNode) PrevHashes() []daghash.Hash {
 	prevHashes := make([]daghash.Hash, len(node.parents))
 	for _, parent := range node.parents {
 		prevHashes = append(prevHashes, parent.hash)
