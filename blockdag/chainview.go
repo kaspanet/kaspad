@@ -92,15 +92,15 @@ func (c *chainView) tip() *blockNode {
 	return c.nodes[len(c.nodes)-1]
 }
 
-// Tip returns the current tip block node for the chain view.  It will return
-// nil if there is no tip.
+// Tips returns the current tip block nodes for the chain view.  It will return
+// an empty slice if there is no tip.
 //
 // This function is safe for concurrent access.
-func (c *chainView) Tip() *blockNode {
+func (c *chainView) Tips() []*blockNode {
 	c.mtx.Lock()
 	tip := c.tip()
 	c.mtx.Unlock()
-	return tip
+	return []*blockNode{tip} // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
 }
 
 // setTip sets the chain view to use the provided block node as the current tip

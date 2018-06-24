@@ -306,7 +306,7 @@ func (b *BlockChain) calcNextRequiredDifficulty(lastNode *blockNode, newBlockTim
 // This function is safe for concurrent access.
 func (b *BlockChain) CalcNextRequiredDifficulty(timestamp time.Time) (uint32, error) {
 	b.chainLock.Lock()
-	difficulty, err := b.calcNextRequiredDifficulty(b.bestChain.Tip(), timestamp)
+	difficulty, err := b.calcNextRequiredDifficulty(b.bestChain.Tips()[0], timestamp) // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
 	b.chainLock.Unlock()
 	return difficulty, err
 }

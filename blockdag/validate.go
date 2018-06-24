@@ -1210,7 +1210,7 @@ func (b *BlockChain) CheckConnectBlockTemplate(block *btcutil.Block) error {
 
 	// This only checks whether the block can be connected to the tip of the
 	// current chain.
-	tip := b.bestChain.Tip()
+	tip := b.bestChain.Tips()[0] // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
 	header := block.MsgBlock().Header
 	if tip.hash != header.PrevBlocks[0] { // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
 		str := fmt.Sprintf("previous block must be the current chain tip %v, "+
