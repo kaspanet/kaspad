@@ -175,7 +175,7 @@ func storeFilter(dbTx database.Tx, block *btcutil.Block, f *gcs.Filter,
 
 	// Then fetch the previous block's filter header.
 	var prevHeader *daghash.Hash
-	ph := &block.MsgBlock().Header.PrevBlock
+	ph := &block.MsgBlock().Header.PrevBlocks[0] // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
 	if ph.IsEqual(&zeroHash) {
 		prevHeader = &zeroHash
 	} else {

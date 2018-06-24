@@ -51,12 +51,13 @@ var (
 	// as the public transaction ledger for the regression test network.
 	regTestGenesisBlock = wire.MsgBlock{
 		Header: wire.BlockHeader{
-			Version:    1,
-			PrevBlock:  *newHashFromStr("0000000000000000000000000000000000000000000000000000000000000000"),
-			MerkleRoot: *newHashFromStr("4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b"),
-			Timestamp:  time.Unix(1296688602, 0), // 2011-02-02 23:16:42 +0000 UTC
-			Bits:       0x207fffff,               // 545259519 [7fffff0000000000000000000000000000000000000000000000000000000000]
-			Nonce:      2,
+			Version:       1,
+			NumPrevBlocks: 0,
+			PrevBlocks:    []daghash.Hash{},
+			MerkleRoot:    *newHashFromStr("4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b"),
+			Timestamp:     time.Unix(0x5b28c636, 0), // 2018-06-19 09:00:38 +0000 UTC
+			Bits:          0x207fffff,               // 545259519 [7fffff0000000000000000000000000000000000000000000000000000000000]
+			Nonce:         1,
 		},
 		Transactions: []*wire.MsgTx{{
 			Version: 1,
@@ -121,7 +122,7 @@ var regressionNetParams = &dagconfig.Params{
 	RelayNonStdTxs: true,
 
 	// Address encoding magics
-	PrivateKeyID:     0xef, // starts with 9 (uncompressed) or c (compressed)
+	PrivateKeyID: 0xef, // starts with 9 (uncompressed) or c (compressed)
 
 	// BIP32 hierarchical deterministic extended key magics
 	HDPrivateKeyID: [4]byte{0x04, 0x35, 0x83, 0x94}, // starts with tprv

@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/daglabs/btcd/wire"
+	"github.com/daglabs/btcd/dagconfig/daghash"
 )
 
 // testNoncePrng provides a deterministic prng for the nonce in generated fake
@@ -28,9 +29,9 @@ func chainedNodes(parent *blockNode, numNodes int) []*blockNode {
 		// synthetic tests to work.
 		header := wire.BlockHeader{Nonce: testNoncePrng.Uint32()}
 		if tip != nil {
-			header.PrevBlock = tip.hash
+			header.PrevBlocks = []daghash.Hash{tip.hash} // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
 		}
-		nodes[i] = newBlockNode(&header, tip)
+		nodes[i] = newBlockNode(&header, []blockNode{*tip}) // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
 		tip = nodes[i]
 	}
 	return nodes

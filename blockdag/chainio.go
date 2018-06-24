@@ -1146,13 +1146,13 @@ func (b *BlockChain) initChainState() error {
 						"first entry in block index to be genesis block, "+
 						"found %s", blockHash))
 				}
-			} else if header.PrevBlock == lastNode.hash {
+			} else if header.PrevBlocks[0] == lastNode.hash { // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
 				// Since we iterate block headers in order of height, if the
 				// blocks are mostly linear there is a very good chance the
 				// previous header processed is the parent.
 				parent = lastNode
 			} else {
-				parent = b.index.LookupNode(&header.PrevBlock)
+				parent = b.index.LookupNode(&header.PrevBlocks[0]) // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
 				if parent == nil {
 					return AssertError(fmt.Sprintf("initChainState: Could "+
 						"not find parent for block %s", header.BlockHash()))
@@ -1162,7 +1162,7 @@ func (b *BlockChain) initChainState() error {
 			// Initialize the block node for the block, connect it,
 			// and add it to the block index.
 			node := &blockNodes[i]
-			initBlockNode(node, header, parent)
+			initBlockNode(node, header, []blockNode{*parent}) // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
 			node.status = status
 			b.index.addNode(node)
 

@@ -973,7 +973,7 @@ func (b *BlockChain) checkConnectBlock(node *blockNode, block *btcutil.Block, vi
 	}
 
 	// Ensure the view is for the node being checked.
-	parentHash := &block.MsgBlock().Header.PrevBlock
+	parentHash := &block.MsgBlock().Header.PrevBlocks[0]
 	if !view.BestHash().IsEqual(parentHash) {
 		return AssertError(fmt.Sprintf("inconsistent view when "+
 			"checking block connection: best hash is %v instead "+
@@ -1141,7 +1141,7 @@ func (b *BlockChain) checkConnectBlock(node *blockNode, block *btcutil.Block, vi
 
 	// Enforce CHECKSEQUENCEVERIFY during all block validation checks once
 	// the soft-fork deployment is fully active.
-	csvState, err := b.deploymentState(node.parent, dagconfig.DeploymentCSV)
+	csvState, err := b.deploymentState(&node.parents[0], dagconfig.DeploymentCSV) // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
 	if err != nil {
 		return err
 	}
@@ -1153,7 +1153,7 @@ func (b *BlockChain) checkConnectBlock(node *blockNode, block *btcutil.Block, vi
 
 		// We obtain the MTP of the *previous* block in order to
 		// determine if transactions in the current block are final.
-		medianTime := node.parent.CalcPastMedianTime()
+		medianTime := node.parents[0].CalcPastMedianTime() // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
 
 		// Additionally, if the CSV soft-fork package is now active,
 		// then we also enforce the relative sequence number based
@@ -1212,9 +1212,9 @@ func (b *BlockChain) CheckConnectBlockTemplate(block *btcutil.Block) error {
 	// current chain.
 	tip := b.bestChain.Tip()
 	header := block.MsgBlock().Header
-	if tip.hash != header.PrevBlock {
+	if tip.hash != header.PrevBlocks[0] { // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
 		str := fmt.Sprintf("previous block must be the current chain tip %v, "+
-			"instead got %v", tip.hash, header.PrevBlock)
+			"instead got %v", tip.hash, header.PrevBlocks[0]) // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
 		return ruleError(ErrPrevBlockNotBest, str)
 	}
 
@@ -1232,6 +1232,6 @@ func (b *BlockChain) CheckConnectBlockTemplate(block *btcutil.Block) error {
 	// is not needed and thus extra work can be avoided.
 	view := NewUtxoViewpoint()
 	view.SetBestHash(&tip.hash)
-	newNode := newBlockNode(&header, tip)
+	newNode := newBlockNode(&header, []blockNode{*tip}) // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
 	return b.checkConnectBlock(newNode, block, view, nil)
 }

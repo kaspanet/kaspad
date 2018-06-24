@@ -375,10 +375,10 @@ func newFakeChain(params *dagconfig.Params) *BlockChain {
 func newFakeNode(parent *blockNode, blockVersion int32, bits uint32, timestamp time.Time) *blockNode {
 	// Make up a header and create a block node from it.
 	header := &wire.BlockHeader{
-		Version:   blockVersion,
-		PrevBlock: parent.hash,
-		Bits:      bits,
-		Timestamp: timestamp,
+		Version:    blockVersion,
+		PrevBlocks: []daghash.Hash{parent.hash}, // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
+		Bits:       bits,
+		Timestamp:  timestamp,
 	}
-	return newBlockNode(header, parent)
+	return newBlockNode(header, []blockNode{*parent}) // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
 }

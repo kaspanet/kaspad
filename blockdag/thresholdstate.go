@@ -230,7 +230,7 @@ func (b *BlockChain) thresholdState(prevNode *blockNode, checker thresholdCondit
 				}
 
 				// Get the previous block node.
-				countNode = countNode.parent
+				countNode = &countNode.parents[0] // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
 			}
 
 			// The state is locked in if the number of blocks in the
@@ -245,8 +245,8 @@ func (b *BlockChain) thresholdState(prevNode *blockNode, checker thresholdCondit
 			// was locked in.
 			state = ThresholdActive
 
-		// Nothing to do if the previous state is active or failed since
-		// they are both terminal states.
+			// Nothing to do if the previous state is active or failed since
+			// they are both terminal states.
 		case ThresholdActive:
 		case ThresholdFailed:
 		}
@@ -316,7 +316,7 @@ func (b *BlockChain) initThresholdCaches() error {
 	// threshold state for each of them.  This will ensure the caches are
 	// populated and any states that needed to be recalculated due to
 	// definition changes is done now.
-	prevNode := b.bestChain.Tip().parent
+	prevNode := &b.bestChain.Tip().parents[0] // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
 	for bit := uint32(0); bit < vbNumBits; bit++ {
 		checker := bitConditionChecker{bit: bit, chain: b}
 		cache := &b.warningCaches[bit]
