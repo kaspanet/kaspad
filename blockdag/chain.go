@@ -69,7 +69,7 @@ type BestState struct {
 
 // newBestState returns a new best stats instance for the given parameters.
 func newBestState(node *blockNode, blockSize, numTxns,
-totalTxns uint64, medianTime time.Time) *BestState {
+	totalTxns uint64, medianTime time.Time) *BestState {
 
 	return &BestState{
 		Hash:       node.hash,
