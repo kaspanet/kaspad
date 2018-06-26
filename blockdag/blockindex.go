@@ -74,6 +74,9 @@ type blockNode struct {
 	// parents is the parent blocks for this node.
 	parents []*blockNode
 
+	// selectedParent is the selected parent for this node.
+	selectedParent *blockNode
+
 	// hash is the double sha 256 of the block.
 	hash daghash.Hash
 
@@ -117,9 +120,9 @@ func initBlockNode(node *blockNode, blockHeader *wire.BlockHeader, parents []*bl
 		merkleRoot: blockHeader.MerkleRoot,
 	}
 	if len(parents) > 0 {
-		parent := parents[0] // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
-		node.height = parent.height + 1
-		node.workSum = node.workSum.Add(parent.workSum, node.workSum)
+		node.selectedParent = parents[0]
+		node.height = node.selectedParent.height + 1
+		node.workSum = node.workSum.Add(node.selectedParent.workSum, node.workSum)
 	}
 }
 
@@ -160,7 +163,7 @@ func (node *blockNode) Ancestor(height int32) *blockNode {
 	}
 
 	n := node
-	for ; n != nil && n.height != height; n = n.parents[0] {
+	for ; n != nil && n.height != height; n = n.selectedParent {
 		// Intentionally left blank
 	}
 
@@ -190,7 +193,7 @@ func (node *blockNode) CalcPastMedianTime() time.Time {
 		timestamps[i] = iterNode.timestamp
 		numNodes++
 
-		iterNode = iterNode.parents[0]
+		iterNode = iterNode.selectedParent
 	}
 
 	// Prune the slice to the actual number of available timestamps which

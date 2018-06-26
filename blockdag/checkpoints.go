@@ -234,14 +234,14 @@ func (b *BlockChain) IsCheckpointCandidate(block *btcutil.Block) (bool, error) {
 	}
 
 	// A checkpoint must be have at least one block before it.
-	if &node.parents[0] == nil { // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
+	if &node.selectedParent == nil {
 		return false, nil
 	}
 
 	// A checkpoint must have timestamps for the block and the blocks on
 	// either side of it in order (due to the median time allowance this is
 	// not always the case).
-	prevTime := time.Unix(node.parents[0].timestamp, 0) // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
+	prevTime := time.Unix(node.selectedParent.timestamp, 0)
 	curTime := block.MsgBlock().Header.Timestamp
 	nextTime := time.Unix(nextNode.timestamp, 0)
 	if prevTime.After(curTime) || nextTime.Before(curTime) {

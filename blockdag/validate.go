@@ -1141,7 +1141,7 @@ func (b *BlockChain) checkConnectBlock(node *blockNode, block *btcutil.Block, vi
 
 	// Enforce CHECKSEQUENCEVERIFY during all block validation checks once
 	// the soft-fork deployment is fully active.
-	csvState, err := b.deploymentState(node.parents[0], dagconfig.DeploymentCSV) // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
+	csvState, err := b.deploymentState(node.selectedParent, dagconfig.DeploymentCSV)
 	if err != nil {
 		return err
 	}
@@ -1153,7 +1153,7 @@ func (b *BlockChain) checkConnectBlock(node *blockNode, block *btcutil.Block, vi
 
 		// We obtain the MTP of the *previous* block in order to
 		// determine if transactions in the current block are final.
-		medianTime := node.parents[0].CalcPastMedianTime() // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
+		medianTime := node.selectedParent.CalcPastMedianTime()
 
 		// Additionally, if the CSV soft-fork package is now active,
 		// then we also enforce the relative sequence number based
