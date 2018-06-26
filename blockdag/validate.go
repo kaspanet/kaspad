@@ -973,7 +973,7 @@ func (b *BlockChain) checkConnectBlock(node *blockNode, block *btcutil.Block, vi
 	}
 
 	// Ensure the view is for the node being checked.
-	parentHash := &block.MsgBlock().Header.PrevBlocks[0]
+	parentHash := block.MsgBlock().Header.SelectedPrevBlock()
 	if !view.BestHash().IsEqual(parentHash) {
 		return AssertError(fmt.Sprintf("inconsistent view when "+
 			"checking block connection: best hash is %v instead "+
@@ -1212,9 +1212,9 @@ func (b *BlockChain) CheckConnectBlockTemplate(block *btcutil.Block) error {
 	// current chain.
 	tip := b.bestChain.Tips()[0] // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
 	header := block.MsgBlock().Header
-	if tip.hash != header.PrevBlocks[0] { // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
+	if tip.hash != *header.SelectedPrevBlock() {
 		str := fmt.Sprintf("previous block must be the current chain tip %v, "+
-			"instead got %v", tip.hash, header.PrevBlocks[0]) // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
+			"instead got %v", tip.hash, header.SelectedPrevBlock())
 		return ruleError(ErrPrevBlockNotBest, str)
 	}
 

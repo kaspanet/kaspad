@@ -66,6 +66,15 @@ func (h *BlockHeader) BlockHash() daghash.Hash {
 	return daghash.DoubleHashH(buf.Bytes())
 }
 
+// BestPrevBlock returns the hash of the selected block header.
+func (header *BlockHeader) SelectedPrevBlock() *daghash.Hash {
+	if header.NumPrevBlocks == 0 {
+		return nil
+	}
+
+	return &header.PrevBlocks[0]
+}
+
 // BtcDecode decodes r using the bitcoin protocol encoding into the receiver.
 // This is part of the Message interface implementation.
 // See Deserialize for decoding block headers stored to disk, such as in a

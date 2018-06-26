@@ -608,7 +608,7 @@ func (g *testGenerator) saveSpendableCoinbaseOuts() {
 	// reaching the block that has already had the coinbase outputs
 	// collected.
 	var collectBlocks []*wire.MsgBlock
-	for b := g.tip; b != nil; b = g.blocks[b.Header.PrevBlocks[0]] { // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
+	for b := g.tip; b != nil; b = g.blocks[*b.Header.SelectedPrevBlock()] {
 		if b.BlockHash() == g.prevCollectedHash {
 			break
 		}
@@ -1556,9 +1556,9 @@ func Generate(includeLargeReorg bool) (tests [][]TestInstance, err error) {
 	//   ... -> b33(9) -> b35(10) -> b39(11) -> b42(12) -> b43(13) -> b53(14)
 	//                                                                       \-> b54(15)
 	g.nextBlock("b54", outs[15], func(b *wire.MsgBlock) {
-		medianBlock := g.blocks[b.Header.PrevBlocks[0]] // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
+		medianBlock := g.blocks[*b.Header.SelectedPrevBlock()]
 		for i := 0; i < medianTimeBlocks/2; i++ {
-			medianBlock = g.blocks[medianBlock.Header.PrevBlocks[0]] // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
+			medianBlock = g.blocks[*medianBlock.Header.SelectedPrevBlock()]
 		}
 		b.Header.Timestamp = medianBlock.Header.Timestamp
 	})
@@ -1570,9 +1570,9 @@ func Generate(includeLargeReorg bool) (tests [][]TestInstance, err error) {
 	//   ... -> b33(9) -> b35(10) -> b39(11) -> b42(12) -> b43(13) -> b53(14) -> b55(15)
 	g.setTip("b53")
 	g.nextBlock("b55", outs[15], func(b *wire.MsgBlock) {
-		medianBlock := g.blocks[b.Header.PrevBlocks[0]] // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
+		medianBlock := g.blocks[*b.Header.SelectedPrevBlock()]
 		for i := 0; i < medianTimeBlocks/2; i++ {
-			medianBlock = g.blocks[medianBlock.Header.PrevBlocks[0]] // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
+			medianBlock = g.blocks[*medianBlock.Header.SelectedPrevBlock()]
 		}
 		medianBlockTime := medianBlock.Header.Timestamp
 		b.Header.Timestamp = medianBlockTime.Add(time.Second)
@@ -1720,7 +1720,7 @@ func Generate(includeLargeReorg bool) (tests [][]TestInstance, err error) {
 	g.nextBlock("b61", outs[18], func(b *wire.MsgBlock) {
 		// Duplicate the coinbase of the parent block to force the
 		// condition.
-		parent := g.blocks[b.Header.PrevBlocks[0]] // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
+		parent := g.blocks[*b.Header.SelectedPrevBlock()]
 		b.Transactions[0] = parent.Transactions[0]
 	})
 	rejected(blockdag.ErrOverwriteTx)

@@ -161,7 +161,7 @@ func readBlockTree(v1BlockIdxBucket database.Bucket) (map[daghash.Hash]*blockCha
 		}
 
 		blockHash := header.BlockHash()
-		prevHash := header.PrevBlocks[0] // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
+		prevHash := *header.SelectedPrevBlock()
 
 		if blocksMap[blockHash] == nil {
 			blocksMap[blockHash] = &blockChainContext{height: -1}

@@ -235,7 +235,7 @@ func (b *BlockChain) GetOrphanRoot(hash *daghash.Hash) *daghash.Hash {
 			break
 		}
 		orphanRoot = prevHash
-		prevHash = &orphan.block.MsgBlock().Header.PrevBlocks[0] // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
+		prevHash = orphan.block.MsgBlock().Header.SelectedPrevBlock()
 	}
 
 	return orphanRoot
@@ -256,7 +256,7 @@ func (b *BlockChain) removeOrphanBlock(orphan *orphanBlock) {
 	// for loop is intentionally used over a range here as range does not
 	// reevaluate the slice on each iteration nor does it adjust the index
 	// for the modified slice.
-	prevHash := &orphan.block.MsgBlock().Header.PrevBlocks[0] // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
+	prevHash := orphan.block.MsgBlock().Header.SelectedPrevBlock()
 	orphans := b.prevOrphans[*prevHash]
 	for i := 0; i < len(orphans); i++ {
 		hash := orphans[i].block.Hash()
@@ -320,7 +320,7 @@ func (b *BlockChain) addOrphanBlock(block *btcutil.Block) {
 	b.orphans[*block.Hash()] = oBlock
 
 	// Add to previous hash lookup index for faster dependency lookups.
-	prevHash := &block.MsgBlock().Header.PrevBlocks[0] // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
+	prevHash := block.MsgBlock().Header.SelectedPrevBlock()
 	b.prevOrphans[*prevHash] = append(b.prevOrphans[*prevHash], oBlock)
 }
 
@@ -556,7 +556,7 @@ func (b *BlockChain) getReorganizeNodes(node *blockNode) (*list.List, *list.List
 // This function MUST be called with the chain state lock held (for writes).
 func (b *BlockChain) connectBlock(node *blockNode, block *btcutil.Block, view *UtxoViewpoint, stxos []spentTxOut) error {
 	// Make sure it's extending the end of the best chain.
-	prevHash := &block.MsgBlock().Header.PrevBlocks[0]  // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
+	prevHash := block.MsgBlock().Header.SelectedPrevBlock()
 	if !prevHash.IsEqual(&b.bestChain.Tips()[0].hash) { // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
 		return AssertError("connectBlock must be called with a block " +
 			"that extends the main chain")
@@ -1029,7 +1029,7 @@ func (b *BlockChain) connectBestChain(node *blockNode, block *btcutil.Block, fla
 
 	// We are extending the main (best) chain with a new block.  This is the
 	// most common case.
-	parentHash := &block.MsgBlock().Header.PrevBlocks[0] // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
+	parentHash := block.MsgBlock().Header.SelectedPrevBlock()
 	if parentHash.IsEqual(&b.bestChain.Tips()[0].hash) { // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
 		// Skip checks if node has already been fully validated.
 		fastAdd = fastAdd || b.index.NodeStatus(node).KnownValid()
