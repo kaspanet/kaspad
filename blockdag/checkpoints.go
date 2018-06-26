@@ -130,7 +130,7 @@ func (b *BlockChain) findPreviousCheckpoint() (*blockNode, error) {
 	// When there is a next checkpoint and the height of the current best
 	// chain does not exceed it, the current checkpoint lockin is still
 	// the latest known checkpoint.
-	if b.bestChain.Tips()[0].height < b.nextCheckpoint.Height { // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
+	if b.bestChain.SelectedTip().height < b.nextCheckpoint.Height {
 		return b.checkpointNode, nil
 	}
 
@@ -218,7 +218,7 @@ func (b *BlockChain) IsCheckpointCandidate(block *btcutil.Block) (bool, error) {
 
 	// A checkpoint must be at least CheckpointConfirmations blocks
 	// before the end of the main chain.
-	mainChainHeight := b.bestChain.Tips()[0].height // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
+	mainChainHeight := b.bestChain.SelectedTip().height
 	if node.height > (mainChainHeight - CheckpointConfirmations) {
 		return false, nil
 	}

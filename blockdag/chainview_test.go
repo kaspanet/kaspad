@@ -185,12 +185,12 @@ testLoop:
 		}
 
 		// Ensure the active and side chain tips are the expected nodes.
-		if test.view.Tips()[0] != test.tip { // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
+		if test.view.SelectedTip() != test.tip {
 			t.Errorf("%s: unexpected active view tip -- got %v, "+
 				"want %v", test.name, test.view.Tips(), test.tip)
 			continue
 		}
-		if test.side.Tips()[0] != test.sideTip { // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
+		if test.side.SelectedTip() != test.sideTip {
 			t.Errorf("%s: unexpected active view tip -- got %v, "+
 				"want %v", test.name, test.side.Tips(),
 				test.sideTip)
@@ -199,14 +199,14 @@ testLoop:
 
 		// Ensure that regardless of the order the two chains are
 		// compared they both return the expected fork point.
-		forkNode := test.view.FindFork(test.side.Tips()[0]) // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
+		forkNode := test.view.FindFork(test.side.SelectedTip())
 		if forkNode != test.fork {
 			t.Errorf("%s: unexpected fork node (view, side) -- "+
 				"got %v, want %v", test.name, forkNode,
 				test.fork)
 			continue
 		}
-		forkNode = test.side.FindFork(test.view.Tips()[0]) // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
+		forkNode = test.side.FindFork(test.view.SelectedTip())
 		if forkNode != test.fork {
 			t.Errorf("%s: unexpected fork node (side, view) -- "+
 				"got %v, want %v", test.name, forkNode,
@@ -216,8 +216,8 @@ testLoop:
 
 		// Ensure that the fork point for a node that is already part
 		// of the chain view is the node itself.
-		forkNode = test.view.FindFork(test.view.Tips()[0]) // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
-		if forkNode != test.view.Tips()[0] { // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
+		forkNode = test.view.FindFork(test.view.SelectedTip())
+		if forkNode != test.view.SelectedTip() {
 			t.Errorf("%s: unexpected fork node (view, tip) -- "+
 				"got %v, want %v", test.name, forkNode,
 				test.view.Tips())
@@ -394,7 +394,7 @@ testLoop:
 		for i, tip := range test.tips {
 			// Ensure the view tip is the expected node.
 			test.view.SetTip(tip)
-			if test.view.Tips()[0] != tip { // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
+			if test.view.SelectedTip() != tip { // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
 				t.Errorf("%s: unexpected view tip -- got %v, "+
 					"want %v", test.name, test.view.Tips(),
 					tip)

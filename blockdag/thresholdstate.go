@@ -265,7 +265,7 @@ func (b *BlockChain) thresholdState(prevNode *blockNode, checker thresholdCondit
 // This function is safe for concurrent access.
 func (b *BlockChain) ThresholdState(deploymentID uint32) (ThresholdState, error) {
 	b.chainLock.Lock()
-	state, err := b.deploymentState(b.bestChain.Tips()[0], deploymentID) // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
+	state, err := b.deploymentState(b.bestChain.SelectedTip(), deploymentID)
 	b.chainLock.Unlock()
 
 	return state, err
@@ -277,7 +277,7 @@ func (b *BlockChain) ThresholdState(deploymentID uint32) (ThresholdState, error)
 // This function is safe for concurrent access.
 func (b *BlockChain) IsDeploymentActive(deploymentID uint32) (bool, error) {
 	b.chainLock.Lock()
-	state, err := b.deploymentState(b.bestChain.Tips()[0], deploymentID) // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
+	state, err := b.deploymentState(b.bestChain.SelectedTip(), deploymentID)
 	b.chainLock.Unlock()
 	if err != nil {
 		return false, err
@@ -316,7 +316,7 @@ func (b *BlockChain) initThresholdCaches() error {
 	// threshold state for each of them.  This will ensure the caches are
 	// populated and any states that needed to be recalculated due to
 	// definition changes is done now.
-	prevNode := b.bestChain.Tips()[0].selectedParent // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
+	prevNode := b.bestChain.SelectedTip().selectedParent
 	for bit := uint32(0); bit < vbNumBits; bit++ {
 		checker := bitConditionChecker{bit: bit, chain: b}
 		cache := &b.warningCaches[bit]
@@ -340,7 +340,7 @@ func (b *BlockChain) initThresholdCaches() error {
 	if b.isCurrent() {
 		// Warn if a high enough percentage of the last blocks have
 		// unexpected versions.
-		bestNode := b.bestChain.Tips()[0] // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
+		bestNode := b.bestChain.SelectedTip()
 		if err := b.warnUnknownVersions(bestNode); err != nil {
 			return err
 		}

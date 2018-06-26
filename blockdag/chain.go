@@ -69,7 +69,7 @@ type BestState struct {
 
 // newBestState returns a new best stats instance for the given parameters.
 func newBestState(node *blockNode, blockSize, numTxns,
-	totalTxns uint64, medianTime time.Time) *BestState {
+totalTxns uint64, medianTime time.Time) *BestState {
 
 	return &BestState{
 		Hash:       node.hash,
@@ -348,7 +348,7 @@ func (b *BlockChain) CalcSequenceLock(tx *btcutil.Tx, utxoView *UtxoViewpoint, m
 	b.chainLock.Lock()
 	defer b.chainLock.Unlock()
 
-	return b.calcSequenceLock(b.bestChain.Tips()[0], tx, utxoView, mempool) // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
+	return b.calcSequenceLock(b.bestChain.SelectedTip(), tx, utxoView, mempool)
 }
 
 // calcSequenceLock computes the relative lock-times for the passed
@@ -536,7 +536,7 @@ func (b *BlockChain) getReorganizeNodes(node *blockNode) (*list.List, *list.List
 	// Start from the end of the main chain and work backwards until the
 	// common ancestor adding each block to the list of nodes to detach from
 	// the main chain.
-	for n := b.bestChain.Tips()[0]; n != nil && n != forkNode; n = n.selectedParent {
+	for n := b.bestChain.SelectedTip(); n != nil && n != forkNode; n = n.selectedParent {
 		detachNodes.PushBack(n)
 	}
 
@@ -557,7 +557,7 @@ func (b *BlockChain) getReorganizeNodes(node *blockNode) (*list.List, *list.List
 func (b *BlockChain) connectBlock(node *blockNode, block *btcutil.Block, view *UtxoViewpoint, stxos []spentTxOut) error {
 	// Make sure it's extending the end of the best chain.
 	prevHash := block.MsgBlock().Header.SelectedPrevBlock()
-	if !prevHash.IsEqual(&b.bestChain.Tips()[0].hash) { // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
+	if !prevHash.IsEqual(&b.bestChain.SelectedTip().hash) {
 		return AssertError("connectBlock must be called with a block " +
 			"that extends the main chain")
 	}
@@ -678,7 +678,7 @@ func (b *BlockChain) connectBlock(node *blockNode, block *btcutil.Block, view *U
 // This function MUST be called with the chain state lock held (for writes).
 func (b *BlockChain) disconnectBlock(node *blockNode, block *btcutil.Block, view *UtxoViewpoint) error {
 	// Make sure the node being disconnected is the end of the best chain.
-	if !node.hash.IsEqual(&b.bestChain.Tips()[0].hash) { // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
+	if !node.hash.IsEqual(&b.bestChain.SelectedTip().hash) {
 		return AssertError("disconnectBlock must be called with the " +
 			"block at the end of the main chain")
 	}
@@ -819,7 +819,7 @@ func (b *BlockChain) reorganizeChain(detachNodes, attachNodes *list.List) error 
 	// database and using that information to unspend all of the spent txos
 	// and remove the utxos created by the blocks.
 	view := NewUtxoViewpoint()
-	view.SetBestHash(&b.bestChain.Tips()[0].hash) // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
+	view.SetBestHash(&b.bestChain.SelectedTip().hash)
 	for e := detachNodes.Front(); e != nil; e = e.Next() {
 		n := e.Value.(*blockNode)
 		var block *btcutil.Block
@@ -940,7 +940,7 @@ func (b *BlockChain) reorganizeChain(detachNodes, attachNodes *list.List) error 
 	// view to be valid from the viewpoint of each block being connected or
 	// disconnected.
 	view = NewUtxoViewpoint()
-	view.SetBestHash(&b.bestChain.Tips()[0].hash) // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
+	view.SetBestHash(&b.bestChain.SelectedTip().hash)
 
 	// Disconnect blocks from the main chain.
 	for i, e := 0, detachNodes.Front(); e != nil; i, e = i+1, e.Next() {
@@ -1030,7 +1030,7 @@ func (b *BlockChain) connectBestChain(node *blockNode, block *btcutil.Block, fla
 	// We are extending the main (best) chain with a new block.  This is the
 	// most common case.
 	parentHash := block.MsgBlock().Header.SelectedPrevBlock()
-	if parentHash.IsEqual(&b.bestChain.Tips()[0].hash) { // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
+	if parentHash.IsEqual(&b.bestChain.SelectedTip().hash) {
 		// Skip checks if node has already been fully validated.
 		fastAdd = fastAdd || b.index.NodeStatus(node).KnownValid()
 
@@ -1094,7 +1094,7 @@ func (b *BlockChain) connectBestChain(node *blockNode, block *btcutil.Block, fla
 
 	// We're extending (or creating) a side chain, but the cumulative
 	// work for this new side chain is not enough to make it the new chain.
-	if node.workSum.Cmp(b.bestChain.Tips()[0].workSum) <= 0 { // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
+	if node.workSum.Cmp(b.bestChain.SelectedTip().workSum) <= 0 {
 		// Log information about how the block is forking the chain.
 		fork := b.bestChain.FindFork(node)
 		if fork.hash.IsEqual(parentHash) {
@@ -1145,7 +1145,7 @@ func (b *BlockChain) isCurrent() bool {
 	// Not current if the latest main (best) chain height is before the
 	// latest known good checkpoint (when checkpoints are enabled).
 	checkpoint := b.LatestCheckpoint()
-	if checkpoint != nil && b.bestChain.Tips()[0].height < checkpoint.Height { // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
+	if checkpoint != nil && b.bestChain.SelectedTip().height < checkpoint.Height {
 		return false
 	}
 
@@ -1155,7 +1155,7 @@ func (b *BlockChain) isCurrent() bool {
 	// The chain appears to be current if none of the checks reported
 	// otherwise.
 	minus24Hours := b.timeSource.AdjustedTime().Add(-24 * time.Hour).Unix()
-	return b.bestChain.Tips()[0].timestamp >= minus24Hours // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
+	return b.bestChain.SelectedTip().timestamp >= minus24Hours
 }
 
 // IsCurrent returns whether or not the chain believes it is current.  Several
@@ -1449,7 +1449,7 @@ func (b *BlockChain) locateInventory(locator BlockLocator, hashStop *daghash.Has
 	}
 
 	// Calculate how many entries are needed.
-	total := uint32((b.bestChain.Tips()[0].height - startNode.height) + 1) // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
+	total := uint32((b.bestChain.SelectedTip().height - startNode.height) + 1)
 	if stopNode != nil && b.bestChain.Contains(stopNode) &&
 		stopNode.height >= startNode.height {
 
@@ -1706,7 +1706,7 @@ func New(config *Config) (*BlockChain, error) {
 		return nil, err
 	}
 
-	bestNode := b.bestChain.Tips()[0] // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
+	bestNode := b.bestChain.SelectedTip()
 	log.Infof("Chain state (height %d, hash %v, totaltx %d, work %v)",
 		bestNode.height, bestNode.hash, b.stateSnapshot.TotalTxns,
 		bestNode.workSum)

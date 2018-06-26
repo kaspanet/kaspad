@@ -126,7 +126,7 @@ func TestCalcSequenceLock(t *testing.T) {
 
 	// Generate enough synthetic blocks to activate CSV.
 	chain := newFakeChain(netParams)
-	node := chain.bestChain.Tips()[0] // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
+	node := chain.bestChain.SelectedTip()
 	blockTime := node.Header().Timestamp
 	numBlocksToActivate := (netParams.MinerConfirmationWindow * 3)
 	for i := uint32(0); i < numBlocksToActivate; i++ {

@@ -103,6 +103,14 @@ func (c *chainView) Tips() []*blockNode {
 	return []*blockNode{tip} // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
 }
 
+// SelecedTip returns the current selected tip block node for the chain view.
+// It will return nil if there is no tip.
+//
+// This function is safe for concurrent access.
+func (view *chainView) SelectedTip() *blockNode {
+	return view.Tips()[0]
+}
+
 // setTip sets the chain view to use the provided block node as the current tip
 // and ensures the view is consistent by populating it with the nodes obtained
 // by walking backwards all the way to genesis block as necessary.  Further
