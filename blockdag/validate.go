@@ -16,6 +16,7 @@ import (
 	"github.com/daglabs/btcd/txscript"
 	"github.com/daglabs/btcd/wire"
 	"github.com/daglabs/btcutil"
+	"reflect"
 )
 
 const (
@@ -973,11 +974,11 @@ func (b *BlockChain) checkConnectBlock(node *blockNode, block *btcutil.Block, vi
 	}
 
 	// Ensure the view is for the node being checked.
-	parentHash := block.MsgBlock().Header.SelectedPrevBlock()
-	if !view.BestHash().IsEqual(parentHash) {
+	parentHashes := block.MsgBlock().Header.PrevBlocks
+	if !reflect.DeepEqual(view.Tips(), parentHashes) {
 		return AssertError(fmt.Sprintf("inconsistent view when "+
-			"checking block connection: best hash is %v instead "+
-			"of expected %v", view.BestHash(), parentHash))
+			"checking block connection: tips are %v instead "+
+			"of expected %v", view.Tips(), parentHashes))
 	}
 
 	// BIP0030 added a rule to prevent blocks which contain duplicate
@@ -1189,9 +1190,9 @@ func (b *BlockChain) checkConnectBlock(node *blockNode, block *btcutil.Block, vi
 		}
 	}
 
-	// Update the best hash for view to include this block since all of its
+	// Update the view tips to include this block since all of its
 	// transactions have been connected.
-	view.SetBestHash(&node.hash)
+	view.AppendTip(node.hash, node.PrevHashes())
 
 	return nil
 }
@@ -1210,11 +1211,12 @@ func (b *BlockChain) CheckConnectBlockTemplate(block *btcutil.Block) error {
 
 	// This only checks whether the block can be connected to the tip of the
 	// current chain.
-	tip := b.bestChain.SelectedTip()
+	tipHashes := b.bestChain.TipHashes()
 	header := block.MsgBlock().Header
-	if tip.hash != *header.SelectedPrevBlock() {
-		str := fmt.Sprintf("previous block must be the current chain tip %v, "+
-			"instead got %v", tip.hash, header.SelectedPrevBlock())
+	prevHashes := header.PrevBlocks
+	if reflect.DeepEqual(tipHashes, prevHashes) {
+		str := fmt.Sprintf("previous blocks must be the currents tips %v, "+
+			"instead got %v", tipHashes, prevHashes)
 		return ruleError(ErrPrevBlockNotBest, str)
 	}
 
@@ -1223,6 +1225,7 @@ func (b *BlockChain) CheckConnectBlockTemplate(block *btcutil.Block) error {
 		return err
 	}
 
+	tips := b.bestChain.Tips()
 	err = b.checkBlockContext(block, tip, flags)
 	if err != nil {
 		return err
@@ -1231,7 +1234,7 @@ func (b *BlockChain) CheckConnectBlockTemplate(block *btcutil.Block) error {
 	// Leave the spent txouts entry nil in the state since the information
 	// is not needed and thus extra work can be avoided.
 	view := NewUtxoViewpoint()
-	view.SetBestHash(&tip.hash)
-	newNode := newBlockNode(&header, []*blockNode{tip}) // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
+	view.SetTips(tipHashes)
+	newNode := newBlockNode(&header, tips)
 	return b.checkConnectBlock(newNode, block, view, nil)
 }

@@ -119,20 +119,40 @@ func (entry *UtxoEntry) Clone() *UtxoEntry {
 // The unspent outputs are needed by other transactions for things such as
 // script validation and double spend prevention.
 type UtxoViewpoint struct {
-	entries  map[wire.OutPoint]*UtxoEntry
-	bestHash daghash.Hash
+	entries map[wire.OutPoint]*UtxoEntry
+	tips    []daghash.Hash
 }
 
-// BestHash returns the hash of the best block in the chain the view currently
-// respresents.
-func (view *UtxoViewpoint) BestHash() *daghash.Hash {
-	return &view.bestHash
+// Tips returns the hashes of the tips in the DAG the view currently
+// represents.
+func (view *UtxoViewpoint) Tips() []daghash.Hash {
+	return view.tips
 }
 
-// SetBestHash sets the hash of the best block in the chain the view currently
-// respresents.
-func (view *UtxoViewpoint) SetBestHash(hash *daghash.Hash) {
-	view.bestHash = *hash
+// SetTips sets the hashes of the tips in the DAG the view currently
+// represents.
+func (view *UtxoViewpoint) SetTips(hashes []daghash.Hash) {
+	view.tips = hashes
+}
+
+// AppendTip removes all the parent hashes of from the tips and adds
+// the given hash to the tips.
+func (view *UtxoViewpoint) AppendTip(hash daghash.Hash, parentHashes []daghash.Hash) {
+	updatedTips := make([]daghash.Hash, len(view.tips)+1)
+	for _, tip := range view.tips {
+		wasFound := false
+		for _, parentHash := range parentHashes {
+			if tip == parentHash {
+				wasFound = true
+				break
+			}
+		}
+		if !wasFound {
+			updatedTips = append(updatedTips, tip)
+		}
+	}
+
+	view.tips = append(updatedTips, hash)
 }
 
 // LookupEntry returns information about a given transaction output according to
@@ -274,7 +294,7 @@ func (view *UtxoViewpoint) connectTransactions(block *btcutil.Block, stxos *[]sp
 
 	// Update the best hash for view to include this block since all of its
 	// transactions have been connected.
-	view.SetBestHash(block.Hash())
+	view.AppendTip(*block.Hash(), block.MsgBlock().Header.PrevBlocks)
 	return nil
 }
 
@@ -432,9 +452,9 @@ func (view *UtxoViewpoint) disconnectTransactions(db database.DB, block *btcutil
 		}
 	}
 
-	// Update the best hash for view to the previous block since all of the
+	// Update the tips for view to the block's parents since all of the
 	// transactions for the current block have been disconnected.
-	view.SetBestHash(block.MsgBlock().Header.SelectedPrevBlock())
+	view.SetTips(block.MsgBlock().Header.PrevBlocks)
 	return nil
 }
 

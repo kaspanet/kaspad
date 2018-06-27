@@ -147,7 +147,7 @@ func TestCalcSequenceLock(t *testing.T) {
 	})
 	utxoView := NewUtxoViewpoint()
 	utxoView.AddTxOuts(targetTx, int32(numBlocksToActivate)-4)
-	utxoView.SetBestHash(&node.hash)
+	utxoView.SetTips(&node.hash)
 
 	// Create a utxo that spends the fake utxo created above for use in the
 	// transactions created in the tests.  It has an age of 4 blocks.  Note
