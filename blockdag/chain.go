@@ -16,6 +16,7 @@ import (
 	"github.com/daglabs/btcd/txscript"
 	"github.com/daglabs/btcd/wire"
 	"github.com/daglabs/btcutil"
+	"reflect"
 )
 
 const (
@@ -819,7 +820,7 @@ func (b *BlockChain) reorganizeChain(detachNodes, attachNodes *list.List) error 
 	// database and using that information to unspend all of the spent txos
 	// and remove the utxos created by the blocks.
 	view := NewUtxoViewpoint()
-	view.SetTips(&b.bestChain.SelectedTip().hash)
+	view.SetTips(b.bestChain.TipHashes())
 	for e := detachNodes.Front(); e != nil; e = e.Next() {
 		n := e.Value.(*blockNode)
 		var block *btcutil.Block
@@ -940,7 +941,7 @@ func (b *BlockChain) reorganizeChain(detachNodes, attachNodes *list.List) error 
 	// view to be valid from the viewpoint of each block being connected or
 	// disconnected.
 	view = NewUtxoViewpoint()
-	view.SetTips(&b.bestChain.SelectedTip().hash)
+	view.SetTips(b.bestChain.TipHashes())
 
 	// Disconnect blocks from the main chain.
 	for i, e := 0, detachNodes.Front(); e != nil; i, e = i+1, e.Next() {
@@ -1029,8 +1030,8 @@ func (b *BlockChain) connectBestChain(node *blockNode, block *btcutil.Block, fla
 
 	// We are extending the main (best) chain with a new block.  This is the
 	// most common case.
-	parentHash := block.MsgBlock().Header.SelectedPrevBlock()
-	if parentHash.IsEqual(&b.bestChain.SelectedTip().hash) {
+	parentHashes := block.MsgBlock().Header.PrevBlocks
+	if reflect.DeepEqual(parentHashes, b.bestChain.Tips()) {
 		// Skip checks if node has already been fully validated.
 		fastAdd = fastAdd || b.index.NodeStatus(node).KnownValid()
 
@@ -1038,7 +1039,7 @@ func (b *BlockChain) connectBestChain(node *blockNode, block *btcutil.Block, fla
 		// to the main chain without violating any rules and without
 		// actually connecting the block.
 		view := NewUtxoViewpoint()
-		view.SetTips(parentHash)
+		view.SetTips(parentHashes)
 		stxos := make([]spentTxOut, 0, countSpentOutputs(block))
 		if !fastAdd {
 			err := b.checkConnectBlock(node, block, view, &stxos)
@@ -1097,7 +1098,7 @@ func (b *BlockChain) connectBestChain(node *blockNode, block *btcutil.Block, fla
 	if node.workSum.Cmp(b.bestChain.SelectedTip().workSum) <= 0 {
 		// Log information about how the block is forking the chain.
 		fork := b.bestChain.FindFork(node)
-		if fork.hash.IsEqual(parentHash) {
+		if fork.hash.IsEqual(block.MsgBlock().Header.SelectedPrevBlock()) {
 			log.Infof("FORK: Block %v forks the chain at height %d"+
 				"/block %v, but does not cause a reorganize",
 				node.hash, fork.height, fork.hash)
