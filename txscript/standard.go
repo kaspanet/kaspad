@@ -80,18 +80,18 @@ func isPubkey(pops []parsedOpcode) bool {
 	// Valid pubkeys are either 33 or 65 bytes.
 	return len(pops) == 2 &&
 		(len(pops[0].data) == 33 || len(pops[0].data) == 65) &&
-		pops[1].opcode.value == OP_CHECKSIG
+		pops[1].opcode.value == OpCheckSig
 }
 
 // isPubkeyHash returns true if the script passed is a pay-to-pubkey-hash
 // transaction, false otherwise.
 func isPubkeyHash(pops []parsedOpcode) bool {
 	return len(pops) == 5 &&
-		pops[0].opcode.value == OP_DUP &&
-		pops[1].opcode.value == OP_HASH160 &&
-		pops[2].opcode.value == OP_DATA_20 &&
-		pops[3].opcode.value == OP_EQUALVERIFY &&
-		pops[4].opcode.value == OP_CHECKSIG
+		pops[0].opcode.value == OpDup &&
+		pops[1].opcode.value == OpHash160 &&
+		pops[2].opcode.value == OpData20 &&
+		pops[3].opcode.value == OpEqualVerify &&
+		pops[4].opcode.value == OpCheckSig
 
 }
 
@@ -110,7 +110,7 @@ func isMultiSig(pops []parsedOpcode) bool {
 	if !isSmallInt(pops[l-2].opcode) {
 		return false
 	}
-	if pops[l-1].opcode.value != OP_CHECKMULTISIG {
+	if pops[l-1].opcode.value != OpCheckMultiSig {
 		return false
 	}
 
@@ -136,14 +136,14 @@ func isNullData(pops []parsedOpcode) bool {
 	// OP_RETURN SMALLDATA (where SMALLDATA is a data push up to
 	// MaxDataCarrierSize bytes).
 	l := len(pops)
-	if l == 1 && pops[0].opcode.value == OP_RETURN {
+	if l == 1 && pops[0].opcode.value == OpReturn {
 		return true
 	}
 
 	return l == 2 &&
-		pops[0].opcode.value == OP_RETURN &&
+		pops[0].opcode.value == OpReturn &&
 		(isSmallInt(pops[1].opcode) || pops[1].opcode.value <=
-			OP_PUSHDATA4) &&
+			OpPushData4) &&
 		len(pops[1].data) <= MaxDataCarrierSize
 }
 
@@ -311,23 +311,23 @@ func CalcMultiSigStats(script []byte) (int, int, error) {
 // output to a 20-byte pubkey hash. It is expected that the input is a valid
 // hash.
 func payToPubKeyHashScript(pubKeyHash []byte) ([]byte, error) {
-	return NewScriptBuilder().AddOp(OP_DUP).AddOp(OP_HASH160).
-		AddData(pubKeyHash).AddOp(OP_EQUALVERIFY).AddOp(OP_CHECKSIG).
+	return NewScriptBuilder().AddOp(OpDup).AddOp(OpHash160).
+		AddData(pubKeyHash).AddOp(OpEqualVerify).AddOp(OpCheckSig).
 		Script()
 }
 
 // payToScriptHashScript creates a new script to pay a transaction output to a
 // script hash. It is expected that the input is a valid hash.
 func payToScriptHashScript(scriptHash []byte) ([]byte, error) {
-	return NewScriptBuilder().AddOp(OP_HASH160).AddData(scriptHash).
-		AddOp(OP_EQUAL).Script()
+	return NewScriptBuilder().AddOp(OpHash160).AddData(scriptHash).
+		AddOp(OpEqual).Script()
 }
 
 // payToPubkeyScript creates a new script to pay a transaction output to a
 // public key. It is expected that the input is a valid pubkey.
 func payToPubKeyScript(serializedPubKey []byte) ([]byte, error) {
 	return NewScriptBuilder().AddData(serializedPubKey).
-		AddOp(OP_CHECKSIG).Script()
+		AddOp(OpCheckSig).Script()
 }
 
 // PayToAddrScript creates a new script to pay a transaction output to a the
@@ -373,7 +373,7 @@ func NullDataScript(data []byte) ([]byte, error) {
 		return nil, scriptError(ErrTooMuchNullData, str)
 	}
 
-	return NewScriptBuilder().AddOp(OP_RETURN).AddData(data).Script()
+	return NewScriptBuilder().AddOp(OpReturn).AddData(data).Script()
 }
 
 // MultiSigScript returns a valid script for a multisignature redemption where
@@ -393,7 +393,7 @@ func MultiSigScript(pubkeys []*btcutil.AddressPubKey, nrequired int) ([]byte, er
 		builder.AddData(key.ScriptAddress())
 	}
 	builder.AddInt64(int64(len(pubkeys)))
-	builder.AddOp(OP_CHECKMULTISIG)
+	builder.AddOp(OpCheckMultiSig)
 
 	return builder.Script()
 }
@@ -410,7 +410,7 @@ func PushedData(script []byte) ([][]byte, error) {
 	for _, pop := range pops {
 		if pop.data != nil {
 			data = append(data, pop.data)
-		} else if pop.opcode.value == OP_0 {
+		} else if pop.opcode.value == Op0 {
 			data = append(data, nil)
 		}
 	}
@@ -528,26 +528,26 @@ func ExtractAtomicSwapDataPushes(version uint16, pkScript []byte) (*AtomicSwapDa
 	if len(pops) != 20 {
 		return nil, nil
 	}
-	isAtomicSwap := pops[0].opcode.value == OP_IF &&
-		pops[1].opcode.value == OP_SIZE &&
+	isAtomicSwap := pops[0].opcode.value == OpIf &&
+		pops[1].opcode.value == OpSize &&
 		canonicalPush(pops[2]) &&
-		pops[3].opcode.value == OP_EQUALVERIFY &&
-		pops[4].opcode.value == OP_SHA256 &&
-		pops[5].opcode.value == OP_DATA_32 &&
-		pops[6].opcode.value == OP_EQUALVERIFY &&
-		pops[7].opcode.value == OP_DUP &&
-		pops[8].opcode.value == OP_HASH160 &&
-		pops[9].opcode.value == OP_DATA_20 &&
-		pops[10].opcode.value == OP_ELSE &&
+		pops[3].opcode.value == OpEqualVerify &&
+		pops[4].opcode.value == OpSHA256 &&
+		pops[5].opcode.value == OpData32 &&
+		pops[6].opcode.value == OpEqualVerify &&
+		pops[7].opcode.value == OpDup &&
+		pops[8].opcode.value == OpHash160 &&
+		pops[9].opcode.value == OpData20 &&
+		pops[10].opcode.value == OpElse &&
 		canonicalPush(pops[11]) &&
-		pops[12].opcode.value == OP_CHECKLOCKTIMEVERIFY &&
-		pops[13].opcode.value == OP_DROP &&
-		pops[14].opcode.value == OP_DUP &&
-		pops[15].opcode.value == OP_HASH160 &&
-		pops[16].opcode.value == OP_DATA_20 &&
-		pops[17].opcode.value == OP_ENDIF &&
-		pops[18].opcode.value == OP_EQUALVERIFY &&
-		pops[19].opcode.value == OP_CHECKSIG
+		pops[12].opcode.value == OpCheckLockTimeVerify &&
+		pops[13].opcode.value == OpDrop &&
+		pops[14].opcode.value == OpDup &&
+		pops[15].opcode.value == OpHash160 &&
+		pops[16].opcode.value == OpData20 &&
+		pops[17].opcode.value == OpEndIf &&
+		pops[18].opcode.value == OpEqualVerify &&
+		pops[19].opcode.value == OpCheckSig
 	if !isAtomicSwap {
 		return nil, nil
 	}

@@ -82,8 +82,8 @@ func parseShortForm(script string) ([]byte, error) {
 			// have the same value, so detect those by name and
 			// allow them.
 			if (opcodeName == "OP_FALSE" || opcodeName == "OP_TRUE") ||
-				(opcodeValue != OP_0 && (opcodeValue < OP_1 ||
-					opcodeValue > OP_16)) {
+				(opcodeValue != Op0 && (opcodeValue < Op1 ||
+					opcodeValue > Op16)) {
 
 				ops[strings.TrimPrefix(opcodeName, "OP_")] = opcodeValue
 			}
@@ -242,7 +242,7 @@ func createSpendingTx(sigScript, pkScript []byte) *wire.MsgTx {
 	coinbaseTx := wire.NewMsgTx(wire.TxVersion)
 
 	outPoint := wire.NewOutPoint(&chainhash.Hash{}, ^uint32(0))
-	txIn := wire.NewTxIn(outPoint, []byte{OP_0, OP_0})
+	txIn := wire.NewTxIn(outPoint, []byte{Op0, Op0})
 	txOut := wire.NewTxOut(0, pkScript)
 	coinbaseTx.AddTxIn(txIn)
 	coinbaseTx.AddTxOut(txOut)

@@ -257,7 +257,7 @@ func createCoinbaseTx(params *chaincfg.Params, coinbaseScript []byte, nextBlockH
 	} else {
 		var err error
 		scriptBuilder := txscript.NewScriptBuilder()
-		pkScript, err = scriptBuilder.AddOp(txscript.OP_TRUE).Script()
+		pkScript, err = scriptBuilder.AddOp(txscript.OpTrue).Script()
 		if err != nil {
 			return nil, err
 		}
