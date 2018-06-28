@@ -380,5 +380,5 @@ func newFakeNode(parent *blockNode, blockVersion int32, bits uint32, timestamp t
 		Bits:       bits,
 		Timestamp:  timestamp,
 	}
-	return newBlockNode(header, []*blockNode{parent}) // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
+	return newBlockNode(header, SetFromSlice(parent)) // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
 }

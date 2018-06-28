@@ -6,7 +6,6 @@ package blockdag
 
 import (
 	"sync"
-	"github.com/daglabs/btcd/dagconfig/daghash"
 )
 
 // approxNodesPerWeek is an approximation of the number of new blocks there are
@@ -97,22 +96,11 @@ func (c *chainView) tip() *blockNode {
 // an empty slice if there is no tip.
 //
 // This function is safe for concurrent access.
-func (c *chainView) Tips() []*blockNode {
+func (c *chainView) Tips() BlockSet {
 	c.mtx.Lock()
 	tip := c.tip()
 	c.mtx.Unlock()
-	return []*blockNode{tip} // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
-}
-
-// TipHashes returns the current tip block nodes' hashes.
-func (view *chainView) TipHashes() []daghash.Hash {
-	tips := view.Tips()
-	tipHashes := make([]daghash.Hash, len(tips))
-	for i, tip := range tips {
-		tipHashes[i] = tip.hash
-	}
-
-	return tipHashes
+	return SetFromSlice(tip) // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
 }
 
 // SelecedTip returns the current selected tip block node for the chain view.
@@ -120,7 +108,7 @@ func (view *chainView) TipHashes() []daghash.Hash {
 //
 // This function is safe for concurrent access.
 func (view *chainView) SelectedTip() *blockNode {
-	return view.Tips()[0]
+	return view.Tips().First()
 }
 
 // setTip sets the chain view to use the provided block node as the current tip

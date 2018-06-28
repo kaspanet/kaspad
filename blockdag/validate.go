@@ -16,7 +16,6 @@ import (
 	"github.com/daglabs/btcd/txscript"
 	"github.com/daglabs/btcd/wire"
 	"github.com/daglabs/btcutil"
-	"reflect"
 )
 
 const (
@@ -975,7 +974,7 @@ func (b *BlockChain) checkConnectBlock(node *blockNode, block *btcutil.Block, vi
 
 	// Ensure the view is for the node being checked.
 	parentHashes := block.MsgBlock().Header.PrevBlocks
-	if !reflect.DeepEqual(view.Tips(), parentHashes) {
+	if !view.Tips().HashesEqual(parentHashes) {
 		return AssertError(fmt.Sprintf("inconsistent view when "+
 			"checking block connection: tips are %v instead "+
 			"of expected %v", view.Tips(), parentHashes))
@@ -1192,7 +1191,7 @@ func (b *BlockChain) checkConnectBlock(node *blockNode, block *btcutil.Block, vi
 
 	// Update the view tips to include this block since all of its
 	// transactions have been connected.
-	view.AppendTip(node.hash, node.PrevHashes())
+	view.AppendTip(node)
 
 	return nil
 }
@@ -1211,12 +1210,12 @@ func (b *BlockChain) CheckConnectBlockTemplate(block *btcutil.Block) error {
 
 	// This only checks whether the block can be connected to the tip of the
 	// current chain.
-	tipHashes := b.bestChain.TipHashes()
+	tips := b.bestChain.Tips()
 	header := block.MsgBlock().Header
 	prevHashes := header.PrevBlocks
-	if reflect.DeepEqual(tipHashes, prevHashes) {
+	if tips.HashesEqual(prevHashes) {
 		str := fmt.Sprintf("previous blocks must be the currents tips %v, "+
-			"instead got %v", tipHashes, prevHashes)
+			"instead got %v", tips, prevHashes)
 		return ruleError(ErrPrevBlockNotBest, str)
 	}
 
@@ -1233,7 +1232,7 @@ func (b *BlockChain) CheckConnectBlockTemplate(block *btcutil.Block) error {
 	// Leave the spent txouts entry nil in the state since the information
 	// is not needed and thus extra work can be avoided.
 	view := NewUtxoViewpoint()
-	view.SetTips(tipHashes)
+	view.SetTips(tips)
 	newNode := newBlockNode(&header, b.bestChain.Tips())
 	return b.checkConnectBlock(newNode, block, view, nil)
 }
