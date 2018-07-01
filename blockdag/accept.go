@@ -24,18 +24,18 @@ import (
 func (b *BlockChain) maybeAcceptBlock(block *btcutil.Block, flags BehaviorFlags) (bool, error) {
 	// The height of this block is one more than the referenced previous
 	// block.
-	nodes, err := lookupPreviousNodes(block, b)
+	parents, err := lookupPreviousNodes(block, b)
 	if err != nil {
 		return false, err
 	}
 
-	firstNode := nodes[0] // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
-	blockHeight := firstNode.height + 1
+	selectedParent := parents.first()
+	blockHeight := selectedParent.height + 1
 	block.SetHeight(blockHeight)
 
 	// The block must pass all of the validation rules which depend on the
 	// position of the block within the block chain.
-	err = b.checkBlockContext(block, firstNode, flags)
+	err = b.checkBlockContext(block, selectedParent, flags)
 	if err != nil {
 		return false, err
 	}
@@ -60,7 +60,7 @@ func (b *BlockChain) maybeAcceptBlock(block *btcutil.Block, flags BehaviorFlags)
 	// if the block ultimately gets connected to the main chain, it starts out
 	// on a side chain.
 	blockHeader := &block.MsgBlock().Header
-	newNode := newBlockNode(blockHeader, nodes)
+	newNode := newBlockNode(blockHeader, parents)
 	newNode.status = statusDataStored
 
 	b.index.AddNode(newNode)
@@ -72,7 +72,7 @@ func (b *BlockChain) maybeAcceptBlock(block *btcutil.Block, flags BehaviorFlags)
 	// Connect the passed block to the chain while respecting proper chain
 	// selection according to the chain with the most proof of work.  This
 	// also handles validation of the transaction scripts.
-	isMainChain, err := b.connectBestChain(newNode, block, flags)
+	isMainChain, err := b.connectBestChain(newNode, parents, block, flags)
 	if err != nil {
 		return false, err
 	}
@@ -87,11 +87,11 @@ func (b *BlockChain) maybeAcceptBlock(block *btcutil.Block, flags BehaviorFlags)
 	return isMainChain, nil
 }
 
-func lookupPreviousNodes(block *btcutil.Block, blockChain *BlockChain) ([]*blockNode, error) {
+func lookupPreviousNodes(block *btcutil.Block, blockChain *BlockChain) (blockSet, error) {
 	header := block.MsgBlock().Header
 	prevHashes := header.PrevBlocks
 
-	nodes := make([]*blockNode, len(prevHashes))
+	nodes := newSet()
 	for _, prevHash := range prevHashes {
 		node := blockChain.index.LookupNode(&prevHash)
 		if node == nil {
@@ -102,7 +102,7 @@ func lookupPreviousNodes(block *btcutil.Block, blockChain *BlockChain) ([]*block
 			return nil, ruleError(ErrInvalidAncestorBlock, str)
 		}
 
-		nodes = append(nodes, node)
+		nodes.add(node)
 	}
 
 	return nodes, nil
