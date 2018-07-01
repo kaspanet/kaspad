@@ -140,7 +140,7 @@ func (vm *Engine) executeOpcode(pop *parsedOpcode) error {
 	}
 
 	// Note that this includes OP_RESERVED which counts as a push operation.
-	if pop.opcode.value > OP_16 {
+	if pop.opcode.value > Op16 {
 		vm.numOps++
 		if vm.numOps > MaxOpsPerScript {
 			str := fmt.Sprintf("exceeded max operation limit of %d",
@@ -163,7 +163,7 @@ func (vm *Engine) executeOpcode(pop *parsedOpcode) error {
 	// Ensure all executed data push opcodes use the minimal encoding when
 	// the minimal data verification flag is set.
 	if vm.dstack.verifyMinimalData && vm.isBranchExecuting() &&
-		pop.opcode.value >= 0 && pop.opcode.value <= OP_PUSHDATA4 {
+		pop.opcode.value >= 0 && pop.opcode.value <= OpPushData4 {
 
 		if err := pop.checkMinimalDataPush(); err != nil {
 			return err

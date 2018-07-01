@@ -74,7 +74,7 @@ func signMultiSig(tx *wire.MsgTx, idx int, subScript []byte, hashType SigHashTyp
 	// We start with a single OP_FALSE to work around the (now standard)
 	// but in the reference implementation that causes a spurious pop at
 	// the end of OP_CHECKMULTISIG.
-	builder := NewScriptBuilder().AddOp(OP_FALSE)
+	builder := NewScriptBuilder().AddOp(OpFalse)
 	signed := 0
 	for _, addr := range addresses {
 		key, _, err := kdb.GetKey(addr)
@@ -315,7 +315,7 @@ sigLoop:
 
 	// Extra opcode to handle the extra arg consumed (due to previous bugs
 	// in the reference implementation).
-	builder := NewScriptBuilder().AddOp(OP_FALSE)
+	builder := NewScriptBuilder().AddOp(OpFalse)
 	doneSigs := 0
 	// This assumes that addresses are in the same order as in the script.
 	for _, addr := range addresses {
@@ -332,7 +332,7 @@ sigLoop:
 
 	// padding for missing ones.
 	for i := doneSigs; i < nRequired; i++ {
-		builder.AddOp(OP_0)
+		builder.AddOp(Op0)
 	}
 
 	script, _ := builder.Script()
