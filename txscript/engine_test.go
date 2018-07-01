@@ -172,7 +172,7 @@ func TestInvalidFlagCombinations(t *testing.T) {
 					}),
 					Index: 0,
 				},
-				SignatureScript: []uint8{OP_NOP},
+				SignatureScript: []uint8{OpNop},
 				Sequence:        4294967295,
 			},
 		},
@@ -184,7 +184,7 @@ func TestInvalidFlagCombinations(t *testing.T) {
 		},
 		LockTime: 0,
 	}
-	pkScript := []byte{OP_NOP}
+	pkScript := []byte{OpNop}
 
 	for i, test := range tests {
 		_, err := NewEngine(pkScript, tx, 0, test, nil)

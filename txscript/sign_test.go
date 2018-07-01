@@ -1608,7 +1608,7 @@ nexttest:
 	for i := range sigScriptTests {
 		tx := wire.NewMsgTx(wire.TxVersion)
 
-		output := wire.NewTxOut(500, []byte{OP_RETURN})
+		output := wire.NewTxOut(500, []byte{OpReturn})
 		tx.AddTxOut(output)
 
 		for range sigScriptTests[i].inputs {

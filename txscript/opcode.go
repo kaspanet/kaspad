@@ -34,266 +34,266 @@ type opcode struct {
 // in bitcoin core and in most if not all other references and software related
 // to handling BTC scripts.
 const (
-	OP_0                   = 0x00 // 0
-	OP_FALSE               = 0x00 // 0 - AKA OP_0
-	OP_DATA_1              = 0x01 // 1
-	OP_DATA_2              = 0x02 // 2
-	OP_DATA_3              = 0x03 // 3
-	OP_DATA_4              = 0x04 // 4
-	OP_DATA_5              = 0x05 // 5
-	OP_DATA_6              = 0x06 // 6
-	OP_DATA_7              = 0x07 // 7
-	OP_DATA_8              = 0x08 // 8
-	OP_DATA_9              = 0x09 // 9
-	OP_DATA_10             = 0x0a // 10
-	OP_DATA_11             = 0x0b // 11
-	OP_DATA_12             = 0x0c // 12
-	OP_DATA_13             = 0x0d // 13
-	OP_DATA_14             = 0x0e // 14
-	OP_DATA_15             = 0x0f // 15
-	OP_DATA_16             = 0x10 // 16
-	OP_DATA_17             = 0x11 // 17
-	OP_DATA_18             = 0x12 // 18
-	OP_DATA_19             = 0x13 // 19
-	OP_DATA_20             = 0x14 // 20
-	OP_DATA_21             = 0x15 // 21
-	OP_DATA_22             = 0x16 // 22
-	OP_DATA_23             = 0x17 // 23
-	OP_DATA_24             = 0x18 // 24
-	OP_DATA_25             = 0x19 // 25
-	OP_DATA_26             = 0x1a // 26
-	OP_DATA_27             = 0x1b // 27
-	OP_DATA_28             = 0x1c // 28
-	OP_DATA_29             = 0x1d // 29
-	OP_DATA_30             = 0x1e // 30
-	OP_DATA_31             = 0x1f // 31
-	OP_DATA_32             = 0x20 // 32
-	OP_DATA_33             = 0x21 // 33
-	OP_DATA_34             = 0x22 // 34
-	OP_DATA_35             = 0x23 // 35
-	OP_DATA_36             = 0x24 // 36
-	OP_DATA_37             = 0x25 // 37
-	OP_DATA_38             = 0x26 // 38
-	OP_DATA_39             = 0x27 // 39
-	OP_DATA_40             = 0x28 // 40
-	OP_DATA_41             = 0x29 // 41
-	OP_DATA_42             = 0x2a // 42
-	OP_DATA_43             = 0x2b // 43
-	OP_DATA_44             = 0x2c // 44
-	OP_DATA_45             = 0x2d // 45
-	OP_DATA_46             = 0x2e // 46
-	OP_DATA_47             = 0x2f // 47
-	OP_DATA_48             = 0x30 // 48
-	OP_DATA_49             = 0x31 // 49
-	OP_DATA_50             = 0x32 // 50
-	OP_DATA_51             = 0x33 // 51
-	OP_DATA_52             = 0x34 // 52
-	OP_DATA_53             = 0x35 // 53
-	OP_DATA_54             = 0x36 // 54
-	OP_DATA_55             = 0x37 // 55
-	OP_DATA_56             = 0x38 // 56
-	OP_DATA_57             = 0x39 // 57
-	OP_DATA_58             = 0x3a // 58
-	OP_DATA_59             = 0x3b // 59
-	OP_DATA_60             = 0x3c // 60
-	OP_DATA_61             = 0x3d // 61
-	OP_DATA_62             = 0x3e // 62
-	OP_DATA_63             = 0x3f // 63
-	OP_DATA_64             = 0x40 // 64
-	OP_DATA_65             = 0x41 // 65
-	OP_DATA_66             = 0x42 // 66
-	OP_DATA_67             = 0x43 // 67
-	OP_DATA_68             = 0x44 // 68
-	OP_DATA_69             = 0x45 // 69
-	OP_DATA_70             = 0x46 // 70
-	OP_DATA_71             = 0x47 // 71
-	OP_DATA_72             = 0x48 // 72
-	OP_DATA_73             = 0x49 // 73
-	OP_DATA_74             = 0x4a // 74
-	OP_DATA_75             = 0x4b // 75
-	OP_PUSHDATA1           = 0x4c // 76
-	OP_PUSHDATA2           = 0x4d // 77
-	OP_PUSHDATA4           = 0x4e // 78
-	OP_1NEGATE             = 0x4f // 79
-	OP_RESERVED            = 0x50 // 80
-	OP_1                   = 0x51 // 81 - AKA OP_TRUE
-	OP_TRUE                = 0x51 // 81
-	OP_2                   = 0x52 // 82
-	OP_3                   = 0x53 // 83
-	OP_4                   = 0x54 // 84
-	OP_5                   = 0x55 // 85
-	OP_6                   = 0x56 // 86
-	OP_7                   = 0x57 // 87
-	OP_8                   = 0x58 // 88
-	OP_9                   = 0x59 // 89
-	OP_10                  = 0x5a // 90
-	OP_11                  = 0x5b // 91
-	OP_12                  = 0x5c // 92
-	OP_13                  = 0x5d // 93
-	OP_14                  = 0x5e // 94
-	OP_15                  = 0x5f // 95
-	OP_16                  = 0x60 // 96
-	OP_NOP                 = 0x61 // 97
-	OP_VER                 = 0x62 // 98
-	OP_IF                  = 0x63 // 99
-	OP_NOTIF               = 0x64 // 100
-	OP_VERIF               = 0x65 // 101
-	OP_VERNOTIF            = 0x66 // 102
-	OP_ELSE                = 0x67 // 103
-	OP_ENDIF               = 0x68 // 104
-	OP_VERIFY              = 0x69 // 105
-	OP_RETURN              = 0x6a // 106
-	OP_TOALTSTACK          = 0x6b // 107
-	OP_FROMALTSTACK        = 0x6c // 108
-	OP_2DROP               = 0x6d // 109
-	OP_2DUP                = 0x6e // 110
-	OP_3DUP                = 0x6f // 111
-	OP_2OVER               = 0x70 // 112
-	OP_2ROT                = 0x71 // 113
-	OP_2SWAP               = 0x72 // 114
-	OP_IFDUP               = 0x73 // 115
-	OP_DEPTH               = 0x74 // 116
-	OP_DROP                = 0x75 // 117
-	OP_DUP                 = 0x76 // 118
-	OP_NIP                 = 0x77 // 119
-	OP_OVER                = 0x78 // 120
-	OP_PICK                = 0x79 // 121
-	OP_ROLL                = 0x7a // 122
-	OP_ROT                 = 0x7b // 123
-	OP_SWAP                = 0x7c // 124
-	OP_TUCK                = 0x7d // 125
-	OP_CAT                 = 0x7e // 126
-	OP_SUBSTR              = 0x7f // 127
-	OP_LEFT                = 0x80 // 128
-	OP_RIGHT               = 0x81 // 129
-	OP_SIZE                = 0x82 // 130
-	OP_INVERT              = 0x83 // 131
-	OP_AND                 = 0x84 // 132
-	OP_OR                  = 0x85 // 133
-	OP_XOR                 = 0x86 // 134
-	OP_EQUAL               = 0x87 // 135
-	OP_EQUALVERIFY         = 0x88 // 136
-	OP_RESERVED1           = 0x89 // 137
-	OP_RESERVED2           = 0x8a // 138
-	OP_1ADD                = 0x8b // 139
-	OP_1SUB                = 0x8c // 140
-	OP_2MUL                = 0x8d // 141
-	OP_2DIV                = 0x8e // 142
-	OP_NEGATE              = 0x8f // 143
-	OP_ABS                 = 0x90 // 144
-	OP_NOT                 = 0x91 // 145
-	OP_0NOTEQUAL           = 0x92 // 146
-	OP_ADD                 = 0x93 // 147
-	OP_SUB                 = 0x94 // 148
-	OP_MUL                 = 0x95 // 149
-	OP_DIV                 = 0x96 // 150
-	OP_MOD                 = 0x97 // 151
-	OP_LSHIFT              = 0x98 // 152
-	OP_RSHIFT              = 0x99 // 153
-	OP_BOOLAND             = 0x9a // 154
-	OP_BOOLOR              = 0x9b // 155
-	OP_NUMEQUAL            = 0x9c // 156
-	OP_NUMEQUALVERIFY      = 0x9d // 157
-	OP_NUMNOTEQUAL         = 0x9e // 158
-	OP_LESSTHAN            = 0x9f // 159
-	OP_GREATERTHAN         = 0xa0 // 160
-	OP_LESSTHANOREQUAL     = 0xa1 // 161
-	OP_GREATERTHANOREQUAL  = 0xa2 // 162
-	OP_MIN                 = 0xa3 // 163
-	OP_MAX                 = 0xa4 // 164
-	OP_WITHIN              = 0xa5 // 165
-	OP_RIPEMD160           = 0xa6 // 166
-	OP_SHA1                = 0xa7 // 167
-	OP_SHA256              = 0xa8 // 168
-	OP_HASH160             = 0xa9 // 169
-	OP_HASH256             = 0xaa // 170
-	OP_CODESEPARATOR       = 0xab // 171
-	OP_CHECKSIG            = 0xac // 172
-	OP_CHECKSIGVERIFY      = 0xad // 173
-	OP_CHECKMULTISIG       = 0xae // 174
-	OP_CHECKMULTISIGVERIFY = 0xaf // 175
-	OP_NOP1                = 0xb0 // 176
-	OP_NOP2                = 0xb1 // 177
-	OP_CHECKLOCKTIMEVERIFY = 0xb1 // 177 - AKA OP_NOP2
-	OP_NOP3                = 0xb2 // 178
-	OP_CHECKSEQUENCEVERIFY = 0xb2 // 178 - AKA OP_NOP3
-	OP_NOP4                = 0xb3 // 179
-	OP_NOP5                = 0xb4 // 180
-	OP_NOP6                = 0xb5 // 181
-	OP_NOP7                = 0xb6 // 182
-	OP_NOP8                = 0xb7 // 183
-	OP_NOP9                = 0xb8 // 184
-	OP_NOP10               = 0xb9 // 185
-	OP_UNKNOWN186          = 0xba // 186
-	OP_UNKNOWN187          = 0xbb // 187
-	OP_UNKNOWN188          = 0xbc // 188
-	OP_UNKNOWN189          = 0xbd // 189
-	OP_UNKNOWN190          = 0xbe // 190
-	OP_UNKNOWN191          = 0xbf // 191
-	OP_UNKNOWN192          = 0xc0 // 192
-	OP_UNKNOWN193          = 0xc1 // 193
-	OP_UNKNOWN194          = 0xc2 // 194
-	OP_UNKNOWN195          = 0xc3 // 195
-	OP_UNKNOWN196          = 0xc4 // 196
-	OP_UNKNOWN197          = 0xc5 // 197
-	OP_UNKNOWN198          = 0xc6 // 198
-	OP_UNKNOWN199          = 0xc7 // 199
-	OP_UNKNOWN200          = 0xc8 // 200
-	OP_UNKNOWN201          = 0xc9 // 201
-	OP_UNKNOWN202          = 0xca // 202
-	OP_UNKNOWN203          = 0xcb // 203
-	OP_UNKNOWN204          = 0xcc // 204
-	OP_UNKNOWN205          = 0xcd // 205
-	OP_UNKNOWN206          = 0xce // 206
-	OP_UNKNOWN207          = 0xcf // 207
-	OP_UNKNOWN208          = 0xd0 // 208
-	OP_UNKNOWN209          = 0xd1 // 209
-	OP_UNKNOWN210          = 0xd2 // 210
-	OP_UNKNOWN211          = 0xd3 // 211
-	OP_UNKNOWN212          = 0xd4 // 212
-	OP_UNKNOWN213          = 0xd5 // 213
-	OP_UNKNOWN214          = 0xd6 // 214
-	OP_UNKNOWN215          = 0xd7 // 215
-	OP_UNKNOWN216          = 0xd8 // 216
-	OP_UNKNOWN217          = 0xd9 // 217
-	OP_UNKNOWN218          = 0xda // 218
-	OP_UNKNOWN219          = 0xdb // 219
-	OP_UNKNOWN220          = 0xdc // 220
-	OP_UNKNOWN221          = 0xdd // 221
-	OP_UNKNOWN222          = 0xde // 222
-	OP_UNKNOWN223          = 0xdf // 223
-	OP_UNKNOWN224          = 0xe0 // 224
-	OP_UNKNOWN225          = 0xe1 // 225
-	OP_UNKNOWN226          = 0xe2 // 226
-	OP_UNKNOWN227          = 0xe3 // 227
-	OP_UNKNOWN228          = 0xe4 // 228
-	OP_UNKNOWN229          = 0xe5 // 229
-	OP_UNKNOWN230          = 0xe6 // 230
-	OP_UNKNOWN231          = 0xe7 // 231
-	OP_UNKNOWN232          = 0xe8 // 232
-	OP_UNKNOWN233          = 0xe9 // 233
-	OP_UNKNOWN234          = 0xea // 234
-	OP_UNKNOWN235          = 0xeb // 235
-	OP_UNKNOWN236          = 0xec // 236
-	OP_UNKNOWN237          = 0xed // 237
-	OP_UNKNOWN238          = 0xee // 238
-	OP_UNKNOWN239          = 0xef // 239
-	OP_UNKNOWN240          = 0xf0 // 240
-	OP_UNKNOWN241          = 0xf1 // 241
-	OP_UNKNOWN242          = 0xf2 // 242
-	OP_UNKNOWN243          = 0xf3 // 243
-	OP_UNKNOWN244          = 0xf4 // 244
-	OP_UNKNOWN245          = 0xf5 // 245
-	OP_UNKNOWN246          = 0xf6 // 246
-	OP_UNKNOWN247          = 0xf7 // 247
-	OP_UNKNOWN248          = 0xf8 // 248
-	OP_UNKNOWN249          = 0xf9 // 249
-	OP_SMALLINTEGER        = 0xfa // 250 - bitcoin core internal
-	OP_PUBKEYS             = 0xfb // 251 - bitcoin core internal
-	OP_UNKNOWN252          = 0xfc // 252
-	OP_PUBKEYHASH          = 0xfd // 253 - bitcoin core internal
-	OP_PUBKEY              = 0xfe // 254 - bitcoin core internal
-	OP_INVALIDOPCODE       = 0xff // 255 - bitcoin core internal
+	Op0                   = 0x00 // 0
+	OpFalse               = 0x00 // 0 - AKA Op0
+	OpData1               = 0x01 // 1
+	OpData2               = 0x02 // 2
+	OpData3               = 0x03 // 3
+	OpData4               = 0x04 // 4
+	OpData5               = 0x05 // 5
+	OpData6               = 0x06 // 6
+	OpData7               = 0x07 // 7
+	OpData8               = 0x08 // 8
+	OpData9               = 0x09 // 9
+	OpData10              = 0x0a // 10
+	OpData11              = 0x0b // 11
+	OpData12              = 0x0c // 12
+	OpData13              = 0x0d // 13
+	OpData14              = 0x0e // 14
+	OpData15              = 0x0f // 15
+	OpData16              = 0x10 // 16
+	OpData17              = 0x11 // 17
+	OpData18              = 0x12 // 18
+	OpData19              = 0x13 // 19
+	OpData20              = 0x14 // 20
+	OpData21              = 0x15 // 21
+	OpData22              = 0x16 // 22
+	OpData23              = 0x17 // 23
+	OpData24              = 0x18 // 24
+	OpData25              = 0x19 // 25
+	OpData26              = 0x1a // 26
+	OpData27              = 0x1b // 27
+	OpData28              = 0x1c // 28
+	OpData29              = 0x1d // 29
+	OpData30              = 0x1e // 30
+	OpData31              = 0x1f // 31
+	OpData32              = 0x20 // 32
+	OpData33              = 0x21 // 33
+	OpData34              = 0x22 // 34
+	OpData35              = 0x23 // 35
+	OpData36              = 0x24 // 36
+	OpData37              = 0x25 // 37
+	OpData38              = 0x26 // 38
+	OpData39              = 0x27 // 39
+	OpData40              = 0x28 // 40
+	OpData41              = 0x29 // 41
+	OpData42              = 0x2a // 42
+	OpData43              = 0x2b // 43
+	OpData44              = 0x2c // 44
+	OpData45              = 0x2d // 45
+	OpData46              = 0x2e // 46
+	OpData47              = 0x2f // 47
+	OpData48              = 0x30 // 48
+	OpData49              = 0x31 // 49
+	OpData50              = 0x32 // 50
+	OpData51              = 0x33 // 51
+	OpData52              = 0x34 // 52
+	OpData53              = 0x35 // 53
+	OpData54              = 0x36 // 54
+	OpData55              = 0x37 // 55
+	OpData56              = 0x38 // 56
+	OpData57              = 0x39 // 57
+	OpData58              = 0x3a // 58
+	OpData59              = 0x3b // 59
+	OpData60              = 0x3c // 60
+	OpData61              = 0x3d // 61
+	OpData62              = 0x3e // 62
+	OpData63              = 0x3f // 63
+	OpData64              = 0x40 // 64
+	OpData65              = 0x41 // 65
+	OpData66              = 0x42 // 66
+	OpData67              = 0x43 // 67
+	OpData68              = 0x44 // 68
+	OpData69              = 0x45 // 69
+	OpData70              = 0x46 // 70
+	OpData71              = 0x47 // 71
+	OpData72              = 0x48 // 72
+	OpData73              = 0x49 // 73
+	OpData74              = 0x4a // 74
+	OpData75              = 0x4b // 75
+	OpPushData1           = 0x4c // 76
+	OpPushData2           = 0x4d // 77
+	OpPushData4           = 0x4e // 78
+	Op1Negate             = 0x4f // 79
+	OpReserved            = 0x50 // 80
+	Op1                   = 0x51 // 81 - AKA OpTrue
+	OpTrue                = 0x51 // 81
+	Op2                   = 0x52 // 82
+	Op3                   = 0x53 // 83
+	Op4                   = 0x54 // 84
+	Op5                   = 0x55 // 85
+	Op6                   = 0x56 // 86
+	Op7                   = 0x57 // 87
+	Op8                   = 0x58 // 88
+	Op9                   = 0x59 // 89
+	Op10                  = 0x5a // 90
+	Op11                  = 0x5b // 91
+	Op12                  = 0x5c // 92
+	Op13                  = 0x5d // 93
+	Op14                  = 0x5e // 94
+	Op15                  = 0x5f // 95
+	Op16                  = 0x60 // 96
+	OpNop                 = 0x61 // 97
+	OpVer                 = 0x62 // 98
+	OpIf                  = 0x63 // 99
+	OpNotIf               = 0x64 // 100
+	OpVerIf               = 0x65 // 101
+	OpVerNotIf            = 0x66 // 102
+	OpElse                = 0x67 // 103
+	OpEndIf               = 0x68 // 104
+	OpVerify              = 0x69 // 105
+	OpReturn              = 0x6a // 106
+	OpToAltStack          = 0x6b // 107
+	OpFromAltStack        = 0x6c // 108
+	Op2Drop               = 0x6d // 109
+	Op2Dup                = 0x6e // 110
+	Op3Dup                = 0x6f // 111
+	Op2Over               = 0x70 // 112
+	Op2Rot                = 0x71 // 113
+	Op2Swap               = 0x72 // 114
+	OpIfDup               = 0x73 // 115
+	OpDepth               = 0x74 // 116
+	OpDrop                = 0x75 // 117
+	OpDup                 = 0x76 // 118
+	OpNip                 = 0x77 // 119
+	OpOver                = 0x78 // 120
+	OpPick                = 0x79 // 121
+	OpRoll                = 0x7a // 122
+	OpRot                 = 0x7b // 123
+	OpSwap                = 0x7c // 124
+	OpTuck                = 0x7d // 125
+	OpCat                 = 0x7e // 126
+	OpSubStr              = 0x7f // 127
+	OpLeft                = 0x80 // 128
+	OpRight               = 0x81 // 129
+	OpSize                = 0x82 // 130
+	OpInvert              = 0x83 // 131
+	OpAnd                 = 0x84 // 132
+	OpOr                  = 0x85 // 133
+	OpXor                 = 0x86 // 134
+	OpEqual               = 0x87 // 135
+	OpEqualVerify         = 0x88 // 136
+	OpReserved1           = 0x89 // 137
+	OpReserved2           = 0x8a // 138
+	Op1Add                = 0x8b // 139
+	Op1Sub                = 0x8c // 140
+	Op2Mul                = 0x8d // 141
+	Op2Div                = 0x8e // 142
+	OpNegate              = 0x8f // 143
+	OpAbs                 = 0x90 // 144
+	OpNot                 = 0x91 // 145
+	Op0NotEqual           = 0x92 // 146
+	OpAdd                 = 0x93 // 147
+	OpSub                 = 0x94 // 148
+	OpMul                 = 0x95 // 149
+	OpDiv                 = 0x96 // 150
+	OpMod                 = 0x97 // 151
+	OpLShift              = 0x98 // 152
+	OpRShift              = 0x99 // 153
+	OpBoolAnd             = 0x9a // 154
+	OpBoolOr              = 0x9b // 155
+	OpNumEqual            = 0x9c // 156
+	OpNumEqualVerify      = 0x9d // 157
+	OpNumNotEqual         = 0x9e // 158
+	OpLessThan            = 0x9f // 159
+	OpGreaterThan         = 0xa0 // 160
+	OpLessThanOrEqual     = 0xa1 // 161
+	OpGreaterThanOrEqual  = 0xa2 // 162
+	OpMin                 = 0xa3 // 163
+	OpMax                 = 0xa4 // 164
+	OpWithin              = 0xa5 // 165
+	OpRipeMD160           = 0xa6 // 166
+	OpSHA1                = 0xa7 // 167
+	OpSHA256              = 0xa8 // 168
+	OpHash160             = 0xa9 // 169
+	OpHash256             = 0xaa // 170
+	OpCodeSeparator       = 0xab // 171
+	OpCheckSig            = 0xac // 172
+	OpCheckSigVerify      = 0xad // 173
+	OpCheckMultiSig       = 0xae // 174
+	OpCheckMultiSigVerify = 0xaf // 175
+	OpNop1                = 0xb0 // 176
+	OpNop2                = 0xb1 // 177
+	OpCheckLockTimeVerify = 0xb1 // 177 - AKA OPNop2
+	OpNop3                = 0xb2 // 178
+	OpCheckSequenceVerify = 0xb2 // 178 - AKA OpNop3
+	OpNop4                = 0xb3 // 179
+	OpNop5                = 0xb4 // 180
+	OpNop6                = 0xb5 // 181
+	OpNop7                = 0xb6 // 182
+	OpNop8                = 0xb7 // 183
+	OpNop9                = 0xb8 // 184
+	OpNop10               = 0xb9 // 185
+	OpUnknown186          = 0xba // 186
+	OpUnknown187          = 0xbb // 187
+	OpUnknown188          = 0xbc // 188
+	OpUnknown189          = 0xbd // 189
+	OpUnknown190          = 0xbe // 190
+	OpUnknown191          = 0xbf // 191
+	OpUnknown192          = 0xc0 // 192
+	OpUnknown193          = 0xc1 // 193
+	OpUnknown194          = 0xc2 // 194
+	OpUnknown195          = 0xc3 // 195
+	OpUnknown196          = 0xc4 // 196
+	OpUnknown197          = 0xc5 // 197
+	OpUnknown198          = 0xc6 // 198
+	OpUnknown199          = 0xc7 // 199
+	OpUnknown200          = 0xc8 // 200
+	OpUnknown201          = 0xc9 // 201
+	OpUnknown202          = 0xca // 202
+	OpUnknown203          = 0xcb // 203
+	OpUnknown204          = 0xcc // 204
+	OpUnknown205          = 0xcd // 205
+	OpUnknown206          = 0xce // 206
+	OpUnknown207          = 0xcf // 207
+	OpUnknown208          = 0xd0 // 208
+	OpUnknown209          = 0xd1 // 209
+	OpUnknown210          = 0xd2 // 210
+	OpUnknown211          = 0xd3 // 211
+	OpUnknown212          = 0xd4 // 212
+	OpUnknown213          = 0xd5 // 213
+	OpUnknown214          = 0xd6 // 214
+	OpUnknown215          = 0xd7 // 215
+	OpUnknown216          = 0xd8 // 216
+	OpUnknown217          = 0xd9 // 217
+	OpUnknown218          = 0xda // 218
+	OpUnknown219          = 0xdb // 219
+	OpUnknown220          = 0xdc // 220
+	OpUnknown221          = 0xdd // 221
+	OpUnknown222          = 0xde // 222
+	OpUnknown223          = 0xdf // 223
+	OpUnknown224          = 0xe0 // 224
+	OpUnknown225          = 0xe1 // 225
+	OpUnknown226          = 0xe2 // 226
+	OpUnknown227          = 0xe3 // 227
+	OpUnknown228          = 0xe4 // 228
+	OpUnknown229          = 0xe5 // 229
+	OpUnknown230          = 0xe6 // 230
+	OpUnknown231          = 0xe7 // 231
+	OpUnknown232          = 0xe8 // 232
+	OpUnknown233          = 0xe9 // 233
+	OpUnknown234          = 0xea // 234
+	OpUnknown235          = 0xeb // 235
+	OpUnknown236          = 0xec // 236
+	OpUnknown237          = 0xed // 237
+	OpUnknown238          = 0xee // 238
+	OpUnknown239          = 0xef // 239
+	OpUnknown240          = 0xf0 // 240
+	OpUnknown241          = 0xf1 // 241
+	OpUnknown242          = 0xf2 // 242
+	OpUnknown243          = 0xf3 // 243
+	OpUnknown244          = 0xf4 // 244
+	OpUnknown245          = 0xf5 // 245
+	OpUnknown246          = 0xf6 // 246
+	OpUnknown247          = 0xf7 // 247
+	OpUnknown248          = 0xf8 // 248
+	OpUnknown249          = 0xf9 // 249
+	OpSmallInteger        = 0xfa // 250 - bitcoin core internal
+	OpPubKeys             = 0xfb // 251 - bitcoin core internal
+	OpUnknown252          = 0xfc // 252
+	OpPubKeyHash          = 0xfd // 253 - bitcoin core internal
+	OpPubKey              = 0xfe // 254 - bitcoin core internal
+	OpInvalidOpCode       = 0xff // 255 - bitcoin core internal
 )
 
 // Conditional execution constants.
@@ -308,281 +308,281 @@ const (
 // the handler function.
 var opcodeArray = [256]opcode{
 	// Data push opcodes.
-	OP_FALSE:     {OP_FALSE, "OP_0", 1, opcodeFalse},
-	OP_DATA_1:    {OP_DATA_1, "OP_DATA_1", 2, opcodePushData},
-	OP_DATA_2:    {OP_DATA_2, "OP_DATA_2", 3, opcodePushData},
-	OP_DATA_3:    {OP_DATA_3, "OP_DATA_3", 4, opcodePushData},
-	OP_DATA_4:    {OP_DATA_4, "OP_DATA_4", 5, opcodePushData},
-	OP_DATA_5:    {OP_DATA_5, "OP_DATA_5", 6, opcodePushData},
-	OP_DATA_6:    {OP_DATA_6, "OP_DATA_6", 7, opcodePushData},
-	OP_DATA_7:    {OP_DATA_7, "OP_DATA_7", 8, opcodePushData},
-	OP_DATA_8:    {OP_DATA_8, "OP_DATA_8", 9, opcodePushData},
-	OP_DATA_9:    {OP_DATA_9, "OP_DATA_9", 10, opcodePushData},
-	OP_DATA_10:   {OP_DATA_10, "OP_DATA_10", 11, opcodePushData},
-	OP_DATA_11:   {OP_DATA_11, "OP_DATA_11", 12, opcodePushData},
-	OP_DATA_12:   {OP_DATA_12, "OP_DATA_12", 13, opcodePushData},
-	OP_DATA_13:   {OP_DATA_13, "OP_DATA_13", 14, opcodePushData},
-	OP_DATA_14:   {OP_DATA_14, "OP_DATA_14", 15, opcodePushData},
-	OP_DATA_15:   {OP_DATA_15, "OP_DATA_15", 16, opcodePushData},
-	OP_DATA_16:   {OP_DATA_16, "OP_DATA_16", 17, opcodePushData},
-	OP_DATA_17:   {OP_DATA_17, "OP_DATA_17", 18, opcodePushData},
-	OP_DATA_18:   {OP_DATA_18, "OP_DATA_18", 19, opcodePushData},
-	OP_DATA_19:   {OP_DATA_19, "OP_DATA_19", 20, opcodePushData},
-	OP_DATA_20:   {OP_DATA_20, "OP_DATA_20", 21, opcodePushData},
-	OP_DATA_21:   {OP_DATA_21, "OP_DATA_21", 22, opcodePushData},
-	OP_DATA_22:   {OP_DATA_22, "OP_DATA_22", 23, opcodePushData},
-	OP_DATA_23:   {OP_DATA_23, "OP_DATA_23", 24, opcodePushData},
-	OP_DATA_24:   {OP_DATA_24, "OP_DATA_24", 25, opcodePushData},
-	OP_DATA_25:   {OP_DATA_25, "OP_DATA_25", 26, opcodePushData},
-	OP_DATA_26:   {OP_DATA_26, "OP_DATA_26", 27, opcodePushData},
-	OP_DATA_27:   {OP_DATA_27, "OP_DATA_27", 28, opcodePushData},
-	OP_DATA_28:   {OP_DATA_28, "OP_DATA_28", 29, opcodePushData},
-	OP_DATA_29:   {OP_DATA_29, "OP_DATA_29", 30, opcodePushData},
-	OP_DATA_30:   {OP_DATA_30, "OP_DATA_30", 31, opcodePushData},
-	OP_DATA_31:   {OP_DATA_31, "OP_DATA_31", 32, opcodePushData},
-	OP_DATA_32:   {OP_DATA_32, "OP_DATA_32", 33, opcodePushData},
-	OP_DATA_33:   {OP_DATA_33, "OP_DATA_33", 34, opcodePushData},
-	OP_DATA_34:   {OP_DATA_34, "OP_DATA_34", 35, opcodePushData},
-	OP_DATA_35:   {OP_DATA_35, "OP_DATA_35", 36, opcodePushData},
-	OP_DATA_36:   {OP_DATA_36, "OP_DATA_36", 37, opcodePushData},
-	OP_DATA_37:   {OP_DATA_37, "OP_DATA_37", 38, opcodePushData},
-	OP_DATA_38:   {OP_DATA_38, "OP_DATA_38", 39, opcodePushData},
-	OP_DATA_39:   {OP_DATA_39, "OP_DATA_39", 40, opcodePushData},
-	OP_DATA_40:   {OP_DATA_40, "OP_DATA_40", 41, opcodePushData},
-	OP_DATA_41:   {OP_DATA_41, "OP_DATA_41", 42, opcodePushData},
-	OP_DATA_42:   {OP_DATA_42, "OP_DATA_42", 43, opcodePushData},
-	OP_DATA_43:   {OP_DATA_43, "OP_DATA_43", 44, opcodePushData},
-	OP_DATA_44:   {OP_DATA_44, "OP_DATA_44", 45, opcodePushData},
-	OP_DATA_45:   {OP_DATA_45, "OP_DATA_45", 46, opcodePushData},
-	OP_DATA_46:   {OP_DATA_46, "OP_DATA_46", 47, opcodePushData},
-	OP_DATA_47:   {OP_DATA_47, "OP_DATA_47", 48, opcodePushData},
-	OP_DATA_48:   {OP_DATA_48, "OP_DATA_48", 49, opcodePushData},
-	OP_DATA_49:   {OP_DATA_49, "OP_DATA_49", 50, opcodePushData},
-	OP_DATA_50:   {OP_DATA_50, "OP_DATA_50", 51, opcodePushData},
-	OP_DATA_51:   {OP_DATA_51, "OP_DATA_51", 52, opcodePushData},
-	OP_DATA_52:   {OP_DATA_52, "OP_DATA_52", 53, opcodePushData},
-	OP_DATA_53:   {OP_DATA_53, "OP_DATA_53", 54, opcodePushData},
-	OP_DATA_54:   {OP_DATA_54, "OP_DATA_54", 55, opcodePushData},
-	OP_DATA_55:   {OP_DATA_55, "OP_DATA_55", 56, opcodePushData},
-	OP_DATA_56:   {OP_DATA_56, "OP_DATA_56", 57, opcodePushData},
-	OP_DATA_57:   {OP_DATA_57, "OP_DATA_57", 58, opcodePushData},
-	OP_DATA_58:   {OP_DATA_58, "OP_DATA_58", 59, opcodePushData},
-	OP_DATA_59:   {OP_DATA_59, "OP_DATA_59", 60, opcodePushData},
-	OP_DATA_60:   {OP_DATA_60, "OP_DATA_60", 61, opcodePushData},
-	OP_DATA_61:   {OP_DATA_61, "OP_DATA_61", 62, opcodePushData},
-	OP_DATA_62:   {OP_DATA_62, "OP_DATA_62", 63, opcodePushData},
-	OP_DATA_63:   {OP_DATA_63, "OP_DATA_63", 64, opcodePushData},
-	OP_DATA_64:   {OP_DATA_64, "OP_DATA_64", 65, opcodePushData},
-	OP_DATA_65:   {OP_DATA_65, "OP_DATA_65", 66, opcodePushData},
-	OP_DATA_66:   {OP_DATA_66, "OP_DATA_66", 67, opcodePushData},
-	OP_DATA_67:   {OP_DATA_67, "OP_DATA_67", 68, opcodePushData},
-	OP_DATA_68:   {OP_DATA_68, "OP_DATA_68", 69, opcodePushData},
-	OP_DATA_69:   {OP_DATA_69, "OP_DATA_69", 70, opcodePushData},
-	OP_DATA_70:   {OP_DATA_70, "OP_DATA_70", 71, opcodePushData},
-	OP_DATA_71:   {OP_DATA_71, "OP_DATA_71", 72, opcodePushData},
-	OP_DATA_72:   {OP_DATA_72, "OP_DATA_72", 73, opcodePushData},
-	OP_DATA_73:   {OP_DATA_73, "OP_DATA_73", 74, opcodePushData},
-	OP_DATA_74:   {OP_DATA_74, "OP_DATA_74", 75, opcodePushData},
-	OP_DATA_75:   {OP_DATA_75, "OP_DATA_75", 76, opcodePushData},
-	OP_PUSHDATA1: {OP_PUSHDATA1, "OP_PUSHDATA1", -1, opcodePushData},
-	OP_PUSHDATA2: {OP_PUSHDATA2, "OP_PUSHDATA2", -2, opcodePushData},
-	OP_PUSHDATA4: {OP_PUSHDATA4, "OP_PUSHDATA4", -4, opcodePushData},
-	OP_1NEGATE:   {OP_1NEGATE, "OP_1NEGATE", 1, opcode1Negate},
-	OP_RESERVED:  {OP_RESERVED, "OP_RESERVED", 1, opcodeReserved},
-	OP_TRUE:      {OP_TRUE, "OP_1", 1, opcodeN},
-	OP_2:         {OP_2, "OP_2", 1, opcodeN},
-	OP_3:         {OP_3, "OP_3", 1, opcodeN},
-	OP_4:         {OP_4, "OP_4", 1, opcodeN},
-	OP_5:         {OP_5, "OP_5", 1, opcodeN},
-	OP_6:         {OP_6, "OP_6", 1, opcodeN},
-	OP_7:         {OP_7, "OP_7", 1, opcodeN},
-	OP_8:         {OP_8, "OP_8", 1, opcodeN},
-	OP_9:         {OP_9, "OP_9", 1, opcodeN},
-	OP_10:        {OP_10, "OP_10", 1, opcodeN},
-	OP_11:        {OP_11, "OP_11", 1, opcodeN},
-	OP_12:        {OP_12, "OP_12", 1, opcodeN},
-	OP_13:        {OP_13, "OP_13", 1, opcodeN},
-	OP_14:        {OP_14, "OP_14", 1, opcodeN},
-	OP_15:        {OP_15, "OP_15", 1, opcodeN},
-	OP_16:        {OP_16, "OP_16", 1, opcodeN},
+	OpFalse:     {OpFalse, "OP_0", 1, opcodeFalse},
+	OpData1:     {OpData1, "OP_DATA_1", 2, opcodePushData},
+	OpData2:     {OpData2, "OP_DATA_2", 3, opcodePushData},
+	OpData3:     {OpData3, "OP_DATA_3", 4, opcodePushData},
+	OpData4:     {OpData4, "OP_DATA_4", 5, opcodePushData},
+	OpData5:     {OpData5, "OP_DATA_5", 6, opcodePushData},
+	OpData6:     {OpData6, "OP_DATA_6", 7, opcodePushData},
+	OpData7:     {OpData7, "OP_DATA_7", 8, opcodePushData},
+	OpData8:     {OpData8, "OP_DATA_8", 9, opcodePushData},
+	OpData9:     {OpData9, "OP_DATA_9", 10, opcodePushData},
+	OpData10:    {OpData10, "OP_DATA_10", 11, opcodePushData},
+	OpData11:    {OpData11, "OP_DATA_11", 12, opcodePushData},
+	OpData12:    {OpData12, "OP_DATA_12", 13, opcodePushData},
+	OpData13:    {OpData13, "OP_DATA_13", 14, opcodePushData},
+	OpData14:    {OpData14, "OP_DATA_14", 15, opcodePushData},
+	OpData15:    {OpData15, "OP_DATA_15", 16, opcodePushData},
+	OpData16:    {OpData16, "OP_DATA_16", 17, opcodePushData},
+	OpData17:    {OpData17, "OP_DATA_17", 18, opcodePushData},
+	OpData18:    {OpData18, "OP_DATA_18", 19, opcodePushData},
+	OpData19:    {OpData19, "OP_DATA_19", 20, opcodePushData},
+	OpData20:    {OpData20, "OP_DATA_20", 21, opcodePushData},
+	OpData21:    {OpData21, "OP_DATA_21", 22, opcodePushData},
+	OpData22:    {OpData22, "OP_DATA_22", 23, opcodePushData},
+	OpData23:    {OpData23, "OP_DATA_23", 24, opcodePushData},
+	OpData24:    {OpData24, "OP_DATA_24", 25, opcodePushData},
+	OpData25:    {OpData25, "OP_DATA_25", 26, opcodePushData},
+	OpData26:    {OpData26, "OP_DATA_26", 27, opcodePushData},
+	OpData27:    {OpData27, "OP_DATA_27", 28, opcodePushData},
+	OpData28:    {OpData28, "OP_DATA_28", 29, opcodePushData},
+	OpData29:    {OpData29, "OP_DATA_29", 30, opcodePushData},
+	OpData30:    {OpData30, "OP_DATA_30", 31, opcodePushData},
+	OpData31:    {OpData31, "OP_DATA_31", 32, opcodePushData},
+	OpData32:    {OpData32, "OP_DATA_32", 33, opcodePushData},
+	OpData33:    {OpData33, "OP_DATA_33", 34, opcodePushData},
+	OpData34:    {OpData34, "OP_DATA_34", 35, opcodePushData},
+	OpData35:    {OpData35, "OP_DATA_35", 36, opcodePushData},
+	OpData36:    {OpData36, "OP_DATA_36", 37, opcodePushData},
+	OpData37:    {OpData37, "OP_DATA_37", 38, opcodePushData},
+	OpData38:    {OpData38, "OP_DATA_38", 39, opcodePushData},
+	OpData39:    {OpData39, "OP_DATA_39", 40, opcodePushData},
+	OpData40:    {OpData40, "OP_DATA_40", 41, opcodePushData},
+	OpData41:    {OpData41, "OP_DATA_41", 42, opcodePushData},
+	OpData42:    {OpData42, "OP_DATA_42", 43, opcodePushData},
+	OpData43:    {OpData43, "OP_DATA_43", 44, opcodePushData},
+	OpData44:    {OpData44, "OP_DATA_44", 45, opcodePushData},
+	OpData45:    {OpData45, "OP_DATA_45", 46, opcodePushData},
+	OpData46:    {OpData46, "OP_DATA_46", 47, opcodePushData},
+	OpData47:    {OpData47, "OP_DATA_47", 48, opcodePushData},
+	OpData48:    {OpData48, "OP_DATA_48", 49, opcodePushData},
+	OpData49:    {OpData49, "OP_DATA_49", 50, opcodePushData},
+	OpData50:    {OpData50, "OP_DATA_50", 51, opcodePushData},
+	OpData51:    {OpData51, "OP_DATA_51", 52, opcodePushData},
+	OpData52:    {OpData52, "OP_DATA_52", 53, opcodePushData},
+	OpData53:    {OpData53, "OP_DATA_53", 54, opcodePushData},
+	OpData54:    {OpData54, "OP_DATA_54", 55, opcodePushData},
+	OpData55:    {OpData55, "OP_DATA_55", 56, opcodePushData},
+	OpData56:    {OpData56, "OP_DATA_56", 57, opcodePushData},
+	OpData57:    {OpData57, "OP_DATA_57", 58, opcodePushData},
+	OpData58:    {OpData58, "OP_DATA_58", 59, opcodePushData},
+	OpData59:    {OpData59, "OP_DATA_59", 60, opcodePushData},
+	OpData60:    {OpData60, "OP_DATA_60", 61, opcodePushData},
+	OpData61:    {OpData61, "OP_DATA_61", 62, opcodePushData},
+	OpData62:    {OpData62, "OP_DATA_62", 63, opcodePushData},
+	OpData63:    {OpData63, "OP_DATA_63", 64, opcodePushData},
+	OpData64:    {OpData64, "OP_DATA_64", 65, opcodePushData},
+	OpData65:    {OpData65, "OP_DATA_65", 66, opcodePushData},
+	OpData66:    {OpData66, "OP_DATA_66", 67, opcodePushData},
+	OpData67:    {OpData67, "OP_DATA_67", 68, opcodePushData},
+	OpData68:    {OpData68, "OP_DATA_68", 69, opcodePushData},
+	OpData69:    {OpData69, "OP_DATA_69", 70, opcodePushData},
+	OpData70:    {OpData70, "OP_DATA_70", 71, opcodePushData},
+	OpData71:    {OpData71, "OP_DATA_71", 72, opcodePushData},
+	OpData72:    {OpData72, "OP_DATA_72", 73, opcodePushData},
+	OpData73:    {OpData73, "OP_DATA_73", 74, opcodePushData},
+	OpData74:    {OpData74, "OP_DATA_74", 75, opcodePushData},
+	OpData75:    {OpData75, "OP_DATA_75", 76, opcodePushData},
+	OpPushData1: {OpPushData1, "OP_PUSHDATA1", -1, opcodePushData},
+	OpPushData2: {OpPushData2, "OP_PUSHDATA2", -2, opcodePushData},
+	OpPushData4: {OpPushData4, "OP_PUSHDATA4", -4, opcodePushData},
+	Op1Negate:   {Op1Negate, "OP_1NEGATE", 1, opcode1Negate},
+	OpReserved:  {OpReserved, "OP_RESERVED", 1, opcodeReserved},
+	OpTrue:      {OpTrue, "OP_1", 1, opcodeN},
+	Op2:         {Op2, "OP_2", 1, opcodeN},
+	Op3:         {Op3, "OP_3", 1, opcodeN},
+	Op4:         {Op4, "OP_4", 1, opcodeN},
+	Op5:         {Op5, "OP_5", 1, opcodeN},
+	Op6:         {Op6, "OP_6", 1, opcodeN},
+	Op7:         {Op7, "OP_7", 1, opcodeN},
+	Op8:         {Op8, "OP_8", 1, opcodeN},
+	Op9:         {Op9, "OP_9", 1, opcodeN},
+	Op10:        {Op10, "OP_10", 1, opcodeN},
+	Op11:        {Op11, "OP_11", 1, opcodeN},
+	Op12:        {Op12, "OP_12", 1, opcodeN},
+	Op13:        {Op13, "OP_13", 1, opcodeN},
+	Op14:        {Op14, "OP_14", 1, opcodeN},
+	Op15:        {Op15, "OP_15", 1, opcodeN},
+	Op16:        {Op16, "OP_16", 1, opcodeN},
 
 	// Control opcodes.
-	OP_NOP:                 {OP_NOP, "OP_NOP", 1, opcodeNop},
-	OP_VER:                 {OP_VER, "OP_VER", 1, opcodeReserved},
-	OP_IF:                  {OP_IF, "OP_IF", 1, opcodeIf},
-	OP_NOTIF:               {OP_NOTIF, "OP_NOTIF", 1, opcodeNotIf},
-	OP_VERIF:               {OP_VERIF, "OP_VERIF", 1, opcodeReserved},
-	OP_VERNOTIF:            {OP_VERNOTIF, "OP_VERNOTIF", 1, opcodeReserved},
-	OP_ELSE:                {OP_ELSE, "OP_ELSE", 1, opcodeElse},
-	OP_ENDIF:               {OP_ENDIF, "OP_ENDIF", 1, opcodeEndif},
-	OP_VERIFY:              {OP_VERIFY, "OP_VERIFY", 1, opcodeVerify},
-	OP_RETURN:              {OP_RETURN, "OP_RETURN", 1, opcodeReturn},
-	OP_CHECKLOCKTIMEVERIFY: {OP_CHECKLOCKTIMEVERIFY, "OP_CHECKLOCKTIMEVERIFY", 1, opcodeCheckLockTimeVerify},
-	OP_CHECKSEQUENCEVERIFY: {OP_CHECKSEQUENCEVERIFY, "OP_CHECKSEQUENCEVERIFY", 1, opcodeCheckSequenceVerify},
+	OpNop:                 {OpNop, "OP_NOP", 1, opcodeNop},
+	OpVer:                 {OpVer, "OP_VER", 1, opcodeReserved},
+	OpIf:                  {OpIf, "OP_IF", 1, opcodeIf},
+	OpNotIf:               {OpNotIf, "OP_NOTIF", 1, opcodeNotIf},
+	OpVerIf:               {OpVerIf, "OP_VERIF", 1, opcodeReserved},
+	OpVerNotIf:            {OpVerNotIf, "OP_VERNOTIF", 1, opcodeReserved},
+	OpElse:                {OpElse, "OP_ELSE", 1, opcodeElse},
+	OpEndIf:               {OpEndIf, "OP_ENDIF", 1, opcodeEndif},
+	OpVerify:              {OpVerify, "OP_VERIFY", 1, opcodeVerify},
+	OpReturn:              {OpReturn, "OP_RETURN", 1, opcodeReturn},
+	OpCheckLockTimeVerify: {OpCheckLockTimeVerify, "OP_CHECKLOCKTIMEVERIFY", 1, opcodeCheckLockTimeVerify},
+	OpCheckSequenceVerify: {OpCheckSequenceVerify, "OP_CHECKSEQUENCEVERIFY", 1, opcodeCheckSequenceVerify},
 
 	// Stack opcodes.
-	OP_TOALTSTACK:   {OP_TOALTSTACK, "OP_TOALTSTACK", 1, opcodeToAltStack},
-	OP_FROMALTSTACK: {OP_FROMALTSTACK, "OP_FROMALTSTACK", 1, opcodeFromAltStack},
-	OP_2DROP:        {OP_2DROP, "OP_2DROP", 1, opcode2Drop},
-	OP_2DUP:         {OP_2DUP, "OP_2DUP", 1, opcode2Dup},
-	OP_3DUP:         {OP_3DUP, "OP_3DUP", 1, opcode3Dup},
-	OP_2OVER:        {OP_2OVER, "OP_2OVER", 1, opcode2Over},
-	OP_2ROT:         {OP_2ROT, "OP_2ROT", 1, opcode2Rot},
-	OP_2SWAP:        {OP_2SWAP, "OP_2SWAP", 1, opcode2Swap},
-	OP_IFDUP:        {OP_IFDUP, "OP_IFDUP", 1, opcodeIfDup},
-	OP_DEPTH:        {OP_DEPTH, "OP_DEPTH", 1, opcodeDepth},
-	OP_DROP:         {OP_DROP, "OP_DROP", 1, opcodeDrop},
-	OP_DUP:          {OP_DUP, "OP_DUP", 1, opcodeDup},
-	OP_NIP:          {OP_NIP, "OP_NIP", 1, opcodeNip},
-	OP_OVER:         {OP_OVER, "OP_OVER", 1, opcodeOver},
-	OP_PICK:         {OP_PICK, "OP_PICK", 1, opcodePick},
-	OP_ROLL:         {OP_ROLL, "OP_ROLL", 1, opcodeRoll},
-	OP_ROT:          {OP_ROT, "OP_ROT", 1, opcodeRot},
-	OP_SWAP:         {OP_SWAP, "OP_SWAP", 1, opcodeSwap},
-	OP_TUCK:         {OP_TUCK, "OP_TUCK", 1, opcodeTuck},
+	OpToAltStack:   {OpToAltStack, "OP_TOALTSTACK", 1, opcodeToAltStack},
+	OpFromAltStack: {OpFromAltStack, "OP_FROMALTSTACK", 1, opcodeFromAltStack},
+	Op2Drop:        {Op2Drop, "OP_2DROP", 1, opcode2Drop},
+	Op2Dup:         {Op2Dup, "OP_2DUP", 1, opcode2Dup},
+	Op3Dup:         {Op3Dup, "OP_3DUP", 1, opcode3Dup},
+	Op2Over:        {Op2Over, "OP_2OVER", 1, opcode2Over},
+	Op2Rot:         {Op2Rot, "OP_2ROT", 1, opcode2Rot},
+	Op2Swap:        {Op2Swap, "OP_2SWAP", 1, opcode2Swap},
+	OpIfDup:        {OpIfDup, "OP_IFDUP", 1, opcodeIfDup},
+	OpDepth:        {OpDepth, "OP_DEPTH", 1, opcodeDepth},
+	OpDrop:         {OpDrop, "OP_DROP", 1, opcodeDrop},
+	OpDup:          {OpDup, "OP_DUP", 1, opcodeDup},
+	OpNip:          {OpNip, "OP_NIP", 1, opcodeNip},
+	OpOver:         {OpOver, "OP_OVER", 1, opcodeOver},
+	OpPick:         {OpPick, "OP_PICK", 1, opcodePick},
+	OpRoll:         {OpRoll, "OP_ROLL", 1, opcodeRoll},
+	OpRot:          {OpRot, "OP_ROT", 1, opcodeRot},
+	OpSwap:         {OpSwap, "OP_SWAP", 1, opcodeSwap},
+	OpTuck:         {OpTuck, "OP_TUCK", 1, opcodeTuck},
 
 	// Splice opcodes.
-	OP_CAT:    {OP_CAT, "OP_CAT", 1, opcodeDisabled},
-	OP_SUBSTR: {OP_SUBSTR, "OP_SUBSTR", 1, opcodeDisabled},
-	OP_LEFT:   {OP_LEFT, "OP_LEFT", 1, opcodeDisabled},
-	OP_RIGHT:  {OP_RIGHT, "OP_RIGHT", 1, opcodeDisabled},
-	OP_SIZE:   {OP_SIZE, "OP_SIZE", 1, opcodeSize},
+	OpCat:    {OpCat, "OP_CAT", 1, opcodeDisabled},
+	OpSubStr: {OpSubStr, "OP_SUBSTR", 1, opcodeDisabled},
+	OpLeft:   {OpLeft, "OP_LEFT", 1, opcodeDisabled},
+	OpRight:  {OpRight, "OP_RIGHT", 1, opcodeDisabled},
+	OpSize:   {OpSize, "OP_SIZE", 1, opcodeSize},
 
 	// Bitwise logic opcodes.
-	OP_INVERT:      {OP_INVERT, "OP_INVERT", 1, opcodeDisabled},
-	OP_AND:         {OP_AND, "OP_AND", 1, opcodeDisabled},
-	OP_OR:          {OP_OR, "OP_OR", 1, opcodeDisabled},
-	OP_XOR:         {OP_XOR, "OP_XOR", 1, opcodeDisabled},
-	OP_EQUAL:       {OP_EQUAL, "OP_EQUAL", 1, opcodeEqual},
-	OP_EQUALVERIFY: {OP_EQUALVERIFY, "OP_EQUALVERIFY", 1, opcodeEqualVerify},
-	OP_RESERVED1:   {OP_RESERVED1, "OP_RESERVED1", 1, opcodeReserved},
-	OP_RESERVED2:   {OP_RESERVED2, "OP_RESERVED2", 1, opcodeReserved},
+	OpInvert:      {OpInvert, "OP_INVERT", 1, opcodeDisabled},
+	OpAnd:         {OpAnd, "OP_AND", 1, opcodeDisabled},
+	OpOr:          {OpOr, "OP_OR", 1, opcodeDisabled},
+	OpXor:         {OpXor, "OP_XOR", 1, opcodeDisabled},
+	OpEqual:       {OpEqual, "OP_EQUAL", 1, opcodeEqual},
+	OpEqualVerify: {OpEqualVerify, "OP_EQUALVERIFY", 1, opcodeEqualVerify},
+	OpReserved1:   {OpReserved1, "OP_RESERVED1", 1, opcodeReserved},
+	OpReserved2:   {OpReserved2, "OP_RESERVED2", 1, opcodeReserved},
 
 	// Numeric related opcodes.
-	OP_1ADD:               {OP_1ADD, "OP_1ADD", 1, opcode1Add},
-	OP_1SUB:               {OP_1SUB, "OP_1SUB", 1, opcode1Sub},
-	OP_2MUL:               {OP_2MUL, "OP_2MUL", 1, opcodeDisabled},
-	OP_2DIV:               {OP_2DIV, "OP_2DIV", 1, opcodeDisabled},
-	OP_NEGATE:             {OP_NEGATE, "OP_NEGATE", 1, opcodeNegate},
-	OP_ABS:                {OP_ABS, "OP_ABS", 1, opcodeAbs},
-	OP_NOT:                {OP_NOT, "OP_NOT", 1, opcodeNot},
-	OP_0NOTEQUAL:          {OP_0NOTEQUAL, "OP_0NOTEQUAL", 1, opcode0NotEqual},
-	OP_ADD:                {OP_ADD, "OP_ADD", 1, opcodeAdd},
-	OP_SUB:                {OP_SUB, "OP_SUB", 1, opcodeSub},
-	OP_MUL:                {OP_MUL, "OP_MUL", 1, opcodeDisabled},
-	OP_DIV:                {OP_DIV, "OP_DIV", 1, opcodeDisabled},
-	OP_MOD:                {OP_MOD, "OP_MOD", 1, opcodeDisabled},
-	OP_LSHIFT:             {OP_LSHIFT, "OP_LSHIFT", 1, opcodeDisabled},
-	OP_RSHIFT:             {OP_RSHIFT, "OP_RSHIFT", 1, opcodeDisabled},
-	OP_BOOLAND:            {OP_BOOLAND, "OP_BOOLAND", 1, opcodeBoolAnd},
-	OP_BOOLOR:             {OP_BOOLOR, "OP_BOOLOR", 1, opcodeBoolOr},
-	OP_NUMEQUAL:           {OP_NUMEQUAL, "OP_NUMEQUAL", 1, opcodeNumEqual},
-	OP_NUMEQUALVERIFY:     {OP_NUMEQUALVERIFY, "OP_NUMEQUALVERIFY", 1, opcodeNumEqualVerify},
-	OP_NUMNOTEQUAL:        {OP_NUMNOTEQUAL, "OP_NUMNOTEQUAL", 1, opcodeNumNotEqual},
-	OP_LESSTHAN:           {OP_LESSTHAN, "OP_LESSTHAN", 1, opcodeLessThan},
-	OP_GREATERTHAN:        {OP_GREATERTHAN, "OP_GREATERTHAN", 1, opcodeGreaterThan},
-	OP_LESSTHANOREQUAL:    {OP_LESSTHANOREQUAL, "OP_LESSTHANOREQUAL", 1, opcodeLessThanOrEqual},
-	OP_GREATERTHANOREQUAL: {OP_GREATERTHANOREQUAL, "OP_GREATERTHANOREQUAL", 1, opcodeGreaterThanOrEqual},
-	OP_MIN:                {OP_MIN, "OP_MIN", 1, opcodeMin},
-	OP_MAX:                {OP_MAX, "OP_MAX", 1, opcodeMax},
-	OP_WITHIN:             {OP_WITHIN, "OP_WITHIN", 1, opcodeWithin},
+	Op1Add:               {Op1Add, "OP_1ADD", 1, opcode1Add},
+	Op1Sub:               {Op1Sub, "OP_1SUB", 1, opcode1Sub},
+	Op2Mul:               {Op2Mul, "OP_2MUL", 1, opcodeDisabled},
+	Op2Div:               {Op2Div, "OP_2DIV", 1, opcodeDisabled},
+	OpNegate:             {OpNegate, "OP_NEGATE", 1, opcodeNegate},
+	OpAbs:                {OpAbs, "OP_ABS", 1, opcodeAbs},
+	OpNot:                {OpNot, "OP_NOT", 1, opcodeNot},
+	Op0NotEqual:          {Op0NotEqual, "OP_0NOTEQUAL", 1, opcode0NotEqual},
+	OpAdd:                {OpAdd, "OP_ADD", 1, opcodeAdd},
+	OpSub:                {OpSub, "OP_SUB", 1, opcodeSub},
+	OpMul:                {OpMul, "OP_MUL", 1, opcodeDisabled},
+	OpDiv:                {OpDiv, "OP_DIV", 1, opcodeDisabled},
+	OpMod:                {OpMod, "OP_MOD", 1, opcodeDisabled},
+	OpLShift:             {OpLShift, "OP_LSHIFT", 1, opcodeDisabled},
+	OpRShift:             {OpRShift, "OP_RSHIFT", 1, opcodeDisabled},
+	OpBoolAnd:            {OpBoolAnd, "OP_BOOLAND", 1, opcodeBoolAnd},
+	OpBoolOr:             {OpBoolOr, "OP_BOOLOR", 1, opcodeBoolOr},
+	OpNumEqual:           {OpNumEqual, "OP_NUMEQUAL", 1, opcodeNumEqual},
+	OpNumEqualVerify:     {OpNumEqualVerify, "OP_NUMEQUALVERIFY", 1, opcodeNumEqualVerify},
+	OpNumNotEqual:        {OpNumNotEqual, "OP_NUMNOTEQUAL", 1, opcodeNumNotEqual},
+	OpLessThan:           {OpLessThan, "OP_LESSTHAN", 1, opcodeLessThan},
+	OpGreaterThan:        {OpGreaterThan, "OP_GREATERTHAN", 1, opcodeGreaterThan},
+	OpLessThanOrEqual:    {OpLessThanOrEqual, "OP_LESSTHANOREQUAL", 1, opcodeLessThanOrEqual},
+	OpGreaterThanOrEqual: {OpGreaterThanOrEqual, "OP_GREATERTHANOREQUAL", 1, opcodeGreaterThanOrEqual},
+	OpMin:                {OpMin, "OP_MIN", 1, opcodeMin},
+	OpMax:                {OpMax, "OP_MAX", 1, opcodeMax},
+	OpWithin:             {OpWithin, "OP_WITHIN", 1, opcodeWithin},
 
 	// Crypto opcodes.
-	OP_RIPEMD160:           {OP_RIPEMD160, "OP_RIPEMD160", 1, opcodeRipemd160},
-	OP_SHA1:                {OP_SHA1, "OP_SHA1", 1, opcodeSha1},
-	OP_SHA256:              {OP_SHA256, "OP_SHA256", 1, opcodeSha256},
-	OP_HASH160:             {OP_HASH160, "OP_HASH160", 1, opcodeHash160},
-	OP_HASH256:             {OP_HASH256, "OP_HASH256", 1, opcodeHash256},
-	OP_CODESEPARATOR:       {OP_CODESEPARATOR, "OP_CODESEPARATOR", 1, opcodeCodeSeparator},
-	OP_CHECKSIG:            {OP_CHECKSIG, "OP_CHECKSIG", 1, opcodeCheckSig},
-	OP_CHECKSIGVERIFY:      {OP_CHECKSIGVERIFY, "OP_CHECKSIGVERIFY", 1, opcodeCheckSigVerify},
-	OP_CHECKMULTISIG:       {OP_CHECKMULTISIG, "OP_CHECKMULTISIG", 1, opcodeCheckMultiSig},
-	OP_CHECKMULTISIGVERIFY: {OP_CHECKMULTISIGVERIFY, "OP_CHECKMULTISIGVERIFY", 1, opcodeCheckMultiSigVerify},
+	OpRipeMD160:           {OpRipeMD160, "OP_RIPEMD160", 1, opcodeRipemd160},
+	OpSHA1:                {OpSHA1, "OP_SHA1", 1, opcodeSha1},
+	OpSHA256:              {OpSHA256, "OP_SHA256", 1, opcodeSha256},
+	OpHash160:             {OpHash160, "OP_HASH160", 1, opcodeHash160},
+	OpHash256:             {OpHash256, "OP_HASH256", 1, opcodeHash256},
+	OpCodeSeparator:       {OpCodeSeparator, "OP_CODESEPARATOR", 1, opcodeCodeSeparator},
+	OpCheckSig:            {OpCheckSig, "OP_CHECKSIG", 1, opcodeCheckSig},
+	OpCheckSigVerify:      {OpCheckSigVerify, "OP_CHECKSIGVERIFY", 1, opcodeCheckSigVerify},
+	OpCheckMultiSig:       {OpCheckMultiSig, "OP_CHECKMULTISIG", 1, opcodeCheckMultiSig},
+	OpCheckMultiSigVerify: {OpCheckMultiSigVerify, "OP_CHECKMULTISIGVERIFY", 1, opcodeCheckMultiSigVerify},
 
 	// Reserved opcodes.
-	OP_NOP1:  {OP_NOP1, "OP_NOP1", 1, opcodeNop},
-	OP_NOP4:  {OP_NOP4, "OP_NOP4", 1, opcodeNop},
-	OP_NOP5:  {OP_NOP5, "OP_NOP5", 1, opcodeNop},
-	OP_NOP6:  {OP_NOP6, "OP_NOP6", 1, opcodeNop},
-	OP_NOP7:  {OP_NOP7, "OP_NOP7", 1, opcodeNop},
-	OP_NOP8:  {OP_NOP8, "OP_NOP8", 1, opcodeNop},
-	OP_NOP9:  {OP_NOP9, "OP_NOP9", 1, opcodeNop},
-	OP_NOP10: {OP_NOP10, "OP_NOP10", 1, opcodeNop},
+	OpNop1:  {OpNop1, "OP_NOP1", 1, opcodeNop},
+	OpNop4:  {OpNop4, "OP_NOP4", 1, opcodeNop},
+	OpNop5:  {OpNop5, "OP_NOP5", 1, opcodeNop},
+	OpNop6:  {OpNop6, "OP_NOP6", 1, opcodeNop},
+	OpNop7:  {OpNop7, "OP_NOP7", 1, opcodeNop},
+	OpNop8:  {OpNop8, "OP_NOP8", 1, opcodeNop},
+	OpNop9:  {OpNop9, "OP_NOP9", 1, opcodeNop},
+	OpNop10: {OpNop10, "OP_NOP10", 1, opcodeNop},
 
 	// Undefined opcodes.
-	OP_UNKNOWN186: {OP_UNKNOWN186, "OP_UNKNOWN186", 1, opcodeInvalid},
-	OP_UNKNOWN187: {OP_UNKNOWN187, "OP_UNKNOWN187", 1, opcodeInvalid},
-	OP_UNKNOWN188: {OP_UNKNOWN188, "OP_UNKNOWN188", 1, opcodeInvalid},
-	OP_UNKNOWN189: {OP_UNKNOWN189, "OP_UNKNOWN189", 1, opcodeInvalid},
-	OP_UNKNOWN190: {OP_UNKNOWN190, "OP_UNKNOWN190", 1, opcodeInvalid},
-	OP_UNKNOWN191: {OP_UNKNOWN191, "OP_UNKNOWN191", 1, opcodeInvalid},
-	OP_UNKNOWN192: {OP_UNKNOWN192, "OP_UNKNOWN192", 1, opcodeInvalid},
-	OP_UNKNOWN193: {OP_UNKNOWN193, "OP_UNKNOWN193", 1, opcodeInvalid},
-	OP_UNKNOWN194: {OP_UNKNOWN194, "OP_UNKNOWN194", 1, opcodeInvalid},
-	OP_UNKNOWN195: {OP_UNKNOWN195, "OP_UNKNOWN195", 1, opcodeInvalid},
-	OP_UNKNOWN196: {OP_UNKNOWN196, "OP_UNKNOWN196", 1, opcodeInvalid},
-	OP_UNKNOWN197: {OP_UNKNOWN197, "OP_UNKNOWN197", 1, opcodeInvalid},
-	OP_UNKNOWN198: {OP_UNKNOWN198, "OP_UNKNOWN198", 1, opcodeInvalid},
-	OP_UNKNOWN199: {OP_UNKNOWN199, "OP_UNKNOWN199", 1, opcodeInvalid},
-	OP_UNKNOWN200: {OP_UNKNOWN200, "OP_UNKNOWN200", 1, opcodeInvalid},
-	OP_UNKNOWN201: {OP_UNKNOWN201, "OP_UNKNOWN201", 1, opcodeInvalid},
-	OP_UNKNOWN202: {OP_UNKNOWN202, "OP_UNKNOWN202", 1, opcodeInvalid},
-	OP_UNKNOWN203: {OP_UNKNOWN203, "OP_UNKNOWN203", 1, opcodeInvalid},
-	OP_UNKNOWN204: {OP_UNKNOWN204, "OP_UNKNOWN204", 1, opcodeInvalid},
-	OP_UNKNOWN205: {OP_UNKNOWN205, "OP_UNKNOWN205", 1, opcodeInvalid},
-	OP_UNKNOWN206: {OP_UNKNOWN206, "OP_UNKNOWN206", 1, opcodeInvalid},
-	OP_UNKNOWN207: {OP_UNKNOWN207, "OP_UNKNOWN207", 1, opcodeInvalid},
-	OP_UNKNOWN208: {OP_UNKNOWN208, "OP_UNKNOWN208", 1, opcodeInvalid},
-	OP_UNKNOWN209: {OP_UNKNOWN209, "OP_UNKNOWN209", 1, opcodeInvalid},
-	OP_UNKNOWN210: {OP_UNKNOWN210, "OP_UNKNOWN210", 1, opcodeInvalid},
-	OP_UNKNOWN211: {OP_UNKNOWN211, "OP_UNKNOWN211", 1, opcodeInvalid},
-	OP_UNKNOWN212: {OP_UNKNOWN212, "OP_UNKNOWN212", 1, opcodeInvalid},
-	OP_UNKNOWN213: {OP_UNKNOWN213, "OP_UNKNOWN213", 1, opcodeInvalid},
-	OP_UNKNOWN214: {OP_UNKNOWN214, "OP_UNKNOWN214", 1, opcodeInvalid},
-	OP_UNKNOWN215: {OP_UNKNOWN215, "OP_UNKNOWN215", 1, opcodeInvalid},
-	OP_UNKNOWN216: {OP_UNKNOWN216, "OP_UNKNOWN216", 1, opcodeInvalid},
-	OP_UNKNOWN217: {OP_UNKNOWN217, "OP_UNKNOWN217", 1, opcodeInvalid},
-	OP_UNKNOWN218: {OP_UNKNOWN218, "OP_UNKNOWN218", 1, opcodeInvalid},
-	OP_UNKNOWN219: {OP_UNKNOWN219, "OP_UNKNOWN219", 1, opcodeInvalid},
-	OP_UNKNOWN220: {OP_UNKNOWN220, "OP_UNKNOWN220", 1, opcodeInvalid},
-	OP_UNKNOWN221: {OP_UNKNOWN221, "OP_UNKNOWN221", 1, opcodeInvalid},
-	OP_UNKNOWN222: {OP_UNKNOWN222, "OP_UNKNOWN222", 1, opcodeInvalid},
-	OP_UNKNOWN223: {OP_UNKNOWN223, "OP_UNKNOWN223", 1, opcodeInvalid},
-	OP_UNKNOWN224: {OP_UNKNOWN224, "OP_UNKNOWN224", 1, opcodeInvalid},
-	OP_UNKNOWN225: {OP_UNKNOWN225, "OP_UNKNOWN225", 1, opcodeInvalid},
-	OP_UNKNOWN226: {OP_UNKNOWN226, "OP_UNKNOWN226", 1, opcodeInvalid},
-	OP_UNKNOWN227: {OP_UNKNOWN227, "OP_UNKNOWN227", 1, opcodeInvalid},
-	OP_UNKNOWN228: {OP_UNKNOWN228, "OP_UNKNOWN228", 1, opcodeInvalid},
-	OP_UNKNOWN229: {OP_UNKNOWN229, "OP_UNKNOWN229", 1, opcodeInvalid},
-	OP_UNKNOWN230: {OP_UNKNOWN230, "OP_UNKNOWN230", 1, opcodeInvalid},
-	OP_UNKNOWN231: {OP_UNKNOWN231, "OP_UNKNOWN231", 1, opcodeInvalid},
-	OP_UNKNOWN232: {OP_UNKNOWN232, "OP_UNKNOWN232", 1, opcodeInvalid},
-	OP_UNKNOWN233: {OP_UNKNOWN233, "OP_UNKNOWN233", 1, opcodeInvalid},
-	OP_UNKNOWN234: {OP_UNKNOWN234, "OP_UNKNOWN234", 1, opcodeInvalid},
-	OP_UNKNOWN235: {OP_UNKNOWN235, "OP_UNKNOWN235", 1, opcodeInvalid},
-	OP_UNKNOWN236: {OP_UNKNOWN236, "OP_UNKNOWN236", 1, opcodeInvalid},
-	OP_UNKNOWN237: {OP_UNKNOWN237, "OP_UNKNOWN237", 1, opcodeInvalid},
-	OP_UNKNOWN238: {OP_UNKNOWN238, "OP_UNKNOWN238", 1, opcodeInvalid},
-	OP_UNKNOWN239: {OP_UNKNOWN239, "OP_UNKNOWN239", 1, opcodeInvalid},
-	OP_UNKNOWN240: {OP_UNKNOWN240, "OP_UNKNOWN240", 1, opcodeInvalid},
-	OP_UNKNOWN241: {OP_UNKNOWN241, "OP_UNKNOWN241", 1, opcodeInvalid},
-	OP_UNKNOWN242: {OP_UNKNOWN242, "OP_UNKNOWN242", 1, opcodeInvalid},
-	OP_UNKNOWN243: {OP_UNKNOWN243, "OP_UNKNOWN243", 1, opcodeInvalid},
-	OP_UNKNOWN244: {OP_UNKNOWN244, "OP_UNKNOWN244", 1, opcodeInvalid},
-	OP_UNKNOWN245: {OP_UNKNOWN245, "OP_UNKNOWN245", 1, opcodeInvalid},
-	OP_UNKNOWN246: {OP_UNKNOWN246, "OP_UNKNOWN246", 1, opcodeInvalid},
-	OP_UNKNOWN247: {OP_UNKNOWN247, "OP_UNKNOWN247", 1, opcodeInvalid},
-	OP_UNKNOWN248: {OP_UNKNOWN248, "OP_UNKNOWN248", 1, opcodeInvalid},
-	OP_UNKNOWN249: {OP_UNKNOWN249, "OP_UNKNOWN249", 1, opcodeInvalid},
+	OpUnknown186: {OpUnknown186, "OP_UNKNOWN186", 1, opcodeInvalid},
+	OpUnknown187: {OpUnknown187, "OP_UNKNOWN187", 1, opcodeInvalid},
+	OpUnknown188: {OpUnknown188, "OP_UNKNOWN188", 1, opcodeInvalid},
+	OpUnknown189: {OpUnknown189, "OP_UNKNOWN189", 1, opcodeInvalid},
+	OpUnknown190: {OpUnknown190, "OP_UNKNOWN190", 1, opcodeInvalid},
+	OpUnknown191: {OpUnknown191, "OP_UNKNOWN191", 1, opcodeInvalid},
+	OpUnknown192: {OpUnknown192, "OP_UNKNOWN192", 1, opcodeInvalid},
+	OpUnknown193: {OpUnknown193, "OP_UNKNOWN193", 1, opcodeInvalid},
+	OpUnknown194: {OpUnknown194, "OP_UNKNOWN194", 1, opcodeInvalid},
+	OpUnknown195: {OpUnknown195, "OP_UNKNOWN195", 1, opcodeInvalid},
+	OpUnknown196: {OpUnknown196, "OP_UNKNOWN196", 1, opcodeInvalid},
+	OpUnknown197: {OpUnknown197, "OP_UNKNOWN197", 1, opcodeInvalid},
+	OpUnknown198: {OpUnknown198, "OP_UNKNOWN198", 1, opcodeInvalid},
+	OpUnknown199: {OpUnknown199, "OP_UNKNOWN199", 1, opcodeInvalid},
+	OpUnknown200: {OpUnknown200, "OP_UNKNOWN200", 1, opcodeInvalid},
+	OpUnknown201: {OpUnknown201, "OP_UNKNOWN201", 1, opcodeInvalid},
+	OpUnknown202: {OpUnknown202, "OP_UNKNOWN202", 1, opcodeInvalid},
+	OpUnknown203: {OpUnknown203, "OP_UNKNOWN203", 1, opcodeInvalid},
+	OpUnknown204: {OpUnknown204, "OP_UNKNOWN204", 1, opcodeInvalid},
+	OpUnknown205: {OpUnknown205, "OP_UNKNOWN205", 1, opcodeInvalid},
+	OpUnknown206: {OpUnknown206, "OP_UNKNOWN206", 1, opcodeInvalid},
+	OpUnknown207: {OpUnknown207, "OP_UNKNOWN207", 1, opcodeInvalid},
+	OpUnknown208: {OpUnknown208, "OP_UNKNOWN208", 1, opcodeInvalid},
+	OpUnknown209: {OpUnknown209, "OP_UNKNOWN209", 1, opcodeInvalid},
+	OpUnknown210: {OpUnknown210, "OP_UNKNOWN210", 1, opcodeInvalid},
+	OpUnknown211: {OpUnknown211, "OP_UNKNOWN211", 1, opcodeInvalid},
+	OpUnknown212: {OpUnknown212, "OP_UNKNOWN212", 1, opcodeInvalid},
+	OpUnknown213: {OpUnknown213, "OP_UNKNOWN213", 1, opcodeInvalid},
+	OpUnknown214: {OpUnknown214, "OP_UNKNOWN214", 1, opcodeInvalid},
+	OpUnknown215: {OpUnknown215, "OP_UNKNOWN215", 1, opcodeInvalid},
+	OpUnknown216: {OpUnknown216, "OP_UNKNOWN216", 1, opcodeInvalid},
+	OpUnknown217: {OpUnknown217, "OP_UNKNOWN217", 1, opcodeInvalid},
+	OpUnknown218: {OpUnknown218, "OP_UNKNOWN218", 1, opcodeInvalid},
+	OpUnknown219: {OpUnknown219, "OP_UNKNOWN219", 1, opcodeInvalid},
+	OpUnknown220: {OpUnknown220, "OP_UNKNOWN220", 1, opcodeInvalid},
+	OpUnknown221: {OpUnknown221, "OP_UNKNOWN221", 1, opcodeInvalid},
+	OpUnknown222: {OpUnknown222, "OP_UNKNOWN222", 1, opcodeInvalid},
+	OpUnknown223: {OpUnknown223, "OP_UNKNOWN223", 1, opcodeInvalid},
+	OpUnknown224: {OpUnknown224, "OP_UNKNOWN224", 1, opcodeInvalid},
+	OpUnknown225: {OpUnknown225, "OP_UNKNOWN225", 1, opcodeInvalid},
+	OpUnknown226: {OpUnknown226, "OP_UNKNOWN226", 1, opcodeInvalid},
+	OpUnknown227: {OpUnknown227, "OP_UNKNOWN227", 1, opcodeInvalid},
+	OpUnknown228: {OpUnknown228, "OP_UNKNOWN228", 1, opcodeInvalid},
+	OpUnknown229: {OpUnknown229, "OP_UNKNOWN229", 1, opcodeInvalid},
+	OpUnknown230: {OpUnknown230, "OP_UNKNOWN230", 1, opcodeInvalid},
+	OpUnknown231: {OpUnknown231, "OP_UNKNOWN231", 1, opcodeInvalid},
+	OpUnknown232: {OpUnknown232, "OP_UNKNOWN232", 1, opcodeInvalid},
+	OpUnknown233: {OpUnknown233, "OP_UNKNOWN233", 1, opcodeInvalid},
+	OpUnknown234: {OpUnknown234, "OP_UNKNOWN234", 1, opcodeInvalid},
+	OpUnknown235: {OpUnknown235, "OP_UNKNOWN235", 1, opcodeInvalid},
+	OpUnknown236: {OpUnknown236, "OP_UNKNOWN236", 1, opcodeInvalid},
+	OpUnknown237: {OpUnknown237, "OP_UNKNOWN237", 1, opcodeInvalid},
+	OpUnknown238: {OpUnknown238, "OP_UNKNOWN238", 1, opcodeInvalid},
+	OpUnknown239: {OpUnknown239, "OP_UNKNOWN239", 1, opcodeInvalid},
+	OpUnknown240: {OpUnknown240, "OP_UNKNOWN240", 1, opcodeInvalid},
+	OpUnknown241: {OpUnknown241, "OP_UNKNOWN241", 1, opcodeInvalid},
+	OpUnknown242: {OpUnknown242, "OP_UNKNOWN242", 1, opcodeInvalid},
+	OpUnknown243: {OpUnknown243, "OP_UNKNOWN243", 1, opcodeInvalid},
+	OpUnknown244: {OpUnknown244, "OP_UNKNOWN244", 1, opcodeInvalid},
+	OpUnknown245: {OpUnknown245, "OP_UNKNOWN245", 1, opcodeInvalid},
+	OpUnknown246: {OpUnknown246, "OP_UNKNOWN246", 1, opcodeInvalid},
+	OpUnknown247: {OpUnknown247, "OP_UNKNOWN247", 1, opcodeInvalid},
+	OpUnknown248: {OpUnknown248, "OP_UNKNOWN248", 1, opcodeInvalid},
+	OpUnknown249: {OpUnknown249, "OP_UNKNOWN249", 1, opcodeInvalid},
 
 	// Bitcoin Core internal use opcode.  Defined here for completeness.
-	OP_SMALLINTEGER: {OP_SMALLINTEGER, "OP_SMALLINTEGER", 1, opcodeInvalid},
-	OP_PUBKEYS:      {OP_PUBKEYS, "OP_PUBKEYS", 1, opcodeInvalid},
-	OP_UNKNOWN252:   {OP_UNKNOWN252, "OP_UNKNOWN252", 1, opcodeInvalid},
-	OP_PUBKEYHASH:   {OP_PUBKEYHASH, "OP_PUBKEYHASH", 1, opcodeInvalid},
-	OP_PUBKEY:       {OP_PUBKEY, "OP_PUBKEY", 1, opcodeInvalid},
+	OpSmallInteger: {OpSmallInteger, "OP_SMALLINTEGER", 1, opcodeInvalid},
+	OpPubKeys:      {OpPubKeys, "OP_PUBKEYS", 1, opcodeInvalid},
+	OpUnknown252:   {OpUnknown252, "OP_UNKNOWN252", 1, opcodeInvalid},
+	OpPubKeyHash:   {OpPubKeyHash, "OP_PUBKEYHASH", 1, opcodeInvalid},
+	OpPubKey:       {OpPubKey, "OP_PUBKEY", 1, opcodeInvalid},
 
-	OP_INVALIDOPCODE: {OP_INVALIDOPCODE, "OP_INVALIDOPCODE", 1, opcodeInvalid},
+	OpInvalidOpCode: {OpInvalidOpCode, "OP_INVALIDOPCODE", 1, opcodeInvalid},
 }
 
 // opcodeOnelineRepls defines opcode names which are replaced when doing a
@@ -621,35 +621,35 @@ type parsedOpcode struct {
 // bad to see in the instruction stream (even if turned off by a conditional).
 func (pop *parsedOpcode) isDisabled() bool {
 	switch pop.opcode.value {
-	case OP_CAT:
+	case OpCat:
 		return true
-	case OP_SUBSTR:
+	case OpSubStr:
 		return true
-	case OP_LEFT:
+	case OpLeft:
 		return true
-	case OP_RIGHT:
+	case OpRight:
 		return true
-	case OP_INVERT:
+	case OpInvert:
 		return true
-	case OP_AND:
+	case OpAnd:
 		return true
-	case OP_OR:
+	case OpOr:
 		return true
-	case OP_XOR:
+	case OpXor:
 		return true
-	case OP_2MUL:
+	case Op2Mul:
 		return true
-	case OP_2DIV:
+	case Op2Div:
 		return true
-	case OP_MUL:
+	case OpMul:
 		return true
-	case OP_DIV:
+	case OpDiv:
 		return true
-	case OP_MOD:
+	case OpMod:
 		return true
-	case OP_LSHIFT:
+	case OpLShift:
 		return true
-	case OP_RSHIFT:
+	case OpRShift:
 		return true
 	default:
 		return false
@@ -661,9 +661,9 @@ func (pop *parsedOpcode) isDisabled() bool {
 // coincidence that they are conditionals).
 func (pop *parsedOpcode) alwaysIllegal() bool {
 	switch pop.opcode.value {
-	case OP_VERIF:
+	case OpVerIf:
 		return true
-	case OP_VERNOTIF:
+	case OpVerNotIf:
 		return true
 	default:
 		return false
@@ -674,13 +674,13 @@ func (pop *parsedOpcode) alwaysIllegal() bool {
 // changes the conditional execution stack when executed.
 func (pop *parsedOpcode) isConditional() bool {
 	switch pop.opcode.value {
-	case OP_IF:
+	case OpIf:
 		return true
-	case OP_NOTIF:
+	case OpNotIf:
 		return true
-	case OP_ELSE:
+	case OpElse:
 		return true
-	case OP_ENDIF:
+	case OpEndIf:
 		return true
 	default:
 		return false
@@ -697,12 +697,12 @@ func (pop *parsedOpcode) checkMinimalDataPush() error {
 	dataLen := len(data)
 	opcode := pop.opcode.value
 
-	if dataLen == 0 && opcode != OP_0 {
+	if dataLen == 0 && opcode != Op0 {
 		str := fmt.Sprintf("zero length data push is encoded with "+
 			"opcode %s instead of OP_0", pop.opcode.name)
 		return scriptError(ErrMinimalData, str)
 	} else if dataLen == 1 && data[0] >= 1 && data[0] <= 16 {
-		if opcode != OP_1+data[0]-1 {
+		if opcode != Op1+data[0]-1 {
 			// Should have used OP_1 .. OP_16
 			str := fmt.Sprintf("data push of the value %d encoded "+
 				"with opcode %s instead of OP_%d", data[0],
@@ -710,7 +710,7 @@ func (pop *parsedOpcode) checkMinimalDataPush() error {
 			return scriptError(ErrMinimalData, str)
 		}
 	} else if dataLen == 1 && data[0] == 0x81 {
-		if opcode != OP_1NEGATE {
+		if opcode != Op1Negate {
 			str := fmt.Sprintf("data push of the value -1 encoded "+
 				"with opcode %s instead of OP_1NEGATE",
 				pop.opcode.name)
@@ -725,14 +725,14 @@ func (pop *parsedOpcode) checkMinimalDataPush() error {
 			return scriptError(ErrMinimalData, str)
 		}
 	} else if dataLen <= 255 {
-		if opcode != OP_PUSHDATA1 {
+		if opcode != OpPushData1 {
 			str := fmt.Sprintf("data push of %d bytes encoded "+
 				"with opcode %s instead of OP_PUSHDATA1",
 				dataLen, pop.opcode.name)
 			return scriptError(ErrMinimalData, str)
 		}
 	} else if dataLen <= 65535 {
-		if opcode != OP_PUSHDATA2 {
+		if opcode != OpPushData2 {
 			str := fmt.Sprintf("data push of %d bytes encoded "+
 				"with opcode %s instead of OP_PUSHDATA2",
 				dataLen, pop.opcode.name)
@@ -898,7 +898,7 @@ func opcode1Negate(op *parsedOpcode, vm *Engine) error {
 func opcodeN(op *parsedOpcode, vm *Engine) error {
 	// The opcodes are all defined consecutively, so the numeric value is
 	// the difference.
-	vm.dstack.PushInt(scriptNum((op.opcode.value - (OP_1 - 1))))
+	vm.dstack.PushInt(scriptNum((op.opcode.value - (Op1 - 1))))
 	return nil
 }
 
@@ -907,11 +907,11 @@ func opcodeN(op *parsedOpcode, vm *Engine) error {
 // the flag to discourage use of NOPs is set for select opcodes.
 func opcodeNop(op *parsedOpcode, vm *Engine) error {
 	switch op.opcode.value {
-	case OP_NOP1, OP_NOP4, OP_NOP5,
-		OP_NOP6, OP_NOP7, OP_NOP8, OP_NOP9, OP_NOP10:
+	case OpNop1, OpNop4, OpNop5,
+		OpNop6, OpNop7, OpNop8, OpNop9, OpNop10:
 		if vm.hasFlag(ScriptDiscourageUpgradableNops) {
 			str := fmt.Sprintf("OP_NOP%d reserved for soft-fork "+
-				"upgrades", op.opcode.value-(OP_NOP1-1))
+				"upgrades", op.opcode.value-(OpNop1-1))
 			return scriptError(ErrDiscourageUpgradableNOPs, str)
 		}
 	}
@@ -2365,8 +2365,8 @@ func init() {
 	for _, op := range opcodeArray {
 		OpcodeByName[op.name] = op.value
 	}
-	OpcodeByName["OP_FALSE"] = OP_FALSE
-	OpcodeByName["OP_TRUE"] = OP_TRUE
-	OpcodeByName["OP_NOP2"] = OP_CHECKLOCKTIMEVERIFY
-	OpcodeByName["OP_NOP3"] = OP_CHECKSEQUENCEVERIFY
+	OpcodeByName["OP_FALSE"] = OpFalse
+	OpcodeByName["OP_TRUE"] = OpTrue
+	OpcodeByName["OP_NOP2"] = OpCheckLockTimeVerify
+	OpcodeByName["OP_NOP3"] = OpCheckSequenceVerify
 }
