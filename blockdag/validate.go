@@ -599,11 +599,11 @@ func ExtractCoinbaseHeight(coinbaseTx *btcutil.Tx) (int32, error) {
 	// Detect the case when the block height is a small integer encoded with
 	// as single byte.
 	opcode := int(sigScript[0])
-	if opcode == txscript.OP_0 {
+	if opcode == txscript.Op0 {
 		return 0, nil
 	}
-	if opcode >= txscript.OP_1 && opcode <= txscript.OP_16 {
-		return int32(opcode - (txscript.OP_1 - 1)), nil
+	if opcode >= txscript.Op1 && opcode <= txscript.Op16 {
+		return int32(opcode - (txscript.Op1 - 1)), nil
 	}
 
 	// Otherwise, the opcode is the length of the following bytes which
