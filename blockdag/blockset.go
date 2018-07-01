@@ -2,115 +2,108 @@ package blockdag
 
 import (
 	"strings"
+
 	"github.com/daglabs/btcd/dagconfig/daghash"
 )
 
-// BlockSet implements a basic unsorted set of blocks
-type BlockSet map[*blockNode]bool
+// blockSet implements a basic unsorted set of blocks
+type blockSet map[daghash.Hash]*blockNode
 
-// NewSet creates a new, empty BlockSet
-func NewSet() BlockSet {
-	return map[*blockNode]bool{}
+// newSet creates a new, empty BlockSet
+func newSet() blockSet {
+	return map[daghash.Hash]*blockNode{}
 }
 
-// SetFromSlice converts a slice of blocks into an unordered set represented as map
-func SetFromSlice(blocks ...*blockNode) BlockSet {
-	set := NewSet()
+// setFromSlice converts a slice of blocks into an unordered set represented as map
+func setFromSlice(blocks ...*blockNode) blockSet {
+	set := newSet()
 	for _, block := range blocks {
-		set[block] = true
+		set[block.hash] = block
 	}
 	return set
 }
 
-// ToSlice converts a set of blocks into a slice
-func (bs BlockSet) ToSlice() []*blockNode {
+// toSlice converts a set of blocks into a slice
+func (bs blockSet) toSlice() []*blockNode {
 	slice := []*blockNode{}
 
-	for block := range bs {
+	for _, block := range bs {
 		slice = append(slice, block)
 	}
 
 	return slice
 }
 
-// Add adds a block to this BlockSet
-func (bs BlockSet) Add(block *blockNode) {
-	bs[block] = true
+// add adds a block to this BlockSet
+func (bs blockSet) add(block *blockNode) {
+	bs[block.hash] = block
 }
 
-// Remove removes a block from this BlockSet, if exists
-func (bs BlockSet) Remove(block *blockNode) {
-	delete(bs, block)
+// remove removes a block from this BlockSet, if exists
+func (bs blockSet) remove(block *blockNode) {
+	delete(bs, block.hash)
 }
 
-// Clone clones thie block set
-func (bs BlockSet) Clone() BlockSet {
-	clone := NewSet()
-	for block := range bs {
-		clone.Add(block)
+// clone clones thie block set
+func (bs blockSet) clone() blockSet {
+	clone := newSet()
+	for _, block := range bs {
+		clone.add(block)
 	}
 	return clone
 }
 
-// Subtract returns the difference between the BlockSet and another BlockSet
-func (bs BlockSet) Subtract(other BlockSet) BlockSet {
-	diff := NewSet()
-	for block := range bs {
-		if !other.Contains(block) {
-			diff.Add(block)
+// subtract returns the difference between the BlockSet and another BlockSet
+func (bs blockSet) subtract(other blockSet) blockSet {
+	diff := newSet()
+	for _, block := range bs {
+		if !other.contains(block) {
+			diff.add(block)
 		}
 	}
 	return diff
 }
 
-// AddSet adds all blocks in other set to this set
-func (bs BlockSet) AddSet(other BlockSet) {
-	for block := range other {
-		bs.Add(block)
+// addSet adds all blocks in other set to this set
+func (bs blockSet) addSet(other blockSet) {
+	for _, block := range other {
+		bs.add(block)
 	}
 }
 
-// AddSlice adds provided slice to this set
-func (bs BlockSet) AddSlice(slice []*blockNode) {
+// addSlice adds provided slice to this set
+func (bs blockSet) addSlice(slice []*blockNode) {
 	for _, block := range slice {
-		bs.Add(block)
+		bs.add(block)
 	}
 }
 
-// Union returns a BlockSet that contains all blocks included in this set,
+// union returns a BlockSet that contains all blocks included in this set,
 // the other set, or both
-func (bs BlockSet) Union(other BlockSet) BlockSet {
-	union := bs.Clone()
+func (bs blockSet) union(other blockSet) blockSet {
+	union := bs.clone()
 
-	union.AddSet(other)
+	union.addSet(other)
 
 	return union
 }
 
-// Contains returns true iff this set contains block
-func (bs BlockSet) Contains(block *blockNode) bool {
-	_, ok := bs[block]
+// contains returns true iff this set contains block
+func (bs blockSet) contains(block *blockNode) bool {
+	_, ok := bs[block.hash]
 	return ok
 }
 
-// HashesEqual returns true if the given hashes are equal to the hashes
+// hashesEqual returns true if the given hashes are equal to the hashes
 // of the blocks in this set.
 // NOTE: The given hash slice must not contain duplicates.
-func (bs BlockSet) HashesEqual(hashes []daghash.Hash) bool {
+func (bs blockSet) hashesEqual(hashes []daghash.Hash) bool {
 	if len(hashes) != len(bs) {
 		return false
 	}
 
 	for _, hash := range hashes {
-		wasFound := false
-		for node := range bs {
-			if hash.IsEqual(&node.hash) {
-				wasFound = true
-				break
-			}
-		}
-
-		if !wasFound {
+		if _, wasFound := bs[hash]; !wasFound {
 			return false
 		}
 	}
@@ -118,19 +111,19 @@ func (bs BlockSet) HashesEqual(hashes []daghash.Hash) bool {
 	return true
 }
 
-// First returns the first block in this set or nil if this set is empty.
-func (bs BlockSet) First() *blockNode {
-	for block := range bs {
+// first returns the first block in this set or nil if this set is empty.
+func (bs blockSet) first() *blockNode {
+	for _, block := range bs {
 		return block
 	}
 
 	return nil
 }
 
-func (bs BlockSet) String() string {
+func (bs blockSet) String() string {
 	ids := []string{}
-	for block := range bs {
-		ids = append(ids, block.hash.String())
+	for hash := range bs {
+		ids = append(ids, hash.String())
 	}
 	return strings.Join(ids, ",")
 }

@@ -72,7 +72,7 @@ type blockNode struct {
 	// padding adds up.
 
 	// parents is the parent blocks for this node.
-	parents BlockSet
+	parents blockSet
 
 	// selectedParent is the selected parent for this node.
 	selectedParent *blockNode
@@ -108,7 +108,7 @@ type blockNode struct {
 // calculating the height and workSum from the respective fields on the first parent.
 // This function is NOT safe for concurrent access.  It must only be called when
 // initially creating a node.
-func initBlockNode(node *blockNode, blockHeader *wire.BlockHeader, parents BlockSet) {
+func initBlockNode(node *blockNode, blockHeader *wire.BlockHeader, parents blockSet) {
 	*node = blockNode{
 		hash:       blockHeader.BlockHash(),
 		parents:    parents,
@@ -120,7 +120,7 @@ func initBlockNode(node *blockNode, blockHeader *wire.BlockHeader, parents Block
 		merkleRoot: blockHeader.MerkleRoot,
 	}
 	if len(parents) > 0 {
-		node.selectedParent = parents.First()
+		node.selectedParent = parents.first()
 		node.height = node.selectedParent.height + 1
 		node.workSum = node.workSum.Add(node.selectedParent.workSum, node.workSum)
 	}
@@ -129,7 +129,7 @@ func initBlockNode(node *blockNode, blockHeader *wire.BlockHeader, parents Block
 // newBlockNode returns a new block node for the given block header and parent
 // nodes, calculating the height and workSum from the respective fields on the
 // parent. This function is NOT safe for concurrent access.
-func newBlockNode(blockHeader *wire.BlockHeader, parents BlockSet) *blockNode {
+func newBlockNode(blockHeader *wire.BlockHeader, parents blockSet) *blockNode {
 	var node blockNode
 	initBlockNode(&node, blockHeader, parents)
 	return &node
@@ -220,7 +220,7 @@ func (node *blockNode) CalcPastMedianTime() time.Time {
 
 func (node *blockNode) PrevHashes() []daghash.Hash {
 	prevHashes := make([]daghash.Hash, len(node.parents))
-	for parent := range node.parents {
+	for _, parent := range node.parents {
 		prevHashes = append(prevHashes, parent.hash)
 	}
 

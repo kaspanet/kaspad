@@ -804,7 +804,7 @@ func countSpentOutputs(block *btcutil.Block) int {
 // This function may modify node statuses in the block index without flushing.
 //
 // This function MUST be called with the chain state lock held (for writes).
-func (chain *BlockChain) reorganizeChain(detachNodes, attachNodes *list.List) error {
+func (b *BlockChain) reorganizeChain(detachNodes, attachNodes *list.List) error {
 	// All of the blocks to detach and related spend journal entries needed
 	// to unspend transaction outputs in the blocks being disconnected must
 	// be loaded from the database during the reorg check phase below and
@@ -819,11 +819,11 @@ func (chain *BlockChain) reorganizeChain(detachNodes, attachNodes *list.List) er
 	// database and using that information to unspend all of the spent txos
 	// and remove the utxos created by the blocks.
 	view := NewUtxoViewpoint()
-	view.SetTips(chain.bestChain.Tips())
+	view.SetTips(b.bestChain.Tips())
 	for element := detachNodes.Front(); element != nil; element = element.Next() {
 		node := element.Value.(*blockNode)
 		var block *btcutil.Block
-		err := chain.db.View(func(dbTx database.Tx) error {
+		err := b.db.View(func(dbTx database.Tx) error {
 			var err error
 			block, err = dbFetchBlockByNode(dbTx, node)
 			return err
@@ -834,7 +834,7 @@ func (chain *BlockChain) reorganizeChain(detachNodes, attachNodes *list.List) er
 
 		// Load all of the utxos referenced by the block that aren't
 		// already in the view.
-		err = view.fetchInputUtxos(chain.db, block)
+		err = view.fetchInputUtxos(b.db, block)
 		if err != nil {
 			return err
 		}
@@ -842,7 +842,7 @@ func (chain *BlockChain) reorganizeChain(detachNodes, attachNodes *list.List) er
 		// Load all of the spent txos for the block from the spend
 		// journal.
 		var stxos []spentTxOut
-		err = chain.db.View(func(dbTx database.Tx) error {
+		err = b.db.View(func(dbTx database.Tx) error {
 			stxos, err = dbFetchSpendJournalEntry(dbTx, block)
 			return err
 		})
@@ -854,7 +854,7 @@ func (chain *BlockChain) reorganizeChain(detachNodes, attachNodes *list.List) er
 		detachBlocks = append(detachBlocks, block)
 		detachSpentTxOuts = append(detachSpentTxOuts, stxos)
 
-		err = view.disconnectTransactions(chain.db, node.parents, block, stxos)
+		err = view.disconnectTransactions(b.db, node.parents, block, stxos)
 		if err != nil {
 			return err
 		}
@@ -879,12 +879,12 @@ func (chain *BlockChain) reorganizeChain(detachNodes, attachNodes *list.List) er
 		// If any previous nodes in attachNodes failed validation,
 		// mark this one as having an invalid ancestor.
 		if validationError != nil {
-			chain.index.SetStatusFlags(node, statusInvalidAncestor)
+			b.index.SetStatusFlags(node, statusInvalidAncestor)
 			continue
 		}
 
 		var block *btcutil.Block
-		err := chain.db.View(func(dbTx database.Tx) error {
+		err := b.db.View(func(dbTx database.Tx) error {
 			var err error
 			block, err = dbFetchBlockByNode(dbTx, node)
 			return err
@@ -899,8 +899,8 @@ func (chain *BlockChain) reorganizeChain(detachNodes, attachNodes *list.List) er
 		// Skip checks if node has already been fully validated. Although
 		// checkConnectBlock gets skipped, we still need to update the UTXO
 		// view.
-		if chain.index.NodeStatus(node).KnownValid() {
-			err = view.fetchInputUtxos(chain.db, block)
+		if b.index.NodeStatus(node).KnownValid() {
+			err = view.fetchInputUtxos(b.db, block)
 			if err != nil {
 				return err
 			}
@@ -915,19 +915,19 @@ func (chain *BlockChain) reorganizeChain(detachNodes, attachNodes *list.List) er
 		// thus will not be generated.  This is done because the state
 		// is not being immediately written to the database, so it is
 		// not needed.
-		err = chain.checkConnectBlock(node, block, view, nil)
+		err = b.checkConnectBlock(node, block, view, nil)
 		if err != nil {
 			// If the block failed validation mark it as invalid, then
 			// continue to loop through remaining nodes, marking them as
 			// having an invalid ancestor.
 			if _, ok := err.(RuleError); ok {
-				chain.index.SetStatusFlags(node, statusValidateFailed)
+				b.index.SetStatusFlags(node, statusValidateFailed)
 				validationError = err
 				continue
 			}
 			return err
 		}
-		chain.index.SetStatusFlags(node, statusValid)
+		b.index.SetStatusFlags(node, statusValid)
 	}
 
 	if validationError != nil {
@@ -940,7 +940,7 @@ func (chain *BlockChain) reorganizeChain(detachNodes, attachNodes *list.List) er
 	// view to be valid from the viewpoint of each block being connected or
 	// disconnected.
 	view = NewUtxoViewpoint()
-	view.SetTips(chain.bestChain.Tips())
+	view.SetTips(b.bestChain.Tips())
 
 	// Disconnect blocks from the main chain.
 	for i, element := 0, detachNodes.Front(); element != nil; i, element = i+1, element.Next() {
@@ -949,21 +949,21 @@ func (chain *BlockChain) reorganizeChain(detachNodes, attachNodes *list.List) er
 
 		// Load all of the utxos referenced by the block that aren't
 		// already in the view.
-		err := view.fetchInputUtxos(chain.db, block)
+		err := view.fetchInputUtxos(b.db, block)
 		if err != nil {
 			return err
 		}
 
 		// Update the view to unspend all of the spent txos and remove
 		// the utxos created by the block.
-		err = view.disconnectTransactions(chain.db, node.parents, block,
+		err = view.disconnectTransactions(b.db, node.parents, block,
 			detachSpentTxOuts[i])
 		if err != nil {
 			return err
 		}
 
 		// Update the database and chain state.
-		err = chain.disconnectBlock(node, block, view)
+		err = b.disconnectBlock(node, block, view)
 		if err != nil {
 			return err
 		}
@@ -976,7 +976,7 @@ func (chain *BlockChain) reorganizeChain(detachNodes, attachNodes *list.List) er
 
 		// Load all of the utxos referenced by the block that aren't
 		// already in the view.
-		err := view.fetchInputUtxos(chain.db, block)
+		err := view.fetchInputUtxos(b.db, block)
 		if err != nil {
 			return err
 		}
@@ -992,7 +992,7 @@ func (chain *BlockChain) reorganizeChain(detachNodes, attachNodes *list.List) er
 		}
 
 		// Update the database and chain state.
-		err = chain.connectBlock(node, block, view, stxos)
+		err = b.connectBlock(node, block, view, stxos)
 		if err != nil {
 			return err
 		}
@@ -1024,13 +1024,13 @@ func (chain *BlockChain) reorganizeChain(detachNodes, attachNodes *list.List) er
 //    This is useful when using checkpoints.
 //
 // This function MUST be called with the chain state lock held (for writes).
-func (b *BlockChain) connectBestChain(node *blockNode, parentNodes BlockSet, block *btcutil.Block, flags BehaviorFlags) (bool, error) {
+func (b *BlockChain) connectBestChain(node *blockNode, parentNodes blockSet, block *btcutil.Block, flags BehaviorFlags) (bool, error) {
 	fastAdd := flags&BFFastAdd == BFFastAdd
 
 	// We are extending the main (best) chain with a new block.  This is the
 	// most common case.
 	parentHashes := block.MsgBlock().Header.PrevBlocks
-	if b.bestChain.Tips().HashesEqual(parentHashes) {
+	if b.bestChain.Tips().hashesEqual(parentHashes) {
 		// Skip checks if node has already been fully validated.
 		fastAdd = fastAdd || b.index.NodeStatus(node).KnownValid()
 

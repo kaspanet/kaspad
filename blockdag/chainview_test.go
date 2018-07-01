@@ -10,8 +10,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/daglabs/btcd/wire"
 	"github.com/daglabs/btcd/dagconfig/daghash"
+	"github.com/daglabs/btcd/wire"
 )
 
 // testNoncePrng provides a deterministic prng for the nonce in generated fake
@@ -31,7 +31,7 @@ func chainedNodes(parent *blockNode, numNodes int) []*blockNode {
 		if tip != nil {
 			header.PrevBlocks = []daghash.Hash{tip.hash} // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
 		}
-		nodes[i] = newBlockNode(&header, SetFromSlice(tip)) // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
+		nodes[i] = newBlockNode(&header, setFromSlice(tip)) // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
 		tip = nodes[i]
 	}
 	return nodes

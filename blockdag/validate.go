@@ -649,13 +649,13 @@ func checkSerializedHeight(coinbaseTx *btcutil.Tx, wantHeight int32) error {
 //    the checkpoints are not performed.
 //
 // This function MUST be called with the chain state lock held (for writes).
-func (b *BlockChain) checkBlockHeaderContext(header *wire.BlockHeader, selectedPrevNode *blockNode, flags BehaviorFlags) error {
+func (b *BlockChain) checkBlockHeaderContext(header *wire.BlockHeader, selectedParent *blockNode, flags BehaviorFlags) error {
 	fastAdd := flags&BFFastAdd == BFFastAdd
 	if !fastAdd {
 		// Ensure the difficulty specified in the block header matches
 		// the calculated difficulty based on the previous block and
 		// difficulty retarget rules.
-		expectedDifficulty, err := b.calcNextRequiredDifficulty(selectedPrevNode,
+		expectedDifficulty, err := b.calcNextRequiredDifficulty(selectedParent,
 			header.Timestamp)
 		if err != nil {
 			return err
@@ -669,7 +669,7 @@ func (b *BlockChain) checkBlockHeaderContext(header *wire.BlockHeader, selectedP
 
 		// Ensure the timestamp for the block header is after the
 		// median time of the last several blocks (medianTimeBlocks).
-		medianTime := selectedPrevNode.CalcPastMedianTime()
+		medianTime := selectedParent.CalcPastMedianTime()
 		if !header.Timestamp.After(medianTime) {
 			str := "block timestamp of %v is not after expected %v"
 			str = fmt.Sprintf(str, header.Timestamp, medianTime)
@@ -679,7 +679,7 @@ func (b *BlockChain) checkBlockHeaderContext(header *wire.BlockHeader, selectedP
 
 	// The height of this block is one more than the referenced previous
 	// block.
-	blockHeight := selectedPrevNode.height + 1
+	blockHeight := selectedParent.height + 1
 
 	// Ensure chain matches up to predetermined checkpoints.
 	blockHash := header.BlockHash()
@@ -731,10 +731,10 @@ func (b *BlockChain) checkBlockHeaderContext(header *wire.BlockHeader, selectedP
 // for how the flags modify its behavior.
 //
 // This function MUST be called with the chain state lock held (for writes).
-func (b *BlockChain) checkBlockContext(block *btcutil.Block, selectedPrevNode *blockNode, flags BehaviorFlags) error {
+func (b *BlockChain) checkBlockContext(block *btcutil.Block, selectedParent *blockNode, flags BehaviorFlags) error {
 	// Perform all block header related validation checks.
 	header := &block.MsgBlock().Header
-	err := b.checkBlockHeaderContext(header, selectedPrevNode, flags)
+	err := b.checkBlockHeaderContext(header, selectedParent, flags)
 	if err != nil {
 		return err
 	}
@@ -744,7 +744,7 @@ func (b *BlockChain) checkBlockContext(block *btcutil.Block, selectedPrevNode *b
 		// Obtain the latest state of the deployed CSV soft-fork in
 		// order to properly guard the new validation behavior based on
 		// the current BIP 9 version bits state.
-		csvState, err := b.deploymentState(selectedPrevNode, dagconfig.DeploymentCSV)
+		csvState, err := b.deploymentState(selectedParent, dagconfig.DeploymentCSV)
 		if err != nil {
 			return err
 		}
@@ -754,12 +754,12 @@ func (b *BlockChain) checkBlockContext(block *btcutil.Block, selectedPrevNode *b
 		// timestamps for all lock-time based checks.
 		blockTime := header.Timestamp
 		if csvState == ThresholdActive {
-			blockTime = selectedPrevNode.CalcPastMedianTime()
+			blockTime = selectedParent.CalcPastMedianTime()
 		}
 
 		// The height of this block is one more than the referenced
 		// previous block.
-		blockHeight := selectedPrevNode.height + 1
+		blockHeight := selectedParent.height + 1
 
 		// Ensure all transactions in the block are finalized.
 		for _, tx := range block.Transactions() {
@@ -974,7 +974,7 @@ func (b *BlockChain) checkConnectBlock(node *blockNode, block *btcutil.Block, vi
 
 	// Ensure the view is for the node being checked.
 	parentHashes := block.MsgBlock().Header.PrevBlocks
-	if !view.Tips().HashesEqual(parentHashes) {
+	if !view.Tips().hashesEqual(parentHashes) {
 		return AssertError(fmt.Sprintf("inconsistent view when "+
 			"checking block connection: tips are %v instead "+
 			"of expected %v", view.Tips(), parentHashes))
@@ -1191,7 +1191,7 @@ func (b *BlockChain) checkConnectBlock(node *blockNode, block *btcutil.Block, vi
 
 	// Update the view tips to include this block since all of its
 	// transactions have been connected.
-	view.AppendTip(node)
+	view.AddBlock(node)
 
 	return nil
 }
@@ -1213,7 +1213,7 @@ func (b *BlockChain) CheckConnectBlockTemplate(block *btcutil.Block) error {
 	tips := b.bestChain.Tips()
 	header := block.MsgBlock().Header
 	prevHashes := header.PrevBlocks
-	if tips.HashesEqual(prevHashes) {
+	if tips.hashesEqual(prevHashes) {
 		str := fmt.Sprintf("previous blocks must be the currents tips %v, "+
 			"instead got %v", tips, prevHashes)
 		return ruleError(ErrPrevBlockNotBest, str)

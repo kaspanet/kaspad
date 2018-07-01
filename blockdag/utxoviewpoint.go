@@ -120,39 +120,33 @@ func (entry *UtxoEntry) Clone() *UtxoEntry {
 // script validation and double spend prevention.
 type UtxoViewpoint struct {
 	entries map[wire.OutPoint]*UtxoEntry
-	tips    BlockSet
+	tips    blockSet
 }
 
 // Tips returns the hashes of the tips in the DAG the view currently
 // represents.
-func (view *UtxoViewpoint) Tips() BlockSet {
+func (view *UtxoViewpoint) Tips() blockSet {
 	return view.tips
 }
 
 // SetTips sets the hashes of the tips in the DAG the view currently
 // represents.
-func (view *UtxoViewpoint) SetTips(tips BlockSet) {
+func (view *UtxoViewpoint) SetTips(tips blockSet) {
 	view.tips = tips
 }
 
-// AppendTip removes all the parent hashes of from the tips and adds
-// the given hash to the tips.
-func (view *UtxoViewpoint) AppendTip(node *blockNode) {
-	updatedTips := NewSet()
-	for tip := range view.tips {
-		isParentOfNode := false
-		for parent := range node.parents {
-			if tip.hash.IsEqual(&parent.hash) {
-				isParentOfNode = true
-				break
-			}
-		}
-		if !isParentOfNode {
-			updatedTips.Add(tip)
+// AddBlock removes all the parents of block from the tips and adds
+// the given block to the tips.
+func (view *UtxoViewpoint) AddBlock(block *blockNode) {
+	updatedTips := view.tips.clone()
+	for _, parent := range block.parents {
+		if updatedTips.contains(parent) {
+			updatedTips.remove(parent)
 		}
 	}
 
-	updatedTips.Add(node)
+	updatedTips.add(block)
+	view.tips = updatedTips
 }
 
 // LookupEntry returns information about a given transaction output according to
@@ -284,9 +278,9 @@ func (view *UtxoViewpoint) connectTransaction(tx *btcutil.Tx, blockHeight int32,
 // spend as spent, and setting the best hash for the view to the passed block.
 // In addition, when the 'stxos' argument is not nil, it will be updated to
 // append an entry for each spent txout.
-func (view *UtxoViewpoint) connectTransactions(node *blockNode, transactions []*btcutil.Tx, stxos *[]spentTxOut) error {
+func (view *UtxoViewpoint) connectTransactions(block *blockNode, transactions []*btcutil.Tx, stxos *[]spentTxOut) error {
 	for _, tx := range transactions {
-		err := view.connectTransaction(tx, node.height, stxos)
+		err := view.connectTransaction(tx, block.height, stxos)
 		if err != nil {
 			return err
 		}
@@ -294,7 +288,7 @@ func (view *UtxoViewpoint) connectTransactions(node *blockNode, transactions []*
 
 	// Update the best hash for view to include this block since all of its
 	// transactions have been connected.
-	view.AppendTip(node)
+	view.AddBlock(block)
 	return nil
 }
 
@@ -328,7 +322,7 @@ func (view *UtxoViewpoint) fetchEntryByHash(db database.DB, hash *daghash.Hash) 
 // created by the passed block, restoring all utxos the transactions spent by
 // using the provided spent txo information, and setting the best hash for the
 // view to the block before the passed block.
-func (view *UtxoViewpoint) disconnectTransactions(db database.DB, parents BlockSet, block *btcutil.Block, stxos []spentTxOut) error {
+func (view *UtxoViewpoint) disconnectTransactions(db database.DB, parents blockSet, block *btcutil.Block, stxos []spentTxOut) error {
 	// Sanity check the correct number of stxos are provided.
 	if len(stxos) != countSpentOutputs(block) {
 		return AssertError("disconnectTransactions called with bad " +
