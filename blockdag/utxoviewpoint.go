@@ -140,9 +140,7 @@ func (view *UtxoViewpoint) SetTips(tips blockSet) {
 func (view *UtxoViewpoint) AddBlock(block *blockNode) {
 	updatedTips := view.tips.clone()
 	for _, parent := range block.parents {
-		if updatedTips.contains(parent) {
-			updatedTips.remove(parent)
-		}
+		updatedTips.remove(parent)
 	}
 
 	updatedTips.add(block)

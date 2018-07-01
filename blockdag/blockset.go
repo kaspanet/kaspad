@@ -40,6 +40,7 @@ func (bs blockSet) add(block *blockNode) {
 }
 
 // remove removes a block from this BlockSet, if exists
+// Does nothing if this set does not contain the block
 func (bs blockSet) remove(block *blockNode) {
 	delete(bs, block.hash)
 }
