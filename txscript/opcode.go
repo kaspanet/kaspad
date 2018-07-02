@@ -2198,24 +2198,6 @@ func opcodeCheckMultiSig(op *parsedOpcode, vm *Engine) error {
 		signatures = append(signatures, sigInfo)
 	}
 
-	// A bug in the original Satoshi client implementation means one more
-	// stack value than should be used must be popped.  Unfortunately, this
-	// buggy behavior is now part of the consensus and a hard fork would be
-	// required to fix it.
-	dummy, err := vm.dstack.PopByteArray()
-	if err != nil {
-		return err
-	}
-
-	// Since the dummy argument is otherwise not checked, it could be any
-	// value which unfortunately provides a source of malleability.  Thus,
-	// there is a script flag to force an error when the value is NOT 0.
-	if vm.hasFlag(ScriptStrictMultiSig) && len(dummy) != 0 {
-		str := fmt.Sprintf("multisig dummy argument has length %d "+
-			"instead of 0", len(dummy))
-		return scriptError(ErrSigNullDummy, str)
-	}
-
 	// Get script starting from the most recent OP_CODESEPARATOR.
 	script := vm.subScript()
 

@@ -151,8 +151,6 @@ func parseScriptFlags(flagStr string) (ScriptFlags, error) {
 			flags |= ScriptVerifyMinimalData
 		case "NONE":
 			// Nothing.
-		case "NULLDUMMY":
-			flags |= ScriptStrictMultiSig
 		case "NULLFAIL":
 			flags |= ScriptVerifyNullFail
 		case "P2SH":
