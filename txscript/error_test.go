@@ -51,7 +51,6 @@ func TestErrorCodeStringer(t *testing.T) {
 		{ErrSigDER, "ErrSigDER"},
 		{ErrSigHighS, "ErrSigHighS"},
 		{ErrNotPushOnly, "ErrNotPushOnly"},
-		{ErrSigNullDummy, "ErrSigNullDummy"},
 		{ErrPubKeyType, "ErrPubKeyType"},
 		{ErrCleanStack, "ErrCleanStack"},
 		{ErrNullFail, "ErrNullFail"},
