@@ -190,11 +190,6 @@ const (
 	// bip16 is active and when the ScriptVerifySigPushOnly flag is set.
 	ErrNotPushOnly
 
-	// ErrSigNullDummy is returned when the ScriptStrictMultiSig flag is set
-	// and a multisig script has anything other than 0 for the extra dummy
-	// argument.
-	ErrSigNullDummy
-
 	// ErrPubKeyType is returned when the ScriptVerifyStrictEncoding
 	// flag is set and the script contains invalid public keys.
 	ErrPubKeyType
@@ -268,7 +263,6 @@ var errorCodeStrings = map[ErrorCode]string{
 	ErrSigDER:                   "ErrSigDER",
 	ErrSigHighS:                 "ErrSigHighS",
 	ErrNotPushOnly:              "ErrNotPushOnly",
-	ErrSigNullDummy:             "ErrSigNullDummy",
 	ErrPubKeyType:               "ErrPubKeyType",
 	ErrCleanStack:               "ErrCleanStack",
 	ErrNullFail:                 "ErrNullFail",
