@@ -39,7 +39,7 @@ func TestNotifications(t *testing.T) {
 		chain.Subscribe(callback)
 	}
 
-	_, _, err = chain.ProcessBlock(blocks[1], BFNone)
+	_, err = chain.ProcessBlock(blocks[1], BFNone)
 	if err != nil {
 		t.Fatalf("ProcessBlock fail on block 1: %v\n", err)
 	}

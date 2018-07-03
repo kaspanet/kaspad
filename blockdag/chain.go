@@ -5,7 +5,6 @@
 package blockdag
 
 import (
-	"container/list"
 	"fmt"
 	"sync"
 	"time"
@@ -484,65 +483,6 @@ func LockTimeToSequence(isSeconds bool, locktime uint32) uint32 {
 		locktime>>wire.SequenceLockTimeGranularity
 }
 
-// getReorganizeNodes finds the fork point between the main chain and the passed
-// node and returns a list of block nodes that would need to be detached from
-// the main chain and a list of block nodes that would need to be attached to
-// the fork point (which will be the end of the main chain after detaching the
-// returned list of block nodes) in order to reorganize the chain such that the
-// passed node is the new end of the main chain.  The lists will be empty if the
-// passed node is not on a side chain.
-//
-// This function may modify node statuses in the block index without flushing.
-//
-// This function MUST be called with the chain state lock held (for reads).
-func (b *BlockChain) getReorganizeNodes(node *blockNode) (*list.List, *list.List) {
-	attachNodes := list.New()
-	detachNodes := list.New()
-
-	// Do not reorganize to a known invalid chain. Ancestors deeper than the
-	// direct parent are checked below but this is a quick check before doing
-	// more unnecessary work.
-	if b.index.NodeStatus(node.selectedParent).KnownInvalid() {
-		b.index.SetStatusFlags(node, statusInvalidAncestor)
-		return detachNodes, attachNodes
-	}
-
-	// Find the fork point (if any) adding each block to the list of nodes
-	// to attach to the main tree.  Push them onto the list in reverse order
-	// so they are attached in the appropriate order when iterating the list
-	// later.
-	forkNode := b.bestChain.FindFork(node)
-	invalidChain := false
-	for n := node; n != nil && n != forkNode; n = n.selectedParent {
-		if b.index.NodeStatus(n).KnownInvalid() {
-			invalidChain = true
-			break
-		}
-		attachNodes.PushFront(n)
-	}
-
-	// If any of the node's ancestors are invalid, unwind attachNodes, marking
-	// each one as invalid for future reference.
-	if invalidChain {
-		var next *list.Element
-		for e := attachNodes.Front(); e != nil; e = next {
-			next = e.Next()
-			n := attachNodes.Remove(e).(*blockNode)
-			b.index.SetStatusFlags(n, statusInvalidAncestor)
-		}
-		return detachNodes, attachNodes
-	}
-
-	// Start from the end of the main chain and work backwards until the
-	// common ancestor adding each block to the list of nodes to detach from
-	// the main chain.
-	for n := b.bestChain.SelectedTip(); n != nil && n != forkNode; n = n.selectedParent {
-		detachNodes.PushBack(n)
-	}
-
-	return detachNodes, attachNodes
-}
-
 // connectBlock handles connecting the passed node/block to the end of the main
 // (best) chain.
 //
@@ -793,345 +733,69 @@ func countSpentOutputs(block *btcutil.Block) int {
 	return numSpent
 }
 
-// reorganizeChain reorganizes the block chain by disconnecting the nodes in the
-// detachNodes list and connecting the nodes in the attach list.  It expects
-// that the lists are already in the correct order and are in sync with the
-// end of the current best chain.  Specifically, nodes that are being
-// disconnected must be in reverse order (think of popping them off the end of
-// the chain) and nodes the are being attached must be in forwards order
-// (think pushing them onto the end of the chain).
-//
-// This function may modify node statuses in the block index without flushing.
-//
-// This function MUST be called with the chain state lock held (for writes).
-func (b *BlockChain) reorganizeChain(detachNodes, attachNodes *list.List) error {
-	// All of the blocks to detach and related spend journal entries needed
-	// to unspend transaction outputs in the blocks being disconnected must
-	// be loaded from the database during the reorg check phase below and
-	// then they are needed again when doing the actual database updates.
-	// Rather than doing two loads, cache the loaded data into these slices.
-	detachBlocks := make([]*btcutil.Block, 0, detachNodes.Len())
-	detachSpentTxOuts := make([][]spentTxOut, 0, detachNodes.Len())
-	attachBlocks := make([]*btcutil.Block, 0, attachNodes.Len())
-
-	// Disconnect all of the blocks back to the point of the fork.  This
-	// entails loading the blocks and their associated spent txos from the
-	// database and using that information to unspend all of the spent txos
-	// and remove the utxos created by the blocks.
-	view := NewUtxoViewpoint()
-	view.SetTips(b.bestChain.Tips())
-	for element := detachNodes.Front(); element != nil; element = element.Next() {
-		node := element.Value.(*blockNode)
-		var block *btcutil.Block
-		err := b.db.View(func(dbTx database.Tx) error {
-			var err error
-			block, err = dbFetchBlockByNode(dbTx, node)
-			return err
-		})
-		if err != nil {
-			return err
-		}
-
-		// Load all of the utxos referenced by the block that aren't
-		// already in the view.
-		err = view.fetchInputUtxos(b.db, block)
-		if err != nil {
-			return err
-		}
-
-		// Load all of the spent txos for the block from the spend
-		// journal.
-		var stxos []spentTxOut
-		err = b.db.View(func(dbTx database.Tx) error {
-			stxos, err = dbFetchSpendJournalEntry(dbTx, block)
-			return err
-		})
-		if err != nil {
-			return err
-		}
-
-		// Store the loaded block and spend journal entry for later.
-		detachBlocks = append(detachBlocks, block)
-		detachSpentTxOuts = append(detachSpentTxOuts, stxos)
-
-		err = view.disconnectTransactions(b.db, node.parents, block, stxos)
-		if err != nil {
-			return err
-		}
-	}
-
-	// Perform several checks to verify each block that needs to be attached
-	// to the main chain can be connected without violating any rules and
-	// without actually connecting the block.
-	//
-	// NOTE: These checks could be done directly when connecting a block,
-	// however the downside to that approach is that if any of these checks
-	// fail after disconnecting some blocks or attaching others, all of the
-	// operations have to be rolled back to get the chain back into the
-	// state it was before the rule violation (or other failure).  There are
-	// at least a couple of ways accomplish that rollback, but both involve
-	// tweaking the chain and/or database.  This approach catches these
-	// issues before ever modifying the chain.
-	var validationError error
-	for element := attachNodes.Front(); element != nil; element = element.Next() {
-		node := element.Value.(*blockNode)
-
-		// If any previous nodes in attachNodes failed validation,
-		// mark this one as having an invalid ancestor.
-		if validationError != nil {
-			b.index.SetStatusFlags(node, statusInvalidAncestor)
-			continue
-		}
-
-		var block *btcutil.Block
-		err := b.db.View(func(dbTx database.Tx) error {
-			var err error
-			block, err = dbFetchBlockByNode(dbTx, node)
-			return err
-		})
-		if err != nil {
-			return err
-		}
-
-		// Store the loaded block for later.
-		attachBlocks = append(attachBlocks, block)
-
-		// Skip checks if node has already been fully validated. Although
-		// checkConnectBlock gets skipped, we still need to update the UTXO
-		// view.
-		if b.index.NodeStatus(node).KnownValid() {
-			err = view.fetchInputUtxos(b.db, block)
-			if err != nil {
-				return err
-			}
-			err = view.connectTransactions(node, block.Transactions(), nil)
-			if err != nil {
-				return err
-			}
-			continue
-		}
-
-		// Notice the spent txout details are not requested here and
-		// thus will not be generated.  This is done because the state
-		// is not being immediately written to the database, so it is
-		// not needed.
-		err = b.checkConnectBlock(node, block, view, nil)
-		if err != nil {
-			// If the block failed validation mark it as invalid, then
-			// continue to loop through remaining nodes, marking them as
-			// having an invalid ancestor.
-			if _, ok := err.(RuleError); ok {
-				b.index.SetStatusFlags(node, statusValidateFailed)
-				validationError = err
-				continue
-			}
-			return err
-		}
-		b.index.SetStatusFlags(node, statusValid)
-	}
-
-	if validationError != nil {
-		return validationError
-	}
-
-	// Reset the view for the actual connection code below.  This is
-	// required because the view was previously modified when checking if
-	// the reorg would be successful and the connection code requires the
-	// view to be valid from the viewpoint of each block being connected or
-	// disconnected.
-	view = NewUtxoViewpoint()
-	view.SetTips(b.bestChain.Tips())
-
-	// Disconnect blocks from the main chain.
-	for i, element := 0, detachNodes.Front(); element != nil; i, element = i+1, element.Next() {
-		node := element.Value.(*blockNode)
-		block := detachBlocks[i]
-
-		// Load all of the utxos referenced by the block that aren't
-		// already in the view.
-		err := view.fetchInputUtxos(b.db, block)
-		if err != nil {
-			return err
-		}
-
-		// Update the view to unspend all of the spent txos and remove
-		// the utxos created by the block.
-		err = view.disconnectTransactions(b.db, node.parents, block,
-			detachSpentTxOuts[i])
-		if err != nil {
-			return err
-		}
-
-		// Update the database and chain state.
-		err = b.disconnectBlock(node, block, view)
-		if err != nil {
-			return err
-		}
-	}
-
-	// Connect the new best chain blocks.
-	for i, element := 0, attachNodes.Front(); element != nil; i, element = i+1, element.Next() {
-		node := element.Value.(*blockNode)
-		block := attachBlocks[i]
-
-		// Load all of the utxos referenced by the block that aren't
-		// already in the view.
-		err := view.fetchInputUtxos(b.db, block)
-		if err != nil {
-			return err
-		}
-
-		// Update the view to mark all utxos referenced by the block
-		// as spent and add all transactions being created by this block
-		// to it.  Also, provide an stxo slice so the spent txout
-		// details are generated.
-		stxos := make([]spentTxOut, 0, countSpentOutputs(block))
-		err = view.connectTransactions(node, block.Transactions(), &stxos)
-		if err != nil {
-			return err
-		}
-
-		// Update the database and chain state.
-		err = b.connectBlock(node, block, view, stxos)
-		if err != nil {
-			return err
-		}
-	}
-
-	// Log the point where the chain forked and old and new best chain
-	// heads.
-	firstAttachNode := attachNodes.Front().Value.(*blockNode)
-	firstDetachNode := detachNodes.Front().Value.(*blockNode)
-	lastAttachNode := attachNodes.Back().Value.(*blockNode)
-	log.Infof("REORGANIZE: Chain forks at %v", firstAttachNode.selectedParent.hash)
-	log.Infof("REORGANIZE: Old best chain head was %v", firstDetachNode.hash)
-	log.Infof("REORGANIZE: New best chain head is %v", lastAttachNode.hash)
-
-	return nil
-}
-
-// connectBestChain handles connecting the passed block to the chain while
-// respecting proper chain selection according to the chain with the most
-// proof of work.  In the typical case, the new block simply extends the main
-// chain.  However, it may also be extending (or creating) a side chain (fork)
-// which may or may not end up becoming the main chain depending on which fork
-// cumulatively has the most proof of work.  It returns whether or not the block
-// ended up on the main chain (either due to extending the main chain or causing
-// a reorganization to become the main chain).
+// connectToDAG handles connecting the passed block to the DAG.
 //
 // The flags modify the behavior of this function as follows:
 //  - BFFastAdd: Avoids several expensive transaction validation operations.
 //    This is useful when using checkpoints.
 //
 // This function MUST be called with the chain state lock held (for writes).
-func (b *BlockChain) connectBestChain(node *blockNode, parentNodes blockSet, block *btcutil.Block, flags BehaviorFlags) (bool, error) {
-	fastAdd := flags&BFFastAdd == BFFastAdd
+func (b *BlockChain) connectToDAG(node *blockNode, parentNodes blockSet, block *btcutil.Block, flags BehaviorFlags) error {
+	// Skip checks if node has already been fully validated.
+	fastAdd := flags&BFFastAdd == BFFastAdd || b.index.NodeStatus(node).KnownValid()
 
-	// We are extending the main (best) chain with a new block.  This is the
-	// most common case.
-	parentHashes := block.MsgBlock().Header.PrevBlocks
-	if b.bestChain.Tips().hashesEqual(parentHashes) {
-		// Skip checks if node has already been fully validated.
-		fastAdd = fastAdd || b.index.NodeStatus(node).KnownValid()
-
-		// Perform several checks to verify the block can be connected
-		// to the main chain without violating any rules and without
-		// actually connecting the block.
-		view := NewUtxoViewpoint()
-		view.SetTips(parentNodes)
-		stxos := make([]spentTxOut, 0, countSpentOutputs(block))
-		if !fastAdd {
-			err := b.checkConnectBlock(node, block, view, &stxos)
-			if err == nil {
-				b.index.SetStatusFlags(node, statusValid)
-			} else if _, ok := err.(RuleError); ok {
-				b.index.SetStatusFlags(node, statusValidateFailed)
-			} else {
-				return false, err
-			}
-
-			// Intentionally ignore errors writing updated node status to DB. If
-			// it fails to write, it's not the end of the world. If the block is
-			// valid, we flush in connectBlock and if the block is invalid, the
-			// worst that can happen is we revalidate the block after a restart.
-			if writeErr := b.index.flushToDB(); writeErr != nil {
-				log.Warnf("Error flushing block index changes to disk: %v",
-					writeErr)
-			}
-
-			if err != nil {
-				return false, err
-			}
-		}
-
-		// In the fast add case the code to check the block connection
-		// was skipped, so the utxo view needs to load the referenced
-		// utxos, spend them, and add the new utxos being created by
-		// this block.
-		if fastAdd {
-			err := view.fetchInputUtxos(b.db, block)
-			if err != nil {
-				return false, err
-			}
-			err = view.connectTransactions(node, block.Transactions(), &stxos)
-			if err != nil {
-				return false, err
-			}
-		}
-
-		// Connect the block to the main chain.
-		err := b.connectBlock(node, block, view, stxos)
-		if err != nil {
-			return false, err
-		}
-
-		return true, nil
-	}
-	if fastAdd {
-		log.Warnf("fastAdd set in the side chain case? %v\n",
-			block.Hash())
-	}
-
-	// We're extending (or creating) a side chain, but the cumulative
-	// work for this new side chain is not enough to make it the new chain.
-	if node.workSum.Cmp(b.bestChain.SelectedTip().workSum) <= 0 {
-		// Log information about how the block is forking the chain.
-		fork := b.bestChain.FindFork(node)
-		if fork.hash.IsEqual(block.MsgBlock().Header.SelectedPrevBlock()) {
-			log.Infof("FORK: Block %v forks the chain at height %d"+
-				"/block %v, but does not cause a reorganize",
-				node.hash, fork.height, fork.hash)
+	// Perform several checks to verify the block can be connected
+	// to the DAG without violating any rules and without actually
+	// connecting the block.
+	view := NewUtxoViewpoint()
+	view.SetTips(parentNodes)
+	stxos := make([]spentTxOut, 0, countSpentOutputs(block))
+	if !fastAdd {
+		err := b.checkConnectBlock(node, block, view, &stxos)
+		if err == nil {
+			b.index.SetStatusFlags(node, statusValid)
+		} else if _, ok := err.(RuleError); ok {
+			b.index.SetStatusFlags(node, statusValidateFailed)
 		} else {
-			log.Infof("EXTEND FORK: Block %v extends a side chain "+
-				"which forks the chain at height %d/block %v",
-				node.hash, fork.height, fork.hash)
+			return err
 		}
 
-		return false, nil
+		// Intentionally ignore errors writing updated node status to DB. If
+		// it fails to write, it's not the end of the world. If the block is
+		// valid, we flush in connectBlock and if the block is invalid, the
+		// worst that can happen is we revalidate the block after a restart.
+		if writeErr := b.index.flushToDB(); writeErr != nil {
+			log.Warnf("Error flushing block index changes to disk: %v",
+				writeErr)
+		}
+
+		if err != nil {
+			return err
+		}
 	}
 
-	// We're extending (or creating) a side chain and the cumulative work
-	// for this new side chain is more than the old best chain, so this side
-	// chain needs to become the main chain.  In order to accomplish that,
-	// find the common ancestor of both sides of the fork, disconnect the
-	// blocks that form the (now) old fork from the main chain, and attach
-	// the blocks that form the new chain to the main chain starting at the
-	// common ancenstor (the point where the chain forked).
-	detachNodes, attachNodes := b.getReorganizeNodes(node)
-
-	// Reorganize the chain.
-	log.Infof("REORGANIZE: Block %v is causing a reorganize.", node.hash)
-	err := b.reorganizeChain(detachNodes, attachNodes)
-
-	// Either getReorganizeNodes or reorganizeChain could have made unsaved
-	// changes to the block index, so flush regardless of whether there was an
-	// error. The index would only be dirty if the block failed to connect, so
-	// we can ignore any errors writing.
-	if writeErr := b.index.flushToDB(); writeErr != nil {
-		log.Warnf("Error flushing block index changes to disk: %v", writeErr)
+	// In the fast add case the code to check the block connection
+	// was skipped, so the utxo view needs to load the referenced
+	// utxos, spend them, and add the new utxos being created by
+	// this block.
+	if fastAdd {
+		err := view.fetchInputUtxos(b.db, block)
+		if err != nil {
+			return err
+		}
+		err = view.connectTransactions(node, block.Transactions(), &stxos)
+		if err != nil {
+			return err
+		}
 	}
 
-	return err == nil, err
+	// Connect the block to the DAG.
+	err := b.connectBlock(node, block, view, stxos)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // isCurrent returns whether or not the chain believes it is current.  Several

@@ -11,22 +11,21 @@ import (
 	"github.com/daglabs/btcutil"
 )
 
-// maybeAcceptBlock potentially accepts a block into the block chain and, if
-// accepted, returns whether or not it is on the main chain.  It performs
-// several validation checks which depend on its position within the block chain
-// before adding it.  The block is expected to have already gone through
-// ProcessBlock before calling this function with it.
+// maybeAcceptBlock potentially accepts a block into the block DAG. It
+// performs several validation checks which depend on its position within
+// the block DAG before adding it. The block is expected to have already
+// gone through ProcessBlock before calling this function with it.
 //
-// The flags are also passed to checkBlockContext and connectBestChain.  See
+// The flags are also passed to checkBlockContext and connectToDAG.  See
 // their documentation for how the flags modify their behavior.
 //
 // This function MUST be called with the chain state lock held (for writes).
-func (b *BlockChain) maybeAcceptBlock(block *btcutil.Block, flags BehaviorFlags) (bool, error) {
+func (b *BlockChain) maybeAcceptBlock(block *btcutil.Block, flags BehaviorFlags) error {
 	// The height of this block is one more than the referenced previous
 	// block.
 	parents, err := lookupPreviousNodes(block, b)
 	if err != nil {
-		return false, err
+		return err
 	}
 
 	selectedParent := parents.first()
@@ -37,7 +36,7 @@ func (b *BlockChain) maybeAcceptBlock(block *btcutil.Block, flags BehaviorFlags)
 	// position of the block within the block chain.
 	err = b.checkBlockContext(block, selectedParent, flags)
 	if err != nil {
-		return false, err
+		return err
 	}
 
 	// Insert the block into the database if it's not already there.  Even
@@ -53,7 +52,7 @@ func (b *BlockChain) maybeAcceptBlock(block *btcutil.Block, flags BehaviorFlags)
 		return dbStoreBlock(dbTx, block)
 	})
 	if err != nil {
-		return false, err
+		return err
 	}
 
 	// Create a new block node for the block and add it to the node index. Even
@@ -66,15 +65,14 @@ func (b *BlockChain) maybeAcceptBlock(block *btcutil.Block, flags BehaviorFlags)
 	b.index.AddNode(newNode)
 	err = b.index.flushToDB()
 	if err != nil {
-		return false, err
+		return err
 	}
 
-	// Connect the passed block to the chain while respecting proper chain
-	// selection according to the chain with the most proof of work.  This
-	// also handles validation of the transaction scripts.
-	isMainChain, err := b.connectBestChain(newNode, parents, block, flags)
+	// Connect the passed block to the DAG. This also handles validation of the
+	// transaction scripts.
+	err = b.connectToDAG(newNode, parents, block, flags)
 	if err != nil {
-		return false, err
+		return err
 	}
 
 	// Notify the caller that the new block was accepted into the block
@@ -84,7 +82,7 @@ func (b *BlockChain) maybeAcceptBlock(block *btcutil.Block, flags BehaviorFlags)
 	b.sendNotification(NTBlockAccepted, block)
 	b.chainLock.Lock()
 
-	return isMainChain, nil
+	return nil
 }
 
 func lookupPreviousNodes(block *btcutil.Block, blockChain *BlockChain) (blockSet, error) {

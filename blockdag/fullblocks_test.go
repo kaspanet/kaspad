@@ -156,7 +156,7 @@ func TestFullBlocks(t *testing.T) {
 		t.Logf("Testing block %s (hash %s, height %d)",
 			item.Name, block.Hash(), blockHeight)
 
-		isMainChain, isOrphan, err := chain.ProcessBlock(block,
+		isOrphan, err := chain.ProcessBlock(block,
 			blockdag.BFNone)
 		if err != nil {
 			t.Fatalf("block %q (hash %s, height %d) should "+
@@ -164,14 +164,6 @@ func TestFullBlocks(t *testing.T) {
 				block.Hash(), blockHeight, err)
 		}
 
-		// Ensure the main chain and orphan flags match the values
-		// specified in the test.
-		if isMainChain != item.IsMainChain {
-			t.Fatalf("block %q (hash %s, height %d) unexpected main "+
-				"chain flag -- got %v, want %v", item.Name,
-				block.Hash(), blockHeight, isMainChain,
-				item.IsMainChain)
-		}
 		if isOrphan != item.IsOrphan {
 			t.Fatalf("block %q (hash %s, height %d) unexpected "+
 				"orphan flag -- got %v, want %v", item.Name,
@@ -190,7 +182,7 @@ func TestFullBlocks(t *testing.T) {
 		t.Logf("Testing block %s (hash %s, height %d)",
 			item.Name, block.Hash(), blockHeight)
 
-		_, _, err := chain.ProcessBlock(block, blockdag.BFNone)
+		_, err := chain.ProcessBlock(block, blockdag.BFNone)
 		if err == nil {
 			t.Fatalf("block %q (hash %s, height %d) should not "+
 				"have been accepted", item.Name, block.Hash(),
@@ -247,7 +239,7 @@ func TestFullBlocks(t *testing.T) {
 		t.Logf("Testing block %s (hash %s, height %d)",
 			item.Name, block.Hash(), blockHeight)
 
-		_, isOrphan, err := chain.ProcessBlock(block, blockdag.BFNone)
+		isOrphan, err := chain.ProcessBlock(block, blockdag.BFNone)
 		if err != nil {
 			// Ensure the error code is of the expected type.
 			if _, ok := err.(blockdag.RuleError); !ok {

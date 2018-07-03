@@ -97,14 +97,10 @@ func TestCheckConnectBlockTemplate(t *testing.T) {
 	}
 
 	for i := 1; i <= 3; i++ {
-		isMainChain, _, err := chain.ProcessBlock(blocks[i], BFNone)
+		_, err := chain.ProcessBlock(blocks[i], BFNone)
 		if err != nil {
 			t.Fatalf("CheckConnectBlockTemplate: Received unexpected error "+
 				"processing block %d: %v", i, err)
-		}
-		if !isMainChain {
-			t.Fatalf("CheckConnectBlockTemplate: Expected block %d to connect "+
-				"to main chain", i)
 		}
 	}
 
