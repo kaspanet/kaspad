@@ -49,7 +49,7 @@ func TestHaveBlock(t *testing.T) {
 	chain.TstSetCoinbaseMaturity(1)
 
 	for i := 1; i < len(blocks); i++ {
-		_, isOrphan, err := chain.ProcessBlock(blocks[i], BFNone)
+		isOrphan, err := chain.ProcessBlock(blocks[i], BFNone)
 		if err != nil {
 			t.Errorf("ProcessBlock fail on block %v: %v\n", i, err)
 			return
@@ -62,7 +62,7 @@ func TestHaveBlock(t *testing.T) {
 	}
 
 	// Insert an orphan block.
-	_, isOrphan, err := chain.ProcessBlock(btcutil.NewBlock(&Block100000),
+	isOrphan, err := chain.ProcessBlock(btcutil.NewBlock(&Block100000),
 		BFNone)
 	if err != nil {
 		t.Errorf("Unable to process block: %v", err)

@@ -543,9 +543,8 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 	delete(state.requestedBlocks, *blockHash)
 	delete(sm.requestedBlocks, *blockHash)
 
-	// Process the block to include validation, best chain selection, orphan
-	// handling, etc.
-	_, isOrphan, err := sm.chain.ProcessBlock(bmsg.block, behaviorFlags)
+	// Process the block to include validation, orphan handling, etc.
+	isOrphan, err := sm.chain.ProcessBlock(bmsg.block, behaviorFlags)
 	if err != nil {
 		// When the error is a rule error, it means the block was simply
 		// rejected as opposed to something actually going wrong, so log
@@ -1127,7 +1126,7 @@ out:
 				msg.reply <- peerID
 
 			case processBlockMsg:
-				_, isOrphan, err := sm.chain.ProcessBlock(
+				isOrphan, err := sm.chain.ProcessBlock(
 					msg.block, msg.flags)
 				if err != nil {
 					msg.reply <- processBlockResponse{

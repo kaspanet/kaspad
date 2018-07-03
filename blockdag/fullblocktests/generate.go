@@ -64,11 +64,10 @@ type TestInstance interface {
 // the blockchain either by extending the main chain, on a side chain, or as an
 // orphan.
 type AcceptedBlock struct {
-	Name        string
-	Block       *wire.MsgBlock
-	Height      int32
-	IsMainChain bool
-	IsOrphan    bool
+	Name     string
+	Block    *wire.MsgBlock
+	Height   int32
+	IsOrphan bool
 }
 
 // Ensure AcceptedBlock implements the TestInstance interface.
@@ -836,9 +835,9 @@ func Generate(includeLargeReorg bool) (tests [][]TestInstance, err error) {
 	//
 	// expectTipBlock creates a test instance that expects the provided
 	// block to be the current tip of the block chain.
-	acceptBlock := func(blockName string, block *wire.MsgBlock, isMainChain, isOrphan bool) TestInstance {
+	acceptBlock := func(blockName string, block *wire.MsgBlock, isOrphan bool) TestInstance {
 		blockHeight := g.blockHeights[blockName]
-		return AcceptedBlock{blockName, block, blockHeight, isMainChain,
+		return AcceptedBlock{blockName, block, blockHeight,
 			isOrphan}
 	}
 	rejectBlock := func(blockName string, block *wire.MsgBlock, code blockdag.ErrorCode) TestInstance {
@@ -882,12 +881,12 @@ func Generate(includeLargeReorg bool) (tests [][]TestInstance, err error) {
 	// test instance for the current tip.
 	accepted := func() {
 		tests = append(tests, []TestInstance{
-			acceptBlock(g.tipName, g.tip, true, false),
+			acceptBlock(g.tipName, g.tip, false),
 		})
 	}
 	acceptedToSideChainWithExpectedTip := func(tipName string) {
 		tests = append(tests, []TestInstance{
-			acceptBlock(g.tipName, g.tip, false, false),
+			acceptBlock(g.tipName, g.tip, false),
 			expectTipBlock(tipName, g.blocksByName[tipName]),
 		})
 	}
@@ -920,7 +919,7 @@ func Generate(includeLargeReorg bool) (tests [][]TestInstance, err error) {
 		g.nextBlock(blockName, nil)
 		g.saveTipCoinbaseOut()
 		testInstances = append(testInstances, acceptBlock(g.tipName,
-			g.tip, true, false))
+			g.tip, false))
 	}
 	tests = append(tests, testInstances)
 
@@ -1037,8 +1036,8 @@ func Generate(includeLargeReorg bool) (tests [][]TestInstance, err error) {
 	b13 := g.nextBlock("b13", outs[4])
 	b14 := g.nextBlock("b14", outs[5], additionalCoinbase(1))
 	tests = append(tests, []TestInstance{
-		acceptBlock("b13", b13, false, true),
-		acceptBlock("b14", b14, false, true),
+		acceptBlock("b13", b13, true),
+		acceptBlock("b14", b14, true),
 		rejectBlock("b12", b12, blockdag.ErrBadCoinbaseValue),
 		expectTipBlock("b13", b13),
 	})
@@ -2081,7 +2080,7 @@ func Generate(includeLargeReorg bool) (tests [][]TestInstance, err error) {
 		g.assertTipBlockSize(maxBlockSize)
 		g.saveTipCoinbaseOut()
 		testInstances = append(testInstances, acceptBlock(g.tipName,
-			g.tip, true, false))
+			g.tip, false))
 
 		// Use the next available spendable output.  First use up any
 		// remaining spendable outputs that were already popped into the
@@ -2105,7 +2104,7 @@ func Generate(includeLargeReorg bool) (tests [][]TestInstance, err error) {
 		chain2TipName = fmt.Sprintf("bralt%d", i)
 		g.nextBlock(chain2TipName, nil)
 		testInstances = append(testInstances, acceptBlock(g.tipName,
-			g.tip, false, false))
+			g.tip, false))
 	}
 	testInstances = append(testInstances, expectTipBlock(chain1TipName,
 		g.blocksByName[chain1TipName]))
