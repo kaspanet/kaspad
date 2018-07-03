@@ -2124,12 +2124,6 @@ type parsedSigInfo struct {
 // keys, followed by the integer number of signatures, followed by that many
 // entries as raw data representing the signatures.
 //
-// Due to a bug in the original Satoshi client implementation, an additional
-// dummy argument is also required by the consensus rules, although it is not
-// used.  The dummy value SHOULD be an OP_0, although that is not required by
-// the consensus rules.  When the ScriptStrictMultiSig flag is set, it must be
-// OP_0.
-//
 // All of the aforementioned stack items are replaced with a bool which
 // indicates if the requisite number of signatures were successfully verified.
 //
@@ -2137,7 +2131,7 @@ type parsedSigInfo struct {
 // for verifying each signature.
 //
 // Stack transformation:
-// [... dummy [sig ...] numsigs [pubkey ...] numpubkeys] -> [... bool]
+// [... [sig ...] numsigs [pubkey ...] numpubkeys] -> [... bool]
 func opcodeCheckMultiSig(op *parsedOpcode, vm *Engine) error {
 	numKeys, err := vm.dstack.PopInt()
 	if err != nil {
@@ -2196,24 +2190,6 @@ func opcodeCheckMultiSig(op *parsedOpcode, vm *Engine) error {
 		}
 		sigInfo := &parsedSigInfo{signature: signature}
 		signatures = append(signatures, sigInfo)
-	}
-
-	// A bug in the original Satoshi client implementation means one more
-	// stack value than should be used must be popped.  Unfortunately, this
-	// buggy behavior is now part of the consensus and a hard fork would be
-	// required to fix it.
-	dummy, err := vm.dstack.PopByteArray()
-	if err != nil {
-		return err
-	}
-
-	// Since the dummy argument is otherwise not checked, it could be any
-	// value which unfortunately provides a source of malleability.  Thus,
-	// there is a script flag to force an error when the value is NOT 0.
-	if vm.hasFlag(ScriptStrictMultiSig) && len(dummy) != 0 {
-		str := fmt.Sprintf("multisig dummy argument has length %d "+
-			"instead of 0", len(dummy))
-		return scriptError(ErrSigNullDummy, str)
 	}
 
 	// Get script starting from the most recent OP_CODESEPARATOR.
@@ -2344,7 +2320,7 @@ func opcodeCheckMultiSig(op *parsedOpcode, vm *Engine) error {
 // See the documentation for each of those opcodes for more details.
 //
 // Stack transformation:
-// [... dummy [sig ...] numsigs [pubkey ...] numpubkeys] -> [... bool] -> [...]
+// [... [sig ...] numsigs [pubkey ...] numpubkeys] -> [... bool] -> [...]
 func opcodeCheckMultiSigVerify(op *parsedOpcode, vm *Engine) error {
 	err := opcodeCheckMultiSig(op, vm)
 	if err == nil {
