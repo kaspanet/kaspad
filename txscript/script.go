@@ -314,13 +314,13 @@ func CalcSignatureHash(script []byte, hashType SigHashType, tx *wire.MsgTx, idx 
 	if err != nil {
 		return nil, fmt.Errorf("cannot parse output script: %v", err)
 	}
-	return calcSignatureHash(parsedScript, hashType, tx, idx), nil
+	return calcSignatureHash(parsedScript, hashType, tx, idx)
 }
 
 // calcSignatureHash will, given a script and hash type for the current script
 // engine instance, calculate the signature hash to be used for signing and
 // verification.
-func calcSignatureHash(script []parsedOpcode, hashType SigHashType, tx *wire.MsgTx, idx int) []byte {
+func calcSignatureHash(script []parsedOpcode, hashType SigHashType, tx *wire.MsgTx, idx int) ([]byte, error) {
 	// The SigHashSingle signature type signs only the corresponding input
 	// and output (the output with the same index number as the input).
 	//
@@ -342,9 +342,7 @@ func calcSignatureHash(script []parsedOpcode, hashType SigHashType, tx *wire.Msg
 	// cleverly construct transactions which can steal those coins provided
 	// they can reuse signatures.
 	if hashType&sigHashMask == SigHashSingle && idx >= len(tx.TxOut) {
-		var hash chainhash.Hash
-		hash[0] = 0x01
-		return hash[:]
+		return nil, scriptError(ErrInvalidSigHashSingleIndex, "sigHashSingle index out of bounds")
 	}
 
 	// Remove all instances of OP_CODESEPARATOR from the script.
@@ -409,7 +407,7 @@ func calcSignatureHash(script []parsedOpcode, hashType SigHashType, tx *wire.Msg
 	wbuf := bytes.NewBuffer(make([]byte, 0, txCopy.SerializeSize()+4))
 	txCopy.Serialize(wbuf)
 	binary.Write(wbuf, binary.LittleEndian, hashType)
-	return chainhash.DoubleHashB(wbuf.Bytes())
+	return chainhash.DoubleHashB(wbuf.Bytes()), nil
 }
 
 // asSmallInt returns the passed opcode, which must be true according to
