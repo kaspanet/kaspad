@@ -11,10 +11,10 @@ import (
 	"github.com/daglabs/btcutil"
 )
 
-// maybeAcceptBlock potentially accepts a block into the block chain. It
+// maybeAcceptBlock potentially accepts a block into the block DAG. It
 // performs several validation checks which depend on its position within
-// the block chain before adding it.  The block is expected to have
-// already gone through ProcessBlock before calling this function with it.
+// the block DAG before adding it. The block is expected to have already
+// gone through ProcessBlock before calling this function with it.
 //
 // The flags are also passed to checkBlockContext and connectToDAG.  See
 // their documentation for how the flags modify their behavior.

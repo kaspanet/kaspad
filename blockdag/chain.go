@@ -741,23 +741,12 @@ func countSpentOutputs(block *btcutil.Block) int {
 //
 // This function MUST be called with the chain state lock held (for writes).
 func (b *BlockChain) connectToDAG(node *blockNode, parentNodes blockSet, block *btcutil.Block, flags BehaviorFlags) error {
-	fastAdd := flags&BFFastAdd == BFFastAdd
-
-	// Orphan blocks had already been culled. If the parents
-	// are not ancestors of the tips then the block, for now,
-	// is dropped.
-	parentHashes := block.MsgBlock().Header.PrevBlocks
-	if !b.bestChain.Tips().hashesEqual(parentHashes) { // TODO: (Stas) parentHashes are not necessarily the tips. Figure out a better test
-		return fmt.Errorf("the block's parents aren't ancestors " +
-			"of the tips")
-	}
-
 	// Skip checks if node has already been fully validated.
-	fastAdd = fastAdd || b.index.NodeStatus(node).KnownValid()
+	fastAdd := flags&BFFastAdd == BFFastAdd || b.index.NodeStatus(node).KnownValid()
 
 	// Perform several checks to verify the block can be connected
-	// to the main chain without violating any rules and without
-	// actually connecting the block.
+	// to the DAG without violating any rules and without actually
+	// connecting the block.
 	view := NewUtxoViewpoint()
 	view.SetTips(parentNodes)
 	stxos := make([]spentTxOut, 0, countSpentOutputs(block))

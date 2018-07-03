@@ -837,8 +837,7 @@ func Generate(includeLargeReorg bool) (tests [][]TestInstance, err error) {
 	// block to be the current tip of the block chain.
 	acceptBlock := func(blockName string, block *wire.MsgBlock, isOrphan bool) TestInstance {
 		blockHeight := g.blockHeights[blockName]
-		return AcceptedBlock{blockName, block, blockHeight,
-			isOrphan}
+		return AcceptedBlock{blockName, block, blockHeight, isOrphan}
 	}
 	rejectBlock := func(blockName string, block *wire.MsgBlock, code blockdag.ErrorCode) TestInstance {
 		blockHeight := g.blockHeights[blockName]
