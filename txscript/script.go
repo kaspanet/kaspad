@@ -265,19 +265,6 @@ func canonicalPush(pop parsedOpcode) bool {
 	return true
 }
 
-// removeOpcodeByData will return the script minus any opcodes that would push
-// the passed data to the stack.
-func removeOpcodeByData(pkscript []parsedOpcode, data []byte) []parsedOpcode {
-	retScript := make([]parsedOpcode, 0, len(pkscript))
-	for _, pop := range pkscript {
-		if !canonicalPush(pop) || !bytes.Contains(pop.data, data) {
-			retScript = append(retScript, pop)
-		}
-	}
-	return retScript
-
-}
-
 // shallowCopyTx creates a shallow copy of the transaction for use when
 // calculating the signature hash.  It is used over the Copy method on the
 // transaction itself since that is a deep copy and therefore does more work and

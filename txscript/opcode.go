@@ -2048,10 +2048,6 @@ func opcodeCheckSig(op *parsedOpcode, vm *Engine) error {
 	// Get script starting from the most recent OP_CODESEPARATOR.
 	subScript := vm.subScript()
 
-	// Remove the signature since there is no way for a signature
-	// to sign itself.
-	subScript = removeOpcodeByData(subScript, fullSigBytes)
-
 	// Generate the signature hash based on the signature hash type.
 	hash, err := calcSignatureHash(subScript, hashType, &vm.tx, vm.txIdx)
 	if err != nil {
@@ -2198,11 +2194,6 @@ func opcodeCheckMultiSig(op *parsedOpcode, vm *Engine) error {
 
 	// Get script starting from the most recent OP_CODESEPARATOR.
 	script := vm.subScript()
-
-	// Remove the signatures in scripts since there is no way for a signature to sign itself.
-	for _, sigInfo := range signatures {
-		script = removeOpcodeByData(script, sigInfo.signature)
-	}
 
 	success := true
 	numPubKeys++
