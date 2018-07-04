@@ -3943,7 +3943,7 @@ func TestIsPayToScriptHash(t *testing.T) {
 }
 
 // TestHasCanonicalPushes ensures the canonicalPush function properly determines
-// what is considered a canonical push for the purposes of removeOpcodeByData.
+// what is considered a canonical push.
 func TestHasCanonicalPushes(t *testing.T) {
 	t.Parallel()
 
