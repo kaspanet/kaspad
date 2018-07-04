@@ -162,7 +162,7 @@ func sign(chainParams *chaincfg.Params, tx *wire.MsgTx, idx int,
 // and nrequired are the result of extracting the addresses from pkscript.
 // The return value is the best effort merging of the two scripts. Calling this
 // function with addresses, class and nrequired that do not match pkScript is
-// an error and results in undefined behaviour.
+// an error.
 func mergeScripts(chainParams *chaincfg.Params, tx *wire.MsgTx, idx int,
 	pkScript []byte, class ScriptClass, addresses []btcutil.Address,
 	nRequired int, sigScript, prevScript []byte) ([]byte, error) {
