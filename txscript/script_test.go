@@ -3379,22 +3379,6 @@ func TestUnparsingInvalidOpcodes(t *testing.T) {
 			expectedErr: scriptError(ErrInternal, ""),
 		},
 		{
-			name: "OP_CODESAPERATOR",
-			pop: &parsedOpcode{
-				opcode: &opcodeArray[OpCodeSeparator],
-				data:   nil,
-			},
-			expectedErr: nil,
-		},
-		{
-			name: "OP_CODESEPARATOR long",
-			pop: &parsedOpcode{
-				opcode: &opcodeArray[OpCodeSeparator],
-				data:   make([]byte, 1),
-			},
-			expectedErr: scriptError(ErrInternal, ""),
-		},
-		{
 			name: "OP_CHECKSIG",
 			pop: &parsedOpcode{
 				opcode: &opcodeArray[OpCheckSig],
@@ -3840,88 +3824,6 @@ func TestGetPreciseSigOps(t *testing.T) {
 			t.Errorf("%s: expected count of %d, got %d", test.name,
 				test.nSigOps, count)
 
-		}
-	}
-}
-
-// TestRemoveOpcodes ensures that removing opcodes from scripts behaves as
-// expected.
-func TestRemoveOpcodes(t *testing.T) {
-	t.Parallel()
-
-	tests := []struct {
-		name   string
-		before string
-		remove byte
-		err    error
-		after  string
-	}{
-		{
-			// Nothing to remove.
-			name:   "nothing to remove",
-			before: "NOP",
-			remove: OpCodeSeparator,
-			after:  "NOP",
-		},
-		{
-			// Test basic opcode removal.
-			name:   "codeseparator 1",
-			before: "NOP CODESEPARATOR TRUE",
-			remove: OpCodeSeparator,
-			after:  "NOP TRUE",
-		},
-		{
-			// The opcode in question is actually part of the data
-			// in a previous opcode.
-			name:   "codeseparator by coincidence",
-			before: "NOP DATA_1 CODESEPARATOR TRUE",
-			remove: OpCodeSeparator,
-			after:  "NOP DATA_1 CODESEPARATOR TRUE",
-		},
-		{
-			name:   "invalid opcode",
-			before: "CAT",
-			remove: OpCodeSeparator,
-			after:  "CAT",
-		},
-		{
-			name:   "invalid length (instruction)",
-			before: "PUSHDATA1",
-			remove: OpCodeSeparator,
-			err:    scriptError(ErrMalformedPush, ""),
-		},
-		{
-			name:   "invalid length (data)",
-			before: "PUSHDATA1 0xff 0xfe",
-			remove: OpCodeSeparator,
-			err:    scriptError(ErrMalformedPush, ""),
-		},
-	}
-
-	// tstRemoveOpcode is a convenience function to parse the provided
-	// raw script, remove the passed opcode, then unparse the result back
-	// into a raw script.
-	tstRemoveOpcode := func(script []byte, opcode byte) ([]byte, error) {
-		pops, err := parseScript(script)
-		if err != nil {
-			return nil, err
-		}
-		pops = removeOpcode(pops, opcode)
-		return unparseScript(pops)
-	}
-
-	for _, test := range tests {
-		before := mustParseShortForm(test.before)
-		after := mustParseShortForm(test.after)
-		result, err := tstRemoveOpcode(before, test.remove)
-		if e := tstCheckScriptError(err, test.err); e != nil {
-			t.Errorf("%s: %v", test.name, e)
-			continue
-		}
-
-		if !bytes.Equal(after, result) {
-			t.Errorf("%s: value does not equal expected: exp: %q"+
-				" got: %q", test.name, after, result)
 		}
 	}
 }

@@ -227,18 +227,6 @@ func DisasmString(buf []byte) (string, error) {
 	return disbuf.String(), err
 }
 
-// removeOpcode will remove any opcode matching ``opcode'' from the opcode
-// stream in pkscript
-func removeOpcode(pkscript []parsedOpcode, opcode byte) []parsedOpcode {
-	retScript := make([]parsedOpcode, 0, len(pkscript))
-	for _, pop := range pkscript {
-		if pop.opcode.value != opcode {
-			retScript = append(retScript, pop)
-		}
-	}
-	return retScript
-}
-
 // canonicalPush returns true if the object is either not a push instruction
 // or the push instruction contained wherein is matches the canonical form
 // or using the smallest instruction to do the job. False otherwise.
@@ -317,9 +305,6 @@ func calcSignatureHash(script []parsedOpcode, hashType SigHashType, tx *wire.Msg
 	if hashType&sigHashMask == SigHashSingle && idx >= len(tx.TxOut) {
 		return nil, scriptError(ErrInvalidSigHashSingleIndex, "sigHashSingle index out of bounds")
 	}
-
-	// Remove all instances of OP_CODESEPARATOR from the script.
-	script = removeOpcode(script, OpCodeSeparator)
 
 	// Make a shallow copy of the transaction, zeroing out the script for
 	// all inputs that are not currently being processed.
