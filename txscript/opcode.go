@@ -2053,7 +2053,11 @@ func opcodeCheckSig(op *parsedOpcode, vm *Engine) error {
 	subScript = removeOpcodeByData(subScript, fullSigBytes)
 
 	// Generate the signature hash based on the signature hash type.
-	hash := calcSignatureHash(subScript, hashType, &vm.tx, vm.txIdx)
+	hash, err := calcSignatureHash(subScript, hashType, &vm.tx, vm.txIdx)
+	if err != nil {
+		vm.dstack.PushBool(false)
+		return nil
+	}
 
 	pubKey, err := btcec.ParsePubKey(pkBytes, btcec.S256())
 	if err != nil {
@@ -2279,7 +2283,10 @@ func opcodeCheckMultiSig(op *parsedOpcode, vm *Engine) error {
 		}
 
 		// Generate the signature hash based on the signature hash type.
-		hash := calcSignatureHash(script, hashType, &vm.tx, vm.txIdx)
+		hash, err := calcSignatureHash(script, hashType, &vm.tx, vm.txIdx)
+		if err != nil {
+			return err
+		}
 
 		var valid bool
 		if vm.sigCache != nil {

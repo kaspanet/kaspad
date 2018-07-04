@@ -162,10 +162,10 @@ func sign(chainParams *chaincfg.Params, tx *wire.MsgTx, idx int,
 // and nrequired are the result of extracting the addresses from pkscript.
 // The return value is the best effort merging of the two scripts. Calling this
 // function with addresses, class and nrequired that do not match pkScript is
-// an error and results in undefined behaviour.
+// an error.
 func mergeScripts(chainParams *chaincfg.Params, tx *wire.MsgTx, idx int,
 	pkScript []byte, class ScriptClass, addresses []btcutil.Address,
-	nRequired int, sigScript, prevScript []byte) []byte {
+	nRequired int, sigScript, prevScript []byte) ([]byte, error) {
 
 	// TODO: the scripthash and multisig paths here are overly
 	// inefficient in that they will recompute already known data.
@@ -177,11 +177,11 @@ func mergeScripts(chainParams *chaincfg.Params, tx *wire.MsgTx, idx int,
 		// this could be a lot less inefficient.
 		sigPops, err := parseScript(sigScript)
 		if err != nil || len(sigPops) == 0 {
-			return prevScript
+			return prevScript, nil
 		}
 		prevPops, err := parseScript(prevScript)
 		if err != nil || len(prevPops) == 0 {
-			return sigScript
+			return sigScript, nil
 		}
 
 		// assume that script in sigPops is the correct one, we just
@@ -197,15 +197,17 @@ func mergeScripts(chainParams *chaincfg.Params, tx *wire.MsgTx, idx int,
 		prevScript, _ := unparseScript(prevPops)
 
 		// Merge
-		mergedScript := mergeScripts(chainParams, tx, idx, script,
+		mergedScript, err := mergeScripts(chainParams, tx, idx, script,
 			class, addresses, nrequired, sigScript, prevScript)
+		if err != nil {
+			return nil, err
+		}
 
 		// Reappend the script and return the result.
 		builder := NewScriptBuilder()
 		builder.AddOps(mergedScript)
 		builder.AddData(script)
-		finalScript, _ := builder.Script()
-		return finalScript
+		return builder.Script()
 	case MultiSigTy:
 		return mergeMultiSig(tx, idx, addresses, nRequired, pkScript,
 			sigScript, prevScript)
@@ -218,34 +220,32 @@ func mergeScripts(chainParams *chaincfg.Params, tx *wire.MsgTx, idx int,
 	// correct (this matches behaviour of the reference implementation).
 	default:
 		if len(sigScript) > len(prevScript) {
-			return sigScript
+			return sigScript, nil
 		}
-		return prevScript
+		return prevScript, nil
 	}
 }
 
 // mergeMultiSig combines the two signature scripts sigScript and prevScript
 // that both provide signatures for pkScript in output idx of tx. addresses
 // and nRequired should be the results from extracting the addresses from
-// pkScript. Since this function is internal only we assume that the arguments
-// have come from other functions internally and thus are all consistent with
-// each other, behaviour is undefined if this contract is broken.
+// pkScript.
 func mergeMultiSig(tx *wire.MsgTx, idx int, addresses []btcutil.Address,
-	nRequired int, pkScript, sigScript, prevScript []byte) []byte {
+	nRequired int, pkScript, sigScript, prevScript []byte) ([]byte, error) {
 
-	// This is an internal only function and we already parsed this script
-	// as ok for multisig (this is how we got here), so if this fails then
-	// all assumptions are broken and who knows which way is up?
-	pkPops, _ := parseScript(pkScript)
+	pkPops, err := parseScript(pkScript)
+	if err != nil {
+		return nil, err
+	}
 
 	sigPops, err := parseScript(sigScript)
 	if err != nil || len(sigPops) == 0 {
-		return prevScript
+		return prevScript, nil
 	}
 
 	prevPops, err := parseScript(prevScript)
 	if err != nil || len(prevPops) == 0 {
-		return sigScript
+		return sigScript, nil
 	}
 
 	// Convenience function to avoid duplication.
@@ -290,7 +290,10 @@ sigLoop:
 		// however, assume no sigs etc are in the script since that
 		// would make the transaction nonstandard and thus not
 		// MultiSigTy, so we just need to hash the full thing.
-		hash := calcSignatureHash(pkPops, hashType, tx, idx)
+		hash, err := calcSignatureHash(pkPops, hashType, tx, idx)
+		if err != nil {
+			return nil, err
+		}
 
 		for _, addr := range addresses {
 			// All multisig addresses should be pubkey addresses
@@ -336,7 +339,7 @@ sigLoop:
 	}
 
 	script, _ := builder.Script()
-	return script
+	return script, nil
 }
 
 // KeyDB is an interface type provided to SignTxOutput, it encapsulates
@@ -403,7 +406,6 @@ func SignTxOutput(chainParams *chaincfg.Params, tx *wire.MsgTx, idx int,
 	}
 
 	// Merge scripts. with any previous data, if any.
-	mergedScript := mergeScripts(chainParams, tx, idx, pkScript, class,
+	return mergeScripts(chainParams, tx, idx, pkScript, class,
 		addresses, nrequired, sigScript, previousScript)
-	return mergedScript, nil
 }

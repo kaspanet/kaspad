@@ -314,37 +314,21 @@ func CalcSignatureHash(script []byte, hashType SigHashType, tx *wire.MsgTx, idx 
 	if err != nil {
 		return nil, fmt.Errorf("cannot parse output script: %v", err)
 	}
-	return calcSignatureHash(parsedScript, hashType, tx, idx), nil
+	return calcSignatureHash(parsedScript, hashType, tx, idx)
 }
 
 // calcSignatureHash will, given a script and hash type for the current script
 // engine instance, calculate the signature hash to be used for signing and
 // verification.
-func calcSignatureHash(script []parsedOpcode, hashType SigHashType, tx *wire.MsgTx, idx int) []byte {
+func calcSignatureHash(script []parsedOpcode, hashType SigHashType, tx *wire.MsgTx, idx int) ([]byte, error) {
 	// The SigHashSingle signature type signs only the corresponding input
 	// and output (the output with the same index number as the input).
 	//
 	// Since transactions can have more inputs than outputs, this means it
 	// is improper to use SigHashSingle on input indices that don't have a
 	// corresponding output.
-	//
-	// A bug in the original Satoshi client implementation means specifying
-	// an index that is out of range results in a signature hash of 1 (as a
-	// uint256 little endian).  The original intent appeared to be to
-	// indicate failure, but unfortunately, it was never checked and thus is
-	// treated as the actual signature hash.  This buggy behavior is now
-	// part of the consensus and a hard fork would be required to fix it.
-	//
-	// Due to this, care must be taken by software that creates transactions
-	// which make use of SigHashSingle because it can lead to an extremely
-	// dangerous situation where the invalid inputs will end up signing a
-	// hash of 1.  This in turn presents an opportunity for attackers to
-	// cleverly construct transactions which can steal those coins provided
-	// they can reuse signatures.
 	if hashType&sigHashMask == SigHashSingle && idx >= len(tx.TxOut) {
-		var hash chainhash.Hash
-		hash[0] = 0x01
-		return hash[:]
+		return nil, scriptError(ErrInvalidSigHashSingleIndex, "sigHashSingle index out of bounds")
 	}
 
 	// Remove all instances of OP_CODESEPARATOR from the script.
@@ -409,7 +393,7 @@ func calcSignatureHash(script []parsedOpcode, hashType SigHashType, tx *wire.Msg
 	wbuf := bytes.NewBuffer(make([]byte, 0, txCopy.SerializeSize()+4))
 	txCopy.Serialize(wbuf)
 	binary.Write(wbuf, binary.LittleEndian, hashType)
-	return chainhash.DoubleHashB(wbuf.Bytes())
+	return chainhash.DoubleHashB(wbuf.Bytes()), nil
 }
 
 // asSmallInt returns the passed opcode, which must be true according to
