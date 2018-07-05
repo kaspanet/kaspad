@@ -708,11 +708,8 @@ func TestCalcSignatureHash(t *testing.T) {
 			err)
 	}
 
-	newTests := make([][]interface{}, len(tests))
-
 	for i, test := range tests {
 		if i == 0 {
-			newTests[i] = test
 			// Skip first line -- contains comments only.
 			continue
 		}
@@ -750,80 +747,5 @@ func TestCalcSignatureHash(t *testing.T) {
 			t.Errorf("TestCalcSignatureHash failed test #%d: "+
 				"Signature hash mismatch.", i)
 		}
-		newTests[i] = removeCodeSeparator(parsedScript, test, t)
 	}
-
-	writeNewTests(newTests, t)
-}
-
-func writeNewTests(newTests [][]interface{}, t *testing.T) {
-	bytes, err := json.Marshal(newTests)
-	if err != nil {
-		t.Fatalf("Error marshalling json: %s", err)
-	}
-	err = ioutil.WriteFile("/tmp/sighash.json", bytes, 0644)
-	if err != nil {
-		t.Fatalf("Error writing json: %s", err)
-	}
-
-}
-
-func removeCodeSeparator(script []parsedOpcode, test []interface{}, t *testing.T) []interface{} {
-	script = removeOpcode(script, OpUnknown171)
-	scriptBytes, err := unparseScript(script)
-	if err != nil {
-		t.Fatalf("Error unparsing script: %s", err)
-	}
-
-	test[1] = hex.EncodeToString(scriptBytes)
-
-	txBytes, err := hex.DecodeString(test[0].(string))
-	if err != nil {
-		t.Fatalf("Error decoding hex of script: %s", err)
-	}
-	tx := wire.MsgTx{}
-	tx.Deserialize(bytes.NewReader(txBytes))
-
-	for _, txIn := range tx.TxIn {
-		parsed, err := parseScript(txIn.SignatureScript)
-		if err != nil {
-			t.Fatalf("Error parsing txIn script: %s", err)
-		}
-		txIn.SignatureScript, err = unparseScript(removeOpcode(parsed, OpUnknown171))
-		if err != nil {
-			t.Fatalf("Error unparsing txIn script: %s", err)
-		}
-	}
-
-	for _, txOut := range tx.TxOut {
-		parsed, err := parseScript(txOut.PkScript)
-		if err != nil {
-			t.Fatalf("Error parsing txOut script: %s", err)
-		}
-		txOut.PkScript, err = unparseScript(removeOpcode(parsed, OpUnknown171))
-		if err != nil {
-			t.Fatalf("Error unparsing txOut script: %s", err)
-		}
-	}
-
-	txBuf := bytes.NewBuffer(make([]byte, 0, tx.SerializeSize()))
-	err = tx.Serialize(txBuf)
-	if err != nil {
-		t.Fatalf("Error serializing tx: %s", err)
-	}
-
-	txBytes = txBuf.Bytes()
-	test[0] = hex.EncodeToString(txBytes)
-
-	return test
-}
-
-func removeOpcode(pkscript []parsedOpcode, opcode byte) []parsedOpcode {
-	retScript := make([]parsedOpcode, 0, len(pkscript))
-	for _, pop := range pkscript {
-		if pop.opcode.value != opcode {
-			retScript = append(retScript, pop)
-		}
-	}
-	return retScript
 }
