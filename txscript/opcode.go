@@ -207,7 +207,7 @@ const (
 	OpSHA256              = 0xa8 // 168
 	OpHash160             = 0xa9 // 169
 	OpHash256             = 0xaa // 170
-	OpCodeSeparator       = 0xab // 171
+	OpUnknown171          = 0xab // 171
 	OpCheckSig            = 0xac // 172
 	OpCheckSigVerify      = 0xad // 173
 	OpCheckMultiSig       = 0xae // 174
@@ -493,7 +493,6 @@ var opcodeArray = [256]opcode{
 	OpSHA256:              {OpSHA256, "OP_SHA256", 1, opcodeSha256},
 	OpHash160:             {OpHash160, "OP_HASH160", 1, opcodeHash160},
 	OpHash256:             {OpHash256, "OP_HASH256", 1, opcodeHash256},
-	OpCodeSeparator:       {OpCodeSeparator, "OP_CODESEPARATOR", 1, opcodeCodeSeparator},
 	OpCheckSig:            {OpCheckSig, "OP_CHECKSIG", 1, opcodeCheckSig},
 	OpCheckSigVerify:      {OpCheckSigVerify, "OP_CHECKSIGVERIFY", 1, opcodeCheckSigVerify},
 	OpCheckMultiSig:       {OpCheckMultiSig, "OP_CHECKMULTISIG", 1, opcodeCheckMultiSig},
@@ -510,6 +509,7 @@ var opcodeArray = [256]opcode{
 	OpNop10: {OpNop10, "OP_NOP10", 1, opcodeNop},
 
 	// Undefined opcodes.
+	OpUnknown171: {OpUnknown171, "OP_UNKNOWN171", 1, opcodeInvalid},
 	OpUnknown186: {OpUnknown186, "OP_UNKNOWN186", 1, opcodeInvalid},
 	OpUnknown187: {OpUnknown187, "OP_UNKNOWN187", 1, opcodeInvalid},
 	OpUnknown188: {OpUnknown188, "OP_UNKNOWN188", 1, opcodeInvalid},
@@ -1979,15 +1979,6 @@ func opcodeHash256(op *parsedOpcode, vm *Engine) error {
 	return nil
 }
 
-// opcodeCodeSeparator stores the current script offset as the most recently
-// seen OP_CODESEPARATOR which is used during signature checking.
-//
-// This opcode does not change the contents of the data stack.
-func opcodeCodeSeparator(op *parsedOpcode, vm *Engine) error {
-	vm.lastCodeSep = vm.scriptOff
-	return nil
-}
-
 // opcodeCheckSig treats the top 2 items on the stack as a public key and a
 // signature and replaces them with a bool which indicates if the signature was
 // successfully verified.
@@ -1995,10 +1986,8 @@ func opcodeCodeSeparator(op *parsedOpcode, vm *Engine) error {
 // The process of verifying a signature requires calculating a signature hash in
 // the same way the transaction signer did.  It involves hashing portions of the
 // transaction based on the hash type byte (which is the final byte of the
-// signature) and the portion of the script starting from the most recent
-// OP_CODESEPARATOR (or the beginning of the script if there are none) to the
-// end of the script (with any other OP_CODESEPARATORs removed).  Once this
-// "script hash" is calculated, the signature is checked using standard
+// signature) and the script.
+// Once this "script hash" is calculated, the signature is checked using standard
 // cryptographic methods against the provided public key.
 //
 // Stack transformation: [... signature pubkey] -> [... bool]
@@ -2045,11 +2034,10 @@ func opcodeCheckSig(op *parsedOpcode, vm *Engine) error {
 		return err
 	}
 
-	// Get script starting from the most recent OP_CODESEPARATOR.
-	subScript := vm.subScript()
+	script := vm.currentScript()
 
 	// Generate the signature hash based on the signature hash type.
-	hash, err := calcSignatureHash(subScript, hashType, &vm.tx, vm.txIdx)
+	hash, err := calcSignatureHash(script, hashType, &vm.tx, vm.txIdx)
 	if err != nil {
 		vm.dstack.PushBool(false)
 		return nil
@@ -2192,8 +2180,7 @@ func opcodeCheckMultiSig(op *parsedOpcode, vm *Engine) error {
 		signatures = append(signatures, sigInfo)
 	}
 
-	// Get script starting from the most recent OP_CODESEPARATOR.
-	script := vm.subScript()
+	script := vm.currentScript()
 
 	success := true
 	numPubKeys++
