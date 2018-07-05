@@ -123,7 +123,7 @@ func TestOpcodeDisasm(t *testing.T) {
 			}
 
 		// OP_UNKNOWN#.
-		case opcodeVal >= 0xba && opcodeVal <= 0xf9 || opcodeVal == 0xfc || opcodeVal == 0xab:
+		case isOpUnknown(opcodeVal):
 			expectedStr = "OP_UNKNOWN" + strconv.Itoa(int(opcodeVal))
 		}
 
@@ -189,7 +189,7 @@ func TestOpcodeDisasm(t *testing.T) {
 			}
 
 		// OP_UNKNOWN#.
-		case opcodeVal >= 0xba && opcodeVal <= 0xf9 || opcodeVal == 0xfc || opcodeVal == 0xab:
+		case isOpUnknown(opcodeVal):
 			expectedStr = "OP_UNKNOWN" + strconv.Itoa(int(opcodeVal))
 		}
 
@@ -202,4 +202,8 @@ func TestOpcodeDisasm(t *testing.T) {
 			continue
 		}
 	}
+}
+
+func isOpUnknown(opcodeVal int) bool {
+	return opcodeVal >= 0xba && opcodeVal <= 0xf9 || opcodeVal == 0xfc || opcodeVal == 0xab
 }
