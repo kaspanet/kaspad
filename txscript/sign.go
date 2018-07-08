@@ -71,10 +71,8 @@ func p2pkSignatureScript(tx *wire.MsgTx, idx int, script []byte, hashType SigHas
 // legal to not be able to sign any of the outputs, no error is returned.
 func signMultiSig(tx *wire.MsgTx, idx int, script []byte, hashType SigHashType,
 	addresses []btcutil.Address, nRequired int, kdb KeyDB) ([]byte, bool) {
-	// We start with a single OP_FALSE to work around the (now standard)
-	// but in the reference implementation that causes a spurious pop at
-	// the end of OP_CHECKMULTISIG.
-	builder := NewScriptBuilder().AddOp(OpFalse)
+
+	builder := NewScriptBuilder()
 	signedCount := 0
 	for _, addr := range addresses {
 		key, _, err := kdb.GetKey(addr)
