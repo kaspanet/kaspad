@@ -671,10 +671,6 @@ testloop:
 					k, i, test)
 				continue testloop
 			}
-
-			if i == 93 {
-				fmt.Printf("lalala")
-			}
 			vm, err := NewEngine(pkScript, tx.MsgTx(), k, flags, nil)
 			if err != nil {
 				t.Errorf("test (%d:%v:%d) failed to create "+

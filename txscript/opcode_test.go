@@ -12,6 +12,9 @@ import (
 	"testing"
 )
 
+const OP_NOP1 = 0xb2
+const OP_NOP10 = 0xbb
+
 // TestOpcodeDisabled tests the opcodeDisabled function manually because all
 // disabled opcodes result in a script execution failure when executed normally,
 // so the function is not called under normal circumstances.
@@ -75,6 +78,7 @@ func TestOpcodeDisasm(t *testing.T) {
 		0xa9: "OP_HASH160", 0xaa: "OP_HASH256",
 		0xac: "OP_CHECKSIG", 0xad: "OP_CHECKSIGVERIFY",
 		0xae: "OP_CHECKMULTISIG", 0xaf: "OP_CHECKMULTISIGVERIFY",
+		0xb0: "OP_CHECKLOCKTIMEVERIFY", 0xb1: "OP_CHECKSEQUENCEVERIFY",
 		0xfa: "OP_SMALLINTEGER", 0xfb: "OP_PUBKEYS",
 		0xfd: "OP_PUBKEYHASH", 0xfe: "OP_PUBKEY",
 		0xff: "OP_INVALIDOPCODE",
@@ -109,18 +113,9 @@ func TestOpcodeDisasm(t *testing.T) {
 			expectedStr = strconv.Itoa(int(val))
 
 		// OP_NOP1 through OP_NOP10.
-		case opcodeVal >= 0xb0 && opcodeVal <= 0xb9:
-			switch opcodeVal {
-			case 0xb1:
-				// OP_NOP2 is an alias of OP_CHECKLOCKTIMEVERIFY
-				expectedStr = "OP_CHECKLOCKTIMEVERIFY"
-			case 0xb2:
-				// OP_NOP3 is an alias of OP_CHECKSEQUENCEVERIFY
-				expectedStr = "OP_CHECKSEQUENCEVERIFY"
-			default:
-				val := byte(opcodeVal - (0xb0 - 1))
-				expectedStr = "OP_NOP" + strconv.Itoa(int(val))
-			}
+		case opcodeVal >= OP_NOP1 && opcodeVal <= OP_NOP10:
+			val := byte(opcodeVal - (OP_NOP1 - 1))
+			expectedStr = "OP_NOP" + strconv.Itoa(int(val))
 
 		// OP_UNKNOWN#.
 		case isOpUnknown(opcodeVal):
@@ -175,18 +170,9 @@ func TestOpcodeDisasm(t *testing.T) {
 			expectedStr = "OP_" + strconv.Itoa(int(val))
 
 		// OP_NOP1 through OP_NOP10.
-		case opcodeVal >= 0xb0 && opcodeVal <= 0xb9:
-			switch opcodeVal {
-			case 0xb1:
-				// OP_NOP2 is an alias of OP_CHECKLOCKTIMEVERIFY
-				expectedStr = "OP_CHECKLOCKTIMEVERIFY"
-			case 0xb2:
-				// OP_NOP3 is an alias of OP_CHECKSEQUENCEVERIFY
-				expectedStr = "OP_CHECKSEQUENCEVERIFY"
-			default:
-				val := byte(opcodeVal - (0xb0 - 1))
-				expectedStr = "OP_NOP" + strconv.Itoa(int(val))
-			}
+		case opcodeVal >= OP_NOP1 && opcodeVal <= OP_NOP10:
+			val := byte(opcodeVal - (OP_NOP1 - 1))
+			expectedStr = "OP_NOP" + strconv.Itoa(int(val))
 
 		// OP_UNKNOWN#.
 		case isOpUnknown(opcodeVal):
