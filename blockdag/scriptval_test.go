@@ -18,7 +18,7 @@ func TestCheckBlockScripts(t *testing.T) {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
 	testBlockNum := 277647
-	blockDataFile := fmt.Sprintf("%d_.dat", testBlockNum)
+	blockDataFile := fmt.Sprintf("%d.dat", testBlockNum)
 	blocks, err := loadBlocks(blockDataFile)
 	if err != nil {
 		t.Errorf("Error loading file: %v\n", err)
@@ -33,7 +33,7 @@ func TestCheckBlockScripts(t *testing.T) {
 		return
 	}
 
-	storeDataFile := fmt.Sprintf("%d_.utxostore", testBlockNum)
+	storeDataFile := fmt.Sprintf("%d.utxostore", testBlockNum)
 	view, err := loadUtxoView(storeDataFile)
 	if err != nil {
 		t.Errorf("Error loading txstore: %v\n", err)
