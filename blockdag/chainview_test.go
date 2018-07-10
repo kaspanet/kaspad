@@ -340,7 +340,7 @@ func TestChainViewSetTip(t *testing.T) {
 	// structure.
 	// 0 -> 1 -> 2  -> 3  -> 4
 	//       \-> 2a -> 3a -> 4a  -> 5a -> 6a -> 7a -> ... -> 26a
-	branch0Nodes := chainedNodes(nil, 5)
+	branch0Nodes := chainedNodes(newSet(), 5)
 	branch1Nodes := chainedNodes(setFromSlice(branch0Nodes[1]), 25)
 
 	tip := tstTip
@@ -426,9 +426,9 @@ func TestChainViewNil(t *testing.T) {
 			genesis)
 	}
 
-	// Ensure the tip of an uninitialized view does not produce a node.
-	if tip := view.Tips(); tip != nil {
-		t.Fatalf("Tip: unexpected tip -- got %v, want nil", tip)
+	// Ensure the tips of an uninitialized view do not produce a node.
+	if tips := view.Tips(); len(tips) > 0 {
+		t.Fatalf("Tip: unexpected tips -- got %v, want nothing", tips)
 	}
 
 	// Ensure the height of an uninitialized view is the expected value.
