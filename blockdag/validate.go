@@ -1213,7 +1213,7 @@ func (b *BlockChain) CheckConnectBlockTemplate(block *btcutil.Block) error {
 	tips := b.bestChain.Tips()
 	header := block.MsgBlock().Header
 	prevHashes := header.PrevBlocks
-	if tips.hashesEqual(prevHashes) {
+	if !tips.hashesEqual(prevHashes) {
 		str := fmt.Sprintf("previous blocks must be the currents tips %v, "+
 			"instead got %v", tips, prevHashes)
 		return ruleError(ErrPrevBlockNotBest, str)
