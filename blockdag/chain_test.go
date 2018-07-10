@@ -17,12 +17,12 @@ import (
 
 // TestHaveBlock tests the HaveBlock API to ensure proper functionality.
 func TestHaveBlock(t *testing.T) {
-	// Load up blocks such that there is a side chain.
+	// Load up blocks such that there is a fork in the DAG.
 	// (genesis block) -> 1 -> 2 -> 3 -> 4
-	//                          \-> 3a
+	//                          \-> 3b
 	testFiles := []string{
-		"blk_0_to_4.dat.bz2",
-		"blk_3A.dat.bz2",
+		"blk_0_to_4_.dat",
+		"blk_3B_.dat",
 	}
 
 	var blocks []*btcutil.Block
@@ -78,14 +78,14 @@ func TestHaveBlock(t *testing.T) {
 		hash string
 		want bool
 	}{
-		// Genesis block should be present (in the main chain).
+		// Genesis block should be present.
 		{hash: dagconfig.MainNetParams.GenesisHash.String(), want: true},
 
-		// Block 3a should be present (on a side chain).
-		{hash: "00000000474284d20067a4d33f6a02284e6ef70764a3a26d6a5b9df52ef663dd", want: true},
+		// Block 3b should be present (as a second child of Block 2).
+		{hash: "000000c7576990a9a73785181a36c0b346d0750c385345252c1cfa6951928c26", want: true},
 
 		// Block 100000 should be present (as an orphan).
-		{hash: "000000000003ba27aa200b1cecaad478d2b00432346c3f1f3986da1afd33e506", want: true},
+		{hash: "000000826ababf6b615336e6e1a5b479f4d2e580448cc090fc111b749a28654b", want: true},
 
 		// Random hashes should not be available.
 		{hash: "123", want: false},

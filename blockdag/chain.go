@@ -483,8 +483,7 @@ func LockTimeToSequence(isSeconds bool, locktime uint32) uint32 {
 		locktime>>wire.SequenceLockTimeGranularity
 }
 
-// connectBlock handles connecting the passed node/block to the end of the main
-// (best) chain.
+// connectBlock handles connecting the passed node/block to the DAG.
 //
 // This passed utxo view must have all referenced txos the block spends marked
 // as spent and all of the new txos the block creates added to it.  In addition,
@@ -495,13 +494,6 @@ func LockTimeToSequence(isSeconds bool, locktime uint32) uint32 {
 //
 // This function MUST be called with the chain state lock held (for writes).
 func (b *BlockChain) connectBlock(node *blockNode, block *btcutil.Block, view *UtxoViewpoint, stxos []spentTxOut) error {
-	// Make sure it's extending the end of the best chain.
-	prevHash := block.MsgBlock().Header.SelectedPrevBlock()
-	if !prevHash.IsEqual(&b.bestChain.SelectedTip().hash) {
-		return AssertError("connectBlock must be called with a block " +
-			"that extends the main chain")
-	}
-
 	// Sanity check the correct number of stxos are provided.
 	if len(stxos) != countSpentOutputs(block) {
 		return AssertError("connectBlock called with inconsistent " +
