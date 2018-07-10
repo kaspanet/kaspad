@@ -125,7 +125,7 @@ func TestCalcSequenceLock(t *testing.T) {
 	blockVersion := int32(0x20000000 | (uint32(1) << csvBit))
 
 	// Generate enough synthetic blocks to activate CSV.
-	chain := newFakeChain(netParams)
+	chain := newFakeDag(netParams)
 	node := chain.bestChain.SelectedTip()
 	blockTime := node.Header().Timestamp
 	numBlocksToActivate := (netParams.MinerConfirmationWindow * 3)
@@ -464,21 +464,21 @@ func nodeHeaders(nodes []*blockNode, indexes ...int) []wire.BlockHeader {
 // TestLocateInventory ensures that locating inventory via the LocateHeaders and
 // LocateBlocks functions behaves as expected.
 func TestLocateInventory(t *testing.T) {
-	// Construct a synthetic block chain with a block index consisting of
+	// Construct a synthetic block DAG with a block index consisting of
 	// the following structure.
 	// 	genesis -> 1 -> 2 -> ... -> 15 -> 16  -> 17  -> 18
 	// 	                              \-> 16a -> 17a
 	tip := tstTip
-	chain := newFakeChain(&dagconfig.MainNetParams)
-	branch0Nodes := chainedNodes(chain.bestChain.Genesis(), 18)
-	branch1Nodes := chainedNodes(branch0Nodes[14], 2)
+	dag := newFakeDag(&dagconfig.MainNetParams)
+	branch0Nodes := chainedNodes(setFromSlice(dag.bestChain.Genesis()), 18)
+	branch1Nodes := chainedNodes(setFromSlice(branch0Nodes[14]), 2)
 	for _, node := range branch0Nodes {
-		chain.index.AddNode(node)
+		dag.index.AddNode(node)
 	}
 	for _, node := range branch1Nodes {
-		chain.index.AddNode(node)
+		dag.index.AddNode(node)
 	}
-	chain.bestChain.SetTip(tip(branch0Nodes))
+	dag.bestChain.SetTip(tip(branch0Nodes))
 
 	// Create chain views for different branches of the overall chain to
 	// simulate a local and remote node on different parts of the chain.
@@ -487,7 +487,7 @@ func TestLocateInventory(t *testing.T) {
 
 	// Create a chain view for a completely unrelated block chain to
 	// simulate a remote node on a totally different chain.
-	unrelatedBranchNodes := chainedNodes(nil, 5)
+	unrelatedBranchNodes := chainedNodes(newSet(), 5)
 	unrelatedView := newChainView(tip(unrelatedBranchNodes))
 
 	tests := []struct {
@@ -772,12 +772,12 @@ func TestLocateInventory(t *testing.T) {
 		if test.maxAllowed != 0 {
 			// Need to use the unexported function to override the
 			// max allowed for headers.
-			chain.chainLock.RLock()
-			headers = chain.locateHeaders(test.locator,
+			dag.chainLock.RLock()
+			headers = dag.locateHeaders(test.locator,
 				&test.hashStop, test.maxAllowed)
-			chain.chainLock.RUnlock()
+			dag.chainLock.RUnlock()
 		} else {
-			headers = chain.LocateHeaders(test.locator,
+			headers = dag.LocateHeaders(test.locator,
 				&test.hashStop)
 		}
 		if !reflect.DeepEqual(headers, test.headers) {
@@ -791,7 +791,7 @@ func TestLocateInventory(t *testing.T) {
 		if test.maxAllowed != 0 {
 			maxAllowed = test.maxAllowed
 		}
-		hashes := chain.LocateBlocks(test.locator, &test.hashStop,
+		hashes := dag.LocateBlocks(test.locator, &test.hashStop,
 			maxAllowed)
 		if !reflect.DeepEqual(hashes, test.hashes) {
 			t.Errorf("%s: unxpected hashes -- got %v, want %v",
@@ -809,9 +809,9 @@ func TestHeightToHashRange(t *testing.T) {
 	// 	genesis -> 1 -> 2 -> ... -> 15 -> 16  -> 17  -> 18
 	// 	                              \-> 16a -> 17a -> 18a (unvalidated)
 	tip := tstTip
-	chain := newFakeChain(&dagconfig.MainNetParams)
-	branch0Nodes := chainedNodes(chain.bestChain.Genesis(), 18)
-	branch1Nodes := chainedNodes(branch0Nodes[14], 3)
+	chain := newFakeDag(&dagconfig.MainNetParams)
+	branch0Nodes := chainedNodes(setFromSlice(chain.bestChain.Genesis()), 18)
+	branch1Nodes := chainedNodes(setFromSlice(branch0Nodes[14]), 3)
 	for _, node := range branch0Nodes {
 		chain.index.SetStatusFlags(node, statusValid)
 		chain.index.AddNode(node)
@@ -901,9 +901,9 @@ func TestIntervalBlockHashes(t *testing.T) {
 	// 	genesis -> 1 -> 2 -> ... -> 15 -> 16  -> 17  -> 18
 	// 	                              \-> 16a -> 17a -> 18a (unvalidated)
 	tip := tstTip
-	chain := newFakeChain(&dagconfig.MainNetParams)
-	branch0Nodes := chainedNodes(chain.bestChain.Genesis(), 18)
-	branch1Nodes := chainedNodes(branch0Nodes[14], 3)
+	chain := newFakeDag(&dagconfig.MainNetParams)
+	branch0Nodes := chainedNodes(setFromSlice(chain.bestChain.Genesis()), 18)
+	branch1Nodes := chainedNodes(setFromSlice(branch0Nodes[14]), 3)
 	for _, node := range branch0Nodes {
 		chain.index.SetStatusFlags(node, statusValid)
 		chain.index.AddNode(node)
