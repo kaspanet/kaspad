@@ -698,7 +698,7 @@
 ["0x17 0x3014021077777777777777777777777777777777020001", "0 CHECKSIG NOT", "", "OK", "Zero-length S is correctly encoded for DERSIG"],
 ["0x27 0x302402107777777777777777777777777777777702108777777777777777777777777777777701", "0 CHECKSIG NOT", "", "OK", "Negative S is correctly encoded"],
  
-["2147483648", "CHECKSEQUENCEVERIFY", "CHECKSEQUENCEVERIFY", "OK", "CSV passes if stack top bit 1 << 31 is set"],
+["2147483648", "CHECKSEQUENCEVERIFY", "", "OK", "CSV passes if stack top bit 1 << 31 is set"],
 
 ["", "DEPTH", "P2SH,STRICTENC",   "EVAL_FALSE", "Test the test: we should have an empty stack after scriptSig evaluation"],
 ["  ", "DEPTH", "P2SH,STRICTENC", "EVAL_FALSE", "and multiple spaces should not change that."],
@@ -1812,11 +1812,11 @@
 ],
 
 ["CHECKSEQUENCEVERIFY tests"],
-["", "CHECKSEQUENCEVERIFY", "CHECKSEQUENCEVERIFY", "INVALID_STACK_OPERATION", "CSV automatically fails on a empty stack"],
-["-1", "CHECKSEQUENCEVERIFY", "CHECKSEQUENCEVERIFY", "NEGATIVE_LOCKTIME", "CSV automatically fails if stack top is negative"],
+["", "CHECKSEQUENCEVERIFY", "", "INVALID_STACK_OPERATION", "CSV automatically fails on a empty stack"],
+["-1", "CHECKSEQUENCEVERIFY", "", "NEGATIVE_LOCKTIME", "CSV automatically fails if stack top is negative"],
 ["0x0100", "CHECKSEQUENCEVERIFY", "MINIMALDATA", "UNKNOWN_ERROR", "CSV fails if stack top is not minimally encoded"],
-["0", "CHECKSEQUENCEVERIFY", "CHECKSEQUENCEVERIFY", "UNSATISFIED_LOCKTIME", "CSV fails if stack top bit 1 << 31 is set and the tx version < 2"],
-["4294967296", "CHECKSEQUENCEVERIFY", "CHECKSEQUENCEVERIFY", "UNSATISFIED_LOCKTIME",
+["0", "CHECKSEQUENCEVERIFY", "", "UNSATISFIED_LOCKTIME", "CSV fails if stack top bit 1 << 31 is set and the tx version < 2"],
+["4294967296", "CHECKSEQUENCEVERIFY", "", "UNSATISFIED_LOCKTIME",
   "CSV fails if stack top bit 1 << 31 is not set, and tx version < 2"],
 
 ["NULLFAIL should cover all signatures and signatures only"],
