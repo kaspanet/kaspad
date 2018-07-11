@@ -343,14 +343,14 @@ func (b *BlockChain) TstSetCoinbaseMaturity(maturity uint16) {
 	b.chainParams.CoinbaseMaturity = maturity
 }
 
-// newFakeChain returns a chain that is usable for syntetic tests.  It is
+// newFakeDag returns a chain that is usable for syntetic tests.  It is
 // important to note that this chain has no database associated with it, so
 // it is not usable with all functions and the tests must take care when making
 // use of it.
-func newFakeChain(params *dagconfig.Params) *BlockChain {
+func newFakeDag(params *dagconfig.Params) *BlockChain {
 	// Create a genesis block node and block index index populated with it
 	// for use when creating the fake chain below.
-	node := newBlockNode(&params.GenesisBlock.Header, nil)
+	node := newBlockNode(&params.GenesisBlock.Header, newSet())
 	index := newBlockIndex(nil, params)
 	index.AddNode(node)
 

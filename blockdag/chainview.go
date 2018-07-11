@@ -100,6 +100,11 @@ func (c *chainView) Tips() blockSet {
 	c.mtx.Lock()
 	tip := c.tip()
 	c.mtx.Unlock()
+
+	if tip == nil { // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
+		return newSet()
+	}
+
 	return setFromSlice(tip) // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
 }
 

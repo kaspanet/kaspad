@@ -10,7 +10,6 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/wire"
 )
 
@@ -21,18 +20,16 @@ var testNoncePrng = rand.New(rand.NewSource(0))
 // chainedNodes returns the specified number of nodes constructed such that each
 // subsequent node points to the previous one to create a chain.  The first node
 // will point to the passed parent which can be nil if desired.
-func chainedNodes(parent *blockNode, numNodes int) []*blockNode {
+func chainedNodes(parents blockSet, numNodes int) []*blockNode {
 	nodes := make([]*blockNode, numNodes)
-	tip := parent
+	tips := parents
 	for i := 0; i < numNodes; i++ {
 		// This is invalid, but all that is needed is enough to get the
 		// synthetic tests to work.
 		header := wire.BlockHeader{Nonce: testNoncePrng.Uint32()}
-		if tip != nil {
-			header.PrevBlocks = []daghash.Hash{tip.hash} // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
-		}
-		nodes[i] = newBlockNode(&header, setFromSlice(tip)) // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
-		tip = nodes[i]
+		header.PrevBlocks = tips.hashes()
+		nodes[i] = newBlockNode(&header, tips)
+		tips = setFromSlice(nodes[i])
 	}
 	return nodes
 }
@@ -79,8 +76,8 @@ func TestChainView(t *testing.T) {
 	//       \-> 2a -> 3a -> 4a  -> 5a -> 6a -> 7a -> ... -> 26a
 	//             \-> 3a'-> 4a' -> 5a'
 	branch0Nodes := chainedNodes(nil, 5)
-	branch1Nodes := chainedNodes(branch0Nodes[1], 25)
-	branch2Nodes := chainedNodes(branch1Nodes[0], 3)
+	branch1Nodes := chainedNodes(setFromSlice(branch0Nodes[1]), 25)
+	branch2Nodes := chainedNodes(setFromSlice(branch1Nodes[0]), 3)
 
 	tip := tstTip
 	tests := []struct {
@@ -343,8 +340,8 @@ func TestChainViewSetTip(t *testing.T) {
 	// structure.
 	// 0 -> 1 -> 2  -> 3  -> 4
 	//       \-> 2a -> 3a -> 4a  -> 5a -> 6a -> 7a -> ... -> 26a
-	branch0Nodes := chainedNodes(nil, 5)
-	branch1Nodes := chainedNodes(branch0Nodes[1], 25)
+	branch0Nodes := chainedNodes(newSet(), 5)
+	branch1Nodes := chainedNodes(setFromSlice(branch0Nodes[1]), 25)
 
 	tip := tstTip
 	tests := []struct {
@@ -429,9 +426,9 @@ func TestChainViewNil(t *testing.T) {
 			genesis)
 	}
 
-	// Ensure the tip of an uninitialized view does not produce a node.
-	if tip := view.Tips(); tip != nil {
-		t.Fatalf("Tip: unexpected tip -- got %v, want nil", tip)
+	// Ensure the tips of an uninitialized view do not produce a node.
+	if tips := view.Tips(); len(tips) > 0 {
+		t.Fatalf("Tip: unexpected tips -- got %v, want nothing", tips)
 	}
 
 	// Ensure the height of an uninitialized view is the expected value.

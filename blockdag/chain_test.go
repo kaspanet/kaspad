@@ -17,12 +17,12 @@ import (
 
 // TestHaveBlock tests the HaveBlock API to ensure proper functionality.
 func TestHaveBlock(t *testing.T) {
-	// Load up blocks such that there is a side chain.
+	// Load up blocks such that there is a fork in the DAG.
 	// (genesis block) -> 1 -> 2 -> 3 -> 4
-	//                          \-> 3a
+	//                          \-> 3b
 	testFiles := []string{
-		"blk_0_to_4.dat.bz2",
-		"blk_3A.dat.bz2",
+		"blk_0_to_4.dat",
+		"blk_3B.dat",
 	}
 
 	var blocks []*btcutil.Block
@@ -78,14 +78,14 @@ func TestHaveBlock(t *testing.T) {
 		hash string
 		want bool
 	}{
-		// Genesis block should be present (in the main chain).
+		// Genesis block should be present.
 		{hash: dagconfig.MainNetParams.GenesisHash.String(), want: true},
 
-		// Block 3a should be present (on a side chain).
-		{hash: "00000000474284d20067a4d33f6a02284e6ef70764a3a26d6a5b9df52ef663dd", want: true},
+		// Block 3b should be present (as a second child of Block 2).
+		{hash: "000000c7576990a9a73785181a36c0b346d0750c385345252c1cfa6951928c26", want: true},
 
 		// Block 100000 should be present (as an orphan).
-		{hash: "000000000003ba27aa200b1cecaad478d2b00432346c3f1f3986da1afd33e506", want: true},
+		{hash: "000000826ababf6b615336e6e1a5b479f4d2e580448cc090fc111b749a28654b", want: true},
 
 		// Random hashes should not be available.
 		{hash: "123", want: false},
@@ -125,7 +125,7 @@ func TestCalcSequenceLock(t *testing.T) {
 	blockVersion := int32(0x20000000 | (uint32(1) << csvBit))
 
 	// Generate enough synthetic blocks to activate CSV.
-	chain := newFakeChain(netParams)
+	chain := newFakeDag(netParams)
 	node := chain.bestChain.SelectedTip()
 	blockTime := node.Header().Timestamp
 	numBlocksToActivate := (netParams.MinerConfirmationWindow * 3)
@@ -464,21 +464,21 @@ func nodeHeaders(nodes []*blockNode, indexes ...int) []wire.BlockHeader {
 // TestLocateInventory ensures that locating inventory via the LocateHeaders and
 // LocateBlocks functions behaves as expected.
 func TestLocateInventory(t *testing.T) {
-	// Construct a synthetic block chain with a block index consisting of
+	// Construct a synthetic block DAG with a block index consisting of
 	// the following structure.
 	// 	genesis -> 1 -> 2 -> ... -> 15 -> 16  -> 17  -> 18
 	// 	                              \-> 16a -> 17a
 	tip := tstTip
-	chain := newFakeChain(&dagconfig.MainNetParams)
-	branch0Nodes := chainedNodes(chain.bestChain.Genesis(), 18)
-	branch1Nodes := chainedNodes(branch0Nodes[14], 2)
+	dag := newFakeDag(&dagconfig.MainNetParams)
+	branch0Nodes := chainedNodes(setFromSlice(dag.bestChain.Genesis()), 18)
+	branch1Nodes := chainedNodes(setFromSlice(branch0Nodes[14]), 2)
 	for _, node := range branch0Nodes {
-		chain.index.AddNode(node)
+		dag.index.AddNode(node)
 	}
 	for _, node := range branch1Nodes {
-		chain.index.AddNode(node)
+		dag.index.AddNode(node)
 	}
-	chain.bestChain.SetTip(tip(branch0Nodes))
+	dag.bestChain.SetTip(tip(branch0Nodes))
 
 	// Create chain views for different branches of the overall chain to
 	// simulate a local and remote node on different parts of the chain.
@@ -487,7 +487,7 @@ func TestLocateInventory(t *testing.T) {
 
 	// Create a chain view for a completely unrelated block chain to
 	// simulate a remote node on a totally different chain.
-	unrelatedBranchNodes := chainedNodes(nil, 5)
+	unrelatedBranchNodes := chainedNodes(newSet(), 5)
 	unrelatedView := newChainView(tip(unrelatedBranchNodes))
 
 	tests := []struct {
@@ -772,12 +772,12 @@ func TestLocateInventory(t *testing.T) {
 		if test.maxAllowed != 0 {
 			// Need to use the unexported function to override the
 			// max allowed for headers.
-			chain.chainLock.RLock()
-			headers = chain.locateHeaders(test.locator,
+			dag.chainLock.RLock()
+			headers = dag.locateHeaders(test.locator,
 				&test.hashStop, test.maxAllowed)
-			chain.chainLock.RUnlock()
+			dag.chainLock.RUnlock()
 		} else {
-			headers = chain.LocateHeaders(test.locator,
+			headers = dag.LocateHeaders(test.locator,
 				&test.hashStop)
 		}
 		if !reflect.DeepEqual(headers, test.headers) {
@@ -791,7 +791,7 @@ func TestLocateInventory(t *testing.T) {
 		if test.maxAllowed != 0 {
 			maxAllowed = test.maxAllowed
 		}
-		hashes := chain.LocateBlocks(test.locator, &test.hashStop,
+		hashes := dag.LocateBlocks(test.locator, &test.hashStop,
 			maxAllowed)
 		if !reflect.DeepEqual(hashes, test.hashes) {
 			t.Errorf("%s: unxpected hashes -- got %v, want %v",
@@ -809,9 +809,9 @@ func TestHeightToHashRange(t *testing.T) {
 	// 	genesis -> 1 -> 2 -> ... -> 15 -> 16  -> 17  -> 18
 	// 	                              \-> 16a -> 17a -> 18a (unvalidated)
 	tip := tstTip
-	chain := newFakeChain(&dagconfig.MainNetParams)
-	branch0Nodes := chainedNodes(chain.bestChain.Genesis(), 18)
-	branch1Nodes := chainedNodes(branch0Nodes[14], 3)
+	chain := newFakeDag(&dagconfig.MainNetParams)
+	branch0Nodes := chainedNodes(setFromSlice(chain.bestChain.Genesis()), 18)
+	branch1Nodes := chainedNodes(setFromSlice(branch0Nodes[14]), 3)
 	for _, node := range branch0Nodes {
 		chain.index.SetStatusFlags(node, statusValid)
 		chain.index.AddNode(node)
@@ -901,9 +901,9 @@ func TestIntervalBlockHashes(t *testing.T) {
 	// 	genesis -> 1 -> 2 -> ... -> 15 -> 16  -> 17  -> 18
 	// 	                              \-> 16a -> 17a -> 18a (unvalidated)
 	tip := tstTip
-	chain := newFakeChain(&dagconfig.MainNetParams)
-	branch0Nodes := chainedNodes(chain.bestChain.Genesis(), 18)
-	branch1Nodes := chainedNodes(branch0Nodes[14], 3)
+	chain := newFakeDag(&dagconfig.MainNetParams)
+	branch0Nodes := chainedNodes(setFromSlice(chain.bestChain.Genesis()), 18)
+	branch1Nodes := chainedNodes(setFromSlice(branch0Nodes[14]), 3)
 	for _, node := range branch0Nodes {
 		chain.index.SetStatusFlags(node, statusValid)
 		chain.index.AddNode(node)

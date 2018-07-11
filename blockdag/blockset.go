@@ -112,6 +112,16 @@ func (bs blockSet) hashesEqual(hashes []daghash.Hash) bool {
 	return true
 }
 
+// hashes returns the hashes of the blocks in this set.
+func (bs blockSet) hashes() []daghash.Hash {
+	hashes := make([]daghash.Hash, 0, len(bs))
+	for hash := range bs {
+		hashes = append(hashes, hash)
+	}
+
+	return hashes
+}
+
 // first returns the first block in this set or nil if this set is empty.
 func (bs blockSet) first() *blockNode {
 	for _, block := range bs {

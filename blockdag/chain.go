@@ -483,8 +483,7 @@ func LockTimeToSequence(isSeconds bool, locktime uint32) uint32 {
 		locktime>>wire.SequenceLockTimeGranularity
 }
 
-// connectBlock handles connecting the passed node/block to the end of the main
-// (best) chain.
+// connectBlock handles connecting the passed node/block to the DAG.
 //
 // This passed utxo view must have all referenced txos the block spends marked
 // as spent and all of the new txos the block creates added to it.  In addition,
@@ -495,13 +494,6 @@ func LockTimeToSequence(isSeconds bool, locktime uint32) uint32 {
 //
 // This function MUST be called with the chain state lock held (for writes).
 func (b *BlockChain) connectBlock(node *blockNode, block *btcutil.Block, view *UtxoViewpoint, stxos []spentTxOut) error {
-	// Make sure it's extending the end of the best chain.
-	prevHash := block.MsgBlock().Header.SelectedPrevBlock()
-	if !prevHash.IsEqual(&b.bestChain.SelectedTip().hash) {
-		return AssertError("connectBlock must be called with a block " +
-			"that extends the main chain")
-	}
-
 	// Sanity check the correct number of stxos are provided.
 	if len(stxos) != countSpentOutputs(block) {
 		return AssertError("connectBlock called with inconsistent " +
@@ -607,117 +599,6 @@ func (b *BlockChain) connectBlock(node *blockNode, block *btcutil.Block, view *U
 	// updating wallets.
 	b.chainLock.Unlock()
 	b.sendNotification(NTBlockConnected, block)
-	b.chainLock.Lock()
-
-	return nil
-}
-
-// disconnectBlock handles disconnecting the passed node/block from the end of
-// the main (best) chain.
-//
-// This function MUST be called with the chain state lock held (for writes).
-func (b *BlockChain) disconnectBlock(node *blockNode, block *btcutil.Block, view *UtxoViewpoint) error {
-	// Make sure the node being disconnected is the end of the best chain.
-	if !node.hash.IsEqual(&b.bestChain.SelectedTip().hash) {
-		return AssertError("disconnectBlock must be called with the " +
-			"block at the end of the main chain")
-	}
-
-	// Load the previous block since some details for it are needed below.
-	prevNode := node.selectedParent
-	var prevBlock *btcutil.Block
-	err := b.db.View(func(dbTx database.Tx) error {
-		var err error
-		prevBlock, err = dbFetchBlockByNode(dbTx, prevNode)
-		return err
-	})
-	if err != nil {
-		return err
-	}
-
-	// Write any block status changes to DB before updating best state.
-	err = b.index.flushToDB()
-	if err != nil {
-		return err
-	}
-
-	// Generate a new best state snapshot that will be used to update the
-	// database and later memory if all database updates are successful.
-	b.stateLock.RLock()
-	curTotalTxns := b.stateSnapshot.TotalTxns
-	b.stateLock.RUnlock()
-	numTxns := uint64(len(prevBlock.MsgBlock().Transactions))
-	blockSize := uint64(prevBlock.MsgBlock().SerializeSize())
-	newTotalTxns := curTotalTxns - uint64(len(block.MsgBlock().Transactions))
-	state := newBestState(prevNode, blockSize, numTxns,
-		newTotalTxns, prevNode.CalcPastMedianTime())
-
-	err = b.db.Update(func(dbTx database.Tx) error {
-		// Update best block state.
-		err := dbPutBestState(dbTx, state, node.workSum)
-		if err != nil {
-			return err
-		}
-
-		// Remove the block hash and height from the block index which
-		// tracks the main chain.
-		err = dbRemoveBlockIndex(dbTx, block.Hash(), node.height)
-		if err != nil {
-			return err
-		}
-
-		// Update the utxo set using the state of the utxo view.  This
-		// entails restoring all of the utxos spent and removing the new
-		// ones created by the block.
-		err = dbPutUtxoView(dbTx, view)
-		if err != nil {
-			return err
-		}
-
-		// Update the transaction spend journal by removing the record
-		// that contains all txos spent by the block .
-		err = dbRemoveSpendJournalEntry(dbTx, block.Hash())
-		if err != nil {
-			return err
-		}
-
-		// Allow the index manager to call each of the currently active
-		// optional indexes with the block being disconnected so they
-		// can update themselves accordingly.
-		if b.indexManager != nil {
-			err := b.indexManager.DisconnectBlock(dbTx, block, view)
-			if err != nil {
-				return err
-			}
-		}
-
-		return nil
-	})
-	if err != nil {
-		return err
-	}
-
-	// Prune fully spent entries and mark all entries in the view unmodified
-	// now that the modifications have been committed to the database.
-	view.commit()
-
-	// This node's parent is now the end of the best chain.
-	b.bestChain.SetTip(node.selectedParent)
-
-	// Update the state for the best block.  Notice how this replaces the
-	// entire struct instead of updating the existing one.  This effectively
-	// allows the old version to act as a snapshot which callers can use
-	// freely without needing to hold a lock for the duration.  See the
-	// comments on the state variable for more details.
-	b.stateLock.Lock()
-	b.stateSnapshot = state
-	b.stateLock.Unlock()
-
-	// Notify the caller that the block was disconnected from the main
-	// chain.  The caller would typically want to react with actions such as
-	// updating wallets.
-	b.chainLock.Unlock()
-	b.sendNotification(NTBlockDisconnected, block)
 	b.chainLock.Lock()
 
 	return nil
