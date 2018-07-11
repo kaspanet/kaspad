@@ -33,8 +33,6 @@ const (
 		ScriptDiscourageUpgradableNops |
 		ScriptVerifyCleanStack |
 		ScriptVerifyNullFail |
-		ScriptVerifyCheckLockTimeVerify |
-		ScriptVerifyCheckSequenceVerify |
 		ScriptVerifyLowS
 )
 

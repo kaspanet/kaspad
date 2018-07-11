@@ -333,15 +333,15 @@ type gbtWorkState struct {
 	prevHash      *chainhash.Hash
 	minTimestamp  time.Time
 	template      *mining.BlockTemplate
-	notifyMap map[chainhash.Hash]map[int64]chan struct{}
-	timeSource blockchain.MedianTimeSource
+	notifyMap     map[chainhash.Hash]map[int64]chan struct{}
+	timeSource    blockchain.MedianTimeSource
 }
 
 // newGbtWorkState returns a new instance of a gbtWorkState with all internal
 // fields initialized and ready to use.
 func newGbtWorkState(timeSource blockchain.MedianTimeSource) *gbtWorkState {
 	return &gbtWorkState{
-		notifyMap: make(map[chainhash.Hash]map[int64]chan struct{}),
+		notifyMap:  make(map[chainhash.Hash]map[int64]chan struct{}),
 		timeSource: timeSource,
 	}
 }
@@ -1219,9 +1219,6 @@ func handleGetBlockChainInfo(s *rpcServer, cmd interface{}, closeChan <-chan str
 		case chaincfg.DeploymentTestDummy:
 			forkName = "dummy"
 
-		case chaincfg.DeploymentCSV:
-			forkName = "csv"
-
 		default:
 			return nil, &btcjson.RPCError{
 				Code: btcjson.ErrRPCInternal.Code,
@@ -1521,7 +1518,7 @@ func (state *gbtWorkState) updateBlockTemplate(s *rpcServer, useCoinbaseValue bo
 	if template == nil || state.prevHash == nil ||
 		!state.prevHash.IsEqual(latestHash) ||
 		(state.lastTxUpdate != lastTxUpdate &&
-			time.Now().After(state.lastGenerated.Add(time.Second *
+			time.Now().After(state.lastGenerated.Add(time.Second*
 				gbtRegenerateSeconds))) {
 
 		// Reset the previous best hash the block template was generated
@@ -1545,7 +1542,7 @@ func (state *gbtWorkState) updateBlockTemplate(s *rpcServer, useCoinbaseValue bo
 		blkTemplate, err := generator.NewBlockTemplate(payAddr)
 		if err != nil {
 			return internalRPCError("Failed to create new block "+
-				"template: "+ err.Error(), "")
+				"template: "+err.Error(), "")
 		}
 		template = blkTemplate
 		msgBlock = template.Block
@@ -2759,7 +2756,7 @@ func handlePing(s *rpcServer, cmd interface{}, closeChan <-chan struct{}) (inter
 	nonce, err := wire.RandomUint64()
 	if err != nil {
 		return nil, internalRPCError("Not sending ping - failed to "+
-			"generate nonce: "+ err.Error(), "")
+			"generate nonce: "+err.Error(), "")
 	}
 	s.cfg.ConnMgr.BroadcastMessage(wire.NewMsgPing(nonce))
 
@@ -4232,7 +4229,7 @@ func newRPCServer(config *rpcserverConfig) (*rpcServer, error) {
 		gbtWorkState:           newGbtWorkState(config.TimeSource),
 		helpCacher:             newHelpCacher(),
 		requestProcessShutdown: make(chan struct{}),
-		quit:                   make(chan int),
+		quit: make(chan int),
 	}
 	if cfg.RPCUser != "" && cfg.RPCPass != "" {
 		login := cfg.RPCUser + ":" + cfg.RPCPass

@@ -1179,14 +1179,6 @@ func opcodeCheckSequenceVerify(op *parsedOpcode, vm *Engine) error {
 		return nil
 	}
 
-	// Transaction version numbers not high enough to trigger CSV rules must
-	// fail.
-	if vm.tx.Version < 2 {
-		str := fmt.Sprintf("invalid transaction version: %d",
-			vm.tx.Version)
-		return scriptError(ErrUnsatisfiedLockTime, str)
-	}
-
 	// Sequence numbers with their most significant bit set are not
 	// consensus constrained. Testing that the transaction's sequence
 	// number does not have this bit set prevents using this property
