@@ -181,9 +181,9 @@ type BlockDAG struct {
 	notifications     []NotificationCallback
 }
 
-// HaveBlock returns whether or not the chain instance has the block represented
+// HaveBlock returns whether or not the DAG instance has the block represented
 // by the passed hash.  This includes checking the various places a block can
-// be like part of the main chain, on a side chain, or in the orphan pool.
+// be in, like part of the DAG or in the orphan pool.
 //
 // This function is safe for concurrent access.
 func (b *BlockDAG) HaveBlock(hash *daghash.Hash) (bool, error) {
@@ -192,6 +192,25 @@ func (b *BlockDAG) HaveBlock(hash *daghash.Hash) (bool, error) {
 		return false, err
 	}
 	return exists || b.IsKnownOrphan(hash), nil
+}
+
+// HaveBlocks returns whether or not the DAG instances has all blocks represented
+// by the passed hashes. This includes checking the various places a block can
+// be in, like part of the DAG or in the orphan pool.
+//
+// This function is safe for concurrent access.
+func (b *BlockDAG) HaveBlocks(hashes []daghash.Hash) (bool, error) {
+	haveBlocks := true
+	for _, hash := range hashes {
+		haveBlock, err := b.HaveBlock(&hash)
+		if err != nil {
+			return false, err
+		}
+
+		haveBlocks = haveBlocks && haveBlock
+	}
+
+	return haveBlocks, nil
 }
 
 // IsKnownOrphan returns whether the passed hash is currently a known orphan.

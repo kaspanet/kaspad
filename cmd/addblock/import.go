@@ -13,13 +13,10 @@ import (
 
 	"github.com/daglabs/btcd/blockdag"
 	"github.com/daglabs/btcd/blockdag/indexers"
-	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/database"
 	"github.com/daglabs/btcd/wire"
 	"github.com/daglabs/btcutil"
 )
-
-var zeroHash = daghash.Hash{}
 
 // importResults houses the stats and result as an import operation.
 type importResults struct {
@@ -89,7 +86,7 @@ func (bi *blockImporter) readBlock() ([]byte, error) {
 // processBlock potentially imports the block into the database.  It first
 // deserializes the raw block while checking for errors.  Already known blocks
 // are skipped and orphan blocks are considered errors.  Finally, it runs the
-// block through the chain rules to ensure it follows all rules and matches
+// block through the DAG rules to ensure it follows all rules and matches
 // up to the known checkpoint.  Returns whether the block was imported along
 // with any potential errors.
 func (bi *blockImporter) processBlock(serializedBlock []byte) (bool, error) {
@@ -114,16 +111,16 @@ func (bi *blockImporter) processBlock(serializedBlock []byte) (bool, error) {
 	}
 
 	// Don't bother trying to process orphans.
-	prevHash := &block.MsgBlock().Header.PrevBlock
-	if !prevHash.IsEqual(&zeroHash) {
-		exists, err := bi.dag.HaveBlock(prevHash)
+	prevBlocks := block.MsgBlock().Header.PrevBlocks
+	if len(prevBlocks) > 0 {
+		exist, err := bi.dag.HaveBlocks(prevBlocks)
 		if err != nil {
 			return false, err
 		}
-		if !exists {
+		if !exist {
 			return false, fmt.Errorf("import file contains block "+
 				"%v which does not link to the available "+
-				"block chain", prevHash)
+				"block DAG", prevBlocks)
 		}
 	}
 
@@ -259,7 +256,7 @@ func (bi *blockImporter) statusHandler(resultsChan chan *importResults) {
 		}
 		close(bi.quit)
 
-	// The import finished normally.
+		// The import finished normally.
 	case <-bi.doneChan:
 		resultsChan <- &importResults{
 			blocksProcessed: bi.blocksProcessed,
