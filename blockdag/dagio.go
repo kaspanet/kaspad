@@ -955,7 +955,7 @@ func deserializeBestChainState(serializedData []byte) (bestChainState, error) {
 
 // dbPutBestState uses an existing database transaction to update the best chain
 // state with the given parameters.
-func dbPutBestState(dbTx database.Tx, snapshot *BestState, workSum *big.Int) error {
+func dbPutBestState(dbTx database.Tx, snapshot *State, workSum *big.Int) error {
 	// Serialize the current best chain state.
 	serializedData := serializeBestChainState(bestChainState{
 		hash:      snapshot.Hash,
@@ -987,7 +987,7 @@ func (b *BlockDAG) createChainState() error {
 	// genesis block, use its timestamp for the median time.
 	numTxns := uint64(len(genesisBlock.MsgBlock().Transactions))
 	blockSize := uint64(genesisBlock.MsgBlock().SerializeSize())
-	b.stateSnapshot = newBestState(node, blockSize, numTxns,
+	b.currentState = newState(node, blockSize, numTxns,
 		numTxns, time.Unix(node.timestamp, 0))
 
 	// Create the initial the database chain state including creating the
@@ -1055,7 +1055,7 @@ func (b *BlockDAG) createChainState() error {
 		}
 
 		// Store the current best chain state into the database.
-		err = dbPutBestState(dbTx, b.stateSnapshot, node.workSum)
+		err = dbPutBestState(dbTx, b.currentState, node.workSum)
 		if err != nil {
 			return err
 		}
@@ -1192,7 +1192,7 @@ func (b *BlockDAG) initChainState() error {
 		// Initialize the state related to the best block.
 		blockSize := uint64(len(blockBytes))
 		numTxns := uint64(len(block.Transactions))
-		b.stateSnapshot = newBestState(tip, blockSize, numTxns, state.totalTxns, tip.CalcPastMedianTime())
+		b.currentState = newState(tip, blockSize, numTxns, state.totalTxns, tip.CalcPastMedianTime())
 
 		return nil
 	})

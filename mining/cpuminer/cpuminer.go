@@ -162,7 +162,7 @@ func (m *CPUMiner) submitBlock(block *btcutil.Block) bool {
 	// a new block, but the check only happens periodically, so it is
 	// possible a block was found and submitted in between.
 	msgBlock := block.MsgBlock()
-	if !msgBlock.Header.PrevBlock.IsEqual(&m.g.BestSnapshot().Hash) {
+	if !msgBlock.Header.PrevBlock.IsEqual(&m.g.GetCurrentState().Hash) {
 		log.Debugf("Block submitted via CPU miner with previous "+
 			"block %s is stale", msgBlock.Header.PrevBlock)
 		return false
@@ -248,8 +248,8 @@ func (m *CPUMiner) solveBlock(msgBlock *wire.MsgBlock, blockHeight int32,
 
 				// The current block is stale if the best block
 				// has changed.
-				best := m.g.BestSnapshot()
-				if !header.PrevBlock.IsEqual(&best.Hash) {
+				currentState := m.g.GetCurrentState()
+				if !header.PrevBlock.IsEqual(&currentState.Hash) {
 					return false
 				}
 
@@ -327,7 +327,7 @@ out:
 		// this would otherwise end up building a new block template on
 		// a block that is in the process of becoming stale.
 		m.submitBlockLock.Lock()
-		curHeight := m.g.BestSnapshot().Height
+		curHeight := m.g.GetCurrentState().Height
 		if curHeight != 0 && !m.cfg.IsCurrent() {
 			m.submitBlockLock.Unlock()
 			time.Sleep(time.Second)
@@ -586,7 +586,7 @@ func (m *CPUMiner) GenerateNBlocks(n uint32) ([]*daghash.Hash, error) {
 		// be changing and this would otherwise end up building a new block
 		// template on a block that is in the process of becoming stale.
 		m.submitBlockLock.Lock()
-		curHeight := m.g.BestSnapshot().Height
+		curHeight := m.g.GetCurrentState().Height
 
 		// Choose a payment address at random.
 		rand.Seed(time.Now().UnixNano())

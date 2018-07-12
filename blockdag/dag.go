@@ -47,16 +47,15 @@ type orphanBlock struct {
 	expiration time.Time
 }
 
-// BestState houses information about the current best block and other info
-// related to the state of the main chain as it exists from the point of view of
-// the current best block.
+// State houses information about the current tips and other info
+// related to the state of the DAG.
 //
-// The BestSnapshot method can be used to obtain access to this information
+// The GetCurrentState method can be used to obtain access to this information
 // in a concurrent safe manner and the data will not be changed out from under
 // the caller when chain state changes occur as the function name implies.
 // However, the returned snapshot must be treated as immutable since it is
 // shared by all callers.
-type BestState struct {
+type State struct {
 	Hash       daghash.Hash // The hash of the block.
 	Height     int32        // The height of the block.
 	Bits       uint32       // The difficulty bits of the block.
@@ -66,11 +65,11 @@ type BestState struct {
 	MedianTime time.Time    // Median time as per CalcPastMedianTime.
 }
 
-// newBestState returns a new best stats instance for the given parameters.
-func newBestState(node *blockNode, blockSize, numTxns,
-	totalTxns uint64, medianTime time.Time) *BestState {
+// newState returns a new best stats instance for the given parameters.
+func newState(node *blockNode, blockSize, numTxns,
+	totalTxns uint64, medianTime time.Time) *State {
 
-	return &BestState{
+	return &State{
 		Hash:       node.hash,
 		Height:     node.height,
 		Bits:       node.bits,
@@ -134,18 +133,18 @@ type BlockDAG struct {
 	checkpointNode *blockNode
 
 	// The state is used as a fairly efficient way to cache information
-	// about the current best chain state that is returned to callers when
+	// about the current DAG state that is returned to callers when
 	// requested.  It operates on the principle of MVCC such that any time a
 	// new block becomes the best block, the state pointer is replaced with
 	// a new struct and the old state is left untouched.  In this way,
-	// multiple callers can be pointing to different best chain states.
+	// multiple callers can be pointing to different DAG states.
 	// This is acceptable for most callers because the state is only being
 	// queried at a specific point in time.
 	//
 	// In addition, some of the fields are stored in the database so the
-	// chain state can be quickly reconstructed on load.
-	stateLock     sync.RWMutex
-	stateSnapshot *BestState
+	// DAG state can be quickly reconstructed on load.
+	stateLock    sync.RWMutex
+	currentState *State
 
 	// The following caches are used to efficiently keep track of the
 	// current deployment threshold state of each rule change deployment.
@@ -525,11 +524,11 @@ func (b *BlockDAG) connectBlock(node *blockNode, block *btcutil.Block, view *Utx
 	// Generate a new best state snapshot that will be used to update the
 	// database and later memory if all database updates are successful.
 	b.stateLock.RLock()
-	curTotalTxns := b.stateSnapshot.TotalTxns
+	curTotalTxns := b.currentState.TotalTxns
 	b.stateLock.RUnlock()
 	numTxns := uint64(len(block.MsgBlock().Transactions))
 	blockSize := uint64(block.MsgBlock().SerializeSize())
-	state := newBestState(node, blockSize, numTxns,
+	state := newState(node, blockSize, numTxns,
 		curTotalTxns+numTxns, node.CalcPastMedianTime())
 
 	// Atomically insert info into the database.
@@ -591,7 +590,7 @@ func (b *BlockDAG) connectBlock(node *blockNode, block *btcutil.Block, view *Utx
 	// freely without needing to hold a lock for the duration.  See the
 	// comments on the state variable for more details.
 	b.stateLock.Lock()
-	b.stateSnapshot = state
+	b.currentState = state
 	b.stateLock.Unlock()
 
 	// Notify the caller that the block was connected to the main chain.
@@ -717,16 +716,16 @@ func (b *BlockDAG) IsCurrent() bool {
 	return b.isCurrent()
 }
 
-// BestSnapshot returns information about the current best chain block and
+// GetCurrentState returns information about the current best chain block and
 // related state as of the current point in time.  The returned instance must be
 // treated as immutable since it is shared by all callers.
 //
 // This function is safe for concurrent access.
-func (b *BlockDAG) BestSnapshot() *BestState {
+func (b *BlockDAG) GetCurrentState() *State {
 	b.stateLock.RLock()
-	snapshot := b.stateSnapshot
+	currentState := b.currentState
 	b.stateLock.RUnlock()
-	return snapshot
+	return currentState
 }
 
 // FetchHeader returns the block header identified by the given hash or an error
@@ -1253,7 +1252,7 @@ func New(config *Config) (*BlockDAG, error) {
 
 	bestNode := b.dag.SelectedTip()
 	log.Infof("Chain state (height %d, hash %v, totaltx %d, work %v)",
-		bestNode.height, bestNode.hash, b.stateSnapshot.TotalTxns,
+		bestNode.height, bestNode.hash, b.currentState.TotalTxns,
 		bestNode.workSum)
 
 	return &b, nil
