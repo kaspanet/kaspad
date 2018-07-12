@@ -37,7 +37,7 @@ const (
 // the main chain or any side chains.
 //
 // This function is safe for concurrent access.
-func (b *BlockChain) blockExists(hash *daghash.Hash) (bool, error) {
+func (b *BlockDAG) blockExists(hash *daghash.Hash) (bool, error) {
 	// Check block index first (could be main chain or side chain blocks).
 	if b.index.HaveBlock(hash) {
 		return true, nil
@@ -80,7 +80,7 @@ func (b *BlockChain) blockExists(hash *daghash.Hash) (bool, error) {
 // are needed to pass along to maybeAcceptBlock.
 //
 // This function MUST be called with the chain state lock held (for writes).
-func (b *BlockChain) processOrphans(hash *daghash.Hash, flags BehaviorFlags) error {
+func (b *BlockDAG) processOrphans(hash *daghash.Hash, flags BehaviorFlags) error {
 	// Start with processing at least the passed hash.  Leave a little room
 	// for additional orphan blocks that need to be processed without
 	// needing to grow the array in the common case.
@@ -138,9 +138,9 @@ func (b *BlockChain) processOrphans(hash *daghash.Hash, flags BehaviorFlags) err
 // whether or not the block is an orphan.
 //
 // This function is safe for concurrent access.
-func (b *BlockChain) ProcessBlock(block *btcutil.Block, flags BehaviorFlags) (bool, error) {
-	b.chainLock.Lock()
-	defer b.chainLock.Unlock()
+func (b *BlockDAG) ProcessBlock(block *btcutil.Block, flags BehaviorFlags) (bool, error) {
+	b.dagLock.Lock()
+	defer b.dagLock.Unlock()
 
 	fastAdd := flags&BFFastAdd == BFFastAdd
 
@@ -164,7 +164,7 @@ func (b *BlockChain) ProcessBlock(block *btcutil.Block, flags BehaviorFlags) (bo
 	}
 
 	// Perform preliminary sanity checks on the block and its transactions.
-	err = checkBlockSanity(block, b.chainParams.PowLimit, b.timeSource, flags)
+	err = checkBlockSanity(block, b.dagParams.PowLimit, b.timeSource, flags)
 	if err != nil {
 		return false, err
 	}

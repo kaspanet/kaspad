@@ -229,7 +229,7 @@ func (m *Manager) maybeCreateIndexes(dbTx database.Tx) error {
 // catch up due to the I/O contention.
 //
 // This is part of the blockchain.IndexManager interface.
-func (m *Manager) Init(chain *blockdag.BlockChain, interrupt <-chan struct{}) error {
+func (m *Manager) Init(chain *blockdag.BlockDAG, interrupt <-chan struct{}) error {
 	// Nothing to do when no indexes are enabled.
 	if len(m.enabledIndexes) == 0 {
 		return nil

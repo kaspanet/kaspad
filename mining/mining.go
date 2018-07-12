@@ -342,7 +342,7 @@ type BlkTmplGenerator struct {
 	policy      *Policy
 	chainParams *dagconfig.Params
 	txSource    TxSource
-	chain       *blockdag.BlockChain
+	dag         *blockdag.BlockDAG
 	timeSource  blockdag.MedianTimeSource
 	sigCache    *txscript.SigCache
 }
@@ -354,7 +354,7 @@ type BlkTmplGenerator struct {
 // templates are built on top of the current best chain and adhere to the
 // consensus rules.
 func NewBlkTmplGenerator(policy *Policy, params *dagconfig.Params,
-	txSource TxSource, chain *blockdag.BlockChain,
+	txSource TxSource, dag *blockdag.BlockDAG,
 	timeSource blockdag.MedianTimeSource,
 	sigCache *txscript.SigCache) *BlkTmplGenerator {
 
@@ -362,7 +362,7 @@ func NewBlkTmplGenerator(policy *Policy, params *dagconfig.Params,
 		policy:      policy,
 		chainParams: params,
 		txSource:    txSource,
-		chain:       chain,
+		dag:         dag,
 		timeSource:  timeSource,
 		sigCache:    sigCache,
 	}
@@ -432,7 +432,7 @@ func NewBlkTmplGenerator(policy *Policy, params *dagconfig.Params,
 //   -----------------------------------  --
 func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress btcutil.Address) (*BlockTemplate, error) {
 	// Extend the most recently known best block.
-	best := g.chain.BestSnapshot()
+	best := g.dag.BestSnapshot()
 	nextBlockHeight := best.Height + 1
 
 	// Create a standard coinbase transaction paying to the provided
@@ -515,7 +515,7 @@ mempoolLoop:
 		// mempool since a transaction which depends on other
 		// transactions in the mempool must come after those
 		// dependencies in the final generated block.
-		utxos, err := g.chain.FetchUtxoView(tx)
+		utxos, err := g.dag.FetchUtxoView(tx)
 		if err != nil {
 			log.Warnf("Unable to fetch utxo view for tx %s: %v",
 				tx.Hash(), err)
@@ -747,14 +747,14 @@ mempoolLoop:
 	// is potentially adjusted to ensure it comes after the median time of
 	// the last several blocks per the chain consensus rules.
 	ts := medianAdjustedTime(best, g.timeSource)
-	reqDifficulty, err := g.chain.CalcNextRequiredDifficulty(ts)
+	reqDifficulty, err := g.dag.CalcNextRequiredDifficulty(ts)
 	if err != nil {
 		return nil, err
 	}
 
 	// Calculate the next expected block version based on the state of the
 	// rule change deployments.
-	nextBlockVersion, err := g.chain.CalcNextBlockVersion()
+	nextBlockVersion, err := g.dag.CalcNextBlockVersion()
 	if err != nil {
 		return nil, err
 	}
@@ -780,7 +780,7 @@ mempoolLoop:
 	// chain with no issues.
 	block := btcutil.NewBlock(&msgBlock)
 	block.SetHeight(nextBlockHeight)
-	if err := g.chain.CheckConnectBlockTemplate(block); err != nil {
+	if err := g.dag.CheckConnectBlockTemplate(block); err != nil {
 		return nil, err
 	}
 
@@ -808,12 +808,12 @@ func (g *BlkTmplGenerator) UpdateBlockTime(msgBlock *wire.MsgBlock) error {
 	// The new timestamp is potentially adjusted to ensure it comes after
 	// the median time of the last several blocks per the chain consensus
 	// rules.
-	newTime := medianAdjustedTime(g.chain.BestSnapshot(), g.timeSource)
+	newTime := medianAdjustedTime(g.dag.BestSnapshot(), g.timeSource)
 	msgBlock.Header.Timestamp = newTime
 
 	// Recalculate the difficulty if running on a network that requires it.
 	if g.chainParams.ReduceMinDifficulty {
-		difficulty, err := g.chain.CalcNextRequiredDifficulty(newTime)
+		difficulty, err := g.dag.CalcNextRequiredDifficulty(newTime)
 		if err != nil {
 			return err
 		}
@@ -858,7 +858,7 @@ func (g *BlkTmplGenerator) UpdateExtraNonce(msgBlock *wire.MsgBlock, blockHeight
 //
 // This function is safe for concurrent access.
 func (g *BlkTmplGenerator) BestSnapshot() *blockdag.BestState {
-	return g.chain.BestSnapshot()
+	return g.dag.BestSnapshot()
 }
 
 // TxSource returns the associated transaction source.

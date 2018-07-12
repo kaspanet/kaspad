@@ -1002,7 +1002,7 @@ func handleGetBestBlock(s *rpcServer, cmd interface{}, closeChan <-chan struct{}
 	// All other "get block" commands give either the height, the
 	// hash, or both but require the block SHA.  This gets both for
 	// the best block.
-	best := s.cfg.Chain.BestSnapshot()
+	best := s.cfg.DAG.BestSnapshot()
 	result := &btcjson.GetBestBlockResult{
 		Hash:   best.Hash.String(),
 		Height: best.Height,
@@ -1012,7 +1012,7 @@ func handleGetBestBlock(s *rpcServer, cmd interface{}, closeChan <-chan struct{}
 
 // handleGetBestBlockHash implements the getbestblockhash command.
 func handleGetBestBlockHash(s *rpcServer, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	best := s.cfg.Chain.BestSnapshot()
+	best := s.cfg.DAG.BestSnapshot()
 	return best.Hash.String(), nil
 }
 
@@ -1074,18 +1074,18 @@ func handleGetBlock(s *rpcServer, cmd interface{}, closeChan <-chan struct{}) (i
 	}
 
 	// Get the block height from chain.
-	blockHeight, err := s.cfg.Chain.BlockHeightByHash(hash)
+	blockHeight, err := s.cfg.DAG.BlockHeightByHash(hash)
 	if err != nil {
 		context := "Failed to obtain block height"
 		return nil, internalRPCError(err.Error(), context)
 	}
 	blk.SetHeight(blockHeight)
-	best := s.cfg.Chain.BestSnapshot()
+	best := s.cfg.DAG.BestSnapshot()
 
 	// Get next block hash unless there are none.
 	var nextHashString string
 	if blockHeight < best.Height {
-		nextHash, err := s.cfg.Chain.BlockHashByHeight(blockHeight + 1)
+		nextHash, err := s.cfg.DAG.BlockHashByHeight(blockHeight + 1)
 		if err != nil {
 			context := "No next block"
 			return nil, internalRPCError(err.Error(), context)
@@ -1161,7 +1161,7 @@ func handleGetBlockChainInfo(s *rpcServer, cmd interface{}, closeChan <-chan str
 	// Obtain a snapshot of the current best known blockchain state. We'll
 	// populate the response to this call primarily from this snapshot.
 	params := s.cfg.ChainParams
-	chain := s.cfg.Chain
+	chain := s.cfg.DAG
 	chainSnapshot := chain.BestSnapshot()
 
 	chainInfo := &btcjson.GetBlockChainInfoResult{
@@ -1265,14 +1265,14 @@ func handleGetBlockChainInfo(s *rpcServer, cmd interface{}, closeChan <-chan str
 
 // handleGetBlockCount implements the getblockcount command.
 func handleGetBlockCount(s *rpcServer, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	best := s.cfg.Chain.BestSnapshot()
+	best := s.cfg.DAG.BestSnapshot()
 	return int64(best.Height), nil
 }
 
 // handleGetBlockHash implements the getblockhash command.
 func handleGetBlockHash(s *rpcServer, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
 	c := cmd.(*btcjson.GetBlockHashCmd)
-	hash, err := s.cfg.Chain.BlockHashByHeight(int32(c.Index))
+	hash, err := s.cfg.DAG.BlockHashByHeight(int32(c.Index))
 	if err != nil {
 		return nil, &btcjson.RPCError{
 			Code:    btcjson.ErrRPCOutOfRange,
@@ -1292,7 +1292,7 @@ func handleGetBlockHeader(s *rpcServer, cmd interface{}, closeChan <-chan struct
 	if err != nil {
 		return nil, rpcDecodeHexError(c.Hash)
 	}
-	blockHeader, err := s.cfg.Chain.FetchHeader(hash)
+	blockHeader, err := s.cfg.DAG.FetchHeader(hash)
 	if err != nil {
 		return nil, &btcjson.RPCError{
 			Code:    btcjson.ErrRPCBlockNotFound,
@@ -1315,17 +1315,17 @@ func handleGetBlockHeader(s *rpcServer, cmd interface{}, closeChan <-chan struct
 	// The verbose flag is set, so generate the JSON object and return it.
 
 	// Get the block height from chain.
-	blockHeight, err := s.cfg.Chain.BlockHeightByHash(hash)
+	blockHeight, err := s.cfg.DAG.BlockHeightByHash(hash)
 	if err != nil {
 		context := "Failed to obtain block height"
 		return nil, internalRPCError(err.Error(), context)
 	}
-	best := s.cfg.Chain.BestSnapshot()
+	best := s.cfg.DAG.BestSnapshot()
 
 	// Get next block hash unless there are none.
 	var nextHashString string
 	if blockHeight < best.Height {
-		nextHash, err := s.cfg.Chain.BlockHashByHeight(blockHeight + 1)
+		nextHash, err := s.cfg.DAG.BlockHashByHeight(blockHeight + 1)
 		if err != nil {
 			context := "No next block"
 			return nil, internalRPCError(err.Error(), context)
@@ -1516,7 +1516,7 @@ func (state *gbtWorkState) updateBlockTemplate(s *rpcServer, useCoinbaseValue bo
 	// generated.
 	var msgBlock *wire.MsgBlock
 	var targetDifficulty string
-	latestHash := &s.cfg.Chain.BestSnapshot().Hash
+	latestHash := &s.cfg.DAG.BestSnapshot().Hash
 	template := state.template
 	if template == nil || state.prevHash == nil ||
 		!state.prevHash.IsEqual(latestHash) ||
@@ -1555,7 +1555,7 @@ func (state *gbtWorkState) updateBlockTemplate(s *rpcServer, useCoinbaseValue bo
 		// Get the minimum allowed timestamp for the block based on the
 		// median timestamp of the last several blocks per the chain
 		// consensus rules.
-		best := s.cfg.Chain.BestSnapshot()
+		best := s.cfg.DAG.BestSnapshot()
 		minTimestamp := mining.MinimumMedianTime(best)
 
 		// Update work state to ensure another block template isn't
@@ -1912,7 +1912,7 @@ func handleGetBlockTemplateRequest(s *rpcServer, request *btcjson.TemplateReques
 	}
 
 	// No point in generating or accepting work before the chain is synced.
-	currentHeight := s.cfg.Chain.BestSnapshot().Height
+	currentHeight := s.cfg.DAG.BestSnapshot().Height
 	if currentHeight != 0 && !s.cfg.SyncMgr.IsCurrent() {
 		return nil, &btcjson.RPCError{
 			Code:    btcjson.ErrRPCClientInInitialDownload,
@@ -2077,13 +2077,13 @@ func handleGetBlockTemplateProposal(s *rpcServer, request *btcjson.TemplateReque
 	block := btcutil.NewBlock(&msgBlock)
 
 	// Ensure the block is building from the expected previous block.
-	expectedPrevHash := s.cfg.Chain.BestSnapshot().Hash
+	expectedPrevHash := s.cfg.DAG.BestSnapshot().Hash
 	prevHash := &block.MsgBlock().Header.PrevBlock
 	if !expectedPrevHash.IsEqual(prevHash) {
 		return "bad-prevblk", nil
 	}
 
-	if err := s.cfg.Chain.CheckConnectBlockTemplate(block); err != nil {
+	if err := s.cfg.DAG.CheckConnectBlockTemplate(block); err != nil {
 		if _, ok := err.(blockdag.RuleError); !ok {
 			errStr := fmt.Sprintf("Failed to process block proposal: %v", err)
 			rpcsLog.Error(errStr)
@@ -2199,7 +2199,7 @@ func handleGetCurrentNet(s *rpcServer, cmd interface{}, closeChan <-chan struct{
 
 // handleGetDifficulty implements the getdifficulty command.
 func handleGetDifficulty(s *rpcServer, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	best := s.cfg.Chain.BestSnapshot()
+	best := s.cfg.DAG.BestSnapshot()
 	return getDifficultyRatio(best.Bits, s.cfg.ChainParams), nil
 }
 
@@ -2257,7 +2257,7 @@ func handleGetHeaders(s *rpcServer, cmd interface{}, closeChan <-chan struct{}) 
 // handleGetInfo implements the getinfo command. We only return the fields
 // that are not related to wallet functionality.
 func handleGetInfo(s *rpcServer, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	best := s.cfg.Chain.BestSnapshot()
+	best := s.cfg.DAG.BestSnapshot()
 	ret := &btcjson.InfoChainResult{
 		Version:         int32(1000000*appMajor + 10000*appMinor + 100*appPatch),
 		ProtocolVersion: int32(maxProtocolVersion),
@@ -2309,7 +2309,7 @@ func handleGetMiningInfo(s *rpcServer, cmd interface{}, closeChan <-chan struct{
 		}
 	}
 
-	best := s.cfg.Chain.BestSnapshot()
+	best := s.cfg.DAG.BestSnapshot()
 	result := btcjson.GetMiningInfoResult{
 		Blocks:           int64(best.Height),
 		CurrentBlockSize: best.BlockSize,
@@ -2348,7 +2348,7 @@ func handleGetNetworkHashPS(s *rpcServer, cmd interface{}, closeChan <-chan stru
 	// since we can't reasonably calculate the number of network hashes
 	// per second from invalid values.  When it's negative, use the current
 	// best block height.
-	best := s.cfg.Chain.BestSnapshot()
+	best := s.cfg.DAG.BestSnapshot()
 	endHeight := int32(-1)
 	if c.Height != nil {
 		endHeight = int32(*c.Height)
@@ -2390,14 +2390,14 @@ func handleGetNetworkHashPS(s *rpcServer, cmd interface{}, closeChan <-chan stru
 	var minTimestamp, maxTimestamp time.Time
 	totalWork := big.NewInt(0)
 	for curHeight := startHeight; curHeight <= endHeight; curHeight++ {
-		hash, err := s.cfg.Chain.BlockHashByHeight(curHeight)
+		hash, err := s.cfg.DAG.BlockHashByHeight(curHeight)
 		if err != nil {
 			context := "Failed to fetch block hash"
 			return nil, internalRPCError(err.Error(), context)
 		}
 
 		// Fetch the header from chain.
-		header, err := s.cfg.Chain.FetchHeader(hash)
+		header, err := s.cfg.DAG.FetchHeader(hash)
 		if err != nil {
 			context := "Failed to fetch block header"
 			return nil, internalRPCError(err.Error(), context)
@@ -2550,7 +2550,7 @@ func handleGetRawTransaction(s *rpcServer, cmd interface{}, closeChan <-chan str
 
 		// Grab the block height.
 		blkHash = blockRegion.Hash
-		blkHeight, err = s.cfg.Chain.BlockHeightByHash(blkHash)
+		blkHeight, err = s.cfg.DAG.BlockHeightByHash(blkHash)
 		if err != nil {
 			context := "Failed to retrieve block height"
 			return nil, internalRPCError(err.Error(), context)
@@ -2589,7 +2589,7 @@ func handleGetRawTransaction(s *rpcServer, cmd interface{}, closeChan <-chan str
 	var chainHeight int32
 	if blkHash != nil {
 		// Fetch the header from chain.
-		header, err := s.cfg.Chain.FetchHeader(blkHash)
+		header, err := s.cfg.DAG.FetchHeader(blkHash)
 		if err != nil {
 			context := "Failed to fetch block header"
 			return nil, internalRPCError(err.Error(), context)
@@ -2597,7 +2597,7 @@ func handleGetRawTransaction(s *rpcServer, cmd interface{}, closeChan <-chan str
 
 		blkHeader = &header
 		blkHashStr = blkHash.String()
-		chainHeight = s.cfg.Chain.BestSnapshot().Height
+		chainHeight = s.cfg.DAG.BestSnapshot().Height
 	}
 
 	rawTxn, err := createTxRawResult(s.cfg.ChainParams, mtx, txHash.String(),
@@ -2653,7 +2653,7 @@ func handleGetTxOut(s *rpcServer, cmd interface{}, closeChan <-chan struct{}) (i
 			return nil, internalRPCError(errStr, "")
 		}
 
-		best := s.cfg.Chain.BestSnapshot()
+		best := s.cfg.DAG.BestSnapshot()
 		bestBlockHash = best.Hash.String()
 		confirmations = 0
 		value = txOut.Value
@@ -2661,7 +2661,7 @@ func handleGetTxOut(s *rpcServer, cmd interface{}, closeChan <-chan struct{}) (i
 		isCoinbase = blockdag.IsCoinBaseTx(mtx)
 	} else {
 		out := wire.OutPoint{Hash: *txHash, Index: c.Vout}
-		entry, err := s.cfg.Chain.FetchUtxoEntry(out)
+		entry, err := s.cfg.DAG.FetchUtxoEntry(out)
 		if err != nil {
 			return nil, rpcNoTxInfoError(txHash)
 		}
@@ -2675,7 +2675,7 @@ func handleGetTxOut(s *rpcServer, cmd interface{}, closeChan <-chan struct{}) (i
 			return nil, nil
 		}
 
-		best := s.cfg.Chain.BestSnapshot()
+		best := s.cfg.DAG.BestSnapshot()
 		bestBlockHash = best.Hash.String()
 		confirmations = 1 + best.Height - entry.BlockHeight()
 		value = entry.Amount()
@@ -3170,7 +3170,7 @@ func handleSearchRawTransactions(s *rpcServer, cmd interface{}, closeChan <-chan
 	}
 
 	// The verbose flag is set, so generate the JSON object and return it.
-	best := s.cfg.Chain.BestSnapshot()
+	best := s.cfg.DAG.BestSnapshot()
 	srtList := make([]btcjson.SearchRawTransactionsResult, len(addressTxns))
 	for i := range addressTxns {
 		// The deserialized transaction is needed, so deserialize the
@@ -3213,7 +3213,7 @@ func handleSearchRawTransactions(s *rpcServer, cmd interface{}, closeChan <-chan
 		var blkHeight int32
 		if blkHash := rtx.blkHash; blkHash != nil {
 			// Fetch the header from chain.
-			header, err := s.cfg.Chain.FetchHeader(blkHash)
+			header, err := s.cfg.DAG.FetchHeader(blkHash)
 			if err != nil {
 				return nil, &btcjson.RPCError{
 					Code:    btcjson.ErrRPCBlockNotFound,
@@ -3222,7 +3222,7 @@ func handleSearchRawTransactions(s *rpcServer, cmd interface{}, closeChan <-chan
 			}
 
 			// Get the block height from chain.
-			height, err := s.cfg.Chain.BlockHeightByHash(blkHash)
+			height, err := s.cfg.DAG.BlockHeightByHash(blkHash)
 			if err != nil {
 				context := "Failed to obtain block height"
 				return nil, internalRPCError(err.Error(), context)
@@ -3425,7 +3425,7 @@ func handleValidateAddress(s *rpcServer, cmd interface{}, closeChan <-chan struc
 }
 
 func verifyChain(s *rpcServer, level, depth int32) error {
-	best := s.cfg.Chain.BestSnapshot()
+	best := s.cfg.DAG.BestSnapshot()
 	finishHeight := best.Height - depth
 	if finishHeight < 0 {
 		finishHeight = 0
@@ -3435,7 +3435,7 @@ func verifyChain(s *rpcServer, level, depth int32) error {
 
 	for height := best.Height; height > finishHeight; height-- {
 		// Level 0 just looks up the block.
-		block, err := s.cfg.Chain.BlockByHeight(height)
+		block, err := s.cfg.DAG.BlockByHeight(height)
 		if err != nil {
 			rpcsLog.Errorf("Verify is unable to fetch block at "+
 				"height %d: %v", height, err)
@@ -4198,7 +4198,7 @@ type rpcserverConfig struct {
 	// These fields allow the RPC server to interface with the local block
 	// chain data and state.
 	TimeSource  blockdag.MedianTimeSource
-	Chain       *blockdag.BlockChain
+	DAG         *blockdag.BlockDAG
 	ChainParams *dagconfig.Params
 	DB          database.DB
 
@@ -4245,7 +4245,7 @@ func newRPCServer(config *rpcserverConfig) (*rpcServer, error) {
 		rpc.limitauthsha = sha256.Sum256([]byte(auth))
 	}
 	rpc.ntfnMgr = newWsNotificationManager(&rpc)
-	rpc.cfg.Chain.Subscribe(rpc.handleBlockchainNotification)
+	rpc.cfg.DAG.Subscribe(rpc.handleBlockchainNotification)
 
 	return &rpc, nil
 }

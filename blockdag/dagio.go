@@ -971,14 +971,14 @@ func dbPutBestState(dbTx database.Tx, snapshot *BestState, workSum *big.Int) err
 // createChainState initializes both the database and the chain state to the
 // genesis block.  This includes creating the necessary buckets and inserting
 // the genesis block, so it must only be called on an uninitialized database.
-func (b *BlockChain) createChainState() error {
+func (b *BlockDAG) createChainState() error {
 	// Create a new node from the genesis block and set it as the best node.
-	genesisBlock := btcutil.NewBlock(b.chainParams.GenesisBlock)
+	genesisBlock := btcutil.NewBlock(b.dagParams.GenesisBlock)
 	genesisBlock.SetHeight(0)
 	header := &genesisBlock.MsgBlock().Header
 	node := newBlockNode(header, nil)
 	node.status = statusDataStored | statusValid
-	b.bestChain.SetTip(node)
+	b.dag.SetTip(node)
 
 	// Add the new node to the index which is used for faster lookups.
 	b.index.addNode(node)
@@ -1069,7 +1069,7 @@ func (b *BlockChain) createChainState() error {
 // initChainState attempts to load and initialize the chain state from the
 // database.  When the db does not yet contain any chain state, both it and the
 // chain state are initialized to the genesis block.
-func (b *BlockChain) initChainState() error {
+func (b *BlockDAG) initChainState() error {
 	// Determine the state of the chain database. We may need to initialize
 	// everything from scratch or upgrade certain buckets.
 	var initialized, hasBlockIndex bool
@@ -1141,7 +1141,7 @@ func (b *BlockChain) initChainState() error {
 			var parent *blockNode
 			if lastNode == nil {
 				blockHash := header.BlockHash()
-				if !blockHash.IsEqual(b.chainParams.GenesisHash) {
+				if !blockHash.IsEqual(b.dagParams.GenesisHash) {
 					return AssertError(fmt.Sprintf("initChainState: Expected "+
 						"first entry in block index to be genesis block, "+
 						"found %s", blockHash))
@@ -1176,7 +1176,7 @@ func (b *BlockChain) initChainState() error {
 			return AssertError(fmt.Sprintf("initChainState: cannot find "+
 				"chain tip %s in block index", state.hash))
 		}
-		b.bestChain.SetTip(tip)
+		b.dag.SetTip(tip)
 
 		// Load the raw block bytes for the best block.
 		blockBytes, err := dbTx.FetchBlock(&state.hash)
@@ -1313,9 +1313,9 @@ func blockIndexKey(blockHash *daghash.Hash, blockHeight uint32) []byte {
 // BlockByHeight returns the block at the given height in the main chain.
 //
 // This function is safe for concurrent access.
-func (b *BlockChain) BlockByHeight(blockHeight int32) (*btcutil.Block, error) {
+func (b *BlockDAG) BlockByHeight(blockHeight int32) (*btcutil.Block, error) {
 	// Lookup the block height in the best chain.
-	node := b.bestChain.NodeByHeight(blockHeight)
+	node := b.dag.NodeByHeight(blockHeight)
 	if node == nil {
 		str := fmt.Sprintf("no block at height %d exists", blockHeight)
 		return nil, errNotInMainChain(str)
@@ -1335,11 +1335,11 @@ func (b *BlockChain) BlockByHeight(blockHeight int32) (*btcutil.Block, error) {
 // the appropriate chain height set.
 //
 // This function is safe for concurrent access.
-func (b *BlockChain) BlockByHash(hash *daghash.Hash) (*btcutil.Block, error) {
+func (b *BlockDAG) BlockByHash(hash *daghash.Hash) (*btcutil.Block, error) {
 	// Lookup the block hash in block index and ensure it is in the best
 	// chain.
 	node := b.index.LookupNode(hash)
-	if node == nil || !b.bestChain.Contains(node) {
+	if node == nil || !b.dag.Contains(node) {
 		str := fmt.Sprintf("block %s is not in the main chain", hash)
 		return nil, errNotInMainChain(str)
 	}

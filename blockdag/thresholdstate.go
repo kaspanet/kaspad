@@ -126,7 +126,7 @@ func newThresholdCaches(numCaches uint32) []thresholdStateCache {
 // threshold states for previous windows are only calculated once.
 //
 // This function MUST be called with the chain state lock held (for writes).
-func (b *BlockChain) thresholdState(prevNode *blockNode, checker thresholdConditionChecker, cache *thresholdStateCache) (ThresholdState, error) {
+func (b *BlockDAG) thresholdState(prevNode *blockNode, checker thresholdConditionChecker, cache *thresholdStateCache) (ThresholdState, error) {
 	// The threshold state for the window that contains the genesis block is
 	// defined by definition.
 	confirmationWindow := int32(checker.MinerConfirmationWindow())
@@ -263,10 +263,10 @@ func (b *BlockChain) thresholdState(prevNode *blockNode, checker thresholdCondit
 // deployment ID for the block AFTER the end of the current best chain.
 //
 // This function is safe for concurrent access.
-func (b *BlockChain) ThresholdState(deploymentID uint32) (ThresholdState, error) {
-	b.chainLock.Lock()
-	state, err := b.deploymentState(b.bestChain.SelectedTip(), deploymentID)
-	b.chainLock.Unlock()
+func (b *BlockDAG) ThresholdState(deploymentID uint32) (ThresholdState, error) {
+	b.dagLock.Lock()
+	state, err := b.deploymentState(b.dag.SelectedTip(), deploymentID)
+	b.dagLock.Unlock()
 
 	return state, err
 }
@@ -275,10 +275,10 @@ func (b *BlockChain) ThresholdState(deploymentID uint32) (ThresholdState, error)
 // false otherwise.
 //
 // This function is safe for concurrent access.
-func (b *BlockChain) IsDeploymentActive(deploymentID uint32) (bool, error) {
-	b.chainLock.Lock()
-	state, err := b.deploymentState(b.bestChain.SelectedTip(), deploymentID)
-	b.chainLock.Unlock()
+func (b *BlockDAG) IsDeploymentActive(deploymentID uint32) (bool, error) {
+	b.dagLock.Lock()
+	state, err := b.deploymentState(b.dag.SelectedTip(), deploymentID)
+	b.dagLock.Unlock()
 	if err != nil {
 		return false, err
 	}
@@ -296,12 +296,12 @@ func (b *BlockChain) IsDeploymentActive(deploymentID uint32) (bool, error) {
 // AFTER the passed node.
 //
 // This function MUST be called with the chain state lock held (for writes).
-func (b *BlockChain) deploymentState(prevNode *blockNode, deploymentID uint32) (ThresholdState, error) {
-	if deploymentID > uint32(len(b.chainParams.Deployments)) {
+func (b *BlockDAG) deploymentState(prevNode *blockNode, deploymentID uint32) (ThresholdState, error) {
+	if deploymentID > uint32(len(b.dagParams.Deployments)) {
 		return ThresholdFailed, DeploymentError(deploymentID)
 	}
 
-	deployment := &b.chainParams.Deployments[deploymentID]
+	deployment := &b.dagParams.Deployments[deploymentID]
 	checker := deploymentChecker{deployment: deployment, chain: b}
 	cache := &b.deploymentCaches[deploymentID]
 
@@ -311,12 +311,12 @@ func (b *BlockChain) deploymentState(prevNode *blockNode, deploymentID uint32) (
 // initThresholdCaches initializes the threshold state caches for each warning
 // bit and defined deployment and provides warnings if the chain is current per
 // the warnUnknownVersions and warnUnknownRuleActivations functions.
-func (b *BlockChain) initThresholdCaches() error {
+func (b *BlockDAG) initThresholdCaches() error {
 	// Initialize the warning and deployment caches by calculating the
 	// threshold state for each of them.  This will ensure the caches are
 	// populated and any states that needed to be recalculated due to
 	// definition changes is done now.
-	prevNode := b.bestChain.SelectedTip().selectedParent
+	prevNode := b.dag.SelectedTip().selectedParent
 	for bit := uint32(0); bit < vbNumBits; bit++ {
 		checker := bitConditionChecker{bit: bit, chain: b}
 		cache := &b.warningCaches[bit]
@@ -325,8 +325,8 @@ func (b *BlockChain) initThresholdCaches() error {
 			return err
 		}
 	}
-	for id := 0; id < len(b.chainParams.Deployments); id++ {
-		deployment := &b.chainParams.Deployments[id]
+	for id := 0; id < len(b.dagParams.Deployments); id++ {
+		deployment := &b.dagParams.Deployments[id]
 		cache := &b.deploymentCaches[id]
 		checker := deploymentChecker{deployment: deployment, chain: b}
 		_, err := b.thresholdState(prevNode, checker, cache)
@@ -340,7 +340,7 @@ func (b *BlockChain) initThresholdCaches() error {
 	if b.isCurrent() {
 		// Warn if a high enough percentage of the last blocks have
 		// unexpected versions.
-		bestNode := b.bestChain.SelectedTip()
+		bestNode := b.dag.SelectedTip()
 		if err := b.warnUnknownVersions(bestNode); err != nil {
 			return err
 		}

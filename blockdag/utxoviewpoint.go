@@ -467,7 +467,7 @@ func NewUtxoViewpoint() *UtxoViewpoint {
 // so the returned view can be examined for duplicate transactions.
 //
 // This function is safe for concurrent access however the returned view is NOT.
-func (b *BlockChain) FetchUtxoView(tx *btcutil.Tx) (*UtxoViewpoint, error) {
+func (b *BlockDAG) FetchUtxoView(tx *btcutil.Tx) (*UtxoViewpoint, error) {
 	// Create a set of needed outputs based on those referenced by the
 	// inputs of the passed transaction and the outputs of the transaction
 	// itself.
@@ -486,9 +486,9 @@ func (b *BlockChain) FetchUtxoView(tx *btcutil.Tx) (*UtxoViewpoint, error) {
 	// Request the utxos from the point of view of the end of the main
 	// chain.
 	view := NewUtxoViewpoint()
-	b.chainLock.RLock()
+	b.dagLock.RLock()
 	err := view.fetchUtxosMain(b.db, neededSet)
-	b.chainLock.RUnlock()
+	b.dagLock.RUnlock()
 	return view, err
 }
 
@@ -502,9 +502,9 @@ func (b *BlockChain) FetchUtxoView(tx *btcutil.Tx) (*UtxoViewpoint, error) {
 //
 // This function is safe for concurrent access however the returned entry (if
 // any) is NOT.
-func (b *BlockChain) FetchUtxoEntry(outpoint wire.OutPoint) (*UtxoEntry, error) {
-	b.chainLock.RLock()
-	defer b.chainLock.RUnlock()
+func (b *BlockDAG) FetchUtxoEntry(outpoint wire.OutPoint) (*UtxoEntry, error) {
+	b.dagLock.RLock()
+	defer b.dagLock.RUnlock()
 
 	var entry *UtxoEntry
 	err := b.db.View(func(dbTx database.Tx) error {

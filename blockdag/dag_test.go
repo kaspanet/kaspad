@@ -126,14 +126,14 @@ func TestCalcSequenceLock(t *testing.T) {
 
 	// Generate enough synthetic blocks to activate CSV.
 	chain := newFakeDag(netParams)
-	node := chain.bestChain.SelectedTip()
+	node := chain.dag.SelectedTip()
 	blockTime := node.Header().Timestamp
 	numBlocksToActivate := (netParams.MinerConfirmationWindow * 3)
 	for i := uint32(0); i < numBlocksToActivate; i++ {
 		blockTime = blockTime.Add(time.Second)
 		node = newFakeNode(node, blockVersion, 0, blockTime)
 		chain.index.AddNode(node)
-		chain.bestChain.SetTip(node)
+		chain.dag.SetTip(node)
 	}
 
 	// Create a utxo view with a fake utxo for the inputs used in the
@@ -470,7 +470,7 @@ func TestLocateInventory(t *testing.T) {
 	// 	                              \-> 16a -> 17a
 	tip := tstTip
 	dag := newFakeDag(&dagconfig.MainNetParams)
-	branch0Nodes := chainedNodes(setFromSlice(dag.bestChain.Genesis()), 18)
+	branch0Nodes := chainedNodes(setFromSlice(dag.dag.Genesis()), 18)
 	branch1Nodes := chainedNodes(setFromSlice(branch0Nodes[14]), 2)
 	for _, node := range branch0Nodes {
 		dag.index.AddNode(node)
@@ -478,17 +478,17 @@ func TestLocateInventory(t *testing.T) {
 	for _, node := range branch1Nodes {
 		dag.index.AddNode(node)
 	}
-	dag.bestChain.SetTip(tip(branch0Nodes))
+	dag.dag.SetTip(tip(branch0Nodes))
 
 	// Create chain views for different branches of the overall chain to
 	// simulate a local and remote node on different parts of the chain.
-	localView := newChainView(tip(branch0Nodes))
-	remoteView := newChainView(tip(branch1Nodes))
+	localView := newDAGView(tip(branch0Nodes))
+	remoteView := newDAGView(tip(branch1Nodes))
 
 	// Create a chain view for a completely unrelated block chain to
 	// simulate a remote node on a totally different chain.
 	unrelatedBranchNodes := chainedNodes(newSet(), 5)
-	unrelatedView := newChainView(tip(unrelatedBranchNodes))
+	unrelatedView := newDAGView(tip(unrelatedBranchNodes))
 
 	tests := []struct {
 		name       string
@@ -772,10 +772,10 @@ func TestLocateInventory(t *testing.T) {
 		if test.maxAllowed != 0 {
 			// Need to use the unexported function to override the
 			// max allowed for headers.
-			dag.chainLock.RLock()
+			dag.dagLock.RLock()
 			headers = dag.locateHeaders(test.locator,
 				&test.hashStop, test.maxAllowed)
-			dag.chainLock.RUnlock()
+			dag.dagLock.RUnlock()
 		} else {
 			headers = dag.LocateHeaders(test.locator,
 				&test.hashStop)
@@ -810,7 +810,7 @@ func TestHeightToHashRange(t *testing.T) {
 	// 	                              \-> 16a -> 17a -> 18a (unvalidated)
 	tip := tstTip
 	chain := newFakeDag(&dagconfig.MainNetParams)
-	branch0Nodes := chainedNodes(setFromSlice(chain.bestChain.Genesis()), 18)
+	branch0Nodes := chainedNodes(setFromSlice(chain.dag.Genesis()), 18)
 	branch1Nodes := chainedNodes(setFromSlice(branch0Nodes[14]), 3)
 	for _, node := range branch0Nodes {
 		chain.index.SetStatusFlags(node, statusValid)
@@ -822,7 +822,7 @@ func TestHeightToHashRange(t *testing.T) {
 		}
 		chain.index.AddNode(node)
 	}
-	chain.bestChain.SetTip(tip(branch0Nodes))
+	chain.dag.SetTip(tip(branch0Nodes))
 
 	tests := []struct {
 		name        string
@@ -902,7 +902,7 @@ func TestIntervalBlockHashes(t *testing.T) {
 	// 	                              \-> 16a -> 17a -> 18a (unvalidated)
 	tip := tstTip
 	chain := newFakeDag(&dagconfig.MainNetParams)
-	branch0Nodes := chainedNodes(setFromSlice(chain.bestChain.Genesis()), 18)
+	branch0Nodes := chainedNodes(setFromSlice(chain.dag.Genesis()), 18)
 	branch1Nodes := chainedNodes(setFromSlice(branch0Nodes[14]), 3)
 	for _, node := range branch0Nodes {
 		chain.index.SetStatusFlags(node, statusValid)
@@ -914,7 +914,7 @@ func TestIntervalBlockHashes(t *testing.T) {
 		}
 		chain.index.AddNode(node)
 	}
-	chain.bestChain.SetTip(tip(branch0Nodes))
+	chain.dag.SetTip(tip(branch0Nodes))
 
 	tests := []struct {
 		name        string

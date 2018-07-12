@@ -20,7 +20,7 @@ import (
 // their documentation for how the flags modify their behavior.
 //
 // This function MUST be called with the chain state lock held (for writes).
-func (b *BlockChain) maybeAcceptBlock(block *btcutil.Block, flags BehaviorFlags) error {
+func (b *BlockDAG) maybeAcceptBlock(block *btcutil.Block, flags BehaviorFlags) error {
 	// The height of this block is one more than the referenced previous
 	// block.
 	parents, err := lookupPreviousNodes(block, b)
@@ -78,24 +78,24 @@ func (b *BlockChain) maybeAcceptBlock(block *btcutil.Block, flags BehaviorFlags)
 	// Notify the caller that the new block was accepted into the block
 	// chain.  The caller would typically want to react by relaying the
 	// inventory to other peers.
-	b.chainLock.Unlock()
+	b.dagLock.Unlock()
 	b.sendNotification(NTBlockAccepted, block)
-	b.chainLock.Lock()
+	b.dagLock.Lock()
 
 	return nil
 }
 
-func lookupPreviousNodes(block *btcutil.Block, blockChain *BlockChain) (blockSet, error) {
+func lookupPreviousNodes(block *btcutil.Block, blockDAG *BlockDAG) (blockSet, error) {
 	header := block.MsgBlock().Header
 	prevHashes := header.PrevBlocks
 
 	nodes := newSet()
 	for _, prevHash := range prevHashes {
-		node := blockChain.index.LookupNode(&prevHash)
+		node := blockDAG.index.LookupNode(&prevHash)
 		if node == nil {
 			str := fmt.Sprintf("previous block %s is unknown", prevHashes)
 			return nil, ruleError(ErrPreviousBlockUnknown, str)
-		} else if blockChain.index.NodeStatus(node).KnownInvalid() {
+		} else if blockDAG.index.NodeStatus(node).KnownInvalid() {
 			str := fmt.Sprintf("previous block %s is known to be invalid", prevHashes)
 			return nil, ruleError(ErrInvalidAncestorBlock, str)
 		}

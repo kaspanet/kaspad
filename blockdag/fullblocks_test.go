@@ -60,7 +60,7 @@ func isSupportedDbType(dbType string) bool {
 // chainSetup is used to create a new db and chain instance with the genesis
 // block already inserted.  In addition to the new chain instance, it returns
 // a teardown function the caller should invoke when done testing to clean up.
-func chainSetup(dbName string, params *dagconfig.Params) (*blockdag.BlockChain, func(), error) {
+func chainSetup(dbName string, params *dagconfig.Params) (*blockdag.BlockDAG, func(), error) {
 	if !isSupportedDbType(testDbType) {
 		return nil, nil, fmt.Errorf("unsupported db type %v", testDbType)
 	}
@@ -116,7 +116,7 @@ func chainSetup(dbName string, params *dagconfig.Params) (*blockdag.BlockChain, 
 	// Create the main chain instance.
 	chain, err := blockdag.New(&blockdag.Config{
 		DB:          db,
-		ChainParams: &paramsCopy,
+		DAGParams:   &paramsCopy,
 		Checkpoints: nil,
 		TimeSource:  blockdag.NewMedianTime(),
 		SigCache:    txscript.NewSigCache(1000),

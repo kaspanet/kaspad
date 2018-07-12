@@ -32,7 +32,7 @@ type importResults struct {
 // file to the block database.
 type blockImporter struct {
 	db                database.DB
-	chain             *blockdag.BlockChain
+	dag               *blockdag.BlockDAG
 	r                 io.ReadSeeker
 	processQueue      chan []byte
 	doneChan          chan bool
@@ -105,7 +105,7 @@ func (bi *blockImporter) processBlock(serializedBlock []byte) (bool, error) {
 
 	// Skip blocks that already exist.
 	blockHash := block.Hash()
-	exists, err := bi.chain.HaveBlock(blockHash)
+	exists, err := bi.dag.HaveBlock(blockHash)
 	if err != nil {
 		return false, err
 	}
@@ -116,7 +116,7 @@ func (bi *blockImporter) processBlock(serializedBlock []byte) (bool, error) {
 	// Don't bother trying to process orphans.
 	prevHash := &block.MsgBlock().Header.PrevBlock
 	if !prevHash.IsEqual(&zeroHash) {
-		exists, err := bi.chain.HaveBlock(prevHash)
+		exists, err := bi.dag.HaveBlock(prevHash)
 		if err != nil {
 			return false, err
 		}
@@ -129,7 +129,7 @@ func (bi *blockImporter) processBlock(serializedBlock []byte) (bool, error) {
 
 	// Ensure the blocks follows all of the chain rules and match up to the
 	// known checkpoints.
-	isOrphan, err := bi.chain.ProcessBlock(block,
+	isOrphan, err := bi.dag.ProcessBlock(block,
 		blockdag.BFFastAdd)
 	if err != nil {
 		return false, err
@@ -326,9 +326,9 @@ func newBlockImporter(db database.DB, r io.ReadSeeker) (*blockImporter, error) {
 		indexManager = indexers.NewManager(db, indexes)
 	}
 
-	chain, err := blockdag.New(&blockdag.Config{
+	dag, err := blockdag.New(&blockdag.Config{
 		DB:           db,
-		ChainParams:  activeNetParams,
+		DAGParams:    activeNetParams,
 		TimeSource:   blockdag.NewMedianTime(),
 		IndexManager: indexManager,
 	})
@@ -343,7 +343,7 @@ func newBlockImporter(db database.DB, r io.ReadSeeker) (*blockImporter, error) {
 		doneChan:     make(chan bool),
 		errChan:      make(chan error),
 		quit:         make(chan struct{}),
-		chain:        chain,
+		dag:          dag,
 		lastLogTime:  time.Now(),
 	}, nil
 }
