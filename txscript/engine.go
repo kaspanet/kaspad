@@ -21,10 +21,6 @@ const (
 	// pay-to-script hash transactions will be fully validated.
 	ScriptBip16 ScriptFlags = 1 << iota
 
-	// ScriptStrictMultiSig defines whether to verify the stack item
-	// used by CHECKMULTISIG is zero length.
-	ScriptStrictMultiSig
-
 	// ScriptDiscourageUpgradableNops defines whether to verify that
 	// NOP1 through NOP10 are reserved for future soft-fork upgrades.  This
 	// flag must not be used for consensus critical code nor applied to
@@ -92,7 +88,6 @@ type Engine struct {
 	scripts         [][]parsedOpcode
 	scriptIdx       int
 	scriptOff       int
-	lastCodeSep     int
 	dstack          stack // data stack
 	astack          stack // alt stack
 	tx              wire.MsgTx
@@ -351,7 +346,6 @@ func (vm *Engine) Step() (done bool, err error) {
 		if vm.scriptIdx < len(vm.scripts) && vm.scriptOff >= len(vm.scripts[vm.scriptIdx]) {
 			vm.scriptIdx++
 		}
-		vm.lastCodeSep = 0
 		if vm.scriptIdx >= len(vm.scripts) {
 			return true, nil
 		}
@@ -394,9 +388,9 @@ func (vm *Engine) Execute() (err error) {
 	return vm.CheckErrorCondition(true)
 }
 
-// subScript returns the script since the last OP_CODESEPARATOR.
-func (vm *Engine) subScript() []parsedOpcode {
-	return vm.scripts[vm.scriptIdx][vm.lastCodeSep:]
+// currentScript returns the script currently being processed.
+func (vm *Engine) currentScript() []parsedOpcode {
+	return vm.scripts[vm.scriptIdx]
 }
 
 // checkHashTypeEncoding returns whether or not the passed hashtype adheres to
