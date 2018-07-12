@@ -3524,7 +3524,7 @@ func handleVerifyMessage(s *rpcServer, cmd interface{}, closeChan <-chan struct{
 	} else {
 		serializedPK = pk.SerializeUncompressed()
 	}
-	address, err := btcutil.NewAddressPubKey(serializedPK)
+	address, err := btcutil.NewAddressPubKey(serializedPK, params)
 	if err != nil {
 		// Again mirror Bitcoin Core behavior, which treats error in public key
 		// reconstruction as invalid signature.

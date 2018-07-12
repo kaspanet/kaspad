@@ -12,8 +12,8 @@ import (
 	"testing"
 )
 
-const OP_NOP1 = 0xb2
-const OP_NOP10 = 0xbb
+const TestOpNop1 = 0xb2
+const TestOpNop10 = 0xbb
 
 // TestOpcodeDisabled tests the opcodeDisabled function manually because all
 // disabled opcodes result in a script execution failure when executed normally,
@@ -112,9 +112,8 @@ func TestOpcodeDisasm(t *testing.T) {
 			data = []byte{val}
 			expectedStr = strconv.Itoa(int(val))
 
-		// OP_NOP1 through OP_NOP10.
-		case opcodeVal >= OP_NOP1 && opcodeVal <= OP_NOP10:
-			val := byte(opcodeVal - (OP_NOP1 - 1))
+		case isNop(opcodeVal):
+			val := byte(opcodeVal - (TestOpNop1 - 1))
 			expectedStr = "OP_NOP" + strconv.Itoa(int(val))
 
 		// OP_UNKNOWN#.
@@ -169,9 +168,8 @@ func TestOpcodeDisasm(t *testing.T) {
 			data = []byte{val}
 			expectedStr = "OP_" + strconv.Itoa(int(val))
 
-		// OP_NOP1 through OP_NOP10.
-		case opcodeVal >= OP_NOP1 && opcodeVal <= OP_NOP10:
-			val := byte(opcodeVal - (OP_NOP1 - 1))
+		case isNop(opcodeVal):
+			val := byte(opcodeVal - (TestOpNop1 - 1))
 			expectedStr = "OP_NOP" + strconv.Itoa(int(val))
 
 		// OP_UNKNOWN#.
@@ -192,4 +190,8 @@ func TestOpcodeDisasm(t *testing.T) {
 
 func isOpUnknown(opcodeVal int) bool {
 	return opcodeVal >= 0xba && opcodeVal <= 0xf9 || opcodeVal == 0xfc || opcodeVal == 0xab
+}
+
+func isNop(opcodeVal int) bool {
+	return opcodeVal >= OpNop1 && opcodeVal <= OpNop10
 }

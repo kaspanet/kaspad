@@ -120,12 +120,12 @@ func TestCalcSequenceLock(t *testing.T) {
 
 	blockVersion := int32(0x20000000)
 
-	// Generate enough synthetic blocks to activate CSV.
+	// Generate enough synthetic blocks for the rest of the test
 	chain := newFakeChain(netParams)
 	node := chain.bestChain.Tip()
 	blockTime := node.Header().Timestamp
-	numBlocksToActivate := (netParams.MinerConfirmationWindow * 3)
-	for i := uint32(0); i < numBlocksToActivate; i++ {
+	numBlocksToGenerate := uint32(5)
+	for i := uint32(0); i < numBlocksToGenerate; i++ {
 		blockTime = blockTime.Add(time.Second)
 		node = newFakeNode(node, blockVersion, 0, blockTime)
 		chain.index.AddNode(node)
@@ -142,7 +142,7 @@ func TestCalcSequenceLock(t *testing.T) {
 		}},
 	})
 	utxoView := NewUtxoViewpoint()
-	utxoView.AddTxOuts(targetTx, int32(numBlocksToActivate)-4)
+	utxoView.AddTxOuts(targetTx, int32(numBlocksToGenerate)-4)
 	utxoView.SetBestHash(&node.hash)
 
 	// Create a utxo that spends the fake utxo created above for use in the
@@ -154,7 +154,7 @@ func TestCalcSequenceLock(t *testing.T) {
 		Hash:  *targetTx.Hash(),
 		Index: 0,
 	}
-	prevUtxoHeight := int32(numBlocksToActivate) - 4
+	prevUtxoHeight := int32(numBlocksToGenerate) - 4
 
 	// Obtain the median time past from the PoV of the input created above.
 	// The MTP for the input is the MTP from the PoV of the block *prior*
@@ -166,7 +166,7 @@ func TestCalcSequenceLock(t *testing.T) {
 	// the MTP will be calculated from the PoV of the yet-to-be-mined
 	// block.
 	nextMedianTime := node.CalcPastMedianTime().Unix()
-	nextBlockHeight := int32(numBlocksToActivate) + 1
+	nextBlockHeight := int32(numBlocksToGenerate) + 1
 
 	// Add an additional transaction which will serve as our unconfirmed
 	// output.
@@ -366,7 +366,7 @@ func TestCalcSequenceLock(t *testing.T) {
 		// after that.
 		{
 			tx: &wire.MsgTx{
-				Version: 0,
+				Version: 1,
 				TxIn: []*wire.TxIn{{
 					PreviousOutPoint: unConfUtxo,
 					Sequence:         LockTimeToSequence(false, 2),
@@ -384,7 +384,7 @@ func TestCalcSequenceLock(t *testing.T) {
 		// MTP of the *next* block.
 		{
 			tx: &wire.MsgTx{
-				Version: 0,
+				Version: 1,
 				TxIn: []*wire.TxIn{{
 					PreviousOutPoint: unConfUtxo,
 					Sequence:         LockTimeToSequence(true, 1024),
