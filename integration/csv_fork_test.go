@@ -42,7 +42,7 @@ func makeTestOutput(r *rpctest.Harness, t *testing.T,
 
 	// Using the key created above, generate a pkScript which it's able to
 	// spend.
-	a, err := btcutil.NewAddressPubKey(key.PubKey().SerializeCompressed())
+	a, err := btcutil.NewAddressPubKey(key.PubKey().SerializeCompressed(), r.ActiveNet)
 	if err != nil {
 		return nil, nil, nil, err
 	}
