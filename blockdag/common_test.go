@@ -193,7 +193,7 @@ func loadUtxoView(filename string) (*UtxoViewpoint, error) {
 	// <tx hash><output index><serialized utxo len><serialized utxo>
 	//
 	// The output index and serialized utxo len are little endian uint32s
-	// and the serialized utxo uses the format described in chainio.go.
+	// and the serialized utxo uses the format described in dagio.go.
 
 	filename = filepath.Join("testdata", filename)
 	fi, err := os.Open(filename)
