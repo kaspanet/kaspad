@@ -83,8 +83,8 @@ func TestCheckConnectBlockTemplate(t *testing.T) {
 	// (genesis block) -> 1 -> 2 -> 3 -> 4
 	//                          \-> 3a
 	testFiles := []string{
-		"blk_0_to_4.dat.bz2",
-		"blk_3A.dat.bz2",
+		"blk_0_to_4.dat",
+		"blk_3B.dat",
 	}
 
 	var blocks []*btcutil.Block
@@ -97,14 +97,10 @@ func TestCheckConnectBlockTemplate(t *testing.T) {
 	}
 
 	for i := 1; i <= 3; i++ {
-		isMainChain, _, err := chain.ProcessBlock(blocks[i], BFNone)
+		_, err := chain.ProcessBlock(blocks[i], BFNone)
 		if err != nil {
 			t.Fatalf("CheckConnectBlockTemplate: Received unexpected error "+
 				"processing block %d: %v", i, err)
-		}
-		if !isMainChain {
-			t.Fatalf("CheckConnectBlockTemplate: Expected block %d to connect "+
-				"to main chain", i)
 		}
 	}
 

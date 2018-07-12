@@ -552,8 +552,8 @@ type AddrIndex struct {
 	// The following fields are set when the instance is created and can't
 	// be changed afterwards, so there is no need to protect them with a
 	// separate mutex.
-	db          database.DB
-	chainParams *dagconfig.Params
+	db        database.DB
+	dagParams *dagconfig.Params
 
 	// The following fields are used to quickly link transactions and
 	// addresses that have not been included into a block yet when an
@@ -633,7 +633,7 @@ func (idx *AddrIndex) indexPkScript(data writeIndexData, pkScript []byte, txIdx 
 	// Nothing to index if the script is non-standard or otherwise doesn't
 	// contain any addresses.
 	_, addrs, _, err := txscript.ExtractPkScriptAddrs(pkScript,
-		idx.chainParams)
+		idx.dagParams)
 	if err != nil || len(addrs) == 0 {
 		return
 	}
@@ -796,7 +796,7 @@ func (idx *AddrIndex) indexUnconfirmedAddresses(pkScript []byte, tx *btcutil.Tx)
 	// script fails to parse and it was already validated before being
 	// admitted to the mempool.
 	_, addresses, _, _ := txscript.ExtractPkScriptAddrs(pkScript,
-		idx.chainParams)
+		idx.dagParams)
 	for _, addr := range addresses {
 		// Ignore unsupported address types.
 		addrKey, err := addrToKey(addr)
@@ -914,12 +914,12 @@ func (idx *AddrIndex) UnconfirmedTxnsForAddress(addr btcutil.Address) []*btcutil
 // It implements the Indexer interface which plugs into the IndexManager that in
 // turn is used by the blockchain package.  This allows the index to be
 // seamlessly maintained along with the chain.
-func NewAddrIndex(db database.DB, chainParams *dagconfig.Params) *AddrIndex {
+func NewAddrIndex(db database.DB, dagParams *dagconfig.Params) *AddrIndex {
 	return &AddrIndex{
-		db:          db,
-		chainParams: chainParams,
-		txnsByAddr:  make(map[[addrKeySize]byte]map[daghash.Hash]*btcutil.Tx),
-		addrsByTx:   make(map[daghash.Hash]map[[addrKeySize]byte]struct{}),
+		db:         db,
+		dagParams:  dagParams,
+		txnsByAddr: make(map[[addrKeySize]byte]map[daghash.Hash]*btcutil.Tx),
+		addrsByTx:  make(map[daghash.Hash]map[[addrKeySize]byte]struct{}),
 	}
 }
 

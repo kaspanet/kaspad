@@ -11,7 +11,6 @@ import (
 	"testing"
 
 	"github.com/daglabs/btcd/wire"
-	"github.com/daglabs/btcd/dagconfig/daghash"
 )
 
 // testNoncePrng provides a deterministic prng for the nonce in generated fake
@@ -21,18 +20,16 @@ var testNoncePrng = rand.New(rand.NewSource(0))
 // chainedNodes returns the specified number of nodes constructed such that each
 // subsequent node points to the previous one to create a chain.  The first node
 // will point to the passed parent which can be nil if desired.
-func chainedNodes(parent *blockNode, numNodes int) []*blockNode {
+func chainedNodes(parents blockSet, numNodes int) []*blockNode {
 	nodes := make([]*blockNode, numNodes)
-	tip := parent
+	tips := parents
 	for i := 0; i < numNodes; i++ {
 		// This is invalid, but all that is needed is enough to get the
 		// synthetic tests to work.
 		header := wire.BlockHeader{Nonce: testNoncePrng.Uint32()}
-		if tip != nil {
-			header.PrevBlocks = []daghash.Hash{tip.hash} // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
-		}
-		nodes[i] = newBlockNode(&header, []*blockNode{tip}) // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
-		tip = nodes[i]
+		header.PrevBlocks = tips.hashes()
+		nodes[i] = newBlockNode(&header, tips)
+		tips = setFromSlice(nodes[i])
 	}
 	return nodes
 }
@@ -79,54 +76,54 @@ func TestChainView(t *testing.T) {
 	//       \-> 2a -> 3a -> 4a  -> 5a -> 6a -> 7a -> ... -> 26a
 	//             \-> 3a'-> 4a' -> 5a'
 	branch0Nodes := chainedNodes(nil, 5)
-	branch1Nodes := chainedNodes(branch0Nodes[1], 25)
-	branch2Nodes := chainedNodes(branch1Nodes[0], 3)
+	branch1Nodes := chainedNodes(setFromSlice(branch0Nodes[1]), 25)
+	branch2Nodes := chainedNodes(setFromSlice(branch1Nodes[0]), 3)
 
 	tip := tstTip
 	tests := []struct {
 		name       string
-		view       *chainView   // active view
+		view       *dagView     // active view
 		genesis    *blockNode   // expected genesis block of active view
 		tip        *blockNode   // expected tip of active view
-		side       *chainView   // side chain view
+		side       *dagView     // side chain view
 		sideTip    *blockNode   // expected tip of side chain view
 		fork       *blockNode   // expected fork node
 		contains   []*blockNode // expected nodes in active view
 		noContains []*blockNode // expected nodes NOT in active view
-		equal      *chainView   // view expected equal to active view
-		unequal    *chainView   // view expected NOT equal to active
+		equal      *dagView     // view expected equal to active view
+		unequal    *dagView     // view expected NOT equal to active
 		locator    BlockLocator // expected locator for active view tip
 	}{
 		{
 			// Create a view for branch 0 as the active chain and
 			// another view for branch 1 as the side chain.
 			name:       "chain0-chain1",
-			view:       newChainView(tip(branch0Nodes)),
+			view:       newDAGView(tip(branch0Nodes)),
 			genesis:    branch0Nodes[0],
 			tip:        tip(branch0Nodes),
-			side:       newChainView(tip(branch1Nodes)),
+			side:       newDAGView(tip(branch1Nodes)),
 			sideTip:    tip(branch1Nodes),
 			fork:       branch0Nodes[1],
 			contains:   branch0Nodes,
 			noContains: branch1Nodes,
-			equal:      newChainView(tip(branch0Nodes)),
-			unequal:    newChainView(tip(branch1Nodes)),
+			equal:      newDAGView(tip(branch0Nodes)),
+			unequal:    newDAGView(tip(branch1Nodes)),
 			locator:    locatorHashes(branch0Nodes, 4, 3, 2, 1, 0),
 		},
 		{
 			// Create a view for branch 1 as the active chain and
 			// another view for branch 2 as the side chain.
 			name:       "chain1-chain2",
-			view:       newChainView(tip(branch1Nodes)),
+			view:       newDAGView(tip(branch1Nodes)),
 			genesis:    branch0Nodes[0],
 			tip:        tip(branch1Nodes),
-			side:       newChainView(tip(branch2Nodes)),
+			side:       newDAGView(tip(branch2Nodes)),
 			sideTip:    tip(branch2Nodes),
 			fork:       branch1Nodes[0],
 			contains:   branch1Nodes,
 			noContains: branch2Nodes,
-			equal:      newChainView(tip(branch1Nodes)),
-			unequal:    newChainView(tip(branch2Nodes)),
+			equal:      newDAGView(tip(branch1Nodes)),
+			unequal:    newDAGView(tip(branch2Nodes)),
 			locator: zipLocators(
 				locatorHashes(branch1Nodes, 24, 23, 22, 21, 20,
 					19, 18, 17, 16, 15, 14, 13, 11, 7),
@@ -136,16 +133,16 @@ func TestChainView(t *testing.T) {
 			// Create a view for branch 2 as the active chain and
 			// another view for branch 0 as the side chain.
 			name:       "chain2-chain0",
-			view:       newChainView(tip(branch2Nodes)),
+			view:       newDAGView(tip(branch2Nodes)),
 			genesis:    branch0Nodes[0],
 			tip:        tip(branch2Nodes),
-			side:       newChainView(tip(branch0Nodes)),
+			side:       newDAGView(tip(branch0Nodes)),
 			sideTip:    tip(branch0Nodes),
 			fork:       branch0Nodes[1],
 			contains:   branch2Nodes,
 			noContains: branch0Nodes[2:],
-			equal:      newChainView(tip(branch2Nodes)),
-			unequal:    newChainView(tip(branch0Nodes)),
+			equal:      newDAGView(tip(branch2Nodes)),
+			unequal:    newDAGView(tip(branch0Nodes)),
 			locator: zipLocators(
 				locatorHashes(branch2Nodes, 2, 1, 0),
 				locatorHashes(branch1Nodes, 0),
@@ -311,8 +308,8 @@ func TestChainViewForkCorners(t *testing.T) {
 	unrelatedBranchNodes := chainedNodes(nil, 7)
 
 	// Create chain views for the two unrelated histories.
-	view1 := newChainView(tstTip(branchNodes))
-	view2 := newChainView(tstTip(unrelatedBranchNodes))
+	view1 := newDAGView(tstTip(branchNodes))
+	view2 := newDAGView(tstTip(unrelatedBranchNodes))
 
 	// Ensure attempting to find a fork point with a node that doesn't exist
 	// doesn't produce a node.
@@ -343,13 +340,13 @@ func TestChainViewSetTip(t *testing.T) {
 	// structure.
 	// 0 -> 1 -> 2  -> 3  -> 4
 	//       \-> 2a -> 3a -> 4a  -> 5a -> 6a -> 7a -> ... -> 26a
-	branch0Nodes := chainedNodes(nil, 5)
-	branch1Nodes := chainedNodes(branch0Nodes[1], 25)
+	branch0Nodes := chainedNodes(newSet(), 5)
+	branch1Nodes := chainedNodes(setFromSlice(branch0Nodes[1]), 25)
 
 	tip := tstTip
 	tests := []struct {
 		name     string
-		view     *chainView     // active view
+		view     *dagView       // active view
 		tips     []*blockNode   // tips to set
 		contains [][]*blockNode // expected nodes in view for each tip
 	}{
@@ -357,7 +354,7 @@ func TestChainViewSetTip(t *testing.T) {
 			// Create an empty view and set the tip to increasingly
 			// longer chains.
 			name:     "increasing",
-			view:     newChainView(nil),
+			view:     newDAGView(nil),
 			tips:     []*blockNode{tip(branch0Nodes), tip(branch1Nodes)},
 			contains: [][]*blockNode{branch0Nodes, branch1Nodes},
 		},
@@ -365,7 +362,7 @@ func TestChainViewSetTip(t *testing.T) {
 			// Create a view with a longer chain and set the tip to
 			// increasingly shorter chains.
 			name:     "decreasing",
-			view:     newChainView(tip(branch1Nodes)),
+			view:     newDAGView(tip(branch1Nodes)),
 			tips:     []*blockNode{tip(branch0Nodes), nil},
 			contains: [][]*blockNode{branch0Nodes, nil},
 		},
@@ -374,7 +371,7 @@ func TestChainViewSetTip(t *testing.T) {
 			// a longer chain followed by setting it back to the
 			// shorter chain.
 			name:     "small-large-small",
-			view:     newChainView(tip(branch0Nodes)),
+			view:     newDAGView(tip(branch0Nodes)),
 			tips:     []*blockNode{tip(branch1Nodes), tip(branch0Nodes)},
 			contains: [][]*blockNode{branch1Nodes, branch0Nodes},
 		},
@@ -383,7 +380,7 @@ func TestChainViewSetTip(t *testing.T) {
 			// a smaller chain followed by setting it back to the
 			// longer chain.
 			name:     "large-small-large",
-			view:     newChainView(tip(branch1Nodes)),
+			view:     newDAGView(tip(branch1Nodes)),
 			tips:     []*blockNode{tip(branch0Nodes), tip(branch1Nodes)},
 			contains: [][]*blockNode{branch0Nodes, branch1Nodes},
 		},
@@ -418,8 +415,8 @@ testLoop:
 // as expected.
 func TestChainViewNil(t *testing.T) {
 	// Ensure two unininitialized views are considered equal.
-	view := newChainView(nil)
-	if !view.Equals(newChainView(nil)) {
+	view := newDAGView(nil)
+	if !view.Equals(newDAGView(nil)) {
 		t.Fatal("uninitialized nil views unequal")
 	}
 
@@ -429,9 +426,9 @@ func TestChainViewNil(t *testing.T) {
 			genesis)
 	}
 
-	// Ensure the tip of an uninitialized view does not produce a node.
-	if tip := view.Tips(); tip != nil {
-		t.Fatalf("Tip: unexpected tip -- got %v, want nil", tip)
+	// Ensure the tips of an uninitialized view do not produce a node.
+	if tips := view.Tips(); len(tips) > 0 {
+		t.Fatalf("Tip: unexpected tips -- got %v, want nothing", tips)
 	}
 
 	// Ensure the height of an uninitialized view is the expected value.

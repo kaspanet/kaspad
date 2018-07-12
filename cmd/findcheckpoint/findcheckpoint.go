@@ -39,15 +39,15 @@ func loadBlockDB() (database.DB, error) {
 // candidates at the last checkpoint that is already hard coded into btcchain
 // since there is no point in finding candidates before already existing
 // checkpoints.
-func findCandidates(chain *blockdag.BlockChain, latestHash *daghash.Hash) ([]*dagconfig.Checkpoint, error) {
+func findCandidates(dag *blockdag.BlockDAG, latestHash *daghash.Hash) ([]*dagconfig.Checkpoint, error) {
 	// Start with the latest block of the main chain.
-	block, err := chain.BlockByHash(latestHash)
+	block, err := dag.BlockByHash(latestHash)
 	if err != nil {
 		return nil, err
 	}
 
 	// Get the latest known checkpoint.
-	latestCheckpoint := chain.LatestCheckpoint()
+	latestCheckpoint := dag.LatestCheckpoint()
 	if latestCheckpoint == nil {
 		// Set the latest checkpoint to the genesis block if there isn't
 		// already one.
@@ -92,7 +92,7 @@ func findCandidates(chain *blockdag.BlockChain, latestHash *daghash.Hash) ([]*da
 		}
 
 		// Determine if this block is a checkpoint candidate.
-		isCandidate, err := chain.IsCheckpointCandidate(block)
+		isCandidate, err := dag.IsCheckpointCandidate(block)
 		if err != nil {
 			return nil, err
 		}
@@ -108,7 +108,7 @@ func findCandidates(chain *blockdag.BlockChain, latestHash *daghash.Hash) ([]*da
 		}
 
 		prevHash := &block.MsgBlock().Header.PrevBlock
-		block, err = chain.BlockByHash(prevHash)
+		block, err = dag.BlockByHash(prevHash)
 		if err != nil {
 			return nil, err
 		}
@@ -150,10 +150,10 @@ func main() {
 
 	// Setup chain.  Ignore notifications since they aren't needed for this
 	// util.
-	chain, err := blockdag.New(&blockdag.Config{
-		DB:          db,
-		ChainParams: activeNetParams,
-		TimeSource:  blockdag.NewMedianTime(),
+	dag, err := blockdag.New(&blockdag.Config{
+		DB:         db,
+		DAGParams:  activeNetParams,
+		TimeSource: blockdag.NewMedianTime(),
 	})
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to initialize chain: %v\n", err)
@@ -162,11 +162,11 @@ func main() {
 
 	// Get the latest block hash and height from the database and report
 	// status.
-	best := chain.BestSnapshot()
+	best := dag.BestSnapshot()
 	fmt.Printf("Block database loaded with block height %d\n", best.Height)
 
 	// Find checkpoint candidates.
-	candidates, err := findCandidates(chain, &best.Hash)
+	candidates, err := findCandidates(dag, &best.Hash)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Unable to identify candidates:", err)
 		return

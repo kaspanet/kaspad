@@ -578,7 +578,7 @@ func upgradeUtxoSetToV2(db database.DB, interrupt <-chan struct{}) error {
 //
 // All buckets used by this package are guaranteed to be the latest version if
 // this function returns without error.
-func (b *BlockChain) maybeUpgradeDbBuckets(interrupt <-chan struct{}) error {
+func (b *BlockDAG) maybeUpgradeDbBuckets(interrupt <-chan struct{}) error {
 	// Load or create bucket versions as needed.
 	var utxoSetVersion uint32
 	err := b.db.Update(func(dbTx database.Tx) error {

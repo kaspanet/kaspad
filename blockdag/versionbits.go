@@ -44,7 +44,7 @@ const (
 // unknown rule activations.
 type bitConditionChecker struct {
 	bit   uint32
-	chain *BlockChain
+	chain *BlockDAG
 }
 
 // Ensure the bitConditionChecker type implements the thresholdConditionChecker
@@ -82,7 +82,7 @@ func (c bitConditionChecker) EndTime() uint64 {
 //
 // This is part of the thresholdConditionChecker interface implementation.
 func (c bitConditionChecker) RuleChangeActivationThreshold() uint32 {
-	return c.chain.chainParams.RuleChangeActivationThreshold
+	return c.chain.dagParams.RuleChangeActivationThreshold
 }
 
 // MinerConfirmationWindow is the number of blocks in each threshold state
@@ -93,7 +93,7 @@ func (c bitConditionChecker) RuleChangeActivationThreshold() uint32 {
 //
 // This is part of the thresholdConditionChecker interface implementation.
 func (c bitConditionChecker) MinerConfirmationWindow() uint32 {
-	return c.chain.chainParams.MinerConfirmationWindow
+	return c.chain.dagParams.MinerConfirmationWindow
 }
 
 // Condition returns true when the specific bit associated with the checker is
@@ -125,7 +125,7 @@ func (c bitConditionChecker) Condition(node *blockNode) (bool, error) {
 // and activating consensus rule changes.
 type deploymentChecker struct {
 	deployment *dagconfig.ConsensusDeployment
-	chain      *BlockChain
+	chain      *BlockDAG
 }
 
 // Ensure the deploymentChecker type implements the thresholdConditionChecker
@@ -163,7 +163,7 @@ func (c deploymentChecker) EndTime() uint64 {
 //
 // This is part of the thresholdConditionChecker interface implementation.
 func (c deploymentChecker) RuleChangeActivationThreshold() uint32 {
-	return c.chain.chainParams.RuleChangeActivationThreshold
+	return c.chain.dagParams.RuleChangeActivationThreshold
 }
 
 // MinerConfirmationWindow is the number of blocks in each threshold state
@@ -174,7 +174,7 @@ func (c deploymentChecker) RuleChangeActivationThreshold() uint32 {
 //
 // This is part of the thresholdConditionChecker interface implementation.
 func (c deploymentChecker) MinerConfirmationWindow() uint32 {
-	return c.chain.chainParams.MinerConfirmationWindow
+	return c.chain.dagParams.MinerConfirmationWindow
 }
 
 // Condition returns true when the specific bit defined by the deployment
@@ -197,13 +197,13 @@ func (c deploymentChecker) Condition(node *blockNode) (bool, error) {
 // while this function accepts any block node.
 //
 // This function MUST be called with the chain state lock held (for writes).
-func (b *BlockChain) calcNextBlockVersion(prevNode *blockNode) (int32, error) {
+func (b *BlockDAG) calcNextBlockVersion(prevNode *blockNode) (int32, error) {
 	// Set the appropriate bits for each actively defined rule deployment
 	// that is either in the process of being voted on, or locked in for the
 	// activation at the next threshold window change.
 	expectedVersion := uint32(vbTopBits)
-	for id := 0; id < len(b.chainParams.Deployments); id++ {
-		deployment := &b.chainParams.Deployments[id]
+	for id := 0; id < len(b.dagParams.Deployments); id++ {
+		deployment := &b.dagParams.Deployments[id]
 		cache := &b.deploymentCaches[id]
 		checker := deploymentChecker{deployment: deployment, chain: b}
 		state, err := b.thresholdState(prevNode, checker, cache)
@@ -222,10 +222,10 @@ func (b *BlockChain) calcNextBlockVersion(prevNode *blockNode) (int32, error) {
 // rule change deployments.
 //
 // This function is safe for concurrent access.
-func (b *BlockChain) CalcNextBlockVersion() (int32, error) {
-	b.chainLock.Lock()
-	version, err := b.calcNextBlockVersion(b.bestChain.SelectedTip())
-	b.chainLock.Unlock()
+func (b *BlockDAG) CalcNextBlockVersion() (int32, error) {
+	b.dagLock.Lock()
+	version, err := b.calcNextBlockVersion(b.dag.SelectedTip())
+	b.dagLock.Unlock()
 	return version, err
 }
 
@@ -235,7 +235,7 @@ func (b *BlockChain) CalcNextBlockVersion() (int32, error) {
 // activated.
 //
 // This function MUST be called with the chain state lock held (for writes)
-func (b *BlockChain) warnUnknownRuleActivations(node *blockNode) error {
+func (b *BlockDAG) warnUnknownRuleActivations(node *blockNode) error {
 	// Warn if any unknown new rules are either about to activate or have
 	// already been activated.
 	for bit := uint32(0); bit < vbNumBits; bit++ {
@@ -269,7 +269,7 @@ func (b *BlockChain) warnUnknownRuleActivations(node *blockNode) error {
 // blocks have unexpected versions.
 //
 // This function MUST be called with the chain state lock held (for writes)
-func (b *BlockChain) warnUnknownVersions(node *blockNode) error {
+func (b *BlockDAG) warnUnknownVersions(node *blockNode) error {
 	// Nothing to do if already warned.
 	if b.unknownVersionsWarned {
 		return nil

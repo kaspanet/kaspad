@@ -156,19 +156,19 @@ func CalcWork(bits uint32) *big.Int {
 // can have given starting difficulty bits and a duration.  It is mainly used to
 // verify that claimed proof of work by a block is sane as compared to a
 // known good checkpoint.
-func (b *BlockChain) calcEasiestDifficulty(bits uint32, duration time.Duration) uint32 {
+func (b *BlockDAG) calcEasiestDifficulty(bits uint32, duration time.Duration) uint32 {
 	// Convert types used in the calculations below.
 	durationVal := int64(duration / time.Second)
-	adjustmentFactor := big.NewInt(b.chainParams.RetargetAdjustmentFactor)
+	adjustmentFactor := big.NewInt(b.dagParams.RetargetAdjustmentFactor)
 
 	// The test network rules allow minimum difficulty blocks after more
 	// than twice the desired amount of time needed to generate a block has
 	// elapsed.
-	if b.chainParams.ReduceMinDifficulty {
-		reductionTime := int64(b.chainParams.MinDiffReductionTime /
+	if b.dagParams.ReduceMinDifficulty {
+		reductionTime := int64(b.dagParams.MinDiffReductionTime /
 			time.Second)
 		if durationVal > reductionTime {
-			return b.chainParams.PowLimitBits
+			return b.dagParams.PowLimitBits
 		}
 	}
 
@@ -177,14 +177,14 @@ func (b *BlockChain) calcEasiestDifficulty(bits uint32, duration time.Duration) 
 	// the number of retargets for the duration and starting difficulty
 	// multiplied by the max adjustment factor.
 	newTarget := CompactToBig(bits)
-	for durationVal > 0 && newTarget.Cmp(b.chainParams.PowLimit) < 0 {
+	for durationVal > 0 && newTarget.Cmp(b.dagParams.PowLimit) < 0 {
 		newTarget.Mul(newTarget, adjustmentFactor)
 		durationVal -= b.maxRetargetTimespan
 	}
 
 	// Limit new value to the proof of work limit.
-	if newTarget.Cmp(b.chainParams.PowLimit) > 0 {
-		newTarget.Set(b.chainParams.PowLimit)
+	if newTarget.Cmp(b.dagParams.PowLimit) > 0 {
+		newTarget.Set(b.dagParams.PowLimit)
 	}
 
 	return BigToCompact(newTarget)
@@ -194,19 +194,19 @@ func (b *BlockChain) calcEasiestDifficulty(bits uint32, duration time.Duration) 
 // did not have the special testnet minimum difficulty rule applied.
 //
 // This function MUST be called with the chain state lock held (for writes).
-func (b *BlockChain) findPrevTestNetDifficulty(startNode *blockNode) uint32 {
+func (b *BlockDAG) findPrevTestNetDifficulty(startNode *blockNode) uint32 {
 	// Search backwards through the chain for the last block without
 	// the special rule applied.
 	iterNode := startNode
 	for iterNode != nil && iterNode.height%b.blocksPerRetarget != 0 &&
-		iterNode.bits == b.chainParams.PowLimitBits {
+		iterNode.bits == b.dagParams.PowLimitBits {
 
 		iterNode = iterNode.selectedParent
 	}
 
 	// Return the found difficulty or the minimum difficulty if no
 	// appropriate block was found.
-	lastBits := b.chainParams.PowLimitBits
+	lastBits := b.dagParams.PowLimitBits
 	if iterNode != nil {
 		lastBits = iterNode.bits
 	}
@@ -218,10 +218,10 @@ func (b *BlockChain) findPrevTestNetDifficulty(startNode *blockNode) uint32 {
 // This function differs from the exported CalcNextRequiredDifficulty in that
 // the exported version uses the current best chain as the previous block node
 // while this function accepts any block node.
-func (b *BlockChain) calcNextRequiredDifficulty(lastNode *blockNode, newBlockTime time.Time) (uint32, error) {
+func (b *BlockDAG) calcNextRequiredDifficulty(lastNode *blockNode, newBlockTime time.Time) (uint32, error) {
 	// Genesis block.
 	if lastNode == nil {
-		return b.chainParams.PowLimitBits, nil
+		return b.dagParams.PowLimitBits, nil
 	}
 
 	// Return the previous block's difficulty requirements if this block
@@ -230,14 +230,14 @@ func (b *BlockChain) calcNextRequiredDifficulty(lastNode *blockNode, newBlockTim
 		// For networks that support it, allow special reduction of the
 		// required difficulty once too much time has elapsed without
 		// mining a block.
-		if b.chainParams.ReduceMinDifficulty {
+		if b.dagParams.ReduceMinDifficulty {
 			// Return minimum difficulty when more than the desired
 			// amount of time has elapsed without mining a block.
-			reductionTime := int64(b.chainParams.MinDiffReductionTime /
+			reductionTime := int64(b.dagParams.MinDiffReductionTime /
 				time.Second)
 			allowMinTime := lastNode.timestamp + reductionTime
 			if newBlockTime.Unix() > allowMinTime {
-				return b.chainParams.PowLimitBits, nil
+				return b.dagParams.PowLimitBits, nil
 			}
 
 			// The block was mined within the desired timeframe, so
@@ -275,12 +275,12 @@ func (b *BlockChain) calcNextRequiredDifficulty(lastNode *blockNode, newBlockTim
 	// result.
 	oldTarget := CompactToBig(lastNode.bits)
 	newTarget := new(big.Int).Mul(oldTarget, big.NewInt(adjustedTimespan))
-	targetTimeSpan := int64(b.chainParams.TargetTimespan / time.Second)
+	targetTimeSpan := int64(b.dagParams.TargetTimespan / time.Second)
 	newTarget.Div(newTarget, big.NewInt(targetTimeSpan))
 
 	// Limit new value to the proof of work limit.
-	if newTarget.Cmp(b.chainParams.PowLimit) > 0 {
-		newTarget.Set(b.chainParams.PowLimit)
+	if newTarget.Cmp(b.dagParams.PowLimit) > 0 {
+		newTarget.Set(b.dagParams.PowLimit)
 	}
 
 	// Log new target difficulty and return it.  The new target logging is
@@ -294,7 +294,7 @@ func (b *BlockChain) calcNextRequiredDifficulty(lastNode *blockNode, newBlockTim
 	log.Debugf("Actual timespan %v, adjusted timespan %v, target timespan %v",
 		time.Duration(actualTimespan)*time.Second,
 		time.Duration(adjustedTimespan)*time.Second,
-		b.chainParams.TargetTimespan)
+		b.dagParams.TargetTimespan)
 
 	return newTargetBits, nil
 }
@@ -304,9 +304,9 @@ func (b *BlockChain) calcNextRequiredDifficulty(lastNode *blockNode, newBlockTim
 // rules.
 //
 // This function is safe for concurrent access.
-func (b *BlockChain) CalcNextRequiredDifficulty(timestamp time.Time) (uint32, error) {
-	b.chainLock.Lock()
-	difficulty, err := b.calcNextRequiredDifficulty(b.bestChain.SelectedTip(), timestamp)
-	b.chainLock.Unlock()
+func (b *BlockDAG) CalcNextRequiredDifficulty(timestamp time.Time) (uint32, error) {
+	b.dagLock.Lock()
+	difficulty, err := b.calcNextRequiredDifficulty(b.dag.SelectedTip(), timestamp)
+	b.dagLock.Unlock()
 	return difficulty, err
 }

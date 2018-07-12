@@ -332,7 +332,7 @@ func TestExtractPkScriptAddrs(t *testing.T) {
 		},
 		{
 			name:    "script that does not parse",
-			script:  []byte{OP_DATA_45},
+			script:  []byte{OpData45},
 			addrs:   nil,
 			reqSigs: 0,
 			class:   NonStandardTy,
@@ -529,22 +529,22 @@ func TestPayToAddrScript(t *testing.T) {
 	}
 
 	//  mainnet p2pk 13CG6SJ3yHUXo4Cr2RY4THLLJrNFuG3gUg
-	p2pkCompressedMain, err := btcutil.NewAddressPubKey(hexToBytes("02192d"+
+	p2pkCompressedMain, err := btcutil.NewAddressPubKey(hexToBytes("02192d" +
 		"74d0cb94344c9569c2e77901573d8d7903c3ebec3a957724895dca52c6b4"))
 	if err != nil {
 		t.Fatalf("Unable to create pubkey address (compressed): %v",
 			err)
 	}
-	p2pkCompressed2Main, err := btcutil.NewAddressPubKey(hexToBytes("03b0b"+
+	p2pkCompressed2Main, err := btcutil.NewAddressPubKey(hexToBytes("03b0b" +
 		"d634234abbb1ba1e986e884185c61cf43e001f9137f23c2c409273eb16e65"))
 	if err != nil {
 		t.Fatalf("Unable to create pubkey address (compressed 2): %v",
 			err)
 	}
 
-	p2pkUncompressedMain, err := btcutil.NewAddressPubKey(hexToBytes("0411"+
-		"db93e1dcdb8a016b49840f8c53bc1eb68a382e97b1482ecad7b148a6909a5"+
-		"cb2e0eaddfb84ccf9744464f82e160bfa9b8b64f9d4c03f999b8643f656b4"+
+	p2pkUncompressedMain, err := btcutil.NewAddressPubKey(hexToBytes("0411" +
+		"db93e1dcdb8a016b49840f8c53bc1eb68a382e97b1482ecad7b148a6909a5" +
+		"cb2e0eaddfb84ccf9744464f82e160bfa9b8b64f9d4c03f999b8643f656b4" +
 		"12a3"))
 	if err != nil {
 		t.Fatalf("Unable to create pubkey address (uncompressed): %v",
@@ -631,22 +631,22 @@ func TestMultiSigScript(t *testing.T) {
 	t.Parallel()
 
 	//  mainnet p2pk 13CG6SJ3yHUXo4Cr2RY4THLLJrNFuG3gUg
-	p2pkCompressedMain, err := btcutil.NewAddressPubKey(hexToBytes("02192d"+
+	p2pkCompressedMain, err := btcutil.NewAddressPubKey(hexToBytes("02192d" +
 		"74d0cb94344c9569c2e77901573d8d7903c3ebec3a957724895dca52c6b4"))
 	if err != nil {
 		t.Fatalf("Unable to create pubkey address (compressed): %v",
 			err)
 	}
-	p2pkCompressed2Main, err := btcutil.NewAddressPubKey(hexToBytes("03b0b"+
+	p2pkCompressed2Main, err := btcutil.NewAddressPubKey(hexToBytes("03b0b" +
 		"d634234abbb1ba1e986e884185c61cf43e001f9137f23c2c409273eb16e65"))
 	if err != nil {
 		t.Fatalf("Unable to create pubkey address (compressed 2): %v",
 			err)
 	}
 
-	p2pkUncompressedMain, err := btcutil.NewAddressPubKey(hexToBytes("0411"+
-		"db93e1dcdb8a016b49840f8c53bc1eb68a382e97b1482ecad7b148a6909a5"+
-		"cb2e0eaddfb84ccf9744464f82e160bfa9b8b64f9d4c03f999b8643f656b4"+
+	p2pkUncompressedMain, err := btcutil.NewAddressPubKey(hexToBytes("0411" +
+		"db93e1dcdb8a016b49840f8c53bc1eb68a382e97b1482ecad7b148a6909a5" +
+		"cb2e0eaddfb84ccf9744464f82e160bfa9b8b64f9d4c03f999b8643f656b4" +
 		"12a3"))
 	if err != nil {
 		t.Fatalf("Unable to create pubkey address (uncompressed): %v",

@@ -118,7 +118,7 @@ func loadBlocks(filename string) (blocks []*btcutil.Block, err error) {
 // chainSetup is used to create a new db and chain instance with the genesis
 // block already inserted.  In addition to the new chain instance, it returns
 // a teardown function the caller should invoke when done testing to clean up.
-func chainSetup(dbName string, params *dagconfig.Params) (*BlockChain, func(), error) {
+func chainSetup(dbName string, params *dagconfig.Params) (*BlockDAG, func(), error) {
 	if !isSupportedDbType(testDbType) {
 		return nil, nil, fmt.Errorf("unsupported db type %v", testDbType)
 	}
@@ -174,7 +174,7 @@ func chainSetup(dbName string, params *dagconfig.Params) (*BlockChain, func(), e
 	// Create the main chain instance.
 	chain, err := New(&Config{
 		DB:          db,
-		ChainParams: &paramsCopy,
+		DAGParams:   &paramsCopy,
 		Checkpoints: nil,
 		TimeSource:  NewMedianTime(),
 		SigCache:    txscript.NewSigCache(1000),
@@ -193,7 +193,7 @@ func loadUtxoView(filename string) (*UtxoViewpoint, error) {
 	// <tx hash><output index><serialized utxo len><serialized utxo>
 	//
 	// The output index and serialized utxo len are little endian uint32s
-	// and the serialized utxo uses the format described in chainio.go.
+	// and the serialized utxo uses the format described in dagio.go.
 
 	filename = filepath.Join("testdata", filename)
 	fi, err := os.Open(filename)
@@ -339,32 +339,32 @@ func convertUtxoStore(r io.Reader, w io.Writer) error {
 
 // TstSetCoinbaseMaturity makes the ability to set the coinbase maturity
 // available when running tests.
-func (b *BlockChain) TstSetCoinbaseMaturity(maturity uint16) {
-	b.chainParams.CoinbaseMaturity = maturity
+func (b *BlockDAG) TstSetCoinbaseMaturity(maturity uint16) {
+	b.dagParams.CoinbaseMaturity = maturity
 }
 
-// newFakeChain returns a chain that is usable for syntetic tests.  It is
+// newFakeDag returns a chain that is usable for syntetic tests.  It is
 // important to note that this chain has no database associated with it, so
 // it is not usable with all functions and the tests must take care when making
 // use of it.
-func newFakeChain(params *dagconfig.Params) *BlockChain {
+func newFakeDag(params *dagconfig.Params) *BlockDAG {
 	// Create a genesis block node and block index index populated with it
 	// for use when creating the fake chain below.
-	node := newBlockNode(&params.GenesisBlock.Header, nil)
+	node := newBlockNode(&params.GenesisBlock.Header, newSet())
 	index := newBlockIndex(nil, params)
 	index.AddNode(node)
 
 	targetTimespan := int64(params.TargetTimespan / time.Second)
 	targetTimePerBlock := int64(params.TargetTimePerBlock / time.Second)
 	adjustmentFactor := params.RetargetAdjustmentFactor
-	return &BlockChain{
-		chainParams:         params,
+	return &BlockDAG{
+		dagParams:           params,
 		timeSource:          NewMedianTime(),
 		minRetargetTimespan: targetTimespan / adjustmentFactor,
 		maxRetargetTimespan: targetTimespan * adjustmentFactor,
 		blocksPerRetarget:   int32(targetTimespan / targetTimePerBlock),
 		index:               index,
-		bestChain:           newChainView(node),
+		dag:                 newDAGView(node),
 		warningCaches:       newThresholdCaches(vbNumBits),
 		deploymentCaches:    newThresholdCaches(dagconfig.DefinedDeployments),
 	}
@@ -380,5 +380,5 @@ func newFakeNode(parent *blockNode, blockVersion int32, bits uint32, timestamp t
 		Bits:       bits,
 		Timestamp:  timestamp,
 	}
-	return newBlockNode(header, []*blockNode{parent}) // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
+	return newBlockNode(header, setFromSlice(parent)) // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
 }

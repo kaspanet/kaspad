@@ -119,20 +119,32 @@ func (entry *UtxoEntry) Clone() *UtxoEntry {
 // The unspent outputs are needed by other transactions for things such as
 // script validation and double spend prevention.
 type UtxoViewpoint struct {
-	entries  map[wire.OutPoint]*UtxoEntry
-	bestHash daghash.Hash
+	entries map[wire.OutPoint]*UtxoEntry
+	tips    blockSet
 }
 
-// BestHash returns the hash of the best block in the chain the view currently
-// respresents.
-func (view *UtxoViewpoint) BestHash() *daghash.Hash {
-	return &view.bestHash
+// Tips returns the hashes of the tips in the DAG the view currently
+// represents.
+func (view *UtxoViewpoint) Tips() blockSet {
+	return view.tips
 }
 
-// SetBestHash sets the hash of the best block in the chain the view currently
-// respresents.
-func (view *UtxoViewpoint) SetBestHash(hash *daghash.Hash) {
-	view.bestHash = *hash
+// SetTips sets the hashes of the tips in the DAG the view currently
+// represents.
+func (view *UtxoViewpoint) SetTips(tips blockSet) {
+	view.tips = tips
+}
+
+// AddBlock removes all the parents of block from the tips and adds
+// the given block to the tips.
+func (view *UtxoViewpoint) AddBlock(block *blockNode) {
+	updatedTips := view.tips.clone()
+	for _, parent := range block.parents {
+		updatedTips.remove(parent)
+	}
+
+	updatedTips.add(block)
+	view.tips = updatedTips
 }
 
 // LookupEntry returns information about a given transaction output according to
@@ -264,9 +276,9 @@ func (view *UtxoViewpoint) connectTransaction(tx *btcutil.Tx, blockHeight int32,
 // spend as spent, and setting the best hash for the view to the passed block.
 // In addition, when the 'stxos' argument is not nil, it will be updated to
 // append an entry for each spent txout.
-func (view *UtxoViewpoint) connectTransactions(block *btcutil.Block, stxos *[]spentTxOut) error {
-	for _, tx := range block.Transactions() {
-		err := view.connectTransaction(tx, block.Height(), stxos)
+func (view *UtxoViewpoint) connectTransactions(block *blockNode, transactions []*btcutil.Tx, stxos *[]spentTxOut) error {
+	for _, tx := range transactions {
+		err := view.connectTransaction(tx, block.height, stxos)
 		if err != nil {
 			return err
 		}
@@ -274,7 +286,7 @@ func (view *UtxoViewpoint) connectTransactions(block *btcutil.Block, stxos *[]sp
 
 	// Update the best hash for view to include this block since all of its
 	// transactions have been connected.
-	view.SetBestHash(block.Hash())
+	view.AddBlock(block)
 	return nil
 }
 
@@ -302,140 +314,6 @@ func (view *UtxoViewpoint) fetchEntryByHash(db database.DB, hash *daghash.Hash) 
 		return err
 	})
 	return entry, err
-}
-
-// disconnectTransactions updates the view by removing all of the transactions
-// created by the passed block, restoring all utxos the transactions spent by
-// using the provided spent txo information, and setting the best hash for the
-// view to the block before the passed block.
-func (view *UtxoViewpoint) disconnectTransactions(db database.DB, block *btcutil.Block, stxos []spentTxOut) error {
-	// Sanity check the correct number of stxos are provided.
-	if len(stxos) != countSpentOutputs(block) {
-		return AssertError("disconnectTransactions called with bad " +
-			"spent transaction out information")
-	}
-
-	// Loop backwards through all transactions so everything is unspent in
-	// reverse order.  This is necessary since transactions later in a block
-	// can spend from previous ones.
-	stxoIdx := len(stxos) - 1
-	transactions := block.Transactions()
-	for txIdx := len(transactions) - 1; txIdx > -1; txIdx-- {
-		tx := transactions[txIdx]
-
-		// All entries will need to potentially be marked as a coinbase.
-		var packedFlags txoFlags
-		isCoinBase := txIdx == 0
-		if isCoinBase {
-			packedFlags |= tfCoinBase
-		}
-
-		// Mark all of the spendable outputs originally created by the
-		// transaction as spent.  It is instructive to note that while
-		// the outputs aren't actually being spent here, rather they no
-		// longer exist, since a pruned utxo set is used, there is no
-		// practical difference between a utxo that does not exist and
-		// one that has been spent.
-		//
-		// When the utxo does not already exist in the view, add an
-		// entry for it and then mark it spent.  This is done because
-		// the code relies on its existence in the view in order to
-		// signal modifications have happened.
-		txHash := tx.Hash()
-		prevOut := wire.OutPoint{Hash: *txHash}
-		for txOutIdx, txOut := range tx.MsgTx().TxOut {
-			if txscript.IsUnspendable(txOut.PkScript) {
-				continue
-			}
-
-			prevOut.Index = uint32(txOutIdx)
-			entry := view.entries[prevOut]
-			if entry == nil {
-				entry = &UtxoEntry{
-					amount:      txOut.Value,
-					pkScript:    txOut.PkScript,
-					blockHeight: block.Height(),
-					packedFlags: packedFlags,
-				}
-
-				view.entries[prevOut] = entry
-			}
-
-			entry.Spend()
-		}
-
-		// Loop backwards through all of the transaction inputs (except
-		// for the coinbase which has no inputs) and unspend the
-		// referenced txos.  This is necessary to match the order of the
-		// spent txout entries.
-		if isCoinBase {
-			continue
-		}
-		for txInIdx := len(tx.MsgTx().TxIn) - 1; txInIdx > -1; txInIdx-- {
-			// Ensure the spent txout index is decremented to stay
-			// in sync with the transaction input.
-			stxo := &stxos[stxoIdx]
-			stxoIdx--
-
-			// When there is not already an entry for the referenced
-			// output in the view, it means it was previously spent,
-			// so create a new utxo entry in order to resurrect it.
-			originOut := &tx.MsgTx().TxIn[txInIdx].PreviousOutPoint
-			entry := view.entries[*originOut]
-			if entry == nil {
-				entry = new(UtxoEntry)
-				view.entries[*originOut] = entry
-			}
-
-			// The legacy v1 spend journal format only stored the
-			// coinbase flag and height when the output was the last
-			// unspent output of the transaction.  As a result, when
-			// the information is missing, search for it by scanning
-			// all possible outputs of the transaction since it must
-			// be in one of them.
-			//
-			// It should be noted that this is quite inefficient,
-			// but it realistically will almost never run since all
-			// new entries include the information for all outputs
-			// and thus the only way this will be hit is if a long
-			// enough reorg happens such that a block with the old
-			// spend data is being disconnected.  The probability of
-			// that in practice is extremely low to begin with and
-			// becomes vanishingly small the more new blocks are
-			// connected.  In the case of a fresh database that has
-			// only ever run with the new v2 format, this code path
-			// will never run.
-			if stxo.height == 0 {
-				utxo, err := view.fetchEntryByHash(db, txHash)
-				if err != nil {
-					return err
-				}
-				if utxo == nil {
-					return AssertError(fmt.Sprintf("unable "+
-						"to resurrect legacy stxo %v",
-						*originOut))
-				}
-
-				stxo.height = utxo.BlockHeight()
-				stxo.isCoinBase = utxo.IsCoinBase()
-			}
-
-			// Restore the utxo using the stxo data from the spend
-			// journal and mark it as modified.
-			entry.amount = stxo.amount
-			entry.pkScript = stxo.pkScript
-			entry.blockHeight = stxo.height
-			entry.packedFlags = tfModified
-			if stxo.isCoinBase {
-				entry.packedFlags |= tfCoinBase
-			}
-		}
-	}
-
-	// Update the best hash for view to the previous block since all of the
-	// transactions for the current block have been disconnected.
-	view.SetBestHash(block.MsgBlock().Header.SelectedPrevBlock())
-	return nil
 }
 
 // RemoveEntry removes the given transaction output from the current state of
@@ -589,7 +467,7 @@ func NewUtxoViewpoint() *UtxoViewpoint {
 // so the returned view can be examined for duplicate transactions.
 //
 // This function is safe for concurrent access however the returned view is NOT.
-func (b *BlockChain) FetchUtxoView(tx *btcutil.Tx) (*UtxoViewpoint, error) {
+func (b *BlockDAG) FetchUtxoView(tx *btcutil.Tx) (*UtxoViewpoint, error) {
 	// Create a set of needed outputs based on those referenced by the
 	// inputs of the passed transaction and the outputs of the transaction
 	// itself.
@@ -608,9 +486,9 @@ func (b *BlockChain) FetchUtxoView(tx *btcutil.Tx) (*UtxoViewpoint, error) {
 	// Request the utxos from the point of view of the end of the main
 	// chain.
 	view := NewUtxoViewpoint()
-	b.chainLock.RLock()
+	b.dagLock.RLock()
 	err := view.fetchUtxosMain(b.db, neededSet)
-	b.chainLock.RUnlock()
+	b.dagLock.RUnlock()
 	return view, err
 }
 
@@ -624,9 +502,9 @@ func (b *BlockChain) FetchUtxoView(tx *btcutil.Tx) (*UtxoViewpoint, error) {
 //
 // This function is safe for concurrent access however the returned entry (if
 // any) is NOT.
-func (b *BlockChain) FetchUtxoEntry(outpoint wire.OutPoint) (*UtxoEntry, error) {
-	b.chainLock.RLock()
-	defer b.chainLock.RUnlock()
+func (b *BlockDAG) FetchUtxoEntry(outpoint wire.OutPoint) (*UtxoEntry, error) {
+	b.dagLock.RLock()
+	defer b.dagLock.RUnlock()
 
 	var entry *UtxoEntry
 	err := b.db.View(func(dbTx database.Tx) error {

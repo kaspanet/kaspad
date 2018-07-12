@@ -72,7 +72,7 @@ type blockNode struct {
 	// padding adds up.
 
 	// parents is the parent blocks for this node.
-	parents []*blockNode
+	parents blockSet
 
 	// selectedParent is the selected parent for this node.
 	selectedParent *blockNode
@@ -80,11 +80,11 @@ type blockNode struct {
 	// hash is the double sha 256 of the block.
 	hash daghash.Hash
 
-	// workSum is the total amount of work in the chain up to and including
+	// workSum is the total amount of work in the DAG up to and including
 	// this node.
 	workSum *big.Int
 
-	// height is the position in the block chain.
+	// height is the position in the block DAG.
 	height int32
 
 	// Some fields from block headers to aid in best chain selection and
@@ -108,7 +108,7 @@ type blockNode struct {
 // calculating the height and workSum from the respective fields on the first parent.
 // This function is NOT safe for concurrent access.  It must only be called when
 // initially creating a node.
-func initBlockNode(node *blockNode, blockHeader *wire.BlockHeader, parents []*blockNode) {
+func initBlockNode(node *blockNode, blockHeader *wire.BlockHeader, parents blockSet) {
 	*node = blockNode{
 		hash:       blockHeader.BlockHash(),
 		parents:    parents,
@@ -120,7 +120,7 @@ func initBlockNode(node *blockNode, blockHeader *wire.BlockHeader, parents []*bl
 		merkleRoot: blockHeader.MerkleRoot,
 	}
 	if len(parents) > 0 {
-		node.selectedParent = parents[0]
+		node.selectedParent = parents.first()
 		node.height = node.selectedParent.height + 1
 		node.workSum = node.workSum.Add(node.selectedParent.workSum, node.workSum)
 	}
@@ -129,7 +129,7 @@ func initBlockNode(node *blockNode, blockHeader *wire.BlockHeader, parents []*bl
 // newBlockNode returns a new block node for the given block header and parent
 // nodes, calculating the height and workSum from the respective fields on the
 // parent. This function is NOT safe for concurrent access.
-func newBlockNode(blockHeader *wire.BlockHeader, parents []*blockNode) *blockNode {
+func newBlockNode(blockHeader *wire.BlockHeader, parents blockSet) *blockNode {
 	var node blockNode
 	initBlockNode(&node, blockHeader, parents)
 	return &node
@@ -236,8 +236,8 @@ type blockIndex struct {
 	// The following fields are set when the instance is created and can't
 	// be changed afterwards, so there is no need to protect them with a
 	// separate mutex.
-	db          database.DB
-	chainParams *dagconfig.Params
+	db        database.DB
+	dagParams *dagconfig.Params
 
 	sync.RWMutex
 	index map[daghash.Hash]*blockNode
@@ -247,12 +247,12 @@ type blockIndex struct {
 // newBlockIndex returns a new empty instance of a block index.  The index will
 // be dynamically populated as block nodes are loaded from the database and
 // manually added.
-func newBlockIndex(db database.DB, chainParams *dagconfig.Params) *blockIndex {
+func newBlockIndex(db database.DB, dagParams *dagconfig.Params) *blockIndex {
 	return &blockIndex{
-		db:          db,
-		chainParams: chainParams,
-		index:       make(map[daghash.Hash]*blockNode),
-		dirty:       make(map[*blockNode]struct{}),
+		db:        db,
+		dagParams: dagParams,
+		index:     make(map[daghash.Hash]*blockNode),
+		dirty:     make(map[*blockNode]struct{}),
 	}
 }
 

@@ -38,7 +38,7 @@ func ExampleBlockChain_ProcessBlock() {
 	defer os.RemoveAll(dbPath)
 	defer db.Close()
 
-	// Create a new BlockChain instance using the underlying database for
+	// Create a new BlockDAG instance using the underlying database for
 	// the main bitcoin network.  This example does not demonstrate some
 	// of the other available configuration options such as specifying a
 	// notification callback and signature cache.  Also, the caller would
@@ -46,9 +46,9 @@ func ExampleBlockChain_ProcessBlock() {
 	// values obtained from other peers on the network so the local time is
 	// adjusted to be in agreement with other peers.
 	chain, err := blockdag.New(&blockdag.Config{
-		DB:          db,
-		ChainParams: &dagconfig.MainNetParams,
-		TimeSource:  blockdag.NewMedianTime(),
+		DB:         db,
+		DAGParams:  &dagconfig.MainNetParams,
+		TimeSource: blockdag.NewMedianTime(),
 	})
 	if err != nil {
 		fmt.Printf("Failed to create chain instance: %v\n", err)
@@ -59,17 +59,16 @@ func ExampleBlockChain_ProcessBlock() {
 	// cause an error by trying to process the genesis block which already
 	// exists.
 	genesisBlock := btcutil.NewBlock(dagconfig.MainNetParams.GenesisBlock)
-	isMainChain, isOrphan, err := chain.ProcessBlock(genesisBlock,
+	isOrphan, err := chain.ProcessBlock(genesisBlock,
 		blockdag.BFNone)
 	if err != nil {
 		fmt.Printf("Failed to process block: %v\n", err)
 		return
 	}
-	fmt.Printf("Block accepted. Is it on the main chain?: %v", isMainChain)
 	fmt.Printf("Block accepted. Is it an orphan?: %v", isOrphan)
 
 	// Output:
-	// Failed to process block: already have block 000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f
+	// Failed to process block: already have block 000000094f48b026266f5b53d42ec33f453c48a31d036b785b743788e6bddc82
 }
 
 // This example demonstrates how to convert the compact "bits" in a block header
