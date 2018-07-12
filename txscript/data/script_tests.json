@@ -698,7 +698,7 @@
 ["0x17 0x3014021077777777777777777777777777777777020001", "0 CHECKSIG NOT", "", "OK", "Zero-length S is correctly encoded for DERSIG"],
 ["0x27 0x302402107777777777777777777777777777777702108777777777777777777777777777777701", "0 CHECKSIG NOT", "", "OK", "Negative S is correctly encoded"],
  
-["2147483648", "CHECKSEQUENCEVERIFY", "", "OK", "CSV passes if stack top bit 1 << 31 is set"],
+["TRUE 2147483648", "CHECKSEQUENCEVERIFY", "", "OK", "CSV passes if stack top bit 1 << 31 is set"],
 
 ["", "DEPTH", "P2SH,STRICTENC",   "EVAL_FALSE", "Test the test: we should have an empty stack after scriptSig evaluation"],
 ["  ", "DEPTH", "P2SH,STRICTENC", "EVAL_FALSE", "and multiple spaces should not change that."],

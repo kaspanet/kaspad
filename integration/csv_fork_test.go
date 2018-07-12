@@ -255,8 +255,7 @@ func createCSVOutput(r *rpctest.Harness, t *testing.T,
 	// Our CSV script is simply: <sequenceLock> OP_CSV OP_DROP
 	b := txscript.NewScriptBuilder().
 		AddInt64(int64(sequenceLock)).
-		AddOp(txscript.OpCheckSequenceVerify).
-		AddOp(txscript.OpDrop)
+		AddOp(txscript.OpCheckSequenceVerify)
 	csvScript, err := b.Script()
 	if err != nil {
 		return nil, nil, nil, err
