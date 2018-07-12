@@ -85,17 +85,17 @@ func (b *BlockDAG) maybeAcceptBlock(block *btcutil.Block, flags BehaviorFlags) e
 	return nil
 }
 
-func lookupPreviousNodes(block *btcutil.Block, blockChain *BlockDAG) (blockSet, error) {
+func lookupPreviousNodes(block *btcutil.Block, blockDAG *BlockDAG) (blockSet, error) {
 	header := block.MsgBlock().Header
 	prevHashes := header.PrevBlocks
 
 	nodes := newSet()
 	for _, prevHash := range prevHashes {
-		node := blockChain.index.LookupNode(&prevHash)
+		node := blockDAG.index.LookupNode(&prevHash)
 		if node == nil {
 			str := fmt.Sprintf("previous block %s is unknown", prevHashes)
 			return nil, ruleError(ErrPreviousBlockUnknown, str)
-		} else if blockChain.index.NodeStatus(node).KnownInvalid() {
+		} else if blockDAG.index.NodeStatus(node).KnownInvalid() {
 			str := fmt.Sprintf("previous block %s is known to be invalid", prevHashes)
 			return nil, ruleError(ErrInvalidAncestorBlock, str)
 		}

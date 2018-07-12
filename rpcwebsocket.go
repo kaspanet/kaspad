@@ -2274,10 +2274,10 @@ func handleRescanBlocks(wsc *wsClient, icmd interface{}) (interface{}, error) {
 // verifies that the new range of blocks is on the same fork as a previous
 // range of blocks.  If this condition does not hold true, the JSON-RPC error
 // for an unrecoverable reorganize is returned.
-func recoverFromReorg(chain *blockdag.BlockDAG, minBlock, maxBlock int32,
+func recoverFromReorg(dag *blockdag.BlockDAG, minBlock, maxBlock int32,
 	lastBlock *daghash.Hash) ([]daghash.Hash, error) {
 
-	hashList, err := chain.HeightRange(minBlock, maxBlock)
+	hashList, err := dag.HeightRange(minBlock, maxBlock)
 	if err != nil {
 		rpcsLog.Errorf("Error looking up block range: %v", err)
 		return nil, &btcjson.RPCError{
@@ -2289,7 +2289,7 @@ func recoverFromReorg(chain *blockdag.BlockDAG, minBlock, maxBlock int32,
 		return hashList, nil
 	}
 
-	blk, err := chain.BlockByHash(&hashList[0])
+	blk, err := dag.BlockByHash(&hashList[0])
 	if err != nil {
 		rpcsLog.Errorf("Error looking up possibly reorged block: %v",
 			err)
