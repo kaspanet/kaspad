@@ -151,8 +151,6 @@ func parseScriptFlags(flagStr string) (ScriptFlags, error) {
 			flags |= ScriptVerifyMinimalData
 		case "NONE":
 			// Nothing.
-		case "NULLDUMMY":
-			flags |= ScriptStrictMultiSig
 		case "NULLFAIL":
 			flags |= ScriptVerifyNullFail
 		case "P2SH":
@@ -191,8 +189,6 @@ func parseExpectedResult(expected string) ([]ErrorCode, error) {
 		return []ErrorCode{ErrSigHighS}, nil
 	case "SIG_HASHTYPE":
 		return []ErrorCode{ErrInvalidSigHashType}, nil
-	case "SIG_NULLDUMMY":
-		return []ErrorCode{ErrSigNullDummy}, nil
 	case "SIG_PUSHONLY":
 		return []ErrorCode{ErrNotPushOnly}, nil
 	case "CLEANSTACK":
@@ -730,17 +726,21 @@ func TestCalcSignatureHash(t *testing.T) {
 			continue
 		}
 
-		subScript, _ := hex.DecodeString(test[1].(string))
-		parsedScript, err := parseScript(subScript)
+		script, _ := hex.DecodeString(test[1].(string))
+		parsedScript, err := parseScript(script)
 		if err != nil {
 			t.Errorf("TestCalcSignatureHash failed test #%d: "+
-				"Failed to parse sub-script: %v", i, err)
+				"Failed to parse script: %v", i, err)
 			continue
 		}
 
 		hashType := SigHashType(testVecF64ToUint32(test[3].(float64)))
-		hash := calcSignatureHash(parsedScript, hashType, &tx,
+		hash, err := calcSignatureHash(parsedScript, hashType, &tx,
 			int(test[2].(float64)))
+		if err != nil {
+			t.Errorf("TestCalcSignatureHash failed test #%d: "+
+				"Failed calculating signature hash: %s", i, err)
+		}
 
 		expectedHash, _ := daghash.NewHashFromStr(test[4].(string))
 		if !bytes.Equal(hash, expectedHash[:]) {

@@ -175,6 +175,10 @@ const (
 	// one of the supported types.
 	ErrInvalidSigHashType
 
+	// ErrInvalidSigHashSingleIndex is returned what a signature of type
+	// SigHashSingle points to a non-existing output
+	ErrInvalidSigHashSingleIndex
+
 	// ErrSigDER is returned when a signature is not a canonically-encoded
 	// DER signature.
 	ErrSigDER
@@ -189,11 +193,6 @@ const (
 	// where this applies is for a pay-to-script-hash signature script when
 	// bip16 is active and when the ScriptVerifySigPushOnly flag is set.
 	ErrNotPushOnly
-
-	// ErrSigNullDummy is returned when the ScriptStrictMultiSig flag is set
-	// and a multisig script has anything other than 0 for the extra dummy
-	// argument.
-	ErrSigNullDummy
 
 	// ErrPubKeyType is returned when the ScriptVerifyStrictEncoding
 	// flag is set and the script contains invalid public keys.
@@ -234,47 +233,47 @@ const (
 
 // Map of ErrorCode values back to their constant names for pretty printing.
 var errorCodeStrings = map[ErrorCode]string{
-	ErrInternal:                 "ErrInternal",
-	ErrInvalidFlags:             "ErrInvalidFlags",
-	ErrInvalidIndex:             "ErrInvalidIndex",
-	ErrUnsupportedAddress:       "ErrUnsupportedAddress",
-	ErrNotMultisigScript:        "ErrNotMultisigScript",
-	ErrTooManyRequiredSigs:      "ErrTooManyRequiredSigs",
-	ErrTooMuchNullData:          "ErrTooMuchNullData",
-	ErrEarlyReturn:              "ErrEarlyReturn",
-	ErrEmptyStack:               "ErrEmptyStack",
-	ErrEvalFalse:                "ErrEvalFalse",
-	ErrScriptUnfinished:         "ErrScriptUnfinished",
-	ErrInvalidProgramCounter:    "ErrInvalidProgramCounter",
-	ErrScriptTooBig:             "ErrScriptTooBig",
-	ErrElementTooBig:            "ErrElementTooBig",
-	ErrTooManyOperations:        "ErrTooManyOperations",
-	ErrStackOverflow:            "ErrStackOverflow",
-	ErrInvalidPubKeyCount:       "ErrInvalidPubKeyCount",
-	ErrInvalidSignatureCount:    "ErrInvalidSignatureCount",
-	ErrNumberTooBig:             "ErrNumberTooBig",
-	ErrVerify:                   "ErrVerify",
-	ErrEqualVerify:              "ErrEqualVerify",
-	ErrNumEqualVerify:           "ErrNumEqualVerify",
-	ErrCheckSigVerify:           "ErrCheckSigVerify",
-	ErrCheckMultiSigVerify:      "ErrCheckMultiSigVerify",
-	ErrDisabledOpcode:           "ErrDisabledOpcode",
-	ErrReservedOpcode:           "ErrReservedOpcode",
-	ErrMalformedPush:            "ErrMalformedPush",
-	ErrInvalidStackOperation:    "ErrInvalidStackOperation",
-	ErrUnbalancedConditional:    "ErrUnbalancedConditional",
-	ErrMinimalData:              "ErrMinimalData",
-	ErrInvalidSigHashType:       "ErrInvalidSigHashType",
-	ErrSigDER:                   "ErrSigDER",
-	ErrSigHighS:                 "ErrSigHighS",
-	ErrNotPushOnly:              "ErrNotPushOnly",
-	ErrSigNullDummy:             "ErrSigNullDummy",
-	ErrPubKeyType:               "ErrPubKeyType",
-	ErrCleanStack:               "ErrCleanStack",
-	ErrNullFail:                 "ErrNullFail",
-	ErrDiscourageUpgradableNOPs: "ErrDiscourageUpgradableNOPs",
-	ErrNegativeLockTime:         "ErrNegativeLockTime",
-	ErrUnsatisfiedLockTime:      "ErrUnsatisfiedLockTime",
+	ErrInternal:                  "ErrInternal",
+	ErrInvalidFlags:              "ErrInvalidFlags",
+	ErrInvalidIndex:              "ErrInvalidIndex",
+	ErrUnsupportedAddress:        "ErrUnsupportedAddress",
+	ErrNotMultisigScript:         "ErrNotMultisigScript",
+	ErrTooManyRequiredSigs:       "ErrTooManyRequiredSigs",
+	ErrTooMuchNullData:           "ErrTooMuchNullData",
+	ErrEarlyReturn:               "ErrEarlyReturn",
+	ErrEmptyStack:                "ErrEmptyStack",
+	ErrEvalFalse:                 "ErrEvalFalse",
+	ErrScriptUnfinished:          "ErrScriptUnfinished",
+	ErrInvalidProgramCounter:     "ErrInvalidProgramCounter",
+	ErrScriptTooBig:              "ErrScriptTooBig",
+	ErrElementTooBig:             "ErrElementTooBig",
+	ErrTooManyOperations:         "ErrTooManyOperations",
+	ErrStackOverflow:             "ErrStackOverflow",
+	ErrInvalidPubKeyCount:        "ErrInvalidPubKeyCount",
+	ErrInvalidSignatureCount:     "ErrInvalidSignatureCount",
+	ErrNumberTooBig:              "ErrNumberTooBig",
+	ErrVerify:                    "ErrVerify",
+	ErrEqualVerify:               "ErrEqualVerify",
+	ErrNumEqualVerify:            "ErrNumEqualVerify",
+	ErrCheckSigVerify:            "ErrCheckSigVerify",
+	ErrCheckMultiSigVerify:       "ErrCheckMultiSigVerify",
+	ErrDisabledOpcode:            "ErrDisabledOpcode",
+	ErrReservedOpcode:            "ErrReservedOpcode",
+	ErrMalformedPush:             "ErrMalformedPush",
+	ErrInvalidStackOperation:     "ErrInvalidStackOperation",
+	ErrUnbalancedConditional:     "ErrUnbalancedConditional",
+	ErrMinimalData:               "ErrMinimalData",
+	ErrInvalidSigHashType:        "ErrInvalidSigHashType",
+	ErrInvalidSigHashSingleIndex: "ErrInvalidSigHashSingleIndex",
+	ErrSigDER:                    "ErrSigDER",
+	ErrSigHighS:                  "ErrSigHighS",
+	ErrNotPushOnly:               "ErrNotPushOnly",
+	ErrPubKeyType:                "ErrPubKeyType",
+	ErrCleanStack:                "ErrCleanStack",
+	ErrNullFail:                  "ErrNullFail",
+	ErrDiscourageUpgradableNOPs:  "ErrDiscourageUpgradableNOPs",
+	ErrNegativeLockTime:          "ErrNegativeLockTime",
+	ErrUnsatisfiedLockTime:       "ErrUnsatisfiedLockTime",
 }
 
 // String returns the ErrorCode as a human-readable name.
