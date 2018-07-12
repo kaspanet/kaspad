@@ -3,7 +3,7 @@
 // license that can be found in the LICENSE file.
 
 // This file is ignored during the regular tests due to the following build tag.
-// +build rpctest
+// build rpctest TODO: add + before build
 
 package integration
 
@@ -42,7 +42,7 @@ func makeTestOutput(r *rpctest.Harness, t *testing.T,
 
 	// Using the key created above, generate a pkScript which it's able to
 	// spend.
-	a, err := btcutil.NewAddressPubKey(key.PubKey().SerializeCompressed(), r.ActiveNet)
+	a, err := btcutil.NewAddressPubKey(key.PubKey().SerializeCompressed())
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -175,38 +175,11 @@ func TestBIP0113Activation(t *testing.T) {
 			"non-final, instead: %v", err)
 	}
 
-	// However, since the block validation consensus rules haven't yet
-	// activated, a block including the transaction should be accepted.
-	txns := []*btcutil.Tx{btcutil.NewTx(tx)}
-	block, err := r.GenerateAndSubmitBlock(txns, -1, time.Time{})
-	if err != nil {
-		t.Fatalf("unable to submit block: %v", err)
-	}
-	txid := tx.TxHash()
-	assertTxInBlock(r, t, block.Hash(), &txid)
-
 	// At this point, the block height should be 103: we mined 101 blocks
 	// to create a single mature output, then an additional block to create
 	// a new output, and then mined a single block above to include our
 	// transaction.
 	assertChainHeight(r, t, 103)
-
-	// Next, mine enough blocks to ensure that the soft-fork becomes
-	// activated. Assert that the block version of the second-to-last block
-	// in the final range is active.
-
-	// Next, mine ensure blocks to ensure that the soft-fork becomes
-	// active. We're at height 103 and we need 200 blocks to be mined after
-	// the genesis target period, so we mine 196 blocks. This'll put us at
-	// height 299. The getblockchaininfo call checks the state for the
-	// block AFTER the current height.
-	numBlocks := (r.ActiveNet.MinerConfirmationWindow * 2) - 4
-	if _, err := r.Node.Generate(numBlocks); err != nil {
-		t.Fatalf("unable to generate blocks: %v", err)
-	}
-
-	assertChainHeight(r, t, 299)
-	assertSoftForkStatus(r, t, csvKey, blockchain.ThresholdActive)
 
 	// The timeLockDeltas slice represents a series of deviations from the
 	// current MTP which will be used to test border conditions w.r.t
@@ -266,7 +239,7 @@ func TestBIP0113Activation(t *testing.T) {
 				"due to being  non-final, instead: %v", err)
 		}
 
-		txns = []*btcutil.Tx{btcutil.NewTx(tx)}
+		txns := []*btcutil.Tx{btcutil.NewTx(tx)}
 		_, err := r.GenerateAndSubmitBlock(txns, -1, time.Time{})
 		if err == nil && timeLockDelta >= 0 {
 			t.Fatal("block should be rejected due to non-final " +
@@ -292,8 +265,8 @@ func createCSVOutput(r *rpctest.Harness, t *testing.T,
 	// Our CSV script is simply: <sequenceLock> OP_CSV OP_DROP
 	b := txscript.NewScriptBuilder().
 		AddInt64(int64(sequenceLock)).
-		AddOp(txscript.OP_CHECKSEQUENCEVERIFY).
-		AddOp(txscript.OP_DROP)
+		AddOp(txscript.OpCheckSequenceVerify).
+		AddOp(txscript.OpDrop)
 	csvScript, err := b.Script()
 	if err != nil {
 		return nil, nil, nil, err
@@ -349,7 +322,7 @@ func spendCSVOutput(redeemScript []byte, csvUTXO *wire.OutPoint,
 	tx.AddTxOut(targetOutput)
 
 	b := txscript.NewScriptBuilder().
-		AddOp(txscript.OP_TRUE).
+		AddOp(txscript.OpTrue).
 		AddData(redeemScript)
 
 	sigScript, err := b.Script()
@@ -586,67 +559,59 @@ func TestBIP0068AndBIP0112Activation(t *testing.T) {
 		tx     *wire.MsgTx
 		accept bool
 	}{
-		// A valid transaction with a single input a sequence number
-		// creating a 100 block relative time-lock. This transaction
-		// should be rejected as its version number is 1, and only tx
-		// of version > 2 will trigger the CSV behavior.
-		{
-			tx:     makeTxCase(blockchain.LockTimeToSequence(false, 100), 1),
-			accept: false,
-		},
-		// A transaction of version 2 spending a single input. The
+		// A transaction spending a single input. The
 		// input has a relative time-lock of 1 block, but the disable
 		// bit it set. The transaction should be rejected as a result.
 		{
 			tx: makeTxCase(
 				blockchain.LockTimeToSequence(false, 1)|wire.SequenceLockTimeDisabled,
-				2,
+				0,
 			),
 			accept: false,
 		},
-		// A v2 transaction with a single input having a 9 block
+		// A transaction with a single input having a 9 block
 		// relative time lock. The referenced input is 11 blocks old,
 		// but the CSV output requires a 10 block relative lock-time.
 		// Therefore, the transaction should be rejected.
 		{
-			tx:     makeTxCase(blockchain.LockTimeToSequence(false, 9), 2),
+			tx:     makeTxCase(blockchain.LockTimeToSequence(false, 9), 0),
 			accept: false,
 		},
-		// A v2 transaction with a single input having a 10 block
+		// A transaction with a single input having a 10 block
 		// relative time lock. The referenced input is 11 blocks old so
 		// the transaction should be accepted.
 		{
-			tx:     makeTxCase(blockchain.LockTimeToSequence(false, 10), 2),
+			tx:     makeTxCase(blockchain.LockTimeToSequence(false, 10), 0),
 			accept: true,
 		},
-		// A v2 transaction with a single input having a 11 block
+		// A transaction with a single input having a 11 block
 		// relative time lock. The input referenced has an input age of
 		// 11 and the CSV op-code requires 10 blocks to have passed, so
 		// this transaction should be accepted.
 		{
-			tx:     makeTxCase(blockchain.LockTimeToSequence(false, 11), 2),
+			tx:     makeTxCase(blockchain.LockTimeToSequence(false, 11), 0),
 			accept: true,
 		},
-		// A v2 transaction whose input has a 1000 blck relative time
+		// A transaction whose input has a 1000 blck relative time
 		// lock.  This should be rejected as the input's age is only 11
 		// blocks.
 		{
-			tx:     makeTxCase(blockchain.LockTimeToSequence(false, 1000), 2),
+			tx:     makeTxCase(blockchain.LockTimeToSequence(false, 1000), 0),
 			accept: false,
 		},
-		// A v2 transaction with a single input having a 512,000 second
+		// A transaction with a single input having a 512,000 second
 		// relative time-lock. This transaction should be rejected as 6
 		// days worth of blocks haven't yet been mined. The referenced
 		// input doesn't have sufficient age.
 		{
-			tx:     makeTxCase(blockchain.LockTimeToSequence(true, 512000), 2),
+			tx:     makeTxCase(blockchain.LockTimeToSequence(true, 512000), 0),
 			accept: false,
 		},
-		// A v2 transaction whose single input has a 512 second
+		// A transaction whose single input has a 512 second
 		// relative time-lock. This transaction should be accepted as
 		// finalized.
 		{
-			tx:     makeTxCase(blockchain.LockTimeToSequence(true, 512), 2),
+			tx:     makeTxCase(blockchain.LockTimeToSequence(true, 512), 0),
 			accept: true,
 		},
 	}
