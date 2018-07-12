@@ -79,8 +79,8 @@ func dbDeleteFilterIdxEntry(dbTx database.Tx, key []byte, h *daghash.Hash) error
 
 // CfIndex implements a committed filter (cf) by hash index.
 type CfIndex struct {
-	db          database.DB
-	chainParams *dagconfig.Params
+	db        database.DB
+	dagParams *dagconfig.Params
 }
 
 // Ensure the CfIndex type implements the Indexer interface.
@@ -344,8 +344,8 @@ func (idx *CfIndex) FilterHashesByBlockHashes(blockHashes []*daghash.Hash,
 // It implements the Indexer interface which plugs into the IndexManager that
 // in turn is used by the blockchain package. This allows the index to be
 // seamlessly maintained along with the chain.
-func NewCfIndex(db database.DB, chainParams *dagconfig.Params) *CfIndex {
-	return &CfIndex{db: db, chainParams: chainParams}
+func NewCfIndex(db database.DB, dagParams *dagconfig.Params) *CfIndex {
+	return &CfIndex{db: db, dagParams: dagParams}
 }
 
 // DropCfIndex drops the CF index from the provided database if exists.

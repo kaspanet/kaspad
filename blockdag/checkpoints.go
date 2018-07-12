@@ -32,14 +32,14 @@ func newHashFromStr(hexStr string) *daghash.Hash {
 // nil.
 //
 // This function is safe for concurrent access.
-func (b *BlockChain) Checkpoints() []dagconfig.Checkpoint {
+func (b *BlockDAG) Checkpoints() []dagconfig.Checkpoint {
 	return b.checkpoints
 }
 
-// HasCheckpoints returns whether this BlockChain has checkpoints defined.
+// HasCheckpoints returns whether this BlockDAG has checkpoints defined.
 //
 // This function is safe for concurrent access.
-func (b *BlockChain) HasCheckpoints() bool {
+func (b *BlockDAG) HasCheckpoints() bool {
 	return len(b.checkpoints) > 0
 }
 
@@ -48,7 +48,7 @@ func (b *BlockChain) HasCheckpoints() bool {
 // instance, it will return nil.
 //
 // This function is safe for concurrent access.
-func (b *BlockChain) LatestCheckpoint() *dagconfig.Checkpoint {
+func (b *BlockDAG) LatestCheckpoint() *dagconfig.Checkpoint {
 	if !b.HasCheckpoints() {
 		return nil
 	}
@@ -58,7 +58,7 @@ func (b *BlockChain) LatestCheckpoint() *dagconfig.Checkpoint {
 // verifyCheckpoint returns whether the passed block height and hash combination
 // match the checkpoint data.  It also returns true if there is no checkpoint
 // data for the passed block height.
-func (b *BlockChain) verifyCheckpoint(height int32, hash *daghash.Hash) bool {
+func (b *BlockDAG) verifyCheckpoint(height int32, hash *daghash.Hash) bool {
 	if !b.HasCheckpoints() {
 		return true
 	}
@@ -84,7 +84,7 @@ func (b *BlockChain) verifyCheckpoint(height int32, hash *daghash.Hash) bool {
 // should really only happen for blocks before the first checkpoint).
 //
 // This function MUST be called with the chain lock held (for reads).
-func (b *BlockChain) findPreviousCheckpoint() (*blockNode, error) {
+func (b *BlockDAG) findPreviousCheckpoint() (*blockNode, error) {
 	if !b.HasCheckpoints() {
 		return nil, nil
 	}
@@ -99,7 +99,7 @@ func (b *BlockChain) findPreviousCheckpoint() (*blockNode, error) {
 		// that is already available.
 		for i := numCheckpoints - 1; i >= 0; i-- {
 			node := b.index.LookupNode(checkpoints[i].Hash)
-			if node == nil || !b.bestChain.Contains(node) {
+			if node == nil || !b.dag.Contains(node) {
 				continue
 			}
 
@@ -130,7 +130,7 @@ func (b *BlockChain) findPreviousCheckpoint() (*blockNode, error) {
 	// When there is a next checkpoint and the height of the current best
 	// chain does not exceed it, the current checkpoint lockin is still
 	// the latest known checkpoint.
-	if b.bestChain.SelectedTip().height < b.nextCheckpoint.Height {
+	if b.dag.SelectedTip().height < b.nextCheckpoint.Height {
 		return b.checkpointNode, nil
 	}
 
@@ -197,13 +197,13 @@ func isNonstandardTransaction(tx *btcutil.Tx) bool {
 // decision and then manually added to the list of checkpoints for a network.
 //
 // This function is safe for concurrent access.
-func (b *BlockChain) IsCheckpointCandidate(block *btcutil.Block) (bool, error) {
-	b.chainLock.RLock()
-	defer b.chainLock.RUnlock()
+func (b *BlockDAG) IsCheckpointCandidate(block *btcutil.Block) (bool, error) {
+	b.dagLock.RLock()
+	defer b.dagLock.RUnlock()
 
 	// A checkpoint must be in the main chain.
 	node := b.index.LookupNode(block.Hash())
-	if node == nil || !b.bestChain.Contains(node) {
+	if node == nil || !b.dag.Contains(node) {
 		return false, nil
 	}
 
@@ -218,7 +218,7 @@ func (b *BlockChain) IsCheckpointCandidate(block *btcutil.Block) (bool, error) {
 
 	// A checkpoint must be at least CheckpointConfirmations blocks
 	// before the end of the main chain.
-	mainChainHeight := b.bestChain.SelectedTip().height
+	mainChainHeight := b.dag.SelectedTip().height
 	if node.height > (mainChainHeight - CheckpointConfirmations) {
 		return false, nil
 	}
@@ -228,7 +228,7 @@ func (b *BlockChain) IsCheckpointCandidate(block *btcutil.Block) (bool, error) {
 	// This should always succeed since the check above already made sure it
 	// is CheckpointConfirmations back, but be safe in case the constant
 	// changes.
-	nextNode := b.bestChain.Next(node)
+	nextNode := b.dag.Next(node)
 	if nextNode == nil {
 		return false, nil
 	}

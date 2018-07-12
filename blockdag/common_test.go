@@ -118,7 +118,7 @@ func loadBlocks(filename string) (blocks []*btcutil.Block, err error) {
 // chainSetup is used to create a new db and chain instance with the genesis
 // block already inserted.  In addition to the new chain instance, it returns
 // a teardown function the caller should invoke when done testing to clean up.
-func chainSetup(dbName string, params *dagconfig.Params) (*BlockChain, func(), error) {
+func chainSetup(dbName string, params *dagconfig.Params) (*BlockDAG, func(), error) {
 	if !isSupportedDbType(testDbType) {
 		return nil, nil, fmt.Errorf("unsupported db type %v", testDbType)
 	}
@@ -174,7 +174,7 @@ func chainSetup(dbName string, params *dagconfig.Params) (*BlockChain, func(), e
 	// Create the main chain instance.
 	chain, err := New(&Config{
 		DB:          db,
-		ChainParams: &paramsCopy,
+		DAGParams:   &paramsCopy,
 		Checkpoints: nil,
 		TimeSource:  NewMedianTime(),
 		SigCache:    txscript.NewSigCache(1000),
@@ -339,15 +339,15 @@ func convertUtxoStore(r io.Reader, w io.Writer) error {
 
 // TstSetCoinbaseMaturity makes the ability to set the coinbase maturity
 // available when running tests.
-func (b *BlockChain) TstSetCoinbaseMaturity(maturity uint16) {
-	b.chainParams.CoinbaseMaturity = maturity
+func (b *BlockDAG) TstSetCoinbaseMaturity(maturity uint16) {
+	b.dagParams.CoinbaseMaturity = maturity
 }
 
 // newFakeDag returns a chain that is usable for syntetic tests.  It is
 // important to note that this chain has no database associated with it, so
 // it is not usable with all functions and the tests must take care when making
 // use of it.
-func newFakeDag(params *dagconfig.Params) *BlockChain {
+func newFakeDag(params *dagconfig.Params) *BlockDAG {
 	// Create a genesis block node and block index index populated with it
 	// for use when creating the fake chain below.
 	node := newBlockNode(&params.GenesisBlock.Header, newSet())
@@ -357,14 +357,14 @@ func newFakeDag(params *dagconfig.Params) *BlockChain {
 	targetTimespan := int64(params.TargetTimespan / time.Second)
 	targetTimePerBlock := int64(params.TargetTimePerBlock / time.Second)
 	adjustmentFactor := params.RetargetAdjustmentFactor
-	return &BlockChain{
-		chainParams:         params,
+	return &BlockDAG{
+		dagParams:           params,
 		timeSource:          NewMedianTime(),
 		minRetargetTimespan: targetTimespan / adjustmentFactor,
 		maxRetargetTimespan: targetTimespan * adjustmentFactor,
 		blocksPerRetarget:   int32(targetTimespan / targetTimePerBlock),
 		index:               index,
-		bestChain:           newChainView(node),
+		dag:                 newDAGView(node),
 		warningCaches:       newThresholdCaches(vbNumBits),
 		deploymentCaches:    newThresholdCaches(dagconfig.DefinedDeployments),
 	}

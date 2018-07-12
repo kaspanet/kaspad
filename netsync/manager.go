@@ -147,7 +147,7 @@ type SyncManager struct {
 	peerNotifier   PeerNotifier
 	started        int32
 	shutdown       int32
-	chain          *blockdag.BlockChain
+	dag            *blockdag.BlockDAG
 	txMemPool      *mempool.TxPool
 	chainParams    *dagconfig.Params
 	progressLogger *blockProgressLogger
@@ -193,7 +193,7 @@ func (sm *SyncManager) resetHeaderState(newestHash *daghash.Hash, newestHeight i
 // later than the final checkpoint or some other reason such as disabled
 // checkpoints.
 func (sm *SyncManager) findNextHeaderCheckpoint(height int32) *dagconfig.Checkpoint {
-	checkpoints := sm.chain.Checkpoints()
+	checkpoints := sm.dag.Checkpoints()
 	if len(checkpoints) == 0 {
 		return nil
 	}
@@ -226,7 +226,7 @@ func (sm *SyncManager) startSync() {
 		return
 	}
 
-	best := sm.chain.BestSnapshot()
+	best := sm.dag.BestSnapshot()
 	var bestPeer *peerpkg.Peer
 	for peer, state := range sm.peerStates {
 		if !state.syncCandidate {
@@ -256,7 +256,7 @@ func (sm *SyncManager) startSync() {
 		// to send.
 		sm.requestedBlocks = make(map[daghash.Hash]struct{})
 
-		locator, err := sm.chain.LatestBlockLocator()
+		locator, err := sm.dag.LatestBlockLocator()
 		if err != nil {
 			log.Errorf("Failed to get block locator for the "+
 				"latest block: %v", err)
@@ -392,7 +392,7 @@ func (sm *SyncManager) handleDonePeerMsg(peer *peerpkg.Peer) {
 	if sm.syncPeer == peer {
 		sm.syncPeer = nil
 		if sm.headersFirstMode {
-			best := sm.chain.BestSnapshot()
+			best := sm.dag.BestSnapshot()
 			sm.resetHeaderState(&best.Hash, best.Height)
 		}
 		sm.startSync()
@@ -470,7 +470,7 @@ func (sm *SyncManager) handleTxMsg(tmsg *txMsg) {
 // current returns true if we believe we are synced with our peers, false if we
 // still have blocks to check
 func (sm *SyncManager) current() bool {
-	if !sm.chain.IsCurrent() {
+	if !sm.dag.IsCurrent() {
 		return false
 	}
 
@@ -482,7 +482,7 @@ func (sm *SyncManager) current() bool {
 
 	// No matter what chain thinks, if we are below the block we are syncing
 	// to we are not current.
-	if sm.chain.BestSnapshot().Height < sm.syncPeer.LastBlock() {
+	if sm.dag.BestSnapshot().Height < sm.syncPeer.LastBlock() {
 		return false
 	}
 	return true
@@ -544,7 +544,7 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 	delete(sm.requestedBlocks, *blockHash)
 
 	// Process the block to include validation, orphan handling, etc.
-	isOrphan, err := sm.chain.ProcessBlock(bmsg.block, behaviorFlags)
+	isOrphan, err := sm.dag.ProcessBlock(bmsg.block, behaviorFlags)
 	if err != nil {
 		// When the error is a rule error, it means the block was simply
 		// rejected as opposed to something actually going wrong, so log
@@ -603,8 +603,8 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 			}
 		}
 
-		orphanRoot := sm.chain.GetOrphanRoot(blockHash)
-		locator, err := sm.chain.LatestBlockLocator()
+		orphanRoot := sm.dag.GetOrphanRoot(blockHash)
+		locator, err := sm.dag.LatestBlockLocator()
 		if err != nil {
 			log.Warnf("Failed to get block locator for the "+
 				"latest block: %v", err)
@@ -618,7 +618,7 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 
 		// Update this peer's latest block height, for future
 		// potential sync node candidacy.
-		best := sm.chain.BestSnapshot()
+		best := sm.dag.BestSnapshot()
 		heightUpdate = best.Height
 		blkHashUpdate = &best.Hash
 
@@ -855,7 +855,7 @@ func (sm *SyncManager) haveInventory(invVect *wire.InvVect) (bool, error) {
 	case wire.InvTypeBlock:
 		// Ask chain if the block is known to it in any form (main
 		// chain, side chain, or orphan).
-		return sm.chain.HaveBlock(&invVect.Hash)
+		return sm.dag.HaveBlock(&invVect.Hash)
 
 	case wire.InvTypeTx:
 		// Ask the transaction memory pool if the transaction is known
@@ -875,7 +875,7 @@ func (sm *SyncManager) haveInventory(invVect *wire.InvVect) (bool, error) {
 		prevOut := wire.OutPoint{Hash: invVect.Hash}
 		for i := uint32(0); i < 2; i++ {
 			prevOut.Index = i
-			entry, err := sm.chain.FetchUtxoEntry(prevOut)
+			entry, err := sm.dag.FetchUtxoEntry(prevOut)
 			if err != nil {
 				return false, err
 			}
@@ -931,7 +931,7 @@ func (sm *SyncManager) handleInvMsg(imsg *invMsg) {
 	// If our chain is current and a peer announces a block we already
 	// know of, then update their current block height.
 	if lastBlock != -1 && sm.current() {
-		blkHeight, err := sm.chain.BlockHeightByHash(&invVects[lastBlock].Hash)
+		blkHeight, err := sm.dag.BlockHeightByHash(&invVects[lastBlock].Hash)
 		if err == nil {
 			peer.UpdateLastBlockHeight(blkHeight)
 		}
@@ -992,12 +992,12 @@ func (sm *SyncManager) handleInvMsg(imsg *invMsg) {
 			// resending the orphan block as an available block
 			// to signal there are more missing blocks that need to
 			// be requested.
-			if sm.chain.IsKnownOrphan(&iv.Hash) {
+			if sm.dag.IsKnownOrphan(&iv.Hash) {
 				// Request blocks starting at the latest known
 				// up to the root of the orphan that just came
 				// in.
-				orphanRoot := sm.chain.GetOrphanRoot(&iv.Hash)
-				locator, err := sm.chain.LatestBlockLocator()
+				orphanRoot := sm.dag.GetOrphanRoot(&iv.Hash)
+				locator, err := sm.dag.LatestBlockLocator()
 				if err != nil {
 					log.Errorf("PEER: Failed to get block "+
 						"locator for the latest block: "+
@@ -1016,7 +1016,7 @@ func (sm *SyncManager) handleInvMsg(imsg *invMsg) {
 				// Request blocks after this one up to the
 				// final one the remote peer knows about (zero
 				// stop hash).
-				locator := sm.chain.BlockLocatorFromHash(&iv.Hash)
+				locator := sm.dag.BlockLocatorFromHash(&iv.Hash)
 				peer.PushGetBlocksMsg(locator, &zeroHash)
 			}
 		}
@@ -1126,7 +1126,7 @@ out:
 				msg.reply <- peerID
 
 			case processBlockMsg:
-				isOrphan, err := sm.chain.ProcessBlock(
+				isOrphan, err := sm.dag.ProcessBlock(
 					msg.block, msg.flags)
 				if err != nil {
 					msg.reply <- processBlockResponse{
@@ -1385,7 +1385,7 @@ func (sm *SyncManager) Pause() chan<- struct{} {
 func New(config *Config) (*SyncManager, error) {
 	sm := SyncManager{
 		peerNotifier:    config.PeerNotifier,
-		chain:           config.Chain,
+		dag:             config.DAG,
 		txMemPool:       config.TxMemPool,
 		chainParams:     config.ChainParams,
 		rejectedTxns:    make(map[daghash.Hash]struct{}),
@@ -1399,7 +1399,7 @@ func New(config *Config) (*SyncManager, error) {
 		feeEstimator:    config.FeeEstimator,
 	}
 
-	best := sm.chain.BestSnapshot()
+	best := sm.dag.BestSnapshot()
 	if !config.DisableCheckpoints {
 		// Initialize the next checkpoint based on the current height.
 		sm.nextCheckpoint = sm.findNextHeaderCheckpoint(best.Height)
@@ -1410,7 +1410,7 @@ func New(config *Config) (*SyncManager, error) {
 		log.Info("Checkpoints are disabled")
 	}
 
-	sm.chain.Subscribe(sm.handleBlockchainNotification)
+	sm.dag.Subscribe(sm.handleBlockchainNotification)
 
 	return &sm, nil
 }

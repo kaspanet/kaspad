@@ -38,7 +38,7 @@ func ExampleBlockChain_ProcessBlock() {
 	defer os.RemoveAll(dbPath)
 	defer db.Close()
 
-	// Create a new BlockChain instance using the underlying database for
+	// Create a new BlockDAG instance using the underlying database for
 	// the main bitcoin network.  This example does not demonstrate some
 	// of the other available configuration options such as specifying a
 	// notification callback and signature cache.  Also, the caller would
@@ -46,9 +46,9 @@ func ExampleBlockChain_ProcessBlock() {
 	// values obtained from other peers on the network so the local time is
 	// adjusted to be in agreement with other peers.
 	chain, err := blockdag.New(&blockdag.Config{
-		DB:          db,
-		ChainParams: &dagconfig.MainNetParams,
-		TimeSource:  blockdag.NewMedianTime(),
+		DB:         db,
+		DAGParams:  &dagconfig.MainNetParams,
+		TimeSource: blockdag.NewMedianTime(),
 	})
 	if err != nil {
 		fmt.Printf("Failed to create chain instance: %v\n", err)

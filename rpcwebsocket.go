@@ -2237,7 +2237,7 @@ func handleRescanBlocks(wsc *wsClient, icmd interface{}) (interface{}, error) {
 
 	// Iterate over each block in the request and rescan.  When a block
 	// contains relevant transactions, add it to the response.
-	bc := wsc.server.cfg.Chain
+	bc := wsc.server.cfg.DAG
 	params := wsc.server.cfg.ChainParams
 	var lastBlockHash *daghash.Hash
 	for i := range blockHashes {
@@ -2274,7 +2274,7 @@ func handleRescanBlocks(wsc *wsClient, icmd interface{}) (interface{}, error) {
 // verifies that the new range of blocks is on the same fork as a previous
 // range of blocks.  If this condition does not hold true, the JSON-RPC error
 // for an unrecoverable reorganize is returned.
-func recoverFromReorg(chain *blockdag.BlockChain, minBlock, maxBlock int32,
+func recoverFromReorg(chain *blockdag.BlockDAG, minBlock, maxBlock int32,
 	lastBlock *daghash.Hash) ([]daghash.Hash, error) {
 
 	hashList, err := chain.HeightRange(minBlock, maxBlock)
@@ -2410,13 +2410,13 @@ func handleRescan(wsc *wsClient, icmd interface{}) (interface{}, error) {
 		lookups.unspent[*outpoint] = struct{}{}
 	}
 
-	chain := wsc.server.cfg.Chain
+	dag := wsc.server.cfg.DAG
 
 	minBlockHash, err := daghash.NewHashFromStr(cmd.BeginBlock)
 	if err != nil {
 		return nil, rpcDecodeHexError(cmd.BeginBlock)
 	}
-	minBlock, err := chain.BlockHeightByHash(minBlockHash)
+	minBlock, err := dag.BlockHeightByHash(minBlockHash)
 	if err != nil {
 		return nil, &btcjson.RPCError{
 			Code:    btcjson.ErrRPCBlockNotFound,
@@ -2430,7 +2430,7 @@ func handleRescan(wsc *wsClient, icmd interface{}) (interface{}, error) {
 		if err != nil {
 			return nil, rpcDecodeHexError(*cmd.EndBlock)
 		}
-		maxBlock, err = chain.BlockHeightByHash(maxBlockHash)
+		maxBlock, err = dag.BlockHeightByHash(maxBlockHash)
 		if err != nil {
 			return nil, &btcjson.RPCError{
 				Code:    btcjson.ErrRPCBlockNotFound,
@@ -2462,7 +2462,7 @@ fetchRange:
 		if maxLoopBlock-minBlock > wire.MaxInvPerMsg {
 			maxLoopBlock = minBlock + wire.MaxInvPerMsg
 		}
-		hashList, err := chain.HeightRange(minBlock, maxLoopBlock)
+		hashList, err := dag.HeightRange(minBlock, maxLoopBlock)
 		if err != nil {
 			rpcsLog.Errorf("Error looking up block range: %v", err)
 			return nil, &btcjson.RPCError{
@@ -2491,7 +2491,7 @@ fetchRange:
 			// continue the fetch loop again to rescan the new
 			// blocks (or error due to an irrecoverable reorganize).
 			pauseGuard := wsc.server.cfg.SyncMgr.Pause()
-			best := wsc.server.cfg.Chain.BestSnapshot()
+			best := wsc.server.cfg.DAG.BestSnapshot()
 			curHash := &best.Hash
 			again := true
 			if lastBlockHash == nil || *lastBlockHash == *curHash {
@@ -2518,7 +2518,7 @@ fetchRange:
 
 	loopHashList:
 		for i := range hashList {
-			blk, err := chain.BlockByHash(&hashList[i])
+			blk, err := dag.BlockByHash(&hashList[i])
 			if err != nil {
 				// Only handle reorgs if a block could not be
 				// found for the hash.
@@ -2554,7 +2554,7 @@ fetchRange:
 				// before the range was evaluated, as it must be
 				// reevaluated for the new hashList.
 				minBlock += int32(i)
-				hashList, err = recoverFromReorg(chain,
+				hashList, err = recoverFromReorg(dag,
 					minBlock, maxBlock, lastBlockHash)
 				if err != nil {
 					return nil, err

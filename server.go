@@ -210,7 +210,7 @@ type server struct {
 	sigCache             *txscript.SigCache
 	rpcServer            *rpcServer
 	syncManager          *netsync.SyncManager
-	chain                *blockdag.BlockChain
+	dag                  *blockdag.BlockDAG
 	txMemPool            *mempool.TxPool
 	cpuMiner             *cpuminer.CPUMiner
 	modifyRebroadcastInv chan interface{}
@@ -288,7 +288,7 @@ func newServerPeer(s *server, isPersistent bool) *serverPeer {
 // newestBlock returns the current best block hash and height using the format
 // required by the configuration for the peer package.
 func (sp *serverPeer) newestBlock() (*daghash.Hash, int32, error) {
-	best := sp.server.chain.BestSnapshot()
+	best := sp.server.dag.BestSnapshot()
 	return &best.Hash, best.Height, nil
 }
 
@@ -669,7 +669,7 @@ func (sp *serverPeer) OnGetBlocks(_ *peer.Peer, msg *wire.MsgGetBlocks) {
 	// over with the genesis block if unknown block locators are provided.
 	//
 	// This mirrors the behavior in the reference implementation.
-	chain := sp.server.chain
+	chain := sp.server.dag
 	hashList := chain.LocateBlocks(msg.BlockLocatorHashes, &msg.HashStop,
 		wire.MaxBlocksPerMsg)
 
@@ -713,7 +713,7 @@ func (sp *serverPeer) OnGetHeaders(_ *peer.Peer, msg *wire.MsgGetHeaders) {
 	// over with the genesis block if unknown block locators are provided.
 	//
 	// This mirrors the behavior in the reference implementation.
-	chain := sp.server.chain
+	chain := sp.server.dag
 	headers := chain.LocateHeaders(msg.BlockLocatorHashes, &msg.HashStop)
 	if len(headers) == 0 {
 		// Nothing to send.
@@ -735,7 +735,7 @@ func (sp *serverPeer) OnGetCFilters(_ *peer.Peer, msg *wire.MsgGetCFilters) {
 		return
 	}
 
-	hashes, err := sp.server.chain.HeightToHashRange(int32(msg.StartHeight),
+	hashes, err := sp.server.dag.HeightToHashRange(int32(msg.StartHeight),
 		&msg.StopHash, wire.MaxGetCFiltersReqRange)
 	if err != nil {
 		peerLog.Debugf("Invalid getcfilters request: %v", err)
@@ -784,7 +784,7 @@ func (sp *serverPeer) OnGetCFHeaders(_ *peer.Peer, msg *wire.MsgGetCFHeaders) {
 	}
 
 	// Fetch the hashes from the block index.
-	hashList, err := sp.server.chain.HeightToHashRange(startHeight,
+	hashList, err := sp.server.dag.HeightToHashRange(startHeight,
 		&msg.StopHash, maxResults)
 	if err != nil {
 		peerLog.Debugf("Invalid getcfheaders request: %v", err)
@@ -875,7 +875,7 @@ func (sp *serverPeer) OnGetCFCheckpt(_ *peer.Peer, msg *wire.MsgGetCFCheckpt) {
 		return
 	}
 
-	blockHashes, err := sp.server.chain.IntervalBlockHashes(&msg.StopHash,
+	blockHashes, err := sp.server.dag.IntervalBlockHashes(&msg.StopHash,
 		wire.CFCheckptInterval)
 	if err != nil {
 		peerLog.Debugf("Invalid getcfilters request: %v", err)
@@ -1337,7 +1337,7 @@ func (s *server) pushBlockMsg(sp *serverPeer, hash *daghash.Hash, doneChan chan<
 	// to trigger it to issue another getblocks message for the next
 	// batch of inventory.
 	if sendInv {
-		best := sp.server.chain.BestSnapshot()
+		best := sp.server.dag.BestSnapshot()
 		invMsg := wire.NewMsgInvSizeHint(1)
 		iv := wire.NewInvVect(wire.InvTypeBlock, &best.Hash)
 		invMsg.AddInvVect(iv)
@@ -1363,7 +1363,7 @@ func (s *server) pushMerkleBlockMsg(sp *serverPeer, hash *daghash.Hash,
 	}
 
 	// Fetch the raw block bytes from the database.
-	blk, err := sp.server.chain.BlockByHash(hash)
+	blk, err := sp.server.dag.BlockByHash(hash)
 	if err != nil {
 		peerLog.Tracef("Unable to fetch requested block hash %v: %v",
 			hash, err)
@@ -2483,10 +2483,10 @@ func newServer(listenAddrs []string, db database.DB, chainParams *dagconfig.Para
 
 	// Create a new block chain instance with the appropriate configuration.
 	var err error
-	s.chain, err = blockdag.New(&blockdag.Config{
+	s.dag, err = blockdag.New(&blockdag.Config{
 		DB:           s.db,
 		Interrupt:    interrupt,
-		ChainParams:  s.chainParams,
+		DAGParams:    s.chainParams,
 		Checkpoints:  checkpoints,
 		TimeSource:   s.timeSource,
 		SigCache:     s.sigCache,
@@ -2520,7 +2520,7 @@ func newServer(listenAddrs []string, db database.DB, chainParams *dagconfig.Para
 
 	// If no feeEstimator has been found, or if the one that has been found
 	// is behind somehow, create a new one and start over.
-	if s.feeEstimator == nil || s.feeEstimator.LastKnownHeight() != s.chain.BestSnapshot().Height {
+	if s.feeEstimator == nil || s.feeEstimator.LastKnownHeight() != s.dag.BestSnapshot().Height {
 		s.feeEstimator = mempool.NewFeeEstimator(
 			mempool.DefaultEstimateFeeMaxRollback,
 			mempool.DefaultEstimateFeeMinRegisteredBlocks)
@@ -2538,13 +2538,13 @@ func newServer(listenAddrs []string, db database.DB, chainParams *dagconfig.Para
 			MaxTxVersion:         2,
 		},
 		ChainParams:    chainParams,
-		FetchUtxoView:  s.chain.FetchUtxoView,
-		BestHeight:     func() int32 { return s.chain.BestSnapshot().Height },
-		MedianTimePast: func() time.Time { return s.chain.BestSnapshot().MedianTime },
+		FetchUtxoView:  s.dag.FetchUtxoView,
+		BestHeight:     func() int32 { return s.dag.BestSnapshot().Height },
+		MedianTimePast: func() time.Time { return s.dag.BestSnapshot().MedianTime },
 		CalcSequenceLock: func(tx *btcutil.Tx, view *blockdag.UtxoViewpoint) (*blockdag.SequenceLock, error) {
-			return s.chain.CalcSequenceLock(tx, view, true)
+			return s.dag.CalcSequenceLock(tx, view, true)
 		},
-		IsDeploymentActive: s.chain.IsDeploymentActive,
+		IsDeploymentActive: s.dag.IsDeploymentActive,
 		SigCache:           s.sigCache,
 		AddrIndex:          s.addrIndex,
 		FeeEstimator:       s.feeEstimator,
@@ -2553,7 +2553,7 @@ func newServer(listenAddrs []string, db database.DB, chainParams *dagconfig.Para
 
 	s.syncManager, err = netsync.New(&netsync.Config{
 		PeerNotifier:       &s,
-		Chain:              s.chain,
+		DAG:                s.dag,
 		TxMemPool:          s.txMemPool,
 		ChainParams:        s.chainParams,
 		DisableCheckpoints: cfg.DisableCheckpoints,
@@ -2576,7 +2576,7 @@ func newServer(listenAddrs []string, db database.DB, chainParams *dagconfig.Para
 		TxMinFreeFee:      cfg.minRelayTxFee,
 	}
 	blockTemplateGenerator := mining.NewBlkTmplGenerator(&policy,
-		s.chainParams, s.txMemPool, s.chain, s.timeSource, s.sigCache)
+		s.chainParams, s.txMemPool, s.dag, s.timeSource, s.sigCache)
 	s.cpuMiner = cpuminer.New(&cpuminer.Config{
 		ChainParams:            chainParams,
 		BlockTemplateGenerator: blockTemplateGenerator,
@@ -2685,7 +2685,7 @@ func newServer(listenAddrs []string, db database.DB, chainParams *dagconfig.Para
 			ConnMgr:      &rpcConnManager{&s},
 			SyncMgr:      &rpcSyncMgr{&s, s.syncManager},
 			TimeSource:   s.timeSource,
-			Chain:        s.chain,
+			DAG:          s.dag,
 			ChainParams:  chainParams,
 			DB:           db,
 			TxMemPool:    s.txMemPool,
