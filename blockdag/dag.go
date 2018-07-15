@@ -56,27 +56,35 @@ type orphanBlock struct {
 // However, the returned snapshot must be treated as immutable since it is
 // shared by all callers.
 type State struct {
-	Hash       daghash.Hash // The hash of the block.
-	Height     int32        // The height of the block.
-	Bits       uint32       // The difficulty bits of the block.
-	BlockSize  uint64       // The size of the block.
-	NumTxns    uint64       // The number of txns in the block.
-	TotalTxns  uint64       // The total number of txns in the chain.
+	SelectedTip SelectedTip    // The selected tip
+	TipHashes   []daghash.Hash // The hashes of the tips
+	TotalTxns   uint64         // The total number of transactions in the DAG.
+}
+
+type SelectedTip struct {
+	Hash       daghash.Hash // The hash of the tip.
+	Height     int32        // The height of the tip.
+	Bits       uint32       // The difficulty bits of the tip.
+	BlockSize  uint64       // The size of the tip.
+	NumTxns    uint64       // The number of transactions in the tip.
 	MedianTime time.Time    // Median time as per CalcPastMedianTime.
 }
 
 // newState returns a new best stats instance for the given parameters.
-func newState(node *blockNode, blockSize, numTxns,
-	totalTxns uint64, medianTime time.Time) *State {
+func newState(tipHashes []daghash.Hash, node *blockNode, blockSize, numTxns,
+totalTxns uint64, medianTime time.Time) *State {
 
 	return &State{
-		Hash:       node.hash,
-		Height:     node.height,
-		Bits:       node.bits,
-		BlockSize:  blockSize,
-		NumTxns:    numTxns,
-		TotalTxns:  totalTxns,
-		MedianTime: medianTime,
+		SelectedTip: SelectedTip{
+			Hash:       node.hash,
+			Height:     node.height,
+			Bits:       node.bits,
+			BlockSize:  blockSize,
+			NumTxns:    numTxns,
+			MedianTime: medianTime,
+		},
+		TipHashes: tipHashes,
+		TotalTxns: totalTxns,
 	}
 }
 
@@ -521,14 +529,14 @@ func (b *BlockDAG) connectBlock(node *blockNode, block *btcutil.Block, view *Utx
 		return err
 	}
 
-	// Generate a new best state snapshot that will be used to update the
+	// Generate a new state snapshot that will be used to update the
 	// database and later memory if all database updates are successful.
 	b.stateLock.RLock()
 	curTotalTxns := b.currentState.TotalTxns
 	b.stateLock.RUnlock()
 	numTxns := uint64(len(block.MsgBlock().Transactions))
 	blockSize := uint64(block.MsgBlock().SerializeSize())
-	state := newState(node, blockSize, numTxns,
+	state := newState(view.tips.hashes(), node, blockSize, numTxns,
 		curTotalTxns+numTxns, node.CalcPastMedianTime())
 
 	// Atomically insert info into the database.
@@ -1227,7 +1235,7 @@ func New(config *Config) (*BlockDAG, error) {
 	// Initialize the chain state from the passed database.  When the db
 	// does not yet contain any chain state, both it and the chain state
 	// will be initialized to contain only the genesis block.
-	if err := b.initChainState(); err != nil {
+	if err := b.initDAGState(); err != nil {
 		return nil, err
 	}
 

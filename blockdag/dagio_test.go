@@ -612,12 +612,12 @@ func TestBestChainStateSerialization(t *testing.T) {
 	workSum := new(big.Int)
 	tests := []struct {
 		name       string
-		state      bestChainState
+		state      dagState
 		serialized []byte
 	}{
 		{
 			name: "genesis",
-			state: bestChainState{
+			state: dagState{
 				hash:      *newHashFromStr("000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f"),
 				height:    0,
 				totalTxns: 1,
@@ -630,7 +630,7 @@ func TestBestChainStateSerialization(t *testing.T) {
 		},
 		{
 			name: "block 1",
-			state: bestChainState{
+			state: dagState{
 				hash:      *newHashFromStr("00000000839a8e6886ab5951d76f411475428afc90947ee320161bbf18eb6048"),
 				height:    1,
 				totalTxns: 2,
@@ -645,9 +645,9 @@ func TestBestChainStateSerialization(t *testing.T) {
 
 	for i, test := range tests {
 		// Ensure the state serializes to the expected value.
-		gotBytes := serializeBestChainState(test.state)
+		gotBytes := serializeDAGState(test.state)
 		if !bytes.Equal(gotBytes, test.serialized) {
-			t.Errorf("serializeBestChainState #%d (%s): mismatched "+
+			t.Errorf("serializeDAGState #%d (%s): mismatched "+
 				"bytes - got %x, want %x", i, test.name,
 				gotBytes, test.serialized)
 			continue
@@ -655,14 +655,14 @@ func TestBestChainStateSerialization(t *testing.T) {
 
 		// Ensure the serialized bytes are decoded back to the expected
 		// state.
-		state, err := deserializeBestChainState(test.serialized)
+		state, err := deserializeDAGState(test.serialized)
 		if err != nil {
-			t.Errorf("deserializeBestChainState #%d (%s) "+
+			t.Errorf("deserializeDAGState #%d (%s) "+
 				"unexpected error: %v", i, test.name, err)
 			continue
 		}
 		if !reflect.DeepEqual(state, test.state) {
-			t.Errorf("deserializeBestChainState #%d (%s) "+
+			t.Errorf("deserializeDAGState #%d (%s) "+
 				"mismatched state - got %v, want %v", i,
 				test.name, state, test.state)
 			continue
@@ -700,9 +700,9 @@ func TestBestChainStateDeserializeErrors(t *testing.T) {
 
 	for _, test := range tests {
 		// Ensure the expected error type and code is returned.
-		_, err := deserializeBestChainState(test.serialized)
+		_, err := deserializeDAGState(test.serialized)
 		if reflect.TypeOf(err) != reflect.TypeOf(test.errType) {
-			t.Errorf("deserializeBestChainState (%s): expected "+
+			t.Errorf("deserializeDAGState (%s): expected "+
 				"error type does not match - got %T, want %T",
 				test.name, err, test.errType)
 			continue
@@ -710,7 +710,7 @@ func TestBestChainStateDeserializeErrors(t *testing.T) {
 		if derr, ok := err.(database.Error); ok {
 			tderr := test.errType.(database.Error)
 			if derr.ErrorCode != tderr.ErrorCode {
-				t.Errorf("deserializeBestChainState (%s): "+
+				t.Errorf("deserializeDAGState (%s): "+
 					"wrong  error code got: %v, want: %v",
 					test.name, derr.ErrorCode,
 					tderr.ErrorCode)

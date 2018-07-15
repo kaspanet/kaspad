@@ -77,8 +77,8 @@ func migrateBlockIndex(db database.DB) error {
 		}
 
 		// Get tip of the main chain.
-		serializedData := dbTx.Metadata().Get(chainStateKeyName)
-		state, err := deserializeBestChainState(serializedData)
+		serializedData := dbTx.Metadata().Get(dagStateKeyName)
+		state, err := deserializeDAGState(serializedData)
 		if err != nil {
 			return err
 		}
