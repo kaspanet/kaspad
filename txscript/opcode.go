@@ -615,6 +615,17 @@ type parsedOpcode struct {
 	data   []byte
 }
 
+// isUpgradableNop returns whether or not the opcode is a numbered nop
+// that is intended to be upgradable by a soft fork
+func isUpgradableNop(pop *parsedOpcode) bool {
+	switch pop.opcode.value {
+	case OpNop1, OpNop2, OpNop3, OpNop4, OpNop5,
+		OpNop6, OpNop7, OpNop8, OpNop9, OpNop10:
+		return true
+	}
+	return false
+}
+
 // isDisabled returns whether or not the opcode is disabled and thus is always
 // bad to see in the instruction stream (even if turned off by a conditional).
 func (pop *parsedOpcode) isDisabled() bool {
@@ -904,9 +915,7 @@ func opcodeN(op *parsedOpcode, vm *Engine) error {
 // implies it generally does nothing, however, it will return an error when
 // the flag to discourage use of NOPs is set for select opcodes.
 func opcodeNop(op *parsedOpcode, vm *Engine) error {
-	switch op.opcode.value {
-	case OpNop1, OpNop2, OpNop3, OpNop4, OpNop5,
-		OpNop6, OpNop7, OpNop8, OpNop9, OpNop10:
+	if isUpgradableNop(op) {
 		if vm.hasFlag(ScriptDiscourageUpgradableNops) {
 			str := fmt.Sprintf("OP_NOP%d reserved for soft-fork "+
 				"upgrades", op.opcode.value-(OpNop1-1))
