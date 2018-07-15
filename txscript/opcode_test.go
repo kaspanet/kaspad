@@ -109,7 +109,7 @@ func TestOpcodeDisasm(t *testing.T) {
 			data = []byte{val}
 			expectedStr = strconv.Itoa(int(val))
 
-		case isNop(opcodeVal):
+		case isNumberedNop(opcodeVal):
 			val := byte(opcodeVal - (OpNop1 - 1))
 			expectedStr = "OP_NOP" + strconv.Itoa(int(val))
 
@@ -165,7 +165,7 @@ func TestOpcodeDisasm(t *testing.T) {
 			data = []byte{val}
 			expectedStr = "OP_" + strconv.Itoa(int(val))
 
-		case isNop(opcodeVal):
+		case isNumberedNop(opcodeVal):
 			val := byte(opcodeVal - (OpNop1 - 1))
 			expectedStr = "OP_NOP" + strconv.Itoa(int(val))
 
@@ -189,6 +189,6 @@ func isOpUnknown(opcodeVal int) bool {
 	return opcodeVal >= 0xba && opcodeVal <= 0xf9 || opcodeVal == 0xfc || opcodeVal == 0xab
 }
 
-func isNop(opcodeVal int) bool {
+func isNumberedNop(opcodeVal int) bool {
 	return opcodeVal >= OpNop1 && opcodeVal <= OpNop10
 }

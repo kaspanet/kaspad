@@ -1198,15 +1198,6 @@ func handleGetBlockChainInfo(s *rpcServer, cmd interface{}, closeChan <-chan str
 				Status: height >= params.BIP0066Height,
 			},
 		},
-		{
-			ID:      "bip65",
-			Version: 4,
-			Reject: struct {
-				Status bool `json:"status"`
-			}{
-				Status: height >= params.BIP0065Height,
-			},
-		},
 	}
 
 	// Finally, query the BIP0009 version bits state for all currently

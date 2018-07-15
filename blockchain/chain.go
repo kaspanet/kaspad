@@ -358,9 +358,7 @@ func (b *BlockChain) CalcSequenceLock(tx *btcutil.Tx, utxoView *UtxoViewpoint, m
 func (b *BlockChain) calcSequenceLock(node *blockNode, tx *btcutil.Tx, utxoView *UtxoViewpoint, mempool bool) (*SequenceLock, error) {
 	// A value of -1 for each relative lock type represents a relative time
 	// lock value that will allow a transaction to be included in a block
-	// at any given height or time. This value is returned as the relative
-	// lock time in the case that BIP 68 is disabled, or has not yet been
-	// activated.
+	// at any given height or time.
 	sequenceLock := &SequenceLock{Seconds: -1, BlockHeight: -1}
 
 	// Sequence locks don't apply to coinbase transactions Therefore, we
