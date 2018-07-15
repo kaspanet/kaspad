@@ -364,7 +364,6 @@ func (b *BlockChain) calcSequenceLock(node *blockNode, tx *btcutil.Tx, utxoView 
 	// Sequence locks don't apply to coinbase transactions Therefore, we
 	// return sequence lock values of -1 indicating that this transaction
 	// can be included within a block at any given height or time.
-	mTx := tx.MsgTx()
 	if IsCoinBase(tx) {
 		return sequenceLock, nil
 	}
@@ -373,6 +372,7 @@ func (b *BlockChain) calcSequenceLock(node *blockNode, tx *btcutil.Tx, utxoView 
 	// inputs present in the mempool.
 	nextHeight := node.height + 1
 
+	mTx := tx.MsgTx()
 	for txInIndex, txIn := range mTx.TxIn {
 		utxo := utxoView.LookupEntry(txIn.PreviousOutPoint)
 		if utxo == nil {
