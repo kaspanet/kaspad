@@ -135,10 +135,6 @@ func parseScriptFlags(flagStr string) (ScriptFlags, error) {
 		switch flag {
 		case "":
 			// Nothing.
-		case "CHECKLOCKTIMEVERIFY":
-			flags |= ScriptVerifyCheckLockTimeVerify
-		case "CHECKSEQUENCEVERIFY":
-			flags |= ScriptVerifyCheckSequenceVerify
 		case "CLEANSTACK":
 			flags |= ScriptVerifyCleanStack
 		case "DERSIG":
@@ -670,10 +666,6 @@ testloop:
 				t.Errorf("bad test (missing %dth input) %d:%v",
 					k, i, test)
 				continue testloop
-			}
-
-			if i == 93 {
-				fmt.Printf("lalala")
 			}
 			vm, err := NewEngine(pkScript, tx.MsgTx(), k, flags, nil)
 			if err != nil {

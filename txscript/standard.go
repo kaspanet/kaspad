@@ -33,8 +33,6 @@ const (
 		ScriptDiscourageUpgradableNops |
 		ScriptVerifyCleanStack |
 		ScriptVerifyNullFail |
-		ScriptVerifyCheckLockTimeVerify |
-		ScriptVerifyCheckSequenceVerify |
 		ScriptVerifyLowS
 )
 
@@ -450,7 +448,7 @@ func ExtractPkScriptAddrs(pkScript []byte, chainParams *chaincfg.Params) (Script
 		// Therefore the pubkey is the first item on the stack.
 		// Skip the pubkey if it's invalid for some reason.
 		requiredSigs = 1
-		addr, err := btcutil.NewAddressPubKey(pops[0].data)
+		addr, err := btcutil.NewAddressPubKey(pops[0].data, chainParams)
 		if err == nil {
 			addrs = append(addrs, addr)
 		}
@@ -479,7 +477,7 @@ func ExtractPkScriptAddrs(pkScript []byte, chainParams *chaincfg.Params) (Script
 		// Extract the public keys while skipping any that are invalid.
 		addrs = make([]btcutil.Address, 0, numPubKeys)
 		for i := 0; i < numPubKeys; i++ {
-			addr, err := btcutil.NewAddressPubKey(pops[i+1].data)
+			addr, err := btcutil.NewAddressPubKey(pops[i+1].data, chainParams)
 			if err == nil {
 				addrs = append(addrs, addr)
 			}

@@ -358,36 +358,13 @@ func (b *BlockChain) CalcSequenceLock(tx *btcutil.Tx, utxoView *UtxoViewpoint, m
 func (b *BlockChain) calcSequenceLock(node *blockNode, tx *btcutil.Tx, utxoView *UtxoViewpoint, mempool bool) (*SequenceLock, error) {
 	// A value of -1 for each relative lock type represents a relative time
 	// lock value that will allow a transaction to be included in a block
-	// at any given height or time. This value is returned as the relative
-	// lock time in the case that BIP 68 is disabled, or has not yet been
-	// activated.
+	// at any given height or time.
 	sequenceLock := &SequenceLock{Seconds: -1, BlockHeight: -1}
 
-	// The sequence locks semantics are always active for transactions
-	// within the mempool.
-	csvSoftforkActive := mempool
-
-	// If we're performing block validation, then we need to query the BIP9
-	// state.
-	if !csvSoftforkActive {
-		// Obtain the latest BIP9 version bits state for the
-		// CSV-package soft-fork deployment. The adherence of sequence
-		// locks depends on the current soft-fork state.
-		csvState, err := b.deploymentState(node.parent, chaincfg.DeploymentCSV)
-		if err != nil {
-			return nil, err
-		}
-		csvSoftforkActive = csvState == ThresholdActive
-	}
-
-	// If the transaction's version is less than 2, and BIP 68 has not yet
-	// been activated then sequence locks are disabled. Additionally,
-	// sequence locks don't apply to coinbase transactions Therefore, we
+	// Sequence locks don't apply to coinbase transactions Therefore, we
 	// return sequence lock values of -1 indicating that this transaction
 	// can be included within a block at any given height or time.
-	mTx := tx.MsgTx()
-	sequenceLockActive := mTx.Version >= 2 && csvSoftforkActive
-	if !sequenceLockActive || IsCoinBase(tx) {
+	if IsCoinBase(tx) {
 		return sequenceLock, nil
 	}
 
@@ -395,6 +372,7 @@ func (b *BlockChain) calcSequenceLock(node *blockNode, tx *btcutil.Tx, utxoView 
 	// inputs present in the mempool.
 	nextHeight := node.height + 1
 
+	mTx := tx.MsgTx()
 	for txInIndex, txIn := range mTx.TxIn {
 		utxo := utxoView.LookupEntry(txIn.PreviousOutPoint)
 		if utxo == nil {

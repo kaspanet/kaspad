@@ -212,20 +212,18 @@ const (
 	OpCheckSigVerify      = 0xad // 173
 	OpCheckMultiSig       = 0xae // 174
 	OpCheckMultiSigVerify = 0xaf // 175
-	OpNop1                = 0xb0 // 176
-	OpNop2                = 0xb1 // 177
-	OpCheckLockTimeVerify = 0xb1 // 177 - AKA OPNop2
-	OpNop3                = 0xb2 // 178
-	OpCheckSequenceVerify = 0xb2 // 178 - AKA OpNop3
-	OpNop4                = 0xb3 // 179
-	OpNop5                = 0xb4 // 180
-	OpNop6                = 0xb5 // 181
-	OpNop7                = 0xb6 // 182
-	OpNop8                = 0xb7 // 183
-	OpNop9                = 0xb8 // 184
-	OpNop10               = 0xb9 // 185
-	OpUnknown186          = 0xba // 186
-	OpUnknown187          = 0xbb // 187
+	OpCheckLockTimeVerify = 0xb0 // 176
+	OpCheckSequenceVerify = 0xb1 // 177
+	OpNop1                = 0xb2 // 178
+	OpNop2                = 0xb3 // 179
+	OpNop3                = 0xb4 // 180
+	OpNop4                = 0xb5 // 181
+	OpNop5                = 0xb6 // 182
+	OpNop6                = 0xb7 // 183
+	OpNop7                = 0xb8 // 184
+	OpNop8                = 0xb9 // 185
+	OpNop9                = 0xba // 186
+	OpNop10               = 0xbb // 187
 	OpUnknown188          = 0xbc // 188
 	OpUnknown189          = 0xbd // 189
 	OpUnknown190          = 0xbe // 190
@@ -500,6 +498,8 @@ var opcodeArray = [256]opcode{
 
 	// Reserved opcodes.
 	OpNop1:  {OpNop1, "OP_NOP1", 1, opcodeNop},
+	OpNop2:  {OpNop2, "OP_NOP2", 1, opcodeNop},
+	OpNop3:  {OpNop3, "OP_NOP3", 1, opcodeNop},
 	OpNop4:  {OpNop4, "OP_NOP4", 1, opcodeNop},
 	OpNop5:  {OpNop5, "OP_NOP5", 1, opcodeNop},
 	OpNop6:  {OpNop6, "OP_NOP6", 1, opcodeNop},
@@ -510,8 +510,6 @@ var opcodeArray = [256]opcode{
 
 	// Undefined opcodes.
 	OpUnknown171: {OpUnknown171, "OP_UNKNOWN171", 1, opcodeInvalid},
-	OpUnknown186: {OpUnknown186, "OP_UNKNOWN186", 1, opcodeInvalid},
-	OpUnknown187: {OpUnknown187, "OP_UNKNOWN187", 1, opcodeInvalid},
 	OpUnknown188: {OpUnknown188, "OP_UNKNOWN188", 1, opcodeInvalid},
 	OpUnknown189: {OpUnknown189, "OP_UNKNOWN189", 1, opcodeInvalid},
 	OpUnknown190: {OpUnknown190, "OP_UNKNOWN190", 1, opcodeInvalid},
@@ -615,6 +613,17 @@ var opcodeOnelineRepls = map[string]string{
 type parsedOpcode struct {
 	opcode *opcode
 	data   []byte
+}
+
+// isUpgradableNop returns whether or not the opcode is a numbered nop
+// that is intended to be upgradable by a soft fork
+func isUpgradableNop(pop *parsedOpcode) bool {
+	switch pop.opcode.value {
+	case OpNop1, OpNop2, OpNop3, OpNop4, OpNop5,
+		OpNop6, OpNop7, OpNop8, OpNop9, OpNop10:
+		return true
+	}
+	return false
 }
 
 // isDisabled returns whether or not the opcode is disabled and thus is always
@@ -906,9 +915,7 @@ func opcodeN(op *parsedOpcode, vm *Engine) error {
 // implies it generally does nothing, however, it will return an error when
 // the flag to discourage use of NOPs is set for select opcodes.
 func opcodeNop(op *parsedOpcode, vm *Engine) error {
-	switch op.opcode.value {
-	case OpNop1, OpNop4, OpNop5,
-		OpNop6, OpNop7, OpNop8, OpNop9, OpNop10:
+	if isUpgradableNop(op) {
 		if vm.hasFlag(ScriptDiscourageUpgradableNops) {
 			str := fmt.Sprintf("OP_NOP%d reserved for soft-fork "+
 				"upgrades", op.opcode.value-(OpNop1-1))
@@ -1081,20 +1088,8 @@ func verifyLockTime(txLockTime, threshold, lockTime int64) error {
 
 // opcodeCheckLockTimeVerify compares the top item on the data stack to the
 // LockTime field of the transaction containing the script signature
-// validating if the transaction outputs are spendable yet.  If flag
-// ScriptVerifyCheckLockTimeVerify is not set, the code continues as if OP_NOP2
-// were executed.
+// validating if the transaction outputs are spendable yet.
 func opcodeCheckLockTimeVerify(op *parsedOpcode, vm *Engine) error {
-	// If the ScriptVerifyCheckLockTimeVerify script flag is not set, treat
-	// opcode as OP_NOP2 instead.
-	if !vm.hasFlag(ScriptVerifyCheckLockTimeVerify) {
-		if vm.hasFlag(ScriptDiscourageUpgradableNops) {
-			return scriptError(ErrDiscourageUpgradableNOPs,
-				"OP_NOP2 reserved for soft-fork upgrades")
-		}
-		return nil
-	}
-
 	// The current transaction locktime is a uint32 resulting in a maximum
 	// locktime of 2^32-1 (the year 2106).  However, scriptNums are signed
 	// and therefore a standard 4-byte scriptNum would only support up to a
@@ -1102,9 +1097,9 @@ func opcodeCheckLockTimeVerify(op *parsedOpcode, vm *Engine) error {
 	// here since it will support up to 2^39-1 which allows dates beyond the
 	// current locktime limit.
 	//
-	// PeekByteArray is used here instead of PeekInt because we do not want
+	// PopByteArray is used here instead of PopInt because we do not want
 	// to be limited to a 4-byte integer for reasons specified above.
-	so, err := vm.dstack.PeekByteArray(0)
+	so, err := vm.dstack.PopByteArray()
 	if err != nil {
 		return err
 	}
@@ -1155,19 +1150,8 @@ func opcodeCheckLockTimeVerify(op *parsedOpcode, vm *Engine) error {
 
 // opcodeCheckSequenceVerify compares the top item on the data stack to the
 // LockTime field of the transaction containing the script signature
-// validating if the transaction outputs are spendable yet.  If flag
-// ScriptVerifyCheckSequenceVerify is not set, the code continues as if OP_NOP3
-// were executed.
+// validating if the transaction outputs are spendable yet.
 func opcodeCheckSequenceVerify(op *parsedOpcode, vm *Engine) error {
-	// If the ScriptVerifyCheckSequenceVerify script flag is not set, treat
-	// opcode as OP_NOP3 instead.
-	if !vm.hasFlag(ScriptVerifyCheckSequenceVerify) {
-		if vm.hasFlag(ScriptDiscourageUpgradableNops) {
-			return scriptError(ErrDiscourageUpgradableNOPs,
-				"OP_NOP3 reserved for soft-fork upgrades")
-		}
-		return nil
-	}
 
 	// The current transaction sequence is a uint32 resulting in a maximum
 	// sequence of 2^32-1.  However, scriptNums are signed and therefore a
@@ -1176,9 +1160,9 @@ func opcodeCheckSequenceVerify(op *parsedOpcode, vm *Engine) error {
 	// up to 2^39-1 which allows sequences beyond the current sequence
 	// limit.
 	//
-	// PeekByteArray is used here instead of PeekInt because we do not want
+	// PopByteArray is used here instead of PopInt because we do not want
 	// to be limited to a 4-byte integer for reasons specified above.
-	so, err := vm.dstack.PeekByteArray(0)
+	so, err := vm.dstack.PopByteArray()
 	if err != nil {
 		return err
 	}
@@ -1202,14 +1186,6 @@ func opcodeCheckSequenceVerify(op *parsedOpcode, vm *Engine) error {
 	// CHECKSEQUENCEVERIFY behaves as a NOP.
 	if sequence&int64(wire.SequenceLockTimeDisabled) != 0 {
 		return nil
-	}
-
-	// Transaction version numbers not high enough to trigger CSV rules must
-	// fail.
-	if vm.tx.Version < 2 {
-		str := fmt.Sprintf("invalid transaction version: %d",
-			vm.tx.Version)
-		return scriptError(ErrUnsatisfiedLockTime, str)
 	}
 
 	// Sequence numbers with their most significant bit set are not
@@ -2320,14 +2296,11 @@ var OpcodeByName = make(map[string]byte)
 
 func init() {
 	// Initialize the opcode name to value map using the contents of the
-	// opcode array.  Also add entries for "OP_FALSE", "OP_TRUE", and
-	// "OP_NOP2" since they are aliases for "OP_0", "OP_1",
-	// and "OP_CHECKLOCKTIMEVERIFY" respectively.
+	// opcode array.  Also add entries for "OP_FALSE" and "OP_TRUE"
+	// since they are aliases for "OP_0" and "OP_1" respectively.
 	for _, op := range opcodeArray {
 		OpcodeByName[op.name] = op.value
 	}
 	OpcodeByName["OP_FALSE"] = OpFalse
 	OpcodeByName["OP_TRUE"] = OpTrue
-	OpcodeByName["OP_NOP2"] = OpCheckLockTimeVerify
-	OpcodeByName["OP_NOP3"] = OpCheckSequenceVerify
 }
