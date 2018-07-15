@@ -1090,13 +1090,11 @@ func verifyLockTime(txLockTime, threshold, lockTime int64) error {
 // LockTime field of the transaction containing the script signature
 // validating if the transaction outputs are spendable yet.
 func opcodeCheckLockTimeVerify(op *parsedOpcode, vm *Engine) error {
-	// The current transaction locktime is a uint32 resulting in a maximum
-	// locktime of 2^32-1 (the year 2106).  However, scriptNums are signed
+	// The current transaction locktime is a int64 resulting in a maximum
+	// locktime of 2^63-1 (the year 292278994).  However, scriptNums are signed
 	// and therefore a standard 4-byte scriptNum would only support up to a
 	// maximum of 2^31-1 (the year 2038).  Thus, a 5-byte scriptNum is used
-	// here since it will support up to 2^39-1 which allows dates beyond the
-	// current locktime limit.
-	//
+	// here since it will support up to 2^39-1 which allows dates until the year 19400
 	// PopByteArray is used here instead of PopInt because we do not want
 	// to be limited to a 4-byte integer for reasons specified above.
 	so, err := vm.dstack.PopByteArray()

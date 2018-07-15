@@ -244,7 +244,7 @@ type MsgTx struct {
 	Version  int32
 	TxIn     []*TxIn
 	TxOut    []*TxOut
-	LockTime uint32
+	LockTime int64
 }
 
 // AddTxIn adds a transaction input to the message.
@@ -430,7 +430,8 @@ func (msg *MsgTx) BtcDecode(r io.Reader, pver uint32) error {
 		totalScriptSize += uint64(len(to.PkScript))
 	}
 
-	msg.LockTime, err = binarySerializer.Uint32(r, littleEndian)
+	uint64LockTime, err := binarySerializer.Uint64(r, littleEndian)
+	msg.LockTime = int64(uint64LockTime)
 	if err != nil {
 		returnScriptBuffers()
 		return err
@@ -541,7 +542,7 @@ func (msg *MsgTx) BtcEncode(w io.Writer, pver uint32) error {
 		}
 	}
 
-	return binarySerializer.PutUint32(w, littleEndian, msg.LockTime)
+	return binarySerializer.PutUint64(w, littleEndian, uint64(msg.LockTime))
 }
 
 // Serialize encodes the transaction to w using a format that suitable for
@@ -564,9 +565,9 @@ func (msg *MsgTx) Serialize(w io.Writer) error {
 // SerializeSize returns the number of bytes it would take to serialize the
 // the transaction.
 func (msg *MsgTx) SerializeSize() int {
-	// Version 4 bytes + LockTime 4 bytes + Serialized varint size for the
+	// Version 4 bytes + LockTime 8 bytes + Serialized varint size for the
 	// number of transaction inputs and outputs.
-	n := 8 + VarIntSerializeSize(uint64(len(msg.TxIn))) +
+	n := 12 + VarIntSerializeSize(uint64(len(msg.TxIn))) +
 		VarIntSerializeSize(uint64(len(msg.TxOut)))
 
 	for _, txIn := range msg.TxIn {

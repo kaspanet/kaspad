@@ -71,7 +71,7 @@ func TestBlock(t *testing.T) {
 // hashes from a block accurately.
 func TestBlockTxHashes(t *testing.T) {
 	// Block 1, transaction 1 hash.
-	hashStr := "0e3e2357e806b6cdb1f70b54c3a3a17b6714ee1f0e68bebb44a74b1efd512098"
+	hashStr := "c52c57dcdaa5cbfd39ef73afb78b1fbb1e856f557dd5f8b53c49acbf21eb387a"
 	wantHash, err := chainhash.NewHashFromStr(hashStr)
 	if err != nil {
 		t.Errorf("NewHashFromStr: %v", err)
@@ -92,7 +92,7 @@ func TestBlockTxHashes(t *testing.T) {
 // TestBlockHash tests the ability to generate the hash of a block accurately.
 func TestBlockHash(t *testing.T) {
 	// Block 1 hash.
-	hashStr := "839a8e6886ab5951d76f411475428afc90947ee320161bbf18eb6048"
+	hashStr := "ec85da8297525c2a2a5f3e826510ea1a48ee741e13a18b93ceeb2fb6c9848925"
 	wantHash, err := chainhash.NewHashFromStr(hashStr)
 	if err != nil {
 		t.Errorf("NewHashFromStr: %v", err)
@@ -201,7 +201,7 @@ func TestBlockWireErrors(t *testing.T) {
 	// version.
 	pver := uint32(60002)
 
-	tests := []struct {
+	tests := []struct { //TODO: need to recheck this part (what are the correct max values)
 		in       *MsgBlock // Value to encode
 		buf      []byte    // Wire encoding
 		pver     uint32    // Protocol version for wire encoding
@@ -218,13 +218,13 @@ func TestBlockWireErrors(t *testing.T) {
 		// Force error in timestamp.
 		{&blockOne, blockOneBytes, pver, 68, io.ErrShortWrite, io.EOF},
 		// Force error in difficulty bits.
-		{&blockOne, blockOneBytes, pver, 72, io.ErrShortWrite, io.EOF},
-		// Force error in header nonce.
 		{&blockOne, blockOneBytes, pver, 76, io.ErrShortWrite, io.EOF},
-		// Force error in transaction count.
+		// Force error in header nonce.
 		{&blockOne, blockOneBytes, pver, 80, io.ErrShortWrite, io.EOF},
+		// Force error in transaction count.
+		{&blockOne, blockOneBytes, pver, 84, io.ErrShortWrite, io.EOF},
 		// Force error in transactions.
-		{&blockOne, blockOneBytes, pver, 81, io.ErrShortWrite, io.EOF},
+		{&blockOne, blockOneBytes, pver, 85, io.ErrShortWrite, io.EOF},
 	}
 
 	t.Logf("Running %d tests", len(tests))
@@ -336,13 +336,13 @@ func TestBlockSerializeErrors(t *testing.T) {
 		// Force error in timestamp.
 		{&blockOne, blockOneBytes, 68, io.ErrShortWrite, io.EOF},
 		// Force error in difficulty bits.
-		{&blockOne, blockOneBytes, 72, io.ErrShortWrite, io.EOF},
-		// Force error in header nonce.
 		{&blockOne, blockOneBytes, 76, io.ErrShortWrite, io.EOF},
-		// Force error in transaction count.
+		// Force error in header nonce.
 		{&blockOne, blockOneBytes, 80, io.ErrShortWrite, io.EOF},
+		// Force error in transaction count.
+		{&blockOne, blockOneBytes, 84, io.ErrShortWrite, io.EOF},
 		// Force error in transactions.
-		{&blockOne, blockOneBytes, 81, io.ErrShortWrite, io.EOF},
+		{&blockOne, blockOneBytes, 85, io.ErrShortWrite, io.EOF},
 	}
 
 	t.Logf("Running %d tests", len(tests))
@@ -404,7 +404,7 @@ func TestBlockOverflowErrors(t *testing.T) {
 				0xbb, 0xbe, 0x68, 0x0e, 0x1f, 0xee, 0x14, 0x67,
 				0x7b, 0xa1, 0xa3, 0xc3, 0x54, 0x0b, 0xf7, 0xb1,
 				0xcd, 0xb6, 0x06, 0xe8, 0x57, 0x23, 0x3e, 0x0e, // MerkleRoot
-				0x61, 0xbc, 0x66, 0x49, // Timestamp
+				0x61, 0xbc, 0x66, 0x49, 0x00, 0x00, 0x00, 0x00, // Timestamp
 				0xff, 0xff, 0x00, 0x1d, // Bits
 				0x01, 0xe3, 0x62, 0x99, // Nonce
 				0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
@@ -456,7 +456,7 @@ func TestBlockSerializeSize(t *testing.T) {
 		size int       // Expected serialized size
 	}{
 		// Block with no transactions.
-		{noTxBlock, 81},
+		{noTxBlock, 85},
 
 		// First block in the mainnet block chain.
 		{&blockOne, len(blockOneBytes)},
@@ -543,7 +543,7 @@ var blockOneBytes = []byte{
 	0xbb, 0xbe, 0x68, 0x0e, 0x1f, 0xee, 0x14, 0x67,
 	0x7b, 0xa1, 0xa3, 0xc3, 0x54, 0x0b, 0xf7, 0xb1,
 	0xcd, 0xb6, 0x06, 0xe8, 0x57, 0x23, 0x3e, 0x0e, // MerkleRoot
-	0x61, 0xbc, 0x66, 0x49, // Timestamp
+	0x61, 0xbc, 0x66, 0x49, 0x00, 0x00, 0x00, 0x00, // Timestamp
 	0xff, 0xff, 0x00, 0x1d, // Bits
 	0x01, 0xe3, 0x62, 0x99, // Nonce
 	0x01,                   // TxnCount
@@ -569,12 +569,12 @@ var blockOneBytes = []byte{
 	0xe0, 0xa6, 0x04, 0xf8, 0x14, 0x17, 0x81, 0xe6,
 	0x22, 0x94, 0x72, 0x11, 0x66, 0xbf, 0x62, 0x1e,
 	0x73, 0xa8, 0x2c, 0xbf, 0x23, 0x42, 0xc8, 0x58,
-	0xee,                   // 65-byte uncompressed public key
-	0xac,                   // OP_CHECKSIG
-	0x00, 0x00, 0x00, 0x00, // Lock time
+	0xee,                                           // 65-byte uncompressed public key
+	0xac,                                           // OP_CHECKSIG
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Lock time
 }
 
 // Transaction location information for block one transactions.
 var blockOneTxLocs = []TxLoc{
-	{TxStart: 81, TxLen: 134},
+	{TxStart: 85, TxLen: 138},
 }

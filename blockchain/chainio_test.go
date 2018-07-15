@@ -413,7 +413,7 @@ func TestUtxoSerialization(t *testing.T) {
 		serialized []byte
 	}{
 		// From tx in main blockchain:
-		// 0e3e2357e806b6cdb1f70b54c3a3a17b6714ee1f0e68bebb44a74b1efd512098:0
+		// c52c57dcdaa5cbfd39ef73afb78b1fbb1e856f557dd5f8b53c49acbf21eb387a:0
 		{
 			name: "height 1, coinbase",
 			entry: &UtxoEntry{
@@ -425,7 +425,7 @@ func TestUtxoSerialization(t *testing.T) {
 			serialized: hexToBytes("03320496b538e853519c726a2c91e61ec11600ae1390813a627c66fb8be7947be63c52"),
 		},
 		// From tx in main blockchain:
-		// 0e3e2357e806b6cdb1f70b54c3a3a17b6714ee1f0e68bebb44a74b1efd512098:0
+		// c52c57dcdaa5cbfd39ef73afb78b1fbb1e856f557dd5f8b53c49acbf21eb387a:0
 		{
 			name: "height 1, coinbase, spent",
 			entry: &UtxoEntry{
@@ -631,7 +631,7 @@ func TestBestChainStateSerialization(t *testing.T) {
 		{
 			name: "block 1",
 			state: bestChainState{
-				hash:      *newHashFromStr("00000000839a8e6886ab5951d76f411475428afc90947ee320161bbf18eb6048"),
+				hash:      *newHashFromStr("ec85da8297525c2a2a5f3e826510ea1a48ee741e13a18b93ceeb2fb6c9848925,"),
 				height:    1,
 				totalTxns: 2,
 				workSum: func() *big.Int {

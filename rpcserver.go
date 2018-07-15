@@ -599,7 +599,7 @@ func handleCreateRawTransaction(s *rpcServer, cmd interface{}, closeChan <-chan 
 
 	// Set the Locktime, if given.
 	if c.LockTime != nil {
-		mtx.LockTime = uint32(*c.LockTime)
+		mtx.LockTime = int64(*c.LockTime)
 	}
 
 	// Return the serialized and hex-encoded transaction.  Note that this

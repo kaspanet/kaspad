@@ -144,7 +144,7 @@ func TestBIP0113(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unable to query for chain info: %v", err)
 	}
-	tx.LockTime = uint32(chainInfo.MedianTime) + 1
+	tx.LockTime = chainInfo.MedianTime + 1
 
 	sigScript, err := txscript.SignatureScript(tx, 0, testPkScript,
 		txscript.SigHashAll, outputKey, true)
@@ -199,7 +199,7 @@ func TestBIP0113(t *testing.T) {
 			PkScript: addrScript,
 			Value:    outputValue - 1000,
 		})
-		tx.LockTime = uint32(medianTimePast + timeLockDelta)
+		tx.LockTime = medianTimePast + timeLockDelta
 		sigScript, err = txscript.SignatureScript(tx, 0, testPkScript,
 			txscript.SigHashAll, outputKey, true)
 		if err != nil {
@@ -237,13 +237,13 @@ func TestBIP0113(t *testing.T) {
 // createCSVOutput creates an output paying to a trivially redeemable CSV
 // pkScript with the specified time-lock.
 func createCSVOutput(r *rpctest.Harness, t *testing.T,
-	numSatoshis btcutil.Amount, timeLock int32,
+	numSatoshis btcutil.Amount, timeLock int64,
 	isSeconds bool) ([]byte, *wire.OutPoint, *wire.MsgTx, error) {
 
 	// Convert the time-lock to the proper sequence lock based according to
 	// if the lock is seconds or time based.
 	sequenceLock := blockchain.LockTimeToSequence(isSeconds,
-		uint32(timeLock))
+		int64(timeLock))
 
 	// Our CSV script is simply: <sequenceLock> OP_CSV OP_DROP
 	b := txscript.NewScriptBuilder().
@@ -397,7 +397,7 @@ func TestBIP0068AndCsv(t *testing.T) {
 	type csvOutput struct {
 		RedeemScript []byte
 		Utxo         *wire.OutPoint
-		Timelock     int32
+		Timelock     int64
 	}
 	var spendableInputs [numTests]csvOutput
 
@@ -412,7 +412,7 @@ func TestBIP0068AndCsv(t *testing.T) {
 		}
 
 		redeemScript, utxo, tx, err := createCSVOutput(r, t, outputAmt,
-			int32(timeLock), isSeconds)
+			timeLock, isSeconds)
 		if err != nil {
 			t.Fatalf("unable to create CSV output: %v", err)
 		}
@@ -424,7 +424,7 @@ func TestBIP0068AndCsv(t *testing.T) {
 		spendableInputs[i] = csvOutput{
 			RedeemScript: redeemScript,
 			Utxo:         utxo,
-			Timelock:     int32(timeLock),
+			Timelock:     int64(timeLock),
 		}
 	}
 

@@ -447,7 +447,7 @@ func (b *BlockChain) calcSequenceLock(node *blockNode, tx *btcutil.Tx, utxoView 
 // number in accordance to BIP-68.
 // See: https://github.com/bitcoin/bips/blob/master/bip-0068.mediawiki
 //  * (Compatibility)
-func LockTimeToSequence(isSeconds bool, locktime uint32) uint32 {
+func LockTimeToSequence(isSeconds bool, locktime int64) int64 {
 	// If we're expressing the relative lock time in blocks, then the
 	// corresponding sequence number is simply the desired input age.
 	if !isSeconds {
