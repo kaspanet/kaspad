@@ -1124,8 +1124,7 @@ func (b *BlockChain) checkConnectBlock(node *blockNode, block *btcutil.Block, vi
 	// determine if transactions in the current block are final.
 	medianTime := node.parent.CalcPastMedianTime()
 
-	// Additionally, if the CSV soft-fork package is now active,
-	// then we also enforce the relative sequence number based
+	// We also enforce the relative sequence number based
 	// lock-times within the inputs of all transactions in this
 	// candidate block.
 	for _, tx := range block.Transactions() {

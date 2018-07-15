@@ -12,9 +12,6 @@ import (
 	"testing"
 )
 
-const TestOpNop1 = 0xb2
-const TestOpNop10 = 0xbb
-
 // TestOpcodeDisabled tests the opcodeDisabled function manually because all
 // disabled opcodes result in a script execution failure when executed normally,
 // so the function is not called under normal circumstances.
@@ -113,7 +110,7 @@ func TestOpcodeDisasm(t *testing.T) {
 			expectedStr = strconv.Itoa(int(val))
 
 		case isNop(opcodeVal):
-			val := byte(opcodeVal - (TestOpNop1 - 1))
+			val := byte(opcodeVal - (OpNop1 - 1))
 			expectedStr = "OP_NOP" + strconv.Itoa(int(val))
 
 		// OP_UNKNOWN#.
@@ -169,7 +166,7 @@ func TestOpcodeDisasm(t *testing.T) {
 			expectedStr = "OP_" + strconv.Itoa(int(val))
 
 		case isNop(opcodeVal):
-			val := byte(opcodeVal - (TestOpNop1 - 1))
+			val := byte(opcodeVal - (OpNop1 - 1))
 			expectedStr = "OP_NOP" + strconv.Itoa(int(val))
 
 		// OP_UNKNOWN#.

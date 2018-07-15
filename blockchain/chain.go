@@ -363,9 +363,7 @@ func (b *BlockChain) calcSequenceLock(node *blockNode, tx *btcutil.Tx, utxoView 
 	// activated.
 	sequenceLock := &SequenceLock{Seconds: -1, BlockHeight: -1}
 
-	// If the transaction's version is less than 2, and BIP 68 has not yet
-	// been activated then sequence locks are disabled. Additionally,
-	// sequence locks don't apply to coinbase transactions Therefore, we
+	// Sequence locks don't apply to coinbase transactions Therefore, we
 	// return sequence lock values of -1 indicating that this transaction
 	// can be included within a block at any given height or time.
 	mTx := tx.MsgTx()

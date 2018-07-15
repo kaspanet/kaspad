@@ -2287,9 +2287,8 @@ var OpcodeByName = make(map[string]byte)
 
 func init() {
 	// Initialize the opcode name to value map using the contents of the
-	// opcode array.  Also add entries for "OP_FALSE", "OP_TRUE", and
-	// "OP_NOP2" since they are aliases for "OP_0", "OP_1",
-	// and "OP_CHECKLOCKTIMEVERIFY" respectively.
+	// opcode array.  Also add entries for "OP_FALSE" and "OP_TRUE"
+	// since they are aliases for "OP_0" and "OP_1" respectively.
 	for _, op := range opcodeArray {
 		OpcodeByName[op.name] = op.value
 	}
