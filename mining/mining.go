@@ -549,7 +549,7 @@ mempoolLoop:
 				deps[*prioItem.tx.Hash()] = prioItem
 				if prioItem.dependsOn == nil {
 					prioItem.dependsOn = make(
-						map[daghash.Hash]struct{})
+					map[daghash.Hash]struct{})
 				}
 				prioItem.dependsOn[*originHash] = struct{}{}
 
@@ -764,7 +764,7 @@ mempoolLoop:
 	var msgBlock wire.MsgBlock
 	msgBlock.Header = wire.BlockHeader{
 		Version:    nextBlockVersion,
-		PrevBlock:  currentState.SelectedTip.Hash,
+		PrevBlocks: currentState.TipHashes,
 		MerkleRoot: *merkles[len(merkles)-1],
 		Timestamp:  ts,
 		Bits:       reqDifficulty,
