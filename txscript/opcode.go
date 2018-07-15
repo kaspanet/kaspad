@@ -1151,7 +1151,7 @@ func opcodeCheckSequenceVerify(op *parsedOpcode, vm *Engine) error {
 	// up to 2^39-1 which allows sequences beyond the current sequence
 	// limit.
 	//
-	// PeekByteArray is used here instead of PeekInt because we do not want
+	// PopByteArray is used here instead of PopInt because we do not want
 	// to be limited to a 4-byte integer for reasons specified above.
 	so, err := vm.dstack.PopByteArray()
 	if err != nil {
