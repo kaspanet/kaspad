@@ -939,10 +939,13 @@ func deserializeDAGState(serializedData []byte) (dagState, error) {
 		}
 	}
 
+	offset := uint32(0)
+
 	// Ensure the serialized data has enough bytes to properly deserialize
 	// the tip hashes, the selected tip hash, its height, total transactions,
 	// and work sum length.
 	numTipHashes := byteOrder.Uint32(serializedData[:4])
+	offset += 4
 	tipHashesLen := uint32(numTipHashes * daghash.HashSize)
 	minSerializedLen := 4 + tipHashesLen + daghash.HashSize + 4 + 8 + 4
 	if uint32(len(serializedData)) < minSerializedLen {
@@ -954,10 +957,9 @@ func deserializeDAGState(serializedData []byte) (dagState, error) {
 
 	state := dagState{}
 	state.numTipHashes = numTipHashes
-	offset := uint32(0)
-	tipHashes := make([]daghash.Hash, numTipHashes)
-	for i, _ := range tipHashes {
-		copy(tipHashes[i][:], serializedData[offset:offset+daghash.HashSize])
+	state.tipHashes = make([]daghash.Hash, numTipHashes)
+	for i, _ := range state.tipHashes {
+		copy(state.tipHashes[i][:], serializedData[offset:offset+daghash.HashSize])
 		offset += uint32(daghash.HashSize)
 	}
 	copy(state.selectedHash[:], serializedData[offset:offset+daghash.HashSize])

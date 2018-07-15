@@ -357,7 +357,7 @@ func (m *Manager) Init(chain *blockdag.BlockDAG, interrupt <-chan struct{}) erro
 	// lowest one so the catchup code only needs to start at the earliest
 	// block and is able to skip connecting the block for the indexes that
 	// don't need it.
-	bestHeight := chain.GetCurrentState().Height
+	bestHeight := chain.GetCurrentState().SelectedTip.Height
 	lowestHeight := bestHeight
 	indexerHeights := make([]int32, len(m.enabledIndexes))
 	err = m.db.View(func(dbTx database.Tx) error {

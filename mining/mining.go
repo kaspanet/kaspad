@@ -311,8 +311,8 @@ func logSkippedDeps(tx *btcutil.Tx, deps map[daghash.Hash]*txPrioItem) {
 // on the end of the provided best chain.  In particular, it is one second after
 // the median timestamp of the last several blocks per the chain consensus
 // rules.
-func MinimumMedianTime(chainState *blockdag.State) time.Time {
-	return chainState.MedianTime.Add(time.Second)
+func MinimumMedianTime(dagState *blockdag.State) time.Time {
+	return dagState.SelectedTip.MedianTime.Add(time.Second)
 }
 
 // medianAdjustedTime returns the current time adjusted to ensure it is at least
@@ -433,7 +433,7 @@ func NewBlkTmplGenerator(policy *Policy, params *dagconfig.Params,
 func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress btcutil.Address) (*BlockTemplate, error) {
 	// Extend the most recently known best block.
 	currentState := g.dag.GetCurrentState()
-	nextBlockHeight := currentState.Height + 1
+	nextBlockHeight := currentState.SelectedTip.Height + 1
 
 	// Create a standard coinbase transaction paying to the provided
 	// address.  NOTE: The coinbase value will be updated to include the
@@ -764,7 +764,7 @@ mempoolLoop:
 	var msgBlock wire.MsgBlock
 	msgBlock.Header = wire.BlockHeader{
 		Version:    nextBlockVersion,
-		PrevBlock:  currentState.Hash,
+		PrevBlock:  currentState.SelectedTip.Hash,
 		MerkleRoot: *merkles[len(merkles)-1],
 		Timestamp:  ts,
 		Bits:       reqDifficulty,

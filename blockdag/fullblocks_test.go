@@ -273,13 +273,13 @@ func TestFullBlocks(t *testing.T) {
 
 		// Ensure hash and height match.
 		currentState := chain.GetCurrentState()
-		if currentState.Hash != item.Block.BlockHash() ||
-			currentState.Height != blockHeight {
+		if currentState.SelectedTip.Hash != item.Block.BlockHash() ||
+			currentState.SelectedTip.Height != blockHeight {
 
 			t.Fatalf("block %q (hash %s, height %d) should be "+
 				"the current tip -- got (hash %s, height %d)",
-				item.Name, block.Hash(), blockHeight, currentState.Hash,
-				currentState.Height)
+				item.Name, block.Hash(), blockHeight, currentState.SelectedTip.Hash,
+				currentState.SelectedTip.Height)
 		}
 	}
 
