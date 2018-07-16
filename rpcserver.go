@@ -2313,7 +2313,7 @@ func handleGetMiningInfo(s *rpcServer, cmd interface{}, closeChan <-chan struct{
 	result := btcjson.GetMiningInfoResult{
 		Blocks:           int64(dagState.SelectedTip.Height),
 		CurrentBlockSize: dagState.SelectedTip.BlockSize,
-		CurrentBlockTx:   dagState.SelectedTip.NumTxns,
+		CurrentBlockTx:   dagState.SelectedTip.NumTxs,
 		Difficulty:       getDifficultyRatio(dagState.SelectedTip.Bits, s.cfg.ChainParams),
 		Generate:         s.cfg.CPUMiner.IsMining(),
 		GenProcLimit:     s.cfg.CPUMiner.NumWorkers(),

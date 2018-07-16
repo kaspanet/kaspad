@@ -617,17 +617,17 @@ func TestDAGStateSerialization(t *testing.T) {
 			name: "genesis",
 			state: dbDAGState{
 				SelectedHash: *newHashFromStr("000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f"),
-				TotalTxns:    1,
+				TotalTxs:     1,
 			},
-			serialized: []byte("{\"SelectedHash\":[111,226,140,10,182,241,179,114,193,166,162,70,174,99,247,79,147,30,131,101,225,90,8,156,104,214,25,0,0,0,0,0],\"TotalTxns\":1}"),
+			serialized: []byte("{\"SelectedHash\":[111,226,140,10,182,241,179,114,193,166,162,70,174,99,247,79,147,30,131,101,225,90,8,156,104,214,25,0,0,0,0,0],\"TotalTxs\":1}"),
 		},
 		{
 			name: "block 1",
 			state: dbDAGState{
 				SelectedHash: *newHashFromStr("00000000839a8e6886ab5951d76f411475428afc90947ee320161bbf18eb6048"),
-				TotalTxns:    2,
+				TotalTxs:     2,
 			},
-			serialized: []byte("{\"SelectedHash\":[72,96,235,24,191,27,22,32,227,126,148,144,252,138,66,117,20,65,111,215,81,89,171,134,104,142,154,131,0,0,0,0],\"TotalTxns\":2}"),
+			serialized: []byte("{\"SelectedHash\":[72,96,235,24,191,27,22,32,227,126,148,144,252,138,66,117,20,65,111,215,81,89,171,134,104,142,154,131,0,0,0,0],\"TotalTxs\":2}"),
 		},
 	}
 

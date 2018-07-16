@@ -48,8 +48,8 @@ var (
 	// the block height -> block hash index.
 	heightIndexBucketName = []byte("heightidx")
 
-	// dagStateKeyName is the name of the db key used to store the best
-	// chain state.
+	// dagStateKeyName is the name of the db key used to store the DAG
+	// state.
 	dagStateKeyName = []byte("dagstate")
 
 	// spendJournalVersionKeyName is the name of the db key used to store
@@ -872,7 +872,7 @@ func dbFetchHashByHeight(dbTx database.Tx, height int32) (*daghash.Hash, error) 
 // DAG state.
 type dbDAGState struct {
 	SelectedHash daghash.Hash
-	TotalTxns    uint64
+	TotalTxs     uint64
 }
 
 // serializeDAGState returns the serialization of the DAG state.
@@ -897,12 +897,12 @@ func deserializeDAGState(serializedData []byte) (*dbDAGState, error) {
 	return &dbState, nil
 }
 
-// dbPutBestState uses an existing database transaction to update the DAG
+// dbPutDAGState uses an existing database transaction to update the DAG
 // state with the given parameters.
-func dbPutBestState(dbTx database.Tx, state *DAGState, workSum *big.Int) error {
+func dbPutDAGState(dbTx database.Tx, state *DAGState, workSum *big.Int) error {
 	serializedData, err := serializeDAGState(dbDAGState{
 		SelectedHash: state.SelectedTip.Hash,
-		TotalTxns:    state.TotalTxns,
+		TotalTxs:     state.TotalTxs,
 	})
 
 	if err != nil {
@@ -916,7 +916,7 @@ func dbPutBestState(dbTx database.Tx, state *DAGState, workSum *big.Int) error {
 // genesis block.  This includes creating the necessary buckets and inserting
 // the genesis block, so it must only be called on an uninitialized database.
 func (b *BlockDAG) createDAGState() error {
-	// Create a new node from the genesis block and set it as the best node.
+	// Create a new node from the genesis block and set it as the DAG.
 	genesisBlock := btcutil.NewBlock(b.dagParams.GenesisBlock)
 	genesisBlock.SetHeight(0)
 	header := &genesisBlock.MsgBlock().Header
@@ -999,8 +999,8 @@ func (b *BlockDAG) createDAGState() error {
 			return err
 		}
 
-		// Store the current best chain state into the database.
-		err = dbPutBestState(dbTx, b.dagState, node.workSum)
+		// Store the current DAG state into the database.
+		err = dbPutDAGState(dbTx, b.dagState, node.workSum)
 		if err != nil {
 			return err
 		}
@@ -1137,7 +1137,7 @@ func (b *BlockDAG) initDAGState() error {
 		// Initialize the DAG state.
 		blockSize := uint64(len(blockBytes))
 		numTxns := uint64(len(block.Transactions))
-		dagState := newDAGState(b.dag.Tips().hashes(), selectedTip, blockSize, numTxns, state.TotalTxns, selectedTip.CalcPastMedianTime())
+		dagState := newDAGState(b.dag.Tips().hashes(), selectedTip, blockSize, numTxns, state.TotalTxs, selectedTip.CalcPastMedianTime())
 		b.setDAGState(dagState)
 
 		return nil
