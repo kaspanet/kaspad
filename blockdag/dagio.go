@@ -886,7 +886,7 @@ func dbFetchHashByHeight(dbTx database.Tx, height int32) (*daghash.Hash, error) 
 //   work sum          big.Int          work sum length
 // -----------------------------------------------------------------------------
 
-// dagState represents the data to be stored the database for the current
+// dagState represents the data to be stored in the database for the current
 // DAG state.
 type dagState struct {
 	numTipHashes uint32
@@ -987,14 +987,14 @@ func deserializeDAGState(serializedData []byte) (dagState, error) {
 
 // dbPutBestState uses an existing database transaction to update the DAG
 // state with the given parameters.
-func dbPutBestState(dbTx database.Tx, snapshot *State, workSum *big.Int) error {
+func dbPutBestState(dbTx database.Tx, state *DAGState, workSum *big.Int) error {
 	// Serialize the current DAG state.
 	serializedData := serializeDAGState(dagState{
-		selectedHash: snapshot.SelectedTip.Hash,
-		numTipHashes: uint32(len(snapshot.TipHashes)),
-		tipHashes:    snapshot.TipHashes,
-		height:       uint32(snapshot.SelectedTip.Height),
-		totalTxns:    snapshot.TotalTxns,
+		selectedHash: state.SelectedTip.Hash,
+		numTipHashes: uint32(len(state.TipHashes)),
+		tipHashes:    state.TipHashes,
+		height:       uint32(state.SelectedTip.Height),
+		totalTxns:    state.TotalTxns,
 		workSum:      workSum,
 	})
 
@@ -1002,10 +1002,10 @@ func dbPutBestState(dbTx database.Tx, snapshot *State, workSum *big.Int) error {
 	return dbTx.Metadata().Put(dagStateKeyName, serializedData)
 }
 
-// createChainState initializes both the database and the chain state to the
+// createDAGState initializes both the database and the DAG state to the
 // genesis block.  This includes creating the necessary buckets and inserting
 // the genesis block, so it must only be called on an uninitialized database.
-func (b *BlockDAG) createChainState() error {
+func (b *BlockDAG) createDAGState() error {
 	// Create a new node from the genesis block and set it as the best node.
 	genesisBlock := btcutil.NewBlock(b.dagParams.GenesisBlock)
 	genesisBlock.SetHeight(0)
@@ -1021,8 +1021,9 @@ func (b *BlockDAG) createChainState() error {
 	// its timestamp for the median time.
 	numTxns := uint64(len(genesisBlock.MsgBlock().Transactions))
 	blockSize := uint64(genesisBlock.MsgBlock().SerializeSize())
-	b.currentState = newState(b.dag.Tips().hashes(), node, blockSize, numTxns,
+	dagState := newDAGState(b.dag.Tips().hashes(), node, blockSize, numTxns,
 		numTxns, time.Unix(node.timestamp, 0))
+	b.setDAGState(dagState)
 
 	// Create the initial the database chain state including creating the
 	// necessary index buckets and inserting the genesis block.
@@ -1089,7 +1090,7 @@ func (b *BlockDAG) createChainState() error {
 		}
 
 		// Store the current best chain state into the database.
-		err = dbPutBestState(dbTx, b.currentState, node.workSum)
+		err = dbPutBestState(dbTx, b.dagState, node.workSum)
 		if err != nil {
 			return err
 		}
@@ -1119,7 +1120,7 @@ func (b *BlockDAG) initDAGState() error {
 	if !initialized {
 		// At this point the database has not already been initialized, so
 		// initialize both it and the chain state to the genesis block.
-		return b.createChainState()
+		return b.createDAGState()
 	}
 
 	if !hasBlockIndex {
@@ -1226,7 +1227,8 @@ func (b *BlockDAG) initDAGState() error {
 		// Initialize the DAG state.
 		blockSize := uint64(len(blockBytes))
 		numTxns := uint64(len(block.Transactions))
-		b.currentState = newState(b.dag.Tips().hashes(), selectedTip, blockSize, numTxns, state.totalTxns, selectedTip.CalcPastMedianTime())
+		dagState := newDAGState(b.dag.Tips().hashes(), selectedTip, blockSize, numTxns, state.totalTxns, selectedTip.CalcPastMedianTime())
+		b.setDAGState(dagState)
 
 		return nil
 	})

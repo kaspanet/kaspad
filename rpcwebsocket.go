@@ -2491,8 +2491,8 @@ fetchRange:
 			// continue the fetch loop again to rescan the new
 			// blocks (or error due to an irrecoverable reorganize).
 			pauseGuard := wsc.server.cfg.SyncMgr.Pause()
-			currentState := wsc.server.cfg.DAG.GetCurrentState()
-			curHash := &currentState.Hash
+			dagState := wsc.server.cfg.DAG.GetDAGState()
+			curHash := &dagState.SelectedTip.Hash
 			again := true
 			if lastBlockHash == nil || *lastBlockHash == *curHash {
 				again = false

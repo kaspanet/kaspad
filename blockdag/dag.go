@@ -47,21 +47,21 @@ type orphanBlock struct {
 	expiration time.Time
 }
 
-// State houses information about the current tips and other info
+// DAGState houses information about the current tips and other info
 // related to the state of the DAG.
 //
-// The GetCurrentState method can be used to obtain access to this information
+// The GetDAGState method can be used to obtain access to this information
 // in a concurrent safe manner and the data will not be changed out from under
 // the caller when chain state changes occur as the function name implies.
 // However, the returned snapshot must be treated as immutable since it is
 // shared by all callers.
-type State struct {
-	SelectedTip SelectedTip    // The selected tip
-	TipHashes   []daghash.Hash // The hashes of the tips
-	TotalTxns   uint64         // The total number of transactions in the DAG.
+type DAGState struct {
+	SelectedTip SelectedTipState // State of the selected tip
+	TipHashes   []daghash.Hash   // The hashes of the tips
+	TotalTxns   uint64           // The total number of transactions in the DAG.
 }
 
-type SelectedTip struct {
+type SelectedTipState struct {
 	Hash       daghash.Hash // The hash of the tip.
 	Height     int32        // The height of the tip.
 	Bits       uint32       // The difficulty bits of the tip.
@@ -70,12 +70,12 @@ type SelectedTip struct {
 	MedianTime time.Time    // Median time as per CalcPastMedianTime.
 }
 
-// newState returns a new best stats instance for the given parameters.
-func newState(tipHashes []daghash.Hash, node *blockNode, blockSize, numTxns,
-totalTxns uint64, medianTime time.Time) *State {
+// newDAGState returns a new state instance for the given parameters.
+func newDAGState(tipHashes []daghash.Hash, node *blockNode, blockSize, numTxns,
+totalTxns uint64, medianTime time.Time) *DAGState {
 
-	return &State{
-		SelectedTip: SelectedTip{
+	return &DAGState{
+		SelectedTip: SelectedTipState{
 			Hash:       node.hash,
 			Height:     node.height,
 			Bits:       node.bits,
@@ -151,8 +151,8 @@ type BlockDAG struct {
 	//
 	// In addition, some of the fields are stored in the database so the
 	// DAG state can be quickly reconstructed on load.
-	stateLock    sync.RWMutex
-	currentState *State
+	stateLock sync.RWMutex
+	dagState  *DAGState
 
 	// The following caches are used to efficiently keep track of the
 	// current deployment threshold state of each rule change deployment.
@@ -532,11 +532,11 @@ func (b *BlockDAG) connectBlock(node *blockNode, block *btcutil.Block, view *Utx
 	// Generate a new state snapshot that will be used to update the
 	// database and later memory if all database updates are successful.
 	b.stateLock.RLock()
-	curTotalTxns := b.currentState.TotalTxns
+	curTotalTxns := b.dagState.TotalTxns
 	b.stateLock.RUnlock()
 	numTxns := uint64(len(block.MsgBlock().Transactions))
 	blockSize := uint64(block.MsgBlock().SerializeSize())
-	state := newState(view.tips.hashes(), node, blockSize, numTxns,
+	state := newDAGState(view.tips.hashes(), node, blockSize, numTxns,
 		curTotalTxns+numTxns, node.CalcPastMedianTime())
 
 	// Atomically insert info into the database.
@@ -597,9 +597,7 @@ func (b *BlockDAG) connectBlock(node *blockNode, block *btcutil.Block, view *Utx
 	// allows the old version to act as a snapshot which callers can use
 	// freely without needing to hold a lock for the duration.  See the
 	// comments on the state variable for more details.
-	b.stateLock.Lock()
-	b.currentState = state
-	b.stateLock.Unlock()
+	b.setDAGState(state)
 
 	// Notify the caller that the block was connected to the main chain.
 	// The caller would typically want to react with actions such as
@@ -724,16 +722,31 @@ func (b *BlockDAG) IsCurrent() bool {
 	return b.isCurrent()
 }
 
-// GetCurrentState returns information about the current best chain block and
-// related state as of the current point in time.  The returned instance must be
-// treated as immutable since it is shared by all callers.
+// GetDAGState returns information about the DAG and related state as of the
+// current point in time.  The returned instance must be treated as immutable
+// since it is shared by all callers.
 //
 // This function is safe for concurrent access.
-func (b *BlockDAG) GetCurrentState() *State {
+func (b *BlockDAG) GetDAGState() *DAGState {
 	b.stateLock.RLock()
-	currentState := b.currentState
-	b.stateLock.RUnlock()
-	return currentState
+	defer func() {
+		b.stateLock.RUnlock()
+	}()
+
+	return b.dagState
+}
+
+// setDAGState sets information about the DAG and related state as of the
+// current point in time.
+//
+// This function is safe for concurrent access.
+func (b *BlockDAG) setDAGState(dagState *DAGState) {
+	b.stateLock.Lock()
+	defer func() {
+		b.stateLock.Unlock()
+	}()
+
+	b.dagState = dagState
 }
 
 // FetchHeader returns the block header identified by the given hash or an error
@@ -1260,7 +1273,7 @@ func New(config *Config) (*BlockDAG, error) {
 
 	bestNode := b.dag.SelectedTip()
 	log.Infof("Chain state (height %d, hash %v, totaltx %d, work %v)",
-		bestNode.height, bestNode.hash, b.currentState.TotalTxns,
+		bestNode.height, bestNode.hash, b.dagState.TotalTxns,
 		bestNode.workSum)
 
 	return &b, nil

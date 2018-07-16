@@ -311,14 +311,14 @@ func logSkippedDeps(tx *btcutil.Tx, deps map[daghash.Hash]*txPrioItem) {
 // on the end of the provided best chain.  In particular, it is one second after
 // the median timestamp of the last several blocks per the chain consensus
 // rules.
-func MinimumMedianTime(dagState *blockdag.State) time.Time {
+func MinimumMedianTime(dagState *blockdag.DAGState) time.Time {
 	return dagState.SelectedTip.MedianTime.Add(time.Second)
 }
 
 // medianAdjustedTime returns the current time adjusted to ensure it is at least
 // one second after the median timestamp of the last several blocks per the
 // chain consensus rules.
-func medianAdjustedTime(chainState *blockdag.State, timeSource blockdag.MedianTimeSource) time.Time {
+func medianAdjustedTime(chainState *blockdag.DAGState, timeSource blockdag.MedianTimeSource) time.Time {
 	// The timestamp for the block must not be before the median timestamp
 	// of the last several blocks.  Thus, choose the maximum between the
 	// current time and one second after the past median time.  The current
@@ -432,8 +432,8 @@ func NewBlkTmplGenerator(policy *Policy, params *dagconfig.Params,
 //   -----------------------------------  --
 func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress btcutil.Address) (*BlockTemplate, error) {
 	// Extend the most recently known best block.
-	currentState := g.dag.GetCurrentState()
-	nextBlockHeight := currentState.SelectedTip.Height + 1
+	dagState := g.dag.GetDAGState()
+	nextBlockHeight := dagState.SelectedTip.Height + 1
 
 	// Create a standard coinbase transaction paying to the provided
 	// address.  NOTE: The coinbase value will be updated to include the
@@ -746,7 +746,7 @@ mempoolLoop:
 	// Calculate the required difficulty for the block.  The timestamp
 	// is potentially adjusted to ensure it comes after the median time of
 	// the last several blocks per the chain consensus rules.
-	ts := medianAdjustedTime(currentState, g.timeSource)
+	ts := medianAdjustedTime(dagState, g.timeSource)
 	reqDifficulty, err := g.dag.CalcNextRequiredDifficulty(ts)
 	if err != nil {
 		return nil, err
@@ -764,7 +764,7 @@ mempoolLoop:
 	var msgBlock wire.MsgBlock
 	msgBlock.Header = wire.BlockHeader{
 		Version:    nextBlockVersion,
-		PrevBlock:  currentState.SelectedTip.Hash,
+		PrevBlock:  dagState.SelectedTip.Hash,
 		MerkleRoot: *merkles[len(merkles)-1],
 		Timestamp:  ts,
 		Bits:       reqDifficulty,
@@ -808,7 +808,7 @@ func (g *BlkTmplGenerator) UpdateBlockTime(msgBlock *wire.MsgBlock) error {
 	// The new timestamp is potentially adjusted to ensure it comes after
 	// the median time of the last several blocks per the chain consensus
 	// rules.
-	newTime := medianAdjustedTime(g.dag.GetCurrentState(), g.timeSource)
+	newTime := medianAdjustedTime(g.dag.GetDAGState(), g.timeSource)
 	msgBlock.Header.Timestamp = newTime
 
 	// Recalculate the difficulty if running on a network that requires it.
@@ -851,14 +851,14 @@ func (g *BlkTmplGenerator) UpdateExtraNonce(msgBlock *wire.MsgBlock, blockHeight
 	return nil
 }
 
-// GetCurrentState returns information about the current state
+// GetDAGState returns information about the current state
 // as of the current point in time using the DAG instance
 // associated with the block template generator.  The returned state must be
 // treated as immutable since it is shared by all callers.
 //
 // This function is safe for concurrent access.
-func (g *BlkTmplGenerator) GetCurrentState() *blockdag.State {
-	return g.dag.GetCurrentState()
+func (g *BlkTmplGenerator) GetDAGState() *blockdag.DAGState {
+	return g.dag.GetDAGState()
 }
 
 // TxSource returns the associated transaction source.
