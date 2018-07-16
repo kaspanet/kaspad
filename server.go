@@ -288,8 +288,8 @@ func newServerPeer(s *server, isPersistent bool) *serverPeer {
 // newestBlock returns the current best block hash and height using the format
 // required by the configuration for the peer package.
 func (sp *serverPeer) newestBlock() (*daghash.Hash, int32, error) {
-	currentState := sp.server.dag.GetCurrentState()
-	return &currentState.Hash, currentState.Height, nil
+	dagState := sp.server.dag.GetDAGState()
+	return &dagState.SelectedTip.Hash, dagState.SelectedTip.Height, nil
 }
 
 // addKnownAddresses adds the given addresses to the set of known addresses to
@@ -1337,9 +1337,9 @@ func (s *server) pushBlockMsg(sp *serverPeer, hash *daghash.Hash, doneChan chan<
 	// to trigger it to issue another getblocks message for the next
 	// batch of inventory.
 	if sendInv {
-		currentState := sp.server.dag.GetCurrentState()
+		dagState := sp.server.dag.GetDAGState()
 		invMsg := wire.NewMsgInvSizeHint(1)
-		iv := wire.NewInvVect(wire.InvTypeBlock, &currentState.Hash)
+		iv := wire.NewInvVect(wire.InvTypeBlock, &dagState.SelectedTip.Hash)
 		invMsg.AddInvVect(iv)
 		sp.QueueMessage(invMsg, doneChan)
 		sp.continueHash = nil
@@ -2520,7 +2520,7 @@ func newServer(listenAddrs []string, db database.DB, chainParams *dagconfig.Para
 
 	// If no feeEstimator has been found, or if the one that has been found
 	// is behind somehow, create a new one and start over.
-	if s.feeEstimator == nil || s.feeEstimator.LastKnownHeight() != s.dag.GetCurrentState().Height {
+	if s.feeEstimator == nil || s.feeEstimator.LastKnownHeight() != s.dag.GetDAGState().SelectedTip.Height {
 		s.feeEstimator = mempool.NewFeeEstimator(
 			mempool.DefaultEstimateFeeMaxRollback,
 			mempool.DefaultEstimateFeeMinRegisteredBlocks)
@@ -2539,8 +2539,8 @@ func newServer(listenAddrs []string, db database.DB, chainParams *dagconfig.Para
 		},
 		ChainParams:    chainParams,
 		FetchUtxoView:  s.dag.FetchUtxoView,
-		BestHeight:     func() int32 { return s.dag.GetCurrentState().Height },
-		MedianTimePast: func() time.Time { return s.dag.GetCurrentState().MedianTime },
+		BestHeight:     func() int32 { return s.dag.GetDAGState().SelectedTip.Height },
+		MedianTimePast: func() time.Time { return s.dag.GetDAGState().SelectedTip.MedianTime },
 		CalcSequenceLock: func(tx *btcutil.Tx, view *blockdag.UtxoViewpoint) (*blockdag.SequenceLock, error) {
 			return s.dag.CalcSequenceLock(tx, view, true)
 		},

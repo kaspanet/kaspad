@@ -16,6 +16,7 @@ import (
 	"github.com/daglabs/btcd/database"
 	"github.com/daglabs/btcd/wire"
 	"github.com/daglabs/btcutil"
+	"encoding/json"
 )
 
 const (
@@ -867,145 +868,54 @@ func dbFetchHashByHeight(dbTx database.Tx, height int32) (*daghash.Hash, error) 
 	return &hash, nil
 }
 
-// -----------------------------------------------------------------------------
-// The DAG state consists of the tip hashes, the selected tip hash and height,
-// the total number of transactions up to and including those in the tips,
-// and the accumulated work sum up to and including the tips.
-//
-// The serialized format is:
-//
-//   <block hash><block height><total txns><work sum length><work sum>
-//
-//   Field             Type             Size
-//   numTipHashes      uint32			4 bytes
-//   tipHashes		   []daghash.Hash   numTipHashes * daghash.HashSize
-//   block hash        daghash.Hash     daghash.HashSize
-//   block height      uint32           4 bytes
-//   total txns        uint64           8 bytes
-//   work sum length   uint32           4 bytes
-//   work sum          big.Int          work sum length
-// -----------------------------------------------------------------------------
-
-// dagState represents the data to be stored the database for the current
+// dbDAGState represents the data to be stored in the database for the current
 // DAG state.
-type dagState struct {
-	numTipHashes uint32
-	tipHashes    []daghash.Hash
-	selectedHash daghash.Hash
-	height       uint32
-	totalTxns    uint64
-	workSum      *big.Int
+type dbDAGState struct {
+	SelectedHash daghash.Hash
+	TotalTxns    uint64
 }
 
 // serializeDAGState returns the serialization of the DAG state.
 // This is data to be stored in the DAG state bucket.
-func serializeDAGState(state dagState) []byte {
-	// Calculate the full size needed to serialize the DAG state.
-	workSumBytes := state.workSum.Bytes()
-	workSumBytesLen := uint32(len(workSumBytes))
-	tipHashesLen := uint32(len(state.tipHashes) * daghash.HashSize)
-	serializedLen := 4 + tipHashesLen + daghash.HashSize + 4 + 8 + 4 + workSumBytesLen
-
-	// Serialize the DAG state.
-	serializedData := make([]byte, serializedLen)
-	offset := uint32(0)
-	byteOrder.PutUint32(serializedData[offset:], state.numTipHashes)
-	offset += 4
-	for _, tipHash := range state.tipHashes {
-		copy(serializedData[offset:], tipHash[:])
-		offset += uint32(daghash.HashSize)
-	}
-	copy(serializedData[offset:], state.selectedHash[:])
-	offset += uint32(daghash.HashSize)
-	byteOrder.PutUint32(serializedData[offset:], state.height)
-	offset += 4
-	byteOrder.PutUint64(serializedData[offset:], state.totalTxns)
-	offset += 8
-	byteOrder.PutUint32(serializedData[offset:], workSumBytesLen)
-	offset += 4
-	copy(serializedData[offset:], workSumBytes)
-	return serializedData[:]
+func serializeDAGState(state dbDAGState) ([]byte, error) {
+	return json.Marshal(state)
 }
 
 // deserializeDAGState deserializes the passed serialized DAG
 // state.  This is data stored in the DAG state bucket and is updated after
 // every block is connected or disconnected form the DAG.
-func deserializeDAGState(serializedData []byte) (dagState, error) {
-	// Attempt to deserialize numTipHashes.
-	if len(serializedData) < 4 {
-		return dagState{}, database.Error{
+func deserializeDAGState(serializedData []byte) (*dbDAGState, error) {
+	var dbState dbDAGState
+	err := json.Unmarshal(serializedData, &dbState)
+	if err != nil {
+		return nil, database.Error{
 			ErrorCode:   database.ErrCorruption,
 			Description: "corrupt DAG state",
 		}
 	}
 
-	offset := uint32(0)
-
-	// Ensure the serialized data has enough bytes to properly deserialize
-	// the tip hashes, the selected tip hash, its height, total transactions,
-	// and work sum length.
-	numTipHashes := byteOrder.Uint32(serializedData[:4])
-	offset += 4
-	tipHashesLen := uint32(numTipHashes * daghash.HashSize)
-	minSerializedLen := 4 + tipHashesLen + daghash.HashSize + 4 + 8 + 4
-	if uint32(len(serializedData)) < minSerializedLen {
-		return dagState{}, database.Error{
-			ErrorCode:   database.ErrCorruption,
-			Description: "corrupt DAG state",
-		}
-	}
-
-	state := dagState{}
-	state.numTipHashes = numTipHashes
-	state.tipHashes = make([]daghash.Hash, numTipHashes)
-	for i, _ := range state.tipHashes {
-		copy(state.tipHashes[i][:], serializedData[offset:offset+daghash.HashSize])
-		offset += uint32(daghash.HashSize)
-	}
-	copy(state.selectedHash[:], serializedData[offset:offset+daghash.HashSize])
-	offset += uint32(daghash.HashSize)
-	state.height = byteOrder.Uint32(serializedData[offset : offset+4])
-	offset += 4
-	state.totalTxns = byteOrder.Uint64(serializedData[offset : offset+8])
-	offset += 8
-	workSumBytesLen := byteOrder.Uint32(serializedData[offset : offset+4])
-	offset += 4
-
-	// Ensure the serialized data has enough bytes to deserialize the work
-	// sum.
-	if uint32(len(serializedData[offset:])) < workSumBytesLen {
-		return dagState{}, database.Error{
-			ErrorCode:   database.ErrCorruption,
-			Description: "corrupt DAG state",
-		}
-	}
-	workSumBytes := serializedData[offset : offset+workSumBytesLen]
-	state.workSum = new(big.Int).SetBytes(workSumBytes)
-
-	return state, nil
+	return &dbState, nil
 }
 
 // dbPutBestState uses an existing database transaction to update the DAG
 // state with the given parameters.
-func dbPutBestState(dbTx database.Tx, snapshot *State, workSum *big.Int) error {
-	// Serialize the current DAG state.
-	serializedData := serializeDAGState(dagState{
-		selectedHash: snapshot.SelectedTip.Hash,
-		numTipHashes: uint32(len(snapshot.TipHashes)),
-		tipHashes:    snapshot.TipHashes,
-		height:       uint32(snapshot.SelectedTip.Height),
-		totalTxns:    snapshot.TotalTxns,
-		workSum:      workSum,
+func dbPutBestState(dbTx database.Tx, state *DAGState, workSum *big.Int) error {
+	serializedData, err := serializeDAGState(dbDAGState{
+		SelectedHash: state.SelectedTip.Hash,
+		TotalTxns:    state.TotalTxns,
 	})
 
-	// Store the current DAG state into the database.
+	if err != nil {
+		return err
+	}
+
 	return dbTx.Metadata().Put(dagStateKeyName, serializedData)
 }
 
-// createChainState initializes both the database and the chain state to the
+// createDAGState initializes both the database and the DAG state to the
 // genesis block.  This includes creating the necessary buckets and inserting
 // the genesis block, so it must only be called on an uninitialized database.
-func (b *BlockDAG) createChainState() error {
+func (b *BlockDAG) createDAGState() error {
 	// Create a new node from the genesis block and set it as the best node.
 	genesisBlock := btcutil.NewBlock(b.dagParams.GenesisBlock)
 	genesisBlock.SetHeight(0)
@@ -1021,8 +931,9 @@ func (b *BlockDAG) createChainState() error {
 	// its timestamp for the median time.
 	numTxns := uint64(len(genesisBlock.MsgBlock().Transactions))
 	blockSize := uint64(genesisBlock.MsgBlock().SerializeSize())
-	b.currentState = newState(b.dag.Tips().hashes(), node, blockSize, numTxns,
+	dagState := newDAGState(b.dag.Tips().hashes(), node, blockSize, numTxns,
 		numTxns, time.Unix(node.timestamp, 0))
+	b.setDAGState(dagState)
 
 	// Create the initial the database chain state including creating the
 	// necessary index buckets and inserting the genesis block.
@@ -1089,7 +1000,7 @@ func (b *BlockDAG) createChainState() error {
 		}
 
 		// Store the current best chain state into the database.
-		err = dbPutBestState(dbTx, b.currentState, node.workSum)
+		err = dbPutBestState(dbTx, b.dagState, node.workSum)
 		if err != nil {
 			return err
 		}
@@ -1119,7 +1030,7 @@ func (b *BlockDAG) initDAGState() error {
 	if !initialized {
 		// At this point the database has not already been initialized, so
 		// initialize both it and the chain state to the genesis block.
-		return b.createChainState()
+		return b.createDAGState()
 	}
 
 	if !hasBlockIndex {
@@ -1205,15 +1116,15 @@ func (b *BlockDAG) initDAGState() error {
 		}
 
 		// Set the DAG view to the stored state.
-		selectedTip := b.index.LookupNode(&state.selectedHash)
+		selectedTip := b.index.LookupNode(&state.SelectedHash)
 		if selectedTip == nil {
 			return AssertError(fmt.Sprintf("initDAGState: cannot find "+
-				"DAG selectedTip %s in block index", state.selectedHash))
+				"DAG selectedTip %s in block index", state.SelectedHash))
 		}
 		b.dag.SetTip(selectedTip)
 
 		// Load the raw block bytes for the selected tip.
-		blockBytes, err := dbTx.FetchBlock(&state.selectedHash)
+		blockBytes, err := dbTx.FetchBlock(&state.SelectedHash)
 		if err != nil {
 			return err
 		}
@@ -1226,7 +1137,8 @@ func (b *BlockDAG) initDAGState() error {
 		// Initialize the DAG state.
 		blockSize := uint64(len(blockBytes))
 		numTxns := uint64(len(block.Transactions))
-		b.currentState = newState(b.dag.Tips().hashes(), selectedTip, blockSize, numTxns, state.totalTxns, selectedTip.CalcPastMedianTime())
+		dagState := newDAGState(b.dag.Tips().hashes(), selectedTip, blockSize, numTxns, state.TotalTxns, selectedTip.CalcPastMedianTime())
+		b.setDAGState(dagState)
 
 		return nil
 	})
