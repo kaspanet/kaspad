@@ -181,9 +181,9 @@ func TestTxWire(t *testing.T) {
 	noTx.Version = 1
 	noTxEncoded := []byte{
 		0x01, 0x00, 0x00, 0x00, // Version
-		0x00,                   // Varint for number of input transactions
-		0x00,                   // Varint for number of output transactions
-		0x00, 0x00, 0x00, 0x00, // Lock time
+		0x00,                                           // Varint for number of input transactions
+		0x00,                                           // Varint for number of output transactions
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Lock time
 	}
 
 	tests := []struct {
@@ -374,9 +374,9 @@ func TestTxSerialize(t *testing.T) {
 	noTx.Version = 1
 	noTxEncoded := []byte{
 		0x01, 0x00, 0x00, 0x00, // Version
-		0x00,                   // Varint for number of input transactions
-		0x00,                   // Varint for number of output transactions
-		0x00, 0x00, 0x00, 0x00, // Lock time
+		0x00,                                           // Varint for number of input transactions
+		0x00,                                           // Varint for number of output transactions
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Lock time
 	}
 
 	tests := []struct {
@@ -619,10 +619,10 @@ func TestTxSerializeSize(t *testing.T) {
 		size int    // Expected serialized size
 	}{
 		// No inputs or outpus.
-		{noTx, 10},
+		{noTx, 14},
 
 		// Transcaction with an input and an output.
-		{multiTx, 210},
+		{multiTx, 214},
 	}
 
 	t.Logf("Running %d tests", len(tests))
@@ -726,9 +726,9 @@ var multiTxEncoded = []byte{
 	0x3d, 0x81, 0xb0, 0x1c, 0xc3, 0x1f, 0x04, 0x78,
 	0x34, 0xbc, 0x06, 0xd6, 0xd6, 0xed, 0xf6, 0x20,
 	0xd1, 0x84, 0x24, 0x1a, 0x6a, 0xed, 0x8b, 0x63,
-	0xa6,                   // 65-byte signature
-	0xac,                   // OP_CHECKSIG
-	0x00, 0x00, 0x00, 0x00, // Lock time
+	0xa6,                                           // 65-byte signature
+	0xac,                                           // OP_CHECKSIG
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Lock time
 }
 
 // multiTxPkScriptLocs is the location information for the public key scripts

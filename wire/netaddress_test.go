@@ -51,7 +51,7 @@ func TestNetAddress(t *testing.T) {
 
 	// Ensure max payload is expected value for latest protocol version.
 	pver := ProtocolVersion
-	wantPayload := uint32(30)
+	wantPayload := uint32(34)
 	maxPayload := maxNetAddressPayload(ProtocolVersion)
 	if maxPayload != wantPayload {
 		t.Errorf("maxNetAddressPayload: wrong max payload length for "+
@@ -228,11 +228,11 @@ func TestNetAddressWireErrors(t *testing.T) {
 		// Force errors on timestamp.
 		{&baseNetAddr, []byte{}, pver, true, 0, io.ErrShortWrite, io.EOF},
 		// Force errors on services.
-		{&baseNetAddr, []byte{}, pver, true, 4, io.ErrShortWrite, io.EOF},
+		{&baseNetAddr, []byte{}, pver, true, 8, io.ErrShortWrite, io.EOF},
 		// Force errors on ip.
-		{&baseNetAddr, []byte{}, pver, true, 12, io.ErrShortWrite, io.EOF},
+		{&baseNetAddr, []byte{}, pver, true, 16, io.ErrShortWrite, io.EOF},
 		// Force errors on port.
-		{&baseNetAddr, []byte{}, pver, true, 28, io.ErrShortWrite, io.EOF},
+		{&baseNetAddr, []byte{}, pver, true, 32, io.ErrShortWrite, io.EOF},
 
 		// Latest protocol version with no timestamp and intentional
 		// read/write errors.
