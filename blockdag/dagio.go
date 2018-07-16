@@ -8,7 +8,6 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
-	"math/big"
 	"sync"
 	"time"
 
@@ -103,13 +102,6 @@ func (e errDeserialize) Error() string {
 func isDeserializeErr(err error) bool {
 	_, ok := err.(errDeserialize)
 	return ok
-}
-
-// isDbBucketNotFoundErr returns whether or not the passed error is a
-// database.Error with an error code of database.ErrBucketNotFound.
-func isDbBucketNotFoundErr(err error) bool {
-	dbErr, ok := err.(database.Error)
-	return ok && dbErr.ErrorCode == database.ErrBucketNotFound
 }
 
 // dbFetchVersion fetches an individual version with the given key from the
@@ -344,10 +336,10 @@ func decodeSpentTxOut(serialized []byte, stxo *spentTxOut) (int, error) {
 // Since the serialization format is not self describing, as noted in the
 // format comments, this function also requires the transactions that spend the
 // txouts.
-func deserializeSpendJournalEntry(serialized []byte, txns []*wire.MsgTx) ([]spentTxOut, error) {
+func deserializeSpendJournalEntry(serialized []byte, txs []*wire.MsgTx) ([]spentTxOut, error) {
 	// Calculate the total number of stxos.
 	var numStxos int
-	for _, tx := range txns {
+	for _, tx := range txs {
 		numStxos += len(tx.TxIn)
 	}
 
@@ -370,8 +362,8 @@ func deserializeSpendJournalEntry(serialized []byte, txns []*wire.MsgTx) ([]spen
 	stxoIdx := numStxos - 1
 	offset := 0
 	stxos := make([]spentTxOut, numStxos)
-	for txIdx := len(txns) - 1; txIdx > -1; txIdx-- {
-		tx := txns[txIdx]
+	for txIdx := len(txs) - 1; txIdx > -1; txIdx-- {
+		tx := txs[txIdx]
 
 		// Loop backwards through all of the transaction inputs and read
 		// the associated stxo.
@@ -417,36 +409,6 @@ func serializeSpendJournalEntry(stxos []spentTxOut) []byte {
 	return serialized
 }
 
-// dbFetchSpendJournalEntry fetches the spend journal entry for the passed block
-// and deserializes it into a slice of spent txout entries.
-//
-// NOTE: Legacy entries will not have the coinbase flag or height set unless it
-// was the final output spend in the containing transaction.  It is up to the
-// caller to handle this properly by looking the information up in the utxo set.
-func dbFetchSpendJournalEntry(dbTx database.Tx, block *btcutil.Block) ([]spentTxOut, error) {
-	// Exclude the coinbase transaction since it can't spend anything.
-	spendBucket := dbTx.Metadata().Bucket(spendJournalBucketName)
-	serialized := spendBucket.Get(block.Hash()[:])
-	blockTxns := block.MsgBlock().Transactions[1:]
-	stxos, err := deserializeSpendJournalEntry(serialized, blockTxns)
-	if err != nil {
-		// Ensure any deserialization errors are returned as database
-		// corruption errors.
-		if isDeserializeErr(err) {
-			return nil, database.Error{
-				ErrorCode: database.ErrCorruption,
-				Description: fmt.Sprintf("corrupt spend "+
-					"information for %v: %v", block.Hash(),
-					err),
-			}
-		}
-
-		return nil, err
-	}
-
-	return stxos, nil
-}
-
 // dbPutSpendJournalEntry uses an existing database transaction to update the
 // spend journal entry for the given block hash using the provided slice of
 // spent txouts.   The spent txouts slice must contain an entry for every txout
@@ -455,13 +417,6 @@ func dbPutSpendJournalEntry(dbTx database.Tx, blockHash *daghash.Hash, stxos []s
 	spendBucket := dbTx.Metadata().Bucket(spendJournalBucketName)
 	serialized := serializeSpendJournalEntry(stxos)
 	return spendBucket.Put(blockHash[:], serialized)
-}
-
-// dbRemoveSpendJournalEntry uses an existing database transaction to remove the
-// spend journal entry for the passed block hash.
-func dbRemoveSpendJournalEntry(dbTx database.Tx, blockHash *daghash.Hash) error {
-	spendBucket := dbTx.Metadata().Bucket(spendJournalBucketName)
-	return spendBucket.Delete(blockHash[:])
 }
 
 // -----------------------------------------------------------------------------
@@ -817,24 +772,6 @@ func dbPutBlockIndex(dbTx database.Tx, hash *daghash.Hash, height int32) error {
 	return heightIndex.Put(serializedHeight[:], hash[:])
 }
 
-// dbRemoveBlockIndex uses an existing database transaction remove block index
-// entries from the hash to height and height to hash mappings for the provided
-// values.
-func dbRemoveBlockIndex(dbTx database.Tx, hash *daghash.Hash, height int32) error {
-	// Remove the block hash to height mapping.
-	meta := dbTx.Metadata()
-	hashIndex := meta.Bucket(hashIndexBucketName)
-	if err := hashIndex.Delete(hash[:]); err != nil {
-		return err
-	}
-
-	// Remove the block height to hash mapping.
-	var serializedHeight [4]byte
-	byteOrder.PutUint32(serializedHeight[:], uint32(height))
-	heightIndex := meta.Bucket(heightIndexBucketName)
-	return heightIndex.Delete(serializedHeight[:])
-}
-
 // dbFetchHeightByHash uses an existing database transaction to retrieve the
 // height for the provided hash from the index.
 func dbFetchHeightByHash(dbTx database.Tx, hash *daghash.Hash) (int32, error) {
@@ -847,25 +784,6 @@ func dbFetchHeightByHash(dbTx database.Tx, hash *daghash.Hash) (int32, error) {
 	}
 
 	return int32(byteOrder.Uint32(serializedHeight)), nil
-}
-
-// dbFetchHashByHeight uses an existing database transaction to retrieve the
-// hash for the provided height from the index.
-func dbFetchHashByHeight(dbTx database.Tx, height int32) (*daghash.Hash, error) {
-	var serializedHeight [4]byte
-	byteOrder.PutUint32(serializedHeight[:], uint32(height))
-
-	meta := dbTx.Metadata()
-	heightIndex := meta.Bucket(heightIndexBucketName)
-	hashBytes := heightIndex.Get(serializedHeight[:])
-	if hashBytes == nil {
-		str := fmt.Sprintf("no block at height %d exists", height)
-		return nil, errNotInMainChain(str)
-	}
-
-	var hash daghash.Hash
-	copy(hash[:], hashBytes)
-	return &hash, nil
 }
 
 // dbDAGState represents the data to be stored in the database for the current
@@ -899,7 +817,7 @@ func deserializeDAGState(serializedData []byte) (*dbDAGState, error) {
 
 // dbPutDAGState uses an existing database transaction to update the DAG
 // state with the given parameters.
-func dbPutDAGState(dbTx database.Tx, state *DAGState, workSum *big.Int) error {
+func dbPutDAGState(dbTx database.Tx, state *DAGState) error {
 	serializedData, err := serializeDAGState(dbDAGState{
 		SelectedHash: state.SelectedTip.Hash,
 		TotalTxs:     state.TotalTxs,
@@ -929,10 +847,10 @@ func (b *BlockDAG) createDAGState() error {
 
 	// Initialize the DAG state.  Since it is the genesis block, use
 	// its timestamp for the median time.
-	numTxns := uint64(len(genesisBlock.MsgBlock().Transactions))
+	numTxs := uint64(len(genesisBlock.MsgBlock().Transactions))
 	blockSize := uint64(genesisBlock.MsgBlock().SerializeSize())
-	dagState := newDAGState(b.dag.Tips().hashes(), node, blockSize, numTxns,
-		numTxns, time.Unix(node.timestamp, 0))
+	dagState := newDAGState(b.dag.Tips().hashes(), node, blockSize, numTxs,
+		numTxs, time.Unix(node.timestamp, 0))
 	b.setDAGState(dagState)
 
 	// Create the initial the database chain state including creating the
@@ -1000,7 +918,7 @@ func (b *BlockDAG) createDAGState() error {
 		}
 
 		// Store the current DAG state into the database.
-		err = dbPutDAGState(dbTx, b.dagState, node.workSum)
+		err = dbPutDAGState(dbTx, b.dagState)
 		if err != nil {
 			return err
 		}
@@ -1178,17 +1096,6 @@ func dbFetchHeaderByHash(dbTx database.Tx, hash *daghash.Hash) (*wire.BlockHeade
 	}
 
 	return &header, nil
-}
-
-// dbFetchHeaderByHeight uses an existing database transaction to retrieve the
-// block header for the provided height.
-func dbFetchHeaderByHeight(dbTx database.Tx, height int32) (*wire.BlockHeader, error) {
-	hash, err := dbFetchHashByHeight(dbTx, height)
-	if err != nil {
-		return nil, err
-	}
-
-	return dbFetchHeaderByHash(dbTx, hash)
 }
 
 // dbFetchBlockByNode uses an existing database transaction to retrieve the

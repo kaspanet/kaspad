@@ -71,8 +71,8 @@ type SelectedTipState struct {
 }
 
 // newDAGState returns a new state instance for the given parameters.
-func newDAGState(tipHashes []daghash.Hash, node *blockNode, blockSize, numTxns,
-	totalTxns uint64, medianTime time.Time) *DAGState {
+func newDAGState(tipHashes []daghash.Hash, node *blockNode, blockSize, numTxs,
+	totalTxs uint64, medianTime time.Time) *DAGState {
 
 	return &DAGState{
 		SelectedTip: SelectedTipState{
@@ -80,11 +80,11 @@ func newDAGState(tipHashes []daghash.Hash, node *blockNode, blockSize, numTxns,
 			Height:     node.height,
 			Bits:       node.bits,
 			BlockSize:  blockSize,
-			NumTxs:     numTxns,
+			NumTxs:     numTxs,
 			MedianTime: medianTime,
 		},
 		TipHashes: tipHashes,
-		TotalTxs:  totalTxns,
+		TotalTxs:  totalTxs,
 	}
 }
 
@@ -532,17 +532,17 @@ func (b *BlockDAG) connectBlock(node *blockNode, block *btcutil.Block, view *Utx
 	// Generate a new state snapshot that will be used to update the
 	// database and later memory if all database updates are successful.
 	b.stateLock.RLock()
-	curTotalTxns := b.dagState.TotalTxs
+	currentTotalTxs := b.dagState.TotalTxs
 	b.stateLock.RUnlock()
-	numTxns := uint64(len(block.MsgBlock().Transactions))
+	numTxs := uint64(len(block.MsgBlock().Transactions))
 	blockSize := uint64(block.MsgBlock().SerializeSize())
-	state := newDAGState(view.tips.hashes(), node, blockSize, numTxns,
-		curTotalTxns+numTxns, node.CalcPastMedianTime())
+	state := newDAGState(view.tips.hashes(), node, blockSize, numTxs,
+		currentTotalTxs+numTxs, node.CalcPastMedianTime())
 
 	// Atomically insert info into the database.
 	err = b.db.Update(func(dbTx database.Tx) error {
 		// Update best block state.
-		err := dbPutDAGState(dbTx, state, node.workSum)
+		err := dbPutDAGState(dbTx, state)
 		if err != nil {
 			return err
 		}
