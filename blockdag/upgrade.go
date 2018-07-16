@@ -77,12 +77,12 @@ func migrateBlockIndex(db database.DB) error {
 		}
 
 		// Get tip of the main chain.
-		serializedData := dbTx.Metadata().Get(chainStateKeyName)
-		state, err := deserializeBestChainState(serializedData)
+		serializedData := dbTx.Metadata().Get(dagStateKeyName)
+		state, err := deserializeDAGState(serializedData)
 		if err != nil {
 			return err
 		}
-		tip := &state.hash
+		tip := &state.SelectedHash
 
 		// Scan the old block index bucket and construct a mapping of each block
 		// to parent block and all child blocks.

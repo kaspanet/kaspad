@@ -7,7 +7,6 @@ package blockdag
 import (
 	"bytes"
 	"errors"
-	"math/big"
 	"reflect"
 	"testing"
 
@@ -604,76 +603,70 @@ func TestUtxoEntryDeserializeErrors(t *testing.T) {
 	}
 }
 
-// TestBestChainStateSerialization ensures serializing and deserializing the
-// best chain state works as expected.
-func TestBestChainStateSerialization(t *testing.T) {
+// TestDAGStateSerialization ensures serializing and deserializing the
+// DAG state works as expected.
+func TestDAGStateSerialization(t *testing.T) {
 	t.Parallel()
 
-	workSum := new(big.Int)
 	tests := []struct {
 		name       string
-		state      bestChainState
+		state      dbDAGState
 		serialized []byte
 	}{
 		{
 			name: "genesis",
-			state: bestChainState{
-				hash:      *newHashFromStr("000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f"),
-				height:    0,
-				totalTxns: 1,
-				workSum: func() *big.Int {
-					workSum.Add(workSum, CalcWork(486604799))
-					return new(big.Int).Set(workSum)
-				}(), // 0x0100010001
+			state: dbDAGState{
+				SelectedHash: *newHashFromStr("000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f"),
+				TotalTxs:     1,
 			},
-			serialized: hexToBytes("6fe28c0ab6f1b372c1a6a246ae63f74f931e8365e15a089c68d6190000000000000000000100000000000000050000000100010001"),
+			serialized: []byte("{\"SelectedHash\":[111,226,140,10,182,241,179,114,193,166,162,70,174,99,247,79,147,30,131,101,225,90,8,156,104,214,25,0,0,0,0,0],\"TotalTxs\":1}"),
 		},
 		{
 			name: "block 1",
-			state: bestChainState{
-				hash:      *newHashFromStr("00000000839a8e6886ab5951d76f411475428afc90947ee320161bbf18eb6048"),
-				height:    1,
-				totalTxns: 2,
-				workSum: func() *big.Int {
-					workSum.Add(workSum, CalcWork(486604799))
-					return new(big.Int).Set(workSum)
-				}(), // 0x0200020002
+			state: dbDAGState{
+				SelectedHash: *newHashFromStr("00000000839a8e6886ab5951d76f411475428afc90947ee320161bbf18eb6048"),
+				TotalTxs:     2,
 			},
-			serialized: hexToBytes("4860eb18bf1b1620e37e9490fc8a427514416fd75159ab86688e9a8300000000010000000200000000000000050000000200020002"),
+			serialized: []byte("{\"SelectedHash\":[72,96,235,24,191,27,22,32,227,126,148,144,252,138,66,117,20,65,111,215,81,89,171,134,104,142,154,131,0,0,0,0],\"TotalTxs\":2}"),
 		},
 	}
 
 	for i, test := range tests {
+		gotBytes, err := serializeDAGState(test.state)
+		if err != nil {
+			t.Errorf("serializeDAGState #%d (%s) "+
+				"unexpected error: %v", i, test.name, err)
+			continue
+		}
+
 		// Ensure the state serializes to the expected value.
-		gotBytes := serializeBestChainState(test.state)
 		if !bytes.Equal(gotBytes, test.serialized) {
-			t.Errorf("serializeBestChainState #%d (%s): mismatched "+
-				"bytes - got %x, want %x", i, test.name,
-				gotBytes, test.serialized)
+			t.Errorf("serializeDAGState #%d (%s): mismatched "+
+				"bytes - got %s, want %s", i, test.name,
+				string(gotBytes), string(test.serialized))
 			continue
 		}
 
 		// Ensure the serialized bytes are decoded back to the expected
 		// state.
-		state, err := deserializeBestChainState(test.serialized)
+		state, err := deserializeDAGState(test.serialized)
 		if err != nil {
-			t.Errorf("deserializeBestChainState #%d (%s) "+
+			t.Errorf("deserializeDAGState #%d (%s) "+
 				"unexpected error: %v", i, test.name, err)
 			continue
 		}
-		if !reflect.DeepEqual(state, test.state) {
-			t.Errorf("deserializeBestChainState #%d (%s) "+
+		if !reflect.DeepEqual(*state, test.state) {
+			t.Errorf("deserializeDAGState #%d (%s) "+
 				"mismatched state - got %v, want %v", i,
-				test.name, state, test.state)
+				test.name, *state, test.state)
 			continue
-
 		}
 	}
 }
 
-// TestBestChainStateDeserializeErrors performs negative tests against
-// deserializing the chain state to ensure error paths work as expected.
-func TestBestChainStateDeserializeErrors(t *testing.T) {
+// TestDAGStateDeserializeErrors performs negative tests against
+// deserializing the DAG state to ensure error paths work as expected.
+func TestDAGStateDeserializeErrors(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
@@ -687,22 +680,17 @@ func TestBestChainStateDeserializeErrors(t *testing.T) {
 			errType:    database.Error{ErrorCode: database.ErrCorruption},
 		},
 		{
-			name:       "short data in hash",
-			serialized: hexToBytes("0000"),
-			errType:    database.Error{ErrorCode: database.ErrCorruption},
-		},
-		{
-			name:       "short data in work sum",
-			serialized: hexToBytes("6fe28c0ab6f1b372c1a6a246ae63f74f931e8365e15a089c68d61900000000000000000001000000000000000500000001000100"),
+			name:       "corrupted data",
+			serialized: []byte("{\"SelectedHash\":[111,226,140,10,182,241,179,114,193,166,162,70,174,99,247,7"),
 			errType:    database.Error{ErrorCode: database.ErrCorruption},
 		},
 	}
 
 	for _, test := range tests {
 		// Ensure the expected error type and code is returned.
-		_, err := deserializeBestChainState(test.serialized)
+		_, err := deserializeDAGState(test.serialized)
 		if reflect.TypeOf(err) != reflect.TypeOf(test.errType) {
-			t.Errorf("deserializeBestChainState (%s): expected "+
+			t.Errorf("deserializeDAGState (%s): expected "+
 				"error type does not match - got %T, want %T",
 				test.name, err, test.errType)
 			continue
@@ -710,7 +698,7 @@ func TestBestChainStateDeserializeErrors(t *testing.T) {
 		if derr, ok := err.(database.Error); ok {
 			tderr := test.errType.(database.Error)
 			if derr.ErrorCode != tderr.ErrorCode {
-				t.Errorf("deserializeBestChainState (%s): "+
+				t.Errorf("deserializeDAGState (%s): "+
 					"wrong  error code got: %v, want: %v",
 					test.name, derr.ErrorCode,
 					tderr.ErrorCode)

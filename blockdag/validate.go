@@ -1089,6 +1089,10 @@ func (b *BlockDAG) checkConnectBlock(node *blockNode, block *btcutil.Block, view
 		}
 	}
 
+	// Update the tips for view to include this block since all of its
+	// transactions have been connected.
+	view.AddBlock(node)
+
 	// The total output values of the coinbase transaction must not exceed
 	// the expected subsidy value plus total transaction fees gained from
 	// mining the block.  It is safe to ignore overflow and out of range

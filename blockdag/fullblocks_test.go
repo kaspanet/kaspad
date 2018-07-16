@@ -272,14 +272,14 @@ func TestFullBlocks(t *testing.T) {
 			item.Name, block.Hash(), blockHeight)
 
 		// Ensure hash and height match.
-		best := chain.BestSnapshot()
-		if best.Hash != item.Block.BlockHash() ||
-			best.Height != blockHeight {
+		dagState := chain.GetDAGState()
+		if dagState.SelectedTip.Hash != item.Block.BlockHash() ||
+			dagState.SelectedTip.Height != blockHeight {
 
 			t.Fatalf("block %q (hash %s, height %d) should be "+
 				"the current tip -- got (hash %s, height %d)",
-				item.Name, block.Hash(), blockHeight, best.Hash,
-				best.Height)
+				item.Name, block.Hash(), blockHeight, dagState.SelectedTip.Hash,
+				dagState.SelectedTip.Height)
 		}
 	}
 

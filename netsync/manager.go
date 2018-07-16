@@ -226,7 +226,7 @@ func (sm *SyncManager) startSync() {
 		return
 	}
 
-	best := sm.dag.BestSnapshot()
+	dagState := sm.dag.GetDAGState()
 	var bestPeer *peerpkg.Peer
 	for peer, state := range sm.peerStates {
 		if !state.syncCandidate {
@@ -239,7 +239,7 @@ func (sm *SyncManager) startSync() {
 		// doesn't have a later block when it's equal, it will likely
 		// have one soon so it is a reasonable choice.  It also allows
 		// the case where both are at 0 such as during regression test.
-		if peer.LastBlock() < best.Height {
+		if peer.LastBlock() < dagState.SelectedTip.Height {
 			state.syncCandidate = false
 			continue
 		}
@@ -284,13 +284,13 @@ func (sm *SyncManager) startSync() {
 		// not support the headers-first approach so do normal block
 		// downloads when in regression test mode.
 		if sm.nextCheckpoint != nil &&
-			best.Height < sm.nextCheckpoint.Height &&
+			dagState.SelectedTip.Height < sm.nextCheckpoint.Height &&
 			sm.chainParams != &dagconfig.RegressionNetParams {
 
 			bestPeer.PushGetHeadersMsg(locator, sm.nextCheckpoint.Hash)
 			sm.headersFirstMode = true
 			log.Infof("Downloading headers for blocks %d to "+
-				"%d from peer %s", best.Height+1,
+				"%d from peer %s", dagState.SelectedTip.Height+1,
 				sm.nextCheckpoint.Height, bestPeer.Addr())
 		} else {
 			bestPeer.PushGetBlocksMsg(locator, &zeroHash)
@@ -392,8 +392,8 @@ func (sm *SyncManager) handleDonePeerMsg(peer *peerpkg.Peer) {
 	if sm.syncPeer == peer {
 		sm.syncPeer = nil
 		if sm.headersFirstMode {
-			best := sm.dag.BestSnapshot()
-			sm.resetHeaderState(&best.Hash, best.Height)
+			dagState := sm.dag.GetDAGState()
+			sm.resetHeaderState(&dagState.SelectedTip.Hash, dagState.SelectedTip.Height)
 		}
 		sm.startSync()
 	}
@@ -482,7 +482,7 @@ func (sm *SyncManager) current() bool {
 
 	// No matter what chain thinks, if we are below the block we are syncing
 	// to we are not current.
-	if sm.dag.BestSnapshot().Height < sm.syncPeer.LastBlock() {
+	if sm.dag.GetDAGState().SelectedTip.Height < sm.syncPeer.LastBlock() {
 		return false
 	}
 	return true
@@ -618,9 +618,9 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 
 		// Update this peer's latest block height, for future
 		// potential sync node candidacy.
-		best := sm.dag.BestSnapshot()
-		heightUpdate = best.Height
-		blkHashUpdate = &best.Hash
+		dagState := sm.dag.GetDAGState()
+		heightUpdate = dagState.SelectedTip.Height
+		blkHashUpdate = &dagState.SelectedTip.Hash
 
 		// Clear the rejected transactions.
 		sm.rejectedTxns = make(map[daghash.Hash]struct{})
@@ -1399,12 +1399,12 @@ func New(config *Config) (*SyncManager, error) {
 		feeEstimator:    config.FeeEstimator,
 	}
 
-	best := sm.dag.BestSnapshot()
+	dagState := sm.dag.GetDAGState()
 	if !config.DisableCheckpoints {
 		// Initialize the next checkpoint based on the current height.
-		sm.nextCheckpoint = sm.findNextHeaderCheckpoint(best.Height)
+		sm.nextCheckpoint = sm.findNextHeaderCheckpoint(dagState.SelectedTip.Height)
 		if sm.nextCheckpoint != nil {
-			sm.resetHeaderState(&best.Hash, best.Height)
+			sm.resetHeaderState(&dagState.SelectedTip.Hash, dagState.SelectedTip.Height)
 		}
 	} else {
 		log.Info("Checkpoints are disabled")

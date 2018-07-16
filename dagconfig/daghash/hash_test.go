@@ -194,3 +194,35 @@ func TestNewHashFromStr(t *testing.T) {
 		}
 	}
 }
+
+// TestAreEqual executes tests against the AreEqual function.
+func TestAreEqual(t *testing.T) {
+	hash0, _ := NewHashFromStr("0000000000000000000000000000000000000000000000000000000000000000")
+	hash1, _ := NewHashFromStr("1111111111111111111111111111111111111111111111111111111111111111")
+	hash2, _ := NewHashFromStr("2222222222222222222222222222222222222222222222222222222222222222")
+	hash3, _ := NewHashFromStr("3333333333333333333333333333333333333333333333333333333333333333")
+
+	// Self-equality
+	hashes0To2 := []Hash{*hash0, *hash1, *hash2}
+	if !AreEqual(hashes0To2, hashes0To2) {
+		t.Errorf("expected equal hash slices are not equal.")
+	}
+
+	// Same members different order
+	hashes0To2Shifted := []Hash{*hash2, *hash0, *hash1}
+	if !AreEqual(hashes0To2, hashes0To2Shifted) {
+		t.Errorf("expected equal hash slices are not equal.")
+	}
+
+	// Same slice length but only some members are equal
+	hashes1To3 := []Hash{*hash1, *hash2, *hash3}
+	if AreEqual(hashes0To2, hashes1To3) {
+		t.Errorf("expected not equal hashes slices are equal.")
+	}
+
+	// Different slice lengths, one slice containing all the other's members
+	hashes0To3 := []Hash{*hash0, *hash1, *hash2, *hash3}
+	if AreEqual(hashes0To3, hashes0To2) {
+		t.Errorf("expected not equal hashes slices are equal.")
+	}
+}
