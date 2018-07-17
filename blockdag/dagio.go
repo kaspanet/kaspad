@@ -8,7 +8,6 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
-	"math/big"
 	"sync"
 	"time"
 
@@ -16,6 +15,7 @@ import (
 	"github.com/daglabs/btcd/database"
 	"github.com/daglabs/btcd/wire"
 	"github.com/daglabs/btcutil"
+	"encoding/json"
 )
 
 const (
@@ -47,9 +47,9 @@ var (
 	// the block height -> block hash index.
 	heightIndexBucketName = []byte("heightidx")
 
-	// chainStateKeyName is the name of the db key used to store the best
-	// chain state.
-	chainStateKeyName = []byte("chainstate")
+	// dagStateKeyName is the name of the db key used to store the DAG
+	// state.
+	dagStateKeyName = []byte("dagstate")
 
 	// spendJournalVersionKeyName is the name of the db key used to store
 	// the version of the spend journal currently in the database.
@@ -102,13 +102,6 @@ func (e errDeserialize) Error() string {
 func isDeserializeErr(err error) bool {
 	_, ok := err.(errDeserialize)
 	return ok
-}
-
-// isDbBucketNotFoundErr returns whether or not the passed error is a
-// database.Error with an error code of database.ErrBucketNotFound.
-func isDbBucketNotFoundErr(err error) bool {
-	dbErr, ok := err.(database.Error)
-	return ok && dbErr.ErrorCode == database.ErrBucketNotFound
 }
 
 // dbFetchVersion fetches an individual version with the given key from the
@@ -343,10 +336,10 @@ func decodeSpentTxOut(serialized []byte, stxo *spentTxOut) (int, error) {
 // Since the serialization format is not self describing, as noted in the
 // format comments, this function also requires the transactions that spend the
 // txouts.
-func deserializeSpendJournalEntry(serialized []byte, txns []*wire.MsgTx) ([]spentTxOut, error) {
+func deserializeSpendJournalEntry(serialized []byte, txs []*wire.MsgTx) ([]spentTxOut, error) {
 	// Calculate the total number of stxos.
 	var numStxos int
-	for _, tx := range txns {
+	for _, tx := range txs {
 		numStxos += len(tx.TxIn)
 	}
 
@@ -369,8 +362,8 @@ func deserializeSpendJournalEntry(serialized []byte, txns []*wire.MsgTx) ([]spen
 	stxoIdx := numStxos - 1
 	offset := 0
 	stxos := make([]spentTxOut, numStxos)
-	for txIdx := len(txns) - 1; txIdx > -1; txIdx-- {
-		tx := txns[txIdx]
+	for txIdx := len(txs) - 1; txIdx > -1; txIdx-- {
+		tx := txs[txIdx]
 
 		// Loop backwards through all of the transaction inputs and read
 		// the associated stxo.
@@ -416,36 +409,6 @@ func serializeSpendJournalEntry(stxos []spentTxOut) []byte {
 	return serialized
 }
 
-// dbFetchSpendJournalEntry fetches the spend journal entry for the passed block
-// and deserializes it into a slice of spent txout entries.
-//
-// NOTE: Legacy entries will not have the coinbase flag or height set unless it
-// was the final output spend in the containing transaction.  It is up to the
-// caller to handle this properly by looking the information up in the utxo set.
-func dbFetchSpendJournalEntry(dbTx database.Tx, block *btcutil.Block) ([]spentTxOut, error) {
-	// Exclude the coinbase transaction since it can't spend anything.
-	spendBucket := dbTx.Metadata().Bucket(spendJournalBucketName)
-	serialized := spendBucket.Get(block.Hash()[:])
-	blockTxns := block.MsgBlock().Transactions[1:]
-	stxos, err := deserializeSpendJournalEntry(serialized, blockTxns)
-	if err != nil {
-		// Ensure any deserialization errors are returned as database
-		// corruption errors.
-		if isDeserializeErr(err) {
-			return nil, database.Error{
-				ErrorCode: database.ErrCorruption,
-				Description: fmt.Sprintf("corrupt spend "+
-					"information for %v: %v", block.Hash(),
-					err),
-			}
-		}
-
-		return nil, err
-	}
-
-	return stxos, nil
-}
-
 // dbPutSpendJournalEntry uses an existing database transaction to update the
 // spend journal entry for the given block hash using the provided slice of
 // spent txouts.   The spent txouts slice must contain an entry for every txout
@@ -454,13 +417,6 @@ func dbPutSpendJournalEntry(dbTx database.Tx, blockHash *daghash.Hash, stxos []s
 	spendBucket := dbTx.Metadata().Bucket(spendJournalBucketName)
 	serialized := serializeSpendJournalEntry(stxos)
 	return spendBucket.Put(blockHash[:], serialized)
-}
-
-// dbRemoveSpendJournalEntry uses an existing database transaction to remove the
-// spend journal entry for the passed block hash.
-func dbRemoveSpendJournalEntry(dbTx database.Tx, blockHash *daghash.Hash) error {
-	spendBucket := dbTx.Metadata().Bucket(spendJournalBucketName)
-	return spendBucket.Delete(blockHash[:])
 }
 
 // -----------------------------------------------------------------------------
@@ -816,24 +772,6 @@ func dbPutBlockIndex(dbTx database.Tx, hash *daghash.Hash, height int32) error {
 	return heightIndex.Put(serializedHeight[:], hash[:])
 }
 
-// dbRemoveBlockIndex uses an existing database transaction remove block index
-// entries from the hash to height and height to hash mappings for the provided
-// values.
-func dbRemoveBlockIndex(dbTx database.Tx, hash *daghash.Hash, height int32) error {
-	// Remove the block hash to height mapping.
-	meta := dbTx.Metadata()
-	hashIndex := meta.Bucket(hashIndexBucketName)
-	if err := hashIndex.Delete(hash[:]); err != nil {
-		return err
-	}
-
-	// Remove the block height to hash mapping.
-	var serializedHeight [4]byte
-	byteOrder.PutUint32(serializedHeight[:], uint32(height))
-	heightIndex := meta.Bucket(heightIndexBucketName)
-	return heightIndex.Delete(serializedHeight[:])
-}
-
 // dbFetchHeightByHash uses an existing database transaction to retrieve the
 // height for the provided hash from the index.
 func dbFetchHeightByHash(dbTx database.Tx, hash *daghash.Hash) (int32, error) {
@@ -848,131 +786,55 @@ func dbFetchHeightByHash(dbTx database.Tx, hash *daghash.Hash) (int32, error) {
 	return int32(byteOrder.Uint32(serializedHeight)), nil
 }
 
-// dbFetchHashByHeight uses an existing database transaction to retrieve the
-// hash for the provided height from the index.
-func dbFetchHashByHeight(dbTx database.Tx, height int32) (*daghash.Hash, error) {
-	var serializedHeight [4]byte
-	byteOrder.PutUint32(serializedHeight[:], uint32(height))
-
-	meta := dbTx.Metadata()
-	heightIndex := meta.Bucket(heightIndexBucketName)
-	hashBytes := heightIndex.Get(serializedHeight[:])
-	if hashBytes == nil {
-		str := fmt.Sprintf("no block at height %d exists", height)
-		return nil, errNotInMainChain(str)
-	}
-
-	var hash daghash.Hash
-	copy(hash[:], hashBytes)
-	return &hash, nil
+// dbDAGState represents the data to be stored in the database for the current
+// DAG state.
+type dbDAGState struct {
+	SelectedHash daghash.Hash
+	TotalTxs     uint64
 }
 
-// -----------------------------------------------------------------------------
-// The best chain state consists of the best block hash and height, the total
-// number of transactions up to and including those in the best block, and the
-// accumulated work sum up to and including the best block.
-//
-// The serialized format is:
-//
-//   <block hash><block height><total txns><work sum length><work sum>
-//
-//   Field             Type             Size
-//   block hash        daghash.Hash   daghash.HashSize
-//   block height      uint32           4 bytes
-//   total txns        uint64           8 bytes
-//   work sum length   uint32           4 bytes
-//   work sum          big.Int          work sum length
-// -----------------------------------------------------------------------------
-
-// bestChainState represents the data to be stored the database for the current
-// best chain state.
-type bestChainState struct {
-	hash      daghash.Hash
-	height    uint32
-	totalTxns uint64
-	workSum   *big.Int
+// serializeDAGState returns the serialization of the DAG state.
+// This is data to be stored in the DAG state bucket.
+func serializeDAGState(state dbDAGState) ([]byte, error) {
+	return json.Marshal(state)
 }
 
-// serializeBestChainState returns the serialization of the passed block best
-// chain state.  This is data to be stored in the chain state bucket.
-func serializeBestChainState(state bestChainState) []byte {
-	// Calculate the full size needed to serialize the chain state.
-	workSumBytes := state.workSum.Bytes()
-	workSumBytesLen := uint32(len(workSumBytes))
-	serializedLen := daghash.HashSize + 4 + 8 + 4 + workSumBytesLen
-
-	// Serialize the chain state.
-	serializedData := make([]byte, serializedLen)
-	copy(serializedData[0:daghash.HashSize], state.hash[:])
-	offset := uint32(daghash.HashSize)
-	byteOrder.PutUint32(serializedData[offset:], state.height)
-	offset += 4
-	byteOrder.PutUint64(serializedData[offset:], state.totalTxns)
-	offset += 8
-	byteOrder.PutUint32(serializedData[offset:], workSumBytesLen)
-	offset += 4
-	copy(serializedData[offset:], workSumBytes)
-	return serializedData[:]
-}
-
-// deserializeBestChainState deserializes the passed serialized best chain
-// state.  This is data stored in the chain state bucket and is updated after
-// every block is connected or disconnected form the main chain.
-// block.
-func deserializeBestChainState(serializedData []byte) (bestChainState, error) {
-	// Ensure the serialized data has enough bytes to properly deserialize
-	// the hash, height, total transactions, and work sum length.
-	if len(serializedData) < daghash.HashSize+16 {
-		return bestChainState{}, database.Error{
+// deserializeDAGState deserializes the passed serialized DAG
+// state.  This is data stored in the DAG state bucket and is updated after
+// every block is connected or disconnected form the DAG.
+func deserializeDAGState(serializedData []byte) (*dbDAGState, error) {
+	var dbState dbDAGState
+	err := json.Unmarshal(serializedData, &dbState)
+	if err != nil {
+		return nil, database.Error{
 			ErrorCode:   database.ErrCorruption,
-			Description: "corrupt best chain state",
+			Description: "corrupt DAG state",
 		}
 	}
 
-	state := bestChainState{}
-	copy(state.hash[:], serializedData[0:daghash.HashSize])
-	offset := uint32(daghash.HashSize)
-	state.height = byteOrder.Uint32(serializedData[offset : offset+4])
-	offset += 4
-	state.totalTxns = byteOrder.Uint64(serializedData[offset : offset+8])
-	offset += 8
-	workSumBytesLen := byteOrder.Uint32(serializedData[offset : offset+4])
-	offset += 4
-
-	// Ensure the serialized data has enough bytes to deserialize the work
-	// sum.
-	if uint32(len(serializedData[offset:])) < workSumBytesLen {
-		return bestChainState{}, database.Error{
-			ErrorCode:   database.ErrCorruption,
-			Description: "corrupt best chain state",
-		}
-	}
-	workSumBytes := serializedData[offset : offset+workSumBytesLen]
-	state.workSum = new(big.Int).SetBytes(workSumBytes)
-
-	return state, nil
+	return &dbState, nil
 }
 
-// dbPutBestState uses an existing database transaction to update the best chain
+// dbPutDAGState uses an existing database transaction to update the DAG
 // state with the given parameters.
-func dbPutBestState(dbTx database.Tx, snapshot *BestState, workSum *big.Int) error {
-	// Serialize the current best chain state.
-	serializedData := serializeBestChainState(bestChainState{
-		hash:      snapshot.Hash,
-		height:    uint32(snapshot.Height),
-		totalTxns: snapshot.TotalTxns,
-		workSum:   workSum,
+func dbPutDAGState(dbTx database.Tx, state *DAGState) error {
+	serializedData, err := serializeDAGState(dbDAGState{
+		SelectedHash: state.SelectedTip.Hash,
+		TotalTxs:     state.TotalTxs,
 	})
 
-	// Store the current best chain state into the database.
-	return dbTx.Metadata().Put(chainStateKeyName, serializedData)
+	if err != nil {
+		return err
+	}
+
+	return dbTx.Metadata().Put(dagStateKeyName, serializedData)
 }
 
-// createChainState initializes both the database and the chain state to the
+// createDAGState initializes both the database and the DAG state to the
 // genesis block.  This includes creating the necessary buckets and inserting
 // the genesis block, so it must only be called on an uninitialized database.
-func (b *BlockDAG) createChainState() error {
-	// Create a new node from the genesis block and set it as the best node.
+func (b *BlockDAG) createDAGState() error {
+	// Create a new node from the genesis block and set it as the DAG.
 	genesisBlock := btcutil.NewBlock(b.dagParams.GenesisBlock)
 	genesisBlock.SetHeight(0)
 	header := &genesisBlock.MsgBlock().Header
@@ -983,12 +845,13 @@ func (b *BlockDAG) createChainState() error {
 	// Add the new node to the index which is used for faster lookups.
 	b.index.addNode(node)
 
-	// Initialize the state related to the best block.  Since it is the
-	// genesis block, use its timestamp for the median time.
-	numTxns := uint64(len(genesisBlock.MsgBlock().Transactions))
+	// Initialize the DAG state.  Since it is the genesis block, use
+	// its timestamp for the median time.
+	numTxs := uint64(len(genesisBlock.MsgBlock().Transactions))
 	blockSize := uint64(genesisBlock.MsgBlock().SerializeSize())
-	b.stateSnapshot = newBestState(node, blockSize, numTxns,
-		numTxns, time.Unix(node.timestamp, 0))
+	dagState := newDAGState(b.dag.Tips().hashes(), node, blockSize, numTxs,
+		numTxs, time.Unix(node.timestamp, 0))
+	b.setDAGState(dagState)
 
 	// Create the initial the database chain state including creating the
 	// necessary index buckets and inserting the genesis block.
@@ -1054,8 +917,8 @@ func (b *BlockDAG) createChainState() error {
 			return err
 		}
 
-		// Store the current best chain state into the database.
-		err = dbPutBestState(dbTx, b.stateSnapshot, node.workSum)
+		// Store the current DAG state into the database.
+		err = dbPutDAGState(dbTx, b.dagState)
 		if err != nil {
 			return err
 		}
@@ -1066,15 +929,15 @@ func (b *BlockDAG) createChainState() error {
 	return err
 }
 
-// initChainState attempts to load and initialize the chain state from the
-// database.  When the db does not yet contain any chain state, both it and the
-// chain state are initialized to the genesis block.
-func (b *BlockDAG) initChainState() error {
+// initDAGState attempts to load and initialize the DAG state from the
+// database.  When the db does not yet contain any DAG state, both it and the
+// DAG state are initialized to the genesis block.
+func (b *BlockDAG) initDAGState() error {
 	// Determine the state of the chain database. We may need to initialize
 	// everything from scratch or upgrade certain buckets.
 	var initialized, hasBlockIndex bool
 	err := b.db.View(func(dbTx database.Tx) error {
-		initialized = dbTx.Metadata().Get(chainStateKeyName) != nil
+		initialized = dbTx.Metadata().Get(dagStateKeyName) != nil
 		hasBlockIndex = dbTx.Metadata().Bucket(blockIndexBucketName) != nil
 		return nil
 	})
@@ -1085,7 +948,7 @@ func (b *BlockDAG) initChainState() error {
 	if !initialized {
 		// At this point the database has not already been initialized, so
 		// initialize both it and the chain state to the genesis block.
-		return b.createChainState()
+		return b.createDAGState()
 	}
 
 	if !hasBlockIndex {
@@ -1095,21 +958,21 @@ func (b *BlockDAG) initChainState() error {
 		}
 	}
 
-	// Attempt to load the chain state from the database.
+	// Attempt to load the DAG state from the database.
 	return b.db.View(func(dbTx database.Tx) error {
-		// Fetch the stored chain state from the database metadata.
+		// Fetch the stored DAG state from the database metadata.
 		// When it doesn't exist, it means the database hasn't been
-		// initialized for use with chain yet, so break out now to allow
+		// initialized for use with the DAG yet, so break out now to allow
 		// that to happen under a writable database transaction.
-		serializedData := dbTx.Metadata().Get(chainStateKeyName)
-		log.Tracef("Serialized chain state: %x", serializedData)
-		state, err := deserializeBestChainState(serializedData)
+		serializedData := dbTx.Metadata().Get(dagStateKeyName)
+		log.Tracef("Serialized DAG state: %x", serializedData)
+		state, err := deserializeDAGState(serializedData)
 		if err != nil {
 			return err
 		}
 
-		// Load all of the headers from the data for the known best
-		// chain and construct the block index accordingly.  Since the
+		// Load all of the headers from the data for the known DAG
+		// and construct the block index accordingly.  Since the
 		// number of nodes are already known, perform a single alloc
 		// for them versus a whole bunch of little ones to reduce
 		// pressure on the GC.
@@ -1142,7 +1005,7 @@ func (b *BlockDAG) initChainState() error {
 			if lastNode == nil {
 				blockHash := header.BlockHash()
 				if !blockHash.IsEqual(b.dagParams.GenesisHash) {
-					return AssertError(fmt.Sprintf("initChainState: Expected "+
+					return AssertError(fmt.Sprintf("initDAGState: Expected "+
 						"first entry in block index to be genesis block, "+
 						"found %s", blockHash))
 				}
@@ -1154,7 +1017,7 @@ func (b *BlockDAG) initChainState() error {
 			} else {
 				parent = b.index.LookupNode(header.SelectedPrevBlock())
 				if parent == nil {
-					return AssertError(fmt.Sprintf("initChainState: Could "+
+					return AssertError(fmt.Sprintf("initDAGState: Could "+
 						"not find parent for block %s", header.BlockHash()))
 				}
 			}
@@ -1170,16 +1033,16 @@ func (b *BlockDAG) initChainState() error {
 			i++
 		}
 
-		// Set the best chain view to the stored best state.
-		tip := b.index.LookupNode(&state.hash)
-		if tip == nil {
-			return AssertError(fmt.Sprintf("initChainState: cannot find "+
-				"chain tip %s in block index", state.hash))
+		// Set the DAG view to the stored state.
+		selectedTip := b.index.LookupNode(&state.SelectedHash)
+		if selectedTip == nil {
+			return AssertError(fmt.Sprintf("initDAGState: cannot find "+
+				"DAG selectedTip %s in block index", state.SelectedHash))
 		}
-		b.dag.SetTip(tip)
+		b.dag.SetTip(selectedTip)
 
-		// Load the raw block bytes for the best block.
-		blockBytes, err := dbTx.FetchBlock(&state.hash)
+		// Load the raw block bytes for the selected tip.
+		blockBytes, err := dbTx.FetchBlock(&state.SelectedHash)
 		if err != nil {
 			return err
 		}
@@ -1189,10 +1052,11 @@ func (b *BlockDAG) initChainState() error {
 			return err
 		}
 
-		// Initialize the state related to the best block.
+		// Initialize the DAG state.
 		blockSize := uint64(len(blockBytes))
 		numTxns := uint64(len(block.Transactions))
-		b.stateSnapshot = newBestState(tip, blockSize, numTxns, state.totalTxns, tip.CalcPastMedianTime())
+		dagState := newDAGState(b.dag.Tips().hashes(), selectedTip, blockSize, numTxns, state.TotalTxs, selectedTip.CalcPastMedianTime())
+		b.setDAGState(dagState)
 
 		return nil
 	})
@@ -1232,17 +1096,6 @@ func dbFetchHeaderByHash(dbTx database.Tx, hash *daghash.Hash) (*wire.BlockHeade
 	}
 
 	return &header, nil
-}
-
-// dbFetchHeaderByHeight uses an existing database transaction to retrieve the
-// block header for the provided height.
-func dbFetchHeaderByHeight(dbTx database.Tx, height int32) (*wire.BlockHeader, error) {
-	hash, err := dbFetchHashByHeight(dbTx, height)
-	if err != nil {
-		return nil, err
-	}
-
-	return dbFetchHeaderByHash(dbTx, hash)
 }
 
 // dbFetchBlockByNode uses an existing database transaction to retrieve the

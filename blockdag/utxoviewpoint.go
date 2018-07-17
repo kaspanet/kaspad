@@ -284,7 +284,7 @@ func (view *UtxoViewpoint) connectTransactions(block *blockNode, transactions []
 		}
 	}
 
-	// Update the best hash for view to include this block since all of its
+	// Update the tips for view to include this block since all of its
 	// transactions have been connected.
 	view.AddBlock(block)
 	return nil

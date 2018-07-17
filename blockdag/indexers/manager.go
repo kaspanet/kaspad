@@ -357,8 +357,8 @@ func (m *Manager) Init(chain *blockdag.BlockDAG, interrupt <-chan struct{}) erro
 	// lowest one so the catchup code only needs to start at the earliest
 	// block and is able to skip connecting the block for the indexes that
 	// don't need it.
-	bestHeight := chain.BestSnapshot().Height
-	lowestHeight := bestHeight
+	dagHeight := chain.GetDAGState().SelectedTip.Height
+	lowestHeight := dagHeight
 	indexerHeights := make([]int32, len(m.enabledIndexes))
 	err = m.db.View(func(dbTx database.Tx) error {
 		for i, indexer := range m.enabledIndexes {
@@ -382,7 +382,7 @@ func (m *Manager) Init(chain *blockdag.BlockDAG, interrupt <-chan struct{}) erro
 	}
 
 	// Nothing to index if all of the indexes are caught up.
-	if lowestHeight == bestHeight {
+	if lowestHeight == dagHeight {
 		return nil
 	}
 
@@ -393,8 +393,8 @@ func (m *Manager) Init(chain *blockdag.BlockDAG, interrupt <-chan struct{}) erro
 	// tip and need to be caught up, so log the details and loop through
 	// each block that needs to be indexed.
 	log.Infof("Catching up indexes from height %d to %d", lowestHeight,
-		bestHeight)
-	for height := lowestHeight + 1; height <= bestHeight; height++ {
+		dagHeight)
+	for height := lowestHeight + 1; height <= dagHeight; height++ {
 		// Load the block for the height since it is required to index
 		// it.
 		block, err := chain.BlockByHeight(height)
@@ -445,7 +445,7 @@ func (m *Manager) Init(chain *blockdag.BlockDAG, interrupt <-chan struct{}) erro
 		}
 	}
 
-	log.Infof("Indexes caught up to height %d", bestHeight)
+	log.Infof("Indexes caught up to height %d", dagHeight)
 	return nil
 }
 
