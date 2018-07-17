@@ -5,6 +5,7 @@
 package chaincfg
 
 import (
+	"math"
 	"time"
 
 	"github.com/daglabs/btcd/chaincfg/chainhash"
@@ -33,7 +34,7 @@ var genesisCoinbaseTx = wire.MsgTx{
 				0x6f, 0x75, 0x74, 0x20, 0x66, 0x6f, 0x72, 0x20, /* |out for |*/
 				0x62, 0x61, 0x6e, 0x6b, 0x73, /* |banks| */
 			},
-			Sequence: 0xffffffff,
+			Sequence: math.MaxUint64,
 		},
 	},
 	TxOut: []*wire.TxOut{

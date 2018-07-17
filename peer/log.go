@@ -65,7 +65,7 @@ func directionString(inbound bool) string {
 }
 
 // formatLockTime returns a transaction lock time as a human-readable string.
-func formatLockTime(lockTime int64) string {
+func formatLockTime(lockTime uint64) string {
 	// The lock time field of a transaction is either a block height at
 	// which the transaction is finalized or a timestamp depending on if the
 	// value is before the lockTimeThreshold.  When it is under the

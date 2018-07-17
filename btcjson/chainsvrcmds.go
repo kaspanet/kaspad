@@ -57,7 +57,7 @@ type TransactionInput struct {
 type CreateRawTransactionCmd struct {
 	Inputs   []TransactionInput
 	Amounts  map[string]float64 `jsonrpcusage:"{\"address\":amount,...}"` // In BTC
-	LockTime *int64
+	LockTime *uint64
 }
 
 // NewCreateRawTransactionCmd returns a new instance which can be used to issue
@@ -65,7 +65,7 @@ type CreateRawTransactionCmd struct {
 //
 // Amounts are in BTC.
 func NewCreateRawTransactionCmd(inputs []TransactionInput, amounts map[string]float64,
-	lockTime *int64) *CreateRawTransactionCmd {
+	lockTime *uint64) *CreateRawTransactionCmd {
 
 	return &CreateRawTransactionCmd{
 		Inputs:   inputs,

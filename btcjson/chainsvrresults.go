@@ -307,7 +307,7 @@ type Vin struct {
 	Txid      string     `json:"txid"`
 	Vout      uint32     `json:"vout"`
 	ScriptSig *ScriptSig `json:"scriptSig"`
-	Sequence  uint32     `json:"sequence"`
+	Sequence  uint64     `json:"sequence"`
 }
 
 // IsCoinBase returns a bool to show if a Vin is a Coinbase one or not.
@@ -320,7 +320,7 @@ func (v *Vin) MarshalJSON() ([]byte, error) {
 	if v.IsCoinBase() {
 		coinbaseStruct := struct {
 			Coinbase string `json:"coinbase"`
-			Sequence uint32 `json:"sequence"`
+			Sequence uint64 `json:"sequence"`
 		}{
 			Coinbase: v.Coinbase,
 			Sequence: v.Sequence,
@@ -332,7 +332,7 @@ func (v *Vin) MarshalJSON() ([]byte, error) {
 		Txid      string     `json:"txid"`
 		Vout      uint32     `json:"vout"`
 		ScriptSig *ScriptSig `json:"scriptSig"`
-		Sequence  uint32     `json:"sequence"`
+		Sequence  uint64     `json:"sequence"`
 	}{
 		Txid:      v.Txid,
 		Vout:      v.Vout,
@@ -355,7 +355,7 @@ type VinPrevOut struct {
 	Vout      uint32     `json:"vout"`
 	ScriptSig *ScriptSig `json:"scriptSig"`
 	PrevOut   *PrevOut   `json:"prevOut"`
-	Sequence  uint32     `json:"sequence"`
+	Sequence  uint64     `json:"sequence"`
 }
 
 // IsCoinBase returns a bool to show if a Vin is a Coinbase one or not.
@@ -368,7 +368,7 @@ func (v *VinPrevOut) MarshalJSON() ([]byte, error) {
 	if v.IsCoinBase() {
 		coinbaseStruct := struct {
 			Coinbase string `json:"coinbase"`
-			Sequence uint32 `json:"sequence"`
+			Sequence uint64 `json:"sequence"`
 		}{
 			Coinbase: v.Coinbase,
 			Sequence: v.Sequence,
@@ -381,7 +381,7 @@ func (v *VinPrevOut) MarshalJSON() ([]byte, error) {
 		Vout      uint32     `json:"vout"`
 		ScriptSig *ScriptSig `json:"scriptSig"`
 		PrevOut   *PrevOut   `json:"prevOut,omitempty"`
-		Sequence  uint32     `json:"sequence"`
+		Sequence  uint64     `json:"sequence"`
 	}{
 		Txid:      v.Txid,
 		Vout:      v.Vout,
@@ -444,13 +444,13 @@ type TxRawResult struct {
 	Hash          string `json:"hash,omitempty"`
 	Size          int32  `json:"size,omitempty"`
 	Version       int32  `json:"version"`
-	LockTime      int64  `json:"locktime"`
+	LockTime      uint64 `json:"locktime"`
 	Vin           []Vin  `json:"vin"`
 	Vout          []Vout `json:"vout"`
 	BlockHash     string `json:"blockhash,omitempty"`
 	Confirmations uint64 `json:"confirmations,omitempty"`
 	Time          int64  `json:"time,omitempty"`
-	Blocktime     int64  `json:"blocktime,omitempty"`
+	Blocktime     uint64 `json:"blocktime,omitempty"`
 }
 
 // SearchRawTransactionsResult models the data from the searchrawtransaction
@@ -461,20 +461,20 @@ type SearchRawTransactionsResult struct {
 	Hash          string       `json:"hash"`
 	Size          string       `json:"size"`
 	Version       int32        `json:"version"`
-	LockTime      int64        `json:"locktime"`
+	LockTime      uint64       `json:"locktime"`
 	Vin           []VinPrevOut `json:"vin"`
 	Vout          []Vout       `json:"vout"`
 	BlockHash     string       `json:"blockhash,omitempty"`
 	Confirmations uint64       `json:"confirmations,omitempty"`
-	Time          int64        `json:"time,omitempty"`
-	Blocktime     int64        `json:"blocktime,omitempty"`
+	Time          uint64       `json:"time,omitempty"`
+	Blocktime     uint64       `json:"blocktime,omitempty"`
 }
 
 // TxRawDecodeResult models the data from the decoderawtransaction command.
 type TxRawDecodeResult struct {
 	Txid     string `json:"txid"`
 	Version  int32  `json:"version"`
-	Locktime int64  `json:"locktime"`
+	Locktime uint64 `json:"locktime"`
 	Vin      []Vin  `json:"vin"`
 	Vout     []Vout `json:"vout"`
 }

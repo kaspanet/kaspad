@@ -497,7 +497,7 @@ func dbRemoveSpendJournalEntry(dbTx database.Tx, blockHash *chainhash.Hash) erro
 //
 // Example 1:
 // From tx in main blockchain:
-// Blk 1, c52c57dcdaa5cbfd39ef73afb78b1fbb1e856f557dd5f8b53c49acbf21eb387a:0
+// Blk 1, b7c3332bc138e2c9429818f5fed500bcc1746544218772389054dc8047d7cd3f:0
 //
 //    03320496b538e853519c726a2c91e61ec11600ae1390813a627c66fb8be7947be63c52
 //    <><------------------------------------------------------------------>

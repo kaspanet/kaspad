@@ -501,7 +501,7 @@ type AtomicSwapDataPushes struct {
 	RefundHash160    [20]byte
 	SecretHash       [32]byte
 	SecretSize       int64
-	LockTime         int64
+	LockTime         uint64
 }
 
 // ExtractAtomicSwapDataPushes returns the data pushes from an atomic swap
@@ -568,9 +568,9 @@ func ExtractAtomicSwapDataPushes(version uint16, pkScript []byte) (*AtomicSwapDa
 		if err != nil {
 			return nil, nil
 		}
-		pushes.LockTime = int64(locktime)
+		pushes.LockTime = uint64(locktime)
 	} else if op := pops[11].opcode; isSmallInt(op) {
-		pushes.LockTime = int64(asSmallInt(op))
+		pushes.LockTime = uint64(asSmallInt(op))
 	} else {
 		return nil, nil
 	}

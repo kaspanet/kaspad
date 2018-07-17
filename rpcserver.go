@@ -514,7 +514,7 @@ func handleCreateRawTransaction(s *rpcServer, cmd interface{}, closeChan <-chan 
 
 	// Validate the locktime, if given.
 	if c.LockTime != nil &&
-		(*c.LockTime < 0 || *c.LockTime > int64(wire.MaxTxInSequenceNum)) {
+		(*c.LockTime < 0 || *c.LockTime > wire.MaxTxInSequenceNum) {
 		return nil, &btcjson.RPCError{
 			Code:    btcjson.ErrRPCInvalidParameter,
 			Message: "Locktime out of range",
@@ -599,7 +599,7 @@ func handleCreateRawTransaction(s *rpcServer, cmd interface{}, closeChan <-chan 
 
 	// Set the Locktime, if given.
 	if c.LockTime != nil {
-		mtx.LockTime = int64(*c.LockTime)
+		mtx.LockTime = *c.LockTime
 	}
 
 	// Return the serialized and hex-encoded transaction.  Note that this

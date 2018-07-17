@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"math"
 	"reflect"
 	"testing"
 
@@ -128,7 +129,7 @@ func TestTx(t *testing.T) {
 // TestTxHash tests the ability to generate the hash of a transaction accurately.
 func TestTxHash(t *testing.T) {
 	// Hash of first transaction from block 113875.
-	hashStr := "a16521abfbac8dc484301bb57adc13ac72f71d42459c9c29c96b11972af2475c"
+	hashStr := "768f7e5de1e0a209c9f4e89a5b610d15e888dfe8f32be7f92462edc5815fc025"
 	wantHash, err := chainhash.NewHashFromStr(hashStr)
 	if err != nil {
 		t.Errorf("NewHashFromStr: %v", err)
@@ -143,7 +144,7 @@ func TestTxHash(t *testing.T) {
 			Index: 0xffffffff,
 		},
 		SignatureScript: []byte{0x04, 0x31, 0xdc, 0x00, 0x1b, 0x01, 0x62},
-		Sequence:        0xffffffff,
+		Sequence:        math.MaxUint64,
 	}
 	txOut := TxOut{
 		Value: 5000000000,
@@ -334,15 +335,15 @@ func TestTxWireErrors(t *testing.T) {
 		// Force error in transaction input sequence.
 		{multiTx, multiTxEncoded, pver, 49, io.ErrShortWrite, io.EOF},
 		// Force error in number of transaction outputs.
-		{multiTx, multiTxEncoded, pver, 53, io.ErrShortWrite, io.EOF},
+		{multiTx, multiTxEncoded, pver, 57, io.ErrShortWrite, io.EOF},
 		// Force error in transaction output value.
-		{multiTx, multiTxEncoded, pver, 54, io.ErrShortWrite, io.EOF},
+		{multiTx, multiTxEncoded, pver, 58, io.ErrShortWrite, io.EOF},
 		// Force error in transaction output pk script length.
-		{multiTx, multiTxEncoded, pver, 62, io.ErrShortWrite, io.EOF},
+		{multiTx, multiTxEncoded, pver, 66, io.ErrShortWrite, io.EOF},
 		// Force error in transaction output pk script.
-		{multiTx, multiTxEncoded, pver, 63, io.ErrShortWrite, io.EOF},
+		{multiTx, multiTxEncoded, pver, 67, io.ErrShortWrite, io.EOF},
 		// Force error in transaction output lock time.
-		{multiTx, multiTxEncoded, pver, 206, io.ErrShortWrite, io.EOF},
+		{multiTx, multiTxEncoded, pver, 210, io.ErrShortWrite, io.EOF},
 	}
 
 	t.Logf("Running %d tests", len(tests))
@@ -477,15 +478,15 @@ func TestTxSerializeErrors(t *testing.T) {
 		// Force error in transaction input sequence.
 		{multiTx, multiTxEncoded, 49, io.ErrShortWrite, io.EOF},
 		// Force error in number of transaction outputs.
-		{multiTx, multiTxEncoded, 53, io.ErrShortWrite, io.EOF},
+		{multiTx, multiTxEncoded, 57, io.ErrShortWrite, io.EOF},
 		// Force error in transaction output value.
-		{multiTx, multiTxEncoded, 54, io.ErrShortWrite, io.EOF},
+		{multiTx, multiTxEncoded, 58, io.ErrShortWrite, io.EOF},
 		// Force error in transaction output pk script length.
-		{multiTx, multiTxEncoded, 62, io.ErrShortWrite, io.EOF},
+		{multiTx, multiTxEncoded, 66, io.ErrShortWrite, io.EOF},
 		// Force error in transaction output pk script.
-		{multiTx, multiTxEncoded, 63, io.ErrShortWrite, io.EOF},
+		{multiTx, multiTxEncoded, 67, io.ErrShortWrite, io.EOF},
 		// Force error in transaction output lock time.
-		{multiTx, multiTxEncoded, 206, io.ErrShortWrite, io.EOF},
+		{multiTx, multiTxEncoded, 210, io.ErrShortWrite, io.EOF},
 	}
 
 	t.Logf("Running %d tests", len(tests))
@@ -574,8 +575,8 @@ func TestTxOverflowErrors(t *testing.T) {
 				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Previous output hash
 				0xff, 0xff, 0xff, 0xff, // Prevous output index
-				0x00,                   // Varint for length of signature script
-				0xff, 0xff, 0xff, 0xff, // Sequence
+				0x00,                                           // Varint for length of signature script
+				0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, // Sequence
 				0x01,                                           // Varint for number of output transactions
 				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Transaction amount
 				0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
@@ -622,7 +623,7 @@ func TestTxSerializeSize(t *testing.T) {
 		{noTx, 14},
 
 		// Transcaction with an input and an output.
-		{multiTx, 214},
+		{multiTx, 218},
 	}
 
 	t.Logf("Running %d tests", len(tests))
@@ -648,7 +649,7 @@ var multiTx = &MsgTx{
 			SignatureScript: []byte{
 				0x04, 0x31, 0xdc, 0x00, 0x1b, 0x01, 0x62,
 			},
-			Sequence: 0xffffffff,
+			Sequence: math.MaxUint64,
 		},
 	},
 	TxOut: []*TxOut{
@@ -700,7 +701,7 @@ var multiTxEncoded = []byte{
 	0xff, 0xff, 0xff, 0xff, // Prevous output index
 	0x07,                                     // Varint for length of signature script
 	0x04, 0x31, 0xdc, 0x00, 0x1b, 0x01, 0x62, // Signature script
-	0xff, 0xff, 0xff, 0xff, // Sequence
+	0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, // Sequence
 	0x02,                                           // Varint for number of output transactions
 	0x00, 0xf2, 0x05, 0x2a, 0x01, 0x00, 0x00, 0x00, // Transaction amount
 	0x43, // Varint for length of pk script
@@ -733,4 +734,4 @@ var multiTxEncoded = []byte{
 
 // multiTxPkScriptLocs is the location information for the public key scripts
 // located in multiTx.
-var multiTxPkScriptLocs = []int{63, 139}
+var multiTxPkScriptLocs = []int{67, 143}

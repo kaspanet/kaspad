@@ -267,7 +267,7 @@ var Block100000 = wire.MsgBlock{
 					SignatureScript: []byte{
 						0x04, 0x4c, 0x86, 0x04, 0x1b, 0x02, 0x06, 0x02,
 					},
-					Sequence: 0xffffffff,
+					Sequence: math.MaxUint64,
 				},
 			},
 			TxOut: []*wire.TxOut{
@@ -326,7 +326,7 @@ var Block100000 = wire.MsgBlock{
 						0xc6, 0xf8, 0xa6, 0x30, 0x12, 0x1d, 0xf2, 0xb3,
 						0xd3, // 65-byte pubkey
 					},
-					Sequence: 0xffffffff,
+					Sequence: math.MaxUint64,
 				},
 			},
 			TxOut: []*wire.TxOut{
@@ -394,7 +394,7 @@ var Block100000 = wire.MsgBlock{
 						0x60, 0x63, 0x9d, 0xb4, 0x62, 0xe9, 0xcb, 0x85,
 						0x0f, // 65-byte pubkey
 					},
-					Sequence: 0xffffffff,
+					Sequence: math.MaxUint64,
 				},
 			},
 			TxOut: []*wire.TxOut{
@@ -463,7 +463,7 @@ var Block100000 = wire.MsgBlock{
 						0x6a, 0xf4, 0xcf, 0xaa, 0xea, 0x4e, 0xa1, 0x4f,
 						0xbb, // 65-byte pubkey
 					},
-					Sequence: 0xffffffff,
+					Sequence: math.MaxUint64,
 				},
 			},
 			TxOut: []*wire.TxOut{

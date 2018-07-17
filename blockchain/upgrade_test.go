@@ -18,7 +18,7 @@ func TestDeserializeUtxoEntryV0(t *testing.T) {
 		serialized []byte
 	}{
 		// From tx in main blockchain:
-		// c52c57dcdaa5cbfd39ef73afb78b1fbb1e856f557dd5f8b53c49acbf21eb387a
+		// b7c3332bc138e2c9429818f5fed500bcc1746544218772389054dc8047d7cd3f
 		{
 			name: "Only output 0, coinbase",
 			entries: map[uint32]*UtxoEntry{

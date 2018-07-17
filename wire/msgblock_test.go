@@ -7,6 +7,7 @@ package wire
 import (
 	"bytes"
 	"io"
+	"math"
 	"reflect"
 	"testing"
 	"time"
@@ -71,7 +72,7 @@ func TestBlock(t *testing.T) {
 // hashes from a block accurately.
 func TestBlockTxHashes(t *testing.T) {
 	// Block 1, transaction 1 hash.
-	hashStr := "c52c57dcdaa5cbfd39ef73afb78b1fbb1e856f557dd5f8b53c49acbf21eb387a"
+	hashStr := "b7c3332bc138e2c9429818f5fed500bcc1746544218772389054dc8047d7cd3f"
 	wantHash, err := chainhash.NewHashFromStr(hashStr)
 	if err != nil {
 		t.Errorf("NewHashFromStr: %v", err)
@@ -506,7 +507,7 @@ var blockOne = MsgBlock{
 					SignatureScript: []byte{
 						0x04, 0xff, 0xff, 0x00, 0x1d, 0x01, 0x04,
 					},
-					Sequence: 0xffffffff,
+					Sequence: math.MaxUint64,
 				},
 			},
 			TxOut: []*TxOut{
@@ -556,7 +557,7 @@ var blockOneBytes = []byte{
 	0xff, 0xff, 0xff, 0xff, // Prevous output index
 	0x07,                                     // Varint for length of signature script
 	0x04, 0xff, 0xff, 0x00, 0x1d, 0x01, 0x04, // Signature script (coinbase)
-	0xff, 0xff, 0xff, 0xff, // Sequence
+	0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, // Sequence
 	0x01,                                           // Varint for number of transaction outputs
 	0x00, 0xf2, 0x05, 0x2a, 0x01, 0x00, 0x00, 0x00, // Transaction amount
 	0x43, // Varint for length of pk script
@@ -576,5 +577,5 @@ var blockOneBytes = []byte{
 
 // Transaction location information for block one transactions.
 var blockOneTxLocs = []TxLoc{
-	{TxStart: 85, TxLen: 138},
+	{TxStart: 85, TxLen: 142},
 }

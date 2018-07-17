@@ -77,7 +77,7 @@ func TestChainSvrCmds(t *testing.T) {
 			unmarshalled: &btcjson.CreateRawTransactionCmd{
 				Inputs:   []btcjson.TransactionInput{{Txid: "123", Vout: 1}},
 				Amounts:  map[string]float64{"456": .0123},
-				LockTime: btcjson.Int64(12312333333),
+				LockTime: btcjson.Uint64(12312333333),
 			},
 		},
 

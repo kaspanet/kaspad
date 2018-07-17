@@ -245,7 +245,7 @@ func createCSVOutput(r *rpctest.Harness, t *testing.T,
 	sequenceLock := blockchain.LockTimeToSequence(isSeconds,
 		int64(timeLock))
 
-	// Our CSV script is simply: <sequenceLock> OP_CSV OP_DROP
+	// Our CSV script is simply: <sequenceLock> OP_CSV
 	b := txscript.NewScriptBuilder().
 		AddInt64(int64(sequenceLock)).
 		AddOp(txscript.OpCheckSequenceVerify)
@@ -293,7 +293,7 @@ func createCSVOutput(r *rpctest.Harness, t *testing.T,
 // function. The sigScript is a trivial push of OP_TRUE followed by the
 // redeemScript to pass P2SH evaluation.
 func spendCSVOutput(redeemScript []byte, csvUTXO *wire.OutPoint,
-	sequence uint32, targetOutput *wire.TxOut,
+	sequence uint64, targetOutput *wire.TxOut,
 	txVersion int32) (*wire.MsgTx, error) {
 
 	tx := wire.NewMsgTx(txVersion)
@@ -456,7 +456,7 @@ func TestBIP0068AndCsv(t *testing.T) {
 	// A helper function to create fully signed transactions in-line during
 	// the array initialization below.
 	var inputIndex uint32
-	makeTxCase := func(sequenceNum uint32, txVersion int32) *wire.MsgTx {
+	makeTxCase := func(sequenceNum uint64, txVersion int32) *wire.MsgTx {
 		csvInput := spendableInputs[inputIndex]
 
 		tx, err := spendCSVOutput(csvInput.RedeemScript, csvInput.Utxo,

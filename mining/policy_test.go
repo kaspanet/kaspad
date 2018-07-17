@@ -6,6 +6,7 @@ package mining
 
 import (
 	"encoding/hex"
+	"math"
 	"testing"
 
 	"github.com/daglabs/btcd/blockchain"
@@ -69,7 +70,7 @@ func TestCalcPriority(t *testing.T) {
 				Index: wire.MaxPrevOutIndex,
 			},
 			SignatureScript: hexToBytes("04ffff001d0134"),
-			Sequence:        0xffffffff,
+			Sequence:        math.MaxUint64,
 		}},
 		TxOut: []*wire.TxOut{{
 			Value: 5000000000,
@@ -98,7 +99,7 @@ func TestCalcPriority(t *testing.T) {
 				"514961a1d3a1a25fdf3f4f7732e9d624c6c61548ab5f" +
 				"b8cd410220181522ec8eca07de4860a4acdd12909d83" +
 				"1cc56cbbac4622082221a8768d1d0901"),
-			Sequence: 0xffffffff,
+			Sequence: math.MaxUint64,
 		}},
 		TxOut: []*wire.TxOut{{
 			Value: 1000000000,

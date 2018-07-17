@@ -1066,7 +1066,7 @@ func opcodeReturn(op *parsedOpcode, vm *Engine) error {
 }
 
 // verifyLockTime is a helper function used to validate locktimes.
-func verifyLockTime(txLockTime, threshold, lockTime int64) error {
+func verifyLockTime(txLockTime, threshold, lockTime uint64) error {
 	// The lockTimes in both the script and transaction must be of the same
 	// type.
 	if !((txLockTime < threshold && lockTime < threshold) ||
@@ -1118,8 +1118,8 @@ func opcodeCheckLockTimeVerify(op *parsedOpcode, vm *Engine) error {
 	// which the transaction is finalized or a timestamp depending on if the
 	// value is before the txscript.LockTimeThreshold.  When it is under the
 	// threshold it is a block height.
-	err = verifyLockTime(int64(vm.tx.LockTime), LockTimeThreshold,
-		int64(lockTime))
+	err = verifyLockTime(vm.tx.LockTime, LockTimeThreshold,
+		uint64(lockTime))
 	if err != nil {
 		return err
 	}
@@ -1151,12 +1151,12 @@ func opcodeCheckLockTimeVerify(op *parsedOpcode, vm *Engine) error {
 // validating if the transaction outputs are spendable yet.
 func opcodeCheckSequenceVerify(op *parsedOpcode, vm *Engine) error {
 
-	// The current transaction sequence is a uint32 resulting in a maximum
+	// The current transaction sequence is a uint64 resulting in a maximum
 	// sequence of 2^32-1.  However, scriptNums are signed and therefore a
 	// standard 4-byte scriptNum would only support up to a maximum of
 	// 2^31-1.  Thus, a 5-byte scriptNum is used here since it will support
 	// up to 2^39-1 which allows sequences beyond the current sequence
-	// limit.
+	// limit. TODO: Understand this
 	//
 	// PopByteArray is used here instead of PopInt because we do not want
 	// to be limited to a 4-byte integer for reasons specified above.
@@ -1177,12 +1177,12 @@ func opcodeCheckSequenceVerify(op *parsedOpcode, vm *Engine) error {
 		return scriptError(ErrNegativeLockTime, str)
 	}
 
-	sequence := int64(stackSequence)
+	sequence := uint64(stackSequence)
 
 	// To provide for future soft-fork extensibility, if the
 	// operand has the disabled lock-time flag set,
 	// CHECKSEQUENCEVERIFY behaves as a NOP.
-	if sequence&int64(wire.SequenceLockTimeDisabled) != 0 {
+	if sequence&uint64(wire.SequenceLockTimeDisabled) != 0 {
 		return nil
 	}
 
@@ -1190,15 +1190,15 @@ func opcodeCheckSequenceVerify(op *parsedOpcode, vm *Engine) error {
 	// consensus constrained. Testing that the transaction's sequence
 	// number does not have this bit set prevents using this property
 	// to get around a CHECKSEQUENCEVERIFY check.
-	txSequence := int64(vm.tx.TxIn[vm.txIdx].Sequence)
-	if txSequence&int64(wire.SequenceLockTimeDisabled) != 0 {
+	txSequence := vm.tx.TxIn[vm.txIdx].Sequence
+	if txSequence&wire.SequenceLockTimeDisabled != 0 {
 		str := fmt.Sprintf("transaction sequence has sequence "+
 			"locktime disabled bit set: 0x%x", txSequence)
 		return scriptError(ErrUnsatisfiedLockTime, str)
 	}
 
 	// Mask off non-consensus bits before doing comparisons.
-	lockTimeMask := int64(wire.SequenceLockTimeIsSeconds |
+	lockTimeMask := uint64(wire.SequenceLockTimeIsSeconds |
 		wire.SequenceLockTimeMask)
 	return verifyLockTime(txSequence&lockTimeMask,
 		wire.SequenceLockTimeIsSeconds, sequence&lockTimeMask)
