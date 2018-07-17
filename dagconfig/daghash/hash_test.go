@@ -201,28 +201,48 @@ func TestAreEqual(t *testing.T) {
 	hash1, _ := NewHashFromStr("1111111111111111111111111111111111111111111111111111111111111111")
 	hash2, _ := NewHashFromStr("2222222222222222222222222222222222222222222222222222222222222222")
 	hash3, _ := NewHashFromStr("3333333333333333333333333333333333333333333333333333333333333333")
-
-	// Self-equality
 	hashes0To2 := []Hash{*hash0, *hash1, *hash2}
-	if !AreEqual(hashes0To2, hashes0To2) {
-		t.Errorf("expected: equal hash slices. got: not equal.")
-	}
-
-	// Same members different order
 	hashes0To2Shifted := []Hash{*hash2, *hash0, *hash1}
-	if !AreEqual(hashes0To2, hashes0To2Shifted) {
-		t.Errorf("expected: equal hash slices. got: not equal.")
-	}
-
-	// Same slice length but only some members are equal
 	hashes1To3 := []Hash{*hash1, *hash2, *hash3}
-	if AreEqual(hashes0To2, hashes1To3) {
-		t.Errorf("expected: not equal hash slices. got: equal.")
+	hashes0To3 := []Hash{*hash0, *hash1, *hash2, *hash3}
+
+	tests := []struct {
+		name     string
+		first    []Hash
+		second   []Hash
+		expected bool
+	}{
+		{
+			name:     "self-equality",
+			first:    hashes0To2,
+			second:   hashes0To2,
+			expected: true,
+		},
+		{
+			name:     "same members, different order",
+			first:    hashes0To2,
+			second:   hashes0To2Shifted,
+			expected: true,
+		},
+		{
+			name:     "same slice length but only some members are equal",
+			first:    hashes0To2,
+			second:   hashes1To3,
+			expected: false,
+		},
+		{
+			name:     "different slice lengths, one slice containing all the other's members",
+			first:    hashes0To3,
+			second:   hashes0To2,
+			expected: false,
+		},
 	}
 
-	// Different slice lengths, one slice containing all the other's members
-	hashes0To3 := []Hash{*hash0, *hash1, *hash2, *hash3}
-	if AreEqual(hashes0To3, hashes0To2) {
-		t.Errorf("expected: not equal hash slices. got: equal.")
+	for _, test := range tests {
+		result := AreEqual(test.first, test.second)
+		if result != test.expected {
+			t.Errorf("unexpected AreEqual result for"+
+				" test \"%s\". Expected: %t, got: %t.", test.name, test.expected, result)
+		}
 	}
 }
