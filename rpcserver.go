@@ -742,7 +742,7 @@ func createTxRawResult(chainParams *chaincfg.Params, mtx *wire.MsgTx,
 	if blkHeader != nil {
 		// This is not a typo, they are identical in bitcoind as well.
 		txReply.Time = blkHeader.Timestamp.Unix()
-		txReply.Blocktime = blkHeader.Timestamp.Unix()
+		txReply.Blocktime = uint64(blkHeader.Timestamp.Unix())
 		txReply.BlockHash = blkHash
 		txReply.Confirmations = uint64(1 + chainHeight - blkHeight)
 	}
@@ -3225,8 +3225,8 @@ func handleSearchRawTransactions(s *rpcServer, cmd interface{}, closeChan <-chan
 		if blkHeader != nil {
 			// This is not a typo, they are identical in Bitcoin
 			// Core as well.
-			result.Time = blkHeader.Timestamp.Unix()
-			result.Blocktime = blkHeader.Timestamp.Unix()
+			result.Time = uint64(blkHeader.Timestamp.Unix())
+			result.Blocktime = uint64(blkHeader.Timestamp.Unix())
 			result.BlockHash = blkHashStr
 			result.Confirmations = uint64(1 + best.Height - blkHeight)
 		}
