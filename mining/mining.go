@@ -549,7 +549,7 @@ mempoolLoop:
 				deps[*prioItem.tx.Hash()] = prioItem
 				if prioItem.dependsOn == nil {
 					prioItem.dependsOn = make(
-					map[daghash.Hash]struct{})
+						map[daghash.Hash]struct{})
 				}
 				prioItem.dependsOn[*originHash] = struct{}{}
 
