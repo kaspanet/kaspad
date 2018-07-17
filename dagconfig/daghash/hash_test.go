@@ -205,24 +205,24 @@ func TestAreEqual(t *testing.T) {
 	// Self-equality
 	hashes0To2 := []Hash{*hash0, *hash1, *hash2}
 	if !AreEqual(hashes0To2, hashes0To2) {
-		t.Errorf("expected equal hash slices are not equal.")
+		t.Errorf("expected: equal hash slices. got: not equal.")
 	}
 
 	// Same members different order
 	hashes0To2Shifted := []Hash{*hash2, *hash0, *hash1}
 	if !AreEqual(hashes0To2, hashes0To2Shifted) {
-		t.Errorf("expected equal hash slices are not equal.")
+		t.Errorf("expected: equal hash slices. got: not equal.")
 	}
 
 	// Same slice length but only some members are equal
 	hashes1To3 := []Hash{*hash1, *hash2, *hash3}
 	if AreEqual(hashes0To2, hashes1To3) {
-		t.Errorf("expected not equal hashes slices are equal.")
+		t.Errorf("expected: not equal hash slices. got: equal.")
 	}
 
 	// Different slice lengths, one slice containing all the other's members
 	hashes0To3 := []Hash{*hash0, *hash1, *hash2, *hash3}
 	if AreEqual(hashes0To3, hashes0To2) {
-		t.Errorf("expected not equal hashes slices are equal.")
+		t.Errorf("expected: not equal hash slices. got: equal.")
 	}
 }
