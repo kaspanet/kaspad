@@ -207,17 +207,17 @@ func (b *BlockDAG) HaveBlock(hash *daghash.Hash) (bool, error) {
 //
 // This function is safe for concurrent access.
 func (b *BlockDAG) HaveBlocks(hashes []daghash.Hash) (bool, error) {
-	haveBlocks := true
 	for _, hash := range hashes {
 		haveBlock, err := b.HaveBlock(&hash)
 		if err != nil {
 			return false, err
 		}
-
-		haveBlocks = haveBlocks && haveBlock
+		if !haveBlock {
+			return false, nil
+		}
 	}
 
-	return haveBlocks, nil
+	return true, nil
 }
 
 // IsKnownOrphan returns whether the passed hash is currently a known orphan.
