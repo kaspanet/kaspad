@@ -1802,7 +1802,7 @@ func handleGetBlockTemplateLongPoll(s *rpcServer, longPollID string, useCoinbase
 	// Return the block template now if the specific block template
 	// identified by the long poll ID no longer matches the current block
 	// template as this means the provided template is stale.
-	prevTemplateHash := &state.template.Block.Header.PrevBlock
+	prevTemplateHash := &state.template.Block.Header.PrevBlocks[0] // TODO: (Stas) This is probably wrong. Modified only to satisfy compilation
 	if !prevHash.IsEqual(prevTemplateHash) ||
 		lastGenerated != state.lastGenerated.Unix() {
 
@@ -1850,7 +1850,7 @@ func handleGetBlockTemplateLongPoll(s *rpcServer, longPollID string, useCoinbase
 	// Include whether or not it is valid to submit work against the old
 	// block template depending on whether or not a solution has already
 	// been found and added to the block chain.
-	submitOld := prevHash.IsEqual(&state.template.Block.Header.PrevBlock)
+	submitOld := prevHash.IsEqual(&state.template.Block.Header.PrevBlocks[0]) // TODO: (Stas) This is probably wrong. Modified only to satisfy compilation
 	result, err := state.blockTemplateResult(useCoinbaseValue, &submitOld)
 	if err != nil {
 		return nil, err
@@ -2076,10 +2076,10 @@ func handleGetBlockTemplateProposal(s *rpcServer, request *btcjson.TemplateReque
 	}
 	block := btcutil.NewBlock(&msgBlock)
 
-	// Ensure the block is building from the expected previous block.
-	expectedPrevHash := s.cfg.DAG.GetDAGState().SelectedTip.Hash
-	prevHash := &block.MsgBlock().Header.PrevBlock
-	if !expectedPrevHash.IsEqual(prevHash) {
+	// Ensure the block is building from the expected previous blocks.
+	expectedPrevHashes := s.cfg.DAG.GetDAGState().TipHashes
+	prevHashes := block.MsgBlock().Header.PrevBlocks
+	if !daghash.AreEqual(expectedPrevHashes, prevHashes) {
 		return "bad-prevblk", nil
 	}
 
