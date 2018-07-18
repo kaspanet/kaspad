@@ -203,7 +203,7 @@ func (b *BlockDAG) HaveBlock(hash *daghash.Hash) (bool, error) {
 
 // HaveBlocks returns whether or not the DAG instances has all blocks represented
 // by the passed hashes. This includes checking the various places a block can
-// be in, like part of the DAG or in the orphan pool.
+// be in, like part of the DAG or the orphan pool.
 //
 // This function is safe for concurrent access.
 func (b *BlockDAG) HaveBlocks(hashes []daghash.Hash) (bool, error) {
