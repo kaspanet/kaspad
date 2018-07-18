@@ -70,19 +70,19 @@ func (hash *Hash) IsEqual(target *Hash) bool {
 }
 
 // AreEqual returns true if both slices contain the same hashes.
-func AreEqual(leftHashes []Hash, rightHashes []Hash) bool {
-	hashSet := make(map[Hash]bool)
-	for _, leftHash := range leftHashes {
-		hashSet[leftHash] = true
-	}
-
-	length := len(hashSet)
-	if length != len(rightHashes) {
+// Either slice must not contain duplicates.
+func AreEqual(first []Hash, second []Hash) bool {
+	if len(first) != len(second) {
 		return false
 	}
 
-	for _, rightHash := range rightHashes {
-		if !hashSet[rightHash] {
+	hashSet := make(map[Hash]bool)
+	for _, hash := range first {
+		hashSet[hash] = true
+	}
+
+	for _, hash := range second {
+		if !hashSet[hash] {
 			return false
 		}
 	}

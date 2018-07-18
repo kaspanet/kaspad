@@ -247,8 +247,8 @@ func (m *CPUMiner) solveBlock(msgBlock *wire.MsgBlock, blockHeight int32,
 				hashesCompleted = 0
 
 				// The current block is stale if the DAG has changed.
-				currentState := m.g.GetDAGState()
-				if !daghash.AreEqual(header.PrevBlocks, currentState.TipHashes) {
+				dagState := m.g.GetDAGState()
+				if !daghash.AreEqual(header.PrevBlocks, dagState.TipHashes) {
 					return false
 				}
 
