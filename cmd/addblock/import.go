@@ -256,7 +256,7 @@ func (bi *blockImporter) statusHandler(resultsChan chan *importResults) {
 		}
 		close(bi.quit)
 
-		// The import finished normally.
+	// The import finished normally.
 	case <-bi.doneChan:
 		resultsChan <- &importResults{
 			blocksProcessed: bi.blocksProcessed,
