@@ -34,14 +34,13 @@ func loadBlockDB() (database.DB, error) {
 	return db, nil
 }
 
-// findCandidates searches the chain backwards for checkpoint candidates and
+// findCandidates searches the DAG backwards for checkpoint candidates and
 // returns a slice of found candidates, if any.  It also stops searching for
-// candidates at the last checkpoint that is already hard coded into btcchain
-// since there is no point in finding candidates before already existing
-// checkpoints.
-func findCandidates(dag *blockdag.BlockDAG, latestHash *daghash.Hash) ([]*dagconfig.Checkpoint, error) {
-	// Start with the latest block of the main chain.
-	block, err := dag.BlockByHash(latestHash)
+// candidates at the last checkpoint that is already hard coded since there
+// is no point in finding candidates before already existing checkpoints.
+func findCandidates(dag *blockdag.BlockDAG, selectedTipHash *daghash.Hash) ([]*dagconfig.Checkpoint, error) {
+	// Start with the selected tip.
+	block, err := dag.BlockByHash(selectedTipHash)
 	if err != nil {
 		return nil, err
 	}
@@ -70,7 +69,7 @@ func findCandidates(dag *blockdag.BlockDAG, latestHash *daghash.Hash) ([]*dagcon
 	}
 
 	// For the first checkpoint, the required height is any block after the
-	// genesis block, so long as the chain has at least the required number
+	// genesis block, so long as the DAG has at least the required number
 	// of confirmations (which is enforced above).
 	if len(activeNetParams.Checkpoints) == 0 {
 		requiredHeight = 1
@@ -82,7 +81,7 @@ func findCandidates(dag *blockdag.BlockDAG, latestHash *daghash.Hash) ([]*dagcon
 	fmt.Print("Searching for candidates")
 	defer fmt.Println()
 
-	// Loop backwards through the chain to find checkpoint candidates.
+	// Loop backwards through the DAG to find checkpoint candidates.
 	candidates := make([]*dagconfig.Checkpoint, 0, cfg.NumCandidates)
 	numTested := int32(0)
 	for len(candidates) < cfg.NumCandidates && block.Height() > requiredHeight {
@@ -107,8 +106,9 @@ func findCandidates(dag *blockdag.BlockDAG, latestHash *daghash.Hash) ([]*dagcon
 			candidates = append(candidates, &checkpoint)
 		}
 
-		prevHash := &block.MsgBlock().Header.PrevBlock
-		block, err = dag.BlockByHash(prevHash)
+		prevBlockHashes := block.MsgBlock().Header.PrevBlocks
+		selectedBlockHash := &prevBlockHashes[0]
+		block, err = dag.BlockByHash(selectedBlockHash)
 		if err != nil {
 			return nil, err
 		}
