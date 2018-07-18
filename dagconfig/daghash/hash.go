@@ -69,6 +69,27 @@ func (hash *Hash) IsEqual(target *Hash) bool {
 	return *hash == *target
 }
 
+// AreEqual returns true if both slices contain the same hashes.
+// Either slice must not contain duplicates.
+func AreEqual(first []Hash, second []Hash) bool {
+	if len(first) != len(second) {
+		return false
+	}
+
+	hashSet := make(map[Hash]bool)
+	for _, hash := range first {
+		hashSet[hash] = true
+	}
+
+	for _, hash := range second {
+		if !hashSet[hash] {
+			return false
+		}
+	}
+
+	return true
+}
+
 // NewHash returns a new Hash from a byte slice.  An error is returned if
 // the number of bytes passed in is not HashSize.
 func NewHash(newHash []byte) (*Hash, error) {
