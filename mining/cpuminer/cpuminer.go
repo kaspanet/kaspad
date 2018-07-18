@@ -124,7 +124,7 @@ out:
 		case numHashes := <-m.updateHashes:
 			totalHashes += numHashes
 
-			// Time to update the hashes per second.
+		// Time to update the hashes per second.
 		case <-ticker.C:
 			curHashesPerSec := float64(totalHashes) / hpsUpdateSecs
 			if hashesPerSec == 0 {
@@ -137,7 +137,7 @@ out:
 					hashesPerSec/1000)
 			}
 
-			// Request for the number of hashes per second.
+		// Request for the number of hashes per second.
 		case m.queryHashesPerSec <- hashesPerSec:
 			// Nothing to do.
 
@@ -247,8 +247,8 @@ func (m *CPUMiner) solveBlock(msgBlock *wire.MsgBlock, blockHeight int32,
 				hashesCompleted = 0
 
 				// The current block is stale if the DAG has changed.
-				currentState := m.g.GetDAGState()
-				if !daghash.AreEqual(header.PrevBlocks, currentState.TipHashes) {
+				dagState := m.g.GetDAGState()
+				if !daghash.AreEqual(header.PrevBlocks, dagState.TipHashes) {
 					return false
 				}
 
