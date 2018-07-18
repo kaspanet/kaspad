@@ -190,7 +190,7 @@ type BlockDAG struct {
 
 // HaveBlock returns whether or not the DAG instance has the block represented
 // by the passed hash.  This includes checking the various places a block can
-// be in, like part of the DAG or in the orphan pool.
+// be in, like part of the DAG or the orphan pool.
 //
 // This function is safe for concurrent access.
 func (b *BlockDAG) HaveBlock(hash *daghash.Hash) (bool, error) {
