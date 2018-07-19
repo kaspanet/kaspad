@@ -1156,13 +1156,13 @@ func softForkStatus(state blockdag.ThresholdState) (string, error) {
 	}
 }
 
-// handleGetBlockDAGInfo implements the getblockchaininfo command.
+// handleGetBlockDAGInfo implements the getblockdaginfo command.
 func handleGetBlockDAGInfo(s *rpcServer, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	// Obtain a snapshot of the current best known blockchain state. We'll
+	// Obtain a snapshot of the current best known DAG state. We'll
 	// populate the response to this call primarily from this snapshot.
 	params := s.cfg.ChainParams
-	chain := s.cfg.DAG
-	dagState := chain.GetDAGState()
+	dag := s.cfg.DAG
+	dagState := dag.GetDAGState()
 
 	chainInfo := &btcjson.GetBlockDAGInfoResult{
 		DAG:           params.Name,
@@ -1230,9 +1230,9 @@ func handleGetBlockDAGInfo(s *rpcServer, cmd interface{}, closeChan <-chan struc
 			}
 		}
 
-		// Query the chain for the current status of the deployment as
+		// Query the dag for the current status of the deployment as
 		// identified by its deployment ID.
-		deploymentStatus, err := chain.ThresholdState(uint32(deployment))
+		deploymentStatus, err := dag.ThresholdState(uint32(deployment))
 		if err != nil {
 			context := "Failed to obtain deployment status"
 			return nil, internalRPCError(err.Error(), context)
