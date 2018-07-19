@@ -11,7 +11,7 @@ import (
 	"math"
 	"strconv"
 
-	"github.com/daglabs/btcd/chaincfg/chainhash"
+	"github.com/daglabs/btcd/dagconfig/daghash"
 )
 
 const (
@@ -57,7 +57,7 @@ const (
 	// minTxInPayload is the minimum payload size for a transaction input.
 	// PreviousOutPoint.Hash + PreviousOutPoint.Index 4 bytes + Varint for
 	// SignatureScript length 1 byte + Sequence 4 bytes.
-	minTxInPayload = 9 + chainhash.HashSize
+	minTxInPayload = 9 + daghash.HashSize
 
 	// maxTxInPerMessage is the maximum number of transactions inputs that
 	// a transaction which fits into a message could possibly have.
@@ -156,13 +156,13 @@ var scriptPool scriptFreeList = make(chan []byte, freeListMaxItems)
 // OutPoint defines a bitcoin data type that is used to track previous
 // transaction outputs.
 type OutPoint struct {
-	Hash  chainhash.Hash
+	Hash  daghash.Hash
 	Index uint32
 }
 
 // NewOutPoint returns a new bitcoin transaction outpoint point with the
 // provided hash and index.
-func NewOutPoint(hash *chainhash.Hash, index uint32) *OutPoint {
+func NewOutPoint(hash *daghash.Hash, index uint32) *OutPoint {
 	return &OutPoint{
 		Hash:  *hash,
 		Index: index,
@@ -177,9 +177,9 @@ func (o OutPoint) String() string {
 	// maximum message payload may increase in the future and this
 	// optimization may go unnoticed, so allocate space for 10 decimal
 	// digits, which will fit any uint32.
-	buf := make([]byte, 2*chainhash.HashSize+1, 2*chainhash.HashSize+1+10)
+	buf := make([]byte, 2*daghash.HashSize+1, 2*daghash.HashSize+1+10)
 	copy(buf, o.Hash.String())
-	buf[2*chainhash.HashSize] = ':'
+	buf[2*daghash.HashSize] = ':'
 	buf = strconv.AppendUint(buf, uint64(o.Index), 10)
 	return string(buf)
 }
@@ -259,14 +259,14 @@ func (msg *MsgTx) AddTxOut(to *TxOut) {
 }
 
 // TxHash generates the Hash for the transaction.
-func (msg *MsgTx) TxHash() chainhash.Hash {
+func (msg *MsgTx) TxHash() daghash.Hash {
 	// Encode the transaction and calculate double sha256 on the result.
 	// Ignore the error returns since the only way the encode could fail
 	// is being out of memory or due to nil pointers, both of which would
 	// cause a run-time panic.
 	buf := bytes.NewBuffer(make([]byte, 0, msg.SerializeSize()))
 	_ = msg.Serialize(buf)
-	return chainhash.DoubleHashH(buf.Bytes())
+	return daghash.DoubleHashH(buf.Bytes())
 }
 
 // Copy creates a deep copy of a transaction so that the original does not get
@@ -431,8 +431,8 @@ func (msg *MsgTx) BtcDecode(r io.Reader, pver uint32) error {
 		totalScriptSize += uint64(len(to.PkScript))
 	}
 
-	uint64LockTime, err := binarySerializer.Uint64(r, littleEndian)
-	msg.LockTime = uint64LockTime
+	lockTime, err := binarySerializer.Uint64(r, littleEndian)
+	msg.LockTime = uint64(lockTime)
 	if err != nil {
 		returnScriptBuffers()
 		return err
@@ -543,7 +543,7 @@ func (msg *MsgTx) BtcEncode(w io.Writer, pver uint32) error {
 		}
 	}
 
-	return binarySerializer.PutUint64(w, littleEndian, uint64(msg.LockTime))
+	return binarySerializer.PutUint64(w, littleEndian, msg.LockTime)
 }
 
 // Serialize encodes the transaction to w using a format that suitable for
@@ -728,7 +728,7 @@ func writeTxIn(w io.Writer, pver uint32, version int32, ti *TxIn) error {
 		return err
 	}
 
-	return binarySerializer.PutUint64(w, littleEndian, ti.Sequence)
+	return binarySerializer.PutUint64(w, littleEndian, uint64(ti.Sequence))
 }
 
 // readTxOut reads the next sequence of bytes from r as a transaction output

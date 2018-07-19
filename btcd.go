@@ -15,7 +15,7 @@ import (
 	"runtime/debug"
 	"runtime/pprof"
 
-	"github.com/daglabs/btcd/blockchain/indexers"
+	"github.com/daglabs/btcd/blockdag/indexers"
 	"github.com/daglabs/btcd/database"
 	"github.com/daglabs/btcd/limits"
 )

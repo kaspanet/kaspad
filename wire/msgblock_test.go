@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/daglabs/btcd/chaincfg/chainhash"
+	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/davecgh/go-spew/spew"
 )
 
@@ -21,11 +21,11 @@ func TestBlock(t *testing.T) {
 	pver := ProtocolVersion
 
 	// Block 1 header.
-	prevHash := &blockOne.Header.PrevBlock
+	prevHashes := blockOne.Header.PrevBlocks
 	merkleHash := &blockOne.Header.MerkleRoot
 	bits := blockOne.Header.Bits
 	nonce := blockOne.Header.Nonce
-	bh := NewBlockHeader(1, prevHash, merkleHash, bits, nonce)
+	bh := NewBlockHeader(1, prevHashes, merkleHash, bits, nonce)
 
 	// Ensure the command is expected value.
 	wantCmd := "block"
@@ -72,14 +72,14 @@ func TestBlock(t *testing.T) {
 // hashes from a block accurately.
 func TestBlockTxHashes(t *testing.T) {
 	// Block 1, transaction 1 hash.
-	hashStr := "b7c3332bc138e2c9429818f5fed500bcc1746544218772389054dc8047d7cd3f"
-	wantHash, err := chainhash.NewHashFromStr(hashStr)
+	hashStr := "0e3e2357e806b6cdb1f70b54c3a3a17b6714ee1f0e68bebb44a74b1efd512098"
+	wantHash, err := daghash.NewHashFromStr(hashStr)
 	if err != nil {
 		t.Errorf("NewHashFromStr: %v", err)
 		return
 	}
 
-	wantHashes := []chainhash.Hash{*wantHash}
+	wantHashes := []daghash.Hash{*wantHash}
 	hashes, err := blockOne.TxHashes()
 	if err != nil {
 		t.Errorf("TxHashes: %v", err)
@@ -93,8 +93,8 @@ func TestBlockTxHashes(t *testing.T) {
 // TestBlockHash tests the ability to generate the hash of a block accurately.
 func TestBlockHash(t *testing.T) {
 	// Block 1 hash.
-	hashStr := "ec85da8297525c2a2a5f3e826510ea1a48ee741e13a18b93ceeb2fb6c9848925"
-	wantHash, err := chainhash.NewHashFromStr(hashStr)
+	hashStr := "2357979742c556c68e90bf624a1139af8c85cafb4ac98d6d1dc367cd661ef67d"
+	wantHash, err := daghash.NewHashFromStr(hashStr)
 	if err != nil {
 		t.Errorf("NewHashFromStr: %v", err)
 	}
@@ -212,20 +212,24 @@ func TestBlockWireErrors(t *testing.T) {
 	}{
 		// Force error in version.
 		{&blockOne, blockOneBytes, pver, 0, io.ErrShortWrite, io.EOF},
-		// Force error in prev block hash.
+		// Force error in num block hashes.
 		{&blockOne, blockOneBytes, pver, 4, io.ErrShortWrite, io.EOF},
+		// Force error in prev block hash #1.
+		{&blockOne, blockOneBytes, pver, 5, io.ErrShortWrite, io.EOF},
+		// Force error in prev block hash #2.
+		{&blockOne, blockOneBytes, pver, 37, io.ErrShortWrite, io.EOF},
 		// Force error in merkle root.
-		{&blockOne, blockOneBytes, pver, 36, io.ErrShortWrite, io.EOF},
+		{&blockOne, blockOneBytes, pver, 69, io.ErrShortWrite, io.EOF},
 		// Force error in timestamp.
-		{&blockOne, blockOneBytes, pver, 68, io.ErrShortWrite, io.EOF},
+		{&blockOne, blockOneBytes, pver, 101, io.ErrShortWrite, io.EOF},
 		// Force error in difficulty bits.
-		{&blockOne, blockOneBytes, pver, 76, io.ErrShortWrite, io.EOF},
+		{&blockOne, blockOneBytes, pver, 109, io.ErrShortWrite, io.EOF},
 		// Force error in header nonce.
-		{&blockOne, blockOneBytes, pver, 80, io.ErrShortWrite, io.EOF},
+		{&blockOne, blockOneBytes, pver, 113, io.ErrShortWrite, io.EOF},
 		// Force error in transaction count.
-		{&blockOne, blockOneBytes, pver, 84, io.ErrShortWrite, io.EOF},
+		{&blockOne, blockOneBytes, pver, 117, io.ErrShortWrite, io.EOF},
 		// Force error in transactions.
-		{&blockOne, blockOneBytes, pver, 85, io.ErrShortWrite, io.EOF},
+		{&blockOne, blockOneBytes, pver, 118, io.ErrShortWrite, io.EOF},
 	}
 
 	t.Logf("Running %d tests", len(tests))
@@ -330,20 +334,24 @@ func TestBlockSerializeErrors(t *testing.T) {
 	}{
 		// Force error in version.
 		{&blockOne, blockOneBytes, 0, io.ErrShortWrite, io.EOF},
-		// Force error in prev block hash.
+		// Force error in numPrevBlocks.
 		{&blockOne, blockOneBytes, 4, io.ErrShortWrite, io.EOF},
+		// Force error in prev block hash #1.
+		{&blockOne, blockOneBytes, 5, io.ErrShortWrite, io.EOF},
+		// Force error in prev block hash #2.
+		{&blockOne, blockOneBytes, 37, io.ErrShortWrite, io.EOF},
 		// Force error in merkle root.
-		{&blockOne, blockOneBytes, 36, io.ErrShortWrite, io.EOF},
+		{&blockOne, blockOneBytes, 69, io.ErrShortWrite, io.EOF},
 		// Force error in timestamp.
-		{&blockOne, blockOneBytes, 68, io.ErrShortWrite, io.EOF},
+		{&blockOne, blockOneBytes, 101, io.ErrShortWrite, io.EOF},
 		// Force error in difficulty bits.
-		{&blockOne, blockOneBytes, 76, io.ErrShortWrite, io.EOF},
+		{&blockOne, blockOneBytes, 109, io.ErrShortWrite, io.EOF},
 		// Force error in header nonce.
-		{&blockOne, blockOneBytes, 80, io.ErrShortWrite, io.EOF},
+		{&blockOne, blockOneBytes, 113, io.ErrShortWrite, io.EOF},
 		// Force error in transaction count.
-		{&blockOne, blockOneBytes, 84, io.ErrShortWrite, io.EOF},
+		{&blockOne, blockOneBytes, 117, io.ErrShortWrite, io.EOF},
 		// Force error in transactions.
-		{&blockOne, blockOneBytes, 85, io.ErrShortWrite, io.EOF},
+		{&blockOne, blockOneBytes, 118, io.ErrShortWrite, io.EOF},
 	}
 
 	t.Logf("Running %d tests", len(tests))
@@ -397,14 +405,19 @@ func TestBlockOverflowErrors(t *testing.T) {
 		{
 			[]byte{
 				0x01, 0x00, 0x00, 0x00, // Version 1
-				0x6f, 0xe2, 0x8c, 0x0a, 0xb6, 0xf1, 0xb3, 0x72,
+				0x02,                                           // NumPrevBlocks
+				0x6f, 0xe2, 0x8c, 0x0a, 0xb6, 0xf1, 0xb3, 0x72, // PrevBlock mainNetGenesisHash
 				0xc1, 0xa6, 0xa2, 0x46, 0xae, 0x63, 0xf7, 0x4f,
 				0x93, 0x1e, 0x83, 0x65, 0xe1, 0x5a, 0x08, 0x9c,
-				0x68, 0xd6, 0x19, 0x00, 0x00, 0x00, 0x00, 0x00, // PrevBlock
-				0x98, 0x20, 0x51, 0xfd, 0x1e, 0x4b, 0xa7, 0x44,
-				0xbb, 0xbe, 0x68, 0x0e, 0x1f, 0xee, 0x14, 0x67,
-				0x7b, 0xa1, 0xa3, 0xc3, 0x54, 0x0b, 0xf7, 0xb1,
-				0xcd, 0xb6, 0x06, 0xe8, 0x57, 0x23, 0x3e, 0x0e, // MerkleRoot
+				0x68, 0xd6, 0x19, 0x00, 0x00, 0x00, 0x00, 0x00,
+				0xf6, 0x7a, 0xd7, 0x69, 0x5d, 0x9b, 0x66, 0x2a, // PrevBlock simNetGenesisHash
+				0x72, 0xff, 0x3d, 0x8e, 0xdb, 0xbb, 0x2d, 0xe0,
+				0xbf, 0xa6, 0x7b, 0x13, 0x97, 0x4b, 0xb9, 0x91,
+				0x0d, 0x11, 0x6d, 0x5c, 0xbd, 0x86, 0x3e, 0x68,
+				0x3b, 0xa3, 0xed, 0xfd, 0x7a, 0x7b, 0x12, 0xb2, // MerkleRoot
+				0x7a, 0xc7, 0x2c, 0x3e, 0x67, 0x76, 0x8f, 0x61,
+				0x7f, 0xc8, 0x1b, 0xc3, 0x88, 0x8a, 0x51, 0x32,
+				0x3a, 0x9f, 0xb8, 0xaa, 0x4b, 0x1e, 0x5e, 0x4a,
 				0x61, 0xbc, 0x66, 0x49, 0x00, 0x00, 0x00, 0x00, // Timestamp
 				0xff, 0xff, 0x00, 0x1d, // Bits
 				0x01, 0xe3, 0x62, 0x99, // Nonce
@@ -457,7 +470,7 @@ func TestBlockSerializeSize(t *testing.T) {
 		size int       // Expected serialized size
 	}{
 		// Block with no transactions.
-		{noTxBlock, 85},
+		{noTxBlock, 118},
 
 		// First block in the mainnet block chain.
 		{&blockOne, len(blockOneBytes)},
@@ -469,6 +482,7 @@ func TestBlockSerializeSize(t *testing.T) {
 		if serializedSize != test.size {
 			t.Errorf("MsgBlock.SerializeSize: #%d got: %d, want: "+
 				"%d", i, serializedSize, test.size)
+
 			continue
 		}
 	}
@@ -477,19 +491,10 @@ func TestBlockSerializeSize(t *testing.T) {
 // blockOne is the first block in the mainnet block chain.
 var blockOne = MsgBlock{
 	Header: BlockHeader{
-		Version: 1,
-		PrevBlock: chainhash.Hash([chainhash.HashSize]byte{ // Make go vet happy.
-			0x6f, 0xe2, 0x8c, 0x0a, 0xb6, 0xf1, 0xb3, 0x72,
-			0xc1, 0xa6, 0xa2, 0x46, 0xae, 0x63, 0xf7, 0x4f,
-			0x93, 0x1e, 0x83, 0x65, 0xe1, 0x5a, 0x08, 0x9c,
-			0x68, 0xd6, 0x19, 0x00, 0x00, 0x00, 0x00, 0x00,
-		}),
-		MerkleRoot: chainhash.Hash([chainhash.HashSize]byte{ // Make go vet happy.
-			0x98, 0x20, 0x51, 0xfd, 0x1e, 0x4b, 0xa7, 0x44,
-			0xbb, 0xbe, 0x68, 0x0e, 0x1f, 0xee, 0x14, 0x67,
-			0x7b, 0xa1, 0xa3, 0xc3, 0x54, 0x0b, 0xf7, 0xb1,
-			0xcd, 0xb6, 0x06, 0xe8, 0x57, 0x23, 0x3e, 0x0e,
-		}),
+		Version:       1,
+		NumPrevBlocks: 2,
+		PrevBlocks:    []daghash.Hash{mainNetGenesisHash, simNetGenesisHash},
+		MerkleRoot:    daghash.Hash(mainNetGenesisMerkleRoot),
 
 		Timestamp: time.Unix(0x4966bc61, 0), // 2009-01-08 20:54:25 -0600 CST
 		Bits:      0x1d00ffff,               // 486604799
@@ -501,7 +506,7 @@ var blockOne = MsgBlock{
 			TxIn: []*TxIn{
 				{
 					PreviousOutPoint: OutPoint{
-						Hash:  chainhash.Hash{},
+						Hash:  daghash.Hash{},
 						Index: 0xffffffff,
 					},
 					SignatureScript: []byte{
@@ -536,14 +541,19 @@ var blockOne = MsgBlock{
 // Block one serialized bytes.
 var blockOneBytes = []byte{
 	0x01, 0x00, 0x00, 0x00, // Version 1
-	0x6f, 0xe2, 0x8c, 0x0a, 0xb6, 0xf1, 0xb3, 0x72,
+	0x02,                                           // NumPrevBlocks
+	0x6f, 0xe2, 0x8c, 0x0a, 0xb6, 0xf1, 0xb3, 0x72, // PrevBlock mainNetGenesisHash
 	0xc1, 0xa6, 0xa2, 0x46, 0xae, 0x63, 0xf7, 0x4f,
 	0x93, 0x1e, 0x83, 0x65, 0xe1, 0x5a, 0x08, 0x9c,
-	0x68, 0xd6, 0x19, 0x00, 0x00, 0x00, 0x00, 0x00, // PrevBlock
-	0x98, 0x20, 0x51, 0xfd, 0x1e, 0x4b, 0xa7, 0x44,
-	0xbb, 0xbe, 0x68, 0x0e, 0x1f, 0xee, 0x14, 0x67,
-	0x7b, 0xa1, 0xa3, 0xc3, 0x54, 0x0b, 0xf7, 0xb1,
-	0xcd, 0xb6, 0x06, 0xe8, 0x57, 0x23, 0x3e, 0x0e, // MerkleRoot
+	0x68, 0xd6, 0x19, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0xf6, 0x7a, 0xd7, 0x69, 0x5d, 0x9b, 0x66, 0x2a, // PrevBlock simNetGenesisHash
+	0x72, 0xff, 0x3d, 0x8e, 0xdb, 0xbb, 0x2d, 0xe0,
+	0xbf, 0xa6, 0x7b, 0x13, 0x97, 0x4b, 0xb9, 0x91,
+	0x0d, 0x11, 0x6d, 0x5c, 0xbd, 0x86, 0x3e, 0x68,
+	0x3b, 0xa3, 0xed, 0xfd, 0x7a, 0x7b, 0x12, 0xb2, // MerkleRoot
+	0x7a, 0xc7, 0x2c, 0x3e, 0x67, 0x76, 0x8f, 0x61,
+	0x7f, 0xc8, 0x1b, 0xc3, 0x88, 0x8a, 0x51, 0x32,
+	0x3a, 0x9f, 0xb8, 0xaa, 0x4b, 0x1e, 0x5e, 0x4a,
 	0x61, 0xbc, 0x66, 0x49, 0x00, 0x00, 0x00, 0x00, // Timestamp
 	0xff, 0xff, 0x00, 0x1d, // Bits
 	0x01, 0xe3, 0x62, 0x99, // Nonce
@@ -577,5 +587,5 @@ var blockOneBytes = []byte{
 
 // Transaction location information for block one transactions.
 var blockOneTxLocs = []TxLoc{
-	{TxStart: 85, TxLen: 142},
+	{TxStart: 118, TxLen: 138},
 }

@@ -10,10 +10,10 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/daglabs/btcd/blockchain"
+	"github.com/daglabs/btcd/blockdag"
 	"github.com/daglabs/btcd/btcec"
-	"github.com/daglabs/btcd/chaincfg"
-	"github.com/daglabs/btcd/chaincfg/chainhash"
+	"github.com/daglabs/btcd/dagconfig"
+	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/rpcclient"
 	"github.com/daglabs/btcd/txscript"
 	"github.com/daglabs/btcd/wire"
@@ -25,7 +25,7 @@ var (
 	// hdSeed is the BIP 32 seed used by the memWallet to initialize it's
 	// HD root key. This value is hard coded in order to ensure
 	// deterministic behavior across test runs.
-	hdSeed = [chainhash.HashSize]byte{
+	hdSeed = [daghash.HashSize]byte{
 		0x79, 0xa6, 0x1a, 0xdb, 0xc6, 0xe5, 0xa2, 0xe1,
 		0x39, 0xd2, 0x71, 0x3a, 0x54, 0x6e, 0xc7, 0xc8,
 		0x75, 0x63, 0x2e, 0x75, 0xf1, 0xdf, 0x9c, 0x3f,
@@ -101,7 +101,7 @@ type memWallet struct {
 	chainUpdateSignal chan struct{}
 	chainMtx          sync.Mutex
 
-	net *chaincfg.Params
+	net *dagconfig.Params
 
 	rpc *rpcclient.Client
 
@@ -110,13 +110,13 @@ type memWallet struct {
 
 // newMemWallet creates and returns a fully initialized instance of the
 // memWallet given a particular blockchain's parameters.
-func newMemWallet(net *chaincfg.Params, harnessID uint32) (*memWallet, error) {
+func newMemWallet(net *dagconfig.Params, harnessID uint32) (*memWallet, error) {
 	// The wallet's final HD seed is: hdSeed || harnessID. This method
 	// ensures that each harness instance uses a deterministic root seed
 	// based on its harness ID.
-	var harnessHDSeed [chainhash.HashSize + 4]byte
+	var harnessHDSeed [daghash.HashSize + 4]byte
 	copy(harnessHDSeed[:], hdSeed[:])
-	binary.BigEndian.PutUint32(harnessHDSeed[:chainhash.HashSize], harnessID)
+	binary.BigEndian.PutUint32(harnessHDSeed[:daghash.HashSize], harnessID)
 
 	hdRoot, err := hdkeychain.NewMaster(harnessHDSeed[:], net)
 	if err != nil {
@@ -207,7 +207,7 @@ func (m *memWallet) ingestBlock(update *chainUpdate) {
 	}
 	for _, tx := range update.filteredTxns {
 		mtx := tx.MsgTx()
-		isCoinbase := blockchain.IsCoinBaseTx(mtx)
+		isCoinbase := blockdag.IsCoinBaseTx(mtx)
 		txHash := mtx.TxHash()
 		m.evalOutputs(mtx.TxOut, &txHash, isCoinbase, undo)
 		m.evalInputs(mtx.TxIn, undo)
@@ -247,7 +247,7 @@ func (m *memWallet) chainSyncer() {
 
 // evalOutputs evaluates each of the passed outputs, creating a new matching
 // utxo within the wallet if we're able to spend the output.
-func (m *memWallet) evalOutputs(outputs []*wire.TxOut, txHash *chainhash.Hash,
+func (m *memWallet) evalOutputs(outputs []*wire.TxOut, txHash *daghash.Hash,
 	isCoinbase bool, undo *undoEntry) {
 
 	for i, output := range outputs {
@@ -446,7 +446,7 @@ func (m *memWallet) fundTx(tx *wire.MsgTx, amt btcutil.Amount, feeRate btcutil.A
 // while observing the passed fee rate. The passed fee rate should be expressed
 // in satoshis-per-byte.
 func (m *memWallet) SendOutputs(outputs []*wire.TxOut,
-	feeRate btcutil.Amount) (*chainhash.Hash, error) {
+	feeRate btcutil.Amount) (*daghash.Hash, error) {
 
 	tx, err := m.CreateTransaction(outputs, feeRate)
 	if err != nil {

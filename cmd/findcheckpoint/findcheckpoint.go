@@ -9,9 +9,9 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/daglabs/btcd/blockchain"
-	"github.com/daglabs/btcd/chaincfg"
-	"github.com/daglabs/btcd/chaincfg/chainhash"
+	"github.com/daglabs/btcd/blockdag"
+	"github.com/daglabs/btcd/dagconfig"
+	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/database"
 )
 
@@ -39,19 +39,19 @@ func loadBlockDB() (database.DB, error) {
 // candidates at the last checkpoint that is already hard coded into btcchain
 // since there is no point in finding candidates before already existing
 // checkpoints.
-func findCandidates(chain *blockchain.BlockChain, latestHash *chainhash.Hash) ([]*chaincfg.Checkpoint, error) {
+func findCandidates(dag *blockdag.BlockDAG, latestHash *daghash.Hash) ([]*dagconfig.Checkpoint, error) {
 	// Start with the latest block of the main chain.
-	block, err := chain.BlockByHash(latestHash)
+	block, err := dag.BlockByHash(latestHash)
 	if err != nil {
 		return nil, err
 	}
 
 	// Get the latest known checkpoint.
-	latestCheckpoint := chain.LatestCheckpoint()
+	latestCheckpoint := dag.LatestCheckpoint()
 	if latestCheckpoint == nil {
 		// Set the latest checkpoint to the genesis block if there isn't
 		// already one.
-		latestCheckpoint = &chaincfg.Checkpoint{
+		latestCheckpoint = &dagconfig.Checkpoint{
 			Hash:   activeNetParams.GenesisHash,
 			Height: 0,
 		}
@@ -59,7 +59,7 @@ func findCandidates(chain *blockchain.BlockChain, latestHash *chainhash.Hash) ([
 
 	// The latest known block must be at least the last known checkpoint
 	// plus required checkpoint confirmations.
-	checkpointConfirmations := int32(blockchain.CheckpointConfirmations)
+	checkpointConfirmations := int32(blockdag.CheckpointConfirmations)
 	requiredHeight := latestCheckpoint.Height + checkpointConfirmations
 	if block.Height() < requiredHeight {
 		return nil, fmt.Errorf("the block database is only at height "+
@@ -83,7 +83,7 @@ func findCandidates(chain *blockchain.BlockChain, latestHash *chainhash.Hash) ([
 	defer fmt.Println()
 
 	// Loop backwards through the chain to find checkpoint candidates.
-	candidates := make([]*chaincfg.Checkpoint, 0, cfg.NumCandidates)
+	candidates := make([]*dagconfig.Checkpoint, 0, cfg.NumCandidates)
 	numTested := int32(0)
 	for len(candidates) < cfg.NumCandidates && block.Height() > requiredHeight {
 		// Display progress.
@@ -92,7 +92,7 @@ func findCandidates(chain *blockchain.BlockChain, latestHash *chainhash.Hash) ([
 		}
 
 		// Determine if this block is a checkpoint candidate.
-		isCandidate, err := chain.IsCheckpointCandidate(block)
+		isCandidate, err := dag.IsCheckpointCandidate(block)
 		if err != nil {
 			return nil, err
 		}
@@ -100,7 +100,7 @@ func findCandidates(chain *blockchain.BlockChain, latestHash *chainhash.Hash) ([
 		// All checks passed, so this node seems like a reasonable
 		// checkpoint candidate.
 		if isCandidate {
-			checkpoint := chaincfg.Checkpoint{
+			checkpoint := dagconfig.Checkpoint{
 				Height: block.Height(),
 				Hash:   block.Hash(),
 			}
@@ -108,7 +108,7 @@ func findCandidates(chain *blockchain.BlockChain, latestHash *chainhash.Hash) ([
 		}
 
 		prevHash := &block.MsgBlock().Header.PrevBlock
-		block, err = chain.BlockByHash(prevHash)
+		block, err = dag.BlockByHash(prevHash)
 		if err != nil {
 			return nil, err
 		}
@@ -120,7 +120,7 @@ func findCandidates(chain *blockchain.BlockChain, latestHash *chainhash.Hash) ([
 // showCandidate display a checkpoint candidate using and output format
 // determined by the configuration parameters.  The Go syntax output
 // uses the format the btcchain code expects for checkpoints added to the list.
-func showCandidate(candidateNum int, checkpoint *chaincfg.Checkpoint) {
+func showCandidate(candidateNum int, checkpoint *dagconfig.Checkpoint) {
 	if cfg.UseGoOutput {
 		fmt.Printf("Candidate %d -- {%d, newShaHashFromStr(\"%v\")},\n",
 			candidateNum, checkpoint.Height, checkpoint.Hash)
@@ -150,10 +150,10 @@ func main() {
 
 	// Setup chain.  Ignore notifications since they aren't needed for this
 	// util.
-	chain, err := blockchain.New(&blockchain.Config{
-		DB:          db,
-		ChainParams: activeNetParams,
-		TimeSource:  blockchain.NewMedianTime(),
+	dag, err := blockdag.New(&blockdag.Config{
+		DB:         db,
+		DAGParams:  activeNetParams,
+		TimeSource: blockdag.NewMedianTime(),
 	})
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to initialize chain: %v\n", err)
@@ -162,11 +162,11 @@ func main() {
 
 	// Get the latest block hash and height from the database and report
 	// status.
-	best := chain.BestSnapshot()
-	fmt.Printf("Block database loaded with block height %d\n", best.Height)
+	dagState := dag.GetDAGState()
+	fmt.Printf("Block database loaded with block height %d\n", dagState.SelectedTip.Height)
 
 	// Find checkpoint candidates.
-	candidates, err := findCandidates(chain, &best.Hash)
+	candidates, err := findCandidates(dag, &dagState.SelectedTip.Hash)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Unable to identify candidates:", err)
 		return

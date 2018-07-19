@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/btcsuite/btclog"
-	"github.com/daglabs/btcd/chaincfg/chainhash"
+	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/txscript"
 	"github.com/daglabs/btcd/wire"
 )
@@ -105,7 +105,7 @@ func invSummary(invList []*wire.InvVect) string {
 }
 
 // locatorSummary returns a block locator as a human-readable string.
-func locatorSummary(locator []*chainhash.Hash, stopHash *chainhash.Hash) string {
+func locatorSummary(locator []*daghash.Hash, stopHash *daghash.Hash) string {
 	if len(locator) > 0 {
 		return fmt.Sprintf("locator %s, stop %s", locator[0], stopHash)
 	}

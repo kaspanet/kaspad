@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/davecgh/go-spew/spew"
 )
 
@@ -21,15 +22,16 @@ func TestBlockHeader(t *testing.T) {
 	}
 	nonce := uint32(nonce64)
 
-	hash := mainNetGenesisHash
+	hashes := []daghash.Hash{mainNetGenesisHash, simNetGenesisHash}
+
 	merkleHash := mainNetGenesisMerkleRoot
 	bits := uint32(0x1d00ffff)
-	bh := NewBlockHeader(1, &hash, &merkleHash, bits, nonce)
+	bh := NewBlockHeader(1, hashes, &merkleHash, bits, nonce)
 
 	// Ensure we get the same data back out.
-	if !bh.PrevBlock.IsEqual(&hash) {
-		t.Errorf("NewBlockHeader: wrong prev hash - got %v, want %v",
-			spew.Sprint(bh.PrevBlock), spew.Sprint(hash))
+	if !reflect.DeepEqual(bh.PrevBlocks, hashes) {
+		t.Errorf("NewBlockHeader: wrong prev hashes - got %v, want %v",
+			spew.Sprint(bh.PrevBlocks), spew.Sprint(hashes))
 	}
 	if !bh.MerkleRoot.IsEqual(&merkleHash) {
 		t.Errorf("NewBlockHeader: wrong merkle root - got %v, want %v",
@@ -54,25 +56,31 @@ func TestBlockHeaderWire(t *testing.T) {
 	// baseBlockHdr is used in the various tests as a baseline BlockHeader.
 	bits := uint32(0x1d00ffff)
 	baseBlockHdr := &BlockHeader{
-		Version:    1,
-		PrevBlock:  mainNetGenesisHash,
-		MerkleRoot: mainNetGenesisMerkleRoot,
-		Timestamp:  time.Unix(0x495fab29, 0), // 2009-01-03 12:15:05 -0600 CST
-		Bits:       bits,
-		Nonce:      nonce,
+		Version:       1,
+		NumPrevBlocks: 2,
+		PrevBlocks:    []daghash.Hash{mainNetGenesisHash, simNetGenesisHash},
+		MerkleRoot:    mainNetGenesisMerkleRoot,
+		Timestamp:     time.Unix(0x495fab29, 0), // 2009-01-03 12:15:05 -0600 CST
+		Bits:          bits,
+		Nonce:         nonce,
 	}
 
 	// baseBlockHdrEncoded is the wire encoded bytes of baseBlockHdr.
 	baseBlockHdrEncoded := []byte{
 		0x01, 0x00, 0x00, 0x00, // Version 1
-		0x6f, 0xe2, 0x8c, 0x0a, 0xb6, 0xf1, 0xb3, 0x72,
+		0x02,                                           // NumPrevBlocks
+		0x6f, 0xe2, 0x8c, 0x0a, 0xb6, 0xf1, 0xb3, 0x72, // PrevBlock mainNetGenesisHash
 		0xc1, 0xa6, 0xa2, 0x46, 0xae, 0x63, 0xf7, 0x4f,
 		0x93, 0x1e, 0x83, 0x65, 0xe1, 0x5a, 0x08, 0x9c,
-		0x68, 0xd6, 0x19, 0x00, 0x00, 0x00, 0x00, 0x00, // PrevBlock
-		0x3b, 0xa3, 0xed, 0xfd, 0x7a, 0x7b, 0x12, 0xb2,
+		0x68, 0xd6, 0x19, 0x00, 0x00, 0x00, 0x00, 0x00,
+		0xf6, 0x7a, 0xd7, 0x69, 0x5d, 0x9b, 0x66, 0x2a, // PrevBlock simNetGenesisHash
+		0x72, 0xff, 0x3d, 0x8e, 0xdb, 0xbb, 0x2d, 0xe0,
+		0xbf, 0xa6, 0x7b, 0x13, 0x97, 0x4b, 0xb9, 0x91,
+		0x0d, 0x11, 0x6d, 0x5c, 0xbd, 0x86, 0x3e, 0x68,
+		0x3b, 0xa3, 0xed, 0xfd, 0x7a, 0x7b, 0x12, 0xb2, // MerkleRoot
 		0x7a, 0xc7, 0x2c, 0x3e, 0x67, 0x76, 0x8f, 0x61,
 		0x7f, 0xc8, 0x1b, 0xc3, 0x88, 0x8a, 0x51, 0x32,
-		0x3a, 0x9f, 0xb8, 0xaa, 0x4b, 0x1e, 0x5e, 0x4a, // MerkleRoot
+		0x3a, 0x9f, 0xb8, 0xaa, 0x4b, 0x1e, 0x5e, 0x4a,
 		0x29, 0xab, 0x5f, 0x49, 0x00, 0x00, 0x00, 0x00, // Timestamp
 		0xff, 0xff, 0x00, 0x1d, // Bits
 		0xf3, 0xe0, 0x01, 0x00, // Nonce
@@ -187,25 +195,31 @@ func TestBlockHeaderSerialize(t *testing.T) {
 	// baseBlockHdr is used in the various tests as a baseline BlockHeader.
 	bits := uint32(0x1d00ffff)
 	baseBlockHdr := &BlockHeader{
-		Version:    1,
-		PrevBlock:  mainNetGenesisHash,
-		MerkleRoot: mainNetGenesisMerkleRoot,
-		Timestamp:  time.Unix(0x495fab29, 0), // 2009-01-03 12:15:05 -0600 CST
-		Bits:       bits,
-		Nonce:      nonce,
+		Version:       1,
+		NumPrevBlocks: 2,
+		PrevBlocks:    []daghash.Hash{mainNetGenesisHash, simNetGenesisHash},
+		MerkleRoot:    mainNetGenesisMerkleRoot,
+		Timestamp:     time.Unix(0x495fab29, 0), // 2009-01-03 12:15:05 -0600 CST
+		Bits:          bits,
+		Nonce:         nonce,
 	}
 
 	// baseBlockHdrEncoded is the wire encoded bytes of baseBlockHdr.
 	baseBlockHdrEncoded := []byte{
 		0x01, 0x00, 0x00, 0x00, // Version 1
-		0x6f, 0xe2, 0x8c, 0x0a, 0xb6, 0xf1, 0xb3, 0x72,
+		0x02,                                           // NumPrevBlocks
+		0x6f, 0xe2, 0x8c, 0x0a, 0xb6, 0xf1, 0xb3, 0x72, // PrevBlock mainNetGenesisHash
 		0xc1, 0xa6, 0xa2, 0x46, 0xae, 0x63, 0xf7, 0x4f,
 		0x93, 0x1e, 0x83, 0x65, 0xe1, 0x5a, 0x08, 0x9c,
-		0x68, 0xd6, 0x19, 0x00, 0x00, 0x00, 0x00, 0x00, // PrevBlock
-		0x3b, 0xa3, 0xed, 0xfd, 0x7a, 0x7b, 0x12, 0xb2,
+		0x68, 0xd6, 0x19, 0x00, 0x00, 0x00, 0x00, 0x00,
+		0xf6, 0x7a, 0xd7, 0x69, 0x5d, 0x9b, 0x66, 0x2a, // PrevBlock simNetGenesisHash
+		0x72, 0xff, 0x3d, 0x8e, 0xdb, 0xbb, 0x2d, 0xe0,
+		0xbf, 0xa6, 0x7b, 0x13, 0x97, 0x4b, 0xb9, 0x91,
+		0x0d, 0x11, 0x6d, 0x5c, 0xbd, 0x86, 0x3e, 0x68,
+		0x3b, 0xa3, 0xed, 0xfd, 0x7a, 0x7b, 0x12, 0xb2, // MerkleRoot
 		0x7a, 0xc7, 0x2c, 0x3e, 0x67, 0x76, 0x8f, 0x61,
 		0x7f, 0xc8, 0x1b, 0xc3, 0x88, 0x8a, 0x51, 0x32,
-		0x3a, 0x9f, 0xb8, 0xaa, 0x4b, 0x1e, 0x5e, 0x4a, // MerkleRoot
+		0x3a, 0x9f, 0xb8, 0xaa, 0x4b, 0x1e, 0x5e, 0x4a,
 		0x29, 0xab, 0x5f, 0x49, 0x00, 0x00, 0x00, 0x00, // Timestamp
 		0xff, 0xff, 0x00, 0x1d, // Bits
 		0xf3, 0xe0, 0x01, 0x00, // Nonce
@@ -249,6 +263,54 @@ func TestBlockHeaderSerialize(t *testing.T) {
 		if !reflect.DeepEqual(&bh, test.out) {
 			t.Errorf("Deserialize #%d\n got: %s want: %s", i,
 				spew.Sdump(&bh), spew.Sdump(test.out))
+			continue
+		}
+	}
+}
+
+// TestBlockHeaderSerializeSize performs tests to ensure the serialize size for
+// various block headers is accurate.
+func TestBlockHeaderSerializeSize(t *testing.T) {
+	nonce := uint32(123123) // 0x1e0f3
+	bits := uint32(0x1d00ffff)
+	timestamp := time.Unix(0x495fab29, 0) // 2009-01-03 12:15:05 -0600 CST
+	baseBlockHdr := &BlockHeader{
+		Version:       1,
+		NumPrevBlocks: 2,
+		PrevBlocks:    []daghash.Hash{mainNetGenesisHash, simNetGenesisHash},
+		MerkleRoot:    mainNetGenesisMerkleRoot,
+		Timestamp:     timestamp,
+		Bits:          bits,
+		Nonce:         nonce,
+	}
+
+	genesisBlockHdr := &BlockHeader{
+		Version:       1,
+		NumPrevBlocks: 0,
+		PrevBlocks:    []daghash.Hash{},
+		MerkleRoot:    mainNetGenesisMerkleRoot,
+		Timestamp:     timestamp,
+		Bits:          bits,
+		Nonce:         nonce,
+	}
+	tests := []struct {
+		in   *BlockHeader // Block header to encode
+		size int          // Expected serialized size
+	}{
+		// Block with no transactions.
+		{genesisBlockHdr, 49},
+
+		// First block in the mainnet block chain.
+		{baseBlockHdr, 113},
+	}
+
+	t.Logf("Running %d tests", len(tests))
+	for i, test := range tests {
+		serializedSize := test.in.SerializeSize()
+		if serializedSize != test.size {
+			t.Errorf("BlockHeader.SerializeSize: #%d got: %d, want: "+
+				"%d", i, serializedSize, test.size)
+
 			continue
 		}
 	}

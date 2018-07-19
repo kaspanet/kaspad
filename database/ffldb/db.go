@@ -14,11 +14,6 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/daglabs/btcd/chaincfg/chainhash"
-	"github.com/daglabs/btcd/database"
-	"github.com/daglabs/btcd/database/internal/treap"
-	"github.com/daglabs/btcd/wire"
-	"github.com/daglabs/btcutil"
 	"github.com/btcsuite/goleveldb/leveldb"
 	"github.com/btcsuite/goleveldb/leveldb/comparer"
 	ldberrors "github.com/btcsuite/goleveldb/leveldb/errors"
@@ -26,16 +21,16 @@ import (
 	"github.com/btcsuite/goleveldb/leveldb/iterator"
 	"github.com/btcsuite/goleveldb/leveldb/opt"
 	"github.com/btcsuite/goleveldb/leveldb/util"
+	"github.com/daglabs/btcd/dagconfig/daghash"
+	"github.com/daglabs/btcd/database"
+	"github.com/daglabs/btcd/database/internal/treap"
+	"github.com/daglabs/btcd/wire"
+	"github.com/daglabs/btcutil"
 )
 
 const (
 	// metadataDbName is the name used for the metadata database.
 	metadataDbName = "metadata"
-
-	// blockHdrSize is the size of a block header.  This is simply the
-	// constant from wire and is only provided here for convenience since
-	// wire.MaxBlockHeaderPayload is quite long.
-	blockHdrSize = wire.MaxBlockHeaderPayload
 
 	// blockHdrOffset defines the offsets into a block index row for the
 	// block header.
@@ -945,7 +940,7 @@ func (b *bucket) Delete(key []byte) error {
 // pendingBlock houses a block that will be written to disk when the database
 // transaction is committed.
 type pendingBlock struct {
-	hash  *chainhash.Hash
+	hash  *daghash.Hash
 	bytes []byte
 }
 
@@ -963,7 +958,7 @@ type transaction struct {
 
 	// Blocks that need to be stored on commit.  The pendingBlocks map is
 	// kept to allow quick lookups of pending data by block hash.
-	pendingBlocks    map[chainhash.Hash]int
+	pendingBlocks    map[daghash.Hash]int
 	pendingBlockData []pendingBlock
 
 	// Keys that need to be stored or deleted on commit.
@@ -1125,7 +1120,7 @@ func (tx *transaction) Metadata() database.Bucket {
 }
 
 // hasBlock returns whether or not a block with the given hash exists.
-func (tx *transaction) hasBlock(hash *chainhash.Hash) bool {
+func (tx *transaction) hasBlock(hash *daghash.Hash) bool {
 	// Return true if the block is pending to be written on commit since
 	// it exists from the viewpoint of this transaction.
 	if _, exists := tx.pendingBlocks[*hash]; exists {
@@ -1177,7 +1172,7 @@ func (tx *transaction) StoreBlock(block *btcutil.Block) error {
 	// map so it is easy to determine the block is pending based on the
 	// block hash.
 	if tx.pendingBlocks == nil {
-		tx.pendingBlocks = make(map[chainhash.Hash]int)
+		tx.pendingBlocks = make(map[daghash.Hash]int)
 	}
 	tx.pendingBlocks[*blockHash] = len(tx.pendingBlockData)
 	tx.pendingBlockData = append(tx.pendingBlockData, pendingBlock{
@@ -1196,7 +1191,7 @@ func (tx *transaction) StoreBlock(block *btcutil.Block) error {
 //   - ErrTxClosed if the transaction has already been closed
 //
 // This function is part of the database.Tx interface implementation.
-func (tx *transaction) HasBlock(hash *chainhash.Hash) (bool, error) {
+func (tx *transaction) HasBlock(hash *daghash.Hash) (bool, error) {
 	// Ensure transaction state is valid.
 	if err := tx.checkClosed(); err != nil {
 		return false, err
@@ -1212,7 +1207,7 @@ func (tx *transaction) HasBlock(hash *chainhash.Hash) (bool, error) {
 //   - ErrTxClosed if the transaction has already been closed
 //
 // This function is part of the database.Tx interface implementation.
-func (tx *transaction) HasBlocks(hashes []chainhash.Hash) ([]bool, error) {
+func (tx *transaction) HasBlocks(hashes []daghash.Hash) ([]bool, error) {
 	// Ensure transaction state is valid.
 	if err := tx.checkClosed(); err != nil {
 		return nil, err
@@ -1228,7 +1223,7 @@ func (tx *transaction) HasBlocks(hashes []chainhash.Hash) ([]bool, error) {
 
 // fetchBlockRow fetches the metadata stored in the block index for the provided
 // hash.  It will return ErrBlockNotFound if there is no entry.
-func (tx *transaction) fetchBlockRow(hash *chainhash.Hash) ([]byte, error) {
+func (tx *transaction) fetchBlockRow(hash *daghash.Hash) ([]byte, error) {
 	blockRow := tx.blockIdxBucket.Get(hash[:])
 	if blockRow == nil {
 		str := fmt.Sprintf("block %s does not exist", hash)
@@ -1236,6 +1231,25 @@ func (tx *transaction) fetchBlockRow(hash *chainhash.Hash) ([]byte, error) {
 	}
 
 	return blockRow, nil
+}
+
+// The offset in a block header at which numPrevBlocks resides.
+const numPrevBlocksOffset = 4
+
+// fetchBlockHeaderSize fetches the numPrevBlocks field out of the block header
+// and uses it to compute the total size of the block header
+func (tx *transaction) fetchBlockHeaderSize(hash *daghash.Hash) (byte, error) {
+	r, err := tx.FetchBlockRegion(&database.BlockRegion{
+		Hash:   hash,
+		Offset: numPrevBlocksOffset,
+		Len:    1,
+	})
+	if err != nil {
+		return 0, err
+	}
+
+	numPrevBlocks := r[0]
+	return numPrevBlocks*daghash.HashSize + wire.BaseBlockHeaderPayload, nil
 }
 
 // FetchBlockHeader returns the raw serialized bytes for the block header
@@ -1254,12 +1268,40 @@ func (tx *transaction) fetchBlockRow(hash *chainhash.Hash) ([]byte, error) {
 // implementations.
 //
 // This function is part of the database.Tx interface implementation.
-func (tx *transaction) FetchBlockHeader(hash *chainhash.Hash) ([]byte, error) {
+func (tx *transaction) FetchBlockHeader(hash *daghash.Hash) ([]byte, error) {
+	headerSize, err := tx.fetchBlockHeaderSize(hash)
+	if err != nil {
+		return nil, err
+	}
+
 	return tx.FetchBlockRegion(&database.BlockRegion{
 		Hash:   hash,
 		Offset: 0,
-		Len:    blockHdrSize,
+		Len:    uint32(headerSize),
 	})
+}
+
+// fetchBlockHeadersSizes fetches the numPrevBlocks fields out of the block headers
+// and uses it to compute the total sizes of the block headers
+func (tx *transaction) fetchBlockHeadersSizes(hashes []daghash.Hash) ([]byte, error) {
+	regions := make([]database.BlockRegion, len(hashes))
+	for i := range hashes {
+		regions[i].Hash = &hashes[i]
+		regions[i].Offset = numPrevBlocksOffset
+		regions[i].Len = 1
+	}
+	rs, err := tx.FetchBlockRegions(regions)
+	if err != nil {
+		return nil, err
+	}
+
+	sizes := make([]byte, len(hashes))
+	for i, r := range rs {
+		numPrevBlocks := r[0]
+		sizes[i] = numPrevBlocks*daghash.HashSize + wire.BaseBlockHeaderPayload
+	}
+
+	return sizes, nil
 }
 
 // FetchBlockHeaders returns the raw serialized bytes for the block headers
@@ -1277,12 +1319,17 @@ func (tx *transaction) FetchBlockHeader(hash *chainhash.Hash) ([]byte, error) {
 // allows support for memory-mapped database implementations.
 //
 // This function is part of the database.Tx interface implementation.
-func (tx *transaction) FetchBlockHeaders(hashes []chainhash.Hash) ([][]byte, error) {
+func (tx *transaction) FetchBlockHeaders(hashes []daghash.Hash) ([][]byte, error) {
+	headerSizes, err := tx.fetchBlockHeadersSizes(hashes)
+	if err != nil {
+		return nil, err
+	}
+
 	regions := make([]database.BlockRegion, len(hashes))
 	for i := range hashes {
 		regions[i].Hash = &hashes[i]
 		regions[i].Offset = 0
-		regions[i].Len = blockHdrSize
+		regions[i].Len = uint32(headerSizes[i])
 	}
 	return tx.FetchBlockRegions(regions)
 }
@@ -1305,7 +1352,7 @@ func (tx *transaction) FetchBlockHeaders(hashes []chainhash.Hash) ([][]byte, err
 // allows support for memory-mapped database implementations.
 //
 // This function is part of the database.Tx interface implementation.
-func (tx *transaction) FetchBlock(hash *chainhash.Hash) ([]byte, error) {
+func (tx *transaction) FetchBlock(hash *daghash.Hash) ([]byte, error) {
 	// Ensure transaction state is valid.
 	if err := tx.checkClosed(); err != nil {
 		return nil, err
@@ -1352,7 +1399,7 @@ func (tx *transaction) FetchBlock(hash *chainhash.Hash) ([]byte, error) {
 // allows support for memory-mapped database implementations.
 //
 // This function is part of the database.Tx interface implementation.
-func (tx *transaction) FetchBlocks(hashes []chainhash.Hash) ([][]byte, error) {
+func (tx *transaction) FetchBlocks(hashes []daghash.Hash) ([][]byte, error) {
 	// Ensure transaction state is valid.
 	if err := tx.checkClosed(); err != nil {
 		return nil, err

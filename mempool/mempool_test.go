@@ -12,10 +12,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/daglabs/btcd/blockchain"
+	"github.com/daglabs/btcd/blockdag"
 	"github.com/daglabs/btcd/btcec"
-	"github.com/daglabs/btcd/chaincfg"
-	"github.com/daglabs/btcd/chaincfg/chainhash"
+	"github.com/daglabs/btcd/dagconfig"
+	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/txscript"
 	"github.com/daglabs/btcd/wire"
 	"github.com/daglabs/btcutil"
@@ -26,7 +26,7 @@ import (
 // transactions to appear as though they are spending completely valid utxos.
 type fakeChain struct {
 	sync.RWMutex
-	utxos          *blockchain.UtxoViewpoint
+	utxos          *blockdag.UtxoViewpoint
 	currentHeight  int32
 	medianTimePast time.Time
 }
@@ -37,7 +37,7 @@ type fakeChain struct {
 // view can be examined for duplicate transactions.
 //
 // This function is safe for concurrent access however the returned view is NOT.
-func (s *fakeChain) FetchUtxoView(tx *btcutil.Tx) (*blockchain.UtxoViewpoint, error) {
+func (s *fakeChain) FetchUtxoView(tx *btcutil.Tx) (*blockdag.UtxoViewpoint, error) {
 	s.RLock()
 	defer s.RUnlock()
 
@@ -45,7 +45,7 @@ func (s *fakeChain) FetchUtxoView(tx *btcutil.Tx) (*blockchain.UtxoViewpoint, er
 	// do not affect the fake chain's view.
 
 	// Add an entry for the tx itself to the new view.
-	viewpoint := blockchain.NewUtxoViewpoint()
+	viewpoint := blockdag.NewUtxoViewpoint()
 	prevOut := wire.OutPoint{Hash: *tx.Hash()}
 	for txOutIdx := range tx.MsgTx().TxOut {
 		prevOut.Index = uint32(txOutIdx)
@@ -98,9 +98,9 @@ func (s *fakeChain) SetMedianTimePast(mtp time.Time) {
 // CalcSequenceLock returns the current sequence lock for the passed
 // transaction associated with the fake chain instance.
 func (s *fakeChain) CalcSequenceLock(tx *btcutil.Tx,
-	view *blockchain.UtxoViewpoint) (*blockchain.SequenceLock, error) {
+	view *blockdag.UtxoViewpoint) (*blockdag.SequenceLock, error) {
 
-	return &blockchain.SequenceLock{
+	return &blockdag.SequenceLock{
 		Seconds:     -1,
 		BlockHeight: -1,
 	}, nil
@@ -135,7 +135,7 @@ type poolHarness struct {
 	signKey     *btcec.PrivateKey
 	payAddr     btcutil.Address
 	payScript   []byte
-	chainParams *chaincfg.Params
+	chainParams *dagconfig.Params
 
 	chain  *fakeChain
 	txPool *TxPool
@@ -159,12 +159,12 @@ func (p *poolHarness) CreateCoinbaseTx(blockHeight int32, numOutputs uint32) (*b
 	tx.AddTxIn(&wire.TxIn{
 		// Coinbase transactions have no inputs, so previous outpoint is
 		// zero hash and max index.
-		PreviousOutPoint: *wire.NewOutPoint(&chainhash.Hash{},
+		PreviousOutPoint: *wire.NewOutPoint(&daghash.Hash{},
 			wire.MaxPrevOutIndex),
 		SignatureScript: coinbaseScript,
 		Sequence:        wire.MaxTxInSequenceNum,
 	})
-	totalInput := blockchain.CalcBlockSubsidy(blockHeight, p.chainParams)
+	totalInput := blockdag.CalcBlockSubsidy(blockHeight, p.chainParams)
 	amountPerOutput := totalInput / int64(numOutputs)
 	remainder := totalInput - amountPerOutput*int64(numOutputs)
 	for i := uint32(0); i < numOutputs; i++ {
@@ -276,7 +276,7 @@ func (p *poolHarness) CreateTxChain(firstOutput spendableOutput, numTxns uint32)
 // for testing.  Also, the fake chain is populated with the returned spendable
 // outputs so the caller can easily create new valid transactions which build
 // off of it.
-func newPoolHarness(chainParams *chaincfg.Params) (*poolHarness, []spendableOutput, error) {
+func newPoolHarness(chainParams *dagconfig.Params) (*poolHarness, []spendableOutput, error) {
 	// Use a hard coded key pair for deterministic results.
 	keyBytes, err := hex.DecodeString("700868df1838811ffbdf918fb482c1f7e" +
 		"ad62db4b97bd7012c23e726485e577d")
@@ -299,7 +299,7 @@ func newPoolHarness(chainParams *chaincfg.Params) (*poolHarness, []spendableOutp
 	}
 
 	// Create a new fake chain and harness bound to it.
-	chain := &fakeChain{utxos: blockchain.NewUtxoViewpoint()}
+	chain := &fakeChain{utxos: blockdag.NewUtxoViewpoint()}
 	harness := poolHarness{
 		signKey:     signKey,
 		payAddr:     payAddr,
@@ -313,7 +313,7 @@ func newPoolHarness(chainParams *chaincfg.Params) (*poolHarness, []spendableOutp
 				FreeTxRelayLimit:     15.0,
 				MaxOrphanTxs:         5,
 				MaxOrphanTxSize:      1000,
-				MaxSigOpsPerTx:       blockchain.MaxSigOpsPerBlock / 5,
+				MaxSigOpsPerTx:       blockdag.MaxSigOpsPerBlock / 5,
 				MinRelayTxFee:        1000, // 1 Satoshi per byte
 				MaxTxVersion:         1,
 			},
@@ -394,7 +394,7 @@ func testPoolMembership(tc *testContext, tx *btcutil.Tx, inOrphanPool, inTxPool 
 func TestSimpleOrphanChain(t *testing.T) {
 	t.Parallel()
 
-	harness, spendableOuts, err := newPoolHarness(&chaincfg.MainNetParams)
+	harness, spendableOuts, err := newPoolHarness(&dagconfig.MainNetParams)
 	if err != nil {
 		t.Fatalf("unable to create test pool: %v", err)
 	}
@@ -457,7 +457,7 @@ func TestSimpleOrphanChain(t *testing.T) {
 func TestOrphanReject(t *testing.T) {
 	t.Parallel()
 
-	harness, outputs, err := newPoolHarness(&chaincfg.MainNetParams)
+	harness, outputs, err := newPoolHarness(&dagconfig.MainNetParams)
 	if err != nil {
 		t.Fatalf("unable to create test pool: %v", err)
 	}
@@ -512,7 +512,7 @@ func TestOrphanReject(t *testing.T) {
 func TestOrphanEviction(t *testing.T) {
 	t.Parallel()
 
-	harness, outputs, err := newPoolHarness(&chaincfg.MainNetParams)
+	harness, outputs, err := newPoolHarness(&dagconfig.MainNetParams)
 	if err != nil {
 		t.Fatalf("unable to create test pool: %v", err)
 	}
@@ -577,7 +577,7 @@ func TestBasicOrphanRemoval(t *testing.T) {
 	t.Parallel()
 
 	const maxOrphans = 4
-	harness, spendableOuts, err := newPoolHarness(&chaincfg.MainNetParams)
+	harness, spendableOuts, err := newPoolHarness(&dagconfig.MainNetParams)
 	if err != nil {
 		t.Fatalf("unable to create test pool: %v", err)
 	}
@@ -617,7 +617,7 @@ func TestBasicOrphanRemoval(t *testing.T) {
 	// and ensure the state of all other orphans are unaffected.
 	nonChainedOrphanTx, err := harness.CreateSignedTx([]spendableOutput{{
 		amount:   btcutil.Amount(5000000000),
-		outPoint: wire.OutPoint{Hash: chainhash.Hash{}, Index: 0},
+		outPoint: wire.OutPoint{Hash: daghash.Hash{}, Index: 0},
 	}}, 1)
 	if err != nil {
 		t.Fatalf("unable to create signed tx: %v", err)
@@ -652,7 +652,7 @@ func TestOrphanChainRemoval(t *testing.T) {
 	t.Parallel()
 
 	const maxOrphans = 10
-	harness, spendableOuts, err := newPoolHarness(&chaincfg.MainNetParams)
+	harness, spendableOuts, err := newPoolHarness(&dagconfig.MainNetParams)
 	if err != nil {
 		t.Fatalf("unable to create test pool: %v", err)
 	}
@@ -715,7 +715,7 @@ func TestMultiInputOrphanDoubleSpend(t *testing.T) {
 	t.Parallel()
 
 	const maxOrphans = 4
-	harness, outputs, err := newPoolHarness(&chaincfg.MainNetParams)
+	harness, outputs, err := newPoolHarness(&dagconfig.MainNetParams)
 	if err != nil {
 		t.Fatalf("unable to create test pool: %v", err)
 	}
@@ -803,7 +803,7 @@ func TestMultiInputOrphanDoubleSpend(t *testing.T) {
 func TestCheckSpend(t *testing.T) {
 	t.Parallel()
 
-	harness, outputs, err := newPoolHarness(&chaincfg.MainNetParams)
+	harness, outputs, err := newPoolHarness(&dagconfig.MainNetParams)
 	if err != nil {
 		t.Fatalf("unable to create test pool: %v", err)
 	}

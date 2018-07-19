@@ -8,7 +8,7 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/daglabs/btcd/chaincfg/chainhash"
+	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/rpcclient"
 )
 
@@ -81,7 +81,7 @@ func syncBlocks(nodes []*Harness) error {
 
 retry:
 	for !blocksMatch {
-		var prevHash *chainhash.Hash
+		var prevHash *daghash.Hash
 		var prevHeight int32
 		for _, node := range nodes {
 			blockHash, blockHeight, err := node.Node.GetBestBlock()

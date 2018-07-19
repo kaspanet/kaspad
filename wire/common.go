@@ -12,7 +12,7 @@ import (
 	"math"
 	"time"
 
-	"github.com/daglabs/btcd/chaincfg/chainhash"
+	"github.com/daglabs/btcd/dagconfig/daghash"
 )
 
 const (
@@ -264,7 +264,7 @@ func readElement(r io.Reader, element interface{}) error {
 		}
 		return nil
 
-	case *chainhash.Hash:
+	case *daghash.Hash:
 		_, err := io.ReadFull(r, e[:])
 		if err != nil {
 			return err
@@ -398,7 +398,7 @@ func writeElement(w io.Writer, element interface{}) error {
 		}
 		return nil
 
-	case *chainhash.Hash:
+	case *daghash.Hash:
 		_, err := w.Write(e[:])
 		if err != nil {
 			return err

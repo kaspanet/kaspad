@@ -14,10 +14,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/daglabs/btcd/blockchain"
+	"github.com/daglabs/btcd/blockdag"
 	"github.com/daglabs/btcd/btcec"
-	"github.com/daglabs/btcd/chaincfg"
-	"github.com/daglabs/btcd/chaincfg/chainhash"
+	"github.com/daglabs/btcd/dagconfig"
+	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/integration/rpctest"
 	"github.com/daglabs/btcd/txscript"
 	"github.com/daglabs/btcd/wire"
@@ -98,7 +98,7 @@ func TestBIP0113(t *testing.T) {
 	t.Parallel()
 
 	btcdCfg := []string{"--rejectnonstd"}
-	r, err := rpctest.New(&chaincfg.SimNetParams, nil, btcdCfg)
+	r, err := rpctest.New(&dagconfig.SimNetParams, nil, btcdCfg)
 	if err != nil {
 		t.Fatal("unable to create primary harness: ", err)
 	}
@@ -242,7 +242,7 @@ func createCSVOutput(r *rpctest.Harness, t *testing.T,
 
 	// Convert the time-lock to the proper sequence lock based according to
 	// if the lock is seconds or time based.
-	sequenceLock := blockchain.LockTimeToSequence(isSeconds,
+	sequenceLock := blockdag.LockTimeToSequence(isSeconds,
 		int64(timeLock))
 
 	// Our CSV script is simply: <sequenceLock> OP_CSV
@@ -318,8 +318,8 @@ func spendCSVOutput(redeemScript []byte, csvUTXO *wire.OutPoint,
 
 // assertTxInBlock asserts a transaction with the specified txid is found
 // within the block with the passed block hash.
-func assertTxInBlock(r *rpctest.Harness, t *testing.T, blockHash *chainhash.Hash,
-	txid *chainhash.Hash) {
+func assertTxInBlock(r *rpctest.Harness, t *testing.T, blockHash *daghash.Hash,
+	txid *daghash.Hash) {
 
 	block, err := r.Node.GetBlock(blockHash)
 	if err != nil {
@@ -351,7 +351,7 @@ func TestBIP0068AndCsv(t *testing.T) {
 	// relative lock times.
 
 	btcdCfg := []string{"--rejectnonstd"}
-	r, err := rpctest.New(&chaincfg.SimNetParams, nil, btcdCfg)
+	r, err := rpctest.New(&dagconfig.SimNetParams, nil, btcdCfg)
 	if err != nil {
 		t.Fatal("unable to create primary harness: ", err)
 	}
@@ -478,7 +478,7 @@ func TestBIP0068AndCsv(t *testing.T) {
 		// bit it set. The transaction should be rejected as a result.
 		{
 			tx: makeTxCase(
-				blockchain.LockTimeToSequence(false, 1)|wire.SequenceLockTimeDisabled,
+				blockdag.LockTimeToSequence(false, 1)|wire.SequenceLockTimeDisabled,
 				1,
 			),
 			accept: false,
@@ -488,14 +488,14 @@ func TestBIP0068AndCsv(t *testing.T) {
 		// but the CSV output requires a 10 block relative lock-time.
 		// Therefore, the transaction should be rejected.
 		{
-			tx:     makeTxCase(blockchain.LockTimeToSequence(false, 9), 1),
+			tx:     makeTxCase(blockdag.LockTimeToSequence(false, 9), 1),
 			accept: false,
 		},
 		// A transaction with a single input having a 10 block
 		// relative time lock. The referenced input is 11 blocks old so
 		// the transaction should be accepted.
 		{
-			tx:     makeTxCase(blockchain.LockTimeToSequence(false, 10), 1),
+			tx:     makeTxCase(blockdag.LockTimeToSequence(false, 10), 1),
 			accept: true,
 		},
 		// A transaction with a single input having a 11 block
@@ -503,14 +503,14 @@ func TestBIP0068AndCsv(t *testing.T) {
 		// 11 and the CSV op-code requires 10 blocks to have passed, so
 		// this transaction should be accepted.
 		{
-			tx:     makeTxCase(blockchain.LockTimeToSequence(false, 11), 1),
+			tx:     makeTxCase(blockdag.LockTimeToSequence(false, 11), 1),
 			accept: true,
 		},
 		// A transaction whose input has a 1000 blck relative time
 		// lock.  This should be rejected as the input's age is only 11
 		// blocks.
 		{
-			tx:     makeTxCase(blockchain.LockTimeToSequence(false, 1000), 1),
+			tx:     makeTxCase(blockdag.LockTimeToSequence(false, 1000), 1),
 			accept: false,
 		},
 		// A transaction with a single input having a 512,000 second
@@ -518,14 +518,14 @@ func TestBIP0068AndCsv(t *testing.T) {
 		// days worth of blocks haven't yet been mined. The referenced
 		// input doesn't have sufficient age.
 		{
-			tx:     makeTxCase(blockchain.LockTimeToSequence(true, 512000), 1),
+			tx:     makeTxCase(blockdag.LockTimeToSequence(true, 512000), 1),
 			accept: false,
 		},
 		// A transaction whose single input has a 512 second
 		// relative time-lock. This transaction should be accepted as
 		// finalized.
 		{
-			tx:     makeTxCase(blockchain.LockTimeToSequence(true, 512), 1),
+			tx:     makeTxCase(blockdag.LockTimeToSequence(true, 512), 1),
 			accept: true,
 		},
 	}

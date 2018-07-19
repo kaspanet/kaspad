@@ -10,7 +10,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/daglabs/btcd/chaincfg"
+	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/database"
 	_ "github.com/daglabs/btcd/database/ffldb"
 	"github.com/daglabs/btcd/wire"
@@ -20,7 +20,7 @@ import (
 var (
 	btcdHomeDir     = btcutil.AppDataDir("btcd", false)
 	knownDbTypes    = database.SupportedDrivers()
-	activeNetParams = &chaincfg.MainNetParams
+	activeNetParams = &dagconfig.MainNetParams
 
 	// Default global config.
 	cfg = &config{
@@ -62,13 +62,13 @@ func validDbType(dbType string) bool {
 // netName returns the name used when referring to a bitcoin network.  At the
 // time of writing, btcd currently places blocks for testnet version 3 in the
 // data and log directory "testnet", which does not match the Name field of the
-// chaincfg parameters.  This function can be used to override this directory name
+// dagconfig parameters.  This function can be used to override this directory name
 // as "testnet" when the passed active network matches wire.TestNet3.
 //
 // A proper upgrade to move the data and log directories for this network to
 // "testnet3" is planned for the future, at which point this function can be
 // removed and the network parameter's name used instead.
-func netName(chainParams *chaincfg.Params) string {
+func netName(chainParams *dagconfig.Params) string {
 	switch chainParams.Net {
 	case wire.TestNet3:
 		return "testnet"
@@ -87,15 +87,15 @@ func setupGlobalConfig() error {
 	numNets := 0
 	if cfg.TestNet3 {
 		numNets++
-		activeNetParams = &chaincfg.TestNet3Params
+		activeNetParams = &dagconfig.TestNet3Params
 	}
 	if cfg.RegressionTest {
 		numNets++
-		activeNetParams = &chaincfg.RegressionNetParams
+		activeNetParams = &dagconfig.RegressionNetParams
 	}
 	if cfg.SimNet {
 		numNets++
-		activeNetParams = &chaincfg.SimNetParams
+		activeNetParams = &dagconfig.SimNetParams
 	}
 	if numNets > 1 {
 		return errors.New("The testnet, regtest, and simnet params " +

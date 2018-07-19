@@ -7,7 +7,7 @@ package wire
 import (
 	"io"
 
-	"github.com/daglabs/btcd/chaincfg/chainhash"
+	"github.com/daglabs/btcd/dagconfig/daghash"
 )
 
 // MsgGetCFHeaders is a message similar to MsgGetHeaders, but for committed
@@ -16,7 +16,7 @@ import (
 type MsgGetCFHeaders struct {
 	FilterType  FilterType
 	StartHeight uint32
-	StopHash    chainhash.Hash
+	StopHash    daghash.Hash
 }
 
 // BtcDecode decodes r using the bitcoin protocol encoding into the receiver.
@@ -61,14 +61,14 @@ func (msg *MsgGetCFHeaders) Command() string {
 // receiver.  This is part of the Message interface implementation.
 func (msg *MsgGetCFHeaders) MaxPayloadLength(pver uint32) uint32 {
 	// Filter type + uint32 + block hash
-	return 1 + 4 + chainhash.HashSize
+	return 1 + 4 + daghash.HashSize
 }
 
 // NewMsgGetCFHeaders returns a new bitcoin getcfheader message that conforms to
 // the Message interface using the passed parameters and defaults for the
 // remaining fields.
 func NewMsgGetCFHeaders(filterType FilterType, startHeight uint32,
-	stopHash *chainhash.Hash) *MsgGetCFHeaders {
+	stopHash *daghash.Hash) *MsgGetCFHeaders {
 	return &MsgGetCFHeaders{
 		FilterType:  filterType,
 		StartHeight: startHeight,

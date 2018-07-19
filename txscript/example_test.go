@@ -9,8 +9,8 @@ import (
 	"fmt"
 
 	"github.com/daglabs/btcd/btcec"
-	"github.com/daglabs/btcd/chaincfg"
-	"github.com/daglabs/btcd/chaincfg/chainhash"
+	"github.com/daglabs/btcd/dagconfig"
+	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/txscript"
 	"github.com/daglabs/btcd/wire"
 	"github.com/daglabs/btcutil"
@@ -25,7 +25,7 @@ func ExamplePayToAddrScript() {
 	// the address type.  It is also required for the upcoming call to
 	// PayToAddrScript.
 	addressStr := "dagcoin:qqfgqp8l9l90zwetj84k2jcac2m8falvvy9uastr55"
-	address, err := btcutil.DecodeAddress(addressStr, &chaincfg.MainNetParams)
+	address, err := btcutil.DecodeAddress(addressStr, &dagconfig.MainNetParams)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -64,7 +64,7 @@ func ExampleExtractPkScriptAddrs() {
 
 	// Extract and print details from the script.
 	scriptClass, addresses, reqSigs, err := txscript.ExtractPkScriptAddrs(
-		script, &chaincfg.MainNetParams)
+		script, &dagconfig.MainNetParams)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -92,7 +92,7 @@ func ExampleSignTxOutput() {
 	privKey, pubKey := btcec.PrivKeyFromBytes(btcec.S256(), privKeyBytes)
 	pubKeyHash := btcutil.Hash160(pubKey.SerializeCompressed())
 	addr, err := btcutil.NewAddressPubKeyHash(pubKeyHash,
-		&chaincfg.MainNetParams)
+		&dagconfig.MainNetParams)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -102,7 +102,7 @@ func ExampleSignTxOutput() {
 	// would ordinarily be the real transaction that is being spent.  It
 	// contains a single output that pays to address in the amount of 1 BTC.
 	originTx := wire.NewMsgTx(wire.TxVersion)
-	prevOut := wire.NewOutPoint(&chainhash.Hash{}, ^uint32(0))
+	prevOut := wire.NewOutPoint(&daghash.Hash{}, ^uint32(0))
 	txIn := wire.NewTxIn(prevOut, []byte{txscript.Op0, txscript.Op0})
 	originTx.AddTxIn(txIn)
 	pkScript, err := txscript.PayToAddrScript(addr)
@@ -151,7 +151,7 @@ func ExampleSignTxOutput() {
 	// Notice that the script database parameter is nil here since it isn't
 	// used.  It must be specified when pay-to-script-hash transactions are
 	// being signed.
-	sigScript, err := txscript.SignTxOutput(&chaincfg.MainNetParams,
+	sigScript, err := txscript.SignTxOutput(&dagconfig.MainNetParams,
 		redeemTx, 0, originTx.TxOut[0].PkScript, txscript.SigHashAll,
 		txscript.KeyClosure(lookupKey), nil, nil)
 	if err != nil {

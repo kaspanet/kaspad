@@ -10,7 +10,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/daglabs/btcd/chaincfg/chainhash"
+	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/wire"
 )
 
@@ -365,7 +365,7 @@ func calcSignatureHash(script []parsedOpcode, hashType SigHashType, tx *wire.Msg
 	wbuf := bytes.NewBuffer(make([]byte, 0, txCopy.SerializeSize()+4))
 	txCopy.Serialize(wbuf)
 	binary.Write(wbuf, binary.LittleEndian, hashType)
-	return chainhash.DoubleHashB(wbuf.Bytes()), nil
+	return daghash.DoubleHashB(wbuf.Bytes()), nil
 }
 
 // asSmallInt returns the passed opcode, which must be true according to

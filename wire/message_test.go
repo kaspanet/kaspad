@@ -13,7 +13,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/daglabs/btcd/chaincfg/chainhash"
+	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/davecgh/go-spew/spew"
 )
 
@@ -51,7 +51,7 @@ func TestMessage(t *testing.T) {
 	msgVerack := NewMsgVerAck()
 	msgGetAddr := NewMsgGetAddr()
 	msgAddr := NewMsgAddr()
-	msgGetBlocks := NewMsgGetBlocks(&chainhash.Hash{})
+	msgGetBlocks := NewMsgGetBlocks(&daghash.Hash{})
 	msgBlock := &blockOne
 	msgInv := NewMsgInv()
 	msgGetData := NewMsgGetData()
@@ -66,16 +66,16 @@ func TestMessage(t *testing.T) {
 	msgFilterAdd := NewMsgFilterAdd([]byte{0x01})
 	msgFilterClear := NewMsgFilterClear()
 	msgFilterLoad := NewMsgFilterLoad([]byte{0x01}, 10, 0, BloomUpdateNone)
-	bh := NewBlockHeader(1, &chainhash.Hash{}, &chainhash.Hash{}, 0, 0)
+	bh := NewBlockHeader(1, []daghash.Hash{mainNetGenesisHash, simNetGenesisHash}, &daghash.Hash{}, 0, 0)
 	msgMerkleBlock := NewMsgMerkleBlock(bh)
 	msgReject := NewMsgReject("block", RejectDuplicate, "duplicate block")
-	msgGetCFilters := NewMsgGetCFilters(GCSFilterExtended, 0, &chainhash.Hash{})
-	msgGetCFHeaders := NewMsgGetCFHeaders(GCSFilterExtended, 0, &chainhash.Hash{})
-	msgGetCFCheckpt := NewMsgGetCFCheckpt(GCSFilterExtended, &chainhash.Hash{})
-	msgCFilter := NewMsgCFilter(GCSFilterExtended, &chainhash.Hash{},
+	msgGetCFilters := NewMsgGetCFilters(GCSFilterExtended, 0, &daghash.Hash{})
+	msgGetCFHeaders := NewMsgGetCFHeaders(GCSFilterExtended, 0, &daghash.Hash{})
+	msgGetCFCheckpt := NewMsgGetCFCheckpt(GCSFilterExtended, &daghash.Hash{})
+	msgCFilter := NewMsgCFilter(GCSFilterExtended, &daghash.Hash{},
 		[]byte("payload"))
 	msgCFHeaders := NewMsgCFHeaders()
-	msgCFCheckpt := NewMsgCFCheckpt(GCSFilterExtended, &chainhash.Hash{}, 0)
+	msgCFCheckpt := NewMsgCFCheckpt(GCSFilterExtended, &daghash.Hash{}, 0)
 
 	tests := []struct {
 		in     Message    // Value to encode
@@ -89,7 +89,7 @@ func TestMessage(t *testing.T) {
 		{msgGetAddr, msgGetAddr, pver, MainNet, 24},
 		{msgAddr, msgAddr, pver, MainNet, 25},
 		{msgGetBlocks, msgGetBlocks, pver, MainNet, 61},
-		{msgBlock, msgBlock, pver, MainNet, 251},
+		{msgBlock, msgBlock, pver, MainNet, 284},
 		{msgInv, msgInv, pver, MainNet, 25},
 		{msgGetData, msgGetData, pver, MainNet, 25},
 		{msgNotFound, msgNotFound, pver, MainNet, 25},
@@ -103,7 +103,7 @@ func TestMessage(t *testing.T) {
 		{msgFilterAdd, msgFilterAdd, pver, MainNet, 26},
 		{msgFilterClear, msgFilterClear, pver, MainNet, 24},
 		{msgFilterLoad, msgFilterLoad, pver, MainNet, 35},
-		{msgMerkleBlock, msgMerkleBlock, pver, MainNet, 114},
+		{msgMerkleBlock, msgMerkleBlock, pver, MainNet, 147},
 		{msgReject, msgReject, pver, MainNet, 79},
 		{msgGetCFilters, msgGetCFilters, pver, MainNet, 61},
 		{msgGetCFHeaders, msgGetCFHeaders, pver, MainNet, 61},

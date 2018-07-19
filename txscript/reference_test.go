@@ -15,7 +15,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/daglabs/btcd/chaincfg/chainhash"
+	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/wire"
 	"github.com/daglabs/btcutil"
 )
@@ -233,7 +233,7 @@ func parseExpectedResult(expected string) ([]ErrorCode, error) {
 func createSpendingTx(sigScript, pkScript []byte) *wire.MsgTx {
 	coinbaseTx := wire.NewMsgTx(wire.TxVersion)
 
-	outPoint := wire.NewOutPoint(&chainhash.Hash{}, ^uint32(0))
+	outPoint := wire.NewOutPoint(&daghash.Hash{}, ^uint32(0))
 	txIn := wire.NewTxIn(outPoint, []byte{Op0, Op0})
 	txOut := wire.NewTxOut(0, pkScript)
 	coinbaseTx.AddTxIn(txIn)
@@ -489,7 +489,7 @@ testloop:
 				continue testloop
 			}
 
-			prevhash, err := chainhash.NewHashFromStr(previoustx)
+			prevhash, err := daghash.NewHashFromStr(previoustx)
 			if err != nil {
 				t.Errorf("bad test (%dth input hash not hash %v)"+
 					"%d: %v", j, err, i, test)
@@ -630,7 +630,7 @@ testloop:
 				continue
 			}
 
-			prevhash, err := chainhash.NewHashFromStr(previoustx)
+			prevhash, err := daghash.NewHashFromStr(previoustx)
 			if err != nil {
 				t.Errorf("bad test (%dth input hash not hash %v)"+
 					"%d: %v", j, err, i, test)
@@ -737,7 +737,7 @@ func TestCalcSignatureHash(t *testing.T) {
 				"Failed calculating signature hash: %s", i, err)
 		}
 
-		expectedHash, _ := chainhash.NewHashFromStr(test[4].(string))
+		expectedHash, _ := daghash.NewHashFromStr(test[4].(string))
 		if !bytes.Equal(hash, expectedHash[:]) {
 			t.Errorf("TestCalcSignatureHash failed test #%d: "+
 				"Signature hash mismatch.", i)

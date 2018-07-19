@@ -9,9 +9,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/daglabs/btcd/blockchain"
-	"github.com/daglabs/btcd/chaincfg"
-	"github.com/daglabs/btcd/chaincfg/chainhash"
+	"github.com/daglabs/btcd/blockdag"
+	"github.com/daglabs/btcd/dagconfig"
+	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/txscript"
 	"github.com/daglabs/btcd/wire"
 	"github.com/daglabs/btcutil"
@@ -68,7 +68,7 @@ type TxSource interface {
 
 	// HaveTransaction returns whether or not the passed transaction hash
 	// exists in the source pool.
-	HaveTransaction(hash *chainhash.Hash) bool
+	HaveTransaction(hash *daghash.Hash) bool
 }
 
 // txPrioItem houses a transaction along with extra information that allows the
@@ -84,7 +84,7 @@ type txPrioItem struct {
 	// on.  It will only be set when the transaction references other
 	// transactions in the source pool and hence must come after them in
 	// a block.
-	dependsOn map[chainhash.Hash]struct{}
+	dependsOn map[daghash.Hash]struct{}
 }
 
 // txPriorityQueueLessFunc describes a function that can be used as a compare
@@ -216,7 +216,7 @@ type BlockTemplate struct {
 // viewA will contain all of its original entries plus all of the entries
 // in viewB.  It will replace any entries in viewB which also exist in viewA
 // if the entry in viewA is spent.
-func mergeUtxoView(viewA *blockchain.UtxoViewpoint, viewB *blockchain.UtxoViewpoint) {
+func mergeUtxoView(viewA *blockdag.UtxoViewpoint, viewB *blockdag.UtxoViewpoint) {
 	viewAEntries := viewA.Entries()
 	for outpoint, entryB := range viewB.Entries() {
 		if entryA, exists := viewAEntries[outpoint]; !exists ||
@@ -243,7 +243,7 @@ func standardCoinbaseScript(nextBlockHeight int32, extraNonce uint64) ([]byte, e
 //
 // See the comment for NewBlockTemplate for more information about why the nil
 // address handling is useful.
-func createCoinbaseTx(params *chaincfg.Params, coinbaseScript []byte, nextBlockHeight int32, addr btcutil.Address) (*btcutil.Tx, error) {
+func createCoinbaseTx(params *dagconfig.Params, coinbaseScript []byte, nextBlockHeight int32, addr btcutil.Address) (*btcutil.Tx, error) {
 	// Create the script to pay to the provided payment address if one was
 	// specified.  Otherwise create a script that allows the coinbase to be
 	// redeemable by anyone.
@@ -267,13 +267,13 @@ func createCoinbaseTx(params *chaincfg.Params, coinbaseScript []byte, nextBlockH
 	tx.AddTxIn(&wire.TxIn{
 		// Coinbase transactions have no inputs, so previous outpoint is
 		// zero hash and max index.
-		PreviousOutPoint: *wire.NewOutPoint(&chainhash.Hash{},
+		PreviousOutPoint: *wire.NewOutPoint(&daghash.Hash{},
 			wire.MaxPrevOutIndex),
 		SignatureScript: coinbaseScript,
 		Sequence:        wire.MaxTxInSequenceNum,
 	})
 	tx.AddTxOut(&wire.TxOut{
-		Value:    blockchain.CalcBlockSubsidy(nextBlockHeight, params),
+		Value:    blockdag.CalcBlockSubsidy(nextBlockHeight, params),
 		PkScript: pkScript,
 	})
 	return btcutil.NewTx(tx), nil
@@ -282,7 +282,7 @@ func createCoinbaseTx(params *chaincfg.Params, coinbaseScript []byte, nextBlockH
 // spendTransaction updates the passed view by marking the inputs to the passed
 // transaction as spent.  It also adds all outputs in the passed transaction
 // which are not provably unspendable as available unspent transaction outputs.
-func spendTransaction(utxoView *blockchain.UtxoViewpoint, tx *btcutil.Tx, height int32) error {
+func spendTransaction(utxoView *blockdag.UtxoViewpoint, tx *btcutil.Tx, height int32) error {
 	for _, txIn := range tx.MsgTx().TxIn {
 		entry := utxoView.LookupEntry(txIn.PreviousOutPoint)
 		if entry != nil {
@@ -296,7 +296,7 @@ func spendTransaction(utxoView *blockchain.UtxoViewpoint, tx *btcutil.Tx, height
 
 // logSkippedDeps logs any dependencies which are also skipped as a result of
 // skipping a transaction while generating a block template at the trace level.
-func logSkippedDeps(tx *btcutil.Tx, deps map[chainhash.Hash]*txPrioItem) {
+func logSkippedDeps(tx *btcutil.Tx, deps map[daghash.Hash]*txPrioItem) {
 	if deps == nil {
 		return
 	}
@@ -311,14 +311,14 @@ func logSkippedDeps(tx *btcutil.Tx, deps map[chainhash.Hash]*txPrioItem) {
 // on the end of the provided best chain.  In particular, it is one second after
 // the median timestamp of the last several blocks per the chain consensus
 // rules.
-func MinimumMedianTime(chainState *blockchain.BestState) time.Time {
-	return chainState.MedianTime.Add(time.Second)
+func MinimumMedianTime(dagState *blockdag.DAGState) time.Time {
+	return dagState.SelectedTip.MedianTime.Add(time.Second)
 }
 
 // medianAdjustedTime returns the current time adjusted to ensure it is at least
 // one second after the median timestamp of the last several blocks per the
 // chain consensus rules.
-func medianAdjustedTime(chainState *blockchain.BestState, timeSource blockchain.MedianTimeSource) time.Time {
+func medianAdjustedTime(chainState *blockdag.DAGState, timeSource blockdag.MedianTimeSource) time.Time {
 	// The timestamp for the block must not be before the median timestamp
 	// of the last several blocks.  Thus, choose the maximum between the
 	// current time and one second after the past median time.  The current
@@ -340,10 +340,10 @@ func medianAdjustedTime(chainState *blockchain.BestState, timeSource blockchain.
 // are built on top of the current best chain and adhere to the consensus rules.
 type BlkTmplGenerator struct {
 	policy      *Policy
-	chainParams *chaincfg.Params
+	chainParams *dagconfig.Params
 	txSource    TxSource
-	chain       *blockchain.BlockChain
-	timeSource  blockchain.MedianTimeSource
+	dag         *blockdag.BlockDAG
+	timeSource  blockdag.MedianTimeSource
 	sigCache    *txscript.SigCache
 }
 
@@ -353,16 +353,16 @@ type BlkTmplGenerator struct {
 // The additional state-related fields are required in order to ensure the
 // templates are built on top of the current best chain and adhere to the
 // consensus rules.
-func NewBlkTmplGenerator(policy *Policy, params *chaincfg.Params,
-	txSource TxSource, chain *blockchain.BlockChain,
-	timeSource blockchain.MedianTimeSource,
+func NewBlkTmplGenerator(policy *Policy, params *dagconfig.Params,
+	txSource TxSource, dag *blockdag.BlockDAG,
+	timeSource blockdag.MedianTimeSource,
 	sigCache *txscript.SigCache) *BlkTmplGenerator {
 
 	return &BlkTmplGenerator{
 		policy:      policy,
 		chainParams: params,
 		txSource:    txSource,
-		chain:       chain,
+		dag:         dag,
 		timeSource:  timeSource,
 		sigCache:    sigCache,
 	}
@@ -432,8 +432,8 @@ func NewBlkTmplGenerator(policy *Policy, params *chaincfg.Params,
 //   -----------------------------------  --
 func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress btcutil.Address) (*BlockTemplate, error) {
 	// Extend the most recently known best block.
-	best := g.chain.BestSnapshot()
-	nextBlockHeight := best.Height + 1
+	dagState := g.dag.GetDAGState()
+	nextBlockHeight := dagState.SelectedTip.Height + 1
 
 	// Create a standard coinbase transaction paying to the provided
 	// address.  NOTE: The coinbase value will be updated to include the
@@ -453,7 +453,7 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress btcutil.Address) (*Bloc
 	if err != nil {
 		return nil, err
 	}
-	numCoinbaseSigOps := int64(blockchain.CountSigOps(coinbaseTx))
+	numCoinbaseSigOps := int64(blockdag.CountSigOps(coinbaseTx))
 
 	// Get the current source transactions and create a priority queue to
 	// hold the transactions which are ready for inclusion into a block
@@ -471,14 +471,14 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress btcutil.Address) (*Bloc
 	// avoided.
 	blockTxns := make([]*btcutil.Tx, 0, len(sourceTxns))
 	blockTxns = append(blockTxns, coinbaseTx)
-	blockUtxos := blockchain.NewUtxoViewpoint()
+	blockUtxos := blockdag.NewUtxoViewpoint()
 
 	// dependers is used to track transactions which depend on another
 	// transaction in the source pool.  This, in conjunction with the
 	// dependsOn map kept with each dependent transaction helps quickly
 	// determine which dependent transactions are now eligible for inclusion
 	// in the block once each transaction has been included.
-	dependers := make(map[chainhash.Hash]map[chainhash.Hash]*txPrioItem)
+	dependers := make(map[daghash.Hash]map[daghash.Hash]*txPrioItem)
 
 	// Create slices to hold the fees and number of signature operations
 	// for each of the selected transactions and add an entry for the
@@ -499,11 +499,11 @@ mempoolLoop:
 		// A block can't have more than one coinbase or contain
 		// non-finalized transactions.
 		tx := txDesc.Tx
-		if blockchain.IsCoinBase(tx) {
+		if blockdag.IsCoinBase(tx) {
 			log.Tracef("Skipping coinbase tx %s", tx.Hash())
 			continue
 		}
-		if !blockchain.IsFinalizedTransaction(tx, nextBlockHeight,
+		if !blockdag.IsFinalizedTransaction(tx, nextBlockHeight,
 			g.timeSource.AdjustedTime()) {
 
 			log.Tracef("Skipping non-finalized tx %s", tx.Hash())
@@ -515,7 +515,7 @@ mempoolLoop:
 		// mempool since a transaction which depends on other
 		// transactions in the mempool must come after those
 		// dependencies in the final generated block.
-		utxos, err := g.chain.FetchUtxoView(tx)
+		utxos, err := g.dag.FetchUtxoView(tx)
 		if err != nil {
 			log.Warnf("Unable to fetch utxo view for tx %s: %v",
 				tx.Hash(), err)
@@ -543,13 +543,13 @@ mempoolLoop:
 				// ordering dependency.
 				deps, exists := dependers[*originHash]
 				if !exists {
-					deps = make(map[chainhash.Hash]*txPrioItem)
+					deps = make(map[daghash.Hash]*txPrioItem)
 					dependers[*originHash] = deps
 				}
 				deps[*prioItem.tx.Hash()] = prioItem
 				if prioItem.dependsOn == nil {
 					prioItem.dependsOn = make(
-						map[chainhash.Hash]struct{})
+						map[daghash.Hash]struct{})
 				}
 				prioItem.dependsOn[*originHash] = struct{}{}
 
@@ -615,15 +615,15 @@ mempoolLoop:
 
 		// Enforce maximum signature operations per block.  Also check
 		// for overflow.
-		numSigOps := int64(blockchain.CountSigOps(tx))
+		numSigOps := int64(blockdag.CountSigOps(tx))
 		if blockSigOps+numSigOps < blockSigOps ||
-			blockSigOps+numSigOps > blockchain.MaxSigOpsPerBlock {
+			blockSigOps+numSigOps > blockdag.MaxSigOpsPerBlock {
 			log.Tracef("Skipping tx %s because it would exceed "+
 				"the maximum sigops per block", tx.Hash())
 			logSkippedDeps(tx, deps)
 			continue
 		}
-		numP2SHSigOps, err := blockchain.CountP2SHSigOps(tx, false,
+		numP2SHSigOps, err := blockdag.CountP2SHSigOps(tx, false,
 			blockUtxos)
 		if err != nil {
 			log.Tracef("Skipping tx %s due to error in "+
@@ -633,7 +633,7 @@ mempoolLoop:
 		}
 		numSigOps += int64(numP2SHSigOps)
 		if blockSigOps+numSigOps < blockSigOps ||
-			blockSigOps+numSigOps > blockchain.MaxSigOpsPerBlock {
+			blockSigOps+numSigOps > blockdag.MaxSigOpsPerBlock {
 			log.Tracef("Skipping tx %s because it would "+
 				"exceed the maximum sigops per block", tx.Hash())
 			logSkippedDeps(tx, deps)
@@ -686,7 +686,7 @@ mempoolLoop:
 
 		// Ensure the transaction inputs pass all of the necessary
 		// preconditions before allowing it to be added to the block.
-		_, err = blockchain.CheckTransactionInputs(tx, nextBlockHeight,
+		_, err = blockdag.CheckTransactionInputs(tx, nextBlockHeight,
 			blockUtxos, g.chainParams)
 		if err != nil {
 			log.Tracef("Skipping tx %s due to error in "+
@@ -694,7 +694,7 @@ mempoolLoop:
 			logSkippedDeps(tx, deps)
 			continue
 		}
-		err = blockchain.ValidateTransactionScripts(tx, blockUtxos,
+		err = blockdag.ValidateTransactionScripts(tx, blockUtxos,
 			txscript.StandardVerifyFlags, g.sigCache)
 		if err != nil {
 			log.Tracef("Skipping tx %s due to error in "+
@@ -746,25 +746,25 @@ mempoolLoop:
 	// Calculate the required difficulty for the block.  The timestamp
 	// is potentially adjusted to ensure it comes after the median time of
 	// the last several blocks per the chain consensus rules.
-	ts := medianAdjustedTime(best, g.timeSource)
-	reqDifficulty, err := g.chain.CalcNextRequiredDifficulty(ts)
+	ts := medianAdjustedTime(dagState, g.timeSource)
+	reqDifficulty, err := g.dag.CalcNextRequiredDifficulty(ts)
 	if err != nil {
 		return nil, err
 	}
 
 	// Calculate the next expected block version based on the state of the
 	// rule change deployments.
-	nextBlockVersion, err := g.chain.CalcNextBlockVersion()
+	nextBlockVersion, err := g.dag.CalcNextBlockVersion()
 	if err != nil {
 		return nil, err
 	}
 
 	// Create a new block ready to be solved.
-	merkles := blockchain.BuildMerkleTreeStore(blockTxns)
+	merkles := blockdag.BuildMerkleTreeStore(blockTxns)
 	var msgBlock wire.MsgBlock
 	msgBlock.Header = wire.BlockHeader{
 		Version:    nextBlockVersion,
-		PrevBlock:  best.Hash,
+		PrevBlock:  dagState.SelectedTip.Hash,
 		MerkleRoot: *merkles[len(merkles)-1],
 		Timestamp:  ts,
 		Bits:       reqDifficulty,
@@ -780,14 +780,14 @@ mempoolLoop:
 	// chain with no issues.
 	block := btcutil.NewBlock(&msgBlock)
 	block.SetHeight(nextBlockHeight)
-	if err := g.chain.CheckConnectBlockTemplate(block); err != nil {
+	if err := g.dag.CheckConnectBlockTemplate(block); err != nil {
 		return nil, err
 	}
 
 	log.Debugf("Created new block template (%d transactions, %d in fees, "+
 		"%d signature operations, %d bytes, target difficulty %064x)",
 		len(msgBlock.Transactions), totalFees, blockSigOps, blockSize,
-		blockchain.CompactToBig(msgBlock.Header.Bits))
+		blockdag.CompactToBig(msgBlock.Header.Bits))
 
 	return &BlockTemplate{
 		Block:           &msgBlock,
@@ -808,12 +808,12 @@ func (g *BlkTmplGenerator) UpdateBlockTime(msgBlock *wire.MsgBlock) error {
 	// The new timestamp is potentially adjusted to ensure it comes after
 	// the median time of the last several blocks per the chain consensus
 	// rules.
-	newTime := medianAdjustedTime(g.chain.BestSnapshot(), g.timeSource)
+	newTime := medianAdjustedTime(g.dag.GetDAGState(), g.timeSource)
 	msgBlock.Header.Timestamp = newTime
 
 	// Recalculate the difficulty if running on a network that requires it.
 	if g.chainParams.ReduceMinDifficulty {
-		difficulty, err := g.chain.CalcNextRequiredDifficulty(newTime)
+		difficulty, err := g.dag.CalcNextRequiredDifficulty(newTime)
 		if err != nil {
 			return err
 		}
@@ -832,11 +832,11 @@ func (g *BlkTmplGenerator) UpdateExtraNonce(msgBlock *wire.MsgBlock, blockHeight
 	if err != nil {
 		return err
 	}
-	if len(coinbaseScript) > blockchain.MaxCoinbaseScriptLen {
+	if len(coinbaseScript) > blockdag.MaxCoinbaseScriptLen {
 		return fmt.Errorf("coinbase transaction script length "+
 			"of %d is out of range (min: %d, max: %d)",
-			len(coinbaseScript), blockchain.MinCoinbaseScriptLen,
-			blockchain.MaxCoinbaseScriptLen)
+			len(coinbaseScript), blockdag.MinCoinbaseScriptLen,
+			blockdag.MaxCoinbaseScriptLen)
 	}
 	msgBlock.Transactions[0].TxIn[0].SignatureScript = coinbaseScript
 
@@ -846,19 +846,19 @@ func (g *BlkTmplGenerator) UpdateExtraNonce(msgBlock *wire.MsgBlock, blockHeight
 
 	// Recalculate the merkle root with the updated extra nonce.
 	block := btcutil.NewBlock(msgBlock)
-	merkles := blockchain.BuildMerkleTreeStore(block.Transactions())
+	merkles := blockdag.BuildMerkleTreeStore(block.Transactions())
 	msgBlock.Header.MerkleRoot = *merkles[len(merkles)-1]
 	return nil
 }
 
-// BestSnapshot returns information about the current best chain block and
-// related state as of the current point in time using the chain instance
+// GetDAGState returns information about the current state
+// as of the current point in time using the DAG instance
 // associated with the block template generator.  The returned state must be
 // treated as immutable since it is shared by all callers.
 //
 // This function is safe for concurrent access.
-func (g *BlkTmplGenerator) BestSnapshot() *blockchain.BestState {
-	return g.chain.BestSnapshot()
+func (g *BlkTmplGenerator) GetDAGState() *blockdag.DAGState {
+	return g.dag.GetDAGState()
 }
 
 // TxSource returns the associated transaction source.

@@ -11,9 +11,9 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/daglabs/btcd/blockchain"
-	"github.com/daglabs/btcd/chaincfg"
-	"github.com/daglabs/btcd/chaincfg/chainhash"
+	"github.com/daglabs/btcd/blockdag"
+	"github.com/daglabs/btcd/dagconfig"
+	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/txscript"
 	"github.com/daglabs/btcd/wire"
 	"github.com/daglabs/btcutil"
@@ -44,7 +44,7 @@ func solveBlock(header *wire.BlockHeader, targetDifficulty *big.Int) bool {
 			default:
 				hdr.Nonce = i
 				hash := hdr.BlockHash()
-				if blockchain.HashToBig(&hash).Cmp(targetDifficulty) <= 0 {
+				if blockdag.HashToBig(&hash).Cmp(targetDifficulty) <= 0 {
 					select {
 					case results <- sbResult{true, i}:
 						return
@@ -97,7 +97,7 @@ func standardCoinbaseScript(nextBlockHeight int32, extraNonce uint64) ([]byte, e
 // subsidy based on the passed block height to the provided address.
 func createCoinbaseTx(coinbaseScript []byte, nextBlockHeight int32,
 	addr btcutil.Address, mineTo []wire.TxOut,
-	net *chaincfg.Params) (*btcutil.Tx, error) {
+	net *dagconfig.Params) (*btcutil.Tx, error) {
 
 	// Create the script to pay to the provided payment address.
 	pkScript, err := txscript.PayToAddrScript(addr)
@@ -109,14 +109,14 @@ func createCoinbaseTx(coinbaseScript []byte, nextBlockHeight int32,
 	tx.AddTxIn(&wire.TxIn{
 		// Coinbase transactions have no inputs, so previous outpoint is
 		// zero hash and max index.
-		PreviousOutPoint: *wire.NewOutPoint(&chainhash.Hash{},
+		PreviousOutPoint: *wire.NewOutPoint(&daghash.Hash{},
 			wire.MaxPrevOutIndex),
 		SignatureScript: coinbaseScript,
 		Sequence:        wire.MaxTxInSequenceNum,
 	})
 	if len(mineTo) == 0 {
 		tx.AddTxOut(&wire.TxOut{
-			Value:    blockchain.CalcBlockSubsidy(nextBlockHeight, net),
+			Value:    blockdag.CalcBlockSubsidy(nextBlockHeight, net),
 			PkScript: pkScript,
 		})
 	} else {
@@ -134,10 +134,10 @@ func createCoinbaseTx(coinbaseScript []byte, nextBlockHeight int32,
 // builds off of the genesis block for the specified chain.
 func CreateBlock(prevBlock *btcutil.Block, inclusionTxs []*btcutil.Tx,
 	blockVersion int32, blockTime time.Time, miningAddr btcutil.Address,
-	mineTo []wire.TxOut, net *chaincfg.Params) (*btcutil.Block, error) {
+	mineTo []wire.TxOut, net *dagconfig.Params) (*btcutil.Block, error) {
 
 	var (
-		prevHash      *chainhash.Hash
+		prevHash      *daghash.Hash
 		blockHeight   int32
 		prevBlockTime time.Time
 	)
@@ -181,7 +181,7 @@ func CreateBlock(prevBlock *btcutil.Block, inclusionTxs []*btcutil.Tx,
 	if inclusionTxs != nil {
 		blockTxns = append(blockTxns, inclusionTxs...)
 	}
-	merkles := blockchain.BuildMerkleTreeStore(blockTxns)
+	merkles := blockdag.BuildMerkleTreeStore(blockTxns)
 	var block wire.MsgBlock
 	block.Header = wire.BlockHeader{
 		Version:    blockVersion,

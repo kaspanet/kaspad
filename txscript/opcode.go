@@ -15,7 +15,7 @@ import (
 	"golang.org/x/crypto/ripemd160"
 
 	"github.com/daglabs/btcd/btcec"
-	"github.com/daglabs/btcd/chaincfg/chainhash"
+	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/wire"
 )
 
@@ -1090,7 +1090,7 @@ func verifyLockTime(txLockTime, threshold, lockTime uint64) error {
 // LockTime field of the transaction containing the script signature
 // validating if the transaction outputs are spendable yet.
 func opcodeCheckLockTimeVerify(op *parsedOpcode, vm *Engine) error {
-	// The current transaction locktime is a int64 resulting in a maximum
+	// The current transaction locktime is a uint64 resulting in a maximum
 	// locktime of 2^63-1 (the year 292278994).  However, scriptNums are signed
 	// and therefore a standard 4-byte scriptNum would only support up to a
 	// maximum of 2^31-1 (the year 2038).  Thus, a 5-byte scriptNum is used
@@ -1152,7 +1152,7 @@ func opcodeCheckLockTimeVerify(op *parsedOpcode, vm *Engine) error {
 func opcodeCheckSequenceVerify(op *parsedOpcode, vm *Engine) error {
 
 	// The current transaction sequence is a uint64 resulting in a maximum
-	// sequence of 2^32-1.  However, scriptNums are signed and therefore a
+	// sequence of 2^63-1.  However, scriptNums are signed and therefore a
 	// standard 4-byte scriptNum would only support up to a maximum of
 	// 2^31-1.  Thus, a 5-byte scriptNum is used here since it will support
 	// up to 2^39-1 which allows sequences beyond the current sequence
@@ -1949,7 +1949,7 @@ func opcodeHash256(op *parsedOpcode, vm *Engine) error {
 		return err
 	}
 
-	vm.dstack.PushByteArray(chainhash.DoubleHashB(buf))
+	vm.dstack.PushByteArray(daghash.DoubleHashB(buf))
 	return nil
 }
 
@@ -2038,7 +2038,7 @@ func opcodeCheckSig(op *parsedOpcode, vm *Engine) error {
 
 	var valid bool
 	if vm.sigCache != nil {
-		var sigHash chainhash.Hash
+		var sigHash daghash.Hash
 		copy(sigHash[:], hash)
 
 		valid = vm.sigCache.Exists(sigHash, signature, pubKey)
@@ -2242,7 +2242,7 @@ func opcodeCheckMultiSig(op *parsedOpcode, vm *Engine) error {
 
 		var valid bool
 		if vm.sigCache != nil {
-			var sigHash chainhash.Hash
+			var sigHash daghash.Hash
 			copy(sigHash[:], hash)
 
 			valid = vm.sigCache.Exists(sigHash, parsedSig, parsedPubKey)

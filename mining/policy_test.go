@@ -9,18 +9,18 @@ import (
 	"math"
 	"testing"
 
-	"github.com/daglabs/btcd/blockchain"
-	"github.com/daglabs/btcd/chaincfg/chainhash"
+	"github.com/daglabs/btcd/blockdag"
+	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/wire"
 	"github.com/daglabs/btcutil"
 )
 
 // newHashFromStr converts the passed big-endian hex string into a
-// chainhash.Hash.  It only differs from the one available in chainhash in that
+// daghash.Hash.  It only differs from the one available in daghash in that
 // it panics on an error since it will only (and must only) be called with
 // hard-coded, and therefore known good, hashes.
-func newHashFromStr(hexStr string) *chainhash.Hash {
-	hash, err := chainhash.NewHashFromStr(hexStr)
+func newHashFromStr(hexStr string) *daghash.Hash {
+	hash, err := daghash.NewHashFromStr(hexStr)
 	if err != nil {
 		panic("invalid hash in source file: " + hexStr)
 	}
@@ -43,12 +43,12 @@ func hexToBytes(s string) []byte {
 // provided source transactions as if there were available at the respective
 // block height specified in the heights slice.  The length of the source txns
 // and source tx heights must match or it will panic.
-func newUtxoViewpoint(sourceTxns []*wire.MsgTx, sourceTxHeights []int32) *blockchain.UtxoViewpoint {
+func newUtxoViewpoint(sourceTxns []*wire.MsgTx, sourceTxHeights []int32) *blockdag.UtxoViewpoint {
 	if len(sourceTxns) != len(sourceTxHeights) {
 		panic("each transaction must have its block height specified")
 	}
 
-	view := blockchain.NewUtxoViewpoint()
+	view := blockdag.NewUtxoViewpoint()
 	for i, tx := range sourceTxns {
 		view.AddTxOuts(btcutil.NewTx(tx), sourceTxHeights[i])
 	}
@@ -66,7 +66,7 @@ func TestCalcPriority(t *testing.T) {
 		Version: 1,
 		TxIn: []*wire.TxIn{{
 			PreviousOutPoint: wire.OutPoint{
-				Hash:  chainhash.Hash{},
+				Hash:  daghash.Hash{},
 				Index: wire.MaxPrevOutIndex,
 			},
 			SignatureScript: hexToBytes("04ffff001d0134"),
@@ -118,11 +118,11 @@ func TestCalcPriority(t *testing.T) {
 	}
 
 	tests := []struct {
-		name       string                    // test description
-		tx         *wire.MsgTx               // tx to calc priority for
-		utxoView   *blockchain.UtxoViewpoint // inputs to tx
-		nextHeight int32                     // height for priority calc
-		want       float64                   // expected priority
+		name       string                  // test description
+		tx         *wire.MsgTx             // tx to calc priority for
+		utxoView   *blockdag.UtxoViewpoint // inputs to tx
+		nextHeight int32                   // height for priority calc
+		want       float64                 // expected priority
 	}{
 		{
 			name: "one height 7 input, prio tx height 169",

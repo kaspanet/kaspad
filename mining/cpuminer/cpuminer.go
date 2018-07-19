@@ -12,9 +12,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/daglabs/btcd/blockchain"
-	"github.com/daglabs/btcd/chaincfg"
-	"github.com/daglabs/btcd/chaincfg/chainhash"
+	"github.com/daglabs/btcd/blockdag"
+	"github.com/daglabs/btcd/dagconfig"
+	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/mining"
 	"github.com/daglabs/btcd/wire"
 	"github.com/daglabs/btcutil"
@@ -51,7 +51,7 @@ var (
 type Config struct {
 	// ChainParams identifies which chain parameters the cpu miner is
 	// associated with.
-	ChainParams *chaincfg.Params
+	ChainParams *dagconfig.Params
 
 	// BlockTemplateGenerator identifies the instance to use in order to
 	// generate block templates that the miner will attempt to solve.
@@ -64,7 +64,7 @@ type Config struct {
 	// ProcessBlock defines the function to call with any solved blocks.
 	// It typically must run the provided block through the same set of
 	// rules and handling as any other block coming from the network.
-	ProcessBlock func(*btcutil.Block, blockchain.BehaviorFlags) (bool, error)
+	ProcessBlock func(*btcutil.Block, blockdag.BehaviorFlags) (bool, error)
 
 	// ConnectedCount defines the function to use to obtain how many other
 	// peers the server is connected to.  This is used by the automatic
@@ -162,7 +162,7 @@ func (m *CPUMiner) submitBlock(block *btcutil.Block) bool {
 	// a new block, but the check only happens periodically, so it is
 	// possible a block was found and submitted in between.
 	msgBlock := block.MsgBlock()
-	if !msgBlock.Header.PrevBlock.IsEqual(&m.g.BestSnapshot().Hash) {
+	if !msgBlock.Header.PrevBlock.IsEqual(&m.g.GetDAGState().SelectedTip.Hash) {
 		log.Debugf("Block submitted via CPU miner with previous "+
 			"block %s is stale", msgBlock.Header.PrevBlock)
 		return false
@@ -170,11 +170,11 @@ func (m *CPUMiner) submitBlock(block *btcutil.Block) bool {
 
 	// Process this block using the same rules as blocks coming from other
 	// nodes.  This will in turn relay it to the network like normal.
-	isOrphan, err := m.cfg.ProcessBlock(block, blockchain.BFNone)
+	isOrphan, err := m.cfg.ProcessBlock(block, blockdag.BFNone)
 	if err != nil {
 		// Anything other than a rule violation is an unexpected error,
 		// so log that error as an internal error.
-		if _, ok := err.(blockchain.RuleError); !ok {
+		if _, ok := err.(blockdag.RuleError); !ok {
 			log.Errorf("Unexpected error while processing "+
 				"block submitted via CPU miner: %v", err)
 			return false
@@ -218,7 +218,7 @@ func (m *CPUMiner) solveBlock(msgBlock *wire.MsgBlock, blockHeight int32,
 
 	// Create some convenience variables.
 	header := &msgBlock.Header
-	targetDifficulty := blockchain.CompactToBig(header.Bits)
+	targetDifficulty := blockdag.CompactToBig(header.Bits)
 
 	// Initial state.
 	lastGenerated := time.Now()
@@ -246,10 +246,9 @@ func (m *CPUMiner) solveBlock(msgBlock *wire.MsgBlock, blockHeight int32,
 				m.updateHashes <- hashesCompleted
 				hashesCompleted = 0
 
-				// The current block is stale if the best block
-				// has changed.
-				best := m.g.BestSnapshot()
-				if !header.PrevBlock.IsEqual(&best.Hash) {
+				// The current block is stale if the DAG has changed.
+				dagState := m.g.GetDAGState()
+				if !header.PrevBlock.IsEqual(&dagState.SelectedTip.Hash) {
 					return false
 				}
 
@@ -279,7 +278,7 @@ func (m *CPUMiner) solveBlock(msgBlock *wire.MsgBlock, blockHeight int32,
 
 			// The block is solved when the new block hash is less
 			// than the target difficulty.  Yay!
-			if blockchain.HashToBig(&hash).Cmp(targetDifficulty) <= 0 {
+			if blockdag.HashToBig(&hash).Cmp(targetDifficulty) <= 0 {
 				m.updateHashes <- hashesCompleted
 				return true
 			}
@@ -327,7 +326,7 @@ out:
 		// this would otherwise end up building a new block template on
 		// a block that is in the process of becoming stale.
 		m.submitBlockLock.Lock()
-		curHeight := m.g.BestSnapshot().Height
+		curHeight := m.g.GetDAGState().SelectedTip.Height
 		if curHeight != 0 && !m.cfg.IsCurrent() {
 			m.submitBlockLock.Unlock()
 			time.Sleep(time.Second)
@@ -544,7 +543,7 @@ func (m *CPUMiner) NumWorkers() int32 {
 // detecting when it is performing stale work and reacting accordingly by
 // generating a new block template.  When a block is solved, it is submitted.
 // The function returns a list of the hashes of generated blocks.
-func (m *CPUMiner) GenerateNBlocks(n uint32) ([]*chainhash.Hash, error) {
+func (m *CPUMiner) GenerateNBlocks(n uint32) ([]*daghash.Hash, error) {
 	m.Lock()
 
 	// Respond with an error if server is already mining.
@@ -566,7 +565,7 @@ func (m *CPUMiner) GenerateNBlocks(n uint32) ([]*chainhash.Hash, error) {
 	log.Tracef("Generating %d blocks", n)
 
 	i := uint32(0)
-	blockHashes := make([]*chainhash.Hash, n)
+	blockHashes := make([]*daghash.Hash, n)
 
 	// Start a ticker which is used to signal checks for stale work and
 	// updates to the speed monitor.
@@ -586,7 +585,7 @@ func (m *CPUMiner) GenerateNBlocks(n uint32) ([]*chainhash.Hash, error) {
 		// be changing and this would otherwise end up building a new block
 		// template on a block that is in the process of becoming stale.
 		m.submitBlockLock.Lock()
-		curHeight := m.g.BestSnapshot().Height
+		curHeight := m.g.GetDAGState().SelectedTip.Height
 
 		// Choose a payment address at random.
 		rand.Seed(time.Now().UnixNano())

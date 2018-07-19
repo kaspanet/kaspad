@@ -11,15 +11,15 @@ import (
 	"sync"
 	"time"
 
-	"github.com/daglabs/btcd/blockchain"
-	"github.com/daglabs/btcd/blockchain/indexers"
-	"github.com/daglabs/btcd/chaincfg/chainhash"
+	"github.com/daglabs/btcd/blockdag"
+	"github.com/daglabs/btcd/blockdag/indexers"
+	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/database"
 	"github.com/daglabs/btcd/wire"
 	"github.com/daglabs/btcutil"
 )
 
-var zeroHash = chainhash.Hash{}
+var zeroHash = daghash.Hash{}
 
 // importResults houses the stats and result as an import operation.
 type importResults struct {
@@ -32,7 +32,7 @@ type importResults struct {
 // file to the block database.
 type blockImporter struct {
 	db                database.DB
-	chain             *blockchain.BlockChain
+	dag               *blockdag.BlockDAG
 	r                 io.ReadSeeker
 	processQueue      chan []byte
 	doneChan          chan bool
@@ -105,7 +105,7 @@ func (bi *blockImporter) processBlock(serializedBlock []byte) (bool, error) {
 
 	// Skip blocks that already exist.
 	blockHash := block.Hash()
-	exists, err := bi.chain.HaveBlock(blockHash)
+	exists, err := bi.dag.HaveBlock(blockHash)
 	if err != nil {
 		return false, err
 	}
@@ -116,7 +116,7 @@ func (bi *blockImporter) processBlock(serializedBlock []byte) (bool, error) {
 	// Don't bother trying to process orphans.
 	prevHash := &block.MsgBlock().Header.PrevBlock
 	if !prevHash.IsEqual(&zeroHash) {
-		exists, err := bi.chain.HaveBlock(prevHash)
+		exists, err := bi.dag.HaveBlock(prevHash)
 		if err != nil {
 			return false, err
 		}
@@ -129,14 +129,10 @@ func (bi *blockImporter) processBlock(serializedBlock []byte) (bool, error) {
 
 	// Ensure the blocks follows all of the chain rules and match up to the
 	// known checkpoints.
-	isMainChain, isOrphan, err := bi.chain.ProcessBlock(block,
-		blockchain.BFFastAdd)
+	isOrphan, err := bi.dag.ProcessBlock(block,
+		blockdag.BFFastAdd)
 	if err != nil {
 		return false, err
-	}
-	if !isMainChain {
-		return false, fmt.Errorf("import file contains an block that "+
-			"does not extend the main chain: %v", blockHash)
 	}
 	if isOrphan {
 		return false, fmt.Errorf("import file contains an orphan "+
@@ -325,15 +321,15 @@ func newBlockImporter(db database.DB, r io.ReadSeeker) (*blockImporter, error) {
 	}
 
 	// Create an index manager if any of the optional indexes are enabled.
-	var indexManager blockchain.IndexManager
+	var indexManager blockdag.IndexManager
 	if len(indexes) > 0 {
 		indexManager = indexers.NewManager(db, indexes)
 	}
 
-	chain, err := blockchain.New(&blockchain.Config{
+	dag, err := blockdag.New(&blockdag.Config{
 		DB:           db,
-		ChainParams:  activeNetParams,
-		TimeSource:   blockchain.NewMedianTime(),
+		DAGParams:    activeNetParams,
+		TimeSource:   blockdag.NewMedianTime(),
 		IndexManager: indexManager,
 	})
 	if err != nil {
@@ -347,7 +343,7 @@ func newBlockImporter(db database.DB, r io.ReadSeeker) (*blockImporter, error) {
 		doneChan:     make(chan bool),
 		errChan:      make(chan error),
 		quit:         make(chan struct{}),
-		chain:        chain,
+		dag:          dag,
 		lastLogTime:  time.Now(),
 	}, nil
 }

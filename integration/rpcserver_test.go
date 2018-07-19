@@ -14,7 +14,7 @@ import (
 	"runtime/debug"
 	"testing"
 
-	"github.com/daglabs/btcd/chaincfg"
+	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/integration/rpctest"
 )
 
@@ -109,7 +109,7 @@ func TestMain(m *testing.M) {
 	// ensure that non-standard transactions aren't accepted into the
 	// mempool or relayed.
 	btcdCfg := []string{"--rejectnonstd"}
-	primaryHarness, err = rpctest.New(&chaincfg.SimNetParams, nil, btcdCfg)
+	primaryHarness, err = rpctest.New(&dagconfig.SimNetParams, nil, btcdCfg)
 	if err != nil {
 		fmt.Println("unable to create primary harness: ", err)
 		os.Exit(1)

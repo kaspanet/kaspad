@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/daglabs/btcd/chaincfg/chainhash"
+	"github.com/daglabs/btcd/dagconfig/daghash"
 )
 
 const (
@@ -23,12 +23,12 @@ const (
 // for details on requesting the headers.
 type MsgCFCheckpt struct {
 	FilterType    FilterType
-	StopHash      chainhash.Hash
-	FilterHeaders []*chainhash.Hash
+	StopHash      daghash.Hash
+	FilterHeaders []*daghash.Hash
 }
 
 // AddCFHeader adds a new committed filter header to the message.
-func (msg *MsgCFCheckpt) AddCFHeader(header *chainhash.Hash) error {
+func (msg *MsgCFCheckpt) AddCFHeader(header *daghash.Hash) error {
 	if len(msg.FilterHeaders) == cap(msg.FilterHeaders) {
 		str := fmt.Sprintf("FilterHeaders has insufficient capacity for "+
 			"additional header: len = %d", len(msg.FilterHeaders))
@@ -62,9 +62,9 @@ func (msg *MsgCFCheckpt) BtcDecode(r io.Reader, pver uint32) error {
 
 	// Create a contiguous slice of hashes to deserialize into in order to
 	// reduce the number of allocations.
-	msg.FilterHeaders = make([]*chainhash.Hash, count)
+	msg.FilterHeaders = make([]*daghash.Hash, count)
 	for i := uint64(0); i < count; i++ {
-		var cfh chainhash.Hash
+		var cfh daghash.Hash
 		err := readElement(r, &cfh)
 		if err != nil {
 			return err
@@ -139,11 +139,11 @@ func (msg *MsgCFCheckpt) MaxPayloadLength(pver uint32) uint32 {
 
 // NewMsgCFCheckpt returns a new bitcoin cfheaders message that conforms to
 // the Message interface. See MsgCFCheckpt for details.
-func NewMsgCFCheckpt(filterType FilterType, stopHash *chainhash.Hash,
+func NewMsgCFCheckpt(filterType FilterType, stopHash *daghash.Hash,
 	headersCount int) *MsgCFCheckpt {
 	return &MsgCFCheckpt{
 		FilterType:    filterType,
 		StopHash:      *stopHash,
-		FilterHeaders: make([]*chainhash.Hash, 0, headersCount),
+		FilterHeaders: make([]*daghash.Hash, 0, headersCount),
 	}
 }

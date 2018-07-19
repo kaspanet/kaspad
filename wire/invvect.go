@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/daglabs/btcd/chaincfg/chainhash"
+	"github.com/daglabs/btcd/dagconfig/daghash"
 )
 
 const (
@@ -17,7 +17,7 @@ const (
 	MaxInvPerMsg = 50000
 
 	// Maximum payload size for an inventory vector.
-	maxInvVectPayload = 4 + chainhash.HashSize
+	maxInvVectPayload = 4 + daghash.HashSize
 )
 
 // InvType represents the allowed types of inventory vectors.  See InvVect.
@@ -52,12 +52,12 @@ func (invtype InvType) String() string {
 // as specified by the Type field, that a peer wants, has, or does not have to
 // another peer.
 type InvVect struct {
-	Type InvType        // Type of data
-	Hash chainhash.Hash // Hash of the data
+	Type InvType      // Type of data
+	Hash daghash.Hash // Hash of the data
 }
 
 // NewInvVect returns a new InvVect using the provided type and hash.
-func NewInvVect(typ InvType, hash *chainhash.Hash) *InvVect {
+func NewInvVect(typ InvType, hash *daghash.Hash) *InvVect {
 	return &InvVect{
 		Type: typ,
 		Hash: *hash,

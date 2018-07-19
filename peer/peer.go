@@ -18,9 +18,9 @@ import (
 	"time"
 
 	"github.com/btcsuite/go-socks/socks"
-	"github.com/daglabs/btcd/blockchain"
-	"github.com/daglabs/btcd/chaincfg"
-	"github.com/daglabs/btcd/chaincfg/chainhash"
+	"github.com/daglabs/btcd/blockdag"
+	"github.com/daglabs/btcd/dagconfig"
+	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/wire"
 	"github.com/davecgh/go-spew/spew"
 )
@@ -77,7 +77,7 @@ var (
 
 	// zeroHash is the zero value hash (all zeros).  It is defined as a
 	// convenience.
-	zeroHash chainhash.Hash
+	zeroHash daghash.Hash
 
 	// sentNonces houses the unique nonces that are generated when pushing
 	// version messages that are used to detect self connections.
@@ -249,7 +249,7 @@ type Config struct {
 	// ChainParams identifies which chain parameters the peer is associated
 	// with.  It is highly recommended to specify this field, however it can
 	// be omitted in which case the test network will be used.
-	ChainParams *chaincfg.Params
+	ChainParams *dagconfig.Params
 
 	// Services specifies which services to advertise as supported by the
 	// local peer.  This field can be omitted in which case it will be 0
@@ -375,7 +375,7 @@ type StatsSnap struct {
 
 // HashFunc is a function which returns a block hash, height and error
 // It is used as a callback to get newest block details.
-type HashFunc func() (hash *chainhash.Hash, height int32, err error)
+type HashFunc func() (hash *daghash.Hash, height int32, err error)
 
 // AddrFunc is a func which takes an address and returns a related address.
 type AddrFunc func(remoteAddr *wire.NetAddress) *wire.NetAddress
@@ -441,11 +441,11 @@ type Peer struct {
 
 	knownInventory     *mruInventoryMap
 	prevGetBlocksMtx   sync.Mutex
-	prevGetBlocksBegin *chainhash.Hash
-	prevGetBlocksStop  *chainhash.Hash
+	prevGetBlocksBegin *daghash.Hash
+	prevGetBlocksStop  *daghash.Hash
 	prevGetHdrsMtx     sync.Mutex
-	prevGetHdrsBegin   *chainhash.Hash
-	prevGetHdrsStop    *chainhash.Hash
+	prevGetHdrsBegin   *daghash.Hash
+	prevGetHdrsStop    *daghash.Hash
 
 	// These fields keep track of statistics for the peer and are protected
 	// by the statsMtx mutex.
@@ -454,7 +454,7 @@ type Peer struct {
 	timeConnected      time.Time
 	startingHeight     int32
 	lastBlock          int32
-	lastAnnouncedBlock *chainhash.Hash
+	lastAnnouncedBlock *daghash.Hash
 	lastPingNonce      uint64    // Set to nonce if we have a pending ping.
 	lastPingTime       time.Time // Time we sent last ping.
 	lastPingMicros     int64     // Time for last ping to return.
@@ -493,7 +493,7 @@ func (p *Peer) UpdateLastBlockHeight(newHeight int32) {
 // peer is known to have announced.
 //
 // This function is safe for concurrent access.
-func (p *Peer) UpdateLastAnnouncedBlock(blkHash *chainhash.Hash) {
+func (p *Peer) UpdateLastAnnouncedBlock(blkHash *daghash.Hash) {
 	log.Tracef("Updating last blk for peer %v, %v", p.addr, blkHash)
 
 	p.statsMtx.Lock()
@@ -611,7 +611,7 @@ func (p *Peer) UserAgent() string {
 // LastAnnouncedBlock returns the last announced block of the remote peer.
 //
 // This function is safe for concurrent access.
-func (p *Peer) LastAnnouncedBlock() *chainhash.Hash {
+func (p *Peer) LastAnnouncedBlock() *daghash.Hash {
 	p.statsMtx.RLock()
 	lastAnnouncedBlock := p.lastAnnouncedBlock
 	p.statsMtx.RUnlock()
@@ -904,10 +904,10 @@ func (p *Peer) PushAddrMsg(addresses []*wire.NetAddress) ([]*wire.NetAddress, er
 // and stop hash.  It will ignore back-to-back duplicate requests.
 //
 // This function is safe for concurrent access.
-func (p *Peer) PushGetBlocksMsg(locator blockchain.BlockLocator, stopHash *chainhash.Hash) error {
+func (p *Peer) PushGetBlocksMsg(locator blockdag.BlockLocator, stopHash *daghash.Hash) error {
 	// Extract the begin hash from the block locator, if one was specified,
 	// to use for filtering duplicate getblocks requests.
-	var beginHash *chainhash.Hash
+	var beginHash *daghash.Hash
 	if len(locator) > 0 {
 		beginHash = locator[0]
 	}
@@ -948,10 +948,10 @@ func (p *Peer) PushGetBlocksMsg(locator blockchain.BlockLocator, stopHash *chain
 // and stop hash.  It will ignore back-to-back duplicate requests.
 //
 // This function is safe for concurrent access.
-func (p *Peer) PushGetHeadersMsg(locator blockchain.BlockLocator, stopHash *chainhash.Hash) error {
+func (p *Peer) PushGetHeadersMsg(locator blockdag.BlockLocator, stopHash *daghash.Hash) error {
 	// Extract the begin hash from the block locator, if one was specified,
 	// to use for filtering duplicate getheaders requests.
-	var beginHash *chainhash.Hash
+	var beginHash *daghash.Hash
 	if len(locator) > 0 {
 		beginHash = locator[0]
 	}
@@ -995,7 +995,7 @@ func (p *Peer) PushGetHeadersMsg(locator blockchain.BlockLocator, stopHash *chai
 // function to block until the reject message has actually been sent.
 //
 // This function is safe for concurrent access.
-func (p *Peer) PushRejectMsg(command string, code wire.RejectCode, reason string, hash *chainhash.Hash, wait bool) {
+func (p *Peer) PushRejectMsg(command string, code wire.RejectCode, reason string, hash *daghash.Hash, wait bool) {
 	// Don't bother sending the reject message if the protocol version
 	// is too low.
 	if p.VersionKnown() && p.ProtocolVersion() < wire.RejectVersion {
@@ -2125,7 +2125,7 @@ func newPeerBase(origCfg *Config, inbound bool) *Peer {
 
 	// Set the chain parameters to testnet if the caller did not specify any.
 	if cfg.ChainParams == nil {
-		cfg.ChainParams = &chaincfg.TestNet3Params
+		cfg.ChainParams = &dagconfig.TestNet3Params
 	}
 
 	p := Peer{

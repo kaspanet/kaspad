@@ -13,7 +13,7 @@ const (
 	AccountBalanceNtfnMethod = "accountbalance"
 
 	// BtcdConnectedNtfnMethod is the method used for notifications when
-	// a wallet server is connected to a chain server.
+	// a wallet server is connected to a dag server.
 	BtcdConnectedNtfnMethod = "btcdconnected"
 
 	// WalletLockStateNtfnMethod is the method used to notify the lock state

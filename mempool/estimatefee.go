@@ -16,7 +16,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/daglabs/btcd/chaincfg/chainhash"
+	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/mining"
 	"github.com/daglabs/btcutil"
 )
@@ -94,7 +94,7 @@ func NewSatoshiPerByte(fee btcutil.Amount, size uint32) SatoshiPerByte {
 // additional data required for the fee estimation algorithm.
 type observedTransaction struct {
 	// A transaction hash.
-	hash chainhash.Hash
+	hash daghash.Hash
 
 	// The fee per byte of the transaction in satoshis.
 	feeRate SatoshiPerByte
@@ -135,7 +135,7 @@ func deserializeObservedTransaction(r io.Reader) (*observedTransaction, error) {
 // is used if Rollback is called to reverse the effect of registering
 // a block.
 type registeredBlock struct {
-	hash         chainhash.Hash
+	hash         daghash.Hash
 	transactions []*observedTransaction
 }
 
@@ -169,7 +169,7 @@ type FeeEstimator struct {
 	numBlocksRegistered uint32
 
 	mtx      sync.RWMutex
-	observed map[chainhash.Hash]*observedTransaction
+	observed map[daghash.Hash]*observedTransaction
 	bin      [estimateFeeDepth][]*observedTransaction
 
 	// The cached estimates.
@@ -190,7 +190,7 @@ func NewFeeEstimator(maxRollback, minRegisteredBlocks uint32) *FeeEstimator {
 		lastKnownHeight:     mining.UnminedHeight,
 		binSize:             estimateFeeBinSize,
 		maxReplacements:     estimateFeeMaxReplacements,
-		observed:            make(map[chainhash.Hash]*observedTransaction),
+		observed:            make(map[daghash.Hash]*observedTransaction),
 		dropped:             make([]*registeredBlock, 0, maxRollback),
 	}
 }
@@ -343,7 +343,7 @@ func (ef *FeeEstimator) LastKnownHeight() int32 {
 // deleted if they have been observed too long ago. That means the result
 // of Rollback won't always be exactly the same as if the last block had not
 // happened, but it should be close enough.
-func (ef *FeeEstimator) Rollback(hash *chainhash.Hash) error {
+func (ef *FeeEstimator) Rollback(hash *daghash.Hash) error {
 	ef.mtx.Lock()
 	defer ef.mtx.Unlock()
 
@@ -691,7 +691,7 @@ func RestoreFeeEstimator(data FeeEstimatorState) (*FeeEstimator, error) {
 	}
 
 	ef := &FeeEstimator{
-		observed: make(map[chainhash.Hash]*observedTransaction),
+		observed: make(map[daghash.Hash]*observedTransaction),
 	}
 
 	// Read basic parameters.

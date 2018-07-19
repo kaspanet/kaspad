@@ -14,7 +14,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/daglabs/btcd/chaincfg/chainhash"
+	"github.com/daglabs/btcd/dagconfig/daghash"
 )
 
 // genesisCoinbaseTx is the coinbase transaction for the genesis blocks for
@@ -24,7 +24,7 @@ var genesisCoinbaseTx = MsgTx{
 	TxIn: []*TxIn{
 		{
 			PreviousOutPoint: OutPoint{
-				Hash:  chainhash.Hash{},
+				Hash:  daghash.Hash{},
 				Index: 0xffffffff,
 			},
 			SignatureScript: []byte{
@@ -197,7 +197,7 @@ func BenchmarkReadOutPoint(b *testing.B) {
 // transaction output point.
 func BenchmarkWriteOutPoint(b *testing.B) {
 	op := &OutPoint{
-		Hash:  chainhash.Hash{},
+		Hash:  daghash.Hash{},
 		Index: 0,
 	}
 	for i := 0; i < b.N; i++ {
@@ -386,7 +386,7 @@ func BenchmarkDecodeGetHeaders(b *testing.B) {
 	pver := ProtocolVersion
 	var m MsgGetHeaders
 	for i := 0; i < MaxBlockLocatorsPerMsg; i++ {
-		hash, err := chainhash.NewHashFromStr(fmt.Sprintf("%x", i))
+		hash, err := daghash.NewHashFromStr(fmt.Sprintf("%x", i))
 		if err != nil {
 			b.Fatalf("NewHashFromStr: unexpected error: %v", err)
 		}
@@ -410,17 +410,26 @@ func BenchmarkDecodeGetHeaders(b *testing.B) {
 }
 
 // BenchmarkDecodeHeaders performs a benchmark on how long it takes to
-// decode a headers message with the maximum number of headers.
+// decode a headers message with the maximum number of headers and maximum number of
+// previous hashes per header.
 func BenchmarkDecodeHeaders(b *testing.B) {
 	// Create a message with the maximum number of headers.
 	pver := ProtocolVersion
 	var m MsgHeaders
 	for i := 0; i < MaxBlockHeadersPerMsg; i++ {
-		hash, err := chainhash.NewHashFromStr(fmt.Sprintf("%x", i))
+		hash, err := daghash.NewHashFromStr(fmt.Sprintf("%x", i))
 		if err != nil {
 			b.Fatalf("NewHashFromStr: unexpected error: %v", err)
 		}
-		m.AddBlockHeader(NewBlockHeader(1, hash, hash, 0, uint32(i)))
+		prevBlocks := make([]daghash.Hash, MaxNumPrevBlocks)
+		for j := byte(0); j < MaxNumPrevBlocks; j++ {
+			hash, err := daghash.NewHashFromStr(fmt.Sprintf("%x%x", i, j))
+			if err != nil {
+				b.Fatalf("NewHashFromStr: unexpected error: %v", err)
+			}
+			prevBlocks[i] = *hash
+		}
+		m.AddBlockHeader(NewBlockHeader(1, prevBlocks, hash, 0, uint32(i)))
 	}
 
 	// Serialize it so the bytes are available to test the decode below.
@@ -446,7 +455,7 @@ func BenchmarkDecodeGetBlocks(b *testing.B) {
 	pver := ProtocolVersion
 	var m MsgGetBlocks
 	for i := 0; i < MaxBlockLocatorsPerMsg; i++ {
-		hash, err := chainhash.NewHashFromStr(fmt.Sprintf("%x", i))
+		hash, err := daghash.NewHashFromStr(fmt.Sprintf("%x", i))
 		if err != nil {
 			b.Fatalf("NewHashFromStr: unexpected error: %v", err)
 		}
@@ -503,7 +512,7 @@ func BenchmarkDecodeInv(b *testing.B) {
 	pver := ProtocolVersion
 	var m MsgInv
 	for i := 0; i < MaxInvPerMsg; i++ {
-		hash, err := chainhash.NewHashFromStr(fmt.Sprintf("%x", i))
+		hash, err := daghash.NewHashFromStr(fmt.Sprintf("%x", i))
 		if err != nil {
 			b.Fatalf("NewHashFromStr: unexpected error: %v", err)
 		}
@@ -533,7 +542,7 @@ func BenchmarkDecodeNotFound(b *testing.B) {
 	pver := ProtocolVersion
 	var m MsgNotFound
 	for i := 0; i < MaxInvPerMsg; i++ {
-		hash, err := chainhash.NewHashFromStr(fmt.Sprintf("%x", i))
+		hash, err := daghash.NewHashFromStr(fmt.Sprintf("%x", i))
 		if err != nil {
 			b.Fatalf("NewHashFromStr: unexpected error: %v", err)
 		}
@@ -562,13 +571,13 @@ func BenchmarkDecodeMerkleBlock(b *testing.B) {
 	// Create a message with random data.
 	pver := ProtocolVersion
 	var m MsgMerkleBlock
-	hash, err := chainhash.NewHashFromStr(fmt.Sprintf("%x", 10000))
+	hash, err := daghash.NewHashFromStr(fmt.Sprintf("%x", 10000))
 	if err != nil {
 		b.Fatalf("NewHashFromStr: unexpected error: %v", err)
 	}
-	m.Header = *NewBlockHeader(1, hash, hash, 0, uint32(10000))
+	m.Header = *NewBlockHeader(1, []daghash.Hash{*hash}, hash, 0, uint32(10000))
 	for i := 0; i < 105; i++ {
-		hash, err := chainhash.NewHashFromStr(fmt.Sprintf("%x", i))
+		hash, err := daghash.NewHashFromStr(fmt.Sprintf("%x", i))
 		if err != nil {
 			b.Fatalf("NewHashFromStr: unexpected error: %v", err)
 		}
@@ -614,12 +623,12 @@ func BenchmarkDoubleHashB(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_ = chainhash.DoubleHashB(txBytes)
+		_ = daghash.DoubleHashB(txBytes)
 	}
 }
 
 // BenchmarkDoubleHashH performs a benchmark on how long it takes to perform
-// a double hash returning a chainhash.Hash.
+// a double hash returning a daghash.Hash.
 func BenchmarkDoubleHashH(b *testing.B) {
 	var buf bytes.Buffer
 	if err := genesisCoinbaseTx.Serialize(&buf); err != nil {
@@ -630,6 +639,6 @@ func BenchmarkDoubleHashH(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_ = chainhash.DoubleHashH(txBytes)
+		_ = daghash.DoubleHashH(txBytes)
 	}
 }

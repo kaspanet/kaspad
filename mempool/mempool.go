@@ -12,11 +12,11 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/daglabs/btcd/blockchain"
-	"github.com/daglabs/btcd/blockchain/indexers"
+	"github.com/daglabs/btcd/blockdag"
+	"github.com/daglabs/btcd/blockdag/indexers"
 	"github.com/daglabs/btcd/btcjson"
-	"github.com/daglabs/btcd/chaincfg"
-	"github.com/daglabs/btcd/chaincfg/chainhash"
+	"github.com/daglabs/btcd/dagconfig"
+	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/mining"
 	"github.com/daglabs/btcd/txscript"
 	"github.com/daglabs/btcd/wire"
@@ -53,11 +53,11 @@ type Config struct {
 
 	// ChainParams identifies which chain parameters the txpool is
 	// associated with.
-	ChainParams *chaincfg.Params
+	ChainParams *dagconfig.Params
 
 	// FetchUtxoView defines the function to use to fetch unspent
 	// transaction output information.
-	FetchUtxoView func(*btcutil.Tx) (*blockchain.UtxoViewpoint, error)
+	FetchUtxoView func(*btcutil.Tx) (*blockdag.UtxoViewpoint, error)
 
 	// BestHeight defines the function to use to access the block height of
 	// the current best chain.
@@ -71,7 +71,7 @@ type Config struct {
 	// CalcSequenceLock defines the function to use in order to generate
 	// the current sequence lock for the given transaction using the passed
 	// utxo view.
-	CalcSequenceLock func(*btcutil.Tx, *blockchain.UtxoViewpoint) (*blockchain.SequenceLock, error)
+	CalcSequenceLock func(*btcutil.Tx, *blockdag.UtxoViewpoint) (*blockdag.SequenceLock, error)
 
 	// IsDeploymentActive returns true if the target deploymentID is
 	// active, and false otherwise. The mempool uses this function to gauge
@@ -160,9 +160,9 @@ type TxPool struct {
 
 	mtx           sync.RWMutex
 	cfg           Config
-	pool          map[chainhash.Hash]*TxDesc
-	orphans       map[chainhash.Hash]*orphanTx
-	orphansByPrev map[wire.OutPoint]map[chainhash.Hash]*btcutil.Tx
+	pool          map[daghash.Hash]*TxDesc
+	orphans       map[daghash.Hash]*orphanTx
+	orphansByPrev map[wire.OutPoint]map[daghash.Hash]*btcutil.Tx
 	outpoints     map[wire.OutPoint]*btcutil.Tx
 	pennyTotal    float64 // exponentially decaying total for penny spends.
 	lastPennyUnix int64   // unix time of last ``penny spend''
@@ -320,7 +320,7 @@ func (mp *TxPool) addOrphan(tx *btcutil.Tx, tag Tag) {
 	for _, txIn := range tx.MsgTx().TxIn {
 		if _, exists := mp.orphansByPrev[txIn.PreviousOutPoint]; !exists {
 			mp.orphansByPrev[txIn.PreviousOutPoint] =
-				make(map[chainhash.Hash]*btcutil.Tx)
+				make(map[daghash.Hash]*btcutil.Tx)
 		}
 		mp.orphansByPrev[txIn.PreviousOutPoint][*tx.Hash()] = tx
 	}
@@ -377,7 +377,7 @@ func (mp *TxPool) removeOrphanDoubleSpends(tx *btcutil.Tx) {
 // exists in the main pool.
 //
 // This function MUST be called with the mempool lock held (for reads).
-func (mp *TxPool) isTransactionInPool(hash *chainhash.Hash) bool {
+func (mp *TxPool) isTransactionInPool(hash *daghash.Hash) bool {
 	if _, exists := mp.pool[*hash]; exists {
 		return true
 	}
@@ -389,7 +389,7 @@ func (mp *TxPool) isTransactionInPool(hash *chainhash.Hash) bool {
 // exists in the main pool.
 //
 // This function is safe for concurrent access.
-func (mp *TxPool) IsTransactionInPool(hash *chainhash.Hash) bool {
+func (mp *TxPool) IsTransactionInPool(hash *daghash.Hash) bool {
 	// Protect concurrent access.
 	mp.mtx.RLock()
 	inPool := mp.isTransactionInPool(hash)
@@ -402,7 +402,7 @@ func (mp *TxPool) IsTransactionInPool(hash *chainhash.Hash) bool {
 // in the orphan pool.
 //
 // This function MUST be called with the mempool lock held (for reads).
-func (mp *TxPool) isOrphanInPool(hash *chainhash.Hash) bool {
+func (mp *TxPool) isOrphanInPool(hash *daghash.Hash) bool {
 	if _, exists := mp.orphans[*hash]; exists {
 		return true
 	}
@@ -414,7 +414,7 @@ func (mp *TxPool) isOrphanInPool(hash *chainhash.Hash) bool {
 // in the orphan pool.
 //
 // This function is safe for concurrent access.
-func (mp *TxPool) IsOrphanInPool(hash *chainhash.Hash) bool {
+func (mp *TxPool) IsOrphanInPool(hash *daghash.Hash) bool {
 	// Protect concurrent access.
 	mp.mtx.RLock()
 	inPool := mp.isOrphanInPool(hash)
@@ -427,7 +427,7 @@ func (mp *TxPool) IsOrphanInPool(hash *chainhash.Hash) bool {
 // in the main pool or in the orphan pool.
 //
 // This function MUST be called with the mempool lock held (for reads).
-func (mp *TxPool) haveTransaction(hash *chainhash.Hash) bool {
+func (mp *TxPool) haveTransaction(hash *daghash.Hash) bool {
 	return mp.isTransactionInPool(hash) || mp.isOrphanInPool(hash)
 }
 
@@ -435,7 +435,7 @@ func (mp *TxPool) haveTransaction(hash *chainhash.Hash) bool {
 // in the main pool or in the orphan pool.
 //
 // This function is safe for concurrent access.
-func (mp *TxPool) HaveTransaction(hash *chainhash.Hash) bool {
+func (mp *TxPool) HaveTransaction(hash *daghash.Hash) bool {
 	// Protect concurrent access.
 	mp.mtx.RLock()
 	haveTx := mp.haveTransaction(hash)
@@ -515,7 +515,7 @@ func (mp *TxPool) RemoveDoubleSpends(tx *btcutil.Tx) {
 // helper for maybeAcceptTransaction.
 //
 // This function MUST be called with the mempool lock held (for writes).
-func (mp *TxPool) addTransaction(utxoView *blockchain.UtxoViewpoint, tx *btcutil.Tx, height int32, fee int64) *TxDesc {
+func (mp *TxPool) addTransaction(utxoView *blockdag.UtxoViewpoint, tx *btcutil.Tx, height int32, fee int64) *TxDesc {
 	// Add the transaction to the pool and mark the referenced outpoints
 	// as spent by the pool.
 	txD := &TxDesc{
@@ -585,7 +585,7 @@ func (mp *TxPool) CheckSpend(op wire.OutPoint) *btcutil.Tx {
 // transaction pool.
 //
 // This function MUST be called with the mempool lock held (for reads).
-func (mp *TxPool) fetchInputUtxos(tx *btcutil.Tx) (*blockchain.UtxoViewpoint, error) {
+func (mp *TxPool) fetchInputUtxos(tx *btcutil.Tx) (*blockdag.UtxoViewpoint, error) {
 	utxoView, err := mp.cfg.FetchUtxoView(tx)
 	if err != nil {
 		return nil, err
@@ -615,7 +615,7 @@ func (mp *TxPool) fetchInputUtxos(tx *btcutil.Tx) (*blockchain.UtxoViewpoint, er
 // orphans.
 //
 // This function is safe for concurrent access.
-func (mp *TxPool) FetchTransaction(txHash *chainhash.Hash) (*btcutil.Tx, error) {
+func (mp *TxPool) FetchTransaction(txHash *daghash.Hash) (*btcutil.Tx, error) {
 	// Protect concurrent access.
 	mp.mtx.RLock()
 	txDesc, exists := mp.pool[*txHash]
@@ -633,7 +633,7 @@ func (mp *TxPool) FetchTransaction(txHash *chainhash.Hash) (*btcutil.Tx, error) 
 // more details.
 //
 // This function MUST be called with the mempool lock held (for writes).
-func (mp *TxPool) maybeAcceptTransaction(tx *btcutil.Tx, isNew, rateLimit, rejectDupOrphans bool) ([]*chainhash.Hash, *TxDesc, error) {
+func (mp *TxPool) maybeAcceptTransaction(tx *btcutil.Tx, isNew, rateLimit, rejectDupOrphans bool) ([]*daghash.Hash, *TxDesc, error) {
 	txHash := tx.Hash()
 
 	// Don't accept the transaction if it already exists in the pool.  This
@@ -650,16 +650,16 @@ func (mp *TxPool) maybeAcceptTransaction(tx *btcutil.Tx, isNew, rateLimit, rejec
 	// Perform preliminary sanity checks on the transaction.  This makes
 	// use of blockchain which contains the invariant rules for what
 	// transactions are allowed into blocks.
-	err := blockchain.CheckTransactionSanity(tx)
+	err := blockdag.CheckTransactionSanity(tx)
 	if err != nil {
-		if cerr, ok := err.(blockchain.RuleError); ok {
+		if cerr, ok := err.(blockdag.RuleError); ok {
 			return nil, nil, chainRuleError(cerr)
 		}
 		return nil, nil, err
 	}
 
 	// A standalone transaction must not be a coinbase transaction.
-	if blockchain.IsCoinBase(tx) {
+	if blockdag.IsCoinBase(tx) {
 		str := fmt.Sprintf("transaction %v is an individual coinbase",
 			txHash)
 		return nil, nil, txRuleError(wire.RejectInvalid, str)
@@ -712,7 +712,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *btcutil.Tx, isNew, rateLimit, rejec
 	// without needing to do a separate lookup.
 	utxoView, err := mp.fetchInputUtxos(tx)
 	if err != nil {
-		if cerr, ok := err.(blockchain.RuleError); ok {
+		if cerr, ok := err.(blockdag.RuleError); ok {
 			return nil, nil, chainRuleError(cerr)
 		}
 		return nil, nil, err
@@ -735,7 +735,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *btcutil.Tx, isNew, rateLimit, rejec
 	// don't exist or are already spent.  Adding orphans to the orphan pool
 	// is not handled by this function, and the caller should use
 	// maybeAddOrphan if this behavior is desired.
-	var missingParents []*chainhash.Hash
+	var missingParents []*daghash.Hash
 	for outpoint, entry := range utxoView.Entries() {
 		if entry == nil || entry.IsSpent() {
 			// Must make a copy of the hash here since the iterator
@@ -755,12 +755,12 @@ func (mp *TxPool) maybeAcceptTransaction(tx *btcutil.Tx, isNew, rateLimit, rejec
 	// with respect to its defined relative lock times.
 	sequenceLock, err := mp.cfg.CalcSequenceLock(tx, utxoView)
 	if err != nil {
-		if cerr, ok := err.(blockchain.RuleError); ok {
+		if cerr, ok := err.(blockdag.RuleError); ok {
 			return nil, nil, chainRuleError(cerr)
 		}
 		return nil, nil, err
 	}
-	if !blockchain.SequenceLockActive(sequenceLock, nextBlockHeight,
+	if !blockdag.SequenceLockActive(sequenceLock, nextBlockHeight,
 		medianTimePast) {
 		return nil, nil, txRuleError(wire.RejectNonstandard,
 			"transaction's sequence locks on inputs not met")
@@ -770,10 +770,10 @@ func (mp *TxPool) maybeAcceptTransaction(tx *btcutil.Tx, isNew, rateLimit, rejec
 	// rules in blockchain for what transactions are allowed into blocks.
 	// Also returns the fees associated with the transaction which will be
 	// used later.
-	txFee, err := blockchain.CheckTransactionInputs(tx, nextBlockHeight,
+	txFee, err := blockdag.CheckTransactionInputs(tx, nextBlockHeight,
 		utxoView, mp.cfg.ChainParams)
 	if err != nil {
-		if cerr, ok := err.(blockchain.RuleError); ok {
+		if cerr, ok := err.(blockdag.RuleError); ok {
 			return nil, nil, chainRuleError(cerr)
 		}
 		return nil, nil, err
@@ -806,9 +806,9 @@ func (mp *TxPool) maybeAcceptTransaction(tx *btcutil.Tx, isNew, rateLimit, rejec
 	// the coinbase address itself can contain signature operations, the
 	// maximum allowed signature operations per transaction is less than
 	// the maximum allowed signature operations per block.
-	sigOpCount, err := blockchain.CountP2SHSigOps(tx, false, utxoView)
+	sigOpCount, err := blockdag.CountP2SHSigOps(tx, false, utxoView)
 	if err != nil {
-		if cerr, ok := err.(blockchain.RuleError); ok {
+		if cerr, ok := err.(blockdag.RuleError); ok {
 			return nil, nil, chainRuleError(cerr)
 		}
 		return nil, nil, err
@@ -881,10 +881,10 @@ func (mp *TxPool) maybeAcceptTransaction(tx *btcutil.Tx, isNew, rateLimit, rejec
 
 	// Verify crypto signatures for each input and reject the transaction if
 	// any don't verify.
-	err = blockchain.ValidateTransactionScripts(tx, utxoView,
+	err = blockdag.ValidateTransactionScripts(tx, utxoView,
 		txscript.StandardVerifyFlags, mp.cfg.SigCache)
 	if err != nil {
-		if cerr, ok := err.(blockchain.RuleError); ok {
+		if cerr, ok := err.(blockdag.RuleError); ok {
 			return nil, nil, chainRuleError(cerr)
 		}
 		return nil, nil, err
@@ -910,7 +910,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *btcutil.Tx, isNew, rateLimit, rejec
 // be added to the orphan pool.
 //
 // This function is safe for concurrent access.
-func (mp *TxPool) MaybeAcceptTransaction(tx *btcutil.Tx, isNew, rateLimit bool) ([]*chainhash.Hash, *TxDesc, error) {
+func (mp *TxPool) MaybeAcceptTransaction(tx *btcutil.Tx, isNew, rateLimit bool) ([]*daghash.Hash, *TxDesc, error) {
 	// Protect concurrent access.
 	mp.mtx.Lock()
 	hashes, txD, err := mp.maybeAcceptTransaction(tx, isNew, rateLimit, true)
@@ -1100,9 +1100,9 @@ func (mp *TxPool) Count() int {
 // pool.
 //
 // This function is safe for concurrent access.
-func (mp *TxPool) TxHashes() []*chainhash.Hash {
+func (mp *TxPool) TxHashes() []*daghash.Hash {
 	mp.mtx.RLock()
-	hashes := make([]*chainhash.Hash, len(mp.pool))
+	hashes := make([]*daghash.Hash, len(mp.pool))
 	i := 0
 	for hash := range mp.pool {
 		hashCopy := hash
@@ -1209,9 +1209,9 @@ func (mp *TxPool) LastUpdated() time.Time {
 func New(cfg *Config) *TxPool {
 	return &TxPool{
 		cfg:            *cfg,
-		pool:           make(map[chainhash.Hash]*TxDesc),
-		orphans:        make(map[chainhash.Hash]*orphanTx),
-		orphansByPrev:  make(map[wire.OutPoint]map[chainhash.Hash]*btcutil.Tx),
+		pool:           make(map[daghash.Hash]*TxDesc),
+		orphans:        make(map[daghash.Hash]*orphanTx),
+		orphansByPrev:  make(map[wire.OutPoint]map[daghash.Hash]*btcutil.Tx),
 		nextExpireScan: time.Now().Add(orphanExpireScanInterval),
 		outpoints:      make(map[wire.OutPoint]*btcutil.Tx),
 	}

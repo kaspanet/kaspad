@@ -107,7 +107,7 @@ function.
 Command Inspection
 
 All registered commands are registered with flags that identify information such
-as whether the command applies to a chain server, wallet server, or is a
+as whether the command applies to a dag server, wallet server, or is a
 notification along with the method name to use.  These flags can be obtained
 with the MethodUsageFlags flags, and the method can be obtained with the
 CmdMethod function.
