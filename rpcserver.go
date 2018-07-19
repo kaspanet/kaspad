@@ -138,7 +138,7 @@ var rpcHandlersBeforeInit = map[string]commandHandler{
 	"getbestblock":          handleGetBestBlock,
 	"getbestblockhash":      handleGetBestBlockHash,
 	"getblock":              handleGetBlock,
-	"getblockchaininfo":     handleGetBlockChainInfo,
+	"getblockdaginfo":       handleGetBlockDAGInfo,
 	"getblockcount":         handleGetBlockCount,
 	"getblockhash":          handleGetBlockHash,
 	"getblockheader":        handleGetBlockHeader,
@@ -170,7 +170,7 @@ var rpcHandlersBeforeInit = map[string]commandHandler{
 	"submitblock":           handleSubmitBlock,
 	"uptime":                handleUptime,
 	"validateaddress":       handleValidateAddress,
-	"verifychain":           handleVerifyChain,
+	"verifydag":             handleVerifyDAG,
 	"verifymessage":         handleVerifyMessage,
 	"version":               handleVersion,
 }
@@ -1156,8 +1156,8 @@ func softForkStatus(state blockdag.ThresholdState) (string, error) {
 	}
 }
 
-// handleGetBlockChainInfo implements the getblockchaininfo command.
-func handleGetBlockChainInfo(s *rpcServer, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
+// handleGetBlockDAGInfo implements the getblockchaininfo command.
+func handleGetBlockDAGInfo(s *rpcServer, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
 	// Obtain a snapshot of the current best known blockchain state. We'll
 	// populate the response to this call primarily from this snapshot.
 	params := s.cfg.ChainParams
@@ -3424,7 +3424,7 @@ func handleValidateAddress(s *rpcServer, cmd interface{}, closeChan <-chan struc
 	return result, nil
 }
 
-func verifyChain(s *rpcServer, level, depth int32) error {
+func verifyDAG(s *rpcServer, level, depth int32) error {
 	dagState := s.cfg.DAG.GetDAGState()
 	finishHeight := dagState.SelectedTip.Height - depth
 	if finishHeight < 0 {
@@ -3459,8 +3459,8 @@ func verifyChain(s *rpcServer, level, depth int32) error {
 	return nil
 }
 
-// handleVerifyChain implements the verifychain command.
-func handleVerifyChain(s *rpcServer, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
+// handleVerifyDAG implements the verifydag command.
+func handleVerifyDAG(s *rpcServer, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
 	c := cmd.(*btcjson.VerifyDAGCmd)
 
 	var checkLevel, checkDepth int32
@@ -3471,7 +3471,7 @@ func handleVerifyChain(s *rpcServer, cmd interface{}, closeChan <-chan struct{})
 		checkDepth = *c.CheckDepth
 	}
 
-	err := verifyChain(s, checkLevel, checkDepth)
+	err := verifyDAG(s, checkLevel, checkDepth)
 	return err == nil, nil
 }
 
