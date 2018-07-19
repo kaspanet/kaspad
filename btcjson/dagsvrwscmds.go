@@ -177,32 +177,6 @@ func NewStopNotifySpentCmd(outPoints []OutPoint) *StopNotifySpentCmd {
 	}
 }
 
-// RescanCmd defines the rescan JSON-RPC command.
-//
-// NOTE: Deprecated. Use RescanBlocksCmd instead.
-type RescanCmd struct {
-	BeginBlock string
-	Addresses  []string
-	OutPoints  []OutPoint
-	EndBlock   *string
-}
-
-// NewRescanCmd returns a new instance which can be used to issue a rescan
-// JSON-RPC command.
-//
-// The parameters which are pointers indicate they are optional.  Passing nil
-// for optional parameters will use the default value.
-//
-// NOTE: Deprecated. Use NewRescanBlocksCmd instead.
-func NewRescanCmd(beginBlock string, addresses []string, outPoints []OutPoint, endBlock *string) *RescanCmd {
-	return &RescanCmd{
-		BeginBlock: beginBlock,
-		Addresses:  addresses,
-		OutPoints:  outPoints,
-		EndBlock:   endBlock,
-	}
-}
-
 // RescanBlocksCmd defines the rescan JSON-RPC command.
 //
 // NOTE: This is a btcd extension ported from github.com/decred/dcrd/dcrjson
@@ -236,6 +210,5 @@ func init() {
 	MustRegisterCmd("stopnotifynewtransactions", (*StopNotifyNewTransactionsCmd)(nil), flags)
 	MustRegisterCmd("stopnotifyspent", (*StopNotifySpentCmd)(nil), flags)
 	MustRegisterCmd("stopnotifyreceived", (*StopNotifyReceivedCmd)(nil), flags)
-	MustRegisterCmd("rescan", (*RescanCmd)(nil), flags)
 	MustRegisterCmd("rescanblocks", (*RescanBlocksCmd)(nil), flags)
 }
