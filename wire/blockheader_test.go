@@ -298,10 +298,10 @@ func TestBlockHeaderSerializeSize(t *testing.T) {
 		size int          // Expected serialized size
 	}{
 		// Block with no transactions.
-		{genesisBlockHdr, 49},
+		{genesisBlockHdr, 53},
 
 		// First block in the mainnet block chain.
-		{baseBlockHdr, 113},
+		{baseBlockHdr, 117},
 	}
 
 	t.Logf("Running %d tests", len(tests))

@@ -29,7 +29,7 @@ func TestHeaders(t *testing.T) {
 	// Ensure max payload is expected value for latest protocol version.
 	// Num headers (varInt) + max allowed headers (header length + 1 byte
 	// for the number of transactions which is always 0).
-	wantPayload := uint32(16420009)
+	wantPayload := uint32(16428009)
 	maxPayload := msg.MaxPayloadLength(pver)
 	if maxPayload != wantPayload {
 		t.Errorf("MaxPayloadLength: wrong max payload length for "+
