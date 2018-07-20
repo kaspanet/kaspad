@@ -194,3 +194,55 @@ func TestNewHashFromStr(t *testing.T) {
 		}
 	}
 }
+
+// TestAreEqual executes tests against the AreEqual function.
+func TestAreEqual(t *testing.T) {
+	hash0, _ := NewHashFromStr("0000000000000000000000000000000000000000000000000000000000000000")
+	hash1, _ := NewHashFromStr("1111111111111111111111111111111111111111111111111111111111111111")
+	hash2, _ := NewHashFromStr("2222222222222222222222222222222222222222222222222222222222222222")
+	hash3, _ := NewHashFromStr("3333333333333333333333333333333333333333333333333333333333333333")
+	hashes0To2 := []Hash{*hash0, *hash1, *hash2}
+	hashes0To2Shifted := []Hash{*hash2, *hash0, *hash1}
+	hashes1To3 := []Hash{*hash1, *hash2, *hash3}
+	hashes0To3 := []Hash{*hash0, *hash1, *hash2, *hash3}
+
+	tests := []struct {
+		name     string
+		first    []Hash
+		second   []Hash
+		expected bool
+	}{
+		{
+			name:     "self-equality",
+			first:    hashes0To2,
+			second:   hashes0To2,
+			expected: true,
+		},
+		{
+			name:     "same members, different order",
+			first:    hashes0To2,
+			second:   hashes0To2Shifted,
+			expected: true,
+		},
+		{
+			name:     "same slice length but only some members are equal",
+			first:    hashes0To2,
+			second:   hashes1To3,
+			expected: false,
+		},
+		{
+			name:     "different slice lengths, one slice containing all the other's members",
+			first:    hashes0To3,
+			second:   hashes0To2,
+			expected: false,
+		},
+	}
+
+	for _, test := range tests {
+		result := AreEqual(test.first, test.second)
+		if result != test.expected {
+			t.Errorf("unexpected AreEqual result for"+
+				" test \"%s\". Expected: %t, got: %t.", test.name, test.expected, result)
+		}
+	}
+}
