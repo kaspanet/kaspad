@@ -72,7 +72,7 @@ func TestBlock(t *testing.T) {
 // hashes from a block accurately.
 func TestBlockTxHashes(t *testing.T) {
 	// Block 1, transaction 1 hash.
-	hashStr := "0e3e2357e806b6cdb1f70b54c3a3a17b6714ee1f0e68bebb44a74b1efd512098"
+	hashStr := "b7c3332bc138e2c9429818f5fed500bcc1746544218772389054dc8047d7cd3f"
 	wantHash, err := daghash.NewHashFromStr(hashStr)
 	if err != nil {
 		t.Errorf("NewHashFromStr: %v", err)
@@ -93,7 +93,7 @@ func TestBlockTxHashes(t *testing.T) {
 // TestBlockHash tests the ability to generate the hash of a block accurately.
 func TestBlockHash(t *testing.T) {
 	// Block 1 hash.
-	hashStr := "2357979742c556c68e90bf624a1139af8c85cafb4ac98d6d1dc367cd661ef67d"
+	hashStr := "f5a1c070bed4d87e1ff0c0040d8d56f9d559aeb4c737978b4c12a83a4c6cd231"
 	wantHash, err := daghash.NewHashFromStr(hashStr)
 	if err != nil {
 		t.Errorf("NewHashFromStr: %v", err)
@@ -587,5 +587,5 @@ var blockOneBytes = []byte{
 
 // Transaction location information for block one transactions.
 var blockOneTxLocs = []TxLoc{
-	{TxStart: 118, TxLen: 138},
+	{TxStart: 118, TxLen: 142},
 }

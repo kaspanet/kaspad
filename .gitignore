@@ -38,3 +38,6 @@ _testmain.go
 .vscode
 debug
 debug.test
+
+#go
+coverage.out
