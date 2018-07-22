@@ -23,7 +23,7 @@ func (dag *BlockDAG) blues(block *blockNode) (blues []*blockNode, selectedParent
 
 // relevantPast returns all the past of block K blocks deep.
 func (dag *BlockDAG) relevantPast(block *blockNode) blockSet {
-	queue := newBlockHeap(blockHeapDirectionDown)
+	queue := NewHeap()
 	queue.Push(block)
 	past := newSet()
 	depths := map[*blockNode]uint{
@@ -89,7 +89,7 @@ func (dag *BlockDAG) blueCandidates(chainStart *blockNode, past blockSet) blockS
 func (dag *BlockDAG) traverseCandidates(newBlock *blockNode, candidates blockSet, selectedParent *blockNode) []*blockNode {
 	blues := []*blockNode{}
 	selectedParentPast := newSet()
-	queue := newBlockHeap(blockHeapDirectionDown)
+	queue := NewHeap()
 	visited := newSet()
 
 	for _, parent := range newBlock.parents {
