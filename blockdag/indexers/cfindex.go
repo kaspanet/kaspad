@@ -176,7 +176,7 @@ func storeFilter(dbTx database.Tx, block *btcutil.Block, f *gcs.Filter,
 	// Then fetch the previous block's filter header.
 	var prevHeader *daghash.Hash
 	ph := block.MsgBlock().Header.SelectedPrevBlock()
-	if block.MsgBlock().Header.NumPrevBlocks == 0 || ph.IsEqual(&zeroHash) {
+	if ph == nil {
 		prevHeader = &zeroHash
 	} else {
 		pfh, err := dbFetchFilterIdxEntry(dbTx, hkey, ph)
