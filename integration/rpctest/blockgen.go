@@ -185,7 +185,7 @@ func CreateBlock(prevBlock *btcutil.Block, inclusionTxs []*btcutil.Tx,
 	var block wire.MsgBlock
 	block.Header = wire.BlockHeader{
 		Version:    blockVersion,
-		PrevBlock:  *prevHash,
+		PrevBlocks: []daghash.Hash{*prevHash},
 		MerkleRoot: *merkles[len(merkles)-1],
 		Timestamp:  ts,
 		Bits:       net.PowLimitBits,
