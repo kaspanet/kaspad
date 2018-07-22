@@ -740,7 +740,6 @@ func (b *BlockDAG) checkBlockContext(block *btcutil.Block, selectedParent *block
 
 	fastAdd := flags&BFFastAdd == BFFastAdd
 	if !fastAdd {
-
 		blockTime := selectedParent.CalcPastMedianTime()
 
 		// The height of this block is one more than the referenced
