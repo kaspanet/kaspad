@@ -75,6 +75,7 @@ type blockNode struct {
 	parents blockSet
 
 	// selectedParent is the selected parent for this node.
+	// The selected parent is the parent that if chosen will maximize the blue score of this block
 	selectedParent *blockNode
 
 	// children are the all the blocks that refer to this block as a parent
@@ -83,10 +84,10 @@ type blockNode struct {
 	// diffChild is the child that UTXODiff will be built from
 	diffChild *blockNode
 
-	// TODO: Explain shortly what is blues
+	// blues are all blue blocks in this block's worldview that are in its selected parent anticone
 	blues blockSet
 
-	// TODO: Explain shortly what is blue score
+	// blueScore is the count of all the blue blocks in this block past (including itself)
 	blueScore int64
 
 	// utxoDiff is the UTXO of the block represented as a diff to the virtual block
