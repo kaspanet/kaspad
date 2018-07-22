@@ -347,7 +347,7 @@ func (b *BlockDAG) TstSetCoinbaseMaturity(maturity uint16) {
 // important to note that this chain has no database associated with it, so
 // it is not usable with all functions and the tests must take care when making
 // use of it.
-func newFakeDag(params *dagconfig.Params) *BlockDAG {
+func newFakeDAG(params *dagconfig.Params) *BlockDAG {
 	// Create a genesis block node and block index index populated with it
 	// for use when creating the fake chain below.
 	node := newBlockNode(&params.GenesisBlock.Header, newSet())

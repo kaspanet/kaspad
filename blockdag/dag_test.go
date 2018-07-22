@@ -120,8 +120,8 @@ func TestCalcSequenceLock(t *testing.T) {
 
 	blockVersion := int32(0x20000000)
 
-	// Generate enough synthetic blocks to activate CSV.
-	chain := newFakeDag(netParams)
+	// Generate enough synthetic blocks for the rest of the test
+	chain := newFakeDAG(netParams)
 	node := chain.dag.SelectedTip()
 	blockTime := node.Header().Timestamp
 	numBlocksToGenerate := uint32(5)
@@ -448,7 +448,7 @@ func TestLocateInventory(t *testing.T) {
 	// 	genesis -> 1 -> 2 -> ... -> 15 -> 16  -> 17  -> 18
 	// 	                              \-> 16a -> 17a
 	tip := tstTip
-	dag := newFakeDag(&dagconfig.MainNetParams)
+	dag := newFakeDAG(&dagconfig.MainNetParams)
 	branch0Nodes := chainedNodes(setFromSlice(dag.dag.Genesis()), 18)
 	branch1Nodes := chainedNodes(setFromSlice(branch0Nodes[14]), 2)
 	for _, node := range branch0Nodes {
@@ -788,7 +788,7 @@ func TestHeightToHashRange(t *testing.T) {
 	// 	genesis -> 1 -> 2 -> ... -> 15 -> 16  -> 17  -> 18
 	// 	                              \-> 16a -> 17a -> 18a (unvalidated)
 	tip := tstTip
-	chain := newFakeDag(&dagconfig.MainNetParams)
+	chain := newFakeDAG(&dagconfig.MainNetParams)
 	branch0Nodes := chainedNodes(setFromSlice(chain.dag.Genesis()), 18)
 	branch1Nodes := chainedNodes(setFromSlice(branch0Nodes[14]), 3)
 	for _, node := range branch0Nodes {
@@ -880,7 +880,7 @@ func TestIntervalBlockHashes(t *testing.T) {
 	// 	genesis -> 1 -> 2 -> ... -> 15 -> 16  -> 17  -> 18
 	// 	                              \-> 16a -> 17a -> 18a (unvalidated)
 	tip := tstTip
-	chain := newFakeDag(&dagconfig.MainNetParams)
+	chain := newFakeDAG(&dagconfig.MainNetParams)
 	branch0Nodes := chainedNodes(setFromSlice(chain.dag.Genesis()), 18)
 	branch1Nodes := chainedNodes(setFromSlice(branch0Nodes[14]), 3)
 	for _, node := range branch0Nodes {

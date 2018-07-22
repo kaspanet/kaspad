@@ -783,7 +783,7 @@ func (sm *SyncManager) handleHeadersMsg(hmsg *headersMsg) {
 		// add it to the list of headers.
 		node := headerNode{hash: &blockHash}
 		prevNode := prevNodeEl.Value.(*headerNode)
-		if prevNode.hash.IsEqual(&blockHeader.PrevBlock) {
+		if prevNode.hash.IsEqual(&blockHeader.PrevBlocks[0]) { // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
 			node.height = prevNode.height + 1
 			e := sm.headerList.PushBack(&node)
 			if sm.startHeader == nil {

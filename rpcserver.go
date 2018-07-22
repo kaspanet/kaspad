@@ -138,7 +138,7 @@ var rpcHandlersBeforeInit = map[string]commandHandler{
 	"getbestblock":          handleGetBestBlock,
 	"getbestblockhash":      handleGetBestBlockHash,
 	"getblock":              handleGetBlock,
-	"getblockchaininfo":     handleGetBlockChainInfo,
+	"getblockdaginfo":       handleGetBlockDAGInfo,
 	"getblockcount":         handleGetBlockCount,
 	"getblockhash":          handleGetBlockHash,
 	"getblockheader":        handleGetBlockHeader,
@@ -170,7 +170,7 @@ var rpcHandlersBeforeInit = map[string]commandHandler{
 	"submitblock":           handleSubmitBlock,
 	"uptime":                handleUptime,
 	"validateaddress":       handleValidateAddress,
-	"verifychain":           handleVerifyChain,
+	"verifydag":             handleVerifyDAG,
 	"verifymessage":         handleVerifyMessage,
 	"version":               handleVersion,
 }
@@ -1096,19 +1096,19 @@ func handleGetBlock(s *rpcServer, cmd interface{}, closeChan <-chan struct{}) (i
 	params := s.cfg.ChainParams
 	blockHeader := &blk.MsgBlock().Header
 	blockReply := btcjson.GetBlockVerboseResult{
-		Hash:          c.Hash,
-		Version:       blockHeader.Version,
-		VersionHex:    fmt.Sprintf("%08x", blockHeader.Version),
-		MerkleRoot:    blockHeader.MerkleRoot.String(),
-		PreviousHash:  blockHeader.PrevBlock.String(),
-		Nonce:         blockHeader.Nonce,
-		Time:          blockHeader.Timestamp.Unix(),
-		Confirmations: uint64(1 + dagState.SelectedTip.Height - blockHeight),
-		Height:        int64(blockHeight),
-		Size:          int32(len(blkBytes)),
-		Bits:          strconv.FormatInt(int64(blockHeader.Bits), 16),
-		Difficulty:    getDifficultyRatio(blockHeader.Bits, params),
-		NextHash:      nextHashString,
+		Hash:           c.Hash,
+		Version:        blockHeader.Version,
+		VersionHex:     fmt.Sprintf("%08x", blockHeader.Version),
+		MerkleRoot:     blockHeader.MerkleRoot.String(),
+		PreviousHashes: daghash.Strings(blockHeader.PrevBlocks),
+		Nonce:          blockHeader.Nonce,
+		Time:           blockHeader.Timestamp.Unix(),
+		Confirmations:  uint64(1 + dagState.SelectedTip.Height - blockHeight),
+		Height:         int64(blockHeight),
+		Size:           int32(len(blkBytes)),
+		Bits:           strconv.FormatInt(int64(blockHeader.Bits), 16),
+		Difficulty:     getDifficultyRatio(blockHeader.Bits, params),
+		NextHash:       nextHashString,
 	}
 
 	if c.VerboseTx == nil || !*c.VerboseTx {
@@ -1156,19 +1156,19 @@ func softForkStatus(state blockdag.ThresholdState) (string, error) {
 	}
 }
 
-// handleGetBlockChainInfo implements the getblockchaininfo command.
-func handleGetBlockChainInfo(s *rpcServer, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	// Obtain a snapshot of the current best known blockchain state. We'll
+// handleGetBlockDAGInfo implements the getblockdaginfo command.
+func handleGetBlockDAGInfo(s *rpcServer, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
+	// Obtain a snapshot of the current best known DAG state. We'll
 	// populate the response to this call primarily from this snapshot.
 	params := s.cfg.ChainParams
-	chain := s.cfg.DAG
-	dagState := chain.GetDAGState()
+	dag := s.cfg.DAG
+	dagState := dag.GetDAGState()
 
-	chainInfo := &btcjson.GetBlockChainInfoResult{
-		Chain:         params.Name,
+	chainInfo := &btcjson.GetBlockDAGInfoResult{
+		DAG:           params.Name,
 		Blocks:        dagState.SelectedTip.Height,
 		Headers:       dagState.SelectedTip.Height,
-		BestBlockHash: dagState.SelectedTip.Hash.String(),
+		TipHashes:     daghash.Strings(dagState.TipHashes),
 		Difficulty:    getDifficultyRatio(dagState.SelectedTip.Bits, params),
 		MedianTime:    dagState.SelectedTip.MedianTime.Unix(),
 		Pruned:        false,
@@ -1218,9 +1218,9 @@ func handleGetBlockChainInfo(s *rpcServer, cmd interface{}, closeChan <-chan str
 			}
 		}
 
-		// Query the chain for the current status of the deployment as
+		// Query the dag for the current status of the deployment as
 		// identified by its deployment ID.
-		deploymentStatus, err := chain.ThresholdState(uint32(deployment))
+		deploymentStatus, err := dag.ThresholdState(uint32(deployment))
 		if err != nil {
 			context := "Failed to obtain deployment status"
 			return nil, internalRPCError(err.Error(), context)
@@ -1323,18 +1323,18 @@ func handleGetBlockHeader(s *rpcServer, cmd interface{}, closeChan <-chan struct
 
 	params := s.cfg.ChainParams
 	blockHeaderReply := btcjson.GetBlockHeaderVerboseResult{
-		Hash:          c.Hash,
-		Confirmations: uint64(1 + dagState.SelectedTip.Height - blockHeight),
-		Height:        blockHeight,
-		Version:       blockHeader.Version,
-		VersionHex:    fmt.Sprintf("%08x", blockHeader.Version),
-		MerkleRoot:    blockHeader.MerkleRoot.String(),
-		NextHash:      nextHashString,
-		PreviousHash:  blockHeader.PrevBlock.String(),
-		Nonce:         uint64(blockHeader.Nonce),
-		Time:          blockHeader.Timestamp.Unix(),
-		Bits:          strconv.FormatInt(int64(blockHeader.Bits), 16),
-		Difficulty:    getDifficultyRatio(blockHeader.Bits, params),
+		Hash:           c.Hash,
+		Confirmations:  uint64(1 + dagState.SelectedTip.Height - blockHeight),
+		Height:         blockHeight,
+		Version:        blockHeader.Version,
+		VersionHex:     fmt.Sprintf("%08x", blockHeader.Version),
+		MerkleRoot:     blockHeader.MerkleRoot.String(),
+		NextHash:       nextHashString,
+		PreviousHashes: daghash.Strings(blockHeader.PrevBlocks),
+		Nonce:          uint64(blockHeader.Nonce),
+		Time:           blockHeader.Timestamp.Unix(),
+		Bits:           strconv.FormatInt(int64(blockHeader.Bits), 16),
+		Difficulty:     getDifficultyRatio(blockHeader.Bits, params),
 	}
 	return blockHeaderReply, nil
 }
@@ -1695,22 +1695,22 @@ func (state *gbtWorkState) blockTemplateResult(useCoinbaseValue bool, submitOld 
 	targetDifficulty := fmt.Sprintf("%064x", blockdag.CompactToBig(header.Bits))
 	templateID := encodeTemplateID(state.prevHash, state.lastGenerated)
 	reply := btcjson.GetBlockTemplateResult{
-		Bits:         strconv.FormatInt(int64(header.Bits), 16),
-		CurTime:      header.Timestamp.Unix(),
-		Height:       int64(template.Height),
-		PreviousHash: header.PrevBlock.String(),
-		SigOpLimit:   blockdag.MaxSigOpsPerBlock,
-		SizeLimit:    wire.MaxBlockPayload,
-		Transactions: transactions,
-		Version:      header.Version,
-		LongPollID:   templateID,
-		SubmitOld:    submitOld,
-		Target:       targetDifficulty,
-		MinTime:      state.minTimestamp.Unix(),
-		MaxTime:      maxTime.Unix(),
-		Mutable:      gbtMutableFields,
-		NonceRange:   gbtNonceRange,
-		Capabilities: gbtCapabilities,
+		Bits:           strconv.FormatInt(int64(header.Bits), 16),
+		CurTime:        header.Timestamp.Unix(),
+		Height:         int64(template.Height),
+		PreviousHashes: daghash.Strings(header.PrevBlocks),
+		SigOpLimit:     blockdag.MaxSigOpsPerBlock,
+		SizeLimit:      wire.MaxBlockPayload,
+		Transactions:   transactions,
+		Version:        header.Version,
+		LongPollID:     templateID,
+		SubmitOld:      submitOld,
+		Target:         targetDifficulty,
+		MinTime:        state.minTimestamp.Unix(),
+		MaxTime:        maxTime.Unix(),
+		Mutable:        gbtMutableFields,
+		NonceRange:     gbtNonceRange,
+		Capabilities:   gbtCapabilities,
 	}
 
 	if useCoinbaseValue {
@@ -1790,7 +1790,7 @@ func handleGetBlockTemplateLongPoll(s *rpcServer, longPollID string, useCoinbase
 	// Return the block template now if the specific block template
 	// identified by the long poll ID no longer matches the current block
 	// template as this means the provided template is stale.
-	prevTemplateHash := &state.template.Block.Header.PrevBlock
+	prevTemplateHash := &state.template.Block.Header.PrevBlocks[0] // TODO: (Stas) This is probably wrong. Modified only to satisfy compilation
 	if !prevHash.IsEqual(prevTemplateHash) ||
 		lastGenerated != state.lastGenerated.Unix() {
 
@@ -1838,7 +1838,7 @@ func handleGetBlockTemplateLongPoll(s *rpcServer, longPollID string, useCoinbase
 	// Include whether or not it is valid to submit work against the old
 	// block template depending on whether or not a solution has already
 	// been found and added to the block chain.
-	submitOld := prevHash.IsEqual(&state.template.Block.Header.PrevBlock)
+	submitOld := prevHash.IsEqual(&state.template.Block.Header.PrevBlocks[0]) // TODO: (Stas) This is probably wrong. Modified only to satisfy compilation
 	result, err := state.blockTemplateResult(useCoinbaseValue, &submitOld)
 	if err != nil {
 		return nil, err
@@ -2064,10 +2064,10 @@ func handleGetBlockTemplateProposal(s *rpcServer, request *btcjson.TemplateReque
 	}
 	block := btcutil.NewBlock(&msgBlock)
 
-	// Ensure the block is building from the expected previous block.
-	expectedPrevHash := s.cfg.DAG.GetDAGState().SelectedTip.Hash
-	prevHash := &block.MsgBlock().Header.PrevBlock
-	if !expectedPrevHash.IsEqual(prevHash) {
+	// Ensure the block is building from the expected previous blocks.
+	expectedPrevHashes := s.cfg.DAG.GetDAGState().TipHashes
+	prevHashes := block.MsgBlock().Header.PrevBlocks
+	if !daghash.AreEqual(expectedPrevHashes, prevHashes) {
 		return "bad-prevblk", nil
 	}
 
@@ -2246,7 +2246,7 @@ func handleGetHeaders(s *rpcServer, cmd interface{}, closeChan <-chan struct{}) 
 // that are not related to wallet functionality.
 func handleGetInfo(s *rpcServer, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
 	dagState := s.cfg.DAG.GetDAGState()
-	ret := &btcjson.InfoChainResult{
+	ret := &btcjson.InfoDAGResult{
 		Version:         int32(1000000*appMajor + 10000*appMinor + 100*appPatch),
 		ProtocolVersion: int32(maxProtocolVersion),
 		Blocks:          dagState.SelectedTip.Height,
@@ -3399,7 +3399,7 @@ func handleUptime(s *rpcServer, cmd interface{}, closeChan <-chan struct{}) (int
 func handleValidateAddress(s *rpcServer, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
 	c := cmd.(*btcjson.ValidateAddressCmd)
 
-	result := btcjson.ValidateAddressChainResult{}
+	result := btcjson.ValidateAddressResult{}
 	addr, err := btcutil.DecodeAddress(c.Address, s.cfg.ChainParams)
 	if err != nil {
 		// Return the default value (false) for IsValid.
@@ -3412,7 +3412,7 @@ func handleValidateAddress(s *rpcServer, cmd interface{}, closeChan <-chan struc
 	return result, nil
 }
 
-func verifyChain(s *rpcServer, level, depth int32) error {
+func verifyDAG(s *rpcServer, level, depth int32) error {
 	dagState := s.cfg.DAG.GetDAGState()
 	finishHeight := dagState.SelectedTip.Height - depth
 	if finishHeight < 0 {
@@ -3447,9 +3447,9 @@ func verifyChain(s *rpcServer, level, depth int32) error {
 	return nil
 }
 
-// handleVerifyChain implements the verifychain command.
-func handleVerifyChain(s *rpcServer, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	c := cmd.(*btcjson.VerifyChainCmd)
+// handleVerifyDAG implements the verifydag command.
+func handleVerifyDAG(s *rpcServer, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
+	c := cmd.(*btcjson.VerifyDAGCmd)
 
 	var checkLevel, checkDepth int32
 	if c.CheckLevel != nil {
@@ -3459,7 +3459,7 @@ func handleVerifyChain(s *rpcServer, cmd interface{}, closeChan <-chan struct{})
 		checkDepth = *c.CheckDepth
 	}
 
-	err := verifyChain(s, checkLevel, checkDepth)
+	err := verifyDAG(s, checkLevel, checkDepth)
 	return err == nil, nil
 }
 
