@@ -33,6 +33,15 @@ func (hash Hash) String() string {
 	return hex.EncodeToString(hash[:])
 }
 
+func Strings(hashes []Hash) []string {
+	strings := make([]string, len(hashes))
+	for i, hash := range hashes {
+		strings[i] = hash.String()
+	}
+
+	return strings
+}
+
 // CloneBytes returns a copy of the bytes which represent the hash as a byte
 // slice.
 //
