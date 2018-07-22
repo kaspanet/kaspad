@@ -13,15 +13,19 @@ func (h *baseHeap) Push(x interface{}) {
 }
 
 func (h *baseHeap) Pop() interface{} {
-	old := *h
-	n := len(old)
-	x := old[n-1]
-	*h = old[0 : n-1]
-	return x
+	oldHeap := *h
+	oldLength := len(oldHeap)
+	popped := oldHeap[oldLength-1]
+	*h = oldHeap[0 : oldLength-1]
+	return popped
 }
 
 func (h baseHeap) Less(i, j int) bool {
-	return h[i].height > h[j].height || (h[i].height == h[j].height && HashToBig(&h[i].hash).Cmp(HashToBig(&h[j].hash)) > 0)
+	if h[i].height == h[j].height {
+		return HashToBig(&h[i].hash).Cmp(HashToBig(&h[j].hash)) > 0
+	}
+
+	return h[i].height > h[j].height
 }
 
 // BlockHeap represents a mutable heap of Blocks, sorted by their height
