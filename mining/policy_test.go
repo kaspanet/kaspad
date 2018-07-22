@@ -58,7 +58,7 @@ func newUtxoViewpoint(sourceTxns []*wire.MsgTx, sourceTxHeights []int32) *blockd
 	return view
 }
 
-func getTxIn(originTx *wire.MsgTx, outputIndex uint32) *wire.TxIn {
+func createTxIn(originTx *wire.MsgTx, outputIndex uint32) *wire.TxIn {
 	var prevOut *wire.OutPoint
 	if originTx != nil {
 		originTxHash := originTx.TxHash()
@@ -72,7 +72,7 @@ func getTxIn(originTx *wire.MsgTx, outputIndex uint32) *wire.TxIn {
 	return wire.NewTxIn(prevOut, nil)
 }
 
-func createTransaction(value int64, originTx *wire.MsgTx, outputIndex uint32, sigScript []byte) (*wire.MsgTx, error) {
+func createTransaction(value int64, originTx *wire.MsgTx, originTxoutputIndex uint32, sigScript []byte) (*wire.MsgTx, error) {
 	lookupKey := func(a btcutil.Address) (*btcec.PrivateKey, bool, error) {
 		// Ordinarily this function would involve looking up the private
 		// key for the provided address, but since the only thing being
@@ -80,21 +80,12 @@ func createTransaction(value int64, originTx *wire.MsgTx, outputIndex uint32, si
 		// private key from above, simply return it with the compressed
 		// flag set since the address is using the associated compressed
 		// public key.
-		//
-		// NOTE: If you want to prove the code is actually signing the
-		// transaction properly, uncomment the following line which
-		// intentionally returns an invalid key to sign with, which in
-		// turn will result in a failure during the script execution
-		// when verifying the signature.
-		//
-		// privKey.D.SetInt64(12345)
-		//
 		return privKey, true, nil
 	}
 
-	redeemTx := wire.NewMsgTx(wire.TxVersion)
+	tx := wire.NewMsgTx(wire.TxVersion)
 
-	redeemTx.AddTxIn(getTxIn(originTx, outputIndex))
+	tx.AddTxIn(createTxIn(originTx, originTxoutputIndex))
 
 	pkScript, err := txscript.PayToAddrScript(addr)
 	if err != nil {
@@ -103,14 +94,14 @@ func createTransaction(value int64, originTx *wire.MsgTx, outputIndex uint32, si
 	}
 
 	txOut := wire.NewTxOut(value, pkScript)
-	redeemTx.AddTxOut(txOut)
+	tx.AddTxOut(txOut)
 	if sigScript == nil {
 		sigScript, err = txscript.SignTxOutput(&dagconfig.MainNetParams,
-			redeemTx, 0, originTx.TxOut[0].PkScript, txscript.SigHashAll,
+			tx, 0, originTx.TxOut[0].PkScript, txscript.SigHashAll,
 			txscript.KeyClosure(lookupKey), nil, nil)
 	}
-	redeemTx.TxIn[0].SignatureScript = sigScript
-	return redeemTx, nil
+	tx.TxIn[0].SignatureScript = sigScript
+	return tx, nil
 }
 
 // TestCalcPriority ensures the priority calculations work as intended.

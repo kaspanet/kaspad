@@ -202,7 +202,7 @@ func TestBlockWireErrors(t *testing.T) {
 	// version.
 	pver := uint32(60002)
 
-	tests := []struct { //TODO: need to recheck this part (what are the correct max values)
+	tests := []struct {
 		in       *MsgBlock // Value to encode
 		buf      []byte    // Wire encoding
 		pver     uint32    // Protocol version for wire encoding

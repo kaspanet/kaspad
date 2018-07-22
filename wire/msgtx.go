@@ -432,7 +432,7 @@ func (msg *MsgTx) BtcDecode(r io.Reader, pver uint32) error {
 	}
 
 	lockTime, err := binarySerializer.Uint64(r, littleEndian)
-	msg.LockTime = uint64(lockTime)
+	msg.LockTime = lockTime
 	if err != nil {
 		returnScriptBuffers()
 		return err
@@ -728,7 +728,7 @@ func writeTxIn(w io.Writer, pver uint32, version int32, ti *TxIn) error {
 		return err
 	}
 
-	return binarySerializer.PutUint64(w, littleEndian, uint64(ti.Sequence))
+	return binarySerializer.PutUint64(w, littleEndian, ti.Sequence)
 }
 
 // readTxOut reads the next sequence of bytes from r as a transaction output
