@@ -29,16 +29,6 @@ const (
 	// executed.
 	ScriptDiscourageUpgradableNops
 
-	// ScriptVerifyCheckLockTimeVerify defines whether to verify that
-	// a transaction output is spendable based on the locktime.
-	// This is BIP0065.
-	ScriptVerifyCheckLockTimeVerify
-
-	// ScriptVerifyCheckSequenceVerify defines whether to allow execution
-	// pathways of a script to be restricted based on the age of the output
-	// being spent.  This is BIP0112.
-	ScriptVerifyCheckSequenceVerify
-
 	// ScriptVerifyCleanStack defines that the stack must contain only
 	// one stack element after evaluation and that the element must be
 	// true if interpreted as a boolean.  This is rule 6 of BIP0062.

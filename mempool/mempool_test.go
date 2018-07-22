@@ -288,7 +288,7 @@ func newPoolHarness(chainParams *dagconfig.Params) (*poolHarness, []spendableOut
 	// Generate associated pay-to-script-hash address and resulting payment
 	// script.
 	pubKeyBytes := signPub.SerializeCompressed()
-	payPubKeyAddr, err := btcutil.NewAddressPubKey(pubKeyBytes)
+	payPubKeyAddr, err := btcutil.NewAddressPubKey(pubKeyBytes, chainParams)
 	if err != nil {
 		return nil, nil, err
 	}

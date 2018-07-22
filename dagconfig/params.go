@@ -87,11 +87,6 @@ const (
 	// purposes.
 	DeploymentTestDummy = iota
 
-	// DeploymentCSV defines the rule change deployment ID for the CSV
-	// soft-fork package. The CSV package includes the deployment of BIPS
-	// 68, 112, and 113.
-	DeploymentCSV
-
 	// NOTE: DefinedDeployments must always come last since it is used to
 	// determine how many defined deployments there currently are.
 
@@ -184,7 +179,6 @@ type Params struct {
 	// These fields define the block heights at which the specified softfork
 	// BIP became active.
 	BIP0034Height int32
-	BIP0065Height int32
 	BIP0066Height int32
 
 	// CoinbaseMaturity is the number of blocks required before newly mined
@@ -283,7 +277,6 @@ var MainNetParams = Params{
 	PowLimit:                 mainPowLimit,
 	PowLimitBits:             0x1d00ffff,
 	BIP0034Height:            227931, // 000000000000024b89b42a942fe0d9fea3bb44ab7bd1b19115dd6a759c0808b8
-	BIP0065Height:            388381, // 000000000000000004c2b624ed5d7756c508d90fd0da2c7c679febfa6c4735f0
 	BIP0066Height:            363725, // 00000000000000000379eaa19dce8c9b722d46ae6a57c2f1a988119488b50931
 	CoinbaseMaturity:         100,
 	SubsidyReductionInterval: 210000,
@@ -328,11 +321,6 @@ var MainNetParams = Params{
 			StartTime:  1199145601, // January 1, 2008 UTC
 			ExpireTime: 1230767999, // December 31, 2008 UTC
 		},
-		DeploymentCSV: {
-			BitNumber:  0,
-			StartTime:  1462060800, // May 1st, 2016
-			ExpireTime: 1493596800, // May 1st, 2017
-		},
 	},
 
 	// Mempool parameters
@@ -369,7 +357,6 @@ var RegressionNetParams = Params{
 	PowLimitBits:             0x207fffff,
 	CoinbaseMaturity:         100,
 	BIP0034Height:            100000000, // Not active - Permit ver 1 blocks
-	BIP0065Height:            1351,      // Used by regression tests
 	BIP0066Height:            1251,      // Used by regression tests
 	SubsidyReductionInterval: 150,
 	TargetTimespan:           time.Hour * 24 * 14, // 14 days
@@ -391,11 +378,6 @@ var RegressionNetParams = Params{
 	Deployments: [DefinedDeployments]ConsensusDeployment{
 		DeploymentTestDummy: {
 			BitNumber:  28,
-			StartTime:  0,             // Always available for vote
-			ExpireTime: math.MaxInt64, // Never expires
-		},
-		DeploymentCSV: {
-			BitNumber:  0,
 			StartTime:  0,             // Always available for vote
 			ExpireTime: math.MaxInt64, // Never expires
 		},
@@ -439,7 +421,6 @@ var TestNet3Params = Params{
 	PowLimit:                 testNet3PowLimit,
 	PowLimitBits:             0x1d00ffff,
 	BIP0034Height:            21111,  // 0000000023b3a96d3484e5abb3755c413e7d41500f8e2a5c3f0dd01299cd8ef8
-	BIP0065Height:            581885, // 00000000007f6655f22f98e72ed80d8b06dc761d5da09df0fa1dc4be4f861eb6
 	BIP0066Height:            330776, // 000000002104c8c45e99a8853285a3b592602a3ccde2b832481da85e9e4ba182
 	CoinbaseMaturity:         100,
 	SubsidyReductionInterval: 210000,
@@ -476,11 +457,6 @@ var TestNet3Params = Params{
 			BitNumber:  28,
 			StartTime:  1199145601, // January 1, 2008 UTC
 			ExpireTime: 1230767999, // December 31, 2008 UTC
-		},
-		DeploymentCSV: {
-			BitNumber:  0,
-			StartTime:  1456790400, // March 1st, 2016
-			ExpireTime: 1493596800, // May 1st, 2017
 		},
 	},
 
@@ -521,7 +497,6 @@ var SimNetParams = Params{
 	PowLimit:                 simNetPowLimit,
 	PowLimitBits:             0x207fffff,
 	BIP0034Height:            0, // Always active on simnet
-	BIP0065Height:            0, // Always active on simnet
 	BIP0066Height:            0, // Always active on simnet
 	CoinbaseMaturity:         100,
 	SubsidyReductionInterval: 210000,
@@ -544,11 +519,6 @@ var SimNetParams = Params{
 	Deployments: [DefinedDeployments]ConsensusDeployment{
 		DeploymentTestDummy: {
 			BitNumber:  28,
-			StartTime:  0,             // Always available for vote
-			ExpireTime: math.MaxInt64, // Never expires
-		},
-		DeploymentCSV: {
-			BitNumber:  0,
 			StartTime:  0,             // Always available for vote
 			ExpireTime: math.MaxInt64, // Never expires
 		},

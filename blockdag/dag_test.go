@@ -118,18 +118,14 @@ func TestHaveBlock(t *testing.T) {
 func TestCalcSequenceLock(t *testing.T) {
 	netParams := &dagconfig.SimNetParams
 
-	// We need to activate CSV in order to test the processing logic, so
-	// manually craft the block version that's used to signal the soft-fork
-	// activation.
-	csvBit := netParams.Deployments[dagconfig.DeploymentCSV].BitNumber
-	blockVersion := int32(0x20000000 | (uint32(1) << csvBit))
+	blockVersion := int32(0x20000000)
 
-	// Generate enough synthetic blocks to activate CSV.
-	chain := newFakeDag(netParams)
+	// Generate enough synthetic blocks for the rest of the test
+	chain := newFakeDAG(netParams)
 	node := chain.dag.SelectedTip()
 	blockTime := node.Header().Timestamp
-	numBlocksToActivate := (netParams.MinerConfirmationWindow * 3)
-	for i := uint32(0); i < numBlocksToActivate; i++ {
+	numBlocksToGenerate := uint32(5)
+	for i := uint32(0); i < numBlocksToGenerate; i++ {
 		blockTime = blockTime.Add(time.Second)
 		node = newFakeNode(node, blockVersion, 0, blockTime)
 		chain.index.AddNode(node)
@@ -146,7 +142,7 @@ func TestCalcSequenceLock(t *testing.T) {
 		}},
 	})
 	utxoView := NewUtxoViewpoint()
-	utxoView.AddTxOuts(targetTx, int32(numBlocksToActivate)-4)
+	utxoView.AddTxOuts(targetTx, int32(numBlocksToGenerate)-4)
 	utxoView.SetTips(setFromSlice(node))
 
 	// Create a utxo that spends the fake utxo created above for use in the
@@ -158,7 +154,7 @@ func TestCalcSequenceLock(t *testing.T) {
 		Hash:  *targetTx.Hash(),
 		Index: 0,
 	}
-	prevUtxoHeight := int32(numBlocksToActivate) - 4
+	prevUtxoHeight := int32(numBlocksToGenerate) - 4
 
 	// Obtain the median time past from the PoV of the input created above.
 	// The MTP for the input is the MTP from the PoV of the block *prior*
@@ -170,7 +166,7 @@ func TestCalcSequenceLock(t *testing.T) {
 	// the MTP will be calculated from the PoV of the yet-to-be-mined
 	// block.
 	nextMedianTime := node.CalcPastMedianTime().Unix()
-	nextBlockHeight := int32(numBlocksToActivate) + 1
+	nextBlockHeight := int32(numBlocksToGenerate) + 1
 
 	// Add an additional transaction which will serve as our unconfirmed
 	// output.
@@ -195,29 +191,12 @@ func TestCalcSequenceLock(t *testing.T) {
 		mempool bool
 		want    *SequenceLock
 	}{
-		// A transaction of version one should disable sequence locks
-		// as the new sequence number semantics only apply to
-		// transactions version 2 or higher.
-		{
-			tx: &wire.MsgTx{
-				Version: 1,
-				TxIn: []*wire.TxIn{{
-					PreviousOutPoint: utxo,
-					Sequence:         LockTimeToSequence(false, 3),
-				}},
-			},
-			view: utxoView,
-			want: &SequenceLock{
-				Seconds:     -1,
-				BlockHeight: -1,
-			},
-		},
 		// A transaction with a single input with max sequence number.
 		// This sequence number has the high bit set, so sequence locks
 		// should be disabled.
 		{
 			tx: &wire.MsgTx{
-				Version: 2,
+				Version: 1,
 				TxIn: []*wire.TxIn{{
 					PreviousOutPoint: utxo,
 					Sequence:         wire.MaxTxInSequenceNum,
@@ -237,7 +216,7 @@ func TestCalcSequenceLock(t *testing.T) {
 		// the targeted block.
 		{
 			tx: &wire.MsgTx{
-				Version: 2,
+				Version: 1,
 				TxIn: []*wire.TxIn{{
 					PreviousOutPoint: utxo,
 					Sequence:         LockTimeToSequence(true, 2),
@@ -255,7 +234,7 @@ func TestCalcSequenceLock(t *testing.T) {
 		// chain.
 		{
 			tx: &wire.MsgTx{
-				Version: 2,
+				Version: 1,
 				TxIn: []*wire.TxIn{{
 					PreviousOutPoint: utxo,
 					Sequence:         LockTimeToSequence(true, 1024),
@@ -275,7 +254,7 @@ func TestCalcSequenceLock(t *testing.T) {
 		// latest lock that isn't disabled.
 		{
 			tx: &wire.MsgTx{
-				Version: 2,
+				Version: 1,
 				TxIn: []*wire.TxIn{{
 					PreviousOutPoint: utxo,
 					Sequence:         LockTimeToSequence(true, 2560),
@@ -300,7 +279,7 @@ func TestCalcSequenceLock(t *testing.T) {
 		// height of 2 meaning it can be included at height 3.
 		{
 			tx: &wire.MsgTx{
-				Version: 2,
+				Version: 1,
 				TxIn: []*wire.TxIn{{
 					PreviousOutPoint: utxo,
 					Sequence:         LockTimeToSequence(false, 3),
@@ -317,7 +296,7 @@ func TestCalcSequenceLock(t *testing.T) {
 		// be the time further in the future.
 		{
 			tx: &wire.MsgTx{
-				Version: 2,
+				Version: 1,
 				TxIn: []*wire.TxIn{{
 					PreviousOutPoint: utxo,
 					Sequence:         LockTimeToSequence(true, 5120),
@@ -338,7 +317,7 @@ func TestCalcSequenceLock(t *testing.T) {
 		// indicating it can be included at height 11.
 		{
 			tx: &wire.MsgTx{
-				Version: 2,
+				Version: 1,
 				TxIn: []*wire.TxIn{{
 					PreviousOutPoint: utxo,
 					Sequence:         LockTimeToSequence(false, 1),
@@ -358,7 +337,7 @@ func TestCalcSequenceLock(t *testing.T) {
 		// further into the future for both inputs should be chosen.
 		{
 			tx: &wire.MsgTx{
-				Version: 2,
+				Version: 1,
 				TxIn: []*wire.TxIn{{
 					PreviousOutPoint: utxo,
 					Sequence:         LockTimeToSequence(true, 2560),
@@ -387,7 +366,7 @@ func TestCalcSequenceLock(t *testing.T) {
 		// after that.
 		{
 			tx: &wire.MsgTx{
-				Version: 2,
+				Version: 1,
 				TxIn: []*wire.TxIn{{
 					PreviousOutPoint: unConfUtxo,
 					Sequence:         LockTimeToSequence(false, 2),
@@ -405,7 +384,7 @@ func TestCalcSequenceLock(t *testing.T) {
 		// MTP of the *next* block.
 		{
 			tx: &wire.MsgTx{
-				Version: 2,
+				Version: 1,
 				TxIn: []*wire.TxIn{{
 					PreviousOutPoint: unConfUtxo,
 					Sequence:         LockTimeToSequence(true, 1024),
@@ -469,7 +448,7 @@ func TestLocateInventory(t *testing.T) {
 	// 	genesis -> 1 -> 2 -> ... -> 15 -> 16  -> 17  -> 18
 	// 	                              \-> 16a -> 17a
 	tip := tstTip
-	dag := newFakeDag(&dagconfig.MainNetParams)
+	dag := newFakeDAG(&dagconfig.MainNetParams)
 	branch0Nodes := chainedNodes(setFromSlice(dag.dag.Genesis()), 18)
 	branch1Nodes := chainedNodes(setFromSlice(branch0Nodes[14]), 2)
 	for _, node := range branch0Nodes {
@@ -809,7 +788,7 @@ func TestHeightToHashRange(t *testing.T) {
 	// 	genesis -> 1 -> 2 -> ... -> 15 -> 16  -> 17  -> 18
 	// 	                              \-> 16a -> 17a -> 18a (unvalidated)
 	tip := tstTip
-	chain := newFakeDag(&dagconfig.MainNetParams)
+	chain := newFakeDAG(&dagconfig.MainNetParams)
 	branch0Nodes := chainedNodes(setFromSlice(chain.dag.Genesis()), 18)
 	branch1Nodes := chainedNodes(setFromSlice(branch0Nodes[14]), 3)
 	for _, node := range branch0Nodes {
@@ -901,7 +880,7 @@ func TestIntervalBlockHashes(t *testing.T) {
 	// 	genesis -> 1 -> 2 -> ... -> 15 -> 16  -> 17  -> 18
 	// 	                              \-> 16a -> 17a -> 18a (unvalidated)
 	tip := tstTip
-	chain := newFakeDag(&dagconfig.MainNetParams)
+	chain := newFakeDAG(&dagconfig.MainNetParams)
 	branch0Nodes := chainedNodes(setFromSlice(chain.dag.Genesis()), 18)
 	branch1Nodes := chainedNodes(setFromSlice(branch0Nodes[14]), 3)
 	for _, node := range branch0Nodes {

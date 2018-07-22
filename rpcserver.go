@@ -333,15 +333,15 @@ type gbtWorkState struct {
 	prevHash      *daghash.Hash
 	minTimestamp  time.Time
 	template      *mining.BlockTemplate
-	notifyMap map[daghash.Hash]map[int64]chan struct{}
-	timeSource blockdag.MedianTimeSource
+	notifyMap     map[daghash.Hash]map[int64]chan struct{}
+	timeSource    blockdag.MedianTimeSource
 }
 
 // newGbtWorkState returns a new instance of a gbtWorkState with all internal
 // fields initialized and ready to use.
 func newGbtWorkState(timeSource blockdag.MedianTimeSource) *gbtWorkState {
 	return &gbtWorkState{
-		notifyMap: make(map[daghash.Hash]map[int64]chan struct{}),
+		notifyMap:  make(map[daghash.Hash]map[int64]chan struct{}),
 		timeSource: timeSource,
 	}
 }
@@ -1198,15 +1198,6 @@ func handleGetBlockDAGInfo(s *rpcServer, cmd interface{}, closeChan <-chan struc
 				Status: height >= params.BIP0066Height,
 			},
 		},
-		{
-			ID:      "bip65",
-			Version: 4,
-			Reject: struct {
-				Status bool `json:"status"`
-			}{
-				Status: height >= params.BIP0065Height,
-			},
-		},
 	}
 
 	// Finally, query the BIP0009 version bits state for all currently
@@ -1218,9 +1209,6 @@ func handleGetBlockDAGInfo(s *rpcServer, cmd interface{}, closeChan <-chan struc
 		switch deployment {
 		case dagconfig.DeploymentTestDummy:
 			forkName = "dummy"
-
-		case dagconfig.DeploymentCSV:
-			forkName = "csv"
 
 		default:
 			return nil, &btcjson.RPCError{
@@ -1521,7 +1509,7 @@ func (state *gbtWorkState) updateBlockTemplate(s *rpcServer, useCoinbaseValue bo
 	if template == nil || state.prevHash == nil ||
 		!state.prevHash.IsEqual(latestHash) ||
 		(state.lastTxUpdate != lastTxUpdate &&
-			time.Now().After(state.lastGenerated.Add(time.Second *
+			time.Now().After(state.lastGenerated.Add(time.Second*
 				gbtRegenerateSeconds))) {
 
 		// Reset the previous best hash the block template was generated
@@ -1545,7 +1533,7 @@ func (state *gbtWorkState) updateBlockTemplate(s *rpcServer, useCoinbaseValue bo
 		blkTemplate, err := generator.NewBlockTemplate(payAddr)
 		if err != nil {
 			return internalRPCError("Failed to create new block "+
-				"template: "+ err.Error(), "")
+				"template: "+err.Error(), "")
 		}
 		template = blkTemplate
 		msgBlock = template.Block
@@ -2759,7 +2747,7 @@ func handlePing(s *rpcServer, cmd interface{}, closeChan <-chan struct{}) (inter
 	nonce, err := wire.RandomUint64()
 	if err != nil {
 		return nil, internalRPCError("Not sending ping - failed to "+
-			"generate nonce: "+ err.Error(), "")
+			"generate nonce: "+err.Error(), "")
 	}
 	s.cfg.ConnMgr.BroadcastMessage(wire.NewMsgPing(nonce))
 
@@ -3527,7 +3515,7 @@ func handleVerifyMessage(s *rpcServer, cmd interface{}, closeChan <-chan struct{
 	} else {
 		serializedPK = pk.SerializeUncompressed()
 	}
-	address, err := btcutil.NewAddressPubKey(serializedPK)
+	address, err := btcutil.NewAddressPubKey(serializedPK, params)
 	if err != nil {
 		// Again mirror Bitcoin Core behavior, which treats error in public key
 		// reconstruction as invalid signature.
@@ -4232,7 +4220,7 @@ func newRPCServer(config *rpcserverConfig) (*rpcServer, error) {
 		gbtWorkState:           newGbtWorkState(config.TimeSource),
 		helpCacher:             newHelpCacher(),
 		requestProcessShutdown: make(chan struct{}),
-		quit:                   make(chan int),
+		quit: make(chan int),
 	}
 	if cfg.RPCUser != "" && cfg.RPCPass != "" {
 		login := cfg.RPCUser + ":" + cfg.RPCPass

@@ -709,8 +709,7 @@ func (b *BlockDAG) checkBlockHeaderContext(header *wire.BlockHeader, selectedPar
 	// BIP0065, and BIP0066.
 	params := b.dagParams
 	if header.Version < 2 && blockHeight >= params.BIP0034Height ||
-		header.Version < 3 && blockHeight >= params.BIP0066Height ||
-		header.Version < 4 && blockHeight >= params.BIP0065Height {
+		header.Version < 3 && blockHeight >= params.BIP0066Height {
 
 		str := "new blocks with version %d are no longer valid"
 		str = fmt.Sprintf(str, header.Version)
@@ -741,21 +740,7 @@ func (b *BlockDAG) checkBlockContext(block *btcutil.Block, selectedParent *block
 
 	fastAdd := flags&BFFastAdd == BFFastAdd
 	if !fastAdd {
-		// Obtain the latest state of the deployed CSV soft-fork in
-		// order to properly guard the new validation behavior based on
-		// the current BIP 9 version bits state.
-		csvState, err := b.deploymentState(selectedParent, dagconfig.DeploymentCSV)
-		if err != nil {
-			return err
-		}
-
-		// Once the CSV soft-fork is fully active, we'll switch to
-		// using the current median time past of the past block's
-		// timestamps for all lock-time based checks.
-		blockTime := header.Timestamp
-		if csvState == ThresholdActive {
-			blockTime = selectedParent.CalcPastMedianTime()
-		}
+		blockTime := selectedParent.CalcPastMedianTime()
 
 		// The height of this block is one more than the referenced
 		// previous block.
@@ -1137,48 +1122,28 @@ func (b *BlockDAG) checkConnectBlock(node *blockNode, block *btcutil.Block, view
 		scriptFlags |= txscript.ScriptVerifyDERSignatures
 	}
 
-	// Enforce CHECKLOCKTIMEVERIFY for block versions 4+ once the historical
-	// activation threshold has been reached.  This is part of BIP0065.
-	if blockHeader.Version >= 4 && node.height >= b.dagParams.BIP0065Height {
-		scriptFlags |= txscript.ScriptVerifyCheckLockTimeVerify
-	}
+	// We obtain the MTP of the *previous* block in order to
+	// determine if transactions in the current block are final.
+	medianTime := node.selectedParent.CalcPastMedianTime()
 
-	// Enforce CHECKSEQUENCEVERIFY during all block validation checks once
-	// the soft-fork deployment is fully active.
-	csvState, err := b.deploymentState(node.selectedParent, dagconfig.DeploymentCSV)
-	if err != nil {
-		return err
-	}
-	if csvState == ThresholdActive {
-		// If the CSV soft-fork is now active, then modify the
-		// scriptFlags to ensure that the CSV op code is properly
-		// validated during the script checks bleow.
-		scriptFlags |= txscript.ScriptVerifyCheckSequenceVerify
-
-		// We obtain the MTP of the *previous* block in order to
-		// determine if transactions in the current block are final.
-		medianTime := node.selectedParent.CalcPastMedianTime()
-
-		// Additionally, if the CSV soft-fork package is now active,
-		// then we also enforce the relative sequence number based
-		// lock-times within the inputs of all transactions in this
-		// candidate block.
-		for _, tx := range block.Transactions() {
-			// A transaction can only be included within a block
-			// once the sequence locks of *all* its inputs are
-			// active.
-			sequenceLock, err := b.calcSequenceLock(node, tx, view,
-				false)
-			if err != nil {
-				return err
-			}
-			if !SequenceLockActive(sequenceLock, node.height,
-				medianTime) {
-				str := fmt.Sprintf("block contains " +
-					"transaction whose input sequence " +
-					"locks are not met")
-				return ruleError(ErrUnfinalizedTx, str)
-			}
+	// We also enforce the relative sequence number based
+	// lock-times within the inputs of all transactions in this
+	// candidate block.
+	for _, tx := range block.Transactions() {
+		// A transaction can only be included within a block
+		// once the sequence locks of *all* its inputs are
+		// active.
+		sequenceLock, err := b.calcSequenceLock(node, tx, view,
+			false)
+		if err != nil {
+			return err
+		}
+		if !SequenceLockActive(sequenceLock, node.height,
+			medianTime) {
+			str := fmt.Sprintf("block contains " +
+				"transaction whose input sequence " +
+				"locks are not met")
+			return ruleError(ErrUnfinalizedTx, str)
 		}
 	}
 

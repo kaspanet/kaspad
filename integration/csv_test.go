@@ -24,10 +24,6 @@ import (
 	"github.com/daglabs/btcutil"
 )
 
-const (
-	csvKey = "csv"
-)
-
 // makeTestOutput creates an on-chain output paying to a freshly generated
 // p2pkh output with the specified amount.
 func makeTestOutput(r *rpctest.Harness, t *testing.T,
@@ -94,18 +90,11 @@ func makeTestOutput(r *rpctest.Harness, t *testing.T,
 // them.
 //
 // Overview:
-//  - Pre soft-fork:
-//    - Transactions with non-final lock-times from the PoV of MTP should be
-//      rejected from the mempool.
-//    - Transactions within non-final MTP based lock-times should be accepted
-//      in valid blocks.
-//
-//  - Post soft-fork:
 //    - Transactions with non-final lock-times from the PoV of MTP should be
 //      rejected from the mempool and when found within otherwise valid blocks.
 //    - Transactions with final lock-times from the PoV of MTP should be
 //      accepted to the mempool and mined in future block.
-func TestBIP0113Activation(t *testing.T) {
+func TestBIP0113(t *testing.T) {
 	t.Parallel()
 
 	btcdCfg := []string{"--rejectnonstd"}
@@ -175,6 +164,7 @@ func TestBIP0113Activation(t *testing.T) {
 			"non-final, instead: %v", err)
 	}
 
+<<<<<<< HEAD:integration/csv_fork_test.go
 	// However, since the block validation consensus rules haven't yet
 	// activated, a block including the transaction should be accepted.
 	txns := []*btcutil.Tx{btcutil.NewTx(tx)}
@@ -208,6 +198,8 @@ func TestBIP0113Activation(t *testing.T) {
 	assertChainHeight(r, t, 299)
 	assertSoftForkStatus(r, t, csvKey, blockdag.ThresholdActive)
 
+=======
+>>>>>>> origin/master:integration/csv_test.go
 	// The timeLockDeltas slice represents a series of deviations from the
 	// current MTP which will be used to test border conditions w.r.t
 	// transaction finality. -1 indicates 1 second prior to the MTP, 0
@@ -266,7 +258,7 @@ func TestBIP0113Activation(t *testing.T) {
 				"due to being  non-final, instead: %v", err)
 		}
 
-		txns = []*btcutil.Tx{btcutil.NewTx(tx)}
+		txns := []*btcutil.Tx{btcutil.NewTx(tx)}
 		_, err := r.GenerateAndSubmitBlock(txns, -1, time.Time{})
 		if err == nil && timeLockDelta >= 0 {
 			t.Fatal("block should be rejected due to non-final " +
@@ -292,8 +284,7 @@ func createCSVOutput(r *rpctest.Harness, t *testing.T,
 	// Our CSV script is simply: <sequenceLock> OP_CSV OP_DROP
 	b := txscript.NewScriptBuilder().
 		AddInt64(int64(sequenceLock)).
-		AddOp(txscript.OP_CHECKSEQUENCEVERIFY).
-		AddOp(txscript.OP_DROP)
+		AddOp(txscript.OpCheckSequenceVerify)
 	csvScript, err := b.Script()
 	if err != nil {
 		return nil, nil, nil, err
@@ -349,7 +340,7 @@ func spendCSVOutput(redeemScript []byte, csvUTXO *wire.OutPoint,
 	tx.AddTxOut(targetOutput)
 
 	b := txscript.NewScriptBuilder().
-		AddOp(txscript.OP_TRUE).
+		AddOp(txscript.OpTrue).
 		AddData(redeemScript)
 
 	sigScript, err := b.Script()
@@ -386,18 +377,9 @@ func assertTxInBlock(r *rpctest.Harness, t *testing.T, blockHash *daghash.Hash,
 		"block %v", line, txid, blockHash)
 }
 
-// TestBIP0068AndBIP0112Activation tests for the proper adherence to the BIP
-// 112 and BIP 68 rule-set after the activation of the CSV-package soft-fork.
-//
-// Overview:
-//  - Pre soft-fork:
-//    - A transaction spending a CSV output validly should be rejected from the
-//    mempool, but accepted in a valid generated block including the
-//    transaction.
-//  - Post soft-fork:
-//    - See the cases exercised within the table driven tests towards the end
-//    of this test.
-func TestBIP0068AndBIP0112Activation(t *testing.T) {
+// TestBIP0068AndCsv tests for the proper adherence to the BIP 68
+// rule-set and the behaviour of OP_CHECKSEQUENCEVERIFY
+func TestBIP0068AndCsv(t *testing.T) {
 	t.Parallel()
 
 	// We'd like the test proper evaluation and validation of the BIP 68
@@ -414,8 +396,11 @@ func TestBIP0068AndBIP0112Activation(t *testing.T) {
 	}
 	defer r.TearDown()
 
+<<<<<<< HEAD:integration/csv_fork_test.go
 	assertSoftForkStatus(r, t, csvKey, blockdag.ThresholdStarted)
 
+=======
+>>>>>>> origin/master:integration/csv_test.go
 	harnessAddr, err := r.NewAddress()
 	if err != nil {
 		t.Fatalf("unable to obtain harness address: %v", err)
@@ -435,6 +420,7 @@ func TestBIP0068AndBIP0112Activation(t *testing.T) {
 		PkScript: harnessScript,
 	}
 
+<<<<<<< HEAD:integration/csv_fork_test.go
 	// As the soft-fork hasn't yet activated _any_ transaction version
 	// which uses the CSV opcode should be accepted. Since at this point,
 	// CSV doesn't actually exist, it's just a NOP.
@@ -492,21 +478,28 @@ func TestBIP0068AndBIP0112Activation(t *testing.T) {
 	assertChainHeight(r, t, 107)
 
 	// With the height at 107 we need 200 blocks to be mined after the
+=======
+	// With the height at 104 we need 200 blocks to be mined after the
+>>>>>>> origin/master:integration/csv_test.go
 	// genesis target period, so we mine 192 blocks. This'll put us at
-	// height 299. The getblockchaininfo call checks the state for the
+	// height 296. The getblockchaininfo call checks the state for the
 	// block AFTER the current height.
 	numBlocks := (r.ActiveNet.MinerConfirmationWindow * 2) - 8
 	if _, err := r.Node.Generate(numBlocks); err != nil {
 		t.Fatalf("unable to generate blocks: %v", err)
 	}
 
+<<<<<<< HEAD:integration/csv_fork_test.go
 	assertChainHeight(r, t, 299)
 	assertSoftForkStatus(r, t, csvKey, blockdag.ThresholdActive)
+=======
+	assertChainHeight(r, t, 293)
+>>>>>>> origin/master:integration/csv_test.go
 
 	// Knowing the number of outputs needed for the tests below, create a
 	// fresh output for use within each of the test-cases below.
 	const relativeTimeLock = 512
-	const numTests = 8
+	const numTests = 7
 	type csvOutput struct {
 		RedeemScript []byte
 		Utxo         *wire.OutPoint
@@ -519,7 +512,7 @@ func TestBIP0068AndBIP0112Activation(t *testing.T) {
 	for i := 0; i < numTests; i++ {
 		timeLock := relativeTimeLock
 		isSeconds := true
-		if i < 7 {
+		if i < 6 {
 			timeLock = relativeBlockLock
 			isSeconds = false
 		}
@@ -586,6 +579,7 @@ func TestBIP0068AndBIP0112Activation(t *testing.T) {
 		tx     *wire.MsgTx
 		accept bool
 	}{
+<<<<<<< HEAD:integration/csv_fork_test.go
 		// A valid transaction with a single input a sequence number
 		// creating a 100 block relative time-lock. This transaction
 		// should be rejected as its version number is 1, and only tx
@@ -595,58 +589,90 @@ func TestBIP0068AndBIP0112Activation(t *testing.T) {
 			accept: false,
 		},
 		// A transaction of version 2 spending a single input. The
+=======
+		// A transaction spending a single input. The
+>>>>>>> origin/master:integration/csv_test.go
 		// input has a relative time-lock of 1 block, but the disable
 		// bit it set. The transaction should be rejected as a result.
 		{
 			tx: makeTxCase(
+<<<<<<< HEAD:integration/csv_fork_test.go
 				blockdag.LockTimeToSequence(false, 1)|wire.SequenceLockTimeDisabled,
 				2,
+=======
+				blockchain.LockTimeToSequence(false, 1)|wire.SequenceLockTimeDisabled,
+				1,
+>>>>>>> origin/master:integration/csv_test.go
 			),
 			accept: false,
 		},
-		// A v2 transaction with a single input having a 9 block
+		// A transaction with a single input having a 9 block
 		// relative time lock. The referenced input is 11 blocks old,
 		// but the CSV output requires a 10 block relative lock-time.
 		// Therefore, the transaction should be rejected.
 		{
+<<<<<<< HEAD:integration/csv_fork_test.go
 			tx:     makeTxCase(blockdag.LockTimeToSequence(false, 9), 2),
+=======
+			tx:     makeTxCase(blockchain.LockTimeToSequence(false, 9), 1),
+>>>>>>> origin/master:integration/csv_test.go
 			accept: false,
 		},
-		// A v2 transaction with a single input having a 10 block
+		// A transaction with a single input having a 10 block
 		// relative time lock. The referenced input is 11 blocks old so
 		// the transaction should be accepted.
 		{
+<<<<<<< HEAD:integration/csv_fork_test.go
 			tx:     makeTxCase(blockdag.LockTimeToSequence(false, 10), 2),
+=======
+			tx:     makeTxCase(blockchain.LockTimeToSequence(false, 10), 1),
+>>>>>>> origin/master:integration/csv_test.go
 			accept: true,
 		},
-		// A v2 transaction with a single input having a 11 block
+		// A transaction with a single input having a 11 block
 		// relative time lock. The input referenced has an input age of
 		// 11 and the CSV op-code requires 10 blocks to have passed, so
 		// this transaction should be accepted.
 		{
+<<<<<<< HEAD:integration/csv_fork_test.go
 			tx:     makeTxCase(blockdag.LockTimeToSequence(false, 11), 2),
+=======
+			tx:     makeTxCase(blockchain.LockTimeToSequence(false, 11), 1),
+>>>>>>> origin/master:integration/csv_test.go
 			accept: true,
 		},
-		// A v2 transaction whose input has a 1000 blck relative time
+		// A transaction whose input has a 1000 blck relative time
 		// lock.  This should be rejected as the input's age is only 11
 		// blocks.
 		{
+<<<<<<< HEAD:integration/csv_fork_test.go
 			tx:     makeTxCase(blockdag.LockTimeToSequence(false, 1000), 2),
+=======
+			tx:     makeTxCase(blockchain.LockTimeToSequence(false, 1000), 1),
+>>>>>>> origin/master:integration/csv_test.go
 			accept: false,
 		},
-		// A v2 transaction with a single input having a 512,000 second
+		// A transaction with a single input having a 512,000 second
 		// relative time-lock. This transaction should be rejected as 6
 		// days worth of blocks haven't yet been mined. The referenced
 		// input doesn't have sufficient age.
 		{
+<<<<<<< HEAD:integration/csv_fork_test.go
 			tx:     makeTxCase(blockdag.LockTimeToSequence(true, 512000), 2),
+=======
+			tx:     makeTxCase(blockchain.LockTimeToSequence(true, 512000), 1),
+>>>>>>> origin/master:integration/csv_test.go
 			accept: false,
 		},
-		// A v2 transaction whose single input has a 512 second
+		// A transaction whose single input has a 512 second
 		// relative time-lock. This transaction should be accepted as
 		// finalized.
 		{
+<<<<<<< HEAD:integration/csv_fork_test.go
 			tx:     makeTxCase(blockdag.LockTimeToSequence(true, 512), 2),
+=======
+			tx:     makeTxCase(blockchain.LockTimeToSequence(true, 512), 1),
+>>>>>>> origin/master:integration/csv_test.go
 			accept: true,
 		},
 	}
