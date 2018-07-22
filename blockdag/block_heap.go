@@ -41,16 +41,16 @@ type BlockHeap struct {
 }
 
 // HeapDirection represents the direction the heap traverses it's children
-type HeapDirection bool
+type blockHeapDirection bool
 
 // HeapDirection possible values
 const (
-	HeapDirectionUp   HeapDirection = true
-	HeapDirectionDown HeapDirection = false
+	blockHeapDirectionUp   blockHeapDirection = true
+	blockHeapDirectionDown blockHeapDirection = false
 )
 
 // NewHeap initializes and returns a new BlockHeap
-func NewHeap(direction HeapDirection) BlockHeap {
+func newBlockHeap(direction HeapDirection) BlockHeap {
 	var h BlockHeap
 	if direction == HeapDirectionUp {
 		h = BlockHeap{impl: &upHeap{}}
