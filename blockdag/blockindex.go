@@ -78,19 +78,19 @@ type blockNode struct {
 	selectedParent *blockNode
 
 	// children are the all the blocks that refer to this block as a parent
-	Children blockSet
+	children blockSet
 
-	// DiffChild is the child that UTXODiff will be built from
-	DiffChild *blockNode
+	// diffChild is the child that UTXODiff will be built from
+	diffChild *blockNode
 
 	// TODO: Explain shortly what is blues
-	Blues blockSet
+	blues blockSet
 
 	// TODO: Explain shortly what is blue score
-	BlueScore int64
+	blueScore int64
 
-	// The UTXO of the block represented as a diff to the diff child
-	UTXODiff UtxoViewpoint
+	// utxoDiff is the UTXO of the block represented as a diff to the virtual block
+	utxoDiff UtxoViewpoint
 
 	// hash is the double sha 256 of the block.
 	hash daghash.Hash
