@@ -3,7 +3,6 @@ package blockdag
 import "container/heap"
 
 // baseHeap is an implementation for heap.Interface that sorts blocks by their height
-// baseHeap doesn't implement Less, because it is implemented by sub-classes, depending on direction
 type baseHeap []*blockNode
 
 func (h baseHeap) Len() int      { return len(h) }
