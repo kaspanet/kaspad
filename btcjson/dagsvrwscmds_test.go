@@ -155,45 +155,6 @@ func TestDAGSvrWsCmds(t *testing.T) {
 			},
 		},
 		{
-			name: "rescan",
-			newCmd: func() (interface{}, error) {
-				return btcjson.NewCmd("rescan", "123", `["1Address"]`, `[{"hash":"0000000000000000000000000000000000000000000000000000000000000123","index":0}]`)
-			},
-			staticCmd: func() interface{} {
-				addrs := []string{"1Address"}
-				ops := []btcjson.OutPoint{{
-					Hash:  "0000000000000000000000000000000000000000000000000000000000000123",
-					Index: 0,
-				}}
-				return btcjson.NewRescanCmd("123", addrs, ops, nil)
-			},
-			marshalled: `{"jsonrpc":"1.0","method":"rescan","params":["123",["1Address"],[{"hash":"0000000000000000000000000000000000000000000000000000000000000123","index":0}]],"id":1}`,
-			unmarshalled: &btcjson.RescanCmd{
-				BeginBlock: "123",
-				Addresses:  []string{"1Address"},
-				OutPoints:  []btcjson.OutPoint{{Hash: "0000000000000000000000000000000000000000000000000000000000000123", Index: 0}},
-				EndBlock:   nil,
-			},
-		},
-		{
-			name: "rescan optional",
-			newCmd: func() (interface{}, error) {
-				return btcjson.NewCmd("rescan", "123", `["1Address"]`, `[{"hash":"123","index":0}]`, "456")
-			},
-			staticCmd: func() interface{} {
-				addrs := []string{"1Address"}
-				ops := []btcjson.OutPoint{{Hash: "123", Index: 0}}
-				return btcjson.NewRescanCmd("123", addrs, ops, btcjson.String("456"))
-			},
-			marshalled: `{"jsonrpc":"1.0","method":"rescan","params":["123",["1Address"],[{"hash":"123","index":0}],"456"],"id":1}`,
-			unmarshalled: &btcjson.RescanCmd{
-				BeginBlock: "123",
-				Addresses:  []string{"1Address"},
-				OutPoints:  []btcjson.OutPoint{{Hash: "123", Index: 0}},
-				EndBlock:   btcjson.String("456"),
-			},
-		},
-		{
 			name: "loadtxfilter",
 			newCmd: func() (interface{}, error) {
 				return btcjson.NewCmd("loadtxfilter", false, `["1Address"]`, `[{"hash":"0000000000000000000000000000000000000000000000000000000000000123","index":0}]`)
