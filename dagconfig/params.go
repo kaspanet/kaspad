@@ -149,6 +149,9 @@ func (prefix Bech32Prefix) String() string {
 // used by Bitcoin applications to differentiate networks as well as addresses
 // and keys for one network from those intended for use on another network.
 type Params struct {
+	// K Determines the depth of the chain start in relation to the virtual block
+	K uint
+
 	// Name defines a human-readable identifier for the network.
 	Name string
 

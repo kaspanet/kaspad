@@ -1,23 +1,20 @@
 package blockdag
 
-import "github.com/daglabs/phantompoc/model"
-
-func (dag *BlockDAG) blues(block *blockNode) (blues []*blockNode, selectedParent *blockNode, score int) {
-	bestScore := -1
+func (dag *BlockDAG) blues(block *blockNode) (blues []*blockNode, selectedParent *blockNode, score int64) {
+	bestScore := int64(-1)
 	var bestParent *blockNode
 	var bestBlues []*blockNode
 	past := dag.relevantPast(block)
-	for parent := range block.parents {
-		chainStart := p.digToChainStart(block, parent)
-		candidates := p.blueCandidates(chainStart, past)
-		blues := p.traverseCandidates(block, candidates, parent)
-		score := len(blues) + parent.blueScore
+	for _, parent := range block.parents {
+		chainStart := dag.digToChainStart(block, parent)
+		candidates := dag.blueCandidates(chainStart, past)
+		blues := dag.traverseCandidates(block, candidates, parent)
+		score := int64(len(blues)) + parent.blueScore
 
 		if score > bestScore {
 			bestScore = score
 			bestBlues = blues
 			bestParent = parent
-		} else {
 		}
 	}
 
@@ -29,7 +26,7 @@ func (dag *BlockDAG) relevantPast(block *blockNode) blockSet {
 	queue := newBlockHeap(blockHeapDirectionDown)
 	queue.Push(block)
 	past := newSet()
-	depths := map[*blockNode]int{
+	depths := map[*blockNode]uint{
 		block: 0,
 	}
 
@@ -37,10 +34,10 @@ func (dag *BlockDAG) relevantPast(block *blockNode) blockSet {
 		current := queue.Pop()
 		depth := depths[current]
 		parentDepth := depth + 1
-		if depth < p.K {
-			for parent := range current.Parents {
-				if !past.Contains(parent) {
-					past.Add(parent)
+		if depth < dag.dagParams.K {
+			for _, parent := range current.parents {
+				if !past.contains(parent) {
+					past.add(parent)
 					queue.Push(parent)
 					depths[parent] = parentDepth
 				} else if previousDepth := depths[parent]; parentDepth < previousDepth {
@@ -55,32 +52,32 @@ func (dag *BlockDAG) relevantPast(block *blockNode) blockSet {
 }
 
 // digToChainStart digs through the chain and returns the block in depth k+1
-func (dag *BlockDAG) digToChainStart(block *blockNode, parent *model.Block) *model.Block {
+func (dag *BlockDAG) digToChainStart(block *blockNode, parent *blockNode) *blockNode {
 	current := parent
 
-	for i := 0; i < p.K; i++ {
-		if current.IsGenesis() {
+	for i := uint(0); i < dag.dagParams.K; i++ {
+		if current.isGenesis() {
 			break
 		}
-		current = current.SelectedParent
+		current = current.selectedParent
 	}
 
 	return current
 }
 
-func (p *Phantom) blueCandidates(chainStart *model.Block, past model.BlockSet) model.BlockSet {
-	candidates := model.NewSet()
-	candidates.Add(chainStart)
+func (dag *BlockDAG) blueCandidates(chainStart *blockNode, past blockSet) blockSet {
+	candidates := newSet()
+	candidates.add(chainStart)
 
-	queue := []*model.Block{chainStart}
+	queue := []*blockNode{chainStart}
 	for len(queue) > 0 {
-		var current *model.Block
+		var current *blockNode
 		current, queue = queue[0], queue[1:]
 
-		children := current.Children
-		for child := range children {
-			if !candidates.Contains(child) && past.Contains(child) {
-				candidates.Add(child)
+		children := current.children
+		for _, child := range children {
+			if !candidates.contains(child) && past.contains(child) {
+				candidates.add(child)
 				queue = append(queue, child)
 			}
 		}
@@ -89,27 +86,27 @@ func (p *Phantom) blueCandidates(chainStart *model.Block, past model.BlockSet) m
 	return candidates
 }
 
-func (p *Phantom) traverseCandidates(newBlock *model.Block, candidates model.BlockSet, selectedParent *model.Block) []*model.Block {
-	blues := []*model.Block{}
-	selectedParentPast := model.NewSet()
-	queue := model.NewHeap(model.HeapDirectionDown)
-	visited := model.NewSet()
+func (dag *BlockDAG) traverseCandidates(newBlock *blockNode, candidates blockSet, selectedParent *blockNode) []*blockNode {
+	blues := []*blockNode{}
+	selectedParentPast := newSet()
+	queue := newBlockHeap(blockHeapDirectionDown)
+	visited := newSet()
 
-	for parent := range newBlock.Parents {
+	for _, parent := range newBlock.parents {
 		queue.Push(parent)
 	}
 
 	for queue.Len() > 0 {
 		current := queue.Pop()
-		if candidates.Contains(current) {
-			if current == selectedParent || selectedParentPast.AnyChildInSet(current) {
-				selectedParentPast.Add(current)
+		if candidates.contains(current) {
+			if current == selectedParent || selectedParentPast.anyChildInSet(current) {
+				selectedParentPast.add(current)
 			} else {
 				blues = append(blues, current)
 			}
-			for parent := range current.Parents {
-				if !visited.Contains(parent) {
-					visited.Add(parent)
+			for _, parent := range current.parents {
+				if !visited.contains(parent) {
+					visited.add(parent)
 					queue.Push(parent)
 				}
 			}

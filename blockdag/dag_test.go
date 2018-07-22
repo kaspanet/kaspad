@@ -127,7 +127,7 @@ func TestCalcSequenceLock(t *testing.T) {
 	numBlocksToGenerate := uint32(5)
 	for i := uint32(0); i < numBlocksToGenerate; i++ {
 		blockTime = blockTime.Add(time.Second)
-		node = newFakeNode(node, blockVersion, 0, blockTime)
+		node = newFakeNode(setFromSlice(node), blockVersion, 0, blockTime)
 		chain.index.AddNode(node)
 		chain.dag.SetTip(node)
 	}

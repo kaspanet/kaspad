@@ -242,6 +242,11 @@ func (node *blockNode) PrevHashes() []daghash.Hash {
 	return prevHashes
 }
 
+// isGenesis says if the current block is the genesis block
+func (node *blockNode) isGenesis() bool {
+	return len(node.parents) == 0
+}
+
 // blockIndex provides facilities for keeping track of an in-memory index of the
 // block chain.  Although the name block chain suggests a single chain of
 // blocks, it is actually a tree-shaped structure where any node can have

@@ -138,3 +138,14 @@ func (bs blockSet) String() string {
 	}
 	return strings.Join(ids, ",")
 }
+
+// anyChildInSet returns true iff any child of block is contained within this set
+func (bs blockSet) anyChildInSet(block *blockNode) bool {
+	for _, child := range block.children {
+		if bs.contains(child) {
+			return true
+		}
+	}
+
+	return false
+}

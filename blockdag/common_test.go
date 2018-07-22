@@ -372,13 +372,13 @@ func newFakeDAG(params *dagconfig.Params) *BlockDAG {
 
 // newFakeNode creates a block node connected to the passed parent with the
 // provided fields populated and fake values for the other fields.
-func newFakeNode(parent *blockNode, blockVersion int32, bits uint32, timestamp time.Time) *blockNode {
+func newFakeNode(parents blockSet, blockVersion int32, bits uint32, timestamp time.Time) *blockNode {
 	// Make up a header and create a block node from it.
 	header := &wire.BlockHeader{
 		Version:    blockVersion,
-		PrevBlocks: []daghash.Hash{parent.hash}, // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
+		PrevBlocks: parents.hashes(),
 		Bits:       bits,
 		Timestamp:  timestamp,
 	}
-	return newBlockNode(header, setFromSlice(parent)) // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
+	return newBlockNode(header, parents)
 }
