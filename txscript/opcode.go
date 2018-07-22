@@ -1156,7 +1156,7 @@ func opcodeCheckSequenceVerify(op *parsedOpcode, vm *Engine) error {
 	// standard 4-byte scriptNum would only support up to a maximum of
 	// 2^31-1.  Thus, a 5-byte scriptNum is used here since it will support
 	// up to 2^39-1 which allows sequences beyond the current sequence
-	// limit. TODO: Understand this
+	// limit.
 	//
 	// PopByteArray is used here instead of PopInt because we do not want
 	// to be limited to a 4-byte integer for reasons specified above.
