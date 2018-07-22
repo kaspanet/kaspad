@@ -741,7 +741,7 @@ func createTxRawResult(chainParams *dagconfig.Params, mtx *wire.MsgTx,
 
 	if blkHeader != nil {
 		// This is not a typo, they are identical in bitcoind as well.
-		txReply.Time = blkHeader.Timestamp.Unix()
+		txReply.Time = uint64(blkHeader.Timestamp.Unix())
 		txReply.Blocktime = uint64(blkHeader.Timestamp.Unix())
 		txReply.BlockHash = blkHash
 		txReply.Confirmations = uint64(1 + chainHeight - blkHeight)

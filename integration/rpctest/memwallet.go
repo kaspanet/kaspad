@@ -560,7 +560,7 @@ func (m *memWallet) ConfirmedBalance() btcutil.Amount {
 }
 
 // keyToAddr maps the passed private to corresponding p2pkh address.
-func keyToAddr(key *btcec.PrivateKey, net *chaincfg.Params) (btcutil.Address, error) {
+func keyToAddr(key *btcec.PrivateKey, net *dagconfig.Params) (btcutil.Address, error) {
 	serializedKey := key.PubKey().SerializeCompressed()
 	pubKeyAddr, err := btcutil.NewAddressPubKey(serializedKey, net)
 	if err != nil {
