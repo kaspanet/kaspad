@@ -76,7 +76,9 @@ func dbIndexConnectBlock(dbTx database.Tx, indexer Indexer, block *btcutil.Block
 	if err != nil {
 		return err
 	}
-	if !curTipHash.IsEqual(block.MsgBlock().Header.SelectedPrevBlock()) {
+
+	header := block.MsgBlock().Header
+	if header.NumPrevBlocks > 0 && !curTipHash.IsEqual(header.SelectedPrevBlock()) {
 		return AssertError(fmt.Sprintf("dbIndexConnectBlock must be "+
 			"called with a block that extends the current index "+
 			"tip (%s, tip %s, block %s)", indexer.Name(),
