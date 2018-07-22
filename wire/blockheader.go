@@ -75,6 +75,10 @@ func (header *BlockHeader) SelectedPrevBlock() *daghash.Hash {
 	return &header.PrevBlocks[0]
 }
 
+func (header *BlockHeader) IsGenesis() bool {
+	return header.NumPrevBlocks == 0
+}
+
 // BtcDecode decodes r using the bitcoin protocol encoding into the receiver.
 // This is part of the Message interface implementation.
 // See Deserialize for decoding block headers stored to disk, such as in a
