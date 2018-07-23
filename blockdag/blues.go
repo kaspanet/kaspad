@@ -7,12 +7,16 @@ func (dag *BlockDAG) blues(block *blockNode) (blues []*blockNode, selectedParent
 	var bestParent *blockNode
 	var bestBlues []*blockNode
 	past := dag.relevantPast(block)
-	fmt.Printf("Past: %v", past)
+	fmt.Printf("Past: %v\n", past)
 	for _, parent := range block.parents {
 		chainStart := dag.digToChainStart(block, parent)
+		fmt.Printf("chainstart: %v\n", chainStart)
 		candidates := dag.blueCandidates(chainStart, past)
+		fmt.Printf("candidates: %v\n", candidates)
 		blues := dag.traverseCandidates(block, candidates, parent)
+		fmt.Printf("blues: %v\n", blues)
 		score := int64(len(blues)) + parent.blueScore
+		fmt.Printf("score: %v\n", score)
 
 		if score > bestScore {
 			bestScore = score
@@ -37,7 +41,7 @@ func (dag *BlockDAG) relevantPast(block *blockNode) blockSet {
 		current := queue.Pop()
 		depth := depths[current]
 		parentDepth := depth + 1
-		if depth < dag.dagParams.K {
+		if depth < dag.dagParams.K { //No need for K + 1 because we don't need the chainStart
 			for _, parent := range current.parents {
 				if !past.contains(parent) {
 					past.add(parent)

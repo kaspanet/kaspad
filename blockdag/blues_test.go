@@ -45,7 +45,7 @@ func TestBlues(t *testing.T) {
 				{
 					parents:                []string{"B"},
 					id:                     "D",
-					expectedScore:          2,
+					expectedScore:          1,
 					expectedSelectedParent: "B",
 					expectedBlues:          []string{"A", "B"},
 				},
@@ -118,6 +118,7 @@ func TestBlues(t *testing.T) {
 		}
 
 		for _, blockData := range test.dagData {
+			fmt.Printf("Block %v test:\n", blockData.id)
 			blockTime = blockTime.Add(time.Second)
 			parents := blockSet{}
 			for _, parentID := range blockData.parents {

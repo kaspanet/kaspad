@@ -128,6 +128,7 @@ func initBlockNode(node *blockNode, blockHeader *wire.BlockHeader, parents block
 	*node = blockNode{
 		hash:       blockHeader.BlockHash(),
 		parents:    parents,
+		children:   make(blockSet),
 		workSum:    CalcWork(blockHeader.Bits),
 		version:    blockHeader.Version,
 		bits:       blockHeader.Bits,
@@ -315,6 +316,9 @@ func (bi *blockIndex) AddNode(node *blockNode) {
 // This function is NOT safe for concurrent access.
 func (bi *blockIndex) addNode(node *blockNode) {
 	bi.index[node.hash] = node
+	for _, parent := range node.parents {
+		parent.children.add(node)
+	}
 }
 
 // NodeStatus provides concurrent-safe access to the status field of a node.
