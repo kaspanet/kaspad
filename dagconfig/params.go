@@ -489,6 +489,7 @@ var TestNet3Params = Params{
 // following normal discovery rules.  This is important as otherwise it would
 // just turn into another public testnet.
 var SimNetParams = Params{
+	K:           1,
 	Name:        "simnet",
 	Net:         wire.SimNet,
 	DefaultPort: "18555",
