@@ -1,10 +1,13 @@
 package blockdag
 
+import "fmt"
+
 func (dag *BlockDAG) blues(block *blockNode) (blues []*blockNode, selectedParent *blockNode, score int64) {
 	bestScore := int64(-1)
 	var bestParent *blockNode
 	var bestBlues []*blockNode
 	past := dag.relevantPast(block)
+	fmt.Printf("Past: %v", past)
 	for _, parent := range block.parents {
 		chainStart := dag.digToChainStart(block, parent)
 		candidates := dag.blueCandidates(chainStart, past)
