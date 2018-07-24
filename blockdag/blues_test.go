@@ -67,27 +67,27 @@ func TestBlues(t *testing.T) {
 					parents:                []string{"C", "D"},
 					id:                     "G",
 					expectedScore:          4,
-					expectedSelectedParent: "D",
-					expectedBlues:          []string{"D"},
+					expectedSelectedParent: "C",
+					expectedBlues:          []string{"D", "B", "C"},
 				},
 				{
 					parents:                []string{"C", "E"},
 					id:                     "H",
-					expectedScore:          6,
+					expectedScore:          4,
 					expectedSelectedParent: "C",
-					expectedBlues:          []string{"C", "B", "D", "G", "E"}, //DGE is not for sure
+					expectedBlues:          []string{"E", "B", "C"},
 				},
 				{
 					parents:                []string{"E", "G"},
 					id:                     "I",
-					expectedScore:          4,
+					expectedScore:          5,
 					expectedSelectedParent: "E",
-					expectedBlues:          []string{"E", "D", "G"},
+					expectedBlues:          []string{"G", "D", "E"},
 				},
 				{
 					parents:                []string{"F"},
 					id:                     "J",
-					expectedScore:          2,
+					expectedScore:          3,
 					expectedSelectedParent: "F",
 					expectedBlues:          []string{"F"},
 				},
@@ -132,7 +132,7 @@ func TestBlues(t *testing.T) {
 			blockIDMap[blockData.id] = node
 			idBlockMap[node] = blockData.id
 
-			bluesIDs := make([]string, len(node.blues))
+			bluesIDs := make([]string, 0, len(node.blues))
 			for _, blue := range node.blues {
 				bluesIDs = append(bluesIDs, idBlockMap[blue])
 			}
