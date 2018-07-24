@@ -45,51 +45,51 @@ func TestBlues(t *testing.T) {
 				{
 					parents:                []string{"B"},
 					id:                     "D",
-					expectedScore:          1,
+					expectedScore:          2,
 					expectedSelectedParent: "B",
-					expectedBlues:          []string{"A", "B"},
+					expectedBlues:          []string{"B"},
 				},
 				{
 					parents:                []string{"B"},
 					id:                     "E",
 					expectedScore:          2,
 					expectedSelectedParent: "B",
-					expectedBlues:          []string{"A", "E"},
+					expectedBlues:          []string{"B"},
 				},
 				{
 					parents:                []string{"C"},
 					id:                     "F",
 					expectedScore:          2,
 					expectedSelectedParent: "C",
-					expectedBlues:          []string{"A", "C"},
+					expectedBlues:          []string{"C"},
 				},
 				{
 					parents:                []string{"C", "D"},
 					id:                     "G",
 					expectedScore:          4,
-					expectedSelectedParent: "C",
-					expectedBlues:          []string{"A", "C", "B", "D"},
+					expectedSelectedParent: "D",
+					expectedBlues:          []string{"D"},
 				},
 				{
 					parents:                []string{"C", "E"},
 					id:                     "H",
 					expectedScore:          6,
 					expectedSelectedParent: "C",
-					expectedBlues:          []string{"A", "C", "B", "D", "G", "E"}, //EGD is not for sure
+					expectedBlues:          []string{"C", "B", "D", "G", "E"}, //DGE is not for sure
 				},
 				{
 					parents:                []string{"E", "G"},
 					id:                     "I",
 					expectedScore:          4,
 					expectedSelectedParent: "E",
-					expectedBlues:          []string{"B", "E", "D", "G"},
+					expectedBlues:          []string{"E", "D", "G"},
 				},
 				{
 					parents:                []string{"F"},
 					id:                     "J",
 					expectedScore:          2,
 					expectedSelectedParent: "F",
-					expectedBlues:          []string{"C", "F"},
+					expectedBlues:          []string{"F"},
 				},
 			},
 		},
@@ -126,24 +126,20 @@ func TestBlues(t *testing.T) {
 				parents.add(parent)
 			}
 			node := newFakeNode(parents, blockVersion, 0, blockTime)
+			fmt.Printf("hash: %v \n", node.hash)
 
 			blockDag.index.AddNode(node)
 			blockIDMap[blockData.id] = node
 			idBlockMap[node] = blockData.id
 
-			blues, selectedParent, score := blockDag.blues(node)
-			node.blues = setFromSlice(blues...)
-			node.selectedParent = selectedParent
-			node.blueScore = score
-
-			bluesIDs := make([]string, len(blues))
-			for i, blue := range blues {
-				bluesIDs[i] = idBlockMap[blue]
+			bluesIDs := make([]string, len(node.blues))
+			for _, blue := range node.blues {
+				bluesIDs = append(bluesIDs, idBlockMap[blue])
 			}
-			selectedParentID := idBlockMap[selectedParent]
-			fullDataStr := fmt.Sprintf("blues: %v, selectedParent: %v, score: %v", bluesIDs, selectedParentID, score)
-			if blockData.expectedScore != score {
-				t.Errorf("Block %v expected to have score %v but got %v (fulldata: %v)", blockData.id, blockData.expectedScore, score, fullDataStr)
+			selectedParentID := idBlockMap[node.selectedParent]
+			fullDataStr := fmt.Sprintf("blues: %v, selectedParent: %v, score: %v", bluesIDs, selectedParentID, node.blueScore)
+			if blockData.expectedScore != node.blueScore {
+				t.Errorf("Block %v expected to have score %v but got %v (fulldata: %v)", blockData.id, blockData.expectedScore, node.blueScore, fullDataStr)
 				continue
 			}
 			if blockData.expectedSelectedParent != selectedParentID {
@@ -154,6 +150,7 @@ func TestBlues(t *testing.T) {
 				t.Errorf("Block %v expected to have blues %v but got %v (fulldata: %v)", blockData.id, blockData.expectedBlues, bluesIDs, fullDataStr)
 				continue
 			}
+			fmt.Printf("\n")
 		}
 
 		// for _, blockData := range test.dagData {
