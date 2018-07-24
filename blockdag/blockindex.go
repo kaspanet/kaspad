@@ -75,7 +75,23 @@ type blockNode struct {
 	parents blockSet
 
 	// selectedParent is the selected parent for this node.
+	// The selected parent is the parent that if chosen will maximize the blue score of this block
 	selectedParent *blockNode
+
+	// children are all the blocks that refer to this block as a parent
+	children blockSet
+
+	// diffChild is the child that UTXODiff will be built from
+	diffChild *blockNode
+
+	// blues are all blue blocks in this block's worldview that are in its selected parent anticone
+	blues blockSet
+
+	// blueScore is the count of all the blue blocks in this block's past (including itself)
+	blueScore int64
+
+	// utxoDiff is the UTXO of the block represented as a diff to the virtual block
+	utxoDiff UtxoViewpoint
 
 	// hash is the double sha 256 of the block.
 	hash daghash.Hash
