@@ -85,7 +85,7 @@ type blockNode struct {
 	diffChild *blockNode
 
 	// blues are all blue blocks in this block's worldview that are in its selected parent anticone
-	blues blockSet
+	blues []*blockNode
 
 	// blueScore is the count of all the blue blocks in this block past
 	blueScore int64
@@ -118,6 +118,9 @@ type blockNode struct {
 	// only be accessed using the concurrent-safe NodeStatus method on
 	// blockIndex once the node has been added to the global index.
 	status blockStatus
+
+	// TODO: DELETE IT ASAP! FOR TESTING ONLY!
+	id string
 }
 
 // initBlockNode initializes a block node from the given header and parent nodes,
@@ -138,7 +141,7 @@ func initBlockNode(node *blockNode, blockHeader *wire.BlockHeader, parents block
 	}
 	if len(parents) > 0 {
 		blues, selectedParent, score := blues(node)
-		node.blues = setFromSlice(blues...)
+		node.blues = blues
 		node.selectedParent = selectedParent
 		node.blueScore = score
 		node.height = node.selectedParent.height + 1

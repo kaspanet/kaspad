@@ -1,6 +1,7 @@
 package blockdag
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/daglabs/btcd/dagconfig/daghash"
@@ -133,8 +134,8 @@ func (bs blockSet) first() *blockNode {
 
 func (bs blockSet) String() string {
 	ids := []string{}
-	for hash := range bs {
-		ids = append(ids, hash.String())
+	for _, node := range bs {
+		ids = append(ids, fmt.Sprintf("%v", node))
 	}
 	return strings.Join(ids, ",")
 }

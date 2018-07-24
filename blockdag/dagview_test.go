@@ -36,7 +36,11 @@ func chainedNodes(parents blockSet, numNodes int) []*blockNode {
 
 // String returns the block node as a human-readable name.
 func (node blockNode) String() string {
-	return fmt.Sprintf("%s(%d)", node.hash, node.height)
+	id := "A"
+	if node.id != "" {
+		id = node.id
+	}
+	return fmt.Sprintf("%s(%d)(%v)", node.hash, node.height, id) //TODO Ori: REMOVE node.id IT AFTER FINISHING TESTING
 }
 
 // tstTip is a convenience function to grab the tip of a chain of block nodes

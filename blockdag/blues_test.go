@@ -2,6 +2,7 @@ package blockdag
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -93,9 +94,36 @@ func TestBlues(t *testing.T) {
 				},
 			},
 		},
+		{
+			k: 2,
+			dagData: []testBlockData{
+				{
+					parents:                []string{"A"},
+					id:                     "B",
+					expectedScore:          1,
+					expectedSelectedParent: "A",
+					expectedBlues:          []string{"A"},
+				},
+				{
+					parents:                []string{"A"},
+					id:                     "C",
+					expectedScore:          1,
+					expectedSelectedParent: "A",
+					expectedBlues:          []string{"A"},
+				},
+				{
+					parents:                []string{"B"},
+					id:                     "D",
+					expectedScore:          1,
+					expectedSelectedParent: "B",
+					expectedBlues:          []string{"B"},
+				},
+			},
+		},
 	}
 
 	for _, test := range tests {
+		phantomK = test.k
 		// Generate enough synthetic blocks for the rest of the test
 		blockDag := newFakeDAG(netParams)
 		genesisNode := blockDag.dag.SelectedTip()
@@ -126,6 +154,7 @@ func TestBlues(t *testing.T) {
 				parents.add(parent)
 			}
 			node := newFakeNode(parents, blockVersion, 0, blockTime)
+			node.id = blockData.id
 			fmt.Printf("hash: %v \n", node.hash)
 
 			blockDag.index.AddNode(node)
@@ -177,7 +206,14 @@ func TestBlues(t *testing.T) {
 	}
 }
 
-func addNode(blockDag *BlockDAG, node *blockNode) {
-	blockDag.index.AddNode(node)
-
+func (bs blockSet) StringByID() string {
+	ids := []string{}
+	for _, node := range bs {
+		id := "A"
+		if node.id != "" {
+			id = node.id
+		}
+		ids = append(ids, id)
+	}
+	return strings.Join(ids, ",")
 }

@@ -30,7 +30,7 @@ func blues(block *blockNode) (blues []*blockNode, selectedParent *blockNode, sco
 func digToChainStart(block *blockNode, parent *blockNode) *blockNode {
 	current := parent
 
-	for i := uint(0); i < k; i++ {
+	for i := uint(0); i < phantomK; i++ {
 		if current.isGenesis() {
 			break
 		}
@@ -91,4 +91,4 @@ func traverseCandidates(newBlock *blockNode, candidates blockSet, selectedParent
 	return append(blues, selectedParent)
 }
 
-const k = 1
+var phantomK uint = 1
