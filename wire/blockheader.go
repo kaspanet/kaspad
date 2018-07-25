@@ -14,11 +14,11 @@ import (
 
 // BaseBlockHeaderPayload is the base number of bytes a block header can be,
 // not including the list of previous block headers.
-// Version 4 bytes + Timestamp 4 bytes + Bits 4 bytes + Nonce 4 bytes +
+// Version 4 bytes + Timestamp 8 bytes + Bits 4 bytes + Nonce 4 bytes +
 // + NumPrevBlocks 1 byte + MerkleRoot hash.
 // To get total size of block header len(PrevBlocks) * daghash.HashSize should be
 // added to this value
-const BaseBlockHeaderPayload = 17 + (daghash.HashSize)
+const BaseBlockHeaderPayload = 21 + (daghash.HashSize)
 
 // MaxNumPrevBlocks is the maximum number of previous blocks a block can reference.
 // Currently set to 255 as the maximum number NumPrevBlocks can be due to it being a byte
@@ -156,14 +156,14 @@ func readBlockHeader(r io.Reader, pver uint32, bh *BlockHeader) error {
 			return err
 		}
 	}
-	return readElements(r, &bh.MerkleRoot, (*uint32Time)(&bh.Timestamp), &bh.Bits, &bh.Nonce)
+	return readElements(r, &bh.MerkleRoot, (*int64Time)(&bh.Timestamp), &bh.Bits, &bh.Nonce)
 }
 
 // writeBlockHeader writes a bitcoin block header to w.  See Serialize for
 // encoding block headers to be stored to disk, such as in a database, as
 // opposed to encoding for the wire.
 func writeBlockHeader(w io.Writer, pver uint32, bh *BlockHeader) error {
-	sec := uint32(bh.Timestamp.Unix())
+	sec := int64(bh.Timestamp.Unix())
 	return writeElements(w, bh.Version, bh.NumPrevBlocks, &bh.PrevBlocks, &bh.MerkleRoot,
 		sec, bh.Bits, bh.Nonce)
 }

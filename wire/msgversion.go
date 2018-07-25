@@ -209,7 +209,7 @@ func (msg *MsgVersion) Command() string {
 func (msg *MsgVersion) MaxPayloadLength(pver uint32) uint32 {
 	// XXX: <= 106 different
 
-	// Protocol version 4 bytes + services 8 bytes + timestamp 8 bytes +
+	// Protocol version 4 bytes + services 8 bytes + timestamp 16 bytes +
 	// remote and local net addresses + nonce 8 bytes + length of user
 	// agent (varInt) + max allowed useragent length + last block 4 bytes +
 	// relay transactions flag 1 byte.

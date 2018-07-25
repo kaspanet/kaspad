@@ -514,7 +514,7 @@ func handleCreateRawTransaction(s *rpcServer, cmd interface{}, closeChan <-chan 
 
 	// Validate the locktime, if given.
 	if c.LockTime != nil &&
-		(*c.LockTime < 0 || *c.LockTime > int64(wire.MaxTxInSequenceNum)) {
+		(*c.LockTime < 0 || *c.LockTime > wire.MaxTxInSequenceNum) {
 		return nil, &btcjson.RPCError{
 			Code:    btcjson.ErrRPCInvalidParameter,
 			Message: "Locktime out of range",
@@ -599,7 +599,7 @@ func handleCreateRawTransaction(s *rpcServer, cmd interface{}, closeChan <-chan 
 
 	// Set the Locktime, if given.
 	if c.LockTime != nil {
-		mtx.LockTime = uint32(*c.LockTime)
+		mtx.LockTime = *c.LockTime
 	}
 
 	// Return the serialized and hex-encoded transaction.  Note that this
@@ -741,8 +741,8 @@ func createTxRawResult(chainParams *dagconfig.Params, mtx *wire.MsgTx,
 
 	if blkHeader != nil {
 		// This is not a typo, they are identical in bitcoind as well.
-		txReply.Time = blkHeader.Timestamp.Unix()
-		txReply.Blocktime = blkHeader.Timestamp.Unix()
+		txReply.Time = uint64(blkHeader.Timestamp.Unix())
+		txReply.Blocktime = uint64(blkHeader.Timestamp.Unix())
 		txReply.BlockHash = blkHash
 		txReply.Confirmations = uint64(1 + chainHeight - blkHeight)
 	}
@@ -3225,8 +3225,8 @@ func handleSearchRawTransactions(s *rpcServer, cmd interface{}, closeChan <-chan
 		if blkHeader != nil {
 			// This is not a typo, they are identical in Bitcoin
 			// Core as well.
-			result.Time = blkHeader.Timestamp.Unix()
-			result.Blocktime = blkHeader.Timestamp.Unix()
+			result.Time = uint64(blkHeader.Timestamp.Unix())
+			result.Blocktime = uint64(blkHeader.Timestamp.Unix())
 			result.BlockHash = blkHashStr
 			result.Confirmations = uint64(1 + dagState.SelectedTip.Height - blkHeight)
 		}
