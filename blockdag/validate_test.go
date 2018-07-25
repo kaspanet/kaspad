@@ -255,9 +255,9 @@ var Block100000 = wire.MsgBlock{
 			0x6f, 0xff, 0xfb, 0xb7, 0xdc, 0x39, 0x9d, 0x76,
 			0x8d, 0xb0, 0xe1, 0x9c, 0x2e, 0x6d, 0x22, 0xd9,
 		}), // f3e94742aca4b5ef85488dc37c06c3282295ffec960994b2c0d5ac2a25a95766
-		Timestamp: time.Unix(0x5b50aa0e, 0), // 2018-06-20 08:32:43 +0000 UTC
+		Timestamp: time.Unix(0x5b50aa0e, 0), // 2018-07-19 15:11:10 +0000 UTC
 		Bits:      0x1e00ffff,               // 503382015
-		Nonce:     0x800c2a77,               // 714047
+		Nonce:     0x800c2a77,               // 2148280951
 	},
 	Transactions: []*wire.MsgTx{
 		{

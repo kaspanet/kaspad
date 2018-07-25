@@ -169,9 +169,9 @@ var simNetGenesisBlock = wire.MsgBlock{
 		NumPrevBlocks: 0,
 		PrevBlocks:    []daghash.Hash{},
 		MerkleRoot:    simNetGenesisMerkleRoot,  // 4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b
-		Timestamp:     time.Unix(0x5b50a002, 0), // 2018-06-19 09:07:56 +0000 UTC
+		Timestamp:     time.Unix(0x5b50a002, 0), // 2018-07-19 14:28:18 +0000 UTC
 		Bits:          0x207fffff,               // 545259519 [7fffff0000000000000000000000000000000000000000000000000000000000]
-		Nonce:         0x5ffffffd,               // 2684354555
+		Nonce:         0x5ffffffd,               // 1610612733
 	},
 	Transactions: []*wire.MsgTx{&genesisCoinbaseTx},
 }
