@@ -2,9 +2,12 @@ package blockdag
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/daglabs/btcd/dagconfig/daghash"
 
 	"github.com/daglabs/btcd/dagconfig"
 )
@@ -15,6 +18,7 @@ type testBlockData struct {
 	expectedScore          int64
 	expectedSelectedParent string
 	expectedBlues          []string
+	hash                   *daghash.Hash
 }
 
 func TestBlues(t *testing.T) {
@@ -118,6 +122,132 @@ func TestBlues(t *testing.T) {
 					expectedSelectedParent: "B",
 					expectedBlues:          []string{"B"},
 				},
+				{
+					parents:                []string{"A", "B"},
+					id:                     "E",
+					expectedScore:          1,
+					expectedSelectedParent: "B",
+					expectedBlues:          []string{"B"},
+				},
+				{
+					parents:                []string{"C"},
+					id:                     "F",
+					expectedScore:          1,
+					expectedSelectedParent: "B",
+					expectedBlues:          []string{"B"},
+				},
+				{
+					parents:                []string{"C"},
+					id:                     "G",
+					expectedScore:          1,
+					expectedSelectedParent: "B",
+					expectedBlues:          []string{"B"},
+				},
+				{
+					parents:                []string{"G"},
+					id:                     "H",
+					expectedScore:          1,
+					expectedSelectedParent: "B",
+					expectedBlues:          []string{"B"},
+				},
+				{
+					parents:                []string{"E"},
+					id:                     "I",
+					expectedScore:          1,
+					expectedSelectedParent: "B",
+					expectedBlues:          []string{"B"},
+				},
+				{
+					parents:                []string{"E"},
+					id:                     "J",
+					expectedScore:          1,
+					expectedSelectedParent: "B",
+					expectedBlues:          []string{"B"},
+				},
+				{
+					parents:                []string{"I"},
+					id:                     "K",
+					expectedScore:          1,
+					expectedSelectedParent: "B",
+					expectedBlues:          []string{"B"},
+				},
+				{
+					parents:                []string{"K", "H"},
+					id:                     "L",
+					expectedScore:          1,
+					expectedSelectedParent: "B",
+					expectedBlues:          []string{"B"},
+				},
+				{
+					parents:                []string{"F", "L"},
+					id:                     "M",
+					expectedScore:          1,
+					expectedSelectedParent: "B",
+					expectedBlues:          []string{"B"},
+				},
+				{
+					parents:                []string{"G", "K"},
+					id:                     "N",
+					expectedScore:          1,
+					expectedSelectedParent: "B",
+					expectedBlues:          []string{"B"},
+				},
+				{
+					parents:                []string{"J", "N"},
+					id:                     "O",
+					expectedScore:          1,
+					expectedSelectedParent: "B",
+					expectedBlues:          []string{"B"},
+				},
+				{
+					parents:                []string{"D"},
+					id:                     "P",
+					expectedScore:          1,
+					expectedSelectedParent: "B",
+					expectedBlues:          []string{"B"},
+				},
+				{
+					parents:                []string{"O", "P"},
+					id:                     "Q",
+					expectedScore:          1,
+					expectedSelectedParent: "B",
+					expectedBlues:          []string{"B"},
+				},
+				{
+					parents:                []string{"L", "Q"},
+					id:                     "R",
+					expectedScore:          1,
+					expectedSelectedParent: "B",
+					expectedBlues:          []string{"B"},
+				},
+				{
+					parents:                []string{"M", "R"},
+					id:                     "S",
+					expectedScore:          1,
+					expectedSelectedParent: "B",
+					expectedBlues:          []string{"B"},
+				},
+				{
+					parents:                []string{"H", "F"},
+					id:                     "T",
+					expectedScore:          1,
+					expectedSelectedParent: "B",
+					expectedBlues:          []string{"B"},
+				},
+				{
+					parents:                []string{"M", "T"},
+					id:                     "U",
+					expectedScore:          1,
+					expectedSelectedParent: "B",
+					expectedBlues:          []string{"B"},
+				},
+				{
+					parents:                []string{"M", "R"},
+					id:                     "S",
+					expectedScore:          1,
+					expectedSelectedParent: "B",
+					expectedBlues:          []string{"B"},
+				},
 			},
 		},
 	}
@@ -155,6 +285,7 @@ func TestBlues(t *testing.T) {
 			}
 			node := newFakeNode(parents, blockVersion, 0, blockTime)
 			node.id = blockData.id
+			blockData.hash = &node.hash //For sorting later
 			fmt.Printf("hash: %v \n", node.hash)
 
 			blockDag.index.AddNode(node)
@@ -182,27 +313,17 @@ func TestBlues(t *testing.T) {
 			fmt.Printf("\n")
 		}
 
-		// for _, blockData := range test.dagData {
-		// 	node := blockIDMap[blockData.id]
-		// 	bluesIDs := make([]string, len(blues))
-		// 	for i, blue := range blues {
-		// 		bluesIDs[i] = idBlockMap[blue]
-		// 	}
-		// 	selectedParentID := idBlockMap[selectedParent]
-		// 	fullDataStr := fmt.Sprintf("blues: %v, selectedParent: %v, score: %v", bluesIDs, selectedParentID, score)
-		// 	if blockData.expectedScore != score {
-		// 		t.Errorf("Block %v expected to have score %v but got %v (%v)", blockData.id, blockData.expectedScore, score, fullDataStr)
-		// 		continue
-		// 	}
-		// 	if blockData.expectedSelectedParent != selectedParentID {
-		// 		t.Errorf("Block %v expected to have selected parent %v but got %v", blockData.id, blockData.expectedSelectedParent, selectedParentID)
-		// 		continue
-		// 	}
-		// 	if !checkBlues(blockData.expectedBlues, bluesIDs) {
-		// 		t.Errorf("Block %v expected to have blues %v but got %v", blockData.id, blockData.expectedBlues, blues)
-		// 		continue
-		// 	}
-		// }
+		sort.Slice(test.dagData, func(i, j int) bool {
+			return test.dagData[i].hash.Cmp(test.dagData[i].hash) < 0
+		})
+
+		fmt.Printf("Block hash order:\n")
+
+		for _, blockData := range test.dagData {
+			fmt.Print(blockData.id)
+		}
+		fmt.Printf("\n")
+
 	}
 }
 

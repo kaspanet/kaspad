@@ -8,6 +8,8 @@ package daghash
 import (
 	"encoding/hex"
 	"fmt"
+
+	"github.com/daglabs/btcd/blockdag"
 )
 
 // HashSize of array used to store hashes.  See Hash.
@@ -155,4 +157,14 @@ func Decode(dst *Hash, src string) error {
 	}
 
 	return nil
+}
+
+// Cmp compares hash and target and returns:
+//
+//   -1 if hash <  target
+//    0 if hash == target
+//   +1 if hash >  target
+//
+func (hash *Hash) Cmp(target *Hash) {
+	return blockdag.HashToBig(*a).Cmp(blockdag.HashToBig(*b)) > 0
 }
