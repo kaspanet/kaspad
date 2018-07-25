@@ -5,9 +5,10 @@ import (
 	"strings"
 	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/wire"
+	"sort"
 )
 
-// utxoCollection represents a set of UTXOs indexed by their TxID and index
+// utxoCollection represents a set of UTXOs indexed by their previousHash and index
 type utxoCollection map[daghash.Hash]map[int]*wire.TxOut
 
 func (uc utxoCollection) String() string {
@@ -18,6 +19,9 @@ func (uc utxoCollection) String() string {
 		utxoStrings[i] = fmt.Sprintf("(%s, %d) => %d", utxo.previousHash, utxo.index, utxo.txOut.Value)
 		i++
 	}
+
+	// Sort strings for determinism.
+	sort.Strings(utxoStrings)
 
 	return fmt.Sprintf("[ %s ]", strings.Join(utxoStrings, ", "))
 }
@@ -32,7 +36,7 @@ func (uc utxoCollection) len() int {
 	return counter
 }
 
-// get returns the txOut represented by provided id and index,
+// get returns the txOut represented by provided hash and index,
 // and a boolean value indicating if said txOut is in the set or not
 func (uc utxoCollection) get(previousHash daghash.Hash, index int) (*wire.TxOut, bool) {
 	previous, ok := uc[previousHash]
@@ -43,7 +47,7 @@ func (uc utxoCollection) get(previousHash daghash.Hash, index int) (*wire.TxOut,
 	return txOut, ok
 }
 
-// contains returns a boolean value indicating if represented by provided id and index is in the set or not
+// contains returns a boolean value indicating if represented by provided hash and index is in the set or not
 func (uc utxoCollection) contains(previousHash daghash.Hash, index int) bool {
 	previous, ok := uc[previousHash]
 	if !ok {
