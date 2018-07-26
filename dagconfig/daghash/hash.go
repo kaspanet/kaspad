@@ -8,8 +8,7 @@ package daghash
 import (
 	"encoding/hex"
 	"fmt"
-
-	"github.com/daglabs/btcd/blockdag"
+	"math/big"
 )
 
 // HashSize of array used to store hashes.  See Hash.
@@ -159,12 +158,26 @@ func Decode(dst *Hash, src string) error {
 	return nil
 }
 
+// HashToBig converts a daghash.Hash into a big.Int that can be used to
+// perform math comparisons.
+func HashToBig(hash *Hash) *big.Int {
+	// A Hash is in little-endian, but the big package wants the bytes in
+	// big-endian, so reverse them.
+	buf := *hash
+	blen := len(buf)
+	for i := 0; i < blen/2; i++ {
+		buf[i], buf[blen-1-i] = buf[blen-1-i], buf[i]
+	}
+
+	return new(big.Int).SetBytes(buf[:])
+}
+
 // Cmp compares hash and target and returns:
 //
 //   -1 if hash <  target
 //    0 if hash == target
 //   +1 if hash >  target
 //
-func (hash *Hash) Cmp(target *Hash) {
-	return blockdag.HashToBig(*a).Cmp(blockdag.HashToBig(*b)) > 0
+func (hash *Hash) Cmp(target *Hash) int {
+	return HashToBig(hash).Cmp(HashToBig(target))
 }

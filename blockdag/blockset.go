@@ -2,6 +2,7 @@ package blockdag
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/daglabs/btcd/dagconfig/daghash"
@@ -24,13 +25,17 @@ func setFromSlice(blocks ...*blockNode) blockSet {
 	return set
 }
 
-// toSlice converts a set of blocks into a slice
+// toSlice converts a set of blocks into an ordered slice
 func (bs blockSet) toSlice() []*blockNode {
 	slice := []*blockNode{}
 
 	for _, block := range bs {
 		slice = append(slice, block)
 	}
+
+	sort.Slice(slice, func(i, j int) bool {
+		return hashLess(&slice[i].hash, &slice[j].hash)
+	})
 
 	return slice
 }
@@ -119,8 +124,14 @@ func (bs blockSet) hashes() []daghash.Hash {
 	for hash := range bs {
 		hashes = append(hashes, hash)
 	}
-
+	sort.Slice(hashes, func(i, j int) bool {
+		return hashLess(&hashes[i], &hashes[j])
+	})
 	return hashes
+}
+
+func hashLess(a *daghash.Hash, b *daghash.Hash) bool {
+	return a.Cmp(b) > 0
 }
 
 // first returns the first block in this set or nil if this set is empty.

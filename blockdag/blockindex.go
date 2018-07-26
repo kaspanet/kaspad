@@ -144,9 +144,19 @@ func initBlockNode(node *blockNode, blockHeader *wire.BlockHeader, parents block
 		node.blues = blues
 		node.selectedParent = selectedParent
 		node.blueScore = score
-		node.height = node.selectedParent.height + 1
+		node.height = calcNodeHeight(node)
 		node.workSum = node.workSum.Add(node.selectedParent.workSum, node.workSum)
 	}
+}
+
+func calcNodeHeight(node *blockNode) int32 {
+	var maxHeight int32
+	for _, parent := range node.parents {
+		if maxHeight < parent.height {
+			maxHeight = parent.height
+		}
+	}
+	return maxHeight + 1
 }
 
 // newBlockNode returns a new block node for the given block header and parent
@@ -242,12 +252,7 @@ func (node *blockNode) CalcPastMedianTime() time.Time {
 }
 
 func (node *blockNode) PrevHashes() []daghash.Hash {
-	prevHashes := make([]daghash.Hash, len(node.parents))
-	for _, parent := range node.parents {
-		prevHashes = append(prevHashes, parent.hash)
-	}
-
-	return prevHashes
+	return node.parents.hashes()
 }
 
 // isGenesis says if the current block is the genesis block

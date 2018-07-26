@@ -1,6 +1,10 @@
 package blockdag
 
-import "container/heap"
+import (
+	"container/heap"
+
+	"github.com/daglabs/btcd/dagconfig/daghash"
+)
 
 // baseHeap is an implementation for heap.Interface that sorts blocks by their height
 type baseHeap []*blockNode
@@ -22,7 +26,7 @@ func (h *baseHeap) Pop() interface{} {
 
 func (h baseHeap) Less(i, j int) bool {
 	if h[i].height == h[j].height {
-		return HashToBig(&h[i].hash).Cmp(HashToBig(&h[j].hash)) > 0
+		return daghash.HashToBig(&h[i].hash).Cmp(daghash.HashToBig(&h[j].hash)) > 0
 	}
 
 	return h[i].height > h[j].height

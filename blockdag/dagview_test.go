@@ -40,7 +40,7 @@ func (node blockNode) String() string {
 	if node.id != "" {
 		id = node.id
 	}
-	return fmt.Sprintf("%s(%d)(%v)", node.hash, node.height, id) //TODO Ori: REMOVE node.id IT AFTER FINISHING TESTING
+	return fmt.Sprintf("%s (%d)" /*, node.hash*/, id, node.height) //TODO Ori: REMOVE node.id IT AFTER FINISHING TESTING
 }
 
 // tstTip is a convenience function to grab the tip of a chain of block nodes
