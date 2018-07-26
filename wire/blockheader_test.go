@@ -315,3 +315,45 @@ func TestBlockHeaderSerializeSize(t *testing.T) {
 		}
 	}
 }
+
+func TestIsGenesis(t *testing.T) {
+	nonce := uint32(123123) // 0x1e0f3
+	bits := uint32(0x1d00ffff)
+	timestamp := time.Unix(0x495fab29, 0) // 2009-01-03 12:15:05 -0600 CST
+
+	baseBlockHdr := &BlockHeader{
+		Version:       1,
+		NumPrevBlocks: 2,
+		PrevBlocks:    []daghash.Hash{mainNetGenesisHash, simNetGenesisHash},
+		MerkleRoot:    mainNetGenesisMerkleRoot,
+		Timestamp:     timestamp,
+		Bits:          bits,
+		Nonce:         nonce,
+	}
+	genesisBlockHdr := &BlockHeader{
+		Version:       1,
+		NumPrevBlocks: 0,
+		PrevBlocks:    []daghash.Hash{},
+		MerkleRoot:    mainNetGenesisMerkleRoot,
+		Timestamp:     timestamp,
+		Bits:          bits,
+		Nonce:         nonce,
+	}
+
+	tests := []struct {
+		in        *BlockHeader // Block header to encode
+		isGenesis bool         // Expected result for call of .IsGenesis
+	}{
+		{genesisBlockHdr, true},
+		{baseBlockHdr, false},
+	}
+
+	t.Logf("Running %d tests", len(tests))
+	for i, test := range tests {
+		isGenesis := test.in.IsGenesis()
+		if isGenesis != test.isGenesis {
+			t.Errorf("BlockHeader.IsGenesis: #%d got: %t, want: %t",
+				i, isGenesis, test.isGenesis)
+		}
+	}
+}
