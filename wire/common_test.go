@@ -766,3 +766,51 @@ func TestRandomUint64Errors(t *testing.T) {
 		t.Errorf("Nonce is not 0 [%v]", nonce)
 	}
 }
+
+func TestBinaryFreeList(t *testing.T) {
+	var list binaryFreeList = make(chan []byte, freeListMaxItems)
+
+	expectedCapacity := 8
+	expectedLength := 8
+
+	first := list.Borrow()
+	if cap(first) != expectedCapacity {
+		t.Errorf("MsgTx.TestScriptFreeList: Expected capacity for first %d, but got %d",
+			expectedCapacity, cap(first))
+	}
+	if len(first) != expectedLength {
+		t.Errorf("MsgTx.TestScriptFreeList: Expected length for first %d, but got %d",
+			expectedLength, len(first))
+	}
+	list.Return(first)
+
+	// Borrow again, and check that the underlying array is re-used for second
+	second := list.Borrow()
+	if cap(second) != expectedCapacity {
+		t.Errorf("TestBinaryFreeList: Expected capacity for second %d, but got %d",
+			expectedCapacity, cap(second))
+	}
+	if len(second) != expectedLength {
+		t.Errorf("TestBinaryFreeList: Expected length for second %d, but got %d",
+			expectedLength, len(second))
+	}
+
+	firstArrayAddress := underlyingArrayAddress(first)
+	secondArrayAddress := underlyingArrayAddress(second)
+
+	if firstArrayAddress != secondArrayAddress {
+		t.Errorf("First underlying array is at address %d and second at address %d, "+
+			"which means memory was not re-used", firstArrayAddress, secondArrayAddress)
+	}
+
+	list.Return(second)
+
+	// test there's no crash when channel is full because borrowed too much
+	buffers := make([][]byte, freeListMaxItems+1)
+	for i := 0; i < freeListMaxItems+1; i++ {
+		buffers[i] = list.Borrow()
+	}
+	for i := 0; i < freeListMaxItems+1; i++ {
+		list.Return(buffers[i])
+	}
+}

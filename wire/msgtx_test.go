@@ -700,7 +700,6 @@ func TestScriptFreeList(t *testing.T) {
 	for i := 0; i < freeListMaxItems+1; i++ {
 		list.Return(buffers[i])
 	}
-
 }
 
 func underlyingArrayAddress(buf []byte) uint64 {
