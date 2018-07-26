@@ -334,11 +334,14 @@ func TestVarIntWireErrors(t *testing.T) {
 		// Force errors on discriminant.
 		{0, []byte{0x00}, pver, 0, io.ErrShortWrite, io.EOF},
 		// Force errors on 2-byte read/write.
-		{0xfd, []byte{0xfd}, pver, 2, io.ErrShortWrite, io.ErrUnexpectedEOF},
+		{0xfd, []byte{0xfd}, pver, 0, io.ErrShortWrite, io.EOF},              // error on writing length
+		{0xfd, []byte{0xfd}, pver, 2, io.ErrShortWrite, io.ErrUnexpectedEOF}, // error on writing actual data
 		// Force errors on 4-byte read/write.
-		{0x10000, []byte{0xfe}, pver, 2, io.ErrShortWrite, io.ErrUnexpectedEOF},
+		{0x10000, []byte{0xfe}, pver, 0, io.ErrShortWrite, io.EOF},              // error on writing length
+		{0x10000, []byte{0xfe}, pver, 2, io.ErrShortWrite, io.ErrUnexpectedEOF}, // error on writing actual data
 		// Force errors on 8-byte read/write.
-		{0x100000000, []byte{0xff}, pver, 2, io.ErrShortWrite, io.ErrUnexpectedEOF},
+		{0x100000000, []byte{0xff}, pver, 0, io.ErrShortWrite, io.EOF},              // error on writing length
+		{0x100000000, []byte{0xff}, pver, 2, io.ErrShortWrite, io.ErrUnexpectedEOF}, // error on writing actual data
 	}
 
 	t.Logf("Running %d tests", len(tests))
