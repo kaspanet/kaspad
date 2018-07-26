@@ -9,7 +9,7 @@ import (
 )
 
 // utxoCollection represents a set of UTXOs indexed by their previousHash and index
-type utxoCollection map[daghash.Hash]map[int]*wire.TxOut
+type utxoCollection map[daghash.Hash]map[uint32]*wire.TxOut
 
 func (uc utxoCollection) String() string {
 	utxoStrings := make([]string, uc.len())
@@ -38,7 +38,7 @@ func (uc utxoCollection) len() int {
 
 // get returns the txOut represented by provided hash and index,
 // and a boolean value indicating if said txOut is in the set or not
-func (uc utxoCollection) get(previousHash daghash.Hash, index int) (*wire.TxOut, bool) {
+func (uc utxoCollection) get(previousHash daghash.Hash, index uint32) (*wire.TxOut, bool) {
 	previous, ok := uc[previousHash]
 	if !ok {
 		return nil, false
@@ -48,7 +48,7 @@ func (uc utxoCollection) get(previousHash daghash.Hash, index int) (*wire.TxOut,
 }
 
 // contains returns a boolean value indicating if represented by provided hash and index is in the set or not
-func (uc utxoCollection) contains(previousHash daghash.Hash, index int) bool {
+func (uc utxoCollection) contains(previousHash daghash.Hash, index uint32) bool {
 	previous, ok := uc[previousHash]
 	if !ok {
 		return false
@@ -58,17 +58,17 @@ func (uc utxoCollection) contains(previousHash daghash.Hash, index int) bool {
 }
 
 // add adds a new UTXO to this collection
-func (uc utxoCollection) add(previousHash daghash.Hash, index int, txOut *wire.TxOut) {
+func (uc utxoCollection) add(previousHash daghash.Hash, index uint32, txOut *wire.TxOut) {
 	_, ok := uc[previousHash]
 	if !ok {
-		uc[previousHash] = map[int]*wire.TxOut{}
+		uc[previousHash] = map[uint32]*wire.TxOut{}
 	}
 
 	uc[previousHash][index] = txOut
 }
 
 // remove removes a UTXO from this collection if exists
-func (uc utxoCollection) remove(previousHash daghash.Hash, index int) {
+func (uc utxoCollection) remove(previousHash daghash.Hash, index uint32) {
 	previous, ok := uc[previousHash]
 	if !ok {
 		return
@@ -84,7 +84,7 @@ func (uc utxoCollection) clone() utxoCollection {
 	clone := utxoCollection{}
 
 	for previousID, txOuts := range uc {
-		clone[previousID] = map[int]*wire.TxOut{}
+		clone[previousID] = map[uint32]*wire.TxOut{}
 		for index, txOut := range txOuts {
 			clone[previousID][index] = txOut
 		}

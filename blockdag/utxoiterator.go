@@ -8,7 +8,7 @@ import (
 // utxoIteratorOutput represents all fields of a single UTXO, to be returned by an iterator
 type utxoIteratorOutput struct {
 	previousHash daghash.Hash
-	index        int
+	index        uint32
 	txOut        *wire.TxOut
 }
 
