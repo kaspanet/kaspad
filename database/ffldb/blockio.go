@@ -116,6 +116,12 @@ type blockStore struct {
 	// override the value.
 	maxBlockFileSize uint32
 
+	// maxOpenFiles is the max number of open files to maintain in the
+	// open blocks cache.  Note that this does not include the current
+	// write file, so there will typically be one more than this value open.
+	// It is defined on the store so the whitebox tests can override the value.
+	maxOpenFiles int
+
 	// The following fields are related to the flat files which hold the
 	// actual blocks.   The number of open files is limited by maxOpenFiles.
 	//
@@ -272,7 +278,7 @@ func (s *blockStore) openFile(fileNum uint32) (*lockableFile, error) {
 	// therefore should be closed last.
 	s.lruMutex.Lock()
 	lruList := s.openBlocksLRU
-	if lruList.Len() >= maxOpenFiles {
+	if lruList.Len() >= s.maxOpenFiles {
 		lruFileNum := lruList.Remove(lruList.Back()).(uint32)
 		oldBlockFile := s.openBlockFiles[lruFileNum]
 
@@ -752,6 +758,7 @@ func newBlockStore(basePath string, network wire.BitcoinNet) *blockStore {
 		network:          network,
 		basePath:         basePath,
 		maxBlockFileSize: maxBlockFileSize,
+		maxOpenFiles:     maxOpenFiles,
 		openBlockFiles:   make(map[uint32]*lockableFile),
 		openBlocksLRU:    list.New(),
 		fileNumToLRUElem: make(map[uint32]*list.Element),

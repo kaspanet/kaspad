@@ -282,7 +282,9 @@ func TestInterface(t *testing.T) {
 
 	// Change the maximum file size to a small value to force multiple flat
 	// files with the test data set.
-	ffldb.TstRunWithMaxBlockFileSize(db, 2048, func() {
+	// Change maximum open files to small value to force shifts in the LRU
+	// mechanism
+	ffldb.TstRunWithMaxBlockFileSizeAndMaxOpenFiles(db, 2048, 10, func() {
 		testInterface(t, db)
 	})
 }
