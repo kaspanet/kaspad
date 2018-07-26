@@ -12,11 +12,11 @@ type utxoIteratorOutput struct {
 	txOut        *wire.TxOut
 }
 
-// utxoIterator is used to iterate over a UTXOSet
+// utxoIterator is used to iterate over a utxoSet
 type utxoIterator <-chan utxoIteratorOutput
 
-// Iterate returns an iterator for a UTXOCollection, and therefore, also a FullUTXOSet
-func (c utxoCollection) Iterate() utxoIterator {
+// iterate returns an iterator for a UTXOCollection, and therefore, also a fullUTXOSet
+func (c utxoCollection) iterate() utxoIterator {
 	iterator := make(chan utxoIteratorOutput)
 
 	go func() {
@@ -34,23 +34,23 @@ func (c utxoCollection) Iterate() utxoIterator {
 
 	return iterator
 }
-//
-//// Iterate returns an iterator for a DiffUTXOSet
-//func (u *DiffUTXOSet) Iterate() utxoIterator {
-//	iterator := make(chan utxoIteratorOutput)
-//
-//	go func() {
-//		for utxo := range u.base.Iterate() {
-//			if !u.diff.toRemove.Contains(utxo.PreviousID, utxo.index) {
-//				iterator <- utxo
-//			}
-//		}
-//
-//		for utxo := range u.diff.toAdd.Iterate() {
-//			iterator <- utxo
-//		}
-//		close(iterator)
-//	}()
-//
-//	return iterator
-//}
+
+// iterate returns an iterator for a diffUTXOSet
+func (u *diffUTXOSet) iterate() utxoIterator {
+	iterator := make(chan utxoIteratorOutput)
+
+	go func() {
+		for utxo := range u.base.iterate() {
+			if !u.utxoDiff.toRemove.contains(utxo.previousHash, utxo.index) {
+				iterator <- utxo
+			}
+		}
+
+		for utxo := range u.utxoDiff.toAdd.iterate() {
+			iterator <- utxo
+		}
+		close(iterator)
+	}()
+
+	return iterator
+}

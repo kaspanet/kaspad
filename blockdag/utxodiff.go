@@ -1,7 +1,8 @@
 package blockdag
 
 import (
-		"fmt"
+	"fmt"
+	"errors"
 )
 
 // utxoDiff  represents a diff between two UTXO Sets
@@ -32,7 +33,7 @@ func (d *utxoDiff) diff(other *utxoDiff) (*utxoDiff, error) {
 	result := newUTXODiff()
 
 	// Note that the following cases are not accounted for, as they are impossible
-	// as long as the base UTXOSet is the same:
+	// as long as the base utxoSet is the same:
 	// - if tx is in d.toAdd and other.toRemove
 	// - if tx is in d.toRemove and other.toAdd
 
@@ -45,7 +46,7 @@ func (d *utxoDiff) diff(other *utxoDiff) (*utxoDiff, error) {
 				result.toRemove.add(id, idx, txOut)
 			}
 			if _, ok := other.toRemove[id][idx]; ok {
-				return nil, fmt.Errorf("diff: transaction both in d.toAdd and in other.toRemove")
+				return nil, errors.New("diff: transaction both in d.toAdd and in other.toRemove")
 			}
 		}
 	}
@@ -58,8 +59,8 @@ func (d *utxoDiff) diff(other *utxoDiff) (*utxoDiff, error) {
 			if _, ok := other.toRemove[id][idx]; !ok {
 				result.toAdd.add(id, idx, txOut)
 			}
-			if _,ok := other.toAdd[id][idx]; ok {
-				return nil, fmt.Errorf("diff: transaction both in d.toRemove and in other.toAdd")
+			if _, ok := other.toAdd[id][idx]; ok {
+				return nil, errors.New("diff: transaction both in d.toRemove and in other.toAdd")
 			}
 		}
 	}
@@ -102,7 +103,7 @@ func (d *utxoDiff) withDiff(diff *utxoDiff) (*utxoDiff, error) {
 				result.toAdd.add(id, idx, txOut)
 			}
 			if _, ok := diff.toAdd[id][idx]; ok {
-				return nil, fmt.Errorf("withDiff: transaction both in d.toAdd and in other.toAdd")
+				return nil, errors.New("withDiff: transaction both in d.toAdd and in other.toAdd")
 			}
 		}
 	}
@@ -117,7 +118,7 @@ func (d *utxoDiff) withDiff(diff *utxoDiff) (*utxoDiff, error) {
 				result.toRemove.add(id, idx, txOut)
 			}
 			if _, ok := diff.toRemove[id][idx]; ok {
-				return nil, fmt.Errorf("withDiff: transaction both in d.toRemove and in other.toRemove")
+				return nil, errors.New("withDiff: transaction both in d.toRemove and in other.toRemove")
 			}
 		}
 	}

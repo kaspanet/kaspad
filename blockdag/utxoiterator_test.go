@@ -74,7 +74,7 @@ func TestIterate(t *testing.T) {
 			expectedHashSet[hash] = false
 		}
 
-		for utxo := range test.collection.Iterate() {
+		for utxo := range test.collection.iterate() {
 			expectedTxOutSet[utxo.txOut] = true
 			expectedHashSet[utxo.previousHash] = true
 			iteratedTimes++

@@ -15,7 +15,7 @@ func (uc utxoCollection) String() string {
 	utxoStrings := make([]string, uc.len())
 
 	i := 0
-	for utxo := range uc.Iterate() {
+	for utxo := range uc.iterate() {
 		utxoStrings[i] = fmt.Sprintf("(%s, %d) => %d", utxo.previousHash, utxo.index, utxo.txOut.Value)
 		i++
 	}
