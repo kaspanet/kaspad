@@ -771,7 +771,7 @@ func TestRandomUint64Errors(t *testing.T) {
 }
 
 func TestBinaryFreeList(t *testing.T) {
-	var list binaryFreeList = make(chan []byte, freeListMaxItems)
+	var list binaryFreeList = make(chan []byte, binaryFreeListMaxItems)
 
 	expectedCapacity := 8
 	expectedLength := 8
@@ -809,11 +809,11 @@ func TestBinaryFreeList(t *testing.T) {
 	list.Return(second)
 
 	// test there's no crash when channel is full because borrowed too much
-	buffers := make([][]byte, freeListMaxItems+1)
-	for i := 0; i < freeListMaxItems+1; i++ {
+	buffers := make([][]byte, binaryFreeListMaxItems+1)
+	for i := 0; i < binaryFreeListMaxItems+1; i++ {
 		buffers[i] = list.Borrow()
 	}
-	for i := 0; i < freeListMaxItems+1; i++ {
+	for i := 0; i < binaryFreeListMaxItems+1; i++ {
 		list.Return(buffers[i])
 	}
 }
