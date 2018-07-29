@@ -778,11 +778,11 @@ func TestBinaryFreeList(t *testing.T) {
 
 	first := list.Borrow()
 	if cap(first) != expectedCapacity {
-		t.Errorf("MsgTx.TestScriptFreeList: Expected capacity for first %d, but got %d",
+		t.Errorf("MsgTx.TestBinaryFreeList: Expected capacity for first %d, but got %d",
 			expectedCapacity, cap(first))
 	}
 	if len(first) != expectedLength {
-		t.Errorf("MsgTx.TestScriptFreeList: Expected length for first %d, but got %d",
+		t.Errorf("MsgTx.TestBinaryFreeList: Expected length for first %d, but got %d",
 			expectedLength, len(first))
 	}
 	list.Return(first)
