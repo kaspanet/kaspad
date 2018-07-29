@@ -11,6 +11,7 @@ import (
 	"math"
 	"reflect"
 	"testing"
+	"unsafe"
 
 	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/davecgh/go-spew/spew"
@@ -635,6 +636,75 @@ func TestTxSerializeSize(t *testing.T) {
 			continue
 		}
 	}
+}
+
+func TestScriptFreeList(t *testing.T) {
+	var list scriptFreeList = make(chan []byte, freeListMaxItems)
+
+	expectedCapacity := 512
+	expectedLengthFirst := 12
+	expectedLengthSecond := 13
+
+	first := list.Borrow(uint64(expectedLengthFirst))
+	if cap(first) != expectedCapacity {
+		t.Errorf("MsgTx.TestScriptFreeList: Expected capacity for first %d, but got %d",
+			expectedCapacity, cap(first))
+	}
+	if len(first) != expectedLengthFirst {
+		t.Errorf("MsgTx.TestScriptFreeList: Expected length for first %d, but got %d",
+			expectedLengthFirst, len(first))
+	}
+	list.Return(first)
+
+	// Borrow again, and check that the underlying array is re-used for second
+	second := list.Borrow(uint64(expectedLengthSecond))
+	if cap(second) != expectedCapacity {
+		t.Errorf("MsgTx.TestScriptFreeList: Expected capacity for second %d, but got %d",
+			expectedCapacity, cap(second))
+	}
+	if len(second) != expectedLengthSecond {
+		t.Errorf("MsgTx.TestScriptFreeList: Expected length for second %d, but got %d",
+			expectedLengthSecond, len(second))
+	}
+
+	firstArrayAddress := underlyingArrayAddress(first)
+	secondArrayAddress := underlyingArrayAddress(second)
+
+	if firstArrayAddress != secondArrayAddress {
+		t.Errorf("First underlying array is at address %d and second at address %d, "+
+			"which means memory was not re-used", firstArrayAddress, secondArrayAddress)
+	}
+
+	list.Return(second)
+
+	// test for buffers bigger than freeListMaxScriptSize
+	expectedCapacityBig := freeListMaxScriptSize + 1
+	expectedLengthBig := expectedCapacityBig
+	big := list.Borrow(uint64(expectedCapacityBig))
+
+	if cap(big) != expectedCapacityBig {
+		t.Errorf("MsgTx.TestScriptFreeList: Expected capacity for second %d, but got %d",
+			expectedCapacityBig, cap(big))
+	}
+	if len(big) != expectedLengthBig {
+		t.Errorf("MsgTx.TestScriptFreeList: Expected length for second %d, but got %d",
+			expectedLengthBig, len(big))
+	}
+
+	list.Return(big)
+
+	// test there's no crash when channel is full because borrowed too much
+	buffers := make([][]byte, freeListMaxItems+1)
+	for i := 0; i < freeListMaxItems+1; i++ {
+		buffers[i] = list.Borrow(1)
+	}
+	for i := 0; i < freeListMaxItems+1; i++ {
+		list.Return(buffers[i])
+	}
+}
+
+func underlyingArrayAddress(buf []byte) uint64 {
+	return uint64((*reflect.SliceHeader)(unsafe.Pointer(&buf)).Data)
 }
 
 // multiTx is a MsgTx with an input and output and used in various tests.

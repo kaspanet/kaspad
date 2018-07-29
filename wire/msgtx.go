@@ -365,13 +365,10 @@ func (msg *MsgTx) BtcDecode(r io.Reader, pver uint32) error {
 	// returns them.
 	returnScriptBuffers := func() {
 		for _, txIn := range msg.TxIn {
-			if txIn == nil {
+			if txIn == nil || txIn.SignatureScript == nil {
 				continue
 			}
-
-			if txIn.SignatureScript != nil {
-				scriptPool.Return(txIn.SignatureScript)
-			}
+			scriptPool.Return(txIn.SignatureScript)
 		}
 		for _, txOut := range msg.TxOut {
 			if txOut == nil || txOut.PkScript == nil {

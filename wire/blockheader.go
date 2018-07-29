@@ -66,17 +66,18 @@ func (h *BlockHeader) BlockHash() daghash.Hash {
 	return daghash.DoubleHashH(buf.Bytes())
 }
 
-// BestPrevBlock returns the hash of the selected block header.
-func (header *BlockHeader) SelectedPrevBlock() *daghash.Hash {
-	if header.NumPrevBlocks == 0 {
+// SelectedPrevBlock returns the hash of the selected block header.
+func (h *BlockHeader) SelectedPrevBlock() *daghash.Hash {
+	if h.NumPrevBlocks == 0 {
 		return nil
 	}
 
-	return &header.PrevBlocks[0]
+	return &h.PrevBlocks[0]
 }
 
-func (header *BlockHeader) IsGenesis() bool {
-	return header.NumPrevBlocks == 0
+// IsGenesis returns true iff this block is a genesis block
+func (h *BlockHeader) IsGenesis() bool {
+	return h.NumPrevBlocks == 0
 }
 
 // BtcDecode decodes r using the bitcoin protocol encoding into the receiver.
