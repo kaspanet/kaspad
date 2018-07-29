@@ -220,21 +220,21 @@ func TestMerkleBlockWireErrors(t *testing.T) {
 		// Force error in timestamp.
 		{&merkleBlockOne, merkleBlockOneBytes, pver, 101, io.ErrShortWrite, io.EOF},
 		// Force error in difficulty bits.
-		{&merkleBlockOne, merkleBlockOneBytes, pver, 105, io.ErrShortWrite, io.EOF},
-		// Force error in header nonce.
 		{&merkleBlockOne, merkleBlockOneBytes, pver, 109, io.ErrShortWrite, io.EOF},
-		// Force error in transaction count.
+		// Force error in header nonce.
 		{&merkleBlockOne, merkleBlockOneBytes, pver, 113, io.ErrShortWrite, io.EOF},
-		// Force error in num hashes.
+		// Force error in transaction count.
 		{&merkleBlockOne, merkleBlockOneBytes, pver, 117, io.ErrShortWrite, io.EOF},
+		// Force error in num hashes.
+		{&merkleBlockOne, merkleBlockOneBytes, pver, 121, io.ErrShortWrite, io.EOF},
 		// Force error in hashes.
-		{&merkleBlockOne, merkleBlockOneBytes, pver, 118, io.ErrShortWrite, io.EOF},
+		{&merkleBlockOne, merkleBlockOneBytes, pver, 122, io.ErrShortWrite, io.EOF},
 		// Force error in num flag bytes.
-		{&merkleBlockOne, merkleBlockOneBytes, pver, 150, io.ErrShortWrite, io.EOF},
+		{&merkleBlockOne, merkleBlockOneBytes, pver, 154, io.ErrShortWrite, io.EOF},
 		// Force error in flag bytes.
-		{&merkleBlockOne, merkleBlockOneBytes, pver, 151, io.ErrShortWrite, io.EOF},
+		{&merkleBlockOne, merkleBlockOneBytes, pver, 155, io.ErrShortWrite, io.EOF},
 		// Force error due to unsupported protocol version.
-		{&merkleBlockOne, merkleBlockOneBytes, pverNoMerkleBlock, 151, wireErr, wireErr},
+		{&merkleBlockOne, merkleBlockOneBytes, pverNoMerkleBlock, 155, wireErr, wireErr},
 	}
 
 	t.Logf("Running %d tests", len(tests))
@@ -294,7 +294,7 @@ func TestMerkleBlockOverflowErrors(t *testing.T) {
 	// allowed tx hashes.
 	var buf bytes.Buffer
 	WriteVarInt(&buf, pver, maxTxPerBlock+1)
-	numHashesOffset := 117
+	numHashesOffset := 121
 	exceedMaxHashes := make([]byte, numHashesOffset)
 	copy(exceedMaxHashes, merkleBlockOneBytes[:numHashesOffset])
 	exceedMaxHashes = append(exceedMaxHashes, buf.Bytes()...)
@@ -303,7 +303,7 @@ func TestMerkleBlockOverflowErrors(t *testing.T) {
 	// allowed flag bytes.
 	buf.Reset()
 	WriteVarInt(&buf, pver, maxFlagsPerMerkleBlock+1)
-	numFlagBytesOffset := 150
+	numFlagBytesOffset := 154
 	exceedMaxFlagBytes := make([]byte, numFlagBytesOffset)
 	copy(exceedMaxFlagBytes, merkleBlockOneBytes[:numFlagBytesOffset])
 	exceedMaxFlagBytes = append(exceedMaxFlagBytes, buf.Bytes()...)
@@ -378,8 +378,8 @@ var merkleBlockOneBytes = []byte{
 	0x98, 0x20, 0x51, 0xfd, 0x1e, 0x4b, 0xa7, 0x44, // MerkleRoot
 	0xbb, 0xbe, 0x68, 0x0e, 0x1f, 0xee, 0x14, 0x67,
 	0x7b, 0xa1, 0xa3, 0xc3, 0x54, 0x0b, 0xf7, 0xb1,
-	0xcd, 0xb6, 0x06, 0xe8, 0x57, 0x23, 0x3e, 0x0e,
-	0x61, 0xbc, 0x66, 0x49, // Timestamp
+	0xcd, 0xb6, 0x06, 0xe8, 0x57, 0x23, 0x3e, 0x0e, // MerkleRoot
+	0x61, 0xbc, 0x66, 0x49, 0x00, 0x00, 0x00, 0x00, // Timestamp
 	0xff, 0xff, 0x00, 0x1d, // Bits
 	0x01, 0xe3, 0x62, 0x99, // Nonce
 	0x01, 0x00, 0x00, 0x00, // TxnCount

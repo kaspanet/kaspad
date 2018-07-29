@@ -81,7 +81,7 @@ func TestBlockHeaderWire(t *testing.T) {
 		0x7a, 0xc7, 0x2c, 0x3e, 0x67, 0x76, 0x8f, 0x61,
 		0x7f, 0xc8, 0x1b, 0xc3, 0x88, 0x8a, 0x51, 0x32,
 		0x3a, 0x9f, 0xb8, 0xaa, 0x4b, 0x1e, 0x5e, 0x4a,
-		0x29, 0xab, 0x5f, 0x49, // Timestamp
+		0x29, 0xab, 0x5f, 0x49, 0x00, 0x00, 0x00, 0x00, // Timestamp
 		0xff, 0xff, 0x00, 0x1d, // Bits
 		0xf3, 0xe0, 0x01, 0x00, // Nonce
 	}
@@ -220,7 +220,7 @@ func TestBlockHeaderSerialize(t *testing.T) {
 		0x7a, 0xc7, 0x2c, 0x3e, 0x67, 0x76, 0x8f, 0x61,
 		0x7f, 0xc8, 0x1b, 0xc3, 0x88, 0x8a, 0x51, 0x32,
 		0x3a, 0x9f, 0xb8, 0xaa, 0x4b, 0x1e, 0x5e, 0x4a,
-		0x29, 0xab, 0x5f, 0x49, // Timestamp
+		0x29, 0xab, 0x5f, 0x49, 0x00, 0x00, 0x00, 0x00, // Timestamp
 		0xff, 0xff, 0x00, 0x1d, // Bits
 		0xf3, 0xe0, 0x01, 0x00, // Nonce
 	}
@@ -298,10 +298,10 @@ func TestBlockHeaderSerializeSize(t *testing.T) {
 		size int          // Expected serialized size
 	}{
 		// Block with no transactions.
-		{genesisBlockHdr, 49},
+		{genesisBlockHdr, 53},
 
 		// First block in the mainnet block chain.
-		{baseBlockHdr, 113},
+		{baseBlockHdr, 117},
 	}
 
 	t.Logf("Running %d tests", len(tests))
@@ -312,6 +312,48 @@ func TestBlockHeaderSerializeSize(t *testing.T) {
 				"%d", i, serializedSize, test.size)
 
 			continue
+		}
+	}
+}
+
+func TestIsGenesis(t *testing.T) {
+	nonce := uint32(123123) // 0x1e0f3
+	bits := uint32(0x1d00ffff)
+	timestamp := time.Unix(0x495fab29, 0) // 2009-01-03 12:15:05 -0600 CST
+
+	baseBlockHdr := &BlockHeader{
+		Version:       1,
+		NumPrevBlocks: 2,
+		PrevBlocks:    []daghash.Hash{mainNetGenesisHash, simNetGenesisHash},
+		MerkleRoot:    mainNetGenesisMerkleRoot,
+		Timestamp:     timestamp,
+		Bits:          bits,
+		Nonce:         nonce,
+	}
+	genesisBlockHdr := &BlockHeader{
+		Version:       1,
+		NumPrevBlocks: 0,
+		PrevBlocks:    []daghash.Hash{},
+		MerkleRoot:    mainNetGenesisMerkleRoot,
+		Timestamp:     timestamp,
+		Bits:          bits,
+		Nonce:         nonce,
+	}
+
+	tests := []struct {
+		in        *BlockHeader // Block header to encode
+		isGenesis bool         // Expected result for call of .IsGenesis
+	}{
+		{genesisBlockHdr, true},
+		{baseBlockHdr, false},
+	}
+
+	t.Logf("Running %d tests", len(tests))
+	for i, test := range tests {
+		isGenesis := test.in.IsGenesis()
+		if isGenesis != test.isGenesis {
+			t.Errorf("BlockHeader.IsGenesis: #%d got: %t, want: %t",
+				i, isGenesis, test.isGenesis)
 		}
 	}
 }

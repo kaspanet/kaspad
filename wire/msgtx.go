@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"math"
 	"strconv"
 
 	"github.com/daglabs/btcd/dagconfig/daghash"
@@ -19,7 +20,7 @@ const (
 
 	// MaxTxInSequenceNum is the maximum sequence number the sequence field
 	// of a transaction input can be.
-	MaxTxInSequenceNum uint32 = 0xffffffff
+	MaxTxInSequenceNum uint64 = math.MaxUint64
 
 	// MaxPrevOutIndex is the maximum index the index field of a previous
 	// outpoint can be.
@@ -187,16 +188,16 @@ func (o OutPoint) String() string {
 type TxIn struct {
 	PreviousOutPoint OutPoint
 	SignatureScript  []byte
-	Sequence         uint32
+	Sequence         uint64
 }
 
 // SerializeSize returns the number of bytes it would take to serialize the
 // the transaction input.
 func (t *TxIn) SerializeSize() int {
-	// Outpoint Hash 32 bytes + Outpoint Index 4 bytes + Sequence 4 bytes +
+	// Outpoint Hash 32 bytes + Outpoint Index 4 bytes + Sequence 8 bytes +
 	// serialized varint size for the length of SignatureScript +
 	// SignatureScript bytes.
-	return 40 + VarIntSerializeSize(uint64(len(t.SignatureScript))) +
+	return 44 + VarIntSerializeSize(uint64(len(t.SignatureScript))) +
 		len(t.SignatureScript)
 }
 
@@ -244,7 +245,7 @@ type MsgTx struct {
 	Version  int32
 	TxIn     []*TxIn
 	TxOut    []*TxOut
-	LockTime uint32
+	LockTime uint64
 }
 
 // AddTxIn adds a transaction input to the message.
@@ -364,13 +365,10 @@ func (msg *MsgTx) BtcDecode(r io.Reader, pver uint32) error {
 	// returns them.
 	returnScriptBuffers := func() {
 		for _, txIn := range msg.TxIn {
-			if txIn == nil {
+			if txIn == nil || txIn.SignatureScript == nil {
 				continue
 			}
-
-			if txIn.SignatureScript != nil {
-				scriptPool.Return(txIn.SignatureScript)
-			}
+			scriptPool.Return(txIn.SignatureScript)
 		}
 		for _, txOut := range msg.TxOut {
 			if txOut == nil || txOut.PkScript == nil {
@@ -430,7 +428,8 @@ func (msg *MsgTx) BtcDecode(r io.Reader, pver uint32) error {
 		totalScriptSize += uint64(len(to.PkScript))
 	}
 
-	msg.LockTime, err = binarySerializer.Uint32(r, littleEndian)
+	lockTime, err := binarySerializer.Uint64(r, littleEndian)
+	msg.LockTime = lockTime
 	if err != nil {
 		returnScriptBuffers()
 		return err
@@ -541,7 +540,7 @@ func (msg *MsgTx) BtcEncode(w io.Writer, pver uint32) error {
 		}
 	}
 
-	return binarySerializer.PutUint32(w, littleEndian, msg.LockTime)
+	return binarySerializer.PutUint64(w, littleEndian, msg.LockTime)
 }
 
 // Serialize encodes the transaction to w using a format that suitable for
@@ -564,9 +563,9 @@ func (msg *MsgTx) Serialize(w io.Writer) error {
 // SerializeSize returns the number of bytes it would take to serialize the
 // the transaction.
 func (msg *MsgTx) SerializeSize() int {
-	// Version 4 bytes + LockTime 4 bytes + Serialized varint size for the
+	// Version 4 bytes + LockTime 8 bytes + Serialized varint size for the
 	// number of transaction inputs and outputs.
-	n := 8 + VarIntSerializeSize(uint64(len(msg.TxIn))) +
+	n := 12 + VarIntSerializeSize(uint64(len(msg.TxIn))) +
 		VarIntSerializeSize(uint64(len(msg.TxOut)))
 
 	for _, txIn := range msg.TxIn {
@@ -726,7 +725,7 @@ func writeTxIn(w io.Writer, pver uint32, version int32, ti *TxIn) error {
 		return err
 	}
 
-	return binarySerializer.PutUint32(w, littleEndian, ti.Sequence)
+	return binarySerializer.PutUint64(w, littleEndian, ti.Sequence)
 }
 
 // readTxOut reads the next sequence of bytes from r as a transaction output

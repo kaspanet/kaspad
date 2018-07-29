@@ -453,7 +453,7 @@ func dbPutSpendJournalEntry(dbTx database.Tx, blockHash *daghash.Hash, stxos []s
 //
 // Example 1:
 // From tx in main blockchain:
-// Blk 1, 0e3e2357e806b6cdb1f70b54c3a3a17b6714ee1f0e68bebb44a74b1efd512098:0
+// Blk 1, b7c3332bc138e2c9429818f5fed500bcc1746544218772389054dc8047d7cd3f:0
 //
 //    03320496b538e853519c726a2c91e61ec11600ae1390813a627c66fb8be7947be63c52
 //    <><------------------------------------------------------------------>

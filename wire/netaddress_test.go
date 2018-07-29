@@ -51,7 +51,7 @@ func TestNetAddress(t *testing.T) {
 
 	// Ensure max payload is expected value for latest protocol version.
 	pver := ProtocolVersion
-	wantPayload := uint32(30)
+	wantPayload := uint32(34)
 	maxPayload := maxNetAddressPayload(ProtocolVersion)
 	if maxPayload != wantPayload {
 		t.Errorf("maxNetAddressPayload: wrong max payload length for "+
@@ -88,7 +88,7 @@ func TestNetAddressWire(t *testing.T) {
 
 	// baseNetAddrEncoded is the wire encoded bytes of baseNetAddr.
 	baseNetAddrEncoded := []byte{
-		0x29, 0xab, 0x5f, 0x49, // Timestamp
+		0x29, 0xab, 0x5f, 0x49, 0x00, 0x00, 0x00, 0x00, // Timestamp
 		0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // SFNodeNetwork
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 		0x00, 0x00, 0xff, 0xff, 0x7f, 0x00, 0x00, 0x01, // IP 127.0.0.1
@@ -228,11 +228,11 @@ func TestNetAddressWireErrors(t *testing.T) {
 		// Force errors on timestamp.
 		{&baseNetAddr, []byte{}, pver, true, 0, io.ErrShortWrite, io.EOF},
 		// Force errors on services.
-		{&baseNetAddr, []byte{}, pver, true, 4, io.ErrShortWrite, io.EOF},
+		{&baseNetAddr, []byte{}, pver, true, 8, io.ErrShortWrite, io.EOF},
 		// Force errors on ip.
-		{&baseNetAddr, []byte{}, pver, true, 12, io.ErrShortWrite, io.EOF},
+		{&baseNetAddr, []byte{}, pver, true, 16, io.ErrShortWrite, io.EOF},
 		// Force errors on port.
-		{&baseNetAddr, []byte{}, pver, true, 28, io.ErrShortWrite, io.EOF},
+		{&baseNetAddr, []byte{}, pver, true, 32, io.ErrShortWrite, io.EOF},
 
 		// Latest protocol version with no timestamp and intentional
 		// read/write errors.
