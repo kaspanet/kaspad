@@ -7,6 +7,7 @@ package daghash
 import (
 	"bytes"
 	"encoding/hex"
+	"reflect"
 	"testing"
 )
 
@@ -106,6 +107,37 @@ func TestHashString(t *testing.T) {
 	if hashStr != wantStr {
 		t.Errorf("String: wrong hash string - got %v, want %v",
 			hashStr, wantStr)
+	}
+}
+
+func TestHashesStrings(t *testing.T) {
+	first := Hash([HashSize]byte{ // Make go vet happy.
+		0x06, 0xe5, 0x33, 0xfd, 0x1a, 0xda, 0x86, 0x39,
+		0x1f, 0x3f, 0x6c, 0x34, 0x32, 0x04, 0xb0, 0xd2,
+		0x78, 0xd4, 0xaa, 0xec, 0x1c, 0x0b, 0x20, 0xaa,
+		0x27, 0xba, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00,
+	})
+	firstStr := "000000000003ba27aa200b1cecaad478d2b00432346c3f1f3986da1afd33e506"
+
+	second := Hash([HashSize]byte{})
+	secondStr := "0000000000000000000000000000000000000000000000000000000000000000"
+
+	tests := []struct {
+		name            string
+		hashes          []Hash
+		expectedStrings []string
+	}{
+		{"empty", []Hash{}, []string{}},
+		{"two hashes", []Hash{first, second}, []string{firstStr, secondStr}},
+		{"two hashes inversed", []Hash{second, first}, []string{secondStr, firstStr}},
+	}
+
+	for _, test := range tests {
+		strings := Strings(test.hashes)
+		if !reflect.DeepEqual(strings, test.expectedStrings) {
+			t.Errorf("HashesStrings: %s: expected: %v, got: %v",
+				test.name, test.expectedStrings, strings)
+		}
 	}
 }
 
