@@ -36,9 +36,9 @@ func TestMustRegisterPanic(t *testing.T) {
 
 func TestParsePrefix(t *testing.T) {
 	tests := []struct {
-		prefixStr string
-		prefix    Bech32Prefix
-		isError   bool
+		prefixStr      string
+		expectedPrefix Bech32Prefix
+		expectedError  bool
 	}{
 		{"dagcoin", DagCoin, false},
 		{"dagreg", DagReg, false},
@@ -51,22 +51,22 @@ func TestParsePrefix(t *testing.T) {
 
 	for _, test := range tests {
 		result, err := ParsePrefix(test.prefixStr)
-		if (err != nil) != test.isError {
+		if (err != nil) != test.expectedError {
 			t.Errorf("TestParsePrefix: %s: expected error status: %t, but got %t",
-				test.prefixStr, test.isError, (err != nil))
+				test.prefixStr, test.expectedError, (err != nil))
 		}
 
-		if result != test.prefix {
+		if result != test.expectedPrefix {
 			t.Errorf("TestParsePrefix: %s: expected prefix: %d, but got %d",
-				test.prefixStr, test.prefix, result)
+				test.prefixStr, test.expectedPrefix, result)
 		}
 	}
 }
 
 func TestPrefixToString(t *testing.T) {
 	tests := []struct {
-		prefix    Bech32Prefix
-		prefixStr string
+		prefix            Bech32Prefix
+		expectedPrefixStr string
 	}{
 		{DagCoin, "dagcoin"},
 		{DagReg, "dagreg"},
@@ -78,9 +78,9 @@ func TestPrefixToString(t *testing.T) {
 	for _, test := range tests {
 		result := test.prefix.String()
 
-		if result != test.prefixStr {
+		if result != test.expectedPrefixStr {
 			t.Errorf("TestPrefixToString: %s: expected string: %s, but got %s",
-				test.prefix, test.prefixStr, result)
+				test.prefix, test.expectedPrefixStr, result)
 		}
 	}
 }
