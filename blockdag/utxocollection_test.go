@@ -18,7 +18,6 @@ func TestUTXOCollection(t *testing.T) {
 		toAdd           []utxoIteratorOutput
 		toRemove        []utxoIteratorOutput
 		expectedMembers []utxoIteratorOutput
-		expectedLength  int
 		expectedString  string
 	}{
 		{
@@ -26,7 +25,6 @@ func TestUTXOCollection(t *testing.T) {
 			toAdd:           []utxoIteratorOutput{},
 			toRemove:        []utxoIteratorOutput{},
 			expectedMembers: []utxoIteratorOutput{},
-			expectedLength:  0,
 			expectedString:  "[  ]",
 		},
 		{
@@ -35,8 +33,7 @@ func TestUTXOCollection(t *testing.T) {
 				{hash: *hash0, index: 0, txOut: txOut0},
 			},
 			toRemove:        []utxoIteratorOutput{},
-			expectedMembers: []utxoIteratorOutput{},
-			expectedLength:  1,
+			expectedMembers: []utxoIteratorOutput{{hash: *hash0, index: 0, txOut: txOut0}},
 			expectedString:  "[ (0000000000000000000000000000000000000000000000000000000000000000, 0) => 10 ]",
 		},
 		{
@@ -46,7 +43,6 @@ func TestUTXOCollection(t *testing.T) {
 				{hash: *hash0, index: 0},
 			},
 			expectedMembers: []utxoIteratorOutput{},
-			expectedLength:  0,
 			expectedString:  "[  ]",
 		},
 		{
@@ -58,7 +54,6 @@ func TestUTXOCollection(t *testing.T) {
 				{hash: *hash0, index: 0},
 			},
 			expectedMembers: []utxoIteratorOutput{},
-			expectedLength:  0,
 			expectedString:  "[  ]",
 		},
 		{
@@ -72,7 +67,6 @@ func TestUTXOCollection(t *testing.T) {
 				{hash: *hash0, index: 0, txOut: txOut0},
 				{hash: *hash0, index: 1, txOut: txOut1},
 			},
-			expectedLength: 2,
 			expectedString: "[ (0000000000000000000000000000000000000000000000000000000000000000, 0) => 10, (0000000000000000000000000000000000000000000000000000000000000000, 1) => 20 ]",
 		},
 		{
@@ -86,7 +80,6 @@ func TestUTXOCollection(t *testing.T) {
 				{hash: *hash0, index: 0, txOut: txOut0},
 				{hash: *hash1, index: 0, txOut: txOut1},
 			},
-			expectedLength: 2,
 			expectedString: "[ (0000000000000000000000000000000000000000000000000000000000000000, 0) => 10, (1111111111111111111111111111111111111111111111111111111111111111, 0) => 20 ]",
 		},
 	}
@@ -112,9 +105,10 @@ func TestUTXOCollection(t *testing.T) {
 			}
 		}
 
-		if collection.len() != test.expectedLength {
+		expectedLength := len(test.expectedMembers)
+		if collection.len() != expectedLength {
 			t.Errorf("unexpected length in test \"%s\". "+
-				"Expected: %d, got: %d.", test.name, test.expectedLength, collection.len())
+				"Expected: %d, got: %d.", test.name, expectedLength, collection.len())
 		}
 		collectionString := collection.String()
 		if collectionString != test.expectedString {
