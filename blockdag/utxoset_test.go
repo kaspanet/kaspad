@@ -335,7 +335,25 @@ func TestDiffUTXOSet_addTx(t *testing.T) {
 			},
 		},
 		{
-			name:     "add two transaction, one spending the other, to set with the first tx in base",
+			name: "add transaction to set with the tx in diff toAdd and its hash in diff toRemove",
+			startSet: &diffUTXOSet{
+				base: newFullUTXOSet(),
+				utxoDiff: &utxoDiff{
+					toAdd:    utxoCollection{*hash0: map[uint32]*wire.TxOut{0: txOut0}},
+					toRemove: utxoCollection{hash1: map[uint32]*wire.TxOut{0: txOut0}},
+				},
+			},
+			toAdd: []*wire.MsgTx{transaction0},
+			expectedSet: &diffUTXOSet{
+				base: newFullUTXOSet(),
+				utxoDiff: &utxoDiff{
+					toAdd:    utxoCollection{},
+					toRemove: utxoCollection{},
+				},
+			},
+		},
+		{
+			name: "add two transactions, one spending the other, to set with the first tx in base",
 			startSet: &diffUTXOSet{
 				base: &fullUTXOSet{utxoCollection: utxoCollection{*hash0: map[uint32]*wire.TxOut{0: txOut0}}},
 				utxoDiff: &utxoDiff{
@@ -343,7 +361,7 @@ func TestDiffUTXOSet_addTx(t *testing.T) {
 					toRemove: utxoCollection{},
 				},
 			},
-			toAdd:    []*wire.MsgTx{transaction0, transaction1},
+			toAdd: []*wire.MsgTx{transaction0, transaction1},
 			expectedSet: &diffUTXOSet{
 				base: &fullUTXOSet{utxoCollection: utxoCollection{*hash0: map[uint32]*wire.TxOut{0: txOut0}}},
 				utxoDiff: &utxoDiff{
