@@ -82,6 +82,10 @@ func TestDiffUTXOSet(t *testing.T) {
 	if !reflect.DeepEqual(withDiffUTXOSet.base, emptySet.base) || !reflect.DeepEqual(withDiffUTXOSet.utxoDiff, withDiff) {
 		t.Errorf("withDiff is of unexpected composition")
 	}
+	_, err = newDiffUTXOSet(newFullUTXOSet(), diff).withDiff(diff)
+	if err == nil {
+		t.Errorf("withDiff unexpectedly succeeded")
+	}
 
 	tests := []struct {
 		name               string
