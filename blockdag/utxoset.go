@@ -85,32 +85,6 @@ func (u *fullUTXOSet) clone() utxoSet {
 	return &fullUTXOSet{utxoCollection: u.utxoCollection.clone()}
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 // diffUTXOSet represents a utxoSet with a base fullUTXOSet and a UTXODiff
 type diffUTXOSet struct {
 	base     *fullUTXOSet
