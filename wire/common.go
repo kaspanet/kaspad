@@ -176,11 +176,6 @@ var binarySerializer binaryFreeList = make(chan []byte, binaryFreeListMaxItems)
 var errNonCanonicalVarInt = "non-canonical varint %x - discriminant %x must " +
 	"encode a value greater than %x"
 
-// uint32Time represents a unix timestamp encoded with a uint32.  It is used as
-// a way to signal the readElement function how to decode a timestamp into a Go
-// time.Time since it is otherwise ambiguous.
-type uint32Time time.Time
-
 // int64Time represents a unix timestamp encoded with an int64.  It is used as
 // a way to signal the readElement function how to decode a timestamp into a Go
 // time.Time since it is otherwise ambiguous.
@@ -234,15 +229,6 @@ func readElement(r io.Reader, element interface{}) error {
 		} else {
 			*e = true
 		}
-		return nil
-
-	// Unix timestamp encoded as a uint32.
-	case *uint32Time:
-		rv, err := binarySerializer.Uint32(r, binary.LittleEndian)
-		if err != nil {
-			return err
-		}
-		*e = uint32Time(time.Unix(int64(rv), 0))
 		return nil
 
 	// Unix timestamp encoded as an int64.

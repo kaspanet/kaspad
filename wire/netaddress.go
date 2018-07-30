@@ -19,8 +19,8 @@ func maxNetAddressPayload(pver uint32) uint32 {
 
 	// NetAddressTimeVersion added a timestamp field.
 	if pver >= NetAddressTimeVersion {
-		// Timestamp 4 bytes.
-		plen += 4
+		// Timestamp 8 bytes.
+		plen += 8
 	}
 
 	return plen
@@ -29,10 +29,7 @@ func maxNetAddressPayload(pver uint32) uint32 {
 // NetAddress defines information about a peer on the network including the time
 // it was last seen, the services it supports, its IP address, and port.
 type NetAddress struct {
-	// Last time the address was seen.  This is, unfortunately, encoded as a
-	// uint32 on the wire and therefore is limited to 2106.  This field is
-	// not present in the bitcoin version message (MsgVersion) nor was it
-	// added until protocol version >= NetAddressTimeVersion.
+	// Last time the address was seen.
 	Timestamp time.Time
 
 	// Bitfield which identifies the services supported by the address.
@@ -91,11 +88,8 @@ func NewNetAddress(addr *net.TCPAddr, services ServiceFlag) *NetAddress {
 func readNetAddress(r io.Reader, pver uint32, na *NetAddress, ts bool) error {
 	var ip [16]byte
 
-	// NOTE: The bitcoin protocol uses a uint32 for the timestamp so it will
-	// stop working somewhere around 2106.  Also timestamp wasn't added until
-	// protocol version >= NetAddressTimeVersion
 	if ts && pver >= NetAddressTimeVersion {
-		err := readElement(r, (*uint32Time)(&na.Timestamp))
+		err := readElement(r, (*int64Time)(&na.Timestamp))
 		if err != nil {
 			return err
 		}
@@ -124,11 +118,9 @@ func readNetAddress(r io.Reader, pver uint32, na *NetAddress, ts bool) error {
 // version and whether or not the timestamp is included per ts.  Some messages
 // like version do not include the timestamp.
 func writeNetAddress(w io.Writer, pver uint32, na *NetAddress, ts bool) error {
-	// NOTE: The bitcoin protocol uses a uint32 for the timestamp so it will
-	// stop working somewhere around 2106.  Also timestamp wasn't added until
-	// until protocol version >= NetAddressTimeVersion.
+	// Timestamp wasn't added until protocol version >= NetAddressTimeVersion.
 	if ts && pver >= NetAddressTimeVersion {
-		err := writeElement(w, uint32(na.Timestamp.Unix()))
+		err := writeElement(w, int64(na.Timestamp.Unix()))
 		if err != nil {
 			return err
 		}

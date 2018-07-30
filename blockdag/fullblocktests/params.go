@@ -6,6 +6,7 @@ package fullblocktests
 
 import (
 	"encoding/hex"
+	"math"
 	"math/big"
 	"time"
 
@@ -71,7 +72,7 @@ var (
 					"32303039204368616e63656c6c6f72206f" +
 					"6e206272696e6b206f66207365636f6e64" +
 					"206261696c6f757420666f72206261686b73"),
-				Sequence: 0xffffffff,
+				Sequence: math.MaxUint64,
 			}},
 			TxOut: []*wire.TxOut{{
 				Value: 0,

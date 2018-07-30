@@ -167,7 +167,7 @@ func IsFinalizedTransaction(tx *btcutil.Tx, blockHeight int32, blockTime time.Ti
 	// the transaction might still be finalized if the sequence number
 	// for all transaction inputs is maxed out.
 	for _, txIn := range msgTx.TxIn {
-		if txIn.Sequence != math.MaxUint32 {
+		if txIn.Sequence != math.MaxUint64 {
 			return false
 		}
 	}
