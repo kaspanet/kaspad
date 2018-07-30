@@ -3,7 +3,6 @@ package blockdag
 import (
 	"fmt"
 	"sort"
-	"strings"
 	"testing"
 	"time"
 
@@ -808,7 +807,6 @@ func TestBlues(t *testing.T) {
 		}
 
 		for _, blockData := range test.dagData {
-			fmt.Printf("Block %v test:\n", blockData.id)
 			blockTime = blockTime.Add(time.Second)
 			parents := blockSet{}
 			for _, parentID := range blockData.parents {
@@ -816,8 +814,6 @@ func TestBlues(t *testing.T) {
 				parents.add(parent)
 			}
 			node := newFakeNode(parents, blockVersion, 0, blockTime)
-			node.id = blockData.id
-			fmt.Printf("hash %v: %v \n", blockData.id, node.hash)
 
 			blockDag.index.AddNode(node)
 			blockIDMap[blockData.id] = node
@@ -841,7 +837,6 @@ func TestBlues(t *testing.T) {
 				errorF("Block %v expected to have blues %v but got %v (fulldata: %v)", blockData.id, blockData.expectedBlues, bluesIDs, fullDataStr)
 				continue
 			}
-			fmt.Printf("\n")
 		}
 
 		if test.expectedReds != nil {
@@ -882,37 +877,25 @@ func TestBlues(t *testing.T) {
 			}
 		}
 
-		pairs := make([]*hashIDPair, 0, len(blockIDMap))
+		// pairs := make([]*hashIDPair, 0, len(blockIDMap))
 
-		for id, node := range blockIDMap {
-			pairs = append(pairs, &hashIDPair{
-				id:   id,
-				hash: &node.hash,
-			})
-		}
+		// for id, node := range blockIDMap {
+		// 	pairs = append(pairs, &hashIDPair{
+		// 		id:   id,
+		// 		hash: &node.hash,
+		// 	})
+		// }
 
-		sort.Slice(pairs, func(i, j int) bool {
-			return pairs[i].hash.Cmp(pairs[j].hash) > 0
-		})
+		// sort.Slice(pairs, func(i, j int) bool {
+		// 	return pairs[i].hash.Cmp(pairs[j].hash) > 0
+		// })
 
-		fmt.Printf("Block hash order:")
+		// fmt.Printf("Block hash order:")
 
-		for _, pair := range pairs {
-			fmt.Print(pair.id)
-		}
-		fmt.Printf("\n")
+		// for _, pair := range pairs {
+		// 	fmt.Print(pair.id)
+		// }
+		// fmt.Printf("\n")
 
 	}
-}
-
-func (bs blockSet) StringByID() string {
-	ids := []string{}
-	for _, node := range bs {
-		id := "A"
-		if node.id != "" {
-			id = node.id
-		}
-		ids = append(ids, id)
-	}
-	return strings.Join(ids, ",")
 }

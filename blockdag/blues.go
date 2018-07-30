@@ -1,21 +1,14 @@
 package blockdag
 
-import "fmt"
-
 func blues(block *blockNode) (blues []*blockNode, selectedParent *blockNode, score int64) {
 	bestScore := int64(-1)
 	var bestParent *blockNode
 	var bestBlues []*blockNode
 	for _, parent := range block.parents.toSlice(true) {
-		fmt.Printf("parent: %v\n", parent)
 		chainStart := digToChainStart(block, parent)
-		fmt.Printf("chainstart: %v\n", chainStart)
 		candidates := blueCandidates(chainStart)
-		fmt.Printf("candidates: %v\n", candidates)
 		blues := traverseCandidates(block, candidates, parent)
-		fmt.Printf("blues: %v\n", blues)
 		score := int64(len(blues)) + parent.blueScore
-		fmt.Printf("score: %v\n", score)
 
 		if score > bestScore {
 			bestScore = score
