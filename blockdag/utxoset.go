@@ -10,7 +10,7 @@ import (
 type utxoSet interface {
 	fmt.Stringer
 	diff(other utxoSet) (*utxoDiff, error)
-	withDiff(diff *utxoDiff) (utxoSet, error)
+	withDiff(utxoDiff *utxoDiff) (utxoSet, error)
 	addTx(tx *wire.MsgTx) (ok bool)
 	iterate() utxoIterator
 	clone() utxoSet
@@ -44,8 +44,8 @@ func (u *fullUTXOSet) diff(other utxoSet) (*utxoDiff, error) {
 }
 
 // withDiff returns a utxoSet which is a diff between this and other utxoSet
-func (u *fullUTXOSet) withDiff(diff *utxoDiff) (utxoSet, error) {
-	return newDiffUTXOSet(u, diff.clone()), nil
+func (u *fullUTXOSet) withDiff(utxoDiff *utxoDiff) (utxoSet, error) {
+	return newDiffUTXOSet(u, utxoDiff.clone()), nil
 }
 
 // addTx adds a transaction to this utxoSet and returns true iff it's valid in this UTXO's context
@@ -54,7 +54,13 @@ func (u *fullUTXOSet) addTx(tx *wire.MsgTx) bool {
 		return false
 	}
 
-	u.appendTx(tx)
+	for _, txIn := range tx.TxIn {
+		u.remove(txIn.PreviousOutPoint.Hash, txIn.PreviousOutPoint.Index)
+	}
+
+	for i, txOut := range tx.TxOut {
+		u.add(tx.TxHash(), uint32(i), txOut)
+	}
 
 	return true
 }
@@ -67,16 +73,6 @@ func (u *fullUTXOSet) verifyTx(tx *wire.MsgTx) bool {
 	}
 
 	return true
-}
-
-func (u *fullUTXOSet) appendTx(tx *wire.MsgTx) {
-	for _, txIn := range tx.TxIn {
-		u.remove(txIn.PreviousOutPoint.Hash, txIn.PreviousOutPoint.Index)
-	}
-
-	for i, txOut := range tx.TxOut {
-		u.add(tx.TxHash(), uint32(i), txOut)
-	}
 }
 
 // collection returns a collection of all UTXOs in this set
@@ -145,13 +141,13 @@ func (u *diffUTXOSet) diff(other utxoSet) (*utxoDiff, error) {
 }
 
 // withDiff return a new utxoSet which is a diff between this and other utxoSet
-func (u *diffUTXOSet) withDiff(diff *utxoDiff) (utxoSet, error) {
-	kaka, err := u.utxoDiff.withDiff(diff)
+func (u *diffUTXOSet) withDiff(utxoDiff *utxoDiff) (utxoSet, error) {
+	diff, err := u.utxoDiff.withDiff(utxoDiff)
 	if err != nil {
 		return nil, err
 	}
 
-	return newDiffUTXOSet(u.base, kaka), nil
+	return newDiffUTXOSet(u.base, diff), nil
 }
 
 // addTx adds a transaction to this utxoSet and returns true iff it's valid in this UTXO's context
@@ -174,6 +170,17 @@ func (u *diffUTXOSet) addTx(tx *wire.MsgTx) bool {
 			u.utxoDiff.toRemove.remove(tx.TxHash(), uint32(i))
 		} else {
 			u.utxoDiff.toAdd.add(tx.TxHash(), uint32(i), txOut)
+		}
+	}
+
+	return true
+}
+
+func (u *diffUTXOSet) verifyTx(tx *wire.MsgTx) bool {
+	for _, txIn := range tx.TxIn {
+		if (!u.base.contains(txIn.PreviousOutPoint.Hash, txIn.PreviousOutPoint.Index) && !u.utxoDiff.toAdd.contains(txIn.PreviousOutPoint.Hash, txIn.PreviousOutPoint.Index)) ||
+			(u.utxoDiff.toRemove.contains(txIn.PreviousOutPoint.Hash, txIn.PreviousOutPoint.Index)) {
+			return false
 		}
 	}
 
@@ -207,17 +214,6 @@ func (u *diffUTXOSet) collection() utxoCollection {
 	clone.meldToBase()
 
 	return clone.base.collection()
-}
-
-func (u *diffUTXOSet) verifyTx(tx *wire.MsgTx) bool {
-	for _, txIn := range tx.TxIn {
-		if (!u.base.contains(txIn.PreviousOutPoint.Hash, txIn.PreviousOutPoint.Index) && !u.utxoDiff.toAdd.contains(txIn.PreviousOutPoint.Hash, txIn.PreviousOutPoint.Index)) ||
-			(u.utxoDiff.toRemove.contains(txIn.PreviousOutPoint.Hash, txIn.PreviousOutPoint.Index)) {
-			return false
-		}
-	}
-
-	return true
 }
 
 // clone returns a clone of this UTXO Set
