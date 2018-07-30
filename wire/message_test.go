@@ -60,6 +60,8 @@ func TestMessage(t *testing.T) {
 	msgPing := NewMsgPing(123123)
 	msgPong := NewMsgPong(123123)
 	msgGetHeaders := NewMsgGetHeaders()
+	msgSendHeaders := NewMsgSendHeaders()
+	msgFeeFilter := NewMsgFeeFilter(123456)
 	msgHeaders := NewMsgHeaders()
 	msgAlert := NewMsgAlert([]byte("payload"), []byte("signature"))
 	msgMemPool := NewMsgMemPool()
@@ -89,21 +91,23 @@ func TestMessage(t *testing.T) {
 		{msgGetAddr, msgGetAddr, pver, MainNet, 24},
 		{msgAddr, msgAddr, pver, MainNet, 25},
 		{msgGetBlocks, msgGetBlocks, pver, MainNet, 61},
-		{msgBlock, msgBlock, pver, MainNet, 272},
+		{msgBlock, msgBlock, pver, MainNet, 284},
 		{msgInv, msgInv, pver, MainNet, 25},
 		{msgGetData, msgGetData, pver, MainNet, 25},
 		{msgNotFound, msgNotFound, pver, MainNet, 25},
-		{msgTx, msgTx, pver, MainNet, 34},
+		{msgTx, msgTx, pver, MainNet, 38},
 		{msgPing, msgPing, pver, MainNet, 32},
 		{msgPong, msgPong, pver, MainNet, 32},
 		{msgGetHeaders, msgGetHeaders, pver, MainNet, 61},
+		{msgSendHeaders, msgSendHeaders, pver, MainNet, 24},
+		{msgFeeFilter, msgFeeFilter, pver, MainNet, 32},
 		{msgHeaders, msgHeaders, pver, MainNet, 25},
 		{msgAlert, msgAlert, pver, MainNet, 42},
 		{msgMemPool, msgMemPool, pver, MainNet, 24},
 		{msgFilterAdd, msgFilterAdd, pver, MainNet, 26},
 		{msgFilterClear, msgFilterClear, pver, MainNet, 24},
 		{msgFilterLoad, msgFilterLoad, pver, MainNet, 35},
-		{msgMerkleBlock, msgMerkleBlock, pver, MainNet, 143},
+		{msgMerkleBlock, msgMerkleBlock, pver, MainNet, 147},
 		{msgReject, msgReject, pver, MainNet, 79},
 		{msgGetCFilters, msgGetCFilters, pver, MainNet, 61},
 		{msgGetCFHeaders, msgGetCFHeaders, pver, MainNet, 61},

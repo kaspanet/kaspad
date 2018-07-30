@@ -26,7 +26,7 @@ type GetTransactionResult struct {
 	Confirmations   int64                         `json:"confirmations"`
 	BlockHash       string                        `json:"blockhash"`
 	BlockIndex      int64                         `json:"blockindex"`
-	BlockTime       int64                         `json:"blocktime"`
+	BlockTime       uint64                        `json:"blocktime"`
 	TxID            string                        `json:"txid"`
 	WalletConflicts []string                      `json:"walletconflicts"`
 	Time            int64                         `json:"time"`
@@ -65,7 +65,7 @@ type ListTransactionsResult struct {
 	BIP125Replaceable string   `json:"bip125-replaceable,omitempty"`
 	BlockHash         string   `json:"blockhash,omitempty"`
 	BlockIndex        *int64   `json:"blockindex,omitempty"`
-	BlockTime         int64    `json:"blocktime,omitempty"`
+	BlockTime         uint64   `json:"blocktime,omitempty"`
 	Category          string   `json:"category"`
 	Confirmations     int64    `json:"confirmations"`
 	Fee               *float64 `json:"fee,omitempty"`
@@ -125,7 +125,7 @@ type SignRawTransactionError struct {
 	TxID      string `json:"txid"`
 	Vout      uint32 `json:"vout"`
 	ScriptSig string `json:"scriptSig"`
-	Sequence  uint32 `json:"sequence"`
+	Sequence  uint64 `json:"sequence"`
 	Error     string `json:"error"`
 }
 

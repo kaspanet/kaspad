@@ -7,6 +7,7 @@ package blockdag
 import (
 	"bytes"
 	"errors"
+	"math"
 	"reflect"
 	"testing"
 
@@ -235,7 +236,7 @@ func TestSpendJournalSerialization(t *testing.T) {
 						Index: 0,
 					},
 					SignatureScript: hexToBytes("47304402204e45e16932b8af514961a1d3a1a25fdf3f4f7732e9d624c6c61548ab5fb8cd410220181522ec8eca07de4860a4acdd12909d831cc56cbbac4622082221a8768d1d0901"),
-					Sequence:        0xffffffff,
+					Sequence:        math.MaxUint64,
 				}},
 				TxOut: []*wire.TxOut{{
 					Value:    1000000000,
@@ -270,7 +271,7 @@ func TestSpendJournalSerialization(t *testing.T) {
 						Index: 1,
 					},
 					SignatureScript: hexToBytes("493046022100c167eead9840da4a033c9a56470d7794a9bb1605b377ebe5688499b39f94be59022100fb6345cab4324f9ea0b9ee9169337534834638d818129778370f7d378ee4a325014104d962cac5390f12ddb7539507065d0def320d68c040f2e73337c3a1aaaab7195cb5c4d02e0959624d534f3c10c3cf3d73ca5065ebd62ae986b04c6d090d32627c"),
-					Sequence:        0xffffffff,
+					Sequence:        math.MaxUint64,
 				}},
 				TxOut: []*wire.TxOut{{
 					Value:    5000000,
@@ -288,7 +289,7 @@ func TestSpendJournalSerialization(t *testing.T) {
 						Index: 0,
 					},
 					SignatureScript: hexToBytes("483045022100e256743154c097465cf13e89955e1c9ff2e55c46051b627751dee0144183157e02201d8d4f02cde8496aae66768f94d35ce54465bd4ae8836004992d3216a93a13f00141049d23ce8686fe9b802a7a938e8952174d35dd2c2089d4112001ed8089023ab4f93a3c9fcd5bfeaa9727858bf640dc1b1c05ec3b434bb59837f8640e8810e87742"),
-					Sequence:        0xffffffff,
+					Sequence:        math.MaxUint64,
 				}},
 				TxOut: []*wire.TxOut{{
 					Value:    5000000,
@@ -355,7 +356,7 @@ func TestSpendJournalErrors(t *testing.T) {
 						Index: 0,
 					},
 					SignatureScript: hexToBytes("47304402204e45e16932b8af514961a1d3a1a25fdf3f4f7732e9d624c6c61548ab5fb8cd410220181522ec8eca07de4860a4acdd12909d831cc56cbbac4622082221a8768d1d0901"),
-					Sequence:        0xffffffff,
+					Sequence:        math.MaxUint64,
 				}},
 				LockTime: 0,
 			}},
@@ -372,7 +373,7 @@ func TestSpendJournalErrors(t *testing.T) {
 						Index: 0,
 					},
 					SignatureScript: hexToBytes("47304402204e45e16932b8af514961a1d3a1a25fdf3f4f7732e9d624c6c61548ab5fb8cd410220181522ec8eca07de4860a4acdd12909d831cc56cbbac4622082221a8768d1d0901"),
-					Sequence:        0xffffffff,
+					Sequence:        math.MaxUint64,
 				}},
 				LockTime: 0,
 			}},
@@ -412,7 +413,7 @@ func TestUtxoSerialization(t *testing.T) {
 		serialized []byte
 	}{
 		// From tx in main blockchain:
-		// 0e3e2357e806b6cdb1f70b54c3a3a17b6714ee1f0e68bebb44a74b1efd512098:0
+		// b7c3332bc138e2c9429818f5fed500bcc1746544218772389054dc8047d7cd3f:0
 		{
 			name: "height 1, coinbase",
 			entry: &UtxoEntry{
@@ -424,7 +425,7 @@ func TestUtxoSerialization(t *testing.T) {
 			serialized: hexToBytes("03320496b538e853519c726a2c91e61ec11600ae1390813a627c66fb8be7947be63c52"),
 		},
 		// From tx in main blockchain:
-		// 0e3e2357e806b6cdb1f70b54c3a3a17b6714ee1f0e68bebb44a74b1efd512098:0
+		// b7c3332bc138e2c9429818f5fed500bcc1746544218772389054dc8047d7cd3f:0
 		{
 			name: "height 1, coinbase, spent",
 			entry: &UtxoEntry{
