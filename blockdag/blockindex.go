@@ -91,7 +91,7 @@ type blockNode struct {
 	blueScore int64
 
 	// utxoDiff is the UTXO of the block represented as a diff to the virtual block
-	utxoDiff UtxoViewpoint
+	utxoDiff utxoDiff
 
 	// hash is the double sha 256 of the block.
 	hash daghash.Hash
