@@ -268,3 +268,107 @@ func TestUTXOSetDiffRules(t *testing.T) {
 	run(fullSet)
 	run(diffSet)
 }
+
+func TestDiffUTXOSet_addTx(t *testing.T) {
+	hash0, _ := daghash.NewHashFromStr("0000000000000000000000000000000000000000000000000000000000000000")
+	txIn0 := &wire.TxIn{SignatureScript: []byte{}, PreviousOutPoint: wire.OutPoint{Hash: *hash0, Index: 0}, Sequence: 0}
+	txOut0 := &wire.TxOut{PkScript: []byte{}, Value: 10}
+	transaction0 := wire.NewMsgTx(1)
+	transaction0.TxIn = []*wire.TxIn{txIn0}
+	transaction0.TxOut = []*wire.TxOut{txOut0}
+
+	hash1 := transaction0.TxHash()
+	txIn1 := &wire.TxIn{SignatureScript: []byte{}, PreviousOutPoint: wire.OutPoint{Hash: hash1, Index: 0}, Sequence: 0}
+	txOut1 := &wire.TxOut{PkScript: []byte{}, Value: 20}
+	transaction1 := wire.NewMsgTx(1)
+	transaction1.TxIn = []*wire.TxIn{txIn1}
+	transaction1.TxOut = []*wire.TxOut{txOut1}
+
+	hash2 := transaction1.TxHash()
+
+	tests := []struct {
+		name        string
+		startSet    *diffUTXOSet
+		toAdd       []*wire.MsgTx
+		expectedSet *diffUTXOSet
+	}{
+		{
+			name:        "add transaction to empty set",
+			startSet:    newDiffUTXOSet(newFullUTXOSet(), newUTXODiff()),
+			toAdd:       []*wire.MsgTx{transaction0},
+			expectedSet: nil,
+		},
+		{
+			name: "add transaction to set with the tx in base",
+			startSet: &diffUTXOSet{
+				base: &fullUTXOSet{utxoCollection: utxoCollection{*hash0: map[uint32]*wire.TxOut{0: txOut0}}},
+				utxoDiff: &utxoDiff{
+					toAdd:    utxoCollection{},
+					toRemove: utxoCollection{},
+				},
+			},
+			toAdd: []*wire.MsgTx{transaction0},
+			expectedSet: &diffUTXOSet{
+				base: &fullUTXOSet{utxoCollection: utxoCollection{*hash0: map[uint32]*wire.TxOut{0: txOut0}}},
+				utxoDiff: &utxoDiff{
+					toAdd:    utxoCollection{hash1: map[uint32]*wire.TxOut{0: txOut0}},
+					toRemove: utxoCollection{*hash0: map[uint32]*wire.TxOut{0: txOut0}},
+				},
+			},
+		},
+		{
+			name: "add transaction to set with the tx in diff toAdd",
+			startSet: &diffUTXOSet{
+				base: newFullUTXOSet(),
+				utxoDiff: &utxoDiff{
+					toAdd:    utxoCollection{*hash0: map[uint32]*wire.TxOut{0: txOut0}},
+					toRemove: utxoCollection{},
+				},
+			},
+			toAdd: []*wire.MsgTx{transaction0},
+			expectedSet: &diffUTXOSet{
+				base: newFullUTXOSet(),
+				utxoDiff: &utxoDiff{
+					toAdd:    utxoCollection{hash1: map[uint32]*wire.TxOut{0: txOut0}},
+					toRemove: utxoCollection{},
+				},
+			},
+		},
+		{
+			name:     "add two transaction, one spending the other, to set with the first tx in base",
+			startSet: &diffUTXOSet{
+				base: &fullUTXOSet{utxoCollection: utxoCollection{*hash0: map[uint32]*wire.TxOut{0: txOut0}}},
+				utxoDiff: &utxoDiff{
+					toAdd:    utxoCollection{},
+					toRemove: utxoCollection{},
+				},
+			},
+			toAdd:    []*wire.MsgTx{transaction0, transaction1},
+			expectedSet: &diffUTXOSet{
+				base: &fullUTXOSet{utxoCollection: utxoCollection{*hash0: map[uint32]*wire.TxOut{0: txOut0}}},
+				utxoDiff: &utxoDiff{
+					toAdd:    utxoCollection{hash2: map[uint32]*wire.TxOut{0: txOut1}},
+					toRemove: utxoCollection{*hash0: map[uint32]*wire.TxOut{0: txOut0}},
+				},
+			},
+		},
+	}
+
+	for _, test := range tests {
+		diffSet := test.startSet.clone()
+		isSuccessful := true
+		for _, transaction := range test.toAdd {
+			isSuccessful = isSuccessful && diffSet.addTx(transaction)
+		}
+
+		shouldBeSuccessful := test.expectedSet != nil
+		if shouldBeSuccessful != isSuccessful {
+			t.Errorf("unexpected addTx success in test \"%s\". "+
+				"Expected: \"%t\", got: \"%t\".", test.name, shouldBeSuccessful, isSuccessful)
+		}
+		if shouldBeSuccessful && !reflect.DeepEqual(diffSet, test.expectedSet) {
+			t.Errorf("unexpected diffSet in test \"%s\". "+
+				"Expected: \"%v\", got: \"%v\".", test.name, test.expectedSet, diffSet)
+		}
+	}
+}
