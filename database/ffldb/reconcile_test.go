@@ -1,16 +1,10 @@
 package ffldb
 
 import (
-	"os"
-	"path/filepath"
 	"reflect"
 	"testing"
 
 	"github.com/bouk/monkey"
-	"github.com/btcsuite/goleveldb/leveldb"
-	"github.com/btcsuite/goleveldb/leveldb/filter"
-	"github.com/btcsuite/goleveldb/leveldb/opt"
-	"github.com/daglabs/btcd/wire"
 )
 
 func TestSerializeWriteRow(t *testing.T) {
@@ -101,33 +95,11 @@ func setWriteRow(pdb *db, writeRow []byte, t *testing.T) {
 // The non-error-cases are tested in the more general tests.
 func TestReconcileErrors(t *testing.T) {
 	// Set-up tests
-	dbPath := "/tmp/reconcile_db_errors_test"
-	err := os.RemoveAll(dbPath)
-	if err != nil && !os.IsNotExist(err) {
-		t.Fatalf("TestReconcileErrors: Error deleting database folder before starting: %s", err)
-	}
-
-	network := wire.TestNet
-
-	opts := opt.Options{
-		ErrorIfExist: false,
-		Strict:       opt.DefaultStrict,
-		Compression:  opt.NoCompression,
-		Filter:       filter.NewBloomFilter(10),
-	}
-	metadataDbPath := filepath.Join(dbPath, metadataDbName)
-	ldb, err := leveldb.OpenFile(metadataDbPath, &opts)
-	if err != nil {
-		t.Errorf("TestReconcileErrors: Error opening metadataDbPath")
-	}
-
-	store := newBlockStore(dbPath, network)
-	cache := newDbCache(ldb, store, defaultCacheSize, defaultFlushSecs)
-	pdb := &db{store: store, cache: cache}
+	pdb := newTestDb("TestReconcileErrors", t)
 
 	// Test without writeLoc
 	setWriteRow(pdb, nil, t)
-	_, err = reconcileDB(pdb, false)
+	_, err := reconcileDB(pdb, false)
 	if err == nil {
 		t.Errorf("TestReconcileErrors: ReconcileDB() didn't error out when " +
 			"running without a writeRowLoc")
