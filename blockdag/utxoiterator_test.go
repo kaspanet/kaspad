@@ -77,7 +77,7 @@ func TestIterate(t *testing.T) {
 			expectedLength: 1,
 		},
 		{
-			name:       "collection with two txOut members with the same previousHash should iterate twice",
+			name:       "collection with two txOut members with the same hash should iterate twice",
 			collection: utxoCollection{*hash0: map[uint32]*wire.TxOut{0: txOut0, 1: txOut1}},
 			diffSet: diffUTXOSet{
 				base: &fullUTXOSet{utxoCollection: utxoCollection{*hash0: map[uint32]*wire.TxOut{0: txOut0}}},
@@ -91,7 +91,7 @@ func TestIterate(t *testing.T) {
 			expectedLength: 2,
 		},
 		{
-			name:       "collection with two txOut members with different previousHashes should iterate twice",
+			name:       "collection with two txOut members with different hashes should iterate twice",
 			collection: utxoCollection{*hash0: map[uint32]*wire.TxOut{0: txOut0}, *hash1: map[uint32]*wire.TxOut{0: txOut1}},
 			diffSet: diffUTXOSet{
 				base: &fullUTXOSet{utxoCollection: utxoCollection{*hash0: map[uint32]*wire.TxOut{0: txOut0}}},
@@ -120,7 +120,7 @@ func TestIterate(t *testing.T) {
 
 			for utxo := range iterator {
 				expectedTxOutSet[utxo.txOut] = true
-				expectedHashSet[utxo.previousHash] = true
+				expectedHashSet[utxo.hash] = true
 				iteratedTimes++
 			}
 
@@ -131,7 +131,7 @@ func TestIterate(t *testing.T) {
 			}
 			for hash, wasVisited := range expectedHashSet {
 				if !wasVisited {
-					t.Errorf("missing previousHash [%v] in test \"%s\".", hash, test.name)
+					t.Errorf("missing hash [%v] in test \"%s\".", hash, test.name)
 				}
 			}
 			if iteratedTimes != test.expectedLength {

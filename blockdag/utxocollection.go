@@ -8,7 +8,7 @@ import (
 	"sort"
 )
 
-// utxoCollection represents a set of UTXOs indexed by their previousHash and index
+// utxoCollection represents a set of UTXOs indexed by their hash and index
 type utxoCollection map[daghash.Hash]map[uint32]*wire.TxOut
 
 func (uc utxoCollection) String() string {
@@ -16,7 +16,7 @@ func (uc utxoCollection) String() string {
 
 	i := 0
 	for utxo := range uc.iterate() {
-		utxoStrings[i] = fmt.Sprintf("(%s, %d) => %d", utxo.previousHash, utxo.index, utxo.txOut.Value)
+		utxoStrings[i] = fmt.Sprintf("(%s, %d) => %d", utxo.hash, utxo.index, utxo.txOut.Value)
 		i++
 	}
 
@@ -38,8 +38,8 @@ func (uc utxoCollection) len() int {
 
 // get returns the txOut represented by provided hash and index,
 // and a boolean value indicating if said txOut is in the set or not
-func (uc utxoCollection) get(previousHash daghash.Hash, index uint32) (*wire.TxOut, bool) {
-	previous, ok := uc[previousHash]
+func (uc utxoCollection) get(hash daghash.Hash, index uint32) (*wire.TxOut, bool) {
+	previous, ok := uc[hash]
 	if !ok {
 		return nil, false
 	}
@@ -48,8 +48,8 @@ func (uc utxoCollection) get(previousHash daghash.Hash, index uint32) (*wire.TxO
 }
 
 // contains returns a boolean value indicating if represented by provided hash and index is in the set or not
-func (uc utxoCollection) contains(previousHash daghash.Hash, index uint32) bool {
-	previous, ok := uc[previousHash]
+func (uc utxoCollection) contains(hash daghash.Hash, index uint32) bool {
+	previous, ok := uc[hash]
 	if !ok {
 		return false
 	}
@@ -58,24 +58,24 @@ func (uc utxoCollection) contains(previousHash daghash.Hash, index uint32) bool 
 }
 
 // add adds a new UTXO to this collection
-func (uc utxoCollection) add(previousHash daghash.Hash, index uint32, txOut *wire.TxOut) {
-	_, ok := uc[previousHash]
+func (uc utxoCollection) add(hash daghash.Hash, index uint32, txOut *wire.TxOut) {
+	_, ok := uc[hash]
 	if !ok {
-		uc[previousHash] = map[uint32]*wire.TxOut{}
+		uc[hash] = map[uint32]*wire.TxOut{}
 	}
 
-	uc[previousHash][index] = txOut
+	uc[hash][index] = txOut
 }
 
 // remove removes a UTXO from this collection if exists
-func (uc utxoCollection) remove(previousHash daghash.Hash, index uint32) {
-	previous, ok := uc[previousHash]
+func (uc utxoCollection) remove(hash daghash.Hash, index uint32) {
+	previous, ok := uc[hash]
 	if !ok {
 		return
 	}
 	delete(previous, index)
 	if len(previous) == 0 {
-		delete(uc, previousHash)
+		delete(uc, hash)
 	}
 }
 

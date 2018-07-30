@@ -7,9 +7,9 @@ import (
 
 // utxoIteratorOutput represents all fields of a single UTXO, to be returned by an iterator
 type utxoIteratorOutput struct {
-	previousHash daghash.Hash
-	index        uint32
-	txOut        *wire.TxOut
+	hash  daghash.Hash
+	index uint32
+	txOut *wire.TxOut
 }
 
 // utxoIterator is used to iterate over a utxoSet
@@ -20,12 +20,12 @@ func (c utxoCollection) iterate() utxoIterator {
 	iterator := make(chan utxoIteratorOutput)
 
 	go func() {
-		for previousHash, txOuts := range c {
+		for hash, txOuts := range c {
 			for index, txOut := range txOuts {
 				iterator <- utxoIteratorOutput{
-					previousHash: previousHash,
-					index:        index,
-					txOut:        txOut,
+					hash:  hash,
+					index: index,
+					txOut: txOut,
 				}
 			}
 		}
@@ -41,7 +41,7 @@ func (u *diffUTXOSet) iterate() utxoIterator {
 
 	go func() {
 		for utxo := range u.base.iterate() {
-			if !u.utxoDiff.toRemove.contains(utxo.previousHash, utxo.index) {
+			if !u.utxoDiff.toRemove.contains(utxo.hash, utxo.index) {
 				iterator <- utxo
 			}
 		}
