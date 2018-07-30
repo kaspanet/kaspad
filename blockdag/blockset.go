@@ -26,7 +26,7 @@ func setFromSlice(blocks ...*blockNode) blockSet {
 }
 
 // toSlice converts a set of blocks into an ordered slice
-func (bs blockSet) toSlice() []*blockNode {
+func (bs blockSet) toSlice(reverseOrder bool) []*blockNode {
 	slice := []*blockNode{}
 
 	for _, block := range bs {
@@ -34,7 +34,11 @@ func (bs blockSet) toSlice() []*blockNode {
 	}
 
 	sort.Slice(slice, func(i, j int) bool {
-		return hashLess(&slice[i].hash, &slice[j].hash)
+		isLess := hashLess(&slice[i].hash, &slice[j].hash)
+		if reverseOrder {
+			return !isLess
+		}
+		return isLess
 	})
 
 	return slice

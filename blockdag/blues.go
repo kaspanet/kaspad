@@ -6,7 +6,7 @@ func blues(block *blockNode) (blues []*blockNode, selectedParent *blockNode, sco
 	bestScore := int64(-1)
 	var bestParent *blockNode
 	var bestBlues []*blockNode
-	for _, parent := range block.parents.toSlice() {
+	for _, parent := range block.parents.toSlice(true) {
 		fmt.Printf("parent: %v\n", parent)
 		chainStart := digToChainStart(block, parent)
 		fmt.Printf("chainstart: %v\n", chainStart)

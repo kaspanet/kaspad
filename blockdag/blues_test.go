@@ -31,227 +31,231 @@ func TestBlues(t *testing.T) {
 	blockVersion := int32(0x20000000)
 
 	tests := []struct {
-		k       uint //TODO: for now it doesn't matter, and it just takes from dagParams
-		dagData []*testBlockData
+		k              uint
+		dagData        []*testBlockData
+		virtualBlockID string
+		expectedReds   []string
 	}{
-		// {
-		// 	//Block hash order:IJDFGBHCEA
-		// 	k: 1,
-		// 	dagData: []*testBlockData{
-		// 		{
-		// 			parents:                []string{"A"},
-		// 			id:                     "B",
-		// 			expectedScore:          1,
-		// 			expectedSelectedParent: "A",
-		// 			expectedBlues:          []string{"A"},
-		// 		},
-		// 		{
-		// 			parents:                []string{"A"},
-		// 			id:                     "C",
-		// 			expectedScore:          1,
-		// 			expectedSelectedParent: "A",
-		// 			expectedBlues:          []string{"A"},
-		// 		},
-		// 		{
-		// 			parents:                []string{"B"},
-		// 			id:                     "D",
-		// 			expectedScore:          2,
-		// 			expectedSelectedParent: "B",
-		// 			expectedBlues:          []string{"B"},
-		// 		},
-		// 		{
-		// 			parents:                []string{"B"},
-		// 			id:                     "E",
-		// 			expectedScore:          2,
-		// 			expectedSelectedParent: "B",
-		// 			expectedBlues:          []string{"B"},
-		// 		},
-		// 		{
-		// 			parents:                []string{"C"},
-		// 			id:                     "F",
-		// 			expectedScore:          2,
-		// 			expectedSelectedParent: "C",
-		// 			expectedBlues:          []string{"C"},
-		// 		},
-		// 		{
-		// 			parents:                []string{"C", "D"},
-		// 			id:                     "G",
-		// 			expectedScore:          4,
-		// 			expectedSelectedParent: "C",
-		// 			expectedBlues:          []string{"D", "B", "C"},
-		// 		},
-		// 		{
-		// 			parents:                []string{"C", "E"},
-		// 			id:                     "H",
-		// 			expectedScore:          4,
-		// 			expectedSelectedParent: "C",
-		// 			expectedBlues:          []string{"E", "B", "C"},
-		// 		},
-		// 		{
-		// 			parents:                []string{"E", "G"},
-		// 			id:                     "I",
-		// 			expectedScore:          5,
-		// 			expectedSelectedParent: "E",
-		// 			expectedBlues:          []string{"G", "D", "E"},
-		// 		},
-		// 		{
-		// 			parents:                []string{"F"},
-		// 			id:                     "J",
-		// 			expectedScore:          3,
-		// 			expectedSelectedParent: "F",
-		// 			expectedBlues:          []string{"F"},
-		// 		},
-		// 	},
-		// },
-		// {
-		// 	//block hash order:LOSPUHDFNIBRGKJQTCMEA
-		// 	k: 2,
-		// 	dagData: []*testBlockData{
-		// 		{
-		// 			parents:                []string{"A"},
-		// 			id:                     "B",
-		// 			expectedScore:          1,
-		// 			expectedSelectedParent: "A",
-		// 			expectedBlues:          []string{"A"},
-		// 		},
-		// 		{
-		// 			parents:                []string{"A"},
-		// 			id:                     "C",
-		// 			expectedScore:          1,
-		// 			expectedSelectedParent: "A",
-		// 			expectedBlues:          []string{"A"},
-		// 		},
-		// 		{
-		// 			parents:                []string{"B"},
-		// 			id:                     "D",
-		// 			expectedScore:          2,
-		// 			expectedSelectedParent: "B",
-		// 			expectedBlues:          []string{"B"},
-		// 		},
-		// 		{
-		// 			parents:                []string{"B"},
-		// 			id:                     "E",
-		// 			expectedScore:          2,
-		// 			expectedSelectedParent: "B",
-		// 			expectedBlues:          []string{"B"},
-		// 		},
-		// 		{
-		// 			parents:                []string{"C"},
-		// 			id:                     "F",
-		// 			expectedScore:          2,
-		// 			expectedSelectedParent: "C",
-		// 			expectedBlues:          []string{"C"},
-		// 		},
-		// 		{
-		// 			parents:                []string{"C"},
-		// 			id:                     "G",
-		// 			expectedScore:          2,
-		// 			expectedSelectedParent: "C",
-		// 			expectedBlues:          []string{"C"},
-		// 		},
-		// 		{
-		// 			parents:                []string{"G"},
-		// 			id:                     "H",
-		// 			expectedScore:          3,
-		// 			expectedSelectedParent: "G",
-		// 			expectedBlues:          []string{"G"},
-		// 		},
-		// 		{
-		// 			parents:                []string{"E"},
-		// 			id:                     "I",
-		// 			expectedScore:          3,
-		// 			expectedSelectedParent: "E",
-		// 			expectedBlues:          []string{"E"},
-		// 		},
-		// 		{
-		// 			parents:                []string{"E"},
-		// 			id:                     "J",
-		// 			expectedScore:          3,
-		// 			expectedSelectedParent: "E",
-		// 			expectedBlues:          []string{"E"},
-		// 		},
-		// 		{
-		// 			parents:                []string{"I"},
-		// 			id:                     "K",
-		// 			expectedScore:          4,
-		// 			expectedSelectedParent: "I",
-		// 			expectedBlues:          []string{"I"},
-		// 		},
-		// 		{
-		// 			parents:                []string{"K", "H"},
-		// 			id:                     "L",
-		// 			expectedScore:          5,
-		// 			expectedSelectedParent: "K",
-		// 			expectedBlues:          []string{"K"},
-		// 		},
-		// 		{
-		// 			parents:                []string{"F", "L"},
-		// 			id:                     "M",
-		// 			expectedScore:          10,
-		// 			expectedSelectedParent: "F",
-		// 			expectedBlues:          []string{"L", "K", "H", "I", "G", "E", "B", "F"},
-		// 		},
-		// 		{
-		// 			parents:                []string{"G", "K"},
-		// 			id:                     "N",
-		// 			expectedScore:          7,
-		// 			expectedSelectedParent: "G",
-		// 			expectedBlues:          []string{"K", "I", "E", "B", "G"},
-		// 		},
-		// 		{
-		// 			parents:                []string{"J", "N"},
-		// 			id:                     "O",
-		// 			expectedScore:          8,
-		// 			expectedSelectedParent: "N",
-		// 			expectedBlues:          []string{"N"},
-		// 		},
-		// 		{
-		// 			parents:                []string{"D"},
-		// 			id:                     "P",
-		// 			expectedScore:          3,
-		// 			expectedSelectedParent: "D",
-		// 			expectedBlues:          []string{"D"},
-		// 		},
-		// 		{
-		// 			parents:                []string{"O", "P"},
-		// 			id:                     "Q",
-		// 			expectedScore:          10,
-		// 			expectedSelectedParent: "P",
-		// 			expectedBlues:          []string{"O", "N", "K", "I", "J", "E", "P"},
-		// 		},
-		// 		{
-		// 			parents:                []string{"L", "Q"},
-		// 			id:                     "R",
-		// 			expectedScore:          11,
-		// 			expectedSelectedParent: "Q",
-		// 			expectedBlues:          []string{"Q"},
-		// 		},
-		// 		{
-		// 			parents:                []string{"M", "R"},
-		// 			id:                     "S",
-		// 			expectedScore:          15,
-		// 			expectedSelectedParent: "M",
-		// 			expectedBlues:          []string{"R", "Q", "O", "N", "M"},
-		// 		},
-		// 		{
-		// 			parents:                []string{"H", "F"},
-		// 			id:                     "T",
-		// 			expectedScore:          5,
-		// 			expectedSelectedParent: "H",
-		// 			expectedBlues:          []string{"F", "H"},
-		// 		},
-		// 		{
-		// 			parents:                []string{"M", "T"},
-		// 			id:                     "U",
-		// 			expectedScore:          12,
-		// 			expectedSelectedParent: "M",
-		// 			expectedBlues:          []string{"T", "M"},
-		// 		},
-		// 	},
-		// },
+		{
+			//Block hash order:IJDFGBHCEA
+			k: 1,
+			dagData: []*testBlockData{
+				{
+					parents:                []string{"A"},
+					id:                     "B",
+					expectedScore:          1,
+					expectedSelectedParent: "A",
+					expectedBlues:          []string{"A"},
+				},
+				{
+					parents:                []string{"A"},
+					id:                     "C",
+					expectedScore:          1,
+					expectedSelectedParent: "A",
+					expectedBlues:          []string{"A"},
+				},
+				{
+					parents:                []string{"B"},
+					id:                     "D",
+					expectedScore:          2,
+					expectedSelectedParent: "B",
+					expectedBlues:          []string{"B"},
+				},
+				{
+					parents:                []string{"B"},
+					id:                     "E",
+					expectedScore:          2,
+					expectedSelectedParent: "B",
+					expectedBlues:          []string{"B"},
+				},
+				{
+					parents:                []string{"C"},
+					id:                     "F",
+					expectedScore:          2,
+					expectedSelectedParent: "C",
+					expectedBlues:          []string{"C"},
+				},
+				{
+					parents:                []string{"C", "D"},
+					id:                     "G",
+					expectedScore:          4,
+					expectedSelectedParent: "C",
+					expectedBlues:          []string{"D", "B", "C"},
+				},
+				{
+					parents:                []string{"C", "E"},
+					id:                     "H",
+					expectedScore:          4,
+					expectedSelectedParent: "C",
+					expectedBlues:          []string{"E", "B", "C"},
+				},
+				{
+					parents:                []string{"E", "G"},
+					id:                     "I",
+					expectedScore:          5,
+					expectedSelectedParent: "E",
+					expectedBlues:          []string{"G", "D", "E"},
+				},
+				{
+					parents:                []string{"F"},
+					id:                     "J",
+					expectedScore:          3,
+					expectedSelectedParent: "F",
+					expectedBlues:          []string{"F"},
+				},
+			},
+		},
+		{
+			//block hash order:LOSPUHDFNIBRGKJQTCMEA
+			k: 2,
+			dagData: []*testBlockData{
+				{
+					parents:                []string{"A"},
+					id:                     "B",
+					expectedScore:          1,
+					expectedSelectedParent: "A",
+					expectedBlues:          []string{"A"},
+				},
+				{
+					parents:                []string{"A"},
+					id:                     "C",
+					expectedScore:          1,
+					expectedSelectedParent: "A",
+					expectedBlues:          []string{"A"},
+				},
+				{
+					parents:                []string{"B"},
+					id:                     "D",
+					expectedScore:          2,
+					expectedSelectedParent: "B",
+					expectedBlues:          []string{"B"},
+				},
+				{
+					parents:                []string{"B"},
+					id:                     "E",
+					expectedScore:          2,
+					expectedSelectedParent: "B",
+					expectedBlues:          []string{"B"},
+				},
+				{
+					parents:                []string{"C"},
+					id:                     "F",
+					expectedScore:          2,
+					expectedSelectedParent: "C",
+					expectedBlues:          []string{"C"},
+				},
+				{
+					parents:                []string{"C"},
+					id:                     "G",
+					expectedScore:          2,
+					expectedSelectedParent: "C",
+					expectedBlues:          []string{"C"},
+				},
+				{
+					parents:                []string{"G"},
+					id:                     "H",
+					expectedScore:          3,
+					expectedSelectedParent: "G",
+					expectedBlues:          []string{"G"},
+				},
+				{
+					parents:                []string{"E"},
+					id:                     "I",
+					expectedScore:          3,
+					expectedSelectedParent: "E",
+					expectedBlues:          []string{"E"},
+				},
+				{
+					parents:                []string{"E"},
+					id:                     "J",
+					expectedScore:          3,
+					expectedSelectedParent: "E",
+					expectedBlues:          []string{"E"},
+				},
+				{
+					parents:                []string{"I"},
+					id:                     "K",
+					expectedScore:          4,
+					expectedSelectedParent: "I",
+					expectedBlues:          []string{"I"},
+				},
+				{
+					parents:                []string{"K", "H"},
+					id:                     "L",
+					expectedScore:          5,
+					expectedSelectedParent: "K",
+					expectedBlues:          []string{"K"},
+				},
+				{
+					parents:                []string{"F", "L"},
+					id:                     "M",
+					expectedScore:          10,
+					expectedSelectedParent: "F",
+					expectedBlues:          []string{"L", "K", "H", "I", "G", "E", "B", "F"},
+				},
+				{
+					parents:                []string{"G", "K"},
+					id:                     "N",
+					expectedScore:          7,
+					expectedSelectedParent: "G",
+					expectedBlues:          []string{"K", "I", "E", "B", "G"},
+				},
+				{
+					parents:                []string{"J", "N"},
+					id:                     "O",
+					expectedScore:          8,
+					expectedSelectedParent: "N",
+					expectedBlues:          []string{"N"},
+				},
+				{
+					parents:                []string{"D"},
+					id:                     "P",
+					expectedScore:          3,
+					expectedSelectedParent: "D",
+					expectedBlues:          []string{"D"},
+				},
+				{
+					parents:                []string{"O", "P"},
+					id:                     "Q",
+					expectedScore:          10,
+					expectedSelectedParent: "P",
+					expectedBlues:          []string{"O", "N", "K", "I", "J", "E", "P"},
+				},
+				{
+					parents:                []string{"L", "Q"},
+					id:                     "R",
+					expectedScore:          11,
+					expectedSelectedParent: "Q",
+					expectedBlues:          []string{"Q"},
+				},
+				{
+					parents:                []string{"M", "R"},
+					id:                     "S",
+					expectedScore:          15,
+					expectedSelectedParent: "M",
+					expectedBlues:          []string{"R", "Q", "O", "N", "M"},
+				},
+				{
+					parents:                []string{"H", "F"},
+					id:                     "T",
+					expectedScore:          5,
+					expectedSelectedParent: "F",
+					expectedBlues:          []string{"H", "G", "F"},
+				},
+				{
+					parents:                []string{"M", "T"},
+					id:                     "U",
+					expectedScore:          12,
+					expectedSelectedParent: "M",
+					expectedBlues:          []string{"T", "M"},
+				},
+			},
+		},
 		{
 			//Block hash order: JTVNIFGWDBQLREUHMPSCOKA
-			k: 1,
+			k:              1,
+			virtualBlockID: "X",
+			expectedReds:   []string{"B", "C", "E", "F", "G", "H", "I", "J", "M", "N", "O", "P", "R"},
 			dagData: []*testBlockData{
 				{
 					parents:                []string{"A"},
@@ -284,134 +288,503 @@ func TestBlues(t *testing.T) {
 				{
 					parents:                []string{"B"},
 					id:                     "F",
+					expectedScore:          2,
+					expectedSelectedParent: "B",
+					expectedBlues:          []string{"B"},
+				},
+				{
+					parents:                []string{"B"},
+					id:                     "G",
+					expectedScore:          2,
+					expectedSelectedParent: "B",
+					expectedBlues:          []string{"B"},
+				},
+				{
+					parents:                []string{"C"},
+					id:                     "H",
+					expectedScore:          2,
+					expectedSelectedParent: "C",
+					expectedBlues:          []string{"C"},
+				},
+				{
+					parents:                []string{"C"},
+					id:                     "I",
+					expectedScore:          2,
+					expectedSelectedParent: "C",
+					expectedBlues:          []string{"C"},
+				},
+				{
+					parents:                []string{"B"},
+					id:                     "J",
+					expectedScore:          2,
+					expectedSelectedParent: "B",
+					expectedBlues:          []string{"B"},
+				},
+				{
+					parents:                []string{"D"},
+					id:                     "K",
+					expectedScore:          2,
+					expectedSelectedParent: "D",
+					expectedBlues:          []string{"D"},
+				},
+				{
+					parents:                []string{"D"},
+					id:                     "L",
+					expectedScore:          2,
+					expectedSelectedParent: "D",
+					expectedBlues:          []string{"D"},
+				},
+				{
+					parents:                []string{"E"},
+					id:                     "M",
+					expectedScore:          2,
+					expectedSelectedParent: "E",
+					expectedBlues:          []string{"E"},
+				},
+				{
+					parents:                []string{"E"},
+					id:                     "N",
+					expectedScore:          2,
+					expectedSelectedParent: "E",
+					expectedBlues:          []string{"E"},
+				},
+				{
+					parents:                []string{"F", "G", "J"},
+					id:                     "O",
+					expectedScore:          5,
+					expectedSelectedParent: "G",
+					expectedBlues:          []string{"J", "F", "G"},
+				},
+				{
+					parents:                []string{"B", "M", "I"},
+					id:                     "P",
+					expectedScore:          6,
+					expectedSelectedParent: "B",
+					expectedBlues:          []string{"I", "M", "E", "C", "B"},
+				},
+				{
+					parents:                []string{"K", "E"},
+					id:                     "Q",
+					expectedScore:          4,
+					expectedSelectedParent: "E",
+					expectedBlues:          []string{"K", "D", "E"},
+				},
+				{
+					parents:                []string{"L", "N"},
+					id:                     "R",
+					expectedScore:          3,
+					expectedSelectedParent: "L",
+					expectedBlues:          []string{"L"},
+				},
+				{
+					parents:                []string{"I", "Q"},
+					id:                     "S",
+					expectedScore:          5,
+					expectedSelectedParent: "Q",
+					expectedBlues:          []string{"Q"},
+				},
+				{
+					parents:                []string{"K", "P"},
+					id:                     "T",
+					expectedScore:          7,
+					expectedSelectedParent: "P",
+					expectedBlues:          []string{"P"},
+				},
+				{
+					parents:                []string{"K", "L"},
+					id:                     "U",
+					expectedScore:          4,
+					expectedSelectedParent: "K",
+					expectedBlues:          []string{"L", "K"},
+				},
+				{
+					parents:                []string{"U", "R"},
+					id:                     "V",
+					expectedScore:          5,
+					expectedSelectedParent: "U",
+					expectedBlues:          []string{"U"},
+				},
+				{
+					parents:                []string{"S", "U", "T"},
+					id:                     "W",
+					expectedScore:          8,
+					expectedSelectedParent: "U",
+					expectedBlues:          []string{"T", "S", "Q", "U"},
+				},
+				{
+					parents:                []string{"V", "W", "H"},
+					id:                     "X",
+					expectedScore:          10,
+					expectedSelectedParent: "W",
+					expectedBlues:          []string{"V", "W"},
+				},
+			},
+		},
+		{
+			//Secret mining attack
+			//Block hash order: LNRWXUFJQMBGOSPDCHTIZKAYE
+			k:              1,
+			virtualBlockID: "Z",
+			expectedReds:   []string{"B", "C", "D", "E", "F", "G"},
+			dagData: []*testBlockData{
+				{
+					parents:                []string{"A"},
+					id:                     "B",
 					expectedScore:          1,
 					expectedSelectedParent: "A",
 					expectedBlues:          []string{"A"},
 				},
 				{
 					parents:                []string{"B"},
-					id:                     "G",
-					expectedScore:          1,
-					expectedSelectedParent: "A",
-					expectedBlues:          []string{"A"},
+					id:                     "C",
+					expectedScore:          2,
+					expectedSelectedParent: "B",
+					expectedBlues:          []string{"B"},
 				},
 				{
 					parents:                []string{"C"},
+					id:                     "D",
+					expectedScore:          3,
+					expectedSelectedParent: "C",
+					expectedBlues:          []string{"C"},
+				},
+				{
+					parents:                []string{"D"},
+					id:                     "E",
+					expectedScore:          4,
+					expectedSelectedParent: "D",
+					expectedBlues:          []string{"D"},
+				},
+				{
+					parents:                []string{"E"},
+					id:                     "F",
+					expectedScore:          5,
+					expectedSelectedParent: "E",
+					expectedBlues:          []string{"E"},
+				},
+				{
+					parents:                []string{"F"},
+					id:                     "G",
+					expectedScore:          6,
+					expectedSelectedParent: "F",
+					expectedBlues:          []string{"F"},
+				},
+				{
+					parents:                []string{"A"},
 					id:                     "H",
 					expectedScore:          1,
 					expectedSelectedParent: "A",
 					expectedBlues:          []string{"A"},
 				},
 				{
-					parents:                []string{"C"},
+					parents:                []string{"A"},
 					id:                     "I",
 					expectedScore:          1,
 					expectedSelectedParent: "A",
 					expectedBlues:          []string{"A"},
 				},
 				{
-					parents:                []string{"B"},
+					parents:                []string{"H", "I"},
 					id:                     "J",
-					expectedScore:          1,
-					expectedSelectedParent: "A",
-					expectedBlues:          []string{"A"},
+					expectedScore:          3,
+					expectedSelectedParent: "I",
+					expectedBlues:          []string{"H", "I"},
 				},
 				{
-					parents:                []string{"D"},
+					parents:                []string{"H", "I"},
 					id:                     "K",
+					expectedScore:          3,
+					expectedSelectedParent: "I",
+					expectedBlues:          []string{"H", "I"},
+				},
+				{
+					parents:                []string{"I"},
+					id:                     "L",
+					expectedScore:          2,
+					expectedSelectedParent: "I",
+					expectedBlues:          []string{"I"},
+				},
+				{
+					parents:                []string{"J", "K", "L"},
+					id:                     "M",
+					expectedScore:          6,
+					expectedSelectedParent: "K",
+					expectedBlues:          []string{"L", "J", "K"},
+				},
+				{
+					parents:                []string{"J", "K", "L"},
+					id:                     "N",
+					expectedScore:          6,
+					expectedSelectedParent: "K",
+					expectedBlues:          []string{"L", "J", "K"},
+				},
+				{
+					parents:                []string{"N", "M"},
+					id:                     "O",
+					expectedScore:          8,
+					expectedSelectedParent: "M",
+					expectedBlues:          []string{"N", "M"},
+				},
+				{
+					parents:                []string{"N", "M"},
+					id:                     "P",
+					expectedScore:          8,
+					expectedSelectedParent: "M",
+					expectedBlues:          []string{"N", "M"},
+				},
+				{
+					parents:                []string{"N", "M"},
+					id:                     "Q",
+					expectedScore:          8,
+					expectedSelectedParent: "M",
+					expectedBlues:          []string{"N", "M"},
+				},
+				{
+					parents:                []string{"O", "P", "Q"},
+					id:                     "R",
+					expectedScore:          11,
+					expectedSelectedParent: "P",
+					expectedBlues:          []string{"Q", "O", "P"},
+				},
+				{
+					parents:                []string{"O", "P", "Q"},
+					id:                     "S",
+					expectedScore:          11,
+					expectedSelectedParent: "P",
+					expectedBlues:          []string{"Q", "O", "P"},
+				},
+				{
+					parents:                []string{"G", "S", "R"},
+					id:                     "T",
+					expectedScore:          13,
+					expectedSelectedParent: "S",
+					expectedBlues:          []string{"R", "S"},
+				},
+				{
+					parents:                []string{"S", "R"},
+					id:                     "U",
+					expectedScore:          13,
+					expectedSelectedParent: "S",
+					expectedBlues:          []string{"R", "S"},
+				},
+				{
+					parents:                []string{"T", "U"},
+					id:                     "W",
+					expectedScore:          15,
+					expectedSelectedParent: "T",
+					expectedBlues:          []string{"U", "T"},
+				},
+				{
+					parents:                []string{"T", "U"},
+					id:                     "X",
+					expectedScore:          15,
+					expectedSelectedParent: "T",
+					expectedBlues:          []string{"U", "T"},
+				},
+				{
+					parents:                []string{"T", "U"},
+					id:                     "Y",
+					expectedScore:          15,
+					expectedSelectedParent: "T",
+					expectedBlues:          []string{"U", "T"},
+				},
+				{
+					parents:                []string{"W", "X", "Y"},
+					id:                     "Z",
+					expectedScore:          18,
+					expectedSelectedParent: "Y",
+					expectedBlues:          []string{"W", "X", "Y"},
+				},
+			},
+		},
+		{
+			//Censorship mining attack
+			//Block hash order:LJNRFYPOKSBGZMXTDCHQIUAWE
+			k:              1,
+			virtualBlockID: "Z",
+			expectedReds:   []string{"C", "D", "E", "F", "G"},
+			dagData: []*testBlockData{
+				{
+					parents:                []string{"A"},
+					id:                     "B",
 					expectedScore:          1,
 					expectedSelectedParent: "A",
 					expectedBlues:          []string{"A"},
+				},
+				{
+					parents:                []string{"B"},
+					id:                     "C",
+					expectedScore:          2,
+					expectedSelectedParent: "B",
+					expectedBlues:          []string{"B"},
+				},
+				{
+					parents:                []string{"C"},
+					id:                     "D",
+					expectedScore:          3,
+					expectedSelectedParent: "C",
+					expectedBlues:          []string{"C"},
 				},
 				{
 					parents:                []string{"D"},
+					id:                     "E",
+					expectedScore:          4,
+					expectedSelectedParent: "D",
+					expectedBlues:          []string{"D"},
+				},
+				{
+					parents:                []string{"E"},
+					id:                     "F",
+					expectedScore:          5,
+					expectedSelectedParent: "E",
+					expectedBlues:          []string{"E"},
+				},
+				{
+					parents:                []string{"F"},
+					id:                     "G",
+					expectedScore:          6,
+					expectedSelectedParent: "F",
+					expectedBlues:          []string{"F"},
+				},
+				{
+					parents:                []string{"A"},
+					id:                     "H",
+					expectedScore:          1,
+					expectedSelectedParent: "A",
+					expectedBlues:          []string{"A"},
+				},
+				{
+					parents:                []string{"A"},
+					id:                     "I",
+					expectedScore:          1,
+					expectedSelectedParent: "A",
+					expectedBlues:          []string{"A"},
+				},
+				{
+					parents:                []string{"H", "I", "B"},
+					id:                     "J",
+					expectedScore:          4,
+					expectedSelectedParent: "I",
+					expectedBlues:          []string{"B", "H", "I"},
+				},
+				{
+					parents:                []string{"H", "I", "B"},
+					id:                     "K",
+					expectedScore:          4,
+					expectedSelectedParent: "I",
+					expectedBlues:          []string{"B", "H", "I"},
+				},
+				{
+					parents:                []string{"I"},
 					id:                     "L",
-					expectedScore:          1,
-					expectedSelectedParent: "A",
-					expectedBlues:          []string{"A"},
+					expectedScore:          2,
+					expectedSelectedParent: "I",
+					expectedBlues:          []string{"I"},
 				},
 				{
-					parents:                []string{"E"},
+					parents:                []string{"J", "K", "L", "C"},
 					id:                     "M",
-					expectedScore:          1,
-					expectedSelectedParent: "A",
-					expectedBlues:          []string{"A"},
+					expectedScore:          7,
+					expectedSelectedParent: "K",
+					expectedBlues:          []string{"L", "J", "K"},
 				},
 				{
-					parents:                []string{"E"},
+					parents:                []string{"J", "K", "L", "C"},
 					id:                     "N",
-					expectedScore:          1,
-					expectedSelectedParent: "A",
-					expectedBlues:          []string{"A"},
+					expectedScore:          7,
+					expectedSelectedParent: "K",
+					expectedBlues:          []string{"L", "J", "K"},
 				},
 				{
-					parents:                []string{"F", "G", "J"},
+					parents:                []string{"N", "M", "D"},
 					id:                     "O",
-					expectedScore:          1,
-					expectedSelectedParent: "A",
-					expectedBlues:          []string{"A"},
+					expectedScore:          9,
+					expectedSelectedParent: "M",
+					expectedBlues:          []string{"N", "M"},
 				},
 				{
-					parents:                []string{"B", "M", "I"},
+					parents:                []string{"N", "M", "D"},
 					id:                     "P",
-					expectedScore:          1,
-					expectedSelectedParent: "A",
-					expectedBlues:          []string{"A"},
+					expectedScore:          9,
+					expectedSelectedParent: "M",
+					expectedBlues:          []string{"N", "M"},
 				},
 				{
-					parents:                []string{"K", "E"},
+					parents:                []string{"N", "M", "D"},
 					id:                     "Q",
-					expectedScore:          1,
-					expectedSelectedParent: "A",
-					expectedBlues:          []string{"A"},
+					expectedScore:          9,
+					expectedSelectedParent: "M",
+					expectedBlues:          []string{"N", "M"},
 				},
 				{
-					parents:                []string{"L", "N"},
+					parents:                []string{"O", "P", "Q", "E"},
 					id:                     "R",
-					expectedScore:          1,
-					expectedSelectedParent: "A",
-					expectedBlues:          []string{"A"},
+					expectedScore:          12,
+					expectedSelectedParent: "Q",
+					expectedBlues:          []string{"P", "O", "Q"},
 				},
 				{
-					parents:                []string{"I", "Q"},
+					parents:                []string{"O", "P", "Q", "E"},
 					id:                     "S",
-					expectedScore:          1,
-					expectedSelectedParent: "A",
-					expectedBlues:          []string{"A"},
+					expectedScore:          12,
+					expectedSelectedParent: "Q",
+					expectedBlues:          []string{"P", "O", "Q"},
 				},
 				{
-					parents:                []string{"K", "P"},
+					parents:                []string{"G", "S", "R"},
 					id:                     "T",
-					expectedScore:          1,
-					expectedSelectedParent: "A",
-					expectedBlues:          []string{"A"},
+					expectedScore:          14,
+					expectedSelectedParent: "S",
+					expectedBlues:          []string{"R", "S"},
 				},
 				{
-					parents:                []string{"K", "L"},
+					parents:                []string{"S", "R", "F"},
 					id:                     "U",
-					expectedScore:          1,
-					expectedSelectedParent: "A",
-					expectedBlues:          []string{"A"},
+					expectedScore:          14,
+					expectedSelectedParent: "S",
+					expectedBlues:          []string{"R", "S"},
 				},
 				{
-					parents:                []string{"U", "R"},
-					id:                     "V",
-					expectedScore:          1,
-					expectedSelectedParent: "A",
-					expectedBlues:          []string{"A"},
-				},
-				{
-					parents:                []string{"S", "U", "T"},
+					parents:                []string{"T", "U"},
 					id:                     "W",
-					expectedScore:          1,
-					expectedSelectedParent: "A",
-					expectedBlues:          []string{"A"},
+					expectedScore:          16,
+					expectedSelectedParent: "U",
+					expectedBlues:          []string{"T", "U"},
+				},
+				{
+					parents:                []string{"T", "U"},
+					id:                     "X",
+					expectedScore:          16,
+					expectedSelectedParent: "U",
+					expectedBlues:          []string{"T", "U"},
+				},
+				{
+					parents:                []string{"T", "U"},
+					id:                     "Y",
+					expectedScore:          16,
+					expectedSelectedParent: "U",
+					expectedBlues:          []string{"T", "U"},
+				},
+				{
+					parents:                []string{"W", "X", "Y"},
+					id:                     "Z",
+					expectedScore:          19,
+					expectedSelectedParent: "W",
+					expectedBlues:          []string{"Y", "X", "W"},
 				},
 			},
 		},
 	}
 
-	for _, test := range tests {
+	for testNum, test := range tests {
+		errorF := func(format string, args ...interface{}) {
+			newArgs := make([]interface{}, 0, len(args)+1)
+			newArgs = append(newArgs, testNum)
+			for _, arg := range args {
+				newArgs = append(newArgs, arg)
+			}
+			t.Errorf("Test %d: "+format, newArgs...)
+		}
 		phantomK = test.k
 		// Generate enough synthetic blocks for the rest of the test
 		blockDag := newFakeDAG(netParams)
@@ -457,18 +830,56 @@ func TestBlues(t *testing.T) {
 			selectedParentID := idBlockMap[node.selectedParent]
 			fullDataStr := fmt.Sprintf("blues: %v, selectedParent: %v, score: %v", bluesIDs, selectedParentID, node.blueScore)
 			if blockData.expectedScore != node.blueScore {
-				t.Errorf("Block %v expected to have score %v but got %v (fulldata: %v)", blockData.id, blockData.expectedScore, node.blueScore, fullDataStr)
+				errorF("Block %v expected to have score %v but got %v (fulldata: %v)", blockData.id, blockData.expectedScore, node.blueScore, fullDataStr)
 				continue
 			}
 			if blockData.expectedSelectedParent != selectedParentID {
-				t.Errorf("Block %v expected to have selected parent %v but got %v (fulldata: %v)", blockData.id, blockData.expectedSelectedParent, selectedParentID, fullDataStr)
+				errorF("Block %v expected to have selected parent %v but got %v (fulldata: %v)", blockData.id, blockData.expectedSelectedParent, selectedParentID, fullDataStr)
 				continue
 			}
 			if !checkBlues(blockData.expectedBlues, bluesIDs) {
-				t.Errorf("Block %v expected to have blues %v but got %v (fulldata: %v)", blockData.id, blockData.expectedBlues, bluesIDs, fullDataStr)
+				errorF("Block %v expected to have blues %v but got %v (fulldata: %v)", blockData.id, blockData.expectedBlues, bluesIDs, fullDataStr)
 				continue
 			}
 			fmt.Printf("\n")
+		}
+
+		if test.expectedReds != nil {
+			reds := make(map[string]bool)
+
+			checkReds := func() bool {
+				if len(test.expectedReds) != len(reds) {
+					return false
+				}
+				for _, redID := range test.expectedReds {
+					if !reds[redID] {
+						return false
+					}
+				}
+				return true
+			}
+
+			for id := range blockIDMap {
+				reds[id] = true
+			}
+
+			for tip := blockIDMap[test.virtualBlockID]; tip.selectedParent != nil; tip = tip.selectedParent {
+				tipID := idBlockMap[tip]
+				delete(reds, tipID)
+				for _, blue := range tip.blues {
+					blueID := idBlockMap[blue]
+					delete(reds, blueID)
+				}
+			}
+			if !checkReds() {
+				redsIDs := make([]string, 0, len(reds))
+				for id := range reds {
+					redsIDs = append(redsIDs, id)
+				}
+				sort.Strings(redsIDs)
+				sort.Strings(test.expectedReds)
+				errorF("Expected reds %v but got %v", test.expectedReds, redsIDs)
+			}
 		}
 
 		pairs := make([]*hashIDPair, 0, len(blockIDMap))
