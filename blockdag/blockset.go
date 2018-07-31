@@ -1,7 +1,6 @@
 package blockdag
 
 import (
-	"fmt"
 	"sort"
 	"strings"
 
@@ -150,7 +149,7 @@ func (bs blockSet) first() *blockNode {
 func (bs blockSet) String() string {
 	ids := []string{}
 	for _, node := range bs {
-		ids = append(ids, fmt.Sprintf("%v", node))
+		ids = append(ids, node.String())
 	}
 	return strings.Join(ids, ",")
 }

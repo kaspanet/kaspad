@@ -877,25 +877,5 @@ func TestBlues(t *testing.T) {
 			}
 		}
 
-		// pairs := make([]*hashIDPair, 0, len(blockIDMap))
-
-		// for id, node := range blockIDMap {
-		// 	pairs = append(pairs, &hashIDPair{
-		// 		id:   id,
-		// 		hash: &node.hash,
-		// 	})
-		// }
-
-		// sort.Slice(pairs, func(i, j int) bool {
-		// 	return pairs[i].hash.Cmp(pairs[j].hash) > 0
-		// })
-
-		// fmt.Printf("Block hash order:")
-
-		// for _, pair := range pairs {
-		// 	fmt.Print(pair.id)
-		// }
-		// fmt.Printf("\n")
-
 	}
 }
