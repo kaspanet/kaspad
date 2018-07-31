@@ -423,7 +423,7 @@ func TestBlues(t *testing.T) {
 			//Secret mining attack
 			//Block hash order: HRTGMKQBXDWSICYFONUPLEAJZ
 			k:              1,
-			virtualBlockID: "Z",
+			virtualBlockID: "Y",
 			expectedReds:   []string{"B", "C", "D", "E", "F", "G"},
 			dagData: []*testBlockData{
 				{
@@ -568,6 +568,13 @@ func TestBlues(t *testing.T) {
 				},
 				{
 					parents:                []string{"T", "U"},
+					id:                     "V",
+					expectedScore:          15,
+					expectedSelectedParent: "U",
+					expectedBlues:          []string{"T", "U"},
+				},
+				{
+					parents:                []string{"T", "U"},
 					id:                     "W",
 					expectedScore:          15,
 					expectedSelectedParent: "U",
@@ -581,18 +588,11 @@ func TestBlues(t *testing.T) {
 					expectedBlues:          []string{"T", "U"},
 				},
 				{
-					parents:                []string{"T", "U"},
+					parents:                []string{"V", "W", "X"},
 					id:                     "Y",
-					expectedScore:          15,
-					expectedSelectedParent: "U",
-					expectedBlues:          []string{"T", "U"},
-				},
-				{
-					parents:                []string{"W", "X", "Y"},
-					id:                     "Z",
 					expectedScore:          18,
-					expectedSelectedParent: "Y",
-					expectedBlues:          []string{"X", "W", "Y"},
+					expectedSelectedParent: "X",
+					expectedBlues:          []string{"W", "V", "X"},
 				},
 			},
 		},
