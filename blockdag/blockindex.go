@@ -5,6 +5,7 @@
 package blockdag
 
 import (
+	"fmt"
 	"math/big"
 	"sort"
 	"sync"
@@ -87,8 +88,8 @@ type blockNode struct {
 	// blues are all blue blocks in this block's worldview that are in its selected parent anticone
 	blues []*blockNode
 
-	// blueScore is the count of all the blue blocks in this block past
-	blueScore int64
+	// blueScore is the count of all the blue blocks in this block's past
+	blueScore uint64
 
 	// utxoDiff is the UTXO of the block represented as a diff to the virtual block
 	utxoDiff UtxoViewpoint
@@ -255,6 +256,11 @@ func (node *blockNode) PrevHashes() []daghash.Hash {
 // isGenesis says if the current block is the genesis block
 func (node *blockNode) isGenesis() bool {
 	return len(node.parents) == 0
+}
+
+// String returns the block node as a human-readable name.
+func (node blockNode) String() string {
+	return fmt.Sprintf("%s (%d)", node.hash, node.height)
 }
 
 // blockIndex provides facilities for keeping track of an in-memory index of the

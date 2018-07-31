@@ -1,14 +1,16 @@
 package blockdag
 
-func blues(block *blockNode) (blues []*blockNode, selectedParent *blockNode, score int64) {
-	bestScore := int64(-1)
+var phantomK uint = 1
+
+func blues(block *blockNode) (blues []*blockNode, selectedParent *blockNode, score uint64) {
+	bestScore := uint64(0)
 	var bestParent *blockNode
 	var bestBlues []*blockNode
 	for _, parent := range block.parents.toSlice(true) {
-		chainStart := digToChainStart(block, parent)
+		chainStart := digToChainStart(parent)
 		candidates := blueCandidates(chainStart)
 		blues := traverseCandidates(block, candidates, parent)
-		score := int64(len(blues)) + parent.blueScore
+		score := uint64(len(blues)) + parent.blueScore
 
 		if score > bestScore {
 			bestScore = score
@@ -21,7 +23,7 @@ func blues(block *blockNode) (blues []*blockNode, selectedParent *blockNode, sco
 }
 
 // digToChainStart digs through the chain and returns the block in depth k+1
-func digToChainStart(block *blockNode, parent *blockNode) *blockNode {
+func digToChainStart(parent *blockNode) *blockNode {
 	current := parent
 
 	for i := uint(0); i < phantomK; i++ {
@@ -84,5 +86,3 @@ func traverseCandidates(newBlock *blockNode, candidates blockSet, selectedParent
 
 	return append(blues, selectedParent)
 }
-
-var phantomK uint = 1

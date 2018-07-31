@@ -14,7 +14,7 @@ import (
 type testBlockData struct {
 	parents                []string
 	id                     string
-	expectedScore          int64
+	expectedScore          uint64
 	expectedSelectedParent string
 	expectedBlues          []string
 }

@@ -491,7 +491,7 @@ func LockTimeToSequence(isSeconds bool, locktime uint64) uint64 {
 //
 // This passed utxo view must have all referenced txos the block spends marked
 // as spent and all of the new txos the block creates added to it.  In addition,
-// the passed utxos slice must be populated with all of the information for the
+// the passed stxos slice must be populated with all of the information for the
 // spent txos.  This approach is used because the connection validation that
 // must happen prior to calling this function requires the same details, so
 // it would be inefficient to repeat it.

@@ -5,7 +5,6 @@
 package blockdag
 
 import (
-	"fmt"
 	"math/rand"
 	"reflect"
 	"testing"
@@ -32,11 +31,6 @@ func chainedNodes(parents blockSet, numNodes int) []*blockNode {
 		tips = setFromSlice(nodes[i])
 	}
 	return nodes
-}
-
-// String returns the block node as a human-readable name.
-func (node blockNode) String() string {
-	return fmt.Sprintf("%s (%d)", node.hash, node.height)
 }
 
 // tstTip is a convenience function to grab the tip of a chain of block nodes
