@@ -600,7 +600,7 @@ func TestBlues(t *testing.T) {
 			//Censorship mining attack
 			//Block hash order:WZHOGBJMDSICRUYKTFQLEAPXN
 			k:              1,
-			virtualBlockID: "Z",
+			virtualBlockID: "Y",
 			expectedReds:   []string{"C", "D", "E", "F", "G"},
 			dagData: []*testBlockData{
 				{
@@ -745,6 +745,13 @@ func TestBlues(t *testing.T) {
 				},
 				{
 					parents:                []string{"T", "U"},
+					id:                     "V",
+					expectedScore:          16,
+					expectedSelectedParent: "T",
+					expectedBlues:          []string{"U", "T"},
+				},
+				{
+					parents:                []string{"T", "U"},
 					id:                     "W",
 					expectedScore:          16,
 					expectedSelectedParent: "T",
@@ -758,18 +765,11 @@ func TestBlues(t *testing.T) {
 					expectedBlues:          []string{"U", "T"},
 				},
 				{
-					parents:                []string{"T", "U"},
+					parents:                []string{"V", "W", "X"},
 					id:                     "Y",
-					expectedScore:          16,
-					expectedSelectedParent: "T",
-					expectedBlues:          []string{"U", "T"},
-				},
-				{
-					parents:                []string{"W", "X", "Y"},
-					id:                     "Z",
 					expectedScore:          19,
-					expectedSelectedParent: "X",
-					expectedBlues:          []string{"W", "Y", "X"},
+					expectedSelectedParent: "W",
+					expectedBlues:          []string{"V", "X", "W"},
 				},
 			},
 		},
