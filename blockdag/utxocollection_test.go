@@ -86,6 +86,15 @@ func TestUTXOCollection(t *testing.T) {
 
 	for _, test := range tests {
 		collection := make(utxoCollection)
+		for _, member := range test.expectedMembers {
+			if collection.contains(member.hash, 0) {
+				t.Errorf("empty collection unexpectedly contains a member")
+			}
+			if txOut, ok := collection.get(member.hash, 0); ok || txOut != nil {
+				t.Errorf("empty collection returned a member")
+			}
+		}
+
 		for _, utxo := range test.toAdd {
 			collection.add(utxo.hash, utxo.index, utxo.txOut)
 		}
@@ -120,17 +129,5 @@ func TestUTXOCollection(t *testing.T) {
 			t.Errorf("collection is not equal to its clone in test \"%s\". "+
 				"Expected: \"%s\", got: \"%s\".", test.name, collectionString, collectionClone.String())
 		}
-	}
-}
-
-func TestUTXOCollectionNegatives(t *testing.T) {
-	hash0, _ := daghash.NewHashFromStr("0000000000000000000000000000000000000000000000000000000000000000")
-
-	collection := make(utxoCollection)
-	if collection.contains(*hash0, 0) {
-		t.Errorf("empty collection unexpectedly contains a member")
-	}
-	if txOut, ok := collection.get(*hash0, 0); ok || txOut != nil {
-		t.Errorf("empty collection returned a member")
 	}
 }
