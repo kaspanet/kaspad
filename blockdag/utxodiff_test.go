@@ -209,15 +209,15 @@ func TestUTXODiffRules(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		diffResult, err := test.this.diff(test.other)
+		diffResult, err := test.this.diffFrom(test.other)
 		isDiffOk := err == nil
 		if isDiffOk && !reflect.DeepEqual(diffResult, test.expectedDiffResult) {
-			t.Errorf("unexpected diff result in test \"%s\". "+
+			t.Errorf("unexpected diffFrom result in test \"%s\". "+
 				"Expected: \"%v\", got: \"%v\".", test.name, test.expectedDiffResult, diffResult)
 		}
 		expectedIsDiffOk := test.expectedDiffResult != nil
 		if isDiffOk != expectedIsDiffOk {
-			t.Errorf("unexpected diff error in test \"%s\". "+
+			t.Errorf("unexpected diffFrom error in test \"%s\". "+
 				"Expected: \"%t\", got: \"%t\".", test.name, expectedIsDiffOk, isDiffOk)
 		}
 

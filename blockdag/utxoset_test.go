@@ -256,7 +256,7 @@ func TestUTXOSetDiffRules(t *testing.T) {
 		}
 
 		for _, test := range tests {
-			_, err := set.diff(test.diffSet)
+			_, err := set.diffFrom(test.diffSet)
 			diffSuccess := err == nil
 			if diffSuccess != test.expectedDiffSuccess {
 				t.Errorf("unexpected diff success in test \"%s\". "+

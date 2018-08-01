@@ -9,7 +9,7 @@ import (
 // utxoSet represents a set of unspent transaction outputs
 type utxoSet interface {
 	fmt.Stringer
-	diff(other utxoSet) (*utxoDiff, error)
+	diffFrom(other utxoSet) (*utxoDiff, error)
 	withDiff(utxoDiff *utxoDiff) (utxoSet, error)
 	addTx(tx *wire.MsgTx) (ok bool)
 	iterate() utxoIterator
@@ -28,16 +28,16 @@ func newFullUTXOSet() *fullUTXOSet {
 	}
 }
 
-// diff returns the diff between this utxoSet and
-// diff can only work when other is a diffUTXOSet, and it's base utxoSet is this.
-func (u *fullUTXOSet) diff(other utxoSet) (*utxoDiff, error) {
+// diffFrom returns the difference between this utxoSet and another
+// diffFrom can only work when other is a diffUTXOSet, and its base utxoSet is this.
+func (u *fullUTXOSet) diffFrom(other utxoSet) (*utxoDiff, error) {
 	o, ok := other.(*diffUTXOSet)
 	if !ok {
-		return nil, errors.New("can't diff two fullUTXOSets")
+		return nil, errors.New("can't diffFrom two fullUTXOSets")
 	}
 
 	if o.base != u {
-		return nil, errors.New("can diff only with diffUTXOSet where this fullUTXOSet is the base")
+		return nil, errors.New("can diffFrom only with diffUTXOSet where this fullUTXOSet is the base")
 	}
 
 	return o.utxoDiff, nil
@@ -99,22 +99,22 @@ func newDiffUTXOSet(base *fullUTXOSet, diff *utxoDiff) *diffUTXOSet {
 	}
 }
 
-// diff returns the diff between this utxoSet and other.
-// diff can work if other is this's base fullUTXOSet, or a diffUTXOSet with the same base as this
-func (u *diffUTXOSet) diff(other utxoSet) (*utxoDiff, error) {
+// diffFrom returns the difference between this utxoSet and another.
+// diffFrom can work if other is this's base fullUTXOSet, or a diffUTXOSet with the same base as this
+func (u *diffUTXOSet) diffFrom(other utxoSet) (*utxoDiff, error) {
 	o, ok := other.(*diffUTXOSet)
 	if !ok {
-		return nil, errors.New("can't diff diffUTXOSet with fullUTXOSet")
+		return nil, errors.New("can't diffFrom diffUTXOSet with fullUTXOSet")
 	}
 
 	if o.base != u.base {
-		return nil, errors.New("can't diff with another diffUTXOSet with a different base")
+		return nil, errors.New("can't diffFrom with another diffUTXOSet with a different base")
 	}
 
-	return u.utxoDiff.diff(o.utxoDiff)
+	return u.utxoDiff.diffFrom(o.utxoDiff)
 }
 
-// withDiff return a new utxoSet which is a diff between this and other utxoSet
+// withDiff return a new utxoSet which is a diffFrom between this and other utxoSet
 func (u *diffUTXOSet) withDiff(utxoDiff *utxoDiff) (utxoSet, error) {
 	diff, err := u.utxoDiff.withDiff(utxoDiff)
 	if err != nil {

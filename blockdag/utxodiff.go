@@ -19,9 +19,9 @@ func newUTXODiff() *utxoDiff {
 	}
 }
 
-// diff returns a new utxoDiff with the difference of this and other
-// Assumes that if a txOut exists in both diffs, it's underlying values would be the same
-func (d *utxoDiff) diff(other *utxoDiff) (*utxoDiff, error) {
+// diffFrom returns a new utxoDiff with the difference between this utxoDiff and another
+// Assumes that if a txOut exists in both utxoDiffs, its underlying values would be the same
+func (d *utxoDiff) diffFrom(other *utxoDiff) (*utxoDiff, error) {
 	result := newUTXODiff()
 
 	// Note that the following cases are not accounted for, as they are impossible
@@ -38,7 +38,7 @@ func (d *utxoDiff) diff(other *utxoDiff) (*utxoDiff, error) {
 				result.toRemove.add(id, idx, txOut)
 			}
 			if _, ok := other.toRemove[id][idx]; ok {
-				return nil, errors.New("diff: transaction both in d.toAdd and in other.toRemove")
+				return nil, errors.New("diffFrom: transaction both in d.toAdd and in other.toRemove")
 			}
 		}
 	}
@@ -52,7 +52,7 @@ func (d *utxoDiff) diff(other *utxoDiff) (*utxoDiff, error) {
 				result.toAdd.add(id, idx, txOut)
 			}
 			if _, ok := other.toAdd[id][idx]; ok {
-				return nil, errors.New("diff: transaction both in d.toRemove and in other.toAdd")
+				return nil, errors.New("diffFrom: transaction both in d.toRemove and in other.toAdd")
 			}
 		}
 	}
@@ -80,7 +80,7 @@ func (d *utxoDiff) diff(other *utxoDiff) (*utxoDiff, error) {
 	return result, nil
 }
 
-// withDiff applies provided diff to this diff, creating a new diff, that would be the result if
+// withDiff applies provided diff to this diff, creating a new utxoDiff, that would be the result if
 // first d, and than diff were applied to the same base
 func (d *utxoDiff) withDiff(diff *utxoDiff) (*utxoDiff, error) {
 	result := newUTXODiff()
@@ -138,7 +138,7 @@ func (d *utxoDiff) withDiff(diff *utxoDiff) (*utxoDiff, error) {
 	return result, nil
 }
 
-// clone returns a clone of this UTXO diff
+// clone returns a clone of this utxoDiff
 func (d *utxoDiff) clone() *utxoDiff {
 	return &utxoDiff{
 		toAdd:    d.toAdd.clone(),
