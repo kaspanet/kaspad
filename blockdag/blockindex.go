@@ -60,9 +60,8 @@ func (status blockStatus) KnownInvalid() bool {
 	return status&(statusValidateFailed|statusInvalidAncestor) != 0
 }
 
-// blockNode represents a block within the block chain and is primarily used to
-// aid in selecting the best chain to be the main chain.  The main chain is
-// stored into the block database.
+// blockNode represents a block within the block DAG. The DAG is stored into
+// the block database.
 type blockNode struct {
 	// NOTE: Additions, deletions, or modifications to the order of the
 	// definitions in this struct should not be changed without considering
@@ -90,8 +89,8 @@ type blockNode struct {
 	// blueScore is the count of all the blue blocks in this block's past (including itself)
 	blueScore int64
 
-	// utxoDiff is the UTXO of the block represented as a diff to the virtual block
-	utxoDiff utxoDiff
+	// diff is the UTXO of the block represented as a diff to the virtual block
+	diff utxoDiff
 
 	// hash is the double sha 256 of the block.
 	hash daghash.Hash
