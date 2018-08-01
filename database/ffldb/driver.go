@@ -7,9 +7,9 @@ package ffldb
 import (
 	"fmt"
 
+	"github.com/btcsuite/btclog"
 	"github.com/daglabs/btcd/database"
 	"github.com/daglabs/btcd/wire"
-	"github.com/btcsuite/btclog"
 )
 
 var log = btclog.Disabled
@@ -61,24 +61,4 @@ func createDBDriver(args ...interface{}) (database.DB, error) {
 	}
 
 	return openDB(dbPath, network, true)
-}
-
-// useLogger is the callback provided during driver registration that sets the
-// current logger to the provided one.
-func useLogger(logger btclog.Logger) {
-	log = logger
-}
-
-func init() {
-	// Register the driver.
-	driver := database.Driver{
-		DbType:    dbType,
-		Create:    createDBDriver,
-		Open:      openDBDriver,
-		UseLogger: useLogger,
-	}
-	if err := database.RegisterDriver(driver); err != nil {
-		panic(fmt.Sprintf("Failed to regiser database driver '%s': %v",
-			dbType, err))
-	}
 }
