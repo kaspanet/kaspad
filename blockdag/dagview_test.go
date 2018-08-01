@@ -9,6 +9,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/wire"
 )
 
@@ -27,7 +28,7 @@ func chainedNodes(parents blockSet, numNodes int) []*blockNode {
 		// synthetic tests to work.
 		header := wire.BlockHeader{Nonce: testNoncePrng.Uint32()}
 		header.PrevBlocks = tips.hashes()
-		nodes[i] = newBlockNode(&header, tips)
+		nodes[i] = newBlockNode(&header, tips, dagconfig.SimNetParams.K)
 		tips = setFromSlice(nodes[i])
 	}
 	return nodes

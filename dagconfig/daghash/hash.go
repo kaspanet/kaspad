@@ -181,3 +181,8 @@ func HashToBig(hash *Hash) *big.Int {
 func (hash *Hash) Cmp(target *Hash) int {
 	return HashToBig(hash).Cmp(HashToBig(target))
 }
+
+//Less returns true iff hash b is less than hash a
+func Less(a *Hash, b *Hash) bool {
+	return a.Cmp(b) > 0
+}

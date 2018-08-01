@@ -11,11 +11,12 @@ import (
 	"sync"
 	"time"
 
+	"encoding/json"
+
 	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/database"
 	"github.com/daglabs/btcd/wire"
 	"github.com/daglabs/btcutil"
-	"encoding/json"
 )
 
 const (
@@ -838,7 +839,7 @@ func (b *BlockDAG) createDAGState() error {
 	genesisBlock := btcutil.NewBlock(b.dagParams.GenesisBlock)
 	genesisBlock.SetHeight(0)
 	header := &genesisBlock.MsgBlock().Header
-	node := newBlockNode(header, nil)
+	node := newBlockNode(header, nil, b.dagParams.K)
 	node.status = statusDataStored | statusValid
 	b.dag.SetTip(node)
 
@@ -1025,7 +1026,7 @@ func (b *BlockDAG) initDAGState() error {
 			// Initialize the block node for the block, connect it,
 			// and add it to the block index.
 			node := &blockNodes[i]
-			initBlockNode(node, header, setFromSlice(parent)) // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
+			initBlockNode(node, header, setFromSlice(parent), b.dagParams.K) // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
 			node.status = status
 			b.index.addNode(node)
 

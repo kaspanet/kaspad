@@ -1,21 +1,26 @@
 package blockdag
 
-var phantomK uint = 1
+import (
+	"github.com/daglabs/btcd/dagconfig/daghash"
+)
 
-func blues(block *blockNode) (blues []*blockNode, selectedParent *blockNode, score uint64) {
+// phantom calculates and returns the block's blue set, selected parent and blue score
+func phantom(block *blockNode, k uint32) (blues []*blockNode, selectedParent *blockNode, score uint64) {
 	bestScore := uint64(0)
 	var bestParent *blockNode
 	var bestBlues []*blockNode
-	for _, parent := range block.parents.toSlice(true) {
-		chainStart := digToChainStart(parent)
+	var bestHash *daghash.Hash
+	for _, parent := range block.parents {
+		chainStart := digToChainStart(parent, k)
 		candidates := blueCandidates(chainStart)
 		blues := traverseCandidates(block, candidates, parent)
 		score := uint64(len(blues)) + parent.blueScore
 
-		if score > bestScore {
+		if score > bestScore || (score == bestScore && (bestHash == nil || daghash.Less(bestHash, &parent.hash))) {
 			bestScore = score
 			bestBlues = blues
 			bestParent = parent
+			bestHash = &parent.hash
 		}
 	}
 
@@ -23,10 +28,10 @@ func blues(block *blockNode) (blues []*blockNode, selectedParent *blockNode, sco
 }
 
 // digToChainStart digs through the chain and returns the block in depth k+1
-func digToChainStart(parent *blockNode) *blockNode {
+func digToChainStart(parent *blockNode, k uint32) *blockNode {
 	current := parent
 
-	for i := uint(0); i < phantomK; i++ {
+	for i := uint32(0); i < k; i++ {
 		if current.isGenesis() {
 			break
 		}

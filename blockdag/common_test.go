@@ -343,14 +343,14 @@ func (b *BlockDAG) TstSetCoinbaseMaturity(maturity uint16) {
 	b.dagParams.CoinbaseMaturity = maturity
 }
 
-// newFakeDag returns a chain that is usable for syntetic tests.  It is
+// newTestDAG returns a DAG that is usable for syntetic tests.  It is
 // important to note that this chain has no database associated with it, so
 // it is not usable with all functions and the tests must take care when making
 // use of it.
-func newFakeDAG(params *dagconfig.Params) *BlockDAG {
+func newTestDAG(params *dagconfig.Params) *BlockDAG {
 	// Create a genesis block node and block index index populated with it
 	// for use when creating the fake chain below.
-	node := newBlockNode(&params.GenesisBlock.Header, newSet())
+	node := newBlockNode(&params.GenesisBlock.Header, newSet(), params.K)
 	index := newBlockIndex(nil, params)
 	index.AddNode(node)
 
@@ -370,9 +370,9 @@ func newFakeDAG(params *dagconfig.Params) *BlockDAG {
 	}
 }
 
-// newFakeNode creates a block node connected to the passed parent with the
+// newTestNode creates a block node connected to the passed parent with the
 // provided fields populated and fake values for the other fields.
-func newFakeNode(parents blockSet, blockVersion int32, bits uint32, timestamp time.Time) *blockNode {
+func newTestNode(parents blockSet, blockVersion int32, bits uint32, timestamp time.Time, phantomK uint32) *blockNode {
 	// Make up a header and create a block node from it.
 	header := &wire.BlockHeader{
 		Version:    blockVersion,
@@ -380,5 +380,5 @@ func newFakeNode(parents blockSet, blockVersion int32, bits uint32, timestamp ti
 		Bits:       bits,
 		Timestamp:  timestamp,
 	}
-	return newBlockNode(header, parents)
+	return newBlockNode(header, parents, phantomK)
 }

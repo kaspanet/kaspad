@@ -125,7 +125,7 @@ type blockNode struct {
 // calculating the height and workSum from the respective fields on the first parent.
 // This function is NOT safe for concurrent access.  It must only be called when
 // initially creating a node.
-func initBlockNode(node *blockNode, blockHeader *wire.BlockHeader, parents blockSet) {
+func initBlockNode(node *blockNode, blockHeader *wire.BlockHeader, parents blockSet, phantomK uint32) {
 	*node = blockNode{
 		hash:       blockHeader.BlockHash(),
 		parents:    parents,
@@ -138,16 +138,23 @@ func initBlockNode(node *blockNode, blockHeader *wire.BlockHeader, parents block
 		merkleRoot: blockHeader.MerkleRoot,
 	}
 	if len(parents) > 0 {
-		blues, selectedParent, score := blues(node)
+		addNodeAsChildToParents(node)
+		blues, selectedParent, score := phantom(node, phantomK)
 		node.blues = blues
 		node.selectedParent = selectedParent
 		node.blueScore = score
-		node.height = calcNodeHeight(node)
+		node.height = calculateNodeHeight(node)
 		node.workSum = node.workSum.Add(node.selectedParent.workSum, node.workSum)
 	}
 }
 
-func calcNodeHeight(node *blockNode) int32 {
+func addNodeAsChildToParents(node *blockNode) {
+	for _, parent := range node.parents {
+		parent.children.add(node)
+	}
+}
+
+func calculateNodeHeight(node *blockNode) int32 {
 	var maxHeight int32
 	for _, parent := range node.parents {
 		if maxHeight < parent.height {
@@ -160,9 +167,9 @@ func calcNodeHeight(node *blockNode) int32 {
 // newBlockNode returns a new block node for the given block header and parent
 // nodes, calculating the height and workSum from the respective fields on the
 // parent. This function is NOT safe for concurrent access.
-func newBlockNode(blockHeader *wire.BlockHeader, parents blockSet) *blockNode {
+func newBlockNode(blockHeader *wire.BlockHeader, parents blockSet, phantomK uint32) *blockNode {
 	var node blockNode
-	initBlockNode(&node, blockHeader, parents)
+	initBlockNode(&node, blockHeader, parents, phantomK)
 	return &node
 }
 
@@ -253,12 +260,12 @@ func (node *blockNode) PrevHashes() []daghash.Hash {
 	return node.parents.hashes()
 }
 
-// isGenesis says if the current block is the genesis block
+// isGenesis returns if the current block is the genesis block
 func (node *blockNode) isGenesis() bool {
 	return len(node.parents) == 0
 }
 
-// String returns the block node as a human-readable name.
+// String returns a string that contains the block hash and height.
 func (node blockNode) String() string {
 	return fmt.Sprintf("%s (%d)", node.hash, node.height)
 }
@@ -330,9 +337,6 @@ func (bi *blockIndex) AddNode(node *blockNode) {
 // This function is NOT safe for concurrent access.
 func (bi *blockIndex) addNode(node *blockNode) {
 	bi.index[node.hash] = node
-	for _, parent := range node.parents {
-		parent.children.add(node)
-	}
 }
 
 // NodeStatus provides concurrent-safe access to the status field of a node.

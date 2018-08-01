@@ -1202,6 +1202,6 @@ func (b *BlockDAG) CheckConnectBlockTemplate(block *btcutil.Block) error {
 	// is not needed and thus extra work can be avoided.
 	view := NewUtxoViewpoint()
 	view.SetTips(tips)
-	newNode := newBlockNode(&header, b.dag.Tips())
+	newNode := newBlockNode(&header, b.dag.Tips(), b.dagParams.K)
 	return b.checkConnectBlock(newNode, block, view, nil)
 }

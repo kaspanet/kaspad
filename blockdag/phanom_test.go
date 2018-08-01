@@ -2,6 +2,7 @@ package blockdag
 
 import (
 	"fmt"
+	"reflect"
 	"sort"
 	"testing"
 	"time"
@@ -25,19 +26,21 @@ type hashIDPair struct {
 }
 
 func TestBlues(t *testing.T) {
-	netParams := &dagconfig.SimNetParams
+	netParams := dagconfig.SimNetParams
 
 	blockVersion := int32(0x20000000)
 
 	tests := []struct {
-		k              uint
+		k              uint32
 		dagData        []*testBlockData
 		virtualBlockID string
 		expectedReds   []string
 	}{
 		{
-			//Block hash order:DEBHICAGJF
-			k: 1,
+			//Block hash order:DEBHICAKGJF
+			k:              1,
+			virtualBlockID: "K",
+			expectedReds:   []string{"D"},
 			dagData: []*testBlockData{
 				{
 					parents:                []string{"A"},
@@ -102,11 +105,21 @@ func TestBlues(t *testing.T) {
 					expectedSelectedParent: "F",
 					expectedBlues:          []string{"F"},
 				},
+				{
+					parents:                []string{"H", "I", "J"},
+					id:                     "K",
+					expectedScore:          9,
+					expectedSelectedParent: "H",
+					expectedBlues:          []string{"I", "G", "J", "F", "H"},
+				},
 			},
 		},
 		{
-			//block hash order:DQKRLHOEBSIGUJNPCMTAF
-			k: 2,
+			//block hash order:DQKRLHOEBSIGUJNPCMTAFV
+			// expectedReds: []string{},
+			k:              2,
+			virtualBlockID: "V",
+			expectedReds:   []string{"D", "J", "P"},
 			dagData: []*testBlockData{
 				{
 					parents:                []string{"A"},
@@ -247,6 +260,13 @@ func TestBlues(t *testing.T) {
 					expectedScore:          12,
 					expectedSelectedParent: "M",
 					expectedBlues:          []string{"T", "M"},
+				},
+				{
+					parents:                []string{"S", "U"},
+					id:                     "V",
+					expectedScore:          18,
+					expectedSelectedParent: "S",
+					expectedBlues:          []string{"U", "T", "S"},
 				},
 			},
 		},
@@ -775,36 +795,24 @@ func TestBlues(t *testing.T) {
 		},
 	}
 
-	for testNum, test := range tests {
+	for i, test := range tests {
 		errorF := func(format string, args ...interface{}) {
 			newArgs := make([]interface{}, 0, len(args)+1)
-			newArgs = append(newArgs, testNum)
+			newArgs = append(newArgs, i)
 			for _, arg := range args {
 				newArgs = append(newArgs, arg)
 			}
 			t.Errorf("Test %d: "+format, newArgs...)
 		}
-		phantomK = test.k
+		netParams.K = test.k
 		// Generate enough synthetic blocks for the rest of the test
-		blockDag := newFakeDAG(netParams)
-		genesisNode := blockDag.dag.SelectedTip()
+		blockDAG := newTestDAG(&netParams)
+		genesisNode := blockDAG.dag.SelectedTip()
 		blockTime := genesisNode.Header().Timestamp
 		blockIDMap := make(map[string]*blockNode)
 		idBlockMap := make(map[*blockNode]string)
 		blockIDMap["A"] = genesisNode
 		idBlockMap[genesisNode] = "A"
-
-		checkBlues := func(expected []string, got []string) bool {
-			if len(expected) != len(got) {
-				return false
-			}
-			for i, expectedID := range expected {
-				if expectedID != got[i] {
-					return false
-				}
-			}
-			return true
-		}
 
 		for _, blockData := range test.dagData {
 			blockTime = blockTime.Add(time.Second)
@@ -813,9 +821,9 @@ func TestBlues(t *testing.T) {
 				parent := blockIDMap[parentID]
 				parents.add(parent)
 			}
-			node := newFakeNode(parents, blockVersion, 0, blockTime)
+			node := newTestNode(parents, blockVersion, 0, blockTime, test.k)
 
-			blockDag.index.AddNode(node)
+			blockDAG.index.AddNode(node)
 			blockIDMap[blockData.id] = node
 			idBlockMap[node] = blockData.id
 
@@ -827,54 +835,49 @@ func TestBlues(t *testing.T) {
 			fullDataStr := fmt.Sprintf("blues: %v, selectedParent: %v, score: %v", bluesIDs, selectedParentID, node.blueScore)
 			if blockData.expectedScore != node.blueScore {
 				errorF("Block %v expected to have score %v but got %v (fulldata: %v)", blockData.id, blockData.expectedScore, node.blueScore, fullDataStr)
-				continue
 			}
 			if blockData.expectedSelectedParent != selectedParentID {
 				errorF("Block %v expected to have selected parent %v but got %v (fulldata: %v)", blockData.id, blockData.expectedSelectedParent, selectedParentID, fullDataStr)
-				continue
 			}
-			if !checkBlues(blockData.expectedBlues, bluesIDs) {
+			if !reflect.DeepEqual(blockData.expectedBlues, bluesIDs) {
 				errorF("Block %v expected to have blues %v but got %v (fulldata: %v)", blockData.id, blockData.expectedBlues, bluesIDs, fullDataStr)
-				continue
 			}
 		}
 
-		if test.expectedReds != nil {
-			reds := make(map[string]bool)
+		reds := make(map[string]bool)
 
-			checkReds := func() bool {
-				if len(test.expectedReds) != len(reds) {
+		checkReds := func() bool {
+			if len(test.expectedReds) != len(reds) {
+				return false
+			}
+			for _, redID := range test.expectedReds {
+				if !reds[redID] {
 					return false
 				}
-				for _, redID := range test.expectedReds {
-					if !reds[redID] {
-						return false
-					}
-				}
-				return true
 			}
+			return true
+		}
 
-			for id := range blockIDMap {
-				reds[id] = true
-			}
+		for id := range blockIDMap {
+			reds[id] = true
+		}
 
-			for tip := blockIDMap[test.virtualBlockID]; tip.selectedParent != nil; tip = tip.selectedParent {
-				tipID := idBlockMap[tip]
-				delete(reds, tipID)
-				for _, blue := range tip.blues {
-					blueID := idBlockMap[blue]
-					delete(reds, blueID)
-				}
+		for tip := blockIDMap[test.virtualBlockID]; tip.selectedParent != nil; tip = tip.selectedParent {
+			tipID := idBlockMap[tip]
+			delete(reds, tipID)
+			for _, blue := range tip.blues {
+				blueID := idBlockMap[blue]
+				delete(reds, blueID)
 			}
-			if !checkReds() {
-				redsIDs := make([]string, 0, len(reds))
-				for id := range reds {
-					redsIDs = append(redsIDs, id)
-				}
-				sort.Strings(redsIDs)
-				sort.Strings(test.expectedReds)
-				errorF("Expected reds %v but got %v", test.expectedReds, redsIDs)
+		}
+		if !checkReds() {
+			redsIDs := make([]string, 0, len(reds))
+			for id := range reds {
+				redsIDs = append(redsIDs, id)
 			}
+			sort.Strings(redsIDs)
+			sort.Strings(test.expectedReds)
+			errorF("Expected reds %v but got %v", test.expectedReds, redsIDs)
 		}
 
 	}

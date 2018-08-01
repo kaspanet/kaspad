@@ -24,25 +24,6 @@ func setFromSlice(blocks ...*blockNode) blockSet {
 	return set
 }
 
-// toSlice converts a set of blocks into an ordered slice
-func (bs blockSet) toSlice(reverseOrder bool) []*blockNode {
-	slice := []*blockNode{}
-
-	for _, block := range bs {
-		slice = append(slice, block)
-	}
-
-	sort.Slice(slice, func(i, j int) bool {
-		isLess := hashLess(&slice[i].hash, &slice[j].hash)
-		if reverseOrder {
-			return !isLess
-		}
-		return isLess
-	})
-
-	return slice
-}
-
 // add adds a block to this BlockSet
 func (bs blockSet) add(block *blockNode) {
 	bs[block.hash] = block
@@ -128,13 +109,9 @@ func (bs blockSet) hashes() []daghash.Hash {
 		hashes = append(hashes, hash)
 	}
 	sort.Slice(hashes, func(i, j int) bool {
-		return hashLess(&hashes[i], &hashes[j])
+		return daghash.Less(&hashes[i], &hashes[j])
 	})
 	return hashes
-}
-
-func hashLess(a *daghash.Hash, b *daghash.Hash) bool {
-	return a.Cmp(b) > 0
 }
 
 // first returns the first block in this set or nil if this set is empty.
@@ -147,11 +124,11 @@ func (bs blockSet) first() *blockNode {
 }
 
 func (bs blockSet) String() string {
-	ids := []string{}
+	nodeStrs := make([]string, 0, len(bs))
 	for _, node := range bs {
-		ids = append(ids, node.String())
+		nodeStrs = append(nodeStrs, node.String())
 	}
-	return strings.Join(ids, ",")
+	return strings.Join(nodeStrs, ",")
 }
 
 // anyChildInSet returns true iff any child of block is contained within this set

@@ -59,7 +59,7 @@ func (b *BlockDAG) maybeAcceptBlock(block *btcutil.Block, flags BehaviorFlags) e
 	// if the block ultimately gets connected to the main chain, it starts out
 	// on a side chain.
 	blockHeader := &block.MsgBlock().Header
-	newNode := newBlockNode(blockHeader, parents)
+	newNode := newBlockNode(blockHeader, parents, b.dagParams.K)
 	newNode.status = statusDataStored
 
 	b.index.AddNode(newNode)

@@ -121,13 +121,13 @@ func TestCalcSequenceLock(t *testing.T) {
 	blockVersion := int32(0x20000000)
 
 	// Generate enough synthetic blocks for the rest of the test
-	chain := newFakeDAG(netParams)
+	chain := newTestDAG(netParams)
 	node := chain.dag.SelectedTip()
 	blockTime := node.Header().Timestamp
 	numBlocksToGenerate := uint32(5)
 	for i := uint32(0); i < numBlocksToGenerate; i++ {
 		blockTime = blockTime.Add(time.Second)
-		node = newFakeNode(setFromSlice(node), blockVersion, 0, blockTime)
+		node = newTestNode(setFromSlice(node), blockVersion, 0, blockTime, netParams.K)
 		chain.index.AddNode(node)
 		chain.dag.SetTip(node)
 	}
@@ -448,7 +448,7 @@ func TestLocateInventory(t *testing.T) {
 	// 	genesis -> 1 -> 2 -> ... -> 15 -> 16  -> 17  -> 18
 	// 	                              \-> 16a -> 17a
 	tip := tstTip
-	dag := newFakeDAG(&dagconfig.MainNetParams)
+	dag := newTestDAG(&dagconfig.MainNetParams)
 	branch0Nodes := chainedNodes(setFromSlice(dag.dag.Genesis()), 18)
 	branch1Nodes := chainedNodes(setFromSlice(branch0Nodes[14]), 2)
 	for _, node := range branch0Nodes {
@@ -788,20 +788,20 @@ func TestHeightToHashRange(t *testing.T) {
 	// 	genesis -> 1 -> 2 -> ... -> 15 -> 16  -> 17  -> 18
 	// 	                              \-> 16a -> 17a -> 18a (unvalidated)
 	tip := tstTip
-	chain := newFakeDAG(&dagconfig.MainNetParams)
-	branch0Nodes := chainedNodes(setFromSlice(chain.dag.Genesis()), 18)
+	blockDAG := newTestDAG(&dagconfig.MainNetParams)
+	branch0Nodes := chainedNodes(setFromSlice(blockDAG.dag.Genesis()), 18)
 	branch1Nodes := chainedNodes(setFromSlice(branch0Nodes[14]), 3)
 	for _, node := range branch0Nodes {
-		chain.index.SetStatusFlags(node, statusValid)
-		chain.index.AddNode(node)
+		blockDAG.index.SetStatusFlags(node, statusValid)
+		blockDAG.index.AddNode(node)
 	}
 	for _, node := range branch1Nodes {
 		if node.height < 18 {
-			chain.index.SetStatusFlags(node, statusValid)
+			blockDAG.index.SetStatusFlags(node, statusValid)
 		}
-		chain.index.AddNode(node)
+		blockDAG.index.AddNode(node)
 	}
-	chain.dag.SetTip(tip(branch0Nodes))
+	blockDAG.dag.SetTip(tip(branch0Nodes))
 
 	tests := []struct {
 		name        string
@@ -856,7 +856,7 @@ func TestHeightToHashRange(t *testing.T) {
 		},
 	}
 	for _, test := range tests {
-		hashes, err := chain.HeightToHashRange(test.startHeight, &test.endHash,
+		hashes, err := blockDAG.HeightToHashRange(test.startHeight, &test.endHash,
 			test.maxResults)
 		if err != nil {
 			if !test.expectError {
@@ -880,7 +880,7 @@ func TestIntervalBlockHashes(t *testing.T) {
 	// 	genesis -> 1 -> 2 -> ... -> 15 -> 16  -> 17  -> 18
 	// 	                              \-> 16a -> 17a -> 18a (unvalidated)
 	tip := tstTip
-	chain := newFakeDAG(&dagconfig.MainNetParams)
+	chain := newTestDAG(&dagconfig.MainNetParams)
 	branch0Nodes := chainedNodes(setFromSlice(chain.dag.Genesis()), 18)
 	branch1Nodes := chainedNodes(setFromSlice(branch0Nodes[14]), 3)
 	for _, node := range branch0Nodes {
