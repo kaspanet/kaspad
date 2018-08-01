@@ -26,15 +26,14 @@ func TestUTXOCollection(t *testing.T) {
 			expectedString: "[  ]",
 		},
 		{
-			name: "add two members with the same outPoint",
+			name: "one member",
 			collection: utxoCollection{
-				outPoint0: utxoEntry0,
 				outPoint0: utxoEntry1,
 			},
 			expectedString: "[ (0000000000000000000000000000000000000000000000000000000000000000, 0) => 20 ]",
 		},
 		{
-			name:           "add two members with different outPoints",
+			name: "two members",
 			collection: utxoCollection{
 				outPoint0: utxoEntry0,
 				outPoint1: utxoEntry1,

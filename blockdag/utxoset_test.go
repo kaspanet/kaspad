@@ -378,7 +378,6 @@ func TestDiffUTXOSet_addTx(t *testing.T) {
 			expectedSet: &diffUTXOSet{
 				base: &fullUTXOSet{utxoCollection: utxoCollection{outPoint0: utxoEntry0}},
 				utxoDiff: &utxoDiff{
-					//toAdd:    utxoCollection{hash2: map[uint32]*wire.TxOut{0: txOut1}},
 					toAdd: utxoCollection{outPoint2: utxoEntry1},
 					toRemove: utxoCollection{outPoint0: utxoEntry0},
 				},
