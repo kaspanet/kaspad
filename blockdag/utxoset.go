@@ -55,11 +55,16 @@ func (u *fullUTXOSet) addTx(tx *wire.MsgTx) bool {
 	}
 
 	for _, txIn := range tx.TxIn {
-		u.remove(txIn.PreviousOutPoint.Hash, txIn.PreviousOutPoint.Index)
+		outPoint := *wire.NewOutPoint(&txIn.PreviousOutPoint.Hash, txIn.PreviousOutPoint.Index)
+		delete(u.utxoCollection, outPoint)
 	}
 
 	for i, txOut := range tx.TxOut {
-		u.add(tx.TxHash(), uint32(i), txOut)
+		hash := tx.TxHash()
+		outPoint := *wire.NewOutPoint(&hash, uint32(i))
+		entry := newUTXOEntry(txOut)
+
+		u.utxoCollection[outPoint] = entry
 	}
 
 	return true
@@ -67,7 +72,8 @@ func (u *fullUTXOSet) addTx(tx *wire.MsgTx) bool {
 
 func (u *fullUTXOSet) verifyTx(tx *wire.MsgTx) bool {
 	for _, txIn := range tx.TxIn {
-		if !u.contains(txIn.PreviousOutPoint.Hash, txIn.PreviousOutPoint.Index) {
+		outPoint := *wire.NewOutPoint(&txIn.PreviousOutPoint.Hash, txIn.PreviousOutPoint.Index)
+		if _, ok := u.utxoCollection[outPoint]; !ok {
 			return false
 		}
 	}
@@ -131,19 +137,24 @@ func (u *diffUTXOSet) addTx(tx *wire.MsgTx) bool {
 	}
 
 	for _, txIn := range tx.TxIn {
-		if u.utxoDiff.toAdd.contains(txIn.PreviousOutPoint.Hash, txIn.PreviousOutPoint.Index) {
-			u.utxoDiff.toAdd.remove(txIn.PreviousOutPoint.Hash, txIn.PreviousOutPoint.Index)
+		outPoint := *wire.NewOutPoint(&txIn.PreviousOutPoint.Hash, txIn.PreviousOutPoint.Index)
+		if _, ok := u.utxoDiff.toAdd[outPoint]; ok {
+			delete(u.utxoDiff.toAdd, outPoint)
 		} else {
-			prevTxOut := u.base.utxoCollection[txIn.PreviousOutPoint.Hash][txIn.PreviousOutPoint.Index]
-			u.utxoDiff.toRemove.add(txIn.PreviousOutPoint.Hash, txIn.PreviousOutPoint.Index, prevTxOut)
+			prevUTXOEntry := u.base.utxoCollection[outPoint]
+			u.utxoDiff.toRemove[outPoint] = prevUTXOEntry
 		}
 	}
 
 	for i, txOut := range tx.TxOut {
-		if u.utxoDiff.toRemove.contains(tx.TxHash(), uint32(i)) {
-			u.utxoDiff.toRemove.remove(tx.TxHash(), uint32(i))
+		hash := tx.TxHash()
+		outPoint := *wire.NewOutPoint(&hash, uint32(i))
+		entry := newUTXOEntry(txOut)
+
+		if _, ok := u.utxoDiff.toRemove[outPoint]; ok {
+			delete(u.utxoDiff.toRemove, outPoint)
 		} else {
-			u.utxoDiff.toAdd.add(tx.TxHash(), uint32(i), txOut)
+			u.utxoDiff.toAdd[outPoint] = entry
 		}
 	}
 
@@ -152,8 +163,11 @@ func (u *diffUTXOSet) addTx(tx *wire.MsgTx) bool {
 
 func (u *diffUTXOSet) verifyTx(tx *wire.MsgTx) bool {
 	for _, txIn := range tx.TxIn {
-		if (!u.base.contains(txIn.PreviousOutPoint.Hash, txIn.PreviousOutPoint.Index) && !u.utxoDiff.toAdd.contains(txIn.PreviousOutPoint.Hash, txIn.PreviousOutPoint.Index)) ||
-			(u.utxoDiff.toRemove.contains(txIn.PreviousOutPoint.Hash, txIn.PreviousOutPoint.Index)) {
+		outPoint := *wire.NewOutPoint(&txIn.PreviousOutPoint.Hash, txIn.PreviousOutPoint.Index)
+		_, isInBase := u.base.utxoCollection[outPoint]
+		_, isInDiffToAdd := u.utxoDiff.toAdd[outPoint]
+		_, isInDiffToRemove := u.utxoDiff.toRemove[outPoint]
+		if (!isInBase && !isInDiffToAdd) || isInDiffToRemove {
 			return false
 		}
 	}
@@ -163,16 +177,12 @@ func (u *diffUTXOSet) verifyTx(tx *wire.MsgTx) bool {
 
 // meldToBase updates the base fullUTXOSet with all changes in diff
 func (u *diffUTXOSet) meldToBase() {
-	for previousID, txOuts := range u.utxoDiff.toRemove {
-		for index := range txOuts {
-			u.base.remove(previousID, index)
-		}
+	for outPoint := range u.utxoDiff.toRemove {
+		delete(u.base.utxoCollection, outPoint)
 	}
 
-	for previousID, txOuts := range u.utxoDiff.toAdd {
-		for index, txOut := range txOuts {
-			u.base.add(previousID, index, txOut)
-		}
+	for outPoint, utxoEntry := range u.utxoDiff.toAdd {
+		u.base.utxoCollection[outPoint] = utxoEntry
 	}
 
 	u.utxoDiff = newUTXODiff()
@@ -193,4 +203,12 @@ func (u *diffUTXOSet) collection() utxoCollection {
 // clone returns a clone of this UTXO Set
 func (u *diffUTXOSet) clone() utxoSet {
 	return newDiffUTXOSet(u.base.clone().(*fullUTXOSet), u.utxoDiff.clone())
+}
+
+func newUTXOEntry(txOut *wire.TxOut) *UtxoEntry {
+	entry := new(UtxoEntry)
+	entry.amount = txOut.Value
+	entry.pkScript = txOut.PkScript
+
+	return entry
 }

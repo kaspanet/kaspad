@@ -26,54 +26,46 @@ func (d *utxoDiff) diffFrom(other *utxoDiff) (*utxoDiff, error) {
 
 	// Note that the following cases are not accounted for, as they are impossible
 	// as long as the base utxoSet is the same:
-	// - if tx is in d.toAdd and other.toRemove
-	// - if tx is in d.toRemove and other.toAdd
+	// - if utxoEntry is in d.toAdd and other.toRemove
+	// - if utxoEntry is in d.toRemove and other.toAdd
 
 	// All transactions in d.toAdd:
 	// If they are not in other.toAdd - should be added in result.toRemove
 	// If they are in other.toRemove - base utxoSet is not the same
-	for id, tx := range d.toAdd {
-		for idx, txOut := range tx {
-			if _, ok := other.toAdd[id][idx]; !ok {
-				result.toRemove.add(id, idx, txOut)
-			}
-			if _, ok := other.toRemove[id][idx]; ok {
-				return nil, errors.New("diffFrom: transaction both in d.toAdd and in other.toRemove")
-			}
+	for outPoint, utxoEntry := range d.toAdd {
+		if _, ok := other.toAdd[outPoint]; !ok {
+			result.toRemove[outPoint] = utxoEntry
+		}
+		if _, ok := other.toRemove[outPoint]; ok {
+			return nil, errors.New("diffFrom: transaction both in d.toAdd and in other.toRemove")
 		}
 	}
 
 	// All transactions in d.toRemove:
 	// If they are not in other.toRemove - should be added in result.toAdd
 	// If they are in other.toAdd - base utxoSet is not the same
-	for id, tx := range d.toRemove {
-		for idx, txOut := range tx {
-			if _, ok := other.toRemove[id][idx]; !ok {
-				result.toAdd.add(id, idx, txOut)
-			}
-			if _, ok := other.toAdd[id][idx]; ok {
-				return nil, errors.New("diffFrom: transaction both in d.toRemove and in other.toAdd")
-			}
+	for outPoint, utxoEntry := range d.toRemove {
+		if _, ok := other.toRemove[outPoint]; !ok {
+			result.toAdd[outPoint] = utxoEntry
+		}
+		if _, ok := other.toAdd[outPoint]; ok {
+			return nil, errors.New("diffFrom: transaction both in d.toRemove and in other.toAdd")
 		}
 	}
 
 	// All transactions in other.toAdd:
 	// If they are not in d.toAdd - should be added in result.toAdd
-	for id, tx := range other.toAdd {
-		for idx, txOut := range tx {
-			if _, ok := d.toAdd[id][idx]; !ok {
-				result.toAdd.add(id, idx, txOut)
-			}
+	for outPoint, utxoEntry := range other.toAdd {
+		if _, ok := d.toAdd[outPoint]; !ok {
+			result.toAdd[outPoint] = utxoEntry
 		}
 	}
 
 	// All transactions in other.toRemove:
 	// If they are not in d.toRemove - should be added in result.toRemove
-	for id, tx := range other.toRemove {
-		for idx, txOut := range tx {
-			if _, ok := d.toRemove[id][idx]; !ok {
-				result.toRemove.add(id, idx, txOut)
-			}
+	for outPoint, utxoEntry := range other.toRemove {
+		if _, ok := d.toRemove[outPoint]; !ok {
+			result.toRemove[outPoint] = utxoEntry
 		}
 	}
 
@@ -89,14 +81,12 @@ func (d *utxoDiff) withDiff(diff *utxoDiff) (*utxoDiff, error) {
 	// If they are not in diff.toRemove - should be added in result.toAdd
 	// If they are in diff.toAdd - should throw an error
 	// Otherwise - should be ignored
-	for id, tx := range d.toAdd {
-		for idx, txOut := range tx {
-			if _, ok := diff.toRemove[id][idx]; !ok {
-				result.toAdd.add(id, idx, txOut)
-			}
-			if _, ok := diff.toAdd[id][idx]; ok {
-				return nil, errors.New("withDiff: transaction both in d.toAdd and in other.toAdd")
-			}
+	for outPoint, utxoEntry := range d.toAdd {
+		if _, ok := diff.toRemove[outPoint]; !ok {
+			result.toAdd[outPoint] = utxoEntry
+		}
+		if _, ok := diff.toAdd[outPoint]; ok {
+			return nil, errors.New("withDiff: transaction both in d.toAdd and in other.toAdd")
 		}
 	}
 
@@ -104,34 +94,28 @@ func (d *utxoDiff) withDiff(diff *utxoDiff) (*utxoDiff, error) {
 	// If they are not in diff.toAdd - should be added in result.toRemove
 	// If they are in diff.toRemove - should throw an error
 	// Otherwise - should be ignored
-	for id, tx := range d.toRemove {
-		for idx, txOut := range tx {
-			if _, ok := diff.toAdd[id][idx]; !ok {
-				result.toRemove.add(id, idx, txOut)
-			}
-			if _, ok := diff.toRemove[id][idx]; ok {
-				return nil, errors.New("withDiff: transaction both in d.toRemove and in other.toRemove")
-			}
+	for outPoint, utxoEntry := range d.toRemove {
+		if _, ok := diff.toAdd[outPoint]; !ok {
+			result.toRemove[outPoint] = utxoEntry
+		}
+		if _, ok := diff.toRemove[outPoint]; ok {
+			return nil, errors.New("withDiff: transaction both in d.toRemove and in other.toRemove")
 		}
 	}
 
 	// All transactions in diff.toAdd:
 	// If they are not in d.toRemove - should be added in result.toAdd
-	for id, tx := range diff.toAdd {
-		for idx, txOut := range tx {
-			if _, ok := d.toRemove[id][idx]; !ok {
-				result.toAdd.add(id, idx, txOut)
-			}
+	for outPoint, utxoEntry := range diff.toAdd {
+		if _, ok := d.toRemove[outPoint]; !ok {
+			result.toAdd[outPoint] = utxoEntry
 		}
 	}
 
 	// All transactions in diff.toRemove:
 	// If they are not in d.toAdd - should be added in result.toRemove
-	for id, tx := range diff.toRemove {
-		for idx, txOut := range tx {
-			if _, ok := d.toAdd[id][idx]; !ok {
-				result.toRemove.add(id, idx, txOut)
-			}
+	for outPoint, utxoEntry := range diff.toRemove {
+		if _, ok := d.toAdd[outPoint]; !ok {
+			result.toRemove[outPoint] = utxoEntry
 		}
 	}
 

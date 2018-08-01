@@ -9,17 +9,19 @@ import (
 
 func TestUTXODiff(t *testing.T) {
 	newDiff := newUTXODiff()
-	if newDiff.toAdd.len() != 0 || newDiff.toRemove.len() != 0 {
+	if len(newDiff.toAdd) != 0 || len(newDiff.toRemove) != 0 {
 		t.Errorf("new diff is not empty")
 	}
 
 	hash0, _ := daghash.NewHashFromStr("0000000000000000000000000000000000000000000000000000000000000000")
 	hash1, _ := daghash.NewHashFromStr("1111111111111111111111111111111111111111111111111111111111111111")
-	txOut0 := &wire.TxOut{PkScript: []byte{}, Value: 10}
-	txOut1 := &wire.TxOut{PkScript: []byte{}, Value: 20}
+	outPoint0 := *wire.NewOutPoint(hash0, 0)
+	outPoint1 := *wire.NewOutPoint(hash1, 0)
+	utxoEntry0 := newUTXOEntry(&wire.TxOut{PkScript: []byte{}, Value: 10})
+	utxoEntry1 := newUTXOEntry(&wire.TxOut{PkScript: []byte{}, Value: 20})
 	diff := utxoDiff{
-		toAdd:    utxoCollection{*hash0: map[uint32]*wire.TxOut{0: txOut0}},
-		toRemove: utxoCollection{*hash1: map[uint32]*wire.TxOut{0: txOut1}},
+		toAdd:    utxoCollection{outPoint0: utxoEntry0},
+		toRemove: utxoCollection{outPoint1: utxoEntry1},
 	}
 
 	clonedDiff := *diff.clone()
@@ -38,7 +40,8 @@ func TestUTXODiff(t *testing.T) {
 
 func TestUTXODiffRules(t *testing.T) {
 	hash0, _ := daghash.NewHashFromStr("0000000000000000000000000000000000000000000000000000000000000000")
-	txOut0 := &wire.TxOut{PkScript: []byte{}, Value: 10}
+	outPoint0 := *wire.NewOutPoint(hash0, 0)
+	utxoEntry0 := newUTXOEntry(&wire.TxOut{PkScript: []byte{}, Value: 10})
 
 	tests := []struct {
 		name                   string
@@ -50,11 +53,11 @@ func TestUTXODiffRules(t *testing.T) {
 		{
 			name: "one toAdd in this, one toAdd in other",
 			this: &utxoDiff{
-				toAdd:    utxoCollection{*hash0: map[uint32]*wire.TxOut{0: txOut0}},
+				toAdd:    utxoCollection{outPoint0: utxoEntry0},
 				toRemove: utxoCollection{},
 			},
 			other: &utxoDiff{
-				toAdd:    utxoCollection{*hash0: map[uint32]*wire.TxOut{0: txOut0}},
+				toAdd:    utxoCollection{outPoint0: utxoEntry0},
 				toRemove: utxoCollection{},
 			},
 			expectedDiffResult: &utxoDiff{
@@ -66,12 +69,12 @@ func TestUTXODiffRules(t *testing.T) {
 		{
 			name: "one toAdd in this, one toRemove in other",
 			this: &utxoDiff{
-				toAdd:    utxoCollection{*hash0: map[uint32]*wire.TxOut{0: txOut0}},
+				toAdd:    utxoCollection{outPoint0: utxoEntry0},
 				toRemove: utxoCollection{},
 			},
 			other: &utxoDiff{
 				toAdd:    utxoCollection{},
-				toRemove: utxoCollection{*hash0: map[uint32]*wire.TxOut{0: txOut0}},
+				toRemove: utxoCollection{outPoint0: utxoEntry0},
 			},
 			expectedDiffResult: nil,
 			expectedWithDiffResult: &utxoDiff{
@@ -82,7 +85,7 @@ func TestUTXODiffRules(t *testing.T) {
 		{
 			name: "one toAdd in this, empty other",
 			this: &utxoDiff{
-				toAdd:    utxoCollection{*hash0: map[uint32]*wire.TxOut{0: txOut0}},
+				toAdd:    utxoCollection{outPoint0: utxoEntry0},
 				toRemove: utxoCollection{},
 			},
 			other: &utxoDiff{
@@ -91,10 +94,10 @@ func TestUTXODiffRules(t *testing.T) {
 			},
 			expectedDiffResult: &utxoDiff{
 				toAdd:    utxoCollection{},
-				toRemove: utxoCollection{*hash0: map[uint32]*wire.TxOut{0: txOut0}},
+				toRemove: utxoCollection{outPoint0: utxoEntry0},
 			},
 			expectedWithDiffResult: &utxoDiff{
-				toAdd:    utxoCollection{*hash0: map[uint32]*wire.TxOut{0: txOut0}},
+				toAdd:    utxoCollection{outPoint0: utxoEntry0},
 				toRemove: utxoCollection{},
 			},
 		},
@@ -102,10 +105,10 @@ func TestUTXODiffRules(t *testing.T) {
 			name: "one toRemove in this, one toAdd in other",
 			this: &utxoDiff{
 				toAdd:    utxoCollection{},
-				toRemove: utxoCollection{*hash0: map[uint32]*wire.TxOut{0: txOut0}},
+				toRemove: utxoCollection{outPoint0: utxoEntry0},
 			},
 			other: &utxoDiff{
-				toAdd:    utxoCollection{*hash0: map[uint32]*wire.TxOut{0: txOut0}},
+				toAdd:    utxoCollection{outPoint0: utxoEntry0},
 				toRemove: utxoCollection{},
 			},
 			expectedDiffResult: nil,
@@ -118,11 +121,11 @@ func TestUTXODiffRules(t *testing.T) {
 			name: "one toRemove in this, one toRemove in other",
 			this: &utxoDiff{
 				toAdd:    utxoCollection{},
-				toRemove: utxoCollection{*hash0: map[uint32]*wire.TxOut{0: txOut0}},
+				toRemove: utxoCollection{outPoint0: utxoEntry0},
 			},
 			other: &utxoDiff{
 				toAdd:    utxoCollection{},
-				toRemove: utxoCollection{*hash0: map[uint32]*wire.TxOut{0: txOut0}},
+				toRemove: utxoCollection{outPoint0: utxoEntry0},
 			},
 			expectedDiffResult: &utxoDiff{
 				toAdd:    utxoCollection{},
@@ -134,19 +137,19 @@ func TestUTXODiffRules(t *testing.T) {
 			name: "one toRemove in this, empty other",
 			this: &utxoDiff{
 				toAdd:    utxoCollection{},
-				toRemove: utxoCollection{*hash0: map[uint32]*wire.TxOut{0: txOut0}},
+				toRemove: utxoCollection{outPoint0: utxoEntry0},
 			},
 			other: &utxoDiff{
 				toAdd:    utxoCollection{},
 				toRemove: utxoCollection{},
 			},
 			expectedDiffResult: &utxoDiff{
-				toAdd:    utxoCollection{*hash0: map[uint32]*wire.TxOut{0: txOut0}},
+				toAdd:    utxoCollection{outPoint0: utxoEntry0},
 				toRemove: utxoCollection{},
 			},
 			expectedWithDiffResult: &utxoDiff{
 				toAdd:    utxoCollection{},
-				toRemove: utxoCollection{*hash0: map[uint32]*wire.TxOut{0: txOut0}},
+				toRemove: utxoCollection{outPoint0: utxoEntry0},
 			},
 		},
 		{
@@ -156,15 +159,15 @@ func TestUTXODiffRules(t *testing.T) {
 				toRemove: utxoCollection{},
 			},
 			other: &utxoDiff{
-				toAdd:    utxoCollection{*hash0: map[uint32]*wire.TxOut{0: txOut0}},
+				toAdd:    utxoCollection{outPoint0: utxoEntry0},
 				toRemove: utxoCollection{},
 			},
 			expectedDiffResult: &utxoDiff{
-				toAdd:    utxoCollection{*hash0: map[uint32]*wire.TxOut{0: txOut0}},
+				toAdd:    utxoCollection{outPoint0: utxoEntry0},
 				toRemove: utxoCollection{},
 			},
 			expectedWithDiffResult: &utxoDiff{
-				toAdd:    utxoCollection{*hash0: map[uint32]*wire.TxOut{0: txOut0}},
+				toAdd:    utxoCollection{outPoint0: utxoEntry0},
 				toRemove: utxoCollection{},
 			},
 		},
@@ -176,15 +179,15 @@ func TestUTXODiffRules(t *testing.T) {
 			},
 			other: &utxoDiff{
 				toAdd:    utxoCollection{},
-				toRemove: utxoCollection{*hash0: map[uint32]*wire.TxOut{0: txOut0}},
+				toRemove: utxoCollection{outPoint0: utxoEntry0},
 			},
 			expectedDiffResult: &utxoDiff{
 				toAdd:    utxoCollection{},
-				toRemove: utxoCollection{*hash0: map[uint32]*wire.TxOut{0: txOut0}},
+				toRemove: utxoCollection{outPoint0: utxoEntry0},
 			},
 			expectedWithDiffResult: &utxoDiff{
 				toAdd:    utxoCollection{},
-				toRemove: utxoCollection{*hash0: map[uint32]*wire.TxOut{0: txOut0}},
+				toRemove: utxoCollection{outPoint0: utxoEntry0},
 			},
 		},
 		{

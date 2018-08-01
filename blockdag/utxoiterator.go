@@ -1,32 +1,31 @@
 package blockdag
 
 import (
-	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/wire"
 )
 
 // utxoIteratorOutput represents all fields of a single UTXO, to be returned by an iterator
 type utxoIteratorOutput struct {
-	hash  daghash.Hash
-	index uint32
-	txOut *wire.TxOut
+	outPoint wire.OutPoint
+	entry    *UtxoEntry
 }
 
 // utxoIterator is used to iterate over a utxoSet
 type utxoIterator <-chan utxoIteratorOutput
+
+type utxoIterable interface {
+	iterate() utxoIterator
+}
 
 // iterate returns an iterator for a UTXOCollection, and therefore, also a fullUTXOSet
 func (c utxoCollection) iterate() utxoIterator {
 	iterator := make(chan utxoIteratorOutput)
 
 	go func() {
-		for hash, txOuts := range c {
-			for index, txOut := range txOuts {
-				iterator <- utxoIteratorOutput{
-					hash:  hash,
-					index: index,
-					txOut: txOut,
-				}
+		for outPoint, entry := range c {
+			iterator <- utxoIteratorOutput{
+				outPoint: outPoint,
+				entry:    entry,
 			}
 		}
 		close(iterator)
@@ -40,9 +39,9 @@ func (u *diffUTXOSet) iterate() utxoIterator {
 	iterator := make(chan utxoIteratorOutput)
 
 	go func() {
-		for utxo := range u.base.iterate() {
-			if !u.utxoDiff.toRemove.contains(utxo.hash, utxo.index) {
-				iterator <- utxo
+		for output := range u.base.iterate() {
+			if _, ok := u.utxoDiff.toRemove[output.outPoint]; !ok {
+				iterator <- output
 			}
 		}
 
