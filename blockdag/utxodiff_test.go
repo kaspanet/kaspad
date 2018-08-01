@@ -21,23 +21,17 @@ func TestUTXODiff(t *testing.T) {
 		toAdd:    utxoCollection{*hash0: map[uint32]*wire.TxOut{0: txOut0}},
 		toRemove: utxoCollection{*hash1: map[uint32]*wire.TxOut{0: txOut1}},
 	}
-	invertedDiff := diff.inverted()
-	if invertedDiff.toAdd.contains(*hash0, 0) ||
-		!invertedDiff.toAdd.contains(*hash1, 0) ||
-		invertedDiff.toRemove.contains(*hash1, 0) ||
-		!invertedDiff.toRemove.contains(*hash0, 0) {
-		t.Errorf("unexpected values in inverted diff")
+
+	clonedDiff := *diff.clone()
+	if !reflect.DeepEqual(clonedDiff, diff) {
+		t.Errorf("cloned diff not equal to the original"+
+			"Original: \"%v\", cloned: \"%v\".", diff, clonedDiff)
 	}
 
-	clonedDiff := invertedDiff.clone()
-	if !reflect.DeepEqual(clonedDiff, invertedDiff) {
-		t.Errorf("cloned diff not equal to the original")
-	}
-
-	expectedDiffString := "toAdd: [ (1111111111111111111111111111111111111111111111111111111111111111, 0) => 20 ]; toRemove: [ (0000000000000000000000000000000000000000000000000000000000000000, 0) => 10 ]"
+	expectedDiffString := "toAdd: [ (0000000000000000000000000000000000000000000000000000000000000000, 0) => 10 ]; toRemove: [ (1111111111111111111111111111111111111111111111111111111111111111, 0) => 20 ]"
 	diffString := clonedDiff.String()
 	if diffString != expectedDiffString {
-		t.Errorf("unexpected diff string. " +
+		t.Errorf("unexpected diff string. "+
 			"Expected: \"%s\", got: \"%s\".", expectedDiffString, diffString)
 	}
 }

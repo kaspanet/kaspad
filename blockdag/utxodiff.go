@@ -19,14 +19,6 @@ func newUTXODiff() *utxoDiff {
 	}
 }
 
-// inverted returns a new utxoDiff with the ToAdd and ToRemove fields inverted
-func (d *utxoDiff) inverted() *utxoDiff {
-	return &utxoDiff{
-		toAdd:    d.toRemove,
-		toRemove: d.toAdd,
-	}
-}
-
 // diff returns a new utxoDiff with the difference of this and other
 // Assumes that if a txOut exists in both diffs, it's underlying values would be the same
 func (d *utxoDiff) diff(other *utxoDiff) (*utxoDiff, error) {
