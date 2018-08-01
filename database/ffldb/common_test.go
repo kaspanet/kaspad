@@ -31,6 +31,10 @@ func newTestDb(testName string, t *testing.T) *db {
 	if err != nil {
 		t.Errorf("%s: Error opening metadataDbPath: %s", testName, err)
 	}
+	err = initDB(ldb)
+	if err != nil {
+		t.Errorf("%s: Error initializing metadata Db: %s", testName, err)
+	}
 
 	store := newBlockStore(dbPath, network)
 	cache := newDbCache(ldb, store, defaultCacheSize, defaultFlushSecs)

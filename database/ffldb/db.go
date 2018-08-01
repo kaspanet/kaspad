@@ -202,6 +202,12 @@ func (c *cursor) Delete() error {
 		return err
 	}
 
+	// Ensure the transaction is writable.
+	if !c.bucket.tx.writable {
+		str := "delete requires a writable database transaction"
+		return makeDbErr(database.ErrTxNotWritable, str, nil)
+	}
+
 	// Error if the cursor is exhausted.
 	if c.currentIter == nil {
 		str := "cursor is exhausted"
