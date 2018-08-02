@@ -199,3 +199,87 @@ func TestSkipPendingUpdates(t *testing.T) {
 		t.Fatalf("Error running main part of test: %s", err)
 	}
 }
+
+// TestCursor tests various edge-cases in cursor that were not hit by the more general tests
+func TestCursor(t *testing.T) {
+	pdb := newTestDb("TestCursor", t)
+	defer pdb.Close()
+
+	value := []byte("value")
+	// Add numbered prefixes to keys so that they are in expected order, and before any other keys
+	firstKey := []byte("1 - first")
+	toDeleteKey := []byte("2 - toDelete")
+	toUpdateKey := []byte("3 - toUpdate")
+	secondKey := []byte("4 - second")
+
+	// create initial metadata for test
+	err := pdb.Update(func(tx database.Tx) error {
+		metadata := tx.Metadata()
+		if err := metadata.Put(firstKey, value); err != nil {
+			return err
+		}
+		if err := metadata.Put(toDeleteKey, value); err != nil {
+			return err
+		}
+		if err := metadata.Put(toUpdateKey, value); err != nil {
+			return err
+		}
+		if err := metadata.Put(secondKey, value); err != nil {
+			return err
+		}
+
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("Error adding to metadata: %s", err)
+	}
+
+	// run the actual tests
+	err = pdb.Update(func(tx database.Tx) error {
+		metadata := tx.Metadata()
+		if err := metadata.Delete(toDeleteKey); err != nil {
+			return err
+		}
+		if err := metadata.Put(toUpdateKey, value); err != nil {
+			return err
+		}
+		cursor := metadata.Cursor().(*cursor)
+
+		// Check prev when currentIter == nil
+		if ok := cursor.Prev(); ok {
+			t.Error("1: .Prev() should have returned false, but have returned true")
+		}
+		// Same thing for .Next()
+		for ok := cursor.First(); ok; ok = cursor.Next() {
+		}
+		if ok := cursor.Next(); ok {
+			t.Error("2: .Next() should have returned false, but have returned true")
+		}
+
+		// Check that Key(), rawKey(), Value(), and rawValue() all return nil when currentIter == nil
+		if key := cursor.Key(); key != nil {
+			t.Errorf("3: .Key() should have returned nil, but have returned '%s' instead", key)
+		}
+		if key := cursor.rawKey(); key != nil {
+			t.Errorf("4: .rawKey() should have returned nil, but have returned '%s' instead", key)
+		}
+		if value := cursor.Value(); value != nil {
+			t.Errorf("5: .Value() should have returned nil, but have returned '%s' instead", value)
+		}
+		if value := cursor.rawValue(); value != nil {
+			t.Errorf("6: .rawValue() should have returned nil, but have returned '%s' instead", value)
+		}
+
+		// Check rawValue in normal operation
+		cursor.First()
+		if rawValue := cursor.rawValue(); !bytes.Equal(rawValue, value) {
+			t.Errorf("7: rawValue should have returned '%s' but have returned '%s' instead", value, rawValue)
+		}
+
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("Error running the actual tests: %s", err)
+	}
+
+}
