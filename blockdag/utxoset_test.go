@@ -7,6 +7,297 @@ import (
 	"testing"
 )
 
+func TestUTXOCollection(t *testing.T) {
+	hash0, _ := daghash.NewHashFromStr("0000000000000000000000000000000000000000000000000000000000000000")
+	hash1, _ := daghash.NewHashFromStr("1111111111111111111111111111111111111111111111111111111111111111")
+	outPoint0 := *wire.NewOutPoint(hash0, 0)
+	outPoint1 := *wire.NewOutPoint(hash1, 0)
+	utxoEntry0 := newUTXOEntry(&wire.TxOut{PkScript: []byte{}, Value: 10})
+	utxoEntry1 := newUTXOEntry(&wire.TxOut{PkScript: []byte{}, Value: 20})
+
+	tests := []struct {
+		name           string
+		collection     utxoCollection
+		expectedString string
+	}{
+		{
+			name:           "empty collection",
+			collection:     utxoCollection{},
+			expectedString: "[  ]",
+		},
+		{
+			name: "one member",
+			collection: utxoCollection{
+				outPoint0: utxoEntry1,
+			},
+			expectedString: "[ (0000000000000000000000000000000000000000000000000000000000000000, 0) => 20 ]",
+		},
+		{
+			name: "two members",
+			collection: utxoCollection{
+				outPoint0: utxoEntry0,
+				outPoint1: utxoEntry1,
+			},
+			expectedString: "[ (0000000000000000000000000000000000000000000000000000000000000000, 0) => 10, (1111111111111111111111111111111111111111111111111111111111111111, 0) => 20 ]",
+		},
+	}
+
+	for _, test := range tests {
+		collectionString := test.collection.String()
+		if collectionString != test.expectedString {
+			t.Errorf("unexpected string in test \"%s\". "+
+				"Expected: \"%s\", got: \"%s\".", test.name, test.expectedString, collectionString)
+		}
+		collectionClone := test.collection.clone()
+		if &collectionClone == &test.collection {
+			t.Errorf("collection is reference-equal to its clone in test \"%s\". ", test.name)
+		}
+		if !reflect.DeepEqual(test.collection, collectionClone) {
+			t.Errorf("collection is not equal to its clone in test \"%s\". "+
+				"Expected: \"%s\", got: \"%s\".", test.name, collectionString, collectionClone.String())
+		}
+	}
+}
+
+
+// TestUTXODiff makes sure that utxoDiff creation, cloning, and string representations work as expected.
+func TestUTXODiff(t *testing.T) {
+	hash0, _ := daghash.NewHashFromStr("0000000000000000000000000000000000000000000000000000000000000000")
+	hash1, _ := daghash.NewHashFromStr("1111111111111111111111111111111111111111111111111111111111111111")
+	outPoint0 := *wire.NewOutPoint(hash0, 0)
+	outPoint1 := *wire.NewOutPoint(hash1, 0)
+	utxoEntry0 := newUTXOEntry(&wire.TxOut{PkScript: []byte{}, Value: 10})
+	utxoEntry1 := newUTXOEntry(&wire.TxOut{PkScript: []byte{}, Value: 20})
+	diff := utxoDiff{
+		toAdd:    utxoCollection{outPoint0: utxoEntry0},
+		toRemove: utxoCollection{outPoint1: utxoEntry1},
+	}
+
+	// Test utxoDiff creation
+	newDiff := newUTXODiff()
+	if len(newDiff.toAdd) != 0 || len(newDiff.toRemove) != 0 {
+		t.Errorf("new diff is not empty")
+	}
+
+	// Test utxoDiff cloning
+	clonedDiff := *diff.clone()
+	if &clonedDiff == &diff {
+		t.Errorf("cloned diff is reference-equal to the original")
+	}
+	if !reflect.DeepEqual(clonedDiff, diff) {
+		t.Errorf("cloned diff not equal to the original"+
+			"Original: \"%v\", cloned: \"%v\".", diff, clonedDiff)
+	}
+
+	// Test utxoDiff string representation
+	expectedDiffString := "toAdd: [ (0000000000000000000000000000000000000000000000000000000000000000, 0) => 10 ]; toRemove: [ (1111111111111111111111111111111111111111111111111111111111111111, 0) => 20 ]"
+	diffString := clonedDiff.String()
+	if diffString != expectedDiffString {
+		t.Errorf("unexpected diff string. "+
+			"Expected: \"%s\", got: \"%s\".", expectedDiffString, diffString)
+	}
+}
+
+func TestUTXODiffRules(t *testing.T) {
+	hash0, _ := daghash.NewHashFromStr("0000000000000000000000000000000000000000000000000000000000000000")
+	outPoint0 := *wire.NewOutPoint(hash0, 0)
+	utxoEntry0 := newUTXOEntry(&wire.TxOut{PkScript: []byte{}, Value: 10})
+
+	tests := []struct {
+		name                   string
+		this                   *utxoDiff
+		other                  *utxoDiff
+		expectedDiffResult     *utxoDiff
+		expectedWithDiffResult *utxoDiff
+	}{
+		{
+			name: "one toAdd in this, one toAdd in other",
+			this: &utxoDiff{
+				toAdd:    utxoCollection{outPoint0: utxoEntry0},
+				toRemove: utxoCollection{},
+			},
+			other: &utxoDiff{
+				toAdd:    utxoCollection{outPoint0: utxoEntry0},
+				toRemove: utxoCollection{},
+			},
+			expectedDiffResult: &utxoDiff{
+				toAdd:    utxoCollection{},
+				toRemove: utxoCollection{},
+			},
+			expectedWithDiffResult: nil,
+		},
+		{
+			name: "one toAdd in this, one toRemove in other",
+			this: &utxoDiff{
+				toAdd:    utxoCollection{outPoint0: utxoEntry0},
+				toRemove: utxoCollection{},
+			},
+			other: &utxoDiff{
+				toAdd:    utxoCollection{},
+				toRemove: utxoCollection{outPoint0: utxoEntry0},
+			},
+			expectedDiffResult: nil,
+			expectedWithDiffResult: &utxoDiff{
+				toAdd:    utxoCollection{},
+				toRemove: utxoCollection{},
+			},
+		},
+		{
+			name: "one toAdd in this, empty other",
+			this: &utxoDiff{
+				toAdd:    utxoCollection{outPoint0: utxoEntry0},
+				toRemove: utxoCollection{},
+			},
+			other: &utxoDiff{
+				toAdd:    utxoCollection{},
+				toRemove: utxoCollection{},
+			},
+			expectedDiffResult: &utxoDiff{
+				toAdd:    utxoCollection{},
+				toRemove: utxoCollection{outPoint0: utxoEntry0},
+			},
+			expectedWithDiffResult: &utxoDiff{
+				toAdd:    utxoCollection{outPoint0: utxoEntry0},
+				toRemove: utxoCollection{},
+			},
+		},
+		{
+			name: "one toRemove in this, one toAdd in other",
+			this: &utxoDiff{
+				toAdd:    utxoCollection{},
+				toRemove: utxoCollection{outPoint0: utxoEntry0},
+			},
+			other: &utxoDiff{
+				toAdd:    utxoCollection{outPoint0: utxoEntry0},
+				toRemove: utxoCollection{},
+			},
+			expectedDiffResult: nil,
+			expectedWithDiffResult: &utxoDiff{
+				toAdd:    utxoCollection{},
+				toRemove: utxoCollection{},
+			},
+		},
+		{
+			name: "one toRemove in this, one toRemove in other",
+			this: &utxoDiff{
+				toAdd:    utxoCollection{},
+				toRemove: utxoCollection{outPoint0: utxoEntry0},
+			},
+			other: &utxoDiff{
+				toAdd:    utxoCollection{},
+				toRemove: utxoCollection{outPoint0: utxoEntry0},
+			},
+			expectedDiffResult: &utxoDiff{
+				toAdd:    utxoCollection{},
+				toRemove: utxoCollection{},
+			},
+			expectedWithDiffResult: nil,
+		},
+		{
+			name: "one toRemove in this, empty other",
+			this: &utxoDiff{
+				toAdd:    utxoCollection{},
+				toRemove: utxoCollection{outPoint0: utxoEntry0},
+			},
+			other: &utxoDiff{
+				toAdd:    utxoCollection{},
+				toRemove: utxoCollection{},
+			},
+			expectedDiffResult: &utxoDiff{
+				toAdd:    utxoCollection{outPoint0: utxoEntry0},
+				toRemove: utxoCollection{},
+			},
+			expectedWithDiffResult: &utxoDiff{
+				toAdd:    utxoCollection{},
+				toRemove: utxoCollection{outPoint0: utxoEntry0},
+			},
+		},
+		{
+			name: "empty this, one toAdd in other",
+			this: &utxoDiff{
+				toAdd:    utxoCollection{},
+				toRemove: utxoCollection{},
+			},
+			other: &utxoDiff{
+				toAdd:    utxoCollection{outPoint0: utxoEntry0},
+				toRemove: utxoCollection{},
+			},
+			expectedDiffResult: &utxoDiff{
+				toAdd:    utxoCollection{outPoint0: utxoEntry0},
+				toRemove: utxoCollection{},
+			},
+			expectedWithDiffResult: &utxoDiff{
+				toAdd:    utxoCollection{outPoint0: utxoEntry0},
+				toRemove: utxoCollection{},
+			},
+		},
+		{
+			name: "empty this, one toRemove in other",
+			this: &utxoDiff{
+				toAdd:    utxoCollection{},
+				toRemove: utxoCollection{},
+			},
+			other: &utxoDiff{
+				toAdd:    utxoCollection{},
+				toRemove: utxoCollection{outPoint0: utxoEntry0},
+			},
+			expectedDiffResult: &utxoDiff{
+				toAdd:    utxoCollection{},
+				toRemove: utxoCollection{outPoint0: utxoEntry0},
+			},
+			expectedWithDiffResult: &utxoDiff{
+				toAdd:    utxoCollection{},
+				toRemove: utxoCollection{outPoint0: utxoEntry0},
+			},
+		},
+		{
+			name: "empty this, empty other",
+			this: &utxoDiff{
+				toAdd:    utxoCollection{},
+				toRemove: utxoCollection{},
+			},
+			other: &utxoDiff{
+				toAdd:    utxoCollection{},
+				toRemove: utxoCollection{},
+			},
+			expectedDiffResult: &utxoDiff{
+				toAdd:    utxoCollection{},
+				toRemove: utxoCollection{},
+			},
+			expectedWithDiffResult: &utxoDiff{
+				toAdd:    utxoCollection{},
+				toRemove: utxoCollection{},
+			},
+		},
+	}
+
+	for _, test := range tests {
+		diffResult, err := test.this.diffFrom(test.other)
+		isDiffOk := err == nil
+		if isDiffOk && !reflect.DeepEqual(diffResult, test.expectedDiffResult) {
+			t.Errorf("unexpected diffFrom result in test \"%s\". "+
+				"Expected: \"%v\", got: \"%v\".", test.name, test.expectedDiffResult, diffResult)
+		}
+		expectedIsDiffOk := test.expectedDiffResult != nil
+		if isDiffOk != expectedIsDiffOk {
+			t.Errorf("unexpected diffFrom error in test \"%s\". "+
+				"Expected: \"%t\", got: \"%t\".", test.name, expectedIsDiffOk, isDiffOk)
+		}
+
+		withDiffResult, err := test.this.withDiff(test.other)
+		isWithDiffOk := err == nil
+		if isWithDiffOk && !reflect.DeepEqual(withDiffResult, test.expectedWithDiffResult) {
+			t.Errorf("unexpected withDiff result in test \"%s\". "+
+				"Expected: \"%v\", got: \"%v\".", test.name, test.expectedWithDiffResult, withDiffResult)
+		}
+		expectedIsWithDiffOk := test.expectedWithDiffResult != nil
+		if isWithDiffOk != expectedIsWithDiffOk {
+			t.Errorf("unexpected withDiff error in test \"%s\". "+
+				"Expected: \"%t\", got: \"%t\".", test.name, expectedIsWithDiffOk, isWithDiffOk)
+		}
+	}
+}
+
 func TestFullUTXOSet(t *testing.T) {
 	hash0, _ := daghash.NewHashFromStr("0000000000000000000000000000000000000000000000000000000000000000")
 	hash1, _ := daghash.NewHashFromStr("1111111111111111111111111111111111111111111111111111111111111111")
