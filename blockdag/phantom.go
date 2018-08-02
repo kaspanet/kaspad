@@ -7,9 +7,9 @@ import (
 // phantom calculates and returns the block's blue set, selected parent and blue score.
 // Chain start is determined by going down the DAG through the selected path
 // (follow the selected parent of each block) k + 1 steps.
-// The blue set of a block are all blue blocks in it's past.
+// The blue set of a block are all blue blocks in its past.
 // To optimize memory usage, for each block we are storing only the blue blocks in
-// it's selected parent's anticone that are in the future of the chain start
+// its selected parent's anticone that are in the future of the chain start
 // as well as the selected parent itself - the rest of the
 // blue set can be restored by traversing the selected parent chain and combining
 // the .blues of all blocks in it.
