@@ -113,3 +113,89 @@ func TestCursorDeleteErrors(t *testing.T) {
 			"when calling .Delete() on with closed transaction, but got '%s' instead", err)
 	}
 }
+
+func TestSkipPendingUpdates(t *testing.T) {
+	pdb := newTestDb("TestSkipPendingUpdates", t)
+	defer pdb.Close()
+
+	value := []byte("value")
+	// Add numbered prefixes to keys so that they are in expected order, and before any other keys
+	firstKey := []byte("1 - first")
+	toDeleteKey := []byte("2 - toDelete")
+	toUpdateKey := []byte("3 - toUpdate")
+	secondKey := []byte("4 - second")
+
+	// create initial metadata for test
+	err := pdb.Update(func(tx database.Tx) error {
+		metadata := tx.Metadata()
+		if err := metadata.Put(firstKey, value); err != nil {
+			return err
+		}
+		if err := metadata.Put(toDeleteKey, value); err != nil {
+			return err
+		}
+		if err := metadata.Put(toUpdateKey, value); err != nil {
+			return err
+		}
+		if err := metadata.Put(secondKey, value); err != nil {
+			return err
+		}
+
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("Error adding to metadata: %s", err)
+	}
+
+	// test skips
+	err = pdb.Update(func(tx database.Tx) error {
+		metadata := tx.Metadata()
+		if err := metadata.Delete(toDeleteKey); err != nil {
+			return err
+		}
+		if err := metadata.Put(toUpdateKey, value); err != nil {
+			return err
+		}
+		cursor := metadata.Cursor().(*cursor)
+		dbIter := cursor.dbIter
+
+		// Check that first is ok
+		dbIter.First()
+		expectedKey := bucketizedKey(metadataBucketID, firstKey)
+		if !bytes.Equal(dbIter.Key(), expectedKey) {
+			t.Errorf("1: key expected to be %v but is %v", expectedKey, dbIter.Key())
+		}
+
+		// Go to the next key, which is toDelete
+		dbIter.Next()
+		expectedKey = bucketizedKey(metadataBucketID, toDeleteKey)
+		if !bytes.Equal(dbIter.Key(), expectedKey) {
+			t.Errorf("2: key expected to be %s but is %s", expectedKey, dbIter.Key())
+		}
+
+		// at this point toDeleteKey and toUpdateKey should be skipped
+		cursor.skipPendingUpdates(true)
+		expectedKey = bucketizedKey(metadataBucketID, secondKey)
+		if !bytes.Equal(dbIter.Key(), expectedKey) {
+			t.Errorf("3: key expected to be %s but is %s", expectedKey, dbIter.Key())
+		}
+
+		// now traverse backwards - should get toUpdate
+		dbIter.Prev()
+		expectedKey = bucketizedKey(metadataBucketID, toUpdateKey)
+		if !bytes.Equal(dbIter.Key(), expectedKey) {
+			t.Errorf("4: key expected to be %s but is %s", expectedKey, dbIter.Key())
+		}
+
+		// at this point toUpdateKey and toDeleteKey should be skipped
+		cursor.skipPendingUpdates(false)
+		expectedKey = bucketizedKey(metadataBucketID, firstKey)
+		if !bytes.Equal(dbIter.Key(), expectedKey) {
+			t.Errorf("5: key expected to be %s but is %s", expectedKey, dbIter.Key())
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("Error running main part of test: %s", err)
+	}
+}
