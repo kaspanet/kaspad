@@ -25,6 +25,9 @@ type hashIDPair struct {
 	id   string
 }
 
+//TestPhantom iterate over several dag simulations, and checks
+//that the blue score, blue set and selected parent of each
+//block calculated as expected
 func TestPhantom(t *testing.T) {
 	netParams := dagconfig.SimNetParams
 
@@ -439,9 +442,12 @@ func TestPhantom(t *testing.T) {
 			},
 		},
 		{
-			//Secret mining attack: The attacker is mining blocks B,C,D,E,F,G,T in secret without propagating them,
-			//so all blocks except T should be red, because they don't follow the rules of
-			//PHANTOM that require you to point to all the parents that you know, and propagate your block as soon as it's mined
+			//Secret mining attack: The attacker is mining
+			//blocks B,C,D,E,F,G,T in secret without propagating
+			//them, so all blocks except T should be red, because
+			//they don't follow the rules of PHANTOM that require
+			//you to point to all the parents that you know, and
+			//propagate your block as soon as it's mined
 
 			//Block hash order: HRTGMKQBXDWSICYFONUPLEAJZ
 			k:              1,
@@ -801,65 +807,61 @@ func TestPhantom(t *testing.T) {
 	}
 
 	for i, test := range tests {
-		errorF := func(format string, args ...interface{}) {
-			newArgs := make([]interface{}, 0, len(args)+1)
-			newArgs = append(newArgs, i)
-			for _, arg := range args {
-				newArgs = append(newArgs, arg)
-			}
-			t.Errorf("Test %d: "+format, newArgs...)
-		}
 		netParams.K = test.k
 		// Generate enough synthetic blocks for the rest of the test
 		blockDAG := newTestDAG(&netParams)
 		genesisNode := blockDAG.dag.SelectedTip()
 		blockTime := genesisNode.Header().Timestamp
-		blockIDMap := make(map[string]*blockNode)
-		idBlockMap := make(map[*blockNode]string)
-		blockIDMap["A"] = genesisNode
-		idBlockMap[genesisNode] = "A"
+		blockByIDMap := make(map[string]*blockNode)
+		idByBlockMap := make(map[*blockNode]string)
+		blockByIDMap["A"] = genesisNode
+		idByBlockMap[genesisNode] = "A"
 
 		for _, blockData := range test.dagData {
 			blockTime = blockTime.Add(time.Second)
 			parents := blockSet{}
 			for _, parentID := range blockData.parents {
-				parent := blockIDMap[parentID]
+				parent := blockByIDMap[parentID]
 				parents.add(parent)
 			}
 			node := newTestNode(parents, blockVersion, 0, blockTime, test.k)
 
 			blockDAG.index.AddNode(node)
-			blockIDMap[blockData.id] = node
-			idBlockMap[node] = blockData.id
+			blockByIDMap[blockData.id] = node
+			idByBlockMap[node] = blockData.id
 
 			bluesIDs := make([]string, 0, len(node.blues))
 			for _, blue := range node.blues {
-				bluesIDs = append(bluesIDs, idBlockMap[blue])
+				bluesIDs = append(bluesIDs, idByBlockMap[blue])
 			}
-			selectedParentID := idBlockMap[node.selectedParent]
-			fullDataStr := fmt.Sprintf("blues: %v, selectedParent: %v, score: %v", bluesIDs, selectedParentID, node.blueScore)
+			selectedParentID := idByBlockMap[node.selectedParent]
+			fullDataStr := fmt.Sprintf("blues: %v, selectedParent: %v, score: %v",
+				bluesIDs, selectedParentID, node.blueScore)
 			if blockData.expectedScore != node.blueScore {
-				errorF("Block %v expected to have score %v but got %v (fulldata: %v)", blockData.id, blockData.expectedScore, node.blueScore, fullDataStr)
+				t.Errorf("Test %d: Block %v expected to have score %v but got %v (fulldata: %v)",
+					i, blockData.id, blockData.expectedScore, node.blueScore, fullDataStr)
 			}
 			if blockData.expectedSelectedParent != selectedParentID {
-				errorF("Block %v expected to have selected parent %v but got %v (fulldata: %v)", blockData.id, blockData.expectedSelectedParent, selectedParentID, fullDataStr)
+				t.Errorf("Test %d: Block %v expected to have selected parent %v but got %v (fulldata: %v)",
+					i, blockData.id, blockData.expectedSelectedParent, selectedParentID, fullDataStr)
 			}
 			if !reflect.DeepEqual(blockData.expectedBlues, bluesIDs) {
-				errorF("Block %v expected to have blues %v but got %v (fulldata: %v)", blockData.id, blockData.expectedBlues, bluesIDs, fullDataStr)
+				t.Errorf("Test %d: Block %v expected to have blues %v but got %v (fulldata: %v)",
+					i, blockData.id, blockData.expectedBlues, bluesIDs, fullDataStr)
 			}
 		}
 
 		reds := make(map[string]bool)
 
-		for id := range blockIDMap {
+		for id := range blockByIDMap {
 			reds[id] = true
 		}
 
-		for tip := blockIDMap[test.virtualBlockID]; tip.selectedParent != nil; tip = tip.selectedParent {
-			tipID := idBlockMap[tip]
+		for tip := blockByIDMap[test.virtualBlockID]; tip.selectedParent != nil; tip = tip.selectedParent {
+			tipID := idByBlockMap[tip]
 			delete(reds, tipID)
 			for _, blue := range tip.blues {
-				blueID := idBlockMap[blue]
+				blueID := idByBlockMap[blue]
 				delete(reds, blueID)
 			}
 		}
@@ -870,7 +872,7 @@ func TestPhantom(t *testing.T) {
 			}
 			sort.Strings(redsIDs)
 			sort.Strings(test.expectedReds)
-			errorF("Expected reds %v but got %v", test.expectedReds, redsIDs)
+			t.Errorf("Test %d: Expected reds %v but got %v", i, test.expectedReds, redsIDs)
 		}
 
 	}
