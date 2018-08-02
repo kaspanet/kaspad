@@ -306,10 +306,16 @@ func TestDiffUTXOSet_addTx(t *testing.T) {
 		expectedSet *diffUTXOSet
 	}{
 		{
-			name:        "add transaction to empty set",
-			startSet:    newDiffUTXOSet(newFullUTXOSet(), newUTXODiff()),
-			toAdd:       []*wire.MsgTx{transaction0},
-			expectedSet: nil,
+			name: "add transaction to empty set",
+			startSet: newDiffUTXOSet(newFullUTXOSet(), newUTXODiff()),
+			toAdd: []*wire.MsgTx{transaction0},
+			expectedSet: &diffUTXOSet{
+				base: &fullUTXOSet{utxoCollection: utxoCollection{}},
+				utxoDiff: &utxoDiff{
+					toAdd:    utxoCollection{},
+					toRemove: utxoCollection{},
+				},
+			},
 		},
 		{
 			name: "add transaction to set with the tx in base",
@@ -387,17 +393,11 @@ func TestDiffUTXOSet_addTx(t *testing.T) {
 
 	for _, test := range tests {
 		diffSet := test.startSet.clone()
-		isSuccessful := true
 		for _, transaction := range test.toAdd {
-			isSuccessful = isSuccessful && diffSet.addTx(transaction)
+			diffSet.addTx(transaction)
 		}
 
-		shouldBeSuccessful := test.expectedSet != nil
-		if shouldBeSuccessful != isSuccessful {
-			t.Errorf("unexpected addTx success in test \"%s\". "+
-				"Expected: \"%t\", got: \"%t\".", test.name, shouldBeSuccessful, isSuccessful)
-		}
-		if shouldBeSuccessful && !reflect.DeepEqual(diffSet, test.expectedSet) {
+		if !reflect.DeepEqual(diffSet, test.expectedSet) {
 			t.Errorf("unexpected diffSet in test \"%s\". "+
 				"Expected: \"%v\", got: \"%v\".", test.name, test.expectedSet, diffSet)
 		}

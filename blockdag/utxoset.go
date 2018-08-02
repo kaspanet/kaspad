@@ -68,7 +68,7 @@ func (fus *fullUTXOSet) withDiff(other *utxoDiff) (utxoSet, error) {
 
 // addTx adds a transaction to this utxoSet and returns true iff it's valid in this UTXO's context
 func (fus *fullUTXOSet) addTx(tx *wire.MsgTx) bool {
-	if !fus.verifyTx(tx) {
+	if !fus.areInputsInUTXO(tx) {
 		return false
 	}
 
@@ -88,7 +88,7 @@ func (fus *fullUTXOSet) addTx(tx *wire.MsgTx) bool {
 	return true
 }
 
-func (fus *fullUTXOSet) verifyTx(tx *wire.MsgTx) bool {
+func (fus *fullUTXOSet) areInputsInUTXO(tx *wire.MsgTx) bool {
 	for _, txIn := range tx.TxIn {
 		outPoint := *wire.NewOutPoint(&txIn.PreviousOutPoint.Hash, txIn.PreviousOutPoint.Index)
 		if _, ok := fus.utxoCollection[outPoint]; !ok {
@@ -165,7 +165,7 @@ func (dus *diffUTXOSet) withDiff(other *utxoDiff) (utxoSet, error) {
 
 // addTx adds a transaction to this utxoSet and returns true iff it's valid in this UTXO's context
 func (dus *diffUTXOSet) addTx(tx *wire.MsgTx) bool {
-	if !dus.verifyTx(tx) {
+	if !dus.areInputsInUTXO(tx) {
 		return false
 	}
 
@@ -194,7 +194,7 @@ func (dus *diffUTXOSet) addTx(tx *wire.MsgTx) bool {
 	return true
 }
 
-func (dus *diffUTXOSet) verifyTx(tx *wire.MsgTx) bool {
+func (dus *diffUTXOSet) areInputsInUTXO(tx *wire.MsgTx) bool {
 	for _, txIn := range tx.TxIn {
 		outPoint := *wire.NewOutPoint(&txIn.PreviousOutPoint.Hash, txIn.PreviousOutPoint.Index)
 		_, isInBase := dus.base.utxoCollection[outPoint]
