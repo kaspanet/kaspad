@@ -5,7 +5,7 @@ import (
 	"errors"
 )
 
-// utxoDiff  represents a diff between two UTXO Sets
+// utxoDiff represents a diff between two UTXO Sets
 type utxoDiff struct {
 	toAdd    utxoCollection
 	toRemove utxoCollection

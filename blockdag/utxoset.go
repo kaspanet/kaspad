@@ -15,6 +15,15 @@ type utxoIteratorOutput struct {
 // utxoIterator is used to iterate over a utxoSet
 type utxoIterator <-chan utxoIteratorOutput
 
+// newUTXOEntry creates a new utxoEntry representing the given txOut
+func newUTXOEntry(txOut *wire.TxOut) *UtxoEntry {
+	entry := new(UtxoEntry)
+	entry.amount = txOut.Value
+	entry.pkScript = txOut.PkScript
+
+	return entry
+}
+
 // utxoSet represents a set of unspent transaction outputs
 type utxoSet interface {
 	fmt.Stringer
@@ -39,33 +48,33 @@ func newFullUTXOSet() *fullUTXOSet {
 
 // diffFrom returns the difference between this utxoSet and another
 // diffFrom can only work when other is a diffUTXOSet, and its base utxoSet is this.
-func (u *fullUTXOSet) diffFrom(other utxoSet) (*utxoDiff, error) {
-	o, ok := other.(*diffUTXOSet)
+func (fus *fullUTXOSet) diffFrom(other utxoSet) (*utxoDiff, error) {
+	otherDiffSet, ok := other.(*diffUTXOSet)
 	if !ok {
 		return nil, errors.New("can't diffFrom two fullUTXOSets")
 	}
 
-	if o.base != u {
+	if otherDiffSet.base != fus {
 		return nil, errors.New("can diffFrom only with diffUTXOSet where this fullUTXOSet is the base")
 	}
 
-	return o.utxoDiff, nil
+	return otherDiffSet.utxoDiff, nil
 }
 
-// withDiff returns a utxoSet which is a diff between this and other utxoSet
-func (u *fullUTXOSet) withDiff(utxoDiff *utxoDiff) (utxoSet, error) {
-	return newDiffUTXOSet(u, utxoDiff.clone()), nil
+// withDiff returns a utxoSet which is a diff between this and another utxoSet
+func (fus *fullUTXOSet) withDiff(other *utxoDiff) (utxoSet, error) {
+	return newDiffUTXOSet(fus, other.clone()), nil
 }
 
 // addTx adds a transaction to this utxoSet and returns true iff it's valid in this UTXO's context
-func (u *fullUTXOSet) addTx(tx *wire.MsgTx) bool {
-	if !u.verifyTx(tx) {
+func (fus *fullUTXOSet) addTx(tx *wire.MsgTx) bool {
+	if !fus.verifyTx(tx) {
 		return false
 	}
 
 	for _, txIn := range tx.TxIn {
 		outPoint := *wire.NewOutPoint(&txIn.PreviousOutPoint.Hash, txIn.PreviousOutPoint.Index)
-		delete(u.utxoCollection, outPoint)
+		delete(fus.utxoCollection, outPoint)
 	}
 
 	for i, txOut := range tx.TxOut {
@@ -73,16 +82,16 @@ func (u *fullUTXOSet) addTx(tx *wire.MsgTx) bool {
 		outPoint := *wire.NewOutPoint(&hash, uint32(i))
 		entry := newUTXOEntry(txOut)
 
-		u.utxoCollection[outPoint] = entry
+		fus.utxoCollection[outPoint] = entry
 	}
 
 	return true
 }
 
-func (u *fullUTXOSet) verifyTx(tx *wire.MsgTx) bool {
+func (fus *fullUTXOSet) verifyTx(tx *wire.MsgTx) bool {
 	for _, txIn := range tx.TxIn {
 		outPoint := *wire.NewOutPoint(&txIn.PreviousOutPoint.Hash, txIn.PreviousOutPoint.Index)
-		if _, ok := u.utxoCollection[outPoint]; !ok {
+		if _, ok := fus.utxoCollection[outPoint]; !ok {
 			return false
 		}
 	}
@@ -91,21 +100,21 @@ func (u *fullUTXOSet) verifyTx(tx *wire.MsgTx) bool {
 }
 
 // collection returns a collection of all UTXOs in this set
-func (u *fullUTXOSet) collection() utxoCollection {
-	return u.utxoCollection.clone()
+func (fus *fullUTXOSet) collection() utxoCollection {
+	return fus.utxoCollection.clone()
 }
 
 // clone returns a clone of this utxoSet
-func (u *fullUTXOSet) clone() utxoSet {
-	return &fullUTXOSet{utxoCollection: u.utxoCollection.clone()}
+func (fus *fullUTXOSet) clone() utxoSet {
+	return &fullUTXOSet{utxoCollection: fus.utxoCollection.clone()}
 }
 
 // iterate returns an iterator for a fullUTXOSet
-func (u *fullUTXOSet) iterate() utxoIterator {
+func (fus *fullUTXOSet) iterate() utxoIterator {
 	iterator := make(chan utxoIteratorOutput)
 
 	go func() {
-		for outPoint, entry := range u.utxoCollection {
+		for outPoint, entry := range fus.utxoCollection {
 			iterator <- utxoIteratorOutput{outPoint: outPoint, entry: entry}
 		}
 
@@ -131,42 +140,42 @@ func newDiffUTXOSet(base *fullUTXOSet, diff *utxoDiff) *diffUTXOSet {
 
 // diffFrom returns the difference between this utxoSet and another.
 // diffFrom can work if other is this's base fullUTXOSet, or a diffUTXOSet with the same base as this
-func (u *diffUTXOSet) diffFrom(other utxoSet) (*utxoDiff, error) {
-	o, ok := other.(*diffUTXOSet)
+func (dus *diffUTXOSet) diffFrom(other utxoSet) (*utxoDiff, error) {
+	otherDiffSet, ok := other.(*diffUTXOSet)
 	if !ok {
 		return nil, errors.New("can't diffFrom diffUTXOSet with fullUTXOSet")
 	}
 
-	if o.base != u.base {
+	if otherDiffSet.base != dus.base {
 		return nil, errors.New("can't diffFrom with another diffUTXOSet with a different base")
 	}
 
-	return u.utxoDiff.diffFrom(o.utxoDiff)
+	return dus.utxoDiff.diffFrom(otherDiffSet.utxoDiff)
 }
 
-// withDiff return a new utxoSet which is a diffFrom between this and other utxoSet
-func (u *diffUTXOSet) withDiff(utxoDiff *utxoDiff) (utxoSet, error) {
-	diff, err := u.utxoDiff.withDiff(utxoDiff)
+// withDiff return a new utxoSet which is a diffFrom between this and another utxoSet
+func (dus *diffUTXOSet) withDiff(other *utxoDiff) (utxoSet, error) {
+	diff, err := dus.utxoDiff.withDiff(other)
 	if err != nil {
 		return nil, err
 	}
 
-	return newDiffUTXOSet(u.base, diff), nil
+	return newDiffUTXOSet(dus.base, diff), nil
 }
 
 // addTx adds a transaction to this utxoSet and returns true iff it's valid in this UTXO's context
-func (u *diffUTXOSet) addTx(tx *wire.MsgTx) bool {
-	if !u.verifyTx(tx) {
+func (dus *diffUTXOSet) addTx(tx *wire.MsgTx) bool {
+	if !dus.verifyTx(tx) {
 		return false
 	}
 
 	for _, txIn := range tx.TxIn {
 		outPoint := *wire.NewOutPoint(&txIn.PreviousOutPoint.Hash, txIn.PreviousOutPoint.Index)
-		if _, ok := u.utxoDiff.toAdd[outPoint]; ok {
-			delete(u.utxoDiff.toAdd, outPoint)
+		if _, ok := dus.utxoDiff.toAdd[outPoint]; ok {
+			delete(dus.utxoDiff.toAdd, outPoint)
 		} else {
-			prevUTXOEntry := u.base.utxoCollection[outPoint]
-			u.utxoDiff.toRemove[outPoint] = prevUTXOEntry
+			prevUTXOEntry := dus.base.utxoCollection[outPoint]
+			dus.utxoDiff.toRemove[outPoint] = prevUTXOEntry
 		}
 	}
 
@@ -175,22 +184,22 @@ func (u *diffUTXOSet) addTx(tx *wire.MsgTx) bool {
 		outPoint := *wire.NewOutPoint(&hash, uint32(i))
 		entry := newUTXOEntry(txOut)
 
-		if _, ok := u.utxoDiff.toRemove[outPoint]; ok {
-			delete(u.utxoDiff.toRemove, outPoint)
+		if _, ok := dus.utxoDiff.toRemove[outPoint]; ok {
+			delete(dus.utxoDiff.toRemove, outPoint)
 		} else {
-			u.utxoDiff.toAdd[outPoint] = entry
+			dus.utxoDiff.toAdd[outPoint] = entry
 		}
 	}
 
 	return true
 }
 
-func (u *diffUTXOSet) verifyTx(tx *wire.MsgTx) bool {
+func (dus *diffUTXOSet) verifyTx(tx *wire.MsgTx) bool {
 	for _, txIn := range tx.TxIn {
 		outPoint := *wire.NewOutPoint(&txIn.PreviousOutPoint.Hash, txIn.PreviousOutPoint.Index)
-		_, isInBase := u.base.utxoCollection[outPoint]
-		_, isInDiffToAdd := u.utxoDiff.toAdd[outPoint]
-		_, isInDiffToRemove := u.utxoDiff.toRemove[outPoint]
+		_, isInBase := dus.base.utxoCollection[outPoint]
+		_, isInDiffToAdd := dus.utxoDiff.toAdd[outPoint]
+		_, isInDiffToRemove := dus.utxoDiff.toRemove[outPoint]
 		if (!isInBase && !isInDiffToAdd) || isInDiffToRemove {
 			return false
 		}
@@ -200,55 +209,47 @@ func (u *diffUTXOSet) verifyTx(tx *wire.MsgTx) bool {
 }
 
 // meldToBase updates the base fullUTXOSet with all changes in diff
-func (u *diffUTXOSet) meldToBase() {
-	for outPoint := range u.utxoDiff.toRemove {
-		delete(u.base.utxoCollection, outPoint)
+func (dus *diffUTXOSet) meldToBase() {
+	for outPoint := range dus.utxoDiff.toRemove {
+		delete(dus.base.utxoCollection, outPoint)
 	}
 
-	for outPoint, utxoEntry := range u.utxoDiff.toAdd {
-		u.base.utxoCollection[outPoint] = utxoEntry
+	for outPoint, utxoEntry := range dus.utxoDiff.toAdd {
+		dus.base.utxoCollection[outPoint] = utxoEntry
 	}
 
-	u.utxoDiff = newUTXODiff()
+	dus.utxoDiff = newUTXODiff()
 }
 
-func (u *diffUTXOSet) String() string {
-	return fmt.Sprintf("{Base: %s, To Add: %s, To Remove: %s}", u.base, u.utxoDiff.toAdd, u.utxoDiff.toRemove)
+func (dus *diffUTXOSet) String() string {
+	return fmt.Sprintf("{Base: %s, To Add: %s, To Remove: %s}", dus.base, dus.utxoDiff.toAdd, dus.utxoDiff.toRemove)
 }
 
 // collection returns a collection of all UTXOs in this set
-func (u *diffUTXOSet) collection() utxoCollection {
-	clone := u.clone().(*diffUTXOSet)
+func (dus *diffUTXOSet) collection() utxoCollection {
+	clone := dus.clone().(*diffUTXOSet)
 	clone.meldToBase()
 
 	return clone.base.collection()
 }
 
 // clone returns a clone of this UTXO Set
-func (u *diffUTXOSet) clone() utxoSet {
-	return newDiffUTXOSet(u.base.clone().(*fullUTXOSet), u.utxoDiff.clone())
-}
-
-func newUTXOEntry(txOut *wire.TxOut) *UtxoEntry {
-	entry := new(UtxoEntry)
-	entry.amount = txOut.Value
-	entry.pkScript = txOut.PkScript
-
-	return entry
+func (dus *diffUTXOSet) clone() utxoSet {
+	return newDiffUTXOSet(dus.base.clone().(*fullUTXOSet), dus.utxoDiff.clone())
 }
 
 // iterate returns an iterator for a diffUTXOSet
-func (u *diffUTXOSet) iterate() utxoIterator {
+func (dus *diffUTXOSet) iterate() utxoIterator {
 	iterator := make(chan utxoIteratorOutput)
 
 	go func() {
-		for outPoint, entry := range u.base.utxoCollection {
-			if _, ok := u.utxoDiff.toRemove[outPoint]; !ok {
+		for outPoint, entry := range dus.base.utxoCollection {
+			if _, ok := dus.utxoDiff.toRemove[outPoint]; !ok {
 				iterator <- utxoIteratorOutput{outPoint: outPoint, entry: entry}
 			}
 		}
 
-		for outPoint, entry := range u.utxoDiff.toAdd {
+		for outPoint, entry := range dus.utxoDiff.toAdd {
 			iterator <- utxoIteratorOutput{outPoint: outPoint, entry: entry}
 		}
 		close(iterator)
