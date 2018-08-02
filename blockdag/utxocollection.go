@@ -14,8 +14,8 @@ func (uc utxoCollection) String() string {
 	utxoStrings := make([]string, len(uc))
 
 	i := 0
-	for utxo := range uc.iterate() {
-		utxoStrings[i] = fmt.Sprintf("(%s, %d) => %d", utxo.outPoint.Hash, utxo.outPoint.Index, utxo.entry.amount)
+	for outPoint, utxoEntry := range uc {
+		utxoStrings[i] = fmt.Sprintf("(%s, %d) => %d", outPoint.Hash, outPoint.Index, utxoEntry.amount)
 		i++
 	}
 

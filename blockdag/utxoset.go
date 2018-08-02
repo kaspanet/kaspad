@@ -6,6 +6,15 @@ import (
 	"errors"
 )
 
+// utxoIteratorOutput represents all fields of a single UTXO, to be returned by an iterator
+type utxoIteratorOutput struct {
+	outPoint wire.OutPoint
+	entry    *UtxoEntry
+}
+
+// utxoIterator is used to iterate over a utxoSet
+type utxoIterator <-chan utxoIteratorOutput
+
 // utxoSet represents a set of unspent transaction outputs
 type utxoSet interface {
 	fmt.Stringer
@@ -89,6 +98,21 @@ func (u *fullUTXOSet) collection() utxoCollection {
 // clone returns a clone of this utxoSet
 func (u *fullUTXOSet) clone() utxoSet {
 	return &fullUTXOSet{utxoCollection: u.utxoCollection.clone()}
+}
+
+// iterate returns an iterator for a fullUTXOSet
+func (u *fullUTXOSet) iterate() utxoIterator {
+	iterator := make(chan utxoIteratorOutput)
+
+	go func() {
+		for outPoint, entry := range u.utxoCollection {
+			iterator <- utxoIteratorOutput{outPoint: outPoint, entry: entry}
+		}
+
+		close(iterator)
+	}()
+
+	return iterator
 }
 
 // diffUTXOSet represents a utxoSet with a base fullUTXOSet and a UTXODiff
@@ -211,4 +235,24 @@ func newUTXOEntry(txOut *wire.TxOut) *UtxoEntry {
 	entry.pkScript = txOut.PkScript
 
 	return entry
+}
+
+// iterate returns an iterator for a diffUTXOSet
+func (u *diffUTXOSet) iterate() utxoIterator {
+	iterator := make(chan utxoIteratorOutput)
+
+	go func() {
+		for outPoint, entry := range u.base.utxoCollection {
+			if _, ok := u.utxoDiff.toRemove[outPoint]; !ok {
+				iterator <- utxoIteratorOutput{outPoint: outPoint, entry: entry}
+			}
+		}
+
+		for outPoint, entry := range u.utxoDiff.toAdd {
+			iterator <- utxoIteratorOutput{outPoint: outPoint, entry: entry}
+		}
+		close(iterator)
+	}()
+
+	return iterator
 }
