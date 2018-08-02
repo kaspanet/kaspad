@@ -139,10 +139,7 @@ func initBlockNode(node *blockNode, blockHeader *wire.BlockHeader, parents block
 	}
 	if len(parents) > 0 {
 		addNodeAsChildToParents(node)
-		blues, selectedParent, score := phantom(node, phantomK)
-		node.blues = blues
-		node.selectedParent = selectedParent
-		node.blueScore = score
+		node.blues, node.selectedParent, node.blueScore = phantom(node, phantomK)
 		node.height = calculateNodeHeight(node)
 		node.workSum = node.workSum.Add(node.selectedParent.workSum, node.workSum)
 	}

@@ -14,7 +14,7 @@ import (
 
 type testBlockData struct {
 	parents                []string
-	id                     string
+	id                     string //id is a virtual entity that is used only for tests so we can define relations between blocks without knowing their hash
 	expectedScore          uint64
 	expectedSelectedParent string
 	expectedBlues          []string
@@ -25,7 +25,7 @@ type hashIDPair struct {
 	id   string
 }
 
-func TestBlues(t *testing.T) {
+func TestPhantom(t *testing.T) {
 	netParams := dagconfig.SimNetParams
 
 	blockVersion := int32(0x20000000)
@@ -116,7 +116,6 @@ func TestBlues(t *testing.T) {
 		},
 		{
 			//block hash order:DQKRLHOEBSIGUJNPCMTAFV
-			// expectedReds: []string{},
 			k:              2,
 			virtualBlockID: "V",
 			expectedReds:   []string{"D", "J", "P"},
@@ -440,7 +439,10 @@ func TestBlues(t *testing.T) {
 			},
 		},
 		{
-			//Secret mining attack
+			//Secret mining attack: The attacker is mining blocks B,C,D,E,F,G,T in secret without propagating them,
+			//so all blocks except T should be red, because they don't follow the rules of
+			//PHANTOM that require you to point to all the parents that you know, and propagate your block as soon as it's mined
+
 			//Block hash order: HRTGMKQBXDWSICYFONUPLEAJZ
 			k:              1,
 			virtualBlockID: "Y",
@@ -617,7 +619,10 @@ func TestBlues(t *testing.T) {
 			},
 		},
 		{
-			//Censorship mining attack
+			//Censorship mining attack: The attacker is mining blocks B,C,D,E,F,G in secret without propagating them,
+			//so all blocks except B should be red, because they don't follow the rules of
+			//PHANTOM that require you to point to all the parents that you know
+
 			//Block hash order:WZHOGBJMDSICRUYKTFQLEAPXN
 			k:              1,
 			virtualBlockID: "Y",
@@ -846,18 +851,6 @@ func TestBlues(t *testing.T) {
 
 		reds := make(map[string]bool)
 
-		checkReds := func() bool {
-			if len(test.expectedReds) != len(reds) {
-				return false
-			}
-			for _, redID := range test.expectedReds {
-				if !reds[redID] {
-					return false
-				}
-			}
-			return true
-		}
-
 		for id := range blockIDMap {
 			reds[id] = true
 		}
@@ -870,7 +863,7 @@ func TestBlues(t *testing.T) {
 				delete(reds, blueID)
 			}
 		}
-		if !checkReds() {
+		if !checkReds(test.expectedReds, reds) {
 			redsIDs := make([]string, 0, len(reds))
 			for id := range reds {
 				redsIDs = append(redsIDs, id)
@@ -881,4 +874,16 @@ func TestBlues(t *testing.T) {
 		}
 
 	}
+}
+
+func checkReds(expectedReds []string, reds map[string]bool) bool {
+	if len(expectedReds) != len(reds) {
+		return false
+	}
+	for _, redID := range expectedReds {
+		if !reds[redID] {
+			return false
+		}
+	}
+	return true
 }

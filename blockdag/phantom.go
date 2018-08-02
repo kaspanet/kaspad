@@ -4,7 +4,18 @@ import (
 	"github.com/daglabs/btcd/dagconfig/daghash"
 )
 
-// phantom calculates and returns the block's blue set, selected parent and blue score
+// phantom calculates and returns the block's blue set, selected parent and blue score.
+// Chain start is determined by going down the DAG through the selected path
+// (follow the selected parent of each block) k + 1 steps.
+// The blue set of a block are all blue blocks in it's past.
+// To optimize memory usage, for each block we are storing only the blue blocks in
+// it's selected parent's anticone that are in the future of the chain start
+// as well as the selected parent itself - the rest of the
+// blue set can be restored by traversing the selected parent chain and combining
+// the .blues of all blocks in it.
+// The blue score is the total number of blocks in this block's blue set
+// of the selected parent. (the blue score of the genesis block is defined as 0)
+// The selected parent is chosen by determining which block's parent will give this block the highest blue score.
 func phantom(block *blockNode, k uint32) (blues []*blockNode, selectedParent *blockNode, score uint64) {
 	bestScore := uint64(0)
 	var bestParent *blockNode
@@ -27,7 +38,7 @@ func phantom(block *blockNode, k uint32) (blues []*blockNode, selectedParent *bl
 	return bestBlues, bestParent, bestScore
 }
 
-// digToChainStart digs through the chain and returns the block in depth k+1
+// digToChainStart digs through the selected path and returns the block in depth k+1
 func digToChainStart(parent *blockNode, k uint32) *blockNode {
 	current := parent
 
@@ -62,6 +73,7 @@ func blueCandidates(chainStart *blockNode) blockSet {
 	return candidates
 }
 
+//traverseCandidates returns all the blocks that are in the future of the chain start and in the anticone of the selected parent
 func traverseCandidates(newBlock *blockNode, candidates blockSet, selectedParent *blockNode) []*blockNode {
 	blues := []*blockNode{}
 	selectedParentPast := newSet()
