@@ -41,6 +41,8 @@ var (
 	simNetPowLimit = new(big.Int).Sub(new(big.Int).Lsh(bigOne, 255), bigOne)
 )
 
+const phantomK = 10
+
 // Checkpoint identifies a known good point in the block chain.  Using
 // checkpoints allows a few optimizations for old blocks during initial download
 // and also prevents forks from old blocks.
@@ -149,6 +151,8 @@ func (prefix Bech32Prefix) String() string {
 // used by Bitcoin applications to differentiate networks as well as addresses
 // and keys for one network from those intended for use on another network.
 type Params struct {
+	K uint32
+
 	// Name defines a human-readable identifier for the network.
 	Name string
 
@@ -259,6 +263,7 @@ type Params struct {
 
 // MainNetParams defines the network parameters for the main Bitcoin network.
 var MainNetParams = Params{
+	K:           phantomK,
 	Name:        "mainnet",
 	Net:         wire.MainNet,
 	DefaultPort: "8333",
@@ -345,6 +350,7 @@ var MainNetParams = Params{
 // Bitcoin network.  Not to be confused with the test Bitcoin network (version
 // 3), this network is sometimes simply called "testnet".
 var RegressionNetParams = Params{
+	K:           phantomK,
 	Name:        "regtest",
 	Net:         wire.TestNet,
 	DefaultPort: "18444",
@@ -405,6 +411,7 @@ var RegressionNetParams = Params{
 // (version 3).  Not to be confused with the regression test network, this
 // network is sometimes simply called "testnet".
 var TestNet3Params = Params{
+	K:           phantomK,
 	Name:        "testnet3",
 	Net:         wire.TestNet3,
 	DefaultPort: "18333",
@@ -486,6 +493,7 @@ var TestNet3Params = Params{
 // following normal discovery rules.  This is important as otherwise it would
 // just turn into another public testnet.
 var SimNetParams = Params{
+	K:           phantomK,
 	Name:        "simnet",
 	Net:         wire.SimNet,
 	DefaultPort: "18555",

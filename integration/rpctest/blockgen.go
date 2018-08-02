@@ -44,7 +44,7 @@ func solveBlock(header *wire.BlockHeader, targetDifficulty *big.Int) bool {
 			default:
 				hdr.Nonce = i
 				hash := hdr.BlockHash()
-				if blockdag.HashToBig(&hash).Cmp(targetDifficulty) <= 0 {
+				if daghash.HashToBig(&hash).Cmp(targetDifficulty) <= 0 {
 					select {
 					case results <- sbResult{true, i}:
 						return

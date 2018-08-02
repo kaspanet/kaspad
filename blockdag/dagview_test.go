@@ -5,11 +5,11 @@
 package blockdag
 
 import (
-	"fmt"
 	"math/rand"
 	"reflect"
 	"testing"
 
+	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/wire"
 )
 
@@ -28,15 +28,10 @@ func chainedNodes(parents blockSet, numNodes int) []*blockNode {
 		// synthetic tests to work.
 		header := wire.BlockHeader{Nonce: testNoncePrng.Uint32()}
 		header.PrevBlocks = tips.hashes()
-		nodes[i] = newBlockNode(&header, tips)
+		nodes[i] = newBlockNode(&header, tips, dagconfig.SimNetParams.K)
 		tips = setFromSlice(nodes[i])
 	}
 	return nodes
-}
-
-// String returns the block node as a human-readable name.
-func (node blockNode) String() string {
-	return fmt.Sprintf("%s(%d)", node.hash, node.height)
 }
 
 // tstTip is a convenience function to grab the tip of a chain of block nodes
