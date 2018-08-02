@@ -7,12 +7,8 @@ import (
 	"github.com/daglabs/btcd/wire"
 )
 
+// TestUTXODiff makes sure that utxoDiff creation, cloning, and string representations work as expected.
 func TestUTXODiff(t *testing.T) {
-	newDiff := newUTXODiff()
-	if len(newDiff.toAdd) != 0 || len(newDiff.toRemove) != 0 {
-		t.Errorf("new diff is not empty")
-	}
-
 	hash0, _ := daghash.NewHashFromStr("0000000000000000000000000000000000000000000000000000000000000000")
 	hash1, _ := daghash.NewHashFromStr("1111111111111111111111111111111111111111111111111111111111111111")
 	outPoint0 := *wire.NewOutPoint(hash0, 0)
@@ -24,12 +20,23 @@ func TestUTXODiff(t *testing.T) {
 		toRemove: utxoCollection{outPoint1: utxoEntry1},
 	}
 
+	// Test utxoDiff creation
+	newDiff := newUTXODiff()
+	if len(newDiff.toAdd) != 0 || len(newDiff.toRemove) != 0 {
+		t.Errorf("new diff is not empty")
+	}
+
+	// Test utxoDiff cloning
 	clonedDiff := *diff.clone()
+	if &clonedDiff == &diff {
+		t.Errorf("cloned diff is reference-equal to the original")
+	}
 	if !reflect.DeepEqual(clonedDiff, diff) {
 		t.Errorf("cloned diff not equal to the original"+
 			"Original: \"%v\", cloned: \"%v\".", diff, clonedDiff)
 	}
 
+	// Test utxoDiff string representation
 	expectedDiffString := "toAdd: [ (0000000000000000000000000000000000000000000000000000000000000000, 0) => 10 ]; toRemove: [ (1111111111111111111111111111111111111111111111111111111111111111, 0) => 20 ]"
 	diffString := clonedDiff.String()
 	if diffString != expectedDiffString {

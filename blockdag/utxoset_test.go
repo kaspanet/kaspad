@@ -1,10 +1,10 @@
 package blockdag
 
 import (
-	"testing"
 	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/wire"
 	"reflect"
+	"testing"
 )
 
 func TestFullUTXOSet(t *testing.T) {
@@ -312,9 +312,9 @@ func TestDiffUTXOSet_addTx(t *testing.T) {
 		expectedSet *diffUTXOSet
 	}{
 		{
-			name: "add coinbase transaction to empty set",
+			name:     "add coinbase transaction to empty set",
 			startSet: newDiffUTXOSet(newFullUTXOSet(), newUTXODiff()),
-			toAdd: []*wire.MsgTx{transaction0},
+			toAdd:    []*wire.MsgTx{transaction0},
 			expectedSet: &diffUTXOSet{
 				base: &fullUTXOSet{utxoCollection: utxoCollection{}},
 				utxoDiff: &utxoDiff{
@@ -324,9 +324,9 @@ func TestDiffUTXOSet_addTx(t *testing.T) {
 			},
 		},
 		{
-			name: "add regular transaction to empty set",
+			name:     "add regular transaction to empty set",
 			startSet: newDiffUTXOSet(newFullUTXOSet(), newUTXODiff()),
-			toAdd: []*wire.MsgTx{transaction1},
+			toAdd:    []*wire.MsgTx{transaction1},
 			expectedSet: &diffUTXOSet{
 				base: &fullUTXOSet{utxoCollection: utxoCollection{}},
 				utxoDiff: &utxoDiff{

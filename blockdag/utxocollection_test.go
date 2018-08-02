@@ -49,6 +49,9 @@ func TestUTXOCollection(t *testing.T) {
 				"Expected: \"%s\", got: \"%s\".", test.name, test.expectedString, collectionString)
 		}
 		collectionClone := test.collection.clone()
+		if &collectionClone == &test.collection {
+			t.Errorf("collection is reference-equal to its clone in test \"%s\". ")
+		}
 		if !reflect.DeepEqual(test.collection, collectionClone) {
 			t.Errorf("collection is not equal to its clone in test \"%s\". "+
 				"Expected: \"%s\", got: \"%s\".", test.name, collectionString, collectionClone.String())

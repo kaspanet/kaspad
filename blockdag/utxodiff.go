@@ -20,7 +20,9 @@ func newUTXODiff() *utxoDiff {
 }
 
 // diffFrom returns a new utxoDiff with the difference between this utxoDiff and another
-// Assumes that if a txOut exists in both utxoDiffs, its underlying values would be the same
+// Assumes that:
+// Both utxoDiffs are from the same base
+// If a txOut exists in both utxoDiffs, its underlying values would be the same
 func (d *utxoDiff) diffFrom(other *utxoDiff) (*utxoDiff, error) {
 	result := newUTXODiff()
 
