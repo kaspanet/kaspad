@@ -278,19 +278,16 @@ func TestUTXOSetDiffRules(t *testing.T) {
 }
 
 func TestDiffUTXOSet_addTx(t *testing.T) {
-	hash0, _ := daghash.NewHashFromStr("0000000000000000000000000000000000000000000000000000000000000000")
-	outPoint0 := *wire.NewOutPoint(hash0, 0)
-	txIn0 := &wire.TxIn{SignatureScript: []byte{}, PreviousOutPoint: wire.OutPoint{Hash: *hash0, Index: 0}, Sequence: 0}
-	txOut0 := &wire.TxOut{PkScript: []byte{}, Value: 10}
+	txOut0 := &wire.TxOut{PkScript: []byte{0}, Value: 10}
 	utxoEntry0 := newUTXOEntry(txOut0)
 	transaction0 := wire.NewMsgTx(1)
-	transaction0.TxIn = []*wire.TxIn{txIn0}
+	transaction0.TxIn = []*wire.TxIn{}
 	transaction0.TxOut = []*wire.TxOut{txOut0}
 
 	hash1 := transaction0.TxHash()
 	outPoint1 := *wire.NewOutPoint(&hash1, 0)
 	txIn1 := &wire.TxIn{SignatureScript: []byte{}, PreviousOutPoint: wire.OutPoint{Hash: hash1, Index: 0}, Sequence: 0}
-	txOut1 := &wire.TxOut{PkScript: []byte{}, Value: 20}
+	txOut1 := &wire.TxOut{PkScript: []byte{1}, Value: 20}
 	utxoEntry1 := newUTXOEntry(txOut1)
 	transaction1 := wire.NewMsgTx(1)
 	transaction1.TxIn = []*wire.TxIn{txIn1}
@@ -298,6 +295,15 @@ func TestDiffUTXOSet_addTx(t *testing.T) {
 
 	hash2 := transaction1.TxHash()
 	outPoint2 := *wire.NewOutPoint(&hash2, 0)
+	txIn2 := &wire.TxIn{SignatureScript: []byte{}, PreviousOutPoint: wire.OutPoint{Hash: hash2, Index: 0}, Sequence: 0}
+	txOut2 := &wire.TxOut{PkScript: []byte{2}, Value: 30}
+	utxoEntry2 := newUTXOEntry(txOut2)
+	transaction2 := wire.NewMsgTx(1)
+	transaction2.TxIn = []*wire.TxIn{txIn2}
+	transaction2.TxOut = []*wire.TxOut{txOut2}
+
+	hash3 := transaction2.TxHash()
+	outPoint3 := *wire.NewOutPoint(&hash3, 0)
 
 	tests := []struct {
 		name        string
@@ -306,9 +312,21 @@ func TestDiffUTXOSet_addTx(t *testing.T) {
 		expectedSet *diffUTXOSet
 	}{
 		{
-			name: "add transaction to empty set",
+			name: "add coinbase transaction to empty set",
 			startSet: newDiffUTXOSet(newFullUTXOSet(), newUTXODiff()),
 			toAdd: []*wire.MsgTx{transaction0},
+			expectedSet: &diffUTXOSet{
+				base: &fullUTXOSet{utxoCollection: utxoCollection{}},
+				utxoDiff: &utxoDiff{
+					toAdd:    utxoCollection{outPoint1: utxoEntry0},
+					toRemove: utxoCollection{},
+				},
+			},
+		},
+		{
+			name: "add regular transaction to empty set",
+			startSet: newDiffUTXOSet(newFullUTXOSet(), newUTXODiff()),
+			toAdd: []*wire.MsgTx{transaction1},
 			expectedSet: &diffUTXOSet{
 				base: &fullUTXOSet{utxoCollection: utxoCollection{}},
 				utxoDiff: &utxoDiff{
@@ -318,51 +336,51 @@ func TestDiffUTXOSet_addTx(t *testing.T) {
 			},
 		},
 		{
-			name: "add transaction to set with the tx in base",
+			name: "add transaction to set with its input in base",
 			startSet: &diffUTXOSet{
-				base: &fullUTXOSet{utxoCollection: utxoCollection{outPoint0: utxoEntry0}},
+				base: &fullUTXOSet{utxoCollection: utxoCollection{outPoint1: utxoEntry0}},
 				utxoDiff: &utxoDiff{
 					toAdd:    utxoCollection{},
 					toRemove: utxoCollection{},
 				},
 			},
-			toAdd: []*wire.MsgTx{transaction0},
+			toAdd: []*wire.MsgTx{transaction1},
 			expectedSet: &diffUTXOSet{
-				base: &fullUTXOSet{utxoCollection: utxoCollection{outPoint0: utxoEntry0}},
+				base: &fullUTXOSet{utxoCollection: utxoCollection{outPoint1: utxoEntry0}},
 				utxoDiff: &utxoDiff{
-					toAdd:    utxoCollection{outPoint1: utxoEntry0},
-					toRemove: utxoCollection{outPoint0: utxoEntry0},
-				},
-			},
-		},
-		{
-			name: "add transaction to set with the tx in diff toAdd",
-			startSet: &diffUTXOSet{
-				base: newFullUTXOSet(),
-				utxoDiff: &utxoDiff{
-					toAdd:    utxoCollection{outPoint0: utxoEntry0},
-					toRemove: utxoCollection{},
-				},
-			},
-			toAdd: []*wire.MsgTx{transaction0},
-			expectedSet: &diffUTXOSet{
-				base: newFullUTXOSet(),
-				utxoDiff: &utxoDiff{
-					toAdd:    utxoCollection{outPoint1: utxoEntry0},
-					toRemove: utxoCollection{},
-				},
-			},
-		},
-		{
-			name: "add transaction to set with the tx in diff toAdd and its hash in diff toRemove",
-			startSet: &diffUTXOSet{
-				base: newFullUTXOSet(),
-				utxoDiff: &utxoDiff{
-					toAdd:    utxoCollection{outPoint0: utxoEntry0},
+					toAdd:    utxoCollection{outPoint2: utxoEntry1},
 					toRemove: utxoCollection{outPoint1: utxoEntry0},
 				},
 			},
-			toAdd: []*wire.MsgTx{transaction0},
+		},
+		{
+			name: "add transaction to set with its input in diff toAdd",
+			startSet: &diffUTXOSet{
+				base: newFullUTXOSet(),
+				utxoDiff: &utxoDiff{
+					toAdd:    utxoCollection{outPoint1: utxoEntry0},
+					toRemove: utxoCollection{},
+				},
+			},
+			toAdd: []*wire.MsgTx{transaction1},
+			expectedSet: &diffUTXOSet{
+				base: newFullUTXOSet(),
+				utxoDiff: &utxoDiff{
+					toAdd:    utxoCollection{outPoint2: utxoEntry1},
+					toRemove: utxoCollection{},
+				},
+			},
+		},
+		{
+			name: "add transaction to set with its input in diff toAdd and its output in diff toRemove",
+			startSet: &diffUTXOSet{
+				base: newFullUTXOSet(),
+				utxoDiff: &utxoDiff{
+					toAdd:    utxoCollection{outPoint1: utxoEntry0},
+					toRemove: utxoCollection{outPoint2: utxoEntry1},
+				},
+			},
+			toAdd: []*wire.MsgTx{transaction1},
 			expectedSet: &diffUTXOSet{
 				base: newFullUTXOSet(),
 				utxoDiff: &utxoDiff{
@@ -372,20 +390,20 @@ func TestDiffUTXOSet_addTx(t *testing.T) {
 			},
 		},
 		{
-			name: "add two transactions, one spending the other, to set with the first tx in base",
+			name: "add two transactions, one spending the other, to set with the first input in base",
 			startSet: &diffUTXOSet{
-				base: &fullUTXOSet{utxoCollection: utxoCollection{outPoint0: utxoEntry0}},
+				base: &fullUTXOSet{utxoCollection: utxoCollection{outPoint1: utxoEntry0}},
 				utxoDiff: &utxoDiff{
 					toAdd:    utxoCollection{},
 					toRemove: utxoCollection{},
 				},
 			},
-			toAdd: []*wire.MsgTx{transaction0, transaction1},
+			toAdd: []*wire.MsgTx{transaction1, transaction2},
 			expectedSet: &diffUTXOSet{
-				base: &fullUTXOSet{utxoCollection: utxoCollection{outPoint0: utxoEntry0}},
+				base: &fullUTXOSet{utxoCollection: utxoCollection{outPoint1: utxoEntry0}},
 				utxoDiff: &utxoDiff{
-					toAdd:    utxoCollection{outPoint2: utxoEntry1},
-					toRemove: utxoCollection{outPoint0: utxoEntry0},
+					toAdd:    utxoCollection{outPoint3: utxoEntry2},
+					toRemove: utxoCollection{outPoint1: utxoEntry0},
 				},
 			},
 		},
