@@ -345,6 +345,7 @@ func TestUTXODiffRules(t *testing.T) {
 	}
 }
 
+// TestFullUTXOSet makes sure that fullUTXOSet is working as expected.
 func TestFullUTXOSet(t *testing.T) {
 	hash0, _ := daghash.NewHashFromStr("0000000000000000000000000000000000000000000000000000000000000000")
 	hash1, _ := daghash.NewHashFromStr("1111111111111111111111111111111111111111111111111111111111111111")
@@ -359,11 +360,13 @@ func TestFullUTXOSet(t *testing.T) {
 		toRemove: utxoCollection{outPoint1: utxoEntry1},
 	}
 
+	// Test fullUTXOSet creation
 	emptySet := newFullUTXOSet()
 	if len(emptySet.collection()) != 0 {
 		t.Errorf("new set is not empty")
 	}
 
+	// Test fullUTXOSet withDiff
 	withDiffResult, err := emptySet.withDiff(diff)
 	if err != nil {
 		t.Errorf("withDiff unexpectedly failed")
@@ -376,6 +379,7 @@ func TestFullUTXOSet(t *testing.T) {
 		t.Errorf("withDiff is of unexpected composition")
 	}
 
+	// Test fullUTXOSet addTx
 	txIn0 := &wire.TxIn{SignatureScript: []byte{}, PreviousOutPoint: wire.OutPoint{Hash: *hash0, Index: 0}, Sequence: 0}
 	transaction0 := wire.NewMsgTx(1)
 	transaction0.TxIn = []*wire.TxIn{txIn0}
@@ -388,15 +392,22 @@ func TestFullUTXOSet(t *testing.T) {
 		t.Errorf("addTx unexpectedly failed")
 	}
 
+	// Test fullUTXOSet collection
 	if !reflect.DeepEqual(emptySet.collection(), emptySet.utxoCollection) {
 		t.Errorf("collection does not equal the set's utxoCollection")
 	}
 
-	if !reflect.DeepEqual(emptySet.clone(), emptySet) {
+	// Test fullUTXOSet cloning
+	clonedEmptySet := emptySet.clone().(*fullUTXOSet)
+	if !reflect.DeepEqual(clonedEmptySet, emptySet) {
 		t.Errorf("clone does not equal the original set")
+	}
+	if clonedEmptySet == emptySet {
+		t.Errorf("cloned set is reference-equal to the original")
 	}
 }
 
+// TestDiffUTXOSet makes sure that diffUTXOSet is working as expected.
 func TestDiffUTXOSet(t *testing.T) {
 	hash0, _ := daghash.NewHashFromStr("0000000000000000000000000000000000000000000000000000000000000000")
 	hash1, _ := daghash.NewHashFromStr("1111111111111111111111111111111111111111111111111111111111111111")
@@ -411,11 +422,13 @@ func TestDiffUTXOSet(t *testing.T) {
 		toRemove: utxoCollection{outPoint1: utxoEntry1},
 	}
 
+	// Test diffUTXOSet creation
 	emptySet := newDiffUTXOSet(newFullUTXOSet(), newUTXODiff())
 	if len(emptySet.collection()) != 0 {
 		t.Errorf("new set is not empty")
 	}
 
+	// Test diffUTXOSet withDiff
 	withDiffResult, err := emptySet.withDiff(diff)
 	if err != nil {
 		t.Errorf("withDiff unexpectedly failed")
@@ -433,16 +446,17 @@ func TestDiffUTXOSet(t *testing.T) {
 		t.Errorf("withDiff unexpectedly succeeded")
 	}
 
+	// Given a diffSet, each case tests that meldToBase, String, collection, and cloning work as expected
 	tests := []struct {
 		name               string
-		startSet           *diffUTXOSet
+		diffSet            *diffUTXOSet
 		expectedMeldSet    *diffUTXOSet
 		expectedString     string
 		expectedCollection utxoCollection
 	}{
 		{
 			name: "empty base, empty diff",
-			startSet: &diffUTXOSet{
+			diffSet: &diffUTXOSet{
 				base: newFullUTXOSet(),
 				utxoDiff: &utxoDiff{
 					toAdd:    utxoCollection{},
@@ -461,7 +475,7 @@ func TestDiffUTXOSet(t *testing.T) {
 		},
 		{
 			name: "empty base, one member in diff toAdd",
-			startSet: &diffUTXOSet{
+			diffSet: &diffUTXOSet{
 				base: newFullUTXOSet(),
 				utxoDiff: &utxoDiff{
 					toAdd:    utxoCollection{outPoint0: utxoEntry0},
@@ -480,7 +494,7 @@ func TestDiffUTXOSet(t *testing.T) {
 		},
 		{
 			name: "empty base, one member in diff toRemove",
-			startSet: &diffUTXOSet{
+			diffSet: &diffUTXOSet{
 				base: newFullUTXOSet(),
 				utxoDiff: &utxoDiff{
 					toAdd:    utxoCollection{},
@@ -499,7 +513,7 @@ func TestDiffUTXOSet(t *testing.T) {
 		},
 		{
 			name: "one member in base toAdd, one member in diff toAdd",
-			startSet: &diffUTXOSet{
+			diffSet: &diffUTXOSet{
 				base: &fullUTXOSet{utxoCollection: utxoCollection{outPoint0: utxoEntry0}},
 				utxoDiff: &utxoDiff{
 					toAdd:    utxoCollection{outPoint1: utxoEntry1},
@@ -526,7 +540,7 @@ func TestDiffUTXOSet(t *testing.T) {
 		},
 		{
 			name: "one member in base toAdd, same one member in diff toRemove",
-			startSet: &diffUTXOSet{
+			diffSet: &diffUTXOSet{
 				base: &fullUTXOSet{utxoCollection: utxoCollection{outPoint0: utxoEntry0}},
 				utxoDiff: &utxoDiff{
 					toAdd:    utxoCollection{},
@@ -548,71 +562,85 @@ func TestDiffUTXOSet(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		meldSet := test.startSet.clone().(*diffUTXOSet)
+		// Test meldToBase
+		meldSet := test.diffSet.clone().(*diffUTXOSet)
 		meldSet.meldToBase()
 		if !reflect.DeepEqual(meldSet, test.expectedMeldSet) {
 			t.Errorf("unexpected melded set in test \"%s\". "+
 				"Expected: \"%v\", got: \"%v\".", test.name, test.expectedMeldSet, meldSet)
 		}
 
-		setString := test.startSet.String()
+		// Test string representation
+		setString := test.diffSet.String()
 		if setString != test.expectedString {
 			t.Errorf("unexpected string in test \"%s\". "+
 				"Expected: \"%s\", got: \"%s\".", test.name, test.expectedString, setString)
 		}
 
-		setCollection := test.startSet.collection()
+		// Test collection
+		setCollection := test.diffSet.collection()
 		if !reflect.DeepEqual(setCollection, test.expectedCollection) {
 			t.Errorf("unexpected set collection in test \"%s\". "+
 				"Expected: \"%v\", got: \"%v\".", test.name, test.expectedCollection, setCollection)
 		}
 
-		setClone := test.startSet.clone()
-		if !reflect.DeepEqual(setClone, test.startSet) {
+		// Test cloning
+		clonedSet := test.diffSet.clone().(*diffUTXOSet)
+		if !reflect.DeepEqual(clonedSet, test.diffSet) {
 			t.Errorf("unexpected set clone in test \"%s\". "+
-				"Expected: \"%v\", got: \"%v\".", test.name, test.startSet, setClone)
+				"Expected: \"%v\", got: \"%v\".", test.name, test.diffSet, clonedSet)
+		}
+		if clonedSet == test.diffSet {
+			t.Errorf("cloned set is reference-equal to the original")
 		}
 	}
 }
 
+// TestUTXOSetDiffRules makes sure that utxoSet diffFrom rules are followed.
+// The rules are:
+// 1. Neither fullUTXOSet nor diffUTXOSet can diffFrom a fullUTXOSet.
+// 2. fullUTXOSet cannot diffFrom a diffUTXOSet with a base other that itself.
+// 3. diffUTXOSet cannot diffFrom a diffUTXOSet with a different base.
 func TestUTXOSetDiffRules(t *testing.T) {
 	fullSet := newFullUTXOSet()
 	diffSet := newDiffUTXOSet(fullSet, newUTXODiff())
+
+	// Test cases are similar for both fullUTXOSet and diffUTXOSet
 	run := func(set utxoSet) {
 		tests := []struct {
-			name                string
-			diffSet             utxoSet
-			expectedDiffSuccess bool
+			name            string
+			diffSet         utxoSet
+			expectedSuccess bool
 		}{
 			{
-				name:                "diff against fullSet",
-				diffSet:             newFullUTXOSet(),
-				expectedDiffSuccess: false,
+				name:            "diff from fullSet",
+				diffSet:         newFullUTXOSet(),
+				expectedSuccess: false,
 			},
 			{
-				name:                "diff against diffSet with different base",
-				diffSet:             newDiffUTXOSet(newFullUTXOSet(), newUTXODiff()),
-				expectedDiffSuccess: false,
+				name:            "diff from diffSet with different base",
+				diffSet:         newDiffUTXOSet(newFullUTXOSet(), newUTXODiff()),
+				expectedSuccess: false,
 			},
 			{
-				name:                "diff against diffSet with same base",
-				diffSet:             newDiffUTXOSet(fullSet, newUTXODiff()),
-				expectedDiffSuccess: true,
+				name:            "diff from diffSet with same base",
+				diffSet:         newDiffUTXOSet(fullSet, newUTXODiff()),
+				expectedSuccess: true,
 			},
 		}
 
 		for _, test := range tests {
 			_, err := set.diffFrom(test.diffSet)
-			diffSuccess := err == nil
-			if diffSuccess != test.expectedDiffSuccess {
-				t.Errorf("unexpected diff success in test \"%s\". "+
-					"Expected: \"%t\", got: \"%t\".", test.name, test.expectedDiffSuccess, diffSuccess)
+			success := err == nil
+			if success != test.expectedSuccess {
+				t.Errorf("unexpected diffFrom success in test \"%s\". "+
+					"Expected: \"%t\", got: \"%t\".", test.name, test.expectedSuccess, success)
 			}
 		}
 	}
 
-	run(fullSet)
-	run(diffSet)
+	run(fullSet) // Perform the test cases above on a fullUTXOSet
+	run(diffSet) // Perform the test cases above on a diffUTXOSet
 }
 
 func TestDiffUTXOSet_addTx(t *testing.T) {
@@ -760,6 +788,7 @@ func TestDiffUTXOSet_addTx(t *testing.T) {
 	}
 }
 
+// TestIterate makes sure that iterating over fullUTXOSets and diffUTXOSets works as expected.
 func TestIterate(t *testing.T) {
 	hash0, _ := daghash.NewHashFromStr("0000000000000000000000000000000000000000000000000000000000000000")
 	hash1, _ := daghash.NewHashFromStr("1111111111111111111111111111111111111111111111111111111111111111")
@@ -768,6 +797,7 @@ func TestIterate(t *testing.T) {
 	utxoEntry0 := newUTXOEntry(&wire.TxOut{PkScript: []byte{}, Value: 10})
 	utxoEntry1 := newUTXOEntry(&wire.TxOut{PkScript: []byte{}, Value: 20})
 
+	// Given a utxoSet, each test case makes sure that all expectedOutputs were iterated over
 	tests := []struct {
 		name            string
 		set             utxoSet
@@ -840,22 +870,33 @@ func TestIterate(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		iteratedTimes := 0
+		// Prepare a set of expectedOutputs
 		expectedOutputSet := make(map[utxoIteratorOutput]bool)
 		for _, output := range test.expectedOutputs {
 			expectedOutputSet[output] = false
 		}
 
+		// Every iteration, increment the iteration counter and mark the output as visited
+		iteratedTimes := 0
 		for output := range test.set.iterate() {
+			// All outputs must have an entry in the expected output set
+			_, ok := expectedOutputSet[output]
+			if !ok {
+				t.Errorf("unexpected output [%v] in test \"%s\".", output, test.name)
+			}
+
 			expectedOutputSet[output] = true
 			iteratedTimes++
 		}
 
+		// Make sure that all expected outputs were visited
 		for output, wasVisited := range expectedOutputSet {
 			if !wasVisited {
 				t.Errorf("missing output [%v] in test \"%s\".", output, test.name)
 			}
 		}
+
+		// Make sure that the length equals to the length of the expected outputs
 		expectedLength := len(test.expectedOutputs)
 		if iteratedTimes != expectedLength {
 			t.Errorf("unexpected length in test \"%s\". "+
