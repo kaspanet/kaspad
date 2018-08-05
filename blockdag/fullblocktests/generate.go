@@ -342,7 +342,7 @@ func solveBlock(header *wire.BlockHeader) bool {
 			default:
 				hdr.Nonce = i
 				hash := hdr.BlockHash()
-				if blockdag.HashToBig(&hash).Cmp(
+				if daghash.HashToBig(&hash).Cmp(
 					targetDifficulty) <= 0 {
 
 					results <- sbResult{true, i}
@@ -1444,7 +1444,7 @@ func Generate(includeLargeReorg bool) (tests [][]TestInstance, err error) {
 			// a uint256 is higher than the limit.
 			b46.Header.Nonce++
 			blockHash := b46.BlockHash()
-			hashNum := blockdag.HashToBig(&blockHash)
+			hashNum := daghash.HashToBig(&blockHash)
 			if hashNum.Cmp(g.params.PowLimit) >= 0 {
 				break
 			}
