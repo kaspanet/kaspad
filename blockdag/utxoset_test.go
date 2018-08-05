@@ -102,39 +102,7 @@ func TestUTXODiff(t *testing.T) {
 }
 
 // TestUTXODiffRules makes sure that all diffFrom and withDiff rules are followed.
-// The rules could be represented on two 3 by 3 tables as follows:
-//
-// diffFrom |           | this      |           |
-// ---------+-----------+-----------+-----------+-----------
-//          |           | toAdd     | toRemove  | None
-// ---------+-----------+-----------+-----------+-----------
-// other    | toAdd     | -         | X         | toAdd
-// ---------+-----------+-----------+-----------+-----------
-//          | toRemove  | X         | -         | toRemove
-// ---------+-----------+-----------+-----------+-----------
-//          | None      | toRemove  | toAdd     | -
-//
-//
-// withDiff |           | this      |           |
-// ---------+-----------+-----------+-----------+-----------
-//          |           | toAdd     | toRemove  | None
-// ---------+-----------+-----------+-----------+-----------
-// other    | toAdd     | X         | -         | toAdd
-// ---------+-----------+-----------+-----------+-----------
-//          | toRemove  | -         | X         | toRemove
-// ---------+-----------+-----------+-----------+-----------
-//          | None      | toAdd     | toRemove  | -
-//
-// Key:
-// -		Don't add anything to the result
-// X		Return an error
-// toAdd	Add the UTXO into the toAdd collection of the result
-// toRemove	Add the UTXO into the toRemove collection of the result
-//
-// Each test case represents a cell in the two tables.
-// For example, the first case checks that between toAdd and toAdd:
-// 1. diffFrom results in nothing being added
-// 2. withDiff results in an error
+// Each test case represents a cell in the two tables outlined in the documentation for utxoDiff.
 func TestUTXODiffRules(t *testing.T) {
 	hash0, _ := daghash.NewHashFromStr("0000000000000000000000000000000000000000000000000000000000000000")
 	outPoint0 := *wire.NewOutPoint(hash0, 0)

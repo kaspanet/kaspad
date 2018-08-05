@@ -36,7 +36,43 @@ func (uc utxoCollection) clone() utxoCollection {
 	return clone
 }
 
-// utxoDiff represents a diff between two UTXO Sets
+// utxoDiff represents a diff between two UTXO Sets.
+// Its methods, diffFrom and withDiff, follow a set of rules represented by two 3 by 3 tables as follows:
+//
+// diffFrom |           | this      |           |
+// ---------+-----------+-----------+-----------+-----------
+//          |           | toAdd     | toRemove  | None
+// ---------+-----------+-----------+-----------+-----------
+// other    | toAdd     | -         | X         | toAdd
+// ---------+-----------+-----------+-----------+-----------
+//          | toRemove  | X         | -         | toRemove
+// ---------+-----------+-----------+-----------+-----------
+//          | None      | toRemove  | toAdd     | -
+//
+//
+// withDiff |           | this      |           |
+// ---------+-----------+-----------+-----------+-----------
+//          |           | toAdd     | toRemove  | None
+// ---------+-----------+-----------+-----------+-----------
+// other    | toAdd     | X         | -         | toAdd
+// ---------+-----------+-----------+-----------+-----------
+//          | toRemove  | -         | X         | toRemove
+// ---------+-----------+-----------+-----------+-----------
+//          | None      | toAdd     | toRemove  | -
+//
+// Key:
+// -		Don't add anything to the result
+// X		Return an error
+// toAdd	Add the UTXO into the toAdd collection of the result
+// toRemove	Add the UTXO into the toRemove collection of the result
+//
+// Examples:
+// 1. This diff contains a UTXO in toAdd, and the other diff contains it in toRemove
+//    diffFrom results in an error
+//    withDiff results in nothing being added
+// 2. This diff contains a UTXO in toRemove, and the other diff does not contain it
+//    diffFrom results in the UTXO being added to toAdd
+//    withDiff results in the UTXO being added to toRemove
 type utxoDiff struct {
 	toAdd    utxoCollection
 	toRemove utxoCollection
