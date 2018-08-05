@@ -643,13 +643,16 @@ func TestUTXOSetDiffRules(t *testing.T) {
 	run(diffSet) // Perform the test cases above on a diffUTXOSet
 }
 
+// TestDiffUTXOSet_addTx makes sure that diffUTXOSet addTx works as expected
 func TestDiffUTXOSet_addTx(t *testing.T) {
+	// transaction0 is coinbase. As such, it does not have any inputs
 	txOut0 := &wire.TxOut{PkScript: []byte{0}, Value: 10}
 	utxoEntry0 := newUTXOEntry(txOut0)
 	transaction0 := wire.NewMsgTx(1)
 	transaction0.TxIn = []*wire.TxIn{}
 	transaction0.TxOut = []*wire.TxOut{txOut0}
 
+	// transaction1 spends transaction0
 	hash1 := transaction0.TxHash()
 	outPoint1 := *wire.NewOutPoint(&hash1, 0)
 	txIn1 := &wire.TxIn{SignatureScript: []byte{}, PreviousOutPoint: wire.OutPoint{Hash: hash1, Index: 0}, Sequence: 0}
@@ -659,6 +662,7 @@ func TestDiffUTXOSet_addTx(t *testing.T) {
 	transaction1.TxIn = []*wire.TxIn{txIn1}
 	transaction1.TxOut = []*wire.TxOut{txOut1}
 
+	// transaction2 spends transaction1
 	hash2 := transaction1.TxHash()
 	outPoint2 := *wire.NewOutPoint(&hash2, 0)
 	txIn2 := &wire.TxIn{SignatureScript: []byte{}, PreviousOutPoint: wire.OutPoint{Hash: hash2, Index: 0}, Sequence: 0}
@@ -668,9 +672,12 @@ func TestDiffUTXOSet_addTx(t *testing.T) {
 	transaction2.TxIn = []*wire.TxIn{txIn2}
 	transaction2.TxOut = []*wire.TxOut{txOut2}
 
+	// outpoint3 is the outpoint for transaction2
 	hash3 := transaction2.TxHash()
 	outPoint3 := *wire.NewOutPoint(&hash3, 0)
 
+	// For each test case,
+	// add all transactions in toAdd to a given startSet and make sure the result equals expectedSet
 	tests := []struct {
 		name        string
 		startSet    *diffUTXOSet
@@ -777,10 +784,13 @@ func TestDiffUTXOSet_addTx(t *testing.T) {
 
 	for _, test := range tests {
 		diffSet := test.startSet.clone()
+
+		// Apply all transactions, in order, to diffSet
 		for _, transaction := range test.toAdd {
 			diffSet.addTx(transaction)
 		}
 
+		// Make sure that the result diffSet equals to the expectedSet
 		if !reflect.DeepEqual(diffSet, test.expectedSet) {
 			t.Errorf("unexpected diffSet in test \"%s\". "+
 				"Expected: \"%v\", got: \"%v\".", test.name, test.expectedSet, diffSet)
