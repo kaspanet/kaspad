@@ -222,6 +222,17 @@ func newUTXOEntry(txOut *wire.TxOut) *UtxoEntry {
 }
 
 // utxoSet represents a set of unspent transaction outputs
+// Every DAG has exactly one fullUTXOSet.
+// When a new block arrives, it is validated and applied to the fullUTXOSet in the following manner:
+// 1. Get the block's PastUTXO:
+// 2. Add all the block's transactions to the block's PastUTXO
+// 3. For each of the block's parents,
+// 3.1. Rebuild their utxoDiff
+// 3.2. Set the block as their diffChild
+// 4. Create and initialize a new virtual block
+// 5. Get the new virtual's PastUTXO
+// 6. Rebuild the utxoDiff for all the tips
+// 7. Convert (meld) the new virtual's diffUTXOSet into a fullUTXOSet. This updates the DAG's fullUTXOSet
 type utxoSet interface {
 	fmt.Stringer
 	diffFrom(other utxoSet) (*utxoDiff, error)
