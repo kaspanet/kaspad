@@ -7,6 +7,7 @@ import (
 	"testing"
 )
 
+// TestUTXOCollection makes sure that utxoCollection cloning and string representations work as expected.
 func TestUTXOCollection(t *testing.T) {
 	hash0, _ := daghash.NewHashFromStr("0000000000000000000000000000000000000000000000000000000000000000")
 	hash1, _ := daghash.NewHashFromStr("1111111111111111111111111111111111111111111111111111111111111111")
@@ -43,11 +44,14 @@ func TestUTXOCollection(t *testing.T) {
 	}
 
 	for _, test := range tests {
+		// Test utxoCollection string representation
 		collectionString := test.collection.String()
 		if collectionString != test.expectedString {
 			t.Errorf("unexpected string in test \"%s\". "+
 				"Expected: \"%s\", got: \"%s\".", test.name, test.expectedString, collectionString)
 		}
+
+		// Test utxoCollection cloning
 		collectionClone := test.collection.clone()
 		if &collectionClone == &test.collection {
 			t.Errorf("collection is reference-equal to its clone in test \"%s\". ", test.name)
@@ -58,7 +62,6 @@ func TestUTXOCollection(t *testing.T) {
 		}
 	}
 }
-
 
 // TestUTXODiff makes sure that utxoDiff creation, cloning, and string representations work as expected.
 func TestUTXODiff(t *testing.T) {
@@ -98,6 +101,40 @@ func TestUTXODiff(t *testing.T) {
 	}
 }
 
+// TestUTXODiffRules makes sure that all diffFrom and withDiff rules are followed.
+// The rules could be represented on two 3 by 3 tables as follows:
+//
+// diffFrom |           | this      |           |
+// ---------+-----------+-----------+-----------+-----------
+//          |           | toAdd     | toRemove  | None
+// ---------+-----------+-----------+-----------+-----------
+// other    | toAdd     | -         | X         | toAdd
+// ---------+-----------+-----------+-----------+-----------
+//          | toRemove  | X         | -         | toRemove
+// ---------+-----------+-----------+-----------+-----------
+//          | None      | toRemove  | toAdd     | -
+//
+//
+// withDiff |           | this      |           |
+// ---------+-----------+-----------+-----------+-----------
+//          |           | toAdd     | toRemove  | None
+// ---------+-----------+-----------+-----------+-----------
+// other    | toAdd     | X         | -         | toAdd
+// ---------+-----------+-----------+-----------+-----------
+//          | toRemove  | -         | X         | toRemove
+// ---------+-----------+-----------+-----------+-----------
+//          | None      | toAdd     | toRemove  | -
+//
+// Key:
+// -		Don't add anything to the result
+// X		Return an error
+// toAdd	Add the UTXO into the toAdd collection of the result
+// toRemove	Add the UTXO into the toRemove collection of the result
+//
+// Each test case represents a cell in the two tables.
+// For example, the first case checks that between toAdd and toAdd:
+// 1. diffFrom results in nothing being added
+// 2. withDiff results in an error
 func TestUTXODiffRules(t *testing.T) {
 	hash0, _ := daghash.NewHashFromStr("0000000000000000000000000000000000000000000000000000000000000000")
 	outPoint0 := *wire.NewOutPoint(hash0, 0)
@@ -107,7 +144,7 @@ func TestUTXODiffRules(t *testing.T) {
 		name                   string
 		this                   *utxoDiff
 		other                  *utxoDiff
-		expectedDiffResult     *utxoDiff
+		expectedDiffFromResult *utxoDiff
 		expectedWithDiffResult *utxoDiff
 	}{
 		{
@@ -120,7 +157,7 @@ func TestUTXODiffRules(t *testing.T) {
 				toAdd:    utxoCollection{outPoint0: utxoEntry0},
 				toRemove: utxoCollection{},
 			},
-			expectedDiffResult: &utxoDiff{
+			expectedDiffFromResult: &utxoDiff{
 				toAdd:    utxoCollection{},
 				toRemove: utxoCollection{},
 			},
@@ -136,7 +173,7 @@ func TestUTXODiffRules(t *testing.T) {
 				toAdd:    utxoCollection{},
 				toRemove: utxoCollection{outPoint0: utxoEntry0},
 			},
-			expectedDiffResult: nil,
+			expectedDiffFromResult: nil,
 			expectedWithDiffResult: &utxoDiff{
 				toAdd:    utxoCollection{},
 				toRemove: utxoCollection{},
@@ -152,7 +189,7 @@ func TestUTXODiffRules(t *testing.T) {
 				toAdd:    utxoCollection{},
 				toRemove: utxoCollection{},
 			},
-			expectedDiffResult: &utxoDiff{
+			expectedDiffFromResult: &utxoDiff{
 				toAdd:    utxoCollection{},
 				toRemove: utxoCollection{outPoint0: utxoEntry0},
 			},
@@ -171,7 +208,7 @@ func TestUTXODiffRules(t *testing.T) {
 				toAdd:    utxoCollection{outPoint0: utxoEntry0},
 				toRemove: utxoCollection{},
 			},
-			expectedDiffResult: nil,
+			expectedDiffFromResult: nil,
 			expectedWithDiffResult: &utxoDiff{
 				toAdd:    utxoCollection{},
 				toRemove: utxoCollection{},
@@ -187,7 +224,7 @@ func TestUTXODiffRules(t *testing.T) {
 				toAdd:    utxoCollection{},
 				toRemove: utxoCollection{outPoint0: utxoEntry0},
 			},
-			expectedDiffResult: &utxoDiff{
+			expectedDiffFromResult: &utxoDiff{
 				toAdd:    utxoCollection{},
 				toRemove: utxoCollection{},
 			},
@@ -203,7 +240,7 @@ func TestUTXODiffRules(t *testing.T) {
 				toAdd:    utxoCollection{},
 				toRemove: utxoCollection{},
 			},
-			expectedDiffResult: &utxoDiff{
+			expectedDiffFromResult: &utxoDiff{
 				toAdd:    utxoCollection{outPoint0: utxoEntry0},
 				toRemove: utxoCollection{},
 			},
@@ -222,7 +259,7 @@ func TestUTXODiffRules(t *testing.T) {
 				toAdd:    utxoCollection{outPoint0: utxoEntry0},
 				toRemove: utxoCollection{},
 			},
-			expectedDiffResult: &utxoDiff{
+			expectedDiffFromResult: &utxoDiff{
 				toAdd:    utxoCollection{outPoint0: utxoEntry0},
 				toRemove: utxoCollection{},
 			},
@@ -241,7 +278,7 @@ func TestUTXODiffRules(t *testing.T) {
 				toAdd:    utxoCollection{},
 				toRemove: utxoCollection{outPoint0: utxoEntry0},
 			},
-			expectedDiffResult: &utxoDiff{
+			expectedDiffFromResult: &utxoDiff{
 				toAdd:    utxoCollection{},
 				toRemove: utxoCollection{outPoint0: utxoEntry0},
 			},
@@ -260,7 +297,7 @@ func TestUTXODiffRules(t *testing.T) {
 				toAdd:    utxoCollection{},
 				toRemove: utxoCollection{},
 			},
-			expectedDiffResult: &utxoDiff{
+			expectedDiffFromResult: &utxoDiff{
 				toAdd:    utxoCollection{},
 				toRemove: utxoCollection{},
 			},
@@ -272,28 +309,38 @@ func TestUTXODiffRules(t *testing.T) {
 	}
 
 	for _, test := range tests {
+		// diffFrom from this to other
 		diffResult, err := test.this.diffFrom(test.other)
-		isDiffOk := err == nil
-		if isDiffOk && !reflect.DeepEqual(diffResult, test.expectedDiffResult) {
-			t.Errorf("unexpected diffFrom result in test \"%s\". "+
-				"Expected: \"%v\", got: \"%v\".", test.name, test.expectedDiffResult, diffResult)
-		}
-		expectedIsDiffOk := test.expectedDiffResult != nil
-		if isDiffOk != expectedIsDiffOk {
+
+		// Test whether diffFrom returned an error
+		isDiffFromOk := err == nil
+		expectedIsDiffFromOk := test.expectedDiffFromResult != nil
+		if isDiffFromOk != expectedIsDiffFromOk {
 			t.Errorf("unexpected diffFrom error in test \"%s\". "+
-				"Expected: \"%t\", got: \"%t\".", test.name, expectedIsDiffOk, isDiffOk)
+				"Expected: \"%t\", got: \"%t\".", test.name, expectedIsDiffFromOk, isDiffFromOk)
 		}
 
-		withDiffResult, err := test.this.withDiff(test.other)
-		isWithDiffOk := err == nil
-		if isWithDiffOk && !reflect.DeepEqual(withDiffResult, test.expectedWithDiffResult) {
-			t.Errorf("unexpected withDiff result in test \"%s\". "+
-				"Expected: \"%v\", got: \"%v\".", test.name, test.expectedWithDiffResult, withDiffResult)
+		// If not error, test the diffFrom result
+		if isDiffFromOk && !reflect.DeepEqual(diffResult, test.expectedDiffFromResult) {
+			t.Errorf("unexpected diffFrom result in test \"%s\". "+
+				"Expected: \"%v\", got: \"%v\".", test.name, test.expectedDiffFromResult, diffResult)
 		}
+
+		// withDiff from this to other
+		withDiffResult, err := test.this.withDiff(test.other)
+
+		// Test whether withDiff returned an error
+		isWithDiffOk := err == nil
 		expectedIsWithDiffOk := test.expectedWithDiffResult != nil
 		if isWithDiffOk != expectedIsWithDiffOk {
 			t.Errorf("unexpected withDiff error in test \"%s\". "+
 				"Expected: \"%t\", got: \"%t\".", test.name, expectedIsWithDiffOk, isWithDiffOk)
+		}
+
+		// Ig not error, test the withDiff result
+		if isWithDiffOk && !reflect.DeepEqual(withDiffResult, test.expectedWithDiffResult) {
+			t.Errorf("unexpected withDiff result in test \"%s\". "+
+				"Expected: \"%v\", got: \"%v\".", test.name, test.expectedWithDiffResult, withDiffResult)
 		}
 	}
 }
