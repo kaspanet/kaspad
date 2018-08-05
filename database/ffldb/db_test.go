@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"testing"
 
+	"github.com/bouk/monkey"
 	"github.com/daglabs/btcd/database"
 )
 
@@ -281,5 +282,64 @@ func TestCursor(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Error running the actual tests: %s", err)
 	}
+}
 
+// TestCreateBucketErrors tests all error-cases in *bucket.CreateBucket().
+// The non-error-cases are tested in the more general tests.
+func TestCreateBucketErrors(t *testing.T) {
+	testKey := []byte("key")
+
+	tests := []struct {
+		name        string
+		key         []byte
+		target      interface{}
+		replacement interface{}
+		isWritable  bool
+		isClosed    bool
+		expectedErr database.ErrorCode
+	}{
+		{"empty key", []byte{}, nil, nil, true, false, database.ErrBucketNameRequired},
+		{"transaction is closed", testKey, nil, nil, true, true, database.ErrTxClosed},
+		{"transaction is not writable", testKey, nil, nil, false, false, database.ErrTxNotWritable},
+		{"key already exists", []byte("ffldb-blockidx"), nil, nil, true, false, database.ErrBucketExists},
+		{"nextBucketID error", testKey, (*transaction).nextBucketID,
+			func(*transaction) ([4]byte, error) {
+				return [4]byte{}, makeDbErr(database.ErrTxClosed, "error in newBucketID", nil)
+			},
+			true, false, database.ErrTxClosed},
+	}
+
+	for _, test := range tests {
+		func() {
+			pdb := newTestDb("TestCursor", t)
+			defer pdb.Close()
+
+			if test.target != nil && test.replacement != nil {
+				patch := monkey.Patch(test.target, test.replacement)
+				defer patch.Unpatch()
+			}
+
+			tx, err := pdb.Begin(test.isWritable)
+			defer tx.Commit()
+			if err != nil {
+				t.Fatalf("TestCreateBucketErrors: %s: error from pdb.Begin: %s", test.name, err)
+			}
+			if test.isClosed {
+				err = tx.Commit()
+				if err != nil {
+					t.Fatalf("TestCreateBucketErrors: %s: error from tx.Commit: %s", test.name, err)
+				}
+			}
+
+			metadata := tx.Metadata()
+
+			_, err = metadata.CreateBucket(test.key)
+
+			if !database.IsErrorCode(err, test.expectedErr) {
+				t.Errorf("TestCreateBucketErrors: %s: Expected error of type %d "+
+					"but got '%v'", test.name, test.expectedErr, err)
+			}
+
+		}()
+	}
 }
