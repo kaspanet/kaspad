@@ -935,7 +935,8 @@ func (b *bucket) Delete(key []byte) error {
 
 	// Nothing to do if there is no key.
 	if len(key) == 0 {
-		return nil
+		str := "delete requires a key"
+		return makeDbErr(database.ErrKeyRequired, str, nil)
 	}
 
 	b.tx.deleteKey(bucketizedKey(b.id, key), true)

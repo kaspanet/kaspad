@@ -311,7 +311,7 @@ func TestCreateBucketErrors(t *testing.T) {
 
 	for _, test := range tests {
 		func() {
-			pdb := newTestDb("TestCursor", t)
+			pdb := newTestDb("TestCreateBucketErrors", t)
 			defer pdb.Close()
 
 			if test.target != nil && test.replacement != nil {
@@ -337,6 +337,141 @@ func TestCreateBucketErrors(t *testing.T) {
 
 			if !database.IsErrorCode(err, test.expectedErr) {
 				t.Errorf("TestCreateBucketErrors: %s: Expected error of type %d "+
+					"but got '%v'", test.name, test.expectedErr, err)
+			}
+
+		}()
+	}
+}
+
+// TestPutErrors tests all error-cases in *bucket.Put().
+// The non-error-cases are tested in the more general tests.
+func TestPutErrors(t *testing.T) {
+	testKey := []byte("key")
+	testValue := []byte("value")
+
+	tests := []struct {
+		name        string
+		key         []byte
+		isWritable  bool
+		isClosed    bool
+		expectedErr database.ErrorCode
+	}{
+		{"empty key", []byte{}, true, false, database.ErrKeyRequired},
+		{"transaction is closed", testKey, true, true, database.ErrTxClosed},
+		{"transaction is not writable", testKey, false, false, database.ErrTxNotWritable},
+	}
+
+	for _, test := range tests {
+		func() {
+			pdb := newTestDb("TestPutErrors", t)
+			defer pdb.Close()
+
+			tx, err := pdb.Begin(test.isWritable)
+			defer tx.Commit()
+			if err != nil {
+				t.Fatalf("TestPutErrors: %s: error from pdb.Begin: %s", test.name, err)
+			}
+			if test.isClosed {
+				err = tx.Commit()
+				if err != nil {
+					t.Fatalf("TestPutErrors: %s: error from tx.Commit: %s", test.name, err)
+				}
+			}
+
+			metadata := tx.Metadata()
+
+			err = metadata.Put(test.key, testValue)
+
+			if !database.IsErrorCode(err, test.expectedErr) {
+				t.Errorf("TestPutErrors: %s: Expected error of type %d "+
+					"but got '%v'", test.name, test.expectedErr, err)
+			}
+
+		}()
+	}
+}
+
+// TestGetErrors tests all error-cases in *bucket.Get().
+// The non-error-cases are tested in the more general tests.
+func TestGetErrors(t *testing.T) {
+	testKey := []byte("key")
+
+	tests := []struct {
+		name     string
+		key      []byte
+		isClosed bool
+	}{
+		{"empty key", []byte{}, false},
+		{"transaction is closed", testKey, true},
+	}
+
+	for _, test := range tests {
+		func() {
+			pdb := newTestDb("TestGetErrors", t)
+			defer pdb.Close()
+
+			tx, err := pdb.Begin(false)
+			defer tx.Rollback()
+			if err != nil {
+				t.Fatalf("TestGetErrors: %s: error from pdb.Begin: %s", test.name, err)
+			}
+			if test.isClosed {
+				err = tx.Rollback()
+				if err != nil {
+					t.Fatalf("TestGetErrors: %s: error from tx.Commit: %s", test.name, err)
+				}
+			}
+
+			metadata := tx.Metadata()
+
+			if result := metadata.Get(test.key); result != nil {
+				t.Errorf("TestGetErrors: %s: Expected to return nil, but got %v", test.name, result)
+			}
+		}()
+	}
+}
+
+// TestDeleteErrors tests all error-cases in *bucket.Delete().
+// The non-error-cases are tested in the more general tests.
+func TestDeleteErrors(t *testing.T) {
+	testKey := []byte("key")
+
+	tests := []struct {
+		name        string
+		key         []byte
+		isWritable  bool
+		isClosed    bool
+		expectedErr database.ErrorCode
+	}{
+		{"empty key", []byte{}, true, false, database.ErrKeyRequired},
+		{"transaction is closed", testKey, true, true, database.ErrTxClosed},
+		{"transaction is not writable", testKey, false, false, database.ErrTxNotWritable},
+	}
+
+	for _, test := range tests {
+		func() {
+			pdb := newTestDb("TestDeleteErrors", t)
+			defer pdb.Close()
+
+			tx, err := pdb.Begin(test.isWritable)
+			defer tx.Commit()
+			if err != nil {
+				t.Fatalf("TestDeleteErrors: %s: error from pdb.Begin: %s", test.name, err)
+			}
+			if test.isClosed {
+				err = tx.Commit()
+				if err != nil {
+					t.Fatalf("TestDeleteErrors: %s: error from tx.Commit: %s", test.name, err)
+				}
+			}
+
+			metadata := tx.Metadata()
+
+			err = metadata.Delete(test.key)
+
+			if !database.IsErrorCode(err, test.expectedErr) {
+				t.Errorf("TestDeleteErrors: %s: Expected error of type %d "+
 					"but got '%v'", test.name, test.expectedErr, err)
 			}
 
