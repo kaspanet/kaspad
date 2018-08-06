@@ -127,6 +127,7 @@ type BlockDAG struct {
 	// efficient chain view into the block index.
 	index   *blockIndex
 	virtual *virtualBlock
+	genesis *blockNode
 
 	// These fields are related to handling of orphan blocks.  They are
 	// protected by a combination of the chain lock and the orphan lock.
@@ -993,7 +994,7 @@ func (b *BlockDAG) locateInventory(locator BlockLocator, hashStop *daghash.Hash,
 	// Find the most recent locator block hash in the main chain.  In the
 	// case none of the hashes in the locator are in the main chain, fall
 	// back to the genesis block.
-	startNode := b.virtual.Genesis()
+	startNode := b.genesis
 	for _, hash := range locator {
 		node := b.index.LookupNode(hash)
 		if node != nil && b.virtual.Contains(node) {
@@ -1223,6 +1224,7 @@ func New(config *Config) (*BlockDAG, error) {
 	targetTimespan := int64(params.TargetTimespan / time.Second)
 	targetTimePerBlock := int64(params.TargetTimePerBlock / time.Second)
 	adjustmentFactor := params.RetargetAdjustmentFactor
+	index := newBlockIndex(config.DB, params)
 	b := BlockDAG{
 		checkpoints:         config.Checkpoints,
 		checkpointsByHeight: checkpointsByHeight,
@@ -1234,8 +1236,9 @@ func New(config *Config) (*BlockDAG, error) {
 		minRetargetTimespan: targetTimespan / adjustmentFactor,
 		maxRetargetTimespan: targetTimespan * adjustmentFactor,
 		blocksPerRetarget:   int32(targetTimespan / targetTimePerBlock),
-		index:               newBlockIndex(config.DB, params),
+		index:               index,
 		virtual:             newVirtualBlock(nil),
+		genesis:             index.LookupNode(params.GenesisHash),
 		orphans:             make(map[daghash.Hash]*orphanBlock),
 		prevOrphans:         make(map[daghash.Hash][]*orphanBlock),
 		warningCaches:       newThresholdCaches(vbNumBits),

@@ -161,21 +161,6 @@ testLoop:
 			continue
 		}
 
-		// Ensure the active and side chain genesis block is the
-		// expected value.
-		if test.view.Genesis() != test.genesis {
-			t.Errorf("%s: unexpected active view genesis -- got "+
-				"%v, want %v", test.name, test.view.Genesis(),
-				test.genesis)
-			continue
-		}
-		if test.side.Genesis() != test.genesis {
-			t.Errorf("%s: unexpected side view genesis -- got %v, "+
-				"want %v", test.name, test.view.Genesis(),
-				test.genesis)
-			continue
-		}
-
 		// Ensure the active and side chain tips are the expected nodes.
 		if test.view.SelectedTip() != test.tip {
 			t.Errorf("%s: unexpected active view tip -- got %v, "+
@@ -413,12 +398,6 @@ func TestChainViewNil(t *testing.T) {
 	view := newVirtualBlock(nil)
 	if !view.Equals(newVirtualBlock(nil)) {
 		t.Fatal("uninitialized nil views unequal")
-	}
-
-	// Ensure the genesis of an uninitialized view does not produce a node.
-	if genesis := view.Genesis(); genesis != nil {
-		t.Fatalf("Genesis: unexpected genesis -- got %v, want nil",
-			genesis)
 	}
 
 	// Ensure the tips of an uninitialized view do not produce a node.

@@ -449,7 +449,7 @@ func TestLocateInventory(t *testing.T) {
 	// 	                              \-> 16a -> 17a
 	tip := tstTip
 	dag := newTestDAG(&dagconfig.MainNetParams)
-	branch0Nodes := chainedNodes(setFromSlice(dag.virtual.Genesis()), 18)
+	branch0Nodes := chainedNodes(setFromSlice(dag.genesis), 18)
 	branch1Nodes := chainedNodes(setFromSlice(branch0Nodes[14]), 2)
 	for _, node := range branch0Nodes {
 		dag.index.AddNode(node)
@@ -789,7 +789,7 @@ func TestHeightToHashRange(t *testing.T) {
 	// 	                              \-> 16a -> 17a -> 18a (unvalidated)
 	tip := tstTip
 	blockDAG := newTestDAG(&dagconfig.MainNetParams)
-	branch0Nodes := chainedNodes(setFromSlice(blockDAG.virtual.Genesis()), 18)
+	branch0Nodes := chainedNodes(setFromSlice(blockDAG.genesis), 18)
 	branch1Nodes := chainedNodes(setFromSlice(branch0Nodes[14]), 3)
 	for _, node := range branch0Nodes {
 		blockDAG.index.SetStatusFlags(node, statusValid)
@@ -881,7 +881,7 @@ func TestIntervalBlockHashes(t *testing.T) {
 	// 	                              \-> 16a -> 17a -> 18a (unvalidated)
 	tip := tstTip
 	chain := newTestDAG(&dagconfig.MainNetParams)
-	branch0Nodes := chainedNodes(setFromSlice(chain.virtual.Genesis()), 18)
+	branch0Nodes := chainedNodes(setFromSlice(chain.genesis), 18)
 	branch1Nodes := chainedNodes(setFromSlice(branch0Nodes[14]), 3)
 	for _, node := range branch0Nodes {
 		chain.index.SetStatusFlags(node, statusValid)

@@ -45,29 +45,6 @@ func newVirtualBlock(tip *blockNode) *virtualBlock {
 	return &c
 }
 
-// genesis returns the genesis block for the chain view.  This only differs from
-// the exported version in that it is up to the caller to ensure the lock is
-// held.
-//
-// This function MUST be called with the view mutex locked (for reads).
-func (c *virtualBlock) genesis() *blockNode {
-	if len(c.nodes) == 0 {
-		return nil
-	}
-
-	return c.nodes[0]
-}
-
-// Genesis returns the genesis block for the chain view.
-//
-// This function is safe for concurrent access.
-func (c *virtualBlock) Genesis() *blockNode {
-	c.mtx.Lock()
-	genesis := c.genesis()
-	c.mtx.Unlock()
-	return genesis
-}
-
 // tip returns the current tip block node for the chain view.  It will return
 // nil if there is no tip.  This only differs from the exported version in that
 // it is up to the caller to ensure the lock is held.
