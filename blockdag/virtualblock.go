@@ -51,22 +51,22 @@ func newVirtualBlock(tip *blockNode) *virtualBlock {
 // it is up to the caller to ensure the lock is held.
 //
 // This function MUST be called with the view mutex locked (for reads).
-func (c *virtualBlock) tip() *blockNode {
-	if len(c.nodes) == 0 {
+func (v *virtualBlock) tip() *blockNode {
+	if len(v.nodes) == 0 {
 		return nil
 	}
 
-	return c.nodes[len(c.nodes)-1]
+	return v.nodes[len(v.nodes)-1]
 }
 
 // Tips returns the current tip block nodes for the chain view.  It will return
 // an empty slice if there is no tip.
 //
 // This function is safe for concurrent access.
-func (c *virtualBlock) Tips() blockSet {
-	c.mtx.Lock()
-	tip := c.tip()
-	c.mtx.Unlock()
+func (v *virtualBlock) Tips() blockSet {
+	v.mtx.Lock()
+	tip := v.tip()
+	v.mtx.Unlock()
 
 	if tip == nil { // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
 		return newSet()
@@ -79,8 +79,8 @@ func (c *virtualBlock) Tips() blockSet {
 // It will return nil if there is no tip.
 //
 // This function is safe for concurrent access.
-func (c *virtualBlock) SelectedTip() *blockNode {
-	return c.Tips().first()
+func (v *virtualBlock) SelectedTip() *blockNode {
+	return v.Tips().first()
 }
 
 // setTip sets the chain view to use the provided block node as the current tip
@@ -91,10 +91,10 @@ func (c *virtualBlock) SelectedTip() *blockNode {
 // up to the caller to ensure the lock is held.
 //
 // This function MUST be called with the view mutex locked (for writes).
-func (c *virtualBlock) setTip(node *blockNode) {
+func (v *virtualBlock) setTip(node *blockNode) {
 	if node == nil {
 		// Keep the backing array around for potential future use.
-		c.nodes = c.nodes[:0]
+		v.nodes = v.nodes[:0]
 		return
 	}
 
@@ -107,20 +107,20 @@ func (c *virtualBlock) setTip(node *blockNode) {
 	// such that the array should only have to be extended about once a
 	// week.
 	needed := node.height + 1
-	if int32(cap(c.nodes)) < needed {
+	if int32(cap(v.nodes)) < needed {
 		nodes := make([]*blockNode, needed, needed+approxNodesPerWeek)
-		copy(nodes, c.nodes)
-		c.nodes = nodes
+		copy(nodes, v.nodes)
+		v.nodes = nodes
 	} else {
-		prevLen := int32(len(c.nodes))
-		c.nodes = c.nodes[0:needed]
+		prevLen := int32(len(v.nodes))
+		v.nodes = v.nodes[0:needed]
 		for i := prevLen; i < needed; i++ {
-			c.nodes[i] = nil
+			v.nodes[i] = nil
 		}
 	}
 
-	for node != nil && c.nodes[node.height] != node {
-		c.nodes[node.height] = node
+	for node != nil && v.nodes[node.height] != node {
+		v.nodes[node.height] = node
 		node = node.selectedParent
 	}
 }
@@ -132,10 +132,10 @@ func (c *virtualBlock) setTip(node *blockNode) {
 // tips is efficient.
 //
 // This function is safe for concurrent access.
-func (c *virtualBlock) SetTip(node *blockNode) {
-	c.mtx.Lock()
-	c.setTip(node)
-	c.mtx.Unlock()
+func (v *virtualBlock) SetTip(node *blockNode) {
+	v.mtx.Lock()
+	v.setTip(node)
+	v.mtx.Unlock()
 }
 
 // nodeByHeight returns the block node at the specified height.  Nil will be
@@ -143,22 +143,22 @@ func (c *virtualBlock) SetTip(node *blockNode) {
 // version in that it is up to the caller to ensure the lock is held.
 //
 // This function MUST be called with the view mutex locked (for reads).
-func (c *virtualBlock) nodeByHeight(height int32) *blockNode {
-	if height < 0 || height >= int32(len(c.nodes)) {
+func (v *virtualBlock) nodeByHeight(height int32) *blockNode {
+	if height < 0 || height >= int32(len(v.nodes)) {
 		return nil
 	}
 
-	return c.nodes[height]
+	return v.nodes[height]
 }
 
 // NodeByHeight returns the block node at the specified height.  Nil will be
 // returned if the height does not exist.
 //
 // This function is safe for concurrent access.
-func (c *virtualBlock) NodeByHeight(height int32) *blockNode {
-	c.mtx.Lock()
-	node := c.nodeByHeight(height)
-	c.mtx.Unlock()
+func (v *virtualBlock) NodeByHeight(height int32) *blockNode {
+	v.mtx.Lock()
+	node := v.nodeByHeight(height)
+	v.mtx.Unlock()
 	return node
 }
 
@@ -166,12 +166,12 @@ func (c *virtualBlock) NodeByHeight(height int32) *blockNode {
 // views (tip set to nil) are considered equal.
 //
 // This function is safe for concurrent access.
-func (c *virtualBlock) Equals(other *virtualBlock) bool {
-	c.mtx.Lock()
+func (v *virtualBlock) Equals(other *virtualBlock) bool {
+	v.mtx.Lock()
 	other.mtx.Lock()
-	equals := len(c.nodes) == len(other.nodes) && c.tip() == other.tip()
+	equals := len(v.nodes) == len(other.nodes) && v.tip() == other.tip()
 	other.mtx.Unlock()
-	c.mtx.Unlock()
+	v.mtx.Unlock()
 	return equals
 }
 
@@ -180,18 +180,18 @@ func (c *virtualBlock) Equals(other *virtualBlock) bool {
 // caller to ensure the lock is held.
 //
 // This function MUST be called with the view mutex locked (for reads).
-func (c *virtualBlock) contains(node *blockNode) bool {
-	return c.nodeByHeight(node.height) == node
+func (v *virtualBlock) contains(node *blockNode) bool {
+	return v.nodeByHeight(node.height) == node
 }
 
 // Contains returns whether or not the chain view contains the passed block
 // node.
 //
 // This function is safe for concurrent access.
-func (c *virtualBlock) Contains(node *blockNode) bool {
-	c.mtx.Lock()
-	contains := c.contains(node)
-	c.mtx.Unlock()
+func (v *virtualBlock) Contains(node *blockNode) bool {
+	v.mtx.Lock()
+	contains := v.contains(node)
+	v.mtx.Unlock()
 	return contains
 }
 
@@ -203,12 +203,12 @@ func (c *virtualBlock) Contains(node *blockNode) bool {
 // See the comment on the exported function for more details.
 //
 // This function MUST be called with the view mutex locked (for reads).
-func (c *virtualBlock) next(node *blockNode) *blockNode {
-	if node == nil || !c.contains(node) {
+func (v *virtualBlock) next(node *blockNode) *blockNode {
+	if node == nil || !v.contains(node) {
 		return nil
 	}
 
-	return c.nodeByHeight(node.height + 1)
+	return v.nodeByHeight(node.height + 1)
 }
 
 // Next returns the successor to the provided node for the chain view.  It will
@@ -228,10 +228,10 @@ func (c *virtualBlock) next(node *blockNode) *blockNode {
 // of the view.
 //
 // This function is safe for concurrent access.
-func (c *virtualBlock) Next(node *blockNode) *blockNode {
-	c.mtx.Lock()
-	next := c.next(node)
-	c.mtx.Unlock()
+func (v *virtualBlock) Next(node *blockNode) *blockNode {
+	v.mtx.Lock()
+	next := v.next(node)
+	v.mtx.Unlock()
 	return next
 }
 
@@ -243,10 +243,10 @@ func (c *virtualBlock) Next(node *blockNode) *blockNode {
 // See the exported BlockLocator function comments for more details.
 //
 // This function MUST be called with the view mutex locked (for reads).
-func (c *virtualBlock) blockLocator(node *blockNode) BlockLocator {
+func (v *virtualBlock) blockLocator(node *blockNode) BlockLocator {
 	// Use the current tip if requested.
 	if node == nil {
-		node = c.tip()
+		node = v.tip()
 	}
 	if node == nil {
 		return nil
@@ -286,8 +286,8 @@ func (c *virtualBlock) blockLocator(node *blockNode) BlockLocator {
 		// ancestors must be too, so use a much faster O(1) lookup in
 		// that case.  Otherwise, fall back to walking backwards through
 		// the nodes of the other chain to the correct ancestor.
-		if c.contains(node) {
-			node = c.nodes[height]
+		if v.contains(node) {
+			node = v.nodes[height]
 		} else {
 			node = node.Ancestor(height)
 		}
@@ -310,9 +310,9 @@ func (c *virtualBlock) blockLocator(node *blockNode) BlockLocator {
 // locator.
 //
 // This function is safe for concurrent access.
-func (c *virtualBlock) BlockLocator(node *blockNode) BlockLocator {
-	c.mtx.Lock()
-	locator := c.blockLocator(node)
-	c.mtx.Unlock()
+func (v *virtualBlock) BlockLocator(node *blockNode) BlockLocator {
+	v.mtx.Lock()
+	locator := v.blockLocator(node)
+	v.mtx.Unlock()
 	return locator
 }
