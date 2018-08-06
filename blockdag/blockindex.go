@@ -126,16 +126,22 @@ type blockNode struct {
 // initially creating a node.
 func initBlockNode(node *blockNode, blockHeader *wire.BlockHeader, parents blockSet, phantomK uint32) {
 	*node = blockNode{
-		hash:       blockHeader.BlockHash(),
-		parents:    parents,
-		children:   make(blockSet),
-		workSum:    CalcWork(blockHeader.Bits),
-		version:    blockHeader.Version,
-		bits:       blockHeader.Bits,
-		nonce:      blockHeader.Nonce,
-		timestamp:  blockHeader.Timestamp.Unix(),
-		merkleRoot: blockHeader.MerkleRoot,
+		parents:  parents,
+		children: make(blockSet),
+		workSum: big.NewInt(0),
+		timestamp: time.Now().Unix(),
 	}
+	
+	if blockHeader != nil {
+		node.hash = blockHeader.BlockHash()
+		node.workSum = CalcWork(blockHeader.Bits)
+		node.version = blockHeader.Version
+		node.bits = blockHeader.Bits
+		node.nonce = blockHeader.Nonce
+		node.timestamp = blockHeader.Timestamp.Unix()
+		node.merkleRoot = blockHeader.MerkleRoot
+	}
+
 	if len(parents) > 0 {
 		addNodeAsChildToParents(node)
 		node.blues, node.selectedParent, node.blueScore = phantom(node, phantomK)

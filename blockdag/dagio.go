@@ -790,8 +790,8 @@ func dbFetchHeightByHash(dbTx database.Tx, hash *daghash.Hash) (int32, error) {
 // dbDAGState represents the data to be stored in the database for the current
 // DAG state.
 type dbDAGState struct {
-	SelectedHash daghash.Hash
-	TotalTxs     uint64
+	Tips     []daghash.Hash
+	TotalTxs uint64
 }
 
 // serializeDAGState returns the serialization of the DAG state.
@@ -820,8 +820,8 @@ func deserializeDAGState(serializedData []byte) (*dbDAGState, error) {
 // state with the given parameters.
 func dbPutDAGState(dbTx database.Tx, state *DAGState) error {
 	serializedData, err := serializeDAGState(dbDAGState{
-		SelectedHash: state.SelectedTip.Hash,
-		TotalTxs:     state.TotalTxs,
+		Tips:     state.TipHashes,
+		TotalTxs: state.TotalTxs,
 	})
 
 	if err != nil {
@@ -1035,15 +1035,20 @@ func (b *BlockDAG) initDAGState() error {
 		}
 
 		// Set the DAG view to the stored state.
-		selectedTip := b.index.LookupNode(&state.SelectedHash)
-		if selectedTip == nil {
-			return AssertError(fmt.Sprintf("initDAGState: cannot find "+
-				"DAG selectedTip %s in block index", state.SelectedHash))
+		tips := newSet()
+		for _, tipHash := range state.Tips {
+			tip := b.index.LookupNode(&tipHash)
+			if tip == nil {
+				return AssertError(fmt.Sprintf("initDAGState: cannot find "+
+					"DAG tip %s in block index", state.Tips))
+			}
+			tips.add(tip)
 		}
-		b.virtual.SetTip(selectedTip)
+		b.virtual.SetTips(tips, b.dagParams.K)
 
 		// Load the raw block bytes for the selected tip.
-		blockBytes, err := dbTx.FetchBlock(&state.SelectedHash)
+		selectedTip := b.virtual.selectedParent
+		blockBytes, err := dbTx.FetchBlock(&selectedTip.hash)
 		if err != nil {
 			return err
 		}

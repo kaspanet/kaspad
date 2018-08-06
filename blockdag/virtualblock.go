@@ -39,10 +39,14 @@ type virtualBlock struct {
 }
 
 // newVirtualBlock creates and returns a new virtualBlock.
-func newVirtualBlock(tip *blockNode) *virtualBlock {
+func newVirtualBlock(tips blockSet, phantomK uint32) *virtualBlock {
 	// The mutex is intentionally not held since this is a constructor.
 	var c virtualBlock
-	c.setTip(tip)
+	c.setTip(tips.first())
+	if tips != nil {
+		c.setTips(tips, phantomK)
+	}
+
 	return &c
 }
 
@@ -135,6 +139,16 @@ func (v *virtualBlock) setTip(node *blockNode) {
 func (v *virtualBlock) SetTip(node *blockNode) {
 	v.mtx.Lock()
 	v.setTip(node)
+	v.mtx.Unlock()
+}
+
+func (v *virtualBlock) setTips(tips blockSet, phantomK uint32) {
+	v.blockNode = *newBlockNode(nil, tips, phantomK)
+}
+
+func (v *virtualBlock) SetTips(tips blockSet, phantomK uint32) {
+	v.mtx.Lock()
+	v.setTips(tips, phantomK)
 	v.mtx.Unlock()
 }
 
