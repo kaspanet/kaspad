@@ -1114,7 +1114,7 @@ func (b *BlockDAG) LocateHeaders(locator BlockLocator, hashStop *daghash.Hash) [
 	return headers
 }
 
-// IndexManager provides a generic interface that the is called when blocks are
+// IndexManager provides a generic interface that is called when blocks are
 // connected and disconnected to and from the tip of the main chain for the
 // purpose of supporting optional indexes.
 type IndexManager interface {
