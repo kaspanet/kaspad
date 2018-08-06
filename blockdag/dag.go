@@ -863,7 +863,7 @@ func (b *BlockDAG) HeightRange(startHeight, endHeight int32) ([]daghash.Hash, er
 
 	// When the requested start height is after the most recent best chain
 	// height, there is nothing to do.
-	latestHeight := b.virtual.tip().height
+	latestHeight := b.virtual.height
 	if startHeight > latestHeight {
 		return nil, nil
 	}

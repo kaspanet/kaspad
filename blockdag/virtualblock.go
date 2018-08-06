@@ -35,6 +35,7 @@ func fastLog2Floor(n uint32) uint8 {
 type virtualBlock struct {
 	mtx   sync.Mutex
 	nodes []*blockNode
+	blockNode
 }
 
 // newVirtualBlock creates and returns a new virtualBlock.
@@ -137,28 +138,6 @@ func (c *virtualBlock) SetTip(node *blockNode) {
 	c.mtx.Unlock()
 }
 
-// height returns the height of the tip of the chain view.  It will return -1 if
-// there is no tip (which only happens if the chain view has not been
-// initialized).  This only differs from the exported version in that it is up
-// to the caller to ensure the lock is held.
-//
-// This function MUST be called with the view mutex locked (for reads).
-func (c *virtualBlock) height() int32 {
-	return int32(len(c.nodes) - 1)
-}
-
-// Height returns the height of the tip of the chain view.  It will return -1 if
-// there is no tip (which only happens if the chain view has not been
-// initialized).
-//
-// This function is safe for concurrent access.
-func (c *virtualBlock) Height() int32 {
-	c.mtx.Lock()
-	height := c.height()
-	c.mtx.Unlock()
-	return height
-}
-
 // nodeByHeight returns the block node at the specified height.  Nil will be
 // returned if the height does not exist.  This only differs from the exported
 // version in that it is up to the caller to ensure the lock is held.
@@ -254,69 +233,6 @@ func (c *virtualBlock) Next(node *blockNode) *blockNode {
 	next := c.next(node)
 	c.mtx.Unlock()
 	return next
-}
-
-// findFork returns the final common block between the provided node and the
-// the chain view.  It will return nil if there is no common block.  This only
-// differs from the exported version in that it is up to the caller to ensure
-// the lock is held.
-//
-// See the exported FindFork comments for more details.
-//
-// This function MUST be called with the view mutex locked (for reads).
-func (c *virtualBlock) findFork(node *blockNode) *blockNode {
-	// No fork point for node that doesn't exist.
-	if node == nil {
-		return nil
-	}
-
-	// When the height of the passed node is higher than the height of the
-	// tip of the current chain view, walk backwards through the nodes of
-	// the other chain until the heights match (or there or no more nodes in
-	// which case there is no common node between the two).
-	//
-	// NOTE: This isn't strictly necessary as the following section will
-	// find the node as well, however, it is more efficient to avoid the
-	// contains check since it is already known that the common node can't
-	// possibly be past the end of the current chain view.  It also allows
-	// this code to take advantage of any potential future optimizations to
-	// the Ancestor function such as using an O(log n) skip list.
-	chainHeight := c.height()
-	if node.height > chainHeight {
-		node = node.Ancestor(chainHeight)
-	}
-
-	// Walk the other chain backwards as long as the current one does not
-	// contain the node or there are no more nodes in which case there is no
-	// common node between the two.
-	for node != nil && !c.contains(node) {
-		node = node.selectedParent
-	}
-
-	return node
-}
-
-// FindFork returns the final common block between the provided node and the
-// the chain view.  It will return nil if there is no common block.
-//
-// For example, assume a block chain with a side chain as depicted below:
-//   genesis -> 1 -> 2 -> ... -> 5 -> 6  -> 7  -> 8
-//                                \-> 6a -> 7a
-//
-// Further, assume the view is for the longer chain depicted above.  That is to
-// say it consists of:
-//   genesis -> 1 -> 2 -> ... -> 5 -> 6 -> 7 -> 8.
-//
-// Invoking this function with block node 7a would return block node 5 while
-// invoking it with block node 7 would return itself since it is already part of
-// the branch formed by the view.
-//
-// This function is safe for concurrent access.
-func (c *virtualBlock) FindFork(node *blockNode) *blockNode {
-	c.mtx.Lock()
-	fork := c.findFork(node)
-	c.mtx.Unlock()
-	return fork
 }
 
 // blockLocator returns a block locator for the passed block node.  The passed

@@ -146,21 +146,6 @@ func TestChainView(t *testing.T) {
 	}
 testLoop:
 	for _, test := range tests {
-		// Ensure the active and side chain heights are the expected
-		// values.
-		if test.view.Height() != test.tip.height {
-			t.Errorf("%s: unexpected active view height -- got "+
-				"%d, want %d", test.name, test.view.Height(),
-				test.tip.height)
-			continue
-		}
-		if test.side.Height() != test.sideTip.height {
-			t.Errorf("%s: unexpected side view height -- got %d, "+
-				"want %d", test.name, test.side.Height(),
-				test.sideTip.height)
-			continue
-		}
-
 		// Ensure the active and side chain tips are the expected nodes.
 		if test.view.SelectedTip() != test.tip {
 			t.Errorf("%s: unexpected active view tip -- got %v, "+
@@ -171,33 +156,6 @@ testLoop:
 			t.Errorf("%s: unexpected active view tip -- got %v, "+
 				"want %v", test.name, test.side.Tips(),
 				test.sideTip)
-			continue
-		}
-
-		// Ensure that regardless of the order the two chains are
-		// compared they both return the expected fork point.
-		forkNode := test.view.FindFork(test.side.SelectedTip())
-		if forkNode != test.fork {
-			t.Errorf("%s: unexpected fork node (view, side) -- "+
-				"got %v, want %v", test.name, forkNode,
-				test.fork)
-			continue
-		}
-		forkNode = test.side.FindFork(test.view.SelectedTip())
-		if forkNode != test.fork {
-			t.Errorf("%s: unexpected fork node (side, view) -- "+
-				"got %v, want %v", test.name, forkNode,
-				test.fork)
-			continue
-		}
-
-		// Ensure that the fork point for a node that is already part
-		// of the chain view is the node itself.
-		forkNode = test.view.FindFork(test.view.SelectedTip())
-		if forkNode != test.view.SelectedTip() {
-			t.Errorf("%s: unexpected fork node (view, tip) -- "+
-				"got %v, want %v", test.name, forkNode,
-				test.view.Tips())
 			continue
 		}
 
@@ -275,40 +233,6 @@ testLoop:
 			t.Errorf("%s: unexpected locator -- got %v, want %v",
 				test.name, locator, test.locator)
 			continue
-		}
-	}
-}
-
-// TestChainViewForkCorners ensures that finding the fork between two chains
-// works in some corner cases such as when the two chains have completely
-// unrelated histories.
-func TestChainViewForkCorners(t *testing.T) {
-	// Construct two unrelated single branch synthetic block indexes.
-	branchNodes := chainedNodes(nil, 5)
-	unrelatedBranchNodes := chainedNodes(nil, 7)
-
-	// Create chain views for the two unrelated histories.
-	view1 := newVirtualBlock(tstTip(branchNodes))
-	view2 := newVirtualBlock(tstTip(unrelatedBranchNodes))
-
-	// Ensure attempting to find a fork point with a node that doesn't exist
-	// doesn't produce a node.
-	if fork := view1.FindFork(nil); fork != nil {
-		t.Fatalf("FindFork: unexpected fork -- got %v, want nil", fork)
-	}
-
-	// Ensure attempting to find a fork point in two chain views with
-	// totally unrelated histories doesn't produce a node.
-	for _, node := range branchNodes {
-		if fork := view2.FindFork(node); fork != nil {
-			t.Fatalf("FindFork: unexpected fork -- got %v, want nil",
-				fork)
-		}
-	}
-	for _, node := range unrelatedBranchNodes {
-		if fork := view1.FindFork(node); fork != nil {
-			t.Fatalf("FindFork: unexpected fork -- got %v, want nil",
-				fork)
 		}
 	}
 }
@@ -405,11 +329,6 @@ func TestChainViewNil(t *testing.T) {
 		t.Fatalf("Tip: unexpected tips -- got %v, want nothing", tips)
 	}
 
-	// Ensure the height of an uninitialized view is the expected value.
-	if height := view.Height(); height != -1 {
-		t.Fatalf("Height: unexpected height -- got %d, want -1", height)
-	}
-
 	// Ensure attempting to get a node for a height that does not exist does
 	// not produce a node.
 	if node := view.NodeByHeight(10); node != nil {
@@ -431,12 +350,6 @@ func TestChainViewNil(t *testing.T) {
 	// Ensure the next node for a node that exists does not produce a node.
 	if next := view.Next(fakeNode); next != nil {
 		t.Fatalf("Next: unexpected next node -- got %v, want nil", next)
-	}
-
-	// Ensure attempting to find a fork point with a node that doesn't exist
-	// doesn't produce a node.
-	if fork := view.FindFork(nil); fork != nil {
-		t.Fatalf("FindFork: unexpected fork -- got %v, want nil", fork)
 	}
 
 	// Ensure attempting to get a block locator for the tip doesn't produce
