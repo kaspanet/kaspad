@@ -178,17 +178,6 @@ testLoop:
 			}
 		}
 
-		// Ensure equality of different views into the same chain works
-		// as intended.
-		if !test.view.Equals(test.equal) {
-			t.Errorf("%s: unexpected unequal views", test.name)
-			continue
-		}
-		if test.view.Equals(test.unequal) {
-			t.Errorf("%s: unexpected equal views", test.name)
-			continue
-		}
-
 		// Ensure all nodes contained in the view return the expected
 		// next node.
 		for i, node := range test.contains {
@@ -318,11 +307,7 @@ testLoop:
 // TestChainViewNil ensures that creating and accessing a nil chain view behaves
 // as expected.
 func TestChainViewNil(t *testing.T) {
-	// Ensure two unininitialized views are considered equal.
 	view := newVirtualBlock(nil, dagconfig.MainNetParams.K)
-	if !view.Equals(newVirtualBlock(nil, dagconfig.MainNetParams.K)) {
-		t.Fatal("uninitialized nil views unequal")
-	}
 
 	// Ensure the tips of an uninitialized view do not produce a node.
 	if tips := view.Tips(); len(tips) > 0 {

@@ -176,19 +176,6 @@ func (v *virtualBlock) NodeByHeight(height int32) *blockNode {
 	return node
 }
 
-// Equals returns whether or not two chain views are the same.  Uninitialized
-// views (tip set to nil) are considered equal.
-//
-// This function is safe for concurrent access.
-func (v *virtualBlock) Equals(other *virtualBlock) bool {
-	v.mtx.Lock()
-	other.mtx.Lock()
-	equals := len(v.nodes) == len(other.nodes) && v.tip() == other.tip()
-	other.mtx.Unlock()
-	v.mtx.Unlock()
-	return equals
-}
-
 // contains returns whether or not the chain view contains the passed block
 // node.  This only differs from the exported version in that it is up to the
 // caller to ensure the lock is held.
