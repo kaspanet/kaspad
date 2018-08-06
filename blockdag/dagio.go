@@ -791,6 +791,7 @@ func dbFetchHeightByHash(dbTx database.Tx, hash *daghash.Hash) (int32, error) {
 // DAG state.
 type dbDAGState struct {
 	SelectedHash daghash.Hash
+	TipHashes    []daghash.Hash
 	TotalTxs     uint64
 }
 
@@ -821,6 +822,7 @@ func deserializeDAGState(serializedData []byte) (*dbDAGState, error) {
 func dbPutDAGState(dbTx database.Tx, state *DAGState) error {
 	serializedData, err := serializeDAGState(dbDAGState{
 		SelectedHash: state.SelectedTip.Hash,
+		TipHashes:    state.TipHashes,
 		TotalTxs:     state.TotalTxs,
 	})
 
@@ -842,6 +844,7 @@ func (b *BlockDAG) createDAGState() error {
 	node := newBlockNode(header, nil, b.dagParams.K)
 	node.status = statusDataStored | statusValid
 	b.dag.SetTip(node)
+	b.addTip(node)
 
 	// Add the new node to the index which is used for faster lookups.
 	b.index.addNode(node)
@@ -1002,7 +1005,7 @@ func (b *BlockDAG) initDAGState() error {
 			// Determine the parent block node. Since we iterate block headers
 			// in order of height, if the blocks are mostly linear there is a
 			// very good chance the previous header processed is the parent.
-			var parents blockSet
+			parents := newSet()
 			if lastNode == nil {
 				blockHash := header.BlockHash()
 				if !blockHash.IsEqual(b.dagParams.GenesisHash) {
@@ -1017,6 +1020,7 @@ func (b *BlockDAG) initDAGState() error {
 						return AssertError(fmt.Sprintf("initDAGState: Could "+
 							"not find parent %s for block %s", hash, header.BlockHash()))
 					}
+					parents.add(parent)
 				}
 				if len(parents) == 0 {
 					return AssertError(fmt.Sprintf("initDAGState: Could "+
@@ -1034,6 +1038,17 @@ func (b *BlockDAG) initDAGState() error {
 			lastNode = node
 			i++
 		}
+
+		tips := newSet()
+		for _, hash := range state.TipHashes {
+			tip := b.index.LookupNode(&hash)
+			if tip == nil {
+				return AssertError(fmt.Sprintf("initDAGState: cannot find "+
+					"DAG selectedTip %s in block index", hash))
+			}
+			tips.add(tip)
+		}
+		b.setTips(tips)
 
 		// Set the DAG view to the stored state.
 		selectedTip := b.index.LookupNode(&state.SelectedHash)

@@ -42,8 +42,10 @@ func fastLog2Floor(n uint32) uint8 {
 // The chain view for the branch ending in 6a consists of:
 //   genesis -> 1 -> 2 -> 3 -> 4a -> 5a -> 6a
 type dagView struct {
-	mtx   sync.Mutex
-	nodes []*blockNode
+	mtx     sync.Mutex
+	nodes   blockSet
+	tips    blockSet
+	genesis *blockNode
 }
 
 // newDAGView returns a new chain view for the given tip block node.  Passing
@@ -51,22 +53,12 @@ type dagView struct {
 // can be updated at any time via the setTip function.
 func newDAGView(tip *blockNode) *dagView {
 	// The mutex is intentionally not held since this is a constructor.
-	var c dagView
+	c := dagView{
+		tips:  newSet(),
+		nodes: newSet(),
+	}
 	c.setTip(tip)
 	return &c
-}
-
-// genesis returns the genesis block for the chain view.  This only differs from
-// the exported version in that it is up to the caller to ensure the lock is
-// held.
-//
-// This function MUST be called with the view mutex locked (for reads).
-func (c *dagView) genesis() *blockNode {
-	if len(c.nodes) == 0 {
-		return nil
-	}
-
-	return c.nodes[0]
 }
 
 // Genesis returns the genesis block for the chain view.
@@ -74,22 +66,9 @@ func (c *dagView) genesis() *blockNode {
 // This function is safe for concurrent access.
 func (c *dagView) Genesis() *blockNode {
 	c.mtx.Lock()
-	genesis := c.genesis()
+	genesis := c.genesis
 	c.mtx.Unlock()
 	return genesis
-}
-
-// tip returns the current tip block node for the chain view.  It will return
-// nil if there is no tip.  This only differs from the exported version in that
-// it is up to the caller to ensure the lock is held.
-//
-// This function MUST be called with the view mutex locked (for reads).
-func (c *dagView) tip() *blockNode {
-	if len(c.nodes) == 0 {
-		return nil
-	}
-
-	return c.nodes[len(c.nodes)-1]
 }
 
 // Tips returns the current tip block nodes for the chain view.  It will return
@@ -98,14 +77,9 @@ func (c *dagView) tip() *blockNode {
 // This function is safe for concurrent access.
 func (c *dagView) Tips() blockSet {
 	c.mtx.Lock()
-	tip := c.tip()
+	tips := c.tips
 	c.mtx.Unlock()
-
-	if tip == nil { // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
-		return newSet()
-	}
-
-	return setFromSlice(tip) // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
+	return tips
 }
 
 // SelecedTip returns the current selected tip block node for the chain view.
@@ -127,35 +101,19 @@ func (c *dagView) SelectedTip() *blockNode {
 func (c *dagView) setTip(node *blockNode) {
 	if node == nil {
 		// Keep the backing array around for potential future use.
-		c.nodes = c.nodes[:0]
+		c.nodes = newSet()
 		return
 	}
 
-	// Create or resize the slice that will hold the block nodes to the
-	// provided tip height.  When creating the slice, it is created with
-	// some additional capacity for the underlying array as append would do
-	// in order to reduce overhead when extending the chain later.  As long
-	// as the underlying array already has enough capacity, simply expand or
-	// contract the slice accordingly.  The additional capacity is chosen
-	// such that the array should only have to be extended about once a
-	// week.
-	needed := node.height + 1
-	if int32(cap(c.nodes)) < needed {
-		nodes := make([]*blockNode, needed, needed+approxNodesPerWeek)
-		copy(nodes, c.nodes)
-		c.nodes = nodes
+	if node.isGenesis() {
+		c.genesis = node
 	} else {
-		prevLen := int32(len(c.nodes))
-		c.nodes = c.nodes[0:needed]
-		for i := prevLen; i < needed; i++ {
-			c.nodes[i] = nil
+		for hash := range node.parents {
+			delete(c.tips, hash)
 		}
 	}
-
-	for node != nil && c.nodes[node.height] != node {
-		c.nodes[node.height] = node
-		node = node.selectedParent
-	}
+	c.tips.add(node)
+	c.nodes.add(node)
 }
 
 // SetTip sets the chain view to use the provided block node as the current tip
@@ -203,7 +161,13 @@ func (c *dagView) nodeByHeight(height int32) *blockNode {
 		return nil
 	}
 
-	return c.nodes[height]
+	for _, node := range c.nodes { //TODO: (Ori) This is wrong. Done only for compilation. We should probably get rid of this method
+		if node.height == height {
+			return node
+		}
+	}
+
+	return nil
 }
 
 // NodeByHeight returns the block node at the specified height.  Nil will be
@@ -224,7 +188,7 @@ func (c *dagView) NodeByHeight(height int32) *blockNode {
 func (c *dagView) Equals(other *dagView) bool {
 	c.mtx.Lock()
 	other.mtx.Lock()
-	equals := len(c.nodes) == len(other.nodes) && c.tip() == other.tip()
+	equals := len(c.nodes) == len(other.nodes) && c.tips.first() == other.tips.first() //TODO: (Ori) This is wrong. Done only for compilation. We should probably get rid of this method
 	other.mtx.Unlock()
 	c.mtx.Unlock()
 	return equals
@@ -364,7 +328,7 @@ func (c *dagView) FindFork(node *blockNode) *blockNode {
 func (c *dagView) blockLocator(node *blockNode) BlockLocator {
 	// Use the current tip if requested.
 	if node == nil {
-		node = c.tip()
+		node = c.SelectedTip() //TODO: (Ori) This is wrong. Done only for compilation. We should probably get rid of this method
 	}
 	if node == nil {
 		return nil
@@ -405,7 +369,7 @@ func (c *dagView) blockLocator(node *blockNode) BlockLocator {
 		// that case.  Otherwise, fall back to walking backwards through
 		// the nodes of the other chain to the correct ancestor.
 		if c.contains(node) {
-			node = c.nodes[height]
+			node = c.nodeByHeight(height) //TODO: (Ori) This is wrong. Done only for compilation. We should probably get rid of this method
 		} else {
 			node = node.Ancestor(height)
 		}

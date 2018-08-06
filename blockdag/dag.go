@@ -186,6 +186,10 @@ type BlockDAG struct {
 	// certain blockchain events.
 	notificationsLock sync.RWMutex
 	notifications     []NotificationCallback
+
+	//Tips are all the blocks in the DAG that have no children
+	Tips    blockSet
+	tipsMtx sync.Mutex
 }
 
 // HaveBlock returns whether or not the DAG instance has the block represented
@@ -588,6 +592,7 @@ func (b *BlockDAG) connectBlock(node *blockNode, block *btcutil.Block, view *Utx
 
 	// This node is now the end of the best chain.
 	b.dag.SetTip(node)
+	b.addTip(node)
 
 	// Update the state for the best block.  Notice how this replaces the
 	// entire struct instead of updating the existing one.  This effectively
@@ -604,6 +609,25 @@ func (b *BlockDAG) connectBlock(node *blockNode, block *btcutil.Block, view *Utx
 	b.dagLock.Lock()
 
 	return nil
+}
+
+//addTip add the node as a new tip to the dag, and removes all of its parents from the tips
+func (b *BlockDAG) addTip(node *blockNode) {
+	b.tipsMtx.Lock()
+	defer b.tipsMtx.Unlock()
+
+	for hash := range node.parents {
+		delete(b.Tips, hash)
+	}
+	b.Tips.add(node)
+}
+
+//setTips overrides the current tips with new ones
+func (b *BlockDAG) setTips(nodes blockSet) {
+	b.tipsMtx.Lock()
+	defer b.tipsMtx.Unlock()
+
+	b.Tips = nodes
 }
 
 // countSpentOutputs returns the number of utxos the passed block spends.
@@ -862,7 +886,7 @@ func (b *BlockDAG) HeightRange(startHeight, endHeight int32) ([]daghash.Hash, er
 
 	// When the requested start height is after the most recent best chain
 	// height, there is nothing to do.
-	latestHeight := b.dag.tip().height
+	latestHeight := b.dag.SelectedTip().height //TODO: (Ori) This is wrong. Done only for compilation.
 	if startHeight > latestHeight {
 		return nil, nil
 	}
@@ -1240,6 +1264,7 @@ func New(config *Config) (*BlockDAG, error) {
 		prevOrphans:         make(map[daghash.Hash][]*orphanBlock),
 		warningCaches:       newThresholdCaches(vbNumBits),
 		deploymentCaches:    newThresholdCaches(dagconfig.DefinedDeployments),
+		Tips:                newSet(),
 	}
 
 	// Initialize the chain state from the passed database.  When the db
