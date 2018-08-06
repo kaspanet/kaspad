@@ -364,7 +364,7 @@ func newTestDAG(params *dagconfig.Params) *BlockDAG {
 		maxRetargetTimespan: targetTimespan * adjustmentFactor,
 		blocksPerRetarget:   int32(targetTimespan / targetTimePerBlock),
 		index:               index,
-		dag:                 newDAGView(node),
+		virtual:             newDAGView(node),
 		warningCaches:       newThresholdCaches(vbNumBits),
 		deploymentCaches:    newThresholdCaches(dagconfig.DefinedDeployments),
 	}

@@ -99,7 +99,7 @@ func (b *BlockDAG) findPreviousCheckpoint() (*blockNode, error) {
 		// that is already available.
 		for i := numCheckpoints - 1; i >= 0; i-- {
 			node := b.index.LookupNode(checkpoints[i].Hash)
-			if node == nil || !b.dag.Contains(node) {
+			if node == nil || !b.virtual.Contains(node) {
 				continue
 			}
 
@@ -130,7 +130,7 @@ func (b *BlockDAG) findPreviousCheckpoint() (*blockNode, error) {
 	// When there is a next checkpoint and the height of the current best
 	// chain does not exceed it, the current checkpoint lockin is still
 	// the latest known checkpoint.
-	if b.dag.SelectedTip().height < b.nextCheckpoint.Height {
+	if b.virtual.SelectedTip().height < b.nextCheckpoint.Height {
 		return b.checkpointNode, nil
 	}
 
@@ -203,7 +203,7 @@ func (b *BlockDAG) IsCheckpointCandidate(block *btcutil.Block) (bool, error) {
 
 	// A checkpoint must be in the main chain.
 	node := b.index.LookupNode(block.Hash())
-	if node == nil || !b.dag.Contains(node) {
+	if node == nil || !b.virtual.Contains(node) {
 		return false, nil
 	}
 
@@ -218,7 +218,7 @@ func (b *BlockDAG) IsCheckpointCandidate(block *btcutil.Block) (bool, error) {
 
 	// A checkpoint must be at least CheckpointConfirmations blocks
 	// before the end of the main chain.
-	mainChainHeight := b.dag.SelectedTip().height
+	mainChainHeight := b.virtual.SelectedTip().height
 	if node.height > (mainChainHeight - CheckpointConfirmations) {
 		return false, nil
 	}
@@ -228,7 +228,7 @@ func (b *BlockDAG) IsCheckpointCandidate(block *btcutil.Block) (bool, error) {
 	// This should always succeed since the check above already made sure it
 	// is CheckpointConfirmations back, but be safe in case the constant
 	// changes.
-	nextNode := b.dag.Next(node)
+	nextNode := b.virtual.Next(node)
 	if nextNode == nil {
 		return false, nil
 	}

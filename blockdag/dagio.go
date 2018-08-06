@@ -841,7 +841,7 @@ func (b *BlockDAG) createDAGState() error {
 	header := &genesisBlock.MsgBlock().Header
 	node := newBlockNode(header, nil, b.dagParams.K)
 	node.status = statusDataStored | statusValid
-	b.dag.SetTip(node)
+	b.virtual.SetTip(node)
 
 	// Add the new node to the index which is used for faster lookups.
 	b.index.addNode(node)
@@ -850,7 +850,7 @@ func (b *BlockDAG) createDAGState() error {
 	// its timestamp for the median time.
 	numTxs := uint64(len(genesisBlock.MsgBlock().Transactions))
 	blockSize := uint64(genesisBlock.MsgBlock().SerializeSize())
-	dagState := newDAGState(b.dag.Tips().hashes(), node, blockSize, numTxs,
+	dagState := newDAGState(b.virtual.Tips().hashes(), node, blockSize, numTxs,
 		numTxs, time.Unix(node.timestamp, 0))
 	b.setDAGState(dagState)
 
@@ -1040,7 +1040,7 @@ func (b *BlockDAG) initDAGState() error {
 			return AssertError(fmt.Sprintf("initDAGState: cannot find "+
 				"DAG selectedTip %s in block index", state.SelectedHash))
 		}
-		b.dag.SetTip(selectedTip)
+		b.virtual.SetTip(selectedTip)
 
 		// Load the raw block bytes for the selected tip.
 		blockBytes, err := dbTx.FetchBlock(&state.SelectedHash)
@@ -1056,7 +1056,7 @@ func (b *BlockDAG) initDAGState() error {
 		// Initialize the DAG state.
 		blockSize := uint64(len(blockBytes))
 		numTxns := uint64(len(block.Transactions))
-		dagState := newDAGState(b.dag.Tips().hashes(), selectedTip, blockSize, numTxns, state.TotalTxs, selectedTip.CalcPastMedianTime())
+		dagState := newDAGState(b.virtual.Tips().hashes(), selectedTip, blockSize, numTxns, state.TotalTxs, selectedTip.CalcPastMedianTime())
 		b.setDAGState(dagState)
 
 		return nil
@@ -1169,7 +1169,7 @@ func blockIndexKey(blockHash *daghash.Hash, blockHeight uint32) []byte {
 // This function is safe for concurrent access.
 func (b *BlockDAG) BlockByHeight(blockHeight int32) (*btcutil.Block, error) {
 	// Lookup the block height in the best chain.
-	node := b.dag.NodeByHeight(blockHeight)
+	node := b.virtual.NodeByHeight(blockHeight)
 	if node == nil {
 		str := fmt.Sprintf("no block at height %d exists", blockHeight)
 		return nil, errNotInMainChain(str)
@@ -1193,7 +1193,7 @@ func (b *BlockDAG) BlockByHash(hash *daghash.Hash) (*btcutil.Block, error) {
 	// Lookup the block hash in block index and ensure it is in the best
 	// chain.
 	node := b.index.LookupNode(hash)
-	if node == nil || !b.dag.Contains(node) {
+	if node == nil || !b.virtual.Contains(node) {
 		str := fmt.Sprintf("block %s is not in the main chain", hash)
 		return nil, errNotInMainChain(str)
 	}

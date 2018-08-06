@@ -123,10 +123,10 @@ type BlockDAG struct {
 	// index houses the entire block index in memory.  The block index is
 	// a tree-shaped structure.
 	//
-	// dag tracks the current active chain by making use of an
+	// virtual tracks the current active chain by making use of an
 	// efficient chain view into the block index.
-	index *blockIndex
-	dag   *dagView
+	index   *blockIndex
+	virtual *virtualBlock
 
 	// These fields are related to handling of orphan blocks.  They are
 	// protected by a combination of the chain lock and the orphan lock.
@@ -373,7 +373,7 @@ func (b *BlockDAG) CalcSequenceLock(tx *btcutil.Tx, utxoView *UtxoViewpoint, mem
 	b.dagLock.Lock()
 	defer b.dagLock.Unlock()
 
-	return b.calcSequenceLock(b.dag.SelectedTip(), tx, utxoView, mempool)
+	return b.calcSequenceLock(b.virtual.SelectedTip(), tx, utxoView, mempool)
 }
 
 // calcSequenceLock computes the relative lock-times for the passed
@@ -587,7 +587,7 @@ func (b *BlockDAG) connectBlock(node *blockNode, block *btcutil.Block, view *Utx
 	view.commit()
 
 	// This node is now the end of the best chain.
-	b.dag.SetTip(node)
+	b.virtual.SetTip(node)
 
 	// Update the state for the best block.  Notice how this replaces the
 	// entire struct instead of updating the existing one.  This effectively
@@ -692,7 +692,7 @@ func (b *BlockDAG) isCurrent() bool {
 	// Not current if the latest main (best) chain height is before the
 	// latest known good checkpoint (when checkpoints are enabled).
 	checkpoint := b.LatestCheckpoint()
-	if checkpoint != nil && b.dag.SelectedTip().height < checkpoint.Height {
+	if checkpoint != nil && b.virtual.SelectedTip().height < checkpoint.Height {
 		return false
 	}
 
@@ -702,7 +702,7 @@ func (b *BlockDAG) isCurrent() bool {
 	// The chain appears to be current if none of the checks reported
 	// otherwise.
 	minus24Hours := b.timeSource.AdjustedTime().Add(-24 * time.Hour).Unix()
-	return b.dag.SelectedTip().timestamp >= minus24Hours
+	return b.virtual.SelectedTip().timestamp >= minus24Hours
 }
 
 // IsCurrent returns whether or not the chain believes it is current.  Several
@@ -773,7 +773,7 @@ func (b *BlockDAG) FetchHeader(hash *daghash.Hash) (wire.BlockHeader, error) {
 // This function is safe for concurrent access.
 func (b *BlockDAG) MainChainHasBlock(hash *daghash.Hash) bool {
 	node := b.index.LookupNode(hash)
-	return node != nil && b.dag.Contains(node)
+	return node != nil && b.virtual.Contains(node)
 }
 
 // BlockLocatorFromHash returns a block locator for the passed block hash.
@@ -787,7 +787,7 @@ func (b *BlockDAG) MainChainHasBlock(hash *daghash.Hash) bool {
 func (b *BlockDAG) BlockLocatorFromHash(hash *daghash.Hash) BlockLocator {
 	b.dagLock.RLock()
 	node := b.index.LookupNode(hash)
-	locator := b.dag.blockLocator(node)
+	locator := b.virtual.blockLocator(node)
 	b.dagLock.RUnlock()
 	return locator
 }
@@ -798,7 +798,7 @@ func (b *BlockDAG) BlockLocatorFromHash(hash *daghash.Hash) BlockLocator {
 // This function is safe for concurrent access.
 func (b *BlockDAG) LatestBlockLocator() (BlockLocator, error) {
 	b.dagLock.RLock()
-	locator := b.dag.BlockLocator(nil)
+	locator := b.virtual.BlockLocator(nil)
 	b.dagLock.RUnlock()
 	return locator, nil
 }
@@ -809,7 +809,7 @@ func (b *BlockDAG) LatestBlockLocator() (BlockLocator, error) {
 // This function is safe for concurrent access.
 func (b *BlockDAG) BlockHeightByHash(hash *daghash.Hash) (int32, error) {
 	node := b.index.LookupNode(hash)
-	if node == nil || !b.dag.Contains(node) {
+	if node == nil || !b.virtual.Contains(node) {
 		str := fmt.Sprintf("block %s is not in the main chain", hash)
 		return 0, errNotInMainChain(str)
 	}
@@ -822,7 +822,7 @@ func (b *BlockDAG) BlockHeightByHash(hash *daghash.Hash) (int32, error) {
 //
 // This function is safe for concurrent access.
 func (b *BlockDAG) BlockHashByHeight(blockHeight int32) (*daghash.Hash, error) {
-	node := b.dag.NodeByHeight(blockHeight)
+	node := b.virtual.NodeByHeight(blockHeight)
 	if node == nil {
 		str := fmt.Sprintf("no block at height %d exists", blockHeight)
 		return nil, errNotInMainChain(str)
@@ -857,12 +857,12 @@ func (b *BlockDAG) HeightRange(startHeight, endHeight int32) ([]daghash.Hash, er
 
 	// Grab a lock on the chain view to prevent it from changing due to a
 	// reorg while building the hashes.
-	b.dag.mtx.Lock()
-	defer b.dag.mtx.Unlock()
+	b.virtual.mtx.Lock()
+	defer b.virtual.mtx.Unlock()
 
 	// When the requested start height is after the most recent best chain
 	// height, there is nothing to do.
-	latestHeight := b.dag.tip().height
+	latestHeight := b.virtual.tip().height
 	if startHeight > latestHeight {
 		return nil, nil
 	}
@@ -875,7 +875,7 @@ func (b *BlockDAG) HeightRange(startHeight, endHeight int32) ([]daghash.Hash, er
 	// Fetch as many as are available within the specified range.
 	hashes := make([]daghash.Hash, 0, endHeight-startHeight)
 	for i := startHeight; i < endHeight; i++ {
-		hashes = append(hashes, b.dag.nodeByHeight(i).hash)
+		hashes = append(hashes, b.virtual.nodeByHeight(i).hash)
 	}
 	return hashes, nil
 }
@@ -941,16 +941,16 @@ func (b *BlockDAG) IntervalBlockHashes(endHash *daghash.Hash, interval int,
 	resultsLength := int(endHeight) / interval
 	hashes := make([]daghash.Hash, resultsLength)
 
-	b.dag.mtx.Lock()
-	defer b.dag.mtx.Unlock()
+	b.virtual.mtx.Lock()
+	defer b.virtual.mtx.Unlock()
 
 	blockNode := endNode
 	for index := int(endHeight) / interval; index > 0; index-- {
-		// Use the bestChain dagView for faster lookups once lookup intersects
+		// Use the bestChain virtualBlock for faster lookups once lookup intersects
 		// the best chain.
 		blockHeight := int32(index * interval)
-		if b.dag.contains(blockNode) {
-			blockNode = b.dag.nodeByHeight(blockHeight)
+		if b.virtual.contains(blockNode) {
+			blockNode = b.virtual.nodeByHeight(blockHeight)
 		} else {
 			blockNode = blockNode.Ancestor(blockHeight)
 		}
@@ -993,10 +993,10 @@ func (b *BlockDAG) locateInventory(locator BlockLocator, hashStop *daghash.Hash,
 	// Find the most recent locator block hash in the main chain.  In the
 	// case none of the hashes in the locator are in the main chain, fall
 	// back to the genesis block.
-	startNode := b.dag.Genesis()
+	startNode := b.virtual.Genesis()
 	for _, hash := range locator {
 		node := b.index.LookupNode(hash)
-		if node != nil && b.dag.Contains(node) {
+		if node != nil && b.virtual.Contains(node) {
 			startNode = node
 			break
 		}
@@ -1005,14 +1005,14 @@ func (b *BlockDAG) locateInventory(locator BlockLocator, hashStop *daghash.Hash,
 	// Start at the block after the most recently known block.  When there
 	// is no next block it means the most recently known block is the tip of
 	// the best chain, so there is nothing more to do.
-	startNode = b.dag.Next(startNode)
+	startNode = b.virtual.Next(startNode)
 	if startNode == nil {
 		return nil, 0
 	}
 
 	// Calculate how many entries are needed.
-	total := uint32((b.dag.SelectedTip().height - startNode.height) + 1)
-	if stopNode != nil && b.dag.Contains(stopNode) &&
+	total := uint32((b.virtual.SelectedTip().height - startNode.height) + 1)
+	if stopNode != nil && b.virtual.Contains(stopNode) &&
 		stopNode.height >= startNode.height {
 
 		total = uint32((stopNode.height - startNode.height) + 1)
@@ -1044,7 +1044,7 @@ func (b *BlockDAG) locateBlocks(locator BlockLocator, hashStop *daghash.Hash, ma
 	hashes := make([]daghash.Hash, 0, total)
 	for i := uint32(0); i < total; i++ {
 		hashes = append(hashes, node.hash)
-		node = b.dag.Next(node)
+		node = b.virtual.Next(node)
 	}
 	return hashes
 }
@@ -1089,7 +1089,7 @@ func (b *BlockDAG) locateHeaders(locator BlockLocator, hashStop *daghash.Hash, m
 	headers := make([]wire.BlockHeader, 0, total)
 	for i := uint32(0); i < total; i++ {
 		headers = append(headers, node.Header())
-		node = b.dag.Next(node)
+		node = b.virtual.Next(node)
 	}
 	return headers
 }
@@ -1235,7 +1235,7 @@ func New(config *Config) (*BlockDAG, error) {
 		maxRetargetTimespan: targetTimespan * adjustmentFactor,
 		blocksPerRetarget:   int32(targetTimespan / targetTimePerBlock),
 		index:               newBlockIndex(config.DB, params),
-		dag:                 newDAGView(nil),
+		virtual:             newDAGView(nil),
 		orphans:             make(map[daghash.Hash]*orphanBlock),
 		prevOrphans:         make(map[daghash.Hash][]*orphanBlock),
 		warningCaches:       newThresholdCaches(vbNumBits),
@@ -1268,7 +1268,7 @@ func New(config *Config) (*BlockDAG, error) {
 		return nil, err
 	}
 
-	selectedTip := b.dag.SelectedTip()
+	selectedTip := b.virtual.SelectedTip()
 	log.Infof("DAG state (height %d, hash %v, totaltx %d, work %v)",
 		selectedTip.height, selectedTip.hash, b.dagState.TotalTxs,
 		selectedTip.workSum)

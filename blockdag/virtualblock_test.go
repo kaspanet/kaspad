@@ -77,17 +77,17 @@ func TestChainView(t *testing.T) {
 	tip := tstTip
 	tests := []struct {
 		name       string
-		view       *dagView     // active view
-		genesis    *blockNode   // expected genesis block of active view
-		tip        *blockNode   // expected tip of active view
-		side       *dagView     // side chain view
-		sideTip    *blockNode   // expected tip of side chain view
-		fork       *blockNode   // expected fork node
-		contains   []*blockNode // expected nodes in active view
-		noContains []*blockNode // expected nodes NOT in active view
-		equal      *dagView     // view expected equal to active view
-		unequal    *dagView     // view expected NOT equal to active
-		locator    BlockLocator // expected locator for active view tip
+		view       *virtualBlock // active view
+		genesis    *blockNode    // expected genesis block of active view
+		tip        *blockNode    // expected tip of active view
+		side       *virtualBlock // side chain view
+		sideTip    *blockNode    // expected tip of side chain view
+		fork       *blockNode    // expected fork node
+		contains   []*blockNode  // expected nodes in active view
+		noContains []*blockNode  // expected nodes NOT in active view
+		equal      *virtualBlock // view expected equal to active view
+		unequal    *virtualBlock // view expected NOT equal to active
+		locator    BlockLocator  // expected locator for active view tip
 	}{
 		{
 			// Create a view for branch 0 as the active chain and
@@ -341,7 +341,7 @@ func TestChainViewSetTip(t *testing.T) {
 	tip := tstTip
 	tests := []struct {
 		name     string
-		view     *dagView       // active view
+		view     *virtualBlock  // active view
 		tips     []*blockNode   // tips to set
 		contains [][]*blockNode // expected nodes in view for each tip
 	}{
