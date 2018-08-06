@@ -1235,7 +1235,7 @@ func New(config *Config) (*BlockDAG, error) {
 		maxRetargetTimespan: targetTimespan * adjustmentFactor,
 		blocksPerRetarget:   int32(targetTimespan / targetTimePerBlock),
 		index:               newBlockIndex(config.DB, params),
-		virtual:             newDAGView(nil),
+		virtual:             newVirtualBlock(nil),
 		orphans:             make(map[daghash.Hash]*orphanBlock),
 		prevOrphans:         make(map[daghash.Hash][]*orphanBlock),
 		warningCaches:       newThresholdCaches(vbNumBits),

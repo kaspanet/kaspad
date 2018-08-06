@@ -31,25 +31,14 @@ func fastLog2Floor(n uint32) uint8 {
 	return rv
 }
 
-// virtualBlock provides a flat view of a specific branch of the block chain from
-// its tip back to the genesis block and provides various convenience functions
-// for comparing chains.
-//
-// For example, assume a block chain with a side chain as depicted below:
-//   genesis -> 1 -> 2 -> 3 -> 4  -> 5 ->  6  -> 7  -> 8
-//                         \-> 4a -> 5a -> 6a
-//
-// The chain view for the branch ending in 6a consists of:
-//   genesis -> 1 -> 2 -> 3 -> 4a -> 5a -> 6a
+// virtualBlock is a virtual block whose parents are the tip of the DAG.
 type virtualBlock struct {
 	mtx   sync.Mutex
 	nodes []*blockNode
 }
 
-// newDAGView returns a new chain view for the given tip block node.  Passing
-// nil as the tip will result in a chain view that is not initialized.  The tip
-// can be updated at any time via the setTip function.
-func newDAGView(tip *blockNode) *virtualBlock {
+// newVirtualBlock creates and returns a new virtualBlock.
+func newVirtualBlock(tip *blockNode) *virtualBlock {
 	// The mutex is intentionally not held since this is a constructor.
 	var c virtualBlock
 	c.setTip(tip)

@@ -461,13 +461,13 @@ func TestLocateInventory(t *testing.T) {
 
 	// Create chain views for different branches of the overall chain to
 	// simulate a local and remote node on different parts of the chain.
-	localView := newDAGView(tip(branch0Nodes))
-	remoteView := newDAGView(tip(branch1Nodes))
+	localView := newVirtualBlock(tip(branch0Nodes))
+	remoteView := newVirtualBlock(tip(branch1Nodes))
 
 	// Create a chain view for a completely unrelated block chain to
 	// simulate a remote node on a totally different chain.
 	unrelatedBranchNodes := chainedNodes(newSet(), 5)
-	unrelatedView := newDAGView(tip(unrelatedBranchNodes))
+	unrelatedView := newVirtualBlock(tip(unrelatedBranchNodes))
 
 	tests := []struct {
 		name       string

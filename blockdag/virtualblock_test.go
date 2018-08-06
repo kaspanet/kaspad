@@ -93,32 +93,32 @@ func TestChainView(t *testing.T) {
 			// Create a view for branch 0 as the active chain and
 			// another view for branch 1 as the side chain.
 			name:       "chain0-chain1",
-			view:       newDAGView(tip(branch0Nodes)),
+			view:       newVirtualBlock(tip(branch0Nodes)),
 			genesis:    branch0Nodes[0],
 			tip:        tip(branch0Nodes),
-			side:       newDAGView(tip(branch1Nodes)),
+			side:       newVirtualBlock(tip(branch1Nodes)),
 			sideTip:    tip(branch1Nodes),
 			fork:       branch0Nodes[1],
 			contains:   branch0Nodes,
 			noContains: branch1Nodes,
-			equal:      newDAGView(tip(branch0Nodes)),
-			unequal:    newDAGView(tip(branch1Nodes)),
+			equal:      newVirtualBlock(tip(branch0Nodes)),
+			unequal:    newVirtualBlock(tip(branch1Nodes)),
 			locator:    locatorHashes(branch0Nodes, 4, 3, 2, 1, 0),
 		},
 		{
 			// Create a view for branch 1 as the active chain and
 			// another view for branch 2 as the side chain.
 			name:       "chain1-chain2",
-			view:       newDAGView(tip(branch1Nodes)),
+			view:       newVirtualBlock(tip(branch1Nodes)),
 			genesis:    branch0Nodes[0],
 			tip:        tip(branch1Nodes),
-			side:       newDAGView(tip(branch2Nodes)),
+			side:       newVirtualBlock(tip(branch2Nodes)),
 			sideTip:    tip(branch2Nodes),
 			fork:       branch1Nodes[0],
 			contains:   branch1Nodes,
 			noContains: branch2Nodes,
-			equal:      newDAGView(tip(branch1Nodes)),
-			unequal:    newDAGView(tip(branch2Nodes)),
+			equal:      newVirtualBlock(tip(branch1Nodes)),
+			unequal:    newVirtualBlock(tip(branch2Nodes)),
 			locator: zipLocators(
 				locatorHashes(branch1Nodes, 24, 23, 22, 21, 20,
 					19, 18, 17, 16, 15, 14, 13, 11, 7),
@@ -128,16 +128,16 @@ func TestChainView(t *testing.T) {
 			// Create a view for branch 2 as the active chain and
 			// another view for branch 0 as the side chain.
 			name:       "chain2-chain0",
-			view:       newDAGView(tip(branch2Nodes)),
+			view:       newVirtualBlock(tip(branch2Nodes)),
 			genesis:    branch0Nodes[0],
 			tip:        tip(branch2Nodes),
-			side:       newDAGView(tip(branch0Nodes)),
+			side:       newVirtualBlock(tip(branch0Nodes)),
 			sideTip:    tip(branch0Nodes),
 			fork:       branch0Nodes[1],
 			contains:   branch2Nodes,
 			noContains: branch0Nodes[2:],
-			equal:      newDAGView(tip(branch2Nodes)),
-			unequal:    newDAGView(tip(branch0Nodes)),
+			equal:      newVirtualBlock(tip(branch2Nodes)),
+			unequal:    newVirtualBlock(tip(branch0Nodes)),
 			locator: zipLocators(
 				locatorHashes(branch2Nodes, 2, 1, 0),
 				locatorHashes(branch1Nodes, 0),
@@ -303,8 +303,8 @@ func TestChainViewForkCorners(t *testing.T) {
 	unrelatedBranchNodes := chainedNodes(nil, 7)
 
 	// Create chain views for the two unrelated histories.
-	view1 := newDAGView(tstTip(branchNodes))
-	view2 := newDAGView(tstTip(unrelatedBranchNodes))
+	view1 := newVirtualBlock(tstTip(branchNodes))
+	view2 := newVirtualBlock(tstTip(unrelatedBranchNodes))
 
 	// Ensure attempting to find a fork point with a node that doesn't exist
 	// doesn't produce a node.
@@ -349,7 +349,7 @@ func TestChainViewSetTip(t *testing.T) {
 			// Create an empty view and set the tip to increasingly
 			// longer chains.
 			name:     "increasing",
-			view:     newDAGView(nil),
+			view:     newVirtualBlock(nil),
 			tips:     []*blockNode{tip(branch0Nodes), tip(branch1Nodes)},
 			contains: [][]*blockNode{branch0Nodes, branch1Nodes},
 		},
@@ -357,7 +357,7 @@ func TestChainViewSetTip(t *testing.T) {
 			// Create a view with a longer chain and set the tip to
 			// increasingly shorter chains.
 			name:     "decreasing",
-			view:     newDAGView(tip(branch1Nodes)),
+			view:     newVirtualBlock(tip(branch1Nodes)),
 			tips:     []*blockNode{tip(branch0Nodes), nil},
 			contains: [][]*blockNode{branch0Nodes, nil},
 		},
@@ -366,7 +366,7 @@ func TestChainViewSetTip(t *testing.T) {
 			// a longer chain followed by setting it back to the
 			// shorter chain.
 			name:     "small-large-small",
-			view:     newDAGView(tip(branch0Nodes)),
+			view:     newVirtualBlock(tip(branch0Nodes)),
 			tips:     []*blockNode{tip(branch1Nodes), tip(branch0Nodes)},
 			contains: [][]*blockNode{branch1Nodes, branch0Nodes},
 		},
@@ -375,7 +375,7 @@ func TestChainViewSetTip(t *testing.T) {
 			// a smaller chain followed by setting it back to the
 			// longer chain.
 			name:     "large-small-large",
-			view:     newDAGView(tip(branch1Nodes)),
+			view:     newVirtualBlock(tip(branch1Nodes)),
 			tips:     []*blockNode{tip(branch0Nodes), tip(branch1Nodes)},
 			contains: [][]*blockNode{branch0Nodes, branch1Nodes},
 		},
@@ -410,8 +410,8 @@ testLoop:
 // as expected.
 func TestChainViewNil(t *testing.T) {
 	// Ensure two unininitialized views are considered equal.
-	view := newDAGView(nil)
-	if !view.Equals(newDAGView(nil)) {
+	view := newVirtualBlock(nil)
+	if !view.Equals(newVirtualBlock(nil)) {
 		t.Fatal("uninitialized nil views unequal")
 	}
 
