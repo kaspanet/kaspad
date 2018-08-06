@@ -3,15 +3,15 @@
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
-package main
+package rpcserver
 
 import (
 	"errors"
 	"sort"
 	"strings"
-	"sync"
 
 	"github.com/daglabs/btcd/btcjson"
+	"github.com/daglabs/btcd/server"
 )
 
 // helpDescsEnUS defines the English descriptions used for the help strings.
@@ -725,18 +725,10 @@ var rpcResultTypes = map[string][]interface{}{
 	"rescanblocks":              {(*[]btcjson.RescannedBlock)(nil)},
 }
 
-// helpCacher provides a concurrent safe type that provides help and usage for
-// the RPC server commands and caches the results for future calls.
-type helpCacher struct {
-	sync.Mutex
-	usage      string
-	methodHelp map[string]string
-}
-
 // rpcMethodHelp returns an RPC help string for the provided method.
 //
 // This function is safe for concurrent access.
-func (c *helpCacher) rpcMethodHelp(method string) (string, error) {
+func rpcMethodHelp(c *server.HelpCacher, method string) (string, error) {
 	c.Lock()
 	defer c.Unlock()
 
@@ -764,7 +756,7 @@ func (c *helpCacher) rpcMethodHelp(method string) (string, error) {
 // rpcUsage returns one-line usage for all support RPC commands.
 //
 // This function is safe for concurrent access.
-func (c *helpCacher) rpcUsage(includeWebsockets bool) (string, error) {
+func rpcUsage(c *server.HelpCacher, includeWebsockets bool) (string, error) {
 	c.Lock()
 	defer c.Unlock()
 
@@ -801,8 +793,8 @@ func (c *helpCacher) rpcUsage(includeWebsockets bool) (string, error) {
 
 // newHelpCacher returns a new instance of a help cacher which provides help and
 // usage for the RPC server commands and caches the results for future calls.
-func newHelpCacher() *helpCacher {
-	return &helpCacher{
-		methodHelp: make(map[string]string),
+func newHelpCacher() *server.HelpCacher {
+	return &server.HelpCacher{
+		MethodHelp: make(map[string]string),
 	}
 }

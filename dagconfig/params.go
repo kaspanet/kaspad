@@ -159,6 +159,9 @@ type Params struct {
 	// Net defines the magic bytes used to identify the network.
 	Net wire.BitcoinNet
 
+	// RPCPort defines the rpc server port
+	RPCPort string
+
 	// DefaultPort defines the default peer-to-peer port for the network.
 	DefaultPort string
 
@@ -266,6 +269,7 @@ var MainNetParams = Params{
 	K:           phantomK,
 	Name:        "mainnet",
 	Net:         wire.MainNet,
+	RPCPort:     "8334",
 	DefaultPort: "8333",
 	DNSSeeds: []DNSSeed{
 		{"seed.bitcoin.sipa.be", true},
@@ -353,6 +357,7 @@ var RegressionNetParams = Params{
 	K:           phantomK,
 	Name:        "regtest",
 	Net:         wire.TestNet,
+	RPCPort:     "18334",
 	DefaultPort: "18444",
 	DNSSeeds:    []DNSSeed{},
 
@@ -414,6 +419,7 @@ var TestNet3Params = Params{
 	K:           phantomK,
 	Name:        "testnet3",
 	Net:         wire.TestNet3,
+	RPCPort:     "18334",
 	DefaultPort: "18333",
 	DNSSeeds: []DNSSeed{
 		{"testnet-seed.bitcoin.jonasschnelli.ch", true},
@@ -496,6 +502,7 @@ var SimNetParams = Params{
 	K:           phantomK,
 	Name:        "simnet",
 	Net:         wire.SimNet,
+	RPCPort:     "18556",
 	DefaultPort: "18555",
 	DNSSeeds:    []DNSSeed{}, // NOTE: There must NOT be any seeds.
 

@@ -6,6 +6,7 @@ package database
 
 import (
 	"github.com/btcsuite/btclog"
+	"github.com/daglabs/btcd/logger"
 )
 
 // log is a logger that is initialized with no output filters.  This
@@ -15,23 +16,11 @@ var log btclog.Logger
 
 // The default amount of logging is none.
 func init() {
-	DisableLog()
-}
-
-// DisableLog disables all library log output.  Logging output is disabled
-// by default until UseLogger is called.
-func DisableLog() {
-	log = btclog.Disabled
-}
-
-// UseLogger uses a specified Logger to output package logging info.
-func UseLogger(logger btclog.Logger) {
-	log = logger
-
+	log, _ = logger.Get(logger.SubsystemTags.BCDB)
 	// Update the logger for the registered drivers.
 	for _, drv := range drivers {
 		if drv.UseLogger != nil {
-			drv.UseLogger(logger)
+			drv.UseLogger(log)
 		}
 	}
 }

@@ -1,4 +1,4 @@
-package main
+package server
 
 // Upnp code taken from Taipei Torrent license is below:
 // Copyright (c) 2010 Jack Palevich. All rights reserved.

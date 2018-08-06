@@ -10,8 +10,9 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/daglabs/btcd/database"
 	"github.com/btcsuite/btclog"
+	"github.com/daglabs/btcd/database"
+	"github.com/daglabs/btcd/logger"
 	flags "github.com/jessevdk/go-flags"
 )
 
@@ -64,9 +65,8 @@ func realMain() error {
 	backendLogger := btclog.NewBackend(os.Stdout)
 	defer os.Stdout.Sync()
 	log = backendLogger.Logger("MAIN")
-	dbLog := backendLogger.Logger("BCDB")
+	dbLog := logger.Get(logger.SubsystemTags.BCDB)
 	dbLog.SetLevel(btclog.LevelDebug)
-	database.UseLogger(dbLog)
 
 	// Setup the parser options and commands.
 	appName := filepath.Base(os.Args[0])

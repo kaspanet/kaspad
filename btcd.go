@@ -16,8 +16,10 @@ import (
 	"runtime/pprof"
 
 	"github.com/daglabs/btcd/blockdag/indexers"
+	"github.com/daglabs/btcd/config"
 	"github.com/daglabs/btcd/database"
 	"github.com/daglabs/btcd/limits"
+	"github.com/daglabs/btcd/server"
 )
 
 const (
@@ -28,7 +30,7 @@ const (
 )
 
 var (
-	cfg *config
+	cfg *config.Config
 )
 
 // winServiceMain is only invoked on Windows.  It detects when btcd is running
@@ -40,14 +42,14 @@ var winServiceMain func() (bool, error)
 // optional serverChan parameter is mainly used by the service code to be
 // notified with the server once it is setup so it can gracefully stop it when
 // requested from the service control manager.
-func btcdMain(serverChan chan<- *server) error {
+func btcdMain(serverChan chan<- *server.Server) error {
 	// Load configuration and parse command line.  This function also
 	// initializes logging and configures it accordingly.
-	tcfg, _, err := loadConfig()
+	err := config.LoadAndSetMainConfig()
 	if err != nil {
 		return err
 	}
-	cfg = tcfg
+	cfg = config.MainConfig()
 	defer func() {
 		if logRotator != nil {
 			logRotator.Close()
