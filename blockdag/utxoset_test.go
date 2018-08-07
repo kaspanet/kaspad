@@ -53,7 +53,7 @@ func TestUTXOCollection(t *testing.T) {
 
 		// Test utxoCollection cloning
 		collectionClone := test.collection.clone()
-		if &collectionClone == &test.collection {
+		if reflect.ValueOf(collectionClone).Pointer() == reflect.ValueOf(test.collection).Pointer() {
 			t.Errorf("collection is reference-equal to its clone in test \"%s\". ", test.name)
 		}
 		if !reflect.DeepEqual(test.collection, collectionClone) {
