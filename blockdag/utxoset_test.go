@@ -16,6 +16,9 @@ func TestUTXOCollection(t *testing.T) {
 	utxoEntry0 := newUTXOEntry(&wire.TxOut{PkScript: []byte{}, Value: 10})
 	utxoEntry1 := newUTXOEntry(&wire.TxOut{PkScript: []byte{}, Value: 20})
 
+	// For each of the following test cases, we will:
+	// .String() the given collection and compare it to expectedString
+	// .clone() the given collection and compare its value to itself (expected: equals) and its reference to itself (expected: not equal)
 	tests := []struct {
 		name           string
 		collection     utxoCollection
@@ -108,6 +111,11 @@ func TestUTXODiffRules(t *testing.T) {
 	outPoint0 := *wire.NewOutPoint(hash0, 0)
 	utxoEntry0 := newUTXOEntry(&wire.TxOut{PkScript: []byte{}, Value: 10})
 
+	// For each of the following test cases, we will:
+	// this.diffFrom(other) and compare it to expectedDiffFromResult
+	// this.withDiff(other) and compare it to expectedWithDiffResult
+	//
+	// Note: an expected nil result means that we expect the respective operation to fail
 	tests := []struct {
 		name                   string
 		this                   *utxoDiff
@@ -415,6 +423,11 @@ func TestDiffUTXOSet(t *testing.T) {
 	}
 
 	// Given a diffSet, each case tests that meldToBase, String, collection, and cloning work as expected
+	// For each of the following test cases, we will:
+	// .meldToBase() the given diffSet and compare it to expectedMeldSet
+	// .String() the given diffSet and compare it to expectedString
+	// .collection() the given diffSet and compare it to expectedCollection
+	// .clone() the given diffSet and compare its value to itself (expected: equals) and its reference to itself (expected: not equal)
 	tests := []struct {
 		name               string
 		diffSet            *diffUTXOSet
@@ -573,7 +586,10 @@ func TestUTXOSetDiffRules(t *testing.T) {
 	fullSet := newFullUTXOSet()
 	diffSet := newDiffUTXOSet(fullSet, newUTXODiff())
 
-	// Test cases are similar for both fullUTXOSet and diffUTXOSet
+	// For each of the following test cases, we will call utxoSet.diffFrom(diffSet) and compare
+	// whether the function succeeded with expectedSuccess
+	//
+	// Note: since test cases are similar for both fullUTXOSet and diffUTXOSet, we test both using the same test cases
 	run := func(set utxoSet) {
 		tests := []struct {
 			name            string
@@ -644,8 +660,9 @@ func TestDiffUTXOSet_addTx(t *testing.T) {
 	hash3 := transaction2.TxHash()
 	outPoint3 := *wire.NewOutPoint(&hash3, 0)
 
-	// For each test case,
-	// add all transactions in toAdd to a given startSet and make sure the result equals expectedSet
+	// For each of the following test cases, we will:
+	// 1. startSet.addTx() all the transactions in toAdd, in order
+	// 2. Compare the result set with expectedSet
 	tests := []struct {
 		name        string
 		startSet    *diffUTXOSet
