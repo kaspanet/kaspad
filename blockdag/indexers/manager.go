@@ -231,7 +231,7 @@ func (m *Manager) maybeCreateIndexes(dbTx database.Tx) error {
 // catch up due to the I/O contention.
 //
 // This is part of the blockchain.IndexManager interface.
-func (m *Manager) Init(chain *blockdag.BlockDAG, interrupt <-chan struct{}) error {
+func (m *Manager) Init(blockDAG *blockdag.BlockDAG, interrupt <-chan struct{}) error {
 	// Nothing to do when no indexes are enabled.
 	if len(m.enabledIndexes) == 0 {
 		return nil
@@ -294,7 +294,7 @@ func (m *Manager) Init(chain *blockdag.BlockDAG, interrupt <-chan struct{}) erro
 
 		// Loop until the tip is a block that exists in the main chain.
 		initialHeight := height
-		for !chain.MainChainHasBlock(hash) {
+		for !blockDAG.MainChainHasBlock(hash) {
 			// At this point the index tip is orphaned, so load the
 			// orphaned block from the database directly and
 			// disconnect it from the index.  The block has to be
@@ -359,7 +359,7 @@ func (m *Manager) Init(chain *blockdag.BlockDAG, interrupt <-chan struct{}) erro
 	// lowest one so the catchup code only needs to start at the earliest
 	// block and is able to skip connecting the block for the indexes that
 	// don't need it.
-	dagHeight := chain.GetDAGState().SelectedTip.Height
+	dagHeight := blockDAG.GetDAGState().SelectedTip.Height
 	lowestHeight := dagHeight
 	indexerHeights := make([]int32, len(m.enabledIndexes))
 	err = m.db.View(func(dbTx database.Tx) error {
@@ -399,7 +399,7 @@ func (m *Manager) Init(chain *blockdag.BlockDAG, interrupt <-chan struct{}) erro
 	for height := lowestHeight + 1; height <= dagHeight; height++ {
 		// Load the block for the height since it is required to index
 		// it.
-		block, err := chain.BlockByHeight(height)
+		block, err := blockDAG.BlockByHeight(height)
 		if err != nil {
 			return err
 		}

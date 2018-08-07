@@ -3421,9 +3421,10 @@ func verifyDAG(s *rpcServer, level, depth int32) error {
 	rpcsLog.Infof("Verifying chain for %d blocks at level %d",
 		dagState.SelectedTip.Height-finishHeight, level)
 
-	for height := dagState.SelectedTip.Height; height > finishHeight; height-- {
+	currentHash := &dagState.SelectedTip.Hash
+	for height := dagState.SelectedTip.Height; height > finishHeight; {
 		// Level 0 just looks up the block.
-		block, err := s.cfg.DAG.BlockByHeight(height)
+		block, err := s.cfg.DAG.BlockByHash(currentHash)
 		if err != nil {
 			rpcsLog.Errorf("Verify is unable to fetch block at "+
 				"height %d: %v", height, err)
@@ -3441,6 +3442,8 @@ func verifyDAG(s *rpcServer, level, depth int32) error {
 				return err
 			}
 		}
+
+		currentHash = block.MsgBlock().Header.SelectedPrevBlock()
 	}
 	rpcsLog.Infof("Chain verify completed successfully")
 
