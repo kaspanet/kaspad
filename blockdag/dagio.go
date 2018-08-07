@@ -841,7 +841,7 @@ func (b *BlockDAG) createDAGState() error {
 	header := &genesisBlock.MsgBlock().Header
 	node := newBlockNode(header, nil, b.dagParams.K)
 	node.status = statusDataStored | statusValid
-	b.virtual.SetTip(node)
+	b.virtual.SetTips(setFromSlice(node))
 
 	// Add the new node to the index which is used for faster lookups.
 	b.index.addNode(node)
@@ -1044,7 +1044,7 @@ func (b *BlockDAG) initDAGState() error {
 			}
 			tips.add(tip)
 		}
-		b.virtual.SetTips(tips, b.dagParams.K)
+		b.virtual.SetTips(tips)
 
 		// Load the raw block bytes for the selected tip.
 		selectedTip := b.virtual.selectedParent

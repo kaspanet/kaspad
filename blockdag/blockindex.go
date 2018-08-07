@@ -131,7 +131,10 @@ func initBlockNode(node *blockNode, blockHeader *wire.BlockHeader, parents block
 		workSum: big.NewInt(0),
 		timestamp: time.Now().Unix(),
 	}
-	
+
+	if parents == nil {
+		node.parents = newSet()
+	}
 	if blockHeader != nil {
 		node.hash = blockHeader.BlockHash()
 		node.workSum = CalcWork(blockHeader.Bits)

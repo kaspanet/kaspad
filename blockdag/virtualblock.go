@@ -33,34 +33,23 @@ func fastLog2Floor(n uint32) uint8 {
 
 // virtualBlock is a virtual block whose parents are the tip of the DAG.
 type virtualBlock struct {
-	mtx   sync.Mutex
-	nodes []*blockNode
+	mtx      sync.Mutex
+	nodes    []*blockNode
+	phantomK uint32
 	blockNode
 }
 
 // newVirtualBlock creates and returns a new virtualBlock.
 func newVirtualBlock(tips blockSet, phantomK uint32) *virtualBlock {
 	// The mutex is intentionally not held since this is a constructor.
-	var c virtualBlock
-	c.setTip(tips.first())
+	var virtual virtualBlock
+	virtual.phantomK = phantomK
+	virtual.setTip(tips.first())
 	if tips != nil {
-		c.setTips(tips, phantomK)
+		virtual.setTips(tips)
 	}
 
-	return &c
-}
-
-// tip returns the current tip block node for the chain view.  It will return
-// nil if there is no tip.  This only differs from the exported version in that
-// it is up to the caller to ensure the lock is held.
-//
-// This function MUST be called with the view mutex locked (for reads).
-func (v *virtualBlock) tip() *blockNode {
-	if len(v.nodes) == 0 {
-		return nil
-	}
-
-	return v.nodes[len(v.nodes)-1]
+	return &virtual
 }
 
 // Tips returns the current tip block nodes for the chain view.  It will return
@@ -69,14 +58,11 @@ func (v *virtualBlock) tip() *blockNode {
 // This function is safe for concurrent access.
 func (v *virtualBlock) Tips() blockSet {
 	v.mtx.Lock()
-	tip := v.tip()
-	v.mtx.Unlock()
+	defer func() {
+		v.mtx.Unlock()
+	}()
 
-	if tip == nil { // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
-		return newSet()
-	}
-
-	return setFromSlice(tip) // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
+	return v.parents
 }
 
 // SelecedTip returns the current selected tip block node for the chain view.
@@ -101,6 +87,8 @@ func (v *virtualBlock) setTip(node *blockNode) {
 		v.nodes = v.nodes[:0]
 		return
 	}
+
+	v.setTips(setFromSlice(node))
 
 	// Create or resize the slice that will hold the block nodes to the
 	// provided tip height.  When creating the slice, it is created with
@@ -142,13 +130,13 @@ func (v *virtualBlock) SetTip(node *blockNode) {
 	v.mtx.Unlock()
 }
 
-func (v *virtualBlock) setTips(tips blockSet, phantomK uint32) {
-	v.blockNode = *newBlockNode(nil, tips, phantomK)
+func (v *virtualBlock) setTips(tips blockSet) {
+	v.blockNode = *newBlockNode(nil, tips, v.phantomK)
 }
 
-func (v *virtualBlock) SetTips(tips blockSet, phantomK uint32) {
+func (v *virtualBlock) SetTips(tips blockSet) {
 	v.mtx.Lock()
-	v.setTips(tips, phantomK)
+	v.setTips(tips)
 	v.mtx.Unlock()
 }
 
@@ -247,7 +235,7 @@ func (v *virtualBlock) Next(node *blockNode) *blockNode {
 func (v *virtualBlock) blockLocator(node *blockNode) BlockLocator {
 	// Use the current tip if requested.
 	if node == nil {
-		node = v.tip()
+		node = v.selectedParent
 	}
 	if node == nil {
 		return nil

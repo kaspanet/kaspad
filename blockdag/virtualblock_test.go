@@ -217,7 +217,7 @@ testLoop:
 
 		// Ensure the block locator for the tip of the active view
 		// consists of the expected hashes.
-		locator := test.view.BlockLocator(test.view.tip())
+		locator := test.view.BlockLocator(test.view.selectedParent)
 		if !reflect.DeepEqual(locator, test.locator) {
 			t.Errorf("%s: unexpected locator -- got %v, want %v",
 				test.name, locator, test.locator)
@@ -256,8 +256,8 @@ func TestChainViewSetTip(t *testing.T) {
 			// increasingly shorter chains.
 			name:     "decreasing",
 			view:     newVirtualBlock(setFromSlice(tip(branch1Nodes)), dagconfig.MainNetParams.K),
-			tips:     []*blockNode{tip(branch0Nodes), nil},
-			contains: [][]*blockNode{branch0Nodes, nil},
+			tips:     []*blockNode{tip(branch0Nodes)},
+			contains: [][]*blockNode{branch0Nodes},
 		},
 		{
 			// Create a view with a shorter chain and set the tip to
