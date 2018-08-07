@@ -81,17 +81,19 @@ type blockNode struct {
 	// children are all the blocks that refer to this block as a parent
 	children blockSet
 
-	// diffChild is the child that UTXODiff will be built from
-	diffChild *blockNode
-
 	// blues are all blue blocks in this block's worldview that are in its selected parent anticone
 	blues []*blockNode
 
 	// blueScore is the count of all the blue blocks in this block's past
 	blueScore uint64
 
-	// diff is the UTXO of the block represented as a diff to the virtual block
+	// diff is the UTXO representation of the block
+	// A block's UTXO is reconstituted by applying diffWith on every block in the chain of diffChildren
+	// from the virtual block down to the block. See diffChild
 	diff utxoDiff
+
+	// diffChild is the child that diff will be built from. See diff
+	diffChild *blockNode
 
 	// hash is the double sha 256 of the block.
 	hash daghash.Hash
