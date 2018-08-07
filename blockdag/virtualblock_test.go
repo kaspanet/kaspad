@@ -159,25 +159,6 @@ testLoop:
 			continue
 		}
 
-		// Ensure all expected nodes are contained in the active view.
-		for _, node := range test.contains {
-			if !test.view.Contains(node) {
-				t.Errorf("%s: expected %v in active view",
-					test.name, node)
-				continue testLoop
-			}
-		}
-
-		// Ensure all nodes from side chain view are NOT contained in
-		// the active view.
-		for _, node := range test.noContains {
-			if test.view.Contains(node) {
-				t.Errorf("%s: unexpected %v in active view",
-					test.name, node)
-				continue testLoop
-			}
-		}
-
 		// Ensure all nodes contained in the view can be retrieved by
 		// height.
 		for _, wantNode := range test.contains {
@@ -256,7 +237,7 @@ func TestChainViewSetTip(t *testing.T) {
 
 testLoop:
 	for _, test := range tests {
-		for i, tip := range test.tips {
+		for _, tip := range test.tips {
 			// Ensure the view tip is the expected node.
 			test.view.SetTip(tip)
 			if test.view.SelectedTip() != tip { // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
@@ -265,16 +246,6 @@ testLoop:
 					tip)
 				continue testLoop
 			}
-
-			// Ensure all expected nodes are contained in the view.
-			for _, node := range test.contains[i] {
-				if !test.view.Contains(node) {
-					t.Errorf("%s: expected %v in active view",
-						test.name, node)
-					continue testLoop
-				}
-			}
-
 		}
 	}
 }
@@ -293,12 +264,6 @@ func TestChainViewNil(t *testing.T) {
 	// not produce a node.
 	if node := view.NodeByHeight(10); node != nil {
 		t.Fatalf("NodeByHeight: unexpected node -- got %v, want nil", node)
-	}
-
-	// Ensure an uninitialized view does not report it contains nodes.
-	fakeNode := chainedNodes(nil, 1)[0]
-	if view.Contains(fakeNode) {
-		t.Fatalf("Contains: view claims it contains node %v", fakeNode)
 	}
 
 	// Ensure attempting to get a block locator for the tip doesn't produce

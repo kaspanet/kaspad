@@ -162,26 +162,6 @@ func (v *virtualBlock) NodeByHeight(height int32) *blockNode {
 	return node
 }
 
-// contains returns whether or not the chain view contains the passed block
-// node.  This only differs from the exported version in that it is up to the
-// caller to ensure the lock is held.
-//
-// This function MUST be called with the view mutex locked (for reads).
-func (v *virtualBlock) contains(node *blockNode) bool {
-	return v.nodeByHeight(node.height) == node
-}
-
-// Contains returns whether or not the chain view contains the passed block
-// node.
-//
-// This function is safe for concurrent access.
-func (v *virtualBlock) Contains(node *blockNode) bool {
-	v.mtx.Lock()
-	contains := v.contains(node)
-	v.mtx.Unlock()
-	return contains
-}
-
 // blockLocator returns a block locator for the passed block node.  The passed
 // node can be nil in which case the block locator for the current tip
 // associated with the view will be returned.  This only differs from the
@@ -229,15 +209,8 @@ func (v *virtualBlock) blockLocator(node *blockNode) BlockLocator {
 			height = 0
 		}
 
-		// When the node is in the current chain view, all of its
-		// ancestors must be too, so use a much faster O(1) lookup in
-		// that case.  Otherwise, fall back to walking backwards through
-		// the nodes of the other chain to the correct ancestor.
-		if v.contains(node) {
-			node = v.nodes[height]
-		} else {
-			node = node.Ancestor(height)
-		}
+		// walk backwards through the nodes to the correct ancestor.
+		node = node.Ancestor(height)
 
 		// Once 11 entries have been included, start doubling the
 		// distance between included hashes.

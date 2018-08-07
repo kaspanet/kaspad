@@ -99,7 +99,7 @@ func (b *BlockDAG) findPreviousCheckpoint() (*blockNode, error) {
 		// that is already available.
 		for i := numCheckpoints - 1; i >= 0; i-- {
 			node := b.index.LookupNode(checkpoints[i].Hash)
-			if node == nil || !b.virtual.Contains(node) {
+			if node == nil {
 				continue
 			}
 
@@ -203,7 +203,7 @@ func (b *BlockDAG) IsCheckpointCandidate(block *btcutil.Block) (bool, error) {
 
 	// A checkpoint must be in the main chain.
 	node := b.index.LookupNode(block.Hash())
-	if node == nil || !b.virtual.Contains(node) {
+	if node == nil {
 		return false, nil
 	}
 

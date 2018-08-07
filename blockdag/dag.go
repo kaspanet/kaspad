@@ -774,7 +774,7 @@ func (b *BlockDAG) FetchHeader(hash *daghash.Hash) (wire.BlockHeader, error) {
 // This function is safe for concurrent access.
 func (b *BlockDAG) MainChainHasBlock(hash *daghash.Hash) bool {
 	node := b.index.LookupNode(hash)
-	return node != nil && b.virtual.Contains(node)
+	return node != nil
 }
 
 // BlockLocatorFromHash returns a block locator for the passed block hash.
@@ -810,7 +810,7 @@ func (b *BlockDAG) LatestBlockLocator() (BlockLocator, error) {
 // This function is safe for concurrent access.
 func (b *BlockDAG) BlockHeightByHash(hash *daghash.Hash) (int32, error) {
 	node := b.index.LookupNode(hash)
-	if node == nil || !b.virtual.Contains(node) {
+	if node == nil {
 		str := fmt.Sprintf("block %s is not in the main chain", hash)
 		return 0, errNotInMainChain(str)
 	}
@@ -947,14 +947,8 @@ func (b *BlockDAG) IntervalBlockHashes(endHash *daghash.Hash, interval int,
 
 	blockNode := endNode
 	for index := int(endHeight) / interval; index > 0; index-- {
-		// Use the bestChain virtualBlock for faster lookups once lookup intersects
-		// the best chain.
 		blockHeight := int32(index * interval)
-		if b.virtual.contains(blockNode) {
-			blockNode = b.virtual.nodeByHeight(blockHeight)
-		} else {
-			blockNode = blockNode.Ancestor(blockHeight)
-		}
+		blockNode = blockNode.Ancestor(blockHeight)
 
 		hashes[index-1] = blockNode.hash
 	}
@@ -997,7 +991,7 @@ func (b *BlockDAG) locateInventory(locator BlockLocator, hashStop *daghash.Hash,
 	startNode := b.genesis
 	for _, hash := range locator {
 		node := b.index.LookupNode(hash)
-		if node != nil && b.virtual.Contains(node) {
+		if node != nil {
 			startNode = node
 			break
 		}

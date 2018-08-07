@@ -1198,7 +1198,7 @@ func (b *BlockDAG) BlockByHash(hash *daghash.Hash) (*btcutil.Block, error) {
 	// Lookup the block hash in block index and ensure it is in the best
 	// chain.
 	node := b.index.LookupNode(hash)
-	if node == nil || !b.virtual.Contains(node) {
+	if node == nil {
 		str := fmt.Sprintf("block %s is not in the main chain", hash)
 		return nil, errNotInMainChain(str)
 	}
