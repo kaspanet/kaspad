@@ -1006,16 +1006,14 @@ func (b *BlockDAG) locateInventory(locator BlockLocator, hashStop *daghash.Hash,
 	// Start at the block after the most recently known block.  When there
 	// is no next block it means the most recently known block is the tip of
 	// the best chain, so there is nothing more to do.
-	startNode = b.virtual.Next(startNode)
+	startNode = startNode.diffChild
 	if startNode == nil {
 		return nil, 0
 	}
 
 	// Calculate how many entries are needed.
 	total := uint32((b.virtual.SelectedTip().height - startNode.height) + 1)
-	if stopNode != nil && b.virtual.Contains(stopNode) &&
-		stopNode.height >= startNode.height {
-
+	if stopNode != nil && stopNode.height >= startNode.height {
 		total = uint32((stopNode.height - startNode.height) + 1)
 	}
 	if total > maxEntries {
@@ -1045,7 +1043,7 @@ func (b *BlockDAG) locateBlocks(locator BlockLocator, hashStop *daghash.Hash, ma
 	hashes := make([]daghash.Hash, 0, total)
 	for i := uint32(0); i < total; i++ {
 		hashes = append(hashes, node.hash)
-		node = b.virtual.Next(node)
+		node = node.diffChild
 	}
 	return hashes
 }
@@ -1090,7 +1088,7 @@ func (b *BlockDAG) locateHeaders(locator BlockLocator, hashStop *daghash.Hash, m
 	headers := make([]wire.BlockHeader, 0, total)
 	for i := uint32(0); i < total; i++ {
 		headers = append(headers, node.Header())
-		node = b.virtual.Next(node)
+		node = node.diffChild
 	}
 	return headers
 }

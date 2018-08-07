@@ -178,31 +178,6 @@ testLoop:
 			}
 		}
 
-		// Ensure all nodes contained in the view return the expected
-		// next node.
-		for i, node := range test.contains {
-			// Final node expects nil for the next node.
-			var expected *blockNode
-			if i < len(test.contains)-1 {
-				expected = test.contains[i+1]
-			}
-			if next := test.view.Next(node); next != expected {
-				t.Errorf("%s: unexpected next node -- got %v, "+
-					"want %v", test.name, next, expected)
-				continue testLoop
-			}
-		}
-
-		// Ensure nodes that are not contained in the view do not
-		// produce a successor node.
-		for _, node := range test.noContains {
-			if next := test.view.Next(node); next != nil {
-				t.Errorf("%s: unexpected next node -- got %v, "+
-					"want nil", test.name, next)
-				continue testLoop
-			}
-		}
-
 		// Ensure all nodes contained in the view can be retrieved by
 		// height.
 		for _, wantNode := range test.contains {
@@ -324,17 +299,6 @@ func TestChainViewNil(t *testing.T) {
 	fakeNode := chainedNodes(nil, 1)[0]
 	if view.Contains(fakeNode) {
 		t.Fatalf("Contains: view claims it contains node %v", fakeNode)
-	}
-
-	// Ensure the next node for a node that does not exist does not produce
-	// a node.
-	if next := view.Next(nil); next != nil {
-		t.Fatalf("Next: unexpected next node -- got %v, want nil", next)
-	}
-
-	// Ensure the next node for a node that exists does not produce a node.
-	if next := view.Next(fakeNode); next != nil {
-		t.Fatalf("Next: unexpected next node -- got %v, want nil", next)
 	}
 
 	// Ensure attempting to get a block locator for the tip doesn't produce

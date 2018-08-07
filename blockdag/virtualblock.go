@@ -83,8 +83,6 @@ func (v *virtualBlock) SelectedTip() *blockNode {
 // This function MUST be called with the view mutex locked (for writes).
 func (v *virtualBlock) setTip(node *blockNode) {
 	if node == nil {
-		// Keep the backing array around for potential future use.
-		v.nodes = v.nodes[:0]
 		return
 	}
 
@@ -182,46 +180,6 @@ func (v *virtualBlock) Contains(node *blockNode) bool {
 	contains := v.contains(node)
 	v.mtx.Unlock()
 	return contains
-}
-
-// next returns the successor to the provided node for the chain view.  It will
-// return nil if there is no successor or the provided node is not part of the
-// view.  This only differs from the exported version in that it is up to the
-// caller to ensure the lock is held.
-//
-// See the comment on the exported function for more details.
-//
-// This function MUST be called with the view mutex locked (for reads).
-func (v *virtualBlock) next(node *blockNode) *blockNode {
-	if node == nil || !v.contains(node) {
-		return nil
-	}
-
-	return v.nodeByHeight(node.height + 1)
-}
-
-// Next returns the successor to the provided node for the chain view.  It will
-// return nil if there is no successfor or the provided node is not part of the
-// view.
-//
-// For example, assume a block chain with a side chain as depicted below:
-//   genesis -> 1 -> 2 -> 3 -> 4  -> 5 ->  6  -> 7  -> 8
-//                         \-> 4a -> 5a -> 6a
-//
-// Further, assume the view is for the longer chain depicted above.  That is to
-// say it consists of:
-//   genesis -> 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8
-//
-// Invoking this function with block node 5 would return block node 6 while
-// invoking it with block node 5a would return nil since that node is not part
-// of the view.
-//
-// This function is safe for concurrent access.
-func (v *virtualBlock) Next(node *blockNode) *blockNode {
-	v.mtx.Lock()
-	next := v.next(node)
-	v.mtx.Unlock()
-	return next
 }
 
 // blockLocator returns a block locator for the passed block node.  The passed

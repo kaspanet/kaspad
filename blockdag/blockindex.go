@@ -156,6 +156,7 @@ func initBlockNode(node *blockNode, blockHeader *wire.BlockHeader, parents block
 func addNodeAsChildToParents(node *blockNode) {
 	for _, parent := range node.parents {
 		parent.children.add(node)
+		parent.diffChild = node
 	}
 }
 

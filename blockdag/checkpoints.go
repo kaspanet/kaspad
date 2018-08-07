@@ -228,7 +228,7 @@ func (b *BlockDAG) IsCheckpointCandidate(block *btcutil.Block) (bool, error) {
 	// This should always succeed since the check above already made sure it
 	// is CheckpointConfirmations back, but be safe in case the constant
 	// changes.
-	nextNode := b.virtual.Next(node)
+	nextNode := node.diffChild
 	if nextNode == nil {
 		return false, nil
 	}
