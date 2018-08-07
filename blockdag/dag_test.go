@@ -129,7 +129,7 @@ func TestCalcSequenceLock(t *testing.T) {
 		blockTime = blockTime.Add(time.Second)
 		node = newTestNode(setFromSlice(node), blockVersion, 0, blockTime, netParams.K)
 		chain.index.AddNode(node)
-		chain.virtual.SetTip(node)
+		chain.virtual.SetTips(setFromSlice(node))
 	}
 
 	// Create a utxo view with a fake utxo for the inputs used in the
@@ -801,7 +801,7 @@ func TestHeightToHashRange(t *testing.T) {
 		}
 		blockDAG.index.AddNode(node)
 	}
-	blockDAG.virtual.SetTip(tip(branch0Nodes))
+	blockDAG.virtual.SetTips(setFromSlice(tip(branch0Nodes)))
 
 	tests := []struct {
 		name        string
@@ -893,7 +893,7 @@ func TestIntervalBlockHashes(t *testing.T) {
 		}
 		chain.index.AddNode(node)
 	}
-	chain.virtual.SetTip(tip(branch0Nodes))
+	chain.virtual.SetTips(setFromSlice(tip(branch0Nodes)))
 
 	tests := []struct {
 		name        string
