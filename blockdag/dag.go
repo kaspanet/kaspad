@@ -833,54 +833,6 @@ func (b *BlockDAG) BlockHashByHeight(blockHeight int32) (*daghash.Hash, error) {
 	return &node.hash, nil
 }
 
-// HeightRange returns a range of block hashes for the given start and end
-// heights.  It is inclusive of the start height and exclusive of the end
-// height.  The end height will be limited to the current main chain height.
-//
-// This function is safe for concurrent access.
-func (b *BlockDAG) HeightRange(startHeight, endHeight int32) ([]daghash.Hash, error) {
-	// Ensure requested heights are sane.
-	if startHeight < 0 {
-		return nil, fmt.Errorf("start height of fetch range must not "+
-			"be less than zero - got %d", startHeight)
-	}
-	if endHeight < startHeight {
-		return nil, fmt.Errorf("end height of fetch range must not "+
-			"be less than the start height - got start %d, end %d",
-			startHeight, endHeight)
-	}
-
-	// There is nothing to do when the start and end heights are the same,
-	// so return now to avoid the chain view lock.
-	if startHeight == endHeight {
-		return nil, nil
-	}
-
-	// Grab a lock on the chain view to prevent it from changing due to a
-	// reorg while building the hashes.
-	b.virtual.mtx.Lock()
-	defer b.virtual.mtx.Unlock()
-
-	// When the requested start height is after the most recent best chain
-	// height, there is nothing to do.
-	latestHeight := b.virtual.height
-	if startHeight > latestHeight {
-		return nil, nil
-	}
-
-	// Limit the ending height to the latest height of the chain.
-	if endHeight > latestHeight+1 {
-		endHeight = latestHeight + 1
-	}
-
-	// Fetch as many as are available within the specified range.
-	hashes := make([]daghash.Hash, 0, endHeight-startHeight)
-	for i := startHeight; i < endHeight; i++ {
-		hashes = append(hashes, b.virtual.nodeByHeight(i).hash)
-	}
-	return hashes, nil
-}
-
 // HeightToHashRange returns a range of block hashes for the given start height
 // and end hash, inclusive on both ends.  The hashes are for all blocks that are
 // ancestors of endHash with height greater than or equal to startHeight.  The
