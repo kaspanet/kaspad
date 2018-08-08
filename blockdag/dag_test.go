@@ -13,6 +13,7 @@ import (
 	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/wire"
 	"github.com/daglabs/btcutil"
+	"math/rand"
 )
 
 // TestHaveBlock tests the HaveBlock API to ensure proper functionality.
@@ -429,15 +430,31 @@ func nodeHashes(nodes []*blockNode, indexes ...int) []daghash.Hash {
 	return hashes
 }
 
-// nodeHeaders is a convenience function that returns the headers for all of
-// the passed indexes of the provided nodes.  It is used to construct expected
-// located headers in the tests.
-func nodeHeaders(nodes []*blockNode, indexes ...int) []wire.BlockHeader {
-	headers := make([]wire.BlockHeader, 0, len(indexes))
-	for _, idx := range indexes {
-		headers = append(headers, nodes[idx].Header())
+// testNoncePrng provides a deterministic prng for the nonce in generated fake
+// nodes.  The ensures that the node have unique hashes.
+var testNoncePrng = rand.New(rand.NewSource(0))
+
+// chainedNodes returns the specified number of nodes constructed such that each
+// subsequent node points to the previous one to create a chain.  The first node
+// will point to the passed parent which can be nil if desired.
+func chainedNodes(parents blockSet, numNodes int) []*blockNode {
+	nodes := make([]*blockNode, numNodes)
+	tips := parents
+	for i := 0; i < numNodes; i++ {
+		// This is invalid, but all that is needed is enough to get the
+		// synthetic tests to work.
+		header := wire.BlockHeader{Nonce: testNoncePrng.Uint32()}
+		header.PrevBlocks = tips.hashes()
+		nodes[i] = newBlockNode(&header, tips, dagconfig.SimNetParams.K)
+		tips = setFromSlice(nodes[i])
 	}
-	return headers
+	return nodes
+}
+
+// tstTip is a convenience function to grab the tip of a chain of block nodes
+// created via chainedNodes.
+func tstTip(nodes []*blockNode) *blockNode {
+	return nodes[len(nodes)-1]
 }
 
 // TestHeightToHashRange ensures that fetching a range of block hashes by start
