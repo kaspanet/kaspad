@@ -2,10 +2,14 @@ package ffldb
 
 import (
 	"bytes"
+	"errors"
 	"testing"
 
 	"github.com/bouk/monkey"
+	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/database"
+	"github.com/daglabs/btcd/wire"
+	"github.com/daglabs/btcutil"
 )
 
 // TestCursorDeleteErrors tests all error-cases in *cursor.Delete().
@@ -474,7 +478,6 @@ func TestDeleteErrors(t *testing.T) {
 				t.Errorf("TestDeleteErrors: %s: Expected error of type %d "+
 					"but got '%v'", test.name, test.expectedErr, err)
 			}
-
 		}()
 	}
 }
@@ -543,5 +546,60 @@ func TestForEachBucket(t *testing.T) {
 	})
 	if err != nil {
 		t.Fatalf("TestForEachBucket: Error running actual tests: %s", err)
+	}
+}
+
+// TestStoreBlockErrors tests all error-cases in *tx.StoreBlock().
+// The non-error-cases are tested in the more general tests.
+func TestStoreBlockErrors(t *testing.T) {
+	testBlock := btcutil.NewBlock(wire.NewMsgBlock(wire.NewBlockHeader(1, []daghash.Hash{}, &daghash.Hash{}, 0, 0)))
+
+	tests := []struct {
+		name        string
+		target      interface{}
+		replacement interface{}
+		isWritable  bool
+		isClosed    bool
+		expectedErr database.ErrorCode
+	}{
+		{"transaction is closed", nil, nil, true, true, database.ErrTxClosed},
+		{"transaction is not writable", nil, nil, false, false, database.ErrTxNotWritable},
+		{"block exists", (*transaction).hasBlock,
+			func(*transaction, *daghash.Hash) bool { return true },
+			true, false, database.ErrBlockExists},
+		{"error in block.Bytes", (*btcutil.Block).Bytes,
+			func(*btcutil.Block) ([]byte, error) { return nil, errors.New("Error in block.Bytes()") },
+			true, false, database.ErrDriverSpecific},
+	}
+
+	for _, test := range tests {
+		func() {
+			pdb := newTestDb("TestStoreBlockErrors", t)
+			defer pdb.Close()
+
+			if test.target != nil && test.replacement != nil {
+				patch := monkey.Patch(test.target, test.replacement)
+				defer patch.Unpatch()
+			}
+
+			tx, err := pdb.Begin(test.isWritable)
+			defer tx.Commit()
+			if err != nil {
+				t.Fatalf("TestStoreBlockErrors: %s: error from pdb.Begin: %s", test.name, err)
+			}
+			if test.isClosed {
+				err = tx.Commit()
+				if err != nil {
+					t.Fatalf("TestStoreBlockErrors: %s: error from tx.Commit: %s", test.name, err)
+				}
+			}
+
+			err = tx.StoreBlock(testBlock)
+			if !database.IsErrorCode(err, test.expectedErr) {
+				t.Errorf("TestStoreBlockErrors: %s: Expected error of type %d "+
+					"but got '%v'", test.name, test.expectedErr, err)
+			}
+
+		}()
 	}
 }
