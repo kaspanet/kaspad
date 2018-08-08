@@ -27,7 +27,7 @@ func TestCursorDeleteErrors(t *testing.T) {
 		return nil
 	})
 	if err != nil {
-		t.Fatalf("TestCursorDeleteErrors: Error setting up test-dabase")
+		t.Fatalf("TestCursorDeleteErrors: Error setting up test-dabase: %s", err)
 	}
 
 	// Check for error when attempted to delete a bucket
@@ -476,5 +476,72 @@ func TestDeleteErrors(t *testing.T) {
 			}
 
 		}()
+	}
+}
+
+func TestForEachBucket(t *testing.T) {
+	pdb := newTestDb("TestForEachBucket", t)
+
+	// set-up test
+	testKey := []byte("key")
+	testValue := []byte("value")
+	bucketKeys := [][]byte{[]byte{1}, []byte{2}, []byte{3}}
+
+	err := pdb.Update(func(tx database.Tx) error {
+		metadata := tx.Metadata()
+		for _, bucketKey := range bucketKeys {
+			bucket, err := metadata.CreateBucket(bucketKey)
+			if err != nil {
+				return err
+			}
+
+			err = bucket.Put(testKey, testValue)
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("TestForEachBucket: Error setting up test-dabase: %s", err)
+	}
+
+	// actual test
+	err = pdb.View(func(tx database.Tx) error {
+		i := 0
+		metadata := tx.Metadata()
+
+		err := metadata.ForEachBucket(func(bucketKey []byte) error {
+			if i >= len(bucketKeys) { // in case there are any other buckets in metadata
+				return nil
+			}
+
+			expectedBucketKey := bucketKeys[i]
+			if !bytes.Equal(expectedBucketKey, bucketKey) {
+				t.Errorf("TestForEachBucket: %d: Expected bucket key: %v, but got: %v",
+					i, expectedBucketKey, bucketKey)
+				return nil
+			}
+			bucket := metadata.Bucket(bucketKey)
+			if bucket == nil {
+				t.Errorf("TestForEachBucket: %d: Bucket is nil", i)
+				return nil
+			}
+
+			value := bucket.Get(testKey)
+			if !bytes.Equal(testValue, value) {
+				t.Errorf("TestForEachBucket: %d: Expected value: %s, but got: %s",
+					i, testValue, value)
+				return nil
+			}
+
+			i++
+			return nil
+		})
+
+		return err
+	})
+	if err != nil {
+		t.Fatalf("TestForEachBucket: Error running actual tests: %s", err)
 	}
 }
