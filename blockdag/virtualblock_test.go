@@ -6,7 +6,6 @@ package blockdag
 
 import (
 	"math/rand"
-	"reflect"
 	"testing"
 
 	"github.com/daglabs/btcd/dagconfig"
@@ -61,10 +60,10 @@ func zipLocators(locators ...BlockLocator) BlockLocator {
 	return hashes
 }
 
-// TestChainView ensures all of the exported functionality of chain views works
-// as intended with the exception of some special cases which are handled in
+// TestVirtualBlock ensures all of the exported functionality of the virtual block
+// works as intended with the exception of some special cases which are handled in
 // other tests.
-func TestChainView(t *testing.T) {
+func TestVirtualBlock(t *testing.T) {
 	// Construct a synthetic block index consisting of the following
 	// structure.
 	// 0 -> 1 -> 2  -> 3  -> 4
@@ -157,21 +156,12 @@ func TestChainView(t *testing.T) {
 				test.sideTip)
 			continue
 		}
-
-		// Ensure the block locator for the tip of the active view
-		// consists of the expected hashes.
-		locator := test.view.BlockLocator(test.view.selectedParent)
-		if !reflect.DeepEqual(locator, test.locator) {
-			t.Errorf("%s: unexpected locator -- got %v, want %v",
-				test.name, locator, test.locator)
-			continue
-		}
 	}
 }
 
-// TestChainViewSetTip ensures changing the tip works as intended including
+// TestVirtualBlockSetTips ensures changing the tips works as intended including
 // capacity changes.
-func TestChainViewSetTip(t *testing.T) {
+func TestVirtualBlockSetTips(t *testing.T) {
 	// Construct a synthetic block index consisting of the following
 	// structure.
 	// 0 -> 1 -> 2  -> 3  -> 4
@@ -237,31 +227,13 @@ testLoop:
 	}
 }
 
-// TestChainViewNil ensures that creating and accessing a nil chain view behaves
+// TestVirtualBlockNil ensures that creating and accessing a nil virtualBlock behaves
 // as expected.
-func TestChainViewNil(t *testing.T) {
+func TestVirtualBlockNil(t *testing.T) {
 	view := newVirtualBlock(nil, dagconfig.MainNetParams.K)
 
 	// Ensure the tips of an uninitialized view do not produce a node.
 	if tips := view.Tips(); len(tips) > 0 {
 		t.Fatalf("Tip: unexpected tips -- got %v, want nothing", tips)
-	}
-
-	// Ensure attempting to get a block locator for the tip doesn't produce
-	// one since the tip is nil.
-	if locator := view.BlockLocator(nil); locator != nil {
-		t.Fatalf("BlockLocator: unexpected locator -- got %v, want nil",
-			locator)
-	}
-
-	// Ensure attempting to get a block locator for a node that exists still
-	// works as intended.
-	branchNodes := chainedNodes(nil, 50)
-	wantLocator := locatorHashes(branchNodes, 49, 48, 47, 46, 45, 44, 43,
-		42, 41, 40, 39, 38, 36, 32, 24, 8, 0)
-	locator := view.BlockLocator(tstTip(branchNodes))
-	if !reflect.DeepEqual(locator, wantLocator) {
-		t.Fatalf("BlockLocator: unexpected locator -- got %v, want %v",
-			locator, wantLocator)
 	}
 }
