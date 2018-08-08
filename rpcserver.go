@@ -1259,16 +1259,10 @@ func handleGetBlockCount(s *rpcServer, cmd interface{}, closeChan <-chan struct{
 
 // handleGetBlockHash implements the getblockhash command.
 func handleGetBlockHash(s *rpcServer, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	c := cmd.(*btcjson.GetBlockHashCmd)
-	hash, err := s.cfg.DAG.BlockHashByHeight(int32(c.Index))
-	if err != nil {
-		return nil, &btcjson.RPCError{
-			Code:    btcjson.ErrRPCOutOfRange,
-			Message: "Block number out of range",
-		}
+	return nil, &btcjson.RPCError{
+		Code:    btcjson.ErrRPCUnimplemented,
+		Message: "getblockhash is not supported",
 	}
-
-	return hash.String(), nil
 }
 
 // handleGetBlockHeader implements the getblockheader command.
