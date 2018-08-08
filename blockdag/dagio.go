@@ -1169,27 +1169,6 @@ func blockIndexKey(blockHash *daghash.Hash, blockHeight uint32) []byte {
 	return indexKey
 }
 
-// BlockByHeight returns the block at the given height in the main chain.
-//
-// This function is safe for concurrent access.
-func (b *BlockDAG) BlockByHeight(blockHeight int32) (*btcutil.Block, error) {
-	// Lookup the block height in the best chain.
-	node := b.virtual.NodeByHeight(blockHeight)
-	if node == nil {
-		str := fmt.Sprintf("no block at height %d exists", blockHeight)
-		return nil, errNotInMainChain(str)
-	}
-
-	// Load the block from the database and return it.
-	var block *btcutil.Block
-	err := b.db.View(func(dbTx database.Tx) error {
-		var err error
-		block, err = dbFetchBlockByNode(dbTx, node)
-		return err
-	})
-	return block, err
-}
-
 // BlockByHash returns the block from the main chain with the given hash with
 // the appropriate chain height set.
 //
