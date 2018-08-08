@@ -587,8 +587,8 @@ func (b *BlockDAG) connectBlock(node *blockNode, block *btcutil.Block, view *Utx
 	// now that the modifications have been committed to the database.
 	view.commit()
 
-	// This node is now the end of the best chain.
-	b.virtual.SetTips(setFromSlice(node))
+	// This node is now at the end of the DAG.
+	b.virtual.AddTip(node)
 
 	// Update the state for the best block.  Notice how this replaces the
 	// entire struct instead of updating the existing one.  This effectively

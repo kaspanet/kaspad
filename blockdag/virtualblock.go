@@ -37,8 +37,38 @@ func (v *virtualBlock) SetTips(tips blockSet) {
 	v.mtx.Unlock()
 }
 
-// Tips returns the current tip block nodes for the chain view.  It will return
-// an empty slice if there is no tip.
+func (v *virtualBlock) addTip(newTip *blockNode) {
+	tips := newSet()
+	tips.add(newTip)
+
+	for tipHash, tip := range v.tips() {
+		isParent := false
+		for parentHash := range newTip.parents {
+			if tipHash == parentHash {
+				isParent = true
+				break
+			}
+		}
+		if !isParent {
+			tips.add(tip)
+		}
+	}
+
+	v.setTips(tips)
+}
+
+func (v *virtualBlock) AddTip(tip *blockNode) {
+	v.mtx.Lock()
+	v.addTip(tip)
+	v.mtx.Unlock()
+}
+
+func (v *virtualBlock) tips() blockSet {
+	return v.parents
+}
+
+// Tips returns the current tip block nodes for the DAG.  It will return
+// an empty blockSet if there is no tip.
 //
 // This function is safe for concurrent access.
 func (v *virtualBlock) Tips() blockSet {
@@ -47,7 +77,7 @@ func (v *virtualBlock) Tips() blockSet {
 		v.mtx.Unlock()
 	}()
 
-	return v.parents
+	return v.tips()
 }
 
 // SelectedTip returns the current selected tip for the DAG.
