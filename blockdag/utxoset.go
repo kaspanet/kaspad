@@ -37,42 +37,6 @@ func (uc utxoCollection) clone() utxoCollection {
 }
 
 // utxoDiff represents a diff between two UTXO Sets.
-// Its methods, diffFrom and withDiff, follow a set of rules represented by two 3 by 3 tables as follows:
-//
-// diffFrom |           | this      |           |
-// ---------+-----------+-----------+-----------+-----------
-//          |           | toAdd     | toRemove  | None
-// ---------+-----------+-----------+-----------+-----------
-// other    | toAdd     | -         | X         | toAdd
-// ---------+-----------+-----------+-----------+-----------
-//          | toRemove  | X         | -         | toRemove
-// ---------+-----------+-----------+-----------+-----------
-//          | None      | toRemove  | toAdd     | -
-//
-//
-// withDiff |           | this      |           |
-// ---------+-----------+-----------+-----------+-----------
-//          |           | toAdd     | toRemove  | None
-// ---------+-----------+-----------+-----------+-----------
-// other    | toAdd     | X         | -         | toAdd
-// ---------+-----------+-----------+-----------+-----------
-//          | toRemove  | -         | X         | toRemove
-// ---------+-----------+-----------+-----------+-----------
-//          | None      | toAdd     | toRemove  | -
-//
-// Key:
-// -		Don't add anything to the result
-// X		Return an error
-// toAdd	Add the UTXO into the toAdd collection of the result
-// toRemove	Add the UTXO into the toRemove collection of the result
-//
-// Examples:
-// 1. This diff contains a UTXO in toAdd, and the other diff contains it in toRemove
-//    diffFrom results in an error
-//    withDiff results in nothing being added
-// 2. This diff contains a UTXO in toRemove, and the other diff does not contain it
-//    diffFrom results in the UTXO being added to toAdd
-//    withDiff results in the UTXO being added to toRemove
 type utxoDiff struct {
 	toAdd    utxoCollection
 	toRemove utxoCollection
@@ -90,6 +54,30 @@ func newUTXODiff() *utxoDiff {
 // Assumes that:
 // Both utxoDiffs are from the same base
 // If a txOut exists in both utxoDiffs, its underlying values would be the same
+//
+// diffFrom follows a set of rules represented by the following 3 by 3 table:
+//
+//          |           | this      |           |
+// ---------+-----------+-----------+-----------+-----------
+//          |           | toAdd     | toRemove  | None
+// ---------+-----------+-----------+-----------+-----------
+// other    | toAdd     | -         | X         | toAdd
+// ---------+-----------+-----------+-----------+-----------
+//          | toRemove  | X         | -         | toRemove
+// ---------+-----------+-----------+-----------+-----------
+//          | None      | toRemove  | toAdd     | -
+//
+// Key:
+// -		Don't add anything to the result
+// X		Return an error
+// toAdd	Add the UTXO into the toAdd collection of the result
+// toRemove	Add the UTXO into the toRemove collection of the result
+//
+// Examples:
+// 1. This diff contains a UTXO in toAdd, and the other diff contains it in toRemove
+//    diffFrom results in an error
+// 2. This diff contains a UTXO in toRemove, and the other diff does not contain it
+//    diffFrom results in the UTXO being added to toAdd
 func (d *utxoDiff) diffFrom(other *utxoDiff) (*utxoDiff, error) {
 	result := newUTXODiff()
 
@@ -143,6 +131,30 @@ func (d *utxoDiff) diffFrom(other *utxoDiff) (*utxoDiff, error) {
 
 // withDiff applies provided diff to this diff, creating a new utxoDiff, that would be the result if
 // first d, and than diff were applied to the same base
+//
+// withDiff follows a set of rules represented by the following 3 by 3 table:
+//
+//          |           | this      |           |
+// ---------+-----------+-----------+-----------+-----------
+//          |           | toAdd     | toRemove  | None
+// ---------+-----------+-----------+-----------+-----------
+// other    | toAdd     | X         | -         | toAdd
+// ---------+-----------+-----------+-----------+-----------
+//          | toRemove  | -         | X         | toRemove
+// ---------+-----------+-----------+-----------+-----------
+//          | None      | toAdd     | toRemove  | -
+//
+// Key:
+// -		Don't add anything to the result
+// X		Return an error
+// toAdd	Add the UTXO into the toAdd collection of the result
+// toRemove	Add the UTXO into the toRemove collection of the result
+//
+// Examples:
+// 1. This diff contains a UTXO in toAdd, and the other diff contains it in toRemove
+//    withDiff results in nothing being added
+// 2. This diff contains a UTXO in toRemove, and the other diff does not contain it
+//    withDiff results in the UTXO being added to toRemove
 func (d *utxoDiff) withDiff(diff *utxoDiff) (*utxoDiff, error) {
 	result := newUTXODiff()
 
@@ -203,15 +215,6 @@ func (d utxoDiff) String() string {
 	return fmt.Sprintf("toAdd: %s; toRemove: %s", d.toAdd, d.toRemove)
 }
 
-// utxoIteratorOutput represents all fields of a single UTXO, to be returned by an iterator
-type utxoIteratorOutput struct {
-	outPoint wire.OutPoint
-	entry    *UtxoEntry
-}
-
-// utxoIterator is used to iterate over a utxoSet
-type utxoIterator <-chan utxoIteratorOutput
-
 // newUTXOEntry creates a new utxoEntry representing the given txOut
 func newUTXOEntry(txOut *wire.TxOut) *UtxoEntry {
 	entry := new(UtxoEntry)
@@ -238,7 +241,6 @@ type utxoSet interface {
 	diffFrom(other utxoSet) (*utxoDiff, error)
 	withDiff(utxoDiff *utxoDiff) (utxoSet, error)
 	addTx(tx *wire.MsgTx) (ok bool)
-	iterate() utxoIterator
 	clone() utxoSet
 }
 
@@ -276,7 +278,7 @@ func (fus *fullUTXOSet) withDiff(other *utxoDiff) (utxoSet, error) {
 
 // addTx adds a transaction to this utxoSet and returns true iff it's valid in this UTXO's context
 func (fus *fullUTXOSet) addTx(tx *wire.MsgTx) bool {
-	if !fus.areInputsInUTXO(tx) {
+	if !fus.containsInputs(tx) {
 		return false
 	}
 
@@ -296,7 +298,7 @@ func (fus *fullUTXOSet) addTx(tx *wire.MsgTx) bool {
 	return true
 }
 
-func (fus *fullUTXOSet) areInputsInUTXO(tx *wire.MsgTx) bool {
+func (fus *fullUTXOSet) containsInputs(tx *wire.MsgTx) bool {
 	for _, txIn := range tx.TxIn {
 		outPoint := *wire.NewOutPoint(&txIn.PreviousOutPoint.Hash, txIn.PreviousOutPoint.Index)
 		if _, ok := fus.utxoCollection[outPoint]; !ok {
@@ -315,21 +317,6 @@ func (fus *fullUTXOSet) collection() utxoCollection {
 // clone returns a clone of this utxoSet
 func (fus *fullUTXOSet) clone() utxoSet {
 	return &fullUTXOSet{utxoCollection: fus.utxoCollection.clone()}
-}
-
-// iterate returns an iterator for a fullUTXOSet
-func (fus *fullUTXOSet) iterate() utxoIterator {
-	iterator := make(chan utxoIteratorOutput)
-
-	go func() {
-		for outPoint, entry := range fus.utxoCollection {
-			iterator <- utxoIteratorOutput{outPoint: outPoint, entry: entry}
-		}
-
-		close(iterator)
-	}()
-
-	return iterator
 }
 
 // diffUTXOSet represents a utxoSet with a base fullUTXOSet and a UTXODiff
@@ -373,7 +360,7 @@ func (dus *diffUTXOSet) withDiff(other *utxoDiff) (utxoSet, error) {
 
 // addTx adds a transaction to this utxoSet and returns true iff it's valid in this UTXO's context
 func (dus *diffUTXOSet) addTx(tx *wire.MsgTx) bool {
-	if !dus.areInputsInUTXO(tx) {
+	if !dus.containsInputs(tx) {
 		return false
 	}
 
@@ -402,7 +389,7 @@ func (dus *diffUTXOSet) addTx(tx *wire.MsgTx) bool {
 	return true
 }
 
-func (dus *diffUTXOSet) areInputsInUTXO(tx *wire.MsgTx) bool {
+func (dus *diffUTXOSet) containsInputs(tx *wire.MsgTx) bool {
 	for _, txIn := range tx.TxIn {
 		outPoint := *wire.NewOutPoint(&txIn.PreviousOutPoint.Hash, txIn.PreviousOutPoint.Index)
 		_, isInBase := dus.base.utxoCollection[outPoint]
@@ -444,24 +431,4 @@ func (dus *diffUTXOSet) collection() utxoCollection {
 // clone returns a clone of this UTXO Set
 func (dus *diffUTXOSet) clone() utxoSet {
 	return newDiffUTXOSet(dus.base.clone().(*fullUTXOSet), dus.utxoDiff.clone())
-}
-
-// iterate returns an iterator for a diffUTXOSet
-func (dus *diffUTXOSet) iterate() utxoIterator {
-	iterator := make(chan utxoIteratorOutput)
-
-	go func() {
-		for outPoint, entry := range dus.base.utxoCollection {
-			if _, ok := dus.utxoDiff.toRemove[outPoint]; !ok {
-				iterator <- utxoIteratorOutput{outPoint: outPoint, entry: entry}
-			}
-		}
-
-		for outPoint, entry := range dus.utxoDiff.toAdd {
-			iterator <- utxoIteratorOutput{outPoint: outPoint, entry: entry}
-		}
-		close(iterator)
-	}()
-
-	return iterator
 }

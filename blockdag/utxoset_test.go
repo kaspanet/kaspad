@@ -16,6 +16,9 @@ func TestUTXOCollection(t *testing.T) {
 	utxoEntry0 := newUTXOEntry(&wire.TxOut{PkScript: []byte{}, Value: 10})
 	utxoEntry1 := newUTXOEntry(&wire.TxOut{PkScript: []byte{}, Value: 20})
 
+	// For each of the following test cases, we will:
+	// .String() the given collection and compare it to expectedString
+	// .clone() the given collection and compare its value to itself (expected: equals) and its reference to itself (expected: not equal)
 	tests := []struct {
 		name           string
 		collection     utxoCollection
@@ -53,7 +56,7 @@ func TestUTXOCollection(t *testing.T) {
 
 		// Test utxoCollection cloning
 		collectionClone := test.collection.clone()
-		if &collectionClone == &test.collection {
+		if reflect.ValueOf(collectionClone).Pointer() == reflect.ValueOf(test.collection).Pointer() {
 			t.Errorf("collection is reference-equal to its clone in test \"%s\". ", test.name)
 		}
 		if !reflect.DeepEqual(test.collection, collectionClone) {
@@ -108,6 +111,11 @@ func TestUTXODiffRules(t *testing.T) {
 	outPoint0 := *wire.NewOutPoint(hash0, 0)
 	utxoEntry0 := newUTXOEntry(&wire.TxOut{PkScript: []byte{}, Value: 10})
 
+	// For each of the following test cases, we will:
+	// this.diffFrom(other) and compare it to expectedDiffFromResult
+	// this.withDiff(other) and compare it to expectedWithDiffResult
+	//
+	// Note: an expected nil result means that we expect the respective operation to fail
 	tests := []struct {
 		name                   string
 		this                   *utxoDiff
@@ -415,6 +423,11 @@ func TestDiffUTXOSet(t *testing.T) {
 	}
 
 	// Given a diffSet, each case tests that meldToBase, String, collection, and cloning work as expected
+	// For each of the following test cases, we will:
+	// .meldToBase() the given diffSet and compare it to expectedMeldSet
+	// .String() the given diffSet and compare it to expectedString
+	// .collection() the given diffSet and compare it to expectedCollection
+	// .clone() the given diffSet and compare its value to itself (expected: equals) and its reference to itself (expected: not equal)
 	tests := []struct {
 		name               string
 		diffSet            *diffUTXOSet
@@ -573,7 +586,10 @@ func TestUTXOSetDiffRules(t *testing.T) {
 	fullSet := newFullUTXOSet()
 	diffSet := newDiffUTXOSet(fullSet, newUTXODiff())
 
-	// Test cases are similar for both fullUTXOSet and diffUTXOSet
+	// For each of the following test cases, we will call utxoSet.diffFrom(diffSet) and compare
+	// whether the function succeeded with expectedSuccess
+	//
+	// Note: since test cases are similar for both fullUTXOSet and diffUTXOSet, we test both using the same test cases
 	run := func(set utxoSet) {
 		tests := []struct {
 			name            string
@@ -644,8 +660,9 @@ func TestDiffUTXOSet_addTx(t *testing.T) {
 	hash3 := transaction2.TxHash()
 	outPoint3 := *wire.NewOutPoint(&hash3, 0)
 
-	// For each test case,
-	// add all transactions in toAdd to a given startSet and make sure the result equals expectedSet
+	// For each of the following test cases, we will:
+	// 1. startSet.addTx() all the transactions in toAdd, in order
+	// 2. Compare the result set with expectedSet
 	tests := []struct {
 		name        string
 		startSet    *diffUTXOSet
@@ -762,123 +779,6 @@ func TestDiffUTXOSet_addTx(t *testing.T) {
 		if !reflect.DeepEqual(diffSet, test.expectedSet) {
 			t.Errorf("unexpected diffSet in test \"%s\". "+
 				"Expected: \"%v\", got: \"%v\".", test.name, test.expectedSet, diffSet)
-		}
-	}
-}
-
-// TestIterate makes sure that iterating over fullUTXOSets and diffUTXOSets works as expected.
-func TestIterate(t *testing.T) {
-	hash0, _ := daghash.NewHashFromStr("0000000000000000000000000000000000000000000000000000000000000000")
-	hash1, _ := daghash.NewHashFromStr("1111111111111111111111111111111111111111111111111111111111111111")
-	outPoint0 := *wire.NewOutPoint(hash0, 0)
-	outPoint1 := *wire.NewOutPoint(hash1, 0)
-	utxoEntry0 := newUTXOEntry(&wire.TxOut{PkScript: []byte{}, Value: 10})
-	utxoEntry1 := newUTXOEntry(&wire.TxOut{PkScript: []byte{}, Value: 20})
-
-	// Given a utxoSet, each test case makes sure that all expectedOutputs were iterated over
-	tests := []struct {
-		name            string
-		set             utxoSet
-		expectedOutputs []utxoIteratorOutput
-	}{
-		{
-			name:            "empty fullSet should not iterate",
-			set:             &fullUTXOSet{},
-			expectedOutputs: []utxoIteratorOutput{},
-		},
-		{
-			name: "empty diffSet should not iterate",
-			set: &diffUTXOSet{
-				base: &fullUTXOSet{},
-				utxoDiff: &utxoDiff{
-					toAdd:    utxoCollection{},
-					toRemove: utxoCollection{},
-				},
-			},
-			expectedOutputs: []utxoIteratorOutput{},
-		},
-		{
-			name:            "fullSet with one nil member should iterate once",
-			set:             &fullUTXOSet{utxoCollection{outPoint0: nil}},
-			expectedOutputs: []utxoIteratorOutput{{outPoint0, nil}},
-		},
-		{
-			name: "diffSet with one nil member should iterate once",
-			set: &diffUTXOSet{
-				base: &fullUTXOSet{utxoCollection: utxoCollection{outPoint0: nil}},
-				utxoDiff: &utxoDiff{
-					toAdd:    utxoCollection{},
-					toRemove: utxoCollection{},
-				},
-			},
-			expectedOutputs: []utxoIteratorOutput{{outPoint0, nil}},
-		},
-		{
-			name:            "fullSet with one entry should iterate once",
-			set:             &fullUTXOSet{utxoCollection{outPoint0: utxoEntry0}},
-			expectedOutputs: []utxoIteratorOutput{{outPoint0, utxoEntry0}},
-		},
-		{
-			name: "diffSet with one entry should iterate once",
-			set: &diffUTXOSet{
-				base: &fullUTXOSet{utxoCollection: utxoCollection{outPoint1: utxoEntry1}},
-				utxoDiff: &utxoDiff{
-					toAdd:    utxoCollection{outPoint0: utxoEntry0},
-					toRemove: utxoCollection{outPoint1: utxoEntry1},
-				},
-			},
-			expectedOutputs: []utxoIteratorOutput{{outPoint0, utxoEntry0}},
-		},
-		{
-			name:            "fullSet with two entries should iterate twice",
-			set:             &fullUTXOSet{utxoCollection{outPoint0: utxoEntry0, outPoint1: utxoEntry1}},
-			expectedOutputs: []utxoIteratorOutput{{outPoint0, utxoEntry0}, {outPoint1, utxoEntry1}},
-		},
-		{
-			name: "diffSet with two txOut members with different hashes should iterate twice",
-			set: &diffUTXOSet{
-				base: &fullUTXOSet{utxoCollection: utxoCollection{outPoint0: utxoEntry0}},
-				utxoDiff: &utxoDiff{
-					toAdd:    utxoCollection{outPoint1: utxoEntry1},
-					toRemove: utxoCollection{},
-				},
-			},
-			expectedOutputs: []utxoIteratorOutput{{outPoint0, utxoEntry0}, {outPoint1, utxoEntry1}},
-		},
-	}
-
-	for _, test := range tests {
-		// Prepare a set of expectedOutputs
-		expectedOutputSet := make(map[utxoIteratorOutput]bool)
-		for _, output := range test.expectedOutputs {
-			expectedOutputSet[output] = false
-		}
-
-		// Every iteration, increment the iteration counter and mark the output as visited
-		iteratedTimes := 0
-		for output := range test.set.iterate() {
-			// All outputs must have an entry in the expected output set
-			_, ok := expectedOutputSet[output]
-			if !ok {
-				t.Errorf("unexpected output [%v] in test \"%s\".", output, test.name)
-			}
-
-			expectedOutputSet[output] = true
-			iteratedTimes++
-		}
-
-		// Make sure that all expected outputs were visited
-		for output, wasVisited := range expectedOutputSet {
-			if !wasVisited {
-				t.Errorf("missing output [%v] in test \"%s\".", output, test.name)
-			}
-		}
-
-		// Make sure that the length equals to the length of the expected outputs
-		expectedLength := len(test.expectedOutputs)
-		if iteratedTimes != expectedLength {
-			t.Errorf("unexpected length in test \"%s\". "+
-				"Expected: %d, got: %d.", test.name, expectedLength, iteratedTimes)
 		}
 	}
 }

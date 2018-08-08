@@ -25,9 +25,9 @@ import (
 	"github.com/daglabs/btcd/addrmgr"
 	"github.com/daglabs/btcd/blockdag"
 	"github.com/daglabs/btcd/blockdag/indexers"
+	"github.com/daglabs/btcd/connmgr"
 	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/dagconfig/daghash"
-	"github.com/daglabs/btcd/connmgr"
 	"github.com/daglabs/btcd/database"
 	"github.com/daglabs/btcd/mempool"
 	"github.com/daglabs/btcd/mining"
@@ -2535,7 +2535,7 @@ func newServer(listenAddrs []string, db database.DB, chainParams *dagconfig.Para
 			MaxOrphanTxSize:      defaultMaxOrphanTxSize,
 			MaxSigOpsPerTx:       blockdag.MaxSigOpsPerBlock / 5,
 			MinRelayTxFee:        cfg.minRelayTxFee,
-			MaxTxVersion:         2,
+			MaxTxVersion:         1,
 		},
 		ChainParams:    chainParams,
 		FetchUtxoView:  s.dag.FetchUtxoView,

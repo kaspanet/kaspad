@@ -251,15 +251,14 @@ func isDust(txOut *wire.TxOut, minRelayTxFee btcutil.Amount) bool {
 // of recognized forms, and not containing "dust" outputs (those that are
 // so small it costs more to process them than they are worth).
 func checkTransactionStandard(tx *btcutil.Tx, height int32,
-	medianTimePast time.Time, minRelayTxFee btcutil.Amount,
-	maxTxVersion int32) error {
+	medianTimePast time.Time, policy *Policy) error {
 
 	// The transaction must be a currently supported version.
 	msgTx := tx.MsgTx()
-	if msgTx.Version > maxTxVersion || msgTx.Version < 1 {
+	if msgTx.Version > policy.MaxTxVersion || msgTx.Version < 1 {
 		str := fmt.Sprintf("transaction version %d is not in the "+
 			"valid range of %d-%d", msgTx.Version, 1,
-			maxTxVersion)
+			policy.MaxTxVersion)
 		return txRuleError(wire.RejectNonstandard, str)
 	}
 
@@ -326,7 +325,7 @@ func checkTransactionStandard(tx *btcutil.Tx, height int32,
 		// "dust".
 		if scriptClass == txscript.NullDataTy {
 			numNullDataOutputs++
-		} else if isDust(txOut, minRelayTxFee) {
+		} else if isDust(txOut, policy.MinRelayTxFee) {
 			str := fmt.Sprintf("transaction output %d: payment "+
 				"of %d is dust", i, txOut.Value)
 			return txRuleError(wire.RejectDust, str)
