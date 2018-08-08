@@ -144,7 +144,6 @@ func TestChainView(t *testing.T) {
 				locatorHashes(branch0Nodes, 1, 0)),
 		},
 	}
-testLoop:
 	for _, test := range tests {
 		// Ensure the active and side chain tips are the expected nodes.
 		if test.view.SelectedTip() != test.tip {
@@ -157,18 +156,6 @@ testLoop:
 				"want %v", test.name, test.side.Tips(),
 				test.sideTip)
 			continue
-		}
-
-		// Ensure all nodes contained in the view can be retrieved by
-		// height.
-		for _, wantNode := range test.contains {
-			node := test.view.NodeByHeight(wantNode.height)
-			if node != wantNode {
-				t.Errorf("%s: unexpected node for height %d -- "+
-					"got %v, want %v", test.name,
-					wantNode.height, node, wantNode)
-				continue testLoop
-			}
 		}
 
 		// Ensure the block locator for the tip of the active view
@@ -258,12 +245,6 @@ func TestChainViewNil(t *testing.T) {
 	// Ensure the tips of an uninitialized view do not produce a node.
 	if tips := view.Tips(); len(tips) > 0 {
 		t.Fatalf("Tip: unexpected tips -- got %v, want nothing", tips)
-	}
-
-	// Ensure attempting to get a node for a height that does not exist does
-	// not produce a node.
-	if node := view.NodeByHeight(10); node != nil {
-		t.Fatalf("NodeByHeight: unexpected node -- got %v, want nil", node)
 	}
 
 	// Ensure attempting to get a block locator for the tip doesn't produce

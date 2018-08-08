@@ -62,7 +62,7 @@ func (b *BlockDAG) blockExists(hash *daghash.Hash) (bool, error) {
 		// instead of only the current main chain so it can be consulted
 		// directly.
 		_, err = dbFetchHeightByHash(dbTx, hash)
-		if isNotInMainChainErr(err) {
+		if isNotInDAGErr(err) {
 			exists = false
 			return nil
 		}

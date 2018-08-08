@@ -73,19 +73,19 @@ var (
 	byteOrder = binary.LittleEndian
 )
 
-// errNotInMainChain signifies that a block hash or height that is not in the
-// main chain was requested.
-type errNotInMainChain string
+// errNotInDAG signifies that a block hash or height that is not in the
+// DAG was requested.
+type errNotInDAG string
 
 // Error implements the error interface.
-func (e errNotInMainChain) Error() string {
+func (e errNotInDAG) Error() string {
 	return string(e)
 }
 
-// isNotInMainChainErr returns whether or not the passed error is an
-// errNotInMainChain error.
-func isNotInMainChainErr(err error) bool {
-	_, ok := err.(errNotInMainChain)
+// isNotInDAGErr returns whether or not the passed error is an
+// errNotInDAG error.
+func isNotInDAGErr(err error) bool {
+	_, ok := err.(errNotInDAG)
 	return ok
 }
 
@@ -781,7 +781,7 @@ func dbFetchHeightByHash(dbTx database.Tx, hash *daghash.Hash) (int32, error) {
 	serializedHeight := hashIndex.Get(hash[:])
 	if serializedHeight == nil {
 		str := fmt.Sprintf("block %s is not in the main chain", hash)
-		return 0, errNotInMainChain(str)
+		return 0, errNotInDAG(str)
 	}
 
 	return int32(byteOrder.Uint32(serializedHeight)), nil
@@ -1179,7 +1179,7 @@ func (b *BlockDAG) BlockByHash(hash *daghash.Hash) (*btcutil.Block, error) {
 	node := b.index.LookupNode(hash)
 	if node == nil {
 		str := fmt.Sprintf("block %s is not in the main chain", hash)
-		return nil, errNotInMainChain(str)
+		return nil, errNotInDAG(str)
 	}
 
 	// Load the block from the database and return it.

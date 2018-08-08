@@ -16,25 +16,25 @@ import (
 	"github.com/daglabs/btcd/dagconfig/daghash"
 )
 
-// TestErrNotInMainChain ensures the functions related to errNotInMainChain work
+// TestErrNotInDAG ensures the functions related to errNotInDAG work
 // as expected.
-func TestErrNotInMainChain(t *testing.T) {
+func TestErrNotInDAG(t *testing.T) {
 	errStr := "no block at height 1 exists"
-	err := error(errNotInMainChain(errStr))
+	err := error(errNotInDAG(errStr))
 
 	// Ensure the stringized output for the error is as expected.
 	if err.Error() != errStr {
-		t.Fatalf("errNotInMainChain retuned unexpected error string - "+
+		t.Fatalf("errNotInDAG retuned unexpected error string - "+
 			"got %q, want %q", err.Error(), errStr)
 	}
 
 	// Ensure error is detected as the correct type.
-	if !isNotInMainChainErr(err) {
-		t.Fatalf("isNotInMainChainErr did not detect as expected type")
+	if !isNotInDAGErr(err) {
+		t.Fatalf("isNotInDAGErr did not detect as expected type")
 	}
 	err = errors.New("something else")
-	if isNotInMainChainErr(err) {
-		t.Fatalf("isNotInMainChainErr detected incorrect type")
+	if isNotInDAGErr(err) {
+		t.Fatalf("isNotInDAGErr detected incorrect type")
 	}
 }
 

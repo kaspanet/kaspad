@@ -138,30 +138,6 @@ func (v *virtualBlock) SetTips(tips blockSet) {
 	v.mtx.Unlock()
 }
 
-// nodeByHeight returns the block node at the specified height.  Nil will be
-// returned if the height does not exist.  This only differs from the exported
-// version in that it is up to the caller to ensure the lock is held.
-//
-// This function MUST be called with the view mutex locked (for reads).
-func (v *virtualBlock) nodeByHeight(height int32) *blockNode {
-	if height < 0 || height >= int32(len(v.nodes)) {
-		return nil
-	}
-
-	return v.nodes[height]
-}
-
-// NodeByHeight returns the block node at the specified height.  Nil will be
-// returned if the height does not exist.
-//
-// This function is safe for concurrent access.
-func (v *virtualBlock) NodeByHeight(height int32) *blockNode {
-	v.mtx.Lock()
-	node := v.nodeByHeight(height)
-	v.mtx.Unlock()
-	return node
-}
-
 // blockLocator returns a block locator for the passed block node.  The passed
 // node can be nil in which case the block locator for the current tip
 // associated with the view will be returned.  This only differs from the

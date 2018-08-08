@@ -805,32 +805,32 @@ func (b *BlockDAG) LatestBlockLocator() (BlockLocator, error) {
 }
 
 // BlockHeightByHash returns the height of the block with the given hash in the
-// main chain.
+// DAG.
 //
 // This function is safe for concurrent access.
 func (b *BlockDAG) BlockHeightByHash(hash *daghash.Hash) (int32, error) {
 	node := b.index.LookupNode(hash)
 	if node == nil {
-		str := fmt.Sprintf("block %s is not in the main chain", hash)
-		return 0, errNotInMainChain(str)
+		str := fmt.Sprintf("block %s is not in the DAG", hash)
+		return 0, errNotInDAG(str)
 	}
 
 	return node.height, nil
 }
 
-// BlockHashByHeight returns the hash of the block at the given height in the
-// main chain.
+// ChildHashesByHash returns the child hashes of the block with the given hash in the
+// DAG.
 //
 // This function is safe for concurrent access.
-func (b *BlockDAG) BlockHashByHeight(blockHeight int32) (*daghash.Hash, error) {
-	node := b.virtual.NodeByHeight(blockHeight)
+func (b *BlockDAG) ChildHashesByHash(hash *daghash.Hash) ([]daghash.Hash, error) {
+	node := b.index.LookupNode(hash)
 	if node == nil {
-		str := fmt.Sprintf("no block at height %d exists", blockHeight)
-		return nil, errNotInMainChain(str)
+		str := fmt.Sprintf("block %s is not in the DAG", hash)
+		return nil, errNotInDAG(str)
 
 	}
 
-	return &node.hash, nil
+	return node.children.hashes(), nil
 }
 
 // HeightToHashRange returns a range of block hashes for the given start height
