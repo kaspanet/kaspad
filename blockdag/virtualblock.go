@@ -20,9 +20,7 @@ func newVirtualBlock(tips blockSet, phantomK uint32) *virtualBlock {
 	// The mutex is intentionally not held since this is a constructor.
 	var virtual virtualBlock
 	virtual.phantomK = phantomK
-	if tips != nil {
-		virtual.setTips(tips)
-	}
+	virtual.setTips(tips)
 
 	return &virtual
 }
