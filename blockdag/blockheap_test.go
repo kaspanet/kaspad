@@ -2,19 +2,20 @@ package blockdag
 
 import (
 	"testing"
-	"github.com/daglabs/btcd/dagconfig/daghash"
+
 	"github.com/daglabs/btcd/dagconfig"
+	"github.com/daglabs/btcd/dagconfig/daghash"
 )
 
 // TestBlockHeap tests pushing, popping, and determining the length of the heap.
 func TestBlockHeap(t *testing.T) {
 	block0Header := dagconfig.MainNetParams.GenesisBlock.Header
-	block0 := newBlockNode(&block0Header, newSet())
+	block0 := newBlockNode(&block0Header, newSet(), dagconfig.MainNetParams.K)
 
 	block100000Header := Block100000.Header
-	block100000 := newBlockNode(&block100000Header, setFromSlice(block0))
+	block100000 := newBlockNode(&block100000Header, setFromSlice(block0), dagconfig.MainNetParams.K)
 
-	block0smallHash := newBlockNode(&block0Header, newSet())
+	block0smallHash := newBlockNode(&block0Header, newSet(), dagconfig.MainNetParams.K)
 	block0smallHash.hash = daghash.Hash{}
 
 	tests := []struct {

@@ -1,6 +1,7 @@
 package blockdag
 
 import (
+	"sort"
 	"strings"
 
 	"github.com/daglabs/btcd/dagconfig/daghash"
@@ -21,17 +22,6 @@ func setFromSlice(blocks ...*blockNode) blockSet {
 		set[block.hash] = block
 	}
 	return set
-}
-
-// toSlice converts a set of blocks into a slice
-func (bs blockSet) toSlice() []*blockNode {
-	slice := []*blockNode{}
-
-	for _, block := range bs {
-		slice = append(slice, block)
-	}
-
-	return slice
 }
 
 // add adds a block to this BlockSet
@@ -118,7 +108,9 @@ func (bs blockSet) hashes() []daghash.Hash {
 	for hash := range bs {
 		hashes = append(hashes, hash)
 	}
-
+	sort.Slice(hashes, func(i, j int) bool {
+		return daghash.Less(&hashes[i], &hashes[j])
+	})
 	return hashes
 }
 
@@ -132,9 +124,20 @@ func (bs blockSet) first() *blockNode {
 }
 
 func (bs blockSet) String() string {
-	ids := []string{}
-	for hash := range bs {
-		ids = append(ids, hash.String())
+	nodeStrs := make([]string, 0, len(bs))
+	for _, node := range bs {
+		nodeStrs = append(nodeStrs, node.String())
 	}
-	return strings.Join(ids, ",")
+	return strings.Join(nodeStrs, ",")
+}
+
+// anyChildInSet returns true iff any child of block is contained within this set
+func (bs blockSet) anyChildInSet(block *blockNode) bool {
+	for _, child := range block.children {
+		if bs.contains(child) {
+			return true
+		}
+	}
+
+	return false
 }

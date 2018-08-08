@@ -43,8 +43,7 @@ type BlockHeader struct {
 	// Merkle tree reference to hash of all transactions for the block.
 	MerkleRoot daghash.Hash
 
-	// Time the block was created.  This is, unfortunately, encoded as a
-	// uint32 on the wire and therefore is limited to 2106.
+	// Time the block was created.
 	Timestamp time.Time
 
 	// Difficulty target for the block.
