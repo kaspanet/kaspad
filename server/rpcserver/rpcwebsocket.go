@@ -24,9 +24,9 @@ import (
 	"github.com/btcsuite/websocket"
 	"github.com/daglabs/btcd/blockdag"
 	"github.com/daglabs/btcd/btcjson"
+	"github.com/daglabs/btcd/config"
 	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/dagconfig/daghash"
-	"github.com/daglabs/btcd/server"
 	"github.com/daglabs/btcd/txscript"
 	"github.com/daglabs/btcd/wire"
 	"github.com/daglabs/btcutil"
@@ -82,7 +82,7 @@ var wsHandlersBeforeInit = map[string]wsCommandHandler{
 // must be run in a separate goroutine.  It should be invoked from the websocket
 // server handler which runs each new connection in a new goroutine thereby
 // satisfying the requirement.
-func WebsocketHandler(s *server.RPCServer, conn *websocket.Conn, remoteAddr string,
+func (s *Server) WebsocketHandler(conn *websocket.Conn, remoteAddr string,
 	authenticated bool, isAdmin bool) {
 
 	// Clear the read deadline that was set before the websocket hijacked
@@ -90,10 +90,10 @@ func WebsocketHandler(s *server.RPCServer, conn *websocket.Conn, remoteAddr stri
 	conn.SetReadDeadline(timeZeroVal)
 
 	// Limit max number of websocket clients.
-	rpcsLog.Infof("New websocket client %s", remoteAddr)
-	if s.ntfnMgr.NumClients()+1 > cfg.RPCMaxWebsockets {
-		rpcsLog.Infof("Max websocket clients exceeded [%d] - "+
-			"disconnecting client %s", cfg.RPCMaxWebsockets,
+	log.Infof("New websocket client %s", remoteAddr)
+	if s.ntfnMgr.NumClients()+1 > config.MainConfig().RPCMaxWebsockets {
+		log.Infof("Max websocket clients exceeded [%d] - "+
+			"disconnecting client %s", config.MainConfig().RPCMaxWebsockets,
 			remoteAddr)
 		conn.Close()
 		return
@@ -104,7 +104,7 @@ func WebsocketHandler(s *server.RPCServer, conn *websocket.Conn, remoteAddr stri
 	// disconnected), remove it and any notifications it registered for.
 	client, err := newWebsocketClient(s, conn, remoteAddr, authenticated, isAdmin)
 	if err != nil {
-		rpcsLog.Errorf("Failed to serve client %s: %v", remoteAddr, err)
+		log.Errorf("Failed to serve client %s: %v", remoteAddr, err)
 		conn.Close()
 		return
 	}
@@ -112,7 +112,35 @@ func WebsocketHandler(s *server.RPCServer, conn *websocket.Conn, remoteAddr stri
 	client.Start()
 	client.WaitForShutdown()
 	s.ntfnMgr.RemoveClient(client)
-	rpcsLog.Infof("Disconnected websocket client %s", remoteAddr)
+	log.Infof("Disconnected websocket client %s", remoteAddr)
+}
+
+// wsNotificationManager is a connection and notification manager used for
+// websockets.  It allows websocket clients to register for notifications they
+// are interested in.  When an event happens elsewhere in the code such as
+// transactions being added to the memory pool or block connects/disconnects,
+// the notification manager is provided with the relevant details needed to
+// figure out which websocket clients need to be notified based on what they
+// have registered for and notifies them accordingly.  It is also used to keep
+// track of all connected websocket clients.
+type wsNotificationManager struct {
+	// server is the RPC server the notification manager is associated with.
+	server *Server
+
+	// queueNotification queues a notification for handling.
+	queueNotification chan interface{}
+
+	// notificationMsgs feeds notificationHandler with notifications
+	// and client (un)registeration requests from a queue as well as
+	// registeration and unregisteration requests from clients.
+	notificationMsgs chan interface{}
+
+	// Access channel for current number of connected clients.
+	numClients chan int
+
+	// Shutdown handling
+	wg   sync.WaitGroup
+	quit chan struct{}
 }
 
 // queueHandler manages a queue of empty interfaces, reading from in and
@@ -163,17 +191,17 @@ out:
 	close(out)
 }
 
-// WSQueueHandler maintains a queue of notifications and notification handler
+// queueHandler maintains a queue of notifications and notification handler
 // control messages.
-func WSQueueHandler(m *server.WSNotificationManager) {
+func (m *wsNotificationManager) queueHandler() {
 	queueHandler(m.queueNotification, m.notificationMsgs, m.quit)
 	m.wg.Done()
 }
 
-// WSNotifyBlockConnected passes a block newly-connected to the best chain
+// NotifyBlockConnected passes a block newly-connected to the best chain
 // to the notification manager for block and transaction notification
 // processing.
-func WSNotifyBlockConnected(m *server.WSNotificationManager, block *btcutil.Block) {
+func (m *wsNotificationManager) NotifyBlockConnected(block *btcutil.Block) {
 	// As NotifyBlockConnected will be called by the block manager
 	// and the RPC server may no longer be running, use a select
 	// statement to unblock enqueuing the notification once the RPC
@@ -186,7 +214,7 @@ func WSNotifyBlockConnected(m *server.WSNotificationManager, block *btcutil.Bloc
 
 // NotifyBlockDisconnected passes a block disconnected from the best chain
 // to the notification manager for block notification processing.
-func NotifyBlockDisconnected(m *server.WSNotificationManager, block *btcutil.Block) {
+func (m *wsNotificationManager) NotifyBlockDisconnected(block *btcutil.Block) {
 	// As NotifyBlockDisconnected will be called by the block manager
 	// and the RPC server may no longer be running, use a select
 	// statement to unblock enqueuing the notification once the RPC
@@ -197,17 +225,17 @@ func NotifyBlockDisconnected(m *server.WSNotificationManager, block *btcutil.Blo
 	}
 }
 
-// WSNotifyMempoolTx passes a transaction accepted by mempool to the
+// NotifyMempoolTx passes a transaction accepted by mempool to the
 // notification manager for transaction notification processing.  If
 // isNew is true, the tx is is a new transaction, rather than one
 // added to the mempool during a reorg.
-func WSNotifyMempoolTx(m *server.WSNotificationManager, tx *btcutil.Tx, isNew bool) {
+func (m *wsNotificationManager) NotifyMempoolTx(tx *btcutil.Tx, isNew bool) {
 	n := &notificationTxAcceptedByMempool{
 		isNew: isNew,
 		tx:    tx,
 	}
 
-	// As WSNotifyMempoolTx will be called by mempool and the RPC server
+	// As NotifyMempoolTx will be called by mempool and the RPC server
 	// may no longer be running, use a select statement to unblock
 	// enqueuing the notification once the RPC server has begun
 	// shutting down.
@@ -449,7 +477,7 @@ type notificationUnregisterAddr struct {
 
 // notificationHandler reads notifications and control messages from the queue
 // handler and processes one at a time.
-func notificationHandler(m *server.WSNotificationManager) {
+func (m *wsNotificationManager) notificationHandler() {
 	// clients is a map of all currently connected websocket clients.
 	clients := make(map[chan struct{}]*wsClient)
 
@@ -487,7 +515,7 @@ out:
 				}
 
 				if len(blockNotifications) != 0 {
-					wsNotifyBlockConnected(blockNotifications,
+					m.notifyBlockConnected(blockNotifications,
 						block)
 					m.notifyFilteredBlockConnected(blockNotifications,
 						block)
@@ -497,9 +525,9 @@ out:
 				block := (*btcutil.Block)(n)
 
 				if len(blockNotifications) != 0 {
-					wsNotifyBlockDisconnected(blockNotifications,
+					m.notifyBlockDisconnected(blockNotifications,
 						block)
-					wsNotifyFilteredBlockDisconnected(blockNotifications,
+					m.notifyFilteredBlockDisconnected(blockNotifications,
 						block)
 				}
 
@@ -530,10 +558,10 @@ out:
 				delete(txNotifications, wsc.quit)
 				for k := range wsc.spentRequests {
 					op := k
-					wsRemoveSpentRequest(watchedOutPoints, wsc, &op)
+					m.removeSpentRequest(watchedOutPoints, wsc, &op)
 				}
 				for addr := range wsc.addrRequests {
-					wsRemoveAddrRequest(watchedAddrs, wsc, addr)
+					m.removeAddrRequest(watchedAddrs, wsc, addr)
 				}
 				delete(clients, wsc.quit)
 
@@ -541,13 +569,13 @@ out:
 				m.addSpentRequests(watchedOutPoints, n.wsc, n.ops)
 
 			case *notificationUnregisterSpent:
-				wsRemoveSpentRequest(watchedOutPoints, n.wsc, n.op)
+				m.removeSpentRequest(watchedOutPoints, n.wsc, n.op)
 
 			case *notificationRegisterAddr:
-				wsAddAddrRequests(watchedAddrs, n.wsc, n.addrs)
+				m.addAddrRequests(watchedAddrs, n.wsc, n.addrs)
 
 			case *notificationUnregisterAddr:
-				wsRemoveAddrRequest(watchedAddrs, n.wsc, n.addr)
+				m.removeAddrRequest(watchedAddrs, n.wsc, n.addr)
 
 			case *notificationRegisterNewMempoolTxs:
 				wsc := (*wsClient)(n)
@@ -558,7 +586,7 @@ out:
 				delete(txNotifications, wsc.quit)
 
 			default:
-				rpcsLog.Warn("Unhandled notification type")
+				log.Warn("Unhandled notification type")
 			}
 
 		case m.numClients <- len(clients):
@@ -576,7 +604,7 @@ out:
 }
 
 // NumClients returns the number of clients actively being served.
-func NumClients(m *server.WSNotificationManager) (n int) {
+func (m *wsNotificationManager) NumClients() (n int) {
 	select {
 	case n = <-m.numClients:
 	case <-m.quit: // Use default n (0) if server has shut down.
@@ -586,13 +614,13 @@ func NumClients(m *server.WSNotificationManager) (n int) {
 
 // RegisterBlockUpdates requests block update notifications to the passed
 // websocket client.
-func RegisterBlockUpdates(m *server.WSNotificationManager, wsc *wsClient) {
+func (m *wsNotificationManager) RegisterBlockUpdates(wsc *wsClient) {
 	m.queueNotification <- (*notificationRegisterBlocks)(wsc)
 }
 
 // UnregisterBlockUpdates removes block update notifications for the passed
 // websocket client.
-func UnregisterBlockUpdates(m *server.WSNotificationManager, wsc *wsClient) {
+func (m *wsNotificationManager) UnregisterBlockUpdates(wsc *wsClient) {
 	m.queueNotification <- (*notificationUnregisterBlocks)(wsc)
 }
 
@@ -601,7 +629,7 @@ func UnregisterBlockUpdates(m *server.WSNotificationManager, wsc *wsClient) {
 // spending a watched output or outputting to a watched address.  Matching
 // client's filters are updated based on this transaction's outputs and output
 // addresses that may be relevant for a client.
-func subscribedClients(m *server.WSNotificationManager, tx *btcutil.Tx,
+func (m *wsNotificationManager) subscribedClients(tx *btcutil.Tx,
 	clients map[chan struct{}]*wsClient) map[chan struct{}]struct{} {
 
 	// Use a map of client quit channels as keys to prevent duplicates when
@@ -658,9 +686,9 @@ func subscribedClients(m *server.WSNotificationManager, tx *btcutil.Tx,
 	return subscribed
 }
 
-// wsNotifyBlockConnected notifies websocket clients that have registered for
+// notifyBlockConnected notifies websocket clients that have registered for
 // block updates when a block is connected to the main chain.
-func wsNotifyBlockConnected(clients map[chan struct{}]*wsClient,
+func (*wsNotificationManager) notifyBlockConnected(clients map[chan struct{}]*wsClient,
 	block *btcutil.Block) {
 
 	// Notify interested websocket clients about the connected block.
@@ -668,7 +696,7 @@ func wsNotifyBlockConnected(clients map[chan struct{}]*wsClient,
 		block.MsgBlock().Header.Timestamp.Unix())
 	marshalledJSON, err := btcjson.MarshalCmd(nil, ntfn)
 	if err != nil {
-		rpcsLog.Errorf("Failed to marshal block connected notification: "+
+		log.Errorf("Failed to marshal block connected notification: "+
 			"%v", err)
 		return
 	}
@@ -677,10 +705,10 @@ func wsNotifyBlockConnected(clients map[chan struct{}]*wsClient,
 	}
 }
 
-// wsNotifyBlockDisconnected notifies websocket clients that have registered for
+// notifyBlockDisconnected notifies websocket clients that have registered for
 // block updates when a block is disconnected from the main chain (due to a
 // reorganize).
-func wsNotifyBlockDisconnected(clients map[chan struct{}]*wsClient, block *btcutil.Block) {
+func (*wsNotificationManager) notifyBlockDisconnected(clients map[chan struct{}]*wsClient, block *btcutil.Block) {
 	// Skip notification creation if no clients have requested block
 	// connected/disconnected notifications.
 	if len(clients) == 0 {
@@ -692,7 +720,7 @@ func wsNotifyBlockDisconnected(clients map[chan struct{}]*wsClient, block *btcut
 		block.Height(), block.MsgBlock().Header.Timestamp.Unix())
 	marshalledJSON, err := btcjson.MarshalCmd(nil, ntfn)
 	if err != nil {
-		rpcsLog.Errorf("Failed to marshal block disconnected "+
+		log.Errorf("Failed to marshal block disconnected "+
 			"notification: %v", err)
 		return
 	}
@@ -703,7 +731,7 @@ func wsNotifyBlockDisconnected(clients map[chan struct{}]*wsClient, block *btcut
 
 // notifyFilteredBlockConnected notifies websocket clients that have registered for
 // block updates when a block is connected to the main chain.
-func notifyFilteredBlockConnected(m *server.WSNotificationManager, clients map[chan struct{}]*wsClient,
+func (m *wsNotificationManager) notifyFilteredBlockConnected(clients map[chan struct{}]*wsClient,
 	block *btcutil.Block) {
 
 	// Create the common portion of the notification that is the same for
@@ -711,7 +739,7 @@ func notifyFilteredBlockConnected(m *server.WSNotificationManager, clients map[c
 	var w bytes.Buffer
 	err := block.MsgBlock().Header.Serialize(&w)
 	if err != nil {
-		rpcsLog.Errorf("Failed to serialize header for filtered block "+
+		log.Errorf("Failed to serialize header for filtered block "+
 			"connected notification: %v", err)
 		return
 	}
@@ -738,7 +766,7 @@ func notifyFilteredBlockConnected(m *server.WSNotificationManager, clients map[c
 		// Marshal and queue notification.
 		marshalledJSON, err := btcjson.MarshalCmd(nil, ntfn)
 		if err != nil {
-			rpcsLog.Errorf("Failed to marshal filtered block "+
+			log.Errorf("Failed to marshal filtered block "+
 				"connected notification: %v", err)
 			return
 		}
@@ -746,10 +774,10 @@ func notifyFilteredBlockConnected(m *server.WSNotificationManager, clients map[c
 	}
 }
 
-// wsNotifyFilteredBlockDisconnected notifies websocket clients that have registered for
+// notifyFilteredBlockDisconnected notifies websocket clients that have registered for
 // block updates when a block is disconnected from the main chain (due to a
 // reorganize).
-func wsNotifyFilteredBlockDisconnected(clients map[chan struct{}]*wsClient,
+func (*wsNotificationManager) notifyFilteredBlockDisconnected(clients map[chan struct{}]*wsClient,
 	block *btcutil.Block) {
 	// Skip notification creation if no clients have requested block
 	// connected/disconnected notifications.
@@ -761,7 +789,7 @@ func wsNotifyFilteredBlockDisconnected(clients map[chan struct{}]*wsClient,
 	var w bytes.Buffer
 	err := block.MsgBlock().Header.Serialize(&w)
 	if err != nil {
-		rpcsLog.Errorf("Failed to serialize header for filtered block "+
+		log.Errorf("Failed to serialize header for filtered block "+
 			"disconnected notification: %v", err)
 		return
 	}
@@ -769,7 +797,7 @@ func wsNotifyFilteredBlockDisconnected(clients map[chan struct{}]*wsClient,
 		hex.EncodeToString(w.Bytes()))
 	marshalledJSON, err := btcjson.MarshalCmd(nil, ntfn)
 	if err != nil {
-		rpcsLog.Errorf("Failed to marshal filtered block disconnected "+
+		log.Errorf("Failed to marshal filtered block disconnected "+
 			"notification: %v", err)
 		return
 	}
@@ -780,19 +808,19 @@ func wsNotifyFilteredBlockDisconnected(clients map[chan struct{}]*wsClient,
 
 // RegisterNewMempoolTxsUpdates requests notifications to the passed websocket
 // client when new transactions are added to the memory pool.
-func RegisterNewMempoolTxsUpdates(m *server.WSNotificationManager, wsc *wsClient) {
+func (m *wsNotificationManager) RegisterNewMempoolTxsUpdates(wsc *wsClient) {
 	m.queueNotification <- (*notificationRegisterNewMempoolTxs)(wsc)
 }
 
 // UnregisterNewMempoolTxsUpdates removes notifications to the passed websocket
 // client when new transaction are added to the memory pool.
-func UnregisterNewMempoolTxsUpdates(m *server.WSNotificationManager, wsc *wsClient) {
+func (m *wsNotificationManager) UnregisterNewMempoolTxsUpdates(wsc *wsClient) {
 	m.queueNotification <- (*notificationUnregisterNewMempoolTxs)(wsc)
 }
 
 // notifyForNewTx notifies websocket clients that have registered for updates
 // when a new transaction is added to the memory pool.
-func notifyForNewTx(m *server.WSNotificationManager, clients map[chan struct{}]*wsClient, tx *btcutil.Tx) {
+func (m *wsNotificationManager) notifyForNewTx(clients map[chan struct{}]*wsClient, tx *btcutil.Tx) {
 	txHashStr := tx.Hash().String()
 	mtx := tx.MsgTx()
 
@@ -804,7 +832,7 @@ func notifyForNewTx(m *server.WSNotificationManager, clients map[chan struct{}]*
 	ntfn := btcjson.NewTxAcceptedNtfn(txHashStr, btcutil.Amount(amount).ToBTC())
 	marshalledJSON, err := btcjson.MarshalCmd(nil, ntfn)
 	if err != nil {
-		rpcsLog.Errorf("Failed to marshal tx notification: %s", err.Error())
+		log.Errorf("Failed to marshal tx notification: %s", err.Error())
 		return
 	}
 
@@ -828,7 +856,7 @@ func notifyForNewTx(m *server.WSNotificationManager, clients map[chan struct{}]*
 			marshalledJSONVerbose, err = btcjson.MarshalCmd(nil,
 				verboseNtfn)
 			if err != nil {
-				rpcsLog.Errorf("Failed to marshal verbose tx "+
+				log.Errorf("Failed to marshal verbose tx "+
 					"notification: %s", err.Error())
 				return
 			}
@@ -843,7 +871,7 @@ func notifyForNewTx(m *server.WSNotificationManager, clients map[chan struct{}]*
 // outpoints is confirmed spent (contained in a block connected to the main
 // chain) for the passed websocket client.  The request is automatically
 // removed once the notification has been sent.
-func RegisterSpentRequests(m *server.WSNotificationManager, wsc *wsClient, ops []*wire.OutPoint) {
+func (m *wsNotificationManager) RegisterSpentRequests(wsc *wsClient, ops []*wire.OutPoint) {
 	m.queueNotification <- &notificationRegisterSpent{
 		wsc: wsc,
 		ops: ops,
@@ -853,7 +881,7 @@ func RegisterSpentRequests(m *server.WSNotificationManager, wsc *wsClient, ops [
 // addSpentRequests modifies a map of watched outpoints to sets of websocket
 // clients to add a new request watch all of the outpoints in ops and create
 // and send a notification when spent to the websocket client wsc.
-func addSpentRequests(m *server.WSNotificationManager, opMap map[wire.OutPoint]map[chan struct{}]*wsClient,
+func (m *wsNotificationManager) addSpentRequests(opMap map[wire.OutPoint]map[chan struct{}]*wsClient,
 	wsc *wsClient, ops []*wire.OutPoint) {
 
 	for _, op := range ops {
@@ -877,7 +905,7 @@ func addSpentRequests(m *server.WSNotificationManager, opMap map[wire.OutPoint]m
 	for _, op := range ops {
 		spend := m.server.cfg.TxMemPool.CheckSpend(*op)
 		if spend != nil {
-			rpcsLog.Debugf("Found existing mempool spend for "+
+			log.Debugf("Found existing mempool spend for "+
 				"outpoint<%v>: %v", op, spend.Hash())
 			spends[*spend.Hash()] = spend
 		}
@@ -891,18 +919,18 @@ func addSpentRequests(m *server.WSNotificationManager, opMap map[wire.OutPoint]m
 // UnregisterSpentRequest removes a request from the passed websocket client
 // to be notified when the passed outpoint is confirmed spent (contained in a
 // block connected to the main chain).
-func UnregisterSpentRequest(m *server.WSNotificationManager, wsc *wsClient, op *wire.OutPoint) {
+func (m *wsNotificationManager) UnregisterSpentRequest(wsc *wsClient, op *wire.OutPoint) {
 	m.queueNotification <- &notificationUnregisterSpent{
 		wsc: wsc,
 		op:  op,
 	}
 }
 
-// wsRemoveSpentRequest modifies a map of watched outpoints to remove the
+// removeSpentRequest modifies a map of watched outpoints to remove the
 // websocket client wsc from the set of clients to be notified when a
 // watched outpoint is spent.  If wsc is the last client, the outpoint
 // key is removed from the map.
-func wsRemoveSpentRequest(ops map[wire.OutPoint]map[chan struct{}]*wsClient,
+func (*wsNotificationManager) removeSpentRequest(ops map[wire.OutPoint]map[chan struct{}]*wsClient,
 	wsc *wsClient, op *wire.OutPoint) {
 
 	// Remove the request tracking from the client.
@@ -911,7 +939,7 @@ func wsRemoveSpentRequest(ops map[wire.OutPoint]map[chan struct{}]*wsClient,
 	// Remove the client from the list to notify.
 	notifyMap, ok := ops[*op]
 	if !ok {
-		rpcsLog.Warnf("Attempt to remove nonexistent spent request "+
+		log.Warnf("Attempt to remove nonexistent spent request "+
 			"for websocket client %s", wsc.addr)
 		return
 	}
@@ -958,7 +986,7 @@ func newRedeemingTxNotification(txHex string, index int, block *btcutil.Block) (
 // websocket clients of the transaction if an output spends to a watched
 // address.  A spent notification request is automatically registered for
 // the client for each matching output.
-func notifyForTxOuts(m *server.WSNotificationManager, ops map[wire.OutPoint]map[chan struct{}]*wsClient,
+func (m *wsNotificationManager) notifyForTxOuts(ops map[wire.OutPoint]map[chan struct{}]*wsClient,
 	addrs map[string]map[chan struct{}]*wsClient, tx *btcutil.Tx, block *btcutil.Block) {
 
 	// Nothing to do if nobody is listening for address notifications.
@@ -989,7 +1017,7 @@ func notifyForTxOuts(m *server.WSNotificationManager, ops map[wire.OutPoint]map[
 
 			marshalledJSON, err := btcjson.MarshalCmd(nil, ntfn)
 			if err != nil {
-				rpcsLog.Errorf("Failed to marshal processedtx notification: %v", err)
+				log.Errorf("Failed to marshal processedtx notification: %v", err)
 				continue
 			}
 
@@ -1011,7 +1039,7 @@ func notifyForTxOuts(m *server.WSNotificationManager, ops map[wire.OutPoint]map[
 // address and inputs spending a watched outpoint.  Any outputs paying to a
 // watched address result in the output being watched as well for future
 // notifications.
-func notifyRelevantTxAccepted(m *server.WSNotificationManager, tx *btcutil.Tx,
+func (m *wsNotificationManager) notifyRelevantTxAccepted(tx *btcutil.Tx,
 	clients map[chan struct{}]*wsClient) {
 
 	clientsToNotify := m.subscribedClients(tx, clients)
@@ -1020,7 +1048,7 @@ func notifyRelevantTxAccepted(m *server.WSNotificationManager, tx *btcutil.Tx,
 		n := btcjson.NewRelevantTxAcceptedNtfn(txHexString(tx.MsgTx()))
 		marshalled, err := btcjson.MarshalCmd(nil, n)
 		if err != nil {
-			rpcsLog.Errorf("Failed to marshal notification: %v", err)
+			log.Errorf("Failed to marshal notification: %v", err)
 			return
 		}
 		for quitChan := range clientsToNotify {
@@ -1032,7 +1060,7 @@ func notifyRelevantTxAccepted(m *server.WSNotificationManager, tx *btcutil.Tx,
 // notifyForTx examines the inputs and outputs of the passed transaction,
 // notifying websocket clients of outputs spending to a watched address
 // and inputs spending a watched outpoint.
-func notifyForTx(m *server.WSNotificationManager, ops map[wire.OutPoint]map[chan struct{}]*wsClient,
+func (m *wsNotificationManager) notifyForTx(ops map[wire.OutPoint]map[chan struct{}]*wsClient,
 	addrs map[string]map[chan struct{}]*wsClient, tx *btcutil.Tx, block *btcutil.Block) {
 
 	if len(ops) != 0 {
@@ -1047,7 +1075,7 @@ func notifyForTx(m *server.WSNotificationManager, ops map[wire.OutPoint]map[chan
 // interested websocket clients a redeemingtx notification if any inputs
 // spend a watched output.  If block is non-nil, any matching spent
 // requests are removed.
-func notifyForTxIns(m *server.WSNotificationManager, ops map[wire.OutPoint]map[chan struct{}]*wsClient,
+func (m *wsNotificationManager) notifyForTxIns(ops map[wire.OutPoint]map[chan struct{}]*wsClient,
 	tx *btcutil.Tx, block *btcutil.Block) {
 
 	// Nothing to do if nobody is watching outpoints.
@@ -1065,12 +1093,12 @@ func notifyForTxIns(m *server.WSNotificationManager, ops map[wire.OutPoint]map[c
 			}
 			marshalledJSON, err := newRedeemingTxNotification(txHex, tx.Index(), block)
 			if err != nil {
-				rpcsLog.Warnf("Failed to marshal redeemingtx notification: %v", err)
+				log.Warnf("Failed to marshal redeemingtx notification: %v", err)
 				continue
 			}
 			for wscQuit, wsc := range cmap {
 				if block != nil {
-					wsRemoveSpentRequest(ops, wsc, prevOut)
+					m.removeSpentRequest(ops, wsc, prevOut)
 				}
 
 				if _, ok := wscNotified[wscQuit]; !ok {
@@ -1084,17 +1112,17 @@ func notifyForTxIns(m *server.WSNotificationManager, ops map[wire.OutPoint]map[c
 
 // RegisterTxOutAddressRequests requests notifications to the passed websocket
 // client when a transaction output spends to the passed address.
-func RegisterTxOutAddressRequests(m *server.WSNotificationManager, wsc *wsClient, addrs []string) {
+func (m *wsNotificationManager) RegisterTxOutAddressRequests(wsc *wsClient, addrs []string) {
 	m.queueNotification <- &notificationRegisterAddr{
 		wsc:   wsc,
 		addrs: addrs,
 	}
 }
 
-// wsAddAddrRequests adds the websocket client wsc to the address to client set
+// addAddrRequests adds the websocket client wsc to the address to client set
 // addrMap so wsc will be notified for any mempool or block transaction outputs
 // spending to any of the addresses in addrs.
-func wsAddAddrRequests(addrMap map[string]map[chan struct{}]*wsClient,
+func (*wsNotificationManager) addAddrRequests(addrMap map[string]map[chan struct{}]*wsClient,
 	wsc *wsClient, addrs []string) {
 
 	for _, addr := range addrs {
@@ -1115,17 +1143,17 @@ func wsAddAddrRequests(addrMap map[string]map[chan struct{}]*wsClient,
 
 // UnregisterTxOutAddressRequest removes a request from the passed websocket
 // client to be notified when a transaction spends to the passed address.
-func UnregisterTxOutAddressRequest(m *server.WSNotificationManager, wsc *wsClient, addr string) {
+func (m *wsNotificationManager) UnregisterTxOutAddressRequest(wsc *wsClient, addr string) {
 	m.queueNotification <- &notificationUnregisterAddr{
 		wsc:  wsc,
 		addr: addr,
 	}
 }
 
-// wsRemoveAddrRequest removes the websocket client wsc from the address to
+// removeAddrRequest removes the websocket client wsc from the address to
 // client set addrs so it will no longer receive notification updates for
 // any transaction outputs send to addr.
-func wsRemoveAddrRequest(addrs map[string]map[chan struct{}]*wsClient,
+func (*wsNotificationManager) removeAddrRequest(addrs map[string]map[chan struct{}]*wsClient,
 	wsc *wsClient, addr string) {
 
 	// Remove the request tracking from the client.
@@ -1134,7 +1162,7 @@ func wsRemoveAddrRequest(addrs map[string]map[chan struct{}]*wsClient,
 	// Remove the client from the list to notify.
 	cmap, ok := addrs[addr]
 	if !ok {
-		rpcsLog.Warnf("Attempt to remove nonexistent addr request "+
+		log.Warnf("Attempt to remove nonexistent addr request "+
 			"<%s> for websocket client %s", addr, wsc.addr)
 		return
 	}
@@ -1148,42 +1176,42 @@ func wsRemoveAddrRequest(addrs map[string]map[chan struct{}]*wsClient,
 }
 
 // AddClient adds the passed websocket client to the notification manager.
-func AddClient(m *server.WSNotificationManager, wsc *wsClient) {
+func (m *wsNotificationManager) AddClient(wsc *wsClient) {
 	m.queueNotification <- (*notificationRegisterClient)(wsc)
 }
 
 // RemoveClient removes the passed websocket client and all notifications
 // registered for it.
-func RemoveClient(m *server.WSNotificationManager, wsc *wsClient) {
+func (m *wsNotificationManager) RemoveClient(wsc *wsClient) {
 	select {
 	case m.queueNotification <- (*notificationUnregisterClient)(wsc):
 	case <-m.quit:
 	}
 }
 
-// StartWS starts the goroutines required for the manager to queue and process
+// Start starts the goroutines required for the manager to queue and process
 // websocket client notifications.
-func StartWS(m *server.WSNotificationManager) {
+func (m *wsNotificationManager) Start() {
 	m.wg.Add(2)
-	go WSQueueHandler(m)
+	go m.queueHandler()
 	go m.notificationHandler()
 }
 
 // WaitForShutdown blocks until all notification manager goroutines have
 // finished.
-func WaitForShutdown(m *server.WSNotificationManager) {
+func (m *wsNotificationManager) WaitForShutdown() {
 	m.wg.Wait()
 }
 
 // Shutdown shuts down the manager, stopping the notification queue and
 // notification handler goroutines.
-func Shutdown(m *server.WSNotificationManager) {
+func (m *wsNotificationManager) Shutdown() {
 	close(m.quit)
 }
 
 // newWsNotificationManager returns a new notification manager ready for use.
 // See wsNotificationManager for more details.
-func newWsNotificationManager(server *server.RPCServer) *server.WSNotificationManager {
+func newWsNotificationManager(server *Server) *wsNotificationManager {
 	return &wsNotificationManager{
 		server:            server,
 		queueNotification: make(chan interface{}),
@@ -1219,7 +1247,7 @@ type wsClient struct {
 	sync.Mutex
 
 	// server is the RPC server that is servicing the client.
-	server *server.RPCServer
+	server *Server
 
 	// conn is the underlying websocket connection.
 	conn *websocket.Conn
@@ -1288,7 +1316,7 @@ out:
 		if err != nil {
 			// Log the error if it's not due to disconnecting.
 			if err != io.EOF {
-				rpcsLog.Errorf("Websocket receive error from "+
+				log.Errorf("Websocket receive error from "+
 					"%s: %v", c.addr, err)
 			}
 			break out
@@ -1307,7 +1335,7 @@ out:
 			}
 			reply, err := createMarshalledReply(nil, nil, jsonErr)
 			if err != nil {
-				rpcsLog.Errorf("Failed to marshal parse failure "+
+				log.Errorf("Failed to marshal parse failure "+
 					"reply: %v", err)
 				continue
 			}
@@ -1333,7 +1361,7 @@ out:
 		//
 		// RPC quirks can be enabled by the user to avoid compatibility issues
 		// with software relying on Core's behavior.
-		if request.ID == nil && !(cfg.RPCQuirks && request.Jsonrpc == "") {
+		if request.ID == nil && !(config.MainConfig().RPCQuirks && request.Jsonrpc == "") {
 			if !c.authenticated {
 				break out
 			}
@@ -1348,14 +1376,14 @@ out:
 
 			reply, err := createMarshalledReply(cmd.id, nil, cmd.err)
 			if err != nil {
-				rpcsLog.Errorf("Failed to marshal parse failure "+
+				log.Errorf("Failed to marshal parse failure "+
 					"reply: %v", err)
 				continue
 			}
 			c.SendMessage(reply, nil)
 			continue
 		}
-		rpcsLog.Debugf("Received command <%s> from %s", cmd.method, c.addr)
+		log.Debugf("Received command <%s> from %s", cmd.method, c.addr)
 
 		// Check auth.  The client is immediately disconnected if the
 		// first request of an unauthentiated websocket client is not
@@ -1364,11 +1392,11 @@ out:
 		// authentication credentials are provided in the request.
 		switch authCmd, ok := cmd.cmd.(*btcjson.AuthenticateCmd); {
 		case c.authenticated && ok:
-			rpcsLog.Warnf("Websocket client %s is already authenticated",
+			log.Warnf("Websocket client %s is already authenticated",
 				c.addr)
 			break out
 		case !c.authenticated && !ok:
-			rpcsLog.Warnf("Unauthenticated websocket message " +
+			log.Warnf("Unauthenticated websocket message " +
 				"received")
 			break out
 		case !c.authenticated:
@@ -1379,7 +1407,7 @@ out:
 			cmp := subtle.ConstantTimeCompare(authSha[:], c.server.authsha[:])
 			limitcmp := subtle.ConstantTimeCompare(authSha[:], c.server.limitauthsha[:])
 			if cmp != 1 && limitcmp != 1 {
-				rpcsLog.Warnf("Auth failure.")
+				log.Warnf("Auth failure.")
 				break out
 			}
 			c.authenticated = true
@@ -1388,7 +1416,7 @@ out:
 			// Marshal and send response.
 			reply, err := createMarshalledReply(cmd.id, nil, nil)
 			if err != nil {
-				rpcsLog.Errorf("Failed to marshal authenticate reply: "+
+				log.Errorf("Failed to marshal authenticate reply: "+
 					"%v", err.Error())
 				continue
 			}
@@ -1407,7 +1435,7 @@ out:
 				// Marshal and send response.
 				reply, err := createMarshalledReply(request.ID, nil, jsonErr)
 				if err != nil {
-					rpcsLog.Errorf("Failed to marshal parse failure "+
+					log.Errorf("Failed to marshal parse failure "+
 						"reply: %v", err)
 					continue
 				}
@@ -1446,7 +1474,7 @@ out:
 	// Ensure the connection is closed.
 	c.Disconnect()
 	c.wg.Done()
-	rpcsLog.Tracef("Websocket client input handler done for %s", c.addr)
+	log.Tracef("Websocket client input handler done for %s", c.addr)
 }
 
 // serviceRequest services a parsed RPC request by looking up and executing the
@@ -1468,7 +1496,7 @@ func (c *wsClient) serviceRequest(r *parsedRPCCmd) {
 	}
 	reply, err := createMarshalledReply(r.id, result, err)
 	if err != nil {
-		rpcsLog.Errorf("Failed to marshal reply for <%s> "+
+		log.Errorf("Failed to marshal reply for <%s> "+
 			"command: %v", r.method, err)
 		return
 	}
@@ -1544,7 +1572,7 @@ cleanup:
 		}
 	}
 	c.wg.Done()
-	rpcsLog.Tracef("Websocket client notification queue handler done "+
+	log.Tracef("Websocket client notification queue handler done "+
 		"for %s", c.addr)
 }
 
@@ -1587,7 +1615,7 @@ cleanup:
 		}
 	}
 	c.wg.Done()
-	rpcsLog.Tracef("Websocket client output handler done for %s", c.addr)
+	log.Tracef("Websocket client output handler done for %s", c.addr)
 }
 
 // SendMessage sends the passed json to the websocket client.  It is backed
@@ -1650,7 +1678,7 @@ func (c *wsClient) Disconnect() {
 		return
 	}
 
-	rpcsLog.Tracef("Disconnecting websocket client %s", c.addr)
+	log.Tracef("Disconnecting websocket client %s", c.addr)
 	close(c.quit)
 	c.conn.Close()
 	c.disconnected = true
@@ -1658,7 +1686,7 @@ func (c *wsClient) Disconnect() {
 
 // Start begins processing input and output messages.
 func (c *wsClient) Start() {
-	rpcsLog.Tracef("Starting websocket client %s", c.addr)
+	log.Tracef("Starting websocket client %s", c.addr)
 
 	// Start processing input and output.
 	c.wg.Add(3)
@@ -1679,7 +1707,7 @@ func (c *wsClient) WaitForShutdown() {
 // returned client is ready to start.  Once started, the client will process
 // incoming and outgoing messages in separate goroutines complete with queuing
 // and asynchrous handling for long-running operations.
-func newWebsocketClient(server *server.RPCServer, conn *websocket.Conn,
+func newWebsocketClient(server *Server, conn *websocket.Conn,
 	remoteAddr string, authenticated bool, isAdmin bool) (*wsClient, error) {
 
 	sessionID, err := wire.RandomUint64()
@@ -1696,7 +1724,7 @@ func newWebsocketClient(server *server.RPCServer, conn *websocket.Conn,
 		server:            server,
 		addrRequests:      make(map[string]struct{}),
 		spentRequests:     make(map[wire.OutPoint]struct{}),
-		serviceRequestSem: makeSemaphore(cfg.RPCMaxConcurrentReqs),
+		serviceRequestSem: makeSemaphore(config.MainConfig().RPCMaxConcurrentReqs),
 		ntfnChan:          make(chan []byte, 1), // nonblocking sync
 		sendChan:          make(chan wsResponse, websocketSendBufferSize),
 		quit:              make(chan struct{}),

@@ -24,7 +24,6 @@ import (
 	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/database"
-	_ "github.com/daglabs/btcd/database/ffldb"
 	"github.com/daglabs/btcd/logger"
 	"github.com/daglabs/btcd/mempool"
 	"github.com/daglabs/btcd/version"
@@ -35,15 +34,16 @@ import (
 )
 
 const (
-	defaultConfigFilename        = "btcd.conf"
-	defaultDataDirname           = "data"
-	defaultLogLevel              = "info"
-	defaultLogDirname            = "logs"
-	defaultLogFilename           = "btcd.log"
-	defaultMaxPeers              = 125
-	defaultBanDuration           = time.Hour * 24
-	defaultBanThreshold          = 100
-	defaultConnectTimeout        = time.Second * 30
+	defaultConfigFilename = "btcd.conf"
+	defaultDataDirname    = "data"
+	defaultLogLevel       = "info"
+	defaultLogDirname     = "logs"
+	defaultLogFilename    = "btcd.log"
+	defaultMaxPeers       = 125
+	defaultBanDuration    = time.Hour * 24
+	defaultBanThreshold   = 100
+	//DefaultConnectTimeout is the default connection timeout when dialing
+	DefaultConnectTimeout        = time.Second * 30
 	defaultMaxRPCClients         = 10
 	defaultMaxRPCWebsockets      = 25
 	defaultMaxRPCConcurrentReqs  = 20
@@ -55,11 +55,12 @@ const (
 	blockMaxSizeMax              = wire.MaxBlockPayload - 1000
 	defaultGenerate              = false
 	defaultMaxOrphanTransactions = 100
-	defaultMaxOrphanTxSize       = 100000
-	defaultSigCacheMaxSize       = 100000
-	sampleConfigFilename         = "sample-btcd.conf"
-	defaultTxIndex               = false
-	defaultAddrIndex             = false
+	//DefaultMaxOrphanTxSize is the default maximum size for an orphan transaction
+	DefaultMaxOrphanTxSize = 100000
+	defaultSigCacheMaxSize = 100000
+	sampleConfigFilename   = "sample-btcd.conf"
+	defaultTxIndex         = false
+	defaultAddrIndex       = false
 )
 
 var (
@@ -71,6 +72,10 @@ var (
 	defaultRPCCertFile = filepath.Join(defaultHomeDir, "rpc.cert")
 	defaultLogDir      = filepath.Join(defaultHomeDir, defaultLogDirname)
 )
+
+// activeNetParams is a pointer to the parameters specific to the
+// currently active bitcoin network.
+var activeNetParams = &dagconfig.MainNetParams
 
 var mainCfg *Config
 
@@ -90,7 +95,7 @@ func minUint32(a, b uint32) uint32 {
 // Config defines the configuration options for btcd.
 //
 // See loadConfig for details on the configuration load process.
-type Config struct {
+type configFlags struct {
 	ShowVersion          bool          `short:"V" long:"version" description:"Display version information and exit"`
 	ConfigFile           string        `short:"C" long:"configfile" description:"Path to configuration file"`
 	DataDir              string        `short:"b" long:"datadir" description:"Directory to store data"`
@@ -158,13 +163,20 @@ type Config struct {
 	DropAddrIndex        bool          `long:"dropaddrindex" description:"Deletes the address-based transaction index from the database on start up and then exits."`
 	RelayNonStd          bool          `long:"relaynonstd" description:"Relay non-standard transactions regardless of the default settings for the active network."`
 	RejectNonStd         bool          `long:"rejectnonstd" description:"Reject non-standard transactions regardless of the default settings for the active network."`
-	Lookup               func(string) ([]net.IP, error)
-	oniondial            func(string, string, time.Duration) (net.Conn, error)
-	dial                 func(string, string, time.Duration) (net.Conn, error)
-	addCheckpoints       []dagconfig.Checkpoint
-	miningAddrs          []btcutil.Address
-	minRelayTxFee        btcutil.Amount
-	whitelists           []*net.IPNet
+}
+
+// Config defines the configuration options for btcd.
+//
+// See loadConfig for details on the configuration load process.
+type Config struct {
+	*configFlags
+	Lookup         func(string) ([]net.IP, error)
+	OnionDial      func(string, string, time.Duration) (net.Conn, error)
+	Dial           func(string, string, time.Duration) (net.Conn, error)
+	AddCheckpoints []dagconfig.Checkpoint
+	MiningAddrs    []btcutil.Address
+	MinRelayTxFee  btcutil.Amount
+	Whitelists     []*net.IPNet
 }
 
 // serviceOptions defines the configuration options for the daemon as a service on
@@ -246,19 +258,9 @@ func parseCheckpoints(checkpointStrings []string) ([]dagconfig.Checkpoint, error
 	return checkpoints, nil
 }
 
-// filesExists reports whether the named file or directory exists.
-func fileExists(name string) bool {
-	if _, err := os.Stat(name); err != nil {
-		if os.IsNotExist(err) {
-			return false
-		}
-	}
-	return true
-}
-
 // newConfigParser returns a new command line flags parser.
-func newConfigParser(cfg *Config, so *serviceOptions, options flags.Options) *flags.Parser {
-	parser := flags.NewParser(cfg, options)
+func newConfigParser(cfgFlags *configFlags, so *serviceOptions, options flags.Options) *flags.Parser {
+	parser := flags.NewParser(cfgFlags, options)
 	if runtime.GOOS == "windows" {
 		parser.AddGroup("Service Options", "Service Options", so)
 	}
@@ -294,7 +296,7 @@ func MainConfig() *Config {
 // command line options.  Command line options always take precedence.
 func loadConfig() (*Config, []string, error) {
 	// Default config.
-	cfg := Config{
+	cfgFlags := configFlags{
 		ConfigFile:           defaultConfigFile,
 		DebugLevel:           defaultLogLevel,
 		MaxPeers:             defaultMaxPeers,
@@ -327,7 +329,7 @@ func loadConfig() (*Config, []string, error) {
 	// file or the version flag was specified.  Any errors aside from the
 	// help message error can be ignored here since they will be caught by
 	// the final parse below.
-	preCfg := cfg
+	preCfg := cfgFlags
 	preParser := newConfigParser(&preCfg, &serviceOpts, flags.HelpFlag)
 	_, err := preParser.Parse()
 	if err != nil {
@@ -359,7 +361,10 @@ func loadConfig() (*Config, []string, error) {
 
 	// Load additional config from file.
 	var configFileError error
-	parser := newConfigParser(&cfg, &serviceOpts, flags.Default)
+	parser := newConfigParser(&cfgFlags, &serviceOpts, flags.Default)
+	cfg := Config{
+		configFlags: &cfgFlags,
+	}
 	if !(preCfg.RegressionTest || preCfg.SimNet) || preCfg.ConfigFile !=
 		defaultConfigFile {
 
@@ -416,8 +421,6 @@ func loadConfig() (*Config, []string, error) {
 		fmt.Fprintln(os.Stderr, err)
 		return nil, nil, err
 	}
-
-	var activeNetParams *dagconfig.Params
 
 	// Multiple networks can't be selected simultaneously.
 	numNets := 0
@@ -532,9 +535,9 @@ func loadConfig() (*Config, []string, error) {
 	// Validate any given whitelisted IP addresses and networks.
 	if len(cfg.Whitelists) > 0 {
 		var ip net.IP
-		cfg.whitelists = make([]*net.IPNet, 0, len(cfg.Whitelists))
+		cfg.Whitelists = make([]*net.IPNet, 0, len(cfg.configFlags.Whitelists))
 
-		for _, addr := range cfg.Whitelists {
+		for _, addr := range cfg.configFlags.Whitelists {
 			_, ipnet, err := net.ParseCIDR(addr)
 			if err != nil {
 				ip = net.ParseIP(addr)
@@ -557,7 +560,7 @@ func loadConfig() (*Config, []string, error) {
 					Mask: net.CIDRMask(bits, bits),
 				}
 			}
-			cfg.whitelists = append(cfg.whitelists, ipnet)
+			cfg.Whitelists = append(cfg.Whitelists, ipnet)
 		}
 	}
 
@@ -644,7 +647,7 @@ func loadConfig() (*Config, []string, error) {
 	}
 
 	// Validate the the minrelaytxfee.
-	cfg.minRelayTxFee, err = btcutil.NewAmount(cfg.MinRelayTxFee)
+	cfg.MinRelayTxFee, err = btcutil.NewAmount(cfg.configFlags.MinRelayTxFee)
 	if err != nil {
 		str := "%s: invalid minrelaytxfee: %v"
 		err := fmt.Errorf(str, funcName, err)
@@ -725,8 +728,8 @@ func loadConfig() (*Config, []string, error) {
 	}
 
 	// Check mining addresses are valid and saved parsed versions.
-	cfg.miningAddrs = make([]btcutil.Address, 0, len(cfg.MiningAddrs))
-	for _, strAddr := range cfg.MiningAddrs {
+	cfg.MiningAddrs = make([]btcutil.Address, 0, len(cfg.configFlags.MiningAddrs))
+	for _, strAddr := range cfg.configFlags.MiningAddrs {
 		addr, err := btcutil.DecodeAddress(strAddr, activeNetParams)
 		if err != nil {
 			str := "%s: mining address '%s' failed to decode: %v"
@@ -742,7 +745,7 @@ func loadConfig() (*Config, []string, error) {
 			fmt.Fprintln(os.Stderr, usageMessage)
 			return nil, nil, err
 		}
-		cfg.miningAddrs = append(cfg.miningAddrs, addr)
+		cfg.MiningAddrs = append(cfg.MiningAddrs, addr)
 	}
 
 	// Ensure there is at least one mining address when the generate flag is
@@ -813,7 +816,7 @@ func loadConfig() (*Config, []string, error) {
 	}
 
 	// Check the checkpoints for syntax errors.
-	cfg.addCheckpoints, err = parseCheckpoints(cfg.AddCheckpoints)
+	cfg.AddCheckpoints, err = parseCheckpoints(cfg.configFlags.AddCheckpoints)
 	if err != nil {
 		str := "%s: Error parsing checkpoints: %v"
 		err := fmt.Errorf(str, funcName, err)
@@ -838,7 +841,7 @@ func loadConfig() (*Config, []string, error) {
 	// proxy is specified, the dial function is set to the proxy specific
 	// dial function and the lookup is set to use tor (unless --noonion is
 	// specified in which case the system DNS resolver is used).
-	cfg.dial = net.DialTimeout
+	cfg.Dial = net.DialTimeout
 	cfg.Lookup = net.LookupIP
 	if cfg.Proxy != "" {
 		_, _, err := net.SplitHostPort(cfg.Proxy)
@@ -868,7 +871,7 @@ func loadConfig() (*Config, []string, error) {
 			Password:     cfg.ProxyPass,
 			TorIsolation: torIsolation,
 		}
-		cfg.dial = proxy.DialTimeout
+		cfg.Dial = proxy.DialTimeout
 
 		// Treat the proxy as tor and perform DNS resolution through it
 		// unless the --noonion flag is set or there is an
@@ -905,7 +908,7 @@ func loadConfig() (*Config, []string, error) {
 				"credentials ")
 		}
 
-		cfg.oniondial = func(network, addr string, timeout time.Duration) (net.Conn, error) {
+		cfg.OnionDial = func(network, addr string, timeout time.Duration) (net.Conn, error) {
 			proxy := &socks.Proxy{
 				Addr:         cfg.OnionProxy,
 				Username:     cfg.OnionProxyUser,
@@ -925,13 +928,13 @@ func loadConfig() (*Config, []string, error) {
 			}
 		}
 	} else {
-		cfg.oniondial = cfg.dial
+		cfg.OnionDial = cfg.Dial
 	}
 
 	// Specifying --noonion means the onion address dial function results in
 	// an error.
 	if cfg.NoOnion {
-		cfg.oniondial = func(a, b string, t time.Duration) (net.Conn, error) {
+		cfg.OnionDial = func(a, b string, t time.Duration) (net.Conn, error) {
 			return nil, errors.New("tor has been disabled")
 		}
 	}
@@ -1011,4 +1014,9 @@ func createDefaultConfigFile(destinationPath string) error {
 	}
 
 	return nil
+}
+
+//ActiveNetParams returns a pointer to the current active net params
+func ActiveNetParams() *dagconfig.Params {
+	return activeNetParams
 }

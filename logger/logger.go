@@ -21,8 +21,10 @@ import (
 type logWriter struct{}
 
 func (logWriter) Write(p []byte) (n int, err error) {
-	os.Stdout.Write(p)
-	logRotator.Write(p)
+	if initiated {
+		os.Stdout.Write(p)
+		LogRotator.Write(p)
+	}
 	return len(p), nil
 }
 
@@ -40,9 +42,9 @@ var (
 	// or data races and/or nil pointer dereferences will occur.
 	backendLog = btclog.NewBackend(logWriter{})
 
-	// logRotator is one of the logging outputs.  It should be closed on
+	// LogRotator is one of the logging outputs.  It should be closed on
 	// application shutdown.
-	logRotator *rotator.Rotator
+	LogRotator *rotator.Rotator
 
 	adxrLog = backendLog.Logger("ADXR")
 	amgrLog = backendLog.Logger("AMGR")
@@ -60,6 +62,8 @@ var (
 	syncLog = backendLog.Logger("SYNC")
 	txmpLog = backendLog.Logger("TXMP")
 	cnfgLog = backendLog.Logger("CNFG")
+
+	initiated = false
 )
 
 // SubsystemTags is an enum of all sub system tags
@@ -122,6 +126,7 @@ var subsystemLoggers = map[string]btclog.Logger{
 // create roll files in the same directory.  It must be called before the
 // package-global log rotater variables are used.
 func InitLogRotator(logFile string) {
+	initiated = true
 	logDir, _ := filepath.Split(logFile)
 	err := os.MkdirAll(logDir, 0700)
 	if err != nil {
@@ -134,7 +139,7 @@ func InitLogRotator(logFile string) {
 		os.Exit(1)
 	}
 
-	logRotator = r
+	LogRotator = r
 }
 
 // SetLogLevel sets the logging level for provided subsystem.  Invalid
@@ -163,18 +168,18 @@ func SetLogLevels(logLevel string) {
 	}
 }
 
-// directionString is a helper function that returns a string that represents
+// DirectionString is a helper function that returns a string that represents
 // the direction of a connection (inbound or outbound).
-func directionString(inbound bool) string {
+func DirectionString(inbound bool) string {
 	if inbound {
 		return "inbound"
 	}
 	return "outbound"
 }
 
-// pickNoun returns the singular or plural form of a noun depending
+// PickNoun returns the singular or plural form of a noun depending
 // on the count n.
-func pickNoun(n uint64, singular, plural string) string {
+func PickNoun(n uint64, singular, plural string) string {
 	if n == 1 {
 		return singular
 	}

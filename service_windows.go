@@ -13,6 +13,7 @@ import (
 	"github.com/btcsuite/winsvc/eventlog"
 	"github.com/btcsuite/winsvc/mgr"
 	"github.com/btcsuite/winsvc/svc"
+	"github.com/daglabs/btcd/signal"
 )
 
 const (
@@ -86,7 +87,7 @@ loop:
 				changes <- svc.Status{State: svc.StopPending}
 
 				// Signal the main function to exit.
-				shutdownRequestChannel <- struct{}{}
+				signal.ShutdownRequestChannel <- struct{}{}
 
 			default:
 				elog.Error(1, fmt.Sprintf("Unexpected control "+

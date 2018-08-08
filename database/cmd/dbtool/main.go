@@ -65,7 +65,7 @@ func realMain() error {
 	backendLogger := btclog.NewBackend(os.Stdout)
 	defer os.Stdout.Sync()
 	log = backendLogger.Logger("MAIN")
-	dbLog := logger.Get(logger.SubsystemTags.BCDB)
+	dbLog, _ := logger.Get(logger.SubsystemTags.BCDB)
 	dbLog.SetLevel(btclog.LevelDebug)
 
 	// Setup the parser options and commands.

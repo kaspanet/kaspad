@@ -45,15 +45,6 @@ func newLogClosure(c func() string) logClosure {
 	return logClosure(c)
 }
 
-// directionString is a helper function that returns a string that represents
-// the direction of a connection (inbound or outbound).
-func directionString(inbound bool) string {
-	if inbound {
-		return "inbound"
-	}
-	return "outbound"
-}
-
 // formatLockTime returns a transaction lock time as a human-readable string.
 func formatLockTime(lockTime uint64) string {
 	// The lock time field of a transaction is either a block height at

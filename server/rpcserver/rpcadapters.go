@@ -12,17 +12,17 @@ import (
 	"github.com/daglabs/btcd/mempool"
 	"github.com/daglabs/btcd/netsync"
 	"github.com/daglabs/btcd/peer"
-	"github.com/daglabs/btcd/server"
+	"github.com/daglabs/btcd/server/p2p"
 	"github.com/daglabs/btcd/wire"
 	"github.com/daglabs/btcutil"
 )
 
 // rpcPeer provides a peer for use with the RPC server and implements the
 // rpcserverPeer interface.
-type rpcPeer server.Peer
+type rpcPeer p2p.Peer
 
 // Ensure rpcPeer implements the rpcserverPeer interface.
-var _ server.RPCServerPeer = (*rpcPeer)(nil)
+var _ rpcserverPeer = (*rpcPeer)(nil)
 
 // ToPeer returns the underlying peer instance.
 //
@@ -32,7 +32,7 @@ func (p *rpcPeer) ToPeer() *peer.Peer {
 	if p == nil {
 		return nil
 	}
-	return (*server.Peer)(p).Peer
+	return (*p2p.Peer)(p).Peer
 }
 
 // IsTxRelayDisabled returns whether or not the peer has disabled transaction
@@ -41,7 +41,7 @@ func (p *rpcPeer) ToPeer() *peer.Peer {
 // This function is safe for concurrent access and is part of the rpcserverPeer
 // interface implementation.
 func (p *rpcPeer) IsTxRelayDisabled() bool {
-	return (*server.Peer)(p).DisableRelayTx
+	return (*p2p.Peer)(p).DisableRelayTx
 }
 
 // BanScore returns the current integer value that represents how close the peer
@@ -50,25 +50,26 @@ func (p *rpcPeer) IsTxRelayDisabled() bool {
 // This function is safe for concurrent access and is part of the rpcserverPeer
 // interface implementation.
 func (p *rpcPeer) BanScore() uint32 {
-	return (*server.Peer)(p).DynamicBanScore.Int()
+	return (*p2p.Peer)(p).DynamicBanScore.Int()
 }
 
 // FeeFilter returns the requested current minimum fee rate for which
 // transactions should be announced.
 //
-// This function is safe for concurrent access
-func FeeFilter(p *rpcPeer) int64 {
-	return atomic.LoadInt64(&(*server.Peer)(p).NonSafeFeeFilter)
+// This function is safe for concurrent access and is part of the rpcserverPeer
+// interface implementation.
+func (p *rpcPeer) FeeFilter() int64 {
+	return atomic.LoadInt64(&(*p2p.Peer)(p).FeeFilterInt)
 }
 
 // rpcConnManager provides a connection manager for use with the RPC server and
 // implements the rpcserverConnManager interface.
 type rpcConnManager struct {
-	server *server.Server
+	server *p2p.Server
 }
 
 // Ensure rpcConnManager implements the rpcserverConnManager interface.
-var _ server.RPCServerConnManager = &rpcConnManager{}
+var _ rpcserverConnManager = &rpcConnManager{}
 
 // Connect adds the provided address as a new outbound peer.  The permanent flag
 // indicates whether or not to make the peer persistent and reconnect if the
@@ -79,7 +80,7 @@ var _ server.RPCServerConnManager = &rpcConnManager{}
 // rpcserverConnManager interface implementation.
 func (cm *rpcConnManager) Connect(addr string, permanent bool) error {
 	replyChan := make(chan error)
-	cm.server.Query <- server.ConnectNodeMsg{
+	cm.server.Query <- p2p.ConnectNodeMsg{
 		Addr:      addr,
 		Permanent: permanent,
 		Reply:     replyChan,
@@ -95,8 +96,8 @@ func (cm *rpcConnManager) Connect(addr string, permanent bool) error {
 // rpcserverConnManager interface implementation.
 func (cm *rpcConnManager) RemoveByID(id int32) error {
 	replyChan := make(chan error)
-	cm.server.Query <- server.RemoveNodeMsg{
-		Cmp:   func(sp *server.Peer) bool { return sp.ID() == id },
+	cm.server.Query <- p2p.RemoveNodeMsg{
+		Cmp:   func(sp *p2p.Peer) bool { return sp.ID() == id },
 		Reply: replyChan,
 	}
 	return <-replyChan
@@ -110,8 +111,8 @@ func (cm *rpcConnManager) RemoveByID(id int32) error {
 // rpcserverConnManager interface implementation.
 func (cm *rpcConnManager) RemoveByAddr(addr string) error {
 	replyChan := make(chan error)
-	cm.server.Query <- server.RemoveNodeMsg{
-		Cmp:   func(sp *server.Peer) bool { return sp.Addr() == addr },
+	cm.server.Query <- p2p.RemoveNodeMsg{
+		Cmp:   func(sp *p2p.Peer) bool { return sp.Addr() == addr },
 		Reply: replyChan,
 	}
 	return <-replyChan
@@ -125,8 +126,8 @@ func (cm *rpcConnManager) RemoveByAddr(addr string) error {
 // rpcserverConnManager interface implementation.
 func (cm *rpcConnManager) DisconnectByID(id int32) error {
 	replyChan := make(chan error)
-	cm.server.Query <- server.DisconnectNodeMsg{
-		Cmp:   func(sp *server.Peer) bool { return sp.ID() == id },
+	cm.server.Query <- p2p.DisconnectNodeMsg{
+		Cmp:   func(sp *p2p.Peer) bool { return sp.ID() == id },
 		Reply: replyChan,
 	}
 	return <-replyChan
@@ -140,8 +141,8 @@ func (cm *rpcConnManager) DisconnectByID(id int32) error {
 // rpcserverConnManager interface implementation.
 func (cm *rpcConnManager) DisconnectByAddr(addr string) error {
 	replyChan := make(chan error)
-	cm.server.Query <- server.DisconnectNodeMsg{
-		Cmp:   func(sp *server.Peer) bool { return sp.Addr() == addr },
+	cm.server.Query <- p2p.DisconnectNodeMsg{
+		Cmp:   func(sp *p2p.Peer) bool { return sp.Addr() == addr },
 		Reply: replyChan,
 	}
 	return <-replyChan
@@ -168,13 +169,13 @@ func (cm *rpcConnManager) NetTotals() (uint64, uint64) {
 //
 // This function is safe for concurrent access and is part of the
 // rpcserverConnManager interface implementation.
-func (cm *rpcConnManager) ConnectedPeers() []server.RPCServerPeer {
-	replyChan := make(chan []*server.Peer)
-	cm.server.Query <- server.GetPeersMsg{Reply: replyChan}
+func (cm *rpcConnManager) ConnectedPeers() []rpcserverPeer {
+	replyChan := make(chan []*p2p.Peer)
+	cm.server.Query <- p2p.GetPeersMsg{Reply: replyChan}
 	serverPeers := <-replyChan
 
 	// Convert to RPC server peers.
-	peers := make([]server.RPCServerPeer, 0, len(serverPeers))
+	peers := make([]rpcserverPeer, 0, len(serverPeers))
 	for _, sp := range serverPeers {
 		peers = append(peers, (*rpcPeer)(sp))
 	}
@@ -186,13 +187,13 @@ func (cm *rpcConnManager) ConnectedPeers() []server.RPCServerPeer {
 //
 // This function is safe for concurrent access and is part of the
 // rpcserverConnManager interface implementation.
-func (cm *rpcConnManager) PersistentPeers() []server.RPCServerPeer {
-	replyChan := make(chan []*server.Peer)
-	cm.server.Query <- server.GetAddedNodesMsg{Reply: replyChan}
+func (cm *rpcConnManager) PersistentPeers() []rpcserverPeer {
+	replyChan := make(chan []*p2p.Peer)
+	cm.server.Query <- p2p.GetAddedNodesMsg{Reply: replyChan}
 	serverPeers := <-replyChan
 
 	// Convert to generic peers.
-	peers := make([]server.RPCServerPeer, 0, len(serverPeers))
+	peers := make([]rpcserverPeer, 0, len(serverPeers))
 	for _, sp := range serverPeers {
 		peers = append(peers, (*rpcPeer)(sp))
 	}
@@ -226,18 +227,18 @@ func (cm *rpcConnManager) RelayTransactions(txns []*mempool.TxDesc) {
 // rpcSyncMgr provides a block manager for use with the RPC server and
 // implements the rpcserverSyncManager interface.
 type rpcSyncMgr struct {
-	server  *server.Server
+	server  *p2p.Server
 	syncMgr *netsync.SyncManager
 }
 
 // Ensure rpcSyncMgr implements the rpcserverSyncManager interface.
-var _ server.RPCServerSyncManager = (*rpcSyncMgr)(nil)
+var _ rpcserverSyncManager = (*rpcSyncMgr)(nil)
 
 // IsCurrent returns whether or not the sync manager believes the chain is
 // current as compared to the rest of the network.
 //
 // This function is safe for concurrent access and is part of the
-// server.RPCServerSyncManager interface implementation.
+// rpcserverSyncManager interface implementation.
 func (b *rpcSyncMgr) IsCurrent() bool {
 	return b.syncMgr.IsCurrent()
 }
@@ -246,7 +247,7 @@ func (b *rpcSyncMgr) IsCurrent() bool {
 // locally.
 //
 // This function is safe for concurrent access and is part of the
-// server.RPCServerSyncManager interface implementation.
+// rpcserverSyncManager interface implementation.
 func (b *rpcSyncMgr) SubmitBlock(block *btcutil.Block, flags blockdag.BehaviorFlags) (bool, error) {
 	return b.syncMgr.ProcessBlock(block, flags)
 }
@@ -254,7 +255,7 @@ func (b *rpcSyncMgr) SubmitBlock(block *btcutil.Block, flags blockdag.BehaviorFl
 // Pause pauses the sync manager until the returned channel is closed.
 //
 // This function is safe for concurrent access and is part of the
-// server.RPCServerSyncManager interface implementation.
+// rpcserverSyncManager interface implementation.
 func (b *rpcSyncMgr) Pause() chan<- struct{} {
 	return b.syncMgr.Pause()
 }
@@ -263,7 +264,7 @@ func (b *rpcSyncMgr) Pause() chan<- struct{} {
 // from.
 //
 // This function is safe for concurrent access and is part of the
-// server.RPCServerSyncManager interface implementation.
+// rpcserverSyncManager interface implementation.
 func (b *rpcSyncMgr) SyncPeerID() int32 {
 	return b.syncMgr.SyncPeerID()
 }
@@ -273,7 +274,7 @@ func (b *rpcSyncMgr) SyncPeerID() int32 {
 // reached, up to a max of wire.MaxBlockHeadersPerMsg hashes.
 //
 // This function is safe for concurrent access and is part of the
-// server.rpcserverSyncManager interface implementation.
+// rpcserverSyncManager interface implementation.
 func (b *rpcSyncMgr) LocateHeaders(locators []*daghash.Hash, hashStop *daghash.Hash) []wire.BlockHeader {
 	return b.server.DAG.LocateHeaders(locators, hashStop)
 }
