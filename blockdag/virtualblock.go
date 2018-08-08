@@ -8,10 +8,6 @@ import (
 	"sync"
 )
 
-// approxNodesPerWeek is an approximation of the number of new blocks there are
-// in a week on average.
-const approxNodesPerWeek = 6 * 24 * 7
-
 // log2FloorMasks defines the masks to use when quickly calculating
 // floor(log2(x)) in a constant log2(32) = 5 steps, where x is a uint32, using
 // shifts.  They are derived from (2^(2^x) - 1) * (2^(2^x)), for x in 4..0.
@@ -34,7 +30,6 @@ func fastLog2Floor(n uint32) uint8 {
 // virtualBlock is a virtual block whose parents are the tip of the DAG.
 type virtualBlock struct {
 	mtx      sync.Mutex
-	nodes    []*blockNode
 	phantomK uint32
 	blockNode
 }
@@ -44,12 +39,21 @@ func newVirtualBlock(tips blockSet, phantomK uint32) *virtualBlock {
 	// The mutex is intentionally not held since this is a constructor.
 	var virtual virtualBlock
 	virtual.phantomK = phantomK
-	virtual.setTip(tips.first())
 	if tips != nil {
 		virtual.setTips(tips)
 	}
 
 	return &virtual
+}
+
+func (v *virtualBlock) setTips(tips blockSet) {
+	v.blockNode = *newBlockNode(nil, tips, v.phantomK)
+}
+
+func (v *virtualBlock) SetTips(tips blockSet) {
+	v.mtx.Lock()
+	v.setTips(tips)
+	v.mtx.Unlock()
 }
 
 // Tips returns the current tip block nodes for the chain view.  It will return
@@ -71,71 +75,6 @@ func (v *virtualBlock) Tips() blockSet {
 // This function is safe for concurrent access.
 func (v *virtualBlock) SelectedTip() *blockNode {
 	return v.Tips().first()
-}
-
-// setTip sets the chain view to use the provided block node as the current tip
-// and ensures the view is consistent by populating it with the nodes obtained
-// by walking backwards all the way to genesis block as necessary.  Further
-// calls will only perform the minimum work needed, so switching between chain
-// tips is efficient.  This only differs from the exported version in that it is
-// up to the caller to ensure the lock is held.
-//
-// This function MUST be called with the view mutex locked (for writes).
-func (v *virtualBlock) setTip(node *blockNode) {
-	if node == nil {
-		return
-	}
-
-	v.setTips(setFromSlice(node))
-
-	// Create or resize the slice that will hold the block nodes to the
-	// provided tip height.  When creating the slice, it is created with
-	// some additional capacity for the underlying array as append would do
-	// in order to reduce overhead when extending the chain later.  As long
-	// as the underlying array already has enough capacity, simply expand or
-	// contract the slice accordingly.  The additional capacity is chosen
-	// such that the array should only have to be extended about once a
-	// week.
-	needed := node.height + 1
-	if int32(cap(v.nodes)) < needed {
-		nodes := make([]*blockNode, needed, needed+approxNodesPerWeek)
-		copy(nodes, v.nodes)
-		v.nodes = nodes
-	} else {
-		prevLen := int32(len(v.nodes))
-		v.nodes = v.nodes[0:needed]
-		for i := prevLen; i < needed; i++ {
-			v.nodes[i] = nil
-		}
-	}
-
-	for node != nil && v.nodes[node.height] != node {
-		v.nodes[node.height] = node
-		node = node.selectedParent
-	}
-}
-
-// SetTip sets the chain view to use the provided block node as the current tip
-// and ensures the view is consistent by populating it with the nodes obtained
-// by walking backwards all the way to genesis block as necessary.  Further
-// calls will only perform the minimum work needed, so switching between chain
-// tips is efficient.
-//
-// This function is safe for concurrent access.
-func (v *virtualBlock) SetTip(node *blockNode) {
-	v.mtx.Lock()
-	v.setTip(node)
-	v.mtx.Unlock()
-}
-
-func (v *virtualBlock) setTips(tips blockSet) {
-	v.blockNode = *newBlockNode(nil, tips, v.phantomK)
-}
-
-func (v *virtualBlock) SetTips(tips blockSet) {
-	v.mtx.Lock()
-	v.setTips(tips)
-	v.mtx.Unlock()
 }
 
 // blockLocator returns a block locator for the passed block node.  The passed

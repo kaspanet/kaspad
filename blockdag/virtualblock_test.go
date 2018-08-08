@@ -226,8 +226,8 @@ testLoop:
 	for _, test := range tests {
 		for _, tip := range test.tips {
 			// Ensure the view tip is the expected node.
-			test.view.SetTip(tip)
-			if test.view.SelectedTip() != tip { // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
+			test.view.SetTips(setFromSlice(tip))
+			if test.view.SelectedTip() != tip {
 				t.Errorf("%s: unexpected view tip -- got %v, "+
 					"want %v", test.name, test.view.Tips(),
 					tip)

@@ -457,7 +457,7 @@ func TestLocateInventory(t *testing.T) {
 	for _, node := range branch1Nodes {
 		dag.index.AddNode(node)
 	}
-	dag.virtual.SetTip(tip(branch0Nodes))
+	dag.virtual.SetTips(setFromSlice(tip(branch0Nodes)))
 
 	// Create chain views for different branches of the overall chain to
 	// simulate a local and remote node on different parts of the chain.
