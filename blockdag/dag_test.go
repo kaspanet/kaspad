@@ -451,9 +451,9 @@ func chainedNodes(parents blockSet, numNodes int) []*blockNode {
 	return nodes
 }
 
-// tstTip is a convenience function to grab the tip of a chain of block nodes
+// testTip is a convenience function to grab the tip of a chain of block nodes
 // created via chainedNodes.
-func tstTip(nodes []*blockNode) *blockNode {
+func testTip(nodes []*blockNode) *blockNode {
 	return nodes[len(nodes)-1]
 }
 
@@ -464,7 +464,7 @@ func TestHeightToHashRange(t *testing.T) {
 	// the following structure.
 	// 	genesis -> 1 -> 2 -> ... -> 15 -> 16  -> 17  -> 18
 	// 	                              \-> 16a -> 17a -> 18a (unvalidated)
-	tip := tstTip
+	tip := testTip
 	blockDAG := newTestDAG(&dagconfig.MainNetParams)
 	branch0Nodes := chainedNodes(setFromSlice(blockDAG.genesis), 18)
 	branch1Nodes := chainedNodes(setFromSlice(branch0Nodes[14]), 3)
@@ -556,7 +556,7 @@ func TestIntervalBlockHashes(t *testing.T) {
 	// the following structure.
 	// 	genesis -> 1 -> 2 -> ... -> 15 -> 16  -> 17  -> 18
 	// 	                              \-> 16a -> 17a -> 18a (unvalidated)
-	tip := tstTip
+	tip := testTip
 	chain := newTestDAG(&dagconfig.MainNetParams)
 	branch0Nodes := chainedNodes(setFromSlice(chain.genesis), 18)
 	branch1Nodes := chainedNodes(setFromSlice(branch0Nodes[14]), 3)
