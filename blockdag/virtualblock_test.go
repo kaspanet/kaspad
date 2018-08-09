@@ -6,19 +6,22 @@ package blockdag
 
 import (
 	"testing"
-	"github.com/daglabs/btcd/dagconfig"
 	"reflect"
-	"github.com/daglabs/btcd/wire"
+	"github.com/daglabs/btcd/dagconfig/daghash"
 )
 
+// TestVirtualBlock ensures that virtualBlock works as expected.
 func TestVirtualBlock(t *testing.T) {
-	hashCounter := uint32(0)
-	params := dagconfig.MainNetParams
+	// For the purposes of this test, we'll create blockNodes whose hashes are a
+	// series of numbers from 0 to n.
+	phantomK := uint32(1)
+	hashCounter := byte(0)
 	buildNode := func(parents blockSet) *blockNode {
-		header := wire.BlockHeader{Nonce: hashCounter}
+		block := newBlockNode(nil, parents, phantomK)
+		block.hash = daghash.Hash{hashCounter}
 		hashCounter++
 
-		return newBlockNode(&header, parents, params.K)
+		return block
 	}
 
 	// Create a DAG as follows:
@@ -35,6 +38,11 @@ func TestVirtualBlock(t *testing.T) {
 	node5 := buildNode(setFromSlice(node3, node4))
 	node6 := buildNode(setFromSlice(node3, node4))
 
+	// Given an empty virtualBlock, each of the following test cases will:
+	// Set its tips to tipsToSet
+	// Add to it all the tips in tipsToAdd, one after the other
+	// Call .Tips() on it and compare the result to expectedTips
+	// Call .SelectedTip() on it and compare the result to expectedSelectedTip
 	tests := []struct {
 		name                string
 		tipsToSet           []*blockNode
@@ -68,23 +76,30 @@ func TestVirtualBlock(t *testing.T) {
 			tipsToSet:           []*blockNode{},
 			tipsToAdd:           []*blockNode{node0, node1, node2, node3, node4, node5, node6},
 			expectedTips:        setFromSlice(node2, node5, node6),
-			expectedSelectedTip: node2,
+			expectedSelectedTip: node5,
 		},
 	}
 
 	for _, test := range tests {
-		virtual := newVirtualBlock(nil, params.K)
+		// Create an empty virtualBlock
+		virtual := newVirtualBlock(nil, phantomK)
+
+		// Set the tips. This will be the initial state
 		virtual.SetTips(setFromSlice(test.tipsToSet...))
+
+		// Add all blockNodes in tipsToAdd in order
 		for _, tipToAdd := range test.tipsToAdd {
 			virtual.AddTip(tipToAdd)
 		}
 
+		// Ensure that the virtual block's tips are now equal to expectedTips
 		resultTips := virtual.Tips()
 		if !reflect.DeepEqual(resultTips, test.expectedTips) {
 			t.Errorf("unexpected tips in test \"%s\". "+
 				"Expected: %v, got: %v.", test.name, test.expectedTips, resultTips)
 		}
 
+		// Ensure that the virtual block's selectedTip is now equal to expectedSelectedTip
 		resultSelectedTip := virtual.SelectedTip()
 		if !reflect.DeepEqual(resultSelectedTip, test.expectedSelectedTip) {
 			t.Errorf("unexpected selected tip in test \"%s\". "+
