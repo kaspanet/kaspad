@@ -290,32 +290,6 @@ func (view *UtxoViewpoint) connectTransactions(block *blockNode, transactions []
 	return nil
 }
 
-// fetchEntryByHash attempts to find any available utxo for the given hash by
-// searching the entire set of possible outputs for the given hash.  It checks
-// the view first and then falls back to the database if needed.
-func (view *UtxoViewpoint) fetchEntryByHash(db database.DB, hash *daghash.Hash) (*UtxoEntry, error) {
-	// First attempt to find a utxo with the provided hash in the view.
-	prevOut := wire.OutPoint{Hash: *hash}
-	for idx := uint32(0); idx < MaxOutputsPerBlock; idx++ {
-		prevOut.Index = idx
-		entry := view.LookupEntry(prevOut)
-		if entry != nil {
-			return entry, nil
-		}
-	}
-
-	// Check the database since it doesn't exist in the view.  This will
-	// often by the case since only specifically referenced utxos are loaded
-	// into the view.
-	var entry *UtxoEntry
-	err := db.View(func(dbTx database.Tx) error {
-		var err error
-		entry, err = dbFetchUtxoEntryByHash(dbTx, hash)
-		return err
-	})
-	return entry, err
-}
-
 // RemoveEntry removes the given transaction output from the current state of
 // the view.  It will have no effect if the passed output does not exist in the
 // view.
