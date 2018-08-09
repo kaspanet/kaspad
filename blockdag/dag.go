@@ -123,8 +123,9 @@ type BlockDAG struct {
 	// index houses the entire block index in memory.  The block index is
 	// a tree-shaped structure.
 	//
-	// virtual tracks the current active chain by making use of an
-	// efficient chain view into the block index.
+	// virtual tracks the current tips.
+	//
+	// genesis is a convenience reference to the genesis blockNode.
 	index   *blockIndex
 	virtual *virtualBlock
 	genesis *blockNode
