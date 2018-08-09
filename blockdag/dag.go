@@ -119,7 +119,7 @@ type BlockDAG struct {
 
 	// index and virtual are related to the memory block index.  They both
 	// have their own locks, however they are often also protected by the
-	// chain lock to help prevent logic races when blocks are being processed.
+	// DAG lock to help prevent logic races when blocks are being processed.
 
 	// index houses the entire block index in memory.  The block index is
 	// a tree-shaped structure.
