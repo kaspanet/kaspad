@@ -769,15 +769,6 @@ func (b *BlockDAG) FetchHeader(hash *daghash.Hash) (wire.BlockHeader, error) {
 	return *header, nil
 }
 
-// MainChainHasBlock returns whether or not the block with the given hash is in
-// the main chain.
-//
-// This function is safe for concurrent access.
-func (b *BlockDAG) MainChainHasBlock(hash *daghash.Hash) bool {
-	node := b.index.LookupNode(hash)
-	return node != nil
-}
-
 // BlockLocatorFromHash returns a block locator for the passed block hash.
 // See BlockLocator for details on the algorithm used to create a block locator.
 //
