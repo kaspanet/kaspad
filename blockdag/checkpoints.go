@@ -201,7 +201,7 @@ func (dag *BlockDAG) IsCheckpointCandidate(block *btcutil.Block) (bool, error) {
 	dag.dagLock.RLock()
 	defer dag.dagLock.RUnlock()
 
-	// A checkpoint must be in the main chain.
+	// A checkpoint must be in the DAG.
 	node := dag.index.LookupNode(block.Hash())
 	if node == nil {
 		return false, nil
@@ -218,8 +218,8 @@ func (dag *BlockDAG) IsCheckpointCandidate(block *btcutil.Block) (bool, error) {
 
 	// A checkpoint must be at least CheckpointConfirmations blocks
 	// before the end of the main chain.
-	mainChainHeight := dag.virtual.SelectedTip().height
-	if node.height > (mainChainHeight - CheckpointConfirmations) {
+	dagHeight := dag.virtual.SelectedTip().height
+	if node.height > (dagHeight - CheckpointConfirmations) {
 		return false, nil
 	}
 

@@ -103,6 +103,7 @@ type BlockDAG struct {
 	timeSource          MedianTimeSource
 	sigCache            *txscript.SigCache
 	indexManager        IndexManager
+	genesis             *blockNode
 
 	// The following fields are calculated based upon the provided chain
 	// parameters.  They are also set when the instance is created and
@@ -116,19 +117,16 @@ type BlockDAG struct {
 	// fields in this struct below this point.
 	dagLock sync.RWMutex
 
-	// These fields are related to the memory block index.  They both have
-	// their own locks, however they are often also protected by the chain
-	// lock to help prevent logic races when blocks are being processed.
-	//
+	// index and virtual are related to the memory block index.  They both
+	// have their own locks, however they are often also protected by the
+	// chain lock to help prevent logic races when blocks are being processed.
+
 	// index houses the entire block index in memory.  The block index is
 	// a tree-shaped structure.
-	//
+	index *blockIndex
+
 	// virtual tracks the current tips.
-	//
-	// genesis is a convenience reference to the genesis blockNode.
-	index   *blockIndex
 	virtual *virtualBlock
-	genesis *blockNode
 
 	// These fields are related to handling of orphan blocks.  They are
 	// protected by a combination of the chain lock and the orphan lock.

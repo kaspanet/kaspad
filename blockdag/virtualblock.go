@@ -8,7 +8,7 @@ import (
 	"sync"
 )
 
-// virtualBlock is a virtual block whose parents are the tip of the DAG.
+// virtualBlock is a virtual block whose parents are the tips of the DAG.
 type virtualBlock struct {
 	mtx      sync.Mutex
 	phantomK uint32
