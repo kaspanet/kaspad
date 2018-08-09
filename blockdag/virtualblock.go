@@ -51,23 +51,13 @@ func (v *virtualBlock) SetTips(tips blockSet) {
 //
 // This function MUST be called with the view mutex locked (for writes).
 func (v *virtualBlock) addTip(newTip *blockNode) {
-	tips := newSet()
-	tips.add(newTip)
-
-	for tipHash, tip := range v.Tips() {
-		isParent := false
-		for parentHash := range newTip.parents {
-			if tipHash == parentHash {
-				isParent = true
-				break
-			}
-		}
-		if !isParent {
-			tips.add(tip)
-		}
+	updatedTips := v.Tips().clone()
+	for _, parent := range newTip.parents {
+		updatedTips.remove(parent)
 	}
 
-	v.setTips(tips)
+	updatedTips.add(newTip)
+	v.setTips(updatedTips)
 }
 
 // addTip adds the given tip to the set of tips in the virtual block.
