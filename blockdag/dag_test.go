@@ -13,6 +13,7 @@ import (
 	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/wire"
 	"github.com/daglabs/btcutil"
+	"math/rand"
 )
 
 // TestHaveBlock tests the HaveBlock API to ensure proper functionality.
@@ -122,14 +123,14 @@ func TestCalcSequenceLock(t *testing.T) {
 
 	// Generate enough synthetic blocks for the rest of the test
 	chain := newTestDAG(netParams)
-	node := chain.dag.SelectedTip()
+	node := chain.virtual.SelectedTip()
 	blockTime := node.Header().Timestamp
 	numBlocksToGenerate := uint32(5)
 	for i := uint32(0); i < numBlocksToGenerate; i++ {
 		blockTime = blockTime.Add(time.Second)
 		node = newTestNode(setFromSlice(node), blockVersion, 0, blockTime, netParams.K)
 		chain.index.AddNode(node)
-		chain.dag.SetTip(node)
+		chain.virtual.SetTips(setFromSlice(node))
 	}
 
 	// Create a utxo view with a fake utxo for the inputs used in the
@@ -429,355 +430,31 @@ func nodeHashes(nodes []*blockNode, indexes ...int) []daghash.Hash {
 	return hashes
 }
 
-// nodeHeaders is a convenience function that returns the headers for all of
-// the passed indexes of the provided nodes.  It is used to construct expected
-// located headers in the tests.
-func nodeHeaders(nodes []*blockNode, indexes ...int) []wire.BlockHeader {
-	headers := make([]wire.BlockHeader, 0, len(indexes))
-	for _, idx := range indexes {
-		headers = append(headers, nodes[idx].Header())
+// testNoncePrng provides a deterministic prng for the nonce in generated fake
+// nodes.  The ensures that the node have unique hashes.
+var testNoncePrng = rand.New(rand.NewSource(0))
+
+// chainedNodes returns the specified number of nodes constructed such that each
+// subsequent node points to the previous one to create a chain.  The first node
+// will point to the passed parent which can be nil if desired.
+func chainedNodes(parents blockSet, numNodes int) []*blockNode {
+	nodes := make([]*blockNode, numNodes)
+	tips := parents
+	for i := 0; i < numNodes; i++ {
+		// This is invalid, but all that is needed is enough to get the
+		// synthetic tests to work.
+		header := wire.BlockHeader{Nonce: testNoncePrng.Uint32()}
+		header.PrevBlocks = tips.hashes()
+		nodes[i] = newBlockNode(&header, tips, dagconfig.SimNetParams.K)
+		tips = setFromSlice(nodes[i])
 	}
-	return headers
+	return nodes
 }
 
-// TestLocateInventory ensures that locating inventory via the LocateHeaders and
-// LocateBlocks functions behaves as expected.
-func TestLocateInventory(t *testing.T) {
-	// Construct a synthetic block DAG with a block index consisting of
-	// the following structure.
-	// 	genesis -> 1 -> 2 -> ... -> 15 -> 16  -> 17  -> 18
-	// 	                              \-> 16a -> 17a
-	tip := tstTip
-	dag := newTestDAG(&dagconfig.MainNetParams)
-	branch0Nodes := chainedNodes(setFromSlice(dag.dag.Genesis()), 18)
-	branch1Nodes := chainedNodes(setFromSlice(branch0Nodes[14]), 2)
-	for _, node := range branch0Nodes {
-		dag.index.AddNode(node)
-	}
-	for _, node := range branch1Nodes {
-		dag.index.AddNode(node)
-	}
-	dag.dag.SetTip(tip(branch0Nodes))
-
-	// Create chain views for different branches of the overall chain to
-	// simulate a local and remote node on different parts of the chain.
-	localView := newDAGView(tip(branch0Nodes))
-	remoteView := newDAGView(tip(branch1Nodes))
-
-	// Create a chain view for a completely unrelated block chain to
-	// simulate a remote node on a totally different chain.
-	unrelatedBranchNodes := chainedNodes(newSet(), 5)
-	unrelatedView := newDAGView(tip(unrelatedBranchNodes))
-
-	tests := []struct {
-		name       string
-		locator    BlockLocator       // locator for requested inventory
-		hashStop   daghash.Hash       // stop hash for locator
-		maxAllowed uint32             // max to locate, 0 = wire const
-		headers    []wire.BlockHeader // expected located headers
-		hashes     []daghash.Hash     // expected located hashes
-	}{
-		{
-			// Empty block locators and unknown stop hash.  No
-			// inventory should be located.
-			name:     "no locators, no stop",
-			locator:  nil,
-			hashStop: daghash.Hash{},
-			headers:  nil,
-			hashes:   nil,
-		},
-		{
-			// Empty block locators and stop hash in side chain.
-			// The expected result is the requested block.
-			name:     "no locators, stop in side",
-			locator:  nil,
-			hashStop: tip(branch1Nodes).hash,
-			headers:  nodeHeaders(branch1Nodes, 1),
-			hashes:   nodeHashes(branch1Nodes, 1),
-		},
-		{
-			// Empty block locators and stop hash in main chain.
-			// The expected result is the requested block.
-			name:     "no locators, stop in main",
-			locator:  nil,
-			hashStop: branch0Nodes[12].hash,
-			headers:  nodeHeaders(branch0Nodes, 12),
-			hashes:   nodeHashes(branch0Nodes, 12),
-		},
-		{
-			// Locators based on remote being on side chain and a
-			// stop hash local node doesn't know about.  The
-			// expected result is the blocks after the fork point in
-			// the main chain and the stop hash has no effect.
-			name:     "remote side chain, unknown stop",
-			locator:  remoteView.BlockLocator(nil),
-			hashStop: daghash.Hash{0x01},
-			headers:  nodeHeaders(branch0Nodes, 15, 16, 17),
-			hashes:   nodeHashes(branch0Nodes, 15, 16, 17),
-		},
-		{
-			// Locators based on remote being on side chain and a
-			// stop hash in side chain.  The expected result is the
-			// blocks after the fork point in the main chain and the
-			// stop hash has no effect.
-			name:     "remote side chain, stop in side",
-			locator:  remoteView.BlockLocator(nil),
-			hashStop: tip(branch1Nodes).hash,
-			headers:  nodeHeaders(branch0Nodes, 15, 16, 17),
-			hashes:   nodeHashes(branch0Nodes, 15, 16, 17),
-		},
-		{
-			// Locators based on remote being on side chain and a
-			// stop hash in main chain, but before fork point.  The
-			// expected result is the blocks after the fork point in
-			// the main chain and the stop hash has no effect.
-			name:     "remote side chain, stop in main before",
-			locator:  remoteView.BlockLocator(nil),
-			hashStop: branch0Nodes[13].hash,
-			headers:  nodeHeaders(branch0Nodes, 15, 16, 17),
-			hashes:   nodeHashes(branch0Nodes, 15, 16, 17),
-		},
-		{
-			// Locators based on remote being on side chain and a
-			// stop hash in main chain, but exactly at the fork
-			// point.  The expected result is the blocks after the
-			// fork point in the main chain and the stop hash has no
-			// effect.
-			name:     "remote side chain, stop in main exact",
-			locator:  remoteView.BlockLocator(nil),
-			hashStop: branch0Nodes[14].hash,
-			headers:  nodeHeaders(branch0Nodes, 15, 16, 17),
-			hashes:   nodeHashes(branch0Nodes, 15, 16, 17),
-		},
-		{
-			// Locators based on remote being on side chain and a
-			// stop hash in main chain just after the fork point.
-			// The expected result is the blocks after the fork
-			// point in the main chain up to and including the stop
-			// hash.
-			name:     "remote side chain, stop in main after",
-			locator:  remoteView.BlockLocator(nil),
-			hashStop: branch0Nodes[15].hash,
-			headers:  nodeHeaders(branch0Nodes, 15),
-			hashes:   nodeHashes(branch0Nodes, 15),
-		},
-		{
-			// Locators based on remote being on side chain and a
-			// stop hash in main chain some time after the fork
-			// point.  The expected result is the blocks after the
-			// fork point in the main chain up to and including the
-			// stop hash.
-			name:     "remote side chain, stop in main after more",
-			locator:  remoteView.BlockLocator(nil),
-			hashStop: branch0Nodes[16].hash,
-			headers:  nodeHeaders(branch0Nodes, 15, 16),
-			hashes:   nodeHashes(branch0Nodes, 15, 16),
-		},
-		{
-			// Locators based on remote being on main chain in the
-			// past and a stop hash local node doesn't know about.
-			// The expected result is the blocks after the known
-			// point in the main chain and the stop hash has no
-			// effect.
-			name:     "remote main chain past, unknown stop",
-			locator:  localView.BlockLocator(branch0Nodes[12]),
-			hashStop: daghash.Hash{0x01},
-			headers:  nodeHeaders(branch0Nodes, 13, 14, 15, 16, 17),
-			hashes:   nodeHashes(branch0Nodes, 13, 14, 15, 16, 17),
-		},
-		{
-			// Locators based on remote being on main chain in the
-			// past and a stop hash in a side chain.  The expected
-			// result is the blocks after the known point in the
-			// main chain and the stop hash has no effect.
-			name:     "remote main chain past, stop in side",
-			locator:  localView.BlockLocator(branch0Nodes[12]),
-			hashStop: tip(branch1Nodes).hash,
-			headers:  nodeHeaders(branch0Nodes, 13, 14, 15, 16, 17),
-			hashes:   nodeHashes(branch0Nodes, 13, 14, 15, 16, 17),
-		},
-		{
-			// Locators based on remote being on main chain in the
-			// past and a stop hash in the main chain before that
-			// point.  The expected result is the blocks after the
-			// known point in the main chain and the stop hash has
-			// no effect.
-			name:     "remote main chain past, stop in main before",
-			locator:  localView.BlockLocator(branch0Nodes[12]),
-			hashStop: branch0Nodes[11].hash,
-			headers:  nodeHeaders(branch0Nodes, 13, 14, 15, 16, 17),
-			hashes:   nodeHashes(branch0Nodes, 13, 14, 15, 16, 17),
-		},
-		{
-			// Locators based on remote being on main chain in the
-			// past and a stop hash in the main chain exactly at that
-			// point.  The expected result is the blocks after the
-			// known point in the main chain and the stop hash has
-			// no effect.
-			name:     "remote main chain past, stop in main exact",
-			locator:  localView.BlockLocator(branch0Nodes[12]),
-			hashStop: branch0Nodes[12].hash,
-			headers:  nodeHeaders(branch0Nodes, 13, 14, 15, 16, 17),
-			hashes:   nodeHashes(branch0Nodes, 13, 14, 15, 16, 17),
-		},
-		{
-			// Locators based on remote being on main chain in the
-			// past and a stop hash in the main chain just after
-			// that point.  The expected result is the blocks after
-			// the known point in the main chain and the stop hash
-			// has no effect.
-			name:     "remote main chain past, stop in main after",
-			locator:  localView.BlockLocator(branch0Nodes[12]),
-			hashStop: branch0Nodes[13].hash,
-			headers:  nodeHeaders(branch0Nodes, 13),
-			hashes:   nodeHashes(branch0Nodes, 13),
-		},
-		{
-			// Locators based on remote being on main chain in the
-			// past and a stop hash in the main chain some time
-			// after that point.  The expected result is the blocks
-			// after the known point in the main chain and the stop
-			// hash has no effect.
-			name:     "remote main chain past, stop in main after more",
-			locator:  localView.BlockLocator(branch0Nodes[12]),
-			hashStop: branch0Nodes[15].hash,
-			headers:  nodeHeaders(branch0Nodes, 13, 14, 15),
-			hashes:   nodeHashes(branch0Nodes, 13, 14, 15),
-		},
-		{
-			// Locators based on remote being at exactly the same
-			// point in the main chain and a stop hash local node
-			// doesn't know about.  The expected result is no
-			// located inventory.
-			name:     "remote main chain same, unknown stop",
-			locator:  localView.BlockLocator(nil),
-			hashStop: daghash.Hash{0x01},
-			headers:  nil,
-			hashes:   nil,
-		},
-		{
-			// Locators based on remote being at exactly the same
-			// point in the main chain and a stop hash at exactly
-			// the same point.  The expected result is no located
-			// inventory.
-			name:     "remote main chain same, stop same point",
-			locator:  localView.BlockLocator(nil),
-			hashStop: tip(branch0Nodes).hash,
-			headers:  nil,
-			hashes:   nil,
-		},
-		{
-			// Locators from remote that don't include any blocks
-			// the local node knows.  This would happen if the
-			// remote node is on a completely separate chain that
-			// isn't rooted with the same genesis block.  The
-			// expected result is the blocks after the genesis
-			// block.
-			name:     "remote unrelated chain",
-			locator:  unrelatedView.BlockLocator(nil),
-			hashStop: daghash.Hash{},
-			headers: nodeHeaders(branch0Nodes, 0, 1, 2, 3, 4, 5, 6,
-				7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17),
-			hashes: nodeHashes(branch0Nodes, 0, 1, 2, 3, 4, 5, 6,
-				7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17),
-		},
-		{
-			// Locators from remote for second block in main chain
-			// and no stop hash, but with an overridden max limit.
-			// The expected result is the blocks after the second
-			// block limited by the max.
-			name:       "remote genesis",
-			locator:    locatorHashes(branch0Nodes, 0),
-			hashStop:   daghash.Hash{},
-			maxAllowed: 3,
-			headers:    nodeHeaders(branch0Nodes, 1, 2, 3),
-			hashes:     nodeHashes(branch0Nodes, 1, 2, 3),
-		},
-		{
-			// Poorly formed locator.
-			//
-			// Locator from remote that only includes a single
-			// block on a side chain the local node knows.  The
-			// expected result is the blocks after the genesis
-			// block since even though the block is known, it is on
-			// a side chain and there are no more locators to find
-			// the fork point.
-			name:     "weak locator, single known side block",
-			locator:  locatorHashes(branch1Nodes, 1),
-			hashStop: daghash.Hash{},
-			headers: nodeHeaders(branch0Nodes, 0, 1, 2, 3, 4, 5, 6,
-				7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17),
-			hashes: nodeHashes(branch0Nodes, 0, 1, 2, 3, 4, 5, 6,
-				7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17),
-		},
-		{
-			// Poorly formed locator.
-			//
-			// Locator from remote that only includes multiple
-			// blocks on a side chain the local node knows however
-			// none in the main chain.  The expected result is the
-			// blocks after the genesis block since even though the
-			// blocks are known, they are all on a side chain and
-			// there are no more locators to find the fork point.
-			name:     "weak locator, multiple known side blocks",
-			locator:  locatorHashes(branch1Nodes, 1),
-			hashStop: daghash.Hash{},
-			headers: nodeHeaders(branch0Nodes, 0, 1, 2, 3, 4, 5, 6,
-				7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17),
-			hashes: nodeHashes(branch0Nodes, 0, 1, 2, 3, 4, 5, 6,
-				7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17),
-		},
-		{
-			// Poorly formed locator.
-			//
-			// Locator from remote that only includes multiple
-			// blocks on a side chain the local node knows however
-			// none in the main chain but includes a stop hash in
-			// the main chain.  The expected result is the blocks
-			// after the genesis block up to the stop hash since
-			// even though the blocks are known, they are all on a
-			// side chain and there are no more locators to find the
-			// fork point.
-			name:     "weak locator, multiple known side blocks, stop in main",
-			locator:  locatorHashes(branch1Nodes, 1),
-			hashStop: branch0Nodes[5].hash,
-			headers:  nodeHeaders(branch0Nodes, 0, 1, 2, 3, 4, 5),
-			hashes:   nodeHashes(branch0Nodes, 0, 1, 2, 3, 4, 5),
-		},
-	}
-	for _, test := range tests {
-		// Ensure the expected headers are located.
-		var headers []wire.BlockHeader
-		if test.maxAllowed != 0 {
-			// Need to use the unexported function to override the
-			// max allowed for headers.
-			dag.dagLock.RLock()
-			headers = dag.locateHeaders(test.locator,
-				&test.hashStop, test.maxAllowed)
-			dag.dagLock.RUnlock()
-		} else {
-			headers = dag.LocateHeaders(test.locator,
-				&test.hashStop)
-		}
-		if !reflect.DeepEqual(headers, test.headers) {
-			t.Errorf("%s: unxpected headers -- got %v, want %v",
-				test.name, headers, test.headers)
-			continue
-		}
-
-		// Ensure the expected block hashes are located.
-		maxAllowed := uint32(wire.MaxBlocksPerMsg)
-		if test.maxAllowed != 0 {
-			maxAllowed = test.maxAllowed
-		}
-		hashes := dag.LocateBlocks(test.locator, &test.hashStop,
-			maxAllowed)
-		if !reflect.DeepEqual(hashes, test.hashes) {
-			t.Errorf("%s: unxpected hashes -- got %v, want %v",
-				test.name, hashes, test.hashes)
-			continue
-		}
-	}
+// testTip is a convenience function to grab the tip of a chain of block nodes
+// created via chainedNodes.
+func testTip(nodes []*blockNode) *blockNode {
+	return nodes[len(nodes)-1]
 }
 
 // TestHeightToHashRange ensures that fetching a range of block hashes by start
@@ -787,9 +464,9 @@ func TestHeightToHashRange(t *testing.T) {
 	// the following structure.
 	// 	genesis -> 1 -> 2 -> ... -> 15 -> 16  -> 17  -> 18
 	// 	                              \-> 16a -> 17a -> 18a (unvalidated)
-	tip := tstTip
+	tip := testTip
 	blockDAG := newTestDAG(&dagconfig.MainNetParams)
-	branch0Nodes := chainedNodes(setFromSlice(blockDAG.dag.Genesis()), 18)
+	branch0Nodes := chainedNodes(setFromSlice(blockDAG.genesis), 18)
 	branch1Nodes := chainedNodes(setFromSlice(branch0Nodes[14]), 3)
 	for _, node := range branch0Nodes {
 		blockDAG.index.SetStatusFlags(node, statusValid)
@@ -801,7 +478,7 @@ func TestHeightToHashRange(t *testing.T) {
 		}
 		blockDAG.index.AddNode(node)
 	}
-	blockDAG.dag.SetTip(tip(branch0Nodes))
+	blockDAG.virtual.SetTips(setFromSlice(tip(branch0Nodes)))
 
 	tests := []struct {
 		name        string
@@ -879,9 +556,9 @@ func TestIntervalBlockHashes(t *testing.T) {
 	// the following structure.
 	// 	genesis -> 1 -> 2 -> ... -> 15 -> 16  -> 17  -> 18
 	// 	                              \-> 16a -> 17a -> 18a (unvalidated)
-	tip := tstTip
+	tip := testTip
 	chain := newTestDAG(&dagconfig.MainNetParams)
-	branch0Nodes := chainedNodes(setFromSlice(chain.dag.Genesis()), 18)
+	branch0Nodes := chainedNodes(setFromSlice(chain.genesis), 18)
 	branch1Nodes := chainedNodes(setFromSlice(branch0Nodes[14]), 3)
 	for _, node := range branch0Nodes {
 		chain.index.SetStatusFlags(node, statusValid)
@@ -893,7 +570,7 @@ func TestIntervalBlockHashes(t *testing.T) {
 		}
 		chain.index.AddNode(node)
 	}
-	chain.dag.SetTip(tip(branch0Nodes))
+	chain.virtual.SetTips(setFromSlice(tip(branch0Nodes)))
 
 	tests := []struct {
 		name        string

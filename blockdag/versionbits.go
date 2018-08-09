@@ -197,16 +197,16 @@ func (c deploymentChecker) Condition(node *blockNode) (bool, error) {
 // while this function accepts any block node.
 //
 // This function MUST be called with the chain state lock held (for writes).
-func (b *BlockDAG) calcNextBlockVersion(prevNode *blockNode) (int32, error) {
+func (dag *BlockDAG) calcNextBlockVersion(prevNode *blockNode) (int32, error) {
 	// Set the appropriate bits for each actively defined rule deployment
 	// that is either in the process of being voted on, or locked in for the
 	// activation at the next threshold window change.
 	expectedVersion := uint32(vbTopBits)
-	for id := 0; id < len(b.dagParams.Deployments); id++ {
-		deployment := &b.dagParams.Deployments[id]
-		cache := &b.deploymentCaches[id]
-		checker := deploymentChecker{deployment: deployment, chain: b}
-		state, err := b.thresholdState(prevNode, checker, cache)
+	for id := 0; id < len(dag.dagParams.Deployments); id++ {
+		deployment := &dag.dagParams.Deployments[id]
+		cache := &dag.deploymentCaches[id]
+		checker := deploymentChecker{deployment: deployment, chain: dag}
+		state, err := dag.thresholdState(prevNode, checker, cache)
 		if err != nil {
 			return 0, err
 		}
@@ -222,10 +222,10 @@ func (b *BlockDAG) calcNextBlockVersion(prevNode *blockNode) (int32, error) {
 // rule change deployments.
 //
 // This function is safe for concurrent access.
-func (b *BlockDAG) CalcNextBlockVersion() (int32, error) {
-	b.dagLock.Lock()
-	version, err := b.calcNextBlockVersion(b.dag.SelectedTip())
-	b.dagLock.Unlock()
+func (dag *BlockDAG) CalcNextBlockVersion() (int32, error) {
+	dag.dagLock.Lock()
+	version, err := dag.calcNextBlockVersion(dag.virtual.SelectedTip())
+	dag.dagLock.Unlock()
 	return version, err
 }
 
@@ -235,23 +235,23 @@ func (b *BlockDAG) CalcNextBlockVersion() (int32, error) {
 // activated.
 //
 // This function MUST be called with the chain state lock held (for writes)
-func (b *BlockDAG) warnUnknownRuleActivations(node *blockNode) error {
+func (dag *BlockDAG) warnUnknownRuleActivations(node *blockNode) error {
 	// Warn if any unknown new rules are either about to activate or have
 	// already been activated.
 	for bit := uint32(0); bit < vbNumBits; bit++ {
-		checker := bitConditionChecker{bit: bit, chain: b}
-		cache := &b.warningCaches[bit]
-		state, err := b.thresholdState(node.selectedParent, checker, cache)
+		checker := bitConditionChecker{bit: bit, chain: dag}
+		cache := &dag.warningCaches[bit]
+		state, err := dag.thresholdState(node.selectedParent, checker, cache)
 		if err != nil {
 			return err
 		}
 
 		switch state {
 		case ThresholdActive:
-			if !b.unknownRulesWarned {
+			if !dag.unknownRulesWarned {
 				log.Warnf("Unknown new rules activated (bit %d)",
 					bit)
-				b.unknownRulesWarned = true
+				dag.unknownRulesWarned = true
 			}
 
 		case ThresholdLockedIn:
@@ -269,16 +269,16 @@ func (b *BlockDAG) warnUnknownRuleActivations(node *blockNode) error {
 // blocks have unexpected versions.
 //
 // This function MUST be called with the chain state lock held (for writes)
-func (b *BlockDAG) warnUnknownVersions(node *blockNode) error {
+func (dag *BlockDAG) warnUnknownVersions(node *blockNode) error {
 	// Nothing to do if already warned.
-	if b.unknownVersionsWarned {
+	if dag.unknownVersionsWarned {
 		return nil
 	}
 
 	// Warn if enough previous blocks have unexpected versions.
 	numUpgraded := uint32(0)
 	for i := uint32(0); i < unknownVerNumToCheck && node != nil; i++ {
-		expectedVersion, err := b.calcNextBlockVersion(node.selectedParent)
+		expectedVersion, err := dag.calcNextBlockVersion(node.selectedParent)
 		if err != nil {
 			return err
 		}
@@ -294,7 +294,7 @@ func (b *BlockDAG) warnUnknownVersions(node *blockNode) error {
 		log.Warn("Unknown block versions are being mined, so new " +
 			"rules might be in effect.  Are you running the " +
 			"latest version of the software?")
-		b.unknownVersionsWarned = true
+		dag.unknownVersionsWarned = true
 	}
 
 	return nil

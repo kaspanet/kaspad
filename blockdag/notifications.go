@@ -61,21 +61,21 @@ type Notification struct {
 // Subscribe to block chain notifications. Registers a callback to be executed
 // when various events take place. See the documentation on Notification and
 // NotificationType for details on the types and contents of notifications.
-func (b *BlockDAG) Subscribe(callback NotificationCallback) {
-	b.notificationsLock.Lock()
-	b.notifications = append(b.notifications, callback)
-	b.notificationsLock.Unlock()
+func (dag *BlockDAG) Subscribe(callback NotificationCallback) {
+	dag.notificationsLock.Lock()
+	dag.notifications = append(dag.notifications, callback)
+	dag.notificationsLock.Unlock()
 }
 
 // sendNotification sends a notification with the passed type and data if the
 // caller requested notifications by providing a callback function in the call
 // to New.
-func (b *BlockDAG) sendNotification(typ NotificationType, data interface{}) {
+func (dag *BlockDAG) sendNotification(typ NotificationType, data interface{}) {
 	// Generate and send the notification.
 	n := Notification{Type: typ, Data: data}
-	b.notificationsLock.RLock()
-	for _, callback := range b.notifications {
+	dag.notificationsLock.RLock()
+	for _, callback := range dag.notifications {
 		callback(&n)
 	}
-	b.notificationsLock.RUnlock()
+	dag.notificationsLock.RUnlock()
 }

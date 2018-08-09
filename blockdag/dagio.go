@@ -73,19 +73,19 @@ var (
 	byteOrder = binary.LittleEndian
 )
 
-// errNotInMainChain signifies that a block hash or height that is not in the
-// main chain was requested.
-type errNotInMainChain string
+// errNotInDAG signifies that a block hash or height that is not in the
+// DAG was requested.
+type errNotInDAG string
 
 // Error implements the error interface.
-func (e errNotInMainChain) Error() string {
+func (e errNotInDAG) Error() string {
 	return string(e)
 }
 
-// isNotInMainChainErr returns whether or not the passed error is an
-// errNotInMainChain error.
-func isNotInMainChainErr(err error) bool {
-	_, ok := err.(errNotInMainChain)
+// isNotInDAGErr returns whether or not the passed error is an
+// errNotInDAG error.
+func isNotInDAGErr(err error) bool {
+	_, ok := err.(errNotInDAG)
 	return ok
 }
 
@@ -781,7 +781,7 @@ func dbFetchHeightByHash(dbTx database.Tx, hash *daghash.Hash) (int32, error) {
 	serializedHeight := hashIndex.Get(hash[:])
 	if serializedHeight == nil {
 		str := fmt.Sprintf("block %s is not in the main chain", hash)
-		return 0, errNotInMainChain(str)
+		return 0, errNotInDAG(str)
 	}
 
 	return int32(byteOrder.Uint32(serializedHeight)), nil
@@ -790,8 +790,8 @@ func dbFetchHeightByHash(dbTx database.Tx, hash *daghash.Hash) (int32, error) {
 // dbDAGState represents the data to be stored in the database for the current
 // DAG state.
 type dbDAGState struct {
-	SelectedHash daghash.Hash
-	TotalTxs     uint64
+	Tips     []daghash.Hash
+	TotalTxs uint64
 }
 
 // serializeDAGState returns the serialization of the DAG state.
@@ -820,8 +820,8 @@ func deserializeDAGState(serializedData []byte) (*dbDAGState, error) {
 // state with the given parameters.
 func dbPutDAGState(dbTx database.Tx, state *DAGState) error {
 	serializedData, err := serializeDAGState(dbDAGState{
-		SelectedHash: state.SelectedTip.Hash,
-		TotalTxs:     state.TotalTxs,
+		Tips:     state.TipHashes,
+		TotalTxs: state.TotalTxs,
 	})
 
 	if err != nil {
@@ -834,29 +834,29 @@ func dbPutDAGState(dbTx database.Tx, state *DAGState) error {
 // createDAGState initializes both the database and the DAG state to the
 // genesis block.  This includes creating the necessary buckets and inserting
 // the genesis block, so it must only be called on an uninitialized database.
-func (b *BlockDAG) createDAGState() error {
+func (dag *BlockDAG) createDAGState() error {
 	// Create a new node from the genesis block and set it as the DAG.
-	genesisBlock := btcutil.NewBlock(b.dagParams.GenesisBlock)
+	genesisBlock := btcutil.NewBlock(dag.dagParams.GenesisBlock)
 	genesisBlock.SetHeight(0)
 	header := &genesisBlock.MsgBlock().Header
-	node := newBlockNode(header, nil, b.dagParams.K)
+	node := newBlockNode(header, newSet(), dag.dagParams.K)
 	node.status = statusDataStored | statusValid
-	b.dag.SetTip(node)
+	dag.virtual.SetTips(setFromSlice(node))
 
 	// Add the new node to the index which is used for faster lookups.
-	b.index.addNode(node)
+	dag.index.addNode(node)
 
 	// Initialize the DAG state.  Since it is the genesis block, use
 	// its timestamp for the median time.
 	numTxs := uint64(len(genesisBlock.MsgBlock().Transactions))
 	blockSize := uint64(genesisBlock.MsgBlock().SerializeSize())
-	dagState := newDAGState(b.dag.Tips().hashes(), node, blockSize, numTxs,
+	dagState := newDAGState(dag.virtual.Tips().hashes(), node, blockSize, numTxs,
 		numTxs, time.Unix(node.timestamp, 0))
-	b.setDAGState(dagState)
+	dag.setDAGState(dagState)
 
 	// Create the initial the database chain state including creating the
 	// necessary index buckets and inserting the genesis block.
-	err := b.db.Update(func(dbTx database.Tx) error {
+	err := dag.db.Update(func(dbTx database.Tx) error {
 		meta := dbTx.Metadata()
 
 		// Create the bucket that houses the block index data.
@@ -919,7 +919,7 @@ func (b *BlockDAG) createDAGState() error {
 		}
 
 		// Store the current DAG state into the database.
-		err = dbPutDAGState(dbTx, b.dagState)
+		err = dbPutDAGState(dbTx, dag.dagState)
 		if err != nil {
 			return err
 		}
@@ -933,11 +933,11 @@ func (b *BlockDAG) createDAGState() error {
 // initDAGState attempts to load and initialize the DAG state from the
 // database.  When the db does not yet contain any DAG state, both it and the
 // DAG state are initialized to the genesis block.
-func (b *BlockDAG) initDAGState() error {
+func (dag *BlockDAG) initDAGState() error {
 	// Determine the state of the chain database. We may need to initialize
 	// everything from scratch or upgrade certain buckets.
 	var initialized, hasBlockIndex bool
-	err := b.db.View(func(dbTx database.Tx) error {
+	err := dag.db.View(func(dbTx database.Tx) error {
 		initialized = dbTx.Metadata().Get(dagStateKeyName) != nil
 		hasBlockIndex = dbTx.Metadata().Bucket(blockIndexBucketName) != nil
 		return nil
@@ -949,18 +949,18 @@ func (b *BlockDAG) initDAGState() error {
 	if !initialized {
 		// At this point the database has not already been initialized, so
 		// initialize both it and the chain state to the genesis block.
-		return b.createDAGState()
+		return dag.createDAGState()
 	}
 
 	if !hasBlockIndex {
-		err := migrateBlockIndex(b.db)
+		err := migrateBlockIndex(dag.db)
 		if err != nil {
 			return nil
 		}
 	}
 
 	// Attempt to load the DAG state from the database.
-	return b.db.View(func(dbTx database.Tx) error {
+	return dag.db.View(func(dbTx database.Tx) error {
 		// Fetch the stored DAG state from the database metadata.
 		// When it doesn't exist, it means the database hasn't been
 		// initialized for use with the DAG yet, so break out now to allow
@@ -1005,7 +1005,7 @@ func (b *BlockDAG) initDAGState() error {
 			var parent *blockNode
 			if lastNode == nil {
 				blockHash := header.BlockHash()
-				if !blockHash.IsEqual(b.dagParams.GenesisHash) {
+				if !blockHash.IsEqual(dag.dagParams.GenesisHash) {
 					return AssertError(fmt.Sprintf("initDAGState: Expected "+
 						"first entry in block index to be genesis block, "+
 						"found %s", blockHash))
@@ -1016,7 +1016,7 @@ func (b *BlockDAG) initDAGState() error {
 				// previous header processed is the parent.
 				parent = lastNode
 			} else {
-				parent = b.index.LookupNode(header.SelectedPrevBlock())
+				parent = dag.index.LookupNode(header.SelectedPrevBlock())
 				if parent == nil {
 					return AssertError(fmt.Sprintf("initDAGState: Could "+
 						"not find parent for block %s", header.BlockHash()))
@@ -1026,24 +1026,29 @@ func (b *BlockDAG) initDAGState() error {
 			// Initialize the block node for the block, connect it,
 			// and add it to the block index.
 			node := &blockNodes[i]
-			initBlockNode(node, header, setFromSlice(parent), b.dagParams.K) // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
+			initBlockNode(node, header, setFromSlice(parent), dag.dagParams.K) // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
 			node.status = status
-			b.index.addNode(node)
+			dag.index.addNode(node)
 
 			lastNode = node
 			i++
 		}
 
 		// Set the DAG view to the stored state.
-		selectedTip := b.index.LookupNode(&state.SelectedHash)
-		if selectedTip == nil {
-			return AssertError(fmt.Sprintf("initDAGState: cannot find "+
-				"DAG selectedTip %s in block index", state.SelectedHash))
+		tips := newSet()
+		for _, tipHash := range state.Tips {
+			tip := dag.index.LookupNode(&tipHash)
+			if tip == nil {
+				return AssertError(fmt.Sprintf("initDAGState: cannot find "+
+					"DAG tip %s in block index", state.Tips))
+			}
+			tips.add(tip)
 		}
-		b.dag.SetTip(selectedTip)
+		dag.virtual.SetTips(tips)
 
 		// Load the raw block bytes for the selected tip.
-		blockBytes, err := dbTx.FetchBlock(&state.SelectedHash)
+		selectedTip := dag.virtual.selectedParent
+		blockBytes, err := dbTx.FetchBlock(&selectedTip.hash)
 		if err != nil {
 			return err
 		}
@@ -1056,8 +1061,8 @@ func (b *BlockDAG) initDAGState() error {
 		// Initialize the DAG state.
 		blockSize := uint64(len(blockBytes))
 		numTxns := uint64(len(block.Transactions))
-		dagState := newDAGState(b.dag.Tips().hashes(), selectedTip, blockSize, numTxns, state.TotalTxs, selectedTip.CalcPastMedianTime())
-		b.setDAGState(dagState)
+		dagState := newDAGState(dag.virtual.Tips().hashes(), selectedTip, blockSize, numTxns, state.TotalTxs, selectedTip.CalcPastMedianTime())
+		dag.setDAGState(dagState)
 
 		return nil
 	})
@@ -1164,43 +1169,22 @@ func blockIndexKey(blockHash *daghash.Hash, blockHeight uint32) []byte {
 	return indexKey
 }
 
-// BlockByHeight returns the block at the given height in the main chain.
-//
-// This function is safe for concurrent access.
-func (b *BlockDAG) BlockByHeight(blockHeight int32) (*btcutil.Block, error) {
-	// Lookup the block height in the best chain.
-	node := b.dag.NodeByHeight(blockHeight)
-	if node == nil {
-		str := fmt.Sprintf("no block at height %d exists", blockHeight)
-		return nil, errNotInMainChain(str)
-	}
-
-	// Load the block from the database and return it.
-	var block *btcutil.Block
-	err := b.db.View(func(dbTx database.Tx) error {
-		var err error
-		block, err = dbFetchBlockByNode(dbTx, node)
-		return err
-	})
-	return block, err
-}
-
 // BlockByHash returns the block from the main chain with the given hash with
 // the appropriate chain height set.
 //
 // This function is safe for concurrent access.
-func (b *BlockDAG) BlockByHash(hash *daghash.Hash) (*btcutil.Block, error) {
+func (dag *BlockDAG) BlockByHash(hash *daghash.Hash) (*btcutil.Block, error) {
 	// Lookup the block hash in block index and ensure it is in the best
 	// chain.
-	node := b.index.LookupNode(hash)
-	if node == nil || !b.dag.Contains(node) {
+	node := dag.index.LookupNode(hash)
+	if node == nil {
 		str := fmt.Sprintf("block %s is not in the main chain", hash)
-		return nil, errNotInMainChain(str)
+		return nil, errNotInDAG(str)
 	}
 
 	// Load the block from the database and return it.
 	var block *btcutil.Block
-	err := b.db.View(func(dbTx database.Tx) error {
+	err := dag.db.View(func(dbTx database.Tx) error {
 		var err error
 		block, err = dbFetchBlockByNode(dbTx, node)
 		return err
