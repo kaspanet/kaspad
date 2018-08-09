@@ -83,7 +83,7 @@ func (dag *BlockDAG) verifyCheckpoint(height int32, hash *daghash.Hash) bool {
 // associated block node.  It returns nil if a checkpoint can't be found (this
 // should really only happen for blocks before the first checkpoint).
 //
-// This function MUST be called with the chain lock held (for reads).
+// This function MUST be called with the DAG lock held (for reads).
 func (dag *BlockDAG) findPreviousCheckpoint() (*blockNode, error) {
 	if !dag.HasCheckpoints() {
 		return nil, nil
