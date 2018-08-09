@@ -195,12 +195,12 @@ type BlockDAG struct {
 // be in, like part of the DAG or the orphan pool.
 //
 // This function is safe for concurrent access.
-func (b *BlockDAG) HaveBlock(hash *daghash.Hash) (bool, error) {
-	exists, err := b.blockExists(hash)
+func (dag *BlockDAG) HaveBlock(hash *daghash.Hash) (bool, error) {
+	exists, err := dag.blockExists(hash)
 	if err != nil {
 		return false, err
 	}
-	return exists || b.IsKnownOrphan(hash), nil
+	return exists || dag.IsKnownOrphan(hash), nil
 }
 
 // HaveBlocks returns whether or not the DAG instances has all blocks represented
@@ -208,9 +208,9 @@ func (b *BlockDAG) HaveBlock(hash *daghash.Hash) (bool, error) {
 // be in, like part of the DAG or the orphan pool.
 //
 // This function is safe for concurrent access.
-func (b *BlockDAG) HaveBlocks(hashes []daghash.Hash) (bool, error) {
+func (dag *BlockDAG) HaveBlocks(hashes []daghash.Hash) (bool, error) {
 	for _, hash := range hashes {
-		haveBlock, err := b.HaveBlock(&hash)
+		haveBlock, err := dag.HaveBlock(&hash)
 		if err != nil {
 			return false, err
 		}
@@ -232,12 +232,12 @@ func (b *BlockDAG) HaveBlocks(hashes []daghash.Hash) (bool, error) {
 // duplicate orphans and react accordingly.
 //
 // This function is safe for concurrent access.
-func (b *BlockDAG) IsKnownOrphan(hash *daghash.Hash) bool {
+func (dag *BlockDAG) IsKnownOrphan(hash *daghash.Hash) bool {
 	// Protect concurrent access.  Using a read lock only so multiple
 	// readers can query without blocking each other.
-	b.orphanLock.RLock()
-	_, exists := b.orphans[*hash]
-	b.orphanLock.RUnlock()
+	dag.orphanLock.RLock()
+	_, exists := dag.orphans[*hash]
+	dag.orphanLock.RUnlock()
 
 	return exists
 }
@@ -246,18 +246,18 @@ func (b *BlockDAG) IsKnownOrphan(hash *daghash.Hash) bool {
 // map of orphan blocks.
 //
 // This function is safe for concurrent access.
-func (b *BlockDAG) GetOrphanRoot(hash *daghash.Hash) *daghash.Hash {
+func (dag *BlockDAG) GetOrphanRoot(hash *daghash.Hash) *daghash.Hash {
 	// Protect concurrent access.  Using a read lock only so multiple
 	// readers can query without blocking each other.
-	b.orphanLock.RLock()
-	defer b.orphanLock.RUnlock()
+	dag.orphanLock.RLock()
+	defer dag.orphanLock.RUnlock()
 
 	// Keep looping while the parent of each orphaned block is
 	// known and is an orphan itself.
 	orphanRoot := hash
 	prevHash := hash
 	for {
-		orphan, exists := b.orphans[*prevHash]
+		orphan, exists := dag.orphans[*prevHash]
 		if !exists {
 			break
 		}
@@ -270,21 +270,21 @@ func (b *BlockDAG) GetOrphanRoot(hash *daghash.Hash) *daghash.Hash {
 
 // removeOrphanBlock removes the passed orphan block from the orphan pool and
 // previous orphan index.
-func (b *BlockDAG) removeOrphanBlock(orphan *orphanBlock) {
+func (dag *BlockDAG) removeOrphanBlock(orphan *orphanBlock) {
 	// Protect concurrent access.
-	b.orphanLock.Lock()
-	defer b.orphanLock.Unlock()
+	dag.orphanLock.Lock()
+	defer dag.orphanLock.Unlock()
 
 	// Remove the orphan block from the orphan pool.
 	orphanHash := orphan.block.Hash()
-	delete(b.orphans, *orphanHash)
+	delete(dag.orphans, *orphanHash)
 
 	// Remove the reference from the previous orphan index too.  An indexing
 	// for loop is intentionally used over a range here as range does not
 	// reevaluate the slice on each iteration nor does it adjust the index
 	// for the modified slice.
 	prevHash := orphan.block.MsgBlock().Header.SelectedPrevBlock()
-	orphans := b.prevOrphans[*prevHash]
+	orphans := dag.prevOrphans[*prevHash]
 	for i := 0; i < len(orphans); i++ {
 		hash := orphans[i].block.Hash()
 		if hash.IsEqual(orphanHash) {
@@ -294,12 +294,12 @@ func (b *BlockDAG) removeOrphanBlock(orphan *orphanBlock) {
 			i--
 		}
 	}
-	b.prevOrphans[*prevHash] = orphans
+	dag.prevOrphans[*prevHash] = orphans
 
 	// Remove the map entry altogether if there are no longer any orphans
 	// which depend on the parent hash.
-	if len(b.prevOrphans[*prevHash]) == 0 {
-		delete(b.prevOrphans, *prevHash)
+	if len(dag.prevOrphans[*prevHash]) == 0 {
+		delete(dag.prevOrphans, *prevHash)
 	}
 }
 
@@ -309,33 +309,33 @@ func (b *BlockDAG) removeOrphanBlock(orphan *orphanBlock) {
 // It also imposes a maximum limit on the number of outstanding orphan
 // blocks and will remove the oldest received orphan block if the limit is
 // exceeded.
-func (b *BlockDAG) addOrphanBlock(block *btcutil.Block) {
+func (dag *BlockDAG) addOrphanBlock(block *btcutil.Block) {
 	// Remove expired orphan blocks.
-	for _, oBlock := range b.orphans {
+	for _, oBlock := range dag.orphans {
 		if time.Now().After(oBlock.expiration) {
-			b.removeOrphanBlock(oBlock)
+			dag.removeOrphanBlock(oBlock)
 			continue
 		}
 
 		// Update the oldest orphan block pointer so it can be discarded
 		// in case the orphan pool fills up.
-		if b.oldestOrphan == nil || oBlock.expiration.Before(b.oldestOrphan.expiration) {
-			b.oldestOrphan = oBlock
+		if dag.oldestOrphan == nil || oBlock.expiration.Before(dag.oldestOrphan.expiration) {
+			dag.oldestOrphan = oBlock
 		}
 	}
 
 	// Limit orphan blocks to prevent memory exhaustion.
-	if len(b.orphans)+1 > maxOrphanBlocks {
+	if len(dag.orphans)+1 > maxOrphanBlocks {
 		// Remove the oldest orphan to make room for the new one.
-		b.removeOrphanBlock(b.oldestOrphan)
-		b.oldestOrphan = nil
+		dag.removeOrphanBlock(dag.oldestOrphan)
+		dag.oldestOrphan = nil
 	}
 
 	// Protect concurrent access.  This is intentionally done here instead
 	// of near the top since removeOrphanBlock does its own locking and
 	// the range iterator is not invalidated by removing map entries.
-	b.orphanLock.Lock()
-	defer b.orphanLock.Unlock()
+	dag.orphanLock.Lock()
+	defer dag.orphanLock.Unlock()
 
 	// Insert the block into the orphan map with an expiration time
 	// 1 hour from now.
@@ -344,11 +344,11 @@ func (b *BlockDAG) addOrphanBlock(block *btcutil.Block) {
 		block:      block,
 		expiration: expiration,
 	}
-	b.orphans[*block.Hash()] = oBlock
+	dag.orphans[*block.Hash()] = oBlock
 
 	// Add to previous hash lookup index for faster dependency lookups.
 	prevHash := block.MsgBlock().Header.SelectedPrevBlock()
-	b.prevOrphans[*prevHash] = append(b.prevOrphans[*prevHash], oBlock)
+	dag.prevOrphans[*prevHash] = append(dag.prevOrphans[*prevHash], oBlock)
 }
 
 // SequenceLock represents the converted relative lock-time in seconds, and
@@ -371,18 +371,18 @@ type SequenceLock struct {
 // the candidate transaction to be included in a block.
 //
 // This function is safe for concurrent access.
-func (b *BlockDAG) CalcSequenceLock(tx *btcutil.Tx, utxoView *UtxoViewpoint, mempool bool) (*SequenceLock, error) {
-	b.dagLock.Lock()
-	defer b.dagLock.Unlock()
+func (dag *BlockDAG) CalcSequenceLock(tx *btcutil.Tx, utxoView *UtxoViewpoint, mempool bool) (*SequenceLock, error) {
+	dag.dagLock.Lock()
+	defer dag.dagLock.Unlock()
 
-	return b.calcSequenceLock(b.virtual.SelectedTip(), tx, utxoView, mempool)
+	return dag.calcSequenceLock(dag.virtual.SelectedTip(), tx, utxoView, mempool)
 }
 
 // calcSequenceLock computes the relative lock-times for the passed
 // transaction. See the exported version, CalcSequenceLock for further details.
 //
 // This function MUST be called with the chain state lock held (for writes).
-func (b *BlockDAG) calcSequenceLock(node *blockNode, tx *btcutil.Tx, utxoView *UtxoViewpoint, mempool bool) (*SequenceLock, error) {
+func (dag *BlockDAG) calcSequenceLock(node *blockNode, tx *btcutil.Tx, utxoView *UtxoViewpoint, mempool bool) (*SequenceLock, error) {
 	// A value of -1 for each relative lock type represents a relative time
 	// lock value that will allow a transaction to be included in a block
 	// at any given height or time.
@@ -499,7 +499,7 @@ func LockTimeToSequence(isSeconds bool, locktime uint64) uint64 {
 // it would be inefficient to repeat it.
 //
 // This function MUST be called with the chain state lock held (for writes).
-func (b *BlockDAG) connectBlock(node *blockNode, block *btcutil.Block, view *UtxoViewpoint, stxos []spentTxOut) error {
+func (dag *BlockDAG) connectBlock(node *blockNode, block *btcutil.Block, view *UtxoViewpoint, stxos []spentTxOut) error {
 	// Sanity check the correct number of stxos are provided.
 	if len(stxos) != countSpentOutputs(block) {
 		return AssertError("connectBlock called with inconsistent " +
@@ -508,38 +508,38 @@ func (b *BlockDAG) connectBlock(node *blockNode, block *btcutil.Block, view *Utx
 
 	// No warnings about unknown rules or versions until the chain is
 	// current.
-	if b.isCurrent() {
+	if dag.isCurrent() {
 		// Warn if any unknown new rules are either about to activate or
 		// have already been activated.
-		if err := b.warnUnknownRuleActivations(node); err != nil {
+		if err := dag.warnUnknownRuleActivations(node); err != nil {
 			return err
 		}
 
 		// Warn if a high enough percentage of the last blocks have
 		// unexpected versions.
-		if err := b.warnUnknownVersions(node); err != nil {
+		if err := dag.warnUnknownVersions(node); err != nil {
 			return err
 		}
 	}
 
 	// Write any block status changes to DB before updating best state.
-	err := b.index.flushToDB()
+	err := dag.index.flushToDB()
 	if err != nil {
 		return err
 	}
 
 	// Generate a new state snapshot that will be used to update the
 	// database and later memory if all database updates are successful.
-	b.stateLock.RLock()
-	currentTotalTxs := b.dagState.TotalTxs
-	b.stateLock.RUnlock()
+	dag.stateLock.RLock()
+	currentTotalTxs := dag.dagState.TotalTxs
+	dag.stateLock.RUnlock()
 	numTxs := uint64(len(block.MsgBlock().Transactions))
 	blockSize := uint64(block.MsgBlock().SerializeSize())
 	state := newDAGState(view.tips.hashes(), node, blockSize, numTxs,
 		currentTotalTxs+numTxs, node.CalcPastMedianTime())
 
 	// Atomically insert info into the database.
-	err = b.db.Update(func(dbTx database.Tx) error {
+	err = dag.db.Update(func(dbTx database.Tx) error {
 		// Update best block state.
 		err := dbPutDAGState(dbTx, state)
 		if err != nil {
@@ -571,8 +571,8 @@ func (b *BlockDAG) connectBlock(node *blockNode, block *btcutil.Block, view *Utx
 		// Allow the index manager to call each of the currently active
 		// optional indexes with the block being connected so they can
 		// update themselves accordingly.
-		if b.indexManager != nil {
-			err := b.indexManager.ConnectBlock(dbTx, block, view)
+		if dag.indexManager != nil {
+			err := dag.indexManager.ConnectBlock(dbTx, block, view)
 			if err != nil {
 				return err
 			}
@@ -589,21 +589,21 @@ func (b *BlockDAG) connectBlock(node *blockNode, block *btcutil.Block, view *Utx
 	view.commit()
 
 	// This node is now at the end of the DAG.
-	b.virtual.AddTip(node)
+	dag.virtual.AddTip(node)
 
 	// Update the state for the best block.  Notice how this replaces the
 	// entire struct instead of updating the existing one.  This effectively
 	// allows the old version to act as a snapshot which callers can use
 	// freely without needing to hold a lock for the duration.  See the
 	// comments on the state variable for more details.
-	b.setDAGState(state)
+	dag.setDAGState(state)
 
 	// Notify the caller that the block was connected to the main chain.
 	// The caller would typically want to react with actions such as
 	// updating wallets.
-	b.dagLock.Unlock()
-	b.sendNotification(NTBlockConnected, block)
-	b.dagLock.Lock()
+	dag.dagLock.Unlock()
+	dag.sendNotification(NTBlockConnected, block)
+	dag.dagLock.Lock()
 
 	return nil
 }
@@ -625,9 +625,9 @@ func countSpentOutputs(block *btcutil.Block) int {
 //    This is useful when using checkpoints.
 //
 // This function MUST be called with the chain state lock held (for writes).
-func (b *BlockDAG) connectToDAG(node *blockNode, parentNodes blockSet, block *btcutil.Block, flags BehaviorFlags) error {
+func (dag *BlockDAG) connectToDAG(node *blockNode, parentNodes blockSet, block *btcutil.Block, flags BehaviorFlags) error {
 	// Skip checks if node has already been fully validated.
-	fastAdd := flags&BFFastAdd == BFFastAdd || b.index.NodeStatus(node).KnownValid()
+	fastAdd := flags&BFFastAdd == BFFastAdd || dag.index.NodeStatus(node).KnownValid()
 
 	// Perform several checks to verify the block can be connected
 	// to the DAG without violating any rules and without actually
@@ -636,11 +636,11 @@ func (b *BlockDAG) connectToDAG(node *blockNode, parentNodes blockSet, block *bt
 	view.SetTips(parentNodes)
 	stxos := make([]spentTxOut, 0, countSpentOutputs(block))
 	if !fastAdd {
-		err := b.checkConnectBlock(node, block, view, &stxos)
+		err := dag.checkConnectBlock(node, block, view, &stxos)
 		if err == nil {
-			b.index.SetStatusFlags(node, statusValid)
+			dag.index.SetStatusFlags(node, statusValid)
 		} else if _, ok := err.(RuleError); ok {
-			b.index.SetStatusFlags(node, statusValidateFailed)
+			dag.index.SetStatusFlags(node, statusValidateFailed)
 		} else {
 			return err
 		}
@@ -649,7 +649,7 @@ func (b *BlockDAG) connectToDAG(node *blockNode, parentNodes blockSet, block *bt
 		// it fails to write, it's not the end of the world. If the block is
 		// valid, we flush in connectBlock and if the block is invalid, the
 		// worst that can happen is we revalidate the block after a restart.
-		if writeErr := b.index.flushToDB(); writeErr != nil {
+		if writeErr := dag.index.flushToDB(); writeErr != nil {
 			log.Warnf("Error flushing block index changes to disk: %v",
 				writeErr)
 		}
@@ -664,7 +664,7 @@ func (b *BlockDAG) connectToDAG(node *blockNode, parentNodes blockSet, block *bt
 	// utxos, spend them, and add the new utxos being created by
 	// this block.
 	if fastAdd {
-		err := view.fetchInputUtxos(b.db, block)
+		err := view.fetchInputUtxos(dag.db, block)
 		if err != nil {
 			return err
 		}
@@ -675,7 +675,7 @@ func (b *BlockDAG) connectToDAG(node *blockNode, parentNodes blockSet, block *bt
 	}
 
 	// Connect the block to the DAG.
-	err := b.connectBlock(node, block, view, stxos)
+	err := dag.connectBlock(node, block, view, stxos)
 	if err != nil {
 		return err
 	}
@@ -690,11 +690,11 @@ func (b *BlockDAG) connectToDAG(node *blockNode, parentNodes blockSet, block *bt
 //  - Latest block has a timestamp newer than 24 hours ago
 //
 // This function MUST be called with the chain state lock held (for reads).
-func (b *BlockDAG) isCurrent() bool {
+func (dag *BlockDAG) isCurrent() bool {
 	// Not current if the latest main (best) chain height is before the
 	// latest known good checkpoint (when checkpoints are enabled).
-	checkpoint := b.LatestCheckpoint()
-	if checkpoint != nil && b.virtual.SelectedTip().height < checkpoint.Height {
+	checkpoint := dag.LatestCheckpoint()
+	if checkpoint != nil && dag.virtual.SelectedTip().height < checkpoint.Height {
 		return false
 	}
 
@@ -703,8 +703,8 @@ func (b *BlockDAG) isCurrent() bool {
 	//
 	// The chain appears to be current if none of the checks reported
 	// otherwise.
-	minus24Hours := b.timeSource.AdjustedTime().Add(-24 * time.Hour).Unix()
-	return b.virtual.SelectedTip().timestamp >= minus24Hours
+	minus24Hours := dag.timeSource.AdjustedTime().Add(-24 * time.Hour).Unix()
+	return dag.virtual.SelectedTip().timestamp >= minus24Hours
 }
 
 // IsCurrent returns whether or not the chain believes it is current.  Several
@@ -714,11 +714,11 @@ func (b *BlockDAG) isCurrent() bool {
 //  - Latest block has a timestamp newer than 24 hours ago
 //
 // This function is safe for concurrent access.
-func (b *BlockDAG) IsCurrent() bool {
-	b.dagLock.RLock()
-	defer b.dagLock.RUnlock()
+func (dag *BlockDAG) IsCurrent() bool {
+	dag.dagLock.RLock()
+	defer dag.dagLock.RUnlock()
 
-	return b.isCurrent()
+	return dag.isCurrent()
 }
 
 // GetDAGState returns information about the DAG and related state as of the
@@ -726,39 +726,39 @@ func (b *BlockDAG) IsCurrent() bool {
 // since it is shared by all callers.
 //
 // This function is safe for concurrent access.
-func (b *BlockDAG) GetDAGState() *DAGState {
-	b.stateLock.RLock()
+func (dag *BlockDAG) GetDAGState() *DAGState {
+	dag.stateLock.RLock()
 	defer func() {
-		b.stateLock.RUnlock()
+		dag.stateLock.RUnlock()
 	}()
 
-	return b.dagState
+	return dag.dagState
 }
 
 // setDAGState sets information about the DAG and related state as of the
 // current point in time.
 //
 // This function is safe for concurrent access.
-func (b *BlockDAG) setDAGState(dagState *DAGState) {
-	b.stateLock.Lock()
+func (dag *BlockDAG) setDAGState(dagState *DAGState) {
+	dag.stateLock.Lock()
 	defer func() {
-		b.stateLock.Unlock()
+		dag.stateLock.Unlock()
 	}()
 
-	b.dagState = dagState
+	dag.dagState = dagState
 }
 
 // FetchHeader returns the block header identified by the given hash or an error
 // if it doesn't exist.
-func (b *BlockDAG) FetchHeader(hash *daghash.Hash) (wire.BlockHeader, error) {
+func (dag *BlockDAG) FetchHeader(hash *daghash.Hash) (wire.BlockHeader, error) {
 	// Reconstruct the header from the block index if possible.
-	if node := b.index.LookupNode(hash); node != nil {
+	if node := dag.index.LookupNode(hash); node != nil {
 		return node.Header(), nil
 	}
 
 	// Fall back to loading it from the database.
 	var header *wire.BlockHeader
-	err := b.db.View(func(dbTx database.Tx) error {
+	err := dag.db.View(func(dbTx database.Tx) error {
 		var err error
 		header, err = dbFetchHeaderByHash(dbTx, hash)
 		return err
@@ -777,11 +777,11 @@ func (b *BlockDAG) FetchHeader(hash *daghash.Hash) (wire.BlockHeader, error) {
 // the passed hash is not currently known.
 //
 // This function is safe for concurrent access.
-func (b *BlockDAG) BlockLocatorFromHash(hash *daghash.Hash) BlockLocator {
-	b.dagLock.RLock()
-	node := b.index.LookupNode(hash)
-	locator := b.blockLocator(node)
-	b.dagLock.RUnlock()
+func (dag *BlockDAG) BlockLocatorFromHash(hash *daghash.Hash) BlockLocator {
+	dag.dagLock.RLock()
+	node := dag.index.LookupNode(hash)
+	locator := dag.blockLocator(node)
+	dag.dagLock.RUnlock()
 	return locator
 }
 
@@ -789,10 +789,10 @@ func (b *BlockDAG) BlockLocatorFromHash(hash *daghash.Hash) BlockLocator {
 // main (best) chain.
 //
 // This function is safe for concurrent access.
-func (b *BlockDAG) LatestBlockLocator() (BlockLocator, error) {
-	b.dagLock.RLock()
-	locator := b.blockLocator(nil)
-	b.dagLock.RUnlock()
+func (dag *BlockDAG) LatestBlockLocator() (BlockLocator, error) {
+	dag.dagLock.RLock()
+	locator := dag.blockLocator(nil)
+	dag.dagLock.RUnlock()
 	return locator, nil
 }
 
@@ -803,10 +803,10 @@ func (b *BlockDAG) LatestBlockLocator() (BlockLocator, error) {
 // See the BlockLocator type comments for more details.
 //
 // This function MUST be called with the chain state lock held (for reads).
-func (b *BlockDAG) blockLocator(node *blockNode) BlockLocator {
+func (dag *BlockDAG) blockLocator(node *blockNode) BlockLocator {
 	// Use the selected tip if requested.
 	if node == nil {
-		node = b.virtual.selectedParent
+		node = dag.virtual.selectedParent
 	}
 	if node == nil {
 		return nil
@@ -878,8 +878,8 @@ func fastLog2Floor(n uint32) uint8 {
 // DAG.
 //
 // This function is safe for concurrent access.
-func (b *BlockDAG) BlockHeightByHash(hash *daghash.Hash) (int32, error) {
-	node := b.index.LookupNode(hash)
+func (dag *BlockDAG) BlockHeightByHash(hash *daghash.Hash) (int32, error) {
+	node := dag.index.LookupNode(hash)
 	if node == nil {
 		str := fmt.Sprintf("block %s is not in the DAG", hash)
 		return 0, errNotInDAG(str)
@@ -892,8 +892,8 @@ func (b *BlockDAG) BlockHeightByHash(hash *daghash.Hash) (int32, error) {
 // DAG.
 //
 // This function is safe for concurrent access.
-func (b *BlockDAG) ChildHashesByHash(hash *daghash.Hash) ([]daghash.Hash, error) {
-	node := b.index.LookupNode(hash)
+func (dag *BlockDAG) ChildHashesByHash(hash *daghash.Hash) ([]daghash.Hash, error) {
+	node := dag.index.LookupNode(hash)
 	if node == nil {
 		str := fmt.Sprintf("block %s is not in the DAG", hash)
 		return nil, errNotInDAG(str)
@@ -909,14 +909,14 @@ func (b *BlockDAG) ChildHashesByHash(hash *daghash.Hash) ([]daghash.Hash, error)
 // end hash must belong to a block that is known to be valid.
 //
 // This function is safe for concurrent access.
-func (b *BlockDAG) HeightToHashRange(startHeight int32,
+func (dag *BlockDAG) HeightToHashRange(startHeight int32,
 	endHash *daghash.Hash, maxResults int) ([]daghash.Hash, error) {
 
-	endNode := b.index.LookupNode(endHash)
+	endNode := dag.index.LookupNode(endHash)
 	if endNode == nil {
 		return nil, fmt.Errorf("no known block header with hash %v", endHash)
 	}
-	if !b.index.NodeStatus(endNode).KnownValid() {
+	if !dag.index.NodeStatus(endNode).KnownValid() {
 		return nil, fmt.Errorf("block %v is not yet validated", endHash)
 	}
 	endHeight := endNode.height
@@ -949,14 +949,14 @@ func (b *BlockDAG) HeightToHashRange(startHeight int32,
 // endHash where the block height is a positive multiple of interval.
 //
 // This function is safe for concurrent access.
-func (b *BlockDAG) IntervalBlockHashes(endHash *daghash.Hash, interval int,
+func (dag *BlockDAG) IntervalBlockHashes(endHash *daghash.Hash, interval int,
 ) ([]daghash.Hash, error) {
 
-	endNode := b.index.LookupNode(endHash)
+	endNode := dag.index.LookupNode(endHash)
 	if endNode == nil {
 		return nil, fmt.Errorf("no known block header with hash %v", endHash)
 	}
-	if !b.index.NodeStatus(endNode).KnownValid() {
+	if !dag.index.NodeStatus(endNode).KnownValid() {
 		return nil, fmt.Errorf("block %v is not yet validated", endHash)
 	}
 	endHeight := endNode.height
@@ -964,8 +964,8 @@ func (b *BlockDAG) IntervalBlockHashes(endHash *daghash.Hash, interval int,
 	resultsLength := int(endHeight) / interval
 	hashes := make([]daghash.Hash, resultsLength)
 
-	b.virtual.mtx.Lock()
-	defer b.virtual.mtx.Unlock()
+	dag.virtual.mtx.Lock()
+	defer dag.virtual.mtx.Unlock()
 
 	blockNode := endNode
 	for index := int(endHeight) / interval; index > 0; index-- {
@@ -994,10 +994,10 @@ func (b *BlockDAG) IntervalBlockHashes(endHash *daghash.Hash, interval int,
 // functions.
 //
 // This function MUST be called with the chain state lock held (for reads).
-func (b *BlockDAG) locateInventory(locator BlockLocator, hashStop *daghash.Hash, maxEntries uint32) (*blockNode, uint32) {
+func (dag *BlockDAG) locateInventory(locator BlockLocator, hashStop *daghash.Hash, maxEntries uint32) (*blockNode, uint32) {
 	// There are no block locators so a specific block is being requested
 	// as identified by the stop hash.
-	stopNode := b.index.LookupNode(hashStop)
+	stopNode := dag.index.LookupNode(hashStop)
 	if len(locator) == 0 {
 		if stopNode == nil {
 			// No blocks with the stop hash were found so there is
@@ -1010,9 +1010,9 @@ func (b *BlockDAG) locateInventory(locator BlockLocator, hashStop *daghash.Hash,
 	// Find the most recent locator block hash in the main chain.  In the
 	// case none of the hashes in the locator are in the main chain, fall
 	// back to the genesis block.
-	startNode := b.genesis
+	startNode := dag.genesis
 	for _, hash := range locator {
-		node := b.index.LookupNode(hash)
+		node := dag.index.LookupNode(hash)
 		if node != nil {
 			startNode = node
 			break
@@ -1028,7 +1028,7 @@ func (b *BlockDAG) locateInventory(locator BlockLocator, hashStop *daghash.Hash,
 	}
 
 	// Calculate how many entries are needed.
-	total := uint32((b.virtual.SelectedTip().height - startNode.height) + 1)
+	total := uint32((dag.virtual.SelectedTip().height - startNode.height) + 1)
 	if stopNode != nil && stopNode.height >= startNode.height {
 		total = uint32((stopNode.height - startNode.height) + 1)
 	}
@@ -1046,11 +1046,11 @@ func (b *BlockDAG) locateInventory(locator BlockLocator, hashStop *daghash.Hash,
 // See the comment on the exported function for more details on special cases.
 //
 // This function MUST be called with the chain state lock held (for reads).
-func (b *BlockDAG) locateBlocks(locator BlockLocator, hashStop *daghash.Hash, maxHashes uint32) []daghash.Hash {
+func (dag *BlockDAG) locateBlocks(locator BlockLocator, hashStop *daghash.Hash, maxHashes uint32) []daghash.Hash {
 	// Find the node after the first known block in the locator and the
 	// total number of nodes after it needed while respecting the stop hash
 	// and max entries.
-	node, total := b.locateInventory(locator, hashStop, maxHashes)
+	node, total := dag.locateInventory(locator, hashStop, maxHashes)
 	if total == 0 {
 		return nil
 	}
@@ -1077,10 +1077,10 @@ func (b *BlockDAG) locateBlocks(locator BlockLocator, hashStop *daghash.Hash, ma
 //   after the genesis block will be returned
 //
 // This function is safe for concurrent access.
-func (b *BlockDAG) LocateBlocks(locator BlockLocator, hashStop *daghash.Hash, maxHashes uint32) []daghash.Hash {
-	b.dagLock.RLock()
-	hashes := b.locateBlocks(locator, hashStop, maxHashes)
-	b.dagLock.RUnlock()
+func (dag *BlockDAG) LocateBlocks(locator BlockLocator, hashStop *daghash.Hash, maxHashes uint32) []daghash.Hash {
+	dag.dagLock.RLock()
+	hashes := dag.locateBlocks(locator, hashStop, maxHashes)
+	dag.dagLock.RUnlock()
 	return hashes
 }
 
@@ -1091,11 +1091,11 @@ func (b *BlockDAG) LocateBlocks(locator BlockLocator, hashStop *daghash.Hash, ma
 // See the comment on the exported function for more details on special cases.
 //
 // This function MUST be called with the chain state lock held (for reads).
-func (b *BlockDAG) locateHeaders(locator BlockLocator, hashStop *daghash.Hash, maxHeaders uint32) []wire.BlockHeader {
+func (dag *BlockDAG) locateHeaders(locator BlockLocator, hashStop *daghash.Hash, maxHeaders uint32) []wire.BlockHeader {
 	// Find the node after the first known block in the locator and the
 	// total number of nodes after it needed while respecting the stop hash
 	// and max entries.
-	node, total := b.locateInventory(locator, hashStop, maxHeaders)
+	node, total := dag.locateInventory(locator, hashStop, maxHeaders)
 	if total == 0 {
 		return nil
 	}
@@ -1122,10 +1122,10 @@ func (b *BlockDAG) locateHeaders(locator BlockLocator, hashStop *daghash.Hash, m
 //   after the genesis block will be returned
 //
 // This function is safe for concurrent access.
-func (b *BlockDAG) LocateHeaders(locator BlockLocator, hashStop *daghash.Hash) []wire.BlockHeader {
-	b.dagLock.RLock()
-	headers := b.locateHeaders(locator, hashStop, wire.MaxBlockHeadersPerMsg)
-	b.dagLock.RUnlock()
+func (dag *BlockDAG) LocateHeaders(locator BlockLocator, hashStop *daghash.Hash) []wire.BlockHeader {
+	dag.dagLock.RLock()
+	headers := dag.locateHeaders(locator, hashStop, wire.MaxBlockHeadersPerMsg)
+	dag.dagLock.RUnlock()
 	return headers
 }
 

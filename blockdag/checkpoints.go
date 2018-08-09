@@ -32,15 +32,15 @@ func newHashFromStr(hexStr string) *daghash.Hash {
 // nil.
 //
 // This function is safe for concurrent access.
-func (b *BlockDAG) Checkpoints() []dagconfig.Checkpoint {
-	return b.checkpoints
+func (dag *BlockDAG) Checkpoints() []dagconfig.Checkpoint {
+	return dag.checkpoints
 }
 
 // HasCheckpoints returns whether this BlockDAG has checkpoints defined.
 //
 // This function is safe for concurrent access.
-func (b *BlockDAG) HasCheckpoints() bool {
-	return len(b.checkpoints) > 0
+func (dag *BlockDAG) HasCheckpoints() bool {
+	return len(dag.checkpoints) > 0
 }
 
 // LatestCheckpoint returns the most recent checkpoint (regardless of whether it
@@ -48,23 +48,23 @@ func (b *BlockDAG) HasCheckpoints() bool {
 // instance, it will return nil.
 //
 // This function is safe for concurrent access.
-func (b *BlockDAG) LatestCheckpoint() *dagconfig.Checkpoint {
-	if !b.HasCheckpoints() {
+func (dag *BlockDAG) LatestCheckpoint() *dagconfig.Checkpoint {
+	if !dag.HasCheckpoints() {
 		return nil
 	}
-	return &b.checkpoints[len(b.checkpoints)-1]
+	return &dag.checkpoints[len(dag.checkpoints)-1]
 }
 
 // verifyCheckpoint returns whether the passed block height and hash combination
 // match the checkpoint data.  It also returns true if there is no checkpoint
 // data for the passed block height.
-func (b *BlockDAG) verifyCheckpoint(height int32, hash *daghash.Hash) bool {
-	if !b.HasCheckpoints() {
+func (dag *BlockDAG) verifyCheckpoint(height int32, hash *daghash.Hash) bool {
+	if !dag.HasCheckpoints() {
 		return true
 	}
 
 	// Nothing to check if there is no checkpoint data for the block height.
-	checkpoint, exists := b.checkpointsByHeight[height]
+	checkpoint, exists := dag.checkpointsByHeight[height]
 	if !exists {
 		return true
 	}
@@ -84,54 +84,54 @@ func (b *BlockDAG) verifyCheckpoint(height int32, hash *daghash.Hash) bool {
 // should really only happen for blocks before the first checkpoint).
 //
 // This function MUST be called with the chain lock held (for reads).
-func (b *BlockDAG) findPreviousCheckpoint() (*blockNode, error) {
-	if !b.HasCheckpoints() {
+func (dag *BlockDAG) findPreviousCheckpoint() (*blockNode, error) {
+	if !dag.HasCheckpoints() {
 		return nil, nil
 	}
 
 	// Perform the initial search to find and cache the latest known
 	// checkpoint if the best chain is not known yet or we haven't already
 	// previously searched.
-	checkpoints := b.checkpoints
+	checkpoints := dag.checkpoints
 	numCheckpoints := len(checkpoints)
-	if b.checkpointNode == nil && b.nextCheckpoint == nil {
+	if dag.checkpointNode == nil && dag.nextCheckpoint == nil {
 		// Loop backwards through the available checkpoints to find one
 		// that is already available.
 		for i := numCheckpoints - 1; i >= 0; i-- {
-			node := b.index.LookupNode(checkpoints[i].Hash)
+			node := dag.index.LookupNode(checkpoints[i].Hash)
 			if node == nil {
 				continue
 			}
 
 			// Checkpoint found.  Cache it for future lookups and
 			// set the next expected checkpoint accordingly.
-			b.checkpointNode = node
+			dag.checkpointNode = node
 			if i < numCheckpoints-1 {
-				b.nextCheckpoint = &checkpoints[i+1]
+				dag.nextCheckpoint = &checkpoints[i+1]
 			}
-			return b.checkpointNode, nil
+			return dag.checkpointNode, nil
 		}
 
 		// No known latest checkpoint.  This will only happen on blocks
 		// before the first known checkpoint.  So, set the next expected
 		// checkpoint to the first checkpoint and return the fact there
 		// is no latest known checkpoint block.
-		b.nextCheckpoint = &checkpoints[0]
+		dag.nextCheckpoint = &checkpoints[0]
 		return nil, nil
 	}
 
 	// At this point we've already searched for the latest known checkpoint,
 	// so when there is no next checkpoint, the current checkpoint lockin
 	// will always be the latest known checkpoint.
-	if b.nextCheckpoint == nil {
-		return b.checkpointNode, nil
+	if dag.nextCheckpoint == nil {
+		return dag.checkpointNode, nil
 	}
 
 	// When there is a next checkpoint and the height of the current best
 	// chain does not exceed it, the current checkpoint lockin is still
 	// the latest known checkpoint.
-	if b.virtual.SelectedTip().height < b.nextCheckpoint.Height {
-		return b.checkpointNode, nil
+	if dag.virtual.SelectedTip().height < dag.nextCheckpoint.Height {
+		return dag.checkpointNode, nil
 	}
 
 	// We've reached or exceeded the next checkpoint height.  Note that
@@ -143,28 +143,28 @@ func (b *BlockDAG) findPreviousCheckpoint() (*blockNode, error) {
 	// this lookup fails something is very wrong since the chain has already
 	// passed the checkpoint which was verified as accurate before inserting
 	// it.
-	checkpointNode := b.index.LookupNode(b.nextCheckpoint.Hash)
+	checkpointNode := dag.index.LookupNode(dag.nextCheckpoint.Hash)
 	if checkpointNode == nil {
 		return nil, AssertError(fmt.Sprintf("findPreviousCheckpoint "+
 			"failed lookup of known good block node %s",
-			b.nextCheckpoint.Hash))
+			dag.nextCheckpoint.Hash))
 	}
-	b.checkpointNode = checkpointNode
+	dag.checkpointNode = checkpointNode
 
 	// Set the next expected checkpoint.
 	checkpointIndex := -1
 	for i := numCheckpoints - 1; i >= 0; i-- {
-		if checkpoints[i].Hash.IsEqual(b.nextCheckpoint.Hash) {
+		if checkpoints[i].Hash.IsEqual(dag.nextCheckpoint.Hash) {
 			checkpointIndex = i
 			break
 		}
 	}
-	b.nextCheckpoint = nil
+	dag.nextCheckpoint = nil
 	if checkpointIndex != -1 && checkpointIndex < numCheckpoints-1 {
-		b.nextCheckpoint = &checkpoints[checkpointIndex+1]
+		dag.nextCheckpoint = &checkpoints[checkpointIndex+1]
 	}
 
-	return b.checkpointNode, nil
+	return dag.checkpointNode, nil
 }
 
 // isNonstandardTransaction determines whether a transaction contains any
@@ -197,12 +197,12 @@ func isNonstandardTransaction(tx *btcutil.Tx) bool {
 // decision and then manually added to the list of checkpoints for a network.
 //
 // This function is safe for concurrent access.
-func (b *BlockDAG) IsCheckpointCandidate(block *btcutil.Block) (bool, error) {
-	b.dagLock.RLock()
-	defer b.dagLock.RUnlock()
+func (dag *BlockDAG) IsCheckpointCandidate(block *btcutil.Block) (bool, error) {
+	dag.dagLock.RLock()
+	defer dag.dagLock.RUnlock()
 
 	// A checkpoint must be in the main chain.
-	node := b.index.LookupNode(block.Hash())
+	node := dag.index.LookupNode(block.Hash())
 	if node == nil {
 		return false, nil
 	}
@@ -218,7 +218,7 @@ func (b *BlockDAG) IsCheckpointCandidate(block *btcutil.Block) (bool, error) {
 
 	// A checkpoint must be at least CheckpointConfirmations blocks
 	// before the end of the main chain.
-	mainChainHeight := b.virtual.SelectedTip().height
+	mainChainHeight := dag.virtual.SelectedTip().height
 	if node.height > (mainChainHeight - CheckpointConfirmations) {
 		return false, nil
 	}

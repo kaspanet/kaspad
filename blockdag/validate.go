@@ -649,13 +649,13 @@ func checkSerializedHeight(coinbaseTx *btcutil.Tx, wantHeight int32) error {
 //    the checkpoints are not performed.
 //
 // This function MUST be called with the chain state lock held (for writes).
-func (b *BlockDAG) checkBlockHeaderContext(header *wire.BlockHeader, selectedParent *blockNode, flags BehaviorFlags) error {
+func (dag *BlockDAG) checkBlockHeaderContext(header *wire.BlockHeader, selectedParent *blockNode, flags BehaviorFlags) error {
 	fastAdd := flags&BFFastAdd == BFFastAdd
 	if !fastAdd {
 		// Ensure the difficulty specified in the block header matches
 		// the calculated difficulty based on the previous block and
 		// difficulty retarget rules.
-		expectedDifficulty, err := b.calcNextRequiredDifficulty(selectedParent,
+		expectedDifficulty, err := dag.calcNextRequiredDifficulty(selectedParent,
 			header.Timestamp)
 		if err != nil {
 			return err
@@ -683,7 +683,7 @@ func (b *BlockDAG) checkBlockHeaderContext(header *wire.BlockHeader, selectedPar
 
 	// Ensure chain matches up to predetermined checkpoints.
 	blockHash := header.BlockHash()
-	if !b.verifyCheckpoint(blockHeight, &blockHash) {
+	if !dag.verifyCheckpoint(blockHeight, &blockHash) {
 		str := fmt.Sprintf("block at height %d does not match "+
 			"checkpoint hash", blockHeight)
 		return ruleError(ErrBadCheckpoint, str)
@@ -693,7 +693,7 @@ func (b *BlockDAG) checkBlockHeaderContext(header *wire.BlockHeader, selectedPar
 	// chain before it.  This prevents storage of new, otherwise valid,
 	// blocks which build off of old blocks that are likely at a much easier
 	// difficulty and therefore could be used to waste cache and disk space.
-	checkpointNode, err := b.findPreviousCheckpoint()
+	checkpointNode, err := dag.findPreviousCheckpoint()
 	if err != nil {
 		return err
 	}
@@ -707,7 +707,7 @@ func (b *BlockDAG) checkBlockHeaderContext(header *wire.BlockHeader, selectedPar
 	// Reject outdated block versions once a majority of the network
 	// has upgraded.  These were originally voted on by BIP0034,
 	// BIP0065, and BIP0066.
-	params := b.dagParams
+	params := dag.dagParams
 	if header.Version < 2 && blockHeight >= params.BIP0034Height ||
 		header.Version < 3 && blockHeight >= params.BIP0066Height {
 
@@ -730,10 +730,10 @@ func (b *BlockDAG) checkBlockHeaderContext(header *wire.BlockHeader, selectedPar
 // for how the flags modify its behavior.
 //
 // This function MUST be called with the chain state lock held (for writes).
-func (b *BlockDAG) checkBlockContext(block *btcutil.Block, selectedParent *blockNode, flags BehaviorFlags) error {
+func (dag *BlockDAG) checkBlockContext(block *btcutil.Block, selectedParent *blockNode, flags BehaviorFlags) error {
 	// Perform all block header related validation checks.
 	header := &block.MsgBlock().Header
-	err := b.checkBlockHeaderContext(header, selectedParent, flags)
+	err := dag.checkBlockHeaderContext(header, selectedParent, flags)
 	if err != nil {
 		return err
 	}
@@ -762,7 +762,7 @@ func (b *BlockDAG) checkBlockContext(block *btcutil.Block, selectedParent *block
 		// once a majority of the network has upgraded.  This is part of
 		// BIP0034.
 		if ShouldHaveSerializedBlockHeight(header) &&
-			blockHeight >= b.dagParams.BIP0034Height {
+			blockHeight >= dag.dagParams.BIP0034Height {
 
 			coinbaseTx := block.Transactions()[0]
 			err := checkSerializedHeight(coinbaseTx, blockHeight)
@@ -786,7 +786,7 @@ func (b *BlockDAG) checkBlockContext(block *btcutil.Block, selectedParent *block
 // http://r6.ca/blog/20120206T005236Z.html.
 //
 // This function MUST be called with the chain state lock held (for reads).
-func (b *BlockDAG) checkBIP0030(node *blockNode, block *btcutil.Block, view *UtxoViewpoint) error {
+func (dag *BlockDAG) checkBIP0030(node *blockNode, block *btcutil.Block, view *UtxoViewpoint) error {
 	// Fetch utxos for all of the transaction ouputs in this block.
 	// Typically, there will not be any utxos for any of the outputs.
 	fetchSet := make(map[wire.OutPoint]struct{})
@@ -797,7 +797,7 @@ func (b *BlockDAG) checkBIP0030(node *blockNode, block *btcutil.Block, view *Utx
 			fetchSet[prevOut] = struct{}{}
 		}
 	}
-	err := view.fetchUtxos(b.db, fetchSet)
+	err := view.fetchUtxos(dag.db, fetchSet)
 	if err != nil {
 		return err
 	}
@@ -943,7 +943,7 @@ func CheckTransactionInputs(tx *btcutil.Tx, txHeight int32, utxoView *UtxoViewpo
 // with that node.
 //
 // This function MUST be called with the chain state lock held (for writes).
-func (b *BlockDAG) checkConnectBlock(node *blockNode, block *btcutil.Block, view *UtxoViewpoint, stxos *[]spentTxOut) error {
+func (dag *BlockDAG) checkConnectBlock(node *blockNode, block *btcutil.Block, view *UtxoViewpoint, stxos *[]spentTxOut) error {
 	// If the side chain blocks end up in the database, a call to
 	// CheckBlockSanity should be done here in case a previous version
 	// allowed a block that is no longer valid.  However, since the
@@ -952,7 +952,7 @@ func (b *BlockDAG) checkConnectBlock(node *blockNode, block *btcutil.Block, view
 
 	// The coinbase for the Genesis block is not spendable, so just return
 	// an error now.
-	if node.hash.IsEqual(b.dagParams.GenesisHash) {
+	if node.hash.IsEqual(dag.dagParams.GenesisHash) {
 		str := "the coinbase for the genesis block is not spendable"
 		return ruleError(ErrMissingTxOut, str)
 	}
@@ -981,8 +981,8 @@ func (b *BlockDAG) checkConnectBlock(node *blockNode, block *btcutil.Block, view
 	// BIP0034 is not yet active.  This is a useful optimization because the
 	// BIP0030 check is expensive since it involves a ton of cache misses in
 	// the utxoset.
-	if !isBIP0030Node(node) && (node.height < b.dagParams.BIP0034Height) {
-		err := b.checkBIP0030(node, block, view)
+	if !isBIP0030Node(node) && (node.height < dag.dagParams.BIP0034Height) {
+		err := dag.checkBIP0030(node, block, view)
 		if err != nil {
 			return err
 		}
@@ -993,7 +993,7 @@ func (b *BlockDAG) checkConnectBlock(node *blockNode, block *btcutil.Block, view
 	//
 	// These utxo entries are needed for verification of things such as
 	// transaction inputs, counting pay-to-script-hashes, and scripts.
-	err := view.fetchInputUtxos(b.db, block)
+	err := view.fetchInputUtxos(dag.db, block)
 	if err != nil {
 		return err
 	}
@@ -1050,7 +1050,7 @@ func (b *BlockDAG) checkConnectBlock(node *blockNode, block *btcutil.Block, view
 	var totalFees int64
 	for _, tx := range transactions {
 		txFee, err := CheckTransactionInputs(tx, node.height, view,
-			b.dagParams)
+			dag.dagParams)
 		if err != nil {
 			return err
 		}
@@ -1087,7 +1087,7 @@ func (b *BlockDAG) checkConnectBlock(node *blockNode, block *btcutil.Block, view
 	for _, txOut := range transactions[0].MsgTx().TxOut {
 		totalSatoshiOut += txOut.Value
 	}
-	expectedSatoshiOut := CalcBlockSubsidy(node.height, b.dagParams) +
+	expectedSatoshiOut := CalcBlockSubsidy(node.height, dag.dagParams) +
 		totalFees
 	if totalSatoshiOut > expectedSatoshiOut {
 		str := fmt.Sprintf("coinbase transaction for block pays %v "+
@@ -1102,7 +1102,7 @@ func (b *BlockDAG) checkConnectBlock(node *blockNode, block *btcutil.Block, view
 	// will therefore be detected by the next checkpoint).  This is a huge
 	// optimization because running the scripts is the most time consuming
 	// portion of block handling.
-	checkpoint := b.LatestCheckpoint()
+	checkpoint := dag.LatestCheckpoint()
 	runScripts := true
 	if checkpoint != nil && node.height <= checkpoint.Height {
 		runScripts = false
@@ -1118,7 +1118,7 @@ func (b *BlockDAG) checkConnectBlock(node *blockNode, block *btcutil.Block, view
 	// Enforce DER signatures for block versions 3+ once the historical
 	// activation threshold has been reached.  This is part of BIP0066.
 	blockHeader := &block.MsgBlock().Header
-	if blockHeader.Version >= 3 && node.height >= b.dagParams.BIP0066Height {
+	if blockHeader.Version >= 3 && node.height >= dag.dagParams.BIP0066Height {
 		scriptFlags |= txscript.ScriptVerifyDERSignatures
 	}
 
@@ -1133,7 +1133,7 @@ func (b *BlockDAG) checkConnectBlock(node *blockNode, block *btcutil.Block, view
 		// A transaction can only be included within a block
 		// once the sequence locks of *all* its inputs are
 		// active.
-		sequenceLock, err := b.calcSequenceLock(node, tx, view,
+		sequenceLock, err := dag.calcSequenceLock(node, tx, view,
 			false)
 		if err != nil {
 			return err
@@ -1152,7 +1152,7 @@ func (b *BlockDAG) checkConnectBlock(node *blockNode, block *btcutil.Block, view
 	// expensive ECDSA signature check scripts.  Doing this last helps
 	// prevent CPU exhaustion attacks.
 	if runScripts {
-		err := checkBlockScripts(block, view, scriptFlags, b.sigCache)
+		err := checkBlockScripts(block, view, scriptFlags, dag.sigCache)
 		if err != nil {
 			return err
 		}
@@ -1170,16 +1170,16 @@ func (b *BlockDAG) checkConnectBlock(node *blockNode, block *btcutil.Block, view
 // work requirement. The block must connect to the current tip of the main chain.
 //
 // This function is safe for concurrent access.
-func (b *BlockDAG) CheckConnectBlockTemplate(block *btcutil.Block) error {
-	b.dagLock.Lock()
-	defer b.dagLock.Unlock()
+func (dag *BlockDAG) CheckConnectBlockTemplate(block *btcutil.Block) error {
+	dag.dagLock.Lock()
+	defer dag.dagLock.Unlock()
 
 	// Skip the proof of work check as this is just a block template.
 	flags := BFNoPoWCheck
 
 	// This only checks whether the block can be connected to the tip of the
 	// current chain.
-	tips := b.virtual.Tips()
+	tips := dag.virtual.Tips()
 	header := block.MsgBlock().Header
 	prevHashes := header.PrevBlocks
 	if !tips.hashesEqual(prevHashes) {
@@ -1188,12 +1188,12 @@ func (b *BlockDAG) CheckConnectBlockTemplate(block *btcutil.Block) error {
 		return ruleError(ErrPrevBlockNotBest, str)
 	}
 
-	err := checkBlockSanity(block, b.dagParams.PowLimit, b.timeSource, flags)
+	err := checkBlockSanity(block, dag.dagParams.PowLimit, dag.timeSource, flags)
 	if err != nil {
 		return err
 	}
 
-	err = b.checkBlockContext(block, b.virtual.SelectedTip(), flags)
+	err = dag.checkBlockContext(block, dag.virtual.SelectedTip(), flags)
 	if err != nil {
 		return err
 	}
@@ -1202,6 +1202,6 @@ func (b *BlockDAG) CheckConnectBlockTemplate(block *btcutil.Block) error {
 	// is not needed and thus extra work can be avoided.
 	view := NewUtxoViewpoint()
 	view.SetTips(tips)
-	newNode := newBlockNode(&header, b.virtual.Tips(), b.dagParams.K)
-	return b.checkConnectBlock(newNode, block, view, nil)
+	newNode := newBlockNode(&header, dag.virtual.Tips(), dag.dagParams.K)
+	return dag.checkConnectBlock(newNode, block, view, nil)
 }
