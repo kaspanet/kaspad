@@ -807,14 +807,13 @@ func (b *BlockDAG) LatestBlockLocator() (BlockLocator, error) {
 
 // blockLocator returns a block locator for the passed block node.  The passed
 // node can be nil in which case the block locator for the current tip
-// associated with the view will be returned.  This only differs from the
-// exported version in that it is up to the caller to ensure the lock is held.
+// associated with the view will be returned.
 //
-// See the exported BlockLocator function comments for more details.
+// See the BlockLocator type comments for more details.
 //
 // This function MUST be called with the chain state lock held (for reads).
 func (b *BlockDAG) blockLocator(node *blockNode) BlockLocator {
-	// Use the current tip if requested.
+	// Use the selected tip if requested.
 	if node == nil {
 		node = b.virtual.selectedParent
 	}
