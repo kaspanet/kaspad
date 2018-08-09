@@ -839,7 +839,7 @@ func (b *BlockDAG) createDAGState() error {
 	genesisBlock := btcutil.NewBlock(b.dagParams.GenesisBlock)
 	genesisBlock.SetHeight(0)
 	header := &genesisBlock.MsgBlock().Header
-	node := newBlockNode(header, nil, b.dagParams.K)
+	node := newBlockNode(header, newSet(), b.dagParams.K)
 	node.status = statusDataStored | statusValid
 	b.virtual.SetTips(setFromSlice(node))
 
