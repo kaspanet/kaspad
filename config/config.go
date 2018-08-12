@@ -64,13 +64,13 @@ const (
 )
 
 var (
-	defaultHomeDir     = btcutil.AppDataDir("btcd", false)
-	defaultConfigFile  = filepath.Join(defaultHomeDir, defaultConfigFilename)
-	defaultDataDir     = filepath.Join(defaultHomeDir, defaultDataDirname)
+	DefaultHomeDir     = btcutil.AppDataDir("btcd", false)
+	defaultConfigFile  = filepath.Join(DefaultHomeDir, defaultConfigFilename)
+	defaultDataDir     = filepath.Join(DefaultHomeDir, defaultDataDirname)
 	knownDbTypes       = database.SupportedDrivers()
-	defaultRPCKeyFile  = filepath.Join(defaultHomeDir, "rpc.key")
-	defaultRPCCertFile = filepath.Join(defaultHomeDir, "rpc.cert")
-	defaultLogDir      = filepath.Join(defaultHomeDir, defaultLogDirname)
+	defaultRPCKeyFile  = filepath.Join(DefaultHomeDir, "rpc.key")
+	defaultRPCCertFile = filepath.Join(DefaultHomeDir, "rpc.cert")
+	defaultLogDir      = filepath.Join(DefaultHomeDir, defaultLogDirname)
 )
 
 // activeNetParams is a pointer to the parameters specific to the
@@ -79,9 +79,9 @@ var activeNetParams = &dagconfig.MainNetParams
 
 var mainCfg *Config
 
-// runServiceCommand is only set to a real function on Windows.  It is used
+// RunServiceCommand is only set to a real function on Windows.  It is used
 // to parse and execute service commands specified via the -s flag.
-var runServiceCommand func(string) error
+var RunServiceCommand func(string) error
 
 // minUint32 is a helper function to return the minimum of two uint32s.
 // This avoids a math import and the need to cast to floats.
@@ -190,7 +190,7 @@ type serviceOptions struct {
 func cleanAndExpandPath(path string) string {
 	// Expand initial ~ to OS specific home directory.
 	if strings.HasPrefix(path, "~") {
-		homeDir := filepath.Dir(defaultHomeDir)
+		homeDir := filepath.Dir(DefaultHomeDir)
 		path = strings.Replace(path, "~", homeDir, 1)
 	}
 
@@ -350,9 +350,9 @@ func loadConfig() (*Config, []string, error) {
 
 	// Perform service command and exit if specified.  Invalid service
 	// commands show an appropriate error.  Only runs on Windows since
-	// the runServiceCommand function will be nil when not on Windows.
-	if serviceOpts.ServiceCommand != "" && runServiceCommand != nil {
-		err := runServiceCommand(serviceOpts.ServiceCommand)
+	// the RunServiceCommand function will be nil when not on Windows.
+	if serviceOpts.ServiceCommand != "" && RunServiceCommand != nil {
+		err := RunServiceCommand(serviceOpts.ServiceCommand)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
 		}
@@ -404,7 +404,7 @@ func loadConfig() (*Config, []string, error) {
 
 	// Create the home directory if it doesn't already exist.
 	funcName := "loadConfig"
-	err = os.MkdirAll(defaultHomeDir, 0700)
+	err = os.MkdirAll(DefaultHomeDir, 0700)
 	if err != nil {
 		// Show a nicer error message if it's because a symlink is
 		// linked to a directory that does not exist (probably because
