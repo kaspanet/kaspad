@@ -126,7 +126,7 @@ func newThresholdCaches(numCaches uint32) []thresholdStateCache {
 // threshold states for previous windows are only calculated once.
 //
 // This function MUST be called with the chain state lock held (for writes).
-func (b *BlockDAG) thresholdState(prevNode *blockNode, checker thresholdConditionChecker, cache *thresholdStateCache) (ThresholdState, error) {
+func (dag *BlockDAG) thresholdState(prevNode *blockNode, checker thresholdConditionChecker, cache *thresholdStateCache) (ThresholdState, error) {
 	// The threshold state for the window that contains the genesis block is
 	// defined by definition.
 	confirmationWindow := int32(checker.MinerConfirmationWindow())
@@ -263,10 +263,10 @@ func (b *BlockDAG) thresholdState(prevNode *blockNode, checker thresholdConditio
 // deployment ID for the block AFTER the end of the current best chain.
 //
 // This function is safe for concurrent access.
-func (b *BlockDAG) ThresholdState(deploymentID uint32) (ThresholdState, error) {
-	b.dagLock.Lock()
-	state, err := b.deploymentState(b.dag.SelectedTip(), deploymentID)
-	b.dagLock.Unlock()
+func (dag *BlockDAG) ThresholdState(deploymentID uint32) (ThresholdState, error) {
+	dag.dagLock.Lock()
+	state, err := dag.deploymentState(dag.virtual.SelectedTip(), deploymentID)
+	dag.dagLock.Unlock()
 
 	return state, err
 }
@@ -275,10 +275,10 @@ func (b *BlockDAG) ThresholdState(deploymentID uint32) (ThresholdState, error) {
 // false otherwise.
 //
 // This function is safe for concurrent access.
-func (b *BlockDAG) IsDeploymentActive(deploymentID uint32) (bool, error) {
-	b.dagLock.Lock()
-	state, err := b.deploymentState(b.dag.SelectedTip(), deploymentID)
-	b.dagLock.Unlock()
+func (dag *BlockDAG) IsDeploymentActive(deploymentID uint32) (bool, error) {
+	dag.dagLock.Lock()
+	state, err := dag.deploymentState(dag.virtual.SelectedTip(), deploymentID)
+	dag.dagLock.Unlock()
 	if err != nil {
 		return false, err
 	}
@@ -296,40 +296,40 @@ func (b *BlockDAG) IsDeploymentActive(deploymentID uint32) (bool, error) {
 // AFTER the passed node.
 //
 // This function MUST be called with the chain state lock held (for writes).
-func (b *BlockDAG) deploymentState(prevNode *blockNode, deploymentID uint32) (ThresholdState, error) {
-	if deploymentID > uint32(len(b.dagParams.Deployments)) {
+func (dag *BlockDAG) deploymentState(prevNode *blockNode, deploymentID uint32) (ThresholdState, error) {
+	if deploymentID > uint32(len(dag.dagParams.Deployments)) {
 		return ThresholdFailed, DeploymentError(deploymentID)
 	}
 
-	deployment := &b.dagParams.Deployments[deploymentID]
-	checker := deploymentChecker{deployment: deployment, chain: b}
-	cache := &b.deploymentCaches[deploymentID]
+	deployment := &dag.dagParams.Deployments[deploymentID]
+	checker := deploymentChecker{deployment: deployment, chain: dag}
+	cache := &dag.deploymentCaches[deploymentID]
 
-	return b.thresholdState(prevNode, checker, cache)
+	return dag.thresholdState(prevNode, checker, cache)
 }
 
 // initThresholdCaches initializes the threshold state caches for each warning
 // bit and defined deployment and provides warnings if the chain is current per
 // the warnUnknownVersions and warnUnknownRuleActivations functions.
-func (b *BlockDAG) initThresholdCaches() error {
+func (dag *BlockDAG) initThresholdCaches() error {
 	// Initialize the warning and deployment caches by calculating the
 	// threshold state for each of them.  This will ensure the caches are
 	// populated and any states that needed to be recalculated due to
 	// definition changes is done now.
-	prevNode := b.dag.SelectedTip().selectedParent
+	prevNode := dag.virtual.SelectedTip().selectedParent
 	for bit := uint32(0); bit < vbNumBits; bit++ {
-		checker := bitConditionChecker{bit: bit, chain: b}
-		cache := &b.warningCaches[bit]
-		_, err := b.thresholdState(prevNode, checker, cache)
+		checker := bitConditionChecker{bit: bit, chain: dag}
+		cache := &dag.warningCaches[bit]
+		_, err := dag.thresholdState(prevNode, checker, cache)
 		if err != nil {
 			return err
 		}
 	}
-	for id := 0; id < len(b.dagParams.Deployments); id++ {
-		deployment := &b.dagParams.Deployments[id]
-		cache := &b.deploymentCaches[id]
-		checker := deploymentChecker{deployment: deployment, chain: b}
-		_, err := b.thresholdState(prevNode, checker, cache)
+	for id := 0; id < len(dag.dagParams.Deployments); id++ {
+		deployment := &dag.dagParams.Deployments[id]
+		cache := &dag.deploymentCaches[id]
+		checker := deploymentChecker{deployment: deployment, chain: dag}
+		_, err := dag.thresholdState(prevNode, checker, cache)
 		if err != nil {
 			return err
 		}
@@ -337,17 +337,17 @@ func (b *BlockDAG) initThresholdCaches() error {
 
 	// No warnings about unknown rules or versions until the chain is
 	// current.
-	if b.isCurrent() {
+	if dag.isCurrent() {
 		// Warn if a high enough percentage of the last blocks have
 		// unexpected versions.
-		bestNode := b.dag.SelectedTip()
-		if err := b.warnUnknownVersions(bestNode); err != nil {
+		bestNode := dag.virtual.SelectedTip()
+		if err := dag.warnUnknownVersions(bestNode); err != nil {
 			return err
 		}
 
 		// Warn if any unknown new rules are either about to activate or
 		// have already been activated.
-		if err := b.warnUnknownRuleActivations(bestNode); err != nil {
+		if err := dag.warnUnknownRuleActivations(bestNode); err != nil {
 			return err
 		}
 	}

@@ -21,7 +21,7 @@ type GetBlockHeaderVerboseResult struct {
 	Bits           string   `json:"bits"`
 	Difficulty     float64  `json:"difficulty"`
 	PreviousHashes []string `json:"previousblockhashes,omitempty"`
-	NextHash       string   `json:"nextblockhash,omitempty"`
+	NextHashes     []string `json:"nextblockhashes,omitempty"`
 }
 
 // GetBlockVerboseResult models the data from the getblock command when the
@@ -42,7 +42,7 @@ type GetBlockVerboseResult struct {
 	Bits           string        `json:"bits"`
 	Difficulty     float64       `json:"difficulty"`
 	PreviousHashes []string      `json:"previousblockhashes"`
-	NextHash       string        `json:"nextblockhash,omitempty"`
+	NextHashes     []string      `json:"nextblockhashes,omitempty"`
 }
 
 // CreateMultiSigResult models the data returned from the createmultisig
@@ -80,7 +80,7 @@ type GetAddedNodeInfoResult struct {
 type SoftForkDescription struct {
 	ID      string `json:"id"`
 	Version uint32 `json:"version"`
-	Reject struct {
+	Reject  struct {
 		Status bool `json:"status"`
 	} `json:"reject"`
 }
