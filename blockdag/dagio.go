@@ -999,9 +999,6 @@ func (dag *BlockDAG) initDAGState() error {
 				return err
 			}
 
-			// Determine the parent block node. Since we iterate block headers
-			// in order of height, if the blocks are mostly linear there is a
-			// very good chance the previous header processed is the parent.
 			parents := newSet()
 			if lastNode == nil {
 				blockHash := header.BlockHash()
@@ -1021,14 +1018,14 @@ func (dag *BlockDAG) initDAGState() error {
 				}
 				if len(parents) == 0 {
 					return AssertError(fmt.Sprintf("initDAGState: Could "+
-						"not find parent for block %s", header.BlockHash()))
+						"not find any parent for block %s", header.BlockHash()))
 				}
 			}
 
 			// Initialize the block node for the block, connect it,
 			// and add it to the block index.
 			node := &blockNodes[i]
-			initBlockNode(node, header, parents, dag.dagParams.K) // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
+			initBlockNode(node, header, parents, dag.dagParams.K)
 			node.status = status
 			dag.index.addNode(node)
 
