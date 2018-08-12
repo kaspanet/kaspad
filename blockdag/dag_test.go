@@ -9,11 +9,12 @@ import (
 	"testing"
 	"time"
 
+	"math/rand"
+
 	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/wire"
 	"github.com/daglabs/btcutil"
-	"math/rand"
 )
 
 // TestHaveBlock tests the HaveBlock API to ensure proper functionality.

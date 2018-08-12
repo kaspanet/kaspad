@@ -999,10 +999,7 @@ func (dag *BlockDAG) initDAGState() error {
 				return err
 			}
 
-			// Determine the parent block node. Since we iterate block headers
-			// in order of height, if the blocks are mostly linear there is a
-			// very good chance the previous header processed is the parent.
-			var parent *blockNode
+			parents := newSet()
 			if lastNode == nil {
 				blockHash := header.BlockHash()
 				if !blockHash.IsEqual(dag.dagParams.GenesisHash) {
@@ -1010,23 +1007,25 @@ func (dag *BlockDAG) initDAGState() error {
 						"first entry in block index to be genesis block, "+
 						"found %s", blockHash))
 				}
-			} else if *header.SelectedPrevBlock() == lastNode.hash {
-				// Since we iterate block headers in order of height, if the
-				// blocks are mostly linear there is a very good chance the
-				// previous header processed is the parent.
-				parent = lastNode
 			} else {
-				parent = dag.index.LookupNode(header.SelectedPrevBlock())
-				if parent == nil {
+				for _, hash := range header.PrevBlocks {
+					parent := dag.index.LookupNode(&hash)
+					if parent == nil {
+						return AssertError(fmt.Sprintf("initDAGState: Could "+
+							"not find parent %s for block %s", hash, header.BlockHash()))
+					}
+					parents.add(parent)
+				}
+				if len(parents) == 0 {
 					return AssertError(fmt.Sprintf("initDAGState: Could "+
-						"not find parent for block %s", header.BlockHash()))
+						"not find any parent for block %s", header.BlockHash()))
 				}
 			}
 
 			// Initialize the block node for the block, connect it,
 			// and add it to the block index.
 			node := &blockNodes[i]
-			initBlockNode(node, header, setFromSlice(parent), dag.dagParams.K) // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
+			initBlockNode(node, header, parents, dag.dagParams.K)
 			node.status = status
 			dag.index.addNode(node)
 

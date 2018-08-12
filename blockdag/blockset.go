@@ -115,7 +115,7 @@ func (bs blockSet) hashes() []daghash.Hash {
 }
 
 // first returns the first block in this set or nil if this set is empty.
-func (bs blockSet) first() *blockNode {
+func (bs blockSet) first() *blockNode { //TODO: (Ori) This is wrong. Done only for compilation. We should probably get rid of this method
 	for _, block := range bs {
 		return block
 	}
