@@ -416,11 +416,6 @@ func (vm *Engine) checkPubKeyEncoding(pubKey []byte) error {
 // checkSignatureEncoding returns whether or not the passed signature adheres to
 // the strict encoding requirements if enabled.
 func (vm *Engine) checkSignatureEncoding(sig []byte) error {
-	if !vm.hasFlag(ScriptVerifyLowS) &&
-		!vm.hasFlag(ScriptVerifyStrictEncoding) {
-
-		return nil
-	}
 
 	// The format of a DER encoded signature is as follows:
 	//
