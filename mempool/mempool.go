@@ -17,6 +17,7 @@ import (
 	"github.com/daglabs/btcd/btcjson"
 	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/dagconfig/daghash"
+	"github.com/daglabs/btcd/logger"
 	"github.com/daglabs/btcd/mining"
 	"github.com/daglabs/btcd/txscript"
 	"github.com/daglabs/btcd/wire"
@@ -271,7 +272,7 @@ func (mp *TxPool) limitNumOrphans() error {
 		numOrphans := len(mp.orphans)
 		if numExpired := origNumOrphans - numOrphans; numExpired > 0 {
 			log.Debugf("Expired %d %s (remaining: %d)", numExpired,
-				pickNoun(numExpired, "orphan", "orphans"),
+				logger.PickNoun(uint64(numExpired), "orphan", "orphans"),
 				numOrphans)
 		}
 	}

@@ -570,6 +570,62 @@ func TestOrphanEviction(t *testing.T) {
 	}
 }
 
+// Attempt to remove orphans by tag,
+// and ensure the state of all other orphans are unaffected.
+func TestRemoveOrphansByTag(t *testing.T) {
+	t.Parallel()
+
+	harness, _, err := newPoolHarness(&dagconfig.MainNetParams)
+	if err != nil {
+		t.Fatalf("unable to create test pool: %v", err)
+	}
+	tc := &testContext{t, harness}
+
+	otx1, err := harness.CreateSignedTx([]spendableOutput{{
+		amount:   btcutil.Amount(5000000000),
+		outPoint: wire.OutPoint{Hash: daghash.Hash{1}, Index: 1},
+	}}, 1)
+	if err != nil {
+		t.Fatalf("unable to create signed tx: %v", err)
+	}
+	harness.txPool.ProcessTransaction(otx1, true,
+		false, 1)
+	otx2, err := harness.CreateSignedTx([]spendableOutput{{
+		amount:   btcutil.Amount(5000000000),
+		outPoint: wire.OutPoint{Hash: daghash.Hash{2}, Index: 2},
+	}}, 1)
+	if err != nil {
+		t.Fatalf("unable to create signed tx: %v", err)
+	}
+	harness.txPool.ProcessTransaction(otx2, true,
+		false, 1)
+	otx3, err := harness.CreateSignedTx([]spendableOutput{{
+		amount:   btcutil.Amount(5000000000),
+		outPoint: wire.OutPoint{Hash: daghash.Hash{3}, Index: 3},
+	}}, 1)
+	if err != nil {
+		t.Fatalf("unable to create signed tx: %v", err)
+	}
+	harness.txPool.ProcessTransaction(otx3, true,
+		false, 1)
+
+	otx4, err := harness.CreateSignedTx([]spendableOutput{{
+		amount:   btcutil.Amount(5000000000),
+		outPoint: wire.OutPoint{Hash: daghash.Hash{4}, Index: 4},
+	}}, 1)
+	if err != nil {
+		t.Fatalf("unable to create signed tx: %v", err)
+	}
+	harness.txPool.ProcessTransaction(otx4, true,
+		false, 2)
+
+	harness.txPool.RemoveOrphansByTag(1)
+	testPoolMembership(tc, otx1, false, false)
+	testPoolMembership(tc, otx2, false, false)
+	testPoolMembership(tc, otx3, false, false)
+	testPoolMembership(tc, otx4, true, false)
+}
+
 // TestBasicOrphanRemoval ensure that orphan removal works as expected when an
 // orphan that doesn't exist is removed  both when there is another orphan that
 // redeems it and when there is not.
