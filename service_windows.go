@@ -13,6 +13,10 @@ import (
 	"github.com/btcsuite/winsvc/eventlog"
 	"github.com/btcsuite/winsvc/mgr"
 	"github.com/btcsuite/winsvc/svc"
+	"github.com/daglabs/btcd/signal"
+	"github.com/daglabs/btcd/config"
+	"github.com/daglabs/btcd/version"
+	"github.com/daglabs/btcd/server"
 )
 
 const (
@@ -34,10 +38,10 @@ var elog *eventlog.Log
 
 // logServiceStartOfDay logs information about btcd when the main server has
 // been started to the Windows event log.
-func logServiceStartOfDay(srvr *server) {
+func logServiceStartOfDay() {
 	var message string
-	message += fmt.Sprintf("Version %s\n", version())
-	message += fmt.Sprintf("Configuration directory: %s\n", defaultHomeDir)
+	message += fmt.Sprintf("Version %s\n", version.Version())
+	message += fmt.Sprintf("Configuration directory: %s\n", config.DefaultHomeDir)
 	message += fmt.Sprintf("Configuration file: %s\n", cfg.ConfigFile)
 	message += fmt.Sprintf("Data directory: %s\n", cfg.DataDir)
 
@@ -62,7 +66,7 @@ func (s *btcdService) Execute(args []string, r <-chan svc.ChangeRequest, changes
 	// doneChan.  serverChan is notified with the main server instance once
 	// it is started so it can be gracefully stopped.
 	doneChan := make(chan error)
-	serverChan := make(chan *server)
+	serverChan := make(chan *server.Server)
 	go func() {
 		err := btcdMain(serverChan)
 		doneChan <- err
@@ -70,8 +74,6 @@ func (s *btcdService) Execute(args []string, r <-chan svc.ChangeRequest, changes
 
 	// Service is now started.
 	changes <- svc.Status{State: svc.Running, Accepts: cmdsAccepted}
-
-	var mainServer *server
 loop:
 	for {
 		select {
@@ -86,16 +88,15 @@ loop:
 				changes <- svc.Status{State: svc.StopPending}
 
 				// Signal the main function to exit.
-				shutdownRequestChannel <- struct{}{}
+				signal.ShutdownRequestChannel <- struct{}{}
 
 			default:
 				elog.Error(1, fmt.Sprintf("Unexpected control "+
 					"request #%d.", c))
 			}
 
-		case srvr := <-serverChan:
-			mainServer = srvr
-			logServiceStartOfDay(mainServer)
+		case <-serverChan:
+			logServiceStartOfDay()
 
 		case err := <-doneChan:
 			if err != nil {
@@ -302,6 +303,6 @@ func serviceMain() (bool, error) {
 
 // Set windows specific functions to real functions.
 func init() {
-	runServiceCommand = performServiceCommand
+	config.RunServiceCommand = performServiceCommand
 	winServiceMain = serviceMain
 }

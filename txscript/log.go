@@ -6,6 +6,7 @@ package txscript
 
 import (
 	"github.com/btcsuite/btclog"
+	"github.com/daglabs/btcd/logger"
 )
 
 // log is a logger that is initialized with no output filters.  This
@@ -13,20 +14,8 @@ import (
 // requests it.
 var log btclog.Logger
 
-// The default amount of logging is none.
 func init() {
-	DisableLog()
-}
-
-// DisableLog disables all library log output.  Logging output is disabled
-// by default until UseLogger is called.
-func DisableLog() {
-	log = btclog.Disabled
-}
-
-// UseLogger uses a specified Logger to output package logging info.
-func UseLogger(logger btclog.Logger) {
-	log = logger
+	log, _ = logger.Get(logger.SubsystemTags.SCRP)
 }
 
 // LogClosure is a closure that can be printed with %v to be used to
