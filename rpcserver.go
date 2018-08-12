@@ -1175,31 +1175,6 @@ func handleGetBlockDAGInfo(s *rpcServer, cmd interface{}, closeChan <-chan struc
 		Bip9SoftForks: make(map[string]*btcjson.Bip9SoftForkDescription),
 	}
 
-	// Next, populate the response with information describing the current
-	// status of soft-forks deployed via the super-majority block
-	// signalling mechanism.
-	height := dagState.SelectedTip.Height
-	chainInfo.SoftForks = []*btcjson.SoftForkDescription{
-		{
-			ID:      "bip34",
-			Version: 2,
-			Reject: struct {
-				Status bool `json:"status"`
-			}{
-				Status: height >= params.BIP0034Height,
-			},
-		},
-		{
-			ID:      "bip66",
-			Version: 3,
-			Reject: struct {
-				Status bool `json:"status"`
-			}{
-				Status: height >= params.BIP0066Height,
-			},
-		},
-	}
-
 	// Finally, query the BIP0009 version bits state for all currently
 	// defined BIP0009 soft-fork deployments.
 	for deployment, deploymentDetails := range params.Deployments {

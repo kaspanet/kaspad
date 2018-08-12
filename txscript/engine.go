@@ -35,10 +35,6 @@ const (
 	// This flag should never be used without the ScriptBip16 flag.
 	ScriptVerifyCleanStack
 
-	// ScriptVerifyDERSignatures defines that signatures are required
-	// to compily with the DER format.
-	ScriptVerifyDERSignatures
-
 	// ScriptVerifyLowS defines that signtures are required to comply with
 	// the DER format and whose S value is <= order / 2.  This is rule 5
 	// of BIP0062.
@@ -420,8 +416,7 @@ func (vm *Engine) checkPubKeyEncoding(pubKey []byte) error {
 // checkSignatureEncoding returns whether or not the passed signature adheres to
 // the strict encoding requirements if enabled.
 func (vm *Engine) checkSignatureEncoding(sig []byte) error {
-	if !vm.hasFlag(ScriptVerifyDERSignatures) &&
-		!vm.hasFlag(ScriptVerifyLowS) &&
+	if !vm.hasFlag(ScriptVerifyLowS) &&
 		!vm.hasFlag(ScriptVerifyStrictEncoding) {
 
 		return nil

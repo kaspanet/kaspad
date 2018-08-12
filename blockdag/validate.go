@@ -38,10 +38,6 @@ const (
 	// used to calculate the median time used to validate block timestamps.
 	medianTimeBlocks = 11
 
-	// serializedHeightVersion is the block version which changed block
-	// coinbases to start with the serialized block height.
-	serializedHeightVersion = 2
-
 	// baseSubsidy is the starting subsidy amount for mined blocks.  This
 	// value is halved every SubsidyHalvingInterval blocks.
 	baseSubsidy = 50 * btcutil.SatoshiPerBitcoin
@@ -75,15 +71,6 @@ func isNullOutpoint(outpoint *wire.OutPoint) bool {
 		return true
 	}
 	return false
-}
-
-// ShouldHaveSerializedBlockHeight determines if a block should have a
-// serialized block height embedded within the scriptSig of its
-// coinbase transaction. Judgement is based on the block version in the block
-// header. Blocks with version 2 and above satisfy this criteria. See BIP0034
-// for further information.
-func ShouldHaveSerializedBlockHeight(header *wire.BlockHeader) bool {
-	return header.Version >= serializedHeightVersion
 }
 
 // IsCoinBaseTx determines whether or not a transaction is a coinbase.  A coinbase
@@ -584,20 +571,19 @@ func CheckBlockSanity(block *btcutil.Block, powLimit *big.Int, timeSource Median
 }
 
 // ExtractCoinbaseHeight attempts to extract the height of the block from the
-// scriptSig of a coinbase transaction.  Coinbase heights are only present in
-// blocks of version 2 or later.  This was added as part of BIP0034.
+// scriptSig of a coinbase transaction.
 func ExtractCoinbaseHeight(coinbaseTx *btcutil.Tx) (int32, error) {
 	sigScript := coinbaseTx.MsgTx().TxIn[0].SignatureScript
 	if len(sigScript) < 1 {
-		str := "the coinbase signature script for blocks of " +
-			"version %d or greater must start with the " +
+		str := "the coinbase signature script" +
+			"must start with the " +
 			"length of the serialized block height"
-		str = fmt.Sprintf(str, serializedHeightVersion)
+		str = fmt.Sprintf(str)
 		return 0, ruleError(ErrMissingCoinbaseHeight, str)
 	}
 
 	// Detect the case when the block height is a small integer encoded with
-	// as single byte.
+	// a single byte.
 	opcode := int(sigScript[0])
 	if opcode == txscript.Op0 {
 		return 0, nil
@@ -610,8 +596,8 @@ func ExtractCoinbaseHeight(coinbaseTx *btcutil.Tx) (int32, error) {
 	// encode in the block height.
 	serializedLen := int(sigScript[0])
 	if len(sigScript[1:]) < serializedLen {
-		str := "the coinbase signature script for blocks of " +
-			"version %d or greater must start with the " +
+		str := "the coinbase signature script " +
+			"must start with the " +
 			"serialized block height"
 		str = fmt.Sprintf(str, serializedLen)
 		return 0, ruleError(ErrMissingCoinbaseHeight, str)
@@ -704,18 +690,6 @@ func (dag *BlockDAG) checkBlockHeaderContext(header *wire.BlockHeader, selectedP
 		return ruleError(ErrForkTooOld, str)
 	}
 
-	// Reject outdated block versions once a majority of the network
-	// has upgraded.  These were originally voted on by BIP0034,
-	// BIP0065, and BIP0066.
-	params := dag.dagParams
-	if header.Version < 2 && blockHeight >= params.BIP0034Height ||
-		header.Version < 3 && blockHeight >= params.BIP0066Height {
-
-		str := "new blocks with version %d are no longer valid"
-		str = fmt.Sprintf(str, header.Version)
-		return ruleError(ErrBlockVersionTooOld, str)
-	}
-
 	return nil
 }
 
@@ -757,25 +731,20 @@ func (dag *BlockDAG) checkBlockContext(block *btcutil.Block, selectedParent *blo
 			}
 		}
 
-		// Ensure coinbase starts with serialized block heights for
-		// blocks whose version is the serializedHeightVersion or newer
-		// once a majority of the network has upgraded.  This is part of
-		// BIP0034.
-		if ShouldHaveSerializedBlockHeight(header) &&
-			blockHeight >= dag.dagParams.BIP0034Height {
+		// Ensure coinbase starts with serialized block heights
 
-			coinbaseTx := block.Transactions()[0]
-			err := checkSerializedHeight(coinbaseTx, blockHeight)
-			if err != nil {
-				return err
-			}
+		coinbaseTx := block.Transactions()[0]
+		err := checkSerializedHeight(coinbaseTx, blockHeight)
+		if err != nil {
+			return err
 		}
+
 	}
 
 	return nil
 }
 
-// checkBIP0030 ensures blocks do not contain duplicate transactions which
+// ensureNoDuplicateTx ensures blocks do not contain duplicate transactions which
 // 'overwrite' older transactions that are not fully spent.  This prevents an
 // attack where a coinbase and all of its dependent transactions could be
 // duplicated to effectively revert the overwritten transactions to a single
@@ -786,7 +755,7 @@ func (dag *BlockDAG) checkBlockContext(block *btcutil.Block, selectedParent *blo
 // http://r6.ca/blog/20120206T005236Z.html.
 //
 // This function MUST be called with the chain state lock held (for reads).
-func (dag *BlockDAG) checkBIP0030(node *blockNode, block *btcutil.Block, view *UtxoViewpoint) error {
+func (dag *BlockDAG) ensureNoDuplicateTx(node *blockNode, block *btcutil.Block, view *UtxoViewpoint) error {
 	// Fetch utxos for all of the transaction ouputs in this block.
 	// Typically, there will not be any utxos for any of the outputs.
 	fetchSet := make(map[wire.OutPoint]struct{})
@@ -965,27 +934,9 @@ func (dag *BlockDAG) checkConnectBlock(node *blockNode, block *btcutil.Block, vi
 			"of expected %v", view.Tips(), parentHashes))
 	}
 
-	// BIP0030 added a rule to prevent blocks which contain duplicate
-	// transactions that 'overwrite' older transactions which are not fully
-	// spent.  See the documentation for checkBIP0030 for more details.
-	//
-	// There are two blocks in the chain which violate this rule, so the
-	// check must be skipped for those blocks.  The isBIP0030Node function
-	// is used to determine if this block is one of the two blocks that must
-	// be skipped.
-	//
-	// In addition, as of BIP0034, duplicate coinbases are no longer
-	// possible due to its requirement for including the block height in the
-	// coinbase and thus it is no longer possible to create transactions
-	// that 'overwrite' older ones.  Therefore, only enforce the rule if
-	// BIP0034 is not yet active.  This is a useful optimization because the
-	// BIP0030 check is expensive since it involves a ton of cache misses in
-	// the utxoset.
-	if !isBIP0030Node(node) && (node.height < dag.dagParams.BIP0034Height) {
-		err := dag.checkBIP0030(node, block, view)
-		if err != nil {
-			return err
-		}
+	err := dag.ensureNoDuplicateTx(node, block, view)
+	if err != nil {
+		return err
 	}
 
 	// Load all of the utxos referenced by the inputs for all transactions
@@ -993,7 +944,7 @@ func (dag *BlockDAG) checkConnectBlock(node *blockNode, block *btcutil.Block, vi
 	//
 	// These utxo entries are needed for verification of things such as
 	// transaction inputs, counting pay-to-script-hashes, and scripts.
-	err := view.fetchInputUtxos(dag.db, block)
+	err = view.fetchInputUtxos(dag.db, block)
 	if err != nil {
 		return err
 	}
@@ -1113,13 +1064,6 @@ func (dag *BlockDAG) checkConnectBlock(node *blockNode, block *btcutil.Block, vi
 	var scriptFlags txscript.ScriptFlags
 	if enforceBIP0016 {
 		scriptFlags |= txscript.ScriptBip16
-	}
-
-	// Enforce DER signatures for block versions 3+ once the historical
-	// activation threshold has been reached.  This is part of BIP0066.
-	blockHeader := &block.MsgBlock().Header
-	if blockHeader.Version >= 3 && node.height >= dag.dagParams.BIP0066Height {
-		scriptFlags |= txscript.ScriptVerifyDERSignatures
 	}
 
 	// We obtain the MTP of the *previous* block in order to
