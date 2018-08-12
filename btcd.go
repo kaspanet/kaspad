@@ -16,8 +16,15 @@ import (
 	"runtime/pprof"
 
 	"github.com/daglabs/btcd/blockdag/indexers"
+	"github.com/daglabs/btcd/config"
 	"github.com/daglabs/btcd/database"
+	_ "github.com/daglabs/btcd/database/ffldb"
 	"github.com/daglabs/btcd/limits"
+	"github.com/daglabs/btcd/logger"
+	"github.com/daglabs/btcd/server"
+	"github.com/daglabs/btcd/signal"
+	"github.com/daglabs/btcd/version"
+	"github.com/daglabs/btcutil/fs"
 )
 
 const (
@@ -28,7 +35,7 @@ const (
 )
 
 var (
-	cfg *config
+	cfg *config.Config
 )
 
 // winServiceMain is only invoked on Windows.  It detects when btcd is running
@@ -40,28 +47,28 @@ var winServiceMain func() (bool, error)
 // optional serverChan parameter is mainly used by the service code to be
 // notified with the server once it is setup so it can gracefully stop it when
 // requested from the service control manager.
-func btcdMain(serverChan chan<- *server) error {
+func btcdMain(serverChan chan<- *server.Server) error {
 	// Load configuration and parse command line.  This function also
 	// initializes logging and configures it accordingly.
-	tcfg, _, err := loadConfig()
+	err := config.LoadAndSetMainConfig()
 	if err != nil {
 		return err
 	}
-	cfg = tcfg
+	cfg = config.MainConfig()
 	defer func() {
-		if logRotator != nil {
-			logRotator.Close()
+		if logger.LogRotator != nil {
+			logger.LogRotator.Close()
 		}
 	}()
 
 	// Get a channel that will be closed when a shutdown signal has been
 	// triggered either from an OS signal such as SIGINT (Ctrl+C) or from
 	// another subsystem such as the RPC server.
-	interrupt := interruptListener()
+	interrupt := signal.InterruptListener()
 	defer btcdLog.Info("Shutdown complete")
 
 	// Show version at startup.
-	btcdLog.Infof("Version %s", version())
+	btcdLog.Infof("Version %s", version.Version())
 
 	// Enable http profiling server if requested.
 	if cfg.Profile != "" {
@@ -94,7 +101,7 @@ func btcdMain(serverChan chan<- *server) error {
 	}
 
 	// Return now if an interrupt signal was triggered.
-	if interruptRequested(interrupt) {
+	if signal.InterruptRequested(interrupt) {
 		return nil
 	}
 
@@ -111,7 +118,7 @@ func btcdMain(serverChan chan<- *server) error {
 	}()
 
 	// Return now if an interrupt signal was triggered.
-	if interruptRequested(interrupt) {
+	if signal.InterruptRequested(interrupt) {
 		return nil
 	}
 
@@ -145,7 +152,7 @@ func btcdMain(serverChan chan<- *server) error {
 	}
 
 	// Create server and start it.
-	server, err := newServer(cfg.Listeners, db, activeNetParams.Params,
+	server, err := server.NewServer(cfg.Listeners, db, config.ActiveNetParams(),
 		interrupt)
 	if err != nil {
 		// TODO: this logging could do with some beautifying.
@@ -226,7 +233,7 @@ func warnMultipleDBs() {
 
 		// Store db path as a duplicate db if it exists.
 		dbPath := blockDbPath(dbType)
-		if fileExists(dbPath) {
+		if fs.FileExists(dbPath) {
 			duplicateDbPaths = append(duplicateDbPaths, dbPath)
 		}
 	}
@@ -271,7 +278,7 @@ func loadBlockDB() (database.DB, error) {
 	removeRegressionDB(dbPath)
 
 	btcdLog.Infof("Loading block database from '%s'", dbPath)
-	db, err := database.Open(cfg.DbType, dbPath, activeNetParams.Net)
+	db, err := database.Open(cfg.DbType, dbPath, config.ActiveNetParams().Net)
 	if err != nil {
 		// Return the error if it's not because the database doesn't
 		// exist.
@@ -286,7 +293,7 @@ func loadBlockDB() (database.DB, error) {
 		if err != nil {
 			return nil, err
 		}
-		db, err = database.Create(cfg.DbType, dbPath, activeNetParams.Net)
+		db, err = database.Create(cfg.DbType, dbPath, config.ActiveNetParams().Net)
 		if err != nil {
 			return nil, err
 		}
