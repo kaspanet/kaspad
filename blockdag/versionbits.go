@@ -11,9 +11,6 @@ import (
 )
 
 const (
-	// vbLegacyBlockVersion is the highest legacy block version before the
-	// version bits scheme became active.
-	vbLegacyBlockVersion = 4
 
 	// vbTopBits defines the bits to set in the version to signal that the
 	// version bits scheme is being used.
@@ -282,8 +279,7 @@ func (dag *BlockDAG) warnUnknownVersions(node *blockNode) error {
 		if err != nil {
 			return err
 		}
-		if expectedVersion > vbLegacyBlockVersion &&
-			(node.version & ^expectedVersion) != 0 {
+		if (node.version & ^expectedVersion) != 0 {
 
 			numUpgraded++
 		}
