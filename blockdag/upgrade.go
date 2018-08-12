@@ -82,7 +82,7 @@ func migrateBlockIndex(db database.DB) error {
 		if err != nil {
 			return err
 		}
-		tip := &state.SelectedHash
+		tip := &state.Tips[0]
 
 		// Scan the old block index bucket and construct a mapping of each block
 		// to parent block and all child blocks.
@@ -578,10 +578,10 @@ func upgradeUtxoSetToV2(db database.DB, interrupt <-chan struct{}) error {
 //
 // All buckets used by this package are guaranteed to be the latest version if
 // this function returns without error.
-func (b *BlockDAG) maybeUpgradeDbBuckets(interrupt <-chan struct{}) error {
+func (dag *BlockDAG) maybeUpgradeDbBuckets(interrupt <-chan struct{}) error {
 	// Load or create bucket versions as needed.
 	var utxoSetVersion uint32
-	err := b.db.Update(func(dbTx database.Tx) error {
+	err := dag.db.Update(func(dbTx database.Tx) error {
 		// Load the utxo set version from the database or create it and
 		// initialize it to version 1 if it doesn't exist.
 		var err error
@@ -595,7 +595,7 @@ func (b *BlockDAG) maybeUpgradeDbBuckets(interrupt <-chan struct{}) error {
 
 	// Update the utxo set to v2 if needed.
 	if utxoSetVersion < 2 {
-		if err := upgradeUtxoSetToV2(b.db, interrupt); err != nil {
+		if err := upgradeUtxoSetToV2(dag.db, interrupt); err != nil {
 			return err
 		}
 	}

@@ -1089,15 +1089,15 @@ func handleGetBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 	blk.SetHeight(blockHeight)
 	dagState := s.cfg.DAG.GetDAGState()
 
-	// Get next block hash unless there are none.
-	var nextHashString string
+	// Get the hashes for the next blocks unless there are none.
+	var nextHashStrings []string
 	if blockHeight < dagState.SelectedTip.Height {
-		nextHash, err := s.cfg.DAG.BlockHashByHeight(blockHeight + 1)
+		childHashes, err := s.cfg.DAG.ChildHashesByHash(hash)
 		if err != nil {
 			context := "No next block"
 			return nil, internalRPCError(err.Error(), context)
 		}
-		nextHashString = nextHash.String()
+		nextHashStrings = daghash.Strings(childHashes)
 	}
 
 	params := s.cfg.ChainParams
@@ -1115,7 +1115,7 @@ func handleGetBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 		Size:           int32(len(blkBytes)),
 		Bits:           strconv.FormatInt(int64(blockHeader.Bits), 16),
 		Difficulty:     getDifficultyRatio(blockHeader.Bits, params),
-		NextHash:       nextHashString,
+		NextHashes:     nextHashStrings,
 	}
 
 	if c.VerboseTx == nil || !*c.VerboseTx {
@@ -1265,17 +1265,10 @@ func handleGetBlockCount(s *Server, cmd interface{}, closeChan <-chan struct{}) 
 }
 
 // handleGetBlockHash implements the getblockhash command.
+// This command had been (possibly temporarily) dropped.
+// Originally it relied on height, which no longer makes sense.
 func handleGetBlockHash(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	c := cmd.(*btcjson.GetBlockHashCmd)
-	hash, err := s.cfg.DAG.BlockHashByHeight(int32(c.Index))
-	if err != nil {
-		return nil, &btcjson.RPCError{
-			Code:    btcjson.ErrRPCOutOfRange,
-			Message: "Block number out of range",
-		}
-	}
-
-	return hash.String(), nil
+	return nil, ErrRPCUnimplemented
 }
 
 // handleGetBlockHeader implements the getblockheader command.
@@ -1317,15 +1310,15 @@ func handleGetBlockHeader(s *Server, cmd interface{}, closeChan <-chan struct{})
 	}
 	dagState := s.cfg.DAG.GetDAGState()
 
-	// Get next block hash unless there are none.
-	var nextHashString string
+	// Get the hashes for the next blocks unless there are none.
+	var nextHashStrings []string
 	if blockHeight < dagState.SelectedTip.Height {
-		nextHash, err := s.cfg.DAG.BlockHashByHeight(blockHeight + 1)
+		childHashes, err := s.cfg.DAG.ChildHashesByHash(hash)
 		if err != nil {
 			context := "No next block"
 			return nil, internalRPCError(err.Error(), context)
 		}
-		nextHashString = nextHash.String()
+		nextHashStrings = daghash.Strings(childHashes)
 	}
 
 	params := s.cfg.ChainParams
@@ -1336,7 +1329,7 @@ func handleGetBlockHeader(s *Server, cmd interface{}, closeChan <-chan struct{})
 		Version:        blockHeader.Version,
 		VersionHex:     fmt.Sprintf("%08x", blockHeader.Version),
 		MerkleRoot:     blockHeader.MerkleRoot.String(),
-		NextHash:       nextHashString,
+		NextHashes:     nextHashStrings,
 		PreviousHashes: daghash.Strings(blockHeader.PrevBlocks),
 		Nonce:          uint64(blockHeader.Nonce),
 		Time:           blockHeader.Timestamp.Unix(),
@@ -2332,97 +2325,10 @@ func handleGetNetTotals(s *Server, cmd interface{}, closeChan <-chan struct{}) (
 }
 
 // handleGetNetworkHashPS implements the getnetworkhashps command.
+// This command had been (possibly temporarily) dropped.
+// Originally it relied on height, which no longer makes sense.
 func handleGetNetworkHashPS(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	// Note: All valid error return paths should return an int64.
-	// Literal zeros are inferred as int, and won't coerce to int64
-	// because the return value is an interface{}.
-
-	c := cmd.(*btcjson.GetNetworkHashPSCmd)
-
-	// When the passed height is too high or zero, just return 0 now
-	// since we can't reasonably calculate the number of network hashes
-	// per second from invalid values.  When it's negative, use the current
-	// best block height.
-	dagState := s.cfg.DAG.GetDAGState()
-	endHeight := int32(-1)
-	if c.Height != nil {
-		endHeight = int32(*c.Height)
-	}
-	if endHeight > dagState.SelectedTip.Height || endHeight == 0 {
-		return int64(0), nil
-	}
-	if endHeight < 0 {
-		endHeight = dagState.SelectedTip.Height
-	}
-
-	// Calculate the number of blocks per retarget interval based on the
-	// chain parameters.
-	blocksPerRetarget := int32(s.cfg.ChainParams.TargetTimespan /
-		s.cfg.ChainParams.TargetTimePerBlock)
-
-	// Calculate the starting block height based on the passed number of
-	// blocks.  When the passed value is negative, use the last block the
-	// difficulty changed as the starting height.  Also make sure the
-	// starting height is not before the beginning of the chain.
-	numBlocks := int32(120)
-	if c.Blocks != nil {
-		numBlocks = int32(*c.Blocks)
-	}
-	var startHeight int32
-	if numBlocks <= 0 {
-		startHeight = endHeight - ((endHeight % blocksPerRetarget) + 1)
-	} else {
-		startHeight = endHeight - numBlocks
-	}
-	if startHeight < 0 {
-		startHeight = 0
-	}
-	log.Debugf("Calculating network hashes per second from %d to %d",
-		startHeight, endHeight)
-
-	// Find the min and max block timestamps as well as calculate the total
-	// amount of work that happened between the start and end blocks.
-	var minTimestamp, maxTimestamp time.Time
-	totalWork := big.NewInt(0)
-	for curHeight := startHeight; curHeight <= endHeight; curHeight++ {
-		hash, err := s.cfg.DAG.BlockHashByHeight(curHeight)
-		if err != nil {
-			context := "Failed to fetch block hash"
-			return nil, internalRPCError(err.Error(), context)
-		}
-
-		// Fetch the header from chain.
-		header, err := s.cfg.DAG.FetchHeader(hash)
-		if err != nil {
-			context := "Failed to fetch block header"
-			return nil, internalRPCError(err.Error(), context)
-		}
-
-		if curHeight == startHeight {
-			minTimestamp = header.Timestamp
-			maxTimestamp = minTimestamp
-		} else {
-			totalWork.Add(totalWork, blockdag.CalcWork(header.Bits))
-
-			if minTimestamp.After(header.Timestamp) {
-				minTimestamp = header.Timestamp
-			}
-			if maxTimestamp.Before(header.Timestamp) {
-				maxTimestamp = header.Timestamp
-			}
-		}
-	}
-
-	// Calculate the difference in seconds between the min and max block
-	// timestamps and avoid division by zero in the case where there is no
-	// time difference.
-	timeDiff := int64(maxTimestamp.Sub(minTimestamp) / time.Second)
-	if timeDiff == 0 {
-		return int64(0), nil
-	}
-
-	hashesPerSec := new(big.Int).Div(totalWork, big.NewInt(timeDiff))
-	return hashesPerSec.Int64(), nil
+	return nil, ErrRPCUnimplemented
 }
 
 // handleGetPeerInfo implements the getpeerinfo command.
@@ -3428,9 +3334,10 @@ func verifyDAG(s *Server, level, depth int32) error {
 	log.Infof("Verifying chain for %d blocks at level %d",
 		dagState.SelectedTip.Height-finishHeight, level)
 
-	for height := dagState.SelectedTip.Height; height > finishHeight; height-- {
+	currentHash := &dagState.SelectedTip.Hash
+	for height := dagState.SelectedTip.Height; height > finishHeight; {
 		// Level 0 just looks up the block.
-		block, err := s.cfg.DAG.BlockByHeight(height)
+		block, err := s.cfg.DAG.BlockByHash(currentHash)
 		if err != nil {
 			log.Errorf("Verify is unable to fetch block at "+
 				"height %d: %v", height, err)
@@ -3448,6 +3355,8 @@ func verifyDAG(s *Server, level, depth int32) error {
 				return err
 			}
 		}
+
+		currentHash = block.MsgBlock().Header.SelectedPrevBlock()
 	}
 	log.Infof("Chain verify completed successfully")
 

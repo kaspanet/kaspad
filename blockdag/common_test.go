@@ -339,8 +339,8 @@ func convertUtxoStore(r io.Reader, w io.Writer) error {
 
 // TstSetCoinbaseMaturity makes the ability to set the coinbase maturity
 // available when running tests.
-func (b *BlockDAG) TstSetCoinbaseMaturity(maturity uint16) {
-	b.dagParams.CoinbaseMaturity = maturity
+func (dag *BlockDAG) TstSetCoinbaseMaturity(maturity uint16) {
+	dag.dagParams.CoinbaseMaturity = maturity
 }
 
 // newTestDAG returns a DAG that is usable for syntetic tests.  It is
@@ -364,7 +364,8 @@ func newTestDAG(params *dagconfig.Params) *BlockDAG {
 		maxRetargetTimespan: targetTimespan * adjustmentFactor,
 		blocksPerRetarget:   int32(targetTimespan / targetTimePerBlock),
 		index:               index,
-		dag:                 newDAGView(node),
+		virtual:             newVirtualBlock(setFromSlice(node), params.K),
+		genesis:             index.LookupNode(params.GenesisHash),
 		warningCaches:       newThresholdCaches(vbNumBits),
 		deploymentCaches:    newThresholdCaches(dagconfig.DefinedDeployments),
 	}

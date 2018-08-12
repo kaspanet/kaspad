@@ -235,7 +235,7 @@ var helpDescsEnUS = map[string]string{
 	"getblockverboseresult-bits":                "The bits which represent the block difficulty",
 	"getblockverboseresult-difficulty":          "The proof-of-work difficulty as a multiple of the minimum difficulty",
 	"getblockverboseresult-previousblockhashes": "The hashes of the previous blocks",
-	"getblockverboseresult-nextblockhash":       "The hash of the next block (only if there is one)",
+	"getblockverboseresult-nextblockhashes":     "The hashes of the next blocks (only if there are any)",
 
 	// GetBlockCountCmd help.
 	"getblockcount--synopsis": "Returns the number of blocks in the longest block chain.",
@@ -266,7 +266,7 @@ var helpDescsEnUS = map[string]string{
 	"getblockheaderverboseresult-bits":                "The bits which represent the block difficulty",
 	"getblockheaderverboseresult-difficulty":          "The proof-of-work difficulty as a multiple of the minimum difficulty",
 	"getblockheaderverboseresult-previousblockhashes": "The hashes of the previous blocks",
-	"getblockheaderverboseresult-nextblockhash":       "The hash of the next block (only if there is one)",
+	"getblockheaderverboseresult-nextblockhashes":     "The hashes of the next blocks (only if there are any)",
 
 	// TemplateRequest help.
 	"templaterequest-mode":         "This is 'template', 'proposal', or omitted",
