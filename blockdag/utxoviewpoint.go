@@ -120,25 +120,6 @@ func (entry *UtxoEntry) Clone() *UtxoEntry {
 // script validation and double spend prevention.
 type UtxoViewpoint struct {
 	entries map[wire.OutPoint]*UtxoEntry
-	tips    blockSet
-}
-
-// SetTips sets the hashes of the tips in the DAG the view currently
-// represents.
-func (view *UtxoViewpoint) SetTips(tips blockSet) {
-	view.tips = tips
-}
-
-// AddBlock removes all the parents of block from the tips and adds
-// the given block to the tips.
-func (view *UtxoViewpoint) AddBlock(block *blockNode) {
-	updatedTips := view.tips.clone()
-	for _, parent := range block.parents {
-		updatedTips.remove(parent)
-	}
-
-	updatedTips.add(block)
-	view.tips = updatedTips
 }
 
 // LookupEntry returns information about a given transaction output according to
@@ -278,9 +259,6 @@ func (view *UtxoViewpoint) connectTransactions(block *blockNode, transactions []
 		}
 	}
 
-	// Update the tips for view to include this block since all of its
-	// transactions have been connected.
-	view.AddBlock(block)
 	return nil
 }
 

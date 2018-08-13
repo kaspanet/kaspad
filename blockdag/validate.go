@@ -1066,10 +1066,6 @@ func (dag *BlockDAG) checkConnectBlock(node *blockNode, block *btcutil.Block, vi
 		}
 	}
 
-	// Update the tips for view to include this block since all of its
-	// transactions have been connected.
-	view.AddBlock(node)
-
 	// The total output values of the coinbase transaction must not exceed
 	// the expected subsidy value plus total transaction fees gained from
 	// mining the block.  It is safe to ignore overflow and out of range
@@ -1150,10 +1146,6 @@ func (dag *BlockDAG) checkConnectBlock(node *blockNode, block *btcutil.Block, vi
 		}
 	}
 
-	// Update the view tips to include this block since all of its
-	// transactions have been connected.
-	view.AddBlock(node)
-
 	return nil
 }
 
@@ -1193,7 +1185,6 @@ func (dag *BlockDAG) CheckConnectBlockTemplate(block *btcutil.Block) error {
 	// Leave the spent txouts entry nil in the state since the information
 	// is not needed and thus extra work can be avoided.
 	view := NewUtxoViewpoint()
-	view.SetTips(tips)
 	newNode := newBlockNode(&header, dag.virtual.Tips(), dag.dagParams.K)
 	return dag.checkConnectBlock(newNode, block, view, nil)
 }

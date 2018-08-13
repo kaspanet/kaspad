@@ -533,7 +533,7 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *btcutil.Block, view *U
 	dag.stateLock.RUnlock()
 	numTxs := uint64(len(block.MsgBlock().Transactions))
 	blockSize := uint64(block.MsgBlock().SerializeSize())
-	state := newDAGState(view.tips.hashes(), node, blockSize, numTxs,
+	state := newDAGState(dag.virtual.Tips().hashes(), node, blockSize, numTxs,
 		currentTotalTxs+numTxs, node.CalcPastMedianTime())
 
 	// Atomically insert info into the database.
@@ -631,7 +631,6 @@ func (dag *BlockDAG) connectToDAG(node *blockNode, parentNodes blockSet, block *
 	// to the DAG without violating any rules and without actually
 	// connecting the block.
 	view := NewUtxoViewpoint()
-	view.SetTips(parentNodes)
 	stxos := make([]spentTxOut, 0, countSpentOutputs(block))
 	if !fastAdd {
 		err := dag.checkConnectBlock(node, block, view, &stxos)
