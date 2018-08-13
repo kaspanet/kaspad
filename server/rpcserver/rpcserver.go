@@ -1280,7 +1280,7 @@ func handleGetBlockHeader(s *Server, cmd interface{}, closeChan <-chan struct{})
 	if err != nil {
 		return nil, rpcDecodeHexError(c.Hash)
 	}
-	blockHeader, err := s.cfg.DAG.FetchHeader(hash)
+	blockHeader, err := s.cfg.DAG.HeaderByHash(hash)
 	if err != nil {
 		return nil, &btcjson.RPCError{
 			Code:    btcjson.ErrRPCBlockNotFound,
@@ -2490,7 +2490,7 @@ func handleGetRawTransaction(s *Server, cmd interface{}, closeChan <-chan struct
 	var chainHeight int32
 	if blkHash != nil {
 		// Fetch the header from chain.
-		header, err := s.cfg.DAG.FetchHeader(blkHash)
+		header, err := s.cfg.DAG.HeaderByHash(blkHash)
 		if err != nil {
 			context := "Failed to fetch block header"
 			return nil, internalRPCError(err.Error(), context)
@@ -3114,7 +3114,7 @@ func handleSearchRawTransactions(s *Server, cmd interface{}, closeChan <-chan st
 		var blkHeight int32
 		if blkHash := rtx.blkHash; blkHash != nil {
 			// Fetch the header from chain.
-			header, err := s.cfg.DAG.FetchHeader(blkHash)
+			header, err := s.cfg.DAG.HeaderByHash(blkHash)
 			if err != nil {
 				return nil, &btcjson.RPCError{
 					Code:    btcjson.ErrRPCBlockNotFound,
