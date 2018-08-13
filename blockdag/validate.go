@@ -934,12 +934,6 @@ func (dag *BlockDAG) checkConnectBlock(node *blockNode, block *btcutil.Block, vi
 		return err
 	}
 
-	// BIP0016 describes a pay-to-script-hash type that is considered a
-	// "standard" type.  The rules for this BIP only apply to transactions
-	// after the timestamp defined by txscript.Bip16Activation.  See
-	// https://en.bitcoin.it/wiki/BIP_0016 for more details.
-	enforceBIP0016 := node.timestamp >= txscript.Bip16Activation.Unix()
-
 	// The number of signature operations must be less than the maximum
 	// allowed per block.  Note that the preliminary sanity checks on a
 	// block also include a check similar to this one, but this check
@@ -950,19 +944,17 @@ func (dag *BlockDAG) checkConnectBlock(node *blockNode, block *btcutil.Block, vi
 	totalSigOps := 0
 	for i, tx := range transactions {
 		numsigOps := CountSigOps(tx)
-		if enforceBIP0016 {
-			// Since the first (and only the first) transaction has
-			// already been verified to be a coinbase transaction,
-			// use i == 0 as an optimization for the flag to
-			// countP2SHSigOps for whether or not the transaction is
-			// a coinbase transaction rather than having to do a
-			// full coinbase check again.
-			numP2SHSigOps, err := CountP2SHSigOps(tx, i == 0, view)
-			if err != nil {
-				return err
-			}
-			numsigOps += numP2SHSigOps
+		// Since the first (and only the first) transaction has
+		// already been verified to be a coinbase transaction,
+		// use i == 0 as an optimization for the flag to
+		// countP2SHSigOps for whether or not the transaction is
+		// a coinbase transaction rather than having to do a
+		// full coinbase check again.
+		numP2SHSigOps, err := CountP2SHSigOps(tx, i == 0, view)
+		if err != nil {
+			return err
 		}
+		numsigOps += numP2SHSigOps
 
 		// Check for overflow or going over the limits.  We have to do
 		// this on every loop iteration to avoid overflow.
@@ -1044,12 +1036,7 @@ func (dag *BlockDAG) checkConnectBlock(node *blockNode, block *btcutil.Block, vi
 		runScripts = false
 	}
 
-	// Blocks created after the BIP0016 activation time need to have the
-	// pay-to-script-hash checks enabled.
 	var scriptFlags txscript.ScriptFlags
-	if enforceBIP0016 {
-		scriptFlags |= txscript.ScriptBip16
-	}
 
 	// We obtain the MTP of the *previous* block in order to
 	// determine if transactions in the current block are final.

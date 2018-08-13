@@ -17,9 +17,6 @@ import (
 type ScriptFlags uint32
 
 const (
-	// ScriptBip16 defines whether the bip16 threshold has passed and thus
-	// pay-to-script hash transactions will be fully validated.
-	ScriptBip16 ScriptFlags = 1 << iota
 
 	// ScriptDiscourageUpgradableNops defines whether to verify that
 	// NOP1 through NOP10 are reserved for future soft-fork upgrades.  This
@@ -27,34 +24,7 @@ const (
 	// blocks as this flag is only for stricter standard transaction
 	// checks.  This flag is only applied when the above opcodes are
 	// executed.
-	ScriptDiscourageUpgradableNops
-
-	// ScriptVerifyCleanStack defines that the stack must contain only
-	// one stack element after evaluation and that the element must be
-	// true if interpreted as a boolean.  This is rule 6 of BIP0062.
-	// This flag should never be used without the ScriptBip16 flag.
-	ScriptVerifyCleanStack
-
-	// ScriptVerifyLowS defines that signtures are required to comply with
-	// the DER format and whose S value is <= order / 2.  This is rule 5
-	// of BIP0062.
-	ScriptVerifyLowS
-
-	// ScriptVerifyMinimalData defines that signatures must use the smallest
-	// push operator. This is both rules 3 and 4 of BIP0062.
-	ScriptVerifyMinimalData
-
-	// ScriptVerifyNullFail defines that signatures must be empty if
-	// a CHECKSIG or CHECKMULTISIG operation fails.
-	ScriptVerifyNullFail
-
-	// ScriptVerifySigPushOnly defines that signature scripts must contain
-	// only pushed data.  This is rule 2 of BIP0062.
-	ScriptVerifySigPushOnly
-
-	// ScriptVerifyStrictEncoding defines that signature scripts and
-	// public keys must follow the strict encoding requirements.
-	ScriptVerifyStrictEncoding
+	ScriptDiscourageUpgradableNops ScriptFlags = 1 << iota
 )
 
 const (
@@ -143,7 +113,7 @@ func (vm *Engine) executeOpcode(pop *parsedOpcode) error {
 
 	// Ensure all executed data push opcodes use the minimal encoding when
 	// the minimal data verification flag is set.
-	if vm.dstack.verifyMinimalData && vm.isBranchExecuting() &&
+	if vm.isBranchExecuting() &&
 		pop.opcode.value >= 0 && pop.opcode.value <= OpPushData4 {
 
 		if err := pop.checkMinimalDataPush(); err != nil {
@@ -228,7 +198,7 @@ func (vm *Engine) CheckErrorCondition(finalScript bool) error {
 			"error check when script unfinished")
 	}
 
-	if finalScript && vm.hasFlag(ScriptVerifyCleanStack) &&
+	if finalScript &&
 		vm.dstack.Depth() != 1 {
 
 		str := fmt.Sprintf("stack contains %d unexpected items",
@@ -382,10 +352,6 @@ func (vm *Engine) currentScript() []parsedOpcode {
 // checkHashTypeEncoding returns whether or not the passed hashtype adheres to
 // the strict encoding requirements if enabled.
 func (vm *Engine) checkHashTypeEncoding(hashType SigHashType) error {
-	if !vm.hasFlag(ScriptVerifyStrictEncoding) {
-		return nil
-	}
-
 	sigHashType := hashType & ^SigHashAnyOneCanPay
 	if sigHashType < SigHashAll || sigHashType > SigHashSingle {
 		str := fmt.Sprintf("invalid hash type 0x%x", hashType)
@@ -397,10 +363,6 @@ func (vm *Engine) checkHashTypeEncoding(hashType SigHashType) error {
 // checkPubKeyEncoding returns whether or not the passed public key adheres to
 // the strict encoding requirements if enabled.
 func (vm *Engine) checkPubKeyEncoding(pubKey []byte) error {
-	if !vm.hasFlag(ScriptVerifyStrictEncoding) {
-		return nil
-	}
-
 	if len(pubKey) == 33 && (pubKey[0] == 0x02 || pubKey[0] == 0x03) {
 		// Compressed
 		return nil
@@ -542,13 +504,11 @@ func (vm *Engine) checkSignatureEncoding(sig []byte) error {
 	// valid transaction with the complement while still being a valid
 	// signature that verifies.  This would result in changing the
 	// transaction hash and thus is source of malleability.
-	if vm.hasFlag(ScriptVerifyLowS) {
-		sValue := new(big.Int).SetBytes(sig[rLen+6 : rLen+6+sLen])
-		if sValue.Cmp(halfOrder) > 0 {
-			return scriptError(ErrSigHighS,
-				"signature is not canonical due to "+
-					"unnecessarily high S value")
-		}
+	sValue := new(big.Int).SetBytes(sig[rLen+6 : rLen+6+sLen])
+	if sValue.Cmp(halfOrder) > 0 {
+		return scriptError(ErrSigHighS,
+			"signature is not canonical due to "+
+				"unnecessarily high S value")
 	}
 
 	return nil
@@ -622,23 +582,11 @@ func NewEngine(scriptPubKey []byte, tx *wire.MsgTx, txIdx int, flags ScriptFlags
 			"false stack entry at end of script execution")
 	}
 
-	// The clean stack flag (ScriptVerifyCleanStack) is not allowed without
-	// the pay-to-script-hash (P2SH) evaluation (ScriptBip16) flag.
-	//
-	// Recall that evaluating a P2SH script without the flag set results in
-	// non-P2SH evaluation which leaves the P2SH inputs on the stack.  Thus,
-	// allowing the clean stack flag without the P2SH flag would make it
-	// possible to have a situation where P2SH would not be a soft fork when
-	// it should be.
 	vm := Engine{flags: flags, sigCache: sigCache}
-	if vm.hasFlag(ScriptVerifyCleanStack) && !vm.hasFlag(ScriptBip16) {
-		return nil, scriptError(ErrInvalidFlags,
-			"invalid flags combination")
-	}
 
 	// The signature script must only contain data pushes when the
 	// associated flag is set.
-	if vm.hasFlag(ScriptVerifySigPushOnly) && !IsPushOnlyScript(scriptSig) {
+	if !IsPushOnlyScript(scriptSig) {
 		return nil, scriptError(ErrNotPushOnly,
 			"signature script is not push only")
 	}
@@ -669,17 +617,13 @@ func NewEngine(scriptPubKey []byte, tx *wire.MsgTx, txIdx int, flags ScriptFlags
 		vm.scriptIdx++
 	}
 
-	if vm.hasFlag(ScriptBip16) && isScriptHash(vm.scripts[1]) {
+	if isScriptHash(vm.scripts[1]) {
 		// Only accept input scripts that push data for P2SH.
 		if !isPushOnly(vm.scripts[0]) {
 			return nil, scriptError(ErrNotPushOnly,
 				"pay to script hash is not push only")
 		}
 		vm.bip16 = true
-	}
-	if vm.hasFlag(ScriptVerifyMinimalData) {
-		vm.dstack.verifyMinimalData = true
-		vm.astack.verifyMinimalData = true
 	}
 
 	vm.tx = *tx

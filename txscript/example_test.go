@@ -162,8 +162,7 @@ func ExampleSignTxOutput() {
 
 	// Prove that the transaction has been validly signed by executing the
 	// script pair.
-	flags := txscript.ScriptBip16 |
-		txscript.ScriptDiscourageUpgradableNops
+	flags := txscript.ScriptDiscourageUpgradableNops
 	vm, err := txscript.NewEngine(originTx.TxOut[0].PkScript, redeemTx, 0, flags, nil)
 	if err != nil {
 		fmt.Println(err)

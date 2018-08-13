@@ -166,9 +166,8 @@ const (
 	// Failures related to malleability.
 	// ---------------------------------
 
-	// ErrMinimalData is returned when the ScriptVerifyMinimalData flag
-	// is set and the script contains push operations that do not use
-	// the minimal opcode required.
+	// ErrMinimalData is returned when the script contains
+	// push operations that do not use the minimal opcode required.
 	ErrMinimalData
 
 	// ErrInvalidSigHashType is returned when a signature hash type is not
@@ -191,21 +190,18 @@ const (
 	// ErrNotPushOnly is returned when a script that is required to only
 	// push data to the stack performs other operations.  A couple of cases
 	// where this applies is for a pay-to-script-hash signature script when
-	// bip16 is active and when the ScriptVerifySigPushOnly flag is set.
+	// bip16 is active.
 	ErrNotPushOnly
 
-	// ErrPubKeyType is returned when the ScriptVerifyStrictEncoding
-	// flag is set and the script contains invalid public keys.
+	// ErrPubKeyType is returned when the script contains invalid public keys.
 	ErrPubKeyType
 
-	// ErrCleanStack is returned when the ScriptVerifyCleanStack flag
-	// is set, and after evalution, the stack does not contain only a
-	// single element.
+	// ErrCleanStack is returned when after evalution, the stack
+	// does not contain only a single element.
 	ErrCleanStack
 
-	// ErrNullFail is returned when the ScriptVerifyNullFail flag is
-	// set and signatures are not empty on failed checksig or checkmultisig
-	// operations.
+	// ErrNullFail is returned when signatures are not empty
+	// on failed checksig or checkmultisig operations.
 	ErrNullFail
 
 	// -------------------------------

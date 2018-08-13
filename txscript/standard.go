@@ -26,13 +26,7 @@ const (
 	//
 	// TODO: This definition does not belong here.  It belongs in a policy
 	// package.
-	StandardVerifyFlags = ScriptBip16 |
-		ScriptVerifyStrictEncoding |
-		ScriptVerifyMinimalData |
-		ScriptDiscourageUpgradableNops |
-		ScriptVerifyCleanStack |
-		ScriptVerifyNullFail |
-		ScriptVerifyLowS
+	StandardVerifyFlags = ScriptDiscourageUpgradableNops
 )
 
 // ScriptClass is an enumeration for the list of standard types of script.
@@ -552,7 +546,7 @@ func ExtractAtomicSwapDataPushes(version uint16, pkScript []byte) (*AtomicSwapDa
 	copy(pushes.RecipientHash160[:], pops[9].data)
 	copy(pushes.RefundHash160[:], pops[16].data)
 	if pops[2].data != nil {
-		locktime, err := makeScriptNum(pops[2].data, true, 5)
+		locktime, err := makeScriptNum(pops[2].data, 5)
 		if err != nil {
 			return nil, nil
 		}
@@ -563,7 +557,7 @@ func ExtractAtomicSwapDataPushes(version uint16, pkScript []byte) (*AtomicSwapDa
 		return nil, nil
 	}
 	if pops[11].data != nil {
-		locktime, err := makeScriptNum(pops[11].data, true, 5)
+		locktime, err := makeScriptNum(pops[11].data, 5)
 		if err != nil {
 			return nil, nil
 		}

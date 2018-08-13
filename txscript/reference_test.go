@@ -133,24 +133,8 @@ func parseScriptFlags(flagStr string) (ScriptFlags, error) {
 		switch flag {
 		case "":
 			// Nothing.
-		case "CLEANSTACK":
-			flags |= ScriptVerifyCleanStack
 		case "DISCOURAGE_UPGRADABLE_NOPS":
 			flags |= ScriptDiscourageUpgradableNops
-		case "LOW_S":
-			flags |= ScriptVerifyLowS
-		case "MINIMALDATA":
-			flags |= ScriptVerifyMinimalData
-		case "NONE":
-			// Nothing.
-		case "NULLFAIL":
-			flags |= ScriptVerifyNullFail
-		case "P2SH":
-			flags |= ScriptBip16
-		case "SIGPUSHONLY":
-			flags |= ScriptVerifySigPushOnly
-		case "STRICTENC":
-			flags |= ScriptVerifyStrictEncoding
 		default:
 			return flags, fmt.Errorf("invalid flag: %s", flag)
 		}
