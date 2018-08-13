@@ -278,7 +278,7 @@ func (p *poolHarness) CreateTxChain(firstOutput spendableOutput, numTxns uint32)
 // for testing.  Also, the fake chain is populated with the returned spendable
 // outputs so the caller can easily create new valid transactions which build
 // off of it.
-func newPoolHarness(chainParams *dagconfig.Params) (*poolHarness, []spendableOutput, error) {
+func newPoolHarness(dagParams *dagconfig.Params, numOutputs uint32) (*poolHarness, []spendableOutput, error) {
 	// Use a hard coded key pair for deterministic results.
 	keyBytes, err := hex.DecodeString("700868df1838811ffbdf918fb482c1f7e" +
 		"ad62db4b97bd7012c23e726485e577d")
@@ -290,7 +290,7 @@ func newPoolHarness(chainParams *dagconfig.Params) (*poolHarness, []spendableOut
 	// Generate associated pay-to-script-hash address and resulting payment
 	// script.
 	pubKeyBytes := signPub.SerializeCompressed()
-	payPubKeyAddr, err := btcutil.NewAddressPubKey(pubKeyBytes, chainParams)
+	payPubKeyAddr, err := btcutil.NewAddressPubKey(pubKeyBytes, dagParams)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -306,7 +306,7 @@ func newPoolHarness(chainParams *dagconfig.Params) (*poolHarness, []spendableOut
 		signKey:     signKey,
 		payAddr:     payAddr,
 		payScript:   pkScript,
-		chainParams: chainParams,
+		chainParams: dagParams,
 
 		chain: chain,
 		txPool: New(&Config{
@@ -319,7 +319,7 @@ func newPoolHarness(chainParams *dagconfig.Params) (*poolHarness, []spendableOut
 				MinRelayTxFee:        1000, // 1 Satoshi per byte
 				MaxTxVersion:         1,
 			},
-			ChainParams:      chainParams,
+			ChainParams:      dagParams,
 			FetchUtxoView:    chain.FetchUtxoView,
 			BestHeight:       chain.BestHeight,
 			MedianTimePast:   chain.MedianTimePast,
@@ -334,7 +334,6 @@ func newPoolHarness(chainParams *dagconfig.Params) (*poolHarness, []spendableOut
 	// coinbase will mature in the next block.  This ensures the txpool
 	// accepts transactions which spend immature coinbases that will become
 	// mature in the next block.
-	numOutputs := uint32(1)
 	outputs := make([]spendableOutput, 0, numOutputs)
 	curHeight := harness.chain.BestHeight()
 	coinbase, err := harness.CreateCoinbaseTx(curHeight+1, numOutputs)
@@ -345,7 +344,7 @@ func newPoolHarness(chainParams *dagconfig.Params) (*poolHarness, []spendableOut
 	for i := uint32(0); i < numOutputs; i++ {
 		outputs = append(outputs, txOutToSpendableOut(coinbase, i))
 	}
-	harness.chain.SetHeight(int32(chainParams.CoinbaseMaturity) + curHeight)
+	harness.chain.SetHeight(int32(dagParams.CoinbaseMaturity) + curHeight)
 	harness.chain.SetMedianTimePast(time.Now())
 
 	return &harness, outputs, nil
@@ -388,6 +387,75 @@ func testPoolMembership(tc *testContext, tx *btcutil.Tx, inOrphanPool, inTxPool 
 	}
 }
 
+func (p *poolHarness) createTx(out spendableOutput, minusSatoshis int64) (*btcutil.Tx, error) {
+	tx := wire.NewMsgTx(wire.TxVersion)
+	tx.AddTxIn(&wire.TxIn{
+		PreviousOutPoint: out.outPoint,
+		SignatureScript:  nil,
+		Sequence:         wire.MaxTxInSequenceNum,
+	})
+	tx.AddTxOut(&wire.TxOut{
+		PkScript: p.payScript,
+		Value:    int64(out.amount) - minusSatoshis,
+	})
+
+	// Sign the new transaction.
+	sigScript, err := txscript.SignatureScript(tx, 0, p.payScript,
+		txscript.SigHashAll, p.signKey, true)
+	if err != nil {
+		return nil, err
+	}
+	tx.TxIn[0].SignatureScript = sigScript
+	return btcutil.NewTx(tx), nil
+}
+
+func TestDoubleSpends(t *testing.T) {
+	t.Parallel()
+
+	harness, spendableOuts, err := newPoolHarness(&dagconfig.MainNetParams, 2)
+	if err != nil {
+		t.Fatalf("unable to create test pool: %v", err)
+	}
+	tc := &testContext{t, harness}
+
+	//Add two transactions to the mempool
+	tx1, err := harness.createTx(spendableOuts[0], 0)
+	if err != nil {
+		t.Fatalf("unable to create transaction: %v", err)
+	}
+	harness.txPool.ProcessTransaction(tx1, true, false, 0)
+
+	tx2, err := harness.createTx(spendableOuts[1], 1)
+	if err != nil {
+		t.Fatalf("unable to create transaction: %v", err)
+	}
+	harness.txPool.ProcessTransaction(tx2, true, false, 0)
+	testPoolMembership(tc, tx1, false, true)
+	testPoolMembership(tc, tx2, false, true)
+
+	tx3, err := harness.createTx(spendableOuts[0], 2) //Spends the same outpoint as tx2
+	if err != nil {
+		t.Fatalf("unable to create transaction: %v", err)
+	}
+	//First we try to add it to the mempool and see it rejected
+	_, err = harness.txPool.ProcessTransaction(tx3, true, false, 0)
+	if err == nil {
+		t.Errorf("ProcessTransaction expected an error, not nil")
+	}
+	if code, _ := extractRejectCode(err); code != wire.RejectDuplicate {
+		t.Errorf("Unexpected error code. Expected %v but got %v", wire.RejectDuplicate, code)
+	}
+	testPoolMembership(tc, tx3, false, false)
+
+	//Then we assume tx3 is already in the DAG, so we need to remove
+	//transactions that spends the same outpoints from the mempool
+	harness.txPool.RemoveDoubleSpends(tx3)
+	//Ensures that only the transaction that double spends the same
+	//funds as tx3 is removed, and the other one remains unaffected
+	testPoolMembership(tc, tx1, false, false)
+	testPoolMembership(tc, tx2, false, true)
+}
+
 // TestSimpleOrphanChain ensures that a simple chain of orphans is handled
 // properly.  In particular, it generates a chain of single input, single output
 // transactions and inserts them while skipping the first linking transaction so
@@ -396,7 +464,7 @@ func testPoolMembership(tc *testContext, tx *btcutil.Tx, inOrphanPool, inTxPool 
 func TestSimpleOrphanChain(t *testing.T) {
 	t.Parallel()
 
-	harness, spendableOuts, err := newPoolHarness(&dagconfig.MainNetParams)
+	harness, spendableOuts, err := newPoolHarness(&dagconfig.MainNetParams, 1)
 	if err != nil {
 		t.Fatalf("unable to create test pool: %v", err)
 	}
@@ -459,7 +527,7 @@ func TestSimpleOrphanChain(t *testing.T) {
 func TestOrphanReject(t *testing.T) {
 	t.Parallel()
 
-	harness, outputs, err := newPoolHarness(&dagconfig.MainNetParams)
+	harness, outputs, err := newPoolHarness(&dagconfig.MainNetParams, 1)
 	if err != nil {
 		t.Fatalf("unable to create test pool: %v", err)
 	}
@@ -515,7 +583,7 @@ func TestOrphanReject(t *testing.T) {
 func TestOrphanExpiration(t *testing.T) {
 	t.Parallel()
 
-	harness, _, err := newPoolHarness(&dagconfig.MainNetParams)
+	harness, _, err := newPoolHarness(&dagconfig.MainNetParams, 1)
 	if err != nil {
 		t.Fatalf("unable to create test pool: %v", err)
 	}
@@ -561,7 +629,7 @@ func TestOrphanExpiration(t *testing.T) {
 func TestMaxOrphanTxSize(t *testing.T) {
 	t.Parallel()
 
-	harness, _, err := newPoolHarness(&dagconfig.MainNetParams)
+	harness, _, err := newPoolHarness(&dagconfig.MainNetParams, 1)
 	if err != nil {
 		t.Fatalf("unable to create test pool: %v", err)
 	}
@@ -592,7 +660,7 @@ func TestMaxOrphanTxSize(t *testing.T) {
 func TestOrphanEviction(t *testing.T) {
 	t.Parallel()
 
-	harness, outputs, err := newPoolHarness(&dagconfig.MainNetParams)
+	harness, outputs, err := newPoolHarness(&dagconfig.MainNetParams, 1)
 	if err != nil {
 		t.Fatalf("unable to create test pool: %v", err)
 	}
@@ -655,7 +723,7 @@ func TestOrphanEviction(t *testing.T) {
 func TestRemoveOrphansByTag(t *testing.T) {
 	t.Parallel()
 
-	harness, _, err := newPoolHarness(&dagconfig.MainNetParams)
+	harness, _, err := newPoolHarness(&dagconfig.MainNetParams, 1)
 	if err != nil {
 		t.Fatalf("unable to create test pool: %v", err)
 	}
@@ -713,7 +781,7 @@ func TestBasicOrphanRemoval(t *testing.T) {
 	t.Parallel()
 
 	const maxOrphans = 4
-	harness, spendableOuts, err := newPoolHarness(&dagconfig.MainNetParams)
+	harness, spendableOuts, err := newPoolHarness(&dagconfig.MainNetParams, 1)
 	if err != nil {
 		t.Fatalf("unable to create test pool: %v", err)
 	}
@@ -788,7 +856,7 @@ func TestOrphanChainRemoval(t *testing.T) {
 	t.Parallel()
 
 	const maxOrphans = 10
-	harness, spendableOuts, err := newPoolHarness(&dagconfig.MainNetParams)
+	harness, spendableOuts, err := newPoolHarness(&dagconfig.MainNetParams, 1)
 	if err != nil {
 		t.Fatalf("unable to create test pool: %v", err)
 	}
@@ -851,7 +919,7 @@ func TestMultiInputOrphanDoubleSpend(t *testing.T) {
 	t.Parallel()
 
 	const maxOrphans = 4
-	harness, outputs, err := newPoolHarness(&dagconfig.MainNetParams)
+	harness, outputs, err := newPoolHarness(&dagconfig.MainNetParams, 1)
 	if err != nil {
 		t.Fatalf("unable to create test pool: %v", err)
 	}
@@ -939,7 +1007,7 @@ func TestMultiInputOrphanDoubleSpend(t *testing.T) {
 func TestCheckSpend(t *testing.T) {
 	t.Parallel()
 
-	harness, outputs, err := newPoolHarness(&dagconfig.MainNetParams)
+	harness, outputs, err := newPoolHarness(&dagconfig.MainNetParams, 1)
 	if err != nil {
 		t.Fatalf("unable to create test pool: %v", err)
 	}
