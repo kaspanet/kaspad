@@ -1245,11 +1245,6 @@ func New(config *Config) (*BlockDAG, error) {
 		return nil, err
 	}
 
-	// Perform any upgrades to the various chain-specific buckets as needed.
-	if err := b.maybeUpgradeDbBuckets(config.Interrupt); err != nil {
-		return nil, err
-	}
-
 	// Initialize and catch up all of the currently active optional indexes
 	// as needed.
 	if config.IndexManager != nil {

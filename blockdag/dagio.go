@@ -952,13 +952,6 @@ func (dag *BlockDAG) initDAGState() error {
 		return dag.createDAGState()
 	}
 
-	if !hasBlockIndex {
-		err := migrateBlockIndex(dag.db)
-		if err != nil {
-			return nil
-		}
-	}
-
 	// Attempt to load the DAG state from the database.
 	return dag.db.View(func(dbTx database.Tx) error {
 		// Fetch the stored DAG state from the database metadata.
