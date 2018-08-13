@@ -6,6 +6,8 @@ package mempool
 
 import (
 	"encoding/hex"
+	"fmt"
+	"math"
 	"reflect"
 	"runtime"
 	"sync"
@@ -505,6 +507,84 @@ func TestOrphanReject(t *testing.T) {
 		// transaction pool, and not reported as available
 		testPoolMembership(tc, tx, false, false)
 	}
+}
+
+//TestOrphanExpiration checks every time we add an orphan transaction
+// it will check if we are beyond nextExpireScan, and if so, it will remove
+// all expired orphan transactions
+func TestOrphanExpiration(t *testing.T) {
+	t.Parallel()
+
+	harness, _, err := newPoolHarness(&dagconfig.MainNetParams)
+	if err != nil {
+		t.Fatalf("unable to create test pool: %v", err)
+	}
+	tc := &testContext{t, harness}
+
+	expiredTx, err := harness.CreateSignedTx([]spendableOutput{{
+		amount:   btcutil.Amount(5000000000),
+		outPoint: wire.OutPoint{Hash: daghash.Hash{}, Index: 0},
+	}}, 1)
+	harness.txPool.ProcessTransaction(expiredTx, true,
+		false, 0)
+	harness.txPool.orphans[*expiredTx.Hash()].expiration = time.Unix(0, 0)
+
+	tx1, err := harness.CreateSignedTx([]spendableOutput{{
+		amount:   btcutil.Amount(5000000000),
+		outPoint: wire.OutPoint{Hash: daghash.Hash{1}, Index: 0},
+	}}, 1)
+	harness.txPool.ProcessTransaction(tx1, true,
+		false, 0)
+
+	//First check that expired orphan transactions are not removed before nextExpireScan
+	testPoolMembership(tc, tx1, true, false)
+	testPoolMembership(tc, expiredTx, true, false)
+
+	//Force nextExpireScan to be in the past
+	harness.txPool.nextExpireScan = time.Unix(0, 0)
+	fmt.Println(harness.txPool.nextExpireScan.Unix())
+
+	tx2, err := harness.CreateSignedTx([]spendableOutput{{
+		amount:   btcutil.Amount(5000000000),
+		outPoint: wire.OutPoint{Hash: daghash.Hash{2}, Index: 0},
+	}}, 1)
+	harness.txPool.ProcessTransaction(tx2, true,
+		false, 0)
+	//Check that only expired orphan transactions are removed
+	testPoolMembership(tc, tx1, true, false)
+	testPoolMembership(tc, tx2, true, false)
+	testPoolMembership(tc, expiredTx, false, false)
+}
+
+//TestMaxOrphanTxSize ensures that a transaction that is
+//bigger than MaxOrphanTxSize will get rejected
+func TestMaxOrphanTxSize(t *testing.T) {
+	t.Parallel()
+
+	harness, _, err := newPoolHarness(&dagconfig.MainNetParams)
+	if err != nil {
+		t.Fatalf("unable to create test pool: %v", err)
+	}
+	tc := &testContext{t, harness}
+	harness.txPool.cfg.Policy.MaxOrphanTxSize = 1
+
+	tx, err := harness.CreateSignedTx([]spendableOutput{{
+		amount:   btcutil.Amount(5000000000),
+		outPoint: wire.OutPoint{Hash: daghash.Hash{}, Index: 0},
+	}}, 1)
+	if err != nil {
+		t.Fatalf("unable to create signed tx: %v", err)
+	}
+	harness.txPool.ProcessTransaction(tx, true,
+		false, 0)
+
+	testPoolMembership(tc, tx, false, false)
+
+	harness.txPool.cfg.Policy.MaxOrphanTxSize = math.MaxInt32
+	harness.txPool.ProcessTransaction(tx, true,
+		false, 0)
+	testPoolMembership(tc, tx, true, false)
+
 }
 
 // TestOrphanEviction ensures that exceeding the maximum number of orphans
