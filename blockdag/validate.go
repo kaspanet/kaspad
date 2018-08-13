@@ -161,21 +161,6 @@ func IsFinalizedTransaction(tx *btcutil.Tx, blockHeight int32, blockTime time.Ti
 	return true
 }
 
-// isBIP0030Node returns whether or not the passed node represents one of the
-// two blocks that violate the BIP0030 rule which prevents transactions from
-// overwriting old ones.
-func isBIP0030Node(node *blockNode) bool {
-	if node.height == 91842 && node.hash.IsEqual(block91842Hash) {
-		return true
-	}
-
-	if node.height == 91880 && node.hash.IsEqual(block91880Hash) {
-		return true
-	}
-
-	return false
-}
-
 // CalcBlockSubsidy returns the subsidy amount a block at the provided height
 // should have. This is mainly used for determining how much the coinbase for
 // newly generated blocks awards as well as validating the coinbase for blocks
