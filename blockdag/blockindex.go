@@ -128,9 +128,9 @@ type blockNode struct {
 // initially creating a node.
 func initBlockNode(node *blockNode, blockHeader *wire.BlockHeader, parents blockSet, phantomK uint32) {
 	*node = blockNode{
-		parents:  parents,
-		children: make(blockSet),
-		workSum: big.NewInt(0),
+		parents:   parents,
+		children:  make(blockSet),
+		workSum:   big.NewInt(0),
 		timestamp: time.Now().Unix(),
 	}
 
@@ -160,13 +160,7 @@ func addNodeAsChildToParents(node *blockNode) {
 }
 
 func calculateNodeHeight(node *blockNode) int32 {
-	var maxHeight int32
-	for _, parent := range node.parents {
-		if maxHeight < parent.height {
-			maxHeight = parent.height
-		}
-	}
-	return maxHeight + 1
+	return node.parents.maxHeight() + 1
 }
 
 // newBlockNode returns a new block node for the given block header and parent

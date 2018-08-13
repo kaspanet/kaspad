@@ -60,6 +60,9 @@ const (
 	// the current time.
 	ErrTimeTooNew
 
+	// ErrWrongParentsOrder indicates that the block's parents are not ordered as expected
+	ErrWrongParentsOrder
+
 	// ErrDifficultyTooLow indicates the difficulty for the block is lower
 	// than the difficulty required by the most recent checkpoint.
 	ErrDifficultyTooLow

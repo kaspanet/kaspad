@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"math"
 	"math/big"
+	"reflect"
+	"sort"
 	"time"
 
 	"github.com/daglabs/btcd/dagconfig"
@@ -444,6 +446,11 @@ func checkBlockHeaderSanity(header *wire.BlockHeader, powLimit *big.Int, timeSou
 		return err
 	}
 
+	err = checkBlockParentsOrder(header)
+	if err != nil {
+		return err
+	}
+
 	// A block timestamp must not have a greater precision than one second.
 	// This check is necessary because Go time.Time values support
 	// nanosecond precision whereas the consensus rules only apply to
@@ -464,6 +471,21 @@ func checkBlockHeaderSanity(header *wire.BlockHeader, powLimit *big.Int, timeSou
 		return ruleError(ErrTimeTooNew, str)
 	}
 
+	return nil
+}
+
+//checkBlockParentsOrder ensures that the block's parents are ordered by hash
+func checkBlockParentsOrder(header *wire.BlockHeader) error {
+	sortedHashes := make([]daghash.Hash, 0, len(header.PrevBlocks))
+	for _, hash := range header.PrevBlocks {
+		sortedHashes = append(sortedHashes, hash)
+	}
+	sort.Slice(sortedHashes, func(i, j int) bool {
+		return daghash.Less(&sortedHashes[i], &sortedHashes[j])
+	})
+	if !reflect.DeepEqual(header.PrevBlocks, sortedHashes) {
+		return ruleError(ErrWrongParentsOrder, "block parents are not ordered by hash")
+	}
 	return nil
 }
 
