@@ -588,19 +588,16 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 		// block height from the scriptSig of the coinbase transaction.
 		// Extraction is only attempted if the block's version is
 		// high enough (ver 2+).
-		header := &bmsg.block.MsgBlock().Header
-		if blockdag.ShouldHaveSerializedBlockHeight(header) {
-			coinbaseTx := bmsg.block.Transactions()[0]
-			cbHeight, err := blockdag.ExtractCoinbaseHeight(coinbaseTx)
-			if err != nil {
-				log.Warnf("Unable to extract height from "+
-					"coinbase tx: %v", err)
-			} else {
-				log.Debugf("Extracted height of %v from "+
-					"orphan block", cbHeight)
-				heightUpdate = cbHeight
-				blkHashUpdate = blockHash
-			}
+		coinbaseTx := bmsg.block.Transactions()[0]
+		cbHeight, err := blockdag.ExtractCoinbaseHeight(coinbaseTx)
+		if err != nil {
+			log.Warnf("Unable to extract height from "+
+				"coinbase tx: %v", err)
+		} else {
+			log.Debugf("Extracted height of %v from "+
+				"orphan block", cbHeight)
+			heightUpdate = cbHeight
+			blkHashUpdate = blockHash
 		}
 
 		orphanRoot := sm.dag.GetOrphanRoot(blockHash)

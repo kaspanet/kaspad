@@ -31,7 +31,7 @@ type hashIDPair struct {
 func TestPhantom(t *testing.T) {
 	netParams := dagconfig.SimNetParams
 
-	blockVersion := int32(0x20000000)
+	blockVersion := int32(0x10000000)
 
 	tests := []struct {
 		k              uint32
@@ -40,7 +40,7 @@ func TestPhantom(t *testing.T) {
 		expectedReds   []string
 	}{
 		{
-			//Block hash order:DEBHICAKGJF
+			//Block hash order:AKJIHGFEDCB
 			k:              1,
 			virtualBlockID: "K",
 			expectedReds:   []string{"D"},
@@ -98,8 +98,8 @@ func TestPhantom(t *testing.T) {
 					parents:                []string{"E", "G"},
 					id:                     "I",
 					expectedScore:          5,
-					expectedSelectedParent: "G",
-					expectedBlues:          []string{"G"},
+					expectedSelectedParent: "E",
+					expectedBlues:          []string{"G", "D", "E"},
 				},
 				{
 					parents:                []string{"F"},
@@ -113,12 +113,12 @@ func TestPhantom(t *testing.T) {
 					id:                     "K",
 					expectedScore:          9,
 					expectedSelectedParent: "H",
-					expectedBlues:          []string{"I", "G", "J", "F", "H"},
+					expectedBlues:          []string{"I", "J", "G", "F", "H"},
 				},
 			},
 		},
 		{
-			//block hash order:DQKRLHOEBSIGUJNPCMTAFV
+			//block hash order:AVUTSRQPONMLKJIHGFEDCB
 			k:              2,
 			virtualBlockID: "V",
 			expectedReds:   []string{"D", "J", "P"},
@@ -205,7 +205,7 @@ func TestPhantom(t *testing.T) {
 					id:                     "M",
 					expectedScore:          10,
 					expectedSelectedParent: "F",
-					expectedBlues:          []string{"L", "K", "H", "I", "E", "G", "B", "F"},
+					expectedBlues:          []string{"L", "K", "I", "H", "G", "E", "B", "F"},
 				},
 				{
 					parents:                []string{"G", "K"},
@@ -233,7 +233,7 @@ func TestPhantom(t *testing.T) {
 					id:                     "Q",
 					expectedScore:          10,
 					expectedSelectedParent: "P",
-					expectedBlues:          []string{"O", "N", "K", "I", "J", "E", "P"},
+					expectedBlues:          []string{"O", "N", "K", "J", "I", "E", "P"},
 				},
 				{
 					parents:                []string{"L", "Q"},
@@ -273,7 +273,7 @@ func TestPhantom(t *testing.T) {
 			},
 		},
 		{
-			//Block hash order:NRSHBUXJTFGPDVCKEQIOWLMA
+			//Block hash order:AXWVUTSRQPONMLKJIHGFEDCB
 			k:              1,
 			virtualBlockID: "X",
 			expectedReds:   []string{"D", "F", "G", "H", "J", "K", "L", "N", "O", "Q", "R", "S", "U", "V"},
@@ -373,15 +373,15 @@ func TestPhantom(t *testing.T) {
 					parents:                []string{"F", "G", "J"},
 					id:                     "O",
 					expectedScore:          5,
-					expectedSelectedParent: "G",
-					expectedBlues:          []string{"J", "F", "G"},
+					expectedSelectedParent: "F",
+					expectedBlues:          []string{"J", "G", "F"},
 				},
 				{
 					parents:                []string{"B", "M", "I"},
 					id:                     "P",
 					expectedScore:          6,
 					expectedSelectedParent: "B",
-					expectedBlues:          []string{"I", "M", "C", "E", "B"},
+					expectedBlues:          []string{"M", "I", "E", "C", "B"},
 				},
 				{
 					parents:                []string{"K", "E"},
@@ -415,15 +415,15 @@ func TestPhantom(t *testing.T) {
 					parents:                []string{"K", "L"},
 					id:                     "U",
 					expectedScore:          4,
-					expectedSelectedParent: "L",
-					expectedBlues:          []string{"K", "L"},
+					expectedSelectedParent: "K",
+					expectedBlues:          []string{"L", "K"},
 				},
 				{
 					parents:                []string{"U", "R"},
 					id:                     "V",
-					expectedScore:          6,
-					expectedSelectedParent: "U",
-					expectedBlues:          []string{"R", "U"},
+					expectedScore:          5,
+					expectedSelectedParent: "R",
+					expectedBlues:          []string{"U", "R"},
 				},
 				{
 					parents:                []string{"S", "U", "T"},
@@ -449,10 +449,10 @@ func TestPhantom(t *testing.T) {
 			//you to point to all the parents that you know, and
 			//propagate your block as soon as it's mined
 
-			//Block hash order: HRTGMKQBXDWSICYFONUPLEAJZ
+			//Block hash order:AYXWVUTSRQPONMLKJIHGFEDCB
 			k:              1,
 			virtualBlockID: "Y",
-			expectedReds:   []string{"B", "C", "D", "E", "F", "G"},
+			expectedReds:   []string{"B", "C", "D", "E", "F", "G", "L"},
 			dagData: []*testBlockData{
 				{
 					parents:                []string{"A"},
@@ -514,15 +514,15 @@ func TestPhantom(t *testing.T) {
 					parents:                []string{"H", "I"},
 					id:                     "J",
 					expectedScore:          3,
-					expectedSelectedParent: "I",
-					expectedBlues:          []string{"H", "I"},
+					expectedSelectedParent: "H",
+					expectedBlues:          []string{"I", "H"},
 				},
 				{
 					parents:                []string{"H", "I"},
 					id:                     "K",
 					expectedScore:          3,
-					expectedSelectedParent: "I",
-					expectedBlues:          []string{"H", "I"},
+					expectedSelectedParent: "H",
+					expectedBlues:          []string{"I", "H"},
 				},
 				{
 					parents:                []string{"I"},
@@ -534,105 +534,105 @@ func TestPhantom(t *testing.T) {
 				{
 					parents:                []string{"J", "K", "L"},
 					id:                     "M",
-					expectedScore:          6,
+					expectedScore:          5,
 					expectedSelectedParent: "J",
-					expectedBlues:          []string{"K", "L", "J"},
+					expectedBlues:          []string{"K", "J"},
 				},
 				{
 					parents:                []string{"J", "K", "L"},
 					id:                     "N",
-					expectedScore:          6,
+					expectedScore:          5,
 					expectedSelectedParent: "J",
-					expectedBlues:          []string{"K", "L", "J"},
+					expectedBlues:          []string{"K", "J"},
 				},
 				{
 					parents:                []string{"N", "M"},
 					id:                     "O",
-					expectedScore:          8,
-					expectedSelectedParent: "N",
-					expectedBlues:          []string{"M", "N"},
+					expectedScore:          7,
+					expectedSelectedParent: "M",
+					expectedBlues:          []string{"N", "M"},
 				},
 				{
 					parents:                []string{"N", "M"},
 					id:                     "P",
-					expectedScore:          8,
-					expectedSelectedParent: "N",
-					expectedBlues:          []string{"M", "N"},
+					expectedScore:          7,
+					expectedSelectedParent: "M",
+					expectedBlues:          []string{"N", "M"},
 				},
 				{
 					parents:                []string{"N", "M"},
 					id:                     "Q",
-					expectedScore:          8,
-					expectedSelectedParent: "N",
-					expectedBlues:          []string{"M", "N"},
+					expectedScore:          7,
+					expectedSelectedParent: "M",
+					expectedBlues:          []string{"N", "M"},
 				},
 				{
 					parents:                []string{"O", "P", "Q"},
 					id:                     "R",
-					expectedScore:          11,
-					expectedSelectedParent: "P",
-					expectedBlues:          []string{"Q", "O", "P"},
+					expectedScore:          10,
+					expectedSelectedParent: "O",
+					expectedBlues:          []string{"Q", "P", "O"},
 				},
 				{
 					parents:                []string{"O", "P", "Q"},
 					id:                     "S",
-					expectedScore:          11,
-					expectedSelectedParent: "P",
-					expectedBlues:          []string{"Q", "O", "P"},
+					expectedScore:          10,
+					expectedSelectedParent: "O",
+					expectedBlues:          []string{"Q", "P", "O"},
 				},
 				{
 					parents:                []string{"G", "S", "R"},
 					id:                     "T",
-					expectedScore:          13,
-					expectedSelectedParent: "S",
-					expectedBlues:          []string{"R", "S"},
+					expectedScore:          12,
+					expectedSelectedParent: "R",
+					expectedBlues:          []string{"S", "R"},
 				},
 				{
 					parents:                []string{"S", "R"},
 					id:                     "U",
-					expectedScore:          13,
-					expectedSelectedParent: "S",
-					expectedBlues:          []string{"R", "S"},
+					expectedScore:          12,
+					expectedSelectedParent: "R",
+					expectedBlues:          []string{"S", "R"},
 				},
 				{
 					parents:                []string{"T", "U"},
 					id:                     "V",
-					expectedScore:          15,
-					expectedSelectedParent: "U",
-					expectedBlues:          []string{"T", "U"},
+					expectedScore:          14,
+					expectedSelectedParent: "T",
+					expectedBlues:          []string{"U", "T"},
 				},
 				{
 					parents:                []string{"T", "U"},
 					id:                     "W",
-					expectedScore:          15,
-					expectedSelectedParent: "U",
-					expectedBlues:          []string{"T", "U"},
+					expectedScore:          14,
+					expectedSelectedParent: "T",
+					expectedBlues:          []string{"U", "T"},
 				},
 				{
-					parents:                []string{"T", "U"},
+					parents:                []string{"U", "T"},
 					id:                     "X",
-					expectedScore:          15,
-					expectedSelectedParent: "U",
-					expectedBlues:          []string{"T", "U"},
+					expectedScore:          14,
+					expectedSelectedParent: "T",
+					expectedBlues:          []string{"U", "T"},
 				},
 				{
 					parents:                []string{"V", "W", "X"},
 					id:                     "Y",
-					expectedScore:          18,
-					expectedSelectedParent: "X",
-					expectedBlues:          []string{"W", "V", "X"},
+					expectedScore:          17,
+					expectedSelectedParent: "V",
+					expectedBlues:          []string{"X", "W", "V"},
 				},
 			},
 		},
 		{
 			//Censorship mining attack: The attacker is mining blocks B,C,D,E,F,G in secret without propagating them,
-			//so all blocks except B should be red, because they don't follow the rules of
+			//so all blocks except B and C should be red, because they don't follow the rules of
 			//PHANTOM that require you to point to all the parents that you know
 
-			//Block hash order:WZHOGBJMDSICRUYKTFQLEAPXN
+			//Block hash order:AYXWVUTSRQPONMLKJIHGFEDCB
 			k:              1,
 			virtualBlockID: "Y",
-			expectedReds:   []string{"C", "D", "E", "F", "G"},
+			expectedReds:   []string{"D", "E", "F", "G", "L"},
 			dagData: []*testBlockData{
 				{
 					parents:                []string{"A"},
@@ -694,15 +694,15 @@ func TestPhantom(t *testing.T) {
 					parents:                []string{"H", "I", "B"},
 					id:                     "J",
 					expectedScore:          4,
-					expectedSelectedParent: "I",
-					expectedBlues:          []string{"H", "B", "I"},
+					expectedSelectedParent: "B",
+					expectedBlues:          []string{"I", "H", "B"},
 				},
 				{
 					parents:                []string{"H", "I", "B"},
 					id:                     "K",
 					expectedScore:          4,
-					expectedSelectedParent: "I",
-					expectedBlues:          []string{"H", "B", "I"},
+					expectedSelectedParent: "B",
+					expectedBlues:          []string{"I", "H", "B"},
 				},
 				{
 					parents:                []string{"I"},
@@ -715,50 +715,50 @@ func TestPhantom(t *testing.T) {
 					parents:                []string{"J", "K", "L", "C"},
 					id:                     "M",
 					expectedScore:          7,
-					expectedSelectedParent: "K",
-					expectedBlues:          []string{"J", "L", "K"},
+					expectedSelectedParent: "J",
+					expectedBlues:          []string{"K", "C", "J"},
 				},
 				{
 					parents:                []string{"J", "K", "L", "C"},
 					id:                     "N",
 					expectedScore:          7,
-					expectedSelectedParent: "K",
-					expectedBlues:          []string{"J", "L", "K"},
+					expectedSelectedParent: "J",
+					expectedBlues:          []string{"K", "C", "J"},
 				},
 				{
 					parents:                []string{"N", "M", "D"},
 					id:                     "O",
 					expectedScore:          9,
-					expectedSelectedParent: "N",
-					expectedBlues:          []string{"M", "N"},
+					expectedSelectedParent: "M",
+					expectedBlues:          []string{"N", "M"},
 				},
 				{
 					parents:                []string{"N", "M", "D"},
 					id:                     "P",
 					expectedScore:          9,
-					expectedSelectedParent: "N",
-					expectedBlues:          []string{"M", "N"},
+					expectedSelectedParent: "M",
+					expectedBlues:          []string{"N", "M"},
 				},
 				{
 					parents:                []string{"N", "M", "D"},
 					id:                     "Q",
 					expectedScore:          9,
-					expectedSelectedParent: "N",
-					expectedBlues:          []string{"M", "N"},
+					expectedSelectedParent: "M",
+					expectedBlues:          []string{"N", "M"},
 				},
 				{
 					parents:                []string{"O", "P", "Q", "E"},
 					id:                     "R",
 					expectedScore:          12,
-					expectedSelectedParent: "P",
-					expectedBlues:          []string{"O", "Q", "P"},
+					expectedSelectedParent: "O",
+					expectedBlues:          []string{"Q", "P", "O"},
 				},
 				{
 					parents:                []string{"O", "P", "Q", "E"},
 					id:                     "S",
 					expectedScore:          12,
-					expectedSelectedParent: "P",
-					expectedBlues:          []string{"O", "Q", "P"},
+					expectedSelectedParent: "O",
+					expectedBlues:          []string{"Q", "P", "O"},
 				},
 				{
 					parents:                []string{"G", "S", "R"},
@@ -799,8 +799,8 @@ func TestPhantom(t *testing.T) {
 					parents:                []string{"V", "W", "X"},
 					id:                     "Y",
 					expectedScore:          19,
-					expectedSelectedParent: "W",
-					expectedBlues:          []string{"V", "X", "W"},
+					expectedSelectedParent: "V",
+					expectedBlues:          []string{"X", "W", "V"},
 				},
 			},
 		},
@@ -825,6 +825,10 @@ func TestPhantom(t *testing.T) {
 				parents.add(parent)
 			}
 			node := newTestNode(parents, blockVersion, 0, blockTime, test.k)
+			node.hash = daghash.Hash{} //It helps to predict hash order
+			for i, char := range blockData.id {
+				node.hash[i] = byte(char)
+			}
 
 			blockDAG.index.AddNode(node)
 			blockByIDMap[blockData.id] = node

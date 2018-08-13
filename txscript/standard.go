@@ -27,7 +27,6 @@ const (
 	// TODO: This definition does not belong here.  It belongs in a policy
 	// package.
 	StandardVerifyFlags = ScriptBip16 |
-		ScriptVerifyDERSignatures |
 		ScriptVerifyStrictEncoding |
 		ScriptVerifyMinimalData |
 		ScriptDiscourageUpgradableNops |
