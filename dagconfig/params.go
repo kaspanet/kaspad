@@ -159,6 +159,9 @@ type Params struct {
 	// Net defines the magic bytes used to identify the network.
 	Net wire.BitcoinNet
 
+	// RPCPort defines the rpc server port
+	RPCPort string
+
 	// DefaultPort defines the default peer-to-peer port for the network.
 	DefaultPort string
 
@@ -179,11 +182,6 @@ type Params struct {
 	// PowLimitBits defines the highest allowed proof of work value for a
 	// block in compact form.
 	PowLimitBits uint32
-
-	// These fields define the block heights at which the specified softfork
-	// BIP became active.
-	BIP0034Height int32
-	BIP0066Height int32
 
 	// CoinbaseMaturity is the number of blocks required before newly mined
 	// coins (coinbase transactions) can be spent.
@@ -266,6 +264,7 @@ var MainNetParams = Params{
 	K:           phantomK,
 	Name:        "mainnet",
 	Net:         wire.MainNet,
+	RPCPort:     "8334",
 	DefaultPort: "8333",
 	DNSSeeds: []DNSSeed{
 		{"seed.bitcoin.sipa.be", true},
@@ -281,8 +280,6 @@ var MainNetParams = Params{
 	GenesisHash:              &genesisHash,
 	PowLimit:                 mainPowLimit,
 	PowLimitBits:             0x1d00ffff,
-	BIP0034Height:            227931, // 000000000000024b89b42a942fe0d9fea3bb44ab7bd1b19115dd6a759c0808b8
-	BIP0066Height:            363725, // 00000000000000000379eaa19dce8c9b722d46ae6a57c2f1a988119488b50931
 	CoinbaseMaturity:         100,
 	SubsidyReductionInterval: 210000,
 	TargetTimespan:           time.Hour * 24 * 14, // 14 days
@@ -353,6 +350,7 @@ var RegressionNetParams = Params{
 	K:           phantomK,
 	Name:        "regtest",
 	Net:         wire.TestNet,
+	RPCPort:     "18334",
 	DefaultPort: "18444",
 	DNSSeeds:    []DNSSeed{},
 
@@ -362,8 +360,6 @@ var RegressionNetParams = Params{
 	PowLimit:                 regressionPowLimit,
 	PowLimitBits:             0x207fffff,
 	CoinbaseMaturity:         100,
-	BIP0034Height:            100000000, // Not active - Permit ver 1 blocks
-	BIP0066Height:            1251,      // Used by regression tests
 	SubsidyReductionInterval: 150,
 	TargetTimespan:           time.Hour * 24 * 14, // 14 days
 	TargetTimePerBlock:       time.Minute * 10,    // 10 minutes
@@ -414,6 +410,7 @@ var TestNet3Params = Params{
 	K:           phantomK,
 	Name:        "testnet3",
 	Net:         wire.TestNet3,
+	RPCPort:     "18334",
 	DefaultPort: "18333",
 	DNSSeeds: []DNSSeed{
 		{"testnet-seed.bitcoin.jonasschnelli.ch", true},
@@ -427,8 +424,6 @@ var TestNet3Params = Params{
 	GenesisHash:              &testNet3GenesisHash,
 	PowLimit:                 testNet3PowLimit,
 	PowLimitBits:             0x1d00ffff,
-	BIP0034Height:            21111,  // 0000000023b3a96d3484e5abb3755c413e7d41500f8e2a5c3f0dd01299cd8ef8
-	BIP0066Height:            330776, // 000000002104c8c45e99a8853285a3b592602a3ccde2b832481da85e9e4ba182
 	CoinbaseMaturity:         100,
 	SubsidyReductionInterval: 210000,
 	TargetTimespan:           time.Hour * 24 * 14, // 14 days
@@ -496,6 +491,7 @@ var SimNetParams = Params{
 	K:           phantomK,
 	Name:        "simnet",
 	Net:         wire.SimNet,
+	RPCPort:     "18556",
 	DefaultPort: "18555",
 	DNSSeeds:    []DNSSeed{}, // NOTE: There must NOT be any seeds.
 
@@ -504,8 +500,6 @@ var SimNetParams = Params{
 	GenesisHash:              &simNetGenesisHash,
 	PowLimit:                 simNetPowLimit,
 	PowLimitBits:             0x207fffff,
-	BIP0034Height:            0, // Always active on simnet
-	BIP0066Height:            0, // Always active on simnet
 	CoinbaseMaturity:         100,
 	SubsidyReductionInterval: 210000,
 	TargetTimespan:           time.Hour * 24 * 14, // 14 days

@@ -4,7 +4,10 @@
 
 package connmgr
 
-import "github.com/btcsuite/btclog"
+import (
+	"github.com/btcsuite/btclog"
+	"github.com/daglabs/btcd/logger"
+)
 
 // log is a logger that is initialized with no output filters.  This
 // means the package will not perform any logging by default until the caller
@@ -13,18 +16,6 @@ var log btclog.Logger
 
 // The default amount of logging is none.
 func init() {
-	DisableLog()
-}
+	log, _ = logger.Get(logger.SubsystemTags.CMGR)
 
-// DisableLog disables all library log output.  Logging output is disabled
-// by default until either UseLogger or SetLogWriter are called.
-func DisableLog() {
-	log = btclog.Disabled
-}
-
-// UseLogger uses a specified Logger to output package logging info.
-// This should be used in preference to SetLogWriter if the caller is also
-// using btclog.
-func UseLogger(logger btclog.Logger) {
-	log = logger
 }

@@ -11,6 +11,7 @@ import (
 
 	"github.com/btcsuite/btclog"
 	"github.com/daglabs/btcd/dagconfig/daghash"
+	"github.com/daglabs/btcd/logger"
 	"github.com/daglabs/btcd/txscript"
 	"github.com/daglabs/btcd/wire"
 )
@@ -28,18 +29,7 @@ var log btclog.Logger
 
 // The default amount of logging is none.
 func init() {
-	DisableLog()
-}
-
-// DisableLog disables all library log output.  Logging output is disabled
-// by default until UseLogger is called.
-func DisableLog() {
-	log = btclog.Disabled
-}
-
-// UseLogger uses a specified Logger to output package logging info.
-func UseLogger(logger btclog.Logger) {
-	log = logger
+	log, _ = logger.Get(logger.SubsystemTags.PEER)
 }
 
 // LogClosure is a closure that can be printed with %v to be used to
@@ -53,15 +43,6 @@ func (c logClosure) String() string {
 
 func newLogClosure(c func() string) logClosure {
 	return logClosure(c)
-}
-
-// directionString is a helper function that returns a string that represents
-// the direction of a connection (inbound or outbound).
-func directionString(inbound bool) string {
-	if inbound {
-		return "inbound"
-	}
-	return "outbound"
 }
 
 // formatLockTime returns a transaction lock time as a human-readable string.

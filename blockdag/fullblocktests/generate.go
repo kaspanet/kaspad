@@ -811,7 +811,7 @@ func Generate(includeLargeReorg bool) (tests [][]TestInstance, err error) {
 
 	// Create a test generator instance initialized with the genesis block
 	// as the tip.
-	g, err := makeTestGenerator(regressionNetParams)
+	g, err := makeTestGenerator(&dagconfig.RegressionNetParams)
 	if err != nil {
 		return nil, err
 	}

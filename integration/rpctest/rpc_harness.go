@@ -33,7 +33,7 @@ const (
 
 	// BlockVersion is the default block version used when generating
 	// blocks.
-	BlockVersion = 4
+	BlockVersion = 1
 )
 
 var (
