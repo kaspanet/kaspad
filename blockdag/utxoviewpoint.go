@@ -123,12 +123,6 @@ type UtxoViewpoint struct {
 	tips    blockSet
 }
 
-// Tips returns the hashes of the tips in the DAG the view currently
-// represents.
-func (view *UtxoViewpoint) Tips() blockSet {
-	return view.tips
-}
-
 // SetTips sets the hashes of the tips in the DAG the view currently
 // represents.
 func (view *UtxoViewpoint) SetTips(tips blockSet) {

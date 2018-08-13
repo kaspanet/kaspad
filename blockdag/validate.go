@@ -957,14 +957,6 @@ func (dag *BlockDAG) checkConnectBlock(node *blockNode, block *btcutil.Block, vi
 		return ruleError(ErrMissingTxOut, str)
 	}
 
-	// Ensure the view is for the node being checked.
-	parentHashes := block.MsgBlock().Header.PrevBlocks
-	if !view.Tips().hashesEqual(parentHashes) {
-		return AssertError(fmt.Sprintf("inconsistent view when "+
-			"checking block connection: tips are %v instead "+
-			"of expected %v", view.Tips(), parentHashes))
-	}
-
 	// BIP0030 added a rule to prevent blocks which contain duplicate
 	// transactions that 'overwrite' older transactions which are not fully
 	// spent.  See the documentation for checkBIP0030 for more details.
