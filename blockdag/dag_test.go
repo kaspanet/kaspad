@@ -84,7 +84,7 @@ func TestHaveBlock(t *testing.T) {
 		{hash: dagconfig.MainNetParams.GenesisHash.String(), want: true},
 
 		// Block 3b should be present (as a second child of Block 2).
-		{hash: "00000033119c0f74eff8b4711fce3769ea33e8a69670d9c0366179a9a5b8aec3", want: true},
+		{hash: "000000bce70562ed076f269c5c4e39c590abb29428c573c02ab970e17931f8a4", want: true},
 
 		// Block 100000 should be present (as an orphan).
 		{hash: "000000824dca82828b9a18ac09ed7c93292f6a042fae580c1192c8cd086fd990", want: true},
@@ -120,7 +120,7 @@ func TestHaveBlock(t *testing.T) {
 func TestCalcSequenceLock(t *testing.T) {
 	netParams := &dagconfig.SimNetParams
 
-	blockVersion := int32(0x20000000)
+	blockVersion := int32(0x10000000)
 
 	// Generate enough synthetic blocks for the rest of the test
 	chain := newTestDAG(netParams)
