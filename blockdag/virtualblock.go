@@ -12,6 +12,7 @@ import (
 type virtualBlock struct {
 	mtx      sync.Mutex
 	phantomK uint32
+	utxoSet  *fullUTXOSet
 	blockNode
 }
 
@@ -20,6 +21,7 @@ func newVirtualBlock(tips blockSet, phantomK uint32) *virtualBlock {
 	// The mutex is intentionally not held since this is a constructor.
 	var virtual virtualBlock
 	virtual.phantomK = phantomK
+	virtual.utxoSet = newFullUTXOSet()
 	virtual.setTips(tips)
 
 	return &virtual
