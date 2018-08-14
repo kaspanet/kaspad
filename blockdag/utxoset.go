@@ -278,13 +278,15 @@ func (fus *fullUTXOSet) withDiff(other *utxoDiff) (utxoSet, error) {
 
 // addTx adds a transaction to this utxoSet and returns true iff it's valid in this UTXO's context
 func (fus *fullUTXOSet) addTx(tx *wire.MsgTx) bool {
-	if !fus.containsInputs(tx) {
-		return false
-	}
+	if !IsCoinBaseTx(tx) {
+		if !fus.containsInputs(tx) {
+			return false
+		}
 
-	for _, txIn := range tx.TxIn {
-		outPoint := *wire.NewOutPoint(&txIn.PreviousOutPoint.Hash, txIn.PreviousOutPoint.Index)
-		delete(fus.utxoCollection, outPoint)
+		for _, txIn := range tx.TxIn {
+			outPoint := *wire.NewOutPoint(&txIn.PreviousOutPoint.Hash, txIn.PreviousOutPoint.Index)
+			delete(fus.utxoCollection, outPoint)
+		}
 	}
 
 	for i, txOut := range tx.TxOut {
@@ -360,17 +362,19 @@ func (dus *diffUTXOSet) withDiff(other *utxoDiff) (utxoSet, error) {
 
 // addTx adds a transaction to this utxoSet and returns true iff it's valid in this UTXO's context
 func (dus *diffUTXOSet) addTx(tx *wire.MsgTx) bool {
-	if !dus.containsInputs(tx) {
-		return false
-	}
+	if !IsCoinBaseTx(tx) {
+		if !dus.containsInputs(tx) {
+			return false
+		}
 
-	for _, txIn := range tx.TxIn {
-		outPoint := *wire.NewOutPoint(&txIn.PreviousOutPoint.Hash, txIn.PreviousOutPoint.Index)
-		if _, ok := dus.utxoDiff.toAdd[outPoint]; ok {
-			delete(dus.utxoDiff.toAdd, outPoint)
-		} else {
-			prevUTXOEntry := dus.base.utxoCollection[outPoint]
-			dus.utxoDiff.toRemove[outPoint] = prevUTXOEntry
+		for _, txIn := range tx.TxIn {
+			outPoint := *wire.NewOutPoint(&txIn.PreviousOutPoint.Hash, txIn.PreviousOutPoint.Index)
+			if _, ok := dus.utxoDiff.toAdd[outPoint]; ok {
+				delete(dus.utxoDiff.toAdd, outPoint)
+			} else {
+				prevUTXOEntry := dus.base.utxoCollection[outPoint]
+				dus.utxoDiff.toRemove[outPoint] = prevUTXOEntry
+			}
 		}
 	}
 

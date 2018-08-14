@@ -841,6 +841,17 @@ func (dag *BlockDAG) createDAGState() error {
 	header := &genesisBlock.MsgBlock().Header
 	node := newBlockNode(header, newSet(), dag.dagParams.K)
 	node.status = statusDataStored | statusValid
+
+	genesisCoinbase := genesisBlock.Transactions()[0].MsgTx()
+	genesisCoinbaseTxIn := genesisCoinbase.TxIn[0]
+	genesisCoinbaseTxOut := genesisCoinbase.TxOut[0]
+	genesisCoinbaseOutpoint := *wire.NewOutPoint(&genesisCoinbaseTxIn.PreviousOutPoint.Hash, genesisCoinbaseTxIn.PreviousOutPoint.Index)
+	genesisCoinbaseUTXOEntry := newUTXOEntry(genesisCoinbaseTxOut)
+	node.diff = &utxoDiff{
+		toAdd:    utxoCollection{genesisCoinbaseOutpoint: genesisCoinbaseUTXOEntry},
+		toRemove: utxoCollection{},
+	}
+
 	dag.virtual.SetTips(setFromSlice(node))
 
 	// Add the new node to the index which is used for faster lookups.

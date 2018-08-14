@@ -487,6 +487,80 @@ func LockTimeToSequence(isSeconds bool, locktime uint64) uint64 {
 		locktime>>wire.SequenceLockTimeGranularity
 }
 
+// connectToDAG handles connecting the passed block to the DAG.
+//
+// The flags modify the behavior of this function as follows:
+//  - BFFastAdd: Avoids several expensive transaction validation operations.
+//    This is useful when using checkpoints.
+//
+// This function MUST be called with the chain state lock held (for writes).
+func (dag *BlockDAG) connectToDAG(node *blockNode, parentNodes blockSet, block *btcutil.Block, flags BehaviorFlags) error {
+	// Skip checks if node has already been fully validated.
+	fastAdd := flags&BFFastAdd == BFFastAdd || dag.index.NodeStatus(node).KnownValid()
+
+	// Perform several checks to verify the block can be connected
+	// to the DAG without violating any rules and without actually
+	// connecting the block.
+	view := NewUtxoViewpoint()
+	stxos := make([]spentTxOut, 0, countSpentOutputs(block))
+	if !fastAdd {
+		err := dag.checkConnectBlock(node, block, view, &stxos)
+		if err == nil {
+			dag.index.SetStatusFlags(node, statusValid)
+		} else if _, ok := err.(RuleError); ok {
+			dag.index.SetStatusFlags(node, statusValidateFailed)
+		} else {
+			return err
+		}
+
+		// Intentionally ignore errors writing updated node status to DB. If
+		// it fails to write, it's not the end of the world. If the block is
+		// valid, we flush in connectBlock and if the block is invalid, the
+		// worst that can happen is we revalidate the block after a restart.
+		if writeErr := dag.index.flushToDB(); writeErr != nil {
+			log.Warnf("Error flushing block index changes to disk: %v",
+				writeErr)
+		}
+
+		if err != nil {
+			return err
+		}
+	}
+
+	// In the fast add case the code to check the block connection
+	// was skipped, so the utxo view needs to load the referenced
+	// utxos, spend them, and add the new utxos being created by
+	// this block.
+	if fastAdd {
+		err := view.fetchInputUtxos(dag.db, block)
+		if err != nil {
+			return err
+		}
+		err = view.connectTransactions(node, block.Transactions(), &stxos)
+		if err != nil {
+			return err
+		}
+	}
+
+	// Connect the block to the DAG.
+	err := dag.connectBlock(node, block, view, stxos)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// countSpentOutputs returns the number of utxos the passed block spends.
+func countSpentOutputs(block *btcutil.Block) int {
+	// Exclude the coinbase transaction since it can't spend anything.
+	var numSpent int
+	for _, tx := range block.Transactions()[1:] {
+		numSpent += len(tx.MsgTx().TxIn)
+	}
+	return numSpent
+}
+
 // connectBlock handles connecting the passed node/block to the DAG.
 //
 // This passed utxo view must have all referenced txos the block spends marked
@@ -520,8 +594,35 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *btcutil.Block, view *U
 		}
 	}
 
-	// Write any block status changes to DB before updating best state.
-	err := dag.index.flushToDB()
+	// Verify and build a UTXO set for the new block.
+	newBlockUTXO, err := dag.verifyAndBuildUTXO(node, block)
+	if err != nil {
+		return err
+	}
+
+	// Update the new block's parents.
+	dag.connectBlockToParents(node)
+	err = dag.updateParentDiffs(node, newBlockUTXO)
+	if err != nil {
+		return err
+	}
+
+	// Update the virtual block's children (the DAG tips) to include the new block.
+	dag.virtual.AddTip(node)
+
+	// Build a UTXO set for the new virtual block and update the DAG tips' diffs.
+	newVirtualUTXO, err := dag.pastUTXO(&dag.virtual.blockNode)
+	if err != nil {
+		return err
+	}
+	err = dag.updateTipsUTXO(newVirtualUTXO)
+	if err != nil {
+		return err
+	}
+	newVirtualUTXO.(*diffUTXOSet).meldToBase()
+
+	// Write any block status changes to DB before updating the DAG state.
+	err = dag.index.flushToDB()
 	if err != nil {
 		return err
 	}
@@ -586,9 +687,6 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *btcutil.Block, view *U
 	// now that the modifications have been committed to the database.
 	view.commit()
 
-	// This node is now at the end of the DAG.
-	dag.virtual.AddTip(node)
-
 	// Update the state for the best block.  Notice how this replaces the
 	// entire struct instead of updating the existing one.  This effectively
 	// allows the old version to act as a snapshot which callers can use
@@ -606,75 +704,133 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *btcutil.Block, view *U
 	return nil
 }
 
-// countSpentOutputs returns the number of utxos the passed block spends.
-func countSpentOutputs(block *btcutil.Block) int {
-	// Exclude the coinbase transaction since it can't spend anything.
-	var numSpent int
-	for _, tx := range block.Transactions()[1:] {
-		numSpent += len(tx.MsgTx().TxIn)
+// verifyAndBuildUTXO verifies all transactions in this block, and builds it's UTXO
+func (dag *BlockDAG) verifyAndBuildUTXO(newBlockNode *blockNode, newBlock *btcutil.Block) (utxoSet, error) {
+	utxo, err := dag.pastUTXO(newBlockNode)
+	if err != nil {
+		return nil, err
 	}
-	return numSpent
+
+	log.Debugf("Past UTXO set for %s: %s", newBlockNode.hash.String(), utxo)
+
+	for _, tx := range newBlock.Transactions() {
+		ok := utxo.addTx(tx.MsgTx())
+		if !ok {
+			return nil, fmt.Errorf("transaction %v is not compatible with UTXO", tx)
+		}
+	}
+
+	log.Debugf("Final UTXO set for %s: %s", newBlockNode.hash.String(), utxo)
+	return utxo, nil
 }
 
-// connectToDAG handles connecting the passed block to the DAG.
-//
-// The flags modify the behavior of this function as follows:
-//  - BFFastAdd: Avoids several expensive transaction validation operations.
-//    This is useful when using checkpoints.
-//
-// This function MUST be called with the chain state lock held (for writes).
-func (dag *BlockDAG) connectToDAG(node *blockNode, parentNodes blockSet, block *btcutil.Block, flags BehaviorFlags) error {
-	// Skip checks if node has already been fully validated.
-	fastAdd := flags&BFFastAdd == BFFastAdd || dag.index.NodeStatus(node).KnownValid()
-
-	// Perform several checks to verify the block can be connected
-	// to the DAG without violating any rules and without actually
-	// connecting the block.
-	view := NewUtxoViewpoint()
-	stxos := make([]spentTxOut, 0, countSpentOutputs(block))
-	if !fastAdd {
-		err := dag.checkConnectBlock(node, block, view, &stxos)
-		if err == nil {
-			dag.index.SetStatusFlags(node, statusValid)
-		} else if _, ok := err.(RuleError); ok {
-			dag.index.SetStatusFlags(node, statusValidateFailed)
-		} else {
-			return err
-		}
-
-		// Intentionally ignore errors writing updated node status to DB. If
-		// it fails to write, it's not the end of the world. If the block is
-		// valid, we flush in connectBlock and if the block is invalid, the
-		// worst that can happen is we revalidate the block after a restart.
-		if writeErr := dag.index.flushToDB(); writeErr != nil {
-			log.Warnf("Error flushing block index changes to disk: %v",
-				writeErr)
-		}
-
-		if err != nil {
-			return err
-		}
+// pastUTXO returns the UTXO of block's past
+func (dag *BlockDAG) pastUTXO(block *blockNode) (utxoSet, error) {
+	if block.isGenesis() {
+		return newDiffUTXOSet(dag.virtual.utxoSet, newUTXODiff()), nil
 	}
 
-	// In the fast add case the code to check the block connection
-	// was skipped, so the utxo view needs to load the referenced
-	// utxos, spend them, and add the new utxos being created by
-	// this block.
-	if fastAdd {
-		err := view.fetchInputUtxos(dag.db, block)
-		if err != nil {
-			return err
-		}
-		err = view.connectTransactions(node, block.Transactions(), &stxos)
-		if err != nil {
-			return err
-		}
+	pastUTXO, err := dag.restoreUTXO(block.selectedParent)
+	if err != nil {
+		return nil, err
 	}
 
-	// Connect the block to the DAG.
-	err := dag.connectBlock(node, block, view, stxos)
+	err = dag.db.View(func(tx database.Tx) error {
+		for i := len(block.blues) - 1; i >= 0; i-- {
+			blueBlockNode := block.blues[i]
+			if blueBlockNode == block.selectedParent {
+				continue
+			}
+
+			blueBlock, err := dbFetchBlockByNode(tx, blueBlockNode)
+			if err != nil {
+				return err
+			}
+			for _, tx := range blueBlock.Transactions() {
+				_ = pastUTXO.addTx(tx.MsgTx()) // purposefully ignore failures - these are just unaccepted transactions
+			}
+		}
+
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return pastUTXO, nil
+}
+
+// restoreUTXO restores the UTXO of a given block from its diff
+func (dag *BlockDAG) restoreUTXO(block *blockNode) (utxoSet, error) {
+	stack := []*blockNode{block}
+	current := block
+
+	for current.diffChild != nil {
+		current = current.diffChild
+		stack = append(stack, current)
+	}
+
+	utxo := utxoSet(dag.virtual.utxoSet)
+
+	for i := len(stack) - 1; i >= 0; i-- {
+		diffedUTXO, err := utxo.withDiff(stack[i].diff)
+		if err != nil {
+			return nil, err
+		}
+
+		utxo = diffedUTXO
+	}
+
+	return utxo, nil
+}
+
+// connectChildToParents iterates the child's parents and adds
+// itself to their child set.
+func (dag *BlockDAG) connectBlockToParents(child *blockNode) {
+	for _, parent := range child.parents {
+		parent.children.add(child)
+	}
+}
+
+// updateParentDiffs updates the diff of any parent whose DiffChild is this block
+func (dag *BlockDAG) updateParentDiffs(newBlock *blockNode, newBlockUTXO utxoSet) error {
+	virtualDiffFromNewBlock, err := dag.virtual.utxoSet.diffFrom(newBlockUTXO)
 	if err != nil {
 		return err
+	}
+
+	newBlock.diff = virtualDiffFromNewBlock
+
+	for _, parent := range newBlock.parents {
+		if parent.diffChild == nil {
+			parentUTXO, err := dag.restoreUTXO(parent)
+			if err != nil {
+				return err
+			}
+			parent.diffChild = newBlock
+			newBlockDiffFromParent, err := newBlockUTXO.diffFrom(parentUTXO)
+			if err != nil {
+				return err
+			}
+			parent.diff = newBlockDiffFromParent
+		}
+	}
+
+	return nil
+}
+
+// updateTipsUTXO builds and applies new diff UTXOs for all the DAG's tips.
+func (dag *BlockDAG) updateTipsUTXO(virtualUTXO utxoSet) error {
+	for _, tip := range dag.virtual.Tips() {
+		tipUTXO, err := dag.restoreUTXO(tip)
+		if err != nil {
+			return err
+		}
+		virtualDiffFromTip, err := virtualUTXO.diffFrom(tipUTXO)
+		if err != nil {
+			return err
+		}
+		tip.diff = virtualDiffFromTip
 	}
 
 	return nil
@@ -1230,7 +1386,6 @@ func New(config *Config) (*BlockDAG, error) {
 		blocksPerRetarget:   int32(targetTimespan / targetTimePerBlock),
 		index:               index,
 		virtual:             newVirtualBlock(nil, params.K),
-		genesis:             index.LookupNode(params.GenesisHash),
 		orphans:             make(map[daghash.Hash]*orphanBlock),
 		prevOrphans:         make(map[daghash.Hash][]*orphanBlock),
 		warningCaches:       newThresholdCaches(vbNumBits),
@@ -1243,6 +1398,9 @@ func New(config *Config) (*BlockDAG, error) {
 	if err := b.initDAGState(); err != nil {
 		return nil, err
 	}
+
+	// Save a reference to the genesis block.
+	b.genesis = index.LookupNode(params.GenesisHash)
 
 	// Perform any upgrades to the various chain-specific buckets as needed.
 	if err := b.maybeUpgradeDbBuckets(config.Interrupt); err != nil {
