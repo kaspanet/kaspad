@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"math"
 	"math/big"
-	"reflect"
 	"sort"
 	"time"
 
@@ -483,7 +482,7 @@ func checkBlockParentsOrder(header *wire.BlockHeader) error {
 	sort.Slice(sortedHashes, func(i, j int) bool {
 		return daghash.Less(&sortedHashes[i], &sortedHashes[j])
 	})
-	if !reflect.DeepEqual(header.PrevBlocks, sortedHashes) {
+	if !daghash.AreEqual(header.PrevBlocks, sortedHashes) {
 		return ruleError(ErrWrongParentsOrder, "block parents are not ordered by hash")
 	}
 	return nil

@@ -234,7 +234,6 @@ func TestAreEqual(t *testing.T) {
 	hash2, _ := NewHashFromStr("2222222222222222222222222222222222222222222222222222222222222222")
 	hash3, _ := NewHashFromStr("3333333333333333333333333333333333333333333333333333333333333333")
 	hashes0To2 := []Hash{*hash0, *hash1, *hash2}
-	hashes0To2Shifted := []Hash{*hash2, *hash0, *hash1}
 	hashes1To3 := []Hash{*hash1, *hash2, *hash3}
 	hashes0To3 := []Hash{*hash0, *hash1, *hash2, *hash3}
 
@@ -248,12 +247,6 @@ func TestAreEqual(t *testing.T) {
 			name:     "self-equality",
 			first:    hashes0To2,
 			second:   hashes0To2,
-			expected: true,
-		},
-		{
-			name:     "same members, different order",
-			first:    hashes0To2,
-			second:   hashes0To2Shifted,
 			expected: true,
 		},
 		{

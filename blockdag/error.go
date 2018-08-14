@@ -60,7 +60,7 @@ const (
 	// the current time.
 	ErrTimeTooNew
 
-	// ErrWrongParentsOrder indicates that the block's parents are not ordered as expected
+	// ErrWrongParentsOrder indicates that the block's parents are not ordered by hash, as expected
 	ErrWrongParentsOrder
 
 	// ErrDifficultyTooLow indicates the difficulty for the block is lower
