@@ -39,7 +39,7 @@ const (
 // ScriptClass is an enumeration for the list of standard types of script.
 type ScriptClass byte
 
-// Classes of script payment known about in the blockchain.
+// Classes of script payment known about in the blockDAG.
 const (
 	NonStandardTy ScriptClass = iota // None of the recognized forms.
 	PubKeyTy                         // Pay pubkey.
