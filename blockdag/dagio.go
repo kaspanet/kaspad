@@ -846,7 +846,7 @@ func (dag *BlockDAG) createDAGState() error {
 	genesisCoinbaseTxIn := genesisCoinbase.TxIn[0]
 	genesisCoinbaseTxOut := genesisCoinbase.TxOut[0]
 	genesisCoinbaseOutpoint := *wire.NewOutPoint(&genesisCoinbaseTxIn.PreviousOutPoint.Hash, genesisCoinbaseTxIn.PreviousOutPoint.Index)
-	genesisCoinbaseUTXOEntry := newUTXOEntry(genesisCoinbaseTxOut)
+	genesisCoinbaseUTXOEntry := newUTXOEntry(genesisCoinbaseTxOut, true)
 	node.diff = &utxoDiff{
 		toAdd:    utxoCollection{genesisCoinbaseOutpoint: genesisCoinbaseUTXOEntry},
 		toRemove: utxoCollection{},

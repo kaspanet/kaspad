@@ -216,10 +216,15 @@ func (d utxoDiff) String() string {
 }
 
 // newUTXOEntry creates a new utxoEntry representing the given txOut
-func newUTXOEntry(txOut *wire.TxOut) *UtxoEntry {
+func newUTXOEntry(txOut *wire.TxOut, isCoinbase bool) *UtxoEntry {
 	entry := new(UtxoEntry)
 	entry.amount = txOut.Value
 	entry.pkScript = txOut.PkScript
+	entry.packedFlags = tfModified
+
+	if isCoinbase {
+		entry.packedFlags |= tfCoinBase
+	}
 
 	return entry
 }
@@ -278,7 +283,8 @@ func (fus *fullUTXOSet) withDiff(other *utxoDiff) (utxoSet, error) {
 
 // addTx adds a transaction to this utxoSet and returns true iff it's valid in this UTXO's context
 func (fus *fullUTXOSet) addTx(tx *wire.MsgTx) bool {
-	if !IsCoinBaseTx(tx) {
+	isCoinbase := IsCoinBaseTx(tx)
+	if !isCoinbase {
 		if !fus.containsInputs(tx) {
 			return false
 		}
@@ -292,7 +298,7 @@ func (fus *fullUTXOSet) addTx(tx *wire.MsgTx) bool {
 	for i, txOut := range tx.TxOut {
 		hash := tx.TxHash()
 		outPoint := *wire.NewOutPoint(&hash, uint32(i))
-		entry := newUTXOEntry(txOut)
+		entry := newUTXOEntry(txOut, isCoinbase)
 
 		fus.utxoCollection[outPoint] = entry
 	}
@@ -362,7 +368,8 @@ func (dus *diffUTXOSet) withDiff(other *utxoDiff) (utxoSet, error) {
 
 // addTx adds a transaction to this utxoSet and returns true iff it's valid in this UTXO's context
 func (dus *diffUTXOSet) addTx(tx *wire.MsgTx) bool {
-	if !IsCoinBaseTx(tx) {
+	isCoinbase := IsCoinBaseTx(tx)
+	if !isCoinbase {
 		if !dus.containsInputs(tx) {
 			return false
 		}
@@ -381,7 +388,7 @@ func (dus *diffUTXOSet) addTx(tx *wire.MsgTx) bool {
 	for i, txOut := range tx.TxOut {
 		hash := tx.TxHash()
 		outPoint := *wire.NewOutPoint(&hash, uint32(i))
-		entry := newUTXOEntry(txOut)
+		entry := newUTXOEntry(txOut, isCoinbase)
 
 		if _, ok := dus.utxoDiff.toRemove[outPoint]; ok {
 			delete(dus.utxoDiff.toRemove, outPoint)
