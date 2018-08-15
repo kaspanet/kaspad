@@ -14,8 +14,8 @@ func TestUTXOCollection(t *testing.T) {
 	hash1, _ := daghash.NewHashFromStr("1111111111111111111111111111111111111111111111111111111111111111")
 	outPoint0 := *wire.NewOutPoint(hash0, 0)
 	outPoint1 := *wire.NewOutPoint(hash1, 0)
-	utxoEntry0 := newUTXOEntry(&wire.TxOut{PkScript: []byte{}, Value: 10}, true)
-	utxoEntry1 := newUTXOEntry(&wire.TxOut{PkScript: []byte{}, Value: 20}, false)
+	utxoEntry0 := newUTXOEntry(&wire.TxOut{PkScript: []byte{}, Value: 10}, true, 0)
+	utxoEntry1 := newUTXOEntry(&wire.TxOut{PkScript: []byte{}, Value: 20}, false, 1)
 
 	// For each of the following test cases, we will:
 	// .String() the given collection and compare it to expectedString
@@ -73,8 +73,8 @@ func TestUTXODiff(t *testing.T) {
 	hash1, _ := daghash.NewHashFromStr("1111111111111111111111111111111111111111111111111111111111111111")
 	outPoint0 := *wire.NewOutPoint(hash0, 0)
 	outPoint1 := *wire.NewOutPoint(hash1, 0)
-	utxoEntry0 := newUTXOEntry(&wire.TxOut{PkScript: []byte{}, Value: 10}, true)
-	utxoEntry1 := newUTXOEntry(&wire.TxOut{PkScript: []byte{}, Value: 20}, false)
+	utxoEntry0 := newUTXOEntry(&wire.TxOut{PkScript: []byte{}, Value: 10}, true, 0)
+	utxoEntry1 := newUTXOEntry(&wire.TxOut{PkScript: []byte{}, Value: 20}, false, 1)
 	diff := utxoDiff{
 		toAdd:    utxoCollection{outPoint0: utxoEntry0},
 		toRemove: utxoCollection{outPoint1: utxoEntry1},
@@ -110,7 +110,7 @@ func TestUTXODiff(t *testing.T) {
 func TestUTXODiffRules(t *testing.T) {
 	hash0, _ := daghash.NewHashFromStr("0000000000000000000000000000000000000000000000000000000000000000")
 	outPoint0 := *wire.NewOutPoint(hash0, 0)
-	utxoEntry0 := newUTXOEntry(&wire.TxOut{PkScript: []byte{}, Value: 10}, true)
+	utxoEntry0 := newUTXOEntry(&wire.TxOut{PkScript: []byte{}, Value: 10}, true, 0)
 
 	// For each of the following test cases, we will:
 	// this.diffFrom(other) and compare it to expectedDiffFromResult
@@ -330,8 +330,8 @@ func TestFullUTXOSet(t *testing.T) {
 	outPoint1 := *wire.NewOutPoint(hash1, 0)
 	txOut0 := &wire.TxOut{PkScript: []byte{}, Value: 10}
 	txOut1 := &wire.TxOut{PkScript: []byte{}, Value: 20}
-	utxoEntry0 := newUTXOEntry(txOut0, true)
-	utxoEntry1 := newUTXOEntry(txOut1, false)
+	utxoEntry0 := newUTXOEntry(txOut0, true, 0)
+	utxoEntry1 := newUTXOEntry(txOut1, false, 1)
 	diff := &utxoDiff{
 		toAdd:    utxoCollection{outPoint0: utxoEntry0},
 		toRemove: utxoCollection{outPoint1: utxoEntry1},
@@ -361,11 +361,11 @@ func TestFullUTXOSet(t *testing.T) {
 	transaction0 := wire.NewMsgTx(1)
 	transaction0.TxIn = []*wire.TxIn{txIn0}
 	transaction0.TxOut = []*wire.TxOut{txOut0}
-	if ok = emptySet.addTx(transaction0); ok {
+	if ok = emptySet.addTx(transaction0, 0); ok {
 		t.Errorf("addTx unexpectedly succeeded")
 	}
 	emptySet = &fullUTXOSet{utxoCollection: utxoCollection{outPoint0: utxoEntry0}}
-	if ok = emptySet.addTx(transaction0); !ok {
+	if ok = emptySet.addTx(transaction0, 0); !ok {
 		t.Errorf("addTx unexpectedly failed")
 	}
 
@@ -392,8 +392,8 @@ func TestDiffUTXOSet(t *testing.T) {
 	outPoint1 := *wire.NewOutPoint(hash1, 0)
 	txOut0 := &wire.TxOut{PkScript: []byte{}, Value: 10}
 	txOut1 := &wire.TxOut{PkScript: []byte{}, Value: 20}
-	utxoEntry0 := newUTXOEntry(txOut0, true)
-	utxoEntry1 := newUTXOEntry(txOut1, false)
+	utxoEntry0 := newUTXOEntry(txOut0, true, 0)
+	utxoEntry1 := newUTXOEntry(txOut1, false, 1)
 	diff := &utxoDiff{
 		toAdd:    utxoCollection{outPoint0: utxoEntry0},
 		toRemove: utxoCollection{outPoint1: utxoEntry1},
@@ -634,7 +634,7 @@ func TestDiffUTXOSet_addTx(t *testing.T) {
 	hash0, _ := daghash.NewHashFromStr("0000000000000000000000000000000000000000000000000000000000000000")
 	txIn0 := &wire.TxIn{SignatureScript: []byte{}, PreviousOutPoint: wire.OutPoint{Hash: *hash0, Index: math.MaxUint32}, Sequence: 0}
 	txOut0 := &wire.TxOut{PkScript: []byte{0}, Value: 10}
-	utxoEntry0 := newUTXOEntry(txOut0, true)
+	utxoEntry0 := newUTXOEntry(txOut0, true, 0)
 	transaction0 := wire.NewMsgTx(1)
 	transaction0.TxIn = []*wire.TxIn{txIn0}
 	transaction0.TxOut = []*wire.TxOut{txOut0}
@@ -644,7 +644,7 @@ func TestDiffUTXOSet_addTx(t *testing.T) {
 	outPoint1 := *wire.NewOutPoint(&hash1, 0)
 	txIn1 := &wire.TxIn{SignatureScript: []byte{}, PreviousOutPoint: wire.OutPoint{Hash: hash1, Index: 0}, Sequence: 0}
 	txOut1 := &wire.TxOut{PkScript: []byte{1}, Value: 20}
-	utxoEntry1 := newUTXOEntry(txOut1, false)
+	utxoEntry1 := newUTXOEntry(txOut1, false, 1)
 	transaction1 := wire.NewMsgTx(1)
 	transaction1.TxIn = []*wire.TxIn{txIn1}
 	transaction1.TxOut = []*wire.TxOut{txOut1}
@@ -654,7 +654,7 @@ func TestDiffUTXOSet_addTx(t *testing.T) {
 	outPoint2 := *wire.NewOutPoint(&hash2, 0)
 	txIn2 := &wire.TxIn{SignatureScript: []byte{}, PreviousOutPoint: wire.OutPoint{Hash: hash2, Index: 0}, Sequence: 0}
 	txOut2 := &wire.TxOut{PkScript: []byte{2}, Value: 30}
-	utxoEntry2 := newUTXOEntry(txOut2, false)
+	utxoEntry2 := newUTXOEntry(txOut2, false, 2)
 	transaction2 := wire.NewMsgTx(1)
 	transaction2.TxIn = []*wire.TxIn{txIn2}
 	transaction2.TxOut = []*wire.TxOut{txOut2}
@@ -664,18 +664,20 @@ func TestDiffUTXOSet_addTx(t *testing.T) {
 	outPoint3 := *wire.NewOutPoint(&hash3, 0)
 
 	// For each of the following test cases, we will:
-	// 1. startSet.addTx() all the transactions in toAdd, in order
+	// 1. startSet.addTx() all the transactions in toAdd, in order, with the initial block height startHeight
 	// 2. Compare the result set with expectedSet
 	tests := []struct {
 		name        string
 		startSet    *diffUTXOSet
+		startHeight int32
 		toAdd       []*wire.MsgTx
 		expectedSet *diffUTXOSet
 	}{
 		{
-			name:     "add coinbase transaction to empty set",
-			startSet: newDiffUTXOSet(newFullUTXOSet(), newUTXODiff()),
-			toAdd:    []*wire.MsgTx{transaction0},
+			name:        "add coinbase transaction to empty set",
+			startSet:    newDiffUTXOSet(newFullUTXOSet(), newUTXODiff()),
+			startHeight: 0,
+			toAdd:       []*wire.MsgTx{transaction0},
 			expectedSet: &diffUTXOSet{
 				base: &fullUTXOSet{utxoCollection: utxoCollection{}},
 				utxoDiff: &utxoDiff{
@@ -685,9 +687,10 @@ func TestDiffUTXOSet_addTx(t *testing.T) {
 			},
 		},
 		{
-			name:     "add regular transaction to empty set",
-			startSet: newDiffUTXOSet(newFullUTXOSet(), newUTXODiff()),
-			toAdd:    []*wire.MsgTx{transaction1},
+			name:        "add regular transaction to empty set",
+			startSet:    newDiffUTXOSet(newFullUTXOSet(), newUTXODiff()),
+			startHeight: 0,
+			toAdd:       []*wire.MsgTx{transaction1},
 			expectedSet: &diffUTXOSet{
 				base: &fullUTXOSet{utxoCollection: utxoCollection{}},
 				utxoDiff: &utxoDiff{
@@ -705,7 +708,8 @@ func TestDiffUTXOSet_addTx(t *testing.T) {
 					toRemove: utxoCollection{},
 				},
 			},
-			toAdd: []*wire.MsgTx{transaction1},
+			startHeight: 1,
+			toAdd:       []*wire.MsgTx{transaction1},
 			expectedSet: &diffUTXOSet{
 				base: &fullUTXOSet{utxoCollection: utxoCollection{outPoint1: utxoEntry0}},
 				utxoDiff: &utxoDiff{
@@ -723,7 +727,8 @@ func TestDiffUTXOSet_addTx(t *testing.T) {
 					toRemove: utxoCollection{},
 				},
 			},
-			toAdd: []*wire.MsgTx{transaction1},
+			startHeight: 1,
+			toAdd:       []*wire.MsgTx{transaction1},
 			expectedSet: &diffUTXOSet{
 				base: newFullUTXOSet(),
 				utxoDiff: &utxoDiff{
@@ -741,7 +746,8 @@ func TestDiffUTXOSet_addTx(t *testing.T) {
 					toRemove: utxoCollection{outPoint2: utxoEntry1},
 				},
 			},
-			toAdd: []*wire.MsgTx{transaction1},
+			startHeight: 1,
+			toAdd:       []*wire.MsgTx{transaction1},
 			expectedSet: &diffUTXOSet{
 				base: newFullUTXOSet(),
 				utxoDiff: &utxoDiff{
@@ -759,7 +765,8 @@ func TestDiffUTXOSet_addTx(t *testing.T) {
 					toRemove: utxoCollection{},
 				},
 			},
-			toAdd: []*wire.MsgTx{transaction1, transaction2},
+			startHeight: 1,
+			toAdd:       []*wire.MsgTx{transaction1, transaction2},
 			expectedSet: &diffUTXOSet{
 				base: &fullUTXOSet{utxoCollection: utxoCollection{outPoint1: utxoEntry0}},
 				utxoDiff: &utxoDiff{
@@ -773,9 +780,9 @@ func TestDiffUTXOSet_addTx(t *testing.T) {
 	for _, test := range tests {
 		diffSet := test.startSet.clone()
 
-		// Apply all transactions, in order, to diffSet
-		for _, transaction := range test.toAdd {
-			diffSet.addTx(transaction)
+		// Apply all transactions to diffSet, in order, with the initial block height startHeight
+		for i, transaction := range test.toAdd {
+			diffSet.addTx(transaction, test.startHeight + int32(i))
 		}
 
 		// Make sure that the result diffSet equals to the expectedSet

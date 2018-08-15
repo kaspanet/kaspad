@@ -714,7 +714,7 @@ func (dag *BlockDAG) verifyAndBuildUTXO(newBlockNode *blockNode, newBlock *btcut
 	log.Debugf("Past UTXO set for %s: %s", newBlockNode.hash.String(), utxo)
 
 	for _, tx := range newBlock.Transactions() {
-		ok := utxo.addTx(tx.MsgTx())
+		ok := utxo.addTx(tx.MsgTx(), newBlockNode.height)
 		if !ok {
 			return nil, fmt.Errorf("transaction %v is not compatible with UTXO", tx)
 		}
@@ -747,7 +747,7 @@ func (dag *BlockDAG) pastUTXO(block *blockNode) (utxoSet, error) {
 				return err
 			}
 			for _, tx := range blueBlock.Transactions() {
-				_ = pastUTXO.addTx(tx.MsgTx()) // purposefully ignore failures - these are just unaccepted transactions
+				_ = pastUTXO.addTx(tx.MsgTx(), block.height) // purposefully ignore failures - these are just unaccepted transactions
 			}
 		}
 

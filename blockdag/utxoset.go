@@ -216,12 +216,13 @@ func (d utxoDiff) String() string {
 }
 
 // newUTXOEntry creates a new utxoEntry representing the given txOut
-func newUTXOEntry(txOut *wire.TxOut, isCoinbase bool) *UtxoEntry {
+func newUTXOEntry(txOut *wire.TxOut, isCoinbase bool, blockHeight int32) *UtxoEntry {
 	entry := new(UtxoEntry)
 	entry.amount = txOut.Value
 	entry.pkScript = txOut.PkScript
-	entry.packedFlags = tfModified
+	entry.blockHeight = blockHeight
 
+	entry.packedFlags = tfModified
 	if isCoinbase {
 		entry.packedFlags |= tfCoinBase
 	}
@@ -245,7 +246,7 @@ type utxoSet interface {
 	fmt.Stringer
 	diffFrom(other utxoSet) (*utxoDiff, error)
 	withDiff(utxoDiff *utxoDiff) (utxoSet, error)
-	addTx(tx *wire.MsgTx) (ok bool)
+	addTx(tx *wire.MsgTx, blockHeight int32) (ok bool)
 	clone() utxoSet
 }
 
@@ -282,7 +283,7 @@ func (fus *fullUTXOSet) withDiff(other *utxoDiff) (utxoSet, error) {
 }
 
 // addTx adds a transaction to this utxoSet and returns true iff it's valid in this UTXO's context
-func (fus *fullUTXOSet) addTx(tx *wire.MsgTx) bool {
+func (fus *fullUTXOSet) addTx(tx *wire.MsgTx, blockHeight int32) bool {
 	isCoinbase := IsCoinBaseTx(tx)
 	if !isCoinbase {
 		if !fus.containsInputs(tx) {
@@ -298,7 +299,7 @@ func (fus *fullUTXOSet) addTx(tx *wire.MsgTx) bool {
 	for i, txOut := range tx.TxOut {
 		hash := tx.TxHash()
 		outPoint := *wire.NewOutPoint(&hash, uint32(i))
-		entry := newUTXOEntry(txOut, isCoinbase)
+		entry := newUTXOEntry(txOut, isCoinbase, blockHeight)
 
 		fus.utxoCollection[outPoint] = entry
 	}
@@ -367,7 +368,7 @@ func (dus *diffUTXOSet) withDiff(other *utxoDiff) (utxoSet, error) {
 }
 
 // addTx adds a transaction to this utxoSet and returns true iff it's valid in this UTXO's context
-func (dus *diffUTXOSet) addTx(tx *wire.MsgTx) bool {
+func (dus *diffUTXOSet) addTx(tx *wire.MsgTx, blockHeight int32) bool {
 	isCoinbase := IsCoinBaseTx(tx)
 	if !isCoinbase {
 		if !dus.containsInputs(tx) {
@@ -388,7 +389,7 @@ func (dus *diffUTXOSet) addTx(tx *wire.MsgTx) bool {
 	for i, txOut := range tx.TxOut {
 		hash := tx.TxHash()
 		outPoint := *wire.NewOutPoint(&hash, uint32(i))
-		entry := newUTXOEntry(txOut, isCoinbase)
+		entry := newUTXOEntry(txOut, isCoinbase, blockHeight)
 
 		if _, ok := dus.utxoDiff.toRemove[outPoint]; ok {
 			delete(dus.utxoDiff.toRemove, outPoint)
