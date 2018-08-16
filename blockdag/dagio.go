@@ -581,6 +581,20 @@ func serializeUtxoEntry(entry *UtxoEntry) ([]byte, error) {
 	return serialized, nil
 }
 
+// deserializeOutPoint decodes an outPoint from the passed serialized byte
+// slice into a new wire.OutPoint using a format that is suitable for long-
+// term storage. this format is described in detail above.
+func deserializeOutPoint(serialized []byte) (*wire.OutPoint, error) {
+	if len(serialized) <= daghash.HashSize {
+		return nil, errDeserialize("unexpected end of data")
+	}
+
+	hash := daghash.Hash{}
+	hash.SetBytes(serialized[:daghash.HashSize])
+	index, _ := deserializeVLQ(serialized[daghash.HashSize:])
+	return wire.NewOutPoint(&hash, uint32(index)), nil
+}
+
 // deserializeUtxoEntry decodes a utxo entry from the passed serialized byte
 // slice into a new UtxoEntry using a format that is suitable for long-term
 // storage.  The format is described in detail above.
@@ -1043,6 +1057,60 @@ func (dag *BlockDAG) initDAGState() error {
 			lastNode = node
 			i++
 		}
+
+		// Load all of the known UTXO entries and construct the full
+		// UTXO set accordingly.  Since the number of entries is already
+		// known, perform a single alloc for them versus a whole bunch
+		// of little ones to reduce pressure on the GC.
+		log.Infof("Loading UTXO set...")
+
+		utxoEntryBucket := dbTx.Metadata().Bucket(blockIndexBucketName)
+
+		// Determine how many UTXO entries will be loaded into the index so we can
+		// allocate the right amount.
+		var utxoEntryCount int32
+		cursor = utxoEntryBucket.Cursor()
+		for ok := cursor.First(); ok; ok = cursor.Next() {
+			utxoEntryCount++
+		}
+
+		fullUTXOCollection := make(utxoCollection, utxoEntryCount)
+		for ok := cursor.First(); ok; ok = cursor.Next() {
+			// Deserialize the outPoint
+			outPoint, err := deserializeOutPoint(cursor.Key())
+			if err != nil {
+				// Ensure any deserialization errors are returned as database
+				// corruption errors.
+				if isDeserializeErr(err) {
+					return database.Error{
+						ErrorCode:   database.ErrCorruption,
+						Description: fmt.Sprintf("corrupt outPoint: %v", err),
+					}
+				}
+
+				return err
+			}
+
+			// Deserialize the utxo entry
+			entry, err := deserializeUtxoEntry(cursor.Value())
+			if err != nil {
+				// Ensure any deserialization errors are returned as database
+				// corruption errors.
+				if isDeserializeErr(err) {
+					return database.Error{
+						ErrorCode:   database.ErrCorruption,
+						Description: fmt.Sprintf("corrupt utxo entry: %v", err),
+					}
+				}
+
+				return err
+			}
+
+			fullUTXOCollection[*outPoint] = entry
+		}
+
+		// Apply the loaded utxoCollection to the virtual block.
+		dag.virtual.utxoSet.utxoCollection = fullUTXOCollection
 
 		// Set the DAG view to the stored state.
 		tips := newSet()
