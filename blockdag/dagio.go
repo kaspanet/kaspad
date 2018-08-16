@@ -9,8 +9,6 @@ import (
 	"encoding/binary"
 	"fmt"
 	"sync"
-	"time"
-
 	"encoding/json"
 
 	"github.com/daglabs/btcd/dagconfig/daghash"
@@ -801,25 +799,18 @@ func dbFetchHeightByHash(dbTx database.Tx, hash *daghash.Hash) (int32, error) {
 	return int32(byteOrder.Uint32(serializedHeight)), nil
 }
 
-// dbDAGState represents the data to be stored in the database for the current
-// DAG state.
-type dbDAGState struct {
-	Tips     []daghash.Hash
-	TotalTxs uint64
-}
-
 // serializeDAGState returns the serialization of the DAG state.
 // This is data to be stored in the DAG state bucket.
-func serializeDAGState(state dbDAGState) ([]byte, error) {
+func serializeDAGState(state DAGState) ([]byte, error) {
 	return json.Marshal(state)
 }
 
 // deserializeDAGState deserializes the passed serialized DAG
 // state.  This is data stored in the DAG state bucket and is updated after
 // every block is connected or disconnected form the DAG.
-func deserializeDAGState(serializedData []byte) (*dbDAGState, error) {
-	var dbState dbDAGState
-	err := json.Unmarshal(serializedData, &dbState)
+func deserializeDAGState(serializedData []byte) (*DAGState, error) {
+	var state DAGState
+	err := json.Unmarshal(serializedData, &state)
 	if err != nil {
 		return nil, database.Error{
 			ErrorCode:   database.ErrCorruption,
@@ -827,16 +818,13 @@ func deserializeDAGState(serializedData []byte) (*dbDAGState, error) {
 		}
 	}
 
-	return &dbState, nil
+	return &state, nil
 }
 
 // dbPutDAGState uses an existing database transaction to update the DAG
 // state with the given parameters.
 func dbPutDAGState(dbTx database.Tx, state *DAGState) error {
-	serializedData, err := serializeDAGState(dbDAGState{
-		Tips:     state.TipHashes,
-		TotalTxs: state.TotalTxs,
-	})
+	serializedData, err := serializeDAGState(*state)
 
 	if err != nil {
 		return err
@@ -873,10 +861,7 @@ func (dag *BlockDAG) createDAGState() error {
 
 	// Initialize the DAG state.  Since it is the genesis block, use
 	// its timestamp for the median time.
-	numTxs := uint64(len(genesisBlock.MsgBlock().Transactions))
-	blockSize := uint64(genesisBlock.MsgBlock().SerializeSize())
-	dagState := newDAGState(dag.virtual.Tips().hashes(), node, blockSize, numTxs,
-		numTxs, time.Unix(node.timestamp, 0))
+	dagState := newDAGState(dag.virtual.Tips().hashes())
 	dag.setDAGState(dagState)
 
 	// Create the initial the database chain state including creating the
@@ -1112,34 +1097,20 @@ func (dag *BlockDAG) initDAGState() error {
 		// Apply the loaded utxoCollection to the virtual block.
 		dag.virtual.utxoSet.utxoCollection = fullUTXOCollection
 
-		// Set the DAG view to the stored state.
+		// Apply the stored tips to the virtual block.
 		tips := newSet()
-		for _, tipHash := range state.Tips {
+		for _, tipHash := range state.TipHashes {
 			tip := dag.index.LookupNode(&tipHash)
 			if tip == nil {
 				return AssertError(fmt.Sprintf("initDAGState: cannot find "+
-					"DAG tip %s in block index", state.Tips))
+					"DAG tip %s in block index", state.TipHashes))
 			}
 			tips.add(tip)
 		}
 		dag.virtual.SetTips(tips)
 
-		// Load the raw block bytes for the selected tip.
-		selectedTip := dag.virtual.selectedParent
-		blockBytes, err := dbTx.FetchBlock(&selectedTip.hash)
-		if err != nil {
-			return err
-		}
-		var block wire.MsgBlock
-		err = block.Deserialize(bytes.NewReader(blockBytes))
-		if err != nil {
-			return err
-		}
-
 		// Initialize the DAG state.
-		blockSize := uint64(len(blockBytes))
-		numTxns := uint64(len(block.Transactions))
-		dagState := newDAGState(dag.virtual.Tips().hashes(), selectedTip, blockSize, numTxns, state.TotalTxs, selectedTip.CalcPastMedianTime())
+		dagState := newDAGState(dag.virtual.Tips().hashes())
 		dag.setDAGState(dagState)
 
 		return nil

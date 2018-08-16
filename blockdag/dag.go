@@ -56,35 +56,13 @@ type orphanBlock struct {
 // However, the returned snapshot must be treated as immutable since it is
 // shared by all callers.
 type DAGState struct {
-	SelectedTip SelectedTipState // State of the selected tip
-	TipHashes   []daghash.Hash   // The hashes of the tips
-	TotalTxs    uint64           // The total number of transactions in the DAG.
-}
-
-type SelectedTipState struct {
-	Hash       daghash.Hash // The hash of the tip.
-	Height     int32        // The height of the tip.
-	Bits       uint32       // The difficulty bits of the tip.
-	BlockSize  uint64       // The size of the tip.
-	NumTxs     uint64       // The number of transactions in the tip.
-	MedianTime time.Time    // Median time as per CalcPastMedianTime.
+	TipHashes []daghash.Hash // The hashes of the tips
 }
 
 // newDAGState returns a new state instance for the given parameters.
-func newDAGState(tipHashes []daghash.Hash, node *blockNode, blockSize, numTxs,
-	totalTxs uint64, medianTime time.Time) *DAGState {
-
+func newDAGState(tipHashes []daghash.Hash) *DAGState {
 	return &DAGState{
-		SelectedTip: SelectedTipState{
-			Hash:       node.hash,
-			Height:     node.height,
-			Bits:       node.bits,
-			BlockSize:  blockSize,
-			NumTxs:     numTxs,
-			MedianTime: medianTime,
-		},
 		TipHashes: tipHashes,
-		TotalTxs:  totalTxs,
 	}
 }
 
@@ -126,7 +104,7 @@ type BlockDAG struct {
 	index *blockIndex
 
 	// virtual tracks the current tips.
-	virtual *virtualBlock
+	virtual *VirtualBlock
 
 	// These fields are related to handling of orphan blocks.  They are
 	// protected by a combination of the chain lock and the orphan lock.
@@ -629,13 +607,7 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *btcutil.Block, view *U
 
 	// Generate a new state snapshot that will be used to update the
 	// database and later memory if all database updates are successful.
-	dag.stateLock.RLock()
-	currentTotalTxs := dag.dagState.TotalTxs
-	dag.stateLock.RUnlock()
-	numTxs := uint64(len(block.MsgBlock().Transactions))
-	blockSize := uint64(block.MsgBlock().SerializeSize())
-	state := newDAGState(dag.virtual.Tips().hashes(), node, blockSize, numTxs,
-		currentTotalTxs+numTxs, node.CalcPastMedianTime())
+	state := newDAGState(dag.virtual.Tips().hashes())
 
 	// Atomically insert info into the database.
 	err = dag.db.Update(func(dbTx database.Tx) error {
@@ -874,18 +846,13 @@ func (dag *BlockDAG) IsCurrent() bool {
 	return dag.isCurrent()
 }
 
-// GetDAGState returns information about the DAG and related state as of the
-// current point in time.  The returned instance must be treated as immutable
-// since it is shared by all callers.
+// GetVirtualBlock returns the DAG's virtual block in the current point in time.
+// The returned instance must be treated as immutable since it is shared by all
+// callers.
 //
 // This function is safe for concurrent access.
-func (dag *BlockDAG) GetDAGState() *DAGState {
-	dag.stateLock.RLock()
-	defer func() {
-		dag.stateLock.RUnlock()
-	}()
-
-	return dag.dagState
+func (dag *BlockDAG) GetVirtualBlock() *VirtualBlock {
+	return dag.virtual
 }
 
 // setDAGState sets information about the DAG and related state as of the
@@ -1422,9 +1389,8 @@ func New(config *Config) (*BlockDAG, error) {
 	}
 
 	selectedTip := b.virtual.SelectedTip()
-	log.Infof("DAG state (height %d, hash %v, totaltx %d, work %v)",
-		selectedTip.height, selectedTip.hash, b.dagState.TotalTxs,
-		selectedTip.workSum)
+	log.Infof("DAG state (height %d, hash %v, work %v)",
+		selectedTip.height, selectedTip.hash, selectedTip.workSum)
 
 	return &b, nil
 }

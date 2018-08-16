@@ -142,7 +142,7 @@ func TestFullBlocks(t *testing.T) {
 	}
 
 	// Create a new database and chain instance to run tests against.
-	chain, teardownFunc, err := chainSetup("fullblocktest",
+	dag, teardownFunc, err := chainSetup("fullblocktest",
 		&dagconfig.RegressionNetParams)
 	if err != nil {
 		t.Errorf("Failed to setup chain instance: %v", err)
@@ -160,7 +160,7 @@ func TestFullBlocks(t *testing.T) {
 		t.Logf("Testing block %s (hash %s, height %d)",
 			item.Name, block.Hash(), blockHeight)
 
-		isOrphan, err := chain.ProcessBlock(block,
+		isOrphan, err := dag.ProcessBlock(block,
 			blockdag.BFNone)
 		if err != nil {
 			t.Fatalf("block %q (hash %s, height %d) should "+
@@ -186,7 +186,7 @@ func TestFullBlocks(t *testing.T) {
 		t.Logf("Testing block %s (hash %s, height %d)",
 			item.Name, block.Hash(), blockHeight)
 
-		_, err := chain.ProcessBlock(block, blockdag.BFNone)
+		_, err := dag.ProcessBlock(block, blockdag.BFNone)
 		if err == nil {
 			t.Fatalf("block %q (hash %s, height %d) should not "+
 				"have been accepted", item.Name, block.Hash(),
@@ -243,7 +243,7 @@ func TestFullBlocks(t *testing.T) {
 		t.Logf("Testing block %s (hash %s, height %d)",
 			item.Name, block.Hash(), blockHeight)
 
-		isOrphan, err := chain.ProcessBlock(block, blockdag.BFNone)
+		isOrphan, err := dag.ProcessBlock(block, blockdag.BFNone)
 		if err != nil {
 			// Ensure the error code is of the expected type.
 			if _, ok := err.(blockdag.RuleError); !ok {
@@ -272,14 +272,14 @@ func TestFullBlocks(t *testing.T) {
 			item.Name, block.Hash(), blockHeight)
 
 		// Ensure hash and height match.
-		dagState := chain.GetDAGState()
-		if dagState.SelectedTip.Hash != item.Block.BlockHash() ||
-			dagState.SelectedTip.Height != blockHeight {
+		virtualBlock := dag.GetVirtualBlock()
+		if virtualBlock.SelectedTipHash() != item.Block.BlockHash() ||
+			virtualBlock.SelectedTipHeight() != blockHeight {
 
 			t.Fatalf("block %q (hash %s, height %d) should be "+
 				"the current tip -- got (hash %s, height %d)",
-				item.Name, block.Hash(), blockHeight, dagState.SelectedTip.Hash,
-				dagState.SelectedTip.Height)
+				item.Name, block.Hash(), blockHeight, virtualBlock.SelectedTipHash(),
+				virtualBlock.SelectedTipHeight())
 		}
 	}
 

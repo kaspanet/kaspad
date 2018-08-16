@@ -6,20 +6,21 @@ package blockdag
 
 import (
 	"sync"
+	"github.com/daglabs/btcd/dagconfig/daghash"
 )
 
-// virtualBlock is a virtual block whose parents are the tips of the DAG.
-type virtualBlock struct {
+// VirtualBlock is a virtual block whose parents are the tips of the DAG.
+type VirtualBlock struct {
 	mtx      sync.Mutex
 	phantomK uint32
 	utxoSet  *fullUTXOSet
 	blockNode
 }
 
-// newVirtualBlock creates and returns a new virtualBlock.
-func newVirtualBlock(tips blockSet, phantomK uint32) *virtualBlock {
+// newVirtualBlock creates and returns a new VirtualBlock.
+func newVirtualBlock(tips blockSet, phantomK uint32) *VirtualBlock {
 	// The mutex is intentionally not held since this is a constructor.
-	var virtual virtualBlock
+	var virtual VirtualBlock
 	virtual.phantomK = phantomK
 	virtual.utxoSet = newFullUTXOSet()
 	virtual.setTips(tips)
@@ -32,7 +33,7 @@ func newVirtualBlock(tips blockSet, phantomK uint32) *virtualBlock {
 // is up to the caller to ensure the lock is held.
 //
 // This function MUST be called with the view mutex locked (for writes).
-func (v *virtualBlock) setTips(tips blockSet) {
+func (v *VirtualBlock) setTips(tips blockSet) {
 	v.blockNode = *newBlockNode(nil, tips, v.phantomK)
 }
 
@@ -40,7 +41,7 @@ func (v *virtualBlock) setTips(tips blockSet) {
 // given blockSet.
 //
 // This function is safe for concurrent access.
-func (v *virtualBlock) SetTips(tips blockSet) {
+func (v *VirtualBlock) SetTips(tips blockSet) {
 	v.mtx.Lock()
 	v.setTips(tips)
 	v.mtx.Unlock()
@@ -52,7 +53,7 @@ func (v *virtualBlock) SetTips(tips blockSet) {
 // is up to the caller to ensure the lock is held.
 //
 // This function MUST be called with the view mutex locked (for writes).
-func (v *virtualBlock) addTip(newTip *blockNode) {
+func (v *VirtualBlock) addTip(newTip *blockNode) {
 	updatedTips := v.Tips().clone()
 	for _, parent := range newTip.parents {
 		updatedTips.remove(parent)
@@ -67,7 +68,7 @@ func (v *virtualBlock) addTip(newTip *blockNode) {
 // from the set.
 //
 // This function is safe for concurrent access.
-func (v *virtualBlock) AddTip(newTip *blockNode) {
+func (v *VirtualBlock) AddTip(newTip *blockNode) {
 	v.mtx.Lock()
 	v.addTip(newTip)
 	v.mtx.Unlock()
@@ -77,7 +78,7 @@ func (v *virtualBlock) AddTip(newTip *blockNode) {
 // an empty blockSet if there is no tip.
 //
 // This function is safe for concurrent access.
-func (v *virtualBlock) Tips() blockSet {
+func (v *VirtualBlock) Tips() blockSet {
 	return v.parents
 }
 
@@ -85,6 +86,18 @@ func (v *virtualBlock) Tips() blockSet {
 // It will return nil if there is no tip.
 //
 // This function is safe for concurrent access.
-func (v *virtualBlock) SelectedTip() *blockNode {
+func (v *VirtualBlock) SelectedTip() *blockNode {
 	return v.selectedParent
+}
+
+func (v *VirtualBlock) SelectedTipHeight() int32 {
+	return v.SelectedTip().height
+}
+
+func (v *VirtualBlock) TipHashes() []daghash.Hash{
+	return v.Tips().hashes()
+}
+
+func (v *VirtualBlock) SelectedTipHash() daghash.Hash {
+	return v.SelectedTip().hash;
 }

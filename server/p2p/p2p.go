@@ -290,8 +290,9 @@ func newServerPeer(s *Server, isPersistent bool) *Peer {
 // newestBlock returns the current best block hash and height using the format
 // required by the configuration for the peer package.
 func (sp *Peer) newestBlock() (*daghash.Hash, int32, error) {
-	dagState := sp.server.DAG.GetDAGState()
-	return &dagState.SelectedTip.Hash, dagState.SelectedTip.Height, nil
+	virtualBlock := sp.server.DAG.GetVirtualBlock()
+	selectedTipHash := virtualBlock.SelectedTipHash()
+	return &selectedTipHash, virtualBlock.SelectedTipHeight(), nil
 }
 
 // addKnownAddresses adds the given addresses to the set of known addresses to
@@ -1311,9 +1312,9 @@ func (s *Server) pushBlockMsg(sp *Peer, hash *daghash.Hash, doneChan chan<- stru
 	// to trigger it to issue another getblocks message for the next
 	// batch of inventory.
 	if sendInv {
-		dagState := sp.server.DAG.GetDAGState()
+		selectedTipHash := sp.server.DAG.GetVirtualBlock().SelectedTipHash()
 		invMsg := wire.NewMsgInvSizeHint(1)
-		iv := wire.NewInvVect(wire.InvTypeBlock, &dagState.SelectedTip.Hash)
+		iv := wire.NewInvVect(wire.InvTypeBlock, &selectedTipHash)
 		invMsg.AddInvVect(iv)
 		sp.QueueMessage(invMsg, doneChan)
 		sp.continueHash = nil
@@ -2422,7 +2423,7 @@ func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params
 
 	// If no feeEstimator has been found, or if the one that has been found
 	// is behind somehow, create a new one and start over.
-	if s.FeeEstimator == nil || s.FeeEstimator.LastKnownHeight() != s.DAG.GetDAGState().SelectedTip.Height {
+	if s.FeeEstimator == nil || s.FeeEstimator.LastKnownHeight() != s.DAG.GetVirtualBlock().SelectedTipHeight() {
 		s.FeeEstimator = mempool.NewFeeEstimator(
 			mempool.DefaultEstimateFeeMaxRollback,
 			mempool.DefaultEstimateFeeMinRegisteredBlocks)
@@ -2441,8 +2442,8 @@ func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params
 		},
 		ChainParams:    dagParams,
 		FetchUtxoView:  s.DAG.FetchUtxoView,
-		BestHeight:     func() int32 { return s.DAG.GetDAGState().SelectedTip.Height },
-		MedianTimePast: func() time.Time { return s.DAG.GetDAGState().SelectedTip.MedianTime },
+		BestHeight:     func() int32 { return s.DAG.GetVirtualBlock().SelectedTipHeight() },
+		MedianTimePast: func() time.Time { return s.DAG.GetVirtualBlock().SelectedTip().CalcPastMedianTime() },
 		CalcSequenceLock: func(tx *btcutil.Tx, view *blockdag.UtxoViewpoint) (*blockdag.SequenceLock, error) {
 			return s.DAG.CalcSequenceLock(tx, view, true)
 		},

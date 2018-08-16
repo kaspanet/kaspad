@@ -1009,18 +1009,18 @@ func handleGetBestBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (
 	// All other "get block" commands give either the height, the
 	// hash, or both but require the block SHA.  This gets both for
 	// the best block.
-	dagState := s.cfg.DAG.GetDAGState()
+	virtualBlock := s.cfg.DAG.GetVirtualBlock()
 	result := &btcjson.GetBestBlockResult{
-		Hash:   dagState.SelectedTip.Hash.String(),
-		Height: dagState.SelectedTip.Height,
+		Hash:   virtualBlock.SelectedTipHash().String(),
+		Height: virtualBlock.SelectedTipHeight(),
 	}
 	return result, nil
 }
 
 // handleGetBestBlockHash implements the getbestblockhash command.
 func handleGetBestBlockHash(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	dagState := s.cfg.DAG.GetDAGState()
-	return dagState.SelectedTip.Hash.String(), nil
+	virtualBlock := s.cfg.DAG.GetVirtualBlock()
+	return virtualBlock.SelectedTipHash().String(), nil
 }
 
 // getDifficultyRatio returns the proof-of-work difficulty as a multiple of the
@@ -1087,11 +1087,11 @@ func handleGetBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 		return nil, internalRPCError(err.Error(), context)
 	}
 	blk.SetHeight(blockHeight)
-	dagState := s.cfg.DAG.GetDAGState()
+	virtualBlock := s.cfg.DAG.GetVirtualBlock()
 
 	// Get the hashes for the next blocks unless there are none.
 	var nextHashStrings []string
-	if blockHeight < dagState.SelectedTip.Height {
+	if blockHeight < virtualBlock.SelectedTipHeight() {
 		childHashes, err := s.cfg.DAG.ChildHashesByHash(hash)
 		if err != nil {
 			context := "No next block"
@@ -1110,7 +1110,7 @@ func handleGetBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 		PreviousHashes: daghash.Strings(blockHeader.PrevBlocks),
 		Nonce:          blockHeader.Nonce,
 		Time:           blockHeader.Timestamp.Unix(),
-		Confirmations:  uint64(1 + dagState.SelectedTip.Height - blockHeight),
+		Confirmations:  uint64(1 + virtualBlock.SelectedTipHeight() - blockHeight),
 		Height:         int64(blockHeight),
 		Size:           int32(len(blkBytes)),
 		Bits:           strconv.FormatInt(int64(blockHeader.Bits), 16),
@@ -1132,7 +1132,7 @@ func handleGetBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 		for i, tx := range txns {
 			rawTxn, err := createTxRawResult(params, tx.MsgTx(),
 				tx.Hash().String(), blockHeader, hash.String(),
-				blockHeight, dagState.SelectedTip.Height)
+				blockHeight, virtualBlock.SelectedTipHeight())
 			if err != nil {
 				return nil, err
 			}
@@ -1169,15 +1169,15 @@ func handleGetBlockDAGInfo(s *Server, cmd interface{}, closeChan <-chan struct{}
 	// populate the response to this call primarily from this snapshot.
 	params := s.cfg.ChainParams
 	dag := s.cfg.DAG
-	dagState := dag.GetDAGState()
+	virtualBlock := dag.GetVirtualBlock()
 
-	chainInfo := &btcjson.GetBlockDAGInfoResult{
+	dagInfo := &btcjson.GetBlockDAGInfoResult{
 		DAG:           params.Name,
-		Blocks:        dagState.SelectedTip.Height,
-		Headers:       dagState.SelectedTip.Height,
-		TipHashes:     daghash.Strings(dagState.TipHashes),
-		Difficulty:    getDifficultyRatio(dagState.SelectedTip.Bits, params),
-		MedianTime:    dagState.SelectedTip.MedianTime.Unix(),
+		Blocks:        virtualBlock.SelectedTipHeight(),
+		Headers:       virtualBlock.SelectedTipHeight(),
+		TipHashes:     daghash.Strings(virtualBlock.TipHashes()),
+		Difficulty:    getDifficultyRatio(virtualBlock.SelectedTip().Header().Bits, params),
+		MedianTime:    virtualBlock.SelectedTip().CalcPastMedianTime().Unix(),
 		Pruned:        false,
 		Bip9SoftForks: make(map[string]*btcjson.Bip9SoftForkDescription),
 	}
@@ -1222,7 +1222,7 @@ func handleGetBlockDAGInfo(s *Server, cmd interface{}, closeChan <-chan struct{}
 
 		// Finally, populate the soft-fork description with all the
 		// information gathered above.
-		chainInfo.Bip9SoftForks[forkName] = &btcjson.Bip9SoftForkDescription{
+		dagInfo.Bip9SoftForks[forkName] = &btcjson.Bip9SoftForkDescription{
 			Status:    strings.ToLower(statusString),
 			Bit:       deploymentDetails.BitNumber,
 			StartTime: int64(deploymentDetails.StartTime),
@@ -1230,13 +1230,13 @@ func handleGetBlockDAGInfo(s *Server, cmd interface{}, closeChan <-chan struct{}
 		}
 	}
 
-	return chainInfo, nil
+	return dagInfo, nil
 }
 
 // handleGetBlockCount implements the getblockcount command.
 func handleGetBlockCount(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	dagState := s.cfg.DAG.GetDAGState()
-	return int64(dagState.SelectedTip.Height), nil
+	virtualBlock := s.cfg.DAG.GetVirtualBlock()
+	return int64(virtualBlock.SelectedTipHeight()), nil
 }
 
 // handleGetBlockHash implements the getblockhash command.
@@ -1283,11 +1283,11 @@ func handleGetBlockHeader(s *Server, cmd interface{}, closeChan <-chan struct{})
 		context := "Failed to obtain block height"
 		return nil, internalRPCError(err.Error(), context)
 	}
-	dagState := s.cfg.DAG.GetDAGState()
+	virtualBlock := s.cfg.DAG.GetVirtualBlock()
 
 	// Get the hashes for the next blocks unless there are none.
 	var nextHashStrings []string
-	if blockHeight < dagState.SelectedTip.Height {
+	if blockHeight < virtualBlock.SelectedTipHeight() {
 		childHashes, err := s.cfg.DAG.ChildHashesByHash(hash)
 		if err != nil {
 			context := "No next block"
@@ -1299,7 +1299,7 @@ func handleGetBlockHeader(s *Server, cmd interface{}, closeChan <-chan struct{})
 	params := s.cfg.ChainParams
 	blockHeaderReply := btcjson.GetBlockHeaderVerboseResult{
 		Hash:           c.Hash,
-		Confirmations:  uint64(1 + dagState.SelectedTip.Height - blockHeight),
+		Confirmations:  uint64(1 + virtualBlock.SelectedTipHeight() - blockHeight),
 		Height:         blockHeight,
 		Version:        blockHeader.Version,
 		VersionHex:     fmt.Sprintf("%08x", blockHeader.Version),
@@ -1479,10 +1479,11 @@ func (state *gbtWorkState) updateBlockTemplate(s *Server, useCoinbaseValue bool)
 	// generated.
 	var msgBlock *wire.MsgBlock
 	var targetDifficulty string
-	latestHash := &s.cfg.DAG.GetDAGState().SelectedTip.Hash
+	virtualBlock := s.cfg.DAG.GetVirtualBlock()
+	latestHash := virtualBlock.SelectedTipHash()
 	template := state.template
 	if template == nil || state.prevHash == nil ||
-		!state.prevHash.IsEqual(latestHash) ||
+		!state.prevHash.IsEqual(&latestHash) ||
 		(state.lastTxUpdate != lastTxUpdate &&
 			time.Now().After(state.lastGenerated.Add(time.Second*
 				gbtRegenerateSeconds))) {
@@ -1518,15 +1519,14 @@ func (state *gbtWorkState) updateBlockTemplate(s *Server, useCoinbaseValue bool)
 		// Get the minimum allowed timestamp for the block based on the
 		// median timestamp of the last several blocks per the chain
 		// consensus rules.
-		dagState := s.cfg.DAG.GetDAGState()
-		minTimestamp := mining.MinimumMedianTime(dagState)
+		minTimestamp := mining.MinimumMedianTime(virtualBlock.SelectedTip().CalcPastMedianTime())
 
 		// Update work state to ensure another block template isn't
 		// generated until needed.
 		state.template = template
 		state.lastGenerated = time.Now()
 		state.lastTxUpdate = lastTxUpdate
-		state.prevHash = latestHash
+		state.prevHash = &latestHash
 		state.minTimestamp = minTimestamp
 
 		log.Debugf("Generated block template (timestamp %v, "+
@@ -1536,7 +1536,7 @@ func (state *gbtWorkState) updateBlockTemplate(s *Server, useCoinbaseValue bool)
 
 		// Notify any clients that are long polling about the new
 		// template.
-		state.notifyLongPollers(latestHash, lastTxUpdate)
+		state.notifyLongPollers(&latestHash, lastTxUpdate)
 	} else {
 		// At this point, there is a saved block template and another
 		// request for a template was made, but either the available
@@ -1875,7 +1875,7 @@ func handleGetBlockTemplateRequest(s *Server, request *btcjson.TemplateRequest, 
 	}
 
 	// No point in generating or accepting work before the chain is synced.
-	currentHeight := s.cfg.DAG.GetDAGState().SelectedTip.Height
+	currentHeight := s.cfg.DAG.GetVirtualBlock().SelectedTipHeight()
 	if currentHeight != 0 && !s.cfg.SyncMgr.IsCurrent() {
 		return nil, &btcjson.RPCError{
 			Code:    btcjson.ErrRPCClientInInitialDownload,
@@ -2040,7 +2040,7 @@ func handleGetBlockTemplateProposal(s *Server, request *btcjson.TemplateRequest)
 	block := btcutil.NewBlock(&msgBlock)
 
 	// Ensure the block is building from the expected previous blocks.
-	expectedPrevHashes := s.cfg.DAG.GetDAGState().TipHashes
+	expectedPrevHashes := s.cfg.DAG.GetVirtualBlock().TipHashes()
 	prevHashes := block.MsgBlock().Header.PrevBlocks
 	if !daghash.AreEqual(expectedPrevHashes, prevHashes) {
 		return "bad-prevblk", nil
@@ -2162,8 +2162,8 @@ func handleGetCurrentNet(s *Server, cmd interface{}, closeChan <-chan struct{}) 
 
 // handleGetDifficulty implements the getdifficulty command.
 func handleGetDifficulty(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	dagState := s.cfg.DAG.GetDAGState()
-	return getDifficultyRatio(dagState.SelectedTip.Bits, s.cfg.ChainParams), nil
+	virtualBlock := s.cfg.DAG.GetVirtualBlock()
+	return getDifficultyRatio(virtualBlock.SelectedTip().Header().Bits, s.cfg.ChainParams), nil
 }
 
 // handleGetGenerate implements the getgenerate command.
@@ -2220,15 +2220,15 @@ func handleGetHeaders(s *Server, cmd interface{}, closeChan <-chan struct{}) (in
 // handleGetInfo implements the getinfo command. We only return the fields
 // that are not related to wallet functionality.
 func handleGetInfo(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	dagState := s.cfg.DAG.GetDAGState()
+	virtualBlock := s.cfg.DAG.GetVirtualBlock()
 	ret := &btcjson.InfoDAGResult{
 		Version:         int32(1000000*version.AppMajor + 10000*version.AppMinor + 100*version.AppPatch),
 		ProtocolVersion: int32(maxProtocolVersion),
-		Blocks:          dagState.SelectedTip.Height,
+		Blocks:          virtualBlock.SelectedTipHeight(),
 		TimeOffset:      int64(s.cfg.TimeSource.Offset().Seconds()),
 		Connections:     s.cfg.ConnMgr.ConnectedCount(),
 		Proxy:           config.MainConfig().Proxy,
-		Difficulty:      getDifficultyRatio(dagState.SelectedTip.Bits, s.cfg.ChainParams),
+		Difficulty:      getDifficultyRatio(virtualBlock.SelectedTip().Header().Bits, s.cfg.ChainParams),
 		TestNet:         config.MainConfig().TestNet3,
 		RelayFee:        config.MainConfig().MinRelayTxFee.ToBTC(),
 	}
@@ -2272,12 +2272,21 @@ func handleGetMiningInfo(s *Server, cmd interface{}, closeChan <-chan struct{}) 
 		}
 	}
 
-	dagState := s.cfg.DAG.GetDAGState()
+	virtualBlock := s.cfg.DAG.GetVirtualBlock()
+	selectedTipHash := virtualBlock.SelectedTipHash()
+	selectedBlock, err := s.cfg.DAG.BlockByHash(&selectedTipHash)
+	if err != nil {
+		return nil, &btcjson.RPCError{
+			Code:    btcjson.ErrRPCInternal.Code,
+			Message: "could not find block for selected tip",
+		}
+	}
+
 	result := btcjson.GetMiningInfoResult{
-		Blocks:           int64(dagState.SelectedTip.Height),
-		CurrentBlockSize: dagState.SelectedTip.BlockSize,
-		CurrentBlockTx:   dagState.SelectedTip.NumTxs,
-		Difficulty:       getDifficultyRatio(dagState.SelectedTip.Bits, s.cfg.ChainParams),
+		Blocks:           int64(virtualBlock.SelectedTipHeight()),
+		CurrentBlockSize: uint64(selectedBlock.MsgBlock().SerializeSize()),
+		CurrentBlockTx:   uint64(len(selectedBlock.MsgBlock().Transactions)),
+		Difficulty:       getDifficultyRatio(virtualBlock.SelectedTip().Header().Bits, s.cfg.ChainParams),
 		Generate:         s.cfg.CPUMiner.IsMining(),
 		GenProcLimit:     s.cfg.CPUMiner.NumWorkers(),
 		HashesPerSec:     int64(s.cfg.CPUMiner.HashesPerSecond()),
@@ -2462,7 +2471,7 @@ func handleGetRawTransaction(s *Server, cmd interface{}, closeChan <-chan struct
 	// The verbose flag is set, so generate the JSON object and return it.
 	var blkHeader *wire.BlockHeader
 	var blkHashStr string
-	var chainHeight int32
+	var dagHeight int32
 	if blkHash != nil {
 		// Fetch the header from chain.
 		header, err := s.cfg.DAG.FetchHeader(blkHash)
@@ -2473,11 +2482,11 @@ func handleGetRawTransaction(s *Server, cmd interface{}, closeChan <-chan struct
 
 		blkHeader = &header
 		blkHashStr = blkHash.String()
-		chainHeight = s.cfg.DAG.GetDAGState().SelectedTip.Height
+		dagHeight = s.cfg.DAG.GetVirtualBlock().SelectedTipHeight()
 	}
 
 	rawTxn, err := createTxRawResult(s.cfg.ChainParams, mtx, txHash.String(),
-		blkHeader, blkHashStr, blkHeight, chainHeight)
+		blkHeader, blkHashStr, blkHeight, dagHeight)
 	if err != nil {
 		return nil, err
 	}
@@ -2529,8 +2538,8 @@ func handleGetTxOut(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 			return nil, internalRPCError(errStr, "")
 		}
 
-		dagState := s.cfg.DAG.GetDAGState()
-		bestBlockHash = dagState.SelectedTip.Hash.String()
+		virtualBlock := s.cfg.DAG.GetVirtualBlock()
+		bestBlockHash = virtualBlock.SelectedTipHash().String()
 		confirmations = 0
 		value = txOut.Value
 		pkScript = txOut.PkScript
@@ -2551,9 +2560,9 @@ func handleGetTxOut(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 			return nil, nil
 		}
 
-		dagState := s.cfg.DAG.GetDAGState()
-		bestBlockHash = dagState.SelectedTip.Hash.String()
-		confirmations = 1 + dagState.SelectedTip.Height - entry.BlockHeight()
+		virtualBlock := s.cfg.DAG.GetVirtualBlock()
+		bestBlockHash = virtualBlock.SelectedTipHash().String()
+		confirmations = 1 + virtualBlock.SelectedTipHeight() - entry.BlockHeight()
 		value = entry.Amount()
 		pkScript = entry.PkScript()
 		isCoinbase = entry.IsCoinBase()
@@ -3046,7 +3055,7 @@ func handleSearchRawTransactions(s *Server, cmd interface{}, closeChan <-chan st
 	}
 
 	// The verbose flag is set, so generate the JSON object and return it.
-	dagState := s.cfg.DAG.GetDAGState()
+	virtualBlock := s.cfg.DAG.GetVirtualBlock()
 	srtList := make([]btcjson.SearchRawTransactionsResult, len(addressTxns))
 	for i := range addressTxns {
 		// The deserialized transaction is needed, so deserialize the
@@ -3116,7 +3125,7 @@ func handleSearchRawTransactions(s *Server, cmd interface{}, closeChan <-chan st
 			result.Time = uint64(blkHeader.Timestamp.Unix())
 			result.Blocktime = uint64(blkHeader.Timestamp.Unix())
 			result.BlockHash = blkHashStr
-			result.Confirmations = uint64(1 + dagState.SelectedTip.Height - blkHeight)
+			result.Confirmations = uint64(1 + virtualBlock.SelectedTipHeight() - blkHeight)
 		}
 	}
 
@@ -3301,18 +3310,18 @@ func handleValidateAddress(s *Server, cmd interface{}, closeChan <-chan struct{}
 }
 
 func verifyDAG(s *Server, level, depth int32) error {
-	dagState := s.cfg.DAG.GetDAGState()
-	finishHeight := dagState.SelectedTip.Height - depth
+	virtualBlock := s.cfg.DAG.GetVirtualBlock()
+	finishHeight := virtualBlock.SelectedTipHeight() - depth
 	if finishHeight < 0 {
 		finishHeight = 0
 	}
 	log.Infof("Verifying chain for %d blocks at level %d",
-		dagState.SelectedTip.Height-finishHeight, level)
+		virtualBlock.SelectedTipHeight()-finishHeight, level)
 
-	currentHash := &dagState.SelectedTip.Hash
-	for height := dagState.SelectedTip.Height; height > finishHeight; {
+	currentHash := virtualBlock.SelectedTipHash()
+	for height := virtualBlock.SelectedTipHeight(); height > finishHeight; {
 		// Level 0 just looks up the block.
-		block, err := s.cfg.DAG.BlockByHash(currentHash)
+		block, err := s.cfg.DAG.BlockByHash(&currentHash)
 		if err != nil {
 			log.Errorf("Verify is unable to fetch block at "+
 				"height %d: %v", height, err)
@@ -3331,7 +3340,7 @@ func verifyDAG(s *Server, level, depth int32) error {
 			}
 		}
 
-		currentHash = block.MsgBlock().Header.SelectedPrevBlock()
+		currentHash = *block.MsgBlock().Header.SelectedPrevBlock()
 	}
 	log.Infof("Chain verify completed successfully")
 

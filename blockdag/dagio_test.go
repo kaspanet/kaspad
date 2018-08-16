@@ -612,24 +612,22 @@ func TestDAGStateSerialization(t *testing.T) {
 
 	tests := []struct {
 		name       string
-		state      dbDAGState
+		state      DAGState
 		serialized []byte
 	}{
 		{
 			name: "genesis",
-			state: dbDAGState{
-				Tips:     []daghash.Hash{*newHashFromStr("000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f")},
-				TotalTxs: 1,
+			state: DAGState{
+				TipHashes:     []daghash.Hash{*newHashFromStr("000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f")},
 			},
-			serialized: []byte("{\"Tips\":[[111,226,140,10,182,241,179,114,193,166,162,70,174,99,247,79,147,30,131,101,225,90,8,156,104,214,25,0,0,0,0,0]],\"TotalTxs\":1}"),
+			serialized: []byte("{\"TipHashes\":[[111,226,140,10,182,241,179,114,193,166,162,70,174,99,247,79,147,30,131,101,225,90,8,156,104,214,25,0,0,0,0,0]]}"),
 		},
 		{
 			name: "block 1",
-			state: dbDAGState{
-				Tips:     []daghash.Hash{*newHashFromStr("00000000839a8e6886ab5951d76f411475428afc90947ee320161bbf18eb6048")},
-				TotalTxs: 2,
+			state: DAGState{
+				TipHashes:     []daghash.Hash{*newHashFromStr("00000000839a8e6886ab5951d76f411475428afc90947ee320161bbf18eb6048")},
 			},
-			serialized: []byte("{\"Tips\":[[72,96,235,24,191,27,22,32,227,126,148,144,252,138,66,117,20,65,111,215,81,89,171,134,104,142,154,131,0,0,0,0]],\"TotalTxs\":2}"),
+			serialized: []byte("{\"TipHashes\":[[72,96,235,24,191,27,22,32,227,126,148,144,252,138,66,117,20,65,111,215,81,89,171,134,104,142,154,131,0,0,0,0]]}"),
 		},
 	}
 

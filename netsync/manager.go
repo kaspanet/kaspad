@@ -226,7 +226,7 @@ func (sm *SyncManager) startSync() {
 		return
 	}
 
-	dagState := sm.dag.GetDAGState()
+	virtualBlock := sm.dag.GetVirtualBlock()
 	var bestPeer *peerpkg.Peer
 	for peer, state := range sm.peerStates {
 		if !state.syncCandidate {
@@ -239,7 +239,7 @@ func (sm *SyncManager) startSync() {
 		// doesn't have a later block when it's equal, it will likely
 		// have one soon so it is a reasonable choice.  It also allows
 		// the case where both are at 0 such as during regression test.
-		if peer.LastBlock() < dagState.SelectedTip.Height {
+		if peer.LastBlock() < virtualBlock.SelectedTipHeight() {
 			state.syncCandidate = false
 			continue
 		}
@@ -284,13 +284,13 @@ func (sm *SyncManager) startSync() {
 		// not support the headers-first approach so do normal block
 		// downloads when in regression test mode.
 		if sm.nextCheckpoint != nil &&
-			dagState.SelectedTip.Height < sm.nextCheckpoint.Height &&
+			virtualBlock.SelectedTipHeight() < sm.nextCheckpoint.Height &&
 			sm.chainParams != &dagconfig.RegressionNetParams {
 
 			bestPeer.PushGetHeadersMsg(locator, sm.nextCheckpoint.Hash)
 			sm.headersFirstMode = true
 			log.Infof("Downloading headers for blocks %d to "+
-				"%d from peer %s", dagState.SelectedTip.Height+1,
+				"%d from peer %s", virtualBlock.SelectedTipHeight()+1,
 				sm.nextCheckpoint.Height, bestPeer.Addr())
 		} else {
 			bestPeer.PushGetBlocksMsg(locator, &zeroHash)
@@ -392,8 +392,9 @@ func (sm *SyncManager) handleDonePeerMsg(peer *peerpkg.Peer) {
 	if sm.syncPeer == peer {
 		sm.syncPeer = nil
 		if sm.headersFirstMode {
-			dagState := sm.dag.GetDAGState()
-			sm.resetHeaderState(&dagState.SelectedTip.Hash, dagState.SelectedTip.Height)
+			virtualBlock := sm.dag.GetVirtualBlock()
+			selectedTipHash := virtualBlock.SelectedTipHash()
+			sm.resetHeaderState(&selectedTipHash, virtualBlock.SelectedTipHeight())
 		}
 		sm.startSync()
 	}
@@ -482,7 +483,7 @@ func (sm *SyncManager) current() bool {
 
 	// No matter what chain thinks, if we are below the block we are syncing
 	// to we are not current.
-	if sm.dag.GetDAGState().SelectedTip.Height < sm.syncPeer.LastBlock() {
+	if sm.dag.GetVirtualBlock().SelectedTipHeight() < sm.syncPeer.LastBlock() {
 		return false
 	}
 	return true
@@ -615,9 +616,10 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 
 		// Update this peer's latest block height, for future
 		// potential sync node candidacy.
-		dagState := sm.dag.GetDAGState()
-		heightUpdate = dagState.SelectedTip.Height
-		blkHashUpdate = &dagState.SelectedTip.Hash
+		virtualBlock := sm.dag.GetVirtualBlock()
+		selectedTipHash := virtualBlock.SelectedTipHash()
+		heightUpdate = virtualBlock.SelectedTipHeight()
+		blkHashUpdate = &selectedTipHash
 
 		// Clear the rejected transactions.
 		sm.rejectedTxns = make(map[daghash.Hash]struct{})
@@ -1182,7 +1184,7 @@ func (sm *SyncManager) handleBlockchainNotification(notification *blockdag.Notif
 		iv := wire.NewInvVect(wire.InvTypeBlock, block.Hash())
 		sm.peerNotifier.RelayInventory(iv, block.MsgBlock().Header)
 
-	// A block has been connected to the main block chain.
+		// A block has been connected to the main block chain.
 	case blockdag.NTBlockConnected:
 		block, ok := notification.Data.(*btcutil.Block)
 		if !ok {
@@ -1220,7 +1222,7 @@ func (sm *SyncManager) handleBlockchainNotification(notification *blockdag.Notif
 			}
 		}
 
-	// A block has been disconnected from the main block chain.
+		// A block has been disconnected from the main block chain.
 	case blockdag.NTBlockDisconnected:
 		block, ok := notification.Data.(*btcutil.Block)
 		if !ok {
@@ -1396,12 +1398,13 @@ func New(config *Config) (*SyncManager, error) {
 		feeEstimator:    config.FeeEstimator,
 	}
 
-	dagState := sm.dag.GetDAGState()
+	virtualBlock := sm.dag.GetVirtualBlock()
+	selectedTipHash := virtualBlock.SelectedTipHash()
 	if !config.DisableCheckpoints {
 		// Initialize the next checkpoint based on the current height.
-		sm.nextCheckpoint = sm.findNextHeaderCheckpoint(dagState.SelectedTip.Height)
+		sm.nextCheckpoint = sm.findNextHeaderCheckpoint(virtualBlock.SelectedTipHeight())
 		if sm.nextCheckpoint != nil {
-			sm.resetHeaderState(&dagState.SelectedTip.Hash, dagState.SelectedTip.Height)
+			sm.resetHeaderState(&selectedTipHash, virtualBlock.SelectedTipHeight())
 		}
 	} else {
 		log.Info("Checkpoints are disabled")

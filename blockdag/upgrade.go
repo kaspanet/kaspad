@@ -82,7 +82,7 @@ func migrateBlockIndex(db database.DB) error {
 		if err != nil {
 			return err
 		}
-		tip := &state.Tips[0]
+		tip := &state.TipHashes[0]
 
 		// Scan the old block index bucket and construct a mapping of each block
 		// to parent block and all child blocks.
