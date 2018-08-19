@@ -3,6 +3,7 @@ package ffldb
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/bouk/monkey"
@@ -602,4 +603,81 @@ func TestStoreBlockErrors(t *testing.T) {
 
 		}()
 	}
+}
+
+func TestDeleteDoubleNestedBucket(t *testing.T) {
+	pdb := newTestDb("TestDeleteDoubleNestedBucket", t)
+	defer pdb.Close()
+
+	firstKey := []byte("first")
+	secondKey := []byte("second")
+	key := []byte("key")
+	value := []byte("value")
+	var rawKey, rawSecondKey []byte
+
+	// Test setup
+	err := pdb.Update(func(tx database.Tx) error {
+		metadata := tx.Metadata()
+		firstBucket, err := metadata.CreateBucket(firstKey)
+		if err != nil {
+			return fmt.Errorf("Error creating first bucket: %s", err)
+		}
+		secondBucket, err := firstBucket.CreateBucket(secondKey)
+		if err != nil {
+			return fmt.Errorf("Error creating second bucket: %s", err)
+		}
+		secondBucket.Put(key, value)
+
+		// extract rawKey from cursor and make sure it's in raw database
+		c := secondBucket.Cursor()
+		for ok := c.First(); ok && !bytes.Equal(c.Key(), key); ok = c.Next() {
+		}
+		if !bytes.Equal(c.Key(), key) {
+			return fmt.Errorf("Couldn't find key to extract rawKey")
+		}
+		rawKey = c.(*cursor).rawKey()
+		if tx.(*transaction).fetchKey(rawKey) == nil {
+			return fmt.Errorf("rawKey not found for some reason")
+		}
+
+		// extract rawSecondKey from cursor and make sure it's in raw database
+		c = firstBucket.Cursor()
+		for ok := c.First(); ok && !bytes.Equal(c.Key(), secondKey); ok = c.Next() {
+		}
+		if !bytes.Equal(c.Key(), secondKey) {
+			return fmt.Errorf("Couldn't find secondKey to extract rawSecondKey")
+		}
+		rawSecondKey = c.(*cursor).rawKey()
+		if tx.(*transaction).fetchKey(rawSecondKey) == nil {
+			return fmt.Errorf("rawSecondKey not found for some reason")
+		}
+
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("TestDeleteDoubleNestedBucket: Error in test setup pdb.Update: %s", err)
+	}
+
+	// Actual test
+	err = pdb.Update(func(tx database.Tx) error {
+		metadata := tx.Metadata()
+		err := metadata.DeleteBucket(firstKey)
+		if err != nil {
+			return err
+		}
+
+		if tx.(*transaction).fetchKey(rawSecondKey) != nil {
+			t.Error("TestDeleteDoubleNestedBucket: secondBucket was not deleted")
+		}
+
+		if tx.(*transaction).fetchKey(rawKey) != nil {
+			t.Error("TestDeleteDoubleNestedBucket: value inside secondBucket was not deleted")
+		}
+
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("TestDeleteDoubleNestedBucket: Error in actual test pdb.Update: %s", err)
+	}
+
 }
