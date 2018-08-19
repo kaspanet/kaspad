@@ -93,7 +93,7 @@ func TestVirtualBlock(t *testing.T) {
 		}
 
 		// Ensure that the virtual block's tips are now equal to expectedTips
-		resultTips := virtual.Tips()
+		resultTips := virtual.tips()
 		if !reflect.DeepEqual(resultTips, test.expectedTips) {
 			t.Errorf("unexpected tips in test \"%s\". "+
 				"Expected: %v, got: %v.", test.name, test.expectedTips, resultTips)

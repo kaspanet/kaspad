@@ -28,6 +28,15 @@ func newVirtualBlock(tips blockSet, phantomK uint32) *VirtualBlock {
 	return &virtual
 }
 
+// clone creates and returns a clone of the virtual block.
+func (v *VirtualBlock) clone() *VirtualBlock {
+	return &VirtualBlock{
+		phantomK:  v.phantomK,
+		utxoSet:   v.utxoSet.clone().(*fullUTXOSet),
+		blockNode: v.blockNode,
+	}
+}
+
 // setTips replaces the tips of the virtual block with the blocks in the
 // given blockSet. This only differs from the exported version in that it
 // is up to the caller to ensure the lock is held.
@@ -54,7 +63,7 @@ func (v *VirtualBlock) SetTips(tips blockSet) {
 //
 // This function MUST be called with the view mutex locked (for writes).
 func (v *VirtualBlock) addTip(newTip *blockNode) {
-	updatedTips := v.Tips().clone()
+	updatedTips := v.tips().clone()
 	for _, parent := range newTip.parents {
 		updatedTips.remove(parent)
 	}
@@ -74,11 +83,11 @@ func (v *VirtualBlock) AddTip(newTip *blockNode) {
 	v.mtx.Unlock()
 }
 
-// Tips returns the current tip block nodes for the DAG.  It will return
+// tips returns the current tip block nodes for the DAG.  It will return
 // an empty blockSet if there is no tip.
 //
 // This function is safe for concurrent access.
-func (v *VirtualBlock) Tips() blockSet {
+func (v *VirtualBlock) tips() blockSet {
 	return v.parents
 }
 
@@ -90,14 +99,17 @@ func (v *VirtualBlock) SelectedTip() *blockNode {
 	return v.selectedParent
 }
 
+// SelectedTipHeight returns the height of the selected tip of the virtual block.
 func (v *VirtualBlock) SelectedTipHeight() int32 {
 	return v.SelectedTip().height
 }
 
-func (v *VirtualBlock) TipHashes() []daghash.Hash{
-	return v.Tips().hashes()
+// TipHashes returns the hashes of the tips of the virtual block.
+func (v *VirtualBlock) TipHashes() []daghash.Hash {
+	return v.tips().hashes()
 }
 
+// SelectedTipHash returns the hash of the selected tip of the virtual block.
 func (v *VirtualBlock) SelectedTipHash() daghash.Hash {
 	return v.SelectedTip().hash;
 }

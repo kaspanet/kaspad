@@ -572,32 +572,11 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *btcutil.Block, view *U
 		}
 	}
 
-	// Verify and build a UTXO set for the new block.
-	newBlockUTXO, err := dag.verifyAndBuildUTXO(node, block)
+	// Add the node to the virtual and update the UTXO set of the DAG.
+	err := dag.connectUTXO(node, block)
 	if err != nil {
 		return err
 	}
-
-	// Update the new block's parents.
-	dag.connectBlockToParents(node)
-	err = dag.updateParentDiffs(node, newBlockUTXO)
-	if err != nil {
-		return err
-	}
-
-	// Update the virtual block's children (the DAG tips) to include the new block.
-	dag.virtual.AddTip(node)
-
-	// Build a UTXO set for the new virtual block and update the DAG tips' diffs.
-	newVirtualUTXO, err := dag.pastUTXO(&dag.virtual.blockNode)
-	if err != nil {
-		return err
-	}
-	err = dag.updateTipsUTXO(newVirtualUTXO)
-	if err != nil {
-		return err
-	}
-	newVirtualUTXO.(*diffUTXOSet).meldToBase()
 
 	// Write any block status changes to DB before updating the DAG state.
 	err = dag.index.flushToDB()
@@ -607,7 +586,7 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *btcutil.Block, view *U
 
 	// Generate a new state snapshot that will be used to update the
 	// database and later memory if all database updates are successful.
-	state := newDAGState(dag.virtual.Tips().hashes())
+	state := newDAGState(dag.virtual.tips().hashes())
 
 	// Atomically insert info into the database.
 	err = dag.db.Update(func(dbTx database.Tx) error {
@@ -676,41 +655,176 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *btcutil.Block, view *U
 	return nil
 }
 
+// connectUTXO does the following:
+// 1. Verifies that new block makes sense UTXO-wise.
+// 2. Connects each of the new block's parents to the block.
+// 3. Adds the new block to the virtual.
+// 4. Updates the DAG's full UTXO set.
+// 5. Updates each of the tips' utxoDiff.
+func (dag *BlockDAG) connectUTXO(node *blockNode, block *btcutil.Block) error {
+	// Prepare nodeDiffs for all the relevant nodes to avoid modifying the original nodes.
+	// We avoid modifying the original nodes in this function because, potentially, it could
+	// fail, thus bringing all the affected nodes (and the virtual) into an undefined state.
+	nodeDiffs := make(map[daghash.Hash]*nodeDiff)
+	nodeDiff := toNodeDiff(node, node.parents, block.Transactions(), nodeDiffs)
+
+	// Verify and build a UTXO set for the new block.
+	newBlockUTXO, err := dag.verifyAndBuildUTXO(nodeDiff)
+	if err != nil {
+		return err
+	}
+
+	// Update the new block's parents.
+	dag.connectBlockToParents(nodeDiff)
+	err = dag.updateParentDiffs(nodeDiff, newBlockUTXO)
+	if err != nil {
+		return err
+	}
+
+	// Clone the virtual block so that we don't modify the existing one.
+	virtualClone := dag.virtual.clone()
+
+	// Update the virtual block's children (the DAG tips) to include the new block.
+	virtualClone.AddTip(node)
+
+	// Build a UTXO set for the new virtual block and update the DAG tips' diffs.
+	virtualNodeDiff := toNodeDiff(&virtualClone.blockNode, virtualClone.tips(), nil, nodeDiffs)
+	newVirtualUTXO, err := dag.pastUTXO(virtualNodeDiff)
+	if err != nil {
+		return err
+	}
+	newVirtualUTXO.(*diffUTXOSet).meldToBase()
+
+	// Apply new utxoDiffs to all the tips
+	err = dag.updateTipsUTXO(virtualNodeDiff.parents, newVirtualUTXO)
+	if err != nil {
+		return err
+	}
+
+	// It is now safe to commit all the nodeDiffs
+	for _, nodeDiff := range nodeDiffs {
+		nodeDiff.commit()
+
+		// Set the status to valid for all index nodes to make sure the changes get
+		// written to the database.
+		if nodeDiff != virtualNodeDiff {
+			dag.index.SetStatusFlags(nodeDiff.original, statusValid)
+		}
+	}
+
+	// It is now safe to apply the new virtual block
+	dag.virtual = virtualClone
+
+	return nil
+}
+
+// nodeDiff is a diff to a blockNode. It is used inside connectUTXO.
+type nodeDiff struct {
+	original       *blockNode
+	selectedParent *nodeDiff
+	parents        []*nodeDiff
+	children       []*nodeDiff
+	diff           *utxoDiff
+	diffChild      *nodeDiff
+	transactions   []*btcutil.Tx
+}
+
+// toNodeDiff takes a node and builds a nodeDiff from it.
+// Note that parents are passed as an arguments. This is to avoid building the
+// entire DAG in nodeDiff format.
+func toNodeDiff(node *blockNode, parents blockSet, transactions []*btcutil.Tx,
+	nodeDiffs map[daghash.Hash]*nodeDiff) *nodeDiff {
+	if existingNodeDiff, ok := nodeDiffs[node.hash]; ok {
+		return existingNodeDiff
+	}
+
+	nodeDiff := &nodeDiff{
+		original:       node,
+		parents:        []*nodeDiff{},
+		children:       []*nodeDiff{},
+		transactions:   transactions,
+	}
+	nodeDiffs[node.hash] = nodeDiff
+
+	if node.selectedParent != nil {
+		nodeDiff.selectedParent = toNodeDiff(node.selectedParent, newSet(), nil, nodeDiffs)
+	}
+	for _, parent := range parents {
+		nodeDiff.parents = append(nodeDiff.parents, toNodeDiff(parent, newSet(), nil, nodeDiffs))
+	}
+	for _, child := range node.children {
+		nodeDiff.children = append(nodeDiff.children, toNodeDiff(child, newSet(), nil, nodeDiffs))
+	}
+	if node.diff != nil {
+		nodeDiff.diff = node.diff.clone()
+	}
+	if node.diffChild != nil {
+		nodeDiff.diffChild = toNodeDiff(node.diffChild, newSet(), nil, nodeDiffs)
+	}
+
+	return nodeDiff
+}
+
+func (n *nodeDiff) commit() {
+	if n.selectedParent != nil {
+		n.original.selectedParent = n.selectedParent.original
+	}
+
+	parents := newSet()
+	for _, parent := range n.parents {
+		parents.add(parent.original)
+	}
+	n.original.parents = parents
+
+	children := newSet()
+	for _, child := range n.children {
+		children.add(child.original)
+	}
+	n.original.children = children
+
+	if n.diff != nil {
+		n.original.diff = n.diff
+	}
+	if n.diffChild != nil {
+		n.original.diffChild = n.diffChild.original
+	}
+}
+
 // verifyAndBuildUTXO verifies all transactions in this block, and builds it's UTXO
-func (dag *BlockDAG) verifyAndBuildUTXO(newBlockNode *blockNode, newBlock *btcutil.Block) (utxoSet, error) {
-	utxo, err := dag.pastUTXO(newBlockNode)
+func (dag *BlockDAG) verifyAndBuildUTXO(nodeDiff *nodeDiff) (utxoSet, error) {
+	utxo, err := dag.pastUTXO(nodeDiff)
 	if err != nil {
 		return nil, err
 	}
 
-	log.Debugf("Past UTXO set for %s: %s", newBlockNode.hash.String(), utxo)
+	log.Debugf("Past UTXO set for %s: %s", nodeDiff.original.hash.String(), utxo)
 
-	for _, tx := range newBlock.Transactions() {
-		ok := utxo.addTx(tx.MsgTx(), newBlockNode.height)
+	for _, tx := range nodeDiff.transactions {
+		ok := utxo.addTx(tx.MsgTx(), nodeDiff.original.height)
 		if !ok {
 			return nil, fmt.Errorf("transaction %v is not compatible with UTXO", tx)
 		}
 	}
 
-	log.Debugf("Final UTXO set for %s: %s", newBlockNode.hash.String(), utxo)
+	log.Debugf("Final UTXO set for %s: %s", nodeDiff.original.hash.String(), utxo)
 	return utxo, nil
 }
 
 // pastUTXO returns the UTXO of block's past
-func (dag *BlockDAG) pastUTXO(block *blockNode) (utxoSet, error) {
-	if block.isGenesis() {
+func (dag *BlockDAG) pastUTXO(nodeDiff *nodeDiff) (utxoSet, error) {
+	if nodeDiff.original.isGenesis() {
 		return newDiffUTXOSet(dag.virtual.utxoSet, newUTXODiff()), nil
 	}
 
-	pastUTXO, err := dag.restoreUTXO(block.selectedParent)
+	pastUTXO, err := dag.restoreUTXO(nodeDiff.selectedParent)
 	if err != nil {
 		return nil, err
 	}
 
 	err = dag.db.View(func(tx database.Tx) error {
-		for i := len(block.blues) - 1; i >= 0; i-- {
-			blueBlockNode := block.blues[i]
-			if blueBlockNode == block.selectedParent {
+		for i := len(nodeDiff.original.blues) - 1; i >= 0; i-- {
+			blueBlockNode := nodeDiff.original.blues[i]
+			if blueBlockNode == nodeDiff.original.selectedParent {
 				continue
 			}
 
@@ -719,7 +833,7 @@ func (dag *BlockDAG) pastUTXO(block *blockNode) (utxoSet, error) {
 				return err
 			}
 			for _, tx := range blueBlock.Transactions() {
-				_ = pastUTXO.addTx(tx.MsgTx(), block.height) // purposefully ignore failures - these are just unaccepted transactions
+				_ = pastUTXO.addTx(tx.MsgTx(), nodeDiff.original.height) // purposefully ignore failures - these are just unaccepted transactions
 			}
 		}
 
@@ -733,9 +847,9 @@ func (dag *BlockDAG) pastUTXO(block *blockNode) (utxoSet, error) {
 }
 
 // restoreUTXO restores the UTXO of a given block from its diff
-func (dag *BlockDAG) restoreUTXO(block *blockNode) (utxoSet, error) {
-	stack := []*blockNode{block}
-	current := block
+func (dag *BlockDAG) restoreUTXO(nodeDiff *nodeDiff) (utxoSet, error) {
+	stack := []*blockNode{nodeDiff.original}
+	current := nodeDiff.original
 
 	for current.diffChild != nil {
 		current = current.diffChild
@@ -758,28 +872,28 @@ func (dag *BlockDAG) restoreUTXO(block *blockNode) (utxoSet, error) {
 
 // connectChildToParents iterates the child's parents and adds
 // itself to their child set.
-func (dag *BlockDAG) connectBlockToParents(child *blockNode) {
-	for _, parent := range child.parents {
-		parent.children.add(child)
+func (dag *BlockDAG) connectBlockToParents(nodeDiff *nodeDiff) {
+	for _, parent := range nodeDiff.parents {
+		parent.children = append(parent.children, nodeDiff)
 	}
 }
 
 // updateParentDiffs updates the diff of any parent whose DiffChild is this block
-func (dag *BlockDAG) updateParentDiffs(newBlock *blockNode, newBlockUTXO utxoSet) error {
+func (dag *BlockDAG) updateParentDiffs(nodeDiff *nodeDiff, newBlockUTXO utxoSet) error {
 	virtualDiffFromNewBlock, err := dag.virtual.utxoSet.diffFrom(newBlockUTXO)
 	if err != nil {
 		return err
 	}
 
-	newBlock.diff = virtualDiffFromNewBlock
+	nodeDiff.diff = virtualDiffFromNewBlock
 
-	for _, parent := range newBlock.parents {
+	for _, parent := range nodeDiff.parents {
 		if parent.diffChild == nil {
 			parentUTXO, err := dag.restoreUTXO(parent)
 			if err != nil {
 				return err
 			}
-			parent.diffChild = newBlock
+			parent.diffChild = nodeDiff
 			newBlockDiffFromParent, err := newBlockUTXO.diffFrom(parentUTXO)
 			if err != nil {
 				return err
@@ -792,9 +906,9 @@ func (dag *BlockDAG) updateParentDiffs(newBlock *blockNode, newBlockUTXO utxoSet
 }
 
 // updateTipsUTXO builds and applies new diff UTXOs for all the DAG's tips.
-func (dag *BlockDAG) updateTipsUTXO(virtualUTXO utxoSet) error {
-	for _, tip := range dag.virtual.Tips() {
-		tipUTXO, err := dag.restoreUTXO(tip)
+func (dag *BlockDAG) updateTipsUTXO(tipDiffs []*nodeDiff, virtualUTXO utxoSet) error {
+	for _, tipDiff := range tipDiffs {
+		tipUTXO, err := dag.restoreUTXO(tipDiff)
 		if err != nil {
 			return err
 		}
@@ -802,7 +916,7 @@ func (dag *BlockDAG) updateTipsUTXO(virtualUTXO utxoSet) error {
 		if err != nil {
 			return err
 		}
-		tip.diff = virtualDiffFromTip
+		tipDiff.diff = virtualDiffFromTip
 	}
 
 	return nil

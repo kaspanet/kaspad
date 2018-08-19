@@ -1071,7 +1071,7 @@ func (dag *BlockDAG) CheckConnectBlockTemplate(block *btcutil.Block) error {
 
 	// This only checks whether the block can be connected to the tip of the
 	// current chain.
-	tips := dag.virtual.Tips()
+	tips := dag.virtual.tips()
 	header := block.MsgBlock().Header
 	prevHashes := header.PrevBlocks
 	if !tips.hashesEqual(prevHashes) {
@@ -1093,6 +1093,6 @@ func (dag *BlockDAG) CheckConnectBlockTemplate(block *btcutil.Block) error {
 	// Leave the spent txouts entry nil in the state since the information
 	// is not needed and thus extra work can be avoided.
 	view := NewUtxoViewpoint()
-	newNode := newBlockNode(&header, dag.virtual.Tips(), dag.dagParams.K)
+	newNode := newBlockNode(&header, dag.virtual.tips(), dag.dagParams.K)
 	return dag.checkConnectBlock(newNode, block, view, nil)
 }

@@ -861,7 +861,7 @@ func (dag *BlockDAG) createDAGState() error {
 
 	// Initialize the DAG state.  Since it is the genesis block, use
 	// its timestamp for the median time.
-	dagState := newDAGState(dag.virtual.Tips().hashes())
+	dagState := newDAGState(dag.virtual.tips().hashes())
 	dag.setDAGState(dagState)
 
 	// Create the initial the database chain state including creating the
@@ -1110,7 +1110,7 @@ func (dag *BlockDAG) initDAGState() error {
 		dag.virtual.SetTips(tips)
 
 		// Initialize the DAG state.
-		dagState := newDAGState(dag.virtual.Tips().hashes())
+		dagState := newDAGState(dag.virtual.tips().hashes())
 		dag.setDAGState(dagState)
 
 		return nil
