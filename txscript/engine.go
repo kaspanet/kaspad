@@ -30,7 +30,7 @@ const (
 const (
 	// MaxStackSize is the maximum combined height of stack and alt stack
 	// during execution.
-	MaxStackSize = 1000
+	MaxStackSize = 244
 
 	// MaxScriptSize is the maximum allowed length of a raw script.
 	MaxScriptSize = 10000
@@ -584,36 +584,31 @@ func NewEngine(scriptPubKey []byte, tx *wire.MsgTx, txIdx int, flags ScriptFlags
 
 	vm := Engine{flags: flags, sigCache: sigCache}
 
-	// The signature script must only contain data pushes when the
-	// associated flag is set.
-	if !IsPushOnlyScript(scriptSig) {
+	parsedScriptSig, err := parseScriptAndVerifySize(scriptSig)
+	if err != nil {
+		return nil, err
+	}
+	// The signature script must only contain data pushes
+	if !isPushOnly(parsedScriptSig) {
 		return nil, scriptError(ErrNotPushOnly,
 			"signature script is not push only")
+	}
+
+	parsedScriptPubKey, err := parseScriptAndVerifySize(scriptPubKey)
+	if err != nil {
+		return nil, err
 	}
 
 	// The engine stores the scripts in parsed form using a slice.  This
 	// allows multiple scripts to be executed in sequence.  For example,
 	// with a pay-to-script-hash transaction, there will be ultimately be
 	// a third script to execute.
-	scripts := [][]byte{scriptSig, scriptPubKey}
-	vm.scripts = make([][]parsedOpcode, len(scripts))
-	for i, scr := range scripts {
-		if len(scr) > MaxScriptSize {
-			str := fmt.Sprintf("script size %d is larger than max "+
-				"allowed size %d", len(scr), MaxScriptSize)
-			return nil, scriptError(ErrScriptTooBig, str)
-		}
-		var err error
-		vm.scripts[i], err = parseScript(scr)
-		if err != nil {
-			return nil, err
-		}
-	}
+	vm.scripts = [][]parsedOpcode{parsedScriptSig, parsedScriptPubKey}
 
 	// Advance the program counter to the public key script if the signature
 	// script is empty since there is nothing to execute for it in that
 	// case.
-	if len(scripts[0]) == 0 {
+	if len(scriptSig) == 0 {
 		vm.scriptIdx++
 	}
 
@@ -630,4 +625,13 @@ func NewEngine(scriptPubKey []byte, tx *wire.MsgTx, txIdx int, flags ScriptFlags
 	vm.txIdx = txIdx
 
 	return &vm, nil
+}
+
+func parseScriptAndVerifySize(script []byte) ([]parsedOpcode, error) {
+	if len(script) > MaxScriptSize {
+		str := fmt.Sprintf("script size %d is larger than max "+
+			"allowed size %d", len(script), MaxScriptSize)
+		return nil, scriptError(ErrScriptTooBig, str)
+	}
+	return parseScript(script)
 }

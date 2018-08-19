@@ -156,7 +156,7 @@ func parseExpectedResult(expected string) ([]ErrorCode, error) {
 	case "SIG_DER":
 		return []ErrorCode{ErrSigDER, ErrInvalidSigHashType}, nil
 	case "EVAL_FALSE":
-		return []ErrorCode{ErrEvalFalse, ErrEmptyStack}, nil
+		return []ErrorCode{ErrEvalFalse, ErrEmptyStack, ErrCleanStack}, nil
 	case "EQUALVERIFY":
 		return []ErrorCode{ErrEqualVerify}, nil
 	case "NULLFAIL":
@@ -318,6 +318,10 @@ func testScripts(t *testing.T, tests [][]interface{}, useSigCache bool) {
 		// other and the provided signature and public key scripts are
 		// used, then create a new engine to execute the scripts.
 		tx := createSpendingTx(scriptSig, scriptPubKey)
+		if name == "test (Very basic P2SH)" {
+			x := 1
+			x = x + 1
+		}
 		vm, err := NewEngine(scriptPubKey, tx, 0, flags, sigCache)
 		if err == nil {
 			err = vm.Execute()
