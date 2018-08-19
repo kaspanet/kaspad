@@ -573,7 +573,7 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *btcutil.Block, view *U
 	}
 
 	// Add the node to the virtual and update the UTXO set of the DAG.
-	err := dag.connectUTXO(node, block)
+	utxoDiff, err := dag.connectUTXO(node, block)
 	if err != nil {
 		return err
 	}
@@ -607,6 +607,10 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *btcutil.Block, view *U
 		// entails removing all of the utxos spent and adding the new
 		// ones created by the block.
 		err = dbPutUtxoView(dbTx, view)
+		
+		// Update the UTXO set using the diffSet that was melded into the
+		// full UTXO set.
+		err = dbPutUTXODiff(dbTx, utxoDiff)
 		if err != nil {
 			return err
 		}
@@ -661,7 +665,7 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *btcutil.Block, view *U
 // 3. Adds the new block to the virtual.
 // 4. Updates the DAG's full UTXO set.
 // 5. Updates each of the tips' utxoDiff.
-func (dag *BlockDAG) connectUTXO(node *blockNode, block *btcutil.Block) error {
+func (dag *BlockDAG) connectUTXO(node *blockNode, block *btcutil.Block) (*utxoDiff, error) {
 	// Prepare nodeDiffs for all the relevant nodes to avoid modifying the original nodes.
 	// We avoid modifying the original nodes in this function because, potentially, it could
 	// fail, thus bringing all the affected nodes (and the virtual) into an undefined state.
@@ -671,14 +675,14 @@ func (dag *BlockDAG) connectUTXO(node *blockNode, block *btcutil.Block) error {
 	// Verify and build a UTXO set for the new block.
 	newBlockUTXO, err := dag.verifyAndBuildUTXO(nodeDiff)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// Update the new block's parents.
 	dag.connectBlockToParents(nodeDiff)
 	err = dag.updateParentDiffs(nodeDiff, newBlockUTXO)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// Clone the virtual block so that we don't modify the existing one.
@@ -691,15 +695,19 @@ func (dag *BlockDAG) connectUTXO(node *blockNode, block *btcutil.Block) error {
 	virtualNodeDiff := toNodeDiff(&virtualClone.blockNode, virtualClone.tips(), nil, nodeDiffs)
 	newVirtualUTXO, err := dag.pastUTXO(virtualNodeDiff)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	newVirtualUTXO.(*diffUTXOSet).meldToBase()
 
 	// Apply new utxoDiffs to all the tips
 	err = dag.updateTipsUTXO(virtualNodeDiff.parents, newVirtualUTXO)
 	if err != nil {
-		return err
+		return nil, err
 	}
+
+	// It is now safe to meld the UTXO to base.
+	diffSet := newVirtualUTXO.(*diffUTXOSet)
+	utxoDiff := diffSet.utxoDiff
+	diffSet.meldToBase()
 
 	// It is now safe to commit all the nodeDiffs
 	for _, nodeDiff := range nodeDiffs {
@@ -715,7 +723,7 @@ func (dag *BlockDAG) connectUTXO(node *blockNode, block *btcutil.Block) error {
 	// It is now safe to apply the new virtual block
 	dag.virtual = virtualClone
 
-	return nil
+	return utxoDiff, nil
 }
 
 // nodeDiff is a diff to a blockNode. It is used inside connectUTXO.

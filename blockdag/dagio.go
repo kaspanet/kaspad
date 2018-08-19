@@ -747,6 +747,42 @@ func dbPutUtxoView(dbTx database.Tx, view *UtxoViewpoint) error {
 	return nil
 }
 
+// dbPutUTXODiff uses an existing database transaction to update the utxo set
+// in the database based on the provided utxo view contents and state.  In
+// particular, only the entries that have been marked as modified are written
+// to the database.
+func dbPutUTXODiff(dbTx database.Tx, diff *utxoDiff) error {
+	utxoBucket := dbTx.Metadata().Bucket(utxoSetBucketName)
+	for outPoint := range diff.toRemove {
+		key := outpointKey(outPoint)
+		err := utxoBucket.Delete(*key)
+		recycleOutpointKey(key)
+		if err != nil {
+			return err
+		}
+	}
+
+	for outPoint, entry := range diff.toAdd {
+		// Serialize and store the utxo entry.
+		serialized, err := serializeUtxoEntry(entry)
+		if err != nil {
+			return err
+		}
+
+		key := outpointKey(outPoint)
+		err = utxoBucket.Put(*key, serialized)
+		// NOTE: The key is intentionally not recycled here since the
+		// database interface contract prohibits modifications.  It will
+		// be garbage collected normally when the database is done with
+		// it.
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 // -----------------------------------------------------------------------------
 // The block index consists of two buckets with an entry for every block in the
 // main chain.  One bucket is for the hash to height mapping and the other is
