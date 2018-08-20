@@ -19,22 +19,22 @@ import (
 // The flags are also passed to checkBlockContext and connectToDAG.  See
 // their documentation for how the flags modify their behavior.
 //
-// This function MUST be called with the chain state lock held (for writes).
-func (b *BlockDAG) maybeAcceptBlock(block *btcutil.Block, flags BehaviorFlags) error {
+// This function MUST be called with the dagLock held (for writes).
+func (dag *BlockDAG) maybeAcceptBlock(block *btcutil.Block, flags BehaviorFlags) error {
 	// The height of this block is one more than the referenced previous
 	// block.
-	parents, err := lookupPreviousNodes(block, b)
+	parents, err := lookupPreviousNodes(block, dag)
 	if err != nil {
 		return err
 	}
 
-	selectedParent := parents.first()
-	blockHeight := selectedParent.height + 1
+	selectedParent := parents.first() //TODO (Ori): This is wrong, done only for compilation
+	blockHeight := parents.maxHeight() + 1
 	block.SetHeight(blockHeight)
 
 	// The block must pass all of the validation rules which depend on the
-	// position of the block within the block chain.
-	err = b.checkBlockContext(block, selectedParent, flags)
+	// position of the block within the block DAG.
+	err = dag.checkBlockContext(block, selectedParent, flags)
 	if err != nil {
 		return err
 	}
@@ -48,7 +48,7 @@ func (b *BlockDAG) maybeAcceptBlock(block *btcutil.Block, flags BehaviorFlags) e
 	// expensive connection logic.  It also has some other nice properties
 	// such as making blocks that never become part of the main chain or
 	// blocks that fail to connect available for further analysis.
-	err = b.db.Update(func(dbTx database.Tx) error {
+	err = dag.db.Update(func(dbTx database.Tx) error {
 		return dbStoreBlock(dbTx, block)
 	})
 	if err != nil {
@@ -59,18 +59,18 @@ func (b *BlockDAG) maybeAcceptBlock(block *btcutil.Block, flags BehaviorFlags) e
 	// if the block ultimately gets connected to the main chain, it starts out
 	// on a side chain.
 	blockHeader := &block.MsgBlock().Header
-	newNode := newBlockNode(blockHeader, parents, b.dagParams.K)
+	newNode := newBlockNode(blockHeader, parents, dag.dagParams.K)
 	newNode.status = statusDataStored
 
-	b.index.AddNode(newNode)
-	err = b.index.flushToDB()
+	dag.index.AddNode(newNode)
+	err = dag.index.flushToDB()
 	if err != nil {
 		return err
 	}
 
 	// Connect the passed block to the DAG. This also handles validation of the
 	// transaction scripts.
-	err = b.connectToDAG(newNode, parents, block, flags)
+	err = dag.connectToDAG(newNode, parents, block, flags)
 	if err != nil {
 		return err
 	}
@@ -78,9 +78,9 @@ func (b *BlockDAG) maybeAcceptBlock(block *btcutil.Block, flags BehaviorFlags) e
 	// Notify the caller that the new block was accepted into the block
 	// chain.  The caller would typically want to react by relaying the
 	// inventory to other peers.
-	b.dagLock.Unlock()
-	b.sendNotification(NTBlockAccepted, block)
-	b.dagLock.Lock()
+	dag.dagLock.Unlock()
+	dag.sendNotification(NTBlockAccepted, block)
+	dag.dagLock.Lock()
 
 	return nil
 }

@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"math"
 	"math/big"
+	"sort"
 	"time"
 
 	"github.com/daglabs/btcd/dagconfig"
@@ -37,10 +38,6 @@ const (
 	// medianTimeBlocks is the number of previous blocks which should be
 	// used to calculate the median time used to validate block timestamps.
 	medianTimeBlocks = 11
-
-	// serializedHeightVersion is the block version which changed block
-	// coinbases to start with the serialized block height.
-	serializedHeightVersion = 2
 
 	// baseSubsidy is the starting subsidy amount for mined blocks.  This
 	// value is halved every SubsidyHalvingInterval blocks.
@@ -75,15 +72,6 @@ func isNullOutpoint(outpoint *wire.OutPoint) bool {
 		return true
 	}
 	return false
-}
-
-// ShouldHaveSerializedBlockHeight determines if a block should have a
-// serialized block height embedded within the scriptSig of its
-// coinbase transaction. Judgement is based on the block version in the block
-// header. Blocks with version 2 and above satisfy this criteria. See BIP0034
-// for further information.
-func ShouldHaveSerializedBlockHeight(header *wire.BlockHeader) bool {
-	return header.Version >= serializedHeightVersion
 }
 
 // IsCoinBaseTx determines whether or not a transaction is a coinbase.  A coinbase
@@ -172,21 +160,6 @@ func IsFinalizedTransaction(tx *btcutil.Tx, blockHeight int32, blockTime time.Ti
 		}
 	}
 	return true
-}
-
-// isBIP0030Node returns whether or not the passed node represents one of the
-// two blocks that violate the BIP0030 rule which prevents transactions from
-// overwriting old ones.
-func isBIP0030Node(node *blockNode) bool {
-	if node.height == 91842 && node.hash.IsEqual(block91842Hash) {
-		return true
-	}
-
-	if node.height == 91880 && node.hash.IsEqual(block91880Hash) {
-		return true
-	}
-
-	return false
 }
 
 // CalcBlockSubsidy returns the subsidy amount a block at the provided height
@@ -444,6 +417,11 @@ func checkBlockHeaderSanity(header *wire.BlockHeader, powLimit *big.Int, timeSou
 		return err
 	}
 
+	err = checkBlockParentsOrder(header)
+	if err != nil {
+		return err
+	}
+
 	// A block timestamp must not have a greater precision than one second.
 	// This check is necessary because Go time.Time values support
 	// nanosecond precision whereas the consensus rules only apply to
@@ -464,6 +442,21 @@ func checkBlockHeaderSanity(header *wire.BlockHeader, powLimit *big.Int, timeSou
 		return ruleError(ErrTimeTooNew, str)
 	}
 
+	return nil
+}
+
+//checkBlockParentsOrder ensures that the block's parents are ordered by hash
+func checkBlockParentsOrder(header *wire.BlockHeader) error {
+	sortedHashes := make([]daghash.Hash, 0, len(header.PrevBlocks))
+	for _, hash := range header.PrevBlocks {
+		sortedHashes = append(sortedHashes, hash)
+	}
+	sort.Slice(sortedHashes, func(i, j int) bool {
+		return daghash.Less(&sortedHashes[i], &sortedHashes[j])
+	})
+	if !daghash.AreEqual(header.PrevBlocks, sortedHashes) {
+		return ruleError(ErrWrongParentsOrder, "block parents are not ordered by hash")
+	}
 	return nil
 }
 
@@ -584,20 +577,19 @@ func CheckBlockSanity(block *btcutil.Block, powLimit *big.Int, timeSource Median
 }
 
 // ExtractCoinbaseHeight attempts to extract the height of the block from the
-// scriptSig of a coinbase transaction.  Coinbase heights are only present in
-// blocks of version 2 or later.  This was added as part of BIP0034.
+// scriptSig of a coinbase transaction.
 func ExtractCoinbaseHeight(coinbaseTx *btcutil.Tx) (int32, error) {
 	sigScript := coinbaseTx.MsgTx().TxIn[0].SignatureScript
 	if len(sigScript) < 1 {
-		str := "the coinbase signature script for blocks of " +
-			"version %d or greater must start with the " +
+		str := "the coinbase signature script" +
+			"must start with the " +
 			"length of the serialized block height"
-		str = fmt.Sprintf(str, serializedHeightVersion)
+		str = fmt.Sprintf(str)
 		return 0, ruleError(ErrMissingCoinbaseHeight, str)
 	}
 
 	// Detect the case when the block height is a small integer encoded with
-	// as single byte.
+	// a single byte.
 	opcode := int(sigScript[0])
 	if opcode == txscript.Op0 {
 		return 0, nil
@@ -610,8 +602,8 @@ func ExtractCoinbaseHeight(coinbaseTx *btcutil.Tx) (int32, error) {
 	// encode in the block height.
 	serializedLen := int(sigScript[0])
 	if len(sigScript[1:]) < serializedLen {
-		str := "the coinbase signature script for blocks of " +
-			"version %d or greater must start with the " +
+		str := "the coinbase signature script " +
+			"must start with the " +
 			"serialized block height"
 		str = fmt.Sprintf(str, serializedLen)
 		return 0, ruleError(ErrMissingCoinbaseHeight, str)
@@ -649,13 +641,13 @@ func checkSerializedHeight(coinbaseTx *btcutil.Tx, wantHeight int32) error {
 //    the checkpoints are not performed.
 //
 // This function MUST be called with the chain state lock held (for writes).
-func (b *BlockDAG) checkBlockHeaderContext(header *wire.BlockHeader, selectedParent *blockNode, flags BehaviorFlags) error {
+func (dag *BlockDAG) checkBlockHeaderContext(header *wire.BlockHeader, selectedParent *blockNode, flags BehaviorFlags) error {
 	fastAdd := flags&BFFastAdd == BFFastAdd
 	if !fastAdd {
 		// Ensure the difficulty specified in the block header matches
 		// the calculated difficulty based on the previous block and
 		// difficulty retarget rules.
-		expectedDifficulty, err := b.calcNextRequiredDifficulty(selectedParent,
+		expectedDifficulty, err := dag.calcNextRequiredDifficulty(selectedParent,
 			header.Timestamp)
 		if err != nil {
 			return err
@@ -683,7 +675,7 @@ func (b *BlockDAG) checkBlockHeaderContext(header *wire.BlockHeader, selectedPar
 
 	// Ensure chain matches up to predetermined checkpoints.
 	blockHash := header.BlockHash()
-	if !b.verifyCheckpoint(blockHeight, &blockHash) {
+	if !dag.verifyCheckpoint(blockHeight, &blockHash) {
 		str := fmt.Sprintf("block at height %d does not match "+
 			"checkpoint hash", blockHeight)
 		return ruleError(ErrBadCheckpoint, str)
@@ -693,7 +685,7 @@ func (b *BlockDAG) checkBlockHeaderContext(header *wire.BlockHeader, selectedPar
 	// chain before it.  This prevents storage of new, otherwise valid,
 	// blocks which build off of old blocks that are likely at a much easier
 	// difficulty and therefore could be used to waste cache and disk space.
-	checkpointNode, err := b.findPreviousCheckpoint()
+	checkpointNode, err := dag.findPreviousCheckpoint()
 	if err != nil {
 		return err
 	}
@@ -702,18 +694,6 @@ func (b *BlockDAG) checkBlockHeaderContext(header *wire.BlockHeader, selectedPar
 			"before the previous checkpoint at height %d",
 			blockHeight, checkpointNode.height)
 		return ruleError(ErrForkTooOld, str)
-	}
-
-	// Reject outdated block versions once a majority of the network
-	// has upgraded.  These were originally voted on by BIP0034,
-	// BIP0065, and BIP0066.
-	params := b.dagParams
-	if header.Version < 2 && blockHeight >= params.BIP0034Height ||
-		header.Version < 3 && blockHeight >= params.BIP0066Height {
-
-		str := "new blocks with version %d are no longer valid"
-		str = fmt.Sprintf(str, header.Version)
-		return ruleError(ErrBlockVersionTooOld, str)
 	}
 
 	return nil
@@ -730,10 +710,10 @@ func (b *BlockDAG) checkBlockHeaderContext(header *wire.BlockHeader, selectedPar
 // for how the flags modify its behavior.
 //
 // This function MUST be called with the chain state lock held (for writes).
-func (b *BlockDAG) checkBlockContext(block *btcutil.Block, selectedParent *blockNode, flags BehaviorFlags) error {
+func (dag *BlockDAG) checkBlockContext(block *btcutil.Block, selectedParent *blockNode, flags BehaviorFlags) error {
 	// Perform all block header related validation checks.
 	header := &block.MsgBlock().Header
-	err := b.checkBlockHeaderContext(header, selectedParent, flags)
+	err := dag.checkBlockHeaderContext(header, selectedParent, flags)
 	if err != nil {
 		return err
 	}
@@ -757,25 +737,20 @@ func (b *BlockDAG) checkBlockContext(block *btcutil.Block, selectedParent *block
 			}
 		}
 
-		// Ensure coinbase starts with serialized block heights for
-		// blocks whose version is the serializedHeightVersion or newer
-		// once a majority of the network has upgraded.  This is part of
-		// BIP0034.
-		if ShouldHaveSerializedBlockHeight(header) &&
-			blockHeight >= b.dagParams.BIP0034Height {
+		// Ensure coinbase starts with serialized block heights
 
-			coinbaseTx := block.Transactions()[0]
-			err := checkSerializedHeight(coinbaseTx, blockHeight)
-			if err != nil {
-				return err
-			}
+		coinbaseTx := block.Transactions()[0]
+		err := checkSerializedHeight(coinbaseTx, blockHeight)
+		if err != nil {
+			return err
 		}
+
 	}
 
 	return nil
 }
 
-// checkBIP0030 ensures blocks do not contain duplicate transactions which
+// ensureNoDuplicateTx ensures blocks do not contain duplicate transactions which
 // 'overwrite' older transactions that are not fully spent.  This prevents an
 // attack where a coinbase and all of its dependent transactions could be
 // duplicated to effectively revert the overwritten transactions to a single
@@ -786,7 +761,7 @@ func (b *BlockDAG) checkBlockContext(block *btcutil.Block, selectedParent *block
 // http://r6.ca/blog/20120206T005236Z.html.
 //
 // This function MUST be called with the chain state lock held (for reads).
-func (b *BlockDAG) checkBIP0030(node *blockNode, block *btcutil.Block, view *UtxoViewpoint) error {
+func (dag *BlockDAG) ensureNoDuplicateTx(node *blockNode, block *btcutil.Block, view *UtxoViewpoint) error {
 	// Fetch utxos for all of the transaction ouputs in this block.
 	// Typically, there will not be any utxos for any of the outputs.
 	fetchSet := make(map[wire.OutPoint]struct{})
@@ -797,7 +772,7 @@ func (b *BlockDAG) checkBIP0030(node *blockNode, block *btcutil.Block, view *Utx
 			fetchSet[prevOut] = struct{}{}
 		}
 	}
-	err := view.fetchUtxos(b.db, fetchSet)
+	err := view.fetchUtxos(dag.db, fetchSet)
 	if err != nil {
 		return err
 	}
@@ -943,7 +918,7 @@ func CheckTransactionInputs(tx *btcutil.Tx, txHeight int32, utxoView *UtxoViewpo
 // with that node.
 //
 // This function MUST be called with the chain state lock held (for writes).
-func (b *BlockDAG) checkConnectBlock(node *blockNode, block *btcutil.Block, view *UtxoViewpoint, stxos *[]spentTxOut) error {
+func (dag *BlockDAG) checkConnectBlock(node *blockNode, block *btcutil.Block, view *UtxoViewpoint, stxos *[]spentTxOut) error {
 	// If the side chain blocks end up in the database, a call to
 	// CheckBlockSanity should be done here in case a previous version
 	// allowed a block that is no longer valid.  However, since the
@@ -952,7 +927,7 @@ func (b *BlockDAG) checkConnectBlock(node *blockNode, block *btcutil.Block, view
 
 	// The coinbase for the Genesis block is not spendable, so just return
 	// an error now.
-	if node.hash.IsEqual(b.dagParams.GenesisHash) {
+	if node.hash.IsEqual(dag.dagParams.GenesisHash) {
 		str := "the coinbase for the genesis block is not spendable"
 		return ruleError(ErrMissingTxOut, str)
 	}
@@ -965,27 +940,9 @@ func (b *BlockDAG) checkConnectBlock(node *blockNode, block *btcutil.Block, view
 			"of expected %v", view.Tips(), parentHashes))
 	}
 
-	// BIP0030 added a rule to prevent blocks which contain duplicate
-	// transactions that 'overwrite' older transactions which are not fully
-	// spent.  See the documentation for checkBIP0030 for more details.
-	//
-	// There are two blocks in the chain which violate this rule, so the
-	// check must be skipped for those blocks.  The isBIP0030Node function
-	// is used to determine if this block is one of the two blocks that must
-	// be skipped.
-	//
-	// In addition, as of BIP0034, duplicate coinbases are no longer
-	// possible due to its requirement for including the block height in the
-	// coinbase and thus it is no longer possible to create transactions
-	// that 'overwrite' older ones.  Therefore, only enforce the rule if
-	// BIP0034 is not yet active.  This is a useful optimization because the
-	// BIP0030 check is expensive since it involves a ton of cache misses in
-	// the utxoset.
-	if !isBIP0030Node(node) && (node.height < b.dagParams.BIP0034Height) {
-		err := b.checkBIP0030(node, block, view)
-		if err != nil {
-			return err
-		}
+	err := dag.ensureNoDuplicateTx(node, block, view)
+	if err != nil {
+		return err
 	}
 
 	// Load all of the utxos referenced by the inputs for all transactions
@@ -993,7 +950,7 @@ func (b *BlockDAG) checkConnectBlock(node *blockNode, block *btcutil.Block, view
 	//
 	// These utxo entries are needed for verification of things such as
 	// transaction inputs, counting pay-to-script-hashes, and scripts.
-	err := view.fetchInputUtxos(b.db, block)
+	err = view.fetchInputUtxos(dag.db, block)
 	if err != nil {
 		return err
 	}
@@ -1050,7 +1007,7 @@ func (b *BlockDAG) checkConnectBlock(node *blockNode, block *btcutil.Block, view
 	var totalFees int64
 	for _, tx := range transactions {
 		txFee, err := CheckTransactionInputs(tx, node.height, view,
-			b.dagParams)
+			dag.dagParams)
 		if err != nil {
 			return err
 		}
@@ -1087,7 +1044,7 @@ func (b *BlockDAG) checkConnectBlock(node *blockNode, block *btcutil.Block, view
 	for _, txOut := range transactions[0].MsgTx().TxOut {
 		totalSatoshiOut += txOut.Value
 	}
-	expectedSatoshiOut := CalcBlockSubsidy(node.height, b.dagParams) +
+	expectedSatoshiOut := CalcBlockSubsidy(node.height, dag.dagParams) +
 		totalFees
 	if totalSatoshiOut > expectedSatoshiOut {
 		str := fmt.Sprintf("coinbase transaction for block pays %v "+
@@ -1102,7 +1059,7 @@ func (b *BlockDAG) checkConnectBlock(node *blockNode, block *btcutil.Block, view
 	// will therefore be detected by the next checkpoint).  This is a huge
 	// optimization because running the scripts is the most time consuming
 	// portion of block handling.
-	checkpoint := b.LatestCheckpoint()
+	checkpoint := dag.LatestCheckpoint()
 	runScripts := true
 	if checkpoint != nil && node.height <= checkpoint.Height {
 		runScripts = false
@@ -1113,13 +1070,6 @@ func (b *BlockDAG) checkConnectBlock(node *blockNode, block *btcutil.Block, view
 	var scriptFlags txscript.ScriptFlags
 	if enforceBIP0016 {
 		scriptFlags |= txscript.ScriptBip16
-	}
-
-	// Enforce DER signatures for block versions 3+ once the historical
-	// activation threshold has been reached.  This is part of BIP0066.
-	blockHeader := &block.MsgBlock().Header
-	if blockHeader.Version >= 3 && node.height >= b.dagParams.BIP0066Height {
-		scriptFlags |= txscript.ScriptVerifyDERSignatures
 	}
 
 	// We obtain the MTP of the *previous* block in order to
@@ -1133,7 +1083,7 @@ func (b *BlockDAG) checkConnectBlock(node *blockNode, block *btcutil.Block, view
 		// A transaction can only be included within a block
 		// once the sequence locks of *all* its inputs are
 		// active.
-		sequenceLock, err := b.calcSequenceLock(node, tx, view,
+		sequenceLock, err := dag.calcSequenceLock(node, tx, view,
 			false)
 		if err != nil {
 			return err
@@ -1152,7 +1102,7 @@ func (b *BlockDAG) checkConnectBlock(node *blockNode, block *btcutil.Block, view
 	// expensive ECDSA signature check scripts.  Doing this last helps
 	// prevent CPU exhaustion attacks.
 	if runScripts {
-		err := checkBlockScripts(block, view, scriptFlags, b.sigCache)
+		err := checkBlockScripts(block, view, scriptFlags, dag.sigCache)
 		if err != nil {
 			return err
 		}
@@ -1170,16 +1120,16 @@ func (b *BlockDAG) checkConnectBlock(node *blockNode, block *btcutil.Block, view
 // work requirement. The block must connect to the current tip of the main chain.
 //
 // This function is safe for concurrent access.
-func (b *BlockDAG) CheckConnectBlockTemplate(block *btcutil.Block) error {
-	b.dagLock.Lock()
-	defer b.dagLock.Unlock()
+func (dag *BlockDAG) CheckConnectBlockTemplate(block *btcutil.Block) error {
+	dag.dagLock.Lock()
+	defer dag.dagLock.Unlock()
 
 	// Skip the proof of work check as this is just a block template.
 	flags := BFNoPoWCheck
 
 	// This only checks whether the block can be connected to the tip of the
 	// current chain.
-	tips := b.dag.Tips()
+	tips := dag.virtual.Tips()
 	header := block.MsgBlock().Header
 	prevHashes := header.PrevBlocks
 	if !tips.hashesEqual(prevHashes) {
@@ -1188,12 +1138,12 @@ func (b *BlockDAG) CheckConnectBlockTemplate(block *btcutil.Block) error {
 		return ruleError(ErrPrevBlockNotBest, str)
 	}
 
-	err := checkBlockSanity(block, b.dagParams.PowLimit, b.timeSource, flags)
+	err := checkBlockSanity(block, dag.dagParams.PowLimit, dag.timeSource, flags)
 	if err != nil {
 		return err
 	}
 
-	err = b.checkBlockContext(block, b.dag.SelectedTip(), flags)
+	err = dag.checkBlockContext(block, dag.virtual.SelectedTip(), flags)
 	if err != nil {
 		return err
 	}
@@ -1202,6 +1152,6 @@ func (b *BlockDAG) CheckConnectBlockTemplate(block *btcutil.Block) error {
 	// is not needed and thus extra work can be avoided.
 	view := NewUtxoViewpoint()
 	view.SetTips(tips)
-	newNode := newBlockNode(&header, b.dag.Tips(), b.dagParams.K)
-	return b.checkConnectBlock(newNode, block, view, nil)
+	newNode := newBlockNode(&header, dag.virtual.Tips(), dag.dagParams.K)
+	return dag.checkConnectBlock(newNode, block, view, nil)
 }

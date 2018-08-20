@@ -24,6 +24,17 @@ func setFromSlice(blocks ...*blockNode) blockSet {
 	return set
 }
 
+// maxHeight returns the height of the highest block in the block set
+func (bs blockSet) maxHeight() int32 {
+	var maxHeight int32
+	for _, node := range bs {
+		if maxHeight < node.height {
+			maxHeight = node.height
+		}
+	}
+	return maxHeight
+}
+
 // add adds a block to this BlockSet
 func (bs blockSet) add(block *blockNode) {
 	bs[block.hash] = block
@@ -115,7 +126,7 @@ func (bs blockSet) hashes() []daghash.Hash {
 }
 
 // first returns the first block in this set or nil if this set is empty.
-func (bs blockSet) first() *blockNode {
+func (bs blockSet) first() *blockNode { //TODO: (Ori) This is wrong. Done only for compilation. We should probably get rid of this method
 	for _, block := range bs {
 		return block
 	}

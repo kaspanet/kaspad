@@ -135,8 +135,6 @@ func parseScriptFlags(flagStr string) (ScriptFlags, error) {
 			// Nothing.
 		case "CLEANSTACK":
 			flags |= ScriptVerifyCleanStack
-		case "DERSIG":
-			flags |= ScriptVerifyDERSignatures
 		case "DISCOURAGE_UPGRADABLE_NOPS":
 			flags |= ScriptDiscourageUpgradableNops
 		case "LOW_S":

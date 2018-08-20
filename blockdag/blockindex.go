@@ -61,9 +61,8 @@ func (status blockStatus) KnownInvalid() bool {
 	return status&(statusValidateFailed|statusInvalidAncestor) != 0
 }
 
-// blockNode represents a block within the block chain and is primarily used to
-// aid in selecting the best chain to be the main chain.  The main chain is
-// stored into the block database.
+// blockNode represents a block within the block DAG. The DAG is stored into
+// the block database.
 type blockNode struct {
 	// NOTE: Additions, deletions, or modifications to the order of the
 	// definitions in this struct should not be changed without considering
@@ -82,17 +81,19 @@ type blockNode struct {
 	// children are all the blocks that refer to this block as a parent
 	children blockSet
 
-	// diffChild is the child that UTXODiff will be built from
-	diffChild *blockNode
-
 	// blues are all blue blocks in this block's worldview that are in its selected parent anticone
 	blues []*blockNode
 
 	// blueScore is the count of all the blue blocks in this block's past
 	blueScore uint64
 
-	// utxoDiff is the UTXO of the block represented as a diff to the virtual block
-	utxoDiff UtxoViewpoint
+	// diff is the UTXO representation of the block
+	// A block's UTXO is reconstituted by applying diffWith on every block in the chain of diffChildren
+	// from the virtual block down to the block. See diffChild
+	diff utxoDiff
+
+	// diffChild is the child that diff will be built from. See diff
+	diffChild *blockNode
 
 	// hash is the double sha 256 of the block.
 	hash daghash.Hash
@@ -127,16 +128,22 @@ type blockNode struct {
 // initially creating a node.
 func initBlockNode(node *blockNode, blockHeader *wire.BlockHeader, parents blockSet, phantomK uint32) {
 	*node = blockNode{
-		hash:       blockHeader.BlockHash(),
-		parents:    parents,
-		children:   make(blockSet),
-		workSum:    CalcWork(blockHeader.Bits),
-		version:    blockHeader.Version,
-		bits:       blockHeader.Bits,
-		nonce:      blockHeader.Nonce,
-		timestamp:  blockHeader.Timestamp.Unix(),
-		merkleRoot: blockHeader.MerkleRoot,
+		parents:   parents,
+		children:  make(blockSet),
+		workSum:   big.NewInt(0),
+		timestamp: time.Now().Unix(),
 	}
+
+	if blockHeader != nil {
+		node.hash = blockHeader.BlockHash()
+		node.workSum = CalcWork(blockHeader.Bits)
+		node.version = blockHeader.Version
+		node.bits = blockHeader.Bits
+		node.nonce = blockHeader.Nonce
+		node.timestamp = blockHeader.Timestamp.Unix()
+		node.merkleRoot = blockHeader.MerkleRoot
+	}
+
 	if len(parents) > 0 {
 		addNodeAsChildToParents(node)
 		node.blues, node.selectedParent, node.blueScore = phantom(node, phantomK)
@@ -148,17 +155,12 @@ func initBlockNode(node *blockNode, blockHeader *wire.BlockHeader, parents block
 func addNodeAsChildToParents(node *blockNode) {
 	for _, parent := range node.parents {
 		parent.children.add(node)
+		parent.diffChild = node
 	}
 }
 
 func calculateNodeHeight(node *blockNode) int32 {
-	var maxHeight int32
-	for _, parent := range node.parents {
-		if maxHeight < parent.height {
-			maxHeight = parent.height
-		}
-	}
-	return maxHeight + 1
+	return node.parents.maxHeight() + 1
 }
 
 // newBlockNode returns a new block node for the given block header and parent

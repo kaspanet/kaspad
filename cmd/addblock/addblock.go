@@ -9,11 +9,9 @@ import (
 	"path/filepath"
 	"runtime"
 
-	"github.com/daglabs/btcd/blockdag"
-	"github.com/daglabs/btcd/blockdag/indexers"
+	"github.com/btcsuite/btclog"
 	"github.com/daglabs/btcd/database"
 	"github.com/daglabs/btcd/limits"
-	"github.com/btcsuite/btclog"
 )
 
 const (
@@ -72,9 +70,6 @@ func realMain() error {
 	backendLogger := btclog.NewBackend(os.Stdout)
 	defer os.Stdout.Sync()
 	log = backendLogger.Logger("MAIN")
-	database.UseLogger(backendLogger.Logger("BCDB"))
-	blockdag.UseLogger(backendLogger.Logger("CHAN"))
-	indexers.UseLogger(backendLogger.Logger("INDX"))
 
 	// Load the block database.
 	db, err := loadBlockDB()
