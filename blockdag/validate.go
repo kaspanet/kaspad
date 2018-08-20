@@ -719,7 +719,7 @@ func (dag *BlockDAG) checkBlockContext(block *btcutil.Block, selectedParent *blo
 // http://r6.ca/blog/20120206T005236Z.html.
 //
 // This function MUST be called with the chain state lock held (for reads).
-func (dag *BlockDAG) ensureNoDuplicateTx(node *blockNode, block *btcutil.Block, view *UtxoViewpoint) error {
+func (dag *BlockDAG) ensureNoDuplicateTx(node *blockNode, block *btcutil.Block) error {
 	// Fetch utxos for all of the transaction ouputs in this block.
 	// Typically, there will not be any utxos for any of the outputs.
 	fetchSet := make(map[wire.OutPoint]struct{})
@@ -730,16 +730,12 @@ func (dag *BlockDAG) ensureNoDuplicateTx(node *blockNode, block *btcutil.Block, 
 			fetchSet[prevOut] = struct{}{}
 		}
 	}
-	err := view.fetchUtxos(dag.db, fetchSet)
-	if err != nil {
-		return err
-	}
 
 	// Duplicate transactions are only allowed if the previous transaction
 	// is fully spent.
 	for outpoint := range fetchSet {
-		utxo := view.LookupEntry(outpoint)
-		if utxo != nil && !utxo.IsSpent() {
+		utxo, ok := dag.GetUTXOEntry(outpoint)
+		if ok && !utxo.IsSpent() {
 			str := fmt.Sprintf("tried to overwrite transaction %v "+
 				"at block height %d that is not fully spent",
 				outpoint.Hash, utxo.BlockHeight())
@@ -890,7 +886,7 @@ func (dag *BlockDAG) checkConnectBlock(node *blockNode, block *btcutil.Block, vi
 		return ruleError(ErrMissingTxOut, str)
 	}
 
-	err := dag.ensureNoDuplicateTx(node, block, view)
+	err := dag.ensureNoDuplicateTx(node, block)
 	if err != nil {
 		return err
 	}

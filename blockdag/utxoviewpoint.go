@@ -122,6 +122,13 @@ type UtxoViewpoint struct {
 	entries map[wire.OutPoint]*UtxoEntry
 }
 
+// NewUtxoViewpoint returns a new empty unspent transaction output view.
+func NewUtxoViewpoint() *UtxoViewpoint {
+	return &UtxoViewpoint{
+		entries: make(map[wire.OutPoint]*UtxoEntry),
+	}
+}
+
 // LookupEntry returns information about a given transaction output according to
 // the current state of the view.  It will return nil if the passed output does
 // not exist in the view or is otherwise not available such as when it has been
@@ -321,30 +328,6 @@ func (view *UtxoViewpoint) fetchUtxosMain(db database.DB, outpoints map[wire.Out
 	})
 }
 
-// fetchUtxos loads the unspent transaction outputs for the provided set of
-// outputs into the view from the database as needed unless they already exist
-// in the view in which case they are ignored.
-func (view *UtxoViewpoint) fetchUtxos(db database.DB, outpoints map[wire.OutPoint]struct{}) error {
-	// Nothing to do if there are no requested outputs.
-	if len(outpoints) == 0 {
-		return nil
-	}
-
-	// Filter entries that are already in the view.
-	neededSet := make(map[wire.OutPoint]struct{})
-	for outpoint := range outpoints {
-		// Already loaded into the current view.
-		if _, ok := view.entries[outpoint]; ok {
-			continue
-		}
-
-		neededSet[outpoint] = struct{}{}
-	}
-
-	// Request the input utxos from the database.
-	return view.fetchUtxosMain(db, neededSet)
-}
-
 // fetchInputUtxos loads the unspent transaction outputs for the inputs
 // referenced by the transactions in the given block into the view from the
 // database as needed.  In particular, referenced entries that are earlier in
@@ -398,13 +381,6 @@ func (view *UtxoViewpoint) fetchInputUtxos(db database.DB, block *btcutil.Block)
 
 	// Request the input utxos from the database.
 	return view.fetchUtxosMain(db, neededSet)
-}
-
-// NewUtxoViewpoint returns a new empty unspent transaction output view.
-func NewUtxoViewpoint() *UtxoViewpoint {
-	return &UtxoViewpoint{
-		entries: make(map[wire.OutPoint]*UtxoEntry),
-	}
 }
 
 // FetchUtxoView loads unspent transaction outputs for the inputs referenced by
