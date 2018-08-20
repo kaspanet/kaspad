@@ -746,25 +746,16 @@ func (dag *BlockDAG) setDAGState(dagState *DAGState) {
 	dag.dagState = dagState
 }
 
-// FetchHeader returns the block header identified by the given hash or an error
-// if it doesn't exist.
-func (dag *BlockDAG) FetchHeader(hash *daghash.Hash) (wire.BlockHeader, error) {
-	// Reconstruct the header from the block index if possible.
-	if node := dag.index.LookupNode(hash); node != nil {
-		return node.Header(), nil
-	}
-
-	// Fall back to loading it from the database.
-	var header *wire.BlockHeader
-	err := dag.db.View(func(dbTx database.Tx) error {
-		var err error
-		header, err = dbFetchHeaderByHash(dbTx, hash)
-		return err
-	})
-	if err != nil {
+// HeaderByHash returns the block header identified by the given hash or an
+// error if it doesn't exist.
+func (dag *BlockDAG) HeaderByHash(hash *daghash.Hash) (wire.BlockHeader, error) {
+	node := dag.index.LookupNode(hash)
+	if node == nil {
+		err := fmt.Errorf("block %s is not known", hash)
 		return wire.BlockHeader{}, err
 	}
-	return *header, nil
+
+	return node.Header(), nil
 }
 
 // BlockLocatorFromHash returns a block locator for the passed block hash.

@@ -936,10 +936,9 @@ func (dag *BlockDAG) createDAGState() error {
 func (dag *BlockDAG) initDAGState() error {
 	// Determine the state of the chain database. We may need to initialize
 	// everything from scratch or upgrade certain buckets.
-	var initialized, hasBlockIndex bool
+	var initialized bool
 	err := dag.db.View(func(dbTx database.Tx) error {
 		initialized = dbTx.Metadata().Get(dagStateKeyName) != nil
-		hasBlockIndex = dbTx.Metadata().Bucket(blockIndexBucketName) != nil
 		return nil
 	})
 	if err != nil {

@@ -19,7 +19,7 @@ import (
 // The flags are also passed to checkBlockContext and connectToDAG.  See
 // their documentation for how the flags modify their behavior.
 //
-// This function MUST be called with the chain state lock held (for writes).
+// This function MUST be called with the dagLock held (for writes).
 func (dag *BlockDAG) maybeAcceptBlock(block *btcutil.Block, flags BehaviorFlags) error {
 	// The height of this block is one more than the referenced previous
 	// block.
@@ -28,12 +28,12 @@ func (dag *BlockDAG) maybeAcceptBlock(block *btcutil.Block, flags BehaviorFlags)
 		return err
 	}
 
-	selectedParent := parents.first()
-	blockHeight := selectedParent.height + 1
+	selectedParent := parents.first() //TODO (Ori): This is wrong, done only for compilation
+	blockHeight := parents.maxHeight() + 1
 	block.SetHeight(blockHeight)
 
 	// The block must pass all of the validation rules which depend on the
-	// position of the block within the block chain.
+	// position of the block within the block DAG.
 	err = dag.checkBlockContext(block, selectedParent, flags)
 	if err != nil {
 		return err

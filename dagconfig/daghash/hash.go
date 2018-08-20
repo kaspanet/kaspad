@@ -86,13 +86,8 @@ func AreEqual(first []Hash, second []Hash) bool {
 		return false
 	}
 
-	hashSet := make(map[Hash]bool)
-	for _, hash := range first {
-		hashSet[hash] = true
-	}
-
-	for _, hash := range second {
-		if !hashSet[hash] {
+	for i := range first {
+		if first[i] != second[i] {
 			return false
 		}
 	}
