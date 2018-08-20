@@ -1085,7 +1085,7 @@ func (dag *BlockDAG) initDAGState() error {
 		// of little ones to reduce pressure on the GC.
 		log.Infof("Loading UTXO set...")
 
-		utxoEntryBucket := dbTx.Metadata().Bucket(blockIndexBucketName)
+		utxoEntryBucket := dbTx.Metadata().Bucket(utxoSetBucketName)
 
 		// Determine how many UTXO entries will be loaded into the index so we can
 		// allocate the right amount.
