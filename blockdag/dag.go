@@ -607,7 +607,7 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *btcutil.Block, view *U
 		// entails removing all of the utxos spent and adding the new
 		// ones created by the block.
 		err = dbPutUtxoView(dbTx, view)
-		
+
 		// Update the UTXO set using the diffSet that was melded into the
 		// full UTXO set.
 		err = dbPutUTXODiff(dbTx, utxoDiff)
@@ -747,10 +747,10 @@ func toNodeDiff(node *blockNode, parents blockSet, transactions []*btcutil.Tx,
 	}
 
 	nodeDiff := &nodeDiff{
-		original:       node,
-		parents:        []*nodeDiff{},
-		children:       []*nodeDiff{},
-		transactions:   transactions,
+		original:     node,
+		parents:      []*nodeDiff{},
+		children:     []*nodeDiff{},
+		transactions: transactions,
 	}
 	nodeDiffs[node.hash] = nodeDiff
 
@@ -975,6 +975,15 @@ func (dag *BlockDAG) IsCurrent() bool {
 // This function is safe for concurrent access.
 func (dag *BlockDAG) GetVirtualBlock() *VirtualBlock {
 	return dag.virtual
+}
+
+// GetUTXOEntry returns the requested unspent transaction output. The returned
+// instance must be treated as immutable since it is shared by all callers.
+//
+// This function is safe for concurrent access. However, the returned entry (if
+// any) is NOT.
+func (dag *BlockDAG) GetUTXOEntry(outPoint wire.OutPoint) (*UtxoEntry, bool) {
+	return dag.virtual.utxoSet.getUTXOEntry(outPoint)
 }
 
 // setDAGState sets information about the DAG and related state as of the

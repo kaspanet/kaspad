@@ -437,30 +437,3 @@ func (dag *BlockDAG) FetchUtxoView(tx *btcutil.Tx) (*UtxoViewpoint, error) {
 	dag.dagLock.RUnlock()
 	return view, err
 }
-
-// FetchUtxoEntry loads and returns the requested unspent transaction output
-// from the point of view of the end of the main chain.
-//
-// NOTE: Requesting an output for which there is no data will NOT return an
-// error.  Instead both the entry and the error will be nil.  This is done to
-// allow pruning of spent transaction outputs.  In practice this means the
-// caller must check if the returned entry is nil before invoking methods on it.
-//
-// This function is safe for concurrent access however the returned entry (if
-// any) is NOT.
-func (dag *BlockDAG) FetchUtxoEntry(outpoint wire.OutPoint) (*UtxoEntry, error) {
-	dag.dagLock.RLock()
-	defer dag.dagLock.RUnlock()
-
-	var entry *UtxoEntry
-	err := dag.db.View(func(dbTx database.Tx) error {
-		var err error
-		entry, err = dbFetchUtxoEntry(dbTx, outpoint)
-		return err
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	return entry, nil
-}

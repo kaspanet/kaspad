@@ -328,6 +328,11 @@ func (fus *fullUTXOSet) clone() utxoSet {
 	return &fullUTXOSet{utxoCollection: fus.utxoCollection.clone()}
 }
 
+func (fus *fullUTXOSet) getUTXOEntry(outPoint wire.OutPoint) (*UtxoEntry, bool) {
+	utxoEntry, ok := fus.utxoCollection[outPoint]
+	return utxoEntry, ok
+}
+
 // diffUTXOSet represents a utxoSet with a base fullUTXOSet and a UTXODiff
 type diffUTXOSet struct {
 	base     *fullUTXOSet

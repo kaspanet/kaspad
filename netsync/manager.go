@@ -874,9 +874,9 @@ func (sm *SyncManager) haveInventory(invVect *wire.InvVect) (bool, error) {
 		prevOut := wire.OutPoint{Hash: invVect.Hash}
 		for i := uint32(0); i < 2; i++ {
 			prevOut.Index = i
-			entry, err := sm.dag.FetchUtxoEntry(prevOut)
-			if err != nil {
-				return false, err
+			entry, ok := sm.dag.GetUTXOEntry(prevOut)
+			if !ok {
+				return false, nil
 			}
 			if entry != nil && !entry.IsSpent() {
 				return true, nil
