@@ -2546,7 +2546,7 @@ func handleGetTxOut(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 		isCoinbase = blockdag.IsCoinBaseTx(mtx)
 	} else {
 		out := wire.OutPoint{Hash: *txHash, Index: c.Vout}
-		entry, ok := s.cfg.DAG.GetUTXOEntry(out)
+		entry, ok := s.cfg.DAG.GetVirtualBlock().GetUTXOEntry(out)
 		if !ok {
 			return nil, rpcNoTxInfoError(txHash)
 		}

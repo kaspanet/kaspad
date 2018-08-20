@@ -977,15 +977,6 @@ func (dag *BlockDAG) GetVirtualBlock() *VirtualBlock {
 	return dag.virtual
 }
 
-// GetUTXOEntry returns the requested unspent transaction output. The returned
-// instance must be treated as immutable since it is shared by all callers.
-//
-// This function is safe for concurrent access. However, the returned entry (if
-// any) is NOT.
-func (dag *BlockDAG) GetUTXOEntry(outPoint wire.OutPoint) (*UtxoEntry, bool) {
-	return dag.virtual.utxoSet.getUTXOEntry(outPoint)
-}
-
 // setDAGState sets information about the DAG and related state as of the
 // current point in time.
 //

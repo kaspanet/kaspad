@@ -874,7 +874,7 @@ func (sm *SyncManager) haveInventory(invVect *wire.InvVect) (bool, error) {
 		prevOut := wire.OutPoint{Hash: invVect.Hash}
 		for i := uint32(0); i < 2; i++ {
 			prevOut.Index = i
-			entry, ok := sm.dag.GetUTXOEntry(prevOut)
+			entry, ok := sm.dag.GetVirtualBlock().GetUTXOEntry(prevOut)
 			if !ok {
 				return false, nil
 			}
