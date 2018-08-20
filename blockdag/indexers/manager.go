@@ -66,7 +66,7 @@ func dbFetchIndexerTip(dbTx database.Tx, idxKey []byte) (*daghash.Hash, int32, e
 // given block using the provided indexer and updates the tip of the indexer
 // accordingly.  An error will be returned if the current tip for the indexer is
 // not the previous block for the passed block.
-func dbIndexConnectBlock(dbTx database.Tx, indexer Indexer, block *btcutil.Block, view *blockdag.UtxoViewpoint) error {
+func dbIndexConnectBlock(dbTx database.Tx, indexer Indexer, block *btcutil.Block, virtual *blockdag.VirtualBlock) error {
 	// Assert that the block being connected properly connects to the
 	// current tip of the index.
 	idxKey := indexer.Key()
@@ -84,7 +84,7 @@ func dbIndexConnectBlock(dbTx database.Tx, indexer Indexer, block *btcutil.Block
 	}
 
 	// Notify the indexer with the connected block so it can index it.
-	if err := indexer.ConnectBlock(dbTx, block, view); err != nil {
+	if err := indexer.ConnectBlock(dbTx, block, virtual); err != nil {
 		return err
 	}
 
@@ -96,7 +96,7 @@ func dbIndexConnectBlock(dbTx database.Tx, indexer Indexer, block *btcutil.Block
 // given block using the provided indexer and updates the tip of the indexer
 // accordingly.  An error will be returned if the current tip for the indexer is
 // not the passed block.
-func dbIndexDisconnectBlock(dbTx database.Tx, indexer Indexer, block *btcutil.Block, view *blockdag.UtxoViewpoint) error {
+func dbIndexDisconnectBlock(dbTx database.Tx, indexer Indexer, block *btcutil.Block, virtual *blockdag.VirtualBlock) error {
 	// Assert that the block being disconnected is the current tip of the
 	// index.
 	idxKey := indexer.Key()
@@ -113,7 +113,7 @@ func dbIndexDisconnectBlock(dbTx database.Tx, indexer Indexer, block *btcutil.Bl
 
 	// Notify the indexer with the disconnected block so it can remove all
 	// of the appropriate entries.
-	if err := indexer.DisconnectBlock(dbTx, block, view); err != nil {
+	if err := indexer.DisconnectBlock(dbTx, block, virtual); err != nil {
 		return err
 	}
 
@@ -274,11 +274,11 @@ func (m *Manager) Init(blockDAG *blockdag.BlockDAG, interrupt <-chan struct{}) e
 // checks, and invokes each indexer.
 //
 // This is part of the blockchain.IndexManager interface.
-func (m *Manager) ConnectBlock(dbTx database.Tx, block *btcutil.Block, view *blockdag.UtxoViewpoint) error {
+func (m *Manager) ConnectBlock(dbTx database.Tx, block *btcutil.Block, virtual *blockdag.VirtualBlock) error {
 	// Call each of the currently active optional indexes with the block
 	// being connected so they can update accordingly.
 	for _, index := range m.enabledIndexes {
-		err := dbIndexConnectBlock(dbTx, index, block, view)
+		err := dbIndexConnectBlock(dbTx, index, block, virtual)
 		if err != nil {
 			return err
 		}
@@ -292,11 +292,11 @@ func (m *Manager) ConnectBlock(dbTx database.Tx, block *btcutil.Block, view *blo
 // the index entries associated with the block.
 //
 // This is part of the blockchain.IndexManager interface.
-func (m *Manager) DisconnectBlock(dbTx database.Tx, block *btcutil.Block, view *blockdag.UtxoViewpoint) error {
+func (m *Manager) DisconnectBlock(dbTx database.Tx, block *btcutil.Block, virtual *blockdag.VirtualBlock) error {
 	// Call each of the currently active optional indexes with the block
 	// being disconnected so they can update accordingly.
 	for _, index := range m.enabledIndexes {
-		err := dbIndexDisconnectBlock(dbTx, index, block, view)
+		err := dbIndexDisconnectBlock(dbTx, index, block, virtual)
 		if err != nil {
 			return err
 		}

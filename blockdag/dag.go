@@ -626,7 +626,7 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *btcutil.Block, view *U
 		// optional indexes with the block being connected so they can
 		// update themselves accordingly.
 		if dag.indexManager != nil {
-			err := dag.indexManager.ConnectBlock(dbTx, block, view)
+			err := dag.indexManager.ConnectBlock(dbTx, block, dag.virtual)
 			if err != nil {
 				return err
 			}
@@ -1365,11 +1365,11 @@ type IndexManager interface {
 
 	// ConnectBlock is invoked when a new block has been connected to the
 	// main chain.
-	ConnectBlock(database.Tx, *btcutil.Block, *UtxoViewpoint) error
+	ConnectBlock(database.Tx, *btcutil.Block, *VirtualBlock) error
 
 	// DisconnectBlock is invoked when a block has been disconnected from
 	// the main chain.
-	DisconnectBlock(database.Tx, *btcutil.Block, *UtxoViewpoint) error
+	DisconnectBlock(database.Tx, *btcutil.Block, *VirtualBlock) error
 }
 
 // Config is a descriptor which specifies the blockchain instance configuration.
