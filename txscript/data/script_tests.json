@@ -686,6 +686,8 @@
 
 ["", "SIZE 1", "", "INVALID_STACK_OPERATION"],
 
+["", "NOP", "", "EMPTY_STACK", "Checks EMPTY_STACK error"],
+
 ["'abc'", "IF INVERT ELSE 1 ENDIF", "", "DISABLED_OPCODE", "INVERT disabled"],
 ["1 2 0", "IF AND ELSE 1 ENDIF NOP", "", "DISABLED_OPCODE", "AND disabled"],
 ["1 2 0", "IF OR ELSE 1 ENDIF NOP", "", "DISABLED_OPCODE", "OR disabled"],

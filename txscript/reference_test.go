@@ -157,6 +157,8 @@ func parseExpectedResult(expected string) ([]ErrorCode, error) {
 		return []ErrorCode{ErrSigDER, ErrInvalidSigHashType}, nil
 	case "EVAL_FALSE":
 		return []ErrorCode{ErrEvalFalse, ErrEmptyStack, ErrCleanStack}, nil
+	case "EMPTY_STACK":
+		return []ErrorCode{ErrEmptyStack}, nil
 	case "EQUALVERIFY":
 		return []ErrorCode{ErrEqualVerify}, nil
 	case "NULLFAIL":

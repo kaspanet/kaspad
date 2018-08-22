@@ -52,8 +52,8 @@ type Engine struct {
 	numOps          int
 	flags           ScriptFlags
 	sigCache        *SigCache
-	bip16           bool     // treat execution as pay-to-script-hash
-	savedFirstStack [][]byte // stack from first script for bip16 scripts
+	isP2sh          bool     // treat execution as pay-to-script-hash
+	savedFirstStack [][]byte // stack from first script for ps2h scripts
 }
 
 // hasFlag returns whether the script engine instance has the passed flag set.
@@ -198,15 +198,16 @@ func (vm *Engine) CheckErrorCondition(finalScript bool) error {
 			"error check when script unfinished")
 	}
 
-	if finalScript &&
-		vm.dstack.Depth() != 1 {
+	if finalScript {
+		if vm.dstack.Depth() > 1 {
 
-		str := fmt.Sprintf("stack contains %d unexpected items",
-			vm.dstack.Depth()-1)
-		return scriptError(ErrCleanStack, str)
-	} else if vm.dstack.Depth() < 1 {
-		return scriptError(ErrEmptyStack,
-			"stack empty at end of script execution")
+			str := fmt.Sprintf("stack contains %d unexpected items",
+				vm.dstack.Depth()-1)
+			return scriptError(ErrCleanStack, str)
+		} else if vm.dstack.Depth() < 1 {
+			return scriptError(ErrEmptyStack,
+				"stack empty at end of script execution")
+		}
 	}
 
 	v, err := vm.dstack.PopBool()
@@ -272,10 +273,10 @@ func (vm *Engine) Step() (done bool, err error) {
 
 		vm.numOps = 0 // number of ops is per script.
 		vm.scriptOff = 0
-		if vm.scriptIdx == 0 && vm.bip16 {
+		if vm.scriptIdx == 0 && vm.isP2sh {
 			vm.scriptIdx++
 			vm.savedFirstStack = vm.GetStack()
-		} else if vm.scriptIdx == 1 && vm.bip16 {
+		} else if vm.scriptIdx == 1 && vm.isP2sh {
 			// Put us past the end for CheckErrorCondition()
 			vm.scriptIdx++
 			// Check script ran successfully and pull the script
@@ -618,7 +619,7 @@ func NewEngine(scriptPubKey []byte, tx *wire.MsgTx, txIdx int, flags ScriptFlags
 			return nil, scriptError(ErrNotPushOnly,
 				"pay to script hash is not push only")
 		}
-		vm.bip16 = true
+		vm.isP2sh = true
 	}
 
 	vm.tx = *tx

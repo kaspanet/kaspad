@@ -221,7 +221,7 @@ type ScriptInfo struct {
 // pair.  It will error if the pair is in someway invalid such that they can not
 // be analysed, i.e. if they do not parse or the pkScript is not a push-only
 // script
-func CalcScriptInfo(sigScript, pkScript []byte, bip16 bool) (*ScriptInfo, error) {
+func CalcScriptInfo(sigScript, pkScript []byte, isP2sh bool) (*ScriptInfo, error) {
 	sigPops, err := parseScript(sigScript)
 	if err != nil {
 		return nil, err
@@ -247,7 +247,7 @@ func CalcScriptInfo(sigScript, pkScript []byte, bip16 bool) (*ScriptInfo, error)
 	// All entries pushed to stack (or are OP_RESERVED and exec will fail).
 	si.NumInputs = len(sigPops)
 
-	if si.PkScriptClass == ScriptHashTy && bip16 {
+	if si.PkScriptClass == ScriptHashTy && isP2sh {
 		// The pay-to-hash-script is the final data push of the
 		// signature script.
 		script := sigPops[len(sigPops)-1].data
