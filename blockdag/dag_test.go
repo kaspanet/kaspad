@@ -87,7 +87,7 @@ func TestHaveBlock(t *testing.T) {
 		{hash: "000000bce70562ed076f269c5c4e39c590abb29428c573c02ab970e17931f8a4", want: true},
 
 		// Block 100000 should be present (as an orphan).
-		{hash: "000000824dca82828b9a18ac09ed7c93292f6a042fae580c1192c8cd086fd990", want: true},
+		{hash: "000000a805b083e0ef1f516b1153828724c235d6e6f0fabb47b869f6d054ac3f", want: true},
 
 		// Random hashes should not be available.
 		{hash: "123", want: false},
