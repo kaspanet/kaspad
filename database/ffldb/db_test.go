@@ -605,6 +605,8 @@ func TestStoreBlockErrors(t *testing.T) {
 	}
 }
 
+// TestDeleteDoubleNestedBucket tests what happens when bucket.DeleteBucket()
+// is invoked on a bucket that contains a nested bucket.
 func TestDeleteDoubleNestedBucket(t *testing.T) {
 	pdb := newTestDb("TestDeleteDoubleNestedBucket", t)
 	defer pdb.Close()
@@ -679,5 +681,47 @@ func TestDeleteDoubleNestedBucket(t *testing.T) {
 	if err != nil {
 		t.Fatalf("TestDeleteDoubleNestedBucket: Error in actual test pdb.Update: %s", err)
 	}
+}
 
+// TestWritePendingAndCommitErrors tests some error-cases in *tx.writePendingAndCommit().
+// The non-error-cases are tested in the more general tests.
+func TestWritePendingAndCommitErrors(t *testing.T) {
+	putPatch := monkey.Patch((*bucket).Put,
+		func(_ *bucket, _, _ []byte) error { return errors.New("Error in bucket.Put") })
+	defer putPatch.Unpatch()
+
+	rollbackCalled := false
+	var rollbackPatch *monkey.PatchGuard
+	rollbackPatch = monkey.Patch((*blockStore).handleRollback,
+		func(s *blockStore, oldBlockFileNum, oldBlockOffset uint32) {
+			rollbackPatch.Unpatch()
+			defer rollbackPatch.Restore()
+
+			rollbackCalled = true
+			s.handleRollback(oldBlockFileNum, oldBlockOffset)
+		})
+	defer rollbackPatch.Unpatch()
+
+	pdb := newTestDb("TestWritePendingAndCommitErrors", t)
+	defer pdb.Close()
+
+	err := pdb.Update(func(tx database.Tx) error { return nil })
+	if err == nil {
+		t.Errorf("No error returned when metaBucket.Put() should have returned an error")
+	}
+	if !rollbackCalled {
+		t.Errorf("No rollback called when metaBucket.Put() have returned an error")
+	}
+
+	rollbackCalled = false
+	err = pdb.Update(func(tx database.Tx) error {
+		return tx.StoreBlock(btcutil.NewBlock(wire.NewMsgBlock(
+			wire.NewBlockHeader(1, []daghash.Hash{}, &daghash.Hash{}, 0, 0))))
+	})
+	if err == nil {
+		t.Errorf("No error returned when blockIdx.Put() should have returned an error")
+	}
+	if !rollbackCalled {
+		t.Errorf("No rollback called when blockIdx.Put() have returned an error")
+	}
 }
