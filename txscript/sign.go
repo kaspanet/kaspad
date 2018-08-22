@@ -314,9 +314,7 @@ sigLoop:
 		}
 	}
 
-	// Extra opcode to handle the extra arg consumed (due to previous bugs
-	// in the reference implementation).
-	builder := NewScriptBuilder().AddOp(OpFalse)
+	builder := NewScriptBuilder()
 	doneSigs := 0
 	// This assumes that addresses are in the same order as in the script.
 	for _, addr := range addresses {

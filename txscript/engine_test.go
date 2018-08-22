@@ -41,7 +41,7 @@ func TestBadPC(t *testing.T) {
 					}),
 					Index: 0,
 				},
-				SignatureScript: mustParseShortForm("NOP"),
+				SignatureScript: mustParseShortForm(""),
 				Sequence:        4294967295,
 			},
 		},

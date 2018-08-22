@@ -318,7 +318,7 @@ func testScripts(t *testing.T, tests [][]interface{}, useSigCache bool) {
 		// other and the provided signature and public key scripts are
 		// used, then create a new engine to execute the scripts.
 		tx := createSpendingTx(scriptSig, scriptPubKey)
-		if name == "test (Very basic P2SH)" {
+		if name == "Basic OP_0 execution" {
 			x := 1
 			x = x + 1
 		}

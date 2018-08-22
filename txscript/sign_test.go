@@ -92,7 +92,6 @@ func TestSignTxOutput(t *testing.T) {
 	// make script based on key.
 	// sign with magic pixie dust.
 	hashTypes := []SigHashType{
-		SigHashOld, // no longer used but should act like all
 		SigHashAll,
 		SigHashNone,
 		SigHashSingle,
@@ -1499,7 +1498,7 @@ var sigScriptTests = []tstSigScript{
 		scriptAtWrongIndex: false,
 	},
 	{
-		name: "hashType SigHashAnyoneCanPay",
+		name: "hashType SigHashAll | SigHashAnyoneCanPay",
 		inputs: []tstInput{
 			{
 				txout:              wire.NewTxOut(coinbaseVal, uncompressedPkScript),
@@ -1508,17 +1507,31 @@ var sigScriptTests = []tstSigScript{
 				indexOutOfRange:    false,
 			},
 		},
+		hashType:           SigHashAll | SigHashAnyOneCanPay,
+		compress:           false,
+		scriptAtWrongIndex: false,
+	},
+	{
+		name: "hashType SigHashAnyoneCanPay",
+		inputs: []tstInput{
+			{
+				txout:              wire.NewTxOut(coinbaseVal, uncompressedPkScript),
+				sigscriptGenerates: true,
+				inputValidates:     false,
+				indexOutOfRange:    false,
+			},
+		},
 		hashType:           SigHashAnyOneCanPay,
 		compress:           false,
 		scriptAtWrongIndex: false,
 	},
 	{
-		name: "hashType non-standard",
+		name: "hashType non-exist",
 		inputs: []tstInput{
 			{
 				txout:              wire.NewTxOut(coinbaseVal, uncompressedPkScript),
 				sigscriptGenerates: true,
-				inputValidates:     true,
+				inputValidates:     false,
 				indexOutOfRange:    false,
 			},
 		},
