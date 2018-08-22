@@ -408,6 +408,7 @@
 ["-1 -1", "BOOLAND", "", "OK"],
 ["-1 0", "BOOLOR", "", "OK"],
 ["0 0", "NUMEQUAL", "", "OK"],
+["5 4", "NUMEQUAL FALSE EQUAL", "", "OK"],
 ["0 0", "NUMEQUALVERIFY 1", "", "OK"],
 ["-1 0", "NUMNOTEQUAL", "", "OK"],
 ["-1 0", "LESSTHAN", "", "OK"],
