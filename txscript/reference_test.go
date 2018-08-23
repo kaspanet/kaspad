@@ -151,7 +151,7 @@ func parseExpectedResult(expected string) ([]ErrorCode, error) {
 		return nil, nil
 	case "UNKNOWN_ERROR":
 		return []ErrorCode{ErrNumberTooBig, ErrMinimalData}, nil
-	case "PUBKEYTYPE":
+	case "PUBKEYFORMAT":
 		return []ErrorCode{ErrPubKeyFormat}, nil
 	case "SIG_DER":
 		return []ErrorCode{ErrSigDER, ErrInvalidSigHashType}, nil
