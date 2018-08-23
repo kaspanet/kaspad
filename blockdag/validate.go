@@ -1057,7 +1057,7 @@ func (dag *BlockDAG) checkConnectBlock(node *blockNode, block *btcutil.Block, vi
 		runScripts = false
 	}
 
-	var scriptFlags txscript.ScriptFlags
+	scriptFlags := txscript.ScriptNoFlags
 
 	// We obtain the MTP of the *previous* block in order to
 	// determine if transactions in the current block are final.

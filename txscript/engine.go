@@ -18,6 +18,9 @@ type ScriptFlags uint32
 
 const (
 
+	// ScriptNoFlags is used when you want to use ScriptFlags without raising any flags
+	ScriptNoFlags ScriptFlags = 0
+
 	// ScriptDiscourageUpgradableNops defines whether to verify that
 	// NOP1 through NOP10 are reserved for future soft-fork upgrades.  This
 	// flag must not be used for consensus critical code nor applied to

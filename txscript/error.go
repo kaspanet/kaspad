@@ -192,10 +192,12 @@ const (
 	ErrNotPushOnly
 
 	// ErrPubKeyType is returned when the script contains invalid public keys.
+	// A valid pubkey should be in uncompressed format as a 64 byte string prefixed with 0x04,
+	// or to be in compressed format as a 32 byte string prefixed with 0x02 or 0x03 to signal oddness.
 	ErrPubKeyType
 
 	// ErrCleanStack is returned when after evalution, the stack
-	// does not contain only a single element.
+	// contains more than one element.
 	ErrCleanStack
 
 	// ErrNullFail is returned when signatures are not empty

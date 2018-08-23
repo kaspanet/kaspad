@@ -40,7 +40,7 @@ func TestCheckBlockScripts(t *testing.T) {
 		return
 	}
 
-	var scriptFlags txscript.ScriptFlags
+	scriptFlags := txscript.ScriptNoFlags
 	err = checkBlockScripts(blocks[0], view, scriptFlags, nil)
 	if err != nil {
 		t.Errorf("Transaction script validation failed: %v\n", err)
