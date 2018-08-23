@@ -47,6 +47,11 @@ type scriptNum int64
 
 // checkMinimalDataEncoding returns whether or not the passed byte array adheres
 // to the minimal encoding requirements.
+// An error will be returned if it will determined that
+// the encoding is not represented with the smallest possible
+// number of bytes or is the negative 0 encoding, [0x80].  For example, consider
+// the number 127.  It could be encoded as [0x7f], [0x7f 0x00],
+// [0x7f 0x00 0x00 ...], etc.  All forms except [0x7f] will return an error
 func checkMinimalDataEncoding(v []byte) error {
 	if len(v) == 0 {
 		return nil
@@ -167,13 +172,6 @@ func (n scriptNum) Int32() int32 {
 // bytes and therefore will pass that value to this function resulting in an
 // allowed range of [-2^31 + 1, 2^31 - 1].
 //
-// The requireMinimal flag causes an error to be returned if additional checks
-// on the encoding determine it is not represented with the smallest possible
-// number of bytes or is the negative 0 encoding, [0x80].  For example, consider
-// the number 127.  It could be encoded as [0x7f], [0x7f 0x00],
-// [0x7f 0x00 0x00 ...], etc.  All forms except [0x7f] will return an error with
-// requireMinimal enabled.
-//
 // The scriptNumLen is the maximum number of bytes the encoded value can be
 // before an ErrStackNumberTooBig is returned.  This effectively limits the
 // range of allowed values.
@@ -182,7 +180,7 @@ func (n scriptNum) Int32() int32 {
 // overflows.
 //
 // See the Bytes function documentation for example encodings.
-func makeScriptNum(v []byte, requireMinimal bool, scriptNumLen int) (scriptNum, error) {
+func makeScriptNum(v []byte, scriptNumLen int) (scriptNum, error) {
 	// Interpreting data requires that it is not larger than
 	// the the passed scriptNumLen value.
 	if len(v) > scriptNumLen {
@@ -192,11 +190,8 @@ func makeScriptNum(v []byte, requireMinimal bool, scriptNumLen int) (scriptNum, 
 		return 0, scriptError(ErrNumberTooBig, str)
 	}
 
-	// Enforce minimal encoded if requested.
-	if requireMinimal {
-		if err := checkMinimalDataEncoding(v); err != nil {
-			return 0, err
-		}
+	if err := checkMinimalDataEncoding(v); err != nil {
+		return 0, err
 	}
 
 	// Zero is encoded as an empty byte slice.

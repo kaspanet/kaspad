@@ -26,13 +26,7 @@ const (
 	//
 	// TODO: This definition does not belong here.  It belongs in a policy
 	// package.
-	StandardVerifyFlags = ScriptBip16 |
-		ScriptVerifyStrictEncoding |
-		ScriptVerifyMinimalData |
-		ScriptDiscourageUpgradableNops |
-		ScriptVerifyCleanStack |
-		ScriptVerifyNullFail |
-		ScriptVerifyLowS
+	StandardVerifyFlags = ScriptDiscourageUpgradableNops
 )
 
 // ScriptClass is an enumeration for the list of standard types of script.
@@ -227,7 +221,7 @@ type ScriptInfo struct {
 // pair.  It will error if the pair is in someway invalid such that they can not
 // be analysed, i.e. if they do not parse or the pkScript is not a push-only
 // script
-func CalcScriptInfo(sigScript, pkScript []byte, bip16 bool) (*ScriptInfo, error) {
+func CalcScriptInfo(sigScript, pkScript []byte, isP2SH bool) (*ScriptInfo, error) {
 	sigPops, err := parseScript(sigScript)
 	if err != nil {
 		return nil, err
@@ -253,7 +247,7 @@ func CalcScriptInfo(sigScript, pkScript []byte, bip16 bool) (*ScriptInfo, error)
 	// All entries pushed to stack (or are OP_RESERVED and exec will fail).
 	si.NumInputs = len(sigPops)
 
-	if si.PkScriptClass == ScriptHashTy && bip16 {
+	if si.PkScriptClass == ScriptHashTy && isP2SH {
 		// The pay-to-hash-script is the final data push of the
 		// signature script.
 		script := sigPops[len(sigPops)-1].data
@@ -552,7 +546,7 @@ func ExtractAtomicSwapDataPushes(version uint16, pkScript []byte) (*AtomicSwapDa
 	copy(pushes.RecipientHash160[:], pops[9].data)
 	copy(pushes.RefundHash160[:], pops[16].data)
 	if pops[2].data != nil {
-		locktime, err := makeScriptNum(pops[2].data, true, 5)
+		locktime, err := makeScriptNum(pops[2].data, 5)
 		if err != nil {
 			return nil, nil
 		}
@@ -563,7 +557,7 @@ func ExtractAtomicSwapDataPushes(version uint16, pkScript []byte) (*AtomicSwapDa
 		return nil, nil
 	}
 	if pops[11].data != nil {
-		locktime, err := makeScriptNum(pops[11].data, true, 5)
+		locktime, err := makeScriptNum(pops[11].data, 5)
 		if err != nil {
 			return nil, nil
 		}
