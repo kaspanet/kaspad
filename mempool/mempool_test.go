@@ -20,8 +20,8 @@ import (
 	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/txscript"
+	"github.com/daglabs/btcd/util"
 	"github.com/daglabs/btcd/wire"
-	"github.com/daglabs/btcutil"
 )
 
 // fakeChain is used by the pool harness to provide generated test utxos and
@@ -40,7 +40,7 @@ type fakeChain struct {
 // view can be examined for duplicate transactions.
 //
 // This function is safe for concurrent access however the returned view is NOT.
-func (s *fakeChain) FetchUtxoView(tx *btcutil.Tx) (*blockdag.UtxoViewpoint, error) {
+func (s *fakeChain) FetchUtxoView(tx *util.Tx) (*blockdag.UtxoViewpoint, error) {
 	s.RLock()
 	defer s.RUnlock()
 
@@ -100,13 +100,13 @@ func (s *fakeChain) SetMedianTimePast(mtp time.Time) {
 
 // CalcSequenceLock returns the current sequence lock for the passed
 // transaction associated with the fake chain instance.
-func (s *fakeChain) CalcSequenceLock(tx *btcutil.Tx,
+func (s *fakeChain) CalcSequenceLock(tx *util.Tx,
 	view *blockdag.UtxoViewpoint) (*blockdag.SequenceLock, error) {
 
 	return calcSequenceLock(tx, view)
 }
 
-func calcSequenceLock(tx *btcutil.Tx,
+func calcSequenceLock(tx *util.Tx,
 	view *blockdag.UtxoViewpoint) (*blockdag.SequenceLock, error) {
 
 	return &blockdag.SequenceLock{
@@ -119,16 +119,16 @@ func calcSequenceLock(tx *btcutil.Tx,
 // amount associated with it.
 type spendableOutput struct {
 	outPoint wire.OutPoint
-	amount   btcutil.Amount
+	amount   util.Amount
 }
 
 // txOutToSpendableOut returns a spendable output given a transaction and index
 // of the output to use.  This is useful as a convenience when creating test
 // transactions.
-func txOutToSpendableOut(tx *btcutil.Tx, outputNum uint32) spendableOutput {
+func txOutToSpendableOut(tx *util.Tx, outputNum uint32) spendableOutput {
 	return spendableOutput{
 		outPoint: wire.OutPoint{Hash: *tx.Hash(), Index: outputNum},
-		amount:   btcutil.Amount(tx.MsgTx().TxOut[outputNum].Value),
+		amount:   util.Amount(tx.MsgTx().TxOut[outputNum].Value),
 	}
 }
 
@@ -142,7 +142,7 @@ type poolHarness struct {
 	// payAddr is the p2sh address for the signing key and is used for the
 	// payment address throughout the tests.
 	signKey     *btcec.PrivateKey
-	payAddr     btcutil.Address
+	payAddr     util.Address
 	payScript   []byte
 	chainParams *dagconfig.Params
 
@@ -155,7 +155,7 @@ type poolHarness struct {
 // address associated with the harness.  It automatically uses a standard
 // signature script that starts with the block height that is required by
 // version 2 blocks.
-func (p *poolHarness) CreateCoinbaseTx(blockHeight int32, numOutputs uint32) (*btcutil.Tx, error) {
+func (p *poolHarness) CreateCoinbaseTx(blockHeight int32, numOutputs uint32) (*util.Tx, error) {
 	// Create standard coinbase script.
 	extraNonce := int64(0)
 	coinbaseScript, err := txscript.NewScriptBuilder().
@@ -189,17 +189,17 @@ func (p *poolHarness) CreateCoinbaseTx(blockHeight int32, numOutputs uint32) (*b
 		})
 	}
 
-	return btcutil.NewTx(tx), nil
+	return util.NewTx(tx), nil
 }
 
 // CreateSignedTx creates a new signed transaction that consumes the provided
 // inputs and generates the provided number of outputs by evenly splitting the
 // total input amount.  All outputs will be to the payment script associated
 // with the harness and all inputs are assumed to do the same.
-func (p *poolHarness) CreateSignedTx(inputs []spendableOutput, numOutputs uint32) (*btcutil.Tx, error) {
+func (p *poolHarness) CreateSignedTx(inputs []spendableOutput, numOutputs uint32) (*util.Tx, error) {
 	// Calculate the total input amount and split it amongst the requested
 	// number of outputs.
-	var totalInput btcutil.Amount
+	var totalInput util.Amount
 	for _, input := range inputs {
 		totalInput += input.amount
 	}
@@ -237,15 +237,15 @@ func (p *poolHarness) CreateSignedTx(inputs []spendableOutput, numOutputs uint32
 		tx.TxIn[i].SignatureScript = sigScript
 	}
 
-	return btcutil.NewTx(tx), nil
+	return util.NewTx(tx), nil
 }
 
 // CreateTxChain creates a chain of zero-fee transactions (each subsequent
 // transaction spends the entire amount from the previous one) with the first
 // one spending the provided outpoint.  Each transaction spends the entire
 // amount of the previous one and as such does not include any fees.
-func (p *poolHarness) CreateTxChain(firstOutput spendableOutput, numTxns uint32) ([]*btcutil.Tx, error) {
-	txChain := make([]*btcutil.Tx, 0, numTxns)
+func (p *poolHarness) CreateTxChain(firstOutput spendableOutput, numTxns uint32) ([]*util.Tx, error) {
+	txChain := make([]*util.Tx, 0, numTxns)
 	prevOutPoint := firstOutput.outPoint
 	spendableAmount := firstOutput.amount
 	for i := uint32(0); i < numTxns; i++ {
@@ -271,7 +271,7 @@ func (p *poolHarness) CreateTxChain(firstOutput spendableOutput, numTxns uint32)
 		}
 		tx.TxIn[0].SignatureScript = sigScript
 
-		txChain = append(txChain, btcutil.NewTx(tx))
+		txChain = append(txChain, util.NewTx(tx))
 
 		// Next transaction uses outputs from this one.
 		prevOutPoint = wire.OutPoint{Hash: tx.TxHash(), Index: 0}
@@ -297,7 +297,7 @@ func newPoolHarness(dagParams *dagconfig.Params, numOutputs uint32) (*poolHarnes
 	// Generate associated pay-to-script-hash address and resulting payment
 	// script.
 	pubKeyBytes := signPub.SerializeCompressed()
-	payPubKeyAddr, err := btcutil.NewAddressPubKey(pubKeyBytes, dagParams)
+	payPubKeyAddr, err := util.NewAddressPubKey(pubKeyBytes, dagParams)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -369,7 +369,7 @@ type testContext struct {
 // orphan pool and transaction pool status.  It also further determines if it
 // should be reported as available by the HaveTransaction function based upon
 // the two flags and tests that condition as well.
-func testPoolMembership(tc *testContext, tx *btcutil.Tx, inOrphanPool, inTxPool bool) {
+func testPoolMembership(tc *testContext, tx *util.Tx, inOrphanPool, inTxPool bool) {
 	txHash := tx.Hash()
 	gotOrphanPool := tc.harness.txPool.IsOrphanInPool(txHash)
 	if inOrphanPool != gotOrphanPool {
@@ -394,7 +394,7 @@ func testPoolMembership(tc *testContext, tx *btcutil.Tx, inOrphanPool, inTxPool 
 	}
 }
 
-func (p *poolHarness) createTx(out spendableOutput, fee int64, numOutputs int64) (*btcutil.Tx, error) {
+func (p *poolHarness) createTx(out spendableOutput, fee int64, numOutputs int64) (*util.Tx, error) {
 	tx := wire.NewMsgTx(wire.TxVersion)
 	tx.AddTxIn(&wire.TxIn{
 		PreviousOutPoint: out.outPoint,
@@ -416,7 +416,7 @@ func (p *poolHarness) createTx(out spendableOutput, fee int64, numOutputs int64)
 		return nil, err
 	}
 	tx.TxIn[0].SignatureScript = sigScript
-	return btcutil.NewTx(tx), nil
+	return util.NewTx(tx), nil
 }
 
 func TestProcessTransaction(t *testing.T) {
@@ -448,7 +448,7 @@ func TestProcessTransaction(t *testing.T) {
 	//Checks that an orphaned transaction cannot be
 	//added to the orphan pool if it's already there
 	orphanedTx, err := harness.CreateSignedTx([]spendableOutput{{
-		amount:   btcutil.Amount(5000000000),
+		amount:   util.Amount(5000000000),
 		outPoint: wire.OutPoint{Hash: daghash.Hash{}, Index: 1},
 	}}, 1)
 	if err != nil {
@@ -529,7 +529,7 @@ func TestProcessTransaction(t *testing.T) {
 
 	p2shPKScript, err := txscript.NewScriptBuilder().
 		AddOp(txscript.OpHash160).
-		AddData(btcutil.Hash160(nonStdSigScript)).
+		AddData(util.Hash160(nonStdSigScript)).
 		AddOp(txscript.OpEqual).
 		Script()
 
@@ -559,7 +559,7 @@ func TestProcessTransaction(t *testing.T) {
 	}
 
 	addrHash := [20]byte{0x01}
-	addr, err := btcutil.NewAddressPubKeyHash(addrHash[:],
+	addr, err := util.NewAddressPubKeyHash(addrHash[:],
 		&dagconfig.TestNet3Params)
 	if err != nil {
 		t.Fatalf("NewAddressPubKeyHash: unexpected error: %v", err)
@@ -569,7 +569,7 @@ func TestProcessTransaction(t *testing.T) {
 		t.Fatalf("PayToAddrScript: unexpected error: %v", err)
 	}
 
-	p2shTx := btcutil.NewTx(&wire.MsgTx{
+	p2shTx := util.NewTx(&wire.MsgTx{
 		Version: 1,
 		TxIn:    []*wire.TxIn{&dummyTxIn},
 		TxOut: []*wire.TxOut{{
@@ -580,7 +580,7 @@ func TestProcessTransaction(t *testing.T) {
 	})
 	harness.chain.utxos.AddTxOuts(p2shTx, curHeight+1)
 
-	nonStdSigScriptTx := btcutil.NewTx(&wire.MsgTx{
+	nonStdSigScriptTx := util.NewTx(&wire.MsgTx{
 		Version: 1,
 		TxIn: []*wire.TxIn{&wire.TxIn{
 			PreviousOutPoint: wire.OutPoint{Hash: *p2shTx.Hash(), Index: 0},
@@ -627,7 +627,7 @@ func TestProcessTransaction(t *testing.T) {
 	harness.txPool.cfg.Policy.AcceptNonStd = false
 
 	//Checks that a transaction with no outputs will get rejected
-	noOutsTx := btcutil.NewTx(&wire.MsgTx{
+	noOutsTx := util.NewTx(&wire.MsgTx{
 		Version: 1,
 		TxIn: []*wire.TxIn{&wire.TxIn{
 			PreviousOutPoint: dummyPrevOut,
@@ -650,7 +650,7 @@ func TestProcessTransaction(t *testing.T) {
 	}
 
 	//Checks that transactions get rejected from mempool if sequence lock is not active
-	harness.txPool.cfg.CalcSequenceLock = func(tx *btcutil.Tx,
+	harness.txPool.cfg.CalcSequenceLock = func(tx *util.Tx,
 		view *blockdag.UtxoViewpoint) (*blockdag.SequenceLock, error) {
 
 		return &blockdag.SequenceLock{
@@ -759,7 +759,7 @@ func TestFetchTransaction(t *testing.T) {
 	tc := &testContext{t, harness}
 
 	orphanedTx, err := harness.CreateSignedTx([]spendableOutput{{
-		amount:   btcutil.Amount(5000000000),
+		amount:   util.Amount(5000000000),
 		outPoint: wire.OutPoint{Hash: daghash.Hash{1}, Index: 1},
 	}}, 1)
 	if err != nil {
@@ -925,7 +925,7 @@ func TestOrphanExpiration(t *testing.T) {
 	tc := &testContext{t, harness}
 
 	expiredTx, err := harness.CreateSignedTx([]spendableOutput{{
-		amount:   btcutil.Amount(5000000000),
+		amount:   util.Amount(5000000000),
 		outPoint: wire.OutPoint{Hash: daghash.Hash{}, Index: 0},
 	}}, 1)
 	harness.txPool.ProcessTransaction(expiredTx, true,
@@ -933,7 +933,7 @@ func TestOrphanExpiration(t *testing.T) {
 	harness.txPool.orphans[*expiredTx.Hash()].expiration = time.Unix(0, 0)
 
 	tx1, err := harness.CreateSignedTx([]spendableOutput{{
-		amount:   btcutil.Amount(5000000000),
+		amount:   util.Amount(5000000000),
 		outPoint: wire.OutPoint{Hash: daghash.Hash{1}, Index: 0},
 	}}, 1)
 	harness.txPool.ProcessTransaction(tx1, true,
@@ -948,7 +948,7 @@ func TestOrphanExpiration(t *testing.T) {
 	fmt.Println(harness.txPool.nextExpireScan.Unix())
 
 	tx2, err := harness.CreateSignedTx([]spendableOutput{{
-		amount:   btcutil.Amount(5000000000),
+		amount:   util.Amount(5000000000),
 		outPoint: wire.OutPoint{Hash: daghash.Hash{2}, Index: 0},
 	}}, 1)
 	harness.txPool.ProcessTransaction(tx2, true,
@@ -972,7 +972,7 @@ func TestMaxOrphanTxSize(t *testing.T) {
 	harness.txPool.cfg.Policy.MaxOrphanTxSize = 1
 
 	tx, err := harness.CreateSignedTx([]spendableOutput{{
-		amount:   btcutil.Amount(5000000000),
+		amount:   util.Amount(5000000000),
 		outPoint: wire.OutPoint{Hash: daghash.Hash{}, Index: 0},
 	}}, 1)
 	if err != nil {
@@ -1034,7 +1034,7 @@ func TestOrphanEviction(t *testing.T) {
 
 	// Figure out which transactions were evicted and make sure the number
 	// evicted matches the expected number.
-	var evictedTxns []*btcutil.Tx
+	var evictedTxns []*util.Tx
 	for _, tx := range chainedTxns[1:] {
 		if !harness.txPool.IsOrphanInPool(tx.Hash()) {
 			evictedTxns = append(evictedTxns, tx)
@@ -1065,7 +1065,7 @@ func TestRemoveOrphansByTag(t *testing.T) {
 	tc := &testContext{t, harness}
 
 	orphanedTx1, err := harness.CreateSignedTx([]spendableOutput{{
-		amount:   btcutil.Amount(5000000000),
+		amount:   util.Amount(5000000000),
 		outPoint: wire.OutPoint{Hash: daghash.Hash{1}, Index: 1},
 	}}, 1)
 	if err != nil {
@@ -1074,7 +1074,7 @@ func TestRemoveOrphansByTag(t *testing.T) {
 	harness.txPool.ProcessTransaction(orphanedTx1, true,
 		false, 1)
 	orphanedTx2, err := harness.CreateSignedTx([]spendableOutput{{
-		amount:   btcutil.Amount(5000000000),
+		amount:   util.Amount(5000000000),
 		outPoint: wire.OutPoint{Hash: daghash.Hash{2}, Index: 2},
 	}}, 1)
 	if err != nil {
@@ -1083,7 +1083,7 @@ func TestRemoveOrphansByTag(t *testing.T) {
 	harness.txPool.ProcessTransaction(orphanedTx2, true,
 		false, 1)
 	orphanedTx3, err := harness.CreateSignedTx([]spendableOutput{{
-		amount:   btcutil.Amount(5000000000),
+		amount:   util.Amount(5000000000),
 		outPoint: wire.OutPoint{Hash: daghash.Hash{3}, Index: 3},
 	}}, 1)
 	if err != nil {
@@ -1093,7 +1093,7 @@ func TestRemoveOrphansByTag(t *testing.T) {
 		false, 1)
 
 	orphanedTx4, err := harness.CreateSignedTx([]spendableOutput{{
-		amount:   btcutil.Amount(5000000000),
+		amount:   util.Amount(5000000000),
 		outPoint: wire.OutPoint{Hash: daghash.Hash{4}, Index: 4},
 	}}, 1)
 	if err != nil {
@@ -1155,7 +1155,7 @@ func TestBasicOrphanRemoval(t *testing.T) {
 	// Attempt to remove an orphan that has no redeemers and is not present,
 	// and ensure the state of all other orphans are unaffected.
 	nonChainedOrphanTx, err := harness.CreateSignedTx([]spendableOutput{{
-		amount:   btcutil.Amount(5000000000),
+		amount:   util.Amount(5000000000),
 		outPoint: wire.OutPoint{Hash: daghash.Hash{}, Index: 0},
 	}}, 1)
 	if err != nil {

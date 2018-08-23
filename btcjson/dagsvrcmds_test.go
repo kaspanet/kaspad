@@ -269,7 +269,7 @@ func TestDAGSvrCmds(t *testing.T) {
 		{
 			name: "getblocktemplate optional - template request with tweaks",
 			newCmd: func() (interface{}, error) {
-				return btcjson.NewCmd("getblocktemplate", `{"mode":"template","capabilities":["longpoll","coinbasetxn"],"sigoplimit":500,"sizelimit":100000000,"maxversion":2}`)
+				return btcjson.NewCmd("getblocktemplate", `{"mode":"template","capabilities":["longpoll","coinbasetxn"],"sigoplimit":500,"sizelimit":100000000,"maxversion":1}`)
 			},
 			staticCmd: func() interface{} {
 				template := btcjson.TemplateRequest{
@@ -277,25 +277,25 @@ func TestDAGSvrCmds(t *testing.T) {
 					Capabilities: []string{"longpoll", "coinbasetxn"},
 					SigOpLimit:   500,
 					SizeLimit:    100000000,
-					MaxVersion:   2,
+					MaxVersion:   1,
 				}
 				return btcjson.NewGetBlockTemplateCmd(&template)
 			},
-			marshalled: `{"jsonrpc":"1.0","method":"getblocktemplate","params":[{"mode":"template","capabilities":["longpoll","coinbasetxn"],"sigoplimit":500,"sizelimit":100000000,"maxversion":2}],"id":1}`,
+			marshalled: `{"jsonrpc":"1.0","method":"getblocktemplate","params":[{"mode":"template","capabilities":["longpoll","coinbasetxn"],"sigoplimit":500,"sizelimit":100000000,"maxversion":1}],"id":1}`,
 			unmarshalled: &btcjson.GetBlockTemplateCmd{
 				Request: &btcjson.TemplateRequest{
 					Mode:         "template",
 					Capabilities: []string{"longpoll", "coinbasetxn"},
 					SigOpLimit:   int64(500),
 					SizeLimit:    int64(100000000),
-					MaxVersion:   2,
+					MaxVersion:   1,
 				},
 			},
 		},
 		{
 			name: "getblocktemplate optional - template request with tweaks 2",
 			newCmd: func() (interface{}, error) {
-				return btcjson.NewCmd("getblocktemplate", `{"mode":"template","capabilities":["longpoll","coinbasetxn"],"sigoplimit":true,"sizelimit":100000000,"maxversion":2}`)
+				return btcjson.NewCmd("getblocktemplate", `{"mode":"template","capabilities":["longpoll","coinbasetxn"],"sigoplimit":true,"sizelimit":100000000,"maxversion":1}`)
 			},
 			staticCmd: func() interface{} {
 				template := btcjson.TemplateRequest{
@@ -303,18 +303,18 @@ func TestDAGSvrCmds(t *testing.T) {
 					Capabilities: []string{"longpoll", "coinbasetxn"},
 					SigOpLimit:   true,
 					SizeLimit:    100000000,
-					MaxVersion:   2,
+					MaxVersion:   1,
 				}
 				return btcjson.NewGetBlockTemplateCmd(&template)
 			},
-			marshalled: `{"jsonrpc":"1.0","method":"getblocktemplate","params":[{"mode":"template","capabilities":["longpoll","coinbasetxn"],"sigoplimit":true,"sizelimit":100000000,"maxversion":2}],"id":1}`,
+			marshalled: `{"jsonrpc":"1.0","method":"getblocktemplate","params":[{"mode":"template","capabilities":["longpoll","coinbasetxn"],"sigoplimit":true,"sizelimit":100000000,"maxversion":1}],"id":1}`,
 			unmarshalled: &btcjson.GetBlockTemplateCmd{
 				Request: &btcjson.TemplateRequest{
 					Mode:         "template",
 					Capabilities: []string{"longpoll", "coinbasetxn"},
 					SigOpLimit:   true,
 					SizeLimit:    int64(100000000),
-					MaxVersion:   2,
+					MaxVersion:   1,
 				},
 			},
 		},

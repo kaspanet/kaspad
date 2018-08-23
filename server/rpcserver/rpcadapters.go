@@ -14,7 +14,7 @@ import (
 	"github.com/daglabs/btcd/peer"
 	"github.com/daglabs/btcd/server/p2p"
 	"github.com/daglabs/btcd/wire"
-	"github.com/daglabs/btcutil"
+	"github.com/daglabs/btcd/util"
 )
 
 // rpcPeer provides a peer for use with the RPC server and implements the
@@ -248,7 +248,7 @@ func (b *rpcSyncMgr) IsCurrent() bool {
 //
 // This function is safe for concurrent access and is part of the
 // rpcserverSyncManager interface implementation.
-func (b *rpcSyncMgr) SubmitBlock(block *btcutil.Block, flags blockdag.BehaviorFlags) (bool, error) {
+func (b *rpcSyncMgr) SubmitBlock(block *util.Block, flags blockdag.BehaviorFlags) (bool, error) {
 	return b.syncMgr.ProcessBlock(block, flags)
 }
 
