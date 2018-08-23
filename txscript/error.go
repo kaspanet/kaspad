@@ -188,8 +188,7 @@ const (
 	ErrSigHighS
 
 	// ErrNotPushOnly is returned when a script that is required to only
-	// push data to the stack performs other operations.  A couple of cases
-	// where this applies is for a pay-to-script-hash signature script
+	// push data to the stack performs other operations.
 	ErrNotPushOnly
 
 	// ErrPubKeyType is returned when the script contains invalid public keys.

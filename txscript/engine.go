@@ -52,7 +52,7 @@ type Engine struct {
 	numOps          int
 	flags           ScriptFlags
 	sigCache        *SigCache
-	isP2sh          bool     // treat execution as pay-to-script-hash
+	isP2SH          bool     // treat execution as pay-to-script-hash
 	savedFirstStack [][]byte // stack from first script for ps2h scripts
 }
 
@@ -273,10 +273,10 @@ func (vm *Engine) Step() (done bool, err error) {
 
 		vm.numOps = 0 // number of ops is per script.
 		vm.scriptOff = 0
-		if vm.scriptIdx == 0 && vm.isP2sh {
+		if vm.scriptIdx == 0 && vm.isP2SH {
 			vm.scriptIdx++
 			vm.savedFirstStack = vm.GetStack()
-		} else if vm.scriptIdx == 1 && vm.isP2sh {
+		} else if vm.scriptIdx == 1 && vm.isP2SH {
 			// Put us past the end for CheckErrorCondition()
 			vm.scriptIdx++
 			// Check script ran successfully and pull the script
@@ -619,7 +619,7 @@ func NewEngine(scriptPubKey []byte, tx *wire.MsgTx, txIdx int, flags ScriptFlags
 			return nil, scriptError(ErrNotPushOnly,
 				"pay to script hash is not push only")
 		}
-		vm.isP2sh = true
+		vm.isP2SH = true
 	}
 
 	vm.tx = *tx

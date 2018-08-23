@@ -422,13 +422,13 @@ func GetSigOpCount(script []byte) int {
 // Pay-To-Script-Hash script in order to find the precise number of signature
 // operations in the transaction.  If the script fails to parse, then the count
 // up to the point of failure is returned.
-func GetPreciseSigOpCount(scriptSig, scriptPubKey []byte, isP2sh bool) int {
+func GetPreciseSigOpCount(scriptSig, scriptPubKey []byte, isP2SH bool) int {
 	// Don't check error since parseScript returns the parsed-up-to-error
 	// list of pops.
 	pops, _ := parseScript(scriptPubKey)
 
 	// Treat non P2SH transactions as normal.
-	if !(isP2sh && isScriptHash(pops)) {
+	if !(isP2SH && isScriptHash(pops)) {
 		return getSigOpCount(pops, true)
 	}
 

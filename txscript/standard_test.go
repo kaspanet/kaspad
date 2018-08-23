@@ -379,7 +379,7 @@ func TestCalcScriptInfo(t *testing.T) {
 		sigScript string
 		pkScript  string
 
-		isP2sh bool
+		isP2SH bool
 
 		scriptInfo    ScriptInfo
 		scriptInfoErr error
@@ -392,7 +392,7 @@ func TestCalcScriptInfo(t *testing.T) {
 				"SWAP ABS EQUAL",
 			pkScript: "HASH160 DATA_20 0xfe441065b6532231de2fac56" +
 				"3152205ec4f59c",
-			isP2sh:        true,
+			isP2SH:        true,
 			scriptInfoErr: scriptError(ErrMalformedPush, ""),
 		},
 		{
@@ -402,7 +402,7 @@ func TestCalcScriptInfo(t *testing.T) {
 				"SWAP ABS",
 			pkScript: "HASH160 DATA_20 0xfe441065b6532231de2fac56" +
 				"3152205ec4f59c74 EQUAL",
-			isP2sh:        true,
+			isP2SH:        true,
 			scriptInfoErr: scriptError(ErrMalformedPush, ""),
 		},
 		{
@@ -413,7 +413,7 @@ func TestCalcScriptInfo(t *testing.T) {
 				"CHECKSIG",
 			pkScript: "HASH160 DATA_20 0xfe441065b6532231de2fac56" +
 				"3152205ec4f59c74 EQUAL",
-			isP2sh: true,
+			isP2SH: true,
 			scriptInfo: ScriptInfo{
 				PkScriptClass:  ScriptHashTy,
 				NumInputs:      3,
@@ -429,7 +429,7 @@ func TestCalcScriptInfo(t *testing.T) {
 				"SWAP ABS EQUAL",
 			pkScript: "HASH160 DATA_20 0xfe441065b6532231de2fac56" +
 				"3152205ec4f59c74 EQUAL",
-			isP2sh: true,
+			isP2SH: true,
 			scriptInfo: ScriptInfo{
 				PkScriptClass:  ScriptHashTy,
 				NumInputs:      3,
@@ -449,7 +449,7 @@ func TestCalcScriptInfo(t *testing.T) {
 				"161718191a1b1c1d1e1f2021 DATA_33 0x010203040" +
 				"5060708090a0b0c0d0e0f101112131415161718191a1" +
 				"b1c1d1e1f2021 3 CHECKMULTISIG",
-			isP2sh: true,
+			isP2SH: true,
 			scriptInfo: ScriptInfo{
 				PkScriptClass:  MultiSigTy,
 				NumInputs:      4,
@@ -463,7 +463,7 @@ func TestCalcScriptInfo(t *testing.T) {
 		sigScript := mustParseShortForm(test.sigScript)
 		pkScript := mustParseShortForm(test.pkScript)
 
-		si, err := CalcScriptInfo(sigScript, pkScript, test.isP2sh)
+		si, err := CalcScriptInfo(sigScript, pkScript, test.isP2SH)
 		if e := tstCheckScriptError(err, test.scriptInfoErr); e != nil {
 			t.Errorf("scriptinfo test %q: %v", test.name, e)
 			continue
