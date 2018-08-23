@@ -103,6 +103,12 @@ func (s *fakeChain) SetMedianTimePast(mtp time.Time) {
 func (s *fakeChain) CalcSequenceLock(tx *btcutil.Tx,
 	view *blockdag.UtxoViewpoint) (*blockdag.SequenceLock, error) {
 
+	return calcSequenceLock(tx, view)
+}
+
+func calcSequenceLock(tx *btcutil.Tx,
+	view *blockdag.UtxoViewpoint) (*blockdag.SequenceLock, error) {
+
 	return &blockdag.SequenceLock{
 		Seconds:     -1,
 		BlockHeight: -1,
@@ -416,7 +422,7 @@ func (p *poolHarness) createTx(out spendableOutput, fee int64, numOutputs int64)
 func TestProcessTransaction(t *testing.T) {
 	t.Parallel()
 
-	harness, spendableOuts, err := newPoolHarness(&dagconfig.MainNetParams, 3)
+	harness, spendableOuts, err := newPoolHarness(&dagconfig.MainNetParams, 5)
 	if err != nil {
 		t.Fatalf("unable to create test pool: %v", err)
 	}
@@ -666,6 +672,31 @@ func TestProcessTransaction(t *testing.T) {
 	expectedErrStr = "transaction's sequence locks on inputs not met"
 	if err.Error() != expectedErrStr {
 		t.Errorf("Unexpected error message. Expected \"%s\" but got \"%s\"", expectedErrStr, err.Error())
+	}
+	harness.txPool.cfg.CalcSequenceLock = calcSequenceLock
+
+	harness.txPool.cfg.Policy.DisableRelayPriority = false
+	//Transaction should be accepted to mempool although it has low fee, because its priority is above mining.MinHighPriority
+	tx, err = harness.createTx(spendableOuts[3], 0, 1)
+	if err != nil {
+		t.Fatalf("unable to create transaction: %v", err)
+	}
+	_, err = harness.txPool.ProcessTransaction(tx, true, false, 0)
+	if err != nil {
+		t.Errorf("ProcessTransaction: unexpected error: %v", err)
+	}
+
+	//Transaction should be rejected from mempool because it has low fee, and its priority is above mining.MinHighPriority
+	tx, err = harness.createTx(spendableOuts[4], 0, 100)
+	if err != nil {
+		t.Fatalf("unable to create transaction: %v", err)
+	}
+	_, err = harness.txPool.ProcessTransaction(tx, true, false, 0)
+	if err == nil {
+		t.Errorf("ProcessTransaction: expected an error, not nil")
+	}
+	if code, _ := extractRejectCode(err); code != wire.RejectInsufficientFee {
+		t.Errorf("Unexpected error code. Expected %v but got %v", wire.RejectInsufficientFee, code)
 	}
 
 }
