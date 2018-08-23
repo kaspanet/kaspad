@@ -11,7 +11,7 @@ import (
 	"github.com/daglabs/btcd/btcec"
 	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/wire"
-	"github.com/daglabs/btcutil"
+	"github.com/daglabs/btcd/util"
 )
 
 // RawTxInSignature returns the serialized ECDSA signature for the input idx of
@@ -70,7 +70,7 @@ func p2pkSignatureScript(tx *wire.MsgTx, idx int, script []byte, hashType SigHas
 // the contract (i.e. nrequired signatures are provided).  Since it is arguably
 // legal to not be able to sign any of the outputs, no error is returned.
 func signMultiSig(tx *wire.MsgTx, idx int, script []byte, hashType SigHashType,
-	addresses []btcutil.Address, nRequired int, kdb KeyDB) ([]byte, bool) {
+	addresses []util.Address, nRequired int, kdb KeyDB) ([]byte, bool) {
 
 	builder := NewScriptBuilder()
 	signedCount := 0
@@ -98,7 +98,7 @@ func signMultiSig(tx *wire.MsgTx, idx int, script []byte, hashType SigHashType,
 
 func sign(chainParams *dagconfig.Params, tx *wire.MsgTx, idx int,
 	script []byte, hashType SigHashType, kdb KeyDB, sdb ScriptDB) ([]byte,
-	ScriptClass, []btcutil.Address, int, error) {
+	ScriptClass, []util.Address, int, error) {
 
 	class, addresses, nrequired, err := ExtractPkScriptAddrs(script,
 		chainParams)
@@ -162,7 +162,7 @@ func sign(chainParams *dagconfig.Params, tx *wire.MsgTx, idx int,
 // function with addresses, class and nrequired that do not match pkScript is
 // an error and results in undefined behaviour.
 func mergeScripts(chainParams *dagconfig.Params, tx *wire.MsgTx, idx int,
-	pkScript []byte, class ScriptClass, addresses []btcutil.Address,
+	pkScript []byte, class ScriptClass, addresses []util.Address,
 	nRequired int, sigScript, prevScript []byte) ([]byte, error) {
 
 	// TODO: the scripthash and multisig paths here are overly
@@ -228,7 +228,7 @@ func mergeScripts(chainParams *dagconfig.Params, tx *wire.MsgTx, idx int,
 // that both provide signatures for pkScript in output idx of tx. addresses
 // and nRequired should be the results from extracting the addresses from
 // pkScript.
-func mergeMultiSig(tx *wire.MsgTx, idx int, addresses []btcutil.Address,
+func mergeMultiSig(tx *wire.MsgTx, idx int, addresses []util.Address,
 	nRequired int, pkScript, sigScript, prevScript []byte) ([]byte, error) {
 
 	pkPops, err := parseScript(pkScript)
@@ -297,7 +297,7 @@ sigLoop:
 			// All multisig addresses should be pubkey addresses
 			// it is an error to call this internal function with
 			// bad input.
-			pkaddr := addr.(*btcutil.AddressPubKey)
+			pkaddr := addr.(*util.AddressPubKey)
 
 			pubKey := pkaddr.PubKey()
 
@@ -341,14 +341,14 @@ sigLoop:
 // KeyDB is an interface type provided to SignTxOutput, it encapsulates
 // any user state required to get the private keys for an address.
 type KeyDB interface {
-	GetKey(btcutil.Address) (*btcec.PrivateKey, bool, error)
+	GetKey(util.Address) (*btcec.PrivateKey, bool, error)
 }
 
 // KeyClosure implements KeyDB with a closure.
-type KeyClosure func(btcutil.Address) (*btcec.PrivateKey, bool, error)
+type KeyClosure func(util.Address) (*btcec.PrivateKey, bool, error)
 
 // GetKey implements KeyDB by returning the result of calling the closure.
-func (kc KeyClosure) GetKey(address btcutil.Address) (*btcec.PrivateKey,
+func (kc KeyClosure) GetKey(address util.Address) (*btcec.PrivateKey,
 	bool, error) {
 	return kc(address)
 }
@@ -356,14 +356,14 @@ func (kc KeyClosure) GetKey(address btcutil.Address) (*btcec.PrivateKey,
 // ScriptDB is an interface type provided to SignTxOutput, it encapsulates any
 // user state required to get the scripts for an pay-to-script-hash address.
 type ScriptDB interface {
-	GetScript(btcutil.Address) ([]byte, error)
+	GetScript(util.Address) ([]byte, error)
 }
 
 // ScriptClosure implements ScriptDB with a closure.
-type ScriptClosure func(btcutil.Address) ([]byte, error)
+type ScriptClosure func(util.Address) ([]byte, error)
 
 // GetScript implements ScriptDB by returning the result of calling the closure.
-func (sc ScriptClosure) GetScript(address btcutil.Address) ([]byte, error) {
+func (sc ScriptClosure) GetScript(address util.Address) ([]byte, error) {
 	return sc(address)
 }
 
