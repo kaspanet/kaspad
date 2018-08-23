@@ -14,7 +14,7 @@ import (
 	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/wire"
-	"github.com/daglabs/btcutil"
+	"github.com/daglabs/btcd/util"
 )
 
 // TestHaveBlock tests the HaveBlock API to ensure proper functionality.
@@ -27,7 +27,7 @@ func TestHaveBlock(t *testing.T) {
 		"blk_3B.dat",
 	}
 
-	var blocks []*btcutil.Block
+	var blocks []*util.Block
 	for _, file := range testFiles {
 		blockTmp, err := loadBlocks(file)
 		if err != nil {
@@ -64,7 +64,7 @@ func TestHaveBlock(t *testing.T) {
 	}
 
 	// Insert an orphan block.
-	isOrphan, err := chain.ProcessBlock(btcutil.NewBlock(&Block100000),
+	isOrphan, err := chain.ProcessBlock(util.NewBlock(&Block100000),
 		BFNone)
 	if err != nil {
 		t.Errorf("Unable to process block: %v", err)
@@ -87,7 +87,7 @@ func TestHaveBlock(t *testing.T) {
 		{hash: "000000bce70562ed076f269c5c4e39c590abb29428c573c02ab970e17931f8a4", want: true},
 
 		// Block 100000 should be present (as an orphan).
-		{hash: "000000824dca82828b9a18ac09ed7c93292f6a042fae580c1192c8cd086fd990", want: true},
+		{hash: "000000a805b083e0ef1f516b1153828724c235d6e6f0fabb47b869f6d054ac3f", want: true},
 
 		// Random hashes should not be available.
 		{hash: "123", want: false},
@@ -137,7 +137,7 @@ func TestCalcSequenceLock(t *testing.T) {
 	// Create a utxo view with a fake utxo for the inputs used in the
 	// transactions created below.  This utxo is added such that it has an
 	// age of 4 blocks.
-	targetTx := btcutil.NewTx(&wire.MsgTx{
+	targetTx := util.NewTx(&wire.MsgTx{
 		TxOut: []*wire.TxOut{{
 			PkScript: nil,
 			Value:    10,
@@ -184,7 +184,7 @@ func TestCalcSequenceLock(t *testing.T) {
 
 	// Adding a utxo with a height of 0x7fffffff indicates that the output
 	// is currently unmined.
-	utxoView.AddTxOuts(btcutil.NewTx(unConfTx), 0x7fffffff)
+	utxoView.AddTxOuts(util.NewTx(unConfTx), 0x7fffffff)
 
 	tests := []struct {
 		tx      *wire.MsgTx
@@ -402,7 +402,7 @@ func TestCalcSequenceLock(t *testing.T) {
 
 	t.Logf("Running %v SequenceLock tests", len(tests))
 	for i, test := range tests {
-		utilTx := btcutil.NewTx(test.tx)
+		utilTx := util.NewTx(test.tx)
 		seqLock, err := chain.CalcSequenceLock(utilTx, test.view, test.mempool)
 		if err != nil {
 			t.Fatalf("test #%d, unable to calc sequence lock: %v", i, err)

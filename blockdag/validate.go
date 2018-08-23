@@ -9,13 +9,14 @@ import (
 	"fmt"
 	"math"
 	"math/big"
+	"sort"
 	"time"
 
 	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/txscript"
 	"github.com/daglabs/btcd/wire"
-	"github.com/daglabs/btcutil"
+	"github.com/daglabs/btcd/util"
 )
 
 const (
@@ -40,7 +41,11 @@ const (
 
 	// baseSubsidy is the starting subsidy amount for mined blocks.  This
 	// value is halved every SubsidyHalvingInterval blocks.
-	baseSubsidy = 50 * btcutil.SatoshiPerBitcoin
+	baseSubsidy = 50 * util.SatoshiPerBitcoin
+
+	// MaxOutputsPerBlock is the maximum number of transaction outputs there
+	// can be in a block of max size.
+	MaxOutputsPerBlock = wire.MaxBlockPayload / wire.MinTxOutPayload
 )
 
 var (
@@ -91,7 +96,7 @@ func IsCoinBaseTx(msgTx *wire.MsgTx) bool {
 //
 // This function only differs from IsCoinBaseTx in that it works with a higher
 // level util transaction as opposed to a raw wire transaction.
-func IsCoinBase(tx *btcutil.Tx) bool {
+func IsCoinBase(tx *util.Tx) bool {
 	return IsCoinBaseTx(tx.MsgTx())
 }
 
@@ -113,7 +118,7 @@ func SequenceLockActive(sequenceLock *SequenceLock, blockHeight int32,
 }
 
 // IsFinalizedTransaction determines whether or not a transaction is finalized.
-func IsFinalizedTransaction(tx *btcutil.Tx, blockHeight int32, blockTime time.Time) bool {
+func IsFinalizedTransaction(tx *util.Tx, blockHeight int32, blockTime time.Time) bool {
 	msgTx := tx.MsgTx()
 
 	// Lock time of zero means the transaction is finalized.
@@ -168,7 +173,7 @@ func CalcBlockSubsidy(height int32, dagParams *dagconfig.Params) int64 {
 
 // CheckTransactionSanity performs some preliminary checks on a transaction to
 // ensure it is sane.  These checks are context free.
-func CheckTransactionSanity(tx *btcutil.Tx) error {
+func CheckTransactionSanity(tx *util.Tx) error {
 	// A transaction must have at least one input.
 	msgTx := tx.MsgTx()
 	if len(msgTx.TxIn) == 0 {
@@ -203,10 +208,10 @@ func CheckTransactionSanity(tx *btcutil.Tx) error {
 				"value of %v", satoshi)
 			return ruleError(ErrBadTxOutValue, str)
 		}
-		if satoshi > btcutil.MaxSatoshi {
+		if satoshi > util.MaxSatoshi {
 			str := fmt.Sprintf("transaction output value of %v is "+
 				"higher than max allowed value of %v", satoshi,
-				btcutil.MaxSatoshi)
+				util.MaxSatoshi)
 			return ruleError(ErrBadTxOutValue, str)
 		}
 
@@ -217,14 +222,14 @@ func CheckTransactionSanity(tx *btcutil.Tx) error {
 		if totalSatoshi < 0 {
 			str := fmt.Sprintf("total value of all transaction "+
 				"outputs exceeds max allowed value of %v",
-				btcutil.MaxSatoshi)
+				util.MaxSatoshi)
 			return ruleError(ErrBadTxOutValue, str)
 		}
-		if totalSatoshi > btcutil.MaxSatoshi {
+		if totalSatoshi > util.MaxSatoshi {
 			str := fmt.Sprintf("total value of all transaction "+
 				"outputs is %v which is higher than max "+
 				"allowed value of %v", totalSatoshi,
-				btcutil.MaxSatoshi)
+				util.MaxSatoshi)
 			return ruleError(ErrBadTxOutValue, str)
 		}
 	}
@@ -306,7 +311,7 @@ func checkProofOfWork(header *wire.BlockHeader, powLimit *big.Int, flags Behavio
 // input and output scripts in the provided transaction.  This uses the
 // quicker, but imprecise, signature operation counting mechanism from
 // txscript.
-func CountSigOps(tx *btcutil.Tx) int {
+func CountSigOps(tx *util.Tx) int {
 	msgTx := tx.MsgTx()
 
 	// Accumulate the number of signature operations in all transaction
@@ -331,7 +336,7 @@ func CountSigOps(tx *btcutil.Tx) int {
 // transactions which are of the pay-to-script-hash type.  This uses the
 // precise, signature operation counting mechanism from the script engine which
 // requires access to the input transaction scripts.
-func CountP2SHSigOps(tx *btcutil.Tx, isCoinBaseTx bool, utxoView *UtxoViewpoint) (int, error) {
+func CountP2SHSigOps(tx *util.Tx, isCoinBaseTx bool, utxoView *UtxoViewpoint) (int, error) {
 	// Coinbase transactions have no interesting inputs.
 	if isCoinBaseTx {
 		return 0, nil
@@ -395,6 +400,11 @@ func checkBlockHeaderSanity(header *wire.BlockHeader, powLimit *big.Int, timeSou
 		return err
 	}
 
+	err = checkBlockParentsOrder(header)
+	if err != nil {
+		return err
+	}
+
 	// A block timestamp must not have a greater precision than one second.
 	// This check is necessary because Go time.Time values support
 	// nanosecond precision whereas the consensus rules only apply to
@@ -418,12 +428,27 @@ func checkBlockHeaderSanity(header *wire.BlockHeader, powLimit *big.Int, timeSou
 	return nil
 }
 
+//checkBlockParentsOrder ensures that the block's parents are ordered by hash
+func checkBlockParentsOrder(header *wire.BlockHeader) error {
+	sortedHashes := make([]daghash.Hash, 0, len(header.PrevBlocks))
+	for _, hash := range header.PrevBlocks {
+		sortedHashes = append(sortedHashes, hash)
+	}
+	sort.Slice(sortedHashes, func(i, j int) bool {
+		return daghash.Less(&sortedHashes[i], &sortedHashes[j])
+	})
+	if !daghash.AreEqual(header.PrevBlocks, sortedHashes) {
+		return ruleError(ErrWrongParentsOrder, "block parents are not ordered by hash")
+	}
+	return nil
+}
+
 // checkBlockSanity performs some preliminary checks on a block to ensure it is
 // sane before continuing with block processing.  These checks are context free.
 //
 // The flags do not modify the behavior of this function directly, however they
 // are needed to pass along to checkBlockHeaderSanity.
-func checkBlockSanity(block *btcutil.Block, powLimit *big.Int, timeSource MedianTimeSource, flags BehaviorFlags) error {
+func checkBlockSanity(block *util.Block, powLimit *big.Int, timeSource MedianTimeSource, flags BehaviorFlags) error {
 	msgBlock := block.MsgBlock()
 	header := &msgBlock.Header
 	err := checkBlockHeaderSanity(header, powLimit, timeSource, flags)
@@ -530,13 +555,13 @@ func checkBlockSanity(block *btcutil.Block, powLimit *big.Int, timeSource Median
 
 // CheckBlockSanity performs some preliminary checks on a block to ensure it is
 // sane before continuing with block processing.  These checks are context free.
-func CheckBlockSanity(block *btcutil.Block, powLimit *big.Int, timeSource MedianTimeSource) error {
+func CheckBlockSanity(block *util.Block, powLimit *big.Int, timeSource MedianTimeSource) error {
 	return checkBlockSanity(block, powLimit, timeSource, BFNone)
 }
 
 // ExtractCoinbaseHeight attempts to extract the height of the block from the
 // scriptSig of a coinbase transaction.
-func ExtractCoinbaseHeight(coinbaseTx *btcutil.Tx) (int32, error) {
+func ExtractCoinbaseHeight(coinbaseTx *util.Tx) (int32, error) {
 	sigScript := coinbaseTx.MsgTx().TxIn[0].SignatureScript
 	if len(sigScript) < 1 {
 		str := "the coinbase signature script" +
@@ -576,7 +601,7 @@ func ExtractCoinbaseHeight(coinbaseTx *btcutil.Tx) (int32, error) {
 
 // checkSerializedHeight checks if the signature script in the passed
 // transaction starts with the serialized block height of wantHeight.
-func checkSerializedHeight(coinbaseTx *btcutil.Tx, wantHeight int32) error {
+func checkSerializedHeight(coinbaseTx *util.Tx, wantHeight int32) error {
 	serializedHeight, err := ExtractCoinbaseHeight(coinbaseTx)
 	if err != nil {
 		return err
@@ -668,7 +693,7 @@ func (dag *BlockDAG) checkBlockHeaderContext(header *wire.BlockHeader, selectedP
 // for how the flags modify its behavior.
 //
 // This function MUST be called with the chain state lock held (for writes).
-func (dag *BlockDAG) checkBlockContext(block *btcutil.Block, selectedParent *blockNode, flags BehaviorFlags) error {
+func (dag *BlockDAG) checkBlockContext(block *util.Block, selectedParent *blockNode, flags BehaviorFlags) error {
 	// Perform all block header related validation checks.
 	header := &block.MsgBlock().Header
 	err := dag.checkBlockHeaderContext(header, selectedParent, flags)
@@ -719,7 +744,7 @@ func (dag *BlockDAG) checkBlockContext(block *btcutil.Block, selectedParent *blo
 // http://r6.ca/blog/20120206T005236Z.html.
 //
 // This function MUST be called with the chain state lock held (for reads).
-func (dag *BlockDAG) ensureNoDuplicateTx(node *blockNode, block *btcutil.Block) error {
+func (dag *BlockDAG) ensureNoDuplicateTx(node *blockNode, block *util.Block) error {
 	// Fetch utxos for all of the transaction ouputs in this block.
 	// Typically, there will not be any utxos for any of the outputs.
 	fetchSet := make(map[wire.OutPoint]struct{})
@@ -757,7 +782,7 @@ func (dag *BlockDAG) ensureNoDuplicateTx(node *blockNode, block *btcutil.Block) 
 //
 // NOTE: The transaction MUST have already been sanity checked with the
 // CheckTransactionSanity function prior to calling this function.
-func CheckTransactionInputs(tx *btcutil.Tx, txHeight int32, utxoView *UtxoViewpoint, dagParams *dagconfig.Params) (int64, error) {
+func CheckTransactionInputs(tx *util.Tx, txHeight int32, utxoView *UtxoViewpoint, dagParams *dagconfig.Params) (int64, error) {
 	// Coinbase transactions have no inputs.
 	if IsCoinBase(tx) {
 		return 0, nil
@@ -802,14 +827,14 @@ func CheckTransactionInputs(tx *btcutil.Tx, txHeight int32, utxoView *UtxoViewpo
 		originTxSatoshi := utxo.Amount()
 		if originTxSatoshi < 0 {
 			str := fmt.Sprintf("transaction output has negative "+
-				"value of %v", btcutil.Amount(originTxSatoshi))
+				"value of %v", util.Amount(originTxSatoshi))
 			return 0, ruleError(ErrBadTxOutValue, str)
 		}
-		if originTxSatoshi > btcutil.MaxSatoshi {
+		if originTxSatoshi > util.MaxSatoshi {
 			str := fmt.Sprintf("transaction output value of %v is "+
 				"higher than max allowed value of %v",
-				btcutil.Amount(originTxSatoshi),
-				btcutil.MaxSatoshi)
+				util.Amount(originTxSatoshi),
+				util.MaxSatoshi)
 			return 0, ruleError(ErrBadTxOutValue, str)
 		}
 
@@ -819,11 +844,11 @@ func CheckTransactionInputs(tx *btcutil.Tx, txHeight int32, utxoView *UtxoViewpo
 		lastSatoshiIn := totalSatoshiIn
 		totalSatoshiIn += originTxSatoshi
 		if totalSatoshiIn < lastSatoshiIn ||
-			totalSatoshiIn > btcutil.MaxSatoshi {
+			totalSatoshiIn > util.MaxSatoshi {
 			str := fmt.Sprintf("total value of all transaction "+
 				"inputs is %v which is higher than max "+
 				"allowed value of %v", totalSatoshiIn,
-				btcutil.MaxSatoshi)
+				util.MaxSatoshi)
 			return 0, ruleError(ErrBadTxOutValue, str)
 		}
 	}
@@ -872,7 +897,7 @@ func CheckTransactionInputs(tx *btcutil.Tx, txHeight int32, utxoView *UtxoViewpo
 // with that node.
 //
 // This function MUST be called with the chain state lock held (for writes).
-func (dag *BlockDAG) checkConnectBlock(node *blockNode, block *btcutil.Block, view *UtxoViewpoint, stxos *[]spentTxOut) error {
+func (dag *BlockDAG) checkConnectBlock(node *blockNode, block *util.Block, view *UtxoViewpoint, stxos *[]spentTxOut) error {
 	// If the side chain blocks end up in the database, a call to
 	// CheckBlockSanity should be done here in case a previous version
 	// allowed a block that is no longer valid.  However, since the
@@ -1058,7 +1083,7 @@ func (dag *BlockDAG) checkConnectBlock(node *blockNode, block *btcutil.Block, vi
 // work requirement. The block must connect to the current tip of the main chain.
 //
 // This function is safe for concurrent access.
-func (dag *BlockDAG) CheckConnectBlockTemplate(block *btcutil.Block) error {
+func (dag *BlockDAG) CheckConnectBlockTemplate(block *util.Block) error {
 	dag.dagLock.Lock()
 	defer dag.dagLock.Unlock()
 

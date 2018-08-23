@@ -159,13 +159,7 @@ func addNodeAsChildToParents(node *blockNode) {
 }
 
 func calculateNodeHeight(node *blockNode) int32 {
-	var maxHeight int32
-	for _, parent := range node.parents {
-		if maxHeight < parent.height {
-			maxHeight = parent.height
-		}
-	}
-	return maxHeight + 1
+	return node.parents.maxHeight() + 1
 }
 
 // newBlockNode returns a new block node for the given block header and parent

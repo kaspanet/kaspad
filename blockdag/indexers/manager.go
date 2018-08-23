@@ -10,7 +10,9 @@ import (
 	"github.com/daglabs/btcd/blockdag"
 	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/database"
-	"github.com/daglabs/btcutil"
+	"github.com/daglabs/btcd/wire"
+	"github.com/daglabs/btcd/util"
+	"bytes"
 )
 
 var (
@@ -66,7 +68,7 @@ func dbFetchIndexerTip(dbTx database.Tx, idxKey []byte) (*daghash.Hash, int32, e
 // given block using the provided indexer and updates the tip of the indexer
 // accordingly.  An error will be returned if the current tip for the indexer is
 // not the previous block for the passed block.
-func dbIndexConnectBlock(dbTx database.Tx, indexer Indexer, block *btcutil.Block, virtual *blockdag.VirtualBlock) error {
+func dbIndexConnectBlock(dbTx database.Tx, indexer Indexer, block *util.Block, virtual *blockdag.VirtualBlock) error {
 	// Assert that the block being connected properly connects to the
 	// current tip of the index.
 	idxKey := indexer.Key()
@@ -96,7 +98,7 @@ func dbIndexConnectBlock(dbTx database.Tx, indexer Indexer, block *btcutil.Block
 // given block using the provided indexer and updates the tip of the indexer
 // accordingly.  An error will be returned if the current tip for the indexer is
 // not the passed block.
-func dbIndexDisconnectBlock(dbTx database.Tx, indexer Indexer, block *btcutil.Block, virtual *blockdag.VirtualBlock) error {
+func dbIndexDisconnectBlock(dbTx database.Tx, indexer Indexer, block *util.Block, virtual *blockdag.VirtualBlock) error {
 	// Assert that the block being disconnected is the current tip of the
 	// index.
 	idxKey := indexer.Key()
@@ -269,12 +271,86 @@ func (m *Manager) Init(blockDAG *blockdag.BlockDAG, interrupt <-chan struct{}) e
 	return nil
 }
 
+// indexNeedsInputs returns whether or not the index needs access to the txouts
+// referenced by the transaction inputs being indexed.
+func indexNeedsInputs(index Indexer) bool {
+	if idx, ok := index.(NeedsInputser); ok {
+		return idx.NeedsInputs()
+	}
+
+	return false
+}
+
+// dbFetchTx looks up the passed transaction hash in the transaction index and
+// loads it from the database.
+func dbFetchTx(dbTx database.Tx, hash *daghash.Hash) (*wire.MsgTx, error) {
+	// Look up the location of the transaction.
+	blockRegion, err := dbFetchTxIndexEntry(dbTx, hash)
+	if err != nil {
+		return nil, err
+	}
+	if blockRegion == nil {
+		return nil, fmt.Errorf("transaction %v not found", hash)
+	}
+
+	// Load the raw transaction bytes from the database.
+	txBytes, err := dbTx.FetchBlockRegion(blockRegion)
+	if err != nil {
+		return nil, err
+	}
+
+	// Deserialize the transaction.
+	var msgTx wire.MsgTx
+	err = msgTx.Deserialize(bytes.NewReader(txBytes))
+	if err != nil {
+		return nil, err
+	}
+
+	return &msgTx, nil
+}
+
+// makeUtxoView creates a mock unspent transaction output view by using the
+// transaction index in order to look up all inputs referenced by the
+// transactions in the block.  This is sometimes needed when catching indexes up
+// because many of the txouts could actually already be spent however the
+// associated scripts are still required to index them.
+func makeUtxoView(dbTx database.Tx, block *util.Block, interrupt <-chan struct{}) (*blockdag.UtxoViewpoint, error) {
+	view := blockdag.NewUtxoViewpoint()
+	for txIdx, tx := range block.Transactions() {
+		// Coinbases do not reference any inputs.  Since the block is
+		// required to have already gone through full validation, it has
+		// already been proven on the first transaction in the block is
+		// a coinbase.
+		if txIdx == 0 {
+			continue
+		}
+
+		// Use the transaction index to load all of the referenced
+		// inputs and add their outputs to the view.
+		for _, txIn := range tx.MsgTx().TxIn {
+			originOut := &txIn.PreviousOutPoint
+			originTx, err := dbFetchTx(dbTx, &originOut.Hash)
+			if err != nil {
+				return nil, err
+			}
+
+			view.AddTxOuts(util.NewTx(originTx), 0)
+		}
+
+		if interruptRequested(interrupt) {
+			return nil, errInterruptRequested
+		}
+	}
+
+	return view, nil
+}
+
 // ConnectBlock must be invoked when a block is extending the main chain.  It
 // keeps track of the state of each index it is managing, performs some sanity
 // checks, and invokes each indexer.
 //
 // This is part of the blockchain.IndexManager interface.
-func (m *Manager) ConnectBlock(dbTx database.Tx, block *btcutil.Block, virtual *blockdag.VirtualBlock) error {
+func (m *Manager) ConnectBlock(dbTx database.Tx, block *util.Block, virtual *blockdag.VirtualBlock) error {
 	// Call each of the currently active optional indexes with the block
 	// being connected so they can update accordingly.
 	for _, index := range m.enabledIndexes {
@@ -292,7 +368,7 @@ func (m *Manager) ConnectBlock(dbTx database.Tx, block *btcutil.Block, virtual *
 // the index entries associated with the block.
 //
 // This is part of the blockchain.IndexManager interface.
-func (m *Manager) DisconnectBlock(dbTx database.Tx, block *btcutil.Block, virtual *blockdag.VirtualBlock) error {
+func (m *Manager) DisconnectBlock(dbTx database.Tx, block *util.Block, virtual *blockdag.VirtualBlock) error {
 	// Call each of the currently active optional indexes with the block
 	// being disconnected so they can update accordingly.
 	for _, index := range m.enabledIndexes {

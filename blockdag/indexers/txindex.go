@@ -12,7 +12,7 @@ import (
 	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/database"
 	"github.com/daglabs/btcd/wire"
-	"github.com/daglabs/btcutil"
+	"github.com/daglabs/btcd/util"
 )
 
 const (
@@ -224,7 +224,7 @@ func dbFetchTxIndexEntry(dbTx database.Tx, txHash *daghash.Hash) (*database.Bloc
 
 // dbAddTxIndexEntries uses an existing database transaction to add a
 // transaction index entry for every transaction in the passed block.
-func dbAddTxIndexEntries(dbTx database.Tx, block *btcutil.Block, blockID uint32) error {
+func dbAddTxIndexEntries(dbTx database.Tx, block *util.Block, blockID uint32) error {
 	// The offset and length of the transactions within the serialized
 	// block.
 	txLocs, err := block.TxLoc()
@@ -268,7 +268,7 @@ func dbRemoveTxIndexEntry(dbTx database.Tx, txHash *daghash.Hash) error {
 
 // dbRemoveTxIndexEntries uses an existing database transaction to remove the
 // latest transaction entry for every transaction in the passed block.
-func dbRemoveTxIndexEntries(dbTx database.Tx, block *btcutil.Block) error {
+func dbRemoveTxIndexEntries(dbTx database.Tx, block *util.Block) error {
 	for _, tx := range block.Transactions() {
 		err := dbRemoveTxIndexEntry(dbTx, tx.Hash())
 		if err != nil {
@@ -388,7 +388,7 @@ func (idx *TxIndex) Create(dbTx database.Tx) error {
 // for every transaction in the passed block.
 //
 // This is part of the Indexer interface.
-func (idx *TxIndex) ConnectBlock(dbTx database.Tx, block *btcutil.Block, virtual *blockdag.VirtualBlock) error {
+func (idx *TxIndex) ConnectBlock(dbTx database.Tx, block *util.Block, virtual *blockdag.VirtualBlock) error {
 	// Increment the internal block ID to use for the block being connected
 	// and add all of the transactions in the block to the index.
 	newBlockID := idx.curBlockID + 1
@@ -411,7 +411,7 @@ func (idx *TxIndex) ConnectBlock(dbTx database.Tx, block *btcutil.Block, virtual
 // hash-to-transaction mapping for every transaction in the block.
 //
 // This is part of the Indexer interface.
-func (idx *TxIndex) DisconnectBlock(dbTx database.Tx, block *btcutil.Block, virtual *blockdag.VirtualBlock) error {
+func (idx *TxIndex) DisconnectBlock(dbTx database.Tx, block *util.Block, virtual *blockdag.VirtualBlock) error {
 	// Remove all of the transactions in the block from the index.
 	if err := dbRemoveTxIndexEntries(dbTx, block); err != nil {
 		return err

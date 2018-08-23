@@ -14,7 +14,7 @@ import (
 	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/database"
 	"github.com/daglabs/btcd/wire"
-	"github.com/daglabs/btcutil"
+	"github.com/daglabs/btcd/util"
 )
 
 const (
@@ -874,7 +874,7 @@ func dbPutDAGState(dbTx database.Tx, state *DAGState) error {
 // the genesis block, so it must only be called on an uninitialized database.
 func (dag *BlockDAG) createDAGState() error {
 	// Create a new node from the genesis block and set it as the DAG.
-	genesisBlock := btcutil.NewBlock(dag.dagParams.GenesisBlock)
+	genesisBlock := util.NewBlock(dag.dagParams.GenesisBlock)
 	genesisBlock.SetHeight(0)
 	header := &genesisBlock.MsgBlock().Header
 	node := newBlockNode(header, newSet(), dag.dagParams.K)
@@ -982,10 +982,9 @@ func (dag *BlockDAG) createDAGState() error {
 func (dag *BlockDAG) initDAGState() error {
 	// Determine the state of the chain database. We may need to initialize
 	// everything from scratch or upgrade certain buckets.
-	var initialized, hasBlockIndex bool
+	var initialized bool
 	err := dag.db.View(func(dbTx database.Tx) error {
 		initialized = dbTx.Metadata().Get(dagStateKeyName) != nil
-		hasBlockIndex = dbTx.Metadata().Bucket(blockIndexBucketName) != nil
 		return nil
 	})
 	if err != nil {
@@ -996,13 +995,6 @@ func (dag *BlockDAG) initDAGState() error {
 		// At this point the database has not already been initialized, so
 		// initialize both it and the chain state to the genesis block.
 		return dag.createDAGState()
-	}
-
-	if !hasBlockIndex {
-		err := migrateBlockIndex(dag.db)
-		if err != nil {
-			return nil
-		}
 	}
 
 	// Attempt to load the DAG state from the database.
@@ -1190,9 +1182,9 @@ func dbFetchHeaderByHash(dbTx database.Tx, hash *daghash.Hash) (*wire.BlockHeade
 }
 
 // dbFetchBlockByNode uses an existing database transaction to retrieve the
-// raw block for the provided node, deserialize it, and return a btcutil.Block
+// raw block for the provided node, deserialize it, and return a util.Block
 // with the height set.
-func dbFetchBlockByNode(dbTx database.Tx, node *blockNode) (*btcutil.Block, error) {
+func dbFetchBlockByNode(dbTx database.Tx, node *blockNode) (*util.Block, error) {
 	// Load the raw block bytes from the database.
 	blockBytes, err := dbTx.FetchBlock(&node.hash)
 	if err != nil {
@@ -1200,7 +1192,7 @@ func dbFetchBlockByNode(dbTx database.Tx, node *blockNode) (*btcutil.Block, erro
 	}
 
 	// Create the encapsulated block and set the height appropriately.
-	block, err := btcutil.NewBlockFromBytes(blockBytes)
+	block, err := util.NewBlockFromBytes(blockBytes)
 	if err != nil {
 		return nil, err
 	}
@@ -1233,7 +1225,7 @@ func dbStoreBlockNode(dbTx database.Tx, node *blockNode) error {
 
 // dbStoreBlock stores the provided block in the database if it is not already
 // there. The full block data is written to ffldb.
-func dbStoreBlock(dbTx database.Tx, block *btcutil.Block) error {
+func dbStoreBlock(dbTx database.Tx, block *util.Block) error {
 	hasBlock, err := dbTx.HasBlock(block.Hash())
 	if err != nil {
 		return err
@@ -1258,7 +1250,7 @@ func blockIndexKey(blockHash *daghash.Hash, blockHeight uint32) []byte {
 // the appropriate chain height set.
 //
 // This function is safe for concurrent access.
-func (dag *BlockDAG) BlockByHash(hash *daghash.Hash) (*btcutil.Block, error) {
+func (dag *BlockDAG) BlockByHash(hash *daghash.Hash) (*util.Block, error) {
 	// Lookup the block hash in block index and ensure it is in the best
 	// chain.
 	node := dag.index.LookupNode(hash)
@@ -1268,7 +1260,7 @@ func (dag *BlockDAG) BlockByHash(hash *daghash.Hash) (*btcutil.Block, error) {
 	}
 
 	// Load the block from the database and return it.
-	var block *btcutil.Block
+	var block *util.Block
 	err := dag.db.View(func(dbTx database.Tx) error {
 		var err error
 		block, err = dbFetchBlockByNode(dbTx, node)

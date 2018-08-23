@@ -12,9 +12,9 @@ import (
 	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/database"
 	"github.com/daglabs/btcd/wire"
-	"github.com/daglabs/btcutil"
-	"github.com/daglabs/btcutil/gcs"
-	"github.com/daglabs/btcutil/gcs/builder"
+	"github.com/daglabs/btcd/util"
+	"github.com/daglabs/btcd/util/gcs"
+	"github.com/daglabs/btcd/util/gcs/builder"
 )
 
 const (
@@ -141,7 +141,7 @@ func (idx *CfIndex) Create(dbTx database.Tx) error {
 
 // storeFilter stores a given filter, and performs the steps needed to
 // generate the filter's header.
-func storeFilter(dbTx database.Tx, block *btcutil.Block, f *gcs.Filter,
+func storeFilter(dbTx database.Tx, block *util.Block, f *gcs.Filter,
 	filterType wire.FilterType) error {
 	if uint8(filterType) > maxFilterType {
 		return errors.New("unsupported filter type")
@@ -202,7 +202,7 @@ func storeFilter(dbTx database.Tx, block *btcutil.Block, f *gcs.Filter,
 // ConnectBlock is invoked by the index manager when a new block has been
 // connected to the main chain. This indexer adds a hash-to-cf mapping for
 // every passed block. This is part of the Indexer interface.
-func (idx *CfIndex) ConnectBlock(dbTx database.Tx, block *btcutil.Block,
+func (idx *CfIndex) ConnectBlock(dbTx database.Tx, block *util.Block,
 	virtual *blockdag.VirtualBlock) error {
 
 	f, err := builder.BuildBasicFilter(block.MsgBlock())
@@ -226,7 +226,7 @@ func (idx *CfIndex) ConnectBlock(dbTx database.Tx, block *btcutil.Block,
 // DisconnectBlock is invoked by the index manager when a block has been
 // disconnected from the main chain.  This indexer removes the hash-to-cf
 // mapping for every passed block. This is part of the Indexer interface.
-func (idx *CfIndex) DisconnectBlock(dbTx database.Tx, block *btcutil.Block,
+func (idx *CfIndex) DisconnectBlock(dbTx database.Tx, block *util.Block,
 	virtual *blockdag.VirtualBlock) error {
 
 	for _, key := range cfIndexKeys {

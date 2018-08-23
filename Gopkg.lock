@@ -2,6 +2,12 @@
 
 
 [[projects]]
+  name = "github.com/aead/siphash"
+  packages = ["."]
+  revision = "83563a290f60225eb120d724600b9690c3fb536f"
+  version = "v1.0.1"
+
+[[projects]]
   branch = "master"
   name = "github.com/btcsuite/btclog"
   packages = ["."]
@@ -76,6 +82,12 @@
 
 [[projects]]
   branch = "master"
+  name = "github.com/kkdai/bstream"
+  packages = ["."]
+  revision = "f71540b9dfdcfe64dbf2818e9b66423c6aafcacd"
+
+[[projects]]
+  branch = "master"
   name = "golang.org/x/crypto"
   packages = ["ripemd160"]
   revision = "a49355c7e3f8fe157a85be2f77e6e269a0f89602"
@@ -83,6 +95,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "f6928f9045d39e392385664563e9e2ebad733056d5a2d28747dfbfbe19aa6ad2"
+  inputs-digest = "9910d3cbbf65bc6204c141bb24b416f79962d69115cba9a0e97a28246fb2a0ea"
   solver-name = "gps-cdcl"
   solver-version = 1
