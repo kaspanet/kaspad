@@ -25,7 +25,7 @@
 //          "fmt"
 //          "log"
 //
-//          "github.com/daglabs/btcd/btcutil"
+//          "github.com/daglabs/btcd/util"
 //          "github.com/daglabs/btcd/dagconfig"
 //  )
 //
@@ -46,7 +46,7 @@
 //
 //          // Create and print new payment address, specific to the active network.
 //          pubKeyHash := make([]byte, 20)
-//          addr, err := btcutil.NewAddressPubKeyHash(pubKeyHash, chainParams)
+//          addr, err := util.NewAddressPubKeyHash(pubKeyHash, chainParams)
 //          if err != nil {
 //                  log.Fatal(err)
 //          }

@@ -15,7 +15,7 @@ import (
 	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/txscript"
 	"github.com/daglabs/btcd/wire"
-	"github.com/daglabs/btcd/btcutil"
+	"github.com/daglabs/btcd/util"
 )
 
 // newHashFromStr converts the passed big-endian hex string into a
@@ -53,7 +53,7 @@ func newUtxoViewpoint(sourceTxns []*wire.MsgTx, sourceTxHeights []int32) *blockd
 
 	view := blockdag.NewUtxoViewpoint()
 	for i, tx := range sourceTxns {
-		view.AddTxOuts(btcutil.NewTx(tx), sourceTxHeights[i])
+		view.AddTxOuts(util.NewTx(tx), sourceTxHeights[i])
 	}
 	return view
 }
@@ -73,7 +73,7 @@ func createTxIn(originTx *wire.MsgTx, outputIndex uint32) *wire.TxIn {
 }
 
 func createTransaction(value int64, originTx *wire.MsgTx, originTxoutputIndex uint32, sigScript []byte) (*wire.MsgTx, error) {
-	lookupKey := func(a btcutil.Address) (*btcec.PrivateKey, bool, error) {
+	lookupKey := func(a util.Address) (*btcec.PrivateKey, bool, error) {
 		// Ordinarily this function would involve looking up the private
 		// key for the provided address, but since the only thing being
 		// signed in this example uses the address associated with the
@@ -182,6 +182,6 @@ var privKeyBytes, _ = hex.DecodeString("22a47fa09a223f2aa079edf85a7c2" +
 	"d4f8720ee63e502ee2869afab7de234b80c")
 
 var privKey, pubKey = btcec.PrivKeyFromBytes(btcec.S256(), privKeyBytes)
-var pubKeyHash = btcutil.Hash160(pubKey.SerializeCompressed())
-var addr, err = btcutil.NewAddressPubKeyHash(pubKeyHash,
+var pubKeyHash = util.Hash160(pubKey.SerializeCompressed())
+var addr, err = util.NewAddressPubKeyHash(pubKeyHash,
 	&dagconfig.MainNetParams)

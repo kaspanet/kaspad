@@ -11,7 +11,7 @@ import (
 	"github.com/daglabs/btcd/mempool"
 	"github.com/daglabs/btcd/peer"
 	"github.com/daglabs/btcd/wire"
-	"github.com/daglabs/btcd/btcutil"
+	"github.com/daglabs/btcd/util"
 )
 
 // PeerNotifier exposes methods to notify peers of status changes to
@@ -24,7 +24,7 @@ type PeerNotifier interface {
 
 	RelayInventory(invVect *wire.InvVect, data interface{})
 
-	TransactionConfirmed(tx *btcutil.Tx)
+	TransactionConfirmed(tx *util.Tx)
 }
 
 // Config is a configuration struct used to initialize a new SyncManager.

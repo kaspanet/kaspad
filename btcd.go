@@ -24,7 +24,7 @@ import (
 	"github.com/daglabs/btcd/server"
 	"github.com/daglabs/btcd/signal"
 	"github.com/daglabs/btcd/version"
-	"github.com/daglabs/btcd/btcutil/fs"
+	"github.com/daglabs/btcd/util/fs"
 )
 
 const (

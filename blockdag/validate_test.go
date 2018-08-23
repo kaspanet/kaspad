@@ -13,7 +13,7 @@ import (
 	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/wire"
-	"github.com/daglabs/btcd/btcutil"
+	"github.com/daglabs/btcd/util"
 )
 
 // TestSequenceLocksActive tests the SequenceLockActive function to ensure it
@@ -87,7 +87,7 @@ func TestCheckConnectBlockTemplate(t *testing.T) {
 		"blk_3B.dat",
 	}
 
-	var blocks []*btcutil.Block
+	var blocks []*util.Block
 	for _, file := range testFiles {
 		blockTmp, err := loadBlocks(file)
 		if err != nil {
@@ -128,7 +128,7 @@ func TestCheckConnectBlockTemplate(t *testing.T) {
 	// Block 4 should connect even if proof of work is invalid.
 	invalidPowBlock := *blocks[4].MsgBlock()
 	invalidPowBlock.Header.Nonce++
-	err = chain.CheckConnectBlockTemplate(btcutil.NewBlock(&invalidPowBlock))
+	err = chain.CheckConnectBlockTemplate(util.NewBlock(&invalidPowBlock))
 	if err != nil {
 		t.Fatalf("CheckConnectBlockTemplate: Received unexpected error on "+
 			"block 4 with bad nonce: %v", err)
@@ -137,7 +137,7 @@ func TestCheckConnectBlockTemplate(t *testing.T) {
 	// Invalid block building on chain tip should fail to connect.
 	invalidBlock := *blocks[4].MsgBlock()
 	invalidBlock.Header.Bits--
-	err = chain.CheckConnectBlockTemplate(btcutil.NewBlock(&invalidBlock))
+	err = chain.CheckConnectBlockTemplate(util.NewBlock(&invalidBlock))
 	if err == nil {
 		t.Fatal("CheckConnectBlockTemplate: Did not received expected error " +
 			"on block 4 with invalid difficulty bits")
@@ -148,7 +148,7 @@ func TestCheckConnectBlockTemplate(t *testing.T) {
 // as expected.
 func TestCheckBlockSanity(t *testing.T) {
 	powLimit := dagconfig.MainNetParams.PowLimit
-	block := btcutil.NewBlock(&Block100000)
+	block := util.NewBlock(&Block100000)
 	timeSource := NewMedianTime()
 	err := CheckBlockSanity(block, powLimit, timeSource)
 	if err != nil {
@@ -421,7 +421,7 @@ func TestCheckBlockSanity(t *testing.T) {
 			},
 		},
 	}
-	btcutilInvalidBlock := btcutil.NewBlock(&invalidParentsOrderBlock)
+	btcutilInvalidBlock := util.NewBlock(&invalidParentsOrderBlock)
 	err = CheckBlockSanity(btcutilInvalidBlock, powLimit, timeSource)
 	if err == nil {
 		t.Errorf("CheckBlockSanity: error is nil when it shouldn't be")
@@ -476,7 +476,7 @@ func TestCheckSerializedHeight(t *testing.T) {
 	for i, test := range tests {
 		msgTx := coinbaseTx.Copy()
 		msgTx.TxIn[0].SignatureScript = test.sigScript
-		tx := btcutil.NewTx(msgTx)
+		tx := util.NewTx(msgTx)
 
 		err := checkSerializedHeight(tx, test.wantHeight)
 		if reflect.TypeOf(err) != reflect.TypeOf(test.err) {

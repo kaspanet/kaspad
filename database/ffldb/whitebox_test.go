@@ -20,7 +20,7 @@ import (
 	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/database"
 	"github.com/daglabs/btcd/wire"
-	"github.com/daglabs/btcd/btcutil"
+	"github.com/daglabs/btcd/util"
 	"github.com/btcsuite/goleveldb/leveldb"
 	ldberrors "github.com/btcsuite/goleveldb/leveldb/errors"
 )
@@ -39,7 +39,7 @@ var (
 
 // loadBlocks loads the blocks contained in the testdata directory and returns
 // a slice of them.
-func loadBlocks(t *testing.T, dataFile string, network wire.BitcoinNet) ([]*btcutil.Block, error) {
+func loadBlocks(t *testing.T, dataFile string, network wire.BitcoinNet) ([]*util.Block, error) {
 	// Open the file that contains the blocks for reading.
 	fi, err := os.Open(dataFile)
 	if err != nil {
@@ -55,8 +55,8 @@ func loadBlocks(t *testing.T, dataFile string, network wire.BitcoinNet) ([]*btcu
 	dr := bzip2.NewReader(fi)
 
 	// Set the first block as the genesis block.
-	blocks := make([]*btcutil.Block, 0, 256)
-	genesis := btcutil.NewBlock(dagconfig.MainNetParams.GenesisBlock)
+	blocks := make([]*util.Block, 0, 256)
+	genesis := util.NewBlock(dagconfig.MainNetParams.GenesisBlock)
 	blocks = append(blocks, genesis)
 
 	// Load the remaining blocks.
@@ -95,7 +95,7 @@ func loadBlocks(t *testing.T, dataFile string, network wire.BitcoinNet) ([]*btcu
 		}
 
 		// Deserialize and store the block.
-		block, err := btcutil.NewBlockFromBytes(blockBytes)
+		block, err := util.NewBlockFromBytes(blockBytes)
 		if err != nil {
 			t.Errorf("Failed to parse block %v: %v", height, err)
 			return nil, err
@@ -132,7 +132,7 @@ type testContext struct {
 	db           database.DB
 	files        map[uint32]*lockableFile
 	maxFileSizes map[uint32]int64
-	blocks       []*btcutil.Block
+	blocks       []*util.Block
 }
 
 // TestConvertErr ensures the leveldb error to database error conversion works

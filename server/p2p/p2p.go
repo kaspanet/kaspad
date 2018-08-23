@@ -37,8 +37,8 @@ import (
 	"github.com/daglabs/btcd/txscript"
 	"github.com/daglabs/btcd/version"
 	"github.com/daglabs/btcd/wire"
-	"github.com/daglabs/btcd/btcutil"
-	"github.com/daglabs/btcd/btcutil/bloom"
+	"github.com/daglabs/btcd/util"
+	"github.com/daglabs/btcd/util/bloom"
 )
 
 const (
@@ -500,9 +500,9 @@ func (sp *Peer) OnTx(_ *peer.Peer, msg *wire.MsgTx) {
 	}
 
 	// Add the transaction to the known inventory for the peer.
-	// Convert the raw MsgTx to a btcutil.Tx which provides some convenience
+	// Convert the raw MsgTx to a util.Tx which provides some convenience
 	// methods and things such as hash caching.
-	tx := btcutil.NewTx(msg)
+	tx := util.NewTx(msg)
 	iv := wire.NewInvVect(wire.InvTypeTx, tx.Hash())
 	sp.AddKnownInventory(iv)
 
@@ -518,9 +518,9 @@ func (sp *Peer) OnTx(_ *peer.Peer, msg *wire.MsgTx) {
 // OnBlock is invoked when a peer receives a block bitcoin message.  It
 // blocks until the bitcoin block has been fully processed.
 func (sp *Peer) OnBlock(_ *peer.Peer, msg *wire.MsgBlock, buf []byte) {
-	// Convert the raw MsgBlock to a btcutil.Block which provides some
+	// Convert the raw MsgBlock to a util.Block which provides some
 	// convenience methods and things such as hash caching.
-	block := btcutil.NewBlockFromBlockAndBytes(msg, buf)
+	block := util.NewBlockFromBlockAndBytes(msg, buf)
 
 	// Add the block to the known inventory for the peer.
 	iv := wire.NewInvVect(wire.InvTypeBlock, block.Hash())
@@ -1006,9 +1006,9 @@ func (sp *Peer) enforceNodeBloomFlag(cmd string) bool {
 // disconnected if an invalid fee filter value is provided.
 func (sp *Peer) OnFeeFilter(_ *peer.Peer, msg *wire.MsgFeeFilter) {
 	// Check that the passed minimum fee is a valid amount.
-	if msg.MinFee < 0 || msg.MinFee > btcutil.MaxSatoshi {
+	if msg.MinFee < 0 || msg.MinFee > util.MaxSatoshi {
 		peerLog.Debugf("Peer %v sent an invalid feefilter '%v' -- "+
-			"disconnecting", sp, btcutil.Amount(msg.MinFee))
+			"disconnecting", sp, util.Amount(msg.MinFee))
 		sp.Disconnect()
 		return
 	}
@@ -2439,7 +2439,7 @@ func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params
 		FetchUtxoView:  s.DAG.FetchUtxoView,
 		BestHeight:     func() int32 { return s.DAG.GetDAGState().SelectedTip.Height },
 		MedianTimePast: func() time.Time { return s.DAG.GetDAGState().SelectedTip.MedianTime },
-		CalcSequenceLock: func(tx *btcutil.Tx, view *blockdag.UtxoViewpoint) (*blockdag.SequenceLock, error) {
+		CalcSequenceLock: func(tx *util.Tx, view *blockdag.UtxoViewpoint) (*blockdag.SequenceLock, error) {
 			return s.DAG.CalcSequenceLock(tx, view, true)
 		},
 		IsDeploymentActive: s.DAG.IsDeploymentActive,
@@ -2839,7 +2839,7 @@ func (s *Server) AnnounceNewTransactions(txns []*mempool.TxDesc) {
 // TransactionConfirmed is a function for the peerNotifier interface.
 // When a transaction has one confirmation, we can mark it as no
 // longer needing rebroadcasting.
-func (s *Server) TransactionConfirmed(tx *btcutil.Tx) {
+func (s *Server) TransactionConfirmed(tx *util.Tx) {
 	// Rebroadcasting is only necessary when the RPC server is active.
 	if config.MainConfig().DisableRPC {
 		return

@@ -14,7 +14,7 @@ import (
 	"github.com/daglabs/btcd/database"
 	_ "github.com/daglabs/btcd/database/ffldb"
 	"github.com/daglabs/btcd/wire"
-	"github.com/daglabs/btcd/btcutil"
+	"github.com/daglabs/btcd/util"
 )
 
 // This example demonstrates creating a new database.
@@ -136,7 +136,7 @@ func Example_blockStorageAndRetrieval() {
 	// and example.
 	err = db.Update(func(tx database.Tx) error {
 		genesisBlock := dagconfig.MainNetParams.GenesisBlock
-		return tx.StoreBlock(btcutil.NewBlock(genesisBlock))
+		return tx.StoreBlock(util.NewBlock(genesisBlock))
 	})
 	if err != nil {
 		fmt.Println(err)

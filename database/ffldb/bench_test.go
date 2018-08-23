@@ -11,7 +11,7 @@ import (
 
 	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/database"
-	"github.com/daglabs/btcd/btcutil"
+	"github.com/daglabs/btcd/util"
 )
 
 // BenchmarkBlockHeader benchmarks how long it takes to load the mainnet genesis
@@ -28,7 +28,7 @@ func BenchmarkBlockHeader(b *testing.B) {
 	defer os.RemoveAll(dbPath)
 	defer db.Close()
 	err = db.Update(func(tx database.Tx) error {
-		block := btcutil.NewBlock(dagconfig.MainNetParams.GenesisBlock)
+		block := util.NewBlock(dagconfig.MainNetParams.GenesisBlock)
 		return tx.StoreBlock(block)
 	})
 	if err != nil {
@@ -69,7 +69,7 @@ func BenchmarkBlock(b *testing.B) {
 	defer os.RemoveAll(dbPath)
 	defer db.Close()
 	err = db.Update(func(tx database.Tx) error {
-		block := btcutil.NewBlock(dagconfig.MainNetParams.GenesisBlock)
+		block := util.NewBlock(dagconfig.MainNetParams.GenesisBlock)
 		return tx.StoreBlock(block)
 	})
 	if err != nil {

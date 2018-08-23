@@ -14,7 +14,7 @@ import (
 	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/database"
 	_ "github.com/daglabs/btcd/database/ffldb"
-	"github.com/daglabs/btcd/btcutil"
+	"github.com/daglabs/btcd/util"
 )
 
 // This example demonstrates how to create a new chain instance and use
@@ -58,7 +58,7 @@ func ExampleBlockChain_ProcessBlock() {
 	// Process a block.  For this example, we are going to intentionally
 	// cause an error by trying to process the genesis block which already
 	// exists.
-	genesisBlock := btcutil.NewBlock(dagconfig.MainNetParams.GenesisBlock)
+	genesisBlock := util.NewBlock(dagconfig.MainNetParams.GenesisBlock)
 	isOrphan, err := chain.ProcessBlock(genesisBlock,
 		blockdag.BFNone)
 	if err != nil {

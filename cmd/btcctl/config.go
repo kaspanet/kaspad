@@ -14,7 +14,7 @@ import (
 	"strings"
 
 	"github.com/daglabs/btcd/btcjson"
-	"github.com/daglabs/btcd/btcutil"
+	"github.com/daglabs/btcd/util"
 	flags "github.com/jessevdk/go-flags"
 )
 
@@ -26,9 +26,9 @@ const (
 )
 
 var (
-	btcdHomeDir           = btcutil.AppDataDir("btcd", false)
-	btcctlHomeDir         = btcutil.AppDataDir("btcctl", false)
-	btcwalletHomeDir      = btcutil.AppDataDir("btcwallet", false)
+	btcdHomeDir           = util.AppDataDir("btcd", false)
+	btcctlHomeDir         = util.AppDataDir("btcctl", false)
+	btcwalletHomeDir      = util.AppDataDir("btcwallet", false)
 	defaultConfigFile     = filepath.Join(btcctlHomeDir, "btcctl.conf")
 	defaultRPCServer      = "localhost"
 	defaultRPCCertFile    = filepath.Join(btcdHomeDir, "rpc.cert")

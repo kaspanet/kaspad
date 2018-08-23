@@ -28,8 +28,8 @@ import (
 	"github.com/daglabs/btcd/mempool"
 	"github.com/daglabs/btcd/version"
 	"github.com/daglabs/btcd/wire"
-	"github.com/daglabs/btcd/btcutil"
-	"github.com/daglabs/btcd/btcutil/network"
+	"github.com/daglabs/btcd/util"
+	"github.com/daglabs/btcd/util/network"
 	flags "github.com/jessevdk/go-flags"
 )
 
@@ -64,7 +64,7 @@ const (
 )
 
 var (
-	DefaultHomeDir     = btcutil.AppDataDir("btcd", false)
+	DefaultHomeDir     = util.AppDataDir("btcd", false)
 	defaultConfigFile  = filepath.Join(DefaultHomeDir, defaultConfigFilename)
 	defaultDataDir     = filepath.Join(DefaultHomeDir, defaultDataDirname)
 	knownDbTypes       = database.SupportedDrivers()
@@ -174,8 +174,8 @@ type Config struct {
 	OnionDial      func(string, string, time.Duration) (net.Conn, error)
 	Dial           func(string, string, time.Duration) (net.Conn, error)
 	AddCheckpoints []dagconfig.Checkpoint
-	MiningAddrs    []btcutil.Address
-	MinRelayTxFee  btcutil.Amount
+	MiningAddrs    []util.Address
+	MinRelayTxFee  util.Amount
 	Whitelists     []*net.IPNet
 }
 
@@ -647,7 +647,7 @@ func loadConfig() (*Config, []string, error) {
 	}
 
 	// Validate the the minrelaytxfee.
-	cfg.MinRelayTxFee, err = btcutil.NewAmount(cfg.configFlags.MinRelayTxFee)
+	cfg.MinRelayTxFee, err = util.NewAmount(cfg.configFlags.MinRelayTxFee)
 	if err != nil {
 		str := "%s: invalid minrelaytxfee: %v"
 		err := fmt.Errorf(str, funcName, err)
@@ -728,9 +728,9 @@ func loadConfig() (*Config, []string, error) {
 	}
 
 	// Check mining addresses are valid and saved parsed versions.
-	cfg.MiningAddrs = make([]btcutil.Address, 0, len(cfg.configFlags.MiningAddrs))
+	cfg.MiningAddrs = make([]util.Address, 0, len(cfg.configFlags.MiningAddrs))
 	for _, strAddr := range cfg.configFlags.MiningAddrs {
-		addr, err := btcutil.DecodeAddress(strAddr, activeNetParams)
+		addr, err := util.DecodeAddress(strAddr, activeNetParams)
 		if err != nil {
 			str := "%s: mining address '%s' failed to decode: %v"
 			err := fmt.Errorf(str, funcName, strAddr, err)

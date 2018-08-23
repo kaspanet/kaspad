@@ -8,7 +8,7 @@ import (
 	"fmt"
 
 	"github.com/daglabs/btcd/database"
-	"github.com/daglabs/btcd/btcutil"
+	"github.com/daglabs/btcd/util"
 )
 
 // maybeAcceptBlock potentially accepts a block into the block DAG. It
@@ -20,7 +20,7 @@ import (
 // their documentation for how the flags modify their behavior.
 //
 // This function MUST be called with the dagLock held (for writes).
-func (dag *BlockDAG) maybeAcceptBlock(block *btcutil.Block, flags BehaviorFlags) error {
+func (dag *BlockDAG) maybeAcceptBlock(block *util.Block, flags BehaviorFlags) error {
 	// The height of this block is one more than the referenced previous
 	// block.
 	parents, err := lookupPreviousNodes(block, dag)
@@ -85,7 +85,7 @@ func (dag *BlockDAG) maybeAcceptBlock(block *btcutil.Block, flags BehaviorFlags)
 	return nil
 }
 
-func lookupPreviousNodes(block *btcutil.Block, blockDAG *BlockDAG) (blockSet, error) {
+func lookupPreviousNodes(block *util.Block, blockDAG *BlockDAG) (blockSet, error) {
 	header := block.MsgBlock().Header
 	prevHashes := header.PrevBlocks
 

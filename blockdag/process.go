@@ -10,7 +10,7 @@ import (
 
 	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/database"
-	"github.com/daglabs/btcd/btcutil"
+	"github.com/daglabs/btcd/util"
 )
 
 // BehaviorFlags is a bitmask defining tweaks to the normal behavior when
@@ -138,7 +138,7 @@ func (dag *BlockDAG) processOrphans(hash *daghash.Hash, flags BehaviorFlags) err
 // whether or not the block is an orphan.
 //
 // This function is safe for concurrent access.
-func (dag *BlockDAG) ProcessBlock(block *btcutil.Block, flags BehaviorFlags) (bool, error) {
+func (dag *BlockDAG) ProcessBlock(block *util.Block, flags BehaviorFlags) (bool, error) {
 	dag.dagLock.Lock()
 	defer dag.dagLock.Unlock()
 

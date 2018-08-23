@@ -20,7 +20,7 @@ import (
 	_ "github.com/daglabs/btcd/database/ffldb"
 	"github.com/daglabs/btcd/txscript"
 	"github.com/daglabs/btcd/wire"
-	"github.com/daglabs/btcd/btcutil"
+	"github.com/daglabs/btcd/util"
 )
 
 const (
@@ -155,7 +155,7 @@ func TestFullBlocks(t *testing.T) {
 	// specified in the test.
 	testAcceptedBlock := func(item fullblocktests.AcceptedBlock) {
 		blockHeight := item.Height
-		block := btcutil.NewBlock(item.Block)
+		block := util.NewBlock(item.Block)
 		block.SetHeight(blockHeight)
 		t.Logf("Testing block %s (hash %s, height %d)",
 			item.Name, block.Hash(), blockHeight)
@@ -181,7 +181,7 @@ func TestFullBlocks(t *testing.T) {
 	// specified in the test.
 	testRejectedBlock := func(item fullblocktests.RejectedBlock) {
 		blockHeight := item.Height
-		block := btcutil.NewBlock(item.Block)
+		block := util.NewBlock(item.Block)
 		block.SetHeight(blockHeight)
 		t.Logf("Testing block %s (hash %s, height %d)",
 			item.Name, block.Hash(), blockHeight)
@@ -238,7 +238,7 @@ func TestFullBlocks(t *testing.T) {
 	// orphan or rejected with a rule violation.
 	testOrphanOrRejectedBlock := func(item fullblocktests.OrphanOrRejectedBlock) {
 		blockHeight := item.Height
-		block := btcutil.NewBlock(item.Block)
+		block := util.NewBlock(item.Block)
 		block.SetHeight(blockHeight)
 		t.Logf("Testing block %s (hash %s, height %d)",
 			item.Name, block.Hash(), blockHeight)
@@ -266,7 +266,7 @@ func TestFullBlocks(t *testing.T) {
 	// block specified in the provided test instance.
 	testExpectedTip := func(item fullblocktests.ExpectedTip) {
 		blockHeight := item.Height
-		block := btcutil.NewBlock(item.Block)
+		block := util.NewBlock(item.Block)
 		block.SetHeight(blockHeight)
 		t.Logf("Testing tip for block %s (hash %s, height %d)",
 			item.Name, block.Hash(), blockHeight)

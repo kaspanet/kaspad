@@ -8,7 +8,7 @@ import (
 	"math"
 
 	"github.com/daglabs/btcd/dagconfig/daghash"
-	"github.com/daglabs/btcd/btcutil"
+	"github.com/daglabs/btcd/util"
 )
 
 // nextPowerOfTwo returns the next highest power of two from a given number if
@@ -66,7 +66,7 @@ func HashMerkleBranches(left *daghash.Hash, right *daghash.Hash) *daghash.Hash {
 // are calculated by concatenating the left node with itself before hashing.
 // Since this function uses nodes that are pointers to the hashes, empty nodes
 // will be nil.
-func BuildMerkleTreeStore(transactions []*btcutil.Tx) []*daghash.Hash {
+func BuildMerkleTreeStore(transactions []*util.Tx) []*daghash.Hash {
 	// Calculate how many entries are required to hold the binary merkle
 	// tree as a linear array and create an array of that size.
 	nextPoT := nextPowerOfTwo(len(transactions))

@@ -15,7 +15,7 @@ import (
 	"github.com/daglabs/btcd/blockdag/indexers"
 	"github.com/daglabs/btcd/database"
 	"github.com/daglabs/btcd/wire"
-	"github.com/daglabs/btcd/btcutil"
+	"github.com/daglabs/btcd/util"
 )
 
 // importResults houses the stats and result as an import operation.
@@ -91,7 +91,7 @@ func (bi *blockImporter) readBlock() ([]byte, error) {
 // with any potential errors.
 func (bi *blockImporter) processBlock(serializedBlock []byte) (bool, error) {
 	// Deserialize the block which includes checks for malformed blocks.
-	block, err := btcutil.NewBlockFromBytes(serializedBlock)
+	block, err := util.NewBlockFromBytes(serializedBlock)
 	if err != nil {
 		return false, err
 	}

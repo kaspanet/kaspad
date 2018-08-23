@@ -14,7 +14,7 @@ import (
 	"github.com/daglabs/btcd/database"
 	"github.com/daglabs/btcd/txscript"
 	"github.com/daglabs/btcd/wire"
-	"github.com/daglabs/btcd/btcutil"
+	"github.com/daglabs/btcd/util"
 )
 
 const (
@@ -43,7 +43,7 @@ type BlockLocator []*daghash.Hash
 // is a normal block plus an expiration time to prevent caching the orphan
 // forever.
 type orphanBlock struct {
-	block      *btcutil.Block
+	block      *util.Block
 	expiration time.Time
 }
 
@@ -307,7 +307,7 @@ func (dag *BlockDAG) removeOrphanBlock(orphan *orphanBlock) {
 // It also imposes a maximum limit on the number of outstanding orphan
 // blocks and will remove the oldest received orphan block if the limit is
 // exceeded.
-func (dag *BlockDAG) addOrphanBlock(block *btcutil.Block) {
+func (dag *BlockDAG) addOrphanBlock(block *util.Block) {
 	// Remove expired orphan blocks.
 	for _, oBlock := range dag.orphans {
 		if time.Now().After(oBlock.expiration) {
@@ -369,7 +369,7 @@ type SequenceLock struct {
 // the candidate transaction to be included in a block.
 //
 // This function is safe for concurrent access.
-func (dag *BlockDAG) CalcSequenceLock(tx *btcutil.Tx, utxoView *UtxoViewpoint, mempool bool) (*SequenceLock, error) {
+func (dag *BlockDAG) CalcSequenceLock(tx *util.Tx, utxoView *UtxoViewpoint, mempool bool) (*SequenceLock, error) {
 	dag.dagLock.Lock()
 	defer dag.dagLock.Unlock()
 
@@ -380,7 +380,7 @@ func (dag *BlockDAG) CalcSequenceLock(tx *btcutil.Tx, utxoView *UtxoViewpoint, m
 // transaction. See the exported version, CalcSequenceLock for further details.
 //
 // This function MUST be called with the chain state lock held (for writes).
-func (dag *BlockDAG) calcSequenceLock(node *blockNode, tx *btcutil.Tx, utxoView *UtxoViewpoint, mempool bool) (*SequenceLock, error) {
+func (dag *BlockDAG) calcSequenceLock(node *blockNode, tx *util.Tx, utxoView *UtxoViewpoint, mempool bool) (*SequenceLock, error) {
 	// A value of -1 for each relative lock type represents a relative time
 	// lock value that will allow a transaction to be included in a block
 	// at any given height or time.
@@ -497,7 +497,7 @@ func LockTimeToSequence(isSeconds bool, locktime uint64) uint64 {
 // it would be inefficient to repeat it.
 //
 // This function MUST be called with the chain state lock held (for writes).
-func (dag *BlockDAG) connectBlock(node *blockNode, block *btcutil.Block, view *UtxoViewpoint, stxos []spentTxOut) error {
+func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block, view *UtxoViewpoint, stxos []spentTxOut) error {
 	// Sanity check the correct number of stxos are provided.
 	if len(stxos) != countSpentOutputs(block) {
 		return AssertError("connectBlock called with inconsistent " +
@@ -607,7 +607,7 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *btcutil.Block, view *U
 }
 
 // countSpentOutputs returns the number of utxos the passed block spends.
-func countSpentOutputs(block *btcutil.Block) int {
+func countSpentOutputs(block *util.Block) int {
 	// Exclude the coinbase transaction since it can't spend anything.
 	var numSpent int
 	for _, tx := range block.Transactions()[1:] {
@@ -623,7 +623,7 @@ func countSpentOutputs(block *btcutil.Block) int {
 //    This is useful when using checkpoints.
 //
 // This function MUST be called with the chain state lock held (for writes).
-func (dag *BlockDAG) connectToDAG(node *blockNode, parentNodes blockSet, block *btcutil.Block, flags BehaviorFlags) error {
+func (dag *BlockDAG) connectToDAG(node *blockNode, parentNodes blockSet, block *util.Block, flags BehaviorFlags) error {
 	// Skip checks if node has already been fully validated.
 	fastAdd := flags&BFFastAdd == BFFastAdd || dag.index.NodeStatus(node).KnownValid()
 
@@ -811,7 +811,7 @@ func (dag *BlockDAG) blockLocator(node *blockNode) BlockLocator {
 		// Requested hash itself + previous 10 entries + genesis block.
 		// Then floor(log2(height-10)) entries for the skip portion.
 		adjustedHeight := uint32(node.height) - 10
-		maxEntries = 12 + btcutil.FastLog2Floor(adjustedHeight)
+		maxEntries = 12 + util.FastLog2Floor(adjustedHeight)
 	}
 	locator := make(BlockLocator, 0, maxEntries)
 
@@ -1112,11 +1112,11 @@ type IndexManager interface {
 
 	// ConnectBlock is invoked when a new block has been connected to the
 	// main chain.
-	ConnectBlock(database.Tx, *btcutil.Block, *UtxoViewpoint) error
+	ConnectBlock(database.Tx, *util.Block, *UtxoViewpoint) error
 
 	// DisconnectBlock is invoked when a block has been disconnected from
 	// the main chain.
-	DisconnectBlock(database.Tx, *btcutil.Block, *UtxoViewpoint) error
+	DisconnectBlock(database.Tx, *util.Block, *UtxoViewpoint) error
 }
 
 // Config is a descriptor which specifies the blockchain instance configuration.
