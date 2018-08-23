@@ -13,7 +13,7 @@ import (
 	"github.com/daglabs/btcd/database"
 	_ "github.com/daglabs/btcd/database/ffldb"
 	"github.com/daglabs/btcd/wire"
-	"github.com/daglabs/btcutil"
+	"github.com/daglabs/btcd/util"
 	flags "github.com/jessevdk/go-flags"
 )
 
@@ -25,7 +25,7 @@ const (
 )
 
 var (
-	btcdHomeDir     = btcutil.AppDataDir("btcd", false)
+	btcdHomeDir     = util.AppDataDir("btcd", false)
 	defaultDataDir  = filepath.Join(btcdHomeDir, "data")
 	knownDbTypes    = database.SupportedDrivers()
 	activeNetParams = &dagconfig.MainNetParams
