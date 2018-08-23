@@ -191,10 +191,10 @@ const (
 	// push data to the stack performs other operations.
 	ErrNotPushOnly
 
-	// ErrPubKeyType is returned when the script contains invalid public keys.
+	// ErrPubKeyFormat is returned when the script contains invalid public keys.
 	// A valid pubkey should be in uncompressed format as a 64 byte string prefixed with 0x04,
 	// or to be in compressed format as a 32 byte string prefixed with 0x02 or 0x03 to signal oddness.
-	ErrPubKeyType
+	ErrPubKeyFormat
 
 	// ErrCleanStack is returned when after evalution, the stack
 	// contains more than one element.
@@ -264,7 +264,7 @@ var errorCodeStrings = map[ErrorCode]string{
 	ErrSigDER:                    "ErrSigDER",
 	ErrSigHighS:                  "ErrSigHighS",
 	ErrNotPushOnly:               "ErrNotPushOnly",
-	ErrPubKeyType:                "ErrPubKeyType",
+	ErrPubKeyFormat:              "ErrPubKeyFormat",
 	ErrCleanStack:                "ErrCleanStack",
 	ErrNullFail:                  "ErrNullFail",
 	ErrDiscourageUpgradableNOPs:  "ErrDiscourageUpgradableNOPs",

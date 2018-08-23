@@ -376,7 +376,7 @@ func (vm *Engine) checkPubKeyEncoding(pubKey []byte) error {
 		return nil
 	}
 
-	return scriptError(ErrPubKeyType, "unsupported public key type")
+	return scriptError(ErrPubKeyFormat, "unsupported public key type")
 }
 
 // checkSignatureEncoding returns whether or not the passed signature adheres to
