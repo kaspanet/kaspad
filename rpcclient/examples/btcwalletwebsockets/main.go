@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/daglabs/btcd/rpcclient"
-	"github.com/daglabs/btcutil"
+	"github.com/daglabs/btcd/btcutil"
 	"github.com/davecgh/go-spew/spew"
 )
 

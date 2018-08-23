@@ -9,7 +9,7 @@ package database
 
 import (
 	"github.com/daglabs/btcd/dagconfig/daghash"
-	"github.com/daglabs/btcutil"
+	"github.com/daglabs/btcd/btcutil"
 )
 
 // Cursor represents a cursor over key/value pairs and nested buckets of a

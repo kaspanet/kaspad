@@ -14,7 +14,7 @@ import (
 	"github.com/daglabs/btcd/peer"
 	"github.com/daglabs/btcd/server/p2p"
 	"github.com/daglabs/btcd/wire"
-	"github.com/daglabs/btcutil"
+	"github.com/daglabs/btcd/btcutil"
 )
 
 // rpcPeer provides a peer for use with the RPC server and implements the

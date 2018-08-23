@@ -18,7 +18,7 @@ import (
 
 	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/mining"
-	"github.com/daglabs/btcutil"
+	"github.com/daglabs/btcd/btcutil"
 )
 
 // TODO incorporate Alex Morcos' modifications to Gavin's initial model

@@ -13,7 +13,7 @@ import (
 	"github.com/daglabs/btcd/database"
 	_ "github.com/daglabs/btcd/database/ffldb"
 	"github.com/daglabs/btcd/wire"
-	"github.com/daglabs/btcutil"
+	"github.com/daglabs/btcd/btcutil"
 	flags "github.com/jessevdk/go-flags"
 )
 

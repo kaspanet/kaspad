@@ -12,7 +12,7 @@ import (
 	"github.com/daglabs/btcd/config"
 	"github.com/daglabs/btcd/connmgr"
 	"github.com/daglabs/btcd/peer"
-	"github.com/daglabs/btcutil"
+	"github.com/daglabs/btcd/btcutil"
 )
 
 // Peer extends the peer to maintain state shared by the server and

@@ -8,7 +8,7 @@ import (
 	"fmt"
 
 	"github.com/daglabs/btcd/dagconfig"
-	"github.com/daglabs/btcutil"
+	"github.com/daglabs/btcd/btcutil"
 )
 
 const (

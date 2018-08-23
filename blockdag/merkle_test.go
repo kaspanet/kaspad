@@ -7,7 +7,7 @@ package blockdag
 import (
 	"testing"
 
-	"github.com/daglabs/btcutil"
+	"github.com/daglabs/btcd/btcutil"
 )
 
 // TestMerkle tests the BuildMerkleTreeStore API.

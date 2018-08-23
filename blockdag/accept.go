@@ -8,7 +8,7 @@ import (
 	"fmt"
 
 	"github.com/daglabs/btcd/database"
-	"github.com/daglabs/btcutil"
+	"github.com/daglabs/btcd/btcutil"
 )
 
 // maybeAcceptBlock potentially accepts a block into the block DAG. It

@@ -10,7 +10,7 @@ import (
 	"testing"
 
 	"github.com/daglabs/btcd/dagconfig"
-	"github.com/daglabs/btcutil"
+	"github.com/daglabs/btcd/btcutil"
 )
 
 // mustParseShortForm parses the passed short form script and returns the

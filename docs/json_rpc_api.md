@@ -1095,7 +1095,7 @@ package main
 
 import (
 	"github.com/btcsuite/btcrpcclient"
-	"github.com/daglabs/btcutil"
+	"github.com/daglabs/btcd/btcutil"
 	"io/ioutil"
 	"log"
 	"path/filepath"
@@ -1156,7 +1156,7 @@ package main
 
 import (
 	"github.com/btcsuite/btcrpcclient"
-	"github.com/daglabs/btcutil"
+	"github.com/daglabs/btcd/btcutil"
 	"github.com/daglabs/btcd/chaincfg/chainhash"
 	"github.com/daglabs/btcd/wire"
 	"io/ioutil"
@@ -1248,7 +1248,7 @@ package main
 
 import (
 	"github.com/btcsuite/btcrpcclient"
-	"github.com/daglabs/btcutil"
+	"github.com/daglabs/btcd/btcutil"
 	"github.com/daglabs/btcd/chaincfg/chainhash"
 	"github.com/daglabs/btcd/wire"
 	"io/ioutil"

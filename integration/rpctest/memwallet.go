@@ -17,8 +17,8 @@ import (
 	"github.com/daglabs/btcd/rpcclient"
 	"github.com/daglabs/btcd/txscript"
 	"github.com/daglabs/btcd/wire"
-	"github.com/daglabs/btcutil"
-	"github.com/daglabs/btcutil/hdkeychain"
+	"github.com/daglabs/btcd/btcutil"
+	"github.com/daglabs/btcd/btcutil/hdkeychain"
 )
 
 var (

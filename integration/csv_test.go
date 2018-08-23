@@ -21,7 +21,7 @@ import (
 	"github.com/daglabs/btcd/integration/rpctest"
 	"github.com/daglabs/btcd/txscript"
 	"github.com/daglabs/btcd/wire"
-	"github.com/daglabs/btcutil"
+	"github.com/daglabs/btcd/btcutil"
 )
 
 // makeTestOutput creates an on-chain output paying to a freshly generated

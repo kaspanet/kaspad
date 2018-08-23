@@ -12,7 +12,7 @@ import (
 	"github.com/daglabs/btcd/btcjson"
 	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/wire"
-	"github.com/daglabs/btcutil"
+	"github.com/daglabs/btcd/btcutil"
 )
 
 // SigHashType enumerates the available signature hashing types that the

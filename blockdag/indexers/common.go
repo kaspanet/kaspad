@@ -13,7 +13,7 @@ import (
 
 	"github.com/daglabs/btcd/blockdag"
 	"github.com/daglabs/btcd/database"
-	"github.com/daglabs/btcutil"
+	"github.com/daglabs/btcd/btcutil"
 )
 
 var (

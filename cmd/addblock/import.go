@@ -15,7 +15,7 @@ import (
 	"github.com/daglabs/btcd/blockdag/indexers"
 	"github.com/daglabs/btcd/database"
 	"github.com/daglabs/btcd/wire"
-	"github.com/daglabs/btcutil"
+	"github.com/daglabs/btcd/btcutil"
 )
 
 // importResults houses the stats and result as an import operation.

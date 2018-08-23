@@ -8,7 +8,7 @@ import (
 	"math"
 
 	"github.com/daglabs/btcd/dagconfig/daghash"
-	"github.com/daglabs/btcutil"
+	"github.com/daglabs/btcd/btcutil"
 )
 
 // nextPowerOfTwo returns the next highest power of two from a given number if

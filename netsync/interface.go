@@ -11,7 +11,7 @@ import (
 	"github.com/daglabs/btcd/mempool"
 	"github.com/daglabs/btcd/peer"
 	"github.com/daglabs/btcd/wire"
-	"github.com/daglabs/btcutil"
+	"github.com/daglabs/btcd/btcutil"
 )
 
 // PeerNotifier exposes methods to notify peers of status changes to

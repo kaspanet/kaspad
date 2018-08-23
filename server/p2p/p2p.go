@@ -37,8 +37,8 @@ import (
 	"github.com/daglabs/btcd/txscript"
 	"github.com/daglabs/btcd/version"
 	"github.com/daglabs/btcd/wire"
-	"github.com/daglabs/btcutil"
-	"github.com/daglabs/btcutil/bloom"
+	"github.com/daglabs/btcd/btcutil"
+	"github.com/daglabs/btcd/btcutil/bloom"
 )
 
 const (

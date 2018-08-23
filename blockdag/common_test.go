@@ -20,7 +20,7 @@ import (
 	_ "github.com/daglabs/btcd/database/ffldb"
 	"github.com/daglabs/btcd/txscript"
 	"github.com/daglabs/btcd/wire"
-	"github.com/daglabs/btcutil"
+	"github.com/daglabs/btcd/btcutil"
 )
 
 const (

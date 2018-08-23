@@ -11,7 +11,7 @@ import (
 
 	"github.com/daglabs/btcd/btcjson"
 	"github.com/daglabs/btcd/dagconfig/daghash"
-	"github.com/daglabs/btcutil"
+	"github.com/daglabs/btcd/btcutil"
 )
 
 // FutureGenerateResult is a future promise to deliver the result of a

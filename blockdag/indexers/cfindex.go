@@ -12,9 +12,9 @@ import (
 	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/database"
 	"github.com/daglabs/btcd/wire"
-	"github.com/daglabs/btcutil"
-	"github.com/daglabs/btcutil/gcs"
-	"github.com/daglabs/btcutil/gcs/builder"
+	"github.com/daglabs/btcd/btcutil"
+	"github.com/daglabs/btcd/btcutil/gcs"
+	"github.com/daglabs/btcd/btcutil/gcs/builder"
 )
 
 const (

@@ -28,8 +28,8 @@ import (
 	"github.com/daglabs/btcd/mempool"
 	"github.com/daglabs/btcd/version"
 	"github.com/daglabs/btcd/wire"
-	"github.com/daglabs/btcutil"
-	"github.com/daglabs/btcutil/network"
+	"github.com/daglabs/btcd/btcutil"
+	"github.com/daglabs/btcd/btcutil/network"
 	flags "github.com/jessevdk/go-flags"
 )
 

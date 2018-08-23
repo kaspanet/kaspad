@@ -7,7 +7,7 @@ package blockdag
 import (
 	"testing"
 
-	"github.com/daglabs/btcutil"
+	"github.com/daglabs/btcd/btcutil"
 )
 
 // BenchmarkIsCoinBase performs a simple benchmark against the IsCoinBase

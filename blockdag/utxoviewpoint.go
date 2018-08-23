@@ -11,7 +11,7 @@ import (
 	"github.com/daglabs/btcd/database"
 	"github.com/daglabs/btcd/txscript"
 	"github.com/daglabs/btcd/wire"
-	"github.com/daglabs/btcutil"
+	"github.com/daglabs/btcd/btcutil"
 )
 
 // txoFlags is a bitmask defining additional information and state for a

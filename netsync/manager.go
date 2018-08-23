@@ -18,7 +18,7 @@ import (
 	"github.com/daglabs/btcd/mempool"
 	peerpkg "github.com/daglabs/btcd/peer"
 	"github.com/daglabs/btcd/wire"
-	"github.com/daglabs/btcutil"
+	"github.com/daglabs/btcd/btcutil"
 )
 
 const (

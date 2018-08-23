@@ -12,7 +12,7 @@ import (
 
 	"github.com/daglabs/btcd/txscript"
 	"github.com/daglabs/btcd/wire"
-	"github.com/daglabs/btcutil"
+	"github.com/daglabs/btcd/btcutil"
 )
 
 // txValidateItem holds a transaction along with which input to validate.
