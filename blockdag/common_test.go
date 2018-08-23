@@ -20,7 +20,7 @@ import (
 	_ "github.com/daglabs/btcd/database/ffldb"
 	"github.com/daglabs/btcd/txscript"
 	"github.com/daglabs/btcd/wire"
-	"github.com/daglabs/btcutil"
+	"github.com/daglabs/btcd/util"
 )
 
 const (
@@ -59,8 +59,8 @@ func isSupportedDbType(dbType string) bool {
 
 // loadBlocks reads files containing bitcoin block data (gzipped but otherwise
 // in the format bitcoind writes) from disk and returns them as an array of
-// btcutil.Block.  This is largely borrowed from the test code in btcdb.
-func loadBlocks(filename string) (blocks []*btcutil.Block, err error) {
+// util.Block.  This is largely borrowed from the test code in btcdb.
+func loadBlocks(filename string) (blocks []*util.Block, err error) {
 	filename = filepath.Join("testdata/", filename)
 
 	var network = wire.MainNet
@@ -79,7 +79,7 @@ func loadBlocks(filename string) (blocks []*btcutil.Block, err error) {
 	}
 	defer fi.Close()
 
-	var block *btcutil.Block
+	var block *util.Block
 
 	err = nil
 	for height := int64(1); err == nil; height++ {
@@ -105,7 +105,7 @@ func loadBlocks(filename string) (blocks []*btcutil.Block, err error) {
 		// read block
 		dr.Read(rbytes)
 
-		block, err = btcutil.NewBlockFromBytes(rbytes)
+		block, err = util.NewBlockFromBytes(rbytes)
 		if err != nil {
 			return
 		}
@@ -253,88 +253,6 @@ func loadUtxoView(filename string) (*UtxoViewpoint, error) {
 	}
 
 	return view, nil
-}
-
-// convertUtxoStore reads a utxostore from the legacy format and writes it back
-// out using the latest format.  It is only useful for converting utxostore data
-// used in the tests, which has already been done.  However, the code is left
-// available for future reference.
-func convertUtxoStore(r io.Reader, w io.Writer) error {
-	// The old utxostore file format was:
-	// <tx hash><serialized utxo len><serialized utxo>
-	//
-	// The serialized utxo len was a little endian uint32 and the serialized
-	// utxo uses the format described in upgrade.go.
-
-	littleEndian := binary.LittleEndian
-	for {
-		// Hash of the utxo entry.
-		var hash daghash.Hash
-		_, err := io.ReadAtLeast(r, hash[:], len(hash[:]))
-		if err != nil {
-			// Expected EOF at the right offset.
-			if err == io.EOF {
-				break
-			}
-			return err
-		}
-
-		// Num of serialized utxo entry bytes.
-		var numBytes uint32
-		err = binary.Read(r, littleEndian, &numBytes)
-		if err != nil {
-			return err
-		}
-
-		// Serialized utxo entry.
-		serialized := make([]byte, numBytes)
-		_, err = io.ReadAtLeast(r, serialized, int(numBytes))
-		if err != nil {
-			return err
-		}
-
-		// Deserialize the entry.
-		entries, err := deserializeUtxoEntryV0(serialized)
-		if err != nil {
-			return err
-		}
-
-		// Loop through all of the utxos and write them out in the new
-		// format.
-		for outputIdx, entry := range entries {
-			// Reserialize the entries using the new format.
-			serialized, err := serializeUtxoEntry(entry)
-			if err != nil {
-				return err
-			}
-
-			// Write the hash of the utxo entry.
-			_, err = w.Write(hash[:])
-			if err != nil {
-				return err
-			}
-
-			// Write the output index of the utxo entry.
-			err = binary.Write(w, littleEndian, outputIdx)
-			if err != nil {
-				return err
-			}
-
-			// Write num of serialized utxo entry bytes.
-			err = binary.Write(w, littleEndian, uint32(len(serialized)))
-			if err != nil {
-				return err
-			}
-
-			// Write the serialized utxo.
-			_, err = w.Write(serialized)
-			if err != nil {
-				return err
-			}
-		}
-	}
-
-	return nil
 }
 
 // TstSetCoinbaseMaturity makes the ability to set the coinbase maturity

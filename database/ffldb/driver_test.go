@@ -15,7 +15,7 @@ import (
 	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/database"
 	"github.com/daglabs/btcd/database/ffldb"
-	"github.com/daglabs/btcutil"
+	"github.com/daglabs/btcd/util"
 )
 
 // dbType is the database type name for this driver.
@@ -171,7 +171,7 @@ func TestPersistence(t *testing.T) {
 		"b1key2": "foo2",
 		"b1key3": "foo3",
 	}
-	genesisBlock := btcutil.NewBlock(dagconfig.MainNetParams.GenesisBlock)
+	genesisBlock := util.NewBlock(dagconfig.MainNetParams.GenesisBlock)
 	genesisHash := dagconfig.MainNetParams.GenesisHash
 	err = db.Update(func(tx database.Tx) error {
 		metadataBucket := tx.Metadata()
