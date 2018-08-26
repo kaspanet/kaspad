@@ -187,8 +187,8 @@ func chainSetup(dbName string, params *dagconfig.Params) (*BlockDAG, func(), err
 	return chain, teardown, nil
 }
 
-// loadUtxoView returns a utxo view loaded from a file.
-func loadUtxoView(filename string) (*UTXOView, error) {
+// loadUTXOView returns a utxo view loaded from a file.
+func loadUTXOView(filename string) (*UTXOView, error) {
 	// The utxostore file format is:
 	// <tx hash><output index><serialized utxo len><serialized utxo>
 	//

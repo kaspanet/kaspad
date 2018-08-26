@@ -34,7 +34,7 @@ func TestCheckBlockScripts(t *testing.T) {
 	}
 
 	storeDataFile := fmt.Sprintf("%d.utxostore", testBlockNum)
-	view, err := loadUtxoView(storeDataFile)
+	view, err := loadUTXOView(storeDataFile)
 	if err != nil {
 		t.Errorf("Error loading txstore: %v\n", err)
 		return
