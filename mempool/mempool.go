@@ -55,9 +55,9 @@ type Config struct {
 	// associated with.
 	ChainParams *dagconfig.Params
 
-	// FetchUtxoView defines the function to use to fetch unspent
+	// FetchUTXOView defines the function to use to fetch unspent
 	// transaction output information.
-	FetchUtxoView func(*util.Tx) (*blockdag.UtxoViewpoint, error)
+	FetchUtxoView func(*util.Tx) (*blockdag.UTXOView, error)
 
 	// BestHeight defines the function to use to access the block height of
 	// the current best chain.
@@ -71,7 +71,7 @@ type Config struct {
 	// CalcSequenceLock defines the function to use in order to generate
 	// the current sequence lock for the given transaction using the passed
 	// utxo view.
-	CalcSequenceLock func(*util.Tx, *blockdag.UtxoViewpoint) (*blockdag.SequenceLock, error)
+	CalcSequenceLock func(*util.Tx, *blockdag.UTXOView) (*blockdag.SequenceLock, error)
 
 	// IsDeploymentActive returns true if the target deploymentID is
 	// active, and false otherwise. The mempool uses this function to gauge
@@ -515,7 +515,7 @@ func (mp *TxPool) RemoveDoubleSpends(tx *util.Tx) {
 // helper for maybeAcceptTransaction.
 //
 // This function MUST be called with the mempool lock held (for writes).
-func (mp *TxPool) addTransaction(utxoView *blockdag.UtxoViewpoint, tx *util.Tx, height int32, fee int64) *TxDesc {
+func (mp *TxPool) addTransaction(utxoView *blockdag.UTXOView, tx *util.Tx, height int32, fee int64) *TxDesc {
 	// Add the transaction to the pool and mark the referenced outpoints
 	// as spent by the pool.
 	txD := &TxDesc{
@@ -585,7 +585,7 @@ func (mp *TxPool) CheckSpend(op wire.OutPoint) *util.Tx {
 // transaction pool.
 //
 // This function MUST be called with the mempool lock held (for reads).
-func (mp *TxPool) fetchInputUtxos(tx *util.Tx) (*blockdag.UtxoViewpoint, error) {
+func (mp *TxPool) fetchInputUtxos(tx *util.Tx) (*blockdag.UTXOView, error) {
 	utxoView, err := mp.cfg.FetchUtxoView(tx)
 	if err != nil {
 		return nil, err

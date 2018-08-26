@@ -336,7 +336,7 @@ func CountSigOps(tx *util.Tx) int {
 // transactions which are of the pay-to-script-hash type.  This uses the
 // precise, signature operation counting mechanism from the script engine which
 // requires access to the input transaction scripts.
-func CountP2SHSigOps(tx *util.Tx, isCoinBaseTx bool, utxoView *UtxoViewpoint) (int, error) {
+func CountP2SHSigOps(tx *util.Tx, isCoinBaseTx bool, utxoView *UTXOView) (int, error) {
 	// Coinbase transactions have no interesting inputs.
 	if isCoinBaseTx {
 		return 0, nil
@@ -782,7 +782,7 @@ func (dag *BlockDAG) ensureNoDuplicateTx(node *blockNode, block *util.Block) err
 //
 // NOTE: The transaction MUST have already been sanity checked with the
 // CheckTransactionSanity function prior to calling this function.
-func CheckTransactionInputs(tx *util.Tx, txHeight int32, utxoView *UtxoViewpoint, dagParams *dagconfig.Params) (int64, error) {
+func CheckTransactionInputs(tx *util.Tx, txHeight int32, utxoView *UTXOView, dagParams *dagconfig.Params) (int64, error) {
 	// Coinbase transactions have no inputs.
 	if IsCoinBase(tx) {
 		return 0, nil
@@ -921,8 +921,8 @@ func (dag *BlockDAG) checkConnectBlock(node *blockNode, block *util.Block) error
 	//
 	// These utxo entries are needed for verification of things such as
 	// transaction inputs, counting pay-to-script-hashes, and scripts.
-	view := NewUtxoViewpoint()
-	err = view.fetchInputUtxos(dag.db, block)
+	view := NewUTXOView()
+	err = view.fetchInputUTXOs(dag.db, block)
 	if err != nil {
 		return err
 	}

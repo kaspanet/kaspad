@@ -339,7 +339,7 @@ type SequenceLock struct {
 }
 
 // CalcSequenceLock computes a relative lock-time SequenceLock for the passed
-// transaction using the passed UtxoViewpoint to obtain the past median time
+// transaction using the passed UTXOView to obtain the past median time
 // for blocks in which the referenced inputs of the transactions were included
 // within. The generated SequenceLock lock can be used in conjunction with a
 // block height, and adjusted median block time to determine if all the inputs
@@ -347,7 +347,7 @@ type SequenceLock struct {
 // the candidate transaction to be included in a block.
 //
 // This function is safe for concurrent access.
-func (dag *BlockDAG) CalcSequenceLock(tx *util.Tx, utxoView *UtxoViewpoint, mempool bool) (*SequenceLock, error) {
+func (dag *BlockDAG) CalcSequenceLock(tx *util.Tx, utxoView *UTXOView, mempool bool) (*SequenceLock, error) {
 	dag.dagLock.Lock()
 	defer dag.dagLock.Unlock()
 
@@ -358,7 +358,7 @@ func (dag *BlockDAG) CalcSequenceLock(tx *util.Tx, utxoView *UtxoViewpoint, memp
 // transaction. See the exported version, CalcSequenceLock for further details.
 //
 // This function MUST be called with the chain state lock held (for writes).
-func (dag *BlockDAG) calcSequenceLock(node *blockNode, tx *util.Tx, utxoView *UtxoViewpoint, mempool bool) (*SequenceLock, error) {
+func (dag *BlockDAG) calcSequenceLock(node *blockNode, tx *util.Tx, utxoView *UTXOView, mempool bool) (*SequenceLock, error) {
 	// A value of -1 for each relative lock type represents a relative time
 	// lock value that will allow a transaction to be included in a block
 	// at any given height or time.
@@ -510,16 +510,9 @@ func (dag *BlockDAG) connectToDAG(node *blockNode, parentNodes blockSet, block *
 
 // connectBlock handles connecting the passed node/block to the DAG.
 //
-// This passed utxo view must have all referenced txos the block spends marked
-// as spent and all of the new txos the block creates added to it.  In addition,
-// the passed stxos slice must be populated with all of the information for the
-// spent txos.  This approach is used because the connection validation that
-// must happen prior to calling this function requires the same details, so
-// it would be inefficient to repeat it.
-//
 // This function MUST be called with the chain state lock held (for writes).
 func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block) error {
-	// No warnings about unknown rules or versions until the chain is
+	// No warnings about unknown rules or versions until the DAG is
 	// current.
 	if dag.isCurrent() {
 		// Warn if any unknown new rules are either about to activate or

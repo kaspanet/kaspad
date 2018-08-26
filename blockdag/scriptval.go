@@ -29,7 +29,7 @@ type txValidator struct {
 	validateChan chan *txValidateItem
 	quitChan     chan struct{}
 	resultChan   chan error
-	utxoView     *UtxoViewpoint
+	utxoView     *UTXOView
 	flags        txscript.ScriptFlags
 	sigCache     *txscript.SigCache
 }
@@ -166,7 +166,7 @@ func (v *txValidator) Validate(items []*txValidateItem) error {
 
 // newTxValidator returns a new instance of txValidator to be used for
 // validating transaction scripts asynchronously.
-func newTxValidator(utxoView *UtxoViewpoint, flags txscript.ScriptFlags, sigCache *txscript.SigCache) *txValidator {
+func newTxValidator(utxoView *UTXOView, flags txscript.ScriptFlags, sigCache *txscript.SigCache) *txValidator {
 	return &txValidator{
 		validateChan: make(chan *txValidateItem),
 		quitChan:     make(chan struct{}),
@@ -179,7 +179,7 @@ func newTxValidator(utxoView *UtxoViewpoint, flags txscript.ScriptFlags, sigCach
 
 // ValidateTransactionScripts validates the scripts for the passed transaction
 // using multiple goroutines.
-func ValidateTransactionScripts(tx *util.Tx, utxoView *UtxoViewpoint, flags txscript.ScriptFlags, sigCache *txscript.SigCache) error {
+func ValidateTransactionScripts(tx *util.Tx, utxoView *UTXOView, flags txscript.ScriptFlags, sigCache *txscript.SigCache) error {
 	// Collect all of the transaction inputs and required information for
 	// validation.
 	txIns := tx.MsgTx().TxIn
@@ -205,7 +205,7 @@ func ValidateTransactionScripts(tx *util.Tx, utxoView *UtxoViewpoint, flags txsc
 
 // checkBlockScripts executes and validates the scripts for all transactions in
 // the passed block using multiple goroutines.
-func checkBlockScripts(block *util.Block, utxoView *UtxoViewpoint, scriptFlags txscript.ScriptFlags, sigCache *txscript.SigCache) error {
+func checkBlockScripts(block *util.Block, utxoView *UTXOView, scriptFlags txscript.ScriptFlags, sigCache *txscript.SigCache) error {
 	// Collect all of the transaction inputs and required information for
 	// validation for all transactions in the block into a single slice.
 	numInputs := 0

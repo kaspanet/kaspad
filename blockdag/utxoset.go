@@ -9,7 +9,7 @@ import (
 )
 
 // utxoCollection represents a set of UTXOs indexed by their outPoints
-type utxoCollection map[wire.OutPoint]*UtxoEntry
+type utxoCollection map[wire.OutPoint]*UTXOEntry
 
 func (uc utxoCollection) String() string {
 	utxoStrings := make([]string, len(uc))
@@ -216,8 +216,8 @@ func (d utxoDiff) String() string {
 }
 
 // newUTXOEntry creates a new utxoEntry representing the given txOut
-func newUTXOEntry(txOut *wire.TxOut, isCoinbase bool, blockHeight int32) *UtxoEntry {
-	entry := new(UtxoEntry)
+func newUTXOEntry(txOut *wire.TxOut, isCoinbase bool, blockHeight int32) *UTXOEntry {
+	entry := new(UTXOEntry)
 	entry.amount = txOut.Value
 	entry.pkScript = txOut.PkScript
 	entry.blockHeight = blockHeight
@@ -328,7 +328,7 @@ func (fus *fullUTXOSet) clone() utxoSet {
 	return &fullUTXOSet{utxoCollection: fus.utxoCollection.clone()}
 }
 
-func (fus *fullUTXOSet) getUTXOEntry(outPoint wire.OutPoint) (*UtxoEntry, bool) {
+func (fus *fullUTXOSet) getUTXOEntry(outPoint wire.OutPoint) (*UTXOEntry, bool) {
 	utxoEntry, ok := fus.utxoCollection[outPoint]
 	return utxoEntry, ok
 }

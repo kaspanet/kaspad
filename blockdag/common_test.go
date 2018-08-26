@@ -188,7 +188,7 @@ func chainSetup(dbName string, params *dagconfig.Params) (*BlockDAG, func(), err
 }
 
 // loadUtxoView returns a utxo view loaded from a file.
-func loadUtxoView(filename string) (*UtxoViewpoint, error) {
+func loadUtxoView(filename string) (*UTXOView, error) {
 	// The utxostore file format is:
 	// <tx hash><output index><serialized utxo len><serialized utxo>
 	//
@@ -210,7 +210,7 @@ func loadUtxoView(filename string) (*UtxoViewpoint, error) {
 	}
 	defer fi.Close()
 
-	view := NewUtxoViewpoint()
+	view := NewUTXOView()
 	for {
 		// Hash of the utxo entry.
 		var hash daghash.Hash
@@ -245,7 +245,7 @@ func loadUtxoView(filename string) (*UtxoViewpoint, error) {
 		}
 
 		// Deserialize it and add it to the view.
-		entry, err := deserializeUtxoEntry(serialized)
+		entry, err := deserializeUTXOEntry(serialized)
 		if err != nil {
 			return nil, err
 		}

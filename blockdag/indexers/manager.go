@@ -314,8 +314,8 @@ func dbFetchTx(dbTx database.Tx, hash *daghash.Hash) (*wire.MsgTx, error) {
 // transactions in the block.  This is sometimes needed when catching indexes up
 // because many of the txouts could actually already be spent however the
 // associated scripts are still required to index them.
-func makeUtxoView(dbTx database.Tx, block *util.Block, interrupt <-chan struct{}) (*blockdag.UtxoViewpoint, error) {
-	view := blockdag.NewUtxoViewpoint()
+func makeUtxoView(dbTx database.Tx, block *util.Block, interrupt <-chan struct{}) (*blockdag.UTXOView, error) {
+	view := blockdag.NewUTXOView()
 	for txIdx, tx := range block.Transactions() {
 		// Coinbases do not reference any inputs.  Since the block is
 		// required to have already gone through full validation, it has

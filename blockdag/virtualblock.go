@@ -120,6 +120,6 @@ func (v *VirtualBlock) SelectedTipHash() daghash.Hash {
 //
 // This function is safe for concurrent access. However, the returned entry (if
 // any) is NOT.
-func (v *VirtualBlock) GetUTXOEntry(outPoint wire.OutPoint) (*UtxoEntry, bool) {
+func (v *VirtualBlock) GetUTXOEntry(outPoint wire.OutPoint) (*UTXOEntry, bool) {
 	return v.utxoSet.getUTXOEntry(outPoint)
 }

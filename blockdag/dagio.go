@@ -23,14 +23,9 @@ const (
 	// wire.MaxBlockHeaderPayload is quite long.
 	blockHdrSize = wire.MaxBlockHeaderPayload
 
-	// latestUtxoSetBucketVersion is the current version of the utxo set
+	// latestUTXOSetBucketVersion is the current version of the UTXO set
 	// bucket that is used to track all unspent outputs.
-	latestUtxoSetBucketVersion = 2
-
-	// latestSpendJournalBucketVersion is the current version of the spend
-	// journal bucket that is used to track all spent transactions for use
-	// in reorgs.
-	latestSpendJournalBucketVersion = 1
+	latestUTXOSetBucketVersion = 2
 )
 
 var (
@@ -95,18 +90,6 @@ func isDeserializeErr(err error) bool {
 	return ok
 }
 
-// dbFetchVersion fetches an individual version with the given key from the
-// metadata bucket.  It is primarily used to track versions on entities such as
-// buckets.  It returns zero if the provided key does not exist.
-func dbFetchVersion(dbTx database.Tx, key []byte) uint32 {
-	serialized := dbTx.Metadata().Get(key)
-	if serialized == nil {
-		return 0
-	}
-
-	return byteOrder.Uint32(serialized[:])
-}
-
 // dbPutVersion uses an existing database transaction to update the provided
 // key in the metadata bucket to the given version.  It is primarily used to
 // track versions on entities such as buckets.
@@ -114,24 +97,6 @@ func dbPutVersion(dbTx database.Tx, key []byte, version uint32) error {
 	var serialized [4]byte
 	byteOrder.PutUint32(serialized[:], version)
 	return dbTx.Metadata().Put(key, serialized[:])
-}
-
-// dbFetchOrCreateVersion uses an existing database transaction to attempt to
-// fetch the provided key from the metadata bucket as a version and in the case
-// it doesn't exist, it adds the entry with the provided default version and
-// returns that.  This is useful during upgrades to automatically handle loading
-// and adding version keys as necessary.
-func dbFetchOrCreateVersion(dbTx database.Tx, key []byte, defaultVersion uint32) (uint32, error) {
-	version := dbFetchVersion(dbTx, key)
-	if version == 0 {
-		version = defaultVersion
-		err := dbPutVersion(dbTx, key, version)
-		if err != nil {
-			return 0, err
-		}
-	}
-
-	return version, nil
 }
 
 // -----------------------------------------------------------------------------
@@ -142,7 +107,7 @@ func dbFetchOrCreateVersion(dbTx database.Tx, key []byte, defaultVersion uint32)
 // This is required because reorganizing the chain necessarily entails
 // disconnecting blocks to get back to the point of the fork which implies
 // unspending all of the transaction outputs that each block previously spent.
-// Since the utxo set, by definition, only contains unspent transaction outputs,
+// Since the UTXO set, by definition, only contains unspent transaction outputs,
 // the spent transaction outputs must be resurrected from somewhere.  There is
 // more than one way this could be done, however this is the most straight
 // forward method that does not require having a transaction index and unpruned
@@ -150,7 +115,7 @@ func dbFetchOrCreateVersion(dbTx database.Tx, key []byte, defaultVersion uint32)
 //
 // NOTE: This format is NOT self describing.  The additional details such as
 // the number of entries (transaction inputs) are expected to come from the
-// block itself and the utxo set (for legacy entries).  The rationale in doing
+// block itself and the UTXO set (for legacy entries).  The rationale in doing
 // this is to save space.  This is also the reason the spent outputs are
 // serialized in the reverse order they are spent because later transactions are
 // allowed to spend outputs from earlier ones in the same block.
@@ -401,14 +366,14 @@ func serializeSpendJournalEntry(stxos []spentTxOut) []byte {
 }
 
 // -----------------------------------------------------------------------------
-// The unspent transaction output (utxo) set consists of an entry for each
+// The unspent transaction output (UTXO) set consists of an entry for each
 // unspent output using a format that is optimized to reduce space using domain
 // specific compression algorithms.  This format is a slightly modified version
 // of the format used in Bitcoin Core.
 //
 // Each entry is keyed by an outpoint as specified below.  It is important to
 // note that the key encoding uses a VLQ, which employs an MSB encoding so
-// iteration of utxos when doing byte-wise comparisons will produce them in
+// iteration of UTXOs when doing byte-wise comparisons will produce them in
 // order.
 //
 // The serialized key format is:
@@ -491,7 +456,7 @@ var outpointKeyPool = sync.Pool{
 	},
 }
 
-// outpointKey returns a key suitable for use as a database key in the utxo set
+// outpointKey returns a key suitable for use as a database key in the UTXO set
 // while making use of a free list.  A new buffer is allocated if there are not
 // already any available on the free list.  The returned byte slice should be
 // returned to the free list by using the recycleOutpointKey function when the
@@ -499,7 +464,7 @@ var outpointKeyPool = sync.Pool{
 // the caller can calculate such as when used to write to the database.
 func outpointKey(outpoint wire.OutPoint) *[]byte {
 	// A VLQ employs an MSB encoding, so they are useful not only to reduce
-	// the amount of storage space, but also so iteration of utxos when
+	// the amount of storage space, but also so iteration of UTXOs when
 	// doing byte-wise comparisons will produce them in order.
 	key := outpointKeyPool.Get().(*[]byte)
 	idx := uint64(outpoint.Index)
@@ -517,9 +482,9 @@ func recycleOutpointKey(key *[]byte) {
 
 // utxoEntryHeaderCode returns the calculated header code to be used when
 // serializing the provided utxo entry.
-func utxoEntryHeaderCode(entry *UtxoEntry) (uint64, error) {
+func utxoEntryHeaderCode(entry *UTXOEntry) (uint64, error) {
 	if entry.IsSpent() {
-		return 0, AssertError("attempt to serialize spent utxo header")
+		return 0, AssertError("attempt to serialize spent UTXO header")
 	}
 
 	// As described in the serialization format comments, the header code
@@ -533,9 +498,9 @@ func utxoEntryHeaderCode(entry *UtxoEntry) (uint64, error) {
 	return headerCode, nil
 }
 
-// serializeUtxoEntry returns the entry serialized to a format that is suitable
+// serializeUTXOEntry returns the entry serialized to a format that is suitable
 // for long-term storage.  The format is described in detail above.
-func serializeUtxoEntry(entry *UtxoEntry) ([]byte, error) {
+func serializeUTXOEntry(entry *UTXOEntry) ([]byte, error) {
 	// Spent outputs have no serialization.
 	if entry.IsSpent() {
 		return nil, nil
@@ -575,10 +540,10 @@ func deserializeOutPoint(serialized []byte) (*wire.OutPoint, error) {
 	return wire.NewOutPoint(&hash, uint32(index)), nil
 }
 
-// deserializeUtxoEntry decodes a utxo entry from the passed serialized byte
-// slice into a new UtxoEntry using a format that is suitable for long-term
+// deserializeUTXOEntry decodes a UTXO entry from the passed serialized byte
+// slice into a new UTXOEntry using a format that is suitable for long-term
 // storage.  The format is described in detail above.
-func deserializeUtxoEntry(serialized []byte) (*UtxoEntry, error) {
+func deserializeUTXOEntry(serialized []byte) (*UTXOEntry, error) {
 	// Deserialize the header code.
 	code, offset := deserializeVLQ(serialized)
 	if offset >= len(serialized) {
@@ -596,10 +561,10 @@ func deserializeUtxoEntry(serialized []byte) (*UtxoEntry, error) {
 	amount, pkScript, _, err := decodeCompressedTxOut(serialized[offset:])
 	if err != nil {
 		return nil, errDeserialize(fmt.Sprintf("unable to decode "+
-			"utxo: %v", err))
+			"UTXO: %v", err))
 	}
 
-	entry := &UtxoEntry{
+	entry := &UTXOEntry{
 		amount:      int64(amount),
 		pkScript:    pkScript,
 		blockHeight: blockHeight,
@@ -612,70 +577,38 @@ func deserializeUtxoEntry(serialized []byte) (*UtxoEntry, error) {
 	return entry, nil
 }
 
-// dbFetchUtxoEntryByHash attempts to find and fetch a utxo for the given hash.
-// It uses a cursor and seek to try and do this as efficiently as possible.
-//
-// When there are no entries for the provided hash, nil will be returned for the
-// both the entry and the error.
-func dbFetchUtxoEntryByHash(dbTx database.Tx, hash *daghash.Hash) (*UtxoEntry, error) {
-	// Attempt to find an entry by seeking for the hash along with a zero
-	// index.  Due to the fact the keys are serialized as <hash><index>,
-	// where the index uses an MSB encoding, if there are any entries for
-	// the hash at all, one will be found.
-	cursor := dbTx.Metadata().Bucket(utxoSetBucketName).Cursor()
-	key := outpointKey(wire.OutPoint{Hash: *hash, Index: 0})
-	ok := cursor.Seek(*key)
-	recycleOutpointKey(key)
-	if !ok {
-		return nil, nil
-	}
-
-	// An entry was found, but it could just be an entry with the next
-	// highest hash after the requested one, so make sure the hashes
-	// actually match.
-	cursorKey := cursor.Key()
-	if len(cursorKey) < daghash.HashSize {
-		return nil, nil
-	}
-	if !bytes.Equal(hash[:], cursorKey[:daghash.HashSize]) {
-		return nil, nil
-	}
-
-	return deserializeUtxoEntry(cursor.Value())
-}
-
-// dbFetchUtxoEntry uses an existing database transaction to fetch the specified
-// transaction output from the utxo set.
+// dbFetchUTXOEntry uses an existing database transaction to fetch the specified
+// transaction output from the UTXO set.
 //
 // When there is no entry for the provided output, nil will be returned for both
 // the entry and the error.
-func dbFetchUtxoEntry(dbTx database.Tx, outpoint wire.OutPoint) (*UtxoEntry, error) {
+func dbFetchUTXOEntry(dbTx database.Tx, outpoint wire.OutPoint) (*UTXOEntry, error) {
 	// Fetch the unspent transaction output information for the passed
 	// transaction output.  Return now when there is no entry.
 	key := outpointKey(outpoint)
 	utxoBucket := dbTx.Metadata().Bucket(utxoSetBucketName)
-	serializedUtxo := utxoBucket.Get(*key)
+	serializedUTXO := utxoBucket.Get(*key)
 	recycleOutpointKey(key)
-	if serializedUtxo == nil {
+	if serializedUTXO == nil {
 		return nil, nil
 	}
 
 	// A non-nil zero-length entry means there is an entry in the database
 	// for a spent transaction output which should never be the case.
-	if len(serializedUtxo) == 0 {
+	if len(serializedUTXO) == 0 {
 		return nil, AssertError(fmt.Sprintf("database contains entry "+
 			"for spent tx output %v", outpoint))
 	}
 
 	// Deserialize the utxo entry and return it.
-	entry, err := deserializeUtxoEntry(serializedUtxo)
+	entry, err := deserializeUTXOEntry(serializedUTXO)
 	if err != nil {
 		// Ensure any deserialization errors are returned as database
 		// corruption errors.
 		if isDeserializeErr(err) {
 			return nil, database.Error{
 				ErrorCode: database.ErrCorruption,
-				Description: fmt.Sprintf("corrupt utxo entry "+
+				Description: fmt.Sprintf("corrupt UTXO entry "+
 					"for %v: %v", outpoint, err),
 			}
 		}
@@ -686,51 +619,8 @@ func dbFetchUtxoEntry(dbTx database.Tx, outpoint wire.OutPoint) (*UtxoEntry, err
 	return entry, nil
 }
 
-// dbPutUtxoView uses an existing database transaction to update the utxo set
-// in the database based on the provided utxo view contents and state.  In
-// particular, only the entries that have been marked as modified are written
-// to the database.
-func dbPutUtxoView(dbTx database.Tx, view *UtxoViewpoint) error {
-	utxoBucket := dbTx.Metadata().Bucket(utxoSetBucketName)
-	for outpoint, entry := range view.entries {
-		// No need to update the database if the entry was not modified.
-		if entry == nil || !entry.isModified() {
-			continue
-		}
-
-		// Remove the utxo entry if it is spent.
-		if entry.IsSpent() {
-			key := outpointKey(outpoint)
-			err := utxoBucket.Delete(*key)
-			recycleOutpointKey(key)
-			if err != nil {
-				return err
-			}
-
-			continue
-		}
-
-		// Serialize and store the utxo entry.
-		serialized, err := serializeUtxoEntry(entry)
-		if err != nil {
-			return err
-		}
-		key := outpointKey(outpoint)
-		err = utxoBucket.Put(*key, serialized)
-		// NOTE: The key is intentionally not recycled here since the
-		// database interface contract prohibits modifications.  It will
-		// be garbage collected normally when the database is done with
-		// it.
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// dbPutUTXODiff uses an existing database transaction to update the utxo set
-// in the database based on the provided utxo view contents and state.  In
+// dbPutUTXODiff uses an existing database transaction to update the UTXO set
+// in the database based on the provided UTXO view contents and state.  In
 // particular, only the entries that have been marked as modified are written
 // to the database.
 func dbPutUTXODiff(dbTx database.Tx, diff *utxoDiff) error {
@@ -745,8 +635,8 @@ func dbPutUTXODiff(dbTx database.Tx, diff *utxoDiff) error {
 	}
 
 	for outPoint, entry := range diff.toAdd {
-		// Serialize and store the utxo entry.
-		serialized, err := serializeUtxoEntry(entry)
+		// Serialize and store the UTXO entry.
+		serialized, err := serializeUTXOEntry(entry)
 		if err != nil {
 			return err
 		}
@@ -917,7 +807,7 @@ func (dag *BlockDAG) createDAGState() error {
 			return err
 		}
 		err = dbPutVersion(dbTx, utxoSetVersionKeyName,
-			latestUtxoSetBucketVersion)
+			latestUTXOSetBucketVersion)
 		if err != nil {
 			return err
 		}
@@ -1076,7 +966,7 @@ func (dag *BlockDAG) initDAGState() error {
 			}
 
 			// Deserialize the utxo entry
-			entry, err := deserializeUtxoEntry(cursor.Value())
+			entry, err := deserializeUTXOEntry(cursor.Value())
 			if err != nil {
 				// Ensure any deserialization errors are returned as database
 				// corruption errors.
@@ -1133,23 +1023,6 @@ func deserializeBlockRow(blockRow []byte) (*wire.BlockHeader, blockStatus, error
 	}
 
 	return &header, blockStatus(statusByte), nil
-}
-
-// dbFetchHeaderByHash uses an existing database transaction to retrieve the
-// block header for the provided hash.
-func dbFetchHeaderByHash(dbTx database.Tx, hash *daghash.Hash) (*wire.BlockHeader, error) {
-	headerBytes, err := dbTx.FetchBlockHeader(hash)
-	if err != nil {
-		return nil, err
-	}
-
-	var header wire.BlockHeader
-	err = header.Deserialize(bytes.NewReader(headerBytes))
-	if err != nil {
-		return nil, err
-	}
-
-	return &header, nil
 }
 
 // dbFetchBlockByNode uses an existing database transaction to retrieve the

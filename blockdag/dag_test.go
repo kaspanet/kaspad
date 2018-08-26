@@ -143,7 +143,7 @@ func TestCalcSequenceLock(t *testing.T) {
 			Value:    10,
 		}},
 	})
-	utxoView := NewUtxoViewpoint()
+	utxoView := NewUTXOView()
 	utxoView.AddTxOuts(targetTx, int32(numBlocksToGenerate)-4)
 
 	// Create a utxo that spends the fake utxo created above for use in the
@@ -188,7 +188,7 @@ func TestCalcSequenceLock(t *testing.T) {
 
 	tests := []struct {
 		tx      *wire.MsgTx
-		view    *UtxoViewpoint
+		view    *UTXOView
 		mempool bool
 		want    *SequenceLock
 	}{

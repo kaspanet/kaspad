@@ -2437,10 +2437,10 @@ func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params
 			MaxTxVersion:         1,
 		},
 		ChainParams:    dagParams,
-		FetchUtxoView:  s.DAG.FetchUtxoView,
+		FetchUtxoView:  s.DAG.FetchUTXOView,
 		BestHeight:     func() int32 { return s.DAG.GetVirtualBlock().SelectedTipHeight() },
 		MedianTimePast: func() time.Time { return s.DAG.GetVirtualBlock().SelectedTip().CalcPastMedianTime() },
-		CalcSequenceLock: func(tx *util.Tx, view *blockdag.UtxoViewpoint) (*blockdag.SequenceLock, error) {
+		CalcSequenceLock: func(tx *util.Tx, view *blockdag.UTXOView) (*blockdag.SequenceLock, error) {
 			return s.DAG.CalcSequenceLock(tx, view, true)
 		},
 		IsDeploymentActive: s.DAG.IsDeploymentActive,

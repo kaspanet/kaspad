@@ -26,18 +26,18 @@ import (
 // transactions to appear as though they are spending completely valid utxos.
 type fakeChain struct {
 	sync.RWMutex
-	utxos          *blockdag.UtxoViewpoint
+	utxos          *blockdag.UTXOView
 	currentHeight  int32
 	medianTimePast time.Time
 }
 
-// FetchUtxoView loads utxo details about the inputs referenced by the passed
+// FetchUTXOView loads utxo details about the inputs referenced by the passed
 // transaction from the point of view of the fake chain.  It also attempts to
 // fetch the utxos for the outputs of the transaction itself so the returned
 // view can be examined for duplicate transactions.
 //
 // This function is safe for concurrent access however the returned view is NOT.
-func (s *fakeChain) FetchUtxoView(tx *util.Tx) (*blockdag.UtxoViewpoint, error) {
+func (s *fakeChain) FetchUtxoView(tx *util.Tx) (*blockdag.UTXOView, error) {
 	s.RLock()
 	defer s.RUnlock()
 
@@ -45,7 +45,7 @@ func (s *fakeChain) FetchUtxoView(tx *util.Tx) (*blockdag.UtxoViewpoint, error) 
 	// do not affect the fake chain's view.
 
 	// Add an entry for the tx itself to the new view.
-	viewpoint := blockdag.NewUtxoViewpoint()
+	viewpoint := blockdag.NewUTXOView()
 	prevOut := wire.OutPoint{Hash: *tx.Hash()}
 	for txOutIdx := range tx.MsgTx().TxOut {
 		prevOut.Index = uint32(txOutIdx)
@@ -98,7 +98,7 @@ func (s *fakeChain) SetMedianTimePast(mtp time.Time) {
 // CalcSequenceLock returns the current sequence lock for the passed
 // transaction associated with the fake chain instance.
 func (s *fakeChain) CalcSequenceLock(tx *util.Tx,
-	view *blockdag.UtxoViewpoint) (*blockdag.SequenceLock, error) {
+	view *blockdag.UTXOView) (*blockdag.SequenceLock, error) {
 
 	return &blockdag.SequenceLock{
 		Seconds:     -1,
@@ -299,7 +299,7 @@ func newPoolHarness(chainParams *dagconfig.Params) (*poolHarness, []spendableOut
 	}
 
 	// Create a new fake chain and harness bound to it.
-	chain := &fakeChain{utxos: blockdag.NewUtxoViewpoint()}
+	chain := &fakeChain{utxos: blockdag.NewUTXOView()}
 	harness := poolHarness{
 		signKey:     signKey,
 		payAddr:     payAddr,

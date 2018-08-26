@@ -833,7 +833,7 @@ func (idx *AddrIndex) indexUnconfirmedAddresses(pkScript []byte, tx *util.Tx) {
 // addresses not being indexed.
 //
 // This function is safe for concurrent access.
-func (idx *AddrIndex) AddUnconfirmedTx(tx *util.Tx, utxoView *blockdag.UtxoViewpoint) {
+func (idx *AddrIndex) AddUnconfirmedTx(tx *util.Tx, utxoView *blockdag.UTXOView) {
 	// Index addresses of all referenced previous transaction outputs.
 	//
 	// The existence checks are elided since this is only called after the

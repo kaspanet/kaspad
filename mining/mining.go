@@ -216,7 +216,7 @@ type BlockTemplate struct {
 // viewA will contain all of its original entries plus all of the entries
 // in viewB.  It will replace any entries in viewB which also exist in viewA
 // if the entry in viewA is spent.
-func mergeUtxoView(viewA *blockdag.UtxoViewpoint, viewB *blockdag.UtxoViewpoint) {
+func mergeUtxoView(viewA *blockdag.UTXOView, viewB *blockdag.UTXOView) {
 	viewAEntries := viewA.Entries()
 	for outpoint, entryB := range viewB.Entries() {
 		if entryA, exists := viewAEntries[outpoint]; !exists ||
@@ -282,7 +282,7 @@ func createCoinbaseTx(params *dagconfig.Params, coinbaseScript []byte, nextBlock
 // spendTransaction updates the passed view by marking the inputs to the passed
 // transaction as spent.  It also adds all outputs in the passed transaction
 // which are not provably unspendable as available unspent transaction outputs.
-func spendTransaction(utxoView *blockdag.UtxoViewpoint, tx *util.Tx, height int32) error {
+func spendTransaction(utxoView *blockdag.UTXOView, tx *util.Tx, height int32) error {
 	for _, txIn := range tx.MsgTx().TxIn {
 		entry := utxoView.LookupEntry(txIn.PreviousOutPoint)
 		if entry != nil {
@@ -471,7 +471,7 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 	// avoided.
 	blockTxns := make([]*util.Tx, 0, len(sourceTxns))
 	blockTxns = append(blockTxns, coinbaseTx)
-	blockUtxos := blockdag.NewUtxoViewpoint()
+	blockUtxos := blockdag.NewUTXOView()
 
 	// dependers is used to track transactions which depend on another
 	// transaction in the source pool.  This, in conjunction with the
@@ -515,7 +515,7 @@ mempoolLoop:
 		// mempool since a transaction which depends on other
 		// transactions in the mempool must come after those
 		// dependencies in the final generated block.
-		utxos, err := g.dag.FetchUtxoView(tx)
+		utxos, err := g.dag.FetchUTXOView(tx)
 		if err != nil {
 			log.Warnf("Unable to fetch utxo view for tx %s: %v",
 				tx.Hash(), err)
