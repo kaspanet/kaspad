@@ -897,7 +897,7 @@ func CheckTransactionInputs(tx *util.Tx, txHeight int32, utxoView *UtxoViewpoint
 // with that node.
 //
 // This function MUST be called with the chain state lock held (for writes).
-func (dag *BlockDAG) checkConnectBlock(node *blockNode, block *util.Block, view *UtxoViewpoint, stxos *[]spentTxOut) error {
+func (dag *BlockDAG) checkConnectBlock(node *blockNode, block *util.Block) error {
 	// If the side chain blocks end up in the database, a call to
 	// CheckBlockSanity should be done here in case a previous version
 	// allowed a block that is no longer valid.  However, since the
@@ -921,6 +921,7 @@ func (dag *BlockDAG) checkConnectBlock(node *blockNode, block *util.Block, view 
 	//
 	// These utxo entries are needed for verification of things such as
 	// transaction inputs, counting pay-to-script-hashes, and scripts.
+	view := NewUtxoViewpoint()
 	err = view.fetchInputUtxos(dag.db, block)
 	if err != nil {
 		return err
@@ -975,6 +976,8 @@ func (dag *BlockDAG) checkConnectBlock(node *blockNode, block *util.Block, view 
 	// still relatively cheap as compared to running the scripts) checks
 	// against all the inputs when the signature operations are out of
 	// bounds.
+	targetSpentOutputCount := countSpentOutputs(block)
+	stxos := make([]spentTxOut, 0, targetSpentOutputCount)
 	var totalFees int64
 	for _, tx := range transactions {
 		txFee, err := CheckTransactionInputs(tx, node.height, view,
@@ -996,10 +999,16 @@ func (dag *BlockDAG) checkConnectBlock(node *blockNode, block *util.Block, view 
 		// provably unspendable as available utxos.  Also, the passed
 		// spent txos slice is updated to contain an entry for each
 		// spent txout in the order each transaction spends them.
-		err = view.connectTransaction(tx, node.height, stxos)
+		err = view.connectTransaction(tx, node.height, &stxos)
 		if err != nil {
 			return err
 		}
+	}
+
+	// Sanity check the correct number of stxos are provided.
+	if len(stxos) != targetSpentOutputCount {
+		return AssertError("connectBlock called with inconsistent " +
+			"spent transaction out information")
 	}
 
 	// The total output values of the coinbase transaction must not exceed
@@ -1078,6 +1087,16 @@ func (dag *BlockDAG) checkConnectBlock(node *blockNode, block *util.Block, view 
 	return nil
 }
 
+// countSpentOutputs returns the number of utxos the passed block spends.
+func countSpentOutputs(block *util.Block) int {
+	// Exclude the coinbase transaction since it can't spend anything.
+	var numSpent int
+	for _, tx := range block.Transactions()[1:] {
+		numSpent += len(tx.MsgTx().TxIn)
+	}
+	return numSpent
+}
+
 // CheckConnectBlockTemplate fully validates that connecting the passed block to
 // the main chain does not violate any consensus rules, aside from the proof of
 // work requirement. The block must connect to the current tip of the main chain.
@@ -1111,9 +1130,6 @@ func (dag *BlockDAG) CheckConnectBlockTemplate(block *util.Block) error {
 		return err
 	}
 
-	// Leave the spent txouts entry nil in the state since the information
-	// is not needed and thus extra work can be avoided.
-	view := NewUtxoViewpoint()
 	newNode := newBlockNode(&header, dag.virtual.tips(), dag.dagParams.K)
-	return dag.checkConnectBlock(newNode, block, view, nil)
+	return dag.checkConnectBlock(newNode, block)
 }

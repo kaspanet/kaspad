@@ -10,8 +10,8 @@ import (
 	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/database"
 	"github.com/daglabs/btcd/txscript"
-	"github.com/daglabs/btcd/wire"
 	"github.com/daglabs/btcd/util"
+	"github.com/daglabs/btcd/wire"
 )
 
 // txoFlags is a bitmask defining additional information and state for a
@@ -250,22 +250,6 @@ func (view *UtxoViewpoint) connectTransaction(tx *util.Tx, blockHeight int32, st
 
 	// Add the transaction's outputs as available utxos.
 	view.AddTxOuts(tx, blockHeight)
-	return nil
-}
-
-// connectTransactions updates the view by adding all new utxos created by all
-// of the transactions in the passed block, marking all utxos the transactions
-// spend as spent, and setting the best hash for the view to the passed block.
-// In addition, when the 'stxos' argument is not nil, it will be updated to
-// append an entry for each spent txout.
-func (view *UtxoViewpoint) connectTransactions(block *blockNode, transactions []*util.Tx, stxos *[]spentTxOut) error {
-	for _, tx := range transactions {
-		err := view.connectTransaction(tx, block.height, stxos)
-		if err != nil {
-			return err
-		}
-	}
-
 	return nil
 }
 

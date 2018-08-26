@@ -479,10 +479,8 @@ func (dag *BlockDAG) connectToDAG(node *blockNode, parentNodes blockSet, block *
 	// Perform several checks to verify the block can be connected
 	// to the DAG without violating any rules and without actually
 	// connecting the block.
-	view := NewUtxoViewpoint()
-	stxos := make([]spentTxOut, 0, countSpentOutputs(block))
 	if !fastAdd {
-		err := dag.checkConnectBlock(node, block, view, &stxos)
+		err := dag.checkConnectBlock(node, block)
 		if err == nil {
 			dag.index.SetStatusFlags(node, statusValid)
 		} else if _, ok := err.(RuleError); ok {
@@ -499,31 +497,6 @@ func (dag *BlockDAG) connectToDAG(node *blockNode, parentNodes blockSet, block *
 			log.Warnf("Error flushing block index changes to disk: %v",
 				writeErr)
 		}
-
-		if err != nil {
-			return err
-		}
-	}
-
-	// In the fast add case the code to check the block connection
-	// was skipped, so the utxo view needs to load the referenced
-	// utxos, spend them, and add the new utxos being created by
-	// this block.
-	if fastAdd {
-		err := view.fetchInputUtxos(dag.db, block)
-		if err != nil {
-			return err
-		}
-		err = view.connectTransactions(node, block.Transactions(), &stxos)
-		if err != nil {
-			return err
-		}
-	}
-
-	// Sanity check the correct number of stxos are provided.
-	if len(stxos) != countSpentOutputs(block) {
-		return AssertError("connectBlock called with inconsistent " +
-			"spent transaction out information")
 	}
 
 	// Connect the block to the DAG.
@@ -533,16 +506,6 @@ func (dag *BlockDAG) connectToDAG(node *blockNode, parentNodes blockSet, block *
 	}
 
 	return nil
-}
-
-// countSpentOutputs returns the number of utxos the passed block spends.
-func countSpentOutputs(block *util.Block) int {
-	// Exclude the coinbase transaction since it can't spend anything.
-	var numSpent int
-	for _, tx := range block.Transactions()[1:] {
-		numSpent += len(tx.MsgTx().TxIn)
-	}
-	return numSpent
 }
 
 // connectBlock handles connecting the passed node/block to the DAG.
