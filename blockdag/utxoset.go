@@ -1,9 +1,9 @@
 package blockdag
 
 import (
+	"errors"
 	"fmt"
 	"github.com/daglabs/btcd/wire"
-	"errors"
 	"sort"
 	"strings"
 )

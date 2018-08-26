@@ -890,6 +890,7 @@ func (dag *BlockDAG) createDAGState() error {
 		toRemove: utxoCollection{},
 	}
 
+	dag.virtual.utxoSet.addTx(genesisCoinbase, 0)
 	dag.virtual.SetTips(setFromSlice(node))
 
 	// Add the new node to the index which is used for faster lookups.
