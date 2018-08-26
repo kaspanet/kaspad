@@ -52,12 +52,6 @@ type UTXOEntry struct {
 	packedFlags txoFlags
 }
 
-// isModified returns whether or not the output has been modified since it was
-// loaded.
-func (entry *UTXOEntry) isModified() bool {
-	return entry.packedFlags&tfModified == tfModified
-}
-
 // IsCoinBase returns whether or not the output was contained in a coinbase
 // transaction.
 func (entry *UTXOEntry) IsCoinBase() bool {
