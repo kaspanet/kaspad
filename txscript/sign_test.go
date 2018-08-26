@@ -55,8 +55,9 @@ func mkGetScript(scripts map[string][]byte) ScriptDB {
 
 func checkScripts(msg string, tx *wire.MsgTx, idx int, sigScript, pkScript []byte) error {
 	tx.TxIn[idx].SignatureScript = sigScript
+	var flags ScriptFlags
 	vm, err := NewEngine(pkScript, tx, idx,
-		ScriptBip16, nil)
+		flags, nil)
 	if err != nil {
 		return fmt.Errorf("failed to make script engine for %s: %v",
 			msg, err)
@@ -91,7 +92,6 @@ func TestSignTxOutput(t *testing.T) {
 	// make script based on key.
 	// sign with magic pixie dust.
 	hashTypes := []SigHashType{
-		SigHashOld, // no longer used but should act like all
 		SigHashAll,
 		SigHashNone,
 		SigHashSingle,
@@ -1498,7 +1498,7 @@ var sigScriptTests = []tstSigScript{
 		scriptAtWrongIndex: false,
 	},
 	{
-		name: "hashType SigHashAnyoneCanPay",
+		name: "hashType SigHashAll | SigHashAnyoneCanPay",
 		inputs: []tstInput{
 			{
 				txout:              wire.NewTxOut(coinbaseVal, uncompressedPkScript),
@@ -1507,17 +1507,31 @@ var sigScriptTests = []tstSigScript{
 				indexOutOfRange:    false,
 			},
 		},
+		hashType:           SigHashAll | SigHashAnyOneCanPay,
+		compress:           false,
+		scriptAtWrongIndex: false,
+	},
+	{
+		name: "hashType SigHashAnyoneCanPay",
+		inputs: []tstInput{
+			{
+				txout:              wire.NewTxOut(coinbaseVal, uncompressedPkScript),
+				sigscriptGenerates: true,
+				inputValidates:     false,
+				indexOutOfRange:    false,
+			},
+		},
 		hashType:           SigHashAnyOneCanPay,
 		compress:           false,
 		scriptAtWrongIndex: false,
 	},
 	{
-		name: "hashType non-standard",
+		name: "hashType non-exist",
 		inputs: []tstInput{
 			{
 				txout:              wire.NewTxOut(coinbaseVal, uncompressedPkScript),
 				sigscriptGenerates: true,
-				inputValidates:     true,
+				inputValidates:     false,
 				indexOutOfRange:    false,
 			},
 		},
@@ -1658,7 +1672,7 @@ nexttest:
 		}
 
 		// Validate tx input scripts
-		scriptFlags := ScriptBip16
+		var scriptFlags ScriptFlags
 		for j := range tx.TxIn {
 			vm, err := NewEngine(sigScriptTests[i].
 				inputs[j].txout.PkScript, tx, j, scriptFlags, nil)

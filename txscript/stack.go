@@ -36,8 +36,7 @@ func fromBool(v bool) []byte {
 // changed it *must* be deep-copied first to avoid changing other values on the
 // stack.
 type stack struct {
-	stk               [][]byte
-	verifyMinimalData bool
+	stk [][]byte
 }
 
 // Depth returns the number of items on the stack.
@@ -86,7 +85,7 @@ func (s *stack) PopInt() (scriptNum, error) {
 		return 0, err
 	}
 
-	return makeScriptNum(so, s.verifyMinimalData, defaultScriptNumLen)
+	return makeScriptNum(so, defaultScriptNumLen)
 }
 
 // PopBool pops the value off the top of the stack, converts it into a bool, and
@@ -123,7 +122,7 @@ func (s *stack) PeekInt(idx int32) (scriptNum, error) {
 		return 0, err
 	}
 
-	return makeScriptNum(so, s.verifyMinimalData, defaultScriptNumLen)
+	return makeScriptNum(so, defaultScriptNumLen)
 }
 
 // PeekBool returns the Nth item on the stack as a bool without removing it.

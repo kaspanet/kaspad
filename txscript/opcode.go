@@ -1101,7 +1101,7 @@ func opcodeCheckLockTimeVerify(op *parsedOpcode, vm *Engine) error {
 	if err != nil {
 		return err
 	}
-	lockTime, err := makeScriptNum(so, vm.dstack.verifyMinimalData, 5)
+	lockTime, err := makeScriptNum(so, 5)
 	if err != nil {
 		return err
 	}
@@ -1164,7 +1164,7 @@ func opcodeCheckSequenceVerify(op *parsedOpcode, vm *Engine) error {
 	if err != nil {
 		return err
 	}
-	stackSequence, err := makeScriptNum(so, vm.dstack.verifyMinimalData, 5)
+	stackSequence, err := makeScriptNum(so, 5)
 	if err != nil {
 		return err
 	}
@@ -2043,7 +2043,7 @@ func opcodeCheckSig(op *parsedOpcode, vm *Engine) error {
 		valid = signature.Verify(hash, pubKey)
 	}
 
-	if !valid && vm.hasFlag(ScriptVerifyNullFail) && len(sigBytes) > 0 {
+	if !valid && len(sigBytes) > 0 {
 		str := "signature not empty on failed checksig"
 		return scriptError(ErrNullFail, str)
 	}
@@ -2248,7 +2248,7 @@ func opcodeCheckMultiSig(op *parsedOpcode, vm *Engine) error {
 		}
 	}
 
-	if !success && vm.hasFlag(ScriptVerifyNullFail) {
+	if !success {
 		for _, sig := range signatures {
 			if len(sig.signature) > 0 {
 				str := "not all signatures empty on failed checkmultisig"
