@@ -520,8 +520,14 @@ func (dag *BlockDAG) connectToDAG(node *blockNode, parentNodes blockSet, block *
 		}
 	}
 
+	// Sanity check the correct number of stxos are provided.
+	if len(stxos) != countSpentOutputs(block) {
+		return AssertError("connectBlock called with inconsistent " +
+			"spent transaction out information")
+	}
+
 	// Connect the block to the DAG.
-	err := dag.connectBlock(node, block, view, stxos)
+	err := dag.connectBlock(node, block)
 	if err != nil {
 		return err
 	}
@@ -549,13 +555,7 @@ func countSpentOutputs(block *util.Block) int {
 // it would be inefficient to repeat it.
 //
 // This function MUST be called with the chain state lock held (for writes).
-func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block, view *UtxoViewpoint, stxos []spentTxOut) error {
-	// Sanity check the correct number of stxos are provided.
-	if len(stxos) != countSpentOutputs(block) {
-		return AssertError("connectBlock called with inconsistent " +
-			"spent transaction out information")
-	}
-
+func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block) error {
 	// No warnings about unknown rules or versions until the chain is
 	// current.
 	if dag.isCurrent() {
@@ -606,13 +606,6 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block, view *Utxo
 		// Update the UTXO set using the diffSet that was melded into the
 		// full UTXO set.
 		err = dbPutUTXODiff(dbTx, utxoDiff)
-		if err != nil {
-			return err
-		}
-
-		// Update the transaction spend journal by adding a record for
-		// the block that contains all txos spent by it.
-		err = dbPutSpendJournalEntry(dbTx, block.Hash(), stxos)
 		if err != nil {
 			return err
 		}

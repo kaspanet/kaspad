@@ -7,14 +7,14 @@ package blockdag
 import (
 	"bytes"
 	"encoding/binary"
+	"encoding/json"
 	"fmt"
 	"sync"
-	"encoding/json"
 
 	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/database"
-	"github.com/daglabs/btcd/wire"
 	"github.com/daglabs/btcd/util"
+	"github.com/daglabs/btcd/wire"
 )
 
 const (
@@ -49,14 +49,6 @@ var (
 	// dagStateKeyName is the name of the db key used to store the DAG
 	// state.
 	dagStateKeyName = []byte("dagstate")
-
-	// spendJournalVersionKeyName is the name of the db key used to store
-	// the version of the spend journal currently in the database.
-	spendJournalVersionKeyName = []byte("spendjournalversion")
-
-	// spendJournalBucketName is the name of the db bucket used to house
-	// transactions outputs that are spent in each block.
-	spendJournalBucketName = []byte("spendjournal")
 
 	// utxoSetVersionKeyName is the name of the db key used to store the
 	// version of the utxo set currently in the database.
@@ -406,16 +398,6 @@ func serializeSpendJournalEntry(stxos []spentTxOut) []byte {
 	}
 
 	return serialized
-}
-
-// dbPutSpendJournalEntry uses an existing database transaction to update the
-// spend journal entry for the given block hash using the provided slice of
-// spent txouts.   The spent txouts slice must contain an entry for every txout
-// the transactions in the block spend in the order they are spent.
-func dbPutSpendJournalEntry(dbTx database.Tx, blockHash *daghash.Hash, stxos []spentTxOut) error {
-	spendBucket := dbTx.Metadata().Bucket(spendJournalBucketName)
-	serialized := serializeSpendJournalEntry(stxos)
-	return spendBucket.Put(blockHash[:], serialized)
 }
 
 // -----------------------------------------------------------------------------
@@ -926,18 +908,6 @@ func (dag *BlockDAG) createDAGState() error {
 			return err
 		}
 
-		// Create the bucket that houses the spend journal data and
-		// store its version.
-		_, err = meta.CreateBucket(spendJournalBucketName)
-		if err != nil {
-			return err
-		}
-		err = dbPutVersion(dbTx, utxoSetVersionKeyName,
-			latestUtxoSetBucketVersion)
-		if err != nil {
-			return err
-		}
-
 		// Create the bucket that houses the utxo set and store its
 		// version.  Note that the genesis block coinbase transaction is
 		// intentionally not inserted here since it is not spendable by
@@ -946,8 +916,8 @@ func (dag *BlockDAG) createDAGState() error {
 		if err != nil {
 			return err
 		}
-		err = dbPutVersion(dbTx, spendJournalVersionKeyName,
-			latestSpendJournalBucketVersion)
+		err = dbPutVersion(dbTx, utxoSetVersionKeyName,
+			latestUtxoSetBucketVersion)
 		if err != nil {
 			return err
 		}
