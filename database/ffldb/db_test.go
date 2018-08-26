@@ -9,8 +9,8 @@ import (
 	"github.com/bouk/monkey"
 	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/database"
+	"github.com/daglabs/btcd/util"
 	"github.com/daglabs/btcd/wire"
-	"github.com/daglabs/btcutil"
 )
 
 // TestCursorDeleteErrors tests all error-cases in *cursor.Delete().
@@ -553,7 +553,7 @@ func TestForEachBucket(t *testing.T) {
 // TestStoreBlockErrors tests all error-cases in *tx.StoreBlock().
 // The non-error-cases are tested in the more general tests.
 func TestStoreBlockErrors(t *testing.T) {
-	testBlock := btcutil.NewBlock(wire.NewMsgBlock(wire.NewBlockHeader(1, []daghash.Hash{}, &daghash.Hash{}, 0, 0)))
+	testBlock := util.NewBlock(wire.NewMsgBlock(wire.NewBlockHeader(1, []daghash.Hash{}, &daghash.Hash{}, 0, 0)))
 
 	tests := []struct {
 		name        string
@@ -568,8 +568,8 @@ func TestStoreBlockErrors(t *testing.T) {
 		{"block exists", (*transaction).hasBlock,
 			func(*transaction, *daghash.Hash) bool { return true },
 			true, false, database.ErrBlockExists},
-		{"error in block.Bytes", (*btcutil.Block).Bytes,
-			func(*btcutil.Block) ([]byte, error) { return nil, errors.New("Error in block.Bytes()") },
+		{"error in block.Bytes", (*util.Block).Bytes,
+			func(*util.Block) ([]byte, error) { return nil, errors.New("Error in block.Bytes()") },
 			true, false, database.ErrDriverSpecific},
 	}
 
@@ -715,7 +715,7 @@ func TestWritePendingAndCommitErrors(t *testing.T) {
 
 	rollbackCalled = false
 	err = pdb.Update(func(tx database.Tx) error {
-		return tx.StoreBlock(btcutil.NewBlock(wire.NewMsgBlock(
+		return tx.StoreBlock(util.NewBlock(wire.NewMsgBlock(
 			wire.NewBlockHeader(1, []daghash.Hash{}, &daghash.Hash{}, 0, 0))))
 	})
 	if err == nil {

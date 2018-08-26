@@ -8,12 +8,12 @@ import (
 	"github.com/bouk/monkey"
 	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/database"
+	"github.com/daglabs/btcd/util"
 	"github.com/daglabs/btcd/wire"
-	"github.com/daglabs/btcutil"
 )
 
 func TestDeleteFile(t *testing.T) {
-	testBlock := btcutil.NewBlock(wire.NewMsgBlock(
+	testBlock := util.NewBlock(wire.NewMsgBlock(
 		wire.NewBlockHeader(1, []daghash.Hash{}, &daghash.Hash{}, 0, 0)))
 
 	tests := []struct {
@@ -57,7 +57,7 @@ func TestDeleteFile(t *testing.T) {
 // Since handleRollback just logs errors, this test simply causes all error-cases to be hit,
 // and makes sure no panic occurs, as well as ensures the writeCursor was updated correctly.
 func TestHandleRollbackErrors(t *testing.T) {
-	testBlock := btcutil.NewBlock(wire.NewMsgBlock(
+	testBlock := util.NewBlock(wire.NewMsgBlock(
 		wire.NewBlockHeader(1, []daghash.Hash{}, &daghash.Hash{}, 0, 0)))
 
 	testBlockSize := uint32(testBlock.MsgBlock().SerializeSize())
