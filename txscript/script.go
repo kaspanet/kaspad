@@ -8,16 +8,10 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
-	"time"
 
 	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/wire"
 )
-
-// Bip16Activation is the timestamp where BIP0016 is valid to use in the
-// blockchain.  To be used to determine if BIP0016 should be called for or not.
-// This timestamp corresponds to Sun Apr 1 00:00:00 UTC 2012.
-var Bip16Activation = time.Unix(1333238400, 0)
 
 // SigHashType represents hash type bits at the end of a signature.
 type SigHashType uint32
@@ -424,17 +418,17 @@ func GetSigOpCount(script []byte) int {
 }
 
 // GetPreciseSigOpCount returns the number of signature operations in
-// scriptPubKey.  If bip16 is true then scriptSig may be searched for the
+// scriptPubKey.  If p2sh is true then scriptSig may be searched for the
 // Pay-To-Script-Hash script in order to find the precise number of signature
 // operations in the transaction.  If the script fails to parse, then the count
 // up to the point of failure is returned.
-func GetPreciseSigOpCount(scriptSig, scriptPubKey []byte, bip16 bool) int {
+func GetPreciseSigOpCount(scriptSig, scriptPubKey []byte, isP2SH bool) int {
 	// Don't check error since parseScript returns the parsed-up-to-error
 	// list of pops.
 	pops, _ := parseScript(scriptPubKey)
 
 	// Treat non P2SH transactions as normal.
-	if !(bip16 && isScriptHash(pops)) {
+	if !(isP2SH && isScriptHash(pops)) {
 		return getSigOpCount(pops, true)
 	}
 
