@@ -5,6 +5,9 @@
 package blockdag
 
 import (
+	"bou.ke/monkey"
+	"errors"
+	"github.com/daglabs/btcd/database"
 	"reflect"
 	"testing"
 	"time"
@@ -13,8 +16,8 @@ import (
 
 	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/dagconfig/daghash"
-	"github.com/daglabs/btcd/wire"
 	"github.com/daglabs/btcd/util"
+	"github.com/daglabs/btcd/wire"
 )
 
 // TestHaveBlock tests the HaveBlock API to ensure proper functionality.
@@ -38,7 +41,7 @@ func TestHaveBlock(t *testing.T) {
 	}
 
 	// Create a new database and chain instance to run tests against.
-	chain, teardownFunc, err := chainSetup("haveblock",
+	chain, teardownFunc, err := dagSetup("haveblock",
 		&dagconfig.MainNetParams)
 	if err != nil {
 		t.Errorf("Failed to setup chain instance: %v", err)
@@ -618,5 +621,70 @@ func TestIntervalBlockHashes(t *testing.T) {
 			t.Errorf("%s: unxpected hashes -- got %v, want %v",
 				test.name, hashes, test.hashes)
 		}
+	}
+}
+
+// TestRestoreUTXOErrors tests all error-cases in restoreUTXO.
+// The non-error-cases are tested in the more general tests.
+func TestRestoreUTXOErrors(t *testing.T) {
+	targetErr := errors.New("restoreUTXO error")
+	monkey.Patch((*BlockDAG).restoreUTXO, func(dag *BlockDAG, provisional *provisionalNode, virtual *VirtualBlock) (utxoSet, error) {
+		return nil, targetErr
+	})
+	testError(t, targetErr)
+	monkey.Unpatch((*BlockDAG).restoreUTXO)
+
+	targetErr = errors.New("dbFetchBlockByNode error")
+	monkey.Patch(dbFetchBlockByNode, func(dbTx database.Tx, node *blockNode) (*util.Block, error) {
+		return nil, targetErr
+	})
+	testError(t, targetErr)
+	monkey.Unpatch(dbFetchBlockByNode)
+}
+
+func testError(t *testing.T, expectedError error) {
+	// Load up blocks such that there is a fork in the DAG.
+	// (genesis block) -> 1 -> 2 -> 3 -> 4
+	//                          \-> 3b
+	testFiles := []string{
+		"blk_0_to_4.dat",
+		"blk_3B.dat",
+	}
+
+	var blocks []*util.Block
+	for _, file := range testFiles {
+		blockTmp, err := loadBlocks(file)
+		if err != nil {
+			t.Errorf("Error loading file: %v\n", err)
+			return
+		}
+		blocks = append(blocks, blockTmp...)
+	}
+
+	// Create a new database and dag instance to run tests against.
+	dag, teardownFunc, err := dagSetup("testError", &dagconfig.MainNetParams)
+	if err != nil {
+		t.Fatalf("Failed to setup dag instance: %v", err)
+	}
+	defer teardownFunc()
+
+	// Since we're not dealing with the real block chain, set the coinbase
+	// maturity to 1.
+	dag.TstSetCoinbaseMaturity(1)
+
+	err = nil
+	for i := 1; i < len (blocks); i++ {
+		_, err = dag.ProcessBlock(blocks[i], BFNone)
+		if err != nil {
+			break
+		}
+	}
+	if err == nil {
+		t.Fatalf("ProcessBlock unexpectedly succeeded. "+
+			"Expected: %s", expectedError)
+	}
+	if err != expectedError {
+		t.Fatalf("ProcessBlock returned wrong error. "+
+			"Want: %s, got: %s", expectedError, err)
 	}
 }
