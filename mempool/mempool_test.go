@@ -422,11 +422,10 @@ func (p *poolHarness) createTx(out spendableOutput, fee int64, numOutputs int64)
 func TestProcessTransaction(t *testing.T) {
 	t.Parallel()
 
-	harness, spendableOuts, err := newPoolHarness(&dagconfig.MainNetParams, 5)
+	harness, spendableOuts, err := newPoolHarness(&dagconfig.MainNetParams, 6)
 	if err != nil {
 		t.Fatalf("unable to create test pool: %v", err)
 	}
-	// tc := &testContext{t, harness}
 
 	//Checks that a transaction cannot be added to the transaction pool if it's already there
 	tx, err := harness.createTx(spendableOuts[0], 0, 1)
@@ -697,6 +696,29 @@ func TestProcessTransaction(t *testing.T) {
 	}
 	if code, _ := extractRejectCode(err); code != wire.RejectInsufficientFee {
 		t.Errorf("Unexpected error code. Expected %v but got %v", wire.RejectInsufficientFee, code)
+	}
+	harness.txPool.cfg.Policy.DisableRelayPriority = true
+
+	tx = util.NewTx(&wire.MsgTx{
+		Version: 1,
+		TxIn: []*wire.TxIn{&wire.TxIn{
+			PreviousOutPoint: spendableOuts[5].outPoint,
+			SignatureScript:  []byte{02, 01}, //Unparsable script
+			Sequence:         wire.MaxTxInSequenceNum,
+		}},
+		TxOut: []*wire.TxOut{{
+			Value:    1,
+			PkScript: dummyPkScript,
+		}},
+		LockTime: 0,
+	})
+	_, err = harness.txPool.ProcessTransaction(tx, true, false, 0)
+	fmt.Println(err)
+	if err == nil {
+		t.Errorf("ProcessTransaction: expected an error, not nil")
+	}
+	if code, _ := extractRejectCode(err); code != wire.RejectNonstandard {
+		t.Errorf("Unexpected error code. Expected %v but got %v", wire.RejectNonstandard, code)
 	}
 
 }

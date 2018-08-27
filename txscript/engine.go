@@ -290,7 +290,7 @@ func (vm *Engine) Step() (done bool, err error) {
 			}
 
 			script := vm.savedFirstStack[len(vm.savedFirstStack)-1]
-			pops, err := parseScript(script)
+			pops, err := ParseScript(script)
 			if err != nil {
 				return false, err
 			}
@@ -593,7 +593,7 @@ func NewEngine(scriptPubKey []byte, tx *wire.MsgTx, txIdx int, flags ScriptFlags
 		return nil, err
 	}
 	// The signature script must only contain data pushes
-	if !isPushOnly(parsedScriptSig) {
+	if !IsPushOnly(parsedScriptSig) {
 		return nil, scriptError(ErrNotPushOnly,
 			"signature script is not push only")
 	}
@@ -618,7 +618,7 @@ func NewEngine(scriptPubKey []byte, tx *wire.MsgTx, txIdx int, flags ScriptFlags
 
 	if isScriptHash(vm.scripts[1]) {
 		// Only accept input scripts that push data for P2SH.
-		if !isPushOnly(vm.scripts[0]) {
+		if !IsPushOnly(vm.scripts[0]) {
 			return nil, scriptError(ErrNotPushOnly,
 				"pay to script hash is not push only")
 		}
@@ -637,5 +637,5 @@ func parseScriptAndVerifySize(script []byte) ([]parsedOpcode, error) {
 			"allowed size %d", len(script), MaxScriptSize)
 		return nil, scriptError(ErrScriptTooBig, str)
 	}
-	return parseScript(script)
+	return ParseScript(script)
 }

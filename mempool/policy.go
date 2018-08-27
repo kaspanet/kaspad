@@ -290,7 +290,13 @@ func checkTransactionStandard(tx *util.Tx, height int32,
 
 		// Each transaction input signature script must only contain
 		// opcodes which push data onto the stack.
-		if !txscript.IsPushOnlyScript(txIn.SignatureScript) {
+		parsedSigScript, err := txscript.ParseScript(txIn.SignatureScript)
+		if err != nil {
+			str := fmt.Sprintf("transaction input %d: signature "+
+				"script is not push only", i)
+			return txRuleError(wire.RejectNonstandard, str)
+		}
+		if !txscript.IsPushOnly(parsedSigScript) {
 			str := fmt.Sprintf("transaction input %d: signature "+
 				"script is not push only", i)
 			return txRuleError(wire.RejectNonstandard, str)
