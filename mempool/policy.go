@@ -10,8 +10,8 @@ import (
 
 	"github.com/daglabs/btcd/blockdag"
 	"github.com/daglabs/btcd/txscript"
-	"github.com/daglabs/btcd/wire"
 	"github.com/daglabs/btcd/util"
+	"github.com/daglabs/btcd/wire"
 )
 
 const (
@@ -84,12 +84,7 @@ func calcMinRequiredTxRelayFee(serializedSize int64, minRelayTxFee util.Amount) 
 // to ensure they are "standard".  A standard transaction input within the
 // context of this function is one whose referenced public key script is of a
 // standard form and, for pay-to-script-hash, does not have more than
-// maxStandardP2SHSigOps signature operations.  However, it should also be noted
-// that standard inputs also are those which have a clean stack after execution
-// and only contain pushed data in their signature scripts.  This function does
-// not perform those checks because the script engine already does this more
-// accurately and concisely via the txscript.ScriptVerifyCleanStack and
-// txscript.ScriptVerifySigPushOnly flags.
+// maxStandardP2SHSigOps signature operations.
 func checkInputsStandard(tx *util.Tx, utxoView *blockdag.UtxoViewpoint) error {
 	// NOTE: The reference implementation also does a coinbase check here,
 	// but coinbases have already been rejected prior to calling this
