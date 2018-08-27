@@ -628,32 +628,41 @@ func TestIntervalBlockHashes(t *testing.T) {
 // The non-error-cases are tested in the more general tests.
 func TestPastUTXOErrors(t *testing.T) {
 	targetErr := errors.New("restoreUTXO error")
-	monkey.Patch((*BlockDAG).restoreUTXO, func(dag *BlockDAG, provisional *provisionalNode, virtual *VirtualBlock) (utxoSet, error) {
-		return nil, targetErr
-	})
-	testError(t, targetErr)
-	monkey.Unpatch((*BlockDAG).restoreUTXO)
+	testErrorThroughPatching(
+		t,
+		targetErr,
+		(*BlockDAG).restoreUTXO,
+		func(dag *BlockDAG, provisional *provisionalNode, virtual *VirtualBlock) (utxoSet, error) {
+			return nil, targetErr
+		},
+	)
 
 	targetErr = errors.New("dbFetchBlockByNode error")
-	monkey.Patch(dbFetchBlockByNode, func(dbTx database.Tx, node *blockNode) (*util.Block, error) {
-		return nil, targetErr
-	})
-	testError(t, targetErr)
-	monkey.Unpatch(dbFetchBlockByNode)
+	testErrorThroughPatching(
+		t,
+		targetErr,
+		dbFetchBlockByNode,
+		func(dbTx database.Tx, node *blockNode) (*util.Block, error) {
+			return nil, targetErr
+		},
+	)
 }
 
 // TestRestoreUTXOErrors tests all error-cases in restoreUTXO.
 // The non-error-cases are tested in the more general tests.
 func TestRestoreUTXOErrors(t *testing.T) {
 	targetErr := errors.New("withDiff error")
-	monkey.Patch((*fullUTXOSet).withDiff, func(fus *fullUTXOSet, other *utxoDiff) (utxoSet, error) {
-		return nil, targetErr
-	})
-	testError(t, targetErr)
-	monkey.Unpatch((*fullUTXOSet).withDiff)
+	testErrorThroughPatching(
+		t,
+		targetErr,
+		(*fullUTXOSet).withDiff,
+		func(fus *fullUTXOSet, other *utxoDiff) (utxoSet, error) {
+			return nil, targetErr
+		},
+	)
 }
 
-func testError(t *testing.T, expectedError error) {
+func testErrorThroughPatching(t *testing.T, expectedError error, targetFunction interface{}, replacementFunction interface{}) {
 	// Load up blocks such that there is a fork in the DAG.
 	// (genesis block) -> 1 -> 2 -> 3 -> 4
 	//                          \-> 3b
@@ -673,7 +682,7 @@ func testError(t *testing.T, expectedError error) {
 	}
 
 	// Create a new database and dag instance to run tests against.
-	dag, teardownFunc, err := dagSetup("testError", &dagconfig.MainNetParams)
+	dag, teardownFunc, err := dagSetup("testErrorThroughPatching", &dagconfig.MainNetParams)
 	if err != nil {
 		t.Fatalf("Failed to setup dag instance: %v", err)
 	}
@@ -683,8 +692,10 @@ func testError(t *testing.T, expectedError error) {
 	// maturity to 1.
 	dag.TstSetCoinbaseMaturity(1)
 
+	monkey.Patch(targetFunction, replacementFunction)
+
 	err = nil
-	for i := 1; i < len (blocks); i++ {
+	for i := 1; i < len(blocks); i++ {
 		_, err = dag.ProcessBlock(blocks[i], BFNone)
 		if err != nil {
 			break
@@ -698,4 +709,6 @@ func testError(t *testing.T, expectedError error) {
 		t.Fatalf("ProcessBlock returned wrong error. "+
 			"Want: %s, got: %s", expectedError, err)
 	}
+
+	monkey.Unpatch(targetFunction)
 }
