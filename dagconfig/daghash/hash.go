@@ -181,3 +181,16 @@ func (hash *Hash) Cmp(target *Hash) int {
 func Less(a *Hash, b *Hash) bool {
 	return a.Cmp(b) > 0
 }
+
+//JoinHashesStrings joins all the stringified hashes separated by a separator
+func JoinHashesStrings(hashes []Hash, separator string) string {
+	str := ""
+	hashesLen := len(hashes)
+	for i, hash := range hashes {
+		str += hash.String()
+		if i < hashesLen-1 {
+			str += separator
+		}
+	}
+	return str
+}

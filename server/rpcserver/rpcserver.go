@@ -1314,27 +1314,26 @@ func handleGetBlockHeader(s *Server, cmd interface{}, closeChan <-chan struct{})
 	return blockHeaderReply, nil
 }
 
-// encodeTemplateID encodes the passed details into an ID that can be used to
+// encodeLongPollID encodes the passed details into an ID that can be used to
 // uniquely identify a block template.
-func encodeTemplateID(prevHashes []daghash.Hash, lastGenerated time.Time) string {
-	return fmt.Sprintf("%s-%d", concatHashesToString(prevHashes), lastGenerated.Unix())
+func encodeLongPollID(prevHashes []daghash.Hash, lastGenerated time.Time) string {
+	return fmt.Sprintf("%s-%d", daghash.JoinHashesStrings(prevHashes, ""), lastGenerated.Unix())
 }
 
-// decodeTemplateID decodes an ID that is used to uniquely identify a block
+// decodeLongPollID decodes an ID that is used to uniquely identify a block
 // template.  This is mainly used as a mechanism to track when to update clients
 // that are using long polling for block templates.  The ID consists of the
 // previous blocks hashes for the associated template and the time the associated
 // template was generated.
-func decodeTemplateID(templateID string) ([]daghash.Hash, int64, error) {
+func decodeLongPollID(templateID string) ([]daghash.Hash, int64, error) {
 	fields := strings.Split(templateID, "-")
-	invalidLongpollidErr := errors.New("invalid longpollid format")
 	if len(fields) != 2 {
-		return nil, 0, invalidLongpollidErr
+		return nil, 0, errors.New("invalid number of fields")
 	}
 
 	prevHashesStr := fields[0]
 	if len(prevHashesStr)%daghash.HashSize != 0 {
-		return nil, 0, invalidLongpollidErr
+		return nil, 0, errors.New("invalid previous hashes format")
 	}
 	numberOfHashes := len(prevHashesStr) / daghash.HashSize
 
@@ -1343,25 +1342,17 @@ func decodeTemplateID(templateID string) ([]daghash.Hash, int64, error) {
 	for i := 0; i < len(prevHashesStr); i += daghash.HashSize {
 		hash, err := daghash.NewHashFromStr(prevHashesStr[i : i+daghash.HashSize])
 		if err != nil {
-			return nil, 0, invalidLongpollidErr
+			return nil, 0, fmt.Errorf("NewHashFromStr: %v", err)
 		}
 		prevHashes = append(prevHashes, *hash)
 	}
 
 	lastGenerated, err := strconv.ParseInt(fields[1], 10, 64)
 	if err != nil {
-		return nil, 0, errors.New("invalid longpollid format")
+		return nil, 0, fmt.Errorf("Cannot parse timestamp: %v", lastGenerated)
 	}
 
 	return prevHashes, lastGenerated, nil
-}
-
-func concatHashesToString(hashes []daghash.Hash) string {
-	str := ""
-	for _, hash := range hashes {
-		str += hash.String()
-	}
-	return str
 }
 
 // notifyLongPollers notifies any channels that have been registered to be
@@ -1372,7 +1363,7 @@ func (state *gbtWorkState) notifyLongPollers(tipHashes []daghash.Hash, lastGener
 	// Notify anything that is waiting for a block template update from a
 	// hash which is not the hash of the tip of the best chain since their
 	// work is now invalid.
-	tipHashesStr := concatHashesToString(tipHashes)
+	tipHashesStr := daghash.JoinHashesStrings(tipHashes, "")
 	for hashesStr, channels := range state.notifyMap {
 		if hashesStr != tipHashesStr {
 			for _, c := range channels {
@@ -1456,7 +1447,7 @@ func (state *gbtWorkState) NotifyMempoolTx(lastUpdated time.Time) {
 //
 // This function MUST be called with the state locked.
 func (state *gbtWorkState) templateUpdateChan(tipHashes []daghash.Hash, lastGenerated int64) chan struct{} {
-	tipHashesStr := concatHashesToString(tipHashes)
+	tipHashesStr := daghash.JoinHashesStrings(tipHashes, "")
 	// Either get the current list of channels waiting for updates about
 	// changes to block template for the previous hash or create a new one.
 	channels, ok := state.notifyMap[tipHashesStr]
@@ -1691,7 +1682,7 @@ func (state *gbtWorkState) blockTemplateResult(useCoinbaseValue bool, submitOld 
 	//  Including MinTime -> time/decrement
 	//  Omitting CoinbaseTxn -> coinbase, generation
 	targetDifficulty := fmt.Sprintf("%064x", blockdag.CompactToBig(header.Bits))
-	templateID := encodeTemplateID(state.tipHashes, state.lastGenerated)
+	longPollID := encodeLongPollID(state.tipHashes, state.lastGenerated)
 	reply := btcjson.GetBlockTemplateResult{
 		Bits:           strconv.FormatInt(int64(header.Bits), 16),
 		CurTime:        header.Timestamp.Unix(),
@@ -1701,7 +1692,7 @@ func (state *gbtWorkState) blockTemplateResult(useCoinbaseValue bool, submitOld 
 		SizeLimit:      wire.MaxBlockPayload,
 		Transactions:   transactions,
 		Version:        header.Version,
-		LongPollID:     templateID,
+		LongPollID:     longPollID,
 		SubmitOld:      submitOld,
 		Target:         targetDifficulty,
 		MinTime:        state.minTimestamp.Unix(),
@@ -1773,7 +1764,7 @@ func handleGetBlockTemplateLongPoll(s *Server, longPollID string, useCoinbaseVal
 
 	// Just return the current block template if the long poll ID provided by
 	// the caller is invalid.
-	prevHashes, lastGenerated, err := decodeTemplateID(longPollID)
+	prevHashes, lastGenerated, err := decodeLongPollID(longPollID)
 	if err != nil {
 		result, err := state.blockTemplateResult(useCoinbaseValue, nil)
 		if err != nil {
