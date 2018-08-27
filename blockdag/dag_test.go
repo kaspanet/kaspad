@@ -9,6 +9,7 @@ import (
 	"errors"
 	"github.com/daglabs/btcd/database"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 
@@ -626,24 +627,28 @@ func TestIntervalBlockHashes(t *testing.T) {
 
 // TestPastUTXOErrors tests all error-cases in restoreUTXO.
 // The non-error-cases are tested in the more general tests.
-func TestPastUTXOErrors(t *testing.T) {
-	targetErr := errors.New("restoreUTXO error")
+func TestVerifyAndBuildUTXOErrors(t *testing.T) {
+	targetErrorMessage := "not compatible with UTXO"
 	testErrorThroughPatching(
 		t,
-		targetErr,
-		(*BlockDAG).restoreUTXO,
-		func(dag *BlockDAG, provisional *provisionalNode, virtual *VirtualBlock) (utxoSet, error) {
-			return nil, targetErr
+		targetErrorMessage,
+		(*diffUTXOSet).addTx,
+		func(fus *diffUTXOSet, tx *wire.MsgTx, blockHeight int32) bool {
+			return false
 		},
 	)
+}
 
-	targetErr = errors.New("dbFetchBlockByNode error")
+// TestPastUTXOErrors tests all error-cases in restoreUTXO.
+// The non-error-cases are tested in the more general tests.
+func TestPastUTXOErrors(t *testing.T) {
+	targetErrorMessage := "dbFetchBlockByNode error"
 	testErrorThroughPatching(
 		t,
-		targetErr,
+		targetErrorMessage,
 		dbFetchBlockByNode,
 		func(dbTx database.Tx, node *blockNode) (*util.Block, error) {
-			return nil, targetErr
+			return nil, errors.New(targetErrorMessage)
 		},
 	)
 }
@@ -651,18 +656,18 @@ func TestPastUTXOErrors(t *testing.T) {
 // TestRestoreUTXOErrors tests all error-cases in restoreUTXO.
 // The non-error-cases are tested in the more general tests.
 func TestRestoreUTXOErrors(t *testing.T) {
-	targetErr := errors.New("withDiff error")
+	targetErrorMessage := "withDiff error"
 	testErrorThroughPatching(
 		t,
-		targetErr,
+		targetErrorMessage,
 		(*fullUTXOSet).withDiff,
 		func(fus *fullUTXOSet, other *utxoDiff) (utxoSet, error) {
-			return nil, targetErr
+			return nil, errors.New(targetErrorMessage)
 		},
 	)
 }
 
-func testErrorThroughPatching(t *testing.T, expectedError error, targetFunction interface{}, replacementFunction interface{}) {
+func testErrorThroughPatching(t *testing.T, expectedErrorMessage string, targetFunction interface{}, replacementFunction interface{}) {
 	// Load up blocks such that there is a fork in the DAG.
 	// (genesis block) -> 1 -> 2 -> 3 -> 4
 	//                          \-> 3b
@@ -675,8 +680,7 @@ func testErrorThroughPatching(t *testing.T, expectedError error, targetFunction 
 	for _, file := range testFiles {
 		blockTmp, err := loadBlocks(file)
 		if err != nil {
-			t.Errorf("Error loading file: %v\n", err)
-			return
+			t.Fatalf("Error loading file: %v\n", err)
 		}
 		blocks = append(blocks, blockTmp...)
 	}
@@ -702,12 +706,12 @@ func testErrorThroughPatching(t *testing.T, expectedError error, targetFunction 
 		}
 	}
 	if err == nil {
-		t.Fatalf("ProcessBlock unexpectedly succeeded. "+
-			"Expected: %s", expectedError)
+		t.Errorf("ProcessBlock unexpectedly succeeded. "+
+			"Expected: %s", expectedErrorMessage)
 	}
-	if err != expectedError {
-		t.Fatalf("ProcessBlock returned wrong error. "+
-			"Want: %s, got: %s", expectedError, err)
+	if !strings.Contains(err.Error(), expectedErrorMessage) {
+		t.Errorf("ProcessBlock returned wrong error. "+
+			"Want: %s, got: %s", expectedErrorMessage, err)
 	}
 
 	monkey.Unpatch(targetFunction)
