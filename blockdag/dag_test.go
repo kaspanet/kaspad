@@ -624,9 +624,9 @@ func TestIntervalBlockHashes(t *testing.T) {
 	}
 }
 
-// TestRestoreUTXOErrors tests all error-cases in restoreUTXO.
+// TestPastUTXOErrors tests all error-cases in restoreUTXO.
 // The non-error-cases are tested in the more general tests.
-func TestRestoreUTXOErrors(t *testing.T) {
+func TestPastUTXOErrors(t *testing.T) {
 	targetErr := errors.New("restoreUTXO error")
 	monkey.Patch((*BlockDAG).restoreUTXO, func(dag *BlockDAG, provisional *provisionalNode, virtual *VirtualBlock) (utxoSet, error) {
 		return nil, targetErr
@@ -640,6 +640,17 @@ func TestRestoreUTXOErrors(t *testing.T) {
 	})
 	testError(t, targetErr)
 	monkey.Unpatch(dbFetchBlockByNode)
+}
+
+// TestRestoreUTXOErrors tests all error-cases in restoreUTXO.
+// The non-error-cases are tested in the more general tests.
+func TestRestoreUTXOErrors(t *testing.T) {
+	targetErr := errors.New("withDiff error")
+	monkey.Patch((*fullUTXOSet).withDiff, func(fus *fullUTXOSet, other *utxoDiff) (utxoSet, error) {
+		return nil, targetErr
+	})
+	testError(t, targetErr)
+	monkey.Unpatch((*fullUTXOSet).withDiff)
 }
 
 func testError(t *testing.T, expectedError error) {
