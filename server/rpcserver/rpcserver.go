@@ -1328,7 +1328,7 @@ func encodeLongPollID(prevHashes []daghash.Hash, lastGenerated time.Time) string
 func decodeLongPollID(longPollID string) ([]daghash.Hash, int64, error) {
 	fields := strings.Split(longPollID, "-")
 	if len(fields) != 2 {
-		return nil, 0, errors.New("invalid number of fields")
+		return nil, 0, errors.New("decodeLongPollID: invalid number of fields")
 	}
 
 	prevHashesStr := fields[0]
