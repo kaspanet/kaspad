@@ -1333,7 +1333,7 @@ func decodeLongPollID(templateID string) ([]daghash.Hash, int64, error) {
 
 	prevHashesStr := fields[0]
 	if len(prevHashesStr)%daghash.HashSize != 0 {
-		return nil, 0, errors.New("invalid previous hashes format")
+		return nil, 0, errors.New("decodeLongPollID: invalid previous hashes format")
 	}
 	numberOfHashes := len(prevHashesStr) / daghash.HashSize
 
@@ -1342,14 +1342,14 @@ func decodeLongPollID(templateID string) ([]daghash.Hash, int64, error) {
 	for i := 0; i < len(prevHashesStr); i += daghash.HashSize {
 		hash, err := daghash.NewHashFromStr(prevHashesStr[i : i+daghash.HashSize])
 		if err != nil {
-			return nil, 0, fmt.Errorf("NewHashFromStr: %v", err)
+			return nil, 0, fmt.Errorf("decodeLongPollID: NewHashFromStr: %v", err)
 		}
 		prevHashes = append(prevHashes, *hash)
 	}
 
 	lastGenerated, err := strconv.ParseInt(fields[1], 10, 64)
 	if err != nil {
-		return nil, 0, fmt.Errorf("Cannot parse timestamp: %v", lastGenerated)
+		return nil, 0, fmt.Errorf("decodeLongPollID: Cannot parse timestamp: %v", lastGenerated)
 	}
 
 	return prevHashes, lastGenerated, nil

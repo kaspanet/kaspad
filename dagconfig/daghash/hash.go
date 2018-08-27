@@ -9,6 +9,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"math/big"
+	"strings"
 )
 
 // HashSize of array used to store hashes.  See Hash.
@@ -184,13 +185,5 @@ func Less(a *Hash, b *Hash) bool {
 
 //JoinHashesStrings joins all the stringified hashes separated by a separator
 func JoinHashesStrings(hashes []Hash, separator string) string {
-	str := ""
-	hashesLen := len(hashes)
-	for i, hash := range hashes {
-		str += hash.String()
-		if i < hashesLen-1 {
-			str += separator
-		}
-	}
-	return str
+	return strings.Join(Strings(hashes), separator)
 }
