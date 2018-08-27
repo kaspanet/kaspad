@@ -772,10 +772,6 @@ func (dag *BlockDAG) verifyAndBuildUTXO(provisional *provisionalNode, virtual *V
 
 // pastUTXO returns the UTXO of a given block's (in provisionalNode format) past
 func (dag *BlockDAG) pastUTXO(provisional *provisionalNode, virtual *VirtualBlock) (utxoSet, error) {
-	if provisional.original.isGenesis() {
-		return newDiffUTXOSet(virtual.utxoSet, newUTXODiff()), nil
-	}
-
 	pastUTXO, err := dag.restoreUTXO(provisional.selectedParent, virtual)
 	if err != nil {
 		return nil, err
@@ -806,7 +802,7 @@ func (dag *BlockDAG) pastUTXO(provisional *provisionalNode, virtual *VirtualBloc
 	return pastUTXO, nil
 }
 
-// restoreUTXO restores the UTXO of a given block from (in provisionalNode format) its diff
+// restoreUTXO restores the UTXO of a given block (in provisionalNode format) from its diff
 func (dag *BlockDAG) restoreUTXO(provisional *provisionalNode, virtual *VirtualBlock) (utxoSet, error) {
 	stack := []*provisionalNode{provisional}
 	current := provisional
