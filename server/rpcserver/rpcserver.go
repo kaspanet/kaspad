@@ -1325,8 +1325,8 @@ func encodeLongPollID(prevHashes []daghash.Hash, lastGenerated time.Time) string
 // that are using long polling for block templates.  The ID consists of the
 // previous blocks hashes for the associated template and the time the associated
 // template was generated.
-func decodeLongPollID(templateID string) ([]daghash.Hash, int64, error) {
-	fields := strings.Split(templateID, "-")
+func decodeLongPollID(longPollID string) ([]daghash.Hash, int64, error) {
+	fields := strings.Split(longPollID, "-")
 	if len(fields) != 2 {
 		return nil, 0, errors.New("invalid number of fields")
 	}
