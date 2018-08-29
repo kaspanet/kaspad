@@ -13,8 +13,8 @@ import (
 	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/database"
 	"github.com/daglabs/btcd/txscript"
-	"github.com/daglabs/btcd/wire"
 	"github.com/daglabs/btcd/util"
+	"github.com/daglabs/btcd/wire"
 )
 
 const (
@@ -600,7 +600,7 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block, view *Utxo
 	// The caller would typically want to react with actions such as
 	// updating wallets.
 	dag.dagLock.Unlock()
-	dag.sendNotification(NTBlockConnected, block)
+	dag.sendNotification(NTBlockConnected, dag.virtual.Tips().hashes())
 	dag.dagLock.Lock()
 
 	return nil
