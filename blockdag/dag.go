@@ -775,6 +775,8 @@ func (dag *BlockDAG) pastUTXO(provisional *provisionalNode, virtual *VirtualBloc
 		return nil, err
 	}
 
+	// Fetch from the database all the transactions for this block's blue set (besides the selected parent)
+	var blueBlockTransactions []*util.Tx
 	err = dag.db.View(func(tx database.Tx) error {
 		for i := len(provisional.original.blues) - 1; i >= 0; i-- {
 			blueBlockNode := provisional.original.blues[i]
@@ -786,15 +788,20 @@ func (dag *BlockDAG) pastUTXO(provisional *provisionalNode, virtual *VirtualBloc
 			if err != nil {
 				return err
 			}
-			for _, tx := range blueBlock.Transactions() {
-				_ = pastUTXO.addTx(tx.MsgTx(), provisional.original.height) // purposefully ignore failures - these are just unaccepted transactions
-			}
+
+			blueBlockTransactions = append(blueBlockTransactions, blueBlock.Transactions()...)
 		}
 
 		return nil
 	})
 	if err != nil {
 		return nil, err
+	}
+
+	// Add all transactions to the pastUTXO
+	// Purposefully ignore failures - these are just unaccepted transactions
+	for _, tx := range blueBlockTransactions {
+		_ = pastUTXO.addTx(tx.MsgTx(), provisional.original.height)
 	}
 
 	return pastUTXO, nil
