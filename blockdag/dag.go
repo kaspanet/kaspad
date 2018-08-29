@@ -648,12 +648,12 @@ func (dag *BlockDAG) applyUTXOChanges(node *blockNode, block *util.Block) (*utxo
 		return nil, err
 	}
 
-	// It is now safe to meld the UTXO to base.
+	// It is now safe to meld the UTXO set to base.
 	diffSet := newVirtualUTXO.(*diffUTXOSet)
 	utxoDiff := diffSet.utxoDiff
 	diffSet.meldToBase()
 
-	// It is now safe to commit all the allProvisionalNodes
+	// It is now safe to commit all the provisionalNodes
 	for _, provisional := range provisionalSet {
 		provisional.commit()
 
