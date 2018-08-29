@@ -761,8 +761,6 @@ func (dag *BlockDAG) verifyAndBuildUTXO(provisional *provisionalNode, virtual *V
 		return nil, err
 	}
 
-	log.Debugf("Past UTXO set for %s: %s", provisional.original.hash.String(), utxo)
-
 	for _, tx := range provisional.transactions {
 		ok := utxo.addTx(tx.MsgTx(), provisional.original.height)
 		if !ok {
@@ -770,7 +768,6 @@ func (dag *BlockDAG) verifyAndBuildUTXO(provisional *provisionalNode, virtual *V
 		}
 	}
 
-	log.Debugf("Final UTXO set for %s: %s", provisional.original.hash.String(), utxo)
 	return utxo, nil
 }
 
