@@ -11,13 +11,13 @@ import (
 	"github.com/daglabs/btcd/mining"
 	"github.com/daglabs/btcd/mining/cpuminer"
 	"github.com/daglabs/btcd/server/p2p"
-	"github.com/daglabs/btcd/server/rpcserver"
+	"github.com/daglabs/btcd/server/rpc"
 	"github.com/daglabs/btcd/signal"
 )
 
 // Server is a wrapper for p2p server and rpc server
 type Server struct {
-	rpcServer   *rpcserver.Server
+	rpcServer   *rpc.Server
 	p2pServer   *p2p.Server
 	cpuminer    *cpuminer.CPUMiner
 	startupTime int64
@@ -119,7 +119,7 @@ func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params
 
 	if !cfg.DisableRPC {
 
-		s.rpcServer, err = rpcserver.NewRPCServer(
+		s.rpcServer, err = rpc.NewRPCServer(
 			s.startupTime,
 			s.p2pServer,
 			db,
