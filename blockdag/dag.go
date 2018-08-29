@@ -622,12 +622,12 @@ func (dag *BlockDAG) applyUTXOChanges(node *blockNode, block *util.Block) (*utxo
 	// Clone the virtual block so that we don't modify the existing one.
 	virtualClone := dag.virtual.clone()
 
-	newBlockUTXO, err := verifyAndBuildUTXO(newNodeProvisional, virtualClone, dag.db)
+	newBlockUTXO, err := newNodeProvisional.verifyAndBuildUTXO(virtualClone, dag.db)
 	if err != nil {
 		return nil, err
 	}
 
-	err = updateParents(newNodeProvisional, virtualClone, newBlockUTXO)
+	err = newNodeProvisional.updateParents(virtualClone, newBlockUTXO)
 	if err != nil {
 		return nil, err
 	}
@@ -637,7 +637,7 @@ func (dag *BlockDAG) applyUTXOChanges(node *blockNode, block *util.Block) (*utxo
 
 	// Build a UTXO set for the new virtual block and update the DAG tips' diffs.
 	virtualNodeProvisional := provisionalSet.createProvisionalNode(&virtualClone.blockNode, true, nil)
-	newVirtualUTXO, err := pastUTXO(virtualNodeProvisional, virtualClone, dag.db)
+	newVirtualUTXO, err := virtualNodeProvisional.pastUTXO(virtualClone, dag.db)
 	if err != nil {
 		return nil, err
 	}
@@ -738,6 +738,130 @@ func (pns provisionalNodeSet) createProvisionalNode(node *blockNode, withParents
 	return provisional
 }
 
+// verifyAndBuildUTXO verifies all transactions in the given block (in provisionalNode format) and builds its UTXO
+func (p *provisionalNode) verifyAndBuildUTXO(virtual *VirtualBlock, db database.DB) (utxoSet, error) {
+	utxo, err := p.pastUTXO(virtual, db)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, tx := range p.transactions {
+		ok := utxo.addTx(tx.MsgTx(), p.original.height)
+		if !ok {
+			return nil, fmt.Errorf("transaction %v is not compatible with UTXO", tx)
+		}
+	}
+
+	return utxo, nil
+}
+
+// pastUTXO returns the UTXO of a given block's (in provisionalNode format) past
+func (p *provisionalNode) pastUTXO(virtual *VirtualBlock, db database.DB) (utxoSet, error) {
+	pastUTXO, err := p.selectedParent.restoreUTXO(virtual)
+	if err != nil {
+		return nil, err
+	}
+
+	// Fetch from the database all the transactions for this block's blue set (besides the selected parent)
+	var blueBlockTransactions []*util.Tx
+	err = db.View(func(tx database.Tx) error {
+		for i := len(p.original.blues) - 1; i >= 0; i-- {
+			blueBlockNode := p.original.blues[i]
+			if blueBlockNode == p.original.selectedParent {
+				continue
+			}
+
+			blueBlock, err := dbFetchBlockByNode(tx, blueBlockNode)
+			if err != nil {
+				return err
+			}
+
+			blueBlockTransactions = append(blueBlockTransactions, blueBlock.Transactions()...)
+		}
+
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// Add all transactions to the pastUTXO
+	// Purposefully ignore failures - these are just unaccepted transactions
+	for _, tx := range blueBlockTransactions {
+		_ = pastUTXO.addTx(tx.MsgTx(), p.original.height)
+	}
+
+	return pastUTXO, nil
+}
+
+// restoreUTXO restores the UTXO of a given block (in provisionalNode format) from its diff
+func (p *provisionalNode) restoreUTXO(virtual *VirtualBlock) (utxoSet, error) {
+	stack := []*provisionalNode{p}
+	current := p
+
+	for current.diffChild != nil {
+		current = current.diffChild
+		stack = append(stack, current)
+	}
+
+	utxo := utxoSet(virtual.utxoSet)
+
+	var err error
+	for i := len(stack) - 1; i >= 0; i-- {
+		utxo, err = utxo.withDiff(stack[i].diff)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return utxo, nil
+}
+
+// updateParents adds this block (in provisionalNode format) to the children sets of its parents
+// and updates the diff of any parent whose DiffChild is this block
+func (p *provisionalNode) updateParents(virtual *VirtualBlock, newBlockUTXO utxoSet) error {
+	virtualDiffFromNewBlock, err := virtual.utxoSet.diffFrom(newBlockUTXO)
+	if err != nil {
+		return err
+	}
+
+	p.diff = virtualDiffFromNewBlock
+
+	for _, parent := range p.parents {
+		if parent.diffChild == nil {
+			parentUTXO, err := parent.restoreUTXO(virtual)
+			if err != nil {
+				return err
+			}
+			parent.diffChild = p
+			parent.diff, err = newBlockUTXO.diffFrom(parentUTXO)
+			if err != nil {
+				return err
+			}
+		}
+
+		parent.children = append(parent.children, p)
+	}
+
+	return nil
+}
+
+// updateTipsUTXO builds and applies new diff UTXOs for all the DAG's tips (in provisionalNode format)
+func updateTipsUTXO(tipProvisionals []*provisionalNode, virtual *VirtualBlock, virtualUTXO utxoSet) error {
+	for _, tipProvisional := range tipProvisionals {
+		tipUTXO, err := tipProvisional.restoreUTXO(virtual)
+		if err != nil {
+			return err
+		}
+		tipProvisional.diff, err = virtualUTXO.diffFrom(tipUTXO)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 // commit updates the original blockNode this provisionalNode was created from with all the changes made to it
 func (p *provisionalNode) commit() {
 	if p.selectedParent != nil {
@@ -762,130 +886,6 @@ func (p *provisionalNode) commit() {
 	if p.diffChild != nil {
 		p.original.diffChild = p.diffChild.original
 	}
-}
-
-// verifyAndBuildUTXO verifies all transactions in the given block (in provisionalNode format) and builds its UTXO
-func verifyAndBuildUTXO(provisional *provisionalNode, virtual *VirtualBlock, db database.DB) (utxoSet, error) {
-	utxo, err := pastUTXO(provisional, virtual, db)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, tx := range provisional.transactions {
-		ok := utxo.addTx(tx.MsgTx(), provisional.original.height)
-		if !ok {
-			return nil, fmt.Errorf("transaction %v is not compatible with UTXO", tx)
-		}
-	}
-
-	return utxo, nil
-}
-
-// pastUTXO returns the UTXO of a given block's (in provisionalNode format) past
-func pastUTXO(provisional *provisionalNode, virtual *VirtualBlock, db database.DB) (utxoSet, error) {
-	pastUTXO, err := restoreUTXO(provisional.selectedParent, virtual)
-	if err != nil {
-		return nil, err
-	}
-
-	// Fetch from the database all the transactions for this block's blue set (besides the selected parent)
-	var blueBlockTransactions []*util.Tx
-	err = db.View(func(tx database.Tx) error {
-		for i := len(provisional.original.blues) - 1; i >= 0; i-- {
-			blueBlockNode := provisional.original.blues[i]
-			if blueBlockNode == provisional.original.selectedParent {
-				continue
-			}
-
-			blueBlock, err := dbFetchBlockByNode(tx, blueBlockNode)
-			if err != nil {
-				return err
-			}
-
-			blueBlockTransactions = append(blueBlockTransactions, blueBlock.Transactions()...)
-		}
-
-		return nil
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	// Add all transactions to the pastUTXO
-	// Purposefully ignore failures - these are just unaccepted transactions
-	for _, tx := range blueBlockTransactions {
-		_ = pastUTXO.addTx(tx.MsgTx(), provisional.original.height)
-	}
-
-	return pastUTXO, nil
-}
-
-// restoreUTXO restores the UTXO of a given block (in provisionalNode format) from its diff
-func restoreUTXO(provisional *provisionalNode, virtual *VirtualBlock) (utxoSet, error) {
-	stack := []*provisionalNode{provisional}
-	current := provisional
-
-	for current.diffChild != nil {
-		current = current.diffChild
-		stack = append(stack, current)
-	}
-
-	utxo := utxoSet(virtual.utxoSet)
-
-	var err error
-	for i := len(stack) - 1; i >= 0; i-- {
-		utxo, err = utxo.withDiff(stack[i].diff)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	return utxo, nil
-}
-
-// updateParents adds this block (in provisionalNode format) to the children sets of its parents
-// and updates the diff of any parent whose DiffChild is this block
-func updateParents(provisional *provisionalNode, virtual *VirtualBlock, newBlockUTXO utxoSet) error {
-	virtualDiffFromNewBlock, err := virtual.utxoSet.diffFrom(newBlockUTXO)
-	if err != nil {
-		return err
-	}
-
-	provisional.diff = virtualDiffFromNewBlock
-
-	for _, parent := range provisional.parents {
-		if parent.diffChild == nil {
-			parentUTXO, err := restoreUTXO(parent, virtual)
-			if err != nil {
-				return err
-			}
-			parent.diffChild = provisional
-			parent.diff, err = newBlockUTXO.diffFrom(parentUTXO)
-			if err != nil {
-				return err
-			}
-		}
-
-		parent.children = append(parent.children, provisional)
-	}
-
-	return nil
-}
-
-// updateTipsUTXO builds and applies new diff UTXOs for all the DAG's tips (in provisionalNode format)
-func updateTipsUTXO(tipProvisionals []*provisionalNode, virtual *VirtualBlock, virtualUTXO utxoSet) error {
-	for _, tipProvisional := range tipProvisionals {
-		tipUTXO, err := restoreUTXO(tipProvisional, virtual)
-		if err != nil {
-			return err
-		}
-		tipProvisional.diff, err = virtualUTXO.diffFrom(tipUTXO)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
 }
 
 // isCurrent returns whether or not the chain believes it is current.  Several
