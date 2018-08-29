@@ -533,7 +533,7 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block) error {
 	}
 
 	// Add the node to the virtual and update the UTXO set of the DAG.
-	utxoDiff, err := dag.connectUTXO(node, block)
+	utxoDiff, err := dag.applyUTXOChanges(node, block)
 	if err != nil {
 		return err
 	}
@@ -603,7 +603,7 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block) error {
 	return nil
 }
 
-// connectUTXO does the following:
+// applyUTXOChanges does the following:
 // 1. Verifies that each transaction within the new block could spend an existing UTXO.
 // 2. Connects each of the new block's parents to the block.
 // 3. Adds the new block to the DAG's tips.
@@ -611,7 +611,7 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block) error {
 // 5. Updates each of the tips' utxoDiff.
 //
 // This function MUST be called with the chain state lock held (for writes).
-func (dag *BlockDAG) connectUTXO(node *blockNode, block *util.Block) (*utxoDiff, error) {
+func (dag *BlockDAG) applyUTXOChanges(node *blockNode, block *util.Block) (*utxoDiff, error) {
 	// Prepare provisionalNodes for all the relevant nodes to avoid modifying the original nodes.
 	// We avoid modifying the original nodes in this function because it could potentially
 	// fail if the block is not valid, thus bringing all the affected nodes (and the virtual)
@@ -671,8 +671,8 @@ func (dag *BlockDAG) connectUTXO(node *blockNode, block *util.Block) (*utxoDiff,
 }
 
 // provisionalNode is a temporary and partial copy of a blockNode. It is used exclusively
-// inside connectUTXO. We use this struct instead of the original blockNode because
-// connectUTXO has a few points of failure which, were we to modify it, would leave the
+// inside applyUTXOChanges. We use this struct instead of the original blockNode because
+// applyUTXOChanges has a few points of failure which, were we to modify it, would leave the
 // blockNode in an undefined state.
 //
 // Important: provisionalNode.original must be treated as immutable.
