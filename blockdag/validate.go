@@ -718,7 +718,10 @@ func validateParents(blockHeader *wire.BlockHeader, parents blockSet) error {
 	for queue.Len() > 0 {
 		current := queue.Pop()
 		if parents.contains(current) {
-			return fmt.Errorf("Block %s is both a parent of %s and an ancestor of another parent", current.hash, blockHeader.BlockHash())
+			return fmt.Errorf("Block %s is both a parent of %s and an"+
+				" ancestor of another parent",
+				current.hash,
+				blockHeader.BlockHash())
 		}
 		if current.height > minHeight {
 			for _, parent := range current.parents {
