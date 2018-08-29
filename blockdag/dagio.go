@@ -25,7 +25,7 @@ const (
 
 	// latestUTXOSetBucketVersion is the current version of the UTXO set
 	// bucket that is used to track all unspent outputs.
-	latestUTXOSetBucketVersion = 2
+	latestUTXOSetBucketVersion = 1
 )
 
 var (
