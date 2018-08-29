@@ -499,7 +499,7 @@ func (dag *BlockDAG) connectToDAG(node *blockNode, parentNodes blockSet, block *
 		}
 
 		if err != nil {
-			return err;
+			return err
 		}
 	}
 
@@ -621,15 +621,12 @@ func (dag *BlockDAG) connectUTXO(node *blockNode, block *util.Block) (*utxoDiff,
 	// Clone the virtual block so that we don't modify the existing one.
 	virtualClone := dag.virtual.clone()
 
-	// Verify and build a UTXO set for the new block.
 	newBlockUTXO, err := dag.verifyAndBuildUTXO(newNodeProvisional, virtualClone)
 	if err != nil {
 		return nil, err
 	}
 
-	// Update the new block's parents.
-	dag.connectBlockToParents(newNodeProvisional)
-	err = dag.updateParentDiffs(newNodeProvisional, virtualClone, newBlockUTXO)
+	err = dag.updateParents(newNodeProvisional, virtualClone, newBlockUTXO)
 	if err != nil {
 		return nil, err
 	}
@@ -827,16 +824,9 @@ func (dag *BlockDAG) restoreUTXO(provisional *provisionalNode, virtual *VirtualB
 	return utxo, nil
 }
 
-// connectChildToParents iterates the child's parents and adds
-// itself to their child set
-func (dag *BlockDAG) connectBlockToParents(provisional *provisionalNode) {
-	for _, parent := range provisional.parents {
-		parent.children = append(parent.children, provisional)
-	}
-}
-
-// updateParentDiffs updates the diff of any parent whose DiffChild is this block (in provisionalNode format)
-func (dag *BlockDAG) updateParentDiffs(provisional *provisionalNode, virtual *VirtualBlock, newBlockUTXO utxoSet) error {
+// updateParents adds this block (in provisionalNode format) to the children sets of its parents
+// and updates the diff of any parent whose DiffChild is this block
+func (dag *BlockDAG) updateParents(provisional *provisionalNode, virtual *VirtualBlock, newBlockUTXO utxoSet) error {
 	virtualDiffFromNewBlock, err := virtual.utxoSet.diffFrom(newBlockUTXO)
 	if err != nil {
 		return err
@@ -856,6 +846,8 @@ func (dag *BlockDAG) updateParentDiffs(provisional *provisionalNode, virtual *Vi
 				return err
 			}
 		}
+
+		parent.children = append(parent.children, provisional)
 	}
 
 	return nil
