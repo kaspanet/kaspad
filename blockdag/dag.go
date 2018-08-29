@@ -851,11 +851,10 @@ func (dag *BlockDAG) updateParentDiffs(provisional *provisionalNode, virtual *Vi
 				return err
 			}
 			parent.diffChild = provisional
-			newBlockDiffFromParent, err := newBlockUTXO.diffFrom(parentUTXO)
+			parent.diff, err = newBlockUTXO.diffFrom(parentUTXO)
 			if err != nil {
 				return err
 			}
-			parent.diff = newBlockDiffFromParent
 		}
 	}
 
@@ -869,11 +868,10 @@ func (dag *BlockDAG) updateTipsUTXO(tipProvisionals []*provisionalNode, virtual 
 		if err != nil {
 			return err
 		}
-		virtualDiffFromTip, err := virtualUTXO.diffFrom(tipUTXO)
+		tipProvisional.diff, err = virtualUTXO.diffFrom(tipUTXO)
 		if err != nil {
 			return err
 		}
-		tipProvisional.diff = virtualDiffFromTip
 	}
 
 	return nil
