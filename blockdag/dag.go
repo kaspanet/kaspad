@@ -1428,7 +1428,9 @@ func New(config *Config) (*BlockDAG, error) {
 		return nil, err
 	}
 
-	// Save a reference to the genesis block.
+	// Save a reference to the genesis block. Note that we may only get
+	// an index reference to it here because the index is uninitialized
+	// before initDAGState.
 	dag.genesis = index.LookupNode(params.GenesisHash)
 
 	// Initialize and catch up all of the currently active optional indexes
