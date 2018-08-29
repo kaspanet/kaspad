@@ -604,9 +604,9 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block) error {
 }
 
 // connectUTXO does the following:
-// 1. Verifies that new block makes sense UTXO-wise.
+// 1. Verifies that each transaction within the new block could spend an existing UTXO.
 // 2. Connects each of the new block's parents to the block.
-// 3. Adds the new block to the virtual.
+// 3. Adds the new block to the DAG's tips.
 // 4. Updates the DAG's full UTXO set.
 // 5. Updates each of the tips' utxoDiff.
 //
