@@ -613,8 +613,9 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block) error {
 // This function MUST be called with the chain state lock held (for writes).
 func (dag *BlockDAG) connectUTXO(node *blockNode, block *util.Block) (*utxoDiff, error) {
 	// Prepare provisionalNodes for all the relevant nodes to avoid modifying the original nodes.
-	// We avoid modifying the original nodes in this function because, potentially, it could
-	// fail, thus bringing all the affected nodes (and the virtual) into an undefined state.
+	// We avoid modifying the original nodes in this function because it could potentially
+	// fail if the block is not valid, thus bringing all the affected nodes (and the virtual)
+	// into an undefined state.
 	allProvisionalNodes := make(map[daghash.Hash]*provisionalNode)
 	newNodeProvisional := toProvisionalNode(node, node.parents, block.Transactions(), allProvisionalNodes)
 
