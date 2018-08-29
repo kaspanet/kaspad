@@ -616,8 +616,8 @@ func (dag *BlockDAG) applyUTXOChanges(node *blockNode, block *util.Block) (*utxo
 	// We avoid modifying the original nodes in this function because it could potentially
 	// fail if the block is not valid, thus bringing all the affected nodes (and the virtual)
 	// into an undefined state.
-	allProvisionalNodes := make(map[daghash.Hash]*provisionalNode)
-	newNodeProvisional := toProvisionalNode(node, node.parents, block.Transactions(), allProvisionalNodes)
+	provisionalSet := newProvisionalNodeSet()
+	newNodeProvisional := provisionalSet.createProvisionalNode(node, node.parents, block.Transactions())
 
 	// Clone the virtual block so that we don't modify the existing one.
 	virtualClone := dag.virtual.clone()
@@ -636,7 +636,7 @@ func (dag *BlockDAG) applyUTXOChanges(node *blockNode, block *util.Block) (*utxo
 	virtualClone.AddTip(node)
 
 	// Build a UTXO set for the new virtual block and update the DAG tips' diffs.
-	virtualNodeProvisional := toProvisionalNode(&virtualClone.blockNode, virtualClone.tips(), nil, allProvisionalNodes)
+	virtualNodeProvisional := provisionalSet.createProvisionalNode(&virtualClone.blockNode, virtualClone.tips(), nil)
 	newVirtualUTXO, err := pastUTXO(virtualNodeProvisional, virtualClone, dag.db)
 	if err != nil {
 		return nil, err
@@ -654,7 +654,7 @@ func (dag *BlockDAG) applyUTXOChanges(node *blockNode, block *util.Block) (*utxo
 	diffSet.meldToBase()
 
 	// It is now safe to commit all the allProvisionalNodes
-	for _, provisional := range allProvisionalNodes {
+	for _, provisional := range provisionalSet {
 		provisional.commit()
 
 		// Set the status to valid for all index nodes to make sure the changes get
@@ -668,6 +668,17 @@ func (dag *BlockDAG) applyUTXOChanges(node *blockNode, block *util.Block) (*utxo
 	dag.virtual = virtualClone
 
 	return utxoDiff, nil
+}
+
+// provisionalNodeSet is a temporary collection of provisionalNodes. It is used exclusively
+// inside applyUTXOChanges. The purpose of this set is twofold:
+// 1. Provide easy access to all provisionalNodes created inside this particular call to applyUTXOChanges
+// 2. Avoid needless recreation of provisionalNodes
+type provisionalNodeSet map[daghash.Hash]*provisionalNode
+
+// newProvisionalNodeSet creates an empty provisionalNodeSet
+func newProvisionalNodeSet() provisionalNodeSet {
+	return provisionalNodeSet{}
 }
 
 // provisionalNode is a temporary and partial copy of a blockNode. It is used exclusively
@@ -686,14 +697,14 @@ type provisionalNode struct {
 	transactions   []*util.Tx
 }
 
-// toProvisionalNode takes a node and builds a provisionalNode from it.
+// createProvisionalNode takes a node and builds a provisionalNode from it.
 // Note that parents are passed as an arguments. This is to avoid building the
 // entire DAG in provisionalNode format.
 // allProvisionalNodes is a collection of all provisionalNodes created thus far.
 // We use it to avoid needlessly recreating provisionalNodes.
-func toProvisionalNode(node *blockNode, parents blockSet, transactions []*util.Tx,
-	allProvisionalNodes map[daghash.Hash]*provisionalNode) *provisionalNode {
-	if existingProvisional, ok := allProvisionalNodes[node.hash]; ok {
+func (pns provisionalNodeSet) createProvisionalNode(node *blockNode, parents blockSet,
+	transactions []*util.Tx) *provisionalNode {
+	if existingProvisional, ok := pns[node.hash]; ok {
 		return existingProvisional
 	}
 
@@ -704,20 +715,20 @@ func toProvisionalNode(node *blockNode, parents blockSet, transactions []*util.T
 		transactions: transactions,
 	}
 	if node.hash != zeroHash {
-		allProvisionalNodes[node.hash] = provisional
+		pns[node.hash] = provisional
 	}
 
 	for _, parent := range parents {
-		provisional.parents = append(provisional.parents, toProvisionalNode(parent, newSet(), nil, allProvisionalNodes))
+		provisional.parents = append(provisional.parents, pns.createProvisionalNode(parent, newSet(), nil))
 	}
 	if node.selectedParent != nil {
-		provisional.selectedParent = allProvisionalNodes[node.selectedParent.hash]
+		provisional.selectedParent = pns[node.selectedParent.hash]
 	}
 	for _, child := range node.children {
-		provisional.children = append(provisional.children, toProvisionalNode(child, newSet(), nil, allProvisionalNodes))
+		provisional.children = append(provisional.children, pns.createProvisionalNode(child, newSet(), nil))
 	}
 	if node.diffChild != nil {
-		provisional.diffChild = allProvisionalNodes[node.diffChild.hash]
+		provisional.diffChild = pns[node.diffChild.hash]
 	}
 	if node.diff != nil {
 		provisional.diff = node.diff.clone()
