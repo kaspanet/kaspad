@@ -63,8 +63,33 @@ func TestHaveBlock(t *testing.T) {
 		}
 	}
 
+	testFiles = []string{
+		"blk_3C.dat",
+	}
+
+	for _, file := range testFiles {
+		blockTmp, err := loadBlocks(file)
+		if err != nil {
+			t.Errorf("Error loading file: %v\n", err)
+			return
+		}
+		blocks = append(blocks, blockTmp...)
+	}
+	isOrphan, err := chain.ProcessBlock(blocks[6], BFNone)
+
+	// Block 3c should fail to connect since its parents are related. (It points to A and B, and A is the parent of B)
+	if err == nil {
+		t.Errorf("ProcessBlock for block 3c has no error when expected to have an error\n")
+		return
+	}
+	if isOrphan {
+		t.Errorf("ProcessBlock incorrectly returned block 3c " +
+			"is an orphan\n")
+		return
+	}
+
 	// Insert an orphan block.
-	isOrphan, err := chain.ProcessBlock(util.NewBlock(&Block100000),
+	isOrphan, err = chain.ProcessBlock(util.NewBlock(&Block100000),
 		BFNone)
 	if err != nil {
 		t.Errorf("Unable to process block: %v", err)
@@ -111,6 +136,10 @@ func TestHaveBlock(t *testing.T) {
 			continue
 		}
 	}
+}
+
+func TestProcessBlock(t *testing.T) {
+	// Block 3c should fail to connect since its parents are related. (It points to A and B, and A is the parent of B)
 }
 
 // TestCalcSequenceLock tests the LockTimeToSequence function, and the

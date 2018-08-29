@@ -126,13 +126,6 @@ func TestCheckConnectBlockTemplate(t *testing.T) {
 			"on block 3a")
 	}
 
-	// Block 3c should fail to connect since its parents are related. (It points to A and B, and A is the parent of B)
-	err = chain.CheckConnectBlockTemplate(blocks[6])
-	if err == nil {
-		t.Fatal("CheckConnectBlockTemplate: Did not received expected error " +
-			"on block 3c")
-	}
-
 	// Block 4 should connect even if proof of work is invalid.
 	invalidPowBlock := *blocks[4].MsgBlock()
 	invalidPowBlock.Header.Nonce++

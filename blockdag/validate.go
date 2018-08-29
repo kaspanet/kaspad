@@ -15,8 +15,8 @@ import (
 	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/txscript"
-	"github.com/daglabs/btcd/wire"
 	"github.com/daglabs/btcd/util"
+	"github.com/daglabs/btcd/wire"
 )
 
 const (
@@ -699,6 +699,39 @@ func (dag *BlockDAG) checkBlockHeaderContext(header *wire.BlockHeader, selectedP
 	return nil
 }
 
+// validateParents validates that no parent is an ancestor of another parent
+func validateParents(blockHeader *wire.BlockHeader, parents blockSet) error {
+	minHeight := int32(math.MaxInt32)
+	queue := NewHeap()
+	visited := newSet()
+	for _, parent := range parents {
+		if parent.height < minHeight {
+			minHeight = parent.height
+		}
+		for _, grandParent := range parent.parents {
+			if !visited.contains(grandParent) {
+				queue.Push(grandParent)
+				visited.add(grandParent)
+			}
+		}
+	}
+	for queue.Len() > 0 {
+		current := queue.Pop()
+		if parents.contains(current) {
+			return fmt.Errorf("Block %s is both a parent of %s and an ancestor of another parent", current.hash, blockHeader.BlockHash())
+		}
+		if current.height > minHeight {
+			for _, parent := range current.parents {
+				if !visited.contains(parent) {
+					queue.Push(current)
+					visited.add(current)
+				}
+			}
+		}
+	}
+	return nil
+}
+
 // checkBlockContext peforms several validation checks on the block which depend
 // on its position within the block chain.
 //
@@ -710,10 +743,14 @@ func (dag *BlockDAG) checkBlockHeaderContext(header *wire.BlockHeader, selectedP
 // for how the flags modify its behavior.
 //
 // This function MUST be called with the chain state lock held (for writes).
-func (dag *BlockDAG) checkBlockContext(block *util.Block, selectedParent *blockNode, flags BehaviorFlags) error {
+func (dag *BlockDAG) checkBlockContext(block *util.Block, parents blockSet, selectedParent *blockNode, flags BehaviorFlags) error {
+	err := validateParents(&block.MsgBlock().Header, parents)
+	if err != nil {
+		return err
+	}
 	// Perform all block header related validation checks.
 	header := &block.MsgBlock().Header
-	err := dag.checkBlockHeaderContext(header, selectedParent, flags)
+	err = dag.checkBlockHeaderContext(header, selectedParent, flags)
 	if err != nil {
 		return err
 	}
@@ -1130,7 +1167,12 @@ func (dag *BlockDAG) CheckConnectBlockTemplate(block *util.Block) error {
 		return err
 	}
 
-	err = dag.checkBlockContext(block, dag.virtual.SelectedTip(), flags)
+	parents, err := lookupPreviousNodes(block, dag)
+	if err != nil {
+		return err
+	}
+
+	err = dag.checkBlockContext(block, parents, dag.virtual.SelectedTip(), flags)
 	if err != nil {
 		return err
 	}
