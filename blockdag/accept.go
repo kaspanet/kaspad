@@ -13,6 +13,7 @@ import (
 	"github.com/daglabs/btcd/wire"
 )
 
+// validateParents validates that no parent is an ancestor of another parent
 func validateParents(blockHeader *wire.BlockHeader, parents blockSet) error {
 	minHeight := int32(math.MaxInt32)
 	queue := NewHeap()
