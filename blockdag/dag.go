@@ -725,7 +725,7 @@ func toProvisionalNode(node *blockNode, parents blockSet, transactions []*util.T
 	return provisional
 }
 
-// commit commits all the provisionalNode's members into the original blockNode that it was built from
+// commit updates the original blockNode this provisionalNode was created from with all the changes made to it
 func (p *provisionalNode) commit() {
 	if p.selectedParent != nil {
 		p.original.selectedParent = p.selectedParent.original
