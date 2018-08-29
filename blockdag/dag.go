@@ -707,20 +707,20 @@ func toProvisionalNode(node *blockNode, parents blockSet, transactions []*util.T
 		allProvisionalNodes[node.hash] = provisional
 	}
 
-	if node.selectedParent != nil {
-		provisional.selectedParent = toProvisionalNode(node.selectedParent, newSet(), nil, allProvisionalNodes)
-	}
 	for _, parent := range parents {
 		provisional.parents = append(provisional.parents, toProvisionalNode(parent, newSet(), nil, allProvisionalNodes))
+	}
+	if node.selectedParent != nil {
+		provisional.selectedParent = allProvisionalNodes[node.selectedParent.hash]
 	}
 	for _, child := range node.children {
 		provisional.children = append(provisional.children, toProvisionalNode(child, newSet(), nil, allProvisionalNodes))
 	}
+	if node.diffChild != nil {
+		provisional.diffChild = allProvisionalNodes[node.diffChild.hash]
+	}
 	if node.diff != nil {
 		provisional.diff = node.diff.clone()
-	}
-	if node.diffChild != nil {
-		provisional.diffChild = toProvisionalNode(node.diffChild, newSet(), nil, allProvisionalNodes)
 	}
 
 	return provisional
