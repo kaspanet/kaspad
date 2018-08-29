@@ -497,6 +497,10 @@ func (dag *BlockDAG) connectToDAG(node *blockNode, parentNodes blockSet, block *
 			log.Warnf("Error flushing block index changes to disk: %v",
 				writeErr)
 		}
+
+		if err != nil {
+			return err;
+		}
 	}
 
 	// Connect the block to the DAG.
@@ -542,7 +546,7 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block) error {
 
 	// Generate a new state snapshot that will be used to update the
 	// database and later memory if all database updates are successful.
-	state := newDAGState(dag.virtual.tips().hashes())
+	state := newDAGState(dag.virtual.TipHashes())
 
 	// Atomically insert info into the database.
 	err = dag.db.Update(func(dbTx database.Tx) error {

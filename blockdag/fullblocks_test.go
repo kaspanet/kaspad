@@ -60,7 +60,7 @@ func isSupportedDbType(dbType string) bool {
 // dagSetup is used to create a new db and chain instance with the genesis
 // block already inserted.  In addition to the new chain instance, it returns
 // a teardown function the caller should invoke when done testing to clean up.
-func chainSetup(dbName string, params *dagconfig.Params) (*blockdag.BlockDAG, func(), error) {
+func dagSetup(dbName string, params *dagconfig.Params) (*blockdag.BlockDAG, func(), error) {
 	if !isSupportedDbType(testDbType) {
 		return nil, nil, fmt.Errorf("unsupported db type %v", testDbType)
 	}
@@ -142,7 +142,7 @@ func TestFullBlocks(t *testing.T) {
 	}
 
 	// Create a new database and chain instance to run tests against.
-	dag, teardownFunc, err := chainSetup("fullblocktest",
+	dag, teardownFunc, err := dagSetup("fullblocktest",
 		&dagconfig.RegressionNetParams)
 	if err != nil {
 		t.Errorf("Failed to setup chain instance: %v", err)

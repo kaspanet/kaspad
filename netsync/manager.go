@@ -17,8 +17,8 @@ import (
 	"github.com/daglabs/btcd/database"
 	"github.com/daglabs/btcd/mempool"
 	peerpkg "github.com/daglabs/btcd/peer"
-	"github.com/daglabs/btcd/wire"
 	"github.com/daglabs/btcd/util"
+	"github.com/daglabs/btcd/wire"
 )
 
 const (
@@ -1184,7 +1184,7 @@ func (sm *SyncManager) handleBlockchainNotification(notification *blockdag.Notif
 		iv := wire.NewInvVect(wire.InvTypeBlock, block.Hash())
 		sm.peerNotifier.RelayInventory(iv, block.MsgBlock().Header)
 
-		// A block has been connected to the main block chain.
+	// A block has been connected to the block DAG.
 	case blockdag.NTBlockConnected:
 		block, ok := notification.Data.(*util.Block)
 		if !ok {
@@ -1222,7 +1222,7 @@ func (sm *SyncManager) handleBlockchainNotification(notification *blockdag.Notif
 			}
 		}
 
-		// A block has been disconnected from the main block chain.
+	// A block has been disconnected from the block DAG.
 	case blockdag.NTBlockDisconnected:
 		block, ok := notification.Data.(*util.Block)
 		if !ok {
