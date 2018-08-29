@@ -6,10 +6,44 @@ package blockdag
 
 import (
 	"fmt"
+	"math"
 
 	"github.com/daglabs/btcd/database"
 	"github.com/daglabs/btcd/util"
+	"github.com/daglabs/btcd/wire"
 )
+
+func validateParents(blockHeader *wire.BlockHeader, parents blockSet) error {
+	minHeight := int32(math.MaxInt32)
+	queue := NewHeap()
+	visited := newSet()
+	for _, parent := range parents {
+		if parent.height < minHeight {
+			minHeight = parent.height
+		}
+		for _, grandParent := range parent.parents {
+			if !visited.contains(grandParent) {
+				queue.Push(grandParent)
+				visited.add(grandParent)
+			}
+		}
+	}
+	for queue.Len() > 0 {
+		current := queue.Pop()
+		if parents.contains(current) {
+			return fmt.Errorf("Block %s is both a parent of %s and an ancestor of another parent", current.hash, blockHeader.BlockHash())
+		}
+		if current.height > minHeight {
+			for _, parent := range current.parents {
+				if !visited.contains(parent) {
+					queue.Push(current)
+					visited.add(current)
+				}
+			}
+		}
+	}
+	return nil
+}
 
 // maybeAcceptBlock potentially accepts a block into the block DAG. It
 // performs several validation checks which depend on its position within
@@ -59,6 +93,10 @@ func (dag *BlockDAG) maybeAcceptBlock(block *util.Block, flags BehaviorFlags) er
 	// if the block ultimately gets connected to the main chain, it starts out
 	// on a side chain.
 	blockHeader := &block.MsgBlock().Header
+	err = validateParents(blockHeader, parents)
+	if err != nil {
+		return err
+	}
 	newNode := newBlockNode(blockHeader, parents, dag.dagParams.K)
 	newNode.status = statusDataStored
 

@@ -12,8 +12,8 @@ import (
 
 	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/dagconfig/daghash"
-	"github.com/daglabs/btcd/wire"
 	"github.com/daglabs/btcd/util"
+	"github.com/daglabs/btcd/wire"
 )
 
 // TestSequenceLocksActive tests the SequenceLockActive function to ensure it
@@ -85,6 +85,7 @@ func TestCheckConnectBlockTemplate(t *testing.T) {
 	testFiles := []string{
 		"blk_0_to_4.dat",
 		"blk_3B.dat",
+		"blk_3C.dat",
 	}
 
 	var blocks []*util.Block
@@ -123,6 +124,13 @@ func TestCheckConnectBlockTemplate(t *testing.T) {
 	if err == nil {
 		t.Fatal("CheckConnectBlockTemplate: Did not received expected error " +
 			"on block 3a")
+	}
+
+	// Block 3c should fail to connect since its parents are related. (It points to A and B, and A is the parent of B)
+	err = chain.CheckConnectBlockTemplate(blocks[6])
+	if err == nil {
+		t.Fatal("CheckConnectBlockTemplate: Did not received expected error " +
+			"on block 3c")
 	}
 
 	// Block 4 should connect even if proof of work is invalid.
