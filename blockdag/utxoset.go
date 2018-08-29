@@ -233,12 +233,13 @@ func (d utxoDiff) String() string {
 
 // newUTXOEntry creates a new utxoEntry representing the given txOut
 func newUTXOEntry(txOut *wire.TxOut, isCoinbase bool, blockHeight int32) *UTXOEntry {
-	entry := new(UTXOEntry)
-	entry.amount = txOut.Value
-	entry.pkScript = txOut.PkScript
-	entry.blockHeight = blockHeight
+	entry := &UTXOEntry{
+		amount:      txOut.Value,
+		pkScript:    txOut.PkScript,
+		blockHeight: blockHeight,
+		packedFlags: tfModified,
+	}
 
-	entry.packedFlags = tfModified
 	if isCoinbase {
 		entry.packedFlags |= tfCoinBase
 	}
