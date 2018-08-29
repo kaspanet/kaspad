@@ -426,6 +426,7 @@ func TestProcessTransaction(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unable to create test pool: %v", err)
 	}
+	tc := &testContext{t, harness}
 
 	//Checks that a transaction cannot be added to the transaction pool if it's already there
 	tx, err := harness.createTx(spendableOuts[0], 0, 1)
@@ -444,8 +445,6 @@ func TestProcessTransaction(t *testing.T) {
 		t.Errorf("Unexpected error code. Expected %v but got %v", wire.RejectDuplicate, code)
 	}
 
-	//Checks that an orphaned transaction cannot be
-	//added to the orphan pool if it's already there
 	orphanedTx, err := harness.CreateSignedTx([]spendableOutput{{
 		amount:   util.Amount(5000000000),
 		outPoint: wire.OutPoint{Hash: daghash.Hash{}, Index: 1},
@@ -453,10 +452,24 @@ func TestProcessTransaction(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unable to create signed tx: %v", err)
 	}
+
+	//Checks that an orphaned transaction cannot be
+	//added to the orphan pool if MaxOrphanTxs is 0
+	harness.txPool.cfg.Policy.MaxOrphanTxs = 0
 	_, err = harness.txPool.ProcessTransaction(orphanedTx, true, false, 0)
 	if err != nil {
 		t.Errorf("ProcessTransaction: unexpected error: %v", err)
 	}
+	testPoolMembership(tc, orphanedTx, false, false)
+
+	harness.txPool.cfg.Policy.MaxOrphanTxs = 5
+	_, err = harness.txPool.ProcessTransaction(orphanedTx, true, false, 0)
+	if err != nil {
+		t.Errorf("ProcessTransaction: unexpected error: %v", err)
+	}
+
+	//Checks that an orphaned transaction cannot be
+	//added to the orphan pool if it's already there
 	_, err = harness.txPool.ProcessTransaction(tx, true, false, 0)
 	if err == nil {
 		t.Errorf("ProcessTransaction: expected an error, not nil")

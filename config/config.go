@@ -26,10 +26,10 @@ import (
 	"github.com/daglabs/btcd/database"
 	"github.com/daglabs/btcd/logger"
 	"github.com/daglabs/btcd/mempool"
-	"github.com/daglabs/btcd/version"
-	"github.com/daglabs/btcd/wire"
 	"github.com/daglabs/btcd/util"
 	"github.com/daglabs/btcd/util/network"
+	"github.com/daglabs/btcd/version"
+	"github.com/daglabs/btcd/wire"
 	flags "github.com/jessevdk/go-flags"
 )
 
@@ -669,7 +669,7 @@ func loadConfig() (*Config, []string, error) {
 		return nil, nil, err
 	}
 
-	// Limit the max orphan count to a sane vlue.
+	// Limit the max orphan count to a sane value.
 	if cfg.MaxOrphanTxs < 0 {
 		str := "%s: The maxorphantx option may not be less than 0 " +
 			"-- parsed [%d]"
