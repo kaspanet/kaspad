@@ -624,12 +624,12 @@ func (dag *BlockDAG) applyUTXOChanges(node *blockNode, block *util.Block) (*utxo
 
 	newBlockUTXO, err := newNodeProvisional.verifyAndBuildUTXO(virtualClone, dag.db)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error verifying UTXO for %v: %s", node, err)
 	}
 
 	err = newNodeProvisional.updateParents(virtualClone, newBlockUTXO)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed updating parents of %v: %s", node, err)
 	}
 
 	// Update the virtual block's children (the DAG tips) to include the new block.
@@ -639,13 +639,13 @@ func (dag *BlockDAG) applyUTXOChanges(node *blockNode, block *util.Block) (*utxo
 	virtualNodeProvisional := provisionalSet.createProvisionalNode(&virtualClone.blockNode, true, nil)
 	newVirtualUTXO, err := virtualNodeProvisional.pastUTXO(virtualClone, dag.db)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("could not restore past UTXO for virtual %v: %s", virtualClone, err)
 	}
 
 	// Apply new utxoDiffs to all the tips
 	err = updateTipsUTXO(virtualNodeProvisional.parents, virtualClone, newVirtualUTXO)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed updating the tips' UTXO: %s", err)
 	}
 
 	// It is now safe to meld the UTXO set to base.
