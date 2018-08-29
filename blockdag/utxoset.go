@@ -26,11 +26,27 @@ func (uc utxoCollection) String() string {
 	return fmt.Sprintf("[ %s ]", strings.Join(utxoStrings, ", "))
 }
 
+// add adds a new UTXO entry to this collection
+func (uc utxoCollection) add(outPoint wire.OutPoint, entry *UTXOEntry) {
+	uc[outPoint] = entry
+}
+
+// remove removes a UTXO entry from this collection if it exists
+func (uc utxoCollection) remove(outPoint wire.OutPoint) {
+	delete(uc, outPoint)
+}
+
+// contains returns a boolean value indicating if represented by provided outPoint is in the set or not
+func (uc utxoCollection) contains(outPoint wire.OutPoint) bool {
+	_, ok := uc[outPoint]
+	return ok
+}
+
 // clone returns a clone of this collection
 func (uc utxoCollection) clone() utxoCollection {
 	clone := utxoCollection{}
 	for outPoint, entry := range uc {
-		clone[outPoint] = entry
+		clone.add(outPoint, entry)
 	}
 
 	return clone
@@ -90,10 +106,10 @@ func (d *utxoDiff) diffFrom(other *utxoDiff) (*utxoDiff, error) {
 	// If they are not in other.toAdd - should be added in result.toRemove
 	// If they are in other.toRemove - base utxoSet is not the same
 	for outPoint, utxoEntry := range d.toAdd {
-		if _, ok := other.toAdd[outPoint]; !ok {
-			result.toRemove[outPoint] = utxoEntry
+		if !other.toAdd.contains(outPoint) {
+			result.toRemove.add(outPoint, utxoEntry)
 		}
-		if _, ok := other.toRemove[outPoint]; ok {
+		if other.toRemove.contains(outPoint) {
 			return nil, errors.New("diffFrom: transaction both in d.toAdd and in other.toRemove")
 		}
 	}
@@ -102,10 +118,10 @@ func (d *utxoDiff) diffFrom(other *utxoDiff) (*utxoDiff, error) {
 	// If they are not in other.toRemove - should be added in result.toAdd
 	// If they are in other.toAdd - base utxoSet is not the same
 	for outPoint, utxoEntry := range d.toRemove {
-		if _, ok := other.toRemove[outPoint]; !ok {
-			result.toAdd[outPoint] = utxoEntry
+		if !other.toRemove.contains(outPoint) {
+			result.toAdd.add(outPoint, utxoEntry)
 		}
-		if _, ok := other.toAdd[outPoint]; ok {
+		if other.toAdd.contains(outPoint) {
 			return nil, errors.New("diffFrom: transaction both in d.toRemove and in other.toAdd")
 		}
 	}
@@ -113,16 +129,16 @@ func (d *utxoDiff) diffFrom(other *utxoDiff) (*utxoDiff, error) {
 	// All transactions in other.toAdd:
 	// If they are not in d.toAdd - should be added in result.toAdd
 	for outPoint, utxoEntry := range other.toAdd {
-		if _, ok := d.toAdd[outPoint]; !ok {
-			result.toAdd[outPoint] = utxoEntry
+		if !d.toAdd.contains(outPoint) {
+			result.toAdd.add(outPoint, utxoEntry)
 		}
 	}
 
 	// All transactions in other.toRemove:
 	// If they are not in d.toRemove - should be added in result.toRemove
 	for outPoint, utxoEntry := range other.toRemove {
-		if _, ok := d.toRemove[outPoint]; !ok {
-			result.toRemove[outPoint] = utxoEntry
+		if !d.toRemove.contains(outPoint) {
+			result.toRemove.add(outPoint, utxoEntry)
 		}
 	}
 
@@ -163,10 +179,10 @@ func (d *utxoDiff) withDiff(diff *utxoDiff) (*utxoDiff, error) {
 	// If they are in diff.toAdd - should throw an error
 	// Otherwise - should be ignored
 	for outPoint, utxoEntry := range d.toAdd {
-		if _, ok := diff.toRemove[outPoint]; !ok {
-			result.toAdd[outPoint] = utxoEntry
+		if !diff.toRemove.contains(outPoint) {
+			result.toAdd.add(outPoint, utxoEntry)
 		}
-		if _, ok := diff.toAdd[outPoint]; ok {
+		if diff.toAdd.contains(outPoint) {
 			return nil, errors.New("withDiff: transaction both in d.toAdd and in other.toAdd")
 		}
 	}
@@ -176,10 +192,10 @@ func (d *utxoDiff) withDiff(diff *utxoDiff) (*utxoDiff, error) {
 	// If they are in diff.toRemove - should throw an error
 	// Otherwise - should be ignored
 	for outPoint, utxoEntry := range d.toRemove {
-		if _, ok := diff.toAdd[outPoint]; !ok {
-			result.toRemove[outPoint] = utxoEntry
+		if !diff.toAdd.contains(outPoint) {
+			result.toRemove.add(outPoint, utxoEntry)
 		}
-		if _, ok := diff.toRemove[outPoint]; ok {
+		if diff.toRemove.contains(outPoint) {
 			return nil, errors.New("withDiff: transaction both in d.toRemove and in other.toRemove")
 		}
 	}
@@ -187,16 +203,16 @@ func (d *utxoDiff) withDiff(diff *utxoDiff) (*utxoDiff, error) {
 	// All transactions in diff.toAdd:
 	// If they are not in d.toRemove - should be added in result.toAdd
 	for outPoint, utxoEntry := range diff.toAdd {
-		if _, ok := d.toRemove[outPoint]; !ok {
-			result.toAdd[outPoint] = utxoEntry
+		if !d.toRemove.contains(outPoint) {
+			result.toAdd.add(outPoint, utxoEntry)
 		}
 	}
 
 	// All transactions in diff.toRemove:
 	// If they are not in d.toAdd - should be added in result.toRemove
 	for outPoint, utxoEntry := range diff.toRemove {
-		if _, ok := d.toAdd[outPoint]; !ok {
-			result.toRemove[outPoint] = utxoEntry
+		if !d.toAdd.contains(outPoint) {
+			result.toRemove.add(outPoint, utxoEntry)
 		}
 	}
 
@@ -292,7 +308,7 @@ func (fus *fullUTXOSet) addTx(tx *wire.MsgTx, blockHeight int32) bool {
 
 		for _, txIn := range tx.TxIn {
 			outPoint := *wire.NewOutPoint(&txIn.PreviousOutPoint.Hash, txIn.PreviousOutPoint.Index)
-			delete(fus.utxoCollection, outPoint)
+			fus.remove(outPoint)
 		}
 	}
 
@@ -301,7 +317,7 @@ func (fus *fullUTXOSet) addTx(tx *wire.MsgTx, blockHeight int32) bool {
 		outPoint := *wire.NewOutPoint(&hash, uint32(i))
 		entry := newUTXOEntry(txOut, isCoinbase, blockHeight)
 
-		fus.utxoCollection[outPoint] = entry
+		fus.add(outPoint, entry)
 	}
 
 	return true
@@ -310,7 +326,7 @@ func (fus *fullUTXOSet) addTx(tx *wire.MsgTx, blockHeight int32) bool {
 func (fus *fullUTXOSet) containsInputs(tx *wire.MsgTx) bool {
 	for _, txIn := range tx.TxIn {
 		outPoint := *wire.NewOutPoint(&txIn.PreviousOutPoint.Hash, txIn.PreviousOutPoint.Index)
-		if _, ok := fus.utxoCollection[outPoint]; !ok {
+		if !fus.contains(outPoint) {
 			return false
 		}
 	}
@@ -382,11 +398,11 @@ func (dus *diffUTXOSet) addTx(tx *wire.MsgTx, blockHeight int32) bool {
 
 		for _, txIn := range tx.TxIn {
 			outPoint := *wire.NewOutPoint(&txIn.PreviousOutPoint.Hash, txIn.PreviousOutPoint.Index)
-			if _, ok := dus.utxoDiff.toAdd[outPoint]; ok {
-				delete(dus.utxoDiff.toAdd, outPoint)
+			if dus.utxoDiff.toAdd.contains(outPoint) {
+				dus.utxoDiff.toAdd.remove(outPoint)
 			} else {
 				prevUTXOEntry := dus.base.utxoCollection[outPoint]
-				dus.utxoDiff.toRemove[outPoint] = prevUTXOEntry
+				dus.utxoDiff.toRemove.add(outPoint, prevUTXOEntry)
 			}
 		}
 	}
@@ -396,10 +412,10 @@ func (dus *diffUTXOSet) addTx(tx *wire.MsgTx, blockHeight int32) bool {
 		outPoint := *wire.NewOutPoint(&hash, uint32(i))
 		entry := newUTXOEntry(txOut, isCoinbase, blockHeight)
 
-		if _, ok := dus.utxoDiff.toRemove[outPoint]; ok {
-			delete(dus.utxoDiff.toRemove, outPoint)
+		if dus.utxoDiff.toRemove.contains(outPoint) {
+			dus.utxoDiff.toRemove.remove(outPoint)
 		} else {
-			dus.utxoDiff.toAdd[outPoint] = entry
+			dus.utxoDiff.toAdd.add(outPoint, entry)
 		}
 	}
 
@@ -409,9 +425,9 @@ func (dus *diffUTXOSet) addTx(tx *wire.MsgTx, blockHeight int32) bool {
 func (dus *diffUTXOSet) containsInputs(tx *wire.MsgTx) bool {
 	for _, txIn := range tx.TxIn {
 		outPoint := *wire.NewOutPoint(&txIn.PreviousOutPoint.Hash, txIn.PreviousOutPoint.Index)
-		_, isInBase := dus.base.utxoCollection[outPoint]
-		_, isInDiffToAdd := dus.utxoDiff.toAdd[outPoint]
-		_, isInDiffToRemove := dus.utxoDiff.toRemove[outPoint]
+		isInBase := dus.base.contains(outPoint)
+		isInDiffToAdd := dus.utxoDiff.toAdd.contains(outPoint)
+		isInDiffToRemove := dus.utxoDiff.toRemove.contains(outPoint)
 		if (!isInBase && !isInDiffToAdd) || isInDiffToRemove {
 			return false
 		}
@@ -423,11 +439,11 @@ func (dus *diffUTXOSet) containsInputs(tx *wire.MsgTx) bool {
 // meldToBase updates the base fullUTXOSet with all changes in diff
 func (dus *diffUTXOSet) meldToBase() {
 	for outPoint := range dus.utxoDiff.toRemove {
-		delete(dus.base.utxoCollection, outPoint)
+		dus.base.remove(outPoint)
 	}
 
 	for outPoint, utxoEntry := range dus.utxoDiff.toAdd {
-		dus.base.utxoCollection[outPoint] = utxoEntry
+		dus.base.add(outPoint, utxoEntry)
 	}
 
 	dus.utxoDiff = newUTXODiff()
