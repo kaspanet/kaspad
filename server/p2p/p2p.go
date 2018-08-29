@@ -290,7 +290,7 @@ func newServerPeer(s *Server, isPersistent bool) *Peer {
 // newestBlock returns the current best block hash and height using the format
 // required by the configuration for the peer package.
 func (sp *Peer) newestBlock() (*daghash.Hash, int32, error) {
-	virtualBlock := sp.server.DAG.GetVirtualBlock()
+	virtualBlock := sp.server.DAG.VirtualBlock()
 	selectedTipHash := virtualBlock.SelectedTipHash()
 	return &selectedTipHash, virtualBlock.SelectedTipHeight(), nil
 }
@@ -1308,7 +1308,7 @@ func (s *Server) pushBlockMsg(sp *Peer, hash *daghash.Hash, doneChan chan<- stru
 	// to trigger it to issue another getblocks message for the next
 	// batch of inventory.
 	if sendInv {
-		selectedTipHash := sp.server.DAG.GetVirtualBlock().SelectedTipHash()
+		selectedTipHash := sp.server.DAG.VirtualBlock().SelectedTipHash()
 		invMsg := wire.NewMsgInvSizeHint(1)
 		iv := wire.NewInvVect(wire.InvTypeBlock, &selectedTipHash)
 		invMsg.AddInvVect(iv)
@@ -2419,7 +2419,7 @@ func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params
 
 	// If no feeEstimator has been found, or if the one that has been found
 	// is behind somehow, create a new one and start over.
-	if s.FeeEstimator == nil || s.FeeEstimator.LastKnownHeight() != s.DAG.GetVirtualBlock().SelectedTipHeight() {
+	if s.FeeEstimator == nil || s.FeeEstimator.LastKnownHeight() != s.DAG.VirtualBlock().SelectedTipHeight() {
 		s.FeeEstimator = mempool.NewFeeEstimator(
 			mempool.DefaultEstimateFeeMaxRollback,
 			mempool.DefaultEstimateFeeMinRegisteredBlocks)
@@ -2438,8 +2438,8 @@ func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params
 		},
 		ChainParams:    dagParams,
 		FetchUtxoView:  s.DAG.FetchUTXOView,
-		BestHeight:     func() int32 { return s.DAG.GetVirtualBlock().SelectedTipHeight() },
-		MedianTimePast: func() time.Time { return s.DAG.GetVirtualBlock().SelectedTip().CalcPastMedianTime() },
+		BestHeight:     func() int32 { return s.DAG.VirtualBlock().SelectedTipHeight() },
+		MedianTimePast: func() time.Time { return s.DAG.VirtualBlock().SelectedTip().CalcPastMedianTime() },
 		CalcSequenceLock: func(tx *util.Tx, view *blockdag.UTXOView) (*blockdag.SequenceLock, error) {
 			return s.DAG.CalcSequenceLock(tx, view, true)
 		},

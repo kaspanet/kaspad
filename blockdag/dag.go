@@ -917,12 +917,12 @@ func (dag *BlockDAG) IsCurrent() bool {
 	return dag.isCurrent()
 }
 
-// GetVirtualBlock returns the DAG's virtual block in the current point in time.
+// VirtualBlock returns the DAG's virtual block in the current point in time.
 // The returned instance must be treated as immutable since it is shared by all
 // callers.
 //
 // This function is safe for concurrent access.
-func (dag *BlockDAG) GetVirtualBlock() *VirtualBlock {
+func (dag *BlockDAG) VirtualBlock() *VirtualBlock {
 	return dag.virtual
 }
 

@@ -432,7 +432,7 @@ func NewBlkTmplGenerator(policy *Policy, params *dagconfig.Params,
 //   -----------------------------------  --
 func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTemplate, error) {
 	// Extend the most recently known best block.
-	virtualBlock := g.dag.GetVirtualBlock()
+	virtualBlock := g.dag.VirtualBlock()
 	nextBlockHeight := virtualBlock.SelectedTipHeight() + 1
 
 	// Create a standard coinbase transaction paying to the provided
@@ -808,7 +808,7 @@ func (g *BlkTmplGenerator) UpdateBlockTime(msgBlock *wire.MsgBlock) error {
 	// The new timestamp is potentially adjusted to ensure it comes after
 	// the median time of the last several blocks per the chain consensus
 	// rules.
-	dagMedianTime := g.dag.GetVirtualBlock().CalcPastMedianTime()
+	dagMedianTime := g.dag.VirtualBlock().CalcPastMedianTime()
 	newTime := medianAdjustedTime(dagMedianTime, g.timeSource)
 	msgBlock.Header.Timestamp = newTime
 
@@ -852,13 +852,13 @@ func (g *BlkTmplGenerator) UpdateExtraNonce(msgBlock *wire.MsgBlock, blockHeight
 	return nil
 }
 
-// GetVirtualBlock returns the DAG's virtual block in the current point in time.
+// VirtualBlock returns the DAG's virtual block in the current point in time.
 // The returned instance must be treated as immutable since it is shared by all
 // callers.
 //
 // This function is safe for concurrent access.
-func (g *BlkTmplGenerator) GetVirtualBlock() *blockdag.VirtualBlock {
-	return g.dag.GetVirtualBlock()
+func (g *BlkTmplGenerator) VirtualBlock() *blockdag.VirtualBlock {
+	return g.dag.VirtualBlock()
 }
 
 // TxSource returns the associated transaction source.

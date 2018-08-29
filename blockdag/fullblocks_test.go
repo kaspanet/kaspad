@@ -272,7 +272,7 @@ func TestFullBlocks(t *testing.T) {
 			item.Name, block.Hash(), blockHeight)
 
 		// Ensure hash and height match.
-		virtualBlock := dag.GetVirtualBlock()
+		virtualBlock := dag.VirtualBlock()
 		if virtualBlock.SelectedTipHash() != item.Block.BlockHash() ||
 			virtualBlock.SelectedTipHeight() != blockHeight {
 

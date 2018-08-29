@@ -1009,7 +1009,7 @@ func handleGetBestBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (
 	// All other "get block" commands give either the height, the
 	// hash, or both but require the block SHA.  This gets both for
 	// the best block.
-	virtualBlock := s.cfg.DAG.GetVirtualBlock()
+	virtualBlock := s.cfg.DAG.VirtualBlock()
 	result := &btcjson.GetBestBlockResult{
 		Hash:   virtualBlock.SelectedTipHash().String(),
 		Height: virtualBlock.SelectedTipHeight(),
@@ -1019,7 +1019,7 @@ func handleGetBestBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (
 
 // handleGetBestBlockHash implements the getbestblockhash command.
 func handleGetBestBlockHash(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	virtualBlock := s.cfg.DAG.GetVirtualBlock()
+	virtualBlock := s.cfg.DAG.VirtualBlock()
 	return virtualBlock.SelectedTipHash().String(), nil
 }
 
@@ -1087,7 +1087,7 @@ func handleGetBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 		return nil, internalRPCError(err.Error(), context)
 	}
 	blk.SetHeight(blockHeight)
-	virtualBlock := s.cfg.DAG.GetVirtualBlock()
+	virtualBlock := s.cfg.DAG.VirtualBlock()
 
 	// Get the hashes for the next blocks unless there are none.
 	var nextHashStrings []string
@@ -1169,7 +1169,7 @@ func handleGetBlockDAGInfo(s *Server, cmd interface{}, closeChan <-chan struct{}
 	// populate the response to this call primarily from this snapshot.
 	params := s.cfg.ChainParams
 	dag := s.cfg.DAG
-	virtualBlock := dag.GetVirtualBlock()
+	virtualBlock := dag.VirtualBlock()
 
 	dagInfo := &btcjson.GetBlockDAGInfoResult{
 		DAG:           params.Name,
@@ -1235,7 +1235,7 @@ func handleGetBlockDAGInfo(s *Server, cmd interface{}, closeChan <-chan struct{}
 
 // handleGetBlockCount implements the getblockcount command.
 func handleGetBlockCount(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	virtualBlock := s.cfg.DAG.GetVirtualBlock()
+	virtualBlock := s.cfg.DAG.VirtualBlock()
 	return int64(virtualBlock.SelectedTipHeight()), nil
 }
 
@@ -1283,7 +1283,7 @@ func handleGetBlockHeader(s *Server, cmd interface{}, closeChan <-chan struct{})
 		context := "Failed to obtain block height"
 		return nil, internalRPCError(err.Error(), context)
 	}
-	virtualBlock := s.cfg.DAG.GetVirtualBlock()
+	virtualBlock := s.cfg.DAG.VirtualBlock()
 
 	// Get the hashes for the next blocks unless there are none.
 	var nextHashStrings []string
@@ -1493,7 +1493,7 @@ func (state *gbtWorkState) updateBlockTemplate(s *Server, useCoinbaseValue bool)
 	// generated.
 	var msgBlock *wire.MsgBlock
 	var targetDifficulty string
-	virtualBlock := s.cfg.DAG.GetVirtualBlock()
+	virtualBlock := s.cfg.DAG.VirtualBlock()
 	tipHashes := virtualBlock.TipHashes()
 	template := state.template
 	if template == nil || state.tipHashes == nil ||
@@ -1889,7 +1889,7 @@ func handleGetBlockTemplateRequest(s *Server, request *btcjson.TemplateRequest, 
 	}
 
 	// No point in generating or accepting work before the chain is synced.
-	currentHeight := s.cfg.DAG.GetVirtualBlock().SelectedTipHeight()
+	currentHeight := s.cfg.DAG.VirtualBlock().SelectedTipHeight()
 	if currentHeight != 0 && !s.cfg.SyncMgr.IsCurrent() {
 		return nil, &btcjson.RPCError{
 			Code:    btcjson.ErrRPCClientInInitialDownload,
@@ -2054,7 +2054,7 @@ func handleGetBlockTemplateProposal(s *Server, request *btcjson.TemplateRequest)
 	block := util.NewBlock(&msgBlock)
 
 	// Ensure the block is building from the expected previous blocks.
-	expectedPrevHashes := s.cfg.DAG.GetVirtualBlock().TipHashes()
+	expectedPrevHashes := s.cfg.DAG.VirtualBlock().TipHashes()
 	prevHashes := block.MsgBlock().Header.PrevBlocks
 	if !daghash.AreEqual(expectedPrevHashes, prevHashes) {
 		return "bad-prevblk", nil
@@ -2176,7 +2176,7 @@ func handleGetCurrentNet(s *Server, cmd interface{}, closeChan <-chan struct{}) 
 
 // handleGetDifficulty implements the getdifficulty command.
 func handleGetDifficulty(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	virtualBlock := s.cfg.DAG.GetVirtualBlock()
+	virtualBlock := s.cfg.DAG.VirtualBlock()
 	return getDifficultyRatio(virtualBlock.SelectedTip().Header().Bits, s.cfg.ChainParams), nil
 }
 
@@ -2234,7 +2234,7 @@ func handleGetHeaders(s *Server, cmd interface{}, closeChan <-chan struct{}) (in
 // handleGetInfo implements the getinfo command. We only return the fields
 // that are not related to wallet functionality.
 func handleGetInfo(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	virtualBlock := s.cfg.DAG.GetVirtualBlock()
+	virtualBlock := s.cfg.DAG.VirtualBlock()
 	ret := &btcjson.InfoDAGResult{
 		Version:         int32(1000000*version.AppMajor + 10000*version.AppMinor + 100*version.AppPatch),
 		ProtocolVersion: int32(maxProtocolVersion),
@@ -2286,7 +2286,7 @@ func handleGetMiningInfo(s *Server, cmd interface{}, closeChan <-chan struct{}) 
 		}
 	}
 
-	virtualBlock := s.cfg.DAG.GetVirtualBlock()
+	virtualBlock := s.cfg.DAG.VirtualBlock()
 	selectedTipHash := virtualBlock.SelectedTipHash()
 	selectedBlock, err := s.cfg.DAG.BlockByHash(&selectedTipHash)
 	if err != nil {
@@ -2496,7 +2496,7 @@ func handleGetRawTransaction(s *Server, cmd interface{}, closeChan <-chan struct
 
 		blkHeader = &header
 		blkHashStr = blkHash.String()
-		dagHeight = s.cfg.DAG.GetVirtualBlock().SelectedTipHeight()
+		dagHeight = s.cfg.DAG.VirtualBlock().SelectedTipHeight()
 	}
 
 	rawTxn, err := createTxRawResult(s.cfg.ChainParams, mtx, txHash.String(),
@@ -2552,7 +2552,7 @@ func handleGetTxOut(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 			return nil, internalRPCError(errStr, "")
 		}
 
-		virtualBlock := s.cfg.DAG.GetVirtualBlock()
+		virtualBlock := s.cfg.DAG.VirtualBlock()
 		bestBlockHash = virtualBlock.SelectedTipHash().String()
 		confirmations = 0
 		value = txOut.Value
@@ -2560,7 +2560,7 @@ func handleGetTxOut(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 		isCoinbase = blockdag.IsCoinBaseTx(mtx)
 	} else {
 		out := wire.OutPoint{Hash: *txHash, Index: c.Vout}
-		entry, ok := s.cfg.DAG.GetVirtualBlock().GetUTXOEntry(out)
+		entry, ok := s.cfg.DAG.VirtualBlock().GetUTXOEntry(out)
 		if !ok {
 			return nil, rpcNoTxInfoError(txHash)
 		}
@@ -2574,7 +2574,7 @@ func handleGetTxOut(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 			return nil, nil
 		}
 
-		virtualBlock := s.cfg.DAG.GetVirtualBlock()
+		virtualBlock := s.cfg.DAG.VirtualBlock()
 		bestBlockHash = virtualBlock.SelectedTipHash().String()
 		confirmations = 1 + virtualBlock.SelectedTipHeight() - entry.BlockHeight()
 		value = entry.Amount()
@@ -3069,7 +3069,7 @@ func handleSearchRawTransactions(s *Server, cmd interface{}, closeChan <-chan st
 	}
 
 	// The verbose flag is set, so generate the JSON object and return it.
-	virtualBlock := s.cfg.DAG.GetVirtualBlock()
+	virtualBlock := s.cfg.DAG.VirtualBlock()
 	srtList := make([]btcjson.SearchRawTransactionsResult, len(addressTxns))
 	for i := range addressTxns {
 		// The deserialized transaction is needed, so deserialize the
@@ -3324,7 +3324,7 @@ func handleValidateAddress(s *Server, cmd interface{}, closeChan <-chan struct{}
 }
 
 func verifyDAG(s *Server, level, depth int32) error {
-	virtualBlock := s.cfg.DAG.GetVirtualBlock()
+	virtualBlock := s.cfg.DAG.VirtualBlock()
 	finishHeight := virtualBlock.SelectedTipHeight() - depth
 	if finishHeight < 0 {
 		finishHeight = 0

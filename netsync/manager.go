@@ -226,7 +226,7 @@ func (sm *SyncManager) startSync() {
 		return
 	}
 
-	virtualBlock := sm.dag.GetVirtualBlock()
+	virtualBlock := sm.dag.VirtualBlock()
 	var bestPeer *peerpkg.Peer
 	for peer, state := range sm.peerStates {
 		if !state.syncCandidate {
@@ -392,7 +392,7 @@ func (sm *SyncManager) handleDonePeerMsg(peer *peerpkg.Peer) {
 	if sm.syncPeer == peer {
 		sm.syncPeer = nil
 		if sm.headersFirstMode {
-			virtualBlock := sm.dag.GetVirtualBlock()
+			virtualBlock := sm.dag.VirtualBlock()
 			selectedTipHash := virtualBlock.SelectedTipHash()
 			sm.resetHeaderState(&selectedTipHash, virtualBlock.SelectedTipHeight())
 		}
@@ -483,7 +483,7 @@ func (sm *SyncManager) current() bool {
 
 	// No matter what chain thinks, if we are below the block we are syncing
 	// to we are not current.
-	if sm.dag.GetVirtualBlock().SelectedTipHeight() < sm.syncPeer.LastBlock() {
+	if sm.dag.VirtualBlock().SelectedTipHeight() < sm.syncPeer.LastBlock() {
 		return false
 	}
 	return true
@@ -616,7 +616,7 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 
 		// Update this peer's latest block height, for future
 		// potential sync node candidacy.
-		virtualBlock := sm.dag.GetVirtualBlock()
+		virtualBlock := sm.dag.VirtualBlock()
 		selectedTipHash := virtualBlock.SelectedTipHash()
 		heightUpdate = virtualBlock.SelectedTipHeight()
 		blkHashUpdate = &selectedTipHash
@@ -874,7 +874,7 @@ func (sm *SyncManager) haveInventory(invVect *wire.InvVect) (bool, error) {
 		prevOut := wire.OutPoint{Hash: invVect.Hash}
 		for i := uint32(0); i < 2; i++ {
 			prevOut.Index = i
-			entry, ok := sm.dag.GetVirtualBlock().GetUTXOEntry(prevOut)
+			entry, ok := sm.dag.VirtualBlock().GetUTXOEntry(prevOut)
 			if !ok {
 				return false, nil
 			}
@@ -1398,7 +1398,7 @@ func New(config *Config) (*SyncManager, error) {
 		feeEstimator:    config.FeeEstimator,
 	}
 
-	virtualBlock := sm.dag.GetVirtualBlock()
+	virtualBlock := sm.dag.VirtualBlock()
 	selectedTipHash := virtualBlock.SelectedTipHash()
 	if !config.DisableCheckpoints {
 		// Initialize the next checkpoint based on the current height.
