@@ -812,13 +812,12 @@ func (dag *BlockDAG) restoreUTXO(provisional *provisionalNode, virtual *VirtualB
 
 	utxo := utxoSet(virtual.utxoSet)
 
+	var err error
 	for i := len(stack) - 1; i >= 0; i-- {
-		diffedUTXO, err := utxo.withDiff(stack[i].diff)
+		utxo, err = utxo.withDiff(stack[i].diff)
 		if err != nil {
 			return nil, err
 		}
-
-		utxo = diffedUTXO
 	}
 
 	return utxo, nil
