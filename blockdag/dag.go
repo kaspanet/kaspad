@@ -696,18 +696,31 @@ func (pns provisionalNodeSet) newProvisionalNode(node *blockNode, withRelatives 
 
 // verifyAndBuildUTXO verifies all transactions in the given block (in provisionalNode format) and builds its UTXO
 func (p *provisionalNode) verifyAndBuildUTXO(virtual *VirtualBlock, db database.DB) (utxoSet, error) {
-	utxo, err := p.pastUTXO(virtual, db)
+	pastUTXO, err := p.pastUTXO(virtual, db)
 	if err != nil {
 		return nil, err
 	}
 
+	diff := newUTXODiff()
+
 	for _, tx := range p.transactions {
-		ok := utxo.addTx(tx.MsgTx(), p.original.height)
-		if !ok {
-			return nil, fmt.Errorf("transaction %v is not compatible with UTXO", tx)
+		txDiff, err := pastUTXO.diffFromTx(tx.MsgTx(), p.original.height)
+		if err != nil {
+			return nil, err
+		}
+		if !diff.isCompatible(txDiff) {
+			return nil, fmt.Errorf("Tx %s is double spending an outpoint already spent in this block", tx.Hash())
+		}
+		diff, err = diff.withDiff(txDiff)
+		if err != nil {
+			return nil, err
 		}
 	}
 
+	utxo, err := pastUTXO.withDiff(diff)
+	if err != nil {
+		return nil, err
+	}
 	return utxo, nil
 }
 
