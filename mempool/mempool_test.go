@@ -1025,6 +1025,41 @@ func TestMaxOrphanTxSize(t *testing.T) {
 
 }
 
+func TestRemoveTransaction(t *testing.T) {
+	t.Parallel()
+
+	harness, outputs, err := newPoolHarness(&dagconfig.MainNetParams, 1)
+	if err != nil {
+		t.Fatalf("unable to create test pool: %v", err)
+	}
+	tc := &testContext{t, harness}
+	chainedTxns, err := harness.CreateTxChain(outputs[0], 5)
+	if err != nil {
+		t.Fatalf("unable to create transaction chain: %v", err)
+	}
+
+	for _, tx := range chainedTxns {
+		_, err := harness.txPool.ProcessTransaction(tx, true,
+			false, 0)
+		if err != nil {
+			t.Fatalf("ProcessTransaction: %v", err)
+		}
+
+		testPoolMembership(tc, tx, false, true)
+	}
+
+	//Checks that when removeRedeemers is false, the specified transaction is the only transaction that gets removed
+	harness.txPool.RemoveTransaction(chainedTxns[3], false)
+	testPoolMembership(tc, chainedTxns[3], false, false)
+	testPoolMembership(tc, chainedTxns[4], false, true)
+
+	//Checks that when removeRedeemers is true, all of the transaction that are dependent on it get removed
+	harness.txPool.RemoveTransaction(chainedTxns[1], true)
+	testPoolMembership(tc, chainedTxns[0], false, true)
+	testPoolMembership(tc, chainedTxns[1], false, false)
+	testPoolMembership(tc, chainedTxns[2], false, false)
+}
+
 // TestOrphanEviction ensures that exceeding the maximum number of orphans
 // evicts entries to make room for the new ones.
 func TestOrphanEviction(t *testing.T) {

@@ -20,8 +20,8 @@ import (
 	"github.com/daglabs/btcd/logger"
 	"github.com/daglabs/btcd/mining"
 	"github.com/daglabs/btcd/txscript"
-	"github.com/daglabs/btcd/wire"
 	"github.com/daglabs/btcd/util"
+	"github.com/daglabs/btcd/wire"
 )
 
 const (
@@ -654,7 +654,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rateLimit, rejectDu
 	err := blockdag.CheckTransactionSanity(tx)
 	if err != nil {
 		if cerr, ok := err.(blockdag.RuleError); ok {
-			return nil, nil, chainRuleError(cerr)
+			return nil, nil, dagRuleError(cerr)
 		}
 		return nil, nil, err
 	}
@@ -713,7 +713,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rateLimit, rejectDu
 	utxoView, err := mp.fetchInputUtxos(tx)
 	if err != nil {
 		if cerr, ok := err.(blockdag.RuleError); ok {
-			return nil, nil, chainRuleError(cerr)
+			return nil, nil, dagRuleError(cerr)
 		}
 		return nil, nil, err
 	}
@@ -756,7 +756,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rateLimit, rejectDu
 	sequenceLock, err := mp.cfg.CalcSequenceLock(tx, utxoView)
 	if err != nil {
 		if cerr, ok := err.(blockdag.RuleError); ok {
-			return nil, nil, chainRuleError(cerr)
+			return nil, nil, dagRuleError(cerr)
 		}
 		return nil, nil, err
 	}
@@ -774,7 +774,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rateLimit, rejectDu
 		utxoView, mp.cfg.ChainParams)
 	if err != nil {
 		if cerr, ok := err.(blockdag.RuleError); ok {
-			return nil, nil, chainRuleError(cerr)
+			return nil, nil, dagRuleError(cerr)
 		}
 		return nil, nil, err
 	}
@@ -809,7 +809,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rateLimit, rejectDu
 	sigOpCount, err := blockdag.CountP2SHSigOps(tx, false, utxoView)
 	if err != nil {
 		if cerr, ok := err.(blockdag.RuleError); ok {
-			return nil, nil, chainRuleError(cerr)
+			return nil, nil, dagRuleError(cerr)
 		}
 		return nil, nil, err
 	}
@@ -885,7 +885,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rateLimit, rejectDu
 		txscript.StandardVerifyFlags, mp.cfg.SigCache)
 	if err != nil {
 		if cerr, ok := err.(blockdag.RuleError); ok {
-			return nil, nil, chainRuleError(cerr)
+			return nil, nil, dagRuleError(cerr)
 		}
 		return nil, nil, err
 	}

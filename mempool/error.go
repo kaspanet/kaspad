@@ -50,11 +50,11 @@ func txRuleError(c wire.RejectCode, desc string) RuleError {
 	}
 }
 
-// chainRuleError returns a RuleError that encapsulates the given
+// dagRuleError returns a RuleError that encapsulates the given
 // blockchain.RuleError.
-func chainRuleError(chainErr blockdag.RuleError) RuleError {
+func dagRuleError(dagErr blockdag.RuleError) RuleError {
 	return RuleError{
-		Err: chainErr,
+		Err: dagErr,
 	}
 }
 
