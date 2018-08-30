@@ -654,9 +654,9 @@ type provisionalNode struct {
 }
 
 // createProvisionalNode takes a node and builds a provisionalNode from it.
-// To avoid building the entire DAG in provisionalNode format we pass withParents = true
-// only when the node's parents are required.
-func (pns provisionalNodeSet) createProvisionalNode(node *blockNode, withParents bool,
+// To avoid building the entire DAG in provisionalNode format we pass withRelatives = true
+// only when the node's relatives (parents and children) are required.
+func (pns provisionalNodeSet) createProvisionalNode(node *blockNode, withRelatives bool,
 	transactions []*util.Tx) *provisionalNode {
 	if existingProvisional, ok := pns[node.hash]; ok {
 		return existingProvisional
@@ -672,20 +672,20 @@ func (pns provisionalNodeSet) createProvisionalNode(node *blockNode, withParents
 		pns[node.hash] = provisional
 	}
 
-	if withParents {
+	if withRelatives {
 		for _, parent := range node.parents {
 			provisional.parents = append(provisional.parents, pns.createProvisionalNode(parent, false, nil))
 		}
 		if node.selectedParent != nil {
 			provisional.selectedParent = pns[node.selectedParent.hash]
 		}
-	}
 
-	for _, child := range node.children {
-		provisional.children = append(provisional.children, pns.createProvisionalNode(child, false, nil))
-	}
-	if node.diffChild != nil {
-		provisional.diffChild = pns[node.diffChild.hash]
+		for _, child := range node.children {
+			provisional.children = append(provisional.children, pns.createProvisionalNode(child, false, nil))
+		}
+		if node.diffChild != nil {
+			provisional.diffChild = pns[node.diffChild.hash]
+		}
 	}
 	if node.diff != nil {
 		provisional.diff = node.diff.clone()
