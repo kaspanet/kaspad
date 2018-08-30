@@ -741,11 +741,10 @@ func (p *provisionalNode) pastUTXO(virtual *VirtualBlock, db database.DB) (utxoS
 			blueBlocks = append(blueBlocks, blueBlock)
 		}
 
-		transactions := make([]*util.Tx, 0, transactionCount)
+		blueBlockTransactions = make([]*util.Tx, 0, transactionCount)
 		for _, blueBlock := range blueBlocks {
-			transactions = append(transactions, blueBlock.Transactions()...)
+			blueBlockTransactions = append(blueBlockTransactions, blueBlock.Transactions()...)
 		}
-		blueBlockTransactions = transactions
 
 		return nil
 	})
