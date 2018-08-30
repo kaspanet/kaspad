@@ -138,10 +138,6 @@ func TestHaveBlock(t *testing.T) {
 	}
 }
 
-func TestProcessBlock(t *testing.T) {
-	// Block 3c should fail to connect since its parents are related. (It points to A and B, and A is the parent of B)
-}
-
 // TestCalcSequenceLock tests the LockTimeToSequence function, and the
 // CalcSequenceLock method of a Chain instance. The tests exercise several
 // combinations of inputs to the CalcSequenceLock function in order to ensure
