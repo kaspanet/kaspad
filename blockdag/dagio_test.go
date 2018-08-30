@@ -605,68 +605,64 @@ func TestUtxoEntryDeserializeErrors(t *testing.T) {
 	}
 }
 
-// TestDAGStateSerialization ensures serializing and deserializing the
-// DAG state works as expected.
-func TestDAGStateSerialization(t *testing.T) {
+// TestDAGTipHashesSerialization ensures serializing and deserializing the
+// DAG tip hashes works as expected.
+func TestDAGTipHashesSerialization(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
 		name       string
-		state      DAGState
+		tipHashes  []daghash.Hash
 		serialized []byte
 	}{
 		{
-			name: "genesis",
-			state: DAGState{
-				TipHashes:     []daghash.Hash{*newHashFromStr("000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f")},
-			},
-			serialized: []byte("{\"TipHashes\":[[111,226,140,10,182,241,179,114,193,166,162,70,174,99,247,79,147,30,131,101,225,90,8,156,104,214,25,0,0,0,0,0]]}"),
+			name:       "genesis",
+			tipHashes:  []daghash.Hash{*newHashFromStr("000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f")},
+			serialized: []byte("[[111,226,140,10,182,241,179,114,193,166,162,70,174,99,247,79,147,30,131,101,225,90,8,156,104,214,25,0,0,0,0,0]]"),
 		},
 		{
-			name: "block 1",
-			state: DAGState{
-				TipHashes:     []daghash.Hash{*newHashFromStr("00000000839a8e6886ab5951d76f411475428afc90947ee320161bbf18eb6048")},
-			},
-			serialized: []byte("{\"TipHashes\":[[72,96,235,24,191,27,22,32,227,126,148,144,252,138,66,117,20,65,111,215,81,89,171,134,104,142,154,131,0,0,0,0]]}"),
+			name:       "block 1",
+			tipHashes:  []daghash.Hash{*newHashFromStr("00000000839a8e6886ab5951d76f411475428afc90947ee320161bbf18eb6048")},
+			serialized: []byte("[[72,96,235,24,191,27,22,32,227,126,148,144,252,138,66,117,20,65,111,215,81,89,171,134,104,142,154,131,0,0,0,0]]"),
 		},
 	}
 
 	for i, test := range tests {
-		gotBytes, err := serializeDAGState(test.state)
+		gotBytes, err := serializeDAGTipHashes(test.tipHashes)
 		if err != nil {
-			t.Errorf("serializeDAGState #%d (%s) "+
+			t.Errorf("serializeDAGTipHashes #%d (%s) "+
 				"unexpected error: %v", i, test.name, err)
 			continue
 		}
 
-		// Ensure the state serializes to the expected value.
+		// Ensure the tipHashes serializes to the expected value.
 		if !bytes.Equal(gotBytes, test.serialized) {
-			t.Errorf("serializeDAGState #%d (%s): mismatched "+
+			t.Errorf("serializeDAGTipHashes #%d (%s): mismatched "+
 				"bytes - got %s, want %s", i, test.name,
 				string(gotBytes), string(test.serialized))
 			continue
 		}
 
 		// Ensure the serialized bytes are decoded back to the expected
-		// state.
-		state, err := deserializeDAGState(test.serialized)
+		// tipHashes.
+		tipHashes, err := deserializeDAGTipHashes(test.serialized)
 		if err != nil {
-			t.Errorf("deserializeDAGState #%d (%s) "+
+			t.Errorf("deserializeDAGTipHashes #%d (%s) "+
 				"unexpected error: %v", i, test.name, err)
 			continue
 		}
-		if !reflect.DeepEqual(*state, test.state) {
-			t.Errorf("deserializeDAGState #%d (%s) "+
-				"mismatched state - got %v, want %v", i,
-				test.name, *state, test.state)
+		if !reflect.DeepEqual(tipHashes, test.tipHashes) {
+			t.Errorf("deserializeDAGTipHashes #%d (%s) "+
+				"mismatched tipHashes - got %v, want %v", i,
+				test.name, tipHashes, test.tipHashes)
 			continue
 		}
 	}
 }
 
-// TestDAGStateDeserializeErrors performs negative tests against
-// deserializing the DAG state to ensure error paths work as expected.
-func TestDAGStateDeserializeErrors(t *testing.T) {
+// TestDAGTipHashesDeserializeErrors performs negative tests against
+// deserializing the DAG tip hashes to ensure error paths work as expected.
+func TestDAGTipHashesDeserializeErrors(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
@@ -681,16 +677,16 @@ func TestDAGStateDeserializeErrors(t *testing.T) {
 		},
 		{
 			name:       "corrupted data",
-			serialized: []byte("{\"Tips\":[111,226,140,10,182,241,179,114,193,166,162,70,174,99,247,7"),
+			serialized: []byte("[[111,226,140,10,182,241,179,114,193,166,162,70,174,99,247,7"),
 			errType:    database.Error{ErrorCode: database.ErrCorruption},
 		},
 	}
 
 	for _, test := range tests {
 		// Ensure the expected error type and code is returned.
-		_, err := deserializeDAGState(test.serialized)
+		_, err := deserializeDAGTipHashes(test.serialized)
 		if reflect.TypeOf(err) != reflect.TypeOf(test.errType) {
-			t.Errorf("deserializeDAGState (%s): expected "+
+			t.Errorf("deserializeDAGTipHashes (%s): expected "+
 				"error type does not match - got %T, want %T",
 				test.name, err, test.errType)
 			continue
@@ -698,8 +694,8 @@ func TestDAGStateDeserializeErrors(t *testing.T) {
 		if derr, ok := err.(database.Error); ok {
 			tderr := test.errType.(database.Error)
 			if derr.ErrorCode != tderr.ErrorCode {
-				t.Errorf("deserializeDAGState (%s): "+
-					"wrong  error code got: %v, want: %v",
+				t.Errorf("deserializeDAGTipHashes (%s): "+
+					"wrong error code got: %v, want: %v",
 					test.name, derr.ErrorCode,
 					tderr.ErrorCode)
 				continue

@@ -41,9 +41,9 @@ var (
 	// the block height -> block hash index.
 	heightIndexBucketName = []byte("heightidx")
 
-	// dagStateKeyName is the name of the db key used to store the DAG
-	// state.
-	dagStateKeyName = []byte("dagstate")
+	// dagTipHashesKeyName is the name of the db key used to store the DAG
+	// tip hashes.
+	dagTipHashesKeyName = []byte("dagtiphashes")
 
 	// utxoSetVersionKeyName is the name of the db key used to store the
 	// version of the utxo set currently in the database.
@@ -51,7 +51,7 @@ var (
 
 	// utxoSetBucketName is the name of the db bucket used to house the
 	// unspent transaction output set.
-	utxoSetBucketName = []byte("utxosetv2")
+	utxoSetBucketName = []byte("utxoset")
 
 	// byteOrder is the preferred byte order used for serializing numeric
 	// fields for storage in the database.
@@ -707,38 +707,38 @@ func dbFetchHeightByHash(dbTx database.Tx, hash *daghash.Hash) (int32, error) {
 	return int32(byteOrder.Uint32(serializedHeight)), nil
 }
 
-// serializeDAGState returns the serialization of the DAG state.
-// This is data to be stored in the DAG state bucket.
-func serializeDAGState(state DAGState) ([]byte, error) {
-	return json.Marshal(state)
+// serializeDAGTipHashes returns the serialization of the DAG tip hashes.
+// This is data to be stored in the DAG tip hashes bucket.
+func serializeDAGTipHashes(tipHashes []daghash.Hash) ([]byte, error) {
+	return json.Marshal(tipHashes)
 }
 
-// deserializeDAGState deserializes the passed serialized DAG
-// state.  This is data stored in the DAG state bucket and is updated after
-// every block is connected or disconnected form the DAG.
-func deserializeDAGState(serializedData []byte) (*DAGState, error) {
-	var state DAGState
-	err := json.Unmarshal(serializedData, &state)
+// deserializeDAGTipHashes deserializes the passed serialized DAG tip hashes.
+// This is data stored in the DAG tip hashes bucket and is updated after
+// every block is connected to the DAG.
+func deserializeDAGTipHashes(serializedData []byte) ([]daghash.Hash, error) {
+	var tipHashes []daghash.Hash
+	err := json.Unmarshal(serializedData, &tipHashes)
 	if err != nil {
 		return nil, database.Error{
 			ErrorCode:   database.ErrCorruption,
-			Description: "corrupt DAG state",
+			Description: "corrupt DAG tip hashes",
 		}
 	}
 
-	return &state, nil
+	return tipHashes, nil
 }
 
-// dbPutDAGState uses an existing database transaction to update the DAG
-// state with the given parameters.
-func dbPutDAGState(dbTx database.Tx, state *DAGState) error {
-	serializedData, err := serializeDAGState(*state)
+// dbPutDAGTipHashes uses an existing database transaction to store the latest
+// tip hashes of the DAG.
+func dbPutDAGTipHashes(dbTx database.Tx, tipHashes []daghash.Hash) error {
+	serializedData, err := serializeDAGTipHashes(tipHashes)
 
 	if err != nil {
 		return err
 	}
 
-	return dbTx.Metadata().Put(dagStateKeyName, serializedData)
+	return dbTx.Metadata().Put(dagTipHashesKeyName, serializedData)
 }
 
 // createDAGState initializes both the database and the DAG state to the
@@ -767,11 +767,6 @@ func (dag *BlockDAG) createDAGState() error {
 
 	// Add the new node to the index which is used for faster lookups.
 	dag.index.addNode(node)
-
-	// Initialize the DAG state.  Since it is the genesis block, use
-	// its timestamp for the median time.
-	dagState := newDAGState(dag.virtual.TipHashes())
-	dag.setDAGState(dagState)
 
 	// Create the initial the database chain state including creating the
 	// necessary index buckets and inserting the genesis block.
@@ -825,8 +820,8 @@ func (dag *BlockDAG) createDAGState() error {
 			return err
 		}
 
-		// Store the current DAG state into the database.
-		err = dbPutDAGState(dbTx, dag.dagState)
+		// Store the current DAG tip hashes into the database.
+		err = dbPutDAGTipHashes(dbTx, dag.virtual.TipHashes())
 		if err != nil {
 			return err
 		}
@@ -845,7 +840,7 @@ func (dag *BlockDAG) initDAGState() error {
 	// everything from scratch or upgrade certain buckets.
 	var initialized bool
 	err := dag.db.View(func(dbTx database.Tx) error {
-		initialized = dbTx.Metadata().Get(dagStateKeyName) != nil
+		initialized = dbTx.Metadata().Get(dagTipHashesKeyName) != nil
 		return nil
 	})
 	if err != nil {
@@ -860,13 +855,13 @@ func (dag *BlockDAG) initDAGState() error {
 
 	// Attempt to load the DAG state from the database.
 	return dag.db.View(func(dbTx database.Tx) error {
-		// Fetch the stored DAG state from the database metadata.
+		// Fetch the stored DAG tipHashes from the database metadata.
 		// When it doesn't exist, it means the database hasn't been
 		// initialized for use with the DAG yet, so break out now to allow
 		// that to happen under a writable database transaction.
-		serializedData := dbTx.Metadata().Get(dagStateKeyName)
-		log.Tracef("Serialized DAG state: %x", serializedData)
-		state, err := deserializeDAGState(serializedData)
+		serializedData := dbTx.Metadata().Get(dagTipHashesKeyName)
+		log.Tracef("Serialized DAG tip hashes: %x", serializedData)
+		tipHashes, err := deserializeDAGTipHashes(serializedData)
 		if err != nil {
 			return err
 		}
@@ -988,19 +983,15 @@ func (dag *BlockDAG) initDAGState() error {
 
 		// Apply the stored tips to the virtual block.
 		tips := newSet()
-		for _, tipHash := range state.TipHashes {
+		for _, tipHash := range tipHashes {
 			tip := dag.index.LookupNode(&tipHash)
 			if tip == nil {
 				return AssertError(fmt.Sprintf("initDAGState: cannot find "+
-					"DAG tip %s in block index", state.TipHashes))
+					"DAG tip %s in block index", tipHashes))
 			}
 			tips.add(tip)
 		}
 		dag.virtual.SetTips(tips)
-
-		// Initialize the DAG state.
-		dagState := newDAGState(dag.virtual.TipHashes())
-		dag.setDAGState(dagState)
 
 		return nil
 	})

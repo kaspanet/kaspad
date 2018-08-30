@@ -47,25 +47,6 @@ type orphanBlock struct {
 	expiration time.Time
 }
 
-// DAGState houses information about the current tips and other info
-// related to the state of the DAG.
-//
-// The GetDAGState method can be used to obtain access to this information
-// in a concurrent safe manner and the data will not be changed out from under
-// the caller when chain state changes occur as the function name implies.
-// However, the returned snapshot must be treated as immutable since it is
-// shared by all callers.
-type DAGState struct {
-	TipHashes []daghash.Hash // The hashes of the tips
-}
-
-// newDAGState returns a new state instance for the given parameters.
-func newDAGState(tipHashes []daghash.Hash) *DAGState {
-	return &DAGState{
-		TipHashes: tipHashes,
-	}
-}
-
 // BlockDAG provides functions for working with the bitcoin block chain.
 // It includes functionality such as rejecting duplicate blocks, ensuring blocks
 // follow all rules, orphan handling, checkpoint handling, and best chain
@@ -117,20 +98,6 @@ type BlockDAG struct {
 	// by the chain lock.
 	nextCheckpoint *dagconfig.Checkpoint
 	checkpointNode *blockNode
-
-	// The state is used as a fairly efficient way to cache information
-	// about the current DAG state that is returned to callers when
-	// requested.  It operates on the principle of MVCC such that any time a
-	// new block becomes the best block, the state pointer is replaced with
-	// a new struct and the old state is left untouched.  In this way,
-	// multiple callers can be pointing to different DAG states.
-	// This is acceptable for most callers because the state is only being
-	// queried at a specific point in time.
-	//
-	// In addition, some of the fields are stored in the database so the
-	// DAG state can be quickly reconstructed on load.
-	stateLock sync.RWMutex
-	dagState  *DAGState
 
 	// The following caches are used to efficiently keep track of the
 	// current deployment threshold state of each rule change deployment.
@@ -544,14 +511,10 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block) error {
 		return err
 	}
 
-	// Generate a new state snapshot that will be used to update the
-	// database and later memory if all database updates are successful.
-	state := newDAGState(dag.virtual.TipHashes())
-
 	// Atomically insert info into the database.
 	err = dag.db.Update(func(dbTx database.Tx) error {
 		// Update best block state.
-		err := dbPutDAGState(dbTx, state)
+		err := dbPutDAGTipHashes(dbTx, dag.virtual.TipHashes())
 		if err != nil {
 			return err
 		}
@@ -585,13 +548,6 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block) error {
 	if err != nil {
 		return err
 	}
-
-	// Update the state for the best block.  Notice how this replaces the
-	// entire struct instead of updating the existing one.  This effectively
-	// allows the old version to act as a snapshot which callers can use
-	// freely without needing to hold a lock for the duration.  See the
-	// comments on the state variable for more details.
-	dag.setDAGState(state)
 
 	// Notify the caller that the block was connected to the main chain.
 	// The caller would typically want to react with actions such as
@@ -933,19 +889,6 @@ func (dag *BlockDAG) IsCurrent() bool {
 // This function is safe for concurrent access.
 func (dag *BlockDAG) VirtualBlock() *VirtualBlock {
 	return dag.virtual
-}
-
-// setDAGState sets information about the DAG and related state as of the
-// current point in time.
-//
-// This function is safe for concurrent access.
-func (dag *BlockDAG) setDAGState(dagState *DAGState) {
-	dag.stateLock.Lock()
-	defer func() {
-		dag.stateLock.Unlock()
-	}()
-
-	dag.dagState = dagState
 }
 
 // HeaderByHash returns the block header identified by the given hash or an
