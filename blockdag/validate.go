@@ -53,16 +53,6 @@ var (
 	// a package level variable to avoid the need to create a new instance
 	// every time a check is needed.
 	zeroHash daghash.Hash
-
-	// block91842Hash is one of the two nodes which violate the rules
-	// set forth in BIP0030.  It is defined as a package level variable to
-	// avoid the need to create a new instance every time a check is needed.
-	block91842Hash = newHashFromStr("00000000000a4d0a398161ffc163c503763b1f4360639393e0e4c8e300e0caec")
-
-	// block91880Hash is one of the two nodes which violate the rules
-	// set forth in BIP0030.  It is defined as a package level variable to
-	// avoid the need to create a new instance every time a check is needed.
-	block91880Hash = newHashFromStr("00000000000743f190a18c5577a3c2d2a1f610ae9601ac046a38084ccb7cd721")
 )
 
 // isNullOutpoint determines whether or not a previous transaction output point
@@ -317,13 +307,6 @@ func checkProofOfWork(header *wire.BlockHeader, powLimit *big.Int, flags Behavio
 	return nil
 }
 
-// CheckProofOfWork ensures the block header bits which indicate the target
-// difficulty is in min/max range and that the block hash is less than the
-// target difficulty as claimed.
-func CheckProofOfWork(block *util.Block, powLimit *big.Int) error {
-	return checkProofOfWork(&block.MsgBlock().Header, powLimit, BFNone)
-}
-
 // CountSigOps returns the number of signature operations for all transaction
 // input and output scripts in the provided transaction.  This uses the
 // quicker, but imprecise, signature operation counting mechanism from
@@ -353,7 +336,7 @@ func CountSigOps(tx *util.Tx) int {
 // transactions which are of the pay-to-script-hash type.  This uses the
 // precise, signature operation counting mechanism from the script engine which
 // requires access to the input transaction scripts.
-func CountP2SHSigOps(tx *util.Tx, isCoinBaseTx bool, utxoView *UtxoViewpoint) (int, error) {
+func CountP2SHSigOps(tx *util.Tx, isCoinBaseTx bool, utxoView *UTXOView) (int, error) {
 	// Coinbase transactions have no interesting inputs.
 	if isCoinBaseTx {
 		return 0, nil
@@ -801,7 +784,7 @@ func (dag *BlockDAG) checkBlockContext(block *util.Block, parents blockSet, sele
 // http://r6.ca/blog/20120206T005236Z.html.
 //
 // This function MUST be called with the chain state lock held (for reads).
-func (dag *BlockDAG) ensureNoDuplicateTx(node *blockNode, block *util.Block, view *UtxoViewpoint) error {
+func (dag *BlockDAG) ensureNoDuplicateTx(node *blockNode, block *util.Block) error {
 	// Fetch utxos for all of the transaction ouputs in this block.
 	// Typically, there will not be any utxos for any of the outputs.
 	fetchSet := make(map[wire.OutPoint]struct{})
@@ -812,16 +795,12 @@ func (dag *BlockDAG) ensureNoDuplicateTx(node *blockNode, block *util.Block, vie
 			fetchSet[prevOut] = struct{}{}
 		}
 	}
-	err := view.fetchUtxos(dag.db, fetchSet)
-	if err != nil {
-		return err
-	}
 
 	// Duplicate transactions are only allowed if the previous transaction
 	// is fully spent.
 	for outpoint := range fetchSet {
-		utxo := view.LookupEntry(outpoint)
-		if utxo != nil && !utxo.IsSpent() {
+		utxo, ok := dag.virtual.GetUTXOEntry(outpoint)
+		if ok && !utxo.IsSpent() {
 			str := fmt.Sprintf("tried to overwrite transaction %v "+
 				"at block height %d that is not fully spent",
 				outpoint.Hash, utxo.BlockHeight())
@@ -843,7 +822,7 @@ func (dag *BlockDAG) ensureNoDuplicateTx(node *blockNode, block *util.Block, vie
 //
 // NOTE: The transaction MUST have already been sanity checked with the
 // CheckTransactionSanity function prior to calling this function.
-func CheckTransactionInputs(tx *util.Tx, txHeight int32, utxoView *UtxoViewpoint, dagParams *dagconfig.Params) (int64, error) {
+func CheckTransactionInputs(tx *util.Tx, txHeight int32, utxoView *UTXOView, dagParams *dagconfig.Params) (int64, error) {
 	// Coinbase transactions have no inputs.
 	if IsCoinBase(tx) {
 		return 0, nil
@@ -958,7 +937,7 @@ func CheckTransactionInputs(tx *util.Tx, txHeight int32, utxoView *UtxoViewpoint
 // with that node.
 //
 // This function MUST be called with the chain state lock held (for writes).
-func (dag *BlockDAG) checkConnectBlock(node *blockNode, block *util.Block, view *UtxoViewpoint, stxos *[]spentTxOut) error {
+func (dag *BlockDAG) checkConnectBlock(node *blockNode, block *util.Block) error {
 	// If the side chain blocks end up in the database, a call to
 	// CheckBlockSanity should be done here in case a previous version
 	// allowed a block that is no longer valid.  However, since the
@@ -972,15 +951,7 @@ func (dag *BlockDAG) checkConnectBlock(node *blockNode, block *util.Block, view 
 		return ruleError(ErrMissingTxOut, str)
 	}
 
-	// Ensure the view is for the node being checked.
-	parentHashes := block.MsgBlock().Header.PrevBlocks
-	if !view.Tips().hashesEqual(parentHashes) {
-		return AssertError(fmt.Sprintf("inconsistent view when "+
-			"checking block connection: tips are %v instead "+
-			"of expected %v", view.Tips(), parentHashes))
-	}
-
-	err := dag.ensureNoDuplicateTx(node, block, view)
+	err := dag.ensureNoDuplicateTx(node, block)
 	if err != nil {
 		return err
 	}
@@ -990,7 +961,8 @@ func (dag *BlockDAG) checkConnectBlock(node *blockNode, block *util.Block, view 
 	//
 	// These utxo entries are needed for verification of things such as
 	// transaction inputs, counting pay-to-script-hashes, and scripts.
-	err = view.fetchInputUtxos(dag.db, block)
+	view := NewUTXOView()
+	err = view.fetchInputUTXOs(dag.db, block)
 	if err != nil {
 		return err
 	}
@@ -1036,6 +1008,8 @@ func (dag *BlockDAG) checkConnectBlock(node *blockNode, block *util.Block, view 
 	// still relatively cheap as compared to running the scripts) checks
 	// against all the inputs when the signature operations are out of
 	// bounds.
+	targetSpentOutputCount := countSpentOutputs(block)
+	stxos := make([]spentTxOut, 0, targetSpentOutputCount)
 	var totalFees int64
 	for _, tx := range transactions {
 		txFee, err := CheckTransactionInputs(tx, node.height, view,
@@ -1057,15 +1031,17 @@ func (dag *BlockDAG) checkConnectBlock(node *blockNode, block *util.Block, view 
 		// provably unspendable as available utxos.  Also, the passed
 		// spent txos slice is updated to contain an entry for each
 		// spent txout in the order each transaction spends them.
-		err = view.connectTransaction(tx, node.height, stxos)
+		err = view.connectTransaction(tx, node.height, &stxos)
 		if err != nil {
 			return err
 		}
 	}
 
-	// Update the tips for view to include this block since all of its
-	// transactions have been connected.
-	view.AddBlock(node)
+	// Sanity check the correct number of stxos are provided.
+	if len(stxos) != targetSpentOutputCount {
+		return AssertError("connectBlock called with inconsistent " +
+			"spent transaction out information")
+	}
 
 	// The total output values of the coinbase transaction must not exceed
 	// the expected subsidy value plus total transaction fees gained from
@@ -1135,11 +1111,17 @@ func (dag *BlockDAG) checkConnectBlock(node *blockNode, block *util.Block, view 
 		}
 	}
 
-	// Update the view tips to include this block since all of its
-	// transactions have been connected.
-	view.AddBlock(node)
-
 	return nil
+}
+
+// countSpentOutputs returns the number of utxos the passed block spends.
+func countSpentOutputs(block *util.Block) int {
+	// Exclude the coinbase transaction since it can't spend anything.
+	var numSpent int
+	for _, tx := range block.Transactions()[1:] {
+		numSpent += len(tx.MsgTx().TxIn)
+	}
+	return numSpent
 }
 
 // CheckConnectBlockTemplate fully validates that connecting the passed block to
@@ -1156,7 +1138,7 @@ func (dag *BlockDAG) CheckConnectBlockTemplate(block *util.Block) error {
 
 	// This only checks whether the block can be connected to the tip of the
 	// current chain.
-	tips := dag.virtual.Tips()
+	tips := dag.virtual.tips()
 	header := block.MsgBlock().Header
 	prevHashes := header.PrevBlocks
 	if !tips.hashesEqual(prevHashes) {
@@ -1180,10 +1162,6 @@ func (dag *BlockDAG) CheckConnectBlockTemplate(block *util.Block) error {
 		return err
 	}
 
-	// Leave the spent txouts entry nil in the state since the information
-	// is not needed and thus extra work can be avoided.
-	view := NewUtxoViewpoint()
-	view.SetTips(tips)
-	newNode := newBlockNode(&header, dag.virtual.Tips(), dag.dagParams.K)
-	return dag.checkConnectBlock(newNode, block, view, nil)
+	newNode := newBlockNode(&header, dag.virtual.tips(), dag.dagParams.K)
+	return dag.checkConnectBlock(newNode, block)
 }

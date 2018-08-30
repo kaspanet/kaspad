@@ -18,7 +18,7 @@ func TestNotifications(t *testing.T) {
 	}
 
 	// Create a new database and chain instance to run tests against.
-	chain, teardownFunc, err := chainSetup("notifications",
+	chain, teardownFunc, err := dagSetup("notifications",
 		&dagconfig.MainNetParams)
 	if err != nil {
 		t.Fatalf("Failed to setup chain instance: %v", err)

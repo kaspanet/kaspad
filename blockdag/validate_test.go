@@ -67,7 +67,7 @@ func TestSequenceLocksActive(t *testing.T) {
 // ensure it fails.
 func TestCheckConnectBlockTemplate(t *testing.T) {
 	// Create a new database and chain instance to run tests against.
-	chain, teardownFunc, err := chainSetup("checkconnectblocktemplate",
+	chain, teardownFunc, err := dagSetup("checkconnectblocktemplate",
 		&dagconfig.MainNetParams)
 	if err != nil {
 		t.Errorf("Failed to setup chain instance: %v", err)

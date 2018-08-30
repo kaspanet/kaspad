@@ -662,7 +662,7 @@ func (idx *AddrIndex) indexPkScript(data writeIndexData, pkScript []byte, txIdx 
 // indexBlock extract all of the standard addresses from all of the transactions
 // in the passed block and maps each of them to the associated transaction using
 // the passed map.
-func (idx *AddrIndex) indexBlock(data writeIndexData, block *util.Block, view *blockdag.UtxoViewpoint) {
+func (idx *AddrIndex) indexBlock(data writeIndexData, block *util.Block, virtual *blockdag.VirtualBlock) {
 	for txIdx, tx := range block.Transactions() {
 		// Coinbases do not reference any inputs.  Since the block is
 		// required to have already gone through full validation, it has
@@ -670,11 +670,11 @@ func (idx *AddrIndex) indexBlock(data writeIndexData, block *util.Block, view *b
 		// a coinbase.
 		if txIdx != 0 {
 			for _, txIn := range tx.MsgTx().TxIn {
-				// The view should always have the input since
+				// The UTXO should always have the input since
 				// the index contract requires it, however, be
 				// safe and simply ignore any missing entries.
-				entry := view.LookupEntry(txIn.PreviousOutPoint)
-				if entry == nil {
+				entry, ok := virtual.GetUTXOEntry(txIn.PreviousOutPoint)
+				if !ok {
 					continue
 				}
 
@@ -693,7 +693,7 @@ func (idx *AddrIndex) indexBlock(data writeIndexData, block *util.Block, view *b
 // the transactions in the block involve.
 //
 // This is part of the Indexer interface.
-func (idx *AddrIndex) ConnectBlock(dbTx database.Tx, block *util.Block, view *blockdag.UtxoViewpoint) error {
+func (idx *AddrIndex) ConnectBlock(dbTx database.Tx, block *util.Block, virtual *blockdag.VirtualBlock) error {
 	// The offset and length of the transactions within the serialized
 	// block.
 	txLocs, err := block.TxLoc()
@@ -709,7 +709,7 @@ func (idx *AddrIndex) ConnectBlock(dbTx database.Tx, block *util.Block, view *bl
 
 	// Build all of the address to transaction mappings in a local map.
 	addrsToTxns := make(writeIndexData)
-	idx.indexBlock(addrsToTxns, block, view)
+	idx.indexBlock(addrsToTxns, block, virtual)
 
 	// Add all of the index entries for each address.
 	addrIdxBucket := dbTx.Metadata().Bucket(addrIndexKey)
@@ -731,10 +731,10 @@ func (idx *AddrIndex) ConnectBlock(dbTx database.Tx, block *util.Block, view *bl
 // each transaction in the block involve.
 //
 // This is part of the Indexer interface.
-func (idx *AddrIndex) DisconnectBlock(dbTx database.Tx, block *util.Block, view *blockdag.UtxoViewpoint) error {
+func (idx *AddrIndex) DisconnectBlock(dbTx database.Tx, block *util.Block, virtual *blockdag.VirtualBlock) error {
 	// Build all of the address to transaction mappings in a local map.
 	addrsToTxns := make(writeIndexData)
-	idx.indexBlock(addrsToTxns, block, view)
+	idx.indexBlock(addrsToTxns, block, virtual)
 
 	// Remove all of the index entries for each address.
 	bucket := dbTx.Metadata().Bucket(addrIndexKey)
@@ -833,7 +833,7 @@ func (idx *AddrIndex) indexUnconfirmedAddresses(pkScript []byte, tx *util.Tx) {
 // addresses not being indexed.
 //
 // This function is safe for concurrent access.
-func (idx *AddrIndex) AddUnconfirmedTx(tx *util.Tx, utxoView *blockdag.UtxoViewpoint) {
+func (idx *AddrIndex) AddUnconfirmedTx(tx *util.Tx, utxoView *blockdag.UTXOView) {
 	// Index addresses of all referenced previous transaction outputs.
 	//
 	// The existence checks are elided since this is only called after the

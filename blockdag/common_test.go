@@ -115,10 +115,10 @@ func loadBlocks(filename string) (blocks []*util.Block, err error) {
 	return
 }
 
-// chainSetup is used to create a new db and chain instance with the genesis
+// dagSetup is used to create a new db and chain instance with the genesis
 // block already inserted.  In addition to the new chain instance, it returns
 // a teardown function the caller should invoke when done testing to clean up.
-func chainSetup(dbName string, params *dagconfig.Params) (*BlockDAG, func(), error) {
+func dagSetup(dbName string, params *dagconfig.Params) (*BlockDAG, func(), error) {
 	if !isSupportedDbType(testDbType) {
 		return nil, nil, fmt.Errorf("unsupported db type %v", testDbType)
 	}
@@ -187,8 +187,8 @@ func chainSetup(dbName string, params *dagconfig.Params) (*BlockDAG, func(), err
 	return chain, teardown, nil
 }
 
-// loadUtxoView returns a utxo view loaded from a file.
-func loadUtxoView(filename string) (*UtxoViewpoint, error) {
+// loadUTXOView returns a utxo view loaded from a file.
+func loadUTXOView(filename string) (*UTXOView, error) {
 	// The utxostore file format is:
 	// <tx hash><output index><serialized utxo len><serialized utxo>
 	//
@@ -210,7 +210,7 @@ func loadUtxoView(filename string) (*UtxoViewpoint, error) {
 	}
 	defer fi.Close()
 
-	view := NewUtxoViewpoint()
+	view := NewUTXOView()
 	for {
 		// Hash of the utxo entry.
 		var hash daghash.Hash
@@ -245,7 +245,7 @@ func loadUtxoView(filename string) (*UtxoViewpoint, error) {
 		}
 
 		// Deserialize it and add it to the view.
-		entry, err := deserializeUtxoEntry(serialized)
+		entry, err := deserializeUTXOEntry(serialized)
 		if err != nil {
 			return nil, err
 		}
