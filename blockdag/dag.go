@@ -721,6 +721,11 @@ func (p *provisionalNode) pastUTXO(virtual *VirtualBlock, db database.DB) (utxoS
 	// Fetch from the database all the transactions for this block's blue set (besides the selected parent)
 	var blueBlockTransactions []*util.Tx
 	err = db.View(func(tx database.Tx) error {
+		// Precalculate the amount of transactions in this block's blue set, besides the selected parent.
+		// This is to avoid an attack in which an attacker fabricates a block that will deliberately cause
+		// a lot of copying, causing a high cost to the whole network.
+		transactionCount := 0
+		blueBlocks := make([]*util.Block, 0, len(p.original.blues)-1)
 		for i := len(p.original.blues) - 1; i >= 0; i-- {
 			blueBlockNode := p.original.blues[i]
 			if blueBlockNode == p.original.selectedParent {
@@ -732,8 +737,15 @@ func (p *provisionalNode) pastUTXO(virtual *VirtualBlock, db database.DB) (utxoS
 				return err
 			}
 
-			blueBlockTransactions = append(blueBlockTransactions, blueBlock.Transactions()...)
+			transactionCount += len(blueBlock.Transactions())
+			blueBlocks = append(blueBlocks, blueBlock)
 		}
+
+		transactions := make([]*util.Tx, 0, transactionCount)
+		for _, blueBlock := range blueBlocks {
+			transactions = append(transactions, blueBlock.Transactions()...)
+		}
+		blueBlockTransactions = transactions
 
 		return nil
 	})
