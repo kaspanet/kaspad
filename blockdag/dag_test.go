@@ -77,7 +77,7 @@ func TestHaveBlock(t *testing.T) {
 	}
 	isOrphan, err := chain.ProcessBlock(blocks[6], BFNone)
 
-	// Block 3c should fail to connect since its parents are related. (It points to A and B, and A is the parent of B)
+	// Block 3c should fail to connect since its parents are related. (It points to 1 and 2, and 1 is the parent of 2)
 	if err == nil {
 		t.Errorf("ProcessBlock for block 3c has no error when expected to have an error\n")
 		return
