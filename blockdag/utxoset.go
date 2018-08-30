@@ -36,7 +36,7 @@ func (uc utxoCollection) remove(outPoint wire.OutPoint) {
 	delete(uc, outPoint)
 }
 
-// contains returns a boolean value indicating if represented by provided outPoint is in the set or not
+// contains returns a boolean value indicating whether a UTXO entry is in the set
 func (uc utxoCollection) contains(outPoint wire.OutPoint) bool {
 	_, ok := uc[outPoint]
 	return ok
