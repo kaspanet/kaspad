@@ -67,8 +67,33 @@ func TestHaveBlock(t *testing.T) {
 		}
 	}
 
+	testFiles = []string{
+		"blk_3C.dat",
+	}
+
+	for _, file := range testFiles {
+		blockTmp, err := loadBlocks(file)
+		if err != nil {
+			t.Errorf("Error loading file: %v\n", err)
+			return
+		}
+		blocks = append(blocks, blockTmp...)
+	}
+	isOrphan, err := chain.ProcessBlock(blocks[6], BFNone)
+
+	// Block 3c should fail to connect since its parents are related. (It points to 1 and 2, and 1 is the parent of 2)
+	if err == nil {
+		t.Errorf("ProcessBlock for block 3c has no error when expected to have an error\n")
+		return
+	}
+	if isOrphan {
+		t.Errorf("ProcessBlock incorrectly returned block 3c " +
+			"is an orphan\n")
+		return
+	}
+
 	// Insert an orphan block.
-	isOrphan, err := chain.ProcessBlock(util.NewBlock(&Block100000),
+	isOrphan, err = chain.ProcessBlock(util.NewBlock(&Block100000),
 		BFNone)
 	if err != nil {
 		t.Errorf("Unable to process block: %v", err)
@@ -88,7 +113,7 @@ func TestHaveBlock(t *testing.T) {
 		{hash: dagconfig.MainNetParams.GenesisHash.String(), want: true},
 
 		// Block 3b should be present (as a second child of Block 2).
-		{hash: "000000bce70562ed076f269c5c4e39c590abb29428c573c02ab970e17931f8a4", want: true},
+		{hash: "00000093c8f2ab3444502da0754fc8149d738701aef9b2e0f32f32c078039295", want: true},
 
 		// Block 100000 should be present (as an orphan).
 		{hash: "000000a805b083e0ef1f516b1153828724c235d6e6f0fabb47b869f6d054ac3f", want: true},
