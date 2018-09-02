@@ -227,17 +227,6 @@ func (d *utxoDiff) withDiff(diff *utxoDiff) (*utxoDiff, error) {
 	return result, nil
 }
 
-// isCompatible returns true iff other can be applied to this UTXODiff.
-// Diffs are incompatible if they both remove the same outPoint
-func (d *utxoDiff) isCompatible(other *utxoDiff) bool {
-	for outPoint := range other.toRemove {
-		if d.toRemove.contains(outPoint) {
-			return false
-		}
-	}
-	return true
-}
-
 // clone returns a clone of this utxoDiff
 func (d *utxoDiff) clone() *utxoDiff {
 	return &utxoDiff{
@@ -282,17 +271,17 @@ type utxoSet interface {
 	fmt.Stringer
 	diffFrom(other utxoSet) (*utxoDiff, error)
 	withDiff(utxoDiff *utxoDiff) (utxoSet, error)
-	diffFromTx(tx *wire.MsgTx, blockHeight int32) (*utxoDiff, error)
+	diffFromTx(tx *wire.MsgTx, node *blockNode) (*utxoDiff, error)
 	addTx(tx *wire.MsgTx, blockHeight int32) (ok bool)
 	clone() utxoSet
 	get(outPoint wire.OutPoint) (*UTXOEntry, bool)
 }
 
-// diffFromTx is a common implementation for DiffFromTx, that works
+// diffFromTx is a common implementation for diffFromTx, that works
 // for both diff-based and full UTXO sets
 // Returns a diff that is equivalent to provided transaction,
 // or an error if provided transaction is not valid in the context of this UTXOSet
-func diffFromTx(u utxoSet, tx *wire.MsgTx, blockHeight int32) (*utxoDiff, error) {
+func diffFromTx(u utxoSet, tx *wire.MsgTx, node *blockNode) (*utxoDiff, error) {
 	diff := newUTXODiff()
 	isCoinbase := IsCoinBaseTx(tx)
 	if !isCoinbase {
@@ -308,7 +297,7 @@ func diffFromTx(u utxoSet, tx *wire.MsgTx, blockHeight int32) (*utxoDiff, error)
 	}
 	for i, txOut := range tx.TxOut {
 		hash := tx.TxHash()
-		entry := newUTXOEntry(txOut, isCoinbase, blockHeight)
+		entry := newUTXOEntry(txOut, isCoinbase, node.height)
 		outPoint := *wire.NewOutPoint(&hash, uint32(i))
 		diff.toAdd.add(outPoint, entry)
 	}
@@ -374,8 +363,8 @@ func (fus *fullUTXOSet) addTx(tx *wire.MsgTx, blockHeight int32) bool {
 
 // diffFromTx returns a diff that is equivalent to provided transaction,
 // or an error if provided transaction is not valid in the context of this UTXOSet
-func (fus *fullUTXOSet) diffFromTx(tx *wire.MsgTx, height int32) (*utxoDiff, error) {
-	return diffFromTx(fus, tx, height)
+func (fus *fullUTXOSet) diffFromTx(tx *wire.MsgTx, node *blockNode) (*utxoDiff, error) {
+	return diffFromTx(fus, tx, node)
 }
 
 func (fus *fullUTXOSet) containsInputs(tx *wire.MsgTx) bool {
@@ -511,8 +500,8 @@ func (dus *diffUTXOSet) meldToBase() {
 
 // diffFromTx returns a diff that is equivalent to provided transaction,
 // or an error if provided transaction is not valid in the context of this UTXOSet
-func (dus *diffUTXOSet) diffFromTx(tx *wire.MsgTx, blockHeight int32) (*utxoDiff, error) {
-	return diffFromTx(dus, tx, blockHeight)
+func (dus *diffUTXOSet) diffFromTx(tx *wire.MsgTx, node *blockNode) (*utxoDiff, error) {
+	return diffFromTx(dus, tx, node)
 }
 
 func (dus *diffUTXOSet) String() string {

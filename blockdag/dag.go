@@ -704,12 +704,9 @@ func (p *provisionalNode) verifyAndBuildUTXO(virtual *VirtualBlock, db database.
 	diff := newUTXODiff()
 
 	for _, tx := range p.transactions {
-		txDiff, err := pastUTXO.diffFromTx(tx.MsgTx(), p.original.height)
+		txDiff, err := pastUTXO.diffFromTx(tx.MsgTx(), p.original)
 		if err != nil {
 			return nil, err
-		}
-		if !diff.isCompatible(txDiff) {
-			return nil, fmt.Errorf("Tx %s is double spending an outpoint already spent in this block", tx.Hash())
 		}
 		diff, err = diff.withDiff(txDiff)
 		if err != nil {

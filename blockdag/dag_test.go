@@ -653,20 +653,6 @@ func TestIntervalBlockHashes(t *testing.T) {
 
 // TestPastUTXOErrors tests all error-cases in restoreUTXO.
 // The non-error-cases are tested in the more general tests.
-func TestVerifyAndBuildUTXOErrors(t *testing.T) {
-	targetErrorMessage := "is double spending an outpoint already spent in this block"
-	testErrorThroughPatching(
-		t,
-		targetErrorMessage,
-		(*utxoDiff).isCompatible,
-		func(d *utxoDiff, other *utxoDiff) bool {
-			return false
-		},
-	)
-}
-
-// TestPastUTXOErrors tests all error-cases in restoreUTXO.
-// The non-error-cases are tested in the more general tests.
 func TestPastUTXOErrors(t *testing.T) {
 	targetErrorMessage := "dbFetchBlockByNode error"
 	testErrorThroughPatching(
