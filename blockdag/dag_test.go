@@ -5,13 +5,14 @@
 package blockdag
 
 import (
-	"bou.ke/monkey"
 	"errors"
-	"github.com/daglabs/btcd/database"
 	"reflect"
 	"strings"
 	"testing"
 	"time"
+
+	"bou.ke/monkey"
+	"github.com/daglabs/btcd/database"
 
 	"math/rand"
 
@@ -653,12 +654,12 @@ func TestIntervalBlockHashes(t *testing.T) {
 // TestPastUTXOErrors tests all error-cases in restoreUTXO.
 // The non-error-cases are tested in the more general tests.
 func TestVerifyAndBuildUTXOErrors(t *testing.T) {
-	targetErrorMessage := "not compatible with UTXO"
+	targetErrorMessage := "is double spending an outpoint already spent in this block"
 	testErrorThroughPatching(
 		t,
 		targetErrorMessage,
-		(*diffUTXOSet).addTx,
-		func(fus *diffUTXOSet, tx *wire.MsgTx, blockHeight int32) bool {
+		(*utxoDiff).isCompatible,
+		func(d *utxoDiff, other *utxoDiff) bool {
 			return false
 		},
 	)
