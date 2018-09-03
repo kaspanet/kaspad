@@ -911,3 +911,68 @@ func TestApplyUTXOChanges(t *testing.T) {
 		t.Errorf("applyUTXOChanges: %v", err)
 	}
 }
+
+func TestDiffFromTx(t *testing.T) {
+	fus := &fullUTXOSet{
+		utxoCollection: utxoCollection{},
+	}
+	cbTx, err := createCoinbaseTx(1, 1)
+	if err != nil {
+		t.Errorf("createCoinbaseTx: %v", err)
+	}
+	fus.addTx(cbTx, 1)
+	node := &blockNode{height: 2} //Fake node
+	cbOutpoint := wire.OutPoint{Hash: cbTx.TxHash(), Index: 0}
+	tx := wire.NewMsgTx(wire.TxVersion)
+	tx.AddTxIn(&wire.TxIn{
+		PreviousOutPoint: cbOutpoint,
+		SignatureScript:  nil,
+		Sequence:         wire.MaxTxInSequenceNum,
+	})
+	tx.AddTxOut(&wire.TxOut{
+		PkScript: OpTrueScript,
+		Value:    int64(1),
+	})
+	diff, err := fus.diffFromTx(tx, node)
+	if err != nil {
+		t.Errorf("diffFromTx: %v", err)
+	}
+	if !reflect.DeepEqual(diff.toAdd, utxoCollection{
+		wire.OutPoint{Hash: tx.TxHash(), Index: 0}: newUTXOEntry(tx.TxOut[0], false, 2),
+	}) {
+		t.Errorf("diff.toAdd doesn't have the expected values")
+	}
+
+	if !reflect.DeepEqual(diff.toRemove, utxoCollection{
+		wire.OutPoint{Hash: cbTx.TxHash(), Index: 0}: newUTXOEntry(cbTx.TxOut[0], true, 1),
+	}) {
+		t.Errorf("diff.toRemove doesn't have the expected values")
+	}
+
+	//Test that we get an error if we don't have the outpoint inside the utxo set
+	invalidTx := wire.NewMsgTx(wire.TxVersion)
+	invalidTx.AddTxIn(&wire.TxIn{
+		PreviousOutPoint: wire.OutPoint{Hash: daghash.Hash{}, Index: 0},
+		SignatureScript:  nil,
+		Sequence:         wire.MaxTxInSequenceNum,
+	})
+	invalidTx.AddTxOut(&wire.TxOut{
+		PkScript: OpTrueScript,
+		Value:    int64(1),
+	})
+	_, err = fus.diffFromTx(invalidTx, node)
+	if err == nil {
+		t.Errorf("diffFromTx: expected an error but got <nil>")
+	}
+
+	//Test that we get an error if the outpoint is inside diffUTXOSet's toRemove
+	dus := newDiffUTXOSet(fus, &utxoDiff{
+		toAdd:    utxoCollection{},
+		toRemove: utxoCollection{},
+	})
+	dus.addTx(tx, 2)
+	_, err = dus.diffFromTx(tx, node)
+	if err == nil {
+		t.Errorf("diffFromTx: expected an error but got <nil>")
+	}
+}

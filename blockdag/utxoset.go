@@ -37,8 +37,8 @@ func (uc utxoCollection) remove(outPoint wire.OutPoint) {
 	delete(uc, outPoint)
 }
 
-// get returns the TxOut represented by provided outPoint,
-// and a boolean value indicating if said TxOut is in the set or not
+// get returns the UTXOEntry represented by provided outPoint,
+// and a boolean value indicating if said UTXOEntry is in the set or not
 func (uc utxoCollection) get(outPoint wire.OutPoint) (*UTXOEntry, bool) {
 	entry, ok := uc[outPoint]
 	return entry, ok
