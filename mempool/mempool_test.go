@@ -29,18 +29,18 @@ import (
 // transactions to appear as though they are spending completely valid utxos.
 type fakeChain struct {
 	sync.RWMutex
-	utxos          *blockdag.UtxoViewpoint
+	utxos          *blockdag.UTXOView
 	currentHeight  int32
 	medianTimePast time.Time
 }
 
-// FetchUtxoView loads utxo details about the inputs referenced by the passed
+// FetchUTXOView loads utxo details about the inputs referenced by the passed
 // transaction from the point of view of the fake chain.  It also attempts to
 // fetch the utxos for the outputs of the transaction itself so the returned
 // view can be examined for duplicate transactions.
 //
 // This function is safe for concurrent access however the returned view is NOT.
-func (s *fakeChain) FetchUtxoView(tx *util.Tx) (*blockdag.UtxoViewpoint, error) {
+func (s *fakeChain) FetchUtxoView(tx *util.Tx) (*blockdag.UTXOView, error) {
 	s.RLock()
 	defer s.RUnlock()
 
@@ -48,7 +48,7 @@ func (s *fakeChain) FetchUtxoView(tx *util.Tx) (*blockdag.UtxoViewpoint, error) 
 	// do not affect the fake chain's view.
 
 	// Add an entry for the tx itself to the new view.
-	viewpoint := blockdag.NewUtxoViewpoint()
+	viewpoint := blockdag.NewUTXOView()
 	prevOut := wire.OutPoint{Hash: *tx.Hash()}
 	for txOutIdx := range tx.MsgTx().TxOut {
 		prevOut.Index = uint32(txOutIdx)
@@ -101,13 +101,13 @@ func (s *fakeChain) SetMedianTimePast(mtp time.Time) {
 // CalcSequenceLock returns the current sequence lock for the passed
 // transaction associated with the fake chain instance.
 func (s *fakeChain) CalcSequenceLock(tx *util.Tx,
-	view *blockdag.UtxoViewpoint) (*blockdag.SequenceLock, error) {
+	view *blockdag.UTXOView) (*blockdag.SequenceLock, error) {
 
 	return calcSequenceLock(tx, view)
 }
 
 func calcSequenceLock(tx *util.Tx,
-	view *blockdag.UtxoViewpoint) (*blockdag.SequenceLock, error) {
+	view *blockdag.UTXOView) (*blockdag.SequenceLock, error) {
 
 	return &blockdag.SequenceLock{
 		Seconds:     -1,
@@ -308,7 +308,7 @@ func newPoolHarness(dagParams *dagconfig.Params, numOutputs uint32) (*poolHarnes
 	}
 
 	// Create a new fake chain and harness bound to it.
-	chain := &fakeChain{utxos: blockdag.NewUtxoViewpoint()}
+	chain := &fakeChain{utxos: blockdag.NewUTXOView()}
 	harness := poolHarness{
 		signKey:     signKey,
 		payAddr:     payAddr,
@@ -538,6 +538,9 @@ func TestProcessTransaction(t *testing.T) {
 		AddOp(txscript.OpCheckSig).
 		AddOp(txscript.OpCheckSig).
 		Script()
+	if err != nil {
+		t.Fatalf("Script: error creating nonStdSigScript: %v", err)
+	}
 
 	p2shPKScript, err := txscript.NewScriptBuilder().
 		AddOp(txscript.OpHash160).
@@ -546,16 +549,12 @@ func TestProcessTransaction(t *testing.T) {
 		Script()
 
 	if err != nil {
-		t.Fatalf("NewScriptBuilder: error creating p2shPKScript: %v", err)
+		t.Fatalf("Script: error creating p2shPKScript: %v", err)
 	}
 
-	wrappedP2shNonStdSigScript, err := txscript.NewScriptBuilder().AddData(nonStdSigScript).Script()
+	wrappedP2SHNonStdSigScript, err := txscript.NewScriptBuilder().AddData(nonStdSigScript).Script()
 	if err != nil {
-		t.Fatalf("NewScriptBuilder: error creating wrappedP2shNonSigScript: %v", err)
-	}
-
-	if err != nil {
-		t.Fatalf("NewScriptBuilder: error creating nonStandardPKScript: %v", err)
+		t.Fatalf("Script: error creating wrappedP2shNonSigScript: %v", err)
 	}
 
 	dummyPrevOutHash, err := daghash.NewHashFromStr("01")
@@ -596,7 +595,7 @@ func TestProcessTransaction(t *testing.T) {
 		Version: 1,
 		TxIn: []*wire.TxIn{&wire.TxIn{
 			PreviousOutPoint: wire.OutPoint{Hash: *p2shTx.Hash(), Index: 0},
-			SignatureScript:  wrappedP2shNonStdSigScript,
+			SignatureScript:  wrappedP2SHNonStdSigScript,
 			Sequence:         wire.MaxTxInSequenceNum,
 		}},
 		TxOut: []*wire.TxOut{{
@@ -620,6 +619,102 @@ func TestProcessTransaction(t *testing.T) {
 	if expectedErrStr != err.Error() {
 		t.Errorf("Unexpected error message. Expected \"%s\" but got \"%s\"", expectedErrStr, err.Error())
 	}
+
+	// maxIntSigOpsScriptBuilder := txscript.NewScriptBuilder()
+	// maxInt := 1<<(strconv.IntSize-1) - 1
+	// for i := 0; i < maxInt; i++ {
+	// 	maxIntSigOpsScriptBuilder = maxIntSigOpsScriptBuilder.AddOp(txscript.OpCheckSig)
+	// }
+	// maxIntSigOpsScript, err := maxIntSigOpsScriptBuilder.Script()
+	// if err != nil {
+	// 	t.Fatalf("Script: error creating maxIntSigOpsScript: %v", err)
+	// }
+	// oneSigOpsScript, err := txscript.NewScriptBuilder().AddOp(txscript.OpCheckSig).Script()
+	// if err != nil {
+	// 	t.Fatalf("Script: error creating oneSigOpsScript: %v", err)
+	// }
+
+	// maxIntSigOpsPkScript, err := txscript.NewScriptBuilder().
+	// 	AddOp(txscript.OpHash160).
+	// 	AddData(util.Hash160(maxIntSigOpsScript)).
+	// 	AddOp(txscript.OpEqual).
+	// 	Script()
+
+	// if err != nil {
+	// 	t.Fatalf("Script: error creating p2shPKScript: %v", err)
+	// }
+
+	// wrappedP2SHMaxIntSigOpsScript, err := txscript.NewScriptBuilder().AddData(maxIntSigOpsScript).Script()
+	// if err != nil {
+	// 	t.Fatalf("Script: error creating wrappedP2shNonSigScript: %v", err)
+	// }
+
+	// oneSigOpsPKScript, err := txscript.NewScriptBuilder().
+	// 	AddOp(txscript.OpHash160).
+	// 	AddData(util.Hash160(maxIntSigOpsScript)).
+	// 	AddOp(txscript.OpEqual).
+	// 	Script()
+
+	// if err != nil {
+	// 	t.Fatalf("Script: error creating p2shPKScript: %v", err)
+	// }
+
+	// wrappedP2SHOneIntSigOpsScript, err := txscript.NewScriptBuilder().AddData(oneSigOpsScript).Script()
+	// if err != nil {
+	// 	t.Fatalf("Script: error creating wrappedP2shNonSigScript: %v", err)
+	// }
+
+	// overflowedP2SHTx := util.NewTx(&wire.MsgTx{
+	// 	Version: 1,
+	// 	TxIn:    []*wire.TxIn{&dummyTxIn},
+	// 	TxOut: []*wire.TxOut{
+	// 		{
+	// 			Value:    2500000000,
+	// 			PkScript: maxIntSigOpsPkScript,
+	// 		},
+	// 		{
+	// 			Value:    2500000000,
+	// 			PkScript: oneSigOpsPKScript,
+	// 		},
+	// 	},
+	// 	LockTime: 0,
+	// })
+	// harness.chain.utxos.AddTxOuts(overflowedP2SHTx, curHeight+1)
+	// spendOverflowedP2SHTx := util.NewTx(&wire.MsgTx{
+	// 	Version: 1,
+	// 	TxIn: []*wire.TxIn{
+	// 		&wire.TxIn{
+	// 			PreviousOutPoint: wire.OutPoint{Hash: *overflowedP2SHTx.Hash(), Index: 0},
+	// 			SignatureScript:  wrappedP2SHMaxIntSigOpsScript,
+	// 			Sequence:         wire.MaxTxInSequenceNum,
+	// 		},
+	// 		&wire.TxIn{
+	// 			PreviousOutPoint: wire.OutPoint{Hash: *overflowedP2SHTx.Hash(), Index: 1},
+	// 			SignatureScript:  wrappedP2SHOneIntSigOpsScript,
+	// 			Sequence:         wire.MaxTxInSequenceNum,
+	// 		},
+	// 	},
+	// 	TxOut: []*wire.TxOut{{
+	// 		Value:    5000000000,
+	// 		PkScript: dummyPkScript,
+	// 	}},
+	// 	LockTime: 0,
+	// })
+	// _, err = harness.txPool.ProcessTransaction(spendOverflowedP2SHTx, true, false, 0)
+	// if err == nil {
+	// 	t.Errorf("ProcessTransaction: expected an error, not nil")
+	// }
+	// if code, _ := extractRejectCode(err); code != wire.RejectNonstandard {
+	// 	t.Errorf("Unexpected error code. Expected %v but got %v", wire.RejectNonstandard, code)
+	// }
+	// expectedErrStr = fmt.Sprintf("transaction %v has a non-standard input: "+
+	// 	"transaction input #%d has "+
+	// 	"%d signature operations which is more "+
+	// 	"than the allowed max amount of %d",
+	// 	nonStdSigScriptTx.Hash(), 0, 16, 15)
+	// if expectedErrStr != err.Error() {
+	// 	t.Errorf("Unexpected error message. Expected \"%s\" but got \"%s\"", expectedErrStr, err.Error())
+	// }
 
 	//Checks that even if we accept non standard transactions, we reject by the MaxSigOpsPerTx consensus rule
 	harness.txPool.cfg.Policy.AcceptNonStd = true
@@ -663,7 +758,7 @@ func TestProcessTransaction(t *testing.T) {
 
 	//Checks that transactions get rejected from mempool if sequence lock is not active
 	harness.txPool.cfg.CalcSequenceLock = func(tx *util.Tx,
-		view *blockdag.UtxoViewpoint) (*blockdag.SequenceLock, error) {
+		view *blockdag.UTXOView) (*blockdag.SequenceLock, error) {
 
 		return &blockdag.SequenceLock{
 			Seconds:     math.MaxInt64,

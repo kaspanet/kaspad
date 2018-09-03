@@ -47,47 +47,6 @@ type orphanBlock struct {
 	expiration time.Time
 }
 
-// DAGState houses information about the current tips and other info
-// related to the state of the DAG.
-//
-// The GetDAGState method can be used to obtain access to this information
-// in a concurrent safe manner and the data will not be changed out from under
-// the caller when chain state changes occur as the function name implies.
-// However, the returned snapshot must be treated as immutable since it is
-// shared by all callers.
-type DAGState struct {
-	SelectedTip SelectedTipState // State of the selected tip
-	TipHashes   []daghash.Hash   // The hashes of the tips
-	TotalTxs    uint64           // The total number of transactions in the DAG.
-}
-
-type SelectedTipState struct {
-	Hash       daghash.Hash // The hash of the tip.
-	Height     int32        // The height of the tip.
-	Bits       uint32       // The difficulty bits of the tip.
-	BlockSize  uint64       // The size of the tip.
-	NumTxs     uint64       // The number of transactions in the tip.
-	MedianTime time.Time    // Median time as per CalcPastMedianTime.
-}
-
-// newDAGState returns a new state instance for the given parameters.
-func newDAGState(tipHashes []daghash.Hash, node *blockNode, blockSize, numTxs,
-	totalTxs uint64, medianTime time.Time) *DAGState {
-
-	return &DAGState{
-		SelectedTip: SelectedTipState{
-			Hash:       node.hash,
-			Height:     node.height,
-			Bits:       node.bits,
-			BlockSize:  blockSize,
-			NumTxs:     numTxs,
-			MedianTime: medianTime,
-		},
-		TipHashes: tipHashes,
-		TotalTxs:  totalTxs,
-	}
-}
-
 // BlockDAG provides functions for working with the bitcoin block chain.
 // It includes functionality such as rejecting duplicate blocks, ensuring blocks
 // follow all rules, orphan handling, checkpoint handling, and best chain
@@ -126,7 +85,7 @@ type BlockDAG struct {
 	index *blockIndex
 
 	// virtual tracks the current tips.
-	virtual *virtualBlock
+	virtual *VirtualBlock
 
 	// These fields are related to handling of orphan blocks.  They are
 	// protected by a combination of the chain lock and the orphan lock.
@@ -139,20 +98,6 @@ type BlockDAG struct {
 	// by the chain lock.
 	nextCheckpoint *dagconfig.Checkpoint
 	checkpointNode *blockNode
-
-	// The state is used as a fairly efficient way to cache information
-	// about the current DAG state that is returned to callers when
-	// requested.  It operates on the principle of MVCC such that any time a
-	// new block becomes the best block, the state pointer is replaced with
-	// a new struct and the old state is left untouched.  In this way,
-	// multiple callers can be pointing to different DAG states.
-	// This is acceptable for most callers because the state is only being
-	// queried at a specific point in time.
-	//
-	// In addition, some of the fields are stored in the database so the
-	// DAG state can be quickly reconstructed on load.
-	stateLock sync.RWMutex
-	dagState  *DAGState
 
 	// The following caches are used to efficiently keep track of the
 	// current deployment threshold state of each rule change deployment.
@@ -361,7 +306,7 @@ type SequenceLock struct {
 }
 
 // CalcSequenceLock computes a relative lock-time SequenceLock for the passed
-// transaction using the passed UtxoViewpoint to obtain the past median time
+// transaction using the passed UTXOView to obtain the past median time
 // for blocks in which the referenced inputs of the transactions were included
 // within. The generated SequenceLock lock can be used in conjunction with a
 // block height, and adjusted median block time to determine if all the inputs
@@ -369,7 +314,7 @@ type SequenceLock struct {
 // the candidate transaction to be included in a block.
 //
 // This function is safe for concurrent access.
-func (dag *BlockDAG) CalcSequenceLock(tx *util.Tx, utxoView *UtxoViewpoint, mempool bool) (*SequenceLock, error) {
+func (dag *BlockDAG) CalcSequenceLock(tx *util.Tx, utxoView *UTXOView, mempool bool) (*SequenceLock, error) {
 	dag.dagLock.Lock()
 	defer dag.dagLock.Unlock()
 
@@ -380,7 +325,7 @@ func (dag *BlockDAG) CalcSequenceLock(tx *util.Tx, utxoView *UtxoViewpoint, memp
 // transaction. See the exported version, CalcSequenceLock for further details.
 //
 // This function MUST be called with the chain state lock held (for writes).
-func (dag *BlockDAG) calcSequenceLock(node *blockNode, tx *util.Tx, utxoView *UtxoViewpoint, mempool bool) (*SequenceLock, error) {
+func (dag *BlockDAG) calcSequenceLock(node *blockNode, tx *util.Tx, utxoView *UTXOView, mempool bool) (*SequenceLock, error) {
 	// A value of -1 for each relative lock type represents a relative time
 	// lock value that will allow a transaction to be included in a block
 	// at any given height or time.
@@ -487,135 +432,6 @@ func LockTimeToSequence(isSeconds bool, locktime uint64) uint64 {
 		locktime>>wire.SequenceLockTimeGranularity
 }
 
-// connectBlock handles connecting the passed node/block to the DAG.
-//
-// This passed utxo view must have all referenced txos the block spends marked
-// as spent and all of the new txos the block creates added to it.  In addition,
-// the passed stxos slice must be populated with all of the information for the
-// spent txos.  This approach is used because the connection validation that
-// must happen prior to calling this function requires the same details, so
-// it would be inefficient to repeat it.
-//
-// This function MUST be called with the chain state lock held (for writes).
-func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block, view *UtxoViewpoint, stxos []spentTxOut) error {
-	// Sanity check the correct number of stxos are provided.
-	if len(stxos) != countSpentOutputs(block) {
-		return AssertError("connectBlock called with inconsistent " +
-			"spent transaction out information")
-	}
-
-	// No warnings about unknown rules or versions until the chain is
-	// current.
-	if dag.isCurrent() {
-		// Warn if any unknown new rules are either about to activate or
-		// have already been activated.
-		if err := dag.warnUnknownRuleActivations(node); err != nil {
-			return err
-		}
-
-		// Warn if a high enough percentage of the last blocks have
-		// unexpected versions.
-		if err := dag.warnUnknownVersions(node); err != nil {
-			return err
-		}
-	}
-
-	// Write any block status changes to DB before updating best state.
-	err := dag.index.flushToDB()
-	if err != nil {
-		return err
-	}
-
-	// Generate a new state snapshot that will be used to update the
-	// database and later memory if all database updates are successful.
-	dag.stateLock.RLock()
-	currentTotalTxs := dag.dagState.TotalTxs
-	dag.stateLock.RUnlock()
-	numTxs := uint64(len(block.MsgBlock().Transactions))
-	blockSize := uint64(block.MsgBlock().SerializeSize())
-	state := newDAGState(view.tips.hashes(), node, blockSize, numTxs,
-		currentTotalTxs+numTxs, node.CalcPastMedianTime())
-
-	// Atomically insert info into the database.
-	err = dag.db.Update(func(dbTx database.Tx) error {
-		// Update best block state.
-		err := dbPutDAGState(dbTx, state)
-		if err != nil {
-			return err
-		}
-
-		// Add the block hash and height to the block index which tracks
-		// the main chain.
-		err = dbPutBlockIndex(dbTx, block.Hash(), node.height)
-		if err != nil {
-			return err
-		}
-
-		// Update the utxo set using the state of the utxo view.  This
-		// entails removing all of the utxos spent and adding the new
-		// ones created by the block.
-		err = dbPutUtxoView(dbTx, view)
-		if err != nil {
-			return err
-		}
-
-		// Update the transaction spend journal by adding a record for
-		// the block that contains all txos spent by it.
-		err = dbPutSpendJournalEntry(dbTx, block.Hash(), stxos)
-		if err != nil {
-			return err
-		}
-
-		// Allow the index manager to call each of the currently active
-		// optional indexes with the block being connected so they can
-		// update themselves accordingly.
-		if dag.indexManager != nil {
-			err := dag.indexManager.ConnectBlock(dbTx, block, view)
-			if err != nil {
-				return err
-			}
-		}
-
-		return nil
-	})
-	if err != nil {
-		return err
-	}
-
-	// Prune fully spent entries and mark all entries in the view unmodified
-	// now that the modifications have been committed to the database.
-	view.commit()
-
-	// This node is now at the end of the DAG.
-	dag.virtual.AddTip(node)
-
-	// Update the state for the best block.  Notice how this replaces the
-	// entire struct instead of updating the existing one.  This effectively
-	// allows the old version to act as a snapshot which callers can use
-	// freely without needing to hold a lock for the duration.  See the
-	// comments on the state variable for more details.
-	dag.setDAGState(state)
-
-	// Notify the caller that the block was connected to the main chain.
-	// The caller would typically want to react with actions such as
-	// updating wallets.
-	dag.dagLock.Unlock()
-	dag.sendNotification(NTBlockConnected, dag.virtual.Tips().hashes())
-	dag.dagLock.Lock()
-
-	return nil
-}
-
-// countSpentOutputs returns the number of utxos the passed block spends.
-func countSpentOutputs(block *util.Block) int {
-	// Exclude the coinbase transaction since it can't spend anything.
-	var numSpent int
-	for _, tx := range block.Transactions()[1:] {
-		numSpent += len(tx.MsgTx().TxIn)
-	}
-	return numSpent
-}
-
 // connectToDAG handles connecting the passed block to the DAG.
 //
 // The flags modify the behavior of this function as follows:
@@ -630,11 +446,8 @@ func (dag *BlockDAG) connectToDAG(node *blockNode, parentNodes blockSet, block *
 	// Perform several checks to verify the block can be connected
 	// to the DAG without violating any rules and without actually
 	// connecting the block.
-	view := NewUtxoViewpoint()
-	view.SetTips(parentNodes)
-	stxos := make([]spentTxOut, 0, countSpentOutputs(block))
 	if !fastAdd {
-		err := dag.checkConnectBlock(node, block, view, &stxos)
+		err := dag.checkConnectBlock(node, block)
 		if err == nil {
 			dag.index.SetStatusFlags(node, statusValid)
 		} else if _, ok := err.(RuleError); ok {
@@ -657,28 +470,389 @@ func (dag *BlockDAG) connectToDAG(node *blockNode, parentNodes blockSet, block *
 		}
 	}
 
-	// In the fast add case the code to check the block connection
-	// was skipped, so the utxo view needs to load the referenced
-	// utxos, spend them, and add the new utxos being created by
-	// this block.
-	if fastAdd {
-		err := view.fetchInputUtxos(dag.db, block)
-		if err != nil {
-			return err
-		}
-		err = view.connectTransactions(node, block.Transactions(), &stxos)
-		if err != nil {
-			return err
-		}
-	}
-
 	// Connect the block to the DAG.
-	err := dag.connectBlock(node, block, view, stxos)
+	err := dag.connectBlock(node, block)
 	if err != nil {
 		return err
 	}
 
 	return nil
+}
+
+// connectBlock handles connecting the passed node/block to the DAG.
+//
+// This function MUST be called with the chain state lock held (for writes).
+func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block) error {
+	// No warnings about unknown rules or versions until the DAG is
+	// current.
+	if dag.isCurrent() {
+		// Warn if any unknown new rules are either about to activate or
+		// have already been activated.
+		if err := dag.warnUnknownRuleActivations(node); err != nil {
+			return err
+		}
+
+		// Warn if a high enough percentage of the last blocks have
+		// unexpected versions.
+		if err := dag.warnUnknownVersions(node); err != nil {
+			return err
+		}
+	}
+
+	// Add the node to the virtual and update the UTXO set of the DAG.
+	utxoDiff, err := dag.applyUTXOChanges(node, block)
+	if err != nil {
+		return err
+	}
+
+	// Write any block status changes to DB before updating the DAG state.
+	err = dag.index.flushToDB()
+	if err != nil {
+		return err
+	}
+
+	// Atomically insert info into the database.
+	err = dag.db.Update(func(dbTx database.Tx) error {
+		// Update best block state.
+		err := dbPutDAGTipHashes(dbTx, dag.virtual.TipHashes())
+		if err != nil {
+			return err
+		}
+
+		// Add the block hash and height to the block index which tracks
+		// the main chain.
+		err = dbPutBlockIndex(dbTx, block.Hash(), node.height)
+		if err != nil {
+			return err
+		}
+
+		// Update the UTXO set using the diffSet that was melded into the
+		// full UTXO set.
+		err = dbPutUTXODiff(dbTx, utxoDiff)
+		if err != nil {
+			return err
+		}
+
+		// Allow the index manager to call each of the currently active
+		// optional indexes with the block being connected so they can
+		// update themselves accordingly.
+		if dag.indexManager != nil {
+			err := dag.indexManager.ConnectBlock(dbTx, block, dag.virtual)
+			if err != nil {
+				return err
+			}
+		}
+
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+
+	// Notify the caller that the block was connected to the main chain.
+	// The caller would typically want to react with actions such as
+	// updating wallets.
+	dag.dagLock.Unlock()
+	dag.sendNotification(NTBlockConnected, dag.virtual.TipHashes())
+	dag.dagLock.Lock()
+
+	return nil
+}
+
+// applyUTXOChanges does the following:
+// 1. Verifies that each transaction within the new block could spend an existing UTXO.
+// 2. Connects each of the new block's parents to the block.
+// 3. Adds the new block to the DAG's tips.
+// 4. Updates the DAG's full UTXO set.
+// 5. Updates each of the tips' utxoDiff.
+//
+// This function MUST be called with the chain state lock held (for writes).
+func (dag *BlockDAG) applyUTXOChanges(node *blockNode, block *util.Block) (*utxoDiff, error) {
+	// Prepare provisionalNodes for all the relevant nodes to avoid modifying the original nodes.
+	// We avoid modifying the original nodes in this function because it could potentially
+	// fail if the block is not valid, thus bringing all the affected nodes (and the virtual)
+	// into an undefined state.
+	provisionalSet := newProvisionalNodeSet()
+	newNodeProvisional := provisionalSet.newProvisionalNode(node, true, block.Transactions())
+
+	// Clone the virtual block so that we don't modify the existing one.
+	virtualClone := dag.virtual.clone()
+
+	newBlockUTXO, err := newNodeProvisional.verifyAndBuildUTXO(virtualClone, dag.db)
+	if err != nil {
+		return nil, fmt.Errorf("error verifying UTXO for %v: %s", node, err)
+	}
+
+	err = newNodeProvisional.updateParents(virtualClone, newBlockUTXO)
+	if err != nil {
+		return nil, fmt.Errorf("failed updating parents of %v: %s", node, err)
+	}
+
+	// Update the virtual block's children (the DAG tips) to include the new block.
+	virtualClone.AddTip(node)
+
+	// Build a UTXO set for the new virtual block and update the DAG tips' diffs.
+	virtualNodeProvisional := provisionalSet.newProvisionalNode(&virtualClone.blockNode, true, nil)
+	newVirtualUTXO, err := virtualNodeProvisional.pastUTXO(virtualClone, dag.db)
+	if err != nil {
+		return nil, fmt.Errorf("could not restore past UTXO for virtual %v: %s", virtualClone, err)
+	}
+
+	// Apply new utxoDiffs to all the tips
+	err = updateTipsUTXO(virtualNodeProvisional.parents, virtualClone, newVirtualUTXO)
+	if err != nil {
+		return nil, fmt.Errorf("failed updating the tips' UTXO: %s", err)
+	}
+
+	// It is now safe to meld the UTXO set to base.
+	diffSet := newVirtualUTXO.(*diffUTXOSet)
+	utxoDiff := diffSet.utxoDiff
+	diffSet.meldToBase()
+
+	// It is now safe to commit all the provisionalNodes
+	for _, provisional := range provisionalSet {
+		provisional.commit()
+
+		// Set the status to valid for all index nodes to make sure the changes get
+		// written to the database.
+		if provisional != virtualNodeProvisional {
+			dag.index.SetStatusFlags(provisional.original, statusValid)
+		}
+	}
+
+	// It is now safe to apply the new virtual block
+	dag.virtual = virtualClone
+
+	return utxoDiff, nil
+}
+
+// provisionalNodeSet is a temporary collection of provisionalNodes. It is used exclusively
+// inside applyUTXOChanges. The purpose of this set is twofold:
+// 1. Provide easy access to all provisionalNodes created inside this particular call to applyUTXOChanges
+// 2. Avoid needless recreation of provisionalNodes
+type provisionalNodeSet map[daghash.Hash]*provisionalNode
+
+// newProvisionalNodeSet creates an empty provisionalNodeSet
+func newProvisionalNodeSet() provisionalNodeSet {
+	return provisionalNodeSet{}
+}
+
+// provisionalNode is a temporary and partial copy of a blockNode. It is used exclusively
+// inside applyUTXOChanges. We use this struct instead of the original blockNode because
+// applyUTXOChanges has a few points of failure which, were we to modify it, would leave the
+// blockNode in an undefined state.
+//
+// Important: provisionalNode.original must be treated as immutable.
+type provisionalNode struct {
+	original       *blockNode
+	selectedParent *provisionalNode
+	parents        []*provisionalNode
+	children       []*provisionalNode
+	diff           *utxoDiff
+	diffChild      *provisionalNode
+	transactions   []*util.Tx
+}
+
+// newProvisionalNode takes a node and builds a provisionalNode from it.
+// To avoid building the entire DAG in provisionalNode format we pass withRelatives = true
+// only when the node's relatives (parents and children) are required.
+func (pns provisionalNodeSet) newProvisionalNode(node *blockNode, withRelatives bool,
+	transactions []*util.Tx) *provisionalNode {
+	if existingProvisional, ok := pns[node.hash]; ok {
+		return existingProvisional
+	}
+
+	provisional := &provisionalNode{
+		original:     node,
+		parents:      []*provisionalNode{},
+		children:     []*provisionalNode{},
+		transactions: transactions,
+	}
+	if node.hash != zeroHash {
+		pns[node.hash] = provisional
+	}
+
+	if withRelatives {
+		for _, parent := range node.parents {
+			provisional.parents = append(provisional.parents, pns.newProvisionalNode(parent, false, nil))
+		}
+		if node.selectedParent != nil {
+			provisional.selectedParent = pns[node.selectedParent.hash]
+		}
+
+		for _, child := range node.children {
+			provisional.children = append(provisional.children, pns.newProvisionalNode(child, false, nil))
+		}
+		if node.diffChild != nil {
+			provisional.diffChild = pns[node.diffChild.hash]
+		}
+	}
+	if node.diff != nil {
+		provisional.diff = node.diff.clone()
+	}
+
+	return provisional
+}
+
+// verifyAndBuildUTXO verifies all transactions in the given block (in provisionalNode format) and builds its UTXO
+func (p *provisionalNode) verifyAndBuildUTXO(virtual *VirtualBlock, db database.DB) (utxoSet, error) {
+	utxo, err := p.pastUTXO(virtual, db)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, tx := range p.transactions {
+		ok := utxo.addTx(tx.MsgTx(), p.original.height)
+		if !ok {
+			return nil, fmt.Errorf("transaction %v is not compatible with UTXO", tx)
+		}
+	}
+
+	return utxo, nil
+}
+
+// pastUTXO returns the UTXO of a given block's (in provisionalNode format) past
+func (p *provisionalNode) pastUTXO(virtual *VirtualBlock, db database.DB) (utxoSet, error) {
+	pastUTXO, err := p.selectedParent.restoreUTXO(virtual)
+	if err != nil {
+		return nil, err
+	}
+
+	// Fetch from the database all the transactions for this block's blue set (besides the selected parent)
+	var blueBlockTransactions []*util.Tx
+	err = db.View(func(tx database.Tx) error {
+		// Precalculate the amount of transactions in this block's blue set, besides the selected parent.
+		// This is to avoid an attack in which an attacker fabricates a block that will deliberately cause
+		// a lot of copying, causing a high cost to the whole network.
+		transactionCount := 0
+		blueBlocks := make([]*util.Block, 0, len(p.original.blues)-1)
+		for i := len(p.original.blues) - 1; i >= 0; i-- {
+			blueBlockNode := p.original.blues[i]
+			if blueBlockNode == p.original.selectedParent {
+				continue
+			}
+
+			blueBlock, err := dbFetchBlockByNode(tx, blueBlockNode)
+			if err != nil {
+				return err
+			}
+
+			transactionCount += len(blueBlock.Transactions())
+			blueBlocks = append(blueBlocks, blueBlock)
+		}
+
+		blueBlockTransactions = make([]*util.Tx, 0, transactionCount)
+		for _, blueBlock := range blueBlocks {
+			blueBlockTransactions = append(blueBlockTransactions, blueBlock.Transactions()...)
+		}
+
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// Add all transactions to the pastUTXO
+	// Purposefully ignore failures - these are just unaccepted transactions
+	for _, tx := range blueBlockTransactions {
+		_ = pastUTXO.addTx(tx.MsgTx(), p.original.height)
+	}
+
+	return pastUTXO, nil
+}
+
+// restoreUTXO restores the UTXO of a given block (in provisionalNode format) from its diff
+func (p *provisionalNode) restoreUTXO(virtual *VirtualBlock) (utxoSet, error) {
+	stack := []*provisionalNode{p}
+	current := p
+
+	for current.diffChild != nil {
+		current = current.diffChild
+		stack = append(stack, current)
+	}
+
+	utxo := utxoSet(virtual.utxoSet)
+
+	var err error
+	for i := len(stack) - 1; i >= 0; i-- {
+		utxo, err = utxo.withDiff(stack[i].diff)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return utxo, nil
+}
+
+// updateParents adds this block (in provisionalNode format) to the children sets of its parents
+// and updates the diff of any parent whose DiffChild is this block
+func (p *provisionalNode) updateParents(virtual *VirtualBlock, newBlockUTXO utxoSet) error {
+	virtualDiffFromNewBlock, err := virtual.utxoSet.diffFrom(newBlockUTXO)
+	if err != nil {
+		return err
+	}
+
+	p.diff = virtualDiffFromNewBlock
+
+	for _, parent := range p.parents {
+		if parent.diffChild == nil {
+			parentUTXO, err := parent.restoreUTXO(virtual)
+			if err != nil {
+				return err
+			}
+			parent.diffChild = p
+			parent.diff, err = newBlockUTXO.diffFrom(parentUTXO)
+			if err != nil {
+				return err
+			}
+		}
+
+		parent.children = append(parent.children, p)
+	}
+
+	return nil
+}
+
+// updateTipsUTXO builds and applies new diff UTXOs for all the DAG's tips (in provisionalNode format)
+func updateTipsUTXO(tipProvisionals []*provisionalNode, virtual *VirtualBlock, virtualUTXO utxoSet) error {
+	for _, tipProvisional := range tipProvisionals {
+		tipUTXO, err := tipProvisional.restoreUTXO(virtual)
+		if err != nil {
+			return err
+		}
+		tipProvisional.diff, err = virtualUTXO.diffFrom(tipUTXO)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// commit updates the original blockNode this provisionalNode was created from with all the changes made to it
+func (p *provisionalNode) commit() {
+	if p.selectedParent != nil {
+		p.original.selectedParent = p.selectedParent.original
+	}
+
+	parents := newSet()
+	for _, parent := range p.parents {
+		parents.add(parent.original)
+	}
+	p.original.parents = parents
+
+	children := newSet()
+	for _, child := range p.children {
+		children.add(child.original)
+	}
+	p.original.children = children
+
+	if p.diff != nil {
+		p.original.diff = p.diff
+	}
+	if p.diffChild != nil {
+		p.original.diffChild = p.diffChild.original
+	}
 }
 
 // isCurrent returns whether or not the chain believes it is current.  Several
@@ -719,31 +893,13 @@ func (dag *BlockDAG) IsCurrent() bool {
 	return dag.isCurrent()
 }
 
-// GetDAGState returns information about the DAG and related state as of the
-// current point in time.  The returned instance must be treated as immutable
-// since it is shared by all callers.
+// VirtualBlock returns the DAG's virtual block in the current point in time.
+// The returned instance must be treated as immutable since it is shared by all
+// callers.
 //
 // This function is safe for concurrent access.
-func (dag *BlockDAG) GetDAGState() *DAGState {
-	dag.stateLock.RLock()
-	defer func() {
-		dag.stateLock.RUnlock()
-	}()
-
-	return dag.dagState
-}
-
-// setDAGState sets information about the DAG and related state as of the
-// current point in time.
-//
-// This function is safe for concurrent access.
-func (dag *BlockDAG) setDAGState(dagState *DAGState) {
-	dag.stateLock.Lock()
-	defer func() {
-		dag.stateLock.Unlock()
-	}()
-
-	dag.dagState = dagState
+func (dag *BlockDAG) VirtualBlock() *VirtualBlock {
+	return dag.virtual
 }
 
 // HeaderByHash returns the block header identified by the given hash or an
@@ -1112,11 +1268,11 @@ type IndexManager interface {
 
 	// ConnectBlock is invoked when a new block has been connected to the
 	// main chain.
-	ConnectBlock(database.Tx, *util.Block, *UtxoViewpoint) error
+	ConnectBlock(database.Tx, *util.Block, *VirtualBlock) error
 
 	// DisconnectBlock is invoked when a block has been disconnected from
 	// the main chain.
-	DisconnectBlock(database.Tx, *util.Block, *UtxoViewpoint) error
+	DisconnectBlock(database.Tx, *util.Block, *VirtualBlock) error
 }
 
 // Config is a descriptor which specifies the blockchain instance configuration.
@@ -1209,7 +1365,7 @@ func New(config *Config) (*BlockDAG, error) {
 	targetTimePerBlock := int64(params.TargetTimePerBlock / time.Second)
 	adjustmentFactor := params.RetargetAdjustmentFactor
 	index := newBlockIndex(config.DB, params)
-	b := BlockDAG{
+	dag := BlockDAG{
 		checkpoints:         config.Checkpoints,
 		checkpointsByHeight: checkpointsByHeight,
 		db:                  config.DB,
@@ -1222,7 +1378,6 @@ func New(config *Config) (*BlockDAG, error) {
 		blocksPerRetarget:   int32(targetTimespan / targetTimePerBlock),
 		index:               index,
 		virtual:             newVirtualBlock(nil, params.K),
-		genesis:             index.LookupNode(params.GenesisHash),
 		orphans:             make(map[daghash.Hash]*orphanBlock),
 		prevOrphans:         make(map[daghash.Hash][]*orphanBlock),
 		warningCaches:       newThresholdCaches(vbNumBits),
@@ -1232,28 +1387,32 @@ func New(config *Config) (*BlockDAG, error) {
 	// Initialize the chain state from the passed database.  When the db
 	// does not yet contain any chain state, both it and the chain state
 	// will be initialized to contain only the genesis block.
-	if err := b.initDAGState(); err != nil {
+	if err := dag.initDAGState(); err != nil {
 		return nil, err
 	}
+
+	// Save a reference to the genesis block. Note that we may only get
+	// an index reference to it here because the index is uninitialized
+	// before initDAGState.
+	dag.genesis = index.LookupNode(params.GenesisHash)
 
 	// Initialize and catch up all of the currently active optional indexes
 	// as needed.
 	if config.IndexManager != nil {
-		err := config.IndexManager.Init(&b, config.Interrupt)
+		err := config.IndexManager.Init(&dag, config.Interrupt)
 		if err != nil {
 			return nil, err
 		}
 	}
 
 	// Initialize rule change threshold state caches.
-	if err := b.initThresholdCaches(); err != nil {
+	if err := dag.initThresholdCaches(); err != nil {
 		return nil, err
 	}
 
-	selectedTip := b.virtual.SelectedTip()
-	log.Infof("DAG state (height %d, hash %v, totaltx %d, work %v)",
-		selectedTip.height, selectedTip.hash, b.dagState.TotalTxs,
-		selectedTip.workSum)
+	selectedTip := dag.virtual.SelectedTip()
+	log.Infof("DAG state (height %d, hash %v, work %v)",
+		selectedTip.height, selectedTip.hash, selectedTip.workSum)
 
-	return &b, nil
+	return &dag, nil
 }
