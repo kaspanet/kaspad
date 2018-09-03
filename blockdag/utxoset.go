@@ -281,7 +281,7 @@ type utxoSet interface {
 // for both diff-based and full UTXO sets
 // Returns a diff that is equivalent to provided transaction,
 // or an error if provided transaction is not valid in the context of this UTXOSet
-func diffFromTx(u utxoSet, tx *wire.MsgTx, node *blockNode) (*utxoDiff, error) {
+func diffFromTx(u utxoSet, tx *wire.MsgTx, containingNode *blockNode) (*utxoDiff, error) {
 	diff := newUTXODiff()
 	isCoinbase := IsCoinBaseTx(tx)
 	if !isCoinbase {
@@ -297,7 +297,7 @@ func diffFromTx(u utxoSet, tx *wire.MsgTx, node *blockNode) (*utxoDiff, error) {
 	}
 	for i, txOut := range tx.TxOut {
 		hash := tx.TxHash()
-		entry := newUTXOEntry(txOut, isCoinbase, node.height)
+		entry := newUTXOEntry(txOut, isCoinbase, containingNode.height)
 		outPoint := *wire.NewOutPoint(&hash, uint32(i))
 		diff.toAdd.add(outPoint, entry)
 	}
