@@ -802,8 +802,7 @@ func TestDiffUTXOSet_addTx(t *testing.T) {
 // createCoinbaseTx returns a coinbase transaction with the requested number of
 // outputs paying an appropriate subsidy based on the passed block height to the
 // address associated with the harness.  It automatically uses a standard
-// signature script that starts with the block height that is required by
-// version 2 blocks.
+// signature script that starts with the block height
 func createCoinbaseTx(blockHeight int32, numOutputs uint32) (*wire.MsgTx, error) {
 	// Create standard coinbase script.
 	extraNonce := int64(0)
@@ -854,9 +853,6 @@ func TestApplyUTXOChanges(t *testing.T) {
 		t.Errorf("createCoinbaseTx: %v", err)
 	}
 
-	//Fake block header
-	blockHeader := wire.NewBlockHeader(1, []daghash.Hash{dag.genesis.hash}, &daghash.Hash{}, 0, 0)
-
 	chainedTx := wire.NewMsgTx(wire.TxVersion)
 	chainedTx.AddTxIn(&wire.TxIn{
 		PreviousOutPoint: wire.OutPoint{Hash: cbTx.TxHash(), Index: 0},
@@ -867,6 +863,9 @@ func TestApplyUTXOChanges(t *testing.T) {
 		PkScript: OpTrueScript,
 		Value:    int64(1),
 	})
+
+	//Fake block header
+	blockHeader := wire.NewBlockHeader(1, []daghash.Hash{dag.genesis.hash}, &daghash.Hash{}, 0, 0)
 
 	msgBlock1 := &wire.MsgBlock{
 		Header:       *blockHeader,
