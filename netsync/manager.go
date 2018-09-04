@@ -1199,13 +1199,11 @@ func (sm *SyncManager) handleBlockchainNotification(notification *blockdag.Notif
 		// no longer an orphan. Transactions which depend on a confirmed
 		// transaction are NOT removed recursively because they are still
 		// valid.
-		for _, tx := range block.Transactions()[1:] {
-			sm.txMemPool.RemoveTransaction(tx, false)
-			sm.txMemPool.RemoveDoubleSpends(tx)
-			sm.txMemPool.RemoveOrphan(tx)
-			sm.peerNotifier.TransactionConfirmed(tx)
-			acceptedTxs := sm.txMemPool.ProcessOrphans(tx)
-			sm.peerNotifier.AnnounceNewTransactions(acceptedTxs)
+		ch := make(chan mempool.HandleNewBlockMsg)
+		sm.txMemPool.HandleNewBlock(block, ch)
+		for msg := range ch {
+			sm.peerNotifier.TransactionConfirmed(msg.Tx)
+			sm.peerNotifier.AnnounceNewTransactions(msg.AcceptedTxs)
 		}
 
 		// Register block with the fee estimator, if it exists.

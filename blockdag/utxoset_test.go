@@ -842,7 +842,7 @@ func createCoinbaseTx(blockHeight int32, numOutputs uint32) (*wire.MsgTx, error)
 
 func TestApplyUTXOChanges(t *testing.T) {
 	// Create a new database and dag instance to run tests against.
-	dag, teardownFunc, err := dagSetup("TestApplyUTXOChanges", &dagconfig.MainNetParams)
+	dag, teardownFunc, err := DagSetup("TestApplyUTXOChanges", &dagconfig.MainNetParams)
 	if err != nil {
 		t.Fatalf("Failed to setup dag instance: %v", err)
 	}

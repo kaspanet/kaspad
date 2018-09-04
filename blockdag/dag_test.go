@@ -43,7 +43,7 @@ func TestHaveBlock(t *testing.T) {
 	}
 
 	// Create a new database and chain instance to run tests against.
-	chain, teardownFunc, err := dagSetup("haveblock",
+	chain, teardownFunc, err := DagSetup("haveblock",
 		&dagconfig.MainNetParams)
 	if err != nil {
 		t.Errorf("Failed to setup chain instance: %v", err)
@@ -173,8 +173,8 @@ func TestCalcSequenceLock(t *testing.T) {
 			Value:    10,
 		}},
 	})
-	utxoView := NewUTXOView()
-	utxoView.AddTxOuts(targetTx, int32(numBlocksToGenerate)-4)
+	utxoSet := NewEmptyDiffUTXOSet()
+	utxoSet.AddTx(targetTx.MsgTx(), int32(numBlocksToGenerate)-4)
 
 	// Create a utxo that spends the fake utxo created above for use in the
 	// transactions created in the tests.  It has an age of 4 blocks.  Note
@@ -214,11 +214,11 @@ func TestCalcSequenceLock(t *testing.T) {
 
 	// Adding a utxo with a height of 0x7fffffff indicates that the output
 	// is currently unmined.
-	utxoView.AddTxOuts(util.NewTx(unConfTx), 0x7fffffff)
+	utxoSet.AddTx(unConfTx, 0x7fffffff)
 
 	tests := []struct {
 		tx      *wire.MsgTx
-		view    *UTXOView
+		utxoSet UTXOSet
 		mempool bool
 		want    *SequenceLock
 	}{
@@ -233,7 +233,7 @@ func TestCalcSequenceLock(t *testing.T) {
 					Sequence:         wire.MaxTxInSequenceNum,
 				}},
 			},
-			view: utxoView,
+			utxoSet: utxoSet,
 			want: &SequenceLock{
 				Seconds:     -1,
 				BlockHeight: -1,
@@ -253,7 +253,7 @@ func TestCalcSequenceLock(t *testing.T) {
 					Sequence:         LockTimeToSequence(true, 2),
 				}},
 			},
-			view: utxoView,
+			utxoSet: utxoSet,
 			want: &SequenceLock{
 				Seconds:     medianTime - 1,
 				BlockHeight: -1,
@@ -271,7 +271,7 @@ func TestCalcSequenceLock(t *testing.T) {
 					Sequence:         LockTimeToSequence(true, 1024),
 				}},
 			},
-			view: utxoView,
+			utxoSet: utxoSet,
 			want: &SequenceLock{
 				Seconds:     medianTime + 1023,
 				BlockHeight: -1,
@@ -298,7 +298,7 @@ func TestCalcSequenceLock(t *testing.T) {
 						wire.SequenceLockTimeDisabled,
 				}},
 			},
-			view: utxoView,
+			utxoSet: utxoSet,
 			want: &SequenceLock{
 				Seconds:     medianTime + (5 << wire.SequenceLockTimeGranularity) - 1,
 				BlockHeight: prevUtxoHeight + 3,
@@ -316,7 +316,7 @@ func TestCalcSequenceLock(t *testing.T) {
 					Sequence:         LockTimeToSequence(false, 3),
 				}},
 			},
-			view: utxoView,
+			utxoSet: utxoSet,
 			want: &SequenceLock{
 				Seconds:     -1,
 				BlockHeight: prevUtxoHeight + 2,
@@ -336,7 +336,7 @@ func TestCalcSequenceLock(t *testing.T) {
 					Sequence:         LockTimeToSequence(true, 2560),
 				}},
 			},
-			view: utxoView,
+			utxoSet: utxoSet,
 			want: &SequenceLock{
 				Seconds:     medianTime + (10 << wire.SequenceLockTimeGranularity) - 1,
 				BlockHeight: -1,
@@ -357,7 +357,7 @@ func TestCalcSequenceLock(t *testing.T) {
 					Sequence:         LockTimeToSequence(false, 11),
 				}},
 			},
-			view: utxoView,
+			utxoSet: utxoSet,
 			want: &SequenceLock{
 				Seconds:     -1,
 				BlockHeight: prevUtxoHeight + 10,
@@ -383,7 +383,7 @@ func TestCalcSequenceLock(t *testing.T) {
 					Sequence:         LockTimeToSequence(false, 9),
 				}},
 			},
-			view: utxoView,
+			utxoSet: utxoSet,
 			want: &SequenceLock{
 				Seconds:     medianTime + (13 << wire.SequenceLockTimeGranularity) - 1,
 				BlockHeight: prevUtxoHeight + 8,
@@ -403,7 +403,7 @@ func TestCalcSequenceLock(t *testing.T) {
 					Sequence:         LockTimeToSequence(false, 2),
 				}},
 			},
-			view:    utxoView,
+			utxoSet: utxoSet,
 			mempool: true,
 			want: &SequenceLock{
 				Seconds:     -1,
@@ -421,7 +421,7 @@ func TestCalcSequenceLock(t *testing.T) {
 					Sequence:         LockTimeToSequence(true, 1024),
 				}},
 			},
-			view:    utxoView,
+			utxoSet: utxoSet,
 			mempool: true,
 			want: &SequenceLock{
 				Seconds:     nextMedianTime + 1023,
@@ -433,7 +433,7 @@ func TestCalcSequenceLock(t *testing.T) {
 	t.Logf("Running %v SequenceLock tests", len(tests))
 	for i, test := range tests {
 		utilTx := util.NewTx(test.tx)
-		seqLock, err := chain.CalcSequenceLock(utilTx, test.mempool)
+		seqLock, err := chain.CalcSequenceLock(utilTx, utxoSet, test.mempool)
 		if err != nil {
 			t.Fatalf("test #%d, unable to calc sequence lock: %v", i, err)
 		}
@@ -698,7 +698,7 @@ func testErrorThroughPatching(t *testing.T, expectedErrorMessage string, targetF
 	}
 
 	// Create a new database and dag instance to run tests against.
-	dag, teardownFunc, err := dagSetup("testErrorThroughPatching", &dagconfig.MainNetParams)
+	dag, teardownFunc, err := DagSetup("testErrorThroughPatching", &dagconfig.MainNetParams)
 	if err != nil {
 		t.Fatalf("Failed to setup dag instance: %v", err)
 	}

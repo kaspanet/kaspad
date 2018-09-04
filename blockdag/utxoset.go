@@ -418,6 +418,10 @@ func NewDiffUTXOSet(base *fullUTXOSet, diff *utxoDiff) *DiffUTXOSet {
 	}
 }
 
+func NewEmptyDiffUTXOSet() *DiffUTXOSet {
+	return NewDiffUTXOSet(newFullUTXOSet(), NewUTXODiff())
+}
+
 func (dus *DiffUTXOSet) Lock() {
 	dus.base.Lock()
 }
