@@ -3,9 +3,10 @@ package blockdag
 import (
 	"errors"
 	"fmt"
-	"github.com/daglabs/btcd/wire"
 	"sort"
 	"strings"
+
+	"github.com/daglabs/btcd/wire"
 )
 
 // utxoCollection represents a set of UTXOs indexed by their outPoints
@@ -34,6 +35,13 @@ func (uc utxoCollection) add(outPoint wire.OutPoint, entry *UTXOEntry) {
 // remove removes a UTXO entry from this collection if it exists
 func (uc utxoCollection) remove(outPoint wire.OutPoint) {
 	delete(uc, outPoint)
+}
+
+// get returns the UTXOEntry represented by provided outPoint,
+// and a boolean value indicating if said UTXOEntry is in the set or not
+func (uc utxoCollection) get(outPoint wire.OutPoint) (*UTXOEntry, bool) {
+	entry, ok := uc[outPoint]
+	return entry, ok
 }
 
 // contains returns a boolean value indicating whether a UTXO entry is in the set
@@ -263,8 +271,37 @@ type utxoSet interface {
 	fmt.Stringer
 	diffFrom(other utxoSet) (*utxoDiff, error)
 	withDiff(utxoDiff *utxoDiff) (utxoSet, error)
+	diffFromTx(tx *wire.MsgTx, node *blockNode) (*utxoDiff, error)
 	addTx(tx *wire.MsgTx, blockHeight int32) (ok bool)
 	clone() utxoSet
+	get(outPoint wire.OutPoint) (*UTXOEntry, bool)
+}
+
+// diffFromTx is a common implementation for diffFromTx, that works
+// for both diff-based and full UTXO sets
+// Returns a diff that is equivalent to provided transaction,
+// or an error if provided transaction is not valid in the context of this UTXOSet
+func diffFromTx(u utxoSet, tx *wire.MsgTx, containingNode *blockNode) (*utxoDiff, error) {
+	diff := newUTXODiff()
+	isCoinbase := IsCoinBaseTx(tx)
+	if !isCoinbase {
+		for _, txIn := range tx.TxIn {
+			if entry, ok := u.get(txIn.PreviousOutPoint); ok {
+				diff.toRemove.add(txIn.PreviousOutPoint, entry)
+			} else {
+				return nil, fmt.Errorf(
+					"Transaction %s is invalid because spends outpoint %s that is not in utxo set",
+					tx.TxHash(), txIn.PreviousOutPoint)
+			}
+		}
+	}
+	for i, txOut := range tx.TxOut {
+		hash := tx.TxHash()
+		entry := newUTXOEntry(txOut, isCoinbase, containingNode.height)
+		outPoint := *wire.NewOutPoint(&hash, uint32(i))
+		diff.toAdd.add(outPoint, entry)
+	}
+	return diff, nil
 }
 
 // fullUTXOSet represents a full list of transaction outputs and their values
@@ -324,6 +361,12 @@ func (fus *fullUTXOSet) addTx(tx *wire.MsgTx, blockHeight int32) bool {
 	return true
 }
 
+// diffFromTx returns a diff that is equivalent to provided transaction,
+// or an error if provided transaction is not valid in the context of this UTXOSet
+func (fus *fullUTXOSet) diffFromTx(tx *wire.MsgTx, node *blockNode) (*utxoDiff, error) {
+	return diffFromTx(fus, tx, node)
+}
+
 func (fus *fullUTXOSet) containsInputs(tx *wire.MsgTx) bool {
 	for _, txIn := range tx.TxIn {
 		outPoint := *wire.NewOutPoint(&txIn.PreviousOutPoint.Hash, txIn.PreviousOutPoint.Index)
@@ -345,7 +388,7 @@ func (fus *fullUTXOSet) clone() utxoSet {
 	return &fullUTXOSet{utxoCollection: fus.utxoCollection.clone()}
 }
 
-func (fus *fullUTXOSet) getUTXOEntry(outPoint wire.OutPoint) (*UTXOEntry, bool) {
+func (fus *fullUTXOSet) get(outPoint wire.OutPoint) (*UTXOEntry, bool) {
 	utxoEntry, ok := fus.utxoCollection[outPoint]
 	return utxoEntry, ok
 }
@@ -391,11 +434,18 @@ func (dus *diffUTXOSet) withDiff(other *utxoDiff) (utxoSet, error) {
 
 // addTx adds a transaction to this utxoSet and returns true iff it's valid in this UTXO's context
 func (dus *diffUTXOSet) addTx(tx *wire.MsgTx, blockHeight int32) bool {
-	isCoinbase := IsCoinBaseTx(tx)
-	if !isCoinbase {
-		if !dus.containsInputs(tx) {
-			return false
-		}
+	isCoinBase := IsCoinBaseTx(tx)
+	if !isCoinBase && !dus.containsInputs(tx) {
+		return false
+	}
+
+	dus.appendTx(tx, blockHeight, isCoinBase)
+
+	return true
+}
+
+func (dus *diffUTXOSet) appendTx(tx *wire.MsgTx, blockHeight int32, isCoinBase bool) {
+	if !isCoinBase {
 
 		for _, txIn := range tx.TxIn {
 			outPoint := *wire.NewOutPoint(&txIn.PreviousOutPoint.Hash, txIn.PreviousOutPoint.Index)
@@ -411,7 +461,7 @@ func (dus *diffUTXOSet) addTx(tx *wire.MsgTx, blockHeight int32) bool {
 	for i, txOut := range tx.TxOut {
 		hash := tx.TxHash()
 		outPoint := *wire.NewOutPoint(&hash, uint32(i))
-		entry := newUTXOEntry(txOut, isCoinbase, blockHeight)
+		entry := newUTXOEntry(txOut, isCoinBase, blockHeight)
 
 		if dus.utxoDiff.toRemove.contains(outPoint) {
 			dus.utxoDiff.toRemove.remove(outPoint)
@@ -419,8 +469,6 @@ func (dus *diffUTXOSet) addTx(tx *wire.MsgTx, blockHeight int32) bool {
 			dus.utxoDiff.toAdd.add(outPoint, entry)
 		}
 	}
-
-	return true
 }
 
 func (dus *diffUTXOSet) containsInputs(tx *wire.MsgTx) bool {
@@ -450,6 +498,12 @@ func (dus *diffUTXOSet) meldToBase() {
 	dus.utxoDiff = newUTXODiff()
 }
 
+// diffFromTx returns a diff that is equivalent to provided transaction,
+// or an error if provided transaction is not valid in the context of this UTXOSet
+func (dus *diffUTXOSet) diffFromTx(tx *wire.MsgTx, node *blockNode) (*utxoDiff, error) {
+	return diffFromTx(dus, tx, node)
+}
+
 func (dus *diffUTXOSet) String() string {
 	return fmt.Sprintf("{Base: %s, To Add: %s, To Remove: %s}", dus.base, dus.utxoDiff.toAdd, dus.utxoDiff.toRemove)
 }
@@ -465,4 +519,17 @@ func (dus *diffUTXOSet) collection() utxoCollection {
 // clone returns a clone of this UTXO Set
 func (dus *diffUTXOSet) clone() utxoSet {
 	return newDiffUTXOSet(dus.base.clone().(*fullUTXOSet), dus.utxoDiff.clone())
+}
+
+// get returns the UTXOEntry associated with provided outPoint in this UTXOSet.
+// Returns false in second output if this UTXOEntry was not found
+func (dus *diffUTXOSet) get(outPoint wire.OutPoint) (*UTXOEntry, bool) {
+	if dus.utxoDiff.toRemove.contains(outPoint) {
+		return nil, false
+	}
+	if txOut, ok := dus.base.get(outPoint); ok {
+		return txOut, true
+	}
+	txOut, ok := dus.utxoDiff.toAdd.get(outPoint)
+	return txOut, ok
 }

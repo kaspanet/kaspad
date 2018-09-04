@@ -6,6 +6,7 @@ package blockdag
 
 import (
 	"sync"
+
 	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/wire"
 )
@@ -112,7 +113,7 @@ func (v *VirtualBlock) TipHashes() []daghash.Hash {
 
 // SelectedTipHash returns the hash of the selected tip of the virtual block.
 func (v *VirtualBlock) SelectedTipHash() daghash.Hash {
-	return v.SelectedTip().hash;
+	return v.SelectedTip().hash
 }
 
 // GetUTXOEntry returns the requested unspent transaction output. The returned
@@ -121,5 +122,5 @@ func (v *VirtualBlock) SelectedTipHash() daghash.Hash {
 // This function is safe for concurrent access. However, the returned entry (if
 // any) is NOT.
 func (v *VirtualBlock) GetUTXOEntry(outPoint wire.OutPoint) (*UTXOEntry, bool) {
-	return v.utxoSet.getUTXOEntry(outPoint)
+	return v.utxoSet.get(outPoint)
 }
