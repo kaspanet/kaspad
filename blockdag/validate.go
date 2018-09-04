@@ -1086,8 +1086,7 @@ func (dag *BlockDAG) checkConnectBlock(node *blockNode, block *util.Block) error
 		// A transaction can only be included within a block
 		// once the sequence locks of *all* its inputs are
 		// active.
-		sequenceLock, err := dag.calcSequenceLock(node, tx, view,
-			false)
+		sequenceLock, err := dag.calcSequenceLock(node, tx, false)
 		if err != nil {
 			return err
 		}

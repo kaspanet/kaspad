@@ -762,7 +762,7 @@ func (dag *BlockDAG) createDAGState() error {
 		toRemove: utxoCollection{},
 	}
 
-	dag.virtual.utxoSet.addTx(genesisCoinbase, 0)
+	dag.virtual.UTXOSet.AddTx(genesisCoinbase, 0)
 	dag.virtual.SetTips(setFromSlice(node))
 
 	// Add the new node to the index which is used for faster lookups.
@@ -979,7 +979,7 @@ func (dag *BlockDAG) initDAGState() error {
 		}
 
 		// Apply the loaded utxoCollection to the virtual block.
-		dag.virtual.utxoSet.utxoCollection = fullUTXOCollection
+		dag.virtual.UTXOSet.utxoCollection = fullUTXOCollection
 
 		// Apply the stored tips to the virtual block.
 		tips := newSet()

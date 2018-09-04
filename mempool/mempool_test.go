@@ -17,8 +17,8 @@ import (
 	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/txscript"
-	"github.com/daglabs/btcd/wire"
 	"github.com/daglabs/btcd/util"
+	"github.com/daglabs/btcd/wire"
 )
 
 // fakeChain is used by the pool harness to provide generated test utxos and
@@ -37,7 +37,7 @@ type fakeChain struct {
 // view can be examined for duplicate transactions.
 //
 // This function is safe for concurrent access however the returned view is NOT.
-func (s *fakeChain) FetchUtxoView(tx *util.Tx) (*blockdag.UTXOView, error) {
+func (s *fakeChain) FetchUtxoSet(tx *util.Tx) (*blockdag.UTXOView, error) {
 	s.RLock()
 	defer s.RUnlock()
 
@@ -318,7 +318,7 @@ func newPoolHarness(chainParams *dagconfig.Params) (*poolHarness, []spendableOut
 				MaxTxVersion:         1,
 			},
 			ChainParams:      chainParams,
-			FetchUtxoView:    chain.FetchUtxoView,
+			FetchUtxoSet:     chain.FetchUtxoSet,
 			BestHeight:       chain.BestHeight,
 			MedianTimePast:   chain.MedianTimePast,
 			CalcSequenceLock: chain.CalcSequenceLock,

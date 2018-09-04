@@ -87,7 +87,7 @@ func TestUTXODiff(t *testing.T) {
 	}
 
 	// Test utxoDiff creation
-	newDiff := newUTXODiff()
+	newDiff := NewUTXODiff()
 	if len(newDiff.toAdd) != 0 || len(newDiff.toRemove) != 0 {
 		t.Errorf("new diff is not empty")
 	}
@@ -111,7 +111,7 @@ func TestUTXODiff(t *testing.T) {
 	}
 }
 
-// TestUTXODiffRules makes sure that all diffFrom and withDiff rules are followed.
+// TestUTXODiffRules makes sure that all diffFrom and WithDiff rules are followed.
 // Each test case represents a cell in the two tables outlined in the documentation for utxoDiff.
 func TestUTXODiffRules(t *testing.T) {
 	hash0, _ := daghash.NewHashFromStr("0000000000000000000000000000000000000000000000000000000000000000")
@@ -120,7 +120,7 @@ func TestUTXODiffRules(t *testing.T) {
 
 	// For each of the following test cases, we will:
 	// this.diffFrom(other) and compare it to expectedDiffFromResult
-	// this.withDiff(other) and compare it to expectedWithDiffResult
+	// this.WithDiff(other) and compare it to expectedWithDiffResult
 	//
 	// Note: an expected nil result means that we expect the respective operation to fail
 	tests := []struct {
@@ -309,21 +309,21 @@ func TestUTXODiffRules(t *testing.T) {
 				"Expected: \"%v\", got: \"%v\".", test.name, test.expectedDiffFromResult, diffResult)
 		}
 
-		// withDiff from this to other
-		withDiffResult, err := test.this.withDiff(test.other)
+		// WithDiff from this to other
+		WithDiffResult, err := test.this.WithDiff(test.other)
 
-		// Test whether withDiff returned an error
+		// Test whether WithDiff returned an error
 		isWithDiffOk := err == nil
 		expectedIsWithDiffOk := test.expectedWithDiffResult != nil
 		if isWithDiffOk != expectedIsWithDiffOk {
-			t.Errorf("unexpected withDiff error in test \"%s\". "+
+			t.Errorf("unexpected WithDiff error in test \"%s\". "+
 				"Expected: \"%t\", got: \"%t\".", test.name, expectedIsWithDiffOk, isWithDiffOk)
 		}
 
-		// Ig not error, test the withDiff result
-		if isWithDiffOk && !reflect.DeepEqual(withDiffResult, test.expectedWithDiffResult) {
-			t.Errorf("unexpected withDiff result in test \"%s\". "+
-				"Expected: \"%v\", got: \"%v\".", test.name, test.expectedWithDiffResult, withDiffResult)
+		// Ig not error, test the WithDiff result
+		if isWithDiffOk && !reflect.DeepEqual(WithDiffResult, test.expectedWithDiffResult) {
+			t.Errorf("unexpected WithDiff result in test \"%s\". "+
+				"Expected: \"%v\", got: \"%v\".", test.name, test.expectedWithDiffResult, WithDiffResult)
 		}
 	}
 }
@@ -349,17 +349,17 @@ func TestFullUTXOSet(t *testing.T) {
 		t.Errorf("new set is not empty")
 	}
 
-	// Test fullUTXOSet withDiff
-	withDiffResult, err := emptySet.withDiff(diff)
+	// Test fullUTXOSet WithDiff
+	WithDiffResult, err := emptySet.WithDiff(diff)
 	if err != nil {
-		t.Errorf("withDiff unexpectedly failed")
+		t.Errorf("WithDiff unexpectedly failed")
 	}
-	withDiffUTXOSet, ok := withDiffResult.(*diffUTXOSet)
+	WithDiffUTXOSet, ok := WithDiffResult.(*DiffUTXOSet)
 	if !ok {
-		t.Errorf("withDiff is of unexpected type")
+		t.Errorf("WithDiff is of unexpected type")
 	}
-	if !reflect.DeepEqual(withDiffUTXOSet.base, emptySet) || !reflect.DeepEqual(withDiffUTXOSet.utxoDiff, diff) {
-		t.Errorf("withDiff is of unexpected composition")
+	if !reflect.DeepEqual(WithDiffUTXOSet.base, emptySet) || !reflect.DeepEqual(WithDiffUTXOSet.UTXODiff, diff) {
+		t.Errorf("WithDiff is of unexpected composition")
 	}
 
 	// Test fullUTXOSet addTx
@@ -367,11 +367,11 @@ func TestFullUTXOSet(t *testing.T) {
 	transaction0 := wire.NewMsgTx(1)
 	transaction0.TxIn = []*wire.TxIn{txIn0}
 	transaction0.TxOut = []*wire.TxOut{txOut0}
-	if ok = emptySet.addTx(transaction0, 0); ok {
+	if ok = emptySet.AddTx(transaction0, 0); ok {
 		t.Errorf("addTx unexpectedly succeeded")
 	}
 	emptySet = &fullUTXOSet{utxoCollection: utxoCollection{outPoint0: utxoEntry0}}
-	if ok = emptySet.addTx(transaction0, 0); !ok {
+	if ok = emptySet.AddTx(transaction0, 0); !ok {
 		t.Errorf("addTx unexpectedly failed")
 	}
 
@@ -406,27 +406,27 @@ func TestDiffUTXOSet(t *testing.T) {
 	}
 
 	// Test diffUTXOSet creation
-	emptySet := newDiffUTXOSet(newFullUTXOSet(), newUTXODiff())
+	emptySet := NewDiffUTXOSet(newFullUTXOSet(), NewUTXODiff())
 	if len(emptySet.collection()) != 0 {
 		t.Errorf("new set is not empty")
 	}
 
-	// Test diffUTXOSet withDiff
-	withDiffResult, err := emptySet.withDiff(diff)
+	// Test diffUTXOSet WithDiff
+	WithDiffResult, err := emptySet.WithDiff(diff)
 	if err != nil {
-		t.Errorf("withDiff unexpectedly failed")
+		t.Errorf("WithDiff unexpectedly failed")
 	}
-	withDiffUTXOSet, ok := withDiffResult.(*diffUTXOSet)
+	WithDiffUTXOSet, ok := WithDiffResult.(*DiffUTXOSet)
 	if !ok {
-		t.Errorf("withDiff is of unexpected type")
+		t.Errorf("WithDiff is of unexpected type")
 	}
-	withDiff, _ := newUTXODiff().withDiff(diff)
-	if !reflect.DeepEqual(withDiffUTXOSet.base, emptySet.base) || !reflect.DeepEqual(withDiffUTXOSet.utxoDiff, withDiff) {
-		t.Errorf("withDiff is of unexpected composition")
+	WithDiff, _ := NewUTXODiff().WithDiff(diff)
+	if !reflect.DeepEqual(WithDiffUTXOSet.base, emptySet.base) || !reflect.DeepEqual(WithDiffUTXOSet.UTXODiff, WithDiff) {
+		t.Errorf("WithDiff is of unexpected composition")
 	}
-	_, err = newDiffUTXOSet(newFullUTXOSet(), diff).withDiff(diff)
+	_, err = NewDiffUTXOSet(newFullUTXOSet(), diff).WithDiff(diff)
 	if err == nil {
-		t.Errorf("withDiff unexpectedly succeeded")
+		t.Errorf("WithDiff unexpectedly succeeded")
 	}
 
 	// Given a diffSet, each case tests that meldToBase, String, collection, and cloning work as expected
@@ -437,23 +437,23 @@ func TestDiffUTXOSet(t *testing.T) {
 	// .clone() the given diffSet and compare its value to itself (expected: equals) and its reference to itself (expected: not equal)
 	tests := []struct {
 		name               string
-		diffSet            *diffUTXOSet
-		expectedMeldSet    *diffUTXOSet
+		diffSet            *DiffUTXOSet
+		expectedMeldSet    *DiffUTXOSet
 		expectedString     string
 		expectedCollection utxoCollection
 	}{
 		{
 			name: "empty base, empty diff",
-			diffSet: &diffUTXOSet{
+			diffSet: &DiffUTXOSet{
 				base: newFullUTXOSet(),
-				utxoDiff: &utxoDiff{
+				UTXODiff: &utxoDiff{
 					toAdd:    utxoCollection{},
 					toRemove: utxoCollection{},
 				},
 			},
-			expectedMeldSet: &diffUTXOSet{
+			expectedMeldSet: &DiffUTXOSet{
 				base: newFullUTXOSet(),
-				utxoDiff: &utxoDiff{
+				UTXODiff: &utxoDiff{
 					toAdd:    utxoCollection{},
 					toRemove: utxoCollection{},
 				},
@@ -463,16 +463,16 @@ func TestDiffUTXOSet(t *testing.T) {
 		},
 		{
 			name: "empty base, one member in diff toAdd",
-			diffSet: &diffUTXOSet{
+			diffSet: &DiffUTXOSet{
 				base: newFullUTXOSet(),
-				utxoDiff: &utxoDiff{
+				UTXODiff: &utxoDiff{
 					toAdd:    utxoCollection{outPoint0: utxoEntry0},
 					toRemove: utxoCollection{},
 				},
 			},
-			expectedMeldSet: &diffUTXOSet{
+			expectedMeldSet: &DiffUTXOSet{
 				base: &fullUTXOSet{utxoCollection: utxoCollection{outPoint0: utxoEntry0}},
-				utxoDiff: &utxoDiff{
+				UTXODiff: &utxoDiff{
 					toAdd:    utxoCollection{},
 					toRemove: utxoCollection{},
 				},
@@ -482,16 +482,16 @@ func TestDiffUTXOSet(t *testing.T) {
 		},
 		{
 			name: "empty base, one member in diff toRemove",
-			diffSet: &diffUTXOSet{
+			diffSet: &DiffUTXOSet{
 				base: newFullUTXOSet(),
-				utxoDiff: &utxoDiff{
+				UTXODiff: &utxoDiff{
 					toAdd:    utxoCollection{},
 					toRemove: utxoCollection{outPoint0: utxoEntry0},
 				},
 			},
-			expectedMeldSet: &diffUTXOSet{
+			expectedMeldSet: &DiffUTXOSet{
 				base: &fullUTXOSet{utxoCollection: utxoCollection{}},
-				utxoDiff: &utxoDiff{
+				UTXODiff: &utxoDiff{
 					toAdd:    utxoCollection{},
 					toRemove: utxoCollection{},
 				},
@@ -501,21 +501,21 @@ func TestDiffUTXOSet(t *testing.T) {
 		},
 		{
 			name: "one member in base toAdd, one member in diff toAdd",
-			diffSet: &diffUTXOSet{
+			diffSet: &DiffUTXOSet{
 				base: &fullUTXOSet{utxoCollection: utxoCollection{outPoint0: utxoEntry0}},
-				utxoDiff: &utxoDiff{
+				UTXODiff: &utxoDiff{
 					toAdd:    utxoCollection{outPoint1: utxoEntry1},
 					toRemove: utxoCollection{},
 				},
 			},
-			expectedMeldSet: &diffUTXOSet{
+			expectedMeldSet: &DiffUTXOSet{
 				base: &fullUTXOSet{
 					utxoCollection: utxoCollection{
 						outPoint0: utxoEntry0,
 						outPoint1: utxoEntry1,
 					},
 				},
-				utxoDiff: &utxoDiff{
+				UTXODiff: &utxoDiff{
 					toAdd:    utxoCollection{},
 					toRemove: utxoCollection{},
 				},
@@ -528,18 +528,18 @@ func TestDiffUTXOSet(t *testing.T) {
 		},
 		{
 			name: "one member in base toAdd, same one member in diff toRemove",
-			diffSet: &diffUTXOSet{
+			diffSet: &DiffUTXOSet{
 				base: &fullUTXOSet{utxoCollection: utxoCollection{outPoint0: utxoEntry0}},
-				utxoDiff: &utxoDiff{
+				UTXODiff: &utxoDiff{
 					toAdd:    utxoCollection{},
 					toRemove: utxoCollection{outPoint0: utxoEntry0},
 				},
 			},
-			expectedMeldSet: &diffUTXOSet{
+			expectedMeldSet: &DiffUTXOSet{
 				base: &fullUTXOSet{
 					utxoCollection: utxoCollection{},
 				},
-				utxoDiff: &utxoDiff{
+				UTXODiff: &utxoDiff{
 					toAdd:    utxoCollection{},
 					toRemove: utxoCollection{},
 				},
@@ -551,7 +551,7 @@ func TestDiffUTXOSet(t *testing.T) {
 
 	for _, test := range tests {
 		// Test meldToBase
-		meldSet := test.diffSet.clone().(*diffUTXOSet)
+		meldSet := test.diffSet.clone().(*DiffUTXOSet)
 		meldSet.meldToBase()
 		if !reflect.DeepEqual(meldSet, test.expectedMeldSet) {
 			t.Errorf("unexpected melded set in test \"%s\". "+
@@ -573,7 +573,7 @@ func TestDiffUTXOSet(t *testing.T) {
 		}
 
 		// Test cloning
-		clonedSet := test.diffSet.clone().(*diffUTXOSet)
+		clonedSet := test.diffSet.clone().(*DiffUTXOSet)
 		if !reflect.DeepEqual(clonedSet, test.diffSet) {
 			t.Errorf("unexpected set clone in test \"%s\". "+
 				"Expected: \"%v\", got: \"%v\".", test.name, test.diffSet, clonedSet)
@@ -591,16 +591,16 @@ func TestDiffUTXOSet(t *testing.T) {
 // 3. diffUTXOSet cannot diffFrom a diffUTXOSet with a different base.
 func TestUTXOSetDiffRules(t *testing.T) {
 	fullSet := newFullUTXOSet()
-	diffSet := newDiffUTXOSet(fullSet, newUTXODiff())
+	diffSet := NewDiffUTXOSet(fullSet, NewUTXODiff())
 
 	// For each of the following test cases, we will call utxoSet.diffFrom(diffSet) and compare
 	// whether the function succeeded with expectedSuccess
 	//
 	// Note: since test cases are similar for both fullUTXOSet and diffUTXOSet, we test both using the same test cases
-	run := func(set utxoSet) {
+	run := func(set UTXOSet) {
 		tests := []struct {
 			name            string
-			diffSet         utxoSet
+			diffSet         UTXOSet
 			expectedSuccess bool
 		}{
 			{
@@ -610,12 +610,12 @@ func TestUTXOSetDiffRules(t *testing.T) {
 			},
 			{
 				name:            "diff from diffSet with different base",
-				diffSet:         newDiffUTXOSet(newFullUTXOSet(), newUTXODiff()),
+				diffSet:         NewDiffUTXOSet(newFullUTXOSet(), NewUTXODiff()),
 				expectedSuccess: false,
 			},
 			{
 				name:            "diff from diffSet with same base",
-				diffSet:         newDiffUTXOSet(fullSet, newUTXODiff()),
+				diffSet:         NewDiffUTXOSet(fullSet, NewUTXODiff()),
 				expectedSuccess: true,
 			},
 		}
@@ -674,19 +674,19 @@ func TestDiffUTXOSet_addTx(t *testing.T) {
 	// 2. Compare the result set with expectedSet
 	tests := []struct {
 		name        string
-		startSet    *diffUTXOSet
+		startSet    *DiffUTXOSet
 		startHeight int32
 		toAdd       []*wire.MsgTx
-		expectedSet *diffUTXOSet
+		expectedSet *DiffUTXOSet
 	}{
 		{
 			name:        "add coinbase transaction to empty set",
-			startSet:    newDiffUTXOSet(newFullUTXOSet(), newUTXODiff()),
+			startSet:    NewDiffUTXOSet(newFullUTXOSet(), NewUTXODiff()),
 			startHeight: 0,
 			toAdd:       []*wire.MsgTx{transaction0},
-			expectedSet: &diffUTXOSet{
+			expectedSet: &DiffUTXOSet{
 				base: &fullUTXOSet{utxoCollection: utxoCollection{}},
-				utxoDiff: &utxoDiff{
+				UTXODiff: &utxoDiff{
 					toAdd:    utxoCollection{outPoint1: utxoEntry0},
 					toRemove: utxoCollection{},
 				},
@@ -694,12 +694,12 @@ func TestDiffUTXOSet_addTx(t *testing.T) {
 		},
 		{
 			name:        "add regular transaction to empty set",
-			startSet:    newDiffUTXOSet(newFullUTXOSet(), newUTXODiff()),
+			startSet:    NewDiffUTXOSet(newFullUTXOSet(), NewUTXODiff()),
 			startHeight: 0,
 			toAdd:       []*wire.MsgTx{transaction1},
-			expectedSet: &diffUTXOSet{
+			expectedSet: &DiffUTXOSet{
 				base: &fullUTXOSet{utxoCollection: utxoCollection{}},
-				utxoDiff: &utxoDiff{
+				UTXODiff: &utxoDiff{
 					toAdd:    utxoCollection{},
 					toRemove: utxoCollection{},
 				},
@@ -707,18 +707,18 @@ func TestDiffUTXOSet_addTx(t *testing.T) {
 		},
 		{
 			name: "add transaction to set with its input in base",
-			startSet: &diffUTXOSet{
+			startSet: &DiffUTXOSet{
 				base: &fullUTXOSet{utxoCollection: utxoCollection{outPoint1: utxoEntry0}},
-				utxoDiff: &utxoDiff{
+				UTXODiff: &utxoDiff{
 					toAdd:    utxoCollection{},
 					toRemove: utxoCollection{},
 				},
 			},
 			startHeight: 1,
 			toAdd:       []*wire.MsgTx{transaction1},
-			expectedSet: &diffUTXOSet{
+			expectedSet: &DiffUTXOSet{
 				base: &fullUTXOSet{utxoCollection: utxoCollection{outPoint1: utxoEntry0}},
-				utxoDiff: &utxoDiff{
+				UTXODiff: &utxoDiff{
 					toAdd:    utxoCollection{outPoint2: utxoEntry1},
 					toRemove: utxoCollection{outPoint1: utxoEntry0},
 				},
@@ -726,18 +726,18 @@ func TestDiffUTXOSet_addTx(t *testing.T) {
 		},
 		{
 			name: "add transaction to set with its input in diff toAdd",
-			startSet: &diffUTXOSet{
+			startSet: &DiffUTXOSet{
 				base: newFullUTXOSet(),
-				utxoDiff: &utxoDiff{
+				UTXODiff: &utxoDiff{
 					toAdd:    utxoCollection{outPoint1: utxoEntry0},
 					toRemove: utxoCollection{},
 				},
 			},
 			startHeight: 1,
 			toAdd:       []*wire.MsgTx{transaction1},
-			expectedSet: &diffUTXOSet{
+			expectedSet: &DiffUTXOSet{
 				base: newFullUTXOSet(),
-				utxoDiff: &utxoDiff{
+				UTXODiff: &utxoDiff{
 					toAdd:    utxoCollection{outPoint2: utxoEntry1},
 					toRemove: utxoCollection{},
 				},
@@ -745,18 +745,18 @@ func TestDiffUTXOSet_addTx(t *testing.T) {
 		},
 		{
 			name: "add transaction to set with its input in diff toAdd and its output in diff toRemove",
-			startSet: &diffUTXOSet{
+			startSet: &DiffUTXOSet{
 				base: newFullUTXOSet(),
-				utxoDiff: &utxoDiff{
+				UTXODiff: &utxoDiff{
 					toAdd:    utxoCollection{outPoint1: utxoEntry0},
 					toRemove: utxoCollection{outPoint2: utxoEntry1},
 				},
 			},
 			startHeight: 1,
 			toAdd:       []*wire.MsgTx{transaction1},
-			expectedSet: &diffUTXOSet{
+			expectedSet: &DiffUTXOSet{
 				base: newFullUTXOSet(),
-				utxoDiff: &utxoDiff{
+				UTXODiff: &utxoDiff{
 					toAdd:    utxoCollection{},
 					toRemove: utxoCollection{},
 				},
@@ -764,18 +764,18 @@ func TestDiffUTXOSet_addTx(t *testing.T) {
 		},
 		{
 			name: "add two transactions, one spending the other, to set with the first input in base",
-			startSet: &diffUTXOSet{
+			startSet: &DiffUTXOSet{
 				base: &fullUTXOSet{utxoCollection: utxoCollection{outPoint1: utxoEntry0}},
-				utxoDiff: &utxoDiff{
+				UTXODiff: &utxoDiff{
 					toAdd:    utxoCollection{},
 					toRemove: utxoCollection{},
 				},
 			},
 			startHeight: 1,
 			toAdd:       []*wire.MsgTx{transaction1, transaction2},
-			expectedSet: &diffUTXOSet{
+			expectedSet: &DiffUTXOSet{
 				base: &fullUTXOSet{utxoCollection: utxoCollection{outPoint1: utxoEntry0}},
-				utxoDiff: &utxoDiff{
+				UTXODiff: &utxoDiff{
 					toAdd:    utxoCollection{outPoint3: utxoEntry2},
 					toRemove: utxoCollection{outPoint1: utxoEntry0},
 				},
@@ -788,7 +788,7 @@ func TestDiffUTXOSet_addTx(t *testing.T) {
 
 		// Apply all transactions to diffSet, in order, with the initial block height startHeight
 		for i, transaction := range test.toAdd {
-			diffSet.addTx(transaction, test.startHeight+int32(i))
+			diffSet.AddTx(transaction, test.startHeight+int32(i))
 		}
 
 		// Make sure that the result diffSet equals to the expectedSet
@@ -919,7 +919,7 @@ func TestDiffFromTx(t *testing.T) {
 	if err != nil {
 		t.Errorf("createCoinbaseTx: %v", err)
 	}
-	fus.addTx(cbTx, 1)
+	fus.AddTx(cbTx, 1)
 	node := &blockNode{height: 2} //Fake node
 	cbOutpoint := wire.OutPoint{Hash: cbTx.TxHash(), Index: 0}
 	tx := wire.NewMsgTx(wire.TxVersion)
@@ -965,11 +965,11 @@ func TestDiffFromTx(t *testing.T) {
 	}
 
 	//Test that we get an error if the outpoint is inside diffUTXOSet's toRemove
-	dus := newDiffUTXOSet(fus, &utxoDiff{
+	dus := NewDiffUTXOSet(fus, &utxoDiff{
 		toAdd:    utxoCollection{},
 		toRemove: utxoCollection{},
 	})
-	dus.addTx(tx, 2)
+	dus.AddTx(tx, 2)
 	_, err = dus.diffFromTx(tx, node)
 	if err == nil {
 		t.Errorf("diffFromTx: expected an error but got <nil>")

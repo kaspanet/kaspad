@@ -433,7 +433,7 @@ func TestCalcSequenceLock(t *testing.T) {
 	t.Logf("Running %v SequenceLock tests", len(tests))
 	for i, test := range tests {
 		utilTx := util.NewTx(test.tx)
-		seqLock, err := chain.CalcSequenceLock(utilTx, test.view, test.mempool)
+		seqLock, err := chain.CalcSequenceLock(utilTx, test.mempool)
 		if err != nil {
 			t.Fatalf("test #%d, unable to calc sequence lock: %v", i, err)
 		}
@@ -668,12 +668,12 @@ func TestPastUTXOErrors(t *testing.T) {
 // TestRestoreUTXOErrors tests all error-cases in restoreUTXO.
 // The non-error-cases are tested in the more general tests.
 func TestRestoreUTXOErrors(t *testing.T) {
-	targetErrorMessage := "withDiff error"
+	targetErrorMessage := "WithDiff error"
 	testErrorThroughPatching(
 		t,
 		targetErrorMessage,
-		(*fullUTXOSet).withDiff,
-		func(fus *fullUTXOSet, other *utxoDiff) (utxoSet, error) {
+		(*fullUTXOSet).WithDiff,
+		func(fus *fullUTXOSet, other *utxoDiff) (UTXOSet, error) {
 			return nil, errors.New(targetErrorMessage)
 		},
 	)
