@@ -348,8 +348,8 @@ func CountP2SHSigOps(tx *util.Tx, isCoinBaseTx bool, utxoSet UTXOSet) (int, erro
 	totalSigOps := 0
 	for txInIndex, txIn := range msgTx.TxIn {
 		// Ensure the referenced input transaction is available.
-		utxo, ok := utxoSet.Get(txIn.PreviousOutPoint)
-		if !ok || utxo.IsSpent() {
+		entry, ok := utxoSet.Get(txIn.PreviousOutPoint)
+		if !ok || entry.IsSpent() {
 			str := fmt.Sprintf("output %v referenced from "+
 				"transaction %s:%d either does not exist or "+
 				"has already been spent", txIn.PreviousOutPoint,
@@ -359,7 +359,7 @@ func CountP2SHSigOps(tx *util.Tx, isCoinBaseTx bool, utxoSet UTXOSet) (int, erro
 
 		// We're only interested in pay-to-script-hash types, so skip
 		// this input if it's not one.
-		pkScript := utxo.PkScript()
+		pkScript := entry.PkScript()
 		if !txscript.IsPayToScriptHash(pkScript) {
 			continue
 		}
@@ -832,8 +832,8 @@ func CheckTransactionInputs(tx *util.Tx, txHeight int32, utxoSet UTXOSet, dagPar
 	var totalSatoshiIn int64
 	for txInIndex, txIn := range tx.MsgTx().TxIn {
 		// Ensure the referenced input transaction is available.
-		utxo, ok := utxoSet.Get(txIn.PreviousOutPoint)
-		if !ok || utxo.IsSpent() {
+		entry, ok := utxoSet.Get(txIn.PreviousOutPoint)
+		if !ok || entry.IsSpent() {
 			str := fmt.Sprintf("output %v referenced from "+
 				"transaction %s:%d either does not exist or "+
 				"has already been spent", txIn.PreviousOutPoint,
@@ -843,8 +843,8 @@ func CheckTransactionInputs(tx *util.Tx, txHeight int32, utxoSet UTXOSet, dagPar
 
 		// Ensure the transaction is not spending coins which have not
 		// yet reached the required coinbase maturity.
-		if utxo.IsCoinBase() {
-			originHeight := utxo.BlockHeight()
+		if entry.IsCoinBase() {
+			originHeight := entry.BlockHeight()
 			blocksSincePrev := txHeight - originHeight
 			coinbaseMaturity := int32(dagParams.CoinbaseMaturity)
 			if blocksSincePrev < coinbaseMaturity {
@@ -864,7 +864,7 @@ func CheckTransactionInputs(tx *util.Tx, txHeight int32, utxoSet UTXOSet, dagPar
 		// a transaction are in a unit value known as a satoshi.  One
 		// bitcoin is a quantity of satoshi as defined by the
 		// SatoshiPerBitcoin constant.
-		originTxSatoshi := utxo.Amount()
+		originTxSatoshi := entry.Amount()
 		if originTxSatoshi < 0 {
 			str := fmt.Sprintf("transaction output has negative "+
 				"value of %v", util.Amount(originTxSatoshi))
@@ -1055,7 +1055,6 @@ func (dag *BlockDAG) checkConnectBlock(node *blockNode, block *util.Block) error
 	// lock-times within the inputs of all transactions in this
 	// candidate block.
 	for _, tx := range block.Transactions() {
-		fmt.Println(tx.Hash())
 		// A transaction can only be included within a block
 		// once the sequence locks of *all* its inputs are
 		// active.

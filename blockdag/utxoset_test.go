@@ -310,7 +310,7 @@ func TestUTXODiffRules(t *testing.T) {
 		}
 
 		// WithDiff from this to other
-		WithDiffResult, err := test.this.WithDiff(test.other)
+		withDiffResult, err := test.this.WithDiff(test.other)
 
 		// Test whether WithDiff returned an error
 		isWithDiffOk := err == nil
@@ -321,9 +321,9 @@ func TestUTXODiffRules(t *testing.T) {
 		}
 
 		// Ig not error, test the WithDiff result
-		if isWithDiffOk && !reflect.DeepEqual(WithDiffResult, test.expectedWithDiffResult) {
+		if isWithDiffOk && !reflect.DeepEqual(withDiffResult, test.expectedWithDiffResult) {
 			t.Errorf("unexpected WithDiff result in test \"%s\". "+
-				"Expected: \"%v\", got: \"%v\".", test.name, test.expectedWithDiffResult, WithDiffResult)
+				"Expected: \"%v\", got: \"%v\".", test.name, test.expectedWithDiffResult, withDiffResult)
 		}
 	}
 }
@@ -350,15 +350,15 @@ func TestFullUTXOSet(t *testing.T) {
 	}
 
 	// Test fullUTXOSet WithDiff
-	WithDiffResult, err := emptySet.WithDiff(diff)
+	withDiffResult, err := emptySet.WithDiff(diff)
 	if err != nil {
 		t.Errorf("WithDiff unexpectedly failed")
 	}
-	WithDiffUTXOSet, ok := WithDiffResult.(*DiffUTXOSet)
+	withDiffUTXOSet, ok := withDiffResult.(*DiffUTXOSet)
 	if !ok {
 		t.Errorf("WithDiff is of unexpected type")
 	}
-	if !reflect.DeepEqual(WithDiffUTXOSet.base, emptySet) || !reflect.DeepEqual(WithDiffUTXOSet.UTXODiff, diff) {
+	if !reflect.DeepEqual(withDiffUTXOSet.base, emptySet) || !reflect.DeepEqual(withDiffUTXOSet.UTXODiff, diff) {
 		t.Errorf("WithDiff is of unexpected composition")
 	}
 
@@ -412,16 +412,16 @@ func TestDiffUTXOSet(t *testing.T) {
 	}
 
 	// Test diffUTXOSet WithDiff
-	WithDiffResult, err := emptySet.WithDiff(diff)
+	withDiffResult, err := emptySet.WithDiff(diff)
 	if err != nil {
 		t.Errorf("WithDiff unexpectedly failed")
 	}
-	WithDiffUTXOSet, ok := WithDiffResult.(*DiffUTXOSet)
+	withDiffUTXOSet, ok := withDiffResult.(*DiffUTXOSet)
 	if !ok {
 		t.Errorf("WithDiff is of unexpected type")
 	}
-	WithDiff, _ := NewUTXODiff().WithDiff(diff)
-	if !reflect.DeepEqual(WithDiffUTXOSet.base, emptySet.base) || !reflect.DeepEqual(WithDiffUTXOSet.UTXODiff, WithDiff) {
+	withDiff, _ := NewUTXODiff().WithDiff(diff)
+	if !reflect.DeepEqual(withDiffUTXOSet.base, emptySet.base) || !reflect.DeepEqual(withDiffUTXOSet.UTXODiff, withDiff) {
 		t.Errorf("WithDiff is of unexpected composition")
 	}
 	_, err = NewDiffUTXOSet(NewFullUTXOSet(), diff).WithDiff(diff)

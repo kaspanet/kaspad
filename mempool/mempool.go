@@ -40,6 +40,8 @@ const (
 	orphanExpireScanInterval = time.Minute * 5
 )
 
+// HandleNewBlockMsg is the type that is used in HandleNewBlockMsg to transfer
+// data about transaction removed and added to the mempool
 type HandleNewBlockMsg struct {
 	AcceptedTxs []*TxDesc
 	Tx          *util.Tx
@@ -56,9 +58,9 @@ type Config struct {
 	// to policy.
 	Policy Policy
 
-	// ChainParams identifies which chain parameters the txpool is
+	// DagParams identifies which chain parameters the txpool is
 	// associated with.
-	ChainParams *dagconfig.Params
+	DagParams *dagconfig.Params
 
 	// BestHeight defines the function to use to access the block height of
 	// the current best chain.
@@ -92,6 +94,7 @@ type Config struct {
 	// records all new transactions it observes into the feeEstimator.
 	FeeEstimator *FeeEstimator
 
+	// DAG is the BlockDAG we want to use (mainly for UTXO checks)
 	DAG *blockdag.BlockDAG
 }
 
@@ -453,7 +456,7 @@ func (mp *TxPool) HaveTransaction(hash *daghash.Hash) bool {
 // RemoveTransaction.  See the comment for RemoveTransaction for more details.
 //
 // This function MUST be called with the mempool lock held (for writes).
-func (mp *TxPool) removeTransaction(tx *util.Tx, removeRedeemers bool) {
+func (mp *TxPool) removeTransaction(tx *util.Tx, removeRedeemers bool) error {
 	txHash := tx.Hash()
 	if removeRedeemers {
 		// Remove any transactions which rely on this one.
@@ -478,8 +481,16 @@ func (mp *TxPool) removeTransaction(tx *util.Tx, removeRedeemers bool) {
 			delete(mp.outpoints, txIn.PreviousOutPoint)
 		}
 		delete(mp.pool, *txHash)
+		diff := blockdag.NewUTXODiff()
+		diff.RemoveTx(txDesc.Tx.MsgTx())
+		var err error
+		mp.diffUTXOSet, err = mp.diffUTXOSet.WithDiff(diff)
+		if err != nil {
+			return err
+		}
 		atomic.StoreInt64(&mp.lastUpdated, time.Now().Unix())
 	}
+	return nil
 }
 
 // RemoveTransaction removes the passed transaction from the mempool. When the
@@ -488,11 +499,11 @@ func (mp *TxPool) removeTransaction(tx *util.Tx, removeRedeemers bool) {
 // they would otherwise become orphans.
 //
 // This function is safe for concurrent access.
-func (mp *TxPool) RemoveTransaction(tx *util.Tx, removeRedeemers bool) {
+func (mp *TxPool) RemoveTransaction(tx *util.Tx, removeRedeemers bool) error {
 	// Protect concurrent access.
 	mp.mtx.Lock()
-	mp.removeTransaction(tx, removeRedeemers)
-	mp.mtx.Unlock()
+	defer mp.mtx.Unlock()
+	return mp.removeTransaction(tx, removeRedeemers)
 }
 
 // RemoveDoubleSpends removes all transactions which spend outputs spent by the
@@ -682,7 +693,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rateLimit, rejectDu
 		return nil, nil, err
 	}
 
-	// Don't allow the transaction if it exists in the main chain and is not
+	// Don't allow the transaction if it exists in the DAG and is not
 	// not already fully spent.
 	prevOut := wire.OutPoint{Hash: *txHash}
 	for txOutIdx := range tx.MsgTx().TxOut {
@@ -734,7 +745,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rateLimit, rejectDu
 	// Also returns the fees associated with the transaction which will be
 	// used later.
 	txFee, err := blockdag.CheckTransactionInputs(tx, nextBlockHeight,
-		mp.diffUTXOSet, mp.cfg.ChainParams)
+		mp.diffUTXOSet, mp.cfg.DagParams)
 	if err != nil {
 		if cerr, ok := err.(blockdag.RuleError); ok {
 			return nil, nil, chainRuleError(cerr)
@@ -1163,10 +1174,16 @@ func (mp *TxPool) LastUpdated() time.Time {
 	return time.Unix(atomic.LoadInt64(&mp.lastUpdated), 0)
 }
 
+// HandleNewBlock removes all the transactions in the new block
+// from the mempool and the orphan pool, and it also removes
+// from the mempool transactions that double spend a
+// transaction that is already in the DAG
 func (mp *TxPool) HandleNewBlock(block *util.Block, txChan chan HandleNewBlockMsg) error {
 	mp.diffUTXOSet.Lock()
 	defer mp.diffUTXOSet.Unlock()
-	diff := blockdag.NewUTXODiff()
+	defer close(txChan)
+
+	oldDiff := mp.diffUTXOSet
 
 	// Remove all of the transactions (except the coinbase) in the
 	// connected block from the transaction pool.  Secondly, remove any
@@ -1176,7 +1193,11 @@ func (mp *TxPool) HandleNewBlock(block *util.Block, txChan chan HandleNewBlockMs
 	// transaction are NOT removed recursively because they are still
 	// valid.
 	for _, tx := range block.Transactions()[1:] {
-		mp.RemoveTransaction(tx, false)
+		err := mp.RemoveTransaction(tx, false)
+		if err != nil {
+			mp.diffUTXOSet = oldDiff
+			return err
+		}
 		mp.RemoveDoubleSpends(tx)
 		mp.RemoveOrphan(tx)
 		acceptedTxs := mp.ProcessOrphans(tx)
@@ -1184,14 +1205,7 @@ func (mp *TxPool) HandleNewBlock(block *util.Block, txChan chan HandleNewBlockMs
 			AcceptedTxs: acceptedTxs,
 			Tx:          tx,
 		}
-		diff.RemoveTx(tx.MsgTx())
 	}
-
-	newDiff, err := mp.diffUTXOSet.WithDiff(diff)
-	if err != nil {
-		return err
-	}
-	mp.diffUTXOSet = newDiff
 	return nil
 }
 

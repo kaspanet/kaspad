@@ -58,52 +58,38 @@ func DagSetup(dbName string, params *dagconfig.Params) (*BlockDAG, func(), error
 	// specific handling.
 	var db database.DB
 	var teardown func()
-	if testDbType == "memdb" {
-		ndb, err := database.Create(testDbType)
-		if err != nil {
-			return nil, nil, fmt.Errorf("error creating db: %v", err)
+	// Create the root directory for test databases.
+	if !fileExists(testDbRoot) {
+		if err := os.MkdirAll(testDbRoot, 0700); err != nil {
+			err := fmt.Errorf("unable to create test db "+
+				"root: %v", err)
+			return nil, nil, err
 		}
-		db = ndb
+	}
 
-		// Setup a teardown function for cleaning up.  This function is
-		// returned to the caller to be invoked when it is done testing.
-		teardown = func() {
-			db.Close()
-		}
-	} else {
-		// Create the root directory for test databases.
-		if !fileExists(testDbRoot) {
-			if err := os.MkdirAll(testDbRoot, 0700); err != nil {
-				err := fmt.Errorf("unable to create test db "+
-					"root: %v", err)
-				return nil, nil, err
-			}
-		}
+	// Create a new database to store the accepted blocks into.
+	dbPath := filepath.Join(testDbRoot, dbName)
+	_ = os.RemoveAll(dbPath)
+	ndb, err := database.Create(testDbType, dbPath, blockDataNet)
+	if err != nil {
+		return nil, nil, fmt.Errorf("error creating db: %v", err)
+	}
+	db = ndb
 
-		// Create a new database to store the accepted blocks into.
-		dbPath := filepath.Join(testDbRoot, dbName)
-		_ = os.RemoveAll(dbPath)
-		ndb, err := database.Create(testDbType, dbPath, blockDataNet)
-		if err != nil {
-			return nil, nil, fmt.Errorf("error creating db: %v", err)
-		}
-		db = ndb
-
-		// Setup a teardown function for cleaning up.  This function is
-		// returned to the caller to be invoked when it is done testing.
-		teardown = func() {
-			db.Close()
-			os.RemoveAll(dbPath)
-			os.RemoveAll(testDbRoot)
-		}
+	// Setup a teardown function for cleaning up.  This function is
+	// returned to the caller to be invoked when it is done testing.
+	teardown = func() {
+		db.Close()
+		os.RemoveAll(dbPath)
+		os.RemoveAll(testDbRoot)
 	}
 
 	// Copy the chain params to ensure any modifications the tests do to
 	// the chain parameters do not affect the global instance.
 	paramsCopy := *params
 
-	// Create the main chain instance.
-	chain, err := New(&Config{
+	// Create the DAG instance.
+	dag, err := New(&Config{
 		DB:          db,
 		DAGParams:   &paramsCopy,
 		Checkpoints: nil,
@@ -112,8 +98,8 @@ func DagSetup(dbName string, params *dagconfig.Params) (*BlockDAG, func(), error
 	})
 	if err != nil {
 		teardown()
-		err := fmt.Errorf("failed to create chain instance: %v", err)
+		err := fmt.Errorf("failed to create dag instance: %v", err)
 		return nil, nil, err
 	}
-	return chain, teardown, nil
+	return dag, teardown, nil
 }

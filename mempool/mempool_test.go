@@ -245,7 +245,7 @@ func (p *poolHarness) CreateTxChain(firstOutput spendableOutput, numTxns uint32)
 // for testing.  Also, the fake chain is populated with the returned spendable
 // outputs so the caller can easily create new valid transactions which build
 // off of it.
-func newPoolHarness(chainParams *dagconfig.Params, dbName string) (*poolHarness, []spendableOutput, error) {
+func newPoolHarness(dagParams *dagconfig.Params, dbName string) (*poolHarness, []spendableOutput, error) {
 	// Use a hard coded key pair for deterministic results.
 	keyBytes, err := hex.DecodeString("700868df1838811ffbdf918fb482c1f7e" +
 		"ad62db4b97bd7012c23e726485e577d")
@@ -257,7 +257,7 @@ func newPoolHarness(chainParams *dagconfig.Params, dbName string) (*poolHarness,
 	// Generate associated pay-to-script-hash address and resulting payment
 	// script.
 	pubKeyBytes := signPub.SerializeCompressed()
-	payPubKeyAddr, err := util.NewAddressPubKey(pubKeyBytes, chainParams)
+	payPubKeyAddr, err := util.NewAddressPubKey(pubKeyBytes, dagParams)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -271,7 +271,7 @@ func newPoolHarness(chainParams *dagconfig.Params, dbName string) (*poolHarness,
 	dag, teardownFunc, err := blockdag.DagSetup(dbName,
 		&dagconfig.MainNetParams)
 	if err != nil {
-		return nil, nil, fmt.Errorf("Failed to setup chain instance: %v", err)
+		return nil, nil, fmt.Errorf("Failed to setup DAG instance: %v", err)
 	}
 	defer teardownFunc()
 
@@ -281,7 +281,7 @@ func newPoolHarness(chainParams *dagconfig.Params, dbName string) (*poolHarness,
 		signKey:     signKey,
 		payAddr:     payAddr,
 		payScript:   pkScript,
-		chainParams: chainParams,
+		chainParams: dagParams,
 
 		chain: chain,
 		txPool: New(&Config{
@@ -295,7 +295,7 @@ func newPoolHarness(chainParams *dagconfig.Params, dbName string) (*poolHarness,
 				MinRelayTxFee:        1000, // 1 Satoshi per byte
 				MaxTxVersion:         1,
 			},
-			ChainParams:      chainParams,
+			DagParams:        dagParams,
 			BestHeight:       chain.BestHeight,
 			MedianTimePast:   chain.MedianTimePast,
 			CalcSequenceLock: chain.CalcSequenceLock,
@@ -320,7 +320,7 @@ func newPoolHarness(chainParams *dagconfig.Params, dbName string) (*poolHarness,
 	for i := uint32(0); i < numOutputs; i++ {
 		outputs = append(outputs, txOutToSpendableOut(coinbase, i))
 	}
-	harness.chain.SetHeight(int32(chainParams.CoinbaseMaturity) + curHeight)
+	harness.chain.SetHeight(int32(dagParams.CoinbaseMaturity) + curHeight)
 	harness.chain.SetMedianTimePast(time.Now())
 
 	return &harness, outputs, nil

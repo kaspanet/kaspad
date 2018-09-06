@@ -11,7 +11,7 @@ import (
 )
 
 // UTXOEntry houses details about an individual transaction output in a utxo
-// view such as whether or not it was contained in a coinbase tx, the height of
+// set such as whether or not it was contained in a coinbase tx, the height of
 // the block that contains the tx, whether or not it is spent, its public key
 // script, and how much it pays.
 type UTXOEntry struct {
@@ -327,6 +327,7 @@ func (d *utxoDiff) clone() *utxoDiff {
 	}
 }
 
+//RemoveTx adds all of the transaction's outputs to d.toRemove
 func (d *utxoDiff) RemoveTx(tx *wire.MsgTx) {
 	for idx := range tx.TxOut {
 		hash := tx.TxHash()
@@ -509,10 +510,12 @@ func NewDiffUTXOSet(base *fullUTXOSet, diff *utxoDiff) *DiffUTXOSet {
 	}
 }
 
+//Lock locks meldToBase operation on the base
 func (dus *DiffUTXOSet) Lock() {
 	dus.base.Lock()
 }
 
+//Unlock unlocks meldToBase operation on the base
 func (dus *DiffUTXOSet) Unlock() {
 	dus.base.Unlock()
 }
