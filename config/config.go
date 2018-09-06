@@ -24,12 +24,13 @@ import (
 	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/database"
+	_ "github.com/daglabs/btcd/database/ffldb"
 	"github.com/daglabs/btcd/logger"
 	"github.com/daglabs/btcd/mempool"
-	"github.com/daglabs/btcd/version"
-	"github.com/daglabs/btcd/wire"
 	"github.com/daglabs/btcd/util"
 	"github.com/daglabs/btcd/util/network"
+	"github.com/daglabs/btcd/version"
+	"github.com/daglabs/btcd/wire"
 	flags "github.com/jessevdk/go-flags"
 )
 
@@ -491,7 +492,7 @@ func loadConfig() (*Config, []string, error) {
 
 	// Initialize log rotation.  After log rotation has been initialized, the
 	// logger variables may be used.
-	logger.InitLogRotator(filepath.Join(mainCfg.LogDir, defaultLogFilename))
+	logger.InitLogRotator(filepath.Join(cfg.LogDir, defaultLogFilename))
 
 	// Parse, validate, and set debug log level(s).
 	if err := logger.ParseAndSetDebugLevels(cfg.DebugLevel); err != nil {
