@@ -55,7 +55,7 @@ out:
 		case txVI := <-v.validateChan:
 			// Ensure the referenced input utxo is available.
 			txIn := txVI.txIn
-			utxo, ok := v.utxoSet.Get(txIn.PreviousOutPoint)
+			entry, ok := v.utxoSet.Get(txIn.PreviousOutPoint)
 			if !ok {
 				str := fmt.Sprintf("unable to find unspent "+
 					"output %v referenced from "+
@@ -69,7 +69,7 @@ out:
 
 			// Create a new script engine for the script pair.
 			sigScript := txIn.SignatureScript
-			pkScript := utxo.PkScript()
+			pkScript := entry.PkScript()
 			vm, err := txscript.NewEngine(pkScript, txVI.tx.MsgTx(),
 				txVI.txInIndex, v.flags, v.sigCache)
 			if err != nil {

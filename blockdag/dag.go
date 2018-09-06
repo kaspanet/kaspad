@@ -344,7 +344,7 @@ func (dag *BlockDAG) calcSequenceLock(node *blockNode, utxoSet UTXOSet, tx *util
 
 	mTx := tx.MsgTx()
 	for txInIndex, txIn := range mTx.TxIn {
-		utxo, ok := utxoSet.Get(txIn.PreviousOutPoint)
+		entry, ok := utxoSet.Get(txIn.PreviousOutPoint)
 		if !ok {
 			str := fmt.Sprintf("output %v referenced from "+
 				"transaction %s:%d either does not exist or "+
@@ -356,7 +356,7 @@ func (dag *BlockDAG) calcSequenceLock(node *blockNode, utxoSet UTXOSet, tx *util
 		// If the input height is set to the mempool height, then we
 		// assume the transaction makes it into the next block when
 		// evaluating its sequence blocks.
-		inputHeight := utxo.BlockHeight()
+		inputHeight := entry.BlockHeight()
 		if inputHeight == 0x7fffffff {
 			inputHeight = nextHeight
 		}

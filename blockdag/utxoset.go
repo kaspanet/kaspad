@@ -509,10 +509,6 @@ func NewDiffUTXOSet(base *fullUTXOSet, diff *utxoDiff) *DiffUTXOSet {
 	}
 }
 
-func NewEmptyDiffUTXOSet() *DiffUTXOSet {
-	return NewDiffUTXOSet(NewFullUTXOSet(), NewUTXODiff())
-}
-
 func (dus *DiffUTXOSet) Lock() {
 	dus.base.Lock()
 }
@@ -637,7 +633,7 @@ func (dus *DiffUTXOSet) clone() UTXOSet {
 	return NewDiffUTXOSet(dus.base.clone().(*fullUTXOSet), dus.UTXODiff.clone())
 }
 
-// get returns the UTXOEntry associated with provided outPoint in this UTXOSet.
+// Get returns the UTXOEntry associated with provided outPoint in this UTXOSet.
 // Returns false in second output if this UTXOEntry was not found
 func (dus *DiffUTXOSet) Get(outPoint wire.OutPoint) (*UTXOEntry, bool) {
 	if dus.UTXODiff.toRemove.contains(outPoint) {

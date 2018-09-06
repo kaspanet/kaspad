@@ -43,7 +43,7 @@ func TestHaveBlock(t *testing.T) {
 	}
 
 	// Create a new database and chain instance to run tests against.
-	chain, teardownFunc, err := DagSetup("haveblock",
+	dag, teardownFunc, err := DagSetup("haveblock",
 		&dagconfig.MainNetParams)
 	if err != nil {
 		t.Errorf("Failed to setup chain instance: %v", err)
@@ -53,10 +53,10 @@ func TestHaveBlock(t *testing.T) {
 
 	// Since we're not dealing with the real block chain, set the coinbase
 	// maturity to 1.
-	chain.TstSetCoinbaseMaturity(1)
+	dag.TstSetCoinbaseMaturity(1)
 
 	for i := 1; i < len(blocks); i++ {
-		isOrphan, err := chain.ProcessBlock(blocks[i], BFNone)
+		isOrphan, err := dag.ProcessBlock(blocks[i], BFNone)
 		if err != nil {
 			t.Errorf("ProcessBlock fail on block %v: %v\n", i, err)
 			return
@@ -80,7 +80,7 @@ func TestHaveBlock(t *testing.T) {
 		}
 		blocks = append(blocks, blockTmp...)
 	}
-	isOrphan, err := chain.ProcessBlock(blocks[6], BFNone)
+	isOrphan, err := dag.ProcessBlock(blocks[6], BFNone)
 
 	// Block 3c should fail to connect since its parents are related. (It points to 1 and 2, and 1 is the parent of 2)
 	if err == nil {
@@ -94,7 +94,7 @@ func TestHaveBlock(t *testing.T) {
 	}
 
 	// Insert an orphan block.
-	isOrphan, err = chain.ProcessBlock(util.NewBlock(&Block100000),
+	isOrphan, err = dag.ProcessBlock(util.NewBlock(&Block100000),
 		BFNone)
 	if err != nil {
 		t.Errorf("Unable to process block: %v", err)
@@ -130,7 +130,7 @@ func TestHaveBlock(t *testing.T) {
 			continue
 		}
 
-		result, err := chain.HaveBlock(hash)
+		result, err := dag.HaveBlock(hash)
 		if err != nil {
 			t.Errorf("HaveBlock #%d unexpected error: %v", i, err)
 			return
@@ -153,15 +153,15 @@ func TestCalcSequenceLock(t *testing.T) {
 	blockVersion := int32(0x10000000)
 
 	// Generate enough synthetic blocks for the rest of the test
-	chain := newTestDAG(netParams)
-	node := chain.virtual.SelectedTip()
+	dag := newTestDAG(netParams)
+	node := dag.virtual.SelectedTip()
 	blockTime := node.Header().Timestamp
 	numBlocksToGenerate := uint32(5)
 	for i := uint32(0); i < numBlocksToGenerate; i++ {
 		blockTime = blockTime.Add(time.Second)
 		node = newTestNode(setFromSlice(node), blockVersion, 0, blockTime, netParams.K)
-		chain.index.AddNode(node)
-		chain.virtual.SetTips(setFromSlice(node))
+		dag.index.AddNode(node)
+		dag.virtual.SetTips(setFromSlice(node))
 	}
 
 	// Create a utxo view with a fake utxo for the inputs used in the
@@ -173,7 +173,7 @@ func TestCalcSequenceLock(t *testing.T) {
 			Value:    10,
 		}},
 	})
-	utxoSet := NewEmptyDiffUTXOSet()
+	utxoSet := NewFullUTXOSet()
 	utxoSet.AddTx(targetTx.MsgTx(), int32(numBlocksToGenerate)-4)
 
 	// Create a utxo that spends the fake utxo created above for use in the
@@ -433,7 +433,7 @@ func TestCalcSequenceLock(t *testing.T) {
 	t.Logf("Running %v SequenceLock tests", len(tests))
 	for i, test := range tests {
 		utilTx := util.NewTx(test.tx)
-		seqLock, err := chain.CalcSequenceLock(utilTx, utxoSet, test.mempool)
+		seqLock, err := dag.CalcSequenceLock(utilTx, utxoSet, test.mempool)
 		if err != nil {
 			t.Fatalf("test #%d, unable to calc sequence lock: %v", i, err)
 		}
