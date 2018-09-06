@@ -24,7 +24,7 @@ func newVirtualBlock(tips blockSet, phantomK uint32) *VirtualBlock {
 	// The mutex is intentionally not held since this is a constructor.
 	var virtual VirtualBlock
 	virtual.phantomK = phantomK
-	virtual.UTXOSet = newFullUTXOSet()
+	virtual.UTXOSet = NewFullUTXOSet()
 	virtual.setTips(tips)
 
 	return &virtual

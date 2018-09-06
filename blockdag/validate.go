@@ -956,14 +956,6 @@ func (dag *BlockDAG) checkConnectBlock(node *blockNode, block *util.Block) error
 		return err
 	}
 
-	// Load all of the utxos referenced by the inputs for all transactions
-	// in the block don't already exist in the utxo view from the database.
-	//
-	// These utxo entries are needed for verification of things such as
-	// transaction inputs, counting pay-to-script-hashes, and scripts.
-	diffUTXOSet := NewDiffUTXOSet(dag.VirtualBlock().UTXOSet, NewUTXODiff())
-	fmt.Printf("virtual utxo set: %v\n", dag.VirtualBlock().UTXOSet)
-
 	// The number of signature operations must be less than the maximum
 	// allowed per block.  Note that the preliminary sanity checks on a
 	// block also include a check similar to this one, but this check
@@ -980,7 +972,7 @@ func (dag *BlockDAG) checkConnectBlock(node *blockNode, block *util.Block) error
 		// countP2SHSigOps for whether or not the transaction is
 		// a coinbase transaction rather than having to do a
 		// full coinbase check again.
-		numP2SHSigOps, err := CountP2SHSigOps(tx, i == 0, diffUTXOSet)
+		numP2SHSigOps, err := CountP2SHSigOps(tx, i == 0, dag.VirtualBlock().UTXOSet)
 		if err != nil {
 			return err
 		}
@@ -1007,7 +999,7 @@ func (dag *BlockDAG) checkConnectBlock(node *blockNode, block *util.Block) error
 	// bounds.
 	var totalFees int64
 	for _, tx := range transactions {
-		txFee, err := CheckTransactionInputs(tx, node.height, diffUTXOSet,
+		txFee, err := CheckTransactionInputs(tx, node.height, dag.VirtualBlock().UTXOSet,
 			dag.dagParams)
 		if err != nil {
 			return err
@@ -1021,12 +1013,6 @@ func (dag *BlockDAG) checkConnectBlock(node *blockNode, block *util.Block) error
 			return ruleError(ErrBadFees, "total fees for block "+
 				"overflows accumulator")
 		}
-
-		// Add all of the outputs for this transaction which are not
-		// provably unspendable as available utxos.  Also, the passed
-		// spent txos slice is updated to contain an entry for each
-		// spent txout in the order each transaction spends them.
-		_ = diffUTXOSet.AddTx(tx.MsgTx(), node.height)
 	}
 
 	// The total output values of the coinbase transaction must not exceed
@@ -1091,7 +1077,7 @@ func (dag *BlockDAG) checkConnectBlock(node *blockNode, block *util.Block) error
 	// expensive ECDSA signature check scripts.  Doing this last helps
 	// prevent CPU exhaustion attacks.
 	if runScripts {
-		err := checkBlockScripts(block, diffUTXOSet, scriptFlags, dag.sigCache)
+		err := checkBlockScripts(block, dag.VirtualBlock().UTXOSet, scriptFlags, dag.sigCache)
 		if err != nil {
 			return err
 		}

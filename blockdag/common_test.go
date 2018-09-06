@@ -78,8 +78,8 @@ func loadBlocks(filename string) (blocks []*util.Block, err error) {
 	return
 }
 
-// loadUTXOView returns a utxo view loaded from a file.
-func loadUTXOView(filename string) (UTXOSet, error) {
+// loadUTXOSet returns a utxo view loaded from a file.
+func loadUTXOSet(filename string) (UTXOSet, error) {
 	// The utxostore file format is:
 	// <tx hash><output index><serialized utxo len><serialized utxo>
 	//
@@ -101,7 +101,7 @@ func loadUTXOView(filename string) (UTXOSet, error) {
 	}
 	defer fi.Close()
 
-	utxoSet := newFullUTXOSet()
+	utxoSet := NewFullUTXOSet()
 	for {
 		// Hash of the utxo entry.
 		var hash daghash.Hash

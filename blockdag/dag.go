@@ -306,7 +306,7 @@ type SequenceLock struct {
 }
 
 // CalcSequenceLock computes a relative lock-time SequenceLock for the passed
-// transaction using the passed UTXOView to obtain the past median time
+// transaction using the passed UTXOSet to obtain the past median time
 // for blocks in which the referenced inputs of the transactions were included
 // within. The generated SequenceLock lock can be used in conjunction with a
 // block height, and adjusted median block time to determine if all the inputs
