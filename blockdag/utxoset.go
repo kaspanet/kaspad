@@ -327,6 +327,12 @@ func (d *utxoDiff) clone() *utxoDiff {
 	}
 }
 
+// IsSpent returns true if the outpoint got spent in this utxoDiff
+func (d *utxoDiff) IsSpent(outPoint wire.OutPoint) bool {
+	isInDiffToRemove := d.toRemove.contains(outPoint)
+	return isInDiffToRemove
+}
+
 //RemoveTx adds all of the transaction's outputs to d.toRemove
 func (d *utxoDiff) RemoveTx(tx *wire.MsgTx) {
 	for idx := range tx.TxOut {

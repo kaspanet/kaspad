@@ -573,11 +573,12 @@ func (mp *TxPool) addTransaction(tx *util.Tx, height int32, fee int64) *TxDesc {
 //
 // This function MUST be called with the mempool lock held (for reads).
 func (mp *TxPool) checkPoolDoubleSpend(tx *util.Tx) error {
+	diff := mp.diffUTXOSet.(*blockdag.DiffUTXOSet).UTXODiff
 	for _, txIn := range tx.MsgTx().TxIn {
-		if txR, exists := mp.outpoints[txIn.PreviousOutPoint]; exists {
-			str := fmt.Sprintf("output %v already spent by "+
-				"transaction %v in the memory pool",
-				txIn.PreviousOutPoint, txR.Hash())
+		if diff.IsSpent(txIn.PreviousOutPoint) {
+			str := fmt.Sprintf("output %v already spent "+
+				"in the memory pool",
+				txIn.PreviousOutPoint)
 			return txRuleError(wire.RejectDuplicate, str)
 		}
 	}
