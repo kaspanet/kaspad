@@ -10,8 +10,8 @@ import (
 
 	"github.com/daglabs/btcd/btcec"
 	"github.com/daglabs/btcd/dagconfig"
-	"github.com/daglabs/btcd/wire"
 	"github.com/daglabs/btcd/util"
+	"github.com/daglabs/btcd/wire"
 )
 
 // RawTxInSignature returns the serialized ECDSA signature for the input idx of
@@ -173,11 +173,11 @@ func mergeScripts(chainParams *dagconfig.Params, tx *wire.MsgTx, idx int,
 	case ScriptHashTy:
 		// Remove the last push in the script and then recurse.
 		// this could be a lot less inefficient.
-		sigPops, err := parseScript(sigScript)
+		sigPops, err := ParseScript(sigScript)
 		if err != nil || len(sigPops) == 0 {
 			return prevScript, nil
 		}
-		prevPops, err := parseScript(prevScript)
+		prevPops, err := ParseScript(prevScript)
 		if err != nil || len(prevPops) == 0 {
 			return sigScript, nil
 		}
@@ -231,17 +231,17 @@ func mergeScripts(chainParams *dagconfig.Params, tx *wire.MsgTx, idx int,
 func mergeMultiSig(tx *wire.MsgTx, idx int, addresses []util.Address,
 	nRequired int, pkScript, sigScript, prevScript []byte) ([]byte, error) {
 
-	pkPops, err := parseScript(pkScript)
+	pkPops, err := ParseScript(pkScript)
 	if err != nil {
 		return nil, err
 	}
 
-	sigPops, err := parseScript(sigScript)
+	sigPops, err := ParseScript(sigScript)
 	if err != nil || len(sigPops) == 0 {
 		return prevScript, nil
 	}
 
-	prevPops, err := parseScript(prevScript)
+	prevPops, err := ParseScript(prevScript)
 	if err != nil || len(prevPops) == 0 {
 		return sigScript, nil
 	}
