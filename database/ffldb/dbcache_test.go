@@ -141,3 +141,23 @@ func TestExhaustedDbCacheIterator(t *testing.T) {
 		t.Errorf("TestExhaustedDbCacheIterator: Expected .Value() = nil, but got %v", value)
 	}
 }
+
+// TestLDBIteratorImplPlaceholders hits functions that are there to implement leveldb iterator.Iterator interface,
+// but surve no other purpose.
+func TestLDBIteratorImplPlaceholders(t *testing.T) {
+	db := newTestDb("TestIteratorImplPlaceholders", t)
+	defer db.Close()
+
+	snapshot, err := db.cache.Snapshot()
+	if err != nil {
+		t.Fatalf("TestLDBIteratorImplPlaceholders: Error creating cache snapshot: %s", err)
+	}
+	iterator := newLdbCacheIter(snapshot, &ldbutil.Range{})
+
+	if err = iterator.Error(); err != nil {
+		t.Errorf("TestLDBIteratorImplPlaceholders: Expected .Error() = nil, but got %v", err)
+	}
+
+	// Call SetReleaser to achieve coverage of it. Actually does nothing
+	iterator.SetReleaser(nil)
+}
