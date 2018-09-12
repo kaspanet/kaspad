@@ -216,7 +216,7 @@ type BlockTemplate struct {
 // viewA will contain all of its original entries plus all of the entries
 // in viewB.  It will replace any entries in viewB which also exist in viewA
 // if the entry in viewA is spent.
-func mergeUtxoView(viewA *blockdag.UtxoViewpoint, viewB *blockdag.UtxoViewpoint) {
+func mergeUtxoView(viewA *blockdag.UTXOView, viewB *blockdag.UTXOView) {
 	viewAEntries := viewA.Entries()
 	for outpoint, entryB := range viewB.Entries() {
 		if entryA, exists := viewAEntries[outpoint]; !exists ||
@@ -282,7 +282,7 @@ func createCoinbaseTx(params *dagconfig.Params, coinbaseScript []byte, nextBlock
 // spendTransaction updates the passed view by marking the inputs to the passed
 // transaction as spent.  It also adds all outputs in the passed transaction
 // which are not provably unspendable as available unspent transaction outputs.
-func spendTransaction(utxoView *blockdag.UtxoViewpoint, tx *util.Tx, height int32) error {
+func spendTransaction(utxoView *blockdag.UTXOView, tx *util.Tx, height int32) error {
 	for _, txIn := range tx.MsgTx().TxIn {
 		entry := utxoView.LookupEntry(txIn.PreviousOutPoint)
 		if entry != nil {
@@ -311,14 +311,14 @@ func logSkippedDeps(tx *util.Tx, deps map[daghash.Hash]*txPrioItem) {
 // on the end of the provided best chain.  In particular, it is one second after
 // the median timestamp of the last several blocks per the chain consensus
 // rules.
-func MinimumMedianTime(dagState *blockdag.DAGState) time.Time {
-	return dagState.SelectedTip.MedianTime.Add(time.Second)
+func MinimumMedianTime(dagMedianTime time.Time) time.Time {
+	return dagMedianTime.Add(time.Second)
 }
 
 // medianAdjustedTime returns the current time adjusted to ensure it is at least
 // one second after the median timestamp of the last several blocks per the
 // chain consensus rules.
-func medianAdjustedTime(chainState *blockdag.DAGState, timeSource blockdag.MedianTimeSource) time.Time {
+func medianAdjustedTime(dagMedianTime time.Time, timeSource blockdag.MedianTimeSource) time.Time {
 	// The timestamp for the block must not be before the median timestamp
 	// of the last several blocks.  Thus, choose the maximum between the
 	// current time and one second after the past median time.  The current
@@ -326,7 +326,7 @@ func medianAdjustedTime(chainState *blockdag.DAGState, timeSource blockdag.Media
 	// block timestamp does not supported a precision greater than one
 	// second.
 	newTimestamp := timeSource.AdjustedTime()
-	minTimestamp := MinimumMedianTime(chainState)
+	minTimestamp := MinimumMedianTime(dagMedianTime)
 	if newTimestamp.Before(minTimestamp) {
 		newTimestamp = minTimestamp
 	}
@@ -432,8 +432,8 @@ func NewBlkTmplGenerator(policy *Policy, params *dagconfig.Params,
 //   -----------------------------------  --
 func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTemplate, error) {
 	// Extend the most recently known best block.
-	dagState := g.dag.GetDAGState()
-	nextBlockHeight := dagState.SelectedTip.Height + 1
+	virtualBlock := g.dag.VirtualBlock()
+	nextBlockHeight := virtualBlock.SelectedTipHeight() + 1
 
 	// Create a standard coinbase transaction paying to the provided
 	// address.  NOTE: The coinbase value will be updated to include the
@@ -471,7 +471,7 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 	// avoided.
 	blockTxns := make([]*util.Tx, 0, len(sourceTxns))
 	blockTxns = append(blockTxns, coinbaseTx)
-	blockUtxos := blockdag.NewUtxoViewpoint()
+	blockUtxos := blockdag.NewUTXOView()
 
 	// dependers is used to track transactions which depend on another
 	// transaction in the source pool.  This, in conjunction with the
@@ -515,7 +515,7 @@ mempoolLoop:
 		// mempool since a transaction which depends on other
 		// transactions in the mempool must come after those
 		// dependencies in the final generated block.
-		utxos, err := g.dag.FetchUtxoView(tx)
+		utxos, err := g.dag.FetchUTXOView(tx)
 		if err != nil {
 			log.Warnf("Unable to fetch utxo view for tx %s: %v",
 				tx.Hash(), err)
@@ -746,7 +746,7 @@ mempoolLoop:
 	// Calculate the required difficulty for the block.  The timestamp
 	// is potentially adjusted to ensure it comes after the median time of
 	// the last several blocks per the chain consensus rules.
-	ts := medianAdjustedTime(dagState, g.timeSource)
+	ts := medianAdjustedTime(virtualBlock.SelectedTip().CalcPastMedianTime(), g.timeSource)
 	reqDifficulty, err := g.dag.CalcNextRequiredDifficulty(ts)
 	if err != nil {
 		return nil, err
@@ -764,7 +764,7 @@ mempoolLoop:
 	var msgBlock wire.MsgBlock
 	msgBlock.Header = wire.BlockHeader{
 		Version:    nextBlockVersion,
-		PrevBlocks: dagState.TipHashes,
+		PrevBlocks: virtualBlock.TipHashes(),
 		MerkleRoot: *merkles[len(merkles)-1],
 		Timestamp:  ts,
 		Bits:       reqDifficulty,
@@ -808,7 +808,8 @@ func (g *BlkTmplGenerator) UpdateBlockTime(msgBlock *wire.MsgBlock) error {
 	// The new timestamp is potentially adjusted to ensure it comes after
 	// the median time of the last several blocks per the chain consensus
 	// rules.
-	newTime := medianAdjustedTime(g.dag.GetDAGState(), g.timeSource)
+	dagMedianTime := g.dag.VirtualBlock().CalcPastMedianTime()
+	newTime := medianAdjustedTime(dagMedianTime, g.timeSource)
 	msgBlock.Header.Timestamp = newTime
 
 	// Recalculate the difficulty if running on a network that requires it.
@@ -851,14 +852,13 @@ func (g *BlkTmplGenerator) UpdateExtraNonce(msgBlock *wire.MsgBlock, blockHeight
 	return nil
 }
 
-// GetDAGState returns information about the current state
-// as of the current point in time using the DAG instance
-// associated with the block template generator.  The returned state must be
-// treated as immutable since it is shared by all callers.
+// VirtualBlock returns the DAG's virtual block in the current point in time.
+// The returned instance must be treated as immutable since it is shared by all
+// callers.
 //
 // This function is safe for concurrent access.
-func (g *BlkTmplGenerator) GetDAGState() *blockdag.DAGState {
-	return g.dag.GetDAGState()
+func (g *BlkTmplGenerator) VirtualBlock() *blockdag.VirtualBlock {
+	return g.dag.VirtualBlock()
 }
 
 // TxSource returns the associated transaction source.

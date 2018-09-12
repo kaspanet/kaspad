@@ -34,7 +34,7 @@ func (dag *BlockDAG) maybeAcceptBlock(block *util.Block, flags BehaviorFlags) er
 
 	// The block must pass all of the validation rules which depend on the
 	// position of the block within the block DAG.
-	err = dag.checkBlockContext(block, selectedParent, flags)
+	err = dag.checkBlockContext(block, parents, selectedParent, flags)
 	if err != nil {
 		return err
 	}

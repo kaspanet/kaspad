@@ -7,16 +7,14 @@ package blockdag
 import (
 	"bytes"
 	"encoding/binary"
+	"encoding/json"
 	"fmt"
 	"sync"
-	"time"
-
-	"encoding/json"
 
 	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/database"
-	"github.com/daglabs/btcd/wire"
 	"github.com/daglabs/btcd/util"
+	"github.com/daglabs/btcd/wire"
 )
 
 const (
@@ -25,14 +23,9 @@ const (
 	// wire.MaxBlockHeaderPayload is quite long.
 	blockHdrSize = wire.MaxBlockHeaderPayload
 
-	// latestUtxoSetBucketVersion is the current version of the utxo set
+	// latestUTXOSetBucketVersion is the current version of the UTXO set
 	// bucket that is used to track all unspent outputs.
-	latestUtxoSetBucketVersion = 2
-
-	// latestSpendJournalBucketVersion is the current version of the spend
-	// journal bucket that is used to track all spent transactions for use
-	// in reorgs.
-	latestSpendJournalBucketVersion = 1
+	latestUTXOSetBucketVersion = 1
 )
 
 var (
@@ -48,17 +41,9 @@ var (
 	// the block height -> block hash index.
 	heightIndexBucketName = []byte("heightidx")
 
-	// dagStateKeyName is the name of the db key used to store the DAG
-	// state.
-	dagStateKeyName = []byte("dagstate")
-
-	// spendJournalVersionKeyName is the name of the db key used to store
-	// the version of the spend journal currently in the database.
-	spendJournalVersionKeyName = []byte("spendjournalversion")
-
-	// spendJournalBucketName is the name of the db bucket used to house
-	// transactions outputs that are spent in each block.
-	spendJournalBucketName = []byte("spendjournal")
+	// dagTipHashesKeyName is the name of the db key used to store the DAG
+	// tip hashes.
+	dagTipHashesKeyName = []byte("dagtiphashes")
 
 	// utxoSetVersionKeyName is the name of the db key used to store the
 	// version of the utxo set currently in the database.
@@ -66,7 +51,7 @@ var (
 
 	// utxoSetBucketName is the name of the db bucket used to house the
 	// unspent transaction output set.
-	utxoSetBucketName = []byte("utxosetv2")
+	utxoSetBucketName = []byte("utxoset")
 
 	// byteOrder is the preferred byte order used for serializing numeric
 	// fields for storage in the database.
@@ -105,18 +90,6 @@ func isDeserializeErr(err error) bool {
 	return ok
 }
 
-// dbFetchVersion fetches an individual version with the given key from the
-// metadata bucket.  It is primarily used to track versions on entities such as
-// buckets.  It returns zero if the provided key does not exist.
-func dbFetchVersion(dbTx database.Tx, key []byte) uint32 {
-	serialized := dbTx.Metadata().Get(key)
-	if serialized == nil {
-		return 0
-	}
-
-	return byteOrder.Uint32(serialized[:])
-}
-
 // dbPutVersion uses an existing database transaction to update the provided
 // key in the metadata bucket to the given version.  It is primarily used to
 // track versions on entities such as buckets.
@@ -124,24 +97,6 @@ func dbPutVersion(dbTx database.Tx, key []byte, version uint32) error {
 	var serialized [4]byte
 	byteOrder.PutUint32(serialized[:], version)
 	return dbTx.Metadata().Put(key, serialized[:])
-}
-
-// dbFetchOrCreateVersion uses an existing database transaction to attempt to
-// fetch the provided key from the metadata bucket as a version and in the case
-// it doesn't exist, it adds the entry with the provided default version and
-// returns that.  This is useful during upgrades to automatically handle loading
-// and adding version keys as necessary.
-func dbFetchOrCreateVersion(dbTx database.Tx, key []byte, defaultVersion uint32) (uint32, error) {
-	version := dbFetchVersion(dbTx, key)
-	if version == 0 {
-		version = defaultVersion
-		err := dbPutVersion(dbTx, key, version)
-		if err != nil {
-			return 0, err
-		}
-	}
-
-	return version, nil
 }
 
 // -----------------------------------------------------------------------------
@@ -152,7 +107,7 @@ func dbFetchOrCreateVersion(dbTx database.Tx, key []byte, defaultVersion uint32)
 // This is required because reorganizing the chain necessarily entails
 // disconnecting blocks to get back to the point of the fork which implies
 // unspending all of the transaction outputs that each block previously spent.
-// Since the utxo set, by definition, only contains unspent transaction outputs,
+// Since the UTXO set, by definition, only contains unspent transaction outputs,
 // the spent transaction outputs must be resurrected from somewhere.  There is
 // more than one way this could be done, however this is the most straight
 // forward method that does not require having a transaction index and unpruned
@@ -160,7 +115,7 @@ func dbFetchOrCreateVersion(dbTx database.Tx, key []byte, defaultVersion uint32)
 //
 // NOTE: This format is NOT self describing.  The additional details such as
 // the number of entries (transaction inputs) are expected to come from the
-// block itself and the utxo set (for legacy entries).  The rationale in doing
+// block itself and the UTXO set (for legacy entries).  The rationale in doing
 // this is to save space.  This is also the reason the spent outputs are
 // serialized in the reverse order they are spent because later transactions are
 // allowed to spend outputs from earlier ones in the same block.
@@ -410,25 +365,15 @@ func serializeSpendJournalEntry(stxos []spentTxOut) []byte {
 	return serialized
 }
 
-// dbPutSpendJournalEntry uses an existing database transaction to update the
-// spend journal entry for the given block hash using the provided slice of
-// spent txouts.   The spent txouts slice must contain an entry for every txout
-// the transactions in the block spend in the order they are spent.
-func dbPutSpendJournalEntry(dbTx database.Tx, blockHash *daghash.Hash, stxos []spentTxOut) error {
-	spendBucket := dbTx.Metadata().Bucket(spendJournalBucketName)
-	serialized := serializeSpendJournalEntry(stxos)
-	return spendBucket.Put(blockHash[:], serialized)
-}
-
 // -----------------------------------------------------------------------------
-// The unspent transaction output (utxo) set consists of an entry for each
+// The unspent transaction output (UTXO) set consists of an entry for each
 // unspent output using a format that is optimized to reduce space using domain
 // specific compression algorithms.  This format is a slightly modified version
 // of the format used in Bitcoin Core.
 //
 // Each entry is keyed by an outpoint as specified below.  It is important to
 // note that the key encoding uses a VLQ, which employs an MSB encoding so
-// iteration of utxos when doing byte-wise comparisons will produce them in
+// iteration of UTXOs when doing byte-wise comparisons will produce them in
 // order.
 //
 // The serialized key format is:
@@ -511,7 +456,7 @@ var outpointKeyPool = sync.Pool{
 	},
 }
 
-// outpointKey returns a key suitable for use as a database key in the utxo set
+// outpointKey returns a key suitable for use as a database key in the UTXO set
 // while making use of a free list.  A new buffer is allocated if there are not
 // already any available on the free list.  The returned byte slice should be
 // returned to the free list by using the recycleOutpointKey function when the
@@ -519,7 +464,7 @@ var outpointKeyPool = sync.Pool{
 // the caller can calculate such as when used to write to the database.
 func outpointKey(outpoint wire.OutPoint) *[]byte {
 	// A VLQ employs an MSB encoding, so they are useful not only to reduce
-	// the amount of storage space, but also so iteration of utxos when
+	// the amount of storage space, but also so iteration of UTXOs when
 	// doing byte-wise comparisons will produce them in order.
 	key := outpointKeyPool.Get().(*[]byte)
 	idx := uint64(outpoint.Index)
@@ -537,9 +482,9 @@ func recycleOutpointKey(key *[]byte) {
 
 // utxoEntryHeaderCode returns the calculated header code to be used when
 // serializing the provided utxo entry.
-func utxoEntryHeaderCode(entry *UtxoEntry) (uint64, error) {
+func utxoEntryHeaderCode(entry *UTXOEntry) (uint64, error) {
 	if entry.IsSpent() {
-		return 0, AssertError("attempt to serialize spent utxo header")
+		return 0, AssertError("attempt to serialize spent UTXO header")
 	}
 
 	// As described in the serialization format comments, the header code
@@ -553,9 +498,9 @@ func utxoEntryHeaderCode(entry *UtxoEntry) (uint64, error) {
 	return headerCode, nil
 }
 
-// serializeUtxoEntry returns the entry serialized to a format that is suitable
+// serializeUTXOEntry returns the entry serialized to a format that is suitable
 // for long-term storage.  The format is described in detail above.
-func serializeUtxoEntry(entry *UtxoEntry) ([]byte, error) {
+func serializeUTXOEntry(entry *UTXOEntry) ([]byte, error) {
 	// Spent outputs have no serialization.
 	if entry.IsSpent() {
 		return nil, nil
@@ -581,10 +526,24 @@ func serializeUtxoEntry(entry *UtxoEntry) ([]byte, error) {
 	return serialized, nil
 }
 
-// deserializeUtxoEntry decodes a utxo entry from the passed serialized byte
-// slice into a new UtxoEntry using a format that is suitable for long-term
+// deserializeOutPoint decodes an outPoint from the passed serialized byte
+// slice into a new wire.OutPoint using a format that is suitable for long-
+// term storage. this format is described in detail above.
+func deserializeOutPoint(serialized []byte) (*wire.OutPoint, error) {
+	if len(serialized) <= daghash.HashSize {
+		return nil, errDeserialize("unexpected end of data")
+	}
+
+	hash := daghash.Hash{}
+	hash.SetBytes(serialized[:daghash.HashSize])
+	index, _ := deserializeVLQ(serialized[daghash.HashSize:])
+	return wire.NewOutPoint(&hash, uint32(index)), nil
+}
+
+// deserializeUTXOEntry decodes a UTXO entry from the passed serialized byte
+// slice into a new UTXOEntry using a format that is suitable for long-term
 // storage.  The format is described in detail above.
-func deserializeUtxoEntry(serialized []byte) (*UtxoEntry, error) {
+func deserializeUTXOEntry(serialized []byte) (*UTXOEntry, error) {
 	// Deserialize the header code.
 	code, offset := deserializeVLQ(serialized)
 	if offset >= len(serialized) {
@@ -602,10 +561,10 @@ func deserializeUtxoEntry(serialized []byte) (*UtxoEntry, error) {
 	amount, pkScript, _, err := decodeCompressedTxOut(serialized[offset:])
 	if err != nil {
 		return nil, errDeserialize(fmt.Sprintf("unable to decode "+
-			"utxo: %v", err))
+			"UTXO: %v", err))
 	}
 
-	entry := &UtxoEntry{
+	entry := &UTXOEntry{
 		amount:      int64(amount),
 		pkScript:    pkScript,
 		blockHeight: blockHeight,
@@ -618,70 +577,38 @@ func deserializeUtxoEntry(serialized []byte) (*UtxoEntry, error) {
 	return entry, nil
 }
 
-// dbFetchUtxoEntryByHash attempts to find and fetch a utxo for the given hash.
-// It uses a cursor and seek to try and do this as efficiently as possible.
-//
-// When there are no entries for the provided hash, nil will be returned for the
-// both the entry and the error.
-func dbFetchUtxoEntryByHash(dbTx database.Tx, hash *daghash.Hash) (*UtxoEntry, error) {
-	// Attempt to find an entry by seeking for the hash along with a zero
-	// index.  Due to the fact the keys are serialized as <hash><index>,
-	// where the index uses an MSB encoding, if there are any entries for
-	// the hash at all, one will be found.
-	cursor := dbTx.Metadata().Bucket(utxoSetBucketName).Cursor()
-	key := outpointKey(wire.OutPoint{Hash: *hash, Index: 0})
-	ok := cursor.Seek(*key)
-	recycleOutpointKey(key)
-	if !ok {
-		return nil, nil
-	}
-
-	// An entry was found, but it could just be an entry with the next
-	// highest hash after the requested one, so make sure the hashes
-	// actually match.
-	cursorKey := cursor.Key()
-	if len(cursorKey) < daghash.HashSize {
-		return nil, nil
-	}
-	if !bytes.Equal(hash[:], cursorKey[:daghash.HashSize]) {
-		return nil, nil
-	}
-
-	return deserializeUtxoEntry(cursor.Value())
-}
-
-// dbFetchUtxoEntry uses an existing database transaction to fetch the specified
-// transaction output from the utxo set.
+// dbFetchUTXOEntry uses an existing database transaction to fetch the specified
+// transaction output from the UTXO set.
 //
 // When there is no entry for the provided output, nil will be returned for both
 // the entry and the error.
-func dbFetchUtxoEntry(dbTx database.Tx, outpoint wire.OutPoint) (*UtxoEntry, error) {
+func dbFetchUTXOEntry(dbTx database.Tx, outpoint wire.OutPoint) (*UTXOEntry, error) {
 	// Fetch the unspent transaction output information for the passed
 	// transaction output.  Return now when there is no entry.
 	key := outpointKey(outpoint)
 	utxoBucket := dbTx.Metadata().Bucket(utxoSetBucketName)
-	serializedUtxo := utxoBucket.Get(*key)
+	serializedUTXO := utxoBucket.Get(*key)
 	recycleOutpointKey(key)
-	if serializedUtxo == nil {
+	if serializedUTXO == nil {
 		return nil, nil
 	}
 
 	// A non-nil zero-length entry means there is an entry in the database
 	// for a spent transaction output which should never be the case.
-	if len(serializedUtxo) == 0 {
+	if len(serializedUTXO) == 0 {
 		return nil, AssertError(fmt.Sprintf("database contains entry "+
 			"for spent tx output %v", outpoint))
 	}
 
 	// Deserialize the utxo entry and return it.
-	entry, err := deserializeUtxoEntry(serializedUtxo)
+	entry, err := deserializeUTXOEntry(serializedUTXO)
 	if err != nil {
 		// Ensure any deserialization errors are returned as database
 		// corruption errors.
 		if isDeserializeErr(err) {
 			return nil, database.Error{
 				ErrorCode: database.ErrCorruption,
-				Description: fmt.Sprintf("corrupt utxo entry "+
+				Description: fmt.Sprintf("corrupt UTXO entry "+
 					"for %v: %v", outpoint, err),
 			}
 		}
@@ -692,36 +619,29 @@ func dbFetchUtxoEntry(dbTx database.Tx, outpoint wire.OutPoint) (*UtxoEntry, err
 	return entry, nil
 }
 
-// dbPutUtxoView uses an existing database transaction to update the utxo set
-// in the database based on the provided utxo view contents and state.  In
+// dbPutUTXODiff uses an existing database transaction to update the UTXO set
+// in the database based on the provided UTXO view contents and state.  In
 // particular, only the entries that have been marked as modified are written
 // to the database.
-func dbPutUtxoView(dbTx database.Tx, view *UtxoViewpoint) error {
+func dbPutUTXODiff(dbTx database.Tx, diff *utxoDiff) error {
 	utxoBucket := dbTx.Metadata().Bucket(utxoSetBucketName)
-	for outpoint, entry := range view.entries {
-		// No need to update the database if the entry was not modified.
-		if entry == nil || !entry.isModified() {
-			continue
-		}
-
-		// Remove the utxo entry if it is spent.
-		if entry.IsSpent() {
-			key := outpointKey(outpoint)
-			err := utxoBucket.Delete(*key)
-			recycleOutpointKey(key)
-			if err != nil {
-				return err
-			}
-
-			continue
-		}
-
-		// Serialize and store the utxo entry.
-		serialized, err := serializeUtxoEntry(entry)
+	for outPoint := range diff.toRemove {
+		key := outpointKey(outPoint)
+		err := utxoBucket.Delete(*key)
+		recycleOutpointKey(key)
 		if err != nil {
 			return err
 		}
-		key := outpointKey(outpoint)
+	}
+
+	for outPoint, entry := range diff.toAdd {
+		// Serialize and store the UTXO entry.
+		serialized, err := serializeUTXOEntry(entry)
+		if err != nil {
+			return err
+		}
+
+		key := outpointKey(outPoint)
 		err = utxoBucket.Put(*key, serialized)
 		// NOTE: The key is intentionally not recycled here since the
 		// database interface contract prohibits modifications.  It will
@@ -787,48 +707,38 @@ func dbFetchHeightByHash(dbTx database.Tx, hash *daghash.Hash) (int32, error) {
 	return int32(byteOrder.Uint32(serializedHeight)), nil
 }
 
-// dbDAGState represents the data to be stored in the database for the current
-// DAG state.
-type dbDAGState struct {
-	Tips     []daghash.Hash
-	TotalTxs uint64
+// serializeDAGTipHashes returns the serialization of the DAG tip hashes.
+// This is data to be stored in the DAG tip hashes bucket.
+func serializeDAGTipHashes(tipHashes []daghash.Hash) ([]byte, error) {
+	return json.Marshal(tipHashes)
 }
 
-// serializeDAGState returns the serialization of the DAG state.
-// This is data to be stored in the DAG state bucket.
-func serializeDAGState(state dbDAGState) ([]byte, error) {
-	return json.Marshal(state)
-}
-
-// deserializeDAGState deserializes the passed serialized DAG
-// state.  This is data stored in the DAG state bucket and is updated after
-// every block is connected or disconnected form the DAG.
-func deserializeDAGState(serializedData []byte) (*dbDAGState, error) {
-	var dbState dbDAGState
-	err := json.Unmarshal(serializedData, &dbState)
+// deserializeDAGTipHashes deserializes the passed serialized DAG tip hashes.
+// This is data stored in the DAG tip hashes bucket and is updated after
+// every block is connected to the DAG.
+func deserializeDAGTipHashes(serializedData []byte) ([]daghash.Hash, error) {
+	var tipHashes []daghash.Hash
+	err := json.Unmarshal(serializedData, &tipHashes)
 	if err != nil {
 		return nil, database.Error{
 			ErrorCode:   database.ErrCorruption,
-			Description: "corrupt DAG state",
+			Description: "corrupt DAG tip hashes",
 		}
 	}
 
-	return &dbState, nil
+	return tipHashes, nil
 }
 
-// dbPutDAGState uses an existing database transaction to update the DAG
-// state with the given parameters.
-func dbPutDAGState(dbTx database.Tx, state *DAGState) error {
-	serializedData, err := serializeDAGState(dbDAGState{
-		Tips:     state.TipHashes,
-		TotalTxs: state.TotalTxs,
-	})
+// dbPutDAGTipHashes uses an existing database transaction to store the latest
+// tip hashes of the DAG.
+func dbPutDAGTipHashes(dbTx database.Tx, tipHashes []daghash.Hash) error {
+	serializedData, err := serializeDAGTipHashes(tipHashes)
 
 	if err != nil {
 		return err
 	}
 
-	return dbTx.Metadata().Put(dagStateKeyName, serializedData)
+	return dbTx.Metadata().Put(dagTipHashesKeyName, serializedData)
 }
 
 // createDAGState initializes both the database and the DAG state to the
@@ -841,18 +751,22 @@ func (dag *BlockDAG) createDAGState() error {
 	header := &genesisBlock.MsgBlock().Header
 	node := newBlockNode(header, newSet(), dag.dagParams.K)
 	node.status = statusDataStored | statusValid
+
+	genesisCoinbase := genesisBlock.Transactions()[0].MsgTx()
+	genesisCoinbaseTxIn := genesisCoinbase.TxIn[0]
+	genesisCoinbaseTxOut := genesisCoinbase.TxOut[0]
+	genesisCoinbaseOutpoint := *wire.NewOutPoint(&genesisCoinbaseTxIn.PreviousOutPoint.Hash, genesisCoinbaseTxIn.PreviousOutPoint.Index)
+	genesisCoinbaseUTXOEntry := newUTXOEntry(genesisCoinbaseTxOut, true, 0)
+	node.diff = &utxoDiff{
+		toAdd:    utxoCollection{genesisCoinbaseOutpoint: genesisCoinbaseUTXOEntry},
+		toRemove: utxoCollection{},
+	}
+
+	dag.virtual.utxoSet.addTx(genesisCoinbase, 0)
 	dag.virtual.SetTips(setFromSlice(node))
 
 	// Add the new node to the index which is used for faster lookups.
 	dag.index.addNode(node)
-
-	// Initialize the DAG state.  Since it is the genesis block, use
-	// its timestamp for the median time.
-	numTxs := uint64(len(genesisBlock.MsgBlock().Transactions))
-	blockSize := uint64(genesisBlock.MsgBlock().SerializeSize())
-	dagState := newDAGState(dag.virtual.Tips().hashes(), node, blockSize, numTxs,
-		numTxs, time.Unix(node.timestamp, 0))
-	dag.setDAGState(dagState)
 
 	// Create the initial the database chain state including creating the
 	// necessary index buckets and inserting the genesis block.
@@ -879,18 +793,6 @@ func (dag *BlockDAG) createDAGState() error {
 			return err
 		}
 
-		// Create the bucket that houses the spend journal data and
-		// store its version.
-		_, err = meta.CreateBucket(spendJournalBucketName)
-		if err != nil {
-			return err
-		}
-		err = dbPutVersion(dbTx, utxoSetVersionKeyName,
-			latestUtxoSetBucketVersion)
-		if err != nil {
-			return err
-		}
-
 		// Create the bucket that houses the utxo set and store its
 		// version.  Note that the genesis block coinbase transaction is
 		// intentionally not inserted here since it is not spendable by
@@ -899,8 +801,8 @@ func (dag *BlockDAG) createDAGState() error {
 		if err != nil {
 			return err
 		}
-		err = dbPutVersion(dbTx, spendJournalVersionKeyName,
-			latestSpendJournalBucketVersion)
+		err = dbPutVersion(dbTx, utxoSetVersionKeyName,
+			latestUTXOSetBucketVersion)
 		if err != nil {
 			return err
 		}
@@ -918,8 +820,8 @@ func (dag *BlockDAG) createDAGState() error {
 			return err
 		}
 
-		// Store the current DAG state into the database.
-		err = dbPutDAGState(dbTx, dag.dagState)
+		// Store the current DAG tip hashes into the database.
+		err = dbPutDAGTipHashes(dbTx, dag.virtual.TipHashes())
 		if err != nil {
 			return err
 		}
@@ -938,7 +840,7 @@ func (dag *BlockDAG) initDAGState() error {
 	// everything from scratch or upgrade certain buckets.
 	var initialized bool
 	err := dag.db.View(func(dbTx database.Tx) error {
-		initialized = dbTx.Metadata().Get(dagStateKeyName) != nil
+		initialized = dbTx.Metadata().Get(dagTipHashesKeyName) != nil
 		return nil
 	})
 	if err != nil {
@@ -953,13 +855,13 @@ func (dag *BlockDAG) initDAGState() error {
 
 	// Attempt to load the DAG state from the database.
 	return dag.db.View(func(dbTx database.Tx) error {
-		// Fetch the stored DAG state from the database metadata.
+		// Fetch the stored DAG tipHashes from the database metadata.
 		// When it doesn't exist, it means the database hasn't been
 		// initialized for use with the DAG yet, so break out now to allow
 		// that to happen under a writable database transaction.
-		serializedData := dbTx.Metadata().Get(dagStateKeyName)
-		log.Tracef("Serialized DAG state: %x", serializedData)
-		state, err := deserializeDAGState(serializedData)
+		serializedData := dbTx.Metadata().Get(dagTipHashesKeyName)
+		log.Tracef("Serialized DAG tip hashes: %x", serializedData)
+		tipHashes, err := deserializeDAGTipHashes(serializedData)
 		if err != nil {
 			return err
 		}
@@ -1025,35 +927,71 @@ func (dag *BlockDAG) initDAGState() error {
 			i++
 		}
 
-		// Set the DAG view to the stored state.
+		// Load all of the known UTXO entries and construct the full
+		// UTXO set accordingly.  Since the number of entries is already
+		// known, perform a single alloc for them versus a whole bunch
+		// of little ones to reduce pressure on the GC.
+		log.Infof("Loading UTXO set...")
+
+		utxoEntryBucket := dbTx.Metadata().Bucket(utxoSetBucketName)
+
+		// Determine how many UTXO entries will be loaded into the index so we can
+		// allocate the right amount.
+		var utxoEntryCount int32
+		cursor = utxoEntryBucket.Cursor()
+		for ok := cursor.First(); ok; ok = cursor.Next() {
+			utxoEntryCount++
+		}
+
+		fullUTXOCollection := make(utxoCollection, utxoEntryCount)
+		for ok := cursor.First(); ok; ok = cursor.Next() {
+			// Deserialize the outPoint
+			outPoint, err := deserializeOutPoint(cursor.Key())
+			if err != nil {
+				// Ensure any deserialization errors are returned as database
+				// corruption errors.
+				if isDeserializeErr(err) {
+					return database.Error{
+						ErrorCode:   database.ErrCorruption,
+						Description: fmt.Sprintf("corrupt outPoint: %v", err),
+					}
+				}
+
+				return err
+			}
+
+			// Deserialize the utxo entry
+			entry, err := deserializeUTXOEntry(cursor.Value())
+			if err != nil {
+				// Ensure any deserialization errors are returned as database
+				// corruption errors.
+				if isDeserializeErr(err) {
+					return database.Error{
+						ErrorCode:   database.ErrCorruption,
+						Description: fmt.Sprintf("corrupt utxo entry: %v", err),
+					}
+				}
+
+				return err
+			}
+
+			fullUTXOCollection[*outPoint] = entry
+		}
+
+		// Apply the loaded utxoCollection to the virtual block.
+		dag.virtual.utxoSet.utxoCollection = fullUTXOCollection
+
+		// Apply the stored tips to the virtual block.
 		tips := newSet()
-		for _, tipHash := range state.Tips {
+		for _, tipHash := range tipHashes {
 			tip := dag.index.LookupNode(&tipHash)
 			if tip == nil {
 				return AssertError(fmt.Sprintf("initDAGState: cannot find "+
-					"DAG tip %s in block index", state.Tips))
+					"DAG tip %s in block index", tipHashes))
 			}
 			tips.add(tip)
 		}
 		dag.virtual.SetTips(tips)
-
-		// Load the raw block bytes for the selected tip.
-		selectedTip := dag.virtual.selectedParent
-		blockBytes, err := dbTx.FetchBlock(&selectedTip.hash)
-		if err != nil {
-			return err
-		}
-		var block wire.MsgBlock
-		err = block.Deserialize(bytes.NewReader(blockBytes))
-		if err != nil {
-			return err
-		}
-
-		// Initialize the DAG state.
-		blockSize := uint64(len(blockBytes))
-		numTxns := uint64(len(block.Transactions))
-		dagState := newDAGState(dag.virtual.Tips().hashes(), selectedTip, blockSize, numTxns, state.TotalTxs, selectedTip.CalcPastMedianTime())
-		dag.setDAGState(dagState)
 
 		return nil
 	})
@@ -1076,23 +1014,6 @@ func deserializeBlockRow(blockRow []byte) (*wire.BlockHeader, blockStatus, error
 	}
 
 	return &header, blockStatus(statusByte), nil
-}
-
-// dbFetchHeaderByHash uses an existing database transaction to retrieve the
-// block header for the provided hash.
-func dbFetchHeaderByHash(dbTx database.Tx, hash *daghash.Hash) (*wire.BlockHeader, error) {
-	headerBytes, err := dbTx.FetchBlockHeader(hash)
-	if err != nil {
-		return nil, err
-	}
-
-	var header wire.BlockHeader
-	err = header.Deserialize(bytes.NewReader(headerBytes))
-	if err != nil {
-		return nil, err
-	}
-
-	return &header, nil
 }
 
 // dbFetchBlockByNode uses an existing database transaction to retrieve the

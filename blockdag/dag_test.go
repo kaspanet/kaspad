@@ -5,16 +5,21 @@
 package blockdag
 
 import (
+	"errors"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
+
+	"bou.ke/monkey"
+	"github.com/daglabs/btcd/database"
 
 	"math/rand"
 
 	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/dagconfig/daghash"
-	"github.com/daglabs/btcd/wire"
 	"github.com/daglabs/btcd/util"
+	"github.com/daglabs/btcd/wire"
 )
 
 // TestHaveBlock tests the HaveBlock API to ensure proper functionality.
@@ -38,7 +43,7 @@ func TestHaveBlock(t *testing.T) {
 	}
 
 	// Create a new database and chain instance to run tests against.
-	chain, teardownFunc, err := chainSetup("haveblock",
+	chain, teardownFunc, err := dagSetup("haveblock",
 		&dagconfig.MainNetParams)
 	if err != nil {
 		t.Errorf("Failed to setup chain instance: %v", err)
@@ -63,8 +68,33 @@ func TestHaveBlock(t *testing.T) {
 		}
 	}
 
+	testFiles = []string{
+		"blk_3C.dat",
+	}
+
+	for _, file := range testFiles {
+		blockTmp, err := loadBlocks(file)
+		if err != nil {
+			t.Errorf("Error loading file: %v\n", err)
+			return
+		}
+		blocks = append(blocks, blockTmp...)
+	}
+	isOrphan, err := chain.ProcessBlock(blocks[6], BFNone)
+
+	// Block 3c should fail to connect since its parents are related. (It points to 1 and 2, and 1 is the parent of 2)
+	if err == nil {
+		t.Errorf("ProcessBlock for block 3c has no error when expected to have an error\n")
+		return
+	}
+	if isOrphan {
+		t.Errorf("ProcessBlock incorrectly returned block 3c " +
+			"is an orphan\n")
+		return
+	}
+
 	// Insert an orphan block.
-	isOrphan, err := chain.ProcessBlock(util.NewBlock(&Block100000),
+	isOrphan, err = chain.ProcessBlock(util.NewBlock(&Block100000),
 		BFNone)
 	if err != nil {
 		t.Errorf("Unable to process block: %v", err)
@@ -84,7 +114,7 @@ func TestHaveBlock(t *testing.T) {
 		{hash: dagconfig.MainNetParams.GenesisHash.String(), want: true},
 
 		// Block 3b should be present (as a second child of Block 2).
-		{hash: "000000bce70562ed076f269c5c4e39c590abb29428c573c02ab970e17931f8a4", want: true},
+		{hash: "00000093c8f2ab3444502da0754fc8149d738701aef9b2e0f32f32c078039295", want: true},
 
 		// Block 100000 should be present (as an orphan).
 		{hash: "000000a805b083e0ef1f516b1153828724c235d6e6f0fabb47b869f6d054ac3f", want: true},
@@ -143,9 +173,8 @@ func TestCalcSequenceLock(t *testing.T) {
 			Value:    10,
 		}},
 	})
-	utxoView := NewUtxoViewpoint()
+	utxoView := NewUTXOView()
 	utxoView.AddTxOuts(targetTx, int32(numBlocksToGenerate)-4)
-	utxoView.SetTips(setFromSlice(node))
 
 	// Create a utxo that spends the fake utxo created above for use in the
 	// transactions created in the tests.  It has an age of 4 blocks.  Note
@@ -189,7 +218,7 @@ func TestCalcSequenceLock(t *testing.T) {
 
 	tests := []struct {
 		tx      *wire.MsgTx
-		view    *UtxoViewpoint
+		view    *UTXOView
 		mempool bool
 		want    *SequenceLock
 	}{
@@ -620,4 +649,82 @@ func TestIntervalBlockHashes(t *testing.T) {
 				test.name, hashes, test.hashes)
 		}
 	}
+}
+
+// TestPastUTXOErrors tests all error-cases in restoreUTXO.
+// The non-error-cases are tested in the more general tests.
+func TestPastUTXOErrors(t *testing.T) {
+	targetErrorMessage := "dbFetchBlockByNode error"
+	testErrorThroughPatching(
+		t,
+		targetErrorMessage,
+		dbFetchBlockByNode,
+		func(dbTx database.Tx, node *blockNode) (*util.Block, error) {
+			return nil, errors.New(targetErrorMessage)
+		},
+	)
+}
+
+// TestRestoreUTXOErrors tests all error-cases in restoreUTXO.
+// The non-error-cases are tested in the more general tests.
+func TestRestoreUTXOErrors(t *testing.T) {
+	targetErrorMessage := "withDiff error"
+	testErrorThroughPatching(
+		t,
+		targetErrorMessage,
+		(*fullUTXOSet).withDiff,
+		func(fus *fullUTXOSet, other *utxoDiff) (utxoSet, error) {
+			return nil, errors.New(targetErrorMessage)
+		},
+	)
+}
+
+func testErrorThroughPatching(t *testing.T, expectedErrorMessage string, targetFunction interface{}, replacementFunction interface{}) {
+	// Load up blocks such that there is a fork in the DAG.
+	// (genesis block) -> 1 -> 2 -> 3 -> 4
+	//                          \-> 3b
+	testFiles := []string{
+		"blk_0_to_4.dat",
+		"blk_3B.dat",
+	}
+
+	var blocks []*util.Block
+	for _, file := range testFiles {
+		blockTmp, err := loadBlocks(file)
+		if err != nil {
+			t.Fatalf("Error loading file: %v\n", err)
+		}
+		blocks = append(blocks, blockTmp...)
+	}
+
+	// Create a new database and dag instance to run tests against.
+	dag, teardownFunc, err := dagSetup("testErrorThroughPatching", &dagconfig.MainNetParams)
+	if err != nil {
+		t.Fatalf("Failed to setup dag instance: %v", err)
+	}
+	defer teardownFunc()
+
+	// Since we're not dealing with the real block chain, set the coinbase
+	// maturity to 1.
+	dag.TstSetCoinbaseMaturity(1)
+
+	monkey.Patch(targetFunction, replacementFunction)
+
+	err = nil
+	for i := 1; i < len(blocks); i++ {
+		_, err = dag.ProcessBlock(blocks[i], BFNone)
+		if err != nil {
+			break
+		}
+	}
+	if err == nil {
+		t.Errorf("ProcessBlock unexpectedly succeeded. "+
+			"Expected: %s", expectedErrorMessage)
+	}
+	if !strings.Contains(err.Error(), expectedErrorMessage) {
+		t.Errorf("ProcessBlock returned wrong error. "+
+			"Want: %s, got: %s", expectedErrorMessage, err)
+	}
+
+	monkey.Unpatch(targetFunction)
 }

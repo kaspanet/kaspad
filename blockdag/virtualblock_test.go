@@ -10,7 +10,7 @@ import (
 	"github.com/daglabs/btcd/dagconfig/daghash"
 )
 
-// TestVirtualBlock ensures that virtualBlock works as expected.
+// TestVirtualBlock ensures that VirtualBlock works as expected.
 func TestVirtualBlock(t *testing.T) {
 	// For the purposes of this test, we'll create blockNodes whose hashes are a
 	// series of numbers from 0 to n.
@@ -38,7 +38,7 @@ func TestVirtualBlock(t *testing.T) {
 	node5 := buildNode(setFromSlice(node3, node4))
 	node6 := buildNode(setFromSlice(node3, node4))
 
-	// Given an empty virtualBlock, each of the following test cases will:
+	// Given an empty VirtualBlock, each of the following test cases will:
 	// Set its tips to tipsToSet
 	// Add to it all the tips in tipsToAdd, one after the other
 	// Call .Tips() on it and compare the result to expectedTips
@@ -81,7 +81,7 @@ func TestVirtualBlock(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		// Create an empty virtualBlock
+		// Create an empty VirtualBlock
 		virtual := newVirtualBlock(nil, phantomK)
 
 		// Set the tips. This will be the initial state
@@ -93,7 +93,7 @@ func TestVirtualBlock(t *testing.T) {
 		}
 
 		// Ensure that the virtual block's tips are now equal to expectedTips
-		resultTips := virtual.Tips()
+		resultTips := virtual.tips()
 		if !reflect.DeepEqual(resultTips, test.expectedTips) {
 			t.Errorf("unexpected tips in test \"%s\". "+
 				"Expected: %v, got: %v.", test.name, test.expectedTips, resultTips)

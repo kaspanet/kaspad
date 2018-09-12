@@ -410,14 +410,14 @@ func TestUtxoSerialization(t *testing.T) {
 
 	tests := []struct {
 		name       string
-		entry      *UtxoEntry
+		entry      *UTXOEntry
 		serialized []byte
 	}{
 		// From tx in main blockchain:
 		// b7c3332bc138e2c9429818f5fed500bcc1746544218772389054dc8047d7cd3f:0
 		{
 			name: "height 1, coinbase",
-			entry: &UtxoEntry{
+			entry: &UTXOEntry{
 				amount:      5000000000,
 				pkScript:    hexToBytes("410496b538e853519c726a2c91e61ec11600ae1390813a627c66fb8be7947be63c52da7589379515d4e0a604f8141781e62294721166bf621e73a82cbf2342c858eeac"),
 				blockHeight: 1,
@@ -429,7 +429,7 @@ func TestUtxoSerialization(t *testing.T) {
 		// b7c3332bc138e2c9429818f5fed500bcc1746544218772389054dc8047d7cd3f:0
 		{
 			name: "height 1, coinbase, spent",
-			entry: &UtxoEntry{
+			entry: &UTXOEntry{
 				amount:      5000000000,
 				pkScript:    hexToBytes("410496b538e853519c726a2c91e61ec11600ae1390813a627c66fb8be7947be63c52da7589379515d4e0a604f8141781e62294721166bf621e73a82cbf2342c858eeac"),
 				blockHeight: 1,
@@ -441,7 +441,7 @@ func TestUtxoSerialization(t *testing.T) {
 		// 8131ffb0a2c945ecaf9b9063e59558784f9c3a74741ce6ae2a18d0571dac15bb:1
 		{
 			name: "height 100001, not coinbase",
-			entry: &UtxoEntry{
+			entry: &UTXOEntry{
 				amount:      1000000,
 				pkScript:    hexToBytes("76a914ee8bd501094a7d5ca318da2506de35e1cb025ddc88ac"),
 				blockHeight: 100001,
@@ -453,7 +453,7 @@ func TestUtxoSerialization(t *testing.T) {
 		// 8131ffb0a2c945ecaf9b9063e59558784f9c3a74741ce6ae2a18d0571dac15bb:1
 		{
 			name: "height 100001, not coinbase, spent",
-			entry: &UtxoEntry{
+			entry: &UTXOEntry{
 				amount:      1000000,
 				pkScript:    hexToBytes("76a914ee8bd501094a7d5ca318da2506de35e1cb025ddc88ac"),
 				blockHeight: 100001,
@@ -465,14 +465,14 @@ func TestUtxoSerialization(t *testing.T) {
 
 	for i, test := range tests {
 		// Ensure the utxo entry serializes to the expected value.
-		gotBytes, err := serializeUtxoEntry(test.entry)
+		gotBytes, err := serializeUTXOEntry(test.entry)
 		if err != nil {
-			t.Errorf("serializeUtxoEntry #%d (%s) unexpected "+
+			t.Errorf("serializeUTXOEntry #%d (%s) unexpected "+
 				"error: %v", i, test.name, err)
 			continue
 		}
 		if !bytes.Equal(gotBytes, test.serialized) {
-			t.Errorf("serializeUtxoEntry #%d (%s): mismatched "+
+			t.Errorf("serializeUTXOEntry #%d (%s): mismatched "+
 				"bytes - got %x, want %x", i, test.name,
 				gotBytes, test.serialized)
 			continue
@@ -485,9 +485,9 @@ func TestUtxoSerialization(t *testing.T) {
 		}
 
 		// Deserialize to a utxo entry.
-		utxoEntry, err := deserializeUtxoEntry(test.serialized)
+		utxoEntry, err := deserializeUTXOEntry(test.serialized)
 		if err != nil {
-			t.Errorf("deserializeUtxoEntry #%d (%s) unexpected "+
+			t.Errorf("deserializeUTXOEntry #%d (%s) unexpected "+
 				"error: %v", i, test.name, err)
 			continue
 		}
@@ -495,7 +495,7 @@ func TestUtxoSerialization(t *testing.T) {
 		// The deserialized entry must not be marked spent since unspent
 		// entries are not serialized.
 		if utxoEntry.IsSpent() {
-			t.Errorf("deserializeUtxoEntry #%d (%s) output should "+
+			t.Errorf("deserializeUTXOEntry #%d (%s) output should "+
 				"not be marked spent", i, test.name)
 			continue
 		}
@@ -503,26 +503,26 @@ func TestUtxoSerialization(t *testing.T) {
 		// Ensure the deserialized entry has the same properties as the
 		// ones in the test entry.
 		if utxoEntry.Amount() != test.entry.Amount() {
-			t.Errorf("deserializeUtxoEntry #%d (%s) mismatched "+
+			t.Errorf("deserializeUTXOEntry #%d (%s) mismatched "+
 				"amounts: got %d, want %d", i, test.name,
 				utxoEntry.Amount(), test.entry.Amount())
 			continue
 		}
 
 		if !bytes.Equal(utxoEntry.PkScript(), test.entry.PkScript()) {
-			t.Errorf("deserializeUtxoEntry #%d (%s) mismatched "+
+			t.Errorf("deserializeUTXOEntry #%d (%s) mismatched "+
 				"scripts: got %x, want %x", i, test.name,
 				utxoEntry.PkScript(), test.entry.PkScript())
 			continue
 		}
 		if utxoEntry.BlockHeight() != test.entry.BlockHeight() {
-			t.Errorf("deserializeUtxoEntry #%d (%s) mismatched "+
+			t.Errorf("deserializeUTXOEntry #%d (%s) mismatched "+
 				"block height: got %d, want %d", i, test.name,
 				utxoEntry.BlockHeight(), test.entry.BlockHeight())
 			continue
 		}
 		if utxoEntry.IsCoinBase() != test.entry.IsCoinBase() {
-			t.Errorf("deserializeUtxoEntry #%d (%s) mismatched "+
+			t.Errorf("deserializeUTXOEntry #%d (%s) mismatched "+
 				"coinbase flag: got %v, want %v", i, test.name,
 				utxoEntry.IsCoinBase(), test.entry.IsCoinBase())
 			continue
@@ -537,13 +537,13 @@ func TestUtxoEntryHeaderCodeErrors(t *testing.T) {
 
 	tests := []struct {
 		name    string
-		entry   *UtxoEntry
+		entry   *UTXOEntry
 		code    uint64
 		errType error
 	}{
 		{
 			name:    "Force assertion due to spent output",
-			entry:   &UtxoEntry{packedFlags: tfSpent},
+			entry:   &UTXOEntry{packedFlags: tfSpent},
 			errType: AssertError(""),
 		},
 	}
@@ -590,85 +590,79 @@ func TestUtxoEntryDeserializeErrors(t *testing.T) {
 	for _, test := range tests {
 		// Ensure the expected error type is returned and the returned
 		// entry is nil.
-		entry, err := deserializeUtxoEntry(test.serialized)
+		entry, err := deserializeUTXOEntry(test.serialized)
 		if reflect.TypeOf(err) != reflect.TypeOf(test.errType) {
-			t.Errorf("deserializeUtxoEntry (%s): expected error "+
+			t.Errorf("deserializeUTXOEntry (%s): expected error "+
 				"type does not match - got %T, want %T",
 				test.name, err, test.errType)
 			continue
 		}
 		if entry != nil {
-			t.Errorf("deserializeUtxoEntry (%s): returned entry "+
+			t.Errorf("deserializeUTXOEntry (%s): returned entry "+
 				"is not nil", test.name)
 			continue
 		}
 	}
 }
 
-// TestDAGStateSerialization ensures serializing and deserializing the
-// DAG state works as expected.
-func TestDAGStateSerialization(t *testing.T) {
+// TestDAGTipHashesSerialization ensures serializing and deserializing the
+// DAG tip hashes works as expected.
+func TestDAGTipHashesSerialization(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
 		name       string
-		state      dbDAGState
+		tipHashes  []daghash.Hash
 		serialized []byte
 	}{
 		{
-			name: "genesis",
-			state: dbDAGState{
-				Tips:     []daghash.Hash{*newHashFromStr("000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f")},
-				TotalTxs: 1,
-			},
-			serialized: []byte("{\"Tips\":[[111,226,140,10,182,241,179,114,193,166,162,70,174,99,247,79,147,30,131,101,225,90,8,156,104,214,25,0,0,0,0,0]],\"TotalTxs\":1}"),
+			name:       "genesis",
+			tipHashes:  []daghash.Hash{*newHashFromStr("000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f")},
+			serialized: []byte("[[111,226,140,10,182,241,179,114,193,166,162,70,174,99,247,79,147,30,131,101,225,90,8,156,104,214,25,0,0,0,0,0]]"),
 		},
 		{
-			name: "block 1",
-			state: dbDAGState{
-				Tips:     []daghash.Hash{*newHashFromStr("00000000839a8e6886ab5951d76f411475428afc90947ee320161bbf18eb6048")},
-				TotalTxs: 2,
-			},
-			serialized: []byte("{\"Tips\":[[72,96,235,24,191,27,22,32,227,126,148,144,252,138,66,117,20,65,111,215,81,89,171,134,104,142,154,131,0,0,0,0]],\"TotalTxs\":2}"),
+			name:       "block 1",
+			tipHashes:  []daghash.Hash{*newHashFromStr("00000000839a8e6886ab5951d76f411475428afc90947ee320161bbf18eb6048")},
+			serialized: []byte("[[72,96,235,24,191,27,22,32,227,126,148,144,252,138,66,117,20,65,111,215,81,89,171,134,104,142,154,131,0,0,0,0]]"),
 		},
 	}
 
 	for i, test := range tests {
-		gotBytes, err := serializeDAGState(test.state)
+		gotBytes, err := serializeDAGTipHashes(test.tipHashes)
 		if err != nil {
-			t.Errorf("serializeDAGState #%d (%s) "+
+			t.Errorf("serializeDAGTipHashes #%d (%s) "+
 				"unexpected error: %v", i, test.name, err)
 			continue
 		}
 
-		// Ensure the state serializes to the expected value.
+		// Ensure the tipHashes serializes to the expected value.
 		if !bytes.Equal(gotBytes, test.serialized) {
-			t.Errorf("serializeDAGState #%d (%s): mismatched "+
+			t.Errorf("serializeDAGTipHashes #%d (%s): mismatched "+
 				"bytes - got %s, want %s", i, test.name,
 				string(gotBytes), string(test.serialized))
 			continue
 		}
 
 		// Ensure the serialized bytes are decoded back to the expected
-		// state.
-		state, err := deserializeDAGState(test.serialized)
+		// tipHashes.
+		tipHashes, err := deserializeDAGTipHashes(test.serialized)
 		if err != nil {
-			t.Errorf("deserializeDAGState #%d (%s) "+
+			t.Errorf("deserializeDAGTipHashes #%d (%s) "+
 				"unexpected error: %v", i, test.name, err)
 			continue
 		}
-		if !reflect.DeepEqual(*state, test.state) {
-			t.Errorf("deserializeDAGState #%d (%s) "+
-				"mismatched state - got %v, want %v", i,
-				test.name, *state, test.state)
+		if !reflect.DeepEqual(tipHashes, test.tipHashes) {
+			t.Errorf("deserializeDAGTipHashes #%d (%s) "+
+				"mismatched tipHashes - got %v, want %v", i,
+				test.name, tipHashes, test.tipHashes)
 			continue
 		}
 	}
 }
 
-// TestDAGStateDeserializeErrors performs negative tests against
-// deserializing the DAG state to ensure error paths work as expected.
-func TestDAGStateDeserializeErrors(t *testing.T) {
+// TestDAGTipHashesDeserializeErrors performs negative tests against
+// deserializing the DAG tip hashes to ensure error paths work as expected.
+func TestDAGTipHashesDeserializeErrors(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
@@ -683,16 +677,16 @@ func TestDAGStateDeserializeErrors(t *testing.T) {
 		},
 		{
 			name:       "corrupted data",
-			serialized: []byte("{\"Tips\":[111,226,140,10,182,241,179,114,193,166,162,70,174,99,247,7"),
+			serialized: []byte("[[111,226,140,10,182,241,179,114,193,166,162,70,174,99,247,7"),
 			errType:    database.Error{ErrorCode: database.ErrCorruption},
 		},
 	}
 
 	for _, test := range tests {
 		// Ensure the expected error type and code is returned.
-		_, err := deserializeDAGState(test.serialized)
+		_, err := deserializeDAGTipHashes(test.serialized)
 		if reflect.TypeOf(err) != reflect.TypeOf(test.errType) {
-			t.Errorf("deserializeDAGState (%s): expected "+
+			t.Errorf("deserializeDAGTipHashes (%s): expected "+
 				"error type does not match - got %T, want %T",
 				test.name, err, test.errType)
 			continue
@@ -700,8 +694,8 @@ func TestDAGStateDeserializeErrors(t *testing.T) {
 		if derr, ok := err.(database.Error); ok {
 			tderr := test.errType.(database.Error)
 			if derr.ErrorCode != tderr.ErrorCode {
-				t.Errorf("deserializeDAGState (%s): "+
-					"wrong  error code got: %v, want: %v",
+				t.Errorf("deserializeDAGTipHashes (%s): "+
+					"wrong error code got: %v, want: %v",
 					test.name, derr.ErrorCode,
 					tderr.ErrorCode)
 				continue

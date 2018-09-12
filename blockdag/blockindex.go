@@ -90,7 +90,7 @@ type blockNode struct {
 	// diff is the UTXO representation of the block
 	// A block's UTXO is reconstituted by applying diffWith on every block in the chain of diffChildren
 	// from the virtual block down to the block. See diffChild
-	diff utxoDiff
+	diff *utxoDiff
 
 	// diffChild is the child that diff will be built from. See diff
 	diffChild *blockNode
@@ -155,7 +155,6 @@ func initBlockNode(node *blockNode, blockHeader *wire.BlockHeader, parents block
 func addNodeAsChildToParents(node *blockNode) {
 	for _, parent := range node.parents {
 		parent.children.add(node)
-		parent.diffChild = node
 	}
 }
 

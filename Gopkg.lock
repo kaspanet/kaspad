@@ -2,6 +2,12 @@
 
 
 [[projects]]
+  branch = "master"
+  name = "bou.ke/monkey"
+  packages = ["."]
+  revision = "21d0bd9ad94e052d4a8117b0910ba026bec94c99"
+
+[[projects]]
   name = "github.com/aead/siphash"
   packages = ["."]
   revision = "83563a290f60225eb120d724600b9690c3fb536f"
@@ -95,6 +101,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "9910d3cbbf65bc6204c141bb24b416f79962d69115cba9a0e97a28246fb2a0ea"
+  inputs-digest = "5976f1edbea819ab26c66eb5e5604c255a72f174b7a47bb218f3b8a6733d0c3a"
   solver-name = "gps-cdcl"
   solver-version = 1

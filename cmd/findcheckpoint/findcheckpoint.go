@@ -162,11 +162,12 @@ func main() {
 
 	// Get the latest block hash and height from the database and report
 	// status.
-	dagState := dag.GetDAGState()
-	fmt.Printf("Block database loaded with block height %d\n", dagState.SelectedTip.Height)
+	virtualBlock := dag.VirtualBlock()
+	fmt.Printf("Block database loaded with block height %d\n", virtualBlock.SelectedTipHeight())
 
 	// Find checkpoint candidates.
-	candidates, err := findCandidates(dag, &dagState.SelectedTip.Hash)
+	selectedTipHash := virtualBlock.SelectedTipHash()
+	candidates, err := findCandidates(dag, &selectedTipHash)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Unable to identify candidates:", err)
 		return

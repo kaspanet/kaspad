@@ -46,12 +46,12 @@ func hexToBytes(s string) []byte {
 // provided source transactions as if there were available at the respective
 // block height specified in the heights slice.  The length of the source txns
 // and source tx heights must match or it will panic.
-func newUtxoViewpoint(sourceTxns []*wire.MsgTx, sourceTxHeights []int32) *blockdag.UtxoViewpoint {
+func newUtxoViewpoint(sourceTxns []*wire.MsgTx, sourceTxHeights []int32) *blockdag.UTXOView {
 	if len(sourceTxns) != len(sourceTxHeights) {
 		panic("each transaction must have its block height specified")
 	}
 
-	view := blockdag.NewUtxoViewpoint()
+	view := blockdag.NewUTXOView()
 	for i, tx := range sourceTxns {
 		view.AddTxOuts(util.NewTx(tx), sourceTxHeights[i])
 	}
@@ -128,11 +128,11 @@ func TestCalcPriority(t *testing.T) {
 	}
 
 	tests := []struct {
-		name       string                  // test description
-		tx         *wire.MsgTx             // tx to calc priority for
-		utxoView   *blockdag.UtxoViewpoint // inputs to tx
-		nextHeight int32                   // height for priority calc
-		want       float64                 // expected priority
+		name       string             // test description
+		tx         *wire.MsgTx        // tx to calc priority for
+		utxoView   *blockdag.UTXOView // inputs to tx
+		nextHeight int32              // height for priority calc
+		want       float64            // expected priority
 	}{
 		{
 			name: "one height 7 input, prio tx height 169",

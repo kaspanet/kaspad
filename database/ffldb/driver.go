@@ -7,12 +7,9 @@ package ffldb
 import (
 	"fmt"
 
-	"github.com/btcsuite/btclog"
 	"github.com/daglabs/btcd/database"
 	"github.com/daglabs/btcd/wire"
 )
-
-var log = btclog.Disabled
 
 const (
 	dbType = "ffldb"
