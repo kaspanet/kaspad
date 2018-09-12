@@ -41,9 +41,9 @@ const (
 	orphanExpireScanInterval = time.Minute * 5
 )
 
-// HandleNewBlockMsg is the type that is used in HandleNewBlockMsg to transfer
+// NewBlockMsg is the type that is used in NewBlockMsg to transfer
 // data about transaction removed and added to the mempool
-type HandleNewBlockMsg struct {
+type NewBlockMsg struct {
 	AcceptedTxs []*TxDesc
 	Tx          *util.Tx
 }
@@ -478,7 +478,7 @@ func (mp *TxPool) removeTransaction(tx *util.Tx, removeRedeemers bool, restoreIn
 		}
 
 		diff := blockdag.NewUTXODiff()
-		diff.RemoveTx(txDesc.Tx.MsgTx())
+		diff.RemoveTxOuts(txDesc.Tx.MsgTx())
 
 		// Mark the referenced outpoints as unspent by the pool.
 		for _, txIn := range txDesc.Tx.MsgTx().TxIn {
@@ -1189,7 +1189,7 @@ func (mp *TxPool) LastUpdated() time.Time {
 // from the mempool and the orphan pool, and it also removes
 // from the mempool transactions that double spend a
 // transaction that is already in the DAG
-func (mp *TxPool) HandleNewBlock(block *util.Block, txChan chan HandleNewBlockMsg) error {
+func (mp *TxPool) HandleNewBlock(block *util.Block, txChan chan NewBlockMsg) error {
 	defer close(txChan)
 
 	oldDiff := mp.diffUTXOSet
@@ -1210,7 +1210,7 @@ func (mp *TxPool) HandleNewBlock(block *util.Block, txChan chan HandleNewBlockMs
 		mp.RemoveDoubleSpends(tx)
 		mp.RemoveOrphan(tx)
 		acceptedTxs := mp.ProcessOrphans(tx)
-		txChan <- HandleNewBlockMsg{
+		txChan <- NewBlockMsg{
 			AcceptedTxs: acceptedTxs,
 			Tx:          tx,
 		}

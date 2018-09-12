@@ -56,8 +56,8 @@ func (entry *UTXOEntry) Spend() {
 		return
 	}
 
-	// Mark the output as spent and modified.
-	entry.packedFlags |= tfSpent | tfModified
+	// Mark the output as spent.
+	entry.packedFlags |= tfSpent
 }
 
 // Amount returns the amount of the output.
@@ -94,10 +94,6 @@ const (
 
 	// tfSpent indicates that a txout is spent.
 	tfSpent
-
-	// tfModified indicates that a txout has been modified since it was
-	// loaded.
-	tfModified
 )
 
 // utxoCollection represents a set of UTXOs indexed by their outPoints
@@ -326,21 +322,15 @@ func (d *utxoDiff) clone() *utxoDiff {
 	}
 }
 
-// IsSpent returns true if the outpoint got spent in this utxoDiff
-func (d *utxoDiff) IsSpent(outPoint wire.OutPoint) bool {
-	isInDiffToRemove := d.toRemove.contains(outPoint)
-	return isInDiffToRemove
-}
-
-//RemoveTx adds all of the transaction's outputs to d.toRemove
-func (d *utxoDiff) RemoveTx(tx *wire.MsgTx) {
+//RemoveTxOuts adds all of the transaction's outputs to d.toRemove
+func (d *utxoDiff) RemoveTxOuts(tx *wire.MsgTx) {
 	for idx := range tx.TxOut {
 		hash := tx.TxHash()
 		d.toRemove.add(*wire.NewOutPoint(&hash, uint32(idx)), nil)
 	}
 }
 
-//RemoveTx adds all of the transaction's outputs to d.toRemove
+//AddEntry adds an UTXOEntry to d.toAdd
 func (d *utxoDiff) AddEntry(outpoint wire.OutPoint, entry *UTXOEntry) {
 	d.toAdd.add(outpoint, entry)
 }
@@ -355,7 +345,6 @@ func NewUTXOEntry(txOut *wire.TxOut, isCoinbase bool, blockHeight int32) *UTXOEn
 		amount:      txOut.Value,
 		pkScript:    txOut.PkScript,
 		blockHeight: blockHeight,
-		packedFlags: tfModified,
 	}
 
 	if isCoinbase {

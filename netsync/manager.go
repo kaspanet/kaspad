@@ -1193,7 +1193,7 @@ func (sm *SyncManager) handleBlockDAGNotification(notification *blockdag.Notific
 			break
 		}
 
-		ch := make(chan mempool.HandleNewBlockMsg)
+		ch := make(chan mempool.NewBlockMsg)
 		go func() {
 			err := sm.txMemPool.HandleNewBlock(block, ch)
 			if err != nil {
