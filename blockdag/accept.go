@@ -76,7 +76,7 @@ func (dag *BlockDAG) maybeAcceptBlock(block *util.Block, flags BehaviorFlags) er
 	}
 
 	// Notify the caller that the new block was accepted into the block
-	// chain.  The caller would typically want to react by relaying the
+	// DAG.  The caller would typically want to react by relaying the
 	// inventory to other peers.
 	dag.dagLock.Unlock()
 	dag.sendNotification(NTBlockAccepted, block)

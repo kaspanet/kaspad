@@ -1236,7 +1236,7 @@ func (sm *SyncManager) handleBlockDAGNotification(notification *blockdag.Notific
 				// Remove the transaction and all transactions
 				// that depend on it if it wasn't accepted into
 				// the transaction pool.
-				sm.txMemPool.RemoveTransaction(tx, true)
+				sm.txMemPool.RemoveTransaction(tx, true, true)
 			}
 		}
 

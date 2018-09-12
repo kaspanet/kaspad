@@ -3198,7 +3198,7 @@ func handleSendRawTransaction(s *Server, cmd interface{}, closeChan <-chan struc
 	// Also, since an error is being returned to the caller, ensure the
 	// transaction is removed from the memory pool.
 	if len(acceptedTxs) == 0 || !acceptedTxs[0].Tx.Hash().IsEqual(tx.Hash()) {
-		err := s.cfg.TxMemPool.RemoveTransaction(tx, true)
+		err := s.cfg.TxMemPool.RemoveTransaction(tx, true, true)
 		if err != nil {
 			return nil, err
 		}

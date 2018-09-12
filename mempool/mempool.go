@@ -74,7 +74,7 @@ type Config struct {
 
 	// CalcSequenceLock defines the function to use in order to generate
 	// the current sequence lock for the given transaction using the passed
-	// utxo view.
+	// utxo set.
 	CalcSequenceLock func(*util.Tx, blockdag.UTXOSet) (*blockdag.SequenceLock, error)
 
 	// IsDeploymentActive returns true if the target deploymentID is
@@ -457,14 +457,14 @@ func (mp *TxPool) HaveTransaction(hash *daghash.Hash) bool {
 // RemoveTransaction.  See the comment for RemoveTransaction for more details.
 //
 // This function MUST be called with the mempool lock held (for writes).
-func (mp *TxPool) removeTransaction(tx *util.Tx, removeRedeemers bool) error {
+func (mp *TxPool) removeTransaction(tx *util.Tx, removeRedeemers bool, restoreInputs bool) error {
 	txHash := tx.Hash()
 	if removeRedeemers {
 		// Remove any transactions which rely on this one.
 		for i := uint32(0); i < uint32(len(tx.MsgTx().TxOut)); i++ {
 			prevOut := wire.OutPoint{Hash: *txHash, Index: i}
 			if txRedeemer, exists := mp.outpoints[prevOut]; exists {
-				mp.removeTransaction(txRedeemer, true)
+				mp.removeTransaction(txRedeemer, true, false)
 			}
 		}
 	}
@@ -477,13 +477,21 @@ func (mp *TxPool) removeTransaction(tx *util.Tx, removeRedeemers bool) error {
 			mp.cfg.AddrIndex.RemoveUnconfirmedTx(txHash)
 		}
 
+		diff := blockdag.NewUTXODiff()
+		diff.RemoveTx(txDesc.Tx.MsgTx())
+
 		// Mark the referenced outpoints as unspent by the pool.
 		for _, txIn := range txDesc.Tx.MsgTx().TxIn {
+			if restoreInputs {
+				if prevTxDesc, exists := mp.pool[txIn.PreviousOutPoint.Hash]; exists {
+					prevOut := prevTxDesc.Tx.MsgTx().TxOut[txIn.PreviousOutPoint.Index]
+					entry := blockdag.NewUTXOEntry(prevOut, false, mining.UnminedHeight)
+					diff.AddEntry(txIn.PreviousOutPoint, entry)
+				}
+			}
 			delete(mp.outpoints, txIn.PreviousOutPoint)
 		}
 		delete(mp.pool, *txHash)
-		diff := blockdag.NewUTXODiff()
-		diff.RemoveTx(txDesc.Tx.MsgTx())
 		var err error
 		mp.diffUTXOSet, err = mp.diffUTXOSet.WithDiff(diff)
 		if err != nil {
@@ -500,11 +508,11 @@ func (mp *TxPool) removeTransaction(tx *util.Tx, removeRedeemers bool) error {
 // they would otherwise become orphans.
 //
 // This function is safe for concurrent access.
-func (mp *TxPool) RemoveTransaction(tx *util.Tx, removeRedeemers bool) error {
+func (mp *TxPool) RemoveTransaction(tx *util.Tx, removeRedeemers bool, restoreInputs bool) error {
 	// Protect concurrent access.
 	mp.mtx.Lock()
 	defer mp.mtx.Unlock()
-	return mp.removeTransaction(tx, removeRedeemers)
+	return mp.removeTransaction(tx, removeRedeemers, restoreInputs)
 }
 
 // RemoveDoubleSpends removes all transactions which spend outputs spent by the
@@ -520,7 +528,7 @@ func (mp *TxPool) RemoveDoubleSpends(tx *util.Tx) {
 	for _, txIn := range tx.MsgTx().TxIn {
 		if txRedeemer, ok := mp.outpoints[txIn.PreviousOutPoint]; ok {
 			if !txRedeemer.Hash().IsEqual(tx.Hash()) {
-				mp.removeTransaction(txRedeemer, true)
+				mp.removeTransaction(txRedeemer, true, false)
 			}
 		}
 	}
@@ -533,6 +541,8 @@ func (mp *TxPool) RemoveDoubleSpends(tx *util.Tx) {
 //
 // This function MUST be called with the mempool lock held (for writes).
 func (mp *TxPool) addTransaction(tx *util.Tx, height int32, fee int64) *TxDesc {
+	mp.cfg.DAG.RLock()
+	defer mp.cfg.DAG.RUnlock()
 	// Add the transaction to the pool and mark the referenced outpoints
 	// as spent by the pool.
 	txD := &TxDesc{
@@ -621,8 +631,8 @@ func (mp *TxPool) FetchTransaction(txHash *daghash.Hash) (*util.Tx, error) {
 //
 // This function MUST be called with the mempool lock held (for writes).
 func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rateLimit, rejectDupOrphans bool) ([]*daghash.Hash, *TxDesc, error) {
-	mp.diffUTXOSet.Lock()
-	defer mp.diffUTXOSet.Unlock()
+	mp.cfg.DAG.RLock()
+	defer mp.cfg.DAG.RUnlock()
 	txHash := tx.Hash()
 
 	// Don't accept the transaction if it already exists in the pool.  This
@@ -1180,8 +1190,6 @@ func (mp *TxPool) LastUpdated() time.Time {
 // from the mempool transactions that double spend a
 // transaction that is already in the DAG
 func (mp *TxPool) HandleNewBlock(block *util.Block, txChan chan HandleNewBlockMsg) error {
-	mp.diffUTXOSet.Lock()
-	defer mp.diffUTXOSet.Unlock()
 	defer close(txChan)
 
 	oldDiff := mp.diffUTXOSet
@@ -1194,7 +1202,7 @@ func (mp *TxPool) HandleNewBlock(block *util.Block, txChan chan HandleNewBlockMs
 	// transaction are NOT removed recursively because they are still
 	// valid.
 	for _, tx := range block.Transactions()[1:] {
-		err := mp.RemoveTransaction(tx, false)
+		err := mp.RemoveTransaction(tx, false, false)
 		if err != nil {
 			mp.diffUTXOSet = oldDiff
 			return err
@@ -1213,8 +1221,8 @@ func (mp *TxPool) HandleNewBlock(block *util.Block, txChan chan HandleNewBlockMs
 // New returns a new memory pool for validating and storing standalone
 // transactions until they are mined into a block.
 func New(cfg *Config) *TxPool {
-	fus := cfg.DAG.VirtualBlock().UTXOSet
-	dus := blockdag.NewDiffUTXOSet(fus, blockdag.NewUTXODiff())
+	virtualUTXO := cfg.DAG.VirtualBlock().UTXOSet
+	mpUTXO := blockdag.NewDiffUTXOSet(virtualUTXO, blockdag.NewUTXODiff())
 	return &TxPool{
 		cfg:            *cfg,
 		pool:           make(map[daghash.Hash]*TxDesc),
@@ -1222,6 +1230,6 @@ func New(cfg *Config) *TxPool {
 		orphansByPrev:  make(map[wire.OutPoint]map[daghash.Hash]*util.Tx),
 		nextExpireScan: time.Now().Add(orphanExpireScanInterval),
 		outpoints:      make(map[wire.OutPoint]*util.Tx),
-		diffUTXOSet:    dus,
+		diffUTXOSet:    mpUTXO,
 	}
 }
