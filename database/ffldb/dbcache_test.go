@@ -6,6 +6,7 @@ import (
 
 	"github.com/bouk/monkey"
 	"github.com/btcsuite/goleveldb/leveldb"
+	ldbutil "github.com/btcsuite/goleveldb/leveldb/util"
 )
 
 // TestDBCacheCloseErrors tests all error-cases in *dbCache.Close().
@@ -111,5 +112,32 @@ func TestCommitTxFlushNeeded(t *testing.T) {
 			cache.commitTx(tx.(*transaction))
 			db.closeLock.RUnlock()
 		}()
+	}
+}
+
+func TestExhaustedDbCacheIterator(t *testing.T) {
+	db := newTestDb("TestExhaustedDbCacheIterator", t)
+	defer db.Close()
+
+	snapshot, err := db.cache.Snapshot()
+	if err != nil {
+		t.Fatalf("TestExhaustedDbCacheIterator: Error creating cache snapshot: %s", err)
+	}
+	iterator := snapshot.NewIterator(&ldbutil.Range{})
+
+	if next := iterator.Next(); next != false {
+		t.Errorf("TestExhaustedDbCacheIterator: Expected .Next() = false, but got %v", next)
+	}
+
+	if prev := iterator.Prev(); prev != false {
+		t.Errorf("TestExhaustedDbCacheIterator: Expected .Prev() = false, but got %v", prev)
+	}
+
+	if key := iterator.Key(); key != nil {
+		t.Errorf("TestExhaustedDbCacheIterator: Expected .Key() = nil, but got %v", key)
+	}
+
+	if value := iterator.Value(); value != nil {
+		t.Errorf("TestExhaustedDbCacheIterator: Expected .Value() = nil, but got %v", value)
 	}
 }
