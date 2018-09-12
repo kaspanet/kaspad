@@ -1114,12 +1114,12 @@ func TestRemoveTransaction(t *testing.T) {
 	}
 
 	//Checks that when removeRedeemers is false, the specified transaction is the only transaction that gets removed
-	harness.txPool.RemoveTransaction(chainedTxns[3], false)
+	harness.txPool.RemoveTransaction(chainedTxns[3], false, true)
 	testPoolMembership(tc, chainedTxns[3], false, false)
 	testPoolMembership(tc, chainedTxns[4], false, true)
 
 	//Checks that when removeRedeemers is true, all of the transaction that are dependent on it get removed
-	harness.txPool.RemoveTransaction(chainedTxns[1], true)
+	harness.txPool.RemoveTransaction(chainedTxns[1], true, true)
 	testPoolMembership(tc, chainedTxns[0], false, true)
 	testPoolMembership(tc, chainedTxns[1], false, false)
 	testPoolMembership(tc, chainedTxns[2], false, false)
