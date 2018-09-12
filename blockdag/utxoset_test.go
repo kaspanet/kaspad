@@ -20,8 +20,8 @@ func TestUTXOCollection(t *testing.T) {
 	hash1, _ := daghash.NewHashFromStr("1111111111111111111111111111111111111111111111111111111111111111")
 	outPoint0 := *wire.NewOutPoint(hash0, 0)
 	outPoint1 := *wire.NewOutPoint(hash1, 0)
-	utxoEntry0 := newUTXOEntry(&wire.TxOut{PkScript: []byte{}, Value: 10}, true, 0)
-	utxoEntry1 := newUTXOEntry(&wire.TxOut{PkScript: []byte{}, Value: 20}, false, 1)
+	utxoEntry0 := NewUTXOEntry(&wire.TxOut{PkScript: []byte{}, Value: 10}, true, 0)
+	utxoEntry1 := NewUTXOEntry(&wire.TxOut{PkScript: []byte{}, Value: 20}, false, 1)
 
 	// For each of the following test cases, we will:
 	// .String() the given collection and compare it to expectedString
@@ -79,8 +79,8 @@ func TestUTXODiff(t *testing.T) {
 	hash1, _ := daghash.NewHashFromStr("1111111111111111111111111111111111111111111111111111111111111111")
 	outPoint0 := *wire.NewOutPoint(hash0, 0)
 	outPoint1 := *wire.NewOutPoint(hash1, 0)
-	utxoEntry0 := newUTXOEntry(&wire.TxOut{PkScript: []byte{}, Value: 10}, true, 0)
-	utxoEntry1 := newUTXOEntry(&wire.TxOut{PkScript: []byte{}, Value: 20}, false, 1)
+	utxoEntry0 := NewUTXOEntry(&wire.TxOut{PkScript: []byte{}, Value: 10}, true, 0)
+	utxoEntry1 := NewUTXOEntry(&wire.TxOut{PkScript: []byte{}, Value: 20}, false, 1)
 	diff := utxoDiff{
 		toAdd:    utxoCollection{outPoint0: utxoEntry0},
 		toRemove: utxoCollection{outPoint1: utxoEntry1},
@@ -116,7 +116,7 @@ func TestUTXODiff(t *testing.T) {
 func TestUTXODiffRules(t *testing.T) {
 	hash0, _ := daghash.NewHashFromStr("0000000000000000000000000000000000000000000000000000000000000000")
 	outPoint0 := *wire.NewOutPoint(hash0, 0)
-	utxoEntry0 := newUTXOEntry(&wire.TxOut{PkScript: []byte{}, Value: 10}, true, 0)
+	utxoEntry0 := NewUTXOEntry(&wire.TxOut{PkScript: []byte{}, Value: 10}, true, 0)
 
 	// For each of the following test cases, we will:
 	// this.diffFrom(other) and compare it to expectedDiffFromResult
@@ -336,8 +336,8 @@ func TestFullUTXOSet(t *testing.T) {
 	outPoint1 := *wire.NewOutPoint(hash1, 0)
 	txOut0 := &wire.TxOut{PkScript: []byte{}, Value: 10}
 	txOut1 := &wire.TxOut{PkScript: []byte{}, Value: 20}
-	utxoEntry0 := newUTXOEntry(txOut0, true, 0)
-	utxoEntry1 := newUTXOEntry(txOut1, false, 1)
+	utxoEntry0 := NewUTXOEntry(txOut0, true, 0)
+	utxoEntry1 := NewUTXOEntry(txOut1, false, 1)
 	diff := &utxoDiff{
 		toAdd:    utxoCollection{outPoint0: utxoEntry0},
 		toRemove: utxoCollection{outPoint1: utxoEntry1},
@@ -398,8 +398,8 @@ func TestDiffUTXOSet(t *testing.T) {
 	outPoint1 := *wire.NewOutPoint(hash1, 0)
 	txOut0 := &wire.TxOut{PkScript: []byte{}, Value: 10}
 	txOut1 := &wire.TxOut{PkScript: []byte{}, Value: 20}
-	utxoEntry0 := newUTXOEntry(txOut0, true, 0)
-	utxoEntry1 := newUTXOEntry(txOut1, false, 1)
+	utxoEntry0 := NewUTXOEntry(txOut0, true, 0)
+	utxoEntry1 := NewUTXOEntry(txOut1, false, 1)
 	diff := &utxoDiff{
 		toAdd:    utxoCollection{outPoint0: utxoEntry0},
 		toRemove: utxoCollection{outPoint1: utxoEntry1},
@@ -640,7 +640,7 @@ func TestDiffUTXOSet_addTx(t *testing.T) {
 	hash0, _ := daghash.NewHashFromStr("0000000000000000000000000000000000000000000000000000000000000000")
 	txIn0 := &wire.TxIn{SignatureScript: []byte{}, PreviousOutPoint: wire.OutPoint{Hash: *hash0, Index: math.MaxUint32}, Sequence: 0}
 	txOut0 := &wire.TxOut{PkScript: []byte{0}, Value: 10}
-	utxoEntry0 := newUTXOEntry(txOut0, true, 0)
+	utxoEntry0 := NewUTXOEntry(txOut0, true, 0)
 	transaction0 := wire.NewMsgTx(1)
 	transaction0.TxIn = []*wire.TxIn{txIn0}
 	transaction0.TxOut = []*wire.TxOut{txOut0}
@@ -650,7 +650,7 @@ func TestDiffUTXOSet_addTx(t *testing.T) {
 	outPoint1 := *wire.NewOutPoint(&hash1, 0)
 	txIn1 := &wire.TxIn{SignatureScript: []byte{}, PreviousOutPoint: wire.OutPoint{Hash: hash1, Index: 0}, Sequence: 0}
 	txOut1 := &wire.TxOut{PkScript: []byte{1}, Value: 20}
-	utxoEntry1 := newUTXOEntry(txOut1, false, 1)
+	utxoEntry1 := NewUTXOEntry(txOut1, false, 1)
 	transaction1 := wire.NewMsgTx(1)
 	transaction1.TxIn = []*wire.TxIn{txIn1}
 	transaction1.TxOut = []*wire.TxOut{txOut1}
@@ -660,7 +660,7 @@ func TestDiffUTXOSet_addTx(t *testing.T) {
 	outPoint2 := *wire.NewOutPoint(&hash2, 0)
 	txIn2 := &wire.TxIn{SignatureScript: []byte{}, PreviousOutPoint: wire.OutPoint{Hash: hash2, Index: 0}, Sequence: 0}
 	txOut2 := &wire.TxOut{PkScript: []byte{2}, Value: 30}
-	utxoEntry2 := newUTXOEntry(txOut2, false, 2)
+	utxoEntry2 := NewUTXOEntry(txOut2, false, 2)
 	transaction2 := wire.NewMsgTx(1)
 	transaction2.TxIn = []*wire.TxIn{txIn2}
 	transaction2.TxOut = []*wire.TxOut{txOut2}
@@ -937,13 +937,13 @@ func TestDiffFromTx(t *testing.T) {
 		t.Errorf("diffFromTx: %v", err)
 	}
 	if !reflect.DeepEqual(diff.toAdd, utxoCollection{
-		wire.OutPoint{Hash: tx.TxHash(), Index: 0}: newUTXOEntry(tx.TxOut[0], false, 2),
+		wire.OutPoint{Hash: tx.TxHash(), Index: 0}: NewUTXOEntry(tx.TxOut[0], false, 2),
 	}) {
 		t.Errorf("diff.toAdd doesn't have the expected values")
 	}
 
 	if !reflect.DeepEqual(diff.toRemove, utxoCollection{
-		wire.OutPoint{Hash: cbTx.TxHash(), Index: 0}: newUTXOEntry(cbTx.TxOut[0], true, 1),
+		wire.OutPoint{Hash: cbTx.TxHash(), Index: 0}: NewUTXOEntry(cbTx.TxOut[0], true, 1),
 	}) {
 		t.Errorf("diff.toRemove doesn't have the expected values")
 	}
