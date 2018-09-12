@@ -1245,6 +1245,16 @@ func (dag *BlockDAG) locateHeaders(locator BlockLocator, hashStop *daghash.Hash,
 	return headers
 }
 
+// RLock locks the DAG for reading.
+func (dag *BlockDAG) RLock() {
+	dag.dagLock.RLock()
+}
+
+// RUnlock unlocks the DAG for reading.
+func (dag *BlockDAG) RUnlock() {
+	dag.dagLock.RUnlock()
+}
+
 // LocateHeaders returns the headers of the blocks after the first known block
 // in the locator until the provided stop hash is reached, or up to a max of
 // wire.MaxBlockHeadersPerMsg headers.

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"sort"
 	"strings"
-	"sync"
 
 	"github.com/daglabs/btcd/wire"
 )
@@ -335,12 +334,17 @@ func (d *utxoDiff) RemoveTx(tx *wire.MsgTx) {
 	}
 }
 
+//RemoveTx adds all of the transaction's outputs to d.toRemove
+func (d *utxoDiff) AddEntry(outpoint wire.OutPoint, entry *UTXOEntry) {
+	d.toAdd.add(outpoint, entry)
+}
+
 func (d utxoDiff) String() string {
 	return fmt.Sprintf("toAdd: %s; toRemove: %s", d.toAdd, d.toRemove)
 }
 
-// newUTXOEntry creates a new utxoEntry representing the given txOut
-func newUTXOEntry(txOut *wire.TxOut, isCoinbase bool, blockHeight int32) *UTXOEntry {
+// NewUTXOEntry creates a new utxoEntry representing the given txOut
+func NewUTXOEntry(txOut *wire.TxOut, isCoinbase bool, blockHeight int32) *UTXOEntry {
 	entry := &UTXOEntry{
 		amount:      txOut.Value,
 		pkScript:    txOut.PkScript,
@@ -375,8 +379,6 @@ type UTXOSet interface {
 	AddTx(tx *wire.MsgTx, blockHeight int32) (ok bool)
 	clone() UTXOSet
 	Get(outPoint wire.OutPoint) (*UTXOEntry, bool)
-	Lock()
-	Unlock()
 }
 
 // diffFromTx is a common implementation for diffFromTx, that works
@@ -399,7 +401,7 @@ func diffFromTx(u UTXOSet, tx *wire.MsgTx, containingNode *blockNode) (*utxoDiff
 	}
 	for i, txOut := range tx.TxOut {
 		hash := tx.TxHash()
-		entry := newUTXOEntry(txOut, isCoinbase, containingNode.height)
+		entry := NewUTXOEntry(txOut, isCoinbase, containingNode.height)
 		outPoint := *wire.NewOutPoint(&hash, uint32(i))
 		diff.toAdd.add(outPoint, entry)
 	}
@@ -408,7 +410,6 @@ func diffFromTx(u UTXOSet, tx *wire.MsgTx, containingNode *blockNode) (*utxoDiff
 
 // fullUTXOSet represents a full list of transaction outputs and their values
 type fullUTXOSet struct {
-	sync.Mutex
 	utxoCollection
 }
 
@@ -456,7 +457,7 @@ func (fus *fullUTXOSet) AddTx(tx *wire.MsgTx, blockHeight int32) bool {
 	for i, txOut := range tx.TxOut {
 		hash := tx.TxHash()
 		outPoint := *wire.NewOutPoint(&hash, uint32(i))
-		entry := newUTXOEntry(txOut, isCoinbase, blockHeight)
+		entry := NewUTXOEntry(txOut, isCoinbase, blockHeight)
 
 		fus.add(outPoint, entry)
 	}
@@ -508,16 +509,6 @@ func NewDiffUTXOSet(base *fullUTXOSet, diff *utxoDiff) *DiffUTXOSet {
 		base:     base,
 		UTXODiff: diff,
 	}
-}
-
-//Lock locks meldToBase operation on the base
-func (dus *DiffUTXOSet) Lock() {
-	dus.base.Lock()
-}
-
-//Unlock unlocks meldToBase operation on the base
-func (dus *DiffUTXOSet) Unlock() {
-	dus.base.Unlock()
 }
 
 // diffFrom returns the difference between this utxoSet and another.
@@ -574,7 +565,7 @@ func (dus *DiffUTXOSet) appendTx(tx *wire.MsgTx, blockHeight int32, isCoinBase b
 	for i, txOut := range tx.TxOut {
 		hash := tx.TxHash()
 		outPoint := *wire.NewOutPoint(&hash, uint32(i))
-		entry := newUTXOEntry(txOut, isCoinBase, blockHeight)
+		entry := NewUTXOEntry(txOut, isCoinBase, blockHeight)
 
 		if dus.UTXODiff.toRemove.contains(outPoint) {
 			dus.UTXODiff.toRemove.remove(outPoint)
@@ -600,8 +591,6 @@ func (dus *DiffUTXOSet) containsInputs(tx *wire.MsgTx) bool {
 
 // meldToBase updates the base fullUTXOSet with all changes in diff
 func (dus *DiffUTXOSet) meldToBase() {
-	dus.base.Lock()
-	defer dus.base.Unlock()
 	for outPoint := range dus.UTXODiff.toRemove {
 		dus.base.remove(outPoint)
 	}
