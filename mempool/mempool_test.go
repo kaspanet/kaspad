@@ -316,7 +316,7 @@ func newPoolHarness(dagParams *dagconfig.Params, dbName string) (*poolHarness, [
 	if err != nil {
 		return nil, nil, err
 	}
-	harness.txPool.diffUTXOSet.AddTx(coinbase.MsgTx(), curHeight+1)
+	harness.txPool.mpUTXOSet.AddTx(coinbase.MsgTx(), curHeight+1)
 	for i := uint32(0); i < numOutputs; i++ {
 		outputs = append(outputs, txOutToSpendableOut(coinbase, i))
 	}
