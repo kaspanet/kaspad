@@ -58,9 +58,9 @@ type Config struct {
 	// to policy.
 	Policy Policy
 
-	// DagParams identifies which chain parameters the txpool is
+	// DAGParams identifies which chain parameters the txpool is
 	// associated with.
-	DagParams *dagconfig.Params
+	DAGParams *dagconfig.Params
 
 	// BestHeight defines the function to use to access the block height of
 	// the current best chain.
@@ -755,7 +755,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rateLimit, rejectDu
 	// Also returns the fees associated with the transaction which will be
 	// used later.
 	txFee, err := blockdag.CheckTransactionInputs(tx, nextBlockHeight,
-		mp.mpUTXOSet, mp.cfg.DagParams)
+		mp.mpUTXOSet, mp.cfg.DAGParams)
 	if err != nil {
 		if cerr, ok := err.(blockdag.RuleError); ok {
 			return nil, nil, chainRuleError(cerr)
@@ -1189,7 +1189,6 @@ func (mp *TxPool) LastUpdated() time.Time {
 // from the mempool transactions that double spend a
 // transaction that is already in the DAG
 func (mp *TxPool) HandleNewBlock(block *util.Block, txChan chan NewBlockMsg) error {
-	defer close(txChan)
 
 	oldUTXOSet := mp.mpUTXOSet
 

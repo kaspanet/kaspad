@@ -295,7 +295,7 @@ func newPoolHarness(dagParams *dagconfig.Params, dbName string) (*poolHarness, [
 				MinRelayTxFee:        1000, // 1 Satoshi per byte
 				MaxTxVersion:         1,
 			},
-			DagParams:        dagParams,
+			DAGParams:        dagParams,
 			BestHeight:       chain.BestHeight,
 			MedianTimePast:   chain.MedianTimePast,
 			CalcSequenceLock: chain.CalcSequenceLock,
