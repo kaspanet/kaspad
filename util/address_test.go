@@ -34,7 +34,7 @@ func TestAddresses(t *testing.T) {
 			encoded: "dagcoin:qr35ennsep3hxfe7lnz5ee7j5jgmkjswss74as46gy",
 			valid:   true,
 			result: util.TstAddressPubKeyHash(
-				dagconfig.DagCoin,
+				util.DagCoin,
 				[ripemd160.Size]byte{
 					0xe3, 0x4c, 0xce, 0x70, 0xc8, 0x63, 0x73, 0x27, 0x3e, 0xfc,
 					0xc5, 0x4c, 0xe7, 0xd2, 0xa4, 0x91, 0xbb, 0x4a, 0x0e, 0x84}),
@@ -42,7 +42,7 @@ func TestAddresses(t *testing.T) {
 				pkHash := []byte{
 					0xe3, 0x4c, 0xce, 0x70, 0xc8, 0x63, 0x73, 0x27, 0x3e, 0xfc,
 					0xc5, 0x4c, 0xe7, 0xd2, 0xa4, 0x91, 0xbb, 0x4a, 0x0e, 0x84}
-				return util.NewAddressPubKeyHash(pkHash, &dagconfig.MainNetParams)
+				return util.NewAddressPubKeyHash(pkHash, util.DagCoin)
 			},
 			net: &dagconfig.MainNetParams,
 		},
@@ -52,7 +52,7 @@ func TestAddresses(t *testing.T) {
 			encoded: "dagcoin:qq80qvqs0lfxuzmt7sz3909ze6camq9d4gwzqeljga",
 			valid:   true,
 			result: util.TstAddressPubKeyHash(
-				dagconfig.DagCoin,
+				util.DagCoin,
 				[ripemd160.Size]byte{
 					0x0e, 0xf0, 0x30, 0x10, 0x7f, 0xd2, 0x6e, 0x0b, 0x6b, 0xf4,
 					0x05, 0x12, 0xbc, 0xa2, 0xce, 0xb1, 0xdd, 0x80, 0xad, 0xaa}),
@@ -60,7 +60,7 @@ func TestAddresses(t *testing.T) {
 				pkHash := []byte{
 					0x0e, 0xf0, 0x30, 0x10, 0x7f, 0xd2, 0x6e, 0x0b, 0x6b, 0xf4,
 					0x05, 0x12, 0xbc, 0xa2, 0xce, 0xb1, 0xdd, 0x80, 0xad, 0xaa}
-				return util.NewAddressPubKeyHash(pkHash, &dagconfig.MainNetParams)
+				return util.NewAddressPubKeyHash(pkHash, util.DagCoin)
 			},
 			net: &dagconfig.MainNetParams,
 		},
@@ -70,7 +70,7 @@ func TestAddresses(t *testing.T) {
 			encoded: "dagtest:qputx94qseratdmjs0j395mq8u03er0x3ucluj5qam",
 			valid:   true,
 			result: util.TstAddressPubKeyHash(
-				dagconfig.DagTest,
+				util.DagTest,
 				[ripemd160.Size]byte{
 					0x78, 0xb3, 0x16, 0xa0, 0x86, 0x47, 0xd5, 0xb7, 0x72, 0x83,
 					0xe5, 0x12, 0xd3, 0x60, 0x3f, 0x1f, 0x1c, 0x8d, 0xe6, 0x8f}),
@@ -78,7 +78,7 @@ func TestAddresses(t *testing.T) {
 				pkHash := []byte{
 					0x78, 0xb3, 0x16, 0xa0, 0x86, 0x47, 0xd5, 0xb7, 0x72, 0x83,
 					0xe5, 0x12, 0xd3, 0x60, 0x3f, 0x1f, 0x1c, 0x8d, 0xe6, 0x8f}
-				return util.NewAddressPubKeyHash(pkHash, &dagconfig.TestNet3Params)
+				return util.NewAddressPubKeyHash(pkHash, util.DagTest)
 			},
 			net: &dagconfig.TestNet3Params,
 		},
@@ -93,7 +93,7 @@ func TestAddresses(t *testing.T) {
 					0x00, 0x0e, 0xf0, 0x30, 0x10, 0x7f, 0xd2, 0x6e, 0x0b, 0x6b,
 					0xf4, 0x05, 0x12, 0xbc, 0xa2, 0xce, 0xb1, 0xdd, 0x80, 0xad,
 					0xaa}
-				return util.NewAddressPubKeyHash(pkHash, &dagconfig.MainNetParams)
+				return util.NewAddressPubKeyHash(pkHash, util.DagCoin)
 			},
 			net: &dagconfig.MainNetParams,
 		},
@@ -114,7 +114,7 @@ func TestAddresses(t *testing.T) {
 			encoded: "dagcoin:pruptvpkmxamee0f72sq40gm70wfr624zq8mc2ujcn",
 			valid:   true,
 			result: util.TstAddressScriptHash(
-				dagconfig.DagCoin,
+				util.DagCoin,
 				[ripemd160.Size]byte{
 					0xf8, 0x15, 0xb0, 0x36, 0xd9, 0xbb, 0xbc, 0xe5, 0xe9, 0xf2,
 					0xa0, 0x0a, 0xbd, 0x1b, 0xf3, 0xdc, 0x91, 0xe9, 0x55, 0x10}),
@@ -141,7 +141,7 @@ func TestAddresses(t *testing.T) {
 					0xdb, 0xfb, 0x1e, 0x75, 0x4e, 0x35, 0xfa, 0x1c, 0x78, 0x44,
 					0xc4, 0x1f, 0x32, 0x2a, 0x18, 0x63, 0xd4, 0x62, 0x13, 0x53,
 					0xae}
-				return util.NewAddressScriptHash(script, &dagconfig.MainNetParams)
+				return util.NewAddressScriptHash(script, util.DagCoin)
 			},
 			net: &dagconfig.MainNetParams,
 		},
@@ -154,7 +154,7 @@ func TestAddresses(t *testing.T) {
 			encoded: "dagcoin:pr5vxqxg0xrwl2zvxlq9rxffqx00sm44ksj47shjr6",
 			valid:   true,
 			result: util.TstAddressScriptHash(
-				dagconfig.DagCoin,
+				util.DagCoin,
 				[ripemd160.Size]byte{
 					0xe8, 0xc3, 0x00, 0xc8, 0x79, 0x86, 0xef, 0xa8, 0x4c, 0x37,
 					0xc0, 0x51, 0x99, 0x29, 0x01, 0x9e, 0xf8, 0x6e, 0xb5, 0xb4}),
@@ -162,7 +162,7 @@ func TestAddresses(t *testing.T) {
 				hash := []byte{
 					0xe8, 0xc3, 0x00, 0xc8, 0x79, 0x86, 0xef, 0xa8, 0x4c, 0x37,
 					0xc0, 0x51, 0x99, 0x29, 0x01, 0x9e, 0xf8, 0x6e, 0xb5, 0xb4}
-				return util.NewAddressScriptHashFromHash(hash, &dagconfig.MainNetParams)
+				return util.NewAddressScriptHashFromHash(hash, util.DagCoin)
 			},
 			net: &dagconfig.MainNetParams,
 		},
@@ -173,7 +173,7 @@ func TestAddresses(t *testing.T) {
 			encoded: "dagtest:przhjdpv93xfygpqtckdc2zkzuzqeyj2pg6ghunlhx",
 			valid:   true,
 			result: util.TstAddressScriptHash(
-				dagconfig.DagTest,
+				util.DagTest,
 				[ripemd160.Size]byte{
 					0xc5, 0x79, 0x34, 0x2c, 0x2c, 0x4c, 0x92, 0x20, 0x20, 0x5e,
 					0x2c, 0xdc, 0x28, 0x56, 0x17, 0x04, 0x0c, 0x92, 0x4a, 0x0a}),
@@ -181,7 +181,7 @@ func TestAddresses(t *testing.T) {
 				hash := []byte{
 					0xc5, 0x79, 0x34, 0x2c, 0x2c, 0x4c, 0x92, 0x20, 0x20, 0x5e,
 					0x2c, 0xdc, 0x28, 0x56, 0x17, 0x04, 0x0c, 0x92, 0x4a, 0x0a}
-				return util.NewAddressScriptHashFromHash(hash, &dagconfig.TestNet3Params)
+				return util.NewAddressScriptHashFromHash(hash, util.DagTest)
 			},
 			net: &dagconfig.TestNet3Params,
 		},
@@ -196,7 +196,7 @@ func TestAddresses(t *testing.T) {
 					0x00, 0xf8, 0x15, 0xb0, 0x36, 0xd9, 0xbb, 0xbc, 0xe5, 0xe9,
 					0xf2, 0xa0, 0x0a, 0xbd, 0x1b, 0xf3, 0xdc, 0x91, 0xe9, 0x55,
 					0x10}
-				return util.NewAddressScriptHashFromHash(hash, &dagconfig.MainNetParams)
+				return util.NewAddressScriptHashFromHash(hash, util.DagCoin)
 			},
 			net: &dagconfig.MainNetParams,
 		},
@@ -204,7 +204,7 @@ func TestAddresses(t *testing.T) {
 
 	for _, test := range tests {
 		// Decode addr and compare error against valid.
-		decoded, err := util.DecodeAddress(test.addr, test.net)
+		decoded, err := util.DecodeAddress(test.addr, test.net.Prefix)
 		if (err == nil) != test.valid {
 			t.Errorf("%v: decoding test failed: %v", test.name, err)
 			return
@@ -270,7 +270,7 @@ func TestAddresses(t *testing.T) {
 			}
 
 			// Ensure the address is for the expected network.
-			if !decoded.IsForNet(test.net) {
+			if !decoded.IsForNet(test.net.Prefix) {
 				t.Errorf("%v: calculated network does not match expected",
 					test.name)
 				return
@@ -310,33 +310,33 @@ func TestAddresses(t *testing.T) {
 func TestDecodeAddressErrorConditions(t *testing.T) {
 	tests := []struct {
 		address      string
-		prefix       dagconfig.Bech32Prefix
+		prefix       util.Bech32Prefix
 		errorMessage string
 	}{
 		{
 			"bitcoincash:qpzry9x8gf2tvdw0s3jn54khce6mua7lcw20ayyn",
-			dagconfig.Unknown,
+			util.Unknown,
 			"decoded address's prefix could not be parsed",
 		},
 		{
 			"dagreg:qpm2qsznhks23z7629mms6s4cwef74vcwvtmvqeszh",
-			dagconfig.DagTest,
+			util.DagTest,
 			"decoded address is of wrong network",
 		},
 		{
 			"dagreg:raskzctpv9skzctpv9skzctpv9skzctpvyd070wnqg",
-			dagconfig.DagReg,
+			util.DagReg,
 			"unknown address type",
 		},
 		{
 			"dagreg:raskzcg5egs6nnj",
-			dagconfig.DagReg,
+			util.DagReg,
 			"decoded address is of unknown size",
 		},
 	}
 
 	for _, test := range tests {
-		_, err := util.DecodeAddress(test.address, &dagconfig.Params{Prefix: test.prefix})
+		_, err := util.DecodeAddress(test.address, test.prefix)
 		if err == nil {
 			t.Errorf("decodeAddress unexpectedly succeeded")
 		} else if !strings.Contains(err.Error(), test.errorMessage) {

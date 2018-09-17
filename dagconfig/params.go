@@ -6,11 +6,10 @@ package dagconfig
 
 import (
 	"errors"
+	"github.com/daglabs/btcd/util"
 	"math"
 	"math/big"
 	"time"
-
-	"fmt"
 
 	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/wire"
@@ -95,57 +94,6 @@ const (
 	// DefinedDeployments is the number of currently defined deployments.
 	DefinedDeployments
 )
-
-// Bech32Prefix is the human-readable prefix for a Bech32 address.
-type Bech32Prefix int
-
-// Constants that define Bech32 address prefixes. Every network is assigned
-// a unique prefix.
-const (
-	// Unknown/Erroneous prefix
-	Unknown Bech32Prefix = iota
-
-	// Prefix for the main network.
-	DagCoin
-
-	// Prefix for the regression test network.
-	DagReg
-
-	// Prefix for the test network.
-	DagTest
-
-	// Prefix for the simulation network.
-	DagSim
-)
-
-// Map from strings to Bech32 address prefix constants for parsing purposes.
-var stringsToBech32Prefixes = map[string]Bech32Prefix{
-	"dagcoin": DagCoin,
-	"dagreg":  DagReg,
-	"dagtest": DagTest,
-	"dagsim":  DagSim,
-}
-
-// ParsePrefix attempts to parse a Bech32 address prefix.
-func ParsePrefix(prefixString string) (Bech32Prefix, error) {
-	prefix, ok := stringsToBech32Prefixes[prefixString]
-	if !ok {
-		return Unknown, fmt.Errorf("could not parse prefix %v", prefixString)
-	}
-
-	return prefix, nil
-}
-
-// Converts from Bech32 address prefixes to their string values
-func (prefix Bech32Prefix) String() string {
-	for key, value := range stringsToBech32Prefixes {
-		if prefix == value {
-			return key
-		}
-	}
-
-	return ""
-}
 
 // Params defines a Bitcoin network by its parameters.  These parameters may be
 // used by Bitcoin applications to differentiate networks as well as addresses
@@ -245,7 +193,7 @@ type Params struct {
 	RelayNonStdTxs bool
 
 	// Human-readable prefix for Bech32 encoded addresses
-	Prefix Bech32Prefix
+	Prefix util.Bech32Prefix
 
 	// Address encoding magics
 	PrivateKeyID byte // First byte of a WIF private key
@@ -329,7 +277,7 @@ var MainNetParams = Params{
 	RelayNonStdTxs: false,
 
 	// Human-readable part for Bech32 encoded addresses
-	Prefix: DagCoin,
+	Prefix: util.DagCoin,
 
 	// Address encoding magics
 	PrivateKeyID: 0x80, // starts with 5 (uncompressed) or K (compressed)
@@ -389,7 +337,7 @@ var RegressionNetParams = Params{
 	RelayNonStdTxs: true,
 
 	// Human-readable part for Bech32 encoded addresses
-	Prefix: DagReg,
+	Prefix: util.DagReg,
 
 	// Address encoding magics
 	PrivateKeyID: 0xef, // starts with 9 (uncompressed) or c (compressed)
@@ -466,7 +414,7 @@ var TestNet3Params = Params{
 	RelayNonStdTxs: true,
 
 	// Human-readable part for Bech32 encoded addresses
-	Prefix: DagTest,
+	Prefix: util.DagTest,
 
 	// Address encoding magics
 	PrivateKeyID: 0xef, // starts with 9 (uncompressed) or c (compressed)
@@ -531,7 +479,7 @@ var SimNetParams = Params{
 
 	PrivateKeyID: 0x64, // starts with 4 (uncompressed) or F (compressed)
 	// Human-readable part for Bech32 encoded addresses
-	Prefix: DagSim,
+	Prefix: util.DagSim,
 
 	// BIP32 hierarchical deterministic extended key magics
 	HDPrivateKeyID: [4]byte{0x04, 0x20, 0xb9, 0x00}, // starts with sprv
