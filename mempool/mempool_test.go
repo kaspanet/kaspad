@@ -6,6 +6,7 @@ package mempool
 
 import (
 	"encoding/hex"
+	"fmt"
 	"reflect"
 	"runtime"
 	"sync"
@@ -17,8 +18,8 @@ import (
 	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/txscript"
-	"github.com/daglabs/btcd/wire"
 	"github.com/daglabs/btcd/util"
+	"github.com/daglabs/btcd/wire"
 )
 
 // fakeChain is used by the pool harness to provide generated test utxos and
@@ -26,40 +27,8 @@ import (
 // transactions to appear as though they are spending completely valid utxos.
 type fakeChain struct {
 	sync.RWMutex
-	utxos          *blockdag.UTXOView
 	currentHeight  int32
 	medianTimePast time.Time
-}
-
-// FetchUTXOView loads utxo details about the inputs referenced by the passed
-// transaction from the point of view of the fake chain.  It also attempts to
-// fetch the utxos for the outputs of the transaction itself so the returned
-// view can be examined for duplicate transactions.
-//
-// This function is safe for concurrent access however the returned view is NOT.
-func (s *fakeChain) FetchUtxoView(tx *util.Tx) (*blockdag.UTXOView, error) {
-	s.RLock()
-	defer s.RUnlock()
-
-	// All entries are cloned to ensure modifications to the returned view
-	// do not affect the fake chain's view.
-
-	// Add an entry for the tx itself to the new view.
-	viewpoint := blockdag.NewUTXOView()
-	prevOut := wire.OutPoint{Hash: *tx.Hash()}
-	for txOutIdx := range tx.MsgTx().TxOut {
-		prevOut.Index = uint32(txOutIdx)
-		entry := s.utxos.LookupEntry(prevOut)
-		viewpoint.Entries()[prevOut] = entry.Clone()
-	}
-
-	// Add entries for all of the inputs to the tx to the new view.
-	for _, txIn := range tx.MsgTx().TxIn {
-		entry := s.utxos.LookupEntry(txIn.PreviousOutPoint)
-		viewpoint.Entries()[txIn.PreviousOutPoint] = entry.Clone()
-	}
-
-	return viewpoint, nil
 }
 
 // BestHeight returns the current height associated with the fake chain
@@ -98,7 +67,7 @@ func (s *fakeChain) SetMedianTimePast(mtp time.Time) {
 // CalcSequenceLock returns the current sequence lock for the passed
 // transaction associated with the fake chain instance.
 func (s *fakeChain) CalcSequenceLock(tx *util.Tx,
-	view *blockdag.UTXOView) (*blockdag.SequenceLock, error) {
+	utxoSet blockdag.UTXOSet) (*blockdag.SequenceLock, error) {
 
 	return &blockdag.SequenceLock{
 		Seconds:     -1,
@@ -276,7 +245,7 @@ func (p *poolHarness) CreateTxChain(firstOutput spendableOutput, numTxns uint32)
 // for testing.  Also, the fake chain is populated with the returned spendable
 // outputs so the caller can easily create new valid transactions which build
 // off of it.
-func newPoolHarness(chainParams *dagconfig.Params) (*poolHarness, []spendableOutput, error) {
+func newPoolHarness(dagParams *dagconfig.Params, dbName string) (*poolHarness, []spendableOutput, error) {
 	// Use a hard coded key pair for deterministic results.
 	keyBytes, err := hex.DecodeString("700868df1838811ffbdf918fb482c1f7e" +
 		"ad62db4b97bd7012c23e726485e577d")
@@ -288,7 +257,7 @@ func newPoolHarness(chainParams *dagconfig.Params) (*poolHarness, []spendableOut
 	// Generate associated pay-to-script-hash address and resulting payment
 	// script.
 	pubKeyBytes := signPub.SerializeCompressed()
-	payPubKeyAddr, err := util.NewAddressPubKey(pubKeyBytes, chainParams)
+	payPubKeyAddr, err := util.NewAddressPubKey(pubKeyBytes, dagParams)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -298,16 +267,25 @@ func newPoolHarness(chainParams *dagconfig.Params) (*poolHarness, []spendableOut
 		return nil, nil, err
 	}
 
+	// Create a new database and chain instance to run tests against.
+	dag, teardownFunc, err := blockdag.DAGSetup(dbName,
+		&dagconfig.MainNetParams)
+	if err != nil {
+		return nil, nil, fmt.Errorf("Failed to setup DAG instance: %v", err)
+	}
+	defer teardownFunc()
+
 	// Create a new fake chain and harness bound to it.
-	chain := &fakeChain{utxos: blockdag.NewUTXOView()}
+	chain := &fakeChain{}
 	harness := poolHarness{
 		signKey:     signKey,
 		payAddr:     payAddr,
 		payScript:   pkScript,
-		chainParams: chainParams,
+		chainParams: dagParams,
 
 		chain: chain,
 		txPool: New(&Config{
+			DAG: dag,
 			Policy: Policy{
 				DisableRelayPriority: true,
 				FreeTxRelayLimit:     15.0,
@@ -317,8 +295,7 @@ func newPoolHarness(chainParams *dagconfig.Params) (*poolHarness, []spendableOut
 				MinRelayTxFee:        1000, // 1 Satoshi per byte
 				MaxTxVersion:         1,
 			},
-			ChainParams:      chainParams,
-			FetchUtxoView:    chain.FetchUtxoView,
+			DAGParams:        dagParams,
 			BestHeight:       chain.BestHeight,
 			MedianTimePast:   chain.MedianTimePast,
 			CalcSequenceLock: chain.CalcSequenceLock,
@@ -339,11 +316,11 @@ func newPoolHarness(chainParams *dagconfig.Params) (*poolHarness, []spendableOut
 	if err != nil {
 		return nil, nil, err
 	}
-	harness.chain.utxos.AddTxOuts(coinbase, curHeight+1)
+	harness.txPool.mpUTXOSet.AddTx(coinbase.MsgTx(), curHeight+1)
 	for i := uint32(0); i < numOutputs; i++ {
 		outputs = append(outputs, txOutToSpendableOut(coinbase, i))
 	}
-	harness.chain.SetHeight(int32(chainParams.CoinbaseMaturity) + curHeight)
+	harness.chain.SetHeight(int32(dagParams.CoinbaseMaturity) + curHeight)
 	harness.chain.SetMedianTimePast(time.Now())
 
 	return &harness, outputs, nil
@@ -394,7 +371,7 @@ func testPoolMembership(tc *testContext, tx *util.Tx, inOrphanPool, inTxPool boo
 func TestSimpleOrphanChain(t *testing.T) {
 	t.Parallel()
 
-	harness, spendableOuts, err := newPoolHarness(&dagconfig.MainNetParams)
+	harness, spendableOuts, err := newPoolHarness(&dagconfig.MainNetParams, "TestSimpleOrphanChain")
 	if err != nil {
 		t.Fatalf("unable to create test pool: %v", err)
 	}
@@ -457,7 +434,7 @@ func TestSimpleOrphanChain(t *testing.T) {
 func TestOrphanReject(t *testing.T) {
 	t.Parallel()
 
-	harness, outputs, err := newPoolHarness(&dagconfig.MainNetParams)
+	harness, outputs, err := newPoolHarness(&dagconfig.MainNetParams, "TestOrphanReject")
 	if err != nil {
 		t.Fatalf("unable to create test pool: %v", err)
 	}
@@ -512,7 +489,7 @@ func TestOrphanReject(t *testing.T) {
 func TestOrphanEviction(t *testing.T) {
 	t.Parallel()
 
-	harness, outputs, err := newPoolHarness(&dagconfig.MainNetParams)
+	harness, outputs, err := newPoolHarness(&dagconfig.MainNetParams, "TestOrphanEviction")
 	if err != nil {
 		t.Fatalf("unable to create test pool: %v", err)
 	}
@@ -577,7 +554,7 @@ func TestBasicOrphanRemoval(t *testing.T) {
 	t.Parallel()
 
 	const maxOrphans = 4
-	harness, spendableOuts, err := newPoolHarness(&dagconfig.MainNetParams)
+	harness, spendableOuts, err := newPoolHarness(&dagconfig.MainNetParams, "TestBasicOrphanRemoval")
 	if err != nil {
 		t.Fatalf("unable to create test pool: %v", err)
 	}
@@ -652,7 +629,7 @@ func TestOrphanChainRemoval(t *testing.T) {
 	t.Parallel()
 
 	const maxOrphans = 10
-	harness, spendableOuts, err := newPoolHarness(&dagconfig.MainNetParams)
+	harness, spendableOuts, err := newPoolHarness(&dagconfig.MainNetParams, "TestOrphanChainRemoval")
 	if err != nil {
 		t.Fatalf("unable to create test pool: %v", err)
 	}
@@ -715,7 +692,7 @@ func TestMultiInputOrphanDoubleSpend(t *testing.T) {
 	t.Parallel()
 
 	const maxOrphans = 4
-	harness, outputs, err := newPoolHarness(&dagconfig.MainNetParams)
+	harness, outputs, err := newPoolHarness(&dagconfig.MainNetParams, "TestMultiInputOrphanDoubleSpend")
 	if err != nil {
 		t.Fatalf("unable to create test pool: %v", err)
 	}
@@ -803,7 +780,7 @@ func TestMultiInputOrphanDoubleSpend(t *testing.T) {
 func TestCheckSpend(t *testing.T) {
 	t.Parallel()
 
-	harness, outputs, err := newPoolHarness(&dagconfig.MainNetParams)
+	harness, outputs, err := newPoolHarness(&dagconfig.MainNetParams, "TestCheckSpend")
 	if err != nil {
 		t.Fatalf("unable to create test pool: %v", err)
 	}
