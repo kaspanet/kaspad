@@ -20,35 +20,35 @@ func TestIsSupportedDbType(t *testing.T) {
 	}
 }
 
-// TestDagSetupErrors tests all error-cases in DagSetup.
+// TestDAGSetupErrors tests all error-cases in DAGSetup.
 // The non-error-cases are tested in the more general tests.
-func TestDagSetupErrors(t *testing.T) {
+func TestDAGSetupErrors(t *testing.T) {
 	os.RemoveAll(testDbRoot)
-	testDagSetupErrorThroughPatching(t, "unable to create test db root: ", os.MkdirAll, func(path string, perm os.FileMode) error {
+	testDAGSetupErrorThroughPatching(t, "unable to create test db root: ", os.MkdirAll, func(path string, perm os.FileMode) error {
 		return errors.New("Made up error")
 	})
 
-	testDagSetupErrorThroughPatching(t, "failed to create dag instance: ", New, func(config *Config) (*BlockDAG, error) {
+	testDAGSetupErrorThroughPatching(t, "failed to create dag instance: ", New, func(config *Config) (*BlockDAG, error) {
 		return nil, errors.New("Made up error")
 	})
 
-	testDagSetupErrorThroughPatching(t, "unsupported db type ", isSupportedDbType, func(dbType string) bool {
+	testDAGSetupErrorThroughPatching(t, "unsupported db type ", isSupportedDbType, func(dbType string) bool {
 		return false
 	})
 
-	testDagSetupErrorThroughPatching(t, "error creating db: ", database.Create, func(dbType string, args ...interface{}) (database.DB, error) {
+	testDAGSetupErrorThroughPatching(t, "error creating db: ", database.Create, func(dbType string, args ...interface{}) (database.DB, error) {
 		return nil, errors.New("Made up error")
 	})
 }
 
-func testDagSetupErrorThroughPatching(t *testing.T, expectedErrorMessage string, targetFunction interface{}, replacementFunction interface{}) {
+func testDAGSetupErrorThroughPatching(t *testing.T, expectedErrorMessage string, targetFunction interface{}, replacementFunction interface{}) {
 	monkey.Patch(targetFunction, replacementFunction)
-	_, tearDown, err := DagSetup("TestDagSetup", &dagconfig.MainNetParams)
+	_, tearDown, err := DAGSetup("TestDAGSetup", &dagconfig.MainNetParams)
 	if tearDown != nil {
 		defer tearDown()
 	}
 	if err == nil || !strings.HasPrefix(err.Error(), expectedErrorMessage) {
-		t.Errorf("DagSetup: expected error to have prefix '%s' but got error '%v'", expectedErrorMessage, err)
+		t.Errorf("DAGSetup: expected error to have prefix '%s' but got error '%v'", expectedErrorMessage, err)
 	}
 	monkey.Unpatch(targetFunction)
 }

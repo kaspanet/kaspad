@@ -46,10 +46,10 @@ func fileExists(name string) bool {
 	return true
 }
 
-// DagSetup is used to create a new db and chain instance with the genesis
+// DAGSetup is used to create a new db and chain instance with the genesis
 // block already inserted.  In addition to the new chain instance, it returns
 // a teardown function the caller should invoke when done testing to clean up.
-func DagSetup(dbName string, params *dagconfig.Params) (*BlockDAG, func(), error) {
+func DAGSetup(dbName string, params *dagconfig.Params) (*BlockDAG, func(), error) {
 	if !isSupportedDbType(testDbType) {
 		return nil, nil, fmt.Errorf("unsupported db type %v", testDbType)
 	}
