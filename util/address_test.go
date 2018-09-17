@@ -12,7 +12,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/util"
 	"golang.org/x/crypto/ripemd160"
 )
@@ -25,7 +24,7 @@ func TestAddresses(t *testing.T) {
 		valid   bool
 		result  util.Address
 		f       func() (util.Address, error)
-		net     *dagconfig.Params
+		prefix  util.Bech32Prefix
 	}{
 		// Positive P2PKH tests.
 		{
@@ -44,7 +43,7 @@ func TestAddresses(t *testing.T) {
 					0xc5, 0x4c, 0xe7, 0xd2, 0xa4, 0x91, 0xbb, 0x4a, 0x0e, 0x84}
 				return util.NewAddressPubKeyHash(pkHash, util.DagCoin)
 			},
-			net: &dagconfig.MainNetParams,
+			prefix: util.DagCoin,
 		},
 		{
 			name:    "mainnet p2pkh 2",
@@ -62,7 +61,7 @@ func TestAddresses(t *testing.T) {
 					0x05, 0x12, 0xbc, 0xa2, 0xce, 0xb1, 0xdd, 0x80, 0xad, 0xaa}
 				return util.NewAddressPubKeyHash(pkHash, util.DagCoin)
 			},
-			net: &dagconfig.MainNetParams,
+			prefix: util.DagCoin,
 		},
 		{
 			name:    "testnet p2pkh",
@@ -80,7 +79,7 @@ func TestAddresses(t *testing.T) {
 					0xe5, 0x12, 0xd3, 0x60, 0x3f, 0x1f, 0x1c, 0x8d, 0xe6, 0x8f}
 				return util.NewAddressPubKeyHash(pkHash, util.DagTest)
 			},
-			net: &dagconfig.TestNet3Params,
+			prefix: util.DagTest,
 		},
 
 		// Negative P2PKH tests.
@@ -95,13 +94,13 @@ func TestAddresses(t *testing.T) {
 					0xaa}
 				return util.NewAddressPubKeyHash(pkHash, util.DagCoin)
 			},
-			net: &dagconfig.MainNetParams,
+			prefix: util.DagCoin,
 		},
 		{
-			name:  "p2pkh bad checksum",
-			addr:  "dagcoin:qr35ennsep3hxfe7lnz5ee7j5jgmkjswss74as46gx",
-			valid: false,
-			net:   &dagconfig.MainNetParams,
+			name:   "p2pkh bad checksum",
+			addr:   "dagcoin:qr35ennsep3hxfe7lnz5ee7j5jgmkjswss74as46gx",
+			valid:  false,
+			prefix: util.DagCoin,
 		},
 
 		// Positive P2SH tests.
@@ -143,7 +142,7 @@ func TestAddresses(t *testing.T) {
 					0xae}
 				return util.NewAddressScriptHash(script, util.DagCoin)
 			},
-			net: &dagconfig.MainNetParams,
+			prefix: util.DagCoin,
 		},
 		{
 			// Taken from transactions:
@@ -164,7 +163,7 @@ func TestAddresses(t *testing.T) {
 					0xc0, 0x51, 0x99, 0x29, 0x01, 0x9e, 0xf8, 0x6e, 0xb5, 0xb4}
 				return util.NewAddressScriptHashFromHash(hash, util.DagCoin)
 			},
-			net: &dagconfig.MainNetParams,
+			prefix: util.DagCoin,
 		},
 		{
 			// Taken from bitcoind base58_keys_valid.
@@ -183,7 +182,7 @@ func TestAddresses(t *testing.T) {
 					0x2c, 0xdc, 0x28, 0x56, 0x17, 0x04, 0x0c, 0x92, 0x4a, 0x0a}
 				return util.NewAddressScriptHashFromHash(hash, util.DagTest)
 			},
-			net: &dagconfig.TestNet3Params,
+			prefix: util.DagTest,
 		},
 
 		// Negative P2SH tests.
@@ -198,13 +197,13 @@ func TestAddresses(t *testing.T) {
 					0x10}
 				return util.NewAddressScriptHashFromHash(hash, util.DagCoin)
 			},
-			net: &dagconfig.MainNetParams,
+			prefix: util.DagCoin,
 		},
 	}
 
 	for _, test := range tests {
 		// Decode addr and compare error against valid.
-		decoded, err := util.DecodeAddress(test.addr, test.net.Prefix)
+		decoded, err := util.DecodeAddress(test.addr, test.prefix)
 		if (err == nil) != test.valid {
 			t.Errorf("%v: decoding test failed: %v", test.name, err)
 			return
@@ -270,7 +269,7 @@ func TestAddresses(t *testing.T) {
 			}
 
 			// Ensure the address is for the expected network.
-			if !decoded.IsForNet(test.net.Prefix) {
+			if !decoded.IsForNet(test.prefix) {
 				t.Errorf("%v: calculated network does not match expected",
 					test.name)
 				return
