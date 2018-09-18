@@ -35,10 +35,10 @@ import (
 	"github.com/daglabs/btcd/peer"
 	"github.com/daglabs/btcd/server/serverutils"
 	"github.com/daglabs/btcd/txscript"
-	"github.com/daglabs/btcd/version"
-	"github.com/daglabs/btcd/wire"
 	"github.com/daglabs/btcd/util"
 	"github.com/daglabs/btcd/util/bloom"
+	"github.com/daglabs/btcd/version"
+	"github.com/daglabs/btcd/wire"
 )
 
 const (
