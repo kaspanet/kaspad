@@ -564,7 +564,7 @@ func TestProcessTransaction(t *testing.T) {
 		}},
 		LockTime: 0,
 	})
-	harness.txPool.diffUTXOSet.AddTx(p2shTx.MsgTx(), curHeight+1)
+	harness.txPool.mpUTXOSet.AddTx(p2shTx.MsgTx(), curHeight+1)
 
 	nonStdSigScriptTx := util.NewTx(&wire.MsgTx{
 		Version: 1,

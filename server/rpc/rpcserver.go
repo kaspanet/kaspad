@@ -4187,6 +4187,7 @@ func NewRPCServer(
 		AddrIndex:    p2pServer.AddrIndex,
 		CfIndex:      p2pServer.CfIndex,
 		FeeEstimator: p2pServer.FeeEstimator,
+		DAG:          p2pServer.DAG,
 	}
 	rpc := Server{
 		cfg:                    *cfg,
