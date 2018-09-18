@@ -584,16 +584,6 @@ func (dus *DiffUTXOSet) containsInputs(tx *wire.MsgTx) bool {
 	return true
 }
 
-func (dus *DiffUTXOSet) IsSpentInDiff(outPoint wire.OutPoint) bool {
-	isInBase := dus.base.contains(outPoint)
-	isInDiffToAdd := dus.UTXODiff.toAdd.contains(outPoint)
-	isInDiffToRemove := dus.UTXODiff.toRemove.contains(outPoint)
-	if (!isInBase && !isInDiffToAdd) || isInDiffToRemove {
-		return false
-	}
-	return true
-}
-
 // meldToBase updates the base fullUTXOSet with all changes in diff
 func (dus *DiffUTXOSet) meldToBase() {
 	for outPoint := range dus.UTXODiff.toRemove {

@@ -66,14 +66,6 @@ func (s *fakeChain) SetMedianTimePast(mtp time.Time) {
 	s.Unlock()
 }
 
-// CalcSequenceLock returns the current sequence lock for the passed
-// transaction associated with the fake chain instance.
-func (s *fakeChain) CalcSequenceLock(tx *util.Tx,
-	utxoSet blockdag.UTXOSet) (*blockdag.SequenceLock, error) {
-
-	return calcSequenceLock(tx, utxoSet)
-}
-
 func calcSequenceLock(tx *util.Tx,
 	utxoSet blockdag.UTXOSet) (*blockdag.SequenceLock, error) {
 
@@ -306,7 +298,7 @@ func newPoolHarness(dagParams *dagconfig.Params, numOutputs uint32, dbName strin
 			DAGParams:        dagParams,
 			BestHeight:       chain.BestHeight,
 			MedianTimePast:   chain.MedianTimePast,
-			CalcSequenceLock: chain.CalcSequenceLock,
+			CalcSequenceLock: calcSequenceLock,
 			SigCache:         nil,
 			AddrIndex:        nil,
 		}),
@@ -396,7 +388,6 @@ func (p *poolHarness) createTx(out spendableOutput, fee int64, numOutputs int64)
 }
 
 func TestProcessTransaction(t *testing.T) {
-	t.Parallel()
 
 	harness, spendableOuts, err := newPoolHarness(&dagconfig.MainNetParams, 6, "TestProcessTransaction")
 	if err != nil {
@@ -595,102 +586,6 @@ func TestProcessTransaction(t *testing.T) {
 		t.Errorf("Unexpected error message. Expected \"%s\" but got \"%s\"", expectedErrStr, err.Error())
 	}
 
-	// maxIntSigOpsScriptBuilder := txscript.NewScriptBuilder()
-	// maxInt := 1<<(strconv.IntSize-1) - 1
-	// for i := 0; i < maxInt; i++ {
-	// 	maxIntSigOpsScriptBuilder = maxIntSigOpsScriptBuilder.AddOp(txscript.OpCheckSig)
-	// }
-	// maxIntSigOpsScript, err := maxIntSigOpsScriptBuilder.Script()
-	// if err != nil {
-	// 	t.Fatalf("Script: error creating maxIntSigOpsScript: %v", err)
-	// }
-	// oneSigOpsScript, err := txscript.NewScriptBuilder().AddOp(txscript.OpCheckSig).Script()
-	// if err != nil {
-	// 	t.Fatalf("Script: error creating oneSigOpsScript: %v", err)
-	// }
-
-	// maxIntSigOpsPkScript, err := txscript.NewScriptBuilder().
-	// 	AddOp(txscript.OpHash160).
-	// 	AddData(util.Hash160(maxIntSigOpsScript)).
-	// 	AddOp(txscript.OpEqual).
-	// 	Script()
-
-	// if err != nil {
-	// 	t.Fatalf("Script: error creating p2shPKScript: %v", err)
-	// }
-
-	// wrappedP2SHMaxIntSigOpsScript, err := txscript.NewScriptBuilder().AddData(maxIntSigOpsScript).Script()
-	// if err != nil {
-	// 	t.Fatalf("Script: error creating wrappedP2shNonSigScript: %v", err)
-	// }
-
-	// oneSigOpsPKScript, err := txscript.NewScriptBuilder().
-	// 	AddOp(txscript.OpHash160).
-	// 	AddData(util.Hash160(maxIntSigOpsScript)).
-	// 	AddOp(txscript.OpEqual).
-	// 	Script()
-
-	// if err != nil {
-	// 	t.Fatalf("Script: error creating p2shPKScript: %v", err)
-	// }
-
-	// wrappedP2SHOneIntSigOpsScript, err := txscript.NewScriptBuilder().AddData(oneSigOpsScript).Script()
-	// if err != nil {
-	// 	t.Fatalf("Script: error creating wrappedP2shNonSigScript: %v", err)
-	// }
-
-	// overflowedP2SHTx := util.NewTx(&wire.MsgTx{
-	// 	Version: 1,
-	// 	TxIn:    []*wire.TxIn{&dummyTxIn},
-	// 	TxOut: []*wire.TxOut{
-	// 		{
-	// 			Value:    2500000000,
-	// 			PkScript: maxIntSigOpsPkScript,
-	// 		},
-	// 		{
-	// 			Value:    2500000000,
-	// 			PkScript: oneSigOpsPKScript,
-	// 		},
-	// 	},
-	// 	LockTime: 0,
-	// })
-	// harness.chain.utxos.AddTxOuts(overflowedP2SHTx, curHeight+1)
-	// spendOverflowedP2SHTx := util.NewTx(&wire.MsgTx{
-	// 	Version: 1,
-	// 	TxIn: []*wire.TxIn{
-	// 		&wire.TxIn{
-	// 			PreviousOutPoint: wire.OutPoint{Hash: *overflowedP2SHTx.Hash(), Index: 0},
-	// 			SignatureScript:  wrappedP2SHMaxIntSigOpsScript,
-	// 			Sequence:         wire.MaxTxInSequenceNum,
-	// 		},
-	// 		&wire.TxIn{
-	// 			PreviousOutPoint: wire.OutPoint{Hash: *overflowedP2SHTx.Hash(), Index: 1},
-	// 			SignatureScript:  wrappedP2SHOneIntSigOpsScript,
-	// 			Sequence:         wire.MaxTxInSequenceNum,
-	// 		},
-	// 	},
-	// 	TxOut: []*wire.TxOut{{
-	// 		Value:    5000000000,
-	// 		PkScript: dummyPkScript,
-	// 	}},
-	// 	LockTime: 0,
-	// })
-	// _, err = harness.txPool.ProcessTransaction(spendOverflowedP2SHTx, true, false, 0)
-	// if err == nil {
-	// 	t.Errorf("ProcessTransaction: expected an error, not nil")
-	// }
-	// if code, _ := extractRejectCode(err); code != wire.RejectNonstandard {
-	// 	t.Errorf("Unexpected error code. Expected %v but got %v", wire.RejectNonstandard, code)
-	// }
-	// expectedErrStr = fmt.Sprintf("transaction %v has a non-standard input: "+
-	// 	"transaction input #%d has "+
-	// 	"%d signature operations which is more "+
-	// 	"than the allowed max amount of %d",
-	// 	nonStdSigScriptTx.Hash(), 0, 16, 15)
-	// if expectedErrStr != err.Error() {
-	// 	t.Errorf("Unexpected error message. Expected \"%s\" but got \"%s\"", expectedErrStr, err.Error())
-	// }
-
 	//Checks that even if we accept non standard transactions, we reject by the MaxSigOpsPerTx consensus rule
 	harness.txPool.cfg.Policy.AcceptNonStd = true
 	harness.txPool.cfg.Policy.MaxSigOpsPerTx = 15
@@ -857,7 +752,6 @@ func TestDoubleSpends(t *testing.T) {
 //TestFetchTransaction checks that FetchTransaction
 //returns only transaction from the main pool and not from the orphan pool
 func TestFetchTransaction(t *testing.T) {
-	t.Parallel()
 
 	harness, spendableOuts, err := newPoolHarness(&dagconfig.MainNetParams, 1, "TestFetchTransaction")
 	tc := &testContext{t, harness}
@@ -963,7 +857,6 @@ func TestSimpleOrphanChain(t *testing.T) {
 // TestOrphanReject ensures that orphans are properly rejected when the allow
 // orphans flag is not set on ProcessTransaction.
 func TestOrphanReject(t *testing.T) {
-	t.Parallel()
 
 	harness, outputs, err := newPoolHarness(&dagconfig.MainNetParams, 1, "TestOrphanReject")
 	if err != nil {
@@ -1128,7 +1021,6 @@ func TestRemoveTransaction(t *testing.T) {
 // TestOrphanEviction ensures that exceeding the maximum number of orphans
 // evicts entries to make room for the new ones.
 func TestOrphanEviction(t *testing.T) {
-	t.Parallel()
 
 	harness, outputs, err := newPoolHarness(&dagconfig.MainNetParams, 1, "TestOrphanEviction")
 	if err != nil {
@@ -1191,7 +1083,6 @@ func TestOrphanEviction(t *testing.T) {
 // Attempt to remove orphans by tag,
 // and ensure the state of all other orphans are unaffected.
 func TestRemoveOrphansByTag(t *testing.T) {
-	t.Parallel()
 
 	harness, _, err := newPoolHarness(&dagconfig.MainNetParams, 1, "TestRemoveOrphansByTag")
 	if err != nil {
@@ -1248,7 +1139,6 @@ func TestRemoveOrphansByTag(t *testing.T) {
 // orphan that doesn't exist is removed  both when there is another orphan that
 // redeems it and when there is not.
 func TestBasicOrphanRemoval(t *testing.T) {
-	t.Parallel()
 
 	const maxOrphans = 4
 	harness, spendableOuts, err := newPoolHarness(&dagconfig.MainNetParams, 1, "TestBasicOrphanRemoval")
@@ -1323,7 +1213,6 @@ func TestBasicOrphanRemoval(t *testing.T) {
 // TestOrphanChainRemoval ensure that orphan chains (orphans that spend outputs
 // from other orphans) are removed as expected.
 func TestOrphanChainRemoval(t *testing.T) {
-	t.Parallel()
 
 	const maxOrphans = 10
 	harness, spendableOuts, err := newPoolHarness(&dagconfig.MainNetParams, 1, "TestOrphanChainRemoval")
@@ -1386,7 +1275,6 @@ func TestOrphanChainRemoval(t *testing.T) {
 // TestMultiInputOrphanDoubleSpend ensures that orphans that spend from an
 // output that is spend by another transaction entering the pool are removed.
 func TestMultiInputOrphanDoubleSpend(t *testing.T) {
-	t.Parallel()
 
 	const maxOrphans = 4
 	harness, outputs, err := newPoolHarness(&dagconfig.MainNetParams, 1, "TestMultiInputOrphanDoubleSpend")
