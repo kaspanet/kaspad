@@ -1196,6 +1196,7 @@ func (sm *SyncManager) handleBlockDAGNotification(notification *blockdag.Notific
 		ch := make(chan mempool.NewBlockMsg)
 		go func() {
 			err := sm.txMemPool.HandleNewBlock(block, ch)
+			close(ch)
 			if err != nil {
 				panic(fmt.Sprintf("HandleNewBlock failed to handle block %v", block.Hash()))
 			}

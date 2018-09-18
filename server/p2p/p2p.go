@@ -2436,7 +2436,7 @@ func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params
 			MinRelayTxFee:        config.MainConfig().MinRelayTxFee,
 			MaxTxVersion:         1,
 		},
-		DagParams:      dagParams,
+		DAGParams:      dagParams,
 		BestHeight:     func() int32 { return s.DAG.VirtualBlock().SelectedTipHeight() },
 		MedianTimePast: func() time.Time { return s.DAG.VirtualBlock().SelectedTip().CalcPastMedianTime() },
 		CalcSequenceLock: func(tx *util.Tx, utxoSet blockdag.UTXOSet) (*blockdag.SequenceLock, error) {

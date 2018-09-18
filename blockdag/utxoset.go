@@ -322,7 +322,7 @@ func (d *utxoDiff) clone() *utxoDiff {
 	}
 }
 
-//RemoveTxOuts adds all of the transaction's outputs to d.toRemove
+//RemoveTxOuts marks the transaction's outputs to removal
 func (d *utxoDiff) RemoveTxOuts(tx *wire.MsgTx) {
 	for idx := range tx.TxOut {
 		hash := tx.TxHash()
@@ -330,7 +330,7 @@ func (d *utxoDiff) RemoveTxOuts(tx *wire.MsgTx) {
 	}
 }
 
-//AddEntry adds an UTXOEntry to d.toAdd
+//AddEntry adds an UTXOEntry to the diff
 func (d *utxoDiff) AddEntry(outpoint wire.OutPoint, entry *UTXOEntry) {
 	d.toAdd.add(outpoint, entry)
 }
