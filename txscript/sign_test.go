@@ -12,8 +12,8 @@ import (
 	"github.com/daglabs/btcd/btcec"
 	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/dagconfig/daghash"
-	"github.com/daglabs/btcd/wire"
 	"github.com/daglabs/btcd/util"
+	"github.com/daglabs/btcd/wire"
 )
 
 type addressToKey struct {
@@ -152,7 +152,7 @@ func TestSignTxOutput(t *testing.T) {
 			pk := (*btcec.PublicKey)(&key.PublicKey).
 				SerializeUncompressed()
 			address, err := util.NewAddressPubKeyHash(
-				util.Hash160(pk), &dagconfig.TestNet3Params)
+				util.Hash160(pk), util.DagTest)
 			if err != nil {
 				t.Errorf("failed to make address for %s: %v",
 					msg, err)
@@ -189,7 +189,7 @@ func TestSignTxOutput(t *testing.T) {
 			pk := (*btcec.PublicKey)(&key.PublicKey).
 				SerializeUncompressed()
 			address, err := util.NewAddressPubKeyHash(
-				util.Hash160(pk), &dagconfig.TestNet3Params)
+				util.Hash160(pk), util.DagTest)
 			if err != nil {
 				t.Errorf("failed to make address for %s: %v",
 					msg, err)
@@ -250,7 +250,7 @@ func TestSignTxOutput(t *testing.T) {
 			pk := (*btcec.PublicKey)(&key.PublicKey).
 				SerializeCompressed()
 			address, err := util.NewAddressPubKeyHash(
-				util.Hash160(pk), &dagconfig.TestNet3Params)
+				util.Hash160(pk), util.DagTest)
 			if err != nil {
 				t.Errorf("failed to make address for %s: %v",
 					msg, err)
@@ -288,7 +288,7 @@ func TestSignTxOutput(t *testing.T) {
 			pk := (*btcec.PublicKey)(&key.PublicKey).
 				SerializeCompressed()
 			address, err := util.NewAddressPubKeyHash(
-				util.Hash160(pk), &dagconfig.TestNet3Params)
+				util.Hash160(pk), util.DagTest)
 			if err != nil {
 				t.Errorf("failed to make address for %s: %v",
 					msg, err)
@@ -348,7 +348,7 @@ func TestSignTxOutput(t *testing.T) {
 
 			pk := (*btcec.PublicKey)(&key.PublicKey).
 				SerializeUncompressed()
-			address, err := util.NewAddressPubKey(pk, &dagconfig.TestNet3Params)
+			address, err := util.NewAddressPubKey(pk, util.DagTest)
 			if err != nil {
 				t.Errorf("failed to make address for %s: %v",
 					msg, err)
@@ -385,7 +385,7 @@ func TestSignTxOutput(t *testing.T) {
 
 			pk := (*btcec.PublicKey)(&key.PublicKey).
 				SerializeUncompressed()
-			address, err := util.NewAddressPubKey(pk, &dagconfig.TestNet3Params)
+			address, err := util.NewAddressPubKey(pk, util.DagTest)
 			if err != nil {
 				t.Errorf("failed to make address for %s: %v",
 					msg, err)
@@ -445,7 +445,7 @@ func TestSignTxOutput(t *testing.T) {
 
 			pk := (*btcec.PublicKey)(&key.PublicKey).
 				SerializeCompressed()
-			address, err := util.NewAddressPubKey(pk, &dagconfig.TestNet3Params)
+			address, err := util.NewAddressPubKey(pk, util.DagTest)
 			if err != nil {
 				t.Errorf("failed to make address for %s: %v",
 					msg, err)
@@ -482,7 +482,7 @@ func TestSignTxOutput(t *testing.T) {
 
 			pk := (*btcec.PublicKey)(&key.PublicKey).
 				SerializeCompressed()
-			address, err := util.NewAddressPubKey(pk, &dagconfig.TestNet3Params)
+			address, err := util.NewAddressPubKey(pk, util.DagTest)
 			if err != nil {
 				t.Errorf("failed to make address for %s: %v",
 					msg, err)
@@ -543,7 +543,7 @@ func TestSignTxOutput(t *testing.T) {
 			pk := (*btcec.PublicKey)(&key.PublicKey).
 				SerializeUncompressed()
 			address, err := util.NewAddressPubKeyHash(
-				util.Hash160(pk), &dagconfig.TestNet3Params)
+				util.Hash160(pk), util.DagTest)
 			if err != nil {
 				t.Errorf("failed to make address for %s: %v",
 					msg, err)
@@ -558,7 +558,7 @@ func TestSignTxOutput(t *testing.T) {
 			}
 
 			scriptAddr, err := util.NewAddressScriptHash(
-				pkScript, &dagconfig.TestNet3Params)
+				pkScript, util.DagTest)
 			if err != nil {
 				t.Errorf("failed to make p2sh addr for %s: %v",
 					msg, err)
@@ -599,7 +599,7 @@ func TestSignTxOutput(t *testing.T) {
 			pk := (*btcec.PublicKey)(&key.PublicKey).
 				SerializeUncompressed()
 			address, err := util.NewAddressPubKeyHash(
-				util.Hash160(pk), &dagconfig.TestNet3Params)
+				util.Hash160(pk), util.DagTest)
 			if err != nil {
 				t.Errorf("failed to make address for %s: %v",
 					msg, err)
@@ -614,7 +614,7 @@ func TestSignTxOutput(t *testing.T) {
 			}
 
 			scriptAddr, err := util.NewAddressScriptHash(
-				pkScript, &dagconfig.TestNet3Params)
+				pkScript, util.DagTest)
 			if err != nil {
 				t.Errorf("failed to make p2sh addr for %s: %v",
 					msg, err)
@@ -681,7 +681,7 @@ func TestSignTxOutput(t *testing.T) {
 			pk := (*btcec.PublicKey)(&key.PublicKey).
 				SerializeCompressed()
 			address, err := util.NewAddressPubKeyHash(
-				util.Hash160(pk), &dagconfig.TestNet3Params)
+				util.Hash160(pk), util.DagTest)
 			if err != nil {
 				t.Errorf("failed to make address for %s: %v",
 					msg, err)
@@ -695,7 +695,7 @@ func TestSignTxOutput(t *testing.T) {
 			}
 
 			scriptAddr, err := util.NewAddressScriptHash(
-				pkScript, &dagconfig.TestNet3Params)
+				pkScript, util.DagTest)
 			if err != nil {
 				t.Errorf("failed to make p2sh addr for %s: %v",
 					msg, err)
@@ -737,7 +737,7 @@ func TestSignTxOutput(t *testing.T) {
 			pk := (*btcec.PublicKey)(&key.PublicKey).
 				SerializeCompressed()
 			address, err := util.NewAddressPubKeyHash(
-				util.Hash160(pk), &dagconfig.TestNet3Params)
+				util.Hash160(pk), util.DagTest)
 			if err != nil {
 				t.Errorf("failed to make address for %s: %v",
 					msg, err)
@@ -751,7 +751,7 @@ func TestSignTxOutput(t *testing.T) {
 			}
 
 			scriptAddr, err := util.NewAddressScriptHash(
-				pkScript, &dagconfig.TestNet3Params)
+				pkScript, util.DagTest)
 			if err != nil {
 				t.Errorf("failed to make p2sh addr for %s: %v",
 					msg, err)
@@ -817,7 +817,7 @@ func TestSignTxOutput(t *testing.T) {
 
 			pk := (*btcec.PublicKey)(&key.PublicKey).
 				SerializeUncompressed()
-			address, err := util.NewAddressPubKey(pk, &dagconfig.TestNet3Params)
+			address, err := util.NewAddressPubKey(pk, util.DagTest)
 			if err != nil {
 				t.Errorf("failed to make address for %s: %v",
 					msg, err)
@@ -831,7 +831,7 @@ func TestSignTxOutput(t *testing.T) {
 			}
 
 			scriptAddr, err := util.NewAddressScriptHash(
-				pkScript, &dagconfig.TestNet3Params)
+				pkScript, util.DagTest)
 			if err != nil {
 				t.Errorf("failed to make p2sh addr for %s: %v",
 					msg, err)
@@ -872,7 +872,7 @@ func TestSignTxOutput(t *testing.T) {
 
 			pk := (*btcec.PublicKey)(&key.PublicKey).
 				SerializeUncompressed()
-			address, err := util.NewAddressPubKey(pk, &dagconfig.TestNet3Params)
+			address, err := util.NewAddressPubKey(pk, util.DagTest)
 			if err != nil {
 				t.Errorf("failed to make address for %s: %v",
 					msg, err)
@@ -886,7 +886,7 @@ func TestSignTxOutput(t *testing.T) {
 			}
 
 			scriptAddr, err := util.NewAddressScriptHash(
-				pkScript, &dagconfig.TestNet3Params)
+				pkScript, util.DagTest)
 			if err != nil {
 				t.Errorf("failed to make p2sh addr for %s: %v",
 					msg, err)
@@ -951,7 +951,7 @@ func TestSignTxOutput(t *testing.T) {
 
 			pk := (*btcec.PublicKey)(&key.PublicKey).
 				SerializeCompressed()
-			address, err := util.NewAddressPubKey(pk, &dagconfig.TestNet3Params)
+			address, err := util.NewAddressPubKey(pk, util.DagTest)
 			if err != nil {
 				t.Errorf("failed to make address for %s: %v",
 					msg, err)
@@ -965,7 +965,7 @@ func TestSignTxOutput(t *testing.T) {
 			}
 
 			scriptAddr, err := util.NewAddressScriptHash(
-				pkScript, &dagconfig.TestNet3Params)
+				pkScript, util.DagTest)
 			if err != nil {
 				t.Errorf("failed to make p2sh addr for %s: %v",
 					msg, err)
@@ -1005,7 +1005,7 @@ func TestSignTxOutput(t *testing.T) {
 
 			pk := (*btcec.PublicKey)(&key.PublicKey).
 				SerializeCompressed()
-			address, err := util.NewAddressPubKey(pk, &dagconfig.TestNet3Params)
+			address, err := util.NewAddressPubKey(pk, util.DagTest)
 			if err != nil {
 				t.Errorf("failed to make address for %s: %v",
 					msg, err)
@@ -1019,7 +1019,7 @@ func TestSignTxOutput(t *testing.T) {
 			}
 
 			scriptAddr, err := util.NewAddressScriptHash(
-				pkScript, &dagconfig.TestNet3Params)
+				pkScript, util.DagTest)
 			if err != nil {
 				t.Errorf("failed to make p2sh addr for %s: %v",
 					msg, err)
@@ -1084,7 +1084,7 @@ func TestSignTxOutput(t *testing.T) {
 
 			pk1 := (*btcec.PublicKey)(&key1.PublicKey).
 				SerializeCompressed()
-			address1, err := util.NewAddressPubKey(pk1, &dagconfig.TestNet3Params)
+			address1, err := util.NewAddressPubKey(pk1, util.DagTest)
 			if err != nil {
 				t.Errorf("failed to make address for %s: %v",
 					msg, err)
@@ -1100,7 +1100,7 @@ func TestSignTxOutput(t *testing.T) {
 
 			pk2 := (*btcec.PublicKey)(&key2.PublicKey).
 				SerializeCompressed()
-			address2, err := util.NewAddressPubKey(pk2, &dagconfig.TestNet3Params)
+			address2, err := util.NewAddressPubKey(pk2, util.DagTest)
 			if err != nil {
 				t.Errorf("failed to make address 2 for %s: %v",
 					msg, err)
@@ -1116,7 +1116,7 @@ func TestSignTxOutput(t *testing.T) {
 			}
 
 			scriptAddr, err := util.NewAddressScriptHash(
-				pkScript, &dagconfig.TestNet3Params)
+				pkScript, util.DagTest)
 			if err != nil {
 				t.Errorf("failed to make p2sh addr for %s: %v",
 					msg, err)
@@ -1157,7 +1157,7 @@ func TestSignTxOutput(t *testing.T) {
 
 			pk1 := (*btcec.PublicKey)(&key1.PublicKey).
 				SerializeCompressed()
-			address1, err := util.NewAddressPubKey(pk1, &dagconfig.TestNet3Params)
+			address1, err := util.NewAddressPubKey(pk1, util.DagTest)
 			if err != nil {
 				t.Errorf("failed to make address for %s: %v",
 					msg, err)
@@ -1173,7 +1173,7 @@ func TestSignTxOutput(t *testing.T) {
 
 			pk2 := (*btcec.PublicKey)(&key2.PublicKey).
 				SerializeCompressed()
-			address2, err := util.NewAddressPubKey(pk2, &dagconfig.TestNet3Params)
+			address2, err := util.NewAddressPubKey(pk2, util.DagTest)
 			if err != nil {
 				t.Errorf("failed to make address 2 for %s: %v",
 					msg, err)
@@ -1189,7 +1189,7 @@ func TestSignTxOutput(t *testing.T) {
 			}
 
 			scriptAddr, err := util.NewAddressScriptHash(
-				pkScript, &dagconfig.TestNet3Params)
+				pkScript, util.DagTest)
 			if err != nil {
 				t.Errorf("failed to make p2sh addr for %s: %v",
 					msg, err)
@@ -1259,7 +1259,7 @@ func TestSignTxOutput(t *testing.T) {
 
 			pk1 := (*btcec.PublicKey)(&key1.PublicKey).
 				SerializeCompressed()
-			address1, err := util.NewAddressPubKey(pk1, &dagconfig.TestNet3Params)
+			address1, err := util.NewAddressPubKey(pk1, util.DagTest)
 			if err != nil {
 				t.Errorf("failed to make address for %s: %v",
 					msg, err)
@@ -1275,7 +1275,7 @@ func TestSignTxOutput(t *testing.T) {
 
 			pk2 := (*btcec.PublicKey)(&key2.PublicKey).
 				SerializeCompressed()
-			address2, err := util.NewAddressPubKey(pk2, &dagconfig.TestNet3Params)
+			address2, err := util.NewAddressPubKey(pk2, util.DagTest)
 			if err != nil {
 				t.Errorf("failed to make address 2 for %s: %v",
 					msg, err)
@@ -1291,7 +1291,7 @@ func TestSignTxOutput(t *testing.T) {
 			}
 
 			scriptAddr, err := util.NewAddressScriptHash(
-				pkScript, &dagconfig.TestNet3Params)
+				pkScript, util.DagTest)
 			if err != nil {
 				t.Errorf("failed to make p2sh addr for %s: %v",
 					msg, err)

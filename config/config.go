@@ -731,7 +731,7 @@ func loadConfig() (*Config, []string, error) {
 	// Check mining addresses are valid and saved parsed versions.
 	cfg.MiningAddrs = make([]util.Address, 0, len(cfg.configFlags.MiningAddrs))
 	for _, strAddr := range cfg.configFlags.MiningAddrs {
-		addr, err := util.DecodeAddress(strAddr, activeNetParams)
+		addr, err := util.DecodeAddress(strAddr, activeNetParams.Prefix)
 		if err != nil {
 			str := "%s: mining address '%s' failed to decode: %v"
 			err := fmt.Errorf(str, funcName, strAddr, err)
@@ -739,7 +739,7 @@ func loadConfig() (*Config, []string, error) {
 			fmt.Fprintln(os.Stderr, usageMessage)
 			return nil, nil, err
 		}
-		if !addr.IsForNet(activeNetParams) {
+		if !addr.IsForNet(activeNetParams.Prefix) {
 			str := "%s: mining address '%s' is on the wrong network"
 			err := fmt.Errorf(str, funcName, strAddr)
 			fmt.Fprintln(os.Stderr, err)

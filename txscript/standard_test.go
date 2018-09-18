@@ -32,7 +32,7 @@ func mustParseShortForm(script string) []byte {
 // the tests as a helper since the only way it can fail is if there is an error
 // in the test source code.
 func newAddressPubKey(serializedPubKey []byte) util.Address {
-	addr, err := util.NewAddressPubKey(serializedPubKey, &dagconfig.MainNetParams)
+	addr, err := util.NewAddressPubKey(serializedPubKey, util.DagCoin)
 	if err != nil {
 		panic("invalid public key in test source")
 	}
@@ -45,7 +45,7 @@ func newAddressPubKey(serializedPubKey []byte) util.Address {
 // as a helper since the only way it can fail is if there is an error in the
 // test source code.
 func newAddressPubKeyHash(pkHash []byte) util.Address {
-	addr, err := util.NewAddressPubKeyHash(pkHash, &dagconfig.MainNetParams)
+	addr, err := util.NewAddressPubKeyHash(pkHash, util.DagCoin)
 	if err != nil {
 		panic("invalid public key hash in test source")
 	}
@@ -59,7 +59,7 @@ func newAddressPubKeyHash(pkHash []byte) util.Address {
 // test source code.
 func newAddressScriptHash(scriptHash []byte) util.Address {
 	addr, err := util.NewAddressScriptHashFromHash(scriptHash,
-		&dagconfig.MainNetParams)
+		util.DagCoin)
 	if err != nil {
 		panic("invalid script hash in test source")
 	}
@@ -498,7 +498,7 @@ func (b *bogusAddress) ScriptAddress() []byte {
 }
 
 // IsForNet lies blatantly to satisfy the util.Address interface.
-func (b *bogusAddress) IsForNet(chainParams *dagconfig.Params) bool {
+func (b *bogusAddress) IsForNet(prefix util.Bech32Prefix) bool {
 	return true // why not?
 }
 
@@ -515,7 +515,7 @@ func TestPayToAddrScript(t *testing.T) {
 
 	// 1MirQ9bwyQcGVJPwKUgapu5ouK2E2Ey4gX
 	p2pkhMain, err := util.NewAddressPubKeyHash(hexToBytes("e34cce70c86"+
-		"373273efcc54ce7d2a491bb4a0e84"), &dagconfig.MainNetParams)
+		"373273efcc54ce7d2a491bb4a0e84"), util.DagCoin)
 	if err != nil {
 		t.Fatalf("Unable to create public key hash address: %v", err)
 	}
@@ -523,20 +523,20 @@ func TestPayToAddrScript(t *testing.T) {
 	// Taken from transaction:
 	// b0539a45de13b3e0403909b8bd1a555b8cbe45fd4e3f3fda76f3a5f52835c29d
 	p2shMain, _ := util.NewAddressScriptHashFromHash(hexToBytes("e8c300"+
-		"c87986efa84c37c0519929019ef86eb5b4"), &dagconfig.MainNetParams)
+		"c87986efa84c37c0519929019ef86eb5b4"), util.DagCoin)
 	if err != nil {
 		t.Fatalf("Unable to create script hash address: %v", err)
 	}
 
 	//  mainnet p2pk 13CG6SJ3yHUXo4Cr2RY4THLLJrNFuG3gUg
 	p2pkCompressedMain, err := util.NewAddressPubKey(hexToBytes("02192d"+
-		"74d0cb94344c9569c2e77901573d8d7903c3ebec3a957724895dca52c6b4"), &dagconfig.MainNetParams)
+		"74d0cb94344c9569c2e77901573d8d7903c3ebec3a957724895dca52c6b4"), util.DagCoin)
 	if err != nil {
 		t.Fatalf("Unable to create pubkey address (compressed): %v",
 			err)
 	}
 	p2pkCompressed2Main, err := util.NewAddressPubKey(hexToBytes("03b0b"+
-		"d634234abbb1ba1e986e884185c61cf43e001f9137f23c2c409273eb16e65"), &dagconfig.MainNetParams)
+		"d634234abbb1ba1e986e884185c61cf43e001f9137f23c2c409273eb16e65"), util.DagCoin)
 	if err != nil {
 		t.Fatalf("Unable to create pubkey address (compressed 2): %v",
 			err)
@@ -545,7 +545,7 @@ func TestPayToAddrScript(t *testing.T) {
 	p2pkUncompressedMain, err := util.NewAddressPubKey(hexToBytes("0411"+
 		"db93e1dcdb8a016b49840f8c53bc1eb68a382e97b1482ecad7b148a6909a5"+
 		"cb2e0eaddfb84ccf9744464f82e160bfa9b8b64f9d4c03f999b8643f656b4"+
-		"12a3"), &dagconfig.MainNetParams)
+		"12a3"), util.DagCoin)
 	if err != nil {
 		t.Fatalf("Unable to create pubkey address (uncompressed): %v",
 			err)
@@ -632,13 +632,13 @@ func TestMultiSigScript(t *testing.T) {
 
 	//  mainnet p2pk 13CG6SJ3yHUXo4Cr2RY4THLLJrNFuG3gUg
 	p2pkCompressedMain, err := util.NewAddressPubKey(hexToBytes("02192d"+
-		"74d0cb94344c9569c2e77901573d8d7903c3ebec3a957724895dca52c6b4"), &dagconfig.MainNetParams)
+		"74d0cb94344c9569c2e77901573d8d7903c3ebec3a957724895dca52c6b4"), util.DagCoin)
 	if err != nil {
 		t.Fatalf("Unable to create pubkey address (compressed): %v",
 			err)
 	}
 	p2pkCompressed2Main, err := util.NewAddressPubKey(hexToBytes("03b0b"+
-		"d634234abbb1ba1e986e884185c61cf43e001f9137f23c2c409273eb16e65"), &dagconfig.MainNetParams)
+		"d634234abbb1ba1e986e884185c61cf43e001f9137f23c2c409273eb16e65"), util.DagCoin)
 	if err != nil {
 		t.Fatalf("Unable to create pubkey address (compressed 2): %v",
 			err)
@@ -647,7 +647,7 @@ func TestMultiSigScript(t *testing.T) {
 	p2pkUncompressedMain, err := util.NewAddressPubKey(hexToBytes("0411"+
 		"db93e1dcdb8a016b49840f8c53bc1eb68a382e97b1482ecad7b148a6909a5"+
 		"cb2e0eaddfb84ccf9744464f82e160bfa9b8b64f9d4c03f999b8643f656b4"+
-		"12a3"), &dagconfig.MainNetParams)
+		"12a3"), util.DagCoin)
 	if err != nil {
 		t.Fatalf("Unable to create pubkey address (uncompressed): %v",
 			err)

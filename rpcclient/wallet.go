@@ -9,10 +9,9 @@ import (
 	"strconv"
 
 	"github.com/daglabs/btcd/btcjson"
-	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/dagconfig/daghash"
-	"github.com/daglabs/btcd/wire"
 	"github.com/daglabs/btcd/util"
+	"github.com/daglabs/btcd/wire"
 )
 
 // *****************************
@@ -771,7 +770,7 @@ func (r FutureAddMultisigAddressResult) Receive() (util.Address, error) {
 		return nil, err
 	}
 
-	return util.DecodeAddress(addr, &dagconfig.MainNetParams)
+	return util.DecodeAddress(addr, util.DagCoin)
 }
 
 // AddMultisigAddressAsync returns an instance of a type that can be used to get
@@ -885,7 +884,7 @@ func (r FutureGetNewAddressResult) Receive() (util.Address, error) {
 		return nil, err
 	}
 
-	return util.DecodeAddress(addr, &dagconfig.MainNetParams)
+	return util.DecodeAddress(addr, util.DagCoin)
 }
 
 // GetNewAddressAsync returns an instance of a type that can be used to get the
@@ -923,7 +922,7 @@ func (r FutureGetRawChangeAddressResult) Receive() (util.Address, error) {
 		return nil, err
 	}
 
-	return util.DecodeAddress(addr, &dagconfig.MainNetParams)
+	return util.DecodeAddress(addr, util.DagCoin)
 }
 
 // GetRawChangeAddressAsync returns an instance of a type that can be used to
@@ -962,7 +961,7 @@ func (r FutureGetAccountAddressResult) Receive() (util.Address, error) {
 		return nil, err
 	}
 
-	return util.DecodeAddress(addr, &dagconfig.MainNetParams)
+	return util.DecodeAddress(addr, util.DagCoin)
 }
 
 // GetAccountAddressAsync returns an instance of a type that can be used to get
@@ -1068,7 +1067,7 @@ func (r FutureGetAddressesByAccountResult) Receive() ([]util.Address, error) {
 	addrs := make([]util.Address, 0, len(addrStrings))
 	for _, addrStr := range addrStrings {
 		addr, err := util.DecodeAddress(addrStr,
-			&dagconfig.MainNetParams)
+			util.DagCoin)
 		if err != nil {
 			return nil, err
 		}

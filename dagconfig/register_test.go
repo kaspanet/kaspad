@@ -2,6 +2,7 @@ package dagconfig_test
 
 import (
 	"bytes"
+	"github.com/daglabs/btcd/util/hdkeychain"
 	"reflect"
 	"testing"
 
@@ -23,10 +24,6 @@ func TestRegister(t *testing.T) {
 		name   string
 		params *Params
 		err    error
-	}
-	type prefixTest struct {
-		prefix string
-		valid  bool
 	}
 	type hdTest struct {
 		priv []byte
@@ -86,15 +83,15 @@ func TestRegister(t *testing.T) {
 				},
 				{
 					priv: mockNetParams.HDPrivateKeyID[:],
-					err:  ErrUnknownHDKeyID,
+					err:  hdkeychain.ErrUnknownHDKeyID,
 				},
 				{
 					priv: []byte{0xff, 0xff, 0xff, 0xff},
-					err:  ErrUnknownHDKeyID,
+					err:  hdkeychain.ErrUnknownHDKeyID,
 				},
 				{
 					priv: []byte{0xff},
-					err:  ErrUnknownHDKeyID,
+					err:  hdkeychain.ErrUnknownHDKeyID,
 				},
 			},
 		},
@@ -172,11 +169,11 @@ func TestRegister(t *testing.T) {
 				},
 				{
 					priv: []byte{0xff, 0xff, 0xff, 0xff},
-					err:  ErrUnknownHDKeyID,
+					err:  hdkeychain.ErrUnknownHDKeyID,
 				},
 				{
 					priv: []byte{0xff},
-					err:  ErrUnknownHDKeyID,
+					err:  hdkeychain.ErrUnknownHDKeyID,
 				},
 			},
 		},
@@ -191,7 +188,7 @@ func TestRegister(t *testing.T) {
 			}
 		}
 		for i, magTest := range test.hdMagics {
-			pubKey, err := HDPrivateKeyToPublicKeyID(magTest.priv[:])
+			pubKey, err := hdkeychain.HDPrivateKeyToPublicKeyID(magTest.priv[:])
 			if !reflect.DeepEqual(err, magTest.err) {
 				t.Errorf("%s: HD magic %d mismatched error: got %v expected %v ",
 					test.name, i, err, magTest.err)

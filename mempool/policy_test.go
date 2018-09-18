@@ -10,11 +10,10 @@ import (
 	"time"
 
 	"github.com/daglabs/btcd/btcec"
-	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/txscript"
-	"github.com/daglabs/btcd/wire"
 	"github.com/daglabs/btcd/util"
+	"github.com/daglabs/btcd/wire"
 )
 
 // TestCalcMinRequiredTxRelayFee tests the calcMinRequiredTxRelayFee API.
@@ -292,8 +291,7 @@ func TestCheckTransactionStandard(t *testing.T) {
 		Sequence:         wire.MaxTxInSequenceNum,
 	}
 	addrHash := [20]byte{0x01}
-	addr, err := util.NewAddressPubKeyHash(addrHash[:],
-		&dagconfig.TestNet3Params)
+	addr, err := util.NewAddressPubKeyHash(addrHash[:], util.DagTest)
 	if err != nil {
 		t.Fatalf("NewAddressPubKeyHash: unexpected error: %v", err)
 	}

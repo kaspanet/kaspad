@@ -34,57 +34,6 @@ func TestMustRegisterPanic(t *testing.T) {
 	mustRegister(&MainNetParams)
 }
 
-func TestParsePrefix(t *testing.T) {
-	tests := []struct {
-		prefixStr      string
-		expectedPrefix Bech32Prefix
-		expectedError  bool
-	}{
-		{"dagcoin", DagCoin, false},
-		{"dagreg", DagReg, false},
-		{"dagtest", DagTest, false},
-		{"dagsim", DagSim, false},
-		{"blabla", Unknown, true},
-		{"unknown", Unknown, true},
-		{"", Unknown, true},
-	}
-
-	for _, test := range tests {
-		result, err := ParsePrefix(test.prefixStr)
-		if (err != nil) != test.expectedError {
-			t.Errorf("TestParsePrefix: %s: expected error status: %t, but got %t",
-				test.prefixStr, test.expectedError, (err != nil))
-		}
-
-		if result != test.expectedPrefix {
-			t.Errorf("TestParsePrefix: %s: expected prefix: %d, but got %d",
-				test.prefixStr, test.expectedPrefix, result)
-		}
-	}
-}
-
-func TestPrefixToString(t *testing.T) {
-	tests := []struct {
-		prefix            Bech32Prefix
-		expectedPrefixStr string
-	}{
-		{DagCoin, "dagcoin"},
-		{DagReg, "dagreg"},
-		{DagTest, "dagtest"},
-		{DagSim, "dagsim"},
-		{Unknown, ""},
-	}
-
-	for _, test := range tests {
-		result := test.prefix.String()
-
-		if result != test.expectedPrefixStr {
-			t.Errorf("TestPrefixToString: %s: expected string: %s, but got %s",
-				test.prefix, test.expectedPrefixStr, result)
-		}
-	}
-}
-
 func TestDNSSeedToString(t *testing.T) {
 	host := "test.dns.seed.com"
 	seed := DNSSeed{HasFiltering: false, Host: host}
