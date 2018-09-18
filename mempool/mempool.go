@@ -19,8 +19,8 @@ import (
 	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/mining"
 	"github.com/daglabs/btcd/txscript"
-	"github.com/daglabs/btcd/wire"
 	"github.com/daglabs/btcd/util"
+	"github.com/daglabs/btcd/wire"
 )
 
 const (
@@ -40,6 +40,13 @@ const (
 	orphanExpireScanInterval = time.Minute * 5
 )
 
+// NewBlockMsg is the type that is used in NewBlockMsg to transfer
+// data about transaction removed and added to the mempool
+type NewBlockMsg struct {
+	AcceptedTxs []*TxDesc
+	Tx          *util.Tx
+}
+
 // Tag represents an identifier to use for tagging orphan transactions.  The
 // caller may choose any scheme it desires, however it is common to use peer IDs
 // so that orphans can be identified by which peer first relayed them.
@@ -51,13 +58,9 @@ type Config struct {
 	// to policy.
 	Policy Policy
 
-	// ChainParams identifies which chain parameters the txpool is
+	// DAGParams identifies which chain parameters the txpool is
 	// associated with.
-	ChainParams *dagconfig.Params
-
-	// FetchUTXOView defines the function to use to fetch unspent
-	// transaction output information.
-	FetchUtxoView func(*util.Tx) (*blockdag.UTXOView, error)
+	DAGParams *dagconfig.Params
 
 	// BestHeight defines the function to use to access the block height of
 	// the current best chain.
@@ -70,8 +73,8 @@ type Config struct {
 
 	// CalcSequenceLock defines the function to use in order to generate
 	// the current sequence lock for the given transaction using the passed
-	// utxo view.
-	CalcSequenceLock func(*util.Tx, *blockdag.UTXOView) (*blockdag.SequenceLock, error)
+	// utxo set.
+	CalcSequenceLock func(*util.Tx, blockdag.UTXOSet) (*blockdag.SequenceLock, error)
 
 	// IsDeploymentActive returns true if the target deploymentID is
 	// active, and false otherwise. The mempool uses this function to gauge
@@ -90,6 +93,9 @@ type Config struct {
 	// FeeEstimatator provides a feeEstimator. If it is not nil, the mempool
 	// records all new transactions it observes into the feeEstimator.
 	FeeEstimator *FeeEstimator
+
+	// DAG is the BlockDAG we want to use (mainly for UTXO checks)
+	DAG *blockdag.BlockDAG
 }
 
 // Policy houses the policy (configuration parameters) which is used to
@@ -172,6 +178,8 @@ type TxPool struct {
 	// the scan will only run when an orphan is added to the pool as opposed
 	// to on an unconditional timer.
 	nextExpireScan time.Time
+
+	mpUTXOSet blockdag.UTXOSet
 }
 
 // Ensure the TxPool type implements the mining.TxSource interface.
@@ -448,14 +456,14 @@ func (mp *TxPool) HaveTransaction(hash *daghash.Hash) bool {
 // RemoveTransaction.  See the comment for RemoveTransaction for more details.
 //
 // This function MUST be called with the mempool lock held (for writes).
-func (mp *TxPool) removeTransaction(tx *util.Tx, removeRedeemers bool) {
+func (mp *TxPool) removeTransaction(tx *util.Tx, removeRedeemers bool, restoreInputs bool) error {
 	txHash := tx.Hash()
 	if removeRedeemers {
 		// Remove any transactions which rely on this one.
 		for i := uint32(0); i < uint32(len(tx.MsgTx().TxOut)); i++ {
 			prevOut := wire.OutPoint{Hash: *txHash, Index: i}
 			if txRedeemer, exists := mp.outpoints[prevOut]; exists {
-				mp.removeTransaction(txRedeemer, true)
+				mp.removeTransaction(txRedeemer, true, false)
 			}
 		}
 	}
@@ -468,13 +476,29 @@ func (mp *TxPool) removeTransaction(tx *util.Tx, removeRedeemers bool) {
 			mp.cfg.AddrIndex.RemoveUnconfirmedTx(txHash)
 		}
 
+		diff := blockdag.NewUTXODiff()
+		diff.RemoveTxOuts(txDesc.Tx.MsgTx())
+
 		// Mark the referenced outpoints as unspent by the pool.
 		for _, txIn := range txDesc.Tx.MsgTx().TxIn {
+			if restoreInputs {
+				if prevTxDesc, exists := mp.pool[txIn.PreviousOutPoint.Hash]; exists {
+					prevOut := prevTxDesc.Tx.MsgTx().TxOut[txIn.PreviousOutPoint.Index]
+					entry := blockdag.NewUTXOEntry(prevOut, false, mining.UnminedHeight)
+					diff.AddEntry(txIn.PreviousOutPoint, entry)
+				}
+			}
 			delete(mp.outpoints, txIn.PreviousOutPoint)
 		}
 		delete(mp.pool, *txHash)
+		var err error
+		mp.mpUTXOSet, err = mp.mpUTXOSet.WithDiff(diff)
+		if err != nil {
+			return err
+		}
 		atomic.StoreInt64(&mp.lastUpdated, time.Now().Unix())
 	}
+	return nil
 }
 
 // RemoveTransaction removes the passed transaction from the mempool. When the
@@ -483,11 +507,11 @@ func (mp *TxPool) removeTransaction(tx *util.Tx, removeRedeemers bool) {
 // they would otherwise become orphans.
 //
 // This function is safe for concurrent access.
-func (mp *TxPool) RemoveTransaction(tx *util.Tx, removeRedeemers bool) {
+func (mp *TxPool) RemoveTransaction(tx *util.Tx, removeRedeemers bool, restoreInputs bool) error {
 	// Protect concurrent access.
 	mp.mtx.Lock()
-	mp.removeTransaction(tx, removeRedeemers)
-	mp.mtx.Unlock()
+	defer mp.mtx.Unlock()
+	return mp.removeTransaction(tx, removeRedeemers, restoreInputs)
 }
 
 // RemoveDoubleSpends removes all transactions which spend outputs spent by the
@@ -503,7 +527,7 @@ func (mp *TxPool) RemoveDoubleSpends(tx *util.Tx) {
 	for _, txIn := range tx.MsgTx().TxIn {
 		if txRedeemer, ok := mp.outpoints[txIn.PreviousOutPoint]; ok {
 			if !txRedeemer.Hash().IsEqual(tx.Hash()) {
-				mp.removeTransaction(txRedeemer, true)
+				mp.removeTransaction(txRedeemer, true, false)
 			}
 		}
 	}
@@ -515,7 +539,9 @@ func (mp *TxPool) RemoveDoubleSpends(tx *util.Tx) {
 // helper for maybeAcceptTransaction.
 //
 // This function MUST be called with the mempool lock held (for writes).
-func (mp *TxPool) addTransaction(utxoView *blockdag.UTXOView, tx *util.Tx, height int32, fee int64) *TxDesc {
+func (mp *TxPool) addTransaction(tx *util.Tx, height int32, fee int64) *TxDesc {
+	mp.cfg.DAG.RLock()
+	defer mp.cfg.DAG.RUnlock()
 	// Add the transaction to the pool and mark the referenced outpoints
 	// as spent by the pool.
 	txD := &TxDesc{
@@ -526,19 +552,20 @@ func (mp *TxPool) addTransaction(utxoView *blockdag.UTXOView, tx *util.Tx, heigh
 			Fee:      fee,
 			FeePerKB: fee * 1000 / int64(tx.MsgTx().SerializeSize()),
 		},
-		StartingPriority: mining.CalcPriority(tx.MsgTx(), utxoView, height),
+		StartingPriority: mining.CalcPriority(tx.MsgTx(), mp.mpUTXOSet, height),
 	}
 
 	mp.pool[*tx.Hash()] = txD
 	for _, txIn := range tx.MsgTx().TxIn {
 		mp.outpoints[txIn.PreviousOutPoint] = tx
 	}
+	mp.mpUTXOSet.AddTx(tx.MsgTx(), mining.UnminedHeight)
 	atomic.StoreInt64(&mp.lastUpdated, time.Now().Unix())
 
 	// Add unconfirmed address index entries associated with the transaction
 	// if enabled.
 	if mp.cfg.AddrIndex != nil {
-		mp.cfg.AddrIndex.AddUnconfirmedTx(tx, utxoView)
+		mp.cfg.AddrIndex.AddUnconfirmedTx(tx, mp.mpUTXOSet)
 	}
 
 	// Record this tx for fee estimation if enabled.
@@ -552,7 +579,7 @@ func (mp *TxPool) addTransaction(utxoView *blockdag.UTXOView, tx *util.Tx, heigh
 // checkPoolDoubleSpend checks whether or not the passed transaction is
 // attempting to spend coins already spent by other transactions in the pool.
 // Note it does not check for double spends against transactions already in the
-// main chain.
+// DAG.
 //
 // This function MUST be called with the mempool lock held (for reads).
 func (mp *TxPool) checkPoolDoubleSpend(tx *util.Tx) error {
@@ -579,37 +606,6 @@ func (mp *TxPool) CheckSpend(op wire.OutPoint) *util.Tx {
 	return txR
 }
 
-// fetchInputUtxos loads utxo details about the input transactions referenced by
-// the passed transaction.  First, it loads the details form the viewpoint of
-// the main chain, then it adjusts them based upon the contents of the
-// transaction pool.
-//
-// This function MUST be called with the mempool lock held (for reads).
-func (mp *TxPool) fetchInputUtxos(tx *util.Tx) (*blockdag.UTXOView, error) {
-	utxoView, err := mp.cfg.FetchUtxoView(tx)
-	if err != nil {
-		return nil, err
-	}
-
-	// Attempt to populate any missing inputs from the transaction pool.
-	for _, txIn := range tx.MsgTx().TxIn {
-		prevOut := &txIn.PreviousOutPoint
-		entry := utxoView.LookupEntry(*prevOut)
-		if entry != nil && !entry.IsSpent() {
-			continue
-		}
-
-		if poolTxDesc, exists := mp.pool[prevOut.Hash]; exists {
-			// AddTxOut ignores out of range index values, so it is
-			// safe to call without bounds checking here.
-			utxoView.AddTxOut(poolTxDesc.Tx, prevOut.Index,
-				mining.UnminedHeight)
-		}
-	}
-
-	return utxoView, nil
-}
-
 // FetchTransaction returns the requested transaction from the transaction pool.
 // This only fetches from the main transaction pool and does not include
 // orphans.
@@ -634,6 +630,8 @@ func (mp *TxPool) FetchTransaction(txHash *daghash.Hash) (*util.Tx, error) {
 //
 // This function MUST be called with the mempool lock held (for writes).
 func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rateLimit, rejectDupOrphans bool) ([]*daghash.Hash, *TxDesc, error) {
+	mp.cfg.DAG.RLock()
+	defer mp.cfg.DAG.RUnlock()
 	txHash := tx.Hash()
 
 	// Don't accept the transaction if it already exists in the pool.  This
@@ -705,29 +703,16 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rateLimit, rejectDu
 		return nil, nil, err
 	}
 
-	// Fetch all of the unspent transaction outputs referenced by the inputs
-	// to this transaction.  This function also attempts to fetch the
-	// transaction itself to be used for detecting a duplicate transaction
-	// without needing to do a separate lookup.
-	utxoView, err := mp.fetchInputUtxos(tx)
-	if err != nil {
-		if cerr, ok := err.(blockdag.RuleError); ok {
-			return nil, nil, chainRuleError(cerr)
-		}
-		return nil, nil, err
-	}
-
-	// Don't allow the transaction if it exists in the main chain and is not
+	// Don't allow the transaction if it exists in the DAG and is not
 	// not already fully spent.
 	prevOut := wire.OutPoint{Hash: *txHash}
 	for txOutIdx := range tx.MsgTx().TxOut {
 		prevOut.Index = uint32(txOutIdx)
-		entry := utxoView.LookupEntry(prevOut)
-		if entry != nil && !entry.IsSpent() {
+		entry, ok := mp.mpUTXOSet.Get(prevOut)
+		if ok && !entry.IsSpent() {
 			return nil, nil, txRuleError(wire.RejectDuplicate,
 				"transaction already exists")
 		}
-		utxoView.RemoveEntry(prevOut)
 	}
 
 	// Transaction is an orphan if any of the referenced transaction outputs
@@ -735,13 +720,13 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rateLimit, rejectDu
 	// is not handled by this function, and the caller should use
 	// maybeAddOrphan if this behavior is desired.
 	var missingParents []*daghash.Hash
-	for outpoint, entry := range utxoView.Entries() {
-		if entry == nil || entry.IsSpent() {
+	for _, txIn := range tx.MsgTx().TxIn {
+		if _, ok := mp.mpUTXOSet.Get(txIn.PreviousOutPoint); !ok {
 			// Must make a copy of the hash here since the iterator
 			// is replaced and taking its address directly would
 			// result in all of the entries pointing to the same
 			// memory location and thus all be the final hash.
-			hashCopy := outpoint.Hash
+			hashCopy := txIn.PreviousOutPoint.Hash
 			missingParents = append(missingParents, &hashCopy)
 		}
 	}
@@ -752,7 +737,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rateLimit, rejectDu
 	// Don't allow the transaction into the mempool unless its sequence
 	// lock is active, meaning that it'll be allowed into the next block
 	// with respect to its defined relative lock times.
-	sequenceLock, err := mp.cfg.CalcSequenceLock(tx, utxoView)
+	sequenceLock, err := mp.cfg.CalcSequenceLock(tx, mp.mpUTXOSet)
 	if err != nil {
 		if cerr, ok := err.(blockdag.RuleError); ok {
 			return nil, nil, chainRuleError(cerr)
@@ -770,7 +755,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rateLimit, rejectDu
 	// Also returns the fees associated with the transaction which will be
 	// used later.
 	txFee, err := blockdag.CheckTransactionInputs(tx, nextBlockHeight,
-		utxoView, mp.cfg.ChainParams)
+		mp.mpUTXOSet, mp.cfg.DAGParams)
 	if err != nil {
 		if cerr, ok := err.(blockdag.RuleError); ok {
 			return nil, nil, chainRuleError(cerr)
@@ -781,7 +766,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rateLimit, rejectDu
 	// Don't allow transactions with non-standard inputs if the network
 	// parameters forbid their acceptance.
 	if !mp.cfg.Policy.AcceptNonStd {
-		err := checkInputsStandard(tx, utxoView)
+		err := checkInputsStandard(tx, mp.mpUTXOSet)
 		if err != nil {
 			// Attempt to extract a reject code from the error so
 			// it can be retained.  When not possible, fall back to
@@ -805,7 +790,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rateLimit, rejectDu
 	// the coinbase address itself can contain signature operations, the
 	// maximum allowed signature operations per transaction is less than
 	// the maximum allowed signature operations per block.
-	sigOpCount, err := blockdag.CountP2SHSigOps(tx, false, utxoView)
+	sigOpCount, err := blockdag.CountP2SHSigOps(tx, false, mp.mpUTXOSet)
 	if err != nil {
 		if cerr, ok := err.(blockdag.RuleError); ok {
 			return nil, nil, chainRuleError(cerr)
@@ -844,7 +829,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rateLimit, rejectDu
 	// memory pool from blocks that have been disconnected during a reorg
 	// are exempted.
 	if isNew && !mp.cfg.Policy.DisableRelayPriority && txFee < minFee {
-		currentPriority := mining.CalcPriority(tx.MsgTx(), utxoView,
+		currentPriority := mining.CalcPriority(tx.MsgTx(), mp.mpUTXOSet,
 			nextBlockHeight)
 		if currentPriority <= mining.MinHighPriority {
 			str := fmt.Sprintf("transaction %v has insufficient "+
@@ -880,7 +865,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rateLimit, rejectDu
 
 	// Verify crypto signatures for each input and reject the transaction if
 	// any don't verify.
-	err = blockdag.ValidateTransactionScripts(tx, utxoView,
+	err = blockdag.ValidateTransactionScripts(tx, mp.mpUTXOSet,
 		txscript.StandardVerifyFlags, mp.cfg.SigCache)
 	if err != nil {
 		if cerr, ok := err.(blockdag.RuleError); ok {
@@ -890,7 +875,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rateLimit, rejectDu
 	}
 
 	// Add to transaction pool.
-	txD := mp.addTransaction(utxoView, tx, bestHeight, txFee)
+	txD := mp.addTransaction(tx, bestHeight, txFee)
 
 	log.Debugf("Accepted transaction %v (pool size: %v)", txHash,
 		len(mp.pool))
@@ -1165,12 +1150,8 @@ func (mp *TxPool) RawMempoolVerbose() map[string]*btcjson.GetRawMempoolVerboseRe
 		// the transaction.  Use zero if one or more of the
 		// input transactions can't be found for some reason.
 		tx := desc.Tx
-		var currentPriority float64
-		utxos, err := mp.fetchInputUtxos(tx)
-		if err == nil {
-			currentPriority = mining.CalcPriority(tx.MsgTx(), utxos,
-				bestHeight+1)
-		}
+		currentPriority := mining.CalcPriority(tx.MsgTx(), mp.mpUTXOSet,
+			bestHeight+1)
 
 		mpd := &btcjson.GetRawMempoolVerboseResult{
 			Size:             int32(tx.MsgTx().SerializeSize()),
@@ -1203,9 +1184,43 @@ func (mp *TxPool) LastUpdated() time.Time {
 	return time.Unix(atomic.LoadInt64(&mp.lastUpdated), 0)
 }
 
+// HandleNewBlock removes all the transactions in the new block
+// from the mempool and the orphan pool, and it also removes
+// from the mempool transactions that double spend a
+// transaction that is already in the DAG
+func (mp *TxPool) HandleNewBlock(block *util.Block, txChan chan NewBlockMsg) error {
+
+	oldUTXOSet := mp.mpUTXOSet
+
+	// Remove all of the transactions (except the coinbase) in the
+	// connected block from the transaction pool.  Secondly, remove any
+	// transactions which are now double spends as a result of these
+	// new transactions.  Finally, remove any transaction that is
+	// no longer an orphan. Transactions which depend on a confirmed
+	// transaction are NOT removed recursively because they are still
+	// valid.
+	for _, tx := range block.Transactions()[1:] {
+		err := mp.RemoveTransaction(tx, false, false)
+		if err != nil {
+			mp.mpUTXOSet = oldUTXOSet
+			return err
+		}
+		mp.RemoveDoubleSpends(tx)
+		mp.RemoveOrphan(tx)
+		acceptedTxs := mp.ProcessOrphans(tx)
+		txChan <- NewBlockMsg{
+			AcceptedTxs: acceptedTxs,
+			Tx:          tx,
+		}
+	}
+	return nil
+}
+
 // New returns a new memory pool for validating and storing standalone
 // transactions until they are mined into a block.
 func New(cfg *Config) *TxPool {
+	virtualUTXO := cfg.DAG.VirtualBlock().UTXOSet
+	mpUTXO := blockdag.NewDiffUTXOSet(virtualUTXO, blockdag.NewUTXODiff())
 	return &TxPool{
 		cfg:            *cfg,
 		pool:           make(map[daghash.Hash]*TxDesc),
@@ -1213,5 +1228,6 @@ func New(cfg *Config) *TxPool {
 		orphansByPrev:  make(map[wire.OutPoint]map[daghash.Hash]*util.Tx),
 		nextExpireScan: time.Now().Add(orphanExpireScanInterval),
 		outpoints:      make(map[wire.OutPoint]*util.Tx),
+		mpUTXOSet:      mpUTXO,
 	}
 }

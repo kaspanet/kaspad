@@ -35,10 +35,10 @@ import (
 	"github.com/daglabs/btcd/peer"
 	"github.com/daglabs/btcd/server/serverutils"
 	"github.com/daglabs/btcd/txscript"
-	"github.com/daglabs/btcd/version"
-	"github.com/daglabs/btcd/wire"
 	"github.com/daglabs/btcd/util"
 	"github.com/daglabs/btcd/util/bloom"
+	"github.com/daglabs/btcd/version"
+	"github.com/daglabs/btcd/wire"
 )
 
 const (
@@ -2436,17 +2436,17 @@ func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params
 			MinRelayTxFee:        config.MainConfig().MinRelayTxFee,
 			MaxTxVersion:         1,
 		},
-		ChainParams:    dagParams,
-		FetchUtxoView:  s.DAG.FetchUTXOView,
+		DAGParams:      dagParams,
 		BestHeight:     func() int32 { return s.DAG.VirtualBlock().SelectedTipHeight() },
 		MedianTimePast: func() time.Time { return s.DAG.VirtualBlock().SelectedTip().CalcPastMedianTime() },
-		CalcSequenceLock: func(tx *util.Tx, view *blockdag.UTXOView) (*blockdag.SequenceLock, error) {
-			return s.DAG.CalcSequenceLock(tx, view, true)
+		CalcSequenceLock: func(tx *util.Tx, utxoSet blockdag.UTXOSet) (*blockdag.SequenceLock, error) {
+			return s.DAG.CalcSequenceLock(tx, utxoSet, true)
 		},
 		IsDeploymentActive: s.DAG.IsDeploymentActive,
 		SigCache:           s.SigCache,
 		AddrIndex:          s.AddrIndex,
 		FeeEstimator:       s.FeeEstimator,
+		DAG:                s.DAG,
 	}
 	s.TxMemPool = mempool.New(&txC)
 
