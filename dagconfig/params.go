@@ -7,6 +7,7 @@ package dagconfig
 import (
 	"errors"
 	"github.com/daglabs/btcd/util"
+	"github.com/daglabs/btcd/util/hdkeychain"
 	"math"
 	"math/big"
 	"time"
@@ -495,16 +496,10 @@ var (
 	// network could not be set due to the network already being a standard
 	// network or previously-registered into this package.
 	ErrDuplicateNet = errors.New("duplicate Bitcoin network")
-
-	// ErrUnknownHDKeyID describes an error where the provided id which
-	// is intended to identify the network for a hierarchical deterministic
-	// private extended key is not registered.
-	ErrUnknownHDKeyID = errors.New("unknown hd private extended key bytes")
 )
 
 var (
-	registeredNets    = make(map[wire.BitcoinNet]struct{})
-	hdPrivToPubKeyIDs = make(map[[4]byte][]byte)
+	registeredNets = make(map[wire.BitcoinNet]struct{})
 )
 
 // String returns the hostname of the DNS seed in human-readable form.
@@ -526,7 +521,7 @@ func Register(params *Params) error {
 		return ErrDuplicateNet
 	}
 	registeredNets[params.Net] = struct{}{}
-	hdPrivToPubKeyIDs[params.HDPrivateKeyID] = params.HDPublicKeyID[:]
+	hdkeychain.RegisterHDPrivateKeyToPublicKeyID(params.HDPrivateKeyID, params.HDPublicKeyID)
 
 	return nil
 }
@@ -537,24 +532,6 @@ func mustRegister(params *Params) {
 	if err := Register(params); err != nil {
 		panic("failed to register network: " + err.Error())
 	}
-}
-
-// HDPrivateKeyToPublicKeyID accepts a private hierarchical deterministic
-// extended key id and returns the associated public key id.  When the provided
-// id is not registered, the ErrUnknownHDKeyID error will be returned.
-func HDPrivateKeyToPublicKeyID(id []byte) ([]byte, error) {
-	if len(id) != 4 {
-		return nil, ErrUnknownHDKeyID
-	}
-
-	var key [4]byte
-	copy(key[:], id)
-	pubBytes, ok := hdPrivToPubKeyIDs[key]
-	if !ok {
-		return nil, ErrUnknownHDKeyID
-	}
-
-	return pubBytes, nil
 }
 
 // newHashFromStr converts the passed big-endian hex string into a

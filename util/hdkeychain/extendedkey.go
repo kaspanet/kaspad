@@ -19,10 +19,9 @@ import (
 	"math/big"
 
 	"github.com/daglabs/btcd/btcec"
-	"github.com/daglabs/btcd/dagconfig"
+	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/util"
 	"github.com/daglabs/btcd/util/base58"
-	"github.com/daglabs/btcd/dagconfig/daghash"
 )
 
 const (
@@ -96,11 +95,18 @@ var (
 	// key is not the expected length.
 	ErrInvalidKeyLen = errors.New("the provided serialized extended key " +
 		"length is invalid")
+
+	// ErrUnknownHDKeyID describes an error where the provided id which
+	// is intended to identify the network for a hierarchical deterministic
+	// private extended key is not registered.
+	ErrUnknownHDKeyID = errors.New("unknown hd private extended key bytes")
 )
 
 // masterKey is the master key used along with a random seed used to generate
 // the master node in the hierarchical tree.
 var masterKey = []byte("Bitcoin seed")
+
+var hdPrivToPubKeyIDs = make(map[[4]byte][]byte)
 
 // ExtendedKey houses all the information needed to support a hierarchical
 // deterministic extended key.  See the package overview documentation for
@@ -344,7 +350,7 @@ func (k *ExtendedKey) Neuter() (*ExtendedKey, error) {
 	}
 
 	// Get the associated public extended key version bytes.
-	version, err := dagconfig.HDPrivateKeyToPublicKeyID(k.version)
+	version, err := HDPrivateKeyToPublicKeyID(k.version)
 	if err != nil {
 		return nil, err
 	}
@@ -355,6 +361,28 @@ func (k *ExtendedKey) Neuter() (*ExtendedKey, error) {
 	// This is the function N((k,c)) -> (K, c) from [BIP32].
 	return NewExtendedKey(version, k.pubKeyBytes(), k.chainCode, k.parentFP,
 		k.depth, k.childNum, false), nil
+}
+
+func RegisterHDPrivateKeyToPublicKeyID(hdPrivateKeyID [4]byte, hdPublicKeyID [4]byte) {
+	hdPrivToPubKeyIDs[hdPrivateKeyID] = hdPublicKeyID[:]
+}
+
+// HDPrivateKeyToPublicKeyID accepts a private hierarchical deterministic
+// extended key id and returns the associated public key id.  When the provided
+// id is not registered, the ErrUnknownHDKeyID error will be returned.
+func HDPrivateKeyToPublicKeyID(id []byte) ([]byte, error) {
+	if len(id) != 4 {
+		return nil, ErrUnknownHDKeyID
+	}
+
+	var key [4]byte
+	copy(key[:], id)
+	pubBytes, ok := hdPrivToPubKeyIDs[key]
+	if !ok {
+		return nil, ErrUnknownHDKeyID
+	}
+
+	return pubBytes, nil
 }
 
 // ECPubKey converts the extended key to a btcec public key and returns it.
@@ -377,9 +405,9 @@ func (k *ExtendedKey) ECPrivKey() (*btcec.PrivateKey, error) {
 
 // Address converts the extended key to a standard bitcoin pay-to-pubkey-hash
 // address for the passed network.
-func (k *ExtendedKey) Address(net *dagconfig.Params) (*util.AddressPubKeyHash, error) {
+func (k *ExtendedKey) Address(prefix util.Bech32Prefix) (*util.AddressPubKeyHash, error) {
 	pkHash := util.Hash160(k.pubKeyBytes())
-	return util.NewAddressPubKeyHash(pkHash, net)
+	return util.NewAddressPubKeyHash(pkHash, prefix)
 }
 
 // paddedAppend appends the src byte slice to dst, returning the new slice.
@@ -423,19 +451,19 @@ func (k *ExtendedKey) String() string {
 }
 
 // IsForNet returns whether or not the extended key is associated with the
-// passed bitcoin network.
-func (k *ExtendedKey) IsForNet(net *dagconfig.Params) bool {
-	return bytes.Equal(k.version, net.HDPrivateKeyID[:]) ||
-		bytes.Equal(k.version, net.HDPublicKeyID[:])
+// passed network keyIDs.
+func (k *ExtendedKey) IsForNet(hdPrivateKeyID [4]byte, hdPublicKeyID [4]byte) bool {
+	return bytes.Equal(k.version, hdPrivateKeyID[:]) ||
+		bytes.Equal(k.version, hdPublicKeyID[:])
 }
 
 // SetNet associates the extended key, and any child keys yet to be derived from
-// it, with the passed network.
-func (k *ExtendedKey) SetNet(net *dagconfig.Params) {
+// it, with the passed key IDs.
+func (k *ExtendedKey) SetNet(hdPrivateKeyID [4]byte, hdPublicKeyID [4]byte) {
 	if k.isPrivate {
-		k.version = net.HDPrivateKeyID[:]
+		k.version = hdPrivateKeyID[:]
 	} else {
-		k.version = net.HDPublicKeyID[:]
+		k.version = hdPublicKeyID[:]
 	}
 }
 
@@ -472,7 +500,7 @@ func (k *ExtendedKey) Zero() {
 // will derive to an unusable secret key.  The ErrUnusable error will be
 // returned if this should occur, so the caller must check for it and generate a
 // new seed accordingly.
-func NewMaster(seed []byte, net *dagconfig.Params) (*ExtendedKey, error) {
+func NewMaster(seed []byte, hdPrivateKeyID [4]byte) (*ExtendedKey, error) {
 	// Per [BIP32], the seed must be in range [MinSeedBytes, MaxSeedBytes].
 	if len(seed) < MinSeedBytes || len(seed) > MaxSeedBytes {
 		return nil, ErrInvalidSeedLen
@@ -497,7 +525,7 @@ func NewMaster(seed []byte, net *dagconfig.Params) (*ExtendedKey, error) {
 	}
 
 	parentFP := []byte{0x00, 0x00, 0x00, 0x00}
-	return NewExtendedKey(net.HDPrivateKeyID[:], secretKey, chainCode,
+	return NewExtendedKey(hdPrivateKeyID[:], secretKey, chainCode,
 		parentFP, 0, 0, true), nil
 }
 

@@ -6,6 +6,7 @@ package hdkeychain_test
 
 import (
 	"fmt"
+	"github.com/daglabs/btcd/util"
 
 	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/util/hdkeychain"
@@ -22,7 +23,7 @@ func ExampleNewMaster() {
 	}
 
 	// Generate a new master node using the seed.
-	key, err := hdkeychain.NewMaster(seed, &dagconfig.MainNetParams)
+	key, err := hdkeychain.NewMaster(seed, dagconfig.MainNetParams.HDPrivateKeyID)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -118,12 +119,12 @@ func Example_defaultWalletLayout() {
 
 	// Get and show the address associated with the extended keys for the
 	// main bitcoin	network.
-	acct0ExtAddr, err := acct0Ext10.Address(&dagconfig.MainNetParams)
+	acct0ExtAddr, err := acct0Ext10.Address(util.DagCoin)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	acct0IntAddr, err := acct0Int0.Address(&dagconfig.MainNetParams)
+	acct0IntAddr, err := acct0Int0.Address(util.DagCoin)
 	if err != nil {
 		fmt.Println(err)
 		return

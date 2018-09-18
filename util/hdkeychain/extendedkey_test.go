@@ -12,6 +12,7 @@ import (
 	"bytes"
 	"encoding/hex"
 	"errors"
+	"github.com/daglabs/btcd/util"
 	"math"
 	"reflect"
 	"testing"
@@ -214,7 +215,7 @@ tests:
 			continue
 		}
 
-		extKey, err := NewMaster(masterSeed, test.net)
+		extKey, err := NewMaster(masterSeed, test.net.HDPrivateKeyID)
 		if err != nil {
 			t.Errorf("NewMaster #%d (%s): unexpected error when "+
 				"creating new master key: %v", i, test.name,
@@ -648,7 +649,7 @@ func TestExtendedKeyAPI(t *testing.T) {
 			continue
 		}
 
-		addr, err := key.Address(&dagconfig.MainNetParams)
+		addr, err := key.Address(util.DagCoin)
 		if err != nil {
 			t.Errorf("Address #%d (%s): unexpected error: %v", i,
 				test.name, err)
@@ -756,14 +757,14 @@ func TestNet(t *testing.T) {
 			continue
 		}
 
-		if !extKey.IsForNet(test.origNet) {
+		if !extKey.IsForNet(test.origNet.HDPrivateKeyID, test.origNet.HDPublicKeyID) {
 			t.Errorf("IsForNet #%d (%s): key is not for expected "+
 				"network %v", i, test.name, test.origNet.Name)
 			continue
 		}
 
-		extKey.SetNet(test.newNet)
-		if !extKey.IsForNet(test.newNet) {
+		extKey.SetNet(test.newNet.HDPrivateKeyID, test.newNet.HDPublicKeyID)
+		if !extKey.IsForNet(test.newNet.HDPrivateKeyID, test.newNet.HDPublicKeyID) {
 			t.Errorf("SetNet/IsForNet #%d (%s): key is not for "+
 				"expected network %v", i, test.name,
 				test.newNet.Name)
@@ -802,14 +803,14 @@ func TestNet(t *testing.T) {
 func TestErrors(t *testing.T) {
 	// Should get an error when seed has too few bytes.
 	net := &dagconfig.MainNetParams
-	_, err := NewMaster(bytes.Repeat([]byte{0x00}, 15), net)
+	_, err := NewMaster(bytes.Repeat([]byte{0x00}, 15), net.HDPrivateKeyID)
 	if err != ErrInvalidSeedLen {
 		t.Fatalf("NewMaster: mismatched error -- got: %v, want: %v",
 			err, ErrInvalidSeedLen)
 	}
 
 	// Should get an error when seed has too many bytes.
-	_, err = NewMaster(bytes.Repeat([]byte{0x00}, 65), net)
+	_, err = NewMaster(bytes.Repeat([]byte{0x00}, 65), net.HDPrivateKeyID)
 	if err != ErrInvalidSeedLen {
 		t.Fatalf("NewMaster: mismatched error -- got: %v, want: %v",
 			err, ErrInvalidSeedLen)
@@ -820,7 +821,7 @@ func TestErrors(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GenerateSeed: unexpected error: %v", err)
 	}
-	extKey, err := NewMaster(seed, net)
+	extKey, err := NewMaster(seed, net.HDPrivateKeyID)
 	if err != nil {
 		t.Fatalf("NewMaster: unexpected error: %v", err)
 	}
@@ -960,7 +961,7 @@ func TestZero(t *testing.T) {
 		}
 
 		wantAddr := "dagcoin:qz689gnx6z7cnsfhq6jpxtx0k9hhcwulevtzqltud6"
-		addr, err := key.Address(&dagconfig.MainNetParams)
+		addr, err := key.Address(util.DagCoin)
 		if err != nil {
 			t.Errorf("Addres s #%d (%s): unexpected error: %v", i,
 				testName, err)
@@ -984,7 +985,7 @@ func TestZero(t *testing.T) {
 				i, test.name, err)
 			continue
 		}
-		key, err := NewMaster(masterSeed, test.net)
+		key, err := NewMaster(masterSeed, test.net.HDPrivateKeyID)
 		if err != nil {
 			t.Errorf("NewMaster #%d (%s): unexpected error when "+
 				"creating new master key: %v", i, test.name,
@@ -1042,7 +1043,7 @@ func TestZero(t *testing.T) {
 // 255 derivations.  Here we test that an error is returned after 'max uint8'.
 func TestMaximumDepth(t *testing.T) {
 	net := &dagconfig.MainNetParams
-	extKey, err := NewMaster([]byte(`abcd1234abcd1234abcd1234abcd1234`), net)
+	extKey, err := NewMaster([]byte(`abcd1234abcd1234abcd1234abcd1234`), net.HDPrivateKeyID)
 	if err != nil {
 		t.Fatalf("NewMaster: unexpected error: %v", err)
 	}
