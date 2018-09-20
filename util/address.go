@@ -40,34 +40,34 @@ type Bech32Prefix int
 // a unique prefix.
 const (
 	// Unknown/Erroneous prefix
-	Unknown Bech32Prefix = iota
+	Bech32PrefixUnknown Bech32Prefix = iota
 
 	// Prefix for the main network.
-	DagCoin
+	Bech32PrefixDAGCoin
 
 	// Prefix for the regression test network.
-	DagReg
+	Bech32PrefixDAGReg
 
 	// Prefix for the test network.
-	DagTest
+	Bech32PrefixDAGTest
 
 	// Prefix for the simulation network.
-	DagSim
+	Bech32PrefixDAGSim
 )
 
 // Map from strings to Bech32 address prefix constants for parsing purposes.
 var stringsToBech32Prefixes = map[string]Bech32Prefix{
-	"dagcoin": DagCoin,
-	"dagreg":  DagReg,
-	"dagtest": DagTest,
-	"dagsim":  DagSim,
+	"dagcoin": Bech32PrefixDAGCoin,
+	"dagreg":  Bech32PrefixDAGReg,
+	"dagtest": Bech32PrefixDAGTest,
+	"dagsim":  Bech32PrefixDAGSim,
 }
 
 // ParsePrefix attempts to parse a Bech32 address prefix.
 func ParsePrefix(prefixString string) (Bech32Prefix, error) {
 	prefix, ok := stringsToBech32Prefixes[prefixString]
 	if !ok {
-		return Unknown, fmt.Errorf("could not parse prefix %v", prefixString)
+		return Bech32PrefixUnknown, fmt.Errorf("could not parse prefix %v", prefixString)
 	}
 
 	return prefix, nil

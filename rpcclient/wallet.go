@@ -770,7 +770,7 @@ func (r FutureAddMultisigAddressResult) Receive() (util.Address, error) {
 		return nil, err
 	}
 
-	return util.DecodeAddress(addr, util.DagCoin)
+	return util.DecodeAddress(addr, util.Bech32PrefixDAGCoin)
 }
 
 // AddMultisigAddressAsync returns an instance of a type that can be used to get
@@ -884,7 +884,7 @@ func (r FutureGetNewAddressResult) Receive() (util.Address, error) {
 		return nil, err
 	}
 
-	return util.DecodeAddress(addr, util.DagCoin)
+	return util.DecodeAddress(addr, util.Bech32PrefixDAGCoin)
 }
 
 // GetNewAddressAsync returns an instance of a type that can be used to get the
@@ -922,7 +922,7 @@ func (r FutureGetRawChangeAddressResult) Receive() (util.Address, error) {
 		return nil, err
 	}
 
-	return util.DecodeAddress(addr, util.DagCoin)
+	return util.DecodeAddress(addr, util.Bech32PrefixDAGCoin)
 }
 
 // GetRawChangeAddressAsync returns an instance of a type that can be used to
@@ -961,7 +961,7 @@ func (r FutureGetAccountAddressResult) Receive() (util.Address, error) {
 		return nil, err
 	}
 
-	return util.DecodeAddress(addr, util.DagCoin)
+	return util.DecodeAddress(addr, util.Bech32PrefixDAGCoin)
 }
 
 // GetAccountAddressAsync returns an instance of a type that can be used to get
@@ -1067,7 +1067,7 @@ func (r FutureGetAddressesByAccountResult) Receive() ([]util.Address, error) {
 	addrs := make([]util.Address, 0, len(addrStrings))
 	for _, addrStr := range addrStrings {
 		addr, err := util.DecodeAddress(addrStr,
-			util.DagCoin)
+			util.Bech32PrefixDAGCoin)
 		if err != nil {
 			return nil, err
 		}

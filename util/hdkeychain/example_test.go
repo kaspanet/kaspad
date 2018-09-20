@@ -118,12 +118,12 @@ func Example_defaultWalletLayout() {
 
 	// Get and show the address associated with the extended keys for the
 	// main bitcoin	network.
-	acct0ExtAddr, err := acct0Ext10.Address(util.DagCoin)
+	acct0ExtAddr, err := acct0Ext10.Address(util.Bech32PrefixDAGCoin)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	acct0IntAddr, err := acct0Int0.Address(util.DagCoin)
+	acct0IntAddr, err := acct0Int0.Address(util.Bech32PrefixDAGCoin)
 	if err != nil {
 		fmt.Println(err)
 		return

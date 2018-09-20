@@ -33,7 +33,7 @@ func TestAddresses(t *testing.T) {
 			encoded: "dagcoin:qr35ennsep3hxfe7lnz5ee7j5jgmkjswss74as46gy",
 			valid:   true,
 			result: util.TstAddressPubKeyHash(
-				util.DagCoin,
+				util.Bech32PrefixDAGCoin,
 				[ripemd160.Size]byte{
 					0xe3, 0x4c, 0xce, 0x70, 0xc8, 0x63, 0x73, 0x27, 0x3e, 0xfc,
 					0xc5, 0x4c, 0xe7, 0xd2, 0xa4, 0x91, 0xbb, 0x4a, 0x0e, 0x84}),
@@ -41,9 +41,9 @@ func TestAddresses(t *testing.T) {
 				pkHash := []byte{
 					0xe3, 0x4c, 0xce, 0x70, 0xc8, 0x63, 0x73, 0x27, 0x3e, 0xfc,
 					0xc5, 0x4c, 0xe7, 0xd2, 0xa4, 0x91, 0xbb, 0x4a, 0x0e, 0x84}
-				return util.NewAddressPubKeyHash(pkHash, util.DagCoin)
+				return util.NewAddressPubKeyHash(pkHash, util.Bech32PrefixDAGCoin)
 			},
-			prefix: util.DagCoin,
+			prefix: util.Bech32PrefixDAGCoin,
 		},
 		{
 			name:    "mainnet p2pkh 2",
@@ -51,7 +51,7 @@ func TestAddresses(t *testing.T) {
 			encoded: "dagcoin:qq80qvqs0lfxuzmt7sz3909ze6camq9d4gwzqeljga",
 			valid:   true,
 			result: util.TstAddressPubKeyHash(
-				util.DagCoin,
+				util.Bech32PrefixDAGCoin,
 				[ripemd160.Size]byte{
 					0x0e, 0xf0, 0x30, 0x10, 0x7f, 0xd2, 0x6e, 0x0b, 0x6b, 0xf4,
 					0x05, 0x12, 0xbc, 0xa2, 0xce, 0xb1, 0xdd, 0x80, 0xad, 0xaa}),
@@ -59,9 +59,9 @@ func TestAddresses(t *testing.T) {
 				pkHash := []byte{
 					0x0e, 0xf0, 0x30, 0x10, 0x7f, 0xd2, 0x6e, 0x0b, 0x6b, 0xf4,
 					0x05, 0x12, 0xbc, 0xa2, 0xce, 0xb1, 0xdd, 0x80, 0xad, 0xaa}
-				return util.NewAddressPubKeyHash(pkHash, util.DagCoin)
+				return util.NewAddressPubKeyHash(pkHash, util.Bech32PrefixDAGCoin)
 			},
-			prefix: util.DagCoin,
+			prefix: util.Bech32PrefixDAGCoin,
 		},
 		{
 			name:    "testnet p2pkh",
@@ -69,7 +69,7 @@ func TestAddresses(t *testing.T) {
 			encoded: "dagtest:qputx94qseratdmjs0j395mq8u03er0x3ucluj5qam",
 			valid:   true,
 			result: util.TstAddressPubKeyHash(
-				util.DagTest,
+				util.Bech32PrefixDAGTest,
 				[ripemd160.Size]byte{
 					0x78, 0xb3, 0x16, 0xa0, 0x86, 0x47, 0xd5, 0xb7, 0x72, 0x83,
 					0xe5, 0x12, 0xd3, 0x60, 0x3f, 0x1f, 0x1c, 0x8d, 0xe6, 0x8f}),
@@ -77,9 +77,9 @@ func TestAddresses(t *testing.T) {
 				pkHash := []byte{
 					0x78, 0xb3, 0x16, 0xa0, 0x86, 0x47, 0xd5, 0xb7, 0x72, 0x83,
 					0xe5, 0x12, 0xd3, 0x60, 0x3f, 0x1f, 0x1c, 0x8d, 0xe6, 0x8f}
-				return util.NewAddressPubKeyHash(pkHash, util.DagTest)
+				return util.NewAddressPubKeyHash(pkHash, util.Bech32PrefixDAGTest)
 			},
-			prefix: util.DagTest,
+			prefix: util.Bech32PrefixDAGTest,
 		},
 
 		// Negative P2PKH tests.
@@ -92,15 +92,15 @@ func TestAddresses(t *testing.T) {
 					0x00, 0x0e, 0xf0, 0x30, 0x10, 0x7f, 0xd2, 0x6e, 0x0b, 0x6b,
 					0xf4, 0x05, 0x12, 0xbc, 0xa2, 0xce, 0xb1, 0xdd, 0x80, 0xad,
 					0xaa}
-				return util.NewAddressPubKeyHash(pkHash, util.DagCoin)
+				return util.NewAddressPubKeyHash(pkHash, util.Bech32PrefixDAGCoin)
 			},
-			prefix: util.DagCoin,
+			prefix: util.Bech32PrefixDAGCoin,
 		},
 		{
 			name:   "p2pkh bad checksum",
 			addr:   "dagcoin:qr35ennsep3hxfe7lnz5ee7j5jgmkjswss74as46gx",
 			valid:  false,
-			prefix: util.DagCoin,
+			prefix: util.Bech32PrefixDAGCoin,
 		},
 
 		// Positive P2SH tests.
@@ -113,7 +113,7 @@ func TestAddresses(t *testing.T) {
 			encoded: "dagcoin:pruptvpkmxamee0f72sq40gm70wfr624zq8mc2ujcn",
 			valid:   true,
 			result: util.TstAddressScriptHash(
-				util.DagCoin,
+				util.Bech32PrefixDAGCoin,
 				[ripemd160.Size]byte{
 					0xf8, 0x15, 0xb0, 0x36, 0xd9, 0xbb, 0xbc, 0xe5, 0xe9, 0xf2,
 					0xa0, 0x0a, 0xbd, 0x1b, 0xf3, 0xdc, 0x91, 0xe9, 0x55, 0x10}),
@@ -140,9 +140,9 @@ func TestAddresses(t *testing.T) {
 					0xdb, 0xfb, 0x1e, 0x75, 0x4e, 0x35, 0xfa, 0x1c, 0x78, 0x44,
 					0xc4, 0x1f, 0x32, 0x2a, 0x18, 0x63, 0xd4, 0x62, 0x13, 0x53,
 					0xae}
-				return util.NewAddressScriptHash(script, util.DagCoin)
+				return util.NewAddressScriptHash(script, util.Bech32PrefixDAGCoin)
 			},
-			prefix: util.DagCoin,
+			prefix: util.Bech32PrefixDAGCoin,
 		},
 		{
 			// Taken from transactions:
@@ -153,7 +153,7 @@ func TestAddresses(t *testing.T) {
 			encoded: "dagcoin:pr5vxqxg0xrwl2zvxlq9rxffqx00sm44ksj47shjr6",
 			valid:   true,
 			result: util.TstAddressScriptHash(
-				util.DagCoin,
+				util.Bech32PrefixDAGCoin,
 				[ripemd160.Size]byte{
 					0xe8, 0xc3, 0x00, 0xc8, 0x79, 0x86, 0xef, 0xa8, 0x4c, 0x37,
 					0xc0, 0x51, 0x99, 0x29, 0x01, 0x9e, 0xf8, 0x6e, 0xb5, 0xb4}),
@@ -161,9 +161,9 @@ func TestAddresses(t *testing.T) {
 				hash := []byte{
 					0xe8, 0xc3, 0x00, 0xc8, 0x79, 0x86, 0xef, 0xa8, 0x4c, 0x37,
 					0xc0, 0x51, 0x99, 0x29, 0x01, 0x9e, 0xf8, 0x6e, 0xb5, 0xb4}
-				return util.NewAddressScriptHashFromHash(hash, util.DagCoin)
+				return util.NewAddressScriptHashFromHash(hash, util.Bech32PrefixDAGCoin)
 			},
-			prefix: util.DagCoin,
+			prefix: util.Bech32PrefixDAGCoin,
 		},
 		{
 			// Taken from bitcoind base58_keys_valid.
@@ -172,7 +172,7 @@ func TestAddresses(t *testing.T) {
 			encoded: "dagtest:przhjdpv93xfygpqtckdc2zkzuzqeyj2pg6ghunlhx",
 			valid:   true,
 			result: util.TstAddressScriptHash(
-				util.DagTest,
+				util.Bech32PrefixDAGTest,
 				[ripemd160.Size]byte{
 					0xc5, 0x79, 0x34, 0x2c, 0x2c, 0x4c, 0x92, 0x20, 0x20, 0x5e,
 					0x2c, 0xdc, 0x28, 0x56, 0x17, 0x04, 0x0c, 0x92, 0x4a, 0x0a}),
@@ -180,9 +180,9 @@ func TestAddresses(t *testing.T) {
 				hash := []byte{
 					0xc5, 0x79, 0x34, 0x2c, 0x2c, 0x4c, 0x92, 0x20, 0x20, 0x5e,
 					0x2c, 0xdc, 0x28, 0x56, 0x17, 0x04, 0x0c, 0x92, 0x4a, 0x0a}
-				return util.NewAddressScriptHashFromHash(hash, util.DagTest)
+				return util.NewAddressScriptHashFromHash(hash, util.Bech32PrefixDAGTest)
 			},
-			prefix: util.DagTest,
+			prefix: util.Bech32PrefixDAGTest,
 		},
 
 		// Negative P2SH tests.
@@ -195,9 +195,9 @@ func TestAddresses(t *testing.T) {
 					0x00, 0xf8, 0x15, 0xb0, 0x36, 0xd9, 0xbb, 0xbc, 0xe5, 0xe9,
 					0xf2, 0xa0, 0x0a, 0xbd, 0x1b, 0xf3, 0xdc, 0x91, 0xe9, 0x55,
 					0x10}
-				return util.NewAddressScriptHashFromHash(hash, util.DagCoin)
+				return util.NewAddressScriptHashFromHash(hash, util.Bech32PrefixDAGCoin)
 			},
-			prefix: util.DagCoin,
+			prefix: util.Bech32PrefixDAGCoin,
 		},
 	}
 
@@ -314,22 +314,22 @@ func TestDecodeAddressErrorConditions(t *testing.T) {
 	}{
 		{
 			"bitcoincash:qpzry9x8gf2tvdw0s3jn54khce6mua7lcw20ayyn",
-			util.Unknown,
+			util.Bech32PrefixUnknown,
 			"decoded address's prefix could not be parsed",
 		},
 		{
 			"dagreg:qpm2qsznhks23z7629mms6s4cwef74vcwvtmvqeszh",
-			util.DagTest,
+			util.Bech32PrefixDAGTest,
 			"decoded address is of wrong network",
 		},
 		{
 			"dagreg:raskzctpv9skzctpv9skzctpv9skzctpvyd070wnqg",
-			util.DagReg,
+			util.Bech32PrefixDAGReg,
 			"unknown address type",
 		},
 		{
 			"dagreg:raskzcg5egs6nnj",
-			util.DagReg,
+			util.Bech32PrefixDAGReg,
 			"decoded address is of unknown size",
 		},
 	}
@@ -351,13 +351,13 @@ func TestParsePrefix(t *testing.T) {
 		expectedPrefix util.Bech32Prefix
 		expectedError  bool
 	}{
-		{"dagcoin", util.DagCoin, false},
-		{"dagreg", util.DagReg, false},
-		{"dagtest", util.DagTest, false},
-		{"dagsim", util.DagSim, false},
-		{"blabla", util.Unknown, true},
-		{"unknown", util.Unknown, true},
-		{"", util.Unknown, true},
+		{"dagcoin", util.Bech32PrefixDAGCoin, false},
+		{"dagreg", util.Bech32PrefixDAGReg, false},
+		{"dagtest", util.Bech32PrefixDAGTest, false},
+		{"dagsim", util.Bech32PrefixDAGSim, false},
+		{"blabla", util.Bech32PrefixUnknown, true},
+		{"unknown", util.Bech32PrefixUnknown, true},
+		{"", util.Bech32PrefixUnknown, true},
 	}
 
 	for _, test := range tests {
@@ -379,11 +379,11 @@ func TestPrefixToString(t *testing.T) {
 		prefix            util.Bech32Prefix
 		expectedPrefixStr string
 	}{
-		{util.DagCoin, "dagcoin"},
-		{util.DagReg, "dagreg"},
-		{util.DagTest, "dagtest"},
-		{util.DagSim, "dagsim"},
-		{util.Unknown, ""},
+		{util.Bech32PrefixDAGCoin, "dagcoin"},
+		{util.Bech32PrefixDAGReg, "dagreg"},
+		{util.Bech32PrefixDAGTest, "dagtest"},
+		{util.Bech32PrefixDAGSim, "dagsim"},
+		{util.Bech32PrefixUnknown, ""},
 	}
 
 	for _, test := range tests {

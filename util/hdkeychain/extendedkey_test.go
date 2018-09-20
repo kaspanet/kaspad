@@ -647,7 +647,7 @@ func TestExtendedKeyAPI(t *testing.T) {
 			continue
 		}
 
-		addr, err := key.Address(util.DagCoin)
+		addr, err := key.Address(util.Bech32PrefixDAGCoin)
 		if err != nil {
 			t.Errorf("Address #%d (%s): unexpected error: %v", i,
 				test.name, err)
@@ -959,7 +959,7 @@ func TestZero(t *testing.T) {
 		}
 
 		wantAddr := "dagcoin:qz689gnx6z7cnsfhq6jpxtx0k9hhcwulevtzqltud6"
-		addr, err := key.Address(util.DagCoin)
+		addr, err := key.Address(util.Bech32PrefixDAGCoin)
 		if err != nil {
 			t.Errorf("Addres s #%d (%s): unexpected error: %v", i,
 				testName, err)

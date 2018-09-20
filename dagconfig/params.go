@@ -277,7 +277,7 @@ var MainNetParams = Params{
 	RelayNonStdTxs: false,
 
 	// Human-readable part for Bech32 encoded addresses
-	Prefix: util.DagCoin,
+	Prefix: util.Bech32PrefixDAGCoin,
 
 	// Address encoding magics
 	PrivateKeyID: 0x80, // starts with 5 (uncompressed) or K (compressed)
@@ -336,7 +336,7 @@ var RegressionNetParams = Params{
 	RelayNonStdTxs: true,
 
 	// Human-readable part for Bech32 encoded addresses
-	Prefix: util.DagReg,
+	Prefix: util.Bech32PrefixDAGReg,
 
 	// Address encoding magics
 	PrivateKeyID: 0xef, // starts with 9 (uncompressed) or c (compressed)
@@ -412,7 +412,7 @@ var TestNet3Params = Params{
 	RelayNonStdTxs: true,
 
 	// Human-readable part for Bech32 encoded addresses
-	Prefix: util.DagTest,
+	Prefix: util.Bech32PrefixDAGTest,
 
 	// Address encoding magics
 	PrivateKeyID: 0xef, // starts with 9 (uncompressed) or c (compressed)
@@ -476,7 +476,7 @@ var SimNetParams = Params{
 
 	PrivateKeyID: 0x64, // starts with 4 (uncompressed) or F (compressed)
 	// Human-readable part for Bech32 encoded addresses
-	Prefix: util.DagSim,
+	Prefix: util.Bech32PrefixDAGSim,
 
 	// BIP32 hierarchical deterministic extended key magics
 	HDKeyIDPair: hdkeychain.SimNetHDKeyIDPair,
@@ -516,7 +516,6 @@ func Register(params *Params) error {
 		return ErrDuplicateNet
 	}
 	registeredNets[params.Net] = struct{}{}
-	hdkeychain.RegisterHDKeyIDPair(params.HDKeyIDPair)
 
 	return nil
 }

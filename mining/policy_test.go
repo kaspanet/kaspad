@@ -183,4 +183,4 @@ var privKeyBytes, _ = hex.DecodeString("22a47fa09a223f2aa079edf85a7c2" +
 
 var privKey, pubKey = btcec.PrivKeyFromBytes(btcec.S256(), privKeyBytes)
 var pubKeyHash = util.Hash160(pubKey.SerializeCompressed())
-var addr, _ = util.NewAddressPubKeyHash(pubKeyHash, util.DagCoin)
+var addr, _ = util.NewAddressPubKeyHash(pubKeyHash, util.Bech32PrefixDAGCoin)

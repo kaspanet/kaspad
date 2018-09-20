@@ -62,7 +62,7 @@ func TestUseBlockHash(t *testing.T) {
 	}
 
 	// util.Address
-	addr, err := util.DecodeAddress(testAddr, util.DagCoin)
+	addr, err := util.DecodeAddress(testAddr, util.Bech32PrefixDAGCoin)
 	if err != nil {
 		t.Fatalf("Address decode failed: %s", err.Error())
 	}
