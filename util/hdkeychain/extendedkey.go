@@ -627,3 +627,11 @@ func GenerateSeed(length uint8) ([]byte, error) {
 
 	return buf, nil
 }
+
+func init() {
+	// Register all default keyPairIDs when the package is initialized.
+	RegisterHDKeyIDPair(MainNetHDKeyIDPair)
+	RegisterHDKeyIDPair(TestNetHDKeyIDPair)
+	RegisterHDKeyIDPair(RegressionNetHDKeyIDPair)
+	RegisterHDKeyIDPair(SimNetHDKeyIDPair)
+}
