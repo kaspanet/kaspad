@@ -704,7 +704,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rateLimit, rejectDu
 		return nil, nil, err
 	}
 
-	// Don't allow the transaction if it exists in the DAG and is not
+	// Don't allow the transaction if it exists in the DAG and is
 	// not already fully spent.
 	prevOut := wire.OutPoint{Hash: *txHash}
 	for txOutIdx := range tx.MsgTx().TxOut {
