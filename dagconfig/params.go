@@ -200,8 +200,7 @@ type Params struct {
 	PrivateKeyID byte // First byte of a WIF private key
 
 	// BIP32 hierarchical deterministic extended key magics
-	HDPrivateKeyID [4]byte
-	HDPublicKeyID  [4]byte
+	HDKeyIDPair hdkeychain.HDKeyIDPair
 
 	// BIP44 coin type used in the hierarchical deterministic path for
 	// address generation.
@@ -284,8 +283,7 @@ var MainNetParams = Params{
 	PrivateKeyID: 0x80, // starts with 5 (uncompressed) or K (compressed)
 
 	// BIP32 hierarchical deterministic extended key magics
-	HDPrivateKeyID: [4]byte{0x04, 0x88, 0xad, 0xe4}, // starts with xprv
-	HDPublicKeyID:  [4]byte{0x04, 0x88, 0xb2, 0x1e}, // starts with xpub
+	HDKeyIDPair: hdkeychain.MainNetHDKeyIDPair,
 
 	// BIP44 coin type used in the hierarchical deterministic path for
 	// address generation.
@@ -344,8 +342,7 @@ var RegressionNetParams = Params{
 	PrivateKeyID: 0xef, // starts with 9 (uncompressed) or c (compressed)
 
 	// BIP32 hierarchical deterministic extended key magics
-	HDPrivateKeyID: [4]byte{0x04, 0x35, 0x83, 0x94}, // starts with tprv
-	HDPublicKeyID:  [4]byte{0x04, 0x35, 0x87, 0xcf}, // starts with tpub
+	HDKeyIDPair: hdkeychain.RegressionNetHDKeyIDPair,
 
 	// BIP44 coin type used in the hierarchical deterministic path for
 	// address generation.
@@ -421,8 +418,7 @@ var TestNet3Params = Params{
 	PrivateKeyID: 0xef, // starts with 9 (uncompressed) or c (compressed)
 
 	// BIP32 hierarchical deterministic extended key magics
-	HDPrivateKeyID: [4]byte{0x04, 0x35, 0x83, 0x94}, // starts with tprv
-	HDPublicKeyID:  [4]byte{0x04, 0x35, 0x87, 0xcf}, // starts with tpub
+	HDKeyIDPair: hdkeychain.TestNetHDKeyIDPair,
 
 	// BIP44 coin type used in the hierarchical deterministic path for
 	// address generation.
@@ -483,8 +479,7 @@ var SimNetParams = Params{
 	Prefix: util.DagSim,
 
 	// BIP32 hierarchical deterministic extended key magics
-	HDPrivateKeyID: [4]byte{0x04, 0x20, 0xb9, 0x00}, // starts with sprv
-	HDPublicKeyID:  [4]byte{0x04, 0x20, 0xbd, 0x3a}, // starts with spub
+	HDKeyIDPair: hdkeychain.SimNetHDKeyIDPair,
 
 	// BIP44 coin type used in the hierarchical deterministic path for
 	// address generation.
@@ -521,7 +516,7 @@ func Register(params *Params) error {
 		return ErrDuplicateNet
 	}
 	registeredNets[params.Net] = struct{}{}
-	hdkeychain.RegisterHDPrivateKeyToPublicKeyID(params.HDPrivateKeyID, params.HDPublicKeyID)
+	hdkeychain.RegisterHDKeyIDPair(params.HDKeyIDPair)
 
 	return nil
 }

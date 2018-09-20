@@ -13,10 +13,12 @@ import (
 // network.  This is necessary to test the registration of and
 // lookup of encoding magics from the network.
 var mockNetParams = Params{
-	Name:           "mocknet",
-	Net:            1<<32 - 1,
-	HDPrivateKeyID: [4]byte{0x01, 0x02, 0x03, 0x04},
-	HDPublicKeyID:  [4]byte{0x05, 0x06, 0x07, 0x08},
+	Name: "mocknet",
+	Net:  1<<32 - 1,
+	HDKeyIDPair: hdkeychain.HDKeyIDPair{
+		PrivateKeyID: [4]byte{0x01, 0x02, 0x03, 0x04},
+		PublicKeyID:  [4]byte{0x05, 0x06, 0x07, 0x08},
+	},
 }
 
 func TestRegister(t *testing.T) {
@@ -62,27 +64,27 @@ func TestRegister(t *testing.T) {
 			},
 			hdMagics: []hdTest{
 				{
-					priv: MainNetParams.HDPrivateKeyID[:],
-					want: MainNetParams.HDPublicKeyID[:],
+					priv: MainNetParams.HDKeyIDPair.PrivateKeyID[:],
+					want: MainNetParams.HDKeyIDPair.PublicKeyID[:],
 					err:  nil,
 				},
 				{
-					priv: TestNet3Params.HDPrivateKeyID[:],
-					want: TestNet3Params.HDPublicKeyID[:],
+					priv: TestNet3Params.HDKeyIDPair.PrivateKeyID[:],
+					want: TestNet3Params.HDKeyIDPair.PublicKeyID[:],
 					err:  nil,
 				},
 				{
-					priv: RegressionNetParams.HDPrivateKeyID[:],
-					want: RegressionNetParams.HDPublicKeyID[:],
+					priv: RegressionNetParams.HDKeyIDPair.PrivateKeyID[:],
+					want: RegressionNetParams.HDKeyIDPair.PublicKeyID[:],
 					err:  nil,
 				},
 				{
-					priv: SimNetParams.HDPrivateKeyID[:],
-					want: SimNetParams.HDPublicKeyID[:],
+					priv: SimNetParams.HDKeyIDPair.PrivateKeyID[:],
+					want: SimNetParams.HDKeyIDPair.PublicKeyID[:],
 					err:  nil,
 				},
 				{
-					priv: mockNetParams.HDPrivateKeyID[:],
+					priv: mockNetParams.HDKeyIDPair.PrivateKeyID[:],
 					err:  hdkeychain.ErrUnknownHDKeyID,
 				},
 				{
@@ -106,8 +108,8 @@ func TestRegister(t *testing.T) {
 			},
 			hdMagics: []hdTest{
 				{
-					priv: mockNetParams.HDPrivateKeyID[:],
-					want: mockNetParams.HDPublicKeyID[:],
+					priv: mockNetParams.HDKeyIDPair.PrivateKeyID[:],
+					want: mockNetParams.HDKeyIDPair.PublicKeyID[:],
 					err:  nil,
 				},
 			},
@@ -143,28 +145,28 @@ func TestRegister(t *testing.T) {
 			},
 			hdMagics: []hdTest{
 				{
-					priv: MainNetParams.HDPrivateKeyID[:],
-					want: MainNetParams.HDPublicKeyID[:],
+					priv: MainNetParams.HDKeyIDPair.PrivateKeyID[:],
+					want: MainNetParams.HDKeyIDPair.PublicKeyID[:],
 					err:  nil,
 				},
 				{
-					priv: TestNet3Params.HDPrivateKeyID[:],
-					want: TestNet3Params.HDPublicKeyID[:],
+					priv: TestNet3Params.HDKeyIDPair.PrivateKeyID[:],
+					want: TestNet3Params.HDKeyIDPair.PublicKeyID[:],
 					err:  nil,
 				},
 				{
-					priv: RegressionNetParams.HDPrivateKeyID[:],
-					want: RegressionNetParams.HDPublicKeyID[:],
+					priv: RegressionNetParams.HDKeyIDPair.PrivateKeyID[:],
+					want: RegressionNetParams.HDKeyIDPair.PublicKeyID[:],
 					err:  nil,
 				},
 				{
-					priv: SimNetParams.HDPrivateKeyID[:],
-					want: SimNetParams.HDPublicKeyID[:],
+					priv: SimNetParams.HDKeyIDPair.PrivateKeyID[:],
+					want: SimNetParams.HDKeyIDPair.PublicKeyID[:],
 					err:  nil,
 				},
 				{
-					priv: mockNetParams.HDPrivateKeyID[:],
-					want: mockNetParams.HDPublicKeyID[:],
+					priv: mockNetParams.HDKeyIDPair.PrivateKeyID[:],
+					want: mockNetParams.HDKeyIDPair.PublicKeyID[:],
 					err:  nil,
 				},
 				{

@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"github.com/daglabs/btcd/util"
 
-	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/util/hdkeychain"
 )
 
@@ -23,7 +22,7 @@ func ExampleNewMaster() {
 	}
 
 	// Generate a new master node using the seed.
-	key, err := hdkeychain.NewMaster(seed, dagconfig.MainNetParams.HDPrivateKeyID)
+	key, err := hdkeychain.NewMaster(seed, hdkeychain.MainNetHDKeyIDPair.PrivateKeyID)
 	if err != nil {
 		fmt.Println(err)
 		return

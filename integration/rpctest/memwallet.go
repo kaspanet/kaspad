@@ -118,7 +118,7 @@ func newMemWallet(net *dagconfig.Params, harnessID uint32) (*memWallet, error) {
 	copy(harnessHDSeed[:], hdSeed[:])
 	binary.BigEndian.PutUint32(harnessHDSeed[:daghash.HashSize], harnessID)
 
-	hdRoot, err := hdkeychain.NewMaster(harnessHDSeed[:], net.HDPrivateKeyID)
+	hdRoot, err := hdkeychain.NewMaster(harnessHDSeed[:], net.HDKeyIDPair.PrivateKeyID)
 	if err != nil {
 		return nil, nil
 	}

@@ -363,8 +363,32 @@ func (k *ExtendedKey) Neuter() (*ExtendedKey, error) {
 		k.depth, k.childNum, false), nil
 }
 
-func RegisterHDPrivateKeyToPublicKeyID(hdPrivateKeyID [4]byte, hdPublicKeyID [4]byte) {
-	hdPrivToPubKeyIDs[hdPrivateKeyID] = hdPublicKeyID[:]
+type HDKeyIDPair struct {
+	PrivateKeyID [4]byte
+	PublicKeyID  [4]byte
+}
+
+var (
+	MainNetHDKeyIDPair = HDKeyIDPair{
+		PrivateKeyID: [4]byte{0x04, 0x88, 0xad, 0xe4}, // starts with xprv
+		PublicKeyID:  [4]byte{0x04, 0x88, 0xb2, 0x1e}, // starts with xpub
+	}
+	TestNetHDKeyIDPair = HDKeyIDPair{
+		PrivateKeyID: [4]byte{0x04, 0x35, 0x83, 0x94}, // starts with tprv
+		PublicKeyID:  [4]byte{0x04, 0x35, 0x87, 0xcf}, // starts with tpub
+	}
+	RegressionNetHDKeyIDPair = HDKeyIDPair{
+		PrivateKeyID: [4]byte{0x04, 0x35, 0x83, 0x94}, // starts with tprv
+		PublicKeyID:  [4]byte{0x04, 0x35, 0x87, 0xcf}, // starts with tpub
+	}
+	SimNetHDKeyIDPair = HDKeyIDPair{
+		PrivateKeyID: [4]byte{0x04, 0x20, 0xb9, 0x00}, // starts with sprv
+		PublicKeyID:  [4]byte{0x04, 0x20, 0xbd, 0x3a}, // starts with spub
+	}
+)
+
+func RegisterHDKeyIDPair(hdKeyIDPair HDKeyIDPair) {
+	hdPrivToPubKeyIDs[hdKeyIDPair.PrivateKeyID] = hdKeyIDPair.PublicKeyID[:]
 }
 
 // HDPrivateKeyToPublicKeyID accepts a private hierarchical deterministic
@@ -452,18 +476,18 @@ func (k *ExtendedKey) String() string {
 
 // IsForNet returns whether or not the extended key is associated with the
 // passed network keyIDs.
-func (k *ExtendedKey) IsForNet(hdPrivateKeyID [4]byte, hdPublicKeyID [4]byte) bool {
-	return bytes.Equal(k.version, hdPrivateKeyID[:]) ||
-		bytes.Equal(k.version, hdPublicKeyID[:])
+func (k *ExtendedKey) IsForNet(hdKeyIDPair HDKeyIDPair) bool {
+	return bytes.Equal(k.version, hdKeyIDPair.PrivateKeyID[:]) ||
+		bytes.Equal(k.version, hdKeyIDPair.PublicKeyID[:])
 }
 
 // SetNet associates the extended key, and any child keys yet to be derived from
 // it, with the passed key IDs.
-func (k *ExtendedKey) SetNet(hdPrivateKeyID [4]byte, hdPublicKeyID [4]byte) {
+func (k *ExtendedKey) SetNet(hdKeyIDPair HDKeyIDPair) {
 	if k.isPrivate {
-		k.version = hdPrivateKeyID[:]
+		k.version = hdKeyIDPair.PrivateKeyID[:]
 	} else {
-		k.version = hdPublicKeyID[:]
+		k.version = hdKeyIDPair.PublicKeyID[:]
 	}
 }
 
