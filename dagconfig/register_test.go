@@ -184,6 +184,10 @@ func TestRegister(t *testing.T) {
 	for _, test := range tests {
 		for _, regTest := range test.register {
 			err := Register(regTest.params)
+
+			// HDKeyIDPairs must be registered separately
+			hdkeychain.RegisterHDKeyIDPair(regTest.params.HDKeyIDPair)
+
 			if err != regTest.err {
 				t.Errorf("%s:%s: Registered network with unexpected error: got %v expected %v",
 					test.name, regTest.name, err, regTest.err)
