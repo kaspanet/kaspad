@@ -652,32 +652,6 @@ func TestDAGSvrCmds(t *testing.T) {
 			unmarshalled: &btcjson.GetTxOutSetInfoCmd{},
 		},
 		{
-			name: "getwork",
-			newCmd: func() (interface{}, error) {
-				return btcjson.NewCmd("getwork")
-			},
-			staticCmd: func() interface{} {
-				return btcjson.NewGetWorkCmd(nil)
-			},
-			marshalled: `{"jsonrpc":"1.0","method":"getwork","params":[],"id":1}`,
-			unmarshalled: &btcjson.GetWorkCmd{
-				Data: nil,
-			},
-		},
-		{
-			name: "getwork optional",
-			newCmd: func() (interface{}, error) {
-				return btcjson.NewCmd("getwork", "00112233")
-			},
-			staticCmd: func() interface{} {
-				return btcjson.NewGetWorkCmd(btcjson.String("00112233"))
-			},
-			marshalled: `{"jsonrpc":"1.0","method":"getwork","params":["00112233"],"id":1}`,
-			unmarshalled: &btcjson.GetWorkCmd{
-				Data: btcjson.String("00112233"),
-			},
-		},
-		{
 			name: "help",
 			newCmd: func() (interface{}, error) {
 				return btcjson.NewCmd("help")

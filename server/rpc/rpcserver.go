@@ -236,7 +236,6 @@ var rpcUnimplemented = map[string]struct{}{
 	"getchaintips":     {},
 	"getmempoolentry":  {},
 	"getnetworkinfo":   {},
-	"getwork":          {},
 	"invalidateblock":  {},
 	"preciousblock":    {},
 	"reconsiderblock":  {},
@@ -4195,7 +4194,7 @@ func NewRPCServer(
 		gbtWorkState:           newGbtWorkState(cfg.TimeSource),
 		helpCacher:             newHelpCacher(),
 		requestProcessShutdown: make(chan struct{}),
-		quit: make(chan int),
+		quit:                   make(chan int),
 	}
 	if config.MainConfig().RPCUser != "" && config.MainConfig().RPCPass != "" {
 		login := config.MainConfig().RPCUser + ":" + config.MainConfig().RPCPass
