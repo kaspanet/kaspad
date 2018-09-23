@@ -257,7 +257,7 @@ func newPoolHarness(dagParams *dagconfig.Params, dbName string) (*poolHarness, [
 	// Generate associated pay-to-script-hash address and resulting payment
 	// script.
 	pubKeyBytes := signPub.SerializeCompressed()
-	payPubKeyAddr, err := util.NewAddressPubKey(pubKeyBytes, dagParams)
+	payPubKeyAddr, err := util.NewAddressPubKey(pubKeyBytes, dagParams.Prefix)
 	if err != nil {
 		return nil, nil, err
 	}

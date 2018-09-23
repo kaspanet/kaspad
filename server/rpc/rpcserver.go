@@ -557,7 +557,7 @@ func handleCreateRawTransaction(s *Server, cmd interface{}, closeChan <-chan str
 		}
 
 		// Decode the provided address.
-		addr, err := util.DecodeAddress(encodedAddr, params)
+		addr, err := util.DecodeAddress(encodedAddr, params.Prefix)
 		if err != nil {
 			return nil, &btcjson.RPCError{
 				Code:    btcjson.ErrRPCInvalidAddressOrKey,
@@ -577,7 +577,7 @@ func handleCreateRawTransaction(s *Server, cmd interface{}, closeChan <-chan str
 				Message: "Invalid address or key",
 			}
 		}
-		if !addr.IsForNet(params) {
+		if !addr.IsForPrefix(params.Prefix) {
 			return nil, &btcjson.RPCError{
 				Code: btcjson.ErrRPCInvalidAddressOrKey,
 				Message: "Invalid address: " + encodedAddr +
@@ -818,7 +818,7 @@ func handleDecodeScript(s *Server, cmd interface{}, closeChan <-chan struct{}) (
 	}
 
 	// Convert the script itself to a pay-to-script-hash address.
-	p2sh, err := util.NewAddressScriptHash(script, s.cfg.ChainParams)
+	p2sh, err := util.NewAddressScriptHash(script, s.cfg.ChainParams.Prefix)
 	if err != nil {
 		context := "Failed to convert script to pay-to-script-hash"
 		return nil, internalRPCError(err.Error(), context)
@@ -2913,7 +2913,7 @@ func handleSearchRawTransactions(s *Server, cmd interface{}, closeChan <-chan st
 
 	// Attempt to decode the supplied address.
 	params := s.cfg.ChainParams
-	addr, err := util.DecodeAddress(c.Address, params)
+	addr, err := util.DecodeAddress(c.Address, params.Prefix)
 	if err != nil {
 		return nil, &btcjson.RPCError{
 			Code:    btcjson.ErrRPCInvalidAddressOrKey,
@@ -3313,7 +3313,7 @@ func handleValidateAddress(s *Server, cmd interface{}, closeChan <-chan struct{}
 	c := cmd.(*btcjson.ValidateAddressCmd)
 
 	result := btcjson.ValidateAddressResult{}
-	addr, err := util.DecodeAddress(c.Address, s.cfg.ChainParams)
+	addr, err := util.DecodeAddress(c.Address, s.cfg.ChainParams.Prefix)
 	if err != nil {
 		// Return the default value (false) for IsValid.
 		return result, nil
@@ -3385,7 +3385,7 @@ func handleVerifyMessage(s *Server, cmd interface{}, closeChan <-chan struct{}) 
 
 	// Decode the provided address.
 	params := s.cfg.ChainParams
-	addr, err := util.DecodeAddress(c.Address, params)
+	addr, err := util.DecodeAddress(c.Address, params.Prefix)
 	if err != nil {
 		return nil, &btcjson.RPCError{
 			Code:    btcjson.ErrRPCInvalidAddressOrKey,
@@ -3431,7 +3431,7 @@ func handleVerifyMessage(s *Server, cmd interface{}, closeChan <-chan struct{}) 
 	} else {
 		serializedPK = pk.SerializeUncompressed()
 	}
-	address, err := util.NewAddressPubKey(serializedPK, params)
+	address, err := util.NewAddressPubKey(serializedPK, params.Prefix)
 	if err != nil {
 		// Again mirror Bitcoin Core behavior, which treats error in public key
 		// reconstruction as invalid signature.

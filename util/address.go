@@ -8,9 +8,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-
 	"github.com/daglabs/btcd/btcec"
-	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/util/bech32"
 	"golang.org/x/crypto/ripemd160"
 )
@@ -35,11 +33,62 @@ const (
 	scriptHashAddrID = 0x08
 )
 
+// Bech32Prefix is the human-readable prefix for a Bech32 address.
+type Bech32Prefix int
+
+// Constants that define Bech32 address prefixes. Every network is assigned
+// a unique prefix.
+const (
+	// Unknown/Erroneous prefix
+	Bech32PrefixUnknown Bech32Prefix = iota
+
+	// Prefix for the main network.
+	Bech32PrefixDAGCoin
+
+	// Prefix for the regression test network.
+	Bech32PrefixDAGReg
+
+	// Prefix for the test network.
+	Bech32PrefixDAGTest
+
+	// Prefix for the simulation network.
+	Bech32PrefixDAGSim
+)
+
+// Map from strings to Bech32 address prefix constants for parsing purposes.
+var stringsToBech32Prefixes = map[string]Bech32Prefix{
+	"dagcoin": Bech32PrefixDAGCoin,
+	"dagreg":  Bech32PrefixDAGReg,
+	"dagtest": Bech32PrefixDAGTest,
+	"dagsim":  Bech32PrefixDAGSim,
+}
+
+// ParsePrefix attempts to parse a Bech32 address prefix.
+func ParsePrefix(prefixString string) (Bech32Prefix, error) {
+	prefix, ok := stringsToBech32Prefixes[prefixString]
+	if !ok {
+		return Bech32PrefixUnknown, fmt.Errorf("could not parse prefix %v", prefixString)
+	}
+
+	return prefix, nil
+}
+
+// Converts from Bech32 address prefixes to their string values
+func (prefix Bech32Prefix) String() string {
+	for key, value := range stringsToBech32Prefixes {
+		if prefix == value {
+			return key
+		}
+	}
+
+	return ""
+}
+
 // encodeAddress returns a human-readable payment address given a network prefix
 // and a ripemd160 hash which encodes the bitcoin network and address type.  It is used
 // in both pay-to-pubkey-hash (P2PKH) and pay-to-script-hash (P2SH) address
 // encoding.
-func encodeAddress(prefix dagconfig.Bech32Prefix, hash160 []byte, version byte) string {
+func encodeAddress(prefix Bech32Prefix, hash160 []byte, version byte) string {
 	return bech32.Encode(prefix.String(), hash160[:ripemd160.Size], version)
 }
 
@@ -68,9 +117,9 @@ type Address interface {
 	// when inserting the address into a txout's script.
 	ScriptAddress() []byte
 
-	// IsForNet returns whether or not the address is associated with the
+	// IsForPrefix returns whether or not the address is associated with the
 	// passed bitcoin network.
-	IsForNet(*dagconfig.Params) bool
+	IsForPrefix(prefix Bech32Prefix) bool
 }
 
 // DecodeAddress decodes the string encoding of an address and returns
@@ -79,17 +128,17 @@ type Address interface {
 // The bitcoin network address is associated with is extracted if possible.
 // When the address does not encode the network, such as in the case of a raw
 // public key, the address will be associated with the passed defaultNet.
-func DecodeAddress(addr string, defaultNet *dagconfig.Params) (Address, error) {
+func DecodeAddress(addr string, defaultPrefix Bech32Prefix) (Address, error) {
 	prefixString, decoded, version, err := bech32.Decode(addr)
 	if err != nil {
 		return nil, fmt.Errorf("decoded address is of unknown format: %v", err)
 	}
 
-	prefix, err := dagconfig.ParsePrefix(prefixString)
+	prefix, err := ParsePrefix(prefixString)
 	if err != nil {
 		return nil, fmt.Errorf("decoded address's prefix could not be parsed: %v", err)
 	}
-	if defaultNet.Prefix != prefix {
+	if defaultPrefix != prefix {
 		return nil, fmt.Errorf("decoded address is of wrong network: %v", err)
 	}
 
@@ -98,9 +147,9 @@ func DecodeAddress(addr string, defaultNet *dagconfig.Params) (Address, error) {
 	case ripemd160.Size: // P2PKH or P2SH
 		switch version {
 		case pubKeyHashAddrID:
-			return newAddressPubKeyHash(defaultNet.Prefix, decoded)
+			return newAddressPubKeyHash(defaultPrefix, decoded)
 		case scriptHashAddrID:
-			return newAddressScriptHashFromHash(defaultNet.Prefix, decoded)
+			return newAddressScriptHashFromHash(defaultPrefix, decoded)
 		default:
 			return nil, ErrUnknownAddressType
 		}
@@ -112,14 +161,14 @@ func DecodeAddress(addr string, defaultNet *dagconfig.Params) (Address, error) {
 // AddressPubKeyHash is an Address for a pay-to-pubkey-hash (P2PKH)
 // transaction.
 type AddressPubKeyHash struct {
-	prefix dagconfig.Bech32Prefix
+	prefix Bech32Prefix
 	hash   [ripemd160.Size]byte
 }
 
 // NewAddressPubKeyHash returns a new AddressPubKeyHash.  pkHash mustbe 20
 // bytes.
-func NewAddressPubKeyHash(pkHash []byte, net *dagconfig.Params) (*AddressPubKeyHash, error) {
-	return newAddressPubKeyHash(net.Prefix, pkHash)
+func NewAddressPubKeyHash(pkHash []byte, prefix Bech32Prefix) (*AddressPubKeyHash, error) {
+	return newAddressPubKeyHash(prefix, pkHash)
 }
 
 // newAddressPubKeyHash is the internal API to create a pubkey hash address
@@ -127,7 +176,7 @@ func NewAddressPubKeyHash(pkHash []byte, net *dagconfig.Params) (*AddressPubKeyH
 // it up through its parameters.  This is useful when creating a new address
 // structure from a string encoding where the identifer byte is already
 // known.
-func newAddressPubKeyHash(prefix dagconfig.Bech32Prefix, pkHash []byte) (*AddressPubKeyHash, error) {
+func newAddressPubKeyHash(prefix Bech32Prefix, pkHash []byte) (*AddressPubKeyHash, error) {
 	// Check for a valid pubkey hash length.
 	if len(pkHash) != ripemd160.Size {
 		return nil, errors.New("pkHash must be 20 bytes")
@@ -150,10 +199,10 @@ func (a *AddressPubKeyHash) ScriptAddress() []byte {
 	return a.hash[:]
 }
 
-// IsForNet returns whether or not the pay-to-pubkey-hash address is associated
+// IsForPrefix returns whether or not the pay-to-pubkey-hash address is associated
 // with the passed bitcoin network.
-func (a *AddressPubKeyHash) IsForNet(net *dagconfig.Params) bool {
-	return a.prefix == net.Prefix
+func (a *AddressPubKeyHash) IsForPrefix(prefix Bech32Prefix) bool {
+	return a.prefix == prefix
 }
 
 // String returns a human-readable string for the pay-to-pubkey-hash address.
@@ -173,20 +222,20 @@ func (a *AddressPubKeyHash) Hash160() *[ripemd160.Size]byte {
 // AddressScriptHash is an Address for a pay-to-script-hash (P2SH)
 // transaction.
 type AddressScriptHash struct {
-	prefix dagconfig.Bech32Prefix
+	prefix Bech32Prefix
 	hash   [ripemd160.Size]byte
 }
 
 // NewAddressScriptHash returns a new AddressScriptHash.
-func NewAddressScriptHash(serializedScript []byte, net *dagconfig.Params) (*AddressScriptHash, error) {
+func NewAddressScriptHash(serializedScript []byte, prefix Bech32Prefix) (*AddressScriptHash, error) {
 	scriptHash := Hash160(serializedScript)
-	return newAddressScriptHashFromHash(net.Prefix, scriptHash)
+	return newAddressScriptHashFromHash(prefix, scriptHash)
 }
 
 // NewAddressScriptHashFromHash returns a new AddressScriptHash.  scriptHash
 // must be 20 bytes.
-func NewAddressScriptHashFromHash(scriptHash []byte, net *dagconfig.Params) (*AddressScriptHash, error) {
-	return newAddressScriptHashFromHash(net.Prefix, scriptHash)
+func NewAddressScriptHashFromHash(scriptHash []byte, prefix Bech32Prefix) (*AddressScriptHash, error) {
+	return newAddressScriptHashFromHash(prefix, scriptHash)
 }
 
 // newAddressScriptHashFromHash is the internal API to create a script hash
@@ -194,7 +243,7 @@ func NewAddressScriptHashFromHash(scriptHash []byte, net *dagconfig.Params) (*Ad
 // looking it up through its parameters.  This is useful when creating a new
 // address structure from a string encoding where the identifer byte is already
 // known.
-func newAddressScriptHashFromHash(prefix dagconfig.Bech32Prefix, scriptHash []byte) (*AddressScriptHash, error) {
+func newAddressScriptHashFromHash(prefix Bech32Prefix, scriptHash []byte) (*AddressScriptHash, error) {
 	// Check for a valid script hash length.
 	if len(scriptHash) != ripemd160.Size {
 		return nil, errors.New("scriptHash must be 20 bytes")
@@ -217,10 +266,10 @@ func (a *AddressScriptHash) ScriptAddress() []byte {
 	return a.hash[:]
 }
 
-// IsForNet returns whether or not the pay-to-script-hash address is associated
+// IsForPrefix returns whether or not the pay-to-script-hash address is associated
 // with the passed bitcoin network.
-func (a *AddressScriptHash) IsForNet(net *dagconfig.Params) bool {
-	return a.prefix == net.Prefix
+func (a *AddressScriptHash) IsForPrefix(prefix Bech32Prefix) bool {
+	return a.prefix == prefix
 }
 
 // String returns a human-readable string for the pay-to-script-hash address.
@@ -256,7 +305,7 @@ const (
 
 // AddressPubKey is an Address for a pay-to-pubkey transaction.
 type AddressPubKey struct {
-	prefix       dagconfig.Bech32Prefix
+	prefix       Bech32Prefix
 	pubKeyFormat PubKeyFormat
 	pubKey       *btcec.PublicKey
 	pubKeyHashID byte
@@ -265,7 +314,7 @@ type AddressPubKey struct {
 // NewAddressPubKey returns a new AddressPubKey which represents a pay-to-pubkey
 // address.  The serializedPubKey parameter must be a valid pubkey and can be
 // uncompressed, compressed, or hybrid.
-func NewAddressPubKey(serializedPubKey []byte, net *dagconfig.Params) (*AddressPubKey, error) {
+func NewAddressPubKey(serializedPubKey []byte, prefix Bech32Prefix) (*AddressPubKey, error) {
 	pubKey, err := btcec.ParsePubKey(serializedPubKey, btcec.S256())
 	if err != nil {
 		return nil, err
@@ -287,7 +336,7 @@ func NewAddressPubKey(serializedPubKey []byte, net *dagconfig.Params) (*AddressP
 		pubKeyFormat: pkFormat,
 		pubKey:       pubKey,
 		pubKeyHashID: pubKeyHashAddrID,
-		prefix:       net.Prefix,
+		prefix:       prefix,
 	}, nil
 }
 
@@ -327,10 +376,10 @@ func (a *AddressPubKey) ScriptAddress() []byte {
 	return a.serialize()
 }
 
-// IsForNet returns whether or not the pay-to-pubkey address is associated
+// IsForPrefix returns whether or not the pay-to-pubkey address is associated
 // with the passed bitcoin network.
-func (a *AddressPubKey) IsForNet(net *dagconfig.Params) bool {
-	return a.prefix == net.Prefix
+func (a *AddressPubKey) IsForPrefix(prefix Bech32Prefix) bool {
+	return a.prefix == prefix
 }
 
 // String returns the hex-encoded human-readable string for the pay-to-pubkey
