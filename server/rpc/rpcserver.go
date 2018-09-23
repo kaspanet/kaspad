@@ -2897,7 +2897,7 @@ func handleSearchRawTransactions(s *Server, cmd interface{}, closeChan <-chan st
 	c := cmd.(*btcjson.SearchRawTransactionsCmd)
 	vinExtra := false
 	if c.VinExtra != nil {
-		vinExtra = *c.VinExtra != 0
+		vinExtra = *c.VinExtra
 	}
 
 	// Including the extra previous output information requires the
@@ -3054,7 +3054,7 @@ func handleSearchRawTransactions(s *Server, cmd interface{}, closeChan <-chan st
 	}
 
 	// When not in verbose mode, simply return a list of serialized txns.
-	if c.Verbose != nil && *c.Verbose == 0 {
+	if c.Verbose != nil && !*c.Verbose {
 		return hexTxns, nil
 	}
 
