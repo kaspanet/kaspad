@@ -7,12 +7,13 @@ package indexers
 import (
 	"fmt"
 
+	"bytes"
+
 	"github.com/daglabs/btcd/blockdag"
 	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/database"
-	"github.com/daglabs/btcd/wire"
 	"github.com/daglabs/btcd/util"
-	"bytes"
+	"github.com/daglabs/btcd/wire"
 )
 
 var (
@@ -307,42 +308,6 @@ func dbFetchTx(dbTx database.Tx, hash *daghash.Hash) (*wire.MsgTx, error) {
 	}
 
 	return &msgTx, nil
-}
-
-// makeUtxoView creates a mock unspent transaction output view by using the
-// transaction index in order to look up all inputs referenced by the
-// transactions in the block.  This is sometimes needed when catching indexes up
-// because many of the txouts could actually already be spent however the
-// associated scripts are still required to index them.
-func makeUtxoView(dbTx database.Tx, block *util.Block, interrupt <-chan struct{}) (*blockdag.UTXOView, error) {
-	view := blockdag.NewUTXOView()
-	for txIdx, tx := range block.Transactions() {
-		// Coinbases do not reference any inputs.  Since the block is
-		// required to have already gone through full validation, it has
-		// already been proven on the first transaction in the block is
-		// a coinbase.
-		if txIdx == 0 {
-			continue
-		}
-
-		// Use the transaction index to load all of the referenced
-		// inputs and add their outputs to the view.
-		for _, txIn := range tx.MsgTx().TxIn {
-			originOut := &txIn.PreviousOutPoint
-			originTx, err := dbFetchTx(dbTx, &originOut.Hash)
-			if err != nil {
-				return nil, err
-			}
-
-			view.AddTxOuts(util.NewTx(originTx), 0)
-		}
-
-		if interruptRequested(interrupt) {
-			return nil, errInterruptRequested
-		}
-	}
-
-	return view, nil
 }
 
 // ConnectBlock must be invoked when a block is extending the main chain.  It

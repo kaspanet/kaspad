@@ -120,6 +120,7 @@ var subsystemLoggers = map[string]btclog.Logger{
 	SubsystemTags.SRVR: srvrLog,
 	SubsystemTags.SYNC: syncLog,
 	SubsystemTags.TXMP: txmpLog,
+	SubsystemTags.CNFG: cnfgLog,
 }
 
 // InitLogRotator initializes the logging rotater to write logs to logFile and
