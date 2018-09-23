@@ -75,9 +75,9 @@ func calcSequenceLock(tx *util.Tx,
 	}, nil
 }
 
-// spendableOutput is a convenience type that houses a particular utxo and the
+// spendableOutpoint is a convenience type that houses a particular utxo and the
 // amount associated with it.
-type spendableOutput struct {
+type spendableOutpoint struct {
 	outPoint wire.OutPoint
 	amount   util.Amount
 }
@@ -85,8 +85,8 @@ type spendableOutput struct {
 // txOutToSpendableOut returns a spendable output given a transaction and index
 // of the output to use.  This is useful as a convenience when creating test
 // transactions.
-func txOutToSpendableOut(tx *util.Tx, outputNum uint32) spendableOutput {
-	return spendableOutput{
+func txOutToSpendableOut(tx *util.Tx, outputNum uint32) spendableOutpoint {
+	return spendableOutpoint{
 		outPoint: wire.OutPoint{Hash: *tx.Hash(), Index: outputNum},
 		amount:   util.Amount(tx.MsgTx().TxOut[outputNum].Value),
 	}
@@ -156,7 +156,7 @@ func (p *poolHarness) CreateCoinbaseTx(blockHeight int32, numOutputs uint32) (*u
 // inputs and generates the provided number of outputs by evenly splitting the
 // total input amount.  All outputs will be to the payment script associated
 // with the harness and all inputs are assumed to do the same.
-func (p *poolHarness) CreateSignedTx(inputs []spendableOutput, numOutputs uint32) (*util.Tx, error) {
+func (p *poolHarness) CreateSignedTx(inputs []spendableOutpoint, numOutputs uint32) (*util.Tx, error) {
 	// Calculate the total input amount and split it amongst the requested
 	// number of outputs.
 	var totalInput util.Amount
@@ -204,7 +204,7 @@ func (p *poolHarness) CreateSignedTx(inputs []spendableOutput, numOutputs uint32
 // transaction spends the entire amount from the previous one) with the first
 // one spending the provided outpoint.  Each transaction spends the entire
 // amount of the previous one and as such does not include any fees.
-func (p *poolHarness) CreateTxChain(firstOutput spendableOutput, numTxns uint32) ([]*util.Tx, error) {
+func (p *poolHarness) CreateTxChain(firstOutput spendableOutpoint, numTxns uint32) ([]*util.Tx, error) {
 	txChain := make([]*util.Tx, 0, numTxns)
 	prevOutPoint := firstOutput.outPoint
 	spendableAmount := firstOutput.amount
@@ -245,7 +245,7 @@ func (p *poolHarness) CreateTxChain(firstOutput spendableOutput, numTxns uint32)
 // for testing.  Also, the fake chain is populated with the returned spendable
 // outputs so the caller can easily create new valid transactions which build
 // off of it.
-func newPoolHarness(dagParams *dagconfig.Params, numOutputs uint32, dbName string) (*poolHarness, []spendableOutput, error) {
+func newPoolHarness(dagParams *dagconfig.Params, numOutputs uint32, dbName string) (*poolHarness, []spendableOutpoint, error) {
 	// Use a hard coded key pair for deterministic results.
 	keyBytes, err := hex.DecodeString("700868df1838811ffbdf918fb482c1f7e" +
 		"ad62db4b97bd7012c23e726485e577d")
@@ -309,7 +309,7 @@ func newPoolHarness(dagParams *dagconfig.Params, numOutputs uint32, dbName strin
 	// coinbase will mature in the next block.  This ensures the txpool
 	// accepts transactions which spend immature coinbases that will become
 	// mature in the next block.
-	outputs := make([]spendableOutput, 0, numOutputs)
+	outputs := make([]spendableOutpoint, 0, numOutputs)
 	curHeight := harness.chain.BestHeight()
 	coinbase, err := harness.CreateCoinbaseTx(curHeight+1, numOutputs)
 	if err != nil {
@@ -362,14 +362,14 @@ func testPoolMembership(tc *testContext, tx *util.Tx, inOrphanPool, inTxPool boo
 	}
 }
 
-func (p *poolHarness) createTx(out spendableOutput, fee int64, numOutputs int64) (*util.Tx, error) {
+func (p *poolHarness) createTx(outpoint spendableOutpoint, fee int64, numOutputs int64) (*util.Tx, error) {
 	tx := wire.NewMsgTx(wire.TxVersion)
 	tx.AddTxIn(&wire.TxIn{
-		PreviousOutPoint: out.outPoint,
+		PreviousOutPoint: outpoint.outPoint,
 		SignatureScript:  nil,
 		Sequence:         wire.MaxTxInSequenceNum,
 	})
-	amountPerOutput := (int64(out.amount) - fee) / numOutputs
+	amountPerOutput := (int64(outpoint.amount) - fee) / numOutputs
 	for i := int64(0); i < numOutputs; i++ {
 		tx.AddTxOut(&wire.TxOut{
 			PkScript: p.payScript,
@@ -388,7 +388,6 @@ func (p *poolHarness) createTx(out spendableOutput, fee int64, numOutputs int64)
 }
 
 func TestProcessTransaction(t *testing.T) {
-
 	harness, spendableOuts, err := newPoolHarness(&dagconfig.MainNetParams, 6, "TestProcessTransaction")
 	if err != nil {
 		t.Fatalf("unable to create test pool: %v", err)
@@ -412,7 +411,7 @@ func TestProcessTransaction(t *testing.T) {
 		t.Errorf("Unexpected error code. Expected %v but got %v", wire.RejectDuplicate, code)
 	}
 
-	orphanedTx, err := harness.CreateSignedTx([]spendableOutput{{
+	orphanedTx, err := harness.CreateSignedTx([]spendableOutpoint{{
 		amount:   util.Amount(5000000000),
 		outPoint: wire.OutPoint{Hash: daghash.Hash{}, Index: 1},
 	}}, 1)
@@ -702,7 +701,6 @@ func TestProcessTransaction(t *testing.T) {
 }
 
 func TestDoubleSpends(t *testing.T) {
-
 	harness, spendableOuts, err := newPoolHarness(&dagconfig.MainNetParams, 2, "TestDoubleSpends")
 	if err != nil {
 		t.Fatalf("unable to create test pool: %v", err)
@@ -752,11 +750,10 @@ func TestDoubleSpends(t *testing.T) {
 //TestFetchTransaction checks that FetchTransaction
 //returns only transaction from the main pool and not from the orphan pool
 func TestFetchTransaction(t *testing.T) {
-
 	harness, spendableOuts, err := newPoolHarness(&dagconfig.MainNetParams, 1, "TestFetchTransaction")
 	tc := &testContext{t, harness}
 
-	orphanedTx, err := harness.CreateSignedTx([]spendableOutput{{
+	orphanedTx, err := harness.CreateSignedTx([]spendableOutpoint{{
 		amount:   util.Amount(5000000000),
 		outPoint: wire.OutPoint{Hash: daghash.Hash{1}, Index: 1},
 	}}, 1)
@@ -795,7 +792,6 @@ func TestFetchTransaction(t *testing.T) {
 // they are all orphans.  Finally, it adds the linking transaction and ensures
 // the entire orphan chain is moved to the transaction pool.
 func TestSimpleOrphanChain(t *testing.T) {
-
 	harness, spendableOuts, err := newPoolHarness(&dagconfig.MainNetParams, 1, "TestSimpleOrphanChain")
 	if err != nil {
 		t.Fatalf("unable to create test pool: %v", err)
@@ -857,7 +853,6 @@ func TestSimpleOrphanChain(t *testing.T) {
 // TestOrphanReject ensures that orphans are properly rejected when the allow
 // orphans flag is not set on ProcessTransaction.
 func TestOrphanReject(t *testing.T) {
-
 	harness, outputs, err := newPoolHarness(&dagconfig.MainNetParams, 1, "TestOrphanReject")
 	if err != nil {
 		t.Fatalf("unable to create test pool: %v", err)
@@ -912,14 +907,13 @@ func TestOrphanReject(t *testing.T) {
 // it will check if we are beyond nextExpireScan, and if so, it will remove
 // all expired orphan transactions
 func TestOrphanExpiration(t *testing.T) {
-
 	harness, _, err := newPoolHarness(&dagconfig.MainNetParams, 1, "TestOrphanExpiration")
 	if err != nil {
 		t.Fatalf("unable to create test pool: %v", err)
 	}
 	tc := &testContext{t, harness}
 
-	expiredTx, err := harness.CreateSignedTx([]spendableOutput{{
+	expiredTx, err := harness.CreateSignedTx([]spendableOutpoint{{
 		amount:   util.Amount(5000000000),
 		outPoint: wire.OutPoint{Hash: daghash.Hash{}, Index: 0},
 	}}, 1)
@@ -927,7 +921,7 @@ func TestOrphanExpiration(t *testing.T) {
 		false, 0)
 	harness.txPool.orphans[*expiredTx.Hash()].expiration = time.Unix(0, 0)
 
-	tx1, err := harness.CreateSignedTx([]spendableOutput{{
+	tx1, err := harness.CreateSignedTx([]spendableOutpoint{{
 		amount:   util.Amount(5000000000),
 		outPoint: wire.OutPoint{Hash: daghash.Hash{1}, Index: 0},
 	}}, 1)
@@ -942,7 +936,7 @@ func TestOrphanExpiration(t *testing.T) {
 	harness.txPool.nextExpireScan = time.Unix(0, 0)
 	fmt.Println(harness.txPool.nextExpireScan.Unix())
 
-	tx2, err := harness.CreateSignedTx([]spendableOutput{{
+	tx2, err := harness.CreateSignedTx([]spendableOutpoint{{
 		amount:   util.Amount(5000000000),
 		outPoint: wire.OutPoint{Hash: daghash.Hash{2}, Index: 0},
 	}}, 1)
@@ -957,7 +951,6 @@ func TestOrphanExpiration(t *testing.T) {
 //TestMaxOrphanTxSize ensures that a transaction that is
 //bigger than MaxOrphanTxSize will get rejected
 func TestMaxOrphanTxSize(t *testing.T) {
-
 	harness, _, err := newPoolHarness(&dagconfig.MainNetParams, 1, "TestMaxOrphanTxSize")
 	if err != nil {
 		t.Fatalf("unable to create test pool: %v", err)
@@ -965,7 +958,7 @@ func TestMaxOrphanTxSize(t *testing.T) {
 	tc := &testContext{t, harness}
 	harness.txPool.cfg.Policy.MaxOrphanTxSize = 1
 
-	tx, err := harness.CreateSignedTx([]spendableOutput{{
+	tx, err := harness.CreateSignedTx([]spendableOutpoint{{
 		amount:   util.Amount(5000000000),
 		outPoint: wire.OutPoint{Hash: daghash.Hash{}, Index: 0},
 	}}, 1)
@@ -985,7 +978,6 @@ func TestMaxOrphanTxSize(t *testing.T) {
 }
 
 func TestRemoveTransaction(t *testing.T) {
-
 	harness, outputs, err := newPoolHarness(&dagconfig.MainNetParams, 1, "TestRemoveTransaction")
 	if err != nil {
 		t.Fatalf("unable to create test pool: %v", err)
@@ -1021,7 +1013,6 @@ func TestRemoveTransaction(t *testing.T) {
 // TestOrphanEviction ensures that exceeding the maximum number of orphans
 // evicts entries to make room for the new ones.
 func TestOrphanEviction(t *testing.T) {
-
 	harness, outputs, err := newPoolHarness(&dagconfig.MainNetParams, 1, "TestOrphanEviction")
 	if err != nil {
 		t.Fatalf("unable to create test pool: %v", err)
@@ -1083,14 +1074,13 @@ func TestOrphanEviction(t *testing.T) {
 // Attempt to remove orphans by tag,
 // and ensure the state of all other orphans are unaffected.
 func TestRemoveOrphansByTag(t *testing.T) {
-
 	harness, _, err := newPoolHarness(&dagconfig.MainNetParams, 1, "TestRemoveOrphansByTag")
 	if err != nil {
 		t.Fatalf("unable to create test pool: %v", err)
 	}
 	tc := &testContext{t, harness}
 
-	orphanedTx1, err := harness.CreateSignedTx([]spendableOutput{{
+	orphanedTx1, err := harness.CreateSignedTx([]spendableOutpoint{{
 		amount:   util.Amount(5000000000),
 		outPoint: wire.OutPoint{Hash: daghash.Hash{1}, Index: 1},
 	}}, 1)
@@ -1099,7 +1089,7 @@ func TestRemoveOrphansByTag(t *testing.T) {
 	}
 	harness.txPool.ProcessTransaction(orphanedTx1, true,
 		false, 1)
-	orphanedTx2, err := harness.CreateSignedTx([]spendableOutput{{
+	orphanedTx2, err := harness.CreateSignedTx([]spendableOutpoint{{
 		amount:   util.Amount(5000000000),
 		outPoint: wire.OutPoint{Hash: daghash.Hash{2}, Index: 2},
 	}}, 1)
@@ -1108,7 +1098,7 @@ func TestRemoveOrphansByTag(t *testing.T) {
 	}
 	harness.txPool.ProcessTransaction(orphanedTx2, true,
 		false, 1)
-	orphanedTx3, err := harness.CreateSignedTx([]spendableOutput{{
+	orphanedTx3, err := harness.CreateSignedTx([]spendableOutpoint{{
 		amount:   util.Amount(5000000000),
 		outPoint: wire.OutPoint{Hash: daghash.Hash{3}, Index: 3},
 	}}, 1)
@@ -1118,7 +1108,7 @@ func TestRemoveOrphansByTag(t *testing.T) {
 	harness.txPool.ProcessTransaction(orphanedTx3, true,
 		false, 1)
 
-	orphanedTx4, err := harness.CreateSignedTx([]spendableOutput{{
+	orphanedTx4, err := harness.CreateSignedTx([]spendableOutpoint{{
 		amount:   util.Amount(5000000000),
 		outPoint: wire.OutPoint{Hash: daghash.Hash{4}, Index: 4},
 	}}, 1)
@@ -1139,7 +1129,6 @@ func TestRemoveOrphansByTag(t *testing.T) {
 // orphan that doesn't exist is removed  both when there is another orphan that
 // redeems it and when there is not.
 func TestBasicOrphanRemoval(t *testing.T) {
-
 	const maxOrphans = 4
 	harness, spendableOuts, err := newPoolHarness(&dagconfig.MainNetParams, 1, "TestBasicOrphanRemoval")
 	if err != nil {
@@ -1179,7 +1168,7 @@ func TestBasicOrphanRemoval(t *testing.T) {
 
 	// Attempt to remove an orphan that has no redeemers and is not present,
 	// and ensure the state of all other orphans are unaffected.
-	nonChainedOrphanTx, err := harness.CreateSignedTx([]spendableOutput{{
+	nonChainedOrphanTx, err := harness.CreateSignedTx([]spendableOutpoint{{
 		amount:   util.Amount(5000000000),
 		outPoint: wire.OutPoint{Hash: daghash.Hash{}, Index: 0},
 	}}, 1)
@@ -1213,7 +1202,6 @@ func TestBasicOrphanRemoval(t *testing.T) {
 // TestOrphanChainRemoval ensure that orphan chains (orphans that spend outputs
 // from other orphans) are removed as expected.
 func TestOrphanChainRemoval(t *testing.T) {
-
 	const maxOrphans = 10
 	harness, spendableOuts, err := newPoolHarness(&dagconfig.MainNetParams, 1, "TestOrphanChainRemoval")
 	if err != nil {
@@ -1275,7 +1263,6 @@ func TestOrphanChainRemoval(t *testing.T) {
 // TestMultiInputOrphanDoubleSpend ensures that orphans that spend from an
 // output that is spend by another transaction entering the pool are removed.
 func TestMultiInputOrphanDoubleSpend(t *testing.T) {
-
 	const maxOrphans = 4
 	harness, outputs, err := newPoolHarness(&dagconfig.MainNetParams, 1, "TestMultiInputOrphanDoubleSpend")
 	if err != nil {
@@ -1313,7 +1300,7 @@ func TestMultiInputOrphanDoubleSpend(t *testing.T) {
 	// orphan pool) is accepted to the orphan pool.  This must be allowed
 	// since it would otherwise be possible for a malicious actor to disrupt
 	// tx chains.
-	doubleSpendTx, err := harness.CreateSignedTx([]spendableOutput{
+	doubleSpendTx, err := harness.CreateSignedTx([]spendableOutpoint{
 		txOutToSpendableOut(chainedTxns[1], 0),
 		txOutToSpendableOut(chainedTxns[maxOrphans], 0),
 	}, 1)
@@ -1363,7 +1350,6 @@ func TestMultiInputOrphanDoubleSpend(t *testing.T) {
 // TestCheckSpend tests that CheckSpend returns the expected spends found in
 // the mempool.
 func TestCheckSpend(t *testing.T) {
-
 	harness, outputs, err := newPoolHarness(&dagconfig.MainNetParams, 1, "TestCheckSpend")
 	if err != nil {
 		t.Fatalf("unable to create test pool: %v", err)

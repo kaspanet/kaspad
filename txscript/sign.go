@@ -173,11 +173,11 @@ func mergeScripts(chainParams *dagconfig.Params, tx *wire.MsgTx, idx int,
 	case ScriptHashTy:
 		// Remove the last push in the script and then recurse.
 		// this could be a lot less inefficient.
-		sigPops, err := ParseScript(sigScript)
+		sigPops, err := parseScript(sigScript)
 		if err != nil || len(sigPops) == 0 {
 			return prevScript, nil
 		}
-		prevPops, err := ParseScript(prevScript)
+		prevPops, err := parseScript(prevScript)
 		if err != nil || len(prevPops) == 0 {
 			return sigScript, nil
 		}
@@ -231,17 +231,17 @@ func mergeScripts(chainParams *dagconfig.Params, tx *wire.MsgTx, idx int,
 func mergeMultiSig(tx *wire.MsgTx, idx int, addresses []util.Address,
 	nRequired int, pkScript, sigScript, prevScript []byte) ([]byte, error) {
 
-	pkPops, err := ParseScript(pkScript)
+	pkPops, err := parseScript(pkScript)
 	if err != nil {
 		return nil, err
 	}
 
-	sigPops, err := ParseScript(sigScript)
+	sigPops, err := parseScript(sigScript)
 	if err != nil || len(sigPops) == 0 {
 		return prevScript, nil
 	}
 
-	prevPops, err := ParseScript(prevScript)
+	prevPops, err := parseScript(prevScript)
 	if err != nil || len(prevPops) == 0 {
 		return sigScript, nil
 	}

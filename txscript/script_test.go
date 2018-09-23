@@ -3733,12 +3733,12 @@ func TestHasCanonicalPush(t *testing.T) {
 				err)
 			continue
 		}
-		if result := IsPushOnlyScript(script); !result {
+		if result, _ := IsPushOnlyScript(script); !result {
 			t.Errorf("IsPushOnlyScript: test #%d failed: %x\n", i,
 				script)
 			continue
 		}
-		pops, err := ParseScript(script)
+		pops, err := parseScript(script)
 		if err != nil {
 			t.Errorf("parseScript: #%d failed: %v", i, err)
 			continue
@@ -3759,11 +3759,11 @@ func TestHasCanonicalPush(t *testing.T) {
 			t.Errorf("StandardPushesTests test #%d unexpected error: %v\n", i, err)
 			continue
 		}
-		if result := IsPushOnlyScript(script); !result {
+		if result, _ := IsPushOnlyScript(script); !result {
 			t.Errorf("StandardPushesTests IsPushOnlyScript test #%d failed: %x\n", i, script)
 			continue
 		}
-		pops, err := ParseScript(script)
+		pops, err := parseScript(script)
 		if err != nil {
 			t.Errorf("StandardPushesTests #%d failed to TstParseScript: %v", i, err)
 			continue
@@ -3869,7 +3869,7 @@ func TestHasCanonicalPushes(t *testing.T) {
 
 	for i, test := range tests {
 		script := mustParseShortForm(test.script)
-		pops, err := ParseScript(script)
+		pops, err := parseScript(script)
 		if err != nil {
 			if test.expected {
 				t.Errorf("TstParseScript #%d failed: %v", i, err)
@@ -3903,7 +3903,9 @@ func TestIsPushOnlyScript(t *testing.T) {
 		expected: false,
 	}
 
-	if IsPushOnlyScript(test.script) != test.expected {
+	isPushOnly, _ := IsPushOnlyScript(test.script)
+
+	if isPushOnly != test.expected {
 		t.Errorf("IsPushOnlyScript (%s) wrong result\ngot: %v\nwant: "+
 			"%v", test.name, true, test.expected)
 	}
