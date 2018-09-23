@@ -526,22 +526,6 @@ func NewGetTxOutSetInfoCmd() *GetTxOutSetInfoCmd {
 	return &GetTxOutSetInfoCmd{}
 }
 
-// GetWorkCmd defines the getwork JSON-RPC command.
-type GetWorkCmd struct {
-	Data *string
-}
-
-// NewGetWorkCmd returns a new instance which can be used to issue a getwork
-// JSON-RPC command.
-//
-// The parameters which are pointers indicate they are optional.  Passing nil
-// for optional parameters will use the default value.
-func NewGetWorkCmd(data *string) *GetWorkCmd {
-	return &GetWorkCmd{
-		Data: data,
-	}
-}
-
 // HelpCmd defines the help JSON-RPC command.
 type HelpCmd struct {
 	Command *string
@@ -809,7 +793,6 @@ func init() {
 	MustRegisterCmd("gettxout", (*GetTxOutCmd)(nil), flags)
 	MustRegisterCmd("gettxoutproof", (*GetTxOutProofCmd)(nil), flags)
 	MustRegisterCmd("gettxoutsetinfo", (*GetTxOutSetInfoCmd)(nil), flags)
-	MustRegisterCmd("getwork", (*GetWorkCmd)(nil), flags)
 	MustRegisterCmd("help", (*HelpCmd)(nil), flags)
 	MustRegisterCmd("invalidateblock", (*InvalidateBlockCmd)(nil), flags)
 	MustRegisterCmd("ping", (*PingCmd)(nil), flags)
