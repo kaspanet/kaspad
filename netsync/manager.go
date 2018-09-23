@@ -6,6 +6,7 @@ package netsync
 
 import (
 	"container/list"
+	"fmt"
 	"net"
 	"sync"
 	"sync/atomic"
@@ -1160,10 +1161,10 @@ out:
 	log.Trace("Block handler done")
 }
 
-// handleBlockchainNotification handles notifications from blockchain.  It does
+// handleBlockDAGNotification handles notifications from blockDAG.  It does
 // things such as request orphan block parents and relay accepted blocks to
 // connected peers.
-func (sm *SyncManager) handleBlockchainNotification(notification *blockdag.Notification) {
+func (sm *SyncManager) handleBlockDAGNotification(notification *blockdag.Notification) {
 	switch notification.Type {
 	// A block has been accepted into the block chain.  Relay it to other
 	// peers.
@@ -1192,20 +1193,17 @@ func (sm *SyncManager) handleBlockchainNotification(notification *blockdag.Notif
 			break
 		}
 
-		// Remove all of the transactions (except the coinbase) in the
-		// connected block from the transaction pool.  Secondly, remove any
-		// transactions which are now double spends as a result of these
-		// new transactions.  Finally, remove any transaction that is
-		// no longer an orphan. Transactions which depend on a confirmed
-		// transaction are NOT removed recursively because they are still
-		// valid.
-		for _, tx := range block.Transactions()[1:] {
-			sm.txMemPool.RemoveTransaction(tx, false)
-			sm.txMemPool.RemoveDoubleSpends(tx)
-			sm.txMemPool.RemoveOrphan(tx)
-			sm.peerNotifier.TransactionConfirmed(tx)
-			acceptedTxs := sm.txMemPool.ProcessOrphans(tx)
-			sm.peerNotifier.AnnounceNewTransactions(acceptedTxs)
+		ch := make(chan mempool.NewBlockMsg)
+		go func() {
+			err := sm.txMemPool.HandleNewBlock(block, ch)
+			close(ch)
+			if err != nil {
+				panic(fmt.Sprintf("HandleNewBlock failed to handle block %v", block.Hash()))
+			}
+		}()
+		for msg := range ch {
+			sm.peerNotifier.TransactionConfirmed(msg.Tx)
+			sm.peerNotifier.AnnounceNewTransactions(msg.AcceptedTxs)
 		}
 
 		// Register block with the fee estimator, if it exists.
@@ -1239,7 +1237,7 @@ func (sm *SyncManager) handleBlockchainNotification(notification *blockdag.Notif
 				// Remove the transaction and all transactions
 				// that depend on it if it wasn't accepted into
 				// the transaction pool.
-				sm.txMemPool.RemoveTransaction(tx, true)
+				sm.txMemPool.RemoveTransaction(tx, true, true)
 			}
 		}
 
@@ -1410,7 +1408,7 @@ func New(config *Config) (*SyncManager, error) {
 		log.Info("Checkpoints are disabled")
 	}
 
-	sm.dag.Subscribe(sm.handleBlockchainNotification)
+	sm.dag.Subscribe(sm.handleBlockDAGNotification)
 
 	return &sm, nil
 }
