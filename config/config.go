@@ -739,7 +739,7 @@ func loadConfig() (*Config, []string, error) {
 			fmt.Fprintln(os.Stderr, usageMessage)
 			return nil, nil, err
 		}
-		if !addr.IsForNet(activeNetParams.Prefix) {
+		if !addr.IsForPrefix(activeNetParams.Prefix) {
 			str := "%s: mining address '%s' is on the wrong network"
 			err := fmt.Errorf(str, funcName, strAddr)
 			fmt.Fprintln(os.Stderr, err)

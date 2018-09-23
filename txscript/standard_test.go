@@ -497,8 +497,8 @@ func (b *bogusAddress) ScriptAddress() []byte {
 	return nil
 }
 
-// IsForNet lies blatantly to satisfy the util.Address interface.
-func (b *bogusAddress) IsForNet(prefix util.Bech32Prefix) bool {
+// IsForPrefix lies blatantly to satisfy the util.Address interface.
+func (b *bogusAddress) IsForPrefix(prefix util.Bech32Prefix) bool {
 	return true // why not?
 }
 

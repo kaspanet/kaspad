@@ -578,7 +578,7 @@ func handleCreateRawTransaction(s *Server, cmd interface{}, closeChan <-chan str
 				Message: "Invalid address or key",
 			}
 		}
-		if !addr.IsForNet(params.Prefix) {
+		if !addr.IsForPrefix(params.Prefix) {
 			return nil, &btcjson.RPCError{
 				Code: btcjson.ErrRPCInvalidAddressOrKey,
 				Message: "Invalid address: " + encodedAddr +

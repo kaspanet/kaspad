@@ -269,7 +269,7 @@ func TestAddresses(t *testing.T) {
 			}
 
 			// Ensure the address is for the expected network.
-			if !decoded.IsForNet(test.prefix) {
+			if !decoded.IsForPrefix(test.prefix) {
 				t.Errorf("%v: calculated network does not match expected",
 					test.name)
 				return

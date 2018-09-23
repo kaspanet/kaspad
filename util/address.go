@@ -117,9 +117,9 @@ type Address interface {
 	// when inserting the address into a txout's script.
 	ScriptAddress() []byte
 
-	// IsForNet returns whether or not the address is associated with the
+	// IsForPrefix returns whether or not the address is associated with the
 	// passed bitcoin network.
-	IsForNet(prefix Bech32Prefix) bool
+	IsForPrefix(prefix Bech32Prefix) bool
 }
 
 // DecodeAddress decodes the string encoding of an address and returns
@@ -199,9 +199,9 @@ func (a *AddressPubKeyHash) ScriptAddress() []byte {
 	return a.hash[:]
 }
 
-// IsForNet returns whether or not the pay-to-pubkey-hash address is associated
+// IsForPrefix returns whether or not the pay-to-pubkey-hash address is associated
 // with the passed bitcoin network.
-func (a *AddressPubKeyHash) IsForNet(prefix Bech32Prefix) bool {
+func (a *AddressPubKeyHash) IsForPrefix(prefix Bech32Prefix) bool {
 	return a.prefix == prefix
 }
 
@@ -266,9 +266,9 @@ func (a *AddressScriptHash) ScriptAddress() []byte {
 	return a.hash[:]
 }
 
-// IsForNet returns whether or not the pay-to-script-hash address is associated
+// IsForPrefix returns whether or not the pay-to-script-hash address is associated
 // with the passed bitcoin network.
-func (a *AddressScriptHash) IsForNet(prefix Bech32Prefix) bool {
+func (a *AddressScriptHash) IsForPrefix(prefix Bech32Prefix) bool {
 	return a.prefix == prefix
 }
 
@@ -376,9 +376,9 @@ func (a *AddressPubKey) ScriptAddress() []byte {
 	return a.serialize()
 }
 
-// IsForNet returns whether or not the pay-to-pubkey address is associated
+// IsForPrefix returns whether or not the pay-to-pubkey address is associated
 // with the passed bitcoin network.
-func (a *AddressPubKey) IsForNet(prefix Bech32Prefix) bool {
+func (a *AddressPubKey) IsForPrefix(prefix Bech32Prefix) bool {
 	return a.prefix == prefix
 }
 
