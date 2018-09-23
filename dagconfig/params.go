@@ -283,7 +283,7 @@ var MainNetParams = Params{
 	PrivateKeyID: 0x80, // starts with 5 (uncompressed) or K (compressed)
 
 	// BIP32 hierarchical deterministic extended key magics
-	HDKeyIDPair: hdkeychain.MainNetHDKeyIDPair,
+	HDKeyIDPair: hdkeychain.HDKeyPairMainNet,
 
 	// BIP44 coin type used in the hierarchical deterministic path for
 	// address generation.
@@ -342,7 +342,7 @@ var RegressionNetParams = Params{
 	PrivateKeyID: 0xef, // starts with 9 (uncompressed) or c (compressed)
 
 	// BIP32 hierarchical deterministic extended key magics
-	HDKeyIDPair: hdkeychain.RegressionNetHDKeyIDPair,
+	HDKeyIDPair: hdkeychain.HDKeyPairRegressionNet,
 
 	// BIP44 coin type used in the hierarchical deterministic path for
 	// address generation.
@@ -418,7 +418,7 @@ var TestNet3Params = Params{
 	PrivateKeyID: 0xef, // starts with 9 (uncompressed) or c (compressed)
 
 	// BIP32 hierarchical deterministic extended key magics
-	HDKeyIDPair: hdkeychain.TestNetHDKeyIDPair,
+	HDKeyIDPair: hdkeychain.HDKeyPairTestNet,
 
 	// BIP44 coin type used in the hierarchical deterministic path for
 	// address generation.
@@ -479,7 +479,7 @@ var SimNetParams = Params{
 	Prefix: util.Bech32PrefixDAGSim,
 
 	// BIP32 hierarchical deterministic extended key magics
-	HDKeyIDPair: hdkeychain.SimNetHDKeyIDPair,
+	HDKeyIDPair: hdkeychain.HDKeyPairSimNet,
 
 	// BIP44 coin type used in the hierarchical deterministic path for
 	// address generation.

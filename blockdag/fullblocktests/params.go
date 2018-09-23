@@ -124,7 +124,7 @@ var regressionNetParams = &dagconfig.Params{
 	PrivateKeyID: 0xef, // starts with 9 (uncompressed) or c (compressed)
 
 	// BIP32 hierarchical deterministic extended key magics
-	HDKeyIDPair: hdkeychain.RegressionNetHDKeyIDPair,
+	HDKeyIDPair: hdkeychain.HDKeyPairRegressionNet,
 
 	// BIP44 coin type used in the hierarchical deterministic path for
 	// address generation.
