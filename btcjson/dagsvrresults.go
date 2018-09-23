@@ -55,8 +55,8 @@ type CreateMultiSigResult struct {
 // DecodeScriptResult models the data returned from the decodescript command.
 type DecodeScriptResult struct {
 	Asm       string   `json:"asm"`
-	ReqSigs   int32    `json:"reqSigs,omitempty"`
 	Type      string   `json:"type"`
+	ReqSigs   int32    `json:"reqSigs,omitempty"`
 	Addresses []string `json:"addresses,omitempty"`
 	P2sh      string   `json:"p2sh,omitempty"`
 }
@@ -270,8 +270,8 @@ type GetRawMempoolVerboseResult struct {
 type ScriptPubKeyResult struct {
 	Asm       string   `json:"asm"`
 	Hex       string   `json:"hex,omitempty"`
-	ReqSigs   int32    `json:"reqSigs,omitempty"`
 	Type      string   `json:"type"`
+	ReqSigs   int32    `json:"reqSigs,omitempty"`
 	Addresses []string `json:"addresses,omitempty"`
 }
 
