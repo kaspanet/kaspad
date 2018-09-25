@@ -7,9 +7,7 @@ package util
 import (
 	"bytes"
 	"errors"
-
 	"github.com/daglabs/btcd/btcec"
-	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/util/base58"
 )
@@ -49,17 +47,14 @@ type WIF struct {
 // as a string encoded in the Wallet Import Format.  The compress argument
 // specifies whether the address intended to be imported or exported was created
 // by serializing the public key compressed rather than uncompressed.
-func NewWIF(privKey *btcec.PrivateKey, net *dagconfig.Params, compress bool) (*WIF, error) {
-	if net == nil {
-		return nil, errors.New("no network")
-	}
-	return &WIF{privKey, compress, net.PrivateKeyID}, nil
+func NewWIF(privKey *btcec.PrivateKey, privateKeyID byte, compress bool) (*WIF, error) {
+	return &WIF{privKey, compress, privateKeyID}, nil
 }
 
 // IsForNet returns whether or not the decoded WIF structure is associated
 // with the passed bitcoin network.
-func (w *WIF) IsForNet(net *dagconfig.Params) bool {
-	return w.netID == net.PrivateKeyID
+func (w *WIF) IsForNet(privateKeyID byte) bool {
+	return w.netID == privateKeyID
 }
 
 // DecodeWIF creates a new WIF structure by decoding the string encoding of

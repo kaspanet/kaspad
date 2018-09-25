@@ -9,19 +9,15 @@ import (
 	"encoding/hex"
 	"testing"
 
-	"github.com/daglabs/btcd/dagconfig"
-	"github.com/daglabs/btcd/txscript"
-	"github.com/daglabs/btcd/wire"
-	"github.com/daglabs/btcd/util"
 	"github.com/daglabs/btcd/dagconfig/daghash"
-	"github.com/daglabs/btcd/util/gcs/builder"
+	"github.com/daglabs/btcd/txscript"
+	"github.com/daglabs/btcd/util"
 	"github.com/daglabs/btcd/util/gcs"
+	"github.com/daglabs/btcd/util/gcs/builder"
+	"github.com/daglabs/btcd/wire"
 )
 
 var (
-	// No need to allocate an err variable in every test
-	err error
-
 	// List of values for building a filter
 	contents = [][]byte{
 		[]byte("Alex"),
@@ -66,7 +62,7 @@ func TestUseBlockHash(t *testing.T) {
 	}
 
 	// util.Address
-	addr, err := util.DecodeAddress(testAddr, &dagconfig.MainNetParams)
+	addr, err := util.DecodeAddress(testAddr, util.Bech32PrefixDAGCoin)
 	if err != nil {
 		t.Fatalf("Address decode failed: %s", err.Error())
 	}

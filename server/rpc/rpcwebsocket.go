@@ -28,8 +28,8 @@ import (
 	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/txscript"
-	"github.com/daglabs/btcd/wire"
 	"github.com/daglabs/btcd/util"
+	"github.com/daglabs/btcd/wire"
 )
 
 const (
@@ -330,7 +330,7 @@ func (f *wsClientFilter) addAddressStr(s string, params *dagconfig.Params) {
 	// If address can't be decoded, no point in saving it since it should also
 	// impossible to create the address from an inspected transaction output
 	// script.
-	a, err := util.DecodeAddress(s, params)
+	a, err := util.DecodeAddress(s, params.Prefix)
 	if err != nil {
 		return
 	}
@@ -411,7 +411,7 @@ func (f *wsClientFilter) removeAddress(a util.Address) {
 //
 // NOTE: This extension was ported from github.com/decred/dcrd
 func (f *wsClientFilter) removeAddressStr(s string, params *dagconfig.Params) {
-	a, err := util.DecodeAddress(s, params)
+	a, err := util.DecodeAddress(s, params.Prefix)
 	if err == nil {
 		f.removeAddress(a)
 	} else {
@@ -1539,8 +1539,8 @@ out:
 			}
 			waiting = true
 
-		// This channel is notified when a notification has been sent
-		// across the network socket.
+			// This channel is notified when a notification has been sent
+			// across the network socket.
 		case <-ntfnSentChan:
 			// No longer waiting if there are no more messages in
 			// the pending messages queue.
@@ -1948,7 +1948,7 @@ func handleStopNotifyReceived(wsc *wsClient, icmd interface{}) (interface{}, err
 // properly, the function returns an error. Otherwise, nil is returned.
 func checkAddressValidity(addrs []string, params *dagconfig.Params) error {
 	for _, addr := range addrs {
-		_, err := util.DecodeAddress(addr, params)
+		_, err := util.DecodeAddress(addr, params.Prefix)
 		if err != nil {
 			return &btcjson.RPCError{
 				Code: btcjson.ErrRPCInvalidAddressOrKey,

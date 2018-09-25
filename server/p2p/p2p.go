@@ -2296,7 +2296,7 @@ func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params
 	if config.MainConfig().NoPeerBloomFilters {
 		services &^= wire.SFNodeBloom
 	}
-	if config.MainConfig().NoCFilters {
+	if !config.MainConfig().EnableCFilters {
 		services &^= wire.SFNodeCF
 	}
 
@@ -2362,7 +2362,7 @@ func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params
 		s.AddrIndex = indexers.NewAddrIndex(db, dagParams)
 		indexes = append(indexes, s.AddrIndex)
 	}
-	if !config.MainConfig().NoCFilters {
+	if config.MainConfig().EnableCFilters {
 		indxLog.Info("cf index is enabled")
 		s.CfIndex = indexers.NewCfIndex(db, dagParams)
 		indexes = append(indexes, s.CfIndex)

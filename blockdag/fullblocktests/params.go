@@ -6,6 +6,7 @@ package fullblocktests
 
 import (
 	"encoding/hex"
+	"github.com/daglabs/btcd/util/hdkeychain"
 	"math"
 	"math/big"
 	"time"
@@ -123,8 +124,7 @@ var regressionNetParams = &dagconfig.Params{
 	PrivateKeyID: 0xef, // starts with 9 (uncompressed) or c (compressed)
 
 	// BIP32 hierarchical deterministic extended key magics
-	HDPrivateKeyID: [4]byte{0x04, 0x35, 0x83, 0x94}, // starts with tprv
-	HDPublicKeyID:  [4]byte{0x04, 0x35, 0x87, 0xcf}, // starts with tpub
+	HDKeyIDPair: hdkeychain.HDKeyPairRegressionNet,
 
 	// BIP44 coin type used in the hierarchical deterministic path for
 	// address generation.
