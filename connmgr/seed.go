@@ -30,10 +30,10 @@ type OnSeed func(addrs []*wire.NetAddress)
 type LookupFunc func(string) ([]net.IP, error)
 
 // SeedFromDNS uses DNS seeding to populate the address manager with peers.
-func SeedFromDNS(chainParams *dagconfig.Params, reqServices wire.ServiceFlag,
+func SeedFromDNS(dagParams *dagconfig.Params, reqServices wire.ServiceFlag,
 	lookupFn LookupFunc, seedFn OnSeed) {
 
-	for _, dnsseed := range chainParams.DNSSeeds {
+	for _, dnsseed := range dagParams.DNSSeeds {
 		var host string
 		if !dnsseed.HasFiltering || reqServices == wire.SFNodeNetwork {
 			host = dnsseed.Host
@@ -58,7 +58,7 @@ func SeedFromDNS(chainParams *dagconfig.Params, reqServices wire.ServiceFlag,
 			}
 			addresses := make([]*wire.NetAddress, len(seedpeers))
 			// if this errors then we have *real* problems
-			intPort, _ := strconv.Atoi(chainParams.DefaultPort)
+			intPort, _ := strconv.Atoi(dagParams.DefaultPort)
 			for i, peer := range seedpeers {
 				addresses[i] = wire.NewNetAddressTimestamp(
 					// bitcoind seeds with addresses from
