@@ -6,10 +6,11 @@ package fullblocktests
 
 import (
 	"encoding/hex"
-	"github.com/daglabs/btcd/util/hdkeychain"
 	"math"
 	"math/big"
 	"time"
+
+	"github.com/daglabs/btcd/util/hdkeychain"
 
 	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/dagconfig/daghash"
@@ -108,7 +109,7 @@ var regressionNetParams = &dagconfig.Params{
 	CoinbaseMaturity:         100,
 	SubsidyReductionInterval: 150,
 	TargetTimespan:           time.Hour * 24 * 14, // 14 days
-	TargetTimePerBlock:       time.Minute * 10,    // 10 minutes
+	TargetTimePerBlock:       time.Second * 10,    // 10 seconds
 	RetargetAdjustmentFactor: 4,                   // 25% less, 400% more
 	ReduceMinDifficulty:      true,
 	MinDiffReductionTime:     time.Minute * 20, // TargetTimePerBlock * 2
