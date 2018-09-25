@@ -22,35 +22,6 @@ var (
 	indexTipsBucketName = []byte("idxtips")
 )
 
-// dbIndexConnectBlock adds all of the index entries associated with the
-// given block using the provided indexer and updates the tip of the indexer
-// accordingly.  An error will be returned if the current tip for the indexer is
-// not the previous block for the passed block.
-func dbIndexConnectBlock(dbTx database.Tx, indexer Indexer, block *util.Block, virtual *blockdag.VirtualBlock) error {
-
-	// Notify the indexer with the connected block so it can index it.
-	if err := indexer.ConnectBlock(dbTx, block, virtual); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// dbIndexDisconnectBlock removes all of the index entries associated with the
-// given block using the provided indexer and updates the tip of the indexer
-// accordingly.  An error will be returned if the current tip for the indexer is
-// not the passed block.
-func dbIndexDisconnectBlock(dbTx database.Tx, indexer Indexer, block *util.Block, virtual *blockdag.VirtualBlock) error {
-
-	// Notify the indexer with the disconnected block so it can remove all
-	// of the appropriate entries.
-	if err := indexer.DisconnectBlock(dbTx, block, virtual); err != nil {
-		return err
-	}
-
-	return nil
-}
-
 // Manager defines an index manager that manages multiple optional indexes and
 // implements the blockchain.IndexManager interface so it can be seamlessly
 // plugged into normal chain processing.
@@ -238,8 +209,8 @@ func (m *Manager) ConnectBlock(dbTx database.Tx, block *util.Block, virtual *blo
 	// Call each of the currently active optional indexes with the block
 	// being connected so they can update accordingly.
 	for _, index := range m.enabledIndexes {
-		err := dbIndexConnectBlock(dbTx, index, block, virtual)
-		if err != nil {
+		// Notify the indexer with the connected block so it can index it.
+		if err := index.ConnectBlock(dbTx, block, virtual); err != nil {
 			return err
 		}
 	}
@@ -256,8 +227,9 @@ func (m *Manager) DisconnectBlock(dbTx database.Tx, block *util.Block, virtual *
 	// Call each of the currently active optional indexes with the block
 	// being disconnected so they can update accordingly.
 	for _, index := range m.enabledIndexes {
-		err := dbIndexDisconnectBlock(dbTx, index, block, virtual)
-		if err != nil {
+		// Notify the indexer with the disconnected block so it can remove all
+		// of the appropriate entries.
+		if err := index.DisconnectBlock(dbTx, block, virtual); err != nil {
 			return err
 		}
 	}
