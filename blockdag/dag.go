@@ -553,7 +553,7 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block) error {
 	// The caller would typically want to react with actions such as
 	// updating wallets.
 	dag.dagLock.Unlock()
-	dag.sendNotification(NTBlockConnected, dag.virtual.TipHashes())
+	dag.sendNotification(NTBlockConnected, block)
 	dag.dagLock.Lock()
 
 	return nil
