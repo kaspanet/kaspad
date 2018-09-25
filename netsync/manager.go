@@ -922,12 +922,6 @@ func (sm *SyncManager) handleInvMsg(imsg *invMsg) {
 		peer.UpdateLastAnnouncedBlock(&invVects[lastBlock].Hash)
 	}
 
-	// Ignore invs from peers that aren't the sync if we are not current.
-	// Helps prevent fetching a mass of orphans.
-	if peer != sm.syncPeer && !sm.current() {
-		return
-	}
-
 	// If our chain is current and a peer announces a block we already
 	// know of, then update their current block height.
 	if lastBlock != -1 && sm.current() {
