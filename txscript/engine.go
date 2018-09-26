@@ -593,7 +593,7 @@ func NewEngine(scriptPubKey []byte, tx *wire.MsgTx, txIdx int, flags ScriptFlags
 		return nil, err
 	}
 	// The signature script must only contain data pushes
-	if !IsPushOnly(parsedScriptSig) {
+	if !isPushOnly(parsedScriptSig) {
 		return nil, scriptError(ErrNotPushOnly,
 			"signature script is not push only")
 	}
@@ -618,7 +618,7 @@ func NewEngine(scriptPubKey []byte, tx *wire.MsgTx, txIdx int, flags ScriptFlags
 
 	if isScriptHash(vm.scripts[1]) {
 		// Only accept input scripts that push data for P2SH.
-		if !IsPushOnly(vm.scripts[0]) {
+		if !isPushOnly(vm.scripts[0]) {
 			return nil, scriptError(ErrNotPushOnly,
 				"pay to script hash is not push only")
 		}

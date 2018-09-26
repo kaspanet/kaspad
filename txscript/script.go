@@ -64,8 +64,8 @@ func IsPayToScriptHash(script []byte) bool {
 	return isScriptHash(pops)
 }
 
-// IsPushOnly returns true if the script only pushes data, false otherwise.
-func IsPushOnly(pops []parsedOpcode) bool {
+// isPushOnly returns true if the script only pushes data, false otherwise.
+func isPushOnly(pops []parsedOpcode) bool {
 	// NOTE: This function does NOT verify opcodes directly since it is
 	// internal and is only called with parsed opcodes for scripts that did
 	// not have any parse errors.  Thus, consensus is properly maintained.
@@ -90,7 +90,7 @@ func IsPushOnlyScript(script []byte) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	return IsPushOnly(pops), nil
+	return isPushOnly(pops), nil
 }
 
 // parseScriptTemplate is the same as parseScript but allows the passing of the
@@ -443,7 +443,7 @@ func GetPreciseSigOpCount(scriptSig, scriptPubKey []byte, isP2SH bool) int {
 	// The signature script must only push data to the stack for P2SH to be
 	// a valid pair, so the signature operation count is 0 when that is not
 	// the case.
-	if !IsPushOnly(sigPops) || len(sigPops) == 0 {
+	if !isPushOnly(sigPops) || len(sigPops) == 0 {
 		return 0
 	}
 

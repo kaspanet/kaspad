@@ -237,7 +237,7 @@ func CalcScriptInfo(sigScript, pkScript []byte, isP2SH bool) (*ScriptInfo, error
 	si.PkScriptClass = typeOfScript(pkPops)
 
 	// Can't have a signature script that doesn't just push data.
-	if !IsPushOnly(sigPops) {
+	if !isPushOnly(sigPops) {
 		return nil, scriptError(ErrNotPushOnly,
 			"signature script is not push only")
 	}

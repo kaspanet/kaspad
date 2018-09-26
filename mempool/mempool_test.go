@@ -82,10 +82,10 @@ type spendableOutpoint struct {
 	amount   util.Amount
 }
 
-// txOutToSpendableOut returns a spendable output given a transaction and index
+// txOutToSpendableOutpoint returns a spendable outpoint given a transaction and index
 // of the output to use.  This is useful as a convenience when creating test
 // transactions.
-func txOutToSpendableOut(tx *util.Tx, outputNum uint32) spendableOutpoint {
+func txOutToSpendableOutpoint(tx *util.Tx, outputNum uint32) spendableOutpoint {
 	return spendableOutpoint{
 		outPoint: wire.OutPoint{Hash: *tx.Hash(), Index: outputNum},
 		amount:   util.Amount(tx.MsgTx().TxOut[outputNum].Value),
@@ -317,7 +317,7 @@ func newPoolHarness(dagParams *dagconfig.Params, numOutputs uint32, dbName strin
 	}
 	harness.txPool.mpUTXOSet.AddTx(coinbase.MsgTx(), curHeight+1)
 	for i := uint32(0); i < numOutputs; i++ {
-		outputs = append(outputs, txOutToSpendableOut(coinbase, i))
+		outputs = append(outputs, txOutToSpendableOutpoint(coinbase, i))
 	}
 	harness.chain.SetHeight(int32(dagParams.CoinbaseMaturity) + curHeight)
 	harness.chain.SetMedianTimePast(time.Now())
@@ -1301,8 +1301,8 @@ func TestMultiInputOrphanDoubleSpend(t *testing.T) {
 	// since it would otherwise be possible for a malicious actor to disrupt
 	// tx chains.
 	doubleSpendTx, err := harness.CreateSignedTx([]spendableOutpoint{
-		txOutToSpendableOut(chainedTxns[1], 0),
-		txOutToSpendableOut(chainedTxns[maxOrphans], 0),
+		txOutToSpendableOutpoint(chainedTxns[1], 0),
+		txOutToSpendableOutpoint(chainedTxns[maxOrphans], 0),
 	}, 1)
 	if err != nil {
 		t.Fatalf("unable to create signed tx: %v", err)
