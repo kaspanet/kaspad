@@ -854,7 +854,7 @@ func (dag *BlockDAG) initDAGState() error {
 	}
 
 	// Attempt to load the DAG state from the database.
-	return dag.db.View(func(dbTx database.Tx) error {
+	err = dag.db.View(func(dbTx database.Tx) error {
 		// Fetch the stored DAG tipHashes from the database metadata.
 		// When it doesn't exist, it means the database hasn't been
 		// initialized for use with the DAG yet, so break out now to allow
@@ -993,8 +993,44 @@ func (dag *BlockDAG) initDAGState() error {
 		}
 		dag.virtual.SetTips(tips)
 
+		// As a final consistency check, we'll run through all the
+		// nodes which are ancestors of the current DAG tips, and mark
+		// them as valid if they aren't already marked as such.  This
+		// is a safe assumption as all the block before the current tips
+		// are valid by definition.
+		visited := newSet()
+		queue := make([]*blockNode, len(dag.virtual.blockNode.parents)-1)
+		for iterNode := &dag.virtual.blockNode; iterNode != nil; queue = queue[1:] {
+			iterNode := queue[0]
+			if !visited.contains(iterNode) {
+				visited.add(iterNode)
+				// If this isn't already marked as valid in the index, then
+				// we'll mark it as valid now to ensure consistency once
+				// we're up and running.
+				if !iterNode.status.KnownValid() {
+					log.Infof("Block %v (height=%v) ancestor of "+
+						"DAG tips not marked as valid, "+
+						"upgrading to valid for consistency",
+						iterNode.hash, iterNode.height)
+					dag.index.SetStatusFlags(iterNode, statusValid)
+				}
+				for _, parent := range iterNode.parents {
+					queue = append(queue, parent)
+				}
+			}
+		}
+
 		return nil
 	})
+
+	if err != nil {
+		return err
+	}
+	// As we might have updated the index after it was loaded, we'll
+	// attempt to flush the index to the DB. This will only result in a
+	// write if the elements are dirty, so it'll usually be a noop.
+	return dag.index.flushToDB()
+
 }
 
 // deserializeBlockRow parses a value in the block index bucket into a block
