@@ -95,7 +95,7 @@ func TestMaybeAcceptBlockErrors(t *testing.T) {
 	monkey.Unpatch(dbStoreBlock)
 
 	// Test rejecting the node due to index error
-	indexErrorMessage := "indes error"
+	indexErrorMessage := "index error"
 	monkey.Patch((*blockIndex).flushToDB, func(_ *blockIndex) error {
 		return errors.New(indexErrorMessage)
 	})
