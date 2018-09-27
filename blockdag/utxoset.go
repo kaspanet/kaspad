@@ -42,24 +42,6 @@ func (entry *UTXOEntry) BlockHeight() int32 {
 	return entry.blockHeight
 }
 
-// IsSpent returns whether or not the output has been spent based upon the
-// current state of the unspent transaction output view it was obtained from.
-func (entry *UTXOEntry) IsSpent() bool {
-	return entry.packedFlags&tfSpent == tfSpent
-}
-
-// Spend marks the output as spent.  Spending an output that is already spent
-// has no effect.
-func (entry *UTXOEntry) Spend() {
-	// Nothing to do if the output is already spent.
-	if entry.IsSpent() {
-		return
-	}
-
-	// Mark the output as spent.
-	entry.packedFlags |= tfSpent
-}
-
 // Amount returns the amount of the output.
 func (entry *UTXOEntry) Amount() int64 {
 	return entry.amount
@@ -91,9 +73,6 @@ type txoFlags uint8
 const (
 	// tfCoinBase indicates that a txout was contained in a coinbase tx.
 	tfCoinBase txoFlags = 1 << iota
-
-	// tfSpent indicates that a txout is spent.
-	tfSpent
 )
 
 // utxoCollection represents a set of UTXOs indexed by their outPoints

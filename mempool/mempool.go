@@ -709,8 +709,8 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rateLimit, rejectDu
 	prevOut := wire.OutPoint{Hash: *txHash}
 	for txOutIdx := range tx.MsgTx().TxOut {
 		prevOut.Index = uint32(txOutIdx)
-		entry, ok := mp.mpUTXOSet.Get(prevOut)
-		if ok && !entry.IsSpent() {
+		_, ok := mp.mpUTXOSet.Get(prevOut)
+		if ok {
 			return nil, nil, txRuleError(wire.RejectDuplicate,
 				"transaction already exists")
 		}

@@ -532,7 +532,7 @@ func TestProcessTransaction(t *testing.T) {
 
 	addrHash := [20]byte{0x01}
 	addr, err := util.NewAddressPubKeyHash(addrHash[:],
-		&dagconfig.TestNet3Params)
+		util.Bech32PrefixDAGTest)
 	if err != nil {
 		t.Fatalf("NewAddressPubKeyHash: unexpected error: %v", err)
 	}

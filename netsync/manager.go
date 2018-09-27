@@ -879,7 +879,7 @@ func (sm *SyncManager) haveInventory(invVect *wire.InvVect) (bool, error) {
 			if !ok {
 				return false, nil
 			}
-			if entry != nil && !entry.IsSpent() {
+			if entry != nil {
 				return true, nil
 			}
 		}
