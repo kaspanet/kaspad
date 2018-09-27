@@ -624,7 +624,7 @@ func checkSerializedHeight(coinbaseTx *util.Tx, wantHeight int32) error {
 //    the checkpoints are not performed.
 //
 // This function MUST be called with the chain state lock held (for writes).
-func (dag *BlockDAG) checkBlockHeaderContext(header *wire.BlockHeader, selectedParent *blockNode, flags BehaviorFlags) error {
+func (dag *BlockDAG) checkBlockHeaderContext(header *wire.BlockHeader, selectedParent *blockNode, blockHeight int32, flags BehaviorFlags) error {
 	fastAdd := flags&BFFastAdd == BFFastAdd
 	if !fastAdd {
 		// Ensure the difficulty specified in the block header matches
@@ -651,10 +651,6 @@ func (dag *BlockDAG) checkBlockHeaderContext(header *wire.BlockHeader, selectedP
 			return ruleError(ErrTimeTooOld, str)
 		}
 	}
-
-	// The height of this block is one more than the referenced previous
-	// block.
-	blockHeight := selectedParent.height + 1
 
 	// Ensure chain matches up to predetermined checkpoints.
 	blockHash := header.BlockHash()
@@ -736,7 +732,7 @@ func (dag *BlockDAG) checkBlockContext(block *util.Block, parents blockSet, sele
 	}
 	// Perform all block header related validation checks.
 	header := &block.MsgBlock().Header
-	err = dag.checkBlockHeaderContext(header, selectedParent, flags)
+	err = dag.checkBlockHeaderContext(header, selectedParent, block.Height(), flags)
 	if err != nil {
 		return err
 	}
@@ -745,13 +741,9 @@ func (dag *BlockDAG) checkBlockContext(block *util.Block, parents blockSet, sele
 	if !fastAdd {
 		blockTime := selectedParent.CalcPastMedianTime()
 
-		// The height of this block is one more than the referenced
-		// previous block.
-		blockHeight := selectedParent.height + 1
-
 		// Ensure all transactions in the block are finalized.
 		for _, tx := range block.Transactions() {
-			if !IsFinalizedTransaction(tx, blockHeight,
+			if !IsFinalizedTransaction(tx, block.Height(),
 				blockTime) {
 
 				str := fmt.Sprintf("block contains unfinalized "+
@@ -763,7 +755,7 @@ func (dag *BlockDAG) checkBlockContext(block *util.Block, parents blockSet, sele
 		// Ensure coinbase starts with serialized block heights
 
 		coinbaseTx := block.Transactions()[0]
-		err := checkSerializedHeight(coinbaseTx, blockHeight)
+		err := checkSerializedHeight(coinbaseTx, block.Height())
 		if err != nil {
 			return err
 		}
