@@ -309,7 +309,7 @@ func newPoolHarness(dagParams *dagconfig.Params, numOutputs uint32, dbName strin
 	// coinbase will mature in the next block.  This ensures the txpool
 	// accepts transactions which spend immature coinbases that will become
 	// mature in the next block.
-	outputs := make([]spendableOutpoint, 0, numOutputs)
+	outpoints := make([]spendableOutpoint, 0, numOutputs)
 	curHeight := harness.chain.BestHeight()
 	coinbase, err := harness.CreateCoinbaseTx(curHeight+1, numOutputs)
 	if err != nil {
@@ -317,12 +317,12 @@ func newPoolHarness(dagParams *dagconfig.Params, numOutputs uint32, dbName strin
 	}
 	harness.txPool.mpUTXOSet.AddTx(coinbase.MsgTx(), curHeight+1)
 	for i := uint32(0); i < numOutputs; i++ {
-		outputs = append(outputs, txOutToSpendableOutpoint(coinbase, i))
+		outpoints = append(outpoints, txOutToSpendableOutpoint(coinbase, i))
 	}
 	harness.chain.SetHeight(int32(dagParams.CoinbaseMaturity) + curHeight)
 	harness.chain.SetMedianTimePast(time.Now())
 
-	return &harness, outputs, nil
+	return &harness, outpoints, nil
 }
 
 // testContext houses a test-related state that is useful to pass to helper
@@ -458,7 +458,7 @@ func TestProcessTransaction(t *testing.T) {
 		t.Errorf("Unexpected error code. Expected %v but got %v", wire.RejectInvalid, code)
 	}
 
-	//Checks that non standard transaction are rejected from the mempool
+	//Checks that non standard transactions are rejected from the mempool
 	nonStdTx, err := harness.createTx(spendableOuts[0], 0, 1)
 	nonStdTx.MsgTx().Version = wire.TxVersion + 1
 	_, err = harness.txPool.ProcessTransaction(nonStdTx, true, false, 0)
@@ -529,11 +529,6 @@ func TestProcessTransaction(t *testing.T) {
 	}
 	dummyPrevOut := wire.OutPoint{Hash: *dummyPrevOutHash, Index: 1}
 	dummySigScript := bytes.Repeat([]byte{0x00}, 65)
-	// dummyTxIn := wire.TxIn{
-	// 	PreviousOutPoint: dummyPrevOut,
-	// 	SignatureScript:  dummySigScript,
-	// 	Sequence:         wire.MaxTxInSequenceNum,
-	// }
 
 	addrHash := [20]byte{0x01}
 	addr, err := util.NewAddressPubKeyHash(addrHash[:],
