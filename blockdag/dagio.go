@@ -1030,7 +1030,6 @@ func (dag *BlockDAG) initDAGState() error {
 	// attempt to flush the index to the DB. This will only result in a
 	// write if the elements are dirty, so it'll usually be a noop.
 	return dag.index.flushToDB()
-
 }
 
 // deserializeBlockRow parses a value in the block index bucket into a block

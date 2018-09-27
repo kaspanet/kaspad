@@ -489,14 +489,6 @@ func (dag *BlockDAG) connectToDAG(node *blockNode, parentNodes blockSet, block *
 		return err
 	}
 
-	// If this is fast add, or this block node isn't yet marked as
-	// valid, then we'll update its status and flush the state to
-	// disk again.
-	if fastAdd || !dag.index.NodeStatus(node).KnownValid() {
-		dag.index.SetStatusFlags(node, statusValid)
-		flushIndexState()
-	}
-
 	return nil
 }
 
