@@ -11,7 +11,7 @@ import (
 )
 
 func TestMaybeAcceptBlockErrors(t *testing.T) {
-	// Create a new database and chain instance to run tests against.
+	// Create a new database and DAG instance to run tests against.
 	dag, teardownFunc, err := DAGSetup("TestMaybeAcceptBlockErrors", &dagconfig.MainNetParams)
 	if err != nil {
 		t.Errorf("Failed to setup DAG instance: %v", err)
@@ -64,7 +64,7 @@ func TestMaybeAcceptBlockErrors(t *testing.T) {
 	}
 
 	// Set block1's status back to valid for next tests
-	blockNode1.status &= ^statusValidateFailed
+	dag.index.UnsetStatusFlags(blockNode1, statusValidateFailed)
 
 	// Test rejecting the block due to bad context
 	originalBits := block2.MsgBlock().Header.Bits
