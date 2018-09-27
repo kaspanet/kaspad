@@ -17,6 +17,7 @@ import (
 	"github.com/daglabs/btcd/btcjson"
 	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/dagconfig/daghash"
+	"github.com/daglabs/btcd/logger"
 	"github.com/daglabs/btcd/mining"
 	"github.com/daglabs/btcd/txscript"
 	"github.com/daglabs/btcd/util"
@@ -279,7 +280,7 @@ func (mp *TxPool) limitNumOrphans() error {
 		numOrphans := len(mp.orphans)
 		if numExpired := origNumOrphans - numOrphans; numExpired > 0 {
 			log.Debugf("Expired %d %s (remaining: %d)", numExpired,
-				pickNoun(numExpired, "orphan", "orphans"),
+				logger.PickNoun(uint64(numExpired), "orphan", "orphans"),
 				numOrphans)
 		}
 	}
@@ -651,7 +652,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rateLimit, rejectDu
 	err := blockdag.CheckTransactionSanity(tx)
 	if err != nil {
 		if cerr, ok := err.(blockdag.RuleError); ok {
-			return nil, nil, chainRuleError(cerr)
+			return nil, nil, dagRuleError(cerr)
 		}
 		return nil, nil, err
 	}
@@ -703,7 +704,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rateLimit, rejectDu
 		return nil, nil, err
 	}
 
-	// Don't allow the transaction if it exists in the DAG and is not
+	// Don't allow the transaction if it exists in the DAG and is
 	// not already fully spent.
 	prevOut := wire.OutPoint{Hash: *txHash}
 	for txOutIdx := range tx.MsgTx().TxOut {
@@ -740,7 +741,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rateLimit, rejectDu
 	sequenceLock, err := mp.cfg.CalcSequenceLock(tx, mp.mpUTXOSet)
 	if err != nil {
 		if cerr, ok := err.(blockdag.RuleError); ok {
-			return nil, nil, chainRuleError(cerr)
+			return nil, nil, dagRuleError(cerr)
 		}
 		return nil, nil, err
 	}
@@ -758,7 +759,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rateLimit, rejectDu
 		mp.mpUTXOSet, mp.cfg.DAGParams)
 	if err != nil {
 		if cerr, ok := err.(blockdag.RuleError); ok {
-			return nil, nil, chainRuleError(cerr)
+			return nil, nil, dagRuleError(cerr)
 		}
 		return nil, nil, err
 	}
@@ -793,7 +794,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rateLimit, rejectDu
 	sigOpCount, err := blockdag.CountP2SHSigOps(tx, false, mp.mpUTXOSet)
 	if err != nil {
 		if cerr, ok := err.(blockdag.RuleError); ok {
-			return nil, nil, chainRuleError(cerr)
+			return nil, nil, dagRuleError(cerr)
 		}
 		return nil, nil, err
 	}
@@ -869,7 +870,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rateLimit, rejectDu
 		txscript.StandardVerifyFlags, mp.cfg.SigCache)
 	if err != nil {
 		if cerr, ok := err.(blockdag.RuleError); ok {
-			return nil, nil, chainRuleError(cerr)
+			return nil, nil, dagRuleError(cerr)
 		}
 		return nil, nil, err
 	}

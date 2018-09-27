@@ -670,7 +670,7 @@ func loadConfig() (*Config, []string, error) {
 		return nil, nil, err
 	}
 
-	// Limit the max orphan count to a sane vlue.
+	// Limit the max orphan count to a sane value.
 	if cfg.MaxOrphanTxs < 0 {
 		str := "%s: The maxorphantx option may not be less than 0 " +
 			"-- parsed [%d]"

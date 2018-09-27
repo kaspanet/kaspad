@@ -3733,7 +3733,7 @@ func TestHasCanonicalPush(t *testing.T) {
 				err)
 			continue
 		}
-		if result := IsPushOnlyScript(script); !result {
+		if result, _ := IsPushOnlyScript(script); !result {
 			t.Errorf("IsPushOnlyScript: test #%d failed: %x\n", i,
 				script)
 			continue
@@ -3759,7 +3759,7 @@ func TestHasCanonicalPush(t *testing.T) {
 			t.Errorf("StandardPushesTests test #%d unexpected error: %v\n", i, err)
 			continue
 		}
-		if result := IsPushOnlyScript(script); !result {
+		if result, _ := IsPushOnlyScript(script); !result {
 			t.Errorf("StandardPushesTests IsPushOnlyScript test #%d failed: %x\n", i, script)
 			continue
 		}
@@ -3892,20 +3892,48 @@ func TestHasCanonicalPushes(t *testing.T) {
 func TestIsPushOnlyScript(t *testing.T) {
 	t.Parallel()
 
-	test := struct {
-		name     string
-		script   []byte
-		expected bool
+	tests := []struct {
+		name           string
+		script         []byte
+		expectedResult bool
+		shouldFail     bool
 	}{
-		name: "does not parse",
-		script: mustParseShortForm("0x046708afdb0fe5548271967f1a67130" +
-			"b7105cd6a828e03909a67962e0ea1f61d"),
-		expected: false,
+		{
+			name: "does not parse",
+			script: mustParseShortForm("0x046708afdb0fe5548271967f1a67130" +
+				"b7105cd6a828e03909a67962e0ea1f61d"),
+			expectedResult: false,
+			shouldFail:     true,
+		},
+		{
+			name:           "non push only script",
+			script:         mustParseShortForm("0x515293"), //OP_1 OP_2 OP_ADD
+			expectedResult: false,
+			shouldFail:     false,
+		},
+		{
+			name:           "push only script",
+			script:         mustParseShortForm("0x5152"), //OP_1 OP_2
+			expectedResult: true,
+			shouldFail:     false,
+		},
 	}
 
-	if IsPushOnlyScript(test.script) != test.expected {
-		t.Errorf("IsPushOnlyScript (%s) wrong result\ngot: %v\nwant: "+
-			"%v", test.name, true, test.expected)
+	for _, test := range tests {
+		isPushOnly, err := IsPushOnlyScript(test.script)
+
+		if isPushOnly != test.expectedResult {
+			t.Errorf("IsPushOnlyScript (%s) wrong result\ngot: %v\nwant: "+
+				"%v", test.name, isPushOnly, test.expectedResult)
+		}
+
+		if test.shouldFail && err == nil {
+			t.Errorf("IsPushOnlyScript (%s) expected an error but got <nil>", test.name)
+		}
+
+		if !test.shouldFail && err != nil {
+			t.Errorf("IsPushOnlyScript (%s) expected no error but got: %v", test.name, err)
+		}
 	}
 }
 

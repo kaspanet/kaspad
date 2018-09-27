@@ -10,8 +10,8 @@ import (
 
 	"github.com/daglabs/btcd/btcec"
 	"github.com/daglabs/btcd/dagconfig"
-	"github.com/daglabs/btcd/wire"
 	"github.com/daglabs/btcd/util"
+	"github.com/daglabs/btcd/wire"
 )
 
 // RawTxInSignature returns the serialized ECDSA signature for the input idx of
