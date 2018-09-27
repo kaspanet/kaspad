@@ -154,7 +154,7 @@ type configFlags struct {
 	BlockPrioritySize    uint32        `long:"blockprioritysize" description:"Size in bytes for high-priority/low-fee transactions when creating a block"`
 	UserAgentComments    []string      `long:"uacomment" description:"Comment to add to the user agent -- See BIP 14 for more information."`
 	NoPeerBloomFilters   bool          `long:"nopeerbloomfilters" description:"Disable bloom filtering support"`
-	NoCFilters           bool          `long:"nocfilters" description:"Disable committed filtering (CF) support"`
+	EnableCFilters       bool          `long:"enablecfilters" description:"Enable committed filtering (CF) support"`
 	DropCfIndex          bool          `long:"dropcfindex" description:"Deletes the index used for committed filtering (CF) support from the database on start up and then exits."`
 	SigCacheMaxSize      uint          `long:"sigcachemaxsize" description:"The maximum number of entries in the signature verification cache"`
 	BlocksOnly           bool          `long:"blocksonly" description:"Do not accept transactions from remote peers."`
@@ -731,7 +731,7 @@ func loadConfig() (*Config, []string, error) {
 	// Check mining addresses are valid and saved parsed versions.
 	cfg.MiningAddrs = make([]util.Address, 0, len(cfg.configFlags.MiningAddrs))
 	for _, strAddr := range cfg.configFlags.MiningAddrs {
-		addr, err := util.DecodeAddress(strAddr, activeNetParams)
+		addr, err := util.DecodeAddress(strAddr, activeNetParams.Prefix)
 		if err != nil {
 			str := "%s: mining address '%s' failed to decode: %v"
 			err := fmt.Errorf(str, funcName, strAddr, err)
@@ -739,7 +739,7 @@ func loadConfig() (*Config, []string, error) {
 			fmt.Fprintln(os.Stderr, usageMessage)
 			return nil, nil, err
 		}
-		if !addr.IsForNet(activeNetParams) {
+		if !addr.IsForPrefix(activeNetParams.Prefix) {
 			str := "%s: mining address '%s' is on the wrong network"
 			err := fmt.Errorf(str, funcName, strAddr)
 			fmt.Fprintln(os.Stderr, err)

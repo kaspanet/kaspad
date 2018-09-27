@@ -13,7 +13,6 @@ package util
 
 import (
 	"github.com/daglabs/btcd/btcec"
-	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/util/bech32"
 	"golang.org/x/crypto/ripemd160"
 )
@@ -31,7 +30,7 @@ func TstAppDataDir(goos, appName string, roaming bool) string {
 	return appDataDir(goos, appName, roaming)
 }
 
-func TstAddressPubKeyHash(prefix dagconfig.Bech32Prefix, hash [ripemd160.Size]byte) *AddressPubKeyHash {
+func TstAddressPubKeyHash(prefix Bech32Prefix, hash [ripemd160.Size]byte) *AddressPubKeyHash {
 	return &AddressPubKeyHash{
 		prefix: prefix,
 		hash:   hash,
@@ -40,7 +39,7 @@ func TstAddressPubKeyHash(prefix dagconfig.Bech32Prefix, hash [ripemd160.Size]by
 
 // TstAddressScriptHash makes an AddressScriptHash, setting the
 // unexported fields with the parameters hash and netID.
-func TstAddressScriptHash(prefix dagconfig.Bech32Prefix, hash [ripemd160.Size]byte) *AddressScriptHash {
+func TstAddressScriptHash(prefix Bech32Prefix, hash [ripemd160.Size]byte) *AddressScriptHash {
 
 	return &AddressScriptHash{
 		prefix: prefix,

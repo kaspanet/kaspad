@@ -717,6 +717,7 @@ mempoolLoop:
 	var msgBlock wire.MsgBlock
 	msgBlock.Header = wire.BlockHeader{
 		Version:    nextBlockVersion,
+		NumPrevBlocks: byte(len(virtualBlock.TipHashes())),
 		PrevBlocks: virtualBlock.TipHashes(),
 		MerkleRoot: *merkles[len(merkles)-1],
 		Timestamp:  ts,

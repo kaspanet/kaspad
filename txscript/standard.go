@@ -430,7 +430,7 @@ func ExtractPkScriptAddrs(pkScript []byte, chainParams *dagconfig.Params) (Scrip
 		// Skip the pubkey hash if it's invalid for some reason.
 		requiredSigs = 1
 		addr, err := util.NewAddressPubKeyHash(pops[2].data,
-			chainParams)
+			chainParams.Prefix)
 		if err == nil {
 			addrs = append(addrs, addr)
 		}
@@ -441,7 +441,7 @@ func ExtractPkScriptAddrs(pkScript []byte, chainParams *dagconfig.Params) (Scrip
 		// Therefore the pubkey is the first item on the stack.
 		// Skip the pubkey if it's invalid for some reason.
 		requiredSigs = 1
-		addr, err := util.NewAddressPubKey(pops[0].data, chainParams)
+		addr, err := util.NewAddressPubKey(pops[0].data, chainParams.Prefix)
 		if err == nil {
 			addrs = append(addrs, addr)
 		}
@@ -453,7 +453,7 @@ func ExtractPkScriptAddrs(pkScript []byte, chainParams *dagconfig.Params) (Scrip
 		// Skip the script hash if it's invalid for some reason.
 		requiredSigs = 1
 		addr, err := util.NewAddressScriptHashFromHash(pops[1].data,
-			chainParams)
+			chainParams.Prefix)
 		if err == nil {
 			addrs = append(addrs, addr)
 		}
@@ -470,7 +470,7 @@ func ExtractPkScriptAddrs(pkScript []byte, chainParams *dagconfig.Params) (Scrip
 		// Extract the public keys while skipping any that are invalid.
 		addrs = make([]util.Address, 0, numPubKeys)
 		for i := 0; i < numPubKeys; i++ {
-			addr, err := util.NewAddressPubKey(pops[i+1].data, chainParams)
+			addr, err := util.NewAddressPubKey(pops[i+1].data, chainParams.Prefix)
 			if err == nil {
 				addrs = append(addrs, addr)
 			}
