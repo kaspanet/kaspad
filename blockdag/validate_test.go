@@ -499,6 +499,48 @@ func TestCheckSerializedHeight(t *testing.T) {
 	}
 }
 
+func TestValidateParents(t *testing.T) {
+	blockDAG := newTestDAG(&dagconfig.MainNetParams)
+	genesisNode := blockDAG.genesis
+	blockVersion := int32(0x10000000)
+
+	blockTime := genesisNode.Header().Timestamp
+
+	generateNode := func(parents ...*blockNode) *blockNode {
+		// The timestamp of each block is changed to prevent a situation where two blocks share the same hash
+		blockTime = blockTime.Add(time.Second)
+		return newTestNode(setFromSlice(parents...),
+			blockVersion,
+			0,
+			blockTime,
+			dagconfig.MainNetParams.K)
+	}
+
+	a := generateNode(genesisNode)
+	b := generateNode(a)
+	c := generateNode(genesisNode)
+
+	fakeBlockHeader := &wire.BlockHeader{}
+
+	// Check direct parents relation
+	err := validateParents(fakeBlockHeader, setFromSlice(a, b))
+	if err == nil {
+		t.Errorf("validateParents: `a` is a parent of `b`, so an error is expected")
+	}
+
+	// Check indirect parents relation
+	err = validateParents(fakeBlockHeader, setFromSlice(genesisNode, b))
+	if err == nil {
+		t.Errorf("validateParents: `genesis` and `b` are indirectly related, so an error is expected")
+	}
+
+	// Check parents with no relation
+	err = validateParents(fakeBlockHeader, setFromSlice(b, c))
+	if err != nil {
+		t.Errorf("validateParents: unexpected error: %v", err)
+	}
+}
+
 // Block100000 defines block 100,000 of the block chain.  It is used to
 // test Block operations.
 var Block100000 = wire.MsgBlock{

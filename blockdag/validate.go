@@ -705,8 +705,8 @@ func validateParents(blockHeader *wire.BlockHeader, parents blockSet) error {
 		if current.height > minHeight {
 			for _, parent := range current.parents {
 				if !visited.contains(parent) {
-					queue.Push(current)
-					visited.add(current)
+					queue.Push(parent)
+					visited.add(parent)
 				}
 			}
 		}

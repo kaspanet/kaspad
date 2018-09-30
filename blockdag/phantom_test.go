@@ -810,7 +810,7 @@ func TestPhantom(t *testing.T) {
 		netParams.K = test.k
 		// Generate enough synthetic blocks for the rest of the test
 		blockDAG := newTestDAG(&netParams)
-		genesisNode := blockDAG.virtual.SelectedTip()
+		genesisNode := blockDAG.genesis
 		blockTime := genesisNode.Header().Timestamp
 		blockByIDMap := make(map[string]*blockNode)
 		idByBlockMap := make(map[*blockNode]string)
