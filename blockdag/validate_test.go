@@ -504,26 +504,37 @@ func TestValidateParents(t *testing.T) {
 	genesisNode := blockDAG.virtual.SelectedTip()
 	blockVersion := int32(0x10000000)
 
-	//Timestamped is changed in order to give each block node different hash
-	a := newTestNode(setFromSlice(genesisNode), blockVersion, 0, genesisNode.Header().Timestamp.Add(time.Second), dagconfig.MainNetParams.K)
-	b := newTestNode(setFromSlice(a), blockVersion, 0, a.Header().Timestamp.Add(time.Second), dagconfig.MainNetParams.K)
-	c := newTestNode(setFromSlice(genesisNode), blockVersion, 0, genesisNode.Header().Timestamp.Add(time.Second*2), dagconfig.MainNetParams.K)
+	blockTime := genesisNode.Header().Timestamp
+
+	generateNode := func(parents ...*blockNode) *blockNode {
+		blockTime = blockTime.Add(time.Second)
+		return newTestNode(setFromSlice(parents...),
+			blockVersion,
+			0,
+			blockTime,
+			dagconfig.MainNetParams.K)
+	}
+
+	// The timestamp of each block is changed to prevent a situation where two blocks share the same hash
+	a := generateNode(genesisNode)
+	b := generateNode(a)
+	c := generateNode(genesisNode)
 
 	fakeBlockHeader := &wire.BlockHeader{}
 
-	//Check direct parents relation
+	// Check direct parents relation
 	err := validateParents(fakeBlockHeader, setFromSlice(a, b))
 	if err == nil {
-		t.Errorf("validateParents: expected an error but got <nil>")
+		t.Errorf("validateParents: `a` is a parent of `b`, so an error is expected")
 	}
 
-	//Check indirect parents relation
+	// Check indirect parents relation
 	err = validateParents(fakeBlockHeader, setFromSlice(genesisNode, b))
 	if err == nil {
-		t.Errorf("validateParents: expected an error but got <nil>")
+		t.Errorf("validateParents: `genesis` and `b` are indirectly related, so an error is expected")
 	}
 
-	//Check parents with relation
+	// Check parents with no relation
 	err = validateParents(fakeBlockHeader, setFromSlice(b, c))
 	if err != nil {
 		t.Errorf("validateParents: unexpected error: %v", err)
