@@ -501,12 +501,13 @@ func TestCheckSerializedHeight(t *testing.T) {
 
 func TestValidateParents(t *testing.T) {
 	blockDAG := newTestDAG(&dagconfig.MainNetParams)
-	genesisNode := blockDAG.virtual.SelectedTip()
+	genesisNode := blockDAG.genesis
 	blockVersion := int32(0x10000000)
 
 	blockTime := genesisNode.Header().Timestamp
 
 	generateNode := func(parents ...*blockNode) *blockNode {
+		// The timestamp of each block is changed to prevent a situation where two blocks share the same hash
 		blockTime = blockTime.Add(time.Second)
 		return newTestNode(setFromSlice(parents...),
 			blockVersion,
@@ -515,7 +516,6 @@ func TestValidateParents(t *testing.T) {
 			dagconfig.MainNetParams.K)
 	}
 
-	// The timestamp of each block is changed to prevent a situation where two blocks share the same hash
 	a := generateNode(genesisNode)
 	b := generateNode(a)
 	c := generateNode(genesisNode)
