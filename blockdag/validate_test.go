@@ -126,9 +126,11 @@ func TestCheckConnectBlockTemplate(t *testing.T) {
 	}
 
 	// Block 4 should connect even if proof of work is invalid.
-	invalidPowBlock := *blocks[4].MsgBlock()
-	invalidPowBlock.Header.Nonce++
-	err = dag.CheckConnectBlockTemplate(util.NewBlock(&invalidPowBlock))
+	invalidPowMsgBlock := *blocks[4].MsgBlock()
+	invalidPowMsgBlock.Header.Nonce++
+	invalidPowBlock := util.NewBlock(&invalidPowMsgBlock)
+	invalidPowBlock.SetHeight(blocks[4].Height())
+	err = dag.CheckConnectBlockTemplate(invalidPowBlock)
 	if err != nil {
 		t.Fatalf("CheckConnectBlockTemplate: Received unexpected error on "+
 			"block 4 with bad nonce: %v", err)

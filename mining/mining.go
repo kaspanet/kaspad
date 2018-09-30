@@ -403,7 +403,7 @@ func NewBlkTmplGenerator(policy *Policy, params *dagconfig.Params,
 func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTemplate, error) {
 	// Extend the most recently known best block.
 	virtualBlock := g.dag.VirtualBlock()
-	nextBlockHeight := virtualBlock.SelectedTipHeight() + 1
+	nextBlockHeight := virtualBlock.Height()
 
 	// Create a standard coinbase transaction paying to the provided
 	// address.  NOTE: The coinbase value will be updated to include the
