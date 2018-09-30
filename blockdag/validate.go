@@ -349,7 +349,7 @@ func CountP2SHSigOps(tx *util.Tx, isCoinBaseTx bool, utxoSet UTXOSet) (int, erro
 	for txInIndex, txIn := range msgTx.TxIn {
 		// Ensure the referenced input transaction is available.
 		entry, ok := utxoSet.Get(txIn.PreviousOutPoint)
-		if !ok || entry.IsSpent() {
+		if !ok {
 			str := fmt.Sprintf("output %v referenced from "+
 				"transaction %s:%d either does not exist or "+
 				"has already been spent", txIn.PreviousOutPoint,
@@ -792,7 +792,7 @@ func (dag *BlockDAG) ensureNoDuplicateTx(node *blockNode, block *util.Block) err
 	// is fully spent.
 	for outpoint := range fetchSet {
 		utxo, ok := dag.virtual.GetUTXOEntry(outpoint)
-		if ok && !utxo.IsSpent() {
+		if ok {
 			str := fmt.Sprintf("tried to overwrite transaction %v "+
 				"at block height %d that is not fully spent",
 				outpoint.Hash, utxo.BlockHeight())
@@ -825,7 +825,7 @@ func CheckTransactionInputs(tx *util.Tx, txHeight int32, utxoSet UTXOSet, dagPar
 	for txInIndex, txIn := range tx.MsgTx().TxIn {
 		// Ensure the referenced input transaction is available.
 		entry, ok := utxoSet.Get(txIn.PreviousOutPoint)
-		if !ok || entry.IsSpent() {
+		if !ok {
 			str := fmt.Sprintf("output %v referenced from "+
 				"transaction %s:%d either does not exist or "+
 				"has already been spent", txIn.PreviousOutPoint,
