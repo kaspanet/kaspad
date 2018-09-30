@@ -497,6 +497,37 @@ func TestCheckSerializedHeight(t *testing.T) {
 	}
 }
 
+func TestValidateParents(t *testing.T) {
+	blockDAG := newTestDAG(&dagconfig.MainNetParams)
+	genesisNode := blockDAG.virtual.SelectedTip()
+	blockVersion := int32(0x10000000)
+
+	//Timestamped is changed in order to give each block node different hash
+	a := newTestNode(setFromSlice(genesisNode), blockVersion, 0, genesisNode.Header().Timestamp.Add(time.Second), dagconfig.MainNetParams.K)
+	b := newTestNode(setFromSlice(a), blockVersion, 0, a.Header().Timestamp.Add(time.Second), dagconfig.MainNetParams.K)
+	c := newTestNode(setFromSlice(genesisNode), blockVersion, 0, genesisNode.Header().Timestamp.Add(time.Second*2), dagconfig.MainNetParams.K)
+
+	fakeBlockHeader := &wire.BlockHeader{}
+
+	//Check direct parents relation
+	err := validateParents(fakeBlockHeader, setFromSlice(a, b))
+	if err == nil {
+		t.Errorf("validateParents: expected an error but got <nil>")
+	}
+
+	//Check indirect parents relation
+	err = validateParents(fakeBlockHeader, setFromSlice(genesisNode, b))
+	if err == nil {
+		t.Errorf("validateParents: expected an error but got <nil>")
+	}
+
+	//Check parents with relation
+	err = validateParents(fakeBlockHeader, setFromSlice(b, c))
+	if err != nil {
+		t.Errorf("validateParents: unexpected error: %v", err)
+	}
+}
+
 // Block100000 defines block 100,000 of the block chain.  It is used to
 // test Block operations.
 var Block100000 = wire.MsgBlock{
