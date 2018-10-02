@@ -730,6 +730,18 @@ func (dag *BlockDAG) checkBlockContext(block *util.Block, parents blockSet, sele
 	if err != nil {
 		return err
 	}
+
+	var bluestParent *blockNode
+	var maxScore uint64
+	for _, parent := range parents {
+		if bluestParent == nil ||
+			parent.blueScore > maxScore ||
+			(parent.blueScore == maxScore && daghash.Less(&bluestParent.hash, &parent.hash)) {
+			bluestParent = parent
+			maxScore = parent.blueScore
+		}
+	}
+
 	// Perform all block header related validation checks.
 	header := &block.MsgBlock().Header
 	err = dag.checkBlockHeaderContext(header, selectedParent, block.Height(), flags)
@@ -739,7 +751,7 @@ func (dag *BlockDAG) checkBlockContext(block *util.Block, parents blockSet, sele
 
 	fastAdd := flags&BFFastAdd == BFFastAdd
 	if !fastAdd {
-		blockTime := selectedParent.CalcPastMedianTime()
+		blockTime := bluestParent.CalcPastMedianTime()
 
 		// Ensure all transactions in the block are finalized.
 		for _, tx := range block.Transactions() {
