@@ -292,7 +292,7 @@ func newServerPeer(s *Server, isPersistent bool) *Peer {
 func (sp *Peer) newestBlock() (*daghash.Hash, int32, error) {
 	virtualBlock := sp.server.DAG.VirtualBlock()
 	selectedTipHash := virtualBlock.SelectedTipHash()
-	return &selectedTipHash, virtualBlock.SelectedTipHeight(), nil
+	return &selectedTipHash, sp.server.DAG.Height(), nil //TODO: (Ori) This is probably wrong. Done only for compilation
 }
 
 // addKnownAddresses adds the given addresses to the set of known addresses to
@@ -2419,7 +2419,7 @@ func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params
 
 	// If no feeEstimator has been found, or if the one that has been found
 	// is behind somehow, create a new one and start over.
-	if s.FeeEstimator == nil || s.FeeEstimator.LastKnownHeight() != s.DAG.VirtualBlock().SelectedTipHeight() {
+	if s.FeeEstimator == nil || s.FeeEstimator.LastKnownHeight() != s.DAG.Height() { //TODO: (Ori) This is probably wrong. Done only for compilation
 		s.FeeEstimator = mempool.NewFeeEstimator(
 			mempool.DefaultEstimateFeeMaxRollback,
 			mempool.DefaultEstimateFeeMinRegisteredBlocks)
@@ -2437,7 +2437,7 @@ func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params
 			MaxTxVersion:         1,
 		},
 		DAGParams:      dagParams,
-		BestHeight:     func() int32 { return s.DAG.VirtualBlock().SelectedTipHeight() },
+		BestHeight:     func() int32 { return s.DAG.Height() }, //TODO: (Ori) This is probably wrong. Done only for compilation
 		MedianTimePast: func() time.Time { return s.DAG.VirtualBlock().SelectedTip().CalcPastMedianTime() },
 		CalcSequenceLock: func(tx *util.Tx, utxoSet blockdag.UTXOSet) (*blockdag.SequenceLock, error) {
 			return s.DAG.CalcSequenceLock(tx, utxoSet, true)

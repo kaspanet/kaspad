@@ -101,17 +101,6 @@ func (v *VirtualBlock) SelectedTip() *blockNode {
 	return v.selectedParent
 }
 
-// SelectedTipHeight returns the height of the selected tip of the virtual block.
-func (v *VirtualBlock) SelectedTipHeight() int32 {
-	return v.SelectedTip().height
-}
-
-// Height returns the height of the virtual block.
-// In other words: height of highest block + 1
-func (v *VirtualBlock) Height() int32 {
-	return v.tips().maxHeight() + 1
-}
-
 // TipHashes returns the hashes of the tips of the virtual block.
 func (v *VirtualBlock) TipHashes() []daghash.Hash {
 	return v.tips().hashes()

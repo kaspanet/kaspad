@@ -163,7 +163,7 @@ func main() {
 	// Get the latest block hash and height from the database and report
 	// status.
 	virtualBlock := dag.VirtualBlock()
-	fmt.Printf("Block database loaded with block height %d\n", virtualBlock.SelectedTipHeight())
+	fmt.Printf("Block database loaded with block height %d\n", dag.Height())
 
 	// Find checkpoint candidates.
 	selectedTipHash := virtualBlock.SelectedTipHash()

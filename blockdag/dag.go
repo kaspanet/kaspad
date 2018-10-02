@@ -912,6 +912,11 @@ func (dag *BlockDAG) VirtualBlock() *VirtualBlock {
 	return dag.virtual
 }
 
+// Height returns the height of the highest tip in the DAG
+func (dag *BlockDAG) Height() int32 {
+	return dag.virtual.tips().maxHeight()
+}
+
 // HeaderByHash returns the block header identified by the given hash or an
 // error if it doesn't exist.
 func (dag *BlockDAG) HeaderByHash(hash *daghash.Hash) (wire.BlockHeader, error) {
