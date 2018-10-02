@@ -624,13 +624,13 @@ func checkSerializedHeight(coinbaseTx *util.Tx, wantHeight int32) error {
 //    the checkpoints are not performed.
 //
 // This function MUST be called with the chain state lock held (for writes).
-func (dag *BlockDAG) checkBlockHeaderContext(header *wire.BlockHeader, selectedParent *blockNode, blockHeight int32, flags BehaviorFlags) error {
+func (dag *BlockDAG) checkBlockHeaderContext(header *wire.BlockHeader, bluestParent *blockNode, blockHeight int32, flags BehaviorFlags) error {
 	fastAdd := flags&BFFastAdd == BFFastAdd
 	if !fastAdd {
 		// Ensure the difficulty specified in the block header matches
 		// the calculated difficulty based on the previous block and
 		// difficulty retarget rules.
-		expectedDifficulty, err := dag.calcNextRequiredDifficulty(selectedParent,
+		expectedDifficulty, err := dag.calcNextRequiredDifficulty(bluestParent,
 			header.Timestamp)
 		if err != nil {
 			return err
@@ -644,7 +644,7 @@ func (dag *BlockDAG) checkBlockHeaderContext(header *wire.BlockHeader, selectedP
 
 		// Ensure the timestamp for the block header is after the
 		// median time of the last several blocks (medianTimeBlocks).
-		medianTime := selectedParent.CalcPastMedianTime()
+		medianTime := bluestParent.CalcPastMedianTime()
 		if !header.Timestamp.After(medianTime) {
 			str := "block timestamp of %v is not after expected %v"
 			str = fmt.Sprintf(str, header.Timestamp, medianTime)
@@ -725,26 +725,15 @@ func validateParents(blockHeader *wire.BlockHeader, parents blockSet) error {
 // for how the flags modify its behavior.
 //
 // This function MUST be called with the chain state lock held (for writes).
-func (dag *BlockDAG) checkBlockContext(block *util.Block, parents blockSet, selectedParent *blockNode, flags BehaviorFlags) error {
+func (dag *BlockDAG) checkBlockContext(block *util.Block, parents blockSet, bluestParent *blockNode, flags BehaviorFlags) error {
 	err := validateParents(&block.MsgBlock().Header, parents)
 	if err != nil {
 		return err
 	}
 
-	var bluestParent *blockNode
-	var maxScore uint64
-	for _, parent := range parents {
-		if bluestParent == nil ||
-			parent.blueScore > maxScore ||
-			(parent.blueScore == maxScore && daghash.Less(&bluestParent.hash, &parent.hash)) {
-			bluestParent = parent
-			maxScore = parent.blueScore
-		}
-	}
-
 	// Perform all block header related validation checks.
 	header := &block.MsgBlock().Header
-	err = dag.checkBlockHeaderContext(header, selectedParent, block.Height(), flags)
+	err = dag.checkBlockHeaderContext(header, bluestParent, block.Height(), flags)
 	if err != nil {
 		return err
 	}
