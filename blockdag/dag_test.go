@@ -68,6 +68,7 @@ func TestHaveBlock(t *testing.T) {
 		}
 	}
 
+	// Test a block with related parents
 	testFiles = []string{
 		"blk_3C.dat",
 	}
@@ -82,13 +83,48 @@ func TestHaveBlock(t *testing.T) {
 	}
 	isOrphan, err := dag.ProcessBlock(blocks[6], BFNone)
 
-	// Block 3c should fail to connect since its parents are related. (It points to 1 and 2, and 1 is the parent of 2)
+	// Block 3C should fail to connect since its parents are related. (It points to 1 and 2, and 1 is the parent of 2)
 	if err == nil {
-		t.Errorf("ProcessBlock for block 3c has no error when expected to have an error\n")
+		t.Errorf("ProcessBlock for block 3C has no error when expected to have an error\n")
 		return
 	}
 	if isOrphan {
 		t.Errorf("ProcessBlock incorrectly returned block 3c " +
+			"is an orphan\n")
+		return
+	}
+
+	// Test a block with the same input twice
+	testFiles = []string{
+		"blk_3D.dat",
+	}
+
+	for _, file := range testFiles {
+		blockTmp, err := loadBlocks(file)
+		if err != nil {
+			t.Errorf("Error loading file: %v\n", err)
+			return
+		}
+		blocks = append(blocks, blockTmp...)
+	}
+	isOrphan, err = dag.ProcessBlock(blocks[7], BFNone)
+
+	// Block 3D should fail to connect since it has a transaction with the same input twice
+	if err == nil {
+		t.Errorf("ProcessBlock for block 3D has no error when expected to have an error\n")
+		return
+	}
+	rErr, ok := err.(RuleError)
+	if !ok {
+		t.Errorf("ProcessBlock for block 3D expected a RuleError, but got something else\n")
+		return
+	}
+	if !ok || rErr.ErrorCode != ErrDuplicateTxInputs {
+		t.Errorf("ProcessBlock for block 3D expected error code %s but got %s\n", ErrDuplicateTxInputs, rErr.ErrorCode)
+		return
+	}
+	if isOrphan {
+		t.Errorf("ProcessBlock incorrectly returned block 3D " +
 			"is an orphan\n")
 		return
 	}
@@ -114,7 +150,7 @@ func TestHaveBlock(t *testing.T) {
 		{hash: dagconfig.MainNetParams.GenesisHash.String(), want: true},
 
 		// Block 3b should be present (as a second child of Block 2).
-		{hash: "00000093c8f2ab3444502da0754fc8149d738701aef9b2e0f32f32c078039295", want: true},
+		{hash: "0000004d6cf95724bced0ad218d1fe3d1fd7810dae663b60cc81e52d12c95ad5", want: true},
 
 		// Block 100000 should be present (as an orphan).
 		{hash: "000000a805b083e0ef1f516b1153828724c235d6e6f0fabb47b869f6d054ac3f", want: true},
