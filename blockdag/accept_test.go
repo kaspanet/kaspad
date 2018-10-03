@@ -32,8 +32,12 @@ func TestMaybeAcceptBlockErrors(t *testing.T) {
 	if err == nil {
 		t.Errorf("TestMaybeAcceptBlockErrors: Expected error but got nil")
 	}
-	if ruleErr, ok := err.(RuleError); !ok || ruleErr.ErrorCode != ErrPreviousBlockUnknown {
-		t.Errorf("TestMaybeAcceptBlockErrors: Unexpected error. Want: %s, got: %s", ErrPreviousBlockUnknown, err)
+	ruleErr, ok := err.(RuleError)
+	if !ok {
+		t.Errorf("TestMaybeAcceptBlockErrors: Expected RuleError but got %s", err)
+	} else if ruleErr.ErrorCode != ErrPreviousBlockUnknown {
+		t.Errorf("TestMaybeAcceptBlockErrors: Unexpected error code. "+
+			"Want: %s, got: %s", ErrPreviousBlockUnknown, ruleErr.ErrorCode)
 	}
 
 	// Test rejecting the block if its parents are invalid
@@ -57,8 +61,12 @@ func TestMaybeAcceptBlockErrors(t *testing.T) {
 	if err == nil {
 		t.Errorf("TestMaybeAcceptBlockErrors: Expected error but got nil")
 	}
-	if ruleErr, ok := err.(RuleError); !ok || ruleErr.ErrorCode != ErrInvalidAncestorBlock {
-		t.Errorf("TestMaybeAcceptBlockErrors: Unexpected error. Want: %s, got: %s", ErrInvalidAncestorBlock, err)
+	ruleErr, ok = err.(RuleError)
+	if !ok {
+		t.Errorf("TestMaybeAcceptBlockErrors: Expected RuleError but got %s", err)
+	} else if ruleErr.ErrorCode != ErrInvalidAncestorBlock {
+		t.Errorf("TestMaybeAcceptBlockErrors: Unexpected error. "+
+			"Want: %s, got: %s", ErrInvalidAncestorBlock, ruleErr.ErrorCode)
 	}
 
 	// Set block1's status back to valid for next tests
@@ -71,8 +79,12 @@ func TestMaybeAcceptBlockErrors(t *testing.T) {
 	if err == nil {
 		t.Errorf("TestMaybeAcceptBlockErrors: Expected error but got nil")
 	}
-	if ruleErr, ok := err.(RuleError); !ok || ruleErr.ErrorCode != ErrUnexpectedDifficulty {
-		t.Errorf("TestMaybeAcceptBlockErrors: Unexpected error. Want: %s, got: %s", ErrUnexpectedDifficulty, err)
+	ruleErr, ok = err.(RuleError)
+	if !ok {
+		t.Errorf("TestMaybeAcceptBlockErrors: Expected RuleError but got %s", err)
+	} else if ruleErr.ErrorCode != ErrUnexpectedDifficulty {
+		t.Errorf("TestMaybeAcceptBlockErrors: Unexpected error. "+
+			"Want: %s, got: %s", ErrUnexpectedDifficulty, ruleErr.ErrorCode)
 	}
 
 	// Set block2's bits back to valid for next tests
