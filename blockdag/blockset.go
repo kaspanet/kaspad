@@ -125,15 +125,6 @@ func (bs blockSet) hashes() []daghash.Hash {
 	return hashes
 }
 
-// first returns the first block in this set or nil if this set is empty.
-func (bs blockSet) first() *blockNode { //TODO: (Ori) This is wrong. Done only for compilation. We should probably get rid of this method
-	for _, block := range bs {
-		return block
-	}
-
-	return nil
-}
-
 func (bs blockSet) String() string {
 	nodeStrs := make([]string, 0, len(bs))
 	for _, node := range bs {
