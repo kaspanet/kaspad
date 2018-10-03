@@ -126,9 +126,11 @@ func TestCheckConnectBlockTemplate(t *testing.T) {
 	}
 
 	// Block 4 should connect even if proof of work is invalid.
-	invalidPowBlock := *blocks[4].MsgBlock()
-	invalidPowBlock.Header.Nonce++
-	err = dag.CheckConnectBlockTemplate(util.NewBlock(&invalidPowBlock))
+	invalidPowMsgBlock := *blocks[4].MsgBlock()
+	invalidPowMsgBlock.Header.Nonce++
+	invalidPowBlock := util.NewBlock(&invalidPowMsgBlock)
+	invalidPowBlock.SetHeight(blocks[4].Height())
+	err = dag.CheckConnectBlockTemplate(invalidPowBlock)
 	if err != nil {
 		t.Fatalf("CheckConnectBlockTemplate: Received unexpected error on "+
 			"block 4 with bad nonce: %v", err)
@@ -494,6 +496,48 @@ func TestCheckSerializedHeight(t *testing.T) {
 				continue
 			}
 		}
+	}
+}
+
+func TestValidateParents(t *testing.T) {
+	blockDAG := newTestDAG(&dagconfig.MainNetParams)
+	genesisNode := blockDAG.genesis
+	blockVersion := int32(0x10000000)
+
+	blockTime := genesisNode.Header().Timestamp
+
+	generateNode := func(parents ...*blockNode) *blockNode {
+		// The timestamp of each block is changed to prevent a situation where two blocks share the same hash
+		blockTime = blockTime.Add(time.Second)
+		return newTestNode(setFromSlice(parents...),
+			blockVersion,
+			0,
+			blockTime,
+			dagconfig.MainNetParams.K)
+	}
+
+	a := generateNode(genesisNode)
+	b := generateNode(a)
+	c := generateNode(genesisNode)
+
+	fakeBlockHeader := &wire.BlockHeader{}
+
+	// Check direct parents relation
+	err := validateParents(fakeBlockHeader, setFromSlice(a, b))
+	if err == nil {
+		t.Errorf("validateParents: `a` is a parent of `b`, so an error is expected")
+	}
+
+	// Check indirect parents relation
+	err = validateParents(fakeBlockHeader, setFromSlice(genesisNode, b))
+	if err == nil {
+		t.Errorf("validateParents: `genesis` and `b` are indirectly related, so an error is expected")
+	}
+
+	// Check parents with no relation
+	err = validateParents(fakeBlockHeader, setFromSlice(b, c))
+	if err != nil {
+		t.Errorf("validateParents: unexpected error: %v", err)
 	}
 }
 

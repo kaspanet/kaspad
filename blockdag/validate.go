@@ -349,7 +349,7 @@ func CountP2SHSigOps(tx *util.Tx, isCoinBaseTx bool, utxoSet UTXOSet) (int, erro
 	for txInIndex, txIn := range msgTx.TxIn {
 		// Ensure the referenced input transaction is available.
 		entry, ok := utxoSet.Get(txIn.PreviousOutPoint)
-		if !ok || entry.IsSpent() {
+		if !ok {
 			str := fmt.Sprintf("output %v referenced from "+
 				"transaction %s:%d either does not exist or "+
 				"has already been spent", txIn.PreviousOutPoint,
@@ -624,7 +624,7 @@ func checkSerializedHeight(coinbaseTx *util.Tx, wantHeight int32) error {
 //    the checkpoints are not performed.
 //
 // This function MUST be called with the chain state lock held (for writes).
-func (dag *BlockDAG) checkBlockHeaderContext(header *wire.BlockHeader, selectedParent *blockNode, flags BehaviorFlags) error {
+func (dag *BlockDAG) checkBlockHeaderContext(header *wire.BlockHeader, selectedParent *blockNode, blockHeight int32, flags BehaviorFlags) error {
 	fastAdd := flags&BFFastAdd == BFFastAdd
 	if !fastAdd {
 		// Ensure the difficulty specified in the block header matches
@@ -651,10 +651,6 @@ func (dag *BlockDAG) checkBlockHeaderContext(header *wire.BlockHeader, selectedP
 			return ruleError(ErrTimeTooOld, str)
 		}
 	}
-
-	// The height of this block is one more than the referenced previous
-	// block.
-	blockHeight := selectedParent.height + 1
 
 	// Ensure chain matches up to predetermined checkpoints.
 	blockHash := header.BlockHash()
@@ -709,8 +705,8 @@ func validateParents(blockHeader *wire.BlockHeader, parents blockSet) error {
 		if current.height > minHeight {
 			for _, parent := range current.parents {
 				if !visited.contains(parent) {
-					queue.Push(current)
-					visited.add(current)
+					queue.Push(parent)
+					visited.add(parent)
 				}
 			}
 		}
@@ -736,7 +732,7 @@ func (dag *BlockDAG) checkBlockContext(block *util.Block, parents blockSet, sele
 	}
 	// Perform all block header related validation checks.
 	header := &block.MsgBlock().Header
-	err = dag.checkBlockHeaderContext(header, selectedParent, flags)
+	err = dag.checkBlockHeaderContext(header, selectedParent, block.Height(), flags)
 	if err != nil {
 		return err
 	}
@@ -745,13 +741,9 @@ func (dag *BlockDAG) checkBlockContext(block *util.Block, parents blockSet, sele
 	if !fastAdd {
 		blockTime := selectedParent.CalcPastMedianTime()
 
-		// The height of this block is one more than the referenced
-		// previous block.
-		blockHeight := selectedParent.height + 1
-
 		// Ensure all transactions in the block are finalized.
 		for _, tx := range block.Transactions() {
-			if !IsFinalizedTransaction(tx, blockHeight,
+			if !IsFinalizedTransaction(tx, block.Height(),
 				blockTime) {
 
 				str := fmt.Sprintf("block contains unfinalized "+
@@ -763,7 +755,7 @@ func (dag *BlockDAG) checkBlockContext(block *util.Block, parents blockSet, sele
 		// Ensure coinbase starts with serialized block heights
 
 		coinbaseTx := block.Transactions()[0]
-		err := checkSerializedHeight(coinbaseTx, blockHeight)
+		err := checkSerializedHeight(coinbaseTx, block.Height())
 		if err != nil {
 			return err
 		}
@@ -800,7 +792,7 @@ func (dag *BlockDAG) ensureNoDuplicateTx(node *blockNode, block *util.Block) err
 	// is fully spent.
 	for outpoint := range fetchSet {
 		utxo, ok := dag.virtual.GetUTXOEntry(outpoint)
-		if ok && !utxo.IsSpent() {
+		if ok {
 			str := fmt.Sprintf("tried to overwrite transaction %v "+
 				"at block height %d that is not fully spent",
 				outpoint.Hash, utxo.BlockHeight())
@@ -833,7 +825,7 @@ func CheckTransactionInputs(tx *util.Tx, txHeight int32, utxoSet UTXOSet, dagPar
 	for txInIndex, txIn := range tx.MsgTx().TxIn {
 		// Ensure the referenced input transaction is available.
 		entry, ok := utxoSet.Get(txIn.PreviousOutPoint)
-		if !ok || entry.IsSpent() {
+		if !ok {
 			str := fmt.Sprintf("output %v referenced from "+
 				"transaction %s:%d either does not exist or "+
 				"has already been spent", txIn.PreviousOutPoint,

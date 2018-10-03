@@ -403,7 +403,7 @@ func NewBlkTmplGenerator(policy *Policy, params *dagconfig.Params,
 func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTemplate, error) {
 	// Extend the most recently known best block.
 	virtualBlock := g.dag.VirtualBlock()
-	nextBlockHeight := virtualBlock.SelectedTipHeight() + 1
+	nextBlockHeight := virtualBlock.Height()
 
 	// Create a standard coinbase transaction paying to the provided
 	// address.  NOTE: The coinbase value will be updated to include the
@@ -486,8 +486,8 @@ mempoolLoop:
 		prioItem := &txPrioItem{tx: tx}
 		for _, txIn := range tx.MsgTx().TxIn {
 			originHash := &txIn.PreviousOutPoint.Hash
-			entry, ok := blockUtxos.Get(txIn.PreviousOutPoint)
-			if !ok || entry.IsSpent() {
+			_, ok := blockUtxos.Get(txIn.PreviousOutPoint)
+			if !ok {
 				if !g.txSource.HaveTransaction(originHash) {
 					log.Tracef("Skipping tx %s because it "+
 						"references unspent output %s "+
@@ -716,12 +716,12 @@ mempoolLoop:
 	merkles := blockdag.BuildMerkleTreeStore(blockTxns)
 	var msgBlock wire.MsgBlock
 	msgBlock.Header = wire.BlockHeader{
-		Version:    nextBlockVersion,
+		Version:       nextBlockVersion,
 		NumPrevBlocks: byte(len(virtualBlock.TipHashes())),
-		PrevBlocks: virtualBlock.TipHashes(),
-		MerkleRoot: *merkles[len(merkles)-1],
-		Timestamp:  ts,
-		Bits:       reqDifficulty,
+		PrevBlocks:    virtualBlock.TipHashes(),
+		MerkleRoot:    *merkles[len(merkles)-1],
+		Timestamp:     ts,
+		Bits:          reqDifficulty,
 	}
 	for _, tx := range blockTxns {
 		if err := msgBlock.AddTransaction(tx.MsgTx()); err != nil {

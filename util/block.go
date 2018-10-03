@@ -9,8 +9,8 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/daglabs/btcd/wire"
 	"github.com/daglabs/btcd/dagconfig/daghash"
+	"github.com/daglabs/btcd/wire"
 )
 
 // OutOfRangeError describes an error due to accessing an element that is out
