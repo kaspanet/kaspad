@@ -33,7 +33,7 @@ func TestFlushToDBErrors(t *testing.T) {
 		t.Errorf("TestFlushToDBErrors: Unexpected flushToDB error: %s", err)
 	}
 
-	// Mark the genesis block dirty
+	// Mark the genesis block as dirty
 	dag.index.SetStatusFlags(dag.genesis, statusValid)
 
 	// Test flushToDB failure due to database error
