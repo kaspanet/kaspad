@@ -1,0 +1,17 @@
+version: '3'
+services:
+  first:
+    image: btcd:latest
+    command: ["btcd", "--regtest", "--generate", "--miningaddr=dagreg:qpm2qsznhks23z7629mms6s4cwef74vcwvtmvqeszh"]
+  second:
+    image: btcd:latest
+    links: ["first"]
+    command: ["btcd", "--regtest", "--generate", "--miningaddr=dagreg:qpm2qsznhks23z7629mms6s4cwef74vcwvtmvqeszh", "--connect=first"]
+  third:
+    image: btcd:latest
+    links: ["second", "first"]
+    command: ["btcd", "--regtest", "--generate", "--miningaddr=dagreg:qpm2qsznhks23z7629mms6s4cwef74vcwvtmvqeszh", "--connect=first", "--connect=second"]
+  fourth:
+    image: btcd:latest
+    links: ["third", "first"]
+    command: ["btcd", "--regtest", "--generate", "--miningaddr=dagreg:qpm2qsznhks23z7629mms6s4cwef74vcwvtmvqeszh", "--connect=third", "--connect=first"]
