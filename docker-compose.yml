@@ -2,16 +2,16 @@ version: '3'
 services:
   first:
     image: 956501169541.dkr.ecr.us-east-1.amazonaws.com/btcd:latest
-    command: ["btcd", "--regtest", "--addrindex", "--generate", "--miningaddr=dagreg:qpm2qsznhks23z7629mms6s4cwef74vcwvtmvqeszh"]
+    command: ["btcd", "--testnet", "--addrindex", "--generate", "--miningaddr=dagtest:qrm4zaetvny2yuh4wudf8y43fd20lunkxs8quragg8"]
   second:
     image: 956501169541.dkr.ecr.us-east-1.amazonaws.com/btcd:latest
     links: ["first"]
-    command: ["btcd", "--regtest", "--addrindex",  "--connect=first"]
+    command: ["btcd", "--testnet", "--addrindex",  "--connect=first"]
   third:
     image: 956501169541.dkr.ecr.us-east-1.amazonaws.com/btcd:latest
     links: ["second", "first"]
-    command: ["btcd", "--regtest", "--addrindex", "--connect=first", "--connect=second"]
+    command: ["btcd", "--testnet", "--addrindex", "--connect=first", "--connect=second"]
   fourth:
     image: 956501169541.dkr.ecr.us-east-1.amazonaws.com/btcd:latest
     links: ["third", "first"]
-    command: ["btcd", "--regtest", "--addrindex", "--connect=third", "--connect=first"]
+    command: ["btcd", "--testnet", "--addrindex", "--connect=third", "--connect=first"]
