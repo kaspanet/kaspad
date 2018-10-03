@@ -15,7 +15,7 @@ func TestAncestorErrors(t *testing.T) {
 	node.height = 2
 	ancestor := node.Ancestor(3)
 	if ancestor != nil {
-		t.Errorf("Ancestor() unexpectedly returned a node. Expected: nil")
+		t.Errorf("TestAncestorErrors: Ancestor() unexpectedly returned a node. Expected: nil")
 	}
 }
 
@@ -23,15 +23,14 @@ func TestFlushToDBErrors(t *testing.T) {
 	// Create a new database and DAG instance to run tests against.
 	dag, teardownFunc, err := DAGSetup("TestMaybeAcceptBlockErrors", &dagconfig.MainNetParams)
 	if err != nil {
-		t.Errorf("Failed to setup DAG instance: %v", err)
-		return
+		t.Fatalf("TestFlushToDBErrors: Failed to setup DAG instance: %v", err)
 	}
 	defer teardownFunc()
 
 	// Call flushToDB without anything to flush. This should succeed
 	err = dag.index.flushToDB()
 	if err != nil {
-		t.Errorf("Unexpected flushToDB error: %s", err)
+		t.Errorf("TestFlushToDBErrors: Unexpected flushToDB error: %s", err)
 	}
 
 	// Mark the genesis block dirty
@@ -44,10 +43,10 @@ func TestFlushToDBErrors(t *testing.T) {
 	})
 	err = dag.index.flushToDB()
 	if err == nil {
-		t.Errorf("Expected flushToDB error but got nil")
+		t.Errorf("TestFlushToDBErrors: Expected flushToDB error but got nil")
 	}
 	if !strings.Contains(err.Error(), databaseErrorMessage) {
-		t.Errorf("Unexpected flushToDB error. Expected: %s, got: %s", databaseErrorMessage, err)
+		t.Errorf("TestFlushToDBErrors: Unexpected flushToDB error. Expected: %s, got: %s", databaseErrorMessage, err)
 	}
 	monkey.Unpatch(dbStoreBlockNode)
 }

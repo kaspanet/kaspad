@@ -14,8 +14,7 @@ func TestMaybeAcceptBlockErrors(t *testing.T) {
 	// Create a new database and DAG instance to run tests against.
 	dag, teardownFunc, err := DAGSetup("TestMaybeAcceptBlockErrors", &dagconfig.MainNetParams)
 	if err != nil {
-		t.Errorf("Failed to setup DAG instance: %v", err)
-		return
+		t.Fatalf("TestMaybeAcceptBlockErrors: Failed to setup DAG instance: %v", err)
 	}
 	defer teardownFunc()
 
@@ -25,31 +24,30 @@ func TestMaybeAcceptBlockErrors(t *testing.T) {
 	orphanBlockFile := "blk_3B.dat"
 	loadedBlocks, err := loadBlocks(orphanBlockFile)
 	if err != nil {
-		t.Fatalf("Error loading file: %s\n", orphanBlockFile)
+		t.Fatalf("TestMaybeAcceptBlockErrors: Error loading file: %s\n", orphanBlockFile)
 	}
 	block := loadedBlocks[0]
 
 	err = dag.maybeAcceptBlock(block, BFNone)
 	if err == nil {
-		t.Errorf("Expected error but got nil")
+		t.Errorf("TestMaybeAcceptBlockErrors: Expected error but got nil")
 	}
 	if ruleErr, ok := err.(RuleError); !ok || ruleErr.ErrorCode != ErrPreviousBlockUnknown {
-		t.Errorf("Unexpected error. Want: %s, got: %s", ErrPreviousBlockUnknown, err)
+		t.Errorf("TestMaybeAcceptBlockErrors: Unexpected error. Want: %s, got: %s", ErrPreviousBlockUnknown, err)
 	}
 
 	// Test rejecting the block if its parents are invalid
 	blocksFile := "blk_0_to_4.dat"
 	blocks, err := loadBlocks(blocksFile)
 	if err != nil {
-		t.Errorf("Error loading file: %s\n", err)
-		return
+		t.Fatalf("TestMaybeAcceptBlockErrors: Error loading file: %s\n", err)
 	}
 
 	// Add a valid block and mark it as invalid
 	block1 := blocks[1]
 	_, err = dag.ProcessBlock(block1, BFNone)
 	if err != nil {
-		t.Fatalf("Valid block unexpectedly returned an error: %s", err)
+		t.Fatalf("TestMaybeAcceptBlockErrors: Valid block unexpectedly returned an error: %s", err)
 	}
 	blockNode1 := dag.index.LookupNode(block1.Hash())
 	dag.index.SetStatusFlags(blockNode1, statusValidateFailed)
@@ -57,10 +55,10 @@ func TestMaybeAcceptBlockErrors(t *testing.T) {
 	block2 := blocks[2]
 	err = dag.maybeAcceptBlock(block2, BFNone)
 	if err == nil {
-		t.Errorf("Expected error but got nil")
+		t.Errorf("TestMaybeAcceptBlockErrors: Expected error but got nil")
 	}
 	if ruleErr, ok := err.(RuleError); !ok || ruleErr.ErrorCode != ErrInvalidAncestorBlock {
-		t.Errorf("Unexpected error. Want: %s, got: %s", ErrInvalidAncestorBlock, err)
+		t.Errorf("TestMaybeAcceptBlockErrors: Unexpected error. Want: %s, got: %s", ErrInvalidAncestorBlock, err)
 	}
 
 	// Set block1's status back to valid for next tests
@@ -71,10 +69,10 @@ func TestMaybeAcceptBlockErrors(t *testing.T) {
 	block2.MsgBlock().Header.Bits = 0
 	err = dag.maybeAcceptBlock(block2, BFNone)
 	if err == nil {
-		t.Errorf("Expected error but got nil")
+		t.Errorf("TestMaybeAcceptBlockErrors: Expected error but got nil")
 	}
 	if ruleErr, ok := err.(RuleError); !ok || ruleErr.ErrorCode != ErrUnexpectedDifficulty {
-		t.Errorf("Unexpected error. Want: %s, got: %s", ErrUnexpectedDifficulty, err)
+		t.Errorf("TestMaybeAcceptBlockErrors: Unexpected error. Want: %s, got: %s", ErrUnexpectedDifficulty, err)
 	}
 
 	// Set block2's bits back to valid for next tests
@@ -87,10 +85,10 @@ func TestMaybeAcceptBlockErrors(t *testing.T) {
 	})
 	err = dag.maybeAcceptBlock(block2, BFNone)
 	if err == nil {
-		t.Errorf("Expected error but got nil")
+		t.Errorf("TestMaybeAcceptBlockErrors: Expected error but got nil")
 	}
 	if !strings.Contains(err.Error(), databaseErrorMessage) {
-		t.Errorf("Unexpected error. Want: %s, got: %s", databaseErrorMessage, err)
+		t.Errorf("TestMaybeAcceptBlockErrors: Unexpected error. Want: %s, got: %s", databaseErrorMessage, err)
 	}
 	monkey.Unpatch(dbStoreBlock)
 
@@ -101,10 +99,10 @@ func TestMaybeAcceptBlockErrors(t *testing.T) {
 	})
 	err = dag.maybeAcceptBlock(block2, BFNone)
 	if err == nil {
-		t.Errorf("Expected error but got nil")
+		t.Errorf("TestMaybeAcceptBlockErrors: Expected error but got nil")
 	}
 	if !strings.Contains(err.Error(), indexErrorMessage) {
-		t.Errorf("Unexpected error. Want: %s, got: %s", indexErrorMessage, err)
+		t.Errorf("TestMaybeAcceptBlockErrors: Unexpected error. Want: %s, got: %s", indexErrorMessage, err)
 	}
 	monkey.Unpatch((*blockIndex).flushToDB)
 }
