@@ -15,7 +15,9 @@ import (
 	"testing"
 	"time"
 
+	"bou.ke/monkey"
 	"github.com/daglabs/btcd/blockdag"
+	"github.com/daglabs/btcd/blockdag/indexers"
 	"github.com/daglabs/btcd/btcec"
 	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/dagconfig/daghash"
@@ -691,6 +693,47 @@ func TestProcessTransaction(t *testing.T) {
 	}
 	if code, _ := extractRejectCode(err); code != wire.RejectNonstandard {
 		t.Errorf("Unexpected error code. Expected %v but got %v", wire.RejectNonstandard, code)
+	}
+
+}
+
+func TestAddrIndex(t *testing.T) {
+	harness, spendableOuts, err := newPoolHarness(&dagconfig.MainNetParams, 2, "TestAddrIndexRemoveUnconfirmedTx")
+	if err != nil {
+		t.Fatalf("unable to create test pool: %v", err)
+	}
+	harness.txPool.cfg.AddrIndex = &indexers.AddrIndex{}
+	enteredAddUnconfirmedTx := false
+	monkey.Patch((*indexers.AddrIndex).AddUnconfirmedTx, func(idx *indexers.AddrIndex, tx *util.Tx, utxoSet blockdag.UTXOSet) {
+		enteredAddUnconfirmedTx = true
+	})
+	defer monkey.Unpatch((*indexers.AddrIndex).AddUnconfirmedTx)
+	enteredRemoveUnconfirmedTx := false
+	monkey.Patch((*indexers.AddrIndex).RemoveUnconfirmedTx, func(idx *indexers.AddrIndex, hash *daghash.Hash) {
+		enteredRemoveUnconfirmedTx = true
+	})
+	defer monkey.Unpatch((*indexers.AddrIndex).RemoveUnconfirmedTx)
+
+	tx, err := harness.createTx(spendableOuts[0], 0, 1)
+	if err != nil {
+		t.Fatalf("unable to create transaction: %v", err)
+	}
+	_, err = harness.txPool.ProcessTransaction(tx, true, false, 0)
+	if err != nil {
+		t.Errorf("ProcessTransaction: unexpected error: %v", err)
+	}
+
+	if !enteredAddUnconfirmedTx {
+		t.Errorf("TestAddrIndex: (*indexers.AddrIndex).AddUnconfirmedTx was not called")
+	}
+
+	err = harness.txPool.RemoveTransaction(tx, false, false)
+	if err != nil {
+		t.Errorf("TestAddrIndex: unexpected error: %v", err)
+	}
+
+	if !enteredRemoveUnconfirmedTx {
+		t.Errorf("TestAddrIndex: (*indexers.AddrIndex).RemoveUnconfirmedTx was not called")
 	}
 
 }
