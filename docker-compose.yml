@@ -2,7 +2,8 @@ version: '3'
 services:
   first:
     image: 956501169541.dkr.ecr.us-east-1.amazonaws.com/btcd:latest
-    command: ["btcd", "--testnet", "--addrindex", "--generate", "--miningaddr=dagtest:qrm4zaetvny2yuh4wudf8y43fd20lunkxs8quragg8"]
+    command: ["btcd", "--testnet", "--addrindex", "--generate", "--miningaddr=dagtest:qrm4zaetvny2yuh4wudf8y43fd20lunkxs8quragg8", "--rpcuser=user", "--rpcpass=pass"]
+    ports: ["18334:18334"]
   second:
     image: 956501169541.dkr.ecr.us-east-1.amazonaws.com/btcd:latest
     links: ["first"]
