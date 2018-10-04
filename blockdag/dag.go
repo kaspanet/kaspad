@@ -609,9 +609,7 @@ func (dag *BlockDAG) applyUTXOChanges(node *blockNode, block *util.Block) (*utxo
 	// It is now safe to meld the UTXO set to base.
 	diffSet := newVirtualUTXO.(*DiffUTXOSet)
 	utxoDiff := diffSet.UTXODiff
-	dag.utxoLock.Lock()
-	diffSet.meldToBase()
-	dag.utxoLock.Unlock()
+	dag.updateVirtualUTXO(diffSet)
 
 	// It is now safe to commit all the provisionalNodes
 	for _, provisional := range provisionalSet {
@@ -628,6 +626,12 @@ func (dag *BlockDAG) applyUTXOChanges(node *blockNode, block *util.Block) (*utxo
 	dag.virtual = virtualClone
 
 	return utxoDiff, nil
+}
+
+func (dag *BlockDAG) updateVirtualUTXO(newVirtualUTXODiffSet *DiffUTXOSet) {
+	dag.utxoLock.Lock()
+	defer dag.utxoLock.Unlock()
+	newVirtualUTXODiffSet.meldToBase()
 }
 
 // provisionalNodeSet is a temporary collection of provisionalNodes. It is used exclusively
