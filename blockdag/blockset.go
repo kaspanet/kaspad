@@ -125,15 +125,6 @@ func (bs blockSet) hashes() []daghash.Hash {
 	return hashes
 }
 
-// first returns the first block in this set or nil if this set is empty.
-func (bs blockSet) first() *blockNode { //TODO: (Ori) This is wrong. Done only for compilation. We should probably get rid of this method
-	for _, block := range bs {
-		return block
-	}
-
-	return nil
-}
-
 func (bs blockSet) String() string {
 	nodeStrs := make([]string, 0, len(bs))
 	for _, node := range bs {
@@ -151,4 +142,18 @@ func (bs blockSet) anyChildInSet(block *blockNode) bool {
 	}
 
 	return false
+}
+
+func (bs blockSet) bluest() *blockNode {
+	var bluestNode *blockNode
+	var maxScore uint64
+	for _, node := range bs {
+		if bluestNode == nil ||
+			node.blueScore > maxScore ||
+			(node.blueScore == maxScore && daghash.Less(&bluestNode.hash, &node.hash)) {
+			bluestNode = node
+			maxScore = node.blueScore
+		}
+	}
+	return bluestNode
 }
