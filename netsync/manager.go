@@ -392,9 +392,8 @@ func (sm *SyncManager) handleDonePeerMsg(peer *peerpkg.Peer) {
 	if sm.syncPeer == peer {
 		sm.syncPeer = nil
 		if sm.headersFirstMode {
-			virtualBlock := sm.dag.VirtualBlock()
-			selectedTipHash := virtualBlock.SelectedTipHash()
-			sm.resetHeaderState(&selectedTipHash, sm.dag.Height()) //TODO: (Ori) This is probably wrong. Done only for compilation
+			highestTipHash := sm.dag.HighestTipHash()
+			sm.resetHeaderState(&highestTipHash, sm.dag.Height()) //TODO: (Ori) This is probably wrong. Done only for compilation
 		}
 		sm.startSync()
 	}
@@ -616,10 +615,9 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 
 		// Update this peer's latest block height, for future
 		// potential sync node candidacy.
-		virtualBlock := sm.dag.VirtualBlock()
-		selectedTipHash := virtualBlock.SelectedTipHash()
+		highestTipHash := sm.dag.HighestTipHash()
 		heightUpdate = sm.dag.Height() //TODO: (Ori) This is probably wrong. Done only for compilation
-		blkHashUpdate = &selectedTipHash
+		blkHashUpdate = &highestTipHash
 
 		// Clear the rejected transactions.
 		sm.rejectedTxns = make(map[daghash.Hash]struct{})
@@ -1389,13 +1387,12 @@ func New(config *Config) (*SyncManager, error) {
 		feeEstimator:    config.FeeEstimator,
 	}
 
-	virtualBlock := sm.dag.VirtualBlock()
-	selectedTipHash := virtualBlock.SelectedTipHash()
+	highestTipHash := sm.dag.HighestTipHash()
 	if !config.DisableCheckpoints {
 		// Initialize the next checkpoint based on the current height.
 		sm.nextCheckpoint = sm.findNextHeaderCheckpoint(sm.dag.Height()) //TODO: (Ori) This is probably wrong. Done only for compilation
 		if sm.nextCheckpoint != nil {
-			sm.resetHeaderState(&selectedTipHash, sm.dag.Height()) //TODO: (Ori) This is probably wrong. Done only for compilation)
+			sm.resetHeaderState(&highestTipHash, sm.dag.Height()) //TODO: (Ori) This is probably wrong. Done only for compilation)
 		}
 	} else {
 		log.Info("Checkpoints are disabled")

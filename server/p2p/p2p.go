@@ -290,9 +290,8 @@ func newServerPeer(s *Server, isPersistent bool) *Peer {
 // newestBlock returns the current best block hash and height using the format
 // required by the configuration for the peer package.
 func (sp *Peer) newestBlock() (*daghash.Hash, int32, error) {
-	virtualBlock := sp.server.DAG.VirtualBlock()
-	selectedTipHash := virtualBlock.SelectedTipHash()
-	return &selectedTipHash, sp.server.DAG.Height(), nil //TODO: (Ori) This is probably wrong. Done only for compilation
+	highestTipHash := sp.server.DAG.HighestTipHash()
+	return &highestTipHash, sp.server.DAG.Height(), nil //TODO: (Ori) This is probably wrong. Done only for compilation
 }
 
 // addKnownAddresses adds the given addresses to the set of known addresses to
@@ -1308,9 +1307,9 @@ func (s *Server) pushBlockMsg(sp *Peer, hash *daghash.Hash, doneChan chan<- stru
 	// to trigger it to issue another getblocks message for the next
 	// batch of inventory.
 	if sendInv {
-		selectedTipHash := sp.server.DAG.VirtualBlock().SelectedTipHash()
+		highestTipHash := sp.server.DAG.HighestTipHash()
 		invMsg := wire.NewMsgInvSizeHint(1)
-		iv := wire.NewInvVect(wire.InvTypeBlock, &selectedTipHash)
+		iv := wire.NewInvVect(wire.InvTypeBlock, &highestTipHash)
 		invMsg.AddInvVect(iv)
 		sp.QueueMessage(invMsg, doneChan)
 		sp.continueHash = nil
