@@ -403,7 +403,7 @@ func NewBlkTmplGenerator(policy *Policy, params *dagconfig.Params,
 func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTemplate, error) {
 	// Extend the most recently known best block.
 	virtualBlock := g.dag.VirtualBlock()
-	nextBlockHeight := virtualBlock.Height()
+	nextBlockHeight := g.dag.Height() + 1
 
 	// Create a standard coinbase transaction paying to the provided
 	// address.  NOTE: The coinbase value will be updated to include the
@@ -813,6 +813,11 @@ func (g *BlkTmplGenerator) UpdateExtraNonce(msgBlock *wire.MsgBlock, blockHeight
 // This function is safe for concurrent access.
 func (g *BlkTmplGenerator) VirtualBlock() *blockdag.VirtualBlock {
 	return g.dag.VirtualBlock()
+}
+
+// DAGHeight returns the DAG's height
+func (g *BlkTmplGenerator) DAGHeight() int32 {
+	return g.dag.Height()
 }
 
 // TxSource returns the associated transaction source.
