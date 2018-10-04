@@ -7,11 +7,3 @@ services:
     image: 956501169541.dkr.ecr.us-east-1.amazonaws.com/btcd:latest
     links: ["first"]
     command: ["btcd", "--testnet", "--addrindex",  "--connect=first"]
-  third:
-    image: 956501169541.dkr.ecr.us-east-1.amazonaws.com/btcd:latest
-    links: ["second", "first"]
-    command: ["btcd", "--testnet", "--addrindex", "--connect=first", "--connect=second"]
-  fourth:
-    image: 956501169541.dkr.ecr.us-east-1.amazonaws.com/btcd:latest
-    links: ["third", "first"]
-    command: ["btcd", "--testnet", "--addrindex", "--connect=third", "--connect=first"]
