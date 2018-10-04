@@ -15,7 +15,7 @@ import (
 type VirtualBlock struct {
 	mtx      sync.Mutex
 	phantomK uint32
-	UTXOSet  *fullUTXOSet
+	utxoSet  *fullUTXOSet
 	blockNode
 }
 
@@ -24,7 +24,7 @@ func newVirtualBlock(tips blockSet, phantomK uint32) *VirtualBlock {
 	// The mutex is intentionally not held since this is a constructor.
 	var virtual VirtualBlock
 	virtual.phantomK = phantomK
-	virtual.UTXOSet = NewFullUTXOSet()
+	virtual.utxoSet = NewFullUTXOSet()
 	virtual.setTips(tips)
 
 	return &virtual
@@ -34,7 +34,7 @@ func newVirtualBlock(tips blockSet, phantomK uint32) *VirtualBlock {
 func (v *VirtualBlock) clone() *VirtualBlock {
 	return &VirtualBlock{
 		phantomK:  v.phantomK,
-		UTXOSet:   v.UTXOSet.clone().(*fullUTXOSet),
+		utxoSet:   v.utxoSet.clone().(*fullUTXOSet),
 		blockNode: v.blockNode,
 	}
 }
@@ -117,5 +117,5 @@ func (v *VirtualBlock) SelectedTipHash() daghash.Hash {
 // This function is safe for concurrent access. However, the returned entry (if
 // any) is NOT.
 func (v *VirtualBlock) GetUTXOEntry(outPoint wire.OutPoint) (*UTXOEntry, bool) {
-	return v.UTXOSet.get(outPoint)
+	return v.utxoSet.get(outPoint)
 }

@@ -76,6 +76,8 @@ type BlockDAG struct {
 	// fields in this struct below this point.
 	dagLock sync.RWMutex
 
+	utxoLock sync.RWMutex
+
 	// index and virtual are related to the memory block index.  They both
 	// have their own locks, however they are often also protected by the
 	// DAG lock to help prevent logic races when blocks are being processed.
@@ -607,7 +609,7 @@ func (dag *BlockDAG) applyUTXOChanges(node *blockNode, block *util.Block) (*utxo
 	// It is now safe to meld the UTXO set to base.
 	diffSet := newVirtualUTXO.(*DiffUTXOSet)
 	utxoDiff := diffSet.UTXODiff
-	diffSet.meldToBase()
+	dag.updateVirtualUTXO(diffSet)
 
 	// It is now safe to commit all the provisionalNodes
 	for _, provisional := range provisionalSet {
@@ -624,6 +626,12 @@ func (dag *BlockDAG) applyUTXOChanges(node *blockNode, block *util.Block) (*utxo
 	dag.virtual = virtualClone
 
 	return utxoDiff, nil
+}
+
+func (dag *BlockDAG) updateVirtualUTXO(newVirtualUTXODiffSet *DiffUTXOSet) {
+	dag.utxoLock.Lock()
+	defer dag.utxoLock.Unlock()
+	newVirtualUTXODiffSet.meldToBase()
 }
 
 // provisionalNodeSet is a temporary collection of provisionalNodes. It is used exclusively
@@ -781,7 +789,7 @@ func (p *provisionalNode) restoreUTXO(virtual *VirtualBlock) (UTXOSet, error) {
 		stack = append(stack, current)
 	}
 
-	utxo := UTXOSet(virtual.UTXOSet)
+	utxo := UTXOSet(virtual.utxoSet)
 
 	var err error
 	for i := len(stack) - 1; i >= 0; i-- {
@@ -797,7 +805,7 @@ func (p *provisionalNode) restoreUTXO(virtual *VirtualBlock) (UTXOSet, error) {
 // updateParents adds this block (in provisionalNode format) to the children sets of its parents
 // and updates the diff of any parent whose DiffChild is this block
 func (p *provisionalNode) updateParents(virtual *VirtualBlock, newBlockUTXO UTXOSet) error {
-	virtualDiffFromNewBlock, err := virtual.UTXOSet.diffFrom(newBlockUTXO)
+	virtualDiffFromNewBlock, err := virtual.utxoSet.diffFrom(newBlockUTXO)
 	if err != nil {
 		return err
 	}
@@ -901,6 +909,11 @@ func (dag *BlockDAG) IsCurrent() bool {
 	defer dag.dagLock.RUnlock()
 
 	return dag.isCurrent()
+}
+
+// UTXOSet returns the DAG's UTXO set
+func (dag *BlockDAG) UTXOSet() *fullUTXOSet {
+	return dag.VirtualBlock().utxoSet
 }
 
 // VirtualBlock returns the DAG's virtual block in the current point in time.
@@ -1250,13 +1263,13 @@ func (dag *BlockDAG) locateHeaders(locator BlockLocator, hashStop *daghash.Hash,
 	return headers
 }
 
-// RLock locks the DAG for reading.
-func (dag *BlockDAG) RLock() {
+// UTXORLock locks the DAG's UTXO set for reading.
+func (dag *BlockDAG) UTXORLock() {
 	dag.dagLock.RLock()
 }
 
-// RUnlock unlocks the DAG for reading.
-func (dag *BlockDAG) RUnlock() {
+// UTXORUnlock unlocks the DAG's UTXO set for reading.
+func (dag *BlockDAG) UTXORUnlock() {
 	dag.dagLock.RUnlock()
 }
 
