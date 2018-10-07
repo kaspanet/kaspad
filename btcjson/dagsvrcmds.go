@@ -526,22 +526,6 @@ func NewGetTxOutSetInfoCmd() *GetTxOutSetInfoCmd {
 	return &GetTxOutSetInfoCmd{}
 }
 
-// GetWorkCmd defines the getwork JSON-RPC command.
-type GetWorkCmd struct {
-	Data *string
-}
-
-// NewGetWorkCmd returns a new instance which can be used to issue a getwork
-// JSON-RPC command.
-//
-// The parameters which are pointers indicate they are optional.  Passing nil
-// for optional parameters will use the default value.
-func NewGetWorkCmd(data *string) *GetWorkCmd {
-	return &GetWorkCmd{
-		Data: data,
-	}
-}
-
 // HelpCmd defines the help JSON-RPC command.
 type HelpCmd struct {
 	Command *string
@@ -609,10 +593,10 @@ func NewReconsiderBlockCmd(blockHash string) *ReconsiderBlockCmd {
 // SearchRawTransactionsCmd defines the searchrawtransactions JSON-RPC command.
 type SearchRawTransactionsCmd struct {
 	Address     string
-	Verbose     *int  `jsonrpcdefault:"1"`
+	Verbose     *bool `jsonrpcdefault:"true"`
 	Skip        *int  `jsonrpcdefault:"0"`
 	Count       *int  `jsonrpcdefault:"100"`
-	VinExtra    *int  `jsonrpcdefault:"0"`
+	VinExtra    *bool `jsonrpcdefault:"false"`
 	Reverse     *bool `jsonrpcdefault:"false"`
 	FilterAddrs *[]string
 }
@@ -622,7 +606,7 @@ type SearchRawTransactionsCmd struct {
 //
 // The parameters which are pointers indicate they are optional.  Passing nil
 // for optional parameters will use the default value.
-func NewSearchRawTransactionsCmd(address string, verbose, skip, count *int, vinExtra *int, reverse *bool, filterAddrs *[]string) *SearchRawTransactionsCmd {
+func NewSearchRawTransactionsCmd(address string, verbose *bool, skip, count *int, vinExtra, reverse *bool, filterAddrs *[]string) *SearchRawTransactionsCmd {
 	return &SearchRawTransactionsCmd{
 		Address:     address,
 		Verbose:     verbose,
@@ -809,7 +793,6 @@ func init() {
 	MustRegisterCmd("gettxout", (*GetTxOutCmd)(nil), flags)
 	MustRegisterCmd("gettxoutproof", (*GetTxOutProofCmd)(nil), flags)
 	MustRegisterCmd("gettxoutsetinfo", (*GetTxOutSetInfoCmd)(nil), flags)
-	MustRegisterCmd("getwork", (*GetWorkCmd)(nil), flags)
 	MustRegisterCmd("help", (*HelpCmd)(nil), flags)
 	MustRegisterCmd("invalidateblock", (*InvalidateBlockCmd)(nil), flags)
 	MustRegisterCmd("ping", (*PingCmd)(nil), flags)

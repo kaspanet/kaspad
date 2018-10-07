@@ -6,6 +6,7 @@ package netsync
 
 import (
 	"container/list"
+	"fmt"
 	"net"
 	"sync"
 	"sync/atomic"
@@ -226,7 +227,6 @@ func (sm *SyncManager) startSync() {
 		return
 	}
 
-	virtualBlock := sm.dag.VirtualBlock()
 	var bestPeer *peerpkg.Peer
 	for peer, state := range sm.peerStates {
 		if !state.syncCandidate {
@@ -239,7 +239,7 @@ func (sm *SyncManager) startSync() {
 		// doesn't have a later block when it's equal, it will likely
 		// have one soon so it is a reasonable choice.  It also allows
 		// the case where both are at 0 such as during regression test.
-		if peer.LastBlock() < virtualBlock.SelectedTipHeight() {
+		if peer.LastBlock() < sm.dag.Height() { //TODO: (Ori) This is probably wrong. Done only for compilation
 			state.syncCandidate = false
 			continue
 		}
@@ -284,14 +284,14 @@ func (sm *SyncManager) startSync() {
 		// not support the headers-first approach so do normal block
 		// downloads when in regression test mode.
 		if sm.nextCheckpoint != nil &&
-			virtualBlock.SelectedTipHeight() < sm.nextCheckpoint.Height &&
-			sm.chainParams != &dagconfig.RegressionNetParams {
+			sm.dag.Height() < sm.nextCheckpoint.Height &&
+			sm.chainParams != &dagconfig.RegressionNetParams { //TODO: (Ori) This is probably wrong. Done only for compilation
 
 			bestPeer.PushGetHeadersMsg(locator, sm.nextCheckpoint.Hash)
 			sm.headersFirstMode = true
 			log.Infof("Downloading headers for blocks %d to "+
-				"%d from peer %s", virtualBlock.SelectedTipHeight()+1,
-				sm.nextCheckpoint.Height, bestPeer.Addr())
+				"%d from peer %s", sm.dag.Height()+1,
+				sm.nextCheckpoint.Height, bestPeer.Addr()) //TODO: (Ori) This is probably wrong. Done only for compilation
 		} else {
 			bestPeer.PushGetBlocksMsg(locator, &zeroHash)
 		}
@@ -392,9 +392,8 @@ func (sm *SyncManager) handleDonePeerMsg(peer *peerpkg.Peer) {
 	if sm.syncPeer == peer {
 		sm.syncPeer = nil
 		if sm.headersFirstMode {
-			virtualBlock := sm.dag.VirtualBlock()
-			selectedTipHash := virtualBlock.SelectedTipHash()
-			sm.resetHeaderState(&selectedTipHash, virtualBlock.SelectedTipHeight())
+			highestTipHash := sm.dag.HighestTipHash()
+			sm.resetHeaderState(&highestTipHash, sm.dag.Height()) //TODO: (Ori) This is probably wrong. Done only for compilation
 		}
 		sm.startSync()
 	}
@@ -483,7 +482,7 @@ func (sm *SyncManager) current() bool {
 
 	// No matter what chain thinks, if we are below the block we are syncing
 	// to we are not current.
-	if sm.dag.VirtualBlock().SelectedTipHeight() < sm.syncPeer.LastBlock() {
+	if sm.dag.Height() < sm.syncPeer.LastBlock() { //TODO: (Ori) This is probably wrong. Done only for compilation
 		return false
 	}
 	return true
@@ -616,10 +615,9 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 
 		// Update this peer's latest block height, for future
 		// potential sync node candidacy.
-		virtualBlock := sm.dag.VirtualBlock()
-		selectedTipHash := virtualBlock.SelectedTipHash()
-		heightUpdate = virtualBlock.SelectedTipHeight()
-		blkHashUpdate = &selectedTipHash
+		highestTipHash := sm.dag.HighestTipHash()
+		heightUpdate = sm.dag.Height() //TODO: (Ori) This is probably wrong. Done only for compilation
+		blkHashUpdate = &highestTipHash
 
 		// Clear the rejected transactions.
 		sm.rejectedTxns = make(map[daghash.Hash]struct{})
@@ -878,7 +876,7 @@ func (sm *SyncManager) haveInventory(invVect *wire.InvVect) (bool, error) {
 			if !ok {
 				return false, nil
 			}
-			if entry != nil && !entry.IsSpent() {
+			if entry != nil {
 				return true, nil
 			}
 		}
@@ -919,12 +917,6 @@ func (sm *SyncManager) handleInvMsg(imsg *invMsg) {
 	// previously announced.
 	if lastBlock != -1 && (peer != sm.syncPeer || sm.current()) {
 		peer.UpdateLastAnnouncedBlock(&invVects[lastBlock].Hash)
-	}
-
-	// Ignore invs from peers that aren't the sync if we are not current.
-	// Helps prevent fetching a mass of orphans.
-	if peer != sm.syncPeer && !sm.current() {
-		return
 	}
 
 	// If our chain is current and a peer announces a block we already
@@ -1160,10 +1152,10 @@ out:
 	log.Trace("Block handler done")
 }
 
-// handleBlockchainNotification handles notifications from blockchain.  It does
+// handleBlockDAGNotification handles notifications from blockDAG.  It does
 // things such as request orphan block parents and relay accepted blocks to
 // connected peers.
-func (sm *SyncManager) handleBlockchainNotification(notification *blockdag.Notification) {
+func (sm *SyncManager) handleBlockDAGNotification(notification *blockdag.Notification) {
 	switch notification.Type {
 	// A block has been accepted into the block chain.  Relay it to other
 	// peers.
@@ -1192,20 +1184,17 @@ func (sm *SyncManager) handleBlockchainNotification(notification *blockdag.Notif
 			break
 		}
 
-		// Remove all of the transactions (except the coinbase) in the
-		// connected block from the transaction pool.  Secondly, remove any
-		// transactions which are now double spends as a result of these
-		// new transactions.  Finally, remove any transaction that is
-		// no longer an orphan. Transactions which depend on a confirmed
-		// transaction are NOT removed recursively because they are still
-		// valid.
-		for _, tx := range block.Transactions()[1:] {
-			sm.txMemPool.RemoveTransaction(tx, false)
-			sm.txMemPool.RemoveDoubleSpends(tx)
-			sm.txMemPool.RemoveOrphan(tx)
-			sm.peerNotifier.TransactionConfirmed(tx)
-			acceptedTxs := sm.txMemPool.ProcessOrphans(tx)
-			sm.peerNotifier.AnnounceNewTransactions(acceptedTxs)
+		ch := make(chan mempool.NewBlockMsg)
+		go func() {
+			err := sm.txMemPool.HandleNewBlock(block, ch)
+			close(ch)
+			if err != nil {
+				panic(fmt.Sprintf("HandleNewBlock failed to handle block %v", block.Hash()))
+			}
+		}()
+		for msg := range ch {
+			sm.peerNotifier.TransactionConfirmed(msg.Tx)
+			sm.peerNotifier.AnnounceNewTransactions(msg.AcceptedTxs)
 		}
 
 		// Register block with the fee estimator, if it exists.
@@ -1239,7 +1228,7 @@ func (sm *SyncManager) handleBlockchainNotification(notification *blockdag.Notif
 				// Remove the transaction and all transactions
 				// that depend on it if it wasn't accepted into
 				// the transaction pool.
-				sm.txMemPool.RemoveTransaction(tx, true)
+				sm.txMemPool.RemoveTransaction(tx, true, true)
 			}
 		}
 
@@ -1398,19 +1387,18 @@ func New(config *Config) (*SyncManager, error) {
 		feeEstimator:    config.FeeEstimator,
 	}
 
-	virtualBlock := sm.dag.VirtualBlock()
-	selectedTipHash := virtualBlock.SelectedTipHash()
+	highestTipHash := sm.dag.HighestTipHash()
 	if !config.DisableCheckpoints {
 		// Initialize the next checkpoint based on the current height.
-		sm.nextCheckpoint = sm.findNextHeaderCheckpoint(virtualBlock.SelectedTipHeight())
+		sm.nextCheckpoint = sm.findNextHeaderCheckpoint(sm.dag.Height()) //TODO: (Ori) This is probably wrong. Done only for compilation
 		if sm.nextCheckpoint != nil {
-			sm.resetHeaderState(&selectedTipHash, virtualBlock.SelectedTipHeight())
+			sm.resetHeaderState(&highestTipHash, sm.dag.Height()) //TODO: (Ori) This is probably wrong. Done only for compilation)
 		}
 	} else {
 		log.Info("Checkpoints are disabled")
 	}
 
-	sm.dag.Subscribe(sm.handleBlockchainNotification)
+	sm.dag.Subscribe(sm.handleBlockDAGNotification)
 
 	return &sm, nil
 }

@@ -12,8 +12,8 @@ import (
 	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/txscript"
-	"github.com/daglabs/btcd/wire"
 	"github.com/daglabs/btcd/util"
+	"github.com/daglabs/btcd/wire"
 )
 
 // This example demonstrates creating a script which pays to a bitcoin address.
@@ -25,7 +25,7 @@ func ExamplePayToAddrScript() {
 	// the address type.  It is also required for the upcoming call to
 	// PayToAddrScript.
 	addressStr := "dagcoin:qqfgqp8l9l90zwetj84k2jcac2m8falvvy9uastr55"
-	address, err := util.DecodeAddress(addressStr, &dagconfig.MainNetParams)
+	address, err := util.DecodeAddress(addressStr, util.Bech32PrefixDAGCoin)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -91,8 +91,7 @@ func ExampleSignTxOutput() {
 	}
 	privKey, pubKey := btcec.PrivKeyFromBytes(btcec.S256(), privKeyBytes)
 	pubKeyHash := util.Hash160(pubKey.SerializeCompressed())
-	addr, err := util.NewAddressPubKeyHash(pubKeyHash,
-		&dagconfig.MainNetParams)
+	addr, err := util.NewAddressPubKeyHash(pubKeyHash, util.Bech32PrefixDAGCoin)
 	if err != nil {
 		fmt.Println(err)
 		return

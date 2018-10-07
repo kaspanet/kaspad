@@ -482,10 +482,7 @@ func recycleOutpointKey(key *[]byte) {
 
 // utxoEntryHeaderCode returns the calculated header code to be used when
 // serializing the provided utxo entry.
-func utxoEntryHeaderCode(entry *UTXOEntry) (uint64, error) {
-	if entry.IsSpent() {
-		return 0, AssertError("attempt to serialize spent UTXO header")
-	}
+func utxoEntryHeaderCode(entry *UTXOEntry) uint64 {
 
 	// As described in the serialization format comments, the header code
 	// encodes the height shifted over one bit and the coinbase flag in the
@@ -495,22 +492,15 @@ func utxoEntryHeaderCode(entry *UTXOEntry) (uint64, error) {
 		headerCode |= 0x01
 	}
 
-	return headerCode, nil
+	return headerCode
 }
 
 // serializeUTXOEntry returns the entry serialized to a format that is suitable
 // for long-term storage.  The format is described in detail above.
 func serializeUTXOEntry(entry *UTXOEntry) ([]byte, error) {
-	// Spent outputs have no serialization.
-	if entry.IsSpent() {
-		return nil, nil
-	}
 
 	// Encode the header code.
-	headerCode, err := utxoEntryHeaderCode(entry)
-	if err != nil {
-		return nil, err
-	}
+	headerCode := utxoEntryHeaderCode(entry)
 
 	// Calculate the size needed to serialize the entry.
 	size := serializeSizeVLQ(headerCode) +
@@ -756,13 +746,13 @@ func (dag *BlockDAG) createDAGState() error {
 	genesisCoinbaseTxIn := genesisCoinbase.TxIn[0]
 	genesisCoinbaseTxOut := genesisCoinbase.TxOut[0]
 	genesisCoinbaseOutpoint := *wire.NewOutPoint(&genesisCoinbaseTxIn.PreviousOutPoint.Hash, genesisCoinbaseTxIn.PreviousOutPoint.Index)
-	genesisCoinbaseUTXOEntry := newUTXOEntry(genesisCoinbaseTxOut, true, 0)
+	genesisCoinbaseUTXOEntry := NewUTXOEntry(genesisCoinbaseTxOut, true, 0)
 	node.diff = &utxoDiff{
 		toAdd:    utxoCollection{genesisCoinbaseOutpoint: genesisCoinbaseUTXOEntry},
 		toRemove: utxoCollection{},
 	}
 
-	dag.virtual.utxoSet.addTx(genesisCoinbase, 0)
+	dag.virtual.utxoSet.AddTx(genesisCoinbase, 0)
 	dag.virtual.SetTips(setFromSlice(node))
 
 	// Add the new node to the index which is used for faster lookups.
@@ -821,7 +811,7 @@ func (dag *BlockDAG) createDAGState() error {
 		}
 
 		// Store the current DAG tip hashes into the database.
-		err = dbPutDAGTipHashes(dbTx, dag.virtual.TipHashes())
+		err = dbPutDAGTipHashes(dbTx, dag.TipHashes())
 		if err != nil {
 			return err
 		}

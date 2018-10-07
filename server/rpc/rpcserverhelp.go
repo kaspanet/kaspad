@@ -82,8 +82,8 @@ var helpDescsEnUS = map[string]string{
 	// ScriptPubKeyResult help.
 	"scriptpubkeyresult-asm":       "Disassembly of the script",
 	"scriptpubkeyresult-hex":       "Hex-encoded bytes of the script",
-	"scriptpubkeyresult-reqSigs":   "The number of required signatures",
 	"scriptpubkeyresult-type":      "The type of the script (e.g. 'pubkeyhash')",
+	"scriptpubkeyresult-reqSigs":   "The number of required signatures",
 	"scriptpubkeyresult-addresses": "The bitcoin addresses associated with this script",
 
 	// Vout help.
@@ -104,8 +104,8 @@ var helpDescsEnUS = map[string]string{
 
 	// DecodeScriptResult help.
 	"decodescriptresult-asm":       "Disassembly of the script",
-	"decodescriptresult-reqSigs":   "The number of required signatures",
 	"decodescriptresult-type":      "The type of the script (e.g. 'pubkeyhash')",
+	"decodescriptresult-reqSigs":   "The number of required signatures",
 	"decodescriptresult-addresses": "The bitcoin addresses associated with this script",
 	"decodescriptresult-p2sh":      "The script hash for use in pay-to-script-hash transactions (only present if the provided redeem script is not already a pay-to-script-hash script)",
 

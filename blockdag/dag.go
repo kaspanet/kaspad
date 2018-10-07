@@ -76,6 +76,8 @@ type BlockDAG struct {
 	// fields in this struct below this point.
 	dagLock sync.RWMutex
 
+	utxoLock sync.RWMutex
+
 	// index and virtual are related to the memory block index.  They both
 	// have their own locks, however they are often also protected by the
 	// DAG lock to help prevent logic races when blocks are being processed.
@@ -306,7 +308,7 @@ type SequenceLock struct {
 }
 
 // CalcSequenceLock computes a relative lock-time SequenceLock for the passed
-// transaction using the passed UTXOView to obtain the past median time
+// transaction using the passed UTXOSet to obtain the past median time
 // for blocks in which the referenced inputs of the transactions were included
 // within. The generated SequenceLock lock can be used in conjunction with a
 // block height, and adjusted median block time to determine if all the inputs
@@ -314,18 +316,18 @@ type SequenceLock struct {
 // the candidate transaction to be included in a block.
 //
 // This function is safe for concurrent access.
-func (dag *BlockDAG) CalcSequenceLock(tx *util.Tx, utxoView *UTXOView, mempool bool) (*SequenceLock, error) {
+func (dag *BlockDAG) CalcSequenceLock(tx *util.Tx, utxoSet UTXOSet, mempool bool) (*SequenceLock, error) {
 	dag.dagLock.Lock()
 	defer dag.dagLock.Unlock()
 
-	return dag.calcSequenceLock(dag.virtual.SelectedTip(), tx, utxoView, mempool)
+	return dag.calcSequenceLock(dag.virtual.SelectedTip(), utxoSet, tx, mempool)
 }
 
 // calcSequenceLock computes the relative lock-times for the passed
 // transaction. See the exported version, CalcSequenceLock for further details.
 //
 // This function MUST be called with the chain state lock held (for writes).
-func (dag *BlockDAG) calcSequenceLock(node *blockNode, tx *util.Tx, utxoView *UTXOView, mempool bool) (*SequenceLock, error) {
+func (dag *BlockDAG) calcSequenceLock(node *blockNode, utxoSet UTXOSet, tx *util.Tx, mempool bool) (*SequenceLock, error) {
 	// A value of -1 for each relative lock type represents a relative time
 	// lock value that will allow a transaction to be included in a block
 	// at any given height or time.
@@ -344,8 +346,8 @@ func (dag *BlockDAG) calcSequenceLock(node *blockNode, tx *util.Tx, utxoView *UT
 
 	mTx := tx.MsgTx()
 	for txInIndex, txIn := range mTx.TxIn {
-		utxo := utxoView.LookupEntry(txIn.PreviousOutPoint)
-		if utxo == nil {
+		entry, ok := utxoSet.Get(txIn.PreviousOutPoint)
+		if !ok {
 			str := fmt.Sprintf("output %v referenced from "+
 				"transaction %s:%d either does not exist or "+
 				"has already been spent", txIn.PreviousOutPoint,
@@ -356,7 +358,7 @@ func (dag *BlockDAG) calcSequenceLock(node *blockNode, tx *util.Tx, utxoView *UT
 		// If the input height is set to the mempool height, then we
 		// assume the transaction makes it into the next block when
 		// evaluating its sequence blocks.
-		inputHeight := utxo.BlockHeight()
+		inputHeight := entry.BlockHeight()
 		if inputHeight == 0x7fffffff {
 			inputHeight = nextHeight
 		}
@@ -514,7 +516,7 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block) error {
 	// Atomically insert info into the database.
 	err = dag.db.Update(func(dbTx database.Tx) error {
 		// Update best block state.
-		err := dbPutDAGTipHashes(dbTx, dag.virtual.TipHashes())
+		err := dbPutDAGTipHashes(dbTx, dag.TipHashes())
 		if err != nil {
 			return err
 		}
@@ -553,7 +555,7 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block) error {
 	// The caller would typically want to react with actions such as
 	// updating wallets.
 	dag.dagLock.Unlock()
-	dag.sendNotification(NTBlockConnected, dag.virtual.TipHashes())
+	dag.sendNotification(NTBlockConnected, block)
 	dag.dagLock.Lock()
 
 	return nil
@@ -605,9 +607,9 @@ func (dag *BlockDAG) applyUTXOChanges(node *blockNode, block *util.Block) (*utxo
 	}
 
 	// It is now safe to meld the UTXO set to base.
-	diffSet := newVirtualUTXO.(*diffUTXOSet)
-	utxoDiff := diffSet.utxoDiff
-	diffSet.meldToBase()
+	diffSet := newVirtualUTXO.(*DiffUTXOSet)
+	utxoDiff := diffSet.UTXODiff
+	dag.updateVirtualUTXO(diffSet)
 
 	// It is now safe to commit all the provisionalNodes
 	for _, provisional := range provisionalSet {
@@ -624,6 +626,12 @@ func (dag *BlockDAG) applyUTXOChanges(node *blockNode, block *util.Block) (*utxo
 	dag.virtual = virtualClone
 
 	return utxoDiff, nil
+}
+
+func (dag *BlockDAG) updateVirtualUTXO(newVirtualUTXODiffSet *DiffUTXOSet) {
+	dag.utxoLock.Lock()
+	defer dag.utxoLock.Unlock()
+	newVirtualUTXODiffSet.meldToBase()
 }
 
 // provisionalNodeSet is a temporary collection of provisionalNodes. It is used exclusively
@@ -695,26 +703,26 @@ func (pns provisionalNodeSet) newProvisionalNode(node *blockNode, withRelatives 
 }
 
 // verifyAndBuildUTXO verifies all transactions in the given block (in provisionalNode format) and builds its UTXO
-func (p *provisionalNode) verifyAndBuildUTXO(virtual *VirtualBlock, db database.DB) (utxoSet, error) {
+func (p *provisionalNode) verifyAndBuildUTXO(virtual *VirtualBlock, db database.DB) (UTXOSet, error) {
 	pastUTXO, err := p.pastUTXO(virtual, db)
 	if err != nil {
 		return nil, err
 	}
 
-	diff := newUTXODiff()
+	diff := NewUTXODiff()
 
 	for _, tx := range p.transactions {
 		txDiff, err := pastUTXO.diffFromTx(tx.MsgTx(), p.original)
 		if err != nil {
 			return nil, err
 		}
-		diff, err = diff.withDiff(txDiff)
+		diff, err = diff.WithDiff(txDiff)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	utxo, err := pastUTXO.withDiff(diff)
+	utxo, err := pastUTXO.WithDiff(diff)
 	if err != nil {
 		return nil, err
 	}
@@ -722,7 +730,7 @@ func (p *provisionalNode) verifyAndBuildUTXO(virtual *VirtualBlock, db database.
 }
 
 // pastUTXO returns the UTXO of a given block's (in provisionalNode format) past
-func (p *provisionalNode) pastUTXO(virtual *VirtualBlock, db database.DB) (utxoSet, error) {
+func (p *provisionalNode) pastUTXO(virtual *VirtualBlock, db database.DB) (UTXOSet, error) {
 	pastUTXO, err := p.selectedParent.restoreUTXO(virtual)
 	if err != nil {
 		return nil, err
@@ -765,14 +773,14 @@ func (p *provisionalNode) pastUTXO(virtual *VirtualBlock, db database.DB) (utxoS
 	// Add all transactions to the pastUTXO
 	// Purposefully ignore failures - these are just unaccepted transactions
 	for _, tx := range blueBlockTransactions {
-		_ = pastUTXO.addTx(tx.MsgTx(), p.original.height)
+		_ = pastUTXO.AddTx(tx.MsgTx(), p.original.height)
 	}
 
 	return pastUTXO, nil
 }
 
 // restoreUTXO restores the UTXO of a given block (in provisionalNode format) from its diff
-func (p *provisionalNode) restoreUTXO(virtual *VirtualBlock) (utxoSet, error) {
+func (p *provisionalNode) restoreUTXO(virtual *VirtualBlock) (UTXOSet, error) {
 	stack := []*provisionalNode{p}
 	current := p
 
@@ -781,11 +789,11 @@ func (p *provisionalNode) restoreUTXO(virtual *VirtualBlock) (utxoSet, error) {
 		stack = append(stack, current)
 	}
 
-	utxo := utxoSet(virtual.utxoSet)
+	utxo := UTXOSet(virtual.utxoSet)
 
 	var err error
 	for i := len(stack) - 1; i >= 0; i-- {
-		utxo, err = utxo.withDiff(stack[i].diff)
+		utxo, err = utxo.WithDiff(stack[i].diff)
 		if err != nil {
 			return nil, err
 		}
@@ -796,7 +804,7 @@ func (p *provisionalNode) restoreUTXO(virtual *VirtualBlock) (utxoSet, error) {
 
 // updateParents adds this block (in provisionalNode format) to the children sets of its parents
 // and updates the diff of any parent whose DiffChild is this block
-func (p *provisionalNode) updateParents(virtual *VirtualBlock, newBlockUTXO utxoSet) error {
+func (p *provisionalNode) updateParents(virtual *VirtualBlock, newBlockUTXO UTXOSet) error {
 	virtualDiffFromNewBlock, err := virtual.utxoSet.diffFrom(newBlockUTXO)
 	if err != nil {
 		return err
@@ -824,7 +832,7 @@ func (p *provisionalNode) updateParents(virtual *VirtualBlock, newBlockUTXO utxo
 }
 
 // updateTipsUTXO builds and applies new diff UTXOs for all the DAG's tips (in provisionalNode format)
-func updateTipsUTXO(tipProvisionals []*provisionalNode, virtual *VirtualBlock, virtualUTXO utxoSet) error {
+func updateTipsUTXO(tipProvisionals []*provisionalNode, virtual *VirtualBlock, virtualUTXO UTXOSet) error {
 	for _, tipProvisional := range tipProvisionals {
 		tipUTXO, err := tipProvisional.restoreUTXO(virtual)
 		if err != nil {
@@ -903,6 +911,11 @@ func (dag *BlockDAG) IsCurrent() bool {
 	return dag.isCurrent()
 }
 
+// UTXOSet returns the DAG's UTXO set
+func (dag *BlockDAG) UTXOSet() *fullUTXOSet {
+	return dag.VirtualBlock().utxoSet
+}
+
 // VirtualBlock returns the DAG's virtual block in the current point in time.
 // The returned instance must be treated as immutable since it is shared by all
 // callers.
@@ -910,6 +923,22 @@ func (dag *BlockDAG) IsCurrent() bool {
 // This function is safe for concurrent access.
 func (dag *BlockDAG) VirtualBlock() *VirtualBlock {
 	return dag.virtual
+}
+
+// Height returns the height of the highest tip in the DAG
+func (dag *BlockDAG) Height() int32 {
+	return dag.virtual.tips().maxHeight()
+}
+
+// TipHashes returns the hashes of the DAG's tips
+func (dag *BlockDAG) TipHashes() []daghash.Hash {
+	return dag.virtual.tips().hashes()
+}
+
+// HighestTipHash returns the hash of the highest tip.
+// This function is a placeholder for places that aren't DAG-compatible, and it's needed to be removed in the future
+func (dag *BlockDAG) HighestTipHash() daghash.Hash {
+	return dag.virtual.tips().highest().hash
 }
 
 // HeaderByHash returns the block header identified by the given hash or an
@@ -1243,6 +1272,16 @@ func (dag *BlockDAG) locateHeaders(locator BlockLocator, hashStop *daghash.Hash,
 		node = node.diffChild
 	}
 	return headers
+}
+
+// UTXORLock locks the DAG's UTXO set for reading.
+func (dag *BlockDAG) UTXORLock() {
+	dag.dagLock.RLock()
+}
+
+// UTXORUnlock unlocks the DAG's UTXO set for reading.
+func (dag *BlockDAG) UTXORUnlock() {
+	dag.dagLock.RUnlock()
 }
 
 // LocateHeaders returns the headers of the blocks after the first known block

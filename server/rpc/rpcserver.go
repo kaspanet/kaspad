@@ -236,7 +236,6 @@ var rpcUnimplemented = map[string]struct{}{
 	"getchaintips":     {},
 	"getmempoolentry":  {},
 	"getnetworkinfo":   {},
-	"getwork":          {},
 	"invalidateblock":  {},
 	"preciousblock":    {},
 	"reconsiderblock":  {},
@@ -558,7 +557,7 @@ func handleCreateRawTransaction(s *Server, cmd interface{}, closeChan <-chan str
 		}
 
 		// Decode the provided address.
-		addr, err := util.DecodeAddress(encodedAddr, params)
+		addr, err := util.DecodeAddress(encodedAddr, params.Prefix)
 		if err != nil {
 			return nil, &btcjson.RPCError{
 				Code:    btcjson.ErrRPCInvalidAddressOrKey,
@@ -578,7 +577,7 @@ func handleCreateRawTransaction(s *Server, cmd interface{}, closeChan <-chan str
 				Message: "Invalid address or key",
 			}
 		}
-		if !addr.IsForNet(params) {
+		if !addr.IsForPrefix(params.Prefix) {
 			return nil, &btcjson.RPCError{
 				Code: btcjson.ErrRPCInvalidAddressOrKey,
 				Message: "Invalid address: " + encodedAddr +
@@ -819,7 +818,7 @@ func handleDecodeScript(s *Server, cmd interface{}, closeChan <-chan struct{}) (
 	}
 
 	// Convert the script itself to a pay-to-script-hash address.
-	p2sh, err := util.NewAddressScriptHash(script, s.cfg.ChainParams)
+	p2sh, err := util.NewAddressScriptHash(script, s.cfg.ChainParams.Prefix)
 	if err != nil {
 		context := "Failed to convert script to pay-to-script-hash"
 		return nil, internalRPCError(err.Error(), context)
@@ -1009,18 +1008,16 @@ func handleGetBestBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (
 	// All other "get block" commands give either the height, the
 	// hash, or both but require the block SHA.  This gets both for
 	// the best block.
-	virtualBlock := s.cfg.DAG.VirtualBlock()
 	result := &btcjson.GetBestBlockResult{
-		Hash:   virtualBlock.SelectedTipHash().String(),
-		Height: virtualBlock.SelectedTipHeight(),
+		Hash:   s.cfg.DAG.HighestTipHash().String(),
+		Height: s.cfg.DAG.Height(), //TODO: (Ori) This is probably wrong. Done only for compilation
 	}
 	return result, nil
 }
 
 // handleGetBestBlockHash implements the getbestblockhash command.
 func handleGetBestBlockHash(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	virtualBlock := s.cfg.DAG.VirtualBlock()
-	return virtualBlock.SelectedTipHash().String(), nil
+	return s.cfg.DAG.HighestTipHash().String(), nil
 }
 
 // getDifficultyRatio returns the proof-of-work difficulty as a multiple of the
@@ -1087,11 +1084,10 @@ func handleGetBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 		return nil, internalRPCError(err.Error(), context)
 	}
 	blk.SetHeight(blockHeight)
-	virtualBlock := s.cfg.DAG.VirtualBlock()
 
 	// Get the hashes for the next blocks unless there are none.
 	var nextHashStrings []string
-	if blockHeight < virtualBlock.SelectedTipHeight() {
+	if blockHeight < s.cfg.DAG.Height() { //TODO: (Ori) This is probably wrong. Done only for compilation
 		childHashes, err := s.cfg.DAG.ChildHashesByHash(hash)
 		if err != nil {
 			context := "No next block"
@@ -1110,7 +1106,7 @@ func handleGetBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 		PreviousHashes: daghash.Strings(blockHeader.PrevBlocks),
 		Nonce:          blockHeader.Nonce,
 		Time:           blockHeader.Timestamp.Unix(),
-		Confirmations:  uint64(1 + virtualBlock.SelectedTipHeight() - blockHeight),
+		Confirmations:  uint64(1 + s.cfg.DAG.Height() - blockHeight), //TODO: (Ori) This is probably wrong. Done only for compilation
 		Height:         int64(blockHeight),
 		Size:           int32(len(blkBytes)),
 		Bits:           strconv.FormatInt(int64(blockHeader.Bits), 16),
@@ -1132,7 +1128,7 @@ func handleGetBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 		for i, tx := range txns {
 			rawTxn, err := createTxRawResult(params, tx.MsgTx(),
 				tx.Hash().String(), blockHeader, hash.String(),
-				blockHeight, virtualBlock.SelectedTipHeight())
+				blockHeight, s.cfg.DAG.Height()) //TODO: (Ori) This is probably wrong. Done only for compilation
 			if err != nil {
 				return nil, err
 			}
@@ -1173,9 +1169,9 @@ func handleGetBlockDAGInfo(s *Server, cmd interface{}, closeChan <-chan struct{}
 
 	dagInfo := &btcjson.GetBlockDAGInfoResult{
 		DAG:           params.Name,
-		Blocks:        virtualBlock.SelectedTipHeight(),
-		Headers:       virtualBlock.SelectedTipHeight(),
-		TipHashes:     daghash.Strings(virtualBlock.TipHashes()),
+		Blocks:        dag.Height(), //TODO: (Ori) This is wrong. Done only for compilation
+		Headers:       dag.Height(), //TODO: (Ori) This is wrong. Done only for compilation
+		TipHashes:     daghash.Strings(dag.TipHashes()),
 		Difficulty:    getDifficultyRatio(virtualBlock.SelectedTip().Header().Bits, params),
 		MedianTime:    virtualBlock.SelectedTip().CalcPastMedianTime().Unix(),
 		Pruned:        false,
@@ -1235,8 +1231,7 @@ func handleGetBlockDAGInfo(s *Server, cmd interface{}, closeChan <-chan struct{}
 
 // handleGetBlockCount implements the getblockcount command.
 func handleGetBlockCount(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	virtualBlock := s.cfg.DAG.VirtualBlock()
-	return int64(virtualBlock.SelectedTipHeight()), nil
+	return int64(s.cfg.DAG.Height()), nil //TODO: (Ori) This is wrong. Done only for compilation
 }
 
 // handleGetBlockHash implements the getblockhash command.
@@ -1283,11 +1278,10 @@ func handleGetBlockHeader(s *Server, cmd interface{}, closeChan <-chan struct{})
 		context := "Failed to obtain block height"
 		return nil, internalRPCError(err.Error(), context)
 	}
-	virtualBlock := s.cfg.DAG.VirtualBlock()
 
 	// Get the hashes for the next blocks unless there are none.
 	var nextHashStrings []string
-	if blockHeight < virtualBlock.SelectedTipHeight() {
+	if blockHeight < s.cfg.DAG.Height() { //TODO: (Ori) This is probably wrong. Done only for compilation
 		childHashes, err := s.cfg.DAG.ChildHashesByHash(hash)
 		if err != nil {
 			context := "No next block"
@@ -1299,7 +1293,7 @@ func handleGetBlockHeader(s *Server, cmd interface{}, closeChan <-chan struct{})
 	params := s.cfg.ChainParams
 	blockHeaderReply := btcjson.GetBlockHeaderVerboseResult{
 		Hash:           c.Hash,
-		Confirmations:  uint64(1 + virtualBlock.SelectedTipHeight() - blockHeight),
+		Confirmations:  uint64(1 + s.cfg.DAG.Height() - blockHeight), //TODO: (Ori) This is probably wrong. Done only for compilation
 		Height:         blockHeight,
 		Version:        blockHeader.Version,
 		VersionHex:     fmt.Sprintf("%08x", blockHeader.Version),
@@ -1494,7 +1488,7 @@ func (state *gbtWorkState) updateBlockTemplate(s *Server, useCoinbaseValue bool)
 	var msgBlock *wire.MsgBlock
 	var targetDifficulty string
 	virtualBlock := s.cfg.DAG.VirtualBlock()
-	tipHashes := virtualBlock.TipHashes()
+	tipHashes := s.cfg.DAG.TipHashes()
 	template := state.template
 	if template == nil || state.tipHashes == nil ||
 		!daghash.AreEqual(state.tipHashes, tipHashes) ||
@@ -1889,7 +1883,7 @@ func handleGetBlockTemplateRequest(s *Server, request *btcjson.TemplateRequest, 
 	}
 
 	// No point in generating or accepting work before the chain is synced.
-	currentHeight := s.cfg.DAG.VirtualBlock().SelectedTipHeight()
+	currentHeight := s.cfg.DAG.Height()
 	if currentHeight != 0 && !s.cfg.SyncMgr.IsCurrent() {
 		return nil, &btcjson.RPCError{
 			Code:    btcjson.ErrRPCClientInInitialDownload,
@@ -2054,7 +2048,7 @@ func handleGetBlockTemplateProposal(s *Server, request *btcjson.TemplateRequest)
 	block := util.NewBlock(&msgBlock)
 
 	// Ensure the block is building from the expected previous blocks.
-	expectedPrevHashes := s.cfg.DAG.VirtualBlock().TipHashes()
+	expectedPrevHashes := s.cfg.DAG.TipHashes()
 	prevHashes := block.MsgBlock().Header.PrevBlocks
 	if !daghash.AreEqual(expectedPrevHashes, prevHashes) {
 		return "bad-prevblk", nil
@@ -2238,7 +2232,7 @@ func handleGetInfo(s *Server, cmd interface{}, closeChan <-chan struct{}) (inter
 	ret := &btcjson.InfoDAGResult{
 		Version:         int32(1000000*version.AppMajor + 10000*version.AppMinor + 100*version.AppPatch),
 		ProtocolVersion: int32(maxProtocolVersion),
-		Blocks:          virtualBlock.SelectedTipHeight(),
+		Blocks:          s.cfg.DAG.Height(), //TODO: (Ori) This is wrong. Done only for compilation
 		TimeOffset:      int64(s.cfg.TimeSource.Offset().Seconds()),
 		Connections:     s.cfg.ConnMgr.ConnectedCount(),
 		Proxy:           config.MainConfig().Proxy,
@@ -2287,8 +2281,8 @@ func handleGetMiningInfo(s *Server, cmd interface{}, closeChan <-chan struct{}) 
 	}
 
 	virtualBlock := s.cfg.DAG.VirtualBlock()
-	selectedTipHash := virtualBlock.SelectedTipHash()
-	selectedBlock, err := s.cfg.DAG.BlockByHash(&selectedTipHash)
+	highestTipHash := s.cfg.DAG.HighestTipHash()
+	selectedBlock, err := s.cfg.DAG.BlockByHash(&highestTipHash)
 	if err != nil {
 		return nil, &btcjson.RPCError{
 			Code:    btcjson.ErrRPCInternal.Code,
@@ -2297,7 +2291,7 @@ func handleGetMiningInfo(s *Server, cmd interface{}, closeChan <-chan struct{}) 
 	}
 
 	result := btcjson.GetMiningInfoResult{
-		Blocks:           int64(virtualBlock.SelectedTipHeight()),
+		Blocks:           int64(s.cfg.DAG.Height()), //TODO: (Ori) This is wrong. Done only for compilation
 		CurrentBlockSize: uint64(selectedBlock.MsgBlock().SerializeSize()),
 		CurrentBlockTx:   uint64(len(selectedBlock.MsgBlock().Transactions)),
 		Difficulty:       getDifficultyRatio(virtualBlock.SelectedTip().Header().Bits, s.cfg.ChainParams),
@@ -2496,7 +2490,7 @@ func handleGetRawTransaction(s *Server, cmd interface{}, closeChan <-chan struct
 
 		blkHeader = &header
 		blkHashStr = blkHash.String()
-		dagHeight = s.cfg.DAG.VirtualBlock().SelectedTipHeight()
+		dagHeight = s.cfg.DAG.Height()
 	}
 
 	rawTxn, err := createTxRawResult(s.cfg.ChainParams, mtx, txHash.String(),
@@ -2552,8 +2546,7 @@ func handleGetTxOut(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 			return nil, internalRPCError(errStr, "")
 		}
 
-		virtualBlock := s.cfg.DAG.VirtualBlock()
-		bestBlockHash = virtualBlock.SelectedTipHash().String()
+		bestBlockHash = s.cfg.DAG.HighestTipHash().String()
 		confirmations = 0
 		value = txOut.Value
 		pkScript = txOut.PkScript
@@ -2570,13 +2563,12 @@ func handleGetTxOut(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 		// transaction already in the main chain.  Mined transactions
 		// that are spent by a mempool transaction are not affected by
 		// this.
-		if entry == nil || entry.IsSpent() {
+		if entry == nil {
 			return nil, nil
 		}
 
-		virtualBlock := s.cfg.DAG.VirtualBlock()
-		bestBlockHash = virtualBlock.SelectedTipHash().String()
-		confirmations = 1 + virtualBlock.SelectedTipHeight() - entry.BlockHeight()
+		bestBlockHash = s.cfg.DAG.HighestTipHash().String()
+		confirmations = 1 + s.cfg.DAG.Height() - entry.BlockHeight() //TODO: (Ori) This is probably wrong. Done only for compilation
 		value = entry.Amount()
 		pkScript = entry.PkScript()
 		isCoinbase = entry.IsCoinBase()
@@ -2898,7 +2890,7 @@ func handleSearchRawTransactions(s *Server, cmd interface{}, closeChan <-chan st
 	c := cmd.(*btcjson.SearchRawTransactionsCmd)
 	vinExtra := false
 	if c.VinExtra != nil {
-		vinExtra = *c.VinExtra != 0
+		vinExtra = *c.VinExtra
 	}
 
 	// Including the extra previous output information requires the
@@ -2914,7 +2906,7 @@ func handleSearchRawTransactions(s *Server, cmd interface{}, closeChan <-chan st
 
 	// Attempt to decode the supplied address.
 	params := s.cfg.ChainParams
-	addr, err := util.DecodeAddress(c.Address, params)
+	addr, err := util.DecodeAddress(c.Address, params.Prefix)
 	if err != nil {
 		return nil, &btcjson.RPCError{
 			Code:    btcjson.ErrRPCInvalidAddressOrKey,
@@ -3055,7 +3047,7 @@ func handleSearchRawTransactions(s *Server, cmd interface{}, closeChan <-chan st
 	}
 
 	// When not in verbose mode, simply return a list of serialized txns.
-	if c.Verbose != nil && *c.Verbose == 0 {
+	if c.Verbose != nil && !*c.Verbose {
 		return hexTxns, nil
 	}
 
@@ -3069,7 +3061,6 @@ func handleSearchRawTransactions(s *Server, cmd interface{}, closeChan <-chan st
 	}
 
 	// The verbose flag is set, so generate the JSON object and return it.
-	virtualBlock := s.cfg.DAG.VirtualBlock()
 	srtList := make([]btcjson.SearchRawTransactionsResult, len(addressTxns))
 	for i := range addressTxns {
 		// The deserialized transaction is needed, so deserialize the
@@ -3139,7 +3130,7 @@ func handleSearchRawTransactions(s *Server, cmd interface{}, closeChan <-chan st
 			result.Time = uint64(blkHeader.Timestamp.Unix())
 			result.Blocktime = uint64(blkHeader.Timestamp.Unix())
 			result.BlockHash = blkHashStr
-			result.Confirmations = uint64(1 + virtualBlock.SelectedTipHeight() - blkHeight)
+			result.Confirmations = uint64(1 + s.cfg.DAG.Height() - blkHeight) //TODO: (Ori) This is probably wrong. Done only for compilation
 		}
 	}
 
@@ -3198,7 +3189,10 @@ func handleSendRawTransaction(s *Server, cmd interface{}, closeChan <-chan struc
 	// Also, since an error is being returned to the caller, ensure the
 	// transaction is removed from the memory pool.
 	if len(acceptedTxs) == 0 || !acceptedTxs[0].Tx.Hash().IsEqual(tx.Hash()) {
-		s.cfg.TxMemPool.RemoveTransaction(tx, true)
+		err := s.cfg.TxMemPool.RemoveTransaction(tx, true, true)
+		if err != nil {
+			return nil, err
+		}
 
 		errStr := fmt.Sprintf("transaction %v is not in accepted list",
 			tx.Hash())
@@ -3311,7 +3305,7 @@ func handleValidateAddress(s *Server, cmd interface{}, closeChan <-chan struct{}
 	c := cmd.(*btcjson.ValidateAddressCmd)
 
 	result := btcjson.ValidateAddressResult{}
-	addr, err := util.DecodeAddress(c.Address, s.cfg.ChainParams)
+	addr, err := util.DecodeAddress(c.Address, s.cfg.ChainParams.Prefix)
 	if err != nil {
 		// Return the default value (false) for IsValid.
 		return result, nil
@@ -3324,16 +3318,15 @@ func handleValidateAddress(s *Server, cmd interface{}, closeChan <-chan struct{}
 }
 
 func verifyDAG(s *Server, level, depth int32) error {
-	virtualBlock := s.cfg.DAG.VirtualBlock()
-	finishHeight := virtualBlock.SelectedTipHeight() - depth
+	finishHeight := s.cfg.DAG.Height() - depth //TODO: (Ori) This is probably wrong. Done only for compilation
 	if finishHeight < 0 {
 		finishHeight = 0
 	}
 	log.Infof("Verifying chain for %d blocks at level %d",
-		virtualBlock.SelectedTipHeight()-finishHeight, level)
+		s.cfg.DAG.Height()-finishHeight, level) //TODO: (Ori) This is probably wrong. Done only for compilation
 
-	currentHash := virtualBlock.SelectedTipHash()
-	for height := virtualBlock.SelectedTipHeight(); height > finishHeight; {
+	currentHash := s.cfg.DAG.HighestTipHash()
+	for height := s.cfg.DAG.Height(); height > finishHeight; { //TODO: (Ori) This is probably wrong. Done only for compilation
 		// Level 0 just looks up the block.
 		block, err := s.cfg.DAG.BlockByHash(&currentHash)
 		if err != nil {
@@ -3383,7 +3376,7 @@ func handleVerifyMessage(s *Server, cmd interface{}, closeChan <-chan struct{}) 
 
 	// Decode the provided address.
 	params := s.cfg.ChainParams
-	addr, err := util.DecodeAddress(c.Address, params)
+	addr, err := util.DecodeAddress(c.Address, params.Prefix)
 	if err != nil {
 		return nil, &btcjson.RPCError{
 			Code:    btcjson.ErrRPCInvalidAddressOrKey,
@@ -3429,7 +3422,7 @@ func handleVerifyMessage(s *Server, cmd interface{}, closeChan <-chan struct{}) 
 	} else {
 		serializedPK = pk.SerializeUncompressed()
 	}
-	address, err := util.NewAddressPubKey(serializedPK, params)
+	address, err := util.NewAddressPubKey(serializedPK, params.Prefix)
 	if err != nil {
 		// Again mirror Bitcoin Core behavior, which treats error in public key
 		// reconstruction as invalid signature.
@@ -4184,6 +4177,7 @@ func NewRPCServer(
 		AddrIndex:    p2pServer.AddrIndex,
 		CfIndex:      p2pServer.CfIndex,
 		FeeEstimator: p2pServer.FeeEstimator,
+		DAG:          p2pServer.DAG,
 	}
 	rpc := Server{
 		cfg:                    *cfg,
@@ -4191,7 +4185,7 @@ func NewRPCServer(
 		gbtWorkState:           newGbtWorkState(cfg.TimeSource),
 		helpCacher:             newHelpCacher(),
 		requestProcessShutdown: make(chan struct{}),
-		quit: make(chan int),
+		quit:                   make(chan int),
 	}
 	if config.MainConfig().RPCUser != "" && config.MainConfig().RPCPass != "" {
 		login := config.MainConfig().RPCUser + ":" + config.MainConfig().RPCPass

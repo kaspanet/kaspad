@@ -13,8 +13,8 @@ import (
 	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/txscript"
-	"github.com/daglabs/btcd/wire"
 	"github.com/daglabs/btcd/util"
+	"github.com/daglabs/btcd/wire"
 )
 
 const (
@@ -212,21 +212,6 @@ type BlockTemplate struct {
 	ValidPayAddress bool
 }
 
-// mergeUtxoView adds all of the entries in viewB to viewA.  The result is that
-// viewA will contain all of its original entries plus all of the entries
-// in viewB.  It will replace any entries in viewB which also exist in viewA
-// if the entry in viewA is spent.
-func mergeUtxoView(viewA *blockdag.UTXOView, viewB *blockdag.UTXOView) {
-	viewAEntries := viewA.Entries()
-	for outpoint, entryB := range viewB.Entries() {
-		if entryA, exists := viewAEntries[outpoint]; !exists ||
-			entryA == nil || entryA.IsSpent() {
-
-			viewAEntries[outpoint] = entryB
-		}
-	}
-}
-
 // standardCoinbaseScript returns a standard script suitable for use as the
 // signature script of the coinbase transaction of a new block.  In particular,
 // it starts with the block height that is required by version 2 blocks and adds
@@ -277,21 +262,6 @@ func createCoinbaseTx(params *dagconfig.Params, coinbaseScript []byte, nextBlock
 		PkScript: pkScript,
 	})
 	return util.NewTx(tx), nil
-}
-
-// spendTransaction updates the passed view by marking the inputs to the passed
-// transaction as spent.  It also adds all outputs in the passed transaction
-// which are not provably unspendable as available unspent transaction outputs.
-func spendTransaction(utxoView *blockdag.UTXOView, tx *util.Tx, height int32) error {
-	for _, txIn := range tx.MsgTx().TxIn {
-		entry := utxoView.LookupEntry(txIn.PreviousOutPoint)
-		if entry != nil {
-			entry.Spend()
-		}
-	}
-
-	utxoView.AddTxOuts(tx, height)
-	return nil
 }
 
 // logSkippedDeps logs any dependencies which are also skipped as a result of
@@ -433,7 +403,7 @@ func NewBlkTmplGenerator(policy *Policy, params *dagconfig.Params,
 func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTemplate, error) {
 	// Extend the most recently known best block.
 	virtualBlock := g.dag.VirtualBlock()
-	nextBlockHeight := virtualBlock.SelectedTipHeight() + 1
+	nextBlockHeight := g.dag.Height() + 1
 
 	// Create a standard coinbase transaction paying to the provided
 	// address.  NOTE: The coinbase value will be updated to include the
@@ -471,7 +441,7 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 	// avoided.
 	blockTxns := make([]*util.Tx, 0, len(sourceTxns))
 	blockTxns = append(blockTxns, coinbaseTx)
-	blockUtxos := blockdag.NewUTXOView()
+	blockUtxos := blockdag.NewDiffUTXOSet(g.dag.UTXOSet(), blockdag.NewUTXODiff())
 
 	// dependers is used to track transactions which depend on another
 	// transaction in the source pool.  This, in conjunction with the
@@ -510,26 +480,14 @@ mempoolLoop:
 			continue
 		}
 
-		// Fetch all of the utxos referenced by the this transaction.
-		// NOTE: This intentionally does not fetch inputs from the
-		// mempool since a transaction which depends on other
-		// transactions in the mempool must come after those
-		// dependencies in the final generated block.
-		utxos, err := g.dag.FetchUTXOView(tx)
-		if err != nil {
-			log.Warnf("Unable to fetch utxo view for tx %s: %v",
-				tx.Hash(), err)
-			continue
-		}
-
 		// Setup dependencies for any transactions which reference
 		// other transactions in the mempool so they can be properly
 		// ordered below.
 		prioItem := &txPrioItem{tx: tx}
 		for _, txIn := range tx.MsgTx().TxIn {
 			originHash := &txIn.PreviousOutPoint.Hash
-			entry := utxos.LookupEntry(txIn.PreviousOutPoint)
-			if entry == nil || entry.IsSpent() {
+			_, ok := blockUtxos.Get(txIn.PreviousOutPoint)
+			if !ok {
 				if !g.txSource.HaveTransaction(originHash) {
 					log.Tracef("Skipping tx %s because it "+
 						"references unspent output %s "+
@@ -562,7 +520,7 @@ mempoolLoop:
 		// Calculate the final transaction priority using the input
 		// value age sum as well as the adjusted transaction size.  The
 		// formula is: sum(inputValue * inputAge) / adjustedTxSize
-		prioItem.priority = CalcPriority(tx.MsgTx(), utxos,
+		prioItem.priority = CalcPriority(tx.MsgTx(), blockUtxos,
 			nextBlockHeight)
 
 		// Calculate the fee in Satoshi/kB.
@@ -574,11 +532,6 @@ mempoolLoop:
 		if prioItem.dependsOn == nil {
 			heap.Push(priorityQueue, prioItem)
 		}
-
-		// Merge the referenced outputs from the input transactions to
-		// this transaction into the block utxo view.  This allows the
-		// code below to avoid a second lookup.
-		mergeUtxoView(blockUtxos, utxos)
 	}
 
 	log.Tracef("Priority queue len %d, dependers len %d",
@@ -707,7 +660,7 @@ mempoolLoop:
 		// an entry for it to ensure any transactions which reference
 		// this one have it available as an input and can ensure they
 		// aren't double spending.
-		spendTransaction(blockUtxos, tx, nextBlockHeight)
+		blockUtxos.AddTx(tx.MsgTx(), nextBlockHeight)
 
 		// Add the transaction to the block, increment counters, and
 		// save the fees and signature operation counts to the block
@@ -763,11 +716,12 @@ mempoolLoop:
 	merkles := blockdag.BuildMerkleTreeStore(blockTxns)
 	var msgBlock wire.MsgBlock
 	msgBlock.Header = wire.BlockHeader{
-		Version:    nextBlockVersion,
-		PrevBlocks: virtualBlock.TipHashes(),
-		MerkleRoot: *merkles[len(merkles)-1],
-		Timestamp:  ts,
-		Bits:       reqDifficulty,
+		Version:       nextBlockVersion,
+		NumPrevBlocks: byte(len(g.dag.TipHashes())),
+		PrevBlocks:    g.dag.TipHashes(),
+		MerkleRoot:    *merkles[len(merkles)-1],
+		Timestamp:     ts,
+		Bits:          reqDifficulty,
 	}
 	for _, tx := range blockTxns {
 		if err := msgBlock.AddTransaction(tx.MsgTx()); err != nil {
@@ -859,6 +813,16 @@ func (g *BlkTmplGenerator) UpdateExtraNonce(msgBlock *wire.MsgBlock, blockHeight
 // This function is safe for concurrent access.
 func (g *BlkTmplGenerator) VirtualBlock() *blockdag.VirtualBlock {
 	return g.dag.VirtualBlock()
+}
+
+// DAGHeight returns the DAG's height
+func (g *BlkTmplGenerator) DAGHeight() int32 {
+	return g.dag.Height()
+}
+
+// TipHashes returns the hashes of the DAG's tips
+func (g *BlkTmplGenerator) TipHashes() []daghash.Hash {
+	return g.dag.TipHashes()
 }
 
 // TxSource returns the associated transaction source.

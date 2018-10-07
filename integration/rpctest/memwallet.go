@@ -118,7 +118,7 @@ func newMemWallet(net *dagconfig.Params, harnessID uint32) (*memWallet, error) {
 	copy(harnessHDSeed[:], hdSeed[:])
 	binary.BigEndian.PutUint32(harnessHDSeed[:daghash.HashSize], harnessID)
 
-	hdRoot, err := hdkeychain.NewMaster(harnessHDSeed[:], net)
+	hdRoot, err := hdkeychain.NewMaster(harnessHDSeed[:], net.HDKeyIDPair.PrivateKeyID)
 	if err != nil {
 		return nil, nil
 	}
@@ -562,7 +562,7 @@ func (m *memWallet) ConfirmedBalance() util.Amount {
 // keyToAddr maps the passed private to corresponding p2pkh address.
 func keyToAddr(key *btcec.PrivateKey, net *dagconfig.Params) (util.Address, error) {
 	serializedKey := key.PubKey().SerializeCompressed()
-	pubKeyAddr, err := util.NewAddressPubKey(serializedKey, net)
+	pubKeyAddr, err := util.NewAddressPubKey(serializedKey, net.Prefix)
 	if err != nil {
 		return nil, err
 	}

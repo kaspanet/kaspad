@@ -7,6 +7,7 @@ package ffldb
 import (
 	"bytes"
 	"encoding/binary"
+	"encoding/hex"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -639,7 +640,7 @@ func (b *bucket) CreateBucket(key []byte) (database.Bucket, error) {
 	// Ensure bucket does not already exist.
 	bidxKey := bucketIndexKey(b.id, key)
 	if b.tx.hasKey(bidxKey) {
-		str := "bucket already exists"
+		str := fmt.Sprintf("bucket %v already exists", hex.EncodeToString(bidxKey))
 		return nil, makeDbErr(database.ErrBucketExists, str, nil)
 	}
 

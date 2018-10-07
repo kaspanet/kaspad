@@ -26,7 +26,6 @@
   revision = "4720035b7bfd2a9bb130b1c184f8bbe41b6f0d0f"
 
 [[projects]]
-  branch = "master"
   name = "github.com/btcsuite/goleveldb"
   packages = [
     "leveldb",
@@ -42,13 +41,14 @@
     "leveldb/table",
     "leveldb/util"
   ]
-  revision = "7834afc9e8cd15233b6c3d97e12674a31ca24602"
+  revision = "3fd0373267b6461dbefe91cef614278064d05465"
+  version = "v1.0.0"
 
 [[projects]]
-  branch = "master"
   name = "github.com/btcsuite/snappy-go"
   packages = ["."]
-  revision = "0bdef8d067237991ddaa1bb6072a740bc40601ba"
+  revision = "b3db38edf0a9a11a115eb6b022d8c946024a9ac0"
+  version = "v1.0.0"
 
 [[projects]]
   branch = "master"
@@ -71,8 +71,8 @@
 [[projects]]
   name = "github.com/davecgh/go-spew"
   packages = ["spew"]
-  revision = "346938d642f2ec3594ed81d874461961cd0faa76"
-  version = "v1.1.0"
+  revision = "8991bc29aa16c548c550c7ff78260e27b9ab7c73"
+  version = "v1.1.1"
 
 [[projects]]
   name = "github.com/jessevdk/go-flags"
@@ -96,7 +96,7 @@
   branch = "master"
   name = "golang.org/x/crypto"
   packages = ["ripemd160"]
-  revision = "a49355c7e3f8fe157a85be2f77e6e269a0f89602"
+  revision = "182538f80094b6a8efaade63a8fd8e0d9d5843dd"
 
 [solve-meta]
   analyzer-name = "dep"

@@ -14,8 +14,8 @@ import (
 	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/txscript"
-	"github.com/daglabs/btcd/wire"
 	"github.com/daglabs/btcd/util"
+	"github.com/daglabs/btcd/wire"
 )
 
 // newHashFromStr converts the passed big-endian hex string into a
@@ -42,20 +42,20 @@ func hexToBytes(s string) []byte {
 	return b
 }
 
-// newUtxoViewpoint returns a new utxo view populated with outputs of the
+// newUTXOSet returns a new utxo view populated with outputs of the
 // provided source transactions as if there were available at the respective
 // block height specified in the heights slice.  The length of the source txns
 // and source tx heights must match or it will panic.
-func newUtxoViewpoint(sourceTxns []*wire.MsgTx, sourceTxHeights []int32) *blockdag.UTXOView {
+func newUTXOSet(sourceTxns []*wire.MsgTx, sourceTxHeights []int32) blockdag.UTXOSet {
 	if len(sourceTxns) != len(sourceTxHeights) {
 		panic("each transaction must have its block height specified")
 	}
 
-	view := blockdag.NewUTXOView()
+	utxoSet := blockdag.NewFullUTXOSet()
 	for i, tx := range sourceTxns {
-		view.AddTxOuts(util.NewTx(tx), sourceTxHeights[i])
+		utxoSet.AddTx(tx, sourceTxHeights[i])
 	}
-	return view
+	return utxoSet
 }
 
 func createTxIn(originTx *wire.MsgTx, outputIndex uint32) *wire.TxIn {
@@ -128,16 +128,16 @@ func TestCalcPriority(t *testing.T) {
 	}
 
 	tests := []struct {
-		name       string             // test description
-		tx         *wire.MsgTx        // tx to calc priority for
-		utxoView   *blockdag.UTXOView // inputs to tx
-		nextHeight int32              // height for priority calc
-		want       float64            // expected priority
+		name       string           // test description
+		tx         *wire.MsgTx      // tx to calc priority for
+		utxoSet    blockdag.UTXOSet // inputs to tx
+		nextHeight int32            // height for priority calc
+		want       float64          // expected priority
 	}{
 		{
 			name: "one height 7 input, prio tx height 169",
 			tx:   commonRedeemTx1,
-			utxoView: newUtxoViewpoint([]*wire.MsgTx{commonSourceTx1},
+			utxoSet: newUTXOSet([]*wire.MsgTx{commonSourceTx1},
 				[]int32{7}),
 			nextHeight: 169,
 			want:       1.5576923076923077e+10,
@@ -145,7 +145,7 @@ func TestCalcPriority(t *testing.T) {
 		{
 			name: "one height 100 input, prio tx height 169",
 			tx:   commonRedeemTx1,
-			utxoView: newUtxoViewpoint([]*wire.MsgTx{commonSourceTx1},
+			utxoSet: newUTXOSet([]*wire.MsgTx{commonSourceTx1},
 				[]int32{100}),
 			nextHeight: 169,
 			want:       6.634615384615385e+09,
@@ -153,7 +153,7 @@ func TestCalcPriority(t *testing.T) {
 		{
 			name: "one height 7 input, prio tx height 100000",
 			tx:   commonRedeemTx1,
-			utxoView: newUtxoViewpoint([]*wire.MsgTx{commonSourceTx1},
+			utxoSet: newUTXOSet([]*wire.MsgTx{commonSourceTx1},
 				[]int32{7}),
 			nextHeight: 100000,
 			want:       9.61471153846154e+12,
@@ -161,7 +161,7 @@ func TestCalcPriority(t *testing.T) {
 		{
 			name: "one height 100 input, prio tx height 100000",
 			tx:   commonRedeemTx1,
-			utxoView: newUtxoViewpoint([]*wire.MsgTx{commonSourceTx1},
+			utxoSet: newUTXOSet([]*wire.MsgTx{commonSourceTx1},
 				[]int32{100}),
 			nextHeight: 100000,
 			want:       9.60576923076923e+12,
@@ -169,7 +169,7 @@ func TestCalcPriority(t *testing.T) {
 	}
 
 	for i, test := range tests {
-		got := CalcPriority(test.tx, test.utxoView, test.nextHeight)
+		got := CalcPriority(test.tx, test.utxoSet, test.nextHeight)
 		if got != test.want {
 			t.Errorf("CalcPriority #%d (%q): unexpected priority "+
 				"got %v want %v", i, test.name, got, test.want)
@@ -183,5 +183,4 @@ var privKeyBytes, _ = hex.DecodeString("22a47fa09a223f2aa079edf85a7c2" +
 
 var privKey, pubKey = btcec.PrivKeyFromBytes(btcec.S256(), privKeyBytes)
 var pubKeyHash = util.Hash160(pubKey.SerializeCompressed())
-var addr, err = util.NewAddressPubKeyHash(pubKeyHash,
-	&dagconfig.MainNetParams)
+var addr, _ = util.NewAddressPubKeyHash(pubKeyHash, util.Bech32PrefixDAGCoin)

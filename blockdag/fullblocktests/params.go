@@ -10,6 +10,8 @@ import (
 	"math/big"
 	"time"
 
+	"github.com/daglabs/btcd/util/hdkeychain"
+
 	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/wire"
@@ -107,7 +109,7 @@ var regressionNetParams = &dagconfig.Params{
 	CoinbaseMaturity:         100,
 	SubsidyReductionInterval: 150,
 	TargetTimespan:           time.Hour * 24 * 14, // 14 days
-	TargetTimePerBlock:       time.Minute * 10,    // 10 minutes
+	TargetTimePerBlock:       time.Second * 10,    // 10 seconds
 	RetargetAdjustmentFactor: 4,                   // 25% less, 400% more
 	ReduceMinDifficulty:      true,
 	MinDiffReductionTime:     time.Minute * 20, // TargetTimePerBlock * 2
@@ -123,8 +125,7 @@ var regressionNetParams = &dagconfig.Params{
 	PrivateKeyID: 0xef, // starts with 9 (uncompressed) or c (compressed)
 
 	// BIP32 hierarchical deterministic extended key magics
-	HDPrivateKeyID: [4]byte{0x04, 0x35, 0x83, 0x94}, // starts with tprv
-	HDPublicKeyID:  [4]byte{0x04, 0x35, 0x87, 0xcf}, // starts with tpub
+	HDKeyIDPair: hdkeychain.HDKeyPairRegressionNet,
 
 	// BIP44 coin type used in the hierarchical deterministic path for
 	// address generation.

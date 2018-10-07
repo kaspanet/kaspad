@@ -63,10 +63,10 @@ recommended that `GOPATH` is set to a directory in your home directory such as
 - Run the following commands to obtain btcd, all dependencies, and install it:
 
 ```bash
-$ go get -u github.com/Masterminds/glide
+$ # Install dep: https://golang.github.io/dep/docs/installation.html
 $ git clone https://github.com/daglabs/btcd $GOPATH/src/github.com/daglabs/btcd
 $ cd $GOPATH/src/github.com/daglabs/btcd
-$ glide install
+$ dep ensure
 $ go install . ./cmd/...
 ```
 
@@ -86,7 +86,7 @@ Install a newer MSI
 
 ```bash
 $ cd $GOPATH/src/github.com/daglabs/btcd
-$ git pull && glide install
+$ git pull && dep ensure
 $ go install . ./cmd/...
 ```
 

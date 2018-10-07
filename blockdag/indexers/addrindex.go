@@ -14,8 +14,8 @@ import (
 	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/database"
 	"github.com/daglabs/btcd/txscript"
-	"github.com/daglabs/btcd/wire"
 	"github.com/daglabs/btcd/util"
+	"github.com/daglabs/btcd/wire"
 )
 
 const (
@@ -833,15 +833,15 @@ func (idx *AddrIndex) indexUnconfirmedAddresses(pkScript []byte, tx *util.Tx) {
 // addresses not being indexed.
 //
 // This function is safe for concurrent access.
-func (idx *AddrIndex) AddUnconfirmedTx(tx *util.Tx, utxoView *blockdag.UTXOView) {
+func (idx *AddrIndex) AddUnconfirmedTx(tx *util.Tx, utxoSet blockdag.UTXOSet) {
 	// Index addresses of all referenced previous transaction outputs.
 	//
 	// The existence checks are elided since this is only called after the
 	// transaction has already been validated and thus all inputs are
 	// already known to exist.
 	for _, txIn := range tx.MsgTx().TxIn {
-		entry := utxoView.LookupEntry(txIn.PreviousOutPoint)
-		if entry == nil {
+		entry, ok := utxoSet.Get(txIn.PreviousOutPoint)
+		if !ok {
 			// Ignore missing entries.  This should never happen
 			// in practice since the function comments specifically
 			// call out all inputs must be available.

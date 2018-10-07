@@ -19,8 +19,8 @@ import (
 	"github.com/daglabs/btcd/database"
 	_ "github.com/daglabs/btcd/database/ffldb"
 	"github.com/daglabs/btcd/txscript"
-	"github.com/daglabs/btcd/wire"
 	"github.com/daglabs/btcd/util"
+	"github.com/daglabs/btcd/wire"
 )
 
 const (
@@ -57,10 +57,10 @@ func isSupportedDbType(dbType string) bool {
 	return false
 }
 
-// dagSetup is used to create a new db and chain instance with the genesis
+// DAGSetup is used to create a new db and chain instance with the genesis
 // block already inserted.  In addition to the new chain instance, it returns
 // a teardown function the caller should invoke when done testing to clean up.
-func dagSetup(dbName string, params *dagconfig.Params) (*blockdag.BlockDAG, func(), error) {
+func DAGSetup(dbName string, params *dagconfig.Params) (*blockdag.BlockDAG, func(), error) {
 	if !isSupportedDbType(testDbType) {
 		return nil, nil, fmt.Errorf("unsupported db type %v", testDbType)
 	}
@@ -142,7 +142,7 @@ func TestFullBlocks(t *testing.T) {
 	}
 
 	// Create a new database and chain instance to run tests against.
-	dag, teardownFunc, err := dagSetup("fullblocktest",
+	dag, teardownFunc, err := DAGSetup("fullblocktest",
 		&dagconfig.RegressionNetParams)
 	if err != nil {
 		t.Errorf("Failed to setup chain instance: %v", err)
@@ -272,14 +272,13 @@ func TestFullBlocks(t *testing.T) {
 			item.Name, block.Hash(), blockHeight)
 
 		// Ensure hash and height match.
-		virtualBlock := dag.VirtualBlock()
-		if virtualBlock.SelectedTipHash() != item.Block.BlockHash() ||
-			virtualBlock.SelectedTipHeight() != blockHeight {
+		if dag.HighestTipHash() != item.Block.BlockHash() ||
+			dag.Height() != blockHeight { //TODO: (Ori) the use of dag.Height() and virtualBlock.HighestTipHash() is wrong, and was done only for compilation
 
 			t.Fatalf("block %q (hash %s, height %d) should be "+
 				"the current tip -- got (hash %s, height %d)",
-				item.Name, block.Hash(), blockHeight, virtualBlock.SelectedTipHash(),
-				virtualBlock.SelectedTipHeight())
+				item.Name, block.Hash(), blockHeight, dag.HighestTipHash(),
+				dag.Height()) //TODO: (Ori) the use of dag.Height() and virtualBlock.HighestTipHash() is wrong, and was done only for compilation
 		}
 	}
 

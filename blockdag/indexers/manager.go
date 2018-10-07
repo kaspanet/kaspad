@@ -7,12 +7,13 @@ package indexers
 import (
 	"fmt"
 
+	"bytes"
+
 	"github.com/daglabs/btcd/blockdag"
 	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/database"
-	"github.com/daglabs/btcd/wire"
 	"github.com/daglabs/btcd/util"
-	"bytes"
+	"github.com/daglabs/btcd/wire"
 )
 
 var (
@@ -20,109 +21,6 @@ var (
 	// current tip of each index.
 	indexTipsBucketName = []byte("idxtips")
 )
-
-// -----------------------------------------------------------------------------
-// The index manager tracks the current tip of each index by using a parent
-// bucket that contains an entry for index.
-//
-// The serialized format for an index tip is:
-//
-//   [<block hash><block height>],...
-//
-//   Field           Type             Size
-//   block hash      daghash.Hash   daghash.HashSize
-//   block height    uint32           4 bytes
-// -----------------------------------------------------------------------------
-
-// dbPutIndexerTip uses an existing database transaction to update or add the
-// current tip for the given index to the provided values.
-func dbPutIndexerTip(dbTx database.Tx, idxKey []byte, hash *daghash.Hash, height int32) error {
-	serialized := make([]byte, daghash.HashSize+4)
-	copy(serialized, hash[:])
-	byteOrder.PutUint32(serialized[daghash.HashSize:], uint32(height))
-
-	indexesBucket := dbTx.Metadata().Bucket(indexTipsBucketName)
-	return indexesBucket.Put(idxKey, serialized)
-}
-
-// dbFetchIndexerTip uses an existing database transaction to retrieve the
-// hash and height of the current tip for the provided index.
-func dbFetchIndexerTip(dbTx database.Tx, idxKey []byte) (*daghash.Hash, int32, error) {
-	indexesBucket := dbTx.Metadata().Bucket(indexTipsBucketName)
-	serialized := indexesBucket.Get(idxKey)
-	if len(serialized) < daghash.HashSize+4 {
-		return nil, 0, database.Error{
-			ErrorCode: database.ErrCorruption,
-			Description: fmt.Sprintf("unexpected end of data for "+
-				"index %q tip", string(idxKey)),
-		}
-	}
-
-	var hash daghash.Hash
-	copy(hash[:], serialized[:daghash.HashSize])
-	height := int32(byteOrder.Uint32(serialized[daghash.HashSize:]))
-	return &hash, height, nil
-}
-
-// dbIndexConnectBlock adds all of the index entries associated with the
-// given block using the provided indexer and updates the tip of the indexer
-// accordingly.  An error will be returned if the current tip for the indexer is
-// not the previous block for the passed block.
-func dbIndexConnectBlock(dbTx database.Tx, indexer Indexer, block *util.Block, virtual *blockdag.VirtualBlock) error {
-	// Assert that the block being connected properly connects to the
-	// current tip of the index.
-	idxKey := indexer.Key()
-	curTipHash, _, err := dbFetchIndexerTip(dbTx, idxKey)
-	if err != nil {
-		return err
-	}
-
-	header := block.MsgBlock().Header
-	if header.NumPrevBlocks > 0 && !curTipHash.IsEqual(header.SelectedPrevBlock()) {
-		return AssertError(fmt.Sprintf("dbIndexConnectBlock must be "+
-			"called with a block that extends the current index "+
-			"tip (%s, tip %s, block %s)", indexer.Name(),
-			curTipHash, block.Hash()))
-	}
-
-	// Notify the indexer with the connected block so it can index it.
-	if err := indexer.ConnectBlock(dbTx, block, virtual); err != nil {
-		return err
-	}
-
-	// Update the current index tip.
-	return dbPutIndexerTip(dbTx, idxKey, block.Hash(), block.Height())
-}
-
-// dbIndexDisconnectBlock removes all of the index entries associated with the
-// given block using the provided indexer and updates the tip of the indexer
-// accordingly.  An error will be returned if the current tip for the indexer is
-// not the passed block.
-func dbIndexDisconnectBlock(dbTx database.Tx, indexer Indexer, block *util.Block, virtual *blockdag.VirtualBlock) error {
-	// Assert that the block being disconnected is the current tip of the
-	// index.
-	idxKey := indexer.Key()
-	curTipHash, _, err := dbFetchIndexerTip(dbTx, idxKey)
-	if err != nil {
-		return err
-	}
-	if !curTipHash.IsEqual(block.Hash()) {
-		return AssertError(fmt.Sprintf("dbIndexDisconnectBlock must "+
-			"be called with the block at the current index tip "+
-			"(%s, tip %s, block %s)", indexer.Name(),
-			curTipHash, block.Hash()))
-	}
-
-	// Notify the indexer with the disconnected block so it can remove all
-	// of the appropriate entries.
-	if err := indexer.DisconnectBlock(dbTx, block, virtual); err != nil {
-		return err
-	}
-
-	// Update the current index tip.
-	prevHash := block.MsgBlock().Header.SelectedPrevBlock()
-	return dbPutIndexerTip(dbTx, idxKey, prevHash, block.Height()-1)
-}
 
 // Manager defines an index manager that manages multiple optional indexes and
 // implements the blockchain.IndexManager interface so it can be seamlessly
@@ -209,13 +107,6 @@ func (m *Manager) maybeCreateIndexes(dbTx database.Tx) error {
 		// invoke the create callback for the index so it can perform
 		// any one-time initialization it requires.
 		if err := indexer.Create(dbTx); err != nil {
-			return err
-		}
-
-		// Set the tip for the index to values which represent an
-		// uninitialized index.
-		err := dbPutIndexerTip(dbTx, idxKey, &daghash.Hash{}, -1)
-		if err != nil {
 			return err
 		}
 	}
@@ -309,42 +200,6 @@ func dbFetchTx(dbTx database.Tx, hash *daghash.Hash) (*wire.MsgTx, error) {
 	return &msgTx, nil
 }
 
-// makeUtxoView creates a mock unspent transaction output view by using the
-// transaction index in order to look up all inputs referenced by the
-// transactions in the block.  This is sometimes needed when catching indexes up
-// because many of the txouts could actually already be spent however the
-// associated scripts are still required to index them.
-func makeUtxoView(dbTx database.Tx, block *util.Block, interrupt <-chan struct{}) (*blockdag.UTXOView, error) {
-	view := blockdag.NewUTXOView()
-	for txIdx, tx := range block.Transactions() {
-		// Coinbases do not reference any inputs.  Since the block is
-		// required to have already gone through full validation, it has
-		// already been proven on the first transaction in the block is
-		// a coinbase.
-		if txIdx == 0 {
-			continue
-		}
-
-		// Use the transaction index to load all of the referenced
-		// inputs and add their outputs to the view.
-		for _, txIn := range tx.MsgTx().TxIn {
-			originOut := &txIn.PreviousOutPoint
-			originTx, err := dbFetchTx(dbTx, &originOut.Hash)
-			if err != nil {
-				return nil, err
-			}
-
-			view.AddTxOuts(util.NewTx(originTx), 0)
-		}
-
-		if interruptRequested(interrupt) {
-			return nil, errInterruptRequested
-		}
-	}
-
-	return view, nil
-}
-
 // ConnectBlock must be invoked when a block is extending the main chain.  It
 // keeps track of the state of each index it is managing, performs some sanity
 // checks, and invokes each indexer.
@@ -354,8 +209,8 @@ func (m *Manager) ConnectBlock(dbTx database.Tx, block *util.Block, virtual *blo
 	// Call each of the currently active optional indexes with the block
 	// being connected so they can update accordingly.
 	for _, index := range m.enabledIndexes {
-		err := dbIndexConnectBlock(dbTx, index, block, virtual)
-		if err != nil {
+		// Notify the indexer with the connected block so it can index it.
+		if err := index.ConnectBlock(dbTx, block, virtual); err != nil {
 			return err
 		}
 	}
@@ -372,8 +227,9 @@ func (m *Manager) DisconnectBlock(dbTx database.Tx, block *util.Block, virtual *
 	// Call each of the currently active optional indexes with the block
 	// being disconnected so they can update accordingly.
 	for _, index := range m.enabledIndexes {
-		err := dbIndexDisconnectBlock(dbTx, index, block, virtual)
-		if err != nil {
+		// Notify the indexer with the disconnected block so it can remove all
+		// of the appropriate entries.
+		if err := index.DisconnectBlock(dbTx, block, virtual); err != nil {
 			return err
 		}
 	}

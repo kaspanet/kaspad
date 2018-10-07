@@ -67,7 +67,7 @@ func TestSequenceLocksActive(t *testing.T) {
 // ensure it fails.
 func TestCheckConnectBlockTemplate(t *testing.T) {
 	// Create a new database and chain instance to run tests against.
-	chain, teardownFunc, err := dagSetup("checkconnectblocktemplate",
+	dag, teardownFunc, err := DAGSetup("checkconnectblocktemplate",
 		&dagconfig.MainNetParams)
 	if err != nil {
 		t.Errorf("Failed to setup chain instance: %v", err)
@@ -77,7 +77,7 @@ func TestCheckConnectBlockTemplate(t *testing.T) {
 
 	// Since we're not dealing with the real block chain, set the coinbase
 	// maturity to 1.
-	chain.TstSetCoinbaseMaturity(1)
+	dag.TstSetCoinbaseMaturity(1)
 
 	// Load up blocks such that there is a side chain.
 	// (genesis block) -> 1 -> 2 -> 3 -> 4
@@ -97,7 +97,7 @@ func TestCheckConnectBlockTemplate(t *testing.T) {
 	}
 
 	for i := 1; i <= 3; i++ {
-		_, err := chain.ProcessBlock(blocks[i], BFNone)
+		_, err := dag.ProcessBlock(blocks[i], BFNone)
 		if err != nil {
 			t.Fatalf("CheckConnectBlockTemplate: Received unexpected error "+
 				"processing block %d: %v", i, err)
@@ -105,30 +105,32 @@ func TestCheckConnectBlockTemplate(t *testing.T) {
 	}
 
 	// Block 3 should fail to connect since it's already inserted.
-	err = chain.CheckConnectBlockTemplate(blocks[3])
+	err = dag.CheckConnectBlockTemplate(blocks[3])
 	if err == nil {
 		t.Fatal("CheckConnectBlockTemplate: Did not received expected error " +
 			"on block 3")
 	}
 
 	// Block 4 should connect successfully to tip of chain.
-	err = chain.CheckConnectBlockTemplate(blocks[4])
+	err = dag.CheckConnectBlockTemplate(blocks[4])
 	if err != nil {
 		t.Fatalf("CheckConnectBlockTemplate: Received unexpected error on "+
 			"block 4: %v", err)
 	}
 
 	// Block 3a should fail to connect since does not build on chain tip.
-	err = chain.CheckConnectBlockTemplate(blocks[5])
+	err = dag.CheckConnectBlockTemplate(blocks[5])
 	if err == nil {
 		t.Fatal("CheckConnectBlockTemplate: Did not received expected error " +
 			"on block 3a")
 	}
 
 	// Block 4 should connect even if proof of work is invalid.
-	invalidPowBlock := *blocks[4].MsgBlock()
-	invalidPowBlock.Header.Nonce++
-	err = chain.CheckConnectBlockTemplate(util.NewBlock(&invalidPowBlock))
+	invalidPowMsgBlock := *blocks[4].MsgBlock()
+	invalidPowMsgBlock.Header.Nonce++
+	invalidPowBlock := util.NewBlock(&invalidPowMsgBlock)
+	invalidPowBlock.SetHeight(blocks[4].Height())
+	err = dag.CheckConnectBlockTemplate(invalidPowBlock)
 	if err != nil {
 		t.Fatalf("CheckConnectBlockTemplate: Received unexpected error on "+
 			"block 4 with bad nonce: %v", err)
@@ -137,7 +139,7 @@ func TestCheckConnectBlockTemplate(t *testing.T) {
 	// Invalid block building on chain tip should fail to connect.
 	invalidBlock := *blocks[4].MsgBlock()
 	invalidBlock.Header.Bits--
-	err = chain.CheckConnectBlockTemplate(util.NewBlock(&invalidBlock))
+	err = dag.CheckConnectBlockTemplate(util.NewBlock(&invalidBlock))
 	if err == nil {
 		t.Fatal("CheckConnectBlockTemplate: Did not received expected error " +
 			"on block 4 with invalid difficulty bits")
@@ -494,6 +496,48 @@ func TestCheckSerializedHeight(t *testing.T) {
 				continue
 			}
 		}
+	}
+}
+
+func TestValidateParents(t *testing.T) {
+	blockDAG := newTestDAG(&dagconfig.MainNetParams)
+	genesisNode := blockDAG.genesis
+	blockVersion := int32(0x10000000)
+
+	blockTime := genesisNode.Header().Timestamp
+
+	generateNode := func(parents ...*blockNode) *blockNode {
+		// The timestamp of each block is changed to prevent a situation where two blocks share the same hash
+		blockTime = blockTime.Add(time.Second)
+		return newTestNode(setFromSlice(parents...),
+			blockVersion,
+			0,
+			blockTime,
+			dagconfig.MainNetParams.K)
+	}
+
+	a := generateNode(genesisNode)
+	b := generateNode(a)
+	c := generateNode(genesisNode)
+
+	fakeBlockHeader := &wire.BlockHeader{}
+
+	// Check direct parents relation
+	err := validateParents(fakeBlockHeader, setFromSlice(a, b))
+	if err == nil {
+		t.Errorf("validateParents: `a` is a parent of `b`, so an error is expected")
+	}
+
+	// Check indirect parents relation
+	err = validateParents(fakeBlockHeader, setFromSlice(genesisNode, b))
+	if err == nil {
+		t.Errorf("validateParents: `genesis` and `b` are indirectly related, so an error is expected")
+	}
+
+	// Check parents with no relation
+	err = validateParents(fakeBlockHeader, setFromSlice(b, c))
+	if err != nil {
+		t.Errorf("validateParents: unexpected error: %v", err)
 	}
 }
 

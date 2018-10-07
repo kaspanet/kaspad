@@ -2,6 +2,7 @@ package dagconfig_test
 
 import (
 	"bytes"
+	"github.com/daglabs/btcd/util/hdkeychain"
 	"reflect"
 	"testing"
 
@@ -12,10 +13,12 @@ import (
 // network.  This is necessary to test the registration of and
 // lookup of encoding magics from the network.
 var mockNetParams = Params{
-	Name:           "mocknet",
-	Net:            1<<32 - 1,
-	HDPrivateKeyID: [4]byte{0x01, 0x02, 0x03, 0x04},
-	HDPublicKeyID:  [4]byte{0x05, 0x06, 0x07, 0x08},
+	Name: "mocknet",
+	Net:  1<<32 - 1,
+	HDKeyIDPair: hdkeychain.HDKeyIDPair{
+		PrivateKeyID: [4]byte{0x01, 0x02, 0x03, 0x04},
+		PublicKeyID:  [4]byte{0x05, 0x06, 0x07, 0x08},
+	},
 }
 
 func TestRegister(t *testing.T) {
@@ -23,10 +26,6 @@ func TestRegister(t *testing.T) {
 		name   string
 		params *Params
 		err    error
-	}
-	type prefixTest struct {
-		prefix string
-		valid  bool
 	}
 	type hdTest struct {
 		priv []byte
@@ -65,36 +64,36 @@ func TestRegister(t *testing.T) {
 			},
 			hdMagics: []hdTest{
 				{
-					priv: MainNetParams.HDPrivateKeyID[:],
-					want: MainNetParams.HDPublicKeyID[:],
+					priv: MainNetParams.HDKeyIDPair.PrivateKeyID[:],
+					want: MainNetParams.HDKeyIDPair.PublicKeyID[:],
 					err:  nil,
 				},
 				{
-					priv: TestNet3Params.HDPrivateKeyID[:],
-					want: TestNet3Params.HDPublicKeyID[:],
+					priv: TestNet3Params.HDKeyIDPair.PrivateKeyID[:],
+					want: TestNet3Params.HDKeyIDPair.PublicKeyID[:],
 					err:  nil,
 				},
 				{
-					priv: RegressionNetParams.HDPrivateKeyID[:],
-					want: RegressionNetParams.HDPublicKeyID[:],
+					priv: RegressionNetParams.HDKeyIDPair.PrivateKeyID[:],
+					want: RegressionNetParams.HDKeyIDPair.PublicKeyID[:],
 					err:  nil,
 				},
 				{
-					priv: SimNetParams.HDPrivateKeyID[:],
-					want: SimNetParams.HDPublicKeyID[:],
+					priv: SimNetParams.HDKeyIDPair.PrivateKeyID[:],
+					want: SimNetParams.HDKeyIDPair.PublicKeyID[:],
 					err:  nil,
 				},
 				{
-					priv: mockNetParams.HDPrivateKeyID[:],
-					err:  ErrUnknownHDKeyID,
+					priv: mockNetParams.HDKeyIDPair.PrivateKeyID[:],
+					err:  hdkeychain.ErrUnknownHDKeyID,
 				},
 				{
 					priv: []byte{0xff, 0xff, 0xff, 0xff},
-					err:  ErrUnknownHDKeyID,
+					err:  hdkeychain.ErrUnknownHDKeyID,
 				},
 				{
 					priv: []byte{0xff},
-					err:  ErrUnknownHDKeyID,
+					err:  hdkeychain.ErrUnknownHDKeyID,
 				},
 			},
 		},
@@ -109,8 +108,8 @@ func TestRegister(t *testing.T) {
 			},
 			hdMagics: []hdTest{
 				{
-					priv: mockNetParams.HDPrivateKeyID[:],
-					want: mockNetParams.HDPublicKeyID[:],
+					priv: mockNetParams.HDKeyIDPair.PrivateKeyID[:],
+					want: mockNetParams.HDKeyIDPair.PublicKeyID[:],
 					err:  nil,
 				},
 			},
@@ -146,37 +145,37 @@ func TestRegister(t *testing.T) {
 			},
 			hdMagics: []hdTest{
 				{
-					priv: MainNetParams.HDPrivateKeyID[:],
-					want: MainNetParams.HDPublicKeyID[:],
+					priv: MainNetParams.HDKeyIDPair.PrivateKeyID[:],
+					want: MainNetParams.HDKeyIDPair.PublicKeyID[:],
 					err:  nil,
 				},
 				{
-					priv: TestNet3Params.HDPrivateKeyID[:],
-					want: TestNet3Params.HDPublicKeyID[:],
+					priv: TestNet3Params.HDKeyIDPair.PrivateKeyID[:],
+					want: TestNet3Params.HDKeyIDPair.PublicKeyID[:],
 					err:  nil,
 				},
 				{
-					priv: RegressionNetParams.HDPrivateKeyID[:],
-					want: RegressionNetParams.HDPublicKeyID[:],
+					priv: RegressionNetParams.HDKeyIDPair.PrivateKeyID[:],
+					want: RegressionNetParams.HDKeyIDPair.PublicKeyID[:],
 					err:  nil,
 				},
 				{
-					priv: SimNetParams.HDPrivateKeyID[:],
-					want: SimNetParams.HDPublicKeyID[:],
+					priv: SimNetParams.HDKeyIDPair.PrivateKeyID[:],
+					want: SimNetParams.HDKeyIDPair.PublicKeyID[:],
 					err:  nil,
 				},
 				{
-					priv: mockNetParams.HDPrivateKeyID[:],
-					want: mockNetParams.HDPublicKeyID[:],
+					priv: mockNetParams.HDKeyIDPair.PrivateKeyID[:],
+					want: mockNetParams.HDKeyIDPair.PublicKeyID[:],
 					err:  nil,
 				},
 				{
 					priv: []byte{0xff, 0xff, 0xff, 0xff},
-					err:  ErrUnknownHDKeyID,
+					err:  hdkeychain.ErrUnknownHDKeyID,
 				},
 				{
 					priv: []byte{0xff},
-					err:  ErrUnknownHDKeyID,
+					err:  hdkeychain.ErrUnknownHDKeyID,
 				},
 			},
 		},
@@ -185,13 +184,17 @@ func TestRegister(t *testing.T) {
 	for _, test := range tests {
 		for _, regTest := range test.register {
 			err := Register(regTest.params)
+
+			// HDKeyIDPairs must be registered separately
+			hdkeychain.RegisterHDKeyIDPair(regTest.params.HDKeyIDPair)
+
 			if err != regTest.err {
 				t.Errorf("%s:%s: Registered network with unexpected error: got %v expected %v",
 					test.name, regTest.name, err, regTest.err)
 			}
 		}
 		for i, magTest := range test.hdMagics {
-			pubKey, err := HDPrivateKeyToPublicKeyID(magTest.priv[:])
+			pubKey, err := hdkeychain.HDPrivateKeyToPublicKeyID(magTest.priv[:])
 			if !reflect.DeepEqual(err, magTest.err) {
 				t.Errorf("%s: HD magic %d mismatched error: got %v expected %v ",
 					test.name, i, err, magTest.err)

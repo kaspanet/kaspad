@@ -7,7 +7,6 @@ package blockdag
 import (
 	"sync"
 
-	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/wire"
 )
 
@@ -24,7 +23,7 @@ func newVirtualBlock(tips blockSet, phantomK uint32) *VirtualBlock {
 	// The mutex is intentionally not held since this is a constructor.
 	var virtual VirtualBlock
 	virtual.phantomK = phantomK
-	virtual.utxoSet = newFullUTXOSet()
+	virtual.utxoSet = NewFullUTXOSet()
 	virtual.setTips(tips)
 
 	return &virtual
@@ -74,7 +73,7 @@ func (v *VirtualBlock) addTip(newTip *blockNode) {
 	v.setTips(updatedTips)
 }
 
-// addTip adds the given tip to the set of tips in the virtual block.
+// AddTip adds the given tip to the set of tips in the virtual block.
 // All former tips that happen to be the given tip's parents are removed
 // from the set.
 //
@@ -99,21 +98,6 @@ func (v *VirtualBlock) tips() blockSet {
 // This function is safe for concurrent access.
 func (v *VirtualBlock) SelectedTip() *blockNode {
 	return v.selectedParent
-}
-
-// SelectedTipHeight returns the height of the selected tip of the virtual block.
-func (v *VirtualBlock) SelectedTipHeight() int32 {
-	return v.SelectedTip().height
-}
-
-// TipHashes returns the hashes of the tips of the virtual block.
-func (v *VirtualBlock) TipHashes() []daghash.Hash {
-	return v.tips().hashes()
-}
-
-// SelectedTipHash returns the hash of the selected tip of the virtual block.
-func (v *VirtualBlock) SelectedTipHash() daghash.Hash {
-	return v.SelectedTip().hash
 }
 
 // GetUTXOEntry returns the requested unspent transaction output. The returned

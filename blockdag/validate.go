@@ -336,7 +336,7 @@ func CountSigOps(tx *util.Tx) int {
 // transactions which are of the pay-to-script-hash type.  This uses the
 // precise, signature operation counting mechanism from the script engine which
 // requires access to the input transaction scripts.
-func CountP2SHSigOps(tx *util.Tx, isCoinBaseTx bool, utxoView *UTXOView) (int, error) {
+func CountP2SHSigOps(tx *util.Tx, isCoinBaseTx bool, utxoSet UTXOSet) (int, error) {
 	// Coinbase transactions have no interesting inputs.
 	if isCoinBaseTx {
 		return 0, nil
@@ -348,8 +348,8 @@ func CountP2SHSigOps(tx *util.Tx, isCoinBaseTx bool, utxoView *UTXOView) (int, e
 	totalSigOps := 0
 	for txInIndex, txIn := range msgTx.TxIn {
 		// Ensure the referenced input transaction is available.
-		utxo := utxoView.LookupEntry(txIn.PreviousOutPoint)
-		if utxo == nil || utxo.IsSpent() {
+		entry, ok := utxoSet.Get(txIn.PreviousOutPoint)
+		if !ok {
 			str := fmt.Sprintf("output %v referenced from "+
 				"transaction %s:%d either does not exist or "+
 				"has already been spent", txIn.PreviousOutPoint,
@@ -359,7 +359,7 @@ func CountP2SHSigOps(tx *util.Tx, isCoinBaseTx bool, utxoView *UTXOView) (int, e
 
 		// We're only interested in pay-to-script-hash types, so skip
 		// this input if it's not one.
-		pkScript := utxo.PkScript()
+		pkScript := entry.PkScript()
 		if !txscript.IsPayToScriptHash(pkScript) {
 			continue
 		}
@@ -624,13 +624,13 @@ func checkSerializedHeight(coinbaseTx *util.Tx, wantHeight int32) error {
 //    the checkpoints are not performed.
 //
 // This function MUST be called with the chain state lock held (for writes).
-func (dag *BlockDAG) checkBlockHeaderContext(header *wire.BlockHeader, selectedParent *blockNode, flags BehaviorFlags) error {
+func (dag *BlockDAG) checkBlockHeaderContext(header *wire.BlockHeader, bluestParent *blockNode, blockHeight int32, flags BehaviorFlags) error {
 	fastAdd := flags&BFFastAdd == BFFastAdd
 	if !fastAdd {
 		// Ensure the difficulty specified in the block header matches
 		// the calculated difficulty based on the previous block and
 		// difficulty retarget rules.
-		expectedDifficulty, err := dag.calcNextRequiredDifficulty(selectedParent,
+		expectedDifficulty, err := dag.calcNextRequiredDifficulty(bluestParent,
 			header.Timestamp)
 		if err != nil {
 			return err
@@ -644,17 +644,13 @@ func (dag *BlockDAG) checkBlockHeaderContext(header *wire.BlockHeader, selectedP
 
 		// Ensure the timestamp for the block header is after the
 		// median time of the last several blocks (medianTimeBlocks).
-		medianTime := selectedParent.CalcPastMedianTime()
+		medianTime := bluestParent.CalcPastMedianTime()
 		if !header.Timestamp.After(medianTime) {
 			str := "block timestamp of %v is not after expected %v"
 			str = fmt.Sprintf(str, header.Timestamp, medianTime)
 			return ruleError(ErrTimeTooOld, str)
 		}
 	}
-
-	// The height of this block is one more than the referenced previous
-	// block.
-	blockHeight := selectedParent.height + 1
 
 	// Ensure chain matches up to predetermined checkpoints.
 	blockHash := header.BlockHash()
@@ -709,8 +705,8 @@ func validateParents(blockHeader *wire.BlockHeader, parents blockSet) error {
 		if current.height > minHeight {
 			for _, parent := range current.parents {
 				if !visited.contains(parent) {
-					queue.Push(current)
-					visited.add(current)
+					queue.Push(parent)
+					visited.add(parent)
 				}
 			}
 		}
@@ -729,29 +725,26 @@ func validateParents(blockHeader *wire.BlockHeader, parents blockSet) error {
 // for how the flags modify its behavior.
 //
 // This function MUST be called with the chain state lock held (for writes).
-func (dag *BlockDAG) checkBlockContext(block *util.Block, parents blockSet, selectedParent *blockNode, flags BehaviorFlags) error {
+func (dag *BlockDAG) checkBlockContext(block *util.Block, parents blockSet, bluestParent *blockNode, flags BehaviorFlags) error {
 	err := validateParents(&block.MsgBlock().Header, parents)
 	if err != nil {
 		return err
 	}
+
 	// Perform all block header related validation checks.
 	header := &block.MsgBlock().Header
-	err = dag.checkBlockHeaderContext(header, selectedParent, flags)
+	err = dag.checkBlockHeaderContext(header, bluestParent, block.Height(), flags)
 	if err != nil {
 		return err
 	}
 
 	fastAdd := flags&BFFastAdd == BFFastAdd
 	if !fastAdd {
-		blockTime := selectedParent.CalcPastMedianTime()
-
-		// The height of this block is one more than the referenced
-		// previous block.
-		blockHeight := selectedParent.height + 1
+		blockTime := bluestParent.CalcPastMedianTime()
 
 		// Ensure all transactions in the block are finalized.
 		for _, tx := range block.Transactions() {
-			if !IsFinalizedTransaction(tx, blockHeight,
+			if !IsFinalizedTransaction(tx, block.Height(),
 				blockTime) {
 
 				str := fmt.Sprintf("block contains unfinalized "+
@@ -763,7 +756,7 @@ func (dag *BlockDAG) checkBlockContext(block *util.Block, parents blockSet, sele
 		// Ensure coinbase starts with serialized block heights
 
 		coinbaseTx := block.Transactions()[0]
-		err := checkSerializedHeight(coinbaseTx, blockHeight)
+		err := checkSerializedHeight(coinbaseTx, block.Height())
 		if err != nil {
 			return err
 		}
@@ -800,7 +793,7 @@ func (dag *BlockDAG) ensureNoDuplicateTx(node *blockNode, block *util.Block) err
 	// is fully spent.
 	for outpoint := range fetchSet {
 		utxo, ok := dag.virtual.GetUTXOEntry(outpoint)
-		if ok && !utxo.IsSpent() {
+		if ok {
 			str := fmt.Sprintf("tried to overwrite transaction %v "+
 				"at block height %d that is not fully spent",
 				outpoint.Hash, utxo.BlockHeight())
@@ -822,7 +815,7 @@ func (dag *BlockDAG) ensureNoDuplicateTx(node *blockNode, block *util.Block) err
 //
 // NOTE: The transaction MUST have already been sanity checked with the
 // CheckTransactionSanity function prior to calling this function.
-func CheckTransactionInputs(tx *util.Tx, txHeight int32, utxoView *UTXOView, dagParams *dagconfig.Params) (int64, error) {
+func CheckTransactionInputs(tx *util.Tx, txHeight int32, utxoSet UTXOSet, dagParams *dagconfig.Params) (int64, error) {
 	// Coinbase transactions have no inputs.
 	if IsCoinBase(tx) {
 		return 0, nil
@@ -832,8 +825,8 @@ func CheckTransactionInputs(tx *util.Tx, txHeight int32, utxoView *UTXOView, dag
 	var totalSatoshiIn int64
 	for txInIndex, txIn := range tx.MsgTx().TxIn {
 		// Ensure the referenced input transaction is available.
-		utxo := utxoView.LookupEntry(txIn.PreviousOutPoint)
-		if utxo == nil || utxo.IsSpent() {
+		entry, ok := utxoSet.Get(txIn.PreviousOutPoint)
+		if !ok {
 			str := fmt.Sprintf("output %v referenced from "+
 				"transaction %s:%d either does not exist or "+
 				"has already been spent", txIn.PreviousOutPoint,
@@ -843,8 +836,8 @@ func CheckTransactionInputs(tx *util.Tx, txHeight int32, utxoView *UTXOView, dag
 
 		// Ensure the transaction is not spending coins which have not
 		// yet reached the required coinbase maturity.
-		if utxo.IsCoinBase() {
-			originHeight := utxo.BlockHeight()
+		if entry.IsCoinBase() {
+			originHeight := entry.BlockHeight()
 			blocksSincePrev := txHeight - originHeight
 			coinbaseMaturity := int32(dagParams.CoinbaseMaturity)
 			if blocksSincePrev < coinbaseMaturity {
@@ -864,7 +857,7 @@ func CheckTransactionInputs(tx *util.Tx, txHeight int32, utxoView *UTXOView, dag
 		// a transaction are in a unit value known as a satoshi.  One
 		// bitcoin is a quantity of satoshi as defined by the
 		// SatoshiPerBitcoin constant.
-		originTxSatoshi := utxo.Amount()
+		originTxSatoshi := entry.Amount()
 		if originTxSatoshi < 0 {
 			str := fmt.Sprintf("transaction output has negative "+
 				"value of %v", util.Amount(originTxSatoshi))
@@ -956,17 +949,6 @@ func (dag *BlockDAG) checkConnectBlock(node *blockNode, block *util.Block) error
 		return err
 	}
 
-	// Load all of the utxos referenced by the inputs for all transactions
-	// in the block don't already exist in the utxo view from the database.
-	//
-	// These utxo entries are needed for verification of things such as
-	// transaction inputs, counting pay-to-script-hashes, and scripts.
-	view := NewUTXOView()
-	err = view.fetchInputUTXOs(dag.db, block)
-	if err != nil {
-		return err
-	}
-
 	// The number of signature operations must be less than the maximum
 	// allowed per block.  Note that the preliminary sanity checks on a
 	// block also include a check similar to this one, but this check
@@ -983,7 +965,7 @@ func (dag *BlockDAG) checkConnectBlock(node *blockNode, block *util.Block) error
 		// countP2SHSigOps for whether or not the transaction is
 		// a coinbase transaction rather than having to do a
 		// full coinbase check again.
-		numP2SHSigOps, err := CountP2SHSigOps(tx, i == 0, view)
+		numP2SHSigOps, err := CountP2SHSigOps(tx, i == 0, dag.VirtualBlock().utxoSet)
 		if err != nil {
 			return err
 		}
@@ -1008,11 +990,9 @@ func (dag *BlockDAG) checkConnectBlock(node *blockNode, block *util.Block) error
 	// still relatively cheap as compared to running the scripts) checks
 	// against all the inputs when the signature operations are out of
 	// bounds.
-	targetSpentOutputCount := countSpentOutputs(block)
-	stxos := make([]spentTxOut, 0, targetSpentOutputCount)
 	var totalFees int64
 	for _, tx := range transactions {
-		txFee, err := CheckTransactionInputs(tx, node.height, view,
+		txFee, err := CheckTransactionInputs(tx, node.height, dag.VirtualBlock().utxoSet,
 			dag.dagParams)
 		if err != nil {
 			return err
@@ -1026,21 +1006,6 @@ func (dag *BlockDAG) checkConnectBlock(node *blockNode, block *util.Block) error
 			return ruleError(ErrBadFees, "total fees for block "+
 				"overflows accumulator")
 		}
-
-		// Add all of the outputs for this transaction which are not
-		// provably unspendable as available utxos.  Also, the passed
-		// spent txos slice is updated to contain an entry for each
-		// spent txout in the order each transaction spends them.
-		err = view.connectTransaction(tx, node.height, &stxos)
-		if err != nil {
-			return err
-		}
-	}
-
-	// Sanity check the correct number of stxos are provided.
-	if len(stxos) != targetSpentOutputCount {
-		return AssertError("connectBlock called with inconsistent " +
-			"spent transaction out information")
 	}
 
 	// The total output values of the coinbase transaction must not exceed
@@ -1086,8 +1051,7 @@ func (dag *BlockDAG) checkConnectBlock(node *blockNode, block *util.Block) error
 		// A transaction can only be included within a block
 		// once the sequence locks of *all* its inputs are
 		// active.
-		sequenceLock, err := dag.calcSequenceLock(node, tx, view,
-			false)
+		sequenceLock, err := dag.calcSequenceLock(node, dag.VirtualBlock().utxoSet, tx, false)
 		if err != nil {
 			return err
 		}
@@ -1105,7 +1069,7 @@ func (dag *BlockDAG) checkConnectBlock(node *blockNode, block *util.Block) error
 	// expensive ECDSA signature check scripts.  Doing this last helps
 	// prevent CPU exhaustion attacks.
 	if runScripts {
-		err := checkBlockScripts(block, view, scriptFlags, dag.sigCache)
+		err := checkBlockScripts(block, dag.VirtualBlock().utxoSet, scriptFlags, dag.sigCache)
 		if err != nil {
 			return err
 		}
