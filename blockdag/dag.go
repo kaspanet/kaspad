@@ -925,14 +925,7 @@ func (dag *BlockDAG) TipHashes() []daghash.Hash {
 // HighestTipHash returns the hash of the highest tip.
 // This function is a placeholder for places that aren't DAG-compatible, and it's needed to be removed in the future
 func (dag *BlockDAG) HighestTipHash() daghash.Hash {
-	tips := dag.virtual.tips()
-	var highestTip *blockNode
-	for _, tip := range tips {
-		if highestTip.height < tip.height || daghash.Less(&highestTip.hash, &tip.hash) {
-			highestTip = tip
-		}
-	}
-	return highestTip.hash
+	return dag.virtual.tips().highest().hash
 }
 
 // HeaderByHash returns the block header identified by the given hash or an
