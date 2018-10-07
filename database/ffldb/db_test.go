@@ -150,7 +150,7 @@ func TestSkipPendingUpdates(t *testing.T) {
 		return nil
 	})
 	if err != nil {
-		t.Fatalf("Error adding to metadata: %s", err)
+		t.Fatalf("TestSkipPendingUpdates: Error adding to metadata: %s", err)
 	}
 
 	// test skips
@@ -169,40 +169,40 @@ func TestSkipPendingUpdates(t *testing.T) {
 		dbIter.First()
 		expectedKey := bucketizedKey(metadataBucketID, firstKey)
 		if !bytes.Equal(dbIter.Key(), expectedKey) {
-			t.Errorf("1: key expected to be %v but is %v", expectedKey, dbIter.Key())
+			t.Errorf("TestSkipPendingUpdates: 1: key expected to be %v but is %v", expectedKey, dbIter.Key())
 		}
 
 		// Go to the next key, which is toDelete
 		dbIter.Next()
 		expectedKey = bucketizedKey(metadataBucketID, toDeleteKey)
 		if !bytes.Equal(dbIter.Key(), expectedKey) {
-			t.Errorf("2: key expected to be %s but is %s", expectedKey, dbIter.Key())
+			t.Errorf("TestSkipPendingUpdates: 2: key expected to be %s but is %s", expectedKey, dbIter.Key())
 		}
 
 		// at this point toDeleteKey and toUpdateKey should be skipped
 		cursor.skipPendingUpdates(true)
 		expectedKey = bucketizedKey(metadataBucketID, secondKey)
 		if !bytes.Equal(dbIter.Key(), expectedKey) {
-			t.Errorf("3: key expected to be %s but is %s", expectedKey, dbIter.Key())
+			t.Errorf("TestSkipPendingUpdates: 3: key expected to be %s but is %s", expectedKey, dbIter.Key())
 		}
 
 		// now traverse backwards - should get toUpdate
 		dbIter.Prev()
 		expectedKey = bucketizedKey(metadataBucketID, toUpdateKey)
 		if !bytes.Equal(dbIter.Key(), expectedKey) {
-			t.Errorf("4: key expected to be %s but is %s", expectedKey, dbIter.Key())
+			t.Errorf("TestSkipPendingUpdates: 4: key expected to be %s but is %s", expectedKey, dbIter.Key())
 		}
 
 		// at this point toUpdateKey and toDeleteKey should be skipped
 		cursor.skipPendingUpdates(false)
 		expectedKey = bucketizedKey(metadataBucketID, firstKey)
 		if !bytes.Equal(dbIter.Key(), expectedKey) {
-			t.Errorf("5: key expected to be %s but is %s", expectedKey, dbIter.Key())
+			t.Errorf("TestSkipPendingUpdates: 5: key expected to be %s but is %s", expectedKey, dbIter.Key())
 		}
 		return nil
 	})
 	if err != nil {
-		t.Fatalf("Error running main part of test: %s", err)
+		t.Fatalf("TestSkipPendingUpdates: Error running main part of test: %s", err)
 	}
 }
 
