@@ -441,7 +441,7 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 	// avoided.
 	blockTxns := make([]*util.Tx, 0, len(sourceTxns))
 	blockTxns = append(blockTxns, coinbaseTx)
-	blockUtxos := blockdag.NewDiffUTXOSet(g.dag.VirtualBlock().UTXOSet, blockdag.NewUTXODiff())
+	blockUtxos := blockdag.NewDiffUTXOSet(g.dag.UTXOSet(), blockdag.NewUTXODiff())
 
 	// dependers is used to track transactions which depend on another
 	// transaction in the source pool.  This, in conjunction with the
@@ -717,8 +717,8 @@ mempoolLoop:
 	var msgBlock wire.MsgBlock
 	msgBlock.Header = wire.BlockHeader{
 		Version:       nextBlockVersion,
-		NumPrevBlocks: byte(len(virtualBlock.TipHashes())),
-		PrevBlocks:    virtualBlock.TipHashes(),
+		NumPrevBlocks: byte(len(g.dag.TipHashes())),
+		PrevBlocks:    g.dag.TipHashes(),
 		MerkleRoot:    *merkles[len(merkles)-1],
 		Timestamp:     ts,
 		Bits:          reqDifficulty,
@@ -818,6 +818,11 @@ func (g *BlkTmplGenerator) VirtualBlock() *blockdag.VirtualBlock {
 // DAGHeight returns the DAG's height
 func (g *BlkTmplGenerator) DAGHeight() int32 {
 	return g.dag.Height()
+}
+
+// TipHashes returns the hashes of the DAG's tips
+func (g *BlkTmplGenerator) TipHashes() []daghash.Hash {
+	return g.dag.TipHashes()
 }
 
 // TxSource returns the associated transaction source.

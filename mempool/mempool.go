@@ -541,8 +541,8 @@ func (mp *TxPool) RemoveDoubleSpends(tx *util.Tx) {
 //
 // This function MUST be called with the mempool lock held (for writes).
 func (mp *TxPool) addTransaction(tx *util.Tx, height int32, fee int64) *TxDesc {
-	mp.cfg.DAG.RLock()
-	defer mp.cfg.DAG.RUnlock()
+	mp.cfg.DAG.UTXORLock()
+	defer mp.cfg.DAG.UTXORUnlock()
 	// Add the transaction to the pool and mark the referenced outpoints
 	// as spent by the pool.
 	txD := &TxDesc{
@@ -631,8 +631,8 @@ func (mp *TxPool) FetchTransaction(txHash *daghash.Hash) (*util.Tx, error) {
 //
 // This function MUST be called with the mempool lock held (for writes).
 func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rateLimit, rejectDupOrphans bool) ([]*daghash.Hash, *TxDesc, error) {
-	mp.cfg.DAG.RLock()
-	defer mp.cfg.DAG.RUnlock()
+	mp.cfg.DAG.UTXORLock()
+	defer mp.cfg.DAG.UTXORUnlock()
 	txHash := tx.Hash()
 
 	// Don't accept the transaction if it already exists in the pool.  This
@@ -1220,7 +1220,7 @@ func (mp *TxPool) HandleNewBlock(block *util.Block, txChan chan NewBlockMsg) err
 // New returns a new memory pool for validating and storing standalone
 // transactions until they are mined into a block.
 func New(cfg *Config) *TxPool {
-	virtualUTXO := cfg.DAG.VirtualBlock().UTXOSet
+	virtualUTXO := cfg.DAG.UTXOSet()
 	mpUTXO := blockdag.NewDiffUTXOSet(virtualUTXO, blockdag.NewUTXODiff())
 	return &TxPool{
 		cfg:            *cfg,
