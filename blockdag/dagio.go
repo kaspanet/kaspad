@@ -811,7 +811,7 @@ func (dag *BlockDAG) createDAGState() error {
 		}
 
 		// Store the current DAG tip hashes into the database.
-		err = dbPutDAGTipHashes(dbTx, dag.virtual.TipHashes())
+		err = dbPutDAGTipHashes(dbTx, dag.TipHashes())
 		if err != nil {
 			return err
 		}

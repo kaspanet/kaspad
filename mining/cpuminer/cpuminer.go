@@ -162,7 +162,7 @@ func (m *CPUMiner) submitBlock(block *util.Block) bool {
 	// a new block, but the check only happens periodically, so it is
 	// possible a block was found and submitted in between.
 	msgBlock := block.MsgBlock()
-	if !daghash.AreEqual(msgBlock.Header.PrevBlocks, m.g.VirtualBlock().TipHashes()) {
+	if !daghash.AreEqual(msgBlock.Header.PrevBlocks, m.g.TipHashes()) {
 		log.Debugf("Block submitted via CPU miner with previous "+
 			"blocks %s is stale", msgBlock.Header.PrevBlocks)
 		return false
@@ -247,8 +247,7 @@ func (m *CPUMiner) solveBlock(msgBlock *wire.MsgBlock, blockHeight int32,
 				hashesCompleted = 0
 
 				// The current block is stale if the DAG has changed.
-				virtualBlock := m.g.VirtualBlock()
-				if !daghash.AreEqual(header.PrevBlocks, virtualBlock.TipHashes()) {
+				if !daghash.AreEqual(header.PrevBlocks, m.g.TipHashes()) {
 					return false
 				}
 

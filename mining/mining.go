@@ -717,8 +717,8 @@ mempoolLoop:
 	var msgBlock wire.MsgBlock
 	msgBlock.Header = wire.BlockHeader{
 		Version:       nextBlockVersion,
-		NumPrevBlocks: byte(len(virtualBlock.TipHashes())),
-		PrevBlocks:    virtualBlock.TipHashes(),
+		NumPrevBlocks: byte(len(g.dag.TipHashes())),
+		PrevBlocks:    g.dag.TipHashes(),
 		MerkleRoot:    *merkles[len(merkles)-1],
 		Timestamp:     ts,
 		Bits:          reqDifficulty,
@@ -818,6 +818,11 @@ func (g *BlkTmplGenerator) VirtualBlock() *blockdag.VirtualBlock {
 // DAGHeight returns the DAG's height
 func (g *BlkTmplGenerator) DAGHeight() int32 {
 	return g.dag.Height()
+}
+
+// TipHashes returns the hashes of the DAG's tips
+func (g *BlkTmplGenerator) TipHashes() []daghash.Hash {
+	return g.dag.TipHashes()
 }
 
 // TxSource returns the associated transaction source.

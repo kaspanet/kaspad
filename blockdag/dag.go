@@ -516,7 +516,7 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block) error {
 	// Atomically insert info into the database.
 	err = dag.db.Update(func(dbTx database.Tx) error {
 		// Update best block state.
-		err := dbPutDAGTipHashes(dbTx, dag.virtual.TipHashes())
+		err := dbPutDAGTipHashes(dbTx, dag.TipHashes())
 		if err != nil {
 			return err
 		}
@@ -928,6 +928,17 @@ func (dag *BlockDAG) VirtualBlock() *VirtualBlock {
 // Height returns the height of the highest tip in the DAG
 func (dag *BlockDAG) Height() int32 {
 	return dag.virtual.tips().maxHeight()
+}
+
+// TipHashes returns the hashes of the DAG's tips
+func (dag *BlockDAG) TipHashes() []daghash.Hash {
+	return dag.virtual.tips().hashes()
+}
+
+// HighestTipHash returns the hash of the highest tip.
+// This function is a placeholder for places that aren't DAG-compatible, and it's needed to be removed in the future
+func (dag *BlockDAG) HighestTipHash() daghash.Hash {
+	return dag.virtual.tips().highest().hash
 }
 
 // HeaderByHash returns the block header identified by the given hash or an
