@@ -27,7 +27,7 @@ func phantom(block *blockNode, k uint32) (blues []*blockNode, selectedParent *bl
 		blues := traverseCandidates(block, candidates, parent)
 		score := uint64(len(blues)) + parent.blueScore
 
-		if score > bestScore || (score == bestScore && (bestHash == nil || daghash.Less(bestHash, &parent.hash))) {
+		if score > bestScore || (score == bestScore && (bestHash == nil || daghash.Less(&parent.hash, bestHash))) {
 			bestScore = score
 			bestBlues = blues
 			bestParent = parent
