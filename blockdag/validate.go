@@ -435,7 +435,7 @@ func checkBlockParentsOrder(header *wire.BlockHeader) error {
 		sortedHashes = append(sortedHashes, hash)
 	}
 	sort.Slice(sortedHashes, func(i, j int) bool {
-		return daghash.Less(&sortedHashes[i], &sortedHashes[j])
+		return daghash.Less(&sortedHashes[j], &sortedHashes[i])
 	})
 	if !daghash.AreEqual(header.PrevBlocks, sortedHashes) {
 		return ruleError(ErrWrongParentsOrder, "block parents are not ordered by hash")

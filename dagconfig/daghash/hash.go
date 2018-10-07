@@ -178,9 +178,9 @@ func (hash *Hash) Cmp(target *Hash) int {
 	return HashToBig(hash).Cmp(HashToBig(target))
 }
 
-//Less returns true iff hash b is less than hash a
+//Less returns true iff hash a is less than hash b
 func Less(a *Hash, b *Hash) bool {
-	return a.Cmp(b) > 0
+	return b.Cmp(a) > 0
 }
 
 //JoinHashesStrings joins all the stringified hashes separated by a separator
