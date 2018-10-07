@@ -180,7 +180,7 @@ func (hash *Hash) Cmp(target *Hash) int {
 
 //Less returns true iff hash a is less than hash b
 func Less(a *Hash, b *Hash) bool {
-	return b.Cmp(a) > 0
+	return a.Cmp(b) < 0
 }
 
 //JoinHashesStrings joins all the stringified hashes separated by a separator
