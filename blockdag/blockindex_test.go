@@ -30,7 +30,8 @@ func TestFlushToDBErrors(t *testing.T) {
 	// Call flushToDB without anything to flush. This should succeed
 	err = dag.index.flushToDB()
 	if err != nil {
-		t.Errorf("TestFlushToDBErrors: Unexpected flushToDB error: %s", err)
+		t.Errorf("TestFlushToDBErrors: flushToDB without anything to flush: " +
+			"Unexpected flushToDB error: %s", err)
 	}
 
 	// Mark the genesis block as dirty
@@ -43,10 +44,12 @@ func TestFlushToDBErrors(t *testing.T) {
 	})
 	err = dag.index.flushToDB()
 	if err == nil {
-		t.Errorf("TestFlushToDBErrors: Expected: %s, got: <nil>", databaseErrorMessage)
+		t.Errorf("TestFlushToDBErrors: flushToDB failure due to database error: " +
+			"Expected: %s, got: <nil>", databaseErrorMessage)
 	}
 	if !strings.Contains(err.Error(), databaseErrorMessage) {
-		t.Errorf("TestFlushToDBErrors: Unexpected flushToDB error. Expected: %s, got: %s", databaseErrorMessage, err)
+		t.Errorf("TestFlushToDBErrors: flushToDB failure due to database error: " +
+			"Unexpected flushToDB error. Expected: %s, got: %s", databaseErrorMessage, err)
 	}
 	monkey.Unpatch(dbStoreBlockNode)
 }

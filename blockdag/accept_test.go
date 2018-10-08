@@ -24,27 +24,31 @@ func TestMaybeAcceptBlockErrors(t *testing.T) {
 	orphanBlockFile := "blk_3B.dat"
 	loadedBlocks, err := loadBlocks(orphanBlockFile)
 	if err != nil {
-		t.Fatalf("TestMaybeAcceptBlockErrors: Error loading file '%s': %s\n", orphanBlockFile, err)
+		t.Fatalf("TestMaybeAcceptBlockErrors: rejecting the block if its parents are missing: " +
+			"Error loading file '%s': %s\n", orphanBlockFile, err)
 	}
 	block := loadedBlocks[0]
 
 	err = dag.maybeAcceptBlock(block, BFNone)
 	if err == nil {
-		t.Errorf("TestMaybeAcceptBlockErrors: Expected: %s, got: <nil>", ErrPreviousBlockUnknown)
+		t.Errorf("TestMaybeAcceptBlockErrors: rejecting the block if its parents are missing: " +
+			"Expected: %s, got: <nil>", ErrPreviousBlockUnknown)
 	}
 	ruleErr, ok := err.(RuleError)
 	if !ok {
-		t.Errorf("TestMaybeAcceptBlockErrors: Expected RuleError but got %s", err)
+		t.Errorf("TestMaybeAcceptBlockErrors: rejecting the block if its parents are missing: " +
+			"Expected RuleError but got %s", err)
 	} else if ruleErr.ErrorCode != ErrPreviousBlockUnknown {
-		t.Errorf("TestMaybeAcceptBlockErrors: Unexpected error code. "+
-			"Want: %s, got: %s", ErrPreviousBlockUnknown, ruleErr.ErrorCode)
+		t.Errorf("TestMaybeAcceptBlockErrors: rejecting the block if its parents are missing: " +
+			"Unexpected error code. Want: %s, got: %s", ErrPreviousBlockUnknown, ruleErr.ErrorCode)
 	}
 
 	// Test rejecting the block if its parents are invalid
 	blocksFile := "blk_0_to_4.dat"
 	blocks, err := loadBlocks(blocksFile)
 	if err != nil {
-		t.Fatalf("TestMaybeAcceptBlockErrors: Error loading file '%s': %s\n", blocksFile, err)
+		t.Fatalf("TestMaybeAcceptBlockErrors: rejecting the block if its parents are invalid: " +
+			"Error loading file '%s': %s\n", blocksFile, err)
 	}
 
 	// Add a valid block and mark it as invalid
@@ -59,14 +63,16 @@ func TestMaybeAcceptBlockErrors(t *testing.T) {
 	block2 := blocks[2]
 	err = dag.maybeAcceptBlock(block2, BFNone)
 	if err == nil {
-		t.Errorf("TestMaybeAcceptBlockErrors: Expected: %s, got: <nil>", ErrInvalidAncestorBlock)
+		t.Errorf("TestMaybeAcceptBlockErrors: rejecting the block if its parents are invalid: " +
+			"Expected: %s, got: <nil>", ErrInvalidAncestorBlock)
 	}
 	ruleErr, ok = err.(RuleError)
 	if !ok {
-		t.Errorf("TestMaybeAcceptBlockErrors: Expected RuleError but got %s", err)
+		t.Errorf("TestMaybeAcceptBlockErrors: rejecting the block if its parents are invalid: " +
+			"Expected RuleError but got %s", err)
 	} else if ruleErr.ErrorCode != ErrInvalidAncestorBlock {
-		t.Errorf("TestMaybeAcceptBlockErrors: Unexpected error. "+
-			"Want: %s, got: %s", ErrInvalidAncestorBlock, ruleErr.ErrorCode)
+		t.Errorf("TestMaybeAcceptBlockErrors: rejecting the block if its parents are invalid: " +
+			"Unexpected error. Want: %s, got: %s", ErrInvalidAncestorBlock, ruleErr.ErrorCode)
 	}
 
 	// Set block1's status back to valid for next tests
@@ -77,14 +83,16 @@ func TestMaybeAcceptBlockErrors(t *testing.T) {
 	block2.MsgBlock().Header.Bits = 0
 	err = dag.maybeAcceptBlock(block2, BFNone)
 	if err == nil {
-		t.Errorf("TestMaybeAcceptBlockErrors: Expected: %s, got: <nil>", ErrUnexpectedDifficulty)
+		t.Errorf("TestMaybeAcceptBlockErrors: rejecting the block due to bad context: " +
+			"Expected: %s, got: <nil>", ErrUnexpectedDifficulty)
 	}
 	ruleErr, ok = err.(RuleError)
 	if !ok {
-		t.Errorf("TestMaybeAcceptBlockErrors: Expected RuleError but got %s", err)
+		t.Errorf("TestMaybeAcceptBlockErrors: rejecting the block due to bad context: " +
+			"Expected RuleError but got %s", err)
 	} else if ruleErr.ErrorCode != ErrUnexpectedDifficulty {
-		t.Errorf("TestMaybeAcceptBlockErrors: Unexpected error. "+
-			"Want: %s, got: %s", ErrUnexpectedDifficulty, ruleErr.ErrorCode)
+		t.Errorf("TestMaybeAcceptBlockErrors: rejecting the block due to bad context: " +
+			"Unexpected error. Want: %s, got: %s", ErrUnexpectedDifficulty, ruleErr.ErrorCode)
 	}
 
 	// Set block2's bits back to valid for next tests
@@ -97,10 +105,12 @@ func TestMaybeAcceptBlockErrors(t *testing.T) {
 	})
 	err = dag.maybeAcceptBlock(block2, BFNone)
 	if err == nil {
-		t.Errorf("TestMaybeAcceptBlockErrors: Expected: %s, got: <nil>", databaseErrorMessage)
+		t.Errorf("TestMaybeAcceptBlockErrors: rejecting the node due to database error: " +
+			"Expected: %s, got: <nil>", databaseErrorMessage)
 	}
 	if !strings.Contains(err.Error(), databaseErrorMessage) {
-		t.Errorf("TestMaybeAcceptBlockErrors: Unexpected error. Want: %s, got: %s", databaseErrorMessage, err)
+		t.Errorf("TestMaybeAcceptBlockErrors: rejecting the node due to database error: " +
+			"Unexpected error. Want: %s, got: %s", databaseErrorMessage, err)
 	}
 	monkey.Unpatch(dbStoreBlock)
 
@@ -111,10 +121,12 @@ func TestMaybeAcceptBlockErrors(t *testing.T) {
 	})
 	err = dag.maybeAcceptBlock(block2, BFNone)
 	if err == nil {
-		t.Errorf("TestMaybeAcceptBlockErrors: Expected %s, got: <nil>", indexErrorMessage)
+		t.Errorf("TestMaybeAcceptBlockErrors: rejecting the node due to index error: " +
+			"Expected %s, got: <nil>", indexErrorMessage)
 	}
 	if !strings.Contains(err.Error(), indexErrorMessage) {
-		t.Errorf("TestMaybeAcceptBlockErrors: Unexpected error. Want: %s, got: %s", indexErrorMessage, err)
+		t.Errorf("TestMaybeAcceptBlockErrors: rejecting the node due to index error: " +
+			"Unexpected error. Want: %s, got: %s", indexErrorMessage, err)
 	}
 	monkey.Unpatch((*blockIndex).flushToDB)
 }
