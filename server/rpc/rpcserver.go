@@ -1008,9 +1008,8 @@ func handleGetBestBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (
 	// All other "get block" commands give either the height, the
 	// hash, or both but require the block SHA.  This gets both for
 	// the best block.
-	virtualBlock := s.cfg.DAG.VirtualBlock()
 	result := &btcjson.GetBestBlockResult{
-		Hash:   virtualBlock.SelectedTipHash().String(),
+		Hash:   s.cfg.DAG.HighestTipHash().String(),
 		Height: s.cfg.DAG.Height(), //TODO: (Ori) This is probably wrong. Done only for compilation
 	}
 	return result, nil
@@ -1018,8 +1017,7 @@ func handleGetBestBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (
 
 // handleGetBestBlockHash implements the getbestblockhash command.
 func handleGetBestBlockHash(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	virtualBlock := s.cfg.DAG.VirtualBlock()
-	return virtualBlock.SelectedTipHash().String(), nil
+	return s.cfg.DAG.HighestTipHash().String(), nil
 }
 
 // getDifficultyRatio returns the proof-of-work difficulty as a multiple of the
@@ -1173,7 +1171,7 @@ func handleGetBlockDAGInfo(s *Server, cmd interface{}, closeChan <-chan struct{}
 		DAG:           params.Name,
 		Blocks:        dag.Height(), //TODO: (Ori) This is wrong. Done only for compilation
 		Headers:       dag.Height(), //TODO: (Ori) This is wrong. Done only for compilation
-		TipHashes:     daghash.Strings(virtualBlock.TipHashes()),
+		TipHashes:     daghash.Strings(dag.TipHashes()),
 		Difficulty:    getDifficultyRatio(virtualBlock.SelectedTip().Header().Bits, params),
 		MedianTime:    virtualBlock.SelectedTip().CalcPastMedianTime().Unix(),
 		Pruned:        false,
@@ -1490,7 +1488,7 @@ func (state *gbtWorkState) updateBlockTemplate(s *Server, useCoinbaseValue bool)
 	var msgBlock *wire.MsgBlock
 	var targetDifficulty string
 	virtualBlock := s.cfg.DAG.VirtualBlock()
-	tipHashes := virtualBlock.TipHashes()
+	tipHashes := s.cfg.DAG.TipHashes()
 	template := state.template
 	if template == nil || state.tipHashes == nil ||
 		!daghash.AreEqual(state.tipHashes, tipHashes) ||
@@ -2050,7 +2048,7 @@ func handleGetBlockTemplateProposal(s *Server, request *btcjson.TemplateRequest)
 	block := util.NewBlock(&msgBlock)
 
 	// Ensure the block is building from the expected previous blocks.
-	expectedPrevHashes := s.cfg.DAG.VirtualBlock().TipHashes()
+	expectedPrevHashes := s.cfg.DAG.TipHashes()
 	prevHashes := block.MsgBlock().Header.PrevBlocks
 	if !daghash.AreEqual(expectedPrevHashes, prevHashes) {
 		return "bad-prevblk", nil
@@ -2283,8 +2281,8 @@ func handleGetMiningInfo(s *Server, cmd interface{}, closeChan <-chan struct{}) 
 	}
 
 	virtualBlock := s.cfg.DAG.VirtualBlock()
-	selectedTipHash := virtualBlock.SelectedTipHash()
-	selectedBlock, err := s.cfg.DAG.BlockByHash(&selectedTipHash)
+	highestTipHash := s.cfg.DAG.HighestTipHash()
+	selectedBlock, err := s.cfg.DAG.BlockByHash(&highestTipHash)
 	if err != nil {
 		return nil, &btcjson.RPCError{
 			Code:    btcjson.ErrRPCInternal.Code,
@@ -2548,8 +2546,7 @@ func handleGetTxOut(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 			return nil, internalRPCError(errStr, "")
 		}
 
-		virtualBlock := s.cfg.DAG.VirtualBlock()
-		bestBlockHash = virtualBlock.SelectedTipHash().String()
+		bestBlockHash = s.cfg.DAG.HighestTipHash().String()
 		confirmations = 0
 		value = txOut.Value
 		pkScript = txOut.PkScript
@@ -2570,8 +2567,7 @@ func handleGetTxOut(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 			return nil, nil
 		}
 
-		virtualBlock := s.cfg.DAG.VirtualBlock()
-		bestBlockHash = virtualBlock.SelectedTipHash().String()
+		bestBlockHash = s.cfg.DAG.HighestTipHash().String()
 		confirmations = 1 + s.cfg.DAG.Height() - entry.BlockHeight() //TODO: (Ori) This is probably wrong. Done only for compilation
 		value = entry.Amount()
 		pkScript = entry.PkScript()
@@ -3322,7 +3318,6 @@ func handleValidateAddress(s *Server, cmd interface{}, closeChan <-chan struct{}
 }
 
 func verifyDAG(s *Server, level, depth int32) error {
-	virtualBlock := s.cfg.DAG.VirtualBlock()
 	finishHeight := s.cfg.DAG.Height() - depth //TODO: (Ori) This is probably wrong. Done only for compilation
 	if finishHeight < 0 {
 		finishHeight = 0
@@ -3330,7 +3325,7 @@ func verifyDAG(s *Server, level, depth int32) error {
 	log.Infof("Verifying chain for %d blocks at level %d",
 		s.cfg.DAG.Height()-finishHeight, level) //TODO: (Ori) This is probably wrong. Done only for compilation
 
-	currentHash := virtualBlock.SelectedTipHash()
+	currentHash := s.cfg.DAG.HighestTipHash()
 	for height := s.cfg.DAG.Height(); height > finishHeight; { //TODO: (Ori) This is probably wrong. Done only for compilation
 		// Level 0 just looks up the block.
 		block, err := s.cfg.DAG.BlockByHash(&currentHash)

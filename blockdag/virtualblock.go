@@ -7,7 +7,6 @@ package blockdag
 import (
 	"sync"
 
-	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/wire"
 )
 
@@ -15,7 +14,7 @@ import (
 type VirtualBlock struct {
 	mtx      sync.Mutex
 	phantomK uint32
-	UTXOSet  *fullUTXOSet
+	utxoSet  *fullUTXOSet
 	blockNode
 }
 
@@ -24,7 +23,7 @@ func newVirtualBlock(tips blockSet, phantomK uint32) *VirtualBlock {
 	// The mutex is intentionally not held since this is a constructor.
 	var virtual VirtualBlock
 	virtual.phantomK = phantomK
-	virtual.UTXOSet = NewFullUTXOSet()
+	virtual.utxoSet = NewFullUTXOSet()
 	virtual.setTips(tips)
 
 	return &virtual
@@ -34,7 +33,7 @@ func newVirtualBlock(tips blockSet, phantomK uint32) *VirtualBlock {
 func (v *VirtualBlock) clone() *VirtualBlock {
 	return &VirtualBlock{
 		phantomK:  v.phantomK,
-		UTXOSet:   v.UTXOSet.clone().(*fullUTXOSet),
+		utxoSet:   v.utxoSet.clone().(*fullUTXOSet),
 		blockNode: v.blockNode,
 	}
 }
@@ -101,21 +100,11 @@ func (v *VirtualBlock) SelectedTip() *blockNode {
 	return v.selectedParent
 }
 
-// TipHashes returns the hashes of the tips of the virtual block.
-func (v *VirtualBlock) TipHashes() []daghash.Hash {
-	return v.tips().hashes()
-}
-
-// SelectedTipHash returns the hash of the selected tip of the virtual block.
-func (v *VirtualBlock) SelectedTipHash() daghash.Hash {
-	return v.SelectedTip().hash
-}
-
 // GetUTXOEntry returns the requested unspent transaction output. The returned
 // instance must be treated as immutable since it is shared by all callers.
 //
 // This function is safe for concurrent access. However, the returned entry (if
 // any) is NOT.
 func (v *VirtualBlock) GetUTXOEntry(outPoint wire.OutPoint) (*UTXOEntry, bool) {
-	return v.UTXOSet.get(outPoint)
+	return v.utxoSet.get(outPoint)
 }

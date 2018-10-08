@@ -435,7 +435,7 @@ func checkBlockParentsOrder(header *wire.BlockHeader) error {
 		sortedHashes = append(sortedHashes, hash)
 	}
 	sort.Slice(sortedHashes, func(i, j int) bool {
-		return daghash.Less(&sortedHashes[i], &sortedHashes[j])
+		return daghash.Less(&sortedHashes[j], &sortedHashes[i])
 	})
 	if !daghash.AreEqual(header.PrevBlocks, sortedHashes) {
 		return ruleError(ErrWrongParentsOrder, "block parents are not ordered by hash")
@@ -965,7 +965,7 @@ func (dag *BlockDAG) checkConnectBlock(node *blockNode, block *util.Block) error
 		// countP2SHSigOps for whether or not the transaction is
 		// a coinbase transaction rather than having to do a
 		// full coinbase check again.
-		numP2SHSigOps, err := CountP2SHSigOps(tx, i == 0, dag.VirtualBlock().UTXOSet)
+		numP2SHSigOps, err := CountP2SHSigOps(tx, i == 0, dag.VirtualBlock().utxoSet)
 		if err != nil {
 			return err
 		}
@@ -992,7 +992,7 @@ func (dag *BlockDAG) checkConnectBlock(node *blockNode, block *util.Block) error
 	// bounds.
 	var totalFees int64
 	for _, tx := range transactions {
-		txFee, err := CheckTransactionInputs(tx, node.height, dag.VirtualBlock().UTXOSet,
+		txFee, err := CheckTransactionInputs(tx, node.height, dag.VirtualBlock().utxoSet,
 			dag.dagParams)
 		if err != nil {
 			return err
@@ -1051,7 +1051,7 @@ func (dag *BlockDAG) checkConnectBlock(node *blockNode, block *util.Block) error
 		// A transaction can only be included within a block
 		// once the sequence locks of *all* its inputs are
 		// active.
-		sequenceLock, err := dag.calcSequenceLock(node, dag.VirtualBlock().UTXOSet, tx, false)
+		sequenceLock, err := dag.calcSequenceLock(node, dag.VirtualBlock().utxoSet, tx, false)
 		if err != nil {
 			return err
 		}
@@ -1069,7 +1069,7 @@ func (dag *BlockDAG) checkConnectBlock(node *blockNode, block *util.Block) error
 	// expensive ECDSA signature check scripts.  Doing this last helps
 	// prevent CPU exhaustion attacks.
 	if runScripts {
-		err := checkBlockScripts(block, dag.VirtualBlock().UTXOSet, scriptFlags, dag.sigCache)
+		err := checkBlockScripts(block, dag.VirtualBlock().utxoSet, scriptFlags, dag.sigCache)
 		if err != nil {
 			return err
 		}
