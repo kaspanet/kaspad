@@ -139,7 +139,7 @@ func TestHaveBlock(t *testing.T) {
 		{hash: "0000004d6cf95724bced0ad218d1fe3d1fd7810dae663b60cc81e52d12c95ad5", want: true},
 
 		// Block 100000 should be present (as an orphan).
-		{hash: "000000a805b083e0ef1f516b1153828724c235d6e6f0fabb47b869f6d054ac3f", want: true},
+		{hash: "000000e46b5f4f7bfecff77f2f30f2ab90d08e3c5a55784080f97689bcd92786", want: true},
 
 		// Random hashes should not be available.
 		{hash: "123", want: false},
@@ -466,6 +466,53 @@ func TestCalcSequenceLock(t *testing.T) {
 				i, seqLock.BlockHeight, test.want.BlockHeight)
 		}
 	}
+}
+
+func TestCalcPastMedianTime(t *testing.T) {
+	netParams := &dagconfig.MainNetParams
+
+	blockVersion := int32(0x10000000)
+
+	dag := newTestDAG(netParams)
+	numBlocks := uint32(60)
+	nodes := make([]*blockNode, numBlocks)
+	nodes[0] = dag.genesis
+	blockTime := dag.genesis.Header().Timestamp
+	for i := uint32(1); i < numBlocks; i++ {
+		blockTime = blockTime.Add(time.Second)
+		nodes[i] = newTestNode(setFromSlice(nodes[i-1]), blockVersion, 0, blockTime, netParams.K)
+		dag.index.AddNode(nodes[i])
+	}
+
+	tests := []struct {
+		blockNumber                 uint32
+		expectedSecondsSinceGenesis int64
+	}{
+		{
+			blockNumber:                 50,
+			expectedSecondsSinceGenesis: 25,
+		},
+		{
+			blockNumber:                 59,
+			expectedSecondsSinceGenesis: 34,
+		},
+		{
+			blockNumber:                 40,
+			expectedSecondsSinceGenesis: 15,
+		},
+		{
+			blockNumber:                 5,
+			expectedSecondsSinceGenesis: 0,
+		},
+	}
+
+	for _, test := range tests {
+		secondsSinceGenesis := nodes[test.blockNumber].CalcPastMedianTime().Unix() - dag.genesis.Header().Timestamp.Unix()
+		if secondsSinceGenesis != test.expectedSecondsSinceGenesis {
+			t.Errorf("TestCalcPastMedianTime: expected past median time of block %v to be %v seconds from genesis but got %v", test.blockNumber, test.expectedSecondsSinceGenesis, secondsSinceGenesis)
+		}
+	}
+
 }
 
 // nodeHashes is a convenience function that returns the hashes for all of the

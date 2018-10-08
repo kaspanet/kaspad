@@ -272,14 +272,13 @@ func TestFullBlocks(t *testing.T) {
 			item.Name, block.Hash(), blockHeight)
 
 		// Ensure hash and height match.
-		virtualBlock := dag.VirtualBlock()
-		if virtualBlock.SelectedTipHash() != item.Block.BlockHash() ||
-			virtualBlock.SelectedTipHeight() != blockHeight {
+		if dag.HighestTipHash() != item.Block.BlockHash() ||
+			dag.Height() != blockHeight { //TODO: (Ori) the use of dag.Height() and virtualBlock.HighestTipHash() is wrong, and was done only for compilation
 
 			t.Fatalf("block %q (hash %s, height %d) should be "+
 				"the current tip -- got (hash %s, height %d)",
-				item.Name, block.Hash(), blockHeight, virtualBlock.SelectedTipHash(),
-				virtualBlock.SelectedTipHeight())
+				item.Name, block.Hash(), blockHeight, dag.HighestTipHash(),
+				dag.Height()) //TODO: (Ori) the use of dag.Height() and virtualBlock.HighestTipHash() is wrong, and was done only for compilation
 		}
 	}
 

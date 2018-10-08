@@ -35,6 +35,16 @@ func (bs blockSet) maxHeight() int32 {
 	return maxHeight
 }
 
+func (bs blockSet) highest() *blockNode {
+	var highest *blockNode
+	for _, node := range bs {
+		if highest.height < node.height || daghash.Less(&node.hash, &highest.hash) {
+			highest = node
+		}
+	}
+	return highest
+}
+
 // add adds a block to this BlockSet
 func (bs blockSet) add(block *blockNode) {
 	bs[block.hash] = block
@@ -120,18 +130,9 @@ func (bs blockSet) hashes() []daghash.Hash {
 		hashes = append(hashes, hash)
 	}
 	sort.Slice(hashes, func(i, j int) bool {
-		return daghash.Less(&hashes[i], &hashes[j])
+		return daghash.Less(&hashes[j], &hashes[i])
 	})
 	return hashes
-}
-
-// first returns the first block in this set or nil if this set is empty.
-func (bs blockSet) first() *blockNode { //TODO: (Ori) This is wrong. Done only for compilation. We should probably get rid of this method
-	for _, block := range bs {
-		return block
-	}
-
-	return nil
 }
 
 func (bs blockSet) String() string {
@@ -151,4 +152,18 @@ func (bs blockSet) anyChildInSet(block *blockNode) bool {
 	}
 
 	return false
+}
+
+func (bs blockSet) bluest() *blockNode {
+	var bluestNode *blockNode
+	var maxScore uint64
+	for _, node := range bs {
+		if bluestNode == nil ||
+			node.blueScore > maxScore ||
+			(node.blueScore == maxScore && daghash.Less(&node.hash, &bluestNode.hash)) {
+			bluestNode = node
+			maxScore = node.blueScore
+		}
+	}
+	return bluestNode
 }

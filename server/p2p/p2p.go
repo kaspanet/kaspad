@@ -290,9 +290,8 @@ func newServerPeer(s *Server, isPersistent bool) *Peer {
 // newestBlock returns the current best block hash and height using the format
 // required by the configuration for the peer package.
 func (sp *Peer) newestBlock() (*daghash.Hash, int32, error) {
-	virtualBlock := sp.server.DAG.VirtualBlock()
-	selectedTipHash := virtualBlock.SelectedTipHash()
-	return &selectedTipHash, virtualBlock.SelectedTipHeight(), nil
+	highestTipHash := sp.server.DAG.HighestTipHash()
+	return &highestTipHash, sp.server.DAG.Height(), nil //TODO: (Ori) This is probably wrong. Done only for compilation
 }
 
 // addKnownAddresses adds the given addresses to the set of known addresses to
@@ -1308,9 +1307,9 @@ func (s *Server) pushBlockMsg(sp *Peer, hash *daghash.Hash, doneChan chan<- stru
 	// to trigger it to issue another getblocks message for the next
 	// batch of inventory.
 	if sendInv {
-		selectedTipHash := sp.server.DAG.VirtualBlock().SelectedTipHash()
+		highestTipHash := sp.server.DAG.HighestTipHash()
 		invMsg := wire.NewMsgInvSizeHint(1)
-		iv := wire.NewInvVect(wire.InvTypeBlock, &selectedTipHash)
+		iv := wire.NewInvVect(wire.InvTypeBlock, &highestTipHash)
 		invMsg.AddInvVect(iv)
 		sp.QueueMessage(invMsg, doneChan)
 		sp.continueHash = nil
@@ -2419,7 +2418,7 @@ func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params
 
 	// If no feeEstimator has been found, or if the one that has been found
 	// is behind somehow, create a new one and start over.
-	if s.FeeEstimator == nil || s.FeeEstimator.LastKnownHeight() != s.DAG.VirtualBlock().SelectedTipHeight() {
+	if s.FeeEstimator == nil || s.FeeEstimator.LastKnownHeight() != s.DAG.Height() { //TODO: (Ori) This is probably wrong. Done only for compilation
 		s.FeeEstimator = mempool.NewFeeEstimator(
 			mempool.DefaultEstimateFeeMaxRollback,
 			mempool.DefaultEstimateFeeMinRegisteredBlocks)
@@ -2437,7 +2436,7 @@ func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params
 			MaxTxVersion:         1,
 		},
 		DAGParams:      dagParams,
-		BestHeight:     func() int32 { return s.DAG.VirtualBlock().SelectedTipHeight() },
+		BestHeight:     func() int32 { return s.DAG.Height() }, //TODO: (Ori) This is probably wrong. Done only for compilation
 		MedianTimePast: func() time.Time { return s.DAG.VirtualBlock().SelectedTip().CalcPastMedianTime() },
 		CalcSequenceLock: func(tx *util.Tx, utxoSet blockdag.UTXOSet) (*blockdag.SequenceLock, error) {
 			return s.DAG.CalcSequenceLock(tx, utxoSet, true)
