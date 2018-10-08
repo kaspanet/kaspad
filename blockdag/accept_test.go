@@ -24,13 +24,13 @@ func TestMaybeAcceptBlockErrors(t *testing.T) {
 	orphanBlockFile := "blk_3B.dat"
 	loadedBlocks, err := loadBlocks(orphanBlockFile)
 	if err != nil {
-		t.Fatalf("TestMaybeAcceptBlockErrors: Error loading file: %s\n", orphanBlockFile)
+		t.Fatalf("TestMaybeAcceptBlockErrors: Error loading file '%s': %s\n", orphanBlockFile, err)
 	}
 	block := loadedBlocks[0]
 
 	err = dag.maybeAcceptBlock(block, BFNone)
 	if err == nil {
-		t.Errorf("TestMaybeAcceptBlockErrors: Expected error but got nil")
+		t.Errorf("TestMaybeAcceptBlockErrors: Expected: %s, got: <nil>", ErrPreviousBlockUnknown)
 	}
 	ruleErr, ok := err.(RuleError)
 	if !ok {
@@ -44,7 +44,7 @@ func TestMaybeAcceptBlockErrors(t *testing.T) {
 	blocksFile := "blk_0_to_4.dat"
 	blocks, err := loadBlocks(blocksFile)
 	if err != nil {
-		t.Fatalf("TestMaybeAcceptBlockErrors: Error loading file: %s\n", err)
+		t.Fatalf("TestMaybeAcceptBlockErrors: Error loading file '%s': %s\n", blocksFile, err)
 	}
 
 	// Add a valid block and mark it as invalid
@@ -59,7 +59,7 @@ func TestMaybeAcceptBlockErrors(t *testing.T) {
 	block2 := blocks[2]
 	err = dag.maybeAcceptBlock(block2, BFNone)
 	if err == nil {
-		t.Errorf("TestMaybeAcceptBlockErrors: Expected error but got nil")
+		t.Errorf("TestMaybeAcceptBlockErrors: Expected: %s, got: <nil>", ErrInvalidAncestorBlock)
 	}
 	ruleErr, ok = err.(RuleError)
 	if !ok {
@@ -77,7 +77,7 @@ func TestMaybeAcceptBlockErrors(t *testing.T) {
 	block2.MsgBlock().Header.Bits = 0
 	err = dag.maybeAcceptBlock(block2, BFNone)
 	if err == nil {
-		t.Errorf("TestMaybeAcceptBlockErrors: Expected error but got nil")
+		t.Errorf("TestMaybeAcceptBlockErrors: Expected: %s, got: <nil>", ErrUnexpectedDifficulty)
 	}
 	ruleErr, ok = err.(RuleError)
 	if !ok {
@@ -97,7 +97,7 @@ func TestMaybeAcceptBlockErrors(t *testing.T) {
 	})
 	err = dag.maybeAcceptBlock(block2, BFNone)
 	if err == nil {
-		t.Errorf("TestMaybeAcceptBlockErrors: Expected error but got nil")
+		t.Errorf("TestMaybeAcceptBlockErrors: Expected: %s, got: <nil>", databaseErrorMessage)
 	}
 	if !strings.Contains(err.Error(), databaseErrorMessage) {
 		t.Errorf("TestMaybeAcceptBlockErrors: Unexpected error. Want: %s, got: %s", databaseErrorMessage, err)
@@ -111,7 +111,7 @@ func TestMaybeAcceptBlockErrors(t *testing.T) {
 	})
 	err = dag.maybeAcceptBlock(block2, BFNone)
 	if err == nil {
-		t.Errorf("TestMaybeAcceptBlockErrors: Expected error but got nil")
+		t.Errorf("TestMaybeAcceptBlockErrors: Expected %s, got: <nil>", indexErrorMessage)
 	}
 	if !strings.Contains(err.Error(), indexErrorMessage) {
 		t.Errorf("TestMaybeAcceptBlockErrors: Unexpected error. Want: %s, got: %s", indexErrorMessage, err)
