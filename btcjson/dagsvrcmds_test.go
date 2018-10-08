@@ -31,15 +31,15 @@ func TestDAGSvrCmds(t *testing.T) {
 		unmarshalled interface{}
 	}{
 		{
-			name: "addnode",
+			name: "addmanualnode",
 			newCmd: func() (interface{}, error) {
-				return btcjson.NewCmd("addnode", "127.0.0.1", btcjson.ANRemove)
+				return btcjson.NewCmd("addmanualnode", "127.0.0.1", false)
 			},
 			staticCmd: func() interface{} {
-				return btcjson.NewAddNodeCmd("127.0.0.1", btcjson.ANRemove)
+				return btcjson.NewAddManualNodeCmd("127.0.0.1", false)
 			},
-			marshalled:   `{"jsonrpc":"1.0","method":"addnode","params":["127.0.0.1","remove"],"id":1}`,
-			unmarshalled: &btcjson.AddNodeCmd{Addr: "127.0.0.1", SubCmd: btcjson.ANRemove},
+			marshalled:   `{"jsonrpc":"1.0","method":"addmanualnode","params":["127.0.0.1",false],"id":1}`,
+			unmarshalled: &btcjson.AddManualNodeCmd{Addr: "127.0.0.1", OneTry: false},
 		},
 		{
 			name: "createrawtransaction",
@@ -104,28 +104,16 @@ func TestDAGSvrCmds(t *testing.T) {
 			unmarshalled: &btcjson.DecodeScriptCmd{HexScript: "00"},
 		},
 		{
-			name: "getaddednodeinfo",
+			name: "getallmanualnodesinfo",
 			newCmd: func() (interface{}, error) {
-				return btcjson.NewCmd("getaddednodeinfo", true)
+				return btcjson.NewCmd("getallmanualnodesinfo", true)
 			},
 			staticCmd: func() interface{} {
-				return btcjson.NewGetAddedNodeInfoCmd(true, nil)
+				return btcjson.NewGetAllManualNodesInfoCmd(true)
 			},
-			marshalled:   `{"jsonrpc":"1.0","method":"getaddednodeinfo","params":[true],"id":1}`,
-			unmarshalled: &btcjson.GetAddedNodeInfoCmd{DNS: true, Node: nil},
-		},
-		{
-			name: "getaddednodeinfo optional",
-			newCmd: func() (interface{}, error) {
-				return btcjson.NewCmd("getaddednodeinfo", true, "127.0.0.1")
-			},
-			staticCmd: func() interface{} {
-				return btcjson.NewGetAddedNodeInfoCmd(true, btcjson.String("127.0.0.1"))
-			},
-			marshalled: `{"jsonrpc":"1.0","method":"getaddednodeinfo","params":[true,"127.0.0.1"],"id":1}`,
-			unmarshalled: &btcjson.GetAddedNodeInfoCmd{
-				DNS:  true,
-				Node: btcjson.String("127.0.0.1"),
+			marshalled: `{"jsonrpc":"1.0","method":"getallmanualnodesinfo","params":[true],"id":1}`,
+			unmarshalled: &btcjson.GetAllManualNodesInfoCmd{
+				Details: true,
 			},
 		},
 		{
@@ -415,6 +403,20 @@ func TestDAGSvrCmds(t *testing.T) {
 			},
 			marshalled:   `{"jsonrpc":"1.0","method":"getinfo","params":[],"id":1}`,
 			unmarshalled: &btcjson.GetInfoCmd{},
+		},
+		{
+			name: "getmanualnodeinfo",
+			newCmd: func() (interface{}, error) {
+				return btcjson.NewCmd("getmanualnodeinfo", true, "127.0.0.1")
+			},
+			staticCmd: func() interface{} {
+				return btcjson.NewGetManualNodeInfoCmd(true, "127.0.0.1")
+			},
+			marshalled: `{"jsonrpc":"1.0","method":"getmanualnodeinfo","params":[true,"127.0.0.1"],"id":1}`,
+			unmarshalled: &btcjson.GetManualNodeInfoCmd{
+				Details: true,
+				Node:    "127.0.0.1",
+			},
 		},
 		{
 			name: "getmempoolentry",
@@ -726,6 +728,17 @@ func TestDAGSvrCmds(t *testing.T) {
 			unmarshalled: &btcjson.ReconsiderBlockCmd{
 				BlockHash: "123",
 			},
+		},
+		{
+			name: "removemanualnode",
+			newCmd: func() (interface{}, error) {
+				return btcjson.NewCmd("removemanualnode", "127.0.0.1")
+			},
+			staticCmd: func() interface{} {
+				return btcjson.NewRemoveManualNodeCmd("127.0.0.1")
+			},
+			marshalled:   `{"jsonrpc":"1.0","method":"removemanualnode","params":["127.0.0.1"],"id":1}`,
+			unmarshalled: &btcjson.RemoveManualNodeCmd{Addr: "127.0.0.1"},
 		},
 		{
 			name: "searchrawtransactions",

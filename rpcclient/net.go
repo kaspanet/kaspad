@@ -10,29 +10,6 @@ import (
 	"github.com/daglabs/btcd/btcjson"
 )
 
-// AddNodeCommand enumerates the available commands that the AddNode function
-// accepts.
-type AddNodeCommand string
-
-// Constants used to indicate the command for the AddNode function.
-const (
-	// ANAdd indicates the specified host should be added as a persistent
-	// peer.
-	ANAdd AddNodeCommand = "add"
-
-	// ANRemove indicates the specified peer should be removed.
-	ANRemove AddNodeCommand = "remove"
-
-	// ANOneTry indicates the specified host should try to connect once,
-	// but it should not be made persistent.
-	ANOneTry AddNodeCommand = "onetry"
-)
-
-// String returns the AddNodeCommand in human-readable form.
-func (cmd AddNodeCommand) String() string {
-	return string(cmd)
-}
-
 // FutureAddNodeResult is a future promise to deliver the result of an
 // AddNodeAsync RPC invocation (or an applicable error).
 type FutureAddNodeResult chan *response
@@ -44,39 +21,39 @@ func (r FutureAddNodeResult) Receive() error {
 	return err
 }
 
-// AddNodeAsync returns an instance of a type that can be used to get the result
+// AddManualNodeAsync returns an instance of a type that can be used to get the result
 // of the RPC at some future time by invoking the Receive function on the
 // returned instance.
 //
 // See AddNode for the blocking version and more details.
-func (c *Client) AddNodeAsync(host string, command AddNodeCommand) FutureAddNodeResult {
-	cmd := btcjson.NewAddNodeCmd(host, btcjson.AddNodeSubCmd(command))
+func (c *Client) AddManualNodeAsync(host string) FutureAddNodeResult {
+	cmd := btcjson.NewAddManualNodeCmd(host, false)
 	return c.sendCmd(cmd)
 }
 
-// AddNode attempts to perform the passed command on the passed persistent peer.
+// AddManualNode attempts to perform the passed command on the passed persistent peer.
 // For example, it can be used to add or a remove a persistent peer, or to do
 // a one time connection to a peer.
 //
 // It may not be used to remove non-persistent peers.
-func (c *Client) AddNode(host string, command AddNodeCommand) error {
-	return c.AddNodeAsync(host, command).Receive()
+func (c *Client) AddManualNode(host string) error {
+	return c.AddManualNodeAsync(host).Receive()
 }
 
-// FutureGetAddedNodeInfoResult is a future promise to deliver the result of a
-// GetAddedNodeInfoAsync RPC invocation (or an applicable error).
-type FutureGetAddedNodeInfoResult chan *response
+// FutureGetManualNodeInfoResult is a future promise to deliver the result of a
+// GetManualNodeInfoAsync RPC invocation (or an applicable error).
+type FutureGetManualNodeInfoResult chan *response
 
 // Receive waits for the response promised by the future and returns information
 // about manually added (persistent) peers.
-func (r FutureGetAddedNodeInfoResult) Receive() ([]btcjson.GetAddedNodeInfoResult, error) {
+func (r FutureGetManualNodeInfoResult) Receive() ([]btcjson.GetManualNodeInfoResult, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return nil, err
 	}
 
-	// Unmarshal as an array of getaddednodeinfo result objects.
-	var nodeInfo []btcjson.GetAddedNodeInfoResult
+	// Unmarshal as an array of getmanualnodeinfo result objects.
+	var nodeInfo []btcjson.GetManualNodeInfoResult
 	err = json.Unmarshal(res, &nodeInfo)
 	if err != nil {
 		return nil, err
@@ -85,31 +62,31 @@ func (r FutureGetAddedNodeInfoResult) Receive() ([]btcjson.GetAddedNodeInfoResul
 	return nodeInfo, nil
 }
 
-// GetAddedNodeInfoAsync returns an instance of a type that can be used to get
+// GetManualNodeInfoAsync returns an instance of a type that can be used to get
 // the result of the RPC at some future time by invoking the Receive function on
 // the returned instance.
 //
-// See GetAddedNodeInfo for the blocking version and more details.
-func (c *Client) GetAddedNodeInfoAsync(peer string) FutureGetAddedNodeInfoResult {
-	cmd := btcjson.NewGetAddedNodeInfoCmd(true, &peer)
+// See GetManualNodeInfo for the blocking version and more details.
+func (c *Client) GetManualNodeInfoAsync(peer string) FutureGetManualNodeInfoResult {
+	cmd := btcjson.NewGetManualNodeInfoCmd(true, peer)
 	return c.sendCmd(cmd)
 }
 
-// GetAddedNodeInfo returns information about manually added (persistent) peers.
+// GetManualNodeInfo returns information about manually added (persistent) peers.
 //
-// See GetAddedNodeInfoNoDNS to retrieve only a list of the added (persistent)
+// See GetManualNodeInfoNoDNS to retrieve only a list of the added (persistent)
 // peers.
-func (c *Client) GetAddedNodeInfo(peer string) ([]btcjson.GetAddedNodeInfoResult, error) {
-	return c.GetAddedNodeInfoAsync(peer).Receive()
+func (c *Client) GetManualNodeInfo(peer string) ([]btcjson.GetManualNodeInfoResult, error) {
+	return c.GetManualNodeInfoAsync(peer).Receive()
 }
 
-// FutureGetAddedNodeInfoNoDNSResult is a future promise to deliver the result
-// of a GetAddedNodeInfoNoDNSAsync RPC invocation (or an applicable error).
-type FutureGetAddedNodeInfoNoDNSResult chan *response
+// FutureGetManualNodeInfoNoDNSResult is a future promise to deliver the result
+// of a GetManualNodeInfoNoDNSAsync RPC invocation (or an applicable error).
+type FutureGetManualNodeInfoNoDNSResult chan *response
 
 // Receive waits for the response promised by the future and returns a list of
 // manually added (persistent) peers.
-func (r FutureGetAddedNodeInfoNoDNSResult) Receive() ([]string, error) {
+func (r FutureGetManualNodeInfoNoDNSResult) Receive() ([]string, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return nil, err
@@ -125,23 +102,23 @@ func (r FutureGetAddedNodeInfoNoDNSResult) Receive() ([]string, error) {
 	return nodes, nil
 }
 
-// GetAddedNodeInfoNoDNSAsync returns an instance of a type that can be used to
+// GetManualNodeInfoNoDNSAsync returns an instance of a type that can be used to
 // get the result of the RPC at some future time by invoking the Receive
 // function on the returned instance.
 //
-// See GetAddedNodeInfoNoDNS for the blocking version and more details.
-func (c *Client) GetAddedNodeInfoNoDNSAsync(peer string) FutureGetAddedNodeInfoNoDNSResult {
-	cmd := btcjson.NewGetAddedNodeInfoCmd(false, &peer)
+// See GetManualNodeInfoNoDNS for the blocking version and more details.
+func (c *Client) GetManualNodeInfoNoDNSAsync(peer string) FutureGetManualNodeInfoNoDNSResult {
+	cmd := btcjson.NewGetManualNodeInfoCmd(false, peer)
 	return c.sendCmd(cmd)
 }
 
-// GetAddedNodeInfoNoDNS returns a list of manually added (persistent) peers.
+// GetManualNodeInfoNoDNS returns a list of manually added (persistent) peers.
 // This works by setting the dns flag to false in the underlying RPC.
 //
-// See GetAddedNodeInfo to obtain more information about each added (persistent)
+// See GetManualNodeInfo to obtain more information about each added (persistent)
 // peer.
-func (c *Client) GetAddedNodeInfoNoDNS(peer string) ([]string, error) {
-	return c.GetAddedNodeInfoNoDNSAsync(peer).Receive()
+func (c *Client) GetManualNodeInfoNoDNS(peer string) ([]string, error) {
+	return c.GetManualNodeInfoNoDNSAsync(peer).Receive()
 }
 
 // FutureGetConnectionCountResult is a future promise to deliver the result
