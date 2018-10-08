@@ -738,8 +738,8 @@ func TestAddrIndex(t *testing.T) {
 
 }
 
-func TestFeeEstimator(t *testing.T) {
-	harness, spendableOuts, err := newPoolHarness(&dagconfig.MainNetParams, 2, "TestAddrIndexRemoveUnconfirmedTx")
+func TestFeeEstimatorCfg(t *testing.T) {
+	harness, spendableOuts, err := newPoolHarness(&dagconfig.MainNetParams, 2, "TestFeeEstimatorCfg")
 	if err != nil {
 		t.Fatalf("unable to create test pool: %v", err)
 	}
@@ -760,7 +760,7 @@ func TestFeeEstimator(t *testing.T) {
 	}
 
 	if !enteredObserveTransaction {
-		t.Errorf("TestFeeEstimator: (*FeeEstimator).ObserveTransaction was not called")
+		t.Errorf("TestFeeEstimatorCfg: (*FeeEstimator).ObserveTransaction was not called")
 	}
 
 }
