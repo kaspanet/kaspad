@@ -445,6 +445,17 @@ func (dag *BlockDAG) connectToDAG(node *blockNode, parentNodes blockSet, block *
 	// Skip checks if node has already been fully validated.
 	fastAdd := flags&BFFastAdd == BFFastAdd || dag.index.NodeStatus(node).KnownValid()
 
+	flushIndexState := func() {
+		// Intentionally ignore errors writing updated node status to DB. If
+		// it fails to write, it's not the end of the world. If the block is
+		// valid, we flush in connectBlock and if the block is invalid, the
+		// worst that can happen is we revalidate the block after a restart.
+		if writeErr := dag.index.flushToDB(); writeErr != nil {
+			log.Warnf("Error flushing block index changes to disk: %v",
+				writeErr)
+		}
+	}
+
 	// Perform several checks to verify the block can be connected
 	// to the DAG without violating any rules and without actually
 	// connecting the block.
@@ -458,14 +469,7 @@ func (dag *BlockDAG) connectToDAG(node *blockNode, parentNodes blockSet, block *
 			return err
 		}
 
-		// Intentionally ignore errors writing updated node status to DB. If
-		// it fails to write, it's not the end of the world. If the block is
-		// valid, we flush in connectBlock and if the block is invalid, the
-		// worst that can happen is we revalidate the block after a restart.
-		if writeErr := dag.index.flushToDB(); writeErr != nil {
-			log.Warnf("Error flushing block index changes to disk: %v",
-				writeErr)
-		}
+		flushIndexState()
 
 		if err != nil {
 			return err
@@ -475,6 +479,15 @@ func (dag *BlockDAG) connectToDAG(node *blockNode, parentNodes blockSet, block *
 	// Connect the block to the DAG.
 	err := dag.connectBlock(node, block)
 	if err != nil {
+		// If we got hit with a rule error, then we'll mark
+		// that status of the block as invalid and flush the
+		// index state to disk before returning with the error.
+		if _, ok := err.(RuleError); ok {
+			dag.index.SetStatusFlags(
+				node, statusValidateFailed,
+			)
+		}
+		flushIndexState()
 		return err
 	}
 
