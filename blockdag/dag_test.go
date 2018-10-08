@@ -36,8 +36,7 @@ func TestHaveBlock(t *testing.T) {
 	for _, file := range testFiles {
 		blockTmp, err := loadBlocks(file)
 		if err != nil {
-			t.Errorf("Error loading file: %v\n", err)
-			return
+			t.Fatalf("Error loading file: %v\n", err)
 		}
 		blocks = append(blocks, blockTmp...)
 	}
@@ -46,8 +45,7 @@ func TestHaveBlock(t *testing.T) {
 	dag, teardownFunc, err := DAGSetup("haveblock",
 		&dagconfig.MainNetParams)
 	if err != nil {
-		t.Errorf("Failed to setup chain instance: %v", err)
-		return
+		t.Fatalf("Failed to setup chain instance: %v", err)
 	}
 	defer teardownFunc()
 
@@ -58,13 +56,11 @@ func TestHaveBlock(t *testing.T) {
 	for i := 1; i < len(blocks); i++ {
 		isOrphan, err := dag.ProcessBlock(blocks[i], BFNone)
 		if err != nil {
-			t.Errorf("ProcessBlock fail on block %v: %v\n", i, err)
-			return
+			t.Fatalf("ProcessBlock fail on block %v: %v\n", i, err)
 		}
 		if isOrphan {
-			t.Errorf("ProcessBlock incorrectly returned block %v "+
+			t.Fatalf("ProcessBlock incorrectly returned block %v "+
 				"is an orphan\n", i)
-			return
 		}
 	}
 
@@ -76,8 +72,7 @@ func TestHaveBlock(t *testing.T) {
 	for _, file := range testFiles {
 		blockTmp, err := loadBlocks(file)
 		if err != nil {
-			t.Errorf("Error loading file: %v\n", err)
-			return
+			t.Fatalf("Error loading file: %v\n", err)
 		}
 		blocks = append(blocks, blockTmp...)
 	}
@@ -85,13 +80,11 @@ func TestHaveBlock(t *testing.T) {
 
 	// Block 3C should fail to connect since its parents are related. (It points to 1 and 2, and 1 is the parent of 2)
 	if err == nil {
-		t.Errorf("ProcessBlock for block 3C has no error when expected to have an error\n")
-		return
+		t.Fatalf("ProcessBlock for block 3C has no error when expected to have an error\n")
 	}
 	if isOrphan {
-		t.Errorf("ProcessBlock incorrectly returned block 3c " +
+		t.Fatalf("ProcessBlock incorrectly returned block 3c " +
 			"is an orphan\n")
-		return
 	}
 
 	// Test a block with the same input twice
@@ -102,8 +95,7 @@ func TestHaveBlock(t *testing.T) {
 	for _, file := range testFiles {
 		blockTmp, err := loadBlocks(file)
 		if err != nil {
-			t.Errorf("Error loading file: %v\n", err)
-			return
+			t.Fatalf("Error loading file: %v\n", err)
 		}
 		blocks = append(blocks, blockTmp...)
 	}
@@ -111,35 +103,29 @@ func TestHaveBlock(t *testing.T) {
 
 	// Block 3D should fail to connect since it has a transaction with the same input twice
 	if err == nil {
-		t.Errorf("ProcessBlock for block 3D has no error when expected to have an error\n")
-		return
+		t.Fatalf("ProcessBlock for block 3D has no error when expected to have an error\n")
 	}
 	rErr, ok := err.(RuleError)
 	if !ok {
-		t.Errorf("ProcessBlock for block 3D expected a RuleError, but got something else\n")
-		return
+		t.Fatalf("ProcessBlock for block 3D expected a RuleError, but got something else\n")
 	}
 	if !ok || rErr.ErrorCode != ErrDuplicateTxInputs {
-		t.Errorf("ProcessBlock for block 3D expected error code %s but got %s\n", ErrDuplicateTxInputs, rErr.ErrorCode)
-		return
+		t.Fatalf("ProcessBlock for block 3D expected error code %s but got %s\n", ErrDuplicateTxInputs, rErr.ErrorCode)
 	}
 	if isOrphan {
-		t.Errorf("ProcessBlock incorrectly returned block 3D " +
+		t.Fatalf("ProcessBlock incorrectly returned block 3D " +
 			"is an orphan\n")
-		return
 	}
 
 	// Insert an orphan block.
 	isOrphan, err = dag.ProcessBlock(util.NewBlock(&Block100000),
 		BFNone)
 	if err != nil {
-		t.Errorf("Unable to process block: %v", err)
-		return
+		t.Fatalf("Unable to process block: %v", err)
 	}
 	if !isOrphan {
-		t.Errorf("ProcessBlock indicated block is an not orphan when " +
+		t.Fatalf("ProcessBlock indicated block is an not orphan when " +
 			"it should be\n")
-		return
 	}
 
 	tests := []struct {
@@ -162,19 +148,16 @@ func TestHaveBlock(t *testing.T) {
 	for i, test := range tests {
 		hash, err := daghash.NewHashFromStr(test.hash)
 		if err != nil {
-			t.Errorf("NewHashFromStr: %v", err)
-			continue
+			t.Fatalf("NewHashFromStr: %v", err)
 		}
 
 		result, err := dag.HaveBlock(hash)
 		if err != nil {
-			t.Errorf("HaveBlock #%d unexpected error: %v", i, err)
-			return
+			t.Fatalf("HaveBlock #%d unexpected error: %v", i, err)
 		}
 		if result != test.want {
-			t.Errorf("HaveBlock #%d got %v want %v", i, result,
+			t.Fatalf("HaveBlock #%d got %v want %v", i, result,
 				test.want)
-			continue
 		}
 	}
 }
