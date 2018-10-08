@@ -1,12 +1,14 @@
 package ffldb
 
 import (
+	"bytes"
 	"errors"
 	"testing"
 
 	"github.com/bouk/monkey"
 	"github.com/btcsuite/goleveldb/leveldb"
 	ldbutil "github.com/btcsuite/goleveldb/leveldb/util"
+	"github.com/daglabs/btcd/database"
 )
 
 // TestDBCacheCloseErrors tests all error-cases in *dbCache.Close().
@@ -160,4 +162,89 @@ func TestLDBIteratorImplPlaceholders(t *testing.T) {
 
 	// Call SetReleaser to achieve coverage of it. Actually does nothing
 	iterator.SetReleaser(nil)
+}
+
+func TestSkipPendingUpdatesCache(t *testing.T) {
+	pdb := newTestDb("TestSkipPendingUpdatesCache", t)
+	defer pdb.Close()
+
+	value := []byte("value")
+	// Add numbered prefixes to keys so that they are in expected order, and before any other keys
+	firstKey := []byte("1 - first")
+	toDeleteKey := []byte("2 - toDelete")
+	toUpdateKey := []byte("3 - toUpdate")
+	secondKey := []byte("4 - second")
+
+	// create initial metadata for test
+	err := pdb.Update(func(tx database.Tx) error {
+		metadata := tx.Metadata()
+		if err := metadata.Put(firstKey, value); err != nil {
+			return err
+		}
+		if err := metadata.Put(toDeleteKey, value); err != nil {
+			return err
+		}
+		if err := metadata.Put(toUpdateKey, value); err != nil {
+			return err
+		}
+		if err := metadata.Put(secondKey, value); err != nil {
+			return err
+		}
+
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("Error adding to metadata: %s", err)
+	}
+
+	// test skips
+	err = pdb.Update(func(tx database.Tx) error {
+		snapshot, err := pdb.cache.Snapshot()
+		if err != nil {
+			t.Fatalf("TestSkipPendingUpdatesCache: Error getting snapshot: %s", err)
+		}
+
+		iterator := snapshot.NewIterator(&ldbutil.Range{})
+		snapshot.pendingRemove.Put(toDeleteKey, value)
+		snapshot.pendingKeys.Put(toUpdateKey, value)
+
+		// Check that first is ok
+		iterator.First()
+		expectedKey := bucketizedKey(metadataBucketID, firstKey)
+		if !bytes.Equal(iterator.Key(), expectedKey) {
+			t.Errorf("TestSkipPendingUpdatesCache: 1: key expected to be %v but is %v", expectedKey, iterator.Key())
+		}
+
+		// Go to the next key, which is toDelete
+		iterator.Next()
+		expectedKey = bucketizedKey(metadataBucketID, toDeleteKey)
+		if !bytes.Equal(iterator.Key(), expectedKey) {
+			t.Errorf("TestSkipPendingUpdatesCache: 2: key expected to be %s but is %s", expectedKey, iterator.Key())
+		}
+
+		// at this point toDeleteKey and toUpdateKey should be skipped
+		iterator.skipPendingUpdates(true)
+		expectedKey = bucketizedKey(metadataBucketID, secondKey)
+		if !bytes.Equal(iterator.Key(), expectedKey) {
+			t.Errorf("TestSkipPendingUpdatesCache: 3: key expected to be %s but is %s", expectedKey, iterator.Key())
+		}
+
+		// now traverse backwards - should get toUpdate
+		iterator.Prev()
+		expectedKey = bucketizedKey(metadataBucketID, toUpdateKey)
+		if !bytes.Equal(iterator.Key(), expectedKey) {
+			t.Errorf("TestSkipPendingUpdatesCache: 4: key expected to be %s but is %s", expectedKey, iterator.Key())
+		}
+
+		// at this point toUpdateKey and toDeleteKey should be skipped
+		iterator.skipPendingUpdates(false)
+		expectedKey = bucketizedKey(metadataBucketID, firstKey)
+		if !bytes.Equal(iterator.Key(), expectedKey) {
+			t.Errorf("TestSkipPendingUpdatesCache: 5: key expected to be %s but is %s", expectedKey, iterator.Key())
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("TestSkipPendingUpdatesCache: Error running main part of test: %s", err)
+	}
 }
