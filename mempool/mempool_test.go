@@ -738,6 +738,33 @@ func TestAddrIndex(t *testing.T) {
 
 }
 
+func TestFeeEstimator(t *testing.T) {
+	harness, spendableOuts, err := newPoolHarness(&dagconfig.MainNetParams, 2, "TestAddrIndexRemoveUnconfirmedTx")
+	if err != nil {
+		t.Fatalf("unable to create test pool: %v", err)
+	}
+	harness.txPool.cfg.FeeEstimator = &FeeEstimator{}
+	enteredObserveTransaction := false
+	monkey.Patch((*FeeEstimator).ObserveTransaction, func(ef *FeeEstimator, t *TxDesc) {
+		enteredObserveTransaction = true
+	})
+	defer monkey.Unpatch((*FeeEstimator).ObserveTransaction)
+
+	tx, err := harness.createTx(spendableOuts[0], 0, 1)
+	if err != nil {
+		t.Fatalf("unable to create transaction: %v", err)
+	}
+	_, err = harness.txPool.ProcessTransaction(tx, true, false, 0)
+	if err != nil {
+		t.Errorf("ProcessTransaction: unexpected error: %v", err)
+	}
+
+	if !enteredObserveTransaction {
+		t.Errorf("TestFeeEstimator: (*FeeEstimator).ObserveTransaction was not called")
+	}
+
+}
+
 func TestDoubleSpends(t *testing.T) {
 	harness, spendableOuts, err := newPoolHarness(&dagconfig.MainNetParams, 2, "TestDoubleSpends")
 	if err != nil {
