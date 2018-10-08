@@ -2,48 +2,46 @@
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
-package database_test
+package database
 
 import (
 	"errors"
 	"testing"
-
-	"github.com/daglabs/btcd/database"
 )
 
 // TestErrorCodeStringer tests the stringized output for the ErrorCode type.
 func TestErrorCodeStringer(t *testing.T) {
 	tests := []struct {
-		in   database.ErrorCode
+		in   ErrorCode
 		want string
 	}{
-		{database.ErrDbTypeRegistered, "ErrDbTypeRegistered"},
-		{database.ErrDbUnknownType, "ErrDbUnknownType"},
-		{database.ErrDbDoesNotExist, "ErrDbDoesNotExist"},
-		{database.ErrDbExists, "ErrDbExists"},
-		{database.ErrDbNotOpen, "ErrDbNotOpen"},
-		{database.ErrDbAlreadyOpen, "ErrDbAlreadyOpen"},
-		{database.ErrInvalid, "ErrInvalid"},
-		{database.ErrCorruption, "ErrCorruption"},
-		{database.ErrTxClosed, "ErrTxClosed"},
-		{database.ErrTxNotWritable, "ErrTxNotWritable"},
-		{database.ErrBucketNotFound, "ErrBucketNotFound"},
-		{database.ErrBucketExists, "ErrBucketExists"},
-		{database.ErrBucketNameRequired, "ErrBucketNameRequired"},
-		{database.ErrKeyRequired, "ErrKeyRequired"},
-		{database.ErrKeyTooLarge, "ErrKeyTooLarge"},
-		{database.ErrValueTooLarge, "ErrValueTooLarge"},
-		{database.ErrIncompatibleValue, "ErrIncompatibleValue"},
-		{database.ErrBlockNotFound, "ErrBlockNotFound"},
-		{database.ErrBlockExists, "ErrBlockExists"},
-		{database.ErrBlockRegionInvalid, "ErrBlockRegionInvalid"},
-		{database.ErrDriverSpecific, "ErrDriverSpecific"},
+		{ErrDbTypeRegistered, "ErrDbTypeRegistered"},
+		{ErrDbUnknownType, "ErrDbUnknownType"},
+		{ErrDbDoesNotExist, "ErrDbDoesNotExist"},
+		{ErrDbExists, "ErrDbExists"},
+		{ErrDbNotOpen, "ErrDbNotOpen"},
+		{ErrDbAlreadyOpen, "ErrDbAlreadyOpen"},
+		{ErrInvalid, "ErrInvalid"},
+		{ErrCorruption, "ErrCorruption"},
+		{ErrTxClosed, "ErrTxClosed"},
+		{ErrTxNotWritable, "ErrTxNotWritable"},
+		{ErrBucketNotFound, "ErrBucketNotFound"},
+		{ErrBucketExists, "ErrBucketExists"},
+		{ErrBucketNameRequired, "ErrBucketNameRequired"},
+		{ErrKeyRequired, "ErrKeyRequired"},
+		{ErrKeyTooLarge, "ErrKeyTooLarge"},
+		{ErrValueTooLarge, "ErrValueTooLarge"},
+		{ErrIncompatibleValue, "ErrIncompatibleValue"},
+		{ErrBlockNotFound, "ErrBlockNotFound"},
+		{ErrBlockExists, "ErrBlockExists"},
+		{ErrBlockRegionInvalid, "ErrBlockRegionInvalid"},
+		{ErrDriverSpecific, "ErrDriverSpecific"},
 
 		{0xffff, "Unknown ErrorCode (65535)"},
 	}
 
 	// Detect additional error codes that don't have the stringer added.
-	if len(tests)-1 != int(database.TstNumErrorCodes) {
+	if len(tests)-1 != int(TstNumErrorCodes) {
 		t.Errorf("It appears an error code was added without adding " +
 			"an associated stringer test")
 	}
@@ -64,20 +62,20 @@ func TestError(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		in   database.Error
+		in   Error
 		want string
 	}{
 		{
-			database.Error{Description: "some error"},
+			Error{Description: "some error"},
 			"some error",
 		},
 		{
-			database.Error{Description: "human-readable error"},
+			Error{Description: "human-readable error"},
 			"human-readable error",
 		},
 		{
-			database.Error{
-				ErrorCode:   database.ErrDriverSpecific,
+			Error{
+				ErrorCode:   ErrDriverSpecific,
 				Description: "some error",
 				Err:         errors.New("driver-specific error"),
 			},
@@ -92,6 +90,29 @@ func TestError(t *testing.T) {
 			t.Errorf("Error #%d\n got: %s want: %s", i, result,
 				test.want)
 			continue
+		}
+	}
+}
+
+func TestIsErrorCode(t *testing.T) {
+	dummyError := errors.New("")
+
+	tests := []struct {
+		err            error
+		code           ErrorCode
+		expectedResult bool
+	}{
+		{makeError(ErrBucketExists, "", dummyError), ErrBucketExists, true},
+		{makeError(ErrBucketExists, "", dummyError), ErrBlockExists, false},
+		{dummyError, ErrBlockExists, false},
+		{nil, ErrBlockExists, false},
+	}
+
+	for i, test := range tests {
+		actualResult := IsErrorCode(test.err, test.code)
+		if test.expectedResult != actualResult {
+			t.Errorf("TestIsErrorCode: %d: Expected: %t, but got: %t",
+				i, test.expectedResult, actualResult)
 		}
 	}
 }

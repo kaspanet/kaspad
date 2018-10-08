@@ -59,16 +59,3 @@ func createDBDriver(args ...interface{}) (database.DB, error) {
 
 	return openDB(dbPath, network, true)
 }
-
-func init() {
-	// Register the driver.
-	driver := database.Driver{
-		DbType: dbType,
-		Create: createDBDriver,
-		Open:   openDBDriver,
-	}
-	if err := database.RegisterDriver(driver); err != nil {
-		panic(fmt.Sprintf("Failed to regiser database driver '%s': %v",
-			dbType, err))
-	}
-}
