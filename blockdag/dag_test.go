@@ -449,6 +449,53 @@ func TestCalcSequenceLock(t *testing.T) {
 	}
 }
 
+func TestCalcPastMedianTime(t *testing.T) {
+	netParams := &dagconfig.MainNetParams
+
+	blockVersion := int32(0x10000000)
+
+	dag := newTestDAG(netParams)
+	numBlocks := uint32(60)
+	nodes := make([]*blockNode, numBlocks)
+	nodes[0] = dag.genesis
+	blockTime := dag.genesis.Header().Timestamp
+	for i := uint32(1); i < numBlocks; i++ {
+		blockTime = blockTime.Add(time.Second)
+		nodes[i] = newTestNode(setFromSlice(nodes[i-1]), blockVersion, 0, blockTime, netParams.K)
+		dag.index.AddNode(nodes[i])
+	}
+
+	tests := []struct {
+		blockNumber                 uint32
+		expectedSecondsSinceGenesis int64
+	}{
+		{
+			blockNumber:                 50,
+			expectedSecondsSinceGenesis: 25,
+		},
+		{
+			blockNumber:                 59,
+			expectedSecondsSinceGenesis: 34,
+		},
+		{
+			blockNumber:                 40,
+			expectedSecondsSinceGenesis: 15,
+		},
+		{
+			blockNumber:                 5,
+			expectedSecondsSinceGenesis: 0,
+		},
+	}
+
+	for _, test := range tests {
+		secondsSinceGenesis := nodes[test.blockNumber].CalcPastMedianTime().Unix() - dag.genesis.Header().Timestamp.Unix()
+		if secondsSinceGenesis != test.expectedSecondsSinceGenesis {
+			t.Errorf("TestCalcPastMedianTime: expected past median time of block %v to be %v seconds from genesis but got %v", test.blockNumber, test.expectedSecondsSinceGenesis, secondsSinceGenesis)
+		}
+	}
+
+}
+
 // nodeHashes is a convenience function that returns the hashes for all of the
 // passed indexes of the provided nodes.  It is used to construct expected hash
 // slices in the tests.
