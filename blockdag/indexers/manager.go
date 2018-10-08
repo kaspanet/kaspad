@@ -109,6 +109,11 @@ func (m *Manager) maybeCreateIndexes(dbTx database.Tx) error {
 		if err := indexer.Create(dbTx); err != nil {
 			return err
 		}
+
+		// TODO (Mike): this is temporary solution to prevent node from not starting
+		// because it thinks indexers are not initialized.
+		// Indexers, however, do not work properly, and a general solution to their work operation is required
+		indexesBucket.Put(idxKey, []byte{0})
 	}
 
 	return nil
