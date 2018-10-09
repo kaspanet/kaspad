@@ -965,7 +965,7 @@ func getManualNodesInfo(s *Server, details bool, node string) (interface{}, erro
 		// or a domain name.
 		peer := rpcPeer.ToPeer()
 		var result btcjson.GetManualNodeInfoResult
-		result.AddedNode = peer.Addr()
+		result.ManualNode = peer.Addr()
 		result.Connected = btcjson.Bool(peer.Connected())
 
 		// Split the address into host and port portions so we can do

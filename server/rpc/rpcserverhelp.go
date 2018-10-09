@@ -140,9 +140,9 @@ var helpDescsEnUS = map[string]string{
 	"getmanualnodeinforesultaddr-connected": "The connection 'direction' (inbound/outbound/false)",
 
 	// GetManualNodeInfoResult help.
-	"getmanualnodeinforesult-addednode": "The ip address or domain of the added peer",
-	"getmanualnodeinforesult-connected": "Whether or not the peer is currently connected",
-	"getmanualnodeinforesult-addresses": "DNS lookup and connection information about the peer",
+	"getmanualnodeinforesult-manualnode": "The ip address or domain of the manually added peer",
+	"getmanualnodeinforesult-connected":  "Whether or not the peer is currently connected",
+	"getmanualnodeinforesult-addresses":  "DNS lookup and connection information about the peer",
 
 	// GetManualNodeInfo help.
 	"getmanualnodeinfo--synopsis":   "Returns information about manually added (persistent) peers.",

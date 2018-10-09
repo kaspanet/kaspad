@@ -70,9 +70,9 @@ type GetManualNodeInfoResultAddr struct {
 
 // GetManualNodeInfoResult models the data from the getmanualnodeinfo command.
 type GetManualNodeInfoResult struct {
-	AddedNode string                         `json:"addednode"`
-	Connected *bool                          `json:"connected,omitempty"`
-	Addresses *[]GetManualNodeInfoResultAddr `json:"addresses,omitempty"`
+	ManualNode string                         `json:"manualnode"`
+	Connected  *bool                          `json:"connected,omitempty"`
+	Addresses  *[]GetManualNodeInfoResultAddr `json:"addresses,omitempty"`
 }
 
 // SoftForkDescription describes the current state of a soft-fork which was
