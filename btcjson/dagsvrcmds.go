@@ -17,12 +17,12 @@ import (
 // AddManualNodeCmd defines the addmanualnode JSON-RPC command.
 type AddManualNodeCmd struct {
 	Addr   string
-	OneTry bool
+	OneTry *bool `jsonrpcdefault:"false"`
 }
 
 // NewAddManualNodeCmd returns a new instance which can be used to issue an addmanualnode
 // JSON-RPC command.
-func NewAddManualNodeCmd(addr string, oneTry bool) *AddManualNodeCmd {
+func NewAddManualNodeCmd(addr string, oneTry *bool) *AddManualNodeCmd {
 	return &AddManualNodeCmd{
 		Addr:   addr,
 		OneTry: oneTry,
@@ -98,13 +98,13 @@ func NewDecodeScriptCmd(hexScript string) *DecodeScriptCmd {
 
 // GetManualNodeInfoCmd defines the getmanualnodeinfo JSON-RPC command.
 type GetManualNodeInfoCmd struct {
-	Details bool
 	Node    string
+	Details *bool `jsonrpcdefault:"true"`
 }
 
 // NewGetManualNodeInfoCmd returns a new instance which can be used to issue a
 // getmanualnodeinfo JSON-RPC command.
-func NewGetManualNodeInfoCmd(details bool, node string) *GetManualNodeInfoCmd {
+func NewGetManualNodeInfoCmd(node string, details *bool) *GetManualNodeInfoCmd {
 	return &GetManualNodeInfoCmd{
 		Details: details,
 		Node:    node,
@@ -113,12 +113,12 @@ func NewGetManualNodeInfoCmd(details bool, node string) *GetManualNodeInfoCmd {
 
 // GetAllManualNodesInfoCmd defines the getmanualnodeinfo JSON-RPC command.
 type GetAllManualNodesInfoCmd struct {
-	Details bool
+	Details *bool `jsonrpcdefault:"true"`
 }
 
 // NewGetAllManualNodesInfoCmd returns a new instance which can be used to issue a
 // getmanualnodeinfo JSON-RPC command.
-func NewGetAllManualNodesInfoCmd(details bool) *GetAllManualNodesInfoCmd {
+func NewGetAllManualNodesInfoCmd(details *bool) *GetAllManualNodesInfoCmd {
 	return &GetAllManualNodesInfoCmd{
 		Details: details,
 	}

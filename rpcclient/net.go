@@ -27,7 +27,7 @@ func (r FutureAddNodeResult) Receive() error {
 //
 // See AddNode for the blocking version and more details.
 func (c *Client) AddManualNodeAsync(host string) FutureAddNodeResult {
-	cmd := btcjson.NewAddManualNodeCmd(host, false)
+	cmd := btcjson.NewAddManualNodeCmd(host, btcjson.Bool(false))
 	return c.sendCmd(cmd)
 }
 
@@ -68,7 +68,7 @@ func (r FutureGetManualNodeInfoResult) Receive() ([]btcjson.GetManualNodeInfoRes
 //
 // See GetManualNodeInfo for the blocking version and more details.
 func (c *Client) GetManualNodeInfoAsync(peer string) FutureGetManualNodeInfoResult {
-	cmd := btcjson.NewGetManualNodeInfoCmd(true, peer)
+	cmd := btcjson.NewGetManualNodeInfoCmd(peer, nil)
 	return c.sendCmd(cmd)
 }
 
@@ -108,7 +108,7 @@ func (r FutureGetManualNodeInfoNoDNSResult) Receive() ([]string, error) {
 //
 // See GetManualNodeInfoNoDNS for the blocking version and more details.
 func (c *Client) GetManualNodeInfoNoDNSAsync(peer string) FutureGetManualNodeInfoNoDNSResult {
-	cmd := btcjson.NewGetManualNodeInfoCmd(false, peer)
+	cmd := btcjson.NewGetManualNodeInfoCmd(peer, btcjson.Bool(false))
 	return c.sendCmd(cmd)
 }
 

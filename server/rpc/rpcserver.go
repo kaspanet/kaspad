@@ -371,9 +371,11 @@ func handleAskWallet(s *Server, cmd interface{}, closeChan <-chan struct{}) (int
 func handleAddManualNode(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
 	c := cmd.(*btcjson.AddManualNodeCmd)
 
+	oneTry := c.OneTry != nil && *c.OneTry
+
 	addr := network.NormalizeAddress(c.Addr, s.cfg.DAGParams.DefaultPort)
 	var err error
-	if c.OneTry {
+	if oneTry {
 		err = s.cfg.ConnMgr.Connect(addr, false)
 	} else {
 		err = s.cfg.ConnMgr.Connect(addr, true)
@@ -926,7 +928,9 @@ func handleGenerate(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 }
 
 // getManualNodesInfo handles getmanualnodeinfo and getallmanualnodesinfo commands.
-func getManualNodesInfo(s *Server, details bool, node string) (interface{}, error) {
+func getManualNodesInfo(s *Server, detailsArg *bool, node string) (interface{}, error) {
+
+	details := detailsArg == nil || *detailsArg
 
 	// Retrieve a list of persistent (manual) peers from the server and
 	// filter the list of peers per the specified address (if any).

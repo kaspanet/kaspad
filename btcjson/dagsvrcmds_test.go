@@ -33,13 +33,13 @@ func TestDAGSvrCmds(t *testing.T) {
 		{
 			name: "addmanualnode",
 			newCmd: func() (interface{}, error) {
-				return btcjson.NewCmd("addmanualnode", "127.0.0.1", false)
+				return btcjson.NewCmd("addmanualnode", "127.0.0.1")
 			},
 			staticCmd: func() interface{} {
-				return btcjson.NewAddManualNodeCmd("127.0.0.1", false)
+				return btcjson.NewAddManualNodeCmd("127.0.0.1", nil)
 			},
-			marshalled:   `{"jsonrpc":"1.0","method":"addmanualnode","params":["127.0.0.1",false],"id":1}`,
-			unmarshalled: &btcjson.AddManualNodeCmd{Addr: "127.0.0.1", OneTry: false},
+			marshalled:   `{"jsonrpc":"1.0","method":"addmanualnode","params":["127.0.0.1"],"id":1}`,
+			unmarshalled: &btcjson.AddManualNodeCmd{Addr: "127.0.0.1", OneTry: btcjson.Bool(false)},
 		},
 		{
 			name: "createrawtransaction",
@@ -106,15 +106,13 @@ func TestDAGSvrCmds(t *testing.T) {
 		{
 			name: "getallmanualnodesinfo",
 			newCmd: func() (interface{}, error) {
-				return btcjson.NewCmd("getallmanualnodesinfo", true)
+				return btcjson.NewCmd("getallmanualnodesinfo")
 			},
 			staticCmd: func() interface{} {
-				return btcjson.NewGetAllManualNodesInfoCmd(true)
+				return btcjson.NewGetAllManualNodesInfoCmd(nil)
 			},
-			marshalled: `{"jsonrpc":"1.0","method":"getallmanualnodesinfo","params":[true],"id":1}`,
-			unmarshalled: &btcjson.GetAllManualNodesInfoCmd{
-				Details: true,
-			},
+			marshalled:   `{"jsonrpc":"1.0","method":"getallmanualnodesinfo","params":[],"id":1}`,
+			unmarshalled: &btcjson.GetAllManualNodesInfoCmd{Details: btcjson.Bool(true)},
 		},
 		{
 			name: "getbestblockhash",
@@ -407,15 +405,15 @@ func TestDAGSvrCmds(t *testing.T) {
 		{
 			name: "getmanualnodeinfo",
 			newCmd: func() (interface{}, error) {
-				return btcjson.NewCmd("getmanualnodeinfo", true, "127.0.0.1")
+				return btcjson.NewCmd("getmanualnodeinfo", "127.0.0.1")
 			},
 			staticCmd: func() interface{} {
-				return btcjson.NewGetManualNodeInfoCmd(true, "127.0.0.1")
+				return btcjson.NewGetManualNodeInfoCmd("127.0.0.1", nil)
 			},
-			marshalled: `{"jsonrpc":"1.0","method":"getmanualnodeinfo","params":[true,"127.0.0.1"],"id":1}`,
+			marshalled: `{"jsonrpc":"1.0","method":"getmanualnodeinfo","params":["127.0.0.1"],"id":1}`,
 			unmarshalled: &btcjson.GetManualNodeInfoCmd{
-				Details: true,
 				Node:    "127.0.0.1",
+				Details: btcjson.Bool(true),
 			},
 		},
 		{
