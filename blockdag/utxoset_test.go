@@ -975,3 +975,16 @@ func TestDiffFromTx(t *testing.T) {
 		t.Errorf("diffFromTx: expected an error but got <nil>")
 	}
 }
+
+// collection returns a collection of all UTXOs in this set
+func (fus *fullUTXOSet) collection() utxoCollection {
+	return fus.utxoCollection.clone()
+}
+
+// collection returns a collection of all UTXOs in this set
+func (dus *DiffUTXOSet) collection() utxoCollection {
+	clone := dus.clone().(*DiffUTXOSet)
+	clone.meldToBase()
+
+	return clone.base.collection()
+}

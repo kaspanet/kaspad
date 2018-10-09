@@ -38,7 +38,7 @@ func (bs blockSet) maxHeight() int32 {
 func (bs blockSet) highest() *blockNode {
 	var highest *blockNode
 	for _, node := range bs {
-		if highest.height < node.height || daghash.Less(&node.hash, &highest.hash) {
+		if highest == nil || highest.height < node.height || daghash.Less(&node.hash, &highest.hash) {
 			highest = node
 		}
 	}

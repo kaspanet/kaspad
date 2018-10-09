@@ -37,7 +37,7 @@ const (
 
 	// medianTimeBlocks is the number of previous blocks which should be
 	// used to calculate the median time used to validate block timestamps.
-	medianTimeBlocks = 11
+	medianTimeBlocks = 51
 
 	// baseSubsidy is the starting subsidy amount for mined blocks.  This
 	// value is halved every SubsidyHalvingInterval blocks.
@@ -435,7 +435,7 @@ func checkBlockParentsOrder(header *wire.BlockHeader) error {
 		sortedHashes = append(sortedHashes, hash)
 	}
 	sort.Slice(sortedHashes, func(i, j int) bool {
-		return daghash.Less(&sortedHashes[j], &sortedHashes[i])
+		return daghash.Less(&sortedHashes[i], &sortedHashes[j])
 	})
 	if !daghash.AreEqual(header.PrevBlocks, sortedHashes) {
 		return ruleError(ErrWrongParentsOrder, "block parents are not ordered by hash")
