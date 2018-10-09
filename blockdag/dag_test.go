@@ -83,7 +83,7 @@ func TestHaveBlock(t *testing.T) {
 		t.Fatalf("ProcessBlock for block 3C has no error when expected to have an error\n")
 	}
 	if isOrphan {
-		t.Fatalf("ProcessBlock incorrectly returned block 3c " +
+		t.Fatalf("ProcessBlock incorrectly returned block 3C " +
 			"is an orphan\n")
 	}
 
@@ -136,10 +136,10 @@ func TestHaveBlock(t *testing.T) {
 		{hash: dagconfig.MainNetParams.GenesisHash.String(), want: true},
 
 		// Block 3b should be present (as a second child of Block 2).
-		{hash: "0000004d6cf95724bced0ad218d1fe3d1fd7810dae663b60cc81e52d12c95ad5", want: true},
+		{hash: "0000002dfee227e29bfd485ca40f6a5560ab5f1321078e14455a7ac9aec9fde0", want: true},
 
 		// Block 100000 should be present (as an orphan).
-		{hash: "000000e46b5f4f7bfecff77f2f30f2ab90d08e3c5a55784080f97689bcd92786", want: true},
+		{hash: "0000003f847fac1a34b79657e93d5567263f689c78b753beb3786628e35c2278", want: true},
 
 		// Random hashes should not be available.
 		{hash: "123", want: false},

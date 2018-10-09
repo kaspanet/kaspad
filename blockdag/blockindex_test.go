@@ -1,17 +1,18 @@
 package blockdag
 
 import (
-	"github.com/bouk/monkey"
-	"github.com/daglabs/btcd/dagconfig"
-	"github.com/daglabs/btcd/database"
-	"github.com/pkg/errors"
 	"strings"
 	"testing"
 	"time"
+
+	"bou.ke/monkey"
+	"github.com/daglabs/btcd/dagconfig"
+	"github.com/daglabs/btcd/database"
+	"github.com/pkg/errors"
 )
 
 func TestAncestorErrors(t *testing.T) {
-	node := newTestNode(newSet(), int32(0x10000000), 0, time.Unix(0,0), dagconfig.MainNetParams.K)
+	node := newTestNode(newSet(), int32(0x10000000), 0, time.Unix(0, 0), dagconfig.MainNetParams.K)
 	node.height = 2
 	ancestor := node.Ancestor(3)
 	if ancestor != nil {
@@ -30,7 +31,7 @@ func TestFlushToDBErrors(t *testing.T) {
 	// Call flushToDB without anything to flush. This should succeed
 	err = dag.index.flushToDB()
 	if err != nil {
-		t.Errorf("TestFlushToDBErrors: flushToDB without anything to flush: " +
+		t.Errorf("TestFlushToDBErrors: flushToDB without anything to flush: "+
 			"Unexpected flushToDB error: %s", err)
 	}
 
@@ -39,16 +40,16 @@ func TestFlushToDBErrors(t *testing.T) {
 
 	// Test flushToDB failure due to database error
 	databaseErrorMessage := "database error"
-	monkey.Patch(dbStoreBlockNode, func (_ database.Tx, _ *blockNode) error{
+	monkey.Patch(dbStoreBlockNode, func(_ database.Tx, _ *blockNode) error {
 		return errors.New(databaseErrorMessage)
 	})
 	err = dag.index.flushToDB()
 	if err == nil {
-		t.Errorf("TestFlushToDBErrors: flushToDB failure due to database error: " +
+		t.Errorf("TestFlushToDBErrors: flushToDB failure due to database error: "+
 			"Expected: %s, got: <nil>", databaseErrorMessage)
 	}
 	if !strings.Contains(err.Error(), databaseErrorMessage) {
-		t.Errorf("TestFlushToDBErrors: flushToDB failure due to database error: " +
+		t.Errorf("TestFlushToDBErrors: flushToDB failure due to database error: "+
 			"Unexpected flushToDB error. Expected: %s, got: %s", databaseErrorMessage, err)
 	}
 	monkey.Unpatch(dbStoreBlockNode)
