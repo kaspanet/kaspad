@@ -43,7 +43,7 @@ func TestHaveBlock(t *testing.T) {
 
 	// Create a new database and chain instance to run tests against.
 	dag, teardownFunc, err := DAGSetup("haveblock",
-		&dagconfig.MainNetParams)
+		&dagconfig.SimNetParams)
 	if err != nil {
 		t.Fatalf("Failed to setup chain instance: %v", err)
 	}
@@ -133,13 +133,13 @@ func TestHaveBlock(t *testing.T) {
 		want bool
 	}{
 		// Genesis block should be present.
-		{hash: dagconfig.MainNetParams.GenesisHash.String(), want: true},
+		{hash: dagconfig.SimNetParams.GenesisHash.String(), want: true},
 
 		// Block 3b should be present (as a second child of Block 2).
-		{hash: "0000002dfee227e29bfd485ca40f6a5560ab5f1321078e14455a7ac9aec9fde0", want: true},
+		{hash: "00cd35debc62fd60b6fbda1925894db5996c02bcd575a4130fdb4d6071537152", want: true},
 
 		// Block 100000 should be present (as an orphan).
-		{hash: "0000003f847fac1a34b79657e93d5567263f689c78b753beb3786628e35c2278", want: true},
+		{hash: "66cdaddc8884c99ccc46c2f34f579903a223cc12b44c239938af47ee0c7193b4", want: true},
 
 		// Random hashes should not be available.
 		{hash: "123", want: false},
@@ -764,7 +764,7 @@ func testErrorThroughPatching(t *testing.T, expectedErrorMessage string, targetF
 	}
 
 	// Create a new database and dag instance to run tests against.
-	dag, teardownFunc, err := DAGSetup("testErrorThroughPatching", &dagconfig.MainNetParams)
+	dag, teardownFunc, err := DAGSetup("testErrorThroughPatching", &dagconfig.SimNetParams)
 	if err != nil {
 		t.Fatalf("Failed to setup dag instance: %v", err)
 	}
@@ -778,7 +778,12 @@ func testErrorThroughPatching(t *testing.T, expectedErrorMessage string, targetF
 
 	err = nil
 	for i := 1; i < len(blocks); i++ {
-		_, err = dag.ProcessBlock(blocks[i], BFNone)
+		var isOrphan bool
+		isOrphan, err = dag.ProcessBlock(blocks[i], BFNone)
+		if isOrphan {
+			t.Fatalf("ProcessBlock incorrectly returned block %v "+
+				"is an orphan\n", i)
+		}
 		if err != nil {
 			break
 		}

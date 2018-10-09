@@ -17,11 +17,11 @@ func TestNotifications(t *testing.T) {
 		t.Fatalf("Error loading file: %v\n", err)
 	}
 
-	// Create a new database and chain instance to run tests against.
-	chain, teardownFunc, err := DAGSetup("notifications",
-		&dagconfig.MainNetParams)
+	// Create a new database and dag instance to run tests against.
+	dag, teardownFunc, err := DAGSetup("notifications",
+		&dagconfig.SimNetParams)
 	if err != nil {
-		t.Fatalf("Failed to setup chain instance: %v", err)
+		t.Fatalf("Failed to setup dag instance: %v", err)
 	}
 	defer teardownFunc()
 
@@ -36,10 +36,14 @@ func TestNotifications(t *testing.T) {
 	// times.
 	const numSubscribers = 3
 	for i := 0; i < numSubscribers; i++ {
-		chain.Subscribe(callback)
+		dag.Subscribe(callback)
 	}
 
-	_, err = chain.ProcessBlock(blocks[1], BFNone)
+	isOrphan, err := dag.ProcessBlock(blocks[1], BFNone)
+	if isOrphan {
+		t.Fatalf("ProcessBlock incorrectly returned block " +
+			"is an orphan\n")
+	}
 	if err != nil {
 		t.Fatalf("ProcessBlock fail on block 1: %v\n", err)
 	}
