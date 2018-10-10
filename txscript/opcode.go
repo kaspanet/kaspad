@@ -931,31 +931,23 @@ func opcodeNop(op *parsedOpcode, vm *Engine) error {
 // either be an empty byte slice, or [0x01]. Otherwise, the item at the top of
 // the stack will be popped and interpreted as a boolean.
 func popIfBool(vm *Engine) (bool, error) {
-	// At this point, a v0 witness program is being executed and the minimal
-	// if flag is set, so enforce additional constraints on the top stack
-	// item.
 	so, err := vm.dstack.PopByteArray()
 	if err != nil {
 		return false, err
 	}
 
-	// The top element MUST have a max length of one.
-	if len(so) > 1 {
-		str := fmt.Sprintf("with OP_IF the top element MUST "+
-			"have a max length of one, instead the length is %v",
-			len(so))
-		return false, scriptError(ErrMinimalIf, str)
+	if len(so) == 1 && so[0] == 0x01 {
+		return true, nil
 	}
 
-	// Additionally, if the length is one, then the value MUST be 0x01.
-	if len(so) == 1 && so[0] != 0x01 {
-		str := fmt.Sprintf("with OP_IF top stack item MUST "+
-			"be an empty byte array or 0x01, and is instead: %v",
-			so[0])
-		return false, scriptError(ErrMinimalIf, str)
+	if len(so) == 0 {
+		return false, nil
 	}
 
-	return asBool(so), nil
+	str := fmt.Sprintf("with OP_IF top stack item MUST "+
+		"be an empty byte array or 0x01, and is instead: %v",
+		so[0])
+	return false, scriptError(ErrMinimalIf, str)
 }
 
 // opcodeIf treats the top item on the data stack as a boolean and removes it.
