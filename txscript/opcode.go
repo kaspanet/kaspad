@@ -927,7 +927,7 @@ func opcodeNop(op *parsedOpcode, vm *Engine) error {
 
 // popIfBool enforces the "minimal if" policy. In order to
 // eliminate an additional source of nuisance malleability, we
-// require the following: for OP_IF and OP_NOT_IF, the top stack item MUST
+// require the following: for OP_IF and OP_NOTIF, the top stack item MUST
 // either be an empty byte slice, or [0x01]. Otherwise, the item at the top of
 // the stack will be popped and interpreted as a boolean.
 func popIfBool(vm *Engine) (bool, error) {
@@ -944,7 +944,7 @@ func popIfBool(vm *Engine) (bool, error) {
 		return false, nil
 	}
 
-	str := fmt.Sprintf("with OP_IF top stack item MUST "+
+	str := fmt.Sprintf("with OP_IF or OP_NOTIF top stack item MUST "+
 		"be an empty byte array or 0x01, and is instead: %v",
 		so[0])
 	return false, scriptError(ErrMinimalIf, str)
@@ -1003,7 +1003,7 @@ func opcodeIf(op *parsedOpcode, vm *Engine) error {
 func opcodeNotIf(op *parsedOpcode, vm *Engine) error {
 	condVal := OpCondFalse
 	if vm.isBranchExecuting() {
-		ok, err := vm.dstack.PopBool()
+		ok, err := popIfBool(vm)
 		if err != nil {
 			return err
 		}

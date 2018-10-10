@@ -1066,6 +1066,7 @@
 
 ["Check MINIMALIF"],
 ["2", "IF TRUE ELSE FALSE", "", "MINIMALIF"],
+["2", "NOTIF TRUE ELSE FALSE", "", "MINIMALIF"],
 
 
 ["Order of CHECKMULTISIG evaluation tests, inverted by swapping the order of"],

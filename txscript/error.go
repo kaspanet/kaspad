@@ -222,7 +222,7 @@ const (
 	// reached.
 	ErrUnsatisfiedLockTime
 
-	// ErrMinimalIf is returned if the operand of an OP_IF/OP_NOF_IF
+	// ErrMinimalIf is returned if the operand of an OP_IF/OP_NOTIF
 	// is not either an empty vector or [0x01].
 	ErrMinimalIf
 
