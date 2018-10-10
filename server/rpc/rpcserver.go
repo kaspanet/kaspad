@@ -69,10 +69,10 @@ const (
 	// 256-bit integer.
 	uint256Size = 32
 
-	// gbtNonceRange is two 32-bit big-endian hexadecimal integers which
+	// gbtNonceRange is two 64-bit big-endian hexadecimal integers which
 	// represent the valid ranges of nonces returned by the getblocktemplate
 	// RPC.
-	gbtNonceRange = "00000000ffffffff"
+	gbtNonceRange = "000000000000ffffffffffff"
 
 	// gbtRegenerateSeconds is the number of seconds that must pass before
 	// a new template is generated when the previous block hash has not

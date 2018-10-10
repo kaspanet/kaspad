@@ -190,9 +190,9 @@ func TestCheckBlockSanity(t *testing.T) {
 				0x6f, 0xff, 0xfb, 0xb7, 0xdc, 0x39, 0x9d, 0x76,
 				0x8d, 0xb0, 0xe1, 0x9c, 0x2e, 0x6d, 0x22, 0xd9,
 			}), // f3e94742aca4b5ef85488dc37c06c3282295ffec960994b2c0d5ac2a25a95766
-			Timestamp: time.Unix(0x5bbc64c9, 0), // 2018-10-09 08:17:35 +0000 UTC
-			Bits:      0x1e00ffff,               // 503382015
-			Nonce:     0xe00edcf9,               // 3759070457
+			Timestamp: time.Unix(0x5bbe0435, 0),
+			Bits:      0x207fffff,
+			Nonce:     0x9ffffffffffffffb,
 		},
 		Transactions: []*wire.MsgTx{
 			{
@@ -502,7 +502,7 @@ func TestCheckSerializedHeight(t *testing.T) {
 }
 
 func TestValidateParents(t *testing.T) {
-	blockDAG := newTestDAG(&dagconfig.MainNetParams)
+	blockDAG := newTestDAG(&dagconfig.SimNetParams)
 	genesisNode := blockDAG.genesis
 	blockVersion := int32(0x10000000)
 
@@ -515,7 +515,7 @@ func TestValidateParents(t *testing.T) {
 			blockVersion,
 			0,
 			blockTime,
-			dagconfig.MainNetParams.K)
+			dagconfig.SimNetParams.K)
 	}
 
 	a := generateNode(genesisNode)
