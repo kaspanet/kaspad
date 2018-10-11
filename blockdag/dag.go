@@ -6,6 +6,7 @@ package blockdag
 
 import (
 	"fmt"
+	"math"
 	"sync"
 	"time"
 
@@ -939,6 +940,18 @@ func (dag *BlockDAG) TipHashes() []daghash.Hash {
 // This function is a placeholder for places that aren't DAG-compatible, and it's needed to be removed in the future
 func (dag *BlockDAG) HighestTipHash() daghash.Hash {
 	return dag.virtual.tips().highest().hash
+}
+
+// CurrentBits returns the bits of the tip with the lowest bits.
+func (dag *BlockDAG) CurrentBits() uint32 {
+	tips := dag.virtual.tips()
+	minBits := uint32(math.MaxUint32)
+	for _, tip := range tips {
+		if minBits > tip.Header().Bits {
+			minBits = tip.Header().Bits
+		}
+	}
+	return minBits
 }
 
 // HeaderByHash returns the block header identified by the given hash or an
