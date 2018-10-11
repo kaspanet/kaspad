@@ -13,8 +13,8 @@ import (
 	"github.com/daglabs/btcd/netsync"
 	"github.com/daglabs/btcd/peer"
 	"github.com/daglabs/btcd/server/p2p"
-	"github.com/daglabs/btcd/wire"
 	"github.com/daglabs/btcd/util"
+	"github.com/daglabs/btcd/wire"
 )
 
 // rpcPeer provides a peer for use with the RPC server and implements the
@@ -189,7 +189,7 @@ func (cm *rpcConnManager) ConnectedPeers() []rpcserverPeer {
 // rpcserverConnManager interface implementation.
 func (cm *rpcConnManager) PersistentPeers() []rpcserverPeer {
 	replyChan := make(chan []*p2p.Peer)
-	cm.server.Query <- p2p.GetAddedNodesMsg{Reply: replyChan}
+	cm.server.Query <- p2p.GetManualNodesMsg{Reply: replyChan}
 	serverPeers := <-replyChan
 
 	// Convert to generic peers.

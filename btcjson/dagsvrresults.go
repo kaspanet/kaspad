@@ -61,18 +61,18 @@ type DecodeScriptResult struct {
 	P2sh      string   `json:"p2sh,omitempty"`
 }
 
-// GetAddedNodeInfoResultAddr models the data of the addresses portion of the
-// getaddednodeinfo command.
-type GetAddedNodeInfoResultAddr struct {
+// GetManualNodeInfoResultAddr models the data of the addresses portion of the
+// getmanualnodeinfo command.
+type GetManualNodeInfoResultAddr struct {
 	Address   string `json:"address"`
 	Connected string `json:"connected"`
 }
 
-// GetAddedNodeInfoResult models the data from the getaddednodeinfo command.
-type GetAddedNodeInfoResult struct {
-	AddedNode string                        `json:"addednode"`
-	Connected *bool                         `json:"connected,omitempty"`
-	Addresses *[]GetAddedNodeInfoResultAddr `json:"addresses,omitempty"`
+// GetManualNodeInfoResult models the data from the getmanualnodeinfo command.
+type GetManualNodeInfoResult struct {
+	ManualNode string                         `json:"manualnode"`
+	Connected  *bool                          `json:"connected,omitempty"`
+	Addresses  *[]GetManualNodeInfoResultAddr `json:"addresses,omitempty"`
 }
 
 // SoftForkDescription describes the current state of a soft-fork which was

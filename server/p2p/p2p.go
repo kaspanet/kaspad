@@ -1615,8 +1615,8 @@ type getOutboundGroup struct {
 	reply chan int
 }
 
-//GetAddedNodesMsg is the message type which is used by the rpc server to get the list of persistent peers from the p2p server
-type GetAddedNodesMsg struct {
+//GetManualNodesMsg is the message type which is used by the rpc server to get the list of persistent peers from the p2p server
+type GetManualNodesMsg struct {
 	Reply chan []*Peer
 }
 
@@ -1712,7 +1712,7 @@ func (s *Server) handleQuery(state *peerState, querymsg interface{}) {
 			msg.reply <- 0
 		}
 	// Request a list of the persistent (added) peers.
-	case GetAddedNodesMsg:
+	case GetManualNodesMsg:
 		// Respond with a slice of the relevant peers.
 		peers := make([]*Peer, 0, len(state.persistentPeers))
 		for _, sp := range state.persistentPeers {
