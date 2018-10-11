@@ -29,7 +29,7 @@ func NewAddManualNodeCmd(addr string, oneTry *bool) *AddManualNodeCmd {
 	}
 }
 
-// RemoveManualNodeCmd defines the addmanualnode JSON-RPC command.
+// RemoveManualNodeCmd defines the removemanualnode JSON-RPC command.
 type RemoveManualNodeCmd struct {
 	Addr string
 }
@@ -111,13 +111,13 @@ func NewGetManualNodeInfoCmd(node string, details *bool) *GetManualNodeInfoCmd {
 	}
 }
 
-// GetAllManualNodesInfoCmd defines the getmanualnodeinfo JSON-RPC command.
+// GetAllManualNodesInfoCmd defines the getallmanualnodesinfo JSON-RPC command.
 type GetAllManualNodesInfoCmd struct {
 	Details *bool `jsonrpcdefault:"true"`
 }
 
 // NewGetAllManualNodesInfoCmd returns a new instance which can be used to issue a
-// getmanualnodeinfo JSON-RPC command.
+// getallmanualnodesinfo JSON-RPC command.
 func NewGetAllManualNodesInfoCmd(details *bool) *GetAllManualNodesInfoCmd {
 	return &GetAllManualNodesInfoCmd{
 		Details: details,
