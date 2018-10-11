@@ -204,6 +204,8 @@ func parseExpectedResult(expected string) ([]ErrorCode, error) {
 		return []ErrorCode{ErrNegativeLockTime}, nil
 	case "UNSATISFIED_LOCKTIME":
 		return []ErrorCode{ErrUnsatisfiedLockTime}, nil
+	case "MINIMALIF":
+		return []ErrorCode{ErrMinimalIf}, nil
 	}
 
 	return nil, fmt.Errorf("unrecognized expected result in test data: %v",
