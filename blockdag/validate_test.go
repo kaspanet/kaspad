@@ -503,14 +503,14 @@ func TestCheckSerializedHeight(t *testing.T) {
 
 func TestPastMedianTime(t *testing.T) {
 	dag := newTestDAG(&dagconfig.MainNetParams)
-	node := dag.genesis
+	tip := dag.genesis
 	blockVersion := int32(0x10000000)
 
-	blockTime := node.Header().Timestamp
+	blockTime := tip.Header().Timestamp
 
 	for i := 0; i < 100; i++ {
 		blockTime = blockTime.Add(time.Second)
-		node = newTestNode(setFromSlice(node),
+		tip = newTestNode(setFromSlice(tip),
 			blockVersion,
 			0,
 			blockTime,
@@ -518,47 +518,47 @@ func TestPastMedianTime(t *testing.T) {
 	}
 
 	// Checks that a block is valid if it has timestamp equals to past median time
-	height := node.height + 1
-	node = newTestNode(setFromSlice(node),
+	height := tip.height + 1
+	node := newTestNode(setFromSlice(tip),
 		blockVersion,
 		0,
-		node.CalcPastMedianTime(),
+		tip.CalcPastMedianTime(),
 		dagconfig.MainNetParams.K)
 
 	header := node.Header()
 	err := dag.checkBlockHeaderContext(&header, node.parents.bluest(), height, BFNone)
 	if err != nil {
-		t.Fatalf("TestPastMedianTime: unexpected error from checkBlockHeaderContext: %v"+
+		t.Errorf("TestPastMedianTime: unexpected error from checkBlockHeaderContext: %v"+
 			"(a block with timestamp equals to past median time should be valid)", err)
 	}
 
 	// Checks that a block is valid if its timestamp is after past median time
-	height = node.height + 1
-	node = newTestNode(setFromSlice(node),
+	height = tip.height + 1
+	node = newTestNode(setFromSlice(tip),
 		blockVersion,
 		0,
-		node.CalcPastMedianTime().Add(time.Second),
+		tip.CalcPastMedianTime().Add(time.Second),
 		dagconfig.MainNetParams.K)
 
 	header = node.Header()
 	err = dag.checkBlockHeaderContext(&header, node.parents.bluest(), height, BFNone)
 	if err != nil {
-		t.Fatalf("TestPastMedianTime: unexpected error from checkBlockHeaderContext: %v"+
+		t.Errorf("TestPastMedianTime: unexpected error from checkBlockHeaderContext: %v"+
 			"(a block with timestamp bigger than past median time should be valid)", err)
 	}
 
-	// Checks that a block is valid if its timestamp is before past median time
-	height = node.height + 1
-	node = newTestNode(setFromSlice(node),
+	// Checks that a block is invalid if its timestamp is before past median time
+	height = tip.height + 1
+	node = newTestNode(setFromSlice(tip),
 		blockVersion,
 		0,
-		node.CalcPastMedianTime().Add(-time.Second),
+		tip.CalcPastMedianTime().Add(-time.Second),
 		dagconfig.MainNetParams.K)
 
 	header = node.Header()
 	err = dag.checkBlockHeaderContext(&header, node.parents.bluest(), height, BFNone)
 	if err == nil {
-		t.Fatalf("TestPastMedianTime: unexpected success: block should be invalid if its timestamp is before past median time")
+		t.Errorf("TestPastMedianTime: unexpected success: block should be invalid if its timestamp is before past median time")
 	}
 
 }
