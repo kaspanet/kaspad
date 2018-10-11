@@ -1199,15 +1199,14 @@ func handleGetBlockDAGInfo(s *Server, cmd interface{}, closeChan <-chan struct{}
 	// populate the response to this call primarily from this snapshot.
 	params := s.cfg.DAGParams
 	dag := s.cfg.DAG
-	virtualBlock := dag.VirtualBlock()
 
 	dagInfo := &btcjson.GetBlockDAGInfoResult{
 		DAG:           params.Name,
 		Blocks:        dag.Height(), //TODO: (Ori) This is wrong. Done only for compilation
 		Headers:       dag.Height(), //TODO: (Ori) This is wrong. Done only for compilation
 		TipHashes:     daghash.Strings(dag.TipHashes()),
-		Difficulty:    getDifficultyRatio(virtualBlock.SelectedTip().Header().Bits, params),
-		MedianTime:    virtualBlock.SelectedTip().CalcPastMedianTime().Unix(),
+		Difficulty:    getDifficultyRatio(dag.SelectedTip().Header().Bits, params),
+		MedianTime:    dag.SelectedTip().CalcPastMedianTime().Unix(),
 		Pruned:        false,
 		Bip9SoftForks: make(map[string]*btcjson.Bip9SoftForkDescription),
 	}
@@ -1521,7 +1520,6 @@ func (state *gbtWorkState) updateBlockTemplate(s *Server, useCoinbaseValue bool)
 	// generated.
 	var msgBlock *wire.MsgBlock
 	var targetDifficulty string
-	virtualBlock := s.cfg.DAG.VirtualBlock()
 	tipHashes := s.cfg.DAG.TipHashes()
 	template := state.template
 	if template == nil || state.tipHashes == nil ||
@@ -1561,7 +1559,7 @@ func (state *gbtWorkState) updateBlockTemplate(s *Server, useCoinbaseValue bool)
 		// Get the minimum allowed timestamp for the block based on the
 		// median timestamp of the last several blocks per the chain
 		// consensus rules.
-		minTimestamp := mining.MinimumMedianTime(virtualBlock.SelectedTip().CalcPastMedianTime())
+		minTimestamp := mining.MinimumMedianTime(s.cfg.DAG.SelectedTip().CalcPastMedianTime())
 
 		// Update work state to ensure another block template isn't
 		// generated until needed.
@@ -2204,8 +2202,7 @@ func handleGetCurrentNet(s *Server, cmd interface{}, closeChan <-chan struct{}) 
 
 // handleGetDifficulty implements the getdifficulty command.
 func handleGetDifficulty(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	virtualBlock := s.cfg.DAG.VirtualBlock()
-	return getDifficultyRatio(virtualBlock.SelectedTip().Header().Bits, s.cfg.DAGParams), nil
+	return getDifficultyRatio(s.cfg.DAG.SelectedTip().Header().Bits, s.cfg.DAGParams), nil
 }
 
 // handleGetGenerate implements the getgenerate command.

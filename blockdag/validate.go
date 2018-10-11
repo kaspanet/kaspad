@@ -1121,7 +1121,7 @@ func (dag *BlockDAG) CheckConnectBlockTemplate(block *util.Block) error {
 		return err
 	}
 
-	err = dag.checkBlockContext(block, parents, dag.virtual.SelectedTip(), flags)
+	err = dag.checkBlockContext(block, parents, dag.SelectedTip(), flags)
 	if err != nil {
 		return err
 	}

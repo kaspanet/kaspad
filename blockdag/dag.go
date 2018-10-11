@@ -320,7 +320,7 @@ func (dag *BlockDAG) CalcSequenceLock(tx *util.Tx, utxoSet UTXOSet, mempool bool
 	dag.dagLock.Lock()
 	defer dag.dagLock.Unlock()
 
-	return dag.calcSequenceLock(dag.virtual.SelectedTip(), utxoSet, tx, mempool)
+	return dag.calcSequenceLock(dag.SelectedTip(), utxoSet, tx, mempool)
 }
 
 // calcSequenceLock computes the relative lock-times for the passed
@@ -884,7 +884,7 @@ func (dag *BlockDAG) isCurrent() bool {
 	// Not current if the latest main (best) chain height is before the
 	// latest known good checkpoint (when checkpoints are enabled).
 	checkpoint := dag.LatestCheckpoint()
-	if checkpoint != nil && dag.virtual.SelectedTip().height < checkpoint.Height {
+	if checkpoint != nil && dag.SelectedTip().height < checkpoint.Height {
 		return false
 	}
 
@@ -894,7 +894,7 @@ func (dag *BlockDAG) isCurrent() bool {
 	// The chain appears to be current if none of the checks reported
 	// otherwise.
 	minus24Hours := dag.timeSource.AdjustedTime().Add(-24 * time.Hour).Unix()
-	return dag.virtual.SelectedTip().timestamp >= minus24Hours
+	return dag.SelectedTip().timestamp >= minus24Hours
 }
 
 // IsCurrent returns whether or not the chain believes it is current.  Several
@@ -909,6 +909,14 @@ func (dag *BlockDAG) IsCurrent() bool {
 	defer dag.dagLock.RUnlock()
 
 	return dag.isCurrent()
+}
+
+// SelectedTip returns the current selected tip for the DAG.
+// It will return nil if there is no tip.
+//
+// This function is safe for concurrent access.
+func (dag *BlockDAG) SelectedTip() *blockNode {
+	return dag.virtual.selectedParent
 }
 
 // UTXOSet returns the DAG's UTXO set
@@ -1193,7 +1201,7 @@ func (dag *BlockDAG) locateInventory(locator BlockLocator, hashStop *daghash.Has
 	}
 
 	// Calculate how many entries are needed.
-	total := uint32((dag.virtual.SelectedTip().height - startNode.height) + 1)
+	total := uint32((dag.SelectedTip().height - startNode.height) + 1)
 	if stopNode != nil && stopNode.height >= startNode.height {
 		total = uint32((stopNode.height - startNode.height) + 1)
 	}
@@ -1459,7 +1467,7 @@ func New(config *Config) (*BlockDAG, error) {
 		return nil, err
 	}
 
-	selectedTip := dag.virtual.SelectedTip()
+	selectedTip := dag.SelectedTip()
 	log.Infof("DAG state (height %d, hash %v, work %v)",
 		selectedTip.height, selectedTip.hash, selectedTip.workSum)
 

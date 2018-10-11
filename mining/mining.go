@@ -402,7 +402,6 @@ func NewBlkTmplGenerator(policy *Policy, params *dagconfig.Params,
 //   -----------------------------------  --
 func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTemplate, error) {
 	// Extend the most recently known best block.
-	virtualBlock := g.dag.VirtualBlock()
 	nextBlockHeight := g.dag.Height() + 1
 
 	// Create a standard coinbase transaction paying to the provided
@@ -699,7 +698,7 @@ mempoolLoop:
 	// Calculate the required difficulty for the block.  The timestamp
 	// is potentially adjusted to ensure it comes after the median time of
 	// the last several blocks per the chain consensus rules.
-	ts := medianAdjustedTime(virtualBlock.SelectedTip().CalcPastMedianTime(), g.timeSource)
+	ts := medianAdjustedTime(g.dag.SelectedTip().CalcPastMedianTime(), g.timeSource)
 	reqDifficulty, err := g.dag.CalcNextRequiredDifficulty(ts)
 	if err != nil {
 		return nil, err
