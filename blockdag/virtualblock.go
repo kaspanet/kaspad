@@ -89,11 +89,3 @@ func (v *VirtualBlock) AddTip(newTip *blockNode) {
 func (v *VirtualBlock) tips() blockSet {
 	return v.parents
 }
-
-// SelectedTip returns the current selected tip for the DAG.
-// It will return nil if there is no tip.
-//
-// This function is safe for concurrent access.
-func (v *VirtualBlock) SelectedTip() *blockNode {
-	return v.selectedParent
-}

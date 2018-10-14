@@ -2259,7 +2259,6 @@ func handleGetHeaders(s *Server, cmd interface{}, closeChan <-chan struct{}) (in
 // handleGetInfo implements the getinfo command. We only return the fields
 // that are not related to wallet functionality.
 func handleGetInfo(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	virtualBlock := s.cfg.DAG.VirtualBlock()
 	ret := &btcjson.InfoDAGResult{
 		Version:         int32(1000000*version.AppMajor + 10000*version.AppMinor + 100*version.AppPatch),
 		ProtocolVersion: int32(maxProtocolVersion),
@@ -2267,7 +2266,7 @@ func handleGetInfo(s *Server, cmd interface{}, closeChan <-chan struct{}) (inter
 		TimeOffset:      int64(s.cfg.TimeSource.Offset().Seconds()),
 		Connections:     s.cfg.ConnMgr.ConnectedCount(),
 		Proxy:           config.MainConfig().Proxy,
-		Difficulty:      getDifficultyRatio(virtualBlock.SelectedTip().Header().Bits, s.cfg.DAGParams),
+		Difficulty:      getDifficultyRatio(s.cfg.DAG.CurrentBits(), s.cfg.DAGParams),
 		TestNet:         config.MainConfig().TestNet3,
 		RelayFee:        config.MainConfig().MinRelayTxFee.ToBTC(),
 	}
@@ -2311,7 +2310,6 @@ func handleGetMiningInfo(s *Server, cmd interface{}, closeChan <-chan struct{}) 
 		}
 	}
 
-	virtualBlock := s.cfg.DAG.VirtualBlock()
 	highestTipHash := s.cfg.DAG.HighestTipHash()
 	selectedBlock, err := s.cfg.DAG.BlockByHash(&highestTipHash)
 	if err != nil {
@@ -2325,7 +2323,7 @@ func handleGetMiningInfo(s *Server, cmd interface{}, closeChan <-chan struct{}) 
 		Blocks:           int64(s.cfg.DAG.Height()), //TODO: (Ori) This is wrong. Done only for compilation
 		CurrentBlockSize: uint64(selectedBlock.MsgBlock().SerializeSize()),
 		CurrentBlockTx:   uint64(len(selectedBlock.MsgBlock().Transactions)),
-		Difficulty:       getDifficultyRatio(virtualBlock.SelectedTip().Header().Bits, s.cfg.DAGParams),
+		Difficulty:       getDifficultyRatio(s.cfg.DAG.CurrentBits(), s.cfg.DAGParams),
 		Generate:         s.cfg.CPUMiner.IsMining(),
 		GenProcLimit:     s.cfg.CPUMiner.NumWorkers(),
 		HashesPerSec:     int64(s.cfg.CPUMiner.HashesPerSecond()),
