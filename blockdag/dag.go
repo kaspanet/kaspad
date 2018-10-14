@@ -955,7 +955,7 @@ func (dag *BlockDAG) HighestTipHash() daghash.Hash {
 	return dag.virtual.tips().highest().hash
 }
 
-// CurrentBits returns the bits of the tip with the lowest bits.
+// CurrentBits returns the bits of the tip with the lowest bits, which also means it has highest difficulty.
 func (dag *BlockDAG) CurrentBits() uint32 {
 	tips := dag.virtual.tips()
 	minBits := uint32(math.MaxUint32)
