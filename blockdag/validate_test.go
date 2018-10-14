@@ -501,9 +501,71 @@ func TestCheckSerializedHeight(t *testing.T) {
 	}
 }
 
+func TestPastMedianTime(t *testing.T) {
+	dag := newTestDAG(&dagconfig.MainNetParams)
+	tip := dag.genesis
+	blockVersion := int32(0x10000000)
+
+	blockTime := tip.Header().Timestamp
+
+	for i := 0; i < 100; i++ {
+		blockTime = blockTime.Add(time.Second)
+		tip = newTestNode(setFromSlice(tip),
+			blockVersion,
+			0,
+			blockTime,
+			dagconfig.MainNetParams.K)
+	}
+
+	// Checks that a block is valid if it has timestamp equals to past median time
+	height := tip.height + 1
+	node := newTestNode(setFromSlice(tip),
+		blockVersion,
+		0,
+		tip.CalcPastMedianTime(),
+		dagconfig.MainNetParams.K)
+
+	header := node.Header()
+	err := dag.checkBlockHeaderContext(&header, node.parents.bluest(), height, BFNone)
+	if err != nil {
+		t.Errorf("TestPastMedianTime: unexpected error from checkBlockHeaderContext: %v"+
+			"(a block with timestamp equals to past median time should be valid)", err)
+	}
+
+	// Checks that a block is valid if its timestamp is after past median time
+	height = tip.height + 1
+	node = newTestNode(setFromSlice(tip),
+		blockVersion,
+		0,
+		tip.CalcPastMedianTime().Add(time.Second),
+		dagconfig.MainNetParams.K)
+
+	header = node.Header()
+	err = dag.checkBlockHeaderContext(&header, node.parents.bluest(), height, BFNone)
+	if err != nil {
+		t.Errorf("TestPastMedianTime: unexpected error from checkBlockHeaderContext: %v"+
+			"(a block with timestamp bigger than past median time should be valid)", err)
+	}
+
+	// Checks that a block is invalid if its timestamp is before past median time
+	height = tip.height + 1
+	node = newTestNode(setFromSlice(tip),
+		blockVersion,
+		0,
+		tip.CalcPastMedianTime().Add(-time.Second),
+		dagconfig.MainNetParams.K)
+
+	header = node.Header()
+	err = dag.checkBlockHeaderContext(&header, node.parents.bluest(), height, BFNone)
+	if err == nil {
+		t.Errorf("TestPastMedianTime: unexpected success: block should be invalid if its timestamp is before past median time")
+	}
+
+}
+
 func TestValidateParents(t *testing.T) {
-	blockDAG := newTestDAG(&dagconfig.MainNetParams)
-	genesisNode := blockDAG.genesis
+	dag := newTestDAG(&dagconfig.MainNetParams)
+	genesisNode := dag.genesis
 	blockVersion := int32(0x10000000)
 
 	blockTime := genesisNode.Header().Timestamp
