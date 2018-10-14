@@ -1205,7 +1205,7 @@ func handleGetBlockDAGInfo(s *Server, cmd interface{}, closeChan <-chan struct{}
 		Blocks:        dag.Height(), //TODO: (Ori) This is wrong. Done only for compilation
 		Headers:       dag.Height(), //TODO: (Ori) This is wrong. Done only for compilation
 		TipHashes:     daghash.Strings(dag.TipHashes()),
-		Difficulty:    getDifficultyRatio(dag.SelectedTip().Header().Bits, params),
+		Difficulty:    getDifficultyRatio(dag.CurrentBits(), params),
 		MedianTime:    dag.SelectedTip().CalcPastMedianTime().Unix(),
 		Pruned:        false,
 		Bip9SoftForks: make(map[string]*btcjson.Bip9SoftForkDescription),
