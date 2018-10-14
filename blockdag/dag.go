@@ -539,7 +539,7 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block) error {
 		// optional indexes with the block being connected so they can
 		// update themselves accordingly.
 		if dag.indexManager != nil {
-			err := dag.indexManager.ConnectBlock(dbTx, block, dag.virtual)
+			err := dag.indexManager.ConnectBlock(dbTx, block, dag)
 			if err != nil {
 				return err
 			}
@@ -933,6 +933,15 @@ func (dag *BlockDAG) VirtualBlock() *VirtualBlock {
 	return dag.virtual
 }
 
+// GetUTXOEntry returns the requested unspent transaction output. The returned
+// instance must be treated as immutable since it is shared by all callers.
+//
+// This function is safe for concurrent access. However, the returned entry (if
+// any) is NOT.
+func (dag *BlockDAG) GetUTXOEntry(outPoint wire.OutPoint) (*UTXOEntry, bool) {
+	return dag.virtual.utxoSet.get(outPoint)
+}
+
 // Height returns the height of the highest tip in the DAG
 func (dag *BlockDAG) Height() int32 {
 	return dag.virtual.tips().maxHeight()
@@ -1324,12 +1333,12 @@ type IndexManager interface {
 	Init(*BlockDAG, <-chan struct{}) error
 
 	// ConnectBlock is invoked when a new block has been connected to the
-	// main chain.
-	ConnectBlock(database.Tx, *util.Block, *VirtualBlock) error
+	// DAG.
+	ConnectBlock(database.Tx, *util.Block, *BlockDAG) error
 
 	// DisconnectBlock is invoked when a block has been disconnected from
-	// the main chain.
-	DisconnectBlock(database.Tx, *util.Block, *VirtualBlock) error
+	// the DAG.
+	DisconnectBlock(database.Tx, *util.Block, *BlockDAG) error
 }
 
 // Config is a descriptor which specifies the blockchain instance configuration.

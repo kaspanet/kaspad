@@ -6,8 +6,6 @@ package blockdag
 
 import (
 	"sync"
-
-	"github.com/daglabs/btcd/wire"
 )
 
 // VirtualBlock is a virtual block whose parents are the tips of the DAG.
@@ -98,13 +96,4 @@ func (v *VirtualBlock) tips() blockSet {
 // This function is safe for concurrent access.
 func (v *VirtualBlock) SelectedTip() *blockNode {
 	return v.selectedParent
-}
-
-// GetUTXOEntry returns the requested unspent transaction output. The returned
-// instance must be treated as immutable since it is shared by all callers.
-//
-// This function is safe for concurrent access. However, the returned entry (if
-// any) is NOT.
-func (v *VirtualBlock) GetUTXOEntry(outPoint wire.OutPoint) (*UTXOEntry, bool) {
-	return v.utxoSet.get(outPoint)
 }

@@ -792,7 +792,7 @@ func (dag *BlockDAG) ensureNoDuplicateTx(node *blockNode, block *util.Block) err
 	// Duplicate transactions are only allowed if the previous transaction
 	// is fully spent.
 	for outpoint := range fetchSet {
-		utxo, ok := dag.virtual.GetUTXOEntry(outpoint)
+		utxo, ok := dag.GetUTXOEntry(outpoint)
 		if ok {
 			str := fmt.Sprintf("tried to overwrite transaction %v "+
 				"at block height %d that is not fully spent",
