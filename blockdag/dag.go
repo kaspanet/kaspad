@@ -922,16 +922,12 @@ func (dag *BlockDAG) SelectedTip() *blockNode {
 
 // UTXOSet returns the DAG's UTXO set
 func (dag *BlockDAG) UTXOSet() *fullUTXOSet {
-	return dag.VirtualBlock().utxoSet
+	return dag.virtual.utxoSet
 }
 
-// VirtualBlock returns the DAG's virtual block in the current point in time.
-// The returned instance must be treated as immutable since it is shared by all
-// callers.
-//
-// This function is safe for concurrent access.
-func (dag *BlockDAG) VirtualBlock() *VirtualBlock {
-	return dag.virtual
+// CalcPastMedianTime returns the past median time of the DAG.
+func (dag *BlockDAG) CalcPastMedianTime() time.Time {
+	return dag.virtual.tips().bluest().CalcPastMedianTime()
 }
 
 // GetUTXOEntry returns the requested unspent transaction output. The returned

@@ -761,7 +761,7 @@ func (g *BlkTmplGenerator) UpdateBlockTime(msgBlock *wire.MsgBlock) error {
 	// The new timestamp is potentially adjusted to ensure it comes after
 	// the median time of the last several blocks per the chain consensus
 	// rules.
-	dagMedianTime := g.dag.VirtualBlock().CalcPastMedianTime()
+	dagMedianTime := g.dag.CalcPastMedianTime()
 	newTime := medianAdjustedTime(dagMedianTime, g.timeSource)
 	msgBlock.Header.Timestamp = newTime
 
@@ -803,15 +803,6 @@ func (g *BlkTmplGenerator) UpdateExtraNonce(msgBlock *wire.MsgBlock, blockHeight
 	merkles := blockdag.BuildMerkleTreeStore(block.Transactions())
 	msgBlock.Header.MerkleRoot = *merkles[len(merkles)-1]
 	return nil
-}
-
-// VirtualBlock returns the DAG's virtual block in the current point in time.
-// The returned instance must be treated as immutable since it is shared by all
-// callers.
-//
-// This function is safe for concurrent access.
-func (g *BlkTmplGenerator) VirtualBlock() *blockdag.VirtualBlock {
-	return g.dag.VirtualBlock()
 }
 
 // DAGHeight returns the DAG's height
