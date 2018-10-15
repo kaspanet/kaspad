@@ -4242,11 +4242,7 @@ func NewRPCServer(
 func (s *Server) handleBlockchainNotification(notification *blockdag.Notification) {
 	switch notification.Type {
 	case blockdag.NTBlockAccepted:
-		tipHashes, ok := notification.Data.([]daghash.Hash)
-		if !ok {
-			log.Warnf("Chain accepted notification is not a block.")
-			break
-		}
+		tipHashes := s.cfg.DAG.TipHashes()
 
 		// Allow any clients performing long polling via the
 		// getblocktemplate RPC to be notified when the new block causes
