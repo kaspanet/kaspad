@@ -6,6 +6,7 @@ package blockdag
 
 import (
 	"errors"
+	"fmt"
 	"reflect"
 	"strings"
 	"testing"
@@ -21,6 +22,65 @@ import (
 	"github.com/daglabs/btcd/util"
 	"github.com/daglabs/btcd/wire"
 )
+
+func TestBlockCount(t *testing.T) {
+	// Load up blocks such that there is a fork in the DAG.
+	// (genesis block) -> 1 -> 2 -> 3 -> 4
+	//                          \-> 3b
+	testFiles := []string{
+		"blk_0_to_4.dat",
+		"blk_3B.dat",
+	}
+
+	var blocks []*util.Block
+	for _, file := range testFiles {
+		blockTmp, err := loadBlocks(file)
+		if err != nil {
+			t.Fatalf("Error loading file: %v\n", err)
+		}
+		blocks = append(blocks, blockTmp...)
+	}
+
+	// Create a new database and chain instance to run tests against.
+	dag, teardownFunc, err := DAGSetup("haveblock",
+		&dagconfig.SimNetParams)
+	if err != nil {
+		t.Fatalf("Failed to setup chain instance: %v", err)
+	}
+	defer teardownFunc()
+
+	// Since we're not dealing with the real block chain, set the coinbase
+	// maturity to 1.
+	dag.TstSetCoinbaseMaturity(1)
+
+	for i := 1; i < len(blocks); i++ {
+		isOrphan, err := dag.ProcessBlock(blocks[i], BFNone)
+		if i == 1 {
+			fmt.Printf("Parents %v\n", dag.index.LookupNode(blocks[1].Hash()).parents)
+		}
+		if err != nil {
+			t.Fatalf("ProcessBlock fail on block %v: %v\n", i, err)
+		}
+		if isOrphan {
+			t.Fatalf("ProcessBlock incorrectly returned block %v "+
+				"is an orphan\n", i)
+		}
+		fmt.Printf("Count after %v: %v\n", i, dag.BlockCount())
+	}
+
+	fmt.Printf("Parents %v\n", dag.index.LookupNode(blocks[1].Hash()).parents)
+
+	// for i := 0; i < len(blocks); i++ {
+	// 	block := blocks[i]
+	// 	found, _ := dag.HaveBlock(block.Hash())
+	// 	fmt.Printf("Have block %v %v %v\n", i, block.Hash(), found)
+	// }
+
+	expectedBlockCount := int64(6)
+	if dag.BlockCount() != expectedBlockCount {
+		t.Errorf("TestBlockCount: BlockCount expected to return %v but got %v", expectedBlockCount, dag.BlockCount())
+	}
+}
 
 // TestHaveBlock tests the HaveBlock API to ensure proper functionality.
 func TestHaveBlock(t *testing.T) {

@@ -930,6 +930,27 @@ func (dag *BlockDAG) Height() int32 {
 	return dag.virtual.tips().maxHeight()
 }
 
+// BlockCount returns the number of blocks in the DAG
+func (dag *BlockDAG) BlockCount() int64 {
+	count := int64(-1)
+	visited := newSet()
+	queue := []*blockNode{&dag.virtual.blockNode}
+	for len(queue) > 0 {
+		node := queue[0]
+		fmt.Printf("Counting block %v\n", node.hash)
+		queue = queue[1:]
+		if !visited.contains(node) {
+			visited.add(node)
+			count++
+			for _, parent := range node.parents {
+				fmt.Printf("Adding parent %v\n", parent.hash)
+				queue = append(queue, parent)
+			}
+		}
+	}
+	return count
+}
+
 // TipHashes returns the hashes of the DAG's tips
 func (dag *BlockDAG) TipHashes() []daghash.Hash {
 	return dag.virtual.tips().hashes()
