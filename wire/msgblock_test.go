@@ -93,7 +93,7 @@ func TestBlockTxHashes(t *testing.T) {
 // TestBlockHash tests the ability to generate the hash of a block accurately.
 func TestBlockHash(t *testing.T) {
 	// Block 1 hash.
-	hashStr := "f5a1c070bed4d87e1ff0c0040d8d56f9d559aeb4c737978b4c12a83a4c6cd231"
+	hashStr := "5d8486ede1953cb1bc91720f10421ae670ec66565f1cc0b889fba125f79d5de3"
 	wantHash, err := daghash.NewHashFromStr(hashStr)
 	if err != nil {
 		t.Errorf("NewHashFromStr: %v", err)
@@ -227,9 +227,9 @@ func TestBlockWireErrors(t *testing.T) {
 		// Force error in header nonce.
 		{&blockOne, blockOneBytes, pver, 113, io.ErrShortWrite, io.EOF},
 		// Force error in transaction count.
-		{&blockOne, blockOneBytes, pver, 117, io.ErrShortWrite, io.EOF},
+		{&blockOne, blockOneBytes, pver, 121, io.ErrShortWrite, io.EOF},
 		// Force error in transactions.
-		{&blockOne, blockOneBytes, pver, 118, io.ErrShortWrite, io.EOF},
+		{&blockOne, blockOneBytes, pver, 122, io.ErrShortWrite, io.EOF},
 	}
 
 	t.Logf("Running %d tests", len(tests))
@@ -349,9 +349,9 @@ func TestBlockSerializeErrors(t *testing.T) {
 		// Force error in header nonce.
 		{&blockOne, blockOneBytes, 113, io.ErrShortWrite, io.EOF},
 		// Force error in transaction count.
-		{&blockOne, blockOneBytes, 117, io.ErrShortWrite, io.EOF},
+		{&blockOne, blockOneBytes, 121, io.ErrShortWrite, io.EOF},
 		// Force error in transactions.
-		{&blockOne, blockOneBytes, 118, io.ErrShortWrite, io.EOF},
+		{&blockOne, blockOneBytes, 122, io.ErrShortWrite, io.EOF},
 	}
 
 	t.Logf("Running %d tests", len(tests))
@@ -420,7 +420,7 @@ func TestBlockOverflowErrors(t *testing.T) {
 				0x3a, 0x9f, 0xb8, 0xaa, 0x4b, 0x1e, 0x5e, 0x4a,
 				0x61, 0xbc, 0x66, 0x49, 0x00, 0x00, 0x00, 0x00, // Timestamp
 				0xff, 0xff, 0x00, 0x1d, // Bits
-				0x01, 0xe3, 0x62, 0x99, // Nonce
+				0x01, 0xe3, 0x62, 0x99, 0x00, 0x00, 0x00, 0x00, // Fake Nonce. TODO: (Ori) Replace to a real nonce
 				0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
 				0xff, // TxnCount
 			}, pver, &MessageError{},
@@ -470,7 +470,7 @@ func TestBlockSerializeSize(t *testing.T) {
 		size int       // Expected serialized size
 	}{
 		// Block with no transactions.
-		{noTxBlock, 118},
+		{noTxBlock, 122},
 
 		// First block in the mainnet block chain.
 		{&blockOne, len(blockOneBytes)},
@@ -556,7 +556,7 @@ var blockOneBytes = []byte{
 	0x3a, 0x9f, 0xb8, 0xaa, 0x4b, 0x1e, 0x5e, 0x4a,
 	0x61, 0xbc, 0x66, 0x49, 0x00, 0x00, 0x00, 0x00, // Timestamp
 	0xff, 0xff, 0x00, 0x1d, // Bits
-	0x01, 0xe3, 0x62, 0x99, // Nonce
+	0x01, 0xe3, 0x62, 0x99, 0x00, 0x00, 0x00, 0x00, // Fake Nonce. TODO: (Ori) Replace to a real nonce
 	0x01,                   // TxnCount
 	0x01, 0x00, 0x00, 0x00, // Version
 	0x01, // Varint for number of transaction inputs
@@ -587,5 +587,5 @@ var blockOneBytes = []byte{
 
 // Transaction location information for block one transactions.
 var blockOneTxLocs = []TxLoc{
-	{TxStart: 118, TxLen: 142},
+	{TxStart: 122, TxLen: 142},
 }

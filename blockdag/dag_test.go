@@ -136,10 +136,10 @@ func TestHaveBlock(t *testing.T) {
 		{hash: dagconfig.SimNetParams.GenesisHash.String(), want: true},
 
 		// Block 3b should be present (as a second child of Block 2).
-		{hash: "00cd35debc62fd60b6fbda1925894db5996c02bcd575a4130fdb4d6071537152", want: true},
+		{hash: "2b31fe171eeadcaec5978add980ebb8108fd5d9082e870ff71744842e0dd01bb", want: true},
 
 		// Block 100000 should be present (as an orphan).
-		{hash: "66cdaddc8884c99ccc46c2f34f579903a223cc12b44c239938af47ee0c7193b4", want: true},
+		{hash: "64f3da4fe61edb33ad6dd5e857ebcfe296182a0c4aaef01e30b4032b94ec1620", want: true},
 
 		// Random hashes should not be available.
 		{hash: "123", want: false},
@@ -469,7 +469,7 @@ func TestCalcSequenceLock(t *testing.T) {
 }
 
 func TestCalcPastMedianTime(t *testing.T) {
-	netParams := &dagconfig.MainNetParams
+	netParams := &dagconfig.SimNetParams
 
 	blockVersion := int32(0x10000000)
 
@@ -539,7 +539,7 @@ func chainedNodes(parents blockSet, numNodes int) []*blockNode {
 	for i := 0; i < numNodes; i++ {
 		// This is invalid, but all that is needed is enough to get the
 		// synthetic tests to work.
-		header := wire.BlockHeader{Nonce: testNoncePrng.Uint32()}
+		header := wire.BlockHeader{Nonce: testNoncePrng.Uint64()}
 		header.PrevBlocks = tips.hashes()
 		nodes[i] = newBlockNode(&header, tips, dagconfig.SimNetParams.K)
 		tips = setFromSlice(nodes[i])
@@ -561,7 +561,7 @@ func TestHeightToHashRange(t *testing.T) {
 	// 	genesis -> 1 -> 2 -> ... -> 15 -> 16  -> 17  -> 18
 	// 	                              \-> 16a -> 17a -> 18a (unvalidated)
 	tip := testTip
-	blockDAG := newTestDAG(&dagconfig.MainNetParams)
+	blockDAG := newTestDAG(&dagconfig.SimNetParams)
 	branch0Nodes := chainedNodes(setFromSlice(blockDAG.genesis), 18)
 	branch1Nodes := chainedNodes(setFromSlice(branch0Nodes[14]), 3)
 	for _, node := range branch0Nodes {
@@ -653,7 +653,7 @@ func TestIntervalBlockHashes(t *testing.T) {
 	// 	genesis -> 1 -> 2 -> ... -> 15 -> 16  -> 17  -> 18
 	// 	                              \-> 16a -> 17a -> 18a (unvalidated)
 	tip := testTip
-	chain := newTestDAG(&dagconfig.MainNetParams)
+	chain := newTestDAG(&dagconfig.SimNetParams)
 	branch0Nodes := chainedNodes(setFromSlice(chain.genesis), 18)
 	branch1Nodes := chainedNodes(setFromSlice(branch0Nodes[14]), 3)
 	for _, node := range branch0Nodes {
