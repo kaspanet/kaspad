@@ -16,6 +16,7 @@ type VirtualBlock struct {
 	phantomK uint32
 	utxoSet  *fullUTXOSet
 	blockNode
+	selectedPathSet blockSet
 }
 
 // newVirtualBlock creates and returns a new VirtualBlock.
@@ -24,6 +25,7 @@ func newVirtualBlock(tips blockSet, phantomK uint32) *VirtualBlock {
 	var virtual VirtualBlock
 	virtual.phantomK = phantomK
 	virtual.utxoSet = NewFullUTXOSet()
+	virtual.selectedPathSet = newSet()
 	virtual.setTips(tips)
 
 	return &virtual
@@ -32,9 +34,10 @@ func newVirtualBlock(tips blockSet, phantomK uint32) *VirtualBlock {
 // clone creates and returns a clone of the virtual block.
 func (v *VirtualBlock) clone() *VirtualBlock {
 	return &VirtualBlock{
-		phantomK:  v.phantomK,
-		utxoSet:   v.utxoSet.clone().(*fullUTXOSet),
-		blockNode: v.blockNode,
+		phantomK:        v.phantomK,
+		utxoSet:         v.utxoSet.clone().(*fullUTXOSet),
+		blockNode:       v.blockNode,
+		selectedPathSet: v.selectedPathSet,
 	}
 }
 
@@ -44,7 +47,22 @@ func (v *VirtualBlock) clone() *VirtualBlock {
 //
 // This function MUST be called with the view mutex locked (for writes).
 func (v *VirtualBlock) setTips(tips blockSet) {
+	oldSelectedParent := v.selectedParent
 	v.blockNode = *newBlockNode(nil, tips, v.phantomK)
+	var intersectionNode *blockNode
+	for node := v.blockNode.selectedParent; intersectionNode == nil && node != nil; node = node.selectedParent {
+		if oldSelectedParent != nil && v.selectedPathSet.contains(node) {
+			intersectionNode = node
+		} else {
+			v.selectedPathSet.add(node)
+		}
+	}
+
+	if intersectionNode != nil {
+		for node := oldSelectedParent; !node.hash.IsEqual(&intersectionNode.hash); node = node.selectedParent {
+			v.selectedPathSet.remove(node)
+		}
+	}
 }
 
 // SetTips replaces the tips of the virtual block with the blocks in the

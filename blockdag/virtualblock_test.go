@@ -5,24 +5,29 @@
 package blockdag
 
 import (
-	"testing"
 	"reflect"
+	"testing"
+
 	"github.com/daglabs/btcd/dagconfig/daghash"
 )
 
-// TestVirtualBlock ensures that VirtualBlock works as expected.
-func TestVirtualBlock(t *testing.T) {
-	// For the purposes of this test, we'll create blockNodes whose hashes are a
+func buildNodeGenerator(phantomK uint32) func(parents blockSet) *blockNode {
+	// For the purposes of these tests, we'll create blockNodes whose hashes are a
 	// series of numbers from 0 to n.
-	phantomK := uint32(1)
 	hashCounter := byte(0)
-	buildNode := func(parents blockSet) *blockNode {
+	return func(parents blockSet) *blockNode {
 		block := newBlockNode(nil, parents, phantomK)
 		block.hash = daghash.Hash{hashCounter}
 		hashCounter++
 
 		return block
 	}
+}
+
+// TestVirtualBlock ensures that VirtualBlock works as expected.
+func TestVirtualBlock(t *testing.T) {
+	phantomK := uint32(1)
+	buildNode := buildNodeGenerator(phantomK)
 
 	// Create a DAG as follows:
 	// 0 <- 1 <- 2
@@ -105,5 +110,55 @@ func TestVirtualBlock(t *testing.T) {
 			t.Errorf("unexpected selected tip in test \"%s\". "+
 				"Expected: %v, got: %v.", test.name, test.expectedSelectedTip, resultSelectedTip)
 		}
+	}
+}
+
+func TestSelectedPath(t *testing.T) {
+	phantomK := uint32(1)
+	buildNode := buildNodeGenerator(phantomK)
+
+	// Create an empty VirtualBlock
+	virtual := newVirtualBlock(nil, phantomK)
+
+	tip := buildNode(setFromSlice())
+	virtual.AddTip(tip)
+	initialPath := setFromSlice(tip)
+	for i := 0; i < 5; i++ {
+		tip = buildNode(setFromSlice(tip))
+		initialPath.add(tip)
+		virtual.AddTip(tip)
+	}
+	initialTip := tip
+
+	firstPath := initialPath.clone()
+	for i := 0; i < 5; i++ {
+		tip = buildNode(setFromSlice(tip))
+		firstPath.add(tip)
+		virtual.AddTip(tip)
+	}
+	if !reflect.DeepEqual(virtual.selectedPathSet, firstPath) {
+		t.Fatalf("TestSelectedPath: selectedPathSet doesn't include the expected values. got %v, want %v", virtual.selectedParent, firstPath)
+	}
+
+	secondPath := initialPath.clone()
+	tip = initialTip
+	for i := 0; i < 100; i++ {
+		tip = buildNode(setFromSlice(tip))
+		secondPath.add(tip)
+		virtual.AddTip(tip)
+	}
+	// Because we added a chain that is much longer than the previous chain, the selected path should be re-organized.
+	if !reflect.DeepEqual(virtual.selectedPathSet, secondPath) {
+		t.Fatalf("TestSelectedPath: selectedPathSet didn't handle the re-org as expected. got %v, want %v", virtual.selectedParent, firstPath)
+	}
+
+	tip = initialTip
+	for i := 0; i < 3; i++ {
+		tip = buildNode(setFromSlice(tip))
+		virtual.AddTip(tip)
+	}
+	// Because we added a very short chain, the selected path should not be affected.
+	if !reflect.DeepEqual(virtual.selectedPathSet, secondPath) {
+		t.Fatalf("TestSelectedPath: selectedPathSet didn an unexpected re-org. got %v, want %v", virtual.selectedParent, firstPath)
 	}
 }
