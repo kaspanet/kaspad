@@ -134,14 +134,14 @@ type commandHandler func(*Server, interface{}, <-chan struct{}) (interface{}, er
 // a dependency loop.
 var rpcHandlers map[string]commandHandler
 var rpcHandlersBeforeInit = map[string]commandHandler{
-	"addnode":               handleAddNode,
+	"addmanualnode":         handleAddManualNode,
 	"createrawtransaction":  handleCreateRawTransaction,
 	"debuglevel":            handleDebugLevel,
 	"decoderawtransaction":  handleDecodeRawTransaction,
 	"decodescript":          handleDecodeScript,
 	"estimatefee":           handleEstimateFee,
 	"generate":              handleGenerate,
-	"getaddednodeinfo":      handleGetAddedNodeInfo,
+	"getallmanualnodesinfo": handleGetAllManualNodesInfo,
 	"getbestblock":          handleGetBestBlock,
 	"getbestblockhash":      handleGetBestBlockHash,
 	"getblock":              handleGetBlock,
@@ -159,6 +159,7 @@ var rpcHandlersBeforeInit = map[string]commandHandler{
 	"gethashespersec":       handleGetHashesPerSec,
 	"getheaders":            handleGetHeaders,
 	"getinfo":               handleGetInfo,
+	"getmanualnodeinfo":     handleGetManualNodeInfo,
 	"getmempoolinfo":        handleGetMempoolInfo,
 	"getmininginfo":         handleGetMiningInfo,
 	"getnettotals":          handleGetNetTotals,
@@ -170,6 +171,7 @@ var rpcHandlersBeforeInit = map[string]commandHandler{
 	"help":                  handleHelp,
 	"node":                  handleNode,
 	"ping":                  handlePing,
+	"removemanualnode":      handleRemoveManualNode,
 	"searchrawtransactions": handleSearchRawTransactions,
 	"sendrawtransaction":    handleSendRawTransaction,
 	"setgenerate":           handleSetGenerate,
@@ -365,25 +367,37 @@ func handleAskWallet(s *Server, cmd interface{}, closeChan <-chan struct{}) (int
 	return nil, ErrRPCNoWallet
 }
 
-// handleAddNode handles addnode commands.
-func handleAddNode(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	c := cmd.(*btcjson.AddNodeCmd)
+// handleAddManualNode handles addmanualnode commands.
+func handleAddManualNode(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
+	c := cmd.(*btcjson.AddManualNodeCmd)
 
-	addr := network.NormalizeAddress(c.Addr, s.cfg.ChainParams.DefaultPort)
+	oneTry := c.OneTry != nil && *c.OneTry
+
+	addr := network.NormalizeAddress(c.Addr, s.cfg.DAGParams.DefaultPort)
 	var err error
-	switch c.SubCmd {
-	case "add":
-		err = s.cfg.ConnMgr.Connect(addr, true)
-	case "remove":
-		err = s.cfg.ConnMgr.RemoveByAddr(addr)
-	case "onetry":
+	if oneTry {
 		err = s.cfg.ConnMgr.Connect(addr, false)
-	default:
+	} else {
+		err = s.cfg.ConnMgr.Connect(addr, true)
+	}
+
+	if err != nil {
 		return nil, &btcjson.RPCError{
 			Code:    btcjson.ErrRPCInvalidParameter,
-			Message: "invalid subcommand for addnode",
+			Message: err.Error(),
 		}
 	}
+
+	// no data returned unless an error.
+	return nil, nil
+}
+
+// handleRemoveManualNode handles removemanualnode command.
+func handleRemoveManualNode(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
+	c := cmd.(*btcjson.RemoveManualNodeCmd)
+
+	addr := network.NormalizeAddress(c.Addr, s.cfg.DAGParams.DefaultPort)
+	err := s.cfg.ConnMgr.RemoveByAddr(addr)
 
 	if err != nil {
 		return nil, &btcjson.RPCError{
@@ -403,7 +417,7 @@ func handleNode(s *Server, cmd interface{}, closeChan <-chan struct{}) (interfac
 	var addr string
 	var nodeID uint64
 	var errN, err error
-	params := s.cfg.ChainParams
+	params := s.cfg.DAGParams
 	switch c.SubCmd {
 	case "disconnect":
 		// If we have a valid uint disconnect by node id. Otherwise,
@@ -546,7 +560,7 @@ func handleCreateRawTransaction(s *Server, cmd interface{}, closeChan <-chan str
 
 	// Add all transaction outputs to the transaction after performing
 	// some validity checks.
-	params := s.cfg.ChainParams
+	params := s.cfg.DAGParams
 	for encodedAddr, amount := range c.Amounts {
 		// Ensure amount is in the valid range for monetary amounts.
 		if amount <= 0 || amount > util.MaxSatoshi {
@@ -784,7 +798,7 @@ func handleDecodeRawTransaction(s *Server, cmd interface{}, closeChan <-chan str
 		Version:  mtx.Version,
 		Locktime: mtx.LockTime,
 		Vin:      createVinList(&mtx),
-		Vout:     createVoutList(&mtx, s.cfg.ChainParams, nil),
+		Vout:     createVoutList(&mtx, s.cfg.DAGParams, nil),
 	}
 	return txReply, nil
 }
@@ -811,14 +825,14 @@ func handleDecodeScript(s *Server, cmd interface{}, closeChan <-chan struct{}) (
 	// Ignore the error here since an error means the script couldn't parse
 	// and there is no additinal information about it anyways.
 	scriptClass, addrs, reqSigs, _ := txscript.ExtractPkScriptAddrs(script,
-		s.cfg.ChainParams)
+		s.cfg.DAGParams)
 	addresses := make([]string, len(addrs))
 	for i, addr := range addrs {
 		addresses[i] = addr.EncodeAddress()
 	}
 
 	// Convert the script itself to a pay-to-script-hash address.
-	p2sh, err := util.NewAddressScriptHash(script, s.cfg.ChainParams.Prefix)
+	p2sh, err := util.NewAddressScriptHash(script, s.cfg.DAGParams.Prefix)
 	if err != nil {
 		context := "Failed to convert script to pay-to-script-hash"
 		return nil, internalRPCError(err.Error(), context)
@@ -873,13 +887,13 @@ func handleGenerate(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 
 	// Respond with an error if there's virtually 0 chance of mining a block
 	// with the CPU.
-	if !s.cfg.ChainParams.GenerateSupported {
+	if !s.cfg.DAGParams.GenerateSupported {
 		return nil, &btcjson.RPCError{
 			Code: btcjson.ErrRPCDifficulty,
 			Message: fmt.Sprintf("No support for `generate` on "+
 				"the current network, %s, as it's unlikely to "+
 				"be possible to mine a block with the CPU.",
-				s.cfg.ChainParams.Net),
+				s.cfg.DAGParams.Net),
 		}
 	}
 
@@ -913,15 +927,15 @@ func handleGenerate(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 	return reply, nil
 }
 
-// handleGetAddedNodeInfo handles getaddednodeinfo commands.
-func handleGetAddedNodeInfo(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	c := cmd.(*btcjson.GetAddedNodeInfoCmd)
+// getManualNodesInfo handles getmanualnodeinfo and getallmanualnodesinfo commands.
+func getManualNodesInfo(s *Server, detailsArg *bool, node string) (interface{}, error) {
 
-	// Retrieve a list of persistent (added) peers from the server and
+	details := detailsArg == nil || *detailsArg
+
+	// Retrieve a list of persistent (manual) peers from the server and
 	// filter the list of peers per the specified address (if any).
 	peers := s.cfg.ConnMgr.PersistentPeers()
-	if c.Node != nil {
-		node := *c.Node
+	if node != "" {
 		found := false
 		for i, peer := range peers {
 			if peer.ToPeer().Addr() == node {
@@ -937,9 +951,9 @@ func handleGetAddedNodeInfo(s *Server, cmd interface{}, closeChan <-chan struct{
 		}
 	}
 
-	// Without the dns flag, the result is just a slice of the addresses as
+	// Without the details flag, the result is just a slice of the addresses as
 	// strings.
-	if !c.DNS {
+	if !details {
 		results := make([]string, 0, len(peers))
 		for _, peer := range peers {
 			results = append(results, peer.ToPeer().Addr())
@@ -947,15 +961,15 @@ func handleGetAddedNodeInfo(s *Server, cmd interface{}, closeChan <-chan struct{
 		return results, nil
 	}
 
-	// With the dns flag, the result is an array of JSON objects which
+	// With the details flag, the result is an array of JSON objects which
 	// include the result of DNS lookups for each peer.
-	results := make([]*btcjson.GetAddedNodeInfoResult, 0, len(peers))
+	results := make([]*btcjson.GetManualNodeInfoResult, 0, len(peers))
 	for _, rpcPeer := range peers {
 		// Set the "address" of the peer which could be an ip address
 		// or a domain name.
 		peer := rpcPeer.ToPeer()
-		var result btcjson.GetAddedNodeInfoResult
-		result.AddedNode = peer.Addr()
+		var result btcjson.GetManualNodeInfoResult
+		result.ManualNode = peer.Addr()
 		result.Connected = btcjson.Bool(peer.Connected())
 
 		// Split the address into host and port portions so we can do
@@ -987,9 +1001,9 @@ func handleGetAddedNodeInfo(s *Server, cmd interface{}, closeChan <-chan struct{
 		}
 
 		// Add the addresses and connection info to the result.
-		addrs := make([]btcjson.GetAddedNodeInfoResultAddr, 0, len(ipList))
+		addrs := make([]btcjson.GetManualNodeInfoResultAddr, 0, len(ipList))
 		for _, ip := range ipList {
-			var addr btcjson.GetAddedNodeInfoResultAddr
+			var addr btcjson.GetManualNodeInfoResultAddr
 			addr.Address = ip
 			addr.Connected = "false"
 			if ip == host && peer.Connected() {
@@ -1001,6 +1015,26 @@ func handleGetAddedNodeInfo(s *Server, cmd interface{}, closeChan <-chan struct{
 		results = append(results, &result)
 	}
 	return results, nil
+}
+
+// handleGetManualNodeInfo handles getmanualnodeinfo commands.
+func handleGetManualNodeInfo(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
+	c := cmd.(*btcjson.GetManualNodeInfoCmd)
+	results, err := getManualNodesInfo(s, c.Details, c.Node)
+	if err != nil {
+		return nil, err
+	}
+	if resultsNonDetailed, ok := results.([]string); ok {
+		return resultsNonDetailed[0], nil
+	}
+	resultsDetailed := results.([]*btcjson.GetManualNodeInfoResult)
+	return resultsDetailed[0], nil
+}
+
+// handleGetAllManualNodesInfo handles getallmanualnodesinfo commands.
+func handleGetAllManualNodesInfo(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
+	c := cmd.(*btcjson.GetAllManualNodesInfoCmd)
+	return getManualNodesInfo(s, c.Details, "")
 }
 
 // handleGetBestBlock implements the getbestblock command.
@@ -1096,7 +1130,7 @@ func handleGetBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 		nextHashStrings = daghash.Strings(childHashes)
 	}
 
-	params := s.cfg.ChainParams
+	params := s.cfg.DAGParams
 	blockHeader := &blk.MsgBlock().Header
 	blockReply := btcjson.GetBlockVerboseResult{
 		Hash:           c.Hash,
@@ -1163,7 +1197,7 @@ func softForkStatus(state blockdag.ThresholdState) (string, error) {
 func handleGetBlockDAGInfo(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
 	// Obtain a snapshot of the current best known DAG state. We'll
 	// populate the response to this call primarily from this snapshot.
-	params := s.cfg.ChainParams
+	params := s.cfg.DAGParams
 	dag := s.cfg.DAG
 	virtualBlock := dag.VirtualBlock()
 
@@ -1290,7 +1324,7 @@ func handleGetBlockHeader(s *Server, cmd interface{}, closeChan <-chan struct{})
 		nextHashStrings = daghash.Strings(childHashes)
 	}
 
-	params := s.cfg.ChainParams
+	params := s.cfg.DAGParams
 	blockHeaderReply := btcjson.GetBlockHeaderVerboseResult{
 		Hash:           c.Hash,
 		Confirmations:  uint64(1 + s.cfg.DAG.Height() - blockHeight), //TODO: (Ori) This is probably wrong. Done only for compilation
@@ -2165,13 +2199,13 @@ func handleGetConnectionCount(s *Server, cmd interface{}, closeChan <-chan struc
 
 // handleGetCurrentNet implements the getcurrentnet command.
 func handleGetCurrentNet(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	return s.cfg.ChainParams.Net, nil
+	return s.cfg.DAGParams.Net, nil
 }
 
 // handleGetDifficulty implements the getdifficulty command.
 func handleGetDifficulty(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
 	virtualBlock := s.cfg.DAG.VirtualBlock()
-	return getDifficultyRatio(virtualBlock.SelectedTip().Header().Bits, s.cfg.ChainParams), nil
+	return getDifficultyRatio(virtualBlock.SelectedTip().Header().Bits, s.cfg.DAGParams), nil
 }
 
 // handleGetGenerate implements the getgenerate command.
@@ -2236,7 +2270,7 @@ func handleGetInfo(s *Server, cmd interface{}, closeChan <-chan struct{}) (inter
 		TimeOffset:      int64(s.cfg.TimeSource.Offset().Seconds()),
 		Connections:     s.cfg.ConnMgr.ConnectedCount(),
 		Proxy:           config.MainConfig().Proxy,
-		Difficulty:      getDifficultyRatio(virtualBlock.SelectedTip().Header().Bits, s.cfg.ChainParams),
+		Difficulty:      getDifficultyRatio(virtualBlock.SelectedTip().Header().Bits, s.cfg.DAGParams),
 		TestNet:         config.MainConfig().TestNet3,
 		RelayFee:        config.MainConfig().MinRelayTxFee.ToBTC(),
 	}
@@ -2294,7 +2328,7 @@ func handleGetMiningInfo(s *Server, cmd interface{}, closeChan <-chan struct{}) 
 		Blocks:           int64(s.cfg.DAG.Height()), //TODO: (Ori) This is wrong. Done only for compilation
 		CurrentBlockSize: uint64(selectedBlock.MsgBlock().SerializeSize()),
 		CurrentBlockTx:   uint64(len(selectedBlock.MsgBlock().Transactions)),
-		Difficulty:       getDifficultyRatio(virtualBlock.SelectedTip().Header().Bits, s.cfg.ChainParams),
+		Difficulty:       getDifficultyRatio(virtualBlock.SelectedTip().Header().Bits, s.cfg.DAGParams),
 		Generate:         s.cfg.CPUMiner.IsMining(),
 		GenProcLimit:     s.cfg.CPUMiner.NumWorkers(),
 		HashesPerSec:     int64(s.cfg.CPUMiner.HashesPerSecond()),
@@ -2493,7 +2527,7 @@ func handleGetRawTransaction(s *Server, cmd interface{}, closeChan <-chan struct
 		dagHeight = s.cfg.DAG.Height()
 	}
 
-	rawTxn, err := createTxRawResult(s.cfg.ChainParams, mtx, txHash.String(),
+	rawTxn, err := createTxRawResult(s.cfg.DAGParams, mtx, txHash.String(),
 		blkHeader, blkHashStr, blkHeight, dagHeight)
 	if err != nil {
 		return nil, err
@@ -2583,7 +2617,7 @@ func handleGetTxOut(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 	// Ignore the error here since an error means the script couldn't parse
 	// and there is no additional information about it anyways.
 	scriptClass, addrs, reqSigs, _ := txscript.ExtractPkScriptAddrs(pkScript,
-		s.cfg.ChainParams)
+		s.cfg.DAGParams)
 	addresses := make([]string, len(addrs))
 	for i, addr := range addrs {
 		addresses[i] = addr.EncodeAddress()
@@ -2905,7 +2939,7 @@ func handleSearchRawTransactions(s *Server, cmd interface{}, closeChan <-chan st
 	}
 
 	// Attempt to decode the supplied address.
-	params := s.cfg.ChainParams
+	params := s.cfg.DAGParams
 	addr, err := util.DecodeAddress(c.Address, params.Prefix)
 	if err != nil {
 		return nil, &btcjson.RPCError{
@@ -3305,7 +3339,7 @@ func handleValidateAddress(s *Server, cmd interface{}, closeChan <-chan struct{}
 	c := cmd.(*btcjson.ValidateAddressCmd)
 
 	result := btcjson.ValidateAddressResult{}
-	addr, err := util.DecodeAddress(c.Address, s.cfg.ChainParams.Prefix)
+	addr, err := util.DecodeAddress(c.Address, s.cfg.DAGParams.Prefix)
 	if err != nil {
 		// Return the default value (false) for IsValid.
 		return result, nil
@@ -3338,7 +3372,7 @@ func verifyDAG(s *Server, level, depth int32) error {
 		// Level 1 does basic chain sanity checks.
 		if level > 0 {
 			err := blockdag.CheckBlockSanity(block,
-				s.cfg.ChainParams.PowLimit, s.cfg.TimeSource)
+				s.cfg.DAGParams.PowLimit, s.cfg.TimeSource)
 			if err != nil {
 				log.Errorf("Verify is unable to validate "+
 					"block at hash %v height %d: %v",
@@ -3375,7 +3409,7 @@ func handleVerifyMessage(s *Server, cmd interface{}, closeChan <-chan struct{}) 
 	c := cmd.(*btcjson.VerifyMessageCmd)
 
 	// Decode the provided address.
-	params := s.cfg.ChainParams
+	params := s.cfg.DAGParams
 	addr, err := util.DecodeAddress(c.Address, params.Prefix)
 	if err != nil {
 		return nil, &btcjson.RPCError{
@@ -4068,10 +4102,10 @@ type rpcserverConfig struct {
 
 	// These fields allow the RPC server to interface with the local block
 	// chain data and state.
-	TimeSource  blockdag.MedianTimeSource
-	DAG         *blockdag.BlockDAG
-	ChainParams *dagconfig.Params
-	DB          database.DB
+	TimeSource blockdag.MedianTimeSource
+	DAG        *blockdag.BlockDAG
+	DAGParams  *dagconfig.Params
+	DB         database.DB
 
 	// TxMemPool defines the transaction memory pool to interact with.
 	TxMemPool *mempool.TxPool
@@ -4168,7 +4202,7 @@ func NewRPCServer(
 		ConnMgr:      &rpcConnManager{p2pServer},
 		SyncMgr:      &rpcSyncMgr{p2pServer, p2pServer.SyncManager},
 		TimeSource:   p2pServer.TimeSource,
-		ChainParams:  p2pServer.DAGParams,
+		DAGParams:    p2pServer.DAGParams,
 		DB:           db,
 		TxMemPool:    p2pServer.TxMemPool,
 		Generator:    blockTemplateGenerator,

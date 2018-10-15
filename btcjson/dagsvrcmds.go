@@ -14,35 +14,31 @@ import (
 	"github.com/daglabs/btcd/wire"
 )
 
-// AddNodeSubCmd defines the type used in the addnode JSON-RPC command for the
-// sub command field.
-type AddNodeSubCmd string
-
-const (
-	// ANAdd indicates the specified host should be added as a persistent
-	// peer.
-	ANAdd AddNodeSubCmd = "add"
-
-	// ANRemove indicates the specified peer should be removed.
-	ANRemove AddNodeSubCmd = "remove"
-
-	// ANOneTry indicates the specified host should try to connect once,
-	// but it should not be made persistent.
-	ANOneTry AddNodeSubCmd = "onetry"
-)
-
-// AddNodeCmd defines the addnode JSON-RPC command.
-type AddNodeCmd struct {
+// AddManualNodeCmd defines the addmanualnode JSON-RPC command.
+type AddManualNodeCmd struct {
 	Addr   string
-	SubCmd AddNodeSubCmd `jsonrpcusage:"\"add|remove|onetry\""`
+	OneTry *bool `jsonrpcdefault:"false"`
 }
 
-// NewAddNodeCmd returns a new instance which can be used to issue an addnode
+// NewAddManualNodeCmd returns a new instance which can be used to issue an addmanualnode
 // JSON-RPC command.
-func NewAddNodeCmd(addr string, subCmd AddNodeSubCmd) *AddNodeCmd {
-	return &AddNodeCmd{
+func NewAddManualNodeCmd(addr string, oneTry *bool) *AddManualNodeCmd {
+	return &AddManualNodeCmd{
 		Addr:   addr,
-		SubCmd: subCmd,
+		OneTry: oneTry,
+	}
+}
+
+// RemoveManualNodeCmd defines the removemanualnode JSON-RPC command.
+type RemoveManualNodeCmd struct {
+	Addr string
+}
+
+// NewRemoveManualNodeCmd returns a new instance which can be used to issue an removemanualnode
+// JSON-RPC command.
+func NewRemoveManualNodeCmd(addr string) *RemoveManualNodeCmd {
+	return &RemoveManualNodeCmd{
+		Addr: addr,
 	}
 }
 
@@ -100,21 +96,31 @@ func NewDecodeScriptCmd(hexScript string) *DecodeScriptCmd {
 	}
 }
 
-// GetAddedNodeInfoCmd defines the getaddednodeinfo JSON-RPC command.
-type GetAddedNodeInfoCmd struct {
-	DNS  bool
-	Node *string
+// GetManualNodeInfoCmd defines the getmanualnodeinfo JSON-RPC command.
+type GetManualNodeInfoCmd struct {
+	Node    string
+	Details *bool `jsonrpcdefault:"true"`
 }
 
-// NewGetAddedNodeInfoCmd returns a new instance which can be used to issue a
-// getaddednodeinfo JSON-RPC command.
-//
-// The parameters which are pointers indicate they are optional.  Passing nil
-// for optional parameters will use the default value.
-func NewGetAddedNodeInfoCmd(dns bool, node *string) *GetAddedNodeInfoCmd {
-	return &GetAddedNodeInfoCmd{
-		DNS:  dns,
-		Node: node,
+// NewGetManualNodeInfoCmd returns a new instance which can be used to issue a
+// getmanualnodeinfo JSON-RPC command.
+func NewGetManualNodeInfoCmd(node string, details *bool) *GetManualNodeInfoCmd {
+	return &GetManualNodeInfoCmd{
+		Details: details,
+		Node:    node,
+	}
+}
+
+// GetAllManualNodesInfoCmd defines the getallmanualnodesinfo JSON-RPC command.
+type GetAllManualNodesInfoCmd struct {
+	Details *bool `jsonrpcdefault:"true"`
+}
+
+// NewGetAllManualNodesInfoCmd returns a new instance which can be used to issue a
+// getallmanualnodesinfo JSON-RPC command.
+func NewGetAllManualNodesInfoCmd(details *bool) *GetAllManualNodesInfoCmd {
+	return &GetAllManualNodesInfoCmd{
+		Details: details,
 	}
 }
 
@@ -761,11 +767,11 @@ func init() {
 	// No special flags for commands in this file.
 	flags := UsageFlag(0)
 
-	MustRegisterCmd("addnode", (*AddNodeCmd)(nil), flags)
+	MustRegisterCmd("addmanualnode", (*AddManualNodeCmd)(nil), flags)
 	MustRegisterCmd("createrawtransaction", (*CreateRawTransactionCmd)(nil), flags)
 	MustRegisterCmd("decoderawtransaction", (*DecodeRawTransactionCmd)(nil), flags)
 	MustRegisterCmd("decodescript", (*DecodeScriptCmd)(nil), flags)
-	MustRegisterCmd("getaddednodeinfo", (*GetAddedNodeInfoCmd)(nil), flags)
+	MustRegisterCmd("getallmanualnodesinfo", (*GetAllManualNodesInfoCmd)(nil), flags)
 	MustRegisterCmd("getbestblockhash", (*GetBestBlockHashCmd)(nil), flags)
 	MustRegisterCmd("getblock", (*GetBlockCmd)(nil), flags)
 	MustRegisterCmd("getblockdaginfo", (*GetBlockDAGInfoCmd)(nil), flags)
@@ -781,6 +787,7 @@ func init() {
 	MustRegisterCmd("getgenerate", (*GetGenerateCmd)(nil), flags)
 	MustRegisterCmd("gethashespersec", (*GetHashesPerSecCmd)(nil), flags)
 	MustRegisterCmd("getinfo", (*GetInfoCmd)(nil), flags)
+	MustRegisterCmd("getmanualnodeinfo", (*GetManualNodeInfoCmd)(nil), flags)
 	MustRegisterCmd("getmempoolentry", (*GetMempoolEntryCmd)(nil), flags)
 	MustRegisterCmd("getmempoolinfo", (*GetMempoolInfoCmd)(nil), flags)
 	MustRegisterCmd("getmininginfo", (*GetMiningInfoCmd)(nil), flags)
@@ -798,6 +805,7 @@ func init() {
 	MustRegisterCmd("ping", (*PingCmd)(nil), flags)
 	MustRegisterCmd("preciousblock", (*PreciousBlockCmd)(nil), flags)
 	MustRegisterCmd("reconsiderblock", (*ReconsiderBlockCmd)(nil), flags)
+	MustRegisterCmd("removemanualnode", (*RemoveManualNodeCmd)(nil), flags)
 	MustRegisterCmd("searchrawtransactions", (*SearchRawTransactionsCmd)(nil), flags)
 	MustRegisterCmd("sendrawtransaction", (*SendRawTransactionCmd)(nil), flags)
 	MustRegisterCmd("setgenerate", (*SetGenerateCmd)(nil), flags)
