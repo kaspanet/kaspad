@@ -6,7 +6,6 @@ package blockdag
 
 import (
 	"errors"
-	"fmt"
 	"reflect"
 	"strings"
 	"testing"
@@ -55,9 +54,6 @@ func TestBlockCount(t *testing.T) {
 
 	for i := 1; i < len(blocks); i++ {
 		isOrphan, err := dag.ProcessBlock(blocks[i], BFNone)
-		if i == 1 {
-			fmt.Printf("Parents %v\n", dag.index.LookupNode(blocks[1].Hash()).parents)
-		}
 		if err != nil {
 			t.Fatalf("ProcessBlock fail on block %v: %v\n", i, err)
 		}
@@ -65,16 +61,7 @@ func TestBlockCount(t *testing.T) {
 			t.Fatalf("ProcessBlock incorrectly returned block %v "+
 				"is an orphan\n", i)
 		}
-		fmt.Printf("Count after %v: %v\n", i, dag.BlockCount())
 	}
-
-	fmt.Printf("Parents %v\n", dag.index.LookupNode(blocks[1].Hash()).parents)
-
-	// for i := 0; i < len(blocks); i++ {
-	// 	block := blocks[i]
-	// 	found, _ := dag.HaveBlock(block.Hash())
-	// 	fmt.Printf("Have block %v %v %v\n", i, block.Hash(), found)
-	// }
 
 	expectedBlockCount := int64(6)
 	if dag.BlockCount() != expectedBlockCount {

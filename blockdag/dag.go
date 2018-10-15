@@ -941,13 +941,11 @@ func (dag *BlockDAG) BlockCount() int64 {
 	queue := []*blockNode{&dag.virtual.blockNode}
 	for len(queue) > 0 {
 		node := queue[0]
-		fmt.Printf("Counting block %v\n", node.hash)
 		queue = queue[1:]
 		if !visited.contains(node) {
 			visited.add(node)
 			count++
 			for _, parent := range node.parents {
-				fmt.Printf("Adding parent %v\n", parent.hash)
 				queue = append(queue, parent)
 			}
 		}
