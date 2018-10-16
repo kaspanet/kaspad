@@ -160,6 +160,15 @@ func TestSelectedPath(t *testing.T) {
 	}
 	// Because we added a very short chain, the selected path should not be affected.
 	if !reflect.DeepEqual(virtual.selectedPathSet, secondPath) {
-		t.Fatalf("TestSelectedPath: selectedPathSet didn an unexpected re-org. got %v, want %v", virtual.selectedParent, firstPath)
+		t.Fatalf("TestSelectedPath: selectedPathSet did an unexpected re-org. got %v, want %v", virtual.selectedParent, firstPath)
 	}
+
+	// We call updateSelectedPathSet manually without updating the tips, to check if it panics
+	virtual2 := newVirtualBlock(nil, phantomK)
+	defer func() {
+		if r := recover(); r == nil {
+			t.Fatalf("updateSelectedPathSet didn't panic")
+		}
+	}()
+	virtual2.updateSelectedPathSet(buildNode(setFromSlice()))
 }

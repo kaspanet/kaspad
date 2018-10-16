@@ -50,6 +50,18 @@ func (v *VirtualBlock) clone() *VirtualBlock {
 func (v *VirtualBlock) setTips(tips blockSet) {
 	oldSelectedParent := v.selectedParent
 	v.blockNode = *newBlockNode(nil, tips, v.phantomK)
+	v.updateSelectedPathSet(oldSelectedParent)
+}
+
+// updateSelectedPathSet updates the selectedPathSet to match the
+// new selected parent of the virtual block.
+// Every time the new selected parent is not a child of
+// the old one, it updates the selected path by removing from
+// the path blocks that are selected ancestors of the old selected
+// parent and are not selected ancestors of the new one, and adding
+// blcoks that are selected ancestors of the new selected parent
+// and aren't selected ancestors of the old one.
+func (v *VirtualBlock) updateSelectedPathSet(oldSelectedParent *blockNode) {
 	var intersectionNode *blockNode
 	for node := v.blockNode.selectedParent; intersectionNode == nil && node != nil; node = node.selectedParent {
 		if v.selectedPathSet.contains(node) {
@@ -57,6 +69,10 @@ func (v *VirtualBlock) setTips(tips blockSet) {
 		} else {
 			v.selectedPathSet.add(node)
 		}
+	}
+
+	if intersectionNode == nil && oldSelectedParent != nil {
+		panic("updateSelectedPathSet: Cannot find intersection node. The block index may be corrupted.")
 	}
 
 	if intersectionNode != nil {
