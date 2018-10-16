@@ -88,7 +88,7 @@ type BlockDAG struct {
 	index *blockIndex
 
 	// virtual tracks the current tips.
-	virtual *VirtualBlock
+	virtual *virtualBlock
 
 	// These fields are related to handling of orphan blocks.  They are
 	// protected by a combination of the chain lock and the orphan lock.
@@ -704,7 +704,7 @@ func (pns provisionalNodeSet) newProvisionalNode(node *blockNode, withRelatives 
 }
 
 // verifyAndBuildUTXO verifies all transactions in the given block (in provisionalNode format) and builds its UTXO
-func (p *provisionalNode) verifyAndBuildUTXO(virtual *VirtualBlock, db database.DB) (UTXOSet, error) {
+func (p *provisionalNode) verifyAndBuildUTXO(virtual *virtualBlock, db database.DB) (UTXOSet, error) {
 	pastUTXO, err := p.pastUTXO(virtual, db)
 	if err != nil {
 		return nil, err
@@ -731,7 +731,7 @@ func (p *provisionalNode) verifyAndBuildUTXO(virtual *VirtualBlock, db database.
 }
 
 // pastUTXO returns the UTXO of a given block's (in provisionalNode format) past
-func (p *provisionalNode) pastUTXO(virtual *VirtualBlock, db database.DB) (UTXOSet, error) {
+func (p *provisionalNode) pastUTXO(virtual *virtualBlock, db database.DB) (UTXOSet, error) {
 	pastUTXO, err := p.selectedParent.restoreUTXO(virtual)
 	if err != nil {
 		return nil, err
@@ -781,7 +781,7 @@ func (p *provisionalNode) pastUTXO(virtual *VirtualBlock, db database.DB) (UTXOS
 }
 
 // restoreUTXO restores the UTXO of a given block (in provisionalNode format) from its diff
-func (p *provisionalNode) restoreUTXO(virtual *VirtualBlock) (UTXOSet, error) {
+func (p *provisionalNode) restoreUTXO(virtual *virtualBlock) (UTXOSet, error) {
 	stack := []*provisionalNode{p}
 	current := p
 
@@ -805,7 +805,7 @@ func (p *provisionalNode) restoreUTXO(virtual *VirtualBlock) (UTXOSet, error) {
 
 // updateParents adds this block (in provisionalNode format) to the children sets of its parents
 // and updates the diff of any parent whose DiffChild is this block
-func (p *provisionalNode) updateParents(virtual *VirtualBlock, newBlockUTXO UTXOSet) error {
+func (p *provisionalNode) updateParents(virtual *virtualBlock, newBlockUTXO UTXOSet) error {
 	virtualDiffFromNewBlock, err := virtual.utxoSet.diffFrom(newBlockUTXO)
 	if err != nil {
 		return err
@@ -833,7 +833,7 @@ func (p *provisionalNode) updateParents(virtual *VirtualBlock, newBlockUTXO UTXO
 }
 
 // updateTipsUTXO builds and applies new diff UTXOs for all the DAG's tips (in provisionalNode format)
-func updateTipsUTXO(tipProvisionals []*provisionalNode, virtual *VirtualBlock, virtualUTXO UTXOSet) error {
+func updateTipsUTXO(tipProvisionals []*provisionalNode, virtual *virtualBlock, virtualUTXO UTXOSet) error {
 	for _, tipProvisional := range tipProvisionals {
 		tipUTXO, err := tipProvisional.restoreUTXO(virtual)
 		if err != nil {

@@ -8,8 +8,8 @@ import (
 	"sync"
 )
 
-// VirtualBlock is a virtual block whose parents are the tips of the DAG.
-type VirtualBlock struct {
+// virtualBlock is a virtual block whose parents are the tips of the DAG.
+type virtualBlock struct {
 	mtx      sync.Mutex
 	phantomK uint32
 	utxoSet  *fullUTXOSet
@@ -19,9 +19,9 @@ type VirtualBlock struct {
 }
 
 // newVirtualBlock creates and returns a new VirtualBlock.
-func newVirtualBlock(tips blockSet, phantomK uint32) *VirtualBlock {
+func newVirtualBlock(tips blockSet, phantomK uint32) *virtualBlock {
 	// The mutex is intentionally not held since this is a constructor.
-	var virtual VirtualBlock
+	var virtual virtualBlock
 	virtual.phantomK = phantomK
 	virtual.utxoSet = NewFullUTXOSet()
 	virtual.selectedPathSet = newSet()
@@ -31,8 +31,8 @@ func newVirtualBlock(tips blockSet, phantomK uint32) *VirtualBlock {
 }
 
 // clone creates and returns a clone of the virtual block.
-func (v *VirtualBlock) clone() *VirtualBlock {
-	return &VirtualBlock{
+func (v *virtualBlock) clone() *virtualBlock {
+	return &virtualBlock{
 		phantomK:        v.phantomK,
 		utxoSet:         v.utxoSet.clone().(*fullUTXOSet),
 		blockNode:       v.blockNode,
@@ -45,7 +45,7 @@ func (v *VirtualBlock) clone() *VirtualBlock {
 // is up to the caller to ensure the lock is held.
 //
 // This function MUST be called with the view mutex locked (for writes).
-func (v *VirtualBlock) setTips(tips blockSet) {
+func (v *virtualBlock) setTips(tips blockSet) {
 	oldSelectedParent := v.selectedParent
 	v.blockNode = *newBlockNode(nil, tips, v.phantomK)
 	v.updateSelectedPathSet(oldSelectedParent)
@@ -59,7 +59,7 @@ func (v *VirtualBlock) setTips(tips blockSet) {
 // parent and are not selected ancestors of the new one, and adding
 // blocks that are selected ancestors of the new selected parent
 // and aren't selected ancestors of the old one.
-func (v *VirtualBlock) updateSelectedPathSet(oldSelectedParent *blockNode) {
+func (v *virtualBlock) updateSelectedPathSet(oldSelectedParent *blockNode) {
 	var intersectionNode *blockNode
 	for node := v.blockNode.selectedParent; intersectionNode == nil && node != nil; node = node.selectedParent {
 		if v.selectedPathSet.contains(node) {
@@ -84,7 +84,7 @@ func (v *VirtualBlock) updateSelectedPathSet(oldSelectedParent *blockNode) {
 // given blockSet.
 //
 // This function is safe for concurrent access.
-func (v *VirtualBlock) SetTips(tips blockSet) {
+func (v *virtualBlock) SetTips(tips blockSet) {
 	v.mtx.Lock()
 	v.setTips(tips)
 	v.mtx.Unlock()
@@ -96,7 +96,7 @@ func (v *VirtualBlock) SetTips(tips blockSet) {
 // is up to the caller to ensure the lock is held.
 //
 // This function MUST be called with the view mutex locked (for writes).
-func (v *VirtualBlock) addTip(newTip *blockNode) {
+func (v *virtualBlock) addTip(newTip *blockNode) {
 	updatedTips := v.tips().clone()
 	for _, parent := range newTip.parents {
 		updatedTips.remove(parent)
@@ -111,7 +111,7 @@ func (v *VirtualBlock) addTip(newTip *blockNode) {
 // from the set.
 //
 // This function is safe for concurrent access.
-func (v *VirtualBlock) AddTip(newTip *blockNode) {
+func (v *virtualBlock) AddTip(newTip *blockNode) {
 	v.mtx.Lock()
 	v.addTip(newTip)
 	v.mtx.Unlock()
@@ -121,6 +121,6 @@ func (v *VirtualBlock) AddTip(newTip *blockNode) {
 // an empty blockSet if there is no tip.
 //
 // This function is safe for concurrent access.
-func (v *VirtualBlock) tips() blockSet {
+func (v *virtualBlock) tips() blockSet {
 	return v.parents
 }
