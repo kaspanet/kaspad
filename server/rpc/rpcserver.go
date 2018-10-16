@@ -69,10 +69,10 @@ const (
 	// 256-bit integer.
 	uint256Size = 32
 
-	// gbtNonceRange is two 32-bit big-endian hexadecimal integers which
+	// gbtNonceRange is two 64-bit big-endian hexadecimal integers which
 	// represent the valid ranges of nonces returned by the getblocktemplate
 	// RPC.
-	gbtNonceRange = "00000000ffffffff"
+	gbtNonceRange = "000000000000ffffffffffff"
 
 	// gbtRegenerateSeconds is the number of seconds that must pass before
 	// a new template is generated when the previous block hash has not
@@ -4237,11 +4237,7 @@ func NewRPCServer(
 func (s *Server) handleBlockchainNotification(notification *blockdag.Notification) {
 	switch notification.Type {
 	case blockdag.NTBlockAccepted:
-		tipHashes, ok := notification.Data.([]daghash.Hash)
-		if !ok {
-			log.Warnf("Chain accepted notification is not a block.")
-			break
-		}
+		tipHashes := s.cfg.DAG.TipHashes()
 
 		// Allow any clients performing long polling via the
 		// getblocktemplate RPC to be notified when the new block causes

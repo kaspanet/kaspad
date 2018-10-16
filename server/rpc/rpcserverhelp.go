@@ -317,7 +317,7 @@ var helpDescsEnUS = map[string]string{
 	"getblocktemplateresult-maxtime":             "Maximum allowed time",
 	"getblocktemplateresult-mintime":             "Minimum allowed time",
 	"getblocktemplateresult-mutable":             "List of mutations the server explicitly allows",
-	"getblocktemplateresult-noncerange":          "Two concatenated hex-encoded big-endian 32-bit integers which represent the valid ranges of nonces the miner may scan",
+	"getblocktemplateresult-noncerange":          "Two concatenated hex-encoded big-endian 64-bit integers which represent the valid ranges of nonces the miner may scan",
 	"getblocktemplateresult-capabilities":        "List of server capabilities including 'proposal' to indicate support for block proposals",
 	"getblocktemplateresult-reject-reason":       "Reason the proposal was invalid as-is (only applies to proposal responses)",
 

@@ -190,9 +190,9 @@ func TestCheckBlockSanity(t *testing.T) {
 				0x6f, 0xff, 0xfb, 0xb7, 0xdc, 0x39, 0x9d, 0x76,
 				0x8d, 0xb0, 0xe1, 0x9c, 0x2e, 0x6d, 0x22, 0xd9,
 			}), // f3e94742aca4b5ef85488dc37c06c3282295ffec960994b2c0d5ac2a25a95766
-			Timestamp: time.Unix(0x5bbc64c9, 0), // 2018-10-09 08:17:35 +0000 UTC
-			Bits:      0x1e00ffff,               // 503382015
-			Nonce:     0xe00edcf9,               // 3759070457
+			Timestamp: time.Unix(0x5bbe0435, 0),
+			Bits:      0x207fffff,
+			Nonce:     0x9ffffffffffffffb,
 		},
 		Transactions: []*wire.MsgTx{
 			{
@@ -501,8 +501,70 @@ func TestCheckSerializedHeight(t *testing.T) {
 	}
 }
 
+func TestPastMedianTime(t *testing.T) {
+	dag := newTestDAG(&dagconfig.MainNetParams)
+	tip := dag.genesis
+	blockVersion := int32(0x10000000)
+
+	blockTime := tip.Header().Timestamp
+
+	for i := 0; i < 100; i++ {
+		blockTime = blockTime.Add(time.Second)
+		tip = newTestNode(setFromSlice(tip),
+			blockVersion,
+			0,
+			blockTime,
+			dagconfig.MainNetParams.K)
+	}
+
+	// Checks that a block is valid if it has timestamp equals to past median time
+	height := tip.height + 1
+	node := newTestNode(setFromSlice(tip),
+		blockVersion,
+		0,
+		tip.CalcPastMedianTime(),
+		dagconfig.MainNetParams.K)
+
+	header := node.Header()
+	err := dag.checkBlockHeaderContext(&header, node.parents.bluest(), height, BFNone)
+	if err != nil {
+		t.Errorf("TestPastMedianTime: unexpected error from checkBlockHeaderContext: %v"+
+			"(a block with timestamp equals to past median time should be valid)", err)
+	}
+
+	// Checks that a block is valid if its timestamp is after past median time
+	height = tip.height + 1
+	node = newTestNode(setFromSlice(tip),
+		blockVersion,
+		0,
+		tip.CalcPastMedianTime().Add(time.Second),
+		dagconfig.MainNetParams.K)
+
+	header = node.Header()
+	err = dag.checkBlockHeaderContext(&header, node.parents.bluest(), height, BFNone)
+	if err != nil {
+		t.Errorf("TestPastMedianTime: unexpected error from checkBlockHeaderContext: %v"+
+			"(a block with timestamp bigger than past median time should be valid)", err)
+	}
+
+	// Checks that a block is invalid if its timestamp is before past median time
+	height = tip.height + 1
+	node = newTestNode(setFromSlice(tip),
+		blockVersion,
+		0,
+		tip.CalcPastMedianTime().Add(-time.Second),
+		dagconfig.MainNetParams.K)
+
+	header = node.Header()
+	err = dag.checkBlockHeaderContext(&header, node.parents.bluest(), height, BFNone)
+	if err == nil {
+		t.Errorf("TestPastMedianTime: unexpected success: block should be invalid if its timestamp is before past median time")
+	}
+
+}
+
 func TestValidateParents(t *testing.T) {
-	blockDAG := newTestDAG(&dagconfig.MainNetParams)
+	blockDAG := newTestDAG(&dagconfig.SimNetParams)
 	genesisNode := blockDAG.genesis
 	blockVersion := int32(0x10000000)
 
@@ -515,7 +577,7 @@ func TestValidateParents(t *testing.T) {
 			blockVersion,
 			0,
 			blockTime,
-			dagconfig.MainNetParams.K)
+			dagconfig.SimNetParams.K)
 	}
 
 	a := generateNode(genesisNode)

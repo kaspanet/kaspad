@@ -14,11 +14,11 @@ import (
 
 // BaseBlockHeaderPayload is the base number of bytes a block header can be,
 // not including the list of previous block headers.
-// Version 4 bytes + Timestamp 8 bytes + Bits 4 bytes + Nonce 4 bytes +
+// Version 4 bytes + Timestamp 8 bytes + Bits 4 bytes + Nonce 8 bytes +
 // + NumPrevBlocks 1 byte + MerkleRoot hash.
 // To get total size of block header len(PrevBlocks) * daghash.HashSize should be
 // added to this value
-const BaseBlockHeaderPayload = 21 + (daghash.HashSize)
+const BaseBlockHeaderPayload = 25 + (daghash.HashSize)
 
 // MaxNumPrevBlocks is the maximum number of previous blocks a block can reference.
 // Currently set to 255 as the maximum number NumPrevBlocks can be due to it being a byte
@@ -50,7 +50,7 @@ type BlockHeader struct {
 	Bits uint32
 
 	// Nonce used to generate the block.
-	Nonce uint32
+	Nonce uint64
 }
 
 // BlockHash computes the block identifier hash for the given block header.
@@ -125,7 +125,7 @@ func (h *BlockHeader) SerializeSize() int {
 // block hash, merkle root hash, difficulty bits, and nonce used to generate the
 // block with defaults or calclulated values for the remaining fields.
 func NewBlockHeader(version int32, prevHashes []daghash.Hash, merkleRootHash *daghash.Hash,
-	bits uint32, nonce uint32) *BlockHeader {
+	bits uint32, nonce uint64) *BlockHeader {
 
 	// Limit the timestamp to one second precision since the protocol
 	// doesn't support better.

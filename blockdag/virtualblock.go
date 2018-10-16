@@ -14,6 +14,8 @@ type VirtualBlock struct {
 	phantomK uint32
 	utxoSet  *fullUTXOSet
 	blockNode
+	// selectedPathSet is a block set that includes all the blocks that belong to the chain of selected parents from the virtual block.
+	selectedPathSet blockSet
 }
 
 // newVirtualBlock creates and returns a new VirtualBlock.
@@ -22,6 +24,7 @@ func newVirtualBlock(tips blockSet, phantomK uint32) *VirtualBlock {
 	var virtual VirtualBlock
 	virtual.phantomK = phantomK
 	virtual.utxoSet = NewFullUTXOSet()
+	virtual.selectedPathSet = newSet()
 	virtual.setTips(tips)
 
 	return &virtual
@@ -30,9 +33,10 @@ func newVirtualBlock(tips blockSet, phantomK uint32) *VirtualBlock {
 // clone creates and returns a clone of the virtual block.
 func (v *VirtualBlock) clone() *VirtualBlock {
 	return &VirtualBlock{
-		phantomK:  v.phantomK,
-		utxoSet:   v.utxoSet.clone().(*fullUTXOSet),
-		blockNode: v.blockNode,
+		phantomK:        v.phantomK,
+		utxoSet:         v.utxoSet.clone().(*fullUTXOSet),
+		blockNode:       v.blockNode,
+		selectedPathSet: v.selectedPathSet,
 	}
 }
 
@@ -42,7 +46,38 @@ func (v *VirtualBlock) clone() *VirtualBlock {
 //
 // This function MUST be called with the view mutex locked (for writes).
 func (v *VirtualBlock) setTips(tips blockSet) {
+	oldSelectedParent := v.selectedParent
 	v.blockNode = *newBlockNode(nil, tips, v.phantomK)
+	v.updateSelectedPathSet(oldSelectedParent)
+}
+
+// updateSelectedPathSet updates the selectedPathSet to match the
+// new selected parent of the virtual block.
+// Every time the new selected parent is not a child of
+// the old one, it updates the selected path by removing from
+// the path blocks that are selected ancestors of the old selected
+// parent and are not selected ancestors of the new one, and adding
+// blocks that are selected ancestors of the new selected parent
+// and aren't selected ancestors of the old one.
+func (v *VirtualBlock) updateSelectedPathSet(oldSelectedParent *blockNode) {
+	var intersectionNode *blockNode
+	for node := v.blockNode.selectedParent; intersectionNode == nil && node != nil; node = node.selectedParent {
+		if v.selectedPathSet.contains(node) {
+			intersectionNode = node
+		} else {
+			v.selectedPathSet.add(node)
+		}
+	}
+
+	if intersectionNode == nil && oldSelectedParent != nil {
+		panic("updateSelectedPathSet: Cannot find intersection node. The block index may be corrupted.")
+	}
+
+	if intersectionNode != nil {
+		for node := oldSelectedParent; !node.hash.IsEqual(&intersectionNode.hash); node = node.selectedParent {
+			v.selectedPathSet.remove(node)
+		}
+	}
 }
 
 // SetTips replaces the tips of the virtual block with the blocks in the

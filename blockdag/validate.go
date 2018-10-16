@@ -642,10 +642,10 @@ func (dag *BlockDAG) checkBlockHeaderContext(header *wire.BlockHeader, bluestPar
 			return ruleError(ErrUnexpectedDifficulty, str)
 		}
 
-		// Ensure the timestamp for the block header is after the
+		// Ensure the timestamp for the block header is not before the
 		// median time of the last several blocks (medianTimeBlocks).
 		medianTime := bluestParent.CalcPastMedianTime()
-		if !header.Timestamp.After(medianTime) {
+		if header.Timestamp.Before(medianTime) {
 			str := "block timestamp of %v is not after expected %v"
 			str = fmt.Sprintf(str, header.Timestamp, medianTime)
 			return ruleError(ErrTimeTooOld, str)

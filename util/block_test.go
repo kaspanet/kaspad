@@ -13,8 +13,8 @@ import (
 	"time"
 
 	"github.com/daglabs/btcd/dagconfig/daghash"
-	"github.com/daglabs/btcd/wire"
 	"github.com/daglabs/btcd/util"
+	"github.com/daglabs/btcd/wire"
 	"github.com/davecgh/go-spew/spew"
 )
 
@@ -37,7 +37,7 @@ func TestBlock(t *testing.T) {
 	}
 
 	// Hash for block 100,000.
-	wantHashStr := "e91f05cb0ca4c761f74f5488ff6f5039587abf37ae33566259c51c1d21a5666a"
+	wantHashStr := "b75e32d07046b5290e131686c2b98636483cc4119573926eebc9dc944496d53b"
 	wantHash, err := daghash.NewHashFromStr(wantHashStr)
 	if err != nil {
 		t.Errorf("NewHashFromStr: %v", err)
@@ -146,10 +146,10 @@ func TestBlock(t *testing.T) {
 
 	// Transaction offsets and length for the transaction in Block100000.
 	wantTxLocs := []wire.TxLoc{
-		{TxStart: 118, TxLen: 143},
-		{TxStart: 261, TxLen: 267},
-		{TxStart: 528, TxLen: 265},
-		{TxStart: 793, TxLen: 233},
+		{TxStart: 122, TxLen: 143},
+		{TxStart: 265, TxLen: 267},
+		{TxStart: 532, TxLen: 265},
+		{TxStart: 797, TxLen: 233},
 	}
 
 	// Ensure the transaction location information is accurate.
@@ -258,7 +258,7 @@ func TestBlockErrors(t *testing.T) {
 	}
 
 	// Truncate the block byte buffer to force errors.
-	shortBytes := block100000Bytes[:118]
+	shortBytes := block100000Bytes[:122]
 	_, err = util.NewBlockFromBytes(shortBytes)
 	if err != io.EOF {
 		t.Errorf("NewBlockFromBytes: did not get expected error - "+
