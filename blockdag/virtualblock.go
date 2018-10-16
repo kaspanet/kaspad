@@ -52,7 +52,7 @@ func (v *VirtualBlock) setTips(tips blockSet) {
 	v.blockNode = *newBlockNode(nil, tips, v.phantomK)
 	var intersectionNode *blockNode
 	for node := v.blockNode.selectedParent; intersectionNode == nil && node != nil; node = node.selectedParent {
-		if oldSelectedParent != nil && v.selectedPathSet.contains(node) {
+		if v.selectedPathSet.contains(node) {
 			intersectionNode = node
 		} else {
 			v.selectedPathSet.add(node)
