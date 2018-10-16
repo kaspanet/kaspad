@@ -136,6 +136,7 @@ func TestSelectedPath(t *testing.T) {
 		firstPath.add(tip)
 		virtual.AddTip(tip)
 	}
+	// For now we don't have any DAG, just chain, the selected path should include all the blocks on the chain.
 	if !reflect.DeepEqual(virtual.selectedPathSet, firstPath) {
 		t.Fatalf("TestSelectedPath: selectedPathSet doesn't include the expected values. got %v, want %v", virtual.selectedParent, firstPath)
 	}

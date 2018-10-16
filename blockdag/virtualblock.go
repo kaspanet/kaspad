@@ -16,6 +16,7 @@ type VirtualBlock struct {
 	phantomK uint32
 	utxoSet  *fullUTXOSet
 	blockNode
+	// selectedPathSet is a block set that includes all the blocks that belong to the chain of selected parents from the virtual block.
 	selectedPathSet blockSet
 }
 
