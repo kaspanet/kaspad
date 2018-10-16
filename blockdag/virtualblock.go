@@ -59,7 +59,7 @@ func (v *VirtualBlock) setTips(tips blockSet) {
 // the old one, it updates the selected path by removing from
 // the path blocks that are selected ancestors of the old selected
 // parent and are not selected ancestors of the new one, and adding
-// blcoks that are selected ancestors of the new selected parent
+// blocks that are selected ancestors of the new selected parent
 // and aren't selected ancestors of the old one.
 func (v *VirtualBlock) updateSelectedPathSet(oldSelectedParent *blockNode) {
 	var intersectionNode *blockNode
