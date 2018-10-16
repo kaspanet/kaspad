@@ -904,7 +904,7 @@ func TestApplyUTXOChanges(t *testing.T) {
 	var node2 blockNode
 	initBlockNode(&node2, blockHeader, setFromSlice(dag.genesis), dagconfig.MainNetParams.K)
 
-	//Checks that dag.applyUTXOChanges doesn't fail because we all of its transaction are dependant on transactions from previous blocks
+	//Checks that dag.applyUTXOChanges doesn't fail because all of its transaction are dependant on transactions from previous blocks
 	_, _, err = dag.applyUTXOChanges(&node2, block2)
 	if err != nil {
 		t.Errorf("applyUTXOChanges: %v", err)

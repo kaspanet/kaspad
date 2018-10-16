@@ -503,7 +503,7 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block) error {
 	}
 
 	// Add the node to the virtual and update the UTXO set of the DAG.
-	utxoDiff, pastUTXOResults, err := dag.applyUTXOChanges(node, block)
+	utxoDiff, bluesTxsData, err := dag.applyUTXOChanges(node, block)
 	if err != nil {
 		return err
 	}
@@ -540,7 +540,7 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block) error {
 		// optional indexes with the block being connected so they can
 		// update themselves accordingly.
 		if dag.indexManager != nil {
-			err := dag.indexManager.ConnectBlock(dbTx, block, dag, pastUTXOResults)
+			err := dag.indexManager.ConnectBlock(dbTx, block, dag, bluesTxsData)
 			if err != nil {
 				return err
 			}
@@ -570,7 +570,7 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block) error {
 // 5. Updates each of the tips' utxoDiff.
 //
 // This function MUST be called with the chain state lock held (for writes).
-func (dag *BlockDAG) applyUTXOChanges(node *blockNode, block *util.Block) (*utxoDiff, []*PastUTXOResult, error) {
+func (dag *BlockDAG) applyUTXOChanges(node *blockNode, block *util.Block) (*utxoDiff, []*BluesTxData, error) {
 	// Prepare provisionalNodes for all the relevant nodes to avoid modifying the original nodes.
 	// We avoid modifying the original nodes in this function because it could potentially
 	// fail if the block is not valid, thus bringing all the affected nodes (and the virtual)
@@ -581,7 +581,7 @@ func (dag *BlockDAG) applyUTXOChanges(node *blockNode, block *util.Block) (*utxo
 	// Clone the virtual block so that we don't modify the existing one.
 	virtualClone := dag.virtual.clone()
 
-	newBlockUTXO, pastUTXOResults, err := newNodeProvisional.verifyAndBuildUTXO(virtualClone, dag.db)
+	newBlockUTXO, bluesTxsData, err := newNodeProvisional.verifyAndBuildUTXO(virtualClone, dag.db)
 	if err != nil {
 		return nil, nil, fmt.Errorf("error verifying UTXO for %v: %s", node, err)
 	}
@@ -626,7 +626,7 @@ func (dag *BlockDAG) applyUTXOChanges(node *blockNode, block *util.Block) (*utxo
 	// It is now safe to apply the new virtual block
 	dag.virtual = virtualClone
 
-	return utxoDiff, pastUTXOResults, nil
+	return utxoDiff, bluesTxsData, nil
 }
 
 func (dag *BlockDAG) updateVirtualUTXO(newVirtualUTXODiffSet *DiffUTXOSet) {
@@ -704,13 +704,15 @@ func (pns provisionalNodeSet) newProvisionalNode(node *blockNode, withRelatives 
 }
 
 // verifyAndBuildUTXO verifies all transactions in the given block (in provisionalNode format) and builds its UTXO
-func (p *provisionalNode) verifyAndBuildUTXO(virtual *virtualBlock, db database.DB) (UTXOSet, []*PastUTXOResult, error) {
-	pastUTXO, pastUTXOResults, err := p.pastUTXO(virtual, db)
+func (p *provisionalNode) verifyAndBuildUTXO(virtual *virtualBlock, db database.DB) (UTXOSet, []*BluesTxData, error) {
+	pastUTXO, bluesTxsData, err := p.pastUTXO(virtual, db)
 	if err != nil {
 		return nil, nil, err
 	}
 
 	diff := NewUTXODiff()
+	bluesTxsDataWithCurrent := make([]*BluesTxData, len(bluesTxsData)+len(p.transactions))
+	bluesTxsDataWithCurrent = append(bluesTxsDataWithCurrent, bluesTxsData...)
 
 	for _, tx := range p.transactions {
 		txDiff, err := pastUTXO.diffFromTx(tx.MsgTx(), p.original)
@@ -721,13 +723,18 @@ func (p *provisionalNode) verifyAndBuildUTXO(virtual *virtualBlock, db database.
 		if err != nil {
 			return nil, nil, err
 		}
+		bluesTxsDataWithCurrent = append(bluesTxsDataWithCurrent, &BluesTxData{
+			tx:         tx,
+			acceptedBy: &p.original.hash,
+			inBlock:    &p.original.hash,
+		})
 	}
 
 	utxo, err := pastUTXO.WithDiff(diff)
 	if err != nil {
 		return nil, nil, err
 	}
-	return utxo, pastUTXOResults, nil
+	return utxo, bluesTxsDataWithCurrent, nil
 }
 
 type blueBlockTransaction struct {
@@ -735,14 +742,14 @@ type blueBlockTransaction struct {
 	blockHash *daghash.Hash
 }
 
-type PastUTXOResult struct {
+type BluesTxData struct {
 	tx         *util.Tx
 	acceptedBy *daghash.Hash
 	inBlock    *daghash.Hash
 }
 
 // pastUTXO returns the UTXO of a given block's (in provisionalNode format) past
-func (p *provisionalNode) pastUTXO(virtual *virtualBlock, db database.DB) (UTXOSet, []*PastUTXOResult, error) {
+func (p *provisionalNode) pastUTXO(virtual *virtualBlock, db database.DB) (UTXOSet, []*BluesTxData, error) {
 	pastUTXO, err := p.selectedParent.restoreUTXO(virtual)
 	if err != nil {
 		return nil, nil, err
@@ -784,17 +791,17 @@ func (p *provisionalNode) pastUTXO(virtual *virtualBlock, db database.DB) (UTXOS
 		return nil, nil, err
 	}
 
-	pastUTXOResults := make([]*PastUTXOResult, transactionCount)
+	bluesTxsData := make([]*BluesTxData, transactionCount)
 
 	// Add all transactions to the pastUTXO
 	// Purposefully ignore failures - these are just unaccepted transactions
 	for _, tx := range blueBlockTransactions {
 		accepted := pastUTXO.AddTx(tx.tx.MsgTx(), p.original.height)
-		pastUTXOResult := &PastUTXOResult{inBlock: tx.blockHash}
+		pastUTXOResult := &BluesTxData{inBlock: tx.blockHash}
 		if accepted {
 			pastUTXOResult.acceptedBy = &p.original.hash
 		}
-		pastUTXOResults = append(pastUTXOResults, pastUTXOResult)
+		bluesTxsData = append(bluesTxsData, pastUTXOResult)
 	}
 
 	return pastUTXO, nil, nil
@@ -1363,7 +1370,7 @@ type IndexManager interface {
 
 	// ConnectBlock is invoked when a new block has been connected to the
 	// DAG.
-	ConnectBlock(database.Tx, *util.Block, *BlockDAG, []*PastUTXOResult) error
+	ConnectBlock(database.Tx, *util.Block, *BlockDAG, []*BluesTxData) error
 
 	// DisconnectBlock is invoked when a block has been disconnected from
 	// the DAG.
