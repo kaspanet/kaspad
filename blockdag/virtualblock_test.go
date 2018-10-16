@@ -47,41 +47,41 @@ func TestVirtualBlock(t *testing.T) {
 	// Set its tips to tipsToSet
 	// Add to it all the tips in tipsToAdd, one after the other
 	// Call .Tips() on it and compare the result to expectedTips
-	// Call .SelectedTip() on it and compare the result to expectedSelectedTip
+	// Call .SelectedTip() on it and compare the result to expectedSelectedParent
 	tests := []struct {
-		name                string
-		tipsToSet           []*blockNode
-		tipsToAdd           []*blockNode
-		expectedTips        blockSet
-		expectedSelectedTip *blockNode
+		name                   string
+		tipsToSet              []*blockNode
+		tipsToAdd              []*blockNode
+		expectedTips           blockSet
+		expectedSelectedParent *blockNode
 	}{
 		{
-			name:                "empty virtual",
-			tipsToSet:           []*blockNode{},
-			tipsToAdd:           []*blockNode{},
-			expectedTips:        newSet(),
-			expectedSelectedTip: nil,
+			name:                   "empty virtual",
+			tipsToSet:              []*blockNode{},
+			tipsToAdd:              []*blockNode{},
+			expectedTips:           newSet(),
+			expectedSelectedParent: nil,
 		},
 		{
-			name:                "virtual with genesis tip",
-			tipsToSet:           []*blockNode{node0},
-			tipsToAdd:           []*blockNode{},
-			expectedTips:        setFromSlice(node0),
-			expectedSelectedTip: node0,
+			name:                   "virtual with genesis tip",
+			tipsToSet:              []*blockNode{node0},
+			tipsToAdd:              []*blockNode{},
+			expectedTips:           setFromSlice(node0),
+			expectedSelectedParent: node0,
 		},
 		{
-			name:                "virtual with genesis tip, add child of genesis",
-			tipsToSet:           []*blockNode{node0},
-			tipsToAdd:           []*blockNode{node1},
-			expectedTips:        setFromSlice(node1),
-			expectedSelectedTip: node1,
+			name:                   "virtual with genesis tip, add child of genesis",
+			tipsToSet:              []*blockNode{node0},
+			tipsToAdd:              []*blockNode{node1},
+			expectedTips:           setFromSlice(node1),
+			expectedSelectedParent: node1,
 		},
 		{
-			name:                "empty virtual, add a full DAG",
-			tipsToSet:           []*blockNode{},
-			tipsToAdd:           []*blockNode{node0, node1, node2, node3, node4, node5, node6},
-			expectedTips:        setFromSlice(node2, node5, node6),
-			expectedSelectedTip: node5,
+			name:                   "empty virtual, add a full DAG",
+			tipsToSet:              []*blockNode{},
+			tipsToAdd:              []*blockNode{node0, node1, node2, node3, node4, node5, node6},
+			expectedTips:           setFromSlice(node2, node5, node6),
+			expectedSelectedParent: node5,
 		},
 	}
 
@@ -104,11 +104,11 @@ func TestVirtualBlock(t *testing.T) {
 				"Expected: %v, got: %v.", test.name, test.expectedTips, resultTips)
 		}
 
-		// Ensure that the virtual block's selectedTip is now equal to expectedSelectedTip
-		resultSelectedTip := virtual.SelectedTip()
-		if !reflect.DeepEqual(resultSelectedTip, test.expectedSelectedTip) {
+		// Ensure that the virtual block's selectedParent is now equal to expectedSelectedParent
+		resultSelectedTip := virtual.selectedParent
+		if !reflect.DeepEqual(resultSelectedTip, test.expectedSelectedParent) {
 			t.Errorf("unexpected selected tip in test \"%s\". "+
-				"Expected: %v, got: %v.", test.name, test.expectedSelectedTip, resultSelectedTip)
+				"Expected: %v, got: %v.", test.name, test.expectedSelectedParent, resultSelectedTip)
 		}
 	}
 }

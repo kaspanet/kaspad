@@ -1199,15 +1199,14 @@ func handleGetBlockDAGInfo(s *Server, cmd interface{}, closeChan <-chan struct{}
 	// populate the response to this call primarily from this snapshot.
 	params := s.cfg.DAGParams
 	dag := s.cfg.DAG
-	virtualBlock := dag.VirtualBlock()
 
 	dagInfo := &btcjson.GetBlockDAGInfoResult{
 		DAG:           params.Name,
 		Blocks:        dag.Height(), //TODO: (Ori) This is wrong. Done only for compilation
 		Headers:       dag.Height(), //TODO: (Ori) This is wrong. Done only for compilation
 		TipHashes:     daghash.Strings(dag.TipHashes()),
-		Difficulty:    getDifficultyRatio(virtualBlock.SelectedTip().Header().Bits, params),
-		MedianTime:    virtualBlock.SelectedTip().CalcPastMedianTime().Unix(),
+		Difficulty:    getDifficultyRatio(dag.CurrentBits(), params),
+		MedianTime:    dag.SelectedTip().CalcPastMedianTime().Unix(),
 		Pruned:        false,
 		Bip9SoftForks: make(map[string]*btcjson.Bip9SoftForkDescription),
 	}
@@ -1521,7 +1520,6 @@ func (state *gbtWorkState) updateBlockTemplate(s *Server, useCoinbaseValue bool)
 	// generated.
 	var msgBlock *wire.MsgBlock
 	var targetDifficulty string
-	virtualBlock := s.cfg.DAG.VirtualBlock()
 	tipHashes := s.cfg.DAG.TipHashes()
 	template := state.template
 	if template == nil || state.tipHashes == nil ||
@@ -1561,7 +1559,7 @@ func (state *gbtWorkState) updateBlockTemplate(s *Server, useCoinbaseValue bool)
 		// Get the minimum allowed timestamp for the block based on the
 		// median timestamp of the last several blocks per the chain
 		// consensus rules.
-		minTimestamp := mining.MinimumMedianTime(virtualBlock.SelectedTip().CalcPastMedianTime())
+		minTimestamp := mining.MinimumMedianTime(s.cfg.DAG.SelectedTip().CalcPastMedianTime())
 
 		// Update work state to ensure another block template isn't
 		// generated until needed.
@@ -2204,8 +2202,7 @@ func handleGetCurrentNet(s *Server, cmd interface{}, closeChan <-chan struct{}) 
 
 // handleGetDifficulty implements the getdifficulty command.
 func handleGetDifficulty(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	virtualBlock := s.cfg.DAG.VirtualBlock()
-	return getDifficultyRatio(virtualBlock.SelectedTip().Header().Bits, s.cfg.DAGParams), nil
+	return getDifficultyRatio(s.cfg.DAG.SelectedTip().Header().Bits, s.cfg.DAGParams), nil
 }
 
 // handleGetGenerate implements the getgenerate command.
@@ -2262,7 +2259,6 @@ func handleGetHeaders(s *Server, cmd interface{}, closeChan <-chan struct{}) (in
 // handleGetInfo implements the getinfo command. We only return the fields
 // that are not related to wallet functionality.
 func handleGetInfo(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	virtualBlock := s.cfg.DAG.VirtualBlock()
 	ret := &btcjson.InfoDAGResult{
 		Version:         int32(1000000*version.AppMajor + 10000*version.AppMinor + 100*version.AppPatch),
 		ProtocolVersion: int32(maxProtocolVersion),
@@ -2270,7 +2266,7 @@ func handleGetInfo(s *Server, cmd interface{}, closeChan <-chan struct{}) (inter
 		TimeOffset:      int64(s.cfg.TimeSource.Offset().Seconds()),
 		Connections:     s.cfg.ConnMgr.ConnectedCount(),
 		Proxy:           config.MainConfig().Proxy,
-		Difficulty:      getDifficultyRatio(virtualBlock.SelectedTip().Header().Bits, s.cfg.DAGParams),
+		Difficulty:      getDifficultyRatio(s.cfg.DAG.CurrentBits(), s.cfg.DAGParams),
 		TestNet:         config.MainConfig().TestNet3,
 		RelayFee:        config.MainConfig().MinRelayTxFee.ToBTC(),
 	}
@@ -2314,7 +2310,6 @@ func handleGetMiningInfo(s *Server, cmd interface{}, closeChan <-chan struct{}) 
 		}
 	}
 
-	virtualBlock := s.cfg.DAG.VirtualBlock()
 	highestTipHash := s.cfg.DAG.HighestTipHash()
 	selectedBlock, err := s.cfg.DAG.BlockByHash(&highestTipHash)
 	if err != nil {
@@ -2328,7 +2323,7 @@ func handleGetMiningInfo(s *Server, cmd interface{}, closeChan <-chan struct{}) 
 		Blocks:           int64(s.cfg.DAG.Height()), //TODO: (Ori) This is wrong. Done only for compilation
 		CurrentBlockSize: uint64(selectedBlock.MsgBlock().SerializeSize()),
 		CurrentBlockTx:   uint64(len(selectedBlock.MsgBlock().Transactions)),
-		Difficulty:       getDifficultyRatio(virtualBlock.SelectedTip().Header().Bits, s.cfg.DAGParams),
+		Difficulty:       getDifficultyRatio(s.cfg.DAG.CurrentBits(), s.cfg.DAGParams),
 		Generate:         s.cfg.CPUMiner.IsMining(),
 		GenProcLimit:     s.cfg.CPUMiner.NumWorkers(),
 		HashesPerSec:     int64(s.cfg.CPUMiner.HashesPerSecond()),
@@ -2587,7 +2582,7 @@ func handleGetTxOut(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 		isCoinbase = blockdag.IsCoinBaseTx(mtx)
 	} else {
 		out := wire.OutPoint{Hash: *txHash, Index: c.Vout}
-		entry, ok := s.cfg.DAG.VirtualBlock().GetUTXOEntry(out)
+		entry, ok := s.cfg.DAG.GetUTXOEntry(out)
 		if !ok {
 			return nil, rpcNoTxInfoError(txHash)
 		}

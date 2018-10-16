@@ -173,7 +173,7 @@ func TestCalcSequenceLock(t *testing.T) {
 
 	// Generate enough synthetic blocks for the rest of the test
 	dag := newTestDAG(netParams)
-	node := dag.virtual.SelectedTip()
+	node := dag.SelectedTip()
 	blockTime := node.Header().Timestamp
 	numBlocksToGenerate := uint32(5)
 	for i := uint32(0); i < numBlocksToGenerate; i++ {

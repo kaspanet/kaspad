@@ -2437,7 +2437,7 @@ func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params
 		},
 		DAGParams:      dagParams,
 		BestHeight:     func() int32 { return s.DAG.Height() }, //TODO: (Ori) This is probably wrong. Done only for compilation
-		MedianTimePast: func() time.Time { return s.DAG.VirtualBlock().SelectedTip().CalcPastMedianTime() },
+		MedianTimePast: func() time.Time { return s.DAG.SelectedTip().CalcPastMedianTime() },
 		CalcSequenceLock: func(tx *util.Tx, utxoSet blockdag.UTXOSet) (*blockdag.SequenceLock, error) {
 			return s.DAG.CalcSequenceLock(tx, utxoSet, true)
 		},
