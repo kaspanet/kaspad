@@ -388,7 +388,7 @@ func (idx *TxIndex) Create(dbTx database.Tx) error {
 // for every transaction in the passed block.
 //
 // This is part of the Indexer interface.
-func (idx *TxIndex) ConnectBlock(dbTx database.Tx, block *util.Block, _ *blockdag.BlockDAG) error {
+func (idx *TxIndex) ConnectBlock(dbTx database.Tx, block *util.Block, _ *blockdag.BlockDAG, pastUTXOResults []*blockdag.PastUTXOResult) error {
 	// Increment the internal block ID to use for the block being connected
 	// and add all of the transactions in the block to the index.
 	newBlockID := idx.curBlockID + 1
