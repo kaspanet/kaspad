@@ -16,13 +16,13 @@ import (
 	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/mining"
-	"github.com/daglabs/btcd/wire"
 	"github.com/daglabs/btcd/util"
+	"github.com/daglabs/btcd/wire"
 )
 
 const (
 	// maxNonce is the maximum value a nonce can be in a block header.
-	maxNonce = ^uint32(0) // 2^32 - 1
+	maxNonce = ^uint64(0) // 2^64 - 1
 
 	// maxExtraNonce is the maximum value an extra nonce used in a coinbase
 	// transaction can be.
@@ -162,7 +162,7 @@ func (m *CPUMiner) submitBlock(block *util.Block) bool {
 	// a new block, but the check only happens periodically, so it is
 	// possible a block was found and submitted in between.
 	msgBlock := block.MsgBlock()
-	if !daghash.AreEqual(msgBlock.Header.PrevBlocks, m.g.VirtualBlock().TipHashes()) {
+	if !daghash.AreEqual(msgBlock.Header.PrevBlocks, m.g.TipHashes()) {
 		log.Debugf("Block submitted via CPU miner with previous "+
 			"blocks %s is stale", msgBlock.Header.PrevBlocks)
 		return false
@@ -237,7 +237,7 @@ func (m *CPUMiner) solveBlock(msgBlock *wire.MsgBlock, blockHeight int32,
 		// Search through the entire nonce range for a solution while
 		// periodically checking for early quit and stale block
 		// conditions along with updates to the speed monitor.
-		for i := uint32(0); i <= maxNonce; i++ {
+		for i := uint64(0); i <= maxNonce; i++ {
 			select {
 			case <-quit:
 				return false
@@ -247,8 +247,7 @@ func (m *CPUMiner) solveBlock(msgBlock *wire.MsgBlock, blockHeight int32,
 				hashesCompleted = 0
 
 				// The current block is stale if the DAG has changed.
-				virtualBlock := m.g.VirtualBlock()
-				if !daghash.AreEqual(header.PrevBlocks, virtualBlock.TipHashes()) {
+				if !daghash.AreEqual(header.PrevBlocks, m.g.TipHashes()) {
 					return false
 				}
 
@@ -326,7 +325,7 @@ out:
 		// this would otherwise end up building a new block template on
 		// a block that is in the process of becoming stale.
 		m.submitBlockLock.Lock()
-		curHeight := m.g.VirtualBlock().SelectedTipHeight()
+		curHeight := m.g.DAGHeight()
 		if curHeight != 0 && !m.cfg.IsCurrent() {
 			m.submitBlockLock.Unlock()
 			time.Sleep(time.Second)
@@ -585,7 +584,7 @@ func (m *CPUMiner) GenerateNBlocks(n uint32) ([]*daghash.Hash, error) {
 		// be changing and this would otherwise end up building a new block
 		// template on a block that is in the process of becoming stale.
 		m.submitBlockLock.Lock()
-		curHeight := m.g.VirtualBlock().SelectedTipHeight()
+		curHeight := m.g.DAGHeight()
 
 		// Choose a payment address at random.
 		rand.Seed(time.Now().UnixNano())

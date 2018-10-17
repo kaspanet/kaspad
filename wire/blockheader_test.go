@@ -16,11 +16,10 @@ import (
 
 // TestBlockHeader tests the BlockHeader API.
 func TestBlockHeader(t *testing.T) {
-	nonce64, err := RandomUint64()
+	nonce, err := RandomUint64()
 	if err != nil {
 		t.Errorf("RandomUint64: Error generating nonce: %v", err)
 	}
-	nonce := uint32(nonce64)
 
 	hashes := []daghash.Hash{mainNetGenesisHash, simNetGenesisHash}
 
@@ -50,7 +49,7 @@ func TestBlockHeader(t *testing.T) {
 // TestBlockHeaderWire tests the BlockHeader wire encode and decode for various
 // protocol versions.
 func TestBlockHeaderWire(t *testing.T) {
-	nonce := uint32(123123) // 0x1e0f3
+	nonce := uint64(123123) // 0x000000000001e0f3
 	pver := uint32(70001)
 
 	// baseBlockHdr is used in the various tests as a baseline BlockHeader.
@@ -83,7 +82,7 @@ func TestBlockHeaderWire(t *testing.T) {
 		0x3a, 0x9f, 0xb8, 0xaa, 0x4b, 0x1e, 0x5e, 0x4a,
 		0x29, 0xab, 0x5f, 0x49, 0x00, 0x00, 0x00, 0x00, // Timestamp
 		0xff, 0xff, 0x00, 0x1d, // Bits
-		0xf3, 0xe0, 0x01, 0x00, // Nonce
+		0xf3, 0xe0, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, // Fake Nonce. TODO: (Ori) Replace to a real nonce
 	}
 
 	tests := []struct {
@@ -190,7 +189,7 @@ func TestBlockHeaderWire(t *testing.T) {
 
 // TestBlockHeaderSerialize tests BlockHeader serialize and deserialize.
 func TestBlockHeaderSerialize(t *testing.T) {
-	nonce := uint32(123123) // 0x1e0f3
+	nonce := uint64(123123) // 0x01e0f3
 
 	// baseBlockHdr is used in the various tests as a baseline BlockHeader.
 	bits := uint32(0x1d00ffff)
@@ -222,7 +221,7 @@ func TestBlockHeaderSerialize(t *testing.T) {
 		0x3a, 0x9f, 0xb8, 0xaa, 0x4b, 0x1e, 0x5e, 0x4a,
 		0x29, 0xab, 0x5f, 0x49, 0x00, 0x00, 0x00, 0x00, // Timestamp
 		0xff, 0xff, 0x00, 0x1d, // Bits
-		0xf3, 0xe0, 0x01, 0x00, // Nonce
+		0xf3, 0xe0, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, // Fake Nonce. TODO: (Ori) Replace to a real nonce
 	}
 
 	tests := []struct {
@@ -271,7 +270,7 @@ func TestBlockHeaderSerialize(t *testing.T) {
 // TestBlockHeaderSerializeSize performs tests to ensure the serialize size for
 // various block headers is accurate.
 func TestBlockHeaderSerializeSize(t *testing.T) {
-	nonce := uint32(123123) // 0x1e0f3
+	nonce := uint64(123123) // 0x1e0f3
 	bits := uint32(0x1d00ffff)
 	timestamp := time.Unix(0x495fab29, 0) // 2009-01-03 12:15:05 -0600 CST
 	baseBlockHdr := &BlockHeader{
@@ -298,10 +297,10 @@ func TestBlockHeaderSerializeSize(t *testing.T) {
 		size int          // Expected serialized size
 	}{
 		// Block with no transactions.
-		{genesisBlockHdr, 53},
+		{genesisBlockHdr, 57},
 
 		// First block in the mainnet block chain.
-		{baseBlockHdr, 117},
+		{baseBlockHdr, 121},
 	}
 
 	t.Logf("Running %d tests", len(tests))
@@ -317,7 +316,7 @@ func TestBlockHeaderSerializeSize(t *testing.T) {
 }
 
 func TestIsGenesis(t *testing.T) {
-	nonce := uint32(123123) // 0x1e0f3
+	nonce := uint64(123123) // 0x1e0f3
 	bits := uint32(0x1d00ffff)
 	timestamp := time.Unix(0x495fab29, 0) // 2009-01-03 12:15:05 -0600 CST
 

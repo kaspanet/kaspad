@@ -29,7 +29,7 @@ func TestHeaders(t *testing.T) {
 	// Ensure max payload is expected value for latest protocol version.
 	// Num headers (varInt) + max allowed headers (header length + 1 byte
 	// for the number of transactions which is always 0).
-	wantPayload := uint32(16428009)
+	wantPayload := uint32(16436009)
 	maxPayload := msg.MaxPayloadLength(pver)
 	if maxPayload != wantPayload {
 		t.Errorf("MaxPayloadLength: wrong max payload length for "+
@@ -64,7 +64,7 @@ func TestHeadersWire(t *testing.T) {
 	hashes := []daghash.Hash{mainNetGenesisHash, simNetGenesisHash}
 	merkleHash := blockOne.Header.MerkleRoot
 	bits := uint32(0x1d00ffff)
-	nonce := uint32(0x9962e301)
+	nonce := uint64(0x9962e301)
 	bh := NewBlockHeader(1, hashes, &merkleHash, bits, nonce)
 	bh.Version = blockOne.Header.Version
 	bh.Timestamp = blockOne.Header.Timestamp
@@ -96,7 +96,7 @@ func TestHeadersWire(t *testing.T) {
 		0x3a, 0x9f, 0xb8, 0xaa, 0x4b, 0x1e, 0x5e, 0x4a,
 		0x61, 0xbc, 0x66, 0x49, 0x00, 0x00, 0x00, 0x00, // Timestamp
 		0xff, 0xff, 0x00, 0x1d, // Bits
-		0x01, 0xe3, 0x62, 0x99, // Nonce
+		0x01, 0xe3, 0x62, 0x99, 0x00, 0x00, 0x00, 0x00, // Fake Nonce. TODO: (Ori) Replace to a real nonce
 		0x00, // TxnCount (0 for headers message)
 	}
 
@@ -226,7 +226,7 @@ func TestHeadersWireErrors(t *testing.T) {
 	hashes := []daghash.Hash{mainNetGenesisHash, simNetGenesisHash}
 	merkleHash := blockOne.Header.MerkleRoot
 	bits := uint32(0x1d00ffff)
-	nonce := uint32(0x9962e301)
+	nonce := uint64(0x9962e301)
 	bh := NewBlockHeader(1, hashes, &merkleHash, bits, nonce)
 	bh.Version = blockOne.Header.Version
 	bh.Timestamp = blockOne.Header.Timestamp
@@ -252,7 +252,7 @@ func TestHeadersWireErrors(t *testing.T) {
 		0x3a, 0x9f, 0xb8, 0xaa, 0x4b, 0x1e, 0x5e, 0x4a,
 		0x61, 0xbc, 0x66, 0x49, 0x00, 0x00, 0x00, 0x00, // Timestamp
 		0xff, 0xff, 0x00, 0x1d, // Bits
-		0x01, 0xe3, 0x62, 0x99, // Nonce
+		0x01, 0xe3, 0x62, 0x99, 0x00, 0x00, 0x00, 0x00, // Fake Nonce. TODO: (Ori) Replace to a real nonce
 		0x00, // TxnCount (0 for headers message)
 	}
 
@@ -293,7 +293,7 @@ func TestHeadersWireErrors(t *testing.T) {
 		0x3a, 0x9f, 0xb8, 0xaa, 0x4b, 0x1e, 0x5e, 0x4a,
 		0x61, 0xbc, 0x66, 0x49, 0x00, 0x00, 0x00, 0x00, // Timestamp
 		0xff, 0xff, 0x00, 0x1d, // Bits
-		0x01, 0xe3, 0x62, 0x99, // Nonce
+		0x01, 0xe3, 0x62, 0x99, 0x00, 0x00, 0x00, 0x00, // Fake Nonce. TODO: (Ori) Replace to a real nonce
 		0x01, // TxnCount (should be 0 for headers message, but 1 to force error)
 	}
 

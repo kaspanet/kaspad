@@ -38,9 +38,9 @@ func loadBlockDB() (database.DB, error) {
 // returns a slice of found candidates, if any.  It also stops searching for
 // candidates at the last checkpoint that is already hard coded since there
 // is no point in finding candidates before already existing checkpoints.
-func findCandidates(dag *blockdag.BlockDAG, selectedTipHash *daghash.Hash) ([]*dagconfig.Checkpoint, error) {
+func findCandidates(dag *blockdag.BlockDAG, highestTipHash *daghash.Hash) ([]*dagconfig.Checkpoint, error) {
 	// Start with the selected tip.
-	block, err := dag.BlockByHash(selectedTipHash)
+	block, err := dag.BlockByHash(highestTipHash)
 	if err != nil {
 		return nil, err
 	}
@@ -162,12 +162,11 @@ func main() {
 
 	// Get the latest block hash and height from the database and report
 	// status.
-	virtualBlock := dag.VirtualBlock()
-	fmt.Printf("Block database loaded with block height %d\n", virtualBlock.SelectedTipHeight())
+	fmt.Printf("Block database loaded with block height %d\n", dag.Height())
 
 	// Find checkpoint candidates.
-	selectedTipHash := virtualBlock.SelectedTipHash()
-	candidates, err := findCandidates(dag, &selectedTipHash)
+	highestTipHash := dag.HighestTipHash()
+	candidates, err := findCandidates(dag, &highestTipHash)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Unable to identify candidates:", err)
 		return

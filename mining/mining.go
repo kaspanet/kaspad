@@ -402,8 +402,7 @@ func NewBlkTmplGenerator(policy *Policy, params *dagconfig.Params,
 //   -----------------------------------  --
 func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTemplate, error) {
 	// Extend the most recently known best block.
-	virtualBlock := g.dag.VirtualBlock()
-	nextBlockHeight := virtualBlock.Height()
+	nextBlockHeight := g.dag.Height() + 1
 
 	// Create a standard coinbase transaction paying to the provided
 	// address.  NOTE: The coinbase value will be updated to include the
@@ -441,7 +440,7 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 	// avoided.
 	blockTxns := make([]*util.Tx, 0, len(sourceTxns))
 	blockTxns = append(blockTxns, coinbaseTx)
-	blockUtxos := blockdag.NewDiffUTXOSet(g.dag.VirtualBlock().UTXOSet, blockdag.NewUTXODiff())
+	blockUtxos := blockdag.NewDiffUTXOSet(g.dag.UTXOSet(), blockdag.NewUTXODiff())
 
 	// dependers is used to track transactions which depend on another
 	// transaction in the source pool.  This, in conjunction with the
@@ -699,7 +698,7 @@ mempoolLoop:
 	// Calculate the required difficulty for the block.  The timestamp
 	// is potentially adjusted to ensure it comes after the median time of
 	// the last several blocks per the chain consensus rules.
-	ts := medianAdjustedTime(virtualBlock.SelectedTip().CalcPastMedianTime(), g.timeSource)
+	ts := medianAdjustedTime(g.dag.SelectedTip().CalcPastMedianTime(), g.timeSource)
 	reqDifficulty, err := g.dag.CalcNextRequiredDifficulty(ts)
 	if err != nil {
 		return nil, err
@@ -717,8 +716,8 @@ mempoolLoop:
 	var msgBlock wire.MsgBlock
 	msgBlock.Header = wire.BlockHeader{
 		Version:       nextBlockVersion,
-		NumPrevBlocks: byte(len(virtualBlock.TipHashes())),
-		PrevBlocks:    virtualBlock.TipHashes(),
+		NumPrevBlocks: byte(len(g.dag.TipHashes())),
+		PrevBlocks:    g.dag.TipHashes(),
 		MerkleRoot:    *merkles[len(merkles)-1],
 		Timestamp:     ts,
 		Bits:          reqDifficulty,
@@ -762,7 +761,7 @@ func (g *BlkTmplGenerator) UpdateBlockTime(msgBlock *wire.MsgBlock) error {
 	// The new timestamp is potentially adjusted to ensure it comes after
 	// the median time of the last several blocks per the chain consensus
 	// rules.
-	dagMedianTime := g.dag.VirtualBlock().CalcPastMedianTime()
+	dagMedianTime := g.dag.CalcPastMedianTime()
 	newTime := medianAdjustedTime(dagMedianTime, g.timeSource)
 	msgBlock.Header.Timestamp = newTime
 
@@ -806,13 +805,14 @@ func (g *BlkTmplGenerator) UpdateExtraNonce(msgBlock *wire.MsgBlock, blockHeight
 	return nil
 }
 
-// VirtualBlock returns the DAG's virtual block in the current point in time.
-// The returned instance must be treated as immutable since it is shared by all
-// callers.
-//
-// This function is safe for concurrent access.
-func (g *BlkTmplGenerator) VirtualBlock() *blockdag.VirtualBlock {
-	return g.dag.VirtualBlock()
+// DAGHeight returns the DAG's height
+func (g *BlkTmplGenerator) DAGHeight() int32 {
+	return g.dag.Height()
+}
+
+// TipHashes returns the hashes of the DAG's tips
+func (g *BlkTmplGenerator) TipHashes() []daghash.Hash {
+	return g.dag.TipHashes()
 }
 
 // TxSource returns the associated transaction source.

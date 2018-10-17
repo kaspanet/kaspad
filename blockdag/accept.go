@@ -28,13 +28,13 @@ func (dag *BlockDAG) maybeAcceptBlock(block *util.Block, flags BehaviorFlags) er
 		return err
 	}
 
-	selectedParent := parents.first() //TODO (Ori): This is wrong, done only for compilation
+	bluestParent := parents.bluest()
 	blockHeight := parents.maxHeight() + 1
 	block.SetHeight(blockHeight)
 
 	// The block must pass all of the validation rules which depend on the
 	// position of the block within the block DAG.
-	err = dag.checkBlockContext(block, parents, selectedParent, flags)
+	err = dag.checkBlockContext(block, parents, bluestParent, flags)
 	if err != nil {
 		return err
 	}

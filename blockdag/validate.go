@@ -37,7 +37,7 @@ const (
 
 	// medianTimeBlocks is the number of previous blocks which should be
 	// used to calculate the median time used to validate block timestamps.
-	medianTimeBlocks = 11
+	medianTimeBlocks = 51
 
 	// baseSubsidy is the starting subsidy amount for mined blocks.  This
 	// value is halved every SubsidyHalvingInterval blocks.
@@ -624,13 +624,13 @@ func checkSerializedHeight(coinbaseTx *util.Tx, wantHeight int32) error {
 //    the checkpoints are not performed.
 //
 // This function MUST be called with the chain state lock held (for writes).
-func (dag *BlockDAG) checkBlockHeaderContext(header *wire.BlockHeader, selectedParent *blockNode, blockHeight int32, flags BehaviorFlags) error {
+func (dag *BlockDAG) checkBlockHeaderContext(header *wire.BlockHeader, bluestParent *blockNode, blockHeight int32, flags BehaviorFlags) error {
 	fastAdd := flags&BFFastAdd == BFFastAdd
 	if !fastAdd {
 		// Ensure the difficulty specified in the block header matches
 		// the calculated difficulty based on the previous block and
 		// difficulty retarget rules.
-		expectedDifficulty, err := dag.calcNextRequiredDifficulty(selectedParent,
+		expectedDifficulty, err := dag.calcNextRequiredDifficulty(bluestParent,
 			header.Timestamp)
 		if err != nil {
 			return err
@@ -642,10 +642,10 @@ func (dag *BlockDAG) checkBlockHeaderContext(header *wire.BlockHeader, selectedP
 			return ruleError(ErrUnexpectedDifficulty, str)
 		}
 
-		// Ensure the timestamp for the block header is after the
+		// Ensure the timestamp for the block header is not before the
 		// median time of the last several blocks (medianTimeBlocks).
-		medianTime := selectedParent.CalcPastMedianTime()
-		if !header.Timestamp.After(medianTime) {
+		medianTime := bluestParent.CalcPastMedianTime()
+		if header.Timestamp.Before(medianTime) {
 			str := "block timestamp of %v is not after expected %v"
 			str = fmt.Sprintf(str, header.Timestamp, medianTime)
 			return ruleError(ErrTimeTooOld, str)
@@ -725,21 +725,22 @@ func validateParents(blockHeader *wire.BlockHeader, parents blockSet) error {
 // for how the flags modify its behavior.
 //
 // This function MUST be called with the chain state lock held (for writes).
-func (dag *BlockDAG) checkBlockContext(block *util.Block, parents blockSet, selectedParent *blockNode, flags BehaviorFlags) error {
+func (dag *BlockDAG) checkBlockContext(block *util.Block, parents blockSet, bluestParent *blockNode, flags BehaviorFlags) error {
 	err := validateParents(&block.MsgBlock().Header, parents)
 	if err != nil {
 		return err
 	}
+
 	// Perform all block header related validation checks.
 	header := &block.MsgBlock().Header
-	err = dag.checkBlockHeaderContext(header, selectedParent, block.Height(), flags)
+	err = dag.checkBlockHeaderContext(header, bluestParent, block.Height(), flags)
 	if err != nil {
 		return err
 	}
 
 	fastAdd := flags&BFFastAdd == BFFastAdd
 	if !fastAdd {
-		blockTime := selectedParent.CalcPastMedianTime()
+		blockTime := bluestParent.CalcPastMedianTime()
 
 		// Ensure all transactions in the block are finalized.
 		for _, tx := range block.Transactions() {
@@ -791,7 +792,7 @@ func (dag *BlockDAG) ensureNoDuplicateTx(node *blockNode, block *util.Block) err
 	// Duplicate transactions are only allowed if the previous transaction
 	// is fully spent.
 	for outpoint := range fetchSet {
-		utxo, ok := dag.virtual.GetUTXOEntry(outpoint)
+		utxo, ok := dag.GetUTXOEntry(outpoint)
 		if ok {
 			str := fmt.Sprintf("tried to overwrite transaction %v "+
 				"at block height %d that is not fully spent",
@@ -964,7 +965,7 @@ func (dag *BlockDAG) checkConnectBlock(node *blockNode, block *util.Block) error
 		// countP2SHSigOps for whether or not the transaction is
 		// a coinbase transaction rather than having to do a
 		// full coinbase check again.
-		numP2SHSigOps, err := CountP2SHSigOps(tx, i == 0, dag.VirtualBlock().UTXOSet)
+		numP2SHSigOps, err := CountP2SHSigOps(tx, i == 0, dag.virtual.utxoSet)
 		if err != nil {
 			return err
 		}
@@ -991,7 +992,7 @@ func (dag *BlockDAG) checkConnectBlock(node *blockNode, block *util.Block) error
 	// bounds.
 	var totalFees int64
 	for _, tx := range transactions {
-		txFee, err := CheckTransactionInputs(tx, node.height, dag.VirtualBlock().UTXOSet,
+		txFee, err := CheckTransactionInputs(tx, node.height, dag.virtual.utxoSet,
 			dag.dagParams)
 		if err != nil {
 			return err
@@ -1050,7 +1051,7 @@ func (dag *BlockDAG) checkConnectBlock(node *blockNode, block *util.Block) error
 		// A transaction can only be included within a block
 		// once the sequence locks of *all* its inputs are
 		// active.
-		sequenceLock, err := dag.calcSequenceLock(node, dag.VirtualBlock().UTXOSet, tx, false)
+		sequenceLock, err := dag.calcSequenceLock(node, dag.virtual.utxoSet, tx, false)
 		if err != nil {
 			return err
 		}
@@ -1068,7 +1069,7 @@ func (dag *BlockDAG) checkConnectBlock(node *blockNode, block *util.Block) error
 	// expensive ECDSA signature check scripts.  Doing this last helps
 	// prevent CPU exhaustion attacks.
 	if runScripts {
-		err := checkBlockScripts(block, dag.VirtualBlock().UTXOSet, scriptFlags, dag.sigCache)
+		err := checkBlockScripts(block, dag.virtual.utxoSet, scriptFlags, dag.sigCache)
 		if err != nil {
 			return err
 		}
@@ -1120,7 +1121,7 @@ func (dag *BlockDAG) CheckConnectBlockTemplate(block *util.Block) error {
 		return err
 	}
 
-	err = dag.checkBlockContext(block, parents, dag.virtual.SelectedTip(), flags)
+	err = dag.checkBlockContext(block, parents, dag.SelectedTip(), flags)
 	if err != nil {
 		return err
 	}

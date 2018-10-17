@@ -359,7 +359,7 @@ func BenchmarkReadBlockHeader(b *testing.B) {
 		0x3a, 0x9f, 0xb8, 0xaa, 0x4b, 0x1e, 0x5e, 0x4a, // MerkleRoot
 		0x29, 0xab, 0x5f, 0x49, 0x00, 0x00, 0x00, 0x00, // Timestamp
 		0xff, 0xff, 0x00, 0x1d, // Bits
-		0xf3, 0xe0, 0x01, 0x00, // Nonce
+		0xf3, 0xe0, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, // Fake Nonce. TODO: (Ori) Replace to a real nonce
 		0x00, // TxnCount Varint
 	}
 	r := bytes.NewReader(buf)
@@ -429,7 +429,7 @@ func BenchmarkDecodeHeaders(b *testing.B) {
 			}
 			prevBlocks[i] = *hash
 		}
-		m.AddBlockHeader(NewBlockHeader(1, prevBlocks, hash, 0, uint32(i)))
+		m.AddBlockHeader(NewBlockHeader(1, prevBlocks, hash, 0, uint64(i)))
 	}
 
 	// Serialize it so the bytes are available to test the decode below.
@@ -575,7 +575,7 @@ func BenchmarkDecodeMerkleBlock(b *testing.B) {
 	if err != nil {
 		b.Fatalf("NewHashFromStr: unexpected error: %v", err)
 	}
-	m.Header = *NewBlockHeader(1, []daghash.Hash{*hash}, hash, 0, uint32(10000))
+	m.Header = *NewBlockHeader(1, []daghash.Hash{*hash}, hash, 0, uint64(10000))
 	for i := 0; i < 105; i++ {
 		hash, err := daghash.NewHashFromStr(fmt.Sprintf("%x", i))
 		if err != nil {

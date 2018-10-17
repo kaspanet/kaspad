@@ -8,7 +8,7 @@
 
 package btcjson
 
-// NodeSubCmd defines the type used in the addnode JSON-RPC command for the
+// NodeSubCmd defines the type used in the `node` JSON-RPC command for the
 // sub command field.
 type NodeSubCmd string
 
