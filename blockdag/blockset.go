@@ -130,7 +130,7 @@ func (bs blockSet) hashes() []daghash.Hash {
 		hashes = append(hashes, hash)
 	}
 	sort.Slice(hashes, func(i, j int) bool {
-		return daghash.Less(&hashes[j], &hashes[i])
+		return daghash.Less(&hashes[i], &hashes[j])
 	})
 	return hashes
 }
