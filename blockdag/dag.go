@@ -711,8 +711,10 @@ func (p *provisionalNode) verifyAndBuildUTXO(virtual *virtualBlock, db database.
 	}
 
 	diff := NewUTXODiff()
-	bluesTxsDataWithCurrent := make([]*BluesTxData, len(bluesTxsData)+len(p.transactions))
-	bluesTxsDataWithCurrent = append(bluesTxsDataWithCurrent, bluesTxsData...)
+	bluesTxsDataWithCurrent := make([]*BluesTxData, 0, len(bluesTxsData)+len(p.transactions))
+	if len(bluesTxsData) != 0 {
+		bluesTxsDataWithCurrent = append(bluesTxsDataWithCurrent, bluesTxsData...)
+	}
 
 	for _, tx := range p.transactions {
 		txDiff, err := pastUTXO.diffFromTx(tx.MsgTx(), p.original)
@@ -724,9 +726,9 @@ func (p *provisionalNode) verifyAndBuildUTXO(virtual *virtualBlock, db database.
 			return nil, nil, err
 		}
 		bluesTxsDataWithCurrent = append(bluesTxsDataWithCurrent, &BluesTxData{
-			tx:         tx,
-			acceptedBy: &p.original.hash,
-			inBlock:    &p.original.hash,
+			Tx:         tx,
+			AcceptedBy: &p.original.hash,
+			InBlock:    &p.original.hash,
 		})
 	}
 
@@ -743,9 +745,9 @@ type blueBlockTransaction struct {
 }
 
 type BluesTxData struct {
-	tx         *util.Tx
-	acceptedBy *daghash.Hash
-	inBlock    *daghash.Hash
+	Tx         *util.Tx
+	AcceptedBy *daghash.Hash
+	InBlock    *daghash.Hash
 }
 
 // pastUTXO returns the UTXO of a given block's (in provisionalNode format) past
@@ -797,9 +799,9 @@ func (p *provisionalNode) pastUTXO(virtual *virtualBlock, db database.DB) (UTXOS
 	// Purposefully ignore failures - these are just unaccepted transactions
 	for _, tx := range blueBlockTransactions {
 		accepted := pastUTXO.AddTx(tx.tx.MsgTx(), p.original.height)
-		pastUTXOResult := &BluesTxData{inBlock: tx.blockHash}
+		pastUTXOResult := &BluesTxData{InBlock: tx.blockHash}
 		if accepted {
-			pastUTXOResult.acceptedBy = &p.original.hash
+			pastUTXOResult.AcceptedBy = &p.original.hash
 		}
 		bluesTxsData = append(bluesTxsData, pastUTXOResult)
 	}
@@ -1371,10 +1373,6 @@ type IndexManager interface {
 	// ConnectBlock is invoked when a new block has been connected to the
 	// DAG.
 	ConnectBlock(database.Tx, *util.Block, *BlockDAG, []*BluesTxData) error
-
-	// DisconnectBlock is invoked when a block has been disconnected from
-	// the DAG.
-	DisconnectBlock(database.Tx, *util.Block, *BlockDAG) error
 }
 
 // Config is a descriptor which specifies the blockchain instance configuration.
