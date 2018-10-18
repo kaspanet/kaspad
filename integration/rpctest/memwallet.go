@@ -16,9 +16,9 @@ import (
 	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/rpcclient"
 	"github.com/daglabs/btcd/txscript"
-	"github.com/daglabs/btcd/wire"
 	"github.com/daglabs/btcd/util"
 	"github.com/daglabs/btcd/util/hdkeychain"
+	"github.com/daglabs/btcd/wire"
 )
 
 var (

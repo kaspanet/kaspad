@@ -15,16 +15,16 @@ RUN go get -u github.com/golang/lint/golint \
 
 COPY ./Gopkg.* ./
 
-RUN dep ensure -v --vendor-only
+RUN dep ensure -v -vendor-only
 
 COPY . .
 
-RUN gofmt -d -e -s . \
-    && go tool vet -all . \
-    && golint -set_exit_status . \
-    && aligncheck . \
-    && structcheck -e . \
-    && varcheck -e .
+RUN go fmt ./...
+RUN go vet ./...
+RUN golint -set_exit_status `go list ./... | grep -v /vendor/`
+RUN aligncheck ./...
+RUN structcheck -e ./...
+RUN varcheck -e ./...
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o btcd .
 RUN strip btcd
 
