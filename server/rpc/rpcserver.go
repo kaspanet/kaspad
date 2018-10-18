@@ -1264,7 +1264,7 @@ func handleGetBlockDAGInfo(s *Server, cmd interface{}, closeChan <-chan struct{}
 
 // handleGetBlockCount implements the getblockcount command.
 func handleGetBlockCount(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	return int64(s.cfg.DAG.Height()), nil //TODO: (Ori) This is wrong. Done only for compilation
+	return s.cfg.DAG.BlockCount(), nil
 }
 
 // handleGetBlockHash implements the getblockhash command.

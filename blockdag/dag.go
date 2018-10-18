@@ -673,8 +673,6 @@ func (pns provisionalNodeSet) newProvisionalNode(node *blockNode, withRelatives 
 
 	provisional := &provisionalNode{
 		original:     node,
-		parents:      []*provisionalNode{},
-		children:     []*provisionalNode{},
 		transactions: transactions,
 	}
 	if node.hash != zeroHash {
@@ -682,6 +680,7 @@ func (pns provisionalNodeSet) newProvisionalNode(node *blockNode, withRelatives 
 	}
 
 	if withRelatives {
+		provisional.parents = []*provisionalNode{}
 		for _, parent := range node.parents {
 			provisional.parents = append(provisional.parents, pns.newProvisionalNode(parent, false, nil))
 		}
@@ -689,6 +688,7 @@ func (pns provisionalNodeSet) newProvisionalNode(node *blockNode, withRelatives 
 			provisional.selectedParent = pns[node.selectedParent.hash]
 		}
 
+		provisional.children = []*provisionalNode{}
 		for _, child := range node.children {
 			provisional.children = append(provisional.children, pns.newProvisionalNode(child, false, nil))
 		}
@@ -883,17 +883,21 @@ func (p *provisionalNode) commit() {
 		p.original.selectedParent = p.selectedParent.original
 	}
 
-	parents := newSet()
-	for _, parent := range p.parents {
-		parents.add(parent.original)
+	if p.parents != nil {
+		parents := newSet()
+		for _, parent := range p.parents {
+			parents.add(parent.original)
+		}
+		p.original.parents = parents
 	}
-	p.original.parents = parents
 
-	children := newSet()
-	for _, child := range p.children {
-		children.add(child.original)
+	if p.children != nil {
+		children := newSet()
+		for _, child := range p.children {
+			children.add(child.original)
+		}
+		p.original.children = children
 	}
-	p.original.children = children
 
 	if p.diff != nil {
 		p.original.diff = p.diff
@@ -971,6 +975,25 @@ func (dag *BlockDAG) GetUTXOEntry(outPoint wire.OutPoint) (*UTXOEntry, bool) {
 // Height returns the height of the highest tip in the DAG
 func (dag *BlockDAG) Height() int32 {
 	return dag.virtual.tips().maxHeight()
+}
+
+// BlockCount returns the number of blocks in the DAG
+func (dag *BlockDAG) BlockCount() int64 {
+	count := int64(-1)
+	visited := newSet()
+	queue := []*blockNode{&dag.virtual.blockNode}
+	for len(queue) > 0 {
+		node := queue[0]
+		queue = queue[1:]
+		if !visited.contains(node) {
+			visited.add(node)
+			count++
+			for _, parent := range node.parents {
+				queue = append(queue, parent)
+			}
+		}
+	}
+	return count
 }
 
 // TipHashes returns the hashes of the DAG's tips

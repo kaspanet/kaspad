@@ -22,6 +22,53 @@ import (
 	"github.com/daglabs/btcd/wire"
 )
 
+func TestBlockCount(t *testing.T) {
+	// Load up blocks such that there is a fork in the DAG.
+	// (genesis block) -> 1 -> 2 -> 3 -> 4
+	//                          \-> 3b
+	testFiles := []string{
+		"blk_0_to_4.dat",
+		"blk_3B.dat",
+	}
+
+	var blocks []*util.Block
+	for _, file := range testFiles {
+		blockTmp, err := loadBlocks(file)
+		if err != nil {
+			t.Fatalf("Error loading file: %v\n", err)
+		}
+		blocks = append(blocks, blockTmp...)
+	}
+
+	// Create a new database and chain instance to run tests against.
+	dag, teardownFunc, err := DAGSetup("haveblock",
+		&dagconfig.SimNetParams)
+	if err != nil {
+		t.Fatalf("Failed to setup chain instance: %v", err)
+	}
+	defer teardownFunc()
+
+	// Since we're not dealing with the real block chain, set the coinbase
+	// maturity to 1.
+	dag.TstSetCoinbaseMaturity(1)
+
+	for i := 1; i < len(blocks); i++ {
+		isOrphan, err := dag.ProcessBlock(blocks[i], BFNone)
+		if err != nil {
+			t.Fatalf("ProcessBlock fail on block %v: %v\n", i, err)
+		}
+		if isOrphan {
+			t.Fatalf("ProcessBlock incorrectly returned block %v "+
+				"is an orphan\n", i)
+		}
+	}
+
+	expectedBlockCount := int64(6)
+	if dag.BlockCount() != expectedBlockCount {
+		t.Errorf("TestBlockCount: BlockCount expected to return %v but got %v", expectedBlockCount, dag.BlockCount())
+	}
+}
+
 // TestHaveBlock tests the HaveBlock API to ensure proper functionality.
 func TestHaveBlock(t *testing.T) {
 	// Load up blocks such that there is a fork in the DAG.
