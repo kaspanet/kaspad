@@ -503,7 +503,7 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block) error {
 	}
 
 	// Add the node to the virtual and update the UTXO set of the DAG.
-	utxoDiff, bluesTxsData, err := dag.applyUTXOChanges(node, block)
+	utxoDiff, acceptedTxsData, err := dag.applyUTXOChanges(node, block)
 	if err != nil {
 		return err
 	}
@@ -540,7 +540,7 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block) error {
 		// optional indexes with the block being connected so they can
 		// update themselves accordingly.
 		if dag.indexManager != nil {
-			err := dag.indexManager.ConnectBlock(dbTx, block, dag, bluesTxsData)
+			err := dag.indexManager.ConnectBlock(dbTx, block, dag, acceptedTxsData)
 			if err != nil {
 				return err
 			}
@@ -570,7 +570,7 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block) error {
 // 5. Updates each of the tips' utxoDiff.
 //
 // This function MUST be called with the chain state lock held (for writes).
-func (dag *BlockDAG) applyUTXOChanges(node *blockNode, block *util.Block) (*utxoDiff, []*BluesTxData, error) {
+func (dag *BlockDAG) applyUTXOChanges(node *blockNode, block *util.Block) (*utxoDiff, []*AcceptedTxData, error) {
 	// Prepare provisionalNodes for all the relevant nodes to avoid modifying the original nodes.
 	// We avoid modifying the original nodes in this function because it could potentially
 	// fail if the block is not valid, thus bringing all the affected nodes (and the virtual)
@@ -581,7 +581,7 @@ func (dag *BlockDAG) applyUTXOChanges(node *blockNode, block *util.Block) (*utxo
 	// Clone the virtual block so that we don't modify the existing one.
 	virtualClone := dag.virtual.clone()
 
-	newBlockUTXO, bluesTxsData, err := newNodeProvisional.verifyAndBuildUTXO(virtualClone, dag.db)
+	newBlockUTXO, acceptedTxsData, err := newNodeProvisional.verifyAndBuildUTXO(virtualClone, dag.db)
 	if err != nil {
 		return nil, nil, fmt.Errorf("error verifying UTXO for %v: %s", node, err)
 	}
@@ -626,7 +626,7 @@ func (dag *BlockDAG) applyUTXOChanges(node *blockNode, block *util.Block) (*utxo
 	// It is now safe to apply the new virtual block
 	dag.virtual = virtualClone
 
-	return utxoDiff, bluesTxsData, nil
+	return utxoDiff, acceptedTxsData, nil
 }
 
 func (dag *BlockDAG) updateVirtualUTXO(newVirtualUTXODiffSet *DiffUTXOSet) {
@@ -704,16 +704,16 @@ func (pns provisionalNodeSet) newProvisionalNode(node *blockNode, withRelatives 
 }
 
 // verifyAndBuildUTXO verifies all transactions in the given block (in provisionalNode format) and builds its UTXO
-func (p *provisionalNode) verifyAndBuildUTXO(virtual *virtualBlock, db database.DB) (UTXOSet, []*BluesTxData, error) {
-	pastUTXO, bluesTxsData, err := p.pastUTXO(virtual, db)
+func (p *provisionalNode) verifyAndBuildUTXO(virtual *virtualBlock, db database.DB) (UTXOSet, []*AcceptedTxData, error) {
+	pastUTXO, accpetedTxsData, err := p.pastUTXO(virtual, db)
 	if err != nil {
 		return nil, nil, err
 	}
 
 	diff := NewUTXODiff()
-	bluesTxsDataWithCurrent := make([]*BluesTxData, 0, len(bluesTxsData)+len(p.transactions))
-	if len(bluesTxsData) != 0 {
-		bluesTxsDataWithCurrent = append(bluesTxsDataWithCurrent, bluesTxsData...)
+	acceptedTxsDataWithCurrent := make([]*AcceptedTxData, 0, len(accpetedTxsData)+len(p.transactions))
+	if len(accpetedTxsData) != 0 {
+		acceptedTxsDataWithCurrent = append(acceptedTxsDataWithCurrent, accpetedTxsData...)
 	}
 
 	for _, tx := range p.transactions {
@@ -725,10 +725,9 @@ func (p *provisionalNode) verifyAndBuildUTXO(virtual *virtualBlock, db database.
 		if err != nil {
 			return nil, nil, err
 		}
-		bluesTxsDataWithCurrent = append(bluesTxsDataWithCurrent, &BluesTxData{
-			Tx:         tx,
-			AcceptedBy: &p.original.hash,
-			InBlock:    &p.original.hash,
+		acceptedTxsDataWithCurrent = append(acceptedTxsDataWithCurrent, &AcceptedTxData{
+			Tx:      tx,
+			InBlock: &p.original.hash,
 		})
 	}
 
@@ -736,7 +735,7 @@ func (p *provisionalNode) verifyAndBuildUTXO(virtual *virtualBlock, db database.
 	if err != nil {
 		return nil, nil, err
 	}
-	return utxo, bluesTxsDataWithCurrent, nil
+	return utxo, acceptedTxsDataWithCurrent, nil
 }
 
 type blueBlockTransaction struct {
@@ -744,14 +743,14 @@ type blueBlockTransaction struct {
 	blockHash *daghash.Hash
 }
 
-type BluesTxData struct {
-	Tx         *util.Tx
-	AcceptedBy *daghash.Hash
-	InBlock    *daghash.Hash
+// AcceptedTxData is a type that holds data about in which blue block is a transaction that got accepted by a new block
+type AcceptedTxData struct {
+	Tx      *util.Tx
+	InBlock *daghash.Hash
 }
 
 // pastUTXO returns the UTXO of a given block's (in provisionalNode format) past
-func (p *provisionalNode) pastUTXO(virtual *virtualBlock, db database.DB) (UTXOSet, []*BluesTxData, error) {
+func (p *provisionalNode) pastUTXO(virtual *virtualBlock, db database.DB) (UTXOSet, []*AcceptedTxData, error) {
 	pastUTXO, err := p.selectedParent.restoreUTXO(virtual)
 	if err != nil {
 		return nil, nil, err
@@ -793,20 +792,18 @@ func (p *provisionalNode) pastUTXO(virtual *virtualBlock, db database.DB) (UTXOS
 		return nil, nil, err
 	}
 
-	bluesTxsData := make([]*BluesTxData, transactionCount)
+	acceptedTxsData := make([]*AcceptedTxData, 0, transactionCount)
 
 	// Add all transactions to the pastUTXO
 	// Purposefully ignore failures - these are just unaccepted transactions
 	for _, tx := range blueBlockTransactions {
 		accepted := pastUTXO.AddTx(tx.tx.MsgTx(), p.original.height)
-		pastUTXOResult := &BluesTxData{InBlock: tx.blockHash}
 		if accepted {
-			pastUTXOResult.AcceptedBy = &p.original.hash
+			acceptedTxsData = append(acceptedTxsData, &AcceptedTxData{InBlock: tx.blockHash})
 		}
-		bluesTxsData = append(bluesTxsData, pastUTXOResult)
 	}
 
-	return pastUTXO, nil, nil
+	return pastUTXO, acceptedTxsData, nil
 }
 
 // restoreUTXO restores the UTXO of a given block (in provisionalNode format) from its diff
@@ -1395,7 +1392,7 @@ type IndexManager interface {
 
 	// ConnectBlock is invoked when a new block has been connected to the
 	// DAG.
-	ConnectBlock(database.Tx, *util.Block, *BlockDAG, []*BluesTxData) error
+	ConnectBlock(database.Tx, *util.Block, *BlockDAG, []*AcceptedTxData) error
 }
 
 // Config is a descriptor which specifies the blockchain instance configuration.

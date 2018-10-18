@@ -243,7 +243,7 @@ func dbFetchFirstTxRegion(dbTx database.Tx, txHash *daghash.Hash) (*database.Blo
 
 // dbAddTxIndexEntries uses an existing database transaction to add a
 // transaction index entry for every transaction in the passed block.
-func dbAddTxIndexEntries(dbTx database.Tx, block *util.Block, blockID uint32, bluesTxsData []*blockdag.BluesTxData) error {
+func dbAddTxIndexEntries(dbTx database.Tx, block *util.Block, blockID uint32, acceptedTxsData []*blockdag.AcceptedTxData) error {
 	// The offset and length of the transactions within the serialized
 	// block.
 	txLocs, err := block.TxLoc()
@@ -274,26 +274,18 @@ func dbAddTxIndexEntries(dbTx database.Tx, block *util.Block, blockID uint32, bl
 
 	acceptingBlocksOffset := 0
 
-	serializedAcceptingBlocksValues := make([]byte, len(bluesTxsData)*acceptingBlocksIndexKeyEntrySize)
-	for _, tx := range bluesTxsData {
-		var acceptingBlockID, includingBlockID uint32
+	serializedAcceptingBlocksValues := make([]byte, len(acceptedTxsData)*acceptingBlocksIndexKeyEntrySize)
+	for _, tx := range acceptedTxsData {
+		var includingBlockID uint32
 		var err error
 		var ok bool
-
-		if acceptingBlockID, ok = blockHashToID[*tx.AcceptedBy]; !ok {
-			acceptingBlockID, err = dbFetchBlockIDByHash(dbTx, tx.AcceptedBy)
-			if err != nil {
-				return err
-			}
-			blockHashToID[*tx.AcceptedBy] = acceptingBlockID
-		}
 
 		if includingBlockID, ok = blockHashToID[*tx.InBlock]; !ok {
 			includingBlockID, err = dbFetchBlockIDByHash(dbTx, tx.InBlock)
 			if err != nil {
 				return err
 			}
-			blockHashToID[*tx.InBlock] = acceptingBlockID
+			blockHashToID[*tx.InBlock] = includingBlockID
 		}
 
 		putAcceptingBlocksEntry(serializedAcceptingBlocksValues[acceptingBlocksOffset:], includingBlockID)
@@ -422,11 +414,11 @@ func (idx *TxIndex) Create(dbTx database.Tx) error {
 // for every transaction in the passed block.
 //
 // This is part of the Indexer interface.
-func (idx *TxIndex) ConnectBlock(dbTx database.Tx, block *util.Block, _ *blockdag.BlockDAG, bluesTxsData []*blockdag.BluesTxData) error {
+func (idx *TxIndex) ConnectBlock(dbTx database.Tx, block *util.Block, _ *blockdag.BlockDAG, acceptedTxsData []*blockdag.AcceptedTxData) error {
 	// Increment the internal block ID to use for the block being connected
 	// and add all of the transactions in the block to the index.
 	newBlockID := idx.curBlockID + 1
-	if err := dbAddTxIndexEntries(dbTx, block, newBlockID, bluesTxsData); err != nil {
+	if err := dbAddTxIndexEntries(dbTx, block, newBlockID, acceptedTxsData); err != nil {
 		return err
 	}
 

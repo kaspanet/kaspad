@@ -210,12 +210,12 @@ func dbFetchTx(dbTx database.Tx, hash *daghash.Hash) (*wire.MsgTx, error) {
 // checks, and invokes each indexer.
 //
 // This is part of the blockchain.IndexManager interface.
-func (m *Manager) ConnectBlock(dbTx database.Tx, block *util.Block, dag *blockdag.BlockDAG, bluesTxsData []*blockdag.BluesTxData) error {
+func (m *Manager) ConnectBlock(dbTx database.Tx, block *util.Block, dag *blockdag.BlockDAG, acceptedTxsData []*blockdag.AcceptedTxData) error {
 	// Call each of the currently active optional indexes with the block
 	// being connected so they can update accordingly.
 	for _, index := range m.enabledIndexes {
 		// Notify the indexer with the connected block so it can index it.
-		if err := index.ConnectBlock(dbTx, block, dag, bluesTxsData); err != nil {
+		if err := index.ConnectBlock(dbTx, block, dag, acceptedTxsData); err != nil {
 			return err
 		}
 	}
