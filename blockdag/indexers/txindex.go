@@ -84,7 +84,7 @@ var (
 //   -----
 //   Total: 36 bytes
 //
-// The the accepting blocks index contains a sub bucket for each transaction hash, that its serialized format is:
+// The the accepting blocks index contains a sub bucket for each transaction hash (32 byte each), that its serialized format is:
 //
 //   <accepting block id> = <including block id>
 //
@@ -94,7 +94,7 @@ var (
 //   -----
 //   Total: 8 bytes
 //
-// The the including blocks index contains a sub bucket for each transaction hash, that its serialized format is:
+// The the including blocks index contains a sub bucket for each transaction hash (32 byte each), that its serialized format is:
 //
 //   <block id> = <start offset><tx length>
 //
