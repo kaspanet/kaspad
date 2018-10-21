@@ -8,9 +8,9 @@ package gcs_test
 import (
 	"bytes"
 	"encoding/binary"
+	"github.com/daglabs/btcd/util/gcs"
 	"math/rand"
 	"testing"
-	"github.com/daglabs/btcd/util/gcs"
 )
 
 var (

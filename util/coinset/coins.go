@@ -10,8 +10,8 @@ import (
 	"sort"
 
 	"github.com/daglabs/btcd/dagconfig/daghash"
-	"github.com/daglabs/btcd/wire"
 	"github.com/daglabs/btcd/util"
+	"github.com/daglabs/btcd/wire"
 )
 
 // Coin represents a spendable transaction outpoint

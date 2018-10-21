@@ -10,8 +10,8 @@ import (
 	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/mempool"
 	"github.com/daglabs/btcd/peer"
-	"github.com/daglabs/btcd/wire"
 	"github.com/daglabs/btcd/util"
+	"github.com/daglabs/btcd/wire"
 )
 
 // PeerNotifier exposes methods to notify peers of status changes to
