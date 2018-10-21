@@ -222,6 +222,10 @@ const (
 	// reached.
 	ErrUnsatisfiedLockTime
 
+	// ErrMinimalIf is returned if the operand of an OP_IF/OP_NOTIF
+	// is not either an empty vector or [0x01].
+	ErrMinimalIf
+
 	// numErrorCodes is the maximum error code number used in tests.  This
 	// entry MUST be the last entry in the enum.
 	numErrorCodes
@@ -270,6 +274,7 @@ var errorCodeStrings = map[ErrorCode]string{
 	ErrDiscourageUpgradableNOPs:  "ErrDiscourageUpgradableNOPs",
 	ErrNegativeLockTime:          "ErrNegativeLockTime",
 	ErrUnsatisfiedLockTime:       "ErrUnsatisfiedLockTime",
+	ErrMinimalIf:                 "ErrMinimalIf",
 }
 
 // String returns the ErrorCode as a human-readable name.

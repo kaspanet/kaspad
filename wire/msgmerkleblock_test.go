@@ -224,17 +224,17 @@ func TestMerkleBlockWireErrors(t *testing.T) {
 		// Force error in header nonce.
 		{&merkleBlockOne, merkleBlockOneBytes, pver, 113, io.ErrShortWrite, io.EOF},
 		// Force error in transaction count.
-		{&merkleBlockOne, merkleBlockOneBytes, pver, 117, io.ErrShortWrite, io.EOF},
-		// Force error in num hashes.
 		{&merkleBlockOne, merkleBlockOneBytes, pver, 121, io.ErrShortWrite, io.EOF},
+		// Force error in num hashes.
+		{&merkleBlockOne, merkleBlockOneBytes, pver, 125, io.ErrShortWrite, io.EOF},
 		// Force error in hashes.
-		{&merkleBlockOne, merkleBlockOneBytes, pver, 122, io.ErrShortWrite, io.EOF},
+		{&merkleBlockOne, merkleBlockOneBytes, pver, 126, io.ErrShortWrite, io.EOF},
 		// Force error in num flag bytes.
-		{&merkleBlockOne, merkleBlockOneBytes, pver, 154, io.ErrShortWrite, io.EOF},
+		{&merkleBlockOne, merkleBlockOneBytes, pver, 158, io.ErrShortWrite, io.EOF},
 		// Force error in flag bytes.
-		{&merkleBlockOne, merkleBlockOneBytes, pver, 155, io.ErrShortWrite, io.EOF},
+		{&merkleBlockOne, merkleBlockOneBytes, pver, 159, io.ErrShortWrite, io.EOF},
 		// Force error due to unsupported protocol version.
-		{&merkleBlockOne, merkleBlockOneBytes, pverNoMerkleBlock, 155, wireErr, wireErr},
+		{&merkleBlockOne, merkleBlockOneBytes, pverNoMerkleBlock, 159, wireErr, wireErr},
 	}
 
 	t.Logf("Running %d tests", len(tests))
@@ -294,7 +294,7 @@ func TestMerkleBlockOverflowErrors(t *testing.T) {
 	// allowed tx hashes.
 	var buf bytes.Buffer
 	WriteVarInt(&buf, pver, maxTxPerBlock+1)
-	numHashesOffset := 121
+	numHashesOffset := 125
 	exceedMaxHashes := make([]byte, numHashesOffset)
 	copy(exceedMaxHashes, merkleBlockOneBytes[:numHashesOffset])
 	exceedMaxHashes = append(exceedMaxHashes, buf.Bytes()...)
@@ -303,7 +303,7 @@ func TestMerkleBlockOverflowErrors(t *testing.T) {
 	// allowed flag bytes.
 	buf.Reset()
 	WriteVarInt(&buf, pver, maxFlagsPerMerkleBlock+1)
-	numFlagBytesOffset := 154
+	numFlagBytesOffset := 158
 	exceedMaxFlagBytes := make([]byte, numFlagBytesOffset)
 	copy(exceedMaxFlagBytes, merkleBlockOneBytes[:numFlagBytesOffset])
 	exceedMaxFlagBytes = append(exceedMaxFlagBytes, buf.Bytes()...)
@@ -381,7 +381,7 @@ var merkleBlockOneBytes = []byte{
 	0xcd, 0xb6, 0x06, 0xe8, 0x57, 0x23, 0x3e, 0x0e, // MerkleRoot
 	0x61, 0xbc, 0x66, 0x49, 0x00, 0x00, 0x00, 0x00, // Timestamp
 	0xff, 0xff, 0x00, 0x1d, // Bits
-	0x01, 0xe3, 0x62, 0x99, // Nonce
+	0x01, 0xe3, 0x62, 0x99, 0x00, 0x00, 0x00, 0x00, // Fake Nonce. TODO: (Ori) Replace to a real nonce
 	0x01, 0x00, 0x00, 0x00, // TxnCount
 	0x01, // Num hashes
 	0x98, 0x20, 0x51, 0xfd, 0x1e, 0x4b, 0xa7, 0x44,

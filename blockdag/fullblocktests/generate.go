@@ -23,8 +23,8 @@ import (
 	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/txscript"
-	"github.com/daglabs/btcd/wire"
 	"github.com/daglabs/btcd/util"
+	"github.com/daglabs/btcd/wire"
 )
 
 const (
@@ -324,7 +324,7 @@ func solveBlock(header *wire.BlockHeader) bool {
 	// sbResult is used by the solver goroutines to send results.
 	type sbResult struct {
 		found bool
-		nonce uint32
+		nonce uint64
 	}
 
 	// solver accepts a block header and a nonce range to test. It is
@@ -332,7 +332,7 @@ func solveBlock(header *wire.BlockHeader) bool {
 	targetDifficulty := blockdag.CompactToBig(header.Bits)
 	quit := make(chan bool)
 	results := make(chan sbResult)
-	solver := func(hdr wire.BlockHeader, startNonce, stopNonce uint32) {
+	solver := func(hdr wire.BlockHeader, startNonce, stopNonce uint64) {
 		// We need to modify the nonce field of the header, so make sure
 		// we work with a copy of the original header.
 		for i := startNonce; i >= startNonce && i <= stopNonce; i++ {
@@ -353,11 +353,11 @@ func solveBlock(header *wire.BlockHeader) bool {
 		results <- sbResult{false, 0}
 	}
 
-	startNonce := uint32(1)
-	stopNonce := uint32(math.MaxUint32)
-	numCores := uint32(runtime.NumCPU())
+	startNonce := uint64(1)
+	stopNonce := uint64(math.MaxUint64)
+	numCores := uint64(runtime.NumCPU())
 	noncesPerCore := (stopNonce - startNonce) / numCores
-	for i := uint32(0); i < numCores; i++ {
+	for i := uint64(0); i < numCores; i++ {
 		rangeStart := startNonce + (noncesPerCore * i)
 		rangeStop := startNonce + (noncesPerCore * (i + 1)) - 1
 		if i == numCores-1 {
@@ -365,7 +365,7 @@ func solveBlock(header *wire.BlockHeader) bool {
 		}
 		go solver(*header, rangeStart, rangeStop)
 	}
-	for i := uint32(0); i < numCores; i++ {
+	for i := uint64(0); i < numCores; i++ {
 		result := <-results
 		if result.found {
 			close(quit)

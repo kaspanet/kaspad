@@ -40,13 +40,6 @@ const (
 	statusNone blockStatus = 0
 )
 
-// HaveData returns whether the full block data is stored in the database. This
-// will return false for a block node where only the header is downloaded or
-// kept.
-func (status blockStatus) HaveData() bool {
-	return status&statusDataStored != 0
-}
-
 // KnownValid returns whether the block is known to be valid. This will return
 // false for a valid block that has not been fully validated yet.
 func (status blockStatus) KnownValid() bool {
@@ -111,7 +104,7 @@ type blockNode struct {
 	// platforms.
 	version    int32
 	bits       uint32
-	nonce      uint32
+	nonce      uint64
 	timestamp  int64
 	merkleRoot daghash.Hash
 
@@ -222,35 +215,23 @@ func (node *blockNode) RelativeAncestor(distance int32) *blockNode {
 func (node *blockNode) CalcPastMedianTime() time.Time {
 	// Create a slice of the previous few block timestamps used to calculate
 	// the median per the number defined by the constant medianTimeBlocks.
+	// If there aren't enough blocks yet - pad remaining with genesis block's timestamp.
 	timestamps := make([]int64, medianTimeBlocks)
-	numNodes := 0
 	iterNode := node
-	for i := 0; i < medianTimeBlocks && iterNode != nil; i++ {
+	for i := 0; i < medianTimeBlocks; i++ {
 		timestamps[i] = iterNode.timestamp
-		numNodes++
 
-		iterNode = iterNode.selectedParent
+		if !iterNode.isGenesis() {
+			iterNode = iterNode.selectedParent
+		}
 	}
 
-	// Prune the slice to the actual number of available timestamps which
-	// will be fewer than desired near the beginning of the block chain
-	// and sort them.
-	timestamps = timestamps[:numNodes]
 	sort.Sort(timeSorter(timestamps))
 
-	// NOTE: The consensus rules incorrectly calculate the median for even
-	// numbers of blocks.  A true median averages the middle two elements
-	// for a set with an even number of elements in it.   Since the constant
-	// for the previous number of blocks to be used is odd, this is only an
-	// issue for a few blocks near the beginning of the chain.  I suspect
-	// this is an optimization even though the result is slightly wrong for
-	// a few of the first blocks since after the first few blocks, there
-	// will always be an odd number of blocks in the set per the constant.
-	//
-	// This code follows suit to ensure the same rules are used, however, be
-	// aware that should the medianTimeBlocks constant ever be changed to an
-	// even number, this code will be wrong.
-	medianTimestamp := timestamps[numNodes/2]
+	// Note: This works when medianTimeBlockCount is an odd number.
+	// If it is to be changed to an even number - must take avarage of two middle values
+	// Since medianTimeBlockCount is a constant, we can skip the odd/even check
+	medianTimestamp := timestamps[medianTimeBlocks/2]
 	return time.Unix(medianTimestamp, 0)
 }
 

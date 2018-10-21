@@ -6,6 +6,7 @@ package blockdag
 
 import (
 	"fmt"
+	"math"
 	"sync"
 	"time"
 
@@ -87,7 +88,7 @@ type BlockDAG struct {
 	index *blockIndex
 
 	// virtual tracks the current tips.
-	virtual *VirtualBlock
+	virtual *virtualBlock
 
 	// These fields are related to handling of orphan blocks.  They are
 	// protected by a combination of the chain lock and the orphan lock.
@@ -320,7 +321,7 @@ func (dag *BlockDAG) CalcSequenceLock(tx *util.Tx, utxoSet UTXOSet, mempool bool
 	dag.dagLock.Lock()
 	defer dag.dagLock.Unlock()
 
-	return dag.calcSequenceLock(dag.virtual.SelectedTip(), utxoSet, tx, mempool)
+	return dag.calcSequenceLock(dag.SelectedTip(), utxoSet, tx, mempool)
 }
 
 // calcSequenceLock computes the relative lock-times for the passed
@@ -539,7 +540,7 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block) error {
 		// optional indexes with the block being connected so they can
 		// update themselves accordingly.
 		if dag.indexManager != nil {
-			err := dag.indexManager.ConnectBlock(dbTx, block, dag.virtual)
+			err := dag.indexManager.ConnectBlock(dbTx, block, dag)
 			if err != nil {
 				return err
 			}
@@ -672,8 +673,6 @@ func (pns provisionalNodeSet) newProvisionalNode(node *blockNode, withRelatives 
 
 	provisional := &provisionalNode{
 		original:     node,
-		parents:      []*provisionalNode{},
-		children:     []*provisionalNode{},
 		transactions: transactions,
 	}
 	if node.hash != zeroHash {
@@ -681,6 +680,7 @@ func (pns provisionalNodeSet) newProvisionalNode(node *blockNode, withRelatives 
 	}
 
 	if withRelatives {
+		provisional.parents = []*provisionalNode{}
 		for _, parent := range node.parents {
 			provisional.parents = append(provisional.parents, pns.newProvisionalNode(parent, false, nil))
 		}
@@ -688,6 +688,7 @@ func (pns provisionalNodeSet) newProvisionalNode(node *blockNode, withRelatives 
 			provisional.selectedParent = pns[node.selectedParent.hash]
 		}
 
+		provisional.children = []*provisionalNode{}
 		for _, child := range node.children {
 			provisional.children = append(provisional.children, pns.newProvisionalNode(child, false, nil))
 		}
@@ -703,7 +704,7 @@ func (pns provisionalNodeSet) newProvisionalNode(node *blockNode, withRelatives 
 }
 
 // verifyAndBuildUTXO verifies all transactions in the given block (in provisionalNode format) and builds its UTXO
-func (p *provisionalNode) verifyAndBuildUTXO(virtual *VirtualBlock, db database.DB) (UTXOSet, error) {
+func (p *provisionalNode) verifyAndBuildUTXO(virtual *virtualBlock, db database.DB) (UTXOSet, error) {
 	pastUTXO, err := p.pastUTXO(virtual, db)
 	if err != nil {
 		return nil, err
@@ -730,7 +731,7 @@ func (p *provisionalNode) verifyAndBuildUTXO(virtual *VirtualBlock, db database.
 }
 
 // pastUTXO returns the UTXO of a given block's (in provisionalNode format) past
-func (p *provisionalNode) pastUTXO(virtual *VirtualBlock, db database.DB) (UTXOSet, error) {
+func (p *provisionalNode) pastUTXO(virtual *virtualBlock, db database.DB) (UTXOSet, error) {
 	pastUTXO, err := p.selectedParent.restoreUTXO(virtual)
 	if err != nil {
 		return nil, err
@@ -780,7 +781,7 @@ func (p *provisionalNode) pastUTXO(virtual *VirtualBlock, db database.DB) (UTXOS
 }
 
 // restoreUTXO restores the UTXO of a given block (in provisionalNode format) from its diff
-func (p *provisionalNode) restoreUTXO(virtual *VirtualBlock) (UTXOSet, error) {
+func (p *provisionalNode) restoreUTXO(virtual *virtualBlock) (UTXOSet, error) {
 	stack := []*provisionalNode{p}
 	current := p
 
@@ -804,7 +805,7 @@ func (p *provisionalNode) restoreUTXO(virtual *VirtualBlock) (UTXOSet, error) {
 
 // updateParents adds this block (in provisionalNode format) to the children sets of its parents
 // and updates the diff of any parent whose DiffChild is this block
-func (p *provisionalNode) updateParents(virtual *VirtualBlock, newBlockUTXO UTXOSet) error {
+func (p *provisionalNode) updateParents(virtual *virtualBlock, newBlockUTXO UTXOSet) error {
 	virtualDiffFromNewBlock, err := virtual.utxoSet.diffFrom(newBlockUTXO)
 	if err != nil {
 		return err
@@ -832,7 +833,7 @@ func (p *provisionalNode) updateParents(virtual *VirtualBlock, newBlockUTXO UTXO
 }
 
 // updateTipsUTXO builds and applies new diff UTXOs for all the DAG's tips (in provisionalNode format)
-func updateTipsUTXO(tipProvisionals []*provisionalNode, virtual *VirtualBlock, virtualUTXO UTXOSet) error {
+func updateTipsUTXO(tipProvisionals []*provisionalNode, virtual *virtualBlock, virtualUTXO UTXOSet) error {
 	for _, tipProvisional := range tipProvisionals {
 		tipUTXO, err := tipProvisional.restoreUTXO(virtual)
 		if err != nil {
@@ -853,17 +854,21 @@ func (p *provisionalNode) commit() {
 		p.original.selectedParent = p.selectedParent.original
 	}
 
-	parents := newSet()
-	for _, parent := range p.parents {
-		parents.add(parent.original)
+	if p.parents != nil {
+		parents := newSet()
+		for _, parent := range p.parents {
+			parents.add(parent.original)
+		}
+		p.original.parents = parents
 	}
-	p.original.parents = parents
 
-	children := newSet()
-	for _, child := range p.children {
-		children.add(child.original)
+	if p.children != nil {
+		children := newSet()
+		for _, child := range p.children {
+			children.add(child.original)
+		}
+		p.original.children = children
 	}
-	p.original.children = children
 
 	if p.diff != nil {
 		p.original.diff = p.diff
@@ -884,7 +889,7 @@ func (dag *BlockDAG) isCurrent() bool {
 	// Not current if the latest main (best) chain height is before the
 	// latest known good checkpoint (when checkpoints are enabled).
 	checkpoint := dag.LatestCheckpoint()
-	if checkpoint != nil && dag.virtual.SelectedTip().height < checkpoint.Height {
+	if checkpoint != nil && dag.SelectedTip().height < checkpoint.Height {
 		return false
 	}
 
@@ -894,7 +899,7 @@ func (dag *BlockDAG) isCurrent() bool {
 	// The chain appears to be current if none of the checks reported
 	// otherwise.
 	minus24Hours := dag.timeSource.AdjustedTime().Add(-24 * time.Hour).Unix()
-	return dag.virtual.SelectedTip().timestamp >= minus24Hours
+	return dag.SelectedTip().timestamp >= minus24Hours
 }
 
 // IsCurrent returns whether or not the chain believes it is current.  Several
@@ -911,23 +916,55 @@ func (dag *BlockDAG) IsCurrent() bool {
 	return dag.isCurrent()
 }
 
-// UTXOSet returns the DAG's UTXO set
-func (dag *BlockDAG) UTXOSet() *fullUTXOSet {
-	return dag.VirtualBlock().utxoSet
-}
-
-// VirtualBlock returns the DAG's virtual block in the current point in time.
-// The returned instance must be treated as immutable since it is shared by all
-// callers.
+// SelectedTip returns the current selected tip for the DAG.
+// It will return nil if there is no tip.
 //
 // This function is safe for concurrent access.
-func (dag *BlockDAG) VirtualBlock() *VirtualBlock {
-	return dag.virtual
+func (dag *BlockDAG) SelectedTip() *blockNode {
+	return dag.virtual.selectedParent
+}
+
+// UTXOSet returns the DAG's UTXO set
+func (dag *BlockDAG) UTXOSet() *fullUTXOSet {
+	return dag.virtual.utxoSet
+}
+
+// CalcPastMedianTime returns the past median time of the DAG.
+func (dag *BlockDAG) CalcPastMedianTime() time.Time {
+	return dag.virtual.tips().bluest().CalcPastMedianTime()
+}
+
+// GetUTXOEntry returns the requested unspent transaction output. The returned
+// instance must be treated as immutable since it is shared by all callers.
+//
+// This function is safe for concurrent access. However, the returned entry (if
+// any) is NOT.
+func (dag *BlockDAG) GetUTXOEntry(outPoint wire.OutPoint) (*UTXOEntry, bool) {
+	return dag.virtual.utxoSet.get(outPoint)
 }
 
 // Height returns the height of the highest tip in the DAG
 func (dag *BlockDAG) Height() int32 {
 	return dag.virtual.tips().maxHeight()
+}
+
+// BlockCount returns the number of blocks in the DAG
+func (dag *BlockDAG) BlockCount() int64 {
+	count := int64(-1)
+	visited := newSet()
+	queue := []*blockNode{&dag.virtual.blockNode}
+	for len(queue) > 0 {
+		node := queue[0]
+		queue = queue[1:]
+		if !visited.contains(node) {
+			visited.add(node)
+			count++
+			for _, parent := range node.parents {
+				queue = append(queue, parent)
+			}
+		}
+	}
+	return count
 }
 
 // TipHashes returns the hashes of the DAG's tips
@@ -939,6 +976,18 @@ func (dag *BlockDAG) TipHashes() []daghash.Hash {
 // This function is a placeholder for places that aren't DAG-compatible, and it's needed to be removed in the future
 func (dag *BlockDAG) HighestTipHash() daghash.Hash {
 	return dag.virtual.tips().highest().hash
+}
+
+// CurrentBits returns the bits of the tip with the lowest bits, which also means it has highest difficulty.
+func (dag *BlockDAG) CurrentBits() uint32 {
+	tips := dag.virtual.tips()
+	minBits := uint32(math.MaxUint32)
+	for _, tip := range tips {
+		if minBits > tip.Header().Bits {
+			minBits = tip.Header().Bits
+		}
+	}
+	return minBits
 }
 
 // HeaderByHash returns the block header identified by the given hash or an
@@ -1193,7 +1242,7 @@ func (dag *BlockDAG) locateInventory(locator BlockLocator, hashStop *daghash.Has
 	}
 
 	// Calculate how many entries are needed.
-	total := uint32((dag.virtual.SelectedTip().height - startNode.height) + 1)
+	total := uint32((dag.SelectedTip().height - startNode.height) + 1)
 	if stopNode != nil && stopNode.height >= startNode.height {
 		total = uint32((stopNode.height - startNode.height) + 1)
 	}
@@ -1316,12 +1365,12 @@ type IndexManager interface {
 	Init(*BlockDAG, <-chan struct{}) error
 
 	// ConnectBlock is invoked when a new block has been connected to the
-	// main chain.
-	ConnectBlock(database.Tx, *util.Block, *VirtualBlock) error
+	// DAG.
+	ConnectBlock(database.Tx, *util.Block, *BlockDAG) error
 
 	// DisconnectBlock is invoked when a block has been disconnected from
-	// the main chain.
-	DisconnectBlock(database.Tx, *util.Block, *VirtualBlock) error
+	// the DAG.
+	DisconnectBlock(database.Tx, *util.Block, *BlockDAG) error
 }
 
 // Config is a descriptor which specifies the blockchain instance configuration.
@@ -1459,7 +1508,7 @@ func New(config *Config) (*BlockDAG, error) {
 		return nil, err
 	}
 
-	selectedTip := dag.virtual.SelectedTip()
+	selectedTip := dag.SelectedTip()
 	log.Infof("DAG state (height %d, hash %v, work %v)",
 		selectedTip.height, selectedTip.hash, selectedTip.workSum)
 

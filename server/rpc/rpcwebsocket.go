@@ -655,7 +655,7 @@ func (m *wsNotificationManager) subscribedClients(tx *util.Tx,
 
 	for i, output := range msgTx.TxOut {
 		_, addrs, _, err := txscript.ExtractPkScriptAddrs(
-			output.PkScript, m.server.cfg.ChainParams)
+			output.PkScript, m.server.cfg.DAGParams)
 		if err != nil {
 			// Clients are not able to subscribe to
 			// nonstandard or non-address outputs.
@@ -845,7 +845,7 @@ func (m *wsNotificationManager) notifyForNewTx(clients map[chan struct{}]*wsClie
 				continue
 			}
 
-			net := m.server.cfg.ChainParams
+			net := m.server.cfg.DAGParams
 			rawTx, err := createTxRawResult(net, mtx, txHashStr, nil,
 				"", 0, 0)
 			if err != nil {
@@ -998,7 +998,7 @@ func (m *wsNotificationManager) notifyForTxOuts(ops map[wire.OutPoint]map[chan s
 	wscNotified := make(map[chan struct{}]struct{})
 	for i, txOut := range tx.MsgTx().TxOut {
 		_, txAddrs, _, err := txscript.ExtractPkScriptAddrs(
-			txOut.PkScript, m.server.cfg.ChainParams)
+			txOut.PkScript, m.server.cfg.DAGParams)
 		if err != nil {
 			continue
 		}
@@ -1801,7 +1801,7 @@ func handleLoadTxFilter(wsc *wsClient, icmd interface{}) (interface{}, error) {
 		}
 	}
 
-	params := wsc.server.cfg.ChainParams
+	params := wsc.server.cfg.DAGParams
 
 	wsc.Lock()
 	if cmd.Reload || wsc.filterData == nil {
@@ -1891,7 +1891,7 @@ func handleNotifyReceived(wsc *wsClient, icmd interface{}) (interface{}, error) 
 
 	// Decode addresses to validate input, but the strings slice is used
 	// directly if these are all ok.
-	err := checkAddressValidity(cmd.Addresses, wsc.server.cfg.ChainParams)
+	err := checkAddressValidity(cmd.Addresses, wsc.server.cfg.DAGParams)
 	if err != nil {
 		return nil, err
 	}
@@ -1930,7 +1930,7 @@ func handleStopNotifyReceived(wsc *wsClient, icmd interface{}) (interface{}, err
 
 	// Decode addresses to validate input, but the strings slice is used
 	// directly if these are all ok.
-	err := checkAddressValidity(cmd.Addresses, wsc.server.cfg.ChainParams)
+	err := checkAddressValidity(cmd.Addresses, wsc.server.cfg.DAGParams)
 	if err != nil {
 		return nil, err
 	}
@@ -2074,7 +2074,7 @@ func handleRescanBlocks(wsc *wsClient, icmd interface{}) (interface{}, error) {
 	// Iterate over each block in the request and rescan.  When a block
 	// contains relevant transactions, add it to the response.
 	bc := wsc.server.cfg.DAG
-	params := wsc.server.cfg.ChainParams
+	params := wsc.server.cfg.DAGParams
 	var lastBlockHash *daghash.Hash
 	for i := range blockHashes {
 		block, err := bc.BlockByHash(blockHashes[i])

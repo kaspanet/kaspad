@@ -22,6 +22,53 @@ import (
 	"github.com/daglabs/btcd/wire"
 )
 
+func TestBlockCount(t *testing.T) {
+	// Load up blocks such that there is a fork in the DAG.
+	// (genesis block) -> 1 -> 2 -> 3 -> 4
+	//                          \-> 3b
+	testFiles := []string{
+		"blk_0_to_4.dat",
+		"blk_3B.dat",
+	}
+
+	var blocks []*util.Block
+	for _, file := range testFiles {
+		blockTmp, err := loadBlocks(file)
+		if err != nil {
+			t.Fatalf("Error loading file: %v\n", err)
+		}
+		blocks = append(blocks, blockTmp...)
+	}
+
+	// Create a new database and chain instance to run tests against.
+	dag, teardownFunc, err := DAGSetup("haveblock",
+		&dagconfig.SimNetParams)
+	if err != nil {
+		t.Fatalf("Failed to setup chain instance: %v", err)
+	}
+	defer teardownFunc()
+
+	// Since we're not dealing with the real block chain, set the coinbase
+	// maturity to 1.
+	dag.TstSetCoinbaseMaturity(1)
+
+	for i := 1; i < len(blocks); i++ {
+		isOrphan, err := dag.ProcessBlock(blocks[i], BFNone)
+		if err != nil {
+			t.Fatalf("ProcessBlock fail on block %v: %v\n", i, err)
+		}
+		if isOrphan {
+			t.Fatalf("ProcessBlock incorrectly returned block %v "+
+				"is an orphan\n", i)
+		}
+	}
+
+	expectedBlockCount := int64(6)
+	if dag.BlockCount() != expectedBlockCount {
+		t.Errorf("TestBlockCount: BlockCount expected to return %v but got %v", expectedBlockCount, dag.BlockCount())
+	}
+}
+
 // TestHaveBlock tests the HaveBlock API to ensure proper functionality.
 func TestHaveBlock(t *testing.T) {
 	// Load up blocks such that there is a fork in the DAG.
@@ -36,18 +83,16 @@ func TestHaveBlock(t *testing.T) {
 	for _, file := range testFiles {
 		blockTmp, err := loadBlocks(file)
 		if err != nil {
-			t.Errorf("Error loading file: %v\n", err)
-			return
+			t.Fatalf("Error loading file: %v\n", err)
 		}
 		blocks = append(blocks, blockTmp...)
 	}
 
 	// Create a new database and chain instance to run tests against.
 	dag, teardownFunc, err := DAGSetup("haveblock",
-		&dagconfig.MainNetParams)
+		&dagconfig.SimNetParams)
 	if err != nil {
-		t.Errorf("Failed to setup chain instance: %v", err)
-		return
+		t.Fatalf("Failed to setup chain instance: %v", err)
 	}
 	defer teardownFunc()
 
@@ -58,16 +103,15 @@ func TestHaveBlock(t *testing.T) {
 	for i := 1; i < len(blocks); i++ {
 		isOrphan, err := dag.ProcessBlock(blocks[i], BFNone)
 		if err != nil {
-			t.Errorf("ProcessBlock fail on block %v: %v\n", i, err)
-			return
+			t.Fatalf("ProcessBlock fail on block %v: %v\n", i, err)
 		}
 		if isOrphan {
-			t.Errorf("ProcessBlock incorrectly returned block %v "+
+			t.Fatalf("ProcessBlock incorrectly returned block %v "+
 				"is an orphan\n", i)
-			return
 		}
 	}
 
+	// Test a block with related parents
 	testFiles = []string{
 		"blk_3C.dat",
 	}
@@ -75,35 +119,60 @@ func TestHaveBlock(t *testing.T) {
 	for _, file := range testFiles {
 		blockTmp, err := loadBlocks(file)
 		if err != nil {
-			t.Errorf("Error loading file: %v\n", err)
-			return
+			t.Fatalf("Error loading file: %v\n", err)
 		}
 		blocks = append(blocks, blockTmp...)
 	}
 	isOrphan, err := dag.ProcessBlock(blocks[6], BFNone)
 
-	// Block 3c should fail to connect since its parents are related. (It points to 1 and 2, and 1 is the parent of 2)
+	// Block 3C should fail to connect since its parents are related. (It points to 1 and 2, and 1 is the parent of 2)
 	if err == nil {
-		t.Errorf("ProcessBlock for block 3c has no error when expected to have an error\n")
-		return
+		t.Fatalf("ProcessBlock for block 3C has no error when expected to have an error\n")
 	}
 	if isOrphan {
-		t.Errorf("ProcessBlock incorrectly returned block 3c " +
+		t.Fatalf("ProcessBlock incorrectly returned block 3C " +
 			"is an orphan\n")
-		return
+	}
+
+	// Test a block with the same input twice
+	testFiles = []string{
+		"blk_3D.dat",
+	}
+
+	for _, file := range testFiles {
+		blockTmp, err := loadBlocks(file)
+		if err != nil {
+			t.Fatalf("Error loading file: %v\n", err)
+		}
+		blocks = append(blocks, blockTmp...)
+	}
+	isOrphan, err = dag.ProcessBlock(blocks[7], BFNone)
+
+	// Block 3D should fail to connect since it has a transaction with the same input twice
+	if err == nil {
+		t.Fatalf("ProcessBlock for block 3D has no error when expected to have an error\n")
+	}
+	rErr, ok := err.(RuleError)
+	if !ok {
+		t.Fatalf("ProcessBlock for block 3D expected a RuleError, but got something else\n")
+	}
+	if !ok || rErr.ErrorCode != ErrDuplicateTxInputs {
+		t.Fatalf("ProcessBlock for block 3D expected error code %s but got %s\n", ErrDuplicateTxInputs, rErr.ErrorCode)
+	}
+	if isOrphan {
+		t.Fatalf("ProcessBlock incorrectly returned block 3D " +
+			"is an orphan\n")
 	}
 
 	// Insert an orphan block.
 	isOrphan, err = dag.ProcessBlock(util.NewBlock(&Block100000),
 		BFNone)
 	if err != nil {
-		t.Errorf("Unable to process block: %v", err)
-		return
+		t.Fatalf("Unable to process block: %v", err)
 	}
 	if !isOrphan {
-		t.Errorf("ProcessBlock indicated block is an not orphan when " +
+		t.Fatalf("ProcessBlock indicated block is an not orphan when " +
 			"it should be\n")
-		return
 	}
 
 	tests := []struct {
@@ -111,13 +180,13 @@ func TestHaveBlock(t *testing.T) {
 		want bool
 	}{
 		// Genesis block should be present.
-		{hash: dagconfig.MainNetParams.GenesisHash.String(), want: true},
+		{hash: dagconfig.SimNetParams.GenesisHash.String(), want: true},
 
 		// Block 3b should be present (as a second child of Block 2).
-		{hash: "00000093c8f2ab3444502da0754fc8149d738701aef9b2e0f32f32c078039295", want: true},
+		{hash: "2b31fe171eeadcaec5978add980ebb8108fd5d9082e870ff71744842e0dd01bb", want: true},
 
 		// Block 100000 should be present (as an orphan).
-		{hash: "000000a805b083e0ef1f516b1153828724c235d6e6f0fabb47b869f6d054ac3f", want: true},
+		{hash: "64f3da4fe61edb33ad6dd5e857ebcfe296182a0c4aaef01e30b4032b94ec1620", want: true},
 
 		// Random hashes should not be available.
 		{hash: "123", want: false},
@@ -126,19 +195,16 @@ func TestHaveBlock(t *testing.T) {
 	for i, test := range tests {
 		hash, err := daghash.NewHashFromStr(test.hash)
 		if err != nil {
-			t.Errorf("NewHashFromStr: %v", err)
-			continue
+			t.Fatalf("NewHashFromStr: %v", err)
 		}
 
 		result, err := dag.HaveBlock(hash)
 		if err != nil {
-			t.Errorf("HaveBlock #%d unexpected error: %v", i, err)
-			return
+			t.Fatalf("HaveBlock #%d unexpected error: %v", i, err)
 		}
 		if result != test.want {
-			t.Errorf("HaveBlock #%d got %v want %v", i, result,
+			t.Fatalf("HaveBlock #%d got %v want %v", i, result,
 				test.want)
-			continue
 		}
 	}
 }
@@ -154,7 +220,7 @@ func TestCalcSequenceLock(t *testing.T) {
 
 	// Generate enough synthetic blocks for the rest of the test
 	dag := newTestDAG(netParams)
-	node := dag.virtual.SelectedTip()
+	node := dag.SelectedTip()
 	blockTime := node.Header().Timestamp
 	numBlocksToGenerate := uint32(5)
 	for i := uint32(0); i < numBlocksToGenerate; i++ {
@@ -449,6 +515,53 @@ func TestCalcSequenceLock(t *testing.T) {
 	}
 }
 
+func TestCalcPastMedianTime(t *testing.T) {
+	netParams := &dagconfig.SimNetParams
+
+	blockVersion := int32(0x10000000)
+
+	dag := newTestDAG(netParams)
+	numBlocks := uint32(60)
+	nodes := make([]*blockNode, numBlocks)
+	nodes[0] = dag.genesis
+	blockTime := dag.genesis.Header().Timestamp
+	for i := uint32(1); i < numBlocks; i++ {
+		blockTime = blockTime.Add(time.Second)
+		nodes[i] = newTestNode(setFromSlice(nodes[i-1]), blockVersion, 0, blockTime, netParams.K)
+		dag.index.AddNode(nodes[i])
+	}
+
+	tests := []struct {
+		blockNumber                 uint32
+		expectedSecondsSinceGenesis int64
+	}{
+		{
+			blockNumber:                 50,
+			expectedSecondsSinceGenesis: 25,
+		},
+		{
+			blockNumber:                 59,
+			expectedSecondsSinceGenesis: 34,
+		},
+		{
+			blockNumber:                 40,
+			expectedSecondsSinceGenesis: 15,
+		},
+		{
+			blockNumber:                 5,
+			expectedSecondsSinceGenesis: 0,
+		},
+	}
+
+	for _, test := range tests {
+		secondsSinceGenesis := nodes[test.blockNumber].CalcPastMedianTime().Unix() - dag.genesis.Header().Timestamp.Unix()
+		if secondsSinceGenesis != test.expectedSecondsSinceGenesis {
+			t.Errorf("TestCalcPastMedianTime: expected past median time of block %v to be %v seconds from genesis but got %v", test.blockNumber, test.expectedSecondsSinceGenesis, secondsSinceGenesis)
+		}
+	}
+
+}
+
 // nodeHashes is a convenience function that returns the hashes for all of the
 // passed indexes of the provided nodes.  It is used to construct expected hash
 // slices in the tests.
@@ -473,7 +586,7 @@ func chainedNodes(parents blockSet, numNodes int) []*blockNode {
 	for i := 0; i < numNodes; i++ {
 		// This is invalid, but all that is needed is enough to get the
 		// synthetic tests to work.
-		header := wire.BlockHeader{Nonce: testNoncePrng.Uint32()}
+		header := wire.BlockHeader{Nonce: testNoncePrng.Uint64()}
 		header.PrevBlocks = tips.hashes()
 		nodes[i] = newBlockNode(&header, tips, dagconfig.SimNetParams.K)
 		tips = setFromSlice(nodes[i])
@@ -495,7 +608,7 @@ func TestHeightToHashRange(t *testing.T) {
 	// 	genesis -> 1 -> 2 -> ... -> 15 -> 16  -> 17  -> 18
 	// 	                              \-> 16a -> 17a -> 18a (unvalidated)
 	tip := testTip
-	blockDAG := newTestDAG(&dagconfig.MainNetParams)
+	blockDAG := newTestDAG(&dagconfig.SimNetParams)
 	branch0Nodes := chainedNodes(setFromSlice(blockDAG.genesis), 18)
 	branch1Nodes := chainedNodes(setFromSlice(branch0Nodes[14]), 3)
 	for _, node := range branch0Nodes {
@@ -587,7 +700,7 @@ func TestIntervalBlockHashes(t *testing.T) {
 	// 	genesis -> 1 -> 2 -> ... -> 15 -> 16  -> 17  -> 18
 	// 	                              \-> 16a -> 17a -> 18a (unvalidated)
 	tip := testTip
-	chain := newTestDAG(&dagconfig.MainNetParams)
+	chain := newTestDAG(&dagconfig.SimNetParams)
 	branch0Nodes := chainedNodes(setFromSlice(chain.genesis), 18)
 	branch1Nodes := chainedNodes(setFromSlice(branch0Nodes[14]), 3)
 	for _, node := range branch0Nodes {
@@ -698,7 +811,7 @@ func testErrorThroughPatching(t *testing.T, expectedErrorMessage string, targetF
 	}
 
 	// Create a new database and dag instance to run tests against.
-	dag, teardownFunc, err := DAGSetup("testErrorThroughPatching", &dagconfig.MainNetParams)
+	dag, teardownFunc, err := DAGSetup("testErrorThroughPatching", &dagconfig.SimNetParams)
 	if err != nil {
 		t.Fatalf("Failed to setup dag instance: %v", err)
 	}
@@ -712,7 +825,12 @@ func testErrorThroughPatching(t *testing.T, expectedErrorMessage string, targetF
 
 	err = nil
 	for i := 1; i < len(blocks); i++ {
-		_, err = dag.ProcessBlock(blocks[i], BFNone)
+		var isOrphan bool
+		isOrphan, err = dag.ProcessBlock(blocks[i], BFNone)
+		if isOrphan {
+			t.Fatalf("ProcessBlock incorrectly returned block %v "+
+				"is an orphan\n", i)
+		}
 		if err != nil {
 			break
 		}

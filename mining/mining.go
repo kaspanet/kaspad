@@ -402,7 +402,6 @@ func NewBlkTmplGenerator(policy *Policy, params *dagconfig.Params,
 //   -----------------------------------  --
 func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTemplate, error) {
 	// Extend the most recently known best block.
-	virtualBlock := g.dag.VirtualBlock()
 	nextBlockHeight := g.dag.Height() + 1
 
 	// Create a standard coinbase transaction paying to the provided
@@ -699,7 +698,7 @@ mempoolLoop:
 	// Calculate the required difficulty for the block.  The timestamp
 	// is potentially adjusted to ensure it comes after the median time of
 	// the last several blocks per the chain consensus rules.
-	ts := medianAdjustedTime(virtualBlock.SelectedTip().CalcPastMedianTime(), g.timeSource)
+	ts := medianAdjustedTime(g.dag.SelectedTip().CalcPastMedianTime(), g.timeSource)
 	reqDifficulty, err := g.dag.CalcNextRequiredDifficulty(ts)
 	if err != nil {
 		return nil, err
@@ -762,7 +761,7 @@ func (g *BlkTmplGenerator) UpdateBlockTime(msgBlock *wire.MsgBlock) error {
 	// The new timestamp is potentially adjusted to ensure it comes after
 	// the median time of the last several blocks per the chain consensus
 	// rules.
-	dagMedianTime := g.dag.VirtualBlock().CalcPastMedianTime()
+	dagMedianTime := g.dag.CalcPastMedianTime()
 	newTime := medianAdjustedTime(dagMedianTime, g.timeSource)
 	msgBlock.Header.Timestamp = newTime
 
@@ -804,15 +803,6 @@ func (g *BlkTmplGenerator) UpdateExtraNonce(msgBlock *wire.MsgBlock, blockHeight
 	merkles := blockdag.BuildMerkleTreeStore(block.Transactions())
 	msgBlock.Header.MerkleRoot = *merkles[len(merkles)-1]
 	return nil
-}
-
-// VirtualBlock returns the DAG's virtual block in the current point in time.
-// The returned instance must be treated as immutable since it is shared by all
-// callers.
-//
-// This function is safe for concurrent access.
-func (g *BlkTmplGenerator) VirtualBlock() *blockdag.VirtualBlock {
-	return g.dag.VirtualBlock()
 }
 
 // DAGHeight returns the DAG's height

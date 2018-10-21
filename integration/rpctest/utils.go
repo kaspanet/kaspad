@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/daglabs/btcd/dagconfig/daghash"
-	"github.com/daglabs/btcd/rpcclient"
 )
 
 // JoinType is an enum representing a particular type of "node join". A node
@@ -115,7 +114,7 @@ func ConnectNode(from *Harness, to *Harness) error {
 	numPeers := len(peerInfo)
 
 	targetAddr := to.node.config.listen
-	if err := from.Node.AddNode(targetAddr, rpcclient.ANAdd); err != nil {
+	if err := from.Node.AddManualNode(targetAddr); err != nil {
 		return err
 	}
 
