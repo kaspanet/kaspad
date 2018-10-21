@@ -2443,7 +2443,7 @@ func handleGetRawTransaction(s *Server, cmd interface{}, closeChan <-chan struct
 		}
 
 		// Look up the location of the transaction.
-		blockRegion, err := s.cfg.TxIndex.TxBlockRegion(txHash)
+		blockRegion, err := s.cfg.TxIndex.TxFirstBlockRegion(txHash)
 		if err != nil {
 			context := "Failed to retrieve transaction location"
 			return nil, internalRPCError(err.Error(), context)
@@ -2724,7 +2724,7 @@ func fetchInputTxos(s *Server, tx *wire.MsgTx) (map[wire.OutPoint]wire.TxOut, er
 		}
 
 		// Look up the location of the transaction.
-		blockRegion, err := s.cfg.TxIndex.TxBlockRegion(&origin.Hash)
+		blockRegion, err := s.cfg.TxIndex.TxFirstBlockRegion(&origin.Hash)
 		if err != nil {
 			context := "Failed to retrieve transaction location"
 			return nil, internalRPCError(err.Error(), context)
