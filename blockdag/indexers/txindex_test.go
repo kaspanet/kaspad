@@ -46,9 +46,7 @@ func TestTxIndexConnectBlock(t *testing.T) {
 			t.Fatalf("TestTxIndexConnectBlock: Couldn't create txIndex: %v", err)
 		}
 		msgBlock1 := wire.NewMsgBlock(wire.NewBlockHeader(1,
-			[]daghash.Hash{
-				daghash.Hash{1},
-			}, &daghash.Hash{}, 1, 1))
+			[]daghash.Hash{{1}}, &daghash.Hash{}, 1, 1))
 
 		dummyPrevOutHash, err := daghash.NewHashFromStr("01")
 		if err != nil {
@@ -66,14 +64,14 @@ func TestTxIndexConnectBlock(t *testing.T) {
 		tx1.AddTxOut(dummyTxOut)
 		msgBlock1.AddTransaction(tx1)
 		block1 := util.NewBlock(msgBlock1)
-		err = txIndex.ConnectBlock(dbTx, block1, &blockdag.BlockDAG{}, []*blockdag.AcceptedTxData{
-			&blockdag.AcceptedTxData{
+		err = txIndex.ConnectBlock(dbTx, block1, &blockdag.BlockDAG{}, []*blockdag.BlueBlockTransaction{
+			{
 				Tx:      util.NewTx(tx1),
 				InBlock: block1.Hash(),
 			},
 		})
 		if err != nil {
-			return err
+			t.Fatalf("TestTxIndexConnectBlock: Couldn't connect block 1 to txindex")
 		}
 
 		tx1Hash := tx1.TxHash()
@@ -117,27 +115,25 @@ func TestTxIndexConnectBlock(t *testing.T) {
 		}
 
 		msgBlock2 := wire.NewMsgBlock(wire.NewBlockHeader(1,
-			[]daghash.Hash{
-				daghash.Hash{2},
-			}, &daghash.Hash{}, 1, 1))
+			[]daghash.Hash{{2}}, &daghash.Hash{}, 1, 1))
 		dummyPrevOut2 := wire.OutPoint{Hash: *dummyPrevOutHash, Index: 1}
 		tx2 := wire.NewMsgTx(wire.TxVersion)
 		tx2.AddTxIn(wire.NewTxIn(&dummyPrevOut2, dummySigScript))
 		tx2.AddTxOut(dummyTxOut)
 		msgBlock2.AddTransaction(tx2)
 		block2 := util.NewBlock(msgBlock2)
-		err = txIndex.ConnectBlock(dbTx, block2, &blockdag.BlockDAG{}, []*blockdag.AcceptedTxData{
-			&blockdag.AcceptedTxData{
+		err = txIndex.ConnectBlock(dbTx, block2, &blockdag.BlockDAG{}, []*blockdag.BlueBlockTransaction{
+			{
 				Tx:      util.NewTx(tx1),
 				InBlock: block1.Hash(),
 			},
-			&blockdag.AcceptedTxData{
+			{
 				Tx:      util.NewTx(tx2),
 				InBlock: block2.Hash(),
 			},
 		})
 		if err != nil {
-			t.Fatalf("TestTxIndexConnectBlock: Couldn't connect block 1 to txindex")
+			t.Fatalf("TestTxIndexConnectBlock: Couldn't connect block 2 to txindex")
 		}
 
 		tx2Hash := tx2.TxHash()

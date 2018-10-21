@@ -570,7 +570,7 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block) error {
 // 5. Updates each of the tips' utxoDiff.
 //
 // This function MUST be called with the chain state lock held (for writes).
-func (dag *BlockDAG) applyUTXOChanges(node *blockNode, block *util.Block) (*utxoDiff, []*AcceptedTxData, error) {
+func (dag *BlockDAG) applyUTXOChanges(node *blockNode, block *util.Block) (*utxoDiff, []*BlueBlockTransaction, error) {
 	// Prepare provisionalNodes for all the relevant nodes to avoid modifying the original nodes.
 	// We avoid modifying the original nodes in this function because it could potentially
 	// fail if the block is not valid, thus bringing all the affected nodes (and the virtual)
@@ -704,16 +704,16 @@ func (pns provisionalNodeSet) newProvisionalNode(node *blockNode, withRelatives 
 }
 
 // verifyAndBuildUTXO verifies all transactions in the given block (in provisionalNode format) and builds its UTXO
-func (p *provisionalNode) verifyAndBuildUTXO(virtual *virtualBlock, db database.DB) (UTXOSet, []*AcceptedTxData, error) {
-	pastUTXO, accpetedTxsData, err := p.pastUTXO(virtual, db)
+func (p *provisionalNode) verifyAndBuildUTXO(virtual *virtualBlock, db database.DB) (UTXOSet, []*BlueBlockTransaction, error) {
+	pastUTXO, accpetedTxData, err := p.pastUTXO(virtual, db)
 	if err != nil {
 		return nil, nil, err
 	}
 
 	diff := NewUTXODiff()
-	acceptedTxsDataWithCurrent := make([]*AcceptedTxData, 0, len(accpetedTxsData)+len(p.transactions))
-	if len(accpetedTxsData) != 0 {
-		acceptedTxsDataWithCurrent = append(acceptedTxsDataWithCurrent, accpetedTxsData...)
+	acceptedTxDataWithCurrentBlock := make([]*BlueBlockTransaction, 0, len(accpetedTxData)+len(p.transactions))
+	if len(accpetedTxData) != 0 {
+		acceptedTxDataWithCurrentBlock = append(acceptedTxDataWithCurrentBlock, accpetedTxData...)
 	}
 
 	for _, tx := range p.transactions {
@@ -725,7 +725,7 @@ func (p *provisionalNode) verifyAndBuildUTXO(virtual *virtualBlock, db database.
 		if err != nil {
 			return nil, nil, err
 		}
-		acceptedTxsDataWithCurrent = append(acceptedTxsDataWithCurrent, &AcceptedTxData{
+		acceptedTxDataWithCurrentBlock = append(acceptedTxDataWithCurrentBlock, &BlueBlockTransaction{
 			Tx:      tx,
 			InBlock: &p.original.hash,
 		})
@@ -735,29 +735,24 @@ func (p *provisionalNode) verifyAndBuildUTXO(virtual *virtualBlock, db database.
 	if err != nil {
 		return nil, nil, err
 	}
-	return utxo, acceptedTxsDataWithCurrent, nil
+	return utxo, acceptedTxDataWithCurrentBlock, nil
 }
 
-type blueBlockTransaction struct {
-	tx        *util.Tx
-	blockHash *daghash.Hash
-}
-
-// AcceptedTxData is a type that holds data about in which blue block is a transaction that got accepted by a new block
-type AcceptedTxData struct {
+// BlueBlockTransaction is a type that holds data about in which blue block is a transaction that got accepted by a new block
+type BlueBlockTransaction struct {
 	Tx      *util.Tx
 	InBlock *daghash.Hash
 }
 
 // pastUTXO returns the UTXO of a given block's (in provisionalNode format) past
-func (p *provisionalNode) pastUTXO(virtual *virtualBlock, db database.DB) (UTXOSet, []*AcceptedTxData, error) {
+func (p *provisionalNode) pastUTXO(virtual *virtualBlock, db database.DB) (UTXOSet, []*BlueBlockTransaction, error) {
 	pastUTXO, err := p.selectedParent.restoreUTXO(virtual)
 	if err != nil {
 		return nil, nil, err
 	}
 
 	// Fetch from the database all the transactions for this block's blue set (besides the selected parent)
-	var blueBlockTransactions []*blueBlockTransaction
+	var blueBlockTransactions []*BlueBlockTransaction
 	transactionCount := 0
 	err = db.View(func(tx database.Tx) error {
 		// Precalculate the amount of transactions in this block's blue set, besides the selected parent.
@@ -779,10 +774,10 @@ func (p *provisionalNode) pastUTXO(virtual *virtualBlock, db database.DB) (UTXOS
 			blueBlocks = append(blueBlocks, blueBlock)
 		}
 
-		blueBlockTransactions = make([]*blueBlockTransaction, 0, transactionCount)
+		blueBlockTransactions = make([]*BlueBlockTransaction, 0, transactionCount)
 		for _, blueBlock := range blueBlocks {
 			for _, tx := range blueBlock.Transactions() {
-				blueBlockTransactions = append(blueBlockTransactions, &blueBlockTransaction{tx: tx, blockHash: blueBlock.Hash()})
+				blueBlockTransactions = append(blueBlockTransactions, &BlueBlockTransaction{Tx: tx, InBlock: blueBlock.Hash()})
 			}
 		}
 
@@ -792,14 +787,14 @@ func (p *provisionalNode) pastUTXO(virtual *virtualBlock, db database.DB) (UTXOS
 		return nil, nil, err
 	}
 
-	acceptedTxsData := make([]*AcceptedTxData, 0, transactionCount)
+	acceptedTxsData := make([]*BlueBlockTransaction, 0, transactionCount)
 
 	// Add all transactions to the pastUTXO
 	// Purposefully ignore failures - these are just unaccepted transactions
 	for _, tx := range blueBlockTransactions {
-		accepted := pastUTXO.AddTx(tx.tx.MsgTx(), p.original.height)
+		accepted := pastUTXO.AddTx(tx.Tx.MsgTx(), p.original.height)
 		if accepted {
-			acceptedTxsData = append(acceptedTxsData, &AcceptedTxData{InBlock: tx.blockHash})
+			acceptedTxsData = append(acceptedTxsData, tx)
 		}
 	}
 
@@ -1392,7 +1387,7 @@ type IndexManager interface {
 
 	// ConnectBlock is invoked when a new block has been connected to the
 	// DAG.
-	ConnectBlock(database.Tx, *util.Block, *BlockDAG, []*AcceptedTxData) error
+	ConnectBlock(database.Tx, *util.Block, *BlockDAG, []*BlueBlockTransaction) error
 }
 
 // Config is a descriptor which specifies the blockchain instance configuration.

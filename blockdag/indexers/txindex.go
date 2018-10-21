@@ -51,9 +51,10 @@ var (
 // only 4 bytes versus 32 bytes hashes and thus saves a ton of space in the
 // index.
 //
-// There are four buckets used in total.  The first bucket maps the hash of
-// each transaction to its location in each block it's include. The second bucket
-// contains all of the blocks that from their viewpoint the transaction has been accepted,
+// There are four buckets used in total. The first bucket maps the hash of
+// each transaction to its location in each block it's included in. The second bucket
+// contains all of the blocks that from their viewpoint the transaction has been
+// accepted (i.e. the transaction is found in their blue set without double spends),
 // and their blue block (or themselves) that included the transaction. The third
 // bucket maps the hash of each block to the unique ID and the fourth maps
 // that ID back to the block hash.
@@ -65,6 +66,27 @@ var (
 // realistically never happen per the probability and even if it did, the old
 // one must be fully spent and so the most likely transaction a caller would
 // want for a given hash is the most recent one anyways.
+//
+// The including blocks index contains a sub bucket for each transaction hash (32 byte each), that its serialized format is:
+//
+//   <block id> = <start offset><tx length>
+//
+//   Field           Type              Size
+//   block id        uint32          4 bytes
+//   start offset    uint32          4 bytes
+//   tx length       uint32          4 bytes
+//   -----
+//   Total: 12 bytes
+//
+// The accepting blocks index contains a sub bucket for each transaction hash (32 byte each), that its serialized format is:
+//
+//   <accepting block id> = <including block id>
+//
+//   Field           Type              Size
+//   accepting block id        uint32          4 bytes
+//   including block id        uint32          4 bytes
+//   -----
+//   Total: 8 bytes
 //
 // The serialized format for keys and values in the block hash to ID bucket is:
 //   <hash> = <ID>
@@ -84,26 +106,6 @@ var (
 //   -----
 //   Total: 36 bytes
 //
-// The the accepting blocks index contains a sub bucket for each transaction hash (32 byte each), that its serialized format is:
-//
-//   <accepting block id> = <including block id>
-//
-//   Field           Type              Size
-//   accepting block id        uint32          4 bytes
-//   including block id        uint32          4 bytes
-//   -----
-//   Total: 8 bytes
-//
-// The the including blocks index contains a sub bucket for each transaction hash (32 byte each), that its serialized format is:
-//
-//   <block id> = <start offset><tx length>
-//
-//   Field           Type              Size
-//   block id        uint32          4 bytes
-//   start offset    uint32          4 bytes
-//   tx length       uint32          4 bytes
-//   -----
-//   Total: 12 bytes
 // -----------------------------------------------------------------------------
 
 // dbPutBlockIDIndexEntry uses an existing database transaction to update or add
@@ -205,8 +207,10 @@ func dbFetchFirstTxRegion(dbTx database.Tx, txHash *daghash.Hash) (*database.Blo
 	}
 	var serializedData, blockIDBytes []byte
 	txBucket.ForEach(func(id, data []byte) error {
-		blockIDBytes = id
-		serializedData = data
+		if blockIDBytes != nil {
+			blockIDBytes = id
+			serializedData = data
+		}
 		return nil
 	})
 	if len(serializedData) == 0 {
@@ -243,7 +247,7 @@ func dbFetchFirstTxRegion(dbTx database.Tx, txHash *daghash.Hash) (*database.Blo
 
 // dbAddTxIndexEntries uses an existing database transaction to add a
 // transaction index entry for every transaction in the passed block.
-func dbAddTxIndexEntries(dbTx database.Tx, block *util.Block, blockID uint32, acceptedTxsData []*blockdag.AcceptedTxData) error {
+func dbAddTxIndexEntries(dbTx database.Tx, block *util.Block, blockID uint32, acceptedTxData []*blockdag.BlueBlockTransaction) error {
 	// The offset and length of the transactions within the serialized
 	// block.
 	txLocs, err := block.TxLoc()
@@ -274,8 +278,8 @@ func dbAddTxIndexEntries(dbTx database.Tx, block *util.Block, blockID uint32, ac
 
 	acceptingBlocksOffset := 0
 
-	serializedAcceptingBlocksValues := make([]byte, len(acceptedTxsData)*acceptingBlocksIndexKeyEntrySize)
-	for _, tx := range acceptedTxsData {
+	serializedAcceptingBlocksValues := make([]byte, len(acceptedTxData)*acceptingBlocksIndexKeyEntrySize)
+	for _, tx := range acceptedTxData {
 		var includingBlockID uint32
 		var err error
 		var ok bool
@@ -410,11 +414,11 @@ func (idx *TxIndex) Create(dbTx database.Tx) error {
 }
 
 // ConnectBlock is invoked by the index manager when a new block has been
-// connected to the main chain.  This indexer adds a hash-to-transaction mapping
+// connected to the DAG.  This indexer adds a hash-to-transaction mapping
 // for every transaction in the passed block.
 //
 // This is part of the Indexer interface.
-func (idx *TxIndex) ConnectBlock(dbTx database.Tx, block *util.Block, _ *blockdag.BlockDAG, acceptedTxsData []*blockdag.AcceptedTxData) error {
+func (idx *TxIndex) ConnectBlock(dbTx database.Tx, block *util.Block, _ *blockdag.BlockDAG, acceptedTxsData []*blockdag.BlueBlockTransaction) error {
 	// Increment the internal block ID to use for the block being connected
 	// and add all of the transactions in the block to the index.
 	newBlockID := idx.curBlockID + 1
