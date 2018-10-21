@@ -20,7 +20,7 @@ RUN dep ensure -v --vendor-only
 COPY . .
 
 RUN gofmt -d -e -s .
-RUN go tool vet -all .
+RUN go vet .
 RUN golint -set_exit_status .
 RUN aligncheck .
 RUN structcheck -e .
