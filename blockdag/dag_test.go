@@ -785,8 +785,8 @@ func TestRestoreUTXOErrors(t *testing.T) {
 	testErrorThroughPatching(
 		t,
 		targetErrorMessage,
-		(*fullUTXOSet).WithDiff,
-		func(fus *fullUTXOSet, other *utxoDiff) (UTXOSet, error) {
+		(*FullUTXOSet).WithDiff,
+		func(fus *FullUTXOSet, other *UTXODiff) (UTXOSet, error) {
 			return nil, errors.New(targetErrorMessage)
 		},
 	)

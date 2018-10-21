@@ -12,7 +12,7 @@ import (
 type virtualBlock struct {
 	mtx      sync.Mutex
 	phantomK uint32
-	utxoSet  *fullUTXOSet
+	utxoSet  *FullUTXOSet
 	blockNode
 	// selectedPathSet is a block set that includes all the blocks that belong to the chain of selected parents from the virtual block.
 	selectedPathSet blockSet
@@ -34,7 +34,7 @@ func newVirtualBlock(tips blockSet, phantomK uint32) *virtualBlock {
 func (v *virtualBlock) clone() *virtualBlock {
 	return &virtualBlock{
 		phantomK:        v.phantomK,
-		utxoSet:         v.utxoSet.clone().(*fullUTXOSet),
+		utxoSet:         v.utxoSet.clone().(*FullUTXOSet),
 		blockNode:       v.blockNode,
 		selectedPathSet: v.selectedPathSet,
 	}

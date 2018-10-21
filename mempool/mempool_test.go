@@ -7,6 +7,7 @@ package mempool
 import (
 	"bytes"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"math"
 	"reflect"
@@ -1073,6 +1074,16 @@ func TestRemoveTransaction(t *testing.T) {
 	testPoolMembership(tc, chainedTxns[0], false, true)
 	testPoolMembership(tc, chainedTxns[1], false, false)
 	testPoolMembership(tc, chainedTxns[2], false, false)
+
+	fakeWithDiffErr := "error from WithDiff"
+	monkey.Patch((*blockdag.DiffUTXOSet).WithDiff, func(_ *blockdag.DiffUTXOSet, _ *blockdag.UTXODiff) (blockdag.UTXOSet, error) {
+		return nil, errors.New(fakeWithDiffErr)
+	})
+	err = harness.txPool.RemoveTransaction(chainedTxns[0], false, false)
+	if err == nil || err.Error() != fakeWithDiffErr {
+		t.Errorf("RemoveTransaction: expected error %v but got %v", fakeWithDiffErr, err)
+	}
+	monkey.Unpatch((*blockdag.DiffUTXOSet).WithDiff)
 }
 
 // TestOrphanEviction ensures that exceeding the maximum number of orphans
@@ -1477,4 +1488,38 @@ func TestCheckSpend(t *testing.T) {
 	if spend != nil {
 		t.Fatalf("Unexpeced spend found in pool: %v", spend)
 	}
+}
+
+func TestCount(t *testing.T) {
+	harness, outputs, err := newPoolHarness(&dagconfig.MainNetParams, 1, "TestCount")
+	if err != nil {
+		t.Fatalf("unable to create test pool: %v", err)
+	}
+	if harness.txPool.Count() != 0 {
+		t.Errorf("TestCount: txPool should be initialized with 0 transactions")
+	}
+
+	chainedTxns, err := harness.CreateTxChain(outputs[0], 3)
+	if err != nil {
+		t.Fatalf("harness.CreateTxChain: unexpected error: %v", err)
+	}
+
+	for i, tx := range chainedTxns {
+		_, err = harness.txPool.ProcessTransaction(tx, true, false, 0)
+		if err != nil {
+			t.Errorf("ProcessTransaction: unexpected error: %v", err)
+		}
+		if harness.txPool.Count() != i+1 {
+			t.Errorf("TestCount: txPool expected to have %v transactions but got %v", i+1, harness.txPool.Count())
+		}
+	}
+
+	err = harness.txPool.RemoveTransaction(chainedTxns[0], false, false)
+	if err != nil {
+		t.Fatalf("harness.CreateTxChain: unexpected error: %v", err)
+	}
+	if harness.txPool.Count() != 2 {
+		t.Errorf("TestCount: txPool expected to have 2 transactions but got %v", harness.txPool.Count())
+	}
+
 }
