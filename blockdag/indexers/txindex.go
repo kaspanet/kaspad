@@ -205,15 +205,16 @@ func dbFetchFirstTxRegion(dbTx database.Tx, txHash *daghash.Hash) (*database.Blo
 				"was found for %s", txHash),
 		}
 	}
-	if ok := txBucket.Cursor().First(); !ok {
+	cursor := txBucket.Cursor()
+	if ok := cursor.First(); !ok {
 		return nil, database.Error{
 			ErrorCode: database.ErrCorruption,
 			Description: fmt.Sprintf("No block region"+
 				"was found for %s", txHash),
 		}
 	}
-	blockIDBytes := txBucket.Cursor().Key()
-	serializedData := txBucket.Cursor().Value()
+	blockIDBytes := cursor.Key()
+	serializedData := cursor.Value()
 	if len(serializedData) == 0 {
 		return nil, nil
 	}
