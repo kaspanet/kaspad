@@ -15,7 +15,7 @@ RUN go get -u github.com/golang/lint/golint \
 
 COPY ./Gopkg.* ./
 
-RUN dep ensure -v --vendor-only
+RUN dep ensure -v -vendor-only
 
 COPY . .
 
