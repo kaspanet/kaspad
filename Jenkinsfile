@@ -12,5 +12,5 @@ node {
     sh "./deploy.sh push"
 
     stage 'Integration Test'
-    echo 'Starting integration test...'
+    echo 'Starting integration test....'
 }
