@@ -693,7 +693,7 @@ func (idx *AddrIndex) indexBlock(data writeIndexData, block *util.Block, dag *bl
 // the transactions in the block involve.
 //
 // This is part of the Indexer interface.
-func (idx *AddrIndex) ConnectBlock(dbTx database.Tx, block *util.Block, dag *blockdag.BlockDAG, _ []*blockdag.BlueBlockTransaction) error {
+func (idx *AddrIndex) ConnectBlock(dbTx database.Tx, block *util.Block, dag *blockdag.BlockDAG, _ []*blockdag.TxWithBlockHash) error {
 	// The offset and length of the transactions within the serialized
 	// block.
 	txLocs, err := block.TxLoc()

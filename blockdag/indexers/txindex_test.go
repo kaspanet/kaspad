@@ -64,7 +64,7 @@ func TestTxIndexConnectBlock(t *testing.T) {
 		tx1.AddTxOut(dummyTxOut)
 		msgBlock1.AddTransaction(tx1)
 		block1 := util.NewBlock(msgBlock1)
-		err = txIndex.ConnectBlock(dbTx, block1, &blockdag.BlockDAG{}, []*blockdag.BlueBlockTransaction{
+		err = txIndex.ConnectBlock(dbTx, block1, &blockdag.BlockDAG{}, []*blockdag.TxWithBlockHash{
 			{
 				Tx:      util.NewTx(tx1),
 				InBlock: block1.Hash(),
@@ -122,7 +122,7 @@ func TestTxIndexConnectBlock(t *testing.T) {
 		tx2.AddTxOut(dummyTxOut)
 		msgBlock2.AddTransaction(tx2)
 		block2 := util.NewBlock(msgBlock2)
-		err = txIndex.ConnectBlock(dbTx, block2, &blockdag.BlockDAG{}, []*blockdag.BlueBlockTransaction{
+		err = txIndex.ConnectBlock(dbTx, block2, &blockdag.BlockDAG{}, []*blockdag.TxWithBlockHash{
 			{
 				Tx:      util.NewTx(tx1),
 				InBlock: block1.Hash(),
