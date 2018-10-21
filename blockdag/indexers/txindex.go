@@ -195,6 +195,9 @@ func dbPutAcceptingBlocksEntry(dbTx database.Tx, txHash *daghash.Hash, blockID u
 // region for the provided transaction hash from the transaction index.  When
 // there is no entry for the provided hash, nil will be returned for the both
 // the region and the error.
+//
+// P.S Because the transaction can be found in multiple blocks, this function arbitarily
+// returns the first block region that is stored in the txindex.
 func dbFetchFirstTxRegion(dbTx database.Tx, txHash *daghash.Hash) (*database.BlockRegion, error) {
 	// Load the record from the database and return now if it doesn't exist.
 	txBucket := dbTx.Metadata().Bucket(includingBlocksIndexKey).Bucket(txHash[:])
