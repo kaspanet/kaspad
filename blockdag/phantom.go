@@ -85,7 +85,7 @@ func traverseCandidates(newBlock *blockNode, candidates blockSet, selectedParent
 	}
 
 	for queue.Len() > 0 {
-		current := queue.Pop()
+		current := queue.pop()
 		if candidates.contains(current) {
 			if current == selectedParent || selectedParentPast.anyChildInSet(current) {
 				selectedParentPast.add(current)
