@@ -964,6 +964,11 @@ func (dag *BlockDAG) GetUTXOEntry(outPoint wire.OutPoint) (*UTXOEntry, bool) {
 	return dag.virtual.utxoSet.get(outPoint)
 }
 
+// IsInSelectedPath returns whether or not a block hash is found in the selected path
+func (dag *BlockDAG) IsInSelectedPath(blockHash *daghash.Hash) bool {
+	return dag.virtual.selectedPathSet.containsHash(blockHash)
+}
+
 // Height returns the height of the highest tip in the DAG
 func (dag *BlockDAG) Height() int32 {
 	return dag.virtual.tips().maxHeight()

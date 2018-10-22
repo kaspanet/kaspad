@@ -315,6 +315,7 @@ func dbAddTxIndexEntries(dbTx database.Tx, block *util.Block, blockID uint32, ac
 type TxIndex struct {
 	db         database.DB
 	curBlockID uint32
+	dag        blockdag.BlockDAG
 }
 
 // Ensure the TxIndex type implements the Indexer interface.
@@ -441,7 +442,7 @@ func (idx *TxIndex) ConnectBlock(dbTx database.Tx, block *util.Block, _ *blockda
 	return nil
 }
 
-// TxFirstBlockRegion returns the block region for the provided transaction hash
+// TxFirstBlockRegion returns the first block region for the provided transaction hash
 // from the transaction index.  The block region can in turn be used to load the
 // raw transaction bytes.  When there is no entry for the provided hash, nil
 // will be returned for the both the entry and the error.
@@ -455,6 +456,79 @@ func (idx *TxIndex) TxFirstBlockRegion(hash *daghash.Hash) (*database.BlockRegio
 		return err
 	})
 	return region, err
+}
+
+// TxBlocks returns the hashes of the blocks where the transaction exists
+func (idx *TxIndex) TxBlocks(hash *daghash.Hash) ([]daghash.Hash, error) {
+	blockHashes := make([]daghash.Hash, 0)
+	err := idx.db.View(func(dbTx database.Tx) error {
+		hashes, err := dbFetchTxBlocks(dbTx, hash)
+		if err != nil {
+			return err
+		}
+		blockHashes = hashes
+		return nil
+	})
+	return blockHashes, err
+}
+
+func dbFetchTxBlocks(dbTx database.Tx, hash *daghash.Hash) ([]daghash.Hash, error) {
+	blockHashes := make([]daghash.Hash, 0)
+	bucket := dbTx.Metadata().Bucket(includingBlocksIndexKey).Bucket(hash[:])
+	if bucket == nil {
+		return nil, database.Error{
+			ErrorCode: database.ErrCorruption,
+			Description: fmt.Sprintf("No including blocks "+
+				"was found for %s", hash),
+		}
+	}
+	err := bucket.ForEach(func(blockIDBytes, _ []byte) error {
+		blockID := byteOrder.Uint32(blockIDBytes)
+		hash, err := dbFetchBlockHashByID(dbTx, blockID)
+		if err != nil {
+			return err
+		}
+		blockHashes = append(blockHashes, *hash)
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return blockHashes, nil
+}
+
+// TxAcceptedInBlock returns the hash of the block where the transaction got accepted (from the virtual block point of view)
+func (idx *TxIndex) TxAcceptedInBlock(dag *blockdag.BlockDAG, hash *daghash.Hash) (*daghash.Hash, error) {
+	var acceptingBlock *daghash.Hash
+	err := idx.db.View(func(dbTx database.Tx) error {
+		bucket := dbTx.Metadata().Bucket(acceptingBlocksIndexKey).Bucket(hash[:])
+		if bucket == nil {
+			return database.Error{
+				ErrorCode: database.ErrCorruption,
+				Description: fmt.Sprintf("No accepting blocks "+
+					"was found for %s", hash),
+			}
+		}
+		cursor := bucket.Cursor()
+		if !cursor.First() {
+			return database.Error{
+				ErrorCode: database.ErrCorruption,
+				Description: fmt.Sprintf("No accepting blocks "+
+					"was found for %s", hash),
+			}
+		}
+		var currentHash daghash.Hash
+		found := false
+		for ; cursor.Key() != nil && !false; cursor.Next() {
+			copy(currentHash[:], cursor.Key())
+			found = dag.IsInSelectedPath(&currentHash)
+		}
+		if found {
+			acceptingBlock = &currentHash
+		}
+		return nil
+	})
+	return acceptingBlock, err
 }
 
 // NewTxIndex returns a new instance of an indexer that is used to create a
