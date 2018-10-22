@@ -14,8 +14,8 @@ import (
 	"github.com/daglabs/btcd/blockdag"
 	"github.com/daglabs/btcd/blockdag/indexers"
 	"github.com/daglabs/btcd/database"
-	"github.com/daglabs/btcd/wire"
 	"github.com/daglabs/btcd/util"
+	"github.com/daglabs/btcd/wire"
 )
 
 // importResults houses the stats and result as an import operation.
@@ -111,16 +111,16 @@ func (bi *blockImporter) processBlock(serializedBlock []byte) (bool, error) {
 	}
 
 	// Don't bother trying to process orphans.
-	prevBlocks := block.MsgBlock().Header.PrevBlocks
-	if len(prevBlocks) > 0 {
-		exist, err := bi.dag.HaveBlocks(prevBlocks)
+	prevParentHashes := block.MsgBlock().Header.ParentHashes
+	if len(prevParentHashes) > 0 {
+		exist, err := bi.dag.HaveBlocks(prevParentHashes)
 		if err != nil {
 			return false, err
 		}
 		if !exist {
 			return false, fmt.Errorf("import file contains block "+
 				"%v which does not link to the available "+
-				"block DAG", prevBlocks)
+				"block DAG", prevParentHashes)
 		}
 	}
 

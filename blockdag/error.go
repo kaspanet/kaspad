@@ -194,17 +194,20 @@ const (
 	// the stack.
 	ErrScriptValidation
 
-	// ErrPreviousBlockUnknown indicates that the previous block is not known.
-	ErrPreviousBlockUnknown
+	// ErrParentBlockUnknown indicates that the parent block is not known.
+	ErrParentBlockUnknown
 
 	// ErrInvalidAncestorBlock indicates that an ancestor of this block has
 	// already failed validation.
 	ErrInvalidAncestorBlock
 
-	// ErrPrevBlockNotBest indicates that the block's previous block is not the
+	// ErrParentBlockNotBest indicates that the block's previous block is not the
 	// current chain tip. This is not a block validation rule, but is required
 	// for block proposals submitted via getblocktemplate RPC.
-	ErrPrevBlockNotBest
+	ErrParentBlockNotBest
+
+	// ErrWithDiff indicates that there was an error with UTXOSet.WithDiff
+	ErrWithDiff
 )
 
 // Map of ErrorCode values back to their constant names for pretty printing.
@@ -245,9 +248,10 @@ var errorCodeStrings = map[ErrorCode]string{
 	ErrBadCoinbaseHeight:     "ErrBadCoinbaseHeight",
 	ErrScriptMalformed:       "ErrScriptMalformed",
 	ErrScriptValidation:      "ErrScriptValidation",
-	ErrPreviousBlockUnknown:  "ErrPreviousBlockUnknown",
+	ErrParentBlockUnknown:    "ErrParentBlockUnknown",
 	ErrInvalidAncestorBlock:  "ErrInvalidAncestorBlock",
-	ErrPrevBlockNotBest:      "ErrPrevBlockNotBest",
+	ErrParentBlockNotBest:    "ErrParentBlockNotBest",
+	ErrWithDiff:              "ErrWithDiff",
 }
 
 // String returns the ErrorCode as a human-readable name.

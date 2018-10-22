@@ -587,7 +587,7 @@ func chainedNodes(parents blockSet, numNodes int) []*blockNode {
 		// This is invalid, but all that is needed is enough to get the
 		// synthetic tests to work.
 		header := wire.BlockHeader{Nonce: testNoncePrng.Uint64()}
-		header.PrevBlocks = tips.hashes()
+		header.ParentHashes = tips.hashes()
 		nodes[i] = newBlockNode(&header, tips, dagconfig.SimNetParams.K)
 		tips = setFromSlice(nodes[i])
 	}
@@ -785,8 +785,8 @@ func TestRestoreUTXOErrors(t *testing.T) {
 	testErrorThroughPatching(
 		t,
 		targetErrorMessage,
-		(*fullUTXOSet).WithDiff,
-		func(fus *fullUTXOSet, other *utxoDiff) (UTXOSet, error) {
+		(*FullUTXOSet).WithDiff,
+		func(fus *FullUTXOSet, other *UTXODiff) (UTXOSet, error) {
 			return nil, errors.New(targetErrorMessage)
 		},
 	)
@@ -821,7 +821,8 @@ func testErrorThroughPatching(t *testing.T, expectedErrorMessage string, targetF
 	// maturity to 1.
 	dag.TstSetCoinbaseMaturity(1)
 
-	monkey.Patch(targetFunction, replacementFunction)
+	guard := monkey.Patch(targetFunction, replacementFunction)
+	defer guard.Unpatch()
 
 	err = nil
 	for i := 1; i < len(blocks); i++ {
@@ -843,6 +844,4 @@ func testErrorThroughPatching(t *testing.T, expectedErrorMessage string, targetF
 		t.Errorf("ProcessBlock returned wrong error. "+
 			"Want: %s, got: %s", expectedErrorMessage, err)
 	}
-
-	monkey.Unpatch(targetFunction)
 }

@@ -30,12 +30,12 @@ func TestCmdMethod(t *testing.T) {
 		{
 			name:   "nil pointer of registered type",
 			cmd:    (*btcjson.GetBlockCmd)(nil),
-			method: "getblock",
+			method: "getBlock",
 		},
 		{
 			name:   "nil instance of registered type",
 			cmd:    &btcjson.GetBlockCountCmd{},
-			method: "getblockcount",
+			method: "getBlockCount",
 		},
 	}
 
@@ -82,17 +82,17 @@ func TestMethodUsageFlags(t *testing.T) {
 	}{
 		{
 			name:   "unregistered type",
-			method: "bogusmethod",
+			method: "bogusMethod",
 			err:    btcjson.Error{ErrorCode: btcjson.ErrUnregisteredMethod},
 		},
 		{
-			name:   "getblock",
-			method: "getblock",
+			name:   "getBlock",
+			method: "getBlock",
 			flags:  0,
 		},
 		{
-			name:   "walletpassphrase",
-			method: "walletpassphrase",
+			name:   "walletPassphrase",
+			method: "walletPassphrase",
 			flags:  btcjson.UFWalletOnly,
 		},
 	}
@@ -140,18 +140,18 @@ func TestMethodUsageText(t *testing.T) {
 	}{
 		{
 			name:   "unregistered type",
-			method: "bogusmethod",
+			method: "bogusMethod",
 			err:    btcjson.Error{ErrorCode: btcjson.ErrUnregisteredMethod},
 		},
 		{
-			name:     "getblockcount",
-			method:   "getblockcount",
-			expected: "getblockcount",
+			name:     "getBlockCount",
+			method:   "getBlockCount",
+			expected: "getBlockCount",
 		},
 		{
-			name:     "getblock",
-			method:   "getblock",
-			expected: `getblock "hash" (verbose=true verbosetx=false)`,
+			name:     "getBlock",
+			method:   "getBlock",
+			expected: `getBlock "hash" (verbose=true verbosetx=false)`,
 		},
 	}
 

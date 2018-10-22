@@ -816,18 +816,18 @@ func (sp *Peer) OnGetCFHeaders(_ *peer.Peer, msg *wire.MsgGetCFHeaders) {
 
 	// Populate the PrevFilterHeader field.
 	if msg.StartHeight > 0 {
-		prevBlockHash := &hashList[0]
+		parentHash := &hashList[0]
 
 		// Fetch the raw committed filter header bytes from the
 		// database.
 		headerBytes, err := sp.server.CfIndex.FilterHeaderByBlockHash(
-			prevBlockHash, msg.FilterType)
+			parentHash, msg.FilterType)
 		if err != nil {
 			peerLog.Errorf("Error retrieving CF header: %v", err)
 			return
 		}
 		if len(headerBytes) == 0 {
-			peerLog.Warnf("Could not obtain CF header for %v", prevBlockHash)
+			peerLog.Warnf("Could not obtain CF header for %v", parentHash)
 			return
 		}
 
@@ -1562,7 +1562,7 @@ func (s *Server) handleRelayInvMsg(state *peerState, msg relayMsg) {
 
 			// Don't relay the transaction if the transaction fee-per-kb
 			// is less than the peer's feefilter.
-			feeFilter := atomic.LoadInt64(&sp.FeeFilterInt)
+			feeFilter := uint64(atomic.LoadInt64(&sp.FeeFilterInt))
 			if feeFilter > 0 && txD.FeePerKB < feeFilter {
 				return
 			}

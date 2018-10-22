@@ -83,7 +83,7 @@ type blockNode struct {
 	// diff is the UTXO representation of the block
 	// A block's UTXO is reconstituted by applying diffWith on every block in the chain of diffChildren
 	// from the virtual block down to the block. See diffChild
-	diff *utxoDiff
+	diff *UTXODiff
 
 	// diffChild is the child that diff will be built from. See diff
 	diffChild *blockNode
@@ -138,16 +138,9 @@ func initBlockNode(node *blockNode, blockHeader *wire.BlockHeader, parents block
 	}
 
 	if len(parents) > 0 {
-		addNodeAsChildToParents(node)
 		node.blues, node.selectedParent, node.blueScore = phantom(node, phantomK)
 		node.height = calculateNodeHeight(node)
 		node.workSum = node.workSum.Add(node.selectedParent.workSum, node.workSum)
-	}
-}
-
-func addNodeAsChildToParents(node *blockNode) {
-	for _, parent := range node.parents {
-		parent.children.add(node)
 	}
 }
 
@@ -170,13 +163,13 @@ func newBlockNode(blockHeader *wire.BlockHeader, parents blockSet, phantomK uint
 func (node *blockNode) Header() wire.BlockHeader {
 	// No lock is needed because all accessed fields are immutable.
 	return wire.BlockHeader{
-		Version:       node.version,
-		NumPrevBlocks: byte(len(node.parents)),
-		PrevBlocks:    node.PrevHashes(),
-		MerkleRoot:    node.merkleRoot,
-		Timestamp:     time.Unix(node.timestamp, 0),
-		Bits:          node.bits,
-		Nonce:         node.nonce,
+		Version:         node.version,
+		NumParentBlocks: byte(len(node.parents)),
+		ParentHashes:    node.ParentHashes(),
+		MerkleRoot:      node.merkleRoot,
+		Timestamp:       time.Unix(node.timestamp, 0),
+		Bits:            node.bits,
+		Nonce:           node.nonce,
 	}
 }
 
@@ -235,7 +228,7 @@ func (node *blockNode) CalcPastMedianTime() time.Time {
 	return time.Unix(medianTimestamp, 0)
 }
 
-func (node *blockNode) PrevHashes() []daghash.Hash {
+func (node *blockNode) ParentHashes() []daghash.Hash {
 	return node.parents.hashes()
 }
 

@@ -78,7 +78,7 @@ func (rate SatoshiPerByte) ToBtcPerKb() BtcPerKilobyte {
 func (rate SatoshiPerByte) Fee(size uint32) util.Amount {
 	// If our rate is the error value, return that.
 	if rate == SatoshiPerByte(-1) {
-		return util.Amount(-1)
+		return math.MaxUint64
 	}
 
 	return util.Amount(float64(rate) * float64(size))

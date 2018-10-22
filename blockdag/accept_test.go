@@ -33,15 +33,15 @@ func TestMaybeAcceptBlockErrors(t *testing.T) {
 	err = dag.maybeAcceptBlock(block, BFNone)
 	if err == nil {
 		t.Errorf("TestMaybeAcceptBlockErrors: rejecting the block if its parents are missing: "+
-			"Expected: %s, got: <nil>", ErrPreviousBlockUnknown)
+			"Expected: %s, got: <nil>", ErrParentBlockUnknown)
 	}
 	ruleErr, ok := err.(RuleError)
 	if !ok {
 		t.Errorf("TestMaybeAcceptBlockErrors: rejecting the block if its parents are missing: "+
 			"Expected RuleError but got %s", err)
-	} else if ruleErr.ErrorCode != ErrPreviousBlockUnknown {
+	} else if ruleErr.ErrorCode != ErrParentBlockUnknown {
 		t.Errorf("TestMaybeAcceptBlockErrors: rejecting the block if its parents are missing: "+
-			"Unexpected error code. Want: %s, got: %s", ErrPreviousBlockUnknown, ruleErr.ErrorCode)
+			"Unexpected error code. Want: %s, got: %s", ErrParentBlockUnknown, ruleErr.ErrorCode)
 	}
 
 	// Test rejecting the block if its parents are invalid
@@ -101,9 +101,10 @@ func TestMaybeAcceptBlockErrors(t *testing.T) {
 
 	// Test rejecting the node due to database error
 	databaseErrorMessage := "database error"
-	monkey.Patch(dbStoreBlock, func(dbTx database.Tx, block *util.Block) error {
+	guard := monkey.Patch(dbStoreBlock, func(dbTx database.Tx, block *util.Block) error {
 		return errors.New(databaseErrorMessage)
 	})
+	defer guard.Unpatch()
 	err = dag.maybeAcceptBlock(block2, BFNone)
 	if err == nil {
 		t.Errorf("TestMaybeAcceptBlockErrors: rejecting the node due to database error: "+
@@ -113,13 +114,14 @@ func TestMaybeAcceptBlockErrors(t *testing.T) {
 		t.Errorf("TestMaybeAcceptBlockErrors: rejecting the node due to database error: "+
 			"Unexpected error. Want: %s, got: %s", databaseErrorMessage, err)
 	}
-	monkey.Unpatch(dbStoreBlock)
+	guard.Unpatch()
 
 	// Test rejecting the node due to index error
 	indexErrorMessage := "index error"
-	monkey.Patch((*blockIndex).flushToDB, func(_ *blockIndex) error {
+	guard = monkey.Patch((*blockIndex).flushToDB, func(_ *blockIndex) error {
 		return errors.New(indexErrorMessage)
 	})
+	defer guard.Unpatch()
 	err = dag.maybeAcceptBlock(block2, BFNone)
 	if err == nil {
 		t.Errorf("TestMaybeAcceptBlockErrors: rejecting the node due to index error: "+
@@ -129,5 +131,4 @@ func TestMaybeAcceptBlockErrors(t *testing.T) {
 		t.Errorf("TestMaybeAcceptBlockErrors: rejecting the node due to index error: "+
 			"Unexpected error. Want: %s, got: %s", indexErrorMessage, err)
 	}
-	monkey.Unpatch((*blockIndex).flushToDB)
 }

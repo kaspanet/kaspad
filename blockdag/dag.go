@@ -5,6 +5,7 @@
 package blockdag
 
 import (
+	"errors"
 	"fmt"
 	"math"
 	"sync"
@@ -201,14 +202,14 @@ func (dag *BlockDAG) GetOrphanRoot(hash *daghash.Hash) *daghash.Hash {
 	// Keep looping while the parent of each orphaned block is
 	// known and is an orphan itself.
 	orphanRoot := hash
-	prevHash := hash
+	parentHash := hash
 	for {
-		orphan, exists := dag.orphans[*prevHash]
+		orphan, exists := dag.orphans[*parentHash]
 		if !exists {
 			break
 		}
-		orphanRoot = prevHash
-		prevHash = orphan.block.MsgBlock().Header.SelectedPrevBlock()
+		orphanRoot = parentHash
+		parentHash = orphan.block.MsgBlock().Header.SelectedParentHash()
 	}
 
 	return orphanRoot
@@ -229,8 +230,8 @@ func (dag *BlockDAG) removeOrphanBlock(orphan *orphanBlock) {
 	// for loop is intentionally used over a range here as range does not
 	// reevaluate the slice on each iteration nor does it adjust the index
 	// for the modified slice.
-	prevHash := orphan.block.MsgBlock().Header.SelectedPrevBlock()
-	orphans := dag.prevOrphans[*prevHash]
+	parentHash := orphan.block.MsgBlock().Header.SelectedParentHash()
+	orphans := dag.prevOrphans[*parentHash]
 	for i := 0; i < len(orphans); i++ {
 		hash := orphans[i].block.Hash()
 		if hash.IsEqual(orphanHash) {
@@ -240,12 +241,12 @@ func (dag *BlockDAG) removeOrphanBlock(orphan *orphanBlock) {
 			i--
 		}
 	}
-	dag.prevOrphans[*prevHash] = orphans
+	dag.prevOrphans[*parentHash] = orphans
 
 	// Remove the map entry altogether if there are no longer any orphans
 	// which depend on the parent hash.
-	if len(dag.prevOrphans[*prevHash]) == 0 {
-		delete(dag.prevOrphans, *prevHash)
+	if len(dag.prevOrphans[*parentHash]) == 0 {
+		delete(dag.prevOrphans, *parentHash)
 	}
 }
 
@@ -293,8 +294,8 @@ func (dag *BlockDAG) addOrphanBlock(block *util.Block) {
 	dag.orphans[*block.Hash()] = oBlock
 
 	// Add to previous hash lookup index for faster dependency lookups.
-	prevHash := block.MsgBlock().Header.SelectedPrevBlock()
-	dag.prevOrphans[*prevHash] = append(dag.prevOrphans[*prevHash], oBlock)
+	parentHash := block.MsgBlock().Header.SelectedParentHash()
+	dag.prevOrphans[*parentHash] = append(dag.prevOrphans[*parentHash], oBlock)
 }
 
 // SequenceLock represents the converted relative lock-time in seconds, and
@@ -446,37 +447,21 @@ func (dag *BlockDAG) connectToDAG(node *blockNode, parentNodes blockSet, block *
 	// Skip checks if node has already been fully validated.
 	fastAdd := flags&BFFastAdd == BFFastAdd || dag.index.NodeStatus(node).KnownValid()
 
-	// Perform several checks to verify the block can be connected
-	// to the DAG without violating any rules and without actually
-	// connecting the block.
-	if !fastAdd {
-		err := dag.checkConnectBlock(node, block)
-		if err == nil {
-			dag.index.SetStatusFlags(node, statusValid)
-		} else if _, ok := err.(RuleError); ok {
-			dag.index.SetStatusFlags(node, statusValidateFailed)
-		} else {
-			return err
-		}
-
-		// Intentionally ignore errors writing updated node status to DB. If
-		// it fails to write, it's not the end of the world. If the block is
-		// valid, we flush in connectBlock and if the block is invalid, the
-		// worst that can happen is we revalidate the block after a restart.
-		if writeErr := dag.index.flushToDB(); writeErr != nil {
-			log.Warnf("Error flushing block index changes to disk: %v",
-				writeErr)
-		}
-
-		if err != nil {
-			return err
-		}
+	// Connect the block to the DAG.
+	err := dag.connectBlock(node, block, fastAdd)
+	if _, ok := err.(RuleError); ok {
+		dag.index.SetStatusFlags(node, statusValidateFailed)
+	} else {
+		return err
 	}
 
-	// Connect the block to the DAG.
-	err := dag.connectBlock(node, block)
-	if err != nil {
-		return err
+	// Intentionally ignore errors writing updated node status to DB. If
+	// it fails to write, it's not the end of the world. If the block is
+	// invalid, the worst that can happen is we revalidate the block
+	// after a restart.
+	if writeErr := dag.index.flushToDB(); writeErr != nil {
+		log.Warnf("Error flushing block index changes to disk: %v",
+			writeErr)
 	}
 
 	return nil
@@ -485,7 +470,14 @@ func (dag *BlockDAG) connectToDAG(node *blockNode, parentNodes blockSet, block *
 // connectBlock handles connecting the passed node/block to the DAG.
 //
 // This function MUST be called with the chain state lock held (for writes).
-func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block) error {
+func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block, fastAdd bool) error {
+	// The coinbase for the Genesis block is not spendable, so just return
+	// an error now.
+	if node.hash.IsEqual(dag.dagParams.GenesisHash) {
+		str := "the coinbase for the genesis block is not spendable"
+		return ruleError(ErrMissingTxOut, str)
+	}
+
 	// No warnings about unknown rules or versions until the DAG is
 	// current.
 	if dag.isCurrent() {
@@ -503,7 +495,7 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block) error {
 	}
 
 	// Add the node to the virtual and update the UTXO set of the DAG.
-	utxoDiff, acceptedTxsData, err := dag.applyUTXOChanges(node, block)
+	utxoDiff, acceptedTxsData, err := dag.applyUTXOChanges(node, block, fastAdd)
 	if err != nil {
 		return err
 	}
@@ -570,20 +562,24 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block) error {
 // 5. Updates each of the tips' utxoDiff.
 //
 // This function MUST be called with the chain state lock held (for writes).
-func (dag *BlockDAG) applyUTXOChanges(node *blockNode, block *util.Block) (utxoDiff *utxoDiff, acceptedTxData []*TxWithBlockHash, err error) {
+func (dag *BlockDAG) applyUTXOChanges(node *blockNode, block *util.Block, fastAdd bool) (utxoDiff *UTXODiff, acceptedTxData []*TxWithBlockHash, err error) {
 	// Prepare provisionalNodes for all the relevant nodes to avoid modifying the original nodes.
 	// We avoid modifying the original nodes in this function because it could potentially
 	// fail if the block is not valid, thus bringing all the affected nodes (and the virtual)
 	// into an undefined state.
 	provisionalSet := newProvisionalNodeSet()
-	newNodeProvisional := provisionalSet.newProvisionalNode(node, true, block.Transactions())
+	newNodeProvisional := provisionalSet.newProvisionalNode(node, true, true, block.Transactions())
 
 	// Clone the virtual block so that we don't modify the existing one.
 	virtualClone := dag.virtual.clone()
 
-	newBlockUTXO, acceptedTxData, err := newNodeProvisional.verifyAndBuildUTXO(virtualClone, dag.db)
+	newBlockUTXO, acceptedTxData, err := newNodeProvisional.verifyAndBuildUTXO(virtualClone, dag, fastAdd)
 	if err != nil {
-		return nil, nil, fmt.Errorf("error verifying UTXO for %v: %s", node, err)
+		newErrString := fmt.Sprintf("error verifying UTXO for %v: %s", node, err)
+		if err, ok := err.(RuleError); ok {
+			return nil, nil, ruleError(err.ErrorCode, newErrString)
+		}
+		return nil, nil, errors.New(newErrString)
 	}
 
 	err = newNodeProvisional.updateParents(virtualClone, newBlockUTXO)
@@ -595,16 +591,24 @@ func (dag *BlockDAG) applyUTXOChanges(node *blockNode, block *util.Block) (utxoD
 	virtualClone.AddTip(node)
 
 	// Build a UTXO set for the new virtual block and update the DAG tips' diffs.
-	virtualNodeProvisional := provisionalSet.newProvisionalNode(&virtualClone.blockNode, true, nil)
+	virtualNodeProvisional := provisionalSet.newProvisionalNode(&virtualClone.blockNode, true, true, nil)
 	newVirtualUTXO, _, err := virtualNodeProvisional.pastUTXO(virtualClone, dag.db)
 	if err != nil {
-		return nil, nil, fmt.Errorf("could not restore past UTXO for virtual %v: %s", virtualClone, err)
+		newErrString := fmt.Sprintf("could not restore past UTXO for virtual %v: %s", virtualClone, err)
+		if err, ok := err.(RuleError); ok {
+			return nil, nil, ruleError(err.ErrorCode, newErrString)
+		}
+		return nil, nil, errors.New(newErrString)
 	}
 
 	// Apply new utxoDiffs to all the tips
 	err = updateTipsUTXO(virtualNodeProvisional.parents, virtualClone, newVirtualUTXO)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed updating the tips' UTXO: %s", err)
+		newErrString := fmt.Sprintf("failed updating the tips' UTXO: %s", err)
+		if err, ok := err.(RuleError); ok {
+			return nil, nil, ruleError(err.ErrorCode, newErrString)
+		}
+		return nil, nil, errors.New(newErrString)
 	}
 
 	// It is now safe to meld the UTXO set to base.
@@ -657,15 +661,15 @@ type provisionalNode struct {
 	selectedParent *provisionalNode
 	parents        []*provisionalNode
 	children       []*provisionalNode
-	diff           *utxoDiff
+	diff           *UTXODiff
 	diffChild      *provisionalNode
 	transactions   []*util.Tx
 }
 
 // newProvisionalNode takes a node and builds a provisionalNode from it.
-// To avoid building the entire DAG in provisionalNode format we pass withRelatives = true
-// only when the node's relatives (parents and children) are required.
-func (pns provisionalNodeSet) newProvisionalNode(node *blockNode, withRelatives bool,
+// To avoid building the entire DAG in provisionalNode format we pass withParents = true or withChildren = true,
+// only when the node's relatives (parents or children) are required.
+func (pns provisionalNodeSet) newProvisionalNode(node *blockNode, withParents bool, withChildren bool,
 	transactions []*util.Tx) *provisionalNode {
 	if existingProvisional, ok := pns[node.hash]; ok {
 		return existingProvisional
@@ -679,23 +683,26 @@ func (pns provisionalNodeSet) newProvisionalNode(node *blockNode, withRelatives 
 		pns[node.hash] = provisional
 	}
 
-	if withRelatives {
+	if withParents {
 		provisional.parents = []*provisionalNode{}
 		for _, parent := range node.parents {
-			provisional.parents = append(provisional.parents, pns.newProvisionalNode(parent, false, nil))
+			provisional.parents = append(provisional.parents, pns.newProvisionalNode(parent, false, true, nil))
 		}
 		if node.selectedParent != nil {
 			provisional.selectedParent = pns[node.selectedParent.hash]
 		}
+	}
 
+	if withChildren {
 		provisional.children = []*provisionalNode{}
 		for _, child := range node.children {
-			provisional.children = append(provisional.children, pns.newProvisionalNode(child, false, nil))
+			provisional.children = append(provisional.children, pns.newProvisionalNode(child, false, false, nil))
 		}
 		if node.diffChild != nil {
 			provisional.diffChild = pns[node.diffChild.hash]
 		}
 	}
+
 	if node.diff != nil {
 		provisional.diff = node.diff.clone()
 	}
@@ -704,10 +711,17 @@ func (pns provisionalNodeSet) newProvisionalNode(node *blockNode, withRelatives 
 }
 
 // verifyAndBuildUTXO verifies all transactions in the given block (in provisionalNode format) and builds its UTXO
-func (p *provisionalNode) verifyAndBuildUTXO(virtual *virtualBlock, db database.DB) (utxoSet UTXOSet, acceptedTxData []*TxWithBlockHash, err error) {
-	pastUTXO, pastUTXOaccpetedTxData, err := p.pastUTXO(virtual, db)
+func (p *provisionalNode) verifyAndBuildUTXO(virtual *virtualBlock, dag *BlockDAG, fastAdd bool) (utxoSet UTXOSet, acceptedTxData []*TxWithBlockHash, err error) {
+	pastUTXO, pastUTXOaccpetedTxData, err := p.pastUTXO(virtual, dag.db)
 	if err != nil {
 		return nil, nil, err
+	}
+
+	if !fastAdd {
+		err = dag.checkConnectToPastUTXO(p, pastUTXO)
+		if err != nil {
+			return nil, nil, err
+		}
 	}
 
 	diff := NewUTXODiff()
@@ -946,7 +960,7 @@ func (dag *BlockDAG) SelectedTip() *blockNode {
 }
 
 // UTXOSet returns the DAG's UTXO set
-func (dag *BlockDAG) UTXOSet() *fullUTXOSet {
+func (dag *BlockDAG) UTXOSet() *FullUTXOSet {
 	return dag.virtual.utxoSet
 }
 

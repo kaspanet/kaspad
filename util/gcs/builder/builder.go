@@ -9,10 +9,10 @@ import (
 	"crypto/rand"
 	"encoding/binary"
 
-	"github.com/daglabs/btcd/txscript"
-	"github.com/daglabs/btcd/wire"
-	"github.com/daglabs/btcd/util/gcs"
 	"github.com/daglabs/btcd/dagconfig/daghash"
+	"github.com/daglabs/btcd/txscript"
+	"github.com/daglabs/btcd/util/gcs"
+	"github.com/daglabs/btcd/wire"
 )
 
 // DefaultP is the default collision probability (2^-20)
@@ -372,17 +372,17 @@ func GetFilterHash(filter *gcs.Filter) (daghash.Hash, error) {
 
 // MakeHeaderForFilter makes a filter chain header for a filter, given the
 // filter and the previous filter chain header.
-func MakeHeaderForFilter(filter *gcs.Filter, prevHeader daghash.Hash) (daghash.Hash, error) {
+func MakeHeaderForFilter(filter *gcs.Filter, parentHeader daghash.Hash) (daghash.Hash, error) {
 	filterTip := make([]byte, 2*daghash.HashSize)
 	filterHash, err := GetFilterHash(filter)
 	if err != nil {
 		return daghash.Hash{}, err
 	}
 
-	// In the buffer we created above we'll compute hash || prevHash as an
+	// In the buffer we created above we'll compute hash || parentHash as an
 	// intermediate value.
 	copy(filterTip, filterHash[:])
-	copy(filterTip[daghash.HashSize:], prevHeader[:])
+	copy(filterTip[daghash.HashSize:], parentHeader[:])
 
 	// The final filter hash is the double-sha256 of the hash computed
 	// above.

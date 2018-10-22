@@ -10,22 +10,22 @@ package btcjson
 const (
 	// AccountBalanceNtfnMethod is the method used for account balance
 	// notifications.
-	AccountBalanceNtfnMethod = "accountbalance"
+	AccountBalanceNtfnMethod = "accountBalance"
 
 	// BtcdConnectedNtfnMethod is the method used for notifications when
 	// a wallet server is connected to a dag server.
-	BtcdConnectedNtfnMethod = "btcdconnected"
+	BtcdConnectedNtfnMethod = "btcdConnected"
 
 	// WalletLockStateNtfnMethod is the method used to notify the lock state
 	// of a wallet has changed.
-	WalletLockStateNtfnMethod = "walletlockstate"
+	WalletLockStateNtfnMethod = "walletLockState"
 
 	// NewTxNtfnMethod is the method used to notify that a wallet server has
 	// added a new transaction to the transaction store.
-	NewTxNtfnMethod = "newtx"
+	NewTxNtfnMethod = "newTx"
 )
 
-// AccountBalanceNtfn defines the accountbalance JSON-RPC notification.
+// AccountBalanceNtfn defines the accountBalance JSON-RPC notification.
 type AccountBalanceNtfn struct {
 	Account   string
 	Balance   float64 // In BTC
@@ -33,7 +33,7 @@ type AccountBalanceNtfn struct {
 }
 
 // NewAccountBalanceNtfn returns a new instance which can be used to issue an
-// accountbalance JSON-RPC notification.
+// accountBalance JSON-RPC notification.
 func NewAccountBalanceNtfn(account string, balance float64, confirmed bool) *AccountBalanceNtfn {
 	return &AccountBalanceNtfn{
 		Account:   account,
@@ -42,39 +42,39 @@ func NewAccountBalanceNtfn(account string, balance float64, confirmed bool) *Acc
 	}
 }
 
-// BtcdConnectedNtfn defines the btcdconnected JSON-RPC notification.
+// BtcdConnectedNtfn defines the btcdConnected JSON-RPC notification.
 type BtcdConnectedNtfn struct {
 	Connected bool
 }
 
 // NewBtcdConnectedNtfn returns a new instance which can be used to issue a
-// btcdconnected JSON-RPC notification.
+// btcdConnected JSON-RPC notification.
 func NewBtcdConnectedNtfn(connected bool) *BtcdConnectedNtfn {
 	return &BtcdConnectedNtfn{
 		Connected: connected,
 	}
 }
 
-// WalletLockStateNtfn defines the walletlockstate JSON-RPC notification.
+// WalletLockStateNtfn defines the walletLockState JSON-RPC notification.
 type WalletLockStateNtfn struct {
 	Locked bool
 }
 
 // NewWalletLockStateNtfn returns a new instance which can be used to issue a
-// walletlockstate JSON-RPC notification.
+// walletLockState JSON-RPC notification.
 func NewWalletLockStateNtfn(locked bool) *WalletLockStateNtfn {
 	return &WalletLockStateNtfn{
 		Locked: locked,
 	}
 }
 
-// NewTxNtfn defines the newtx JSON-RPC notification.
+// NewTxNtfn defines the newTx JSON-RPC notification.
 type NewTxNtfn struct {
 	Account string
 	Details ListTransactionsResult
 }
 
-// NewNewTxNtfn returns a new instance which can be used to issue a newtx
+// NewNewTxNtfn returns a new instance which can be used to issue a newTx
 // JSON-RPC notification.
 func NewNewTxNtfn(account string, details ListTransactionsResult) *NewTxNtfn {
 	return &NewTxNtfn{

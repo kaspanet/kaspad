@@ -214,7 +214,7 @@ func NewTxIn(prevOut *OutPoint, signatureScript []byte) *TxIn {
 
 // TxOut defines a bitcoin transaction output.
 type TxOut struct {
-	Value    int64
+	Value    uint64
 	PkScript []byte
 }
 
@@ -228,7 +228,7 @@ func (t *TxOut) SerializeSize() int {
 
 // NewTxOut returns a new bitcoin transaction output with the provided
 // transaction value and public key script.
-func NewTxOut(value int64, pkScript []byte) *TxOut {
+func NewTxOut(value uint64, pkScript []byte) *TxOut {
 	return &TxOut{
 		Value:    value,
 		PkScript: pkScript,

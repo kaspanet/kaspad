@@ -10,39 +10,39 @@ import "encoding/json"
 // the verbose flag is set.  When the verbose flag is not set, getblockheader
 // returns a hex-encoded string.
 type GetBlockHeaderVerboseResult struct {
-	Hash           string   `json:"hash"`
-	Confirmations  uint64   `json:"confirmations"`
-	Height         int32    `json:"height"`
-	Version        int32    `json:"version"`
-	VersionHex     string   `json:"versionHex"`
-	MerkleRoot     string   `json:"merkleroot"`
-	Time           int64    `json:"time"`
-	Nonce          uint64   `json:"nonce"`
-	Bits           string   `json:"bits"`
-	Difficulty     float64  `json:"difficulty"`
-	PreviousHashes []string `json:"previousblockhashes,omitempty"`
-	NextHashes     []string `json:"nextblockhashes,omitempty"`
+	Hash          string   `json:"hash"`
+	Confirmations uint64   `json:"confirmations"`
+	Height        int32    `json:"height"`
+	Version       int32    `json:"version"`
+	VersionHex    string   `json:"versionHex"`
+	MerkleRoot    string   `json:"merkleroot"`
+	Time          int64    `json:"time"`
+	Nonce         uint64   `json:"nonce"`
+	Bits          string   `json:"bits"`
+	Difficulty    float64  `json:"difficulty"`
+	ParentHashes  []string `json:"parentblockhashes,omitempty"`
+	NextHashes    []string `json:"nextblockhashes,omitempty"`
 }
 
 // GetBlockVerboseResult models the data from the getblock command when the
 // verbose flag is set.  When the verbose flag is not set, getblock returns a
 // hex-encoded string.
 type GetBlockVerboseResult struct {
-	Hash           string        `json:"hash"`
-	Confirmations  uint64        `json:"confirmations"`
-	Size           int32         `json:"size"`
-	Height         int64         `json:"height"`
-	Version        int32         `json:"version"`
-	VersionHex     string        `json:"versionHex"`
-	MerkleRoot     string        `json:"merkleroot"`
-	Tx             []string      `json:"tx,omitempty"`
-	RawTx          []TxRawResult `json:"rawtx,omitempty"`
-	Time           int64         `json:"time"`
-	Nonce          uint64        `json:"nonce"`
-	Bits           string        `json:"bits"`
-	Difficulty     float64       `json:"difficulty"`
-	PreviousHashes []string      `json:"previousblockhashes"`
-	NextHashes     []string      `json:"nextblockhashes,omitempty"`
+	Hash          string        `json:"hash"`
+	Confirmations uint64        `json:"confirmations"`
+	Size          int32         `json:"size"`
+	Height        int64         `json:"height"`
+	Version       int32         `json:"version"`
+	VersionHex    string        `json:"versionHex"`
+	MerkleRoot    string        `json:"merkleroot"`
+	Tx            []string      `json:"tx,omitempty"`
+	RawTx         []TxRawResult `json:"rawtx,omitempty"`
+	Time          int64         `json:"time"`
+	Nonce         uint64        `json:"nonce"`
+	Bits          string        `json:"bits"`
+	Difficulty    float64       `json:"difficulty"`
+	ParentHashes  []string      `json:"parentblockhashes"`
+	NextHashes    []string      `json:"nextblockhashes,omitempty"`
 }
 
 // CreateMultiSigResult models the data returned from the createmultisig
@@ -118,7 +118,7 @@ type GetBlockTemplateResultTx struct {
 	Data    string  `json:"data"`
 	Hash    string  `json:"hash"`
 	Depends []int64 `json:"depends"`
-	Fee     int64   `json:"fee"`
+	Fee     uint64  `json:"fee"`
 	SigOps  int64   `json:"sigops"`
 }
 
@@ -133,18 +133,18 @@ type GetBlockTemplateResultAux struct {
 type GetBlockTemplateResult struct {
 	// Base fields from BIP 0022.  CoinbaseAux is optional.  One of
 	// CoinbaseTxn or CoinbaseValue must be specified, but not both.
-	Bits           string                     `json:"bits"`
-	CurTime        int64                      `json:"curtime"`
-	Height         int64                      `json:"height"`
-	PreviousHashes []string                   `json:"previousblockhashes"`
-	SigOpLimit     int64                      `json:"sigoplimit,omitempty"`
-	SizeLimit      int64                      `json:"sizelimit,omitempty"`
-	Transactions   []GetBlockTemplateResultTx `json:"transactions"`
-	Version        int32                      `json:"version"`
-	CoinbaseAux    *GetBlockTemplateResultAux `json:"coinbaseaux,omitempty"`
-	CoinbaseTxn    *GetBlockTemplateResultTx  `json:"coinbasetxn,omitempty"`
-	CoinbaseValue  *int64                     `json:"coinbasevalue,omitempty"`
-	WorkID         string                     `json:"workid,omitempty"`
+	Bits          string                     `json:"bits"`
+	CurTime       int64                      `json:"curtime"`
+	Height        int64                      `json:"height"`
+	ParentHashes  []string                   `json:"parentblockhashes"`
+	SigOpLimit    int64                      `json:"sigoplimit,omitempty"`
+	SizeLimit     int64                      `json:"sizelimit,omitempty"`
+	Transactions  []GetBlockTemplateResultTx `json:"transactions"`
+	Version       int32                      `json:"version"`
+	CoinbaseAux   *GetBlockTemplateResultAux `json:"coinbaseaux,omitempty"`
+	CoinbaseTxn   *GetBlockTemplateResultTx  `json:"coinbasetxn,omitempty"`
+	CoinbaseValue *uint64                    `json:"coinbasevalue,omitempty"`
+	WorkID        string                     `json:"workid,omitempty"`
 
 	// Optional long polling from BIP 0022.
 	LongPollID  string `json:"longpollid,omitempty"`

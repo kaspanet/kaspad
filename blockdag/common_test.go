@@ -186,10 +186,16 @@ func newTestDAG(params *dagconfig.Params) *BlockDAG {
 func newTestNode(parents blockSet, blockVersion int32, bits uint32, timestamp time.Time, phantomK uint32) *blockNode {
 	// Make up a header and create a block node from it.
 	header := &wire.BlockHeader{
-		Version:    blockVersion,
-		PrevBlocks: parents.hashes(),
-		Bits:       bits,
-		Timestamp:  timestamp,
+		Version:      blockVersion,
+		ParentHashes: parents.hashes(),
+		Bits:         bits,
+		Timestamp:    timestamp,
 	}
 	return newBlockNode(header, parents, phantomK)
+}
+
+func addNodeAsChildToParents(node *blockNode) {
+	for _, parent := range node.parents {
+		parent.children.add(node)
+	}
 }

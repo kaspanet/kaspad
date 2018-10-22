@@ -14,8 +14,8 @@ import (
 
 	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/database"
-	"github.com/daglabs/btcd/wire"
 	"github.com/daglabs/btcd/util"
+	"github.com/daglabs/btcd/wire"
 )
 
 // importCmd defines the configuration options for the insecureimport command.
@@ -131,11 +131,11 @@ func (bi *blockImporter) processBlock(serializedBlock []byte) (bool, error) {
 	}
 
 	// Don't bother trying to process orphans.
-	prevHashes := block.MsgBlock().Header.PrevBlocks
-	for _, prevHash := range prevHashes {
+	parentHashes := block.MsgBlock().Header.ParentHashes
+	for _, parentHash := range parentHashes {
 		var exists bool
 		err := bi.db.View(func(tx database.Tx) error {
-			exists, err = tx.HasBlock(&prevHash)
+			exists, err = tx.HasBlock(&parentHash)
 			return err
 		})
 		if err != nil {
@@ -144,7 +144,7 @@ func (bi *blockImporter) processBlock(serializedBlock []byte) (bool, error) {
 		if !exists {
 			return false, fmt.Errorf("import file contains block "+
 				"%v which does not link to the available "+
-				"block chain", prevHash)
+				"block chain", parentHash)
 		}
 	}
 

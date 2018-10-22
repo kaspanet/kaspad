@@ -15,18 +15,18 @@ import (
 // BaseBlockHeaderPayload is the base number of bytes a block header can be,
 // not including the list of previous block headers.
 // Version 4 bytes + Timestamp 8 bytes + Bits 4 bytes + Nonce 8 bytes +
-// + NumPrevBlocks 1 byte + MerkleRoot hash.
-// To get total size of block header len(PrevBlocks) * daghash.HashSize should be
+// + NumParentBlocks 1 byte + MerkleRoot hash.
+// To get total size of block header len(ParentHashes) * daghash.HashSize should be
 // added to this value
 const BaseBlockHeaderPayload = 25 + (daghash.HashSize)
 
-// MaxNumPrevBlocks is the maximum number of previous blocks a block can reference.
-// Currently set to 255 as the maximum number NumPrevBlocks can be due to it being a byte
-const MaxNumPrevBlocks = 255
+// MaxNumParentBlocks is the maximum number of previous blocks a block can reference.
+// Currently set to 255 as the maximum number NumParentBlocks can be due to it being a byte
+const MaxNumParentBlocks = 255
 
 // MaxBlockHeaderPayload is the maximum number of bytes a block header can be.
-// BaseBlockHeaderPayload + up to MaxNumPrevBlocks hashes of previous blocks
-const MaxBlockHeaderPayload = BaseBlockHeaderPayload + (MaxNumPrevBlocks * daghash.HashSize)
+// BaseBlockHeaderPayload + up to MaxNumParentBlocks hashes of previous blocks
+const MaxBlockHeaderPayload = BaseBlockHeaderPayload + (MaxNumParentBlocks * daghash.HashSize)
 
 // BlockHeader defines information about a block and is used in the bitcoin
 // block (MsgBlock) and headers (MsgHeader) messages.
@@ -34,11 +34,11 @@ type BlockHeader struct {
 	// Version of the block.  This is not the same as the protocol version.
 	Version int32
 
-	// Number of entries in PrevBlocks
-	NumPrevBlocks byte
+	// Number of entries in ParentHashes
+	NumParentBlocks byte
 
 	// Hashes of the previous block headers in the blockDAG.
-	PrevBlocks []daghash.Hash
+	ParentHashes []daghash.Hash
 
 	// Merkle tree reference to hash of all transactions for the block.
 	MerkleRoot daghash.Hash
@@ -59,24 +59,24 @@ func (h *BlockHeader) BlockHash() daghash.Hash {
 	// transactions.  Ignore the error returns since there is no way the
 	// encode could fail except being out of memory which would cause a
 	// run-time panic.
-	buf := bytes.NewBuffer(make([]byte, 0, BaseBlockHeaderPayload+len(h.PrevBlocks)))
+	buf := bytes.NewBuffer(make([]byte, 0, BaseBlockHeaderPayload+len(h.ParentHashes)))
 	_ = writeBlockHeader(buf, 0, h)
 
 	return daghash.DoubleHashH(buf.Bytes())
 }
 
-// SelectedPrevBlock returns the hash of the selected block header.
-func (h *BlockHeader) SelectedPrevBlock() *daghash.Hash {
-	if h.NumPrevBlocks == 0 {
+// SelectedParentHash returns the hash of the selected block header.
+func (h *BlockHeader) SelectedParentHash() *daghash.Hash {
+	if h.NumParentBlocks == 0 {
 		return nil
 	}
 
-	return &h.PrevBlocks[0]
+	return &h.ParentHashes[0]
 }
 
 // IsGenesis returns true iff this block is a genesis block
 func (h *BlockHeader) IsGenesis() bool {
-	return h.NumPrevBlocks == 0
+	return h.NumParentBlocks == 0
 }
 
 // BtcDecode decodes r using the bitcoin protocol encoding into the receiver.
@@ -118,25 +118,25 @@ func (h *BlockHeader) Serialize(w io.Writer) error {
 // SerializeSize returns the number of bytes it would take to serialize the
 // block header.
 func (h *BlockHeader) SerializeSize() int {
-	return BaseBlockHeaderPayload + int(h.NumPrevBlocks)*daghash.HashSize
+	return BaseBlockHeaderPayload + int(h.NumParentBlocks)*daghash.HashSize
 }
 
 // NewBlockHeader returns a new BlockHeader using the provided version, previous
 // block hash, merkle root hash, difficulty bits, and nonce used to generate the
 // block with defaults or calclulated values for the remaining fields.
-func NewBlockHeader(version int32, prevHashes []daghash.Hash, merkleRootHash *daghash.Hash,
+func NewBlockHeader(version int32, parentHashes []daghash.Hash, merkleRootHash *daghash.Hash,
 	bits uint32, nonce uint64) *BlockHeader {
 
 	// Limit the timestamp to one second precision since the protocol
 	// doesn't support better.
 	return &BlockHeader{
-		Version:       version,
-		NumPrevBlocks: byte(len(prevHashes)),
-		PrevBlocks:    prevHashes,
-		MerkleRoot:    *merkleRootHash,
-		Timestamp:     time.Unix(time.Now().Unix(), 0),
-		Bits:          bits,
-		Nonce:         nonce,
+		Version:         version,
+		NumParentBlocks: byte(len(parentHashes)),
+		ParentHashes:    parentHashes,
+		MerkleRoot:      *merkleRootHash,
+		Timestamp:       time.Unix(time.Now().Unix(), 0),
+		Bits:            bits,
+		Nonce:           nonce,
 	}
 }
 
@@ -144,14 +144,14 @@ func NewBlockHeader(version int32, prevHashes []daghash.Hash, merkleRootHash *da
 // decoding block headers stored to disk, such as in a database, as opposed to
 // decoding from the wire.
 func readBlockHeader(r io.Reader, pver uint32, bh *BlockHeader) error {
-	err := readElements(r, &bh.Version, &bh.NumPrevBlocks)
+	err := readElements(r, &bh.Version, &bh.NumParentBlocks)
 	if err != nil {
 		return err
 	}
 
-	bh.PrevBlocks = make([]daghash.Hash, bh.NumPrevBlocks)
-	for i := byte(0); i < bh.NumPrevBlocks; i++ {
-		err := readElement(r, &bh.PrevBlocks[i])
+	bh.ParentHashes = make([]daghash.Hash, bh.NumParentBlocks)
+	for i := byte(0); i < bh.NumParentBlocks; i++ {
+		err := readElement(r, &bh.ParentHashes[i])
 		if err != nil {
 			return err
 		}
@@ -164,6 +164,6 @@ func readBlockHeader(r io.Reader, pver uint32, bh *BlockHeader) error {
 // opposed to encoding for the wire.
 func writeBlockHeader(w io.Writer, pver uint32, bh *BlockHeader) error {
 	sec := int64(bh.Timestamp.Unix())
-	return writeElements(w, bh.Version, bh.NumPrevBlocks, &bh.PrevBlocks, &bh.MerkleRoot,
+	return writeElements(w, bh.Version, bh.NumParentBlocks, &bh.ParentHashes, &bh.MerkleRoot,
 		sec, bh.Bits, bh.Nonce)
 }

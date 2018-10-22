@@ -555,7 +555,7 @@ func deserializeUTXOEntry(serialized []byte) (*UTXOEntry, error) {
 	}
 
 	entry := &UTXOEntry{
-		amount:      int64(amount),
+		amount:      amount,
 		pkScript:    pkScript,
 		blockHeight: blockHeight,
 		packedFlags: 0,
@@ -613,7 +613,7 @@ func dbFetchUTXOEntry(dbTx database.Tx, outpoint wire.OutPoint) (*UTXOEntry, err
 // in the database based on the provided UTXO view contents and state.  In
 // particular, only the entries that have been marked as modified are written
 // to the database.
-func dbPutUTXODiff(dbTx database.Tx, diff *utxoDiff) error {
+func dbPutUTXODiff(dbTx database.Tx, diff *UTXODiff) error {
 	utxoBucket := dbTx.Metadata().Bucket(utxoSetBucketName)
 	for outPoint := range diff.toRemove {
 		key := outpointKey(outPoint)
@@ -747,7 +747,7 @@ func (dag *BlockDAG) createDAGState() error {
 	genesisCoinbaseTxOut := genesisCoinbase.TxOut[0]
 	genesisCoinbaseOutpoint := *wire.NewOutPoint(&genesisCoinbaseTxIn.PreviousOutPoint.Hash, genesisCoinbaseTxIn.PreviousOutPoint.Index)
 	genesisCoinbaseUTXOEntry := NewUTXOEntry(genesisCoinbaseTxOut, true, 0)
-	node.diff = &utxoDiff{
+	node.diff = &UTXODiff{
 		toAdd:    utxoCollection{genesisCoinbaseOutpoint: genesisCoinbaseUTXOEntry},
 		toRemove: utxoCollection{},
 	}
@@ -892,7 +892,7 @@ func (dag *BlockDAG) initDAGState() error {
 						"found %s", blockHash))
 				}
 			} else {
-				for _, hash := range header.PrevBlocks {
+				for _, hash := range header.ParentHashes {
 					parent := dag.index.LookupNode(&hash)
 					if parent == nil {
 						return AssertError(fmt.Sprintf("initDAGState: Could "+

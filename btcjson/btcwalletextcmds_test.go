@@ -30,109 +30,109 @@ func TestBtcWalletExtCmds(t *testing.T) {
 		unmarshalled interface{}
 	}{
 		{
-			name: "createnewaccount",
+			name: "createNewAccount",
 			newCmd: func() (interface{}, error) {
-				return btcjson.NewCmd("createnewaccount", "acct")
+				return btcjson.NewCmd("createNewAccount", "acct")
 			},
 			staticCmd: func() interface{} {
 				return btcjson.NewCreateNewAccountCmd("acct")
 			},
-			marshalled: `{"jsonrpc":"1.0","method":"createnewaccount","params":["acct"],"id":1}`,
+			marshalled: `{"jsonrpc":"1.0","method":"createNewAccount","params":["acct"],"id":1}`,
 			unmarshalled: &btcjson.CreateNewAccountCmd{
 				Account: "acct",
 			},
 		},
 		{
-			name: "dumpwallet",
+			name: "dumpWallet",
 			newCmd: func() (interface{}, error) {
-				return btcjson.NewCmd("dumpwallet", "filename")
+				return btcjson.NewCmd("dumpWallet", "filename")
 			},
 			staticCmd: func() interface{} {
 				return btcjson.NewDumpWalletCmd("filename")
 			},
-			marshalled: `{"jsonrpc":"1.0","method":"dumpwallet","params":["filename"],"id":1}`,
+			marshalled: `{"jsonrpc":"1.0","method":"dumpWallet","params":["filename"],"id":1}`,
 			unmarshalled: &btcjson.DumpWalletCmd{
 				Filename: "filename",
 			},
 		},
 		{
-			name: "importaddress",
+			name: "importAddress",
 			newCmd: func() (interface{}, error) {
-				return btcjson.NewCmd("importaddress", "1Address")
+				return btcjson.NewCmd("importAddress", "1Address")
 			},
 			staticCmd: func() interface{} {
 				return btcjson.NewImportAddressCmd("1Address", nil)
 			},
-			marshalled: `{"jsonrpc":"1.0","method":"importaddress","params":["1Address"],"id":1}`,
+			marshalled: `{"jsonrpc":"1.0","method":"importAddress","params":["1Address"],"id":1}`,
 			unmarshalled: &btcjson.ImportAddressCmd{
 				Address: "1Address",
 				Rescan:  btcjson.Bool(true),
 			},
 		},
 		{
-			name: "importaddress optional",
+			name: "importAddress optional",
 			newCmd: func() (interface{}, error) {
-				return btcjson.NewCmd("importaddress", "1Address", false)
+				return btcjson.NewCmd("importAddress", "1Address", false)
 			},
 			staticCmd: func() interface{} {
 				return btcjson.NewImportAddressCmd("1Address", btcjson.Bool(false))
 			},
-			marshalled: `{"jsonrpc":"1.0","method":"importaddress","params":["1Address",false],"id":1}`,
+			marshalled: `{"jsonrpc":"1.0","method":"importAddress","params":["1Address",false],"id":1}`,
 			unmarshalled: &btcjson.ImportAddressCmd{
 				Address: "1Address",
 				Rescan:  btcjson.Bool(false),
 			},
 		},
 		{
-			name: "importpubkey",
+			name: "importPubKey",
 			newCmd: func() (interface{}, error) {
-				return btcjson.NewCmd("importpubkey", "031234")
+				return btcjson.NewCmd("importPubKey", "031234")
 			},
 			staticCmd: func() interface{} {
 				return btcjson.NewImportPubKeyCmd("031234", nil)
 			},
-			marshalled: `{"jsonrpc":"1.0","method":"importpubkey","params":["031234"],"id":1}`,
+			marshalled: `{"jsonrpc":"1.0","method":"importPubKey","params":["031234"],"id":1}`,
 			unmarshalled: &btcjson.ImportPubKeyCmd{
 				PubKey: "031234",
 				Rescan: btcjson.Bool(true),
 			},
 		},
 		{
-			name: "importpubkey optional",
+			name: "importPubKey optional",
 			newCmd: func() (interface{}, error) {
-				return btcjson.NewCmd("importpubkey", "031234", false)
+				return btcjson.NewCmd("importPubKey", "031234", false)
 			},
 			staticCmd: func() interface{} {
 				return btcjson.NewImportPubKeyCmd("031234", btcjson.Bool(false))
 			},
-			marshalled: `{"jsonrpc":"1.0","method":"importpubkey","params":["031234",false],"id":1}`,
+			marshalled: `{"jsonrpc":"1.0","method":"importPubKey","params":["031234",false],"id":1}`,
 			unmarshalled: &btcjson.ImportPubKeyCmd{
 				PubKey: "031234",
 				Rescan: btcjson.Bool(false),
 			},
 		},
 		{
-			name: "importwallet",
+			name: "importWallet",
 			newCmd: func() (interface{}, error) {
-				return btcjson.NewCmd("importwallet", "filename")
+				return btcjson.NewCmd("importWallet", "filename")
 			},
 			staticCmd: func() interface{} {
 				return btcjson.NewImportWalletCmd("filename")
 			},
-			marshalled: `{"jsonrpc":"1.0","method":"importwallet","params":["filename"],"id":1}`,
+			marshalled: `{"jsonrpc":"1.0","method":"importWallet","params":["filename"],"id":1}`,
 			unmarshalled: &btcjson.ImportWalletCmd{
 				Filename: "filename",
 			},
 		},
 		{
-			name: "renameaccount",
+			name: "renameAccount",
 			newCmd: func() (interface{}, error) {
-				return btcjson.NewCmd("renameaccount", "oldacct", "newacct")
+				return btcjson.NewCmd("renameAccount", "oldacct", "newacct")
 			},
 			staticCmd: func() interface{} {
 				return btcjson.NewRenameAccountCmd("oldacct", "newacct")
 			},
-			marshalled: `{"jsonrpc":"1.0","method":"renameaccount","params":["oldacct","newacct"],"id":1}`,
+			marshalled: `{"jsonrpc":"1.0","method":"renameAccount","params":["oldacct","newacct"],"id":1}`,
 			unmarshalled: &btcjson.RenameAccountCmd{
 				OldAccount: "oldacct",
 				NewAccount: "newacct",

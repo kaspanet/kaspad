@@ -76,7 +76,7 @@ func TestBlockHeap(t *testing.T) {
 
 		var poppedBlock *blockNode
 		if test.expectedPop != nil {
-			poppedBlock = heap.Pop()
+			poppedBlock = heap.pop()
 		}
 		if heap.Len() != test.expectedLength {
 			t.Errorf("unexpected heap length in test \"%s\". "+
