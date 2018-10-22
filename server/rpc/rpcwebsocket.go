@@ -63,18 +63,18 @@ type wsCommandHandler func(*wsClient, interface{}) (interface{}, error)
 // causes a dependency loop.
 var wsHandlers map[string]wsCommandHandler
 var wsHandlersBeforeInit = map[string]wsCommandHandler{
-	"loadtxfilter":              handleLoadTxFilter,
+	"loadTxFilter":              handleLoadTxFilter,
 	"help":                      handleWebsocketHelp,
-	"notifyblocks":              handleNotifyBlocks,
-	"notifynewtransactions":     handleNotifyNewTransactions,
-	"notifyreceived":            handleNotifyReceived,
-	"notifyspent":               handleNotifySpent,
+	"notifyBlocks":              handleNotifyBlocks,
+	"notifyNewTransactions":     handleNotifyNewTransactions,
+	"notifyReceived":            handleNotifyReceived,
+	"notifySpent":               handleNotifySpent,
 	"session":                   handleSession,
-	"stopnotifyblocks":          handleStopNotifyBlocks,
-	"stopnotifynewtransactions": handleStopNotifyNewTransactions,
-	"stopnotifyspent":           handleStopNotifySpent,
-	"stopnotifyreceived":        handleStopNotifyReceived,
-	"rescanblocks":              handleRescanBlocks,
+	"stopNotifyBlocks":          handleStopNotifyBlocks,
+	"stopNotifyNewTransactions": handleStopNotifyNewTransactions,
+	"stopNotifySpent":           handleStopNotifySpent,
+	"stopNotifyReceived":        handleStopNotifyReceived,
+	"rescanBlocks":              handleRescanBlocks,
 }
 
 // WebsocketHandler handles a new websocket client by creating a new wsClient,
@@ -246,7 +246,7 @@ func (m *wsNotificationManager) NotifyMempoolTx(tx *util.Tx, isNew bool) {
 }
 
 // wsClientFilter tracks relevant addresses for each websocket client for
-// the `rescanblocks` extension. It is modified by the `loadtxfilter` command.
+// the `rescanBlocks` extension. It is modified by the `loadTxFilter` command.
 //
 // NOTE: This extension was ported from github.com/decred/dcrd
 type wsClientFilter struct {
@@ -1287,8 +1287,8 @@ type wsClient struct {
 	spentRequests map[wire.OutPoint]struct{}
 
 	// filterData is the new generation transaction filter backported from
-	// github.com/decred/dcrd for the new backported `loadtxfilter` and
-	// `rescanblocks` methods.
+	// github.com/decred/dcrd for the new backported `loadTxFilter` and
+	// `rescanBlocks` methods.
 	filterData *wsClientFilter
 
 	// Networking infrastructure.
@@ -1779,7 +1779,7 @@ func handleWebsocketHelp(wsc *wsClient, icmd interface{}) (interface{}, error) {
 	return help, nil
 }
 
-// handleLoadTxFilter implements the loadtxfilter command extension for
+// handleLoadTxFilter implements the loadTxFilter command extension for
 // websocket connections.
 //
 // NOTE: This extension is ported from github.com/decred/dcrd
@@ -1824,7 +1824,7 @@ func handleLoadTxFilter(wsc *wsClient, icmd interface{}) (interface{}, error) {
 	return nil, nil
 }
 
-// handleNotifyBlocks implements the notifyblocks command extension for
+// handleNotifyBlocks implements the notifyBlocks command extension for
 // websocket connections.
 func handleNotifyBlocks(wsc *wsClient, icmd interface{}) (interface{}, error) {
 	wsc.server.ntfnMgr.RegisterBlockUpdates(wsc)
@@ -1837,14 +1837,14 @@ func handleSession(wsc *wsClient, icmd interface{}) (interface{}, error) {
 	return &btcjson.SessionResult{SessionID: wsc.sessionID}, nil
 }
 
-// handleStopNotifyBlocks implements the stopnotifyblocks command extension for
+// handleStopNotifyBlocks implements the stopNotifyBlocks command extension for
 // websocket connections.
 func handleStopNotifyBlocks(wsc *wsClient, icmd interface{}) (interface{}, error) {
 	wsc.server.ntfnMgr.UnregisterBlockUpdates(wsc)
 	return nil, nil
 }
 
-// handleNotifySpent implements the notifyspent command extension for
+// handleNotifySpent implements the notifySpent command extension for
 // websocket connections.
 func handleNotifySpent(wsc *wsClient, icmd interface{}) (interface{}, error) {
 	cmd, ok := icmd.(*btcjson.NotifySpentCmd)
@@ -1861,7 +1861,7 @@ func handleNotifySpent(wsc *wsClient, icmd interface{}) (interface{}, error) {
 	return nil, nil
 }
 
-// handleNotifyNewTransations implements the notifynewtransactions command
+// handleNotifyNewTransations implements the notifyNewTransactions command
 // extension for websocket connections.
 func handleNotifyNewTransactions(wsc *wsClient, icmd interface{}) (interface{}, error) {
 	cmd, ok := icmd.(*btcjson.NotifyNewTransactionsCmd)
@@ -1874,14 +1874,14 @@ func handleNotifyNewTransactions(wsc *wsClient, icmd interface{}) (interface{}, 
 	return nil, nil
 }
 
-// handleStopNotifyNewTransations implements the stopnotifynewtransactions
+// handleStopNotifyNewTransations implements the stopNotifyNewTransactions
 // command extension for websocket connections.
 func handleStopNotifyNewTransactions(wsc *wsClient, icmd interface{}) (interface{}, error) {
 	wsc.server.ntfnMgr.UnregisterNewMempoolTxsUpdates(wsc)
 	return nil, nil
 }
 
-// handleNotifyReceived implements the notifyreceived command extension for
+// handleNotifyReceived implements the notifyReceived command extension for
 // websocket connections.
 func handleNotifyReceived(wsc *wsClient, icmd interface{}) (interface{}, error) {
 	cmd, ok := icmd.(*btcjson.NotifyReceivedCmd)
@@ -1900,7 +1900,7 @@ func handleNotifyReceived(wsc *wsClient, icmd interface{}) (interface{}, error) 
 	return nil, nil
 }
 
-// handleStopNotifySpent implements the stopnotifyspent command extension for
+// handleStopNotifySpent implements the stopNotifySpent command extension for
 // websocket connections.
 func handleStopNotifySpent(wsc *wsClient, icmd interface{}) (interface{}, error) {
 	cmd, ok := icmd.(*btcjson.StopNotifySpentCmd)
@@ -1920,7 +1920,7 @@ func handleStopNotifySpent(wsc *wsClient, icmd interface{}) (interface{}, error)
 	return nil, nil
 }
 
-// handleStopNotifyReceived implements the stopnotifyreceived command extension
+// handleStopNotifyReceived implements the stopNotifyReceived command extension
 // for websocket connections.
 func handleStopNotifyReceived(wsc *wsClient, icmd interface{}) (interface{}, error) {
 	cmd, ok := icmd.(*btcjson.StopNotifyReceivedCmd)
@@ -2038,7 +2038,7 @@ func rescanBlockFilter(filter *wsClientFilter, block *util.Block, params *dagcon
 	return transactions
 }
 
-// handleRescanBlocks implements the rescanblocks command extension for
+// handleRescanBlocks implements the rescanBlocks command extension for
 // websocket connections.
 //
 // NOTE: This extension is ported from github.com/decred/dcrd

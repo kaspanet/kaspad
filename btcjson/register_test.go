@@ -67,7 +67,7 @@ func TestRegisterCmdErrors(t *testing.T) {
 	}{
 		{
 			name:   "duplicate method",
-			method: "getblock",
+			method: "getBlock",
 			cmdFunc: func() interface{} {
 				return struct{}{}
 			},
@@ -75,7 +75,7 @@ func TestRegisterCmdErrors(t *testing.T) {
 		},
 		{
 			name:   "invalid usage flags",
-			method: "registertestcmd",
+			method: "registerTestCmd",
 			cmdFunc: func() interface{} {
 				return 0
 			},
@@ -84,7 +84,7 @@ func TestRegisterCmdErrors(t *testing.T) {
 		},
 		{
 			name:   "invalid type",
-			method: "registertestcmd",
+			method: "registerTestCmd",
 			cmdFunc: func() interface{} {
 				return 0
 			},
@@ -92,7 +92,7 @@ func TestRegisterCmdErrors(t *testing.T) {
 		},
 		{
 			name:   "invalid type 2",
-			method: "registertestcmd",
+			method: "registerTestCmd",
 			cmdFunc: func() interface{} {
 				return &[]string{}
 			},
@@ -100,7 +100,7 @@ func TestRegisterCmdErrors(t *testing.T) {
 		},
 		{
 			name:   "embedded field",
-			method: "registertestcmd",
+			method: "registerTestCmd",
 			cmdFunc: func() interface{} {
 				type test struct{ int }
 				return (*test)(nil)
@@ -109,7 +109,7 @@ func TestRegisterCmdErrors(t *testing.T) {
 		},
 		{
 			name:   "unexported field",
-			method: "registertestcmd",
+			method: "registerTestCmd",
 			cmdFunc: func() interface{} {
 				type test struct{ a int }
 				return (*test)(nil)
@@ -118,7 +118,7 @@ func TestRegisterCmdErrors(t *testing.T) {
 		},
 		{
 			name:   "unsupported field type 1",
-			method: "registertestcmd",
+			method: "registerTestCmd",
 			cmdFunc: func() interface{} {
 				type test struct{ A **int }
 				return (*test)(nil)
@@ -127,7 +127,7 @@ func TestRegisterCmdErrors(t *testing.T) {
 		},
 		{
 			name:   "unsupported field type 2",
-			method: "registertestcmd",
+			method: "registerTestCmd",
 			cmdFunc: func() interface{} {
 				type test struct{ A chan int }
 				return (*test)(nil)
@@ -136,7 +136,7 @@ func TestRegisterCmdErrors(t *testing.T) {
 		},
 		{
 			name:   "unsupported field type 3",
-			method: "registertestcmd",
+			method: "registerTestCmd",
 			cmdFunc: func() interface{} {
 				type test struct{ A complex64 }
 				return (*test)(nil)
@@ -145,7 +145,7 @@ func TestRegisterCmdErrors(t *testing.T) {
 		},
 		{
 			name:   "unsupported field type 4",
-			method: "registertestcmd",
+			method: "registerTestCmd",
 			cmdFunc: func() interface{} {
 				type test struct{ A complex128 }
 				return (*test)(nil)
@@ -154,7 +154,7 @@ func TestRegisterCmdErrors(t *testing.T) {
 		},
 		{
 			name:   "unsupported field type 5",
-			method: "registertestcmd",
+			method: "registerTestCmd",
 			cmdFunc: func() interface{} {
 				type test struct{ A func() }
 				return (*test)(nil)
@@ -163,7 +163,7 @@ func TestRegisterCmdErrors(t *testing.T) {
 		},
 		{
 			name:   "unsupported field type 6",
-			method: "registertestcmd",
+			method: "registerTestCmd",
 			cmdFunc: func() interface{} {
 				type test struct{ A interface{} }
 				return (*test)(nil)
@@ -172,7 +172,7 @@ func TestRegisterCmdErrors(t *testing.T) {
 		},
 		{
 			name:   "required after optional",
-			method: "registertestcmd",
+			method: "registerTestCmd",
 			cmdFunc: func() interface{} {
 				type test struct {
 					A *int
@@ -184,7 +184,7 @@ func TestRegisterCmdErrors(t *testing.T) {
 		},
 		{
 			name:   "non-optional with default",
-			method: "registertestcmd",
+			method: "registerTestCmd",
 			cmdFunc: func() interface{} {
 				type test struct {
 					A int `jsonrpcdefault:"1"`
@@ -195,7 +195,7 @@ func TestRegisterCmdErrors(t *testing.T) {
 		},
 		{
 			name:   "mismatched default",
-			method: "registertestcmd",
+			method: "registerTestCmd",
 			cmdFunc: func() interface{} {
 				type test struct {
 					A *int `jsonrpcdefault:"1.7"`
