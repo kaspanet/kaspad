@@ -181,7 +181,7 @@ func indexNeedsInputs(index Indexer) bool {
 // loads it from the database.
 func dbFetchTx(dbTx database.Tx, hash *daghash.Hash) (*wire.MsgTx, error) {
 	// Look up the location of the transaction.
-	blockRegion, err := dbFetchTxIndexEntry(dbTx, hash)
+	blockRegion, err := dbFetchFirstTxRegion(dbTx, hash)
 	if err != nil {
 		return nil, err
 	}
@@ -210,31 +210,12 @@ func dbFetchTx(dbTx database.Tx, hash *daghash.Hash) (*wire.MsgTx, error) {
 // checks, and invokes each indexer.
 //
 // This is part of the blockchain.IndexManager interface.
-func (m *Manager) ConnectBlock(dbTx database.Tx, block *util.Block, dag *blockdag.BlockDAG) error {
+func (m *Manager) ConnectBlock(dbTx database.Tx, block *util.Block, dag *blockdag.BlockDAG, acceptedTxsData []*blockdag.TxWithBlockHash) error {
 	// Call each of the currently active optional indexes with the block
 	// being connected so they can update accordingly.
 	for _, index := range m.enabledIndexes {
 		// Notify the indexer with the connected block so it can index it.
-		if err := index.ConnectBlock(dbTx, block, dag); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-// DisconnectBlock must be invoked when a block is being disconnected from the
-// end of the main chain.  It keeps track of the state of each index it is
-// managing, performs some sanity checks, and invokes each indexer to remove
-// the index entries associated with the block.
-//
-// This is part of the blockchain.IndexManager interface.
-func (m *Manager) DisconnectBlock(dbTx database.Tx, block *util.Block, dag *blockdag.BlockDAG) error {
-	// Call each of the currently active optional indexes with the block
-	// being disconnected so they can update accordingly.
-	for _, index := range m.enabledIndexes {
-		// Notify the indexer with the disconnected block so it can remove all
-		// of the appropriate entries.
-		if err := index.DisconnectBlock(dbTx, block, dag); err != nil {
+		if err := index.ConnectBlock(dbTx, block, dag, acceptedTxsData); err != nil {
 			return err
 		}
 	}
