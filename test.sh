@@ -16,7 +16,7 @@ go list ./... | \
 rm -f ${COVERAGE_TEMP_PATH}
 
 grep "ok .* 100.0% of statements" -v /tmp/test > /tmp/test2 || true
-if [[ -s /tmp/test2 ]]
+if [ -s /tmp/test2 ]
 then
     echo " >> tests failed or not 100% coverage"
     exit 1
