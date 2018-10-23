@@ -1523,3 +1523,85 @@ func TestCount(t *testing.T) {
 	}
 
 }
+
+type fakeErr string
+
+func (e fakeErr) Error() string {
+	return string(e)
+}
+
+func TestExtractRejectCode(t *testing.T) {
+	tests := []struct {
+		blockdagRuleErrorCode blockdag.ErrorCode
+		wireRejectCode        wire.RejectCode
+	}{
+		{
+			blockdagRuleErrorCode: blockdag.ErrDuplicateBlock,
+			wireRejectCode:        wire.RejectDuplicate,
+		},
+		{
+			blockdagRuleErrorCode: blockdag.ErrBlockVersionTooOld,
+			wireRejectCode:        wire.RejectObsolete,
+		},
+		{
+			blockdagRuleErrorCode: blockdag.ErrCheckpointTimeTooOld,
+			wireRejectCode:        wire.RejectCheckpoint,
+		},
+		{
+			blockdagRuleErrorCode: blockdag.ErrDifficultyTooLow,
+			wireRejectCode:        wire.RejectCheckpoint,
+		},
+		{
+			blockdagRuleErrorCode: blockdag.ErrBadCheckpoint,
+			wireRejectCode:        wire.RejectCheckpoint,
+		},
+		{
+			blockdagRuleErrorCode: blockdag.ErrForkTooOld,
+			wireRejectCode:        wire.RejectCheckpoint,
+		},
+		{
+			blockdagRuleErrorCode: math.MaxUint32,
+			wireRejectCode:        wire.RejectInvalid,
+		},
+	}
+
+	for _, test := range tests {
+		err := blockdag.RuleError{ErrorCode: test.blockdagRuleErrorCode}
+		code, ok := extractRejectCode(err)
+		if !ok {
+			t.Errorf("TestExtractRejectCode: %v could not be extracted", test.blockdagRuleErrorCode)
+		}
+		if test.wireRejectCode != code {
+			t.Errorf("TestExtractRejectCode: expected %v to extract %v but got %v", test.blockdagRuleErrorCode, test.wireRejectCode, code)
+		}
+	}
+
+	txRuleError := TxRuleError{RejectCode: wire.RejectDust}
+	txExtractedCode, ok := extractRejectCode(txRuleError)
+	if !ok {
+		t.Errorf("TestExtractRejectCode: %v could not be extracted", txRuleError)
+	}
+	if txExtractedCode != wire.RejectDust {
+		t.Errorf("TestExtractRejectCode: expected %v to extract %v but got %v", wire.RejectDust, wire.RejectDust, txExtractedCode)
+	}
+
+	var nilErr error
+	nilErrExtractedCode, ok := extractRejectCode(nilErr)
+	if nilErrExtractedCode != wire.RejectInvalid {
+		t.Errorf("TestExtractRejectCode: expected %v to extract %v but got %v", wire.RejectInvalid, wire.RejectInvalid, nilErrExtractedCode)
+	}
+	if ok {
+		t.Errorf("TestExtractRejectCode: a nil error is expected to return false but got %v", ok)
+	}
+
+	fErr := fakeErr("fake err")
+
+	fErrExtractedCode, ok := extractRejectCode(fErr)
+	if fErrExtractedCode != wire.RejectInvalid {
+		t.Errorf("TestExtractRejectCode: expected %v to extract %v but got %v", wire.RejectInvalid, wire.RejectInvalid, nilErrExtractedCode)
+	}
+	if ok {
+		t.Errorf("TestExtractRejectCode: a fakeErr type is expected to return false but got %v", ok)
+	}
+
+}
