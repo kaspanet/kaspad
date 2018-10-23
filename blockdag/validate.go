@@ -162,7 +162,7 @@ func IsFinalizedTransaction(tx *util.Tx, blockHeight int32, blockTime time.Time)
 //
 // At the target block generation rate for the main network, this is
 // approximately every 4 years.
-func CalcBlockSubsidy(height int32, dagParams *dagconfig.Params) int64 {
+func CalcBlockSubsidy(height int32, dagParams *dagconfig.Params) uint64 {
 	if dagParams.SubsidyReductionInterval == 0 {
 		return baseSubsidy
 	}
@@ -200,7 +200,7 @@ func CheckTransactionSanity(tx *util.Tx) error {
 	// restrictions.  All amounts in a transaction are in a unit value known
 	// as a satoshi.  One bitcoin is a quantity of satoshi as defined by the
 	// SatoshiPerBitcoin constant.
-	var totalSatoshi int64
+	var totalSatoshi uint64
 	for _, txOut := range msgTx.TxOut {
 		satoshi := txOut.Value
 		if satoshi < 0 {
@@ -218,13 +218,14 @@ func CheckTransactionSanity(tx *util.Tx) error {
 		// Two's complement int64 overflow guarantees that any overflow
 		// is detected and reported.  This is impossible for Bitcoin, but
 		// perhaps possible if an alt increases the total money supply.
-		totalSatoshi += satoshi
-		if totalSatoshi < 0 {
+		newTotalSatoshi := totalSatoshi + satoshi
+		if newTotalSatoshi < totalSatoshi {
 			str := fmt.Sprintf("total value of all transaction "+
 				"outputs exceeds max allowed value of %v",
 				util.MaxSatoshi)
 			return ruleError(ErrBadTxOutValue, str)
 		}
+		totalSatoshi = newTotalSatoshi
 		if totalSatoshi > util.MaxSatoshi {
 			str := fmt.Sprintf("total value of all transaction "+
 				"outputs is %v which is higher than max "+
@@ -815,14 +816,14 @@ func (dag *BlockDAG) ensureNoDuplicateTx(node *blockNode, block *util.Block) err
 //
 // NOTE: The transaction MUST have already been sanity checked with the
 // CheckTransactionSanity function prior to calling this function.
-func CheckTransactionInputs(tx *util.Tx, txHeight int32, utxoSet UTXOSet, dagParams *dagconfig.Params) (int64, error) {
+func CheckTransactionInputs(tx *util.Tx, txHeight int32, utxoSet UTXOSet, dagParams *dagconfig.Params) (uint64, error) {
 	// Coinbase transactions have no inputs.
 	if IsCoinBase(tx) {
 		return 0, nil
 	}
 
 	txHash := tx.Hash()
-	var totalSatoshiIn int64
+	var totalSatoshiIn uint64
 	for txInIndex, txIn := range tx.MsgTx().TxIn {
 		// Ensure the referenced input transaction is available.
 		entry, ok := utxoSet.Get(txIn.PreviousOutPoint)
@@ -858,11 +859,6 @@ func CheckTransactionInputs(tx *util.Tx, txHeight int32, utxoSet UTXOSet, dagPar
 		// bitcoin is a quantity of satoshi as defined by the
 		// SatoshiPerBitcoin constant.
 		originTxSatoshi := entry.Amount()
-		if originTxSatoshi < 0 {
-			str := fmt.Sprintf("transaction output has negative "+
-				"value of %v", util.Amount(originTxSatoshi))
-			return 0, ruleError(ErrBadTxOutValue, str)
-		}
 		if originTxSatoshi > util.MaxSatoshi {
 			str := fmt.Sprintf("transaction output value of %v is "+
 				"higher than max allowed value of %v",
@@ -889,7 +885,7 @@ func CheckTransactionInputs(tx *util.Tx, txHeight int32, utxoSet UTXOSet, dagPar
 	// Calculate the total output amount for this transaction.  It is safe
 	// to ignore overflow and out of range errors here because those error
 	// conditions would have already been caught by checkTransactionSanity.
-	var totalSatoshiOut int64
+	var totalSatoshiOut uint64
 	for _, txOut := range tx.MsgTx().TxOut {
 		totalSatoshiOut += txOut.Value
 	}
@@ -990,7 +986,7 @@ func (dag *BlockDAG) checkConnectBlock(node *blockNode, block *util.Block) error
 	// still relatively cheap as compared to running the scripts) checks
 	// against all the inputs when the signature operations are out of
 	// bounds.
-	var totalFees int64
+	var totalFees uint64
 	for _, tx := range transactions {
 		txFee, err := CheckTransactionInputs(tx, node.height, dag.virtual.utxoSet,
 			dag.dagParams)
@@ -1013,7 +1009,7 @@ func (dag *BlockDAG) checkConnectBlock(node *blockNode, block *util.Block) error
 	// mining the block.  It is safe to ignore overflow and out of range
 	// errors here because those error conditions would have already been
 	// caught by checkTransactionSanity.
-	var totalSatoshiOut int64
+	var totalSatoshiOut uint64
 	for _, txOut := range transactions[0].MsgTx().TxOut {
 		totalSatoshiOut += txOut.Value
 	}

@@ -43,7 +43,7 @@ func TestTxFeePrioHeap(t *testing.T) {
 	prng := rand.New(rand.NewSource(randSeed))
 	for i := 0; i < 1000; i++ {
 		testItems = append(testItems, &txPrioItem{
-			feePerKB: int64(prng.Float64() * util.SatoshiPerBitcoin),
+			feePerKB: uint64(prng.Float64() * util.SatoshiPerBitcoin),
 			priority: prng.Float64() * 100,
 		})
 	}

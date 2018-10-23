@@ -11,8 +11,8 @@ import (
 
 	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/mining"
-	"github.com/daglabs/btcd/wire"
 	"github.com/daglabs/btcd/util"
+	"github.com/daglabs/btcd/wire"
 )
 
 // newTestFeeEstimator creates a feeEstimator with some different parameters
@@ -54,7 +54,7 @@ func (eft *estimateFeeTester) testTx(fee util.Amount) *TxDesc {
 				Version: eft.version,
 			}),
 			Height: eft.height,
-			Fee:    int64(fee),
+			Fee:    uint64(fee),
 		},
 		StartingPriority: 0,
 	}

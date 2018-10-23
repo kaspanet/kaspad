@@ -11,6 +11,7 @@ import (
 
 	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/wire"
+	"math"
 )
 
 // SigHashType represents hash type bits at the end of a signature.
@@ -329,7 +330,7 @@ func calcSignatureHash(script []parsedOpcode, hashType SigHashType, tx *wire.Msg
 
 		// All but current output get zeroed out.
 		for i := 0; i < idx; i++ {
-			txCopy.TxOut[i].Value = -1
+			txCopy.TxOut[i].Value = math.MaxUint64
 			txCopy.TxOut[i].PkScript = nil
 		}
 

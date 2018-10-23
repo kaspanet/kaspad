@@ -134,8 +134,8 @@ func (p *poolHarness) CreateCoinbaseTx(blockHeight int32, numOutputs uint32) (*u
 		Sequence:        wire.MaxTxInSequenceNum,
 	})
 	totalInput := blockdag.CalcBlockSubsidy(blockHeight, p.chainParams)
-	amountPerOutput := totalInput / int64(numOutputs)
-	remainder := totalInput - amountPerOutput*int64(numOutputs)
+	amountPerOutput := totalInput / uint64(numOutputs)
+	remainder := totalInput - amountPerOutput*uint64(numOutputs)
 	for i := uint32(0); i < numOutputs; i++ {
 		// Ensure the final output accounts for any remainder that might
 		// be left from splitting the input amount.
@@ -163,8 +163,8 @@ func (p *poolHarness) CreateSignedTx(inputs []spendableOutpoint, numOutputs uint
 	for _, input := range inputs {
 		totalInput += input.amount
 	}
-	amountPerOutput := int64(totalInput) / int64(numOutputs)
-	remainder := int64(totalInput) - amountPerOutput*int64(numOutputs)
+	amountPerOutput := uint64(totalInput) / uint64(numOutputs)
+	remainder := uint64(totalInput) - amountPerOutput*uint64(numOutputs)
 
 	tx := wire.NewMsgTx(wire.TxVersion)
 	for _, input := range inputs {
@@ -220,7 +220,7 @@ func (p *poolHarness) CreateTxChain(firstOutput spendableOutpoint, numTxns uint3
 		})
 		tx.AddTxOut(&wire.TxOut{
 			PkScript: p.payScript,
-			Value:    int64(spendableAmount),
+			Value:    uint64(spendableAmount),
 		})
 
 		// Sign the new transaction.
@@ -362,14 +362,14 @@ func testPoolMembership(tc *testContext, tx *util.Tx, inOrphanPool, inTxPool boo
 	}
 }
 
-func (p *poolHarness) createTx(outpoint spendableOutpoint, fee int64, numOutputs int64) (*util.Tx, error) {
+func (p *poolHarness) createTx(outpoint spendableOutpoint, fee uint64, numOutputs int64) (*util.Tx, error) {
 	tx := wire.NewMsgTx(wire.TxVersion)
 	tx.AddTxIn(&wire.TxIn{
 		PreviousOutPoint: outpoint.outPoint,
 		SignatureScript:  nil,
 		Sequence:         wire.MaxTxInSequenceNum,
 	})
-	amountPerOutput := (int64(outpoint.amount) - fee) / numOutputs
+	amountPerOutput := (uint64(outpoint.amount) - fee) / uint64(numOutputs)
 	for i := int64(0); i < numOutputs; i++ {
 		tx.AddTxOut(&wire.TxOut{
 			PkScript: p.payScript,
