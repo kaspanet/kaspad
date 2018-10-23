@@ -28,7 +28,7 @@ RUN varcheck -e ./...
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o btcd .
 RUN strip btcd
 
-RUN go test ./...
+RUN ./test.sh
 
 # --- multistage docker build: stage #2: runtime image
 FROM alpine
