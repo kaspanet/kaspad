@@ -359,25 +359,25 @@ func TestNewCmdErrors(t *testing.T) {
 	}{
 		{
 			name:   "unregistered command",
-			method: "boguscommand",
+			method: "bogusCommand",
 			args:   []interface{}{},
 			err:    btcjson.Error{ErrorCode: btcjson.ErrUnregisteredMethod},
 		},
 		{
 			name:   "too few parameters to command with required + optional",
-			method: "getblock",
+			method: "getBlock",
 			args:   []interface{}{},
 			err:    btcjson.Error{ErrorCode: btcjson.ErrNumParams},
 		},
 		{
 			name:   "too many parameters to command with no optional",
-			method: "getblockcount",
+			method: "getBlockCount",
 			args:   []interface{}{"123"},
 			err:    btcjson.Error{ErrorCode: btcjson.ErrNumParams},
 		},
 		{
 			name:   "incorrect parameter type",
-			method: "getblock",
+			method: "getBlock",
 			args:   []interface{}{1},
 			err:    btcjson.Error{ErrorCode: btcjson.ErrInvalidType},
 		},
@@ -462,7 +462,7 @@ func TestUnmarshalCmdErrors(t *testing.T) {
 			name: "unregistered type",
 			request: btcjson.Request{
 				Jsonrpc: "1.0",
-				Method:  "bogusmethod",
+				Method:  "bogusMethod",
 				Params:  nil,
 				ID:      nil,
 			},
@@ -472,7 +472,7 @@ func TestUnmarshalCmdErrors(t *testing.T) {
 			name: "incorrect number of params",
 			request: btcjson.Request{
 				Jsonrpc: "1.0",
-				Method:  "getblockcount",
+				Method:  "getBlockCount",
 				Params:  []json.RawMessage{[]byte(`"bogusparam"`)},
 				ID:      nil,
 			},
@@ -482,7 +482,7 @@ func TestUnmarshalCmdErrors(t *testing.T) {
 			name: "invalid type for a parameter",
 			request: btcjson.Request{
 				Jsonrpc: "1.0",
-				Method:  "getblock",
+				Method:  "getBlock",
 				Params:  []json.RawMessage{[]byte("1")},
 				ID:      nil,
 			},
@@ -492,7 +492,7 @@ func TestUnmarshalCmdErrors(t *testing.T) {
 			name: "invalid JSON for a parameter",
 			request: btcjson.Request{
 				Jsonrpc: "1.0",
-				Method:  "getblock",
+				Method:  "getBlock",
 				Params:  []json.RawMessage{[]byte(`"1`)},
 				ID:      nil,
 			},
