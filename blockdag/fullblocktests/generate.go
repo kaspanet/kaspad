@@ -383,7 +383,7 @@ func additionalCoinbase(amount util.Amount) func(*wire.MsgBlock) {
 	return func(b *wire.MsgBlock) {
 		// Increase the first proof-of-work coinbase subsidy by the
 		// provided amount.
-		b.Transactions[0].TxOut[0].Value += int64(amount)
+		b.Transactions[0].TxOut[0].Value += uint64(amount)
 	}
 }
 
@@ -396,12 +396,12 @@ func additionalSpendFee(fee util.Amount) func(*wire.MsgBlock) {
 	return func(b *wire.MsgBlock) {
 		// Increase the fee of the spending transaction by reducing the
 		// amount paid.
-		if int64(fee) > b.Transactions[1].TxOut[0].Value {
+		if uint64(fee) > b.Transactions[1].TxOut[0].Value {
 			panic(fmt.Sprintf("additionalSpendFee: fee of %d "+
 				"exceeds available spend transaction value",
 				fee))
 		}
-		b.Transactions[1].TxOut[0].Value -= int64(fee)
+		b.Transactions[1].TxOut[0].Value -= uint64(fee)
 	}
 }
 
@@ -441,7 +441,7 @@ func createSpendTx(spend *spendableOut, fee util.Amount) *wire.MsgTx {
 		Sequence:         wire.MaxTxInSequenceNum,
 		SignatureScript:  nil,
 	})
-	spendTx.AddTxOut(wire.NewTxOut(int64(spend.amount-fee),
+	spendTx.AddTxOut(wire.NewTxOut(uint64(spend.amount-fee),
 		opTrueScript))
 	spendTx.AddTxOut(wire.NewTxOut(0, uniqueOpReturnScript()))
 
@@ -487,7 +487,7 @@ func (g *testGenerator) nextBlock(blockName string, spend *spendableOut, mungers
 		// Create the transaction with a fee of 1 atom for the
 		// miner and increase the coinbase subsidy accordingly.
 		fee := util.Amount(1)
-		coinbaseTx.TxOut[0].Value += int64(fee)
+		coinbaseTx.TxOut[0].Value += uint64(fee)
 
 		// Create a transaction that spends from the provided spendable
 		// output and includes an additional unique OP_RETURN output to
@@ -1695,7 +1695,7 @@ func Generate(includeLargeReorg bool) (tests [][]TestInstance, err error) {
 	//                 \-> b59(17)
 	g.setTip("b57")
 	g.nextBlock("b59", outs[17], func(b *wire.MsgBlock) {
-		b.Transactions[1].TxOut[0].Value = int64(outs[17].amount) + 1
+		b.Transactions[1].TxOut[0].Value = uint64(outs[17].amount) + 1
 	})
 	rejected(blockdag.ErrSpendTooHigh)
 
@@ -1967,7 +1967,7 @@ func Generate(includeLargeReorg bool) (tests [][]TestInstance, err error) {
 		// Add 4 outputs to the spending transaction that are spent
 		// below.
 		const numAdditionalOutputs = 4
-		const zeroCoin = int64(0)
+		const zeroCoin = uint64(0)
 		spendTx := b.Transactions[1]
 		for i := 0; i < numAdditionalOutputs; i++ {
 			spendTx.AddTxOut(wire.NewTxOut(zeroCoin, opTrueScript))
@@ -2032,7 +2032,7 @@ func Generate(includeLargeReorg bool) (tests [][]TestInstance, err error) {
 	g.setTip("b79")
 	g.nextBlock("b81", outs[27], func(b *wire.MsgBlock) {
 		const numAdditionalOutputs = 4
-		const zeroCoin = int64(0)
+		const zeroCoin = uint64(0)
 		spendTx := b.Transactions[1]
 		for i := 0; i < numAdditionalOutputs; i++ {
 			opRetScript := uniqueOpReturnScript()

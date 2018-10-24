@@ -824,7 +824,7 @@ func (m *wsNotificationManager) notifyForNewTx(clients map[chan struct{}]*wsClie
 	txHashStr := tx.Hash().String()
 	mtx := tx.MsgTx()
 
-	var amount int64
+	var amount uint64
 	for _, txOut := range mtx.TxOut {
 		amount += txOut.Value
 	}

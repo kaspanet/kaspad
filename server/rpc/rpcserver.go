@@ -613,7 +613,7 @@ func handleCreateRawTransaction(s *Server, cmd interface{}, closeChan <-chan str
 			return nil, internalRPCError(err.Error(), context)
 		}
 
-		txOut := wire.NewTxOut(int64(satoshi), pkScript)
+		txOut := wire.NewTxOut(uint64(satoshi), pkScript)
 		mtx.AddTxOut(txOut)
 	}
 
@@ -2544,7 +2544,7 @@ func handleGetTxOut(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 	// from there, otherwise attempt to fetch from the block database.
 	var bestBlockHash string
 	var confirmations int32
-	var value int64
+	var value uint64
 	var pkScript []byte
 	var isCoinbase bool
 	includeMempool := true
@@ -4214,7 +4214,7 @@ func NewRPCServer(
 		gbtWorkState:           newGbtWorkState(cfg.TimeSource),
 		helpCacher:             newHelpCacher(),
 		requestProcessShutdown: make(chan struct{}),
-		quit:                   make(chan int),
+		quit: make(chan int),
 	}
 	if config.MainConfig().RPCUser != "" && config.MainConfig().RPCPass != "" {
 		login := config.MainConfig().RPCUser + ":" + config.MainConfig().RPCPass

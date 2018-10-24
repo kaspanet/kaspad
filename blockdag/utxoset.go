@@ -20,7 +20,7 @@ type UTXOEntry struct {
 	// specifically crafted to result in minimal padding.  There will be a
 	// lot of these in memory, so a few extra bytes of padding adds up.
 
-	amount      int64
+	amount      uint64
 	pkScript    []byte // The public key script for the output.
 	blockHeight int32  // Height of block containing tx.
 
@@ -43,7 +43,7 @@ func (entry *UTXOEntry) BlockHeight() int32 {
 }
 
 // Amount returns the amount of the output.
-func (entry *UTXOEntry) Amount() int64 {
+func (entry *UTXOEntry) Amount() uint64 {
 	return entry.amount
 }
 

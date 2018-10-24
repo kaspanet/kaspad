@@ -555,7 +555,7 @@ func deserializeUTXOEntry(serialized []byte) (*UTXOEntry, error) {
 	}
 
 	entry := &UTXOEntry{
-		amount:      int64(amount),
+		amount:      amount,
 		pkScript:    pkScript,
 		blockHeight: blockHeight,
 		packedFlags: 0,
