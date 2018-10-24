@@ -498,15 +498,15 @@ func dbFetchTxBlocks(dbTx database.Tx, hash *daghash.Hash) ([]daghash.Hash, erro
 }
 
 // TxAcceptedInBlock returns the hash of the block where the transaction got accepted (from the virtual block point of view)
-func (idx *TxIndex) TxAcceptedInBlock(dag *blockdag.BlockDAG, hash *daghash.Hash) (*daghash.Hash, error) {
+func (idx *TxIndex) TxAcceptedInBlock(dag *blockdag.BlockDAG, txHash *daghash.Hash) (*daghash.Hash, error) {
 	var acceptingBlock *daghash.Hash
 	err := idx.db.View(func(dbTx database.Tx) error {
-		bucket := dbTx.Metadata().Bucket(acceptingBlocksIndexKey).Bucket(hash[:])
+		bucket := dbTx.Metadata().Bucket(acceptingBlocksIndexKey).Bucket(txHash[:])
 		if bucket == nil {
 			return database.Error{
 				ErrorCode: database.ErrCorruption,
 				Description: fmt.Sprintf("No accepting blocks "+
-					"was found for %s", hash),
+					"was found for %s", txHash),
 			}
 		}
 		cursor := bucket.Cursor()
@@ -514,12 +514,12 @@ func (idx *TxIndex) TxAcceptedInBlock(dag *blockdag.BlockDAG, hash *daghash.Hash
 			return database.Error{
 				ErrorCode: database.ErrCorruption,
 				Description: fmt.Sprintf("No accepting blocks "+
-					"was found for %s", hash),
+					"was found for %s", txHash),
 			}
 		}
 		var currentHash daghash.Hash
 		found := false
-		for ; cursor.Key() != nil && !false; cursor.Next() {
+		for ; cursor.Key() != nil && !found; cursor.Next() {
 			copy(currentHash[:], cursor.Key())
 			found = dag.IsInSelectedPath(&currentHash)
 		}

@@ -43,7 +43,7 @@ func TestDAGSetupErrors(t *testing.T) {
 
 func testDAGSetupErrorThroughPatching(t *testing.T, expectedErrorMessage string, targetFunction interface{}, replacementFunction interface{}) {
 	monkey.Patch(targetFunction, replacementFunction)
-	_, tearDown, err := DAGSetup("TestDAGSetup", &dagconfig.MainNetParams)
+	_, tearDown, err := DAGSetup("TestDAGSetup", &dagconfig.MainNetParams, Config{})
 	if tearDown != nil {
 		defer tearDown()
 	}

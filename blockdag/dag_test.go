@@ -42,7 +42,7 @@ func TestBlockCount(t *testing.T) {
 
 	// Create a new database and chain instance to run tests against.
 	dag, teardownFunc, err := DAGSetup("haveblock",
-		&dagconfig.SimNetParams)
+		&dagconfig.SimNetParams, Config{})
 	if err != nil {
 		t.Fatalf("Failed to setup chain instance: %v", err)
 	}
@@ -90,7 +90,7 @@ func TestHaveBlock(t *testing.T) {
 
 	// Create a new database and chain instance to run tests against.
 	dag, teardownFunc, err := DAGSetup("haveblock",
-		&dagconfig.SimNetParams)
+		&dagconfig.SimNetParams, Config{})
 	if err != nil {
 		t.Fatalf("Failed to setup chain instance: %v", err)
 	}
@@ -811,7 +811,7 @@ func testErrorThroughPatching(t *testing.T, expectedErrorMessage string, targetF
 	}
 
 	// Create a new database and dag instance to run tests against.
-	dag, teardownFunc, err := DAGSetup("testErrorThroughPatching", &dagconfig.SimNetParams)
+	dag, teardownFunc, err := DAGSetup("testErrorThroughPatching", &dagconfig.SimNetParams, Config{})
 	if err != nil {
 		t.Fatalf("Failed to setup dag instance: %v", err)
 	}

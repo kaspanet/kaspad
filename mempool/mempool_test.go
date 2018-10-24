@@ -269,7 +269,7 @@ func newPoolHarness(dagParams *dagconfig.Params, numOutputs uint32, dbName strin
 
 	// Create a new database and chain instance to run tests against.
 	dag, teardownFunc, err := blockdag.DAGSetup(dbName,
-		&dagconfig.MainNetParams)
+		&dagconfig.MainNetParams, blockdag.Config{})
 	if err != nil {
 		return nil, nil, fmt.Errorf("Failed to setup DAG instance: %v", err)
 	}
