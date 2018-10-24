@@ -15,7 +15,6 @@ import (
 	"github.com/daglabs/btcd/txscript"
 	"github.com/daglabs/btcd/util"
 	"github.com/daglabs/btcd/wire"
-	"math"
 )
 
 const (
@@ -458,7 +457,7 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 	// the coinbase fee which will be updated later.
 	txFees := make([]uint64, 0, len(sourceTxns))
 	txSigOpCounts := make([]int64, 0, len(sourceTxns))
-	txFees = append(txFees, math.MaxUint64) // Updated once known
+	txFees = append(txFees, 0) // Updated once known
 	txSigOpCounts = append(txSigOpCounts, numCoinbaseSigOps)
 
 	log.Debugf("Considering %d transactions for inclusion to new block",
