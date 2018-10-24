@@ -215,7 +215,7 @@ func CheckTransactionSanity(tx *util.Tx) error {
 			return ruleError(ErrBadTxOutValue, str)
 		}
 
-		// Two's complement int64 overflow guarantees that any overflow
+		// Two's complement uint64 overflow guarantees that any overflow
 		// is detected and reported.  This is impossible for Bitcoin, but
 		// perhaps possible if an alt increases the total money supply.
 		newTotalSatoshi := totalSatoshi + satoshi
