@@ -20,7 +20,7 @@ type UTXOEntry struct {
 	// specifically crafted to result in minimal padding.  There will be a
 	// lot of these in memory, so a few extra bytes of padding adds up.
 
-	amount      int64
+	amount      uint64
 	pkScript    []byte // The public key script for the output.
 	blockHeight int32  // Height of block containing tx.
 
@@ -43,7 +43,7 @@ func (entry *UTXOEntry) BlockHeight() int32 {
 }
 
 // Amount returns the amount of the output.
-func (entry *UTXOEntry) Amount() int64 {
+func (entry *UTXOEntry) Amount() uint64 {
 	return entry.amount
 }
 
@@ -456,11 +456,6 @@ func (fus *fullUTXOSet) containsInputs(tx *wire.MsgTx) bool {
 	return true
 }
 
-// collection returns a collection of all UTXOs in this set
-func (fus *fullUTXOSet) collection() utxoCollection {
-	return fus.utxoCollection.clone()
-}
-
 // clone returns a clone of this utxoSet
 func (fus *fullUTXOSet) clone() UTXOSet {
 	return &fullUTXOSet{utxoCollection: fus.utxoCollection.clone()}
@@ -584,14 +579,6 @@ func (dus *DiffUTXOSet) diffFromTx(tx *wire.MsgTx, node *blockNode) (*utxoDiff, 
 
 func (dus *DiffUTXOSet) String() string {
 	return fmt.Sprintf("{Base: %s, To Add: %s, To Remove: %s}", dus.base, dus.UTXODiff.toAdd, dus.UTXODiff.toRemove)
-}
-
-// collection returns a collection of all UTXOs in this set
-func (dus *DiffUTXOSet) collection() utxoCollection {
-	clone := dus.clone().(*DiffUTXOSet)
-	clone.meldToBase()
-
-	return clone.base.collection()
 }
 
 // clone returns a clone of this UTXO Set

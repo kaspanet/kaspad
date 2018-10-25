@@ -822,8 +822,8 @@ func createCoinbaseTx(blockHeight int32, numOutputs uint32) (*wire.MsgTx, error)
 		Sequence:        wire.MaxTxInSequenceNum,
 	})
 	totalInput := CalcBlockSubsidy(blockHeight, &dagconfig.MainNetParams)
-	amountPerOutput := totalInput / int64(numOutputs)
-	remainder := totalInput - amountPerOutput*int64(numOutputs)
+	amountPerOutput := totalInput / uint64(numOutputs)
+	remainder := totalInput - amountPerOutput*uint64(numOutputs)
 	for i := uint32(0); i < numOutputs; i++ {
 		// Ensure the final output accounts for any remainder that might
 		// be left from splitting the input amount.
@@ -842,7 +842,7 @@ func createCoinbaseTx(blockHeight int32, numOutputs uint32) (*wire.MsgTx, error)
 
 func TestApplyUTXOChanges(t *testing.T) {
 	// Create a new database and dag instance to run tests against.
-	dag, teardownFunc, err := DAGSetup("TestApplyUTXOChanges", &dagconfig.MainNetParams)
+	dag, teardownFunc, err := DAGSetup("TestApplyUTXOChanges", &dagconfig.SimNetParams)
 	if err != nil {
 		t.Fatalf("Failed to setup dag instance: %v", err)
 	}
@@ -861,7 +861,7 @@ func TestApplyUTXOChanges(t *testing.T) {
 	})
 	chainedTx.AddTxOut(&wire.TxOut{
 		PkScript: OpTrueScript,
-		Value:    int64(1),
+		Value:    uint64(1),
 	})
 
 	//Fake block header
@@ -878,7 +878,7 @@ func TestApplyUTXOChanges(t *testing.T) {
 	initBlockNode(&node1, blockHeader, setFromSlice(dag.genesis), dagconfig.MainNetParams.K)
 
 	//Checks that dag.applyUTXOChanges fails because we don't allow a transaction to spend another transaction from the same block
-	_, err = dag.applyUTXOChanges(&node1, block1)
+	_, _, err = dag.applyUTXOChanges(&node1, block1)
 	if err == nil {
 		t.Errorf("applyUTXOChanges expected an error\n")
 	}
@@ -891,7 +891,7 @@ func TestApplyUTXOChanges(t *testing.T) {
 	})
 	nonChainedTx.AddTxOut(&wire.TxOut{
 		PkScript: OpTrueScript,
-		Value:    int64(1),
+		Value:    uint64(1),
 	})
 
 	msgBlock2 := &wire.MsgBlock{
@@ -904,8 +904,8 @@ func TestApplyUTXOChanges(t *testing.T) {
 	var node2 blockNode
 	initBlockNode(&node2, blockHeader, setFromSlice(dag.genesis), dagconfig.MainNetParams.K)
 
-	//Checks that dag.applyUTXOChanges doesn't fail because we all of its transaction are dependant on transactions from previous blocks
-	_, err = dag.applyUTXOChanges(&node2, block2)
+	//Checks that dag.applyUTXOChanges doesn't fail because all of its transaction are dependant on transactions from previous blocks
+	_, _, err = dag.applyUTXOChanges(&node2, block2)
 	if err != nil {
 		t.Errorf("applyUTXOChanges: %v", err)
 	}
@@ -930,7 +930,7 @@ func TestDiffFromTx(t *testing.T) {
 	})
 	tx.AddTxOut(&wire.TxOut{
 		PkScript: OpTrueScript,
-		Value:    int64(1),
+		Value:    uint64(1),
 	})
 	diff, err := fus.diffFromTx(tx, node)
 	if err != nil {
@@ -957,7 +957,7 @@ func TestDiffFromTx(t *testing.T) {
 	})
 	invalidTx.AddTxOut(&wire.TxOut{
 		PkScript: OpTrueScript,
-		Value:    int64(1),
+		Value:    uint64(1),
 	})
 	_, err = fus.diffFromTx(invalidTx, node)
 	if err == nil {
@@ -974,4 +974,17 @@ func TestDiffFromTx(t *testing.T) {
 	if err == nil {
 		t.Errorf("diffFromTx: expected an error but got <nil>")
 	}
+}
+
+// collection returns a collection of all UTXOs in this set
+func (fus *fullUTXOSet) collection() utxoCollection {
+	return fus.utxoCollection.clone()
+}
+
+// collection returns a collection of all UTXOs in this set
+func (dus *DiffUTXOSet) collection() utxoCollection {
+	clone := dus.clone().(*DiffUTXOSet)
+	clone.meldToBase()
+
+	return clone.base.collection()
 }

@@ -1562,7 +1562,7 @@ func (s *Server) handleRelayInvMsg(state *peerState, msg relayMsg) {
 
 			// Don't relay the transaction if the transaction fee-per-kb
 			// is less than the peer's feefilter.
-			feeFilter := atomic.LoadInt64(&sp.FeeFilterInt)
+			feeFilter := uint64(atomic.LoadInt64(&sp.FeeFilterInt))
 			if feeFilter > 0 && txD.FeePerKB < feeFilter {
 				return
 			}
@@ -1615,8 +1615,8 @@ type getOutboundGroup struct {
 	reply chan int
 }
 
-//GetAddedNodesMsg is the message type which is used by the rpc server to get the list of persistent peers from the p2p server
-type GetAddedNodesMsg struct {
+//GetManualNodesMsg is the message type which is used by the rpc server to get the list of persistent peers from the p2p server
+type GetManualNodesMsg struct {
 	Reply chan []*Peer
 }
 
@@ -1712,7 +1712,7 @@ func (s *Server) handleQuery(state *peerState, querymsg interface{}) {
 			msg.reply <- 0
 		}
 	// Request a list of the persistent (added) peers.
-	case GetAddedNodesMsg:
+	case GetManualNodesMsg:
 		// Respond with a slice of the relevant peers.
 		peers := make([]*Peer, 0, len(state.persistentPeers))
 		for _, sp := range state.persistentPeers {
@@ -2437,7 +2437,7 @@ func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params
 		},
 		DAGParams:      dagParams,
 		BestHeight:     func() int32 { return s.DAG.Height() }, //TODO: (Ori) This is probably wrong. Done only for compilation
-		MedianTimePast: func() time.Time { return s.DAG.VirtualBlock().SelectedTip().CalcPastMedianTime() },
+		MedianTimePast: func() time.Time { return s.DAG.SelectedTip().CalcPastMedianTime() },
 		CalcSequenceLock: func(tx *util.Tx, utxoSet blockdag.UTXOSet) (*blockdag.SequenceLock, error) {
 			return s.DAG.CalcSequenceLock(tx, utxoSet, true)
 		},

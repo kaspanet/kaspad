@@ -22,7 +22,7 @@ import (
 
 const (
 	// maxNonce is the maximum value a nonce can be in a block header.
-	maxNonce = ^uint32(0) // 2^32 - 1
+	maxNonce = ^uint64(0) // 2^64 - 1
 
 	// maxExtraNonce is the maximum value an extra nonce used in a coinbase
 	// transaction can be.
@@ -237,7 +237,7 @@ func (m *CPUMiner) solveBlock(msgBlock *wire.MsgBlock, blockHeight int32,
 		// Search through the entire nonce range for a solution while
 		// periodically checking for early quit and stale block
 		// conditions along with updates to the speed monitor.
-		for i := uint32(0); i <= maxNonce; i++ {
+		for i := uint64(0); i <= maxNonce; i++ {
 			select {
 			case <-quit:
 				return false

@@ -8,7 +8,7 @@
 
 package btcjson
 
-// NodeSubCmd defines the type used in the addnode JSON-RPC command for the
+// NodeSubCmd defines the type used in the `node` JSON-RPC command for the
 // sub command field.
 type NodeSubCmd string
 
@@ -44,14 +44,14 @@ func NewNodeCmd(subCmd NodeSubCmd, target string, connectSubCmd *string) *NodeCm
 	}
 }
 
-// DebugLevelCmd defines the debuglevel JSON-RPC command.  This command is not a
+// DebugLevelCmd defines the debugLevel JSON-RPC command.  This command is not a
 // standard Bitcoin command.  It is an extension for btcd.
 type DebugLevelCmd struct {
 	LevelSpec string
 }
 
 // NewDebugLevelCmd returns a new DebugLevelCmd which can be used to issue a
-// debuglevel JSON-RPC command.  This command is not a standard Bitcoin command.
+// debugLevel JSON-RPC command.  This command is not a standard Bitcoin command.
 // It is an extension for btcd.
 func NewDebugLevelCmd(levelSpec string) *DebugLevelCmd {
 	return &DebugLevelCmd{
@@ -72,25 +72,25 @@ func NewGenerateCmd(numBlocks uint32) *GenerateCmd {
 	}
 }
 
-// GetBestBlockCmd defines the getbestblock JSON-RPC command.
+// GetBestBlockCmd defines the getBestBlock JSON-RPC command.
 type GetBestBlockCmd struct{}
 
 // NewGetBestBlockCmd returns a new instance which can be used to issue a
-// getbestblock JSON-RPC command.
+// getBestBlock JSON-RPC command.
 func NewGetBestBlockCmd() *GetBestBlockCmd {
 	return &GetBestBlockCmd{}
 }
 
-// GetCurrentNetCmd defines the getcurrentnet JSON-RPC command.
+// GetCurrentNetCmd defines the getCurrentNet JSON-RPC command.
 type GetCurrentNetCmd struct{}
 
 // NewGetCurrentNetCmd returns a new instance which can be used to issue a
-// getcurrentnet JSON-RPC command.
+// getCurrentNet JSON-RPC command.
 func NewGetCurrentNetCmd() *GetCurrentNetCmd {
 	return &GetCurrentNetCmd{}
 }
 
-// GetHeadersCmd defines the getheaders JSON-RPC command.
+// GetHeadersCmd defines the getHeaders JSON-RPC command.
 //
 // NOTE: This is a btcsuite extension ported from
 // github.com/decred/dcrd/dcrjson.
@@ -100,7 +100,7 @@ type GetHeadersCmd struct {
 }
 
 // NewGetHeadersCmd returns a new instance which can be used to issue a
-// getheaders JSON-RPC command.
+// getHeaders JSON-RPC command.
 //
 // NOTE: This is a btcsuite extension ported from
 // github.com/decred/dcrd/dcrjson.
@@ -128,11 +128,11 @@ func init() {
 	// No special flags for commands in this file.
 	flags := UsageFlag(0)
 
-	MustRegisterCmd("debuglevel", (*DebugLevelCmd)(nil), flags)
+	MustRegisterCmd("debugLevel", (*DebugLevelCmd)(nil), flags)
 	MustRegisterCmd("node", (*NodeCmd)(nil), flags)
 	MustRegisterCmd("generate", (*GenerateCmd)(nil), flags)
-	MustRegisterCmd("getbestblock", (*GetBestBlockCmd)(nil), flags)
-	MustRegisterCmd("getcurrentnet", (*GetCurrentNetCmd)(nil), flags)
-	MustRegisterCmd("getheaders", (*GetHeadersCmd)(nil), flags)
+	MustRegisterCmd("getBestBlock", (*GetBestBlockCmd)(nil), flags)
+	MustRegisterCmd("getCurrentNet", (*GetCurrentNetCmd)(nil), flags)
+	MustRegisterCmd("getHeaders", (*GetHeadersCmd)(nil), flags)
 	MustRegisterCmd("version", (*VersionCmd)(nil), flags)
 }

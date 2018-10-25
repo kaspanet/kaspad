@@ -30,14 +30,14 @@ func TestDAGSvrWsNtfns(t *testing.T) {
 		unmarshalled interface{}
 	}{
 		{
-			name: "blockconnected",
+			name: "blockConnected",
 			newNtfn: func() (interface{}, error) {
-				return btcjson.NewCmd("blockconnected", "123", 100000, 123456789)
+				return btcjson.NewCmd("blockConnected", "123", 100000, 123456789)
 			},
 			staticNtfn: func() interface{} {
 				return btcjson.NewBlockConnectedNtfn("123", 100000, 123456789)
 			},
-			marshalled: `{"jsonrpc":"1.0","method":"blockconnected","params":["123",100000,123456789],"id":null}`,
+			marshalled: `{"jsonrpc":"1.0","method":"blockConnected","params":["123",100000,123456789],"id":null}`,
 			unmarshalled: &btcjson.BlockConnectedNtfn{
 				Hash:   "123",
 				Height: 100000,
@@ -45,14 +45,14 @@ func TestDAGSvrWsNtfns(t *testing.T) {
 			},
 		},
 		{
-			name: "blockdisconnected",
+			name: "blockDisconnected",
 			newNtfn: func() (interface{}, error) {
-				return btcjson.NewCmd("blockdisconnected", "123", 100000, 123456789)
+				return btcjson.NewCmd("blockDisconnected", "123", 100000, 123456789)
 			},
 			staticNtfn: func() interface{} {
 				return btcjson.NewBlockDisconnectedNtfn("123", 100000, 123456789)
 			},
-			marshalled: `{"jsonrpc":"1.0","method":"blockdisconnected","params":["123",100000,123456789],"id":null}`,
+			marshalled: `{"jsonrpc":"1.0","method":"blockDisconnected","params":["123",100000,123456789],"id":null}`,
 			unmarshalled: &btcjson.BlockDisconnectedNtfn{
 				Hash:   "123",
 				Height: 100000,
@@ -60,14 +60,14 @@ func TestDAGSvrWsNtfns(t *testing.T) {
 			},
 		},
 		{
-			name: "filteredblockconnected",
+			name: "filteredBlockConnected",
 			newNtfn: func() (interface{}, error) {
-				return btcjson.NewCmd("filteredblockconnected", 100000, "header", []string{"tx0", "tx1"})
+				return btcjson.NewCmd("filteredBlockConnected", 100000, "header", []string{"tx0", "tx1"})
 			},
 			staticNtfn: func() interface{} {
 				return btcjson.NewFilteredBlockConnectedNtfn(100000, "header", []string{"tx0", "tx1"})
 			},
-			marshalled: `{"jsonrpc":"1.0","method":"filteredblockconnected","params":[100000,"header",["tx0","tx1"]],"id":null}`,
+			marshalled: `{"jsonrpc":"1.0","method":"filteredBlockConnected","params":[100000,"header",["tx0","tx1"]],"id":null}`,
 			unmarshalled: &btcjson.FilteredBlockConnectedNtfn{
 				Height:        100000,
 				Header:        "header",
@@ -75,23 +75,23 @@ func TestDAGSvrWsNtfns(t *testing.T) {
 			},
 		},
 		{
-			name: "filteredblockdisconnected",
+			name: "filteredBlockDisconnected",
 			newNtfn: func() (interface{}, error) {
-				return btcjson.NewCmd("filteredblockdisconnected", 100000, "header")
+				return btcjson.NewCmd("filteredBlockDisconnected", 100000, "header")
 			},
 			staticNtfn: func() interface{} {
 				return btcjson.NewFilteredBlockDisconnectedNtfn(100000, "header")
 			},
-			marshalled: `{"jsonrpc":"1.0","method":"filteredblockdisconnected","params":[100000,"header"],"id":null}`,
+			marshalled: `{"jsonrpc":"1.0","method":"filteredBlockDisconnected","params":[100000,"header"],"id":null}`,
 			unmarshalled: &btcjson.FilteredBlockDisconnectedNtfn{
 				Height: 100000,
 				Header: "header",
 			},
 		},
 		{
-			name: "recvtx",
+			name: "recvTx",
 			newNtfn: func() (interface{}, error) {
-				return btcjson.NewCmd("recvtx", "001122", `{"height":100000,"hash":"123","index":0,"time":12345678}`)
+				return btcjson.NewCmd("recvTx", "001122", `{"height":100000,"hash":"123","index":0,"time":12345678}`)
 			},
 			staticNtfn: func() interface{} {
 				blockDetails := btcjson.BlockDetails{
@@ -102,7 +102,7 @@ func TestDAGSvrWsNtfns(t *testing.T) {
 				}
 				return btcjson.NewRecvTxNtfn("001122", &blockDetails)
 			},
-			marshalled: `{"jsonrpc":"1.0","method":"recvtx","params":["001122",{"height":100000,"hash":"123","index":0,"time":12345678}],"id":null}`,
+			marshalled: `{"jsonrpc":"1.0","method":"recvTx","params":["001122",{"height":100000,"hash":"123","index":0,"time":12345678}],"id":null}`,
 			unmarshalled: &btcjson.RecvTxNtfn{
 				HexTx: "001122",
 				Block: &btcjson.BlockDetails{
@@ -114,9 +114,9 @@ func TestDAGSvrWsNtfns(t *testing.T) {
 			},
 		},
 		{
-			name: "redeemingtx",
+			name: "redeemingTx",
 			newNtfn: func() (interface{}, error) {
-				return btcjson.NewCmd("redeemingtx", "001122", `{"height":100000,"hash":"123","index":0,"time":12345678}`)
+				return btcjson.NewCmd("redeemingTx", "001122", `{"height":100000,"hash":"123","index":0,"time":12345678}`)
 			},
 			staticNtfn: func() interface{} {
 				blockDetails := btcjson.BlockDetails{
@@ -127,7 +127,7 @@ func TestDAGSvrWsNtfns(t *testing.T) {
 				}
 				return btcjson.NewRedeemingTxNtfn("001122", &blockDetails)
 			},
-			marshalled: `{"jsonrpc":"1.0","method":"redeemingtx","params":["001122",{"height":100000,"hash":"123","index":0,"time":12345678}],"id":null}`,
+			marshalled: `{"jsonrpc":"1.0","method":"redeemingTx","params":["001122",{"height":100000,"hash":"123","index":0,"time":12345678}],"id":null}`,
 			unmarshalled: &btcjson.RedeemingTxNtfn{
 				HexTx: "001122",
 				Block: &btcjson.BlockDetails{
@@ -139,14 +139,14 @@ func TestDAGSvrWsNtfns(t *testing.T) {
 			},
 		},
 		{
-			name: "rescanfinished",
+			name: "rescanFinished",
 			newNtfn: func() (interface{}, error) {
-				return btcjson.NewCmd("rescanfinished", "123", 100000, 12345678)
+				return btcjson.NewCmd("rescanFinished", "123", 100000, 12345678)
 			},
 			staticNtfn: func() interface{} {
 				return btcjson.NewRescanFinishedNtfn("123", 100000, 12345678)
 			},
-			marshalled: `{"jsonrpc":"1.0","method":"rescanfinished","params":["123",100000,12345678],"id":null}`,
+			marshalled: `{"jsonrpc":"1.0","method":"rescanFinished","params":["123",100000,12345678],"id":null}`,
 			unmarshalled: &btcjson.RescanFinishedNtfn{
 				Hash:   "123",
 				Height: 100000,
@@ -154,14 +154,14 @@ func TestDAGSvrWsNtfns(t *testing.T) {
 			},
 		},
 		{
-			name: "rescanprogress",
+			name: "rescanProgress",
 			newNtfn: func() (interface{}, error) {
-				return btcjson.NewCmd("rescanprogress", "123", 100000, 12345678)
+				return btcjson.NewCmd("rescanProgress", "123", 100000, 12345678)
 			},
 			staticNtfn: func() interface{} {
 				return btcjson.NewRescanProgressNtfn("123", 100000, 12345678)
 			},
-			marshalled: `{"jsonrpc":"1.0","method":"rescanprogress","params":["123",100000,12345678],"id":null}`,
+			marshalled: `{"jsonrpc":"1.0","method":"rescanProgress","params":["123",100000,12345678],"id":null}`,
 			unmarshalled: &btcjson.RescanProgressNtfn{
 				Hash:   "123",
 				Height: 100000,
@@ -169,23 +169,23 @@ func TestDAGSvrWsNtfns(t *testing.T) {
 			},
 		},
 		{
-			name: "txaccepted",
+			name: "txAccepted",
 			newNtfn: func() (interface{}, error) {
-				return btcjson.NewCmd("txaccepted", "123", 1.5)
+				return btcjson.NewCmd("txAccepted", "123", 1.5)
 			},
 			staticNtfn: func() interface{} {
 				return btcjson.NewTxAcceptedNtfn("123", 1.5)
 			},
-			marshalled: `{"jsonrpc":"1.0","method":"txaccepted","params":["123",1.5],"id":null}`,
+			marshalled: `{"jsonrpc":"1.0","method":"txAccepted","params":["123",1.5],"id":null}`,
 			unmarshalled: &btcjson.TxAcceptedNtfn{
 				TxID:   "123",
 				Amount: 1.5,
 			},
 		},
 		{
-			name: "txacceptedverbose",
+			name: "txAcceptedVerbose",
 			newNtfn: func() (interface{}, error) {
-				return btcjson.NewCmd("txacceptedverbose", `{"hex":"001122","txid":"123","version":1,"locktime":4294967295,"vin":null,"vout":null,"confirmations":0}`)
+				return btcjson.NewCmd("txAcceptedVerbose", `{"hex":"001122","txid":"123","version":1,"locktime":4294967295,"vin":null,"vout":null,"confirmations":0}`)
 			},
 			staticNtfn: func() interface{} {
 				txResult := btcjson.TxRawResult{
@@ -199,7 +199,7 @@ func TestDAGSvrWsNtfns(t *testing.T) {
 				}
 				return btcjson.NewTxAcceptedVerboseNtfn(txResult)
 			},
-			marshalled: `{"jsonrpc":"1.0","method":"txacceptedverbose","params":[{"hex":"001122","txid":"123","version":1,"locktime":4294967295,"vin":null,"vout":null}],"id":null}`,
+			marshalled: `{"jsonrpc":"1.0","method":"txAcceptedVerbose","params":[{"hex":"001122","txid":"123","version":1,"locktime":4294967295,"vin":null,"vout":null}],"id":null}`,
 			unmarshalled: &btcjson.TxAcceptedVerboseNtfn{
 				RawTx: btcjson.TxRawResult{
 					Hex:           "001122",
@@ -213,14 +213,14 @@ func TestDAGSvrWsNtfns(t *testing.T) {
 			},
 		},
 		{
-			name: "relevanttxaccepted",
+			name: "relevantTxAccepted",
 			newNtfn: func() (interface{}, error) {
-				return btcjson.NewCmd("relevanttxaccepted", "001122")
+				return btcjson.NewCmd("relevantTxAccepted", "001122")
 			},
 			staticNtfn: func() interface{} {
 				return btcjson.NewRelevantTxAcceptedNtfn("001122")
 			},
-			marshalled: `{"jsonrpc":"1.0","method":"relevanttxaccepted","params":["001122"],"id":null}`,
+			marshalled: `{"jsonrpc":"1.0","method":"relevantTxAccepted","params":["001122"],"id":null}`,
 			unmarshalled: &btcjson.RelevantTxAcceptedNtfn{
 				Transaction: "001122",
 			},

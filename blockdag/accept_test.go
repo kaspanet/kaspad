@@ -1,18 +1,19 @@
 package blockdag
 
 import (
-	"bou.ke/monkey"
 	"errors"
+	"strings"
+	"testing"
+
+	"bou.ke/monkey"
 	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/database"
 	"github.com/daglabs/btcd/util"
-	"strings"
-	"testing"
 )
 
 func TestMaybeAcceptBlockErrors(t *testing.T) {
 	// Create a new database and DAG instance to run tests against.
-	dag, teardownFunc, err := DAGSetup("TestMaybeAcceptBlockErrors", &dagconfig.MainNetParams)
+	dag, teardownFunc, err := DAGSetup("TestMaybeAcceptBlockErrors", &dagconfig.SimNetParams)
 	if err != nil {
 		t.Fatalf("TestMaybeAcceptBlockErrors: Failed to setup DAG instance: %v", err)
 	}
@@ -24,22 +25,22 @@ func TestMaybeAcceptBlockErrors(t *testing.T) {
 	orphanBlockFile := "blk_3B.dat"
 	loadedBlocks, err := loadBlocks(orphanBlockFile)
 	if err != nil {
-		t.Fatalf("TestMaybeAcceptBlockErrors: rejecting the block if its parents are missing: " +
+		t.Fatalf("TestMaybeAcceptBlockErrors: rejecting the block if its parents are missing: "+
 			"Error loading file '%s': %s\n", orphanBlockFile, err)
 	}
 	block := loadedBlocks[0]
 
 	err = dag.maybeAcceptBlock(block, BFNone)
 	if err == nil {
-		t.Errorf("TestMaybeAcceptBlockErrors: rejecting the block if its parents are missing: " +
+		t.Errorf("TestMaybeAcceptBlockErrors: rejecting the block if its parents are missing: "+
 			"Expected: %s, got: <nil>", ErrPreviousBlockUnknown)
 	}
 	ruleErr, ok := err.(RuleError)
 	if !ok {
-		t.Errorf("TestMaybeAcceptBlockErrors: rejecting the block if its parents are missing: " +
+		t.Errorf("TestMaybeAcceptBlockErrors: rejecting the block if its parents are missing: "+
 			"Expected RuleError but got %s", err)
 	} else if ruleErr.ErrorCode != ErrPreviousBlockUnknown {
-		t.Errorf("TestMaybeAcceptBlockErrors: rejecting the block if its parents are missing: " +
+		t.Errorf("TestMaybeAcceptBlockErrors: rejecting the block if its parents are missing: "+
 			"Unexpected error code. Want: %s, got: %s", ErrPreviousBlockUnknown, ruleErr.ErrorCode)
 	}
 
@@ -47,7 +48,7 @@ func TestMaybeAcceptBlockErrors(t *testing.T) {
 	blocksFile := "blk_0_to_4.dat"
 	blocks, err := loadBlocks(blocksFile)
 	if err != nil {
-		t.Fatalf("TestMaybeAcceptBlockErrors: rejecting the block if its parents are invalid: " +
+		t.Fatalf("TestMaybeAcceptBlockErrors: rejecting the block if its parents are invalid: "+
 			"Error loading file '%s': %s\n", blocksFile, err)
 	}
 
@@ -63,15 +64,15 @@ func TestMaybeAcceptBlockErrors(t *testing.T) {
 	block2 := blocks[2]
 	err = dag.maybeAcceptBlock(block2, BFNone)
 	if err == nil {
-		t.Errorf("TestMaybeAcceptBlockErrors: rejecting the block if its parents are invalid: " +
+		t.Errorf("TestMaybeAcceptBlockErrors: rejecting the block if its parents are invalid: "+
 			"Expected: %s, got: <nil>", ErrInvalidAncestorBlock)
 	}
 	ruleErr, ok = err.(RuleError)
 	if !ok {
-		t.Errorf("TestMaybeAcceptBlockErrors: rejecting the block if its parents are invalid: " +
+		t.Errorf("TestMaybeAcceptBlockErrors: rejecting the block if its parents are invalid: "+
 			"Expected RuleError but got %s", err)
 	} else if ruleErr.ErrorCode != ErrInvalidAncestorBlock {
-		t.Errorf("TestMaybeAcceptBlockErrors: rejecting the block if its parents are invalid: " +
+		t.Errorf("TestMaybeAcceptBlockErrors: rejecting the block if its parents are invalid: "+
 			"Unexpected error. Want: %s, got: %s", ErrInvalidAncestorBlock, ruleErr.ErrorCode)
 	}
 
@@ -83,15 +84,15 @@ func TestMaybeAcceptBlockErrors(t *testing.T) {
 	block2.MsgBlock().Header.Bits = 0
 	err = dag.maybeAcceptBlock(block2, BFNone)
 	if err == nil {
-		t.Errorf("TestMaybeAcceptBlockErrors: rejecting the block due to bad context: " +
+		t.Errorf("TestMaybeAcceptBlockErrors: rejecting the block due to bad context: "+
 			"Expected: %s, got: <nil>", ErrUnexpectedDifficulty)
 	}
 	ruleErr, ok = err.(RuleError)
 	if !ok {
-		t.Errorf("TestMaybeAcceptBlockErrors: rejecting the block due to bad context: " +
+		t.Errorf("TestMaybeAcceptBlockErrors: rejecting the block due to bad context: "+
 			"Expected RuleError but got %s", err)
 	} else if ruleErr.ErrorCode != ErrUnexpectedDifficulty {
-		t.Errorf("TestMaybeAcceptBlockErrors: rejecting the block due to bad context: " +
+		t.Errorf("TestMaybeAcceptBlockErrors: rejecting the block due to bad context: "+
 			"Unexpected error. Want: %s, got: %s", ErrUnexpectedDifficulty, ruleErr.ErrorCode)
 	}
 
@@ -105,11 +106,11 @@ func TestMaybeAcceptBlockErrors(t *testing.T) {
 	})
 	err = dag.maybeAcceptBlock(block2, BFNone)
 	if err == nil {
-		t.Errorf("TestMaybeAcceptBlockErrors: rejecting the node due to database error: " +
+		t.Errorf("TestMaybeAcceptBlockErrors: rejecting the node due to database error: "+
 			"Expected: %s, got: <nil>", databaseErrorMessage)
 	}
 	if !strings.Contains(err.Error(), databaseErrorMessage) {
-		t.Errorf("TestMaybeAcceptBlockErrors: rejecting the node due to database error: " +
+		t.Errorf("TestMaybeAcceptBlockErrors: rejecting the node due to database error: "+
 			"Unexpected error. Want: %s, got: %s", databaseErrorMessage, err)
 	}
 	monkey.Unpatch(dbStoreBlock)
@@ -121,11 +122,11 @@ func TestMaybeAcceptBlockErrors(t *testing.T) {
 	})
 	err = dag.maybeAcceptBlock(block2, BFNone)
 	if err == nil {
-		t.Errorf("TestMaybeAcceptBlockErrors: rejecting the node due to index error: " +
+		t.Errorf("TestMaybeAcceptBlockErrors: rejecting the node due to index error: "+
 			"Expected %s, got: <nil>", indexErrorMessage)
 	}
 	if !strings.Contains(err.Error(), indexErrorMessage) {
-		t.Errorf("TestMaybeAcceptBlockErrors: rejecting the node due to index error: " +
+		t.Errorf("TestMaybeAcceptBlockErrors: rejecting the node due to index error: "+
 			"Unexpected error. Want: %s, got: %s", indexErrorMessage, err)
 	}
 	monkey.Unpatch((*blockIndex).flushToDB)

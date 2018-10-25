@@ -6,6 +6,7 @@ package blockdag
 
 import (
 	"fmt"
+	"math"
 	"sync"
 	"time"
 
@@ -87,7 +88,7 @@ type BlockDAG struct {
 	index *blockIndex
 
 	// virtual tracks the current tips.
-	virtual *VirtualBlock
+	virtual *virtualBlock
 
 	// These fields are related to handling of orphan blocks.  They are
 	// protected by a combination of the chain lock and the orphan lock.
@@ -320,7 +321,7 @@ func (dag *BlockDAG) CalcSequenceLock(tx *util.Tx, utxoSet UTXOSet, mempool bool
 	dag.dagLock.Lock()
 	defer dag.dagLock.Unlock()
 
-	return dag.calcSequenceLock(dag.virtual.SelectedTip(), utxoSet, tx, mempool)
+	return dag.calcSequenceLock(dag.SelectedTip(), utxoSet, tx, mempool)
 }
 
 // calcSequenceLock computes the relative lock-times for the passed
@@ -502,7 +503,7 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block) error {
 	}
 
 	// Add the node to the virtual and update the UTXO set of the DAG.
-	utxoDiff, err := dag.applyUTXOChanges(node, block)
+	utxoDiff, acceptedTxsData, err := dag.applyUTXOChanges(node, block)
 	if err != nil {
 		return err
 	}
@@ -539,7 +540,7 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block) error {
 		// optional indexes with the block being connected so they can
 		// update themselves accordingly.
 		if dag.indexManager != nil {
-			err := dag.indexManager.ConnectBlock(dbTx, block, dag.virtual)
+			err := dag.indexManager.ConnectBlock(dbTx, block, dag, acceptedTxsData)
 			if err != nil {
 				return err
 			}
@@ -569,7 +570,7 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block) error {
 // 5. Updates each of the tips' utxoDiff.
 //
 // This function MUST be called with the chain state lock held (for writes).
-func (dag *BlockDAG) applyUTXOChanges(node *blockNode, block *util.Block) (*utxoDiff, error) {
+func (dag *BlockDAG) applyUTXOChanges(node *blockNode, block *util.Block) (utxoDiff *utxoDiff, acceptedTxData []*TxWithBlockHash, err error) {
 	// Prepare provisionalNodes for all the relevant nodes to avoid modifying the original nodes.
 	// We avoid modifying the original nodes in this function because it could potentially
 	// fail if the block is not valid, thus bringing all the affected nodes (and the virtual)
@@ -580,14 +581,14 @@ func (dag *BlockDAG) applyUTXOChanges(node *blockNode, block *util.Block) (*utxo
 	// Clone the virtual block so that we don't modify the existing one.
 	virtualClone := dag.virtual.clone()
 
-	newBlockUTXO, err := newNodeProvisional.verifyAndBuildUTXO(virtualClone, dag.db)
+	newBlockUTXO, acceptedTxData, err := newNodeProvisional.verifyAndBuildUTXO(virtualClone, dag.db)
 	if err != nil {
-		return nil, fmt.Errorf("error verifying UTXO for %v: %s", node, err)
+		return nil, nil, fmt.Errorf("error verifying UTXO for %v: %s", node, err)
 	}
 
 	err = newNodeProvisional.updateParents(virtualClone, newBlockUTXO)
 	if err != nil {
-		return nil, fmt.Errorf("failed updating parents of %v: %s", node, err)
+		return nil, nil, fmt.Errorf("failed updating parents of %v: %s", node, err)
 	}
 
 	// Update the virtual block's children (the DAG tips) to include the new block.
@@ -595,20 +596,20 @@ func (dag *BlockDAG) applyUTXOChanges(node *blockNode, block *util.Block) (*utxo
 
 	// Build a UTXO set for the new virtual block and update the DAG tips' diffs.
 	virtualNodeProvisional := provisionalSet.newProvisionalNode(&virtualClone.blockNode, true, nil)
-	newVirtualUTXO, err := virtualNodeProvisional.pastUTXO(virtualClone, dag.db)
+	newVirtualUTXO, _, err := virtualNodeProvisional.pastUTXO(virtualClone, dag.db)
 	if err != nil {
-		return nil, fmt.Errorf("could not restore past UTXO for virtual %v: %s", virtualClone, err)
+		return nil, nil, fmt.Errorf("could not restore past UTXO for virtual %v: %s", virtualClone, err)
 	}
 
 	// Apply new utxoDiffs to all the tips
 	err = updateTipsUTXO(virtualNodeProvisional.parents, virtualClone, newVirtualUTXO)
 	if err != nil {
-		return nil, fmt.Errorf("failed updating the tips' UTXO: %s", err)
+		return nil, nil, fmt.Errorf("failed updating the tips' UTXO: %s", err)
 	}
 
 	// It is now safe to meld the UTXO set to base.
 	diffSet := newVirtualUTXO.(*DiffUTXOSet)
-	utxoDiff := diffSet.UTXODiff
+	utxoDiff = diffSet.UTXODiff
 	dag.updateVirtualUTXO(diffSet)
 
 	// It is now safe to commit all the provisionalNodes
@@ -625,7 +626,7 @@ func (dag *BlockDAG) applyUTXOChanges(node *blockNode, block *util.Block) (*utxo
 	// It is now safe to apply the new virtual block
 	dag.virtual = virtualClone
 
-	return utxoDiff, nil
+	return utxoDiff, acceptedTxData, nil
 }
 
 func (dag *BlockDAG) updateVirtualUTXO(newVirtualUTXODiffSet *DiffUTXOSet) {
@@ -672,8 +673,6 @@ func (pns provisionalNodeSet) newProvisionalNode(node *blockNode, withRelatives 
 
 	provisional := &provisionalNode{
 		original:     node,
-		parents:      []*provisionalNode{},
-		children:     []*provisionalNode{},
 		transactions: transactions,
 	}
 	if node.hash != zeroHash {
@@ -681,6 +680,7 @@ func (pns provisionalNodeSet) newProvisionalNode(node *blockNode, withRelatives 
 	}
 
 	if withRelatives {
+		provisional.parents = []*provisionalNode{}
 		for _, parent := range node.parents {
 			provisional.parents = append(provisional.parents, pns.newProvisionalNode(parent, false, nil))
 		}
@@ -688,6 +688,7 @@ func (pns provisionalNodeSet) newProvisionalNode(node *blockNode, withRelatives 
 			provisional.selectedParent = pns[node.selectedParent.hash]
 		}
 
+		provisional.children = []*provisionalNode{}
 		for _, child := range node.children {
 			provisional.children = append(provisional.children, pns.newProvisionalNode(child, false, nil))
 		}
@@ -703,46 +704,60 @@ func (pns provisionalNodeSet) newProvisionalNode(node *blockNode, withRelatives 
 }
 
 // verifyAndBuildUTXO verifies all transactions in the given block (in provisionalNode format) and builds its UTXO
-func (p *provisionalNode) verifyAndBuildUTXO(virtual *VirtualBlock, db database.DB) (UTXOSet, error) {
-	pastUTXO, err := p.pastUTXO(virtual, db)
+func (p *provisionalNode) verifyAndBuildUTXO(virtual *virtualBlock, db database.DB) (utxoSet UTXOSet, acceptedTxData []*TxWithBlockHash, err error) {
+	pastUTXO, pastUTXOaccpetedTxData, err := p.pastUTXO(virtual, db)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	diff := NewUTXODiff()
+	acceptedTxData = make([]*TxWithBlockHash, 0, len(pastUTXOaccpetedTxData)+len(p.transactions))
+	if len(pastUTXOaccpetedTxData) != 0 {
+		acceptedTxData = append(acceptedTxData, pastUTXOaccpetedTxData...)
+	}
 
 	for _, tx := range p.transactions {
 		txDiff, err := pastUTXO.diffFromTx(tx.MsgTx(), p.original)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		diff, err = diff.WithDiff(txDiff)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
+		acceptedTxData = append(acceptedTxData, &TxWithBlockHash{
+			Tx:      tx,
+			InBlock: &p.original.hash,
+		})
 	}
 
 	utxo, err := pastUTXO.WithDiff(diff)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	return utxo, nil
+	return utxo, acceptedTxData, nil
+}
+
+// TxWithBlockHash is a type that holds data about in which block a transaction was found
+type TxWithBlockHash struct {
+	Tx      *util.Tx
+	InBlock *daghash.Hash
 }
 
 // pastUTXO returns the UTXO of a given block's (in provisionalNode format) past
-func (p *provisionalNode) pastUTXO(virtual *VirtualBlock, db database.DB) (UTXOSet, error) {
-	pastUTXO, err := p.selectedParent.restoreUTXO(virtual)
+func (p *provisionalNode) pastUTXO(virtual *virtualBlock, db database.DB) (pastUTXO UTXOSet, acceptedTxData []*TxWithBlockHash, err error) {
+	pastUTXO, err = p.selectedParent.restoreUTXO(virtual)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	// Fetch from the database all the transactions for this block's blue set (besides the selected parent)
-	var blueBlockTransactions []*util.Tx
+	var blueBlockTransactions []*TxWithBlockHash
+	transactionCount := 0
 	err = db.View(func(tx database.Tx) error {
 		// Precalculate the amount of transactions in this block's blue set, besides the selected parent.
 		// This is to avoid an attack in which an attacker fabricates a block that will deliberately cause
 		// a lot of copying, causing a high cost to the whole network.
-		transactionCount := 0
 		blueBlocks := make([]*util.Block, 0, len(p.original.blues)-1)
 		for i := len(p.original.blues) - 1; i >= 0; i-- {
 			blueBlockNode := p.original.blues[i]
@@ -759,28 +774,35 @@ func (p *provisionalNode) pastUTXO(virtual *VirtualBlock, db database.DB) (UTXOS
 			blueBlocks = append(blueBlocks, blueBlock)
 		}
 
-		blueBlockTransactions = make([]*util.Tx, 0, transactionCount)
+		blueBlockTransactions = make([]*TxWithBlockHash, 0, transactionCount)
 		for _, blueBlock := range blueBlocks {
-			blueBlockTransactions = append(blueBlockTransactions, blueBlock.Transactions()...)
+			for _, tx := range blueBlock.Transactions() {
+				blueBlockTransactions = append(blueBlockTransactions, &TxWithBlockHash{Tx: tx, InBlock: blueBlock.Hash()})
+			}
 		}
 
 		return nil
 	})
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
+
+	acceptedTxData = make([]*TxWithBlockHash, 0, transactionCount)
 
 	// Add all transactions to the pastUTXO
 	// Purposefully ignore failures - these are just unaccepted transactions
 	for _, tx := range blueBlockTransactions {
-		_ = pastUTXO.AddTx(tx.MsgTx(), p.original.height)
+		isAccepted := pastUTXO.AddTx(tx.Tx.MsgTx(), p.original.height)
+		if isAccepted {
+			acceptedTxData = append(acceptedTxData, tx)
+		}
 	}
 
-	return pastUTXO, nil
+	return pastUTXO, acceptedTxData, nil
 }
 
 // restoreUTXO restores the UTXO of a given block (in provisionalNode format) from its diff
-func (p *provisionalNode) restoreUTXO(virtual *VirtualBlock) (UTXOSet, error) {
+func (p *provisionalNode) restoreUTXO(virtual *virtualBlock) (UTXOSet, error) {
 	stack := []*provisionalNode{p}
 	current := p
 
@@ -804,7 +826,7 @@ func (p *provisionalNode) restoreUTXO(virtual *VirtualBlock) (UTXOSet, error) {
 
 // updateParents adds this block (in provisionalNode format) to the children sets of its parents
 // and updates the diff of any parent whose DiffChild is this block
-func (p *provisionalNode) updateParents(virtual *VirtualBlock, newBlockUTXO UTXOSet) error {
+func (p *provisionalNode) updateParents(virtual *virtualBlock, newBlockUTXO UTXOSet) error {
 	virtualDiffFromNewBlock, err := virtual.utxoSet.diffFrom(newBlockUTXO)
 	if err != nil {
 		return err
@@ -832,7 +854,7 @@ func (p *provisionalNode) updateParents(virtual *VirtualBlock, newBlockUTXO UTXO
 }
 
 // updateTipsUTXO builds and applies new diff UTXOs for all the DAG's tips (in provisionalNode format)
-func updateTipsUTXO(tipProvisionals []*provisionalNode, virtual *VirtualBlock, virtualUTXO UTXOSet) error {
+func updateTipsUTXO(tipProvisionals []*provisionalNode, virtual *virtualBlock, virtualUTXO UTXOSet) error {
 	for _, tipProvisional := range tipProvisionals {
 		tipUTXO, err := tipProvisional.restoreUTXO(virtual)
 		if err != nil {
@@ -853,17 +875,21 @@ func (p *provisionalNode) commit() {
 		p.original.selectedParent = p.selectedParent.original
 	}
 
-	parents := newSet()
-	for _, parent := range p.parents {
-		parents.add(parent.original)
+	if p.parents != nil {
+		parents := newSet()
+		for _, parent := range p.parents {
+			parents.add(parent.original)
+		}
+		p.original.parents = parents
 	}
-	p.original.parents = parents
 
-	children := newSet()
-	for _, child := range p.children {
-		children.add(child.original)
+	if p.children != nil {
+		children := newSet()
+		for _, child := range p.children {
+			children.add(child.original)
+		}
+		p.original.children = children
 	}
-	p.original.children = children
 
 	if p.diff != nil {
 		p.original.diff = p.diff
@@ -884,7 +910,7 @@ func (dag *BlockDAG) isCurrent() bool {
 	// Not current if the latest main (best) chain height is before the
 	// latest known good checkpoint (when checkpoints are enabled).
 	checkpoint := dag.LatestCheckpoint()
-	if checkpoint != nil && dag.virtual.SelectedTip().height < checkpoint.Height {
+	if checkpoint != nil && dag.SelectedTip().height < checkpoint.Height {
 		return false
 	}
 
@@ -894,7 +920,7 @@ func (dag *BlockDAG) isCurrent() bool {
 	// The chain appears to be current if none of the checks reported
 	// otherwise.
 	minus24Hours := dag.timeSource.AdjustedTime().Add(-24 * time.Hour).Unix()
-	return dag.virtual.SelectedTip().timestamp >= minus24Hours
+	return dag.SelectedTip().timestamp >= minus24Hours
 }
 
 // IsCurrent returns whether or not the chain believes it is current.  Several
@@ -911,23 +937,55 @@ func (dag *BlockDAG) IsCurrent() bool {
 	return dag.isCurrent()
 }
 
-// UTXOSet returns the DAG's UTXO set
-func (dag *BlockDAG) UTXOSet() *fullUTXOSet {
-	return dag.VirtualBlock().utxoSet
-}
-
-// VirtualBlock returns the DAG's virtual block in the current point in time.
-// The returned instance must be treated as immutable since it is shared by all
-// callers.
+// SelectedTip returns the current selected tip for the DAG.
+// It will return nil if there is no tip.
 //
 // This function is safe for concurrent access.
-func (dag *BlockDAG) VirtualBlock() *VirtualBlock {
-	return dag.virtual
+func (dag *BlockDAG) SelectedTip() *blockNode {
+	return dag.virtual.selectedParent
+}
+
+// UTXOSet returns the DAG's UTXO set
+func (dag *BlockDAG) UTXOSet() *fullUTXOSet {
+	return dag.virtual.utxoSet
+}
+
+// CalcPastMedianTime returns the past median time of the DAG.
+func (dag *BlockDAG) CalcPastMedianTime() time.Time {
+	return dag.virtual.tips().bluest().CalcPastMedianTime()
+}
+
+// GetUTXOEntry returns the requested unspent transaction output. The returned
+// instance must be treated as immutable since it is shared by all callers.
+//
+// This function is safe for concurrent access. However, the returned entry (if
+// any) is NOT.
+func (dag *BlockDAG) GetUTXOEntry(outPoint wire.OutPoint) (*UTXOEntry, bool) {
+	return dag.virtual.utxoSet.get(outPoint)
 }
 
 // Height returns the height of the highest tip in the DAG
 func (dag *BlockDAG) Height() int32 {
 	return dag.virtual.tips().maxHeight()
+}
+
+// BlockCount returns the number of blocks in the DAG
+func (dag *BlockDAG) BlockCount() int64 {
+	count := int64(-1)
+	visited := newSet()
+	queue := []*blockNode{&dag.virtual.blockNode}
+	for len(queue) > 0 {
+		node := queue[0]
+		queue = queue[1:]
+		if !visited.contains(node) {
+			visited.add(node)
+			count++
+			for _, parent := range node.parents {
+				queue = append(queue, parent)
+			}
+		}
+	}
+	return count
 }
 
 // TipHashes returns the hashes of the DAG's tips
@@ -939,6 +997,18 @@ func (dag *BlockDAG) TipHashes() []daghash.Hash {
 // This function is a placeholder for places that aren't DAG-compatible, and it's needed to be removed in the future
 func (dag *BlockDAG) HighestTipHash() daghash.Hash {
 	return dag.virtual.tips().highest().hash
+}
+
+// CurrentBits returns the bits of the tip with the lowest bits, which also means it has highest difficulty.
+func (dag *BlockDAG) CurrentBits() uint32 {
+	tips := dag.virtual.tips()
+	minBits := uint32(math.MaxUint32)
+	for _, tip := range tips {
+		if minBits > tip.Header().Bits {
+			minBits = tip.Header().Bits
+		}
+	}
+	return minBits
 }
 
 // HeaderByHash returns the block header identified by the given hash or an
@@ -1193,7 +1263,7 @@ func (dag *BlockDAG) locateInventory(locator BlockLocator, hashStop *daghash.Has
 	}
 
 	// Calculate how many entries are needed.
-	total := uint32((dag.virtual.SelectedTip().height - startNode.height) + 1)
+	total := uint32((dag.SelectedTip().height - startNode.height) + 1)
 	if stopNode != nil && stopNode.height >= startNode.height {
 		total = uint32((stopNode.height - startNode.height) + 1)
 	}
@@ -1316,12 +1386,8 @@ type IndexManager interface {
 	Init(*BlockDAG, <-chan struct{}) error
 
 	// ConnectBlock is invoked when a new block has been connected to the
-	// main chain.
-	ConnectBlock(database.Tx, *util.Block, *VirtualBlock) error
-
-	// DisconnectBlock is invoked when a block has been disconnected from
-	// the main chain.
-	DisconnectBlock(database.Tx, *util.Block, *VirtualBlock) error
+	// DAG.
+	ConnectBlock(database.Tx, *util.Block, *BlockDAG, []*TxWithBlockHash) error
 }
 
 // Config is a descriptor which specifies the blockchain instance configuration.
@@ -1459,7 +1525,7 @@ func New(config *Config) (*BlockDAG, error) {
 		return nil, err
 	}
 
-	selectedTip := dag.virtual.SelectedTip()
+	selectedTip := dag.SelectedTip()
 	log.Infof("DAG state (height %d, hash %v, work %v)",
 		selectedTip.height, selectedTip.hash, selectedTip.workSum)
 

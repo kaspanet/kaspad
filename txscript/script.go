@@ -329,7 +329,7 @@ func calcSignatureHash(script []parsedOpcode, hashType SigHashType, tx *wire.Msg
 
 		// All but current output get zeroed out.
 		for i := 0; i < idx; i++ {
-			txCopy.TxOut[i].Value = -1
+			txCopy.TxOut[i].Value = 0
 			txCopy.TxOut[i].PkScript = nil
 		}
 

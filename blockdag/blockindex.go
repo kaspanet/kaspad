@@ -104,7 +104,7 @@ type blockNode struct {
 	// platforms.
 	version    int32
 	bits       uint32
-	nonce      uint32
+	nonce      uint64
 	timestamp  int64
 	merkleRoot daghash.Hash
 

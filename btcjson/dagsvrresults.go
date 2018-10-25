@@ -38,7 +38,7 @@ type GetBlockVerboseResult struct {
 	Tx             []string      `json:"tx,omitempty"`
 	RawTx          []TxRawResult `json:"rawtx,omitempty"`
 	Time           int64         `json:"time"`
-	Nonce          uint32        `json:"nonce"`
+	Nonce          uint64        `json:"nonce"`
 	Bits           string        `json:"bits"`
 	Difficulty     float64       `json:"difficulty"`
 	PreviousHashes []string      `json:"previousblockhashes"`
@@ -61,18 +61,18 @@ type DecodeScriptResult struct {
 	P2sh      string   `json:"p2sh,omitempty"`
 }
 
-// GetAddedNodeInfoResultAddr models the data of the addresses portion of the
-// getaddednodeinfo command.
-type GetAddedNodeInfoResultAddr struct {
+// GetManualNodeInfoResultAddr models the data of the addresses portion of the
+// getmanualnodeinfo command.
+type GetManualNodeInfoResultAddr struct {
 	Address   string `json:"address"`
 	Connected string `json:"connected"`
 }
 
-// GetAddedNodeInfoResult models the data from the getaddednodeinfo command.
-type GetAddedNodeInfoResult struct {
-	AddedNode string                        `json:"addednode"`
-	Connected *bool                         `json:"connected,omitempty"`
-	Addresses *[]GetAddedNodeInfoResultAddr `json:"addresses,omitempty"`
+// GetManualNodeInfoResult models the data from the getmanualnodeinfo command.
+type GetManualNodeInfoResult struct {
+	ManualNode string                         `json:"manualnode"`
+	Connected  *bool                          `json:"connected,omitempty"`
+	Addresses  *[]GetManualNodeInfoResultAddr `json:"addresses,omitempty"`
 }
 
 // SoftForkDescription describes the current state of a soft-fork which was
@@ -118,7 +118,7 @@ type GetBlockTemplateResultTx struct {
 	Data    string  `json:"data"`
 	Hash    string  `json:"hash"`
 	Depends []int64 `json:"depends"`
-	Fee     int64   `json:"fee"`
+	Fee     uint64  `json:"fee"`
 	SigOps  int64   `json:"sigops"`
 }
 
@@ -143,7 +143,7 @@ type GetBlockTemplateResult struct {
 	Version        int32                      `json:"version"`
 	CoinbaseAux    *GetBlockTemplateResultAux `json:"coinbaseaux,omitempty"`
 	CoinbaseTxn    *GetBlockTemplateResultTx  `json:"coinbasetxn,omitempty"`
-	CoinbaseValue  *int64                     `json:"coinbasevalue,omitempty"`
+	CoinbaseValue  *uint64                    `json:"coinbasevalue,omitempty"`
 	WorkID         string                     `json:"workid,omitempty"`
 
 	// Optional long polling from BIP 0022.
