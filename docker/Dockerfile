@@ -19,7 +19,7 @@ RUN dep ensure -v -vendor-only
 
 COPY . .
 
-RUN test -z `gofmt -l .`
+RUN GOFMT_RESULT=`gofmt -l .`; echo $GOFMT_RESULT; test -z "$GOFMT_RESULT"
 RUN go vet ./...
 # RUN golint -set_exit_status `go list ./... | grep -v /vendor/`
 # RUN aligncheck ./...
