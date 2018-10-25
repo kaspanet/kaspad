@@ -19,7 +19,7 @@ IMAGE_NAME=${ECR_SERVER}/${SERVICE_NAME}
 
 trap "exit 1" INT
 fatal() { echo "ERROR: $*" >&2; exit 1; }
-tm() {
+measure_runtime() {
   START=$(date +%s)
   echo "--> $*" >&2
   "$@"
@@ -53,7 +53,7 @@ if [ -z "$COMMIT" ]; then
   export COMMIT
 fi
 
-do_version() {
+version() {
   test_git_cli
   # place environment variables set by Jenkins into a metadata file
   cat <<-EOF > version.txt
@@ -65,46 +65,46 @@ do_version() {
 	EOF
 }
 
-do_login() {
+login() {
   test_aws_cli
   eval "$(aws ecr get-login --no-include-email)"
 }
 
-do_build() {
-  do_login
+build() {
+  login
   test_docker_cli
-  do_version
-  tm docker build -t "${SERVICE_NAME}:${COMMIT}" . \
+  version
+  measure_runtime docker build -t "${SERVICE_NAME}:${COMMIT}" . \
       -f docker/Dockerfile \
       || fatal 'Failed to build the docker image'
 }
 
-do_create_ecr() {
+create_ecr() {
     echo "==> Checking for existance of ECR repository..."
-    tm aws ecr describe-repositories --query 'repositories[].repositoryName' \
+    measure_runtime aws ecr describe-repositories --query 'repositories[].repositoryName' \
     | grep -E "\"$SERVICE_NAME\"" >/dev/null \
     || {
       echo "==> ECR for $SERVICE_NAME does not exist. Creating ..."
-      tm aws ecr create-repository --repository-name "$SERVICE_NAME" \
+      measure_runtime aws ecr create-repository --repository-name "$SERVICE_NAME" \
           || fatal 'Failed to create ECR repository'
     }
 }
 
-do_push() {
+push() {
   test_aws_cli
   test_docker_cli
   test_docker_server
-  do_build
-  tm docker tag  "${SERVICE_NAME}:${COMMIT}" "${IMAGE_NAME}:${COMMIT}" || fatal 'Failed to tag docker image'
-  tm docker tag  "${SERVICE_NAME}:${COMMIT}" "${IMAGE_NAME}:latest" || fatal 'Failed to tag docker image to :last'
-  do_create_ecr
-  do_login
-  tm docker push "${IMAGE_NAME}:${COMMIT}" || fatal 'Failed to push docker image to ECR'
-  tm docker push "${IMAGE_NAME}:latest" || fatal 'Failed to push docker image :latest to ECR'
+  build
+  measure_runtime docker tag  "${SERVICE_NAME}:${COMMIT}" "${IMAGE_NAME}:${COMMIT}" || fatal 'Failed to tag docker image'
+  measure_runtime docker tag  "${SERVICE_NAME}:${COMMIT}" "${IMAGE_NAME}:latest" || fatal 'Failed to tag docker image to :last'
+  create_ecr
+  login
+  measure_runtime docker push "${IMAGE_NAME}:${COMMIT}" || fatal 'Failed to push docker image to ECR'
+  measure_runtime docker push "${IMAGE_NAME}:latest" || fatal 'Failed to push docker image :latest to ECR'
 }
 
-do_deploy() {
-  tm aws cloudformation \
+deploy() {
+  measure_runtime aws cloudformation \
     update-stack \
     --stack-name "$CF_STACK_NAME" \
     --capabilities CAPABILITY_NAMED_IAM \
@@ -114,7 +114,7 @@ do_deploy() {
     || fatal "Failed to update CloudFormation stack $STACK_NAME."
 }
 
-do_usage() {
+usage() {
   echo "Usage: $0 <build|login|push|deploy>"
   echo "  version  - create a version.txt file with some meta data"
   echo "  build    - create docker image named $SERVICE_NAME with tag \$COMMIT"
@@ -124,23 +124,23 @@ do_usage() {
   echo "  deploy   - update CloudFormation stack '$CF_STACK_NAME' with ECR image '${SERVICE_NAME}:${COMMIT}'"
 }
 
-do_push_all() {
+push_all() {
   for AWS_DEFAULT_REGION in 'us-east-1' 'us-east-2'; do
     export AWS_DEFAULT_REGION
     ECR_SERVER="$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com"
     export ECR_SERVER
     IMAGE_NAME=${ECR_SERVER}/${SERVICE_NAME}
     export IMAGE_NAME
-    do_push
+    push
   done
 }
 
 case $1 in
-  version)  do_version  ;;
-  build)    do_build    ;;
-  login)    do_login    ;;
-  push)     do_push     ;;
-  push_all) do_push_all ;;
-  deploy)   do_deploy   ;;
-  *)        do_usage    ;;
+  version)  version  ;;
+  build)    build    ;;
+  login)    login    ;;
+  push)     push     ;;
+  push_all) push_all ;;
+  deploy)   deploy   ;;
+  *)        usage    ;;
 esac
