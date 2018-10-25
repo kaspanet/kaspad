@@ -27,9 +27,8 @@ RUN go vet ./...
 # RUN varcheck -e ./...
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o btcd .
 
+# Remove the line below and uncomment the line after it for testing with coverage
 RUN go test -gcflags='-l' ./...
-
-# Uncomment the line below for testing with coverage
 # RUN ./test.sh
 
 # --- multistage docker build: stage #2: runtime image
