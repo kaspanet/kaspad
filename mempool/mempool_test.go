@@ -705,15 +705,15 @@ func TestAddrIndex(t *testing.T) {
 	}
 	harness.txPool.cfg.AddrIndex = &indexers.AddrIndex{}
 	enteredAddUnconfirmedTx := false
-	monkey.Patch((*indexers.AddrIndex).AddUnconfirmedTx, func(idx *indexers.AddrIndex, tx *util.Tx, utxoSet blockdag.UTXOSet) {
+	guard := monkey.Patch((*indexers.AddrIndex).AddUnconfirmedTx, func(idx *indexers.AddrIndex, tx *util.Tx, utxoSet blockdag.UTXOSet) {
 		enteredAddUnconfirmedTx = true
 	})
-	defer monkey.Unpatch((*indexers.AddrIndex).AddUnconfirmedTx)
+	defer guard.Unpatch()
 	enteredRemoveUnconfirmedTx := false
-	monkey.Patch((*indexers.AddrIndex).RemoveUnconfirmedTx, func(idx *indexers.AddrIndex, hash *daghash.Hash) {
+	guard = monkey.Patch((*indexers.AddrIndex).RemoveUnconfirmedTx, func(idx *indexers.AddrIndex, hash *daghash.Hash) {
 		enteredRemoveUnconfirmedTx = true
 	})
-	defer monkey.Unpatch((*indexers.AddrIndex).RemoveUnconfirmedTx)
+	defer guard.Unpatch()
 
 	tx, err := harness.createTx(spendableOuts[0], 0, 1)
 	if err != nil {
@@ -736,7 +736,6 @@ func TestAddrIndex(t *testing.T) {
 	if !enteredRemoveUnconfirmedTx {
 		t.Errorf("TestAddrIndex: (*indexers.AddrIndex).RemoveUnconfirmedTx was not called")
 	}
-
 }
 
 func TestFeeEstimatorCfg(t *testing.T) {
@@ -746,10 +745,10 @@ func TestFeeEstimatorCfg(t *testing.T) {
 	}
 	harness.txPool.cfg.FeeEstimator = &FeeEstimator{}
 	enteredObserveTransaction := false
-	monkey.Patch((*FeeEstimator).ObserveTransaction, func(ef *FeeEstimator, t *TxDesc) {
+	guard := monkey.Patch((*FeeEstimator).ObserveTransaction, func(ef *FeeEstimator, t *TxDesc) {
 		enteredObserveTransaction = true
 	})
-	defer monkey.Unpatch((*FeeEstimator).ObserveTransaction)
+	defer guard.Unpatch()
 
 	tx, err := harness.createTx(spendableOuts[0], 0, 1)
 	if err != nil {
@@ -1520,7 +1519,6 @@ func TestCount(t *testing.T) {
 	if harness.txPool.Count() != 2 {
 		t.Errorf("TestCount: txPool expected to have 2 transactions but got %v", harness.txPool.Count())
 	}
-
 }
 
 func TestExtractRejectCode(t *testing.T) {
@@ -1596,5 +1594,4 @@ func TestExtractRejectCode(t *testing.T) {
 	if ok {
 		t.Errorf("TestExtractRejectCode: a nonRuleError is expected to return false but got %v", ok)
 	}
-
 }
