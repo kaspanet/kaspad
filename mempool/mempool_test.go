@@ -556,7 +556,7 @@ func TestProcessTransaction(t *testing.T) {
 
 	nonStdSigScriptTx := util.NewTx(&wire.MsgTx{
 		Version: 1,
-		TxIn: []*wire.TxIn{&wire.TxIn{
+		TxIn: []*wire.TxIn{{
 			PreviousOutPoint: wire.OutPoint{Hash: *p2shTx.Hash(), Index: 0},
 			SignatureScript:  wrappedP2SHNonStdSigScript,
 			Sequence:         wire.MaxTxInSequenceNum,
@@ -603,7 +603,7 @@ func TestProcessTransaction(t *testing.T) {
 	//Checks that a transaction with no outputs will get rejected
 	noOutsTx := util.NewTx(&wire.MsgTx{
 		Version: 1,
-		TxIn: []*wire.TxIn{&wire.TxIn{
+		TxIn: []*wire.TxIn{{
 			PreviousOutPoint: dummyPrevOut,
 			SignatureScript:  dummySigScript,
 			Sequence:         wire.MaxTxInSequenceNum,
@@ -676,7 +676,7 @@ func TestProcessTransaction(t *testing.T) {
 
 	tx = util.NewTx(&wire.MsgTx{
 		Version: 1,
-		TxIn: []*wire.TxIn{&wire.TxIn{
+		TxIn: []*wire.TxIn{{
 			PreviousOutPoint: spendableOuts[5].outPoint,
 			SignatureScript:  []byte{02, 01}, //Unparsable script
 			Sequence:         wire.MaxTxInSequenceNum,

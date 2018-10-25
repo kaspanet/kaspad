@@ -6,8 +6,8 @@ package base58_test
 
 import (
 	"bytes"
-	"testing"
 	"github.com/daglabs/btcd/util/base58"
+	"testing"
 )
 
 func BenchmarkBase58Encode(b *testing.B) {

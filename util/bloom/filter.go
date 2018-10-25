@@ -9,10 +9,10 @@ import (
 	"math"
 	"sync"
 
-	"github.com/daglabs/btcd/txscript"
-	"github.com/daglabs/btcd/wire"
-	"github.com/daglabs/btcd/util"
 	"github.com/daglabs/btcd/dagconfig/daghash"
+	"github.com/daglabs/btcd/txscript"
+	"github.com/daglabs/btcd/util"
+	"github.com/daglabs/btcd/wire"
 )
 
 // ln2Squared is simply the square of the natural log of 2.
