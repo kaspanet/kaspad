@@ -19,9 +19,11 @@ RUN dep ensure -v -vendor-only
 
 COPY . .
 
-RUN GOFMT_RESULT=`gofmt -l .`; echo $GOFMT_RESULT; test -z "$GOFMT_RESULT"
+RUN TEST_DIRS=`go list -f {{.Dir}} ./... | grep -v /vendor/`
+RUN GOFMT_RESULT=`gofmt -l $TEST_DIRS`
+RUN test -z "$GOFMT_RESULT" || echo $GOFMT_RESULT
 RUN go vet ./...
-# RUN golint -set_exit_status `go list ./... | grep -v /vendor/`
+# RUN golint -set_exit_status $TEST_DIRS
 # RUN aligncheck ./...
 # RUN structcheck -e ./...
 # RUN varcheck -e ./...
