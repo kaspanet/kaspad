@@ -5,24 +5,29 @@
 package blockdag
 
 import (
-	"testing"
 	"reflect"
+	"testing"
+
 	"github.com/daglabs/btcd/dagconfig/daghash"
 )
 
-// TestVirtualBlock ensures that VirtualBlock works as expected.
-func TestVirtualBlock(t *testing.T) {
-	// For the purposes of this test, we'll create blockNodes whose hashes are a
+func buildNodeGenerator(phantomK uint32) func(parents blockSet) *blockNode {
+	// For the purposes of these tests, we'll create blockNodes whose hashes are a
 	// series of numbers from 0 to n.
-	phantomK := uint32(1)
 	hashCounter := byte(0)
-	buildNode := func(parents blockSet) *blockNode {
+	return func(parents blockSet) *blockNode {
 		block := newBlockNode(nil, parents, phantomK)
 		block.hash = daghash.Hash{hashCounter}
 		hashCounter++
 
 		return block
 	}
+}
+
+// TestVirtualBlock ensures that VirtualBlock works as expected.
+func TestVirtualBlock(t *testing.T) {
+	phantomK := uint32(1)
+	buildNode := buildNodeGenerator(phantomK)
 
 	// Create a DAG as follows:
 	// 0 <- 1 <- 2
@@ -42,41 +47,41 @@ func TestVirtualBlock(t *testing.T) {
 	// Set its tips to tipsToSet
 	// Add to it all the tips in tipsToAdd, one after the other
 	// Call .Tips() on it and compare the result to expectedTips
-	// Call .SelectedTip() on it and compare the result to expectedSelectedTip
+	// Call .SelectedTip() on it and compare the result to expectedSelectedParent
 	tests := []struct {
-		name                string
-		tipsToSet           []*blockNode
-		tipsToAdd           []*blockNode
-		expectedTips        blockSet
-		expectedSelectedTip *blockNode
+		name                   string
+		tipsToSet              []*blockNode
+		tipsToAdd              []*blockNode
+		expectedTips           blockSet
+		expectedSelectedParent *blockNode
 	}{
 		{
-			name:                "empty virtual",
-			tipsToSet:           []*blockNode{},
-			tipsToAdd:           []*blockNode{},
-			expectedTips:        newSet(),
-			expectedSelectedTip: nil,
+			name:                   "empty virtual",
+			tipsToSet:              []*blockNode{},
+			tipsToAdd:              []*blockNode{},
+			expectedTips:           newSet(),
+			expectedSelectedParent: nil,
 		},
 		{
-			name:                "virtual with genesis tip",
-			tipsToSet:           []*blockNode{node0},
-			tipsToAdd:           []*blockNode{},
-			expectedTips:        setFromSlice(node0),
-			expectedSelectedTip: node0,
+			name:                   "virtual with genesis tip",
+			tipsToSet:              []*blockNode{node0},
+			tipsToAdd:              []*blockNode{},
+			expectedTips:           setFromSlice(node0),
+			expectedSelectedParent: node0,
 		},
 		{
-			name:                "virtual with genesis tip, add child of genesis",
-			tipsToSet:           []*blockNode{node0},
-			tipsToAdd:           []*blockNode{node1},
-			expectedTips:        setFromSlice(node1),
-			expectedSelectedTip: node1,
+			name:                   "virtual with genesis tip, add child of genesis",
+			tipsToSet:              []*blockNode{node0},
+			tipsToAdd:              []*blockNode{node1},
+			expectedTips:           setFromSlice(node1),
+			expectedSelectedParent: node1,
 		},
 		{
-			name:                "empty virtual, add a full DAG",
-			tipsToSet:           []*blockNode{},
-			tipsToAdd:           []*blockNode{node0, node1, node2, node3, node4, node5, node6},
-			expectedTips:        setFromSlice(node2, node5, node6),
-			expectedSelectedTip: node5,
+			name:                   "empty virtual, add a full DAG",
+			tipsToSet:              []*blockNode{},
+			tipsToAdd:              []*blockNode{node0, node1, node2, node3, node4, node5, node6},
+			expectedTips:           setFromSlice(node2, node5, node6),
+			expectedSelectedParent: node5,
 		},
 	}
 
@@ -99,11 +104,71 @@ func TestVirtualBlock(t *testing.T) {
 				"Expected: %v, got: %v.", test.name, test.expectedTips, resultTips)
 		}
 
-		// Ensure that the virtual block's selectedTip is now equal to expectedSelectedTip
-		resultSelectedTip := virtual.SelectedTip()
-		if !reflect.DeepEqual(resultSelectedTip, test.expectedSelectedTip) {
+		// Ensure that the virtual block's selectedParent is now equal to expectedSelectedParent
+		resultSelectedTip := virtual.selectedParent
+		if !reflect.DeepEqual(resultSelectedTip, test.expectedSelectedParent) {
 			t.Errorf("unexpected selected tip in test \"%s\". "+
-				"Expected: %v, got: %v.", test.name, test.expectedSelectedTip, resultSelectedTip)
+				"Expected: %v, got: %v.", test.name, test.expectedSelectedParent, resultSelectedTip)
 		}
 	}
+}
+
+func TestSelectedPath(t *testing.T) {
+	phantomK := uint32(1)
+	buildNode := buildNodeGenerator(phantomK)
+
+	// Create an empty VirtualBlock
+	virtual := newVirtualBlock(nil, phantomK)
+
+	tip := buildNode(setFromSlice())
+	virtual.AddTip(tip)
+	initialPath := setFromSlice(tip)
+	for i := 0; i < 5; i++ {
+		tip = buildNode(setFromSlice(tip))
+		initialPath.add(tip)
+		virtual.AddTip(tip)
+	}
+	initialTip := tip
+
+	firstPath := initialPath.clone()
+	for i := 0; i < 5; i++ {
+		tip = buildNode(setFromSlice(tip))
+		firstPath.add(tip)
+		virtual.AddTip(tip)
+	}
+	// For now we don't have any DAG, just chain, the selected path should include all the blocks on the chain.
+	if !reflect.DeepEqual(virtual.selectedPathSet, firstPath) {
+		t.Fatalf("TestSelectedPath: selectedPathSet doesn't include the expected values. got %v, want %v", virtual.selectedParent, firstPath)
+	}
+
+	secondPath := initialPath.clone()
+	tip = initialTip
+	for i := 0; i < 100; i++ {
+		tip = buildNode(setFromSlice(tip))
+		secondPath.add(tip)
+		virtual.AddTip(tip)
+	}
+	// Because we added a chain that is much longer than the previous chain, the selected path should be re-organized.
+	if !reflect.DeepEqual(virtual.selectedPathSet, secondPath) {
+		t.Fatalf("TestSelectedPath: selectedPathSet didn't handle the re-org as expected. got %v, want %v", virtual.selectedParent, firstPath)
+	}
+
+	tip = initialTip
+	for i := 0; i < 3; i++ {
+		tip = buildNode(setFromSlice(tip))
+		virtual.AddTip(tip)
+	}
+	// Because we added a very short chain, the selected path should not be affected.
+	if !reflect.DeepEqual(virtual.selectedPathSet, secondPath) {
+		t.Fatalf("TestSelectedPath: selectedPathSet did an unexpected re-org. got %v, want %v", virtual.selectedParent, firstPath)
+	}
+
+	// We call updateSelectedPathSet manually without updating the tips, to check if it panics
+	virtual2 := newVirtualBlock(nil, phantomK)
+	defer func() {
+		if r := recover(); r == nil {
+			t.Fatalf("updateSelectedPathSet didn't panic")
+		}
+	}()
+	virtual2.updateSelectedPathSet(buildNode(setFromSlice()))
 }

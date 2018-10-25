@@ -33,10 +33,10 @@ func TestHelp(t *testing.T) {
 	// Ensure the usage for every command can be generated without errors.
 	helpCacher := newHelpCacher()
 	if _, err := helpCacher.rpcUsage(true); err != nil {
-		t.Fatalf("Failed to generate one-line usage: %v", err)
+		t.Errorf("Failed to generate one-line usage: %v", err)
 	}
 	if _, err := helpCacher.rpcUsage(true); err != nil {
-		t.Fatalf("Failed to generate one-line usage (cached): %v", err)
+		t.Errorf("Failed to generate one-line usage (cached): %v", err)
 	}
 
 	// Ensure the help for every command can be generated without errors.

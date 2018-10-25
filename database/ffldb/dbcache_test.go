@@ -197,6 +197,11 @@ func TestSkipPendingUpdatesCache(t *testing.T) {
 		t.Fatalf("Error adding to metadata: %s", err)
 	}
 
+	err = pdb.cache.flush()
+	if err != nil {
+		t.Fatalf("Error flushing cache: %s", err)
+	}
+
 	// test skips
 	err = pdb.Update(func(tx database.Tx) error {
 		snapshot, err := pdb.cache.Snapshot()
@@ -205,43 +210,33 @@ func TestSkipPendingUpdatesCache(t *testing.T) {
 		}
 
 		iterator := snapshot.NewIterator(&ldbutil.Range{})
-		snapshot.pendingRemove.Put(toDeleteKey, value)
-		snapshot.pendingKeys.Put(toUpdateKey, value)
+		snapshot.pendingRemove = snapshot.pendingRemove.Put(bucketizedKey(metadataBucketID, toDeleteKey), value)
+		snapshot.pendingKeys = snapshot.pendingKeys.Put(bucketizedKey(metadataBucketID, toUpdateKey), value)
 
 		// Check that first is ok
 		iterator.First()
 		expectedKey := bucketizedKey(metadataBucketID, firstKey)
-		if !bytes.Equal(iterator.Key(), expectedKey) {
-			t.Errorf("TestSkipPendingUpdatesCache: 1: key expected to be %v but is %v", expectedKey, iterator.Key())
+		actualKey := iterator.Key()
+		if !bytes.Equal(actualKey, expectedKey) {
+			t.Errorf("TestSkipPendingUpdatesCache: 1: key expected to be %v but is %v", expectedKey, actualKey)
 		}
 
-		// Go to the next key, which is toDelete
+		// Go to the next key, which is second, toDelete and toUpdate will be skipped
 		iterator.Next()
-		expectedKey = bucketizedKey(metadataBucketID, toDeleteKey)
-		if !bytes.Equal(iterator.Key(), expectedKey) {
-			t.Errorf("TestSkipPendingUpdatesCache: 2: key expected to be %s but is %s", expectedKey, iterator.Key())
-		}
-
-		// at this point toDeleteKey and toUpdateKey should be skipped
-		iterator.skipPendingUpdates(true)
 		expectedKey = bucketizedKey(metadataBucketID, secondKey)
-		if !bytes.Equal(iterator.Key(), expectedKey) {
-			t.Errorf("TestSkipPendingUpdatesCache: 3: key expected to be %s but is %s", expectedKey, iterator.Key())
+		actualKey = iterator.Key()
+		if !bytes.Equal(actualKey, expectedKey) {
+			t.Errorf("TestSkipPendingUpdatesCache: 2: key expected to be %s but is %s", expectedKey, actualKey)
 		}
 
-		// now traverse backwards - should get toUpdate
+		// now traverse backwards - should get first, toUpdate and toDelete will be skipped
 		iterator.Prev()
-		expectedKey = bucketizedKey(metadataBucketID, toUpdateKey)
-		if !bytes.Equal(iterator.Key(), expectedKey) {
-			t.Errorf("TestSkipPendingUpdatesCache: 4: key expected to be %s but is %s", expectedKey, iterator.Key())
+		expectedKey = bucketizedKey(metadataBucketID, firstKey)
+		actualKey = iterator.Key()
+		if !bytes.Equal(actualKey, expectedKey) {
+			t.Errorf("TestSkipPendingUpdatesCache: 4: key expected to be %s but is %s", expectedKey, actualKey)
 		}
 
-		// at this point toUpdateKey and toDeleteKey should be skipped
-		iterator.skipPendingUpdates(false)
-		expectedKey = bucketizedKey(metadataBucketID, firstKey)
-		if !bytes.Equal(iterator.Key(), expectedKey) {
-			t.Errorf("TestSkipPendingUpdatesCache: 5: key expected to be %s but is %s", expectedKey, iterator.Key())
-		}
 		return nil
 	})
 	if err != nil {

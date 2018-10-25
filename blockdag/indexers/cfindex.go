@@ -11,10 +11,10 @@ import (
 	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/database"
-	"github.com/daglabs/btcd/wire"
 	"github.com/daglabs/btcd/util"
 	"github.com/daglabs/btcd/util/gcs"
 	"github.com/daglabs/btcd/util/gcs/builder"
+	"github.com/daglabs/btcd/wire"
 )
 
 const (
@@ -203,7 +203,7 @@ func storeFilter(dbTx database.Tx, block *util.Block, f *gcs.Filter,
 // connected to the main chain. This indexer adds a hash-to-cf mapping for
 // every passed block. This is part of the Indexer interface.
 func (idx *CfIndex) ConnectBlock(dbTx database.Tx, block *util.Block,
-	virtual *blockdag.VirtualBlock) error {
+	_ *blockdag.BlockDAG, _ []*blockdag.TxWithBlockHash) error {
 
 	f, err := builder.BuildBasicFilter(block.MsgBlock())
 	if err != nil {
@@ -227,7 +227,7 @@ func (idx *CfIndex) ConnectBlock(dbTx database.Tx, block *util.Block,
 // disconnected from the main chain.  This indexer removes the hash-to-cf
 // mapping for every passed block. This is part of the Indexer interface.
 func (idx *CfIndex) DisconnectBlock(dbTx database.Tx, block *util.Block,
-	virtual *blockdag.VirtualBlock) error {
+	_ *blockdag.BlockDAG) error {
 
 	for _, key := range cfIndexKeys {
 		err := dbDeleteFilterIdxEntry(dbTx, key, block.Hash())

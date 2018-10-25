@@ -13,8 +13,8 @@ import (
 	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/database"
 	_ "github.com/daglabs/btcd/database/ffldb"
-	"github.com/daglabs/btcd/wire"
 	"github.com/daglabs/btcd/util"
+	"github.com/daglabs/btcd/wire"
 )
 
 // This example demonstrates creating a new database.
@@ -173,5 +173,5 @@ func Example_blockStorageAndRetrieval() {
 	fmt.Printf("Serialized block size: %d bytes\n", len(loadedBlockBytes))
 
 	// Output:
-	// Serialized block size: 266 bytes
+	// Serialized block size: 270 bytes
 }
