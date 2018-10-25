@@ -83,7 +83,7 @@ type blockNode struct {
 	// diff is the UTXO representation of the block
 	// A block's UTXO is reconstituted by applying diffWith on every block in the chain of diffChildren
 	// from the virtual block down to the block. See diffChild
-	diff *utxoDiff
+	diff *UTXODiff
 
 	// diffChild is the child that diff will be built from. See diff
 	diffChild *blockNode

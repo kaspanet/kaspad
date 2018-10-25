@@ -570,7 +570,7 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block) error {
 // 5. Updates each of the tips' utxoDiff.
 //
 // This function MUST be called with the chain state lock held (for writes).
-func (dag *BlockDAG) applyUTXOChanges(node *blockNode, block *util.Block) (utxoDiff *utxoDiff, acceptedTxData []*TxWithBlockHash, err error) {
+func (dag *BlockDAG) applyUTXOChanges(node *blockNode, block *util.Block) (utxoDiff *UTXODiff, acceptedTxData []*TxWithBlockHash, err error) {
 	// Prepare provisionalNodes for all the relevant nodes to avoid modifying the original nodes.
 	// We avoid modifying the original nodes in this function because it could potentially
 	// fail if the block is not valid, thus bringing all the affected nodes (and the virtual)
@@ -657,7 +657,7 @@ type provisionalNode struct {
 	selectedParent *provisionalNode
 	parents        []*provisionalNode
 	children       []*provisionalNode
-	diff           *utxoDiff
+	diff           *UTXODiff
 	diffChild      *provisionalNode
 	transactions   []*util.Tx
 }
@@ -946,7 +946,7 @@ func (dag *BlockDAG) SelectedTip() *blockNode {
 }
 
 // UTXOSet returns the DAG's UTXO set
-func (dag *BlockDAG) UTXOSet() *fullUTXOSet {
+func (dag *BlockDAG) UTXOSet() *FullUTXOSet {
 	return dag.virtual.utxoSet
 }
 
