@@ -699,7 +699,7 @@ func TestProcessTransaction(t *testing.T) {
 }
 
 func TestAddrIndex(t *testing.T) {
-	harness, spendableOuts, err := newPoolHarness(&dagconfig.MainNetParams, 2, "TestAddrIndexRemoveUnconfirmedTx")
+	harness, spendableOuts, err := newPoolHarness(&dagconfig.MainNetParams, 2, "TestAddrIndex")
 	if err != nil {
 		t.Fatalf("unable to create test pool: %v", err)
 	}
@@ -763,7 +763,6 @@ func TestFeeEstimatorCfg(t *testing.T) {
 	if !enteredObserveTransaction {
 		t.Errorf("TestFeeEstimatorCfg: (*FeeEstimator).ObserveTransaction was not called")
 	}
-
 }
 
 func TestDoubleSpends(t *testing.T) {
@@ -1076,14 +1075,14 @@ func TestRemoveTransaction(t *testing.T) {
 	testPoolMembership(tc, chainedTxns[2], false, false)
 
 	fakeWithDiffErr := "error from WithDiff"
-	monkey.Patch((*blockdag.DiffUTXOSet).WithDiff, func(_ *blockdag.DiffUTXOSet, _ *blockdag.UTXODiff) (blockdag.UTXOSet, error) {
+	guard := monkey.Patch((*blockdag.DiffUTXOSet).WithDiff, func(_ *blockdag.DiffUTXOSet, _ *blockdag.UTXODiff) (blockdag.UTXOSet, error) {
 		return nil, errors.New(fakeWithDiffErr)
 	})
+	defer guard.Unpatch()
 	err = harness.txPool.RemoveTransaction(chainedTxns[0], false, false)
 	if err == nil || err.Error() != fakeWithDiffErr {
 		t.Errorf("RemoveTransaction: expected error %v but got %v", fakeWithDiffErr, err)
 	}
-	monkey.Unpatch((*blockdag.DiffUTXOSet).WithDiff)
 }
 
 // TestOrphanEviction ensures that exceeding the maximum number of orphans
@@ -1524,12 +1523,6 @@ func TestCount(t *testing.T) {
 
 }
 
-type fakeErr string
-
-func (e fakeErr) Error() string {
-	return string(e)
-}
-
 func TestExtractRejectCode(t *testing.T) {
 	tests := []struct {
 		blockdagRuleErrorCode blockdag.ErrorCode
@@ -1594,14 +1587,14 @@ func TestExtractRejectCode(t *testing.T) {
 		t.Errorf("TestExtractRejectCode: a nil error is expected to return false but got %v", ok)
 	}
 
-	fErr := fakeErr("fake err")
+	nonRuleError := errors.New("nonRuleError")
 
-	fErrExtractedCode, ok := extractRejectCode(fErr)
+	fErrExtractedCode, ok := extractRejectCode(nonRuleError)
 	if fErrExtractedCode != wire.RejectInvalid {
 		t.Errorf("TestExtractRejectCode: expected %v to extract %v but got %v", wire.RejectInvalid, wire.RejectInvalid, nilErrExtractedCode)
 	}
 	if ok {
-		t.Errorf("TestExtractRejectCode: a fakeErr type is expected to return false but got %v", ok)
+		t.Errorf("TestExtractRejectCode: a nonRuleError is expected to return false but got %v", ok)
 	}
 
 }
