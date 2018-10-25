@@ -46,10 +46,10 @@ type TxDesc struct {
 	Height int32
 
 	// Fee is the total fee the transaction associated with the entry pays.
-	Fee int64
+	Fee uint64
 
 	// FeePerKB is the fee the transaction pays in Satoshi per 1000 bytes.
-	FeePerKB int64
+	FeePerKB uint64
 }
 
 // TxSource represents a source of transactions to consider for inclusion in
@@ -76,9 +76,9 @@ type TxSource interface {
 // which have not been mined into a block yet.
 type txPrioItem struct {
 	tx       *util.Tx
-	fee      int64
+	fee      uint64
 	priority float64
-	feePerKB int64
+	feePerKB uint64
 
 	// dependsOn holds a map of transaction hashes which this one depends
 	// on.  It will only be set when the transaction references other
@@ -195,7 +195,7 @@ type BlockTemplate struct {
 	// template pays in base units.  Since the first transaction is the
 	// coinbase, the first entry (offset 0) will contain the negative of the
 	// sum of the fees of all other transactions.
-	Fees []int64
+	Fees []uint64
 
 	// SigOpCounts contains the number of signature operations each
 	// transaction in the generated template performs.
@@ -455,9 +455,9 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 	// a transaction as it is selected for inclusion in the final block.
 	// However, since the total fees aren't known yet, use a dummy value for
 	// the coinbase fee which will be updated later.
-	txFees := make([]int64, 0, len(sourceTxns))
+	txFees := make([]uint64, 0, len(sourceTxns))
 	txSigOpCounts := make([]int64, 0, len(sourceTxns))
-	txFees = append(txFees, -1) // Updated once known
+	txFees = append(txFees, 0) // Updated once known
 	txSigOpCounts = append(txSigOpCounts, numCoinbaseSigOps)
 
 	log.Debugf("Considering %d transactions for inclusion to new block",
@@ -541,7 +541,7 @@ mempoolLoop:
 	// transaction.
 	blockSize := blockHeaderOverhead + uint32(coinbaseTx.MsgTx().SerializeSize())
 	blockSigOps := numCoinbaseSigOps
-	totalFees := int64(0)
+	totalFees := uint64(0)
 
 	// Choose which transactions make it into the block.
 	for priorityQueue.Len() > 0 {
@@ -595,7 +595,7 @@ mempoolLoop:
 		// Skip free transactions once the block is larger than the
 		// minimum block size.
 		if sortedByFee &&
-			prioItem.feePerKB < int64(g.policy.TxMinFreeFee) &&
+			prioItem.feePerKB < uint64(g.policy.TxMinFreeFee) &&
 			blockPlusTxSize >= g.policy.BlockMinSize {
 
 			log.Tracef("Skipping tx %s with feePerKB %.2f "+

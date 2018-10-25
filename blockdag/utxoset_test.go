@@ -822,8 +822,8 @@ func createCoinbaseTx(blockHeight int32, numOutputs uint32) (*wire.MsgTx, error)
 		Sequence:        wire.MaxTxInSequenceNum,
 	})
 	totalInput := CalcBlockSubsidy(blockHeight, &dagconfig.MainNetParams)
-	amountPerOutput := totalInput / int64(numOutputs)
-	remainder := totalInput - amountPerOutput*int64(numOutputs)
+	amountPerOutput := totalInput / uint64(numOutputs)
+	remainder := totalInput - amountPerOutput*uint64(numOutputs)
 	for i := uint32(0); i < numOutputs; i++ {
 		// Ensure the final output accounts for any remainder that might
 		// be left from splitting the input amount.
@@ -861,7 +861,7 @@ func TestApplyUTXOChanges(t *testing.T) {
 	})
 	chainedTx.AddTxOut(&wire.TxOut{
 		PkScript: OpTrueScript,
-		Value:    int64(1),
+		Value:    uint64(1),
 	})
 
 	//Fake block header
@@ -891,7 +891,7 @@ func TestApplyUTXOChanges(t *testing.T) {
 	})
 	nonChainedTx.AddTxOut(&wire.TxOut{
 		PkScript: OpTrueScript,
-		Value:    int64(1),
+		Value:    uint64(1),
 	})
 
 	msgBlock2 := &wire.MsgBlock{
@@ -930,7 +930,7 @@ func TestDiffFromTx(t *testing.T) {
 	})
 	tx.AddTxOut(&wire.TxOut{
 		PkScript: OpTrueScript,
-		Value:    int64(1),
+		Value:    uint64(1),
 	})
 	diff, err := fus.diffFromTx(tx, node)
 	if err != nil {
@@ -957,7 +957,7 @@ func TestDiffFromTx(t *testing.T) {
 	})
 	invalidTx.AddTxOut(&wire.TxOut{
 		PkScript: OpTrueScript,
-		Value:    int64(1),
+		Value:    uint64(1),
 	})
 	_, err = fus.diffFromTx(invalidTx, node)
 	if err == nil {

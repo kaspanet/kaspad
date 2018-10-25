@@ -72,7 +72,7 @@ func createTxIn(originTx *wire.MsgTx, outputIndex uint32) *wire.TxIn {
 	return wire.NewTxIn(prevOut, nil)
 }
 
-func createTransaction(value int64, originTx *wire.MsgTx, originTxoutputIndex uint32, sigScript []byte) (*wire.MsgTx, error) {
+func createTransaction(value uint64, originTx *wire.MsgTx, originTxoutputIndex uint32, sigScript []byte) (*wire.MsgTx, error) {
 	lookupKey := func(a util.Address) (*btcec.PrivateKey, bool, error) {
 		// Ordinarily this function would involve looking up the private
 		// key for the provided address, but since the only thing being

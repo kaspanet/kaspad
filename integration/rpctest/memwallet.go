@@ -428,7 +428,7 @@ func (m *memWallet) fundTx(tx *wire.MsgTx, amt util.Amount, feeRate util.Amount)
 				return err
 			}
 			changeOutput := &wire.TxOut{
-				Value:    int64(changeVal),
+				Value:    uint64(changeVal),
 				PkScript: pkScript,
 			}
 			tx.AddTxOut(changeOutput)
