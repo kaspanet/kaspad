@@ -40,7 +40,7 @@ func TestCheckBlockScripts(t *testing.T) {
 		return
 	}
 
-	pNode := &provisionalNode{
+	node := &provisionalNode{
 		original: &blockNode{
 			hash: *blocks[0].Hash(),
 		},
@@ -48,7 +48,7 @@ func TestCheckBlockScripts(t *testing.T) {
 	}
 
 	scriptFlags := txscript.ScriptNoFlags
-	err = checkBlockScripts(pNode, utxoSet, scriptFlags, nil)
+	err = checkBlockScripts(node, utxoSet, scriptFlags, nil)
 	if err != nil {
 		t.Errorf("Transaction script validation failed: %v\n", err)
 		return

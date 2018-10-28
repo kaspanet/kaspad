@@ -471,6 +471,13 @@ func (dag *BlockDAG) connectToDAG(node *blockNode, parentNodes blockSet, block *
 //
 // This function MUST be called with the chain state lock held (for writes).
 func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block, fastAdd bool) error {
+	// The coinbase for the Genesis block is not spendable, so just return
+	// an error now.
+	if node.hash.IsEqual(dag.dagParams.GenesisHash) {
+		str := "the coinbase for the genesis block is not spendable"
+		return ruleError(ErrMissingTxOut, str)
+	}
+
 	// No warnings about unknown rules or versions until the DAG is
 	// current.
 	if dag.isCurrent() {
