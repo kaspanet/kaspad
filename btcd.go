@@ -23,8 +23,8 @@ import (
 	"github.com/daglabs/btcd/logger"
 	"github.com/daglabs/btcd/server"
 	"github.com/daglabs/btcd/signal"
-	"github.com/daglabs/btcd/version"
 	"github.com/daglabs/btcd/util/fs"
+	"github.com/daglabs/btcd/version"
 )
 
 const (

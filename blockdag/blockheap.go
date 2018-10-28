@@ -44,8 +44,8 @@ func NewHeap() BlockHeap {
 	return h
 }
 
-// Pop removes the block with lowest height from this heap and returns it
-func (bh BlockHeap) Pop() *blockNode {
+// pop removes the block with lowest height from this heap and returns it
+func (bh BlockHeap) pop() *blockNode {
 	return heap.Pop(bh.impl).(*blockNode)
 }
 

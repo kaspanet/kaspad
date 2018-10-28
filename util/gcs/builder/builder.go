@@ -9,10 +9,10 @@ import (
 	"crypto/rand"
 	"encoding/binary"
 
-	"github.com/daglabs/btcd/txscript"
-	"github.com/daglabs/btcd/wire"
-	"github.com/daglabs/btcd/util/gcs"
 	"github.com/daglabs/btcd/dagconfig/daghash"
+	"github.com/daglabs/btcd/txscript"
+	"github.com/daglabs/btcd/util/gcs"
+	"github.com/daglabs/btcd/wire"
 )
 
 // DefaultP is the default collision probability (2^-20)

@@ -7,6 +7,7 @@ package mempool
 import (
 	"bytes"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"math"
 	"reflect"
@@ -15,7 +16,9 @@ import (
 	"testing"
 	"time"
 
+	"bou.ke/monkey"
 	"github.com/daglabs/btcd/blockdag"
+	"github.com/daglabs/btcd/blockdag/indexers"
 	"github.com/daglabs/btcd/btcec"
 	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/dagconfig/daghash"
@@ -553,7 +556,7 @@ func TestProcessTransaction(t *testing.T) {
 
 	nonStdSigScriptTx := util.NewTx(&wire.MsgTx{
 		Version: 1,
-		TxIn: []*wire.TxIn{&wire.TxIn{
+		TxIn: []*wire.TxIn{{
 			PreviousOutPoint: wire.OutPoint{Hash: *p2shTx.Hash(), Index: 0},
 			SignatureScript:  wrappedP2SHNonStdSigScript,
 			Sequence:         wire.MaxTxInSequenceNum,
@@ -600,7 +603,7 @@ func TestProcessTransaction(t *testing.T) {
 	//Checks that a transaction with no outputs will get rejected
 	noOutsTx := util.NewTx(&wire.MsgTx{
 		Version: 1,
-		TxIn: []*wire.TxIn{&wire.TxIn{
+		TxIn: []*wire.TxIn{{
 			PreviousOutPoint: dummyPrevOut,
 			SignatureScript:  dummySigScript,
 			Sequence:         wire.MaxTxInSequenceNum,
@@ -673,7 +676,7 @@ func TestProcessTransaction(t *testing.T) {
 
 	tx = util.NewTx(&wire.MsgTx{
 		Version: 1,
-		TxIn: []*wire.TxIn{&wire.TxIn{
+		TxIn: []*wire.TxIn{{
 			PreviousOutPoint: spendableOuts[5].outPoint,
 			SignatureScript:  []byte{02, 01}, //Unparsable script
 			Sequence:         wire.MaxTxInSequenceNum,
@@ -693,6 +696,72 @@ func TestProcessTransaction(t *testing.T) {
 		t.Errorf("Unexpected error code. Expected %v but got %v", wire.RejectNonstandard, code)
 	}
 
+}
+
+func TestAddrIndex(t *testing.T) {
+	harness, spendableOuts, err := newPoolHarness(&dagconfig.MainNetParams, 2, "TestAddrIndex")
+	if err != nil {
+		t.Fatalf("unable to create test pool: %v", err)
+	}
+	harness.txPool.cfg.AddrIndex = &indexers.AddrIndex{}
+	enteredAddUnconfirmedTx := false
+	guard := monkey.Patch((*indexers.AddrIndex).AddUnconfirmedTx, func(idx *indexers.AddrIndex, tx *util.Tx, utxoSet blockdag.UTXOSet) {
+		enteredAddUnconfirmedTx = true
+	})
+	defer guard.Unpatch()
+	enteredRemoveUnconfirmedTx := false
+	guard = monkey.Patch((*indexers.AddrIndex).RemoveUnconfirmedTx, func(idx *indexers.AddrIndex, hash *daghash.Hash) {
+		enteredRemoveUnconfirmedTx = true
+	})
+	defer guard.Unpatch()
+
+	tx, err := harness.createTx(spendableOuts[0], 0, 1)
+	if err != nil {
+		t.Fatalf("unable to create transaction: %v", err)
+	}
+	_, err = harness.txPool.ProcessTransaction(tx, true, false, 0)
+	if err != nil {
+		t.Errorf("ProcessTransaction: unexpected error: %v", err)
+	}
+
+	if !enteredAddUnconfirmedTx {
+		t.Errorf("TestAddrIndex: (*indexers.AddrIndex).AddUnconfirmedTx was not called")
+	}
+
+	err = harness.txPool.RemoveTransaction(tx, false, false)
+	if err != nil {
+		t.Errorf("TestAddrIndex: unexpected error: %v", err)
+	}
+
+	if !enteredRemoveUnconfirmedTx {
+		t.Errorf("TestAddrIndex: (*indexers.AddrIndex).RemoveUnconfirmedTx was not called")
+	}
+}
+
+func TestFeeEstimatorCfg(t *testing.T) {
+	harness, spendableOuts, err := newPoolHarness(&dagconfig.MainNetParams, 2, "TestFeeEstimatorCfg")
+	if err != nil {
+		t.Fatalf("unable to create test pool: %v", err)
+	}
+	harness.txPool.cfg.FeeEstimator = &FeeEstimator{}
+	enteredObserveTransaction := false
+	guard := monkey.Patch((*FeeEstimator).ObserveTransaction, func(ef *FeeEstimator, t *TxDesc) {
+		enteredObserveTransaction = true
+	})
+	defer guard.Unpatch()
+
+	tx, err := harness.createTx(spendableOuts[0], 0, 1)
+	if err != nil {
+		t.Fatalf("unable to create transaction: %v", err)
+	}
+	_, err = harness.txPool.ProcessTransaction(tx, true, false, 0)
+	if err != nil {
+		t.Errorf("ProcessTransaction: unexpected error: %v", err)
+	}
+
+	if !enteredObserveTransaction {
+		t.Errorf("TestFeeEstimatorCfg: (*FeeEstimator).ObserveTransaction was not called")
+	}
 }
 
 func TestDoubleSpends(t *testing.T) {
@@ -1003,6 +1072,16 @@ func TestRemoveTransaction(t *testing.T) {
 	testPoolMembership(tc, chainedTxns[0], false, true)
 	testPoolMembership(tc, chainedTxns[1], false, false)
 	testPoolMembership(tc, chainedTxns[2], false, false)
+
+	fakeWithDiffErr := "error from WithDiff"
+	guard := monkey.Patch((*blockdag.DiffUTXOSet).WithDiff, func(_ *blockdag.DiffUTXOSet, _ *blockdag.UTXODiff) (blockdag.UTXOSet, error) {
+		return nil, errors.New(fakeWithDiffErr)
+	})
+	defer guard.Unpatch()
+	err = harness.txPool.RemoveTransaction(chainedTxns[0], false, false)
+	if err == nil || err.Error() != fakeWithDiffErr {
+		t.Errorf("RemoveTransaction: expected error %v but got %v", fakeWithDiffErr, err)
+	}
 }
 
 // TestOrphanEviction ensures that exceeding the maximum number of orphans
@@ -1406,5 +1485,113 @@ func TestCheckSpend(t *testing.T) {
 	spend = harness.txPool.CheckSpend(op)
 	if spend != nil {
 		t.Fatalf("Unexpeced spend found in pool: %v", spend)
+	}
+}
+
+func TestCount(t *testing.T) {
+	harness, outputs, err := newPoolHarness(&dagconfig.MainNetParams, 1, "TestCount")
+	if err != nil {
+		t.Fatalf("unable to create test pool: %v", err)
+	}
+	if harness.txPool.Count() != 0 {
+		t.Errorf("TestCount: txPool should be initialized with 0 transactions")
+	}
+
+	chainedTxns, err := harness.CreateTxChain(outputs[0], 3)
+	if err != nil {
+		t.Fatalf("harness.CreateTxChain: unexpected error: %v", err)
+	}
+
+	for i, tx := range chainedTxns {
+		_, err = harness.txPool.ProcessTransaction(tx, true, false, 0)
+		if err != nil {
+			t.Errorf("ProcessTransaction: unexpected error: %v", err)
+		}
+		if harness.txPool.Count() != i+1 {
+			t.Errorf("TestCount: txPool expected to have %v transactions but got %v", i+1, harness.txPool.Count())
+		}
+	}
+
+	err = harness.txPool.RemoveTransaction(chainedTxns[0], false, false)
+	if err != nil {
+		t.Fatalf("harness.CreateTxChain: unexpected error: %v", err)
+	}
+	if harness.txPool.Count() != 2 {
+		t.Errorf("TestCount: txPool expected to have 2 transactions but got %v", harness.txPool.Count())
+	}
+}
+
+func TestExtractRejectCode(t *testing.T) {
+	tests := []struct {
+		blockdagRuleErrorCode blockdag.ErrorCode
+		wireRejectCode        wire.RejectCode
+	}{
+		{
+			blockdagRuleErrorCode: blockdag.ErrDuplicateBlock,
+			wireRejectCode:        wire.RejectDuplicate,
+		},
+		{
+			blockdagRuleErrorCode: blockdag.ErrBlockVersionTooOld,
+			wireRejectCode:        wire.RejectObsolete,
+		},
+		{
+			blockdagRuleErrorCode: blockdag.ErrCheckpointTimeTooOld,
+			wireRejectCode:        wire.RejectCheckpoint,
+		},
+		{
+			blockdagRuleErrorCode: blockdag.ErrDifficultyTooLow,
+			wireRejectCode:        wire.RejectCheckpoint,
+		},
+		{
+			blockdagRuleErrorCode: blockdag.ErrBadCheckpoint,
+			wireRejectCode:        wire.RejectCheckpoint,
+		},
+		{
+			blockdagRuleErrorCode: blockdag.ErrForkTooOld,
+			wireRejectCode:        wire.RejectCheckpoint,
+		},
+		{
+			blockdagRuleErrorCode: math.MaxUint32,
+			wireRejectCode:        wire.RejectInvalid,
+		},
+	}
+
+	for _, test := range tests {
+		err := blockdag.RuleError{ErrorCode: test.blockdagRuleErrorCode}
+		code, ok := extractRejectCode(err)
+		if !ok {
+			t.Errorf("TestExtractRejectCode: %v could not be extracted", test.blockdagRuleErrorCode)
+		}
+		if test.wireRejectCode != code {
+			t.Errorf("TestExtractRejectCode: expected %v to extract %v but got %v", test.blockdagRuleErrorCode, test.wireRejectCode, code)
+		}
+	}
+
+	txRuleError := TxRuleError{RejectCode: wire.RejectDust}
+	txExtractedCode, ok := extractRejectCode(txRuleError)
+	if !ok {
+		t.Errorf("TestExtractRejectCode: %v could not be extracted", txRuleError)
+	}
+	if txExtractedCode != wire.RejectDust {
+		t.Errorf("TestExtractRejectCode: expected %v to extract %v but got %v", wire.RejectDust, wire.RejectDust, txExtractedCode)
+	}
+
+	var nilErr error
+	nilErrExtractedCode, ok := extractRejectCode(nilErr)
+	if nilErrExtractedCode != wire.RejectInvalid {
+		t.Errorf("TestExtractRejectCode: expected %v to extract %v but got %v", wire.RejectInvalid, wire.RejectInvalid, nilErrExtractedCode)
+	}
+	if ok {
+		t.Errorf("TestExtractRejectCode: a nil error is expected to return false but got %v", ok)
+	}
+
+	nonRuleError := errors.New("nonRuleError")
+
+	fErrExtractedCode, ok := extractRejectCode(nonRuleError)
+	if fErrExtractedCode != wire.RejectInvalid {
+		t.Errorf("TestExtractRejectCode: expected %v to extract %v but got %v", wire.RejectInvalid, wire.RejectInvalid, nilErrExtractedCode)
+	}
+	if ok {
+		t.Errorf("TestExtractRejectCode: a nonRuleError is expected to return false but got %v", ok)
 	}
 }

@@ -9,9 +9,9 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/daglabs/btcd/wire"
 	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/util/bloom"
+	"github.com/daglabs/btcd/wire"
 )
 
 // This example demonstrates how to create a new bloom filter, add a transaction

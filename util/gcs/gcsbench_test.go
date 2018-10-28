@@ -7,9 +7,9 @@ package gcs_test
 
 import (
 	"encoding/binary"
+	"github.com/daglabs/btcd/util/gcs"
 	"math/rand"
 	"testing"
-	"github.com/daglabs/btcd/util/gcs"
 )
 
 func genRandFilterElements(numElements uint) ([][]byte, error) {
