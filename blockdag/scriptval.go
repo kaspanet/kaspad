@@ -205,15 +205,15 @@ func ValidateTransactionScripts(tx *util.Tx, utxoSet UTXOSet, flags txscript.Scr
 
 // checkBlockScripts executes and validates the scripts for all transactions in
 // the passed block using multiple goroutines.
-func checkBlockScripts(pNode *provisionalNode, utxoSet UTXOSet, scriptFlags txscript.ScriptFlags, sigCache *txscript.SigCache) error {
+func checkBlockScripts(block *provisionalNode, utxoSet UTXOSet, scriptFlags txscript.ScriptFlags, sigCache *txscript.SigCache) error {
 	// Collect all of the transaction inputs and required information for
 	// validation for all transactions in the block into a single slice.
 	numInputs := 0
-	for _, tx := range pNode.transactions {
+	for _, tx := range block.transactions {
 		numInputs += len(tx.MsgTx().TxIn)
 	}
 	txValItems := make([]*txValidateItem, 0, numInputs)
-	for _, tx := range pNode.transactions {
+	for _, tx := range block.transactions {
 		for txInIdx, txIn := range tx.MsgTx().TxIn {
 			// Skip coinbases.
 			if txIn.PreviousOutPoint.Index == math.MaxUint32 {
@@ -237,7 +237,7 @@ func checkBlockScripts(pNode *provisionalNode, utxoSet UTXOSet, scriptFlags txsc
 	}
 	elapsed := time.Since(start)
 
-	log.Tracef("block %v took %v to verify", pNode.original.hash, elapsed)
+	log.Tracef("block %v took %v to verify", block.original.hash, elapsed)
 
 	return nil
 }

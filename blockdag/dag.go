@@ -5,6 +5,7 @@
 package blockdag
 
 import (
+	"errors"
 	"fmt"
 	"math"
 	"sync"
@@ -446,37 +447,21 @@ func (dag *BlockDAG) connectToDAG(node *blockNode, parentNodes blockSet, block *
 	// Skip checks if node has already been fully validated.
 	fastAdd := flags&BFFastAdd == BFFastAdd || dag.index.NodeStatus(node).KnownValid()
 
-	// Perform several checks to verify the block can be connected
-	// to the DAG without violating any rules and without actually
-	// connecting the block.
-	if !fastAdd {
-		err := dag.checkConnectBlock(node, block)
-		if err == nil {
-			dag.index.SetStatusFlags(node, statusValid)
-		} else if _, ok := err.(RuleError); ok {
-			dag.index.SetStatusFlags(node, statusValidateFailed)
-		} else {
-			return err
-		}
-
-		// Intentionally ignore errors writing updated node status to DB. If
-		// it fails to write, it's not the end of the world. If the block is
-		// valid, we flush in connectBlock and if the block is invalid, the
-		// worst that can happen is we revalidate the block after a restart.
-		if writeErr := dag.index.flushToDB(); writeErr != nil {
-			log.Warnf("Error flushing block index changes to disk: %v",
-				writeErr)
-		}
-
-		if err != nil {
-			return err
-		}
+	// Connect the block to the DAG.
+	err := dag.connectBlock(node, block, fastAdd)
+	if _, ok := err.(RuleError); ok {
+		dag.index.SetStatusFlags(node, statusValidateFailed)
+	} else {
+		return err
 	}
 
-	// Connect the block to the DAG.
-	err := dag.connectBlock(node, block)
-	if err != nil {
-		return err
+	// Intentionally ignore errors writing updated node status to DB. If
+	// it fails to write, it's not the end of the world. If the block is
+	// invalid, the worst that can happen is we revalidate the block
+	// after a restart.
+	if writeErr := dag.index.flushToDB(); writeErr != nil {
+		log.Warnf("Error flushing block index changes to disk: %v",
+			writeErr)
 	}
 
 	return nil
@@ -485,7 +470,7 @@ func (dag *BlockDAG) connectToDAG(node *blockNode, parentNodes blockSet, block *
 // connectBlock handles connecting the passed node/block to the DAG.
 //
 // This function MUST be called with the chain state lock held (for writes).
-func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block) error {
+func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block, fastAdd bool) error {
 	// No warnings about unknown rules or versions until the DAG is
 	// current.
 	if dag.isCurrent() {
@@ -503,7 +488,7 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block) error {
 	}
 
 	// Add the node to the virtual and update the UTXO set of the DAG.
-	utxoDiff, acceptedTxsData, err := dag.applyUTXOChanges(node, block)
+	utxoDiff, acceptedTxsData, err := dag.applyUTXOChanges(node, block, fastAdd)
 	if err != nil {
 		return err
 	}
@@ -570,7 +555,7 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block) error {
 // 5. Updates each of the tips' utxoDiff.
 //
 // This function MUST be called with the chain state lock held (for writes).
-func (dag *BlockDAG) applyUTXOChanges(node *blockNode, block *util.Block) (utxoDiff *UTXODiff, acceptedTxData []*TxWithBlockHash, err error) {
+func (dag *BlockDAG) applyUTXOChanges(node *blockNode, block *util.Block, fastAdd bool) (utxoDiff *UTXODiff, acceptedTxData []*TxWithBlockHash, err error) {
 	// Prepare provisionalNodes for all the relevant nodes to avoid modifying the original nodes.
 	// We avoid modifying the original nodes in this function because it could potentially
 	// fail if the block is not valid, thus bringing all the affected nodes (and the virtual)
@@ -581,9 +566,13 @@ func (dag *BlockDAG) applyUTXOChanges(node *blockNode, block *util.Block) (utxoD
 	// Clone the virtual block so that we don't modify the existing one.
 	virtualClone := dag.virtual.clone()
 
-	newBlockUTXO, acceptedTxData, err := newNodeProvisional.verifyAndBuildUTXO(virtualClone, dag)
+	newBlockUTXO, acceptedTxData, err := newNodeProvisional.verifyAndBuildUTXO(virtualClone, dag, fastAdd)
 	if err != nil {
-		return nil, nil, fmt.Errorf("error verifying UTXO for %v: %s", node, err)
+		newErrString := fmt.Sprintf("error verifying UTXO for %v: %s", node, err)
+		if err, ok := err.(RuleError); ok {
+			return nil, nil, ruleError(err.ErrorCode, newErrString)
+		}
+		return nil, nil, errors.New(newErrString)
 	}
 
 	err = newNodeProvisional.updateParents(virtualClone, newBlockUTXO)
@@ -598,13 +587,21 @@ func (dag *BlockDAG) applyUTXOChanges(node *blockNode, block *util.Block) (utxoD
 	virtualNodeProvisional := provisionalSet.newProvisionalNode(&virtualClone.blockNode, true, nil)
 	newVirtualUTXO, _, err := virtualNodeProvisional.pastUTXO(virtualClone, dag.db)
 	if err != nil {
-		return nil, nil, fmt.Errorf("could not restore past UTXO for virtual %v: %s", virtualClone, err)
+		newErrString := fmt.Sprintf("could not restore past UTXO for virtual %v: %s", virtualClone, err)
+		if err, ok := err.(RuleError); ok {
+			return nil, nil, ruleError(err.ErrorCode, newErrString)
+		}
+		return nil, nil, errors.New(newErrString)
 	}
 
 	// Apply new utxoDiffs to all the tips
 	err = updateTipsUTXO(virtualNodeProvisional.parents, virtualClone, newVirtualUTXO)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed updating the tips' UTXO: %s", err)
+		newErrString := fmt.Sprintf("failed updating the tips' UTXO: %s", err)
+		if err, ok := err.(RuleError); ok {
+			return nil, nil, ruleError(err.ErrorCode, newErrString)
+		}
+		return nil, nil, errors.New(newErrString)
 	}
 
 	// It is now safe to meld the UTXO set to base.
@@ -704,15 +701,17 @@ func (pns provisionalNodeSet) newProvisionalNode(node *blockNode, withRelatives 
 }
 
 // verifyAndBuildUTXO verifies all transactions in the given block (in provisionalNode format) and builds its UTXO
-func (p *provisionalNode) verifyAndBuildUTXO(virtual *virtualBlock, dag *BlockDAG) (utxoSet UTXOSet, acceptedTxData []*TxWithBlockHash, err error) {
+func (p *provisionalNode) verifyAndBuildUTXO(virtual *virtualBlock, dag *BlockDAG, fastAdd bool) (utxoSet UTXOSet, acceptedTxData []*TxWithBlockHash, err error) {
 	pastUTXO, pastUTXOaccpetedTxData, err := p.pastUTXO(virtual, dag.db)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	err = dag.checkConnectToPastUTXO(p, pastUTXO)
-	if err != nil {
-		return nil, nil, err
+	if !fastAdd {
+		err = dag.checkConnectToPastUTXO(p, pastUTXO)
+		if err != nil {
+			return nil, nil, err
+		}
 	}
 
 	diff := NewUTXODiff()

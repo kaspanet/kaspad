@@ -886,7 +886,7 @@ func TestApplyUTXOChanges(t *testing.T) {
 	initBlockNode(&node1, blockHeader, setFromSlice(dag.genesis), dagconfig.MainNetParams.K)
 
 	//Checks that dag.applyUTXOChanges fails because we don't allow a transaction to spend another transaction from the same block
-	_, _, err = dag.applyUTXOChanges(&node1, block1)
+	_, _, err = dag.applyUTXOChanges(&node1, block1, false)
 	if err == nil {
 		t.Errorf("applyUTXOChanges expected an error\n")
 	}
@@ -913,7 +913,7 @@ func TestApplyUTXOChanges(t *testing.T) {
 	initBlockNode(&node2, blockHeader, setFromSlice(dag.genesis), dagconfig.MainNetParams.K)
 
 	//Checks that dag.applyUTXOChanges doesn't fail because all of its transaction are dependant on transactions from previous blocks
-	_, _, err = dag.applyUTXOChanges(&node2, block2)
+	_, _, err = dag.applyUTXOChanges(&node2, block2, false)
 	if err != nil {
 		t.Errorf("applyUTXOChanges: %v", err)
 	}

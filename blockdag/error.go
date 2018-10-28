@@ -205,6 +205,8 @@ const (
 	// current chain tip. This is not a block validation rule, but is required
 	// for block proposals submitted via getblocktemplate RPC.
 	ErrPrevBlockNotBest
+
+	ErrWithDiffErr
 )
 
 // Map of ErrorCode values back to their constant names for pretty printing.
