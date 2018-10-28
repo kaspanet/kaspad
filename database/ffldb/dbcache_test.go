@@ -7,6 +7,7 @@ import (
 
 	"github.com/bouk/monkey"
 	"github.com/btcsuite/goleveldb/leveldb"
+	"github.com/btcsuite/goleveldb/leveldb/opt"
 	ldbutil "github.com/btcsuite/goleveldb/leveldb/util"
 	"github.com/daglabs/btcd/database"
 )
@@ -242,4 +243,77 @@ func TestSkipPendingUpdatesCache(t *testing.T) {
 	if err != nil {
 		t.Fatalf("TestSkipPendingUpdatesCache: Error running main part of test: %s", err)
 	}
+}
+
+// TestFlushCommitTreapsErrors tests error-cases in *dbCache.flush() when commitTreaps returns error.
+// The non-error-cases are tested in the more general tests.
+func TestFlushCommitTreapsErrors(t *testing.T) {
+	pdb := newTestDb("TestFlushCommitTreapsErrors", t)
+	defer pdb.Close()
+
+	key := []byte("key")
+	value := []byte("value")
+
+	// Before setting flush interval to zero - put some data so that there's something to flush
+	err := pdb.Update(func(tx database.Tx) error {
+		metadata := tx.Metadata()
+		metadata.Put(key, value)
+
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("TestFlushCommitTreapsErrors: Error putting some data to flush: %s", err)
+	}
+
+	cache := pdb.cache
+	cache.flushInterval = 0 // set flushInterval to 0 so that flush is always required
+
+	// Test for correctness when encountered error on Put
+	func() {
+		patch := monkey.Patch((*leveldb.Transaction).Put,
+			func(*leveldb.Transaction, []byte, []byte, *opt.WriteOptions) error { return errors.New("error") })
+		defer patch.Unpatch()
+
+		err := pdb.Update(func(tx database.Tx) error {
+			metadata := tx.Metadata()
+			metadata.Put(key, value)
+
+			return nil
+		})
+
+		if err == nil {
+			t.Errorf("TestFlushCommitTreapsErrors: No error from pdb.Update when ldbTx.Put returned error")
+		}
+	}()
+
+	// Test for correctness when encountered error on Delete
+
+	// First put some data we can later "fail" to delete
+	err = pdb.Update(func(tx database.Tx) error {
+		metadata := tx.Metadata()
+		metadata.Put(key, value)
+
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("TestFlushCommitTreapsErrors: Error putting some data to delete: %s", err)
+	}
+
+	// Now "fail" to delete it
+	func() {
+		patch := monkey.Patch((*leveldb.Transaction).Delete,
+			func(*leveldb.Transaction, []byte, *opt.WriteOptions) error { return errors.New("error") })
+		defer patch.Unpatch()
+
+		err := pdb.Update(func(tx database.Tx) error {
+			metadata := tx.Metadata()
+			metadata.Delete(key)
+
+			return nil
+		})
+
+		if err == nil {
+			t.Errorf("TestFlushCommitTreapsErrors: No error from pdb.Update when ldbTx.Delete returned error")
+		}
+	}()
 }
