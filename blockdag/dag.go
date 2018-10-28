@@ -581,7 +581,7 @@ func (dag *BlockDAG) applyUTXOChanges(node *blockNode, block *util.Block) (utxoD
 	// Clone the virtual block so that we don't modify the existing one.
 	virtualClone := dag.virtual.clone()
 
-	newBlockUTXO, acceptedTxData, err := newNodeProvisional.verifyAndBuildUTXO(virtualClone, dag.db)
+	newBlockUTXO, acceptedTxData, err := newNodeProvisional.verifyAndBuildUTXO(virtualClone, dag)
 	if err != nil {
 		return nil, nil, fmt.Errorf("error verifying UTXO for %v: %s", node, err)
 	}
@@ -704,8 +704,13 @@ func (pns provisionalNodeSet) newProvisionalNode(node *blockNode, withRelatives 
 }
 
 // verifyAndBuildUTXO verifies all transactions in the given block (in provisionalNode format) and builds its UTXO
-func (p *provisionalNode) verifyAndBuildUTXO(virtual *virtualBlock, db database.DB) (utxoSet UTXOSet, acceptedTxData []*TxWithBlockHash, err error) {
-	pastUTXO, pastUTXOaccpetedTxData, err := p.pastUTXO(virtual, db)
+func (p *provisionalNode) verifyAndBuildUTXO(virtual *virtualBlock, dag *BlockDAG) (utxoSet UTXOSet, acceptedTxData []*TxWithBlockHash, err error) {
+	pastUTXO, pastUTXOaccpetedTxData, err := p.pastUTXO(virtual, dag.db)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	err = dag.checkConnectToPastUTXO(p, pastUTXO)
 	if err != nil {
 		return nil, nil, err
 	}
