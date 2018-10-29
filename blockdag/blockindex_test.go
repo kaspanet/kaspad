@@ -40,9 +40,10 @@ func TestFlushToDBErrors(t *testing.T) {
 
 	// Test flushToDB failure due to database error
 	databaseErrorMessage := "database error"
-	monkey.Patch(dbStoreBlockNode, func(_ database.Tx, _ *blockNode) error {
+	guard := monkey.Patch(dbStoreBlockNode, func(_ database.Tx, _ *blockNode) error {
 		return errors.New(databaseErrorMessage)
 	})
+	defer guard.Unpatch()
 	err = dag.index.flushToDB()
 	if err == nil {
 		t.Errorf("TestFlushToDBErrors: flushToDB failure due to database error: "+
@@ -52,5 +53,4 @@ func TestFlushToDBErrors(t *testing.T) {
 		t.Errorf("TestFlushToDBErrors: flushToDB failure due to database error: "+
 			"Unexpected flushToDB error. Expected: %s, got: %s", databaseErrorMessage, err)
 	}
-	monkey.Unpatch(dbStoreBlockNode)
 }
