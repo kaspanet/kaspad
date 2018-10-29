@@ -344,7 +344,7 @@ func argHelp(xT descLookupFunc, rtp reflect.Type, defaults map[int]reflect.Value
 			defaultVal = &defVal
 		}
 
-		fieldName := strings.ToLower(rtf.Name)
+		fieldName := toLowercaseCamelCase(rtf.Name)
 		helpText := fmt.Sprintf("%d.\t%s\t(%s)\t%s", i+1, fieldName,
 			argTypeHelp(xT, rtf, defaultVal),
 			xT(method+"-"+fieldName))
@@ -388,6 +388,10 @@ func argHelp(xT descLookupFunc, rtp reflect.Type, defaults map[int]reflect.Value
 	}
 	w.Flush()
 	return formatted.String()
+}
+
+func toLowercaseCamelCase(str string) string {
+	return strings.ToLower(string(str[0])) + str[1:]
 }
 
 // methodHelp generates and returns the help output for the provided command
