@@ -10,6 +10,7 @@ import (
 	"reflect"
 	"strings"
 	"text/tabwriter"
+	"unicode"
 )
 
 // baseHelpDescs house the various help labels, types, and example values used
@@ -81,7 +82,7 @@ func reflectTypeToJSONType(xT descLookupFunc, rt reflect.Type) string {
 // field name if no json tag was specified).
 func resultStructHelp(xT descLookupFunc, rt reflect.Type, indentLevel int) []string {
 	indent := strings.Repeat(" ", indentLevel)
-	typeName := strings.ToLower(rt.Name())
+	typeName := toLowercaseCamelCase(rt.Name())
 
 	// Generate the help for each of the fields in the result struct.
 	numField := rt.NumField()
@@ -395,7 +396,44 @@ func toLowercaseCamelCase(str string) string {
 		return ""
 	}
 
-	return strings.ToLower(string(str[0])) + str[1:]
+	words := make([]string, 0)
+	wordStartIndex := 0
+	wordEndIndex := 0
+	var previousCharacter rune
+	for i, character := range str {
+		if i > 1 && unicode.IsLower(previousCharacter) && unicode.IsUpper(character) {
+			// previousCharacter is definitely the end of a word
+			word := str[wordStartIndex:i]
+			words = append(words, word)
+			wordEndIndex = i - 1
+		}
+		if i > 1 && unicode.IsUpper(previousCharacter) && unicode.IsLower(character) {
+			// previousCharacter is definitely the start of a word
+			wordStartIndex = i - 1
+
+			if wordStartIndex-wordEndIndex > 1 {
+				word := str[wordEndIndex+1 : wordStartIndex]
+				words = append(words, word)
+			}
+		}
+		previousCharacter = character
+	}
+	lastWord := str[wordStartIndex:]
+	words = append(words, lastWord)
+
+	var camelCaseBuilder strings.Builder
+	for i, word := range words {
+		if i > 1 && len(words[i-1]) == 1 && len(word) == 1 {
+			camelCaseBuilder.WriteString(strings.ToLower(word))
+		} else {
+			lowercaseWord := strings.ToLower(word)
+			capitalizedWord := strings.ToUpper(string(lowercaseWord[0])) + lowercaseWord[1:]
+			camelCaseBuilder.WriteString(capitalizedWord)
+		}
+	}
+	camelCaseString := camelCaseBuilder.String()
+
+	return strings.ToLower(string(camelCaseString[0])) + camelCaseString[1:]
 }
 
 // methodHelp generates and returns the help output for the provided command
