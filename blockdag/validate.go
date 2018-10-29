@@ -778,11 +778,11 @@ func (dag *BlockDAG) checkBlockContext(block *util.Block, parents blockSet, blue
 // http://r6.ca/blog/20120206T005236Z.html.
 //
 // This function MUST be called with the chain state lock held (for reads).
-func (dag *BlockDAG) ensureNoDuplicateTx(node *blockNode, block *util.Block) error {
+func ensureNoDuplicateTx(block *provisionalNode, utxoSet UTXOSet) error {
 	// Fetch utxos for all of the transaction ouputs in this block.
 	// Typically, there will not be any utxos for any of the outputs.
 	fetchSet := make(map[wire.OutPoint]struct{})
-	for _, tx := range block.Transactions() {
+	for _, tx := range block.transactions {
 		prevOut := wire.OutPoint{Hash: *tx.Hash()}
 		for txOutIdx := range tx.MsgTx().TxOut {
 			prevOut.Index = uint32(txOutIdx)
@@ -793,7 +793,7 @@ func (dag *BlockDAG) ensureNoDuplicateTx(node *blockNode, block *util.Block) err
 	// Duplicate transactions are only allowed if the previous transaction
 	// is fully spent.
 	for outpoint := range fetchSet {
-		utxo, ok := dag.GetUTXOEntry(outpoint)
+		utxo, ok := utxoSet.Get(outpoint)
 		if ok {
 			str := fmt.Sprintf("tried to overwrite transaction %v "+
 				"at block height %d that is not fully spent",
@@ -905,12 +905,8 @@ func CheckTransactionInputs(tx *util.Tx, txHeight int32, utxoSet UTXOSet, dagPar
 	return txFeeInSatoshi, nil
 }
 
-// checkConnectBlock performs several checks to confirm connecting the passed
-// block to the chain represented by the passed view does not violate any rules.
-// In addition, the passed view is updated to spend all of the referenced
-// outputs and add all of the new utxos created by block.  Thus, the view will
-// represent the state of the chain as if the block were actually connected and
-// consequently the best hash for the view is also updated to passed block.
+// checkConnectToPastUTXO performs several checks to confirm connecting the passed
+// block to the DAG represented by the passed view does not violate any rules.
 //
 // An example of some of the checks performed are ensuring connecting the block
 // would not cause any duplicate transaction hashes for old transactions that
@@ -918,29 +914,10 @@ func CheckTransactionInputs(tx *util.Tx, txHeight int32, utxoSet UTXOSet, dagPar
 // signature operations per block, invalid values in relation to the expected
 // block subsidy, or fail transaction script validation.
 //
-// The CheckConnectBlockTemplate function makes use of this function to perform
-// the bulk of its work.  The only difference is this function accepts a node
-// which may or may not require reorganization to connect it to the main chain
-// whereas CheckConnectBlockTemplate creates a new node which specifically
-// connects to the end of the current main chain and then calls this function
-// with that node.
-//
-// This function MUST be called with the chain state lock held (for writes).
-func (dag *BlockDAG) checkConnectBlock(node *blockNode, block *util.Block) error {
-	// If the side chain blocks end up in the database, a call to
-	// CheckBlockSanity should be done here in case a previous version
-	// allowed a block that is no longer valid.  However, since the
-	// implementation only currently uses memory for the side chain blocks,
-	// it isn't currently necessary.
+// This function MUST be called with the dag state lock held (for writes).
+func (dag *BlockDAG) checkConnectToPastUTXO(block *provisionalNode, pastUTXO UTXOSet) error {
 
-	// The coinbase for the Genesis block is not spendable, so just return
-	// an error now.
-	if node.hash.IsEqual(dag.dagParams.GenesisHash) {
-		str := "the coinbase for the genesis block is not spendable"
-		return ruleError(ErrMissingTxOut, str)
-	}
-
-	err := dag.ensureNoDuplicateTx(node, block)
+	err := ensureNoDuplicateTx(block, pastUTXO)
 	if err != nil {
 		return err
 	}
@@ -951,9 +928,8 @@ func (dag *BlockDAG) checkConnectBlock(node *blockNode, block *util.Block) error
 	// expands the count to include a precise count of pay-to-script-hash
 	// signature operations in each of the input transaction public key
 	// scripts.
-	transactions := block.Transactions()
 	totalSigOps := 0
-	for i, tx := range transactions {
+	for i, tx := range block.transactions {
 		numsigOps := CountSigOps(tx)
 		// Since the first (and only the first) transaction has
 		// already been verified to be a coinbase transaction,
@@ -961,7 +937,7 @@ func (dag *BlockDAG) checkConnectBlock(node *blockNode, block *util.Block) error
 		// countP2SHSigOps for whether or not the transaction is
 		// a coinbase transaction rather than having to do a
 		// full coinbase check again.
-		numP2SHSigOps, err := CountP2SHSigOps(tx, i == 0, dag.virtual.utxoSet)
+		numP2SHSigOps, err := CountP2SHSigOps(tx, i == 0, pastUTXO)
 		if err != nil {
 			return err
 		}
@@ -987,8 +963,8 @@ func (dag *BlockDAG) checkConnectBlock(node *blockNode, block *util.Block) error
 	// against all the inputs when the signature operations are out of
 	// bounds.
 	var totalFees uint64
-	for _, tx := range transactions {
-		txFee, err := CheckTransactionInputs(tx, node.height, dag.virtual.utxoSet,
+	for _, tx := range block.transactions {
+		txFee, err := CheckTransactionInputs(tx, block.original.height, pastUTXO,
 			dag.dagParams)
 		if err != nil {
 			return err
@@ -1010,10 +986,10 @@ func (dag *BlockDAG) checkConnectBlock(node *blockNode, block *util.Block) error
 	// errors here because those error conditions would have already been
 	// caught by checkTransactionSanity.
 	var totalSatoshiOut uint64
-	for _, txOut := range transactions[0].MsgTx().TxOut {
+	for _, txOut := range block.transactions[0].MsgTx().TxOut {
 		totalSatoshiOut += txOut.Value
 	}
-	expectedSatoshiOut := CalcBlockSubsidy(node.height, dag.dagParams) +
+	expectedSatoshiOut := CalcBlockSubsidy(block.original.height, dag.dagParams) +
 		totalFees
 	if totalSatoshiOut > expectedSatoshiOut {
 		str := fmt.Sprintf("coinbase transaction for block pays %v "+
@@ -1030,7 +1006,7 @@ func (dag *BlockDAG) checkConnectBlock(node *blockNode, block *util.Block) error
 	// portion of block handling.
 	checkpoint := dag.LatestCheckpoint()
 	runScripts := true
-	if checkpoint != nil && node.height <= checkpoint.Height {
+	if checkpoint != nil && block.original.height <= checkpoint.Height {
 		runScripts = false
 	}
 
@@ -1038,20 +1014,20 @@ func (dag *BlockDAG) checkConnectBlock(node *blockNode, block *util.Block) error
 
 	// We obtain the MTP of the *previous* block in order to
 	// determine if transactions in the current block are final.
-	medianTime := node.selectedParent.CalcPastMedianTime()
+	medianTime := block.original.selectedParent.CalcPastMedianTime()
 
 	// We also enforce the relative sequence number based
 	// lock-times within the inputs of all transactions in this
 	// candidate block.
-	for _, tx := range block.Transactions() {
+	for _, tx := range block.transactions {
 		// A transaction can only be included within a block
 		// once the sequence locks of *all* its inputs are
 		// active.
-		sequenceLock, err := dag.calcSequenceLock(node, dag.virtual.utxoSet, tx, false)
+		sequenceLock, err := dag.calcSequenceLock(block.original, pastUTXO, tx, false)
 		if err != nil {
 			return err
 		}
-		if !SequenceLockActive(sequenceLock, node.height,
+		if !SequenceLockActive(sequenceLock, block.original.height,
 			medianTime) {
 			str := fmt.Sprintf("block contains " +
 				"transaction whose input sequence " +
@@ -1065,7 +1041,7 @@ func (dag *BlockDAG) checkConnectBlock(node *blockNode, block *util.Block) error
 	// expensive ECDSA signature check scripts.  Doing this last helps
 	// prevent CPU exhaustion attacks.
 	if runScripts {
-		err := checkBlockScripts(block, dag.virtual.utxoSet, scriptFlags, dag.sigCache)
+		err := checkBlockScripts(block, pastUTXO, scriptFlags, dag.sigCache)
 		if err != nil {
 			return err
 		}
@@ -1122,6 +1098,9 @@ func (dag *BlockDAG) CheckConnectBlockTemplate(block *util.Block) error {
 		return err
 	}
 
-	newNode := newBlockNode(&header, dag.virtual.tips(), dag.dagParams.K)
-	return dag.checkConnectBlock(newNode, block)
+	newProvisionalNode := &provisionalNode{
+		original:     newBlockNode(&header, dag.virtual.tips(), dag.dagParams.K),
+		transactions: block.Transactions(),
+	}
+	return dag.checkConnectToPastUTXO(newProvisionalNode, dag.UTXOSet())
 }

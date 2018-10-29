@@ -205,6 +205,9 @@ const (
 	// current chain tip. This is not a block validation rule, but is required
 	// for block proposals submitted via getblocktemplate RPC.
 	ErrPrevBlockNotBest
+
+	// ErrWithDiff indicates that there was an error with UTXOSet.WithDiff
+	ErrWithDiff
 )
 
 // Map of ErrorCode values back to their constant names for pretty printing.
@@ -248,6 +251,7 @@ var errorCodeStrings = map[ErrorCode]string{
 	ErrPreviousBlockUnknown:  "ErrPreviousBlockUnknown",
 	ErrInvalidAncestorBlock:  "ErrInvalidAncestorBlock",
 	ErrPrevBlockNotBest:      "ErrPrevBlockNotBest",
+	ErrWithDiff:              "ErrWithDiff",
 }
 
 // String returns the ErrorCode as a human-readable name.
