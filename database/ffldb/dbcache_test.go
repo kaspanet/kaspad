@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/bouk/monkey"
+	"bou.ke/monkey"
 	"github.com/btcsuite/goleveldb/leveldb"
 	"github.com/btcsuite/goleveldb/leveldb/opt"
 	ldbutil "github.com/btcsuite/goleveldb/leveldb/util"
