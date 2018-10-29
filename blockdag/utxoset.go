@@ -257,7 +257,7 @@ func (d *UTXODiff) WithDiff(diff *UTXODiff) (*UTXODiff, error) {
 			result.toAdd.add(outPoint, utxoEntry)
 		}
 		if diff.toAdd.contains(outPoint) {
-			return nil, ruleError(ErrWithDiffErr, "WithDiff: transaction both in d.toAdd and in other.toAdd")
+			return nil, ruleError(ErrWithDiff, "WithDiff: transaction both in d.toAdd and in other.toAdd")
 		}
 	}
 
@@ -270,7 +270,7 @@ func (d *UTXODiff) WithDiff(diff *UTXODiff) (*UTXODiff, error) {
 			result.toRemove.add(outPoint, utxoEntry)
 		}
 		if diff.toRemove.contains(outPoint) {
-			return nil, ruleError(ErrWithDiffErr, "WithDiff: transaction both in d.toRemove and in other.toRemove")
+			return nil, ruleError(ErrWithDiff, "WithDiff: transaction both in d.toRemove and in other.toRemove")
 		}
 	}
 

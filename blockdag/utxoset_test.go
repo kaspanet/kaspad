@@ -849,7 +849,7 @@ func TestApplyUTXOChanges(t *testing.T) {
 	defer teardownFunc()
 
 	dag.dagParams.CoinbaseMaturity = 1
-	// Create artificial checkpoint in order to prevent script validation before it
+	// Create artificial checkpoint in order to prevent script validation for blocks that comes before it
 	dag.checkpoints = []dagconfig.Checkpoint{
 		{
 			Height: 1000,
