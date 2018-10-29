@@ -95,7 +95,7 @@ func resultStructHelp(xT descLookupFunc, rt reflect.Type, indentLevel int) []str
 		if tag := rtf.Tag.Get("json"); tag != "" {
 			fieldName = strings.Split(tag, ",")[0]
 		} else {
-			fieldName = strings.ToLower(rtf.Name)
+			fieldName = toLowercaseCamelCase(rtf.Name)
 		}
 
 		// Deference pointer if needed.
@@ -391,6 +391,10 @@ func argHelp(xT descLookupFunc, rtp reflect.Type, defaults map[int]reflect.Value
 }
 
 func toLowercaseCamelCase(str string) string {
+	if len(str) == 0 {
+		return ""
+	}
+
 	return strings.ToLower(string(str[0])) + str[1:]
 }
 
