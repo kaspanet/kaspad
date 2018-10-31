@@ -2,6 +2,7 @@ package ffldb
 
 import (
 	"os"
+	"path"
 	"path/filepath"
 	"testing"
 
@@ -12,7 +13,7 @@ import (
 )
 
 func newTestDb(testName string, t *testing.T) *db {
-	dbPath := "/tmp/db_test"
+	dbPath := path.Join(os.TempDir(), "db_test")
 	err := os.RemoveAll(dbPath)
 	if err != nil && !os.IsNotExist(err) {
 		t.Fatalf("%s: Error deleting database folder before starting: %s", testName, err)
