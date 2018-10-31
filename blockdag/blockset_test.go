@@ -23,10 +23,10 @@ func TestHashes(t *testing.T) {
 	)
 
 	expected := []daghash.Hash{
-		daghash.Hash{0},
-		daghash.Hash{1},
-		daghash.Hash{2},
-		daghash.Hash{3},
+		{0},
+		{1},
+		{2},
+		{3},
 	}
 
 	if !daghash.AreEqual(bs.hashes(), expected) {

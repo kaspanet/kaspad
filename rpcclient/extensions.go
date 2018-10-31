@@ -14,8 +14,8 @@ import (
 
 	"github.com/daglabs/btcd/btcjson"
 	"github.com/daglabs/btcd/dagconfig/daghash"
-	"github.com/daglabs/btcd/wire"
 	"github.com/daglabs/btcd/util"
+	"github.com/daglabs/btcd/wire"
 )
 
 // FutureDebugLevelResult is a future promise to deliver the result of a

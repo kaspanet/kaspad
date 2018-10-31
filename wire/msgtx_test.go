@@ -79,7 +79,7 @@ func TestTx(t *testing.T) {
 	}
 
 	// Ensure we get the same transaction output back out.
-	txValue := int64(5000000000)
+	txValue := uint64(5000000000)
 	pkScript := []byte{
 		0x41, // OP_DATA_65
 		0x04, 0xd6, 0x4b, 0xdf, 0xd0, 0x9e, 0xb1, 0xc5,

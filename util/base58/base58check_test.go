@@ -5,8 +5,8 @@
 package base58_test
 
 import (
-	"testing"
 	"github.com/daglabs/btcd/util/base58"
+	"testing"
 )
 
 var checkEncodingStringTests = []struct {

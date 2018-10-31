@@ -31,14 +31,14 @@ func TestBtcdExtCmds(t *testing.T) {
 		unmarshalled interface{}
 	}{
 		{
-			name: "debuglevel",
+			name: "debugLevel",
 			newCmd: func() (interface{}, error) {
-				return btcjson.NewCmd("debuglevel", "trace")
+				return btcjson.NewCmd("debugLevel", "trace")
 			},
 			staticCmd: func() interface{} {
 				return btcjson.NewDebugLevelCmd("trace")
 			},
-			marshalled: `{"jsonrpc":"1.0","method":"debuglevel","params":["trace"],"id":1}`,
+			marshalled: `{"jsonrpc":"1.0","method":"debugLevel","params":["trace"],"id":1}`,
 			unmarshalled: &btcjson.DebugLevelCmd{
 				LevelSpec: "trace",
 			},
@@ -115,31 +115,31 @@ func TestBtcdExtCmds(t *testing.T) {
 			},
 		},
 		{
-			name: "getbestblock",
+			name: "getBestBlock",
 			newCmd: func() (interface{}, error) {
-				return btcjson.NewCmd("getbestblock")
+				return btcjson.NewCmd("getBestBlock")
 			},
 			staticCmd: func() interface{} {
 				return btcjson.NewGetBestBlockCmd()
 			},
-			marshalled:   `{"jsonrpc":"1.0","method":"getbestblock","params":[],"id":1}`,
+			marshalled:   `{"jsonrpc":"1.0","method":"getBestBlock","params":[],"id":1}`,
 			unmarshalled: &btcjson.GetBestBlockCmd{},
 		},
 		{
-			name: "getcurrentnet",
+			name: "getCurrentNet",
 			newCmd: func() (interface{}, error) {
-				return btcjson.NewCmd("getcurrentnet")
+				return btcjson.NewCmd("getCurrentNet")
 			},
 			staticCmd: func() interface{} {
 				return btcjson.NewGetCurrentNetCmd()
 			},
-			marshalled:   `{"jsonrpc":"1.0","method":"getcurrentnet","params":[],"id":1}`,
+			marshalled:   `{"jsonrpc":"1.0","method":"getCurrentNet","params":[],"id":1}`,
 			unmarshalled: &btcjson.GetCurrentNetCmd{},
 		},
 		{
-			name: "getheaders",
+			name: "getHeaders",
 			newCmd: func() (interface{}, error) {
-				return btcjson.NewCmd("getheaders", []string{}, "")
+				return btcjson.NewCmd("getHeaders", []string{}, "")
 			},
 			staticCmd: func() interface{} {
 				return btcjson.NewGetHeadersCmd(
@@ -147,16 +147,16 @@ func TestBtcdExtCmds(t *testing.T) {
 					"",
 				)
 			},
-			marshalled: `{"jsonrpc":"1.0","method":"getheaders","params":[[],""],"id":1}`,
+			marshalled: `{"jsonrpc":"1.0","method":"getHeaders","params":[[],""],"id":1}`,
 			unmarshalled: &btcjson.GetHeadersCmd{
 				BlockLocators: []string{},
 				HashStop:      "",
 			},
 		},
 		{
-			name: "getheaders - with arguments",
+			name: "getHeaders - with arguments",
 			newCmd: func() (interface{}, error) {
-				return btcjson.NewCmd("getheaders", []string{"000000000000000001f1739002418e2f9a84c47a4fd2a0eb7a787a6b7dc12f16", "0000000000000000026f4b7f56eef057b32167eb5ad9ff62006f1807b7336d10"}, "000000000000000000ba33b33e1fad70b69e234fc24414dd47113bff38f523f7")
+				return btcjson.NewCmd("getHeaders", []string{"000000000000000001f1739002418e2f9a84c47a4fd2a0eb7a787a6b7dc12f16", "0000000000000000026f4b7f56eef057b32167eb5ad9ff62006f1807b7336d10"}, "000000000000000000ba33b33e1fad70b69e234fc24414dd47113bff38f523f7")
 			},
 			staticCmd: func() interface{} {
 				return btcjson.NewGetHeadersCmd(
@@ -167,7 +167,7 @@ func TestBtcdExtCmds(t *testing.T) {
 					"000000000000000000ba33b33e1fad70b69e234fc24414dd47113bff38f523f7",
 				)
 			},
-			marshalled: `{"jsonrpc":"1.0","method":"getheaders","params":[["000000000000000001f1739002418e2f9a84c47a4fd2a0eb7a787a6b7dc12f16","0000000000000000026f4b7f56eef057b32167eb5ad9ff62006f1807b7336d10"],"000000000000000000ba33b33e1fad70b69e234fc24414dd47113bff38f523f7"],"id":1}`,
+			marshalled: `{"jsonrpc":"1.0","method":"getHeaders","params":[["000000000000000001f1739002418e2f9a84c47a4fd2a0eb7a787a6b7dc12f16","0000000000000000026f4b7f56eef057b32167eb5ad9ff62006f1807b7336d10"],"000000000000000000ba33b33e1fad70b69e234fc24414dd47113bff38f523f7"],"id":1}`,
 			unmarshalled: &btcjson.GetHeadersCmd{
 				BlockLocators: []string{
 					"000000000000000001f1739002418e2f9a84c47a4fd2a0eb7a787a6b7dc12f16",

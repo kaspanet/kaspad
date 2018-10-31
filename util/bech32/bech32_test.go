@@ -5,8 +5,8 @@
 package bech32_test
 
 import (
-	"testing"
 	"github.com/daglabs/btcd/util/bech32"
+	"testing"
 )
 
 var checkEncodingStringTests = []struct {

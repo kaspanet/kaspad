@@ -29,14 +29,14 @@ func TestWalletSvrWsNtfns(t *testing.T) {
 		unmarshalled interface{}
 	}{
 		{
-			name: "accountbalance",
+			name: "accountBalance",
 			newNtfn: func() (interface{}, error) {
-				return btcjson.NewCmd("accountbalance", "acct", 1.25, true)
+				return btcjson.NewCmd("accountBalance", "acct", 1.25, true)
 			},
 			staticNtfn: func() interface{} {
 				return btcjson.NewAccountBalanceNtfn("acct", 1.25, true)
 			},
-			marshalled: `{"jsonrpc":"1.0","method":"accountbalance","params":["acct",1.25,true],"id":null}`,
+			marshalled: `{"jsonrpc":"1.0","method":"accountBalance","params":["acct",1.25,true],"id":null}`,
 			unmarshalled: &btcjson.AccountBalanceNtfn{
 				Account:   "acct",
 				Balance:   1.25,
@@ -44,35 +44,35 @@ func TestWalletSvrWsNtfns(t *testing.T) {
 			},
 		},
 		{
-			name: "btcdconnected",
+			name: "btcdConnected",
 			newNtfn: func() (interface{}, error) {
-				return btcjson.NewCmd("btcdconnected", true)
+				return btcjson.NewCmd("btcdConnected", true)
 			},
 			staticNtfn: func() interface{} {
 				return btcjson.NewBtcdConnectedNtfn(true)
 			},
-			marshalled: `{"jsonrpc":"1.0","method":"btcdconnected","params":[true],"id":null}`,
+			marshalled: `{"jsonrpc":"1.0","method":"btcdConnected","params":[true],"id":null}`,
 			unmarshalled: &btcjson.BtcdConnectedNtfn{
 				Connected: true,
 			},
 		},
 		{
-			name: "walletlockstate",
+			name: "walletLockState",
 			newNtfn: func() (interface{}, error) {
-				return btcjson.NewCmd("walletlockstate", true)
+				return btcjson.NewCmd("walletLockState", true)
 			},
 			staticNtfn: func() interface{} {
 				return btcjson.NewWalletLockStateNtfn(true)
 			},
-			marshalled: `{"jsonrpc":"1.0","method":"walletlockstate","params":[true],"id":null}`,
+			marshalled: `{"jsonrpc":"1.0","method":"walletLockState","params":[true],"id":null}`,
 			unmarshalled: &btcjson.WalletLockStateNtfn{
 				Locked: true,
 			},
 		},
 		{
-			name: "newtx",
+			name: "newTx",
 			newNtfn: func() (interface{}, error) {
-				return btcjson.NewCmd("newtx", "acct", `{"account":"acct","address":"1Address","category":"send","amount":1.5,"bip125-replaceable":"unknown","fee":0.0001,"confirmations":1,"trusted":true,"txid":"456","walletconflicts":[],"time":12345678,"timereceived":12345876,"vout":789,"otheraccount":"otheracct"}`)
+				return btcjson.NewCmd("newTx", "acct", `{"account":"acct","address":"1Address","category":"send","amount":1.5,"bip125-replaceable":"unknown","fee":0.0001,"confirmations":1,"trusted":true,"txid":"456","walletconflicts":[],"time":12345678,"timereceived":12345876,"vout":789,"otheraccount":"otheracct"}`)
 			},
 			staticNtfn: func() interface{} {
 				result := btcjson.ListTransactionsResult{
@@ -94,7 +94,7 @@ func TestWalletSvrWsNtfns(t *testing.T) {
 				}
 				return btcjson.NewNewTxNtfn("acct", result)
 			},
-			marshalled: `{"jsonrpc":"1.0","method":"newtx","params":["acct",{"abandoned":false,"account":"acct","address":"1Address","amount":1.5,"bip125-replaceable":"unknown","category":"send","confirmations":1,"fee":0.0001,"time":12345678,"timereceived":12345876,"trusted":true,"txid":"456","vout":789,"walletconflicts":[],"otheraccount":"otheracct"}],"id":null}`,
+			marshalled: `{"jsonrpc":"1.0","method":"newTx","params":["acct",{"abandoned":false,"account":"acct","address":"1Address","amount":1.5,"bip125-replaceable":"unknown","category":"send","confirmations":1,"fee":0.0001,"time":12345678,"timereceived":12345876,"trusted":true,"txid":"456","vout":789,"walletconflicts":[],"otheraccount":"otheracct"}],"id":null}`,
 			unmarshalled: &btcjson.NewTxNtfn{
 				Account: "acct",
 				Details: btcjson.ListTransactionsResult{

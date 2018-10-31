@@ -15,20 +15,22 @@ RUN go get -u github.com/golang/lint/golint \
 
 COPY ./Gopkg.* ./
 
-RUN dep ensure -v --vendor-only
+RUN dep ensure -v -vendor-only
 
 COPY . .
 
-RUN gofmt -d -e -s . \
-    && go tool vet -all . \
-    && golint -set_exit_status . \
-    && aligncheck . \
-    && structcheck -e . \
-    && varcheck -e .
+RUN TEST_DIRS=`go list -f {{.Dir}} ./... | grep -v /vendor/`
+RUN GOFMT_RESULT=`gofmt -l $TEST_DIRS`; echo $GOFMT_RESULT; test -z "$GOFMT_RESULT"
+RUN go vet ./...
+# RUN golint -set_exit_status $TEST_DIRS
+# RUN aligncheck ./...
+# RUN structcheck -e ./...
+# RUN varcheck -e ./...
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o btcd .
-RUN strip btcd
 
-RUN go test ./...
+# Remove the line below and uncomment the line after it for testing with coverage
+RUN go test -gcflags='-l' ./...
+# RUN ./test.sh
 
 # --- multistage docker build: stage #2: runtime image
 FROM alpine

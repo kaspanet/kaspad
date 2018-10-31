@@ -51,7 +51,7 @@ func (u AmountUnit) String() string {
 
 // Amount represents the base bitcoin monetary unit (colloquially referred
 // to as a `Satoshi').  A single Amount is equal to 1e-8 of a bitcoin.
-type Amount int64
+type Amount uint64
 
 // round converts a floating point number, which may or may not be representable
 // as an integer, to the Amount integer type by rounding to the nearest integer.

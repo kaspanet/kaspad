@@ -5,8 +5,8 @@
 package bloom_test
 
 import (
-	"testing"
 	"github.com/daglabs/btcd/util/bloom"
+	"testing"
 )
 
 // TestMurmurHash3 ensure the MurmurHash3 function produces the correct hash

@@ -785,8 +785,8 @@ func TestRestoreUTXOErrors(t *testing.T) {
 	testErrorThroughPatching(
 		t,
 		targetErrorMessage,
-		(*fullUTXOSet).WithDiff,
-		func(fus *fullUTXOSet, other *utxoDiff) (UTXOSet, error) {
+		(*FullUTXOSet).WithDiff,
+		func(fus *FullUTXOSet, other *UTXODiff) (UTXOSet, error) {
 			return nil, errors.New(targetErrorMessage)
 		},
 	)
@@ -821,7 +821,8 @@ func testErrorThroughPatching(t *testing.T, expectedErrorMessage string, targetF
 	// maturity to 1.
 	dag.TstSetCoinbaseMaturity(1)
 
-	monkey.Patch(targetFunction, replacementFunction)
+	guard := monkey.Patch(targetFunction, replacementFunction)
+	defer guard.Unpatch()
 
 	err = nil
 	for i := 1; i < len(blocks); i++ {
@@ -843,6 +844,4 @@ func testErrorThroughPatching(t *testing.T, expectedErrorMessage string, targetF
 		t.Errorf("ProcessBlock returned wrong error. "+
 			"Want: %s, got: %s", expectedErrorMessage, err)
 	}
-
-	monkey.Unpatch(targetFunction)
 }

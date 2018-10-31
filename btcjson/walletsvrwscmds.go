@@ -7,27 +7,27 @@ package btcjson
 // NOTE: This file is intended to house the RPC commands that are supported by
 // a wallet server, but are only available via websockets.
 
-// CreateEncryptedWalletCmd defines the createencryptedwallet JSON-RPC command.
+// CreateEncryptedWalletCmd defines the createEncryptedWallet JSON-RPC command.
 type CreateEncryptedWalletCmd struct {
 	Passphrase string
 }
 
 // NewCreateEncryptedWalletCmd returns a new instance which can be used to issue
-// a createencryptedwallet JSON-RPC command.
+// a createEncryptedWallet JSON-RPC command.
 func NewCreateEncryptedWalletCmd(passphrase string) *CreateEncryptedWalletCmd {
 	return &CreateEncryptedWalletCmd{
 		Passphrase: passphrase,
 	}
 }
 
-// ExportWatchingWalletCmd defines the exportwatchingwallet JSON-RPC command.
+// ExportWatchingWalletCmd defines the exportWatchingWallet JSON-RPC command.
 type ExportWatchingWalletCmd struct {
 	Account  *string
 	Download *bool `jsonrpcdefault:"false"`
 }
 
 // NewExportWatchingWalletCmd returns a new instance which can be used to issue
-// a exportwatchingwallet JSON-RPC command.
+// a exportWatchingWallet JSON-RPC command.
 //
 // The parameters which are pointers indicate they are optional.  Passing nil
 // for optional parameters will use the default value.
@@ -38,13 +38,13 @@ func NewExportWatchingWalletCmd(account *string, download *bool) *ExportWatching
 	}
 }
 
-// GetUnconfirmedBalanceCmd defines the getunconfirmedbalance JSON-RPC command.
+// GetUnconfirmedBalanceCmd defines the getUnconfirmedBalance JSON-RPC command.
 type GetUnconfirmedBalanceCmd struct {
 	Account *string
 }
 
 // NewGetUnconfirmedBalanceCmd returns a new instance which can be used to issue
-// a getunconfirmedbalance JSON-RPC command.
+// a getUnconfirmedBalance JSON-RPC command.
 //
 // The parameters which are pointers indicate they are optional.  Passing nil
 // for optional parameters will use the default value.
@@ -54,7 +54,7 @@ func NewGetUnconfirmedBalanceCmd(account *string) *GetUnconfirmedBalanceCmd {
 	}
 }
 
-// ListAddressTransactionsCmd defines the listaddresstransactions JSON-RPC
+// ListAddressTransactionsCmd defines the listAddressTransactions JSON-RPC
 // command.
 type ListAddressTransactionsCmd struct {
 	Addresses []string
@@ -62,7 +62,7 @@ type ListAddressTransactionsCmd struct {
 }
 
 // NewListAddressTransactionsCmd returns a new instance which can be used to
-// issue a listaddresstransactions JSON-RPC command.
+// issue a listAddressTransactions JSON-RPC command.
 //
 // The parameters which are pointers indicate they are optional.  Passing nil
 // for optional parameters will use the default value.
@@ -73,13 +73,13 @@ func NewListAddressTransactionsCmd(addresses []string, account *string) *ListAdd
 	}
 }
 
-// ListAllTransactionsCmd defines the listalltransactions JSON-RPC command.
+// ListAllTransactionsCmd defines the listAllTransactions JSON-RPC command.
 type ListAllTransactionsCmd struct {
 	Account *string
 }
 
 // NewListAllTransactionsCmd returns a new instance which can be used to issue a
-// listalltransactions JSON-RPC command.
+// listAllTransactions JSON-RPC command.
 //
 // The parameters which are pointers indicate they are optional.  Passing nil
 // for optional parameters will use the default value.
@@ -89,14 +89,14 @@ func NewListAllTransactionsCmd(account *string) *ListAllTransactionsCmd {
 	}
 }
 
-// RecoverAddressesCmd defines the recoveraddresses JSON-RPC command.
+// RecoverAddressesCmd defines the recoverAddresses JSON-RPC command.
 type RecoverAddressesCmd struct {
 	Account string
 	N       int
 }
 
 // NewRecoverAddressesCmd returns a new instance which can be used to issue a
-// recoveraddresses JSON-RPC command.
+// recoverAddresses JSON-RPC command.
 func NewRecoverAddressesCmd(account string, n int) *RecoverAddressesCmd {
 	return &RecoverAddressesCmd{
 		Account: account,
@@ -104,11 +104,11 @@ func NewRecoverAddressesCmd(account string, n int) *RecoverAddressesCmd {
 	}
 }
 
-// WalletIsLockedCmd defines the walletislocked JSON-RPC command.
+// WalletIsLockedCmd defines the walletIsLocked JSON-RPC command.
 type WalletIsLockedCmd struct{}
 
 // NewWalletIsLockedCmd returns a new instance which can be used to issue a
-// walletislocked JSON-RPC command.
+// walletIsLocked JSON-RPC command.
 func NewWalletIsLockedCmd() *WalletIsLockedCmd {
 	return &WalletIsLockedCmd{}
 }
@@ -118,11 +118,11 @@ func init() {
 	// websockets.
 	flags := UFWalletOnly | UFWebsocketOnly
 
-	MustRegisterCmd("createencryptedwallet", (*CreateEncryptedWalletCmd)(nil), flags)
-	MustRegisterCmd("exportwatchingwallet", (*ExportWatchingWalletCmd)(nil), flags)
-	MustRegisterCmd("getunconfirmedbalance", (*GetUnconfirmedBalanceCmd)(nil), flags)
-	MustRegisterCmd("listaddresstransactions", (*ListAddressTransactionsCmd)(nil), flags)
-	MustRegisterCmd("listalltransactions", (*ListAllTransactionsCmd)(nil), flags)
-	MustRegisterCmd("recoveraddresses", (*RecoverAddressesCmd)(nil), flags)
-	MustRegisterCmd("walletislocked", (*WalletIsLockedCmd)(nil), flags)
+	MustRegisterCmd("createEncryptedWallet", (*CreateEncryptedWalletCmd)(nil), flags)
+	MustRegisterCmd("exportWatchingWallet", (*ExportWatchingWalletCmd)(nil), flags)
+	MustRegisterCmd("getUnconfirmedBalance", (*GetUnconfirmedBalanceCmd)(nil), flags)
+	MustRegisterCmd("listAddressTransactions", (*ListAddressTransactionsCmd)(nil), flags)
+	MustRegisterCmd("listAllTransactions", (*ListAllTransactionsCmd)(nil), flags)
+	MustRegisterCmd("recoverAddresses", (*RecoverAddressesCmd)(nil), flags)
+	MustRegisterCmd("walletIsLocked", (*WalletIsLockedCmd)(nil), flags)
 }

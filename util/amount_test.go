@@ -32,22 +32,10 @@ func TestAmountCreation(t *testing.T) {
 			expected: MaxSatoshi,
 		},
 		{
-			name:     "min producible",
-			amount:   -21e6,
-			valid:    true,
-			expected: -MaxSatoshi,
-		},
-		{
 			name:     "exceeds max producible",
 			amount:   21e6 + 1e-8,
 			valid:    true,
 			expected: MaxSatoshi + 1,
-		},
-		{
-			name:     "exceeds min producible",
-			amount:   -21e6 - 1e-8,
-			valid:    true,
-			expected: -MaxSatoshi - 1,
 		},
 		{
 			name:     "one hundred",
@@ -218,42 +206,6 @@ func TestAmountMulF64(t *testing.T) {
 			name: "Multiply 0.2 BTC by 0.02",
 			amt:  200e5, // 0.2 BTC
 			mul:  1.02,
-			res:  204e5, // 0.204 BTC
-		},
-		{
-			name: "Multiply 0.1 BTC by -2",
-			amt:  100e5, // 0.1 BTC
-			mul:  -2,
-			res:  -200e5, // -0.2 BTC
-		},
-		{
-			name: "Multiply 0.2 BTC by -0.02",
-			amt:  200e5, // 0.2 BTC
-			mul:  -1.02,
-			res:  -204e5, // -0.204 BTC
-		},
-		{
-			name: "Multiply -0.1 BTC by 2",
-			amt:  -100e5, // -0.1 BTC
-			mul:  2,
-			res:  -200e5, // -0.2 BTC
-		},
-		{
-			name: "Multiply -0.2 BTC by 0.02",
-			amt:  -200e5, // -0.2 BTC
-			mul:  1.02,
-			res:  -204e5, // -0.204 BTC
-		},
-		{
-			name: "Multiply -0.1 BTC by -2",
-			amt:  -100e5, // -0.1 BTC
-			mul:  -2,
-			res:  200e5, // 0.2 BTC
-		},
-		{
-			name: "Multiply -0.2 BTC by -0.02",
-			amt:  -200e5, // -0.2 BTC
-			mul:  -1.02,
 			res:  204e5, // 0.204 BTC
 		},
 		{

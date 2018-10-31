@@ -118,7 +118,7 @@ type GetBlockTemplateResultTx struct {
 	Data    string  `json:"data"`
 	Hash    string  `json:"hash"`
 	Depends []int64 `json:"depends"`
-	Fee     int64   `json:"fee"`
+	Fee     uint64  `json:"fee"`
 	SigOps  int64   `json:"sigops"`
 }
 
@@ -143,7 +143,7 @@ type GetBlockTemplateResult struct {
 	Version        int32                      `json:"version"`
 	CoinbaseAux    *GetBlockTemplateResultAux `json:"coinbaseaux,omitempty"`
 	CoinbaseTxn    *GetBlockTemplateResultTx  `json:"coinbasetxn,omitempty"`
-	CoinbaseValue  *int64                     `json:"coinbasevalue,omitempty"`
+	CoinbaseValue  *uint64                    `json:"coinbasevalue,omitempty"`
 	WorkID         string                     `json:"workid,omitempty"`
 
 	// Optional long polling from BIP 0022.
