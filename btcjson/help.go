@@ -82,7 +82,7 @@ func reflectTypeToJSONType(xT descLookupFunc, rt reflect.Type) string {
 // field name if no json tag was specified).
 func resultStructHelp(xT descLookupFunc, rt reflect.Type, indentLevel int) []string {
 	indent := strings.Repeat(" ", indentLevel)
-	typeName := toLowercaseCamelCase(rt.Name())
+	typeName := toCamelCase(rt.Name())
 
 	// Generate the help for each of the fields in the result struct.
 	numField := rt.NumField()
@@ -96,7 +96,7 @@ func resultStructHelp(xT descLookupFunc, rt reflect.Type, indentLevel int) []str
 		if tag := rtf.Tag.Get("json"); tag != "" {
 			fieldName = strings.Split(tag, ",")[0]
 		} else {
-			fieldName = toLowercaseCamelCase(rtf.Name)
+			fieldName = toCamelCase(rtf.Name)
 		}
 
 		// Deference pointer if needed.
@@ -345,7 +345,7 @@ func argHelp(xT descLookupFunc, rtp reflect.Type, defaults map[int]reflect.Value
 			defaultVal = &defVal
 		}
 
-		fieldName := toLowercaseCamelCase(rtf.Name)
+		fieldName := toCamelCase(rtf.Name)
 		helpText := fmt.Sprintf("%d.\t%s\t(%s)\t%s", i+1, fieldName,
 			argTypeHelp(xT, rtf, defaultVal),
 			xT(method+"-"+fieldName))
@@ -391,9 +391,9 @@ func argHelp(xT descLookupFunc, rtp reflect.Type, defaults map[int]reflect.Value
 	return formatted.String()
 }
 
-// toLowercaseCamelCase converts a camelCase-ish string into a typical JSON camelCase string.
+// toCamelCase converts a camelCase-ish string into a typical JSON camelCase string.
 // Example conversion: MyJSONVariable -> myJsonVariable
-func toLowercaseCamelCase(str string) string {
+func toCamelCase(str string) string {
 	if len(str) == 0 {
 		return ""
 	}
@@ -416,7 +416,7 @@ func toLowercaseCamelCase(str string) string {
 				// previousCharacter is definitely the start of a word
 				wordStartIndex = i - 1
 
-				// This handles consequent uppercase words, such as acronyms.
+				// The following handles consequent uppercase words, such as acronyms.
 				// Example: getBlockDAGInfo
 				//                  ^^^
 				if wordStartIndex-wordEndIndex > 1 {
