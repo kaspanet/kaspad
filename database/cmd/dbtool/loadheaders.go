@@ -41,9 +41,9 @@ func (cmd *headersCmd) Execute(args []string) error {
 	// the database would keep a metadata index of its own.
 	blockIdxName := []byte("ffldb-blockidx")
 	if !headersCfg.Bulk {
-		err = db.View(func(tx database.Tx) error {
+		err = db.View(func(dbTx database.Tx) error {
 			totalHdrs := 0
-			blockIdxBucket := tx.Metadata().Bucket(blockIdxName)
+			blockIdxBucket := dbTx.Metadata().Bucket(blockIdxName)
 			blockIdxBucket.ForEach(func(k, v []byte) error {
 				totalHdrs++
 				return nil
@@ -54,7 +54,7 @@ func (cmd *headersCmd) Execute(args []string) error {
 			blockIdxBucket.ForEach(func(k, v []byte) error {
 				var hash daghash.Hash
 				copy(hash[:], k)
-				_, err := tx.FetchBlockHeader(&hash)
+				_, err := dbTx.FetchBlockHeader(&hash)
 				if err != nil {
 					return err
 				}
@@ -69,8 +69,8 @@ func (cmd *headersCmd) Execute(args []string) error {
 	}
 
 	// Bulk load headers.
-	err = db.View(func(tx database.Tx) error {
-		blockIdxBucket := tx.Metadata().Bucket(blockIdxName)
+	err = db.View(func(dbTx database.Tx) error {
+		blockIdxBucket := dbTx.Metadata().Bucket(blockIdxName)
 		hashes := make([]daghash.Hash, 0, 500000)
 		blockIdxBucket.ForEach(func(k, v []byte) error {
 			var hash daghash.Hash
@@ -81,7 +81,7 @@ func (cmd *headersCmd) Execute(args []string) error {
 
 		log.Infof("Loading headers for %d blocks...", len(hashes))
 		startTime := time.Now()
-		hdrs, err := tx.FetchBlockHeaders(hashes)
+		hdrs, err := dbTx.FetchBlockHeaders(hashes)
 		if err != nil {
 			return err
 		}

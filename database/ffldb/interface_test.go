@@ -626,10 +626,10 @@ func testBucketInterface(tc *testContext, bucket database.Bucket) bool {
 // would leave any manually created transactions with the database mutex locked
 // thereby leading to a deadlock and masking the real reason for the panic.  It
 // also logs a test error and repanics so the original panic can be traced.
-func rollbackOnPanic(t *testing.T, tx database.Tx) {
+func rollbackOnPanic(t *testing.T, dbTx database.Tx) {
 	if err := recover(); err != nil {
 		t.Errorf("Unexpected panic: %v", err)
-		_ = tx.Rollback()
+		_ = dbTx.Rollback()
 		panic(err)
 	}
 }
@@ -851,8 +851,8 @@ func testManagedTxPanics(tc *testContext) bool {
 
 	// Ensure calling Commit on a managed read-only transaction panics.
 	paniced := testPanic(func() {
-		tc.db.View(func(tx database.Tx) error {
-			tx.Commit()
+		tc.db.View(func(dbTx database.Tx) error {
+			dbTx.Commit()
 			return nil
 		})
 	})
@@ -863,8 +863,8 @@ func testManagedTxPanics(tc *testContext) bool {
 
 	// Ensure calling Rollback on a managed read-only transaction panics.
 	paniced = testPanic(func() {
-		tc.db.View(func(tx database.Tx) error {
-			tx.Rollback()
+		tc.db.View(func(dbTx database.Tx) error {
+			dbTx.Rollback()
 			return nil
 		})
 	})
@@ -875,8 +875,8 @@ func testManagedTxPanics(tc *testContext) bool {
 
 	// Ensure calling Commit on a managed read-write transaction panics.
 	paniced = testPanic(func() {
-		tc.db.Update(func(tx database.Tx) error {
-			tx.Commit()
+		tc.db.Update(func(dbTx database.Tx) error {
+			dbTx.Commit()
 			return nil
 		})
 	})
@@ -887,8 +887,8 @@ func testManagedTxPanics(tc *testContext) bool {
 
 	// Ensure calling Rollback on a managed read-write transaction panics.
 	paniced = testPanic(func() {
-		tc.db.Update(func(tx database.Tx) error {
-			tx.Rollback()
+		tc.db.Update(func(dbTx database.Tx) error {
+			dbTx.Rollback()
 			return nil
 		})
 	})
@@ -909,8 +909,8 @@ func testMetadataTxInterface(tc *testContext) bool {
 	}
 
 	bucket1Name := []byte("bucket1")
-	err := tc.db.Update(func(tx database.Tx) error {
-		_, err := tx.Metadata().CreateBucket(bucket1Name)
+	err := tc.db.Update(func(dbTx database.Tx) error {
+		_, err := dbTx.Metadata().CreateBucket(bucket1Name)
 		return err
 	})
 	if err != nil {
@@ -932,8 +932,8 @@ func testMetadataTxInterface(tc *testContext) bool {
 	}
 
 	// Test the bucket interface via a managed read-only transaction.
-	err = tc.db.View(func(tx database.Tx) error {
-		metadataBucket := tx.Metadata()
+	err = tc.db.View(func(dbTx database.Tx) error {
+		metadataBucket := dbTx.Metadata()
 		if metadataBucket == nil {
 			return fmt.Errorf("Metadata: unexpected nil bucket")
 		}
@@ -960,7 +960,7 @@ func testMetadataTxInterface(tc *testContext) bool {
 	// Ensure errors returned from the user-supplied View function are
 	// returned.
 	viewError := fmt.Errorf("example view error")
-	err = tc.db.View(func(tx database.Tx) error {
+	err = tc.db.View(func(dbTx database.Tx) error {
 		return viewError
 	})
 	if err != viewError {
@@ -973,8 +973,8 @@ func testMetadataTxInterface(tc *testContext) bool {
 	// Also, put a series of values and force a rollback so the following
 	// code can ensure the values were not stored.
 	forceRollbackError := fmt.Errorf("force rollback")
-	err = tc.db.Update(func(tx database.Tx) error {
-		metadataBucket := tx.Metadata()
+	err = tc.db.Update(func(dbTx database.Tx) error {
+		metadataBucket := dbTx.Metadata()
 		if metadataBucket == nil {
 			return fmt.Errorf("Metadata: unexpected nil bucket")
 		}
@@ -1008,8 +1008,8 @@ func testMetadataTxInterface(tc *testContext) bool {
 
 	// Ensure the values that should not have been stored due to the forced
 	// rollback above were not actually stored.
-	err = tc.db.View(func(tx database.Tx) error {
-		metadataBucket := tx.Metadata()
+	err = tc.db.View(func(dbTx database.Tx) error {
+		metadataBucket := dbTx.Metadata()
 		if metadataBucket == nil {
 			return fmt.Errorf("Metadata: unexpected nil bucket")
 		}
@@ -1028,8 +1028,8 @@ func testMetadataTxInterface(tc *testContext) bool {
 	}
 
 	// Store a series of values via a managed read-write transaction.
-	err = tc.db.Update(func(tx database.Tx) error {
-		metadataBucket := tx.Metadata()
+	err = tc.db.Update(func(dbTx database.Tx) error {
+		metadataBucket := dbTx.Metadata()
 		if metadataBucket == nil {
 			return fmt.Errorf("Metadata: unexpected nil bucket")
 		}
@@ -1053,8 +1053,8 @@ func testMetadataTxInterface(tc *testContext) bool {
 	}
 
 	// Ensure the values stored above were committed as expected.
-	err = tc.db.View(func(tx database.Tx) error {
-		metadataBucket := tx.Metadata()
+	err = tc.db.View(func(dbTx database.Tx) error {
+		metadataBucket := dbTx.Metadata()
 		if metadataBucket == nil {
 			return fmt.Errorf("Metadata: unexpected nil bucket")
 		}
@@ -1078,8 +1078,8 @@ func testMetadataTxInterface(tc *testContext) bool {
 	}
 
 	// Clean up the values stored above in a managed read-write transaction.
-	err = tc.db.Update(func(tx database.Tx) error {
-		metadataBucket := tx.Metadata()
+	err = tc.db.Update(func(dbTx database.Tx) error {
+		metadataBucket := dbTx.Metadata()
 		if metadataBucket == nil {
 			return fmt.Errorf("Metadata: unexpected nil bucket")
 		}
@@ -1107,7 +1107,7 @@ func testMetadataTxInterface(tc *testContext) bool {
 
 // testFetchBlockIOMissing ensures that all of the block retrieval API functions
 // work as expected when requesting blocks that don't exist.
-func testFetchBlockIOMissing(tc *testContext, tx database.Tx) bool {
+func testFetchBlockIOMissing(tc *testContext, dbTx database.Tx) bool {
 	wantErrCode := database.ErrBlockNotFound
 
 	// ---------------------
@@ -1132,7 +1132,7 @@ func testFetchBlockIOMissing(tc *testContext, tx database.Tx) bool {
 
 		// Ensure FetchBlock returns expected error.
 		testName := fmt.Sprintf("FetchBlock #%d on missing block", i)
-		_, err = tx.FetchBlock(blockHash)
+		_, err = dbTx.FetchBlock(blockHash)
 		if !checkDbError(tc.t, testName, err, wantErrCode) {
 			return false
 		}
@@ -1140,7 +1140,7 @@ func testFetchBlockIOMissing(tc *testContext, tx database.Tx) bool {
 		// Ensure FetchBlockHeader returns expected error.
 		testName = fmt.Sprintf("FetchBlockHeader #%d on missing block",
 			i)
-		_, err = tx.FetchBlockHeader(blockHash)
+		_, err = dbTx.FetchBlockHeader(blockHash)
 		if !checkDbError(tc.t, testName, err, wantErrCode) {
 			return false
 		}
@@ -1153,13 +1153,13 @@ func testFetchBlockIOMissing(tc *testContext, tx database.Tx) bool {
 			Len:    uint32(txLocs[0].TxLen),
 		}
 		allBlockRegions[i] = region
-		_, err = tx.FetchBlockRegion(&region)
+		_, err = dbTx.FetchBlockRegion(&region)
 		if !checkDbError(tc.t, testName, err, wantErrCode) {
 			return false
 		}
 
 		// Ensure HasBlock returns false.
-		hasBlock, err := tx.HasBlock(blockHash)
+		hasBlock, err := dbTx.HasBlock(blockHash)
 		if err != nil {
 			tc.t.Errorf("HasBlock #%d: unexpected err: %v", i, err)
 			return false
@@ -1176,27 +1176,27 @@ func testFetchBlockIOMissing(tc *testContext, tx database.Tx) bool {
 
 	// Ensure FetchBlocks returns expected error.
 	testName := "FetchBlocks on missing blocks"
-	_, err := tx.FetchBlocks(allBlockHashes)
+	_, err := dbTx.FetchBlocks(allBlockHashes)
 	if !checkDbError(tc.t, testName, err, wantErrCode) {
 		return false
 	}
 
 	// Ensure FetchBlockHeaders returns expected error.
 	testName = "FetchBlockHeaders on missing blocks"
-	_, err = tx.FetchBlockHeaders(allBlockHashes)
+	_, err = dbTx.FetchBlockHeaders(allBlockHashes)
 	if !checkDbError(tc.t, testName, err, wantErrCode) {
 		return false
 	}
 
 	// Ensure FetchBlockRegions returns expected error.
 	testName = "FetchBlockRegions on missing blocks"
-	_, err = tx.FetchBlockRegions(allBlockRegions)
+	_, err = dbTx.FetchBlockRegions(allBlockRegions)
 	if !checkDbError(tc.t, testName, err, wantErrCode) {
 		return false
 	}
 
 	// Ensure HasBlocks returns false for all blocks.
-	hasBlocks, err := tx.HasBlocks(allBlockHashes)
+	hasBlocks, err := dbTx.HasBlocks(allBlockHashes)
 	if err != nil {
 		tc.t.Errorf("HasBlocks: unexpected err: %v", err)
 	}
@@ -1215,7 +1215,7 @@ func testFetchBlockIOMissing(tc *testContext, tx database.Tx) bool {
 // the database, or at least stored into the the passed transaction.  It also
 // tests several error conditions such as ensuring the expected errors are
 // returned when fetching blocks, headers, and regions that don't exist.
-func testFetchBlockIO(tc *testContext, tx database.Tx) bool {
+func testFetchBlockIO(tc *testContext, dbTx database.Tx) bool {
 	// ---------------------
 	// Non-bulk Block IO API
 	// ---------------------
@@ -1251,7 +1251,7 @@ func testFetchBlockIO(tc *testContext, tx database.Tx) bool {
 
 		// Ensure the block data fetched from the database matches the
 		// expected bytes.
-		gotBlockBytes, err := tx.FetchBlock(blockHash)
+		gotBlockBytes, err := dbTx.FetchBlock(blockHash)
 		if err != nil {
 			tc.t.Errorf("FetchBlock(%s): unexpected error: %v",
 				blockHash, err)
@@ -1264,7 +1264,7 @@ func testFetchBlockIO(tc *testContext, tx database.Tx) bool {
 		}
 
 		wantHeaderBytes := blockBytes[0:allBlockHeaderSizes[i]]
-		gotHeaderBytes, err := tx.FetchBlockHeader(blockHash)
+		gotHeaderBytes, err := dbTx.FetchBlockHeader(blockHash)
 		if err != nil {
 			tc.t.Errorf("FetchBlockHeader(%s): unexpected error: %v",
 				blockHash, err)
@@ -1287,7 +1287,7 @@ func testFetchBlockIO(tc *testContext, tx database.Tx) bool {
 		allBlockRegions[i] = region
 		endRegionOffset := region.Offset + region.Len
 		wantRegionBytes := blockBytes[region.Offset:endRegionOffset]
-		gotRegionBytes, err := tx.FetchBlockRegion(&region)
+		gotRegionBytes, err := dbTx.FetchBlockRegion(&region)
 		if err != nil {
 			tc.t.Errorf("FetchBlockRegion(%s): unexpected error: %v",
 				blockHash, err)
@@ -1302,7 +1302,7 @@ func testFetchBlockIO(tc *testContext, tx database.Tx) bool {
 
 		// Ensure the block header fetched from the database matches the
 		// expected bytes.
-		hasBlock, err := tx.HasBlock(blockHash)
+		hasBlock, err := dbTx.HasBlock(blockHash)
 		if err != nil {
 			tc.t.Errorf("HasBlock(%s): unexpected error: %v",
 				blockHash, err)
@@ -1324,7 +1324,7 @@ func testFetchBlockIO(tc *testContext, tx database.Tx) bool {
 		testName := fmt.Sprintf("FetchBlock(%s) invalid block",
 			badBlockHash)
 		wantErrCode := database.ErrBlockNotFound
-		_, err = tx.FetchBlock(badBlockHash)
+		_, err = dbTx.FetchBlock(badBlockHash)
 		if !checkDbError(tc.t, testName, err, wantErrCode) {
 			return false
 		}
@@ -1333,7 +1333,7 @@ func testFetchBlockIO(tc *testContext, tx database.Tx) bool {
 		// the expected error.
 		testName = fmt.Sprintf("FetchBlockHeader(%s) invalid block",
 			badBlockHash)
-		_, err = tx.FetchBlockHeader(badBlockHash)
+		_, err = dbTx.FetchBlockHeader(badBlockHash)
 		if !checkDbError(tc.t, testName, err, wantErrCode) {
 			return false
 		}
@@ -1345,7 +1345,7 @@ func testFetchBlockIO(tc *testContext, tx database.Tx) bool {
 		wantErrCode = database.ErrBlockNotFound
 		region.Hash = badBlockHash
 		region.Offset = ^uint32(0)
-		_, err = tx.FetchBlockRegion(&region)
+		_, err = dbTx.FetchBlockRegion(&region)
 		if !checkDbError(tc.t, testName, err, wantErrCode) {
 			return false
 		}
@@ -1357,7 +1357,7 @@ func testFetchBlockIO(tc *testContext, tx database.Tx) bool {
 		wantErrCode = database.ErrBlockRegionInvalid
 		region.Hash = blockHash
 		region.Offset = ^uint32(0)
-		_, err = tx.FetchBlockRegion(&region)
+		_, err = dbTx.FetchBlockRegion(&region)
 		if !checkDbError(tc.t, testName, err, wantErrCode) {
 			return false
 		}
@@ -1369,7 +1369,7 @@ func testFetchBlockIO(tc *testContext, tx database.Tx) bool {
 
 	// Ensure the bulk block data fetched from the database matches the
 	// expected bytes.
-	blockData, err := tx.FetchBlocks(allBlockHashes)
+	blockData, err := dbTx.FetchBlocks(allBlockHashes)
 	if err != nil {
 		tc.t.Errorf("FetchBlocks: unexpected error: %v", err)
 		return false
@@ -1393,7 +1393,7 @@ func testFetchBlockIO(tc *testContext, tx database.Tx) bool {
 
 	// Ensure the bulk block headers fetched from the database match the
 	// expected bytes.
-	blockHeaderData, err := tx.FetchBlockHeaders(allBlockHashes)
+	blockHeaderData, err := dbTx.FetchBlockHeaders(allBlockHashes)
 	if err != nil {
 		tc.t.Errorf("FetchBlockHeaders: unexpected error: %v", err)
 		return false
@@ -1418,7 +1418,7 @@ func testFetchBlockIO(tc *testContext, tx database.Tx) bool {
 
 	// Ensure the first transaction of every block fetched in bulk block
 	// regions from the database matches the expected bytes.
-	allRegionBytes, err := tx.FetchBlockRegions(allBlockRegions)
+	allRegionBytes, err := dbTx.FetchBlockRegions(allBlockRegions)
 	if err != nil {
 		tc.t.Errorf("FetchBlockRegions: unexpected error: %v", err)
 		return false
@@ -1444,7 +1444,7 @@ func testFetchBlockIO(tc *testContext, tx database.Tx) bool {
 
 	// Ensure the bulk determination of whether a set of block hashes are in
 	// the database returns true for all loaded blocks.
-	hasBlocks, err := tx.HasBlocks(allBlockHashes)
+	hasBlocks, err := dbTx.HasBlocks(allBlockHashes)
 	if err != nil {
 		tc.t.Errorf("HasBlocks: unexpected error: %v", err)
 		return false
@@ -1467,7 +1467,7 @@ func testFetchBlockIO(tc *testContext, tx database.Tx) bool {
 	copy(badBlockHashes, allBlockHashes)
 	badBlockHashes[len(badBlockHashes)-1] = daghash.Hash{}
 	wantErrCode := database.ErrBlockNotFound
-	_, err = tx.FetchBlocks(badBlockHashes)
+	_, err = dbTx.FetchBlocks(badBlockHashes)
 	if !checkDbError(tc.t, testName, err, wantErrCode) {
 		return false
 	}
@@ -1475,7 +1475,7 @@ func testFetchBlockIO(tc *testContext, tx database.Tx) bool {
 	// Ensure fetching block headers for which one doesn't exist returns the
 	// expected error.
 	testName = "FetchBlockHeaders invalid hash"
-	_, err = tx.FetchBlockHeaders(badBlockHashes)
+	_, err = dbTx.FetchBlockHeaders(badBlockHashes)
 	if !checkDbError(tc.t, testName, err, wantErrCode) {
 		return false
 	}
@@ -1487,7 +1487,7 @@ func testFetchBlockIO(tc *testContext, tx database.Tx) bool {
 	copy(badBlockRegions, allBlockRegions)
 	badBlockRegions[len(badBlockRegions)-1].Hash = &daghash.Hash{}
 	wantErrCode = database.ErrBlockNotFound
-	_, err = tx.FetchBlockRegions(badBlockRegions)
+	_, err = dbTx.FetchBlockRegions(badBlockRegions)
 	if !checkDbError(tc.t, testName, err, wantErrCode) {
 		return false
 	}
@@ -1500,7 +1500,7 @@ func testFetchBlockIO(tc *testContext, tx database.Tx) bool {
 		badBlockRegions[i].Offset = ^uint32(0)
 	}
 	wantErrCode = database.ErrBlockRegionInvalid
-	_, err = tx.FetchBlockRegions(badBlockRegions)
+	_, err = dbTx.FetchBlockRegions(badBlockRegions)
 	return checkDbError(tc.t, testName, err, wantErrCode)
 }
 
@@ -1510,11 +1510,11 @@ func testFetchBlockIO(tc *testContext, tx database.Tx) bool {
 func testBlockIOTxInterface(tc *testContext) bool {
 	// Ensure attempting to store a block with a read-only transaction fails
 	// with the expected error.
-	err := tc.db.View(func(tx database.Tx) error {
+	err := tc.db.View(func(dbTx database.Tx) error {
 		wantErrCode := database.ErrTxNotWritable
 		for i, block := range tc.blocks {
 			testName := fmt.Sprintf("StoreBlock(%d) on ro tx", i)
-			err := tx.StoreBlock(block)
+			err := dbTx.StoreBlock(block)
 			if !checkDbError(tc.t, testName, err, wantErrCode) {
 				return errSubTestFail
 			}
@@ -1534,10 +1534,10 @@ func testBlockIOTxInterface(tc *testContext) bool {
 	// commit or rollback.  Then, force a rollback so the code below can
 	// ensure none of the data actually gets stored.
 	forceRollbackError := fmt.Errorf("force rollback")
-	err = tc.db.Update(func(tx database.Tx) error {
+	err = tc.db.Update(func(dbTx database.Tx) error {
 		// Store all blocks in the same transaction.
 		for i, block := range tc.blocks {
-			err := tx.StoreBlock(block)
+			err := dbTx.StoreBlock(block)
 			if err != nil {
 				tc.t.Errorf("StoreBlock #%d: unexpected error: "+
 					"%v", i, err)
@@ -1551,7 +1551,7 @@ func testBlockIOTxInterface(tc *testContext) bool {
 		for i, block := range tc.blocks {
 			testName := fmt.Sprintf("duplicate block entry #%d "+
 				"(before commit)", i)
-			err := tx.StoreBlock(block)
+			err := dbTx.StoreBlock(block)
 			if !checkDbError(tc.t, testName, err, wantErrCode) {
 				return errSubTestFail
 			}
@@ -1559,7 +1559,7 @@ func testBlockIOTxInterface(tc *testContext) bool {
 
 		// Ensure that all data fetches from the stored blocks before
 		// the transaction has been committed work as expected.
-		if !testFetchBlockIO(tc, tx) {
+		if !testFetchBlockIO(tc, dbTx) {
 			return errSubTestFail
 		}
 
@@ -1576,8 +1576,8 @@ func testBlockIOTxInterface(tc *testContext) bool {
 	}
 
 	// Ensure rollback was successful
-	err = tc.db.View(func(tx database.Tx) error {
-		if !testFetchBlockIOMissing(tc, tx) {
+	err = tc.db.View(func(dbTx database.Tx) error {
+		if !testFetchBlockIOMissing(tc, dbTx) {
 			return errSubTestFail
 		}
 		return nil
@@ -1591,10 +1591,10 @@ func testBlockIOTxInterface(tc *testContext) bool {
 
 	// Populate the database with loaded blocks and ensure all of the data
 	// fetching APIs work properly.
-	err = tc.db.Update(func(tx database.Tx) error {
+	err = tc.db.Update(func(dbTx database.Tx) error {
 		// Store a bunch of blocks in the same transaction.
 		for i, block := range tc.blocks {
-			err := tx.StoreBlock(block)
+			err := dbTx.StoreBlock(block)
 			if err != nil {
 				tc.t.Errorf("StoreBlock #%d: unexpected error: "+
 					"%v", i, err)
@@ -1609,7 +1609,7 @@ func testBlockIOTxInterface(tc *testContext) bool {
 			testName := fmt.Sprintf("duplicate block entry #%d "+
 				"(before commit)", i)
 			wantErrCode := database.ErrBlockExists
-			err := tx.StoreBlock(block)
+			err := dbTx.StoreBlock(block)
 			if !checkDbError(tc.t, testName, err, wantErrCode) {
 				return errSubTestFail
 			}
@@ -1617,7 +1617,7 @@ func testBlockIOTxInterface(tc *testContext) bool {
 
 		// Ensure that all data fetches from the stored blocks before
 		// the transaction has been committed work as expected.
-		if !testFetchBlockIO(tc, tx) {
+		if !testFetchBlockIO(tc, dbTx) {
 			return errSubTestFail
 		}
 
@@ -1633,8 +1633,8 @@ func testBlockIOTxInterface(tc *testContext) bool {
 	// Ensure all data fetch tests work as expected using a managed
 	// read-only transaction after the data was successfully committed
 	// above.
-	err = tc.db.View(func(tx database.Tx) error {
-		if !testFetchBlockIO(tc, tx) {
+	err = tc.db.View(func(dbTx database.Tx) error {
+		if !testFetchBlockIO(tc, dbTx) {
 			return errSubTestFail
 		}
 
@@ -1650,8 +1650,8 @@ func testBlockIOTxInterface(tc *testContext) bool {
 	// Ensure all data fetch tests work as expected using a managed
 	// read-write transaction after the data was successfully committed
 	// above.
-	err = tc.db.Update(func(tx database.Tx) error {
-		if !testFetchBlockIO(tc, tx) {
+	err = tc.db.Update(func(dbTx database.Tx) error {
+		if !testFetchBlockIO(tc, dbTx) {
 			return errSubTestFail
 		}
 
@@ -1663,7 +1663,7 @@ func testBlockIOTxInterface(tc *testContext) bool {
 		for i, block := range tc.blocks {
 			testName := fmt.Sprintf("duplicate block entry #%d "+
 				"(before commit)", i)
-			err := tx.StoreBlock(block)
+			err := dbTx.StoreBlock(block)
 			if !checkDbError(tc.t, testName, err, wantErrCode) {
 				return errSubTestFail
 			}
@@ -1683,10 +1683,10 @@ func testBlockIOTxInterface(tc *testContext) bool {
 
 // testClosedTxInterface ensures that both the metadata and block IO API
 // functions behave as expected when attempted against a closed transaction.
-func testClosedTxInterface(tc *testContext, tx database.Tx) bool {
+func testClosedTxInterface(tc *testContext, dbTx database.Tx) bool {
 	wantErrCode := database.ErrTxClosed
-	bucket := tx.Metadata()
-	cursor := tx.Metadata().Cursor()
+	bucket := dbTx.Metadata()
+	cursor := dbTx.Metadata().Cursor()
 	bucketName := []byte("closedtxbucket")
 	keyName := []byte("closedtxkey")
 
@@ -1852,21 +1852,21 @@ func testClosedTxInterface(tc *testContext, tx database.Tx) bool {
 
 		// Ensure StoreBlock returns expected error.
 		testName = "StoreBlock on closed tx"
-		err = tx.StoreBlock(block)
+		err = dbTx.StoreBlock(block)
 		if !checkDbError(tc.t, testName, err, wantErrCode) {
 			return false
 		}
 
 		// Ensure FetchBlock returns expected error.
 		testName = fmt.Sprintf("FetchBlock #%d on closed tx", i)
-		_, err = tx.FetchBlock(blockHash)
+		_, err = dbTx.FetchBlock(blockHash)
 		if !checkDbError(tc.t, testName, err, wantErrCode) {
 			return false
 		}
 
 		// Ensure FetchBlockHeader returns expected error.
 		testName = fmt.Sprintf("FetchBlockHeader #%d on closed tx", i)
-		_, err = tx.FetchBlockHeader(blockHash)
+		_, err = dbTx.FetchBlockHeader(blockHash)
 		if !checkDbError(tc.t, testName, err, wantErrCode) {
 			return false
 		}
@@ -1879,14 +1879,14 @@ func testClosedTxInterface(tc *testContext, tx database.Tx) bool {
 			Len:    uint32(txLocs[0].TxLen),
 		}
 		allBlockRegions[i] = region
-		_, err = tx.FetchBlockRegion(&region)
+		_, err = dbTx.FetchBlockRegion(&region)
 		if !checkDbError(tc.t, testName, err, wantErrCode) {
 			return false
 		}
 
 		// Ensure HasBlock returns expected error.
 		testName = fmt.Sprintf("HasBlock #%d on closed tx", i)
-		_, err = tx.HasBlock(blockHash)
+		_, err = dbTx.HasBlock(blockHash)
 		if !checkDbError(tc.t, testName, err, wantErrCode) {
 			return false
 		}
@@ -1898,28 +1898,28 @@ func testClosedTxInterface(tc *testContext, tx database.Tx) bool {
 
 	// Ensure FetchBlocks returns expected error.
 	testName = "FetchBlocks on closed tx"
-	_, err = tx.FetchBlocks(allBlockHashes)
+	_, err = dbTx.FetchBlocks(allBlockHashes)
 	if !checkDbError(tc.t, testName, err, wantErrCode) {
 		return false
 	}
 
 	// Ensure FetchBlockHeaders returns expected error.
 	testName = "FetchBlockHeaders on closed tx"
-	_, err = tx.FetchBlockHeaders(allBlockHashes)
+	_, err = dbTx.FetchBlockHeaders(allBlockHashes)
 	if !checkDbError(tc.t, testName, err, wantErrCode) {
 		return false
 	}
 
 	// Ensure FetchBlockRegions returns expected error.
 	testName = "FetchBlockRegions on closed tx"
-	_, err = tx.FetchBlockRegions(allBlockRegions)
+	_, err = dbTx.FetchBlockRegions(allBlockRegions)
 	if !checkDbError(tc.t, testName, err, wantErrCode) {
 		return false
 	}
 
 	// Ensure HasBlocks returns expected error.
 	testName = "HasBlocks on closed tx"
-	_, err = tx.HasBlocks(allBlockHashes)
+	_, err = dbTx.HasBlocks(allBlockHashes)
 	if !checkDbError(tc.t, testName, err, wantErrCode) {
 		return false
 	}
@@ -1930,11 +1930,11 @@ func testClosedTxInterface(tc *testContext, tx database.Tx) bool {
 
 	// Ensure that attempting to rollback or commit a transaction that is
 	// already closed returns the expected error.
-	err = tx.Rollback()
+	err = dbTx.Rollback()
 	if !checkDbError(tc.t, "closed tx rollback", err, wantErrCode) {
 		return false
 	}
-	err = tx.Commit()
+	err = dbTx.Commit()
 	return checkDbError(tc.t, "closed tx commit", err, wantErrCode)
 }
 
@@ -2003,8 +2003,8 @@ func testConcurrecy(tc *testContext) bool {
 	// help prevent durations that are too short which would cause erroneous
 	// test failures on slower systems.
 	startTime := time.Now()
-	err := tc.db.View(func(tx database.Tx) error {
-		_, err := tx.FetchBlock(tc.blocks[0].Hash())
+	err := tc.db.View(func(dbTx database.Tx) error {
+		_, err := dbTx.FetchBlock(tc.blocks[0].Hash())
 		return err
 	})
 	if err != nil {
@@ -2024,9 +2024,9 @@ func testConcurrecy(tc *testContext) bool {
 	numReaders := len(tc.blocks)
 	resultChan := make(chan bool, numReaders)
 	reader := func(blockNum int) {
-		err := tc.db.View(func(tx database.Tx) error {
+		err := tc.db.View(func(dbTx database.Tx) error {
 			time.Sleep(sleepTime)
-			_, err := tx.FetchBlock(tc.blocks[blockNum].Hash())
+			_, err := dbTx.FetchBlock(tc.blocks[blockNum].Hash())
 			return err
 		})
 		if err != nil {
@@ -2092,7 +2092,7 @@ func testConcurrecy(tc *testContext) bool {
 	started := make(chan struct{})
 	writeComplete := make(chan struct{})
 	reader = func(blockNum int) {
-		err := tc.db.View(func(tx database.Tx) error {
+		err := tc.db.View(func(dbTx database.Tx) error {
 			started <- struct{}{}
 
 			// Wait for the writer to complete.
@@ -2100,7 +2100,7 @@ func testConcurrecy(tc *testContext) bool {
 
 			// Since this reader was created before the write took
 			// place, the data it added should not be visible.
-			val := tx.Metadata().Get(concurrentKey)
+			val := dbTx.Metadata().Get(concurrentKey)
 			if val != nil {
 				return fmt.Errorf("%s should not be visible",
 					concurrentKey)
@@ -2124,8 +2124,8 @@ func testConcurrecy(tc *testContext) bool {
 	// All readers are started and waiting for completion of the writer.
 	// Set some data the readers are expecting to not find and signal the
 	// readers the write is done by closing the writeComplete channel.
-	err = tc.db.Update(func(tx database.Tx) error {
-		return tx.Metadata().Put(concurrentKey, concurrentVal)
+	err = tc.db.Update(func(dbTx database.Tx) error {
+		return dbTx.Metadata().Put(concurrentKey, concurrentVal)
 	})
 	if err != nil {
 		tc.t.Errorf("Unexpected error in update: %v", err)
@@ -2145,7 +2145,7 @@ func testConcurrecy(tc *testContext) bool {
 	// can be active at a time.
 	writeSleepTime := time.Millisecond * 250
 	writer := func() {
-		err := tc.db.Update(func(tx database.Tx) error {
+		err := tc.db.Update(func(dbTx database.Tx) error {
 			time.Sleep(writeSleepTime)
 			return nil
 		})
@@ -2195,7 +2195,7 @@ func testConcurrentClose(tc *testContext) bool {
 	finishReaders := make(chan struct{})
 	resultChan := make(chan bool, numReaders+1)
 	reader := func() {
-		err := tc.db.View(func(tx database.Tx) error {
+		err := tc.db.View(func(dbTx database.Tx) error {
 			atomic.AddInt32(&activeReaders, 1)
 			started <- struct{}{}
 			<-finishReaders

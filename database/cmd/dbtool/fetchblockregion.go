@@ -64,7 +64,7 @@ func (cmd *blockRegionCmd) Execute(args []string) error {
 	}
 	defer db.Close()
 
-	return db.View(func(tx database.Tx) error {
+	return db.View(func(dbTx database.Tx) error {
 		log.Infof("Fetching block region %s<%d:%d>", blockHash,
 			startOffset, startOffset+regionLen-1)
 		region := database.BlockRegion{
@@ -73,7 +73,7 @@ func (cmd *blockRegionCmd) Execute(args []string) error {
 			Len:    uint32(regionLen),
 		}
 		startTime := time.Now()
-		regionBytes, err := tx.FetchBlockRegion(&region)
+		regionBytes, err := dbTx.FetchBlockRegion(&region)
 		if err != nil {
 			return err
 		}

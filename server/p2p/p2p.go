@@ -2132,8 +2132,8 @@ func (s *Server) Start() {
 func (s *Server) Stop() error {
 
 	// Save fee estimator state in the database.
-	s.db.Update(func(tx database.Tx) error {
-		metadata := tx.Metadata()
+	s.db.Update(func(dbTx database.Tx) error {
+		metadata := dbTx.Metadata()
 		metadata.Put(mempool.EstimateFeeDatabaseKey, s.FeeEstimator.Save())
 
 		return nil
@@ -2396,8 +2396,8 @@ func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params
 
 	// Search for a FeeEstimator state in the database. If none can be found
 	// or if it cannot be loaded, create a new one.
-	db.Update(func(tx database.Tx) error {
-		metadata := tx.Metadata()
+	db.Update(func(dbTx database.Tx) error {
+		metadata := dbTx.Metadata()
 		feeEstimationData := metadata.Get(mempool.EstimateFeeDatabaseKey)
 		if feeEstimationData != nil {
 			// delete it from the database so that we don't try to restore the

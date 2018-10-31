@@ -29,8 +29,8 @@ func TestDeleteFile(t *testing.T) {
 			pdb := newTestDb("TestDeleteFile", t)
 			defer pdb.Close()
 
-			err := pdb.Update(func(tx database.Tx) error {
-				tx.StoreBlock(testBlock)
+			err := pdb.Update(func(dbTx database.Tx) error {
+				dbTx.StoreBlock(testBlock)
 				return nil
 			})
 			if err != nil {
@@ -88,8 +88,8 @@ func TestHandleRollbackErrors(t *testing.T) {
 			// Set maxBlockFileSize to testBlockSize so that writeCursor.curFileNum increments
 			pdb.store.maxBlockFileSize = testBlockSize
 
-			err := pdb.Update(func(tx database.Tx) error {
-				return tx.StoreBlock(testBlock)
+			err := pdb.Update(func(dbTx database.Tx) error {
+				return dbTx.StoreBlock(testBlock)
 			})
 			if err != nil {
 				t.Fatalf("TestHandleRollbackErrors: %s: Error adding test block to dabase: %s", test.name, err)

@@ -177,8 +177,8 @@ func TestSkipPendingUpdatesCache(t *testing.T) {
 	secondKey := []byte("4 - second")
 
 	// create initial metadata for test
-	err := pdb.Update(func(tx database.Tx) error {
-		metadata := tx.Metadata()
+	err := pdb.Update(func(dbTx database.Tx) error {
+		metadata := dbTx.Metadata()
 		if err := metadata.Put(firstKey, value); err != nil {
 			return err
 		}
@@ -204,7 +204,7 @@ func TestSkipPendingUpdatesCache(t *testing.T) {
 	}
 
 	// test skips
-	err = pdb.Update(func(tx database.Tx) error {
+	err = pdb.Update(func(dbTx database.Tx) error {
 		snapshot, err := pdb.cache.Snapshot()
 		if err != nil {
 			t.Fatalf("TestSkipPendingUpdatesCache: Error getting snapshot: %s", err)
@@ -255,8 +255,8 @@ func TestFlushCommitTreapsErrors(t *testing.T) {
 	value := []byte("value")
 
 	// Before setting flush interval to zero - put some data so that there's something to flush
-	err := pdb.Update(func(tx database.Tx) error {
-		metadata := tx.Metadata()
+	err := pdb.Update(func(dbTx database.Tx) error {
+		metadata := dbTx.Metadata()
 		metadata.Put(key, value)
 
 		return nil
@@ -274,8 +274,8 @@ func TestFlushCommitTreapsErrors(t *testing.T) {
 			func(*leveldb.Transaction, []byte, []byte, *opt.WriteOptions) error { return errors.New("error") })
 		defer patch.Unpatch()
 
-		err := pdb.Update(func(tx database.Tx) error {
-			metadata := tx.Metadata()
+		err := pdb.Update(func(dbTx database.Tx) error {
+			metadata := dbTx.Metadata()
 			metadata.Put(key, value)
 
 			return nil
@@ -289,8 +289,8 @@ func TestFlushCommitTreapsErrors(t *testing.T) {
 	// Test for correctness when encountered error on Delete
 
 	// First put some data we can later "fail" to delete
-	err = pdb.Update(func(tx database.Tx) error {
-		metadata := tx.Metadata()
+	err = pdb.Update(func(dbTx database.Tx) error {
+		metadata := dbTx.Metadata()
 		metadata.Put(key, value)
 
 		return nil
@@ -305,8 +305,8 @@ func TestFlushCommitTreapsErrors(t *testing.T) {
 			func(*leveldb.Transaction, []byte, *opt.WriteOptions) error { return errors.New("error") })
 		defer patch.Unpatch()
 
-		err := pdb.Update(func(tx database.Tx) error {
-			metadata := tx.Metadata()
+		err := pdb.Update(func(dbTx database.Tx) error {
+			metadata := dbTx.Metadata()
 			metadata.Delete(key)
 
 			return nil

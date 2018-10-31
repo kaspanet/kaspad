@@ -119,8 +119,8 @@ func (bi *blockImporter) processBlock(serializedBlock []byte) (bool, error) {
 
 	// Skip blocks that already exist.
 	var exists bool
-	err = bi.db.View(func(tx database.Tx) error {
-		exists, err = tx.HasBlock(block.Hash())
+	err = bi.db.View(func(dbTx database.Tx) error {
+		exists, err = dbTx.HasBlock(block.Hash())
 		return err
 	})
 	if err != nil {
@@ -134,8 +134,8 @@ func (bi *blockImporter) processBlock(serializedBlock []byte) (bool, error) {
 	prevHashes := block.MsgBlock().Header.PrevBlocks
 	for _, prevHash := range prevHashes {
 		var exists bool
-		err := bi.db.View(func(tx database.Tx) error {
-			exists, err = tx.HasBlock(&prevHash)
+		err := bi.db.View(func(dbTx database.Tx) error {
+			exists, err = dbTx.HasBlock(&prevHash)
 			return err
 		})
 		if err != nil {
@@ -149,8 +149,8 @@ func (bi *blockImporter) processBlock(serializedBlock []byte) (bool, error) {
 	}
 
 	// Put the blocks into the database with no checking of chain rules.
-	err = bi.db.Update(func(tx database.Tx) error {
-		return tx.StoreBlock(block)
+	err = bi.db.Update(func(dbTx database.Tx) error {
+		return dbTx.StoreBlock(block)
 	})
 	if err != nil {
 		return false, err

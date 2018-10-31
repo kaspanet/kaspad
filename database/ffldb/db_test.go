@@ -22,8 +22,8 @@ func TestCursorDeleteErrors(t *testing.T) {
 	key := []byte("key")
 	value := []byte("value")
 
-	err := pdb.Update(func(tx database.Tx) error {
-		metadata := tx.Metadata()
+	err := pdb.Update(func(dbTx database.Tx) error {
+		metadata := dbTx.Metadata()
 		_, err := metadata.CreateBucket(nestedBucket)
 		if err != nil {
 			return err
@@ -36,8 +36,8 @@ func TestCursorDeleteErrors(t *testing.T) {
 	}
 
 	// Check for error when attempted to delete a bucket
-	err = pdb.Update(func(tx database.Tx) error {
-		cursor := tx.Metadata().Cursor()
+	err = pdb.Update(func(dbTx database.Tx) error {
+		cursor := dbTx.Metadata().Cursor()
 		found := false
 		for ok := cursor.First(); ok; ok = cursor.Next() {
 			if bytes.Equal(cursor.Key(), nestedBucket) {
@@ -63,8 +63,8 @@ func TestCursorDeleteErrors(t *testing.T) {
 	}
 
 	// Check for error when transaction is not writable
-	err = pdb.View(func(tx database.Tx) error {
-		cursor := tx.Metadata().Cursor()
+	err = pdb.View(func(dbTx database.Tx) error {
+		cursor := dbTx.Metadata().Cursor()
 		if !cursor.First() {
 			t.Fatal("TestCursorDeleteErrors: Nothing in cursor when testing for delete in " +
 				"non-writable transaction")
@@ -84,8 +84,8 @@ func TestCursorDeleteErrors(t *testing.T) {
 	}
 
 	// Check for error when cursor was exhausted
-	err = pdb.Update(func(tx database.Tx) error {
-		cursor := tx.Metadata().Cursor()
+	err = pdb.Update(func(dbTx database.Tx) error {
+		cursor := dbTx.Metadata().Cursor()
 		for ok := cursor.First(); ok; ok = cursor.Next() {
 		}
 
@@ -132,8 +132,8 @@ func TestSkipPendingUpdates(t *testing.T) {
 	secondKey := []byte("4 - second")
 
 	// create initial metadata for test
-	err := pdb.Update(func(tx database.Tx) error {
-		metadata := tx.Metadata()
+	err := pdb.Update(func(dbTx database.Tx) error {
+		metadata := dbTx.Metadata()
 		if err := metadata.Put(firstKey, value); err != nil {
 			return err
 		}
@@ -154,8 +154,8 @@ func TestSkipPendingUpdates(t *testing.T) {
 	}
 
 	// test skips
-	err = pdb.Update(func(tx database.Tx) error {
-		metadata := tx.Metadata()
+	err = pdb.Update(func(dbTx database.Tx) error {
+		metadata := dbTx.Metadata()
 		if err := metadata.Delete(toDeleteKey); err != nil {
 			return err
 		}
@@ -219,8 +219,8 @@ func TestCursor(t *testing.T) {
 	secondKey := []byte("4 - second")
 
 	// create initial metadata for test
-	err := pdb.Update(func(tx database.Tx) error {
-		metadata := tx.Metadata()
+	err := pdb.Update(func(dbTx database.Tx) error {
+		metadata := dbTx.Metadata()
 		if err := metadata.Put(firstKey, value); err != nil {
 			return err
 		}
@@ -241,8 +241,8 @@ func TestCursor(t *testing.T) {
 	}
 
 	// run the actual tests
-	err = pdb.Update(func(tx database.Tx) error {
-		metadata := tx.Metadata()
+	err = pdb.Update(func(dbTx database.Tx) error {
+		metadata := dbTx.Metadata()
 		if err := metadata.Delete(toDeleteKey); err != nil {
 			return err
 		}
@@ -491,8 +491,8 @@ func TestForEachBucket(t *testing.T) {
 	testValue := []byte("value")
 	bucketKeys := [][]byte{[]byte{1}, []byte{2}, []byte{3}}
 
-	err := pdb.Update(func(tx database.Tx) error {
-		metadata := tx.Metadata()
+	err := pdb.Update(func(dbTx database.Tx) error {
+		metadata := dbTx.Metadata()
 		for _, bucketKey := range bucketKeys {
 			bucket, err := metadata.CreateBucket(bucketKey)
 			if err != nil {
@@ -511,9 +511,9 @@ func TestForEachBucket(t *testing.T) {
 	}
 
 	// actual test
-	err = pdb.View(func(tx database.Tx) error {
+	err = pdb.View(func(dbTx database.Tx) error {
 		i := 0
-		metadata := tx.Metadata()
+		metadata := dbTx.Metadata()
 
 		err := metadata.ForEachBucket(func(bucketKey []byte) error {
 			if i >= len(bucketKeys) { // in case there are any other buckets in metadata
@@ -618,8 +618,8 @@ func TestDeleteDoubleNestedBucket(t *testing.T) {
 	var rawKey, rawSecondKey []byte
 
 	// Test setup
-	err := pdb.Update(func(tx database.Tx) error {
-		metadata := tx.Metadata()
+	err := pdb.Update(func(dbTx database.Tx) error {
+		metadata := dbTx.Metadata()
 		firstBucket, err := metadata.CreateBucket(firstKey)
 		if err != nil {
 			return fmt.Errorf("Error creating first bucket: %s", err)
@@ -638,7 +638,7 @@ func TestDeleteDoubleNestedBucket(t *testing.T) {
 			return fmt.Errorf("Couldn't find key to extract rawKey")
 		}
 		rawKey = c.(*cursor).rawKey()
-		if tx.(*transaction).fetchKey(rawKey) == nil {
+		if dbTx.(*transaction).fetchKey(rawKey) == nil {
 			return fmt.Errorf("rawKey not found for some reason")
 		}
 
@@ -650,7 +650,7 @@ func TestDeleteDoubleNestedBucket(t *testing.T) {
 			return fmt.Errorf("Couldn't find secondKey to extract rawSecondKey")
 		}
 		rawSecondKey = c.(*cursor).rawKey()
-		if tx.(*transaction).fetchKey(rawSecondKey) == nil {
+		if dbTx.(*transaction).fetchKey(rawSecondKey) == nil {
 			return fmt.Errorf("rawSecondKey not found for some reason")
 		}
 
@@ -661,18 +661,18 @@ func TestDeleteDoubleNestedBucket(t *testing.T) {
 	}
 
 	// Actual test
-	err = pdb.Update(func(tx database.Tx) error {
-		metadata := tx.Metadata()
+	err = pdb.Update(func(dbTx database.Tx) error {
+		metadata := dbTx.Metadata()
 		err := metadata.DeleteBucket(firstKey)
 		if err != nil {
 			return err
 		}
 
-		if tx.(*transaction).fetchKey(rawSecondKey) != nil {
+		if dbTx.(*transaction).fetchKey(rawSecondKey) != nil {
 			t.Error("TestDeleteDoubleNestedBucket: secondBucket was not deleted")
 		}
 
-		if tx.(*transaction).fetchKey(rawKey) != nil {
+		if dbTx.(*transaction).fetchKey(rawKey) != nil {
 			t.Error("TestDeleteDoubleNestedBucket: value inside secondBucket was not deleted")
 		}
 
@@ -705,7 +705,7 @@ func TestWritePendingAndCommitErrors(t *testing.T) {
 	pdb := newTestDb("TestWritePendingAndCommitErrors", t)
 	defer pdb.Close()
 
-	err := pdb.Update(func(tx database.Tx) error { return nil })
+	err := pdb.Update(func(dbTx database.Tx) error { return nil })
 	if err == nil {
 		t.Errorf("No error returned when metaBucket.Put() should have returned an error")
 	}
@@ -714,8 +714,8 @@ func TestWritePendingAndCommitErrors(t *testing.T) {
 	}
 
 	rollbackCalled = false
-	err = pdb.Update(func(tx database.Tx) error {
-		return tx.StoreBlock(util.NewBlock(wire.NewMsgBlock(
+	err = pdb.Update(func(dbTx database.Tx) error {
+		return dbTx.StoreBlock(util.NewBlock(wire.NewMsgBlock(
 			wire.NewBlockHeader(1, []daghash.Hash{}, &daghash.Hash{}, 0, 0))))
 	})
 	if err == nil {
