@@ -461,6 +461,7 @@ func (fus *FullUTXOSet) clone() UTXOSet {
 	return &FullUTXOSet{utxoCollection: fus.utxoCollection.clone()}
 }
 
+// Get returns the UTXOEntry associated with given outPoint, and a boolean indicating if such entry was found
 func (fus *FullUTXOSet) Get(outPoint wire.OutPoint) (*UTXOEntry, bool) {
 	utxoEntry, ok := fus.utxoCollection[outPoint]
 	return utxoEntry, ok
