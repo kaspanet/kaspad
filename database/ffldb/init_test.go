@@ -2,11 +2,9 @@ package ffldb
 
 import (
 	"errors"
-	"os"
 	"testing"
 
 	"bou.ke/monkey"
-	"github.com/btcsuite/btclog"
 	"github.com/daglabs/btcd/database"
 )
 
@@ -25,19 +23,4 @@ func TestInitErrors(t *testing.T) {
 	}()
 
 	registerDriver()
-}
-
-func TestUseLogger(t *testing.T) {
-	currentLog := log
-	defer func() { log = currentLog }()
-
-	backend := btclog.NewBackend(os.Stdout)
-	logger := backend.Logger("TEST")
-
-	useLogger(logger)
-
-	if log != logger {
-		t.Errorf("TestUseLogger: `log` was not changed to correct logger")
-	}
-
 }
