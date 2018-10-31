@@ -65,13 +65,13 @@ const (
 )
 
 var (
-	DefaultHomeDir     = util.AppDataDir("btcd", false)
-	defaultConfigFile  = filepath.Join(DefaultHomeDir, defaultConfigFilename)
-	defaultDataDir     = filepath.Join(DefaultHomeDir, defaultDataDirname)
+	defaultHomeDir     = util.AppDataDir("btcd", false)
+	defaultConfigFile  = filepath.Join(defaultHomeDir, defaultConfigFilename)
+	defaultDataDir     = filepath.Join(defaultHomeDir, defaultDataDirname)
 	knownDbTypes       = database.SupportedDrivers()
-	defaultRPCKeyFile  = filepath.Join(DefaultHomeDir, "rpc.key")
-	defaultRPCCertFile = filepath.Join(DefaultHomeDir, "rpc.cert")
-	defaultLogDir      = filepath.Join(DefaultHomeDir, defaultLogDirname)
+	defaultRPCKeyFile  = filepath.Join(defaultHomeDir, "rpc.key")
+	defaultRPCCertFile = filepath.Join(defaultHomeDir, "rpc.cert")
+	defaultLogDir      = filepath.Join(defaultHomeDir, defaultLogDirname)
 )
 
 // activeNetParams is a pointer to the parameters specific to the
@@ -191,7 +191,7 @@ type serviceOptions struct {
 func cleanAndExpandPath(path string) string {
 	// Expand initial ~ to OS specific home directory.
 	if strings.HasPrefix(path, "~") {
-		homeDir := filepath.Dir(DefaultHomeDir)
+		homeDir := filepath.Dir(defaultHomeDir)
 		path = strings.Replace(path, "~", homeDir, 1)
 	}
 
@@ -405,7 +405,7 @@ func loadConfig() (*Config, []string, error) {
 
 	// Create the home directory if it doesn't already exist.
 	funcName := "loadConfig"
-	err = os.MkdirAll(DefaultHomeDir, 0700)
+	err = os.MkdirAll(defaultHomeDir, 0700)
 	if err != nil {
 		// Show a nicer error message if it's because a symlink is
 		// linked to a directory that does not exist (probably because
