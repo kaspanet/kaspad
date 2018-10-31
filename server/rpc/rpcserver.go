@@ -1206,7 +1206,7 @@ func handleGetBlockDAGInfo(s *Server, cmd interface{}, closeChan <-chan struct{}
 		Headers:       dag.Height(), //TODO: (Ori) This is wrong. Done only for compilation
 		TipHashes:     daghash.Strings(dag.TipHashes()),
 		Difficulty:    getDifficultyRatio(dag.CurrentBits(), params),
-		MedianTime:    dag.SelectedTip().CalcPastMedianTime().Unix(),
+		MedianTime:    dag.CalcPastMedianTime().Unix(),
 		Pruned:        false,
 		Bip9SoftForks: make(map[string]*btcjson.Bip9SoftForkDescription),
 	}
@@ -1559,7 +1559,7 @@ func (state *gbtWorkState) updateBlockTemplate(s *Server, useCoinbaseValue bool)
 		// Get the minimum allowed timestamp for the block based on the
 		// median timestamp of the last several blocks per the chain
 		// consensus rules.
-		minTimestamp := mining.MinimumMedianTime(s.cfg.DAG.SelectedTip().CalcPastMedianTime())
+		minTimestamp := mining.MinimumMedianTime(s.cfg.DAG.CalcPastMedianTime())
 
 		// Update work state to ensure another block template isn't
 		// generated until needed.
@@ -2202,7 +2202,7 @@ func handleGetCurrentNet(s *Server, cmd interface{}, closeChan <-chan struct{}) 
 
 // handleGetDifficulty implements the getDifficulty command.
 func handleGetDifficulty(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	return getDifficultyRatio(s.cfg.DAG.SelectedTip().Header().Bits, s.cfg.DAGParams), nil
+	return getDifficultyRatio(s.cfg.DAG.SelectedTipHeader().Bits, s.cfg.DAGParams), nil
 }
 
 // handleGetGenerate implements the getGenerate command.
@@ -2517,7 +2517,7 @@ func handleGetRawTransaction(s *Server, cmd interface{}, closeChan <-chan struct
 			return nil, internalRPCError(err.Error(), context)
 		}
 
-		blkHeader = &header
+		blkHeader = header
 		blkHashStr = blkHash.String()
 		dagHeight = s.cfg.DAG.Height()
 	}
@@ -3147,7 +3147,7 @@ func handleSearchRawTransactions(s *Server, cmd interface{}, closeChan <-chan st
 				return nil, internalRPCError(err.Error(), context)
 			}
 
-			blkHeader = &header
+			blkHeader = header
 			blkHashStr = blkHash.String()
 			blkHeight = height
 		}
@@ -4071,7 +4071,7 @@ type rpcserverSyncManager interface {
 	// block in the provided locators until the provided stop hash or the
 	// current tip is reached, up to a max of wire.MaxBlockHeadersPerMsg
 	// hashes.
-	LocateHeaders(locators []*daghash.Hash, hashStop *daghash.Hash) []wire.BlockHeader
+	LocateHeaders(locators []*daghash.Hash, hashStop *daghash.Hash) []*wire.BlockHeader
 }
 
 // rpcserverConfig is a descriptor containing the RPC server configuration.
@@ -4214,7 +4214,7 @@ func NewRPCServer(
 		gbtWorkState:           newGbtWorkState(cfg.TimeSource),
 		helpCacher:             newHelpCacher(),
 		requestProcessShutdown: make(chan struct{}),
-		quit:                   make(chan int),
+		quit: make(chan int),
 	}
 	if config.MainConfig().RPCUser != "" && config.MainConfig().RPCPass != "" {
 		login := config.MainConfig().RPCUser + ":" + config.MainConfig().RPCPass
