@@ -391,29 +391,38 @@ func argHelp(xT descLookupFunc, rtp reflect.Type, defaults map[int]reflect.Value
 	return formatted.String()
 }
 
+// toLowercaseCamelCase converts a camelCase-ish string into a typical JSON camelCase string.
+// Example conversion: MyJSONVariable -> myJsonVariable
 func toLowercaseCamelCase(str string) string {
 	if len(str) == 0 {
 		return ""
 	}
 
+	// Split the string into words
 	words := make([]string, 0)
 	wordStartIndex := 0
 	wordEndIndex := 0
 	var previousCharacter rune
 	for i, character := range str {
-		if i > 1 && unicode.IsLower(previousCharacter) && unicode.IsUpper(character) {
-			// previousCharacter is definitely the end of a word
-			word := str[wordStartIndex:i]
-			words = append(words, word)
-			wordEndIndex = i - 1
-		}
-		if i > 1 && unicode.IsUpper(previousCharacter) && unicode.IsLower(character) {
-			// previousCharacter is definitely the start of a word
-			wordStartIndex = i - 1
+		if i > 0 {
+			if unicode.IsLower(previousCharacter) && unicode.IsUpper(character) {
+				// previousCharacter is definitely the end of a word
+				wordEndIndex = i - 1
 
-			if wordStartIndex-wordEndIndex > 1 {
-				word := str[wordEndIndex+1 : wordStartIndex]
+				word := str[wordStartIndex:i]
 				words = append(words, word)
+			}
+			if unicode.IsUpper(previousCharacter) && unicode.IsLower(character) {
+				// previousCharacter is definitely the start of a word
+				wordStartIndex = i - 1
+
+				// This handles consequent uppercase words, such as acronyms.
+				// Example: getBlockDAGInfo
+				//                  ^^^
+				if wordStartIndex-wordEndIndex > 1 {
+					word := str[wordEndIndex+1 : wordStartIndex]
+					words = append(words, word)
+				}
 			}
 		}
 		previousCharacter = character
@@ -421,18 +430,16 @@ func toLowercaseCamelCase(str string) string {
 	lastWord := str[wordStartIndex:]
 	words = append(words, lastWord)
 
+	// Build a PascalCase string out of the words
 	var camelCaseBuilder strings.Builder
-	for i, word := range words {
-		if i > 1 && len(words[i-1]) == 1 && len(word) == 1 {
-			camelCaseBuilder.WriteString(strings.ToLower(word))
-		} else {
-			lowercaseWord := strings.ToLower(word)
-			capitalizedWord := strings.ToUpper(string(lowercaseWord[0])) + lowercaseWord[1:]
-			camelCaseBuilder.WriteString(capitalizedWord)
-		}
+	for _, word := range words {
+		lowercaseWord := strings.ToLower(word)
+		capitalizedWord := strings.ToUpper(string(lowercaseWord[0])) + lowercaseWord[1:]
+		camelCaseBuilder.WriteString(capitalizedWord)
 	}
 	camelCaseString := camelCaseBuilder.String()
 
+	// Un-capitalize the first character to covert PascalCase into camelCase
 	return strings.ToLower(string(camelCaseString[0])) + camelCaseString[1:]
 }
 
