@@ -92,7 +92,7 @@ func TestHandleRollbackErrors(t *testing.T) {
 				return dbTx.StoreBlock(testBlock)
 			})
 			if err != nil {
-				t.Fatalf("TestHandleRollbackErrors: %s: Error adding test block to dabase: %s", test.name, err)
+				t.Fatalf("TestHandleRollbackErrors: %s: Error adding test block to database: %s", test.name, err)
 			}
 
 			if test.target != nil && test.replacement != nil {
