@@ -314,6 +314,9 @@ func scriptError(c ErrorCode, desc string) Error {
 // IsErrorCode returns whether or not the provided error is a script error with
 // the provided error code.
 func IsErrorCode(err error, c ErrorCode) bool {
-	serr, ok := err.(Error)
-	return ok && serr.ErrorCode == c
+	if err, ok := err.(Error); ok {
+		return err.ErrorCode == c
+	}
+
+	return false
 }
