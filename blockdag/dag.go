@@ -1399,7 +1399,7 @@ type IndexManager interface {
 	// channel parameter specifies a channel the caller can close to signal
 	// that the process should be interrupted.  It can be nil if that
 	// behavior is not desired.
-	Init(*BlockDAG, <-chan struct{}) error
+	Init(database.DB, *BlockDAG, <-chan struct{}) error
 
 	// ConnectBlock is invoked when a new block has been connected to the
 	// DAG.
@@ -1530,7 +1530,7 @@ func New(config *Config) (*BlockDAG, error) {
 	// Initialize and catch up all of the currently active optional indexes
 	// as needed.
 	if config.IndexManager != nil {
-		err := config.IndexManager.Init(&dag, config.Interrupt)
+		err := config.IndexManager.Init(dag.db, &dag, config.Interrupt)
 		if err != nil {
 			return nil, err
 		}

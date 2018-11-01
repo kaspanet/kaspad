@@ -2,10 +2,7 @@ package indexers
 
 import (
 	"bytes"
-	"fmt"
-	"io/ioutil"
 	"math"
-	"os"
 	"reflect"
 	"testing"
 	"time"
@@ -13,26 +10,9 @@ import (
 	"github.com/daglabs/btcd/blockdag"
 	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/dagconfig/daghash"
-	"github.com/daglabs/btcd/database"
 	"github.com/daglabs/btcd/util"
 	"github.com/daglabs/btcd/wire"
 )
-
-func tempDb() (database.DB, func(), error) {
-	dbPath, err := ioutil.TempDir("", "ffldb")
-	if err != nil {
-		return nil, nil, err
-	}
-	db, err := database.Create("ffldb", dbPath, wire.SimNet)
-	if err != nil {
-		return nil, nil, fmt.Errorf("error creating db: %v", err)
-	}
-	teardown := func() {
-		db.Close()
-		os.RemoveAll(dbPath)
-	}
-	return db, teardown, nil
-}
 
 func TestTxIndexConnectBlock(t *testing.T) {
 	blocks := make(map[daghash.Hash]*util.Block)
@@ -47,15 +27,10 @@ func TestTxIndexConnectBlock(t *testing.T) {
 			t.Fatalf("TestTxIndexConnectBlock: block %v was unexpectedly orphan", blockName)
 		}
 	}
-	db, teardown, err := tempDb()
-	if teardown != nil {
-		defer teardown()
-	}
 
-	txIndex := NewTxIndex(db)
-	indexManager := NewManager(db, []Indexer{txIndex})
+	txIndex := NewTxIndex()
+	indexManager := NewManager([]Indexer{txIndex})
 	config := blockdag.Config{
-		DB:           db,
 		IndexManager: indexManager,
 	}
 

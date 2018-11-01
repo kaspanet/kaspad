@@ -591,8 +591,8 @@ func (idx *AddrIndex) NeedsInputs() bool {
 // initialize for this index.
 //
 // This is part of the Indexer interface.
-func (idx *AddrIndex) Init(_ database.DB) error {
-	// Nothing to do.
+func (idx *AddrIndex) Init(db database.DB) error {
+	idx.db = db
 	return nil
 }
 
@@ -914,9 +914,8 @@ func (idx *AddrIndex) UnconfirmedTxnsForAddress(addr util.Address) []*util.Tx {
 // It implements the Indexer interface which plugs into the IndexManager that in
 // turn is used by the blockchain package.  This allows the index to be
 // seamlessly maintained along with the chain.
-func NewAddrIndex(db database.DB, dagParams *dagconfig.Params) *AddrIndex {
+func NewAddrIndex(dagParams *dagconfig.Params) *AddrIndex {
 	return &AddrIndex{
-		db:         db,
 		dagParams:  dagParams,
 		txnsByAddr: make(map[[addrKeySize]byte]map[daghash.Hash]*util.Tx),
 		addrsByTx:  make(map[daghash.Hash]map[[addrKeySize]byte]struct{}),

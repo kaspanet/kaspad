@@ -2353,24 +2353,24 @@ func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params
 			indxLog.Info("Transaction index is enabled")
 		}
 
-		s.TxIndex = indexers.NewTxIndex(db)
+		s.TxIndex = indexers.NewTxIndex()
 		indexes = append(indexes, s.TxIndex)
 	}
 	if config.MainConfig().AddrIndex {
 		indxLog.Info("Address index is enabled")
-		s.AddrIndex = indexers.NewAddrIndex(db, dagParams)
+		s.AddrIndex = indexers.NewAddrIndex(dagParams)
 		indexes = append(indexes, s.AddrIndex)
 	}
 	if config.MainConfig().EnableCFilters {
 		indxLog.Info("cf index is enabled")
-		s.CfIndex = indexers.NewCfIndex(db, dagParams)
+		s.CfIndex = indexers.NewCfIndex(dagParams)
 		indexes = append(indexes, s.CfIndex)
 	}
 
 	// Create an index manager if any of the optional indexes are enabled.
 	var indexManager blockdag.IndexManager
 	if len(indexes) > 0 {
-		indexManager = indexers.NewManager(db, indexes)
+		indexManager = indexers.NewManager(indexes)
 	}
 
 	// Merge given checkpoints with the default ones unless they are disabled.

@@ -326,7 +326,10 @@ var _ Indexer = (*TxIndex)(nil)
 // disconnecting blocks.
 //
 // This is part of the Indexer interface.
-func (idx *TxIndex) Init() error {
+func (idx *TxIndex) Init(db database.DB) error {
+
+	idx.db = db
+
 	// Find the latest known block id field for the internal block id
 	// index and initialize it.  This is done because it's a lot more
 	// efficient to do a single search at initialize time than it is to
@@ -538,8 +541,8 @@ func (idx *TxIndex) TxAcceptedInBlock(dag *blockdag.BlockDAG, txHash *daghash.Ha
 // It implements the Indexer interface which plugs into the IndexManager that in
 // turn is used by the blockchain package.  This allows the index to be
 // seamlessly maintained along with the chain.
-func NewTxIndex(db database.DB) *TxIndex {
-	return &TxIndex{db: db}
+func NewTxIndex() *TxIndex {
+	return &TxIndex{}
 }
 
 // dropBlockIDIndex drops the internal block id index.
