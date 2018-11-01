@@ -521,7 +521,7 @@ func (idx *TxIndex) TxAcceptedInBlock(dag *blockdag.BlockDAG, txHash *daghash.Ha
 		found := false
 		for ; cursor.Key() != nil && !found; cursor.Next() {
 			copy(currentHash[:], cursor.Key())
-			found = dag.IsInSelectedPath(&currentHash)
+			found = dag.IsInSelectedPathChain(&currentHash)
 		}
 		if found {
 			acceptingBlock = &currentHash

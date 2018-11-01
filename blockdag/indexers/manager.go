@@ -159,7 +159,7 @@ func (m *Manager) Init(blockDAG *blockdag.BlockDAG, interrupt <-chan struct{}) e
 
 	// Initialize each of the enabled indexes.
 	for _, indexer := range m.enabledIndexes {
-		if err := indexer.Init(); err != nil {
+		if err := indexer.Init(blockDAG.DB); err != nil {
 			return err
 		}
 	}
