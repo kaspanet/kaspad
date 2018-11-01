@@ -13,6 +13,12 @@ func TestSerializeWriteRow(t *testing.T) {
 		curFileOffset    uint32
 		expectedWriteRow []byte
 	}{
+		// WriteRow format:
+		// 		First 4 bytes: curBlockFileNum
+		//		Next  4 bytes: curFileOffset
+		//		Next  4 bytes: Castagnoli CRC-32 checksum
+		// One can easily calculate checksums using the following code:
+		// https://play.golang.org/p/zoMKT-ORyF9
 		{0, 0, []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x8A, 0xB2, 0x28, 0x8C}},
 		{10, 11, []byte{0x0A, 0x00, 0x00, 0x00, 0x0B, 0x00, 0x00, 0x00, 0xC1, 0xA6, 0x0D, 0xC8}},
 	}
@@ -34,6 +40,12 @@ func TestDeserializeWriteRow(t *testing.T) {
 		expectedCurFileOffset   uint32
 		expectedError           bool
 	}{
+		// WriteRow format:
+		// 		First 4 bytes: curBlockFileNum
+		//		Next  4 bytes: curFileOffset
+		//		Next  4 bytes: Castagnoli CRC-32 checksum
+		// One can easily calculate checksums using the following code:
+		// https://play.golang.org/p/zoMKT-ORyF9
 		{[]byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x8A, 0xB2, 0x28, 0x8C}, 0, 0, false},
 		{[]byte{0x0A, 0x00, 0x00, 0x00, 0x0B, 0x00, 0x00, 0x00, 0xC1, 0xA6, 0x0D, 0xC8}, 10, 11, false},
 		{[]byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x8A, 0xB2, 0x28, 0x8D}, 0, 0, true},
