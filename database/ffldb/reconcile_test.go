@@ -72,6 +72,9 @@ func TestDeserializeWriteRow(t *testing.T) {
 	}
 }
 
+// setWriteRow is a low-level helper method to update the write row in the
+// metadata bucket to enable certain test-cases in TestReconcileErrors
+// if writeRow = nil deletes the write row altogether
 func setWriteRow(pdb *db, writeRow []byte, t *testing.T) {
 	tx, err := pdb.begin(true)
 	if err != nil {
