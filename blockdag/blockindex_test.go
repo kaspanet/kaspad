@@ -1,6 +1,7 @@
 package blockdag
 
 import (
+	"errors"
 	"strings"
 	"testing"
 	"time"
@@ -8,7 +9,6 @@ import (
 	"bou.ke/monkey"
 	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/database"
-	"github.com/pkg/errors"
 )
 
 func TestAncestorErrors(t *testing.T) {

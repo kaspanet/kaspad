@@ -94,6 +94,7 @@ func TestVirtualBlock(t *testing.T) {
 
 		// Add all blockNodes in tipsToAdd in order
 		for _, tipToAdd := range test.tipsToAdd {
+			addNodeAsChildToParents(tipToAdd)
 			virtual.AddTip(tipToAdd)
 		}
 

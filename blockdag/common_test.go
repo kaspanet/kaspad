@@ -193,3 +193,9 @@ func newTestNode(parents blockSet, blockVersion int32, bits uint32, timestamp ti
 	}
 	return newBlockNode(header, parents, phantomK)
 }
+
+func addNodeAsChildToParents(node *blockNode) {
+	for _, parent := range node.parents {
+		parent.children.add(node)
+	}
+}

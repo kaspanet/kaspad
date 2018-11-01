@@ -63,10 +63,6 @@
   branch = "master"
   name = "bou.ke/monkey"
 
-[[constraint]]
-  branch = "master"
-  name = "github.com/pkg/errors"
-
 [prune]
   go-tests = true
   unused-packages = true
