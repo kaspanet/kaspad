@@ -306,7 +306,7 @@ func TestCreateBucketErrors(t *testing.T) {
 		{"empty key", []byte{}, nil, nil, true, false, database.ErrBucketNameRequired},
 		{"transaction is closed", testKey, nil, nil, true, true, database.ErrTxClosed},
 		{"transaction is not writable", testKey, nil, nil, false, false, database.ErrTxNotWritable},
-		{"key already exists", []byte("ffldb-blockidx"), nil, nil, true, false, database.ErrBucketExists},
+		{"key already exists", blockIdxBucketName, nil, nil, true, false, database.ErrBucketExists},
 		{"nextBucketID error", testKey, (*transaction).nextBucketID,
 			func(*transaction) ([4]byte, error) {
 				return [4]byte{}, makeDbErr(database.ErrTxClosed, "error in newBucketID", nil)
