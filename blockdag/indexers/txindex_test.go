@@ -37,12 +37,12 @@ func TestTxIndexConnectBlock(t *testing.T) {
 	params := dagconfig.SimNetParams
 	params.CoinbaseMaturity = 1
 
-	dag, teardownDAGSetup, err := blockdag.DAGSetup("TestTxIndexConnectBlock", &params, config)
+	dag, teardown, err := blockdag.DAGSetup("TestTxIndexConnectBlock", &params, config)
 	if err != nil {
 		t.Fatalf("TestTxIndexConnectBlock: Failed to setup DAG instance: %v", err)
 	}
-	if teardownDAGSetup != nil {
-		defer teardownDAGSetup()
+	if teardown != nil {
+		defer teardown()
 	}
 
 	processBlock(t, dag, &block1, "1")

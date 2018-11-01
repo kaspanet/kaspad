@@ -315,7 +315,6 @@ func dbAddTxIndexEntries(dbTx database.Tx, block *util.Block, blockID uint32, ac
 type TxIndex struct {
 	db         database.DB
 	curBlockID uint32
-	dag        blockdag.BlockDAG
 }
 
 // Ensure the TxIndex type implements the Indexer interface.
