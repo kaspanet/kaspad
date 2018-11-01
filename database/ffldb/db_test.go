@@ -32,7 +32,7 @@ func TestCursorDeleteErrors(t *testing.T) {
 		return nil
 	})
 	if err != nil {
-		t.Fatalf("TestCursorDeleteErrors: Error setting up test-dabase: %s", err)
+		t.Fatalf("TestCursorDeleteErrors: Error setting up test-database: %s", err)
 	}
 
 	// Check for error when attempted to delete a bucket
@@ -489,7 +489,7 @@ func TestForEachBucket(t *testing.T) {
 	// set-up test
 	testKey := []byte("key")
 	testValue := []byte("value")
-	bucketKeys := [][]byte{[]byte{1}, []byte{2}, []byte{3}}
+	bucketKeys := [][]byte{{1}, {2}, {3}}
 
 	err := pdb.Update(func(dbTx database.Tx) error {
 		metadata := dbTx.Metadata()
@@ -507,7 +507,7 @@ func TestForEachBucket(t *testing.T) {
 		return nil
 	})
 	if err != nil {
-		t.Fatalf("TestForEachBucket: Error setting up test-dabase: %s", err)
+		t.Fatalf("TestForEachBucket: Error setting up test-database: %s", err)
 	}
 
 	// actual test
@@ -639,7 +639,7 @@ func TestDeleteDoubleNestedBucket(t *testing.T) {
 		}
 		rawKey = c.(*cursor).rawKey()
 		if dbTx.(*transaction).fetchKey(rawKey) == nil {
-			return fmt.Errorf("rawKey not found for some reason")
+			return fmt.Errorf("rawKey not found")
 		}
 
 		// extract rawSecondKey from cursor and make sure it's in raw database
