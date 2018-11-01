@@ -568,7 +568,7 @@ func (dag *BlockDAG) applyUTXOChanges(node *blockNode, block *util.Block, fastAd
 	// fail if the block is not valid, thus bringing all the affected nodes (and the virtual)
 	// into an undefined state.
 	provisionalSet := newProvisionalNodeSet()
-	newNodeProvisional := provisionalSet.newProvisionalNode(node, true, block.Transactions())
+	newNodeProvisional := provisionalSet.newProvisionalNode(node, true, true, block.Transactions())
 
 	// Clone the virtual block so that we don't modify the existing one.
 	virtualClone := dag.virtual.clone()
@@ -591,7 +591,7 @@ func (dag *BlockDAG) applyUTXOChanges(node *blockNode, block *util.Block, fastAd
 	virtualClone.AddTip(node)
 
 	// Build a UTXO set for the new virtual block and update the DAG tips' diffs.
-	virtualNodeProvisional := provisionalSet.newProvisionalNode(&virtualClone.blockNode, true, nil)
+	virtualNodeProvisional := provisionalSet.newProvisionalNode(&virtualClone.blockNode, true, true, nil)
 	newVirtualUTXO, _, err := virtualNodeProvisional.pastUTXO(virtualClone, dag.db)
 	if err != nil {
 		newErrString := fmt.Sprintf("could not restore past UTXO for virtual %v: %s", virtualClone, err)
@@ -669,7 +669,7 @@ type provisionalNode struct {
 // newProvisionalNode takes a node and builds a provisionalNode from it.
 // To avoid building the entire DAG in provisionalNode format we pass withRelatives = true
 // only when the node's relatives (parents and children) are required.
-func (pns provisionalNodeSet) newProvisionalNode(node *blockNode, withRelatives bool,
+func (pns provisionalNodeSet) newProvisionalNode(node *blockNode, withParents bool, withChildren bool,
 	transactions []*util.Tx) *provisionalNode {
 	if existingProvisional, ok := pns[node.hash]; ok {
 		return existingProvisional
@@ -683,23 +683,26 @@ func (pns provisionalNodeSet) newProvisionalNode(node *blockNode, withRelatives 
 		pns[node.hash] = provisional
 	}
 
-	if withRelatives {
+	if withParents {
 		provisional.parents = []*provisionalNode{}
 		for _, parent := range node.parents {
-			provisional.parents = append(provisional.parents, pns.newProvisionalNode(parent, false, nil))
+			provisional.parents = append(provisional.parents, pns.newProvisionalNode(parent, false, true, nil))
 		}
 		if node.selectedParent != nil {
 			provisional.selectedParent = pns[node.selectedParent.hash]
 		}
+	}
 
+	if withChildren {
 		provisional.children = []*provisionalNode{}
 		for _, child := range node.children {
-			provisional.children = append(provisional.children, pns.newProvisionalNode(child, false, nil))
+			provisional.children = append(provisional.children, pns.newProvisionalNode(child, false, false, nil))
 		}
 		if node.diffChild != nil {
 			provisional.diffChild = pns[node.diffChild.hash]
 		}
 	}
+
 	if node.diff != nil {
 		provisional.diff = node.diff.clone()
 	}
