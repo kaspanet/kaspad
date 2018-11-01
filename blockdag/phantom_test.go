@@ -895,9 +895,3 @@ func checkReds(expectedReds []string, reds map[string]bool) bool {
 	}
 	return true
 }
-
-func addNodeAsChildToParents(node *blockNode) {
-	for _, parent := range node.parents {
-		parent.children.add(node)
-	}
-}
