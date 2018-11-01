@@ -667,8 +667,8 @@ type provisionalNode struct {
 }
 
 // newProvisionalNode takes a node and builds a provisionalNode from it.
-// To avoid building the entire DAG in provisionalNode format we pass withRelatives = true
-// only when the node's relatives (parents and children) are required.
+// To avoid building the entire DAG in provisionalNode format we pass withParents = true or withChildren = true,
+// only when the node's relatives (parents or children) are required.
 func (pns provisionalNodeSet) newProvisionalNode(node *blockNode, withParents bool, withChildren bool,
 	transactions []*util.Tx) *provisionalNode {
 	if existingProvisional, ok := pns[node.hash]; ok {
