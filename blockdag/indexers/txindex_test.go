@@ -30,14 +30,16 @@ func TestTxIndexConnectBlock(t *testing.T) {
 
 	txIndex := NewTxIndex()
 	indexManager := NewManager([]Indexer{txIndex})
-	config := blockdag.Config{
-		IndexManager: indexManager,
-	}
 
 	params := dagconfig.SimNetParams
 	params.CoinbaseMaturity = 1
 
-	dag, teardown, err := blockdag.DAGSetup("TestTxIndexConnectBlock", &params, config)
+	config := blockdag.Config{
+		IndexManager: indexManager,
+		DAGParams:    &params,
+	}
+
+	dag, teardown, err := blockdag.DAGSetup("TestTxIndexConnectBlock", config)
 	if err != nil {
 		t.Fatalf("TestTxIndexConnectBlock: Failed to setup DAG instance: %v", err)
 	}
@@ -50,12 +52,12 @@ func TestTxIndexConnectBlock(t *testing.T) {
 	processBlock(t, dag, &block3A, "3A")
 
 	block3TxHash := block3Tx.TxHash()
-	block3TxAcceptedBlock, err := txIndex.TxAcceptedInBlock(dag, &block3TxHash)
+	block3TxAcceptedBlock, err := txIndex.TxAcceptingBlock(dag, &block3TxHash)
 	if err != nil {
 		t.Errorf("TestTxIndexConnectBlock: TxAcceptedInBlock: %v", err)
 	}
 	block3AHash := block3A.Header.BlockHash()
-	if block3TxAcceptedBlock.IsEqual(&block3AHash) {
+	if !block3TxAcceptedBlock.IsEqual(&block3AHash) {
 		t.Errorf("TestTxIndexConnectBlock: block3Tx should've "+
 			"been accepted in block %v but instead got accepted in block %v", block3AHash, block3TxAcceptedBlock)
 	}
@@ -64,7 +66,7 @@ func TestTxIndexConnectBlock(t *testing.T) {
 	processBlock(t, dag, &block4, "4")
 	processBlock(t, dag, &block5, "5")
 
-	block3TxNewAcceptedBlock, err := txIndex.TxAcceptedInBlock(dag, &block3TxHash)
+	block3TxNewAcceptedBlock, err := txIndex.TxAcceptingBlock(dag, &block3TxHash)
 	if err != nil {
 		t.Errorf("TestTxIndexConnectBlock: TxAcceptedInBlock: %v", err)
 	}

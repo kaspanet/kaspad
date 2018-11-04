@@ -44,7 +44,9 @@ func TestDAGSetupErrors(t *testing.T) {
 func testDAGSetupErrorThroughPatching(t *testing.T, expectedErrorMessage string, targetFunction interface{}, replacementFunction interface{}) {
 	guard := monkey.Patch(targetFunction, replacementFunction)
 	defer guard.Unpatch()
-	_, tearDown, err := DAGSetup("TestDAGSetup", &dagconfig.MainNetParams, Config{})
+	_, tearDown, err := DAGSetup("TestDAGSetup", Config{
+		DAGParams: &dagconfig.MainNetParams,
+	})
 	if tearDown != nil {
 		defer tearDown()
 	}

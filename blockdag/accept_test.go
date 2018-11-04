@@ -13,7 +13,9 @@ import (
 
 func TestMaybeAcceptBlockErrors(t *testing.T) {
 	// Create a new database and DAG instance to run tests against.
-	dag, teardownFunc, err := DAGSetup("TestMaybeAcceptBlockErrors", &dagconfig.SimNetParams, Config{})
+	dag, teardownFunc, err := DAGSetup("TestMaybeAcceptBlockErrors", Config{
+		DAGParams: &dagconfig.SimNetParams,
+	})
 	if err != nil {
 		t.Fatalf("TestMaybeAcceptBlockErrors: Failed to setup DAG instance: %v", err)
 	}

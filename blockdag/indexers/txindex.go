@@ -326,7 +326,6 @@ var _ Indexer = (*TxIndex)(nil)
 //
 // This is part of the Indexer interface.
 func (idx *TxIndex) Init(db database.DB) error {
-
 	idx.db = db
 
 	// Find the latest known block id field for the internal block id
@@ -461,36 +460,36 @@ func (idx *TxIndex) TxFirstBlockRegion(hash *daghash.Hash) (*database.BlockRegio
 }
 
 // TxBlocks returns the hashes of the blocks where the transaction exists
-func (idx *TxIndex) TxBlocks(hash *daghash.Hash) ([]daghash.Hash, error) {
+func (idx *TxIndex) TxBlocks(txHash *daghash.Hash) ([]daghash.Hash, error) {
 	blockHashes := make([]daghash.Hash, 0)
 	err := idx.db.View(func(dbTx database.Tx) error {
-		hashes, err := dbFetchTxBlocks(dbTx, hash)
+		var err error
+		blockHashes, err = dbFetchTxBlocks(dbTx, txHash)
 		if err != nil {
 			return err
 		}
-		blockHashes = hashes
 		return nil
 	})
 	return blockHashes, err
 }
 
-func dbFetchTxBlocks(dbTx database.Tx, hash *daghash.Hash) ([]daghash.Hash, error) {
+func dbFetchTxBlocks(dbTx database.Tx, txHash *daghash.Hash) ([]daghash.Hash, error) {
 	blockHashes := make([]daghash.Hash, 0)
-	bucket := dbTx.Metadata().Bucket(includingBlocksIndexKey).Bucket(hash[:])
+	bucket := dbTx.Metadata().Bucket(includingBlocksIndexKey).Bucket(txHash[:])
 	if bucket == nil {
 		return nil, database.Error{
 			ErrorCode: database.ErrCorruption,
 			Description: fmt.Sprintf("No including blocks "+
-				"was found for %s", hash),
+				"were found for %s", txHash),
 		}
 	}
 	err := bucket.ForEach(func(blockIDBytes, _ []byte) error {
 		blockID := byteOrder.Uint32(blockIDBytes)
-		hash, err := dbFetchBlockHashByID(dbTx, blockID)
+		blockHash, err := dbFetchBlockHashByID(dbTx, blockID)
 		if err != nil {
 			return err
 		}
-		blockHashes = append(blockHashes, *hash)
+		blockHashes = append(blockHashes, *blockHash)
 		return nil
 	})
 	if err != nil {
@@ -499,38 +498,45 @@ func dbFetchTxBlocks(dbTx database.Tx, hash *daghash.Hash) ([]daghash.Hash, erro
 	return blockHashes, nil
 }
 
-// TxAcceptedInBlock returns the hash of the block where the transaction got accepted (from the virtual block point of view)
-func (idx *TxIndex) TxAcceptedInBlock(dag *blockdag.BlockDAG, txHash *daghash.Hash) (*daghash.Hash, error) {
+// TxAcceptingBlock returns the hash of the block where the transaction got accepted (from the virtual block point of view)
+func (idx *TxIndex) TxAcceptingBlock(dag *blockdag.BlockDAG, txHash *daghash.Hash) (*daghash.Hash, error) {
 	var acceptingBlock *daghash.Hash
 	err := idx.db.View(func(dbTx database.Tx) error {
-		bucket := dbTx.Metadata().Bucket(acceptingBlocksIndexKey).Bucket(txHash[:])
-		if bucket == nil {
-			return database.Error{
-				ErrorCode: database.ErrCorruption,
-				Description: fmt.Sprintf("No accepting blocks "+
-					"was found for %s", txHash),
-			}
-		}
-		cursor := bucket.Cursor()
-		if !cursor.First() {
-			return database.Error{
-				ErrorCode: database.ErrCorruption,
-				Description: fmt.Sprintf("No accepting blocks "+
-					"was found for %s", txHash),
-			}
-		}
-		var currentHash daghash.Hash
-		found := false
-		for ; cursor.Key() != nil && !found; cursor.Next() {
-			copy(currentHash[:], cursor.Key())
-			found = dag.IsInSelectedPathChain(&currentHash)
-		}
-		if found {
-			acceptingBlock = &currentHash
-		}
-		return nil
+		var err error
+		acceptingBlock, err = dbFetchTxAcceptingBlock(dbTx, txHash, dag)
+		return err
 	})
 	return acceptingBlock, err
+}
+
+func dbFetchTxAcceptingBlock(dbTx database.Tx, txHash *daghash.Hash, dag *blockdag.BlockDAG) (*daghash.Hash, error) {
+	bucket := dbTx.Metadata().Bucket(acceptingBlocksIndexKey).Bucket(txHash[:])
+	if bucket == nil {
+		return nil, database.Error{
+			ErrorCode: database.ErrCorruption,
+			Description: fmt.Sprintf("No accepting blocks "+
+				"were found for %s", txHash),
+		}
+	}
+	cursor := bucket.Cursor()
+	if !cursor.First() {
+		return nil, database.Error{
+			ErrorCode: database.ErrCorruption,
+			Description: fmt.Sprintf("No accepting blocks "+
+				"were found for %s", txHash),
+		}
+	}
+	for ; cursor.Key() != nil; cursor.Next() {
+		blockID := byteOrder.Uint32(cursor.Key())
+		blockHash, err := dbFetchBlockHashByID(dbTx, blockID)
+		if err != nil {
+			return nil, err
+		}
+		if dag.IsInSelectedPathChain(blockHash) {
+			return blockHash, nil
+		}
+	}
+	return nil, nil
 }
 
 // NewTxIndex returns a new instance of an indexer that is used to create a
