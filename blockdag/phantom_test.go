@@ -831,6 +831,8 @@ func TestPhantom(t *testing.T) {
 			}
 
 			blockDAG.index.AddNode(node)
+			addNodeAsChildToParents(node)
+
 			blockByIDMap[blockData.id] = node
 			idByBlockMap[node] = blockData.id
 
