@@ -38,7 +38,7 @@ func ExampleMarshalCmd() {
 	fmt.Printf("%s\n", marshalledBytes)
 
 	// Output:
-	// {"jsonrpc":"1.0","method":"getBlock","params":["000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f",false],"id":1}
+	// {"jsonRpc":"1.0","method":"getBlock","params":["000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f",false],"id":1}
 }
 
 // This example demonstrates how to unmarshal a JSON-RPC request and then

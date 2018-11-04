@@ -37,7 +37,7 @@ func TestWalletSvrWsCmds(t *testing.T) {
 			staticCmd: func() interface{} {
 				return btcjson.NewCreateEncryptedWalletCmd("pass")
 			},
-			marshalled:   `{"jsonrpc":"1.0","method":"createEncryptedWallet","params":["pass"],"id":1}`,
+			marshalled:   `{"jsonRpc":"1.0","method":"createEncryptedWallet","params":["pass"],"id":1}`,
 			unmarshalled: &btcjson.CreateEncryptedWalletCmd{Passphrase: "pass"},
 		},
 		{
@@ -48,7 +48,7 @@ func TestWalletSvrWsCmds(t *testing.T) {
 			staticCmd: func() interface{} {
 				return btcjson.NewExportWatchingWalletCmd(nil, nil)
 			},
-			marshalled: `{"jsonrpc":"1.0","method":"exportWatchingWallet","params":[],"id":1}`,
+			marshalled: `{"jsonRpc":"1.0","method":"exportWatchingWallet","params":[],"id":1}`,
 			unmarshalled: &btcjson.ExportWatchingWalletCmd{
 				Account:  nil,
 				Download: btcjson.Bool(false),
@@ -62,7 +62,7 @@ func TestWalletSvrWsCmds(t *testing.T) {
 			staticCmd: func() interface{} {
 				return btcjson.NewExportWatchingWalletCmd(btcjson.String("acct"), nil)
 			},
-			marshalled: `{"jsonrpc":"1.0","method":"exportWatchingWallet","params":["acct"],"id":1}`,
+			marshalled: `{"jsonRpc":"1.0","method":"exportWatchingWallet","params":["acct"],"id":1}`,
 			unmarshalled: &btcjson.ExportWatchingWalletCmd{
 				Account:  btcjson.String("acct"),
 				Download: btcjson.Bool(false),
@@ -77,7 +77,7 @@ func TestWalletSvrWsCmds(t *testing.T) {
 				return btcjson.NewExportWatchingWalletCmd(btcjson.String("acct"),
 					btcjson.Bool(true))
 			},
-			marshalled: `{"jsonrpc":"1.0","method":"exportWatchingWallet","params":["acct",true],"id":1}`,
+			marshalled: `{"jsonRpc":"1.0","method":"exportWatchingWallet","params":["acct",true],"id":1}`,
 			unmarshalled: &btcjson.ExportWatchingWalletCmd{
 				Account:  btcjson.String("acct"),
 				Download: btcjson.Bool(true),
@@ -91,7 +91,7 @@ func TestWalletSvrWsCmds(t *testing.T) {
 			staticCmd: func() interface{} {
 				return btcjson.NewGetUnconfirmedBalanceCmd(nil)
 			},
-			marshalled: `{"jsonrpc":"1.0","method":"getUnconfirmedBalance","params":[],"id":1}`,
+			marshalled: `{"jsonRpc":"1.0","method":"getUnconfirmedBalance","params":[],"id":1}`,
 			unmarshalled: &btcjson.GetUnconfirmedBalanceCmd{
 				Account: nil,
 			},
@@ -104,7 +104,7 @@ func TestWalletSvrWsCmds(t *testing.T) {
 			staticCmd: func() interface{} {
 				return btcjson.NewGetUnconfirmedBalanceCmd(btcjson.String("acct"))
 			},
-			marshalled: `{"jsonrpc":"1.0","method":"getUnconfirmedBalance","params":["acct"],"id":1}`,
+			marshalled: `{"jsonRpc":"1.0","method":"getUnconfirmedBalance","params":["acct"],"id":1}`,
 			unmarshalled: &btcjson.GetUnconfirmedBalanceCmd{
 				Account: btcjson.String("acct"),
 			},
@@ -117,7 +117,7 @@ func TestWalletSvrWsCmds(t *testing.T) {
 			staticCmd: func() interface{} {
 				return btcjson.NewListAddressTransactionsCmd([]string{"1Address"}, nil)
 			},
-			marshalled: `{"jsonrpc":"1.0","method":"listAddressTransactions","params":[["1Address"]],"id":1}`,
+			marshalled: `{"jsonRpc":"1.0","method":"listAddressTransactions","params":[["1Address"]],"id":1}`,
 			unmarshalled: &btcjson.ListAddressTransactionsCmd{
 				Addresses: []string{"1Address"},
 				Account:   nil,
@@ -132,7 +132,7 @@ func TestWalletSvrWsCmds(t *testing.T) {
 				return btcjson.NewListAddressTransactionsCmd([]string{"1Address"},
 					btcjson.String("acct"))
 			},
-			marshalled: `{"jsonrpc":"1.0","method":"listAddressTransactions","params":[["1Address"],"acct"],"id":1}`,
+			marshalled: `{"jsonRpc":"1.0","method":"listAddressTransactions","params":[["1Address"],"acct"],"id":1}`,
 			unmarshalled: &btcjson.ListAddressTransactionsCmd{
 				Addresses: []string{"1Address"},
 				Account:   btcjson.String("acct"),
@@ -146,7 +146,7 @@ func TestWalletSvrWsCmds(t *testing.T) {
 			staticCmd: func() interface{} {
 				return btcjson.NewListAllTransactionsCmd(nil)
 			},
-			marshalled: `{"jsonrpc":"1.0","method":"listAllTransactions","params":[],"id":1}`,
+			marshalled: `{"jsonRpc":"1.0","method":"listAllTransactions","params":[],"id":1}`,
 			unmarshalled: &btcjson.ListAllTransactionsCmd{
 				Account: nil,
 			},
@@ -159,7 +159,7 @@ func TestWalletSvrWsCmds(t *testing.T) {
 			staticCmd: func() interface{} {
 				return btcjson.NewListAllTransactionsCmd(btcjson.String("acct"))
 			},
-			marshalled: `{"jsonrpc":"1.0","method":"listAllTransactions","params":["acct"],"id":1}`,
+			marshalled: `{"jsonRpc":"1.0","method":"listAllTransactions","params":["acct"],"id":1}`,
 			unmarshalled: &btcjson.ListAllTransactionsCmd{
 				Account: btcjson.String("acct"),
 			},
@@ -172,7 +172,7 @@ func TestWalletSvrWsCmds(t *testing.T) {
 			staticCmd: func() interface{} {
 				return btcjson.NewRecoverAddressesCmd("acct", 10)
 			},
-			marshalled: `{"jsonrpc":"1.0","method":"recoverAddresses","params":["acct",10],"id":1}`,
+			marshalled: `{"jsonRpc":"1.0","method":"recoverAddresses","params":["acct",10],"id":1}`,
 			unmarshalled: &btcjson.RecoverAddressesCmd{
 				Account: "acct",
 				N:       10,
@@ -186,7 +186,7 @@ func TestWalletSvrWsCmds(t *testing.T) {
 			staticCmd: func() interface{} {
 				return btcjson.NewWalletIsLockedCmd()
 			},
-			marshalled:   `{"jsonrpc":"1.0","method":"walletIsLocked","params":[],"id":1}`,
+			marshalled:   `{"jsonRpc":"1.0","method":"walletIsLocked","params":[],"id":1}`,
 			unmarshalled: &btcjson.WalletIsLockedCmd{},
 		},
 	}

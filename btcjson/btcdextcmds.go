@@ -95,8 +95,8 @@ func NewGetCurrentNetCmd() *GetCurrentNetCmd {
 // NOTE: This is a btcsuite extension ported from
 // github.com/decred/dcrd/dcrjson.
 type GetHeadersCmd struct {
-	BlockLocators []string `json:"blocklocators"`
-	HashStop      string   `json:"hashstop"`
+	BlockLocators []string `json:"blockLocators"`
+	HashStop      string   `json:"hashStop"`
 }
 
 // NewGetHeadersCmd returns a new instance which can be used to issue a
