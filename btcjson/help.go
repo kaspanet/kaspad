@@ -431,7 +431,7 @@ func toCamelCase(str string) string {
 		// This handles consequent uppercase words, such as acronyms, at the end of the string
 		// Example: TxID
 		//            ^^
-		for i := len(str) - 1; i > 0; i-- {
+		for i := len(str) - 1; i >= 0; i-- {
 			if unicode.IsLower(rune(str[i])) {
 				break
 			}
