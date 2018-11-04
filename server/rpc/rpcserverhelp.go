@@ -441,7 +441,6 @@ var helpDescsEnUS = map[string]string{
 	// GetPeerInfoResult help.
 	"getPeerInfoResult-id":             "A unique node ID",
 	"getPeerInfoResult-addr":           "The ip address and port of the peer",
-	"getPeerInfoResult-addrLocal":      "Local address",
 	"getPeerInfoResult-services":       "Services bitmask which represents the services supported by the peer",
 	"getPeerInfoResult-relayTxes":      "Peer has requested transactions be relayed to it",
 	"getPeerInfoResult-lastSend":       "Time the last message was received in seconds since 1 Jan 1970 GMT",
