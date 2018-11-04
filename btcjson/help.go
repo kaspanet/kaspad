@@ -416,16 +416,28 @@ func toCamelCase(str string) string {
 				// previousCharacter is definitely the start of a word
 				wordStartIndex = i - 1
 
-				// The following handles consequent uppercase words, such as acronyms.
-				// Example: getBlockDAGInfo
-				//                  ^^^
 				if wordStartIndex-wordEndIndex > 1 {
+					// This handles consequent uppercase words, such as acronyms.
+					// Example: getBlockDAGInfo
+					//                  ^^^
 					word := str[wordEndIndex+1 : wordStartIndex]
 					words = append(words, word)
 				}
 			}
 		}
 		previousCharacter = character
+	}
+	if unicode.IsUpper(previousCharacter) {
+		// This handles consequent uppercase words, such as acronyms, at the end of the string
+		// Example: TxID
+		//            ^^
+		for i := len(str) - 1; i > 0; i-- {
+			if unicode.IsLower(rune(str[i])) {
+				break
+			}
+
+			wordStartIndex = i
+		}
 	}
 	lastWord := str[wordStartIndex:]
 	words = append(words, lastWord)
