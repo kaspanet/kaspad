@@ -389,7 +389,7 @@ var (
 	}
 )
 
-// RegisterHDKeyIDPair registes an HDKeyIDPair in the private to public key map
+// RegisterHDKeyIDPair registers an HDKeyIDPair in the private to public key map
 func RegisterHDKeyIDPair(hdKeyIDPair HDKeyIDPair) {
 	hdPrivToPubKeyIDs[hdKeyIDPair.PrivateKeyID] = hdKeyIDPair.PublicKeyID[:]
 }
