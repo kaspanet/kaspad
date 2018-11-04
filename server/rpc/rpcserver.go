@@ -1710,22 +1710,22 @@ func (state *gbtWorkState) blockTemplateResult(useCoinbaseValue bool, submitOld 
 	targetDifficulty := fmt.Sprintf("%064x", blockdag.CompactToBig(header.Bits))
 	longPollID := encodeLongPollID(state.tipHashes, state.lastGenerated)
 	reply := btcjson.GetBlockTemplateResult{
-		Bits:           strconv.FormatInt(int64(header.Bits), 16),
-		CurTime:        header.Timestamp.Unix(),
-		Height:         int64(template.Height),
-		PreviousHashes: daghash.Strings(header.ParentHashes),
-		SigOpLimit:     blockdag.MaxSigOpsPerBlock,
-		SizeLimit:      wire.MaxBlockPayload,
-		Transactions:   transactions,
-		Version:        header.Version,
-		LongPollID:     longPollID,
-		SubmitOld:      submitOld,
-		Target:         targetDifficulty,
-		MinTime:        state.minTimestamp.Unix(),
-		MaxTime:        maxTime.Unix(),
-		Mutable:        gbtMutableFields,
-		NonceRange:     gbtNonceRange,
-		Capabilities:   gbtCapabilities,
+		Bits:         strconv.FormatInt(int64(header.Bits), 16),
+		CurTime:      header.Timestamp.Unix(),
+		Height:       int64(template.Height),
+		ParentHashes: daghash.Strings(header.ParentHashes),
+		SigOpLimit:   blockdag.MaxSigOpsPerBlock,
+		SizeLimit:    wire.MaxBlockPayload,
+		Transactions: transactions,
+		Version:      header.Version,
+		LongPollID:   longPollID,
+		SubmitOld:    submitOld,
+		Target:       targetDifficulty,
+		MinTime:      state.minTimestamp.Unix(),
+		MaxTime:      maxTime.Unix(),
+		Mutable:      gbtMutableFields,
+		NonceRange:   gbtNonceRange,
+		Capabilities: gbtCapabilities,
 	}
 
 	if useCoinbaseValue {
