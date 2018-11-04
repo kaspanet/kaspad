@@ -63,7 +63,7 @@ func TestBlockCount(t *testing.T) {
 		}
 	}
 
-	expectedBlockCount := int64(6)
+	expectedBlockCount := uint64(6)
 	if dag.BlockCount() != expectedBlockCount {
 		t.Errorf("TestBlockCount: BlockCount expected to return %v but got %v", expectedBlockCount, dag.BlockCount())
 	}

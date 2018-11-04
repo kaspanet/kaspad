@@ -990,8 +990,8 @@ func (dag *BlockDAG) Height() int32 {
 }
 
 // BlockCount returns the number of blocks in the DAG
-func (dag *BlockDAG) BlockCount() int64 {
-	return int64(dag.blockCount)
+func (dag *BlockDAG) BlockCount() uint64 {
+	return dag.blockCount
 }
 
 // TipHashes returns the hashes of the DAG's tips
