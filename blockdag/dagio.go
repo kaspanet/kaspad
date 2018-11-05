@@ -913,6 +913,10 @@ func (dag *BlockDAG) initDAGState() error {
 			node.status = status
 			dag.index.addNode(node)
 
+			if blockStatus(status).KnownValid() {
+				dag.blockCount++
+			}
+
 			lastNode = node
 			i++
 		}

@@ -88,6 +88,9 @@ type BlockDAG struct {
 	// a tree-shaped structure.
 	index *blockIndex
 
+	// blockCount holds the number of blocks in the DAG
+	blockCount uint64
+
 	// virtual tracks the current tips.
 	virtual *virtualBlock
 
@@ -449,10 +452,16 @@ func (dag *BlockDAG) connectToDAG(node *blockNode, parentNodes blockSet, block *
 
 	// Connect the block to the DAG.
 	err := dag.connectBlock(node, block, fastAdd)
-	if _, ok := err.(RuleError); ok {
-		dag.index.SetStatusFlags(node, statusValidateFailed)
-	} else {
-		return err
+	if err != nil {
+		if _, ok := err.(RuleError); ok {
+			dag.index.SetStatusFlags(node, statusValidateFailed)
+		} else {
+			return err
+		}
+	}
+
+	if dag.index.NodeStatus(node).KnownValid() {
+		dag.blockCount++
 	}
 
 	// Intentionally ignore errors writing updated node status to DB. If
@@ -997,22 +1006,8 @@ func (dag *BlockDAG) Height() int32 {
 }
 
 // BlockCount returns the number of blocks in the DAG
-func (dag *BlockDAG) BlockCount() int64 {
-	count := int64(-1)
-	visited := newSet()
-	queue := []*blockNode{&dag.virtual.blockNode}
-	for len(queue) > 0 {
-		node := queue[0]
-		queue = queue[1:]
-		if !visited.contains(node) {
-			visited.add(node)
-			count++
-			for _, parent := range node.parents {
-				queue = append(queue, parent)
-			}
-		}
-	}
-	return count
+func (dag *BlockDAG) BlockCount() uint64 {
+	return dag.blockCount
 }
 
 // TipHashes returns the hashes of the DAG's tips
@@ -1524,6 +1519,7 @@ func New(config *Config) (*BlockDAG, error) {
 		prevOrphans:         make(map[daghash.Hash][]*orphanBlock),
 		warningCaches:       newThresholdCaches(vbNumBits),
 		deploymentCaches:    newThresholdCaches(dagconfig.DefinedDeployments),
+		blockCount:          1,
 	}
 
 	// Initialize the chain state from the passed database.  When the db
