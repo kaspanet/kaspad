@@ -431,7 +431,7 @@ func checkBlockHeaderSanity(header *wire.BlockHeader, powLimit *big.Int, timeSou
 
 //checkBlockParentsOrder ensures that the block's parents are ordered by hash
 func checkBlockParentsOrder(header *wire.BlockHeader) error {
-	sortedHashes := make([]daghash.Hash, 0, len(header.ParentHashes))
+	sortedHashes := make([]daghash.Hash, 0, header.NumParentBlocks())
 	for _, hash := range header.ParentHashes {
 		sortedHashes = append(sortedHashes, hash)
 	}

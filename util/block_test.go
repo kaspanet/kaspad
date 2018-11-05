@@ -304,8 +304,7 @@ func TestBlockErrors(t *testing.T) {
 // test Block operations.
 var Block100000 = wire.MsgBlock{
 	Header: wire.BlockHeader{
-		Version:         1,
-		NumParentBlocks: 2,
+		Version: 1,
 		ParentHashes: []daghash.Hash{
 			[32]byte{ // Make go vet happy.
 				0x82, 0xdc, 0xbd, 0xe6, 0x88, 0x37, 0x74, 0x5b,
