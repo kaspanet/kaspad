@@ -7,10 +7,10 @@ package btcjson
 import (
 	"bytes"
 	"fmt"
+	"github.com/daglabs/btcd/util"
 	"reflect"
 	"strings"
 	"text/tabwriter"
-	"unicode"
 )
 
 // baseHelpDescs house the various help labels, types, and example values used
@@ -82,7 +82,7 @@ func reflectTypeToJSONType(xT descLookupFunc, rt reflect.Type) string {
 // field name if no json tag was specified).
 func resultStructHelp(xT descLookupFunc, rt reflect.Type, indentLevel int) []string {
 	indent := strings.Repeat(" ", indentLevel)
-	typeName := toCamelCase(rt.Name())
+	typeName := util.ToCamelCase(rt.Name())
 
 	// Generate the help for each of the fields in the result struct.
 	numField := rt.NumField()
@@ -96,7 +96,7 @@ func resultStructHelp(xT descLookupFunc, rt reflect.Type, indentLevel int) []str
 		if tag := rtf.Tag.Get("json"); tag != "" {
 			fieldName = strings.Split(tag, ",")[0]
 		} else {
-			fieldName = toCamelCase(rtf.Name)
+			fieldName = util.ToCamelCase(rtf.Name)
 		}
 
 		// Deference pointer if needed.
@@ -345,7 +345,7 @@ func argHelp(xT descLookupFunc, rtp reflect.Type, defaults map[int]reflect.Value
 			defaultVal = &defVal
 		}
 
-		fieldName := toCamelCase(rtf.Name)
+		fieldName := util.ToCamelCase(rtf.Name)
 		helpText := fmt.Sprintf("%d.\t%s\t(%s)\t%s", i+1, fieldName,
 			argTypeHelp(xT, rtf, defaultVal),
 			xT(method+"-"+fieldName))
@@ -389,70 +389,6 @@ func argHelp(xT descLookupFunc, rtp reflect.Type, defaults map[int]reflect.Value
 	}
 	w.Flush()
 	return formatted.String()
-}
-
-// toCamelCase converts a camelCase-ish string into a typical JSON camelCase string.
-// Example conversion: MyJSONVariable -> myJsonVariable
-func toCamelCase(str string) string {
-	if len(str) == 0 {
-		return ""
-	}
-
-	// Split the string into words
-	words := make([]string, 0)
-	wordStartIndex := 0
-	wordEndIndex := 0
-	var previousCharacter rune
-	for i, character := range str {
-		if i > 0 {
-			if unicode.IsLower(previousCharacter) && unicode.IsUpper(character) {
-				// previousCharacter is definitely the end of a word
-				wordEndIndex = i - 1
-
-				word := str[wordStartIndex:i]
-				words = append(words, word)
-			}
-			if unicode.IsUpper(previousCharacter) && unicode.IsLower(character) {
-				// previousCharacter is definitely the start of a word
-				wordStartIndex = i - 1
-
-				if wordStartIndex-wordEndIndex > 1 {
-					// This handles consequent uppercase words, such as acronyms.
-					// Example: getBlockDAGInfo
-					//                  ^^^
-					word := str[wordEndIndex+1 : wordStartIndex]
-					words = append(words, word)
-				}
-			}
-		}
-		previousCharacter = character
-	}
-	if unicode.IsUpper(previousCharacter) {
-		// This handles consequent uppercase words, such as acronyms, at the end of the string
-		// Example: TxID
-		//            ^^
-		for i := len(str) - 1; i >= 0; i-- {
-			if unicode.IsLower(rune(str[i])) {
-				break
-			}
-
-			wordStartIndex = i
-		}
-	}
-	lastWord := str[wordStartIndex:]
-	words = append(words, lastWord)
-
-	// Build a PascalCase string out of the words
-	var camelCaseBuilder strings.Builder
-	for _, word := range words {
-		lowercaseWord := strings.ToLower(word)
-		capitalizedWord := strings.ToUpper(string(lowercaseWord[0])) + lowercaseWord[1:]
-		camelCaseBuilder.WriteString(capitalizedWord)
-	}
-	camelCaseString := camelCaseBuilder.String()
-
-	// Un-capitalize the first character to covert PascalCase into camelCase
-	return strings.ToLower(string(camelCaseString[0])) + camelCaseString[1:]
 }
 
 // methodHelp generates and returns the help output for the provided command
