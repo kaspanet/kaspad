@@ -130,7 +130,7 @@ func (dag *BlockDAG) findPreviousCheckpoint() (*blockNode, error) {
 	// When there is a next checkpoint and the height of the current best
 	// chain does not exceed it, the current checkpoint lockin is still
 	// the latest known checkpoint.
-	if dag.SelectedTip().height < dag.nextCheckpoint.Height {
+	if dag.selectedTip().height < dag.nextCheckpoint.Height {
 		return dag.checkpointNode, nil
 	}
 
@@ -218,7 +218,7 @@ func (dag *BlockDAG) IsCheckpointCandidate(block *util.Block) (bool, error) {
 
 	// A checkpoint must be at least CheckpointConfirmations blocks
 	// before the end of the main chain.
-	dagHeight := dag.SelectedTip().height
+	dagHeight := dag.selectedTip().height
 	if node.height > (dagHeight - CheckpointConfirmations) {
 		return false, nil
 	}

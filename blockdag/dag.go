@@ -322,7 +322,7 @@ func (dag *BlockDAG) CalcSequenceLock(tx *util.Tx, utxoSet UTXOSet, mempool bool
 	dag.dagLock.Lock()
 	defer dag.dagLock.Unlock()
 
-	return dag.calcSequenceLock(dag.SelectedTip(), utxoSet, tx, mempool)
+	return dag.calcSequenceLock(dag.selectedTip(), utxoSet, tx, mempool)
 }
 
 // calcSequenceLock computes the relative lock-times for the passed
@@ -924,7 +924,7 @@ func (dag *BlockDAG) isCurrent() bool {
 	// Not current if the latest main (best) chain height is before the
 	// latest known good checkpoint (when checkpoints are enabled).
 	checkpoint := dag.LatestCheckpoint()
-	if checkpoint != nil && dag.SelectedTip().height < checkpoint.Height {
+	if checkpoint != nil && dag.selectedTip().height < checkpoint.Height {
 		return false
 	}
 
@@ -934,7 +934,7 @@ func (dag *BlockDAG) isCurrent() bool {
 	// The chain appears to be current if none of the checks reported
 	// otherwise.
 	minus24Hours := dag.timeSource.AdjustedTime().Add(-24 * time.Hour).Unix()
-	return dag.SelectedTip().timestamp >= minus24Hours
+	return dag.selectedTip().timestamp >= minus24Hours
 }
 
 // IsCurrent returns whether or not the chain believes it is current.  Several
@@ -951,12 +951,25 @@ func (dag *BlockDAG) IsCurrent() bool {
 	return dag.isCurrent()
 }
 
-// SelectedTip returns the current selected tip for the DAG.
+// selectedTip returns the current selected tip for the DAG.
 // It will return nil if there is no tip.
 //
 // This function is safe for concurrent access.
-func (dag *BlockDAG) SelectedTip() *blockNode {
+func (dag *BlockDAG) selectedTip() *blockNode {
 	return dag.virtual.selectedParent
+}
+
+// SelectedTipHeader returns the header of the current selected tip for the DAG.
+// It will return nil if there is no tip.
+//
+// This function is safe for concurrent access.
+func (dag *BlockDAG) SelectedTipHeader() *wire.BlockHeader {
+	selectedTip := dag.selectedTip()
+	if selectedTip == nil {
+		return nil
+	}
+
+	return selectedTip.Header()
 }
 
 // UTXOSet returns the DAG's UTXO set
@@ -1027,11 +1040,11 @@ func (dag *BlockDAG) CurrentBits() uint32 {
 
 // HeaderByHash returns the block header identified by the given hash or an
 // error if it doesn't exist.
-func (dag *BlockDAG) HeaderByHash(hash *daghash.Hash) (wire.BlockHeader, error) {
+func (dag *BlockDAG) HeaderByHash(hash *daghash.Hash) (*wire.BlockHeader, error) {
 	node := dag.index.LookupNode(hash)
 	if node == nil {
 		err := fmt.Errorf("block %s is not known", hash)
-		return wire.BlockHeader{}, err
+		return &wire.BlockHeader{}, err
 	}
 
 	return node.Header(), nil
@@ -1277,7 +1290,7 @@ func (dag *BlockDAG) locateInventory(locator BlockLocator, hashStop *daghash.Has
 	}
 
 	// Calculate how many entries are needed.
-	total := uint32((dag.SelectedTip().height - startNode.height) + 1)
+	total := uint32((dag.selectedTip().height - startNode.height) + 1)
 	if stopNode != nil && stopNode.height >= startNode.height {
 		total = uint32((stopNode.height - startNode.height) + 1)
 	}
@@ -1340,7 +1353,7 @@ func (dag *BlockDAG) LocateBlocks(locator BlockLocator, hashStop *daghash.Hash, 
 // See the comment on the exported function for more details on special cases.
 //
 // This function MUST be called with the chain state lock held (for reads).
-func (dag *BlockDAG) locateHeaders(locator BlockLocator, hashStop *daghash.Hash, maxHeaders uint32) []wire.BlockHeader {
+func (dag *BlockDAG) locateHeaders(locator BlockLocator, hashStop *daghash.Hash, maxHeaders uint32) []*wire.BlockHeader {
 	// Find the node after the first known block in the locator and the
 	// total number of nodes after it needed while respecting the stop hash
 	// and max entries.
@@ -1350,7 +1363,7 @@ func (dag *BlockDAG) locateHeaders(locator BlockLocator, hashStop *daghash.Hash,
 	}
 
 	// Populate and return the found headers.
-	headers := make([]wire.BlockHeader, 0, total)
+	headers := make([]*wire.BlockHeader, 0, total)
 	for i := uint32(0); i < total; i++ {
 		headers = append(headers, node.Header())
 		node = node.diffChild
@@ -1381,7 +1394,7 @@ func (dag *BlockDAG) UTXORUnlock() {
 //   after the genesis block will be returned
 //
 // This function is safe for concurrent access.
-func (dag *BlockDAG) LocateHeaders(locator BlockLocator, hashStop *daghash.Hash) []wire.BlockHeader {
+func (dag *BlockDAG) LocateHeaders(locator BlockLocator, hashStop *daghash.Hash) []*wire.BlockHeader {
 	dag.dagLock.RLock()
 	headers := dag.locateHeaders(locator, hashStop, wire.MaxBlockHeadersPerMsg)
 	dag.dagLock.RUnlock()
@@ -1539,7 +1552,7 @@ func New(config *Config) (*BlockDAG, error) {
 		return nil, err
 	}
 
-	selectedTip := dag.SelectedTip()
+	selectedTip := dag.selectedTip()
 	log.Infof("DAG state (height %d, hash %v, work %v)",
 		selectedTip.height, selectedTip.hash, selectedTip.workSum)
 
