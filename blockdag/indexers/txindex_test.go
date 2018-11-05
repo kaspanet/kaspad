@@ -104,9 +104,9 @@ func TestTxIndexConnectBlock(t *testing.T) {
 
 var block1 = wire.MsgBlock{
 	Header: wire.BlockHeader{
-		Version:       1,
-		NumPrevBlocks: 1,
-		PrevBlocks: []daghash.Hash{
+		Version:         1,
+		NumParentBlocks: 1,
+		ParentHashes: []daghash.Hash{
 			[32]byte{ // Make go vet happy.
 				0x4a, 0xc1, 0x82, 0x2e, 0x43, 0x05, 0xea, 0x0c,
 				0x4f, 0xcc, 0x77, 0x87, 0xae, 0x26, 0x48, 0x87,
@@ -158,9 +158,9 @@ var block1 = wire.MsgBlock{
 
 var block2 = wire.MsgBlock{
 	Header: wire.BlockHeader{
-		Version:       1,
-		NumPrevBlocks: 1,
-		PrevBlocks: []daghash.Hash{
+		Version:         1,
+		NumParentBlocks: 1,
+		ParentHashes: []daghash.Hash{
 			[32]byte{ // Make go vet happy.
 				0x42, 0xb9, 0x2c, 0xee, 0x3e, 0x3e, 0x35, 0x02,
 				0xf5, 0x8d, 0xd2, 0xc8, 0xff, 0x61, 0xe3, 0x44,
@@ -303,9 +303,9 @@ var block3Tx *wire.MsgTx = &wire.MsgTx{
 
 var block3 = wire.MsgBlock{
 	Header: wire.BlockHeader{
-		Version:       1,
-		NumPrevBlocks: 1,
-		PrevBlocks: []daghash.Hash{
+		Version:         1,
+		NumParentBlocks: 1,
+		ParentHashes: []daghash.Hash{
 			[32]byte{ // Make go vet happy.
 				0x8b, 0xdf, 0xd1, 0x48, 0xef, 0xf5, 0x2b, 0x5e,
 				0xfe, 0x26, 0xba, 0x37, 0xcb, 0x23, 0x0d, 0x41,
@@ -358,9 +358,9 @@ var block3 = wire.MsgBlock{
 
 var block3A = wire.MsgBlock{
 	Header: wire.BlockHeader{
-		Version:       1,
-		NumPrevBlocks: 1,
-		PrevBlocks: []daghash.Hash{
+		Version:         1,
+		NumParentBlocks: 1,
+		ParentHashes: []daghash.Hash{
 			[32]byte{ // Make go vet happy.
 				0x8b, 0xdf, 0xd1, 0x48, 0xef, 0xf5, 0x2b, 0x5e,
 				0xfe, 0x26, 0xba, 0x37, 0xcb, 0x23, 0x0d, 0x41,
@@ -413,9 +413,9 @@ var block3A = wire.MsgBlock{
 
 var block4 = wire.MsgBlock{
 	Header: wire.BlockHeader{
-		Version:       1,
-		NumPrevBlocks: 1,
-		PrevBlocks: []daghash.Hash{
+		Version:         1,
+		NumParentBlocks: 1,
+		ParentHashes: []daghash.Hash{
 			[32]byte{ // Make go vet happy.
 				0xde, 0xe3, 0x62, 0x5f, 0x0c, 0x98, 0x26, 0x5f,
 				0x9b, 0x3e, 0xb1, 0xd9, 0x32, 0x0a, 0x84, 0xb3,
@@ -467,9 +467,9 @@ var block4 = wire.MsgBlock{
 
 var block5 = wire.MsgBlock{
 	Header: wire.BlockHeader{
-		Version:       1,
-		NumPrevBlocks: 2,
-		PrevBlocks: []daghash.Hash{
+		Version:         1,
+		NumParentBlocks: 2,
+		ParentHashes: []daghash.Hash{
 			[32]byte{ // Make go vet happy.
 				0xfd, 0x96, 0x3c, 0xfb, 0xed, 0x5a, 0xeb, 0xdb, 0x3d, 0x8e, 0xe9, 0x53, 0xf1, 0xe6, 0xad, 0x12, 0x21, 0x02, 0x55, 0x62, 0xbc, 0x2e, 0x52, 0xee, 0xb9, 0xd0, 0x60, 0xda, 0xd6, 0x4a, 0x20, 0x5a},
 			[32]byte{ // Make go vet happy.
