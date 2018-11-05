@@ -33,6 +33,7 @@ func TestTxIndexConnectBlock(t *testing.T) {
 
 	params := dagconfig.SimNetParams
 	params.CoinbaseMaturity = 1
+	params.K = 1
 
 	config := blockdag.Config{
 		IndexManager: indexManager,
@@ -49,9 +50,23 @@ func TestTxIndexConnectBlock(t *testing.T) {
 
 	processBlock(t, dag, &block1, "1")
 	processBlock(t, dag, &block2, "2")
-	processBlock(t, dag, &block3A, "3A")
+	processBlock(t, dag, &block3, "3")
 
 	block3TxHash := block3Tx.TxHash()
+	block3TxNewAcceptedBlock, err := txIndex.TxAcceptingBlock(dag, &block3TxHash)
+	if err != nil {
+		t.Errorf("TestTxIndexConnectBlock: TxAcceptedInBlock: %v", err)
+	}
+	block3Hash := block3.Header.BlockHash()
+	if !block3TxNewAcceptedBlock.IsEqual(&block3Hash) {
+		t.Errorf("TestTxIndexConnectBlock: block3Tx should've "+
+			"been accepted in block %v but instead got accepted in block %v", block3Hash, block3TxNewAcceptedBlock)
+	}
+
+	processBlock(t, dag, &block3A, "3A")
+	processBlock(t, dag, &block4, "4")
+	processBlock(t, dag, &block5, "5")
+
 	block3TxAcceptedBlock, err := txIndex.TxAcceptingBlock(dag, &block3TxHash)
 	if err != nil {
 		t.Errorf("TestTxIndexConnectBlock: TxAcceptedInBlock: %v", err)
@@ -60,20 +75,6 @@ func TestTxIndexConnectBlock(t *testing.T) {
 	if !block3TxAcceptedBlock.IsEqual(&block3AHash) {
 		t.Errorf("TestTxIndexConnectBlock: block3Tx should've "+
 			"been accepted in block %v but instead got accepted in block %v", block3AHash, block3TxAcceptedBlock)
-	}
-
-	processBlock(t, dag, &block3, "3")
-	processBlock(t, dag, &block4, "4")
-	processBlock(t, dag, &block5, "5")
-
-	block3TxNewAcceptedBlock, err := txIndex.TxAcceptingBlock(dag, &block3TxHash)
-	if err != nil {
-		t.Errorf("TestTxIndexConnectBlock: TxAcceptedInBlock: %v", err)
-	}
-	block3Hash := block3.Header.BlockHash()
-	if block3TxNewAcceptedBlock.IsEqual(&block3Hash) {
-		t.Errorf("TestTxIndexConnectBlock: block3Tx should've "+
-			"been accepted in block %v but instead got accepted in block %v", block3Hash, block3TxNewAcceptedBlock)
 	}
 
 	region, err := txIndex.TxFirstBlockRegion(&block3TxHash)
