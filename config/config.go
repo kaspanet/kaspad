@@ -64,7 +64,9 @@ const (
 )
 
 var (
+	// DefaultHomeDir is the default home directory for BTCD.
 	DefaultHomeDir     = util.AppDataDir("btcd", false)
+
 	defaultConfigFile  = filepath.Join(DefaultHomeDir, defaultConfigFilename)
 	defaultDataDir     = filepath.Join(DefaultHomeDir, defaultDataDirname)
 	knownDbTypes       = database.SupportedDrivers()
