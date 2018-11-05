@@ -168,9 +168,9 @@ func TestCheckBlockSanity(t *testing.T) {
 
 	var invalidParentsOrderBlock = wire.MsgBlock{
 		Header: wire.BlockHeader{
-			Version:       1,
-			NumPrevBlocks: 2,
-			PrevBlocks: []daghash.Hash{
+			Version:         1,
+			NumParentBlocks: 2,
+			ParentHashes: []daghash.Hash{
 				[32]byte{ // Make go vet happy.
 					0x4b, 0xb0, 0x75, 0x35, 0xdf, 0xd5, 0x8e, 0x0b,
 					0x3c, 0xd6, 0x4f, 0xd7, 0x15, 0x52, 0x80, 0x87,
@@ -609,9 +609,9 @@ func TestValidateParents(t *testing.T) {
 // test Block operations.
 var Block100000 = wire.MsgBlock{
 	Header: wire.BlockHeader{
-		Version:       1,
-		NumPrevBlocks: 2,
-		PrevBlocks: []daghash.Hash{
+		Version:         1,
+		NumParentBlocks: 2,
+		ParentHashes: []daghash.Hash{
 			[32]byte{ // Make go vet happy.
 				0x16, 0x5e, 0x38, 0xe8, 0xb3, 0x91, 0x45, 0x95,
 				0xd9, 0xc6, 0x41, 0xf3, 0xb8, 0xee, 0xc2, 0xf3,

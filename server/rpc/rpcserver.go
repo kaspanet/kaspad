@@ -75,7 +75,7 @@ const (
 	gbtNonceRange = "000000000000ffffffffffff"
 
 	// gbtRegenerateSeconds is the number of seconds that must pass before
-	// a new template is generated when the previous block hash has not
+	// a new template is generated when the parent block hashes has not
 	// changed and there have been changes to the available transactions
 	// in the memory pool.
 	gbtRegenerateSeconds = 60
@@ -90,7 +90,7 @@ var (
 	// declared here to avoid the overhead of creating the slice on every
 	// invocation for constant data.
 	gbtMutableFields = []string{
-		"time", "transactions/add", "prevblock", "coinbase/append",
+		"time", "transactions/add", "parentblock", "coinbase/append",
 	}
 
 	// gbtCoinbaseAux describes additional data that miners should include
@@ -1133,19 +1133,19 @@ func handleGetBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 	params := s.cfg.DAGParams
 	blockHeader := &blk.MsgBlock().Header
 	blockReply := btcjson.GetBlockVerboseResult{
-		Hash:           c.Hash,
-		Version:        blockHeader.Version,
-		VersionHex:     fmt.Sprintf("%08x", blockHeader.Version),
-		MerkleRoot:     blockHeader.MerkleRoot.String(),
-		PreviousHashes: daghash.Strings(blockHeader.PrevBlocks),
-		Nonce:          blockHeader.Nonce,
-		Time:           blockHeader.Timestamp.Unix(),
-		Confirmations:  uint64(1 + s.cfg.DAG.Height() - blockHeight), //TODO: (Ori) This is probably wrong. Done only for compilation
-		Height:         int64(blockHeight),
-		Size:           int32(len(blkBytes)),
-		Bits:           strconv.FormatInt(int64(blockHeader.Bits), 16),
-		Difficulty:     getDifficultyRatio(blockHeader.Bits, params),
-		NextHashes:     nextHashStrings,
+		Hash:          c.Hash,
+		Version:       blockHeader.Version,
+		VersionHex:    fmt.Sprintf("%08x", blockHeader.Version),
+		MerkleRoot:    blockHeader.MerkleRoot.String(),
+		ParentHashes:  daghash.Strings(blockHeader.ParentHashes),
+		Nonce:         blockHeader.Nonce,
+		Time:          blockHeader.Timestamp.Unix(),
+		Confirmations: uint64(1 + s.cfg.DAG.Height() - blockHeight), //TODO: (Ori) This is probably wrong. Done only for compilation
+		Height:        int64(blockHeight),
+		Size:          int32(len(blkBytes)),
+		Bits:          strconv.FormatInt(int64(blockHeader.Bits), 16),
+		Difficulty:    getDifficultyRatio(blockHeader.Bits, params),
+		NextHashes:    nextHashStrings,
 	}
 
 	if c.VerboseTx == nil || !*c.VerboseTx {
@@ -1325,32 +1325,32 @@ func handleGetBlockHeader(s *Server, cmd interface{}, closeChan <-chan struct{})
 
 	params := s.cfg.DAGParams
 	blockHeaderReply := btcjson.GetBlockHeaderVerboseResult{
-		Hash:           c.Hash,
-		Confirmations:  uint64(1 + s.cfg.DAG.Height() - blockHeight), //TODO: (Ori) This is probably wrong. Done only for compilation
-		Height:         blockHeight,
-		Version:        blockHeader.Version,
-		VersionHex:     fmt.Sprintf("%08x", blockHeader.Version),
-		MerkleRoot:     blockHeader.MerkleRoot.String(),
-		NextHashes:     nextHashStrings,
-		PreviousHashes: daghash.Strings(blockHeader.PrevBlocks),
-		Nonce:          uint64(blockHeader.Nonce),
-		Time:           blockHeader.Timestamp.Unix(),
-		Bits:           strconv.FormatInt(int64(blockHeader.Bits), 16),
-		Difficulty:     getDifficultyRatio(blockHeader.Bits, params),
+		Hash:          c.Hash,
+		Confirmations: uint64(1 + s.cfg.DAG.Height() - blockHeight), //TODO: (Ori) This is probably wrong. Done only for compilation
+		Height:        blockHeight,
+		Version:       blockHeader.Version,
+		VersionHex:    fmt.Sprintf("%08x", blockHeader.Version),
+		MerkleRoot:    blockHeader.MerkleRoot.String(),
+		NextHashes:    nextHashStrings,
+		ParentHashes:  daghash.Strings(blockHeader.ParentHashes),
+		Nonce:         uint64(blockHeader.Nonce),
+		Time:          blockHeader.Timestamp.Unix(),
+		Bits:          strconv.FormatInt(int64(blockHeader.Bits), 16),
+		Difficulty:    getDifficultyRatio(blockHeader.Bits, params),
 	}
 	return blockHeaderReply, nil
 }
 
 // encodeLongPollID encodes the passed details into an ID that can be used to
 // uniquely identify a block template.
-func encodeLongPollID(prevHashes []daghash.Hash, lastGenerated time.Time) string {
-	return fmt.Sprintf("%s-%d", daghash.JoinHashesStrings(prevHashes, ""), lastGenerated.Unix())
+func encodeLongPollID(parentHashes []daghash.Hash, lastGenerated time.Time) string {
+	return fmt.Sprintf("%s-%d", daghash.JoinHashesStrings(parentHashes, ""), lastGenerated.Unix())
 }
 
 // decodeLongPollID decodes an ID that is used to uniquely identify a block
 // template.  This is mainly used as a mechanism to track when to update clients
 // that are using long polling for block templates.  The ID consists of the
-// previous blocks hashes for the associated template and the time the associated
+// parent blocks hashes for the associated template and the time the associated
 // template was generated.
 func decodeLongPollID(longPollID string) ([]daghash.Hash, int64, error) {
 	fields := strings.Split(longPollID, "-")
@@ -1358,20 +1358,20 @@ func decodeLongPollID(longPollID string) ([]daghash.Hash, int64, error) {
 		return nil, 0, errors.New("decodeLongPollID: invalid number of fields")
 	}
 
-	prevHashesStr := fields[0]
-	if len(prevHashesStr)%daghash.HashSize != 0 {
-		return nil, 0, errors.New("decodeLongPollID: invalid previous hashes format")
+	parentHashesStr := fields[0]
+	if len(parentHashesStr)%daghash.HashSize != 0 {
+		return nil, 0, errors.New("decodeLongPollID: invalid parent hashes format")
 	}
-	numberOfHashes := len(prevHashesStr) / daghash.HashSize
+	numberOfHashes := len(parentHashesStr) / daghash.HashSize
 
-	prevHashes := make([]daghash.Hash, 0, numberOfHashes)
+	parentHashes := make([]daghash.Hash, 0, numberOfHashes)
 
-	for i := 0; i < len(prevHashesStr); i += daghash.HashSize {
-		hash, err := daghash.NewHashFromStr(prevHashesStr[i : i+daghash.HashSize])
+	for i := 0; i < len(parentHashesStr); i += daghash.HashSize {
+		hash, err := daghash.NewHashFromStr(parentHashesStr[i : i+daghash.HashSize])
 		if err != nil {
 			return nil, 0, fmt.Errorf("decodeLongPollID: NewHashFromStr: %v", err)
 		}
-		prevHashes = append(prevHashes, *hash)
+		parentHashes = append(parentHashes, *hash)
 	}
 
 	lastGenerated, err := strconv.ParseInt(fields[1], 10, 64)
@@ -1379,7 +1379,7 @@ func decodeLongPollID(longPollID string) ([]daghash.Hash, int64, error) {
 		return nil, 0, fmt.Errorf("decodeLongPollID: Cannot parse timestamp: %v", lastGenerated)
 	}
 
-	return prevHashes, lastGenerated, nil
+	return parentHashes, lastGenerated, nil
 }
 
 // notifyLongPollers notifies any channels that have been registered to be
@@ -1467,7 +1467,7 @@ func (state *gbtWorkState) NotifyMempoolTx(lastUpdated time.Time) {
 }
 
 // templateUpdateChan returns a channel that will be closed once the block
-// template associated with the passed previous hash and last generated time
+// template associated with the passed parent hashes and last generated time
 // is stale.  The function will return existing channels for duplicate
 // parameters which allows multiple clients to wait for the same block template
 // without requiring a different channel for each client.
@@ -1476,7 +1476,7 @@ func (state *gbtWorkState) NotifyMempoolTx(lastUpdated time.Time) {
 func (state *gbtWorkState) templateUpdateChan(tipHashes []daghash.Hash, lastGenerated int64) chan struct{} {
 	tipHashesStr := daghash.JoinHashesStrings(tipHashes, "")
 	// Either get the current list of channels waiting for updates about
-	// changes to block template for the previous hash or create a new one.
+	// changes to block template for the parent hashes or create a new one.
 	channels, ok := state.notifyMap[tipHashesStr]
 	if !ok {
 		m := make(map[int64]chan struct{})
@@ -1710,22 +1710,22 @@ func (state *gbtWorkState) blockTemplateResult(useCoinbaseValue bool, submitOld 
 	targetDifficulty := fmt.Sprintf("%064x", blockdag.CompactToBig(header.Bits))
 	longPollID := encodeLongPollID(state.tipHashes, state.lastGenerated)
 	reply := btcjson.GetBlockTemplateResult{
-		Bits:           strconv.FormatInt(int64(header.Bits), 16),
-		CurTime:        header.Timestamp.Unix(),
-		Height:         int64(template.Height),
-		PreviousHashes: daghash.Strings(header.PrevBlocks),
-		SigOpLimit:     blockdag.MaxSigOpsPerBlock,
-		SizeLimit:      wire.MaxBlockPayload,
-		Transactions:   transactions,
-		Version:        header.Version,
-		LongPollID:     longPollID,
-		SubmitOld:      submitOld,
-		Target:         targetDifficulty,
-		MinTime:        state.minTimestamp.Unix(),
-		MaxTime:        maxTime.Unix(),
-		Mutable:        gbtMutableFields,
-		NonceRange:     gbtNonceRange,
-		Capabilities:   gbtCapabilities,
+		Bits:         strconv.FormatInt(int64(header.Bits), 16),
+		CurTime:      header.Timestamp.Unix(),
+		Height:       int64(template.Height),
+		ParentHashes: daghash.Strings(header.ParentHashes),
+		SigOpLimit:   blockdag.MaxSigOpsPerBlock,
+		SizeLimit:    wire.MaxBlockPayload,
+		Transactions: transactions,
+		Version:      header.Version,
+		LongPollID:   longPollID,
+		SubmitOld:    submitOld,
+		Target:       targetDifficulty,
+		MinTime:      state.minTimestamp.Unix(),
+		MaxTime:      maxTime.Unix(),
+		Mutable:      gbtMutableFields,
+		NonceRange:   gbtNonceRange,
+		Capabilities: gbtCapabilities,
 	}
 
 	if useCoinbaseValue {
@@ -1790,7 +1790,7 @@ func handleGetBlockTemplateLongPoll(s *Server, longPollID string, useCoinbaseVal
 
 	// Just return the current block template if the long poll ID provided by
 	// the caller is invalid.
-	prevHashes, lastGenerated, err := decodeLongPollID(longPollID)
+	parentHashes, lastGenerated, err := decodeLongPollID(longPollID)
 	if err != nil {
 		result, err := state.blockTemplateResult(useCoinbaseValue, nil)
 		if err != nil {
@@ -1805,7 +1805,7 @@ func handleGetBlockTemplateLongPoll(s *Server, longPollID string, useCoinbaseVal
 	// Return the block template now if the specific block template
 	// identified by the long poll ID no longer matches the current block
 	// template as this means the provided template is stale.
-	areHashesEqual := daghash.AreEqual(state.template.Block.Header.PrevBlocks, prevHashes)
+	areHashesEqual := daghash.AreEqual(state.template.Block.Header.ParentHashes, parentHashes)
 	if !areHashesEqual ||
 		lastGenerated != state.lastGenerated.Unix() {
 
@@ -1824,11 +1824,11 @@ func handleGetBlockTemplateLongPoll(s *Server, longPollID string, useCoinbaseVal
 		return result, nil
 	}
 
-	// Register the previous hash and last generated time for notifications
+	// Register the parent hashes and last generated time for notifications
 	// Get a channel that will be notified when the template associated with
 	// the provided ID is stale and a new block template should be returned to
 	// the caller.
-	longPollChan := state.templateUpdateChan(prevHashes, lastGenerated)
+	longPollChan := state.templateUpdateChan(parentHashes, lastGenerated)
 	state.Unlock()
 
 	select {
@@ -2032,12 +2032,12 @@ func chainErrToGBTErrString(err error) string {
 		return "bad-script-malformed"
 	case blockdag.ErrScriptValidation:
 		return "bad-script-validate"
-	case blockdag.ErrPreviousBlockUnknown:
-		return "prev-blk-not-found"
+	case blockdag.ErrParentBlockUnknown:
+		return "parent-blk-not-found"
 	case blockdag.ErrInvalidAncestorBlock:
-		return "bad-prevblk"
-	case blockdag.ErrPrevBlockNotBest:
-		return "inconclusive-not-best-prvblk"
+		return "bad-parentblk"
+	case blockdag.ErrParentBlockNotCurrentTips:
+		return "inconclusive-not-best-parentblk"
 	}
 
 	return "rejected: " + err.Error()
@@ -2079,11 +2079,11 @@ func handleGetBlockTemplateProposal(s *Server, request *btcjson.TemplateRequest)
 	}
 	block := util.NewBlock(&msgBlock)
 
-	// Ensure the block is building from the expected previous blocks.
-	expectedPrevHashes := s.cfg.DAG.TipHashes()
-	prevHashes := block.MsgBlock().Header.PrevBlocks
-	if !daghash.AreEqual(expectedPrevHashes, prevHashes) {
-		return "bad-prevblk", nil
+	// Ensure the block is building from the expected parent blocks.
+	expectedParentHashes := s.cfg.DAG.TipHashes()
+	parentHashes := block.MsgBlock().Header.ParentHashes
+	if !daghash.AreEqual(expectedParentHashes, parentHashes) {
+		return "bad-parentblk", nil
 	}
 
 	if err := s.cfg.DAG.CheckConnectBlockTemplate(block); err != nil {
@@ -3375,7 +3375,7 @@ func verifyDAG(s *Server, level, depth int32) error {
 			}
 		}
 
-		currentHash = *block.MsgBlock().Header.SelectedPrevBlock()
+		currentHash = *block.MsgBlock().Header.SelectedParentHash()
 	}
 	log.Infof("Chain verify completed successfully")
 

@@ -587,7 +587,7 @@ func chainedNodes(parents blockSet, numNodes int) []*blockNode {
 		// This is invalid, but all that is needed is enough to get the
 		// synthetic tests to work.
 		header := wire.BlockHeader{Nonce: testNoncePrng.Uint64()}
-		header.PrevBlocks = tips.hashes()
+		header.ParentHashes = tips.hashes()
 		nodes[i] = newBlockNode(&header, tips, dagconfig.SimNetParams.K)
 		tips = setFromSlice(nodes[i])
 	}

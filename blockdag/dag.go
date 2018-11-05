@@ -205,14 +205,14 @@ func (dag *BlockDAG) GetOrphanRoot(hash *daghash.Hash) *daghash.Hash {
 	// Keep looping while the parent of each orphaned block is
 	// known and is an orphan itself.
 	orphanRoot := hash
-	prevHash := hash
+	parentHash := hash
 	for {
-		orphan, exists := dag.orphans[*prevHash]
+		orphan, exists := dag.orphans[*parentHash]
 		if !exists {
 			break
 		}
-		orphanRoot = prevHash
-		prevHash = orphan.block.MsgBlock().Header.SelectedPrevBlock()
+		orphanRoot = parentHash
+		parentHash = orphan.block.MsgBlock().Header.SelectedParentHash()
 	}
 
 	return orphanRoot
@@ -233,8 +233,8 @@ func (dag *BlockDAG) removeOrphanBlock(orphan *orphanBlock) {
 	// for loop is intentionally used over a range here as range does not
 	// reevaluate the slice on each iteration nor does it adjust the index
 	// for the modified slice.
-	prevHash := orphan.block.MsgBlock().Header.SelectedPrevBlock()
-	orphans := dag.prevOrphans[*prevHash]
+	parentHash := orphan.block.MsgBlock().Header.SelectedParentHash()
+	orphans := dag.prevOrphans[*parentHash]
 	for i := 0; i < len(orphans); i++ {
 		hash := orphans[i].block.Hash()
 		if hash.IsEqual(orphanHash) {
@@ -244,12 +244,12 @@ func (dag *BlockDAG) removeOrphanBlock(orphan *orphanBlock) {
 			i--
 		}
 	}
-	dag.prevOrphans[*prevHash] = orphans
+	dag.prevOrphans[*parentHash] = orphans
 
 	// Remove the map entry altogether if there are no longer any orphans
 	// which depend on the parent hash.
-	if len(dag.prevOrphans[*prevHash]) == 0 {
-		delete(dag.prevOrphans, *prevHash)
+	if len(dag.prevOrphans[*parentHash]) == 0 {
+		delete(dag.prevOrphans, *parentHash)
 	}
 }
 
@@ -296,9 +296,9 @@ func (dag *BlockDAG) addOrphanBlock(block *util.Block) {
 	}
 	dag.orphans[*block.Hash()] = oBlock
 
-	// Add to previous hash lookup index for faster dependency lookups.
-	prevHash := block.MsgBlock().Header.SelectedPrevBlock()
-	dag.prevOrphans[*prevHash] = append(dag.prevOrphans[*prevHash], oBlock)
+	// Add to parent hash lookup index for faster dependency lookups.
+	parentHash := block.MsgBlock().Header.SelectedParentHash()
+	dag.prevOrphans[*parentHash] = append(dag.prevOrphans[*parentHash], oBlock)
 }
 
 // SequenceLock represents the converted relative lock-time in seconds, and

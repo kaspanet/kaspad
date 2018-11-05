@@ -431,14 +431,14 @@ func checkBlockHeaderSanity(header *wire.BlockHeader, powLimit *big.Int, timeSou
 
 //checkBlockParentsOrder ensures that the block's parents are ordered by hash
 func checkBlockParentsOrder(header *wire.BlockHeader) error {
-	sortedHashes := make([]daghash.Hash, 0, len(header.PrevBlocks))
-	for _, hash := range header.PrevBlocks {
+	sortedHashes := make([]daghash.Hash, 0, len(header.ParentHashes))
+	for _, hash := range header.ParentHashes {
 		sortedHashes = append(sortedHashes, hash)
 	}
 	sort.Slice(sortedHashes, func(i, j int) bool {
 		return daghash.Less(&sortedHashes[i], &sortedHashes[j])
 	})
-	if !daghash.AreEqual(header.PrevBlocks, sortedHashes) {
+	if !daghash.AreEqual(header.ParentHashes, sortedHashes) {
 		return ruleError(ErrWrongParentsOrder, "block parents are not ordered by hash")
 	}
 	return nil
@@ -1076,11 +1076,11 @@ func (dag *BlockDAG) CheckConnectBlockTemplate(block *util.Block) error {
 	// current chain.
 	tips := dag.virtual.tips()
 	header := block.MsgBlock().Header
-	prevHashes := header.PrevBlocks
-	if !tips.hashesEqual(prevHashes) {
-		str := fmt.Sprintf("previous blocks must be the currents tips %v, "+
-			"instead got %v", tips, prevHashes)
-		return ruleError(ErrPrevBlockNotBest, str)
+	parentHashes := header.ParentHashes
+	if !tips.hashesEqual(parentHashes) {
+		str := fmt.Sprintf("parent blocks must be the currents tips %v, "+
+			"instead got %v", tips, parentHashes)
+		return ruleError(ErrParentBlockNotCurrentTips, str)
 	}
 
 	err := checkBlockSanity(block, dag.dagParams.PowLimit, dag.timeSource, flags)
@@ -1088,7 +1088,7 @@ func (dag *BlockDAG) CheckConnectBlockTemplate(block *util.Block) error {
 		return err
 	}
 
-	parents, err := lookupPreviousNodes(block, dag)
+	parents, err := lookupParentNodes(block, dag)
 	if err != nil {
 		return err
 	}

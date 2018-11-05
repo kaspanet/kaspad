@@ -411,7 +411,7 @@ func BenchmarkDecodeGetHeaders(b *testing.B) {
 
 // BenchmarkDecodeHeaders performs a benchmark on how long it takes to
 // decode a headers message with the maximum number of headers and maximum number of
-// previous hashes per header.
+// parent hashes per header.
 func BenchmarkDecodeHeaders(b *testing.B) {
 	// Create a message with the maximum number of headers.
 	pver := ProtocolVersion
@@ -421,15 +421,15 @@ func BenchmarkDecodeHeaders(b *testing.B) {
 		if err != nil {
 			b.Fatalf("NewHashFromStr: unexpected error: %v", err)
 		}
-		prevBlocks := make([]daghash.Hash, MaxNumPrevBlocks)
-		for j := byte(0); j < MaxNumPrevBlocks; j++ {
+		parentHashes := make([]daghash.Hash, MaxNumParentBlocks)
+		for j := byte(0); j < MaxNumParentBlocks; j++ {
 			hash, err := daghash.NewHashFromStr(fmt.Sprintf("%x%x", i, j))
 			if err != nil {
 				b.Fatalf("NewHashFromStr: unexpected error: %v", err)
 			}
-			prevBlocks[i] = *hash
+			parentHashes[i] = *hash
 		}
-		m.AddBlockHeader(NewBlockHeader(1, prevBlocks, hash, 0, uint64(i)))
+		m.AddBlockHeader(NewBlockHeader(1, parentHashes, hash, 0, uint64(i)))
 	}
 
 	// Serialize it so the bytes are available to test the decode below.
