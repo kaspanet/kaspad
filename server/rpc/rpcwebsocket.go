@@ -2084,7 +2084,7 @@ func handleRescanBlocks(wsc *wsClient, icmd interface{}) (interface{}, error) {
 				Message: "Failed to fetch block: " + err.Error(),
 			}
 		}
-		if lastBlockHash != nil && block.MsgBlock().Header.PrevBlocks[0] != *lastBlockHash { // TODO: (Stas) This is likely wrong. Modified to satisfy compilation.
+		if lastBlockHash != nil && block.MsgBlock().Header.ParentHashes[0] != *lastBlockHash { // TODO: (Stas) This is likely wrong. Modified to satisfy compilation.
 			return nil, &btcjson.RPCError{
 				Code: btcjson.ErrRPCInvalidParameter,
 				Message: fmt.Sprintf("Block %v is not a child of %v",

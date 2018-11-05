@@ -80,20 +80,20 @@ func syncBlocks(nodes []*Harness) error {
 
 retry:
 	for !blocksMatch {
-		var prevHash *daghash.Hash
+		var parentHash *daghash.Hash
 		var prevHeight int32
 		for _, node := range nodes {
 			blockHash, blockHeight, err := node.Node.GetBestBlock()
 			if err != nil {
 				return err
 			}
-			if prevHash != nil && (*blockHash != *prevHash ||
+			if parentHash != nil && (*blockHash != *parentHash ||
 				blockHeight != prevHeight) {
 
 				time.Sleep(time.Millisecond * 100)
 				continue retry
 			}
-			prevHash, prevHeight = blockHash, blockHeight
+			parentHash, prevHeight = blockHash, blockHeight
 		}
 
 		blocksMatch = true

@@ -35,6 +35,7 @@ func (hash Hash) String() string {
 	return hex.EncodeToString(hash[:])
 }
 
+// Strings returns a slice of strings representing the hashes in the given slice of hashes
 func Strings(hashes []Hash) []string {
 	strings := make([]string, len(hashes))
 	for i, hash := range hashes {

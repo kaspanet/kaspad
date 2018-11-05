@@ -179,7 +179,7 @@ func storeFilter(dbTx database.Tx, block *util.Block, f *gcs.Filter,
 	if header.IsGenesis() {
 		prevHeader = &zeroHash
 	} else {
-		ph := header.SelectedPrevBlock()
+		ph := header.SelectedParentHash()
 		pfh, err := dbFetchFilterIdxEntry(dbTx, hkey, ph)
 		if err != nil {
 			return err

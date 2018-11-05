@@ -111,16 +111,16 @@ func (bi *blockImporter) processBlock(serializedBlock []byte) (bool, error) {
 	}
 
 	// Don't bother trying to process orphans.
-	prevBlocks := block.MsgBlock().Header.PrevBlocks
-	if len(prevBlocks) > 0 {
-		exist, err := bi.dag.HaveBlocks(prevBlocks)
+	parentHashes := block.MsgBlock().Header.ParentHashes
+	if len(parentHashes) > 0 {
+		exist, err := bi.dag.HaveBlocks(parentHashes)
 		if err != nil {
 			return false, err
 		}
 		if !exist {
 			return false, fmt.Errorf("import file contains block "+
 				"%v which does not link to the available "+
-				"block DAG", prevBlocks)
+				"block DAG", parentHashes)
 		}
 	}
 

@@ -160,16 +160,16 @@ func newBlockNode(blockHeader *wire.BlockHeader, parents blockSet, phantomK uint
 // Header constructs a block header from the node and returns it.
 //
 // This function is safe for concurrent access.
-func (node *blockNode) Header() wire.BlockHeader {
+func (node *blockNode) Header() *wire.BlockHeader {
 	// No lock is needed because all accessed fields are immutable.
-	return wire.BlockHeader{
-		Version:       node.version,
-		NumPrevBlocks: byte(len(node.parents)),
-		PrevBlocks:    node.PrevHashes(),
-		MerkleRoot:    node.merkleRoot,
-		Timestamp:     time.Unix(node.timestamp, 0),
-		Bits:          node.bits,
-		Nonce:         node.nonce,
+	return &wire.BlockHeader{
+		Version:         node.version,
+		NumParentBlocks: byte(len(node.parents)),
+		ParentHashes:    node.ParentHashes(),
+		MerkleRoot:      node.merkleRoot,
+		Timestamp:       time.Unix(node.timestamp, 0),
+		Bits:            node.bits,
+		Nonce:           node.nonce,
 	}
 }
 
@@ -228,7 +228,7 @@ func (node *blockNode) CalcPastMedianTime() time.Time {
 	return time.Unix(medianTimestamp, 0)
 }
 
-func (node *blockNode) PrevHashes() []daghash.Hash {
+func (node *blockNode) ParentHashes() []daghash.Hash {
 	return node.parents.hashes()
 }
 

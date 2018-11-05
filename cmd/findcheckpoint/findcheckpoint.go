@@ -106,8 +106,8 @@ func findCandidates(dag *blockdag.BlockDAG, highestTipHash *daghash.Hash) ([]*da
 			candidates = append(candidates, &checkpoint)
 		}
 
-		prevBlockHashes := block.MsgBlock().Header.PrevBlocks
-		selectedBlockHash := &prevBlockHashes[0]
+		parentHashes := block.MsgBlock().Header.ParentHashes
+		selectedBlockHash := &parentHashes[0]
 		block, err = dag.BlockByHash(selectedBlockHash)
 		if err != nil {
 			return nil, err

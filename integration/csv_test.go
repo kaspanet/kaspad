@@ -435,22 +435,22 @@ func TestBIP0068AndCsv(t *testing.T) {
 
 	// Now mine 10 additional blocks giving the inputs generated above a
 	// age of 11. Space out each block 10 minutes after the previous block.
-	prevBlockHash, err := r.Node.GetBestBlockHash()
+	parentBlockHash, err := r.Node.GetBestBlockHash()
 	if err != nil {
 		t.Fatalf("unable to get prior block hash: %v", err)
 	}
-	prevBlock, err := r.Node.GetBlock(prevBlockHash)
+	parentBlock, err := r.Node.GetBlock(parentBlockHash)
 	if err != nil {
 		t.Fatalf("unable to get block: %v", err)
 	}
 	for i := 0; i < relativeBlockLock; i++ {
-		timeStamp := prevBlock.Header.Timestamp.Add(time.Minute * 10)
+		timeStamp := parentBlock.Header.Timestamp.Add(time.Minute * 10)
 		b, err := r.GenerateAndSubmitBlock(nil, -1, timeStamp)
 		if err != nil {
 			t.Fatalf("unable to generate block: %v", err)
 		}
 
-		prevBlock = b.MsgBlock()
+		parentBlock = b.MsgBlock()
 	}
 
 	// A helper function to create fully signed transactions in-line during

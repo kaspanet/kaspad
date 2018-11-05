@@ -435,19 +435,19 @@ func (h *Harness) GenerateAndSubmitBlockWithCustomCoinbaseOutputs(
 		blockVersion = BlockVersion
 	}
 
-	prevBlockHash, prevBlockHeight, err := h.Node.GetBestBlock()
+	parentBlockHash, parentBlockHeight, err := h.Node.GetBestBlock()
 	if err != nil {
 		return nil, err
 	}
-	mBlock, err := h.Node.GetBlock(prevBlockHash)
+	mBlock, err := h.Node.GetBlock(parentBlockHash)
 	if err != nil {
 		return nil, err
 	}
-	prevBlock := util.NewBlock(mBlock)
-	prevBlock.SetHeight(prevBlockHeight)
+	parentBlock := util.NewBlock(mBlock)
+	parentBlock.SetHeight(parentBlockHeight)
 
 	// Create a new block including the specified transactions
-	newBlock, err := CreateBlock(prevBlock, txns, blockVersion,
+	newBlock, err := CreateBlock(parentBlock, txns, blockVersion,
 		blockTime, h.wallet.coinbaseAddr, mineTo, h.ActiveNet)
 	if err != nil {
 		return nil, err
