@@ -160,9 +160,9 @@ func newBlockNode(blockHeader *wire.BlockHeader, parents blockSet, phantomK uint
 // Header constructs a block header from the node and returns it.
 //
 // This function is safe for concurrent access.
-func (node *blockNode) Header() wire.BlockHeader {
+func (node *blockNode) Header() *wire.BlockHeader {
 	// No lock is needed because all accessed fields are immutable.
-	return wire.BlockHeader{
+	return &wire.BlockHeader{
 		Version:         node.version,
 		NumParentBlocks: byte(len(node.parents)),
 		ParentHashes:    node.ParentHashes(),

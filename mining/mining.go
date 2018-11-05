@@ -698,7 +698,7 @@ mempoolLoop:
 	// Calculate the required difficulty for the block.  The timestamp
 	// is potentially adjusted to ensure it comes after the median time of
 	// the last several blocks per the chain consensus rules.
-	ts := medianAdjustedTime(g.dag.SelectedTip().CalcPastMedianTime(), g.timeSource)
+	ts := medianAdjustedTime(g.dag.CalcPastMedianTime(), g.timeSource)
 	reqDifficulty, err := g.dag.CalcNextRequiredDifficulty(ts)
 	if err != nil {
 		return nil, err

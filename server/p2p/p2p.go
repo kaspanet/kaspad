@@ -721,7 +721,7 @@ func (sp *Peer) OnGetHeaders(_ *peer.Peer, msg *wire.MsgGetHeaders) {
 	// Send found headers to the requesting peer.
 	blockHeaders := make([]*wire.BlockHeader, len(headers))
 	for i := range headers {
-		blockHeaders[i] = &headers[i]
+		blockHeaders[i] = headers[i]
 	}
 	sp.QueueMessage(&wire.MsgHeaders{Headers: blockHeaders}, nil)
 }
@@ -2437,7 +2437,7 @@ func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params
 		},
 		DAGParams:      dagParams,
 		BestHeight:     func() int32 { return s.DAG.Height() }, //TODO: (Ori) This is probably wrong. Done only for compilation
-		MedianTimePast: func() time.Time { return s.DAG.SelectedTip().CalcPastMedianTime() },
+		MedianTimePast: func() time.Time { return s.DAG.CalcPastMedianTime() },
 		CalcSequenceLock: func(tx *util.Tx, utxoSet blockdag.UTXOSet) (*blockdag.SequenceLock, error) {
 			return s.DAG.CalcSequenceLock(tx, utxoSet, true)
 		},
