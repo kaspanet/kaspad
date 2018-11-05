@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/daglabs/btcd/database"
-	_ "github.com/daglabs/btcd/database/ffldb"
+	_ "github.com/daglabs/btcd/database/ffldb" // blank import ffldb so that its init() function runs before tests
 	"github.com/daglabs/btcd/txscript"
 	"github.com/daglabs/btcd/wire"
 )

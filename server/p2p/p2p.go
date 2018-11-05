@@ -721,7 +721,7 @@ func (sp *Peer) OnGetHeaders(_ *peer.Peer, msg *wire.MsgGetHeaders) {
 	// Send found headers to the requesting peer.
 	blockHeaders := make([]*wire.BlockHeader, len(headers))
 	for i := range headers {
-		blockHeaders[i] = &headers[i]
+		blockHeaders[i] = headers[i]
 	}
 	sp.QueueMessage(&wire.MsgHeaders{Headers: blockHeaders}, nil)
 }
@@ -816,18 +816,18 @@ func (sp *Peer) OnGetCFHeaders(_ *peer.Peer, msg *wire.MsgGetCFHeaders) {
 
 	// Populate the PrevFilterHeader field.
 	if msg.StartHeight > 0 {
-		prevBlockHash := &hashList[0]
+		parentHash := &hashList[0]
 
 		// Fetch the raw committed filter header bytes from the
 		// database.
 		headerBytes, err := sp.server.CfIndex.FilterHeaderByBlockHash(
-			prevBlockHash, msg.FilterType)
+			parentHash, msg.FilterType)
 		if err != nil {
 			peerLog.Errorf("Error retrieving CF header: %v", err)
 			return
 		}
 		if len(headerBytes) == 0 {
-			peerLog.Warnf("Could not obtain CF header for %v", prevBlockHash)
+			peerLog.Warnf("Could not obtain CF header for %v", parentHash)
 			return
 		}
 
@@ -2437,7 +2437,7 @@ func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params
 		},
 		DAGParams:      dagParams,
 		BestHeight:     func() int32 { return s.DAG.Height() }, //TODO: (Ori) This is probably wrong. Done only for compilation
-		MedianTimePast: func() time.Time { return s.DAG.SelectedTip().CalcPastMedianTime() },
+		MedianTimePast: func() time.Time { return s.DAG.CalcPastMedianTime() },
 		CalcSequenceLock: func(tx *util.Tx, utxoSet blockdag.UTXOSet) (*blockdag.SequenceLock, error) {
 			return s.DAG.CalcSequenceLock(tx, utxoSet, true)
 		},

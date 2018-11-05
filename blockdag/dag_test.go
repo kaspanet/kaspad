@@ -64,7 +64,7 @@ func TestBlockCount(t *testing.T) {
 		}
 	}
 
-	expectedBlockCount := int64(6)
+	expectedBlockCount := uint64(6)
 	if dag.BlockCount() != expectedBlockCount {
 		t.Errorf("TestBlockCount: BlockCount expected to return %v but got %v", expectedBlockCount, dag.BlockCount())
 	}
@@ -222,7 +222,7 @@ func TestCalcSequenceLock(t *testing.T) {
 
 	// Generate enough synthetic blocks for the rest of the test
 	dag := newTestDAG(netParams)
-	node := dag.SelectedTip()
+	node := dag.selectedTip()
 	blockTime := node.Header().Timestamp
 	numBlocksToGenerate := uint32(5)
 	for i := uint32(0); i < numBlocksToGenerate; i++ {
@@ -589,7 +589,7 @@ func chainedNodes(parents blockSet, numNodes int) []*blockNode {
 		// This is invalid, but all that is needed is enough to get the
 		// synthetic tests to work.
 		header := wire.BlockHeader{Nonce: testNoncePrng.Uint64()}
-		header.PrevBlocks = tips.hashes()
+		header.ParentHashes = tips.hashes()
 		nodes[i] = newBlockNode(&header, tips, dagconfig.SimNetParams.K)
 		tips = setFromSlice(nodes[i])
 	}

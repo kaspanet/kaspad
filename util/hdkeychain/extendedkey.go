@@ -363,11 +363,13 @@ func (k *ExtendedKey) Neuter() (*ExtendedKey, error) {
 		k.depth, k.childNum, false), nil
 }
 
+// HDKeyIDPair represents a pair of public and private key IDs
 type HDKeyIDPair struct {
 	PrivateKeyID [4]byte
 	PublicKeyID  [4]byte
 }
 
+// HDKeyPairs for all kinds of nets
 var (
 	HDKeyPairMainNet = HDKeyIDPair{
 		PrivateKeyID: [4]byte{0x04, 0x88, 0xad, 0xe4}, // starts with xprv
@@ -387,6 +389,7 @@ var (
 	}
 )
 
+// RegisterHDKeyIDPair registers an HDKeyIDPair in the private to public key map
 func RegisterHDKeyIDPair(hdKeyIDPair HDKeyIDPair) {
 	hdPrivToPubKeyIDs[hdKeyIDPair.PrivateKeyID] = hdKeyIDPair.PublicKeyID[:]
 }

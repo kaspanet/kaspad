@@ -892,7 +892,7 @@ func (dag *BlockDAG) initDAGState() error {
 						"found %s", blockHash))
 				}
 			} else {
-				for _, hash := range header.PrevBlocks {
+				for _, hash := range header.ParentHashes {
 					parent := dag.index.LookupNode(&hash)
 					if parent == nil {
 						return AssertError(fmt.Sprintf("initDAGState: Could "+
@@ -912,6 +912,10 @@ func (dag *BlockDAG) initDAGState() error {
 			initBlockNode(node, header, parents, dag.dagParams.K)
 			node.status = status
 			dag.index.addNode(node)
+
+			if blockStatus(status).KnownValid() {
+				dag.blockCount++
+			}
 
 			lastNode = node
 			i++

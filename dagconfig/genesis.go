@@ -78,13 +78,13 @@ var genesisMerkleRoot = daghash.Hash([daghash.HashSize]byte{ // Make go vet happ
 // public transaction ledger for the main network.
 var genesisBlock = wire.MsgBlock{
 	Header: wire.BlockHeader{
-		Version:       1,
-		NumPrevBlocks: 0,
-		PrevBlocks:    []daghash.Hash{},
-		MerkleRoot:    genesisMerkleRoot,        // 4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b
-		Timestamp:     time.Unix(0x5bbe076c, 0), // 2018-10-10 14:06:36 +0000 UTC
-		Bits:          0x1e00ffff,               // 503382015 [000000ffff000000000000000000000000000000000000000000000000000000]
-		Nonce:         0x80000000000d8796,       // 9223372036855662486
+		Version:         1,
+		NumParentBlocks: 0,
+		ParentHashes:    []daghash.Hash{},
+		MerkleRoot:      genesisMerkleRoot,        // 4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b
+		Timestamp:       time.Unix(0x5bbe076c, 0), // 2018-10-10 14:06:36 +0000 UTC
+		Bits:            0x1e00ffff,               // 503382015 [000000ffff000000000000000000000000000000000000000000000000000000]
+		Nonce:           0x80000000000d8796,       // 9223372036855662486
 	},
 	Transactions: []*wire.MsgTx{&genesisCoinbaseTx},
 }
@@ -107,13 +107,13 @@ var regTestGenesisMerkleRoot = genesisMerkleRoot
 // as the public transaction ledger for the regression test network.
 var regTestGenesisBlock = wire.MsgBlock{
 	Header: wire.BlockHeader{
-		Version:       1,
-		NumPrevBlocks: 0,
-		PrevBlocks:    []daghash.Hash{},
-		MerkleRoot:    regTestGenesisMerkleRoot, // 4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b
-		Timestamp:     time.Unix(0x5bbe0d4b, 0), // 2018-06-19 09:00:38 +0000 UTC
-		Bits:          0x207fffff,               // 545259519 [7fffff0000000000000000000000000000000000000000000000000000000000]
-		Nonce:         0x00000000,
+		Version:         1,
+		NumParentBlocks: 0,
+		ParentHashes:    []daghash.Hash{},
+		MerkleRoot:      regTestGenesisMerkleRoot, // 4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b
+		Timestamp:       time.Unix(0x5bbe0d4b, 0), // 2018-06-19 09:00:38 +0000 UTC
+		Bits:            0x207fffff,               // 545259519 [7fffff0000000000000000000000000000000000000000000000000000000000]
+		Nonce:           0x00000000,
 	},
 	Transactions: []*wire.MsgTx{&genesisCoinbaseTx},
 }
@@ -136,13 +136,13 @@ var testNet3GenesisMerkleRoot = genesisMerkleRoot
 // serves as the public transaction ledger for the test network (version 3).
 var testNet3GenesisBlock = wire.MsgBlock{
 	Header: wire.BlockHeader{
-		Version:       1,
-		NumPrevBlocks: 0,
-		PrevBlocks:    []daghash.Hash{},
-		MerkleRoot:    testNet3GenesisMerkleRoot, // 4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b
-		Timestamp:     time.Unix(0x5bbe0e49, 0),  // 2018-06-19 09:04:06 +0000 UTC
-		Bits:          0x1e00ffff,                // 503382015 [000000ffff000000000000000000000000000000000000000000000000000000]
-		Nonce:         0xc00000000032560b,        // 2150570811
+		Version:         1,
+		NumParentBlocks: 0,
+		ParentHashes:    []daghash.Hash{},
+		MerkleRoot:      testNet3GenesisMerkleRoot, // 4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b
+		Timestamp:       time.Unix(0x5bbe0e49, 0),  // 2018-06-19 09:04:06 +0000 UTC
+		Bits:            0x1e00ffff,                // 503382015 [000000ffff000000000000000000000000000000000000000000000000000000]
+		Nonce:           0xc00000000032560b,        // 2150570811
 	},
 	Transactions: []*wire.MsgTx{&genesisCoinbaseTx},
 }
@@ -165,13 +165,13 @@ var simNetGenesisMerkleRoot = genesisMerkleRoot
 // as the public transaction ledger for the simulation test network.
 var simNetGenesisBlock = wire.MsgBlock{
 	Header: wire.BlockHeader{
-		Version:       1,
-		NumPrevBlocks: 0,
-		PrevBlocks:    []daghash.Hash{},
-		MerkleRoot:    simNetGenesisMerkleRoot,  // 4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b
-		Timestamp:     time.Unix(0x5bbe00fe, 0), // 2018-10-10 13:39:10 +0000 UTC
-		Bits:          0x207fffff,               // 545259519 [7fffff0000000000000000000000000000000000000000000000000000000000]
-		Nonce:         0xdffffffffffffffc,       // 1610612733
+		Version:         1,
+		NumParentBlocks: 0,
+		ParentHashes:    []daghash.Hash{},
+		MerkleRoot:      simNetGenesisMerkleRoot,  // 4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b
+		Timestamp:       time.Unix(0x5bbe00fe, 0), // 2018-10-10 13:39:10 +0000 UTC
+		Bits:            0x207fffff,               // 545259519 [7fffff0000000000000000000000000000000000000000000000000000000000]
+		Nonce:           0xdffffffffffffffc,       // 1610612733
 	},
 	Transactions: []*wire.MsgTx{&genesisCoinbaseTx},
 }

@@ -3,7 +3,7 @@
 // license that can be found in the LICENSE file.
 
 /*
-Package blockchain implements bitcoin block handling and chain selection rules.
+Package blockdag implements bitcoin block handling and chain selection rules.
 
 The bitcoin block handling and chain selection rules are an integral, and quite
 likely the most important, part of bitcoin.  Unfortunately, at the time of
