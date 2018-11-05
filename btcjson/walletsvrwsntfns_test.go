@@ -36,7 +36,7 @@ func TestWalletSvrWsNtfns(t *testing.T) {
 			staticNtfn: func() interface{} {
 				return btcjson.NewAccountBalanceNtfn("acct", 1.25, true)
 			},
-			marshalled: `{"jsonRpc":"1.0","method":"accountBalance","params":["acct",1.25,true],"id":null}`,
+			marshalled: `{"jsonrpc":"1.0","method":"accountBalance","params":["acct",1.25,true],"id":null}`,
 			unmarshalled: &btcjson.AccountBalanceNtfn{
 				Account:   "acct",
 				Balance:   1.25,
@@ -51,7 +51,7 @@ func TestWalletSvrWsNtfns(t *testing.T) {
 			staticNtfn: func() interface{} {
 				return btcjson.NewBtcdConnectedNtfn(true)
 			},
-			marshalled: `{"jsonRpc":"1.0","method":"btcdConnected","params":[true],"id":null}`,
+			marshalled: `{"jsonrpc":"1.0","method":"btcdConnected","params":[true],"id":null}`,
 			unmarshalled: &btcjson.BtcdConnectedNtfn{
 				Connected: true,
 			},
@@ -64,7 +64,7 @@ func TestWalletSvrWsNtfns(t *testing.T) {
 			staticNtfn: func() interface{} {
 				return btcjson.NewWalletLockStateNtfn(true)
 			},
-			marshalled: `{"jsonRpc":"1.0","method":"walletLockState","params":[true],"id":null}`,
+			marshalled: `{"jsonrpc":"1.0","method":"walletLockState","params":[true],"id":null}`,
 			unmarshalled: &btcjson.WalletLockStateNtfn{
 				Locked: true,
 			},
@@ -94,7 +94,7 @@ func TestWalletSvrWsNtfns(t *testing.T) {
 				}
 				return btcjson.NewNewTxNtfn("acct", result)
 			},
-			marshalled: `{"jsonRpc":"1.0","method":"newTx","params":["acct",{"abandoned":false,"account":"acct","address":"1Address","amount":1.5,"bip125Replaceable":"unknown","category":"send","confirmations":1,"fee":0.0001,"time":12345678,"timeReceived":12345876,"trusted":true,"txId":"456","vout":789,"walletConflicts":[],"otherAccount":"otheracct"}],"id":null}`,
+			marshalled: `{"jsonrpc":"1.0","method":"newTx","params":["acct",{"abandoned":false,"account":"acct","address":"1Address","amount":1.5,"bip125Replaceable":"unknown","category":"send","confirmations":1,"fee":0.0001,"time":12345678,"timeReceived":12345876,"trusted":true,"txId":"456","vout":789,"walletConflicts":[],"otherAccount":"otheracct"}],"id":null}`,
 			unmarshalled: &btcjson.NewTxNtfn{
 				Account: "acct",
 				Details: btcjson.ListTransactionsResult{

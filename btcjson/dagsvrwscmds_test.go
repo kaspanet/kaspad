@@ -38,7 +38,7 @@ func TestDAGSvrWsCmds(t *testing.T) {
 			staticCmd: func() interface{} {
 				return btcjson.NewAuthenticateCmd("user", "pass")
 			},
-			marshalled:   `{"jsonRpc":"1.0","method":"authenticate","params":["user","pass"],"id":1}`,
+			marshalled:   `{"jsonrpc":"1.0","method":"authenticate","params":["user","pass"],"id":1}`,
 			unmarshalled: &btcjson.AuthenticateCmd{Username: "user", Passphrase: "pass"},
 		},
 		{
@@ -49,7 +49,7 @@ func TestDAGSvrWsCmds(t *testing.T) {
 			staticCmd: func() interface{} {
 				return btcjson.NewNotifyBlocksCmd()
 			},
-			marshalled:   `{"jsonRpc":"1.0","method":"notifyBlocks","params":[],"id":1}`,
+			marshalled:   `{"jsonrpc":"1.0","method":"notifyBlocks","params":[],"id":1}`,
 			unmarshalled: &btcjson.NotifyBlocksCmd{},
 		},
 		{
@@ -60,7 +60,7 @@ func TestDAGSvrWsCmds(t *testing.T) {
 			staticCmd: func() interface{} {
 				return btcjson.NewStopNotifyBlocksCmd()
 			},
-			marshalled:   `{"jsonRpc":"1.0","method":"stopNotifyBlocks","params":[],"id":1}`,
+			marshalled:   `{"jsonrpc":"1.0","method":"stopNotifyBlocks","params":[],"id":1}`,
 			unmarshalled: &btcjson.StopNotifyBlocksCmd{},
 		},
 		{
@@ -71,7 +71,7 @@ func TestDAGSvrWsCmds(t *testing.T) {
 			staticCmd: func() interface{} {
 				return btcjson.NewNotifyNewTransactionsCmd(nil)
 			},
-			marshalled: `{"jsonRpc":"1.0","method":"notifyNewTransactions","params":[],"id":1}`,
+			marshalled: `{"jsonrpc":"1.0","method":"notifyNewTransactions","params":[],"id":1}`,
 			unmarshalled: &btcjson.NotifyNewTransactionsCmd{
 				Verbose: btcjson.Bool(false),
 			},
@@ -84,7 +84,7 @@ func TestDAGSvrWsCmds(t *testing.T) {
 			staticCmd: func() interface{} {
 				return btcjson.NewNotifyNewTransactionsCmd(btcjson.Bool(true))
 			},
-			marshalled: `{"jsonRpc":"1.0","method":"notifyNewTransactions","params":[true],"id":1}`,
+			marshalled: `{"jsonrpc":"1.0","method":"notifyNewTransactions","params":[true],"id":1}`,
 			unmarshalled: &btcjson.NotifyNewTransactionsCmd{
 				Verbose: btcjson.Bool(true),
 			},
@@ -97,7 +97,7 @@ func TestDAGSvrWsCmds(t *testing.T) {
 			staticCmd: func() interface{} {
 				return btcjson.NewStopNotifyNewTransactionsCmd()
 			},
-			marshalled:   `{"jsonRpc":"1.0","method":"stopNotifyNewTransactions","params":[],"id":1}`,
+			marshalled:   `{"jsonrpc":"1.0","method":"stopNotifyNewTransactions","params":[],"id":1}`,
 			unmarshalled: &btcjson.StopNotifyNewTransactionsCmd{},
 		},
 		{
@@ -108,7 +108,7 @@ func TestDAGSvrWsCmds(t *testing.T) {
 			staticCmd: func() interface{} {
 				return btcjson.NewNotifyReceivedCmd([]string{"1Address"})
 			},
-			marshalled: `{"jsonRpc":"1.0","method":"notifyReceived","params":[["1Address"]],"id":1}`,
+			marshalled: `{"jsonrpc":"1.0","method":"notifyReceived","params":[["1Address"]],"id":1}`,
 			unmarshalled: &btcjson.NotifyReceivedCmd{
 				Addresses: []string{"1Address"},
 			},
@@ -121,7 +121,7 @@ func TestDAGSvrWsCmds(t *testing.T) {
 			staticCmd: func() interface{} {
 				return btcjson.NewStopNotifyReceivedCmd([]string{"1Address"})
 			},
-			marshalled: `{"jsonRpc":"1.0","method":"stopNotifyReceived","params":[["1Address"]],"id":1}`,
+			marshalled: `{"jsonrpc":"1.0","method":"stopNotifyReceived","params":[["1Address"]],"id":1}`,
 			unmarshalled: &btcjson.StopNotifyReceivedCmd{
 				Addresses: []string{"1Address"},
 			},
@@ -135,7 +135,7 @@ func TestDAGSvrWsCmds(t *testing.T) {
 				ops := []btcjson.OutPoint{{Hash: "123", Index: 0}}
 				return btcjson.NewNotifySpentCmd(ops)
 			},
-			marshalled: `{"jsonRpc":"1.0","method":"notifySpent","params":[[{"hash":"123","index":0}]],"id":1}`,
+			marshalled: `{"jsonrpc":"1.0","method":"notifySpent","params":[[{"hash":"123","index":0}]],"id":1}`,
 			unmarshalled: &btcjson.NotifySpentCmd{
 				OutPoints: []btcjson.OutPoint{{Hash: "123", Index: 0}},
 			},
@@ -149,7 +149,7 @@ func TestDAGSvrWsCmds(t *testing.T) {
 				ops := []btcjson.OutPoint{{Hash: "123", Index: 0}}
 				return btcjson.NewStopNotifySpentCmd(ops)
 			},
-			marshalled: `{"jsonRpc":"1.0","method":"stopNotifySpent","params":[[{"hash":"123","index":0}]],"id":1}`,
+			marshalled: `{"jsonrpc":"1.0","method":"stopNotifySpent","params":[[{"hash":"123","index":0}]],"id":1}`,
 			unmarshalled: &btcjson.StopNotifySpentCmd{
 				OutPoints: []btcjson.OutPoint{{Hash: "123", Index: 0}},
 			},
@@ -167,7 +167,7 @@ func TestDAGSvrWsCmds(t *testing.T) {
 				}}
 				return btcjson.NewLoadTxFilterCmd(false, addrs, ops)
 			},
-			marshalled: `{"jsonRpc":"1.0","method":"loadTxFilter","params":[false,["1Address"],[{"hash":"0000000000000000000000000000000000000000000000000000000000000123","index":0}]],"id":1}`,
+			marshalled: `{"jsonrpc":"1.0","method":"loadTxFilter","params":[false,["1Address"],[{"hash":"0000000000000000000000000000000000000000000000000000000000000123","index":0}]],"id":1}`,
 			unmarshalled: &btcjson.LoadTxFilterCmd{
 				Reload:    false,
 				Addresses: []string{"1Address"},
@@ -183,7 +183,7 @@ func TestDAGSvrWsCmds(t *testing.T) {
 				blockhashes := []string{"0000000000000000000000000000000000000000000000000000000000000123"}
 				return btcjson.NewRescanBlocksCmd(blockhashes)
 			},
-			marshalled: `{"jsonRpc":"1.0","method":"rescanBlocks","params":[["0000000000000000000000000000000000000000000000000000000000000123"]],"id":1}`,
+			marshalled: `{"jsonrpc":"1.0","method":"rescanBlocks","params":[["0000000000000000000000000000000000000000000000000000000000000123"]],"id":1}`,
 			unmarshalled: &btcjson.RescanBlocksCmd{
 				BlockHashes: []string{"0000000000000000000000000000000000000000000000000000000000000123"},
 			},

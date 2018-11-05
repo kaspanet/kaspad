@@ -38,7 +38,7 @@ func TestBtcdExtCmds(t *testing.T) {
 			staticCmd: func() interface{} {
 				return btcjson.NewDebugLevelCmd("trace")
 			},
-			marshalled: `{"jsonRpc":"1.0","method":"debugLevel","params":["trace"],"id":1}`,
+			marshalled: `{"jsonrpc":"1.0","method":"debugLevel","params":["trace"],"id":1}`,
 			unmarshalled: &btcjson.DebugLevelCmd{
 				LevelSpec: "trace",
 			},
@@ -51,7 +51,7 @@ func TestBtcdExtCmds(t *testing.T) {
 			staticCmd: func() interface{} {
 				return btcjson.NewNodeCmd("remove", "1.1.1.1", nil)
 			},
-			marshalled: `{"jsonRpc":"1.0","method":"node","params":["remove","1.1.1.1"],"id":1}`,
+			marshalled: `{"jsonrpc":"1.0","method":"node","params":["remove","1.1.1.1"],"id":1}`,
 			unmarshalled: &btcjson.NodeCmd{
 				SubCmd: btcjson.NRemove,
 				Target: "1.1.1.1",
@@ -65,7 +65,7 @@ func TestBtcdExtCmds(t *testing.T) {
 			staticCmd: func() interface{} {
 				return btcjson.NewNodeCmd("disconnect", "1.1.1.1", nil)
 			},
-			marshalled: `{"jsonRpc":"1.0","method":"node","params":["disconnect","1.1.1.1"],"id":1}`,
+			marshalled: `{"jsonrpc":"1.0","method":"node","params":["disconnect","1.1.1.1"],"id":1}`,
 			unmarshalled: &btcjson.NodeCmd{
 				SubCmd: btcjson.NDisconnect,
 				Target: "1.1.1.1",
@@ -79,7 +79,7 @@ func TestBtcdExtCmds(t *testing.T) {
 			staticCmd: func() interface{} {
 				return btcjson.NewNodeCmd("connect", "1.1.1.1", btcjson.String("perm"))
 			},
-			marshalled: `{"jsonRpc":"1.0","method":"node","params":["connect","1.1.1.1","perm"],"id":1}`,
+			marshalled: `{"jsonrpc":"1.0","method":"node","params":["connect","1.1.1.1","perm"],"id":1}`,
 			unmarshalled: &btcjson.NodeCmd{
 				SubCmd:        btcjson.NConnect,
 				Target:        "1.1.1.1",
@@ -94,7 +94,7 @@ func TestBtcdExtCmds(t *testing.T) {
 			staticCmd: func() interface{} {
 				return btcjson.NewNodeCmd("connect", "1.1.1.1", btcjson.String("temp"))
 			},
-			marshalled: `{"jsonRpc":"1.0","method":"node","params":["connect","1.1.1.1","temp"],"id":1}`,
+			marshalled: `{"jsonrpc":"1.0","method":"node","params":["connect","1.1.1.1","temp"],"id":1}`,
 			unmarshalled: &btcjson.NodeCmd{
 				SubCmd:        btcjson.NConnect,
 				Target:        "1.1.1.1",
@@ -109,7 +109,7 @@ func TestBtcdExtCmds(t *testing.T) {
 			staticCmd: func() interface{} {
 				return btcjson.NewGenerateCmd(1)
 			},
-			marshalled: `{"jsonRpc":"1.0","method":"generate","params":[1],"id":1}`,
+			marshalled: `{"jsonrpc":"1.0","method":"generate","params":[1],"id":1}`,
 			unmarshalled: &btcjson.GenerateCmd{
 				NumBlocks: 1,
 			},
@@ -122,7 +122,7 @@ func TestBtcdExtCmds(t *testing.T) {
 			staticCmd: func() interface{} {
 				return btcjson.NewGetBestBlockCmd()
 			},
-			marshalled:   `{"jsonRpc":"1.0","method":"getBestBlock","params":[],"id":1}`,
+			marshalled:   `{"jsonrpc":"1.0","method":"getBestBlock","params":[],"id":1}`,
 			unmarshalled: &btcjson.GetBestBlockCmd{},
 		},
 		{
@@ -133,7 +133,7 @@ func TestBtcdExtCmds(t *testing.T) {
 			staticCmd: func() interface{} {
 				return btcjson.NewGetCurrentNetCmd()
 			},
-			marshalled:   `{"jsonRpc":"1.0","method":"getCurrentNet","params":[],"id":1}`,
+			marshalled:   `{"jsonrpc":"1.0","method":"getCurrentNet","params":[],"id":1}`,
 			unmarshalled: &btcjson.GetCurrentNetCmd{},
 		},
 		{
@@ -147,7 +147,7 @@ func TestBtcdExtCmds(t *testing.T) {
 					"",
 				)
 			},
-			marshalled: `{"jsonRpc":"1.0","method":"getHeaders","params":[[],""],"id":1}`,
+			marshalled: `{"jsonrpc":"1.0","method":"getHeaders","params":[[],""],"id":1}`,
 			unmarshalled: &btcjson.GetHeadersCmd{
 				BlockLocators: []string{},
 				HashStop:      "",
@@ -167,7 +167,7 @@ func TestBtcdExtCmds(t *testing.T) {
 					"000000000000000000ba33b33e1fad70b69e234fc24414dd47113bff38f523f7",
 				)
 			},
-			marshalled: `{"jsonRpc":"1.0","method":"getHeaders","params":[["000000000000000001f1739002418e2f9a84c47a4fd2a0eb7a787a6b7dc12f16","0000000000000000026f4b7f56eef057b32167eb5ad9ff62006f1807b7336d10"],"000000000000000000ba33b33e1fad70b69e234fc24414dd47113bff38f523f7"],"id":1}`,
+			marshalled: `{"jsonrpc":"1.0","method":"getHeaders","params":[["000000000000000001f1739002418e2f9a84c47a4fd2a0eb7a787a6b7dc12f16","0000000000000000026f4b7f56eef057b32167eb5ad9ff62006f1807b7336d10"],"000000000000000000ba33b33e1fad70b69e234fc24414dd47113bff38f523f7"],"id":1}`,
 			unmarshalled: &btcjson.GetHeadersCmd{
 				BlockLocators: []string{
 					"000000000000000001f1739002418e2f9a84c47a4fd2a0eb7a787a6b7dc12f16",
@@ -184,7 +184,7 @@ func TestBtcdExtCmds(t *testing.T) {
 			staticCmd: func() interface{} {
 				return btcjson.NewVersionCmd()
 			},
-			marshalled:   `{"jsonRpc":"1.0","method":"version","params":[],"id":1}`,
+			marshalled:   `{"jsonrpc":"1.0","method":"version","params":[],"id":1}`,
 			unmarshalled: &btcjson.VersionCmd{},
 		},
 	}
