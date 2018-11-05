@@ -310,17 +310,17 @@ func newBlockImporter(db database.DB, r io.ReadSeeker) (*blockImporter, error) {
 		} else {
 			log.Info("Transaction index is enabled")
 		}
-		indexes = append(indexes, indexers.NewTxIndex(db))
+		indexes = append(indexes, indexers.NewTxIndex())
 	}
 	if cfg.AddrIndex {
 		log.Info("Address index is enabled")
-		indexes = append(indexes, indexers.NewAddrIndex(db, activeNetParams))
+		indexes = append(indexes, indexers.NewAddrIndex(activeNetParams))
 	}
 
 	// Create an index manager if any of the optional indexes are enabled.
 	var indexManager blockdag.IndexManager
 	if len(indexes) > 0 {
-		indexManager = indexers.NewManager(db, indexes)
+		indexManager = indexers.NewManager(indexes)
 	}
 
 	dag, err := blockdag.New(&blockdag.Config{

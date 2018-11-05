@@ -14,8 +14,8 @@ type virtualBlock struct {
 	phantomK uint32
 	utxoSet  *FullUTXOSet
 	blockNode
-	// selectedPathSet is a block set that includes all the blocks that belong to the chain of selected parents from the virtual block.
-	selectedPathSet blockSet
+	// selectedPathChainSet is a block set that includes all the blocks that belong to the chain of selected parents from the virtual block.
+	selectedPathChainSet blockSet
 }
 
 // newVirtualBlock creates and returns a new VirtualBlock.
@@ -24,7 +24,7 @@ func newVirtualBlock(tips blockSet, phantomK uint32) *virtualBlock {
 	var virtual virtualBlock
 	virtual.phantomK = phantomK
 	virtual.utxoSet = NewFullUTXOSet()
-	virtual.selectedPathSet = newSet()
+	virtual.selectedPathChainSet = newSet()
 	virtual.setTips(tips)
 
 	return &virtual
@@ -33,10 +33,10 @@ func newVirtualBlock(tips blockSet, phantomK uint32) *virtualBlock {
 // clone creates and returns a clone of the virtual block.
 func (v *virtualBlock) clone() *virtualBlock {
 	return &virtualBlock{
-		phantomK:        v.phantomK,
-		utxoSet:         v.utxoSet.clone().(*FullUTXOSet),
-		blockNode:       v.blockNode,
-		selectedPathSet: v.selectedPathSet,
+		phantomK:             v.phantomK,
+		utxoSet:              v.utxoSet.clone().(*FullUTXOSet),
+		blockNode:            v.blockNode,
+		selectedPathChainSet: v.selectedPathChainSet,
 	}
 }
 
@@ -62,10 +62,10 @@ func (v *virtualBlock) setTips(tips blockSet) {
 func (v *virtualBlock) updateSelectedPathSet(oldSelectedParent *blockNode) {
 	var intersectionNode *blockNode
 	for node := v.blockNode.selectedParent; intersectionNode == nil && node != nil; node = node.selectedParent {
-		if v.selectedPathSet.contains(node) {
+		if v.selectedPathChainSet.contains(node) {
 			intersectionNode = node
 		} else {
-			v.selectedPathSet.add(node)
+			v.selectedPathChainSet.add(node)
 		}
 	}
 
@@ -75,7 +75,7 @@ func (v *virtualBlock) updateSelectedPathSet(oldSelectedParent *blockNode) {
 
 	if intersectionNode != nil {
 		for node := oldSelectedParent; !node.hash.IsEqual(&intersectionNode.hash); node = node.selectedParent {
-			v.selectedPathSet.remove(node)
+			v.selectedPathChainSet.remove(node)
 		}
 	}
 }

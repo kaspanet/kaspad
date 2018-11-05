@@ -1000,6 +1000,11 @@ func (dag *BlockDAG) GetUTXOEntry(outPoint wire.OutPoint) (*UTXOEntry, bool) {
 	return dag.virtual.utxoSet.get(outPoint)
 }
 
+// IsInSelectedPathChain returns whether or not a block hash is found in the selected path
+func (dag *BlockDAG) IsInSelectedPathChain(blockHash *daghash.Hash) bool {
+	return dag.virtual.selectedPathChainSet.containsHash(blockHash)
+}
+
 // Height returns the height of the highest tip in the DAG
 func (dag *BlockDAG) Height() int32 {
 	return dag.virtual.tips().maxHeight()
@@ -1405,7 +1410,7 @@ type IndexManager interface {
 	// channel parameter specifies a channel the caller can close to signal
 	// that the process should be interrupted.  It can be nil if that
 	// behavior is not desired.
-	Init(*BlockDAG, <-chan struct{}) error
+	Init(database.DB, *BlockDAG, <-chan struct{}) error
 
 	// ConnectBlock is invoked when a new block has been connected to the
 	// DAG.
@@ -1537,7 +1542,7 @@ func New(config *Config) (*BlockDAG, error) {
 	// Initialize and catch up all of the currently active optional indexes
 	// as needed.
 	if config.IndexManager != nil {
-		err := config.IndexManager.Init(&dag, config.Interrupt)
+		err := config.IndexManager.Init(dag.db, &dag, config.Interrupt)
 		if err != nil {
 			return nil, err
 		}

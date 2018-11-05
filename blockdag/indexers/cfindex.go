@@ -88,8 +88,9 @@ var _ Indexer = (*CfIndex)(nil)
 
 // Init initializes the hash-based cf index. This is part of the Indexer
 // interface.
-func (idx *CfIndex) Init() error {
-	return nil // Nothing to do.
+func (idx *CfIndex) Init(db database.DB) error {
+	idx.db = db
+	return nil
 }
 
 // Key returns the database key to use for the index as a byte slice. This is
@@ -345,8 +346,8 @@ func (idx *CfIndex) FilterHashesByBlockHashes(blockHashes []*daghash.Hash,
 // It implements the Indexer interface which plugs into the IndexManager that
 // in turn is used by the blockchain package. This allows the index to be
 // seamlessly maintained along with the chain.
-func NewCfIndex(db database.DB, dagParams *dagconfig.Params) *CfIndex {
-	return &CfIndex{db: db, dagParams: dagParams}
+func NewCfIndex(dagParams *dagconfig.Params) *CfIndex {
+	return &CfIndex{dagParams: dagParams}
 }
 
 // DropCfIndex drops the CF index from the provided database if exists.

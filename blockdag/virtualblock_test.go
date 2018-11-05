@@ -138,7 +138,7 @@ func TestSelectedPath(t *testing.T) {
 		virtual.AddTip(tip)
 	}
 	// For now we don't have any DAG, just chain, the selected path should include all the blocks on the chain.
-	if !reflect.DeepEqual(virtual.selectedPathSet, firstPath) {
+	if !reflect.DeepEqual(virtual.selectedPathChainSet, firstPath) {
 		t.Fatalf("TestSelectedPath: selectedPathSet doesn't include the expected values. got %v, want %v", virtual.selectedParent, firstPath)
 	}
 
@@ -150,7 +150,7 @@ func TestSelectedPath(t *testing.T) {
 		virtual.AddTip(tip)
 	}
 	// Because we added a chain that is much longer than the previous chain, the selected path should be re-organized.
-	if !reflect.DeepEqual(virtual.selectedPathSet, secondPath) {
+	if !reflect.DeepEqual(virtual.selectedPathChainSet, secondPath) {
 		t.Fatalf("TestSelectedPath: selectedPathSet didn't handle the re-org as expected. got %v, want %v", virtual.selectedParent, firstPath)
 	}
 
@@ -160,7 +160,7 @@ func TestSelectedPath(t *testing.T) {
 		virtual.AddTip(tip)
 	}
 	// Because we added a very short chain, the selected path should not be affected.
-	if !reflect.DeepEqual(virtual.selectedPathSet, secondPath) {
+	if !reflect.DeepEqual(virtual.selectedPathChainSet, secondPath) {
 		t.Fatalf("TestSelectedPath: selectedPathSet did an unexpected re-org. got %v, want %v", virtual.selectedParent, firstPath)
 	}
 

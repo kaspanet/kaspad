@@ -22,7 +22,9 @@ func TestAncestorErrors(t *testing.T) {
 
 func TestFlushToDBErrors(t *testing.T) {
 	// Create a new database and DAG instance to run tests against.
-	dag, teardownFunc, err := DAGSetup("TestFlushToDBErrors", &dagconfig.SimNetParams)
+	dag, teardownFunc, err := DAGSetup("TestFlushToDBErrors", Config{
+		DAGParams: &dagconfig.SimNetParams,
+	})
 	if err != nil {
 		t.Fatalf("TestFlushToDBErrors: Failed to setup DAG instance: %s", err)
 	}

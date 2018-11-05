@@ -9,6 +9,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"math/big"
+	"sort"
 	"strings"
 )
 
@@ -187,4 +188,10 @@ func Less(a *Hash, b *Hash) bool {
 //JoinHashesStrings joins all the stringified hashes separated by a separator
 func JoinHashesStrings(hashes []Hash, separator string) string {
 	return strings.Join(Strings(hashes), separator)
+}
+
+func Sort(hashes []Hash) {
+	sort.Slice(hashes, func(i, j int) bool {
+		return Less(&hashes[i], &hashes[j])
+	})
 }
