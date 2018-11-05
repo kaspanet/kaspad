@@ -142,7 +142,7 @@ func CreateBlock(parentBlock *util.Block, inclusionTxs []*util.Tx,
 		parentBlockTime time.Time
 	)
 
-	// If the previous block isn't specified, then we'll construct a block
+	// If the parent block isn't specified, then we'll construct a block
 	// that builds off of the genesis block for the chain.
 	if parentBlock == nil {
 		parentHash = net.GenesisHash
@@ -155,7 +155,7 @@ func CreateBlock(parentBlock *util.Block, inclusionTxs []*util.Tx,
 	}
 
 	// If a target block time was specified, then use that as the header's
-	// timestamp. Otherwise, add one second to the previous block unless
+	// timestamp. Otherwise, add one second to the parent block unless
 	// it's the genesis block in which case use the current time.
 	var ts time.Time
 	switch {

@@ -241,7 +241,7 @@ var helpDescsEnUS = map[string]string{
 	"getblockverboseresult-nonce":             "The block nonce",
 	"getblockverboseresult-bits":              "The bits which represent the block difficulty",
 	"getblockverboseresult-difficulty":        "The proof-of-work difficulty as a multiple of the minimum difficulty",
-	"getblockverboseresult-parentblockhashes": "The hashes of the previous blocks",
+	"getblockverboseresult-parentblockhashes": "The hashes of the parent blocks",
 	"getblockverboseresult-nextblockhashes":   "The hashes of the next blocks (only if there are any)",
 
 	// GetBlockCountCmd help.
@@ -272,7 +272,7 @@ var helpDescsEnUS = map[string]string{
 	"getblockheaderverboseresult-nonce":             "The block nonce",
 	"getblockheaderverboseresult-bits":              "The bits which represent the block difficulty",
 	"getblockheaderverboseresult-difficulty":        "The proof-of-work difficulty as a multiple of the minimum difficulty",
-	"getblockheaderverboseresult-parentblockhashes": "The hashes of the previous blocks",
+	"getblockheaderverboseresult-parentblockhashes": "The hashes of the parent blocks",
 	"getblockheaderverboseresult-nextblockhashes":   "The hashes of the next blocks (only if there are any)",
 
 	// TemplateRequest help.
@@ -300,7 +300,7 @@ var helpDescsEnUS = map[string]string{
 	"getblocktemplateresult-bits":              "Hex-encoded compressed difficulty",
 	"getblocktemplateresult-curtime":           "Current time as seen by the server (recommended for block time); must fall within mintime/maxtime rules",
 	"getblocktemplateresult-height":            "Height of the block to be solved",
-	"getblocktemplateresult-parentblockhashes": "Hex-encoded big-endian hashes of the previous blocks",
+	"getblocktemplateresult-parentblockhashes": "Hex-encoded big-endian hashes of the parent blocks",
 	"getblocktemplateresult-sigoplimit":        "Number of sigops allowed in blocks ",
 	"getblocktemplateresult-sizelimit":         "Number of bytes allowed in blocks",
 	"getblocktemplateresult-transactions":      "Array of transactions as JSON objects",

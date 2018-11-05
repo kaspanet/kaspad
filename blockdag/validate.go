@@ -1078,9 +1078,9 @@ func (dag *BlockDAG) CheckConnectBlockTemplate(block *util.Block) error {
 	header := block.MsgBlock().Header
 	parentHashes := header.ParentHashes
 	if !tips.hashesEqual(parentHashes) {
-		str := fmt.Sprintf("previous blocks must be the currents tips %v, "+
+		str := fmt.Sprintf("parent blocks must be the currents tips %v, "+
 			"instead got %v", tips, parentHashes)
-		return ruleError(ErrParentBlockNotBest, str)
+		return ruleError(ErrParentBlockNotCurrentTips, str)
 	}
 
 	err := checkBlockSanity(block, dag.dagParams.PowLimit, dag.timeSource, flags)

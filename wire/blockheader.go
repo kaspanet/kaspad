@@ -13,19 +13,19 @@ import (
 )
 
 // BaseBlockHeaderPayload is the base number of bytes a block header can be,
-// not including the list of previous block headers.
+// not including the list of parent block headers.
 // Version 4 bytes + Timestamp 8 bytes + Bits 4 bytes + Nonce 8 bytes +
 // + NumParentBlocks 1 byte + MerkleRoot hash.
 // To get total size of block header len(ParentHashes) * daghash.HashSize should be
 // added to this value
 const BaseBlockHeaderPayload = 25 + (daghash.HashSize)
 
-// MaxNumParentBlocks is the maximum number of previous blocks a block can reference.
+// MaxNumParentBlocks is the maximum number of parent blocks a block can reference.
 // Currently set to 255 as the maximum number NumParentBlocks can be due to it being a byte
 const MaxNumParentBlocks = 255
 
 // MaxBlockHeaderPayload is the maximum number of bytes a block header can be.
-// BaseBlockHeaderPayload + up to MaxNumParentBlocks hashes of previous blocks
+// BaseBlockHeaderPayload + up to MaxNumParentBlocks hashes of parent blocks
 const MaxBlockHeaderPayload = BaseBlockHeaderPayload + (MaxNumParentBlocks * daghash.HashSize)
 
 // BlockHeader defines information about a block and is used in the bitcoin
@@ -37,7 +37,7 @@ type BlockHeader struct {
 	// Number of entries in ParentHashes
 	NumParentBlocks byte
 
-	// Hashes of the previous block headers in the blockDAG.
+	// Hashes of the parent block headers in the blockDAG.
 	ParentHashes []daghash.Hash
 
 	// Merkle tree reference to hash of all transactions for the block.

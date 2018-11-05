@@ -293,7 +293,7 @@ func (dag *BlockDAG) addOrphanBlock(block *util.Block) {
 	}
 	dag.orphans[*block.Hash()] = oBlock
 
-	// Add to previous hash lookup index for faster dependency lookups.
+	// Add to parent hash lookup index for faster dependency lookups.
 	parentHash := block.MsgBlock().Header.SelectedParentHash()
 	dag.prevOrphans[*parentHash] = append(dag.prevOrphans[*parentHash], oBlock)
 }

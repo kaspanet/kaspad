@@ -75,7 +75,7 @@ const (
 	gbtNonceRange = "000000000000ffffffffffff"
 
 	// gbtRegenerateSeconds is the number of seconds that must pass before
-	// a new template is generated when the previous block hash has not
+	// a new template is generated when the parent block hashes has not
 	// changed and there have been changes to the available transactions
 	// in the memory pool.
 	gbtRegenerateSeconds = 60
@@ -1350,7 +1350,7 @@ func encodeLongPollID(parentHashes []daghash.Hash, lastGenerated time.Time) stri
 // decodeLongPollID decodes an ID that is used to uniquely identify a block
 // template.  This is mainly used as a mechanism to track when to update clients
 // that are using long polling for block templates.  The ID consists of the
-// previous blocks hashes for the associated template and the time the associated
+// parent blocks hashes for the associated template and the time the associated
 // template was generated.
 func decodeLongPollID(longPollID string) ([]daghash.Hash, int64, error) {
 	fields := strings.Split(longPollID, "-")
@@ -1360,7 +1360,7 @@ func decodeLongPollID(longPollID string) ([]daghash.Hash, int64, error) {
 
 	parentHashesStr := fields[0]
 	if len(parentHashesStr)%daghash.HashSize != 0 {
-		return nil, 0, errors.New("decodeLongPollID: invalid previous hashes format")
+		return nil, 0, errors.New("decodeLongPollID: invalid parent hashes format")
 	}
 	numberOfHashes := len(parentHashesStr) / daghash.HashSize
 
@@ -1467,7 +1467,7 @@ func (state *gbtWorkState) NotifyMempoolTx(lastUpdated time.Time) {
 }
 
 // templateUpdateChan returns a channel that will be closed once the block
-// template associated with the passed previous hash and last generated time
+// template associated with the passed parent hashes and last generated time
 // is stale.  The function will return existing channels for duplicate
 // parameters which allows multiple clients to wait for the same block template
 // without requiring a different channel for each client.
@@ -1476,7 +1476,7 @@ func (state *gbtWorkState) NotifyMempoolTx(lastUpdated time.Time) {
 func (state *gbtWorkState) templateUpdateChan(tipHashes []daghash.Hash, lastGenerated int64) chan struct{} {
 	tipHashesStr := daghash.JoinHashesStrings(tipHashes, "")
 	// Either get the current list of channels waiting for updates about
-	// changes to block template for the previous hash or create a new one.
+	// changes to block template for the parent hashes or create a new one.
 	channels, ok := state.notifyMap[tipHashesStr]
 	if !ok {
 		m := make(map[int64]chan struct{})
@@ -1824,7 +1824,7 @@ func handleGetBlockTemplateLongPoll(s *Server, longPollID string, useCoinbaseVal
 		return result, nil
 	}
 
-	// Register the previous hash and last generated time for notifications
+	// Register the parent hashes and last generated time for notifications
 	// Get a channel that will be notified when the template associated with
 	// the provided ID is stale and a new block template should be returned to
 	// the caller.
@@ -2036,7 +2036,7 @@ func chainErrToGBTErrString(err error) string {
 		return "parent-blk-not-found"
 	case blockdag.ErrInvalidAncestorBlock:
 		return "bad-parentblk"
-	case blockdag.ErrParentBlockNotBest:
+	case blockdag.ErrParentBlockNotCurrentTips:
 		return "inconclusive-not-best-parentblk"
 	}
 
@@ -2079,7 +2079,7 @@ func handleGetBlockTemplateProposal(s *Server, request *btcjson.TemplateRequest)
 	}
 	block := util.NewBlock(&msgBlock)
 
-	// Ensure the block is building from the expected previous blocks.
+	// Ensure the block is building from the expected parent blocks.
 	expectedParentHashes := s.cfg.DAG.TipHashes()
 	parentHashes := block.MsgBlock().Header.ParentHashes
 	if !daghash.AreEqual(expectedParentHashes, parentHashes) {

@@ -411,7 +411,7 @@ func BenchmarkDecodeGetHeaders(b *testing.B) {
 
 // BenchmarkDecodeHeaders performs a benchmark on how long it takes to
 // decode a headers message with the maximum number of headers and maximum number of
-// previous hashes per header.
+// parent hashes per header.
 func BenchmarkDecodeHeaders(b *testing.B) {
 	// Create a message with the maximum number of headers.
 	pver := ProtocolVersion
