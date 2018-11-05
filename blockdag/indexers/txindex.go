@@ -498,8 +498,8 @@ func dbFetchTxBlocks(dbTx database.Tx, txHash *daghash.Hash) ([]daghash.Hash, er
 	return blockHashes, nil
 }
 
-// TxAcceptingBlock returns the hash of the block where the transaction got accepted (from the virtual block point of view)
-func (idx *TxIndex) TxAcceptingBlock(dag *blockdag.BlockDAG, txHash *daghash.Hash) (*daghash.Hash, error) {
+// BlockThatAcceptedTx returns the hash of the block where the transaction got accepted (from the virtual block point of view)
+func (idx *TxIndex) BlockThatAcceptedTx(dag *blockdag.BlockDAG, txHash *daghash.Hash) (*daghash.Hash, error) {
 	var acceptingBlock *daghash.Hash
 	err := idx.db.View(func(dbTx database.Tx) error {
 		var err error

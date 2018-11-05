@@ -53,7 +53,7 @@ func TestTxIndexConnectBlock(t *testing.T) {
 	processBlock(t, dag, &block3, "3")
 
 	block3TxHash := block3Tx.TxHash()
-	block3TxNewAcceptedBlock, err := txIndex.TxAcceptingBlock(dag, &block3TxHash)
+	block3TxNewAcceptedBlock, err := txIndex.BlockThatAcceptedTx(dag, &block3TxHash)
 	if err != nil {
 		t.Errorf("TestTxIndexConnectBlock: TxAcceptedInBlock: %v", err)
 	}
@@ -67,7 +67,7 @@ func TestTxIndexConnectBlock(t *testing.T) {
 	processBlock(t, dag, &block4, "4")
 	processBlock(t, dag, &block5, "5")
 
-	block3TxAcceptedBlock, err := txIndex.TxAcceptingBlock(dag, &block3TxHash)
+	block3TxAcceptedBlock, err := txIndex.BlockThatAcceptedTx(dag, &block3TxHash)
 	if err != nil {
 		t.Errorf("TestTxIndexConnectBlock: TxAcceptedInBlock: %v", err)
 	}
