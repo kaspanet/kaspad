@@ -545,9 +545,9 @@ func handleCreateRawTransaction(s *Server, cmd interface{}, closeChan <-chan str
 	// some validity checks.
 	mtx := wire.NewMsgTx(wire.TxVersion)
 	for _, input := range c.Inputs {
-		txHash, err := daghash.NewHashFromStr(input.Txid)
+		txHash, err := daghash.NewHashFromStr(input.TxID)
 		if err != nil {
-			return nil, rpcDecodeHexError(input.Txid)
+			return nil, rpcDecodeHexError(input.TxID)
 		}
 
 		prevOut := wire.NewOutPoint(txHash, input.Vout)
@@ -673,7 +673,7 @@ func createVinList(mtx *wire.MsgTx) []btcjson.Vin {
 		disbuf, _ := txscript.DisasmString(txIn.SignatureScript)
 
 		vinEntry := &vinList[i]
-		vinEntry.Txid = txIn.PreviousOutPoint.Hash.String()
+		vinEntry.TxID = txIn.PreviousOutPoint.Hash.String()
 		vinEntry.Vout = txIn.PreviousOutPoint.Index
 		vinEntry.Sequence = txIn.Sequence
 		vinEntry.ScriptSig = &btcjson.ScriptSig{
@@ -750,7 +750,7 @@ func createTxRawResult(chainParams *dagconfig.Params, mtx *wire.MsgTx,
 
 	txReply := &btcjson.TxRawResult{
 		Hex:      mtxHex,
-		Txid:     txHash,
+		TxID:     txHash,
 		Hash:     mtx.TxHash().String(),
 		Size:     int32(mtx.SerializeSize()),
 		Vin:      createVinList(mtx),
@@ -762,7 +762,7 @@ func createTxRawResult(chainParams *dagconfig.Params, mtx *wire.MsgTx,
 	if blkHeader != nil {
 		// This is not a typo, they are identical in bitcoind as well.
 		txReply.Time = uint64(blkHeader.Timestamp.Unix())
-		txReply.Blocktime = uint64(blkHeader.Timestamp.Unix())
+		txReply.BlockTime = uint64(blkHeader.Timestamp.Unix())
 		txReply.BlockHash = blkHash
 		txReply.Confirmations = uint64(1 + chainHeight - blkHeight)
 	}
@@ -794,7 +794,7 @@ func handleDecodeRawTransaction(s *Server, cmd interface{}, closeChan <-chan str
 
 	// Create and return the result.
 	txReply := btcjson.TxRawDecodeResult{
-		Txid:     mtx.TxHash().String(),
+		TxID:     mtx.TxHash().String(),
 		Version:  mtx.Version,
 		Locktime: mtx.LockTime,
 		Vin:      createVinList(&mtx),
@@ -2415,9 +2415,9 @@ func handleGetRawTransaction(s *Server, cmd interface{}, closeChan <-chan struct
 	c := cmd.(*btcjson.GetRawTransactionCmd)
 
 	// Convert the provided transaction hash hex to a Hash.
-	txHash, err := daghash.NewHashFromStr(c.Txid)
+	txHash, err := daghash.NewHashFromStr(c.TxID)
 	if err != nil {
-		return nil, rpcDecodeHexError(c.Txid)
+		return nil, rpcDecodeHexError(c.TxID)
 	}
 
 	verbose := false
@@ -2534,9 +2534,9 @@ func handleGetTxOut(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 	c := cmd.(*btcjson.GetTxOutCmd)
 
 	// Convert the provided transaction hash hex to a Hash.
-	txHash, err := daghash.NewHashFromStr(c.Txid)
+	txHash, err := daghash.NewHashFromStr(c.TxID)
 	if err != nil {
-		return nil, rpcDecodeHexError(c.Txid)
+		return nil, rpcDecodeHexError(c.TxID)
 	}
 
 	// If requested and the tx is available in the mempool try to fetch it
@@ -2808,7 +2808,7 @@ func createVinListPrevOut(s *Server, mtx *wire.MsgTx, chainParams *dagconfig.Par
 		// requested and available.
 		prevOut := &txIn.PreviousOutPoint
 		vinEntry := btcjson.VinPrevOut{
-			Txid:     prevOut.Hash.String(),
+			TxID:     prevOut.Hash.String(),
 			Vout:     prevOut.Index,
 			Sequence: txIn.Sequence,
 			ScriptSig: &btcjson.ScriptSig{
@@ -3112,7 +3112,7 @@ func handleSearchRawTransactions(s *Server, cmd interface{}, closeChan <-chan st
 
 		result := &srtList[i]
 		result.Hex = hexTxns[i]
-		result.Txid = mtx.TxHash().String()
+		result.TxID = mtx.TxHash().String()
 		result.Vin, err = createVinListPrevOut(s, mtx, params, vinExtra,
 			filterAddrMap)
 		if err != nil {
@@ -3822,7 +3822,7 @@ func (s *Server) jsonRPCRead(w http.ResponseWriter, r *http.Request, isAdmin boo
 		//
 		// RPC quirks can be enabled by the user to avoid compatibility issues
 		// with software relying on Core's behavior.
-		if request.ID == nil && !(config.MainConfig().RPCQuirks && request.Jsonrpc == "") {
+		if request.ID == nil && !(config.MainConfig().RPCQuirks && request.JsonRPC == "") {
 			return
 		}
 

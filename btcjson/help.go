@@ -7,6 +7,7 @@ package btcjson
 import (
 	"bytes"
 	"fmt"
+	"github.com/daglabs/btcd/util"
 	"reflect"
 	"strings"
 	"text/tabwriter"
@@ -81,7 +82,7 @@ func reflectTypeToJSONType(xT descLookupFunc, rt reflect.Type) string {
 // field name if no json tag was specified).
 func resultStructHelp(xT descLookupFunc, rt reflect.Type, indentLevel int) []string {
 	indent := strings.Repeat(" ", indentLevel)
-	typeName := strings.ToLower(rt.Name())
+	typeName := util.ToCamelCase(rt.Name())
 
 	// Generate the help for each of the fields in the result struct.
 	numField := rt.NumField()
@@ -95,7 +96,7 @@ func resultStructHelp(xT descLookupFunc, rt reflect.Type, indentLevel int) []str
 		if tag := rtf.Tag.Get("json"); tag != "" {
 			fieldName = strings.Split(tag, ",")[0]
 		} else {
-			fieldName = strings.ToLower(rtf.Name)
+			fieldName = util.ToCamelCase(rtf.Name)
 		}
 
 		// Deference pointer if needed.
@@ -344,7 +345,7 @@ func argHelp(xT descLookupFunc, rtp reflect.Type, defaults map[int]reflect.Value
 			defaultVal = &defVal
 		}
 
-		fieldName := strings.ToLower(rtf.Name)
+		fieldName := util.ToCamelCase(rtf.Name)
 		helpText := fmt.Sprintf("%d.\t%s\t(%s)\t%s", i+1, fieldName,
 			argTypeHelp(xT, rtf, defaultVal),
 			xT(method+"-"+fieldName))
