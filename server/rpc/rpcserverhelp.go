@@ -171,6 +171,7 @@ var helpDescsEnUS = map[string]string{
 	"getBlock-verbosetx":   "Specifies that each transaction is returned as a JSON object and only applies if the verbose flag is true (btcd extension)",
 	"getBlock--condition0": "verbose=false",
 	"getBlock--condition1": "verbose=true",
+	"getBlock-acceptedtx":  "Specifies if the transaction got accepted",
 	"getBlock--result0":    "Hex-encoded bytes of the serialized block",
 
 	// GetBlockChainInfoCmd help.
@@ -212,6 +213,7 @@ var helpDescsEnUS = map[string]string{
 	"txrawresult-blocktime":     "Block time in seconds since the 1 Jan 1970 GMT",
 	"txrawresult-size":          "The size of the transaction in bytes",
 	"txrawresult-hash":          "The wtxid of the transaction",
+	"txrawresult-accepted":      "Whether the transaction was accepted or not",
 
 	// SearchRawTransactionsResult help.
 	"searchrawtransactionsresult-hex":           "Hex-encoded transaction",

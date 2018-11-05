@@ -741,7 +741,7 @@ func createVoutList(mtx *wire.MsgTx, chainParams *dagconfig.Params, filterAddrMa
 // to a raw transaction JSON object.
 func createTxRawResult(chainParams *dagconfig.Params, mtx *wire.MsgTx,
 	txHash string, blkHeader *wire.BlockHeader, blkHash string,
-	blkHeight int32, chainHeight int32) (*btcjson.TxRawResult, error) {
+	blkHeight int32, chainHeight int32, isAccepted func(*wire.MsgTx) (bool, error)) (*btcjson.TxRawResult, error) {
 
 	mtxHex, err := messageToHex(mtx)
 	if err != nil {
@@ -765,6 +765,14 @@ func createTxRawResult(chainParams *dagconfig.Params, mtx *wire.MsgTx,
 		txReply.Blocktime = uint64(blkHeader.Timestamp.Unix())
 		txReply.BlockHash = blkHash
 		txReply.Confirmations = uint64(1 + chainHeight - blkHeight)
+	}
+
+	if isAccepted != nil {
+		accepted, err := isAccepted(mtx)
+		if err != nil {
+			return nil, err
+		}
+		txReply.Accepted = btcjson.Bool(accepted)
 	}
 
 	return txReply, nil
@@ -1078,6 +1086,17 @@ func getDifficultyRatio(bits uint32, params *dagconfig.Params) float64 {
 func handleGetBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
 	c := cmd.(*btcjson.GetBlockCmd)
 
+	showAcceptedTxStatus := c.AcceptedTx == nil || !(*c.AcceptedTx)
+
+	if showAcceptedTxStatus && s.cfg.TxIndex == nil {
+		return nil, &btcjson.RPCError{
+			Code: btcjson.ErrRPCNoTxInfo,
+			Message: "The transaction index must be " +
+				"enabled to check transaction acceptance " +
+				"(specify --txindex)",
+		}
+	}
+
 	// Load the raw block bytes from the database.
 	hash, err := daghash.NewHashFromStr(c.Hash)
 	if err != nil {
@@ -1160,9 +1179,20 @@ func handleGetBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 		txns := blk.Transactions()
 		rawTxns := make([]btcjson.TxRawResult, len(txns))
 		for i, tx := range txns {
+			var isAccepted func(*wire.MsgTx) (bool, error)
+			if showAcceptedTxStatus {
+				isAccepted = func(tx *wire.MsgTx) (bool, error) {
+					txHash := tx.TxHash()
+					blockHash, err := s.cfg.TxIndex.BlockThatAcceptedTx(s.cfg.DAG, &txHash)
+					if err != nil {
+						return false, err
+					}
+					return blockHash != nil, err
+				}
+			}
 			rawTxn, err := createTxRawResult(params, tx.MsgTx(),
 				tx.Hash().String(), blockHeader, hash.String(),
-				blockHeight, s.cfg.DAG.Height()) //TODO: (Ori) This is probably wrong. Done only for compilation
+				blockHeight, s.cfg.DAG.Height(), isAccepted) //TODO: (Ori) This is probably wrong. Done only for compilation
 			if err != nil {
 				return nil, err
 			}
@@ -2522,7 +2552,7 @@ func handleGetRawTransaction(s *Server, cmd interface{}, closeChan <-chan struct
 	}
 
 	rawTxn, err := createTxRawResult(s.cfg.DAGParams, mtx, txHash.String(),
-		blkHeader, blkHashStr, blkHeight, dagHeight)
+		blkHeader, blkHashStr, blkHeight, dagHeight, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -4213,7 +4243,7 @@ func NewRPCServer(
 		gbtWorkState:           newGbtWorkState(cfg.TimeSource),
 		helpCacher:             newHelpCacher(),
 		requestProcessShutdown: make(chan struct{}),
-		quit: make(chan int),
+		quit:                   make(chan int),
 	}
 	if config.MainConfig().RPCUser != "" && config.MainConfig().RPCPass != "" {
 		login := config.MainConfig().RPCUser + ":" + config.MainConfig().RPCPass
