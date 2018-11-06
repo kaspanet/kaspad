@@ -104,8 +104,7 @@ func TestTxIndexConnectBlock(t *testing.T) {
 
 var block1 = wire.MsgBlock{
 	Header: wire.BlockHeader{
-		Version:         1,
-		NumParentBlocks: 1,
+		Version: 1,
 		ParentHashes: []daghash.Hash{
 			[32]byte{ // Make go vet happy.
 				0x4a, 0xc1, 0x82, 0x2e, 0x43, 0x05, 0xea, 0x0c,
@@ -158,8 +157,7 @@ var block1 = wire.MsgBlock{
 
 var block2 = wire.MsgBlock{
 	Header: wire.BlockHeader{
-		Version:         1,
-		NumParentBlocks: 1,
+		Version: 1,
 		ParentHashes: []daghash.Hash{
 			[32]byte{ // Make go vet happy.
 				0x42, 0xb9, 0x2c, 0xee, 0x3e, 0x3e, 0x35, 0x02,
@@ -303,8 +301,7 @@ var block3Tx *wire.MsgTx = &wire.MsgTx{
 
 var block3 = wire.MsgBlock{
 	Header: wire.BlockHeader{
-		Version:         1,
-		NumParentBlocks: 1,
+		Version: 1,
 		ParentHashes: []daghash.Hash{
 			[32]byte{ // Make go vet happy.
 				0x8b, 0xdf, 0xd1, 0x48, 0xef, 0xf5, 0x2b, 0x5e,
@@ -358,8 +355,7 @@ var block3 = wire.MsgBlock{
 
 var block3A = wire.MsgBlock{
 	Header: wire.BlockHeader{
-		Version:         1,
-		NumParentBlocks: 1,
+		Version: 1,
 		ParentHashes: []daghash.Hash{
 			[32]byte{ // Make go vet happy.
 				0x8b, 0xdf, 0xd1, 0x48, 0xef, 0xf5, 0x2b, 0x5e,
@@ -413,8 +409,7 @@ var block3A = wire.MsgBlock{
 
 var block4 = wire.MsgBlock{
 	Header: wire.BlockHeader{
-		Version:         1,
-		NumParentBlocks: 1,
+		Version: 1,
 		ParentHashes: []daghash.Hash{
 			[32]byte{ // Make go vet happy.
 				0xde, 0xe3, 0x62, 0x5f, 0x0c, 0x98, 0x26, 0x5f,
@@ -467,8 +462,7 @@ var block4 = wire.MsgBlock{
 
 var block5 = wire.MsgBlock{
 	Header: wire.BlockHeader{
-		Version:         1,
-		NumParentBlocks: 2,
+		Version: 1,
 		ParentHashes: []daghash.Hash{
 			[32]byte{ // Make go vet happy.
 				0xfd, 0x96, 0x3c, 0xfb, 0xed, 0x5a, 0xeb, 0xdb, 0x3d, 0x8e, 0xe9, 0x53, 0xf1, 0xe6, 0xad, 0x12, 0x21, 0x02, 0x55, 0x62, 0xbc, 0x2e, 0x52, 0xee, 0xb9, 0xd0, 0x60, 0xda, 0xd6, 0x4a, 0x20, 0x5a},
