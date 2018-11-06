@@ -68,25 +68,25 @@ func Example_basicUsage() {
 	// Use the Update function of the database to perform a managed
 	// read-write transaction.  The transaction will automatically be rolled
 	// back if the supplied inner function returns a non-nil error.
-	err = db.Update(func(tx database.Tx) error {
+	err = db.Update(func(dbTx database.Tx) error {
 		// Store a key/value pair directly in the metadata bucket.
 		// Typically a nested bucket would be used for a given feature,
 		// but this example is using the metadata bucket directly for
 		// simplicity.
 		key := []byte("mykey")
 		value := []byte("myvalue")
-		if err := tx.Metadata().Put(key, value); err != nil {
+		if err := dbTx.Metadata().Put(key, value); err != nil {
 			return err
 		}
 
 		// Read the key back and ensure it matches.
-		if !bytes.Equal(tx.Metadata().Get(key), value) {
+		if !bytes.Equal(dbTx.Metadata().Get(key), value) {
 			return fmt.Errorf("unexpected value for key '%s'", key)
 		}
 
 		// Create a new nested bucket under the metadata bucket.
 		nestedBucketKey := []byte("mybucket")
-		nestedBucket, err := tx.Metadata().CreateBucket(nestedBucketKey)
+		nestedBucket, err := dbTx.Metadata().CreateBucket(nestedBucketKey)
 		if err != nil {
 			return err
 		}
@@ -134,9 +134,9 @@ func Example_blockStorageAndRetrieval() {
 	// Use the Update function of the database to perform a managed
 	// read-write transaction and store a genesis block in the database as
 	// and example.
-	err = db.Update(func(tx database.Tx) error {
+	err = db.Update(func(dbTx database.Tx) error {
 		genesisBlock := dagconfig.MainNetParams.GenesisBlock
-		return tx.StoreBlock(util.NewBlock(genesisBlock))
+		return dbTx.StoreBlock(util.NewBlock(genesisBlock))
 	})
 	if err != nil {
 		fmt.Println(err)
@@ -146,9 +146,9 @@ func Example_blockStorageAndRetrieval() {
 	// Use the View function of the database to perform a managed read-only
 	// transaction and fetch the block stored above.
 	var loadedBlockBytes []byte
-	err = db.Update(func(tx database.Tx) error {
+	err = db.Update(func(dbTx database.Tx) error {
 		genesisHash := dagconfig.MainNetParams.GenesisHash
-		blockBytes, err := tx.FetchBlock(genesisHash)
+		blockBytes, err := dbTx.FetchBlock(genesisHash)
 		if err != nil {
 			return err
 		}

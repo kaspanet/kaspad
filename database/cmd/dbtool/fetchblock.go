@@ -43,10 +43,10 @@ func (cmd *fetchBlockCmd) Execute(args []string) error {
 	}
 	defer db.Close()
 
-	return db.View(func(tx database.Tx) error {
+	return db.View(func(dbTx database.Tx) error {
 		log.Infof("Fetching block %s", blockHash)
 		startTime := time.Now()
-		blockBytes, err := tx.FetchBlock(blockHash)
+		blockBytes, err := dbTx.FetchBlock(blockHash)
 		if err != nil {
 			return err
 		}

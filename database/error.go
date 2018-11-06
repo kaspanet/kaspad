@@ -195,3 +195,13 @@ func (e Error) Error() string {
 func makeError(c ErrorCode, desc string, err error) Error {
 	return Error{ErrorCode: c, Description: desc, Err: err}
 }
+
+// IsErrorCode returns whether or not the provided error is a script error with
+// the provided error code.
+func IsErrorCode(err error, c ErrorCode) bool {
+	if err, ok := err.(Error); ok {
+		return err.ErrorCode == c
+	}
+
+	return false
+}
