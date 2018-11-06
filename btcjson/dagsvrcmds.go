@@ -45,7 +45,7 @@ func NewRemoveManualNodeCmd(addr string) *RemoveManualNodeCmd {
 // TransactionInput represents the inputs to a transaction.  Specifically a
 // transaction hash and output number pair.
 type TransactionInput struct {
-	Txid string `json:"txid"`
+	TxID string `json:"txId"`
 	Vout uint32 `json:"vout"`
 }
 
@@ -209,13 +209,13 @@ type TemplateRequest struct {
 	Capabilities []string `json:"capabilities,omitempty"`
 
 	// Optional long polling.
-	LongPollID string `json:"longpollid,omitempty"`
+	LongPollID string `json:"longPollId,omitempty"`
 
 	// Optional template tweaking.  SigOpLimit and SizeLimit can be int64
 	// or bool.
-	SigOpLimit interface{} `json:"sigoplimit,omitempty"`
-	SizeLimit  interface{} `json:"sizelimit,omitempty"`
-	MaxVersion uint32      `json:"maxversion,omitempty"`
+	SigOpLimit interface{} `json:"sigOpLimit,omitempty"`
+	SizeLimit  interface{} `json:"sizeLimit,omitempty"`
+	MaxVersion uint32      `json:"maxVersion,omitempty"`
 
 	// Basic pool extension from BIP 0023.
 	Target string `json:"target,omitempty"`
@@ -223,7 +223,7 @@ type TemplateRequest struct {
 	// Block proposal from BIP 0023.  Data is only provided when Mode is
 	// "proposal".
 	Data   string `json:"data,omitempty"`
-	WorkID string `json:"workid,omitempty"`
+	WorkID string `json:"workId,omitempty"`
 }
 
 // convertTemplateRequestField potentially converts the provided value as
@@ -257,14 +257,14 @@ func (t *TemplateRequest) UnmarshalJSON(data []byte) error {
 	}
 
 	// The SigOpLimit field can only be nil, bool, or int64.
-	val, err := convertTemplateRequestField("sigoplimit", request.SigOpLimit)
+	val, err := convertTemplateRequestField("sigOpLimit", request.SigOpLimit)
 	if err != nil {
 		return err
 	}
 	request.SigOpLimit = val
 
 	// The SizeLimit field can only be nil, bool, or int64.
-	val, err = convertTemplateRequestField("sizelimit", request.SizeLimit)
+	val, err = convertTemplateRequestField("sizeLimit", request.SizeLimit)
 	if err != nil {
 		return err
 	}
@@ -471,7 +471,7 @@ func NewGetRawMempoolCmd(verbose *bool) *GetRawMempoolCmd {
 // NOTE: This field is an int versus a bool to remain compatible with Bitcoin
 // Core even though it really should be a bool.
 type GetRawTransactionCmd struct {
-	Txid    string
+	TxID    string
 	Verbose *int `jsonrpcdefault:"0"`
 }
 
@@ -482,14 +482,14 @@ type GetRawTransactionCmd struct {
 // for optional parameters will use the default value.
 func NewGetRawTransactionCmd(txHash string, verbose *int) *GetRawTransactionCmd {
 	return &GetRawTransactionCmd{
-		Txid:    txHash,
+		TxID:    txHash,
 		Verbose: verbose,
 	}
 }
 
 // GetTxOutCmd defines the getTxOut JSON-RPC command.
 type GetTxOutCmd struct {
-	Txid           string
+	TxID           string
 	Vout           uint32
 	IncludeMempool *bool `jsonrpcdefault:"true"`
 }
@@ -501,7 +501,7 @@ type GetTxOutCmd struct {
 // for optional parameters will use the default value.
 func NewGetTxOutCmd(txHash string, vout uint32, includeMempool *bool) *GetTxOutCmd {
 	return &GetTxOutCmd{
-		Txid:           txHash,
+		TxID:           txHash,
 		Vout:           vout,
 		IncludeMempool: includeMempool,
 	}
@@ -675,7 +675,7 @@ func NewStopCmd() *StopCmd {
 // SubmitBlockCmd command.
 type SubmitBlockOptions struct {
 	// must be provided if server provided a workid with template.
-	WorkID string `json:"workid,omitempty"`
+	WorkID string `json:"workId,omitempty"`
 }
 
 // SubmitBlockCmd defines the submitBlock JSON-RPC command.

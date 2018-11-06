@@ -307,7 +307,7 @@ func TestFieldUsage(t *testing.T) {
 			name: "array of structs",
 			field: func() reflect.StructField {
 				type s2 struct {
-					Txid string
+					TxID string
 				}
 				type s struct {
 					Capabilities []s2
@@ -346,7 +346,7 @@ func TestFieldUsage(t *testing.T) {
 			name: "sub struct with string",
 			field: func() reflect.StructField {
 				type s2 struct {
-					Txid string
+					TxID string
 				}
 				type s struct {
 					Test s2

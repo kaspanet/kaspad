@@ -715,12 +715,11 @@ mempoolLoop:
 	merkles := blockdag.BuildMerkleTreeStore(blockTxns)
 	var msgBlock wire.MsgBlock
 	msgBlock.Header = wire.BlockHeader{
-		Version:         nextBlockVersion,
-		NumParentBlocks: byte(len(g.dag.TipHashes())),
-		ParentHashes:    g.dag.TipHashes(),
-		MerkleRoot:      *merkles[len(merkles)-1],
-		Timestamp:       ts,
-		Bits:            reqDifficulty,
+		Version:      nextBlockVersion,
+		ParentHashes: g.dag.TipHashes(),
+		MerkleRoot:   *merkles[len(merkles)-1],
+		Timestamp:    ts,
+		Bits:         reqDifficulty,
 	}
 	for _, tx := range blockTxns {
 		if err := msgBlock.AddTransaction(tx.MsgTx()); err != nil {

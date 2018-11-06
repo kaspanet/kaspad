@@ -44,38 +44,38 @@ func TestDAGSvrCmds(t *testing.T) {
 		{
 			name: "createRawTransaction",
 			newCmd: func() (interface{}, error) {
-				return btcjson.NewCmd("createRawTransaction", `[{"txid":"123","vout":1}]`,
+				return btcjson.NewCmd("createRawTransaction", `[{"txId":"123","vout":1}]`,
 					`{"456":0.0123}`)
 			},
 			staticCmd: func() interface{} {
 				txInputs := []btcjson.TransactionInput{
-					{Txid: "123", Vout: 1},
+					{TxID: "123", Vout: 1},
 				}
 				amounts := map[string]float64{"456": .0123}
 				return btcjson.NewCreateRawTransactionCmd(txInputs, amounts, nil)
 			},
-			marshalled: `{"jsonrpc":"1.0","method":"createRawTransaction","params":[[{"txid":"123","vout":1}],{"456":0.0123}],"id":1}`,
+			marshalled: `{"jsonrpc":"1.0","method":"createRawTransaction","params":[[{"txId":"123","vout":1}],{"456":0.0123}],"id":1}`,
 			unmarshalled: &btcjson.CreateRawTransactionCmd{
-				Inputs:  []btcjson.TransactionInput{{Txid: "123", Vout: 1}},
+				Inputs:  []btcjson.TransactionInput{{TxID: "123", Vout: 1}},
 				Amounts: map[string]float64{"456": .0123},
 			},
 		},
 		{
 			name: "createRawTransaction optional",
 			newCmd: func() (interface{}, error) {
-				return btcjson.NewCmd("createRawTransaction", `[{"txid":"123","vout":1}]`,
+				return btcjson.NewCmd("createRawTransaction", `[{"txId":"123","vout":1}]`,
 					`{"456":0.0123}`, int64(12312333333))
 			},
 			staticCmd: func() interface{} {
 				txInputs := []btcjson.TransactionInput{
-					{Txid: "123", Vout: 1},
+					{TxID: "123", Vout: 1},
 				}
 				amounts := map[string]float64{"456": .0123}
 				return btcjson.NewCreateRawTransactionCmd(txInputs, amounts, btcjson.Uint64(12312333333))
 			},
-			marshalled: `{"jsonrpc":"1.0","method":"createRawTransaction","params":[[{"txid":"123","vout":1}],{"456":0.0123},12312333333],"id":1}`,
+			marshalled: `{"jsonrpc":"1.0","method":"createRawTransaction","params":[[{"txId":"123","vout":1}],{"456":0.0123},12312333333],"id":1}`,
 			unmarshalled: &btcjson.CreateRawTransactionCmd{
-				Inputs:   []btcjson.TransactionInput{{Txid: "123", Vout: 1}},
+				Inputs:   []btcjson.TransactionInput{{TxID: "123", Vout: 1}},
 				Amounts:  map[string]float64{"456": .0123},
 				LockTime: btcjson.Uint64(12312333333),
 			},
@@ -258,23 +258,23 @@ func TestDAGSvrCmds(t *testing.T) {
 		{
 			name: "getBlockTemplate optional - template request with tweaks",
 			newCmd: func() (interface{}, error) {
-				return btcjson.NewCmd("getBlockTemplate", `{"mode":"template","capabilities":["longpoll","coinbasetxn"],"sigoplimit":500,"sizelimit":100000000,"maxversion":1}`)
+				return btcjson.NewCmd("getBlockTemplate", `{"mode":"template","capabilities":["longPoll","coinbaseTxn"],"sigOpLimit":500,"sizeLimit":100000000,"maxVersion":1}`)
 			},
 			staticCmd: func() interface{} {
 				template := btcjson.TemplateRequest{
 					Mode:         "template",
-					Capabilities: []string{"longpoll", "coinbasetxn"},
+					Capabilities: []string{"longPoll", "coinbaseTxn"},
 					SigOpLimit:   500,
 					SizeLimit:    100000000,
 					MaxVersion:   1,
 				}
 				return btcjson.NewGetBlockTemplateCmd(&template)
 			},
-			marshalled: `{"jsonrpc":"1.0","method":"getBlockTemplate","params":[{"mode":"template","capabilities":["longpoll","coinbasetxn"],"sigoplimit":500,"sizelimit":100000000,"maxversion":1}],"id":1}`,
+			marshalled: `{"jsonrpc":"1.0","method":"getBlockTemplate","params":[{"mode":"template","capabilities":["longPoll","coinbaseTxn"],"sigOpLimit":500,"sizeLimit":100000000,"maxVersion":1}],"id":1}`,
 			unmarshalled: &btcjson.GetBlockTemplateCmd{
 				Request: &btcjson.TemplateRequest{
 					Mode:         "template",
-					Capabilities: []string{"longpoll", "coinbasetxn"},
+					Capabilities: []string{"longPoll", "coinbaseTxn"},
 					SigOpLimit:   int64(500),
 					SizeLimit:    int64(100000000),
 					MaxVersion:   1,
@@ -284,23 +284,23 @@ func TestDAGSvrCmds(t *testing.T) {
 		{
 			name: "getBlockTemplate optional - template request with tweaks 2",
 			newCmd: func() (interface{}, error) {
-				return btcjson.NewCmd("getBlockTemplate", `{"mode":"template","capabilities":["longpoll","coinbasetxn"],"sigoplimit":true,"sizelimit":100000000,"maxversion":1}`)
+				return btcjson.NewCmd("getBlockTemplate", `{"mode":"template","capabilities":["longPoll","coinbaseTxn"],"sigOpLimit":true,"sizeLimit":100000000,"maxVersion":1}`)
 			},
 			staticCmd: func() interface{} {
 				template := btcjson.TemplateRequest{
 					Mode:         "template",
-					Capabilities: []string{"longpoll", "coinbasetxn"},
+					Capabilities: []string{"longPoll", "coinbaseTxn"},
 					SigOpLimit:   true,
 					SizeLimit:    100000000,
 					MaxVersion:   1,
 				}
 				return btcjson.NewGetBlockTemplateCmd(&template)
 			},
-			marshalled: `{"jsonrpc":"1.0","method":"getBlockTemplate","params":[{"mode":"template","capabilities":["longpoll","coinbasetxn"],"sigoplimit":true,"sizelimit":100000000,"maxversion":1}],"id":1}`,
+			marshalled: `{"jsonrpc":"1.0","method":"getBlockTemplate","params":[{"mode":"template","capabilities":["longPoll","coinbaseTxn"],"sigOpLimit":true,"sizeLimit":100000000,"maxVersion":1}],"id":1}`,
 			unmarshalled: &btcjson.GetBlockTemplateCmd{
 				Request: &btcjson.TemplateRequest{
 					Mode:         "template",
-					Capabilities: []string{"longpoll", "coinbasetxn"},
+					Capabilities: []string{"longPoll", "coinbaseTxn"},
 					SigOpLimit:   true,
 					SizeLimit:    int64(100000000),
 					MaxVersion:   1,
@@ -565,7 +565,7 @@ func TestDAGSvrCmds(t *testing.T) {
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"getRawTransaction","params":["123"],"id":1}`,
 			unmarshalled: &btcjson.GetRawTransactionCmd{
-				Txid:    "123",
+				TxID:    "123",
 				Verbose: btcjson.Int(0),
 			},
 		},
@@ -579,7 +579,7 @@ func TestDAGSvrCmds(t *testing.T) {
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"getRawTransaction","params":["123",1],"id":1}`,
 			unmarshalled: &btcjson.GetRawTransactionCmd{
-				Txid:    "123",
+				TxID:    "123",
 				Verbose: btcjson.Int(1),
 			},
 		},
@@ -593,7 +593,7 @@ func TestDAGSvrCmds(t *testing.T) {
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"getTxOut","params":["123",1],"id":1}`,
 			unmarshalled: &btcjson.GetTxOutCmd{
-				Txid:           "123",
+				TxID:           "123",
 				Vout:           1,
 				IncludeMempool: btcjson.Bool(true),
 			},
@@ -608,7 +608,7 @@ func TestDAGSvrCmds(t *testing.T) {
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"getTxOut","params":["123",1,true],"id":1}`,
 			unmarshalled: &btcjson.GetTxOutCmd{
-				Txid:           "123",
+				TxID:           "123",
 				Vout:           1,
 				IncludeMempool: btcjson.Bool(true),
 			},
@@ -964,7 +964,7 @@ func TestDAGSvrCmds(t *testing.T) {
 		{
 			name: "submitBlock optional",
 			newCmd: func() (interface{}, error) {
-				return btcjson.NewCmd("submitBlock", "112233", `{"workid":"12345"}`)
+				return btcjson.NewCmd("submitBlock", "112233", `{"workId":"12345"}`)
 			},
 			staticCmd: func() interface{} {
 				options := btcjson.SubmitBlockOptions{
@@ -972,7 +972,7 @@ func TestDAGSvrCmds(t *testing.T) {
 				}
 				return btcjson.NewSubmitBlockCmd("112233", &options)
 			},
-			marshalled: `{"jsonrpc":"1.0","method":"submitBlock","params":["112233",{"workid":"12345"}],"id":1}`,
+			marshalled: `{"jsonrpc":"1.0","method":"submitBlock","params":["112233",{"workId":"12345"}],"id":1}`,
 			unmarshalled: &btcjson.SubmitBlockCmd{
 				HexBlock: "112233",
 				Options: &btcjson.SubmitBlockOptions{

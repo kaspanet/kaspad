@@ -221,7 +221,7 @@ func NewGetReceivedByAddressCmd(address string, minConf *int) *GetReceivedByAddr
 
 // GetTransactionCmd defines the getTransaction JSON-RPC command.
 type GetTransactionCmd struct {
-	Txid             string
+	TxID             string
 	IncludeWatchOnly *bool `jsonrpcdefault:"false"`
 }
 
@@ -232,7 +232,7 @@ type GetTransactionCmd struct {
 // for optional parameters will use the default value.
 func NewGetTransactionCmd(txHash string, includeWatchOnly *bool) *GetTransactionCmd {
 	return &GetTransactionCmd{
-		Txid:             txHash,
+		TxID:             txHash,
 		IncludeWatchOnly: includeWatchOnly,
 	}
 }
@@ -573,7 +573,7 @@ func NewSignMessageCmd(address, message string) *SignMessageCmd {
 // RawTxInput models the data needed for raw transaction input that is used in
 // the SignRawTransactionCmd struct.
 type RawTxInput struct {
-	Txid         string `json:"txid"`
+	TxID         string `json:"txId"`
 	Vout         uint32 `json:"vout"`
 	ScriptPubKey string `json:"scriptPubKey"`
 	RedeemScript string `json:"redeemScript"`

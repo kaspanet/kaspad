@@ -335,7 +335,7 @@ func (c *Client) LockUnspentAsync(unlock bool, ops []*wire.OutPoint) FutureLockU
 	outputs := make([]btcjson.TransactionInput, len(ops))
 	for i, op := range ops {
 		outputs[i] = btcjson.TransactionInput{
-			Txid: op.Hash.String(),
+			TxID: op.Hash.String(),
 			Vout: op.Index,
 		}
 	}
@@ -386,7 +386,7 @@ func (r FutureListLockUnspentResult) Receive() ([]*wire.OutPoint, error) {
 	// Create a slice of outpoints from the transaction input structs.
 	ops := make([]*wire.OutPoint, len(inputs))
 	for i, input := range inputs {
-		sha, err := daghash.NewHashFromStr(input.Txid)
+		sha, err := daghash.NewHashFromStr(input.TxID)
 		if err != nil {
 			return nil, err
 		}

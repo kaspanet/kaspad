@@ -190,7 +190,7 @@ func TestDAGSvrWsNtfns(t *testing.T) {
 			staticNtfn: func() interface{} {
 				txResult := btcjson.TxRawResult{
 					Hex:           "001122",
-					Txid:          "123",
+					TxID:          "123",
 					Version:       1,
 					LockTime:      4294967295,
 					Vin:           nil,
@@ -199,11 +199,11 @@ func TestDAGSvrWsNtfns(t *testing.T) {
 				}
 				return btcjson.NewTxAcceptedVerboseNtfn(txResult)
 			},
-			marshalled: `{"jsonrpc":"1.0","method":"txAcceptedVerbose","params":[{"hex":"001122","txid":"123","version":1,"locktime":4294967295,"vin":null,"vout":null}],"id":null}`,
+			marshalled: `{"jsonrpc":"1.0","method":"txAcceptedVerbose","params":[{"hex":"001122","txId":"123","version":1,"lockTime":4294967295,"vin":null,"vout":null}],"id":null}`,
 			unmarshalled: &btcjson.TxAcceptedVerboseNtfn{
 				RawTx: btcjson.TxRawResult{
 					Hex:           "001122",
-					Txid:          "123",
+					TxID:          "123",
 					Version:       1,
 					LockTime:      4294967295,
 					Vin:           nil,

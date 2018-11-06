@@ -163,13 +163,12 @@ func newBlockNode(blockHeader *wire.BlockHeader, parents blockSet, phantomK uint
 func (node *blockNode) Header() *wire.BlockHeader {
 	// No lock is needed because all accessed fields are immutable.
 	return &wire.BlockHeader{
-		Version:         node.version,
-		NumParentBlocks: byte(len(node.parents)),
-		ParentHashes:    node.ParentHashes(),
-		MerkleRoot:      node.merkleRoot,
-		Timestamp:       time.Unix(node.timestamp, 0),
-		Bits:            node.bits,
-		Nonce:           node.nonce,
+		Version:      node.version,
+		ParentHashes: node.ParentHashes(),
+		MerkleRoot:   node.merkleRoot,
+		Timestamp:    time.Unix(node.timestamp, 0),
+		Bits:         node.bits,
+		Nonce:        node.nonce,
 	}
 }
 
