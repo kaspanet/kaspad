@@ -1806,7 +1806,7 @@ func newPeerConfig(sp *Peer) *peer.Config {
 			// other implementations' alert messages, we will not relay theirs.
 			OnAlert: nil,
 		},
-		NewestBlock:       sp.newestBlock,
+		TipHashes:         sp.server.DAG.TipHashes,
 		HostToNetAddress:  sp.server.addrManager.HostToNetAddress,
 		Proxy:             config.MainConfig().Proxy,
 		UserAgentName:     userAgentName,

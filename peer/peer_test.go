@@ -8,6 +8,7 @@ import (
 	"errors"
 	"io"
 	"net"
+	"reflect"
 	"strconv"
 	"testing"
 	"time"
@@ -94,20 +95,20 @@ func pipe(c1, c2 *conn) (*conn, *conn) {
 
 // peerStats holds the expected peer stats used for testing peer.
 type peerStats struct {
-	wantUserAgent       string
-	wantServices        wire.ServiceFlag
-	wantProtocolVersion uint32
-	wantConnected       bool
-	wantVersionKnown    bool
-	wantVerAckReceived  bool
-	wantLastBlock       int32
-	wantStartingHeight  int32
-	wantLastPingTime    time.Time
-	wantLastPingNonce   uint64
-	wantLastPingMicros  int64
-	wantTimeOffset      int64
-	wantBytesSent       uint64
-	wantBytesReceived   uint64
+	wantUserAgent         string
+	wantServices          wire.ServiceFlag
+	wantProtocolVersion   uint32
+	wantConnected         bool
+	wantVersionKnown      bool
+	wantVerAckReceived    bool
+	wantTipHashes         []*daghash.Hash
+	wantStartingTipHashes []*daghash.Hash
+	wantLastPingTime      time.Time
+	wantLastPingNonce     uint64
+	wantLastPingMicros    int64
+	wantTimeOffset        int64
+	wantBytesSent         uint64
+	wantBytesReceived     uint64
 }
 
 // testPeer tests the given peer's flags and stats
@@ -152,8 +153,8 @@ func testPeer(t *testing.T, p *peer.Peer, s peerStats) {
 		return
 	}
 
-	if p.LastBlock() != s.wantLastBlock {
-		t.Errorf("testPeer: wrong LastBlock - got %v, want %v", p.LastBlock(), s.wantLastBlock)
+	if !reflect.DeepEqual(p.TipHashes(), s.wantTipHashes) {
+		t.Errorf("testPeer: wrong TipHashes - got %v, want %v", p.TipHashes(), s.wantTipHashes)
 		return
 	}
 
@@ -175,8 +176,8 @@ func testPeer(t *testing.T, p *peer.Peer, s peerStats) {
 		return
 	}
 
-	if p.StartingHeight() != s.wantStartingHeight {
-		t.Errorf("testPeer: wrong StartingHeight - got %v, want %v", p.StartingHeight(), s.wantStartingHeight)
+	if !reflect.DeepEqual(p.StartingTipHashes(), s.wantStartingTipHashes) {
+		t.Errorf("testPeer: wrong StartingTipHashes - got %v, want %v", p.StartingTipHashes(), s.wantStartingTipHashes)
 		return
 	}
 
@@ -600,8 +601,8 @@ func TestPeerListeners(t *testing.T) {
 func TestOutboundPeer(t *testing.T) {
 
 	peerCfg := &peer.Config{
-		NewestBlock: func() (*daghash.Hash, int32, error) {
-			return nil, 0, errors.New("newest block not found")
+		TipHashes: func() []*daghash.Hash {
+			return []*daghash.Hash{{0}}
 		},
 		UserAgentName:     "peer",
 		UserAgentVersion:  "1.0",
@@ -656,17 +657,12 @@ func TestOutboundPeer(t *testing.T) {
 	<-done
 	p.Disconnect()
 
-	// Test NewestBlock
-	var newestBlock = func() (*daghash.Hash, int32, error) {
-		hashStr := "14a0810ac680a3eb3f82edc878cea25ec41d6b790744e5daeef"
-		hash, err := daghash.NewHashFromStr(hashStr)
-		if err != nil {
-			return nil, 0, err
-		}
-		return hash, 234439, nil
+	// Test TipHashes
+	var tipHashes = func() []*daghash.Hash {
+		return []*daghash.Hash{{0x14, 0xa0, 0x81, 0x0a, 0xc6, 0x80, 0xa3, 0xeb, 0x3f, 0x82, 0xed, 0xc8, 0x78, 0xce, 0xa2, 0x5e, 0xc4, 0x1d, 0x6b, 0x79, 0x07, 0x44, 0xe5, 0xda, 0xee, 0xef}}
 	}
 
-	peerCfg.NewestBlock = newestBlock
+	peerCfg.TipHashes = tipHashes
 	r1, w1 := io.Pipe()
 	c1 := &conn{raddr: "10.0.0.1:8333", Writer: w1, Reader: r1}
 	p1, err := peer.NewOutboundPeer(peerCfg, "10.0.0.1:8333")
@@ -683,7 +679,7 @@ func TestOutboundPeer(t *testing.T) {
 		return
 	}
 	p1.UpdateLastAnnouncedBlock(latestBlockHash)
-	p1.UpdateLastBlockHeight(234440)
+	p1.UpdateTipHashes([]*daghash.Hash{{12, 34}, {56, 78}})
 	if p1.LastAnnouncedBlock() != latestBlockHash {
 		t.Errorf("LastAnnouncedBlock: wrong block - got %v, want %v",
 			p1.LastAnnouncedBlock(), latestBlockHash)
@@ -804,7 +800,7 @@ func TestUnsupportedVersionPeer(t *testing.T) {
 	}
 
 	// Remote peer writes version message advertising invalid protocol version 1
-	invalidVersionMsg := wire.NewMsgVersion(remoteNA, localNA, 0, 0)
+	invalidVersionMsg := wire.NewMsgVersion(remoteNA, localNA, 0, []*daghash.Hash{})
 	invalidVersionMsg.ProtocolVersion = 1
 
 	_, err = wire.WriteMessageN(

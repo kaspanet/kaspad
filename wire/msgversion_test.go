@@ -13,6 +13,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/daglabs/btcd/dagconfig/daghash"
+
 	"github.com/davecgh/go-spew/spew"
 )
 
@@ -21,7 +23,7 @@ func TestVersion(t *testing.T) {
 	pver := ProtocolVersion
 
 	// Create version message data.
-	lastBlock := int32(234234)
+	tipHashes := []*daghash.Hash{{23, 45}, {67, 89}}
 	tcpAddrMe := &net.TCPAddr{IP: net.ParseIP("127.0.0.1"), Port: 8333}
 	me := NewNetAddress(tcpAddrMe, SFNodeNetwork)
 	tcpAddrYou := &net.TCPAddr{IP: net.ParseIP("192.168.0.1"), Port: 8333}
@@ -32,7 +34,7 @@ func TestVersion(t *testing.T) {
 	}
 
 	// Ensure we get the correct data back out.
-	msg := NewMsgVersion(me, you, nonce, lastBlock)
+	msg := NewMsgVersion(me, you, nonce, tipHashes)
 	if msg.ProtocolVersion != int32(pver) {
 		t.Errorf("NewMsgVersion: wrong protocol version - got %v, want %v",
 			msg.ProtocolVersion, pver)
@@ -53,9 +55,9 @@ func TestVersion(t *testing.T) {
 		t.Errorf("NewMsgVersion: wrong user agent - got %v, want %v",
 			msg.UserAgent, DefaultUserAgent)
 	}
-	if msg.LastBlock != lastBlock {
+	if !reflect.DeepEqual(msg.TipHashes, tipHashes) {
 		t.Errorf("NewMsgVersion: wrong last block - got %v, want %v",
-			msg.LastBlock, lastBlock)
+			msg.TipHashes, tipHashes)
 	}
 	if msg.DisableRelayTx {
 		t.Errorf("NewMsgVersion: disable relay tx is not false by "+
@@ -402,7 +404,7 @@ func TestVersionOptionalFields(t *testing.T) {
 	// lastBlockVersion is a version message that contains all fields
 	// through the LastBlock field.
 	lastBlockVersion := uaVersion
-	lastBlockVersion.LastBlock = 234234 // 0x392fa
+	lastBlockVersion.TipHashes = []*daghash.Hash{{23, 45}, {67, 89}}
 	lastBlockVersionEncoded := make([]byte, len(baseVersionEncoded))
 	copy(lastBlockVersionEncoded, baseVersionEncoded)
 
@@ -474,7 +476,7 @@ var baseVersion = &MsgVersion{
 	},
 	Nonce:     123123, // 0x1e0f3
 	UserAgent: "/btcdtest:0.0.1/",
-	LastBlock: 234234, // 0x392fa
+	TipHashes: []*daghash.Hash{{23, 45}, {67, 89}},
 }
 
 // baseVersionEncoded is the wire encoded bytes for baseVersion using protocol
@@ -520,7 +522,7 @@ var baseVersionBIP0037 = &MsgVersion{
 	},
 	Nonce:     123123, // 0x1e0f3
 	UserAgent: "/btcdtest:0.0.1/",
-	LastBlock: 234234, // 0x392fa
+	TipHashes: []*daghash.Hash{{23, 45}, {67, 89}},
 }
 
 // baseVersionBIP0037Encoded is the wire encoded bytes for baseVersionBIP0037

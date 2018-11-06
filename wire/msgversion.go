@@ -10,6 +10,8 @@ import (
 	"io"
 	"strings"
 	"time"
+
+	"github.com/daglabs/btcd/dagconfig/daghash"
 )
 
 // MaxUserAgentLen is the maximum allowed length for the user agent field in a
@@ -51,7 +53,7 @@ type MsgVersion struct {
 	UserAgent string
 
 	// Last block seen by the generator of the version message.
-	LastBlock int32
+	TipHashes []*daghash.Hash
 
 	// Don't announce transactions to peer.
 	DisableRelayTx bool
@@ -94,37 +96,34 @@ func (msg *MsgVersion) BtcDecode(r io.Reader, pver uint32) error {
 		return err
 	}
 
-	// Protocol versions >= 106 added a from address, nonce, and user agent
-	// field and they are only considered present if there are bytes
-	// remaining in the message.
-	if buf.Len() > 0 {
-		err = readNetAddress(buf, pver, &msg.AddrMe, false)
-		if err != nil {
-			return err
-		}
-	}
-	if buf.Len() > 0 {
-		err = readElement(buf, &msg.Nonce)
-		if err != nil {
-			return err
-		}
-	}
-	if buf.Len() > 0 {
-		userAgent, err := ReadVarString(buf, pver)
-		if err != nil {
-			return err
-		}
-		err = validateUserAgent(userAgent)
-		if err != nil {
-			return err
-		}
-		msg.UserAgent = userAgent
+	err = readNetAddress(buf, pver, &msg.AddrMe, false)
+	if err != nil {
+		return err
 	}
 
-	// Protocol versions >= 209 added a last known block field.  It is only
-	// considered present if there are bytes remaining in the message.
-	if buf.Len() > 0 {
-		err = readElement(buf, &msg.LastBlock)
+	err = readElement(buf, &msg.Nonce)
+	if err != nil {
+		return err
+	}
+
+	userAgent, err := ReadVarString(buf, pver)
+	if err != nil {
+		return err
+	}
+	err = validateUserAgent(userAgent)
+	if err != nil {
+		return err
+	}
+	msg.UserAgent = userAgent
+
+	var numTipHashes byte
+	err = readElements(r, &numTipHashes)
+	if err != nil {
+		return err
+	}
+	msg.TipHashes = make([]*daghash.Hash, numTipHashes)
+	for i := byte(0); i < numTipHashes; i++ {
+		err := readElement(r, &msg.TipHashes[i])
 		if err != nil {
 			return err
 		}
@@ -181,7 +180,7 @@ func (msg *MsgVersion) BtcEncode(w io.Writer, pver uint32) error {
 		return err
 	}
 
-	err = writeElement(w, msg.LastBlock)
+	err = writeElements(w, byte(len(msg.TipHashes)), &msg.TipHashes)
 	if err != nil {
 		return err
 	}
@@ -221,7 +220,7 @@ func (msg *MsgVersion) MaxPayloadLength(pver uint32) uint32 {
 // Message interface using the passed parameters and defaults for the remaining
 // fields.
 func NewMsgVersion(me *NetAddress, you *NetAddress, nonce uint64,
-	lastBlock int32) *MsgVersion {
+	tipHashes []*daghash.Hash) *MsgVersion {
 
 	// Limit the timestamp to one second precision since the protocol
 	// doesn't support better.
@@ -233,7 +232,7 @@ func NewMsgVersion(me *NetAddress, you *NetAddress, nonce uint64,
 		AddrMe:          *me,
 		Nonce:           nonce,
 		UserAgent:       DefaultUserAgent,
-		LastBlock:       lastBlock,
+		TipHashes:       tipHashes,
 		DisableRelayTx:  false,
 	}
 }

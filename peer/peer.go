@@ -217,12 +217,9 @@ type MessageListeners struct {
 
 // Config is the struct to hold configuration options useful to Peer.
 type Config struct {
-	// NewestBlock specifies a callback which provides the newest block
-	// details to the peer as needed.  This can be nil in which case the
-	// peer will report a block height of 0, however it is good practice for
-	// peers to specify this so their currently best known is accurately
-	// reported.
-	NewestBlock HashFunc
+	// TipHashes specifies a callback which provides the tip hashes
+	// details to the peer as needed.
+	TipHashes func() []*daghash.Hash
 
 	// HostToNetAddress returns the netaddress for the given host. This can be
 	// nil in  which case the host will be parsed as an IP address.
@@ -355,23 +352,23 @@ type stallControlMsg struct {
 
 // StatsSnap is a snapshot of peer stats at a point in time.
 type StatsSnap struct {
-	ID             int32
-	Addr           string
-	Services       wire.ServiceFlag
-	LastSend       time.Time
-	LastRecv       time.Time
-	BytesSent      uint64
-	BytesRecv      uint64
-	ConnTime       time.Time
-	TimeOffset     int64
-	Version        uint32
-	UserAgent      string
-	Inbound        bool
-	StartingHeight int32
-	LastBlock      int32
-	LastPingNonce  uint64
-	LastPingTime   time.Time
-	LastPingMicros int64
+	ID                int32
+	Addr              string
+	Services          wire.ServiceFlag
+	LastSend          time.Time
+	LastRecv          time.Time
+	BytesSent         uint64
+	BytesRecv         uint64
+	ConnTime          time.Time
+	TimeOffset        int64
+	Version           uint32
+	UserAgent         string
+	Inbound           bool
+	StartingTipHashes []*daghash.Hash
+	TipHashes         []*daghash.Hash
+	LastPingNonce     uint64
+	LastPingTime      time.Time
+	LastPingMicros    int64
 }
 
 // HashFunc is a function which returns a block hash, height and error
@@ -453,8 +450,8 @@ type Peer struct {
 	statsMtx           sync.RWMutex
 	timeOffset         int64
 	timeConnected      time.Time
-	startingHeight     int32
-	lastBlock          int32
+	startingTipHashes  []*daghash.Hash
+	tipHashes          []*daghash.Hash
 	lastAnnouncedBlock *daghash.Hash
 	lastPingNonce      uint64    // Set to nonce if we have a pending ping.
 	lastPingTime       time.Time // Time we sent last ping.
@@ -479,14 +476,14 @@ func (p *Peer) String() string {
 	return fmt.Sprintf("%s (%s)", p.addr, logger.DirectionString(p.inbound))
 }
 
-// UpdateLastBlockHeight updates the last known block for the peer.
+// UpdateTipHashes updates the tip hashes for the peer.
 //
 // This function is safe for concurrent access.
-func (p *Peer) UpdateLastBlockHeight(newHeight int32) {
+func (p *Peer) UpdateTipHashes(newTipHashes []*daghash.Hash) {
 	p.statsMtx.Lock()
 	log.Tracef("Updating last block height of peer %v from %v to %v",
-		p.addr, p.lastBlock, newHeight)
-	p.lastBlock = newHeight
+		p.addr, p.tipHashes, newTipHashes)
+	p.tipHashes = newTipHashes
 	p.statsMtx.Unlock()
 }
 
@@ -526,23 +523,23 @@ func (p *Peer) StatsSnapshot() *StatsSnap {
 
 	// Get a copy of all relevant flags and stats.
 	statsSnap := &StatsSnap{
-		ID:             id,
-		Addr:           addr,
-		UserAgent:      userAgent,
-		Services:       services,
-		LastSend:       p.LastSend(),
-		LastRecv:       p.LastRecv(),
-		BytesSent:      p.BytesSent(),
-		BytesRecv:      p.BytesReceived(),
-		ConnTime:       p.timeConnected,
-		TimeOffset:     p.timeOffset,
-		Version:        protocolVersion,
-		Inbound:        p.inbound,
-		StartingHeight: p.startingHeight,
-		LastBlock:      p.lastBlock,
-		LastPingNonce:  p.lastPingNonce,
-		LastPingMicros: p.lastPingMicros,
-		LastPingTime:   p.lastPingTime,
+		ID:                id,
+		Addr:              addr,
+		UserAgent:         userAgent,
+		Services:          services,
+		LastSend:          p.LastSend(),
+		LastRecv:          p.LastRecv(),
+		BytesSent:         p.BytesSent(),
+		BytesRecv:         p.BytesReceived(),
+		ConnTime:          p.timeConnected,
+		TimeOffset:        p.timeOffset,
+		Version:           protocolVersion,
+		Inbound:           p.inbound,
+		StartingTipHashes: p.startingTipHashes,
+		TipHashes:         p.tipHashes,
+		LastPingNonce:     p.lastPingNonce,
+		LastPingMicros:    p.lastPingMicros,
+		LastPingTime:      p.lastPingTime,
 	}
 
 	p.statsMtx.RUnlock()
@@ -688,15 +685,15 @@ func (p *Peer) ProtocolVersion() uint32 {
 	return protocolVersion
 }
 
-// LastBlock returns the last block of the peer.
+// TipHashes returns the tip hashes of the peer.
 //
 // This function is safe for concurrent access.
-func (p *Peer) LastBlock() int32 {
+func (p *Peer) TipHashes() []*daghash.Hash {
 	p.statsMtx.RLock()
-	lastBlock := p.lastBlock
+	tipHashes := p.tipHashes
 	p.statsMtx.RUnlock()
 
-	return lastBlock
+	return tipHashes
 }
 
 // LastSend returns the last send time of the peer.
@@ -751,16 +748,16 @@ func (p *Peer) TimeOffset() int64 {
 	return timeOffset
 }
 
-// StartingHeight returns the last known height the peer reported during the
+// StartingTipHashes returns the last known tip hashes the peer reported during the
 // initial negotiation phase.
 //
 // This function is safe for concurrent access.
-func (p *Peer) StartingHeight() int32 {
+func (p *Peer) StartingTipHashes() []*daghash.Hash {
 	p.statsMtx.RLock()
-	startingHeight := p.startingHeight
+	startingTipHashes := p.startingTipHashes
 	p.statsMtx.RUnlock()
 
-	return startingHeight
+	return startingTipHashes
 }
 
 // WantsHeaders returns if the peer wants header messages instead of
@@ -778,14 +775,7 @@ func (p *Peer) WantsHeaders() bool {
 // localVersionMsg creates a version message that can be used to send to the
 // remote peer.
 func (p *Peer) localVersionMsg() (*wire.MsgVersion, error) {
-	var blockNum int32
-	if p.cfg.NewestBlock != nil {
-		var err error
-		_, blockNum, err = p.cfg.NewestBlock()
-		if err != nil {
-			return nil, err
-		}
-	}
+	tipHashes := p.cfg.TipHashes()
 
 	theirNA := p.na
 
@@ -820,7 +810,7 @@ func (p *Peer) localVersionMsg() (*wire.MsgVersion, error) {
 	sentNonces.Add(nonce)
 
 	// Version message.
-	msg := wire.NewMsgVersion(ourNA, theirNA, nonce, blockNum)
+	msg := wire.NewMsgVersion(ourNA, theirNA, nonce, tipHashes)
 	msg.AddUserAgent(p.cfg.UserAgentName, p.cfg.UserAgentVersion,
 		p.cfg.UserAgentComments...)
 
@@ -1039,8 +1029,8 @@ func (p *Peer) handleRemoteVersionMsg(msg *wire.MsgVersion) error {
 	// Updating a bunch of stats including block based stats, and the
 	// peer's time offset.
 	p.statsMtx.Lock()
-	p.lastBlock = msg.LastBlock
-	p.startingHeight = msg.LastBlock
+	p.tipHashes = msg.TipHashes
+	p.startingTipHashes = msg.TipHashes
 	p.timeOffset = msg.Timestamp.Unix() - time.Now().Unix()
 	p.statsMtx.Unlock()
 
