@@ -21,12 +21,12 @@ func TestBech32(t *testing.T) {
 		{"::qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq40ku0e3z", true},
 		{"split:checkupstagehandshakeupstreamerranterredcaperred3za27wc5", true},
 		{"aaa:bbb", false}, // too short
-		{"split:checkupstagehandshakeupstreamerranterredCaperred3za27wc5", false},                              // mixed uppercase and lowercase
-		{"split:checkupstagehandshakeupstreamerranterredcaperred3za28wc5", false},                              // invalid checksum
-		{"s lit:checkupstagehandshakeupstreamerranterredcaperred3za27wc5", false},                              // invalid character (space) in prefix
-		{"spl" + string(127) + "t:checkupstagehandshakeupstreamerranterredcaperred3za27wc5", false},            // invalid character (DEL) in prefix
-		{"split:cheosgds2s3c", false},                                                                          // invalid character (o) in data part
-		{"split:te5peu7", false},                                                                               // too short data part
+		{"split:checkupstagehandshakeupstreamerranterredCaperred3za27wc5", false},                   // mixed uppercase and lowercase
+		{"split:checkupstagehandshakeupstreamerranterredcaperred3za28wc5", false},                   // invalid checksum
+		{"s lit:checkupstagehandshakeupstreamerranterredcaperred3za27wc5", false},                   // invalid character (space) in prefix
+		{"spl" + string(127) + "t:checkupstagehandshakeupstreamerranterredcaperred3za27wc5", false}, // invalid character (DEL) in prefix
+		{"split:cheosgds2s3c", false}, // invalid character (o) in data part
+		{"split:te5peu7", false},      // too short data part
 		{":checkupstagehandshakeupstreamerranterredcaperred3za27wc5", false},                                   // empty prefix
 		{"::qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq40ku0e3z", false}, // too long
 		{"bitcoincash:qr6m7j9njldwwzlg9v7v53unlr4jkmx6eylep8ekg2", true},
