@@ -203,6 +203,12 @@ func (c *cursor) Delete() error {
 		return err
 	}
 
+	// Ensure the transaction is writable.
+	if !c.bucket.tx.writable {
+		str := "delete requires a writable database transaction"
+		return makeDbErr(database.ErrTxNotWritable, str, nil)
+	}
+
 	// Error if the cursor is exhausted.
 	if c.currentIter == nil {
 		str := "cursor is exhausted"
@@ -652,10 +658,7 @@ func (b *bucket) CreateBucket(key []byte) (database.Bucket, error) {
 	}
 
 	// Add the new bucket to the bucket index.
-	if err := b.tx.putKey(bidxKey, childID[:]); err != nil {
-		str := fmt.Sprintf("failed to create bucket with key %q", key)
-		return nil, convertErr(str, err)
-	}
+	b.tx.putKey(bidxKey, childID[:])
 	return &bucket{tx: b.tx, id: childID}, nil
 }
 
@@ -881,7 +884,9 @@ func (b *bucket) Put(key, value []byte) error {
 		return makeDbErr(database.ErrKeyRequired, str, nil)
 	}
 
-	return b.tx.putKey(bucketizedKey(b.id, key), value)
+	b.tx.putKey(bucketizedKey(b.id, key), value)
+
+	return nil
 }
 
 // Get returns the value for the given key.  Returns nil if the key does not
@@ -931,7 +936,8 @@ func (b *bucket) Delete(key []byte) error {
 
 	// Nothing to do if there is no key.
 	if len(key) == 0 {
-		return nil
+		str := "delete requires a key"
+		return makeDbErr(database.ErrKeyRequired, str, nil)
 	}
 
 	b.tx.deleteKey(bucketizedKey(b.id, key), true)
@@ -1044,7 +1050,7 @@ func (tx *transaction) hasKey(key []byte) bool {
 //
 // NOTE: This function must only be called on a writable transaction.  Since it
 // is an internal helper function, it does not check.
-func (tx *transaction) putKey(key, value []byte) error {
+func (tx *transaction) putKey(key, value []byte) {
 	// Prevent the key from being deleted if it was previously scheduled
 	// to be deleted on transaction commit.
 	tx.pendingRemove.Delete(key)
@@ -1053,7 +1059,6 @@ func (tx *transaction) putKey(key, value []byte) error {
 	// commit.
 	tx.pendingKeys.Put(key, value)
 	tx.notifyActiveIters()
-	return nil
 }
 
 // fetchKey attempts to fetch the provided key from the database cache (and
@@ -1107,9 +1112,9 @@ func (tx *transaction) nextBucketID() ([4]byte, error) {
 	// Increment and update the current bucket ID and return it.
 	var nextBucketID [4]byte
 	binary.BigEndian.PutUint32(nextBucketID[:], curBucketNum+1)
-	if err := tx.putKey(curBucketIDKeyName, nextBucketID[:]); err != nil {
-		return [4]byte{}, err
-	}
+
+	tx.putKey(curBucketIDKeyName, nextBucketID[:])
+
 	return nextBucketID, nil
 }
 

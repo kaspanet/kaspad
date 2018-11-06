@@ -113,7 +113,7 @@ func TestCreateOpenFail(t *testing.T) {
 	db.Close()
 
 	wantErrCode = database.ErrDbNotOpen
-	err = db.View(func(tx database.Tx) error {
+	err = db.View(func(dbTx database.Tx) error {
 		return nil
 	})
 	if !checkDbError(t, "View", err, wantErrCode) {
@@ -121,7 +121,7 @@ func TestCreateOpenFail(t *testing.T) {
 	}
 
 	wantErrCode = database.ErrDbNotOpen
-	err = db.Update(func(tx database.Tx) error {
+	err = db.Update(func(dbTx database.Tx) error {
 		return nil
 	})
 	if !checkDbError(t, "Update", err, wantErrCode) {
@@ -173,8 +173,8 @@ func TestPersistence(t *testing.T) {
 	}
 	genesisBlock := util.NewBlock(dagconfig.MainNetParams.GenesisBlock)
 	genesisHash := dagconfig.MainNetParams.GenesisHash
-	err = db.Update(func(tx database.Tx) error {
-		metadataBucket := tx.Metadata()
+	err = db.Update(func(dbTx database.Tx) error {
+		metadataBucket := dbTx.Metadata()
 		if metadataBucket == nil {
 			return fmt.Errorf("Metadata: unexpected nil bucket")
 		}
@@ -193,7 +193,7 @@ func TestPersistence(t *testing.T) {
 			}
 		}
 
-		if err := tx.StoreBlock(genesisBlock); err != nil {
+		if err := dbTx.StoreBlock(genesisBlock); err != nil {
 			return fmt.Errorf("StoreBlock: unexpected error: %v",
 				err)
 		}
@@ -216,8 +216,8 @@ func TestPersistence(t *testing.T) {
 
 	// Ensure the values previously stored in the 3rd namespace still exist
 	// and are correct.
-	err = db.View(func(tx database.Tx) error {
-		metadataBucket := tx.Metadata()
+	err = db.View(func(dbTx database.Tx) error {
+		metadataBucket := dbTx.Metadata()
 		if metadataBucket == nil {
 			return fmt.Errorf("Metadata: unexpected nil bucket")
 		}
@@ -237,7 +237,7 @@ func TestPersistence(t *testing.T) {
 		}
 
 		genesisBlockBytes, _ := genesisBlock.Bytes()
-		gotBytes, err := tx.FetchBlock(genesisHash)
+		gotBytes, err := dbTx.FetchBlock(genesisHash)
 		if err != nil {
 			return fmt.Errorf("FetchBlock: unexpected error: %v",
 				err)
@@ -282,7 +282,9 @@ func TestInterface(t *testing.T) {
 
 	// Change the maximum file size to a small value to force multiple flat
 	// files with the test data set.
-	ffldb.TstRunWithMaxBlockFileSize(db, 2048, func() {
+	// Change maximum open files to small value to force shifts in the LRU
+	// mechanism
+	ffldb.TstRunWithMaxBlockFileSizeAndMaxOpenFiles(db, 2048, 10, func() {
 		testInterface(t, db)
 	})
 }

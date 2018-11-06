@@ -1,5 +1,5 @@
 # -- multistage docker build: stage #1: build stage
-FROM golang:1.10-alpine AS build
+FROM golang:1.11-alpine AS build
 
 RUN mkdir -p /go/src/github.com/daglabs/btcd
 
