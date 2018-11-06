@@ -138,16 +138,9 @@ func initBlockNode(node *blockNode, blockHeader *wire.BlockHeader, parents block
 	}
 
 	if len(parents) > 0 {
-		addNodeAsChildToParents(node)
 		node.blues, node.selectedParent, node.blueScore = phantom(node, phantomK)
 		node.height = calculateNodeHeight(node)
 		node.workSum = node.workSum.Add(node.selectedParent.workSum, node.workSum)
-	}
-}
-
-func addNodeAsChildToParents(node *blockNode) {
-	for _, parent := range node.parents {
-		parent.children.add(node)
 	}
 }
 
@@ -167,16 +160,15 @@ func newBlockNode(blockHeader *wire.BlockHeader, parents blockSet, phantomK uint
 // Header constructs a block header from the node and returns it.
 //
 // This function is safe for concurrent access.
-func (node *blockNode) Header() wire.BlockHeader {
+func (node *blockNode) Header() *wire.BlockHeader {
 	// No lock is needed because all accessed fields are immutable.
-	return wire.BlockHeader{
-		Version:       node.version,
-		NumPrevBlocks: byte(len(node.parents)),
-		PrevBlocks:    node.PrevHashes(),
-		MerkleRoot:    node.merkleRoot,
-		Timestamp:     time.Unix(node.timestamp, 0),
-		Bits:          node.bits,
-		Nonce:         node.nonce,
+	return &wire.BlockHeader{
+		Version:      node.version,
+		ParentHashes: node.ParentHashes(),
+		MerkleRoot:   node.merkleRoot,
+		Timestamp:    time.Unix(node.timestamp, 0),
+		Bits:         node.bits,
+		Nonce:        node.nonce,
 	}
 }
 
@@ -235,7 +227,7 @@ func (node *blockNode) CalcPastMedianTime() time.Time {
 	return time.Unix(medianTimestamp, 0)
 }
 
-func (node *blockNode) PrevHashes() []daghash.Hash {
+func (node *blockNode) ParentHashes() []daghash.Hash {
 	return node.parents.hashes()
 }
 

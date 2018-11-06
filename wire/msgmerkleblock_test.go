@@ -21,11 +21,11 @@ func TestMerkleBlock(t *testing.T) {
 	pver := ProtocolVersion
 
 	// Block 1 header.
-	prevHashes := blockOne.Header.PrevBlocks
+	parentHashes := blockOne.Header.ParentHashes
 	merkleHash := &blockOne.Header.MerkleRoot
 	bits := blockOne.Header.Bits
 	nonce := blockOne.Header.Nonce
-	bh := NewBlockHeader(1, prevHashes, merkleHash, bits, nonce)
+	bh := NewBlockHeader(1, parentHashes, merkleHash, bits, nonce)
 
 	// Ensure the command is expected value.
 	wantCmd := "merkleblock"
@@ -113,11 +113,11 @@ func TestMerkleBlock(t *testing.T) {
 // the latest protocol version and decoding with BIP0031Version.
 func TestMerkleBlockCrossProtocol(t *testing.T) {
 	// Block 1 header.
-	prevHashes := blockOne.Header.PrevBlocks
+	parentHashes := blockOne.Header.ParentHashes
 	merkleHash := &blockOne.Header.MerkleRoot
 	bits := blockOne.Header.Bits
 	nonce := blockOne.Header.Nonce
-	bh := NewBlockHeader(1, prevHashes, merkleHash, bits, nonce)
+	bh := NewBlockHeader(1, parentHashes, merkleHash, bits, nonce)
 
 	msg := NewMsgMerkleBlock(bh)
 
@@ -337,9 +337,8 @@ func TestMerkleBlockOverflowErrors(t *testing.T) {
 // where the first transaction matches.
 var merkleBlockOne = MsgMerkleBlock{
 	Header: BlockHeader{
-		Version:       1,
-		NumPrevBlocks: 2,
-		PrevBlocks:    []daghash.Hash{mainNetGenesisHash, simNetGenesisHash},
+		Version:      1,
+		ParentHashes: []daghash.Hash{mainNetGenesisHash, simNetGenesisHash},
 		MerkleRoot: daghash.Hash([daghash.HashSize]byte{ // Make go vet happy.
 			0x98, 0x20, 0x51, 0xfd, 0x1e, 0x4b, 0xa7, 0x44,
 			0xbb, 0xbe, 0x68, 0x0e, 0x1f, 0xee, 0x14, 0x67,
@@ -366,12 +365,12 @@ var merkleBlockOne = MsgMerkleBlock{
 // block one of the block chain where the first transaction matches.
 var merkleBlockOneBytes = []byte{
 	0x01, 0x00, 0x00, 0x00, // Version 1
-	0x02,                                           // NumPrevBlocks
-	0x6f, 0xe2, 0x8c, 0x0a, 0xb6, 0xf1, 0xb3, 0x72, // PrevBlock mainNetGenesisHash
+	0x02,                                           // NumParentBlocks
+	0x6f, 0xe2, 0x8c, 0x0a, 0xb6, 0xf1, 0xb3, 0x72, // mainNetGenesisHash
 	0xc1, 0xa6, 0xa2, 0x46, 0xae, 0x63, 0xf7, 0x4f,
 	0x93, 0x1e, 0x83, 0x65, 0xe1, 0x5a, 0x08, 0x9c,
 	0x68, 0xd6, 0x19, 0x00, 0x00, 0x00, 0x00, 0x00,
-	0xf6, 0x7a, 0xd7, 0x69, 0x5d, 0x9b, 0x66, 0x2a, // PrevBlock simNetGenesisHash
+	0xf6, 0x7a, 0xd7, 0x69, 0x5d, 0x9b, 0x66, 0x2a, // simNetGenesisHash
 	0x72, 0xff, 0x3d, 0x8e, 0xdb, 0xbb, 0x2d, 0xe0,
 	0xbf, 0xa6, 0x7b, 0x13, 0x97, 0x4b, 0xb9, 0x91,
 	0x0d, 0x11, 0x6d, 0x5c, 0xbd, 0x86, 0x3e, 0x68,

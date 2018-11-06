@@ -265,7 +265,7 @@ func (dag *BlockDAG) thresholdState(prevNode *blockNode, checker thresholdCondit
 // This function is safe for concurrent access.
 func (dag *BlockDAG) ThresholdState(deploymentID uint32) (ThresholdState, error) {
 	dag.dagLock.Lock()
-	state, err := dag.deploymentState(dag.SelectedTip(), deploymentID)
+	state, err := dag.deploymentState(dag.selectedTip(), deploymentID)
 	dag.dagLock.Unlock()
 
 	return state, err
@@ -277,7 +277,7 @@ func (dag *BlockDAG) ThresholdState(deploymentID uint32) (ThresholdState, error)
 // This function is safe for concurrent access.
 func (dag *BlockDAG) IsDeploymentActive(deploymentID uint32) (bool, error) {
 	dag.dagLock.Lock()
-	state, err := dag.deploymentState(dag.SelectedTip(), deploymentID)
+	state, err := dag.deploymentState(dag.selectedTip(), deploymentID)
 	dag.dagLock.Unlock()
 	if err != nil {
 		return false, err
@@ -316,7 +316,7 @@ func (dag *BlockDAG) initThresholdCaches() error {
 	// threshold state for each of them.  This will ensure the caches are
 	// populated and any states that needed to be recalculated due to
 	// definition changes is done now.
-	prevNode := dag.SelectedTip().selectedParent
+	prevNode := dag.selectedTip().selectedParent
 	for bit := uint32(0); bit < vbNumBits; bit++ {
 		checker := bitConditionChecker{bit: bit, chain: dag}
 		cache := &dag.warningCaches[bit]
@@ -340,7 +340,7 @@ func (dag *BlockDAG) initThresholdCaches() error {
 	if dag.isCurrent() {
 		// Warn if a high enough percentage of the last blocks have
 		// unexpected versions.
-		bestNode := dag.SelectedTip()
+		bestNode := dag.selectedTip()
 		if err := dag.warnUnknownVersions(bestNode); err != nil {
 			return err
 		}

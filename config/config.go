@@ -24,14 +24,13 @@ import (
 	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/database"
-	_ "github.com/daglabs/btcd/database/ffldb"
 	"github.com/daglabs/btcd/logger"
 	"github.com/daglabs/btcd/mempool"
 	"github.com/daglabs/btcd/util"
 	"github.com/daglabs/btcd/util/network"
 	"github.com/daglabs/btcd/version"
 	"github.com/daglabs/btcd/wire"
-	flags "github.com/jessevdk/go-flags"
+	"github.com/jessevdk/go-flags"
 )
 
 const (
@@ -65,7 +64,9 @@ const (
 )
 
 var (
-	DefaultHomeDir     = util.AppDataDir("btcd", false)
+	// DefaultHomeDir is the default home directory for BTCD.
+	DefaultHomeDir = util.AppDataDir("btcd", false)
+
 	defaultConfigFile  = filepath.Join(DefaultHomeDir, defaultConfigFilename)
 	defaultDataDir     = filepath.Join(DefaultHomeDir, defaultDataDirname)
 	knownDbTypes       = database.SupportedDrivers()

@@ -210,22 +210,22 @@ func (dag *BlockDAG) ProcessBlock(block *util.Block, flags BehaviorFlags) (bool,
 	}
 
 	// Handle orphan blocks.
-	allPrevBlocksExist := true
-	for _, prevBlock := range blockHeader.PrevBlocks {
-		prevBlockExists, err := dag.blockExists(&prevBlock)
+	allParentsExist := true
+	for _, parentHash := range blockHeader.ParentHashes {
+		parentExists, err := dag.blockExists(&parentHash)
 		if err != nil {
 			return false, err
 		}
 
-		if !prevBlockExists {
-			log.Infof("Adding orphan block %v with parent %v", blockHash, prevBlock)
+		if !parentExists {
+			log.Infof("Adding orphan block %v with parent %v", blockHash, parentHash)
 			dag.addOrphanBlock(block)
 
-			allPrevBlocksExist = false
+			allParentsExist = false
 		}
 	}
 
-	if !allPrevBlocksExist {
+	if !allParentsExist {
 		return true, nil
 	}
 

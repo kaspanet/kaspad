@@ -33,7 +33,7 @@ func TestDAGSvrCustomResults(t *testing.T) {
 		{
 			name: "custom vin marshal without coinbase",
 			result: &btcjson.Vin{
-				Txid: "123",
+				TxID: "123",
 				Vout: 1,
 				ScriptSig: &btcjson.ScriptSig{
 					Asm: "0",
@@ -41,7 +41,7 @@ func TestDAGSvrCustomResults(t *testing.T) {
 				},
 				Sequence: 4294967295,
 			},
-			expected: `{"txid":"123","vout":1,"scriptSig":{"asm":"0","hex":"00"},"sequence":4294967295}`,
+			expected: `{"txId":"123","vout":1,"scriptSig":{"asm":"0","hex":"00"},"sequence":4294967295}`,
 		},
 		{
 			name: "custom vinprevout marshal with coinbase",
@@ -54,7 +54,7 @@ func TestDAGSvrCustomResults(t *testing.T) {
 		{
 			name: "custom vinprevout marshal without coinbase",
 			result: &btcjson.VinPrevOut{
-				Txid: "123",
+				TxID: "123",
 				Vout: 1,
 				ScriptSig: &btcjson.ScriptSig{
 					Asm: "0",
@@ -66,7 +66,7 @@ func TestDAGSvrCustomResults(t *testing.T) {
 				},
 				Sequence: 4294967295,
 			},
-			expected: `{"txid":"123","vout":1,"scriptSig":{"asm":"0","hex":"00"},"prevOut":{"addresses":["addr1"],"value":0},"sequence":4294967295}`,
+			expected: `{"txId":"123","vout":1,"scriptSig":{"asm":"0","hex":"00"},"prevOut":{"addresses":["addr1"],"value":0},"sequence":4294967295}`,
 		},
 	}
 

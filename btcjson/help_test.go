@@ -354,7 +354,7 @@ func TestResultStructHelp(t *testing.T) {
 			expected: []string{
 				"\"field\": {\t(json-type-object)\ts-field",
 				"{",
-				" \"subfield\": n,\t(json-type-numeric)\ts2-subfield",
+				" \"subField\": n,\t(json-type-numeric)\ts2-subField",
 				"}\t\t",
 			},
 		},
@@ -372,7 +372,7 @@ func TestResultStructHelp(t *testing.T) {
 			expected: []string{
 				"\"field\": {\t(json-type-object)\ts-field",
 				"{",
-				" \"subfield\": n,\t(json-type-numeric)\ts2-subfield",
+				" \"subField\": n,\t(json-type-numeric)\ts2-subField",
 				"}\t\t",
 			},
 		},
@@ -390,7 +390,7 @@ func TestResultStructHelp(t *testing.T) {
 			expected: []string{
 				"\"field\": [{\t(json-type-arrayjson-type-object)\ts-field",
 				"[{",
-				" \"subfield\": n,\t(json-type-numeric)\ts2-subfield",
+				" \"subField\": n,\t(json-type-numeric)\ts2-subField",
 				"},...]",
 			},
 		},

@@ -11,10 +11,10 @@ package btcjson
 // NOTE: This is a btcsuite extension ported from
 // github.com/decred/dcrd/dcrjson.
 type VersionResult struct {
-	VersionString string `json:"versionstring"`
+	VersionString string `json:"versionString"`
 	Major         uint32 `json:"major"`
 	Minor         uint32 `json:"minor"`
 	Patch         uint32 `json:"patch"`
 	Prerelease    string `json:"prerelease"`
-	BuildMetadata string `json:"buildmetadata"`
+	BuildMetadata string `json:"buildMetadata"`
 }

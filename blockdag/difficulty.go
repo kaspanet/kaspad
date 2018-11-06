@@ -290,7 +290,7 @@ func (dag *BlockDAG) calcNextRequiredDifficulty(lastNode *blockNode, newBlockTim
 // This function is safe for concurrent access.
 func (dag *BlockDAG) CalcNextRequiredDifficulty(timestamp time.Time) (uint32, error) {
 	dag.dagLock.Lock()
-	difficulty, err := dag.calcNextRequiredDifficulty(dag.SelectedTip(), timestamp)
+	difficulty, err := dag.calcNextRequiredDifficulty(dag.selectedTip(), timestamp)
 	dag.dagLock.Unlock()
 	return difficulty, err
 }

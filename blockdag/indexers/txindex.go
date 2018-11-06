@@ -325,7 +325,9 @@ var _ Indexer = (*TxIndex)(nil)
 // disconnecting blocks.
 //
 // This is part of the Indexer interface.
-func (idx *TxIndex) Init() error {
+func (idx *TxIndex) Init(db database.DB) error {
+	idx.db = db
+
 	// Find the latest known block id field for the internal block id
 	// index and initialize it.  This is done because it's a lot more
 	// efficient to do a single search at initialize time than it is to
@@ -441,7 +443,7 @@ func (idx *TxIndex) ConnectBlock(dbTx database.Tx, block *util.Block, _ *blockda
 	return nil
 }
 
-// TxFirstBlockRegion returns the block region for the provided transaction hash
+// TxFirstBlockRegion returns the first block region for the provided transaction hash
 // from the transaction index.  The block region can in turn be used to load the
 // raw transaction bytes.  When there is no entry for the provided hash, nil
 // will be returned for the both the entry and the error.
@@ -457,6 +459,86 @@ func (idx *TxIndex) TxFirstBlockRegion(hash *daghash.Hash) (*database.BlockRegio
 	return region, err
 }
 
+// TxBlocks returns the hashes of the blocks where the transaction exists
+func (idx *TxIndex) TxBlocks(txHash *daghash.Hash) ([]daghash.Hash, error) {
+	blockHashes := make([]daghash.Hash, 0)
+	err := idx.db.View(func(dbTx database.Tx) error {
+		var err error
+		blockHashes, err = dbFetchTxBlocks(dbTx, txHash)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+	return blockHashes, err
+}
+
+func dbFetchTxBlocks(dbTx database.Tx, txHash *daghash.Hash) ([]daghash.Hash, error) {
+	blockHashes := make([]daghash.Hash, 0)
+	bucket := dbTx.Metadata().Bucket(includingBlocksIndexKey).Bucket(txHash[:])
+	if bucket == nil {
+		return nil, database.Error{
+			ErrorCode: database.ErrCorruption,
+			Description: fmt.Sprintf("No including blocks "+
+				"were found for %s", txHash),
+		}
+	}
+	err := bucket.ForEach(func(blockIDBytes, _ []byte) error {
+		blockID := byteOrder.Uint32(blockIDBytes)
+		blockHash, err := dbFetchBlockHashByID(dbTx, blockID)
+		if err != nil {
+			return err
+		}
+		blockHashes = append(blockHashes, *blockHash)
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return blockHashes, nil
+}
+
+// BlockThatAcceptedTx returns the hash of the block where the transaction got accepted (from the virtual block point of view)
+func (idx *TxIndex) BlockThatAcceptedTx(dag *blockdag.BlockDAG, txHash *daghash.Hash) (*daghash.Hash, error) {
+	var acceptingBlock *daghash.Hash
+	err := idx.db.View(func(dbTx database.Tx) error {
+		var err error
+		acceptingBlock, err = dbFetchTxAcceptingBlock(dbTx, txHash, dag)
+		return err
+	})
+	return acceptingBlock, err
+}
+
+func dbFetchTxAcceptingBlock(dbTx database.Tx, txHash *daghash.Hash, dag *blockdag.BlockDAG) (*daghash.Hash, error) {
+	bucket := dbTx.Metadata().Bucket(acceptingBlocksIndexKey).Bucket(txHash[:])
+	if bucket == nil {
+		return nil, database.Error{
+			ErrorCode: database.ErrCorruption,
+			Description: fmt.Sprintf("No accepting blocks "+
+				"were found for %s", txHash),
+		}
+	}
+	cursor := bucket.Cursor()
+	if !cursor.First() {
+		return nil, database.Error{
+			ErrorCode: database.ErrCorruption,
+			Description: fmt.Sprintf("No accepting blocks "+
+				"were found for %s", txHash),
+		}
+	}
+	for ; cursor.Key() != nil; cursor.Next() {
+		blockID := byteOrder.Uint32(cursor.Key())
+		blockHash, err := dbFetchBlockHashByID(dbTx, blockID)
+		if err != nil {
+			return nil, err
+		}
+		if dag.IsInSelectedPathChain(blockHash) {
+			return blockHash, nil
+		}
+	}
+	return nil, nil
+}
+
 // NewTxIndex returns a new instance of an indexer that is used to create a
 // mapping of the hashes of all transactions in the blockchain to the respective
 // block, location within the block, and size of the transaction.
@@ -464,8 +546,8 @@ func (idx *TxIndex) TxFirstBlockRegion(hash *daghash.Hash) (*database.BlockRegio
 // It implements the Indexer interface which plugs into the IndexManager that in
 // turn is used by the blockchain package.  This allows the index to be
 // seamlessly maintained along with the chain.
-func NewTxIndex(db database.DB) *TxIndex {
-	return &TxIndex{db: db}
+func NewTxIndex() *TxIndex {
+	return &TxIndex{}
 }
 
 // dropBlockIDIndex drops the internal block id index.

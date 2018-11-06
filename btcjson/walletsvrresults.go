@@ -14,7 +14,7 @@ type GetTransactionDetailsResult struct {
 	Address           string   `json:"address,omitempty"`
 	Amount            float64  `json:"amount"`
 	Category          string   `json:"category"`
-	InvolvesWatchOnly bool     `json:"involveswatchonly,omitempty"`
+	InvolvesWatchOnly bool     `json:"involvesWatchOnly,omitempty"`
 	Fee               *float64 `json:"fee,omitempty"`
 	Vout              uint32   `json:"vout"`
 }
@@ -24,13 +24,13 @@ type GetTransactionResult struct {
 	Amount          float64                       `json:"amount"`
 	Fee             float64                       `json:"fee,omitempty"`
 	Confirmations   int64                         `json:"confirmations"`
-	BlockHash       string                        `json:"blockhash"`
-	BlockIndex      int64                         `json:"blockindex"`
-	BlockTime       uint64                        `json:"blocktime"`
-	TxID            string                        `json:"txid"`
-	WalletConflicts []string                      `json:"walletconflicts"`
+	BlockHash       string                        `json:"blockHash"`
+	BlockIndex      int64                         `json:"blockIndex"`
+	BlockTime       uint64                        `json:"blockTime"`
+	TxID            string                        `json:"txId"`
+	WalletConflicts []string                      `json:"walletConflicts"`
 	Time            int64                         `json:"time"`
-	TimeReceived    int64                         `json:"timereceived"`
+	TimeReceived    int64                         `json:"timeReceived"`
 	Details         []GetTransactionDetailsResult `json:"details"`
 	Hex             string                        `json:"hex"`
 }
@@ -39,20 +39,20 @@ type GetTransactionResult struct {
 // command.
 type InfoWalletResult struct {
 	Version         int32   `json:"version"`
-	ProtocolVersion int32   `json:"protocolversion"`
-	WalletVersion   int32   `json:"walletversion"`
+	ProtocolVersion int32   `json:"protocolVersion"`
+	WalletVersion   int32   `json:"walletVersion"`
 	Balance         float64 `json:"balance"`
 	Blocks          int32   `json:"blocks"`
-	TimeOffset      int64   `json:"timeoffset"`
+	TimeOffset      int64   `json:"timeOffset"`
 	Connections     int32   `json:"connections"`
 	Proxy           string  `json:"proxy"`
 	Difficulty      float64 `json:"difficulty"`
-	TestNet         bool    `json:"testnet"`
-	KeypoolOldest   int64   `json:"keypoololdest"`
-	KeypoolSize     int32   `json:"keypoolsize"`
-	UnlockedUntil   int64   `json:"unlocked_until"`
-	PaytxFee        float64 `json:"paytxfee"`
-	RelayFee        float64 `json:"relayfee"`
+	TestNet         bool    `json:"testNet"`
+	KeypoolOldest   int64   `json:"keypoolOldest"`
+	KeypoolSize     int32   `json:"keypoolSize"`
+	UnlockedUntil   int64   `json:"unlockedUntil"`
+	PayTxFee        float64 `json:"payTxFee"`
+	RelayFee        float64 `json:"relayFee"`
 	Errors          string  `json:"errors"`
 }
 
@@ -62,23 +62,23 @@ type ListTransactionsResult struct {
 	Account           string   `json:"account"`
 	Address           string   `json:"address,omitempty"`
 	Amount            float64  `json:"amount"`
-	BIP125Replaceable string   `json:"bip125-replaceable,omitempty"`
-	BlockHash         string   `json:"blockhash,omitempty"`
-	BlockIndex        *int64   `json:"blockindex,omitempty"`
-	BlockTime         uint64   `json:"blocktime,omitempty"`
+	BIP125Replaceable string   `json:"bip125Replaceable,omitempty"`
+	BlockHash         string   `json:"blockGash,omitempty"`
+	BlockIndex        *int64   `json:"blockIndex,omitempty"`
+	BlockTime         uint64   `json:"blockTime,omitempty"`
 	Category          string   `json:"category"`
 	Confirmations     int64    `json:"confirmations"`
 	Fee               *float64 `json:"fee,omitempty"`
 	Generated         bool     `json:"generated,omitempty"`
-	InvolvesWatchOnly bool     `json:"involveswatchonly,omitempty"`
+	InvolvesWatchOnly bool     `json:"involvesWatchOnly,omitempty"`
 	Time              int64    `json:"time"`
-	TimeReceived      int64    `json:"timereceived"`
+	TimeReceived      int64    `json:"timeReceived"`
 	Trusted           bool     `json:"trusted"`
-	TxID              string   `json:"txid"`
+	TxID              string   `json:"txId"`
 	Vout              uint32   `json:"vout"`
-	WalletConflicts   []string `json:"walletconflicts"`
+	WalletConflicts   []string `json:"walletConflicts"`
 	Comment           string   `json:"comment,omitempty"`
-	OtherAccount      string   `json:"otheraccount,omitempty"`
+	OtherAccount      string   `json:"otherAccount,omitempty"`
 }
 
 // ListReceivedByAccountResult models the data from the listreceivedbyaccount
@@ -96,19 +96,19 @@ type ListReceivedByAddressResult struct {
 	Address           string   `json:"address"`
 	Amount            float64  `json:"amount"`
 	Confirmations     uint64   `json:"confirmations"`
-	TxIDs             []string `json:"txids,omitempty"`
-	InvolvesWatchonly bool     `json:"involvesWatchonly,omitempty"`
+	TxIDs             []string `json:"txIds,omitempty"`
+	InvolvesWatchOnly bool     `json:"involvesWatchOnly,omitempty"`
 }
 
 // ListSinceBlockResult models the data from the listsinceblock command.
 type ListSinceBlockResult struct {
 	Transactions []ListTransactionsResult `json:"transactions"`
-	LastBlock    string                   `json:"lastblock"`
+	LastBlock    string                   `json:"lastBlock"`
 }
 
 // ListUnspentResult models a successful response from the listunspent request.
 type ListUnspentResult struct {
-	TxID          string  `json:"txid"`
+	TxID          string  `json:"txId"`
 	Vout          uint32  `json:"vout"`
 	Address       string  `json:"address"`
 	Account       string  `json:"account"`
@@ -122,7 +122,7 @@ type ListUnspentResult struct {
 // SignRawTransactionError models the data that contains script verification
 // errors from the signrawtransaction request.
 type SignRawTransactionError struct {
-	TxID      string `json:"txid"`
+	TxID      string `json:"txId"`
 	Vout      uint32 `json:"vout"`
 	ScriptSig string `json:"scriptSig"`
 	Sequence  uint64 `json:"sequence"`
@@ -140,18 +140,18 @@ type SignRawTransactionResult struct {
 // ValidateAddressWalletResult models the data returned by the wallet server
 // validateaddress command.
 type ValidateAddressWalletResult struct {
-	IsValid      bool     `json:"isvalid"`
+	IsValid      bool     `json:"isValid"`
 	Address      string   `json:"address,omitempty"`
-	IsMine       bool     `json:"ismine,omitempty"`
-	IsWatchOnly  bool     `json:"iswatchonly,omitempty"`
-	IsScript     bool     `json:"isscript,omitempty"`
-	PubKey       string   `json:"pubkey,omitempty"`
-	IsCompressed bool     `json:"iscompressed,omitempty"`
+	IsMine       bool     `json:"isMine,omitempty"`
+	IsWatchOnly  bool     `json:"isWatchOnly,omitempty"`
+	IsScript     bool     `json:"isScript,omitempty"`
+	PubKey       string   `json:"pubKey,omitempty"`
+	IsCompressed bool     `json:"isCompressed,omitempty"`
 	Account      string   `json:"account,omitempty"`
 	Addresses    []string `json:"addresses,omitempty"`
 	Hex          string   `json:"hex,omitempty"`
 	Script       string   `json:"script,omitempty"`
-	SigsRequired int32    `json:"sigsrequired,omitempty"`
+	SigsRequired int32    `json:"sigsRequired,omitempty"`
 }
 
 // GetBestBlockResult models the data from the getbestblock command.

@@ -656,10 +656,10 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 	// for headers starting from the block after this one up to the next
 	// checkpoint.
 	prevHeight := sm.nextCheckpoint.Height
-	prevHash := sm.nextCheckpoint.Hash
+	parentHash := sm.nextCheckpoint.Hash
 	sm.nextCheckpoint = sm.findNextHeaderCheckpoint(prevHeight)
 	if sm.nextCheckpoint != nil {
-		locator := blockdag.BlockLocator([]*daghash.Hash{prevHash})
+		locator := blockdag.BlockLocator([]*daghash.Hash{parentHash})
 		err := peer.PushGetHeadersMsg(locator, sm.nextCheckpoint.Hash)
 		if err != nil {
 			log.Warnf("Failed to send getheaders message to "+
@@ -780,7 +780,7 @@ func (sm *SyncManager) handleHeadersMsg(hmsg *headersMsg) {
 		// add it to the list of headers.
 		node := headerNode{hash: &blockHash}
 		prevNode := prevNodeEl.Value.(*headerNode)
-		if prevNode.hash.IsEqual(&blockHeader.PrevBlocks[0]) { // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
+		if prevNode.hash.IsEqual(&blockHeader.ParentHashes[0]) { // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
 			node.height = prevNode.height + 1
 			e := sm.headerList.PushBack(&node)
 			if sm.startHeader == nil {

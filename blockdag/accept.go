@@ -23,7 +23,7 @@ import (
 func (dag *BlockDAG) maybeAcceptBlock(block *util.Block, flags BehaviorFlags) error {
 	// The height of this block is one more than the referenced previous
 	// block.
-	parents, err := lookupPreviousNodes(block, dag)
+	parents, err := lookupParentNodes(block, dag)
 	if err != nil {
 		return err
 	}
@@ -85,18 +85,18 @@ func (dag *BlockDAG) maybeAcceptBlock(block *util.Block, flags BehaviorFlags) er
 	return nil
 }
 
-func lookupPreviousNodes(block *util.Block, blockDAG *BlockDAG) (blockSet, error) {
+func lookupParentNodes(block *util.Block, blockDAG *BlockDAG) (blockSet, error) {
 	header := block.MsgBlock().Header
-	prevHashes := header.PrevBlocks
+	parentHashes := header.ParentHashes
 
 	nodes := newSet()
-	for _, prevHash := range prevHashes {
-		node := blockDAG.index.LookupNode(&prevHash)
+	for _, parentHash := range parentHashes {
+		node := blockDAG.index.LookupNode(&parentHash)
 		if node == nil {
-			str := fmt.Sprintf("previous block %s is unknown", prevHashes)
-			return nil, ruleError(ErrPreviousBlockUnknown, str)
+			str := fmt.Sprintf("parent block %s is unknown", parentHashes)
+			return nil, ruleError(ErrParentBlockUnknown, str)
 		} else if blockDAG.index.NodeStatus(node).KnownInvalid() {
-			str := fmt.Sprintf("previous block %s is known to be invalid", prevHashes)
+			str := fmt.Sprintf("parent block %s is known to be invalid", parentHashes)
 			return nil, ruleError(ErrInvalidAncestorBlock, str)
 		}
 

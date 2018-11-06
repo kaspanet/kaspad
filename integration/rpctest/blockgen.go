@@ -132,37 +132,37 @@ func createCoinbaseTx(coinbaseScript []byte, nextBlockHeight int32,
 // initialized), then the timestamp of the previous block will be used plus 1
 // second is used. Passing nil for the previous block results in a block that
 // builds off of the genesis block for the specified chain.
-func CreateBlock(prevBlock *util.Block, inclusionTxs []*util.Tx,
+func CreateBlock(parentBlock *util.Block, inclusionTxs []*util.Tx,
 	blockVersion int32, blockTime time.Time, miningAddr util.Address,
 	mineTo []wire.TxOut, net *dagconfig.Params) (*util.Block, error) {
 
 	var (
-		prevHash      *daghash.Hash
-		blockHeight   int32
-		prevBlockTime time.Time
+		parentHash      *daghash.Hash
+		blockHeight     int32
+		parentBlockTime time.Time
 	)
 
-	// If the previous block isn't specified, then we'll construct a block
+	// If the parent block isn't specified, then we'll construct a block
 	// that builds off of the genesis block for the chain.
-	if prevBlock == nil {
-		prevHash = net.GenesisHash
+	if parentBlock == nil {
+		parentHash = net.GenesisHash
 		blockHeight = 1
-		prevBlockTime = net.GenesisBlock.Header.Timestamp.Add(time.Minute)
+		parentBlockTime = net.GenesisBlock.Header.Timestamp.Add(time.Minute)
 	} else {
-		prevHash = prevBlock.Hash()
-		blockHeight = prevBlock.Height() + 1
-		prevBlockTime = prevBlock.MsgBlock().Header.Timestamp
+		parentHash = parentBlock.Hash()
+		blockHeight = parentBlock.Height() + 1
+		parentBlockTime = parentBlock.MsgBlock().Header.Timestamp
 	}
 
 	// If a target block time was specified, then use that as the header's
-	// timestamp. Otherwise, add one second to the previous block unless
+	// timestamp. Otherwise, add one second to the parent block unless
 	// it's the genesis block in which case use the current time.
 	var ts time.Time
 	switch {
 	case !blockTime.IsZero():
 		ts = blockTime
 	default:
-		ts = prevBlockTime.Add(time.Second)
+		ts = parentBlockTime.Add(time.Second)
 	}
 
 	extraNonce := uint64(0)
@@ -184,11 +184,11 @@ func CreateBlock(prevBlock *util.Block, inclusionTxs []*util.Tx,
 	merkles := blockdag.BuildMerkleTreeStore(blockTxns)
 	var block wire.MsgBlock
 	block.Header = wire.BlockHeader{
-		Version:    blockVersion,
-		PrevBlocks: []daghash.Hash{*prevHash},
-		MerkleRoot: *merkles[len(merkles)-1],
-		Timestamp:  ts,
-		Bits:       net.PowLimitBits,
+		Version:      blockVersion,
+		ParentHashes: []daghash.Hash{*parentHash},
+		MerkleRoot:   *merkles[len(merkles)-1],
+		Timestamp:    ts,
+		Bits:         net.PowLimitBits,
 	}
 	for _, tx := range blockTxns {
 		if err := block.AddTransaction(tx.MsgTx()); err != nil {

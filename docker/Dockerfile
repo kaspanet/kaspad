@@ -1,5 +1,5 @@
 # -- multistage docker build: stage #1: build stage
-FROM golang:1.10-alpine AS build
+FROM golang:1.11-alpine AS build
 
 RUN mkdir -p /go/src/github.com/daglabs/btcd
 
@@ -19,10 +19,9 @@ RUN dep ensure -v -vendor-only
 
 COPY . .
 
-RUN TEST_DIRS=`go list -f {{.Dir}} ./... | grep -v /vendor/`
-RUN GOFMT_RESULT=`gofmt -l $TEST_DIRS`; echo $GOFMT_RESULT; test -z "$GOFMT_RESULT"
+RUN TEST_DIRS=`go list -f {{.Dir}} ./... | grep -v /vendor/` GOFMT_RESULT=`gofmt -l $TEST_DIRS`; echo $GOFMT_RESULT; test -z "$GOFMT_RESULT"
 RUN go vet ./...
-# RUN golint -set_exit_status $TEST_DIRS
+RUN TEST_DIRS=`go list -f {{.Dir}} ./... | grep -v /vendor/` golint -set_exit_status $TEST_DIRS
 # RUN aligncheck ./...
 # RUN structcheck -e ./...
 # RUN varcheck -e ./...

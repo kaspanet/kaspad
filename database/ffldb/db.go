@@ -1239,23 +1239,23 @@ func (tx *transaction) fetchBlockRow(hash *daghash.Hash) ([]byte, error) {
 	return blockRow, nil
 }
 
-// The offset in a block header at which numPrevBlocks resides.
-const numPrevBlocksOffset = 4
+// The offset in a block header at which NumParentBlocks resides.
+const numParentBlocksOffset = 4
 
-// fetchBlockHeaderSize fetches the numPrevBlocks field out of the block header
+// fetchBlockHeaderSize fetches the NumParentBlocks field out of the block header
 // and uses it to compute the total size of the block header
 func (tx *transaction) fetchBlockHeaderSize(hash *daghash.Hash) (byte, error) {
 	r, err := tx.FetchBlockRegion(&database.BlockRegion{
 		Hash:   hash,
-		Offset: numPrevBlocksOffset,
+		Offset: numParentBlocksOffset,
 		Len:    1,
 	})
 	if err != nil {
 		return 0, err
 	}
 
-	numPrevBlocks := r[0]
-	return numPrevBlocks*daghash.HashSize + wire.BaseBlockHeaderPayload, nil
+	numParentBlocks := r[0]
+	return numParentBlocks*daghash.HashSize + wire.BaseBlockHeaderPayload, nil
 }
 
 // FetchBlockHeader returns the raw serialized bytes for the block header
@@ -1287,13 +1287,13 @@ func (tx *transaction) FetchBlockHeader(hash *daghash.Hash) ([]byte, error) {
 	})
 }
 
-// fetchBlockHeadersSizes fetches the numPrevBlocks fields out of the block headers
+// fetchBlockHeadersSizes fetches the NumParentBlocks fields out of the block headers
 // and uses it to compute the total sizes of the block headers
 func (tx *transaction) fetchBlockHeadersSizes(hashes []daghash.Hash) ([]byte, error) {
 	regions := make([]database.BlockRegion, len(hashes))
 	for i := range hashes {
 		regions[i].Hash = &hashes[i]
-		regions[i].Offset = numPrevBlocksOffset
+		regions[i].Offset = numParentBlocksOffset
 		regions[i].Len = 1
 	}
 	rs, err := tx.FetchBlockRegions(regions)
@@ -1303,8 +1303,8 @@ func (tx *transaction) fetchBlockHeadersSizes(hashes []daghash.Hash) ([]byte, er
 
 	sizes := make([]byte, len(hashes))
 	for i, r := range rs {
-		numPrevBlocks := r[0]
-		sizes[i] = numPrevBlocks*daghash.HashSize + wire.BaseBlockHeaderPayload
+		numParentBlocks := r[0]
+		sizes[i] = numParentBlocks*daghash.HashSize + wire.BaseBlockHeaderPayload
 	}
 
 	return sizes, nil

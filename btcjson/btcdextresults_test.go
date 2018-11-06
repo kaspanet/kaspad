@@ -33,7 +33,7 @@ func TestBtcdExtCustomResults(t *testing.T) {
 				Prerelease:    "pr",
 				BuildMetadata: "bm",
 			},
-			expected: `{"versionstring":"1.0.0","major":1,"minor":0,"patch":0,"prerelease":"pr","buildmetadata":"bm"}`,
+			expected: `{"versionString":"1.0.0","major":1,"minor":0,"patch":0,"prerelease":"pr","buildMetadata":"bm"}`,
 		},
 	}
 

@@ -127,7 +127,7 @@ func (m *Manager) maybeCreateIndexes(dbTx database.Tx) error {
 // catch up due to the I/O contention.
 //
 // This is part of the blockchain.IndexManager interface.
-func (m *Manager) Init(blockDAG *blockdag.BlockDAG, interrupt <-chan struct{}) error {
+func (m *Manager) Init(db database.DB, blockDAG *blockdag.BlockDAG, interrupt <-chan struct{}) error {
 	// Nothing to do when no indexes are enabled.
 	if len(m.enabledIndexes) == 0 {
 		return nil
@@ -136,6 +136,8 @@ func (m *Manager) Init(blockDAG *blockdag.BlockDAG, interrupt <-chan struct{}) e
 	if interruptRequested(interrupt) {
 		return errInterruptRequested
 	}
+
+	m.db = db
 
 	// Finish and drops that were previously interrupted.
 	if err := m.maybeFinishDrops(interrupt); err != nil {
@@ -159,7 +161,7 @@ func (m *Manager) Init(blockDAG *blockdag.BlockDAG, interrupt <-chan struct{}) e
 
 	// Initialize each of the enabled indexes.
 	for _, indexer := range m.enabledIndexes {
-		if err := indexer.Init(); err != nil {
+		if err := indexer.Init(db); err != nil {
 			return err
 		}
 	}
@@ -226,9 +228,8 @@ func (m *Manager) ConnectBlock(dbTx database.Tx, block *util.Block, dag *blockda
 //
 // The manager returned satisfies the blockchain.IndexManager interface and thus
 // cleanly plugs into the normal blockchain processing path.
-func NewManager(db database.DB, enabledIndexes []Indexer) *Manager {
+func NewManager(enabledIndexes []Indexer) *Manager {
 	return &Manager{
-		db:             db,
 		enabledIndexes: enabledIndexes,
 	}
 }

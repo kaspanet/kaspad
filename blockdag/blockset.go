@@ -1,7 +1,6 @@
 package blockdag
 
 import (
-	"sort"
 	"strings"
 
 	"github.com/daglabs/btcd/dagconfig/daghash"
@@ -106,6 +105,12 @@ func (bs blockSet) contains(block *blockNode) bool {
 	return ok
 }
 
+// containsHash returns true iff this set contains a block hash
+func (bs blockSet) containsHash(hash *daghash.Hash) bool {
+	_, ok := bs[*hash]
+	return ok
+}
+
 // hashesEqual returns true if the given hashes are equal to the hashes
 // of the blocks in this set.
 // NOTE: The given hash slice must not contain duplicates.
@@ -129,9 +134,7 @@ func (bs blockSet) hashes() []daghash.Hash {
 	for hash := range bs {
 		hashes = append(hashes, hash)
 	}
-	sort.Slice(hashes, func(i, j int) bool {
-		return daghash.Less(&hashes[i], &hashes[j])
-	})
+	daghash.Sort(hashes)
 	return hashes
 }
 

@@ -9,6 +9,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"math/big"
+	"sort"
 	"strings"
 )
 
@@ -35,6 +36,7 @@ func (hash Hash) String() string {
 	return hex.EncodeToString(hash[:])
 }
 
+// Strings returns a slice of strings representing the hashes in the given slice of hashes
 func Strings(hashes []Hash) []string {
 	strings := make([]string, len(hashes))
 	for i, hash := range hashes {
@@ -186,4 +188,10 @@ func Less(a *Hash, b *Hash) bool {
 //JoinHashesStrings joins all the stringified hashes separated by a separator
 func JoinHashesStrings(hashes []Hash, separator string) string {
 	return strings.Join(Strings(hashes), separator)
+}
+
+func Sort(hashes []Hash) {
+	sort.Slice(hashes, func(i, j int) bool {
+		return Less(&hashes[i], &hashes[j])
+	})
 }

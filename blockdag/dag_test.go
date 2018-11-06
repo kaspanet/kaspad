@@ -41,8 +41,9 @@ func TestBlockCount(t *testing.T) {
 	}
 
 	// Create a new database and chain instance to run tests against.
-	dag, teardownFunc, err := DAGSetup("haveblock",
-		&dagconfig.SimNetParams)
+	dag, teardownFunc, err := DAGSetup("haveblock", Config{
+		DAGParams: &dagconfig.SimNetParams,
+	})
 	if err != nil {
 		t.Fatalf("Failed to setup chain instance: %v", err)
 	}
@@ -63,7 +64,7 @@ func TestBlockCount(t *testing.T) {
 		}
 	}
 
-	expectedBlockCount := int64(6)
+	expectedBlockCount := uint64(6)
 	if dag.BlockCount() != expectedBlockCount {
 		t.Errorf("TestBlockCount: BlockCount expected to return %v but got %v", expectedBlockCount, dag.BlockCount())
 	}
@@ -89,8 +90,9 @@ func TestHaveBlock(t *testing.T) {
 	}
 
 	// Create a new database and chain instance to run tests against.
-	dag, teardownFunc, err := DAGSetup("haveblock",
-		&dagconfig.SimNetParams)
+	dag, teardownFunc, err := DAGSetup("haveblock", Config{
+		DAGParams: &dagconfig.SimNetParams,
+	})
 	if err != nil {
 		t.Fatalf("Failed to setup chain instance: %v", err)
 	}
@@ -220,7 +222,7 @@ func TestCalcSequenceLock(t *testing.T) {
 
 	// Generate enough synthetic blocks for the rest of the test
 	dag := newTestDAG(netParams)
-	node := dag.SelectedTip()
+	node := dag.selectedTip()
 	blockTime := node.Header().Timestamp
 	numBlocksToGenerate := uint32(5)
 	for i := uint32(0); i < numBlocksToGenerate; i++ {
@@ -587,7 +589,7 @@ func chainedNodes(parents blockSet, numNodes int) []*blockNode {
 		// This is invalid, but all that is needed is enough to get the
 		// synthetic tests to work.
 		header := wire.BlockHeader{Nonce: testNoncePrng.Uint64()}
-		header.PrevBlocks = tips.hashes()
+		header.ParentHashes = tips.hashes()
 		nodes[i] = newBlockNode(&header, tips, dagconfig.SimNetParams.K)
 		tips = setFromSlice(nodes[i])
 	}
@@ -811,7 +813,9 @@ func testErrorThroughPatching(t *testing.T, expectedErrorMessage string, targetF
 	}
 
 	// Create a new database and dag instance to run tests against.
-	dag, teardownFunc, err := DAGSetup("testErrorThroughPatching", &dagconfig.SimNetParams)
+	dag, teardownFunc, err := DAGSetup("testErrorThroughPatching", Config{
+		DAGParams: &dagconfig.SimNetParams,
+	})
 	if err != nil {
 		t.Fatalf("Failed to setup dag instance: %v", err)
 	}
@@ -821,7 +825,8 @@ func testErrorThroughPatching(t *testing.T, expectedErrorMessage string, targetF
 	// maturity to 1.
 	dag.TstSetCoinbaseMaturity(1)
 
-	monkey.Patch(targetFunction, replacementFunction)
+	guard := monkey.Patch(targetFunction, replacementFunction)
+	defer guard.Unpatch()
 
 	err = nil
 	for i := 1; i < len(blocks); i++ {
@@ -843,6 +848,4 @@ func testErrorThroughPatching(t *testing.T, expectedErrorMessage string, targetF
 		t.Errorf("ProcessBlock returned wrong error. "+
 			"Want: %s, got: %s", expectedErrorMessage, err)
 	}
-
-	monkey.Unpatch(targetFunction)
 }

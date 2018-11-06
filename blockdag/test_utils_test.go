@@ -42,13 +42,15 @@ func TestDAGSetupErrors(t *testing.T) {
 }
 
 func testDAGSetupErrorThroughPatching(t *testing.T, expectedErrorMessage string, targetFunction interface{}, replacementFunction interface{}) {
-	monkey.Patch(targetFunction, replacementFunction)
-	_, tearDown, err := DAGSetup("TestDAGSetup", &dagconfig.MainNetParams)
+	guard := monkey.Patch(targetFunction, replacementFunction)
+	defer guard.Unpatch()
+	_, tearDown, err := DAGSetup("TestDAGSetup", Config{
+		DAGParams: &dagconfig.MainNetParams,
+	})
 	if tearDown != nil {
 		defer tearDown()
 	}
 	if err == nil || !strings.HasPrefix(err.Error(), expectedErrorMessage) {
 		t.Errorf("DAGSetup: expected error to have prefix '%s' but got error '%v'", expectedErrorMessage, err)
 	}
-	monkey.Unpatch(targetFunction)
 }

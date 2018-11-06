@@ -257,7 +257,7 @@ func (d *UTXODiff) WithDiff(diff *UTXODiff) (*UTXODiff, error) {
 			result.toAdd.add(outPoint, utxoEntry)
 		}
 		if diff.toAdd.contains(outPoint) {
-			return nil, errors.New("WithDiff: transaction both in d.toAdd and in other.toAdd")
+			return nil, ruleError(ErrWithDiff, "WithDiff: transaction both in d.toAdd and in other.toAdd")
 		}
 	}
 
@@ -270,7 +270,7 @@ func (d *UTXODiff) WithDiff(diff *UTXODiff) (*UTXODiff, error) {
 			result.toRemove.add(outPoint, utxoEntry)
 		}
 		if diff.toRemove.contains(outPoint) {
-			return nil, errors.New("WithDiff: transaction both in d.toRemove and in other.toRemove")
+			return nil, ruleError(ErrWithDiff, "WithDiff: transaction both in d.toRemove and in other.toRemove")
 		}
 	}
 
@@ -367,9 +367,9 @@ func diffFromTx(u UTXOSet, tx *wire.MsgTx, containingNode *blockNode) (*UTXODiff
 			if entry, ok := u.Get(txIn.PreviousOutPoint); ok {
 				diff.toRemove.add(txIn.PreviousOutPoint, entry)
 			} else {
-				return nil, fmt.Errorf(
+				return nil, ruleError(ErrMissingTxOut, fmt.Sprintf(
 					"Transaction %s is invalid because spends outpoint %s that is not in utxo set",
-					tx.TxHash(), txIn.PreviousOutPoint)
+					tx.TxHash(), txIn.PreviousOutPoint))
 			}
 		}
 	}
@@ -461,6 +461,7 @@ func (fus *FullUTXOSet) clone() UTXOSet {
 	return &FullUTXOSet{utxoCollection: fus.utxoCollection.clone()}
 }
 
+// Get returns the UTXOEntry associated with the given OutPoint, and a boolean indicating if such entry was found
 func (fus *FullUTXOSet) Get(outPoint wire.OutPoint) (*UTXOEntry, bool) {
 	utxoEntry, ok := fus.utxoCollection[outPoint]
 	return utxoEntry, ok

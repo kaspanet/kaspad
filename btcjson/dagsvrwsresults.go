@@ -7,7 +7,7 @@ package btcjson
 
 // SessionResult models the data from the session command.
 type SessionResult struct {
-	SessionID uint64 `json:"sessionid"`
+	SessionID uint64 `json:"sessionId"`
 }
 
 // RescannedBlock contains the hash and all discovered transactions of a single

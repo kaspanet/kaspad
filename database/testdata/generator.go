@@ -44,13 +44,12 @@ func generateBlocks(out *os.File, numBlocks int) {
 func generateBlock(parent *wire.MsgBlock) *wire.MsgBlock {
 	return &wire.MsgBlock{
 		Header: wire.BlockHeader{
-			Version:       1,
-			NumPrevBlocks: 1,
-			PrevBlocks:    []daghash.Hash{parent.BlockHash()},
-			MerkleRoot:    genesisMerkleRoot,
-			Timestamp:     time.Unix(0x5b28c4c8, 0), // 2018-06-19 08:54:32 +0000 UTC
-			Bits:          0x1e00ffff,               // 503382015 [000000ffff000000000000000000000000000000000000000000000000000000]
-			Nonce:         0xc0192550,               // 2148484547
+			Version:      1,
+			ParentHashes: []daghash.Hash{parent.BlockHash()},
+			MerkleRoot:   genesisMerkleRoot,
+			Timestamp:    time.Unix(0x5b28c4c8, 0), // 2018-06-19 08:54:32 +0000 UTC
+			Bits:         0x1e00ffff,               // 503382015 [000000ffff000000000000000000000000000000000000000000000000000000]
+			Nonce:        0xc0192550,               // 2148484547
 		},
 		Transactions: []*wire.MsgTx{&genesisCoinbaseTx},
 	}

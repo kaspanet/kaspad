@@ -327,7 +327,7 @@ func TestWalletSvrCmds(t *testing.T) {
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"getTransaction","params":["123"],"id":1}`,
 			unmarshalled: &btcjson.GetTransactionCmd{
-				Txid:             "123",
+				TxID:             "123",
 				IncludeWatchOnly: btcjson.Bool(false),
 			},
 		},
@@ -341,7 +341,7 @@ func TestWalletSvrCmds(t *testing.T) {
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"getTransaction","params":["123",true],"id":1}`,
 			unmarshalled: &btcjson.GetTransactionCmd{
-				Txid:             "123",
+				TxID:             "123",
 				IncludeWatchOnly: btcjson.Bool(true),
 			},
 		},
@@ -801,19 +801,19 @@ func TestWalletSvrCmds(t *testing.T) {
 		{
 			name: "lockUnspent",
 			newCmd: func() (interface{}, error) {
-				return btcjson.NewCmd("lockUnspent", true, `[{"txid":"123","vout":1}]`)
+				return btcjson.NewCmd("lockUnspent", true, `[{"txId":"123","vout":1}]`)
 			},
 			staticCmd: func() interface{} {
 				txInputs := []btcjson.TransactionInput{
-					{Txid: "123", Vout: 1},
+					{TxID: "123", Vout: 1},
 				}
 				return btcjson.NewLockUnspentCmd(true, txInputs)
 			},
-			marshalled: `{"jsonrpc":"1.0","method":"lockUnspent","params":[true,[{"txid":"123","vout":1}]],"id":1}`,
+			marshalled: `{"jsonrpc":"1.0","method":"lockUnspent","params":[true,[{"txId":"123","vout":1}]],"id":1}`,
 			unmarshalled: &btcjson.LockUnspentCmd{
 				Unlock: true,
 				Transactions: []btcjson.TransactionInput{
-					{Txid: "123", Vout: 1},
+					{TxID: "123", Vout: 1},
 				},
 			},
 		},
@@ -1086,12 +1086,12 @@ func TestWalletSvrCmds(t *testing.T) {
 		{
 			name: "signRawTransaction optional1",
 			newCmd: func() (interface{}, error) {
-				return btcjson.NewCmd("signRawTransaction", "001122", `[{"txid":"123","vout":1,"scriptPubKey":"00","redeemScript":"01"}]`)
+				return btcjson.NewCmd("signRawTransaction", "001122", `[{"txId":"123","vout":1,"scriptPubKey":"00","redeemScript":"01"}]`)
 			},
 			staticCmd: func() interface{} {
 				txInputs := []btcjson.RawTxInput{
 					{
-						Txid:         "123",
+						TxID:         "123",
 						Vout:         1,
 						ScriptPubKey: "00",
 						RedeemScript: "01",
@@ -1100,12 +1100,12 @@ func TestWalletSvrCmds(t *testing.T) {
 
 				return btcjson.NewSignRawTransactionCmd("001122", &txInputs, nil, nil)
 			},
-			marshalled: `{"jsonrpc":"1.0","method":"signRawTransaction","params":["001122",[{"txid":"123","vout":1,"scriptPubKey":"00","redeemScript":"01"}]],"id":1}`,
+			marshalled: `{"jsonrpc":"1.0","method":"signRawTransaction","params":["001122",[{"txId":"123","vout":1,"scriptPubKey":"00","redeemScript":"01"}]],"id":1}`,
 			unmarshalled: &btcjson.SignRawTransactionCmd{
 				RawTx: "001122",
 				Inputs: &[]btcjson.RawTxInput{
 					{
-						Txid:         "123",
+						TxID:         "123",
 						Vout:         1,
 						ScriptPubKey: "00",
 						RedeemScript: "01",
