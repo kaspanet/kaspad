@@ -54,13 +54,12 @@ var (
 	// as the public transaction ledger for the regression test network.
 	regTestGenesisBlock = wire.MsgBlock{
 		Header: wire.BlockHeader{
-			Version:         1,
-			NumParentBlocks: 0,
-			ParentHashes:    []daghash.Hash{},
-			MerkleRoot:      *newHashFromStr("4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b"),
-			Timestamp:       time.Unix(0x5b28c636, 0), // 2018-06-19 09:00:38 +0000 UTC
-			Bits:            0x207fffff,               // 545259519 [7fffff0000000000000000000000000000000000000000000000000000000000]
-			Nonce:           1,
+			Version:      1,
+			ParentHashes: []daghash.Hash{},
+			MerkleRoot:   *newHashFromStr("4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b"),
+			Timestamp:    time.Unix(0x5b28c636, 0), // 2018-06-19 09:00:38 +0000 UTC
+			Bits:         0x207fffff,               // 545259519 [7fffff0000000000000000000000000000000000000000000000000000000000]
+			Nonce:        1,
 		},
 		Transactions: []*wire.MsgTx{{
 			Version: 1,

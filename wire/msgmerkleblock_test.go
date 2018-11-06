@@ -337,9 +337,8 @@ func TestMerkleBlockOverflowErrors(t *testing.T) {
 // where the first transaction matches.
 var merkleBlockOne = MsgMerkleBlock{
 	Header: BlockHeader{
-		Version:         1,
-		NumParentBlocks: 2,
-		ParentHashes:    []daghash.Hash{mainNetGenesisHash, simNetGenesisHash},
+		Version:      1,
+		ParentHashes: []daghash.Hash{mainNetGenesisHash, simNetGenesisHash},
 		MerkleRoot: daghash.Hash([daghash.HashSize]byte{ // Make go vet happy.
 			0x98, 0x20, 0x51, 0xfd, 0x1e, 0x4b, 0xa7, 0x44,
 			0xbb, 0xbe, 0x68, 0x0e, 0x1f, 0xee, 0x14, 0x67,

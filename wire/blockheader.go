@@ -34,9 +34,6 @@ type BlockHeader struct {
 	// Version of the block.  This is not the same as the protocol version.
 	Version int32
 
-	// Number of entries in ParentHashes
-	NumParentBlocks byte
-
 	// Hashes of the parent block headers in the blockDAG.
 	ParentHashes []daghash.Hash
 
@@ -53,13 +50,18 @@ type BlockHeader struct {
 	Nonce uint64
 }
 
+// NumParentBlocks return the number of entries in ParentHashes
+func (h *BlockHeader) NumParentBlocks() byte {
+	return byte(len(h.ParentHashes))
+}
+
 // BlockHash computes the block identifier hash for the given block header.
 func (h *BlockHeader) BlockHash() daghash.Hash {
 	// Encode the header and double sha256 everything prior to the number of
 	// transactions.  Ignore the error returns since there is no way the
 	// encode could fail except being out of memory which would cause a
 	// run-time panic.
-	buf := bytes.NewBuffer(make([]byte, 0, BaseBlockHeaderPayload+len(h.ParentHashes)))
+	buf := bytes.NewBuffer(make([]byte, 0, BaseBlockHeaderPayload+h.NumParentBlocks()))
 	_ = writeBlockHeader(buf, 0, h)
 
 	return daghash.DoubleHashH(buf.Bytes())
@@ -67,7 +69,7 @@ func (h *BlockHeader) BlockHash() daghash.Hash {
 
 // SelectedParentHash returns the hash of the selected block header.
 func (h *BlockHeader) SelectedParentHash() *daghash.Hash {
-	if h.NumParentBlocks == 0 {
+	if h.NumParentBlocks() == 0 {
 		return nil
 	}
 
@@ -76,7 +78,7 @@ func (h *BlockHeader) SelectedParentHash() *daghash.Hash {
 
 // IsGenesis returns true iff this block is a genesis block
 func (h *BlockHeader) IsGenesis() bool {
-	return h.NumParentBlocks == 0
+	return h.NumParentBlocks() == 0
 }
 
 // BtcDecode decodes r using the bitcoin protocol encoding into the receiver.
@@ -118,7 +120,7 @@ func (h *BlockHeader) Serialize(w io.Writer) error {
 // SerializeSize returns the number of bytes it would take to serialize the
 // block header.
 func (h *BlockHeader) SerializeSize() int {
-	return BaseBlockHeaderPayload + int(h.NumParentBlocks)*daghash.HashSize
+	return BaseBlockHeaderPayload + int(h.NumParentBlocks())*daghash.HashSize
 }
 
 // NewBlockHeader returns a new BlockHeader using the provided version, previous
@@ -130,13 +132,12 @@ func NewBlockHeader(version int32, parentHashes []daghash.Hash, merkleRootHash *
 	// Limit the timestamp to one second precision since the protocol
 	// doesn't support better.
 	return &BlockHeader{
-		Version:         version,
-		NumParentBlocks: byte(len(parentHashes)),
-		ParentHashes:    parentHashes,
-		MerkleRoot:      *merkleRootHash,
-		Timestamp:       time.Unix(time.Now().Unix(), 0),
-		Bits:            bits,
-		Nonce:           nonce,
+		Version:      version,
+		ParentHashes: parentHashes,
+		MerkleRoot:   *merkleRootHash,
+		Timestamp:    time.Unix(time.Now().Unix(), 0),
+		Bits:         bits,
+		Nonce:        nonce,
 	}
 }
 
@@ -144,13 +145,14 @@ func NewBlockHeader(version int32, parentHashes []daghash.Hash, merkleRootHash *
 // decoding block headers stored to disk, such as in a database, as opposed to
 // decoding from the wire.
 func readBlockHeader(r io.Reader, pver uint32, bh *BlockHeader) error {
-	err := readElements(r, &bh.Version, &bh.NumParentBlocks)
+	var numParentBlocks byte
+	err := readElements(r, &bh.Version, &numParentBlocks)
 	if err != nil {
 		return err
 	}
 
-	bh.ParentHashes = make([]daghash.Hash, bh.NumParentBlocks)
-	for i := byte(0); i < bh.NumParentBlocks; i++ {
+	bh.ParentHashes = make([]daghash.Hash, numParentBlocks)
+	for i := byte(0); i < numParentBlocks; i++ {
 		err := readElement(r, &bh.ParentHashes[i])
 		if err != nil {
 			return err
@@ -164,6 +166,6 @@ func readBlockHeader(r io.Reader, pver uint32, bh *BlockHeader) error {
 // opposed to encoding for the wire.
 func writeBlockHeader(w io.Writer, pver uint32, bh *BlockHeader) error {
 	sec := int64(bh.Timestamp.Unix())
-	return writeElements(w, bh.Version, bh.NumParentBlocks, &bh.ParentHashes, &bh.MerkleRoot,
+	return writeElements(w, bh.Version, bh.NumParentBlocks(), &bh.ParentHashes, &bh.MerkleRoot,
 		sec, bh.Bits, bh.Nonce)
 }

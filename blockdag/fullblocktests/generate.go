@@ -509,13 +509,12 @@ func (g *testGenerator) nextBlock(blockName string, spend *spendableOut, mungers
 
 	block := wire.MsgBlock{
 		Header: wire.BlockHeader{
-			Version:         1,
-			NumParentBlocks: 1,                                 // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
-			ParentHashes:    []daghash.Hash{g.tip.BlockHash()}, // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
-			MerkleRoot:      calcMerkleRoot(txns),
-			Bits:            g.params.PowLimitBits,
-			Timestamp:       ts,
-			Nonce:           0, // To be solved.
+			Version:      1,
+			ParentHashes: []daghash.Hash{g.tip.BlockHash()}, // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
+			MerkleRoot:   calcMerkleRoot(txns),
+			Bits:         g.params.PowLimitBits,
+			Timestamp:    ts,
+			Nonce:        0, // To be solved.
 		},
 		Transactions: txns,
 	}

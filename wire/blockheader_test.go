@@ -55,13 +55,12 @@ func TestBlockHeaderWire(t *testing.T) {
 	// baseBlockHdr is used in the various tests as a baseline BlockHeader.
 	bits := uint32(0x1d00ffff)
 	baseBlockHdr := &BlockHeader{
-		Version:         1,
-		NumParentBlocks: 2,
-		ParentHashes:    []daghash.Hash{mainNetGenesisHash, simNetGenesisHash},
-		MerkleRoot:      mainNetGenesisMerkleRoot,
-		Timestamp:       time.Unix(0x495fab29, 0), // 2009-01-03 12:15:05 -0600 CST
-		Bits:            bits,
-		Nonce:           nonce,
+		Version:      1,
+		ParentHashes: []daghash.Hash{mainNetGenesisHash, simNetGenesisHash},
+		MerkleRoot:   mainNetGenesisMerkleRoot,
+		Timestamp:    time.Unix(0x495fab29, 0), // 2009-01-03 12:15:05 -0600 CST
+		Bits:         bits,
+		Nonce:        nonce,
 	}
 
 	// baseBlockHdrEncoded is the wire encoded bytes of baseBlockHdr.
@@ -194,13 +193,12 @@ func TestBlockHeaderSerialize(t *testing.T) {
 	// baseBlockHdr is used in the various tests as a baseline BlockHeader.
 	bits := uint32(0x1d00ffff)
 	baseBlockHdr := &BlockHeader{
-		Version:         1,
-		NumParentBlocks: 2,
-		ParentHashes:    []daghash.Hash{mainNetGenesisHash, simNetGenesisHash},
-		MerkleRoot:      mainNetGenesisMerkleRoot,
-		Timestamp:       time.Unix(0x495fab29, 0), // 2009-01-03 12:15:05 -0600 CST
-		Bits:            bits,
-		Nonce:           nonce,
+		Version:      1,
+		ParentHashes: []daghash.Hash{mainNetGenesisHash, simNetGenesisHash},
+		MerkleRoot:   mainNetGenesisMerkleRoot,
+		Timestamp:    time.Unix(0x495fab29, 0), // 2009-01-03 12:15:05 -0600 CST
+		Bits:         bits,
+		Nonce:        nonce,
 	}
 
 	// baseBlockHdrEncoded is the wire encoded bytes of baseBlockHdr.
@@ -274,23 +272,21 @@ func TestBlockHeaderSerializeSize(t *testing.T) {
 	bits := uint32(0x1d00ffff)
 	timestamp := time.Unix(0x495fab29, 0) // 2009-01-03 12:15:05 -0600 CST
 	baseBlockHdr := &BlockHeader{
-		Version:         1,
-		NumParentBlocks: 2,
-		ParentHashes:    []daghash.Hash{mainNetGenesisHash, simNetGenesisHash},
-		MerkleRoot:      mainNetGenesisMerkleRoot,
-		Timestamp:       timestamp,
-		Bits:            bits,
-		Nonce:           nonce,
+		Version:      1,
+		ParentHashes: []daghash.Hash{mainNetGenesisHash, simNetGenesisHash},
+		MerkleRoot:   mainNetGenesisMerkleRoot,
+		Timestamp:    timestamp,
+		Bits:         bits,
+		Nonce:        nonce,
 	}
 
 	genesisBlockHdr := &BlockHeader{
-		Version:         1,
-		NumParentBlocks: 0,
-		ParentHashes:    []daghash.Hash{},
-		MerkleRoot:      mainNetGenesisMerkleRoot,
-		Timestamp:       timestamp,
-		Bits:            bits,
-		Nonce:           nonce,
+		Version:      1,
+		ParentHashes: []daghash.Hash{},
+		MerkleRoot:   mainNetGenesisMerkleRoot,
+		Timestamp:    timestamp,
+		Bits:         bits,
+		Nonce:        nonce,
 	}
 	tests := []struct {
 		in   *BlockHeader // Block header to encode
@@ -321,22 +317,20 @@ func TestIsGenesis(t *testing.T) {
 	timestamp := time.Unix(0x495fab29, 0) // 2009-01-03 12:15:05 -0600 CST
 
 	baseBlockHdr := &BlockHeader{
-		Version:         1,
-		NumParentBlocks: 2,
-		ParentHashes:    []daghash.Hash{mainNetGenesisHash, simNetGenesisHash},
-		MerkleRoot:      mainNetGenesisMerkleRoot,
-		Timestamp:       timestamp,
-		Bits:            bits,
-		Nonce:           nonce,
+		Version:      1,
+		ParentHashes: []daghash.Hash{mainNetGenesisHash, simNetGenesisHash},
+		MerkleRoot:   mainNetGenesisMerkleRoot,
+		Timestamp:    timestamp,
+		Bits:         bits,
+		Nonce:        nonce,
 	}
 	genesisBlockHdr := &BlockHeader{
-		Version:         1,
-		NumParentBlocks: 0,
-		ParentHashes:    []daghash.Hash{},
-		MerkleRoot:      mainNetGenesisMerkleRoot,
-		Timestamp:       timestamp,
-		Bits:            bits,
-		Nonce:           nonce,
+		Version:      1,
+		ParentHashes: []daghash.Hash{},
+		MerkleRoot:   mainNetGenesisMerkleRoot,
+		Timestamp:    timestamp,
+		Bits:         bits,
+		Nonce:        nonce,
 	}
 
 	tests := []struct {
