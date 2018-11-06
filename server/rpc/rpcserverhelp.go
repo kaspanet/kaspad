@@ -213,7 +213,7 @@ var helpDescsEnUS = map[string]string{
 	"txRawResult-blockTime":     "Block time in seconds since the 1 Jan 1970 GMT",
 	"txRawResult-size":          "The size of the transaction in bytes",
 	"txRawResult-hash":          "The wtxid of the transaction",
-	"txrawresult-accepted":      "Whether the transaction was accepted or not",
+	"txRawResult-accepted":      "Whether the transaction was accepted or not",
 
 	// SearchRawTransactionsResult help.
 	"searchRawTransactionsResult-hex":           "Hex-encoded transaction",
