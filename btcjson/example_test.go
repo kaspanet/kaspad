@@ -21,7 +21,7 @@ func ExampleMarshalCmd() {
 	// convenience function for creating a pointer out of a primitive for
 	// optional parameters.
 	blockHash := "000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f"
-	gbCmd := btcjson.NewGetBlockCmd(blockHash, btcjson.Bool(false), nil, nil)
+	gbCmd := btcjson.NewGetBlockCmd(blockHash, btcjson.Bool(false), nil)
 
 	// Marshal the command to the format suitable for sending to the RPC
 	// server.  Typically the client would increment the id here which is

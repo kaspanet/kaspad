@@ -438,19 +438,19 @@ type InfoDAGResult struct {
 
 // TxRawResult models the data from the getrawtransaction command.
 type TxRawResult struct {
-	Hex           string `json:"hex"`
-	TxID          string `json:"txId"`
-	Hash          string `json:"hash,omitempty"`
-	Size          int32  `json:"size,omitempty"`
-	Version       int32  `json:"version"`
-	LockTime      uint64 `json:"lockTime"`
-	Vin           []Vin  `json:"vin"`
-	Vout          []Vout `json:"vout"`
-	BlockHash     string `json:"blockHash,omitempty"`
-	Confirmations uint64 `json:"confirmations,omitempty"`
-	Accepted      *bool  `json:"accepted,omitempty"`
-	Time          uint64 `json:"time,omitempty"`
-	BlockTime     uint64 `json:"blockTime,omitempty"`
+	Hex           string  `json:"hex"`
+	TxID          string  `json:"txId"`
+	Hash          string  `json:"hash,omitempty"`
+	Size          int32   `json:"size,omitempty"`
+	Version       int32   `json:"version"`
+	LockTime      uint64  `json:"lockTime"`
+	Vin           []Vin   `json:"vin"`
+	Vout          []Vout  `json:"vout"`
+	BlockHash     string  `json:"blockHash,omitempty"`
+	Confirmations uint64  `json:"confirmations,omitempty"`
+	AcceptedBy    *string `json:"acceptedBy"`
+	Time          uint64  `json:"time,omitempty"`
+	BlockTime     uint64  `json:"blockTime,omitempty"`
 }
 
 // SearchRawTransactionsResult models the data from the searchrawtransaction
