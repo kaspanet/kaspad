@@ -57,6 +57,7 @@ const (
 	CmdCFilter      = "cfilter"
 	CmdCFHeaders    = "cfheaders"
 	CmdCFCheckpt    = "cfcheckpt"
+	CmdSyncMe       = "syncMe"
 )
 
 // Message is an interface that describes a bitcoin message.  A type that
