@@ -199,7 +199,7 @@ func TestDAGSvrWsNtfns(t *testing.T) {
 				}
 				return btcjson.NewTxAcceptedVerboseNtfn(txResult)
 			},
-			marshalled: `{"jsonrpc":"1.0","method":"txAcceptedVerbose","params":[{"hex":"001122","txId":"123","version":1,"lockTime":4294967295,"vin":null,"vout":null}],"id":null}`,
+			marshalled: `{"jsonrpc":"1.0","method":"txAcceptedVerbose","params":[{"hex":"001122","txId":"123","version":1,"lockTime":4294967295,"vin":null,"vout":null,"acceptedBy":null}],"id":null}`,
 			unmarshalled: &btcjson.TxAcceptedVerboseNtfn{
 				RawTx: btcjson.TxRawResult{
 					Hex:           "001122",

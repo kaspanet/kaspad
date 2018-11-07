@@ -741,7 +741,7 @@ func createVoutList(mtx *wire.MsgTx, chainParams *dagconfig.Params, filterAddrMa
 // to a raw transaction JSON object.
 func createTxRawResult(chainParams *dagconfig.Params, mtx *wire.MsgTx,
 	txHash string, blkHeader *wire.BlockHeader, blkHash string,
-	blkHeight int32, chainHeight int32, isAccepted func(*wire.MsgTx) (bool, error)) (*btcjson.TxRawResult, error) {
+	blkHeight int32, chainHeight int32, acceptedBy *daghash.Hash) (*btcjson.TxRawResult, error) {
 
 	mtxHex, err := messageToHex(mtx)
 	if err != nil {
@@ -767,12 +767,8 @@ func createTxRawResult(chainParams *dagconfig.Params, mtx *wire.MsgTx,
 		txReply.Confirmations = uint64(1 + chainHeight - blkHeight)
 	}
 
-	if isAccepted != nil {
-		accepted, err := isAccepted(mtx)
-		if err != nil {
-			return nil, err
-		}
-		txReply.Accepted = btcjson.Bool(accepted)
+	if acceptedBy != nil {
+		txReply.AcceptedBy = btcjson.String(acceptedBy.String())
 	}
 
 	return txReply, nil
@@ -1086,17 +1082,6 @@ func getDifficultyRatio(bits uint32, params *dagconfig.Params) float64 {
 func handleGetBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
 	c := cmd.(*btcjson.GetBlockCmd)
 
-	showAcceptedTxStatus := c.AcceptedTx == nil || !(*c.AcceptedTx)
-
-	if showAcceptedTxStatus && s.cfg.TxIndex == nil {
-		return nil, &btcjson.RPCError{
-			Code: btcjson.ErrRPCNoTxInfo,
-			Message: "The transaction index must be " +
-				"enabled to check transaction acceptance " +
-				"(specify --txindex)",
-		}
-	}
-
 	// Load the raw block bytes from the database.
 	hash, err := daghash.NewHashFromStr(c.Hash)
 	if err != nil {
@@ -1179,20 +1164,16 @@ func handleGetBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 		txns := blk.Transactions()
 		rawTxns := make([]btcjson.TxRawResult, len(txns))
 		for i, tx := range txns {
-			var isAccepted func(*wire.MsgTx) (bool, error)
-			if showAcceptedTxStatus {
-				isAccepted = func(tx *wire.MsgTx) (bool, error) {
-					txHash := tx.TxHash()
-					blockHash, err := s.cfg.TxIndex.BlockThatAcceptedTx(s.cfg.DAG, &txHash)
-					if err != nil {
-						return false, err
-					}
-					return blockHash != nil, err
+			var acceptedBy *daghash.Hash
+			if s.cfg.TxIndex != nil {
+				acceptedBy, err = s.cfg.TxIndex.BlockThatAcceptedTx(s.cfg.DAG, tx.Hash())
+				if err != nil {
+					return nil, err
 				}
 			}
 			rawTxn, err := createTxRawResult(params, tx.MsgTx(),
 				tx.Hash().String(), blockHeader, hash.String(),
-				blockHeight, s.cfg.DAG.Height(), isAccepted) //TODO: (Ori) This is probably wrong. Done only for compilation
+				blockHeight, s.cfg.DAG.Height(), acceptedBy) //TODO: (Ori) This is probably wrong. Done only for compilation
 			if err != nil {
 				return nil, err
 			}

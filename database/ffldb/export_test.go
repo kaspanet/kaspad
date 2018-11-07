@@ -16,11 +16,14 @@ import "github.com/daglabs/btcd/database"
 // TstRunWithMaxBlockFileSize runs the passed function with the maximum allowed
 // file size for the database set to the provided value.  The value will be set
 // back to the original value upon completion.
-func TstRunWithMaxBlockFileSize(idb database.DB, size uint32, fn func()) {
+func TstRunWithMaxBlockFileSizeAndMaxOpenFiles(idb database.DB, size uint32, maxOpenFiles int, fn func()) {
 	ffldb := idb.(*db)
 	origSize := ffldb.store.maxBlockFileSize
+	origMaxOpenFiles := ffldb.store.maxOpenFiles
 
 	ffldb.store.maxBlockFileSize = size
+	ffldb.store.maxOpenFiles = maxOpenFiles
 	fn()
 	ffldb.store.maxBlockFileSize = origSize
+	ffldb.store.maxOpenFiles = origMaxOpenFiles
 }

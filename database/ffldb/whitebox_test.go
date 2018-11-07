@@ -231,7 +231,7 @@ func TestCornerCases(t *testing.T) {
 	// properly.
 	testName = "View: underlying leveldb error"
 	wantErrCode = database.ErrDbNotOpen
-	err = idb.View(func(tx database.Tx) error {
+	err = idb.View(func(dbTx database.Tx) error {
 		return nil
 	})
 	if !checkDbError(t, testName, err, wantErrCode) {
@@ -241,7 +241,7 @@ func TestCornerCases(t *testing.T) {
 	// Ensure the Update handles errors in the underlying leveldb database
 	// properly.
 	testName = "Update: underlying leveldb error"
-	err = idb.Update(func(tx database.Tx) error {
+	err = idb.Update(func(dbTx database.Tx) error {
 		return nil
 	})
 	if !checkDbError(t, testName, err, wantErrCode) {
@@ -253,13 +253,13 @@ func TestCornerCases(t *testing.T) {
 // test context including all metadata and the mock files.
 func resetDatabase(tc *testContext) bool {
 	// Reset the metadata.
-	err := tc.db.Update(func(tx database.Tx) error {
+	err := tc.db.Update(func(dbTx database.Tx) error {
 		// Remove all the keys using a cursor while also generating a
 		// list of buckets.  It's not safe to remove keys during ForEach
 		// iteration nor is it safe to remove buckets during cursor
 		// iteration, so this dual approach is needed.
 		var bucketNames [][]byte
-		cursor := tx.Metadata().Cursor()
+		cursor := dbTx.Metadata().Cursor()
 		for ok := cursor.First(); ok; ok = cursor.Next() {
 			if cursor.Value() != nil {
 				if err := cursor.Delete(); err != nil {
@@ -272,12 +272,12 @@ func resetDatabase(tc *testContext) bool {
 
 		// Remove the buckets.
 		for _, k := range bucketNames {
-			if err := tx.Metadata().DeleteBucket(k); err != nil {
+			if err := dbTx.Metadata().DeleteBucket(k); err != nil {
 				return err
 			}
 		}
 
-		_, err := tx.Metadata().CreateBucket(blockIdxBucketName)
+		_, err := dbTx.Metadata().CreateBucket(blockIdxBucketName)
 		return err
 	})
 	if err != nil {
@@ -360,9 +360,9 @@ func testWriteFailures(tc *testContext) bool {
 		// file that fails the write fails when the transaction is
 		// committed, not when the block is stored.
 		tc.maxFileSizes = map[uint32]int64{test.fileNum: test.maxSize}
-		err := tc.db.Update(func(tx database.Tx) error {
+		err := tc.db.Update(func(dbTx database.Tx) error {
 			for i, block := range tc.blocks {
-				err := tx.StoreBlock(block)
+				err := dbTx.StoreBlock(block)
 				if err != nil {
 					tc.t.Errorf("StoreBlock (%d): unexpected "+
 						"error: %v", i, err)
@@ -423,8 +423,8 @@ func testBlockFileErrors(tc *testContext) bool {
 	}
 
 	// Insert the first block into the mock file.
-	err = tc.db.Update(func(tx database.Tx) error {
-		err := tx.StoreBlock(tc.blocks[0])
+	err = tc.db.Update(func(dbTx database.Tx) error {
+		err := dbTx.StoreBlock(tc.blocks[0])
 		if err != nil {
 			tc.t.Errorf("StoreBlock: unexpected error: %v", err)
 			return errSubTestFail
@@ -464,10 +464,10 @@ func testBlockFileErrors(tc *testContext) bool {
 
 	// Ensure failures in FetchBlock and FetchBlockRegion(s) since the
 	// underlying file they need to read from has been closed.
-	err = tc.db.View(func(tx database.Tx) error {
+	err = tc.db.View(func(dbTx database.Tx) error {
 		testName = "FetchBlock closed file"
 		wantErrCode := database.ErrDriverSpecific
-		_, err := tx.FetchBlock(block0Hash)
+		_, err := dbTx.FetchBlock(block0Hash)
 		if !checkDbError(tc.t, testName, err, wantErrCode) {
 			return errSubTestFail
 		}
@@ -480,13 +480,13 @@ func testBlockFileErrors(tc *testContext) bool {
 				Offset: 0,
 			},
 		}
-		_, err = tx.FetchBlockRegion(&regions[0])
+		_, err = dbTx.FetchBlockRegion(&regions[0])
 		if !checkDbError(tc.t, testName, err, wantErrCode) {
 			return errSubTestFail
 		}
 
 		testName = "FetchBlockRegions closed file"
-		_, err = tx.FetchBlockRegions(regions)
+		_, err = dbTx.FetchBlockRegions(regions)
 		if !checkDbError(tc.t, testName, err, wantErrCode) {
 			return errSubTestFail
 		}
@@ -511,8 +511,8 @@ func testCorruption(tc *testContext) bool {
 	}
 
 	// Insert the first block into the mock file.
-	err := tc.db.Update(func(tx database.Tx) error {
-		err := tx.StoreBlock(tc.blocks[0])
+	err := tc.db.Update(func(dbTx database.Tx) error {
+		err := dbTx.StoreBlock(tc.blocks[0])
 		if err != nil {
 			tc.t.Errorf("StoreBlock: unexpected error: %v", err)
 			return errSubTestFail
@@ -556,7 +556,7 @@ func testCorruption(tc *testContext) bool {
 		// Random checksum byte.
 		{uint32(len(block0Bytes)) + 10, false, database.ErrCorruption},
 	}
-	err = tc.db.View(func(tx database.Tx) error {
+	err = tc.db.View(func(dbTx database.Tx) error {
 		data := tc.files[0].file.(*mockFile).data
 		for i, test := range tests {
 			// Corrupt the byte at the offset by a single bit.
@@ -574,7 +574,7 @@ func testCorruption(tc *testContext) bool {
 
 			testName := fmt.Sprintf("FetchBlock (test #%d): "+
 				"corruption", i)
-			_, err := tx.FetchBlock(block0Hash)
+			_, err := dbTx.FetchBlock(block0Hash)
 			if !checkDbError(tc.t, testName, err, test.wantErrCode) {
 				return errSubTestFail
 			}

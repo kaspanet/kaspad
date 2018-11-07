@@ -27,9 +27,9 @@ func BenchmarkBlockHeader(b *testing.B) {
 	}
 	defer os.RemoveAll(dbPath)
 	defer db.Close()
-	err = db.Update(func(tx database.Tx) error {
+	err = db.Update(func(dbTx database.Tx) error {
 		block := util.NewBlock(dagconfig.MainNetParams.GenesisBlock)
-		return tx.StoreBlock(block)
+		return dbTx.StoreBlock(block)
 	})
 	if err != nil {
 		b.Fatal(err)
@@ -37,10 +37,10 @@ func BenchmarkBlockHeader(b *testing.B) {
 
 	b.ReportAllocs()
 	b.ResetTimer()
-	err = db.View(func(tx database.Tx) error {
+	err = db.View(func(dbTx database.Tx) error {
 		blockHash := dagconfig.MainNetParams.GenesisHash
 		for i := 0; i < b.N; i++ {
-			_, err := tx.FetchBlockHeader(blockHash)
+			_, err := dbTx.FetchBlockHeader(blockHash)
 			if err != nil {
 				return err
 			}
@@ -68,9 +68,9 @@ func BenchmarkBlock(b *testing.B) {
 	}
 	defer os.RemoveAll(dbPath)
 	defer db.Close()
-	err = db.Update(func(tx database.Tx) error {
+	err = db.Update(func(dbTx database.Tx) error {
 		block := util.NewBlock(dagconfig.MainNetParams.GenesisBlock)
-		return tx.StoreBlock(block)
+		return dbTx.StoreBlock(block)
 	})
 	if err != nil {
 		b.Fatal(err)
@@ -78,10 +78,10 @@ func BenchmarkBlock(b *testing.B) {
 
 	b.ReportAllocs()
 	b.ResetTimer()
-	err = db.View(func(tx database.Tx) error {
+	err = db.View(func(dbTx database.Tx) error {
 		blockHash := dagconfig.MainNetParams.GenesisHash
 		for i := 0; i < b.N; i++ {
-			_, err := tx.FetchBlock(blockHash)
+			_, err := dbTx.FetchBlock(blockHash)
 			if err != nil {
 				return err
 			}
