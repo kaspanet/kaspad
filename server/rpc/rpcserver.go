@@ -741,7 +741,7 @@ func createVoutList(mtx *wire.MsgTx, chainParams *dagconfig.Params, filterAddrMa
 // to a raw transaction JSON object.
 func createTxRawResult(chainParams *dagconfig.Params, mtx *wire.MsgTx,
 	txHash string, blkHeader *wire.BlockHeader, blkHash string,
-	blkHeight int32, chainHeight int32) (*btcjson.TxRawResult, error) {
+	blkHeight int32, chainHeight int32, acceptedBy *daghash.Hash) (*btcjson.TxRawResult, error) {
 
 	mtxHex, err := messageToHex(mtx)
 	if err != nil {
@@ -765,6 +765,10 @@ func createTxRawResult(chainParams *dagconfig.Params, mtx *wire.MsgTx,
 		txReply.BlockTime = uint64(blkHeader.Timestamp.Unix())
 		txReply.BlockHash = blkHash
 		txReply.Confirmations = uint64(1 + chainHeight - blkHeight)
+	}
+
+	if acceptedBy != nil {
+		txReply.AcceptedBy = btcjson.String(acceptedBy.String())
 	}
 
 	return txReply, nil
@@ -1160,9 +1164,16 @@ func handleGetBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 		txns := blk.Transactions()
 		rawTxns := make([]btcjson.TxRawResult, len(txns))
 		for i, tx := range txns {
+			var acceptedBy *daghash.Hash
+			if s.cfg.TxIndex != nil {
+				acceptedBy, err = s.cfg.TxIndex.BlockThatAcceptedTx(s.cfg.DAG, tx.Hash())
+				if err != nil {
+					return nil, err
+				}
+			}
 			rawTxn, err := createTxRawResult(params, tx.MsgTx(),
 				tx.Hash().String(), blockHeader, hash.String(),
-				blockHeight, s.cfg.DAG.Height()) //TODO: (Ori) This is probably wrong. Done only for compilation
+				blockHeight, s.cfg.DAG.Height(), acceptedBy) //TODO: (Ori) This is probably wrong. Done only for compilation
 			if err != nil {
 				return nil, err
 			}
@@ -2522,7 +2533,7 @@ func handleGetRawTransaction(s *Server, cmd interface{}, closeChan <-chan struct
 	}
 
 	rawTxn, err := createTxRawResult(s.cfg.DAGParams, mtx, txHash.String(),
-		blkHeader, blkHashStr, blkHeight, dagHeight)
+		blkHeader, blkHashStr, blkHeight, dagHeight, nil)
 	if err != nil {
 		return nil, err
 	}

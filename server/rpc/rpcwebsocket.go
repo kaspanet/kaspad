@@ -847,7 +847,7 @@ func (m *wsNotificationManager) notifyForNewTx(clients map[chan struct{}]*wsClie
 
 			net := m.server.cfg.DAGParams
 			rawTx, err := createTxRawResult(net, mtx, txHashStr, nil,
-				"", 0, 0)
+				"", 0, 0, nil)
 			if err != nil {
 				return
 			}
