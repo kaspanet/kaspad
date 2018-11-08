@@ -26,16 +26,12 @@ func (msg *MsgSyncMe) BtcDecode(r io.Reader, pver uint32) error {
 			"*bytes.Buffer")
 	}
 
-	err := readElement(buf, &msg.ProtocolVersion)
+	var numHashes uint16
+	err := readElements(buf, &msg.ProtocolVersion, &numHashes)
 	if err != nil {
 		return err
 	}
 
-	var numHashes uint16
-	err = readElements(r, &numHashes)
-	if err != nil {
-		return err
-	}
 	msg.PartialSelectedPath = make([]*daghash.Hash, numHashes)
 	for i := uint16(0); i < numHashes; i++ {
 		err := readElement(r, &msg.PartialSelectedPath[i])
@@ -50,12 +46,7 @@ func (msg *MsgSyncMe) BtcDecode(r io.Reader, pver uint32) error {
 // BtcEncode encodes the receiver to w using the bitcoin protocol encoding.
 // This is part of the Message interface implementation.
 func (msg *MsgSyncMe) BtcEncode(w io.Writer, pver uint32) error {
-	err := writeElement(w, msg.ProtocolVersion)
-	if err != nil {
-		return err
-	}
-
-	err = writeElements(w, uint16(len(msg.PartialSelectedPath)), &msg.PartialSelectedPath)
+	err := writeElements(w, msg.ProtocolVersion, uint16(len(msg.PartialSelectedPath)), &msg.PartialSelectedPath)
 	if err != nil {
 		return err
 	}
