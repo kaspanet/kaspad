@@ -7,22 +7,7 @@ package blockdag
 import (
 	"reflect"
 	"testing"
-
-	"github.com/daglabs/btcd/dagconfig/daghash"
 )
-
-func buildNodeGenerator(phantomK uint32) func(parents blockSet) *blockNode {
-	// For the purposes of these tests, we'll create blockNodes whose hashes are a
-	// series of numbers from 0 to n.
-	hashCounter := byte(0)
-	return func(parents blockSet) *blockNode {
-		block := newBlockNode(nil, parents, phantomK)
-		block.hash = daghash.Hash{hashCounter}
-		hashCounter++
-
-		return block
-	}
-}
 
 // TestVirtualBlock ensures that VirtualBlock works as expected.
 func TestVirtualBlock(t *testing.T) {
