@@ -242,10 +242,13 @@ func NewTxOut(value uint64, pkScript []byte) *TxOut {
 // Use the AddTxIn and AddTxOut functions to build up the list of transaction
 // inputs and outputs.
 type MsgTx struct {
-	Version  int32
-	TxIn     []*TxIn
-	TxOut    []*TxOut
-	LockTime uint64
+	Version      int32
+	TxIn         []*TxIn
+	TxOut        []*TxOut
+	LockTime     uint64
+	SubNetworkID uint64
+	Gas          uint64
+	Payload      []byte
 }
 
 // AddTxIn adds a transaction input to the message.
@@ -435,6 +438,27 @@ func (msg *MsgTx) BtcDecode(r io.Reader, pver uint32) error {
 		return err
 	}
 
+	msg.SubNetworkID, err = binarySerializer.Uint64(r, littleEndian)
+	if err != nil {
+		returnScriptBuffers()
+		return err
+	}
+
+	msg.Gas, err = binarySerializer.Uint64(r, littleEndian)
+	if err != nil {
+		returnScriptBuffers()
+		return err
+	}
+
+	payloadLength, err := ReadVarInt(r, pver)
+	if err != nil {
+		returnScriptBuffers()
+		return err
+	}
+
+	msg.Payload = make([]byte, payloadLength)
+	_, err = io.ReadFull(r, msg.Payload)
+
 	// Create a single allocation to house all of the scripts and set each
 	// input signature script and output public key script to the
 	// appropriate subslice of the overall contiguous buffer.  Then, return
@@ -540,7 +564,28 @@ func (msg *MsgTx) BtcEncode(w io.Writer, pver uint32) error {
 		}
 	}
 
-	return binarySerializer.PutUint64(w, littleEndian, msg.LockTime)
+	err = binarySerializer.PutUint64(w, littleEndian, msg.LockTime)
+	if err != nil {
+		return err
+	}
+
+	err = binarySerializer.PutUint64(w, littleEndian, msg.SubNetworkID)
+	if err != nil {
+		return err
+	}
+
+	err = binarySerializer.PutUint64(w, littleEndian, msg.Gas)
+	if err != nil {
+		return err
+	}
+
+	err = WriteVarInt(w, pver, uint64(len(msg.Payload)))
+	if err != nil {
+		return err
+	}
+	w.Write(msg.Payload)
+
+	return nil
 }
 
 // Serialize encodes the transaction to w using a format that suitable for
