@@ -2,7 +2,7 @@
 User visible changes for btcd
   A full-node bitcoin implementation written in Go
 ============================================================================
-
+ 
 Changes in 0.12.0 (Fri Nov 20 2015)
   - Protocol and network related changes:
     - Add a new checkpoint at block height 382320 (#555)
