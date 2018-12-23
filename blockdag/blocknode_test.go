@@ -4,7 +4,6 @@ import (
 	"testing"
 )
 
-// TestChainHeight checks that initBlockNode calculates the chain height properly.
 func TestChainHeight(t *testing.T) {
 	phantomK := uint32(2)
 	buildNode := buildNodeGenerator(phantomK)
@@ -25,6 +24,10 @@ func TestChainHeight(t *testing.T) {
 	node8 := buildWithChildren(setFromSlice(node7))
 	node9 := buildWithChildren(setFromSlice(node8))
 	node10 := buildWithChildren(setFromSlice(node9, node6))
+
+	// Because nodes 7 & 8 were mined secretly, node10's selected
+	// parent will be node6, although node9 is higher. So in this
+	// case, node10.height and node10.chainHeight will be different
 
 	tests := []struct {
 		node                *blockNode
