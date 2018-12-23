@@ -1,12 +1,11 @@
 package blockdag
 
 import (
-	"fmt"
 	"testing"
 )
 
+// TestChainHeight checks that initBlockNode calculates the chain height properly.
 func TestChainHeight(t *testing.T) {
-
 	phantomK := uint32(2)
 	buildNode := buildNodeGenerator(phantomK)
 	buildWithChildren := func(parents blockSet) *blockNode {
@@ -77,10 +76,7 @@ func TestChainHeight(t *testing.T) {
 		},
 	}
 
-	for i, test := range tests {
-		if i == i {
-			fmt.Printf("block %v blue score %v\n", i, test.node.blueScore)
-		}
+	for _, test := range tests {
 		if test.node.chainHeight != test.expectedChainHeight {
 			t.Errorf("block %v expected chain height %v but got %v", test.node, test.expectedChainHeight, test.node.chainHeight)
 		}
