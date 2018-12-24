@@ -608,10 +608,12 @@ func (msg *MsgTx) Serialize(w io.Writer) error {
 // SerializeSize returns the number of bytes it would take to serialize the
 // the transaction.
 func (msg *MsgTx) SerializeSize() int {
-	// Version 4 bytes + LockTime 8 bytes + Serialized varint size for the
+	// Version 4 bytes + LockTime 8 bytes + Subnetwork ID 8 bytes + Gas 8 bytes + Serialized varint
+	// size for the length of the payload + Serialized varint size for the
 	// number of transaction inputs and outputs.
-	n := 12 + VarIntSerializeSize(uint64(len(msg.TxIn))) +
-		VarIntSerializeSize(uint64(len(msg.TxOut)))
+	n := 26 + VarIntSerializeSize(uint64(len(msg.TxIn))) +
+		VarIntSerializeSize(uint64(len(msg.TxOut))) +
+		VarIntSerializeSize(uint64(len(msg.Payload)))
 
 	for _, txIn := range msg.TxIn {
 		n += txIn.SerializeSize()
@@ -620,6 +622,8 @@ func (msg *MsgTx) SerializeSize() int {
 	for _, txOut := range msg.TxOut {
 		n += txOut.SerializeSize()
 	}
+
+	n += len(msg.Payload)
 
 	return n
 }
