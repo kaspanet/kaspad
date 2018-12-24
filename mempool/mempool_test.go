@@ -1596,3 +1596,163 @@ func TestExtractRejectCode(t *testing.T) {
 		t.Errorf("TestExtractRejectCode: a nonRuleError is expected to return false but got %v", ok)
 	}
 }
+
+// TestHandleNewBlock
+func TestHandleNewBlock(t *testing.T) {
+	harness, spendableOuts, err := newPoolHarness(&dagconfig.MainNetParams, 2, "TestHandleNewBlock")
+	if err != nil {
+		t.Fatalf("unable to create test pool: %v", err)
+	}
+	tc := &testContext{t, harness}
+
+	// Create parent transaction for orphan transaction below
+	blockTx, err := harness.CreateSignedTx(spendableOuts[:1], 1)
+	if err != nil {
+		t.Fatalf("unable to create transaction: %v", err)
+	}
+
+	// Create orphan transaction and add it to UTXO set
+	hash := blockTx.Hash()
+	orphanTx, err := harness.CreateSignedTx([]spendableOutpoint{{
+		amount:   util.Amount(2500000000),
+		outPoint: wire.OutPoint{Hash: *hash, Index: 0},
+	}}, 1)
+	if err != nil {
+		t.Fatalf("unable to create signed tx: %v", err)
+	}
+	_, err = harness.txPool.ProcessTransaction(orphanTx, true, false, 0)
+	if err != nil {
+		t.Fatalf("ProcessTransaction: unexpected error: %v", err)
+	}
+	// ensure that transaction added to orphan pool
+	testPoolMembership(tc, orphanTx, true, false)
+
+	// Add parent transaction to block
+	dummyBlock.Transactions = append(dummyBlock.Transactions, blockTx.MsgTx())
+
+	// Add one more transaction to pool
+	blockTx1, err := harness.CreateSignedTx(spendableOuts[1:], 1)
+	if err != nil {
+		t.Fatalf("unable to create transaction 1: %v", err)
+	}
+	dummyBlock.Transactions = append(dummyBlock.Transactions, blockTx1.MsgTx())
+
+	// Create block and its transactions to UTXO set
+	block := util.NewBlock(&dummyBlock)
+	for i, tx := range block.Transactions() {
+		if !harness.txPool.mpUTXOSet.AddTx(tx.MsgTx(), 1) {
+			t.Fatalf("Failed to add transaction %v to UTXO set: %v", i, tx.Hash())
+		}
+	}
+
+	// Handle new block by pool
+	ch := make(chan NewBlockMsg)
+	go func() {
+		err = harness.txPool.HandleNewBlock(block, ch)
+		close(ch)
+	}()
+
+	// process messages pushed by HandleNewBlock
+	blockTransnactions := make(map[daghash.Hash]int)
+	for msg := range ch {
+		blockTransnactions[*msg.Tx.Hash()] = 1
+		if *msg.Tx.Hash() != *blockTx.Hash() {
+			if len(msg.AcceptedTxs) != 0 {
+				t.Fatalf("Unexpected accepted transactions")
+			}
+		} else {
+			if len(msg.AcceptedTxs) != 1 {
+				t.Fatalf("Wrong accepted transactions length")
+			}
+			if *msg.AcceptedTxs[0].Tx.Hash() != *orphanTx.Hash() {
+				t.Fatalf("Wrong accepted transaction hash")
+			}
+		}
+	}
+	// ensure that HandleNewBlock is not failed
+	if err != nil {
+		t.Fatalf("HandleNewBlock failed to handle block %v", block.Hash())
+	}
+
+	// Validate messages pushed by HandleNewBlock into channel
+	if len(blockTransnactions) != 2 {
+		t.Fatalf("Wrong size of blockTransnactions after new block handling")
+	}
+
+	if _, ok := blockTransnactions[*blockTx.Hash()]; !ok {
+		t.Fatalf("Transaction 1 of new block is not handled")
+	}
+
+	if _, ok := blockTransnactions[*blockTx1.Hash()]; !ok {
+		t.Fatalf("Transaction 2 of new block is not handled")
+	}
+
+	// ensure that orphan transaction moved to main pool
+	testPoolMembership(tc, orphanTx, false, true)
+}
+
+// dummyBlock defines some of the block chain.  It is used to
+// test block operations.
+var dummyBlock = wire.MsgBlock{
+	Header: wire.BlockHeader{
+		Version: 1,
+		ParentHashes: []daghash.Hash{
+			[32]byte{ // Make go vet happy.
+				0x82, 0xdc, 0xbd, 0xe6, 0x88, 0x37, 0x74, 0x5b,
+				0x78, 0x6b, 0x03, 0x1d, 0xa3, 0x48, 0x3c, 0x45,
+				0x3f, 0xc3, 0x2e, 0xd4, 0x53, 0x5b, 0x6f, 0x26,
+				0x26, 0xb0, 0x48, 0x4f, 0x09, 0x00, 0x00, 0x00,
+			}, // MainNet genesis
+			[32]byte{ // Make go vet happy.
+				0xc1, 0x5b, 0x71, 0xfe, 0x20, 0x70, 0x0f, 0xd0,
+				0x08, 0x49, 0x88, 0x1b, 0x32, 0xb5, 0xbd, 0x13,
+				0x17, 0xbe, 0x75, 0xe7, 0x29, 0x46, 0xdd, 0x03,
+				0x01, 0x92, 0x90, 0xf1, 0xca, 0x8a, 0x88, 0x11,
+			}}, // SimNet genesis
+		MerkleRoot: daghash.Hash([32]byte{ // Make go vet happy.
+			0x66, 0x57, 0xa9, 0x25, 0x2a, 0xac, 0xd5, 0xc0,
+			0xb2, 0x94, 0x09, 0x96, 0xec, 0xff, 0x95, 0x22,
+			0x28, 0xc3, 0x06, 0x7c, 0xc3, 0x8d, 0x48, 0x85,
+			0xef, 0xb5, 0xa4, 0xac, 0x42, 0x47, 0xe9, 0xf3,
+		}), // f3e94742aca4b5ef85488dc37c06c3282295ffec960994b2c0d5ac2a25a95766
+		Timestamp: time.Unix(1529483563, 0), // 2018-06-20 08:32:43 +0000 UTC
+		Bits:      0x1e00ffff,               // 503382015
+		Nonce:     0x000ae53f,               // 714047
+	},
+	Transactions: []*wire.MsgTx{
+		{
+			Version: 1,
+			TxIn: []*wire.TxIn{
+				{
+					PreviousOutPoint: wire.OutPoint{
+						Hash:  daghash.Hash{},
+						Index: 0xffffffff,
+					},
+					SignatureScript: []byte{
+						0x04, 0x4c, 0x86, 0x04, 0x1b, 0x02, 0x06, 0x02,
+					},
+					Sequence: math.MaxUint64,
+				},
+			},
+			TxOut: []*wire.TxOut{
+				{
+					Value: 0x12a05f200, // 5000000000
+					PkScript: []byte{
+						0x41, // OP_DATA_65
+						0x04, 0x1b, 0x0e, 0x8c, 0x25, 0x67, 0xc1, 0x25,
+						0x36, 0xaa, 0x13, 0x35, 0x7b, 0x79, 0xa0, 0x73,
+						0xdc, 0x44, 0x44, 0xac, 0xb8, 0x3c, 0x4e, 0xc7,
+						0xa0, 0xe2, 0xf9, 0x9d, 0xd7, 0x45, 0x75, 0x16,
+						0xc5, 0x81, 0x72, 0x42, 0xda, 0x79, 0x69, 0x24,
+						0xca, 0x4e, 0x99, 0x94, 0x7d, 0x08, 0x7f, 0xed,
+						0xf9, 0xce, 0x46, 0x7c, 0xb9, 0xf7, 0xc6, 0x28,
+						0x70, 0x78, 0xf8, 0x01, 0xdf, 0x27, 0x6f, 0xdf,
+						0x84, // 65-byte signature
+						0xac, // OP_CHECKSIG
+					},
+				},
+			},
+			LockTime: 0,
+		},
+	},
+}
