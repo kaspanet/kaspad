@@ -1606,13 +1606,13 @@ func TestHandleNewBlock(t *testing.T) {
 	tc := &testContext{t, harness}
 
 	// Create parent transaction for orphan transaction below
-	blockTx, err := harness.CreateSignedTx(spendableOuts[:1], 1)
+	blockTx1, err := harness.CreateSignedTx(spendableOuts[:1], 1)
 	if err != nil {
 		t.Fatalf("unable to create transaction: %v", err)
 	}
 
 	// Create orphan transaction and add it to UTXO set
-	hash := blockTx.Hash()
+	hash := blockTx1.Hash()
 	orphanTx, err := harness.CreateSignedTx([]spendableOutpoint{{
 		amount:   util.Amount(2500000000),
 		outPoint: wire.OutPoint{Hash: *hash, Index: 0},
@@ -1628,11 +1628,11 @@ func TestHandleNewBlock(t *testing.T) {
 	testPoolMembership(tc, orphanTx, true, false)
 
 	// Add one more transaction to block
-	blockTx1, err := harness.CreateSignedTx(spendableOuts[1:], 1)
+	blockTx2, err := harness.CreateSignedTx(spendableOuts[1:], 1)
 	if err != nil {
 		t.Fatalf("unable to create transaction 1: %v", err)
 	}
-	dummyBlock.Transactions = append(dummyBlock.Transactions, blockTx.MsgTx(), blockTx1.MsgTx())
+	dummyBlock.Transactions = append(dummyBlock.Transactions, blockTx1.MsgTx(), blockTx2.MsgTx())
 
 	// Create block and add its transactions to UTXO set
 	block := util.NewBlock(&dummyBlock)
@@ -1653,7 +1653,7 @@ func TestHandleNewBlock(t *testing.T) {
 	blockTransnactions := make(map[daghash.Hash]int)
 	for msg := range ch {
 		blockTransnactions[*msg.Tx.Hash()] = 1
-		if *msg.Tx.Hash() != *blockTx.Hash() {
+		if *msg.Tx.Hash() != *blockTx1.Hash() {
 			if len(msg.AcceptedTxs) != 0 {
 				t.Fatalf("Expected amount of accepted transactions 0. Got: %v", len(msg.AcceptedTxs))
 			}
@@ -1676,11 +1676,11 @@ func TestHandleNewBlock(t *testing.T) {
 		t.Fatalf("Wrong size of blockTransnactions after new block handling")
 	}
 
-	if _, ok := blockTransnactions[*blockTx.Hash()]; !ok {
+	if _, ok := blockTransnactions[*blockTx1.Hash()]; !ok {
 		t.Fatalf("Transaction 1 of new block is not handled")
 	}
 
-	if _, ok := blockTransnactions[*blockTx1.Hash()]; !ok {
+	if _, ok := blockTransnactions[*blockTx2.Hash()]; !ok {
 		t.Fatalf("Transaction 2 of new block is not handled")
 	}
 
