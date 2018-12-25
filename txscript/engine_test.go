@@ -375,3 +375,120 @@ func TestCheckSignatureEncoding(t *testing.T) {
 		}
 	}
 }
+
+func TestDisasmPC(t *testing.T) {
+	// tx with almost empty scripts.
+	tx := &wire.MsgTx{
+		Version: 1,
+		TxIn: []*wire.TxIn{{
+			PreviousOutPoint: wire.OutPoint{
+				Hash: daghash.Hash([32]byte{
+					0xc9, 0x97, 0xa5, 0xe5,
+					0x6e, 0x10, 0x41, 0x02,
+					0xfa, 0x20, 0x9c, 0x6a,
+					0x85, 0x2d, 0xd9, 0x06,
+					0x60, 0xa2, 0x0b, 0x2d,
+					0x9c, 0x35, 0x24, 0x23,
+					0xed, 0xce, 0x25, 0x85,
+					0x7f, 0xcd, 0x37, 0x04,
+				}),
+				Index: 0,
+			},
+			SignatureScript: mustParseShortForm("OP_2"),
+			Sequence:        4294967295,
+		}},
+		TxOut: []*wire.TxOut{{
+			Value:    1000000000,
+			PkScript: nil,
+		}},
+		LockTime: 0,
+	}
+	pkScript := mustParseShortForm("OP_DROP NOP TRUE")
+
+	vm, err := NewEngine(pkScript, tx, 0, 0, nil)
+	if err != nil {
+		t.Fatalf("failed to create script: %v", err)
+	}
+
+	tests := []struct {
+		expected    string
+		expectedErr error
+	}{
+		{"00:0000: OP_2", nil},
+		{"01:0000: OP_DROP", nil},
+		{"01:0001: OP_NOP", nil},
+		{"01:0002: OP_1", nil},
+		{"", scriptError(ErrInvalidProgramCounter, "")},
+	}
+
+	for i, test := range tests {
+		actual, err := vm.DisasmPC()
+		if e := tstCheckScriptError(err, test.expectedErr); e != nil {
+			t.Errorf("TestDisasmPC: %d: %s", i, e)
+		}
+
+		if actual != test.expected {
+			t.Errorf("TestDisasmPC: %d: expected: '%s'. Got: '%s'", i, test.expected, actual)
+		}
+
+		// ignore results from vm.Step() to keep going even when no opcodes left, to hit error case
+		_, _ = vm.Step()
+	}
+}
+
+func TestDisasmScript(t *testing.T) {
+	// tx with almost empty scripts.
+	tx := &wire.MsgTx{
+		Version: 1,
+		TxIn: []*wire.TxIn{{
+			PreviousOutPoint: wire.OutPoint{
+				Hash: daghash.Hash([32]byte{
+					0xc9, 0x97, 0xa5, 0xe5,
+					0x6e, 0x10, 0x41, 0x02,
+					0xfa, 0x20, 0x9c, 0x6a,
+					0x85, 0x2d, 0xd9, 0x06,
+					0x60, 0xa2, 0x0b, 0x2d,
+					0x9c, 0x35, 0x24, 0x23,
+					0xed, 0xce, 0x25, 0x85,
+					0x7f, 0xcd, 0x37, 0x04,
+				}),
+				Index: 0,
+			},
+			SignatureScript: mustParseShortForm("OP_2"),
+			Sequence:        4294967295,
+		}},
+		TxOut: []*wire.TxOut{{
+			Value:    1000000000,
+			PkScript: nil,
+		}},
+		LockTime: 0,
+	}
+	pkScript := mustParseShortForm("OP_DROP NOP TRUE")
+
+	vm, err := NewEngine(pkScript, tx, 0, 0, nil)
+	if err != nil {
+		t.Fatalf("failed to create script: %v", err)
+	}
+
+	tests := []struct {
+		index       int
+		expected    string
+		expectedErr error
+	}{
+		{-1, "", scriptError(ErrInvalidIndex, "")},
+		{0, "00:0000: OP_2\n", nil},
+		{1, "01:0000: OP_DROP\n01:0001: OP_NOP\n01:0002: OP_1\n", nil},
+		{2, "", scriptError(ErrInvalidIndex, "")},
+	}
+
+	for _, test := range tests {
+		actual, err := vm.DisasmScript(test.index)
+		if e := tstCheckScriptError(err, test.expectedErr); e != nil {
+			t.Errorf("TestDisasmScript: %d: %s", test.index, e)
+		}
+
+		if actual != test.expected {
+			t.Errorf("TestDisasmScript: %d: expected: '%s'. Got: '%s'", test.index, test.expected, actual)
+		}
+	}
+}
