@@ -664,3 +664,17 @@ out:
 	cmgr.Stop()
 	cmgr.Wait()
 }
+
+// TestConnReqString ensures that ConnReq.String() does not crash
+func TestConnReqString(t *testing.T) {
+	cr1 := &ConnReq{
+		Addr: &net.TCPAddr{
+			IP:   net.ParseIP("127.0.0.1"),
+			Port: 18555,
+		},
+		Permanent: true,
+	}
+	cr1.String()
+	cr2 := &ConnReq{}
+	cr2.String()
+}
