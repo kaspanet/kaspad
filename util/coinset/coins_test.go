@@ -223,7 +223,7 @@ func TestMinPrioritySelector(t *testing.T) {
 var (
 	// should be two outpoints, with 1st one having 0.035BTC value.
 	testSimpleCoinNumConfs = int64(1)
-	testSimpleCoinTxHash   = "a0a82fc00cdfde26119c0795c06eea7c9db5f3c9d26dd1f883ade0ba70b29970"
+	testSimpleCoinTxHash   = "ab1279cda9c6fbbbd578d994b2caa72e16cf97ee2e8132433f1524cf2fdc94e7"
 	testSimpleCoinTxHex    = "0100000001a214a110f79e4abe073865ea5b3745c6e82c91" +
 		"3bad44be70652804a5e4003b0a010000008c493046022100" +
 		"edd18a69664efa57264be207100c203e6cade1888cbb88a0" +
@@ -235,7 +235,7 @@ var (
 		"673500000000001976a914686dd149a79b4a559d561fbc39" +
 		"6d3e3c6628b98d88ace86ef102000000001976a914ac3f99" +
 		"5655e81b875b38b64351d6f896ddbfc68588ac0000000000" +
-		"000000"
+		"0000000000000000000000000000000000000000"
 	testSimpleCoinTxValue0            = util.Amount(3500000)
 	testSimpleCoinTxValueAge0         = int64(testSimpleCoinTxValue0) * testSimpleCoinNumConfs
 	testSimpleCoinTxPkScript0Hex      = "76a914686dd149a79b4a559d561fbc396d3e3c6628b98d88ac"
