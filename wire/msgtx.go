@@ -278,11 +278,16 @@ func (msg *MsgTx) Copy() *MsgTx {
 	// Create new tx and start by copying primitive values and making space
 	// for the transaction inputs and outputs.
 	newTx := MsgTx{
-		Version:  msg.Version,
-		TxIn:     make([]*TxIn, 0, len(msg.TxIn)),
-		TxOut:    make([]*TxOut, 0, len(msg.TxOut)),
-		LockTime: msg.LockTime,
+		Version:      msg.Version,
+		TxIn:         make([]*TxIn, 0, len(msg.TxIn)),
+		TxOut:        make([]*TxOut, 0, len(msg.TxOut)),
+		LockTime:     msg.LockTime,
+		SubNetworkID: msg.SubNetworkID,
+		Gas:          msg.Gas,
+		Payload:      make([]byte, len(msg.Payload)),
 	}
+
+	copy(newTx.Payload, msg.Payload)
 
 	// Deep copy the old TxIn data.
 	for _, oldTxIn := range msg.TxIn {
@@ -611,7 +616,7 @@ func (msg *MsgTx) SerializeSize() int {
 	// Version 4 bytes + LockTime 8 bytes + Subnetwork ID 8 bytes + Gas 8 bytes + Serialized varint
 	// size for the length of the payload + Serialized varint size for the
 	// number of transaction inputs and outputs.
-	n := 26 + VarIntSerializeSize(uint64(len(msg.TxIn))) +
+	n := 28 + VarIntSerializeSize(uint64(len(msg.TxIn))) +
 		VarIntSerializeSize(uint64(len(msg.TxOut))) +
 		VarIntSerializeSize(uint64(len(msg.Payload)))
 
@@ -688,6 +693,7 @@ func NewMsgTx(version int32) *MsgTx {
 		Version: version,
 		TxIn:    make([]*TxIn, 0, defaultTxInOutAlloc),
 		TxOut:   make([]*TxOut, 0, defaultTxInOutAlloc),
+		Payload: []byte{},
 	}
 }
 

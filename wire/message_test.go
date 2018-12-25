@@ -95,7 +95,7 @@ func TestMessage(t *testing.T) {
 		{msgInv, msgInv, pver, MainNet, 25},
 		{msgGetData, msgGetData, pver, MainNet, 25},
 		{msgNotFound, msgNotFound, pver, MainNet, 25},
-		{msgTx, msgTx, pver, MainNet, 38},
+		{msgTx, msgTx, pver, MainNet, 55},
 		{msgPing, msgPing, pver, MainNet, 32},
 		{msgPong, msgPong, pver, MainNet, 32},
 		{msgGetHeaders, msgGetHeaders, pver, MainNet, 61},
