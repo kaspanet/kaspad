@@ -1627,17 +1627,14 @@ func TestHandleNewBlock(t *testing.T) {
 	// ensure that transaction added to orphan pool
 	testPoolMembership(tc, orphanTx, true, false)
 
-	// Add parent transaction to block
-	dummyBlock.Transactions = append(dummyBlock.Transactions, blockTx.MsgTx())
-
-	// Add one more transaction to pool
+	// Add one more transaction to block
 	blockTx1, err := harness.CreateSignedTx(spendableOuts[1:], 1)
 	if err != nil {
 		t.Fatalf("unable to create transaction 1: %v", err)
 	}
-	dummyBlock.Transactions = append(dummyBlock.Transactions, blockTx1.MsgTx())
+	dummyBlock.Transactions = append(dummyBlock.Transactions, blockTx.MsgTx(), blockTx1.MsgTx())
 
-	// Create block and its transactions to UTXO set
+	// Create block and add its transactions to UTXO set
 	block := util.NewBlock(&dummyBlock)
 	for i, tx := range block.Transactions() {
 		if !harness.txPool.mpUTXOSet.AddTx(tx.MsgTx(), 1) {
@@ -1658,7 +1655,7 @@ func TestHandleNewBlock(t *testing.T) {
 		blockTransnactions[*msg.Tx.Hash()] = 1
 		if *msg.Tx.Hash() != *blockTx.Hash() {
 			if len(msg.AcceptedTxs) != 0 {
-				t.Fatalf("Unexpected accepted transactions")
+				t.Fatalf("Expected amount of accepted transactions 0. Got: %v", len(msg.AcceptedTxs))
 			}
 		} else {
 			if len(msg.AcceptedTxs) != 1 {
@@ -1669,12 +1666,12 @@ func TestHandleNewBlock(t *testing.T) {
 			}
 		}
 	}
-	// ensure that HandleNewBlock is not failed
+	// ensure that HandleNewBlock has not failed
 	if err != nil {
-		t.Fatalf("HandleNewBlock failed to handle block %v", block.Hash())
+		t.Fatalf("HandleNewBlock failed to handle block %v", err)
 	}
 
-	// Validate messages pushed by HandleNewBlock into channel
+	// Validate messages pushed by HandleNewBlock into the channel
 	if len(blockTransnactions) != 2 {
 		t.Fatalf("Wrong size of blockTransnactions after new block handling")
 	}
@@ -1691,8 +1688,7 @@ func TestHandleNewBlock(t *testing.T) {
 	testPoolMembership(tc, orphanTx, false, true)
 }
 
-// dummyBlock defines some of the block chain.  It is used to
-// test block operations.
+// dummyBlock defines a block on the block DAG. It is used to test block operations.
 var dummyBlock = wire.MsgBlock{
 	Header: wire.BlockHeader{
 		Version: 1,
