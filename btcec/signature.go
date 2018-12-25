@@ -103,8 +103,6 @@ func parseSig(sigStr []byte, curve elliptic.Curve, der bool) (*Signature, error)
 
 	signature := &Signature{}
 
-	// minimal message is when both numbers are 1 bytes. adding up to:
-	// 0x30 + len + 0x02 + 0x01 + <byte> + 0x2 + 0x01 + <byte>
 	if len(sigStr) < minSigLen {
 		return nil, errors.New("malformed signature: too short")
 	}
