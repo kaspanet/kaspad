@@ -679,7 +679,7 @@ func TestConnReqString(t *testing.T) {
 		},
 		Permanent: true,
 	}
-	cr1.String()
+	_ = cr1.String()
 	cr2 := &ConnReq{}
-	cr2.String()
+	_ = cr2.String()
 }
