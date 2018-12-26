@@ -208,7 +208,6 @@ func (vm *Engine) CheckErrorCondition(finalScript bool) error {
 
 	if finalScript {
 		if vm.dstack.Depth() > 1 {
-
 			str := fmt.Sprintf("stack contains %d unexpected items",
 				vm.dstack.Depth()-1)
 			return scriptError(ErrCleanStack, str)

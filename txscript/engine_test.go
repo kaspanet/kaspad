@@ -7,6 +7,7 @@ package txscript
 import (
 	"testing"
 
+	"bou.ke/monkey"
 	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/wire"
 )
@@ -77,71 +78,88 @@ func TestBadPC(t *testing.T) {
 	}
 }
 
-// TestCheckErrorCondition tests the execute early test in CheckErrorCondition()
-// since most code paths are tested elsewhere.
 func TestCheckErrorCondition(t *testing.T) {
 	t.Parallel()
 
-	// tx with almost empty scripts.
-	tx := &wire.MsgTx{
-		Version: 1,
-		TxIn: []*wire.TxIn{{
-			PreviousOutPoint: wire.OutPoint{
-				Hash: daghash.Hash([32]byte{
-					0xc9, 0x97, 0xa5, 0xe5,
-					0x6e, 0x10, 0x41, 0x02,
-					0xfa, 0x20, 0x9c, 0x6a,
-					0x85, 0x2d, 0xd9, 0x06,
-					0x60, 0xa2, 0x0b, 0x2d,
-					0x9c, 0x35, 0x24, 0x23,
-					0xed, 0xce, 0x25, 0x85,
-					0x7f, 0xcd, 0x37, 0x04,
-				}),
-				Index: 0,
-			},
-			SignatureScript: nil,
-			Sequence:        4294967295,
-		}},
-		TxOut: []*wire.TxOut{{
-			Value:    1000000000,
-			PkScript: nil,
-		}},
-		LockTime: 0,
-	}
-	pkScript := mustParseShortForm("NOP NOP NOP NOP NOP NOP NOP NOP NOP" +
-		" NOP TRUE")
-
-	vm, err := NewEngine(pkScript, tx, 0, 0, nil)
-	if err != nil {
-		t.Errorf("failed to create script: %v", err)
+	tests := []struct {
+		script      string
+		finalScript bool
+		stepCount   int
+		source      interface{}
+		replacement interface{}
+		expectedErr error
+	}{
+		{"OP_1", true, 1, nil, nil, nil},
+		{"NOP", true, 0, nil, nil, scriptError(ErrScriptUnfinished, "")},
+		{"NOP", true, 1, nil, nil, scriptError(ErrEmptyStack, "")},
+		{"OP_1 OP_1", true, 2, nil, nil, scriptError(ErrCleanStack, "")},
+		{"OP_0", true, 1, nil, nil, scriptError(ErrEvalFalse, "")},
+		{"OP_1", true, 1, (*stack).PopBool,
+			func(*stack) (bool, error) { return false, scriptError(ErrInvalidStackOperation, "") },
+			scriptError(ErrInvalidStackOperation, "")},
 	}
 
-	for i := 0; i < len(pkScript)-1; i++ {
-		done, err := vm.Step()
-		if err != nil {
-			t.Fatalf("failed to step %dth time: %v", i, err)
-		}
-		if done {
-			t.Fatalf("finshed early on %dth time", i)
-		}
+	for i, test := range tests {
+		func() {
+			tx := &wire.MsgTx{
+				Version: 1,
+				TxIn: []*wire.TxIn{{
+					PreviousOutPoint: wire.OutPoint{
+						Hash: daghash.Hash([32]byte{
+							0xc9, 0x97, 0xa5, 0xe5,
+							0x6e, 0x10, 0x41, 0x02,
+							0xfa, 0x20, 0x9c, 0x6a,
+							0x85, 0x2d, 0xd9, 0x06,
+							0x60, 0xa2, 0x0b, 0x2d,
+							0x9c, 0x35, 0x24, 0x23,
+							0xed, 0xce, 0x25, 0x85,
+							0x7f, 0xcd, 0x37, 0x04,
+						}),
+						Index: 0,
+					},
+					SignatureScript: nil,
+					Sequence:        4294967295,
+				}},
+				TxOut: []*wire.TxOut{{
+					Value:    1000000000,
+					PkScript: nil,
+				}},
+				LockTime: 0,
+			}
+			pkScript := mustParseShortForm(test.script)
 
-		err = vm.CheckErrorCondition(false)
-		if !IsErrorCode(err, ErrScriptUnfinished) {
-			t.Fatalf("got unexepected error %v on %dth iteration",
-				err, i)
-		}
-	}
-	done, err := vm.Step()
-	if err != nil {
-		t.Fatalf("final step failed %v", err)
-	}
-	if !done {
-		t.Fatalf("final step isn't done!")
-	}
+			vm, err := NewEngine(pkScript, tx, 0, 0, nil)
+			if err != nil {
+				t.Errorf("TestCheckErrorCondition: %d: failed to create script: %v", i, err)
+			}
 
-	err = vm.CheckErrorCondition(false)
-	if err != nil {
-		t.Errorf("unexpected error %v on final check", err)
+			for j := 0; j < test.stepCount; j++ {
+				_, err = vm.Step()
+				if err != nil {
+					t.Errorf("TestCheckErrorCondition: %d: failed to execute step No. %d: %v", i, j+1, err)
+					return
+				}
+
+				if j != test.stepCount-1 {
+					err = vm.CheckErrorCondition(false)
+					if !IsErrorCode(err, ErrScriptUnfinished) {
+						t.Fatalf("TestCheckErrorCondition: %d: got unexepected error %v on %dth iteration",
+							i, err, j)
+						return
+					}
+				}
+			}
+
+			if test.source != nil {
+				patch := monkey.Patch(test.source, test.replacement)
+				defer patch.Unpatch()
+			}
+
+			err = vm.CheckErrorCondition(test.finalScript)
+			if e := tstCheckScriptError(err, test.expectedErr); e != nil {
+				t.Errorf("TestCheckErrorCondition: %d: %s", i, e)
+			}
+		}()
 	}
 }
 
@@ -377,6 +395,8 @@ func TestCheckSignatureEncoding(t *testing.T) {
 }
 
 func TestDisasmPC(t *testing.T) {
+	t.Parallel()
+
 	// tx with almost empty scripts.
 	tx := &wire.MsgTx{
 		Version: 1,
@@ -437,6 +457,8 @@ func TestDisasmPC(t *testing.T) {
 }
 
 func TestDisasmScript(t *testing.T) {
+	t.Parallel()
+
 	// tx with almost empty scripts.
 	tx := &wire.MsgTx{
 		Version: 1,
