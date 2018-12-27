@@ -130,7 +130,7 @@ func TestTx(t *testing.T) {
 // TestTxHash tests the ability to generate the hash of a transaction accurately.
 func TestTxHash(t *testing.T) {
 	// Hash of first transaction from block 113875.
-	hashStr := "768f7e5de1e0a209c9f4e89a5b610d15e888dfe8f32be7f92462edc5815fc025"
+	hashStr := "bc103ee9c89185146ba4e3eb9e936d46acd312cd8d2c5865fa4b0c02e67d0959"
 	wantHash, err := daghash.NewHashFromStr(hashStr)
 	if err != nil {
 		t.Errorf("NewHashFromStr: %v", err)
@@ -186,6 +186,7 @@ func TestTxWire(t *testing.T) {
 		0x00,                                           // Varint for number of input transactions
 		0x00,                                           // Varint for number of output transactions
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Lock time
+		0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Sub Network ID
 	}
 
 	tests := []struct {
@@ -379,6 +380,35 @@ func TestTxSerialize(t *testing.T) {
 		0x00,                                           // Varint for number of input transactions
 		0x00,                                           // Varint for number of output transactions
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Lock time
+		0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Sub Network ID
+	}
+
+	registryTx := newRegistryMsgTx(1, 16)
+	registryTxEncoded := []byte{
+		0x01, 0x00, 0x00, 0x00, // Version
+		0x00,                                           // Varint for number of input transactions
+		0x00,                                           // Varint for number of output transactions
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Lock time
+		0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Sub Network ID
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Gas
+		0x08,                                           // Payload length varint
+		0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Payload / Gas limit
+	}
+
+	subNetworkTx := NewMsgTx(1)
+	subNetworkTx.SubNetworkID = 0xff
+	subNetworkTx.Gas = 5
+	subNetworkTx.Payload = []byte{0, 1, 2}
+
+	subNetworkTxEncoded := []byte{
+		0x01, 0x00, 0x00, 0x00, // Version
+		0x00,                                           // Varint for number of input transactions
+		0x00,                                           // Varint for number of output transactions
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Lock time
+		0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Sub Network ID
+		0x05, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Gas
+		0x03,             // Payload length varint
+		0x00, 0x01, 0x02, // Payload
 	}
 
 	tests := []struct {
@@ -392,6 +422,22 @@ func TestTxSerialize(t *testing.T) {
 			noTx,
 			noTx,
 			noTxEncoded,
+			nil,
+		},
+
+		// Registry Transaction.
+		{
+			registryTx,
+			registryTx,
+			registryTxEncoded,
+			nil,
+		},
+
+		// Sub Network Transaction.
+		{
+			subNetworkTx,
+			subNetworkTx,
+			subNetworkTxEncoded,
 			nil,
 		},
 
@@ -511,6 +557,101 @@ func TestTxSerializeErrors(t *testing.T) {
 			continue
 		}
 	}
+
+	registryTx := NewMsgTx(1)
+	registryTx.SubNetworkID = SubNetworkRegistry
+	registryTx.Gas = 1
+
+	w := bytes.NewBuffer(make([]byte, 0, registryTx.SerializeSize()))
+	err := registryTx.Serialize(w)
+	str := fmt.Sprintf("Transactions from subnetwork %v should have 0 gas", SubNetworkRegistry)
+	expectedErr := messageError("MsgTx.BtcEncode", str)
+	if err == nil || err.Error() != expectedErr.Error() {
+		t.Errorf("TestTxSerializeErrors: expected error %v but got %v", expectedErr, err)
+	}
+
+	dagCoinTx := NewMsgTx(1)
+	dagCoinTx.Gas = 1
+	w = bytes.NewBuffer(make([]byte, 0, registryTx.SerializeSize()))
+	err = dagCoinTx.Serialize(w)
+
+	str = fmt.Sprintf("Transactions from subnetwork %v should have 0 gas", SubNetworkDAGCoin)
+	expectedErr = messageError("MsgTx.BtcEncode", str)
+	if err == nil || err.Error() != expectedErr.Error() {
+		t.Errorf("TestTxSerializeErrors: expected error %v but got %v", expectedErr, err)
+	}
+
+	dagCoinTx.Gas = 0
+	dagCoinTx.Payload = []byte{1, 2, 3}
+	w = bytes.NewBuffer(make([]byte, 0, registryTx.SerializeSize()))
+	err = dagCoinTx.Serialize(w)
+
+	str = fmt.Sprintf("Transactions from subnetwork %v should have <nil> payload", SubNetworkDAGCoin)
+	expectedErr = messageError("MsgTx.BtcEncode", str)
+	if err == nil || err.Error() != expectedErr.Error() {
+		t.Errorf("TestTxSerializeErrors: expected error %v but got %v", expectedErr, err)
+	}
+
+	zeroSubnetworkTxEncoded := []byte{
+		0x01, 0x00, 0x00, 0x00, // Version
+		0x00,                                           // Varint for number of input transactions
+		0x00,                                           // Varint for number of output transactions
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Lock time
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Sub Network ID
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Gas
+		0x08,                                           // Payload length varint
+		0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Payload / Gas limit
+	}
+
+	r := bytes.NewReader(zeroSubnetworkTxEncoded)
+	var tx MsgTx
+	err = tx.Deserialize(r)
+
+	str = fmt.Sprintf("%v is a reserved sub network and cannot be used as part of a transaction", 0)
+	expectedErr = messageError("MsgTx.BtcDecode", str)
+	if err == nil || err.Error() != expectedErr.Error() {
+		t.Errorf("TestTxSerializeErrors: expected error %v but got %v", expectedErr, err)
+	}
+
+	registryWithGasTxEncoded := []byte{
+		0x01, 0x00, 0x00, 0x00, // Version
+		0x00,                                           // Varint for number of input transactions
+		0x00,                                           // Varint for number of output transactions
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Lock time
+		0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Sub Network ID
+		0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Gas
+		0x08,                                           // Payload length varint
+		0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Payload / Gas limit
+	}
+
+	r = bytes.NewReader(registryWithGasTxEncoded)
+	err = tx.Deserialize(r)
+
+	str = fmt.Sprintf("Transactions from subnetwork %v should have 0 gas", SubNetworkRegistry)
+	expectedErr = messageError("MsgTx.BtcDecode", str)
+	if err == nil || err.Error() != expectedErr.Error() {
+		t.Errorf("TestTxSerializeErrors: expected error %v but got %v", expectedErr, err)
+	}
+
+	registryWithWrongPayloadTxEncoded := []byte{
+		0x01, 0x00, 0x00, 0x00, // Version
+		0x00,                                           // Varint for number of input transactions
+		0x00,                                           // Varint for number of output transactions
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Lock time
+		0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Sub Network ID
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Gas
+		0x03,             // Payload length varint
+		0x01, 0x02, 0x03, // Payload / Gas limit
+	}
+
+	r = bytes.NewReader(registryWithWrongPayloadTxEncoded)
+	err = tx.Deserialize(r)
+
+	str = fmt.Sprintf("For registry sub network the payload should always be uint64 (8 bytes length)")
+	expectedErr = messageError("MsgTx.BtcDecode", str)
+	if err == nil || err.Error() != expectedErr.Error() {
+		t.Errorf("TestTxSerializeErrors: expected error %v but got %v", expectedErr, err)
+	}
 }
 
 // TestTxOverflowErrors performs tests to ensure deserializing transactions
@@ -621,10 +762,10 @@ func TestTxSerializeSize(t *testing.T) {
 		size int    // Expected serialized size
 	}{
 		// No inputs or outpus.
-		{noTx, 14},
+		{noTx, 22},
 
 		// Transcaction with an input and an output.
-		{multiTx, 218},
+		{multiTx, 226},
 	}
 
 	t.Logf("Running %d tests", len(tests))
@@ -756,7 +897,8 @@ var multiTx = &MsgTx{
 			},
 		},
 	},
-	LockTime: 0,
+	LockTime:     0,
+	SubNetworkID: SubNetworkDAGCoin,
 }
 
 // multiTxEncoded is the wire encoded bytes for multiTx using protocol version
@@ -800,6 +942,7 @@ var multiTxEncoded = []byte{
 	0xa6,                                           // 65-byte signature
 	0xac,                                           // OP_CHECKSIG
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Lock time
+	0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Sub Network ID
 }
 
 // multiTxPkScriptLocs is the location information for the public key scripts

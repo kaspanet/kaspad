@@ -6,6 +6,7 @@ package wire
 
 import (
 	"bytes"
+	"encoding/binary"
 	"fmt"
 	"io"
 	"math"
@@ -94,6 +95,15 @@ const (
 	// peers.  Thus, the peak usage of the free list is 12,500 * 512 =
 	// 6,400,000 bytes.
 	freeListMaxItems = 12500
+
+	// SubNetworkSupportsAll is the sub network id that is used to signal to peers that you support all sub-networks
+	SubNetworkSupportsAll = 0
+
+	// SubNetworkDAGCoin is the default sub network which is used for transactions without related payload data
+	SubNetworkDAGCoin = 1
+
+	// SubNetworkRegistry is the sub network which is used for adding new sub networks to the registry
+	SubNetworkRegistry = 2
 )
 
 // scriptFreeList defines a free list of byte slices (up to the maximum number
@@ -242,10 +252,13 @@ func NewTxOut(value uint64, pkScript []byte) *TxOut {
 // Use the AddTxIn and AddTxOut functions to build up the list of transaction
 // inputs and outputs.
 type MsgTx struct {
-	Version  int32
-	TxIn     []*TxIn
-	TxOut    []*TxOut
-	LockTime uint64
+	Version      int32
+	TxIn         []*TxIn
+	TxOut        []*TxOut
+	LockTime     uint64
+	SubNetworkID uint64
+	Gas          uint64
+	Payload      []byte
 }
 
 // AddTxIn adds a transaction input to the message.
@@ -275,10 +288,17 @@ func (msg *MsgTx) Copy() *MsgTx {
 	// Create new tx and start by copying primitive values and making space
 	// for the transaction inputs and outputs.
 	newTx := MsgTx{
-		Version:  msg.Version,
-		TxIn:     make([]*TxIn, 0, len(msg.TxIn)),
-		TxOut:    make([]*TxOut, 0, len(msg.TxOut)),
-		LockTime: msg.LockTime,
+		Version:      msg.Version,
+		TxIn:         make([]*TxIn, 0, len(msg.TxIn)),
+		TxOut:        make([]*TxOut, 0, len(msg.TxOut)),
+		LockTime:     msg.LockTime,
+		SubNetworkID: msg.SubNetworkID,
+		Gas:          msg.Gas,
+	}
+
+	if msg.Payload != nil {
+		newTx.Payload = make([]byte, len(msg.Payload))
+		copy(newTx.Payload, msg.Payload)
 	}
 
 	// Deep copy the old TxIn data.
@@ -435,6 +455,46 @@ func (msg *MsgTx) BtcDecode(r io.Reader, pver uint32) error {
 		return err
 	}
 
+	msg.SubNetworkID, err = binarySerializer.Uint64(r, littleEndian)
+	if err != nil {
+		returnScriptBuffers()
+		return err
+	}
+
+	if msg.SubNetworkID == SubNetworkSupportsAll {
+		str := fmt.Sprintf("%v is a reserved sub network and cannot be used as part of a transaction", msg.SubNetworkID)
+		return messageError("MsgTx.BtcDecode", str)
+	}
+
+	if msg.SubNetworkID != SubNetworkDAGCoin {
+		msg.Gas, err = binarySerializer.Uint64(r, littleEndian)
+		if err != nil {
+			returnScriptBuffers()
+			return err
+		}
+
+		isRegistrySubNetwork := msg.SubNetworkID == SubNetworkRegistry
+
+		if isRegistrySubNetwork && msg.Gas != 0 {
+			str := fmt.Sprintf("Transactions from subnetwork %v should have 0 gas", msg.SubNetworkID)
+			return messageError("MsgTx.BtcDecode", str)
+		}
+
+		payloadLength, err := ReadVarInt(r, pver)
+		if err != nil {
+			returnScriptBuffers()
+			return err
+		}
+
+		if isRegistrySubNetwork && payloadLength != 8 {
+			str := fmt.Sprintf("For registry sub network the payload should always be uint64 (8 bytes length)")
+			return messageError("MsgTx.BtcDecode", str)
+		}
+
+		msg.Payload = make([]byte, payloadLength)
+		_, err = io.ReadFull(r, msg.Payload)
+	}
+
 	// Create a single allocation to house all of the scripts and set each
 	// input signature script and output public key script to the
 	// appropriate subslice of the overall contiguous buffer.  Then, return
@@ -540,7 +600,41 @@ func (msg *MsgTx) BtcEncode(w io.Writer, pver uint32) error {
 		}
 	}
 
-	return binarySerializer.PutUint64(w, littleEndian, msg.LockTime)
+	err = binarySerializer.PutUint64(w, littleEndian, msg.LockTime)
+	if err != nil {
+		return err
+	}
+
+	err = binarySerializer.PutUint64(w, littleEndian, msg.SubNetworkID)
+	if err != nil {
+		return err
+	}
+
+	if msg.SubNetworkID != SubNetworkDAGCoin {
+		if msg.SubNetworkID == SubNetworkRegistry && msg.Gas != 0 {
+			str := fmt.Sprintf("Transactions from subnetwork %v should have 0 gas", msg.SubNetworkID)
+			return messageError("MsgTx.BtcEncode", str)
+		}
+
+		err = binarySerializer.PutUint64(w, littleEndian, msg.Gas)
+		if err != nil {
+			return err
+		}
+
+		err = WriteVarInt(w, pver, uint64(len(msg.Payload)))
+		if err != nil {
+			return err
+		}
+		w.Write(msg.Payload)
+	} else if msg.Payload != nil {
+		str := fmt.Sprintf("Transactions from subnetwork %v should have <nil> payload", msg.SubNetworkID)
+		return messageError("MsgTx.BtcEncode", str)
+	} else if msg.Gas != 0 {
+		str := fmt.Sprintf("Transactions from subnetwork %v should have 0 gas", msg.SubNetworkID)
+		return messageError("MsgTx.BtcEncode", str)
+	}
+
+	return nil
 }
 
 // Serialize encodes the transaction to w using a format that suitable for
@@ -563,10 +657,16 @@ func (msg *MsgTx) Serialize(w io.Writer) error {
 // SerializeSize returns the number of bytes it would take to serialize the
 // the transaction.
 func (msg *MsgTx) SerializeSize() int {
-	// Version 4 bytes + LockTime 8 bytes + Serialized varint size for the
-	// number of transaction inputs and outputs.
-	n := 12 + VarIntSerializeSize(uint64(len(msg.TxIn))) +
+	// Version 4 bytes + LockTime 8 bytes + Subnetwork ID 8
+	// bytes + Serialized varint size for the number of transaction
+	// inputs and outputs.
+	n := 20 + VarIntSerializeSize(uint64(len(msg.TxIn))) +
 		VarIntSerializeSize(uint64(len(msg.TxOut)))
+
+	if msg.SubNetworkID != SubNetworkDAGCoin {
+		// Gas 8 bytes + Serialized varint size for the length of the payload
+		n += 8 + VarIntSerializeSize(uint64(len(msg.Payload)))
+	}
 
 	for _, txIn := range msg.TxIn {
 		n += txIn.SerializeSize()
@@ -575,6 +675,8 @@ func (msg *MsgTx) SerializeSize() int {
 	for _, txOut := range msg.TxOut {
 		n += txOut.SerializeSize()
 	}
+
+	n += len(msg.Payload)
 
 	return n
 }
@@ -636,10 +738,19 @@ func (msg *MsgTx) PkScriptLocs() []int {
 // future.
 func NewMsgTx(version int32) *MsgTx {
 	return &MsgTx{
-		Version: version,
-		TxIn:    make([]*TxIn, 0, defaultTxInOutAlloc),
-		TxOut:   make([]*TxOut, 0, defaultTxInOutAlloc),
+		Version:      version,
+		TxIn:         make([]*TxIn, 0, defaultTxInOutAlloc),
+		TxOut:        make([]*TxOut, 0, defaultTxInOutAlloc),
+		SubNetworkID: SubNetworkDAGCoin,
 	}
+}
+
+func newRegistryMsgTx(version int32, gasLimit uint64) *MsgTx {
+	tx := NewMsgTx(version)
+	tx.SubNetworkID = SubNetworkRegistry
+	tx.Payload = make([]byte, 8)
+	binary.LittleEndian.PutUint64(tx.Payload, gasLimit)
+	return tx
 }
 
 // readOutPoint reads the next sequence of bytes from r as an OutPoint.
