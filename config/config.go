@@ -165,7 +165,7 @@ type configFlags struct {
 	DropAddrIndex        bool          `long:"dropaddrindex" description:"Deletes the address-based transaction index from the database on start up and then exits."`
 	RelayNonStd          bool          `long:"relaynonstd" description:"Relay non-standard transactions regardless of the default settings for the active network."`
 	RejectNonStd         bool          `long:"rejectnonstd" description:"Reject non-standard transactions regardless of the default settings for the active network."`
-	SubNetwork           uint64        `long:"subnetwork" description:"If subnetwork > 0, than node will request and process only payloads from specified subnetwork"`
+	SubNetwork           uint64        `long:"subnetwork" description:"If subnetwork > 0, than node will request and process only payloads from specified subnetwork. And if subnetwork is 0, than payloads of all subnetworks are processed."`
 }
 
 // Config defines the configuration options for btcd.
