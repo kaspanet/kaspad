@@ -178,8 +178,7 @@ func (vm *Engine) DisasmPC() (string, error) {
 // script.
 func (vm *Engine) DisasmScript(idx int) (string, error) {
 	if idx < 0 {
-		str := fmt.Sprintf("script index %d >= total scripts %d", idx,
-			len(vm.scripts))
+		str := fmt.Sprintf("script index %d < 0", idx)
 		return "", scriptError(ErrInvalidIndex, str)
 	}
 	if idx >= len(vm.scripts) {
