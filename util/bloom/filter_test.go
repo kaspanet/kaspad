@@ -7,7 +7,6 @@ package bloom_test
 import (
 	"bytes"
 	"encoding/hex"
-	"fmt"
 	"testing"
 
 	"github.com/daglabs/btcd/dagconfig/daghash"
@@ -267,7 +266,6 @@ func TestFilterBloomMatch(t *testing.T) {
 		t.Errorf("TestFilterBloomMatch NewTxFromBytes failure: %v", err)
 		return
 	}
-	fmt.Printf("%v\n", tx.Hash())
 	spendingTxStr := "0100000001F66914B25A46137FB0551E95CCE775254B8711" +
 		"D01D7D258C119396E57E105622000000008C493046022100" +
 		"DA0DC6AECEFE1E06EFDF05773757DEB168820930E3B0D03F" +

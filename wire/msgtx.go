@@ -476,7 +476,7 @@ func (msg *MsgTx) BtcDecode(r io.Reader, pver uint32) error {
 		isRegistrySubNetwork := msg.SubNetworkID == SubNetworkRegistry
 
 		if isRegistrySubNetwork && msg.Gas != 0 {
-			str := fmt.Sprintf("If you use subnetwork %v your gas should be 0", msg.SubNetworkID)
+			str := fmt.Sprintf("Transactions from subnetwork %v should have 0 gas", msg.SubNetworkID)
 			return messageError("MsgTx.BtcDecode", str)
 		}
 
@@ -612,7 +612,7 @@ func (msg *MsgTx) BtcEncode(w io.Writer, pver uint32) error {
 
 	if msg.SubNetworkID != SubNetworkDAGCoin {
 		if msg.SubNetworkID == SubNetworkRegistry && msg.Gas != 0 {
-			str := fmt.Sprintf("If you use subnetwork %v your gas should be 0", msg.SubNetworkID)
+			str := fmt.Sprintf("Transactions from subnetwork %v should have 0 gas", msg.SubNetworkID)
 			return messageError("MsgTx.BtcEncode", str)
 		}
 
@@ -627,10 +627,10 @@ func (msg *MsgTx) BtcEncode(w io.Writer, pver uint32) error {
 		}
 		w.Write(msg.Payload)
 	} else if msg.Payload != nil {
-		str := fmt.Sprintf("If you use subnetwork %v your payload should be <nil>", msg.SubNetworkID)
+		str := fmt.Sprintf("Transactions from subnetwork %v should have <nil> payload", msg.SubNetworkID)
 		return messageError("MsgTx.BtcEncode", str)
 	} else if msg.Gas != 0 {
-		str := fmt.Sprintf("If you use subnetwork %v your gas should be 0", msg.SubNetworkID)
+		str := fmt.Sprintf("Transactions from subnetwork %v should have 0 gas", msg.SubNetworkID)
 		return messageError("MsgTx.BtcEncode", str)
 	}
 

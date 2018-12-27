@@ -564,7 +564,7 @@ func TestTxSerializeErrors(t *testing.T) {
 
 	w := bytes.NewBuffer(make([]byte, 0, registryTx.SerializeSize()))
 	err := registryTx.Serialize(w)
-	str := fmt.Sprintf("If you use subnetwork %v your gas should be 0", SubNetworkRegistry)
+	str := fmt.Sprintf("Transactions from subnetwork %v should have 0 gas", SubNetworkRegistry)
 	expectedErr := messageError("MsgTx.BtcEncode", str)
 	if err == nil || err.Error() != expectedErr.Error() {
 		t.Errorf("TestTxSerializeErrors: expected error %v but got %v", expectedErr, err)
@@ -575,7 +575,7 @@ func TestTxSerializeErrors(t *testing.T) {
 	w = bytes.NewBuffer(make([]byte, 0, registryTx.SerializeSize()))
 	err = dagCoinTx.Serialize(w)
 
-	str = fmt.Sprintf("If you use subnetwork %v your gas should be 0", SubNetworkDAGCoin)
+	str = fmt.Sprintf("Transactions from subnetwork %v should have 0 gas", SubNetworkDAGCoin)
 	expectedErr = messageError("MsgTx.BtcEncode", str)
 	if err == nil || err.Error() != expectedErr.Error() {
 		t.Errorf("TestTxSerializeErrors: expected error %v but got %v", expectedErr, err)
@@ -586,7 +586,7 @@ func TestTxSerializeErrors(t *testing.T) {
 	w = bytes.NewBuffer(make([]byte, 0, registryTx.SerializeSize()))
 	err = dagCoinTx.Serialize(w)
 
-	str = fmt.Sprintf("If you use subnetwork %v your payload should be <nil>", SubNetworkDAGCoin)
+	str = fmt.Sprintf("Transactions from subnetwork %v should have <nil> payload", SubNetworkDAGCoin)
 	expectedErr = messageError("MsgTx.BtcEncode", str)
 	if err == nil || err.Error() != expectedErr.Error() {
 		t.Errorf("TestTxSerializeErrors: expected error %v but got %v", expectedErr, err)
@@ -627,7 +627,7 @@ func TestTxSerializeErrors(t *testing.T) {
 	r = bytes.NewReader(registryWithGasTxEncoded)
 	err = tx.Deserialize(r)
 
-	str = fmt.Sprintf("If you use subnetwork %v your gas should be 0", SubNetworkRegistry)
+	str = fmt.Sprintf("Transactions from subnetwork %v should have 0 gas", SubNetworkRegistry)
 	expectedErr = messageError("MsgTx.BtcDecode", str)
 	if err == nil || err.Error() != expectedErr.Error() {
 		t.Errorf("TestTxSerializeErrors: expected error %v but got %v", expectedErr, err)
