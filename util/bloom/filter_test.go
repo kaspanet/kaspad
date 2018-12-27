@@ -7,6 +7,7 @@ package bloom_test
 import (
 	"bytes"
 	"encoding/hex"
+	"fmt"
 	"testing"
 
 	"github.com/daglabs/btcd/dagconfig/daghash"
@@ -255,7 +256,7 @@ func TestFilterBloomMatch(t *testing.T) {
 		"3D11000000001976A91404943FDD508053C75000106D3BC6" +
 		"E2754DBCFF1988AC2F15DE00000000001976A914A266436D" +
 		"2965547608B9E15D9032A7B9D64FA43188AC000000000000" +
-		"00000000000000000000000000000000000000"
+		"00000100000000000000"
 	strBytes, err := hex.DecodeString(str)
 	if err != nil {
 		t.Errorf("TestFilterBloomMatch DecodeString failure: %v", err)
@@ -266,8 +267,9 @@ func TestFilterBloomMatch(t *testing.T) {
 		t.Errorf("TestFilterBloomMatch NewTxFromBytes failure: %v", err)
 		return
 	}
-	spendingTxStr := "0100000001FFDB4B99D648037A96E58E7C30BBAE3241B7BA" +
-		"9139FE5B5F4E4D9525FC7CE00A000000008C493046022100" +
+	fmt.Printf("%v\n", tx.Hash())
+	spendingTxStr := "0100000001F66914B25A46137FB0551E95CCE775254B8711" +
+		"D01D7D258C119396E57E105622000000008C493046022100" +
 		"DA0DC6AECEFE1E06EFDF05773757DEB168820930E3B0D03F" +
 		"46F5FCF150BF990C022100D25B5C87040076E4F253F8262E" +
 		"763E2DD51E7FF0BE157727C4BC42807F17BD39014104E6C2" +
@@ -277,7 +279,7 @@ func TestFilterBloomMatch(t *testing.T) {
 		"A7940E000000001976A914BADEECFDEF0507247FC8F74241" +
 		"D73BC039972D7B88AC4094A802000000001976A914C10932" +
 		"483FEC93ED51F5FE95E72559F2CC7043F988AC0000000000" +
-		"000000000000000000000000000000000000000000"
+		"0000000100000000000000"
 	spendingTxBytes, err := hex.DecodeString(spendingTxStr)
 	if err != nil {
 		t.Errorf("TestFilterBloomMatch DecodeString failed to decode spendingTxStr: %v", err)
@@ -291,7 +293,7 @@ func TestFilterBloomMatch(t *testing.T) {
 	}
 
 	f := bloom.NewFilter(10, 0, 0.000001, wire.BloomUpdateAll)
-	inputStr := "0ae07cfc25954d4e5f5bfe3991bab74132aebb307c8ee5967a0348d6994bdbff" // byte-reversed tx hash
+	inputStr := "2256107ee59693118c257d1dd011874b2575e7cc951e55b07f13465ab21469f6" // byte-reversed tx hash
 	hash, err := daghash.NewHashFromStr(inputStr)
 	if err != nil {
 		t.Errorf("TestFilterBloomMatch NewHashFromStr failed: %v\n", err)
@@ -303,7 +305,7 @@ func TestFilterBloomMatch(t *testing.T) {
 	}
 
 	f = bloom.NewFilter(10, 0, 0.000001, wire.BloomUpdateAll)
-	inputStr = "ffdb4b99d648037a96e58e7c30bbae3241b7ba9139fe5b5f4e4d9525fc7ce00a" // non-reversed tx hash
+	inputStr = "f66914b25a46137fb0551e95cce775254b8711d01d7d258c119396e57e105622" // non-reversed tx hash
 	hashBytes, err := hex.DecodeString(inputStr)
 	if err != nil {
 		t.Errorf("TestFilterBloomMatch DecodeString failed: %v\n", err)

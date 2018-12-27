@@ -151,7 +151,7 @@ var block1 = wire.MsgBlock{
 				},
 			},
 			LockTime:     0,
-			SubNetworkID: wire.DAGcoinSubNetwork,
+			SubNetworkID: wire.SubNetworkDAGCoin,
 		},
 	},
 }
@@ -205,7 +205,7 @@ var block2 = wire.MsgBlock{
 				},
 			},
 			LockTime:     0,
-			SubNetworkID: wire.DAGcoinSubNetwork,
+			SubNetworkID: wire.SubNetworkDAGCoin,
 		},
 		{
 			Version: 1,
@@ -251,7 +251,7 @@ var block2 = wire.MsgBlock{
 				},
 			},
 			LockTime:     0,
-			SubNetworkID: wire.DAGcoinSubNetwork,
+			SubNetworkID: wire.SubNetworkDAGCoin,
 		},
 	},
 }
@@ -300,7 +300,7 @@ var block3Tx = &wire.MsgTx{
 		},
 	},
 	LockTime:     0,
-	SubNetworkID: wire.DAGcoinSubNetwork,
+	SubNetworkID: wire.SubNetworkDAGCoin,
 }
 
 var block3 = wire.MsgBlock{
@@ -352,7 +352,7 @@ var block3 = wire.MsgBlock{
 				},
 			},
 			LockTime:     0,
-			SubNetworkID: wire.DAGcoinSubNetwork,
+			SubNetworkID: wire.SubNetworkDAGCoin,
 		},
 		block3Tx,
 	},
@@ -407,7 +407,7 @@ var block3A = wire.MsgBlock{
 				},
 			},
 			LockTime:     0,
-			SubNetworkID: wire.DAGcoinSubNetwork,
+			SubNetworkID: wire.SubNetworkDAGCoin,
 		},
 		block3Tx,
 	},
@@ -462,7 +462,7 @@ var block4 = wire.MsgBlock{
 				},
 			},
 			LockTime:     0,
-			SubNetworkID: wire.DAGcoinSubNetwork,
+			SubNetworkID: wire.SubNetworkDAGCoin,
 		},
 	},
 }
@@ -522,7 +522,7 @@ var block5 = wire.MsgBlock{
 				},
 			},
 			LockTime:     0,
-			SubNetworkID: wire.DAGcoinSubNetwork,
+			SubNetworkID: wire.SubNetworkDAGCoin,
 		},
 	},
 }

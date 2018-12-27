@@ -142,7 +142,8 @@ var genesisCoinbaseTx = wire.MsgTx{
 			},
 		},
 	},
-	LockTime: 0,
+	LockTime:     0,
+	SubNetworkID: wire.DAGCoinSubNetwork,
 }
 
 var genesisMerkleRoot = daghash.Hash([daghash.HashSize]byte{ // Make go vet happy.

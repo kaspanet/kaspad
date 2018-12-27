@@ -6,7 +6,6 @@ package bloom_test
 
 import (
 	"bytes"
-	"fmt"
 	"testing"
 
 	"github.com/daglabs/btcd/dagconfig/daghash"
@@ -51,8 +50,6 @@ func TestMerkleBlock3(t *testing.T) {
 		t.Errorf("TestMerkleBlock3 NewBlockFromBytes failed: %v", err)
 		return
 	}
-
-	fmt.Printf("%v\n", blk.Hash())
 
 	f := bloom.NewFilter(10, 0, 0.000001, wire.BloomUpdateAll)
 
