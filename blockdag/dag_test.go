@@ -94,7 +94,7 @@ func TestHaveBlock(t *testing.T) {
 		DAGParams: &dagconfig.SimNetParams,
 	})
 	if err != nil {
-		t.Fatalf("Failed to setup chain instance: %v", err)
+		t.Fatalf("Failed to setup DAG instance: %v", err)
 	}
 	defer teardownFunc()
 
@@ -185,10 +185,10 @@ func TestHaveBlock(t *testing.T) {
 		{hash: dagconfig.SimNetParams.GenesisHash.String(), want: true},
 
 		// Block 3b should be present (as a second child of Block 2).
-		{hash: "18093bc434d032caccc68144d4667fcf7916a07cc0c2f333465477fa1cb416f5", want: true},
+		{hash: "74e325a48f84020f3d36c07edf9cda95d93cff866ff8e8df5d2825d2ced6d28f", want: true},
 
 		// Block 100000 should be present (as an orphan).
-		{hash: "3804ea8ed22965d50df2ad2b25da8d02e10a2724671469e33b50a6bc31b60c17", want: true},
+		{hash: "566ca0e828951be69df4b45b82b4eb9b593b712a0018a382cb75790f85810be3", want: true},
 
 		// Random hashes should not be available.
 		{hash: "123", want: false},

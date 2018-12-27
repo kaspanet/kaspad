@@ -83,8 +83,8 @@ var (
 					"c4f35504e51ec112de5c384df7ba0b8d578a" +
 					"4c702b6bf11d5fac"),
 			}},
-			LockTime: 0,
-			Payload:  []byte{},
+			LockTime:     0,
+			SubNetworkID: wire.DAGcoinSubNetwork,
 		}},
 	}
 )

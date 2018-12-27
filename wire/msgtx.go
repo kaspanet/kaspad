@@ -94,6 +94,9 @@ const (
 	// peers.  Thus, the peak usage of the free list is 12,500 * 512 =
 	// 6,400,000 bytes.
 	freeListMaxItems = 12500
+
+	// DAGcoinSubNetwork is the default sub network which is used for transactions without related payload data
+	DAGcoinSubNetwork = 1
 )
 
 // scriptFreeList defines a free list of byte slices (up to the maximum number
@@ -284,10 +287,12 @@ func (msg *MsgTx) Copy() *MsgTx {
 		LockTime:     msg.LockTime,
 		SubNetworkID: msg.SubNetworkID,
 		Gas:          msg.Gas,
-		Payload:      make([]byte, len(msg.Payload)),
 	}
 
-	copy(newTx.Payload, msg.Payload)
+	if msg.Payload != nil {
+		newTx.Payload = make([]byte, len(msg.Payload))
+		copy(newTx.Payload, msg.Payload)
+	}
 
 	// Deep copy the old TxIn data.
 	for _, oldTxIn := range msg.TxIn {
@@ -449,20 +454,22 @@ func (msg *MsgTx) BtcDecode(r io.Reader, pver uint32) error {
 		return err
 	}
 
-	msg.Gas, err = binarySerializer.Uint64(r, littleEndian)
-	if err != nil {
-		returnScriptBuffers()
-		return err
-	}
+	if msg.SubNetworkID != DAGcoinSubNetwork {
+		msg.Gas, err = binarySerializer.Uint64(r, littleEndian)
+		if err != nil {
+			returnScriptBuffers()
+			return err
+		}
 
-	payloadLength, err := ReadVarInt(r, pver)
-	if err != nil {
-		returnScriptBuffers()
-		return err
-	}
+		payloadLength, err := ReadVarInt(r, pver)
+		if err != nil {
+			returnScriptBuffers()
+			return err
+		}
 
-	msg.Payload = make([]byte, payloadLength)
-	_, err = io.ReadFull(r, msg.Payload)
+		msg.Payload = make([]byte, payloadLength)
+		_, err = io.ReadFull(r, msg.Payload)
+	}
 
 	// Create a single allocation to house all of the scripts and set each
 	// input signature script and output public key script to the
@@ -579,16 +586,21 @@ func (msg *MsgTx) BtcEncode(w io.Writer, pver uint32) error {
 		return err
 	}
 
-	err = binarySerializer.PutUint64(w, littleEndian, msg.Gas)
-	if err != nil {
-		return err
-	}
+	if msg.SubNetworkID != DAGcoinSubNetwork {
+		err = binarySerializer.PutUint64(w, littleEndian, msg.Gas)
+		if err != nil {
+			return err
+		}
 
-	err = WriteVarInt(w, pver, uint64(len(msg.Payload)))
-	if err != nil {
-		return err
+		err = WriteVarInt(w, pver, uint64(len(msg.Payload)))
+		if err != nil {
+			return err
+		}
+		w.Write(msg.Payload)
+	} else if msg.Payload != nil {
+		str := fmt.Sprintf("If you use subnetwork %v your payload should be <nil>", DAGcoinSubNetwork)
+		return messageError("MsgTx.BtcEncode", str)
 	}
-	w.Write(msg.Payload)
 
 	return nil
 }
@@ -613,12 +625,16 @@ func (msg *MsgTx) Serialize(w io.Writer) error {
 // SerializeSize returns the number of bytes it would take to serialize the
 // the transaction.
 func (msg *MsgTx) SerializeSize() int {
-	// Version 4 bytes + LockTime 8 bytes + Subnetwork ID 8 bytes + Gas 8 bytes + Serialized varint
-	// size for the length of the payload + Serialized varint size for the
-	// number of transaction inputs and outputs.
-	n := 28 + VarIntSerializeSize(uint64(len(msg.TxIn))) +
-		VarIntSerializeSize(uint64(len(msg.TxOut))) +
-		VarIntSerializeSize(uint64(len(msg.Payload)))
+	// Version 4 bytes + LockTime 8 bytes + Subnetwork ID 8
+	// bytes + Serialized varint size for the number of transaction
+	// inputs and outputs.
+	n := 20 + VarIntSerializeSize(uint64(len(msg.TxIn))) +
+		VarIntSerializeSize(uint64(len(msg.TxOut)))
+
+	if msg.SubNetworkID != DAGcoinSubNetwork {
+		// Gas 8 bytes + Serialized varint size for the length of the payload
+		n += 8 + VarIntSerializeSize(uint64(len(msg.Payload)))
+	}
 
 	for _, txIn := range msg.TxIn {
 		n += txIn.SerializeSize()
@@ -690,10 +706,10 @@ func (msg *MsgTx) PkScriptLocs() []int {
 // future.
 func NewMsgTx(version int32) *MsgTx {
 	return &MsgTx{
-		Version: version,
-		TxIn:    make([]*TxIn, 0, defaultTxInOutAlloc),
-		TxOut:   make([]*TxOut, 0, defaultTxInOutAlloc),
-		Payload: []byte{},
+		Version:      version,
+		TxIn:         make([]*TxIn, 0, defaultTxInOutAlloc),
+		TxOut:        make([]*TxOut, 0, defaultTxInOutAlloc),
+		SubNetworkID: DAGcoinSubNetwork,
 	}
 }
 

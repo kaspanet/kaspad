@@ -140,7 +140,7 @@ func TestCalcPriority(t *testing.T) {
 			utxoSet: newUTXOSet([]*wire.MsgTx{commonSourceTx1},
 				[]int32{7}),
 			nextHeight: 169,
-			want:       1.1739130434782608e+10,
+			want:       1.35e+10,
 		},
 		{
 			name: "one height 100 input, prio tx height 169",
@@ -148,7 +148,7 @@ func TestCalcPriority(t *testing.T) {
 			utxoSet: newUTXOSet([]*wire.MsgTx{commonSourceTx1},
 				[]int32{100}),
 			nextHeight: 169,
-			want:       5e+09,
+			want:       5.75e+09,
 		},
 		{
 			name: "one height 7 input, prio tx height 100000",
@@ -156,7 +156,7 @@ func TestCalcPriority(t *testing.T) {
 			utxoSet: newUTXOSet([]*wire.MsgTx{commonSourceTx1},
 				[]int32{7}),
 			nextHeight: 100000,
-			want:       7.245869565217392e+12,
+			want:       8.33275e+12,
 		},
 		{
 			name: "one height 100 input, prio tx height 100000",
@@ -164,7 +164,7 @@ func TestCalcPriority(t *testing.T) {
 			utxoSet: newUTXOSet([]*wire.MsgTx{commonSourceTx1},
 				[]int32{100}),
 			nextHeight: 100000,
-			want:       7.239130434782608e+12,
+			want:       8.325e+12,
 		},
 	}
 

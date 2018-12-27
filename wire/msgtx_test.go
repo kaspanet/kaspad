@@ -130,7 +130,7 @@ func TestTx(t *testing.T) {
 // TestTxHash tests the ability to generate the hash of a transaction accurately.
 func TestTxHash(t *testing.T) {
 	// Hash of first transaction from block 113875.
-	hashStr := "3c5552b31907474afdc2faacdde5236df5f21f7bb76e0099fa295706e05b3aed"
+	hashStr := "bc103ee9c89185146ba4e3eb9e936d46acd312cd8d2c5865fa4b0c02e67d0959"
 	wantHash, err := daghash.NewHashFromStr(hashStr)
 	if err != nil {
 		t.Errorf("NewHashFromStr: %v", err)
@@ -186,9 +186,7 @@ func TestTxWire(t *testing.T) {
 		0x00,                                           // Varint for number of input transactions
 		0x00,                                           // Varint for number of output transactions
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Lock time
-		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Sub Network ID
-		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Gas
-		0x00, // Varint for payload length
+		0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Sub Network ID
 	}
 
 	tests := []struct {
@@ -382,9 +380,7 @@ func TestTxSerialize(t *testing.T) {
 		0x00,                                           // Varint for number of input transactions
 		0x00,                                           // Varint for number of output transactions
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Lock time
-		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Sub Network ID
-		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Gas
-		0x00, // Varint for payload length
+		0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Sub Network ID
 	}
 
 	tests := []struct {
@@ -627,10 +623,10 @@ func TestTxSerializeSize(t *testing.T) {
 		size int    // Expected serialized size
 	}{
 		// No inputs or outpus.
-		{noTx, 31},
+		{noTx, 22},
 
 		// Transcaction with an input and an output.
-		{multiTx, 235},
+		{multiTx, 226},
 	}
 
 	t.Logf("Running %d tests", len(tests))
@@ -762,8 +758,8 @@ var multiTx = &MsgTx{
 			},
 		},
 	},
-	LockTime: 0,
-	Payload:  []byte{},
+	LockTime:     0,
+	SubNetworkID: DAGcoinSubNetwork,
 }
 
 // multiTxEncoded is the wire encoded bytes for multiTx using protocol version
@@ -807,9 +803,7 @@ var multiTxEncoded = []byte{
 	0xa6,                                           // 65-byte signature
 	0xac,                                           // OP_CHECKSIG
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Lock time
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Sub Network ID
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Gas
-	0x00, // Varint for payload length
+	0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Sub Network ID
 }
 
 // multiTxPkScriptLocs is the location information for the public key scripts

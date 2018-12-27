@@ -72,7 +72,7 @@ func TestBlock(t *testing.T) {
 // hashes from a block accurately.
 func TestBlockTxHashes(t *testing.T) {
 	// Block 1, transaction 1 hash.
-	hashStr := "290a2710ebbf1ffd748b364a33a543f0745e2369158da18fb5eea8c0dd39a57a"
+	hashStr := "603ea191aecb5809c78790a0bd58293086c1b19118e7251a38680dd9e1dc3b32"
 	wantHash, err := daghash.NewHashFromStr(hashStr)
 	if err != nil {
 		t.Errorf("NewHashFromStr: %v", err)
@@ -532,8 +532,8 @@ var blockOne = MsgBlock{
 					},
 				},
 			},
-			LockTime: 0,
-			Payload:  []byte{},
+			LockTime:     0,
+			SubNetworkID: DAGcoinSubNetwork,
 		},
 	},
 }
@@ -583,12 +583,10 @@ var blockOneBytes = []byte{
 	0xee,                                           // 65-byte uncompressed public key
 	0xac,                                           // OP_CHECKSIG
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Lock time
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Subnetwork ID
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Gas
-	0x00, // Varint for payload length
+	0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Subnetwork ID
 }
 
 // Transaction location information for block one transactions.
 var blockOneTxLocs = []TxLoc{
-	{TxStart: 122, TxLen: 159},
+	{TxStart: 122, TxLen: 150},
 }
