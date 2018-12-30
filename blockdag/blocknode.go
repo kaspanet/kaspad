@@ -113,6 +113,8 @@ type blockNode struct {
 	// only be accessed using the concurrent-safe NodeStatus method on
 	// blockIndex once the node has been added to the global index.
 	status blockStatus
+
+	finalized bool
 }
 
 // initBlockNode initializes a block node from the given header and parent nodes,
