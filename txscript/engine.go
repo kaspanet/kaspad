@@ -177,6 +177,10 @@ func (vm *Engine) DisasmPC() (string, error) {
 // offset index.  Index 0 is the signature script and 1 is the public key
 // script.
 func (vm *Engine) DisasmScript(idx int) (string, error) {
+	if idx < 0 {
+		str := fmt.Sprintf("script index %d < 0", idx)
+		return "", scriptError(ErrInvalidIndex, str)
+	}
 	if idx >= len(vm.scripts) {
 		str := fmt.Sprintf("script index %d >= total scripts %d", idx,
 			len(vm.scripts))
@@ -203,7 +207,6 @@ func (vm *Engine) CheckErrorCondition(finalScript bool) error {
 
 	if finalScript {
 		if vm.dstack.Depth() > 1 {
-
 			str := fmt.Sprintf("stack contains %d unexpected items",
 				vm.dstack.Depth()-1)
 			return scriptError(ErrCleanStack, str)
