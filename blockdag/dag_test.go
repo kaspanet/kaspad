@@ -40,16 +40,16 @@ func TestBlockCount(t *testing.T) {
 		blocks = append(blocks, blockTmp...)
 	}
 
-	// Create a new database and chain instance to run tests against.
+	// Create a new database and DAG instance to run tests against.
 	dag, teardownFunc, err := DAGSetup("haveblock", Config{
 		DAGParams: &dagconfig.SimNetParams,
 	})
 	if err != nil {
-		t.Fatalf("Failed to setup chain instance: %v", err)
+		t.Fatalf("Failed to setup DAG instance: %v", err)
 	}
 	defer teardownFunc()
 
-	// Since we're not dealing with the real block chain, set the coinbase
+	// Since we're not dealing with the real block DAG, set the coinbase
 	// maturity to 1.
 	dag.TstSetCoinbaseMaturity(1)
 
@@ -847,5 +847,58 @@ func testErrorThroughPatching(t *testing.T, expectedErrorMessage string, targetF
 	if !strings.Contains(err.Error(), expectedErrorMessage) {
 		t.Errorf("ProcessBlock returned wrong error. "+
 			"Want: %s, got: %s", expectedErrorMessage, err)
+	}
+}
+
+func TestFinality(t *testing.T) {
+	dag, teardownFunc, err := DAGSetup("haveblock", Config{
+		DAGParams: &dagconfig.SimNetParams,
+	})
+	if err != nil {
+		t.Fatalf("Failed to setup DAG instance: %v", err)
+	}
+	defer teardownFunc()
+	buildNode := buildNodeGenerator(dagconfig.SimNetParams.K, true)
+	buildNodeToDag := func(parents blockSet) *blockNode {
+		node := buildNode(parents)
+		dag.index.AddNode(node)
+		return node
+	}
+	currentNode := dag.genesis
+	for ; currentNode.blueScore < finalityInterval; currentNode = buildNodeToDag(setFromSlice(currentNode)) {
+	}
+
+	expectedFinalityPoint := currentNode
+
+	for ; currentNode.blueScore < 2*finalityInterval; currentNode = buildNodeToDag(setFromSlice(currentNode)) {
+	}
+	finalityPointCandidate, err := dag.maybeGetFinalityPointCandidate(currentNode)
+	if err != nil {
+		t.Errorf("TestFinality: maybeGetFinalityPointCandidate unexpectedly returned an error: %v", err)
+	}
+	if finalityPointCandidate != expectedFinalityPoint {
+		t.Errorf("TestFinality: maybeGetFinalityPointCandidate expected finalityPointCandidate %v but got %v", expectedFinalityPoint, finalityPointCandidate)
+	}
+
+	added := dag.maybeAddFinalityPoint(currentNode, finalityPointCandidate)
+	if !added {
+		t.Errorf("TestFinality: maybeAddFinalityPoint expected to add a new finality point, but none was added")
+	}
+	if dag.lastFinalityPoint != finalityPointCandidate {
+		t.Errorf("TestFinality: dag.lastFinalityPoint expected to be %v but got %v", finalityPointCandidate, dag.lastFinalityPoint)
+	}
+
+	alternativeCandidate := buildNodeToDag(setFromSlice(currentNode.selectedParent))
+	addedAlternative := dag.maybeAddFinalityPoint(alternativeCandidate, nil)
+	if addedAlternative {
+		t.Errorf("TestFinality: maybeAddFinalityPoint unexpectedly added a new finality point")
+	}
+	invalidNode := buildNode(setFromSlice(dag.genesis))
+	_, err = dag.maybeGetFinalityPointCandidate(invalidNode)
+	if err == nil {
+		t.Errorf("TestFinality: maybeGetFinalityPointCandidate expected an error but got <nil>")
+	}
+	if err := err.(RuleError); err.ErrorCode != ErrFinality {
+		t.Errorf("TestFinality: maybeGetFinalityPointCandidate expected an error with code %v but instead got %v", ErrFinality, err.ErrorCode)
 	}
 }

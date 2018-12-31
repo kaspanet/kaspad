@@ -507,7 +507,7 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block, fastAdd bo
 		}
 	}
 
-	finalityPointCandidate, err := dag.checkBlockFinalityRules(node)
+	finalityPointCandidate, err := dag.maybeGetFinalityPointCandidate(node)
 
 	// Add the node to the virtual and update the UTXO set of the DAG.
 	utxoDiff, acceptedTxsData, err := dag.applyUTXOChanges(node, block, fastAdd)
@@ -575,24 +575,27 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block, fastAdd bo
 	return nil
 }
 
-func (dag *BlockDAG) checkBlockFinalityRules(node *blockNode) (*blockNode, error) {
-	var finaltiyPointCandidate *blockNode
+func (dag *BlockDAG) maybeGetFinalityPointCandidate(node *blockNode) (*blockNode, error) {
+	var finalityPointCandidate *blockNode
+	shouldFindFinalityPointCandidate := node.blueScore/finalityInterval > dag.lastFinalityPoint.blueScore/finalityInterval
 	currentNode := node
 	for ; currentNode != dag.lastFinalityPoint; currentNode = currentNode.selectedParent {
 		if currentNode.blueScore <= dag.lastFinalityPoint.blueScore {
 			return nil, ruleError(ErrFinality, "The last finality point is not in the selected chain of this block")
 		}
-		if currentNode.blueScore/finalityInterval > currentNode.selectedParent.blueScore/finalityInterval {
-			finaltiyPointCandidate = currentNode
+		if shouldFindFinalityPointCandidate && currentNode.blueScore/finalityInterval > currentNode.selectedParent.blueScore/finalityInterval {
+			finalityPointCandidate = currentNode
 		}
 	}
-	return finaltiyPointCandidate, nil
+	return finalityPointCandidate, nil
 }
 
-func (dag *BlockDAG) maybeAddFinalityPoint(node, finalityPointCandidate *blockNode) {
-	if node.blueScore/finalityInterval > node.selectedParent.blueScore/finalityInterval {
+func (dag *BlockDAG) maybeAddFinalityPoint(node, finalityPointCandidate *blockNode) bool {
+	if finalityPointCandidate != nil && node.blueScore/finalityInterval > node.selectedParent.blueScore/finalityInterval {
 		dag.lastFinalityPoint = finalityPointCandidate
+		return true
 	}
+	return false
 }
 
 // applyUTXOChanges does the following:

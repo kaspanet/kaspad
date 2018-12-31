@@ -200,15 +200,23 @@ func addNodeAsChildToParents(node *blockNode) {
 	}
 }
 
-func buildNodeGenerator(phantomK uint32) func(parents blockSet) *blockNode {
+func buildNodeGenerator(phantomK uint32, withChildren bool) func(parents blockSet) *blockNode {
 	// For the purposes of these tests, we'll create blockNodes whose hashes are a
 	// series of numbers from 0 to n.
 	hashCounter := byte(0)
-	return func(parents blockSet) *blockNode {
+	buildNode := func(parents blockSet) *blockNode {
 		block := newBlockNode(nil, parents, phantomK)
 		block.hash = daghash.Hash{hashCounter}
 		hashCounter++
 
 		return block
 	}
+	if withChildren {
+		return func(parents blockSet) *blockNode {
+			node := buildNode(parents)
+			addNodeAsChildToParents(node)
+			return node
+		}
+	}
+	return buildNode
 }
