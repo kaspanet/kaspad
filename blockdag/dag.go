@@ -509,6 +509,13 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block, fastAdd bo
 		return err
 	}
 
+	// Scan all accepted transactions and collect any valid sub-network registry
+	// transactions into validSubNetworkRegistryTxs.
+	validSubNetworkRegistryTxs, err := extractValidSubNetworkRegistryTxs(acceptedTxsData)
+	if err != nil {
+		return err
+	}
+
 	// Write any block status changes to DB before updating the DAG state.
 	err = dag.index.flushToDB()
 	if err != nil {
@@ -533,6 +540,13 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block, fastAdd bo
 		// Update the UTXO set using the diffSet that was melded into the
 		// full UTXO set.
 		err = dbPutUTXODiff(dbTx, utxoDiff)
+		if err != nil {
+			return err
+		}
+
+		// Add the pending sub-network in this block to the pending sub-networks
+		// collection.
+		err = dbPutPendingSubNetworkTxs(dbTx, block.Hash(), validSubNetworkRegistryTxs)
 		if err != nil {
 			return err
 		}
@@ -1558,4 +1572,33 @@ func New(config *Config) (*BlockDAG, error) {
 		selectedTip.height, selectedTip.hash, selectedTip.workSum)
 
 	return &dag, nil
+}
+
+// extractValidSubNetworkRegistryTxs filters the given input and extracts a list
+// of valid sub-network registry transactions.
+func extractValidSubNetworkRegistryTxs(txs []*TxWithBlockHash) ([]*wire.MsgTx, error) {
+	validSubNetworkRegistryTxs := make([]*wire.MsgTx, 0, len(txs))
+	for _, txData := range txs {
+		tx := txData.Tx.MsgTx()
+		if tx.SubNetworkID == wire.SubNetworkRegistry {
+			err := validateSubNetworkRegistryTransaction(tx)
+			if err != nil {
+				return nil, err
+			}
+			validSubNetworkRegistryTxs = append(validSubNetworkRegistryTxs, tx)
+		}
+	}
+
+	return validSubNetworkRegistryTxs, nil
+}
+
+// validateSubNetworkRegistryTransaction makes sure that a given sub-network registry
+// transaction is valid.
+func validateSubNetworkRegistryTransaction(tx *wire.MsgTx) error {
+	if len(tx.TxOut) > 0 {
+		return fmt.Errorf("validation failed: subnetwork registry"+
+			"tx '%s' has more than zero txOuts", tx.TxHash())
+	}
+
+	return nil
 }
