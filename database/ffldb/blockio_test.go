@@ -1,8 +1,10 @@
 package ffldb
 
 import (
+	"container/list"
 	"errors"
 	"os"
+	"sync"
 	"testing"
 
 	"bou.ke/monkey"
@@ -113,4 +115,59 @@ func TestHandleRollbackErrors(t *testing.T) {
 			}
 		}()
 	}
+}
+
+// TestBlockFileSingleThread tests a certain branch of blockStore.blockFile() that never gets hit in
+// computers with a single CPU, since the number of goroutines is determined by number of CPUs.
+func TestBlockFileSingleCPU(t *testing.T) {
+	pdb := newTestDb("TestBlockFileSingleCPU", t)
+	defer pdb.Close()
+
+	// Write empty block to database, so that 0 file is created
+	_, err := pdb.store.writeBlock([]byte{})
+	if err != nil {
+		t.Fatalf("TestBlockFileSingleCPU: Error writing block: %s", err)
+	}
+	// Close the file, and clear the openBlocksLRU
+	pdb.store.writeCursor.curFile.file.Close()
+	pdb.store.writeCursor.curFile.file = nil
+	pdb.store.openBlocksLRU = &list.List{}
+
+	blockFileCompleteChan := make(chan bool)
+	runlockedChan := make(chan bool)
+
+	// patch RLocks so that they don't interfere
+	patchRLock := monkey.Patch((*sync.RWMutex).RLock, func(*sync.RWMutex) {})
+	defer patchRLock.Unpatch()
+
+	// patch RUnlocks to know where are we standing in the execution of blockFile()
+	patchRUnlock := monkey.Patch((*sync.RWMutex).RUnlock, func(mutex *sync.RWMutex) {
+		runlockedChan <- true
+	})
+	defer patchRUnlock.Unpatch()
+
+	// Lock obfMutex for writing, so that we can open the file before blockFile() obtains the write mutex
+	pdb.store.obfMutex.Lock()
+
+	// Launch blockFile in separate goroutine so that we can open file in the interim
+	go func() {
+		pdb.store.blockFile(0)
+		blockFileCompleteChan <- true
+	}()
+
+	// Read twice from runlockedChan, for both wc and obfMutex unlocks
+	<-runlockedChan
+	<-runlockedChan
+
+	// Open file
+	_, err = pdb.store.openFileFunc(0)
+	if err != nil {
+		t.Fatalf("TestBlockFileSingleCPU: Error openning file: %s", err)
+	}
+
+	// Unlock write mutex to let blockFile() continue exection
+	pdb.store.obfMutex.Unlock()
+
+	// Wait for blockFile() to complete
+	<-blockFileCompleteChan
 }
