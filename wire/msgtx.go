@@ -204,11 +204,19 @@ type TxIn struct {
 // SerializeSize returns the number of bytes it would take to serialize the
 // the transaction input.
 func (t *TxIn) SerializeSize() int {
+	return t.serializeSize(false)
+}
+
+func (t *TxIn) serializeSize(thinEncoding bool) int {
 	// Outpoint Hash 32 bytes + Outpoint Index 4 bytes + Sequence 8 bytes +
 	// serialized varint size for the length of SignatureScript +
 	// SignatureScript bytes.
-	return 44 + VarIntSerializeSize(uint64(len(t.SignatureScript))) +
-		len(t.SignatureScript)
+	n := 44
+	if !thinEncoding {
+		return n + VarIntSerializeSize(uint64(len(t.SignatureScript))) +
+			len(t.SignatureScript)
+	}
+	return n + VarIntSerializeSize(0)
 }
 
 // NewTxIn returns a new bitcoin transaction input with the provided
@@ -279,6 +287,17 @@ func (msg *MsgTx) TxHash() daghash.Hash {
 	// cause a run-time panic.
 	buf := bytes.NewBuffer(make([]byte, 0, msg.SerializeSize()))
 	_ = msg.Serialize(buf)
+	return daghash.DoubleHashH(buf.Bytes())
+}
+
+// TxID generates the Hash for the transaction without the signature script, gas and payload fields.
+func (msg *MsgTx) TxID() daghash.Hash {
+	// Encode the transaction and calculate double sha256 on the result.
+	// Ignore the error returns since the only way the encode could fail
+	// is being out of memory or due to nil pointers, both of which would
+	// cause a run-time panic.
+	buf := bytes.NewBuffer(make([]byte, 0, msg.serializeSize(true)))
+	_ = msg.serializeThin(buf)
 	return daghash.DoubleHashH(buf.Bytes())
 }
 
@@ -569,6 +588,10 @@ func (msg *MsgTx) Deserialize(r io.Reader) error {
 // See Serialize for encoding transactions to be stored to disk, such as in a
 // database, as opposed to encoding transactions for the wire.
 func (msg *MsgTx) BtcEncode(w io.Writer, pver uint32) error {
+	return msg.encode(w, pver, false)
+}
+
+func (msg *MsgTx) encode(w io.Writer, pver uint32, thinEncoding bool) error {
 	err := binarySerializer.PutUint32(w, littleEndian, uint32(msg.Version))
 	if err != nil {
 		return err
@@ -581,7 +604,7 @@ func (msg *MsgTx) BtcEncode(w io.Writer, pver uint32) error {
 	}
 
 	for _, ti := range msg.TxIn {
-		err = writeTxIn(w, pver, msg.Version, ti)
+		err = writeTxIn(w, pver, msg.Version, ti, thinEncoding)
 		if err != nil {
 			return err
 		}
@@ -604,28 +627,34 @@ func (msg *MsgTx) BtcEncode(w io.Writer, pver uint32) error {
 	if err != nil {
 		return err
 	}
-
 	err = binarySerializer.PutUint64(w, littleEndian, msg.SubNetworkID)
 	if err != nil {
 		return err
 	}
-
 	if msg.SubNetworkID != SubNetworkDAGCoin {
 		if msg.SubNetworkID == SubNetworkRegistry && msg.Gas != 0 {
 			str := fmt.Sprintf("Transactions from subnetwork %v should have 0 gas", msg.SubNetworkID)
 			return messageError("MsgTx.BtcEncode", str)
 		}
 
-		err = binarySerializer.PutUint64(w, littleEndian, msg.Gas)
+		if !thinEncoding {
+			err = binarySerializer.PutUint64(w, littleEndian, msg.Gas)
+		} else {
+			err = binarySerializer.PutUint64(w, littleEndian, 0)
+		}
 		if err != nil {
 			return err
 		}
 
-		err = WriteVarInt(w, pver, uint64(len(msg.Payload)))
+		if !thinEncoding {
+			err = WriteVarInt(w, pver, uint64(len(msg.Payload)))
+			w.Write(msg.Payload)
+		} else {
+			err = WriteVarInt(w, pver, 0)
+		}
 		if err != nil {
 			return err
 		}
-		w.Write(msg.Payload)
 	} else if msg.Payload != nil {
 		str := fmt.Sprintf("Transactions from subnetwork %v should have <nil> payload", msg.SubNetworkID)
 		return messageError("MsgTx.BtcEncode", str)
@@ -654,9 +683,22 @@ func (msg *MsgTx) Serialize(w io.Writer) error {
 	return msg.BtcEncode(w, 0)
 }
 
+func (msg *MsgTx) serializeThin(w io.Writer) error {
+	// At the current time, there is no difference between the wire encoding
+	// at protocol version 0 and the stable long-term storage format.  As
+	// a result, make use of BtcEncode.
+	return msg.encode(w, 0, true)
+}
+
 // SerializeSize returns the number of bytes it would take to serialize the
 // the transaction.
 func (msg *MsgTx) SerializeSize() int {
+	return msg.serializeSize(false)
+}
+
+// SerializeSize returns the number of bytes it would take to serialize the
+// the transaction.
+func (msg *MsgTx) serializeSize(thinEncoding bool) int {
 	// Version 4 bytes + LockTime 8 bytes + Subnetwork ID 8
 	// bytes + Serialized varint size for the number of transaction
 	// inputs and outputs.
@@ -664,12 +706,19 @@ func (msg *MsgTx) SerializeSize() int {
 		VarIntSerializeSize(uint64(len(msg.TxOut)))
 
 	if msg.SubNetworkID != SubNetworkDAGCoin {
-		// Gas 8 bytes + Serialized varint size for the length of the payload
-		n += 8 + VarIntSerializeSize(uint64(len(msg.Payload)))
+		// Gas 8 bytes
+		n += 8
+
+		// Serialized varint size for the length of the payload
+		if !thinEncoding {
+			n += VarIntSerializeSize(uint64(len(msg.Payload)))
+		} else {
+			n += VarIntSerializeSize(0)
+		}
 	}
 
 	for _, txIn := range msg.TxIn {
-		n += txIn.SerializeSize()
+		n += txIn.serializeSize(thinEncoding)
 	}
 
 	for _, txOut := range msg.TxOut {
@@ -825,13 +874,17 @@ func readTxIn(r io.Reader, pver uint32, version int32, ti *TxIn) error {
 
 // writeTxIn encodes ti to the bitcoin protocol encoding for a transaction
 // input (TxIn) to w.
-func writeTxIn(w io.Writer, pver uint32, version int32, ti *TxIn) error {
+func writeTxIn(w io.Writer, pver uint32, version int32, ti *TxIn, thinEncoding bool) error {
 	err := writeOutPoint(w, pver, version, &ti.PreviousOutPoint)
 	if err != nil {
 		return err
 	}
 
-	err = WriteVarBytes(w, pver, ti.SignatureScript)
+	if !thinEncoding {
+		err = WriteVarBytes(w, pver, ti.SignatureScript)
+	} else {
+		err = WriteVarBytes(w, pver, []byte{})
+	}
 	if err != nil {
 		return err
 	}
