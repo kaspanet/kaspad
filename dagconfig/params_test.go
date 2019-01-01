@@ -4,17 +4,39 @@
 
 package dagconfig
 
-import "testing"
+import (
+	"testing"
 
-// TestInvalidHashStr ensures the newShaHashFromStr function panics when used to
-// with an invalid hash string.
-func TestInvalidHashStr(t *testing.T) {
-	defer func() {
-		if r := recover(); r == nil {
-			t.Errorf("Expected panic for invalid hash, got nil")
-		}
-	}()
-	newHashFromStr("banana")
+	"github.com/daglabs/btcd/dagconfig/daghash"
+)
+
+func TestNewHashFromStr(t *testing.T) {
+	tests := []struct {
+		hexStr        string
+		expectedHash  *daghash.Hash
+		expectedPanic bool
+	}{
+		{"banana", nil, true},
+		{"0000000000000000000000000000000000000000000000000000000000000000",
+			&daghash.Hash{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, false},
+	}
+
+	for _, test := range tests {
+		func() {
+			defer func() {
+				err := recover()
+				if (err != nil) != test.expectedPanic {
+					t.Errorf("%s: Expected panic: %t for invalid hash, got %t", test.hexStr, test.expectedPanic, err != nil)
+				}
+			}()
+
+			result := newHashFromStr(test.hexStr)
+
+			if result.Cmp(test.expectedHash) != 0 {
+				t.Errorf("%s: Expected hash: %s, but got %s", test.hexStr, test.expectedHash, result)
+			}
+		}()
+	}
 }
 
 // TestMustRegisterPanic ensures the mustRegister function panics when used to
