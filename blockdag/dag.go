@@ -507,7 +507,10 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block, fastAdd bo
 		}
 	}
 
-	finalityPointCandidate, err := dag.maybeGetFinalityPointCandidate(node)
+	finalityPointCandidate, err := dag.checkFinalityRulesAndGetFinalityPointCandidate(node)
+	if err != nil {
+		return err
+	}
 
 	// Add the node to the virtual and update the UTXO set of the DAG.
 	utxoDiff, acceptedTxsData, err := dag.applyUTXOChanges(node, block, fastAdd)
@@ -515,7 +518,9 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block, fastAdd bo
 		return err
 	}
 
-	dag.maybeAddFinalityPoint(node, finalityPointCandidate)
+	if finalityPointCandidate != nil {
+		dag.lastFinalityPoint = finalityPointCandidate
+	}
 
 	// Write any block status changes to DB before updating the DAG state.
 	err = dag.index.flushToDB()
@@ -575,27 +580,25 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block, fastAdd bo
 	return nil
 }
 
-func (dag *BlockDAG) maybeGetFinalityPointCandidate(node *blockNode) (*blockNode, error) {
+func (dag *BlockDAG) checkFinalityRulesAndGetFinalityPointCandidate(node *blockNode) (*blockNode, error) {
 	var finalityPointCandidate *blockNode
-	shouldFindFinalityPointCandidate := node.blueScore/finalityInterval > dag.lastFinalityPoint.blueScore/finalityInterval
-	currentNode := node
-	for ; currentNode != dag.lastFinalityPoint; currentNode = currentNode.selectedParent {
+	finalityErr := ruleError(ErrFinality, "The last finality point is not in the selected chain of this block")
+
+	if node.blueScore <= dag.lastFinalityPoint.blueScore {
+		return nil, finalityErr
+	}
+
+	shouldFindFinalityPointCandidate := node.hasBiggerFinalityScoreThan(dag.lastFinalityPoint)
+
+	for currentNode := node.selectedParent; currentNode != dag.lastFinalityPoint; currentNode = currentNode.selectedParent {
 		if currentNode.blueScore <= dag.lastFinalityPoint.blueScore {
-			return nil, ruleError(ErrFinality, "The last finality point is not in the selected chain of this block")
+			return nil, finalityErr
 		}
-		if shouldFindFinalityPointCandidate && currentNode.blueScore/finalityInterval > currentNode.selectedParent.blueScore/finalityInterval {
+		if shouldFindFinalityPointCandidate && currentNode.hasBiggerFinalityScoreThan(currentNode.selectedParent) {
 			finalityPointCandidate = currentNode
 		}
 	}
 	return finalityPointCandidate, nil
-}
-
-func (dag *BlockDAG) maybeAddFinalityPoint(node, finalityPointCandidate *blockNode) bool {
-	if finalityPointCandidate != nil && node.blueScore/finalityInterval > node.selectedParent.blueScore/finalityInterval {
-		dag.lastFinalityPoint = finalityPointCandidate
-		return true
-	}
-	return false
 }
 
 // applyUTXOChanges does the following:
@@ -1434,10 +1437,6 @@ func (dag *BlockDAG) LocateHeaders(locator BlockLocator, hashStop *daghash.Hash)
 	headers := dag.locateHeaders(locator, hashStop, wire.MaxBlockHeadersPerMsg)
 	dag.dagLock.RUnlock()
 	return headers
-}
-
-func (dag *BlockDAG) isFinalityPointCandidate(block *blockNode) bool {
-	return block.chainHeight%finalityInterval == 0 && dag.IsInSelectedPathChain(&block.hash)
 }
 
 // IndexManager provides a generic interface that is called when blocks are

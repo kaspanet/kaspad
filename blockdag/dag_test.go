@@ -850,6 +850,23 @@ func testErrorThroughPatching(t *testing.T, expectedErrorMessage string, targetF
 	}
 }
 
+// TestFinality checks that the finality mechanism works as expected.
+// This is how the flow goes:
+// 1) We build a chain of finalityInterval blocks and call its tip altChainTip.
+// 2) We build another chain (let's call it mainChain) of 2 * finalityInterval
+// blocks, which points to genesis, and then we check that the block in that
+// chain with height of finalityInterval is marked as finality point (This is
+// very predictable, because the blue score of each new block in a chain is the
+// parents plus one).
+// 3) We make a new child to block with height (2 * finalityInterval - 1)
+// in mainChain, and we check that connecting it to the DAG
+// doesn't affect the last finality point.
+// 4) We make a block that points to genesis, and check that it
+// gets rejected because its blue score is lower then the last finality
+// point.
+// 5) We make a block that points to altChainTip, and check that it
+// gets rejected because it doesn't have the last finality point in
+// its selected parent chain.
 func TestFinality(t *testing.T) {
 	dag, teardownFunc, err := DAGSetup("haveblock", Config{
 		DAGParams: &dagconfig.SimNetParams,
@@ -858,47 +875,83 @@ func TestFinality(t *testing.T) {
 		t.Fatalf("Failed to setup DAG instance: %v", err)
 	}
 	defer teardownFunc()
-	buildNode := buildNodeGenerator(dagconfig.SimNetParams.K, true)
-	buildNodeToDag := func(parents blockSet) *blockNode {
-		node := buildNode(parents)
-		dag.index.AddNode(node)
-		return node
+	nonce := uint64(0)
+	buildNodeToDag := func(parents blockSet) (*blockNode, error) {
+		// We need change the nonce to keep all block hashes unique
+		nonce++
+		bh := &wire.BlockHeader{
+			Version:      1,
+			ParentHashes: parents.hashes(),
+			Nonce:        nonce,
+		}
+		block := util.NewBlock(wire.NewMsgBlock(bh))
+
+		dag.dagLock.Lock()
+		defer dag.dagLock.Unlock()
+
+		err := dag.maybeAcceptBlock(block, BFFastAdd)
+		if err != nil {
+			return nil, err
+		}
+
+		return dag.index.LookupNode(block.Hash()), nil
 	}
+
 	currentNode := dag.genesis
-	for ; currentNode.blueScore < finalityInterval; currentNode = buildNodeToDag(setFromSlice(currentNode)) {
+
+	for currentNode.blueScore < finalityInterval {
+		currentNode, err = buildNodeToDag(setFromSlice(currentNode))
+		if err != nil {
+			t.Fatalf("TestFinality: buildNodeToDag unexpectedly returned an error: %v", err)
+		}
+	}
+
+	altChainTip := currentNode
+
+	currentNode = dag.genesis
+
+	for currentNode.blueScore < finalityInterval {
+		currentNode, err = buildNodeToDag(setFromSlice(currentNode))
+		if err != nil {
+			t.Fatalf("TestFinality: buildNodeToDag unexpectedly returned an error: %v", err)
+		}
 	}
 
 	expectedFinalityPoint := currentNode
 
-	for ; currentNode.blueScore < 2*finalityInterval; currentNode = buildNodeToDag(setFromSlice(currentNode)) {
+	for currentNode.blueScore < 2*finalityInterval {
+		currentNode, err = buildNodeToDag(setFromSlice(currentNode))
+		if err != nil {
+			t.Fatalf("TestFinality: buildNodeToDag unexpectedly returned an error: %v", err)
+		}
 	}
-	finalityPointCandidate, err := dag.maybeGetFinalityPointCandidate(currentNode)
+
+	if dag.lastFinalityPoint != expectedFinalityPoint {
+		t.Errorf("TestFinality: dag.lastFinalityPoint expected to be %v but got %v", expectedFinalityPoint, dag.lastFinalityPoint)
+	}
+
+	// Parallel child
+	_, err = buildNodeToDag(setFromSlice(currentNode.selectedParent))
 	if err != nil {
-		t.Errorf("TestFinality: maybeGetFinalityPointCandidate unexpectedly returned an error: %v", err)
+		t.Fatalf("TestFinality: buildNodeToDag unexpectedly returned an error: %v", err)
 	}
-	if finalityPointCandidate != expectedFinalityPoint {
-		t.Errorf("TestFinality: maybeGetFinalityPointCandidate expected finalityPointCandidate %v but got %v", expectedFinalityPoint, finalityPointCandidate)
-	}
-
-	added := dag.maybeAddFinalityPoint(currentNode, finalityPointCandidate)
-	if !added {
-		t.Errorf("TestFinality: maybeAddFinalityPoint expected to add a new finality point, but none was added")
-	}
-	if dag.lastFinalityPoint != finalityPointCandidate {
-		t.Errorf("TestFinality: dag.lastFinalityPoint expected to be %v but got %v", finalityPointCandidate, dag.lastFinalityPoint)
+	if dag.lastFinalityPoint != expectedFinalityPoint {
+		t.Errorf("TestFinality: dag.lastFinalityPoint was unexpectly changed")
 	}
 
-	alternativeCandidate := buildNodeToDag(setFromSlice(currentNode.selectedParent))
-	addedAlternative := dag.maybeAddFinalityPoint(alternativeCandidate, nil)
-	if addedAlternative {
-		t.Errorf("TestFinality: maybeAddFinalityPoint unexpectedly added a new finality point")
+	nodeWithLowBlueScore, err := buildNodeToDag(setFromSlice(dag.genesis))
+	if err != nil {
+		t.Fatalf("TestFinality: buildNodeToDag unexpectedly returned an error: %v", err)
 	}
-	invalidNode := buildNode(setFromSlice(dag.genesis))
-	_, err = dag.maybeGetFinalityPointCandidate(invalidNode)
-	if err == nil {
-		t.Errorf("TestFinality: maybeGetFinalityPointCandidate expected an error but got <nil>")
+	if !dag.index.NodeStatus(nodeWithLowBlueScore).KnownInvalid() {
+		t.Errorf("TestFinality: nodeWithLowBlueScore was expected to be invalid, but got valid instead")
 	}
-	if err := err.(RuleError); err.ErrorCode != ErrFinality {
-		t.Errorf("TestFinality: maybeGetFinalityPointCandidate expected an error with code %v but instead got %v", ErrFinality, err.ErrorCode)
+
+	nodeWithFinalityPointInAnticone, err := buildNodeToDag(setFromSlice(altChainTip))
+	if err != nil {
+		t.Fatalf("TestFinality: buildNodeToDag unexpectedly returned an error: %v", err)
+	}
+	if !dag.index.NodeStatus(nodeWithFinalityPointInAnticone).KnownInvalid() {
+		t.Errorf("TestFinality: invalidNode was expected to be invalid, but got valid instead")
 	}
 }

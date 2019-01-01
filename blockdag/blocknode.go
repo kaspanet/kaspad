@@ -113,8 +113,6 @@ type blockNode struct {
 	// only be accessed using the concurrent-safe NodeStatus method on
 	// blockIndex once the node has been added to the global index.
 	status blockStatus
-
-	finalized bool
 }
 
 // initBlockNode initializes a block node from the given header and parent nodes,
@@ -244,6 +242,10 @@ func (node *blockNode) ParentHashes() []daghash.Hash {
 // isGenesis returns if the current block is the genesis block
 func (node *blockNode) isGenesis() bool {
 	return len(node.parents) == 0
+}
+
+func (node *blockNode) hasBiggerFinalityScoreThan(b *blockNode) bool {
+	return node.blueScore/finalityInterval > b.blueScore/finalityInterval
 }
 
 // String returns a string that contains the block hash and height.
