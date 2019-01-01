@@ -57,6 +57,10 @@ var (
 	// pending sub-networks.
 	pendingSubNetworksBucketName = []byte("pendingsubnetworks")
 
+	// registeredSubNetworkTxsBucketName is the name of the db bucket used to house
+	// the transactions that have been used to register sub-networks.
+	registeredSubNetworkTxsBucketName = []byte("registeredsubnetworktxs")
+
 	// subNetworksBucketName is the name of the db bucket used to store the
 	// sub-network registry.
 	subNetworksBucketName = []byte("subnetworks")
@@ -692,16 +696,29 @@ func dbGetPendingSubNetworkTxs(dbTx database.Tx, blockHash daghash.Hash) ([]*wir
 	return txs, nil
 }
 
-func dbIsRegisteredSubNetworkTx(dbTx database.Tx, txHash daghash.Hash) (bool, error) {
-	return false, nil
+func dbPutRegisteredSubNetworkTx(dbTx database.Tx, txHash daghash.Hash, subNetworkID uint64) error {
+	bucket := dbTx.Metadata().Bucket(registeredSubNetworkTxsBucketName)
+
+	var subNetworkIDBytes []byte
+	byteOrder.PutUint64(subNetworkIDBytes, subNetworkID)
+	err := bucket.Put(txHash[:], subNetworkIDBytes)
+	if err != nil {
+		return fmt.Errorf("failed to put registered sub-networkTx '%s': %s", txHash, err)
+	}
+
+	return nil
+}
+
+func dbIsRegisteredSubNetworkTx(dbTx database.Tx, txHash daghash.Hash) bool {
+	bucket := dbTx.Metadata().Bucket(registeredSubNetworkTxsBucketName)
+	subNetworkIDBytes := bucket.Get(txHash[:])
+	subNetworkID := byteOrder.Uint64(subNetworkIDBytes)
+
+	return subNetworkID != 0
 }
 
 func dbRegisterSubNetwork(dbTx database.Tx, tx *wire.MsgTx) (uint64, error) {
 	return 0, nil
-}
-
-func dbPutRegisteredSubNetworkTx(dbTx database.Tx, txHash daghash.Hash, subNetworkID uint64) error {
-	return nil
 }
 
 func dbRemovePendingSubNetworkTxs(dbTx database.Tx, blockHash daghash.Hash) error {

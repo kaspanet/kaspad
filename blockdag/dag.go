@@ -1647,13 +1647,7 @@ func registerPendingSubNetworksInBlock(dbTx database.Tx, blockHash daghash.Hash)
 		return fmt.Errorf("failed to retrieve pending sub-network txs in block '%s': %s",  blockHash, err)
 	}
 	for _, tx := range pendingSubNetworkTxs {
-		isRegisteredSubNetworkTx, err := dbIsRegisteredSubNetworkTx(dbTx, tx.TxHash())
-		if err != nil {
-			return fmt.Errorf("failed to find out whether tx '%s' in block '%s'" +
-				"is already registered: %s", tx.TxHash(), blockHash, err)
-		}
-
-		if !isRegisteredSubNetworkTx {
+		if !dbIsRegisteredSubNetworkTx(dbTx, tx.TxHash()) {
 			subNetworkID, err := dbRegisterSubNetwork(dbTx, tx)
 			if err != nil {
 				return fmt.Errorf("failed registering sub-network" +
