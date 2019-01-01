@@ -54,10 +54,10 @@ func TestBlock(t *testing.T) {
 
 	// Hashes for the transactions in Block100000.
 	wantTxHashes := []string{
-		"8913f1fa776ba67b1bffc156788caa41d914f9d2c90a864421259e5977749669",
-		"0b999b0aed782261104e6417879f2e9b74306f80a92a6bff489d513b68c7be8b",
-		"62bbb36f70ee6d216bf5709eaa7297b1e3b1c3ca81f61e3dcc1079b9a5386e61",
-		"4c6c95b556627e3ecfdd31f3bed5fd6fffc6d4e887b268d0b0bc82c977305b6c",
+		"4f2a5f1e00034ed3222e0e7fae8485ad3154d40b21b1c1b64ec74ce389a1bb1d",
+		"cdd164e1b3c910e1b54349d442d26541830d0551a15c8b2e202aa7f96ccf3b32",
+		"7fb0543009c39a12a0e5b3c23f157c9152f9e956412a825d296d1e3826dcf81c",
+		"ba611a9e39e784e51ea9efe66453de7a0355deae454f63c526a1938a58f683fc",
 	}
 
 	// Create a new block to nuke all cached data.
@@ -146,10 +146,10 @@ func TestBlock(t *testing.T) {
 
 	// Transaction offsets and length for the transaction in Block100000.
 	wantTxLocs := []wire.TxLoc{
-		{TxStart: 122, TxLen: 143},
-		{TxStart: 265, TxLen: 267},
-		{TxStart: 532, TxLen: 265},
-		{TxStart: 797, TxLen: 233},
+		{TxStart: 122, TxLen: 151},
+		{TxStart: 273, TxLen: 275},
+		{TxStart: 548, TxLen: 273},
+		{TxStart: 821, TxLen: 241},
 	}
 
 	// Ensure the transaction location information is accurate.
@@ -361,7 +361,8 @@ var Block100000 = wire.MsgBlock{
 					},
 				},
 			},
-			LockTime: 0,
+			LockTime:     0,
+			SubNetworkID: wire.SubNetworkDAGCoin,
 		},
 		{
 			Version: 1,
@@ -430,7 +431,8 @@ var Block100000 = wire.MsgBlock{
 					},
 				},
 			},
-			LockTime: 0,
+			LockTime:     0,
+			SubNetworkID: wire.SubNetworkDAGCoin,
 		},
 		{
 			Version: 1,
@@ -498,7 +500,8 @@ var Block100000 = wire.MsgBlock{
 					},
 				},
 			},
-			LockTime: 0,
+			LockTime:     0,
+			SubNetworkID: wire.SubNetworkDAGCoin,
 		},
 		{
 			Version: 1,
@@ -554,7 +557,8 @@ var Block100000 = wire.MsgBlock{
 					},
 				},
 			},
-			LockTime: 0,
+			LockTime:     0,
+			SubNetworkID: wire.SubNetworkDAGCoin,
 		},
 	},
 }

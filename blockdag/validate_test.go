@@ -625,14 +625,14 @@ var Block100000 = wire.MsgBlock{
 			},
 		},
 		MerkleRoot: daghash.Hash([32]byte{ // Make go vet happy.
-			0xc0, 0x92, 0x53, 0x8f, 0x6f, 0xf7, 0xf5, 0x24,
-			0xd5, 0x33, 0xd4, 0x8b, 0xf3, 0xc0, 0xf8, 0xf9,
-			0x6f, 0xff, 0xfb, 0xb7, 0xdc, 0x39, 0x9d, 0x76,
-			0x8d, 0xb0, 0xe1, 0x9c, 0x2e, 0x6d, 0x22, 0xd9,
-		}), // f3e94742aca4b5ef85488dc37c06c3282295ffec960994b2c0d5ac2a25a95766
-		Timestamp: time.Unix(0x5bbc7588, 0), // 2018-10-09 07:49:35 +0000 UTC
-		Bits:      0x207fffff,               // 503382015
-		Nonce:     0xdffffff9,
+			0x0b, 0x79, 0xf5, 0x29, 0x6d, 0x1c, 0xaa, 0x90,
+			0x2f, 0x01, 0xd4, 0x83, 0x9b, 0x2a, 0x04, 0x5e,
+			0xa0, 0x69, 0x2d, 0x16, 0xb5, 0xd7, 0xe4, 0xf3,
+			0xcd, 0xc7, 0xc9, 0xaf, 0xfb, 0xd2, 0x1b, 0x85,
+		}),
+		Timestamp: time.Unix(0x5c22330f, 0),
+		Bits:      0x207fffff,
+		Nonce:     0xdffffffffffffffc,
 	},
 	Transactions: []*wire.MsgTx{
 		{
@@ -736,7 +736,8 @@ var Block100000 = wire.MsgBlock{
 					},
 				},
 			},
-			LockTime: 0,
+			LockTime:     0,
+			SubNetworkID: wire.SubNetworkDAGCoin,
 		},
 		{
 			Version: 1,
@@ -804,7 +805,8 @@ var Block100000 = wire.MsgBlock{
 					},
 				},
 			},
-			LockTime: 0,
+			LockTime:     0,
+			SubNetworkID: wire.SubNetworkDAGCoin,
 		},
 		{
 			Version: 1,
@@ -860,7 +862,8 @@ var Block100000 = wire.MsgBlock{
 					},
 				},
 			},
-			LockTime: 0,
+			LockTime:     0,
+			SubNetworkID: wire.SubNetworkDAGCoin,
 		},
 	},
 }

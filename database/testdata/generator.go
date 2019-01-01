@@ -48,7 +48,7 @@ func generateBlock(parent *wire.MsgBlock) *wire.MsgBlock {
 			ParentHashes: []daghash.Hash{parent.BlockHash()},
 			MerkleRoot:   genesisMerkleRoot,
 			Timestamp:    time.Unix(0x5b28c4c8, 0), // 2018-06-19 08:54:32 +0000 UTC
-			Bits:         0x1e00ffff,               // 503382015 [000000ffff000000000000000000000000000000000000000000000000000000]
+			Bits:         0x2e00ffff,               // 503382015 [000000ffff000000000000000000000000000000000000000000000000000000]
 			Nonce:        0xc0192550,               // 2148484547
 		},
 		Transactions: []*wire.MsgTx{&genesisCoinbaseTx},
@@ -142,7 +142,8 @@ var genesisCoinbaseTx = wire.MsgTx{
 			},
 		},
 	},
-	LockTime: 0,
+	LockTime:     0,
+	SubNetworkID: wire.SubNetworkDAGCoin,
 }
 
 var genesisMerkleRoot = daghash.Hash([daghash.HashSize]byte{ // Make go vet happy.
