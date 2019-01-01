@@ -153,10 +153,29 @@ func TestCheckBlockSanity(t *testing.T) {
 	powLimit := dagconfig.MainNetParams.PowLimit
 	block := util.NewBlock(&Block100000)
 	timeSource := NewMedianTime()
+	if len(block.Transactions()) < 3 {
+		t.Fatalf("Too few transactions in block, expect at least 3, got %v", len(block.Transactions()))
+	}
 	err := CheckBlockSanity(block, powLimit, timeSource)
 	if err != nil {
 		t.Errorf("CheckBlockSanity: %v", err)
 	}
+	// Now break transactions sorting order
+	transactions := block.Transactions()
+	savedSubNetworkID := transactions[1].MsgTx().SubNetworkID
+	transactions[1].MsgTx().SubNetworkID = transactions[2].MsgTx().SubNetworkID + 1
+	err = CheckBlockSanity(block, powLimit, timeSource)
+	if err == nil {
+		t.Errorf("CheckBlockSanity: transactions disorder is not detected")
+	}
+	ruleErr, ok := err.(RuleError)
+	if !ok {
+		t.Errorf("CheckBlockSanity: wrong error returned, expect RuleError, got %T", err)
+	} else if ruleErr.ErrorCode != ErrTransactionsNotSorted {
+		t.Errorf("CheckBlockSanity: wrong error returned, expect ErrTransactionsNotSorted, got %v", ruleErr.ErrorCode)
+	}
+	// Restore transactions sorting order
+	transactions[1].MsgTx().SubNetworkID = savedSubNetworkID
 
 	// Ensure a block that has a timestamp with a precision higher than one
 	// second fails.

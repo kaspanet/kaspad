@@ -57,6 +57,8 @@ func Example_basicUsage() {
 	// this, nor put it in the temp directory, but it's done here to ensure
 	// the example cleans up after itself.
 	dbPath := filepath.Join(os.TempDir(), "exampleusage")
+	// ensure that DB does not exist before test starts
+	os.RemoveAll(dbPath)
 	db, err := database.Create("ffldb", dbPath, wire.MainNet)
 	if err != nil {
 		fmt.Println(err)
