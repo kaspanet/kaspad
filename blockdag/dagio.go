@@ -624,6 +624,10 @@ func dbPutUTXODiff(dbTx database.Tx, diff *UTXODiff) error {
 // -----------------------------------------------------------------------------
 
 func dbPutPendingSubNetworkTxs(dbTx database.Tx, blockHash *daghash.Hash, subNetworkRegistryTxs []*wire.MsgTx) error {
+	if len(subNetworkRegistryTxs) == 0 {
+		return nil
+	}
+
 	serializedTxsLength := 0
 	for _, tx := range subNetworkRegistryTxs {
 		serializedTxsLength += 8 // for the serialized size
@@ -647,6 +651,26 @@ func dbPutPendingSubNetworkTxs(dbTx database.Tx, blockHash *daghash.Hash, subNet
 		return fmt.Errorf("failed to write pending sub- network txs: %s", err)
 	}
 
+	return nil
+}
+
+func dbGetPendingSubNetworkTxs(dbTx database.Tx, blockHash daghash.Hash) ([]*wire.MsgTx, error) {
+	return nil, nil
+}
+
+func dbIsRegisteredSubNetworkTx(dbTx database.Tx, txHash daghash.Hash) (bool, error) {
+	return false, nil
+}
+
+func dbRegisterSubNetwork(dbTx database.Tx, tx *wire.MsgTx) (uint64, error) {
+	return 0, nil
+}
+
+func dbPutRegisteredSubNetworkTx(dbTx database.Tx, txHash daghash.Hash, subNetworkID uint64) error {
+	return nil
+}
+
+func dbRemovePendingSubNetworkTxs(dbTx database.Tx, blockHash daghash.Hash) error {
 	return nil
 }
 

@@ -503,6 +503,8 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block, fastAdd bo
 		}
 	}
 
+	//currentFinalityPoint := dag.finalityPoint
+
 	// Add the node to the virtual and update the UTXO set of the DAG.
 	utxoDiff, acceptedTxsData, err := dag.applyUTXOChanges(node, block, fastAdd)
 	if err != nil {
@@ -550,6 +552,15 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block, fastAdd bo
 		if err != nil {
 			return err
 		}
+
+		// Register all pending sub-networks between the previous finality point and
+		// the new one.
+		// if isFinality {
+		//	err = registerPendingSubNetworks(dbTx, currentFinalityPoint, dag.finalityPoint)
+		//	if err != nil {
+		//		return err
+		//	}
+		// }
 
 		// Allow the index manager to call each of the currently active
 		// optional indexes with the block being connected so they can
@@ -1598,6 +1609,69 @@ func validateSubNetworkRegistryTransaction(tx *wire.MsgTx) error {
 	if len(tx.TxOut) > 0 {
 		return fmt.Errorf("validation failed: subnetwork registry"+
 			"tx '%s' has more than zero txOuts", tx.TxHash())
+	}
+
+	return nil
+}
+
+// registerPendingSubNetworks attempts to register all the pending sub-networks that
+// had previously been defined between the previous finality point and the new one.
+func registerPendingSubNetworks(dbTx database.Tx, previousFinalityPoint *blockNode, newFinalityPoint *blockNode) error {
+	var stack []*blockNode
+	for currentNode := newFinalityPoint; currentNode != previousFinalityPoint; currentNode = currentNode.selectedParent {
+		stack = append(stack, currentNode)
+	}
+
+	for i := len(stack) - 1; i >= 0; i-- {
+		currentNode := stack[i]
+		for _, blue := range currentNode.blues {
+			err := registerPendingSubNetworksInBlock(dbTx, blue.hash)
+			if err != nil {
+				return fmt.Errorf("failed to register pending sub-networks: %s", err)
+			}
+		}
+		err := registerPendingSubNetworksInBlock(dbTx, currentNode.hash)
+		if err != nil {
+			return fmt.Errorf("failed to register pending sub-networks: : %s", err)
+		}
+	}
+
+	return nil
+}
+
+// registerPendingSubNetworksInBlock attempts to register all the sub-networks
+// that had been defined in a given block.
+func registerPendingSubNetworksInBlock(dbTx database.Tx, blockHash daghash.Hash) error {
+	pendingSubNetworkTxs, err := dbGetPendingSubNetworkTxs(dbTx, blockHash)
+	if err != nil {
+		return fmt.Errorf("failed to retrieve pending sub-network txs in block '%s': %s",  blockHash, err)
+	}
+	for _, tx := range pendingSubNetworkTxs {
+		isRegisteredSubNetworkTx, err := dbIsRegisteredSubNetworkTx(dbTx, tx.TxHash())
+		if err != nil {
+			return fmt.Errorf("failed to find out whether tx '%s' in block '%s'" +
+				"is already registered: %s", tx.TxHash(), blockHash, err)
+		}
+
+		if !isRegisteredSubNetworkTx {
+			subNetworkID, err := dbRegisterSubNetwork(dbTx, tx)
+			if err != nil {
+				return fmt.Errorf("failed registering sub-network" +
+					"for tx '%s' in block '%s': %s", tx.TxHash(), blockHash, err)
+			}
+
+			err = dbPutRegisteredSubNetworkTx(dbTx, tx.TxHash(), subNetworkID)
+			if err != nil {
+				return fmt.Errorf("failed to put registered sub-network tx '%s'" +
+					" in block '%s': %s", tx.TxHash(), blockHash, err)
+			}
+		}
+	}
+
+	err = dbRemovePendingSubNetworkTxs(dbTx, blockHash)
+	if err != nil {
+		return fmt.Errorf("failed to remove block '%s'" +
+			"from pending sub-networks: %s", blockHash, err)
 	}
 
 	return nil
