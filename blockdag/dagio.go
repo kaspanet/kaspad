@@ -696,6 +696,17 @@ func dbGetPendingSubNetworkTxs(dbTx database.Tx, blockHash daghash.Hash) ([]*wir
 	return txs, nil
 }
 
+func dbRemovePendingSubNetworkTxs(dbTx database.Tx, blockHash daghash.Hash) error {
+	bucket := dbTx.Metadata().Bucket(pendingSubNetworksBucketName)
+
+	err := bucket.Delete(blockHash[:])
+	if err != nil {
+		return fmt.Errorf("failed to remove pending sub-network txs in block '%s': %s", blockHash, err)
+	}
+
+	return nil
+}
+
 func dbPutRegisteredSubNetworkTx(dbTx database.Tx, txHash daghash.Hash, subNetworkID uint64) error {
 	bucket := dbTx.Metadata().Bucket(registeredSubNetworkTxsBucketName)
 
@@ -717,11 +728,25 @@ func dbIsRegisteredSubNetworkTx(dbTx database.Tx, txHash daghash.Hash) bool {
 	return subNetworkID != 0
 }
 
-func dbRegisterSubNetwork(dbTx database.Tx, tx *wire.MsgTx) (uint64, error) {
-	return 0, nil
-}
+func dbRegisterSubNetwork(dbTx database.Tx, subNetworkID uint64, tx *wire.MsgTx) error {
+	// Serialize the sub-network ID
+	var subNetworkIDBytes []byte
+	byteOrder.PutUint64(subNetworkIDBytes, subNetworkID)
 
-func dbRemovePendingSubNetworkTxs(dbTx database.Tx, blockHash daghash.Hash) error {
+	// Serialize the transaction
+	serializedTx := bytes.NewBuffer(make([]byte, 0, tx.SerializeSize()))
+	err := tx.Serialize(serializedTx)
+	if err != nil {
+		return fmt.Errorf("failed to serialize tx '%s': %s", tx.TxHash(), err)
+	}
+
+	// Store the transaction
+	bucket := dbTx.Metadata().Bucket(subNetworksBucketName)
+	err = bucket.Put(subNetworkIDBytes, serializedTx.Bytes())
+	if err != nil {
+		return fmt.Errorf("failed to write tx '%s': %s", tx.TxHash(), err)
+	}
+
 	return nil
 }
 

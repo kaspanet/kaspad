@@ -94,6 +94,10 @@ type BlockDAG struct {
 	// virtual tracks the current tips.
 	virtual *virtualBlock
 
+	// lastSubNetworkID holds the last register sub-network ID on the network.
+	// Note that it is NOT the total amount of active (or registered) sub-networks.
+	lastSubNetworkID uint64
+
 	// These fields are related to handling of orphan blocks.  They are
 	// protected by a combination of the chain lock and the orphan lock.
 	orphanLock   sync.RWMutex
@@ -1616,7 +1620,7 @@ func validateSubNetworkRegistryTransaction(tx *wire.MsgTx) error {
 
 // registerPendingSubNetworks attempts to register all the pending sub-networks that
 // had previously been defined between the previous finality point and the new one.
-func registerPendingSubNetworks(dbTx database.Tx, previousFinalityPoint *blockNode, newFinalityPoint *blockNode) error {
+func (dag *BlockDAG) registerPendingSubNetworks(dbTx database.Tx, previousFinalityPoint *blockNode, newFinalityPoint *blockNode) error {
 	var stack []*blockNode
 	for currentNode := newFinalityPoint; currentNode != previousFinalityPoint; currentNode = currentNode.selectedParent {
 		stack = append(stack, currentNode)
@@ -1625,12 +1629,12 @@ func registerPendingSubNetworks(dbTx database.Tx, previousFinalityPoint *blockNo
 	for i := len(stack) - 1; i >= 0; i-- {
 		currentNode := stack[i]
 		for _, blue := range currentNode.blues {
-			err := registerPendingSubNetworksInBlock(dbTx, blue.hash)
+			err := dag.registerPendingSubNetworksInBlock(dbTx, blue.hash)
 			if err != nil {
 				return fmt.Errorf("failed to register pending sub-networks: %s", err)
 			}
 		}
-		err := registerPendingSubNetworksInBlock(dbTx, currentNode.hash)
+		err := dag.registerPendingSubNetworksInBlock(dbTx, currentNode.hash)
 		if err != nil {
 			return fmt.Errorf("failed to register pending sub-networks: : %s", err)
 		}
@@ -1641,30 +1645,34 @@ func registerPendingSubNetworks(dbTx database.Tx, previousFinalityPoint *blockNo
 
 // registerPendingSubNetworksInBlock attempts to register all the sub-networks
 // that had been defined in a given block.
-func registerPendingSubNetworksInBlock(dbTx database.Tx, blockHash daghash.Hash) error {
+func (dag *BlockDAG) registerPendingSubNetworksInBlock(dbTx database.Tx, blockHash daghash.Hash) error {
 	pendingSubNetworkTxs, err := dbGetPendingSubNetworkTxs(dbTx, blockHash)
 	if err != nil {
-		return fmt.Errorf("failed to retrieve pending sub-network txs in block '%s': %s",  blockHash, err)
+		return fmt.Errorf("failed to retrieve pending sub-network txs in block '%s': %s", blockHash, err)
 	}
 	for _, tx := range pendingSubNetworkTxs {
 		if !dbIsRegisteredSubNetworkTx(dbTx, tx.TxHash()) {
-			subNetworkID, err := dbRegisterSubNetwork(dbTx, tx)
+			nextSubNetworkID := dag.lastSubNetworkID + 1
+			err := dbRegisterSubNetwork(dbTx, nextSubNetworkID, tx)
 			if err != nil {
-				return fmt.Errorf("failed registering sub-network" +
+				return fmt.Errorf("failed registering sub-network"+
 					"for tx '%s' in block '%s': %s", tx.TxHash(), blockHash, err)
 			}
 
-			err = dbPutRegisteredSubNetworkTx(dbTx, tx.TxHash(), subNetworkID)
+			err = dbPutRegisteredSubNetworkTx(dbTx, tx.TxHash(), nextSubNetworkID)
 			if err != nil {
-				return fmt.Errorf("failed to put registered sub-network tx '%s'" +
+				return fmt.Errorf("failed to put registered sub-network tx '%s'"+
 					" in block '%s': %s", tx.TxHash(), blockHash, err)
 			}
+
+			// TODO: (Stas) lastSubNetworkID should be persisted in the state object (Ori had already implemented it)
+			dag.lastSubNetworkID = nextSubNetworkID
 		}
 	}
 
 	err = dbRemovePendingSubNetworkTxs(dbTx, blockHash)
 	if err != nil {
-		return fmt.Errorf("failed to remove block '%s'" +
+		return fmt.Errorf("failed to remove block '%s'"+
 			"from pending sub-networks: %s", blockHash, err)
 	}
 
