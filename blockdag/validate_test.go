@@ -151,7 +151,7 @@ func TestCheckConnectBlockTemplate(t *testing.T) {
 // as expected.
 func TestCheckBlockSanity(t *testing.T) {
 	powLimit := dagconfig.MainNetParams.PowLimit
-	block := util.NewBlock(&Block100000Mutable)
+	block := util.NewBlock(&Block100000)
 	timeSource := NewMedianTime()
 	if len(block.Transactions()) < 3 {
 		t.Fatalf("Too few transactions in block, expect at least 3, got %v", len(block.Transactions()))
@@ -160,11 +160,9 @@ func TestCheckBlockSanity(t *testing.T) {
 	if err != nil {
 		t.Errorf("CheckBlockSanity: %v", err)
 	}
-	// Now break transactions sorting order
-	transactions := block.Transactions()
-	savedSubNetworkID := transactions[1].MsgTx().SubNetworkID
-	transactions[1].MsgTx().SubNetworkID = transactions[2].MsgTx().SubNetworkID + 1
-	err = CheckBlockSanity(block, powLimit, timeSource)
+	// Test with block with wrong transactions sorting order
+	invalidBlock := util.NewBlock(&BlockWithWrongTxOrder)
+	err = CheckBlockSanity(invalidBlock, powLimit, timeSource)
 	if err == nil {
 		t.Errorf("CheckBlockSanity: transactions disorder is not detected")
 	}
@@ -174,8 +172,6 @@ func TestCheckBlockSanity(t *testing.T) {
 	} else if ruleErr.ErrorCode != ErrTransactionsNotSorted {
 		t.Errorf("CheckBlockSanity: wrong error returned, expect ErrTransactionsNotSorted, got %v", ruleErr.ErrorCode)
 	}
-	// Restore transactions sorting order
-	transactions[1].MsgTx().SubNetworkID = savedSubNetworkID
 
 	// Ensure a block that has a timestamp with a precision higher than one
 	// second fails.
@@ -887,9 +883,8 @@ var Block100000 = wire.MsgBlock{
 	},
 }
 
-// Block100000Mutable defines block 100,000 of the block chain.  It is used to
-// test Block operations and may be modified by test.
-var Block100000Mutable = wire.MsgBlock{
+// BlockWithWrongTxOrder defines invalid block 100,000 of the block chain.
+var BlockWithWrongTxOrder = wire.MsgBlock{
 	Header: wire.BlockHeader{
 		Version: 1,
 		ParentHashes: []daghash.Hash{
@@ -1019,7 +1014,7 @@ var Block100000Mutable = wire.MsgBlock{
 				},
 			},
 			LockTime:     0,
-			SubNetworkID: wire.SubNetworkDAGCoin,
+			SubNetworkID: wire.SubNetworkDAGCoin + 10,
 		},
 		{
 			Version: 1,
