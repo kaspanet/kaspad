@@ -1559,3 +1559,8 @@ func New(config *Config) (*BlockDAG, error) {
 
 	return &dag, nil
 }
+
+// GetGasLimit retuns GAS limit for subnetwork
+func GetGasLimit(subNetworkID uint64) (uint64, error) {
+	return 0, errors.New("dag.GetGasLimit is not implemented")
+}
