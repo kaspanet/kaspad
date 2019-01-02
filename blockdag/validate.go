@@ -488,12 +488,16 @@ func checkBlockSanity(block *util.Block, powLimit *big.Int, timeSource MedianTim
 			"block is not a coinbase")
 	}
 
-	// A block must not have more than one coinbase.
+	// A block must not have more than one coinbase. And transactions must be
+	// ordered by subnetwork
 	for i, tx := range transactions[1:] {
 		if IsCoinBase(tx) {
 			str := fmt.Sprintf("block contains second coinbase at "+
 				"index %d", i+1)
 			return ruleError(ErrMultipleCoinbases, str)
+		}
+		if tx.MsgTx().SubNetworkID < transactions[i].MsgTx().SubNetworkID {
+			return ruleError(ErrTransactionsNotSorted, "transactions must be sorted by subnetwork")
 		}
 	}
 
