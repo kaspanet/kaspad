@@ -634,40 +634,21 @@ func dbPutUTXODiff(dbTx database.Tx, diff *UTXODiff) error {
 // -----------------------------------------------------------------------------
 
 // dbPutPendingSubNetworkTxs stores mappings from a block (via its hash) to an
-// array of sub-network transactions. The array of sub-network transactions is
-// serialized as follows:
-// | amount of transactions (8 bytes) | serialized transactions 1 .. n |
+// array of sub-network transactions.
 func dbPutPendingSubNetworkTxs(dbTx database.Tx, blockHash *daghash.Hash, subNetworkRegistryTxs []*wire.MsgTx) error {
 	// Empty blocks are not written
 	if len(subNetworkRegistryTxs) == 0 {
 		return nil
 	}
 
-	// Calculate the length in bytes of the serialized transactions
-	serializedTxsLength := uint64(0)
-	for _, tx := range subNetworkRegistryTxs {
-		serializedTxsLength += 8 // for the number of Txs
-		serializedTxsLength += uint64(tx.SerializeSize())
-	}
-	serializedTxs := bytes.NewBuffer(make([]byte, 0, serializedTxsLength))
-
-	// Write the amount of transactions
-	err := binary.Write(serializedTxs, byteOrder, uint64(len(subNetworkRegistryTxs)))
+	serializedTxs, err := serializeSubNetworkRegistryTxs(subNetworkRegistryTxs)
 	if err != nil {
 		return fmt.Errorf("failed to serialize pending sub-network txs in block '%s': %s", blockHash, err)
 	}
 
-	// Write each transaction in the order it appears in
-	for _, tx := range subNetworkRegistryTxs {
-		err = tx.Serialize(serializedTxs)
-		if err != nil {
-			return fmt.Errorf("failed to serialize tx '%s' in block '%s': %s", tx.TxHash(), blockHash, err)
-		}
-	}
-
 	// Store the serialized transactions
 	bucket := dbTx.Metadata().Bucket(pendingSubNetworksBucketName)
-	err = bucket.Put(blockHash[:], serializedTxs.Bytes())
+	err = bucket.Put(blockHash[:], serializedTxs)
 	if err != nil {
 		return fmt.Errorf("failed to write pending sub-network txs in block '%s': %s", blockHash, err)
 	}
@@ -680,9 +661,47 @@ func dbPutPendingSubNetworkTxs(dbTx database.Tx, blockHash *daghash.Hash, subNet
 // dbPutPendingSubNetworkTxs.
 // Returns an empty slice if the hash was not previously stored.
 func dbGetPendingSubNetworkTxs(dbTx database.Tx, blockHash daghash.Hash) ([]*wire.MsgTx, error) {
-	// Retrieve the serialized transactions from the bucket
 	bucket := dbTx.Metadata().Bucket(pendingSubNetworksBucketName)
 	serializedTxsBytes := bucket.Get(blockHash[:])
+	txs, err := deserializeSubNetworkRegistryTxs(serializedTxsBytes)
+	if err != nil {
+		return nil, fmt.Errorf("failed to deserialize pending sub-network txs for block '%s': %s", blockHash, err)
+	}
+
+	return txs, nil
+}
+
+// serializeSubNetworkRegistryTxs serializes a slice of MsgTxs into the following
+// binary format:
+// | amount of transactions (8 bytes) | serialized transactions 1 .. amount |
+func serializeSubNetworkRegistryTxs(subNetworkRegistryTxs []*wire.MsgTx) ([]byte, error) {
+	// Calculate the length in bytes of the serialized transactions
+	serializedTxsLength := uint64(8) // The first 8 bytes are reserved for the amount of transactions
+	for _, tx := range subNetworkRegistryTxs {
+		serializedTxsLength += uint64(tx.SerializeSize())
+	}
+	serializedTxs := bytes.NewBuffer(make([]byte, 0, serializedTxsLength))
+
+	// Write the amount of transactions
+	err := binary.Write(serializedTxs, byteOrder, uint64(len(subNetworkRegistryTxs)))
+	if err != nil {
+		return nil, fmt.Errorf("failed to serialize pending sub-network txs: %s", err)
+	}
+
+	// Write each transaction in the order it appears in
+	for _, tx := range subNetworkRegistryTxs {
+		err = tx.Serialize(serializedTxs)
+		if err != nil {
+			return nil, fmt.Errorf("failed to serialize tx '%s': %s", tx.TxHash(), err)
+		}
+	}
+
+	return serializedTxs.Bytes(), nil
+}
+
+// deserializeSubNetworkRegistryTxs deserializes a byte slice into a slice of MsgTxs.
+// See serializeSubNetworkRegistryTxs for the binary format.
+func deserializeSubNetworkRegistryTxs(serializedTxsBytes []byte) ([]*wire.MsgTx, error) {
 	if len(serializedTxsBytes) == 0 {
 		return []*wire.MsgTx{}, nil
 	}
@@ -690,9 +709,9 @@ func dbGetPendingSubNetworkTxs(dbTx database.Tx, blockHash daghash.Hash) ([]*wir
 
 	// Read the amount of transactions
 	var subNetworkRegistryTxsAmount uint64
-	err := binary.Read(serializedTxs, byteOrder, subNetworkRegistryTxsAmount)
+	err := binary.Read(serializedTxs, byteOrder, &subNetworkRegistryTxsAmount)
 	if err != nil {
-		return nil, fmt.Errorf("failed to deserialize pending sub-network txs in block '%s': %s", blockHash, err)
+		return nil, fmt.Errorf("failed to deserialize pending sub-network txs: %s", err)
 	}
 
 	// Read each transaction and store it in txs
@@ -701,7 +720,7 @@ func dbGetPendingSubNetworkTxs(dbTx database.Tx, blockHash daghash.Hash) ([]*wir
 		var tx wire.MsgTx
 		err = tx.Deserialize(serializedTxs)
 		if err != nil {
-			return nil, fmt.Errorf("failed to deserialize pending sub-network txs in block '%s': %s", blockHash, err)
+			return nil, fmt.Errorf("failed to deserialize pending sub-network txs: %s", err)
 		}
 
 		txs = append(txs, &tx)
