@@ -94,8 +94,8 @@ type BlockDAG struct {
 	// virtual tracks the current tips.
 	virtual *virtualBlock
 
-	// lastSubNetworkID holds the last register sub-network ID on the network.
-	// Note that it is NOT the total amount of active (or registered) sub-networks.
+	// lastSubNetworkID holds the last registered sub-network ID in the DAG.
+	// Note that it is NOT the total amount of registered (or active) sub-networks.
 	lastSubNetworkID uint64
 
 	// These fields are related to handling of orphan blocks.  They are

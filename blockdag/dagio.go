@@ -616,17 +616,27 @@ func dbPutUTXODiff(dbTx database.Tx, diff *UTXODiff) error {
 }
 
 // -----------------------------------------------------------------------------
-// The sub-network registry bucket and the pending sub-networks bucket consist,
-// respectively, of finalized and non-finalized DAGCoin sub-network records.
+// The sub-network registry consists of three buckets:
+// a. The pending sub-network bucket
+// b. The registered transaction bucket
+// c. The sub-network bucket
 //
-// The sub-network registry is implemented using a db bucket where the key is
-// the sub-network ID.
+// All newly-discovered sub-network registry transactions are stored in the
+// pending sub-network bucket. These transactions are withheld until the
+// blocks that contain them become final.
 //
-// The pending sub-networks are stored in a separate bucket where the keys are
-// blockIDs, while the values are a list of sub-networks that were activated in
-// this block.
+// Once the block of a sub-network registry transaction becomes final, all the
+// transactions within that block are retrieved and checked for validity.
+// Valid transactions are then:
+// 1. Assigned a sub-network ID
+// 2. Added to the registered transaction bucket
+// 3. Added to the sub-network bucket
 // -----------------------------------------------------------------------------
 
+// dbPutPendingSubNetworkTxs stores mappings from a block (via its hash) to an
+// array of sub-network transactions. The array of sub-network transactions is
+// serialized as follows:
+// | amount of transactions (8 bytes) | serialized transactions 1 .. n |
 func dbPutPendingSubNetworkTxs(dbTx database.Tx, blockHash *daghash.Hash, subNetworkRegistryTxs []*wire.MsgTx) error {
 	// Empty blocks are not written
 	if len(subNetworkRegistryTxs) == 0 {
@@ -665,6 +675,10 @@ func dbPutPendingSubNetworkTxs(dbTx database.Tx, blockHash *daghash.Hash, subNet
 	return nil
 }
 
+// dbGetPendingSubNetworkTxs retrieves an array of sub-network transactions,
+// associated with a block's hash, that was previously stored with
+// dbPutPendingSubNetworkTxs.
+// Returns an empty slice if the hash was not previously stored.
 func dbGetPendingSubNetworkTxs(dbTx database.Tx, blockHash daghash.Hash) ([]*wire.MsgTx, error) {
 	// Retrieve the serialized transactions from the bucket
 	bucket := dbTx.Metadata().Bucket(pendingSubNetworksBucketName)
@@ -696,6 +710,10 @@ func dbGetPendingSubNetworkTxs(dbTx database.Tx, blockHash daghash.Hash) ([]*wir
 	return txs, nil
 }
 
+// dbRemovePendingSubNetworkTxs deletes an array of sub-network transactions,
+// associated with a block's hash, that was previously stored with
+// dbPutPendingSubNetworkTxs.
+// This function does not return an error if the hash was not previously stored.
 func dbRemovePendingSubNetworkTxs(dbTx database.Tx, blockHash daghash.Hash) error {
 	bucket := dbTx.Metadata().Bucket(pendingSubNetworksBucketName)
 
@@ -707,6 +725,8 @@ func dbRemovePendingSubNetworkTxs(dbTx database.Tx, blockHash daghash.Hash) erro
 	return nil
 }
 
+// dbPutRegisteredSubNetworkTx stores mappings from a sub-network registry
+// transaction (via its hash) to its sub-network ID.
 func dbPutRegisteredSubNetworkTx(dbTx database.Tx, txHash daghash.Hash, subNetworkID uint64) error {
 	bucket := dbTx.Metadata().Bucket(registeredSubNetworkTxsBucketName)
 
@@ -720,14 +740,17 @@ func dbPutRegisteredSubNetworkTx(dbTx database.Tx, txHash daghash.Hash, subNetwo
 	return nil
 }
 
+// dbIsRegisteredSubNetworkTx checks whether a sub-network registry transaction
+// was previously stored with dbPutRegisteredSubNetworkTx.
 func dbIsRegisteredSubNetworkTx(dbTx database.Tx, txHash daghash.Hash) bool {
 	bucket := dbTx.Metadata().Bucket(registeredSubNetworkTxsBucketName)
 	subNetworkIDBytes := bucket.Get(txHash[:])
-	subNetworkID := byteOrder.Uint64(subNetworkIDBytes)
 
-	return subNetworkID != 0
+	return subNetworkIDBytes != nil
 }
 
+// dbRegisterSubNetwork stored mappings from newly-registered sub-network IDs
+// to their registry transactions.
 func dbRegisterSubNetwork(dbTx database.Tx, subNetworkID uint64, tx *wire.MsgTx) error {
 	// Serialize the sub-network ID
 	var subNetworkIDBytes []byte
