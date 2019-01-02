@@ -887,7 +887,7 @@ var Block100000 = wire.MsgBlock{
 	},
 }
 
-// Block100000 defines block 100,000 of the block chain.  It is used to
+// Block100000Mutable defines block 100,000 of the block chain.  It is used to
 // test Block operations and may be modified by test.
 var Block100000Mutable = wire.MsgBlock{
 	Header: wire.BlockHeader{
