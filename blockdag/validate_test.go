@@ -161,8 +161,8 @@ func TestCheckBlockSanity(t *testing.T) {
 		t.Errorf("CheckBlockSanity: %v", err)
 	}
 	// Test with block with wrong transactions sorting order
-	invalidBlock := util.NewBlock(&BlockWithWrongTxOrder)
-	err = CheckBlockSanity(invalidBlock, powLimit, timeSource)
+	blockWithWrongTxOrder := util.NewBlock(&BlockWithWrongTxOrder)
+	err = CheckBlockSanity(blockWithWrongTxOrder, powLimit, timeSource)
 	if err == nil {
 		t.Errorf("CheckBlockSanity: transactions disorder is not detected")
 	}
