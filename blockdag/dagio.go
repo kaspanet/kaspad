@@ -768,28 +768,102 @@ func dbIsRegisteredSubNetworkTx(dbTx database.Tx, txHash daghash.Hash) bool {
 	return subNetworkIDBytes != nil
 }
 
-// dbRegisterSubNetwork stored mappings from newly-registered sub-network IDs
+// dbRegisterSubNetwork stores mappings from newly-registered sub-network IDs
 // to their registry transactions.
-func dbRegisterSubNetwork(dbTx database.Tx, subNetworkID uint64, tx *wire.MsgTx) error {
+func dbRegisterSubNetwork(dbTx database.Tx, subNetworkID uint64, network *subNetwork) error {
 	// Serialize the sub-network ID
 	var subNetworkIDBytes []byte
 	byteOrder.PutUint64(subNetworkIDBytes, subNetworkID)
 
-	// Serialize the transaction
-	serializedTx := bytes.NewBuffer(make([]byte, 0, tx.SerializeSize()))
-	err := tx.Serialize(serializedTx)
+	// Serialize the sub-network
+	serializedSubNetwork, err := serializeSubNetwork(network)
 	if err != nil {
-		return fmt.Errorf("failed to serialize tx '%s': %s", tx.TxHash(), err)
+		return fmt.Errorf("failed to serialize sub-netowrk of tx '%s': %s", network.txHash, err)
 	}
 
 	// Store the transaction
 	bucket := dbTx.Metadata().Bucket(subNetworksBucketName)
-	err = bucket.Put(subNetworkIDBytes, serializedTx.Bytes())
+	err = bucket.Put(subNetworkIDBytes, serializedSubNetwork)
 	if err != nil {
-		return fmt.Errorf("failed to write tx '%s': %s", tx.TxHash(), err)
+		return fmt.Errorf("failed to write sub-netowrk of tx '%s': %s", network.txHash, err)
 	}
 
 	return nil
+}
+
+func dbGetSubNetwork(dbTx database.Tx, subNetworkID uint64) (*subNetwork, error) {
+	// Serialize the sub-network ID
+	var subNetworkIDBytes []byte
+	byteOrder.PutUint64(subNetworkIDBytes, subNetworkID)
+
+	// Get the sub-network
+	bucket := dbTx.Metadata().Bucket(subNetworksBucketName)
+	serializedSubNetwork := bucket.Get(subNetworkIDBytes)
+	if serializedSubNetwork == nil {
+		return nil, fmt.Errorf("sub-network '%d' not found", subNetworkID)
+	}
+
+	return deserializeSubNetwork(serializedSubNetwork)
+}
+
+type subNetwork struct {
+	txHash   daghash.Hash
+	gasLimit uint64
+}
+
+func newSubNetwork(tx *wire.MsgTx) *subNetwork {
+	txHash := tx.TxHash()
+	gasLimit := binary.LittleEndian.Uint64(tx.Payload[:8])
+
+	return &subNetwork{
+		txHash:   txHash,
+		gasLimit: gasLimit,
+	}
+}
+
+// serializeSubNetwork serializes a subNetwork into the following binary format:
+// | txHash (32 bytes) | gasLimit (8 bytes) |
+func serializeSubNetwork(sNet *subNetwork) ([]byte, error) {
+	serializedSNet := bytes.NewBuffer(make([]byte, 0, 40))
+
+	// Write the tx hash
+	err := binary.Write(serializedSNet, byteOrder, sNet.txHash)
+	if err != nil {
+		return nil, fmt.Errorf("failed to serialize sub-network for tx '%s': %s", sNet.txHash, err)
+	}
+
+	// Write the gas limit
+	err = binary.Write(serializedSNet, byteOrder, sNet.gasLimit)
+	if err != nil {
+		return nil, fmt.Errorf("failed to serialize sub-network for tx '%s': %s", sNet.txHash, err)
+	}
+
+	return serializedSNet.Bytes(), nil
+}
+
+// deserializeSubNetwork deserializes a byte slice into a subNetwork.
+// See serializeSubNetwork for the binary format.
+func deserializeSubNetwork(serializedSNetBytes []byte) (*subNetwork, error) {
+	serializedSNet := bytes.NewBuffer(serializedSNetBytes)
+
+	// Read the tx hash
+	var txHash daghash.Hash
+	err := binary.Read(serializedSNet, byteOrder, &txHash)
+	if err != nil {
+		return nil, fmt.Errorf("failed to deserialize sub-network: %s", err)
+	}
+
+	// Read the gas limit
+	var gasLimit uint64
+	err = binary.Read(serializedSNet, byteOrder, &gasLimit)
+	if err != nil {
+		return nil, fmt.Errorf("failed to deserialize sub-network: %s", err)
+	}
+
+	return &subNetwork{
+		txHash:   txHash,
+		gasLimit: gasLimit,
+	}, nil
 }
 
 // -----------------------------------------------------------------------------

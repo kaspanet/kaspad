@@ -718,3 +718,24 @@ func TestSerializeSubNetworkRegistryTxs(t *testing.T) {
 		}
 	}
 }
+
+func TestSerializeSubNetwork(t *testing.T) {
+	sNet := &subNetwork{
+		txHash:   *newHashFromStr("0437cd7f8525ceed2324359c2d0ba26006d92d856a9c20fa0241106ee5a597c9"),
+		gasLimit: 1000,
+	}
+
+	serializedSNet, err := serializeSubNetwork(sNet)
+	if err != nil {
+		t.Fatalf("sub-network serialization unexpectedly failed: %s", err)
+	}
+
+	deserializedSNet, err := deserializeSubNetwork(serializedSNet)
+	if err != nil {
+		t.Fatalf("sub-network deserialization unexpectedly failed: %s", err)
+	}
+
+	if !reflect.DeepEqual(sNet, deserializedSNet) {
+		t.Errorf("original sub-network and deserialized sub-network are not equal")
+	}
+}

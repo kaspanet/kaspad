@@ -1653,7 +1653,8 @@ func (dag *BlockDAG) registerPendingSubNetworksInBlock(dbTx database.Tx, blockHa
 	for _, tx := range pendingSubNetworkTxs {
 		if !dbIsRegisteredSubNetworkTx(dbTx, tx.TxHash()) {
 			nextSubNetworkID := dag.lastSubNetworkID + 1
-			err := dbRegisterSubNetwork(dbTx, nextSubNetworkID, tx)
+			nextSubNetwork := newSubNetwork(tx)
+			err := dbRegisterSubNetwork(dbTx, nextSubNetworkID, nextSubNetwork)
 			if err != nil {
 				return fmt.Errorf("failed registering sub-network"+
 					"for tx '%s' in block '%s': %s", tx.TxHash(), blockHash, err)
@@ -1677,4 +1678,31 @@ func (dag *BlockDAG) registerPendingSubNetworksInBlock(dbTx database.Tx, blockHa
 	}
 
 	return nil
+}
+
+func (dag *BlockDAG) subNetwork(subNetworkID uint64) (*subNetwork, error) {
+	var sNet *subNetwork
+	var err error
+	dbErr := dag.db.View(func(dbTx database.Tx) error {
+		sNet, err = dbGetSubNetwork(dbTx, subNetworkID)
+		return nil
+	})
+
+	if dbErr != nil {
+		return nil, fmt.Errorf("could not retrieve sub-network '%d': %s", subNetworkID, dbErr)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("could not retrieve sub-network '%d': %s", subNetworkID, err)
+	}
+
+	return sNet, nil
+}
+
+func (dag *BlockDAG) gasLimit(subNetworkID uint64) (uint64, error) {
+	sNet, err := dag.subNetwork(subNetworkID)
+	if err != nil {
+		return 0, err
+	}
+
+	return sNet.gasLimit, nil
 }
