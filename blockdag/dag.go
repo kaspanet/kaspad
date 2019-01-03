@@ -1610,9 +1610,9 @@ func extractValidSubNetworkRegistryTxs(txs []*TxWithBlockHash) ([]*wire.MsgTx, e
 // validateSubNetworkRegistryTransaction makes sure that a given sub-network registry
 // transaction is valid.
 func validateSubNetworkRegistryTransaction(tx *wire.MsgTx) error {
-	if len(tx.TxOut) > 0 {
+	if len(tx.Payload) != 8 {
 		return fmt.Errorf("validation failed: subnetwork registry"+
-			"tx '%s' has more than zero txOuts", tx.TxHash())
+			"tx '%s' has an invalid payload", tx.TxHash())
 	}
 
 	return nil
@@ -1680,6 +1680,8 @@ func (dag *BlockDAG) registerPendingSubNetworksInBlock(dbTx database.Tx, blockHa
 	return nil
 }
 
+// subNetwork returns a registered-and-finalized sub-network. If the sub-network
+// does not exist this method returns an error.
 func (dag *BlockDAG) subNetwork(subNetworkID uint64) (*subNetwork, error) {
 	var sNet *subNetwork
 	var err error
@@ -1698,6 +1700,8 @@ func (dag *BlockDAG) subNetwork(subNetworkID uint64) (*subNetwork, error) {
 	return sNet, nil
 }
 
+// gasLimit returns the gas limit of a registered-and-finalized sub-network. If
+// the sub-network does not exist this method returns an error.
 func (dag *BlockDAG) gasLimit(subNetworkID uint64) (uint64, error) {
 	sNet, err := dag.subNetwork(subNetworkID)
 	if err != nil {
