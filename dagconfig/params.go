@@ -206,6 +206,9 @@ type Params struct {
 	// BIP44 coin type used in the hierarchical deterministic path for
 	// address generation.
 	HDCoinType uint32
+
+	// FirstSubNetworkID the first sub-network ID
+	FirstSubNetworkID uint64
 }
 
 // MainNetParams defines the network parameters for the main Bitcoin network.
@@ -270,6 +273,9 @@ var MainNetParams = Params{
 	// BIP44 coin type used in the hierarchical deterministic path for
 	// address generation.
 	HDCoinType: 0,
+
+	// FirstSubNetworkID the first sub-network ID
+	FirstSubNetworkID: 256,
 }
 
 // RegressionNetParams defines the network parameters for the regression test
@@ -329,6 +335,9 @@ var RegressionNetParams = Params{
 	// BIP44 coin type used in the hierarchical deterministic path for
 	// address generation.
 	HDCoinType: 1,
+
+	// FirstSubNetworkID the first sub-network ID
+	FirstSubNetworkID: 256,
 }
 
 // TestNet3Params defines the network parameters for the test Bitcoin network
@@ -388,6 +397,9 @@ var TestNet3Params = Params{
 	// BIP44 coin type used in the hierarchical deterministic path for
 	// address generation.
 	HDCoinType: 1,
+
+	// FirstSubNetworkID the first sub-network ID
+	FirstSubNetworkID: 256,
 }
 
 // SimNetParams defines the network parameters for the simulation test Bitcoin
@@ -449,6 +461,9 @@ var SimNetParams = Params{
 	// BIP44 coin type used in the hierarchical deterministic path for
 	// address generation.
 	HDCoinType: 115, // ASCII for s
+
+	// FirstSubNetworkID the first sub-network ID
+	FirstSubNetworkID: 256,
 }
 
 var (

@@ -1554,6 +1554,7 @@ func New(config *Config) (*BlockDAG, error) {
 		warningCaches:       newThresholdCaches(vbNumBits),
 		deploymentCaches:    newThresholdCaches(dagconfig.DefinedDeployments),
 		blockCount:          1,
+		lastSubNetworkID:    params.FirstSubNetworkID,
 	}
 
 	// Initialize the chain state from the passed database.  When the db
