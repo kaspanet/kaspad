@@ -515,9 +515,10 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block, fastAdd bo
 		return err
 	}
 
-	// Scan all accepted transactions and collect any valid sub-network registry
-	// transactions into validSubNetworkRegistryTxs.
-	validSubNetworkRegistryTxs, err := extractValidSubNetworkRegistryTxs(acceptedTxsData)
+	// Scan all accepted transactions and collect any sub-network registry
+	// transactions into subNetworkRegistryTxs. If any sub-network registry
+	// transaction is not well-formed, fail the entire block.
+	subNetworkRegistryTxs, err := validateAndExtractSubNetworkRegistryTxs(acceptedTxsData)
 	if err != nil {
 		return err
 	}
@@ -552,7 +553,7 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block, fastAdd bo
 
 		// Add the pending sub-network in this block to the pending sub-networks
 		// collection.
-		err = dbPutPendingSubNetworkTxs(dbTx, block.Hash(), validSubNetworkRegistryTxs)
+		err = dbPutPendingSubNetworkTxs(dbTx, block.Hash(), subNetworkRegistryTxs)
 		if err != nil {
 			return err
 		}
@@ -1590,9 +1591,9 @@ func New(config *Config) (*BlockDAG, error) {
 	return &dag, nil
 }
 
-// extractValidSubNetworkRegistryTxs filters the given input and extracts a list
+// validateAndExtractSubNetworkRegistryTxs filters the given input and extracts a list
 // of valid sub-network registry transactions.
-func extractValidSubNetworkRegistryTxs(txs []*TxWithBlockHash) ([]*wire.MsgTx, error) {
+func validateAndExtractSubNetworkRegistryTxs(txs []*TxWithBlockHash) ([]*wire.MsgTx, error) {
 	validSubNetworkRegistryTxs := make([]*wire.MsgTx, 0, len(txs))
 	for _, txData := range txs {
 		tx := txData.Tx.MsgTx()
