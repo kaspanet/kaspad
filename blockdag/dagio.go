@@ -749,7 +749,7 @@ func dbRemovePendingSubNetworkTxs(dbTx database.Tx, blockHash daghash.Hash) erro
 func dbPutRegisteredSubNetworkTx(dbTx database.Tx, txHash daghash.Hash, subNetworkID uint64) error {
 	bucket := dbTx.Metadata().Bucket(registeredSubNetworkTxsBucketName)
 
-	var subNetworkIDBytes []byte
+	subNetworkIDBytes := make([]byte, 8)
 	byteOrder.PutUint64(subNetworkIDBytes, subNetworkID)
 	err := bucket.Put(txHash[:], subNetworkIDBytes)
 	if err != nil {
@@ -772,7 +772,7 @@ func dbIsRegisteredSubNetworkTx(dbTx database.Tx, txHash daghash.Hash) bool {
 // to their registry transactions.
 func dbRegisterSubNetwork(dbTx database.Tx, subNetworkID uint64, network *subNetwork) error {
 	// Serialize the sub-network ID
-	var subNetworkIDBytes []byte
+	subNetworkIDBytes := make([]byte, 8)
 	byteOrder.PutUint64(subNetworkIDBytes, subNetworkID)
 
 	// Serialize the sub-network
@@ -793,7 +793,7 @@ func dbRegisterSubNetwork(dbTx database.Tx, subNetworkID uint64, network *subNet
 
 func dbGetSubNetwork(dbTx database.Tx, subNetworkID uint64) (*subNetwork, error) {
 	// Serialize the sub-network ID
-	var subNetworkIDBytes []byte
+	subNetworkIDBytes := make([]byte, 8)
 	byteOrder.PutUint64(subNetworkIDBytes, subNetworkID)
 
 	// Get the sub-network

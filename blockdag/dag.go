@@ -1697,22 +1697,21 @@ func (dag *BlockDAG) registerPendingSubNetworksInBlock(dbTx database.Tx, blockHa
 	}
 	for _, tx := range pendingSubNetworkTxs {
 		if !dbIsRegisteredSubNetworkTx(dbTx, tx.TxHash()) {
-			nextSubNetworkID := dag.lastSubNetworkID + 1
-			nextSubNetwork := newSubNetwork(tx)
-			err := dbRegisterSubNetwork(dbTx, nextSubNetworkID, nextSubNetwork)
+			createdSubNetwork := newSubNetwork(tx)
+			err := dbRegisterSubNetwork(dbTx, dag.lastSubNetworkID, createdSubNetwork)
 			if err != nil {
 				return fmt.Errorf("failed registering sub-network"+
 					"for tx '%s' in block '%s': %s", tx.TxHash(), blockHash, err)
 			}
 
-			err = dbPutRegisteredSubNetworkTx(dbTx, tx.TxHash(), nextSubNetworkID)
+			err = dbPutRegisteredSubNetworkTx(dbTx, tx.TxHash(), dag.lastSubNetworkID)
 			if err != nil {
 				return fmt.Errorf("failed to put registered sub-network tx '%s'"+
 					" in block '%s': %s", tx.TxHash(), blockHash, err)
 			}
 
 			// TODO: (Stas) lastSubNetworkID should be persisted in the state object (Ori had already implemented it)
-			dag.lastSubNetworkID = nextSubNetworkID
+			dag.lastSubNetworkID++
 		}
 	}
 
