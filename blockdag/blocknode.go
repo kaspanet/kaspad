@@ -244,8 +244,8 @@ func (node *blockNode) isGenesis() bool {
 	return len(node.parents) == 0
 }
 
-func (node *blockNode) hasBiggerFinalityScoreThan(b *blockNode) bool {
-	return node.blueScore/finalityInterval > b.blueScore/finalityInterval
+func (node *blockNode) finalityScore() uint64 {
+	return node.blueScore / finalityInterval
 }
 
 // String returns a string that contains the block hash and height.

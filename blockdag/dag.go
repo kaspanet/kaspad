@@ -593,13 +593,13 @@ func (dag *BlockDAG) checkFinalityRulesAndGetFinalityPointCandidate(node *blockN
 		return nil, finalityErr
 	}
 
-	shouldFindFinalityPointCandidate := node.hasBiggerFinalityScoreThan(dag.lastFinalityPoint)
+	shouldFindFinalityPointCandidate := node.finalityScore() > dag.lastFinalityPoint.finalityScore()
 
 	for currentNode := node.selectedParent; currentNode != dag.lastFinalityPoint; currentNode = currentNode.selectedParent {
 		if currentNode.blueScore <= dag.lastFinalityPoint.blueScore {
 			return nil, finalityErr
 		}
-		if shouldFindFinalityPointCandidate && currentNode.hasBiggerFinalityScoreThan(currentNode.selectedParent) {
+		if shouldFindFinalityPointCandidate && currentNode.finalityScore() > currentNode.selectedParent.finalityScore() {
 			finalityPointCandidate = currentNode
 		}
 	}
