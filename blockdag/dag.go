@@ -1608,7 +1608,8 @@ func extractValidSubNetworkRegistryTxs(txs []*TxWithBlockHash) ([]*wire.MsgTx, e
 }
 
 // validateSubNetworkRegistryTransaction makes sure that a given sub-network registry
-// transaction is valid.
+// transaction is valid. Such a transaction is valid iff:
+// - Its entire payload is a uint64 (8 bytes)
 func validateSubNetworkRegistryTransaction(tx *wire.MsgTx) error {
 	if len(tx.Payload) != 8 {
 		return fmt.Errorf("validation failed: subnetwork registry"+
