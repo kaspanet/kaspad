@@ -12,7 +12,7 @@ import (
 // TestVirtualBlock ensures that VirtualBlock works as expected.
 func TestVirtualBlock(t *testing.T) {
 	phantomK := uint32(1)
-	buildNode := buildNodeGenerator(phantomK)
+	buildNode := buildNodeGenerator(phantomK, false)
 
 	// Create a DAG as follows:
 	// 0 <- 1 <- 2
@@ -101,7 +101,7 @@ func TestVirtualBlock(t *testing.T) {
 
 func TestSelectedPath(t *testing.T) {
 	phantomK := uint32(1)
-	buildNode := buildNodeGenerator(phantomK)
+	buildNode := buildNodeGenerator(phantomK, false)
 
 	// Create an empty VirtualBlock
 	virtual := newVirtualBlock(nil, phantomK)

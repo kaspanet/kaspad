@@ -209,6 +209,8 @@ const (
 	// ErrWithDiff indicates that there was an error with UTXOSet.WithDiff
 	ErrWithDiff
 
+	// ErrFinality indicates that a block doesn't adhere to the finality rules
+	ErrFinality
 	// ErrTransactionsNotSorted indicates that transactions in block are not
 	// sorted by subnetwork
 	ErrTransactionsNotSorted
@@ -256,6 +258,7 @@ var errorCodeStrings = map[ErrorCode]string{
 	ErrInvalidAncestorBlock:      "ErrInvalidAncestorBlock",
 	ErrParentBlockNotCurrentTips: "ErrParentBlockNotCurrentTips",
 	ErrWithDiff:                  "ErrWithDiff",
+	ErrFinality:                  "ErrFinality",
 	ErrTransactionsNotSorted:     "ErrTransactionsNotSorted",
 }
 
