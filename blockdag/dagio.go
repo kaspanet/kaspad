@@ -1026,6 +1026,25 @@ func (dag *BlockDAG) createDAGState() error {
 			return err
 		}
 
+		// Create the bucket that houses the pending sub-networks.
+		_, err = meta.CreateBucket(pendingSubNetworksBucketName)
+		if err != nil {
+			return err
+		}
+
+		// Create the bucket that houses the registered sub-networks to
+		// their registry transactions index.
+		_, err = meta.CreateBucket(registeredSubNetworkTxsBucketName)
+		if err != nil {
+			return err
+		}
+
+		// Create the bucket that houses the registered sub-networks.
+		_, err = meta.CreateBucket(subNetworksBucketName)
+		if err != nil {
+			return err
+		}
+
 		// Save the genesis block to the block index database.
 		err = dbStoreBlockNode(dbTx, node)
 		if err != nil {
