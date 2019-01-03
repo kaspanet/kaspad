@@ -49,6 +49,18 @@ func TestTx(t *testing.T) {
 				hash, wantHash)
 		}
 	}
+
+	// ID for block 100,000 transaction 0.
+	wantIDStr := "4f2a5f1e00034ed3222e0e7fae8485ad3154d40b21b1c1b64ec74ce389a1bb1d"
+	wantID, err := daghash.NewHashFromStr(wantIDStr)
+	// Request the ID multiple times to test generation and caching.
+	for i := 0; i < 2; i++ {
+		id := tx.ID()
+		if !id.IsEqual(wantID) {
+			t.Errorf("Hash #%d mismatched hash - got %v, want %v", i,
+				id, wantID)
+		}
+	}
 }
 
 // TestNewTxFromBytes tests creation of a Tx from serialized bytes.

@@ -68,28 +68,6 @@ func TestBlock(t *testing.T) {
 	}
 }
 
-// TestBlockTxHashes tests the ability to generate a slice of all transaction
-// hashes from a block accurately.
-func TestBlockTxHashes(t *testing.T) {
-	// Block 1, transaction 1 hash.
-	hashStr := "603ea191aecb5809c78790a0bd58293086c1b19118e7251a38680dd9e1dc3b32"
-	wantHash, err := daghash.NewHashFromStr(hashStr)
-	if err != nil {
-		t.Errorf("NewHashFromStr: %v", err)
-		return
-	}
-
-	wantHashes := []daghash.Hash{*wantHash}
-	hashes, err := blockOne.TxHashes()
-	if err != nil {
-		t.Errorf("TxHashes: %v", err)
-	}
-	if !reflect.DeepEqual(hashes, wantHashes) {
-		t.Errorf("TxHashes: wrong transaction hashes - got %v, want %v",
-			spew.Sdump(hashes), spew.Sdump(wantHashes))
-	}
-}
-
 // TestBlockHash tests the ability to generate the hash of a block accurately.
 func TestBlockHash(t *testing.T) {
 	// Block 1 hash.
@@ -505,7 +483,7 @@ var blockOne = MsgBlock{
 			TxIn: []*TxIn{
 				{
 					PreviousOutPoint: OutPoint{
-						Hash:  daghash.Hash{},
+						TxID:  daghash.Hash{},
 						Index: 0xffffffff,
 					},
 					SignatureScript: []byte{

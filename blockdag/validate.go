@@ -58,7 +58,7 @@ var (
 // isNullOutpoint determines whether or not a previous transaction output point
 // is set.
 func isNullOutpoint(outpoint *wire.OutPoint) bool {
-	if outpoint.Index == math.MaxUint32 && outpoint.Hash == zeroHash {
+	if outpoint.Index == math.MaxUint32 && outpoint.TxID == zeroHash {
 		return true
 	}
 	return false
@@ -81,7 +81,7 @@ func IsCoinBaseTx(msgTx *wire.MsgTx) bool {
 	// The previous output of a coin base must have a max value index and
 	// a zero hash.
 	prevOut := &msgTx.TxIn[0].PreviousOutPoint
-	if prevOut.Index != math.MaxUint32 || prevOut.Hash != zeroHash {
+	if prevOut.Index != math.MaxUint32 || prevOut.TxID != zeroHash {
 		return false
 	}
 
@@ -354,7 +354,7 @@ func CountP2SHSigOps(tx *util.Tx, isCoinBaseTx bool, utxoSet UTXOSet) (int, erro
 			str := fmt.Sprintf("output %v referenced from "+
 				"transaction %s:%d either does not exist or "+
 				"has already been spent", txIn.PreviousOutPoint,
-				tx.Hash(), txInIndex)
+				tx.ID(), txInIndex)
 			return 0, ruleError(ErrMissingTxOut, str)
 		}
 
@@ -526,13 +526,13 @@ func checkBlockSanity(block *util.Block, powLimit *big.Int, timeSource MedianTim
 	// merkle tree above.
 	existingTxHashes := make(map[daghash.Hash]struct{})
 	for _, tx := range transactions {
-		hash := tx.Hash()
-		if _, exists := existingTxHashes[*hash]; exists {
+		id := tx.ID()
+		if _, exists := existingTxHashes[*id]; exists {
 			str := fmt.Sprintf("block contains duplicate "+
-				"transaction %v", hash)
+				"transaction %v", id)
 			return ruleError(ErrDuplicateTx, str)
 		}
-		existingTxHashes[*hash] = struct{}{}
+		existingTxHashes[*id] = struct{}{}
 	}
 
 	// The number of signature operations must be less than the maximum
@@ -749,7 +749,7 @@ func (dag *BlockDAG) checkBlockContext(block *util.Block, parents blockSet, blue
 				blockTime) {
 
 				str := fmt.Sprintf("block contains unfinalized "+
-					"transaction %v", tx.Hash())
+					"transaction %v", tx.ID())
 				return ruleError(ErrUnfinalizedTx, str)
 			}
 		}
@@ -783,7 +783,7 @@ func ensureNoDuplicateTx(block *provisionalNode, utxoSet UTXOSet) error {
 	// Typically, there will not be any utxos for any of the outputs.
 	fetchSet := make(map[wire.OutPoint]struct{})
 	for _, tx := range block.transactions {
-		prevOut := wire.OutPoint{Hash: *tx.Hash()}
+		prevOut := wire.OutPoint{TxID: *tx.ID()}
 		for txOutIdx := range tx.MsgTx().TxOut {
 			prevOut.Index = uint32(txOutIdx)
 			fetchSet[prevOut] = struct{}{}
@@ -797,7 +797,7 @@ func ensureNoDuplicateTx(block *provisionalNode, utxoSet UTXOSet) error {
 		if ok {
 			str := fmt.Sprintf("tried to overwrite transaction %v "+
 				"at block height %d that is not fully spent",
-				outpoint.Hash, utxo.BlockHeight())
+				outpoint.TxID, utxo.BlockHeight())
 			return ruleError(ErrOverwriteTx, str)
 		}
 	}
@@ -822,7 +822,7 @@ func CheckTransactionInputs(tx *util.Tx, txHeight int32, utxoSet UTXOSet, dagPar
 		return 0, nil
 	}
 
-	txHash := tx.Hash()
+	txID := tx.ID()
 	var totalSatoshiIn uint64
 	for txInIndex, txIn := range tx.MsgTx().TxIn {
 		// Ensure the referenced input transaction is available.
@@ -831,7 +831,7 @@ func CheckTransactionInputs(tx *util.Tx, txHeight int32, utxoSet UTXOSet, dagPar
 			str := fmt.Sprintf("output %v referenced from "+
 				"transaction %s:%d either does not exist or "+
 				"has already been spent", txIn.PreviousOutPoint,
-				tx.Hash(), txInIndex)
+				tx.ID(), txInIndex)
 			return 0, ruleError(ErrMissingTxOut, str)
 		}
 
@@ -894,7 +894,7 @@ func CheckTransactionInputs(tx *util.Tx, txHeight int32, utxoSet UTXOSet, dagPar
 	if totalSatoshiIn < totalSatoshiOut {
 		str := fmt.Sprintf("total value of all transaction inputs for "+
 			"transaction %v is %v which is less than the amount "+
-			"spent of %v", txHash, totalSatoshiIn, totalSatoshiOut)
+			"spent of %v", txID, totalSatoshiIn, totalSatoshiOut)
 		return 0, ruleError(ErrSpendTooHigh, str)
 	}
 

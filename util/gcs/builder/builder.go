@@ -63,7 +63,7 @@ func DeriveKey(keyHash *daghash.Hash) [gcs.KeySize]byte {
 func OutPointToFilterEntry(outpoint wire.OutPoint) []byte {
 	// Size of the hash plus size of int32 index
 	data := make([]byte, daghash.HashSize+4)
-	copy(data[:], outpoint.Hash.CloneBytes()[:])
+	copy(data[:], outpoint.TxID.CloneBytes()[:])
 	binary.LittleEndian.PutUint32(data[daghash.HashSize:], outpoint.Index)
 	return data
 }
@@ -305,8 +305,8 @@ func BuildBasicFilter(block *wire.MsgBlock) (*gcs.Filter, error) {
 	for i, tx := range block.Transactions {
 		// First we'll compute the bash of the transaction and add that
 		// directly to the filter.
-		txHash := tx.TxHash()
-		b.AddHash(&txHash)
+		txID := tx.TxID()
+		b.AddHash(&txID)
 
 		// Skip the inputs for the coinbase transaction
 		if i != 0 {

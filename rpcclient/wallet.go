@@ -335,7 +335,7 @@ func (c *Client) LockUnspentAsync(unlock bool, ops []*wire.OutPoint) FutureLockU
 	outputs := make([]btcjson.TransactionInput, len(ops))
 	for i, op := range ops {
 		outputs[i] = btcjson.TransactionInput{
-			TxID: op.Hash.String(),
+			TxID: op.TxID.String(),
 			Vout: op.Index,
 		}
 	}

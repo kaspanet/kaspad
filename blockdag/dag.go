@@ -356,7 +356,7 @@ func (dag *BlockDAG) calcSequenceLock(node *blockNode, utxoSet UTXOSet, tx *util
 			str := fmt.Sprintf("output %v referenced from "+
 				"transaction %s:%d either does not exist or "+
 				"has already been spent", txIn.PreviousOutPoint,
-				tx.Hash(), txInIndex)
+				tx.ID(), txInIndex)
 			return sequenceLock, ruleError(ErrMissingTxOut, str)
 		}
 

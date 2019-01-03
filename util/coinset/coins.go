@@ -131,7 +131,7 @@ func NewMsgTxWithInputCoins(txVersion int32, inputCoins Coins) *wire.MsgTx {
 	for i, coin := range coins {
 		msgTx.TxIn[i] = &wire.TxIn{
 			PreviousOutPoint: wire.OutPoint{
-				Hash:  *coin.Hash(),
+				TxID:  *coin.Hash(),
 				Index: coin.Index(),
 			},
 			SignatureScript: nil,

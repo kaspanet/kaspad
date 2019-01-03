@@ -273,7 +273,7 @@ func logSkippedDeps(tx *util.Tx, deps map[daghash.Hash]*txPrioItem) {
 
 	for _, item := range deps {
 		log.Tracef("Skipping tx %s since it depends on %s\n",
-			item.tx.Hash(), tx.Hash())
+			item.tx.ID(), tx.ID())
 	}
 }
 
@@ -469,13 +469,13 @@ mempoolLoop:
 		// non-finalized transactions.
 		tx := txDesc.Tx
 		if blockdag.IsCoinBase(tx) {
-			log.Tracef("Skipping coinbase tx %s", tx.Hash())
+			log.Tracef("Skipping coinbase tx %s", tx.ID())
 			continue
 		}
 		if !blockdag.IsFinalizedTransaction(tx, nextBlockHeight,
 			g.timeSource.AdjustedTime()) {
 
-			log.Tracef("Skipping non-finalized tx %s", tx.Hash())
+			log.Tracef("Skipping non-finalized tx %s", tx.ID())
 			continue
 		}
 
@@ -484,31 +484,31 @@ mempoolLoop:
 		// ordered below.
 		prioItem := &txPrioItem{tx: tx}
 		for _, txIn := range tx.MsgTx().TxIn {
-			originHash := &txIn.PreviousOutPoint.Hash
+			originID := &txIn.PreviousOutPoint.TxID
 			_, ok := blockUtxos.Get(txIn.PreviousOutPoint)
 			if !ok {
-				if !g.txSource.HaveTransaction(originHash) {
+				if !g.txSource.HaveTransaction(originID) {
 					log.Tracef("Skipping tx %s because it "+
 						"references unspent output %s "+
 						"which is not available",
-						tx.Hash(), txIn.PreviousOutPoint)
+						tx.ID(), txIn.PreviousOutPoint)
 					continue mempoolLoop
 				}
 
 				// The transaction is referencing another
 				// transaction in the source pool, so setup an
 				// ordering dependency.
-				deps, exists := dependers[*originHash]
+				deps, exists := dependers[*originID]
 				if !exists {
 					deps = make(map[daghash.Hash]*txPrioItem)
-					dependers[*originHash] = deps
+					dependers[*originID] = deps
 				}
-				deps[*prioItem.tx.Hash()] = prioItem
+				deps[*prioItem.tx.ID()] = prioItem
 				if prioItem.dependsOn == nil {
 					prioItem.dependsOn = make(
 						map[daghash.Hash]struct{})
 				}
-				prioItem.dependsOn[*originHash] = struct{}{}
+				prioItem.dependsOn[*originID] = struct{}{}
 
 				// Skip the check below. We already know the
 				// referenced transaction is available.
@@ -551,7 +551,7 @@ mempoolLoop:
 		tx := prioItem.tx
 
 		// Grab any transactions which depend on this one.
-		deps := dependers[*tx.Hash()]
+		deps := dependers[*tx.ID()]
 
 		// Enforce maximum block size.  Also check for overflow.
 		txSize := uint32(tx.MsgTx().SerializeSize())
@@ -560,7 +560,7 @@ mempoolLoop:
 			blockPlusTxSize >= g.policy.BlockMaxSize {
 
 			log.Tracef("Skipping tx %s because it would exceed "+
-				"the max block size", tx.Hash())
+				"the max block size", tx.ID())
 			logSkippedDeps(tx, deps)
 			continue
 		}
@@ -571,7 +571,7 @@ mempoolLoop:
 		if blockSigOps+numSigOps < blockSigOps ||
 			blockSigOps+numSigOps > blockdag.MaxSigOpsPerBlock {
 			log.Tracef("Skipping tx %s because it would exceed "+
-				"the maximum sigops per block", tx.Hash())
+				"the maximum sigops per block", tx.ID())
 			logSkippedDeps(tx, deps)
 			continue
 		}
@@ -579,7 +579,7 @@ mempoolLoop:
 			blockUtxos)
 		if err != nil {
 			log.Tracef("Skipping tx %s due to error in "+
-				"GetSigOpCost: %v", tx.Hash(), err)
+				"GetSigOpCost: %v", tx.ID(), err)
 			logSkippedDeps(tx, deps)
 			continue
 		}
@@ -587,7 +587,7 @@ mempoolLoop:
 		if blockSigOps+numSigOps < blockSigOps ||
 			blockSigOps+numSigOps > blockdag.MaxSigOpsPerBlock {
 			log.Tracef("Skipping tx %s because it would "+
-				"exceed the maximum sigops per block", tx.Hash())
+				"exceed the maximum sigops per block", tx.ID())
 			logSkippedDeps(tx, deps)
 			continue
 		}
@@ -600,7 +600,7 @@ mempoolLoop:
 
 			log.Tracef("Skipping tx %s with feePerKB %.2f "+
 				"< TxMinFreeFee %d and block size %d >= "+
-				"minBlockSize %d", tx.Hash(), prioItem.feePerKB,
+				"minBlockSize %d", tx.ID(), prioItem.feePerKB,
 				g.policy.TxMinFreeFee, blockPlusTxSize,
 				g.policy.BlockMinSize)
 			logSkippedDeps(tx, deps)
@@ -642,7 +642,7 @@ mempoolLoop:
 			blockUtxos, g.chainParams)
 		if err != nil {
 			log.Tracef("Skipping tx %s due to error in "+
-				"CheckTransactionInputs: %v", tx.Hash(), err)
+				"CheckTransactionInputs: %v", tx.ID(), err)
 			logSkippedDeps(tx, deps)
 			continue
 		}
@@ -650,7 +650,7 @@ mempoolLoop:
 			txscript.StandardVerifyFlags, g.sigCache)
 		if err != nil {
 			log.Tracef("Skipping tx %s due to error in "+
-				"ValidateTransactionScripts: %v", tx.Hash(), err)
+				"ValidateTransactionScripts: %v", tx.ID(), err)
 			logSkippedDeps(tx, deps)
 			continue
 		}
@@ -672,7 +672,7 @@ mempoolLoop:
 		txSigOpCounts = append(txSigOpCounts, numSigOps)
 
 		log.Tracef("Adding tx %s (priority %.2f, feePerKB %.2f)",
-			prioItem.tx.Hash(), prioItem.priority, prioItem.feePerKB)
+			prioItem.tx.ID(), prioItem.priority, prioItem.feePerKB)
 
 		// Add transactions which depend on this one (and also do not
 		// have any other unsatisified dependencies) to the priority
@@ -680,7 +680,7 @@ mempoolLoop:
 		for _, item := range deps {
 			// Add the transaction to the priority queue if there
 			// are no more dependencies after this one.
-			delete(item.dependsOn, *tx.Hash())
+			delete(item.dependsOn, *tx.ID())
 			if len(item.dependsOn) == 0 {
 				heap.Push(priorityQueue, item)
 			}

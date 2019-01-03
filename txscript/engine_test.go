@@ -30,7 +30,7 @@ func TestBadPC(t *testing.T) {
 		TxIn: []*wire.TxIn{
 			{
 				PreviousOutPoint: wire.OutPoint{
-					Hash: daghash.Hash([32]byte{
+					TxID: daghash.Hash([32]byte{
 						0xc9, 0x97, 0xa5, 0xe5,
 						0x6e, 0x10, 0x41, 0x02,
 						0xfa, 0x20, 0x9c, 0x6a,
@@ -105,7 +105,7 @@ func TestCheckErrorCondition(t *testing.T) {
 				Version: 1,
 				TxIn: []*wire.TxIn{{
 					PreviousOutPoint: wire.OutPoint{
-						Hash: daghash.Hash([32]byte{
+						TxID: daghash.Hash([32]byte{
 							0xc9, 0x97, 0xa5, 0xe5,
 							0x6e, 0x10, 0x41, 0x02,
 							0xfa, 0x20, 0x9c, 0x6a,
@@ -402,7 +402,7 @@ func TestDisasmPC(t *testing.T) {
 		Version: 1,
 		TxIn: []*wire.TxIn{{
 			PreviousOutPoint: wire.OutPoint{
-				Hash: daghash.Hash([32]byte{
+				TxID: daghash.Hash([32]byte{
 					0xc9, 0x97, 0xa5, 0xe5,
 					0x6e, 0x10, 0x41, 0x02,
 					0xfa, 0x20, 0x9c, 0x6a,
@@ -464,7 +464,7 @@ func TestDisasmScript(t *testing.T) {
 		Version: 1,
 		TxIn: []*wire.TxIn{{
 			PreviousOutPoint: wire.OutPoint{
-				Hash: daghash.Hash([32]byte{
+				TxID: daghash.Hash([32]byte{
 					0xc9, 0x97, 0xa5, 0xe5,
 					0x6e, 0x10, 0x41, 0x02,
 					0xfa, 0x20, 0x9c, 0x6a,

@@ -55,9 +55,9 @@ func testSendOutputs(r *Harness, t *testing.T) {
 		}
 
 		minedTx := block.Transactions[1]
-		txHash := minedTx.TxHash()
-		if txHash != *txid {
-			t.Fatalf("txid's don't match, %v vs %v", txHash, txid)
+		minedTxID := minedTx.TxID()
+		if minedTxID != *txid {
+			t.Fatalf("txid's don't match, %v vs %v", minedTxID, txid)
 		}
 	}
 

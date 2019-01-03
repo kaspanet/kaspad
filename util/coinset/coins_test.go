@@ -115,7 +115,7 @@ func TestCoinSet(t *testing.T) {
 		t.Errorf("Expected only 1 TxIn, got %d", len(mtx.TxIn))
 	}
 	op := mtx.TxIn[0].PreviousOutPoint
-	if !op.Hash.IsEqual(coins[1].Hash()) || op.Index != coins[1].Index() {
+	if !op.TxID.IsEqual(coins[1].Hash()) || op.Index != coins[1].Index() {
 		t.Errorf("Expected the second coin to be added as input to mtx")
 	}
 }

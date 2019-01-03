@@ -57,7 +57,7 @@ func TestUseBlockHash(t *testing.T) {
 
 	// wire.OutPoint
 	outPoint := wire.OutPoint{
-		Hash:  *hash,
+		TxID:  *hash,
 		Index: 4321,
 	}
 

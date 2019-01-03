@@ -40,16 +40,16 @@ func TestBlockCount(t *testing.T) {
 		blocks = append(blocks, blockTmp...)
 	}
 
-	// Create a new database and chain instance to run tests against.
-	dag, teardownFunc, err := DAGSetup("haveblock", Config{
+	// Create a new database and DAG instance to run tests against.
+	dag, teardownFunc, err := DAGSetup("TestBlockCount", Config{
 		DAGParams: &dagconfig.SimNetParams,
 	})
 	if err != nil {
-		t.Fatalf("Failed to setup chain instance: %v", err)
+		t.Fatalf("Failed to setup DAG instance: %v", err)
 	}
 	defer teardownFunc()
 
-	// Since we're not dealing with the real block chain, set the coinbase
+	// Since we're not dealing with the real block DAG, set the coinbase
 	// maturity to 1.
 	dag.TstSetCoinbaseMaturity(1)
 
@@ -250,7 +250,7 @@ func TestCalcSequenceLock(t *testing.T) {
 	// point of view that they were originally calculated from for a given
 	// utxo.  That is to say, the height prior to it.
 	utxo := wire.OutPoint{
-		Hash:  *targetTx.Hash(),
+		TxID:  *targetTx.ID(),
 		Index: 0,
 	}
 	prevUtxoHeight := int32(numBlocksToGenerate) - 4
@@ -276,7 +276,7 @@ func TestCalcSequenceLock(t *testing.T) {
 		}},
 	}
 	unConfUtxo := wire.OutPoint{
-		Hash:  unConfTx.TxHash(),
+		TxID:  unConfTx.TxID(),
 		Index: 0,
 	}
 

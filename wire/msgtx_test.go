@@ -50,9 +50,9 @@ func TestTx(t *testing.T) {
 	// testing package functionality.
 	prevOutIndex := uint32(1)
 	prevOut := NewOutPoint(hash, prevOutIndex)
-	if !prevOut.Hash.IsEqual(hash) {
+	if !prevOut.TxID.IsEqual(hash) {
 		t.Errorf("NewOutPoint: wrong hash - got %v, want %v",
-			spew.Sprint(&prevOut.Hash), spew.Sprint(hash))
+			spew.Sprint(&prevOut.TxID), spew.Sprint(hash))
 	}
 	if prevOut.Index != prevOutIndex {
 		t.Errorf("NewOutPoint: wrong index - got %v, want %v",
@@ -141,7 +141,7 @@ func TestTxHash(t *testing.T) {
 	msgTx := NewMsgTx(1)
 	txIn := TxIn{
 		PreviousOutPoint: OutPoint{
-			Hash:  daghash.Hash{},
+			TxID:  daghash.Hash{},
 			Index: 0xffffffff,
 		},
 		SignatureScript: []byte{0x04, 0x31, 0xdc, 0x00, 0x1b, 0x01, 0x62},
@@ -854,7 +854,7 @@ var multiTx = &MsgTx{
 	TxIn: []*TxIn{
 		{
 			PreviousOutPoint: OutPoint{
-				Hash:  daghash.Hash{},
+				TxID:  daghash.Hash{},
 				Index: 0xffffffff,
 			},
 			SignatureScript: []byte{

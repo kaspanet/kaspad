@@ -166,7 +166,7 @@ var scriptPool scriptFreeList = make(chan []byte, freeListMaxItems)
 // OutPoint defines a bitcoin data type that is used to track previous
 // transaction outputs.
 type OutPoint struct {
-	Hash  daghash.Hash
+	TxID  daghash.Hash
 	Index uint32
 }
 
@@ -174,7 +174,7 @@ type OutPoint struct {
 // provided hash and index.
 func NewOutPoint(hash *daghash.Hash, index uint32) *OutPoint {
 	return &OutPoint{
-		Hash:  *hash,
+		TxID:  *hash,
 		Index: index,
 	}
 }
@@ -188,7 +188,7 @@ func (o OutPoint) String() string {
 	// optimization may go unnoticed, so allocate space for 10 decimal
 	// digits, which will fit any uint32.
 	buf := make([]byte, 2*daghash.HashSize+1, 2*daghash.HashSize+1+10)
-	copy(buf, o.Hash.String())
+	copy(buf, o.TxID.String())
 	buf[2*daghash.HashSize] = ':'
 	buf = strconv.AppendUint(buf, uint64(o.Index), 10)
 	return string(buf)
@@ -325,7 +325,7 @@ func (msg *MsgTx) Copy() *MsgTx {
 		// Deep copy the old previous outpoint.
 		oldOutPoint := oldTxIn.PreviousOutPoint
 		newOutPoint := OutPoint{}
-		newOutPoint.Hash.SetBytes(oldOutPoint.Hash[:])
+		newOutPoint.TxID.SetBytes(oldOutPoint.TxID[:])
 		newOutPoint.Index = oldOutPoint.Index
 
 		// Deep copy the old signature script.
@@ -804,7 +804,7 @@ func newRegistryMsgTx(version int32, gasLimit uint64) *MsgTx {
 
 // readOutPoint reads the next sequence of bytes from r as an OutPoint.
 func readOutPoint(r io.Reader, pver uint32, version int32, op *OutPoint) error {
-	_, err := io.ReadFull(r, op.Hash[:])
+	_, err := io.ReadFull(r, op.TxID[:])
 	if err != nil {
 		return err
 	}
@@ -816,7 +816,7 @@ func readOutPoint(r io.Reader, pver uint32, version int32, op *OutPoint) error {
 // writeOutPoint encodes op to the bitcoin protocol encoding for an OutPoint
 // to w.
 func writeOutPoint(w io.Writer, pver uint32, version int32, op *OutPoint) error {
-	_, err := w.Write(op.Hash[:])
+	_, err := w.Write(op.TxID[:])
 	if err != nil {
 		return err
 	}

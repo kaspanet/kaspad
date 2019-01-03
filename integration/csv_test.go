@@ -77,7 +77,7 @@ func makeTestOutput(r *rpctest.Harness, t *testing.T,
 	}
 
 	utxo := &wire.OutPoint{
-		Hash:  fundTx.TxHash(),
+		Hash:  fundTx.TxID(),
 		Index: outputIndex,
 	}
 
@@ -282,7 +282,7 @@ func createCSVOutput(r *rpctest.Harness, t *testing.T,
 	}
 
 	utxo := &wire.OutPoint{
-		Hash:  tx.TxHash(),
+		Hash:  tx.TxID(),
 		Index: outputIndex,
 	}
 
@@ -330,8 +330,8 @@ func assertTxInBlock(r *rpctest.Harness, t *testing.T, blockHash *daghash.Hash,
 	}
 
 	for _, txn := range block.Transactions {
-		txHash := txn.TxHash()
-		if txn.TxHash() == txHash {
+		txHash := txn.TxID()
+		if txn.TxID() == txHash {
 			return
 		}
 	}
