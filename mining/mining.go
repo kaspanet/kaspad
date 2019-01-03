@@ -494,9 +494,9 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 				continue
 			}
 			txGas := tx.MsgTx().Gas
-			if txGas > gasLimit || gasLimit-txGas > gasUsage {
-				log.Tracef("Transaction %v ignored because gas overusage in subnetwork %v",
-					tx.MsgTx().TxHash, subnetwork)
+			if gasLimit-gasUsage < txGas {
+				log.Tracef("Transaction %v (GAS=%v) ignored because gas overusage (GASUsage=%v) in subnetwork %v (GASLimit=%v)",
+					tx.MsgTx().TxHash, txGas, gasUsage, subnetwork, gasLimit)
 				continue
 			}
 			gasUsageMap[subnetwork] = gasUsage + txGas
