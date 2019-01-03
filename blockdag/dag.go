@@ -477,7 +477,7 @@ func (dag *BlockDAG) connectToDAG(node *blockNode, parentNodes blockSet, block *
 			writeErr)
 	}
 
-	return nil
+	return err
 }
 
 // connectBlock handles connecting the passed node/block to the DAG.

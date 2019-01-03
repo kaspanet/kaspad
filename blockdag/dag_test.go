@@ -960,21 +960,31 @@ func TestFinality(t *testing.T) {
 
 	// Here we check that a block with lower blue score than the last finality
 	// point will get rejected
-	nodeWithLowBlueScore, err := buildNodeToDag(setFromSlice(dag.genesis))
-	if err != nil {
-		t.Fatalf("TestFinality: buildNodeToDag unexpectedly returned an error: %v", err)
+	_, err = buildNodeToDag(setFromSlice(dag.genesis))
+	if err == nil {
+		t.Errorf("TestFinality: buildNodeToDag expected an error but got <nil>")
 	}
-	if !dag.index.NodeStatus(nodeWithLowBlueScore).KnownInvalid() {
-		t.Errorf("TestFinality: nodeWithLowBlueScore was expected to be invalid, but got valid instead")
+	rErr, ok := err.(RuleError)
+	if ok {
+		if rErr.ErrorCode != ErrFinality {
+			t.Errorf("TestFinality: buildNodeToDag expected an error with code %v but instead got %v", ErrFinality, rErr.ErrorCode)
+		}
+	} else {
+		t.Errorf("TestFinality: buildNodeToDag got unexpected error: %v", rErr)
 	}
 
 	// Here we check that a block that doesn't have the last finality point in
 	// its selected parent chain will get rejected
-	nodeWithFinalityPointInAnticone, err := buildNodeToDag(setFromSlice(altChainTip))
-	if err != nil {
-		t.Fatalf("TestFinality: buildNodeToDag unexpectedly returned an error: %v", err)
+	_, err = buildNodeToDag(setFromSlice(altChainTip))
+	if err == nil {
+		t.Errorf("TestFinality: buildNodeToDag expected an error but got <nil>")
 	}
-	if !dag.index.NodeStatus(nodeWithFinalityPointInAnticone).KnownInvalid() {
-		t.Errorf("TestFinality: invalidNode was expected to be invalid, but got valid instead")
+	rErr, ok = err.(RuleError)
+	if ok {
+		if rErr.ErrorCode != ErrFinality {
+			t.Errorf("TestFinality: buildNodeToDag expected an error with code %v but instead got %v", ErrFinality, rErr.ErrorCode)
+		}
+	} else {
+		t.Errorf("TestFinality: buildNodeToDag got unexpected error: %v", rErr)
 	}
 }
