@@ -211,6 +211,9 @@ const (
 
 	// ErrFinality indicates that a block doesn't adhere to the finality rules
 	ErrFinality
+	// ErrTransactionsNotSorted indicates that transactions in block are not
+	// sorted by subnetwork
+	ErrTransactionsNotSorted
 )
 
 // Map of ErrorCode values back to their constant names for pretty printing.
@@ -256,6 +259,7 @@ var errorCodeStrings = map[ErrorCode]string{
 	ErrParentBlockNotCurrentTips: "ErrParentBlockNotCurrentTips",
 	ErrWithDiff:                  "ErrWithDiff",
 	ErrFinality:                  "ErrFinality",
+	ErrTransactionsNotSorted:     "ErrTransactionsNotSorted",
 }
 
 // String returns the ErrorCode as a human-readable name.

@@ -56,6 +56,7 @@ func TestErrorCodeStringer(t *testing.T) {
 		{ErrParentBlockNotCurrentTips, "ErrParentBlockNotCurrentTips"},
 		{ErrWithDiff, "ErrWithDiff"},
 		{ErrFinality, "ErrFinality"},
+		{ErrTransactionsNotSorted, "ErrTransactionsNotSorted"},
 		{0xffff, "Unknown ErrorCode (65535)"},
 	}
 
