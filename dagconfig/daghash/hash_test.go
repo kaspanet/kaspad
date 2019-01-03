@@ -7,6 +7,7 @@ package daghash
 import (
 	"bytes"
 	"encoding/hex"
+	"math/big"
 	"reflect"
 	"testing"
 )
@@ -268,6 +269,158 @@ func TestAreEqual(t *testing.T) {
 		if result != test.expected {
 			t.Errorf("unexpected AreEqual result for"+
 				" test \"%s\". Expected: %t, got: %t.", test.name, test.expected, result)
+		}
+	}
+}
+
+func TestHashToBig(t *testing.T) {
+	hash0, _ := NewHashFromStr("0000000000000000000000000000000000000000000000000000000000000000")
+	big0 := big.NewInt(0)
+	hash1, _ := NewHashFromStr("1111111111111111111111111111111111111111111111111111111111111111")
+	big1 := big.NewInt(0)
+	big1.SetString("1111111111111111111111111111111111111111111111111111111111111111", 16)
+	hash2, _ := NewHashFromStr("2222222222222222222222222222222222222222222222222222222222222222")
+	big2 := big.NewInt(0)
+	big2.SetString("2222222222222222222222222222222222222222222222222222222222222222", 16)
+	hash3, _ := NewHashFromStr("3333333333333333333333333333333333333333333333333333333333333333")
+	big3 := big.NewInt(0)
+	big3.SetString("3333333333333333333333333333333333333333333333333333333333333333", 16)
+
+	tests := []struct {
+		hash     *Hash
+		expected *big.Int
+	}{
+		{hash0, big0},
+		{hash1, big1},
+		{hash2, big2},
+		{hash3, big3},
+	}
+
+	for _, test := range tests {
+		result := HashToBig(test.hash)
+
+		if result.Cmp(test.expected) != 0 {
+			t.Errorf("unexpected HashToBig result for"+
+				" test \"%s\". Expected: %s, got: %s.", test.hash, test.expected, result)
+		}
+	}
+}
+
+func TestHashCmp(t *testing.T) {
+	hash0, _ := NewHashFromStr("0000000000000000000000000000000000000000000000000000000000000000")
+	hash1, _ := NewHashFromStr("1111111111111111111111111111111111111111111111111111111111111111")
+	hash2, _ := NewHashFromStr("2222222222222222222222222222222222222222222222222222222222222222")
+
+	tests := []struct {
+		name     string
+		first    *Hash
+		second   *Hash
+		expected int
+	}{
+		{"equal 0", hash0, hash0, 0},
+		{"equal 2", hash2, hash2, 0},
+		{"1 vs 0", hash1, hash0, 1},
+		{"0 vs 1", hash0, hash1, -1},
+		{"2 vs 1", hash2, hash1, 1},
+		{"2 vs 0", hash2, hash0, 1},
+		{"0 vs 2", hash0, hash2, -1},
+	}
+
+	for _, test := range tests {
+		result := test.first.Cmp(test.second)
+
+		if result != test.expected {
+			t.Errorf("unexpected Hash.Cmp result for"+
+				" test \"%s\". Expected: %d, got: %d.", test.name, test.expected, result)
+		}
+	}
+}
+
+func TestHashLess(t *testing.T) {
+	hash0, _ := NewHashFromStr("0000000000000000000000000000000000000000000000000000000000000000")
+	hash1, _ := NewHashFromStr("1111111111111111111111111111111111111111111111111111111111111111")
+	hash2, _ := NewHashFromStr("2222222222222222222222222222222222222222222222222222222222222222")
+
+	tests := []struct {
+		name     string
+		first    *Hash
+		second   *Hash
+		expected bool
+	}{
+		{"equal 0", hash0, hash0, false},
+		{"equal 2", hash2, hash2, false},
+		{"1 vs 0", hash1, hash0, false},
+		{"0 vs 1", hash0, hash1, true},
+		{"2 vs 1", hash2, hash1, false},
+		{"2 vs 0", hash2, hash0, false},
+		{"0 vs 2", hash0, hash2, true},
+	}
+
+	for _, test := range tests {
+		result := Less(test.first, test.second)
+
+		if result != test.expected {
+			t.Errorf("unexpected Hash.Less result for"+
+				" test \"%s\". Expected: %t, got: %t.", test.name, test.expected, result)
+		}
+	}
+}
+
+func TestJoinHashesStrings(t *testing.T) {
+	hash0, _ := NewHashFromStr("0000000000000000000000000000000000000000000000000000000000000000")
+	hash1, _ := NewHashFromStr("1111111111111111111111111111111111111111111111111111111111111111")
+
+	tests := []struct {
+		name      string
+		hashes    []Hash
+		separator string
+		expected  string
+	}{
+		{"no separator", []Hash{*hash0, *hash1}, "",
+			"00000000000000000000000000000000000000000000000000000000000000001111111111111111111111111111111111111111111111111111111111111111"},
+		{", separator", []Hash{*hash0, *hash1}, ",",
+			"0000000000000000000000000000000000000000000000000000000000000000,1111111111111111111111111111111111111111111111111111111111111111"},
+		{"blabla separator", []Hash{*hash0, *hash1}, "blabla",
+			"0000000000000000000000000000000000000000000000000000000000000000blabla1111111111111111111111111111111111111111111111111111111111111111"},
+		{"1 hash", []Hash{*hash0}, ",", "0000000000000000000000000000000000000000000000000000000000000000"},
+		{"0 hashes", []Hash{}, ",", ""},
+	}
+
+	for _, test := range tests {
+		result := JoinHashesStrings(test.hashes, test.separator)
+
+		if result != test.expected {
+			t.Errorf("unexpected JoinHashesStrings result for"+
+				" test \"%s\". Expected: %s, got: %s.", test.name, test.expected, result)
+		}
+	}
+}
+
+func TestSort(t *testing.T) {
+	hash0, _ := NewHashFromStr("0000000000000000000000000000000000000000000000000000000000000000")
+	hash1, _ := NewHashFromStr("1111111111111111111111111111111111111111111111111111111111111111")
+	hash2, _ := NewHashFromStr("2222222222222222222222222222222222222222222222222222222222222222")
+	hash3, _ := NewHashFromStr("3333333333333333333333333333333333333333333333333333333333333333")
+
+	tests := []struct {
+		name     string
+		hashes   []Hash
+		expected []Hash
+	}{
+		{"empty", []Hash{}, []Hash{}},
+		{"single item", []Hash{*hash0}, []Hash{*hash0}},
+		{"already sorted", []Hash{*hash0, *hash1, *hash2, *hash3}, []Hash{*hash0, *hash1, *hash2, *hash3}},
+		{"inverted", []Hash{*hash3, *hash2, *hash1, *hash0}, []Hash{*hash0, *hash1, *hash2, *hash3}},
+		{"shuffled", []Hash{*hash2, *hash3, *hash0, *hash1}, []Hash{*hash0, *hash1, *hash2, *hash3}},
+		{"with duplicates", []Hash{*hash2, *hash3, *hash0, *hash1, *hash1}, []Hash{*hash0, *hash1, *hash1, *hash2, *hash3}},
+	}
+
+	for _, test := range tests {
+		Sort(test.hashes)
+
+		if !reflect.DeepEqual(test.hashes, test.expected) {
+			t.Errorf("unexpected Sort result for"+
+				" test \"%s\". Expected: %v, got: %v.", test.name, test.expected, test.hashes)
 		}
 	}
 }
