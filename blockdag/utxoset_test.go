@@ -803,9 +803,8 @@ func TestDiffUTXOSet_addTx(t *testing.T) {
 // outputs paying an appropriate subsidy based on the passed block height to the
 // address associated with the harness.  It automatically uses a standard
 // signature script that starts with the block height
-func createCoinbaseTx(blockHeight int32, numOutputs uint32) (*wire.MsgTx, error) {
+func createCoinbaseTx(blockHeight int32, numOutputs uint32, extraNonce int64, params *dagconfig.Params) (*wire.MsgTx, error) {
 	// Create standard coinbase script.
-	extraNonce := int64(0)
 	coinbaseScript, err := txscript.NewScriptBuilder().
 		AddInt64(int64(blockHeight)).AddInt64(extraNonce).Script()
 	if err != nil {
@@ -821,7 +820,7 @@ func createCoinbaseTx(blockHeight int32, numOutputs uint32) (*wire.MsgTx, error)
 		SignatureScript: coinbaseScript,
 		Sequence:        wire.MaxTxInSequenceNum,
 	})
-	totalInput := CalcBlockSubsidy(blockHeight, &dagconfig.MainNetParams)
+	totalInput := CalcBlockSubsidy(blockHeight, params)
 	amountPerOutput := totalInput / uint64(numOutputs)
 	remainder := totalInput - amountPerOutput*uint64(numOutputs)
 	for i := uint32(0); i < numOutputs; i++ {
@@ -858,7 +857,7 @@ func TestApplyUTXOChanges(t *testing.T) {
 		},
 	}
 
-	cbTx, err := createCoinbaseTx(1, 1)
+	cbTx, err := createCoinbaseTx(1, 1, 0, dag.dagParams)
 	if err != nil {
 		t.Errorf("createCoinbaseTx: %v", err)
 	}
@@ -925,7 +924,7 @@ func TestDiffFromTx(t *testing.T) {
 	fus := &FullUTXOSet{
 		utxoCollection: utxoCollection{},
 	}
-	cbTx, err := createCoinbaseTx(1, 1)
+	cbTx, err := createCoinbaseTx(1, 1, 0, &dagconfig.SimNetParams)
 	if err != nil {
 		t.Errorf("createCoinbaseTx: %v", err)
 	}

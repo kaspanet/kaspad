@@ -23,6 +23,8 @@ const (
 	// maxOrphanBlocks is the maximum number of orphan blocks that can be
 	// queued.
 	maxOrphanBlocks = 100
+
+	finalityInterval = 100
 )
 
 // BlockLocator is used to help locate a specific block.  The algorithm for
@@ -138,6 +140,8 @@ type BlockDAG struct {
 	// certain blockchain events.
 	notificationsLock sync.RWMutex
 	notifications     []NotificationCallback
+
+	lastFinalityPoint *blockNode
 }
 
 // HaveBlock returns whether or not the DAG instance has the block represented
@@ -473,6 +477,11 @@ func (dag *BlockDAG) connectToDAG(node *blockNode, parentNodes blockSet, block *
 			writeErr)
 	}
 
+	// If dag.connectBlock returned a rule error, return it here after updating DB
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -503,10 +512,24 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block, fastAdd bo
 		}
 	}
 
+	var finalityPointCandidate *blockNode
+
+	if !fastAdd {
+		var err error
+		finalityPointCandidate, err = dag.checkFinalityRulesAndGetFinalityPointCandidate(node)
+		if err != nil {
+			return err
+		}
+	}
+
 	// Add the node to the virtual and update the UTXO set of the DAG.
 	utxoDiff, acceptedTxsData, err := dag.applyUTXOChanges(node, block, fastAdd)
 	if err != nil {
 		return err
+	}
+
+	if finalityPointCandidate != nil {
+		dag.lastFinalityPoint = finalityPointCandidate
 	}
 
 	// Write any block status changes to DB before updating the DAG state.
@@ -518,7 +541,11 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block, fastAdd bo
 	// Atomically insert info into the database.
 	err = dag.db.Update(func(dbTx database.Tx) error {
 		// Update best block state.
-		err := dbPutDAGTipHashes(dbTx, dag.TipHashes())
+		state := &dagState{
+			TipHashes:         dag.TipHashes(),
+			LastFinalityPoint: dag.lastFinalityPoint.hash,
+		}
+		err := dbPutDAGState(dbTx, state)
 		if err != nil {
 			return err
 		}
@@ -561,6 +588,27 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block, fastAdd bo
 	dag.dagLock.Lock()
 
 	return nil
+}
+
+func (dag *BlockDAG) checkFinalityRulesAndGetFinalityPointCandidate(node *blockNode) (*blockNode, error) {
+	var finalityPointCandidate *blockNode
+	finalityErr := ruleError(ErrFinality, "The last finality point is not in the selected chain of this block")
+
+	if node.blueScore <= dag.lastFinalityPoint.blueScore {
+		return nil, finalityErr
+	}
+
+	shouldFindFinalityPointCandidate := node.finalityScore() > dag.lastFinalityPoint.finalityScore()
+
+	for currentNode := node.selectedParent; currentNode != dag.lastFinalityPoint; currentNode = currentNode.selectedParent {
+		if currentNode.blueScore <= dag.lastFinalityPoint.blueScore {
+			return nil, finalityErr
+		}
+		if shouldFindFinalityPointCandidate && currentNode.finalityScore() > currentNode.selectedParent.finalityScore() {
+			finalityPointCandidate = currentNode
+		}
+	}
+	return finalityPointCandidate, nil
 }
 
 // applyUTXOChanges does the following:
@@ -1528,7 +1576,7 @@ func New(config *Config) (*BlockDAG, error) {
 	}
 
 	// Initialize the chain state from the passed database.  When the db
-	// does not yet contain any chain state, both it and the chain state
+	// does not yet contain any DAG state, both it and the DAG state
 	// will be initialized to contain only the genesis block.
 	if err := dag.initDAGState(); err != nil {
 		return nil, err

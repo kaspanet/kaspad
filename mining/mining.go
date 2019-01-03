@@ -7,6 +7,7 @@ package mining
 import (
 	"container/heap"
 	"fmt"
+	"sort"
 	"time"
 
 	"github.com/daglabs/btcd/blockdag"
@@ -710,6 +711,11 @@ mempoolLoop:
 	if err != nil {
 		return nil, err
 	}
+
+	// Sort transactions by subnetwork ID before building Merkle tree
+	sort.Slice(blockTxns, func(i, j int) bool {
+		return blockTxns[i].MsgTx().SubNetworkID < blockTxns[j].MsgTx().SubNetworkID
+	})
 
 	// Create a new block ready to be solved.
 	merkles := blockdag.BuildMerkleTreeStore(blockTxns)
