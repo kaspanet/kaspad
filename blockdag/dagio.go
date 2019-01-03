@@ -921,6 +921,7 @@ func dbFetchHeightByHash(dbTx database.Tx, hash *daghash.Hash) (int32, error) {
 type dagState struct {
 	TipHashes         []daghash.Hash
 	LastFinalityPoint daghash.Hash
+	LastSubNetworkID  uint64
 }
 
 // serializeDAGState returns the serialization of the DAG state.
@@ -1241,6 +1242,9 @@ func (dag *BlockDAG) initDAGState() error {
 
 		// Set the last finality point
 		dag.lastFinalityPoint = dag.index.LookupNode(&state.LastFinalityPoint)
+
+		// Set the last sub-network ID
+		dag.lastSubNetworkID = state.LastSubNetworkID
 
 		return nil
 	})

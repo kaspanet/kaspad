@@ -555,6 +555,7 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block, fastAdd bo
 		state := &dagState{
 			TipHashes:         dag.TipHashes(),
 			LastFinalityPoint: dag.lastFinalityPoint.hash,
+			LastSubNetworkID:  dag.lastSubNetworkID,
 		}
 		err := dbPutDAGState(dbTx, state)
 		if err != nil {
@@ -1713,7 +1714,6 @@ func (dag *BlockDAG) registerPendingSubNetworksInBlock(dbTx database.Tx, blockHa
 					" in block '%s': %s", tx.TxHash(), blockHash, err)
 			}
 
-			// TODO: (Stas) lastSubNetworkID should be persisted in the state object (Ori had already implemented it)
 			dag.lastSubNetworkID++
 		}
 	}
@@ -1736,7 +1736,6 @@ func (dag *BlockDAG) subNetwork(subNetworkID uint64) (*subNetwork, error) {
 		sNet, err = dbGetSubNetwork(dbTx, subNetworkID)
 		return nil
 	})
-
 	if dbErr != nil {
 		return nil, fmt.Errorf("could not retrieve sub-network '%d': %s", subNetworkID, dbErr)
 	}
