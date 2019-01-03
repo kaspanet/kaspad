@@ -130,7 +130,4 @@ var regressionNetParams = &dagconfig.Params{
 	// BIP44 coin type used in the hierarchical deterministic path for
 	// address generation.
 	HDCoinType: 1,
-
-	// FirstSubNetworkID the first sub-network ID
-	FirstSubNetworkID: 256,
 }

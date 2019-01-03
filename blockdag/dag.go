@@ -25,6 +25,9 @@ const (
 	maxOrphanBlocks = 100
 
 	finalityInterval = 100
+
+	// firstSubNetworkID the first sub-network ID
+	firstSubNetworkID = uint64(256)
 )
 
 // BlockLocator is used to help locate a specific block.  The algorithm for
@@ -1597,7 +1600,7 @@ func New(config *Config) (*BlockDAG, error) {
 		warningCaches:       newThresholdCaches(vbNumBits),
 		deploymentCaches:    newThresholdCaches(dagconfig.DefinedDeployments),
 		blockCount:          1,
-		lastSubNetworkID:    params.FirstSubNetworkID,
+		lastSubNetworkID:    firstSubNetworkID,
 	}
 
 	// Initialize the chain state from the passed database.  When the db
