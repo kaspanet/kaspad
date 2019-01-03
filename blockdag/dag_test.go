@@ -40,16 +40,16 @@ func TestBlockCount(t *testing.T) {
 		blocks = append(blocks, blockTmp...)
 	}
 
-	// Create a new database and chain instance to run tests against.
+	// Create a new database and DAG instance to run tests against.
 	dag, teardownFunc, err := DAGSetup("haveblock", Config{
 		DAGParams: &dagconfig.SimNetParams,
 	})
 	if err != nil {
-		t.Fatalf("Failed to setup chain instance: %v", err)
+		t.Fatalf("Failed to setup DAG instance: %v", err)
 	}
 	defer teardownFunc()
 
-	// Since we're not dealing with the real block chain, set the coinbase
+	// Since we're not dealing with the real block DAG, set the coinbase
 	// maturity to 1.
 	dag.TstSetCoinbaseMaturity(1)
 
@@ -847,5 +847,134 @@ func testErrorThroughPatching(t *testing.T, expectedErrorMessage string, targetF
 	if !strings.Contains(err.Error(), expectedErrorMessage) {
 		t.Errorf("ProcessBlock returned wrong error. "+
 			"Want: %s, got: %s", expectedErrorMessage, err)
+	}
+}
+
+// TestFinality checks that the finality mechanism works as expected.
+// This is how the flow goes:
+// 1) We build a chain of finalityInterval blocks and call its tip altChainTip.
+// 2) We build another chain (let's call it mainChain) of 2 * finalityInterval
+// blocks, which points to genesis, and then we check that the block in that
+// chain with height of finalityInterval is marked as finality point (This is
+// very predictable, because the blue score of each new block in a chain is the
+// parents plus one).
+// 3) We make a new child to block with height (2 * finalityInterval - 1)
+// in mainChain, and we check that connecting it to the DAG
+// doesn't affect the last finality point.
+// 4) We make a block that points to genesis, and check that it
+// gets rejected because its blue score is lower then the last finality
+// point.
+// 5) We make a block that points to altChainTip, and check that it
+// gets rejected because it doesn't have the last finality point in
+// its selected parent chain.
+func TestFinality(t *testing.T) {
+	params := dagconfig.SimNetParams
+	params.K = 1
+	dag, teardownFunc, err := DAGSetup("TestFinality", Config{
+		DAGParams: &params,
+	})
+	if err != nil {
+		t.Fatalf("Failed to setup DAG instance: %v", err)
+	}
+	defer teardownFunc()
+	blockTime := time.Unix(dag.genesis.timestamp, 0)
+	extraNonce := int64(0)
+	buildNodeToDag := func(parents blockSet) (*blockNode, error) {
+		// We need to change the blockTime to keep all block hashes unique
+		blockTime = blockTime.Add(time.Second)
+
+		// We need to change the extraNonce to keep coinbase hashes unique
+		extraNonce++
+
+		bh := &wire.BlockHeader{
+			Version:      1,
+			Bits:         dag.genesis.bits,
+			ParentHashes: parents.hashes(),
+			Timestamp:    blockTime,
+		}
+		msgBlock := wire.NewMsgBlock(bh)
+		blockHeight := parents.maxHeight() + 1
+		coinbaseTx, err := createCoinbaseTx(blockHeight, 1, extraNonce, dag.dagParams)
+		if err != nil {
+			return nil, err
+		}
+		msgBlock.AddTransaction(coinbaseTx)
+		block := util.NewBlock(msgBlock)
+
+		dag.dagLock.Lock()
+		defer dag.dagLock.Unlock()
+
+		err = dag.maybeAcceptBlock(block, BFNone)
+		if err != nil {
+			return nil, err
+		}
+
+		return dag.index.LookupNode(block.Hash()), nil
+	}
+
+	currentNode := dag.genesis
+
+	// First we build a chain of finalityInterval blocks for future use
+	for currentNode.blueScore < finalityInterval {
+		currentNode, err = buildNodeToDag(setFromSlice(currentNode))
+		if err != nil {
+			t.Fatalf("TestFinality: buildNodeToDag unexpectedly returned an error: %v", err)
+		}
+	}
+
+	altChainTip := currentNode
+
+	// Now we build a new chain of 2 * finalityInterval blocks, pointed to genesis, and
+	// we expect the block with height 1 * finalityInterval to be the last finality point
+	currentNode = dag.genesis
+	for currentNode.blueScore < finalityInterval {
+		currentNode, err = buildNodeToDag(setFromSlice(currentNode))
+		if err != nil {
+			t.Fatalf("TestFinality: buildNodeToDag unexpectedly returned an error: %v", err)
+		}
+	}
+
+	expectedFinalityPoint := currentNode
+
+	for currentNode.blueScore < 2*finalityInterval {
+		currentNode, err = buildNodeToDag(setFromSlice(currentNode))
+		if err != nil {
+			t.Fatalf("TestFinality: buildNodeToDag unexpectedly returned an error: %v", err)
+		}
+	}
+
+	if dag.lastFinalityPoint != expectedFinalityPoint {
+		t.Errorf("TestFinality: dag.lastFinalityPoint expected to be %v but got %v", expectedFinalityPoint, dag.lastFinalityPoint)
+	}
+
+	// Here we check that even if we create a parallel tip (a new tip with
+	// the same parents as the current one) with the same blue score as the
+	// current tip, it still won't affect the last finality point.
+	_, err = buildNodeToDag(setFromSlice(currentNode.selectedParent))
+	if err != nil {
+		t.Fatalf("TestFinality: buildNodeToDag unexpectedly returned an error: %v", err)
+	}
+	if dag.lastFinalityPoint != expectedFinalityPoint {
+		t.Errorf("TestFinality: dag.lastFinalityPoint was unexpectly changed")
+	}
+
+	// Here we check that a block with lower blue score than the last finality
+	// point will get rejected
+	nodeWithLowBlueScore, err := buildNodeToDag(setFromSlice(dag.genesis))
+	if err != nil {
+		t.Fatalf("TestFinality: buildNodeToDag unexpectedly returned an error: %v", err)
+	}
+	if !dag.index.NodeStatus(nodeWithLowBlueScore).KnownInvalid() {
+		t.Errorf("TestFinality: nodeWithLowBlueScore was expected to be invalid, but got valid instead")
+	}
+
+	// Here we check that a block that doesn't have the last finality point in
+	// its selected parent chain will get rejected
+	nodeWithFinalityPointInAnticone, err := buildNodeToDag(setFromSlice(altChainTip))
+	if err != nil {
+		t.Fatalf("TestFinality: buildNodeToDag unexpectedly returned an error: %v", err)
+	}
+	if !dag.index.NodeStatus(nodeWithFinalityPointInAnticone).KnownInvalid() {
+		t.Errorf("TestFinality: invalidNode was expected to be invalid, but got valid instead")
 	}
 }
