@@ -484,6 +484,11 @@ func (dag *BlockDAG) connectToDAG(node *blockNode, parentNodes blockSet, block *
 			writeErr)
 	}
 
+	// If dag.connectBlock returned a rule error, return it here after updating DB
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
