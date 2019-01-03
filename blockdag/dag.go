@@ -507,9 +507,14 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block, fastAdd bo
 		}
 	}
 
-	finalityPointCandidate, err := dag.checkFinalityRulesAndGetFinalityPointCandidate(node)
-	if err != nil {
-		return err
+	var finalityPointCandidate *blockNode
+
+	if !fastAdd {
+		var err error
+		finalityPointCandidate, err = dag.checkFinalityRulesAndGetFinalityPointCandidate(node)
+		if err != nil {
+			return err
+		}
 	}
 
 	// Add the node to the virtual and update the UTXO set of the DAG.
