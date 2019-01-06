@@ -373,36 +373,36 @@ func testPoolMembership(tc *testContext, tx *util.Tx, inOrphanPool, inTxPool boo
 		tc.t.Error("mempool.TxHashes(), mempool.TxDescs() and mempool.MiningDescs() have different length")
 	}
 	if inTxPool {
-		i := 0
+		wasFound := false
 		for _, txh := range txHashes {
 			if *txHash == *txh {
+				wasFound = true
 				break
 			}
-			i++
 		}
-		if i == len(txHashes) {
+		if !wasFound {
 			tc.t.Error("Can not find transaction in mempool.TxHashes")
 		}
 
-		i = 0
+		wasFound = false
 		for _, txd := range txDescs {
 			if *txHash == *txd.Tx.Hash() {
+				wasFound = true
 				break
 			}
-			i++
 		}
-		if i == len(txDescs) {
+		if !wasFound {
 			tc.t.Error("Can not find transaction in mempool.TxDescs")
 		}
 
-		i = 0
+		wasFound = false
 		for _, txd := range txMiningDescs {
 			if *txHash == *txd.Tx.Hash() {
+				wasFound = true
 				break
 			}
-			i++
 		}
-		if i == len(txMiningDescs) {
+		if !wasFound {
 			tc.t.Error("Can not find transaction in mempool.MiningDescs")
 		}
 	}
