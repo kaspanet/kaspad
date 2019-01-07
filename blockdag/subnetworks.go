@@ -41,12 +41,19 @@ func validateSubNetworkRegistryTransaction(tx *wire.MsgTx) error {
 
 // registerPendingSubNetworks attempts to register all the pending sub-networks that
 // had previously been defined between the initial finality point and the new one.
+// Note: transactions within newFinalityPoint itself are not registered. Instead, they will
+// be registered when the next finality point is chosen; then it will be the
+// initialFinalityPoint.
 func (dag *BlockDAG) registerPendingSubNetworks(dbTx database.Tx, initialFinalityPoint *blockNode, newFinalityPoint *blockNode) error {
 	var stack []*blockNode
 	for currentNode := newFinalityPoint; currentNode != initialFinalityPoint; currentNode = currentNode.selectedParent {
 		stack = append(stack, currentNode)
 	}
 
+	// Register a pending sub-network for all blues. The block itself is not explicitly
+	// registered since it will be one of the blues of the next block.
+	// Note that this means that the very last block in the selected parent chain is not
+	// registered. This is intentional.
 	for i := len(stack) - 1; i >= 0; i-- {
 		currentNode := stack[i]
 		for _, blue := range currentNode.blues {
@@ -201,7 +208,6 @@ func serializeSubNetworkRegistryTxs(subNetworkRegistryTxs []*wire.MsgTx) ([]byte
 }
 
 // deserializeSubNetworkRegistryTxs deserializes a byte slice into a slice of MsgTxs.
-// See serializeSubNetworkRegistryTxs for the binary format.
 func deserializeSubNetworkRegistryTxs(serializedTxsBytes []byte) ([]*wire.MsgTx, error) {
 	serializedTxs := bytes.NewBuffer(serializedTxsBytes)
 
@@ -236,7 +242,7 @@ func dbRemovePendingSubNetworkTxs(dbTx database.Tx, blockHash daghash.Hash) erro
 }
 
 // dbIsRegisteredSubNetworkTx checks whether a sub-network registry transaction
-// was previously stored with dbPutRegisteredSubNetworkTx.
+// had successfully registered a sub-network.
 func dbIsRegisteredSubNetworkTx(dbTx database.Tx, txHash daghash.Hash) bool {
 	bucket := dbTx.Metadata().Bucket(registeredSubNetworkTxsBucketName)
 	subNetworkIDBytes := bucket.Get(txHash[:])
