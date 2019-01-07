@@ -310,12 +310,12 @@ func medianAdjustedTime(dagMedianTime time.Time, timeSource blockdag.MedianTimeS
 // It also houses additional state required in order to ensure the templates
 // are built on top of the current best chain and adhere to the consensus rules.
 type BlkTmplGenerator struct {
-	policy      *Policy
-	chainParams *dagconfig.Params
-	txSource    TxSource
-	dag         *blockdag.BlockDAG
-	timeSource  blockdag.MedianTimeSource
-	sigCache    *txscript.SigCache
+	policy     *Policy
+	dagParams  *dagconfig.Params
+	txSource   TxSource
+	dag        *blockdag.BlockDAG
+	timeSource blockdag.MedianTimeSource
+	sigCache   *txscript.SigCache
 }
 
 // NewBlkTmplGenerator returns a new block template generator for the given
@@ -330,12 +330,12 @@ func NewBlkTmplGenerator(policy *Policy, params *dagconfig.Params,
 	sigCache *txscript.SigCache) *BlkTmplGenerator {
 
 	return &BlkTmplGenerator{
-		policy:      policy,
-		chainParams: params,
-		txSource:    txSource,
-		dag:         dag,
-		timeSource:  timeSource,
-		sigCache:    sigCache,
+		policy:     policy,
+		dagParams:  params,
+		txSource:   txSource,
+		dag:        dag,
+		timeSource: timeSource,
+		sigCache:   sigCache,
 	}
 }
 
@@ -418,7 +418,7 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 	if err != nil {
 		return nil, err
 	}
-	coinbaseTx, err := createCoinbaseTx(g.chainParams, coinbaseScript,
+	coinbaseTx, err := createCoinbaseTx(g.dagParams, coinbaseScript,
 		nextBlockHeight, payToAddress)
 	if err != nil {
 		return nil, err
@@ -640,7 +640,7 @@ mempoolLoop:
 		// Ensure the transaction inputs pass all of the necessary
 		// preconditions before allowing it to be added to the block.
 		_, err = blockdag.CheckTransactionInputs(tx, nextBlockHeight,
-			blockUtxos, g.chainParams)
+			blockUtxos, g.dagParams)
 		if err != nil {
 			log.Tracef("Skipping tx %s due to error in "+
 				"CheckTransactionInputs: %v", tx.Hash(), err)
@@ -771,7 +771,7 @@ func (g *BlkTmplGenerator) UpdateBlockTime(msgBlock *wire.MsgBlock) error {
 	msgBlock.Header.Timestamp = newTime
 
 	// Recalculate the difficulty if running on a network that requires it.
-	if g.chainParams.ReduceMinDifficulty {
+	if g.dagParams.ReduceMinDifficulty {
 		difficulty, err := g.dag.CalcNextRequiredDifficulty(newTime)
 		if err != nil {
 			return err
