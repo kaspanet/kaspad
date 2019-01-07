@@ -187,7 +187,7 @@ func CheckTransactionSanity(tx *util.Tx) error {
 
 	// A transaction must not exceed the maximum allowed block payload when
 	// serialized.
-	serializedTxSize := tx.MsgTx().SerializeSize()
+	serializedTxSize := msgTx.SerializeSize()
 	if serializedTxSize > wire.MaxBlockPayload {
 		str := fmt.Sprintf("serialized transaction is too big - got "+
 			"%d, max %d", serializedTxSize, wire.MaxBlockPayload)
@@ -263,6 +263,19 @@ func CheckTransactionSanity(tx *util.Tx) error {
 					"input refers to previous output that "+
 					"is null")
 			}
+		}
+	}
+
+	// Check that transaction does not overuse GAS
+	if msgTx.SubNetworkID != wire.SubNetworkDAGCoin {
+		gasLimit, err := GetGasLimit(msgTx.SubNetworkID)
+		if err != nil {
+			return err
+		}
+		if msgTx.Gas > gasLimit {
+			str := fmt.Sprintf("transaction wants more gas %v, than allowed %v",
+				msgTx.Gas, gasLimit)
+			return ruleError(ErrTooMuchGasInTransaction, str)
 		}
 	}
 

@@ -212,6 +212,10 @@ const (
 	// ErrTransactionsNotSorted indicates that transactions in block are not
 	// sorted by subnetwork
 	ErrTransactionsNotSorted
+
+	// ErrTooMuchGasInTransaction transaction wants to use more GAS than allowed
+	// by subnetwork
+	ErrTooMuchGasInTransaction
 )
 
 // Map of ErrorCode values back to their constant names for pretty printing.
@@ -257,6 +261,7 @@ var errorCodeStrings = map[ErrorCode]string{
 	ErrParentBlockNotCurrentTips: "ErrParentBlockNotCurrentTips",
 	ErrWithDiff:                  "ErrWithDiff",
 	ErrTransactionsNotSorted:     "ErrTransactionsNotSorted",
+	ErrTooMuchGasInTransaction:   "ErrTooMuchGasInTransaction",
 }
 
 // String returns the ErrorCode as a human-readable name.
