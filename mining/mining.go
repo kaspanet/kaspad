@@ -488,7 +488,7 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 			if !ok {
 				gasUsage = 0
 			}
-			gasLimit, err := blockdag.GetGasLimit(subnetwork)
+			gasLimit, err := blockdag.GasLimit(subnetwork)
 			if err != nil {
 				log.Errorf("Cannot get GAS limit for subnetwork %v", subnetwork)
 				continue
