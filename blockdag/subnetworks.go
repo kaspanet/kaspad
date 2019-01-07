@@ -38,10 +38,10 @@ func validateSubNetworkRegistryTransaction(tx *wire.MsgTx) error {
 }
 
 // registerPendingSubNetworks attempts to register all the pending sub-networks that
-// had previously been defined between the previous finality point and the new one.
-func (dag *BlockDAG) registerPendingSubNetworks(dbTx database.Tx, previousFinalityPoint *blockNode, newFinalityPoint *blockNode) error {
+// had previously been defined between the initial finality point and the new one.
+func (dag *BlockDAG) registerPendingSubNetworks(dbTx database.Tx, initialFinalityPoint *blockNode, newFinalityPoint *blockNode) error {
 	var stack []*blockNode
-	for currentNode := newFinalityPoint; currentNode != previousFinalityPoint; currentNode = currentNode.selectedParent {
+	for currentNode := newFinalityPoint; currentNode != initialFinalityPoint; currentNode = currentNode.selectedParent {
 		stack = append(stack, currentNode)
 	}
 

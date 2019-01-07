@@ -516,7 +516,7 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block, fastAdd bo
 		}
 	}
 
-	currentFinalityPoint := dag.lastFinalityPoint
+	initialFinalityPoint := dag.lastFinalityPoint
 
 	var finalityPointCandidate *blockNode
 	if !fastAdd {
@@ -585,10 +585,10 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block, fastAdd bo
 			return err
 		}
 
-		// Register all pending sub-networks between the previous finality point and
+		// Register all pending sub-networks between the initial finality point and
 		// the new one.
-		if currentFinalityPoint != dag.lastFinalityPoint {
-			err = dag.registerPendingSubNetworks(dbTx, currentFinalityPoint, dag.lastFinalityPoint)
+		if initialFinalityPoint != dag.lastFinalityPoint {
+			err = dag.registerPendingSubNetworks(dbTx, initialFinalityPoint, dag.lastFinalityPoint)
 			if err != nil {
 				return err
 			}
