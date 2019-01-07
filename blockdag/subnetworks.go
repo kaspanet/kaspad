@@ -12,7 +12,7 @@ import (
 // validateAndExtractSubNetworkRegistryTxs filters the given input and extracts a list
 // of valid sub-network registry transactions.
 func validateAndExtractSubNetworkRegistryTxs(txs []*TxWithBlockHash) ([]*wire.MsgTx, error) {
-	var validSubNetworkRegistryTxs []*wire.MsgTx
+	validSubNetworkRegistryTxs := make([]*wire.MsgTx, 0)
 	for _, txData := range txs {
 		tx := txData.Tx.MsgTx()
 		if tx.SubNetworkID == wire.SubNetworkRegistry {
@@ -179,26 +179,19 @@ func dbGetPendingSubNetworkTxs(dbTx database.Tx, blockHash daghash.Hash) ([]*wir
 	return txs, nil
 }
 
-// serializeSubNetworkRegistryTxs serializes a slice of MsgTxs into the following
-// binary format:
-// | amount of transactions (8 bytes) | serialized transactions 1 .. amount |
+// serializeSubNetworkRegistryTxs serializes a slice of MsgTxs by serializing each transaction
+// individually and appending it to one long byte slice.
 func serializeSubNetworkRegistryTxs(subNetworkRegistryTxs []*wire.MsgTx) ([]byte, error) {
 	// Calculate the length in bytes of the serialized transactions
-	serializedTxsLength := uint64(8) // The first 8 bytes are reserved for the amount of transactions
+	serializedTxsLength := uint64(0)
 	for _, tx := range subNetworkRegistryTxs {
 		serializedTxsLength += uint64(tx.SerializeSize())
 	}
 	serializedTxs := bytes.NewBuffer(make([]byte, 0, serializedTxsLength))
 
-	// Write the amount of transactions
-	err := binary.Write(serializedTxs, byteOrder, uint64(len(subNetworkRegistryTxs)))
-	if err != nil {
-		return nil, fmt.Errorf("failed to serialize pending sub-network txs: %s", err)
-	}
-
 	// Write each transaction in the order it appears in
 	for _, tx := range subNetworkRegistryTxs {
-		err = tx.Serialize(serializedTxs)
+		err := tx.Serialize(serializedTxs)
 		if err != nil {
 			return nil, fmt.Errorf("failed to serialize tx '%s': %s", tx.TxHash(), err)
 		}
@@ -212,18 +205,11 @@ func serializeSubNetworkRegistryTxs(subNetworkRegistryTxs []*wire.MsgTx) ([]byte
 func deserializeSubNetworkRegistryTxs(serializedTxsBytes []byte) ([]*wire.MsgTx, error) {
 	serializedTxs := bytes.NewBuffer(serializedTxsBytes)
 
-	// Read the amount of transactions
-	var subNetworkRegistryTxsAmount uint64
-	err := binary.Read(serializedTxs, byteOrder, &subNetworkRegistryTxsAmount)
-	if err != nil {
-		return nil, fmt.Errorf("failed to deserialize pending sub-network txs: %s", err)
-	}
-
-	// Read each transaction and store it in txs
-	txs := make([]*wire.MsgTx, 0, subNetworkRegistryTxsAmount)
-	for i := uint64(0); i < subNetworkRegistryTxsAmount; i++ {
+	// Read each transaction and store it in txs until the end of the buffer
+	txs := make([]*wire.MsgTx, 0)
+	for serializedTxs.Len() > 0 {
 		var tx wire.MsgTx
-		err = tx.Deserialize(serializedTxs)
+		err := tx.Deserialize(serializedTxs)
 		if err != nil {
 			return nil, fmt.Errorf("failed to deserialize pending sub-network txs: %s", err)
 		}
