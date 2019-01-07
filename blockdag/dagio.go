@@ -41,9 +41,9 @@ var (
 	// the block height -> block hash index.
 	heightIndexBucketName = []byte("heightidx")
 
-	// dagTipHashesKeyName is the name of the db key used to store the DAG
+	// dagStateKeyName is the name of the db key used to store the DAG
 	// tip hashes.
-	dagTipHashesKeyName = []byte("dagtiphashes")
+	dagStateKeyName = []byte("dagstate")
 
 	// utxoSetVersionKeyName is the name of the db key used to store the
 	// version of the utxo set currently in the database.
@@ -52,6 +52,18 @@ var (
 	// utxoSetBucketName is the name of the db bucket used to house the
 	// unspent transaction output set.
 	utxoSetBucketName = []byte("utxoset")
+
+	// pendingSubNetworksBucketName is the name of the db bucket used to store the
+	// pending sub-networks.
+	pendingSubNetworksBucketName = []byte("pendingsubnetworks")
+
+	// registeredSubNetworkTxsBucketName is the name of the db bucket used to house
+	// the transactions that have been used to register sub-networks.
+	registeredSubNetworkTxsBucketName = []byte("registeredsubnetworktxs")
+
+	// subNetworksBucketName is the name of the db bucket used to store the
+	// sub-network registry.
+	subNetworksBucketName = []byte("subnetworks")
 
 	// byteOrder is the preferred byte order used for serializing numeric
 	// fields for storage in the database.
@@ -567,48 +579,6 @@ func deserializeUTXOEntry(serialized []byte) (*UTXOEntry, error) {
 	return entry, nil
 }
 
-// dbFetchUTXOEntry uses an existing database transaction to fetch the specified
-// transaction output from the UTXO set.
-//
-// When there is no entry for the provided output, nil will be returned for both
-// the entry and the error.
-func dbFetchUTXOEntry(dbTx database.Tx, outpoint wire.OutPoint) (*UTXOEntry, error) {
-	// Fetch the unspent transaction output information for the passed
-	// transaction output.  Return now when there is no entry.
-	key := outpointKey(outpoint)
-	utxoBucket := dbTx.Metadata().Bucket(utxoSetBucketName)
-	serializedUTXO := utxoBucket.Get(*key)
-	recycleOutpointKey(key)
-	if serializedUTXO == nil {
-		return nil, nil
-	}
-
-	// A non-nil zero-length entry means there is an entry in the database
-	// for a spent transaction output which should never be the case.
-	if len(serializedUTXO) == 0 {
-		return nil, AssertError(fmt.Sprintf("database contains entry "+
-			"for spent tx output %v", outpoint))
-	}
-
-	// Deserialize the utxo entry and return it.
-	entry, err := deserializeUTXOEntry(serializedUTXO)
-	if err != nil {
-		// Ensure any deserialization errors are returned as database
-		// corruption errors.
-		if isDeserializeErr(err) {
-			return nil, database.Error{
-				ErrorCode: database.ErrCorruption,
-				Description: fmt.Sprintf("corrupt UTXO entry "+
-					"for %v: %v", outpoint, err),
-			}
-		}
-
-		return nil, err
-	}
-
-	return entry, nil
-}
-
 // dbPutUTXODiff uses an existing database transaction to update the UTXO set
 // in the database based on the provided UTXO view contents and state.  In
 // particular, only the entries that have been marked as modified are written
@@ -697,38 +667,44 @@ func dbFetchHeightByHash(dbTx database.Tx, hash *daghash.Hash) (int32, error) {
 	return int32(byteOrder.Uint32(serializedHeight)), nil
 }
 
-// serializeDAGTipHashes returns the serialization of the DAG tip hashes.
-// This is data to be stored in the DAG tip hashes bucket.
-func serializeDAGTipHashes(tipHashes []daghash.Hash) ([]byte, error) {
-	return json.Marshal(tipHashes)
+type dagState struct {
+	TipHashes         []daghash.Hash
+	LastFinalityPoint daghash.Hash
+	LastSubNetworkID  uint64
 }
 
-// deserializeDAGTipHashes deserializes the passed serialized DAG tip hashes.
-// This is data stored in the DAG tip hashes bucket and is updated after
+// serializeDAGState returns the serialization of the DAG state.
+// This is data to be stored in the DAG state bucket.
+func serializeDAGState(state *dagState) ([]byte, error) {
+	return json.Marshal(state)
+}
+
+// deserializeDAGState deserializes the passed serialized DAG state.
+// This is data stored in the DAG state bucket and is updated after
 // every block is connected to the DAG.
-func deserializeDAGTipHashes(serializedData []byte) ([]daghash.Hash, error) {
-	var tipHashes []daghash.Hash
-	err := json.Unmarshal(serializedData, &tipHashes)
+func deserializeDAGState(serializedData []byte) (*dagState, error) {
+	var state *dagState
+	err := json.Unmarshal(serializedData, &state)
 	if err != nil {
 		return nil, database.Error{
 			ErrorCode:   database.ErrCorruption,
-			Description: "corrupt DAG tip hashes",
+			Description: "corrupt DAG state",
 		}
 	}
 
-	return tipHashes, nil
+	return state, nil
 }
 
-// dbPutDAGTipHashes uses an existing database transaction to store the latest
+// dbPutDAGState uses an existing database transaction to store the latest
 // tip hashes of the DAG.
-func dbPutDAGTipHashes(dbTx database.Tx, tipHashes []daghash.Hash) error {
-	serializedData, err := serializeDAGTipHashes(tipHashes)
+func dbPutDAGState(dbTx database.Tx, state *dagState) error {
+	serializedData, err := serializeDAGState(state)
 
 	if err != nil {
 		return err
 	}
 
-	return dbTx.Metadata().Put(dagTipHashesKeyName, serializedData)
+	return dbTx.Metadata().Put(dagStateKeyName, serializedData)
 }
 
 // createDAGState initializes both the database and the DAG state to the
@@ -757,6 +733,9 @@ func (dag *BlockDAG) createDAGState() error {
 
 	// Add the new node to the index which is used for faster lookups.
 	dag.index.addNode(node)
+
+	// Initiate the last finality point to the genesis block
+	dag.lastFinalityPoint = node
 
 	// Create the initial the database chain state including creating the
 	// necessary index buckets and inserting the genesis block.
@@ -797,6 +776,25 @@ func (dag *BlockDAG) createDAGState() error {
 			return err
 		}
 
+		// Create the bucket that houses the pending sub-networks.
+		_, err = meta.CreateBucket(pendingSubNetworksBucketName)
+		if err != nil {
+			return err
+		}
+
+		// Create the bucket that houses the registered sub-networks to
+		// their registry transactions index.
+		_, err = meta.CreateBucket(registeredSubNetworkTxsBucketName)
+		if err != nil {
+			return err
+		}
+
+		// Create the bucket that houses the registered sub-networks.
+		_, err = meta.CreateBucket(subNetworksBucketName)
+		if err != nil {
+			return err
+		}
+
 		// Save the genesis block to the block index database.
 		err = dbStoreBlockNode(dbTx, node)
 		if err != nil {
@@ -810,8 +808,12 @@ func (dag *BlockDAG) createDAGState() error {
 			return err
 		}
 
-		// Store the current DAG tip hashes into the database.
-		err = dbPutDAGTipHashes(dbTx, dag.TipHashes())
+		// Store the current DAG state into the database.
+		state := &dagState{
+			TipHashes:         dag.TipHashes(),
+			LastFinalityPoint: *genesisBlock.Hash(),
+		}
+		err = dbPutDAGState(dbTx, state)
 		if err != nil {
 			return err
 		}
@@ -830,7 +832,7 @@ func (dag *BlockDAG) initDAGState() error {
 	// everything from scratch or upgrade certain buckets.
 	var initialized bool
 	err := dag.db.View(func(dbTx database.Tx) error {
-		initialized = dbTx.Metadata().Get(dagTipHashesKeyName) != nil
+		initialized = dbTx.Metadata().Get(dagStateKeyName) != nil
 		return nil
 	})
 	if err != nil {
@@ -849,9 +851,9 @@ func (dag *BlockDAG) initDAGState() error {
 		// When it doesn't exist, it means the database hasn't been
 		// initialized for use with the DAG yet, so break out now to allow
 		// that to happen under a writable database transaction.
-		serializedData := dbTx.Metadata().Get(dagTipHashesKeyName)
+		serializedData := dbTx.Metadata().Get(dagStateKeyName)
 		log.Tracef("Serialized DAG tip hashes: %x", serializedData)
-		tipHashes, err := deserializeDAGTipHashes(serializedData)
+		state, err := deserializeDAGState(serializedData)
 		if err != nil {
 			return err
 		}
@@ -977,15 +979,21 @@ func (dag *BlockDAG) initDAGState() error {
 
 		// Apply the stored tips to the virtual block.
 		tips := newSet()
-		for _, tipHash := range tipHashes {
+		for _, tipHash := range state.TipHashes {
 			tip := dag.index.LookupNode(&tipHash)
 			if tip == nil {
 				return AssertError(fmt.Sprintf("initDAGState: cannot find "+
-					"DAG tip %s in block index", tipHashes))
+					"DAG tip %s in block index", state.TipHashes))
 			}
 			tips.add(tip)
 		}
 		dag.virtual.SetTips(tips)
+
+		// Set the last finality point
+		dag.lastFinalityPoint = dag.index.LookupNode(&state.LastFinalityPoint)
+
+		// Set the last sub-network ID
+		dag.lastSubNetworkID = state.LastSubNetworkID
 
 		return nil
 	})

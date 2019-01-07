@@ -209,13 +209,20 @@ const (
 	// ErrWithDiff indicates that there was an error with UTXOSet.WithDiff
 	ErrWithDiff
 
+	// ErrFinality indicates that a block doesn't adhere to the finality rules
+	ErrFinality
+
 	// ErrTransactionsNotSorted indicates that transactions in block are not
-	// sorted by subnetwork
+	// sorted by sub-network
 	ErrTransactionsNotSorted
 
 	// ErrTooMuchGasInTransaction transaction wants to use more GAS than allowed
 	// by subnetwork
 	ErrTooMuchGasInTransaction
+
+	// ErrSubNetwork indicates that a block doesn't adhere to the sub-network
+	// registry rules
+	ErrSubNetworkRegistry
 )
 
 // Map of ErrorCode values back to their constant names for pretty printing.
@@ -260,6 +267,7 @@ var errorCodeStrings = map[ErrorCode]string{
 	ErrInvalidAncestorBlock:      "ErrInvalidAncestorBlock",
 	ErrParentBlockNotCurrentTips: "ErrParentBlockNotCurrentTips",
 	ErrWithDiff:                  "ErrWithDiff",
+	ErrFinality:                  "ErrFinality",
 	ErrTransactionsNotSorted:     "ErrTransactionsNotSorted",
 	ErrTooMuchGasInTransaction:   "ErrTooMuchGasInTransaction",
 }
