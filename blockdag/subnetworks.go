@@ -12,7 +12,7 @@ import (
 // validateAndExtractSubNetworkRegistryTxs filters the given input and extracts a list
 // of valid sub-network registry transactions.
 func validateAndExtractSubNetworkRegistryTxs(txs []*TxWithBlockHash) ([]*wire.MsgTx, error) {
-	validSubNetworkRegistryTxs := make([]*wire.MsgTx, 0, len(txs))
+	var validSubNetworkRegistryTxs []*wire.MsgTx
 	for _, txData := range txs {
 		tx := txData.Tx.MsgTx()
 		if tx.SubNetworkID == wire.SubNetworkRegistry {
@@ -55,10 +55,6 @@ func (dag *BlockDAG) registerPendingSubNetworks(dbTx database.Tx, initialFinalit
 				return fmt.Errorf("failed to register pending sub-networks: %s", err)
 			}
 		}
-		err := dag.registerPendingSubNetworksInBlock(dbTx, currentNode.hash)
-		if err != nil {
-			return fmt.Errorf("failed to register pending sub-networks: : %s", err)
-		}
 	}
 
 	return nil
@@ -74,16 +70,10 @@ func (dag *BlockDAG) registerPendingSubNetworksInBlock(dbTx database.Tx, blockHa
 	for _, tx := range pendingSubNetworkTxs {
 		if !dbIsRegisteredSubNetworkTx(dbTx, tx.TxHash()) {
 			createdSubNetwork := newSubNetwork(tx)
-			err := dbRegisterSubNetwork(dbTx, dag.lastSubNetworkID, createdSubNetwork)
+			err := dbRegisterSubNetwork(dbTx, dag.lastSubNetworkID, tx.TxHash(), createdSubNetwork)
 			if err != nil {
 				return fmt.Errorf("failed registering sub-network"+
 					"for tx '%s' in block '%s': %s", tx.TxHash(), blockHash, err)
-			}
-
-			err = dbPutRegisteredSubNetworkTx(dbTx, tx.TxHash(), dag.lastSubNetworkID)
-			if err != nil {
-				return fmt.Errorf("failed to put registered sub-network tx '%s'"+
-					" in block '%s': %s", tx.TxHash(), blockHash, err)
 			}
 
 			dag.lastSubNetworkID++
@@ -177,6 +167,10 @@ func dbPutPendingSubNetworkTxs(dbTx database.Tx, blockHash *daghash.Hash, subNet
 func dbGetPendingSubNetworkTxs(dbTx database.Tx, blockHash daghash.Hash) ([]*wire.MsgTx, error) {
 	bucket := dbTx.Metadata().Bucket(pendingSubNetworksBucketName)
 	serializedTxsBytes := bucket.Get(blockHash[:])
+	if serializedTxsBytes == nil {
+		return []*wire.MsgTx{}, nil
+	}
+
 	txs, err := deserializeSubNetworkRegistryTxs(serializedTxsBytes)
 	if err != nil {
 		return nil, fmt.Errorf("failed to deserialize pending sub-network txs for block '%s': %s", blockHash, err)
@@ -216,9 +210,6 @@ func serializeSubNetworkRegistryTxs(subNetworkRegistryTxs []*wire.MsgTx) ([]byte
 // deserializeSubNetworkRegistryTxs deserializes a byte slice into a slice of MsgTxs.
 // See serializeSubNetworkRegistryTxs for the binary format.
 func deserializeSubNetworkRegistryTxs(serializedTxsBytes []byte) ([]*wire.MsgTx, error) {
-	if len(serializedTxsBytes) == 0 {
-		return []*wire.MsgTx{}, nil
-	}
 	serializedTxs := bytes.NewBuffer(serializedTxsBytes)
 
 	// Read the amount of transactions
@@ -258,21 +249,6 @@ func dbRemovePendingSubNetworkTxs(dbTx database.Tx, blockHash daghash.Hash) erro
 	return nil
 }
 
-// dbPutRegisteredSubNetworkTx stores mappings from a sub-network registry
-// transaction (via its hash) to its sub-network ID.
-func dbPutRegisteredSubNetworkTx(dbTx database.Tx, txHash daghash.Hash, subNetworkID uint64) error {
-	bucket := dbTx.Metadata().Bucket(registeredSubNetworkTxsBucketName)
-
-	subNetworkIDBytes := make([]byte, 8)
-	byteOrder.PutUint64(subNetworkIDBytes, subNetworkID)
-	err := bucket.Put(txHash[:], subNetworkIDBytes)
-	if err != nil {
-		return fmt.Errorf("failed to put registered sub-networkTx '%s': %s", txHash, err)
-	}
-
-	return nil
-}
-
 // dbIsRegisteredSubNetworkTx checks whether a sub-network registry transaction
 // was previously stored with dbPutRegisteredSubNetworkTx.
 func dbIsRegisteredSubNetworkTx(dbTx database.Tx, txHash daghash.Hash) bool {
@@ -282,9 +258,10 @@ func dbIsRegisteredSubNetworkTx(dbTx database.Tx, txHash daghash.Hash) bool {
 	return subNetworkIDBytes != nil
 }
 
-// dbRegisterSubNetwork stores mappings from newly-registered sub-network IDs
-// to their registry transactions.
-func dbRegisterSubNetwork(dbTx database.Tx, subNetworkID uint64, network *subNetwork) error {
+// dbRegisterSubNetwork stores mappings:
+// a. from the ID of the sub-network to the sub-network data.
+// b. from the hash of a sub-network registry transaction to the sub-network ID.
+func dbRegisterSubNetwork(dbTx database.Tx, subNetworkID uint64, txHash daghash.Hash, network *subNetwork) error {
 	// Serialize the sub-network ID
 	subNetworkIDBytes := make([]byte, 8)
 	byteOrder.PutUint64(subNetworkIDBytes, subNetworkID)
@@ -295,11 +272,18 @@ func dbRegisterSubNetwork(dbTx database.Tx, subNetworkID uint64, network *subNet
 		return fmt.Errorf("failed to serialize sub-netowrk of tx '%s': %s", network.txHash, err)
 	}
 
-	// Store the transaction
-	bucket := dbTx.Metadata().Bucket(subNetworksBucketName)
-	err = bucket.Put(subNetworkIDBytes, serializedSubNetwork)
+	// Store the sub-network
+	subNetworksBucket := dbTx.Metadata().Bucket(subNetworksBucketName)
+	err = subNetworksBucket.Put(subNetworkIDBytes, serializedSubNetwork)
 	if err != nil {
 		return fmt.Errorf("failed to write sub-netowrk of tx '%s': %s", network.txHash, err)
+	}
+
+	// Store the mapping between txHash and subNetworkID
+	registeredSubNetworkTxs := dbTx.Metadata().Bucket(registeredSubNetworkTxsBucketName)
+	err = registeredSubNetworkTxs.Put(txHash[:], subNetworkIDBytes)
+	if err != nil {
+		return fmt.Errorf("failed to put registered sub-networkTx '%s': %s", txHash, err)
 	}
 
 	return nil
