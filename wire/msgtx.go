@@ -96,14 +96,21 @@ const (
 	// 6,400,000 bytes.
 	freeListMaxItems = 12500
 
-	// SubNetworkSupportsAll is the sub network id that is used to signal to peers that you support all sub-networks
+	// SubNetworkSupportsAll is the sub-network id that is used to signal to peers that you support all sub-networks
 	SubNetworkSupportsAll = 0
 
-	// SubNetworkDAGCoin is the default sub network which is used for transactions without related payload data
+	// SubNetworkDAGCoin is the default sub-network which is used for transactions without related payload data
 	SubNetworkDAGCoin = 1
 
-	// SubNetworkRegistry is the sub network which is used for adding new sub networks to the registry
+	// SubNetworkRegistry is the sub-network which is used for adding new sub networks to the registry
 	SubNetworkRegistry = 2
+
+	// SubNetworkReservedFirst and SubnetworkReservedLast mark the range of sub-networks that are reserved for future use
+	// and are currently un-assigned for anything
+	// SubNetworkReservedFirst is the first reserved sub-network
+	SubNetworkReservedFirst = 3
+	// SubNetworkReservedLast is the last reserved sub-network
+	SubNetworkReservedLast = 255
 )
 
 // scriptFreeList defines a free list of byte slices (up to the maximum number

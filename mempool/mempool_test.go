@@ -364,6 +364,48 @@ func testPoolMembership(tc *testContext, tx *util.Tx, inOrphanPool, inTxPool boo
 		tc.t.Fatalf("%s:%d -- HaveTransaction: want %v, got %v", file,
 			line, wantHaveTx, gotHaveTx)
 	}
+
+	count := tc.harness.txPool.Count()
+	txHashes := tc.harness.txPool.TxHashes()
+	txDescs := tc.harness.txPool.TxDescs()
+	txMiningDescs := tc.harness.txPool.MiningDescs()
+	if count != len(txHashes) || count != len(txDescs) || count != len(txMiningDescs) {
+		tc.t.Error("mempool.TxHashes(), mempool.TxDescs() and mempool.MiningDescs() have different length")
+	}
+	if inTxPool {
+		wasFound := false
+		for _, txh := range txHashes {
+			if *txHash == *txh {
+				wasFound = true
+				break
+			}
+		}
+		if !wasFound {
+			tc.t.Error("Can not find transaction in mempool.TxHashes")
+		}
+
+		wasFound = false
+		for _, txd := range txDescs {
+			if *txHash == *txd.Tx.Hash() {
+				wasFound = true
+				break
+			}
+		}
+		if !wasFound {
+			tc.t.Error("Can not find transaction in mempool.TxDescs")
+		}
+
+		wasFound = false
+		for _, txd := range txMiningDescs {
+			if *txHash == *txd.Tx.Hash() {
+				wasFound = true
+				break
+			}
+		}
+		if !wasFound {
+			tc.t.Error("Can not find transaction in mempool.MiningDescs")
+		}
+	}
 }
 
 func (p *poolHarness) createTx(outpoint spendableOutpoint, fee uint64, numOutputs int64) (*util.Tx, error) {
