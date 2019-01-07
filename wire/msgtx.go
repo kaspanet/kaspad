@@ -109,8 +109,9 @@ const (
 	// and are currently un-assigned for anything
 	// SubNetworkReservedFirst is the first reserved sub-network
 	SubNetworkReservedFirst = 3
-	// SubNetworkReservedLast is the last reserved sub-network
-	SubNetworkReservedLast = 255
+
+	// SubNetworkUnreservedFirst is the first unreserved sub-network
+	SubNetworkUnreservedFirst = 256
 )
 
 // scriptFreeList defines a free list of byte slices (up to the maximum number

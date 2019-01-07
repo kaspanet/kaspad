@@ -751,7 +751,7 @@ func loadConfig() (*Config, []string, error) {
 		cfg.MiningAddrs = append(cfg.MiningAddrs, addr)
 	}
 
-	if cfg.SubNetwork >= wire.SubNetworkReservedFirst && cfg.SubNetwork <= wire.SubNetworkReservedLast {
+	if cfg.SubNetwork >= wire.SubNetworkReservedFirst && cfg.SubNetwork < wire.SubNetworkUnreservedFirst {
 		str := "%s: subnetworkID %d is reserved for future use, and nodes can not run in it "
 		err := fmt.Errorf(str, funcName, cfg.SubNetwork)
 		fmt.Fprintln(os.Stderr, err)
