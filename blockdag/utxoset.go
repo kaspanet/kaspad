@@ -184,7 +184,7 @@ func (d *UTXODiff) diffFrom(other *UTXODiff) (*UTXODiff, error) {
 			result.toRemove.add(outPoint, utxoEntry)
 		}
 		if other.toRemove.contains(outPoint) {
-			return nil, errors.New("diffFrom: transaction both in d.toAdd and in other.toRemove")
+			return nil, fmt.Errorf("diffFrom: outpoint %v both in d.toAdd and in other.toRemove", outPoint)
 		}
 	}
 

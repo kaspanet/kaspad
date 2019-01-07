@@ -244,6 +244,10 @@ func (node *blockNode) isGenesis() bool {
 	return len(node.parents) == 0
 }
 
+func (node *blockNode) finalityScore() uint64 {
+	return node.blueScore / finalityInterval
+}
+
 // String returns a string that contains the block hash and height.
 func (node blockNode) String() string {
 	return fmt.Sprintf("%s (%d)", node.hash, node.height)

@@ -6,24 +6,19 @@ import (
 
 func TestChainHeight(t *testing.T) {
 	phantomK := uint32(2)
-	buildNode := buildNodeGenerator(phantomK)
-	buildWithChildren := func(parents blockSet) *blockNode {
-		node := buildNode(parents)
-		addNodeAsChildToParents(node)
-		return node
-	}
+	buildNode := buildNodeGenerator(phantomK, true)
 
-	node0 := buildWithChildren(setFromSlice())
-	node1 := buildWithChildren(setFromSlice(node0))
-	node2 := buildWithChildren(setFromSlice(node0))
-	node3 := buildWithChildren(setFromSlice(node0))
-	node4 := buildWithChildren(setFromSlice(node1, node2, node3))
-	node5 := buildWithChildren(setFromSlice(node1, node2, node3))
-	node6 := buildWithChildren(setFromSlice(node1, node2, node3))
-	node7 := buildWithChildren(setFromSlice(node0))
-	node8 := buildWithChildren(setFromSlice(node7))
-	node9 := buildWithChildren(setFromSlice(node8))
-	node10 := buildWithChildren(setFromSlice(node9, node6))
+	node0 := buildNode(setFromSlice())
+	node1 := buildNode(setFromSlice(node0))
+	node2 := buildNode(setFromSlice(node0))
+	node3 := buildNode(setFromSlice(node0))
+	node4 := buildNode(setFromSlice(node1, node2, node3))
+	node5 := buildNode(setFromSlice(node1, node2, node3))
+	node6 := buildNode(setFromSlice(node1, node2, node3))
+	node7 := buildNode(setFromSlice(node0))
+	node8 := buildNode(setFromSlice(node7))
+	node9 := buildNode(setFromSlice(node8))
+	node10 := buildNode(setFromSlice(node9, node6))
 
 	// Because nodes 7 & 8 were mined secretly, node10's selected
 	// parent will be node6, although node9 is higher. So in this
