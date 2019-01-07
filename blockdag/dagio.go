@@ -53,6 +53,18 @@ var (
 	// unspent transaction output set.
 	utxoSetBucketName = []byte("utxoset")
 
+	// pendingSubNetworksBucketName is the name of the db bucket used to store the
+	// pending sub-networks.
+	pendingSubNetworksBucketName = []byte("pendingsubnetworks")
+
+	// registeredSubNetworkTxsBucketName is the name of the db bucket used to house
+	// the transactions that have been used to register sub-networks.
+	registeredSubNetworkTxsBucketName = []byte("registeredsubnetworktxs")
+
+	// subNetworksBucketName is the name of the db bucket used to store the
+	// sub-network registry.
+	subNetworksBucketName = []byte("subnetworks")
+
 	// byteOrder is the preferred byte order used for serializing numeric
 	// fields for storage in the database.
 	byteOrder = binary.LittleEndian
@@ -567,48 +579,6 @@ func deserializeUTXOEntry(serialized []byte) (*UTXOEntry, error) {
 	return entry, nil
 }
 
-// dbFetchUTXOEntry uses an existing database transaction to fetch the specified
-// transaction output from the UTXO set.
-//
-// When there is no entry for the provided output, nil will be returned for both
-// the entry and the error.
-func dbFetchUTXOEntry(dbTx database.Tx, outpoint wire.OutPoint) (*UTXOEntry, error) {
-	// Fetch the unspent transaction output information for the passed
-	// transaction output.  Return now when there is no entry.
-	key := outpointKey(outpoint)
-	utxoBucket := dbTx.Metadata().Bucket(utxoSetBucketName)
-	serializedUTXO := utxoBucket.Get(*key)
-	recycleOutpointKey(key)
-	if serializedUTXO == nil {
-		return nil, nil
-	}
-
-	// A non-nil zero-length entry means there is an entry in the database
-	// for a spent transaction output which should never be the case.
-	if len(serializedUTXO) == 0 {
-		return nil, AssertError(fmt.Sprintf("database contains entry "+
-			"for spent tx output %v", outpoint))
-	}
-
-	// Deserialize the utxo entry and return it.
-	entry, err := deserializeUTXOEntry(serializedUTXO)
-	if err != nil {
-		// Ensure any deserialization errors are returned as database
-		// corruption errors.
-		if isDeserializeErr(err) {
-			return nil, database.Error{
-				ErrorCode: database.ErrCorruption,
-				Description: fmt.Sprintf("corrupt UTXO entry "+
-					"for %v: %v", outpoint, err),
-			}
-		}
-
-		return nil, err
-	}
-
-	return entry, nil
-}
-
 // dbPutUTXODiff uses an existing database transaction to update the UTXO set
 // in the database based on the provided UTXO view contents and state.  In
 // particular, only the entries that have been marked as modified are written
@@ -700,6 +670,7 @@ func dbFetchHeightByHash(dbTx database.Tx, hash *daghash.Hash) (int32, error) {
 type dagState struct {
 	TipHashes         []daghash.Hash
 	LastFinalityPoint daghash.Hash
+	LastSubNetworkID  uint64
 }
 
 // serializeDAGState returns the serialization of the DAG state.
@@ -801,6 +772,25 @@ func (dag *BlockDAG) createDAGState() error {
 		}
 		err = dbPutVersion(dbTx, utxoSetVersionKeyName,
 			latestUTXOSetBucketVersion)
+		if err != nil {
+			return err
+		}
+
+		// Create the bucket that houses the pending sub-networks.
+		_, err = meta.CreateBucket(pendingSubNetworksBucketName)
+		if err != nil {
+			return err
+		}
+
+		// Create the bucket that houses the registered sub-networks to
+		// their registry transactions index.
+		_, err = meta.CreateBucket(registeredSubNetworkTxsBucketName)
+		if err != nil {
+			return err
+		}
+
+		// Create the bucket that houses the registered sub-networks.
+		_, err = meta.CreateBucket(subNetworksBucketName)
 		if err != nil {
 			return err
 		}
@@ -1001,6 +991,9 @@ func (dag *BlockDAG) initDAGState() error {
 
 		// Set the last finality point
 		dag.lastFinalityPoint = dag.index.LookupNode(&state.LastFinalityPoint)
+
+		// Set the last sub-network ID
+		dag.lastSubNetworkID = state.LastSubNetworkID
 
 		return nil
 	})
