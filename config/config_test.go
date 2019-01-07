@@ -83,7 +83,7 @@ func TestConstants(t *testing.T) {
 		t.Errorf("wire.SubNetworkReservedFirst value was changed from 0, therefore you probably need to update the help text for SubNetwork")
 	}
 
-	if wire.SubNetworkReservedLast != 255 {
-		t.Errorf("wire.SubNetworkReservedLast value was changed from 0, therefore you probably need to update the help text for SubNetwork")
+	if wire.SubNetworkUnreservedFirst != 256 {
+		t.Errorf("wire.SubNetworkUnreservedFirst value was changed from 0, therefore you probably need to update the help text for SubNetwork")
 	}
 }
