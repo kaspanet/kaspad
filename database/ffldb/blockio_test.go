@@ -39,6 +39,11 @@ func TestDeleteFile(t *testing.T) {
 				t.Fatalf("TestDeleteFile: Error storing block: %s", err)
 			}
 
+			err = pdb.Close()
+			if err != nil {
+				t.Fatalf("TestDeleteFile: Error closing file before deletion: %s", err)
+			}
+
 			err = pdb.store.deleteFile(test.fileNum)
 			if (err != nil) != test.expectedErr {
 				t.Errorf("TestDeleteFile: %d: Expected error status: %t, but got: %t",
