@@ -889,6 +889,14 @@ func handleGenerate(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 		}
 	}
 
+	if config.MainConfig().SubNetwork != wire.SubNetworkSupportsAll {
+		return nil, &btcjson.RPCError{
+			Code: btcjson.ErrRPCInternal.Code,
+			Message: fmt.Sprintf("No support for `generate` on any sub-network" +
+				"besides %d", wire.SubNetworkSupportsAll),
+		}
+	}
+
 	// Respond with an error if there's virtually 0 chance of mining a block
 	// with the CPU.
 	if !s.cfg.DAGParams.GenerateSupported {
@@ -2218,11 +2226,27 @@ func handleGetDifficulty(s *Server, cmd interface{}, closeChan <-chan struct{}) 
 
 // handleGetGenerate implements the getGenerate command.
 func handleGetGenerate(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
+	if config.MainConfig().SubNetwork != wire.SubNetworkSupportsAll {
+		return nil, &btcjson.RPCError{
+			Code: btcjson.ErrRPCInternal.Code,
+			Message: fmt.Sprintf("No support for `getGenerate` on any sub-network" +
+				"besides %d", wire.SubNetworkSupportsAll),
+		}
+	}
+
 	return s.cfg.CPUMiner.IsMining(), nil
 }
 
 // handleGetHashesPerSec implements the getHashesPerSec command.
 func handleGetHashesPerSec(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
+	if config.MainConfig().SubNetwork != wire.SubNetworkSupportsAll {
+		return nil, &btcjson.RPCError{
+			Code: btcjson.ErrRPCInternal.Code,
+			Message: fmt.Sprintf("No support for `getHashesPerSec` on any sub-network" +
+				"besides %d", wire.SubNetworkSupportsAll),
+		}
+	}
+
 	return int64(s.cfg.CPUMiner.HashesPerSecond()), nil
 }
 
@@ -2305,6 +2329,14 @@ func handleGetMempoolInfo(s *Server, cmd interface{}, closeChan <-chan struct{})
 // handleGetMiningInfo implements the getMiningInfo command. We only return the
 // fields that are not related to wallet functionality.
 func handleGetMiningInfo(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
+	if config.MainConfig().SubNetwork != wire.SubNetworkSupportsAll {
+		return nil, &btcjson.RPCError{
+			Code: btcjson.ErrRPCInternal.Code,
+			Message: fmt.Sprintf("No support for `getMiningInfo` on any sub-network" +
+				"besides %d", wire.SubNetworkSupportsAll),
+		}
+	}
+
 	// Create a default getNetworkHashPs command to use defaults and make
 	// use of the existing getNetworkHashPs handler.
 	gnhpsCmd := btcjson.NewGetNetworkHashPSCmd(nil, nil)
@@ -2360,6 +2392,14 @@ func handleGetNetTotals(s *Server, cmd interface{}, closeChan <-chan struct{}) (
 // This command had been (possibly temporarily) dropped.
 // Originally it relied on height, which no longer makes sense.
 func handleGetNetworkHashPS(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
+	if config.MainConfig().SubNetwork != wire.SubNetworkSupportsAll {
+		return nil, &btcjson.RPCError{
+			Code: btcjson.ErrRPCInternal.Code,
+			Message: fmt.Sprintf("No support for `getNetworkHashesPS` on any sub-network" +
+				"besides %d", wire.SubNetworkSupportsAll),
+		}
+	}
+
 	return nil, ErrRPCUnimplemented
 }
 
@@ -3258,6 +3298,14 @@ func handleSendRawTransaction(s *Server, cmd interface{}, closeChan <-chan struc
 
 // handleSetGenerate implements the setGenerate command.
 func handleSetGenerate(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
+	if config.MainConfig().SubNetwork != wire.SubNetworkSupportsAll {
+		return nil, &btcjson.RPCError{
+			Code: btcjson.ErrRPCInternal.Code,
+			Message: fmt.Sprintf("No support for `setGenerate` on any sub-network" +
+				"besides %d", wire.SubNetworkSupportsAll),
+		}
+	}
+
 	c := cmd.(*btcjson.SetGenerateCmd)
 
 	// Disable generation regardless of the provided generate flag if the
