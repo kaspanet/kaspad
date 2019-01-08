@@ -2,13 +2,14 @@ package blockdag
 
 import (
 	"encoding/binary"
-	"github.com/daglabs/btcd/dagconfig"
-	"github.com/daglabs/btcd/util"
-	"github.com/daglabs/btcd/wire"
 	"math"
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/daglabs/btcd/dagconfig"
+	"github.com/daglabs/btcd/util"
+	"github.com/daglabs/btcd/wire"
 )
 
 // TestSubNetworkRegistry tests the full sub-network registry flow. In this test:
@@ -43,7 +44,7 @@ func TestSubNetworkRegistry(t *testing.T) {
 		}
 		msgBlock := wire.NewMsgBlock(bh)
 		blockHeight := parents.maxHeight() + 1
-		coinbaseTx, err := createCoinbaseTx(blockHeight, 1, extraNonce, dag.dagParams)
+		coinbaseTx, err := CreateCoinbaseTxForTest(blockHeight, 1, extraNonce, dag.dagParams)
 		if err != nil {
 			return nil, err
 		}

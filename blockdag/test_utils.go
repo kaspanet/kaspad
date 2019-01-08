@@ -1,13 +1,18 @@
 package blockdag
 
 import (
+	"encoding/binary"
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 
+	"github.com/daglabs/btcd/dagconfig"
+	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/database"
 	_ "github.com/daglabs/btcd/database/ffldb" // blank import ffldb so that its init() function runs before tests
 	"github.com/daglabs/btcd/txscript"
+	"github.com/daglabs/btcd/util"
 	"github.com/daglabs/btcd/wire"
 )
 
@@ -93,4 +98,135 @@ func DAGSetup(dbName string, config Config) (*BlockDAG, func(), error) {
 		return nil, nil, err
 	}
 	return dag, teardown, nil
+}
+
+// OpTrueScript is script returning TRUE
+var OpTrueScript = []byte{txscript.OpTrue}
+
+// CreateCoinbaseTxForTest returns a coinbase transaction with the requested number of
+// outputs paying an appropriate subsidy based on the passed block height to the
+// address associated with the harness.  It automatically uses a standard
+// signature script that starts with the block height
+func CreateCoinbaseTxForTest(blockHeight int32, numOutputs uint32, extraNonce int64, params *dagconfig.Params) (*wire.MsgTx, error) {
+	// Create standard coinbase script.
+	coinbaseScript, err := txscript.NewScriptBuilder().
+		AddInt64(int64(blockHeight)).AddInt64(extraNonce).Script()
+	if err != nil {
+		return nil, err
+	}
+
+	tx := wire.NewMsgTx(wire.TxVersion)
+	tx.AddTxIn(&wire.TxIn{
+		// Coinbase transactions have no inputs, so previous outpoint is
+		// zero hash and max index.
+		PreviousOutPoint: *wire.NewOutPoint(&daghash.Hash{},
+			wire.MaxPrevOutIndex),
+		SignatureScript: coinbaseScript,
+		Sequence:        wire.MaxTxInSequenceNum,
+	})
+	totalInput := CalcBlockSubsidy(blockHeight, params)
+	amountPerOutput := totalInput / uint64(numOutputs)
+	remainder := totalInput - amountPerOutput*uint64(numOutputs)
+	for i := uint32(0); i < numOutputs; i++ {
+		// Ensure the final output accounts for any remainder that might
+		// be left from splitting the input amount.
+		amount := amountPerOutput
+		if i == numOutputs-1 {
+			amount = amountPerOutput + remainder
+		}
+		tx.AddTxOut(&wire.TxOut{
+			PkScript: OpTrueScript,
+			Value:    amount,
+		})
+	}
+
+	return tx, nil
+}
+
+// RegisterSubnetworkForTest is used to register network on DAG with specified GAS limit.
+func RegisterSubnetworkForTest(dag *BlockDAG, gasLimit uint64) (subNetworkID uint64, err error) {
+	blockTime := time.Unix(dag.genesis.timestamp, 0)
+	extraNonce := int64(0)
+
+	buildNextBlock := func(parents blockSet, txs []*wire.MsgTx) (*util.Block, error) {
+		// We need to change the blockTime to keep all block hashes unique
+		blockTime = blockTime.Add(time.Second)
+
+		// We need to change the extraNonce to keep coinbase hashes unique
+		extraNonce++
+
+		bh := &wire.BlockHeader{
+			Version:      1,
+			Bits:         dag.genesis.bits,
+			ParentHashes: parents.hashes(),
+			Timestamp:    blockTime,
+		}
+		msgBlock := wire.NewMsgBlock(bh)
+		blockHeight := parents.maxHeight() + 1
+		coinbaseTx, err := CreateCoinbaseTxForTest(blockHeight, 1, extraNonce, dag.dagParams)
+		if err != nil {
+			return nil, err
+		}
+		_ = msgBlock.AddTransaction(coinbaseTx)
+
+		for _, tx := range txs {
+			_ = msgBlock.AddTransaction(tx)
+		}
+
+		return util.NewBlock(msgBlock), nil
+	}
+
+	addBlockToDAG := func(block *util.Block) (*blockNode, error) {
+		dag.dagLock.Lock()
+		defer dag.dagLock.Unlock()
+
+		err = dag.maybeAcceptBlock(block, BFNone)
+		if err != nil {
+			return nil, err
+		}
+
+		return dag.index.LookupNode(block.Hash()), nil
+	}
+
+	currentNode := dag.genesis
+
+	// Create a block with a valid sub-network registry transaction
+	registryTx := wire.NewMsgTx(wire.TxVersion)
+	registryTx.SubNetworkID = wire.SubNetworkRegistry
+	registryTx.Payload = make([]byte, 8)
+	binary.LittleEndian.PutUint64(registryTx.Payload, gasLimit)
+
+	// Add it to the DAG
+	registryBlock, err := buildNextBlock(setFromSlice(currentNode), []*wire.MsgTx{registryTx})
+	if err != nil {
+		return 0, fmt.Errorf("could not build registry block: %s", err)
+	}
+	currentNode, err = addBlockToDAG(registryBlock)
+	if err != nil {
+		return 0, fmt.Errorf("could not add registry block to DAG: %s", err)
+	}
+
+	// Add 2*finalityInterval to ensure the registry transaction is finalized
+	for currentNode.blueScore < 2*finalityInterval {
+		nextBlock, err := buildNextBlock(setFromSlice(currentNode), []*wire.MsgTx{})
+		if err != nil {
+			return 0, fmt.Errorf("could not create block: %s", err)
+		}
+		currentNode, err = addBlockToDAG(nextBlock)
+		if err != nil {
+			return 0, fmt.Errorf("could not add block to DAG: %s", err)
+		}
+	}
+
+	// Make sure that the sub-network had been successfully registered by trying
+	// to retrieve its gas limit.
+	mostRecentlyRegisteredSubNetworkID := dag.lastSubNetworkID - 1
+	limit, err := dag.GasLimit(mostRecentlyRegisteredSubNetworkID)
+	if err != nil {
+		return 0, fmt.Errorf("could not retrieve gas limit: %s", err)
+	}
+	if limit != gasLimit {
+		return 0, fmt.Errorf("unexpected gas limit. want: %d, got: %d", gasLimit, limit)
+	}
+	return mostRecentlyRegisteredSubNetworkID, nil
 }
