@@ -482,13 +482,13 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 		prioItem := heap.Pop(priorityQueue).(*txPrioItem)
 		tx := prioItem.tx
 
-		if tx.MsgTx().SubNetworkID > wire.SubNetworkDAGCoin {
+		if tx.MsgTx().SubNetworkID != wire.SubNetworkDAGCoin {
 			subnetwork := tx.MsgTx().SubNetworkID
 			gasUsage, ok := gasUsageMap[subnetwork]
 			if !ok {
 				gasUsage = 0
 			}
-			gasLimit, err := blockdag.GetGasLimit(subnetwork)
+			gasLimit, err := g.dag.GasLimit(subnetwork)
 			if err != nil {
 				log.Errorf("Cannot get GAS limit for subnetwork %v", subnetwork)
 				continue

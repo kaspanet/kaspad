@@ -266,19 +266,6 @@ func CheckTransactionSanity(tx *util.Tx) error {
 		}
 	}
 
-	// Check that transaction does not overuse GAS
-	if msgTx.SubNetworkID != wire.SubNetworkDAGCoin {
-		gasLimit, err := GetGasLimit(msgTx.SubNetworkID)
-		if err != nil {
-			return err
-		}
-		if msgTx.Gas > gasLimit {
-			str := fmt.Sprintf("transaction wants more gas %v, than allowed %v",
-				msgTx.Gas, gasLimit)
-			return ruleError(ErrTooMuchGasInTransaction, str)
-		}
-	}
-
 	return nil
 }
 

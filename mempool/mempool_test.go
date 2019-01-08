@@ -593,7 +593,8 @@ func TestProcessTransaction(t *testing.T) {
 			Value:    5000000000,
 			PkScript: p2shPKScript,
 		}},
-		LockTime: 0,
+		LockTime:     0,
+		SubNetworkID: wire.SubNetworkDAGCoin,
 	})
 	harness.txPool.mpUTXOSet.AddTx(p2shTx.MsgTx(), curHeight+1)
 
@@ -608,7 +609,8 @@ func TestProcessTransaction(t *testing.T) {
 			Value:    5000000000,
 			PkScript: dummyPkScript,
 		}},
-		LockTime: 0,
+		LockTime:     0,
+		SubNetworkID: wire.SubNetworkDAGCoin,
 	})
 	_, err = harness.txPool.ProcessTransaction(nonStdSigScriptTx, true, false, 0)
 	if err == nil {
@@ -651,8 +653,9 @@ func TestProcessTransaction(t *testing.T) {
 			SignatureScript:  dummySigScript,
 			Sequence:         wire.MaxTxInSequenceNum,
 		}},
-		TxOut:    []*wire.TxOut{},
-		LockTime: 0,
+		TxOut:        []*wire.TxOut{},
+		LockTime:     0,
+		SubNetworkID: wire.SubNetworkDAGCoin,
 	})
 	_, err = harness.txPool.ProcessTransaction(noOutsTx, true, false, 0)
 	if err == nil {
@@ -728,7 +731,8 @@ func TestProcessTransaction(t *testing.T) {
 			Value:    1,
 			PkScript: dummyPkScript,
 		}},
-		LockTime: 0,
+		LockTime:     0,
+		SubNetworkID: wire.SubNetworkDAGCoin,
 	})
 	_, err = harness.txPool.ProcessTransaction(tx, true, false, 0)
 	fmt.Println(err)
@@ -1790,7 +1794,8 @@ var dummyBlock = wire.MsgBlock{
 					},
 				},
 			},
-			LockTime: 0,
+			LockTime:     0,
+			SubNetworkID: wire.SubNetworkDAGCoin,
 		},
 	},
 }
