@@ -892,7 +892,7 @@ func handleGenerate(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 	if config.MainConfig().SubNetwork != wire.SubNetworkSupportsAll {
 		return nil, &btcjson.RPCError{
 			Code: btcjson.ErrRPCInternal.Code,
-			Message: fmt.Sprintf("No support for `generate` on any sub-network" +
+			Message: fmt.Sprintf("No support for `generate` on any sub-network"+
 				"besides %d", wire.SubNetworkSupportsAll),
 		}
 	}
@@ -1544,7 +1544,7 @@ func (state *gbtWorkState) updateBlockTemplate(s *Server, useCoinbaseValue bool)
 	if template == nil || state.tipHashes == nil ||
 		!daghash.AreEqual(state.tipHashes, tipHashes) ||
 		(state.lastTxUpdate != lastTxUpdate &&
-			time.Now().After(state.lastGenerated.Add(time.Second*
+			time.Now().After(state.lastGenerated.Add(time.Second *
 				gbtRegenerateSeconds))) {
 
 		// Reset the previous best hash the block template was generated
@@ -2229,7 +2229,7 @@ func handleGetGenerate(s *Server, cmd interface{}, closeChan <-chan struct{}) (i
 	if config.MainConfig().SubNetwork != wire.SubNetworkSupportsAll {
 		return nil, &btcjson.RPCError{
 			Code: btcjson.ErrRPCInternal.Code,
-			Message: fmt.Sprintf("No support for `getGenerate` on any sub-network" +
+			Message: fmt.Sprintf("No support for `getGenerate` on any sub-network"+
 				"besides %d", wire.SubNetworkSupportsAll),
 		}
 	}
@@ -2242,7 +2242,7 @@ func handleGetHashesPerSec(s *Server, cmd interface{}, closeChan <-chan struct{}
 	if config.MainConfig().SubNetwork != wire.SubNetworkSupportsAll {
 		return nil, &btcjson.RPCError{
 			Code: btcjson.ErrRPCInternal.Code,
-			Message: fmt.Sprintf("No support for `getHashesPerSec` on any sub-network" +
+			Message: fmt.Sprintf("No support for `getHashesPerSec` on any sub-network"+
 				"besides %d", wire.SubNetworkSupportsAll),
 		}
 	}
@@ -2332,7 +2332,7 @@ func handleGetMiningInfo(s *Server, cmd interface{}, closeChan <-chan struct{}) 
 	if config.MainConfig().SubNetwork != wire.SubNetworkSupportsAll {
 		return nil, &btcjson.RPCError{
 			Code: btcjson.ErrRPCInternal.Code,
-			Message: fmt.Sprintf("No support for `getMiningInfo` on any sub-network" +
+			Message: fmt.Sprintf("No support for `getMiningInfo` on any sub-network"+
 				"besides %d", wire.SubNetworkSupportsAll),
 		}
 	}
@@ -2395,7 +2395,7 @@ func handleGetNetworkHashPS(s *Server, cmd interface{}, closeChan <-chan struct{
 	if config.MainConfig().SubNetwork != wire.SubNetworkSupportsAll {
 		return nil, &btcjson.RPCError{
 			Code: btcjson.ErrRPCInternal.Code,
-			Message: fmt.Sprintf("No support for `getNetworkHashesPS` on any sub-network" +
+			Message: fmt.Sprintf("No support for `getNetworkHashesPS` on any sub-network"+
 				"besides %d", wire.SubNetworkSupportsAll),
 		}
 	}
@@ -3301,7 +3301,7 @@ func handleSetGenerate(s *Server, cmd interface{}, closeChan <-chan struct{}) (i
 	if config.MainConfig().SubNetwork != wire.SubNetworkSupportsAll {
 		return nil, &btcjson.RPCError{
 			Code: btcjson.ErrRPCInternal.Code,
-			Message: fmt.Sprintf("No support for `setGenerate` on any sub-network" +
+			Message: fmt.Sprintf("No support for `setGenerate` on any sub-network"+
 				"besides %d", wire.SubNetworkSupportsAll),
 		}
 	}
