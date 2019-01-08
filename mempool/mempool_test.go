@@ -1865,6 +1865,6 @@ func TestTransactionGas(t *testing.T) {
 	}
 	_, err = harness.txPool.ProcessTransaction(tx, true, false, 0)
 	if err == nil {
-		t.Error("ProcessTransaction did not return error, expecting ErrTooMuchGasInTransaction")
+		t.Error("ProcessTransaction did not return error, expecting ErrInvalidGas")
 	}
 }

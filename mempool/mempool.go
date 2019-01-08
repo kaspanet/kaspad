@@ -670,7 +670,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rateLimit, rejectDu
 			str := fmt.Sprintf("transaction wants more gas %v, than allowed %v",
 				msgTx.Gas, gasLimit)
 			return nil, nil, dagRuleError(blockdag.RuleError{
-				ErrorCode:   blockdag.ErrTooMuchGasInTransaction,
+				ErrorCode:   blockdag.ErrInvalidGas,
 				Description: str})
 		}
 	}
