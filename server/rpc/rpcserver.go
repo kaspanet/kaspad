@@ -1544,7 +1544,7 @@ func (state *gbtWorkState) updateBlockTemplate(s *Server, useCoinbaseValue bool)
 	if template == nil || state.tipHashes == nil ||
 		!daghash.AreEqual(state.tipHashes, tipHashes) ||
 		(state.lastTxUpdate != lastTxUpdate &&
-			time.Now().After(state.lastGenerated.Add(time.Second *
+			time.Now().After(state.lastGenerated.Add(time.Second*
 				gbtRegenerateSeconds))) {
 
 		// Reset the previous best hash the block template was generated
