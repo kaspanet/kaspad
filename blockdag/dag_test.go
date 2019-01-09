@@ -894,7 +894,7 @@ func TestFinality(t *testing.T) {
 		}
 		msgBlock := wire.NewMsgBlock(bh)
 		blockHeight := parents.maxHeight() + 1
-		coinbaseTx, err := CreateCoinbaseTxForTest(blockHeight, 1, extraNonce, dag.dagParams)
+		coinbaseTx, err := createCoinbaseTxForTest(blockHeight, 1, extraNonce, dag.dagParams)
 		if err != nil {
 			return nil, err
 		}

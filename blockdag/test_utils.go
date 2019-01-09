@@ -103,11 +103,11 @@ func DAGSetup(dbName string, config Config) (*BlockDAG, func(), error) {
 // OpTrueScript is script returning TRUE
 var OpTrueScript = []byte{txscript.OpTrue}
 
-// CreateCoinbaseTxForTest returns a coinbase transaction with the requested number of
+// createCoinbaseTxForTest returns a coinbase transaction with the requested number of
 // outputs paying an appropriate subsidy based on the passed block height to the
 // address associated with the harness.  It automatically uses a standard
 // signature script that starts with the block height
-func CreateCoinbaseTxForTest(blockHeight int32, numOutputs uint32, extraNonce int64, params *dagconfig.Params) (*wire.MsgTx, error) {
+func createCoinbaseTxForTest(blockHeight int32, numOutputs uint32, extraNonce int64, params *dagconfig.Params) (*wire.MsgTx, error) {
 	// Create standard coinbase script.
 	coinbaseScript, err := txscript.NewScriptBuilder().
 		AddInt64(int64(blockHeight)).AddInt64(extraNonce).Script()
@@ -163,7 +163,7 @@ func RegisterSubnetworkForTest(dag *BlockDAG, gasLimit uint64) (subNetworkID uin
 		}
 		msgBlock := wire.NewMsgBlock(bh)
 		blockHeight := parents.maxHeight() + 1
-		coinbaseTx, err := CreateCoinbaseTxForTest(blockHeight, 1, extraNonce, dag.dagParams)
+		coinbaseTx, err := createCoinbaseTxForTest(blockHeight, 1, extraNonce, dag.dagParams)
 		if err != nil {
 			return nil, err
 		}

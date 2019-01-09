@@ -814,9 +814,9 @@ func TestApplyUTXOChanges(t *testing.T) {
 		},
 	}
 
-	cbTx, err := CreateCoinbaseTxForTest(1, 1, 0, dag.dagParams)
+	cbTx, err := createCoinbaseTxForTest(1, 1, 0, dag.dagParams)
 	if err != nil {
-		t.Errorf("CreateCoinbaseTxForTest: %v", err)
+		t.Errorf("createCoinbaseTxForTest: %v", err)
 	}
 
 	chainedTx := wire.NewMsgTx(wire.TxVersion)
@@ -881,9 +881,9 @@ func TestDiffFromTx(t *testing.T) {
 	fus := &FullUTXOSet{
 		utxoCollection: utxoCollection{},
 	}
-	cbTx, err := CreateCoinbaseTxForTest(1, 1, 0, &dagconfig.SimNetParams)
+	cbTx, err := createCoinbaseTxForTest(1, 1, 0, &dagconfig.SimNetParams)
 	if err != nil {
-		t.Errorf("CreateCoinbaseTxForTest: %v", err)
+		t.Errorf("createCoinbaseTxForTest: %v", err)
 	}
 	fus.AddTx(cbTx, 1)
 	node := &blockNode{height: 2} //Fake node
