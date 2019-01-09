@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+
 	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/database"
+	"github.com/daglabs/btcd/util/subnetworkid"
 	"github.com/daglabs/btcd/wire"
 )
 
@@ -98,7 +100,7 @@ func (dag *BlockDAG) registerPendingSubNetworksInBlock(dbTx database.Tx, blockHa
 
 // subNetwork returns a registered-and-finalized sub-network. If the sub-network
 // does not exist this method returns an error.
-func (dag *BlockDAG) subNetwork(subNetworkID uint64) (*subNetwork, error) {
+func (dag *BlockDAG) subNetwork(subNetworkID subnetworkid.SubNetworkID) (*subNetwork, error) {
 	var sNet *subNetwork
 	var err error
 	dbErr := dag.db.View(func(dbTx database.Tx) error {
@@ -117,7 +119,7 @@ func (dag *BlockDAG) subNetwork(subNetworkID uint64) (*subNetwork, error) {
 
 // GasLimit returns the gas limit of a registered-and-finalized sub-network. If
 // the sub-network does not exist this method returns an error.
-func (dag *BlockDAG) GasLimit(subNetworkID uint64) (uint64, error) {
+func (dag *BlockDAG) GasLimit(subNetworkID subnetworkid.SubNetworkID) (uint64, error) {
 	sNet, err := dag.subNetwork(subNetworkID)
 	if err != nil {
 		return 0, err
@@ -281,14 +283,10 @@ func dbRegisterSubNetwork(dbTx database.Tx, subNetworkID uint64, txHash daghash.
 	return nil
 }
 
-func dbGetSubNetwork(dbTx database.Tx, subNetworkID uint64) (*subNetwork, error) {
-	// Serialize the sub-network ID
-	subNetworkIDBytes := make([]byte, 8)
-	byteOrder.PutUint64(subNetworkIDBytes, subNetworkID)
-
+func dbGetSubNetwork(dbTx database.Tx, subNetworkID subnetworkid.SubNetworkID) (*subNetwork, error) {
 	// Get the sub-network
 	bucket := dbTx.Metadata().Bucket(subNetworksBucketName)
-	serializedSubNetwork := bucket.Get(subNetworkIDBytes)
+	serializedSubNetwork := bucket.Get(subNetworkID[:])
 	if serializedSubNetwork == nil {
 		return nil, fmt.Errorf("sub-network '%d' not found", subNetworkID)
 	}

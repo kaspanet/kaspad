@@ -28,6 +28,7 @@ import (
 	"github.com/daglabs/btcd/mempool"
 	"github.com/daglabs/btcd/util"
 	"github.com/daglabs/btcd/util/network"
+	"github.com/daglabs/btcd/util/subnetworkid"
 	"github.com/daglabs/btcd/version"
 	"github.com/daglabs/btcd/wire"
 	"github.com/jessevdk/go-flags"
@@ -165,7 +166,7 @@ type configFlags struct {
 	DropAddrIndex        bool          `long:"dropaddrindex" description:"Deletes the address-based transaction index from the database on start up and then exits."`
 	RelayNonStd          bool          `long:"relaynonstd" description:"Relay non-standard transactions regardless of the default settings for the active network."`
 	RejectNonStd         bool          `long:"rejectnonstd" description:"Reject non-standard transactions regardless of the default settings for the active network."`
-	SubNetwork           uint64        `long:"subnetwork" description:"If subnetwork > 0, than node will request and process only payloads from specified subnetwork. And if subnetwork is 0, than payloads of all subnetworks are processed. Subnetworks 3 through 255 are reserved for future use and are currently not allowed."`
+	SubNetwork           string        `string:"subnetwork" description:"If subnetwork != 0, than node will request and process only payloads from specified subnetwork. And if subnetwork is 0, than payloads of all subnetworks are processed. Subnetworks 3 through 255 are reserved for future use and are currently not allowed."`
 }
 
 // Config defines the configuration options for btcd.
@@ -180,6 +181,7 @@ type Config struct {
 	MiningAddrs    []util.Address
 	MinRelayTxFee  util.Amount
 	Whitelists     []*net.IPNet
+	SubNetwork     *subnetworkid.SubNetworkID
 }
 
 // serviceOptions defines the configuration options for the daemon as a service on
@@ -751,16 +753,15 @@ func loadConfig() (*Config, []string, error) {
 		cfg.MiningAddrs = append(cfg.MiningAddrs, addr)
 	}
 
-	if cfg.SubNetwork >= wire.SubNetworkReservedFirst && cfg.SubNetwork < wire.SubNetworkUnreservedFirst {
-		str := "%s: subnetworkID %d is reserved for future use, and nodes can not run in it "
-		err := fmt.Errorf(str, funcName, cfg.SubNetwork)
-		fmt.Fprintln(os.Stderr, err)
-		fmt.Fprintln(os.Stderr, usageMessage)
-		return nil, nil, err
+	if cfg.configFlags.SubNetwork != "" {
+		cfg.SubNetwork, err = subnetworkid.NewIDFromStr(cfg.configFlags.SubNetwork)
+		if err != nil {
+			return nil, nil, err
+		}
 	}
 
 	// Check that 'generate' and 'subnetwork' flags do not conflict
-	if cfg.Generate && cfg.SubNetwork != wire.SubNetworkSupportsAll {
+	if cfg.Generate && *cfg.SubNetwork != wire.SubNetworkSupportsAll {
 		str := "%s: both generate flag and subnetwork filtering are set "
 		err := fmt.Errorf(str, funcName)
 		fmt.Fprintln(os.Stderr, err)
