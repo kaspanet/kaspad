@@ -10,13 +10,12 @@ import (
 	"sort"
 	"time"
 
-	"github.com/daglabs/btcd/util/subnetworkhash"
-
 	"github.com/daglabs/btcd/blockdag"
 	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/txscript"
 	"github.com/daglabs/btcd/util"
+	"github.com/daglabs/btcd/util/subnetworkid"
 	"github.com/daglabs/btcd/wire"
 )
 
@@ -475,7 +474,7 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 	totalFees := uint64(0)
 
 	// Create map of GAS usage per subnetwork
-	gasUsageMap := make(map[subnetworkhash.SubNetworkHash]uint64)
+	gasUsageMap := make(map[subnetworkid.SubNetworkID]uint64)
 
 	// Choose which transactions make it into the block.
 	for priorityQueue.Len() > 0 {
@@ -484,7 +483,7 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 		prioItem := heap.Pop(priorityQueue).(*txPrioItem)
 		tx := prioItem.tx
 
-		if subnetworkhash.Less(&wire.SubNetworkDAGCoin, &tx.MsgTx().SubNetworkID) {
+		if tx.MsgTx().SubNetworkID != wire.SubNetworkDAGCoin {
 			subnetwork := tx.MsgTx().SubNetworkID
 			gasUsage, ok := gasUsageMap[subnetwork]
 			if !ok {
@@ -645,7 +644,7 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 
 	// Sort transactions by subnetwork ID before building Merkle tree
 	sort.Slice(blockTxns, func(i, j int) bool {
-		return subnetworkhash.Less(&blockTxns[i].MsgTx().SubNetworkID, &blockTxns[j].MsgTx().SubNetworkID)
+		return subnetworkid.Less(&blockTxns[i].MsgTx().SubNetworkID, &blockTxns[j].MsgTx().SubNetworkID)
 	})
 
 	// Create a new block ready to be solved.

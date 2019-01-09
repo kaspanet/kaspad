@@ -16,7 +16,7 @@ import (
 	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/txscript"
 	"github.com/daglabs/btcd/util"
-	"github.com/daglabs/btcd/util/subnetworkhash"
+	"github.com/daglabs/btcd/util/subnetworkid"
 	"github.com/daglabs/btcd/wire"
 )
 
@@ -497,7 +497,7 @@ func checkBlockSanity(block *util.Block, powLimit *big.Int, timeSource MedianTim
 				"index %d", i+1)
 			return ruleError(ErrMultipleCoinbases, str)
 		}
-		if subnetworkhash.Less(&tx.MsgTx().SubNetworkID, &transactions[i].MsgTx().SubNetworkID) {
+		if subnetworkid.Less(&tx.MsgTx().SubNetworkID, &transactions[i].MsgTx().SubNetworkID) {
 			return ruleError(ErrTransactionsNotSorted, "transactions must be sorted by subnetwork")
 		}
 	}

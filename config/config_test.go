@@ -8,8 +8,7 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/daglabs/btcd/util/subnetworkhash"
-
+	"github.com/daglabs/btcd/util/subnetworkid"
 	"github.com/daglabs/btcd/wire"
 )
 
@@ -77,7 +76,7 @@ func TestCreateDefaultConfigFile(t *testing.T) {
 
 // TestConstants makes sure that all constants hard-coded into the help text were not modified.
 func TestConstants(t *testing.T) {
-	zero := subnetworkhash.SubNetworkHash{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+	zero := subnetworkid.SubNetworkID{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 	if wire.SubNetworkSupportsAll != zero {
 		t.Errorf("wire.SubNetworkSupportsAll value was changed from 0, therefore you probably need to update the help text for SubNetwork")
 	}

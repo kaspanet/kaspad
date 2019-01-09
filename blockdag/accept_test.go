@@ -57,11 +57,11 @@ func TestMaybeAcceptBlockErrors(t *testing.T) {
 	// Add a valid block and mark it as invalid
 	block1 := blocks[1]
 	isOrphan, err := dag.ProcessBlock(block1, BFNone)
-	if isOrphan {
-		t.Fatalf("TestMaybeAcceptBlockErrors: incorrectly returned block 1 is an orphan")
-	}
 	if err != nil {
 		t.Fatalf("TestMaybeAcceptBlockErrors: Valid block unexpectedly returned an error: %s", err)
+	}
+	if isOrphan {
+		t.Fatalf("TestMaybeAcceptBlockErrors: incorrectly returned block 1 is an orphan")
 	}
 	blockNode1 := dag.index.LookupNode(block1.Hash())
 	dag.index.SetStatusFlags(blockNode1, statusValidateFailed)

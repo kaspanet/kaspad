@@ -14,7 +14,7 @@ import (
 	"unsafe"
 
 	"github.com/daglabs/btcd/dagconfig/daghash"
-	"github.com/daglabs/btcd/util/subnetworkhash"
+	"github.com/daglabs/btcd/util/subnetworkid"
 	"github.com/davecgh/go-spew/spew"
 )
 
@@ -404,7 +404,7 @@ func TestTxSerialize(t *testing.T) {
 	}
 
 	subNetworkTx := NewMsgTx(1)
-	subNetworkTx.SubNetworkID = subnetworkhash.SubNetworkHash{0xff}
+	subNetworkTx.SubNetworkID = subnetworkid.SubNetworkID{0xff}
 	subNetworkTx.Gas = 5
 	subNetworkTx.Payload = []byte{0, 1, 2}
 

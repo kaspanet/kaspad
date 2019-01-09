@@ -13,7 +13,7 @@ import (
 	"strconv"
 
 	"github.com/daglabs/btcd/dagconfig/daghash"
-	"github.com/daglabs/btcd/util/subnetworkhash"
+	"github.com/daglabs/btcd/util/subnetworkid"
 )
 
 const (
@@ -108,13 +108,13 @@ const (
 
 var (
 	// SubNetworkSupportsAll is the sub-network id that is used to signal to peers that you support all sub-networks
-	SubNetworkSupportsAll = subnetworkhash.SubNetworkHash{}
+	SubNetworkSupportsAll = subnetworkid.SubNetworkID{}
 
 	// SubNetworkDAGCoin is the default sub-network which is used for transactions without related payload data
-	SubNetworkDAGCoin = subnetworkhash.SubNetworkHash{1}
+	SubNetworkDAGCoin = subnetworkid.SubNetworkID{1}
 
 	// SubNetworkRegistry is the sub-network which is used for adding new sub networks to the registry
-	SubNetworkRegistry = subnetworkhash.SubNetworkHash{2}
+	SubNetworkRegistry = subnetworkid.SubNetworkID{2}
 )
 
 // scriptFreeList defines a free list of byte slices (up to the maximum number
@@ -267,7 +267,7 @@ type MsgTx struct {
 	TxIn         []*TxIn
 	TxOut        []*TxOut
 	LockTime     uint64
-	SubNetworkID subnetworkhash.SubNetworkHash
+	SubNetworkID subnetworkid.SubNetworkID
 	Gas          uint64
 	Payload      []byte
 }

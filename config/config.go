@@ -19,8 +19,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/daglabs/btcd/util/subnetworkhash"
-
 	"github.com/btcsuite/go-socks/socks"
 	"github.com/daglabs/btcd/connmgr"
 	"github.com/daglabs/btcd/dagconfig"
@@ -30,6 +28,7 @@ import (
 	"github.com/daglabs/btcd/mempool"
 	"github.com/daglabs/btcd/util"
 	"github.com/daglabs/btcd/util/network"
+	"github.com/daglabs/btcd/util/subnetworkid"
 	"github.com/daglabs/btcd/version"
 	"github.com/daglabs/btcd/wire"
 	"github.com/jessevdk/go-flags"
@@ -182,7 +181,7 @@ type Config struct {
 	MiningAddrs    []util.Address
 	MinRelayTxFee  util.Amount
 	Whitelists     []*net.IPNet
-	SubNetwork     *subnetworkhash.SubNetworkHash
+	SubNetwork     *subnetworkid.SubNetworkID
 }
 
 // serviceOptions defines the configuration options for the daemon as a service on
@@ -755,7 +754,7 @@ func loadConfig() (*Config, []string, error) {
 	}
 
 	if cfg.configFlags.SubNetwork != "" {
-		cfg.SubNetwork, err = subnetworkhash.NewHashFromStr(cfg.configFlags.SubNetwork)
+		cfg.SubNetwork, err = subnetworkid.NewIDFromStr(cfg.configFlags.SubNetwork)
 		if err != nil {
 			return nil, nil, err
 		}

@@ -10,11 +10,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/daglabs/btcd/util/subnetworkhash"
-
 	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/util"
+	"github.com/daglabs/btcd/util/subnetworkid"
 	"github.com/daglabs/btcd/wire"
 )
 
@@ -1016,7 +1015,7 @@ var BlockWithWrongTxOrder = wire.MsgBlock{
 				},
 			},
 			LockTime:     0,
-			SubNetworkID: subnetworkhash.SubNetworkHash{11},
+			SubNetworkID: subnetworkid.SubNetworkID{11},
 		},
 		{
 			Version: 1,
