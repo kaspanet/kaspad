@@ -25,8 +25,6 @@ func TestSubNetworkRegistry(t *testing.T) {
 	}
 	defer teardownFunc()
 
-	// Fix RegisterSubnetworkForTest, when fiunality wan't be used for subnetworks
-	// registration
 	_, err = RegisterSubnetworkForTest(dag, 12345)
 
 	if err != nil {
