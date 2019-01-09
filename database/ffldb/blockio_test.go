@@ -29,7 +29,11 @@ func TestDeleteFile(t *testing.T) {
 	for _, test := range tests {
 		func() {
 			pdb := newTestDb("TestDeleteFile", t)
-			defer pdb.Close()
+			defer func() {
+				if !pdb.closed {
+					pdb.Close()
+				}
+			}()
 
 			err := pdb.Update(func(dbTx database.Tx) error {
 				dbTx.StoreBlock(testBlock)
@@ -37,6 +41,11 @@ func TestDeleteFile(t *testing.T) {
 			})
 			if err != nil {
 				t.Fatalf("TestDeleteFile: Error storing block: %s", err)
+			}
+
+			err = pdb.Close()
+			if err != nil {
+				t.Fatalf("TestDeleteFile: Error closing file before deletion: %s", err)
 			}
 
 			err = pdb.store.deleteFile(test.fileNum)
