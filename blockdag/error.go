@@ -216,6 +216,10 @@ const (
 	// sorted by sub-network
 	ErrTransactionsNotSorted
 
+	// ErrInvalidGas transaction wants to use more GAS than allowed
+	// by subnetwork
+	ErrInvalidGas
+
 	// ErrSubNetwork indicates that a block doesn't adhere to the sub-network
 	// registry rules
 	ErrSubNetworkRegistry
@@ -265,6 +269,7 @@ var errorCodeStrings = map[ErrorCode]string{
 	ErrWithDiff:                  "ErrWithDiff",
 	ErrFinality:                  "ErrFinality",
 	ErrTransactionsNotSorted:     "ErrTransactionsNotSorted",
+	ErrInvalidGas:                "ErrInvalidGas",
 }
 
 // String returns the ErrorCode as a human-readable name.

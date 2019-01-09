@@ -6,8 +6,31 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/wire"
 )
+
+// TestSubNetworkRegistry tests the full sub-network registry flow. In this test:
+// 1. We create a sub-network registry transaction and add its block to the DAG
+// 2. Add 2*finalityInterval so that the sub-network registry transaction becomes final
+// 3. Attempt to retrieve the gas limit of the now-registered sub-network
+func TestSubNetworkRegistry(t *testing.T) {
+	params := dagconfig.SimNetParams
+	params.K = 1
+	dag, teardownFunc, err := DAGSetup("TestFinality", Config{
+		DAGParams: &params,
+	})
+	if err != nil {
+		t.Fatalf("Failed to setup DAG instance: %v", err)
+	}
+	defer teardownFunc()
+
+	_, err = RegisterSubnetworkForTest(dag, 12345)
+
+	if err != nil {
+		t.Fatalf("could not register network: %s", err)
+	}
+}
 
 func TestSerializeSubNetworkRegistryTxs(t *testing.T) {
 	payload1 := make([]byte, 8)
