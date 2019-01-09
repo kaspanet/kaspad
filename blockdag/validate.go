@@ -187,7 +187,7 @@ func CheckTransactionSanity(tx *util.Tx) error {
 
 	// A transaction must not exceed the maximum allowed block payload when
 	// serialized.
-	serializedTxSize := tx.MsgTx().SerializeSize()
+	serializedTxSize := msgTx.SerializeSize()
 	if serializedTxSize > wire.MaxBlockPayload {
 		str := fmt.Sprintf("serialized transaction is too big - got "+
 			"%d, max %d", serializedTxSize, wire.MaxBlockPayload)
