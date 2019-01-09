@@ -2225,13 +2225,6 @@ func handleGetDifficulty(s *Server, cmd interface{}, closeChan <-chan struct{}) 
 
 // handleGetGenerate implements the getGenerate command.
 func handleGetGenerate(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	if config.MainConfig().SubNetwork != wire.SubNetworkSupportsAll {
-		return nil, &btcjson.RPCError{
-			Code:    btcjson.ErrRPCInvalidRequest.Code,
-			Message: "`getGenerate` is not supported on partial nodes.",
-		}
-	}
-
 	return s.cfg.CPUMiner.IsMining(), nil
 }
 
