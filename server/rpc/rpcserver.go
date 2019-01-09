@@ -891,9 +891,8 @@ func handleGenerate(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 
 	if config.MainConfig().SubNetwork != wire.SubNetworkSupportsAll {
 		return nil, &btcjson.RPCError{
-			Code: btcjson.ErrRPCInternal.Code,
-			Message: fmt.Sprintf("No support for `generate` on any sub-network"+
-				"besides %d", wire.SubNetworkSupportsAll),
+			Code: btcjson.ErrRPCInvalidRequest.Code,
+			Message: "`generate` is not supported on partial nodes.",
 		}
 	}
 
@@ -2228,9 +2227,8 @@ func handleGetDifficulty(s *Server, cmd interface{}, closeChan <-chan struct{}) 
 func handleGetGenerate(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
 	if config.MainConfig().SubNetwork != wire.SubNetworkSupportsAll {
 		return nil, &btcjson.RPCError{
-			Code: btcjson.ErrRPCInternal.Code,
-			Message: fmt.Sprintf("No support for `getGenerate` on any sub-network"+
-				"besides %d", wire.SubNetworkSupportsAll),
+			Code: btcjson.ErrRPCInvalidRequest.Code,
+			Message: "`getGenerate` is not supported on partial nodes.",
 		}
 	}
 
@@ -2241,9 +2239,8 @@ func handleGetGenerate(s *Server, cmd interface{}, closeChan <-chan struct{}) (i
 func handleGetHashesPerSec(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
 	if config.MainConfig().SubNetwork != wire.SubNetworkSupportsAll {
 		return nil, &btcjson.RPCError{
-			Code: btcjson.ErrRPCInternal.Code,
-			Message: fmt.Sprintf("No support for `getHashesPerSec` on any sub-network"+
-				"besides %d", wire.SubNetworkSupportsAll),
+			Code: btcjson.ErrRPCInvalidRequest.Code,
+			Message: "`getHashesPerSec` is not supported on partial nodes.",
 		}
 	}
 
@@ -2331,9 +2328,8 @@ func handleGetMempoolInfo(s *Server, cmd interface{}, closeChan <-chan struct{})
 func handleGetMiningInfo(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
 	if config.MainConfig().SubNetwork != wire.SubNetworkSupportsAll {
 		return nil, &btcjson.RPCError{
-			Code: btcjson.ErrRPCInternal.Code,
-			Message: fmt.Sprintf("No support for `getMiningInfo` on any sub-network"+
-				"besides %d", wire.SubNetworkSupportsAll),
+			Code: btcjson.ErrRPCInvalidRequest.Code,
+			Message: "`getMiningInfo` is not supported on partial nodes.",
 		}
 	}
 
@@ -2394,9 +2390,8 @@ func handleGetNetTotals(s *Server, cmd interface{}, closeChan <-chan struct{}) (
 func handleGetNetworkHashPS(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
 	if config.MainConfig().SubNetwork != wire.SubNetworkSupportsAll {
 		return nil, &btcjson.RPCError{
-			Code: btcjson.ErrRPCInternal.Code,
-			Message: fmt.Sprintf("No support for `getNetworkHashesPS` on any sub-network"+
-				"besides %d", wire.SubNetworkSupportsAll),
+			Code: btcjson.ErrRPCInvalidRequest.Code,
+			Message: "`getNetworkHashPS` is not supported on partial nodes.",
 		}
 	}
 
@@ -3300,9 +3295,8 @@ func handleSendRawTransaction(s *Server, cmd interface{}, closeChan <-chan struc
 func handleSetGenerate(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
 	if config.MainConfig().SubNetwork != wire.SubNetworkSupportsAll {
 		return nil, &btcjson.RPCError{
-			Code: btcjson.ErrRPCInternal.Code,
-			Message: fmt.Sprintf("No support for `setGenerate` on any sub-network"+
-				"besides %d", wire.SubNetworkSupportsAll),
+			Code: btcjson.ErrRPCInvalidRequest.Code,
+			Message: "`setGenerate` is not supported on partial nodes.",
 		}
 	}
 
