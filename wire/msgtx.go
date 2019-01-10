@@ -96,14 +96,6 @@ const (
 	// peers.  Thus, the peak usage of the free list is 12,500 * 512 =
 	// 6,400,000 bytes.
 	freeListMaxItems = 12500
-
-	// SubNetworkReservedFirst and SubnetworkReservedLast mark the range of sub-networks that are reserved for future use
-	// and are currently un-assigned for anything
-	// SubNetworkReservedFirst is the first reserved sub-network
-	SubNetworkReservedFirst = 3
-
-	// SubNetworkUnreservedFirst is the first unreserved sub-network
-	SubNetworkUnreservedFirst = 256
 )
 
 var (

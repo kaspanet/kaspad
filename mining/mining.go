@@ -464,6 +464,8 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 		// Calculate the fee in Satoshi/kB.
 		prioItem.feePerKB = txDesc.FeePerKB
 		prioItem.fee = txDesc.Fee
+
+		heap.Push(priorityQueue, prioItem)
 	}
 
 	// The starting block size is the size of the block header plus the max
@@ -484,23 +486,23 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 		tx := prioItem.tx
 
 		if tx.MsgTx().SubNetworkID != wire.SubNetworkDAGCoin {
-			subnetwork := tx.MsgTx().SubNetworkID
-			gasUsage, ok := gasUsageMap[subnetwork]
+			subNetwork := tx.MsgTx().SubNetworkID
+			gasUsage, ok := gasUsageMap[subNetwork]
 			if !ok {
 				gasUsage = 0
 			}
-			gasLimit, err := g.dag.GasLimit(subnetwork)
+			gasLimit, err := g.dag.GasLimit(&subNetwork)
 			if err != nil {
-				log.Errorf("Cannot get GAS limit for subnetwork %v", subnetwork)
+				log.Errorf("Cannot get GAS limit for subNetwork %v", subNetwork)
 				continue
 			}
 			txGas := tx.MsgTx().Gas
 			if gasLimit-gasUsage < txGas {
-				log.Tracef("Transaction %v (GAS=%v) ignored because gas overusage (GASUsage=%v) in subnetwork %v (GASLimit=%v)",
-					tx.MsgTx().TxHash, txGas, gasUsage, subnetwork, gasLimit)
+				log.Tracef("Transaction %v (GAS=%v) ignored because gas overusage (GASUsage=%v) in subNetwork %v (GASLimit=%v)",
+					tx.MsgTx().TxHash, txGas, gasUsage, subNetwork, gasLimit)
 				continue
 			}
-			gasUsageMap[subnetwork] = gasUsage + txGas
+			gasUsageMap[subNetwork] = gasUsage + txGas
 		}
 
 		// Enforce maximum block size.  Also check for overflow.
