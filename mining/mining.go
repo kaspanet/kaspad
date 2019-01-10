@@ -463,6 +463,8 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 		// Calculate the fee in Satoshi/kB.
 		prioItem.feePerKB = txDesc.FeePerKB
 		prioItem.fee = txDesc.Fee
+
+		heap.Push(priorityQueue, prioItem)
 	}
 
 	// The starting block size is the size of the block header plus the max
