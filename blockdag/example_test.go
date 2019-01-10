@@ -68,7 +68,7 @@ func ExampleBlockDAG_ProcessBlock() {
 	fmt.Printf("Block accepted. Is it an orphan?: %v", isOrphan)
 
 	// Output:
-	// Failed to process block: already have block 47c205482e0a2aa1f5503ec73ea0ffe5226f9d9357f037dcde79f75d85171634
+	// Failed to process block: already have block 4acd12ea38e16dd28b067c13f677511ac0a4d9074c932223082fd444655fd9ca
 }
 
 // This example demonstrates how to convert the compact "bits" in a block header

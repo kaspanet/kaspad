@@ -15,6 +15,7 @@ import (
 	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/txscript"
 	"github.com/daglabs/btcd/util"
+	"github.com/daglabs/btcd/util/subnetworkid"
 	"github.com/daglabs/btcd/wire"
 )
 
@@ -475,7 +476,7 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 	totalFees := uint64(0)
 
 	// Create map of GAS usage per subnetwork
-	gasUsageMap := make(map[uint64]uint64)
+	gasUsageMap := make(map[subnetworkid.SubNetworkID]uint64)
 
 	// Choose which transactions make it into the block.
 	for priorityQueue.Len() > 0 {
@@ -485,23 +486,23 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 		tx := prioItem.tx
 
 		if tx.MsgTx().SubNetworkID != wire.SubNetworkDAGCoin {
-			subnetwork := tx.MsgTx().SubNetworkID
-			gasUsage, ok := gasUsageMap[subnetwork]
+			subNetwork := tx.MsgTx().SubNetworkID
+			gasUsage, ok := gasUsageMap[subNetwork]
 			if !ok {
 				gasUsage = 0
 			}
-			gasLimit, err := g.dag.GasLimit(subnetwork)
+			gasLimit, err := g.dag.GasLimit(&subNetwork)
 			if err != nil {
-				log.Errorf("Cannot get GAS limit for subnetwork %v", subnetwork)
+				log.Errorf("Cannot get GAS limit for subNetwork %v", subNetwork)
 				continue
 			}
 			txGas := tx.MsgTx().Gas
 			if gasLimit-gasUsage < txGas {
-				log.Tracef("Transaction %v (GAS=%v) ignored because gas overusage (GASUsage=%v) in subnetwork %v (GASLimit=%v)",
-					tx.MsgTx().TxHash, txGas, gasUsage, subnetwork, gasLimit)
+				log.Tracef("Transaction %v (GAS=%v) ignored because gas overusage (GASUsage=%v) in subNetwork %v (GASLimit=%v)",
+					tx.MsgTx().TxHash, txGas, gasUsage, subNetwork, gasLimit)
 				continue
 			}
-			gasUsageMap[subnetwork] = gasUsage + txGas
+			gasUsageMap[subNetwork] = gasUsage + txGas
 		}
 
 		// Enforce maximum block size.  Also check for overflow.
@@ -645,7 +646,7 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 
 	// Sort transactions by subnetwork ID before building Merkle tree
 	sort.Slice(blockTxns, func(i, j int) bool {
-		return blockTxns[i].MsgTx().SubNetworkID < blockTxns[j].MsgTx().SubNetworkID
+		return subnetworkid.Less(&blockTxns[i].MsgTx().SubNetworkID, &blockTxns[j].MsgTx().SubNetworkID)
 	})
 
 	// Create a new block ready to be solved.

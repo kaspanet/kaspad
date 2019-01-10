@@ -516,8 +516,6 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block, fastAdd bo
 		}
 	}
 
-	initialFinalityPoint := dag.lastFinalityPoint
-
 	var finalityPointCandidate *blockNode
 	if !fastAdd {
 		var err error
@@ -537,14 +535,6 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block, fastAdd bo
 		dag.lastFinalityPoint = finalityPointCandidate
 	}
 
-	// Scan all accepted transactions and collect any sub-network registry
-	// transactions into subNetworkRegistryTxs. If any sub-network registry
-	// transaction is not well-formed, fail the entire block.
-	subNetworkRegistryTxs, err := validateAndExtractSubNetworkRegistryTxs(acceptedTxsData)
-	if err != nil {
-		return err
-	}
-
 	// Write any block status changes to DB before updating the DAG state.
 	err = dag.index.flushToDB()
 	if err != nil {
@@ -557,7 +547,6 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block, fastAdd bo
 		state := &dagState{
 			TipHashes:         dag.TipHashes(),
 			LastFinalityPoint: dag.lastFinalityPoint.hash,
-			LastSubNetworkID:  dag.lastSubNetworkID,
 		}
 		err := dbPutDAGState(dbTx, state)
 		if err != nil {
@@ -578,20 +567,12 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block, fastAdd bo
 			return err
 		}
 
-		// Add the pending sub-network in this block to the pending sub-networks
-		// collection.
-		err = dbPutPendingSubNetworkTxs(dbTx, block.Hash(), subNetworkRegistryTxs)
+		// Scan all accepted transactions and register any sub-network registry
+		// transaction. If any sub-network registry transaction is not well-formed,
+		// fail the entire block.
+		err = registerSubNetworks(dbTx, acceptedTxsData)
 		if err != nil {
 			return err
-		}
-
-		// Register all pending sub-networks between the initial finality point and
-		// the new one.
-		if initialFinalityPoint != dag.lastFinalityPoint {
-			err = dag.registerPendingSubNetworks(dbTx, initialFinalityPoint, dag.lastFinalityPoint)
-			if err != nil {
-				return err
-			}
 		}
 
 		// Allow the index manager to call each of the currently active
@@ -1603,7 +1584,6 @@ func New(config *Config) (*BlockDAG, error) {
 		warningCaches:       newThresholdCaches(vbNumBits),
 		deploymentCaches:    newThresholdCaches(dagconfig.DefinedDeployments),
 		blockCount:          1,
-		lastSubNetworkID:    wire.SubNetworkUnreservedFirst,
 	}
 
 	// Initialize the chain state from the passed database.  When the db
