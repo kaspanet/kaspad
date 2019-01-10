@@ -61,7 +61,7 @@ func validateSubNetworkRegistryTransaction(tx *wire.MsgTx) error {
 // buildSubNetworkID creates a sub-network ID from a sub-network registry transaction
 func buildSubNetworkID(tx *wire.MsgTx) (*subnetworkid.SubNetworkID, error) {
 	txHash := tx.TxHash()
-	return subnetworkid.New(util.Hash160(txHash.CloneBytes()))
+	return subnetworkid.New(util.Hash160(txHash[:]))
 }
 
 // subNetwork returns a registered sub-network. If the sub-network does not exist
