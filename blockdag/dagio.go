@@ -992,9 +992,6 @@ func (dag *BlockDAG) initDAGState() error {
 		// Set the last finality point
 		dag.lastFinalityPoint = dag.index.LookupNode(&state.LastFinalityPoint)
 
-		// Set the last sub-network ID
-		dag.lastSubNetworkID = state.LastSubNetworkID
-
 		return nil
 	})
 }

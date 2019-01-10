@@ -754,7 +754,7 @@ func loadConfig() (*Config, []string, error) {
 	}
 
 	if cfg.configFlags.SubNetwork != "" {
-		cfg.SubNetwork, err = subnetworkid.NewIDFromStr(cfg.configFlags.SubNetwork)
+		cfg.SubNetwork, err = subnetworkid.NewFromStr(cfg.configFlags.SubNetwork)
 		if err != nil {
 			return nil, nil, err
 		}
