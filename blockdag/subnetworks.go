@@ -17,23 +17,34 @@ import (
 // This function returns an error if one or more transactions are invalid
 func registerSubNetworks(dbTx database.Tx, txs []*TxWithBlockHash) error {
 	validSubNetworkRegistryTxs := make([]*wire.MsgTx, 0)
+	seenSubNetworkRegistryTx := false
 	for _, txData := range txs {
 		tx := txData.Tx.MsgTx()
 		if tx.SubNetworkID == wire.SubNetworkRegistry {
+			seenSubNetworkRegistryTx = true
 			err := validateSubNetworkRegistryTransaction(tx)
 			if err != nil {
 				return err
 			}
 			validSubNetworkRegistryTxs = append(validSubNetworkRegistryTxs, tx)
+		} else if seenSubNetworkRegistryTx {
+			// Transactions are ordered by sub-network, so we can safely assume
+			// that the rest of the transactions will not be sub-network registry
+			// transactions.
+			break
 		}
 	}
 
 	for _, registryTx := range validSubNetworkRegistryTxs {
-		subNetworkID, err := buildSubNetworkID(registryTx)
+		subNetworkID, err := txToSubNetworkID(registryTx)
 		if err != nil {
 			return err
 		}
-		if _, err := dbGetSubNetwork(dbTx, subNetworkID); err != nil {
+		sNet, err := dbGetSubNetwork(dbTx, subNetworkID)
+		if err != nil {
+			return nil
+		}
+		if sNet == nil {
 			createdSubNetwork := newSubNetwork(registryTx)
 			err := dbRegisterSubNetwork(dbTx, subNetworkID, createdSubNetwork)
 			if err != nil {
@@ -58,8 +69,8 @@ func validateSubNetworkRegistryTransaction(tx *wire.MsgTx) error {
 	return nil
 }
 
-// buildSubNetworkID creates a sub-network ID from a sub-network registry transaction
-func buildSubNetworkID(tx *wire.MsgTx) (*subnetworkid.SubNetworkID, error) {
+// txToSubNetworkID creates a sub-network ID from a sub-network registry transaction
+func txToSubNetworkID(tx *wire.MsgTx) (*subnetworkid.SubNetworkID, error) {
 	txHash := tx.TxHash()
 	return subnetworkid.New(util.Hash160(txHash[:]))
 }
@@ -112,12 +123,12 @@ func dbRegisterSubNetwork(dbTx database.Tx, subNetworkID *subnetworkid.SubNetwor
 	return nil
 }
 
+// dbGetSubNetwork returns the sub-network associated with subNetworkID or nil if the sub-network was not found.
 func dbGetSubNetwork(dbTx database.Tx, subNetworkID *subnetworkid.SubNetworkID) (*subNetwork, error) {
-	// Get the sub-network
 	bucket := dbTx.Metadata().Bucket(subNetworksBucketName)
 	serializedSubNetwork := bucket.Get(subNetworkID[:])
 	if serializedSubNetwork == nil {
-		return nil, fmt.Errorf("sub-network '%d' not found", subNetworkID)
+		return nil, nil
 	}
 
 	return deserializeSubNetwork(serializedSubNetwork)

@@ -208,7 +208,7 @@ func RegisterSubNetworkForTest(dag *BlockDAG, gasLimit uint64) (*subnetworkid.Su
 	}
 
 	// Build a sub-network ID from the registry transaction
-	subNetworkID, err := buildSubNetworkID(registryTx)
+	subNetworkID, err := txToSubNetworkID(registryTx)
 	if err != nil {
 		return nil, fmt.Errorf("could not build sub-network ID: %s", err)
 	}
