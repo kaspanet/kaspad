@@ -8,7 +8,6 @@ import (
 	"container/heap"
 	"encoding/hex"
 	"errors"
-	"fmt"
 	"math/rand"
 	"testing"
 	"time"
@@ -142,7 +141,7 @@ func (txs *fakeTxSource) HaveTransaction(hash *daghash.Hash) bool {
 	return false
 }
 
-func TestSomething(t *testing.T) {
+func TestNewBlockTemplate(t *testing.T) {
 	params := &dagconfig.SimNetParams
 
 	// Use a hard coded key pair for deterministic results.
@@ -224,6 +223,20 @@ func TestSomething(t *testing.T) {
 		Value:    1,
 	})
 
+	nonFinalizedTx := wire.NewMsgTx(wire.TxVersion)
+	nonFinalizedTx.LockTime = uint64(dag.Height() + 2)
+	nonFinalizedTx.AddTxIn(&wire.TxIn{
+		PreviousOutPoint: wire.OutPoint{
+			Hash:  template1CbTx.TxHash(),
+			Index: 0,
+		},
+		Sequence: 0,
+	})
+	nonFinalizedTx.AddTxOut(&wire.TxOut{
+		PkScript: pkScript,
+		Value:    1,
+	})
+
 	// Sign the new transaction.
 	tx.TxIn[0].SignatureScript, err = txscript.SignatureScript(tx, 0, pkScript,
 		txscript.SigHashAll, signKey, true)
@@ -238,78 +251,63 @@ func TestSomething(t *testing.T) {
 		{
 			Tx: util.NewTx(tx),
 		},
-	}
-
-	functionCalledAsExpected := false
-
-	tests := []struct {
-		target              interface{}
-		replacement         interface{}
-		expectsError        bool
-		expectedErrorString string
-	}{
 		{
-			target:       nil,
-			replacement:  nil,
-			expectsError: false,
-		},
-		{
-			target: standardCoinbaseScript,
-			replacement: func(nextBlockHeight int32, extraNonce uint64) ([]byte, error) {
-				functionCalledAsExpected = true
-				return nil, errors.New("standardCoinbaseScript err")
-			},
-			expectsError:        true,
-			expectedErrorString: "standardCoinbaseScript err",
-		},
-		{
-			target: log.Tracef,
-			replacement: func() func(format string, params ...interface{}) {
-				i := 0
-				return func(format string, params ...interface{}) {
-					if i == 0 {
-						functionCalledAsExpected = true
-					}
-					switch i {
-					case 0:
-						if fmt.Sprintf(format, params...) != fmt.Sprintf("Skipping coinbase tx %s", cbTx.Hash()) {
-							functionCalledAsExpected = false
-						}
-					}
-					i++
-				}
-			}(),
-			expectsError: false,
+			Tx: util.NewTx(nonFinalizedTx),
 		},
 	}
 
-	for i, test := range tests {
-		func() {
-			functionCalledAsExpected = false
-			if test.target != nil {
-				guard := monkey.Patch(test.target, test.replacement)
-				defer guard.Unpatch()
-			} else {
-				functionCalledAsExpected = true
-			}
-			_, err = blockTemplateGenerator.NewBlockTemplate(payAddr)
+	standardCoinbaseScriptErrString := "standardCoinbaseScript err"
 
-			if !functionCalledAsExpected {
-				t.Errorf("Test %v: function wasn't called as expected", i)
-			}
+	var guard *monkey.PatchGuard
+	guard = monkey.Patch(standardCoinbaseScript, func(nextBlockHeight int32, extraNonce uint64) ([]byte, error) {
+		return nil, errors.New(standardCoinbaseScriptErrString)
+	})
+	defer guard.Unpatch()
 
-			if !test.expectsError {
-				if err != nil {
-					t.Errorf("Test %v: unexpected error: %v", i, err)
-				}
-			} else {
-				if err == nil || err.Error() != test.expectedErrorString {
-					t.Errorf("Test %v: expected an error \"%v\" but got \"%v\"", i, test.expectedErrorString, err)
-				}
-				if err == nil {
-					t.Errorf("Test %v: expected an error but got <nil>", i)
-				}
-			}
-		}()
+	_, err = blockTemplateGenerator.NewBlockTemplate(payAddr)
+	guard.Unpatch()
+
+	if err == nil || err.Error() != standardCoinbaseScriptErrString {
+		t.Errorf("expected an error \"%v\" but got \"%v\"", standardCoinbaseScriptErrString, err)
+	}
+	if err == nil {
+		t.Errorf("expected an error but got <nil>")
+	}
+
+	popCalled := false
+	popReturnedUnexpectedValue := false
+	firstCall := true
+	guard = monkey.Patch((*txPriorityQueue).Pop, func(pq *txPriorityQueue) interface{} {
+		guard.Unpatch()
+		defer guard.Restore()
+
+		if firstCall {
+			popCalled = true
+			firstCall = false
+		}
+		item, ok := pq.Pop().(*txPrioItem)
+		// Because NewBlockTemplate filters coinbase transaction
+		// and non-finalized transactions, the only transaction
+		// in the queue should be `tx`
+		if !ok || *item.tx.Hash() != tx.TxHash() {
+			popReturnedUnexpectedValue = false
+		}
+		return item
+	})
+	defer guard.Unpatch()
+
+	_, err = blockTemplateGenerator.NewBlockTemplate(payAddr)
+	guard.Unpatch()
+
+	if !popCalled {
+		t.Errorf("(*txPriorityQueue).Pop wasn't called")
+	}
+
+	if popReturnedUnexpectedValue {
+		t.Errorf("(*txPriorityQueue).Pop returned unexpected value")
+	}
+
+	if err != nil {
+		t.Errorf("NewBlockTemplate: unexpected error: %v", err)
 	}
 }
