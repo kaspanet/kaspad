@@ -204,11 +204,6 @@ func CheckTransactionSanity(tx *util.Tx) error {
 	var totalSatoshi uint64
 	for _, txOut := range msgTx.TxOut {
 		satoshi := txOut.Value
-		if satoshi < 0 {
-			str := fmt.Sprintf("transaction output has negative "+
-				"value of %v", satoshi)
-			return ruleError(ErrBadTxOutValue, str)
-		}
 		if satoshi > util.MaxSatoshi {
 			str := fmt.Sprintf("transaction output value of %v is "+
 				"higher than max allowed value of %v", satoshi,
