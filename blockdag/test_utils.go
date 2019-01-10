@@ -3,6 +3,7 @@ package blockdag
 import (
 	"encoding/binary"
 	"fmt"
+	"github.com/daglabs/btcd/util/subnetworkid"
 	"os"
 	"path/filepath"
 	"time"
@@ -143,9 +144,9 @@ func createCoinbaseTxForTest(blockHeight int32, numOutputs uint32, extraNonce in
 	return tx, nil
 }
 
-// RegisterSubnetworkForTest is used to register network on DAG with specified GAS limit.
-func RegisterSubnetworkForTest(dag *BlockDAG, gasLimit uint64) (subNetworkID uint64, err error) {
-	blockTime := time.Unix(dag.genesis.timestamp, 0)
+// RegisterSubNetworkForTest is used to register network on DAG with specified gas limit
+func RegisterSubNetworkForTest(dag *BlockDAG, gasLimit uint64) (*subnetworkid.SubNetworkID, error) {
+	blockTime := time.Unix(dag.selectedTip().timestamp, 0)
 	extraNonce := int64(0)
 
 	buildNextBlock := func(parents blockSet, txs []*wire.MsgTx) (*util.Block, error) {
@@ -180,7 +181,7 @@ func RegisterSubnetworkForTest(dag *BlockDAG, gasLimit uint64) (subNetworkID uin
 		dag.dagLock.Lock()
 		defer dag.dagLock.Unlock()
 
-		err = dag.maybeAcceptBlock(block, BFNone)
+		err := dag.maybeAcceptBlock(block, BFNone)
 		if err != nil {
 			return nil, err
 		}
@@ -188,7 +189,7 @@ func RegisterSubnetworkForTest(dag *BlockDAG, gasLimit uint64) (subNetworkID uin
 		return dag.index.LookupNode(block.Hash()), nil
 	}
 
-	currentNode := dag.genesis
+	currentNode := dag.selectedTip()
 
 	// Create a block with a valid sub-network registry transaction
 	registryTx := wire.NewMsgTx(wire.TxVersion)
@@ -199,34 +200,17 @@ func RegisterSubnetworkForTest(dag *BlockDAG, gasLimit uint64) (subNetworkID uin
 	// Add it to the DAG
 	registryBlock, err := buildNextBlock(setFromSlice(currentNode), []*wire.MsgTx{registryTx})
 	if err != nil {
-		return 0, fmt.Errorf("could not build registry block: %s", err)
+		return nil, fmt.Errorf("could not build registry block: %s", err)
 	}
 	currentNode, err = addBlockToDAG(registryBlock)
 	if err != nil {
-		return 0, fmt.Errorf("could not add registry block to DAG: %s", err)
+		return nil, fmt.Errorf("could not add registry block to DAG: %s", err)
 	}
 
-	// Add 2*finalityInterval to ensure the registry transaction is finalized
-	for currentNode.blueScore < 2*finalityInterval {
-		nextBlock, err := buildNextBlock(setFromSlice(currentNode), []*wire.MsgTx{})
-		if err != nil {
-			return 0, fmt.Errorf("could not create block: %s", err)
-		}
-		currentNode, err = addBlockToDAG(nextBlock)
-		if err != nil {
-			return 0, fmt.Errorf("could not add block to DAG: %s", err)
-		}
-	}
-
-	// Make sure that the sub-network had been successfully registered by trying
-	// to retrieve its gas limit.
-	mostRecentlyRegisteredSubNetworkID := dag.lastSubNetworkID - 1
-	limit, err := dag.GasLimit(mostRecentlyRegisteredSubNetworkID)
+	// Build a sub-network ID from the registry transaction
+	subNetworkID, err := buildSubNetworkID(registryTx)
 	if err != nil {
-		return 0, fmt.Errorf("could not retrieve gas limit: %s", err)
+		return nil, fmt.Errorf("could not build sub-network ID: %s", err)
 	}
-	if limit != gasLimit {
-		return 0, fmt.Errorf("unexpected gas limit. want: %d, got: %d", gasLimit, limit)
-	}
-	return mostRecentlyRegisteredSubNetworkID, nil
+	return subNetworkID, nil
 }
