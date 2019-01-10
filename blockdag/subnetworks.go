@@ -101,6 +101,9 @@ func (dag *BlockDAG) GasLimit(subNetworkID *subnetworkid.SubNetworkID) (uint64, 
 	if err != nil {
 		return 0, err
 	}
+	if sNet == nil {
+		return 0, fmt.Errorf("sub-network '%s' not found", subNetworkID)
+	}
 
 	return sNet.gasLimit, nil
 }
