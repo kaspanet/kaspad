@@ -58,6 +58,7 @@ func TestErrorCodeStringer(t *testing.T) {
 		{ErrFinality, "ErrFinality"},
 		{ErrTransactionsNotSorted, "ErrTransactionsNotSorted"},
 		{ErrInvalidGas, "ErrInvalidGas"},
+		{ErrInvalidPayload, "ErrInvalidPayload"},
 		{0xffff, "Unknown ErrorCode (65535)"},
 	}
 

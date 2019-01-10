@@ -267,6 +267,21 @@ func CheckTransactionSanity(tx *util.Tx) error {
 		}
 	}
 
+	// Transactions in native and SubNetworkRegistry SubNetworks must have Gas = 0
+	if (msgTx.SubNetworkID == wire.SubNetworkDAGCoin ||
+		msgTx.SubNetworkID == wire.SubNetworkRegistry) &&
+		msgTx.Gas > 0 {
+
+		return ruleError(ErrInvalidGas, "transaction in the native or "+
+			"registry sub-networks has gas > 0 ")
+	}
+
+	if msgTx.SubNetworkID == wire.SubNetworkDAGCoin &&
+		len(msgTx.Payload) > 0 {
+		return ruleError(ErrInvalidPayload,
+			"transaction in the native sub-network includes a payload")
+	}
+
 	return nil
 }
 
