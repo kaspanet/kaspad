@@ -17,17 +17,17 @@ import (
 // This function returns an error if one or more transactions are invalid
 func registerSubNetworks(dbTx database.Tx, txs []*TxWithBlockHash) error {
 	validSubNetworkRegistryTxs := make([]*wire.MsgTx, 0)
-	seenSubNetworkRegistryTx := false
 	for _, txData := range txs {
 		tx := txData.Tx.MsgTx()
 		if tx.SubNetworkID == wire.SubNetworkRegistry {
-			seenSubNetworkRegistryTx = true
 			err := validateSubNetworkRegistryTransaction(tx)
 			if err != nil {
 				return err
 			}
 			validSubNetworkRegistryTxs = append(validSubNetworkRegistryTxs, tx)
-		} else if seenSubNetworkRegistryTx {
+		}
+
+		if subnetworkid.Less(&wire.SubNetworkRegistry, &tx.SubNetworkID) {
 			// Transactions are ordered by sub-network, so we can safely assume
 			// that the rest of the transactions will not be sub-network registry
 			// transactions.
@@ -42,7 +42,7 @@ func registerSubNetworks(dbTx database.Tx, txs []*TxWithBlockHash) error {
 		}
 		sNet, err := dbGetSubNetwork(dbTx, subNetworkID)
 		if err != nil {
-			return nil
+			return err
 		}
 		if sNet == nil {
 			createdSubNetwork := newSubNetwork(registryTx)
