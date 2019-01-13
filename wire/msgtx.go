@@ -98,6 +98,18 @@ const (
 	freeListMaxItems = 12500
 )
 
+// txEncoding is a bitmask defining which transaction fields we
+// want to encode and which to ignore.
+type txEncoding uint8
+
+const (
+	txEncodingExcludeSubNetworkData txEncoding = 1 << iota
+
+	txEncodingExcludeSignatureScript
+
+	txEncodingFull txEncoding = 0
+)
+
 var (
 	// SubNetworkSupportsAll is the sub-network id that is used to signal to peers that you support all sub-networks
 	SubNetworkSupportsAll = subnetworkid.SubNetworkID{}
@@ -207,15 +219,15 @@ type TxIn struct {
 // SerializeSize returns the number of bytes it would take to serialize the
 // the transaction input.
 func (t *TxIn) SerializeSize() int {
-	return t.serializeSize(false)
+	return t.serializeSize(txEncodingFull)
 }
 
-func (t *TxIn) serializeSize(thinEncoding bool) int {
+func (t *TxIn) serializeSize(encodingFlags txEncoding) int {
 	// Outpoint Hash 32 bytes + Outpoint Index 4 bytes + Sequence 8 bytes +
 	// serialized varint size for the length of SignatureScript +
 	// SignatureScript bytes.
 	n := 44
-	if !thinEncoding {
+	if encodingFlags&txEncodingExcludeSignatureScript != txEncodingExcludeSignatureScript {
 		return n + VarIntSerializeSize(uint64(len(t.SignatureScript))) +
 			len(t.SignatureScript)
 	}
@@ -295,12 +307,14 @@ func (msg *MsgTx) TxHash() daghash.Hash {
 
 // TxID generates the Hash for the transaction without the signature script, gas and payload fields.
 func (msg *MsgTx) TxID() daghash.Hash {
-	// Encode the transaction and calculate double sha256 on the result.
+	// Encode the transaction, replace signature script, payload and gas with
+	// zeroes, and calculate double sha256 on the result.
 	// Ignore the error returns since the only way the encode could fail
 	// is being out of memory or due to nil pointers, both of which would
 	// cause a run-time panic.
-	buf := bytes.NewBuffer(make([]byte, 0, msg.serializeSize(true)))
-	_ = msg.serializeThin(buf)
+	encodingFlags := txEncodingExcludeSignatureScript & txEncodingExcludeSubNetworkData
+	buf := bytes.NewBuffer(make([]byte, 0, msg.serializeSize(encodingFlags)))
+	_ = msg.serialize(buf, encodingFlags)
 	return daghash.DoubleHashH(buf.Bytes())
 }
 
@@ -591,10 +605,10 @@ func (msg *MsgTx) Deserialize(r io.Reader) error {
 // See Serialize for encoding transactions to be stored to disk, such as in a
 // database, as opposed to encoding transactions for the wire.
 func (msg *MsgTx) BtcEncode(w io.Writer, pver uint32) error {
-	return msg.encode(w, pver, false)
+	return msg.encode(w, pver, txEncodingFull)
 }
 
-func (msg *MsgTx) encode(w io.Writer, pver uint32, thinEncoding bool) error {
+func (msg *MsgTx) encode(w io.Writer, pver uint32, encodingFlags txEncoding) error {
 	err := binarySerializer.PutUint32(w, littleEndian, uint32(msg.Version))
 	if err != nil {
 		return err
@@ -607,7 +621,7 @@ func (msg *MsgTx) encode(w io.Writer, pver uint32, thinEncoding bool) error {
 	}
 
 	for _, ti := range msg.TxIn {
-		err = writeTxIn(w, pver, msg.Version, ti, thinEncoding)
+		err = writeTxIn(w, pver, msg.Version, ti, encodingFlags)
 		if err != nil {
 			return err
 		}
@@ -640,7 +654,7 @@ func (msg *MsgTx) encode(w io.Writer, pver uint32, thinEncoding bool) error {
 			return messageError("MsgTx.BtcEncode", str)
 		}
 
-		if !thinEncoding {
+		if encodingFlags&txEncodingExcludeSubNetworkData != txEncodingExcludeSubNetworkData {
 			err = binarySerializer.PutUint64(w, littleEndian, msg.Gas)
 		} else {
 			err = binarySerializer.PutUint64(w, littleEndian, 0)
@@ -649,7 +663,7 @@ func (msg *MsgTx) encode(w io.Writer, pver uint32, thinEncoding bool) error {
 			return err
 		}
 
-		if !thinEncoding {
+		if encodingFlags&txEncodingExcludeSubNetworkData != txEncodingExcludeSubNetworkData {
 			err = WriteVarInt(w, pver, uint64(len(msg.Payload)))
 			w.Write(msg.Payload)
 		} else {
@@ -686,22 +700,22 @@ func (msg *MsgTx) Serialize(w io.Writer) error {
 	return msg.BtcEncode(w, 0)
 }
 
-func (msg *MsgTx) serializeThin(w io.Writer) error {
+func (msg *MsgTx) serialize(w io.Writer, encodingFlags txEncoding) error {
 	// At the current time, there is no difference between the wire encoding
 	// at protocol version 0 and the stable long-term storage format.  As
 	// a result, make use of BtcEncode.
-	return msg.encode(w, 0, true)
+	return msg.encode(w, 0, encodingFlags)
 }
 
 // SerializeSize returns the number of bytes it would take to serialize the
 // the transaction.
 func (msg *MsgTx) SerializeSize() int {
-	return msg.serializeSize(false)
+	return msg.serializeSize(txEncodingFull)
 }
 
 // SerializeSize returns the number of bytes it would take to serialize the
 // the transaction.
-func (msg *MsgTx) serializeSize(thinEncoding bool) int {
+func (msg *MsgTx) serializeSize(encodingFlags txEncoding) int {
 	// Version 4 bytes + LockTime 8 bytes + Subnetwork ID 20
 	// bytes + Serialized varint size for the number of transaction
 	// inputs and outputs.
@@ -713,7 +727,7 @@ func (msg *MsgTx) serializeSize(thinEncoding bool) int {
 		n += 8
 
 		// Serialized varint size for the length of the payload
-		if !thinEncoding {
+		if encodingFlags&txEncodingExcludeSubNetworkData != txEncodingExcludeSubNetworkData {
 			n += VarIntSerializeSize(uint64(len(msg.Payload)))
 		} else {
 			n += VarIntSerializeSize(0)
@@ -721,14 +735,16 @@ func (msg *MsgTx) serializeSize(thinEncoding bool) int {
 	}
 
 	for _, txIn := range msg.TxIn {
-		n += txIn.serializeSize(thinEncoding)
+		n += txIn.serializeSize(encodingFlags)
 	}
 
 	for _, txOut := range msg.TxOut {
 		n += txOut.SerializeSize()
 	}
 
-	n += len(msg.Payload)
+	if encodingFlags&txEncodingExcludeSubNetworkData != txEncodingExcludeSubNetworkData {
+		n += len(msg.Payload)
+	}
 
 	return n
 }
@@ -877,13 +893,13 @@ func readTxIn(r io.Reader, pver uint32, version int32, ti *TxIn) error {
 
 // writeTxIn encodes ti to the bitcoin protocol encoding for a transaction
 // input (TxIn) to w.
-func writeTxIn(w io.Writer, pver uint32, version int32, ti *TxIn, thinEncoding bool) error {
+func writeTxIn(w io.Writer, pver uint32, version int32, ti *TxIn, encodingFlags txEncoding) error {
 	err := writeOutPoint(w, pver, version, &ti.PreviousOutPoint)
 	if err != nil {
 		return err
 	}
 
-	if !thinEncoding {
+	if encodingFlags&txEncodingExcludeSignatureScript != txEncodingExcludeSignatureScript {
 		err = WriteVarBytes(w, pver, ti.SignatureScript)
 	} else {
 		err = WriteVarBytes(w, pver, []byte{})
