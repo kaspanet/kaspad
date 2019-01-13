@@ -533,7 +533,7 @@ func (c *dbCache) flush() error {
 func (c *dbCache) needsFlush(tx *transaction) bool {
 	// A flush is needed when more time has elapsed than the configured
 	// flush interval.
-	if time.Since(c.lastFlush) > c.flushInterval {
+	if time.Since(c.lastFlush) >= c.flushInterval {
 		return true
 	}
 

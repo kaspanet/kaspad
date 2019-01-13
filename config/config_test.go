@@ -7,6 +7,9 @@ import (
 	"regexp"
 	"runtime"
 	"testing"
+
+	"github.com/daglabs/btcd/util/subnetworkid"
+	"github.com/daglabs/btcd/wire"
 )
 
 var (
@@ -68,5 +71,13 @@ func TestCreateDefaultConfigFile(t *testing.T) {
 
 	if !rpcpassRegexp.Match(content) {
 		t.Error("Could not find rpcpass in generated default config file.")
+	}
+}
+
+// TestConstants makes sure that all constants hard-coded into the help text were not modified.
+func TestConstants(t *testing.T) {
+	zero := subnetworkid.SubNetworkID{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+	if wire.SubNetworkSupportsAll != zero {
+		t.Errorf("wire.SubNetworkSupportsAll value was changed from 0, therefore you probably need to update the help text for SubNetwork")
 	}
 }

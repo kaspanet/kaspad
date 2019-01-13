@@ -16,6 +16,7 @@ import (
 	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/txscript"
 	"github.com/daglabs/btcd/util"
+	"github.com/daglabs/btcd/util/subnetworkid"
 	"github.com/daglabs/btcd/wire"
 )
 
@@ -187,7 +188,7 @@ func CheckTransactionSanity(tx *util.Tx) error {
 
 	// A transaction must not exceed the maximum allowed block payload when
 	// serialized.
-	serializedTxSize := tx.MsgTx().SerializeSize()
+	serializedTxSize := msgTx.SerializeSize()
 	if serializedTxSize > wire.MaxBlockPayload {
 		str := fmt.Sprintf("serialized transaction is too big - got "+
 			"%d, max %d", serializedTxSize, wire.MaxBlockPayload)
@@ -496,7 +497,7 @@ func checkBlockSanity(block *util.Block, powLimit *big.Int, timeSource MedianTim
 				"index %d", i+1)
 			return ruleError(ErrMultipleCoinbases, str)
 		}
-		if tx.MsgTx().SubNetworkID < transactions[i].MsgTx().SubNetworkID {
+		if subnetworkid.Less(&tx.MsgTx().SubNetworkID, &transactions[i].MsgTx().SubNetworkID) {
 			return ruleError(ErrTransactionsNotSorted, "transactions must be sorted by subnetwork")
 		}
 	}

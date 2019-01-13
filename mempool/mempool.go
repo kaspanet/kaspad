@@ -657,6 +657,24 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rateLimit, rejectDu
 		return nil, nil, err
 	}
 
+	// Check that transaction does not overuse GAS
+	msgTx := tx.MsgTx()
+	if msgTx.SubNetworkID == wire.SubNetworkSupportsAll {
+		return nil, nil, txRuleError(wire.RejectInvalid, "Subnetwork 0 is not permited in transaction")
+	} else if msgTx.SubNetworkID != wire.SubNetworkDAGCoin {
+		gasLimit, err := mp.cfg.DAG.GasLimit(&msgTx.SubNetworkID)
+		if err != nil {
+			return nil, nil, err
+		}
+		if msgTx.Gas > gasLimit {
+			str := fmt.Sprintf("transaction wants more gas %v, than allowed %v",
+				msgTx.Gas, gasLimit)
+			return nil, nil, dagRuleError(blockdag.RuleError{
+				ErrorCode:   blockdag.ErrInvalidGas,
+				Description: str})
+		}
+	}
+
 	// A standalone transaction must not be a coinbase transaction.
 	if blockdag.IsCoinBase(tx) {
 		str := fmt.Sprintf("transaction %v is an individual coinbase",

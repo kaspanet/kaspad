@@ -7,12 +7,9 @@ import (
 
 	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/dagconfig/daghash"
-	"github.com/daglabs/btcd/txscript"
 	"github.com/daglabs/btcd/util"
 	"github.com/daglabs/btcd/wire"
 )
-
-var OpTrueScript = []byte{txscript.OpTrue}
 
 // TestUTXOCollection makes sure that utxoCollection cloning and string representations work as expected.
 func TestUTXOCollection(t *testing.T) {
@@ -799,46 +796,6 @@ func TestDiffUTXOSet_addTx(t *testing.T) {
 	}
 }
 
-// createCoinbaseTx returns a coinbase transaction with the requested number of
-// outputs paying an appropriate subsidy based on the passed block height to the
-// address associated with the harness.  It automatically uses a standard
-// signature script that starts with the block height
-func createCoinbaseTx(blockHeight int32, numOutputs uint32, extraNonce int64, params *dagconfig.Params) (*wire.MsgTx, error) {
-	// Create standard coinbase script.
-	coinbaseScript, err := txscript.NewScriptBuilder().
-		AddInt64(int64(blockHeight)).AddInt64(extraNonce).Script()
-	if err != nil {
-		return nil, err
-	}
-
-	tx := wire.NewMsgTx(wire.TxVersion)
-	tx.AddTxIn(&wire.TxIn{
-		// Coinbase transactions have no inputs, so previous outpoint is
-		// zero hash and max index.
-		PreviousOutPoint: *wire.NewOutPoint(&daghash.Hash{},
-			wire.MaxPrevOutIndex),
-		SignatureScript: coinbaseScript,
-		Sequence:        wire.MaxTxInSequenceNum,
-	})
-	totalInput := CalcBlockSubsidy(blockHeight, params)
-	amountPerOutput := totalInput / uint64(numOutputs)
-	remainder := totalInput - amountPerOutput*uint64(numOutputs)
-	for i := uint32(0); i < numOutputs; i++ {
-		// Ensure the final output accounts for any remainder that might
-		// be left from splitting the input amount.
-		amount := amountPerOutput
-		if i == numOutputs-1 {
-			amount = amountPerOutput + remainder
-		}
-		tx.AddTxOut(&wire.TxOut{
-			PkScript: OpTrueScript,
-			Value:    amount,
-		})
-	}
-
-	return tx, nil
-}
-
 func TestApplyUTXOChanges(t *testing.T) {
 	// Create a new database and dag instance to run tests against.
 	dag, teardownFunc, err := DAGSetup("TestApplyUTXOChanges", Config{
@@ -857,9 +814,9 @@ func TestApplyUTXOChanges(t *testing.T) {
 		},
 	}
 
-	cbTx, err := createCoinbaseTx(1, 1, 0, dag.dagParams)
+	cbTx, err := createCoinbaseTxForTest(1, 1, 0, dag.dagParams)
 	if err != nil {
-		t.Errorf("createCoinbaseTx: %v", err)
+		t.Errorf("createCoinbaseTxForTest: %v", err)
 	}
 
 	chainedTx := wire.NewMsgTx(wire.TxVersion)
@@ -924,9 +881,9 @@ func TestDiffFromTx(t *testing.T) {
 	fus := &FullUTXOSet{
 		utxoCollection: utxoCollection{},
 	}
-	cbTx, err := createCoinbaseTx(1, 1, 0, &dagconfig.SimNetParams)
+	cbTx, err := createCoinbaseTxForTest(1, 1, 0, &dagconfig.SimNetParams)
 	if err != nil {
-		t.Errorf("createCoinbaseTx: %v", err)
+		t.Errorf("createCoinbaseTxForTest: %v", err)
 	}
 	fus.AddTx(cbTx, 1)
 	node := &blockNode{height: 2} //Fake node

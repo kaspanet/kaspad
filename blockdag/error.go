@@ -211,9 +211,18 @@ const (
 
 	// ErrFinality indicates that a block doesn't adhere to the finality rules
 	ErrFinality
+
 	// ErrTransactionsNotSorted indicates that transactions in block are not
-	// sorted by subnetwork
+	// sorted by sub-network
 	ErrTransactionsNotSorted
+
+	// ErrInvalidGas transaction wants to use more GAS than allowed
+	// by subnetwork
+	ErrInvalidGas
+
+	// ErrSubNetwork indicates that a block doesn't adhere to the sub-network
+	// registry rules
+	ErrSubNetworkRegistry
 )
 
 // Map of ErrorCode values back to their constant names for pretty printing.
@@ -260,6 +269,7 @@ var errorCodeStrings = map[ErrorCode]string{
 	ErrWithDiff:                  "ErrWithDiff",
 	ErrFinality:                  "ErrFinality",
 	ErrTransactionsNotSorted:     "ErrTransactionsNotSorted",
+	ErrInvalidGas:                "ErrInvalidGas",
 }
 
 // String returns the ErrorCode as a human-readable name.

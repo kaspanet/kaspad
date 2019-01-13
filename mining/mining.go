@@ -15,6 +15,7 @@ import (
 	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/txscript"
 	"github.com/daglabs/btcd/util"
+	"github.com/daglabs/btcd/util/subnetworkid"
 	"github.com/daglabs/btcd/wire"
 )
 
@@ -80,12 +81,6 @@ type txPrioItem struct {
 	fee      uint64
 	priority float64
 	feePerKB uint64
-
-	// dependsOn holds a map of transaction hashes which this one depends
-	// on.  It will only be set when the transaction references other
-	// transactions in the source pool and hence must come after them in
-	// a block.
-	dependsOn map[daghash.Hash]struct{}
 }
 
 // txPriorityQueueLessFunc describes a function that can be used as a compare
@@ -265,19 +260,6 @@ func createCoinbaseTx(params *dagconfig.Params, coinbaseScript []byte, nextBlock
 	return util.NewTx(tx), nil
 }
 
-// logSkippedDeps logs any dependencies which are also skipped as a result of
-// skipping a transaction while generating a block template at the trace level.
-func logSkippedDeps(tx *util.Tx, deps map[daghash.Hash]*txPrioItem) {
-	if deps == nil {
-		return
-	}
-
-	for _, item := range deps {
-		log.Tracef("Skipping tx %s since it depends on %s\n",
-			item.tx.ID(), tx.ID())
-	}
-}
-
 // MinimumMedianTime returns the minimum allowed timestamp for a block building
 // on the end of the provided best chain.  In particular, it is one second after
 // the median timestamp of the last several blocks per the chain consensus
@@ -443,13 +425,6 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 	blockTxns = append(blockTxns, coinbaseTx)
 	blockUtxos := blockdag.NewDiffUTXOSet(g.dag.UTXOSet(), blockdag.NewUTXODiff())
 
-	// dependers is used to track transactions which depend on another
-	// transaction in the source pool.  This, in conjunction with the
-	// dependsOn map kept with each dependent transaction helps quickly
-	// determine which dependent transactions are now eligible for inclusion
-	// in the block once each transaction has been included.
-	dependers := make(map[daghash.Hash]map[daghash.Hash]*txPrioItem)
-
 	// Create slices to hold the fees and number of signature operations
 	// for each of the selected transactions and add an entry for the
 	// coinbase.  This allows the code below to simply append details about
@@ -464,7 +439,6 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 	log.Debugf("Considering %d transactions for inclusion to new block",
 		len(sourceTxns))
 
-mempoolLoop:
 	for _, txDesc := range sourceTxns {
 		// A block can't have more than one coinbase or contain
 		// non-finalized transactions.
@@ -480,46 +454,10 @@ mempoolLoop:
 			continue
 		}
 
-		// Setup dependencies for any transactions which reference
-		// other transactions in the mempool so they can be properly
-		// ordered below.
-		prioItem := &txPrioItem{tx: tx}
-		for _, txIn := range tx.MsgTx().TxIn {
-			originID := &txIn.PreviousOutPoint.TxID
-			_, ok := blockUtxos.Get(txIn.PreviousOutPoint)
-			if !ok {
-				if !g.txSource.HaveTransaction(originID) {
-					log.Tracef("Skipping tx %s because it "+
-						"references unspent output %s "+
-						"which is not available",
-						tx.ID(), txIn.PreviousOutPoint)
-					continue mempoolLoop
-				}
-
-				// The transaction is referencing another
-				// transaction in the source pool, so setup an
-				// ordering dependency.
-				deps, exists := dependers[*originID]
-				if !exists {
-					deps = make(map[daghash.Hash]*txPrioItem)
-					dependers[*originID] = deps
-				}
-				deps[*prioItem.tx.ID()] = prioItem
-				if prioItem.dependsOn == nil {
-					prioItem.dependsOn = make(
-						map[daghash.Hash]struct{})
-				}
-				prioItem.dependsOn[*originID] = struct{}{}
-
-				// Skip the check below. We already know the
-				// referenced transaction is available.
-				continue
-			}
-		}
-
 		// Calculate the final transaction priority using the input
 		// value age sum as well as the adjusted transaction size.  The
 		// formula is: sum(inputValue * inputAge) / adjustedTxSize
+		prioItem := &txPrioItem{tx: tx}
 		prioItem.priority = CalcPriority(tx.MsgTx(), blockUtxos,
 			nextBlockHeight)
 
@@ -527,15 +465,8 @@ mempoolLoop:
 		prioItem.feePerKB = txDesc.FeePerKB
 		prioItem.fee = txDesc.Fee
 
-		// Add the transaction to the priority queue to mark it ready
-		// for inclusion in the block unless it has dependencies.
-		if prioItem.dependsOn == nil {
-			heap.Push(priorityQueue, prioItem)
-		}
+		heap.Push(priorityQueue, prioItem)
 	}
-
-	log.Tracef("Priority queue len %d, dependers len %d",
-		priorityQueue.Len(), len(dependers))
 
 	// The starting block size is the size of the block header plus the max
 	// possible transaction count size, plus the size of the coinbase
@@ -544,6 +475,9 @@ mempoolLoop:
 	blockSigOps := numCoinbaseSigOps
 	totalFees := uint64(0)
 
+	// Create map of GAS usage per subnetwork
+	gasUsageMap := make(map[subnetworkid.SubNetworkID]uint64)
+
 	// Choose which transactions make it into the block.
 	for priorityQueue.Len() > 0 {
 		// Grab the highest priority (or highest fee per kilobyte
@@ -551,8 +485,25 @@ mempoolLoop:
 		prioItem := heap.Pop(priorityQueue).(*txPrioItem)
 		tx := prioItem.tx
 
-		// Grab any transactions which depend on this one.
-		deps := dependers[*tx.ID()]
+		if tx.MsgTx().SubNetworkID != wire.SubNetworkDAGCoin {
+			subNetwork := tx.MsgTx().SubNetworkID
+			gasUsage, ok := gasUsageMap[subNetwork]
+			if !ok {
+				gasUsage = 0
+			}
+			gasLimit, err := g.dag.GasLimit(&subNetwork)
+			if err != nil {
+				log.Errorf("Cannot get GAS limit for subNetwork %v", subNetwork)
+				continue
+			}
+			txGas := tx.MsgTx().Gas
+			if gasLimit-gasUsage < txGas {
+				log.Tracef("Transaction %v (GAS=%v) ignored because gas overusage (GASUsage=%v) in subNetwork %v (GASLimit=%v)",
+					tx.MsgTx().TxID(), txGas, gasUsage, subNetwork, gasLimit)
+				continue
+			}
+			gasUsageMap[subNetwork] = gasUsage + txGas
+		}
 
 		// Enforce maximum block size.  Also check for overflow.
 		txSize := uint32(tx.MsgTx().SerializeSize())
@@ -562,7 +513,6 @@ mempoolLoop:
 
 			log.Tracef("Skipping tx %s because it would exceed "+
 				"the max block size", tx.ID())
-			logSkippedDeps(tx, deps)
 			continue
 		}
 
@@ -573,7 +523,6 @@ mempoolLoop:
 			blockSigOps+numSigOps > blockdag.MaxSigOpsPerBlock {
 			log.Tracef("Skipping tx %s because it would exceed "+
 				"the maximum sigops per block", tx.ID())
-			logSkippedDeps(tx, deps)
 			continue
 		}
 		numP2SHSigOps, err := blockdag.CountP2SHSigOps(tx, false,
@@ -581,7 +530,6 @@ mempoolLoop:
 		if err != nil {
 			log.Tracef("Skipping tx %s due to error in "+
 				"GetSigOpCost: %v", tx.ID(), err)
-			logSkippedDeps(tx, deps)
 			continue
 		}
 		numSigOps += int64(numP2SHSigOps)
@@ -589,7 +537,6 @@ mempoolLoop:
 			blockSigOps+numSigOps > blockdag.MaxSigOpsPerBlock {
 			log.Tracef("Skipping tx %s because it would "+
 				"exceed the maximum sigops per block", tx.ID())
-			logSkippedDeps(tx, deps)
 			continue
 		}
 
@@ -604,7 +551,6 @@ mempoolLoop:
 				"minBlockSize %d", tx.ID(), prioItem.feePerKB,
 				g.policy.TxMinFreeFee, blockPlusTxSize,
 				g.policy.BlockMinSize)
-			logSkippedDeps(tx, deps)
 			continue
 		}
 
@@ -644,7 +590,6 @@ mempoolLoop:
 		if err != nil {
 			log.Tracef("Skipping tx %s due to error in "+
 				"CheckTransactionInputs: %v", tx.ID(), err)
-			logSkippedDeps(tx, deps)
 			continue
 		}
 		err = blockdag.ValidateTransactionScripts(tx, blockUtxos,
@@ -652,7 +597,6 @@ mempoolLoop:
 		if err != nil {
 			log.Tracef("Skipping tx %s due to error in "+
 				"ValidateTransactionScripts: %v", tx.ID(), err)
-			logSkippedDeps(tx, deps)
 			continue
 		}
 
@@ -674,18 +618,6 @@ mempoolLoop:
 
 		log.Tracef("Adding tx %s (priority %.2f, feePerKB %.2f)",
 			prioItem.tx.ID(), prioItem.priority, prioItem.feePerKB)
-
-		// Add transactions which depend on this one (and also do not
-		// have any other unsatisified dependencies) to the priority
-		// queue.
-		for _, item := range deps {
-			// Add the transaction to the priority queue if there
-			// are no more dependencies after this one.
-			delete(item.dependsOn, *tx.ID())
-			if len(item.dependsOn) == 0 {
-				heap.Push(priorityQueue, item)
-			}
-		}
 	}
 
 	// Now that the actual transactions have been selected, update the
@@ -714,7 +646,7 @@ mempoolLoop:
 
 	// Sort transactions by subnetwork ID before building Merkle tree
 	sort.Slice(blockTxns, func(i, j int) bool {
-		return blockTxns[i].MsgTx().SubNetworkID < blockTxns[j].MsgTx().SubNetworkID
+		return subnetworkid.Less(&blockTxns[i].MsgTx().SubNetworkID, &blockTxns[j].MsgTx().SubNetworkID)
 	})
 
 	// Create a new block ready to be solved.

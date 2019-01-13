@@ -13,6 +13,7 @@ import (
 	"strconv"
 
 	"github.com/daglabs/btcd/dagconfig/daghash"
+	"github.com/daglabs/btcd/util/subnetworkid"
 )
 
 const (
@@ -95,15 +96,17 @@ const (
 	// peers.  Thus, the peak usage of the free list is 12,500 * 512 =
 	// 6,400,000 bytes.
 	freeListMaxItems = 12500
+)
 
-	// SubNetworkSupportsAll is the sub network id that is used to signal to peers that you support all sub-networks
-	SubNetworkSupportsAll = 0
+var (
+	// SubNetworkSupportsAll is the sub-network id that is used to signal to peers that you support all sub-networks
+	SubNetworkSupportsAll = subnetworkid.SubNetworkID{}
 
-	// SubNetworkDAGCoin is the default sub network which is used for transactions without related payload data
-	SubNetworkDAGCoin = 1
+	// SubNetworkDAGCoin is the default sub-network which is used for transactions without related payload data
+	SubNetworkDAGCoin = subnetworkid.SubNetworkID{1}
 
-	// SubNetworkRegistry is the sub network which is used for adding new sub networks to the registry
-	SubNetworkRegistry = 2
+	// SubNetworkRegistry is the sub-network which is used for adding new sub networks to the registry
+	SubNetworkRegistry = subnetworkid.SubNetworkID{2}
 )
 
 // scriptFreeList defines a free list of byte slices (up to the maximum number
@@ -264,7 +267,7 @@ type MsgTx struct {
 	TxIn         []*TxIn
 	TxOut        []*TxOut
 	LockTime     uint64
-	SubNetworkID uint64
+	SubNetworkID subnetworkid.SubNetworkID
 	Gas          uint64
 	Payload      []byte
 }
@@ -474,7 +477,7 @@ func (msg *MsgTx) BtcDecode(r io.Reader, pver uint32) error {
 		return err
 	}
 
-	msg.SubNetworkID, err = binarySerializer.Uint64(r, littleEndian)
+	_, err = io.ReadFull(r, msg.SubNetworkID[:])
 	if err != nil {
 		returnScriptBuffers()
 		return err
@@ -627,7 +630,7 @@ func (msg *MsgTx) encode(w io.Writer, pver uint32, thinEncoding bool) error {
 	if err != nil {
 		return err
 	}
-	err = binarySerializer.PutUint64(w, littleEndian, msg.SubNetworkID)
+	_, err = w.Write(msg.SubNetworkID[:])
 	if err != nil {
 		return err
 	}
@@ -699,10 +702,10 @@ func (msg *MsgTx) SerializeSize() int {
 // SerializeSize returns the number of bytes it would take to serialize the
 // the transaction.
 func (msg *MsgTx) serializeSize(thinEncoding bool) int {
-	// Version 4 bytes + LockTime 8 bytes + Subnetwork ID 8
+	// Version 4 bytes + LockTime 8 bytes + Subnetwork ID 20
 	// bytes + Serialized varint size for the number of transaction
 	// inputs and outputs.
-	n := 20 + VarIntSerializeSize(uint64(len(msg.TxIn))) +
+	n := 32 + VarIntSerializeSize(uint64(len(msg.TxIn))) +
 		VarIntSerializeSize(uint64(len(msg.TxOut)))
 
 	if msg.SubNetworkID != SubNetworkDAGCoin {

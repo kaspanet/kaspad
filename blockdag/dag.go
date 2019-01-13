@@ -96,6 +96,10 @@ type BlockDAG struct {
 	// virtual tracks the current tips.
 	virtual *virtualBlock
 
+	// lastSubNetworkID holds the last registered sub-network ID in the DAG.
+	// Note that it is NOT the total amount of registered (or active) sub-networks.
+	lastSubNetworkID uint64
+
 	// These fields are related to handling of orphan blocks.  They are
 	// protected by a combination of the chain lock and the orphan lock.
 	orphanLock   sync.RWMutex
@@ -513,7 +517,6 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block, fastAdd bo
 	}
 
 	var finalityPointCandidate *blockNode
-
 	if !fastAdd {
 		var err error
 		finalityPointCandidate, err = dag.checkFinalityRulesAndGetFinalityPointCandidate(node)
@@ -560,6 +563,14 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block, fastAdd bo
 		// Update the UTXO set using the diffSet that was melded into the
 		// full UTXO set.
 		err = dbPutUTXODiff(dbTx, utxoDiff)
+		if err != nil {
+			return err
+		}
+
+		// Scan all accepted transactions and register any sub-network registry
+		// transaction. If any sub-network registry transaction is not well-formed,
+		// fail the entire block.
+		err = registerSubNetworks(dbTx, acceptedTxsData)
 		if err != nil {
 			return err
 		}

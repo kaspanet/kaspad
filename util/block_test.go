@@ -54,10 +54,10 @@ func TestBlock(t *testing.T) {
 
 	// Hashes for the transactions in Block100000.
 	wantTxHashes := []string{
-		"4f2a5f1e00034ed3222e0e7fae8485ad3154d40b21b1c1b64ec74ce389a1bb1d",
-		"cdd164e1b3c910e1b54349d442d26541830d0551a15c8b2e202aa7f96ccf3b32",
-		"7fb0543009c39a12a0e5b3c23f157c9152f9e956412a825d296d1e3826dcf81c",
-		"ba611a9e39e784e51ea9efe66453de7a0355deae454f63c526a1938a58f683fc",
+		"171090dd8ab478a2c4499858abd5d9b10e173b659bab5d5acca68c7dcb4c519e",
+		"fc9100986f2a188ccffe206a4c013aaa0c7442898b2f58d474f0b4f534600e0b",
+		"42ef8bcc302b4a92d479c02c4bf6cb154f26ad9915433da7fb102f6fd135b5c3",
+		"c8eeef60be812de9982d066be027fee93f2c226c840670424a413fbd66ad36dd",
 	}
 
 	// Create a new block to nuke all cached data.
@@ -146,10 +146,10 @@ func TestBlock(t *testing.T) {
 
 	// Transaction offsets and length for the transaction in Block100000.
 	wantTxLocs := []wire.TxLoc{
-		{TxStart: 122, TxLen: 151},
-		{TxStart: 273, TxLen: 275},
-		{TxStart: 548, TxLen: 273},
-		{TxStart: 821, TxLen: 241},
+		{TxStart: 122, TxLen: 163},
+		{TxStart: 285, TxLen: 287},
+		{TxStart: 572, TxLen: 285},
+		{TxStart: 857, TxLen: 253},
 	}
 
 	// Ensure the transaction location information is accurate.
