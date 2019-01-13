@@ -7,6 +7,7 @@ package netsync
 import (
 	"container/list"
 	"fmt"
+	"github.com/daglabs/btcd/config"
 	"net"
 	"sync"
 	"sync/atomic"
@@ -511,6 +512,24 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 			peer.Disconnect()
 			return
 		}
+	}
+
+	// If we're a full node and this block is a partial block
+	// or we're a partial node and this block is a full block
+	// then the peer is misbehaving.
+	isFullNode := config.MainConfig().SubNetwork.IsEqual(&wire.SubNetworkSupportsAll)
+	isFullBlock := bmsg.block.MsgBlock().MerkleProof.IsEqual(&zeroHash)
+	if isFullNode && !isFullBlock {
+		log.Warnf("Got partial block %v from %s while in full-node mode -- "+
+			"disconnecting", blockHash, peer.Addr())
+		peer.Disconnect()
+		return
+	}
+	if !isFullNode && isFullBlock {
+		log.Warnf("Got full block %v from %s while in partial-node mode -- "+
+			"disconnecting", blockHash, peer.Addr())
+		peer.Disconnect()
+		return
 	}
 
 	// When in headers-first mode, if the block matches the hash of the

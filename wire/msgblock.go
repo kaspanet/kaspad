@@ -42,6 +42,7 @@ type TxLoc struct {
 type MsgBlock struct {
 	Header       BlockHeader
 	Transactions []*MsgTx
+	MerkleProof  daghash.Hash
 }
 
 // AddTransaction adds a transaction to the message.
