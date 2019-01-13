@@ -517,27 +517,36 @@ func checkBlockSanity(block *util.Block, powLimit *big.Int, timeSource MedianTim
 	// checks.  Bitcoind builds the tree here and checks the merkle root
 	// after the following checks, but there is no reason not to check the
 	// merkle root matches here.
-	merkles := BuildMerkleTreeStore(block.Transactions())
-	calculatedMerkleRoot := merkles[len(merkles)-1]
-	if !header.MerkleRoot.IsEqual(calculatedMerkleRoot) {
-		str := fmt.Sprintf("block merkle root is invalid - block "+
+	hashMerkles := BuildHashMerkleTreeStore(block.Transactions())
+	calculatedHashMerkleRoot := hashMerkles[len(hashMerkles)-1]
+	if !header.HashMerkleRoot.IsEqual(calculatedHashMerkleRoot) {
+		str := fmt.Sprintf("block hash merkle root is invalid - block "+
 			"header indicates %v, but calculated value is %v",
-			header.MerkleRoot, calculatedMerkleRoot)
+			header.HashMerkleRoot, calculatedHashMerkleRoot)
+		return ruleError(ErrBadMerkleRoot, str)
+	}
+
+	idMerkles := BuildIDMerkleTreeStore(block.Transactions())
+	calculatedIDMerkleRoot := idMerkles[len(idMerkles)-1]
+	if !header.IDMerkleRoot.IsEqual(calculatedIDMerkleRoot) {
+		str := fmt.Sprintf("block ID merkle root is invalid - block "+
+			"header indicates %v, but calculated value is %v",
+			header.IDMerkleRoot, calculatedIDMerkleRoot)
 		return ruleError(ErrBadMerkleRoot, str)
 	}
 
 	// Check for duplicate transactions.  This check will be fairly quick
-	// since the transaction hashes are already cached due to building the
+	// since the transaction IDs are already cached due to building the
 	// merkle tree above.
-	existingTxHashes := make(map[daghash.Hash]struct{})
+	existingTxIDs := make(map[daghash.Hash]struct{})
 	for _, tx := range transactions {
 		id := tx.ID()
-		if _, exists := existingTxHashes[*id]; exists {
+		if _, exists := existingTxIDs[*id]; exists {
 			str := fmt.Sprintf("block contains duplicate "+
 				"transaction %v", id)
 			return ruleError(ErrDuplicateTx, str)
 		}
-		existingTxHashes[*id] = struct{}{}
+		existingTxIDs[*id] = struct{}{}
 	}
 
 	// The number of signature operations must be less than the maximum

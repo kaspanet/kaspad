@@ -37,8 +37,11 @@ type BlockHeader struct {
 	// Hashes of the parent block headers in the blockDAG.
 	ParentHashes []daghash.Hash
 
-	// Merkle tree reference to hash of all transactions for the block.
-	MerkleRoot daghash.Hash
+	// HashMerkleRoot is the merkle tree reference to hash of all transactions for the block.
+	HashMerkleRoot daghash.Hash
+
+	// IDMerkleRoot is the merkle tree reference to hash of all transactions' IDs for the block.
+	IDMerkleRoot daghash.Hash
 
 	// Time the block was created.
 	Timestamp time.Time
@@ -132,12 +135,12 @@ func NewBlockHeader(version int32, parentHashes []daghash.Hash, merkleRootHash *
 	// Limit the timestamp to one second precision since the protocol
 	// doesn't support better.
 	return &BlockHeader{
-		Version:      version,
-		ParentHashes: parentHashes,
-		MerkleRoot:   *merkleRootHash,
-		Timestamp:    time.Unix(time.Now().Unix(), 0),
-		Bits:         bits,
-		Nonce:        nonce,
+		Version:        version,
+		ParentHashes:   parentHashes,
+		HashMerkleRoot: *merkleRootHash,
+		Timestamp:      time.Unix(time.Now().Unix(), 0),
+		Bits:           bits,
+		Nonce:          nonce,
 	}
 }
 
@@ -158,7 +161,7 @@ func readBlockHeader(r io.Reader, pver uint32, bh *BlockHeader) error {
 			return err
 		}
 	}
-	return readElements(r, &bh.MerkleRoot, (*int64Time)(&bh.Timestamp), &bh.Bits, &bh.Nonce)
+	return readElements(r, &bh.HashMerkleRoot, (*int64Time)(&bh.Timestamp), &bh.Bits, &bh.Nonce)
 }
 
 // writeBlockHeader writes a bitcoin block header to w.  See Serialize for
@@ -166,6 +169,6 @@ func readBlockHeader(r io.Reader, pver uint32, bh *BlockHeader) error {
 // opposed to encoding for the wire.
 func writeBlockHeader(w io.Writer, pver uint32, bh *BlockHeader) error {
 	sec := int64(bh.Timestamp.Unix())
-	return writeElements(w, bh.Version, bh.NumParentBlocks(), &bh.ParentHashes, &bh.MerkleRoot,
+	return writeElements(w, bh.Version, bh.NumParentBlocks(), &bh.ParentHashes, &bh.HashMerkleRoot,
 		sec, bh.Bits, bh.Nonce)
 }

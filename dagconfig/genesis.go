@@ -79,12 +79,12 @@ var genesisMerkleRoot = daghash.Hash([daghash.HashSize]byte{ // Make go vet happ
 // public transaction ledger for the main network.
 var genesisBlock = wire.MsgBlock{
 	Header: wire.BlockHeader{
-		Version:      1,
-		ParentHashes: []daghash.Hash{},
-		MerkleRoot:   genesisMerkleRoot,
-		Timestamp:    time.Unix(0x5c34b3ba, 0),
-		Bits:         0x207fffff,
-		Nonce:        0xdffffffffffffff9,
+		Version:        1,
+		ParentHashes:   []daghash.Hash{},
+		HashMerkleRoot: genesisMerkleRoot,
+		Timestamp:      time.Unix(0x5c34b3ba, 0),
+		Bits:           0x207fffff,
+		Nonce:          0xdffffffffffffff9,
 	},
 	Transactions: []*wire.MsgTx{&genesisCoinbaseTx},
 }
@@ -107,12 +107,12 @@ var regTestGenesisMerkleRoot = genesisMerkleRoot
 // as the public transaction ledger for the regression test network.
 var regTestGenesisBlock = wire.MsgBlock{
 	Header: wire.BlockHeader{
-		Version:      1,
-		ParentHashes: []daghash.Hash{},
-		MerkleRoot:   genesisMerkleRoot,
-		Timestamp:    time.Unix(0x5c34b3ba, 0),
-		Bits:         0x207fffff,
-		Nonce:        0xdffffffffffffff9,
+		Version:        1,
+		ParentHashes:   []daghash.Hash{},
+		HashMerkleRoot: genesisMerkleRoot,
+		Timestamp:      time.Unix(0x5c34b3ba, 0),
+		Bits:           0x207fffff,
+		Nonce:          0xdffffffffffffff9,
 	},
 	Transactions: []*wire.MsgTx{&genesisCoinbaseTx},
 }
@@ -135,12 +135,12 @@ var testNet3GenesisMerkleRoot = genesisMerkleRoot
 // serves as the public transaction ledger for the test network (version 3).
 var testNet3GenesisBlock = wire.MsgBlock{
 	Header: wire.BlockHeader{
-		Version:      1,
-		ParentHashes: []daghash.Hash{},
-		MerkleRoot:   genesisMerkleRoot,
-		Timestamp:    time.Unix(0x5c34b3ba, 0),
-		Bits:         0x207fffff,
-		Nonce:        0xdffffffffffffff9,
+		Version:        1,
+		ParentHashes:   []daghash.Hash{},
+		HashMerkleRoot: genesisMerkleRoot,
+		Timestamp:      time.Unix(0x5c34b3ba, 0),
+		Bits:           0x207fffff,
+		Nonce:          0xdffffffffffffff9,
 	},
 	Transactions: []*wire.MsgTx{&genesisCoinbaseTx},
 }
@@ -163,12 +163,12 @@ var simNetGenesisMerkleRoot = genesisMerkleRoot
 // as the public transaction ledger for the simulation test network.
 var simNetGenesisBlock = wire.MsgBlock{
 	Header: wire.BlockHeader{
-		Version:      1,
-		ParentHashes: []daghash.Hash{},
-		MerkleRoot:   genesisMerkleRoot,
-		Timestamp:    time.Unix(0x5c34b3ba, 0),
-		Bits:         0x207fffff,
-		Nonce:        0xdffffffffffffff9,
+		Version:        1,
+		ParentHashes:   []daghash.Hash{},
+		HashMerkleRoot: genesisMerkleRoot,
+		Timestamp:      time.Unix(0x5c34b3ba, 0),
+		Bits:           0x207fffff,
+		Nonce:          0xdffffffffffffff9,
 	},
 	Transactions: []*wire.MsgTx{&genesisCoinbaseTx},
 }

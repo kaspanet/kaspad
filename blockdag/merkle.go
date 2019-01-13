@@ -38,7 +38,27 @@ func HashMerkleBranches(left *daghash.Hash, right *daghash.Hash) *daghash.Hash {
 	return &newHash
 }
 
-// BuildMerkleTreeStore creates a merkle tree from a slice of transactions,
+// BuildHashMerkleTreeStore creates a merkle tree from a slice of transactions, based
+// on their hash. See `buildMerkleTreeStore` for more info.
+func BuildHashMerkleTreeStore(transactions []*util.Tx) []*daghash.Hash {
+	txHashes := make([]*daghash.Hash, 0, len(transactions))
+	for i, tx := range transactions {
+		txHashes[i] = tx.Hash()
+	}
+	return buildMerkleTreeStore(txHashes)
+}
+
+// BuildIDMerkleTreeStore creates a merkle tree from a slice of transactions, based
+// on their ID. See `buildMerkleTreeStore` for more info.
+func BuildIDMerkleTreeStore(transactions []*util.Tx) []*daghash.Hash {
+	txIDs := make([]*daghash.Hash, 0, len(transactions))
+	for i, tx := range transactions {
+		txIDs[i] = tx.ID()
+	}
+	return buildMerkleTreeStore(txIDs)
+}
+
+// buildMerkleTreeStore creates a merkle tree from a slice of hashes,
 // stores it using a linear array, and returns a slice of the backing array.  A
 // linear array was chosen as opposed to an actual tree structure since it uses
 // about half as much memory.  The following describes a merkle tree and how it
@@ -66,16 +86,16 @@ func HashMerkleBranches(left *daghash.Hash, right *daghash.Hash) *daghash.Hash {
 // are calculated by concatenating the left node with itself before hashing.
 // Since this function uses nodes that are pointers to the hashes, empty nodes
 // will be nil.
-func BuildMerkleTreeStore(transactions []*util.Tx) []*daghash.Hash {
+func buildMerkleTreeStore(hashes []*daghash.Hash) []*daghash.Hash {
 	// Calculate how many entries are required to hold the binary merkle
 	// tree as a linear array and create an array of that size.
-	nextPoT := nextPowerOfTwo(len(transactions))
+	nextPoT := nextPowerOfTwo(len(hashes))
 	arraySize := nextPoT*2 - 1
 	merkles := make([]*daghash.Hash, arraySize)
 
 	// Create the base transaction hashes and populate the array with them.
-	for i, tx := range transactions {
-		merkles[i] = tx.Hash()
+	for i, hash := range hashes {
+		merkles[i] = hash
 	}
 
 	// Start the array offset after the last transaction and adjusted to the

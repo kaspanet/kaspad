@@ -62,7 +62,7 @@ func TestHeaders(t *testing.T) {
 // numbers of headers and protocol versions.
 func TestHeadersWire(t *testing.T) {
 	hashes := []daghash.Hash{mainNetGenesisHash, simNetGenesisHash}
-	merkleHash := blockOne.Header.MerkleRoot
+	merkleHash := blockOne.Header.HashMerkleRoot
 	bits := uint32(0x1d00ffff)
 	nonce := uint64(0x9962e301)
 	bh := NewBlockHeader(1, hashes, &merkleHash, bits, nonce)
@@ -224,7 +224,7 @@ func TestHeadersWireErrors(t *testing.T) {
 	wireErr := &MessageError{}
 
 	hashes := []daghash.Hash{mainNetGenesisHash, simNetGenesisHash}
-	merkleHash := blockOne.Header.MerkleRoot
+	merkleHash := blockOne.Header.HashMerkleRoot
 	bits := uint32(0x1d00ffff)
 	nonce := uint64(0x9962e301)
 	bh := NewBlockHeader(1, hashes, &merkleHash, bits, nonce)

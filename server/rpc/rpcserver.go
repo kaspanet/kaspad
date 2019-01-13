@@ -1147,7 +1147,7 @@ func handleGetBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 		Hash:          c.Hash,
 		Version:       blockHeader.Version,
 		VersionHex:    fmt.Sprintf("%08x", blockHeader.Version),
-		MerkleRoot:    blockHeader.MerkleRoot.String(),
+		MerkleRoot:    blockHeader.HashMerkleRoot.String(),
 		ParentHashes:  daghash.Strings(blockHeader.ParentHashes),
 		Nonce:         blockHeader.Nonce,
 		Time:          blockHeader.Timestamp.Unix(),
@@ -1348,7 +1348,7 @@ func handleGetBlockHeader(s *Server, cmd interface{}, closeChan <-chan struct{})
 		Height:        blockHeight,
 		Version:       blockHeader.Version,
 		VersionHex:    fmt.Sprintf("%08x", blockHeader.Version),
-		MerkleRoot:    blockHeader.MerkleRoot.String(),
+		MerkleRoot:    blockHeader.HashMerkleRoot.String(),
 		NextHashes:    nextHashStrings,
 		ParentHashes:  daghash.Strings(blockHeader.ParentHashes),
 		Nonce:         uint64(blockHeader.Nonce),
@@ -1590,7 +1590,7 @@ func (state *gbtWorkState) updateBlockTemplate(s *Server, useCoinbaseValue bool)
 		log.Debugf("Generated block template (timestamp %v, "+
 			"target %s, merkle root %s)",
 			msgBlock.Header.Timestamp, targetDifficulty,
-			msgBlock.Header.MerkleRoot)
+			msgBlock.Header.HashMerkleRoot)
 
 		// Notify any clients that are long polling about the new
 		// template.
@@ -1624,8 +1624,8 @@ func (state *gbtWorkState) updateBlockTemplate(s *Server, useCoinbaseValue bool)
 
 			// Update the merkle root.
 			block := util.NewBlock(template.Block)
-			merkles := blockdag.BuildMerkleTreeStore(block.Transactions())
-			template.Block.Header.MerkleRoot = *merkles[len(merkles)-1]
+			merkles := blockdag.BuildHashMerkleTreeStore(block.Transactions())
+			template.Block.Header.HashMerkleRoot = *merkles[len(merkles)-1]
 		}
 
 		// Set locals for convenience.

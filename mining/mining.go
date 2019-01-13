@@ -650,14 +650,16 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 	})
 
 	// Create a new block ready to be solved.
-	merkles := blockdag.BuildMerkleTreeStore(blockTxns)
+	hashMerkles := blockdag.BuildHashMerkleTreeStore(blockTxns)
+	idMerkles := blockdag.BuildIDMerkleTreeStore(blockTxns)
 	var msgBlock wire.MsgBlock
 	msgBlock.Header = wire.BlockHeader{
-		Version:      nextBlockVersion,
-		ParentHashes: g.dag.TipHashes(),
-		MerkleRoot:   *merkles[len(merkles)-1],
-		Timestamp:    ts,
-		Bits:         reqDifficulty,
+		Version:        nextBlockVersion,
+		ParentHashes:   g.dag.TipHashes(),
+		HashMerkleRoot: *hashMerkles[len(hashMerkles)-1],
+		IDMerkleRoot:   *idMerkles[len(idMerkles)-1],
+		Timestamp:      ts,
+		Bits:           reqDifficulty,
 	}
 	for _, tx := range blockTxns {
 		if err := msgBlock.AddTransaction(tx.MsgTx()); err != nil {
@@ -737,8 +739,8 @@ func (g *BlkTmplGenerator) UpdateExtraNonce(msgBlock *wire.MsgBlock, blockHeight
 
 	// Recalculate the merkle root with the updated extra nonce.
 	block := util.NewBlock(msgBlock)
-	merkles := blockdag.BuildMerkleTreeStore(block.Transactions())
-	msgBlock.Header.MerkleRoot = *merkles[len(merkles)-1]
+	merkles := blockdag.BuildHashMerkleTreeStore(block.Transactions())
+	msgBlock.Header.HashMerkleRoot = *merkles[len(merkles)-1]
 	return nil
 }
 
