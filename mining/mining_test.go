@@ -164,7 +164,7 @@ func TestNewBlockTemplate(t *testing.T) {
 	payAddr, err := util.NewAddressPubKeyHash(
 		util.Hash160(pubKeyBytes), util.Bech32PrefixDAGTest)
 
-	dag, teardownFunc, err := blockdag.DAGSetup("TestSomething", blockdag.Config{
+	dag, teardownFunc, err := blockdag.DAGSetup("TestNewBlockTemplate", blockdag.Config{
 		DAGParams: params,
 	})
 	if err != nil {
