@@ -277,6 +277,13 @@ func CheckTransactionSanity(tx *util.Tx) error {
 			"transaction in the native sub-network includes a payload")
 	}
 
+	if msgTx.SubNetworkID == wire.SubNetworkRegistry &&
+		len(msgTx.Payload) != 8 {
+		return ruleError(ErrInvalidPayload,
+			"transaction in the sub-network registry include a payload "+
+				"with length != 8 bytes")
+	}
+
 	return nil
 }
 
