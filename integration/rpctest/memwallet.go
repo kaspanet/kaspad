@@ -208,8 +208,8 @@ func (m *memWallet) ingestBlock(update *chainUpdate) {
 	for _, tx := range update.filteredTxns {
 		mtx := tx.MsgTx()
 		isCoinbase := blockdag.IsCoinBaseTx(mtx)
-		txHash := mtx.TxHash()
-		m.evalOutputs(mtx.TxOut, &txHash, isCoinbase, undo)
+		txID := mtx.TxID()
+		m.evalOutputs(mtx.TxOut, &txID, isCoinbase, undo)
 		m.evalInputs(mtx.TxIn, undo)
 	}
 
@@ -269,7 +269,7 @@ func (m *memWallet) evalOutputs(outputs []*wire.TxOut, txHash *daghash.Hash,
 				maturityHeight = m.currentHeight + int32(m.net.CoinbaseMaturity)
 			}
 
-			op := wire.OutPoint{Hash: *txHash, Index: uint32(i)}
+			op := wire.OutPoint{TxID: *txHash, Index: uint32(i)}
 			m.utxos[op] = &utxo{
 				value:          util.Amount(output.Value),
 				keyIndex:       keyIndex,

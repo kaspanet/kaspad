@@ -98,6 +98,18 @@ const (
 	freeListMaxItems = 12500
 )
 
+// txEncoding is a bitmask defining which transaction fields we
+// want to encode and which to ignore.
+type txEncoding uint8
+
+const (
+	txEncodingExcludeSubNetworkData txEncoding = 1 << iota
+
+	txEncodingExcludeSignatureScript
+
+	txEncodingFull txEncoding = 0
+)
+
 var (
 	// SubNetworkSupportsAll is the sub-network id that is used to signal to peers that you support all sub-networks
 	SubNetworkSupportsAll = subnetworkid.SubNetworkID{}
@@ -169,7 +181,7 @@ var scriptPool scriptFreeList = make(chan []byte, freeListMaxItems)
 // OutPoint defines a bitcoin data type that is used to track previous
 // transaction outputs.
 type OutPoint struct {
-	Hash  daghash.Hash
+	TxID  daghash.Hash
 	Index uint32
 }
 
@@ -177,7 +189,7 @@ type OutPoint struct {
 // provided hash and index.
 func NewOutPoint(hash *daghash.Hash, index uint32) *OutPoint {
 	return &OutPoint{
-		Hash:  *hash,
+		TxID:  *hash,
 		Index: index,
 	}
 }
@@ -191,7 +203,7 @@ func (o OutPoint) String() string {
 	// optimization may go unnoticed, so allocate space for 10 decimal
 	// digits, which will fit any uint32.
 	buf := make([]byte, 2*daghash.HashSize+1, 2*daghash.HashSize+1+10)
-	copy(buf, o.Hash.String())
+	copy(buf, o.TxID.String())
 	buf[2*daghash.HashSize] = ':'
 	buf = strconv.AppendUint(buf, uint64(o.Index), 10)
 	return string(buf)
@@ -207,11 +219,19 @@ type TxIn struct {
 // SerializeSize returns the number of bytes it would take to serialize the
 // the transaction input.
 func (t *TxIn) SerializeSize() int {
+	return t.serializeSize(txEncodingFull)
+}
+
+func (t *TxIn) serializeSize(encodingFlags txEncoding) int {
 	// Outpoint Hash 32 bytes + Outpoint Index 4 bytes + Sequence 8 bytes +
 	// serialized varint size for the length of SignatureScript +
 	// SignatureScript bytes.
-	return 44 + VarIntSerializeSize(uint64(len(t.SignatureScript))) +
-		len(t.SignatureScript)
+	n := 44
+	if encodingFlags&txEncodingExcludeSignatureScript != txEncodingExcludeSignatureScript {
+		return n + VarIntSerializeSize(uint64(len(t.SignatureScript))) +
+			len(t.SignatureScript)
+	}
+	return n + VarIntSerializeSize(0)
 }
 
 // NewTxIn returns a new bitcoin transaction input with the provided
@@ -285,6 +305,19 @@ func (msg *MsgTx) TxHash() daghash.Hash {
 	return daghash.DoubleHashH(buf.Bytes())
 }
 
+// TxID generates the Hash for the transaction without the signature script, gas and payload fields.
+func (msg *MsgTx) TxID() daghash.Hash {
+	// Encode the transaction, replace signature script, payload and gas with
+	// zeroes, and calculate double sha256 on the result.
+	// Ignore the error returns since the only way the encode could fail
+	// is being out of memory or due to nil pointers, both of which would
+	// cause a run-time panic.
+	encodingFlags := txEncodingExcludeSignatureScript & txEncodingExcludeSubNetworkData
+	buf := bytes.NewBuffer(make([]byte, 0, msg.serializeSize(encodingFlags)))
+	_ = msg.serialize(buf, encodingFlags)
+	return daghash.DoubleHashH(buf.Bytes())
+}
+
 // Copy creates a deep copy of a transaction so that the original does not get
 // modified when the copy is manipulated.
 func (msg *MsgTx) Copy() *MsgTx {
@@ -309,7 +342,7 @@ func (msg *MsgTx) Copy() *MsgTx {
 		// Deep copy the old previous outpoint.
 		oldOutPoint := oldTxIn.PreviousOutPoint
 		newOutPoint := OutPoint{}
-		newOutPoint.Hash.SetBytes(oldOutPoint.Hash[:])
+		newOutPoint.TxID.SetBytes(oldOutPoint.TxID[:])
 		newOutPoint.Index = oldOutPoint.Index
 
 		// Deep copy the old signature script.
@@ -572,6 +605,10 @@ func (msg *MsgTx) Deserialize(r io.Reader) error {
 // See Serialize for encoding transactions to be stored to disk, such as in a
 // database, as opposed to encoding transactions for the wire.
 func (msg *MsgTx) BtcEncode(w io.Writer, pver uint32) error {
+	return msg.encode(w, pver, txEncodingFull)
+}
+
+func (msg *MsgTx) encode(w io.Writer, pver uint32, encodingFlags txEncoding) error {
 	err := binarySerializer.PutUint32(w, littleEndian, uint32(msg.Version))
 	if err != nil {
 		return err
@@ -584,7 +621,7 @@ func (msg *MsgTx) BtcEncode(w io.Writer, pver uint32) error {
 	}
 
 	for _, ti := range msg.TxIn {
-		err = writeTxIn(w, pver, msg.Version, ti)
+		err = writeTxIn(w, pver, msg.Version, ti, encodingFlags)
 		if err != nil {
 			return err
 		}
@@ -607,28 +644,31 @@ func (msg *MsgTx) BtcEncode(w io.Writer, pver uint32) error {
 	if err != nil {
 		return err
 	}
-
 	_, err = w.Write(msg.SubNetworkID[:])
 	if err != nil {
 		return err
 	}
-
 	if msg.SubNetworkID != SubNetworkDAGCoin {
 		if msg.SubNetworkID == SubNetworkRegistry && msg.Gas != 0 {
 			str := fmt.Sprintf("Transactions from subnetwork %v should have 0 gas", msg.SubNetworkID)
 			return messageError("MsgTx.BtcEncode", str)
 		}
 
-		err = binarySerializer.PutUint64(w, littleEndian, msg.Gas)
+		if encodingFlags&txEncodingExcludeSubNetworkData != txEncodingExcludeSubNetworkData {
+			err = binarySerializer.PutUint64(w, littleEndian, msg.Gas)
+		} else {
+			err = binarySerializer.PutUint64(w, littleEndian, 0)
+		}
 		if err != nil {
 			return err
 		}
 
-		err = WriteVarInt(w, pver, uint64(len(msg.Payload)))
-		if err != nil {
-			return err
+		if encodingFlags&txEncodingExcludeSubNetworkData != txEncodingExcludeSubNetworkData {
+			err = WriteVarInt(w, pver, uint64(len(msg.Payload)))
+			w.Write(msg.Payload)
+		} else {
+			err = WriteVarInt(w, pver, 0)
 		}
-		_, err := w.Write(msg.Payload)
 		if err != nil {
 			return err
 		}
@@ -660,9 +700,22 @@ func (msg *MsgTx) Serialize(w io.Writer) error {
 	return msg.BtcEncode(w, 0)
 }
 
+func (msg *MsgTx) serialize(w io.Writer, encodingFlags txEncoding) error {
+	// At the current time, there is no difference between the wire encoding
+	// at protocol version 0 and the stable long-term storage format.  As
+	// a result, make use of BtcEncode.
+	return msg.encode(w, 0, encodingFlags)
+}
+
 // SerializeSize returns the number of bytes it would take to serialize the
 // the transaction.
 func (msg *MsgTx) SerializeSize() int {
+	return msg.serializeSize(txEncodingFull)
+}
+
+// SerializeSize returns the number of bytes it would take to serialize the
+// the transaction.
+func (msg *MsgTx) serializeSize(encodingFlags txEncoding) int {
 	// Version 4 bytes + LockTime 8 bytes + Subnetwork ID 20
 	// bytes + Serialized varint size for the number of transaction
 	// inputs and outputs.
@@ -670,19 +723,28 @@ func (msg *MsgTx) SerializeSize() int {
 		VarIntSerializeSize(uint64(len(msg.TxOut)))
 
 	if msg.SubNetworkID != SubNetworkDAGCoin {
-		// Gas 8 bytes + Serialized varint size for the length of the payload
-		n += 8 + VarIntSerializeSize(uint64(len(msg.Payload)))
+		// Gas 8 bytes
+		n += 8
+
+		// Serialized varint size for the length of the payload
+		if encodingFlags&txEncodingExcludeSubNetworkData != txEncodingExcludeSubNetworkData {
+			n += VarIntSerializeSize(uint64(len(msg.Payload)))
+		} else {
+			n += VarIntSerializeSize(0)
+		}
 	}
 
 	for _, txIn := range msg.TxIn {
-		n += txIn.SerializeSize()
+		n += txIn.serializeSize(encodingFlags)
 	}
 
 	for _, txOut := range msg.TxOut {
 		n += txOut.SerializeSize()
 	}
 
-	n += len(msg.Payload)
+	if encodingFlags&txEncodingExcludeSubNetworkData != txEncodingExcludeSubNetworkData {
+		n += len(msg.Payload)
+	}
 
 	return n
 }
@@ -761,7 +823,7 @@ func newRegistryMsgTx(version int32, gasLimit uint64) *MsgTx {
 
 // readOutPoint reads the next sequence of bytes from r as an OutPoint.
 func readOutPoint(r io.Reader, pver uint32, version int32, op *OutPoint) error {
-	_, err := io.ReadFull(r, op.Hash[:])
+	_, err := io.ReadFull(r, op.TxID[:])
 	if err != nil {
 		return err
 	}
@@ -773,7 +835,7 @@ func readOutPoint(r io.Reader, pver uint32, version int32, op *OutPoint) error {
 // writeOutPoint encodes op to the bitcoin protocol encoding for an OutPoint
 // to w.
 func writeOutPoint(w io.Writer, pver uint32, version int32, op *OutPoint) error {
-	_, err := w.Write(op.Hash[:])
+	_, err := w.Write(op.TxID[:])
 	if err != nil {
 		return err
 	}
@@ -831,13 +893,17 @@ func readTxIn(r io.Reader, pver uint32, version int32, ti *TxIn) error {
 
 // writeTxIn encodes ti to the bitcoin protocol encoding for a transaction
 // input (TxIn) to w.
-func writeTxIn(w io.Writer, pver uint32, version int32, ti *TxIn) error {
+func writeTxIn(w io.Writer, pver uint32, version int32, ti *TxIn, encodingFlags txEncoding) error {
 	err := writeOutPoint(w, pver, version, &ti.PreviousOutPoint)
 	if err != nil {
 		return err
 	}
 
-	err = WriteVarBytes(w, pver, ti.SignatureScript)
+	if encodingFlags&txEncodingExcludeSignatureScript != txEncodingExcludeSignatureScript {
+		err = WriteVarBytes(w, pver, ti.SignatureScript)
+	} else {
+		err = WriteVarBytes(w, pver, []byte{})
+	}
 	if err != nil {
 		return err
 	}

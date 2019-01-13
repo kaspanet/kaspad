@@ -65,7 +65,7 @@ var (
 			Version: 1,
 			TxIn: []*wire.TxIn{{
 				PreviousOutPoint: wire.OutPoint{
-					Hash:  daghash.Hash{},
+					TxID:  daghash.Hash{},
 					Index: 0xffffffff,
 				},
 				SignatureScript: fromHex("04ffff001d010445" +

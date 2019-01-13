@@ -270,7 +270,7 @@ func dbAddTxIndexEntries(dbTx database.Tx, block *util.Block, blockID uint32, ac
 	for i, tx := range block.Transactions() {
 		putIncludingBlocksEntry(serializedIncludingBlocksValues[includingBlocksOffset:], txLocs[i])
 		endOffset := includingBlocksOffset + includingBlocksIndexKeyEntrySize
-		err := dbPutIncludingBlocksEntry(dbTx, tx.Hash(), blockID,
+		err := dbPutIncludingBlocksEntry(dbTx, tx.ID(), blockID,
 			serializedIncludingBlocksValues[includingBlocksOffset:endOffset:endOffset])
 		if err != nil {
 			return err
@@ -299,7 +299,7 @@ func dbAddTxIndexEntries(dbTx database.Tx, block *util.Block, blockID uint32, ac
 
 		putAcceptingBlocksEntry(serializedAcceptingBlocksValues[acceptingBlocksOffset:], includingBlockID)
 		endOffset := acceptingBlocksOffset + acceptingBlocksIndexKeyEntrySize
-		err = dbPutAcceptingBlocksEntry(dbTx, tx.Tx.Hash(), blockID,
+		err = dbPutAcceptingBlocksEntry(dbTx, tx.Tx.ID(), blockID,
 			serializedAcceptingBlocksValues[acceptingBlocksOffset:endOffset:endOffset])
 		if err != nil {
 			return err

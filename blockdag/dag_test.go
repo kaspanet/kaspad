@@ -41,7 +41,7 @@ func TestBlockCount(t *testing.T) {
 	}
 
 	// Create a new database and DAG instance to run tests against.
-	dag, teardownFunc, err := DAGSetup("haveblock", Config{
+	dag, teardownFunc, err := DAGSetup("TestBlockCount", Config{
 		DAGParams: &dagconfig.SimNetParams,
 	})
 	if err != nil {
@@ -250,7 +250,7 @@ func TestCalcSequenceLock(t *testing.T) {
 	// point of view that they were originally calculated from for a given
 	// utxo.  That is to say, the height prior to it.
 	utxo := wire.OutPoint{
-		Hash:  *targetTx.Hash(),
+		TxID:  *targetTx.ID(),
 		Index: 0,
 	}
 	prevUtxoHeight := int32(numBlocksToGenerate) - 4
@@ -276,7 +276,7 @@ func TestCalcSequenceLock(t *testing.T) {
 		}},
 	}
 	unConfUtxo := wire.OutPoint{
-		Hash:  unConfTx.TxHash(),
+		TxID:  unConfTx.TxID(),
 		Index: 0,
 	}
 

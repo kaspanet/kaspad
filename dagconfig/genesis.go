@@ -19,7 +19,7 @@ var genesisCoinbaseTx = wire.MsgTx{
 	TxIn: []*wire.TxIn{
 		{
 			PreviousOutPoint: wire.OutPoint{
-				Hash:  daghash.Hash{},
+				TxID:  daghash.Hash{},
 				Index: 0xffffffff,
 			},
 			SignatureScript: []byte{

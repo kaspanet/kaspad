@@ -231,15 +231,6 @@ func (msg *MsgBlock) BlockHash() daghash.Hash {
 	return msg.Header.BlockHash()
 }
 
-// TxHashes returns a slice of hashes of all of transactions in this block.
-func (msg *MsgBlock) TxHashes() ([]daghash.Hash, error) {
-	hashList := make([]daghash.Hash, 0, len(msg.Transactions))
-	for _, tx := range msg.Transactions {
-		hashList = append(hashList, tx.TxHash())
-	}
-	return hashList, nil
-}
-
 // NewMsgBlock returns a new bitcoin block message that conforms to the
 // Message interface.  See MsgBlock for details.
 func NewMsgBlock(blockHeader *BlockHeader) *MsgBlock {

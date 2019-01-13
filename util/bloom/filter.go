@@ -168,7 +168,7 @@ func (bf *Filter) Matches(data []byte) bool {
 func (bf *Filter) matchesOutPoint(outpoint *wire.OutPoint) bool {
 	// Serialize
 	var buf [daghash.HashSize + 4]byte
-	copy(buf[:], outpoint.Hash[:])
+	copy(buf[:], outpoint.TxID[:])
 	binary.LittleEndian.PutUint32(buf[daghash.HashSize:], outpoint.Index)
 
 	return bf.matches(buf[:])
@@ -230,7 +230,7 @@ func (bf *Filter) AddHash(hash *daghash.Hash) {
 func (bf *Filter) addOutPoint(outpoint *wire.OutPoint) {
 	// Serialize
 	var buf [daghash.HashSize + 4]byte
-	copy(buf[:], outpoint.Hash[:])
+	copy(buf[:], outpoint.TxID[:])
 	binary.LittleEndian.PutUint32(buf[daghash.HashSize:], outpoint.Index)
 
 	bf.add(buf[:])
@@ -273,7 +273,7 @@ func (bf *Filter) maybeAddOutpoint(pkScript []byte, outHash *daghash.Hash, outId
 func (bf *Filter) matchTxAndUpdate(tx *util.Tx) bool {
 	// Check if the filter matches the hash of the transaction.
 	// This is useful for finding transactions when they appear in a block.
-	matched := bf.matches(tx.Hash()[:])
+	matched := bf.matches(tx.ID()[:])
 
 	// Check if the filter matches any data elements in the public key
 	// scripts of any of the outputs.  When it does, add the outpoint that
@@ -295,7 +295,7 @@ func (bf *Filter) matchTxAndUpdate(tx *util.Tx) bool {
 			}
 
 			matched = true
-			bf.maybeAddOutpoint(txOut.PkScript, tx.Hash(), uint32(i))
+			bf.maybeAddOutpoint(txOut.PkScript, tx.ID(), uint32(i))
 			break
 		}
 	}

@@ -141,7 +141,7 @@ func loadUTXOSet(filename string) (UTXOSet, error) {
 		if err != nil {
 			return nil, err
 		}
-		utxoSet.utxoCollection[wire.OutPoint{Hash: hash, Index: index}] = entry
+		utxoSet.utxoCollection[wire.OutPoint{TxID: hash, Index: index}] = entry
 	}
 
 	return utxoSet, nil

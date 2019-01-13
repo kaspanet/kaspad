@@ -444,13 +444,13 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 		// non-finalized transactions.
 		tx := txDesc.Tx
 		if blockdag.IsCoinBase(tx) {
-			log.Tracef("Skipping coinbase tx %s", tx.Hash())
+			log.Tracef("Skipping coinbase tx %s", tx.ID())
 			continue
 		}
 		if !blockdag.IsFinalizedTransaction(tx, nextBlockHeight,
 			g.timeSource.AdjustedTime()) {
 
-			log.Tracef("Skipping non-finalized tx %s", tx.Hash())
+			log.Tracef("Skipping non-finalized tx %s", tx.ID())
 			continue
 		}
 
@@ -499,7 +499,7 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 			txGas := tx.MsgTx().Gas
 			if gasLimit-gasUsage < txGas {
 				log.Tracef("Transaction %v (GAS=%v) ignored because gas overusage (GASUsage=%v) in subNetwork %v (GASLimit=%v)",
-					tx.MsgTx().TxHash, txGas, gasUsage, subNetwork, gasLimit)
+					tx.MsgTx().TxID(), txGas, gasUsage, subNetwork, gasLimit)
 				continue
 			}
 			gasUsageMap[subNetwork] = gasUsage + txGas
@@ -512,7 +512,7 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 			blockPlusTxSize >= g.policy.BlockMaxSize {
 
 			log.Tracef("Skipping tx %s because it would exceed "+
-				"the max block size", tx.Hash())
+				"the max block size", tx.ID())
 			continue
 		}
 
@@ -522,21 +522,21 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 		if blockSigOps+numSigOps < blockSigOps ||
 			blockSigOps+numSigOps > blockdag.MaxSigOpsPerBlock {
 			log.Tracef("Skipping tx %s because it would exceed "+
-				"the maximum sigops per block", tx.Hash())
+				"the maximum sigops per block", tx.ID())
 			continue
 		}
 		numP2SHSigOps, err := blockdag.CountP2SHSigOps(tx, false,
 			blockUtxos)
 		if err != nil {
 			log.Tracef("Skipping tx %s due to error in "+
-				"GetSigOpCost: %v", tx.Hash(), err)
+				"GetSigOpCost: %v", tx.ID(), err)
 			continue
 		}
 		numSigOps += int64(numP2SHSigOps)
 		if blockSigOps+numSigOps < blockSigOps ||
 			blockSigOps+numSigOps > blockdag.MaxSigOpsPerBlock {
 			log.Tracef("Skipping tx %s because it would "+
-				"exceed the maximum sigops per block", tx.Hash())
+				"exceed the maximum sigops per block", tx.ID())
 			continue
 		}
 
@@ -548,7 +548,7 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 
 			log.Tracef("Skipping tx %s with feePerKB %.2f "+
 				"< TxMinFreeFee %d and block size %d >= "+
-				"minBlockSize %d", tx.Hash(), prioItem.feePerKB,
+				"minBlockSize %d", tx.ID(), prioItem.feePerKB,
 				g.policy.TxMinFreeFee, blockPlusTxSize,
 				g.policy.BlockMinSize)
 			continue
@@ -589,14 +589,14 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 			blockUtxos, g.chainParams)
 		if err != nil {
 			log.Tracef("Skipping tx %s due to error in "+
-				"CheckTransactionInputs: %v", tx.Hash(), err)
+				"CheckTransactionInputs: %v", tx.ID(), err)
 			continue
 		}
 		err = blockdag.ValidateTransactionScripts(tx, blockUtxos,
 			txscript.StandardVerifyFlags, g.sigCache)
 		if err != nil {
 			log.Tracef("Skipping tx %s due to error in "+
-				"ValidateTransactionScripts: %v", tx.Hash(), err)
+				"ValidateTransactionScripts: %v", tx.ID(), err)
 			continue
 		}
 
@@ -617,7 +617,7 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 		txSigOpCounts = append(txSigOpCounts, numSigOps)
 
 		log.Tracef("Adding tx %s (priority %.2f, feePerKB %.2f)",
-			prioItem.tx.Hash(), prioItem.priority, prioItem.feePerKB)
+			prioItem.tx.ID(), prioItem.priority, prioItem.feePerKB)
 	}
 
 	// Now that the actual transactions have been selected, update the

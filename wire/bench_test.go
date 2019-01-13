@@ -24,7 +24,7 @@ var genesisCoinbaseTx = MsgTx{
 	TxIn: []*TxIn{
 		{
 			PreviousOutPoint: OutPoint{
-				Hash:  daghash.Hash{},
+				TxID:  daghash.Hash{},
 				Index: 0xffffffff,
 			},
 			SignatureScript: []byte{
@@ -197,7 +197,7 @@ func BenchmarkReadOutPoint(b *testing.B) {
 // transaction output point.
 func BenchmarkWriteOutPoint(b *testing.B) {
 	op := &OutPoint{
-		Hash:  daghash.Hash{},
+		TxID:  daghash.Hash{},
 		Index: 0,
 	}
 	for i := 0; i < b.N; i++ {
@@ -268,7 +268,7 @@ func BenchmarkReadTxIn(b *testing.B) {
 func BenchmarkWriteTxIn(b *testing.B) {
 	txIn := blockOne.Transactions[0].TxIn[0]
 	for i := 0; i < b.N; i++ {
-		writeTxIn(ioutil.Discard, 0, 0, txIn)
+		writeTxIn(ioutil.Discard, 0, 0, txIn, txEncodingFull)
 	}
 }
 

@@ -52,8 +52,8 @@ func TestTxIndexConnectBlock(t *testing.T) {
 	processBlock(t, dag, &block2, "2")
 	processBlock(t, dag, &block3, "3")
 
-	block3TxHash := block3Tx.TxHash()
-	block3TxNewAcceptedBlock, err := txIndex.BlockThatAcceptedTx(dag, &block3TxHash)
+	block3TxID := block3Tx.TxID()
+	block3TxNewAcceptedBlock, err := txIndex.BlockThatAcceptedTx(dag, &block3TxID)
 	if err != nil {
 		t.Errorf("TestTxIndexConnectBlock: TxAcceptedInBlock: %v", err)
 	}
@@ -67,7 +67,7 @@ func TestTxIndexConnectBlock(t *testing.T) {
 	processBlock(t, dag, &block4, "4")
 	processBlock(t, dag, &block5, "5")
 
-	block3TxAcceptedBlock, err := txIndex.BlockThatAcceptedTx(dag, &block3TxHash)
+	block3TxAcceptedBlock, err := txIndex.BlockThatAcceptedTx(dag, &block3TxID)
 	if err != nil {
 		t.Errorf("TestTxIndexConnectBlock: TxAcceptedInBlock: %v", err)
 	}
@@ -77,7 +77,7 @@ func TestTxIndexConnectBlock(t *testing.T) {
 			"been accepted in block %v but instead got accepted in block %v", block3AHash, block3TxAcceptedBlock)
 	}
 
-	region, err := txIndex.TxFirstBlockRegion(&block3TxHash)
+	region, err := txIndex.TxFirstBlockRegion(&block3TxID)
 	if err != nil {
 		t.Fatalf("TestTxIndexConnectBlock: no block region was found for block3Tx")
 	}
@@ -129,7 +129,7 @@ var block1 = wire.MsgBlock{
 			TxIn: []*wire.TxIn{
 				{
 					PreviousOutPoint: wire.OutPoint{
-						Hash:  daghash.Hash{},
+						TxID:  daghash.Hash{},
 						Index: 0xffffffff,
 					},
 					SignatureScript: []byte{
@@ -183,7 +183,7 @@ var block2 = wire.MsgBlock{
 			TxIn: []*wire.TxIn{
 				{
 					PreviousOutPoint: wire.OutPoint{
-						Hash:  daghash.Hash{},
+						TxID:  daghash.Hash{},
 						Index: 0xffffffff,
 					},
 					SignatureScript: []byte{
@@ -212,11 +212,11 @@ var block2 = wire.MsgBlock{
 			TxIn: []*wire.TxIn{
 				{
 					PreviousOutPoint: wire.OutPoint{
-						Hash: daghash.Hash{
-							0x80, 0x57, 0x44, 0xf9, 0xee, 0xb7, 0x14, 0x05,
-							0x8c, 0x37, 0x2e, 0x41, 0x82, 0x98, 0xcd, 0x0d,
-							0xc8, 0xd1, 0xd1, 0x11, 0x9b, 0xe2, 0xc1, 0x4e,
-							0x4b, 0x7c, 0x02, 0xd1, 0x11, 0xe0, 0x50, 0x11,
+						TxID: daghash.Hash{
+							0x6c, 0x56, 0xa7, 0x7d, 0xfa, 0x18, 0x89, 0xdc,
+							0x20, 0x60, 0x3f, 0x51, 0x32, 0xa8, 0xdc, 0x47,
+							0x5f, 0x43, 0xb7, 0xe8, 0xae, 0x24, 0x22, 0x34,
+							0x64, 0x91, 0xe7, 0xd5, 0xac, 0xc0, 0xed, 0x88,
 						},
 						Index: 0,
 					},
@@ -261,11 +261,11 @@ var block3Tx = &wire.MsgTx{
 	TxIn: []*wire.TxIn{
 		{
 			PreviousOutPoint: wire.OutPoint{
-				Hash: daghash.Hash{
-					0x65, 0x63, 0x9f, 0x61, 0x7c, 0xaa, 0xc1, 0x4a,
-					0x96, 0x7d, 0x8a, 0xc0, 0x4b, 0x97, 0xc5, 0xf3,
-					0x86, 0xbe, 0x54, 0x03, 0x26, 0x00, 0x0c, 0xc5,
-					0xd8, 0xbb, 0x75, 0x96, 0x1b, 0xdb, 0xa7, 0x5b,
+				TxID: daghash.Hash{
+					0x99, 0x30, 0x0c, 0x6e, 0xad, 0x5c, 0x9c, 0xcf,
+					0xfc, 0xcb, 0x62, 0xfd, 0x39, 0xe3, 0xc1, 0x7e,
+					0x87, 0x17, 0xec, 0x9e, 0x7b, 0xc7, 0x81, 0xe0,
+					0x8f, 0x15, 0x85, 0xcb, 0x6d, 0x54, 0x74, 0x3e,
 				},
 				Index: 0,
 			},
@@ -330,7 +330,7 @@ var block3 = wire.MsgBlock{
 			TxIn: []*wire.TxIn{
 				{
 					PreviousOutPoint: wire.OutPoint{
-						Hash:  daghash.Hash{},
+						TxID:  daghash.Hash{},
 						Index: 0xffffffff,
 					},
 					SignatureScript: []byte{
@@ -385,7 +385,7 @@ var block3A = wire.MsgBlock{
 			TxIn: []*wire.TxIn{
 				{
 					PreviousOutPoint: wire.OutPoint{
-						Hash:  daghash.Hash{},
+						TxID:  daghash.Hash{},
 						Index: 0xffffffff,
 					},
 					SignatureScript: []byte{
@@ -440,7 +440,7 @@ var block4 = wire.MsgBlock{
 			TxIn: []*wire.TxIn{
 				{
 					PreviousOutPoint: wire.OutPoint{
-						Hash:  daghash.Hash{},
+						TxID:  daghash.Hash{},
 						Index: 0xffffffff,
 					},
 					SignatureScript: []byte{
@@ -500,7 +500,7 @@ var block5 = wire.MsgBlock{
 			TxIn: []*wire.TxIn{
 				{
 					PreviousOutPoint: wire.OutPoint{
-						Hash:  daghash.Hash{},
+						TxID:  daghash.Hash{},
 						Index: 0xffffffff,
 					},
 					SignatureScript: []byte{

@@ -161,7 +161,7 @@ type spendableOut struct {
 func makeSpendableOutForTx(tx *wire.MsgTx, txOutIndex uint32) spendableOut {
 	return spendableOut{
 		prevOut: wire.OutPoint{
-			Hash:  tx.TxHash(),
+			TxID:  tx.TxID(),
 			Index: txOutIndex,
 		},
 		amount: util.Amount(tx.TxOut[txOutIndex].Value),
@@ -1531,7 +1531,7 @@ func Generate(includeLargeReorg bool) (tests [][]TestInstance, err error) {
 	g.nextBlock("b52", outs[14], func(b *wire.MsgBlock) {
 		hash := newHashFromStr("00000000000000000000000000000000" +
 			"00000000000000000123456789abcdef")
-		b.Transactions[1].TxIn[0].PreviousOutPoint.Hash = *hash
+		b.Transactions[1].TxIn[0].PreviousOutPoint.TxID = *hash
 		b.Transactions[1].TxIn[0].PreviousOutPoint.Index = 0
 	})
 	rejected(blockdag.ErrMissingTxOut)

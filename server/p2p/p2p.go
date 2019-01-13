@@ -474,7 +474,7 @@ func (sp *Peer) OnMemPool(_ *peer.Peer, msg *wire.MsgMemPool) {
 		// or only the transactions that match the filter when there is
 		// one.
 		if !sp.filter.IsLoaded() || sp.filter.MatchTxAndUpdate(txDesc.Tx) {
-			iv := wire.NewInvVect(wire.InvTypeTx, txDesc.Tx.Hash())
+			iv := wire.NewInvVect(wire.InvTypeTx, txDesc.Tx.ID())
 			invMsg.AddInvVect(iv)
 			if len(invMsg.InvList)+1 > wire.MaxInvPerMsg {
 				break
@@ -495,7 +495,7 @@ func (sp *Peer) OnMemPool(_ *peer.Peer, msg *wire.MsgMemPool) {
 func (sp *Peer) OnTx(_ *peer.Peer, msg *wire.MsgTx) {
 	if config.MainConfig().BlocksOnly {
 		peerLog.Tracef("Ignoring tx %v from %v - blocksonly enabled",
-			msg.TxHash(), sp)
+			msg.TxID(), sp)
 		return
 	}
 
@@ -503,7 +503,7 @@ func (sp *Peer) OnTx(_ *peer.Peer, msg *wire.MsgTx) {
 	// Convert the raw MsgTx to a util.Tx which provides some convenience
 	// methods and things such as hash caching.
 	tx := util.NewTx(msg)
-	iv := wire.NewInvVect(wire.InvTypeTx, tx.Hash())
+	iv := wire.NewInvVect(wire.InvTypeTx, tx.ID())
 	sp.AddKnownInventory(iv)
 
 	// Queue the transaction up to be handled by the sync manager and
@@ -1217,7 +1217,7 @@ func (s *Server) RemoveRebroadcastInventory(iv *wire.InvVect) {
 // passed transactions to all connected peers.
 func (s *Server) RelayTransactions(txns []*mempool.TxDesc) {
 	for _, txD := range txns {
-		iv := wire.NewInvVect(wire.InvTypeTx, txD.Tx.Hash())
+		iv := wire.NewInvVect(wire.InvTypeTx, txD.Tx.ID())
 		s.RelayInventory(iv, txD)
 	}
 }
@@ -2845,6 +2845,6 @@ func (s *Server) TransactionConfirmed(tx *util.Tx) {
 		return
 	}
 
-	iv := wire.NewInvVect(wire.InvTypeTx, tx.Hash())
+	iv := wire.NewInvVect(wire.InvTypeTx, tx.ID())
 	s.RemoveRebroadcastInventory(iv)
 }
