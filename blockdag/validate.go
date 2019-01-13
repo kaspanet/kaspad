@@ -204,11 +204,6 @@ func CheckTransactionSanity(tx *util.Tx) error {
 	var totalSatoshi uint64
 	for _, txOut := range msgTx.TxOut {
 		satoshi := txOut.Value
-		if satoshi < 0 {
-			str := fmt.Sprintf("transaction output has negative "+
-				"value of %v", satoshi)
-			return ruleError(ErrBadTxOutValue, str)
-		}
 		if satoshi > util.MaxSatoshi {
 			str := fmt.Sprintf("transaction output value of %v is "+
 				"higher than max allowed value of %v", satoshi,
@@ -265,6 +260,30 @@ func CheckTransactionSanity(tx *util.Tx) error {
 					"is null")
 			}
 		}
+	}
+
+	// Transactions in native and SubNetworkRegistry SubNetworks must have Gas = 0
+	if (msgTx.SubNetworkID == wire.SubNetworkDAGCoin ||
+		msgTx.SubNetworkID == wire.SubNetworkRegistry) &&
+		msgTx.Gas > 0 {
+
+		return ruleError(ErrInvalidGas, "transaction in the native or "+
+			"registry sub-networks has gas > 0 ")
+	}
+
+	if msgTx.SubNetworkID == wire.SubNetworkDAGCoin &&
+		len(msgTx.Payload) > 0 {
+
+		return ruleError(ErrInvalidPayload,
+			"transaction in the native sub-network includes a payload")
+	}
+
+	if msgTx.SubNetworkID == wire.SubNetworkRegistry &&
+		len(msgTx.Payload) != 8 {
+
+		return ruleError(ErrInvalidPayload,
+			"transaction in the sub-network registry include a payload "+
+				"with length != 8 bytes")
 	}
 
 	return nil

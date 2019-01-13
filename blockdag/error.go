@@ -220,6 +220,10 @@ const (
 	// by subnetwork
 	ErrInvalidGas
 
+	// ErrInvalidPayload transaction includes a payload in a sub-network that doesn't allow
+	// a Payload
+	ErrInvalidPayload
+
 	// ErrSubNetwork indicates that a block doesn't adhere to the sub-network
 	// registry rules
 	ErrSubNetworkRegistry
@@ -270,6 +274,7 @@ var errorCodeStrings = map[ErrorCode]string{
 	ErrFinality:                  "ErrFinality",
 	ErrTransactionsNotSorted:     "ErrTransactionsNotSorted",
 	ErrInvalidGas:                "ErrInvalidGas",
+	ErrInvalidPayload:            "ErrInvalidPayload",
 }
 
 // String returns the ErrorCode as a human-readable name.

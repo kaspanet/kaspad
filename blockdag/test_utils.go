@@ -3,10 +3,11 @@ package blockdag
 import (
 	"encoding/binary"
 	"fmt"
-	"github.com/daglabs/btcd/util/subnetworkid"
 	"os"
 	"path/filepath"
 	"time"
+
+	"github.com/daglabs/btcd/util/subnetworkid"
 
 	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/dagconfig/daghash"
@@ -103,6 +104,41 @@ func DAGSetup(dbName string, config Config) (*BlockDAG, func(), error) {
 
 // OpTrueScript is script returning TRUE
 var OpTrueScript = []byte{txscript.OpTrue}
+
+type txSubnetworkData struct {
+	subnetworkID subnetworkid.SubNetworkID
+	Gas          uint64
+	Payload      []byte
+}
+
+func createTxForTest(numInputs uint32, numOutputs uint32, outputValue uint64, subnetworkData *txSubnetworkData) *wire.MsgTx {
+	tx := wire.NewMsgTx(wire.TxVersion)
+
+	for i := uint32(0); i < numInputs; i++ {
+		tx.AddTxIn(&wire.TxIn{
+			PreviousOutPoint: *wire.NewOutPoint(&daghash.Hash{}, i),
+			SignatureScript:  []byte{},
+			Sequence:         wire.MaxTxInSequenceNum,
+		})
+	}
+	for i := uint32(0); i < numOutputs; i++ {
+		tx.AddTxOut(&wire.TxOut{
+			PkScript: OpTrueScript,
+			Value:    outputValue,
+		})
+	}
+
+	if subnetworkData != nil {
+		tx.SubNetworkID = subnetworkData.subnetworkID
+		tx.Gas = subnetworkData.Gas
+		tx.Payload = subnetworkData.Payload
+	} else {
+		tx.SubNetworkID = wire.SubNetworkDAGCoin
+		tx.Gas = 0
+		tx.Payload = []byte{}
+	}
+	return tx
+}
 
 // createCoinbaseTxForTest returns a coinbase transaction with the requested number of
 // outputs paying an appropriate subsidy based on the passed block height to the

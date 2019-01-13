@@ -476,22 +476,10 @@ func (msg *MsgTx) BtcDecode(r io.Reader, pver uint32) error {
 			return err
 		}
 
-		isRegistrySubNetwork := msg.SubNetworkID == SubNetworkRegistry
-
-		if isRegistrySubNetwork && msg.Gas != 0 {
-			str := fmt.Sprintf("Transactions from subnetwork %v should have 0 gas", msg.SubNetworkID)
-			return messageError("MsgTx.BtcDecode", str)
-		}
-
 		payloadLength, err := ReadVarInt(r, pver)
 		if err != nil {
 			returnScriptBuffers()
 			return err
-		}
-
-		if isRegistrySubNetwork && payloadLength != 8 {
-			str := fmt.Sprintf("For registry sub network the payload should always be uint64 (8 bytes length)")
-			return messageError("MsgTx.BtcDecode", str)
 		}
 
 		msg.Payload = make([]byte, payloadLength)

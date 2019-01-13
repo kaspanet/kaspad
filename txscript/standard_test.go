@@ -464,7 +464,7 @@ func TestCalcScriptInfo(t *testing.T) {
 		pkScript := mustParseShortForm(test.pkScript)
 
 		si, err := CalcScriptInfo(sigScript, pkScript, test.isP2SH)
-		if e := tstCheckScriptError(err, test.scriptInfoErr); e != nil {
+		if e := checkScriptError(err, test.scriptInfoErr); e != nil {
 			t.Errorf("scriptinfo test %q: %v", test.name, e)
 			continue
 		}
@@ -610,7 +610,7 @@ func TestPayToAddrScript(t *testing.T) {
 	t.Logf("Running %d tests", len(tests))
 	for i, test := range tests {
 		pkScript, err := PayToAddrScript(test.in)
-		if e := tstCheckScriptError(err, test.err); e != nil {
+		if e := checkScriptError(err, test.err); e != nil {
 			t.Errorf("PayToAddrScript #%d unexpected error - "+
 				"got %v, want %v", i, err, test.err)
 			continue
@@ -716,7 +716,7 @@ func TestMultiSigScript(t *testing.T) {
 	t.Logf("Running %d tests", len(tests))
 	for i, test := range tests {
 		script, err := MultiSigScript(test.keys, test.nrequired)
-		if e := tstCheckScriptError(err, test.err); e != nil {
+		if e := checkScriptError(err, test.err); e != nil {
 			t.Errorf("MultiSigScript #%d: %v", i, e)
 			continue
 		}
@@ -768,7 +768,7 @@ func TestCalcMultiSigStats(t *testing.T) {
 	for i, test := range tests {
 		script := mustParseShortForm(test.script)
 		_, _, err := CalcMultiSigStats(script)
-		if e := tstCheckScriptError(err, test.err); e != nil {
+		if e := checkScriptError(err, test.err); e != nil {
 			t.Errorf("CalcMultiSigStats #%d (%s): %v", i, test.name,
 				e)
 			continue
@@ -1077,7 +1077,7 @@ func TestNullDataScript(t *testing.T) {
 
 	for i, test := range tests {
 		script, err := NullDataScript(test.data)
-		if e := tstCheckScriptError(err, test.err); e != nil {
+		if e := checkScriptError(err, test.err); e != nil {
 			t.Errorf("NullDataScript: #%d (%s): %v", i, test.name,
 				e)
 			continue
