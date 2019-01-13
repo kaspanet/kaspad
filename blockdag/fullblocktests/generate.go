@@ -297,9 +297,9 @@ func (g *testGenerator) createCoinbaseTx(blockHeight int32) *wire.MsgTx {
 	return tx
 }
 
-// calcMerkleRoot creates a merkle tree from the slice of transactions and
+// calcHashMerkleRoot creates a merkle tree from the slice of transactions and
 // returns the root of the tree.
-func calcMerkleRoot(txns []*wire.MsgTx) daghash.Hash {
+func calcHashMerkleRoot(txns []*wire.MsgTx) daghash.Hash {
 	if len(txns) == 0 {
 		return daghash.Hash{}
 	}
@@ -511,7 +511,7 @@ func (g *testGenerator) nextBlock(blockName string, spend *spendableOut, mungers
 		Header: wire.BlockHeader{
 			Version:        1,
 			ParentHashes:   []daghash.Hash{g.tip.BlockHash()}, // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
-			HashMerkleRoot: calcMerkleRoot(txns),
+			HashMerkleRoot: calcHashMerkleRoot(txns),
 			Bits:           g.params.PowLimitBits,
 			Timestamp:      ts,
 			Nonce:          0, // To be solved.
@@ -527,7 +527,7 @@ func (g *testGenerator) nextBlock(blockName string, spend *spendableOut, mungers
 		f(&block)
 	}
 	if block.Header.HashMerkleRoot == curMerkleRoot {
-		block.Header.HashMerkleRoot = calcMerkleRoot(block.Transactions)
+		block.Header.HashMerkleRoot = calcHashMerkleRoot(block.Transactions)
 	}
 
 	// Only solve the block if the nonce wasn't manually changed by a munge

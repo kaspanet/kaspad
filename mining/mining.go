@@ -737,10 +737,13 @@ func (g *BlkTmplGenerator) UpdateExtraNonce(msgBlock *wire.MsgBlock, blockHeight
 	// recalculating all of the other transaction hashes.
 	// block.Transactions[0].InvalidateCache()
 
-	// Recalculate the merkle root with the updated extra nonce.
+	// Recalculate the merkle roots with the updated extra nonce.
 	block := util.NewBlock(msgBlock)
-	merkles := blockdag.BuildHashMerkleTreeStore(block.Transactions())
-	msgBlock.Header.HashMerkleRoot = *merkles[len(merkles)-1]
+	hashMerkles := blockdag.BuildHashMerkleTreeStore(block.Transactions())
+	msgBlock.Header.HashMerkleRoot = *hashMerkles[len(hashMerkles)-1]
+	idMerkles := blockdag.BuildIDMerkleTreeStore(block.Transactions())
+	msgBlock.Header.IDMerkleRoot = *idMerkles[len(idMerkles)-1]
+
 	return nil
 }
 
