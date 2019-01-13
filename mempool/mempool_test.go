@@ -9,13 +9,14 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"github.com/daglabs/btcd/util/subnetworkid"
 	"math"
 	"reflect"
 	"runtime"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/daglabs/btcd/util/subnetworkid"
 
 	"bou.ke/monkey"
 	"github.com/daglabs/btcd/blockdag"
@@ -381,27 +382,27 @@ func testPoolMembership(tc *testContext, tx *util.Tx, inOrphanPool, inTxPool boo
 	}
 
 	count := tc.harness.txPool.Count()
-	txHashes := tc.harness.txPool.TxHashes()
+	txIDs := tc.harness.txPool.TxIDs()
 	txDescs := tc.harness.txPool.TxDescs()
 	txMiningDescs := tc.harness.txPool.MiningDescs()
-	if count != len(txHashes) || count != len(txDescs) || count != len(txMiningDescs) {
-		tc.t.Error("mempool.TxHashes(), mempool.TxDescs() and mempool.MiningDescs() have different length")
+	if count != len(txIDs) || count != len(txDescs) || count != len(txMiningDescs) {
+		tc.t.Error("mempool.TxIDs(), mempool.TxDescs() and mempool.MiningDescs() have different length")
 	}
 	if inTxPool {
 		wasFound := false
-		for _, txh := range txHashes {
-			if *txHash == *txh {
+		for _, txI := range txIDs {
+			if *txID == *txI {
 				wasFound = true
 				break
 			}
 		}
 		if !wasFound {
-			tc.t.Error("Can not find transaction in mempool.TxHashes")
+			tc.t.Error("Can not find transaction in mempool.TxIDs")
 		}
 
 		wasFound = false
 		for _, txd := range txDescs {
-			if *txHash == *txd.Tx.Hash() {
+			if *txID == *txd.Tx.ID() {
 				wasFound = true
 				break
 			}
@@ -412,7 +413,7 @@ func testPoolMembership(tc *testContext, tx *util.Tx, inOrphanPool, inTxPool boo
 
 		wasFound = false
 		for _, txd := range txMiningDescs {
-			if *txHash == *txd.Tx.Hash() {
+			if *txID == *txd.Tx.ID() {
 				wasFound = true
 				break
 			}
@@ -1546,7 +1547,7 @@ func TestCheckSpend(t *testing.T) {
 	// Now all but the last tx should be spent by the next.
 	for i := 0; i < len(chainedTxns)-1; i++ {
 		op = wire.OutPoint{
-			TxID:  *chainedTxns[i].Hash(),
+			TxID:  *chainedTxns[i].ID(),
 			Index: 0,
 		}
 		expSpend := chainedTxns[i+1]
@@ -1559,7 +1560,7 @@ func TestCheckSpend(t *testing.T) {
 
 	// The last tx should have no spend.
 	op = wire.OutPoint{
-		TxID:  *chainedTxns[txChainLength-1].Hash(),
+		TxID:  *chainedTxns[txChainLength-1].ID(),
 		Index: 0,
 	}
 	spend = harness.txPool.CheckSpend(op)
@@ -1693,10 +1694,10 @@ func TestHandleNewBlock(t *testing.T) {
 	}
 
 	// Create orphan transaction and add it to UTXO set
-	hash := blockTx1.Hash()
+	txID := blockTx1.ID()
 	orphanTx, err := harness.CreateSignedTx([]spendableOutpoint{{
 		amount:   util.Amount(2500000000),
-		outPoint: wire.OutPoint{TxID: *hash, Index: 0},
+		outPoint: wire.OutPoint{TxID: *txID, Index: 0},
 	}}, 1)
 	if err != nil {
 		t.Fatalf("unable to create signed tx: %v", err)
@@ -1734,7 +1735,7 @@ func TestHandleNewBlock(t *testing.T) {
 	blockTransnactions := make(map[daghash.Hash]int)
 	for msg := range ch {
 		blockTransnactions[*msg.Tx.ID()] = 1
-		if *msg.Tx.ID() != *blockTx1.Hash() {
+		if *msg.Tx.ID() != *blockTx1.ID() {
 			if len(msg.AcceptedTxs) != 0 {
 				t.Fatalf("Expected amount of accepted transactions 0. Got: %v", len(msg.AcceptedTxs))
 			}
@@ -1757,11 +1758,11 @@ func TestHandleNewBlock(t *testing.T) {
 		t.Fatalf("Wrong size of blockTransnactions after new block handling")
 	}
 
-	if _, ok := blockTransnactions[*blockTx1.Hash()]; !ok {
+	if _, ok := blockTransnactions[*blockTx1.ID()]; !ok {
 		t.Fatalf("Transaction 1 of new block is not handled")
 	}
 
-	if _, ok := blockTransnactions[*blockTx2.Hash()]; !ok {
+	if _, ok := blockTransnactions[*blockTx2.ID()]; !ok {
 		t.Fatalf("Transaction 2 of new block is not handled")
 	}
 

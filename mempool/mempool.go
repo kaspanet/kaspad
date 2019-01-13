@@ -1099,22 +1099,22 @@ func (mp *TxPool) Count() int {
 	return count
 }
 
-// TxHashes returns a slice of hashes for all of the transactions in the memory
+// TxIDs returns a slice of hashes for all of the transactions in the memory
 // pool.
 //
 // This function is safe for concurrent access.
-func (mp *TxPool) TxHashes() []*daghash.Hash {
+func (mp *TxPool) TxIDs() []*daghash.Hash {
 	mp.mtx.RLock()
-	hashes := make([]*daghash.Hash, len(mp.pool))
+	ids := make([]*daghash.Hash, len(mp.pool))
 	i := 0
-	for hash := range mp.pool {
-		hashCopy := hash
-		hashes[i] = &hashCopy
+	for txID := range mp.pool {
+		idCopy := txID
+		ids[i] = &idCopy
 		i++
 	}
 	mp.mtx.RUnlock()
 
-	return hashes
+	return ids
 }
 
 // TxDescs returns a slice of descriptors for all the transactions in the pool.
