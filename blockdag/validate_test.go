@@ -1187,7 +1187,7 @@ func TestCheckTransactionSanity(t *testing.T) {
 		}
 
 		err := CheckTransactionSanity(util.NewTx(tx))
-		if e := tstCheckRuleError(err, test.expectedErr); e != nil {
+		if e := checkRuleError(err, test.expectedErr); e != nil {
 			t.Errorf("TestCheckTransactionSanity: '%s': %v", test.name, e)
 			continue
 		}

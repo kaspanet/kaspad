@@ -12,10 +12,10 @@ import (
 	"testing"
 )
 
-// tstCheckScriptError ensures the type of the two passed errors are of the
+// checkScriptError ensures the type of the two passed errors are of the
 // same type (either both nil or both of type Error) and their error codes
 // match when not nil.
-func tstCheckScriptError(gotErr, wantErr error) error {
+func checkScriptError(gotErr, wantErr error) error {
 	// Ensure the error code is of the expected type and the error
 	// code matches the value specified in the test instance.
 	if reflect.TypeOf(gotErr) != reflect.TypeOf(wantErr) {
@@ -827,7 +827,7 @@ func TestStack(t *testing.T) {
 
 		// Ensure the error code is of the expected type and the error
 		// code matches the value specified in the test instance.
-		if e := tstCheckScriptError(err, test.err); e != nil {
+		if e := checkScriptError(err, test.err); e != nil {
 			t.Errorf("%s: %v", test.name, e)
 			continue
 		}

@@ -223,10 +223,10 @@ func buildNodeGenerator(phantomK uint32, withChildren bool) func(parents blockSe
 	return buildNode
 }
 
-// tstCheckRuleError ensures the type of the two passed errors are of the
+// checkRuleError ensures the type of the two passed errors are of the
 // same type (either both nil or both of type RuleError) and their error codes
 // match when not nil.
-func tstCheckRuleError(gotErr, wantErr error) error {
+func checkRuleError(gotErr, wantErr error) error {
 	// Ensure the error code is of the expected type and the error
 	// code matches the value specified in the test instance.
 	if reflect.TypeOf(gotErr) != reflect.TypeOf(wantErr) {
