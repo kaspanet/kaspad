@@ -7,11 +7,11 @@ import (
 	"github.com/daglabs/btcd/dagconfig"
 )
 
-// TestSubNetworkRegistry tests the full sub-network registry flow
-func TestSubNetworkRegistry(t *testing.T) {
+// TestSubnetworkRegistry tests the full subnetwork registry flow
+func TestSubnetworkRegistry(t *testing.T) {
 	params := dagconfig.SimNetParams
 	params.K = 1
-	dag, teardownFunc, err := DAGSetup("TestSubNetworkRegistry", Config{
+	dag, teardownFunc, err := DAGSetup("TestSubnetworkRegistry", Config{
 		DAGParams: &params,
 	})
 	if err != nil {
@@ -20,11 +20,11 @@ func TestSubNetworkRegistry(t *testing.T) {
 	defer teardownFunc()
 
 	gasLimit := uint64(12345)
-	subNetworkID, err := RegisterSubNetworkForTest(dag, gasLimit)
+	subnetworkID, err := RegisterSubnetworkForTest(dag, gasLimit)
 	if err != nil {
 		t.Fatalf("could not register network: %s", err)
 	}
-	limit, err := dag.GasLimit(subNetworkID)
+	limit, err := dag.GasLimit(subnetworkID)
 	if err != nil {
 		t.Fatalf("could not retrieve gas limit: %s", err)
 	}
@@ -33,22 +33,22 @@ func TestSubNetworkRegistry(t *testing.T) {
 	}
 }
 
-func TestSerializeSubNetwork(t *testing.T) {
-	sNet := &subNetwork{
+func TestSerializeSubnetwork(t *testing.T) {
+	sNet := &subnetwork{
 		gasLimit: 1000,
 	}
 
-	serializedSNet, err := serializeSubNetwork(sNet)
+	serializedSNet, err := serializeSubnetwork(sNet)
 	if err != nil {
-		t.Fatalf("sub-network serialization unexpectedly failed: %s", err)
+		t.Fatalf("subnetwork serialization unexpectedly failed: %s", err)
 	}
 
-	deserializedSNet, err := deserializeSubNetwork(serializedSNet)
+	deserializedSNet, err := deserializeSubnetwork(serializedSNet)
 	if err != nil {
-		t.Fatalf("sub-network deserialization unexpectedly failed: %s", err)
+		t.Fatalf("subnetwork deserialization unexpectedly failed: %s", err)
 	}
 
 	if !reflect.DeepEqual(sNet, deserializedSNet) {
-		t.Errorf("original sub-network and deserialized sub-network are not equal")
+		t.Errorf("original subnetwork and deserialized subnetwork are not equal")
 	}
 }
