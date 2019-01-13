@@ -213,20 +213,20 @@ const (
 	ErrFinality
 
 	// ErrTransactionsNotSorted indicates that transactions in block are not
-	// sorted by sub-network
+	// sorted by subnetwork
 	ErrTransactionsNotSorted
 
 	// ErrInvalidGas transaction wants to use more GAS than allowed
 	// by subnetwork
 	ErrInvalidGas
 
-	// ErrInvalidPayload transaction includes a payload in a sub-network that doesn't allow
+	// ErrInvalidPayload transaction includes a payload in a subnetwork that doesn't allow
 	// a Payload
 	ErrInvalidPayload
 
-	// ErrSubNetwork indicates that a block doesn't adhere to the sub-network
+	// ErrSubnetwork indicates that a block doesn't adhere to the subnetwork
 	// registry rules
-	ErrSubNetworkRegistry
+	ErrSubnetworkRegistry
 )
 
 // Map of ErrorCode values back to their constant names for pretty printing.
