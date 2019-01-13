@@ -105,7 +105,7 @@ type txEncoding uint8
 const (
 	txEncodingExcludeSubNetworkData txEncoding = 1 << iota
 
-	txEncodingexcludeSignatureScript
+	txEncodingExcludeSignatureScript
 
 	txEncodingFull txEncoding = 0
 )
@@ -227,7 +227,7 @@ func (t *TxIn) serializeSize(encodingFlags txEncoding) int {
 	// serialized varint size for the length of SignatureScript +
 	// SignatureScript bytes.
 	n := 44
-	if encodingFlags&txEncodingexcludeSignatureScript != txEncodingexcludeSignatureScript {
+	if encodingFlags&txEncodingExcludeSignatureScript != txEncodingExcludeSignatureScript {
 		return n + VarIntSerializeSize(uint64(len(t.SignatureScript))) +
 			len(t.SignatureScript)
 	}
@@ -312,7 +312,7 @@ func (msg *MsgTx) TxID() daghash.Hash {
 	// Ignore the error returns since the only way the encode could fail
 	// is being out of memory or due to nil pointers, both of which would
 	// cause a run-time panic.
-	encodingFlags := txEncodingexcludeSignatureScript & txEncodingExcludeSubNetworkData
+	encodingFlags := txEncodingExcludeSignatureScript & txEncodingExcludeSubNetworkData
 	buf := bytes.NewBuffer(make([]byte, 0, msg.serializeSize(encodingFlags)))
 	_ = msg.serialize(buf, encodingFlags)
 	return daghash.DoubleHashH(buf.Bytes())
@@ -899,7 +899,7 @@ func writeTxIn(w io.Writer, pver uint32, version int32, ti *TxIn, encodingFlags 
 		return err
 	}
 
-	if encodingFlags&txEncodingexcludeSignatureScript != txEncodingexcludeSignatureScript {
+	if encodingFlags&txEncodingExcludeSignatureScript != txEncodingExcludeSignatureScript {
 		err = WriteVarBytes(w, pver, ti.SignatureScript)
 	} else {
 		err = WriteVarBytes(w, pver, []byte{})
