@@ -103,11 +103,11 @@ const (
 type txEncoding uint8
 
 const (
-	tEexcludeSubNetworkData txEncoding = 1 << iota
+	txEncodingExcludeSubNetworkData txEncoding = 1 << iota
 
-	tEexcludeSignatureScript
+	txEncodingexcludeSignatureScript
 
-	tEFull txEncoding = 0
+	txEncodingFull txEncoding = 0
 )
 
 var (
@@ -219,15 +219,15 @@ type TxIn struct {
 // SerializeSize returns the number of bytes it would take to serialize the
 // the transaction input.
 func (t *TxIn) SerializeSize() int {
-	return t.serializeSize(tEFull)
+	return t.serializeSize(txEncodingFull)
 }
 
-func (t *TxIn) serializeSize(enc txEncoding) int {
+func (t *TxIn) serializeSize(encodingFlags txEncoding) int {
 	// Outpoint Hash 32 bytes + Outpoint Index 4 bytes + Sequence 8 bytes +
 	// serialized varint size for the length of SignatureScript +
 	// SignatureScript bytes.
 	n := 44
-	if enc&tEexcludeSignatureScript != tEexcludeSignatureScript {
+	if encodingFlags&txEncodingexcludeSignatureScript != txEncodingexcludeSignatureScript {
 		return n + VarIntSerializeSize(uint64(len(t.SignatureScript))) +
 			len(t.SignatureScript)
 	}
@@ -312,10 +312,9 @@ func (msg *MsgTx) TxID() daghash.Hash {
 	// Ignore the error returns since the only way the encode could fail
 	// is being out of memory or due to nil pointers, both of which would
 	// cause a run-time panic.
-	var enc txEncoding
-	enc = enc & tEexcludeSignatureScript & tEexcludeSubNetworkData
-	buf := bytes.NewBuffer(make([]byte, 0, msg.serializeSize(enc)))
-	_ = msg.serialize(buf, enc)
+	encodingFlags := txEncodingexcludeSignatureScript & txEncodingExcludeSubNetworkData
+	buf := bytes.NewBuffer(make([]byte, 0, msg.serializeSize(encodingFlags)))
+	_ = msg.serialize(buf, encodingFlags)
 	return daghash.DoubleHashH(buf.Bytes())
 }
 
@@ -606,10 +605,10 @@ func (msg *MsgTx) Deserialize(r io.Reader) error {
 // See Serialize for encoding transactions to be stored to disk, such as in a
 // database, as opposed to encoding transactions for the wire.
 func (msg *MsgTx) BtcEncode(w io.Writer, pver uint32) error {
-	return msg.encode(w, pver, tEFull)
+	return msg.encode(w, pver, txEncodingFull)
 }
 
-func (msg *MsgTx) encode(w io.Writer, pver uint32, enc txEncoding) error {
+func (msg *MsgTx) encode(w io.Writer, pver uint32, encodingFlags txEncoding) error {
 	err := binarySerializer.PutUint32(w, littleEndian, uint32(msg.Version))
 	if err != nil {
 		return err
@@ -622,7 +621,7 @@ func (msg *MsgTx) encode(w io.Writer, pver uint32, enc txEncoding) error {
 	}
 
 	for _, ti := range msg.TxIn {
-		err = writeTxIn(w, pver, msg.Version, ti, enc)
+		err = writeTxIn(w, pver, msg.Version, ti, encodingFlags)
 		if err != nil {
 			return err
 		}
@@ -655,7 +654,7 @@ func (msg *MsgTx) encode(w io.Writer, pver uint32, enc txEncoding) error {
 			return messageError("MsgTx.BtcEncode", str)
 		}
 
-		if enc&tEexcludeSubNetworkData != tEexcludeSubNetworkData {
+		if encodingFlags&txEncodingExcludeSubNetworkData != txEncodingExcludeSubNetworkData {
 			err = binarySerializer.PutUint64(w, littleEndian, msg.Gas)
 		} else {
 			err = binarySerializer.PutUint64(w, littleEndian, 0)
@@ -664,7 +663,7 @@ func (msg *MsgTx) encode(w io.Writer, pver uint32, enc txEncoding) error {
 			return err
 		}
 
-		if enc&tEexcludeSubNetworkData != tEexcludeSubNetworkData {
+		if encodingFlags&txEncodingExcludeSubNetworkData != txEncodingExcludeSubNetworkData {
 			err = WriteVarInt(w, pver, uint64(len(msg.Payload)))
 			w.Write(msg.Payload)
 		} else {
@@ -701,22 +700,22 @@ func (msg *MsgTx) Serialize(w io.Writer) error {
 	return msg.BtcEncode(w, 0)
 }
 
-func (msg *MsgTx) serialize(w io.Writer, enc txEncoding) error {
+func (msg *MsgTx) serialize(w io.Writer, encodingFlags txEncoding) error {
 	// At the current time, there is no difference between the wire encoding
 	// at protocol version 0 and the stable long-term storage format.  As
 	// a result, make use of BtcEncode.
-	return msg.encode(w, 0, enc)
+	return msg.encode(w, 0, encodingFlags)
 }
 
 // SerializeSize returns the number of bytes it would take to serialize the
 // the transaction.
 func (msg *MsgTx) SerializeSize() int {
-	return msg.serializeSize(tEFull)
+	return msg.serializeSize(txEncodingFull)
 }
 
 // SerializeSize returns the number of bytes it would take to serialize the
 // the transaction.
-func (msg *MsgTx) serializeSize(enc txEncoding) int {
+func (msg *MsgTx) serializeSize(encodingFlags txEncoding) int {
 	// Version 4 bytes + LockTime 8 bytes + Subnetwork ID 20
 	// bytes + Serialized varint size for the number of transaction
 	// inputs and outputs.
@@ -728,7 +727,7 @@ func (msg *MsgTx) serializeSize(enc txEncoding) int {
 		n += 8
 
 		// Serialized varint size for the length of the payload
-		if enc&tEexcludeSubNetworkData != tEexcludeSubNetworkData {
+		if encodingFlags&txEncodingExcludeSubNetworkData != txEncodingExcludeSubNetworkData {
 			n += VarIntSerializeSize(uint64(len(msg.Payload)))
 		} else {
 			n += VarIntSerializeSize(0)
@@ -736,14 +735,14 @@ func (msg *MsgTx) serializeSize(enc txEncoding) int {
 	}
 
 	for _, txIn := range msg.TxIn {
-		n += txIn.serializeSize(enc)
+		n += txIn.serializeSize(encodingFlags)
 	}
 
 	for _, txOut := range msg.TxOut {
 		n += txOut.SerializeSize()
 	}
 
-	if enc&tEexcludeSubNetworkData != tEexcludeSubNetworkData {
+	if encodingFlags&txEncodingExcludeSubNetworkData != txEncodingExcludeSubNetworkData {
 		n += len(msg.Payload)
 	}
 
@@ -894,13 +893,13 @@ func readTxIn(r io.Reader, pver uint32, version int32, ti *TxIn) error {
 
 // writeTxIn encodes ti to the bitcoin protocol encoding for a transaction
 // input (TxIn) to w.
-func writeTxIn(w io.Writer, pver uint32, version int32, ti *TxIn, enc txEncoding) error {
+func writeTxIn(w io.Writer, pver uint32, version int32, ti *TxIn, encodingFlags txEncoding) error {
 	err := writeOutPoint(w, pver, version, &ti.PreviousOutPoint)
 	if err != nil {
 		return err
 	}
 
-	if enc&tEexcludeSignatureScript != tEexcludeSignatureScript {
+	if encodingFlags&txEncodingexcludeSignatureScript != txEncodingexcludeSignatureScript {
 		err = WriteVarBytes(w, pver, ti.SignatureScript)
 	} else {
 		err = WriteVarBytes(w, pver, []byte{})
