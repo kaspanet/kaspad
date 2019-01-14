@@ -93,6 +93,11 @@ func (msg *MsgVersion) BtcDecode(r io.Reader, pver uint32) error {
 		return err
 	}
 
+	err = readElement(buf, &msg.Subnetwork)
+	if err != nil {
+		return err
+	}
+
 	err = readNetAddress(buf, pver, &msg.AddrYou, false)
 	if err != nil {
 		return err
@@ -161,6 +166,11 @@ func (msg *MsgVersion) BtcEncode(w io.Writer, pver uint32) error {
 
 	err = writeElements(w, msg.ProtocolVersion, msg.Services,
 		msg.Timestamp.Unix())
+	if err != nil {
+		return err
+	}
+
+	err = writeElement(w, msg.Subnetwork)
 	if err != nil {
 		return err
 	}

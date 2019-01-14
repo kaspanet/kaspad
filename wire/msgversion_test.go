@@ -266,14 +266,14 @@ func TestVersionWireErrors(t *testing.T) {
 
 	// Make a new buffer big enough to hold the base version plus the new
 	// bytes for the bigger varint to hold the new size of the user agent
-	// and the new user agent string.  Then stich it all together.
+	// and the new user agent string.  Then stitch it all together.
 	newLen := len(baseVersionEncoded) - len(baseVersion.UserAgent)
 	newLen = newLen + len(newUAVarIntBuf.Bytes()) - 1 + len(newUA)
 	exceedUAVerEncoded := make([]byte, newLen)
-	copy(exceedUAVerEncoded, baseVersionEncoded[0:80])
-	copy(exceedUAVerEncoded[80:], newUAVarIntBuf.Bytes())
-	copy(exceedUAVerEncoded[83:], []byte(newUA))
-	copy(exceedUAVerEncoded[83+len(newUA):], baseVersionEncoded[97:100])
+	copy(exceedUAVerEncoded, baseVersionEncoded[0:100])
+	copy(exceedUAVerEncoded[100:], newUAVarIntBuf.Bytes())
+	copy(exceedUAVerEncoded[103:], []byte(newUA))
+	copy(exceedUAVerEncoded[103+len(newUA):], baseVersionEncoded[117:120])
 
 	tests := []struct {
 		in       *MsgVersion // Value to encode
@@ -289,23 +289,25 @@ func TestVersionWireErrors(t *testing.T) {
 		{baseVersion, baseVersionEncoded, pver, 4, io.ErrShortWrite, io.EOF},
 		// Force error in timestamp.
 		{baseVersion, baseVersionEncoded, pver, 12, io.ErrShortWrite, io.EOF},
-		// Force error in remote address.
+		// Force error in subnetwork.
 		{baseVersion, baseVersionEncoded, pver, 20, io.ErrShortWrite, io.EOF},
+		// Force error in remote address.
+		{baseVersion, baseVersionEncoded, pver, 40, io.ErrShortWrite, io.EOF},
 		// Force error in local address.
-		{baseVersion, baseVersionEncoded, pver, 47, io.ErrShortWrite, io.ErrUnexpectedEOF},
+		{baseVersion, baseVersionEncoded, pver, 67, io.ErrShortWrite, io.ErrUnexpectedEOF},
 		// Force error in nonce.
-		{baseVersion, baseVersionEncoded, pver, 73, io.ErrShortWrite, io.ErrUnexpectedEOF},
+		{baseVersion, baseVersionEncoded, pver, 93, io.ErrShortWrite, io.ErrUnexpectedEOF},
 		// Force error in user agent length.
-		{baseVersion, baseVersionEncoded, pver, 81, io.ErrShortWrite, io.EOF},
+		{baseVersion, baseVersionEncoded, pver, 101, io.ErrShortWrite, io.EOF},
 		// Force error in user agent.
-		{baseVersion, baseVersionEncoded, pver, 82, io.ErrShortWrite, io.ErrUnexpectedEOF},
+		{baseVersion, baseVersionEncoded, pver, 102, io.ErrShortWrite, io.ErrUnexpectedEOF},
 		// Force error in last block.
-		{baseVersion, baseVersionEncoded, pver, 98, io.ErrShortWrite, io.ErrUnexpectedEOF},
+		{baseVersion, baseVersionEncoded, pver, 118, io.ErrShortWrite, io.ErrUnexpectedEOF},
 		// Force error in relay tx - no read error should happen since
 		// it's optional.
 		{
 			baseVersionBIP0037, baseVersionBIP0037Encoded,
-			BIP0037Version, 101, io.ErrShortWrite, nil,
+			BIP0037Version, 121, io.ErrShortWrite, nil,
 		},
 		// Force error due to user agent too big
 		{exceedUAVer, exceedUAVerEncoded, pver, newLen, wireErr, wireErr},
@@ -483,6 +485,9 @@ var baseVersionEncoded = []byte{
 	0x62, 0xea, 0x00, 0x00, // Protocol version 60002
 	0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // SFNodeNetwork
 	0x29, 0xab, 0x5f, 0x49, 0x00, 0x00, 0x00, 0x00, // 64-bit Timestamp
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, // Subnetwork SupportsAll
 	// AddrYou -- No timestamp for NetAddress in version message
 	0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // SFNodeNetwork
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -529,6 +534,9 @@ var baseVersionBIP0037Encoded = []byte{
 	0x71, 0x11, 0x01, 0x00, // Protocol version 70001
 	0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // SFNodeNetwork
 	0x29, 0xab, 0x5f, 0x49, 0x00, 0x00, 0x00, 0x00, // 64-bit Timestamp
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, // Subnetwork SupportsAll
 	// AddrYou -- No timestamp for NetAddress in version message
 	0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // SFNodeNetwork
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,

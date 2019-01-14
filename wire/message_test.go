@@ -86,7 +86,7 @@ func TestMessage(t *testing.T) {
 		btcnet BitcoinNet // Network to use for wire encoding
 		bytes  int        // Expected num bytes read/written
 	}{
-		{msgVersion, msgVersion, pver, MainNet, 125},
+		{msgVersion, msgVersion, pver, MainNet, 145},
 		{msgVerack, msgVerack, pver, MainNet, 24},
 		{msgGetAddr, msgGetAddr, pver, MainNet, 24},
 		{msgAddr, msgAddr, pver, MainNet, 25},
