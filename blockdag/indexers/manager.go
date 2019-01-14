@@ -5,15 +5,9 @@
 package indexers
 
 import (
-	"fmt"
-
-	"bytes"
-
 	"github.com/daglabs/btcd/blockdag"
-	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/database"
 	"github.com/daglabs/btcd/util"
-	"github.com/daglabs/btcd/wire"
 )
 
 var (
@@ -167,44 +161,6 @@ func (m *Manager) Init(db database.DB, blockDAG *blockdag.BlockDAG, interrupt <-
 	}
 
 	return nil
-}
-
-// indexNeedsInputs returns whether or not the index needs access to the txouts
-// referenced by the transaction inputs being indexed.
-func indexNeedsInputs(index Indexer) bool {
-	if idx, ok := index.(NeedsInputser); ok {
-		return idx.NeedsInputs()
-	}
-
-	return false
-}
-
-// dbFetchTx looks up the passed transaction hash in the transaction index and
-// loads it from the database.
-func dbFetchTx(dbTx database.Tx, hash *daghash.Hash) (*wire.MsgTx, error) {
-	// Look up the location of the transaction.
-	blockRegion, err := dbFetchFirstTxRegion(dbTx, hash)
-	if err != nil {
-		return nil, err
-	}
-	if blockRegion == nil {
-		return nil, fmt.Errorf("transaction %v not found", hash)
-	}
-
-	// Load the raw transaction bytes from the database.
-	txBytes, err := dbTx.FetchBlockRegion(blockRegion)
-	if err != nil {
-		return nil, err
-	}
-
-	// Deserialize the transaction.
-	var msgTx wire.MsgTx
-	err = msgTx.Deserialize(bytes.NewReader(txBytes))
-	if err != nil {
-		return nil, err
-	}
-
-	return &msgTx, nil
 }
 
 // ConnectBlock must be invoked when a block is extending the main chain.  It
