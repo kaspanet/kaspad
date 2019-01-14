@@ -770,6 +770,11 @@ func TestIntervalBlockHashes(t *testing.T) {
 // The non-error-cases are tested in the more general tests.
 func TestPastUTXOErrors(t *testing.T) {
 	targetErrorMessage := "dbFetchBlockByNode error"
+	defer func() {
+		if recover() == nil {
+			t.Errorf("Past UTXO error is not catched")
+		}
+	}()
 	testErrorThroughPatching(
 		t,
 		targetErrorMessage,

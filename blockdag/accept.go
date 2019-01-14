@@ -61,6 +61,14 @@ func (dag *BlockDAG) maybeAcceptBlock(block *util.Block, flags BehaviorFlags) er
 	blockHeader := &block.MsgBlock().Header
 	newNode := newBlockNode(blockHeader, parents, dag.dagParams.K)
 	newNode.status = statusDataStored
+	defer func() {
+		if err != nil {
+			// remove new node from parents
+			for _, p := range newNode.parents {
+				delete(p.children, newNode.hash)
+			}
+		}
+	}()
 
 	dag.index.AddNode(newNode)
 	err = dag.index.flushToDB()

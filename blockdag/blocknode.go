@@ -135,6 +135,11 @@ func initBlockNode(node *blockNode, blockHeader *wire.BlockHeader, parents block
 		node.nonce = blockHeader.Nonce
 		node.timestamp = blockHeader.Timestamp.Unix()
 		node.merkleRoot = blockHeader.MerkleRoot
+
+		// update parents to point on new node
+		for _, p := range parents {
+			p.children[node.hash] = node
+		}
 	}
 
 	if len(parents) > 0 {

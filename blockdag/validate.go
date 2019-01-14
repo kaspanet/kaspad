@@ -802,11 +802,12 @@ func (dag *BlockDAG) checkBlockContext(block *util.Block, parents blockSet, blue
 // http://r6.ca/blog/20120206T005236Z.html.
 //
 // This function MUST be called with the chain state lock held (for reads).
-func ensureNoDuplicateTx(block *provisionalNode, utxoSet UTXOSet) error {
+func ensureNoDuplicateTx(block *blockNode, utxoSet UTXOSet,
+	transactions []*util.Tx) error {
 	// Fetch utxos for all of the transaction ouputs in this block.
 	// Typically, there will not be any utxos for any of the outputs.
 	fetchSet := make(map[wire.OutPoint]struct{})
-	for _, tx := range block.transactions {
+	for _, tx := range transactions {
 		prevOut := wire.OutPoint{Hash: *tx.Hash()}
 		for txOutIdx := range tx.MsgTx().TxOut {
 			prevOut.Index = uint32(txOutIdx)
@@ -939,9 +940,10 @@ func CheckTransactionInputs(tx *util.Tx, txHeight int32, utxoSet UTXOSet, dagPar
 // block subsidy, or fail transaction script validation.
 //
 // This function MUST be called with the dag state lock held (for writes).
-func (dag *BlockDAG) checkConnectToPastUTXO(block *provisionalNode, pastUTXO UTXOSet) error {
+func (dag *BlockDAG) checkConnectToPastUTXO(block *blockNode, pastUTXO UTXOSet,
+	transactions []*util.Tx) error {
 
-	err := ensureNoDuplicateTx(block, pastUTXO)
+	err := ensureNoDuplicateTx(block, pastUTXO, transactions)
 	if err != nil {
 		return err
 	}
@@ -953,7 +955,7 @@ func (dag *BlockDAG) checkConnectToPastUTXO(block *provisionalNode, pastUTXO UTX
 	// signature operations in each of the input transaction public key
 	// scripts.
 	totalSigOps := 0
-	for i, tx := range block.transactions {
+	for i, tx := range transactions {
 		numsigOps := CountSigOps(tx)
 		// Since the first (and only the first) transaction has
 		// already been verified to be a coinbase transaction,
@@ -987,8 +989,8 @@ func (dag *BlockDAG) checkConnectToPastUTXO(block *provisionalNode, pastUTXO UTX
 	// against all the inputs when the signature operations are out of
 	// bounds.
 	var totalFees uint64
-	for _, tx := range block.transactions {
-		txFee, err := CheckTransactionInputs(tx, block.original.height, pastUTXO,
+	for _, tx := range transactions {
+		txFee, err := CheckTransactionInputs(tx, block.height, pastUTXO,
 			dag.dagParams)
 		if err != nil {
 			return err
@@ -1010,10 +1012,10 @@ func (dag *BlockDAG) checkConnectToPastUTXO(block *provisionalNode, pastUTXO UTX
 	// errors here because those error conditions would have already been
 	// caught by checkTransactionSanity.
 	var totalSatoshiOut uint64
-	for _, txOut := range block.transactions[0].MsgTx().TxOut {
+	for _, txOut := range transactions[0].MsgTx().TxOut {
 		totalSatoshiOut += txOut.Value
 	}
-	expectedSatoshiOut := CalcBlockSubsidy(block.original.height, dag.dagParams) +
+	expectedSatoshiOut := CalcBlockSubsidy(block.height, dag.dagParams) +
 		totalFees
 	if totalSatoshiOut > expectedSatoshiOut {
 		str := fmt.Sprintf("coinbase transaction for block pays %v "+
@@ -1030,7 +1032,7 @@ func (dag *BlockDAG) checkConnectToPastUTXO(block *provisionalNode, pastUTXO UTX
 	// portion of block handling.
 	checkpoint := dag.LatestCheckpoint()
 	runScripts := true
-	if checkpoint != nil && block.original.height <= checkpoint.Height {
+	if checkpoint != nil && block.height <= checkpoint.Height {
 		runScripts = false
 	}
 
@@ -1038,20 +1040,20 @@ func (dag *BlockDAG) checkConnectToPastUTXO(block *provisionalNode, pastUTXO UTX
 
 	// We obtain the MTP of the *previous* block in order to
 	// determine if transactions in the current block are final.
-	medianTime := block.original.selectedParent.CalcPastMedianTime()
+	medianTime := block.selectedParent.CalcPastMedianTime()
 
 	// We also enforce the relative sequence number based
 	// lock-times within the inputs of all transactions in this
 	// candidate block.
-	for _, tx := range block.transactions {
+	for _, tx := range transactions {
 		// A transaction can only be included within a block
 		// once the sequence locks of *all* its inputs are
 		// active.
-		sequenceLock, err := dag.calcSequenceLock(block.original, pastUTXO, tx, false)
+		sequenceLock, err := dag.calcSequenceLock(block, pastUTXO, tx, false)
 		if err != nil {
 			return err
 		}
-		if !SequenceLockActive(sequenceLock, block.original.height,
+		if !SequenceLockActive(sequenceLock, block.height,
 			medianTime) {
 			str := fmt.Sprintf("block contains " +
 				"transaction whose input sequence " +
@@ -1065,7 +1067,7 @@ func (dag *BlockDAG) checkConnectToPastUTXO(block *provisionalNode, pastUTXO UTX
 	// expensive ECDSA signature check scripts.  Doing this last helps
 	// prevent CPU exhaustion attacks.
 	if runScripts {
-		err := checkBlockScripts(block, pastUTXO, scriptFlags, dag.sigCache)
+		err := checkBlockScripts(block, pastUTXO, scriptFlags, dag.sigCache, transactions)
 		if err != nil {
 			return err
 		}
@@ -1122,9 +1124,6 @@ func (dag *BlockDAG) CheckConnectBlockTemplate(block *util.Block) error {
 		return err
 	}
 
-	newProvisionalNode := &provisionalNode{
-		original:     newBlockNode(&header, dag.virtual.tips(), dag.dagParams.K),
-		transactions: block.Transactions(),
-	}
-	return dag.checkConnectToPastUTXO(newProvisionalNode, dag.UTXOSet())
+	return dag.checkConnectToPastUTXO(newBlockNode(&header, dag.virtual.tips(), dag.dagParams.K),
+		dag.UTXOSet(), block.Transactions())
 }

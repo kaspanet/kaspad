@@ -717,6 +717,15 @@ func (dag *BlockDAG) createDAGState() error {
 	header := &genesisBlock.MsgBlock().Header
 	node := newBlockNode(header, newSet(), dag.dagParams.K)
 	node.status = statusDataStored | statusValid
+	var err error
+	defer func() {
+		if err != nil {
+			// remove new node from parents
+			for _, p := range node.parents {
+				delete(p.children, node.hash)
+			}
+		}
+	}()
 
 	genesisCoinbase := genesisBlock.Transactions()[0].MsgTx()
 	genesisCoinbaseTxIn := genesisCoinbase.TxIn[0]
@@ -739,7 +748,7 @@ func (dag *BlockDAG) createDAGState() error {
 
 	// Create the initial the database chain state including creating the
 	// necessary index buckets and inserting the genesis block.
-	err := dag.db.Update(func(dbTx database.Tx) error {
+	err = dag.db.Update(func(dbTx database.Tx) error {
 		meta := dbTx.Metadata()
 
 		// Create the bucket that houses the block index data.
