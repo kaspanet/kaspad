@@ -821,6 +821,7 @@ func (dag *BlockDAG) createDAGState() error {
 		// Store the genesis block into the database.
 		return dbStoreBlock(dbTx, genesisBlock)
 	})
+
 	return err
 }
 
