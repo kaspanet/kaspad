@@ -226,7 +226,7 @@ func TestPeerConnection(t *testing.T) {
 		UserAgentName:     "peer",
 		UserAgentVersion:  "1.0",
 		UserAgentComments: []string{"comment"},
-		ChainParams:       &dagconfig.MainNetParams,
+		DAGParams:         &dagconfig.MainNetParams,
 		ProtocolVersion:   wire.RejectVersion, // Configure with older version
 		Services:          0,
 		Subnetwork:        &wire.SubnetworkSupportsAll,
@@ -236,7 +236,7 @@ func TestPeerConnection(t *testing.T) {
 		UserAgentName:     "peer",
 		UserAgentVersion:  "1.0",
 		UserAgentComments: []string{"comment"},
-		ChainParams:       &dagconfig.MainNetParams,
+		DAGParams:         &dagconfig.MainNetParams,
 		Services:          wire.SFNodeNetwork,
 		Subnetwork:        &wire.SubnetworkSupportsAll,
 	}
@@ -438,7 +438,7 @@ func TestPeerListeners(t *testing.T) {
 		UserAgentName:     "peer",
 		UserAgentVersion:  "1.0",
 		UserAgentComments: []string{"comment"},
-		ChainParams:       &dagconfig.MainNetParams,
+		DAGParams:         &dagconfig.MainNetParams,
 		Services:          wire.SFNodeBloom,
 		Subnetwork:        &wire.SubnetworkSupportsAll,
 	}
@@ -609,7 +609,7 @@ func TestOutboundPeer(t *testing.T) {
 		UserAgentName:     "peer",
 		UserAgentVersion:  "1.0",
 		UserAgentComments: []string{"comment"},
-		ChainParams:       &dagconfig.MainNetParams,
+		DAGParams:         &dagconfig.MainNetParams,
 		Services:          0,
 		Subnetwork:        &wire.SubnetworkSupportsAll,
 	}
@@ -699,7 +699,7 @@ func TestOutboundPeer(t *testing.T) {
 	p1.Disconnect()
 
 	// Test regression
-	peerCfg.ChainParams = &dagconfig.RegressionNetParams
+	peerCfg.DAGParams = &dagconfig.RegressionNetParams
 	peerCfg.Services = wire.SFNodeBloom
 	r2, w2 := io.Pipe()
 	c2 := &conn{raddr: "10.0.0.1:8333", Writer: w2, Reader: r2}
@@ -750,7 +750,7 @@ func TestUnsupportedVersionPeer(t *testing.T) {
 		UserAgentName:     "peer",
 		UserAgentVersion:  "1.0",
 		UserAgentComments: []string{"comment"},
-		ChainParams:       &dagconfig.MainNetParams,
+		DAGParams:         &dagconfig.MainNetParams,
 		Services:          0,
 		Subnetwork:        &wire.SubnetworkSupportsAll,
 	}
@@ -783,7 +783,7 @@ func TestUnsupportedVersionPeer(t *testing.T) {
 			_, msg, _, err := wire.ReadMessageN(
 				remoteConn,
 				p.ProtocolVersion(),
-				peerCfg.ChainParams.Net,
+				peerCfg.DAGParams.Net,
 			)
 			if err == io.EOF {
 				close(outboundMessages)
@@ -816,7 +816,7 @@ func TestUnsupportedVersionPeer(t *testing.T) {
 		remoteConn.Writer,
 		invalidVersionMsg,
 		uint32(invalidVersionMsg.ProtocolVersion),
-		peerCfg.ChainParams.Net,
+		peerCfg.DAGParams.Net,
 	)
 	if err != nil {
 		t.Fatalf("wire.WriteMessageN: unexpected err - %v\n", err)

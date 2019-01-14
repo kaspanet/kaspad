@@ -49,9 +49,9 @@ var (
 
 // Config is a descriptor containing the cpu miner configuration.
 type Config struct {
-	// ChainParams identifies which chain parameters the cpu miner is
+	// DAGParams identifies which chain parameters the cpu miner is
 	// associated with.
-	ChainParams *dagconfig.Params
+	DAGParams *dagconfig.Params
 
 	// BlockTemplateGenerator identifies the instance to use in order to
 	// generate block templates that the miner will attempt to solve.
