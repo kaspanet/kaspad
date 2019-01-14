@@ -643,6 +643,11 @@ func (dag *BlockDAG) applyUTXOChanges(node *blockNode, block *util.Block, fastAd
 		return nil, nil, errors.New(newErrString)
 	}
 
+	// since verifyAndBuildUTXO ran, we know for sure that block is valid -
+	// therefore, if an error occured - this means there's some problem in the
+	// internal structure of block nodes, and it's irrecoverable - therefore
+	// panic"
+
 	err = node.updateParents(virtualClone, newBlockUTXO)
 	if err != nil {
 		panic(fmt.Errorf("failed updating parents of %v: %s", node, err))
@@ -670,7 +675,9 @@ func (dag *BlockDAG) applyUTXOChanges(node *blockNode, block *util.Block, fastAd
 
 	// Set the status to valid for all index nodes to make sure the changes get
 	// written to the database.
-	dag.index.SetStatusFlags(node, statusValid)
+	for _, p := range node.parents {
+		dag.index.SetStatusFlags(p, statusValid)
+	}
 
 	// It is now safe to apply the new virtual block
 	dag.virtual = virtualClone
@@ -684,7 +691,7 @@ func (dag *BlockDAG) updateVirtualUTXO(newVirtualUTXODiffSet *DiffUTXOSet) {
 	newVirtualUTXODiffSet.meldToBase()
 }
 
-// verifyAndBuildUTXO verifies all transactions in the given block (in provisionalNode format) and builds its UTXO
+// verifyAndBuildUTXO verifies all transactions in the given block and builds its UTXO
 func (node *blockNode) verifyAndBuildUTXO(virtual *virtualBlock, dag *BlockDAG,
 	transactions []*util.Tx, fastAdd bool) (utxoSet UTXOSet, acceptedTxData []*TxWithBlockHash, err error) {
 	pastUTXO, pastUTXOaccpetedTxData, err := node.pastUTXO(virtual, dag.db)
@@ -733,7 +740,7 @@ type TxWithBlockHash struct {
 	InBlock *daghash.Hash
 }
 
-// pastUTXO returns the UTXO of a given block's (in provisionalNode format) past
+// pastUTXO returns the UTXO of a given block's past
 func (node *blockNode) pastUTXO(virtual *virtualBlock, db database.DB) (pastUTXO UTXOSet, acceptedTxData []*TxWithBlockHash, err error) {
 	pastUTXO, err = node.selectedParent.restoreUTXO(virtual)
 	if err != nil {
@@ -790,7 +797,7 @@ func (node *blockNode) pastUTXO(virtual *virtualBlock, db database.DB) (pastUTXO
 	return pastUTXO, acceptedTxData, nil
 }
 
-// restoreUTXO restores the UTXO of a given block (in provisionalNode format) from its diff
+// restoreUTXO restores the UTXO of a given block from its diff
 func (node *blockNode) restoreUTXO(virtual *virtualBlock) (UTXOSet, error) {
 	stack := []*blockNode{node}
 	current := node
@@ -813,7 +820,7 @@ func (node *blockNode) restoreUTXO(virtual *virtualBlock) (UTXOSet, error) {
 	return utxo, nil
 }
 
-// updateParents adds this block (in provisionalNode format) to the children sets of its parents
+// updateParents adds this block to the children sets of its parents
 // and updates the diff of any parent whose DiffChild is this block
 func (node *blockNode) updateParents(virtual *virtualBlock, newBlockUTXO UTXOSet) error {
 	virtualDiffFromNewBlock, err := virtual.utxoSet.diffFrom(newBlockUTXO)
@@ -840,7 +847,7 @@ func (node *blockNode) updateParents(virtual *virtualBlock, newBlockUTXO UTXOSet
 	return nil
 }
 
-// updateTipsUTXO builds and applies new diff UTXOs for all the DAG's tips (in provisionalNode format)
+// updateTipsUTXO builds and applies new diff UTXOs for all the DAG's tips
 func updateTipsUTXO(tips blockSet, virtual *virtualBlock, virtualUTXO UTXOSet) error {
 	for _, tip := range tips {
 		tipUTXO, err := tip.restoreUTXO(virtual)

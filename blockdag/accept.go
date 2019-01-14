@@ -66,7 +66,7 @@ func (dag *BlockDAG) maybeAcceptBlock(block *util.Block, flags BehaviorFlags) er
 	isOk := false
 	defer func() {
 		if !isOk {
-			newNode.restoreParents()
+			newNode.detachFromParents()
 		}
 	}()
 

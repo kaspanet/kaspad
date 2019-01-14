@@ -772,7 +772,7 @@ func TestPastUTXOErrors(t *testing.T) {
 	targetErrorMessage := "dbFetchBlockByNode error"
 	defer func() {
 		if recover() == nil {
-			t.Errorf("Past UTXO error is not catched")
+			t.Errorf("Got no panic on past UTXO error, while expected panic")
 		}
 	}()
 	testErrorThroughPatching(

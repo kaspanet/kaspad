@@ -717,14 +717,6 @@ func (dag *BlockDAG) createDAGState() error {
 	header := &genesisBlock.MsgBlock().Header
 	node := newBlockNode(header, newSet(), dag.dagParams.K)
 	node.status = statusDataStored | statusValid
-	// newBlockNode adds node into children maps of its parents. So it must be
-	// removed in case of error.
-	isOk := false
-	defer func() {
-		if !isOk {
-			node.restoreParents()
-		}
-	}()
 
 	genesisCoinbase := genesisBlock.Transactions()[0].MsgTx()
 	genesisCoinbaseTxIn := genesisCoinbase.TxIn[0]
@@ -829,8 +821,6 @@ func (dag *BlockDAG) createDAGState() error {
 		// Store the genesis block into the database.
 		return dbStoreBlock(dbTx, genesisBlock)
 	})
-
-	isOk = true
 
 	return err
 }

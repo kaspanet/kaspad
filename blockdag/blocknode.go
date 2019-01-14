@@ -172,7 +172,7 @@ func newBlockNode(blockHeader *wire.BlockHeader, parents blockSet, phantomK uint
 
 // newBlockNode adds node into children maps of its parents. So it must be
 // removed in case of error.
-func (node *blockNode) restoreParents() {
+func (node *blockNode) detachFromParents() {
 	// remove node from parents
 	for _, p := range node.parents {
 		delete(p.children, node.hash)
