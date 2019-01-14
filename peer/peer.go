@@ -272,7 +272,7 @@ type Config struct {
 	Listeners MessageListeners
 
 	// blah blah blah
-	Subnetwork *subnetworkid.SubNetworkID
+	Subnetwork *subnetworkid.SubnetworkID
 }
 
 // minUint32 is a helper function to return the minimum of two uint32s.
