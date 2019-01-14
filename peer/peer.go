@@ -271,7 +271,7 @@ type Config struct {
 	// messages.
 	Listeners MessageListeners
 
-	// blah blah blah
+	// Subnetwork specifies which subnetwork the peer is associated with.
 	Subnetwork *subnetworkid.SubnetworkID
 }
 
