@@ -678,6 +678,7 @@ func (dag *BlockDAG) applyUTXOChanges(node *blockNode, block *util.Block, fastAd
 	for _, p := range node.parents {
 		dag.index.SetStatusFlags(p, statusValid)
 	}
+	dag.index.SetStatusFlags(node, statusValid)
 
 	// It is now safe to apply the new virtual block
 	dag.virtual = virtualClone
