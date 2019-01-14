@@ -229,6 +229,7 @@ func TestPeerConnection(t *testing.T) {
 		ChainParams:       &dagconfig.MainNetParams,
 		ProtocolVersion:   wire.RejectVersion, // Configure with older version
 		Services:          0,
+		Subnetwork:        &wire.SubNetworkSupportsAll,
 	}
 	peer2Cfg := &peer.Config{
 		Listeners:         peer1Cfg.Listeners,
@@ -237,6 +238,7 @@ func TestPeerConnection(t *testing.T) {
 		UserAgentComments: []string{"comment"},
 		ChainParams:       &dagconfig.MainNetParams,
 		Services:          wire.SFNodeNetwork,
+		Subnetwork:        &wire.SubNetworkSupportsAll,
 	}
 
 	wantStats1 := peerStats{
@@ -438,6 +440,7 @@ func TestPeerListeners(t *testing.T) {
 		UserAgentComments: []string{"comment"},
 		ChainParams:       &dagconfig.MainNetParams,
 		Services:          wire.SFNodeBloom,
+		Subnetwork:        &wire.SubNetworkSupportsAll,
 	}
 	inConn, outConn := pipe(
 		&conn{raddr: "10.0.0.1:8333"},
@@ -608,6 +611,7 @@ func TestOutboundPeer(t *testing.T) {
 		UserAgentComments: []string{"comment"},
 		ChainParams:       &dagconfig.MainNetParams,
 		Services:          0,
+		Subnetwork:        &wire.SubNetworkSupportsAll,
 	}
 
 	r, w := io.Pipe()
@@ -748,6 +752,7 @@ func TestUnsupportedVersionPeer(t *testing.T) {
 		UserAgentComments: []string{"comment"},
 		ChainParams:       &dagconfig.MainNetParams,
 		Services:          0,
+		Subnetwork:        &wire.SubNetworkSupportsAll,
 	}
 
 	localNA := wire.NewNetAddressIPPort(
@@ -804,7 +809,7 @@ func TestUnsupportedVersionPeer(t *testing.T) {
 	}
 
 	// Remote peer writes version message advertising invalid protocol version 1
-	invalidVersionMsg := wire.NewMsgVersion(remoteNA, localNA, 0, 0)
+	invalidVersionMsg := wire.NewMsgVersion(remoteNA, localNA, 0, 0, &wire.SubNetworkSupportsAll)
 	invalidVersionMsg.ProtocolVersion = 1
 
 	_, err = wire.WriteMessageN(

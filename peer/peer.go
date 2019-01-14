@@ -9,6 +9,7 @@ import (
 	"container/list"
 	"errors"
 	"fmt"
+	"github.com/daglabs/btcd/util/subnetworkid"
 	"io"
 	"math/rand"
 	"net"
@@ -269,6 +270,9 @@ type Config struct {
 	// Listeners houses callback functions to be invoked on receiving peer
 	// messages.
 	Listeners MessageListeners
+
+	// blah blah blah
+	Subnetwork *subnetworkid.SubNetworkID
 }
 
 // minUint32 is a helper function to return the minimum of two uint32s.
@@ -819,8 +823,10 @@ func (p *Peer) localVersionMsg() (*wire.MsgVersion, error) {
 	nonce := uint64(rand.Int63())
 	sentNonces.Add(nonce)
 
+	subnetworkID := p.cfg.Subnetwork
+
 	// Version message.
-	msg := wire.NewMsgVersion(ourNA, theirNA, nonce, blockNum)
+	msg := wire.NewMsgVersion(ourNA, theirNA, nonce, blockNum, subnetworkID)
 	msg.AddUserAgent(p.cfg.UserAgentName, p.cfg.UserAgentVersion,
 		p.cfg.UserAgentComments...)
 

@@ -7,6 +7,7 @@ package wire
 import (
 	"bytes"
 	"fmt"
+	"github.com/daglabs/btcd/util/subnetworkid"
 	"io"
 	"strings"
 	"time"
@@ -55,6 +56,9 @@ type MsgVersion struct {
 
 	// Don't announce transactions to peer.
 	DisableRelayTx bool
+
+	// The subnetwork of the generator of the version message.
+	Subnetwork subnetworkid.SubNetworkID
 }
 
 // HasService returns whether the specified service is supported by the peer
@@ -221,7 +225,7 @@ func (msg *MsgVersion) MaxPayloadLength(pver uint32) uint32 {
 // Message interface using the passed parameters and defaults for the remaining
 // fields.
 func NewMsgVersion(me *NetAddress, you *NetAddress, nonce uint64,
-	lastBlock int32) *MsgVersion {
+	lastBlock int32, subnetworkID *subnetworkid.SubNetworkID) *MsgVersion {
 
 	// Limit the timestamp to one second precision since the protocol
 	// doesn't support better.
@@ -235,6 +239,7 @@ func NewMsgVersion(me *NetAddress, you *NetAddress, nonce uint64,
 		UserAgent:       DefaultUserAgent,
 		LastBlock:       lastBlock,
 		DisableRelayTx:  false,
+		Subnetwork:      *subnetworkID,
 	}
 }
 
