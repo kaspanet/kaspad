@@ -646,7 +646,7 @@ func (dag *BlockDAG) applyUTXOChanges(node *blockNode, block *util.Block, fastAd
 	// since verifyAndBuildUTXO ran, we know for sure that block is valid -
 	// therefore, if an error occured - this means there's some problem in the
 	// internal structure of block nodes, and it's irrecoverable - therefore
-	// panic"
+	// panic
 
 	err = node.updateParents(virtualClone, newBlockUTXO)
 	if err != nil {

@@ -67,7 +67,7 @@ func isNullOutpoint(outpoint *wire.OutPoint) bool {
 
 // IsCoinBaseTx determines whether or not a transaction is a coinbase.  A coinbase
 // is a special transaction created by miners that has no inputs.  This is
-// represented in the block chain by a transaction with a single input that has
+// represented in the block dag by a transaction with a single input that has
 // a previous output transaction index set to the maximum value along with a
 // zero hash.
 //
@@ -91,7 +91,7 @@ func IsCoinBaseTx(msgTx *wire.MsgTx) bool {
 
 // IsCoinBase determines whether or not a transaction is a coinbase.  A coinbase
 // is a special transaction created by miners that has no inputs.  This is
-// represented in the block chain by a transaction with a single input that has
+// represented in the block dag by a transaction with a single input that has
 // a previous output transaction index set to the maximum value along with a
 // zero hash.
 //
@@ -642,13 +642,13 @@ func checkSerializedHeight(coinbaseTx *util.Tx, wantHeight int32) error {
 }
 
 // checkBlockHeaderContext performs several validation checks on the block header
-// which depend on its position within the block chain.
+// which depend on its position within the block dag.
 //
 // The flags modify the behavior of this function as follows:
 //  - BFFastAdd: All checks except those involving comparing the header against
 //    the checkpoints are not performed.
 //
-// This function MUST be called with the chain state lock held (for writes).
+// This function MUST be called with the dag state lock held (for writes).
 func (dag *BlockDAG) checkBlockHeaderContext(header *wire.BlockHeader, bluestParent *blockNode, blockHeight int32, flags BehaviorFlags) error {
 	fastAdd := flags&BFFastAdd == BFFastAdd
 	if !fastAdd {
@@ -677,7 +677,7 @@ func (dag *BlockDAG) checkBlockHeaderContext(header *wire.BlockHeader, bluestPar
 		}
 	}
 
-	// Ensure chain matches up to predetermined checkpoints.
+	// Ensure dag matches up to predetermined checkpoints.
 	blockHash := header.BlockHash()
 	if !dag.verifyCheckpoint(blockHeight, &blockHash) {
 		str := fmt.Sprintf("block at height %d does not match "+
@@ -686,7 +686,7 @@ func (dag *BlockDAG) checkBlockHeaderContext(header *wire.BlockHeader, bluestPar
 	}
 
 	// Find the previous checkpoint and prevent blocks which fork the main
-	// chain before it.  This prevents storage of new, otherwise valid,
+	// dag before it.  This prevents storage of new, otherwise valid,
 	// blocks which build off of old blocks that are likely at a much easier
 	// difficulty and therefore could be used to waste cache and disk space.
 	checkpointNode, err := dag.findPreviousCheckpoint()
@@ -694,7 +694,7 @@ func (dag *BlockDAG) checkBlockHeaderContext(header *wire.BlockHeader, bluestPar
 		return err
 	}
 	if checkpointNode != nil && blockHeight < checkpointNode.height {
-		str := fmt.Sprintf("block at height %d forks the main chain "+
+		str := fmt.Sprintf("block at height %d forks the main dag "+
 			"before the previous checkpoint at height %d",
 			blockHeight, checkpointNode.height)
 		return ruleError(ErrForkTooOld, str)
@@ -740,7 +740,7 @@ func validateParents(blockHeader *wire.BlockHeader, parents blockSet) error {
 }
 
 // checkBlockContext peforms several validation checks on the block which depend
-// on its position within the block chain.
+// on its position within the block dag.
 //
 // The flags modify the behavior of this function as follows:
 //  - BFFastAdd: The transaction are not checked to see if they are finalized
@@ -749,7 +749,7 @@ func validateParents(blockHeader *wire.BlockHeader, parents blockSet) error {
 // The flags are also passed to checkBlockHeaderContext.  See its documentation
 // for how the flags modify its behavior.
 //
-// This function MUST be called with the chain state lock held (for writes).
+// This function MUST be called with the dag state lock held (for writes).
 func (dag *BlockDAG) checkBlockContext(block *util.Block, parents blockSet, bluestParent *blockNode, flags BehaviorFlags) error {
 	err := validateParents(&block.MsgBlock().Header, parents)
 	if err != nil {
@@ -801,7 +801,7 @@ func (dag *BlockDAG) checkBlockContext(block *util.Block, parents blockSet, blue
 // https://github.com/bitcoin/bips/blob/master/bip-0030.mediawiki and
 // http://r6.ca/blog/20120206T005236Z.html.
 //
-// This function MUST be called with the chain state lock held (for reads).
+// This function MUST be called with the dag state lock held (for reads).
 func ensureNoDuplicateTx(block *blockNode, utxoSet UTXOSet,
 	transactions []*util.Tx) error {
 	// Fetch utxos for all of the transaction ouputs in this block.
@@ -1087,8 +1087,8 @@ func countSpentOutputs(block *util.Block) int {
 }
 
 // CheckConnectBlockTemplate fully validates that connecting the passed block to
-// the main chain does not violate any consensus rules, aside from the proof of
-// work requirement. The block must connect to the current tip of the main chain.
+// the main dag does not violate any consensus rules, aside from the proof of
+// work requirement. The block must connect to the current tip of the main dag.
 //
 // This function is safe for concurrent access.
 func (dag *BlockDAG) CheckConnectBlockTemplate(block *util.Block) error {
@@ -1099,7 +1099,7 @@ func (dag *BlockDAG) CheckConnectBlockTemplate(block *util.Block) error {
 	flags := BFNoPoWCheck
 
 	// This only checks whether the block can be connected to the tip of the
-	// current chain.
+	// current dag.
 	tips := dag.virtual.tips()
 	header := block.MsgBlock().Header
 	parentHashes := header.ParentHashes
