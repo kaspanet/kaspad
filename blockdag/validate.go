@@ -262,27 +262,27 @@ func CheckTransactionSanity(tx *util.Tx) error {
 		}
 	}
 
-	// Transactions in native and SubNetworkRegistry SubNetworks must have Gas = 0
-	if (msgTx.SubNetworkID == wire.SubNetworkDAGCoin ||
-		msgTx.SubNetworkID == wire.SubNetworkRegistry) &&
+	// Transactions in native and SubnetworkRegistry Subnetworks must have Gas = 0
+	if (msgTx.SubnetworkID == wire.SubnetworkDAGCoin ||
+		msgTx.SubnetworkID == wire.SubnetworkRegistry) &&
 		msgTx.Gas > 0 {
 
 		return ruleError(ErrInvalidGas, "transaction in the native or "+
-			"registry sub-networks has gas > 0 ")
+			"registry subnetworks has gas > 0 ")
 	}
 
-	if msgTx.SubNetworkID == wire.SubNetworkDAGCoin &&
+	if msgTx.SubnetworkID == wire.SubnetworkDAGCoin &&
 		len(msgTx.Payload) > 0 {
 
 		return ruleError(ErrInvalidPayload,
-			"transaction in the native sub-network includes a payload")
+			"transaction in the native subnetwork includes a payload")
 	}
 
-	if msgTx.SubNetworkID == wire.SubNetworkRegistry &&
+	if msgTx.SubnetworkID == wire.SubnetworkRegistry &&
 		len(msgTx.Payload) != 8 {
 
 		return ruleError(ErrInvalidPayload,
-			"transaction in the sub-network registry include a payload "+
+			"transaction in the subnetwork registry include a payload "+
 				"with length != 8 bytes")
 	}
 
@@ -516,7 +516,7 @@ func checkBlockSanity(block *util.Block, powLimit *big.Int, timeSource MedianTim
 				"index %d", i+1)
 			return ruleError(ErrMultipleCoinbases, str)
 		}
-		if subnetworkid.Less(&tx.MsgTx().SubNetworkID, &transactions[i].MsgTx().SubNetworkID) {
+		if subnetworkid.Less(&tx.MsgTx().SubnetworkID, &transactions[i].MsgTx().SubnetworkID) {
 			return ruleError(ErrTransactionsNotSorted, "transactions must be sorted by subnetwork")
 		}
 	}

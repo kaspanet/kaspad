@@ -96,9 +96,9 @@ type BlockDAG struct {
 	// virtual tracks the current tips.
 	virtual *virtualBlock
 
-	// lastSubNetworkID holds the last registered sub-network ID in the DAG.
-	// Note that it is NOT the total amount of registered (or active) sub-networks.
-	lastSubNetworkID uint64
+	// lastSubnetworkID holds the last registered subnetwork ID in the DAG.
+	// Note that it is NOT the total amount of registered (or active) subnetworks.
+	lastSubnetworkID uint64
 
 	// These fields are related to handling of orphan blocks.  They are
 	// protected by a combination of the chain lock and the orphan lock.
@@ -567,10 +567,10 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block, fastAdd bo
 			return err
 		}
 
-		// Scan all accepted transactions and register any sub-network registry
-		// transaction. If any sub-network registry transaction is not well-formed,
+		// Scan all accepted transactions and register any subnetwork registry
+		// transaction. If any subnetwork registry transaction is not well-formed,
 		// fail the entire block.
-		err = registerSubNetworks(dbTx, acceptedTxsData)
+		err = registerSubnetworks(dbTx, acceptedTxsData)
 		if err != nil {
 			return err
 		}
