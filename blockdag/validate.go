@@ -67,7 +67,7 @@ func isNullOutpoint(outpoint *wire.OutPoint) bool {
 
 // IsCoinBaseTx determines whether or not a transaction is a coinbase.  A coinbase
 // is a special transaction created by miners that has no inputs.  This is
-// represented in the block chain by a transaction with a single input that has
+// represented in the block dag by a transaction with a single input that has
 // a previous output transaction index set to the maximum value along with a
 // zero hash.
 //
@@ -91,7 +91,7 @@ func IsCoinBaseTx(msgTx *wire.MsgTx) bool {
 
 // IsCoinBase determines whether or not a transaction is a coinbase.  A coinbase
 // is a special transaction created by miners that has no inputs.  This is
-// represented in the block chain by a transaction with a single input that has
+// represented in the block dag by a transaction with a single input that has
 // a previous output transaction index set to the maximum value along with a
 // zero hash.
 //
@@ -642,13 +642,13 @@ func checkSerializedHeight(coinbaseTx *util.Tx, wantHeight int32) error {
 }
 
 // checkBlockHeaderContext performs several validation checks on the block header
-// which depend on its position within the block chain.
+// which depend on its position within the block dag.
 //
 // The flags modify the behavior of this function as follows:
 //  - BFFastAdd: All checks except those involving comparing the header against
 //    the checkpoints are not performed.
 //
-// This function MUST be called with the chain state lock held (for writes).
+// This function MUST be called with the dag state lock held (for writes).
 func (dag *BlockDAG) checkBlockHeaderContext(header *wire.BlockHeader, bluestParent *blockNode, blockHeight int32, flags BehaviorFlags) error {
 	fastAdd := flags&BFFastAdd == BFFastAdd
 	if !fastAdd {
@@ -677,7 +677,7 @@ func (dag *BlockDAG) checkBlockHeaderContext(header *wire.BlockHeader, bluestPar
 		}
 	}
 
-	// Ensure chain matches up to predetermined checkpoints.
+	// Ensure dag matches up to predetermined checkpoints.
 	blockHash := header.BlockHash()
 	if !dag.verifyCheckpoint(blockHeight, &blockHash) {
 		str := fmt.Sprintf("block at height %d does not match "+
@@ -686,7 +686,7 @@ func (dag *BlockDAG) checkBlockHeaderContext(header *wire.BlockHeader, bluestPar
 	}
 
 	// Find the previous checkpoint and prevent blocks which fork the main
-	// chain before it.  This prevents storage of new, otherwise valid,
+	// dag before it.  This prevents storage of new, otherwise valid,
 	// blocks which build off of old blocks that are likely at a much easier
 	// difficulty and therefore could be used to waste cache and disk space.
 	checkpointNode, err := dag.findPreviousCheckpoint()
@@ -694,7 +694,7 @@ func (dag *BlockDAG) checkBlockHeaderContext(header *wire.BlockHeader, bluestPar
 		return err
 	}
 	if checkpointNode != nil && blockHeight < checkpointNode.height {
-		str := fmt.Sprintf("block at height %d forks the main chain "+
+		str := fmt.Sprintf("block at height %d forks the main dag "+
 			"before the previous checkpoint at height %d",
 			blockHeight, checkpointNode.height)
 		return ruleError(ErrForkTooOld, str)
@@ -740,7 +740,7 @@ func validateParents(blockHeader *wire.BlockHeader, parents blockSet) error {
 }
 
 // checkBlockContext peforms several validation checks on the block which depend
-// on its position within the block chain.
+// on its position within the block dag.
 //
 // The flags modify the behavior of this function as follows:
 //  - BFFastAdd: The transaction are not checked to see if they are finalized
@@ -749,7 +749,7 @@ func validateParents(blockHeader *wire.BlockHeader, parents blockSet) error {
 // The flags are also passed to checkBlockHeaderContext.  See its documentation
 // for how the flags modify its behavior.
 //
-// This function MUST be called with the chain state lock held (for writes).
+// This function MUST be called with the dag state lock held (for writes).
 func (dag *BlockDAG) checkBlockContext(block *util.Block, parents blockSet, bluestParent *blockNode, flags BehaviorFlags) error {
 	err := validateParents(&block.MsgBlock().Header, parents)
 	if err != nil {
@@ -801,12 +801,13 @@ func (dag *BlockDAG) checkBlockContext(block *util.Block, parents blockSet, blue
 // https://github.com/bitcoin/bips/blob/master/bip-0030.mediawiki and
 // http://r6.ca/blog/20120206T005236Z.html.
 //
-// This function MUST be called with the chain state lock held (for reads).
-func ensureNoDuplicateTx(block *provisionalNode, utxoSet UTXOSet) error {
+// This function MUST be called with the dag state lock held (for reads).
+func ensureNoDuplicateTx(block *blockNode, utxoSet UTXOSet,
+	transactions []*util.Tx) error {
 	// Fetch utxos for all of the transaction ouputs in this block.
 	// Typically, there will not be any utxos for any of the outputs.
 	fetchSet := make(map[wire.OutPoint]struct{})
-	for _, tx := range block.transactions {
+	for _, tx := range transactions {
 		prevOut := wire.OutPoint{Hash: *tx.Hash()}
 		for txOutIdx := range tx.MsgTx().TxOut {
 			prevOut.Index = uint32(txOutIdx)
@@ -939,9 +940,10 @@ func CheckTransactionInputs(tx *util.Tx, txHeight int32, utxoSet UTXOSet, dagPar
 // block subsidy, or fail transaction script validation.
 //
 // This function MUST be called with the dag state lock held (for writes).
-func (dag *BlockDAG) checkConnectToPastUTXO(block *provisionalNode, pastUTXO UTXOSet) error {
+func (dag *BlockDAG) checkConnectToPastUTXO(block *blockNode, pastUTXO UTXOSet,
+	transactions []*util.Tx) error {
 
-	err := ensureNoDuplicateTx(block, pastUTXO)
+	err := ensureNoDuplicateTx(block, pastUTXO, transactions)
 	if err != nil {
 		return err
 	}
@@ -953,7 +955,7 @@ func (dag *BlockDAG) checkConnectToPastUTXO(block *provisionalNode, pastUTXO UTX
 	// signature operations in each of the input transaction public key
 	// scripts.
 	totalSigOps := 0
-	for i, tx := range block.transactions {
+	for i, tx := range transactions {
 		numsigOps := CountSigOps(tx)
 		// Since the first (and only the first) transaction has
 		// already been verified to be a coinbase transaction,
@@ -987,8 +989,8 @@ func (dag *BlockDAG) checkConnectToPastUTXO(block *provisionalNode, pastUTXO UTX
 	// against all the inputs when the signature operations are out of
 	// bounds.
 	var totalFees uint64
-	for _, tx := range block.transactions {
-		txFee, err := CheckTransactionInputs(tx, block.original.height, pastUTXO,
+	for _, tx := range transactions {
+		txFee, err := CheckTransactionInputs(tx, block.height, pastUTXO,
 			dag.dagParams)
 		if err != nil {
 			return err
@@ -1010,10 +1012,10 @@ func (dag *BlockDAG) checkConnectToPastUTXO(block *provisionalNode, pastUTXO UTX
 	// errors here because those error conditions would have already been
 	// caught by checkTransactionSanity.
 	var totalSatoshiOut uint64
-	for _, txOut := range block.transactions[0].MsgTx().TxOut {
+	for _, txOut := range transactions[0].MsgTx().TxOut {
 		totalSatoshiOut += txOut.Value
 	}
-	expectedSatoshiOut := CalcBlockSubsidy(block.original.height, dag.dagParams) +
+	expectedSatoshiOut := CalcBlockSubsidy(block.height, dag.dagParams) +
 		totalFees
 	if totalSatoshiOut > expectedSatoshiOut {
 		str := fmt.Sprintf("coinbase transaction for block pays %v "+
@@ -1030,7 +1032,7 @@ func (dag *BlockDAG) checkConnectToPastUTXO(block *provisionalNode, pastUTXO UTX
 	// portion of block handling.
 	checkpoint := dag.LatestCheckpoint()
 	runScripts := true
-	if checkpoint != nil && block.original.height <= checkpoint.Height {
+	if checkpoint != nil && block.height <= checkpoint.Height {
 		runScripts = false
 	}
 
@@ -1038,20 +1040,20 @@ func (dag *BlockDAG) checkConnectToPastUTXO(block *provisionalNode, pastUTXO UTX
 
 	// We obtain the MTP of the *previous* block in order to
 	// determine if transactions in the current block are final.
-	medianTime := block.original.selectedParent.CalcPastMedianTime()
+	medianTime := block.selectedParent.CalcPastMedianTime()
 
 	// We also enforce the relative sequence number based
 	// lock-times within the inputs of all transactions in this
 	// candidate block.
-	for _, tx := range block.transactions {
+	for _, tx := range transactions {
 		// A transaction can only be included within a block
 		// once the sequence locks of *all* its inputs are
 		// active.
-		sequenceLock, err := dag.calcSequenceLock(block.original, pastUTXO, tx, false)
+		sequenceLock, err := dag.calcSequenceLock(block, pastUTXO, tx, false)
 		if err != nil {
 			return err
 		}
-		if !SequenceLockActive(sequenceLock, block.original.height,
+		if !SequenceLockActive(sequenceLock, block.height,
 			medianTime) {
 			str := fmt.Sprintf("block contains " +
 				"transaction whose input sequence " +
@@ -1065,7 +1067,7 @@ func (dag *BlockDAG) checkConnectToPastUTXO(block *provisionalNode, pastUTXO UTX
 	// expensive ECDSA signature check scripts.  Doing this last helps
 	// prevent CPU exhaustion attacks.
 	if runScripts {
-		err := checkBlockScripts(block, pastUTXO, scriptFlags, dag.sigCache)
+		err := checkBlockScripts(block, pastUTXO, transactions, scriptFlags, dag.sigCache)
 		if err != nil {
 			return err
 		}
@@ -1085,8 +1087,8 @@ func countSpentOutputs(block *util.Block) int {
 }
 
 // CheckConnectBlockTemplate fully validates that connecting the passed block to
-// the main chain does not violate any consensus rules, aside from the proof of
-// work requirement. The block must connect to the current tip of the main chain.
+// the main dag does not violate any consensus rules, aside from the proof of
+// work requirement. The block must connect to the current tip of the main dag.
 //
 // This function is safe for concurrent access.
 func (dag *BlockDAG) CheckConnectBlockTemplate(block *util.Block) error {
@@ -1097,7 +1099,7 @@ func (dag *BlockDAG) CheckConnectBlockTemplate(block *util.Block) error {
 	flags := BFNoPoWCheck
 
 	// This only checks whether the block can be connected to the tip of the
-	// current chain.
+	// current dag.
 	tips := dag.virtual.tips()
 	header := block.MsgBlock().Header
 	parentHashes := header.ParentHashes
@@ -1122,9 +1124,6 @@ func (dag *BlockDAG) CheckConnectBlockTemplate(block *util.Block) error {
 		return err
 	}
 
-	newProvisionalNode := &provisionalNode{
-		original:     newBlockNode(&header, dag.virtual.tips(), dag.dagParams.K),
-		transactions: block.Transactions(),
-	}
-	return dag.checkConnectToPastUTXO(newProvisionalNode, dag.UTXOSet())
+	return dag.checkConnectToPastUTXO(newBlockNode(&header, dag.virtual.tips(), dag.dagParams.K),
+		dag.UTXOSet(), block.Transactions())
 }
