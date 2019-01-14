@@ -13,23 +13,23 @@ import (
 	"strings"
 )
 
-// IDLength of array used to store the sub-network ID.  See SubNetworkID.
+// IDLength of array used to store the subnetwork ID.  See SubnetworkID.
 const IDLength = 20
 
-// MaxStringSize is the maximum length of a SubNetworkID string.
+// MaxStringSize is the maximum length of a SubnetworkID string.
 const MaxStringSize = IDLength * 2
 
 // ErrIDStrSize describes an error that indicates the caller specified an ID
 // string that has too many characters.
 var ErrIDStrSize = fmt.Errorf("max ID string length is %v bytes", MaxStringSize)
 
-// SubNetworkID is used in several of the bitcoin messages and common structures.  It
+// SubnetworkID is used in several of the bitcoin messages and common structures.  It
 // typically represents ripmed160(sha256(data)).
-type SubNetworkID [IDLength]byte
+type SubnetworkID [IDLength]byte
 
-// String returns the SubNetworkID as the hexadecimal string of the byte-reversed
+// String returns the SubnetworkID as the hexadecimal string of the byte-reversed
 // hash.
-func (id SubNetworkID) String() string {
+func (id SubnetworkID) String() string {
 	for i := 0; i < IDLength/2; i++ {
 		id[i], id[IDLength-1-i] = id[IDLength-1-i], id[i]
 	}
@@ -37,7 +37,7 @@ func (id SubNetworkID) String() string {
 }
 
 // Strings returns a slice of strings representing the IDs in the given slice of IDs
-func Strings(ids []SubNetworkID) []string {
+func Strings(ids []SubnetworkID) []string {
 	strings := make([]string, len(ids))
 	for i, id := range ids {
 		strings[i] = id.String()
@@ -51,7 +51,7 @@ func Strings(ids []SubNetworkID) []string {
 //
 // NOTE: It is generally cheaper to just slice the ID directly thereby reusing
 // the same bytes rather than calling this method.
-func (id *SubNetworkID) CloneBytes() []byte {
+func (id *SubnetworkID) CloneBytes() []byte {
 	newID := make([]byte, IDLength)
 	copy(newID, id[:])
 
@@ -60,7 +60,7 @@ func (id *SubNetworkID) CloneBytes() []byte {
 
 // SetBytes sets the bytes which represent the ID.  An error is returned if
 // the number of bytes passed in is not IDLength.
-func (id *SubNetworkID) SetBytes(newID []byte) error {
+func (id *SubnetworkID) SetBytes(newID []byte) error {
 	nhlen := len(newID)
 	if nhlen != IDLength {
 		return fmt.Errorf("invalid ID length of %v, want %v", nhlen,
@@ -72,7 +72,7 @@ func (id *SubNetworkID) SetBytes(newID []byte) error {
 }
 
 // IsEqual returns true if target is the same as ID.
-func (id *SubNetworkID) IsEqual(target *SubNetworkID) bool {
+func (id *SubnetworkID) IsEqual(target *SubnetworkID) bool {
 	if id == nil && target == nil {
 		return true
 	}
@@ -84,7 +84,7 @@ func (id *SubNetworkID) IsEqual(target *SubNetworkID) bool {
 
 // AreEqual returns true if both slices contain the same IDs.
 // Either slice must not contain duplicates.
-func AreEqual(first []SubNetworkID, second []SubNetworkID) bool {
+func AreEqual(first []SubnetworkID, second []SubnetworkID) bool {
 	if len(first) != len(second) {
 		return false
 	}
@@ -100,8 +100,8 @@ func AreEqual(first []SubNetworkID, second []SubNetworkID) bool {
 
 // New returns a new ID from a byte slice.  An error is returned if
 // the number of bytes passed in is not IDLength.
-func New(newID []byte) (*SubNetworkID, error) {
-	var sh SubNetworkID
+func New(newID []byte) (*SubnetworkID, error) {
+	var sh SubnetworkID
 	err := sh.SetBytes(newID)
 	if err != nil {
 		return nil, err
@@ -109,11 +109,11 @@ func New(newID []byte) (*SubNetworkID, error) {
 	return &sh, err
 }
 
-// NewFromStr creates a SubNetworkID from a string.  The string should be
+// NewFromStr creates a SubnetworkID from a string.  The string should be
 // the hexadecimal string of a byte-reversed hash, but any missing characters
-// result in zero padding at the end of the SubNetworkID.
-func NewFromStr(id string) (*SubNetworkID, error) {
-	ret := new(SubNetworkID)
+// result in zero padding at the end of the SubnetworkID.
+func NewFromStr(id string) (*SubnetworkID, error) {
+	ret := new(SubnetworkID)
 	err := Decode(ret, id)
 	if err != nil {
 		return nil, err
@@ -121,9 +121,9 @@ func NewFromStr(id string) (*SubNetworkID, error) {
 	return ret, nil
 }
 
-// Decode decodes the byte-reversed hexadecimal string encoding of a SubNetworkID to a
+// Decode decodes the byte-reversed hexadecimal string encoding of a SubnetworkID to a
 // destination.
-func Decode(dst *SubNetworkID, src string) error {
+func Decode(dst *SubnetworkID, src string) error {
 	// Return error if ID string is too long.
 	if len(src) > MaxStringSize {
 		return ErrIDStrSize
@@ -141,7 +141,7 @@ func Decode(dst *SubNetworkID, src string) error {
 	}
 
 	// Hex decode the source bytes to a temporary destination.
-	var reversedHash SubNetworkID
+	var reversedHash SubnetworkID
 	_, err := hex.Decode(reversedHash[IDLength-hex.DecodedLen(len(srcBytes)):], srcBytes)
 	if err != nil {
 		return err
@@ -156,9 +156,9 @@ func Decode(dst *SubNetworkID, src string) error {
 	return nil
 }
 
-// ToBig converts a SubNetworkID into a big.Int that can be used to
+// ToBig converts a SubnetworkID into a big.Int that can be used to
 // perform math comparisons.
-func ToBig(id *SubNetworkID) *big.Int {
+func ToBig(id *SubnetworkID) *big.Int {
 	// A Hash is in little-endian, but the big package wants the bytes in
 	// big-endian, so reverse them.
 	buf := *id
@@ -176,22 +176,22 @@ func ToBig(id *SubNetworkID) *big.Int {
 //    0 if id == target
 //   +1 if id >  target
 //
-func (id *SubNetworkID) Cmp(target *SubNetworkID) int {
+func (id *SubnetworkID) Cmp(target *SubnetworkID) int {
 	return ToBig(id).Cmp(ToBig(target))
 }
 
 // Less returns true iff id a is less than id b
-func Less(a *SubNetworkID, b *SubNetworkID) bool {
+func Less(a *SubnetworkID, b *SubnetworkID) bool {
 	return a.Cmp(b) < 0
 }
 
 // JoinIDsStrings joins all the stringified IDs separated by a separator
-func JoinIDsStrings(ids []SubNetworkID, separator string) string {
+func JoinIDsStrings(ids []SubnetworkID, separator string) string {
 	return strings.Join(Strings(ids), separator)
 }
 
 // Sort sorts a slice of ids
-func Sort(ids []SubNetworkID) {
+func Sort(ids []SubnetworkID) {
 	sort.Slice(ids, func(i, j int) bool {
 		return Less(&ids[i], &ids[j])
 	})
