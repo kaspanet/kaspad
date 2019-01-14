@@ -1042,6 +1042,13 @@ func (p *Peer) handleRemoteVersionMsg(msg *wire.MsgVersion) error {
 		return errors.New(reason)
 	}
 
+	// Notify and disconnect clients that have a subnetwork that is
+	// different from our subnetwork
+	if !msg.Subnetwork.IsEqual(p.cfg.Subnetwork) {
+		reason := fmt.Sprintf("subnetwork must be %s", p.cfg.Subnetwork)
+		return errors.New(reason)
+	}
+
 	// Updating a bunch of stats including block based stats, and the
 	// peer's time offset.
 	p.statsMtx.Lock()
