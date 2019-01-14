@@ -1067,7 +1067,7 @@ func (dag *BlockDAG) checkConnectToPastUTXO(block *blockNode, pastUTXO UTXOSet,
 	// expensive ECDSA signature check scripts.  Doing this last helps
 	// prevent CPU exhaustion attacks.
 	if runScripts {
-		err := checkBlockScripts(block, pastUTXO, scriptFlags, dag.sigCache, transactions)
+		err := checkBlockScripts(block, pastUTXO, transactions, scriptFlags, dag.sigCache)
 		if err != nil {
 			return err
 		}

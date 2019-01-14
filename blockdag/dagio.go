@@ -717,13 +717,12 @@ func (dag *BlockDAG) createDAGState() error {
 	header := &genesisBlock.MsgBlock().Header
 	node := newBlockNode(header, newSet(), dag.dagParams.K)
 	node.status = statusDataStored | statusValid
-	var err error
+	// newBlockNode adds node into children maps of its parents. So it must be
+	// removed in case of error.
+	isOk := false
 	defer func() {
-		if err != nil {
-			// remove new node from parents
-			for _, p := range node.parents {
-				delete(p.children, node.hash)
-			}
+		if !isOk {
+			node.restoreParents()
 		}
 	}()
 
@@ -748,7 +747,7 @@ func (dag *BlockDAG) createDAGState() error {
 
 	// Create the initial the database chain state including creating the
 	// necessary index buckets and inserting the genesis block.
-	err = dag.db.Update(func(dbTx database.Tx) error {
+	err := dag.db.Update(func(dbTx database.Tx) error {
 		meta := dbTx.Metadata()
 
 		// Create the bucket that houses the block index data.
@@ -830,6 +829,9 @@ func (dag *BlockDAG) createDAGState() error {
 		// Store the genesis block into the database.
 		return dbStoreBlock(dbTx, genesisBlock)
 	})
+
+	isOk = true
+
 	return err
 }
 

@@ -61,12 +61,12 @@ func (dag *BlockDAG) maybeAcceptBlock(block *util.Block, flags BehaviorFlags) er
 	blockHeader := &block.MsgBlock().Header
 	newNode := newBlockNode(blockHeader, parents, dag.dagParams.K)
 	newNode.status = statusDataStored
+	// newBlockNode adds node into children maps of its parents. So it must be
+	// removed in case of error.
+	isOk := false
 	defer func() {
-		if err != nil {
-			// remove new node from parents
-			for _, p := range newNode.parents {
-				delete(p.children, newNode.hash)
-			}
+		if !isOk {
+			newNode.restoreParents()
 		}
 	}()
 
@@ -89,6 +89,8 @@ func (dag *BlockDAG) maybeAcceptBlock(block *util.Block, flags BehaviorFlags) er
 	dag.dagLock.Unlock()
 	dag.sendNotification(NTBlockAccepted, block)
 	dag.dagLock.Lock()
+
+	isOk = true
 
 	return nil
 }
