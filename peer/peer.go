@@ -248,7 +248,7 @@ type Config struct {
 	// '/', ':', '(', ')'.
 	UserAgentComments []string
 
-	// DAGParams identifies which chain parameters the peer is associated
+	// DAGParams identifies which DAG parameters the peer is associated
 	// with.  It is highly recommended to specify this field, however it can
 	// be omitted in which case the test network will be used.
 	DAGParams *dagconfig.Params
@@ -2126,7 +2126,7 @@ func newPeerBase(origCfg *Config, inbound bool) *Peer {
 		cfg.ProtocolVersion = MaxProtocolVersion
 	}
 
-	// Set the chain parameters to testnet if the caller did not specify any.
+	// Set the DAG parameters to testnet if the caller did not specify any.
 	if cfg.DAGParams == nil {
 		cfg.DAGParams = &dagconfig.TestNet3Params
 	}

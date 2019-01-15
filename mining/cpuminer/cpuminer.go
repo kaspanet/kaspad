@@ -49,7 +49,7 @@ var (
 
 // Config is a descriptor containing the cpu miner configuration.
 type Config struct {
-	// DAGParams identifies which chain parameters the cpu miner is
+	// DAGParams identifies which DAG parameters the cpu miner is
 	// associated with.
 	DAGParams *dagconfig.Params
 
