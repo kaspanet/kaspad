@@ -15,10 +15,10 @@ import (
 // BaseBlockHeaderPayload is the base number of bytes a block header can be,
 // not including the list of parent block headers.
 // Version 4 bytes + Timestamp 8 bytes + Bits 4 bytes + Nonce 8 bytes +
-// + NumParentBlocks 1 byte + MerkleRoot hash.
+// + NumParentBlocks 1 byte + HashMerkleRoot hash + IDMerkleRoot hash.
 // To get total size of block header len(ParentHashes) * daghash.HashSize should be
 // added to this value
-const BaseBlockHeaderPayload = 25 + (daghash.HashSize)
+const BaseBlockHeaderPayload = 25 + 2*(daghash.HashSize)
 
 // MaxNumParentBlocks is the maximum number of parent blocks a block can reference.
 // Currently set to 255 as the maximum number NumParentBlocks can be due to it being a byte
@@ -161,7 +161,7 @@ func readBlockHeader(r io.Reader, pver uint32, bh *BlockHeader) error {
 			return err
 		}
 	}
-	return readElements(r, &bh.HashMerkleRoot, (*int64Time)(&bh.Timestamp), &bh.Bits, &bh.Nonce)
+	return readElements(r, &bh.HashMerkleRoot, &bh.IDMerkleRoot, (*int64Time)(&bh.Timestamp), &bh.Bits, &bh.Nonce)
 }
 
 // writeBlockHeader writes a bitcoin block header to w.  See Serialize for
@@ -169,6 +169,6 @@ func readBlockHeader(r io.Reader, pver uint32, bh *BlockHeader) error {
 // opposed to encoding for the wire.
 func writeBlockHeader(w io.Writer, pver uint32, bh *BlockHeader) error {
 	sec := int64(bh.Timestamp.Unix())
-	return writeElements(w, bh.Version, bh.NumParentBlocks(), &bh.ParentHashes, &bh.HashMerkleRoot,
+	return writeElements(w, bh.Version, bh.NumParentBlocks(), &bh.ParentHashes, &bh.HashMerkleRoot, &bh.IDMerkleRoot,
 		sec, bh.Bits, bh.Nonce)
 }

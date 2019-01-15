@@ -156,7 +156,7 @@ func TestHaveBlock(t *testing.T) {
 	}
 	rErr, ok := err.(RuleError)
 	if !ok {
-		t.Fatalf("ProcessBlock for block 3D expected a RuleError, but got something else\n")
+		t.Fatalf("ProcessBlock for block 3D expected a RuleError, but got %v\n", err)
 	}
 	if !ok || rErr.ErrorCode != ErrDuplicateTxInputs {
 		t.Fatalf("ProcessBlock for block 3D expected error code %s but got %s\n", ErrDuplicateTxInputs, rErr.ErrorCode)

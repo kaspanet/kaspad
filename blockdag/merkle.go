@@ -41,7 +41,7 @@ func HashMerkleBranches(left *daghash.Hash, right *daghash.Hash) *daghash.Hash {
 // BuildHashMerkleTreeStore creates a merkle tree from a slice of transactions, based
 // on their hash. See `buildMerkleTreeStore` for more info.
 func BuildHashMerkleTreeStore(transactions []*util.Tx) []*daghash.Hash {
-	txHashes := make([]*daghash.Hash, 0, len(transactions))
+	txHashes := make([]*daghash.Hash, len(transactions))
 	for i, tx := range transactions {
 		txHashes[i] = tx.Hash()
 	}
@@ -51,7 +51,7 @@ func BuildHashMerkleTreeStore(transactions []*util.Tx) []*daghash.Hash {
 // BuildIDMerkleTreeStore creates a merkle tree from a slice of transactions, based
 // on their ID. See `buildMerkleTreeStore` for more info.
 func BuildIDMerkleTreeStore(transactions []*util.Tx) []*daghash.Hash {
-	txIDs := make([]*daghash.Hash, 0, len(transactions))
+	txIDs := make([]*daghash.Hash, len(transactions))
 	for i, tx := range transactions {
 		txIDs[i] = tx.ID()
 	}
