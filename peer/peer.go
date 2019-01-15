@@ -1042,10 +1042,18 @@ func (p *Peer) handleRemoteVersionMsg(msg *wire.MsgVersion) error {
 		return errors.New(reason)
 	}
 
-	// Notify and disconnect clients that have an incompatible subnetwork
 	isLocalNodeFull := p.cfg.Subnetwork.IsEqual(&wire.SubnetworkSupportsAll)
 	isRemoteNodeFull := msg.Subnetwork.IsEqual(&wire.SubnetworkSupportsAll)
-	if !isRemoteNodeFull && (isLocalNodeFull || (!isLocalNodeFull && !msg.Subnetwork.IsEqual(p.cfg.Subnetwork))) {
+
+	// If we are a full node and the outbound connection we've initiated is
+	// a partial node -- disconnect
+	if isLocalNodeFull && !isRemoteNodeFull && !p.inbound {
+		return errors.New("incompatible subnetworks")
+	}
+
+	// If the remote node is partial and our subnetwork doesn't match their
+	// subnetwork -- disconnect
+	if !isRemoteNodeFull && !msg.Subnetwork.IsEqual(p.cfg.Subnetwork) {
 		return errors.New("incompatible subnetworks")
 	}
 
