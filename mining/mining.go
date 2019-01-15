@@ -479,7 +479,7 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 	totalFees := uint64(0)
 
 	// Create map of GAS usage per subnetwork
-	gasUsageMap := make(map[subnetworkid.SubNetworkID]uint64)
+	gasUsageMap := make(map[subnetworkid.SubnetworkID]uint64)
 
 	// Choose which transactions make it into the block.
 	for priorityQueue.Len() > 0 {
@@ -488,24 +488,24 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 		prioItem := heap.Pop(priorityQueue).(*txPrioItem)
 		tx := prioItem.tx
 
-		if tx.MsgTx().SubNetworkID != wire.SubNetworkDAGCoin {
-			subNetwork := tx.MsgTx().SubNetworkID
-			gasUsage, ok := gasUsageMap[subNetwork]
+		if tx.MsgTx().SubnetworkID != wire.SubnetworkDAGCoin {
+			subnetwork := tx.MsgTx().SubnetworkID
+			gasUsage, ok := gasUsageMap[subnetwork]
 			if !ok {
 				gasUsage = 0
 			}
-			gasLimit, err := g.dag.GasLimit(&subNetwork)
+			gasLimit, err := g.dag.GasLimit(&subnetwork)
 			if err != nil {
-				log.Errorf("Cannot get GAS limit for subNetwork %v", subNetwork)
+				log.Errorf("Cannot get GAS limit for subnetwork %v", subnetwork)
 				continue
 			}
 			txGas := tx.MsgTx().Gas
 			if gasLimit-gasUsage < txGas {
-				log.Tracef("Transaction %v (GAS=%v) ignored because gas overusage (GASUsage=%v) in subNetwork %v (GASLimit=%v)",
-					tx.MsgTx().TxID(), txGas, gasUsage, subNetwork, gasLimit)
+				log.Tracef("Transaction %v (GAS=%v) ignored because gas overusage (GASUsage=%v) in subnetwork %v (GASLimit=%v)",
+					tx.MsgTx().TxID(), txGas, gasUsage, subnetwork, gasLimit)
 				continue
 			}
-			gasUsageMap[subNetwork] = gasUsage + txGas
+			gasUsageMap[subnetwork] = gasUsage + txGas
 		}
 
 		// Enforce maximum block size.  Also check for overflow.
@@ -649,7 +649,7 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 
 	// Sort transactions by subnetwork ID before building Merkle tree
 	sort.Slice(blockTxns, func(i, j int) bool {
-		return subnetworkid.Less(&blockTxns[i].MsgTx().SubNetworkID, &blockTxns[j].MsgTx().SubNetworkID)
+		return subnetworkid.Less(&blockTxns[i].MsgTx().SubnetworkID, &blockTxns[j].MsgTx().SubnetworkID)
 	})
 
 	// Create a new block ready to be solved.

@@ -156,7 +156,7 @@ func TestCheckErrorCondition(t *testing.T) {
 			}
 
 			err = vm.CheckErrorCondition(test.finalScript)
-			if e := tstCheckScriptError(err, test.expectedErr); e != nil {
+			if e := checkScriptError(err, test.expectedErr); e != nil {
 				t.Errorf("TestCheckErrorCondition: %d: %s", i, e)
 			}
 		}()
@@ -443,7 +443,7 @@ func TestDisasmPC(t *testing.T) {
 
 	for i, test := range tests {
 		actual, err := vm.DisasmPC()
-		if e := tstCheckScriptError(err, test.expectedErr); e != nil {
+		if e := checkScriptError(err, test.expectedErr); e != nil {
 			t.Errorf("TestDisasmPC: %d: %s", i, e)
 		}
 
@@ -505,7 +505,7 @@ func TestDisasmScript(t *testing.T) {
 
 	for _, test := range tests {
 		actual, err := vm.DisasmScript(test.index)
-		if e := tstCheckScriptError(err, test.expectedErr); e != nil {
+		if e := checkScriptError(err, test.expectedErr); e != nil {
 			t.Errorf("TestDisasmScript: %d: %s", test.index, e)
 		}
 

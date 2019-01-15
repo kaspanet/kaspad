@@ -3654,7 +3654,7 @@ func TestUnparsingInvalidOpcodes(t *testing.T) {
 
 	for _, test := range tests {
 		_, err := test.pop.bytes()
-		if e := tstCheckScriptError(err, test.expectedErr); e != nil {
+		if e := checkScriptError(err, test.expectedErr); e != nil {
 			t.Errorf("Parsed opcode test '%s': %v", test.name, e)
 			continue
 		}

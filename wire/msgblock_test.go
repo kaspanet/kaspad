@@ -511,7 +511,7 @@ var blockOne = MsgBlock{
 				},
 			},
 			LockTime:     0,
-			SubNetworkID: SubNetworkDAGCoin,
+			SubnetworkID: SubnetworkDAGCoin,
 		},
 	},
 }
