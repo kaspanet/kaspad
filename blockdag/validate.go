@@ -469,7 +469,9 @@ func checkBlockParentsOrder(header *wire.BlockHeader) error {
 //
 // The flags do not modify the behavior of this function directly, however they
 // are needed to pass along to checkBlockHeaderSanity.
-func checkBlockSanity(block *util.Block, powLimit *big.Int, timeSource MedianTimeSource, flags BehaviorFlags) error {
+func checkBlockSanity(block *util.Block, powLimit *big.Int, timeSource MedianTimeSource,
+	subnetworkStore *subnetworkStore, flags BehaviorFlags) error {
+
 	msgBlock := block.MsgBlock()
 	header := &msgBlock.Header
 	err := checkBlockHeaderSanity(header, powLimit, timeSource, flags)
@@ -575,13 +577,36 @@ func checkBlockSanity(block *util.Block, powLimit *big.Int, timeSource MedianTim
 		}
 	}
 
+	// Amount of gas consumed per sub-network shouldn't be more than the subnetwork's limit
+	gasUsageInAllSubnetworks := map[subnetworkid.SubnetworkID]uint64{}
+	for _, tx := range transactions {
+		msgTx := tx.MsgTx()
+		// In DAGCoin and Registry sub-networks all txs must have Gas = 0, and that is validated in checkTransactionSanity
+		// Therefore - no need to check them here.
+		if msgTx.SubnetworkID != wire.SubnetworkDAGCoin && msgTx.SubnetworkID != wire.SubnetworkRegistry {
+			gasUsageInSubnetwork := gasUsageInAllSubnetworks[msgTx.SubnetworkID]
+			gasUsageInAllSubnetworks[msgTx.SubnetworkID] = gasUsageInSubnetwork + msgTx.Gas
+
+			gasLimit, err := subnetworkStore.GasLimit(&msgTx.SubnetworkID)
+			if err != nil {
+				return err
+			}
+			if gasUsageInSubnetwork > gasLimit {
+				str := fmt.Sprintf("Block wastes too much gas in subnetwork with ID %s", msgTx.SubnetworkID)
+				return ruleError(ErrInvalidGas, str)
+			}
+		}
+	}
+
 	return nil
 }
 
 // CheckBlockSanity performs some preliminary checks on a block to ensure it is
 // sane before continuing with block processing.  These checks are context free.
-func CheckBlockSanity(block *util.Block, powLimit *big.Int, timeSource MedianTimeSource) error {
-	return checkBlockSanity(block, powLimit, timeSource, BFNone)
+func CheckBlockSanity(block *util.Block, powLimit *big.Int,
+	timeSource MedianTimeSource, subnetworkStore *subnetworkStore) error {
+
+	return checkBlockSanity(block, powLimit, timeSource, subnetworkStore, BFNone)
 }
 
 // ExtractCoinbaseHeight attempts to extract the height of the block from the
@@ -1109,7 +1134,7 @@ func (dag *BlockDAG) CheckConnectBlockTemplate(block *util.Block) error {
 		return ruleError(ErrParentBlockNotCurrentTips, str)
 	}
 
-	err := checkBlockSanity(block, dag.dagParams.PowLimit, dag.timeSource, flags)
+	err := checkBlockSanity(block, dag.dagParams.PowLimit, dag.timeSource, dag.SubnetworkStore, flags)
 	if err != nil {
 		return err
 	}

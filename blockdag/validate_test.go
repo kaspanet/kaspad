@@ -72,7 +72,7 @@ func TestCheckConnectBlockTemplate(t *testing.T) {
 		DAGParams: &dagconfig.SimNetParams,
 	})
 	if err != nil {
-		t.Errorf("Failed to setup chain instance: %v", err)
+		t.Errorf("Failed to setup dag instance: %v", err)
 		return
 	}
 	defer teardownFunc()
@@ -151,19 +151,29 @@ func TestCheckConnectBlockTemplate(t *testing.T) {
 // TestCheckBlockSanity tests the CheckBlockSanity function to ensure it works
 // as expected.
 func TestCheckBlockSanity(t *testing.T) {
+	// Create a new database and dag instance to run tests against.
+	dag, teardownFunc, err := DAGSetup("TestCheckBlockSanity", Config{
+		DAGParams: &dagconfig.SimNetParams,
+	})
+	if err != nil {
+		t.Errorf("Failed to setup dag instance: %v", err)
+		return
+	}
+	defer teardownFunc()
+
 	powLimit := dagconfig.MainNetParams.PowLimit
 	block := util.NewBlock(&Block100000)
 	timeSource := NewMedianTime()
 	if len(block.Transactions()) < 3 {
 		t.Fatalf("Too few transactions in block, expect at least 3, got %v", len(block.Transactions()))
 	}
-	err := CheckBlockSanity(block, powLimit, timeSource)
+	err = CheckBlockSanity(block, powLimit, timeSource, dag.SubnetworkStore)
 	if err != nil {
 		t.Errorf("CheckBlockSanity: %v", err)
 	}
 	// Test with block with wrong transactions sorting order
 	blockWithWrongTxOrder := util.NewBlock(&BlockWithWrongTxOrder)
-	err = CheckBlockSanity(blockWithWrongTxOrder, powLimit, timeSource)
+	err = CheckBlockSanity(blockWithWrongTxOrder, powLimit, timeSource, dag.SubnetworkStore)
 	if err == nil {
 		t.Errorf("CheckBlockSanity: transactions disorder is not detected")
 	}
@@ -178,7 +188,7 @@ func TestCheckBlockSanity(t *testing.T) {
 	// second fails.
 	timestamp := block.MsgBlock().Header.Timestamp
 	block.MsgBlock().Header.Timestamp = timestamp.Add(time.Nanosecond)
-	err = CheckBlockSanity(block, powLimit, timeSource)
+	err = CheckBlockSanity(block, powLimit, timeSource, dag.SubnetworkStore)
 	if err == nil {
 		t.Errorf("CheckBlockSanity: error is nil when it shouldn't be")
 	}
@@ -442,7 +452,7 @@ func TestCheckBlockSanity(t *testing.T) {
 	}
 
 	btcutilInvalidBlock := util.NewBlock(&invalidParentsOrderBlock)
-	err = CheckBlockSanity(btcutilInvalidBlock, powLimit, timeSource)
+	err = CheckBlockSanity(btcutilInvalidBlock, powLimit, timeSource, dag.SubnetworkStore)
 	if err == nil {
 		t.Errorf("CheckBlockSanity: error is nil when it shouldn't be")
 	}
