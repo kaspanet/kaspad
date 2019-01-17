@@ -342,14 +342,14 @@ type gbtWorkState struct {
 	minTimestamp  time.Time
 	template      *mining.BlockTemplate
 	notifyMap     map[string]map[int64]chan struct{}
-	timeSource    blockdag.MedianTimeSource
+	timeSource blockdag.MedianTimeSource
 }
 
 // newGbtWorkState returns a new instance of a gbtWorkState with all internal
 // fields initialized and ready to use.
 func newGbtWorkState(timeSource blockdag.MedianTimeSource) *gbtWorkState {
 	return &gbtWorkState{
-		notifyMap:  make(map[string]map[int64]chan struct{}),
+		notifyMap: make(map[string]map[int64]chan struct{}),
 		timeSource: timeSource,
 	}
 }
@@ -1543,7 +1543,7 @@ func (state *gbtWorkState) updateBlockTemplate(s *Server, useCoinbaseValue bool)
 	if template == nil || state.tipHashes == nil ||
 		!daghash.AreEqual(state.tipHashes, tipHashes) ||
 		(state.lastTxUpdate != lastTxUpdate &&
-			time.Now().After(state.lastGenerated.Add(time.Second*
+			time.Now().After(state.lastGenerated.Add(time.Second *
 				gbtRegenerateSeconds))) {
 
 		// Reset the previous best hash the block template was generated
@@ -3411,8 +3411,8 @@ func verifyDAG(s *Server, level, depth int32) error {
 
 		// Level 1 does basic chain sanity checks.
 		if level > 0 {
-			err := blockdag.CheckBlockSanity(block,
-				s.cfg.DAGParams.PowLimit, s.cfg.TimeSource)
+			err := blockdag.CheckBlockSanity(block, s.cfg.DAGParams.PowLimit,
+				s.cfg.TimeSource, config.MainConfig().Subnetwork)
 			if err != nil {
 				log.Errorf("Verify is unable to validate "+
 					"block at hash %v height %d: %v",

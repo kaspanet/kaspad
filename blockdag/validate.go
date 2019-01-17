@@ -174,7 +174,7 @@ func CalcBlockSubsidy(height int32, dagParams *dagconfig.Params) uint64 {
 
 // CheckTransactionSanity performs some preliminary checks on a transaction to
 // ensure it is sane.  These checks are context free.
-func CheckTransactionSanity(tx *util.Tx) error {
+func CheckTransactionSanity(tx *util.Tx, subnetworkID *subnetworkid.SubnetworkID) error {
 	// A transaction must have at least one input.
 	msgTx := tx.MsgTx()
 	if len(msgTx.TxIn) == 0 {
@@ -284,6 +284,17 @@ func CheckTransactionSanity(tx *util.Tx) error {
 		return ruleError(ErrInvalidPayload,
 			"transaction in the subnetwork registry include a payload "+
 				"with length != 8 bytes")
+	}
+
+	// Blah blah blah
+	isLocalNodeFull := subnetworkID.IsEqual(&wire.SubnetworkSupportsAll)
+	isRemoteTransactionFull := msgTx.SubnetworkID.IsEqual(&wire.SubnetworkDAGCoin) ||
+		msgTx.SubnetworkID.IsEqual(&wire.SubnetworkRegistry) ||
+		msgTx.SubnetworkID.IsEqual(subnetworkID)
+	if !isLocalNodeFull && !isRemoteTransactionFull && len(msgTx.Payload) > 0 {
+		return ruleError(ErrInvalidPayload,
+			"transaction that was expected to be partial has a payload "+
+				"with length > 0")
 	}
 
 	return nil
@@ -469,7 +480,8 @@ func checkBlockParentsOrder(header *wire.BlockHeader) error {
 //
 // The flags do not modify the behavior of this function directly, however they
 // are needed to pass along to checkBlockHeaderSanity.
-func checkBlockSanity(block *util.Block, powLimit *big.Int, timeSource MedianTimeSource, flags BehaviorFlags) error {
+func checkBlockSanity(block *util.Block, powLimit *big.Int, timeSource MedianTimeSource,
+	subnetworkID *subnetworkid.SubnetworkID, flags BehaviorFlags) error {
 	msgBlock := block.MsgBlock()
 	header := &msgBlock.Header
 	err := checkBlockHeaderSanity(header, powLimit, timeSource, flags)
@@ -524,7 +536,7 @@ func checkBlockSanity(block *util.Block, powLimit *big.Int, timeSource MedianTim
 	// Do some preliminary checks on each transaction to ensure they are
 	// sane before continuing.
 	for _, tx := range transactions {
-		err := CheckTransactionSanity(tx)
+		err := CheckTransactionSanity(tx, subnetworkID)
 		if err != nil {
 			return err
 		}
@@ -580,8 +592,8 @@ func checkBlockSanity(block *util.Block, powLimit *big.Int, timeSource MedianTim
 
 // CheckBlockSanity performs some preliminary checks on a block to ensure it is
 // sane before continuing with block processing.  These checks are context free.
-func CheckBlockSanity(block *util.Block, powLimit *big.Int, timeSource MedianTimeSource) error {
-	return checkBlockSanity(block, powLimit, timeSource, BFNone)
+func CheckBlockSanity(block *util.Block, powLimit *big.Int, timeSource MedianTimeSource, subnetworkID *subnetworkid.SubnetworkID) error {
+	return checkBlockSanity(block, powLimit, timeSource, subnetworkID, BFNone)
 }
 
 // ExtractCoinbaseHeight attempts to extract the height of the block from the
@@ -1109,7 +1121,7 @@ func (dag *BlockDAG) CheckConnectBlockTemplate(block *util.Block) error {
 		return ruleError(ErrParentBlockNotCurrentTips, str)
 	}
 
-	err := checkBlockSanity(block, dag.dagParams.PowLimit, dag.timeSource, flags)
+	err := checkBlockSanity(block, dag.dagParams.PowLimit, dag.timeSource, dag.subnetworkID, flags)
 	if err != nil {
 		return err
 	}
