@@ -659,7 +659,7 @@ func handleDebugLevel(s *Server, cmd interface{}, closeChan <-chan struct{}) (in
 func createVinList(mtx *wire.MsgTx) []btcjson.Vin {
 	// Coinbase transactions only have a single txin by definition.
 	vinList := make([]btcjson.Vin, len(mtx.TxIn))
-	if blockdag.IsCoinBaseTx(mtx) {
+	if mtx.IsCoinBase() {
 		txIn := mtx.TxIn[0]
 		vinList[0].Coinbase = hex.EncodeToString(txIn.SignatureScript)
 		vinList[0].Sequence = txIn.Sequence
@@ -2617,7 +2617,7 @@ func handleGetTxOut(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 		confirmations = 0
 		value = txOut.Value
 		pkScript = txOut.PkScript
-		isCoinbase = blockdag.IsCoinBaseTx(mtx)
+		isCoinbase = mtx.IsCoinBase()
 	} else {
 		out := wire.OutPoint{TxID: *txHash, Index: c.Vout}
 		entry, ok := s.cfg.DAG.GetUTXOEntry(out)
@@ -2807,7 +2807,7 @@ func fetchInputTxos(s *Server, tx *wire.MsgTx) (map[wire.OutPoint]wire.TxOut, er
 // passed transaction.
 func createVinListPrevOut(s *Server, mtx *wire.MsgTx, chainParams *dagconfig.Params, vinExtra bool, filterAddrMap map[string]struct{}) ([]btcjson.VinPrevOut, error) {
 	// Coinbase transactions only have a single txin by definition.
-	if blockdag.IsCoinBaseTx(mtx) {
+	if mtx.IsCoinBase() {
 		// Only include the transaction if the filter map is empty
 		// because a coinbase input has no addresses and so would never
 		// match a non-empty filter.

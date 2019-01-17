@@ -14,7 +14,7 @@ const (
 
 	// vbTopBits defines the bits to set in the version to signal that the
 	// version bits scheme is being used.
-	vbTopBits = 0x20000000
+	vbTopBits = 0x10000000
 
 	// vbTopMask is the bitmask to use to determine whether or not the
 	// version bits scheme is in use.

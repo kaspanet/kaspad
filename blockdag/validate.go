@@ -65,30 +65,6 @@ func isNullOutpoint(outpoint *wire.OutPoint) bool {
 	return false
 }
 
-// IsCoinBaseTx determines whether or not a transaction is a coinbase.  A coinbase
-// is a special transaction created by miners that has no inputs.  This is
-// represented in the block dag by a transaction with a single input that has
-// a previous output transaction index set to the maximum value along with a
-// zero hash.
-//
-// This function only differs from IsCoinBase in that it works with a raw wire
-// transaction as opposed to a higher level util transaction.
-func IsCoinBaseTx(msgTx *wire.MsgTx) bool {
-	// A coin base must only have one transaction input.
-	if len(msgTx.TxIn) != 1 {
-		return false
-	}
-
-	// The previous output of a coin base must have a max value index and
-	// a zero hash.
-	prevOut := &msgTx.TxIn[0].PreviousOutPoint
-	if prevOut.Index != math.MaxUint32 || prevOut.TxID != zeroHash {
-		return false
-	}
-
-	return true
-}
-
 // IsCoinBase determines whether or not a transaction is a coinbase.  A coinbase
 // is a special transaction created by miners that has no inputs.  This is
 // represented in the block dag by a transaction with a single input that has
@@ -98,7 +74,7 @@ func IsCoinBaseTx(msgTx *wire.MsgTx) bool {
 // This function only differs from IsCoinBaseTx in that it works with a higher
 // level util transaction as opposed to a raw wire transaction.
 func IsCoinBase(tx *util.Tx) bool {
-	return IsCoinBaseTx(tx.MsgTx())
+	return tx.MsgTx().IsCoinBase()
 }
 
 // SequenceLockActive determines if a transaction's sequence locks have been

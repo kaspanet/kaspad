@@ -22,7 +22,6 @@ import (
 	"golang.org/x/crypto/ripemd160"
 
 	"github.com/btcsuite/websocket"
-	"github.com/daglabs/btcd/blockdag"
 	"github.com/daglabs/btcd/btcjson"
 	"github.com/daglabs/btcd/config"
 	"github.com/daglabs/btcd/dagconfig"
@@ -1992,7 +1991,7 @@ func rescanBlockFilter(filter *wsClientFilter, block *util.Block, params *dagcon
 		added := false
 
 		// Scan inputs if not a coinbase transaction.
-		if !blockdag.IsCoinBaseTx(msgTx) {
+		if !msgTx.IsCoinBase() {
 			for _, input := range msgTx.TxIn {
 				if !filter.existsUnspentOutPoint(&input.PreviousOutPoint) {
 					continue

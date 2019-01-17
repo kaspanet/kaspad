@@ -127,17 +127,18 @@ func (h *BlockHeader) SerializeSize() int {
 }
 
 // NewBlockHeader returns a new BlockHeader using the provided version, previous
-// block hash, merkle root hash, difficulty bits, and nonce used to generate the
+// block hash, hash merkle root, ID merkle root difficulty bits, and nonce used to generate the
 // block with defaults or calclulated values for the remaining fields.
-func NewBlockHeader(version int32, parentHashes []daghash.Hash, merkleRootHash *daghash.Hash,
-	bits uint32, nonce uint64) *BlockHeader {
+func NewBlockHeader(version int32, parentHashes []daghash.Hash, hashMerkleRoot *daghash.Hash,
+	idMerkleRoot *daghash.Hash, bits uint32, nonce uint64) *BlockHeader {
 
 	// Limit the timestamp to one second precision since the protocol
 	// doesn't support better.
 	return &BlockHeader{
 		Version:        version,
 		ParentHashes:   parentHashes,
-		HashMerkleRoot: *merkleRootHash,
+		HashMerkleRoot: *hashMerkleRoot,
+		IDMerkleRoot:   *idMerkleRoot,
 		Timestamp:      time.Unix(time.Now().Unix(), 0),
 		Bits:           bits,
 		Nonce:          nonce,

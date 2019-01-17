@@ -13,11 +13,20 @@ import (
 // TestMerkle tests the BuildHashMerkleTreeStore API.
 func TestMerkle(t *testing.T) {
 	block := util.NewBlock(&Block100000)
-	merkles := BuildHashMerkleTreeStore(block.Transactions())
-	calculatedMerkleRoot := merkles[len(merkles)-1]
-	wantMerkle := &Block100000.Header.HashMerkleRoot
-	if !wantMerkle.IsEqual(calculatedMerkleRoot) {
-		t.Errorf("BuildHashMerkleTreeStore: merkle root mismatch - "+
-			"got %v, want %v", calculatedMerkleRoot, wantMerkle)
+
+	hashMerkles := BuildHashMerkleTreeStore(block.Transactions())
+	calculatedHashMerkleRoot := hashMerkles[len(hashMerkles)-1]
+	wantHashMerkleRoot := &Block100000.Header.HashMerkleRoot
+	if !wantHashMerkleRoot.IsEqual(calculatedHashMerkleRoot) {
+		t.Errorf("BuildHashMerkleTreeStore: hash merkle root mismatch - "+
+			"got %v, want %v", calculatedHashMerkleRoot, wantHashMerkleRoot)
+	}
+
+	idMerkles := BuildIDMerkleTreeStore(block.Transactions())
+	calculatedIDMerkleRoot := idMerkles[len(idMerkles)-1]
+	wantIDMerkleRoot := &Block100000.Header.IDMerkleRoot
+	if !wantIDMerkleRoot.IsEqual(calculatedIDMerkleRoot) {
+		t.Errorf("BuildIDMerkleTreeStore: ID merkle root mismatch - "+
+			"got %v, want %v", calculatedIDMerkleRoot, wantIDMerkleRoot)
 	}
 }

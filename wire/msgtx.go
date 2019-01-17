@@ -294,6 +294,23 @@ func (msg *MsgTx) AddTxOut(to *TxOut) {
 	msg.TxOut = append(msg.TxOut, to)
 }
 
+// IsCoinBase determines whether or not a transaction is a coinbase.  A coinbase
+// is a special transaction created by miners that has no inputs.  This is
+// represented in the block dag by a transaction with a single input that has
+// a previous output transaction index set to the maximum value along with a
+// zero hash.
+func (msg *MsgTx) IsCoinBase() bool {
+	// A coin base must only have one transaction input.
+	if len(msg.TxIn) != 1 {
+		return false
+	}
+
+	// The previous output of a coinbase must have a max value index and
+	// a zero hash.
+	prevOut := &msg.TxIn[0].PreviousOutPoint
+	return prevOut.Index == math.MaxUint32 && prevOut.TxID == daghash.Zero
+}
+
 // TxHash generates the Hash for the transaction.
 func (msg *MsgTx) TxHash() daghash.Hash {
 	// Encode the transaction and calculate double sha256 on the result.
@@ -312,7 +329,10 @@ func (msg *MsgTx) TxID() daghash.Hash {
 	// Ignore the error returns since the only way the encode could fail
 	// is being out of memory or due to nil pointers, both of which would
 	// cause a run-time panic.
-	encodingFlags := txEncodingExcludeSignatureScript & txEncodingExcludeSubNetworkData
+	var encodingFlags txEncoding
+	if !msg.IsCoinBase() {
+		encodingFlags = txEncodingExcludeSignatureScript | txEncodingExcludeSubNetworkData
+	}
 	buf := bytes.NewBuffer(make([]byte, 0, msg.serializeSize(encodingFlags)))
 	_ = msg.serialize(buf, encodingFlags)
 	return daghash.DoubleHashH(buf.Bytes())

@@ -831,7 +831,7 @@ func TestApplyUTXOChanges(t *testing.T) {
 	})
 
 	//Fake block header
-	blockHeader := wire.NewBlockHeader(1, []daghash.Hash{dag.genesis.hash}, &daghash.Hash{}, 0, 0)
+	blockHeader := wire.NewBlockHeader(1, []daghash.Hash{dag.genesis.hash}, &daghash.Hash{}, &daghash.Hash{}, 0, 0)
 
 	msgBlock1 := &wire.MsgBlock{
 		Header:       *blockHeader,

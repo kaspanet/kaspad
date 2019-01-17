@@ -361,7 +361,7 @@ type UTXOSet interface {
 // or an error if provided transaction is not valid in the context of this UTXOSet
 func diffFromTx(u UTXOSet, tx *wire.MsgTx, containingNode *blockNode) (*UTXODiff, error) {
 	diff := NewUTXODiff()
-	isCoinbase := IsCoinBaseTx(tx)
+	isCoinbase := tx.IsCoinBase()
 	if !isCoinbase {
 		for _, txIn := range tx.TxIn {
 			if entry, ok := u.Get(txIn.PreviousOutPoint); ok {
@@ -416,7 +416,7 @@ func (fus *FullUTXOSet) WithDiff(other *UTXODiff) (UTXOSet, error) {
 
 // AddTx adds a transaction to this utxoSet and returns true iff it's valid in this UTXO's context
 func (fus *FullUTXOSet) AddTx(tx *wire.MsgTx, blockHeight int32) bool {
-	isCoinbase := IsCoinBaseTx(tx)
+	isCoinbase := tx.IsCoinBase()
 	if !isCoinbase {
 		if !fus.containsInputs(tx) {
 			return false
@@ -508,7 +508,7 @@ func (dus *DiffUTXOSet) WithDiff(other *UTXODiff) (UTXOSet, error) {
 
 // AddTx adds a transaction to this utxoSet and returns true iff it's valid in this UTXO's context
 func (dus *DiffUTXOSet) AddTx(tx *wire.MsgTx, blockHeight int32) bool {
-	isCoinBase := IsCoinBaseTx(tx)
+	isCoinBase := tx.IsCoinBase()
 	if !isCoinBase && !dus.containsInputs(tx) {
 		return false
 	}
