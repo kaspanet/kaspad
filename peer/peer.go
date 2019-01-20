@@ -271,8 +271,8 @@ type Config struct {
 	// messages.
 	Listeners MessageListeners
 
-	// Subnetwork specifies which subnetwork the peer is associated with.
-	Subnetwork *subnetworkid.SubnetworkID
+	// SubnetworkID specifies which subnetwork the peer is associated with.
+	SubnetworkID *subnetworkid.SubnetworkID
 }
 
 // minUint32 is a helper function to return the minimum of two uint32s.
@@ -823,7 +823,7 @@ func (p *Peer) localVersionMsg() (*wire.MsgVersion, error) {
 	nonce := uint64(rand.Int63())
 	sentNonces.Add(nonce)
 
-	subnetworkID := p.cfg.Subnetwork
+	subnetworkID := p.cfg.SubnetworkID
 
 	// Version message.
 	msg := wire.NewMsgVersion(ourNA, theirNA, nonce, blockNum, subnetworkID)
@@ -1045,10 +1045,10 @@ func (p *Peer) handleRemoteVersionMsg(msg *wire.MsgVersion) error {
 	// Disconnect if:
 	// - we are a full node and the outbound connection we've initiated is a partial node
 	// - the remote node is partial and our subnetwork doesn't match their subnetwork
-	isLocalNodeFull := p.cfg.Subnetwork.IsEqual(&wire.SubnetworkSupportsAll)
-	isRemoteNodeFull := msg.Subnetwork.IsEqual(&wire.SubnetworkSupportsAll)
+	isLocalNodeFull := p.cfg.SubnetworkID.IsEqual(&wire.SubnetworkIDSupportsAll)
+	isRemoteNodeFull := msg.SubnetworkID.IsEqual(&wire.SubnetworkIDSupportsAll)
 	if (isLocalNodeFull && !isRemoteNodeFull && !p.inbound) ||
-		(!isRemoteNodeFull && !msg.Subnetwork.IsEqual(p.cfg.Subnetwork)) {
+		(!isRemoteNodeFull && !msg.SubnetworkID.IsEqual(p.cfg.SubnetworkID)) {
 
 		return errors.New("incompatible subnetworks")
 	}

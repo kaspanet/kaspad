@@ -569,12 +569,12 @@ func TestTxSerializeErrors(t *testing.T) {
 	}
 
 	registryTx := NewMsgTx(1)
-	registryTx.SubnetworkID = SubnetworkRegistry
+	registryTx.SubnetworkID = SubnetworkIDRegistry
 	registryTx.Gas = 1
 
 	w := bytes.NewBuffer(make([]byte, 0, registryTx.SerializeSize()))
 	err := registryTx.Serialize(w)
-	str := fmt.Sprintf("Transactions from subnetwork %v should have 0 gas", SubnetworkRegistry)
+	str := fmt.Sprintf("Transactions from subnetwork %v should have 0 gas", SubnetworkIDRegistry)
 	expectedErr := messageError("MsgTx.BtcEncode", str)
 	if err == nil || err.Error() != expectedErr.Error() {
 		t.Errorf("TestTxSerializeErrors: expected error %v but got %v", expectedErr, err)
@@ -585,7 +585,7 @@ func TestTxSerializeErrors(t *testing.T) {
 	w = bytes.NewBuffer(make([]byte, 0, registryTx.SerializeSize()))
 	err = dagCoinTx.Serialize(w)
 
-	str = fmt.Sprintf("Transactions from subnetwork %v should have 0 gas", SubnetworkDAGCoin)
+	str = fmt.Sprintf("Transactions from subnetwork %v should have 0 gas", SubnetworkIDNative)
 	expectedErr = messageError("MsgTx.BtcEncode", str)
 	if err == nil || err.Error() != expectedErr.Error() {
 		t.Errorf("TestTxSerializeErrors: expected error %v but got %v", expectedErr, err)
@@ -596,7 +596,7 @@ func TestTxSerializeErrors(t *testing.T) {
 	w = bytes.NewBuffer(make([]byte, 0, registryTx.SerializeSize()))
 	err = dagCoinTx.Serialize(w)
 
-	str = fmt.Sprintf("Transactions from subnetwork %v should have <nil> payload", SubnetworkDAGCoin)
+	str = fmt.Sprintf("Transactions from subnetwork %v should have <nil> payload", SubnetworkIDNative)
 	expectedErr = messageError("MsgTx.BtcEncode", str)
 	if err == nil || err.Error() != expectedErr.Error() {
 		t.Errorf("TestTxSerializeErrors: expected error %v but got %v", expectedErr, err)
@@ -619,7 +619,7 @@ func TestTxSerializeErrors(t *testing.T) {
 	var tx MsgTx
 	err = tx.Deserialize(r)
 
-	str = fmt.Sprintf("%v is a reserved sub network and cannot be used as part of a transaction", SubnetworkSupportsAll)
+	str = fmt.Sprintf("%v is a reserved sub network and cannot be used as part of a transaction", SubnetworkIDSupportsAll)
 	expectedErr = messageError("MsgTx.BtcDecode", str)
 	if err == nil || err.Error() != expectedErr.Error() {
 		t.Errorf("TestTxSerializeErrors: expected error %v but got %v", expectedErr, err)
@@ -870,7 +870,7 @@ var multiTx = &MsgTx{
 		},
 	},
 	LockTime:     0,
-	SubnetworkID: SubnetworkDAGCoin,
+	SubnetworkID: SubnetworkIDNative,
 }
 
 // multiTxEncoded is the wire encoded bytes for multiTx using protocol version
