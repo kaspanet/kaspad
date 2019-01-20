@@ -580,10 +580,10 @@ func TestTxSerializeErrors(t *testing.T) {
 		t.Errorf("TestTxSerializeErrors: expected error %v but got %v", expectedErr, err)
 	}
 
-	dagCoinTx := NewMsgTx(1)
-	dagCoinTx.Gas = 1
+	nativeTx := NewMsgTx(1)
+	nativeTx.Gas = 1
 	w = bytes.NewBuffer(make([]byte, 0, registryTx.SerializeSize()))
-	err = dagCoinTx.Serialize(w)
+	err = nativeTx.Serialize(w)
 
 	str = fmt.Sprintf("Transactions from subnetwork %v should have 0 gas", SubnetworkIDNative)
 	expectedErr = messageError("MsgTx.BtcEncode", str)
@@ -591,10 +591,10 @@ func TestTxSerializeErrors(t *testing.T) {
 		t.Errorf("TestTxSerializeErrors: expected error %v but got %v", expectedErr, err)
 	}
 
-	dagCoinTx.Gas = 0
-	dagCoinTx.Payload = []byte{1, 2, 3}
+	nativeTx.Gas = 0
+	nativeTx.Payload = []byte{1, 2, 3}
 	w = bytes.NewBuffer(make([]byte, 0, registryTx.SerializeSize()))
-	err = dagCoinTx.Serialize(w)
+	err = nativeTx.Serialize(w)
 
 	str = fmt.Sprintf("Transactions from subnetwork %v should have <nil> payload", SubnetworkIDNative)
 	expectedErr = messageError("MsgTx.BtcEncode", str)
