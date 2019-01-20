@@ -38,7 +38,7 @@ var genesisCoinbaseTx = wire.MsgTx{
 		},
 	},
 	LockTime:     0,
-	SubnetworkID: wire.SubnetworkDAGCoin,
+	SubnetworkID: wire.SubnetworkIDNative,
 }
 
 // genesisHash is the hash of the first block in the block chain for the main

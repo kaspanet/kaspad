@@ -754,7 +754,7 @@ var Block100000 = wire.MsgBlock{
 				},
 			},
 			LockTime:     0,
-			SubnetworkID: wire.SubnetworkDAGCoin,
+			SubnetworkID: wire.SubnetworkIDNative,
 		},
 		{
 			Version: 1,
@@ -823,7 +823,7 @@ var Block100000 = wire.MsgBlock{
 				},
 			},
 			LockTime:     0,
-			SubnetworkID: wire.SubnetworkDAGCoin,
+			SubnetworkID: wire.SubnetworkIDNative,
 		},
 		{
 			Version: 1,
@@ -880,7 +880,7 @@ var Block100000 = wire.MsgBlock{
 				},
 			},
 			LockTime:     0,
-			SubnetworkID: wire.SubnetworkDAGCoin,
+			SubnetworkID: wire.SubnetworkIDNative,
 		},
 	},
 }
@@ -1085,7 +1085,7 @@ var BlockWithWrongTxOrder = wire.MsgBlock{
 				},
 			},
 			LockTime:     0,
-			SubnetworkID: wire.SubnetworkDAGCoin,
+			SubnetworkID: wire.SubnetworkIDNative,
 		},
 		{
 			Version: 1,
@@ -1142,7 +1142,7 @@ var BlockWithWrongTxOrder = wire.MsgBlock{
 				},
 			},
 			LockTime:     0,
-			SubnetworkID: wire.SubnetworkDAGCoin,
+			SubnetworkID: wire.SubnetworkIDNative,
 		},
 	},
 }
@@ -1166,17 +1166,17 @@ func TestCheckTransactionSanity(t *testing.T) {
 		{"duplicate inputs", 2, 1, 1, nil,
 			func(tx *wire.MsgTx) { tx.TxIn[1].PreviousOutPoint.Index = 0 },
 			ruleError(ErrDuplicateTxInputs, "")},
-		{"non-zero gas in DAGCoin", 1, 1, 0,
-			&txSubnetworkData{wire.SubnetworkDAGCoin, 1, []byte{}},
+		{"non-zero gas in native subnetwork", 1, 1, 0,
+			&txSubnetworkData{wire.SubnetworkIDNative, 1, []byte{}},
 			nil, ruleError(ErrInvalidGas, "")},
 		{"non-zero gas in subnetwork registry", 1, 1, 0,
-			&txSubnetworkData{wire.SubnetworkRegistry, 1, []byte{}},
+			&txSubnetworkData{wire.SubnetworkIDRegistry, 1, []byte{}},
 			nil, ruleError(ErrInvalidGas, "")},
-		{"non-zero payload in DAGCoin", 1, 1, 0,
-			&txSubnetworkData{wire.SubnetworkDAGCoin, 0, []byte{1}},
+		{"non-zero payload in native subnetwork", 1, 1, 0,
+			&txSubnetworkData{wire.SubnetworkIDNative, 0, []byte{1}},
 			nil, ruleError(ErrInvalidPayload, "")},
 		{"payload in subnetwork registry isn't 8 bytes", 1, 1, 0,
-			&txSubnetworkData{wire.SubnetworkRegistry, 0, []byte{1, 2, 3, 4, 5, 6, 7}},
+			&txSubnetworkData{wire.SubnetworkIDRegistry, 0, []byte{1, 2, 3, 4, 5, 6, 7}},
 			nil, ruleError(ErrInvalidPayload, "")},
 	}
 

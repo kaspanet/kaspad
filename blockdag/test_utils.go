@@ -133,7 +133,7 @@ func createTxForTest(numInputs uint32, numOutputs uint32, outputValue uint64, su
 		tx.Gas = subnetworkData.Gas
 		tx.Payload = subnetworkData.Payload
 	} else {
-		tx.SubnetworkID = wire.SubnetworkDAGCoin
+		tx.SubnetworkID = wire.SubnetworkIDNative
 		tx.Gas = 0
 		tx.Payload = []byte{}
 	}
@@ -229,7 +229,7 @@ func RegisterSubnetworkForTest(dag *BlockDAG, gasLimit uint64) (*subnetworkid.Su
 
 	// Create a block with a valid subnetwork registry transaction
 	registryTx := wire.NewMsgTx(wire.TxVersion)
-	registryTx.SubnetworkID = wire.SubnetworkRegistry
+	registryTx.SubnetworkID = wire.SubnetworkIDRegistry
 	registryTx.Payload = make([]byte, 8)
 	binary.LittleEndian.PutUint64(registryTx.Payload, gasLimit)
 

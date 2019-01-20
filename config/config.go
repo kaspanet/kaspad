@@ -181,7 +181,7 @@ type Config struct {
 	MiningAddrs    []util.Address
 	MinRelayTxFee  util.Amount
 	Whitelists     []*net.IPNet
-	Subnetwork     *subnetworkid.SubnetworkID
+	SubnetworkID   *subnetworkid.SubnetworkID
 }
 
 // serviceOptions defines the configuration options for the daemon as a service on
@@ -754,14 +754,14 @@ func loadConfig() (*Config, []string, error) {
 	}
 
 	if cfg.configFlags.Subnetwork != "" {
-		cfg.Subnetwork, err = subnetworkid.NewFromStr(cfg.configFlags.Subnetwork)
+		cfg.SubnetworkID, err = subnetworkid.NewFromStr(cfg.configFlags.Subnetwork)
 		if err != nil {
 			return nil, nil, err
 		}
 	}
 
 	// Check that 'generate' and 'subnetwork' flags do not conflict
-	if cfg.Generate && *cfg.Subnetwork != wire.SubnetworkSupportsAll {
+	if cfg.Generate && *cfg.SubnetworkID != wire.SubnetworkIDSupportsAll {
 		str := "%s: both generate flag and subnetwork filtering are set "
 		err := fmt.Errorf(str, funcName)
 		fmt.Fprintln(os.Stderr, err)

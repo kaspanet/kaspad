@@ -1816,7 +1816,7 @@ func newPeerConfig(sp *Peer) *peer.Config {
 		Services:          sp.server.services,
 		DisableRelayTx:    config.MainConfig().BlocksOnly,
 		ProtocolVersion:   peer.MaxProtocolVersion,
-		Subnetwork:        config.MainConfig().Subnetwork,
+		SubnetworkID:      config.MainConfig().SubnetworkID,
 	}
 }
 

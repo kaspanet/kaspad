@@ -19,7 +19,7 @@ func registerSubnetworks(dbTx database.Tx, txs []*TxWithBlockHash) error {
 	validSubnetworkRegistryTxs := make([]*wire.MsgTx, 0)
 	for _, txData := range txs {
 		tx := txData.Tx.MsgTx()
-		if tx.SubnetworkID == wire.SubnetworkRegistry {
+		if tx.SubnetworkID == wire.SubnetworkIDRegistry {
 			err := validateSubnetworkRegistryTransaction(tx)
 			if err != nil {
 				return err
@@ -27,7 +27,7 @@ func registerSubnetworks(dbTx database.Tx, txs []*TxWithBlockHash) error {
 			validSubnetworkRegistryTxs = append(validSubnetworkRegistryTxs, tx)
 		}
 
-		if subnetworkid.Less(&wire.SubnetworkRegistry, &tx.SubnetworkID) {
+		if subnetworkid.Less(&wire.SubnetworkIDRegistry, &tx.SubnetworkID) {
 			// Transactions are ordered by subnetwork, so we can safely assume
 			// that the rest of the transactions will not be subnetwork registry
 			// transactions.
