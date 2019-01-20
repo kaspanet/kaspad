@@ -25,7 +25,7 @@ func TestFlushToDBErrors(t *testing.T) {
 	// Create a new database and DAG instance to run tests against.
 	dag, teardownFunc, err := DAGSetup("TestFlushToDBErrors", Config{
 		DAGParams:    &dagconfig.SimNetParams,
-		SubnetworkID: &wire.SubnetworkSupportsAll,
+		SubnetworkID: &wire.SubnetworkIDSupportsAll,
 	})
 	if err != nil {
 		t.Fatalf("TestFlushToDBErrors: Failed to setup DAG instance: %s", err)

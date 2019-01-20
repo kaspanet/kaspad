@@ -43,7 +43,7 @@ func TestBlockCount(t *testing.T) {
 	// Create a new database and DAG instance to run tests against.
 	dag, teardownFunc, err := DAGSetup("haveblock", Config{
 		DAGParams:    &dagconfig.SimNetParams,
-		SubnetworkID: &wire.SubnetworkSupportsAll,
+		SubnetworkID: &wire.SubnetworkIDSupportsAll,
 	})
 	if err != nil {
 		t.Fatalf("Failed to setup DAG instance: %v", err)
@@ -93,7 +93,7 @@ func TestHaveBlock(t *testing.T) {
 	// Create a new database and chain instance to run tests against.
 	dag, teardownFunc, err := DAGSetup("haveblock", Config{
 		DAGParams:    &dagconfig.SimNetParams,
-		SubnetworkID: &wire.SubnetworkSupportsAll,
+		SubnetworkID: &wire.SubnetworkIDSupportsAll,
 	})
 	if err != nil {
 		t.Fatalf("Failed to setup DAG instance: %v", err)
@@ -822,7 +822,7 @@ func testErrorThroughPatching(t *testing.T, expectedErrorMessage string, targetF
 	// Create a new database and dag instance to run tests against.
 	dag, teardownFunc, err := DAGSetup("testErrorThroughPatching", Config{
 		DAGParams:    &dagconfig.SimNetParams,
-		SubnetworkID: &wire.SubnetworkSupportsAll,
+		SubnetworkID: &wire.SubnetworkIDSupportsAll,
 	})
 	if err != nil {
 		t.Fatalf("Failed to setup dag instance: %v", err)
@@ -880,7 +880,7 @@ func TestFinality(t *testing.T) {
 	params.K = 1
 	dag, teardownFunc, err := DAGSetup("TestFinality", Config{
 		DAGParams:    &params,
-		SubnetworkID: &wire.SubnetworkSupportsAll,
+		SubnetworkID: &wire.SubnetworkIDSupportsAll,
 	})
 	if err != nil {
 		t.Fatalf("Failed to setup DAG instance: %v", err)

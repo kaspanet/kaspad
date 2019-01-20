@@ -1577,7 +1577,7 @@ func (s *Server) handleRelayInvMsg(state *peerState, msg relayMsg) {
 
 			// Don't relay the transaction if the peer's subnetwork is
 			// incompatible with it
-			if !sp.Peer.SubnetworkID().IsEqual(&wire.SubnetworkDAGCoin) &&
+			if !sp.Peer.SubnetworkID().IsEqual(&wire.SubnetworkIDNative) &&
 				!sp.Peer.SubnetworkID().IsEqual(&txD.Tx.MsgTx().SubnetworkID) {
 				return
 			}
@@ -1823,7 +1823,7 @@ func newPeerConfig(sp *Peer) *peer.Config {
 		Services:          sp.server.services,
 		DisableRelayTx:    config.MainConfig().BlocksOnly,
 		ProtocolVersion:   peer.MaxProtocolVersion,
-		Subnetwork:        config.MainConfig().Subnetwork,
+		SubnetworkID:      config.MainConfig().SubnetworkID,
 	}
 }
 

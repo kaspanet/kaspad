@@ -70,7 +70,7 @@ func TestCheckConnectBlockTemplate(t *testing.T) {
 	// Create a new database and chain instance to run tests against.
 	dag, teardownFunc, err := DAGSetup("checkconnectblocktemplate", Config{
 		DAGParams:    &dagconfig.SimNetParams,
-		SubnetworkID: &wire.SubnetworkSupportsAll,
+		SubnetworkID: &wire.SubnetworkIDSupportsAll,
 	})
 	if err != nil {
 		t.Errorf("Failed to setup chain instance: %v", err)
@@ -158,13 +158,13 @@ func TestCheckBlockSanity(t *testing.T) {
 	if len(block.Transactions()) < 3 {
 		t.Fatalf("Too few transactions in block, expect at least 3, got %v", len(block.Transactions()))
 	}
-	err := CheckBlockSanity(block, powLimit, timeSource, &wire.SubnetworkDAGCoin)
+	err := CheckBlockSanity(block, powLimit, timeSource, &wire.SubnetworkIDNative)
 	if err != nil {
 		t.Errorf("CheckBlockSanity: %v", err)
 	}
 	// Test with block with wrong transactions sorting order
 	blockWithWrongTxOrder := util.NewBlock(&BlockWithWrongTxOrder)
-	err = CheckBlockSanity(blockWithWrongTxOrder, powLimit, timeSource, &wire.SubnetworkDAGCoin)
+	err = CheckBlockSanity(blockWithWrongTxOrder, powLimit, timeSource, &wire.SubnetworkIDNative)
 	if err == nil {
 		t.Errorf("CheckBlockSanity: transactions disorder is not detected")
 	}
@@ -179,7 +179,7 @@ func TestCheckBlockSanity(t *testing.T) {
 	// second fails.
 	timestamp := block.MsgBlock().Header.Timestamp
 	block.MsgBlock().Header.Timestamp = timestamp.Add(time.Nanosecond)
-	err = CheckBlockSanity(block, powLimit, timeSource, &wire.SubnetworkDAGCoin)
+	err = CheckBlockSanity(block, powLimit, timeSource, &wire.SubnetworkIDNative)
 	if err == nil {
 		t.Errorf("CheckBlockSanity: error is nil when it shouldn't be")
 	}
@@ -443,7 +443,7 @@ func TestCheckBlockSanity(t *testing.T) {
 	}
 
 	btcutilInvalidBlock := util.NewBlock(&invalidParentsOrderBlock)
-	err = CheckBlockSanity(btcutilInvalidBlock, powLimit, timeSource, &wire.SubnetworkDAGCoin)
+	err = CheckBlockSanity(btcutilInvalidBlock, powLimit, timeSource, &wire.SubnetworkIDNative)
 	if err == nil {
 		t.Errorf("CheckBlockSanity: error is nil when it shouldn't be")
 	}
@@ -754,7 +754,7 @@ var Block100000 = wire.MsgBlock{
 				},
 			},
 			LockTime:     0,
-			SubnetworkID: wire.SubnetworkDAGCoin,
+			SubnetworkID: wire.SubnetworkIDNative,
 		},
 		{
 			Version: 1,
@@ -823,7 +823,7 @@ var Block100000 = wire.MsgBlock{
 				},
 			},
 			LockTime:     0,
-			SubnetworkID: wire.SubnetworkDAGCoin,
+			SubnetworkID: wire.SubnetworkIDNative,
 		},
 		{
 			Version: 1,
@@ -880,7 +880,7 @@ var Block100000 = wire.MsgBlock{
 				},
 			},
 			LockTime:     0,
-			SubnetworkID: wire.SubnetworkDAGCoin,
+			SubnetworkID: wire.SubnetworkIDNative,
 		},
 	},
 }
@@ -1085,7 +1085,7 @@ var BlockWithWrongTxOrder = wire.MsgBlock{
 				},
 			},
 			LockTime:     0,
-			SubnetworkID: wire.SubnetworkDAGCoin,
+			SubnetworkID: wire.SubnetworkIDNative,
 		},
 		{
 			Version: 1,
@@ -1142,7 +1142,7 @@ var BlockWithWrongTxOrder = wire.MsgBlock{
 				},
 			},
 			LockTime:     0,
-			SubnetworkID: wire.SubnetworkDAGCoin,
+			SubnetworkID: wire.SubnetworkIDNative,
 		},
 	},
 }
@@ -1158,43 +1158,43 @@ func TestCheckTransactionSanity(t *testing.T) {
 		extraModificationsFunc func(*wire.MsgTx)
 		expectedErr            error
 	}{
-		{"good one", 1, 1, 1, wire.SubnetworkDAGCoin, nil, nil, nil},
-		{"no inputs", 0, 1, 1, wire.SubnetworkDAGCoin, nil, nil, ruleError(ErrNoTxInputs, "")},
-		{"no outputs", 1, 0, 1, wire.SubnetworkDAGCoin, nil, nil, ruleError(ErrNoTxOutputs, "")},
-		{"too big", 100000, 1, 1, wire.SubnetworkDAGCoin, nil, nil, ruleError(ErrTxTooBig, "")},
+		{"good one", 1, 1, 1, wire.SubnetworkIDNative, nil, nil, nil},
+		{"no inputs", 0, 1, 1, wire.SubnetworkIDNative, nil, nil, ruleError(ErrNoTxInputs, "")},
+		{"no outputs", 1, 0, 1, wire.SubnetworkIDNative, nil, nil, ruleError(ErrNoTxOutputs, "")},
+		{"too big", 100000, 1, 1, wire.SubnetworkIDNative, nil, nil, ruleError(ErrTxTooBig, "")},
 		{"too much satoshi in one output", 1, 1, util.MaxSatoshi + 1,
-			wire.SubnetworkDAGCoin,
+			wire.SubnetworkIDNative,
 			nil,
 			nil,
 			ruleError(ErrBadTxOutValue, "")},
 		{"too much satoshi in total outputs", 1, 2, util.MaxSatoshi - 1,
-			wire.SubnetworkDAGCoin,
+			wire.SubnetworkIDNative,
 			nil,
 			nil,
 			ruleError(ErrBadTxOutValue, "")},
 		{"duplicate inputs", 2, 1, 1,
-			wire.SubnetworkDAGCoin,
+			wire.SubnetworkIDNative,
 			nil,
 			func(tx *wire.MsgTx) { tx.TxIn[1].PreviousOutPoint.Index = 0 },
 			ruleError(ErrDuplicateTxInputs, "")},
 		{"non-zero gas in DAGCoin", 1, 1, 0,
-			wire.SubnetworkDAGCoin,
-			&txSubnetworkData{wire.SubnetworkDAGCoin, 1, []byte{}},
+			wire.SubnetworkIDNative,
+			&txSubnetworkData{wire.SubnetworkIDNative, 1, []byte{}},
 			nil,
 			ruleError(ErrInvalidGas, "")},
 		{"non-zero gas in subnetwork registry", 1, 1, 0,
-			wire.SubnetworkDAGCoin,
-			&txSubnetworkData{wire.SubnetworkRegistry, 1, []byte{}},
+			wire.SubnetworkIDNative,
+			&txSubnetworkData{wire.SubnetworkIDNative, 1, []byte{}},
 			nil,
 			ruleError(ErrInvalidGas, "")},
 		{"non-zero payload in DAGCoin", 1, 1, 0,
-			wire.SubnetworkDAGCoin,
-			&txSubnetworkData{wire.SubnetworkDAGCoin, 0, []byte{1}},
+			wire.SubnetworkIDNative,
+			&txSubnetworkData{wire.SubnetworkIDNative, 0, []byte{1}},
 			nil,
 			ruleError(ErrInvalidPayload, "")},
 		{"payload in subnetwork registry isn't 8 bytes", 1, 1, 0,
-			wire.SubnetworkDAGCoin,
-			&txSubnetworkData{wire.SubnetworkRegistry, 0, []byte{1, 2, 3, 4, 5, 6, 7}},
+			wire.SubnetworkIDNative,
+			&txSubnetworkData{wire.SubnetworkIDNative, 0, []byte{1, 2, 3, 4, 5, 6, 7}},
 			nil,
 			ruleError(ErrInvalidPayload, "")},
 		{"payload in other subnetwork isn't 0 bytes", 1, 1, 0,

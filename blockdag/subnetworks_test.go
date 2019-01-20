@@ -14,7 +14,7 @@ func TestSubnetworkRegistry(t *testing.T) {
 	params.K = 1
 	dag, teardownFunc, err := DAGSetup("TestSubnetworkRegistry", Config{
 		DAGParams:    &params,
-		SubnetworkID: &wire.SubnetworkSupportsAll,
+		SubnetworkID: &wire.SubnetworkIDSupportsAll,
 	})
 	if err != nil {
 		t.Fatalf("Failed to setup DAG instance: %v", err)
