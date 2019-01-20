@@ -1378,7 +1378,7 @@ type Config struct {
 	// This field can be nil if the caller does not desire the behavior.
 	Interrupt <-chan struct{}
 
-	// DAGParams identifies which chain parameters the chain is associated
+	// DAGParams identifies which DAG parameters the DAG is associated
 	// with.
 	//
 	// This field is required.
@@ -1416,7 +1416,10 @@ type Config struct {
 	// index manager.
 	IndexManager IndexManager
 
-	// Blah blah blah
+	// SubnetworkID identifies which subnetwork the DAG is associated
+	// with.
+	//
+	// This field is required.
 	SubnetworkID *subnetworkid.SubnetworkID
 }
 
