@@ -286,7 +286,8 @@ func CheckTransactionSanity(tx *util.Tx, subnetworkID *subnetworkid.SubnetworkID
 				"with length != 8 bytes")
 	}
 
-	// Blah blah blah
+	// If we are a partial node, transactions not in native, registry, and our own subnetwork
+	// must not have a payload
 	isLocalNodeFull := subnetworkID.IsEqual(&wire.SubnetworkSupportsAll)
 	isRemoteTransactionFull := msgTx.SubnetworkID.IsEqual(&wire.SubnetworkDAGCoin) ||
 		msgTx.SubnetworkID.IsEqual(&wire.SubnetworkRegistry) ||
