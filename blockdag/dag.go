@@ -96,10 +96,6 @@ type BlockDAG struct {
 	// virtual tracks the current tips.
 	virtual *virtualBlock
 
-	// lastSubnetworkID holds the last registered subnetwork ID in the DAG.
-	// Note that it is NOT the total amount of registered (or active) subnetworks.
-	lastSubnetworkID uint64
-
 	// These fields are related to handling of orphan blocks.  They are
 	// protected by a combination of the chain lock and the orphan lock.
 	orphanLock   sync.RWMutex

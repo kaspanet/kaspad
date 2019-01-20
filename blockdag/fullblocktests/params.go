@@ -84,7 +84,7 @@ var (
 					"4c702b6bf11d5fac"),
 			}},
 			LockTime:     0,
-			SubnetworkID: wire.SubnetworkDAGCoin,
+			SubnetworkID: wire.SubnetworkIDNative,
 		}},
 	}
 )

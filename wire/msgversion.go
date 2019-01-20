@@ -58,7 +58,7 @@ type MsgVersion struct {
 	DisableRelayTx bool
 
 	// The subnetwork of the generator of the version message.
-	Subnetwork subnetworkid.SubnetworkID
+	SubnetworkID subnetworkid.SubnetworkID
 }
 
 // HasService returns whether the specified service is supported by the peer
@@ -93,7 +93,7 @@ func (msg *MsgVersion) BtcDecode(r io.Reader, pver uint32) error {
 		return err
 	}
 
-	err = readElement(buf, &msg.Subnetwork)
+	err = readElement(buf, &msg.SubnetworkID)
 	if err != nil {
 		return err
 	}
@@ -170,7 +170,7 @@ func (msg *MsgVersion) BtcEncode(w io.Writer, pver uint32) error {
 		return err
 	}
 
-	err = writeElement(w, msg.Subnetwork)
+	err = writeElement(w, msg.SubnetworkID)
 	if err != nil {
 		return err
 	}
@@ -249,7 +249,7 @@ func NewMsgVersion(me *NetAddress, you *NetAddress, nonce uint64,
 		UserAgent:       DefaultUserAgent,
 		LastBlock:       lastBlock,
 		DisableRelayTx:  false,
-		Subnetwork:      *subnetworkID,
+		SubnetworkID:    *subnetworkID,
 	}
 }
 

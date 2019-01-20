@@ -211,7 +211,7 @@ func (p *poolHarness) CreateSignedTxForSubnetwork(inputs []spendableOutpoint, nu
 // total input amount.  All outputs will be to the payment script associated
 // with the harness and all inputs are assumed to do the same.
 func (p *poolHarness) CreateSignedTx(inputs []spendableOutpoint, numOutputs uint32) (*util.Tx, error) {
-	return p.CreateSignedTxForSubnetwork(inputs, numOutputs, &wire.SubnetworkDAGCoin, 0)
+	return p.CreateSignedTxForSubnetwork(inputs, numOutputs, &wire.SubnetworkIDNative, 0)
 }
 
 // CreateTxChain creates a chain of zero-fee transactions (each subsequent
@@ -610,7 +610,7 @@ func TestProcessTransaction(t *testing.T) {
 			PkScript: p2shPKScript,
 		}},
 		LockTime:     0,
-		SubnetworkID: wire.SubnetworkDAGCoin,
+		SubnetworkID: wire.SubnetworkIDNative,
 	})
 	harness.txPool.mpUTXOSet.AddTx(p2shTx.MsgTx(), curHeight+1)
 
@@ -626,7 +626,7 @@ func TestProcessTransaction(t *testing.T) {
 			PkScript: dummyPkScript,
 		}},
 		LockTime:     0,
-		SubnetworkID: wire.SubnetworkDAGCoin,
+		SubnetworkID: wire.SubnetworkIDNative,
 	})
 	_, err = harness.txPool.ProcessTransaction(nonStdSigScriptTx, true, false, 0)
 	if err == nil {
@@ -671,7 +671,7 @@ func TestProcessTransaction(t *testing.T) {
 		}},
 		TxOut:        []*wire.TxOut{},
 		LockTime:     0,
-		SubnetworkID: wire.SubnetworkDAGCoin,
+		SubnetworkID: wire.SubnetworkIDNative,
 	})
 	_, err = harness.txPool.ProcessTransaction(noOutsTx, true, false, 0)
 	if err == nil {
@@ -748,7 +748,7 @@ func TestProcessTransaction(t *testing.T) {
 			PkScript: dummyPkScript,
 		}},
 		LockTime:     0,
-		SubnetworkID: wire.SubnetworkDAGCoin,
+		SubnetworkID: wire.SubnetworkIDNative,
 	})
 	_, err = harness.txPool.ProcessTransaction(tx, true, false, 0)
 	fmt.Println(err)
@@ -1830,7 +1830,7 @@ var dummyBlock = wire.MsgBlock{
 				},
 			},
 			LockTime:     0,
-			SubnetworkID: wire.SubnetworkDAGCoin,
+			SubnetworkID: wire.SubnetworkIDNative,
 		},
 	},
 }

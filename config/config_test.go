@@ -77,7 +77,7 @@ func TestCreateDefaultConfigFile(t *testing.T) {
 // TestConstants makes sure that all constants hard-coded into the help text were not modified.
 func TestConstants(t *testing.T) {
 	zero := subnetworkid.SubnetworkID{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
-	if wire.SubnetworkSupportsAll != zero {
-		t.Errorf("wire.SubnetworkSupportsAll value was changed from 0, therefore you probably need to update the help text for Subnetwork")
+	if wire.SubnetworkIDSupportsAll != zero {
+		t.Errorf("wire.SubnetworkIDSupportsAll value was changed from 0, therefore you probably need to update the help text for SubnetworkID")
 	}
 }

@@ -229,7 +229,7 @@ func TestPeerConnection(t *testing.T) {
 		DAGParams:         &dagconfig.MainNetParams,
 		ProtocolVersion:   wire.RejectVersion, // Configure with older version
 		Services:          0,
-		Subnetwork:        &wire.SubnetworkSupportsAll,
+		SubnetworkID:      &wire.SubnetworkIDSupportsAll,
 	}
 	peer2Cfg := &peer.Config{
 		Listeners:         peer1Cfg.Listeners,
@@ -238,7 +238,7 @@ func TestPeerConnection(t *testing.T) {
 		UserAgentComments: []string{"comment"},
 		DAGParams:         &dagconfig.MainNetParams,
 		Services:          wire.SFNodeNetwork,
-		Subnetwork:        &wire.SubnetworkSupportsAll,
+		SubnetworkID:      &wire.SubnetworkIDSupportsAll,
 	}
 
 	wantStats1 := peerStats{
@@ -440,7 +440,7 @@ func TestPeerListeners(t *testing.T) {
 		UserAgentComments: []string{"comment"},
 		DAGParams:         &dagconfig.MainNetParams,
 		Services:          wire.SFNodeBloom,
-		Subnetwork:        &wire.SubnetworkSupportsAll,
+		SubnetworkID:      &wire.SubnetworkIDSupportsAll,
 	}
 	inConn, outConn := pipe(
 		&conn{raddr: "10.0.0.1:8333"},
@@ -611,7 +611,7 @@ func TestOutboundPeer(t *testing.T) {
 		UserAgentComments: []string{"comment"},
 		DAGParams:         &dagconfig.MainNetParams,
 		Services:          0,
-		Subnetwork:        &wire.SubnetworkSupportsAll,
+		SubnetworkID:      &wire.SubnetworkIDSupportsAll,
 	}
 
 	r, w := io.Pipe()
@@ -752,7 +752,7 @@ func TestUnsupportedVersionPeer(t *testing.T) {
 		UserAgentComments: []string{"comment"},
 		DAGParams:         &dagconfig.MainNetParams,
 		Services:          0,
-		Subnetwork:        &wire.SubnetworkSupportsAll,
+		SubnetworkID:      &wire.SubnetworkIDSupportsAll,
 	}
 
 	localNA := wire.NewNetAddressIPPort(
@@ -809,7 +809,7 @@ func TestUnsupportedVersionPeer(t *testing.T) {
 	}
 
 	// Remote peer writes version message advertising invalid protocol version 1
-	invalidVersionMsg := wire.NewMsgVersion(remoteNA, localNA, 0, 0, &wire.SubnetworkSupportsAll)
+	invalidVersionMsg := wire.NewMsgVersion(remoteNA, localNA, 0, 0, &wire.SubnetworkIDSupportsAll)
 	invalidVersionMsg.ProtocolVersion = 1
 
 	_, err = wire.WriteMessageN(
