@@ -1574,6 +1574,14 @@ func (s *Server) handleRelayInvMsg(state *peerState, msg relayMsg) {
 					return
 				}
 			}
+
+			// Don't relay the transaction if the peer's subnetwork is
+			// incompatible with it
+			if !sp.Peer.SubnetworkID().IsEqual(&wire.SubnetworkDAGCoin) &&
+				!sp.Peer.SubnetworkID().IsEqual(???SubnetworkID???) {
+				return
+			}
+
 		}
 
 		// Queue the inventory to be relayed with the next batch.
