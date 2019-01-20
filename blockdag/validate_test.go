@@ -242,7 +242,7 @@ func TestCheckBlockSanity(t *testing.T) {
 					},
 				},
 				LockTime:     0,
-				SubnetworkID: wire.SubnetworkDAGCoin,
+				SubnetworkID: wire.SubnetworkIDNative,
 			},
 			{
 				Version: 1,
@@ -312,7 +312,7 @@ func TestCheckBlockSanity(t *testing.T) {
 					},
 				},
 				LockTime:     0,
-				SubnetworkID: wire.SubnetworkDAGCoin,
+				SubnetworkID: wire.SubnetworkIDNative,
 			},
 			{
 				Version: 1,
@@ -381,7 +381,7 @@ func TestCheckBlockSanity(t *testing.T) {
 					},
 				},
 				LockTime:     0,
-				SubnetworkID: wire.SubnetworkDAGCoin,
+				SubnetworkID: wire.SubnetworkIDNative,
 			},
 			{
 				Version: 1,
@@ -438,7 +438,7 @@ func TestCheckBlockSanity(t *testing.T) {
 					},
 				},
 				LockTime:     0,
-				SubnetworkID: wire.SubnetworkDAGCoin,
+				SubnetworkID: wire.SubnetworkIDNative,
 			},
 		},
 	}
@@ -684,7 +684,7 @@ var Block100000 = wire.MsgBlock{
 				},
 			},
 			LockTime:     0,
-			SubnetworkID: wire.SubnetworkDAGCoin,
+			SubnetworkID: wire.SubnetworkIDNative,
 		},
 		{
 			Version: 1,
