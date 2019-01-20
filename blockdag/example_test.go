@@ -6,6 +6,7 @@ package blockdag_test
 
 import (
 	"fmt"
+	"github.com/daglabs/btcd/wire"
 	"math/big"
 	"os"
 	"path/filepath"
@@ -46,9 +47,10 @@ func ExampleBlockDAG_ProcessBlock() {
 	// values obtained from other peers on the network so the local time is
 	// adjusted to be in agreement with other peers.
 	chain, err := blockdag.New(&blockdag.Config{
-		DB:         db,
-		DAGParams:  &dagconfig.MainNetParams,
-		TimeSource: blockdag.NewMedianTime(),
+		DB:           db,
+		DAGParams:    &dagconfig.MainNetParams,
+		TimeSource:   blockdag.NewMedianTime(),
+		SubnetworkID: &wire.SubnetworkSupportsAll,
 	})
 	if err != nil {
 		fmt.Printf("Failed to create chain instance: %v\n", err)

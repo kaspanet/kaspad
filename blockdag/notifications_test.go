@@ -5,6 +5,7 @@
 package blockdag
 
 import (
+	"github.com/daglabs/btcd/wire"
 	"testing"
 
 	"github.com/daglabs/btcd/dagconfig"
@@ -19,7 +20,8 @@ func TestNotifications(t *testing.T) {
 
 	// Create a new database and dag instance to run tests against.
 	dag, teardownFunc, err := DAGSetup("notifications", Config{
-		DAGParams: &dagconfig.SimNetParams,
+		DAGParams:    &dagconfig.SimNetParams,
+		SubnetworkID: &wire.SubnetworkSupportsAll,
 	})
 	if err != nil {
 		t.Fatalf("Failed to setup dag instance: %v", err)

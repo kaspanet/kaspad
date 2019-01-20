@@ -2,6 +2,7 @@ package blockdag
 
 import (
 	"errors"
+	"github.com/daglabs/btcd/wire"
 	"strings"
 	"testing"
 
@@ -14,7 +15,8 @@ import (
 func TestMaybeAcceptBlockErrors(t *testing.T) {
 	// Create a new database and DAG instance to run tests against.
 	dag, teardownFunc, err := DAGSetup("TestMaybeAcceptBlockErrors", Config{
-		DAGParams: &dagconfig.SimNetParams,
+		DAGParams:    &dagconfig.SimNetParams,
+		SubnetworkID: &wire.SubnetworkSupportsAll,
 	})
 	if err != nil {
 		t.Fatalf("TestMaybeAcceptBlockErrors: Failed to setup DAG instance: %v", err)
