@@ -1430,7 +1430,7 @@ func New(config *Config) (*BlockDAG, error) {
 		return nil, AssertError("BlockDAG.New database is nil")
 	}
 	if config.DAGParams == nil {
-		return nil, AssertError("BlockDAG.New chain parameters nil")
+		return nil, AssertError("BlockDAG.New DAG parameters nil")
 	}
 	if config.TimeSource == nil {
 		return nil, AssertError("BlockDAG.New timesource is nil")
