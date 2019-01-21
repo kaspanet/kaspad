@@ -9,13 +9,14 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"github.com/daglabs/btcd/util/subnetworkid"
 	"math"
 	"reflect"
 	"runtime"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/daglabs/btcd/util/subnetworkid"
 
 	"bou.ke/monkey"
 	"github.com/daglabs/btcd/blockdag"
@@ -972,15 +973,22 @@ func TestSimpleOrphanChain(t *testing.T) {
 		t.Fatalf("ProcessTransaction: failed to accept valid "+
 			"orphan %v", err)
 	}
-	if len(acceptedTxns) != len(chainedTxns) {
+	if len(acceptedTxns) != 1 {
 		t.Fatalf("ProcessTransaction: reported accepted transactions "+
-			"length does not match expected -- got %d, want %d",
-			len(acceptedTxns), len(chainedTxns))
+			"length does not match expected -- got %d, want 1",
+			len(acceptedTxns))
+	}
+	if acceptedTxns[0].Tx != chainedTxns[0] {
+		t.Fatal("ProcessTransaction: wrong accepted transaction")
 	}
 	for _, txD := range acceptedTxns {
 		// Ensure the transaction is no longer in the orphan pool, is
 		// now in the transaction pool, and is reported as available.
 		testPoolMembership(tc, txD.Tx, false, true)
+	}
+	for _, tx := range chainedTxns[1:] {
+		// Ensure that chained transactions are still is in the orphan pool
+		testPoolMembership(tc, tx, true, false)
 	}
 }
 
@@ -1126,26 +1134,30 @@ func TestRemoveTransaction(t *testing.T) {
 		t.Fatalf("unable to create transaction chain: %v", err)
 	}
 
-	for _, tx := range chainedTxns {
+	for i, tx := range chainedTxns {
 		_, err := harness.txPool.ProcessTransaction(tx, true,
 			false, 0)
 		if err != nil {
 			t.Fatalf("ProcessTransaction: %v", err)
 		}
 
-		testPoolMembership(tc, tx, false, true)
+		testPoolMembership(tc, tx, i != 0, i == 0)
 	}
 
 	//Checks that when removeRedeemers is false, the specified transaction is the only transaction that gets removed
 	harness.txPool.RemoveTransaction(chainedTxns[3], false, true)
+	testPoolMembership(tc, chainedTxns[3], true, false)
+	harness.txPool.RemoveOrphan(chainedTxns[3])
 	testPoolMembership(tc, chainedTxns[3], false, false)
-	testPoolMembership(tc, chainedTxns[4], false, true)
+	testPoolMembership(tc, chainedTxns[4], true, false)
 
 	//Checks that when removeRedeemers is true, all of the transaction that are dependent on it get removed
 	harness.txPool.RemoveTransaction(chainedTxns[1], true, true)
 	testPoolMembership(tc, chainedTxns[0], false, true)
+	testPoolMembership(tc, chainedTxns[1], true, false)
+	harness.txPool.RemoveOrphan(chainedTxns[1])
 	testPoolMembership(tc, chainedTxns[1], false, false)
-	testPoolMembership(tc, chainedTxns[2], false, false)
+	testPoolMembership(tc, chainedTxns[2], true, false)
 
 	fakeWithDiffErr := "error from WithDiff"
 	guard := monkey.Patch((*blockdag.DiffUTXOSet).WithDiff, func(_ *blockdag.DiffUTXOSet, _ *blockdag.UTXODiff) (blockdag.UTXOSet, error) {
@@ -1484,10 +1496,10 @@ func TestMultiInputOrphanDoubleSpend(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ProcessTransaction: failed to accept valid tx %v", err)
 	}
-	if len(acceptedTxns) != maxOrphans {
+	if len(acceptedTxns) != 1 {
 		t.Fatalf("ProcessTransaction: reported accepted transactions "+
-			"length does not match expected -- got %d, want %d",
-			len(acceptedTxns), maxOrphans)
+			"length does not match expected -- got %d, want 1",
+			len(acceptedTxns))
 	}
 	for _, txD := range acceptedTxns {
 		// Ensure the transaction is no longer in the orphan pool, is
@@ -1495,9 +1507,9 @@ func TestMultiInputOrphanDoubleSpend(t *testing.T) {
 		testPoolMembership(tc, txD.Tx, false, true)
 	}
 
-	// Ensure the double spending orphan is no longer in the orphan pool and
+	// Ensure the double spending orphan is still in the orphan pool and
 	// was not moved to the transaction pool.
-	testPoolMembership(tc, doubleSpendTx, false, false)
+	testPoolMembership(tc, doubleSpendTx, true, false)
 }
 
 // TestCheckSpend tests that CheckSpend returns the expected spends found in
@@ -1543,17 +1555,16 @@ func TestCheckSpend(t *testing.T) {
 			"got %v", op, chainedTxns[0], spend)
 	}
 
-	// Now all but the last tx should be spent by the next.
+	// Now all but the last tx should be orphans, their spent must be nil.
 	for i := 0; i < len(chainedTxns)-1; i++ {
 		op = wire.OutPoint{
 			Hash:  *chainedTxns[i].Hash(),
 			Index: 0,
 		}
-		expSpend := chainedTxns[i+1]
 		spend = harness.txPool.CheckSpend(op)
-		if spend != expSpend {
-			t.Fatalf("expected %v to be spent by %v, instead "+
-				"got %v", op, expSpend, spend)
+		if spend != nil {
+			t.Fatalf("expected %v to be spent by nil, instead "+
+				"got %v", op, spend)
 		}
 	}
 
@@ -1583,13 +1594,14 @@ func TestCount(t *testing.T) {
 		t.Fatalf("harness.CreateTxChain: unexpected error: %v", err)
 	}
 
-	for i, tx := range chainedTxns {
+	for _, tx := range chainedTxns {
 		_, err = harness.txPool.ProcessTransaction(tx, true, false, 0)
 		if err != nil {
 			t.Errorf("ProcessTransaction: unexpected error: %v", err)
 		}
-		if harness.txPool.Count() != i+1 {
-			t.Errorf("TestCount: txPool expected to have %v transactions but got %v", i+1, harness.txPool.Count())
+		// only first transction from chain should be accepted
+		if harness.txPool.Count() != 1 {
+			t.Errorf("TestCount: txPool expected to have 1 transactions but got %v", harness.txPool.Count())
 		}
 	}
 
@@ -1597,8 +1609,8 @@ func TestCount(t *testing.T) {
 	if err != nil {
 		t.Fatalf("harness.CreateTxChain: unexpected error: %v", err)
 	}
-	if harness.txPool.Count() != 2 {
-		t.Errorf("TestCount: txPool expected to have 2 transactions but got %v", harness.txPool.Count())
+	if harness.txPool.Count() != 0 {
+		t.Errorf("TestCount: txPool expected to have 0 transactions but got %v", harness.txPool.Count())
 	}
 }
 

@@ -740,7 +740,9 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rateLimit, rejectDu
 	// maybeAddOrphan if this behavior is desired.
 	var missingParents []*daghash.Hash
 	for _, txIn := range tx.MsgTx().TxIn {
-		if _, ok := mp.mpUTXOSet.Get(txIn.PreviousOutPoint); !ok {
+		if _, ok := mp.mpUTXOSet.Get(txIn.PreviousOutPoint); !ok || mp.isTransactionInPool(&txIn.PreviousOutPoint.Hash) {
+			// Dependant transactions are handled as orphans
+
 			// Must make a copy of the hash here since the iterator
 			// is replaced and taking its address directly would
 			// result in all of the entries pointing to the same
