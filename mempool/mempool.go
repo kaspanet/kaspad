@@ -646,10 +646,21 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rateLimit, rejectDu
 		return nil, nil, txRuleError(wire.RejectDuplicate, str)
 	}
 
+	// If we're a partial node, don't accept the transaction if it does not
+	// belong to our own subnetwork
+	subnetworkID := mp.cfg.DAG.SubnetworkID()
+	isLocalNodeFull := subnetworkID.IsEqual(&wire.SubnetworkIDSupportsAll)
+	isLocalNodeNative := subnetworkID.IsEqual(&wire.SubnetworkIDNative)
+	isTxSubnetworkLocal := tx.MsgTx().SubnetworkID.IsEqual(&wire.SubnetworkIDNative)
+	if !isLocalNodeFull && !isLocalNodeNative && !isTxSubnetworkLocal {
+		str:= "tx %v belongs to an invalid subnetwork"
+		return nil, nil, txRuleError(wire.RejectInvalid, str)
+	}
+
 	// Perform preliminary sanity checks on the transaction.  This makes
 	// use of blockchain which contains the invariant rules for what
 	// transactions are allowed into blocks.
-	err := blockdag.CheckTransactionSanity(tx, mp.cfg.DAG.SubnetworkID())
+	err := blockdag.CheckTransactionSanity(tx, subnetworkID)
 	if err != nil {
 		if cerr, ok := err.(blockdag.RuleError); ok {
 			return nil, nil, dagRuleError(cerr)
