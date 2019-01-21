@@ -271,7 +271,7 @@ func (bf *Filter) maybeAddOutpoint(pkScript []byte, outHash *daghash.Hash, outId
 //
 // This function MUST be called with the filter lock held.
 func (bf *Filter) matchTxAndUpdate(tx *util.Tx) bool {
-	// Check if the filter matches the hash of the transaction.
+	// Check if the filter matches the ID of the transaction.
 	// This is useful for finding transactions when they appear in a block.
 	matched := bf.matches(tx.ID()[:])
 

@@ -19,12 +19,14 @@ import (
 
 type TestCoin struct {
 	TxHash     *daghash.Hash
+	TxID       *daghash.Hash
 	TxIndex    uint32
 	TxValue    util.Amount
 	TxNumConfs int64
 }
 
 func (c *TestCoin) Hash() *daghash.Hash { return c.TxHash }
+func (c *TestCoin) ID() *daghash.Hash   { return c.TxID }
 func (c *TestCoin) Index() uint32       { return c.TxIndex }
 func (c *TestCoin) Value() util.Amount  { return c.TxValue }
 func (c *TestCoin) PkScript() []byte    { return nil }
@@ -35,8 +37,10 @@ func NewCoin(index int64, value util.Amount, numConfs int64) coinset.Coin {
 	h := sha256.New()
 	h.Write([]byte(fmt.Sprintf("%d", index)))
 	hash, _ := daghash.NewHash(h.Sum(nil))
+	id, _ := daghash.NewHash(h.Sum(nil))
 	c := &TestCoin{
 		TxHash:     hash,
+		TxID:       id,
 		TxIndex:    0,
 		TxValue:    value,
 		TxNumConfs: numConfs,

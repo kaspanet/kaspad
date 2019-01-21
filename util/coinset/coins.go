@@ -17,6 +17,7 @@ import (
 // Coin represents a spendable transaction outpoint
 type Coin interface {
 	Hash() *daghash.Hash
+	ID() *daghash.Hash
 	Index() uint32
 	Value() util.Amount
 	PkScript() []byte
@@ -131,7 +132,7 @@ func NewMsgTxWithInputCoins(txVersion int32, inputCoins Coins) *wire.MsgTx {
 	for i, coin := range coins {
 		msgTx.TxIn[i] = &wire.TxIn{
 			PreviousOutPoint: wire.OutPoint{
-				TxID:  *coin.Hash(),
+				TxID:  *coin.ID(),
 				Index: coin.Index(),
 			},
 			SignatureScript: nil,
@@ -357,6 +358,11 @@ var _ Coin = &SimpleCoin{}
 // Hash returns the hash value of the transaction on which the Coin is an output
 func (c *SimpleCoin) Hash() *daghash.Hash {
 	return c.Tx.Hash()
+}
+
+// ID returns the ID of the transaction on which the Coin is an output
+func (c *SimpleCoin) ID() *daghash.Hash {
+	return c.Tx.ID()
 }
 
 // Index returns the index of the output on the transaction which the Coin represents

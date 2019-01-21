@@ -1099,7 +1099,7 @@ func (mp *TxPool) Count() int {
 	return count
 }
 
-// TxIDs returns a slice of hashes for all of the transactions in the memory
+// TxIDs returns a slice of IDs for all of the transactions in the memory
 // pool.
 //
 // This function is safe for concurrent access.
