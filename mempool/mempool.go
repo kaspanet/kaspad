@@ -653,7 +653,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rateLimit, rejectDu
 	isLocalNodeNative := subnetworkID.IsEqual(&wire.SubnetworkIDNative)
 	isTxSubnetworkLocal := tx.MsgTx().SubnetworkID.IsEqual(&wire.SubnetworkIDNative)
 	if !isLocalNodeFull && !isLocalNodeNative && !isTxSubnetworkLocal {
-		str:= "tx %v belongs to an invalid subnetwork"
+		str := "tx %v belongs to an invalid subnetwork"
 		return nil, nil, txRuleError(wire.RejectInvalid, str)
 	}
 
