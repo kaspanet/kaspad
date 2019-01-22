@@ -691,7 +691,7 @@ func (mp *TxPool) CheckSpend(op wire.OutPoint) *util.Tx {
 }
 
 // This function MUST be called with the mempool lock held (for reads).
-func (mp *TxPool) fetchTransaction(txHash *daghash.Hash) *TxDesc {
+func (mp *TxPool) fetchTransaction(txHash *daghash.Hash) (*TxDesc, bool) {
 	txDesc, exists := mp.pool[*txHash]
 	if !exists {
 		txDesc, exists = mp.depends[*txHash]
