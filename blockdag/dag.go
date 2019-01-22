@@ -11,6 +11,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/daglabs/btcd/util/subnetworkid"
+
 	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/database"
@@ -96,9 +98,8 @@ type BlockDAG struct {
 	// virtual tracks the current tips.
 	virtual *virtualBlock
 
-	// lastSubnetworkID holds the last registered subnetwork ID in the DAG.
-	// Note that it is NOT the total amount of registered (or active) subnetworks.
-	lastSubnetworkID uint64
+	// subnetworkID holds the subnetwork ID of the DAG
+	subnetworkID *subnetworkid.SubnetworkID
 
 	// These fields are related to handling of orphan blocks.  They are
 	// protected by a combination of the chain lock and the orphan lock.
@@ -1345,6 +1346,10 @@ func (dag *BlockDAG) LocateHeaders(locator BlockLocator, hashStop *daghash.Hash)
 	return headers
 }
 
+func (dag *BlockDAG) SubnetworkID() *subnetworkid.SubnetworkID {
+	return dag.subnetworkID
+}
+
 // IndexManager provides a generic interface that is called when blocks are
 // connected and disconnected to and from the tip of the main chain for the
 // purpose of supporting optional indexes.
@@ -1376,7 +1381,7 @@ type Config struct {
 	// This field can be nil if the caller does not desire the behavior.
 	Interrupt <-chan struct{}
 
-	// DAGParams identifies which chain parameters the chain is associated
+	// DAGParams identifies which DAG parameters the DAG is associated
 	// with.
 	//
 	// This field is required.
@@ -1413,19 +1418,28 @@ type Config struct {
 	// This field can be nil if the caller does not wish to make use of an
 	// index manager.
 	IndexManager IndexManager
+
+	// SubnetworkID identifies which subnetwork the DAG is associated
+	// with.
+	//
+	// This field is required.
+	SubnetworkID *subnetworkid.SubnetworkID
 }
 
 // New returns a BlockDAG instance using the provided configuration details.
 func New(config *Config) (*BlockDAG, error) {
 	// Enforce required config fields.
 	if config.DB == nil {
-		return nil, AssertError("blockchain.New database is nil")
+		return nil, AssertError("BlockDAG.New database is nil")
 	}
 	if config.DAGParams == nil {
-		return nil, AssertError("blockchain.New chain parameters nil")
+		return nil, AssertError("BlockDAG.New DAG parameters nil")
 	}
 	if config.TimeSource == nil {
-		return nil, AssertError("blockchain.New timesource is nil")
+		return nil, AssertError("BlockDAG.New timesource is nil")
+	}
+	if config.SubnetworkID == nil {
+		return nil, AssertError("BlockDAG.New subnetworkID is nil")
 	}
 
 	// Generate a checkpoint by height map from the provided checkpoints
@@ -1470,6 +1484,7 @@ func New(config *Config) (*BlockDAG, error) {
 		deploymentCaches:    newThresholdCaches(dagconfig.DefinedDeployments),
 		blockCount:          1,
 		SubnetworkStore:     newSubnetworkStore(config.DB),
+		subnetworkID:        config.SubnetworkID,
 	}
 
 	// Initialize the chain state from the passed database.  When the db

@@ -99,14 +99,14 @@ const (
 )
 
 var (
-	// SubnetworkSupportsAll is the subnetwork id that is used to signal to peers that you support all subnetworks
-	SubnetworkSupportsAll = subnetworkid.SubnetworkID{}
+	// SubnetworkIDSupportsAll is the subnetwork ID that is used to signal to peers that you support all subnetworks
+	SubnetworkIDSupportsAll = subnetworkid.SubnetworkID{}
 
-	// SubnetworkDAGCoin is the default subnetwork which is used for transactions without related payload data
-	SubnetworkDAGCoin = subnetworkid.SubnetworkID{1}
+	// SubnetworkIDNative is the default subnetwork ID which is used for transactions without related payload data
+	SubnetworkIDNative = subnetworkid.SubnetworkID{1}
 
-	// SubnetworkRegistry is the subnetwork which is used for adding new sub networks to the registry
-	SubnetworkRegistry = subnetworkid.SubnetworkID{2}
+	// SubnetworkIDRegistry is the subnetwork ID which is used for adding new sub networks to the registry
+	SubnetworkIDRegistry = subnetworkid.SubnetworkID{2}
 )
 
 // scriptFreeList defines a free list of byte slices (up to the maximum number
@@ -464,12 +464,12 @@ func (msg *MsgTx) BtcDecode(r io.Reader, pver uint32) error {
 		return err
 	}
 
-	if msg.SubnetworkID == SubnetworkSupportsAll {
+	if msg.SubnetworkID == SubnetworkIDSupportsAll {
 		str := fmt.Sprintf("%v is a reserved sub network and cannot be used as part of a transaction", msg.SubnetworkID)
 		return messageError("MsgTx.BtcDecode", str)
 	}
 
-	if msg.SubnetworkID != SubnetworkDAGCoin {
+	if msg.SubnetworkID != SubnetworkIDNative {
 		msg.Gas, err = binarySerializer.Uint64(r, littleEndian)
 		if err != nil {
 			returnScriptBuffers()
@@ -601,8 +601,8 @@ func (msg *MsgTx) BtcEncode(w io.Writer, pver uint32) error {
 		return err
 	}
 
-	if msg.SubnetworkID != SubnetworkDAGCoin {
-		if msg.SubnetworkID == SubnetworkRegistry && msg.Gas != 0 {
+	if msg.SubnetworkID != SubnetworkIDNative {
+		if msg.SubnetworkID == SubnetworkIDRegistry && msg.Gas != 0 {
 			str := fmt.Sprintf("Transactions from subnetwork %v should have 0 gas", msg.SubnetworkID)
 			return messageError("MsgTx.BtcEncode", str)
 		}
@@ -651,13 +651,13 @@ func (msg *MsgTx) Serialize(w io.Writer) error {
 // SerializeSize returns the number of bytes it would take to serialize the
 // the transaction.
 func (msg *MsgTx) SerializeSize() int {
-	// Version 4 bytes + LockTime 8 bytes + Subnetwork ID 20
+	// Version 4 bytes + LockTime 8 bytes + SubnetworkID 20
 	// bytes + Serialized varint size for the number of transaction
 	// inputs and outputs.
 	n := 32 + VarIntSerializeSize(uint64(len(msg.TxIn))) +
 		VarIntSerializeSize(uint64(len(msg.TxOut)))
 
-	if msg.SubnetworkID != SubnetworkDAGCoin {
+	if msg.SubnetworkID != SubnetworkIDNative {
 		// Gas 8 bytes + Serialized varint size for the length of the payload
 		n += 8 + VarIntSerializeSize(uint64(len(msg.Payload)))
 	}
@@ -725,6 +725,16 @@ func (msg *MsgTx) PkScriptLocs() []int {
 	return pkScriptLocs
 }
 
+// IsSubnetworkCompatible return true iff subnetworkID is one or more of the following:
+// 1. The SupportsAll subnetwork (full node)
+// 2. The native subnetwork
+// 3. The transaction's subnetwork
+func (msg *MsgTx) IsSubnetworkCompatible(subnetworkID *subnetworkid.SubnetworkID) bool {
+	return subnetworkID.IsEqual(&SubnetworkIDSupportsAll) ||
+		subnetworkID.IsEqual(&SubnetworkIDNative) ||
+		subnetworkID.IsEqual(&msg.SubnetworkID)
+}
+
 // NewMsgTx returns a new bitcoin tx message that conforms to the Message
 // interface.  The return instance has a default version of TxVersion and there
 // are no transaction inputs or outputs.  Also, the lock time is set to zero
@@ -735,13 +745,13 @@ func NewMsgTx(version int32) *MsgTx {
 		Version:      version,
 		TxIn:         make([]*TxIn, 0, defaultTxInOutAlloc),
 		TxOut:        make([]*TxOut, 0, defaultTxInOutAlloc),
-		SubnetworkID: SubnetworkDAGCoin,
+		SubnetworkID: SubnetworkIDNative,
 	}
 }
 
 func newRegistryMsgTx(version int32, gasLimit uint64) *MsgTx {
 	tx := NewMsgTx(version)
-	tx.SubnetworkID = SubnetworkRegistry
+	tx.SubnetworkID = SubnetworkIDRegistry
 	tx.Payload = make([]byte, 8)
 	binary.LittleEndian.PutUint64(tx.Payload, gasLimit)
 	return tx

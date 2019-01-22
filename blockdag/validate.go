@@ -174,7 +174,7 @@ func CalcBlockSubsidy(height int32, dagParams *dagconfig.Params) uint64 {
 
 // CheckTransactionSanity performs some preliminary checks on a transaction to
 // ensure it is sane.  These checks are context free.
-func CheckTransactionSanity(tx *util.Tx) error {
+func CheckTransactionSanity(tx *util.Tx, subnetworkID *subnetworkid.SubnetworkID) error {
 	// A transaction must have at least one input.
 	msgTx := tx.MsgTx()
 	if len(msgTx.TxIn) == 0 {
@@ -262,28 +262,39 @@ func CheckTransactionSanity(tx *util.Tx) error {
 		}
 	}
 
-	// Transactions in native and SubnetworkRegistry Subnetworks must have Gas = 0
-	if (msgTx.SubnetworkID == wire.SubnetworkDAGCoin ||
-		msgTx.SubnetworkID == wire.SubnetworkRegistry) &&
+	// Transactions in native and subnetwork registry subnetworks must have Gas = 0
+	if (msgTx.SubnetworkID == wire.SubnetworkIDNative ||
+		msgTx.SubnetworkID == wire.SubnetworkIDRegistry) &&
 		msgTx.Gas > 0 {
 
 		return ruleError(ErrInvalidGas, "transaction in the native or "+
 			"registry subnetworks has gas > 0 ")
 	}
 
-	if msgTx.SubnetworkID == wire.SubnetworkDAGCoin &&
+	if msgTx.SubnetworkID == wire.SubnetworkIDNative &&
 		len(msgTx.Payload) > 0 {
 
 		return ruleError(ErrInvalidPayload,
 			"transaction in the native subnetwork includes a payload")
 	}
 
-	if msgTx.SubnetworkID == wire.SubnetworkRegistry &&
+	if msgTx.SubnetworkID == wire.SubnetworkIDRegistry &&
 		len(msgTx.Payload) != 8 {
 
 		return ruleError(ErrInvalidPayload,
 			"transaction in the subnetwork registry include a payload "+
 				"with length != 8 bytes")
+	}
+
+	// If we are a partial node, only transactions on the Registry subnetwork
+	// or our own subnetwork may have a payload
+	isLocalNodeFull := subnetworkID.IsEqual(&wire.SubnetworkIDSupportsAll)
+	shouldTxBeFull := msgTx.SubnetworkID.IsEqual(&wire.SubnetworkIDRegistry) ||
+		msgTx.SubnetworkID.IsEqual(subnetworkID)
+	if !isLocalNodeFull && !shouldTxBeFull && len(msgTx.Payload) > 0 {
+		return ruleError(ErrInvalidPayload,
+			"transaction that was expected to be partial has a payload "+
+				"with length > 0")
 	}
 
 	return nil
@@ -470,7 +481,7 @@ func checkBlockParentsOrder(header *wire.BlockHeader) error {
 // The flags do not modify the behavior of this function directly, however they
 // are needed to pass along to checkBlockHeaderSanity.
 func checkBlockSanity(block *util.Block, powLimit *big.Int, timeSource MedianTimeSource,
-	subnetworkStore *subnetworkStore, flags BehaviorFlags) error {
+	subnetworkID *subnetworkid.SubnetworkID, subnetworkStore *subnetworkStore, flags BehaviorFlags) error {
 
 	msgBlock := block.MsgBlock()
 	header := &msgBlock.Header
@@ -526,7 +537,7 @@ func checkBlockSanity(block *util.Block, powLimit *big.Int, timeSource MedianTim
 	// Do some preliminary checks on each transaction to ensure they are
 	// sane before continuing.
 	for _, tx := range transactions {
-		err := CheckTransactionSanity(tx)
+		err := CheckTransactionSanity(tx, subnetworkID)
 		if err != nil {
 			return err
 		}
@@ -583,7 +594,7 @@ func checkBlockSanity(block *util.Block, powLimit *big.Int, timeSource MedianTim
 		msgTx := tx.MsgTx()
 		// In DAGCoin and Registry sub-networks all txs must have Gas = 0, and that is validated in checkTransactionSanity
 		// Therefore - no need to check them here.
-		if msgTx.SubnetworkID != wire.SubnetworkDAGCoin && msgTx.SubnetworkID != wire.SubnetworkRegistry {
+		if msgTx.SubnetworkID != wire.SubnetworkIDNative && msgTx.SubnetworkID != wire.SubnetworkIDRegistry {
 			gasUsageInSubnetwork := gasUsageInAllSubnetworks[msgTx.SubnetworkID]
 			gasUsageInAllSubnetworks[msgTx.SubnetworkID] = gasUsageInSubnetwork + msgTx.Gas
 
@@ -604,9 +615,9 @@ func checkBlockSanity(block *util.Block, powLimit *big.Int, timeSource MedianTim
 // CheckBlockSanity performs some preliminary checks on a block to ensure it is
 // sane before continuing with block processing.  These checks are context free.
 func CheckBlockSanity(block *util.Block, powLimit *big.Int,
-	timeSource MedianTimeSource, subnetworkStore *subnetworkStore) error {
+	timeSource MedianTimeSource, subnetworkID *subnetworkid.SubnetworkID, subnetworkStore *subnetworkStore) error {
 
-	return checkBlockSanity(block, powLimit, timeSource, subnetworkStore, BFNone)
+	return checkBlockSanity(block, powLimit, timeSource, subnetworkID, subnetworkStore, BFNone)
 }
 
 // ExtractCoinbaseHeight attempts to extract the height of the block from the
@@ -1134,7 +1145,7 @@ func (dag *BlockDAG) CheckConnectBlockTemplate(block *util.Block) error {
 		return ruleError(ErrParentBlockNotCurrentTips, str)
 	}
 
-	err := checkBlockSanity(block, dag.dagParams.PowLimit, dag.timeSource, dag.SubnetworkStore, flags)
+	err := checkBlockSanity(block, dag.dagParams.PowLimit, dag.timeSource, dag.SubnetworkID(), dag.SubnetworkStore, flags)
 	if err != nil {
 		return err
 	}

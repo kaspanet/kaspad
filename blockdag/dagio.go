@@ -53,14 +53,6 @@ var (
 	// unspent transaction output set.
 	utxoSetBucketName = []byte("utxoset")
 
-	// pendingSubnetworksBucketName is the name of the db bucket used to store the
-	// pending subnetworks.
-	pendingSubnetworksBucketName = []byte("pendingsubnetworks")
-
-	// registeredSubnetworkTxsBucketName is the name of the db bucket used to house
-	// the transactions that have been used to register subnetworks.
-	registeredSubnetworkTxsBucketName = []byte("registeredsubnetworktxs")
-
 	// subnetworksBucketName is the name of the db bucket used to store the
 	// subnetwork registry.
 	subnetworksBucketName = []byte("subnetworks")
@@ -670,7 +662,6 @@ func dbFetchHeightByHash(dbTx database.Tx, hash *daghash.Hash) (int32, error) {
 type dagState struct {
 	TipHashes         []daghash.Hash
 	LastFinalityPoint daghash.Hash
-	LastSubnetworkID  uint64
 }
 
 // serializeDAGState returns the serialization of the DAG state.
@@ -772,19 +763,6 @@ func (dag *BlockDAG) createDAGState() error {
 		}
 		err = dbPutVersion(dbTx, utxoSetVersionKeyName,
 			latestUTXOSetBucketVersion)
-		if err != nil {
-			return err
-		}
-
-		// Create the bucket that houses the pending subnetworks.
-		_, err = meta.CreateBucket(pendingSubnetworksBucketName)
-		if err != nil {
-			return err
-		}
-
-		// Create the bucket that houses the registered subnetworks to
-		// their registry transactions index.
-		_, err = meta.CreateBucket(registeredSubnetworkTxsBucketName)
 		if err != nil {
 			return err
 		}

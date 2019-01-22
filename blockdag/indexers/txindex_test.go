@@ -38,6 +38,7 @@ func TestTxIndexConnectBlock(t *testing.T) {
 	config := blockdag.Config{
 		IndexManager: indexManager,
 		DAGParams:    &params,
+		SubnetworkID: &wire.SubnetworkIDSupportsAll,
 	}
 
 	dag, teardown, err := blockdag.DAGSetup("TestTxIndexConnectBlock", config)
@@ -151,7 +152,7 @@ var block1 = wire.MsgBlock{
 				},
 			},
 			LockTime:     0,
-			SubnetworkID: wire.SubnetworkDAGCoin,
+			SubnetworkID: wire.SubnetworkIDNative,
 		},
 	},
 }
@@ -205,7 +206,7 @@ var block2 = wire.MsgBlock{
 				},
 			},
 			LockTime:     0,
-			SubnetworkID: wire.SubnetworkDAGCoin,
+			SubnetworkID: wire.SubnetworkIDNative,
 		},
 		{
 			Version: 1,
@@ -251,7 +252,7 @@ var block2 = wire.MsgBlock{
 				},
 			},
 			LockTime:     0,
-			SubnetworkID: wire.SubnetworkDAGCoin,
+			SubnetworkID: wire.SubnetworkIDNative,
 		},
 	},
 }
@@ -300,7 +301,7 @@ var block3Tx = &wire.MsgTx{
 		},
 	},
 	LockTime:     0,
-	SubnetworkID: wire.SubnetworkDAGCoin,
+	SubnetworkID: wire.SubnetworkIDNative,
 }
 
 var block3 = wire.MsgBlock{
@@ -352,7 +353,7 @@ var block3 = wire.MsgBlock{
 				},
 			},
 			LockTime:     0,
-			SubnetworkID: wire.SubnetworkDAGCoin,
+			SubnetworkID: wire.SubnetworkIDNative,
 		},
 		block3Tx,
 	},
@@ -407,7 +408,7 @@ var block3A = wire.MsgBlock{
 				},
 			},
 			LockTime:     0,
-			SubnetworkID: wire.SubnetworkDAGCoin,
+			SubnetworkID: wire.SubnetworkIDNative,
 		},
 		block3Tx,
 	},
@@ -462,7 +463,7 @@ var block4 = wire.MsgBlock{
 				},
 			},
 			LockTime:     0,
-			SubnetworkID: wire.SubnetworkDAGCoin,
+			SubnetworkID: wire.SubnetworkIDNative,
 		},
 	},
 }
@@ -522,7 +523,7 @@ var block5 = wire.MsgBlock{
 				},
 			},
 			LockTime:     0,
-			SubnetworkID: wire.SubnetworkDAGCoin,
+			SubnetworkID: wire.SubnetworkIDNative,
 		},
 	},
 }

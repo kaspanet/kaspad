@@ -485,24 +485,24 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 		prioItem := heap.Pop(priorityQueue).(*txPrioItem)
 		tx := prioItem.tx
 
-		if tx.MsgTx().SubnetworkID != wire.SubnetworkDAGCoin {
-			subnetwork := tx.MsgTx().SubnetworkID
-			gasUsage, ok := gasUsageMap[subnetwork]
+		if tx.MsgTx().SubnetworkID != wire.SubnetworkIDNative {
+			subnetworkID := tx.MsgTx().SubnetworkID
+			gasUsage, ok := gasUsageMap[subnetworkID]
 			if !ok {
 				gasUsage = 0
 			}
-			gasLimit, err := g.dag.SubnetworkStore.GasLimit(&subnetwork)
+			gasLimit, err := g.dag.SubnetworkStore.GasLimit(&subnetworkID)
 			if err != nil {
-				log.Errorf("Cannot get GAS limit for subnetwork %v", subnetwork)
+				log.Errorf("Cannot get GAS limit for subnetwork %v", subnetworkID)
 				continue
 			}
 			txGas := tx.MsgTx().Gas
 			if gasLimit-gasUsage < txGas {
 				log.Tracef("Transaction %v (GAS=%v) ignored because gas overusage (GASUsage=%v) in subnetwork %v (GASLimit=%v)",
-					tx.MsgTx().TxHash, txGas, gasUsage, subnetwork, gasLimit)
+					tx.MsgTx().TxHash, txGas, gasUsage, subnetworkID, gasLimit)
 				continue
 			}
-			gasUsageMap[subnetwork] = gasUsage + txGas
+			gasUsageMap[subnetworkID] = gasUsage + txGas
 		}
 
 		// Enforce maximum block size.  Also check for overflow.
