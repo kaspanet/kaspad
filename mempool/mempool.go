@@ -646,13 +646,9 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rateLimit, rejectDu
 		return nil, nil, txRuleError(wire.RejectDuplicate, str)
 	}
 
-	// If we're a partial node, don't accept the transaction if it does not
-	// belong to our own subnetwork
+	// Don't accept the transaction if it's from an incompatible subnetwork.
 	subnetworkID := mp.cfg.DAG.SubnetworkID()
-	isLocalNodeFull := subnetworkID.IsEqual(&wire.SubnetworkIDSupportsAll)
-	isLocalNodeNative := subnetworkID.IsEqual(&wire.SubnetworkIDNative)
-	isTxSubnetworkLocal := tx.MsgTx().SubnetworkID.IsEqual(subnetworkID)
-	if !isLocalNodeFull && !isLocalNodeNative && !isTxSubnetworkLocal {
+	if !tx.MsgTx().IsSubnetworkCompatible(subnetworkID) {
 		str := "tx %v belongs to an invalid subnetwork"
 		return nil, nil, txRuleError(wire.RejectInvalid, str)
 	}

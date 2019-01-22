@@ -1576,10 +1576,8 @@ func (s *Server) handleRelayInvMsg(state *peerState, msg relayMsg) {
 			}
 
 			// Don't relay the transaction if the peer's subnetwork is
-			// incompatible with it
-			if !sp.Peer.SubnetworkID().IsEqual(&wire.SubnetworkIDSupportsAll) &&
-				!sp.Peer.SubnetworkID().IsEqual(&wire.SubnetworkIDNative) &&
-				!sp.Peer.SubnetworkID().IsEqual(&txD.Tx.MsgTx().SubnetworkID) {
+			// incompatible with it.
+			if !txD.Tx.MsgTx().IsSubnetworkCompatible(sp.Peer.SubnetworkID()) {
 				return
 			}
 		}
