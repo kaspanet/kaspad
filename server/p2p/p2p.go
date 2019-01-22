@@ -661,7 +661,7 @@ func (sp *Peer) OnGetData(_ *peer.Peer, msg *wire.MsgGetData) {
 // OnGetBlocks is invoked when a peer receives a getblocks bitcoin
 // message.
 func (sp *Peer) OnGetBlocks(_ *peer.Peer, msg *wire.MsgGetBlocks) {
-	// Find the most recent known block in the best chain based on the block
+	// Find the most recent known block in the dag based on the block
 	// locator and fetch all of the block hashes after it until either
 	// wire.MaxBlocksPerMsg have been fetched or the provided stop hash is
 	// encountered.
@@ -671,8 +671,8 @@ func (sp *Peer) OnGetBlocks(_ *peer.Peer, msg *wire.MsgGetBlocks) {
 	// over with the genesis block if unknown block locators are provided.
 	//
 	// This mirrors the behavior in the reference implementation.
-	chain := sp.server.DAG
-	hashList := chain.LocateBlocks(msg.BlockLocatorHashes, &msg.HashStop,
+	dag := sp.server.DAG
+	hashList := dag.LocateBlocks(msg.BlockLocatorHashes, &msg.HashStop,
 		wire.MaxBlocksPerMsg)
 
 	// Generate inventory message.
@@ -1284,6 +1284,17 @@ func (s *Server) pushBlockMsg(sp *Peer, hash *daghash.Hash, doneChan chan<- stru
 			doneChan <- struct{}{}
 		}
 		return err
+	}
+
+	// If the peer is a partial node, clear out all the payloads of the
+	// subnetworks that are incompatible with it.
+	subnetworkID := sp.Peer.SubnetworkID()
+	if !wire.IsSubnetworkFull(subnetworkID) {
+		for _, tx := range msgBlock.Transactions {
+			if !tx.IsSubnetworkCompatible(subnetworkID) {
+				tx.Payload = []byte{}
+			}
+		}
 	}
 
 	// Once we have fetched data wait for any previous operation to finish.

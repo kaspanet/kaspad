@@ -726,13 +726,18 @@ func (msg *MsgTx) PkScriptLocs() []int {
 }
 
 // IsSubnetworkCompatible return true iff subnetworkID is one or more of the following:
+// 1. A full subnetwork (see: IsSubnetworkFull)
+// 2. The transaction's subnetwork
+func (msg *MsgTx) IsSubnetworkCompatible(subnetworkID *subnetworkid.SubnetworkID) bool {
+	return IsSubnetworkFull(subnetworkID) || subnetworkID.IsEqual(&msg.SubnetworkID)
+}
+
+// IsSubnetworkFull return true iff subnetworkID is one of the subnetworks that are
+// compatible with all other subnetworks. They are:
 // 1. The SupportsAll subnetwork (full node)
 // 2. The native subnetwork
-// 3. The transaction's subnetwork
-func (msg *MsgTx) IsSubnetworkCompatible(subnetworkID *subnetworkid.SubnetworkID) bool {
-	return subnetworkID.IsEqual(&SubnetworkIDSupportsAll) ||
-		subnetworkID.IsEqual(&SubnetworkIDNative) ||
-		subnetworkID.IsEqual(&msg.SubnetworkID)
+func IsSubnetworkFull(subnetworkID *subnetworkid.SubnetworkID) bool {
+	return subnetworkID.IsEqual(&SubnetworkIDSupportsAll) || subnetworkID.IsEqual(&SubnetworkIDNative)
 }
 
 // NewMsgTx returns a new bitcoin tx message that conforms to the Message

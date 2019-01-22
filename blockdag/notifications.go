@@ -30,8 +30,8 @@ const (
 // notificationTypeStrings is a map of notification types back to their constant
 // names for pretty printing.
 var notificationTypeStrings = map[NotificationType]string{
-	NTBlockAccepted:     "NTBlockAccepted",
-	NTBlockConnected:    "NTBlockConnected",
+	NTBlockAccepted:  "NTBlockAccepted",
+	NTBlockConnected: "NTBlockConnected",
 }
 
 // String returns the NotificationType in human-readable form.
