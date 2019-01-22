@@ -342,14 +342,14 @@ type gbtWorkState struct {
 	minTimestamp  time.Time
 	template      *mining.BlockTemplate
 	notifyMap     map[string]map[int64]chan struct{}
-	timeSource    blockdag.MedianTimeSource
+	timeSource blockdag.MedianTimeSource
 }
 
 // newGbtWorkState returns a new instance of a gbtWorkState with all internal
 // fields initialized and ready to use.
 func newGbtWorkState(timeSource blockdag.MedianTimeSource) *gbtWorkState {
 	return &gbtWorkState{
-		notifyMap:  make(map[string]map[int64]chan struct{}),
+		notifyMap: make(map[string]map[int64]chan struct{}),
 		timeSource: timeSource,
 	}
 }
@@ -1543,7 +1543,7 @@ func (state *gbtWorkState) updateBlockTemplate(s *Server, useCoinbaseValue bool)
 	if template == nil || state.tipHashes == nil ||
 		!daghash.AreEqual(state.tipHashes, tipHashes) ||
 		(state.lastTxUpdate != lastTxUpdate &&
-			time.Now().After(state.lastGenerated.Add(time.Second*
+			time.Now().After(state.lastGenerated.Add(time.Second *
 				gbtRegenerateSeconds))) {
 
 		// Reset the previous best hash the block template was generated
@@ -4298,16 +4298,6 @@ func (s *Server) handleBlockchainNotification(notification *blockdag.Notificatio
 
 		// Notify registered websocket clients of incoming block.
 		s.ntfnMgr.NotifyBlockConnected(block)
-
-	case blockdag.NTBlockDisconnected:
-		block, ok := notification.Data.(*util.Block)
-		if !ok {
-			log.Warnf("Chain disconnected notification is not a block.")
-			break
-		}
-
-		// Notify registered websocket clients.
-		s.ntfnMgr.NotifyBlockDisconnected(block)
 	}
 }
 
