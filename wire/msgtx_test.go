@@ -751,6 +751,44 @@ func TestTxSerializeSize(t *testing.T) {
 	}
 }
 
+func TestIsSubnetworkCompatible(t *testing.T) {
+	testTx := MsgTx{SubnetworkID: subnetworkid.SubnetworkID{123}}
+	tests := []struct {
+		name           string
+		subnetworkID   *subnetworkid.SubnetworkID
+		expectedResult bool
+	}{
+		{
+			name:           "SupportsAll subnetwork",
+			subnetworkID:   &SubnetworkIDSupportsAll,
+			expectedResult: true,
+		},
+		{
+			name:           "Native subnetwork",
+			subnetworkID:   &SubnetworkIDNative,
+			expectedResult: true,
+		},
+		{
+			name:           "same subnetwork as test tx",
+			subnetworkID:   &subnetworkid.SubnetworkID{123},
+			expectedResult: true,
+		},
+		{
+			name:           "other subnetwork",
+			subnetworkID:   &subnetworkid.SubnetworkID{234},
+			expectedResult: false,
+		},
+	}
+
+	for _, test := range tests {
+		result := testTx.IsSubnetworkCompatible(test.subnetworkID)
+		if result != test.expectedResult {
+			t.Errorf("IsSubnetworkCompatible got unexpected result in test '%s': "+
+				"expected: %t, want: %t", test.name, test.expectedResult, result)
+		}
+	}
+}
+
 func TestScriptFreeList(t *testing.T) {
 	var list scriptFreeList = make(chan []byte, freeListMaxItems)
 
