@@ -517,7 +517,7 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 	// If we're a full node and this block is a partial block
 	// or we're a partial node and this block is a full block
 	// then the peer is misbehaving.
-	isFullNode := config.MainConfig().SubNetwork.IsEqual(&wire.SubNetworkSupportsAll)
+	isFullNode := config.MainConfig().SubnetworkID.IsEqual(&wire.SubnetworkIDSupportsAll)
 	isFullBlock := bmsg.block.MsgBlock().MerkleProof.IsEqual(&zeroHash)
 	if isFullNode && !isFullBlock {
 		log.Warnf("Got partial block %v from %s while in full-node mode -- "+
