@@ -147,6 +147,11 @@ type TxDesc struct {
 	// StartingPriority is the priority of the transaction when it was added
 	// to the pool.
 	StartingPriority float64
+
+	// depCount is not 0 for dependent transaction. Dependent transaction is
+	// one that is accepted to pool, but cannot be mined in next block because it
+	// depends on outputs of accepted, but still not mined transaction
+	depCount uint
 }
 
 // orphanTx is normal transaction that references an ancestor transaction
@@ -168,6 +173,8 @@ type TxPool struct {
 	mtx           sync.RWMutex
 	cfg           Config
 	pool          map[daghash.Hash]*TxDesc
+	depends       map[daghash.Hash]*TxDesc
+	dependsByPrev map[wire.OutPoint]map[daghash.Hash]*TxDesc
 	orphans       map[daghash.Hash]*orphanTx
 	orphansByPrev map[wire.OutPoint]map[daghash.Hash]*util.Tx
 	outpoints     map[wire.OutPoint]*util.Tx
@@ -390,8 +397,7 @@ func (mp *TxPool) isTransactionInPool(hash *daghash.Hash) bool {
 	if _, exists := mp.pool[*hash]; exists {
 		return true
 	}
-
-	return false
+	return mp.isDependInPool(hash)
 }
 
 // IsTransactionInPool returns whether or not the passed transaction already
@@ -402,6 +408,31 @@ func (mp *TxPool) IsTransactionInPool(hash *daghash.Hash) bool {
 	// Protect concurrent access.
 	mp.mtx.RLock()
 	inPool := mp.isTransactionInPool(hash)
+	mp.mtx.RUnlock()
+
+	return inPool
+}
+
+// isDependInPool returns whether or not the passed transaction already
+// exists in the depend pool.
+//
+// This function MUST be called with the mempool lock held (for reads).
+func (mp *TxPool) isDependInPool(hash *daghash.Hash) bool {
+	if _, exists := mp.depends[*hash]; exists {
+		return true
+	}
+
+	return false
+}
+
+// IsDependInPool returns whether or not the passed transaction already
+// exists in the main pool.
+//
+// This function is safe for concurrent access.
+func (mp *TxPool) IsDependInPool(hash *daghash.Hash) bool {
+	// Protect concurrent access.
+	mp.mtx.RLock()
+	inPool := mp.isDependInPool(hash)
 	mp.mtx.RUnlock()
 
 	return inPool
@@ -470,7 +501,9 @@ func (mp *TxPool) removeTransaction(tx *util.Tx, removeRedeemers bool, restoreIn
 	}
 
 	// Remove the transaction if needed.
-	if txDesc, exists := mp.pool[*txHash]; exists {
+	txDesc := mp.fetchTransaction(txHash)
+
+	if txDesc != nil {
 		// Remove unconfirmed address index entries associated with the
 		// transaction if enabled.
 		if mp.cfg.AddrIndex != nil {
@@ -488,10 +521,46 @@ func (mp *TxPool) removeTransaction(tx *util.Tx, removeRedeemers bool, restoreIn
 					entry := blockdag.NewUTXOEntry(prevOut, false, mining.UnminedHeight)
 					diff.AddEntry(txIn.PreviousOutPoint, entry)
 				}
+				if prevTxDesc, exists := mp.depends[txIn.PreviousOutPoint.Hash]; exists {
+					prevOut := prevTxDesc.Tx.MsgTx().TxOut[txIn.PreviousOutPoint.Index]
+					entry := blockdag.NewUTXOEntry(prevOut, false, mining.UnminedHeight)
+					diff.AddEntry(txIn.PreviousOutPoint, entry)
+				}
 			}
 			delete(mp.outpoints, txIn.PreviousOutPoint)
 		}
-		delete(mp.pool, *txHash)
+
+		if txDesc.depCount == 0 {
+			delete(mp.pool, *txHash)
+		} else {
+			delete(mp.depends, *txHash)
+		}
+
+		// Proceed dependant transactions
+		prevOut := wire.OutPoint{Hash: *txHash}
+		for txOutIdx := range tx.MsgTx().TxOut {
+			// Skip to the next available output if there are none.
+			prevOut.Index = uint32(txOutIdx)
+			depends, exists := mp.dependsByPrev[prevOut]
+			if !exists {
+				continue
+			}
+
+			// Move independant transactions into main pool
+			for _, txD := range depends {
+				txD.depCount--
+				if txD.depCount == 0 {
+					// Transaction may be already removed by recursive calls, if removeRedeemers is true.
+					// So avoid to move it into main pool
+					if _, ok := mp.depends[*txD.Tx.Hash()]; ok {
+						delete(mp.depends, *txD.Tx.Hash())
+						mp.pool[*txD.Tx.Hash()] = txD
+					}
+				}
+			}
+			delete(mp.dependsByPrev, prevOut)
+		}
+
 		var err error
 		mp.mpUTXOSet, err = mp.mpUTXOSet.WithDiff(diff)
 		if err != nil {
@@ -540,7 +609,7 @@ func (mp *TxPool) RemoveDoubleSpends(tx *util.Tx) {
 // helper for maybeAcceptTransaction.
 //
 // This function MUST be called with the mempool lock held (for writes).
-func (mp *TxPool) addTransaction(tx *util.Tx, height int32, fee uint64) *TxDesc {
+func (mp *TxPool) addTransaction(tx *util.Tx, height int32, fee uint64, depCount uint) *TxDesc {
 	mp.cfg.DAG.UTXORLock()
 	defer mp.cfg.DAG.UTXORUnlock()
 	// Add the transaction to the pool and mark the referenced outpoints
@@ -554,9 +623,25 @@ func (mp *TxPool) addTransaction(tx *util.Tx, height int32, fee uint64) *TxDesc 
 			FeePerKB: fee * 1000 / uint64(tx.MsgTx().SerializeSize()),
 		},
 		StartingPriority: mining.CalcPriority(tx.MsgTx(), mp.mpUTXOSet, height),
+		depCount:         depCount,
 	}
 
-	mp.pool[*tx.Hash()] = txD
+	if depCount == 0 {
+		mp.pool[*tx.Hash()] = txD
+	} else {
+		mp.depends[*tx.Hash()] = txD
+		for _, txIn := range tx.MsgTx().TxIn {
+			if !mp.isTransactionInPool(&txIn.PreviousOutPoint.Hash) {
+				continue
+			}
+			if _, exists := mp.dependsByPrev[txIn.PreviousOutPoint]; !exists {
+				mp.dependsByPrev[txIn.PreviousOutPoint] =
+					make(map[daghash.Hash]*TxDesc)
+			}
+			mp.dependsByPrev[txIn.PreviousOutPoint][*tx.Hash()] = txD
+		}
+	}
+
 	for _, txIn := range tx.MsgTx().TxIn {
 		mp.outpoints[txIn.PreviousOutPoint] = tx
 	}
@@ -607,6 +692,18 @@ func (mp *TxPool) CheckSpend(op wire.OutPoint) *util.Tx {
 	return txR
 }
 
+// fetchTransaction is helper function
+func (mp *TxPool) fetchTransaction(txHash *daghash.Hash) *TxDesc {
+	txDesc, exists := mp.pool[*txHash]
+	if !exists {
+		txDesc, exists = mp.depends[*txHash]
+	}
+	if !exists {
+		return nil
+	}
+	return txDesc
+}
+
 // FetchTransaction returns the requested transaction from the transaction pool.
 // This only fetches from the main transaction pool and does not include
 // orphans.
@@ -615,10 +712,10 @@ func (mp *TxPool) CheckSpend(op wire.OutPoint) *util.Tx {
 func (mp *TxPool) FetchTransaction(txHash *daghash.Hash) (*util.Tx, error) {
 	// Protect concurrent access.
 	mp.mtx.RLock()
-	txDesc, exists := mp.pool[*txHash]
+	txDesc := mp.fetchTransaction(txHash)
 	mp.mtx.RUnlock()
 
-	if exists {
+	if txDesc != nil {
 		return txDesc.Tx, nil
 	}
 
@@ -739,6 +836,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rateLimit, rejectDu
 	// is not handled by this function, and the caller should use
 	// maybeAddOrphan if this behavior is desired.
 	var missingParents []*daghash.Hash
+	var depCount uint
 	for _, txIn := range tx.MsgTx().TxIn {
 		if _, ok := mp.mpUTXOSet.Get(txIn.PreviousOutPoint); !ok {
 			// Must make a copy of the hash here since the iterator
@@ -747,6 +845,9 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rateLimit, rejectDu
 			// memory location and thus all be the final hash.
 			hashCopy := txIn.PreviousOutPoint.Hash
 			missingParents = append(missingParents, &hashCopy)
+		}
+		if mp.isTransactionInPool(&txIn.PreviousOutPoint.Hash) {
+			depCount++
 		}
 	}
 	if len(missingParents) > 0 {
@@ -894,7 +995,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rateLimit, rejectDu
 	}
 
 	// Add to transaction pool.
-	txD := mp.addTransaction(tx, bestHeight, txFee)
+	txD := mp.addTransaction(tx, bestHeight, txFee, depCount)
 
 	log.Debugf("Accepted transaction %v (pool size: %v)", txHash,
 		len(mp.pool))
@@ -1099,6 +1200,18 @@ func (mp *TxPool) Count() int {
 	return count
 }
 
+// DepCount returns the number of dependent transactions in the main pool.  It does not
+// include the orphan pool.
+//
+// This function is safe for concurrent access.
+func (mp *TxPool) DepCount() int {
+	mp.mtx.RLock()
+	count := len(mp.depends)
+	mp.mtx.RUnlock()
+
+	return count
+}
+
 // TxHashes returns a slice of hashes for all of the transactions in the memory
 // pool.
 //
@@ -1243,6 +1356,8 @@ func New(cfg *Config) *TxPool {
 	return &TxPool{
 		cfg:            *cfg,
 		pool:           make(map[daghash.Hash]*TxDesc),
+		depends:        make(map[daghash.Hash]*TxDesc),
+		dependsByPrev:  make(map[wire.OutPoint]map[daghash.Hash]*TxDesc),
 		orphans:        make(map[daghash.Hash]*orphanTx),
 		orphansByPrev:  make(map[wire.OutPoint]map[daghash.Hash]*util.Tx),
 		nextExpireScan: time.Now().Add(orphanExpireScanInterval),
