@@ -99,14 +99,14 @@ const (
 )
 
 var (
-	// SubNetworkSupportsAll is the sub-network id that is used to signal to peers that you support all sub-networks
-	SubNetworkSupportsAll = subnetworkid.SubNetworkID{}
+	// SubnetworkIDSupportsAll is the subnetwork ID that is used to signal to peers that you support all subnetworks
+	SubnetworkIDSupportsAll = subnetworkid.SubnetworkID{}
 
-	// SubNetworkDAGCoin is the default sub-network which is used for transactions without related payload data
-	SubNetworkDAGCoin = subnetworkid.SubNetworkID{1}
+	// SubnetworkIDNative is the default subnetwork ID which is used for transactions without related payload data
+	SubnetworkIDNative = subnetworkid.SubnetworkID{1}
 
-	// SubNetworkRegistry is the sub-network which is used for adding new sub networks to the registry
-	SubNetworkRegistry = subnetworkid.SubNetworkID{2}
+	// SubnetworkIDRegistry is the subnetwork ID which is used for adding new sub networks to the registry
+	SubnetworkIDRegistry = subnetworkid.SubnetworkID{2}
 )
 
 // scriptFreeList defines a free list of byte slices (up to the maximum number
@@ -259,7 +259,7 @@ type MsgTx struct {
 	TxIn         []*TxIn
 	TxOut        []*TxOut
 	LockTime     uint64
-	SubNetworkID subnetworkid.SubNetworkID
+	SubnetworkID subnetworkid.SubnetworkID
 	Gas          uint64
 	Payload      []byte
 }
@@ -295,7 +295,7 @@ func (msg *MsgTx) Copy() *MsgTx {
 		TxIn:         make([]*TxIn, 0, len(msg.TxIn)),
 		TxOut:        make([]*TxOut, 0, len(msg.TxOut)),
 		LockTime:     msg.LockTime,
-		SubNetworkID: msg.SubNetworkID,
+		SubnetworkID: msg.SubnetworkID,
 		Gas:          msg.Gas,
 	}
 
@@ -458,18 +458,18 @@ func (msg *MsgTx) BtcDecode(r io.Reader, pver uint32) error {
 		return err
 	}
 
-	_, err = io.ReadFull(r, msg.SubNetworkID[:])
+	_, err = io.ReadFull(r, msg.SubnetworkID[:])
 	if err != nil {
 		returnScriptBuffers()
 		return err
 	}
 
-	if msg.SubNetworkID == SubNetworkSupportsAll {
-		str := fmt.Sprintf("%v is a reserved sub network and cannot be used as part of a transaction", msg.SubNetworkID)
+	if msg.SubnetworkID == SubnetworkIDSupportsAll {
+		str := fmt.Sprintf("%v is a reserved sub network and cannot be used as part of a transaction", msg.SubnetworkID)
 		return messageError("MsgTx.BtcDecode", str)
 	}
 
-	if msg.SubNetworkID != SubNetworkDAGCoin {
+	if msg.SubnetworkID != SubnetworkIDNative {
 		msg.Gas, err = binarySerializer.Uint64(r, littleEndian)
 		if err != nil {
 			returnScriptBuffers()
@@ -596,14 +596,14 @@ func (msg *MsgTx) BtcEncode(w io.Writer, pver uint32) error {
 		return err
 	}
 
-	_, err = w.Write(msg.SubNetworkID[:])
+	_, err = w.Write(msg.SubnetworkID[:])
 	if err != nil {
 		return err
 	}
 
-	if msg.SubNetworkID != SubNetworkDAGCoin {
-		if msg.SubNetworkID == SubNetworkRegistry && msg.Gas != 0 {
-			str := fmt.Sprintf("Transactions from subnetwork %v should have 0 gas", msg.SubNetworkID)
+	if msg.SubnetworkID != SubnetworkIDNative {
+		if msg.SubnetworkID == SubnetworkIDRegistry && msg.Gas != 0 {
+			str := fmt.Sprintf("Transactions from subnetwork %v should have 0 gas", msg.SubnetworkID)
 			return messageError("MsgTx.BtcEncode", str)
 		}
 
@@ -621,10 +621,10 @@ func (msg *MsgTx) BtcEncode(w io.Writer, pver uint32) error {
 			return err
 		}
 	} else if msg.Payload != nil {
-		str := fmt.Sprintf("Transactions from subnetwork %v should have <nil> payload", msg.SubNetworkID)
+		str := fmt.Sprintf("Transactions from subnetwork %v should have <nil> payload", msg.SubnetworkID)
 		return messageError("MsgTx.BtcEncode", str)
 	} else if msg.Gas != 0 {
-		str := fmt.Sprintf("Transactions from subnetwork %v should have 0 gas", msg.SubNetworkID)
+		str := fmt.Sprintf("Transactions from subnetwork %v should have 0 gas", msg.SubnetworkID)
 		return messageError("MsgTx.BtcEncode", str)
 	}
 
@@ -651,13 +651,13 @@ func (msg *MsgTx) Serialize(w io.Writer) error {
 // SerializeSize returns the number of bytes it would take to serialize the
 // the transaction.
 func (msg *MsgTx) SerializeSize() int {
-	// Version 4 bytes + LockTime 8 bytes + Subnetwork ID 20
+	// Version 4 bytes + LockTime 8 bytes + SubnetworkID 20
 	// bytes + Serialized varint size for the number of transaction
 	// inputs and outputs.
 	n := 32 + VarIntSerializeSize(uint64(len(msg.TxIn))) +
 		VarIntSerializeSize(uint64(len(msg.TxOut)))
 
-	if msg.SubNetworkID != SubNetworkDAGCoin {
+	if msg.SubnetworkID != SubnetworkIDNative {
 		// Gas 8 bytes + Serialized varint size for the length of the payload
 		n += 8 + VarIntSerializeSize(uint64(len(msg.Payload)))
 	}
@@ -735,13 +735,13 @@ func NewMsgTx(version int32) *MsgTx {
 		Version:      version,
 		TxIn:         make([]*TxIn, 0, defaultTxInOutAlloc),
 		TxOut:        make([]*TxOut, 0, defaultTxInOutAlloc),
-		SubNetworkID: SubNetworkDAGCoin,
+		SubnetworkID: SubnetworkIDNative,
 	}
 }
 
 func newRegistryMsgTx(version int32, gasLimit uint64) *MsgTx {
 	tx := NewMsgTx(version)
-	tx.SubNetworkID = SubNetworkRegistry
+	tx.SubnetworkID = SubnetworkIDRegistry
 	tx.Payload = make([]byte, 8)
 	binary.LittleEndian.PutUint64(tx.Payload, gasLimit)
 	return tx

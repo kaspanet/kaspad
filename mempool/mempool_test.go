@@ -156,11 +156,11 @@ func (p *poolHarness) CreateCoinbaseTx(blockHeight int32, numOutputs uint32) (*u
 	return util.NewTx(tx), nil
 }
 
-// CreateSignedTxForSubNetwork creates a new signed transaction that consumes the provided
+// CreateSignedTxForSubnetwork creates a new signed transaction that consumes the provided
 // inputs and generates the provided number of outputs by evenly splitting the
 // total input amount.  All outputs will be to the payment script associated
 // with the harness and all inputs are assumed to do the same.
-func (p *poolHarness) CreateSignedTxForSubNetwork(inputs []spendableOutpoint, numOutputs uint32, subNetworkID *subnetworkid.SubNetworkID, gas uint64) (*util.Tx, error) {
+func (p *poolHarness) CreateSignedTxForSubnetwork(inputs []spendableOutpoint, numOutputs uint32, subnetworkID *subnetworkid.SubnetworkID, gas uint64) (*util.Tx, error) {
 	// Calculate the total input amount and split it amongst the requested
 	// number of outputs.
 	var totalInput util.Amount
@@ -171,7 +171,7 @@ func (p *poolHarness) CreateSignedTxForSubNetwork(inputs []spendableOutpoint, nu
 	remainder := uint64(totalInput) - amountPerOutput*uint64(numOutputs)
 
 	tx := wire.NewMsgTx(wire.TxVersion)
-	tx.SubNetworkID = *subNetworkID
+	tx.SubnetworkID = *subnetworkID
 	tx.Gas = gas
 	for _, input := range inputs {
 		tx.AddTxIn(&wire.TxIn{
@@ -211,7 +211,7 @@ func (p *poolHarness) CreateSignedTxForSubNetwork(inputs []spendableOutpoint, nu
 // total input amount.  All outputs will be to the payment script associated
 // with the harness and all inputs are assumed to do the same.
 func (p *poolHarness) CreateSignedTx(inputs []spendableOutpoint, numOutputs uint32) (*util.Tx, error) {
-	return p.CreateSignedTxForSubNetwork(inputs, numOutputs, &wire.SubNetworkDAGCoin, 0)
+	return p.CreateSignedTxForSubnetwork(inputs, numOutputs, &wire.SubnetworkIDNative, 0)
 }
 
 // CreateTxChain creates a chain of zero-fee transactions (each subsequent
@@ -610,7 +610,7 @@ func TestProcessTransaction(t *testing.T) {
 			PkScript: p2shPKScript,
 		}},
 		LockTime:     0,
-		SubNetworkID: wire.SubNetworkDAGCoin,
+		SubnetworkID: wire.SubnetworkIDNative,
 	})
 	harness.txPool.mpUTXOSet.AddTx(p2shTx.MsgTx(), curHeight+1)
 
@@ -626,7 +626,7 @@ func TestProcessTransaction(t *testing.T) {
 			PkScript: dummyPkScript,
 		}},
 		LockTime:     0,
-		SubNetworkID: wire.SubNetworkDAGCoin,
+		SubnetworkID: wire.SubnetworkIDNative,
 	})
 	_, err = harness.txPool.ProcessTransaction(nonStdSigScriptTx, true, false, 0)
 	if err == nil {
@@ -671,7 +671,7 @@ func TestProcessTransaction(t *testing.T) {
 		}},
 		TxOut:        []*wire.TxOut{},
 		LockTime:     0,
-		SubNetworkID: wire.SubNetworkDAGCoin,
+		SubnetworkID: wire.SubnetworkIDNative,
 	})
 	_, err = harness.txPool.ProcessTransaction(noOutsTx, true, false, 0)
 	if err == nil {
@@ -748,7 +748,7 @@ func TestProcessTransaction(t *testing.T) {
 			PkScript: dummyPkScript,
 		}},
 		LockTime:     0,
-		SubNetworkID: wire.SubNetworkDAGCoin,
+		SubnetworkID: wire.SubnetworkIDNative,
 	})
 	_, err = harness.txPool.ProcessTransaction(tx, true, false, 0)
 	fmt.Println(err)
@@ -1830,7 +1830,7 @@ var dummyBlock = wire.MsgBlock{
 				},
 			},
 			LockTime:     0,
-			SubNetworkID: wire.SubNetworkDAGCoin,
+			SubnetworkID: wire.SubnetworkIDNative,
 		},
 	},
 }
@@ -1844,13 +1844,13 @@ func TestTransactionGas(t *testing.T) {
 	//	tc := &testContext{t, harness}
 
 	const gasLimit = 10000
-	subNetworkID, err := blockdag.RegisterSubNetworkForTest(harness.txPool.cfg.DAG, gasLimit)
+	subnetworkID, err := blockdag.RegisterSubnetworkForTest(harness.txPool.cfg.DAG, gasLimit)
 	if err != nil {
 		t.Fatalf("unable to register network: %v", err)
 	}
 
 	// Create valid transaction
-	tx, err := harness.CreateSignedTxForSubNetwork(spendableOuts[:1], 1, subNetworkID, gasLimit)
+	tx, err := harness.CreateSignedTxForSubnetwork(spendableOuts[:1], 1, subnetworkID, gasLimit)
 	if err != nil {
 		t.Fatalf("unable to create transaction: %v", err)
 	}
@@ -1860,7 +1860,7 @@ func TestTransactionGas(t *testing.T) {
 	}
 
 	// Create invalid transaction
-	tx, err = harness.CreateSignedTxForSubNetwork(spendableOuts[1:], 1, subNetworkID, gasLimit+1)
+	tx, err = harness.CreateSignedTxForSubnetwork(spendableOuts[1:], 1, subnetworkID, gasLimit+1)
 	if err != nil {
 		t.Fatalf("unable to create transaction: %v", err)
 	}

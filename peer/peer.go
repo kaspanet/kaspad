@@ -9,6 +9,7 @@ import (
 	"container/list"
 	"errors"
 	"fmt"
+	"github.com/daglabs/btcd/util/subnetworkid"
 	"io"
 	"math/rand"
 	"net"
@@ -247,10 +248,10 @@ type Config struct {
 	// '/', ':', '(', ')'.
 	UserAgentComments []string
 
-	// ChainParams identifies which chain parameters the peer is associated
+	// DAGParams identifies which DAG parameters the peer is associated
 	// with.  It is highly recommended to specify this field, however it can
 	// be omitted in which case the test network will be used.
-	ChainParams *dagconfig.Params
+	DAGParams *dagconfig.Params
 
 	// Services specifies which services to advertise as supported by the
 	// local peer.  This field can be omitted in which case it will be 0
@@ -269,6 +270,9 @@ type Config struct {
 	// Listeners houses callback functions to be invoked on receiving peer
 	// messages.
 	Listeners MessageListeners
+
+	// SubnetworkID specifies which subnetwork the peer is associated with.
+	SubnetworkID *subnetworkid.SubnetworkID
 }
 
 // minUint32 is a helper function to return the minimum of two uint32s.
@@ -819,8 +823,10 @@ func (p *Peer) localVersionMsg() (*wire.MsgVersion, error) {
 	nonce := uint64(rand.Int63())
 	sentNonces.Add(nonce)
 
+	subnetworkID := p.cfg.SubnetworkID
+
 	// Version message.
-	msg := wire.NewMsgVersion(ourNA, theirNA, nonce, blockNum)
+	msg := wire.NewMsgVersion(ourNA, theirNA, nonce, blockNum, subnetworkID)
 	msg.AddUserAgent(p.cfg.UserAgentName, p.cfg.UserAgentVersion,
 		p.cfg.UserAgentComments...)
 
@@ -1036,6 +1042,17 @@ func (p *Peer) handleRemoteVersionMsg(msg *wire.MsgVersion) error {
 		return errors.New(reason)
 	}
 
+	// Disconnect if:
+	// - we are a full node and the outbound connection we've initiated is a partial node
+	// - the remote node is partial and our subnetwork doesn't match their subnetwork
+	isLocalNodeFull := p.cfg.SubnetworkID.IsEqual(&wire.SubnetworkIDSupportsAll)
+	isRemoteNodeFull := msg.SubnetworkID.IsEqual(&wire.SubnetworkIDSupportsAll)
+	if (isLocalNodeFull && !isRemoteNodeFull && !p.inbound) ||
+		(!isRemoteNodeFull && !msg.SubnetworkID.IsEqual(p.cfg.SubnetworkID)) {
+
+		return errors.New("incompatible subnetworks")
+	}
+
 	// Updating a bunch of stats including block based stats, and the
 	// peer's time offset.
 	p.statsMtx.Lock()
@@ -1105,7 +1122,7 @@ func (p *Peer) handlePongMsg(msg *wire.MsgPong) {
 // readMessage reads the next bitcoin message from the peer with logging.
 func (p *Peer) readMessage() (wire.Message, []byte, error) {
 	n, msg, buf, err := wire.ReadMessageN(p.conn,
-		p.ProtocolVersion(), p.cfg.ChainParams.Net)
+		p.ProtocolVersion(), p.cfg.DAGParams.Net)
 	atomic.AddUint64(&p.bytesReceived, uint64(n))
 	if p.cfg.Listeners.OnRead != nil {
 		p.cfg.Listeners.OnRead(p, n, msg, err)
@@ -1159,7 +1176,7 @@ func (p *Peer) writeMessage(msg wire.Message) error {
 	log.Tracef("%v", newLogClosure(func() string {
 		var buf bytes.Buffer
 		_, err := wire.WriteMessageN(&buf, msg, p.ProtocolVersion(),
-			p.cfg.ChainParams.Net)
+			p.cfg.DAGParams.Net)
 		if err != nil {
 			return err.Error()
 		}
@@ -1168,7 +1185,7 @@ func (p *Peer) writeMessage(msg wire.Message) error {
 
 	// Write the message to the peer.
 	n, err := wire.WriteMessageN(p.conn, msg,
-		p.ProtocolVersion(), p.cfg.ChainParams.Net)
+		p.ProtocolVersion(), p.cfg.DAGParams.Net)
 	atomic.AddUint64(&p.bytesSent, uint64(n))
 	if p.cfg.Listeners.OnWrite != nil {
 		p.cfg.Listeners.OnWrite(p, n, msg, err)
@@ -1181,7 +1198,7 @@ func (p *Peer) writeMessage(msg wire.Message) error {
 // to send malformed messages without the peer being disconnected.
 func (p *Peer) isAllowedReadError(err error) bool {
 	// Only allow read errors in regression test mode.
-	if p.cfg.ChainParams.Net != wire.TestNet {
+	if p.cfg.DAGParams.Net != wire.TestNet {
 		return false
 	}
 
@@ -2113,9 +2130,9 @@ func newPeerBase(origCfg *Config, inbound bool) *Peer {
 		cfg.ProtocolVersion = MaxProtocolVersion
 	}
 
-	// Set the chain parameters to testnet if the caller did not specify any.
-	if cfg.ChainParams == nil {
-		cfg.ChainParams = &dagconfig.TestNet3Params
+	// Set the DAG parameters to testnet if the caller did not specify any.
+	if cfg.DAGParams == nil {
+		cfg.DAGParams = &dagconfig.TestNet3Params
 	}
 
 	p := Peer{

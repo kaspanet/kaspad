@@ -106,7 +106,7 @@ func DAGSetup(dbName string, config Config) (*BlockDAG, func(), error) {
 var OpTrueScript = []byte{txscript.OpTrue}
 
 type txSubnetworkData struct {
-	subnetworkID subnetworkid.SubNetworkID
+	subnetworkID subnetworkid.SubnetworkID
 	Gas          uint64
 	Payload      []byte
 }
@@ -129,11 +129,11 @@ func createTxForTest(numInputs uint32, numOutputs uint32, outputValue uint64, su
 	}
 
 	if subnetworkData != nil {
-		tx.SubNetworkID = subnetworkData.subnetworkID
+		tx.SubnetworkID = subnetworkData.subnetworkID
 		tx.Gas = subnetworkData.Gas
 		tx.Payload = subnetworkData.Payload
 	} else {
-		tx.SubNetworkID = wire.SubNetworkDAGCoin
+		tx.SubnetworkID = wire.SubnetworkIDNative
 		tx.Gas = 0
 		tx.Payload = []byte{}
 	}
@@ -180,8 +180,8 @@ func createCoinbaseTxForTest(blockHeight int32, numOutputs uint32, extraNonce in
 	return tx, nil
 }
 
-// RegisterSubNetworkForTest is used to register network on DAG with specified gas limit
-func RegisterSubNetworkForTest(dag *BlockDAG, gasLimit uint64) (*subnetworkid.SubNetworkID, error) {
+// RegisterSubnetworkForTest is used to register network on DAG with specified gas limit
+func RegisterSubnetworkForTest(dag *BlockDAG, gasLimit uint64) (*subnetworkid.SubnetworkID, error) {
 	blockTime := time.Unix(dag.selectedTip().timestamp, 0)
 	extraNonce := int64(0)
 
@@ -227,9 +227,9 @@ func RegisterSubNetworkForTest(dag *BlockDAG, gasLimit uint64) (*subnetworkid.Su
 
 	currentNode := dag.selectedTip()
 
-	// Create a block with a valid sub-network registry transaction
+	// Create a block with a valid subnetwork registry transaction
 	registryTx := wire.NewMsgTx(wire.TxVersion)
-	registryTx.SubNetworkID = wire.SubNetworkRegistry
+	registryTx.SubnetworkID = wire.SubnetworkIDRegistry
 	registryTx.Payload = make([]byte, 8)
 	binary.LittleEndian.PutUint64(registryTx.Payload, gasLimit)
 
@@ -243,10 +243,10 @@ func RegisterSubNetworkForTest(dag *BlockDAG, gasLimit uint64) (*subnetworkid.Su
 		return nil, fmt.Errorf("could not add registry block to DAG: %s", err)
 	}
 
-	// Build a sub-network ID from the registry transaction
-	subNetworkID, err := txToSubNetworkID(registryTx)
+	// Build a subnetwork ID from the registry transaction
+	subnetworkID, err := txToSubnetworkID(registryTx)
 	if err != nil {
-		return nil, fmt.Errorf("could not build sub-network ID: %s", err)
+		return nil, fmt.Errorf("could not build subnetwork ID: %s", err)
 	}
-	return subNetworkID, nil
+	return subnetworkID, nil
 }

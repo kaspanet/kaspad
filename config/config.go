@@ -166,7 +166,7 @@ type configFlags struct {
 	DropAddrIndex        bool          `long:"dropaddrindex" description:"Deletes the address-based transaction index from the database on start up and then exits."`
 	RelayNonStd          bool          `long:"relaynonstd" description:"Relay non-standard transactions regardless of the default settings for the active network."`
 	RejectNonStd         bool          `long:"rejectnonstd" description:"Reject non-standard transactions regardless of the default settings for the active network."`
-	SubNetwork           string        `string:"subnetwork" description:"If subnetwork != 0, than node will request and process only payloads from specified subnetwork. And if subnetwork is 0, than payloads of all subnetworks are processed. Subnetworks 3 through 255 are reserved for future use and are currently not allowed."`
+	Subnetwork           string        `string:"subnetwork" description:"If subnetwork != 0, than node will request and process only payloads from specified subnetwork. And if subnetwork is 0, than payloads of all subnetworks are processed. Subnetworks 3 through 255 are reserved for future use and are currently not allowed."`
 }
 
 // Config defines the configuration options for btcd.
@@ -181,7 +181,7 @@ type Config struct {
 	MiningAddrs    []util.Address
 	MinRelayTxFee  util.Amount
 	Whitelists     []*net.IPNet
-	SubNetwork     *subnetworkid.SubNetworkID
+	SubnetworkID   *subnetworkid.SubnetworkID
 }
 
 // serviceOptions defines the configuration options for the daemon as a service on
@@ -753,15 +753,15 @@ func loadConfig() (*Config, []string, error) {
 		cfg.MiningAddrs = append(cfg.MiningAddrs, addr)
 	}
 
-	if cfg.configFlags.SubNetwork != "" {
-		cfg.SubNetwork, err = subnetworkid.NewFromStr(cfg.configFlags.SubNetwork)
+	if cfg.configFlags.Subnetwork != "" {
+		cfg.SubnetworkID, err = subnetworkid.NewFromStr(cfg.configFlags.Subnetwork)
 		if err != nil {
 			return nil, nil, err
 		}
 	}
 
 	// Check that 'generate' and 'subnetwork' flags do not conflict
-	if cfg.Generate && *cfg.SubNetwork != wire.SubNetworkSupportsAll {
+	if cfg.Generate && *cfg.SubnetworkID != wire.SubnetworkIDSupportsAll {
 		str := "%s: both generate flag and subnetwork filtering are set "
 		err := fmt.Errorf(str, funcName)
 		fmt.Fprintln(os.Stderr, err)

@@ -226,17 +226,19 @@ func TestPeerConnection(t *testing.T) {
 		UserAgentName:     "peer",
 		UserAgentVersion:  "1.0",
 		UserAgentComments: []string{"comment"},
-		ChainParams:       &dagconfig.MainNetParams,
+		DAGParams:         &dagconfig.MainNetParams,
 		ProtocolVersion:   wire.RejectVersion, // Configure with older version
 		Services:          0,
+		SubnetworkID:      &wire.SubnetworkIDSupportsAll,
 	}
 	peer2Cfg := &peer.Config{
 		Listeners:         peer1Cfg.Listeners,
 		UserAgentName:     "peer",
 		UserAgentVersion:  "1.0",
 		UserAgentComments: []string{"comment"},
-		ChainParams:       &dagconfig.MainNetParams,
+		DAGParams:         &dagconfig.MainNetParams,
 		Services:          wire.SFNodeNetwork,
+		SubnetworkID:      &wire.SubnetworkIDSupportsAll,
 	}
 
 	wantStats1 := peerStats{
@@ -250,8 +252,8 @@ func TestPeerConnection(t *testing.T) {
 		wantLastPingNonce:   uint64(0),
 		wantLastPingMicros:  int64(0),
 		wantTimeOffset:      int64(0),
-		wantBytesSent:       167, // 143 version + 24 verack
-		wantBytesReceived:   167,
+		wantBytesSent:       187, // 163 version + 24 verack
+		wantBytesReceived:   187,
 	}
 	wantStats2 := peerStats{
 		wantUserAgent:       wire.DefaultUserAgent + "peer:1.0(comment)/",
@@ -264,8 +266,8 @@ func TestPeerConnection(t *testing.T) {
 		wantLastPingNonce:   uint64(0),
 		wantLastPingMicros:  int64(0),
 		wantTimeOffset:      int64(0),
-		wantBytesSent:       167, // 143 version + 24 verack
-		wantBytesReceived:   167,
+		wantBytesSent:       187, // 163 version + 24 verack
+		wantBytesReceived:   187,
 	}
 
 	tests := []struct {
@@ -436,8 +438,9 @@ func TestPeerListeners(t *testing.T) {
 		UserAgentName:     "peer",
 		UserAgentVersion:  "1.0",
 		UserAgentComments: []string{"comment"},
-		ChainParams:       &dagconfig.MainNetParams,
+		DAGParams:         &dagconfig.MainNetParams,
 		Services:          wire.SFNodeBloom,
+		SubnetworkID:      &wire.SubnetworkIDSupportsAll,
 	}
 	inConn, outConn := pipe(
 		&conn{raddr: "10.0.0.1:8333"},
@@ -606,8 +609,9 @@ func TestOutboundPeer(t *testing.T) {
 		UserAgentName:     "peer",
 		UserAgentVersion:  "1.0",
 		UserAgentComments: []string{"comment"},
-		ChainParams:       &dagconfig.MainNetParams,
+		DAGParams:         &dagconfig.MainNetParams,
 		Services:          0,
+		SubnetworkID:      &wire.SubnetworkIDSupportsAll,
 	}
 
 	r, w := io.Pipe()
@@ -695,7 +699,7 @@ func TestOutboundPeer(t *testing.T) {
 	p1.Disconnect()
 
 	// Test regression
-	peerCfg.ChainParams = &dagconfig.RegressionNetParams
+	peerCfg.DAGParams = &dagconfig.RegressionNetParams
 	peerCfg.Services = wire.SFNodeBloom
 	r2, w2 := io.Pipe()
 	c2 := &conn{raddr: "10.0.0.1:8333", Writer: w2, Reader: r2}
@@ -746,8 +750,9 @@ func TestUnsupportedVersionPeer(t *testing.T) {
 		UserAgentName:     "peer",
 		UserAgentVersion:  "1.0",
 		UserAgentComments: []string{"comment"},
-		ChainParams:       &dagconfig.MainNetParams,
+		DAGParams:         &dagconfig.MainNetParams,
 		Services:          0,
+		SubnetworkID:      &wire.SubnetworkIDSupportsAll,
 	}
 
 	localNA := wire.NewNetAddressIPPort(
@@ -778,7 +783,7 @@ func TestUnsupportedVersionPeer(t *testing.T) {
 			_, msg, _, err := wire.ReadMessageN(
 				remoteConn,
 				p.ProtocolVersion(),
-				peerCfg.ChainParams.Net,
+				peerCfg.DAGParams.Net,
 			)
 			if err == io.EOF {
 				close(outboundMessages)
@@ -804,14 +809,14 @@ func TestUnsupportedVersionPeer(t *testing.T) {
 	}
 
 	// Remote peer writes version message advertising invalid protocol version 1
-	invalidVersionMsg := wire.NewMsgVersion(remoteNA, localNA, 0, 0)
+	invalidVersionMsg := wire.NewMsgVersion(remoteNA, localNA, 0, 0, &wire.SubnetworkIDSupportsAll)
 	invalidVersionMsg.ProtocolVersion = 1
 
 	_, err = wire.WriteMessageN(
 		remoteConn.Writer,
 		invalidVersionMsg,
 		uint32(invalidVersionMsg.ProtocolVersion),
-		peerCfg.ChainParams.Net,
+		peerCfg.DAGParams.Net,
 	)
 	if err != nil {
 		t.Fatalf("wire.WriteMessageN: unexpected err - %v\n", err)

@@ -53,17 +53,9 @@ var (
 	// unspent transaction output set.
 	utxoSetBucketName = []byte("utxoset")
 
-	// pendingSubNetworksBucketName is the name of the db bucket used to store the
-	// pending sub-networks.
-	pendingSubNetworksBucketName = []byte("pendingsubnetworks")
-
-	// registeredSubNetworkTxsBucketName is the name of the db bucket used to house
-	// the transactions that have been used to register sub-networks.
-	registeredSubNetworkTxsBucketName = []byte("registeredsubnetworktxs")
-
-	// subNetworksBucketName is the name of the db bucket used to store the
-	// sub-network registry.
-	subNetworksBucketName = []byte("subnetworks")
+	// subnetworksBucketName is the name of the db bucket used to store the
+	// subnetwork registry.
+	subnetworksBucketName = []byte("subnetworks")
 
 	// byteOrder is the preferred byte order used for serializing numeric
 	// fields for storage in the database.
@@ -670,7 +662,6 @@ func dbFetchHeightByHash(dbTx database.Tx, hash *daghash.Hash) (int32, error) {
 type dagState struct {
 	TipHashes         []daghash.Hash
 	LastFinalityPoint daghash.Hash
-	LastSubNetworkID  uint64
 }
 
 // serializeDAGState returns the serialization of the DAG state.
@@ -776,21 +767,8 @@ func (dag *BlockDAG) createDAGState() error {
 			return err
 		}
 
-		// Create the bucket that houses the pending sub-networks.
-		_, err = meta.CreateBucket(pendingSubNetworksBucketName)
-		if err != nil {
-			return err
-		}
-
-		// Create the bucket that houses the registered sub-networks to
-		// their registry transactions index.
-		_, err = meta.CreateBucket(registeredSubNetworkTxsBucketName)
-		if err != nil {
-			return err
-		}
-
-		// Create the bucket that houses the registered sub-networks.
-		_, err = meta.CreateBucket(subNetworksBucketName)
+		// Create the bucket that houses the registered subnetworks.
+		_, err = meta.CreateBucket(subnetworksBucketName)
 		if err != nil {
 			return err
 		}
@@ -821,6 +799,7 @@ func (dag *BlockDAG) createDAGState() error {
 		// Store the genesis block into the database.
 		return dbStoreBlock(dbTx, genesisBlock)
 	})
+
 	return err
 }
 
