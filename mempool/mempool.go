@@ -397,7 +397,7 @@ func (mp *TxPool) isTransactionInPool(hash *daghash.Hash) bool {
 	if _, exists := mp.pool[*hash]; exists {
 		return true
 	}
-	return mp.isDependInPool(hash)
+	return mp.isInDependPool(hash)
 }
 
 // IsTransactionInPool returns whether or not the passed transaction already
@@ -413,11 +413,11 @@ func (mp *TxPool) IsTransactionInPool(hash *daghash.Hash) bool {
 	return inPool
 }
 
-// isDependInPool returns whether or not the passed transaction already
+// isInDependPool returns whether or not the passed transaction already
 // exists in the depend pool.
 //
 // This function MUST be called with the mempool lock held (for reads).
-func (mp *TxPool) isDependInPool(hash *daghash.Hash) bool {
+func (mp *TxPool) isInDependPool(hash *daghash.Hash) bool {
 	if _, exists := mp.depends[*hash]; exists {
 		return true
 	}
@@ -425,15 +425,15 @@ func (mp *TxPool) isDependInPool(hash *daghash.Hash) bool {
 	return false
 }
 
-// IsDependInPool returns whether or not the passed transaction already
+// IsInDependPool returns whether or not the passed transaction already
 // exists in the main pool.
 //
 // This function is safe for concurrent access.
-func (mp *TxPool) IsDependInPool(hash *daghash.Hash) bool {
+func (mp *TxPool) IsInDependPool(hash *daghash.Hash) bool {
 	// Protect concurrent access.
 	mp.mtx.RLock()
-	inPool := mp.isDependInPool(hash)
-	mp.mtx.RUnlock()
+	defer mp.mtx.RUnlock()
+	inPool := mp.isInDependPool(hash)
 
 	return inPool
 }
@@ -501,9 +501,7 @@ func (mp *TxPool) removeTransaction(tx *util.Tx, removeRedeemers bool, restoreIn
 	}
 
 	// Remove the transaction if needed.
-	txDesc := mp.fetchTransaction(txHash)
-
-	if txDesc != nil {
+	if txDesc, exists := mp.fetchTransaction(txHash); exists {
 		// Remove unconfirmed address index entries associated with the
 		// transaction if enabled.
 		if mp.cfg.AddrIndex != nil {
@@ -536,7 +534,7 @@ func (mp *TxPool) removeTransaction(tx *util.Tx, removeRedeemers bool, restoreIn
 			delete(mp.depends, *txHash)
 		}
 
-		// Proceed dependant transactions
+		// Process dependent transactions
 		prevOut := wire.OutPoint{Hash: *txHash}
 		for txOutIdx := range tx.MsgTx().TxOut {
 			// Skip to the next available output if there are none.
@@ -546,12 +544,12 @@ func (mp *TxPool) removeTransaction(tx *util.Tx, removeRedeemers bool, restoreIn
 				continue
 			}
 
-			// Move independant transactions into main pool
+			// Move independent transactions into main pool
 			for _, txD := range depends {
 				txD.depCount--
 				if txD.depCount == 0 {
 					// Transaction may be already removed by recursive calls, if removeRedeemers is true.
-					// So avoid to move it into main pool
+					// So avoid moving it into main pool
 					if _, ok := mp.depends[*txD.Tx.Hash()]; ok {
 						delete(mp.depends, *txD.Tx.Hash())
 						mp.pool[*txD.Tx.Hash()] = txD
@@ -692,16 +690,13 @@ func (mp *TxPool) CheckSpend(op wire.OutPoint) *util.Tx {
 	return txR
 }
 
-// fetchTransaction is helper function
+// This function MUST be called with the mempool lock held (for reads).
 func (mp *TxPool) fetchTransaction(txHash *daghash.Hash) *TxDesc {
 	txDesc, exists := mp.pool[*txHash]
 	if !exists {
 		txDesc, exists = mp.depends[*txHash]
 	}
-	if !exists {
-		return nil
-	}
-	return txDesc
+	return txDesc, exists
 }
 
 // FetchTransaction returns the requested transaction from the transaction pool.
@@ -712,10 +707,9 @@ func (mp *TxPool) fetchTransaction(txHash *daghash.Hash) *TxDesc {
 func (mp *TxPool) FetchTransaction(txHash *daghash.Hash) (*util.Tx, error) {
 	// Protect concurrent access.
 	mp.mtx.RLock()
-	txDesc := mp.fetchTransaction(txHash)
-	mp.mtx.RUnlock()
+	defer mp.mtx.RUnlock()
 
-	if txDesc != nil {
+	if txDesc, exists := mp.fetchTransaction(txHash); exists {
 		return txDesc.Tx, nil
 	}
 
@@ -1206,8 +1200,8 @@ func (mp *TxPool) Count() int {
 // This function is safe for concurrent access.
 func (mp *TxPool) DepCount() int {
 	mp.mtx.RLock()
+	defer mp.mtx.RUnlock()
 	count := len(mp.depends)
-	mp.mtx.RUnlock()
 
 	return count
 }

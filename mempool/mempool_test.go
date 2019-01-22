@@ -373,10 +373,10 @@ func testPoolMembership(tc *testContext, tx *util.Tx, inOrphanPool, inTxPool boo
 			file, line, inTxPool, gotTxPool)
 	}
 
-	gotIsDepends := tc.harness.txPool.IsDependInPool(txHash)
+	gotIsDepends := tc.harness.txPool.IsInDependPool(txHash)
 	if isDepends != gotIsDepends {
 		_, file, line, _ := runtime.Caller(1)
-		tc.t.Fatalf("%s:%d -- IsDependInPool: want %v, got %v",
+		tc.t.Fatalf("%s:%d -- IsInDependPool: want %v, got %v",
 			file, line, isDepends, gotIsDepends)
 	}
 
