@@ -286,11 +286,10 @@ func CheckTransactionSanity(tx *util.Tx, subnetworkID *subnetworkid.SubnetworkID
 				"with length != 8 bytes")
 	}
 
-	// If we are a partial node, only transactions on the Native subnetwork,
-	// the Registry subnetwork, or our own subnetwork may have a payload
+	// If we are a partial node, only transactions on the Registry subnetwork
+	// or our own subnetwork may have a payload
 	isLocalNodeFull := subnetworkID.IsEqual(&wire.SubnetworkIDSupportsAll)
-	shouldTxBeFull := msgTx.SubnetworkID.IsEqual(&wire.SubnetworkIDNative) ||
-		msgTx.SubnetworkID.IsEqual(&wire.SubnetworkIDRegistry) ||
+	shouldTxBeFull := msgTx.SubnetworkID.IsEqual(&wire.SubnetworkIDRegistry) ||
 		msgTx.SubnetworkID.IsEqual(subnetworkID)
 	if !isLocalNodeFull && !shouldTxBeFull && len(msgTx.Payload) > 0 {
 		return ruleError(ErrInvalidPayload,
