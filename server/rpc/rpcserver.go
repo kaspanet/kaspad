@@ -659,7 +659,7 @@ func handleDebugLevel(s *Server, cmd interface{}, closeChan <-chan struct{}) (in
 func createVinList(mtx *wire.MsgTx) []btcjson.Vin {
 	// Coinbase transactions only have a single txin by definition.
 	vinList := make([]btcjson.Vin, len(mtx.TxIn))
-	if blockdag.IsCoinBaseTx(mtx) {
+	if mtx.IsCoinBase() {
 		txIn := mtx.TxIn[0]
 		vinList[0].Coinbase = hex.EncodeToString(txIn.SignatureScript)
 		vinList[0].Sequence = txIn.Sequence
@@ -673,7 +673,7 @@ func createVinList(mtx *wire.MsgTx) []btcjson.Vin {
 		disbuf, _ := txscript.DisasmString(txIn.SignatureScript)
 
 		vinEntry := &vinList[i]
-		vinEntry.TxID = txIn.PreviousOutPoint.Hash.String()
+		vinEntry.TxID = txIn.PreviousOutPoint.TxID.String()
 		vinEntry.Vout = txIn.PreviousOutPoint.Index
 		vinEntry.Sequence = txIn.Sequence
 		vinEntry.ScriptSig = &btcjson.ScriptSig{
@@ -739,8 +739,8 @@ func createVoutList(mtx *wire.MsgTx, chainParams *dagconfig.Params, filterAddrMa
 
 // createTxRawResult converts the passed transaction and associated parameters
 // to a raw transaction JSON object.
-func createTxRawResult(chainParams *dagconfig.Params, mtx *wire.MsgTx,
-	txHash string, blkHeader *wire.BlockHeader, blkHash string,
+func createTxRawResult(dagParams *dagconfig.Params, mtx *wire.MsgTx,
+	txID string, blkHeader *wire.BlockHeader, blkHash string,
 	blkHeight int32, chainHeight int32, acceptedBy *daghash.Hash) (*btcjson.TxRawResult, error) {
 
 	mtxHex, err := messageToHex(mtx)
@@ -750,11 +750,11 @@ func createTxRawResult(chainParams *dagconfig.Params, mtx *wire.MsgTx,
 
 	txReply := &btcjson.TxRawResult{
 		Hex:      mtxHex,
-		TxID:     txHash,
+		TxID:     txID,
 		Hash:     mtx.TxHash().String(),
 		Size:     int32(mtx.SerializeSize()),
 		Vin:      createVinList(mtx),
-		Vout:     createVoutList(mtx, chainParams, nil),
+		Vout:     createVoutList(mtx, dagParams, nil),
 		Version:  mtx.Version,
 		LockTime: mtx.LockTime,
 	}
@@ -798,7 +798,7 @@ func handleDecodeRawTransaction(s *Server, cmd interface{}, closeChan <-chan str
 
 	// Create and return the result.
 	txReply := btcjson.TxRawDecodeResult{
-		TxID:     mtx.TxHash().String(),
+		TxID:     mtx.TxID().String(),
 		Version:  mtx.Version,
 		Locktime: mtx.LockTime,
 		Vin:      createVinList(&mtx),
@@ -1147,7 +1147,7 @@ func handleGetBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 		Hash:          c.Hash,
 		Version:       blockHeader.Version,
 		VersionHex:    fmt.Sprintf("%08x", blockHeader.Version),
-		MerkleRoot:    blockHeader.MerkleRoot.String(),
+		MerkleRoot:    blockHeader.HashMerkleRoot.String(),
 		ParentHashes:  daghash.Strings(blockHeader.ParentHashes),
 		Nonce:         blockHeader.Nonce,
 		Time:          blockHeader.Timestamp.Unix(),
@@ -1163,7 +1163,7 @@ func handleGetBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 		transactions := blk.Transactions()
 		txNames := make([]string, len(transactions))
 		for i, tx := range transactions {
-			txNames[i] = tx.Hash().String()
+			txNames[i] = tx.ID().String()
 		}
 
 		blockReply.Tx = txNames
@@ -1173,13 +1173,13 @@ func handleGetBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 		for i, tx := range txns {
 			var acceptedBy *daghash.Hash
 			if s.cfg.TxIndex != nil {
-				acceptedBy, err = s.cfg.TxIndex.BlockThatAcceptedTx(s.cfg.DAG, tx.Hash())
+				acceptedBy, err = s.cfg.TxIndex.BlockThatAcceptedTx(s.cfg.DAG, tx.ID())
 				if err != nil {
 					return nil, err
 				}
 			}
 			rawTxn, err := createTxRawResult(params, tx.MsgTx(),
-				tx.Hash().String(), blockHeader, hash.String(),
+				tx.ID().String(), blockHeader, hash.String(),
 				blockHeight, s.cfg.DAG.Height(), acceptedBy) //TODO: (Ori) This is probably wrong. Done only for compilation
 			if err != nil {
 				return nil, err
@@ -1348,7 +1348,7 @@ func handleGetBlockHeader(s *Server, cmd interface{}, closeChan <-chan struct{})
 		Height:        blockHeight,
 		Version:       blockHeader.Version,
 		VersionHex:    fmt.Sprintf("%08x", blockHeader.Version),
-		MerkleRoot:    blockHeader.MerkleRoot.String(),
+		MerkleRoot:    blockHeader.HashMerkleRoot.String(),
 		NextHashes:    nextHashStrings,
 		ParentHashes:  daghash.Strings(blockHeader.ParentHashes),
 		Nonce:         uint64(blockHeader.Nonce),
@@ -1590,7 +1590,7 @@ func (state *gbtWorkState) updateBlockTemplate(s *Server, useCoinbaseValue bool)
 		log.Debugf("Generated block template (timestamp %v, "+
 			"target %s, merkle root %s)",
 			msgBlock.Header.Timestamp, targetDifficulty,
-			msgBlock.Header.MerkleRoot)
+			msgBlock.Header.HashMerkleRoot)
 
 		// Notify any clients that are long polling about the new
 		// template.
@@ -1624,8 +1624,10 @@ func (state *gbtWorkState) updateBlockTemplate(s *Server, useCoinbaseValue bool)
 
 			// Update the merkle root.
 			block := util.NewBlock(template.Block)
-			merkles := blockdag.BuildMerkleTreeStore(block.Transactions())
-			template.Block.Header.MerkleRoot = *merkles[len(merkles)-1]
+			hashMerkleTree := blockdag.BuildHashMerkleTreeStore(block.Transactions())
+			template.Block.Header.HashMerkleRoot = *hashMerkleTree.Root()
+			idMerkleTree := blockdag.BuildIDMerkleTreeStore(block.Transactions())
+			template.Block.Header.IDMerkleRoot = *idMerkleTree.Root()
 		}
 
 		// Set locals for convenience.
@@ -1679,8 +1681,8 @@ func (state *gbtWorkState) blockTemplateResult(useCoinbaseValue bool, submitOld 
 	transactions := make([]btcjson.GetBlockTemplateResultTx, 0, numTx-1)
 	txIndex := make(map[daghash.Hash]int64, numTx)
 	for i, tx := range msgBlock.Transactions {
-		txHash := tx.TxHash()
-		txIndex[txHash] = int64(i)
+		txID := tx.TxID()
+		txIndex[txID] = int64(i)
 
 		// Skip the coinbase transaction.
 		if i == 0 {
@@ -1695,7 +1697,7 @@ func (state *gbtWorkState) blockTemplateResult(useCoinbaseValue bool, submitOld 
 		// when multiple inputs reference the same transaction.
 		dependsMap := make(map[int64]struct{})
 		for _, txIn := range tx.TxIn {
-			if idx, ok := txIndex[txIn.PreviousOutPoint.Hash]; ok {
+			if idx, ok := txIndex[txIn.PreviousOutPoint.TxID]; ok {
 				dependsMap[idx] = struct{}{}
 			}
 		}
@@ -1713,7 +1715,7 @@ func (state *gbtWorkState) blockTemplateResult(useCoinbaseValue bool, submitOld 
 
 		resultTx := btcjson.GetBlockTemplateResultTx{
 			Data:    hex.EncodeToString(txBuf.Bytes()),
-			Hash:    txHash.String(),
+			ID:      txID.String(),
 			Depends: depends,
 			Fee:     template.Fees[i],
 			SigOps:  template.SigOpCounts[i],
@@ -1772,7 +1774,7 @@ func (state *gbtWorkState) blockTemplateResult(useCoinbaseValue bool, submitOld 
 
 		resultTx := btcjson.GetBlockTemplateResultTx{
 			Data:    hex.EncodeToString(txBuf.Bytes()),
-			Hash:    tx.TxHash().String(),
+			ID:      tx.TxID().String(),
 			Depends: []int64{},
 			Fee:     template.Fees[0],
 			SigOps:  template.SigOpCounts[0],
@@ -2443,7 +2445,7 @@ func handleGetRawMempool(s *Server, cmd interface{}, closeChan <-chan struct{}) 
 	descs := mp.TxDescs()
 	hashStrings := make([]string, len(descs))
 	for i := range hashStrings {
-		hashStrings[i] = descs[i].Tx.Hash().String()
+		hashStrings[i] = descs[i].Tx.ID().String()
 	}
 
 	return hashStrings, nil
@@ -2617,9 +2619,9 @@ func handleGetTxOut(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 		confirmations = 0
 		value = txOut.Value
 		pkScript = txOut.PkScript
-		isCoinbase = blockdag.IsCoinBaseTx(mtx)
+		isCoinbase = mtx.IsCoinBase()
 	} else {
-		out := wire.OutPoint{Hash: *txHash, Index: c.Vout}
+		out := wire.OutPoint{TxID: *txHash, Index: c.Vout}
 		entry, ok := s.cfg.DAG.GetUTXOEntry(out)
 		if !ok {
 			return nil, rpcNoTxInfoError(txHash)
@@ -2747,13 +2749,13 @@ func fetchInputTxos(s *Server, tx *wire.MsgTx) (map[wire.OutPoint]wire.TxOut, er
 		// Attempt to fetch and use the referenced transaction from the
 		// memory pool.
 		origin := &txIn.PreviousOutPoint
-		originTx, err := mp.FetchTransaction(&origin.Hash)
+		originTx, err := mp.FetchTransaction(&origin.TxID)
 		if err == nil {
 			txOuts := originTx.MsgTx().TxOut
 			if origin.Index >= uint32(len(txOuts)) {
 				errStr := fmt.Sprintf("unable to find output "+
 					"%v referenced from transaction %s:%d",
-					origin, tx.TxHash(), txInIndex)
+					origin, tx.TxID(), txInIndex)
 				return nil, internalRPCError(errStr, "")
 			}
 
@@ -2762,13 +2764,13 @@ func fetchInputTxos(s *Server, tx *wire.MsgTx) (map[wire.OutPoint]wire.TxOut, er
 		}
 
 		// Look up the location of the transaction.
-		blockRegion, err := s.cfg.TxIndex.TxFirstBlockRegion(&origin.Hash)
+		blockRegion, err := s.cfg.TxIndex.TxFirstBlockRegion(&origin.TxID)
 		if err != nil {
 			context := "Failed to retrieve transaction location"
 			return nil, internalRPCError(err.Error(), context)
 		}
 		if blockRegion == nil {
-			return nil, rpcNoTxInfoError(&origin.Hash)
+			return nil, rpcNoTxInfoError(&origin.TxID)
 		}
 
 		// Load the raw transaction bytes from the database.
@@ -2779,7 +2781,7 @@ func fetchInputTxos(s *Server, tx *wire.MsgTx) (map[wire.OutPoint]wire.TxOut, er
 			return err
 		})
 		if err != nil {
-			return nil, rpcNoTxInfoError(&origin.Hash)
+			return nil, rpcNoTxInfoError(&origin.TxID)
 		}
 
 		// Deserialize the transaction
@@ -2794,7 +2796,7 @@ func fetchInputTxos(s *Server, tx *wire.MsgTx) (map[wire.OutPoint]wire.TxOut, er
 		if origin.Index >= uint32(len(msgTx.TxOut)) {
 			errStr := fmt.Sprintf("unable to find output %v "+
 				"referenced from transaction %s:%d", origin,
-				tx.TxHash(), txInIndex)
+				tx.TxID(), txInIndex)
 			return nil, internalRPCError(errStr, "")
 		}
 		originOutputs[*origin] = *msgTx.TxOut[origin.Index]
@@ -2807,7 +2809,7 @@ func fetchInputTxos(s *Server, tx *wire.MsgTx) (map[wire.OutPoint]wire.TxOut, er
 // passed transaction.
 func createVinListPrevOut(s *Server, mtx *wire.MsgTx, chainParams *dagconfig.Params, vinExtra bool, filterAddrMap map[string]struct{}) ([]btcjson.VinPrevOut, error) {
 	// Coinbase transactions only have a single txin by definition.
-	if blockdag.IsCoinBaseTx(mtx) {
+	if mtx.IsCoinBase() {
 		// Only include the transaction if the filter map is empty
 		// because a coinbase input has no addresses and so would never
 		// match a non-empty filter.
@@ -2847,7 +2849,7 @@ func createVinListPrevOut(s *Server, mtx *wire.MsgTx, chainParams *dagconfig.Par
 		// requested and available.
 		prevOut := &txIn.PreviousOutPoint
 		vinEntry := btcjson.VinPrevOut{
-			TxID:     prevOut.Hash.String(),
+			TxID:     prevOut.TxID.String(),
 			Vout:     prevOut.Index,
 			Sequence: txIn.Sequence,
 			ScriptSig: &btcjson.ScriptSig{
@@ -3151,7 +3153,7 @@ func handleSearchRawTransactions(s *Server, cmd interface{}, closeChan <-chan st
 
 		result := &srtList[i]
 		result.Hex = hexTxns[i]
-		result.TxID = mtx.TxHash().String()
+		result.TxID = mtx.TxID().String()
 		result.Vin, err = createVinListPrevOut(s, mtx, params, vinExtra,
 			filterAddrMap)
 		if err != nil {
@@ -3236,11 +3238,11 @@ func handleSendRawTransaction(s *Server, cmd interface{}, closeChan <-chan struc
 		// error is returned to the client with the deserialization
 		// error code (to match bitcoind behavior).
 		if _, ok := err.(mempool.RuleError); ok {
-			log.Debugf("Rejected transaction %v: %v", tx.Hash(),
+			log.Debugf("Rejected transaction %v: %v", tx.ID(),
 				err)
 		} else {
 			log.Errorf("Failed to process transaction %v: %v",
-				tx.Hash(), err)
+				tx.ID(), err)
 		}
 		return nil, &btcjson.RPCError{
 			Code:    btcjson.ErrRPCDeserialization,
@@ -3255,14 +3257,14 @@ func handleSendRawTransaction(s *Server, cmd interface{}, closeChan <-chan struc
 	//
 	// Also, since an error is being returned to the caller, ensure the
 	// transaction is removed from the memory pool.
-	if len(acceptedTxs) == 0 || !acceptedTxs[0].Tx.Hash().IsEqual(tx.Hash()) {
+	if len(acceptedTxs) == 0 || !acceptedTxs[0].Tx.ID().IsEqual(tx.ID()) {
 		err := s.cfg.TxMemPool.RemoveTransaction(tx, true, true)
 		if err != nil {
 			return nil, err
 		}
 
 		errStr := fmt.Sprintf("transaction %v is not in accepted list",
-			tx.Hash())
+			tx.ID())
 		return nil, internalRPCError(errStr, "")
 	}
 
@@ -3278,10 +3280,10 @@ func handleSendRawTransaction(s *Server, cmd interface{}, closeChan <-chan struc
 	// Keep track of all the sendRawTransaction request txns so that they
 	// can be rebroadcast if they don't make their way into a block.
 	txD := acceptedTxs[0]
-	iv := wire.NewInvVect(wire.InvTypeTx, txD.Tx.Hash())
+	iv := wire.NewInvVect(wire.InvTypeTx, txD.Tx.ID())
 	s.cfg.ConnMgr.AddRebroadcastInventory(iv, txD)
 
-	return tx.Hash().String(), nil
+	return tx.ID().String(), nil
 }
 
 // handleSetGenerate implements the setGenerate command.
@@ -4298,16 +4300,6 @@ func (s *Server) handleBlockchainNotification(notification *blockdag.Notificatio
 
 		// Notify registered websocket clients of incoming block.
 		s.ntfnMgr.NotifyBlockConnected(block)
-
-	case blockdag.NTBlockDisconnected:
-		block, ok := notification.Data.(*util.Block)
-		if !ok {
-			log.Warnf("Chain disconnected notification is not a block.")
-			break
-		}
-
-		// Notify registered websocket clients.
-		s.ntfnMgr.NotifyBlockDisconnected(block)
 	}
 }
 

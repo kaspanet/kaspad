@@ -283,7 +283,7 @@ func TestCheckTransactionStandard(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewShaHashFromStr: unexpected error: %v", err)
 	}
-	dummyPrevOut := wire.OutPoint{Hash: *prevOutHash, Index: 1}
+	dummyPrevOut := wire.OutPoint{TxID: *prevOutHash, Index: 1}
 	dummySigScript := bytes.Repeat([]byte{0x00}, 65)
 	dummyTxIn := wire.TxIn{
 		PreviousOutPoint: dummyPrevOut,

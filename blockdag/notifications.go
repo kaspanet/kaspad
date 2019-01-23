@@ -25,18 +25,13 @@ const (
 	// NTBlockConnected indicates the associated block was connected to the
 	// main chain.
 	NTBlockConnected
-
-	// NTBlockDisconnected indicates the associated block was disconnected
-	// from the main chain.
-	NTBlockDisconnected
 )
 
 // notificationTypeStrings is a map of notification types back to their constant
 // names for pretty printing.
 var notificationTypeStrings = map[NotificationType]string{
-	NTBlockAccepted:     "NTBlockAccepted",
-	NTBlockConnected:    "NTBlockConnected",
-	NTBlockDisconnected: "NTBlockDisconnected",
+	NTBlockAccepted:  "NTBlockAccepted",
+	NTBlockConnected: "NTBlockConnected",
 }
 
 // String returns the NotificationType in human-readable form.

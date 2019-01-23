@@ -367,7 +367,7 @@ func (dag *BlockDAG) calcSequenceLock(node *blockNode, utxoSet UTXOSet, tx *util
 			str := fmt.Sprintf("output %v referenced from "+
 				"transaction %s:%d either does not exist or "+
 				"has already been spent", txIn.PreviousOutPoint,
-				tx.Hash(), txInIndex)
+				tx.ID(), txInIndex)
 			return sequenceLock, ruleError(ErrMissingTxOut, str)
 		}
 
@@ -1346,6 +1346,7 @@ func (dag *BlockDAG) LocateHeaders(locator BlockLocator, hashStop *daghash.Hash)
 	return headers
 }
 
+// SubnetworkID returns the node's subnetwork ID
 func (dag *BlockDAG) SubnetworkID() *subnetworkid.SubnetworkID {
 	return dag.subnetworkID
 }
