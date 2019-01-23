@@ -358,7 +358,7 @@ type testContext struct {
 // orphan pool and transaction pool status.  It also further determines if it
 // should be reported as available by the HaveTransaction function based upon
 // the two flags and tests that condition as well.
-func testPoolMembership(tc *testContext, tx *util.Tx, inOrphanPool, inTxPool bool) {
+func testPoolMembership(tc *testContext, tx *util.Tx, inOrphanPool, inTxPool bool, isDepends bool) {
 	txID := tx.ID()
 	gotOrphanPool := tc.harness.txPool.IsOrphanInPool(txID)
 	if inOrphanPool != gotOrphanPool {
@@ -372,6 +372,13 @@ func testPoolMembership(tc *testContext, tx *util.Tx, inOrphanPool, inTxPool boo
 		_, file, line, _ := runtime.Caller(1)
 		tc.t.Fatalf("%s:%d -- IsTransactionInPool: want %v, got %v",
 			file, line, inTxPool, gotTxPool)
+	}
+
+	gotIsDepends := tc.harness.txPool.IsInDependPool(txID)
+	if isDepends != gotIsDepends {
+		_, file, line, _ := runtime.Caller(1)
+		tc.t.Fatalf("%s:%d -- IsInDependPool: want %v, got %v",
+			file, line, isDepends, gotIsDepends)
 	}
 
 	gotHaveTx := tc.harness.txPool.HaveTransaction(txID)
@@ -389,7 +396,7 @@ func testPoolMembership(tc *testContext, tx *util.Tx, inOrphanPool, inTxPool boo
 	if count != len(txIDs) || count != len(txDescs) || count != len(txMiningDescs) {
 		tc.t.Error("mempool.TxIDs(), mempool.TxDescs() and mempool.MiningDescs() have different length")
 	}
-	if inTxPool {
+	if inTxPool && !isDepends {
 		wasFound := false
 		for _, txI := range txIDs {
 			if *txID == *txI {
@@ -490,7 +497,7 @@ func TestProcessTransaction(t *testing.T) {
 	if err != nil {
 		t.Errorf("ProcessTransaction: unexpected error: %v", err)
 	}
-	testPoolMembership(tc, orphanedTx, false, false)
+	testPoolMembership(tc, orphanedTx, false, false, false)
 
 	harness.txPool.cfg.Policy.MaxOrphanTxs = 5
 	_, err = harness.txPool.ProcessTransaction(orphanedTx, true, false, 0)
@@ -850,8 +857,8 @@ func TestDoubleSpends(t *testing.T) {
 		t.Fatalf("unable to create transaction: %v", err)
 	}
 	harness.txPool.ProcessTransaction(tx2, true, false, 0)
-	testPoolMembership(tc, tx1, false, true)
-	testPoolMembership(tc, tx2, false, true)
+	testPoolMembership(tc, tx1, false, true, false)
+	testPoolMembership(tc, tx2, false, true, false)
 
 	//Spends the same outpoint as tx2
 	tx3, err := harness.createTx(spendableOuts[0], 2, 1) //We put here different fee to create different transaction hash
@@ -867,15 +874,15 @@ func TestDoubleSpends(t *testing.T) {
 	if code, _ := extractRejectCode(err); code != wire.RejectDuplicate {
 		t.Errorf("Unexpected error code. Expected %v but got %v", wire.RejectDuplicate, code)
 	}
-	testPoolMembership(tc, tx3, false, false)
+	testPoolMembership(tc, tx3, false, false, false)
 
 	//Then we assume tx3 is already in the DAG, so we need to remove
 	//transactions that spends the same outpoints from the mempool
 	harness.txPool.RemoveDoubleSpends(tx3)
 	//Ensures that only the transaction that double spends the same
 	//funds as tx3 is removed, and the other one remains unaffected
-	testPoolMembership(tc, tx1, false, false)
-	testPoolMembership(tc, tx2, false, true)
+	testPoolMembership(tc, tx1, false, false, false)
+	testPoolMembership(tc, tx2, false, true, false)
 }
 
 //TestFetchTransaction checks that FetchTransaction
@@ -896,7 +903,7 @@ func TestFetchTransaction(t *testing.T) {
 		t.Fatalf("unable to create signed tx: %v", err)
 	}
 	harness.txPool.ProcessTransaction(orphanedTx, true, false, 0)
-	testPoolMembership(tc, orphanedTx, true, false)
+	testPoolMembership(tc, orphanedTx, true, false, false)
 	fetchedorphanedTx, err := harness.txPool.FetchTransaction(orphanedTx.ID())
 	if fetchedorphanedTx != nil {
 		t.Fatalf("FetchTransaction: expected fetchedorphanedTx to be nil")
@@ -910,7 +917,7 @@ func TestFetchTransaction(t *testing.T) {
 		t.Fatalf("unable to create transaction: %v", err)
 	}
 	harness.txPool.ProcessTransaction(tx, true, false, 0)
-	testPoolMembership(tc, tx, false, true)
+	testPoolMembership(tc, tx, false, true, false)
 	fetchedTx, err := harness.txPool.FetchTransaction(tx.ID())
 	if !reflect.DeepEqual(fetchedTx, tx) {
 		t.Fatalf("FetchTransaction: returned a transaction, but not the right one")
@@ -961,7 +968,7 @@ func TestSimpleOrphanChain(t *testing.T) {
 
 		// Ensure the transaction is in the orphan pool, is not in the
 		// transaction pool, and is reported as available.
-		testPoolMembership(tc, tx, true, false)
+		testPoolMembership(tc, tx, true, false, false)
 	}
 
 	// Add the transaction which completes the orphan chain and ensure they
@@ -982,7 +989,7 @@ func TestSimpleOrphanChain(t *testing.T) {
 	for _, txD := range acceptedTxns {
 		// Ensure the transaction is no longer in the orphan pool, is
 		// now in the transaction pool, and is reported as available.
-		testPoolMembership(tc, txD.Tx, false, true)
+		testPoolMembership(tc, txD.Tx, false, true, txD.Tx != chainedTxns[0])
 	}
 }
 
@@ -1036,7 +1043,7 @@ func TestOrphanReject(t *testing.T) {
 
 		// Ensure the transaction is not in the orphan pool, not in the
 		// transaction pool, and not reported as available
-		testPoolMembership(tc, tx, false, false)
+		testPoolMembership(tc, tx, false, false, false)
 	}
 }
 
@@ -1067,8 +1074,8 @@ func TestOrphanExpiration(t *testing.T) {
 		false, 0)
 
 	//First check that expired orphan transactions are not removed before nextExpireScan
-	testPoolMembership(tc, tx1, true, false)
-	testPoolMembership(tc, expiredTx, true, false)
+	testPoolMembership(tc, tx1, true, false, false)
+	testPoolMembership(tc, expiredTx, true, false, false)
 
 	//Force nextExpireScan to be in the past
 	harness.txPool.nextExpireScan = time.Unix(0, 0)
@@ -1081,9 +1088,9 @@ func TestOrphanExpiration(t *testing.T) {
 	harness.txPool.ProcessTransaction(tx2, true,
 		false, 0)
 	//Check that only expired orphan transactions are removed
-	testPoolMembership(tc, tx1, true, false)
-	testPoolMembership(tc, tx2, true, false)
-	testPoolMembership(tc, expiredTx, false, false)
+	testPoolMembership(tc, tx1, true, false, false)
+	testPoolMembership(tc, tx2, true, false, false)
+	testPoolMembership(tc, expiredTx, false, false, false)
 }
 
 //TestMaxOrphanTxSize ensures that a transaction that is
@@ -1107,12 +1114,12 @@ func TestMaxOrphanTxSize(t *testing.T) {
 	harness.txPool.ProcessTransaction(tx, true,
 		false, 0)
 
-	testPoolMembership(tc, tx, false, false)
+	testPoolMembership(tc, tx, false, false, false)
 
 	harness.txPool.cfg.Policy.MaxOrphanTxSize = math.MaxInt32
 	harness.txPool.ProcessTransaction(tx, true,
 		false, 0)
-	testPoolMembership(tc, tx, true, false)
+	testPoolMembership(tc, tx, true, false, false)
 
 }
 
@@ -1128,26 +1135,26 @@ func TestRemoveTransaction(t *testing.T) {
 		t.Fatalf("unable to create transaction chain: %v", err)
 	}
 
-	for _, tx := range chainedTxns {
+	for i, tx := range chainedTxns {
 		_, err := harness.txPool.ProcessTransaction(tx, true,
 			false, 0)
 		if err != nil {
 			t.Fatalf("ProcessTransaction: %v", err)
 		}
 
-		testPoolMembership(tc, tx, false, true)
+		testPoolMembership(tc, tx, false, true, i != 0)
 	}
 
 	//Checks that when removeRedeemers is false, the specified transaction is the only transaction that gets removed
 	harness.txPool.RemoveTransaction(chainedTxns[3], false, true)
-	testPoolMembership(tc, chainedTxns[3], false, false)
-	testPoolMembership(tc, chainedTxns[4], false, true)
+	testPoolMembership(tc, chainedTxns[3], false, false, false)
+	testPoolMembership(tc, chainedTxns[4], false, true, false)
 
 	//Checks that when removeRedeemers is true, all of the transaction that are dependent on it get removed
 	harness.txPool.RemoveTransaction(chainedTxns[1], true, true)
-	testPoolMembership(tc, chainedTxns[0], false, true)
-	testPoolMembership(tc, chainedTxns[1], false, false)
-	testPoolMembership(tc, chainedTxns[2], false, false)
+	testPoolMembership(tc, chainedTxns[0], false, true, false)
+	testPoolMembership(tc, chainedTxns[1], false, false, false)
+	testPoolMembership(tc, chainedTxns[2], false, false, false)
 
 	fakeWithDiffErr := "error from WithDiff"
 	guard := monkey.Patch((*blockdag.DiffUTXOSet).WithDiff, func(_ *blockdag.DiffUTXOSet, _ *blockdag.UTXODiff) (blockdag.UTXOSet, error) {
@@ -1198,7 +1205,7 @@ func TestOrphanEviction(t *testing.T) {
 
 		// Ensure the transaction is in the orphan pool, is not in the
 		// transaction pool, and is reported as available.
-		testPoolMembership(tc, tx, true, false)
+		testPoolMembership(tc, tx, true, false, false)
 	}
 
 	// Figure out which transactions were evicted and make sure the number
@@ -1218,7 +1225,7 @@ func TestOrphanEviction(t *testing.T) {
 	// Ensure none of the evicted transactions ended up in the transaction
 	// pool.
 	for _, tx := range evictedTxns {
-		testPoolMembership(tc, tx, false, false)
+		testPoolMembership(tc, tx, false, false, false)
 	}
 }
 
@@ -1271,10 +1278,10 @@ func TestRemoveOrphansByTag(t *testing.T) {
 		false, 2)
 
 	harness.txPool.RemoveOrphansByTag(1)
-	testPoolMembership(tc, orphanedTx1, false, false)
-	testPoolMembership(tc, orphanedTx2, false, false)
-	testPoolMembership(tc, orphanedTx3, false, false)
-	testPoolMembership(tc, orphanedTx4, true, false)
+	testPoolMembership(tc, orphanedTx1, false, false, false)
+	testPoolMembership(tc, orphanedTx2, false, false, false)
+	testPoolMembership(tc, orphanedTx3, false, false, false)
+	testPoolMembership(tc, orphanedTx4, true, false, false)
 }
 
 // TestBasicOrphanRemoval ensure that orphan removal works as expected when an
@@ -1316,7 +1323,7 @@ func TestBasicOrphanRemoval(t *testing.T) {
 
 		// Ensure the transaction is in the orphan pool, not in the
 		// transaction pool, and reported as available.
-		testPoolMembership(tc, tx, true, false)
+		testPoolMembership(tc, tx, true, false, false)
 	}
 
 	// Attempt to remove an orphan that has no redeemers and is not present,
@@ -1330,25 +1337,25 @@ func TestBasicOrphanRemoval(t *testing.T) {
 	}
 
 	harness.txPool.RemoveOrphan(nonChainedOrphanTx)
-	testPoolMembership(tc, nonChainedOrphanTx, false, false)
+	testPoolMembership(tc, nonChainedOrphanTx, false, false, false)
 	for _, tx := range chainedTxns[1 : maxOrphans+1] {
-		testPoolMembership(tc, tx, true, false)
+		testPoolMembership(tc, tx, true, false, false)
 	}
 
 	// Attempt to remove an orphan that has a existing redeemer but itself
 	// is not present and ensure the state of all other orphans (including
 	// the one that redeems it) are unaffected.
 	harness.txPool.RemoveOrphan(chainedTxns[0])
-	testPoolMembership(tc, chainedTxns[0], false, false)
+	testPoolMembership(tc, chainedTxns[0], false, false, false)
 	for _, tx := range chainedTxns[1 : maxOrphans+1] {
-		testPoolMembership(tc, tx, true, false)
+		testPoolMembership(tc, tx, true, false, false)
 	}
 
 	// Remove each orphan one-by-one and ensure they are removed as
 	// expected.
 	for _, tx := range chainedTxns[1 : maxOrphans+1] {
 		harness.txPool.RemoveOrphan(tx)
-		testPoolMembership(tc, tx, false, false)
+		testPoolMembership(tc, tx, false, false, false)
 	}
 }
 
@@ -1390,7 +1397,7 @@ func TestOrphanChainRemoval(t *testing.T) {
 
 		// Ensure the transaction is in the orphan pool, not in the
 		// transaction pool, and reported as available.
-		testPoolMembership(tc, tx, true, false)
+		testPoolMembership(tc, tx, true, false, false)
 	}
 
 	// Remove the first orphan that starts the orphan chain without the
@@ -1399,9 +1406,9 @@ func TestOrphanChainRemoval(t *testing.T) {
 	harness.txPool.mtx.Lock()
 	harness.txPool.removeOrphan(chainedTxns[1], false)
 	harness.txPool.mtx.Unlock()
-	testPoolMembership(tc, chainedTxns[1], false, false)
+	testPoolMembership(tc, chainedTxns[1], false, false, false)
 	for _, tx := range chainedTxns[2 : maxOrphans+1] {
-		testPoolMembership(tc, tx, true, false)
+		testPoolMembership(tc, tx, true, false, false)
 	}
 
 	// Remove the first remaining orphan that starts the orphan chain with
@@ -1410,7 +1417,7 @@ func TestOrphanChainRemoval(t *testing.T) {
 	harness.txPool.removeOrphan(chainedTxns[2], true)
 	harness.txPool.mtx.Unlock()
 	for _, tx := range chainedTxns[2 : maxOrphans+1] {
-		testPoolMembership(tc, tx, false, false)
+		testPoolMembership(tc, tx, false, false, false)
 	}
 }
 
@@ -1446,7 +1453,7 @@ func TestMultiInputOrphanDoubleSpend(t *testing.T) {
 			t.Fatalf("ProcessTransaction: reported %d accepted transactions "+
 				"from what should be an orphan", len(acceptedTxns))
 		}
-		testPoolMembership(tc, tx, true, false)
+		testPoolMembership(tc, tx, true, false, false)
 	}
 
 	// Ensure a transaction that contains a double spend of the same output
@@ -1472,7 +1479,7 @@ func TestMultiInputOrphanDoubleSpend(t *testing.T) {
 		t.Fatalf("ProcessTransaction: reported %d accepted transactions "+
 			"from what should be an orphan", len(acceptedTxns))
 	}
-	testPoolMembership(tc, doubleSpendTx, true, false)
+	testPoolMembership(tc, doubleSpendTx, true, false, false)
 
 	// Add the transaction which completes the orphan chain and ensure the
 	// chain gets accepted.  Notice the accept orphans flag is also false
@@ -1494,12 +1501,12 @@ func TestMultiInputOrphanDoubleSpend(t *testing.T) {
 	for _, txD := range acceptedTxns {
 		// Ensure the transaction is no longer in the orphan pool, is
 		// in the transaction pool, and is reported as available.
-		testPoolMembership(tc, txD.Tx, false, true)
+		testPoolMembership(tc, txD.Tx, false, true, txD.Tx != chainedTxns[0])
 	}
 
 	// Ensure the double spending orphan is no longer in the orphan pool and
 	// was not moved to the transaction pool.
-	testPoolMembership(tc, doubleSpendTx, false, false)
+	testPoolMembership(tc, doubleSpendTx, false, false, false)
 }
 
 // TestCheckSpend tests that CheckSpend returns the expected spends found in
@@ -1590,7 +1597,7 @@ func TestCount(t *testing.T) {
 		if err != nil {
 			t.Errorf("ProcessTransaction: unexpected error: %v", err)
 		}
-		if harness.txPool.Count() != i+1 {
+		if harness.txPool.Count()+harness.txPool.DepCount() != i+1 {
 			t.Errorf("TestCount: txPool expected to have %v transactions but got %v", i+1, harness.txPool.Count())
 		}
 	}
@@ -1599,7 +1606,7 @@ func TestCount(t *testing.T) {
 	if err != nil {
 		t.Fatalf("harness.CreateTxChain: unexpected error: %v", err)
 	}
-	if harness.txPool.Count() != 2 {
+	if harness.txPool.Count()+harness.txPool.DepCount() != 2 {
 		t.Errorf("TestCount: txPool expected to have 2 transactions but got %v", harness.txPool.Count())
 	}
 }
@@ -1708,7 +1715,7 @@ func TestHandleNewBlock(t *testing.T) {
 		t.Fatalf("ProcessTransaction: unexpected error: %v", err)
 	}
 	// ensure that transaction added to orphan pool
-	testPoolMembership(tc, orphanTx, true, false)
+	testPoolMembership(tc, orphanTx, true, false, false)
 
 	// Add one more transaction to block
 	blockTx2, err := harness.CreateSignedTx(spendableOuts[1:], 1)
@@ -1768,7 +1775,7 @@ func TestHandleNewBlock(t *testing.T) {
 	}
 
 	// ensure that orphan transaction moved to main pool
-	testPoolMembership(tc, orphanTx, false, true)
+	testPoolMembership(tc, orphanTx, false, true, false)
 }
 
 // dummyBlock defines a block on the block DAG. It is used to test block operations.
