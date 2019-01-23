@@ -613,6 +613,14 @@ func (p *Peer) UserAgent() string {
 	return userAgent
 }
 
+func (p *Peer) SubnetworkID() *subnetworkid.SubnetworkID {
+	p.flagsMtx.Lock()
+	subnetworkID := p.cfg.SubnetworkID
+	p.flagsMtx.Unlock()
+
+	return subnetworkID
+}
+
 // LastAnnouncedBlock returns the last announced block of the remote peer.
 //
 // This function is safe for concurrent access.

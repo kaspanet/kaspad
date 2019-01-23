@@ -38,6 +38,7 @@ func TestTxIndexConnectBlock(t *testing.T) {
 	config := blockdag.Config{
 		IndexManager: indexManager,
 		DAGParams:    &params,
+		SubnetworkID: &wire.SubnetworkIDSupportsAll,
 	}
 
 	dag, teardown, err := blockdag.DAGSetup("TestTxIndexConnectBlock", config)

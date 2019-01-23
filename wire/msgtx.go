@@ -808,6 +808,16 @@ func (msg *MsgTx) PkScriptLocs() []int {
 	return pkScriptLocs
 }
 
+// IsSubnetworkCompatible return true iff subnetworkID is one or more of the following:
+// 1. The SupportsAll subnetwork (full node)
+// 2. The native subnetwork
+// 3. The transaction's subnetwork
+func (msg *MsgTx) IsSubnetworkCompatible(subnetworkID *subnetworkid.SubnetworkID) bool {
+	return subnetworkID.IsEqual(&SubnetworkIDSupportsAll) ||
+		subnetworkID.IsEqual(&SubnetworkIDNative) ||
+		subnetworkID.IsEqual(&msg.SubnetworkID)
+}
+
 // NewMsgTx returns a new bitcoin tx message that conforms to the Message
 // interface.  The return instance has a default version of TxVersion and there
 // are no transaction inputs or outputs.  Also, the lock time is set to zero
