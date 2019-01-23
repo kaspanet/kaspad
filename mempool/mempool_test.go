@@ -9,13 +9,14 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"github.com/daglabs/btcd/util/subnetworkid"
 	"math"
 	"reflect"
 	"runtime"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/daglabs/btcd/util/subnetworkid"
 
 	"bou.ke/monkey"
 	"github.com/daglabs/btcd/blockdag"
@@ -91,7 +92,7 @@ type spendableOutpoint struct {
 // transactions.
 func txOutToSpendableOutpoint(tx *util.Tx, outputNum uint32) spendableOutpoint {
 	return spendableOutpoint{
-		outPoint: wire.OutPoint{Hash: *tx.Hash(), Index: outputNum},
+		outPoint: wire.OutPoint{TxID: *tx.ID(), Index: outputNum},
 		amount:   util.Amount(tx.MsgTx().TxOut[outputNum].Value),
 	}
 }
@@ -248,7 +249,7 @@ func (p *poolHarness) CreateTxChain(firstOutput spendableOutpoint, numTxns uint3
 		txChain = append(txChain, util.NewTx(tx))
 
 		// Next transaction uses outputs from this one.
-		prevOutPoint = wire.OutPoint{Hash: tx.TxHash(), Index: 0}
+		prevOutPoint = wire.OutPoint{TxID: tx.TxID(), Index: 0}
 	}
 
 	return txChain, nil
@@ -358,22 +359,22 @@ type testContext struct {
 // should be reported as available by the HaveTransaction function based upon
 // the two flags and tests that condition as well.
 func testPoolMembership(tc *testContext, tx *util.Tx, inOrphanPool, inTxPool bool) {
-	txHash := tx.Hash()
-	gotOrphanPool := tc.harness.txPool.IsOrphanInPool(txHash)
+	txID := tx.ID()
+	gotOrphanPool := tc.harness.txPool.IsOrphanInPool(txID)
 	if inOrphanPool != gotOrphanPool {
 		_, file, line, _ := runtime.Caller(1)
 		tc.t.Fatalf("%s:%d -- IsOrphanInPool: want %v, got %v", file,
 			line, inOrphanPool, gotOrphanPool)
 	}
 
-	gotTxPool := tc.harness.txPool.IsTransactionInPool(txHash)
+	gotTxPool := tc.harness.txPool.IsTransactionInPool(txID)
 	if inTxPool != gotTxPool {
 		_, file, line, _ := runtime.Caller(1)
 		tc.t.Fatalf("%s:%d -- IsTransactionInPool: want %v, got %v",
 			file, line, inTxPool, gotTxPool)
 	}
 
-	gotHaveTx := tc.harness.txPool.HaveTransaction(txHash)
+	gotHaveTx := tc.harness.txPool.HaveTransaction(txID)
 	wantHaveTx := inOrphanPool || inTxPool
 	if wantHaveTx != gotHaveTx {
 		_, file, line, _ := runtime.Caller(1)
@@ -382,27 +383,27 @@ func testPoolMembership(tc *testContext, tx *util.Tx, inOrphanPool, inTxPool boo
 	}
 
 	count := tc.harness.txPool.Count()
-	txHashes := tc.harness.txPool.TxHashes()
+	txIDs := tc.harness.txPool.TxIDs()
 	txDescs := tc.harness.txPool.TxDescs()
 	txMiningDescs := tc.harness.txPool.MiningDescs()
-	if count != len(txHashes) || count != len(txDescs) || count != len(txMiningDescs) {
-		tc.t.Error("mempool.TxHashes(), mempool.TxDescs() and mempool.MiningDescs() have different length")
+	if count != len(txIDs) || count != len(txDescs) || count != len(txMiningDescs) {
+		tc.t.Error("mempool.TxIDs(), mempool.TxDescs() and mempool.MiningDescs() have different length")
 	}
 	if inTxPool {
 		wasFound := false
-		for _, txh := range txHashes {
-			if *txHash == *txh {
+		for _, txI := range txIDs {
+			if *txID == *txI {
 				wasFound = true
 				break
 			}
 		}
 		if !wasFound {
-			tc.t.Error("Can not find transaction in mempool.TxHashes")
+			tc.t.Error("Can not find transaction in mempool.TxIDs")
 		}
 
 		wasFound = false
 		for _, txd := range txDescs {
-			if *txHash == *txd.Tx.Hash() {
+			if *txID == *txd.Tx.ID() {
 				wasFound = true
 				break
 			}
@@ -413,7 +414,7 @@ func testPoolMembership(tc *testContext, tx *util.Tx, inOrphanPool, inTxPool boo
 
 		wasFound = false
 		for _, txd := range txMiningDescs {
-			if *txHash == *txd.Tx.Hash() {
+			if *txID == *txd.Tx.ID() {
 				wasFound = true
 				break
 			}
@@ -476,7 +477,7 @@ func TestProcessTransaction(t *testing.T) {
 
 	orphanedTx, err := harness.CreateSignedTx([]spendableOutpoint{{
 		amount:   util.Amount(5000000000),
-		outPoint: wire.OutPoint{Hash: daghash.Hash{}, Index: 1},
+		outPoint: wire.OutPoint{TxID: daghash.Hash{}, Index: 1},
 	}}, 1)
 	if err != nil {
 		t.Fatalf("unable to create signed tx: %v", err)
@@ -590,7 +591,7 @@ func TestProcessTransaction(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewShaHashFromStr: unexpected error: %v", err)
 	}
-	dummyPrevOut := wire.OutPoint{Hash: *dummyPrevOutHash, Index: 1}
+	dummyPrevOut := wire.OutPoint{TxID: *dummyPrevOutHash, Index: 1}
 	dummySigScript := bytes.Repeat([]byte{0x00}, 65)
 
 	addrHash := [20]byte{0x01}
@@ -618,7 +619,7 @@ func TestProcessTransaction(t *testing.T) {
 	nonStdSigScriptTx := util.NewTx(&wire.MsgTx{
 		Version: 1,
 		TxIn: []*wire.TxIn{{
-			PreviousOutPoint: wire.OutPoint{Hash: *p2shTx.Hash(), Index: 0},
+			PreviousOutPoint: wire.OutPoint{TxID: *p2shTx.ID(), Index: 0},
 			SignatureScript:  wrappedP2SHNonStdSigScript,
 			Sequence:         wire.MaxTxInSequenceNum,
 		}},
@@ -640,7 +641,7 @@ func TestProcessTransaction(t *testing.T) {
 		"transaction input #%d has "+
 		"%d signature operations which is more "+
 		"than the allowed max amount of %d",
-		nonStdSigScriptTx.Hash(), 0, 16, 15)
+		nonStdSigScriptTx.ID(), 0, 16, 15)
 	if expectedErrStr != err.Error() {
 		t.Errorf("Unexpected error message. Expected \"%s\" but got \"%s\"", expectedErrStr, err.Error())
 	}
@@ -656,7 +657,7 @@ func TestProcessTransaction(t *testing.T) {
 		t.Errorf("Unexpected error code. Expected %v but got %v", wire.RejectNonstandard, code)
 	}
 	expectedErrStr = fmt.Sprintf("transaction %v sigop count is too high: %v > %v",
-		nonStdSigScriptTx.Hash(), 16, 15)
+		nonStdSigScriptTx.ID(), 16, 15)
 	if expectedErrStr != err.Error() {
 		t.Errorf("Unexpected error message. Expected \"%s\" but got \"%s\"", expectedErrStr, err.Error())
 	}
@@ -889,14 +890,14 @@ func TestFetchTransaction(t *testing.T) {
 
 	orphanedTx, err := harness.CreateSignedTx([]spendableOutpoint{{
 		amount:   util.Amount(5000000000),
-		outPoint: wire.OutPoint{Hash: daghash.Hash{1}, Index: 1},
+		outPoint: wire.OutPoint{TxID: daghash.Hash{1}, Index: 1},
 	}}, 1)
 	if err != nil {
 		t.Fatalf("unable to create signed tx: %v", err)
 	}
 	harness.txPool.ProcessTransaction(orphanedTx, true, false, 0)
 	testPoolMembership(tc, orphanedTx, true, false)
-	fetchedorphanedTx, err := harness.txPool.FetchTransaction(orphanedTx.Hash())
+	fetchedorphanedTx, err := harness.txPool.FetchTransaction(orphanedTx.ID())
 	if fetchedorphanedTx != nil {
 		t.Fatalf("FetchTransaction: expected fetchedorphanedTx to be nil")
 	}
@@ -910,7 +911,7 @@ func TestFetchTransaction(t *testing.T) {
 	}
 	harness.txPool.ProcessTransaction(tx, true, false, 0)
 	testPoolMembership(tc, tx, false, true)
-	fetchedTx, err := harness.txPool.FetchTransaction(tx.Hash())
+	fetchedTx, err := harness.txPool.FetchTransaction(tx.ID())
 	if !reflect.DeepEqual(fetchedTx, tx) {
 		t.Fatalf("FetchTransaction: returned a transaction, but not the right one")
 	}
@@ -1009,7 +1010,7 @@ func TestOrphanReject(t *testing.T) {
 			false, 0)
 		if err == nil {
 			t.Fatalf("ProcessTransaction: did not fail on orphan "+
-				"%v when allow orphans flag is false", tx.Hash())
+				"%v when allow orphans flag is false", tx.ID())
 		}
 		expectedErr := RuleError{}
 		if reflect.TypeOf(err) != reflect.TypeOf(expectedErr) {
@@ -1052,15 +1053,15 @@ func TestOrphanExpiration(t *testing.T) {
 
 	expiredTx, err := harness.CreateSignedTx([]spendableOutpoint{{
 		amount:   util.Amount(5000000000),
-		outPoint: wire.OutPoint{Hash: daghash.Hash{}, Index: 0},
+		outPoint: wire.OutPoint{TxID: daghash.Hash{}, Index: 0},
 	}}, 1)
 	harness.txPool.ProcessTransaction(expiredTx, true,
 		false, 0)
-	harness.txPool.orphans[*expiredTx.Hash()].expiration = time.Unix(0, 0)
+	harness.txPool.orphans[*expiredTx.ID()].expiration = time.Unix(0, 0)
 
 	tx1, err := harness.CreateSignedTx([]spendableOutpoint{{
 		amount:   util.Amount(5000000000),
-		outPoint: wire.OutPoint{Hash: daghash.Hash{1}, Index: 0},
+		outPoint: wire.OutPoint{TxID: daghash.Hash{1}, Index: 0},
 	}}, 1)
 	harness.txPool.ProcessTransaction(tx1, true,
 		false, 0)
@@ -1075,7 +1076,7 @@ func TestOrphanExpiration(t *testing.T) {
 
 	tx2, err := harness.CreateSignedTx([]spendableOutpoint{{
 		amount:   util.Amount(5000000000),
-		outPoint: wire.OutPoint{Hash: daghash.Hash{2}, Index: 0},
+		outPoint: wire.OutPoint{TxID: daghash.Hash{2}, Index: 0},
 	}}, 1)
 	harness.txPool.ProcessTransaction(tx2, true,
 		false, 0)
@@ -1098,7 +1099,7 @@ func TestMaxOrphanTxSize(t *testing.T) {
 
 	tx, err := harness.CreateSignedTx([]spendableOutpoint{{
 		amount:   util.Amount(5000000000),
-		outPoint: wire.OutPoint{Hash: daghash.Hash{}, Index: 0},
+		outPoint: wire.OutPoint{TxID: daghash.Hash{}, Index: 0},
 	}}, 1)
 	if err != nil {
 		t.Fatalf("unable to create signed tx: %v", err)
@@ -1204,7 +1205,7 @@ func TestOrphanEviction(t *testing.T) {
 	// evicted matches the expected number.
 	var evictedTxns []*util.Tx
 	for _, tx := range chainedTxns[1:] {
-		if !harness.txPool.IsOrphanInPool(tx.Hash()) {
+		if !harness.txPool.IsOrphanInPool(tx.ID()) {
 			evictedTxns = append(evictedTxns, tx)
 		}
 	}
@@ -1233,7 +1234,7 @@ func TestRemoveOrphansByTag(t *testing.T) {
 
 	orphanedTx1, err := harness.CreateSignedTx([]spendableOutpoint{{
 		amount:   util.Amount(5000000000),
-		outPoint: wire.OutPoint{Hash: daghash.Hash{1}, Index: 1},
+		outPoint: wire.OutPoint{TxID: daghash.Hash{1}, Index: 1},
 	}}, 1)
 	if err != nil {
 		t.Fatalf("unable to create signed tx: %v", err)
@@ -1242,7 +1243,7 @@ func TestRemoveOrphansByTag(t *testing.T) {
 		false, 1)
 	orphanedTx2, err := harness.CreateSignedTx([]spendableOutpoint{{
 		amount:   util.Amount(5000000000),
-		outPoint: wire.OutPoint{Hash: daghash.Hash{2}, Index: 2},
+		outPoint: wire.OutPoint{TxID: daghash.Hash{2}, Index: 2},
 	}}, 1)
 	if err != nil {
 		t.Fatalf("unable to create signed tx: %v", err)
@@ -1251,7 +1252,7 @@ func TestRemoveOrphansByTag(t *testing.T) {
 		false, 1)
 	orphanedTx3, err := harness.CreateSignedTx([]spendableOutpoint{{
 		amount:   util.Amount(5000000000),
-		outPoint: wire.OutPoint{Hash: daghash.Hash{3}, Index: 3},
+		outPoint: wire.OutPoint{TxID: daghash.Hash{3}, Index: 3},
 	}}, 1)
 	if err != nil {
 		t.Fatalf("unable to create signed tx: %v", err)
@@ -1261,7 +1262,7 @@ func TestRemoveOrphansByTag(t *testing.T) {
 
 	orphanedTx4, err := harness.CreateSignedTx([]spendableOutpoint{{
 		amount:   util.Amount(5000000000),
-		outPoint: wire.OutPoint{Hash: daghash.Hash{4}, Index: 4},
+		outPoint: wire.OutPoint{TxID: daghash.Hash{4}, Index: 4},
 	}}, 1)
 	if err != nil {
 		t.Fatalf("unable to create signed tx: %v", err)
@@ -1322,7 +1323,7 @@ func TestBasicOrphanRemoval(t *testing.T) {
 	// and ensure the state of all other orphans are unaffected.
 	nonChainedOrphanTx, err := harness.CreateSignedTx([]spendableOutpoint{{
 		amount:   util.Amount(5000000000),
-		outPoint: wire.OutPoint{Hash: daghash.Hash{}, Index: 0},
+		outPoint: wire.OutPoint{TxID: daghash.Hash{}, Index: 0},
 	}}, 1)
 	if err != nil {
 		t.Fatalf("unable to create signed tx: %v", err)
@@ -1547,7 +1548,7 @@ func TestCheckSpend(t *testing.T) {
 	// Now all but the last tx should be spent by the next.
 	for i := 0; i < len(chainedTxns)-1; i++ {
 		op = wire.OutPoint{
-			Hash:  *chainedTxns[i].Hash(),
+			TxID:  *chainedTxns[i].ID(),
 			Index: 0,
 		}
 		expSpend := chainedTxns[i+1]
@@ -1560,7 +1561,7 @@ func TestCheckSpend(t *testing.T) {
 
 	// The last tx should have no spend.
 	op = wire.OutPoint{
-		Hash:  *chainedTxns[txChainLength-1].Hash(),
+		TxID:  *chainedTxns[txChainLength-1].ID(),
 		Index: 0,
 	}
 	spend = harness.txPool.CheckSpend(op)
@@ -1694,10 +1695,10 @@ func TestHandleNewBlock(t *testing.T) {
 	}
 
 	// Create orphan transaction and add it to UTXO set
-	hash := blockTx1.Hash()
+	txID := blockTx1.ID()
 	orphanTx, err := harness.CreateSignedTx([]spendableOutpoint{{
 		amount:   util.Amount(2500000000),
-		outPoint: wire.OutPoint{Hash: *hash, Index: 0},
+		outPoint: wire.OutPoint{TxID: *txID, Index: 0},
 	}}, 1)
 	if err != nil {
 		t.Fatalf("unable to create signed tx: %v", err)
@@ -1720,7 +1721,7 @@ func TestHandleNewBlock(t *testing.T) {
 	block := util.NewBlock(&dummyBlock)
 	for i, tx := range block.Transactions() {
 		if !harness.txPool.mpUTXOSet.AddTx(tx.MsgTx(), 1) {
-			t.Fatalf("Failed to add transaction %v to UTXO set: %v", i, tx.Hash())
+			t.Fatalf("Failed to add transaction %v to UTXO set: %v", i, tx.ID())
 		}
 	}
 
@@ -1734,8 +1735,8 @@ func TestHandleNewBlock(t *testing.T) {
 	// process messages pushed by HandleNewBlock
 	blockTransnactions := make(map[daghash.Hash]int)
 	for msg := range ch {
-		blockTransnactions[*msg.Tx.Hash()] = 1
-		if *msg.Tx.Hash() != *blockTx1.Hash() {
+		blockTransnactions[*msg.Tx.ID()] = 1
+		if *msg.Tx.ID() != *blockTx1.ID() {
 			if len(msg.AcceptedTxs) != 0 {
 				t.Fatalf("Expected amount of accepted transactions 0. Got: %v", len(msg.AcceptedTxs))
 			}
@@ -1743,8 +1744,8 @@ func TestHandleNewBlock(t *testing.T) {
 			if len(msg.AcceptedTxs) != 1 {
 				t.Fatalf("Wrong accepted transactions length")
 			}
-			if *msg.AcceptedTxs[0].Tx.Hash() != *orphanTx.Hash() {
-				t.Fatalf("Wrong accepted transaction hash")
+			if *msg.AcceptedTxs[0].Tx.ID() != *orphanTx.ID() {
+				t.Fatalf("Wrong accepted transaction ID")
 			}
 		}
 	}
@@ -1758,11 +1759,11 @@ func TestHandleNewBlock(t *testing.T) {
 		t.Fatalf("Wrong size of blockTransnactions after new block handling")
 	}
 
-	if _, ok := blockTransnactions[*blockTx1.Hash()]; !ok {
+	if _, ok := blockTransnactions[*blockTx1.ID()]; !ok {
 		t.Fatalf("Transaction 1 of new block is not handled")
 	}
 
-	if _, ok := blockTransnactions[*blockTx2.Hash()]; !ok {
+	if _, ok := blockTransnactions[*blockTx2.ID()]; !ok {
 		t.Fatalf("Transaction 2 of new block is not handled")
 	}
 
@@ -1787,7 +1788,7 @@ var dummyBlock = wire.MsgBlock{
 				0x17, 0xbe, 0x75, 0xe7, 0x29, 0x46, 0xdd, 0x03,
 				0x01, 0x92, 0x90, 0xf1, 0xca, 0x8a, 0x88, 0x11,
 			}}, // SimNet genesis
-		MerkleRoot: daghash.Hash([32]byte{ // Make go vet happy.
+		HashMerkleRoot: daghash.Hash([32]byte{ // Make go vet happy.
 			0x66, 0x57, 0xa9, 0x25, 0x2a, 0xac, 0xd5, 0xc0,
 			0xb2, 0x94, 0x09, 0x96, 0xec, 0xff, 0x95, 0x22,
 			0x28, 0xc3, 0x06, 0x7c, 0xc3, 0x8d, 0x48, 0x85,
@@ -1803,7 +1804,7 @@ var dummyBlock = wire.MsgBlock{
 			TxIn: []*wire.TxIn{
 				{
 					PreviousOutPoint: wire.OutPoint{
-						Hash:  daghash.Hash{},
+						TxID:  daghash.Hash{},
 						Index: 0xffffffff,
 					},
 					SignatureScript: []byte{

@@ -232,15 +232,6 @@ func (msg *MsgBlock) BlockHash() daghash.Hash {
 	return msg.Header.BlockHash()
 }
 
-// TxHashes returns a slice of hashes of all of transactions in this block.
-func (msg *MsgBlock) TxHashes() ([]daghash.Hash, error) {
-	hashList := make([]daghash.Hash, 0, len(msg.Transactions))
-	for _, tx := range msg.Transactions {
-		hashList = append(hashList, tx.TxHash())
-	}
-	return hashList, nil
-}
-
 // ConvertToPartial clears out all the payloads of the subnetworks that are
 // incompatible with the given subnetwork ID.
 // Note: this operation modifies the block in place.

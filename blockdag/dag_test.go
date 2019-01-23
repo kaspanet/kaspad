@@ -41,7 +41,7 @@ func TestBlockCount(t *testing.T) {
 	}
 
 	// Create a new database and DAG instance to run tests against.
-	dag, teardownFunc, err := DAGSetup("haveblock", Config{
+	dag, teardownFunc, err := DAGSetup("TestBlockCount", Config{
 		DAGParams:    &dagconfig.SimNetParams,
 		SubnetworkID: &wire.SubnetworkIDSupportsAll,
 	})
@@ -158,7 +158,7 @@ func TestHaveBlock(t *testing.T) {
 	}
 	rErr, ok := err.(RuleError)
 	if !ok {
-		t.Fatalf("ProcessBlock for block 3D expected a RuleError, but got something else\n")
+		t.Fatalf("ProcessBlock for block 3D expected a RuleError, but got %v\n", err)
 	}
 	if !ok || rErr.ErrorCode != ErrDuplicateTxInputs {
 		t.Fatalf("ProcessBlock for block 3D expected error code %s but got %s\n", ErrDuplicateTxInputs, rErr.ErrorCode)
@@ -187,10 +187,10 @@ func TestHaveBlock(t *testing.T) {
 		{hash: dagconfig.SimNetParams.GenesisHash.String(), want: true},
 
 		// Block 3b should be present (as a second child of Block 2).
-		{hash: "2664223a8b2abba475ed5760433e8204806c17b60f12d826b876cccbf5f74be6", want: true},
+		{hash: "4b89947c906a2a95fa9b4a4b4cb11a51f87cae2cfa2c9bcddfd45140a7e62e1f", want: true},
 
 		// Block 100000 should be present (as an orphan).
-		{hash: "66965d8ebcdccae2b3791f652326ef1063fa0a7e506c66f68e0c7bbb59104711", want: true},
+		{hash: "22accd0c0281c0776dc3b5d5957bae3f61290e1075f97c99cd347c38cc26555a", want: true},
 
 		// Random hashes should not be available.
 		{hash: "123", want: false},
@@ -252,7 +252,7 @@ func TestCalcSequenceLock(t *testing.T) {
 	// point of view that they were originally calculated from for a given
 	// utxo.  That is to say, the height prior to it.
 	utxo := wire.OutPoint{
-		Hash:  *targetTx.Hash(),
+		TxID:  *targetTx.ID(),
 		Index: 0,
 	}
 	prevUtxoHeight := int32(numBlocksToGenerate) - 4
@@ -278,7 +278,7 @@ func TestCalcSequenceLock(t *testing.T) {
 		}},
 	}
 	unConfUtxo := wire.OutPoint{
-		Hash:  unConfTx.TxHash(),
+		TxID:  unConfTx.TxID(),
 		Index: 0,
 	}
 

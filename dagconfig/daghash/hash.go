@@ -190,8 +190,13 @@ func JoinHashesStrings(hashes []Hash, separator string) string {
 	return strings.Join(Strings(hashes), separator)
 }
 
+// Sort sorts a slice of hashes
 func Sort(hashes []Hash) {
 	sort.Slice(hashes, func(i, j int) bool {
 		return Less(&hashes[i], &hashes[j])
 	})
 }
+
+// Zero is the Hash value of all zero bytes, defined here for
+// convenience.
+var Zero Hash

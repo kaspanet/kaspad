@@ -29,7 +29,7 @@ func TestMaybeAcceptBlockErrors(t *testing.T) {
 	orphanBlockFile := "blk_3B.dat"
 	loadedBlocks, err := loadBlocks(orphanBlockFile)
 	if err != nil {
-		t.Fatalf("TestMaybeAcceptBlockErrors: rejecting the block if its parents are missing: "+
+		t.Fatalf("TestMaybeAcceptBlockErrors: "+
 			"Error loading file '%s': %s\n", orphanBlockFile, err)
 	}
 	block := loadedBlocks[0]
@@ -52,7 +52,7 @@ func TestMaybeAcceptBlockErrors(t *testing.T) {
 	blocksFile := "blk_0_to_4.dat"
 	blocks, err := loadBlocks(blocksFile)
 	if err != nil {
-		t.Fatalf("TestMaybeAcceptBlockErrors: rejecting the block if its parents are invalid: "+
+		t.Fatalf("TestMaybeAcceptBlockErrors: "+
 			"Error loading file '%s': %s\n", blocksFile, err)
 	}
 

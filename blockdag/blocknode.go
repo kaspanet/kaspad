@@ -102,11 +102,12 @@ type blockNode struct {
 	// reconstructing headers from memory.  These must be treated as
 	// immutable and are intentionally ordered to avoid padding on 64-bit
 	// platforms.
-	version    int32
-	bits       uint32
-	nonce      uint64
-	timestamp  int64
-	merkleRoot daghash.Hash
+	version        int32
+	bits           uint32
+	nonce          uint64
+	timestamp      int64
+	hashMerkleRoot daghash.Hash
+	idMerkleRoot   daghash.Hash
 
 	// status is a bitfield representing the validation state of the block. The
 	// status field, unlike the other fields, may be written to and so should
@@ -134,7 +135,8 @@ func initBlockNode(node *blockNode, blockHeader *wire.BlockHeader, parents block
 		node.bits = blockHeader.Bits
 		node.nonce = blockHeader.Nonce
 		node.timestamp = blockHeader.Timestamp.Unix()
-		node.merkleRoot = blockHeader.MerkleRoot
+		node.hashMerkleRoot = blockHeader.HashMerkleRoot
+		node.idMerkleRoot = blockHeader.IDMerkleRoot
 
 		// update parents to point to new node
 		for _, p := range parents {
@@ -185,12 +187,13 @@ func (node *blockNode) detachFromParents() {
 func (node *blockNode) Header() *wire.BlockHeader {
 	// No lock is needed because all accessed fields are immutable.
 	return &wire.BlockHeader{
-		Version:      node.version,
-		ParentHashes: node.ParentHashes(),
-		MerkleRoot:   node.merkleRoot,
-		Timestamp:    time.Unix(node.timestamp, 0),
-		Bits:         node.bits,
-		Nonce:        node.nonce,
+		Version:        node.version,
+		ParentHashes:   node.ParentHashes(),
+		HashMerkleRoot: node.hashMerkleRoot,
+		IDMerkleRoot:   node.idMerkleRoot,
+		Timestamp:      time.Unix(node.timestamp, 0),
+		Bits:           node.bits,
+		Nonce:          node.nonce,
 	}
 }
 

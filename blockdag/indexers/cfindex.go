@@ -52,10 +52,6 @@ var (
 	}
 
 	maxFilterType = uint8(len(cfHeaderKeys) - 1)
-
-	// zeroHash is the daghash.Hash value of all zero bytes, defined here for
-	// convenience.
-	zeroHash daghash.Hash
 )
 
 // dbFetchFilterIdxEntry retrieves a data blob from the filter index database.
@@ -178,7 +174,7 @@ func storeFilter(dbTx database.Tx, block *util.Block, f *gcs.Filter,
 	var prevHeader *daghash.Hash
 	header := block.MsgBlock().Header
 	if header.IsGenesis() {
-		prevHeader = &zeroHash
+		prevHeader = &daghash.Zero
 	} else {
 		ph := header.SelectedParentHash()
 		pfh, err := dbFetchFilterIdxEntry(dbTx, hkey, ph)
