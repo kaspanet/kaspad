@@ -416,14 +416,14 @@ func (sm *SyncManager) handleTxMsg(tmsg *txMsg) {
 	// spec to proliferate.  While this is not ideal, there is no check here
 	// to disconnect peers for sending unsolicited transactions to provide
 	// interoperability.
-	txHash := tmsg.tx.Hash()
+	txID := tmsg.tx.ID()
 
 	// Ignore transactions that we have already rejected.  Do not
 	// send a reject message here because if the transaction was already
 	// rejected, the transaction was unsolicited.
-	if _, exists = sm.rejectedTxns[*txHash]; exists {
+	if _, exists = sm.rejectedTxns[*txID]; exists {
 		log.Debugf("Ignoring unsolicited previously rejected "+
-			"transaction %v from %s", txHash, peer)
+			"transaction %v from %s", txID, peer)
 		return
 	}
 
@@ -436,13 +436,13 @@ func (sm *SyncManager) handleTxMsg(tmsg *txMsg) {
 	// already knows about it and as such we shouldn't have any more
 	// instances of trying to fetch it, or we failed to insert and thus
 	// we'll retry next time we get an inv.
-	delete(state.requestedTxns, *txHash)
-	delete(sm.requestedTxns, *txHash)
+	delete(state.requestedTxns, *txID)
+	delete(sm.requestedTxns, *txID)
 
 	if err != nil {
 		// Do not request this transaction again until a new block
 		// has been processed.
-		sm.rejectedTxns[*txHash] = struct{}{}
+		sm.rejectedTxns[*txID] = struct{}{}
 		sm.limitMap(sm.rejectedTxns, maxRejectedTxns)
 
 		// When the error is a rule error, it means the transaction was
@@ -451,16 +451,16 @@ func (sm *SyncManager) handleTxMsg(tmsg *txMsg) {
 		// so log it as an actual error.
 		if _, ok := err.(mempool.RuleError); ok {
 			log.Debugf("Rejected transaction %v from %s: %v",
-				txHash, peer, err)
+				txID, peer, err)
 		} else {
 			log.Errorf("Failed to process transaction %v: %v",
-				txHash, err)
+				txID, err)
 		}
 
 		// Convert the error into an appropriate reject message and
 		// send it.
 		code, reason := mempool.ErrToRejectErr(err)
-		peer.PushRejectMsg(wire.CmdTx, code, reason, txHash, false)
+		peer.PushRejectMsg(wire.CmdTx, code, reason, txID, false)
 		return
 	}
 
@@ -869,7 +869,7 @@ func (sm *SyncManager) haveInventory(invVect *wire.InvVect) (bool, error) {
 		// checked because the vast majority of transactions consist of
 		// two outputs where one is some form of "pay-to-somebody-else"
 		// and the other is a change output.
-		prevOut := wire.OutPoint{Hash: invVect.Hash}
+		prevOut := wire.OutPoint{TxID: invVect.Hash}
 		for i := uint32(0); i < 2; i++ {
 			prevOut.Index = i
 			entry, ok := sm.dag.GetUTXOEntry(prevOut)
@@ -1209,32 +1209,6 @@ func (sm *SyncManager) handleBlockDAGNotification(notification *blockdag.Notific
 					mempool.DefaultEstimateFeeMaxRollback,
 					mempool.DefaultEstimateFeeMinRegisteredBlocks)
 			}
-		}
-
-	// A block has been disconnected from the block DAG.
-	case blockdag.NTBlockDisconnected:
-		block, ok := notification.Data.(*util.Block)
-		if !ok {
-			log.Warnf("Chain disconnected notification is not a block.")
-			break
-		}
-
-		// Reinsert all of the transactions (except the coinbase) into
-		// the transaction pool.
-		for _, tx := range block.Transactions()[1:] {
-			_, _, err := sm.txMemPool.MaybeAcceptTransaction(tx,
-				false, false)
-			if err != nil {
-				// Remove the transaction and all transactions
-				// that depend on it if it wasn't accepted into
-				// the transaction pool.
-				sm.txMemPool.RemoveTransaction(tx, true, true)
-			}
-		}
-
-		// Rollback previous block recorded by the fee estimator.
-		if sm.feeEstimator != nil {
-			sm.feeEstimator.Rollback(block.Hash())
 		}
 	}
 }

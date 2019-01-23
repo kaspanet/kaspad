@@ -59,34 +59,10 @@ var (
 // isNullOutpoint determines whether or not a previous transaction output point
 // is set.
 func isNullOutpoint(outpoint *wire.OutPoint) bool {
-	if outpoint.Index == math.MaxUint32 && outpoint.Hash == zeroHash {
+	if outpoint.Index == math.MaxUint32 && outpoint.TxID == zeroHash {
 		return true
 	}
 	return false
-}
-
-// IsCoinBaseTx determines whether or not a transaction is a coinbase.  A coinbase
-// is a special transaction created by miners that has no inputs.  This is
-// represented in the block dag by a transaction with a single input that has
-// a previous output transaction index set to the maximum value along with a
-// zero hash.
-//
-// This function only differs from IsCoinBase in that it works with a raw wire
-// transaction as opposed to a higher level util transaction.
-func IsCoinBaseTx(msgTx *wire.MsgTx) bool {
-	// A coin base must only have one transaction input.
-	if len(msgTx.TxIn) != 1 {
-		return false
-	}
-
-	// The previous output of a coin base must have a max value index and
-	// a zero hash.
-	prevOut := &msgTx.TxIn[0].PreviousOutPoint
-	if prevOut.Index != math.MaxUint32 || prevOut.Hash != zeroHash {
-		return false
-	}
-
-	return true
 }
 
 // IsCoinBase determines whether or not a transaction is a coinbase.  A coinbase
@@ -98,7 +74,7 @@ func IsCoinBaseTx(msgTx *wire.MsgTx) bool {
 // This function only differs from IsCoinBaseTx in that it works with a higher
 // level util transaction as opposed to a raw wire transaction.
 func IsCoinBase(tx *util.Tx) bool {
-	return IsCoinBaseTx(tx.MsgTx())
+	return tx.MsgTx().IsCoinBase()
 }
 
 // SequenceLockActive determines if a transaction's sequence locks have been
@@ -174,7 +150,7 @@ func CalcBlockSubsidy(height int32, dagParams *dagconfig.Params) uint64 {
 
 // CheckTransactionSanity performs some preliminary checks on a transaction to
 // ensure it is sane.  These checks are context free.
-func CheckTransactionSanity(tx *util.Tx) error {
+func CheckTransactionSanity(tx *util.Tx, subnetworkID *subnetworkid.SubnetworkID) error {
 	// A transaction must have at least one input.
 	msgTx := tx.MsgTx()
 	if len(msgTx.TxIn) == 0 {
@@ -286,6 +262,17 @@ func CheckTransactionSanity(tx *util.Tx) error {
 				"with length != 8 bytes")
 	}
 
+	// If we are a partial node, only transactions on the Registry subnetwork
+	// or our own subnetwork may have a payload
+	isLocalNodeFull := subnetworkID.IsEqual(&wire.SubnetworkIDSupportsAll)
+	shouldTxBeFull := msgTx.SubnetworkID.IsEqual(&wire.SubnetworkIDRegistry) ||
+		msgTx.SubnetworkID.IsEqual(subnetworkID)
+	if !isLocalNodeFull && !shouldTxBeFull && len(msgTx.Payload) > 0 {
+		return ruleError(ErrInvalidPayload,
+			"transaction that was expected to be partial has a payload "+
+				"with length > 0")
+	}
+
 	return nil
 }
 
@@ -374,7 +361,7 @@ func CountP2SHSigOps(tx *util.Tx, isCoinBaseTx bool, utxoSet UTXOSet) (int, erro
 			str := fmt.Sprintf("output %v referenced from "+
 				"transaction %s:%d either does not exist or "+
 				"has already been spent", txIn.PreviousOutPoint,
-				tx.Hash(), txInIndex)
+				tx.ID(), txInIndex)
 			return 0, ruleError(ErrMissingTxOut, str)
 		}
 
@@ -469,7 +456,8 @@ func checkBlockParentsOrder(header *wire.BlockHeader) error {
 //
 // The flags do not modify the behavior of this function directly, however they
 // are needed to pass along to checkBlockHeaderSanity.
-func checkBlockSanity(block *util.Block, powLimit *big.Int, timeSource MedianTimeSource, flags BehaviorFlags) error {
+func checkBlockSanity(block *util.Block, powLimit *big.Int, timeSource MedianTimeSource,
+	subnetworkID *subnetworkid.SubnetworkID, flags BehaviorFlags) error {
 	msgBlock := block.MsgBlock()
 	header := &msgBlock.Header
 	err := checkBlockHeaderSanity(header, powLimit, timeSource, flags)
@@ -524,7 +512,7 @@ func checkBlockSanity(block *util.Block, powLimit *big.Int, timeSource MedianTim
 	// Do some preliminary checks on each transaction to ensure they are
 	// sane before continuing.
 	for _, tx := range transactions {
-		err := CheckTransactionSanity(tx)
+		err := CheckTransactionSanity(tx, subnetworkID)
 		if err != nil {
 			return err
 		}
@@ -536,27 +524,36 @@ func checkBlockSanity(block *util.Block, powLimit *big.Int, timeSource MedianTim
 	// checks.  Bitcoind builds the tree here and checks the merkle root
 	// after the following checks, but there is no reason not to check the
 	// merkle root matches here.
-	merkles := BuildMerkleTreeStore(block.Transactions())
-	calculatedMerkleRoot := merkles[len(merkles)-1]
-	if !header.MerkleRoot.IsEqual(calculatedMerkleRoot) {
-		str := fmt.Sprintf("block merkle root is invalid - block "+
+	hashMerkleTree := BuildHashMerkleTreeStore(block.Transactions())
+	calculatedHashMerkleRoot := hashMerkleTree.Root()
+	if !header.HashMerkleRoot.IsEqual(calculatedHashMerkleRoot) {
+		str := fmt.Sprintf("block hash merkle root is invalid - block "+
 			"header indicates %v, but calculated value is %v",
-			header.MerkleRoot, calculatedMerkleRoot)
+			header.HashMerkleRoot, calculatedHashMerkleRoot)
+		return ruleError(ErrBadMerkleRoot, str)
+	}
+
+	idMerkleTree := BuildIDMerkleTreeStore(block.Transactions())
+	calculatedIDMerkleRoot := idMerkleTree.Root()
+	if !header.IDMerkleRoot.IsEqual(calculatedIDMerkleRoot) {
+		str := fmt.Sprintf("block ID merkle root is invalid - block "+
+			"header indicates %v, but calculated value is %v",
+			header.IDMerkleRoot, calculatedIDMerkleRoot)
 		return ruleError(ErrBadMerkleRoot, str)
 	}
 
 	// Check for duplicate transactions.  This check will be fairly quick
-	// since the transaction hashes are already cached due to building the
+	// since the transaction IDs are already cached due to building the
 	// merkle tree above.
-	existingTxHashes := make(map[daghash.Hash]struct{})
+	existingTxIDs := make(map[daghash.Hash]struct{})
 	for _, tx := range transactions {
-		hash := tx.Hash()
-		if _, exists := existingTxHashes[*hash]; exists {
+		id := tx.ID()
+		if _, exists := existingTxIDs[*id]; exists {
 			str := fmt.Sprintf("block contains duplicate "+
-				"transaction %v", hash)
+				"transaction %v", id)
 			return ruleError(ErrDuplicateTx, str)
 		}
-		existingTxHashes[*hash] = struct{}{}
+		existingTxIDs[*id] = struct{}{}
 	}
 
 	// The number of signature operations must be less than the maximum
@@ -580,8 +577,8 @@ func checkBlockSanity(block *util.Block, powLimit *big.Int, timeSource MedianTim
 
 // CheckBlockSanity performs some preliminary checks on a block to ensure it is
 // sane before continuing with block processing.  These checks are context free.
-func CheckBlockSanity(block *util.Block, powLimit *big.Int, timeSource MedianTimeSource) error {
-	return checkBlockSanity(block, powLimit, timeSource, BFNone)
+func CheckBlockSanity(block *util.Block, powLimit *big.Int, timeSource MedianTimeSource, subnetworkID *subnetworkid.SubnetworkID) error {
+	return checkBlockSanity(block, powLimit, timeSource, subnetworkID, BFNone)
 }
 
 // ExtractCoinbaseHeight attempts to extract the height of the block from the
@@ -773,7 +770,7 @@ func (dag *BlockDAG) checkBlockContext(block *util.Block, parents blockSet, blue
 				blockTime) {
 
 				str := fmt.Sprintf("block contains unfinalized "+
-					"transaction %v", tx.Hash())
+					"transaction %v", tx.ID())
 				return ruleError(ErrUnfinalizedTx, str)
 			}
 		}
@@ -808,7 +805,7 @@ func ensureNoDuplicateTx(block *blockNode, utxoSet UTXOSet,
 	// Typically, there will not be any utxos for any of the outputs.
 	fetchSet := make(map[wire.OutPoint]struct{})
 	for _, tx := range transactions {
-		prevOut := wire.OutPoint{Hash: *tx.Hash()}
+		prevOut := wire.OutPoint{TxID: *tx.ID()}
 		for txOutIdx := range tx.MsgTx().TxOut {
 			prevOut.Index = uint32(txOutIdx)
 			fetchSet[prevOut] = struct{}{}
@@ -822,7 +819,7 @@ func ensureNoDuplicateTx(block *blockNode, utxoSet UTXOSet,
 		if ok {
 			str := fmt.Sprintf("tried to overwrite transaction %v "+
 				"at block height %d that is not fully spent",
-				outpoint.Hash, utxo.BlockHeight())
+				outpoint.TxID, utxo.BlockHeight())
 			return ruleError(ErrOverwriteTx, str)
 		}
 	}
@@ -847,7 +844,7 @@ func CheckTransactionInputs(tx *util.Tx, txHeight int32, utxoSet UTXOSet, dagPar
 		return 0, nil
 	}
 
-	txHash := tx.Hash()
+	txID := tx.ID()
 	var totalSatoshiIn uint64
 	for txInIndex, txIn := range tx.MsgTx().TxIn {
 		// Ensure the referenced input transaction is available.
@@ -856,7 +853,7 @@ func CheckTransactionInputs(tx *util.Tx, txHeight int32, utxoSet UTXOSet, dagPar
 			str := fmt.Sprintf("output %v referenced from "+
 				"transaction %s:%d either does not exist or "+
 				"has already been spent", txIn.PreviousOutPoint,
-				tx.Hash(), txInIndex)
+				tx.ID(), txInIndex)
 			return 0, ruleError(ErrMissingTxOut, str)
 		}
 
@@ -919,7 +916,7 @@ func CheckTransactionInputs(tx *util.Tx, txHeight int32, utxoSet UTXOSet, dagPar
 	if totalSatoshiIn < totalSatoshiOut {
 		str := fmt.Sprintf("total value of all transaction inputs for "+
 			"transaction %v is %v which is less than the amount "+
-			"spent of %v", txHash, totalSatoshiIn, totalSatoshiOut)
+			"spent of %v", txID, totalSatoshiIn, totalSatoshiOut)
 		return 0, ruleError(ErrSpendTooHigh, str)
 	}
 
@@ -1109,7 +1106,7 @@ func (dag *BlockDAG) CheckConnectBlockTemplate(block *util.Block) error {
 		return ruleError(ErrParentBlockNotCurrentTips, str)
 	}
 
-	err := checkBlockSanity(block, dag.dagParams.PowLimit, dag.timeSource, flags)
+	err := checkBlockSanity(block, dag.dagParams.PowLimit, dag.timeSource, dag.subnetworkID, flags)
 	if err != nil {
 		return err
 	}

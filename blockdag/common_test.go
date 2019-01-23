@@ -106,9 +106,9 @@ func loadUTXOSet(filename string) (UTXOSet, error) {
 
 	utxoSet := NewFullUTXOSet()
 	for {
-		// Hash of the utxo entry.
-		var hash daghash.Hash
-		_, err := io.ReadAtLeast(r, hash[:], len(hash[:]))
+		// Tx ID of the utxo entry.
+		var txID daghash.Hash
+		_, err := io.ReadAtLeast(r, txID[:], len(txID[:]))
 		if err != nil {
 			// Expected EOF at the right offset.
 			if err == io.EOF {
@@ -143,7 +143,7 @@ func loadUTXOSet(filename string) (UTXOSet, error) {
 		if err != nil {
 			return nil, err
 		}
-		utxoSet.utxoCollection[wire.OutPoint{Hash: hash, Index: index}] = entry
+		utxoSet.utxoCollection[wire.OutPoint{TxID: txID, Index: index}] = entry
 	}
 
 	return utxoSet, nil

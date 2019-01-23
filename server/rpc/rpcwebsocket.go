@@ -22,7 +22,6 @@ import (
 	"golang.org/x/crypto/ripemd160"
 
 	"github.com/btcsuite/websocket"
-	"github.com/daglabs/btcd/blockdag"
 	"github.com/daglabs/btcd/btcjson"
 	"github.com/daglabs/btcd/config"
 	"github.com/daglabs/btcd/dagconfig"
@@ -673,7 +672,7 @@ func (m *wsNotificationManager) subscribedClients(tx *util.Tx,
 				if filter.existsAddress(a) {
 					subscribed[quitChan] = struct{}{}
 					op := wire.OutPoint{
-						Hash:  *tx.Hash(),
+						TxID:  *tx.ID(),
 						Index: uint32(i),
 					}
 					filter.addUnspentOutPoint(&op)
@@ -821,7 +820,7 @@ func (m *wsNotificationManager) UnregisterNewMempoolTxsUpdates(wsc *wsClient) {
 // notifyForNewTx notifies websocket clients that have registered for updates
 // when a new transaction is added to the memory pool.
 func (m *wsNotificationManager) notifyForNewTx(clients map[chan struct{}]*wsClient, tx *util.Tx) {
-	txHashStr := tx.Hash().String()
+	txIDStr := tx.ID().String()
 	mtx := tx.MsgTx()
 
 	var amount uint64
@@ -829,7 +828,7 @@ func (m *wsNotificationManager) notifyForNewTx(clients map[chan struct{}]*wsClie
 		amount += txOut.Value
 	}
 
-	ntfn := btcjson.NewTxAcceptedNtfn(txHashStr, util.Amount(amount).ToBTC())
+	ntfn := btcjson.NewTxAcceptedNtfn(txIDStr, util.Amount(amount).ToBTC())
 	marshalledJSON, err := btcjson.MarshalCmd(nil, ntfn)
 	if err != nil {
 		log.Errorf("Failed to marshal tx notification: %s", err.Error())
@@ -846,7 +845,7 @@ func (m *wsNotificationManager) notifyForNewTx(clients map[chan struct{}]*wsClie
 			}
 
 			net := m.server.cfg.DAGParams
-			rawTx, err := createTxRawResult(net, mtx, txHashStr, nil,
+			rawTx, err := createTxRawResult(net, mtx, txIDStr, nil,
 				"", 0, 0, nil)
 			if err != nil {
 				return
@@ -1021,7 +1020,7 @@ func (m *wsNotificationManager) notifyForTxOuts(ops map[wire.OutPoint]map[chan s
 				continue
 			}
 
-			op := []*wire.OutPoint{wire.NewOutPoint(tx.Hash(), uint32(i))}
+			op := []*wire.OutPoint{wire.NewOutPoint(tx.ID(), uint32(i))}
 			for wscQuit, wsc := range cmap {
 				m.addSpentRequests(ops, wsc, op)
 
@@ -1796,7 +1795,7 @@ func handleLoadTxFilter(wsc *wsClient, icmd interface{}) (interface{}, error) {
 			}
 		}
 		outPoints[i] = wire.OutPoint{
-			Hash:  *hash,
+			TxID:  *hash,
 			Index: cmd.OutPoints[i].Index,
 		}
 	}
@@ -1992,7 +1991,7 @@ func rescanBlockFilter(filter *wsClientFilter, block *util.Block, params *dagcon
 		added := false
 
 		// Scan inputs if not a coinbase transaction.
-		if !blockdag.IsCoinBaseTx(msgTx) {
+		if !msgTx.IsCoinBase() {
 			for _, input := range msgTx.TxIn {
 				if !filter.existsUnspentOutPoint(&input.PreviousOutPoint) {
 					continue
@@ -2019,7 +2018,7 @@ func rescanBlockFilter(filter *wsClientFilter, block *util.Block, params *dagcon
 				}
 
 				op := wire.OutPoint{
-					Hash:  *tx.Hash(),
+					TxID:  *tx.ID(),
 					Index: uint32(i),
 				}
 				filter.addUnspentOutPoint(&op)

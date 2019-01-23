@@ -473,7 +473,7 @@ func outpointKey(outpoint wire.OutPoint) *[]byte {
 	key := outpointKeyPool.Get().(*[]byte)
 	idx := uint64(outpoint.Index)
 	*key = (*key)[:daghash.HashSize+serializeSizeVLQ(idx)]
-	copy(*key, outpoint.Hash[:])
+	copy(*key, outpoint.TxID[:])
 	putVLQ((*key)[daghash.HashSize:], idx)
 	return key
 }
@@ -712,7 +712,7 @@ func (dag *BlockDAG) createDAGState() error {
 	genesisCoinbase := genesisBlock.Transactions()[0].MsgTx()
 	genesisCoinbaseTxIn := genesisCoinbase.TxIn[0]
 	genesisCoinbaseTxOut := genesisCoinbase.TxOut[0]
-	genesisCoinbaseOutpoint := *wire.NewOutPoint(&genesisCoinbaseTxIn.PreviousOutPoint.Hash, genesisCoinbaseTxIn.PreviousOutPoint.Index)
+	genesisCoinbaseOutpoint := *wire.NewOutPoint(&genesisCoinbaseTxIn.PreviousOutPoint.TxID, genesisCoinbaseTxIn.PreviousOutPoint.Index)
 	genesisCoinbaseUTXOEntry := NewUTXOEntry(genesisCoinbaseTxOut, true, 0)
 	node.diff = &UTXODiff{
 		toAdd:    utxoCollection{genesisCoinbaseOutpoint: genesisCoinbaseUTXOEntry},

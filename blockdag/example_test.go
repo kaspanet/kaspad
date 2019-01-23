@@ -6,6 +6,7 @@ package blockdag_test
 
 import (
 	"fmt"
+	"github.com/daglabs/btcd/wire"
 	"math/big"
 	"os"
 	"path/filepath"
@@ -46,9 +47,10 @@ func ExampleBlockDAG_ProcessBlock() {
 	// values obtained from other peers on the network so the local time is
 	// adjusted to be in agreement with other peers.
 	chain, err := blockdag.New(&blockdag.Config{
-		DB:         db,
-		DAGParams:  &dagconfig.MainNetParams,
-		TimeSource: blockdag.NewMedianTime(),
+		DB:           db,
+		DAGParams:    &dagconfig.MainNetParams,
+		TimeSource:   blockdag.NewMedianTime(),
+		SubnetworkID: &wire.SubnetworkIDSupportsAll,
 	})
 	if err != nil {
 		fmt.Printf("Failed to create chain instance: %v\n", err)
@@ -68,7 +70,7 @@ func ExampleBlockDAG_ProcessBlock() {
 	fmt.Printf("Block accepted. Is it an orphan?: %v", isOrphan)
 
 	// Output:
-	// Failed to process block: already have block 4acd12ea38e16dd28b067c13f677511ac0a4d9074c932223082fd444655fd9ca
+	// Failed to process block: already have block ccc309e79328f036bdd6964adbed68ff374cfb878c7a797c0aae3fec4bf9b853
 }
 
 // This example demonstrates how to convert the compact "bits" in a block header

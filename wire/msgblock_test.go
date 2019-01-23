@@ -6,6 +6,7 @@ package wire
 
 import (
 	"bytes"
+	"github.com/daglabs/btcd/util/subnetworkid"
 	"io"
 	"math"
 	"reflect"
@@ -22,10 +23,11 @@ func TestBlock(t *testing.T) {
 
 	// Block 1 header.
 	parentHashes := blockOne.Header.ParentHashes
-	merkleHash := &blockOne.Header.MerkleRoot
+	hashMerkleRoot := &blockOne.Header.HashMerkleRoot
+	idMerkleRoot := &blockOne.Header.IDMerkleRoot
 	bits := blockOne.Header.Bits
 	nonce := blockOne.Header.Nonce
-	bh := NewBlockHeader(1, parentHashes, merkleHash, bits, nonce)
+	bh := NewBlockHeader(1, parentHashes, hashMerkleRoot, idMerkleRoot, bits, nonce)
 
 	// Ensure the command is expected value.
 	wantCmd := "block"
@@ -68,32 +70,10 @@ func TestBlock(t *testing.T) {
 	}
 }
 
-// TestBlockTxHashes tests the ability to generate a slice of all transaction
-// hashes from a block accurately.
-func TestBlockTxHashes(t *testing.T) {
-	// Block 1, transaction 1 hash.
-	hashStr := "f8f148865a0ecb895a2b8fffd37245b3d4f5e01213bdaaa38a52b74e2f3289b4"
-	wantHash, err := daghash.NewHashFromStr(hashStr)
-	if err != nil {
-		t.Errorf("NewHashFromStr: %v", err)
-		return
-	}
-
-	wantHashes := []daghash.Hash{*wantHash}
-	hashes, err := blockOne.TxHashes()
-	if err != nil {
-		t.Errorf("TxHashes: %v", err)
-	}
-	if !reflect.DeepEqual(hashes, wantHashes) {
-		t.Errorf("TxHashes: wrong transaction hashes - got %v, want %v",
-			spew.Sdump(hashes), spew.Sdump(wantHashes))
-	}
-}
-
 // TestBlockHash tests the ability to generate the hash of a block accurately.
 func TestBlockHash(t *testing.T) {
 	// Block 1 hash.
-	hashStr := "f10122ba81929ca2bc907541ebb20302122ce83a24ff9124c9e36402ecd837b7"
+	hashStr := "67ec32b619b4cda3255de5318c730e2e9f696d335427adfecae884aa41156b0f"
 	wantHash, err := daghash.NewHashFromStr(hashStr)
 	if err != nil {
 		t.Errorf("NewHashFromStr: %v", err)
@@ -104,6 +84,64 @@ func TestBlockHash(t *testing.T) {
 	if !blockHash.IsEqual(wantHash) {
 		t.Errorf("BlockHash: wrong hash - got %v, want %v",
 			spew.Sprint(blockHash), spew.Sprint(wantHash))
+	}
+}
+
+func TestConvertToPartial(t *testing.T) {
+	transactions := []struct {
+		subnetworkID          subnetworkid.SubnetworkID
+		payload               []byte
+		expectedPayloadLength int
+	}{
+		{
+			subnetworkID:          SubnetworkIDNative,
+			payload:               []byte{},
+			expectedPayloadLength: 0,
+		},
+		{
+			subnetworkID:          SubnetworkIDRegistry,
+			payload:               []byte{0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08},
+			expectedPayloadLength: 0,
+		},
+		{
+			subnetworkID:          subnetworkid.SubnetworkID{123},
+			payload:               []byte{0x01},
+			expectedPayloadLength: 1,
+		},
+		{
+			subnetworkID:          subnetworkid.SubnetworkID{234},
+			payload:               []byte{0x02},
+			expectedPayloadLength: 0,
+		},
+	}
+
+	block := MsgBlock{}
+	for _, transaction := range transactions {
+		block.Transactions = append(block.Transactions, &MsgTx{
+			SubnetworkID: transaction.subnetworkID,
+			Payload:      []byte{1},
+		})
+	}
+
+	block.ConvertToPartial(&subnetworkid.SubnetworkID{123})
+
+	for _, transaction := range transactions {
+		var subnetworkTx *MsgTx
+		for _, tx := range block.Transactions {
+			if tx.SubnetworkID.IsEqual(&transaction.subnetworkID) {
+				subnetworkTx = tx
+			}
+		}
+		if subnetworkTx == nil {
+			t.Errorf("ConvertToPartial: subnetworkID '%s' not found in block!", transaction.subnetworkID)
+			continue
+		}
+
+		payloadLength := len(subnetworkTx.Payload)
+		if payloadLength != transaction.expectedPayloadLength {
+			t.Errorf("ConvertToPartial: unexpected payload length for subnetwork '%s': expected: %d, got: %d",
+				transaction.subnetworkID, transaction.expectedPayloadLength, payloadLength)
+		}
 	}
 }
 
@@ -218,18 +256,20 @@ func TestBlockWireErrors(t *testing.T) {
 		{&blockOne, blockOneBytes, pver, 5, io.ErrShortWrite, io.EOF},
 		// Force error in prev block hash #2.
 		{&blockOne, blockOneBytes, pver, 37, io.ErrShortWrite, io.EOF},
-		// Force error in merkle root.
+		// Force error in hash merkle root.
 		{&blockOne, blockOneBytes, pver, 69, io.ErrShortWrite, io.EOF},
-		// Force error in timestamp.
+		// Force error in ID merkle root.
 		{&blockOne, blockOneBytes, pver, 101, io.ErrShortWrite, io.EOF},
+		// Force error in timestamp.
+		{&blockOne, blockOneBytes, pver, 133, io.ErrShortWrite, io.EOF},
 		// Force error in difficulty bits.
-		{&blockOne, blockOneBytes, pver, 109, io.ErrShortWrite, io.EOF},
+		{&blockOne, blockOneBytes, pver, 141, io.ErrShortWrite, io.EOF},
 		// Force error in header nonce.
-		{&blockOne, blockOneBytes, pver, 113, io.ErrShortWrite, io.EOF},
+		{&blockOne, blockOneBytes, pver, 145, io.ErrShortWrite, io.EOF},
 		// Force error in transaction count.
-		{&blockOne, blockOneBytes, pver, 121, io.ErrShortWrite, io.EOF},
+		{&blockOne, blockOneBytes, pver, 153, io.ErrShortWrite, io.EOF},
 		// Force error in transactions.
-		{&blockOne, blockOneBytes, pver, 122, io.ErrShortWrite, io.EOF},
+		{&blockOne, blockOneBytes, pver, 154, io.ErrShortWrite, io.EOF},
 	}
 
 	t.Logf("Running %d tests", len(tests))
@@ -340,18 +380,20 @@ func TestBlockSerializeErrors(t *testing.T) {
 		{&blockOne, blockOneBytes, 5, io.ErrShortWrite, io.EOF},
 		// Force error in prev block hash #2.
 		{&blockOne, blockOneBytes, 37, io.ErrShortWrite, io.EOF},
-		// Force error in merkle root.
+		// Force error in hash merkle root.
 		{&blockOne, blockOneBytes, 69, io.ErrShortWrite, io.EOF},
-		// Force error in timestamp.
+		// Force error in ID merkle root.
 		{&blockOne, blockOneBytes, 101, io.ErrShortWrite, io.EOF},
+		// Force error in timestamp.
+		{&blockOne, blockOneBytes, 133, io.ErrShortWrite, io.EOF},
 		// Force error in difficulty bits.
-		{&blockOne, blockOneBytes, 109, io.ErrShortWrite, io.EOF},
+		{&blockOne, blockOneBytes, 141, io.ErrShortWrite, io.EOF},
 		// Force error in header nonce.
-		{&blockOne, blockOneBytes, 113, io.ErrShortWrite, io.EOF},
+		{&blockOne, blockOneBytes, 145, io.ErrShortWrite, io.EOF},
 		// Force error in transaction count.
-		{&blockOne, blockOneBytes, 121, io.ErrShortWrite, io.EOF},
+		{&blockOne, blockOneBytes, 153, io.ErrShortWrite, io.EOF},
 		// Force error in transactions.
-		{&blockOne, blockOneBytes, 122, io.ErrShortWrite, io.EOF},
+		{&blockOne, blockOneBytes, 154, io.ErrShortWrite, io.EOF},
 	}
 
 	t.Logf("Running %d tests", len(tests))
@@ -414,10 +456,14 @@ func TestBlockOverflowErrors(t *testing.T) {
 				0x72, 0xff, 0x3d, 0x8e, 0xdb, 0xbb, 0x2d, 0xe0,
 				0xbf, 0xa6, 0x7b, 0x13, 0x97, 0x4b, 0xb9, 0x91,
 				0x0d, 0x11, 0x6d, 0x5c, 0xbd, 0x86, 0x3e, 0x68,
-				0x3b, 0xa3, 0xed, 0xfd, 0x7a, 0x7b, 0x12, 0xb2, // MerkleRoot
+				0x3b, 0xa3, 0xed, 0xfd, 0x7a, 0x7b, 0x12, 0xb2, // HashMerkleRoot
 				0x7a, 0xc7, 0x2c, 0x3e, 0x67, 0x76, 0x8f, 0x61,
 				0x7f, 0xc8, 0x1b, 0xc3, 0x88, 0x8a, 0x51, 0x32,
 				0x3a, 0x9f, 0xb8, 0xaa, 0x4b, 0x1e, 0x5e, 0x4a,
+				0x7F, 0x16, 0xC5, 0x96, 0x2E, 0x8B, 0xD9, 0x63, // IDMerkleRoot
+				0x65, 0x9C, 0x79, 0x3C, 0xE3, 0x70, 0xD9, 0x5F,
+				0x09, 0x3B, 0xC7, 0xE3, 0x67, 0x11, 0x7B, 0x3C,
+				0x30, 0xC1, 0xF8, 0xFD, 0xD0, 0xD9, 0x72, 0x87,
 				0x61, 0xbc, 0x66, 0x49, 0x00, 0x00, 0x00, 0x00, // Timestamp
 				0xff, 0xff, 0x00, 0x1d, // Bits
 				0x01, 0xe3, 0x62, 0x99, 0x00, 0x00, 0x00, 0x00, // Fake Nonce. TODO: (Ori) Replace to a real nonce
@@ -470,7 +516,7 @@ func TestBlockSerializeSize(t *testing.T) {
 		size int       // Expected serialized size
 	}{
 		// Block with no transactions.
-		{noTxBlock, 122},
+		{noTxBlock, 154},
 
 		// First block in the mainnet block chain.
 		{&blockOne, len(blockOneBytes)},
@@ -491,13 +537,13 @@ func TestBlockSerializeSize(t *testing.T) {
 // blockOne is the first block in the mainnet block chain.
 var blockOne = MsgBlock{
 	Header: BlockHeader{
-		Version:      1,
-		ParentHashes: []daghash.Hash{mainNetGenesisHash, simNetGenesisHash},
-		MerkleRoot:   daghash.Hash(mainNetGenesisMerkleRoot),
-
-		Timestamp: time.Unix(0x4966bc61, 0), // 2009-01-08 20:54:25 -0600 CST
-		Bits:      0x1d00ffff,               // 486604799
-		Nonce:     0x9962e301,               // 2573394689
+		Version:        1,
+		ParentHashes:   []daghash.Hash{mainNetGenesisHash, simNetGenesisHash},
+		HashMerkleRoot: daghash.Hash(mainNetGenesisMerkleRoot),
+		IDMerkleRoot:   exampleIDMerkleRoot,
+		Timestamp:      time.Unix(0x4966bc61, 0), // 2009-01-08 20:54:25 -0600 CST
+		Bits:           0x1d00ffff,               // 486604799
+		Nonce:          0x9962e301,               // 2573394689
 	},
 	Transactions: []*MsgTx{
 		{
@@ -505,7 +551,7 @@ var blockOne = MsgBlock{
 			TxIn: []*TxIn{
 				{
 					PreviousOutPoint: OutPoint{
-						Hash:  daghash.Hash{},
+						TxID:  daghash.Hash{},
 						Index: 0xffffffff,
 					},
 					SignatureScript: []byte{
@@ -550,10 +596,14 @@ var blockOneBytes = []byte{
 	0x72, 0xff, 0x3d, 0x8e, 0xdb, 0xbb, 0x2d, 0xe0,
 	0xbf, 0xa6, 0x7b, 0x13, 0x97, 0x4b, 0xb9, 0x91,
 	0x0d, 0x11, 0x6d, 0x5c, 0xbd, 0x86, 0x3e, 0x68,
-	0x4a, 0x5e, 0x1e, 0x4b, 0xaa, 0xb8, 0x9f, 0x3a, // MerkleRoot
+	0x4a, 0x5e, 0x1e, 0x4b, 0xaa, 0xb8, 0x9f, 0x3a, // HashMerkleRoot
 	0x32, 0x51, 0x8a, 0x88, 0xc3, 0x1b, 0xc8, 0x7f,
 	0x61, 0x8f, 0x76, 0x67, 0x3e, 0x2c, 0xc7, 0x7a,
 	0xb2, 0x12, 0x7b, 0x7a, 0xfd, 0xed, 0xa3, 0x3b,
+	0x7F, 0x16, 0xC5, 0x96, 0x2E, 0x8B, 0xD9, 0x63, // Fake IDMerkleRoot. TODO: (Ori) Replace to a real IDMerkleRoot
+	0x65, 0x9C, 0x79, 0x3C, 0xE3, 0x70, 0xD9, 0x5F,
+	0x09, 0x3B, 0xC7, 0xE3, 0x67, 0x11, 0x7B, 0x3C,
+	0x30, 0xC1, 0xF8, 0xFD, 0xD0, 0xD9, 0x72, 0x87,
 	0x61, 0xbc, 0x66, 0x49, 0x00, 0x00, 0x00, 0x00, // Timestamp
 	0xff, 0xff, 0x00, 0x1d, // Bits
 	0x01, 0xe3, 0x62, 0x99, 0x00, 0x00, 0x00, 0x00, // Fake Nonce. TODO: (Ori) Replace to a real nonce
@@ -590,5 +640,5 @@ var blockOneBytes = []byte{
 
 // Transaction location information for block one transactions.
 var blockOneTxLocs = []TxLoc{
-	{TxStart: 122, TxLen: 162},
+	{TxStart: 154, TxLen: 162},
 }

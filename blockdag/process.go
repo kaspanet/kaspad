@@ -164,7 +164,7 @@ func (dag *BlockDAG) ProcessBlock(block *util.Block, flags BehaviorFlags) (bool,
 	}
 
 	// Perform preliminary sanity checks on the block and its transactions.
-	err = checkBlockSanity(block, dag.dagParams.PowLimit, dag.timeSource, flags)
+	err = checkBlockSanity(block, dag.dagParams.PowLimit, dag.timeSource, dag.subnetworkID, flags)
 	if err != nil {
 		return false, err
 	}

@@ -22,10 +22,11 @@ func TestMerkleBlock(t *testing.T) {
 
 	// Block 1 header.
 	parentHashes := blockOne.Header.ParentHashes
-	merkleHash := &blockOne.Header.MerkleRoot
+	hashMerkleRoot := &blockOne.Header.HashMerkleRoot
+	idMerkleRoot := &blockOne.Header.IDMerkleRoot
 	bits := blockOne.Header.Bits
 	nonce := blockOne.Header.Nonce
-	bh := NewBlockHeader(1, parentHashes, merkleHash, bits, nonce)
+	bh := NewBlockHeader(1, parentHashes, hashMerkleRoot, idMerkleRoot, bits, nonce)
 
 	// Ensure the command is expected value.
 	wantCmd := "merkleblock"
@@ -114,10 +115,11 @@ func TestMerkleBlock(t *testing.T) {
 func TestMerkleBlockCrossProtocol(t *testing.T) {
 	// Block 1 header.
 	parentHashes := blockOne.Header.ParentHashes
-	merkleHash := &blockOne.Header.MerkleRoot
+	hashMerkleRoot := &blockOne.Header.HashMerkleRoot
+	idMerkleRoot := &blockOne.Header.IDMerkleRoot
 	bits := blockOne.Header.Bits
 	nonce := blockOne.Header.Nonce
-	bh := NewBlockHeader(1, parentHashes, merkleHash, bits, nonce)
+	bh := NewBlockHeader(1, parentHashes, hashMerkleRoot, idMerkleRoot, bits, nonce)
 
 	msg := NewMsgMerkleBlock(bh)
 
@@ -215,26 +217,28 @@ func TestMerkleBlockWireErrors(t *testing.T) {
 		{&merkleBlockOne, merkleBlockOneBytes, pver, 5, io.ErrShortWrite, io.EOF},
 		// Force error in prev block hash #2.
 		{&merkleBlockOne, merkleBlockOneBytes, pver, 37, io.ErrShortWrite, io.EOF},
-		// Force error in merkle root.
+		// Force error in hash merkle root.
 		{&merkleBlockOne, merkleBlockOneBytes, pver, 69, io.ErrShortWrite, io.EOF},
-		// Force error in timestamp.
+		// Force error in hash merkle root.
 		{&merkleBlockOne, merkleBlockOneBytes, pver, 101, io.ErrShortWrite, io.EOF},
+		// Force error in timestamp.
+		{&merkleBlockOne, merkleBlockOneBytes, pver, 133, io.ErrShortWrite, io.EOF},
 		// Force error in difficulty bits.
-		{&merkleBlockOne, merkleBlockOneBytes, pver, 109, io.ErrShortWrite, io.EOF},
+		{&merkleBlockOne, merkleBlockOneBytes, pver, 141, io.ErrShortWrite, io.EOF},
 		// Force error in header nonce.
-		{&merkleBlockOne, merkleBlockOneBytes, pver, 113, io.ErrShortWrite, io.EOF},
+		{&merkleBlockOne, merkleBlockOneBytes, pver, 145, io.ErrShortWrite, io.EOF},
 		// Force error in transaction count.
-		{&merkleBlockOne, merkleBlockOneBytes, pver, 121, io.ErrShortWrite, io.EOF},
+		{&merkleBlockOne, merkleBlockOneBytes, pver, 153, io.ErrShortWrite, io.EOF},
 		// Force error in num hashes.
-		{&merkleBlockOne, merkleBlockOneBytes, pver, 125, io.ErrShortWrite, io.EOF},
+		{&merkleBlockOne, merkleBlockOneBytes, pver, 157, io.ErrShortWrite, io.EOF},
 		// Force error in hashes.
-		{&merkleBlockOne, merkleBlockOneBytes, pver, 126, io.ErrShortWrite, io.EOF},
-		// Force error in num flag bytes.
 		{&merkleBlockOne, merkleBlockOneBytes, pver, 158, io.ErrShortWrite, io.EOF},
+		// Force error in num flag bytes.
+		{&merkleBlockOne, merkleBlockOneBytes, pver, 190, io.ErrShortWrite, io.EOF},
 		// Force error in flag bytes.
-		{&merkleBlockOne, merkleBlockOneBytes, pver, 159, io.ErrShortWrite, io.EOF},
+		{&merkleBlockOne, merkleBlockOneBytes, pver, 191, io.ErrShortWrite, io.EOF},
 		// Force error due to unsupported protocol version.
-		{&merkleBlockOne, merkleBlockOneBytes, pverNoMerkleBlock, 159, wireErr, wireErr},
+		{&merkleBlockOne, merkleBlockOneBytes, pverNoMerkleBlock, 191, wireErr, wireErr},
 	}
 
 	t.Logf("Running %d tests", len(tests))
@@ -294,7 +298,7 @@ func TestMerkleBlockOverflowErrors(t *testing.T) {
 	// allowed tx hashes.
 	var buf bytes.Buffer
 	WriteVarInt(&buf, pver, maxTxPerBlock+1)
-	numHashesOffset := 125
+	numHashesOffset := 157
 	exceedMaxHashes := make([]byte, numHashesOffset)
 	copy(exceedMaxHashes, merkleBlockOneBytes[:numHashesOffset])
 	exceedMaxHashes = append(exceedMaxHashes, buf.Bytes()...)
@@ -303,7 +307,7 @@ func TestMerkleBlockOverflowErrors(t *testing.T) {
 	// allowed flag bytes.
 	buf.Reset()
 	WriteVarInt(&buf, pver, maxFlagsPerMerkleBlock+1)
-	numFlagBytesOffset := 158
+	numFlagBytesOffset := 190
 	exceedMaxFlagBytes := make([]byte, numFlagBytesOffset)
 	copy(exceedMaxFlagBytes, merkleBlockOneBytes[:numFlagBytesOffset])
 	exceedMaxFlagBytes = append(exceedMaxFlagBytes, buf.Bytes()...)
@@ -339,15 +343,16 @@ var merkleBlockOne = MsgMerkleBlock{
 	Header: BlockHeader{
 		Version:      1,
 		ParentHashes: []daghash.Hash{mainNetGenesisHash, simNetGenesisHash},
-		MerkleRoot: daghash.Hash([daghash.HashSize]byte{ // Make go vet happy.
+		HashMerkleRoot: daghash.Hash([daghash.HashSize]byte{ // Make go vet happy.
 			0x98, 0x20, 0x51, 0xfd, 0x1e, 0x4b, 0xa7, 0x44,
 			0xbb, 0xbe, 0x68, 0x0e, 0x1f, 0xee, 0x14, 0x67,
 			0x7b, 0xa1, 0xa3, 0xc3, 0x54, 0x0b, 0xf7, 0xb1,
 			0xcd, 0xb6, 0x06, 0xe8, 0x57, 0x23, 0x3e, 0x0e,
 		}),
-		Timestamp: time.Unix(0x4966bc61, 0), // 2009-01-08 20:54:25 -0600 CST
-		Bits:      0x1d00ffff,               // 486604799
-		Nonce:     0x9962e301,               // 2573394689
+		IDMerkleRoot: exampleIDMerkleRoot,
+		Timestamp:    time.Unix(0x4966bc61, 0), // 2009-01-08 20:54:25 -0600 CST
+		Bits:         0x1d00ffff,               // 486604799
+		Nonce:        0x9962e301,               // 2573394689
 	},
 	Transactions: 1,
 	Hashes: []*daghash.Hash{
@@ -377,7 +382,11 @@ var merkleBlockOneBytes = []byte{
 	0x98, 0x20, 0x51, 0xfd, 0x1e, 0x4b, 0xa7, 0x44, // MerkleRoot
 	0xbb, 0xbe, 0x68, 0x0e, 0x1f, 0xee, 0x14, 0x67,
 	0x7b, 0xa1, 0xa3, 0xc3, 0x54, 0x0b, 0xf7, 0xb1,
-	0xcd, 0xb6, 0x06, 0xe8, 0x57, 0x23, 0x3e, 0x0e, // MerkleRoot
+	0xcd, 0xb6, 0x06, 0xe8, 0x57, 0x23, 0x3e, 0x0e,
+	0x7F, 0x16, 0xC5, 0x96, 0x2E, 0x8B, 0xD9, 0x63, // IDMerkleRoot
+	0x65, 0x9C, 0x79, 0x3C, 0xE3, 0x70, 0xD9, 0x5F,
+	0x09, 0x3B, 0xC7, 0xE3, 0x67, 0x11, 0x7B, 0x3C,
+	0x30, 0xC1, 0xF8, 0xFD, 0xD0, 0xD9, 0x72, 0x87,
 	0x61, 0xbc, 0x66, 0x49, 0x00, 0x00, 0x00, 0x00, // Timestamp
 	0xff, 0xff, 0x00, 0x1d, // Bits
 	0x01, 0xe3, 0x62, 0x99, 0x00, 0x00, 0x00, 0x00, // Fake Nonce. TODO: (Ori) Replace to a real nonce

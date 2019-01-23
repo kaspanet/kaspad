@@ -1,6 +1,7 @@
 package blockdag
 
 import (
+	"github.com/daglabs/btcd/wire"
 	"reflect"
 	"testing"
 
@@ -12,7 +13,8 @@ func TestSubnetworkRegistry(t *testing.T) {
 	params := dagconfig.SimNetParams
 	params.K = 1
 	dag, teardownFunc, err := DAGSetup("TestSubnetworkRegistry", Config{
-		DAGParams: &params,
+		DAGParams:    &params,
+		SubnetworkID: &wire.SubnetworkIDSupportsAll,
 	})
 	if err != nil {
 		t.Fatalf("Failed to setup DAG instance: %v", err)

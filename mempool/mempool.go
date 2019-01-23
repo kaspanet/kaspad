@@ -199,8 +199,8 @@ var _ mining.TxSource = (*TxPool)(nil)
 // This function MUST be called with the mempool lock held (for writes).
 func (mp *TxPool) removeOrphan(tx *util.Tx, removeRedeemers bool) {
 	// Nothing to do if passed tx is not an orphan.
-	txHash := tx.Hash()
-	otx, exists := mp.orphans[*txHash]
+	txID := tx.ID()
+	otx, exists := mp.orphans[*txID]
 	if !exists {
 		return
 	}
@@ -209,7 +209,7 @@ func (mp *TxPool) removeOrphan(tx *util.Tx, removeRedeemers bool) {
 	for _, txIn := range otx.tx.MsgTx().TxIn {
 		orphans, exists := mp.orphansByPrev[txIn.PreviousOutPoint]
 		if exists {
-			delete(orphans, *txHash)
+			delete(orphans, *txID)
 
 			// Remove the map entry altogether if there are no
 			// longer any orphans which depend on it.
@@ -221,7 +221,7 @@ func (mp *TxPool) removeOrphan(tx *util.Tx, removeRedeemers bool) {
 
 	// Remove any orphans that redeem outputs from this one if requested.
 	if removeRedeemers {
-		prevOut := wire.OutPoint{Hash: *txHash}
+		prevOut := wire.OutPoint{TxID: *txID}
 		for txOutIdx := range tx.MsgTx().TxOut {
 			prevOut.Index = uint32(txOutIdx)
 			for _, orphan := range mp.orphansByPrev[prevOut] {
@@ -231,7 +231,7 @@ func (mp *TxPool) removeOrphan(tx *util.Tx, removeRedeemers bool) {
 	}
 
 	// Remove the transaction from the orphan pool.
-	delete(mp.orphans, *txHash)
+	delete(mp.orphans, *txID)
 }
 
 // RemoveOrphan removes the passed orphan transaction from the orphan pool and
@@ -328,7 +328,7 @@ func (mp *TxPool) addOrphan(tx *util.Tx, tag Tag) {
 	// orphan if space is still needed.
 	mp.limitNumOrphans()
 
-	mp.orphans[*tx.Hash()] = &orphanTx{
+	mp.orphans[*tx.ID()] = &orphanTx{
 		tx:         tx,
 		tag:        tag,
 		expiration: time.Now().Add(orphanTTL),
@@ -338,10 +338,10 @@ func (mp *TxPool) addOrphan(tx *util.Tx, tag Tag) {
 			mp.orphansByPrev[txIn.PreviousOutPoint] =
 				make(map[daghash.Hash]*util.Tx)
 		}
-		mp.orphansByPrev[txIn.PreviousOutPoint][*tx.Hash()] = tx
+		mp.orphansByPrev[txIn.PreviousOutPoint][*tx.ID()] = tx
 	}
 
-	log.Debugf("Stored orphan transaction %v (total: %d)", tx.Hash(),
+	log.Debugf("Stored orphan transaction %v (total: %d)", tx.ID(),
 		len(mp.orphans))
 }
 
@@ -487,11 +487,11 @@ func (mp *TxPool) HaveTransaction(hash *daghash.Hash) bool {
 //
 // This function MUST be called with the mempool lock held (for writes).
 func (mp *TxPool) removeTransaction(tx *util.Tx, removeRedeemers bool, restoreInputs bool) error {
-	txHash := tx.Hash()
+	txID := tx.ID()
 	if removeRedeemers {
 		// Remove any transactions which rely on this one.
 		for i := uint32(0); i < uint32(len(tx.MsgTx().TxOut)); i++ {
-			prevOut := wire.OutPoint{Hash: *txHash, Index: i}
+			prevOut := wire.OutPoint{TxID: *txID, Index: i}
 			if txRedeemer, exists := mp.outpoints[prevOut]; exists {
 				mp.removeTransaction(txRedeemer, true, false)
 			}
@@ -499,11 +499,11 @@ func (mp *TxPool) removeTransaction(tx *util.Tx, removeRedeemers bool, restoreIn
 	}
 
 	// Remove the transaction if needed.
-	if txDesc, exists := mp.fetchTransaction(txHash); exists {
+	if txDesc, exists := mp.fetchTransaction(txID); exists {
 		// Remove unconfirmed address index entries associated with the
 		// transaction if enabled.
 		if mp.cfg.AddrIndex != nil {
-			mp.cfg.AddrIndex.RemoveUnconfirmedTx(txHash)
+			mp.cfg.AddrIndex.RemoveUnconfirmedTx(txID)
 		}
 
 		diff := blockdag.NewUTXODiff()
@@ -512,12 +512,12 @@ func (mp *TxPool) removeTransaction(tx *util.Tx, removeRedeemers bool, restoreIn
 		// Mark the referenced outpoints as unspent by the pool.
 		for _, txIn := range txDesc.Tx.MsgTx().TxIn {
 			if restoreInputs {
-				if prevTxDesc, exists := mp.pool[txIn.PreviousOutPoint.Hash]; exists {
+				if prevTxDesc, exists := mp.pool[txIn.PreviousOutPoint.TxID]; exists {
 					prevOut := prevTxDesc.Tx.MsgTx().TxOut[txIn.PreviousOutPoint.Index]
 					entry := blockdag.NewUTXOEntry(prevOut, false, mining.UnminedHeight)
 					diff.AddEntry(txIn.PreviousOutPoint, entry)
 				}
-				if prevTxDesc, exists := mp.depends[txIn.PreviousOutPoint.Hash]; exists {
+				if prevTxDesc, exists := mp.depends[txIn.PreviousOutPoint.TxID]; exists {
 					prevOut := prevTxDesc.Tx.MsgTx().TxOut[txIn.PreviousOutPoint.Index]
 					entry := blockdag.NewUTXOEntry(prevOut, false, mining.UnminedHeight)
 					diff.AddEntry(txIn.PreviousOutPoint, entry)
@@ -527,13 +527,13 @@ func (mp *TxPool) removeTransaction(tx *util.Tx, removeRedeemers bool, restoreIn
 		}
 
 		if txDesc.depCount == 0 {
-			delete(mp.pool, *txHash)
+			delete(mp.pool, *txID)
 		} else {
-			delete(mp.depends, *txHash)
+			delete(mp.depends, *txID)
 		}
 
 		// Process dependent transactions
-		prevOut := wire.OutPoint{Hash: *txHash}
+		prevOut := wire.OutPoint{TxID: *txID}
 		for txOutIdx := range tx.MsgTx().TxOut {
 			// Skip to the next available output if there are none.
 			prevOut.Index = uint32(txOutIdx)
@@ -548,9 +548,9 @@ func (mp *TxPool) removeTransaction(tx *util.Tx, removeRedeemers bool, restoreIn
 				if txD.depCount == 0 {
 					// Transaction may be already removed by recursive calls, if removeRedeemers is true.
 					// So avoid moving it into main pool
-					if _, ok := mp.depends[*txD.Tx.Hash()]; ok {
-						delete(mp.depends, *txD.Tx.Hash())
-						mp.pool[*txD.Tx.Hash()] = txD
+					if _, ok := mp.depends[*txD.Tx.ID()]; ok {
+						delete(mp.depends, *txD.Tx.ID())
+						mp.pool[*txD.Tx.ID()] = txD
 					}
 				}
 			}
@@ -592,7 +592,7 @@ func (mp *TxPool) RemoveDoubleSpends(tx *util.Tx) {
 	mp.mtx.Lock()
 	for _, txIn := range tx.MsgTx().TxIn {
 		if txRedeemer, ok := mp.outpoints[txIn.PreviousOutPoint]; ok {
-			if !txRedeemer.Hash().IsEqual(tx.Hash()) {
+			if !txRedeemer.ID().IsEqual(tx.ID()) {
 				mp.removeTransaction(txRedeemer, true, false)
 			}
 		}
@@ -623,14 +623,14 @@ func (mp *TxPool) addTransaction(tx *util.Tx, height int32, fee uint64, parentsI
 	}
 
 	if len(parentsInPool) == 0 {
-		mp.pool[*tx.Hash()] = txD
+		mp.pool[*tx.ID()] = txD
 	} else {
-		mp.depends[*tx.Hash()] = txD
+		mp.depends[*tx.ID()] = txD
 		for _, previousOutPoint := range parentsInPool {
 			if _, exists := mp.dependsByPrev[*previousOutPoint]; !exists {
 				mp.dependsByPrev[*previousOutPoint] = make(map[daghash.Hash]*TxDesc)
 			}
-			mp.dependsByPrev[*previousOutPoint][*tx.Hash()] = txD
+			mp.dependsByPrev[*previousOutPoint][*tx.ID()] = txD
 		}
 	}
 
@@ -665,7 +665,7 @@ func (mp *TxPool) checkPoolDoubleSpend(tx *util.Tx) error {
 		if txR, exists := mp.outpoints[txIn.PreviousOutPoint]; exists {
 			str := fmt.Sprintf("output %v already spent by "+
 				"transaction %v in the memory pool",
-				txIn.PreviousOutPoint, txR.Hash())
+				txIn.PreviousOutPoint, txR.ID())
 			return txRuleError(wire.RejectDuplicate, str)
 		}
 	}
@@ -685,10 +685,10 @@ func (mp *TxPool) CheckSpend(op wire.OutPoint) *util.Tx {
 }
 
 // This function MUST be called with the mempool lock held (for reads).
-func (mp *TxPool) fetchTransaction(txHash *daghash.Hash) (*TxDesc, bool) {
-	txDesc, exists := mp.pool[*txHash]
+func (mp *TxPool) fetchTransaction(txID *daghash.Hash) (*TxDesc, bool) {
+	txDesc, exists := mp.pool[*txID]
 	if !exists {
-		txDesc, exists = mp.depends[*txHash]
+		txDesc, exists = mp.depends[*txID]
 	}
 	return txDesc, exists
 }
@@ -698,12 +698,12 @@ func (mp *TxPool) fetchTransaction(txHash *daghash.Hash) (*TxDesc, bool) {
 // orphans.
 //
 // This function is safe for concurrent access.
-func (mp *TxPool) FetchTransaction(txHash *daghash.Hash) (*util.Tx, error) {
+func (mp *TxPool) FetchTransaction(txID *daghash.Hash) (*util.Tx, error) {
 	// Protect concurrent access.
 	mp.mtx.RLock()
 	defer mp.mtx.RUnlock()
 
-	if txDesc, exists := mp.fetchTransaction(txHash); exists {
+	if txDesc, exists := mp.fetchTransaction(txID); exists {
 		return txDesc.Tx, nil
 	}
 
@@ -718,23 +718,30 @@ func (mp *TxPool) FetchTransaction(txHash *daghash.Hash) (*util.Tx, error) {
 func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rateLimit, rejectDupOrphans bool) ([]*daghash.Hash, *TxDesc, error) {
 	mp.cfg.DAG.UTXORLock()
 	defer mp.cfg.DAG.UTXORUnlock()
-	txHash := tx.Hash()
+	txID := tx.ID()
 
 	// Don't accept the transaction if it already exists in the pool.  This
 	// applies to orphan transactions as well when the reject duplicate
 	// orphans flag is set.  This check is intended to be a quick check to
 	// weed out duplicates.
-	if mp.isTransactionInPool(txHash) || (rejectDupOrphans &&
-		mp.isOrphanInPool(txHash)) {
+	if mp.isTransactionInPool(txID) || (rejectDupOrphans &&
+		mp.isOrphanInPool(txID)) {
 
-		str := fmt.Sprintf("already have transaction %v", txHash)
+		str := fmt.Sprintf("already have transaction %v", txID)
 		return nil, nil, txRuleError(wire.RejectDuplicate, str)
+	}
+
+	// Don't accept the transaction if it's from an incompatible subnetwork.
+	subnetworkID := mp.cfg.DAG.SubnetworkID()
+	if !tx.MsgTx().IsSubnetworkCompatible(subnetworkID) {
+		str := "tx %v belongs to an invalid subnetwork"
+		return nil, nil, txRuleError(wire.RejectInvalid, str)
 	}
 
 	// Perform preliminary sanity checks on the transaction.  This makes
 	// use of blockchain which contains the invariant rules for what
 	// transactions are allowed into blocks.
-	err := blockdag.CheckTransactionSanity(tx)
+	err := blockdag.CheckTransactionSanity(tx, subnetworkID)
 	if err != nil {
 		if cerr, ok := err.(blockdag.RuleError); ok {
 			return nil, nil, dagRuleError(cerr)
@@ -763,7 +770,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rateLimit, rejectDu
 	// A standalone transaction must not be a coinbase transaction.
 	if blockdag.IsCoinBase(tx) {
 		str := fmt.Sprintf("transaction %v is an individual coinbase",
-			txHash)
+			txID)
 		return nil, nil, txRuleError(wire.RejectInvalid, str)
 	}
 
@@ -789,7 +796,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rateLimit, rejectDu
 				rejectCode = wire.RejectNonstandard
 			}
 			str := fmt.Sprintf("transaction %v is not standard: %v",
-				txHash, err)
+				txID, err)
 			return nil, nil, txRuleError(rejectCode, str)
 		}
 	}
@@ -809,7 +816,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rateLimit, rejectDu
 
 	// Don't allow the transaction if it exists in the DAG and is
 	// not already fully spent.
-	prevOut := wire.OutPoint{Hash: *txHash}
+	prevOut := wire.OutPoint{TxID: *txID}
 	for txOutIdx := range tx.MsgTx().TxOut {
 		prevOut.Index = uint32(txOutIdx)
 		_, ok := mp.mpUTXOSet.Get(prevOut)
@@ -831,10 +838,10 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rateLimit, rejectDu
 			// is replaced and taking its address directly would
 			// result in all of the entries pointing to the same
 			// memory location and thus all be the final hash.
-			hashCopy := txIn.PreviousOutPoint.Hash
+			hashCopy := txIn.PreviousOutPoint.TxID
 			missingParents = append(missingParents, &hashCopy)
 		}
-		if mp.isTransactionInPool(&txIn.PreviousOutPoint.Hash) {
+		if mp.isTransactionInPool(&txIn.PreviousOutPoint.TxID) {
 			parentsInPool = append(parentsInPool, &txIn.PreviousOutPoint)
 		}
 	}
@@ -884,7 +891,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rateLimit, rejectDu
 				rejectCode = wire.RejectNonstandard
 			}
 			str := fmt.Sprintf("transaction %v has a non-standard "+
-				"input: %v", txHash, err)
+				"input: %v", txID, err)
 			return nil, nil, txRuleError(rejectCode, str)
 		}
 	}
@@ -907,7 +914,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rateLimit, rejectDu
 	}
 	if sigOpCount > mp.cfg.Policy.MaxSigOpsPerTx {
 		str := fmt.Sprintf("transaction %v sigop count is too high: %d > %d",
-			txHash, sigOpCount, mp.cfg.Policy.MaxSigOpsPerTx)
+			txID, sigOpCount, mp.cfg.Policy.MaxSigOpsPerTx)
 		return nil, nil, txRuleError(wire.RejectNonstandard, str)
 	}
 
@@ -927,7 +934,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rateLimit, rejectDu
 		mp.cfg.Policy.MinRelayTxFee))
 	if serializedSize >= (DefaultBlockPrioritySize-1000) && txFee < minFee {
 		str := fmt.Sprintf("transaction %v has %d fees which is under "+
-			"the required amount of %d", txHash, txFee,
+			"the required amount of %d", txID, txFee,
 			minFee)
 		return nil, nil, txRuleError(wire.RejectInsufficientFee, str)
 	}
@@ -941,7 +948,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rateLimit, rejectDu
 			nextBlockHeight)
 		if currentPriority <= mining.MinHighPriority {
 			str := fmt.Sprintf("transaction %v has insufficient "+
-				"priority (%g <= %g)", txHash,
+				"priority (%g <= %g)", txID,
 				currentPriority, mining.MinHighPriority)
 			return nil, nil, txRuleError(wire.RejectInsufficientFee, str)
 		}
@@ -960,7 +967,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rateLimit, rejectDu
 		// Are we still over the limit?
 		if mp.pennyTotal >= mp.cfg.Policy.FreeTxRelayLimit*10*1000 {
 			str := fmt.Sprintf("transaction %v has been rejected "+
-				"by the rate limiter due to low fees", txHash)
+				"by the rate limiter due to low fees", txID)
 			return nil, nil, txRuleError(wire.RejectInsufficientFee, str)
 		}
 		oldTotal := mp.pennyTotal
@@ -985,7 +992,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rateLimit, rejectDu
 	// Add to transaction pool.
 	txD := mp.addTransaction(tx, bestHeight, txFee, parentsInPool)
 
-	log.Debugf("Accepted transaction %v (pool size: %v)", txHash,
+	log.Debugf("Accepted transaction %v (pool size: %v)", txID,
 		len(mp.pool))
 
 	return nil, txD, nil
@@ -1026,7 +1033,7 @@ func (mp *TxPool) processOrphans(acceptedTx *util.Tx) []*TxDesc {
 		firstElement := processList.Remove(processList.Front())
 		processItem := firstElement.(*util.Tx)
 
-		prevOut := wire.OutPoint{Hash: *processItem.Hash()}
+		prevOut := wire.OutPoint{TxID: *processItem.ID()}
 		for txOutIdx := range processItem.MsgTx().TxOut {
 			// Look up all orphans that redeem the output that is
 			// now available.  This will typically only be one, but
@@ -1124,7 +1131,7 @@ func (mp *TxPool) ProcessOrphans(acceptedTx *util.Tx) []*TxDesc {
 //
 // This function is safe for concurrent access.
 func (mp *TxPool) ProcessTransaction(tx *util.Tx, allowOrphan, rateLimit bool, tag Tag) ([]*TxDesc, error) {
-	log.Tracef("Processing transaction %v", tx.Hash())
+	log.Tracef("Processing transaction %v", tx.ID())
 
 	// Protect concurrent access.
 	mp.mtx.Lock()
@@ -1167,7 +1174,7 @@ func (mp *TxPool) ProcessTransaction(tx *util.Tx, allowOrphan, rateLimit bool, t
 		// which is not really always the case.
 		str := fmt.Sprintf("orphan transaction %v references "+
 			"outputs of unknown or fully-spent "+
-			"transaction %v", tx.Hash(), missingParents[0])
+			"transaction %v", tx.ID(), missingParents[0])
 		return nil, txRuleError(wire.RejectDuplicate, str)
 	}
 
@@ -1198,22 +1205,22 @@ func (mp *TxPool) DepCount() int {
 	return len(mp.depends)
 }
 
-// TxHashes returns a slice of hashes for all of the transactions in the memory
+// TxIDs returns a slice of IDs for all of the transactions in the memory
 // pool.
 //
 // This function is safe for concurrent access.
-func (mp *TxPool) TxHashes() []*daghash.Hash {
+func (mp *TxPool) TxIDs() []*daghash.Hash {
 	mp.mtx.RLock()
-	hashes := make([]*daghash.Hash, len(mp.pool))
+	ids := make([]*daghash.Hash, len(mp.pool))
 	i := 0
-	for hash := range mp.pool {
-		hashCopy := hash
-		hashes[i] = &hashCopy
+	for txID := range mp.pool {
+		idCopy := txID
+		ids[i] = &idCopy
 		i++
 	}
 	mp.mtx.RUnlock()
 
-	return hashes
+	return ids
 }
 
 // TxDescs returns a slice of descriptors for all the transactions in the pool.
@@ -1281,14 +1288,14 @@ func (mp *TxPool) RawMempoolVerbose() map[string]*btcjson.GetRawMempoolVerboseRe
 			Depends:          make([]string, 0),
 		}
 		for _, txIn := range tx.MsgTx().TxIn {
-			hash := &txIn.PreviousOutPoint.Hash
+			hash := &txIn.PreviousOutPoint.TxID
 			if mp.haveTransaction(hash) {
 				mpd.Depends = append(mpd.Depends,
 					hash.String())
 			}
 		}
 
-		result[tx.Hash().String()] = mpd
+		result[tx.ID().String()] = mpd
 	}
 
 	return result
