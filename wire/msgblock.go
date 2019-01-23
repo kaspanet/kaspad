@@ -7,6 +7,7 @@ package wire
 import (
 	"bytes"
 	"fmt"
+	"github.com/daglabs/btcd/util/subnetworkid"
 	"io"
 
 	"github.com/daglabs/btcd/dagconfig/daghash"
@@ -238,6 +239,17 @@ func (msg *MsgBlock) TxHashes() ([]daghash.Hash, error) {
 		hashList = append(hashList, tx.TxHash())
 	}
 	return hashList, nil
+}
+
+// ConvertToPartial clears out all the payloads of the subnetworks that are
+// incompatible with the given subnetwork ID.
+// Note: this operation modifies the block in place.
+func (msg *MsgBlock) ConvertToPartial(subnetworkID *subnetworkid.SubnetworkID) {
+	for _, tx := range msg.Transactions {
+		if !tx.IsSubnetworkCompatible(subnetworkID) {
+			tx.Payload = []byte{}
+		}
+	}
 }
 
 // NewMsgBlock returns a new bitcoin block message that conforms to the

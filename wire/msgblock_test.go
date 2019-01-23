@@ -6,6 +6,7 @@ package wire
 
 import (
 	"bytes"
+	"github.com/daglabs/btcd/util/subnetworkid"
 	"io"
 	"math"
 	"reflect"
@@ -104,6 +105,64 @@ func TestBlockHash(t *testing.T) {
 	if !blockHash.IsEqual(wantHash) {
 		t.Errorf("BlockHash: wrong hash - got %v, want %v",
 			spew.Sprint(blockHash), spew.Sprint(wantHash))
+	}
+}
+
+func TestConvertToPartial(t *testing.T) {
+	transactions := []struct {
+		subnetworkID          subnetworkid.SubnetworkID
+		payload               []byte
+		expectedPayloadLength int
+	}{
+		{
+			subnetworkID:          SubnetworkIDNative,
+			payload:               []byte{},
+			expectedPayloadLength: 0,
+		},
+		{
+			subnetworkID:          SubnetworkIDRegistry,
+			payload:               []byte{0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08},
+			expectedPayloadLength: 0,
+		},
+		{
+			subnetworkID:          subnetworkid.SubnetworkID{123},
+			payload:               []byte{0x01},
+			expectedPayloadLength: 1,
+		},
+		{
+			subnetworkID:          subnetworkid.SubnetworkID{234},
+			payload:               []byte{0x02},
+			expectedPayloadLength: 0,
+		},
+	}
+
+	block := MsgBlock{}
+	for _, transaction := range transactions {
+		block.Transactions = append(block.Transactions, &MsgTx{
+			SubnetworkID: transaction.subnetworkID,
+			Payload:      []byte{1},
+		})
+	}
+
+	block.ConvertToPartial(&subnetworkid.SubnetworkID{123})
+
+	for _, transaction := range transactions {
+		var subnetworkTx *MsgTx
+		for _, tx := range block.Transactions {
+			if tx.SubnetworkID.IsEqual(&transaction.subnetworkID) {
+				subnetworkTx = tx
+			}
+		}
+		if subnetworkTx == nil {
+			t.Errorf("ConvertToPartial: subnetworkID '%s' not found in block!", transaction.subnetworkID)
+			continue
+		}
+
+		payloadLength := len(subnetworkTx.Payload)
+		if payloadLength != transaction.expectedPayloadLength {
+			t.Errorf("ConvertToPartial: unexpected payload length for subnetwork '%s': expected: %d, got: %d",
+				transaction.subnetworkID, transaction.expectedPayloadLength, payloadLength)
+		}
 	}
 }
 

@@ -1286,15 +1286,14 @@ func (s *Server) pushBlockMsg(sp *Peer, hash *daghash.Hash, doneChan chan<- stru
 		return err
 	}
 
-	// If the peer is a partial node, clear out all the payloads of the
-	// subnetworks that are incompatible with it.
-	subnetworkID := sp.Peer.SubnetworkID()
-	if !wire.IsSubnetworkFull(subnetworkID) {
-		for _, tx := range msgBlock.Transactions {
-			if !tx.IsSubnetworkCompatible(subnetworkID) {
-				tx.Payload = []byte{}
-			}
-		}
+	// If we are a full node and the peer is a partial node, we must convert
+	// the block to a partial block.
+	nodeSubnetworkID := s.DAG.SubnetworkID()
+	peerSubnetworkID := sp.Peer.SubnetworkID()
+	isNodeFull := nodeSubnetworkID.IsEqual(&wire.SubnetworkIDSupportsAll)
+	isPeerFull := peerSubnetworkID.IsEqual(&wire.SubnetworkIDSupportsAll)
+	if isNodeFull && !isPeerFull {
+		msgBlock.ConvertToPartial(peerSubnetworkID)
 	}
 
 	// Once we have fetched data wait for any previous operation to finish.
