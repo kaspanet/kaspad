@@ -224,7 +224,7 @@ var MainNetParams = Params{
 		{"seed.bitcoin.jonasschnelli.ch", true},
 	},
 
-	// Chain parameters
+	// DAG parameters
 	GenesisBlock:             &genesisBlock,
 	GenesisHash:              &genesisHash,
 	PowLimit:                 mainPowLimit,

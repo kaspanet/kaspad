@@ -116,7 +116,7 @@ type GetBlockDAGInfoResult struct {
 // getblocktemplate command.
 type GetBlockTemplateResultTx struct {
 	Data    string  `json:"data"`
-	Hash    string  `json:"hash"`
+	ID      string  `json:"id"`
 	Depends []int64 `json:"depends"`
 	Fee     uint64  `json:"fee"`
 	SigOps  int64   `json:"sigOps"`
