@@ -237,7 +237,7 @@ func (msg *MsgBlock) BlockHash() daghash.Hash {
 // Note: this operation modifies the block in place.
 func (msg *MsgBlock) ConvertToPartial(subnetworkID *subnetworkid.SubnetworkID) {
 	for _, tx := range msg.Transactions {
-		if !tx.IsSubnetworkCompatible(subnetworkID) {
+		if !tx.SubnetworkID.IsEqual(subnetworkID) {
 			tx.Payload = []byte{}
 		}
 	}
