@@ -433,9 +433,7 @@ func (mp *TxPool) IsInDependPool(hash *daghash.Hash) bool {
 	// Protect concurrent access.
 	mp.mtx.RLock()
 	defer mp.mtx.RUnlock()
-	inPool := mp.isInDependPool(hash)
-
-	return inPool
+	return mp.isInDependPool(hash)
 }
 
 // isOrphanInPool returns whether or not the passed transaction already exists
@@ -628,20 +626,17 @@ func (mp *TxPool) addTransaction(tx *util.Tx, height int32, fee uint64, depCount
 		mp.pool[*tx.Hash()] = txD
 	} else {
 		mp.depends[*tx.Hash()] = txD
-		for _, txIn := range tx.MsgTx().TxIn {
-			if !mp.isTransactionInPool(&txIn.PreviousOutPoint.Hash) {
-				continue
-			}
-			if _, exists := mp.dependsByPrev[txIn.PreviousOutPoint]; !exists {
-				mp.dependsByPrev[txIn.PreviousOutPoint] =
-					make(map[daghash.Hash]*TxDesc)
-			}
-			mp.dependsByPrev[txIn.PreviousOutPoint][*tx.Hash()] = txD
-		}
 	}
 
 	for _, txIn := range tx.MsgTx().TxIn {
 		mp.outpoints[txIn.PreviousOutPoint] = tx
+		if depCount == 0 || !mp.isTransactionInPool(&txIn.PreviousOutPoint.Hash) {
+			continue
+		}
+		if _, exists := mp.dependsByPrev[txIn.PreviousOutPoint]; !exists {
+			mp.dependsByPrev[txIn.PreviousOutPoint] = make(map[daghash.Hash]*TxDesc)
+		}
+		mp.dependsByPrev[txIn.PreviousOutPoint][*tx.Hash()] = txD
 	}
 	mp.mpUTXOSet.AddTx(tx.MsgTx(), mining.UnminedHeight)
 	atomic.StoreInt64(&mp.lastUpdated, time.Now().Unix())
@@ -1201,9 +1196,7 @@ func (mp *TxPool) Count() int {
 func (mp *TxPool) DepCount() int {
 	mp.mtx.RLock()
 	defer mp.mtx.RUnlock()
-	count := len(mp.depends)
-
-	return count
+	return len(mp.depends)
 }
 
 // TxHashes returns a slice of hashes for all of the transactions in the memory
