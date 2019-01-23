@@ -7,6 +7,7 @@ package wire
 import (
 	"bytes"
 	"fmt"
+	"github.com/daglabs/btcd/util/subnetworkid"
 	"io"
 
 	"github.com/daglabs/btcd/dagconfig/daghash"
@@ -229,6 +230,17 @@ func (msg *MsgBlock) MaxPayloadLength(pver uint32) uint32 {
 // BlockHash computes the block identifier hash for this block.
 func (msg *MsgBlock) BlockHash() daghash.Hash {
 	return msg.Header.BlockHash()
+}
+
+// ConvertToPartial clears out all the payloads of the subnetworks that are
+// incompatible with the given subnetwork ID.
+// Note: this operation modifies the block in place.
+func (msg *MsgBlock) ConvertToPartial(subnetworkID *subnetworkid.SubnetworkID) {
+	for _, tx := range msg.Transactions {
+		if !tx.SubnetworkID.IsEqual(subnetworkID) {
+			tx.Payload = []byte{}
+		}
+	}
 }
 
 // NewMsgBlock returns a new bitcoin block message that conforms to the

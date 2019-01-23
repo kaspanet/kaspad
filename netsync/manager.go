@@ -1210,32 +1210,6 @@ func (sm *SyncManager) handleBlockDAGNotification(notification *blockdag.Notific
 					mempool.DefaultEstimateFeeMinRegisteredBlocks)
 			}
 		}
-
-	// A block has been disconnected from the block DAG.
-	case blockdag.NTBlockDisconnected:
-		block, ok := notification.Data.(*util.Block)
-		if !ok {
-			log.Warnf("Chain disconnected notification is not a block.")
-			break
-		}
-
-		// Reinsert all of the transactions (except the coinbase) into
-		// the transaction pool.
-		for _, tx := range block.Transactions()[1:] {
-			_, _, err := sm.txMemPool.MaybeAcceptTransaction(tx,
-				false, false)
-			if err != nil {
-				// Remove the transaction and all transactions
-				// that depend on it if it wasn't accepted into
-				// the transaction pool.
-				sm.txMemPool.RemoveTransaction(tx, true, true)
-			}
-		}
-
-		// Rollback previous block recorded by the fee estimator.
-		if sm.feeEstimator != nil {
-			sm.feeEstimator.Rollback(block.Hash())
-		}
 	}
 }
 

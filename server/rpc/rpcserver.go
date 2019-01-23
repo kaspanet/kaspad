@@ -4300,16 +4300,6 @@ func (s *Server) handleBlockchainNotification(notification *blockdag.Notificatio
 
 		// Notify registered websocket clients of incoming block.
 		s.ntfnMgr.NotifyBlockConnected(block)
-
-	case blockdag.NTBlockDisconnected:
-		block, ok := notification.Data.(*util.Block)
-		if !ok {
-			log.Warnf("Chain disconnected notification is not a block.")
-			break
-		}
-
-		// Notify registered websocket clients.
-		s.ntfnMgr.NotifyBlockDisconnected(block)
 	}
 }
 
