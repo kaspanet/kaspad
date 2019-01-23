@@ -154,7 +154,8 @@ func TestCheckConnectBlockTemplate(t *testing.T) {
 func TestCheckBlockSanity(t *testing.T) {
 	// Create a new database and dag instance to run tests against.
 	dag, teardownFunc, err := DAGSetup("TestCheckBlockSanity", Config{
-		DAGParams: &dagconfig.SimNetParams,
+		DAGParams:    &dagconfig.SimNetParams,
+		SubnetworkID: &wire.SubnetworkIDSupportsAll,
 	})
 	if err != nil {
 		t.Errorf("Failed to setup dag instance: %v", err)
