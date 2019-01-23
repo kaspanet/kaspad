@@ -7,10 +7,11 @@ package blockdag
 import (
 	"errors"
 	"fmt"
-	"github.com/daglabs/btcd/util/subnetworkid"
 	"math"
 	"sync"
 	"time"
+
+	"github.com/daglabs/btcd/util/subnetworkid"
 
 	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/dagconfig/daghash"
@@ -1343,6 +1344,7 @@ func (dag *BlockDAG) LocateHeaders(locator BlockLocator, hashStop *daghash.Hash)
 	return headers
 }
 
+// SubnetworkID returns the node's subnetwork ID
 func (dag *BlockDAG) SubnetworkID() *subnetworkid.SubnetworkID {
 	return dag.subnetworkID
 }
