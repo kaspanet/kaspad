@@ -722,7 +722,7 @@ func (msg *MsgTx) SerializeSize() int {
 	return msg.serializeSize(txEncodingFull)
 }
 
-// SerializeSize returns the number of bytes it would take to serialize the
+// SerializeSize returns the number of bytes it would take to serialize
 // the transaction.
 func (msg *MsgTx) serializeSize(encodingFlags txEncoding) int {
 	// Version 4 bytes + LockTime 8 bytes + SubnetworkID 20
