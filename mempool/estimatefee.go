@@ -206,7 +206,7 @@ func (ef *FeeEstimator) ObserveTransaction(t *TxDesc) {
 		return
 	}
 
-	hash := *t.Tx.Hash()
+	hash := *t.Tx.ID()
 	if _, ok := ef.observed[hash]; !ok {
 		size := uint32(t.Tx.MsgTx().SerializeSize())
 

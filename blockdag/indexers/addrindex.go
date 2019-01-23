@@ -811,13 +811,13 @@ func (idx *AddrIndex) indexUnconfirmedAddresses(pkScript []byte, tx *util.Tx) {
 			addrIndexEntry = make(map[daghash.Hash]*util.Tx)
 			idx.txnsByAddr[addrKey] = addrIndexEntry
 		}
-		addrIndexEntry[*tx.Hash()] = tx
+		addrIndexEntry[*tx.ID()] = tx
 
 		// Add a mapping from the transaction to the address.
-		addrsByTxEntry := idx.addrsByTx[*tx.Hash()]
+		addrsByTxEntry := idx.addrsByTx[*tx.ID()]
 		if addrsByTxEntry == nil {
 			addrsByTxEntry = make(map[[addrKeySize]byte]struct{})
-			idx.addrsByTx[*tx.Hash()] = addrsByTxEntry
+			idx.addrsByTx[*tx.ID()] = addrsByTxEntry
 		}
 		addrsByTxEntry[addrKey] = struct{}{}
 		idx.unconfirmedLock.Unlock()

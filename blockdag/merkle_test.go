@@ -10,14 +10,23 @@ import (
 	"github.com/daglabs/btcd/util"
 )
 
-// TestMerkle tests the BuildMerkleTreeStore API.
+// TestMerkle tests the BuildHashMerkleTreeStore API.
 func TestMerkle(t *testing.T) {
 	block := util.NewBlock(&Block100000)
-	merkles := BuildMerkleTreeStore(block.Transactions())
-	calculatedMerkleRoot := merkles[len(merkles)-1]
-	wantMerkle := &Block100000.Header.MerkleRoot
-	if !wantMerkle.IsEqual(calculatedMerkleRoot) {
-		t.Errorf("BuildMerkleTreeStore: merkle root mismatch - "+
-			"got %v, want %v", calculatedMerkleRoot, wantMerkle)
+
+	hashMerkleTree := BuildHashMerkleTreeStore(block.Transactions())
+	calculatedHashMerkleRoot := hashMerkleTree.Root()
+	wantHashMerkleRoot := &Block100000.Header.HashMerkleRoot
+	if !wantHashMerkleRoot.IsEqual(calculatedHashMerkleRoot) {
+		t.Errorf("BuildHashMerkleTreeStore: hash merkle root mismatch - "+
+			"got %v, want %v", calculatedHashMerkleRoot, wantHashMerkleRoot)
+	}
+
+	idMerkleTree := BuildIDMerkleTreeStore(block.Transactions())
+	calculatedIDMerkleRoot := idMerkleTree.Root()
+	wantIDMerkleRoot := &Block100000.Header.IDMerkleRoot
+	if !wantIDMerkleRoot.IsEqual(calculatedIDMerkleRoot) {
+		t.Errorf("BuildIDMerkleTreeStore: ID merkle root mismatch - "+
+			"got %v, want %v", calculatedIDMerkleRoot, wantIDMerkleRoot)
 	}
 }

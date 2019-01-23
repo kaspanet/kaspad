@@ -553,7 +553,7 @@ func TestForEachBucket(t *testing.T) {
 // TestStoreBlockErrors tests all error-cases in *tx.StoreBlock().
 // The non-error-cases are tested in the more general tests.
 func TestStoreBlockErrors(t *testing.T) {
-	testBlock := util.NewBlock(wire.NewMsgBlock(wire.NewBlockHeader(1, []daghash.Hash{}, &daghash.Hash{}, 0, 0)))
+	testBlock := util.NewBlock(wire.NewMsgBlock(wire.NewBlockHeader(1, []daghash.Hash{}, &daghash.Hash{}, &daghash.Hash{}, 0, 0)))
 
 	tests := []struct {
 		name        string
@@ -716,7 +716,7 @@ func TestWritePendingAndCommitErrors(t *testing.T) {
 	rollbackCalled = false
 	err = pdb.Update(func(dbTx database.Tx) error {
 		return dbTx.StoreBlock(util.NewBlock(wire.NewMsgBlock(
-			wire.NewBlockHeader(1, []daghash.Hash{}, &daghash.Hash{}, 0, 0))))
+			wire.NewBlockHeader(1, []daghash.Hash{}, &daghash.Hash{}, &daghash.Hash{}, 0, 0))))
 	})
 	if err == nil {
 		t.Errorf("No error returned when blockIdx.Put() should have returned an error")

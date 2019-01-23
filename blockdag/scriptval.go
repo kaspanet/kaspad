@@ -60,7 +60,7 @@ out:
 				str := fmt.Sprintf("unable to find unspent "+
 					"output %v referenced from "+
 					"transaction %s:%d",
-					txIn.PreviousOutPoint, txVI.tx.Hash(),
+					txIn.PreviousOutPoint, txVI.tx.ID(),
 					txVI.txInIndex)
 				err := ruleError(ErrMissingTxOut, str)
 				v.sendResult(err)
@@ -77,7 +77,7 @@ out:
 					"%s:%d which references output %v - "+
 					"%v (input script bytes %x, prev "+
 					"output script bytes %x)",
-					txVI.tx.Hash(), txVI.txInIndex,
+					txVI.tx.ID(), txVI.txInIndex,
 					txIn.PreviousOutPoint, err, sigScript, pkScript)
 				err := ruleError(ErrScriptMalformed, str)
 				v.sendResult(err)
@@ -90,7 +90,7 @@ out:
 					"%s:%d which references output %v - "+
 					"%v (input script bytes %x, prev output "+
 					"script bytes %x)",
-					txVI.tx.Hash(), txVI.txInIndex,
+					txVI.tx.ID(), txVI.txInIndex,
 					txIn.PreviousOutPoint, err, sigScript, pkScript)
 				err := ruleError(ErrScriptValidation, str)
 				v.sendResult(err)

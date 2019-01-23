@@ -7,6 +7,7 @@ package mining
 import (
 	"container/heap"
 	"fmt"
+	"math/rand"
 	"sort"
 	"time"
 
@@ -395,7 +396,9 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 	// ensure the transaction is not a duplicate transaction (paying the
 	// same value to the same public key address would otherwise be an
 	// identical transaction for block version 1).
-	extraNonce := uint64(0)
+	seed := rand.NewSource(time.Now().UnixNano())
+	randomGenerator := rand.New(seed)
+	extraNonce := randomGenerator.Uint64()
 	coinbaseScript, err := standardCoinbaseScript(nextBlockHeight, extraNonce)
 	if err != nil {
 		return nil, err
@@ -444,13 +447,13 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 		// non-finalized transactions.
 		tx := txDesc.Tx
 		if blockdag.IsCoinBase(tx) {
-			log.Tracef("Skipping coinbase tx %s", tx.Hash())
+			log.Tracef("Skipping coinbase tx %s", tx.ID())
 			continue
 		}
 		if !blockdag.IsFinalizedTransaction(tx, nextBlockHeight,
 			g.timeSource.AdjustedTime()) {
 
-			log.Tracef("Skipping non-finalized tx %s", tx.Hash())
+			log.Tracef("Skipping non-finalized tx %s", tx.ID())
 			continue
 		}
 
@@ -499,7 +502,7 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 			txGas := tx.MsgTx().Gas
 			if gasLimit-gasUsage < txGas {
 				log.Tracef("Transaction %v (GAS=%v) ignored because gas overusage (GASUsage=%v) in subnetwork %v (GASLimit=%v)",
-					tx.MsgTx().TxHash, txGas, gasUsage, subnetworkID, gasLimit)
+					tx.MsgTx().TxID(), txGas, gasUsage, subnetworkID, gasLimit)
 				continue
 			}
 			gasUsageMap[subnetworkID] = gasUsage + txGas
@@ -512,7 +515,7 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 			blockPlusTxSize >= g.policy.BlockMaxSize {
 
 			log.Tracef("Skipping tx %s because it would exceed "+
-				"the max block size", tx.Hash())
+				"the max block size", tx.ID())
 			continue
 		}
 
@@ -522,21 +525,21 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 		if blockSigOps+numSigOps < blockSigOps ||
 			blockSigOps+numSigOps > blockdag.MaxSigOpsPerBlock {
 			log.Tracef("Skipping tx %s because it would exceed "+
-				"the maximum sigops per block", tx.Hash())
+				"the maximum sigops per block", tx.ID())
 			continue
 		}
 		numP2SHSigOps, err := blockdag.CountP2SHSigOps(tx, false,
 			blockUtxos)
 		if err != nil {
 			log.Tracef("Skipping tx %s due to error in "+
-				"GetSigOpCost: %v", tx.Hash(), err)
+				"GetSigOpCost: %v", tx.ID(), err)
 			continue
 		}
 		numSigOps += int64(numP2SHSigOps)
 		if blockSigOps+numSigOps < blockSigOps ||
 			blockSigOps+numSigOps > blockdag.MaxSigOpsPerBlock {
 			log.Tracef("Skipping tx %s because it would "+
-				"exceed the maximum sigops per block", tx.Hash())
+				"exceed the maximum sigops per block", tx.ID())
 			continue
 		}
 
@@ -548,7 +551,7 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 
 			log.Tracef("Skipping tx %s with feePerKB %.2f "+
 				"< TxMinFreeFee %d and block size %d >= "+
-				"minBlockSize %d", tx.Hash(), prioItem.feePerKB,
+				"minBlockSize %d", tx.ID(), prioItem.feePerKB,
 				g.policy.TxMinFreeFee, blockPlusTxSize,
 				g.policy.BlockMinSize)
 			continue
@@ -589,14 +592,14 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 			blockUtxos, g.chainParams)
 		if err != nil {
 			log.Tracef("Skipping tx %s due to error in "+
-				"CheckTransactionInputs: %v", tx.Hash(), err)
+				"CheckTransactionInputs: %v", tx.ID(), err)
 			continue
 		}
 		err = blockdag.ValidateTransactionScripts(tx, blockUtxos,
 			txscript.StandardVerifyFlags, g.sigCache)
 		if err != nil {
 			log.Tracef("Skipping tx %s due to error in "+
-				"ValidateTransactionScripts: %v", tx.Hash(), err)
+				"ValidateTransactionScripts: %v", tx.ID(), err)
 			continue
 		}
 
@@ -617,7 +620,7 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 		txSigOpCounts = append(txSigOpCounts, numSigOps)
 
 		log.Tracef("Adding tx %s (priority %.2f, feePerKB %.2f)",
-			prioItem.tx.Hash(), prioItem.priority, prioItem.feePerKB)
+			prioItem.tx.ID(), prioItem.priority, prioItem.feePerKB)
 	}
 
 	// Now that the actual transactions have been selected, update the
@@ -650,14 +653,16 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 	})
 
 	// Create a new block ready to be solved.
-	merkles := blockdag.BuildMerkleTreeStore(blockTxns)
+	hashMerkleTree := blockdag.BuildHashMerkleTreeStore(blockTxns)
+	idMerkleTree := blockdag.BuildIDMerkleTreeStore(blockTxns)
 	var msgBlock wire.MsgBlock
 	msgBlock.Header = wire.BlockHeader{
-		Version:      nextBlockVersion,
-		ParentHashes: g.dag.TipHashes(),
-		MerkleRoot:   *merkles[len(merkles)-1],
-		Timestamp:    ts,
-		Bits:         reqDifficulty,
+		Version:        nextBlockVersion,
+		ParentHashes:   g.dag.TipHashes(),
+		HashMerkleRoot: *hashMerkleTree.Root(),
+		IDMerkleRoot:   *idMerkleTree.Root(),
+		Timestamp:      ts,
+		Bits:           reqDifficulty,
 	}
 	for _, tx := range blockTxns {
 		if err := msgBlock.AddTransaction(tx.MsgTx()); err != nil {
@@ -735,10 +740,13 @@ func (g *BlkTmplGenerator) UpdateExtraNonce(msgBlock *wire.MsgBlock, blockHeight
 	// recalculating all of the other transaction hashes.
 	// block.Transactions[0].InvalidateCache()
 
-	// Recalculate the merkle root with the updated extra nonce.
+	// Recalculate the merkle roots with the updated extra nonce.
 	block := util.NewBlock(msgBlock)
-	merkles := blockdag.BuildMerkleTreeStore(block.Transactions())
-	msgBlock.Header.MerkleRoot = *merkles[len(merkles)-1]
+	hashMerkleTree := blockdag.BuildHashMerkleTreeStore(block.Transactions())
+	msgBlock.Header.HashMerkleRoot = *hashMerkleTree.Root()
+	idMerkleTree := blockdag.BuildIDMerkleTreeStore(block.Transactions())
+	msgBlock.Header.IDMerkleRoot = *idMerkleTree.Root()
+
 	return nil
 }
 
