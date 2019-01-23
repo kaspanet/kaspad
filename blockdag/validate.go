@@ -456,8 +456,8 @@ func checkBlockParentsOrder(header *wire.BlockHeader) error {
 //
 // The flags do not modify the behavior of this function directly, however they
 // are needed to pass along to checkBlockHeaderSanity.
-func checkBlockSanity(block *util.Block, powLimit *big.Int, timeSource MedianTimeSource,
-	subnetworkID *subnetworkid.SubnetworkID, subnetworkStore *subnetworkStore, flags BehaviorFlags) error {
+func (dag *BlockDAG) checkBlockSanity(block *util.Block, powLimit *big.Int, timeSource MedianTimeSource,
+	subnetworkID *subnetworkid.SubnetworkID, flags BehaviorFlags) error {
 
 	msgBlock := block.MsgBlock()
 	header := &msgBlock.Header
@@ -583,7 +583,7 @@ func checkBlockSanity(block *util.Block, powLimit *big.Int, timeSource MedianTim
 			gasUsageInSubnetwork := gasUsageInAllSubnetworks[msgTx.SubnetworkID]
 			gasUsageInAllSubnetworks[msgTx.SubnetworkID] = gasUsageInSubnetwork + msgTx.Gas
 
-			gasLimit, err := subnetworkStore.GasLimit(&msgTx.SubnetworkID)
+			gasLimit, err := dag.SubnetworkStore.GasLimit(&msgTx.SubnetworkID)
 			if err != nil {
 				return err
 			}
@@ -599,10 +599,10 @@ func checkBlockSanity(block *util.Block, powLimit *big.Int, timeSource MedianTim
 
 // CheckBlockSanity performs some preliminary checks on a block to ensure it is
 // sane before continuing with block processing.  These checks are context free.
-func CheckBlockSanity(block *util.Block, powLimit *big.Int,
-	timeSource MedianTimeSource, subnetworkID *subnetworkid.SubnetworkID, subnetworkStore *subnetworkStore) error {
+func (dag *BlockDAG) CheckBlockSanity(block *util.Block, powLimit *big.Int,
+	timeSource MedianTimeSource, subnetworkID *subnetworkid.SubnetworkID) error {
 
-	return checkBlockSanity(block, powLimit, timeSource, subnetworkID, subnetworkStore, BFNone)
+	return dag.checkBlockSanity(block, powLimit, timeSource, subnetworkID, BFNone)
 }
 
 // ExtractCoinbaseHeight attempts to extract the height of the block from the
@@ -1130,7 +1130,7 @@ func (dag *BlockDAG) CheckConnectBlockTemplate(block *util.Block) error {
 		return ruleError(ErrParentBlockNotCurrentTips, str)
 	}
 
-	err := checkBlockSanity(block, dag.dagParams.PowLimit, dag.timeSource, dag.SubnetworkID(), dag.SubnetworkStore, flags)
+	err := dag.checkBlockSanity(block, dag.dagParams.PowLimit, dag.timeSource, dag.SubnetworkID(), flags)
 	if err != nil {
 		return err
 	}
