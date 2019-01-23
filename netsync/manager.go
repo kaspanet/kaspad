@@ -408,15 +408,14 @@ func (sm *SyncManager) handleTxMsg(tmsg *txMsg) {
 		return
 	}
 
-	// NOTE:  BitcoinJ, and possibly other wallets, don't follow the spec of
-	// sending an inventory message and allowing the remote peer to decide
-	// whether or not they want to request the transaction via a getdata
-	// message.  Unfortunately, the reference implementation permits
-	// unrequested data, so it has allowed wallets that don't follow the
-	// spec to proliferate.  While this is not ideal, there is no check here
-	// to disconnect peers for sending unsolicited transactions to provide
-	// interoperability.
+	// If we didn't ask for this transaction then the peer is misbehaving.
 	txHash := tmsg.tx.Hash()
+	if _, exists = state.requestedTxns[*txHash]; !exists {
+		log.Warnf("Got unrequested transaction %v from %s -- "+
+			"disconnecting", txHash, peer.Addr())
+		peer.Disconnect()
+		return
+	}
 
 	// Ignore transactions that we have already rejected.  Do not
 	// send a reject message here because if the transaction was already
