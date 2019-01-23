@@ -151,7 +151,7 @@ type TxDesc struct {
 	// depCount is not 0 for dependent transaction. Dependent transaction is
 	// one that is accepted to pool, but cannot be mined in next block because it
 	// depends on outputs of accepted, but still not mined transaction
-	depCount uint
+	depCount int
 }
 
 // orphanTx is normal transaction that references an ancestor transaction
@@ -605,7 +605,7 @@ func (mp *TxPool) RemoveDoubleSpends(tx *util.Tx) {
 // helper for maybeAcceptTransaction.
 //
 // This function MUST be called with the mempool lock held (for writes).
-func (mp *TxPool) addTransaction(tx *util.Tx, height int32, fee uint64, depCount uint) *TxDesc {
+func (mp *TxPool) addTransaction(tx *util.Tx, height int32, fee uint64, parentsInPool []*wire.OutPoint) *TxDesc {
 	mp.cfg.DAG.UTXORLock()
 	defer mp.cfg.DAG.UTXORUnlock()
 	// Add the transaction to the pool and mark the referenced outpoints
@@ -619,24 +619,23 @@ func (mp *TxPool) addTransaction(tx *util.Tx, height int32, fee uint64, depCount
 			FeePerKB: fee * 1000 / uint64(tx.MsgTx().SerializeSize()),
 		},
 		StartingPriority: mining.CalcPriority(tx.MsgTx(), mp.mpUTXOSet, height),
-		depCount:         depCount,
+		depCount:         len(parentsInPool),
 	}
 
-	if depCount == 0 {
+	if len(parentsInPool) == 0 {
 		mp.pool[*tx.Hash()] = txD
 	} else {
 		mp.depends[*tx.Hash()] = txD
+		for _, previousOutPoint := range parentsInPool {
+			if _, exists := mp.dependsByPrev[*previousOutPoint]; !exists {
+				mp.dependsByPrev[*previousOutPoint] = make(map[daghash.Hash]*TxDesc)
+			}
+			mp.dependsByPrev[*previousOutPoint][*tx.Hash()] = txD
+		}
 	}
 
 	for _, txIn := range tx.MsgTx().TxIn {
 		mp.outpoints[txIn.PreviousOutPoint] = tx
-		if depCount == 0 || !mp.isTransactionInPool(&txIn.PreviousOutPoint.Hash) {
-			continue
-		}
-		if _, exists := mp.dependsByPrev[txIn.PreviousOutPoint]; !exists {
-			mp.dependsByPrev[txIn.PreviousOutPoint] = make(map[daghash.Hash]*TxDesc)
-		}
-		mp.dependsByPrev[txIn.PreviousOutPoint][*tx.Hash()] = txD
 	}
 	mp.mpUTXOSet.AddTx(tx.MsgTx(), mining.UnminedHeight)
 	atomic.StoreInt64(&mp.lastUpdated, time.Now().Unix())
@@ -825,7 +824,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rateLimit, rejectDu
 	// is not handled by this function, and the caller should use
 	// maybeAddOrphan if this behavior is desired.
 	var missingParents []*daghash.Hash
-	var depCount uint
+	var parentsInPool []*wire.OutPoint
 	for _, txIn := range tx.MsgTx().TxIn {
 		if _, ok := mp.mpUTXOSet.Get(txIn.PreviousOutPoint); !ok {
 			// Must make a copy of the hash here since the iterator
@@ -836,7 +835,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rateLimit, rejectDu
 			missingParents = append(missingParents, &hashCopy)
 		}
 		if mp.isTransactionInPool(&txIn.PreviousOutPoint.Hash) {
-			depCount++
+			parentsInPool = append(parentsInPool, &txIn.PreviousOutPoint)
 		}
 	}
 	if len(missingParents) > 0 {
@@ -984,7 +983,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rateLimit, rejectDu
 	}
 
 	// Add to transaction pool.
-	txD := mp.addTransaction(tx, bestHeight, txFee, depCount)
+	txD := mp.addTransaction(tx, bestHeight, txFee, parentsInPool)
 
 	log.Debugf("Accepted transaction %v (pool size: %v)", txHash,
 		len(mp.pool))
