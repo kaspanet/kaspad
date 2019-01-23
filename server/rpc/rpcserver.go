@@ -1624,8 +1624,10 @@ func (state *gbtWorkState) updateBlockTemplate(s *Server, useCoinbaseValue bool)
 
 			// Update the merkle root.
 			block := util.NewBlock(template.Block)
-			merkles := blockdag.BuildHashMerkleTreeStore(block.Transactions())
-			template.Block.Header.HashMerkleRoot = *merkles[len(merkles)-1]
+			hashMerkleTree := blockdag.BuildHashMerkleTreeStore(block.Transactions())
+			template.Block.Header.HashMerkleRoot = *hashMerkleTree.Root()
+			idMerkleTree := blockdag.BuildIDMerkleTreeStore(block.Transactions())
+			template.Block.Header.IDMerkleRoot = *idMerkleTree.Root()
 		}
 
 		// Set locals for convenience.

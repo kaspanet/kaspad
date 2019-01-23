@@ -181,12 +181,14 @@ func CreateBlock(parentBlock *util.Block, inclusionTxs []*util.Tx,
 	if inclusionTxs != nil {
 		blockTxns = append(blockTxns, inclusionTxs...)
 	}
-	merkles := blockdag.BuildHashMerkleTreeStore(blockTxns)
+	hashMerkleTree := blockdag.BuildHashMerkleTreeStore(blockTxns)
+	idMerkleTree := blockdag.BuildIDMerkleTreeStore(blockTxns)
 	var block wire.MsgBlock
 	block.Header = wire.BlockHeader{
 		Version:        blockVersion,
 		ParentHashes:   []daghash.Hash{*parentHash},
-		HashMerkleRoot: *merkles[len(merkles)-1],
+		HashMerkleRoot: *hashMerkleTree.Root(),
+		IDMerkleRoot:   *idMerkleTree.Root(),
 		Timestamp:      ts,
 		Bits:           net.PowLimitBits,
 	}

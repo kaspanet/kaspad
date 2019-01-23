@@ -512,8 +512,8 @@ func checkBlockSanity(block *util.Block, powLimit *big.Int, timeSource MedianTim
 	// checks.  Bitcoind builds the tree here and checks the merkle root
 	// after the following checks, but there is no reason not to check the
 	// merkle root matches here.
-	hashMerkles := BuildHashMerkleTreeStore(block.Transactions())
-	calculatedHashMerkleRoot := hashMerkles[len(hashMerkles)-1]
+	hashMerkleTree := BuildHashMerkleTreeStore(block.Transactions())
+	calculatedHashMerkleRoot := hashMerkleTree.Root()
 	if !header.HashMerkleRoot.IsEqual(calculatedHashMerkleRoot) {
 		str := fmt.Sprintf("block hash merkle root is invalid - block "+
 			"header indicates %v, but calculated value is %v",
@@ -521,8 +521,8 @@ func checkBlockSanity(block *util.Block, powLimit *big.Int, timeSource MedianTim
 		return ruleError(ErrBadMerkleRoot, str)
 	}
 
-	idMerkles := BuildIDMerkleTreeStore(block.Transactions())
-	calculatedIDMerkleRoot := idMerkles[len(idMerkles)-1]
+	idMerkleTree := BuildIDMerkleTreeStore(block.Transactions())
+	calculatedIDMerkleRoot := idMerkleTree.Root()
 	if !header.IDMerkleRoot.IsEqual(calculatedIDMerkleRoot) {
 		str := fmt.Sprintf("block ID merkle root is invalid - block "+
 			"header indicates %v, but calculated value is %v",

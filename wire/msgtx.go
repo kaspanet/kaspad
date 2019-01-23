@@ -103,11 +103,11 @@ const (
 type txEncoding uint8
 
 const (
+	txEncodingFull txEncoding = 0
+
 	txEncodingExcludeSubNetworkData txEncoding = 1 << iota
 
 	txEncodingExcludeSignatureScript
-
-	txEncodingFull txEncoding = 0
 )
 
 var (
@@ -226,12 +226,15 @@ func (t *TxIn) serializeSize(encodingFlags txEncoding) int {
 	// Outpoint Hash 32 bytes + Outpoint Index 4 bytes + Sequence 8 bytes +
 	// serialized varint size for the length of SignatureScript +
 	// SignatureScript bytes.
-	n := 44
+	return 44 + serializeSignatureScriptSize(t.SignatureScript, encodingFlags)
+}
+
+func serializeSignatureScriptSize(signatureScript []byte, encodingFlags txEncoding) int {
 	if encodingFlags&txEncodingExcludeSignatureScript != txEncodingExcludeSignatureScript {
-		return n + VarIntSerializeSize(uint64(len(t.SignatureScript))) +
-			len(t.SignatureScript)
+		return VarIntSerializeSize(uint64(len(signatureScript))) +
+			len(signatureScript)
 	}
-	return n + VarIntSerializeSize(0)
+	return VarIntSerializeSize(0)
 }
 
 // NewTxIn returns a new bitcoin transaction input with the provided
@@ -664,11 +667,7 @@ func (msg *MsgTx) encode(w io.Writer, pver uint32, encodingFlags txEncoding) err
 			return messageError("MsgTx.BtcEncode", str)
 		}
 
-		if encodingFlags&txEncodingExcludeSubNetworkData != txEncodingExcludeSubNetworkData {
-			err = binarySerializer.PutUint64(w, littleEndian, msg.Gas)
-		} else {
-			err = binarySerializer.PutUint64(w, littleEndian, 0)
-		}
+		err = binarySerializer.PutUint64(w, littleEndian, msg.Gas)
 		if err != nil {
 			return err
 		}
@@ -713,11 +712,11 @@ func (msg *MsgTx) Serialize(w io.Writer) error {
 func (msg *MsgTx) serialize(w io.Writer, encodingFlags txEncoding) error {
 	// At the current time, there is no difference between the wire encoding
 	// at protocol version 0 and the stable long-term storage format.  As
-	// a result, make use of BtcEncode.
+	// a result, make use of `encode`.
 	return msg.encode(w, 0, encodingFlags)
 }
 
-// SerializeSize returns the number of bytes it would take to serialize the
+// SerializeSize returns the number of bytes it would take to serialize
 // the transaction.
 func (msg *MsgTx) SerializeSize() int {
 	return msg.serializeSize(txEncodingFull)

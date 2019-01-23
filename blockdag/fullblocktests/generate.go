@@ -308,8 +308,8 @@ func calcHashMerkleRoot(txns []*wire.MsgTx) daghash.Hash {
 	for _, tx := range txns {
 		utilTxns = append(utilTxns, util.NewTx(tx))
 	}
-	merkles := blockdag.BuildHashMerkleTreeStore(utilTxns)
-	return *merkles[len(merkles)-1]
+	merkleTree := blockdag.BuildHashMerkleTreeStore(utilTxns)
+	return *merkleTree.Root()
 }
 
 // solveBlock attempts to find a nonce which makes the passed block header hash

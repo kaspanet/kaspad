@@ -11,6 +11,14 @@ import (
 	"github.com/daglabs/btcd/util"
 )
 
+// MerkleTree holds the hashes of a merkle tree
+type MerkleTree []*daghash.Hash
+
+// Root returns the root of the merkle tree
+func (mt MerkleTree) Root() *daghash.Hash {
+	return mt[len(mt)-1]
+}
+
 // nextPowerOfTwo returns the next highest power of two from a given number if
 // it is not already a power of two.  This is a helper function used during the
 // calculation of a merkle tree.
@@ -40,7 +48,7 @@ func HashMerkleBranches(left *daghash.Hash, right *daghash.Hash) *daghash.Hash {
 
 // BuildHashMerkleTreeStore creates a merkle tree from a slice of transactions, based
 // on their hash. See `buildMerkleTreeStore` for more info.
-func BuildHashMerkleTreeStore(transactions []*util.Tx) []*daghash.Hash {
+func BuildHashMerkleTreeStore(transactions []*util.Tx) MerkleTree {
 	txHashes := make([]*daghash.Hash, len(transactions))
 	for i, tx := range transactions {
 		txHashes[i] = tx.Hash()
@@ -50,7 +58,7 @@ func BuildHashMerkleTreeStore(transactions []*util.Tx) []*daghash.Hash {
 
 // BuildIDMerkleTreeStore creates a merkle tree from a slice of transactions, based
 // on their ID. See `buildMerkleTreeStore` for more info.
-func BuildIDMerkleTreeStore(transactions []*util.Tx) []*daghash.Hash {
+func BuildIDMerkleTreeStore(transactions []*util.Tx) MerkleTree {
 	txIDs := make([]*daghash.Hash, len(transactions))
 	for i, tx := range transactions {
 		txIDs[i] = tx.ID()
@@ -86,12 +94,12 @@ func BuildIDMerkleTreeStore(transactions []*util.Tx) []*daghash.Hash {
 // are calculated by concatenating the left node with itself before hashing.
 // Since this function uses nodes that are pointers to the hashes, empty nodes
 // will be nil.
-func buildMerkleTreeStore(hashes []*daghash.Hash) []*daghash.Hash {
+func buildMerkleTreeStore(hashes []*daghash.Hash) MerkleTree {
 	// Calculate how many entries are required to hold the binary merkle
 	// tree as a linear array and create an array of that size.
 	nextPoT := nextPowerOfTwo(len(hashes))
 	arraySize := nextPoT*2 - 1
-	merkles := make([]*daghash.Hash, arraySize)
+	merkles := make(MerkleTree, arraySize)
 
 	// Create the base transaction hashes and populate the array with them.
 	for i, hash := range hashes {
