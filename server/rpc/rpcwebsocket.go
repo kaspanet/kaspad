@@ -872,19 +872,17 @@ func (m *wsNotificationManager) notifyForNewTx(clients map[chan struct{}]*wsClie
 
 	for _, wsc := range clients {
 		if wsc.verboseTxUpdates {
-			if wsc.txUpdateSubnetworkID == nil || wsc.txUpdateSubnetworkID.IsEqual(m.server.cfg.DAG.SubnetworkID()) {
-				if marshalledJSONVerboseFull == nil {
-					if ok := initializeMarshalledJSONVerbose(); !ok {
-						return
-					}
+			if marshalledJSONVerboseFull == nil {
+				ok := initializeMarshalledJSONVerbose()
+				if !ok {
+					return
 				}
+			}
+
+			nodeSubnetworkID := m.server.cfg.DAG.SubnetworkID()
+			if wsc.txUpdateSubnetworkID == nil || wsc.txUpdateSubnetworkID.IsEqual(nodeSubnetworkID) {
 				wsc.QueueNotification(marshalledJSONVerboseFull)
 			} else {
-				if marshalledJSONVerbosePartial == nil {
-					if ok := initializeMarshalledJSONVerbose(); !ok {
-						return
-					}
-				}
 				wsc.QueueNotification(marshalledJSONVerbosePartial)
 			}
 		} else {
