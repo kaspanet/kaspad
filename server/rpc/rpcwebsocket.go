@@ -872,7 +872,7 @@ func (m *wsNotificationManager) notifyForNewTx(clients map[chan struct{}]*wsClie
 
 	for _, wsc := range clients {
 		if wsc.verboseTxUpdates {
-			if wsc.TxUpdateSubnetworkID == nil || wsc.TxUpdateSubnetworkID.IsEqual(m.server.cfg.DAG.SubnetworkID()) {
+			if wsc.txUpdateSubnetworkID == nil || wsc.txUpdateSubnetworkID.IsEqual(m.server.cfg.DAG.SubnetworkID()) {
 				if marshalledJSONVerboseFull == nil {
 					if ok := initializeMarshalledJSONVerbose(); !ok {
 						return
@@ -1302,9 +1302,9 @@ type wsClient struct {
 	// information about all new transactions.
 	verboseTxUpdates bool
 
-	// TxUpdateSubnetworkID specifies whether a client has requested to receive
+	// txUpdateSubnetworkID specifies whether a client has requested to receive
 	// new transaction information from a specific subnetwork.
-	TxUpdateSubnetworkID *subnetworkid.SubnetworkID
+	txUpdateSubnetworkID *subnetworkid.SubnetworkID
 
 	// addrRequests is a set of addresses the caller has requested to be
 	// notified about.  It is maintained here so all requests can be removed
@@ -1899,7 +1899,49 @@ func handleNotifyNewTransactions(wsc *wsClient, icmd interface{}) (interface{}, 
 		return nil, btcjson.ErrRPCInternal
 	}
 
-	wsc.verboseTxUpdates = cmd.Verbose != nil && *cmd.Verbose
+	isVerbose := cmd.Verbose != nil && *cmd.Verbose
+	if isVerbose == false && cmd.Subnetwork != nil {
+		return nil, &btcjson.RPCError{
+			Code:    btcjson.ErrRPCInvalidParameter,
+			Message: "Subnetwork switch is only allowed if verbose=true",
+		}
+	}
+
+	var subnetworkID *subnetworkid.SubnetworkID
+	if cmd.Subnetwork != nil {
+		var err error
+		subnetworkID, err = subnetworkid.NewFromStr(*cmd.Subnetwork)
+		if err != nil {
+			return nil, &btcjson.RPCError{
+				Code:    btcjson.ErrRPCInvalidParameter,
+				Message: "Subnetwork is malformed",
+			}
+		}
+	}
+
+	nodeSubnetworkID := wsc.server.cfg.DAG.SubnetworkID()
+	if nodeSubnetworkID.IsEqual(&wire.SubnetworkIDNative) && subnetworkID != nil {
+		return nil, &btcjson.RPCError{
+			Code:    btcjson.ErrRPCInvalidParameter,
+			Message: "Subnetwork switch is disabled when node is in Native subnetwork",
+		}
+	} else if !nodeSubnetworkID.IsEqual(&wire.SubnetworkIDSupportsAll) {
+		if subnetworkID == nil {
+			return nil, &btcjson.RPCError{
+				Code:    btcjson.ErrRPCInvalidParameter,
+				Message: "Subnetwork switch is required when node is partial",
+			}
+		}
+		if !nodeSubnetworkID.IsEqual(subnetworkID) {
+			return nil, &btcjson.RPCError{
+				Code:    btcjson.ErrRPCInvalidParameter,
+				Message: "Subnetwork must equal the node's subnetwork when the node is partial",
+			}
+		}
+	}
+
+	wsc.verboseTxUpdates = isVerbose
+	wsc.txUpdateSubnetworkID = subnetworkID
 	wsc.server.ntfnMgr.RegisterNewMempoolTxsUpdates(wsc)
 	return nil, nil
 }

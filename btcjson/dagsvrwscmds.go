@@ -43,7 +43,8 @@ func NewStopNotifyBlocksCmd() *StopNotifyBlocksCmd {
 
 // NotifyNewTransactionsCmd defines the notifyNewTransactions JSON-RPC command.
 type NotifyNewTransactionsCmd struct {
-	Verbose *bool `jsonrpcdefault:"false"`
+	Verbose    *bool `jsonrpcdefault:"false"`
+	Subnetwork *string
 }
 
 // NewNotifyNewTransactionsCmd returns a new instance which can be used to issue
