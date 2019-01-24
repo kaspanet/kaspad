@@ -217,7 +217,6 @@ func (m *CPUMiner) solveBlock(msgBlock *wire.MsgBlock, blockHeight int32,
 	if err != nil {
 		log.Errorf("Unexpected error while generating random "+
 			"extra nonce offset: %v", err)
-		enOffset = 0
 	}
 
 	// Update the extra nonce in the block template with the
