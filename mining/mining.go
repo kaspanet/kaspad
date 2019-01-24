@@ -494,7 +494,7 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 			if !ok {
 				gasUsage = 0
 			}
-			gasLimit, err := g.dag.GasLimit(&subnetworkID)
+			gasLimit, err := g.dag.SubnetworkStore.GasLimit(&subnetworkID)
 			if err != nil {
 				log.Errorf("Cannot get GAS limit for subnetwork %v", subnetworkID)
 				continue

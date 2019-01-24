@@ -4,12 +4,23 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+
 	"github.com/daglabs/btcd/util"
 
 	"github.com/daglabs/btcd/database"
 	"github.com/daglabs/btcd/util/subnetworkid"
 	"github.com/daglabs/btcd/wire"
 )
+
+type subnetworkStore struct {
+	db database.DB
+}
+
+func newSubnetworkStore(db database.DB) *subnetworkStore {
+	return &subnetworkStore{
+		db: db,
+	}
+}
 
 // registerSubnetworks scans a list of accepted transactions, singles out
 // subnetwork registry transactions, validates them, and registers a new
@@ -77,10 +88,10 @@ func txToSubnetworkID(tx *wire.MsgTx) (*subnetworkid.SubnetworkID, error) {
 
 // subnetwork returns a registered subnetwork. If the subnetwork does not exist
 // this method returns an error.
-func (dag *BlockDAG) subnetwork(subnetworkID *subnetworkid.SubnetworkID) (*subnetwork, error) {
+func (s *subnetworkStore) subnetwork(subnetworkID *subnetworkid.SubnetworkID) (*subnetwork, error) {
 	var sNet *subnetwork
 	var err error
-	dbErr := dag.db.View(func(dbTx database.Tx) error {
+	dbErr := s.db.View(func(dbTx database.Tx) error {
 		sNet, err = dbGetSubnetwork(dbTx, subnetworkID)
 		return nil
 	})
@@ -96,8 +107,8 @@ func (dag *BlockDAG) subnetwork(subnetworkID *subnetworkid.SubnetworkID) (*subne
 
 // GasLimit returns the gas limit of a registered subnetwork. If the subnetwork does not
 // exist this method returns an error.
-func (dag *BlockDAG) GasLimit(subnetworkID *subnetworkid.SubnetworkID) (uint64, error) {
-	sNet, err := dag.subnetwork(subnetworkID)
+func (s *subnetworkStore) GasLimit(subnetworkID *subnetworkid.SubnetworkID) (uint64, error) {
+	sNet, err := s.subnetwork(subnetworkID)
 	if err != nil {
 		return 0, err
 	}

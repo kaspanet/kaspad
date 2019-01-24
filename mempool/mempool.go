@@ -754,7 +754,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rateLimit, rejectDu
 	if msgTx.SubnetworkID == wire.SubnetworkIDSupportsAll {
 		return nil, nil, txRuleError(wire.RejectInvalid, "SubnetworkIDSupportsAll is not permited in transaction")
 	} else if msgTx.SubnetworkID != wire.SubnetworkIDNative {
-		gasLimit, err := mp.cfg.DAG.GasLimit(&msgTx.SubnetworkID)
+		gasLimit, err := mp.cfg.DAG.SubnetworkStore.GasLimit(&msgTx.SubnetworkID)
 		if err != nil {
 			return nil, nil, err
 		}

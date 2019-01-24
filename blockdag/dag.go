@@ -147,6 +147,8 @@ type BlockDAG struct {
 	notifications     []NotificationCallback
 
 	lastFinalityPoint *blockNode
+
+	SubnetworkStore *subnetworkStore
 }
 
 // HaveBlock returns whether or not the DAG instance has the block represented
@@ -1482,6 +1484,7 @@ func New(config *Config) (*BlockDAG, error) {
 		warningCaches:       newThresholdCaches(vbNumBits),
 		deploymentCaches:    newThresholdCaches(dagconfig.DefinedDeployments),
 		blockCount:          1,
+		SubnetworkStore:     newSubnetworkStore(config.DB),
 		subnetworkID:        config.SubnetworkID,
 	}
 

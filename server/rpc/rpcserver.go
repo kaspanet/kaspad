@@ -3398,7 +3398,7 @@ func verifyDAG(s *Server, level, depth int32) error {
 	if finishHeight < 0 {
 		finishHeight = 0
 	}
-	log.Infof("Verifying chain for %d blocks at level %d",
+	log.Infof("Verifying DAG for %d blocks at level %d",
 		s.cfg.DAG.Height()-finishHeight, level) //TODO: (Ori) This is probably wrong. Done only for compilation
 
 	currentHash := s.cfg.DAG.HighestTipHash()
@@ -3411,10 +3411,9 @@ func verifyDAG(s *Server, level, depth int32) error {
 			return err
 		}
 
-		// Level 1 does basic chain sanity checks.
+		// Level 1 does basic DAG sanity checks.
 		if level > 0 {
-			err := blockdag.CheckBlockSanity(block, s.cfg.DAGParams.PowLimit,
-				s.cfg.TimeSource, config.MainConfig().SubnetworkID)
+			err := s.cfg.DAG.CheckBlockSanity(block, s.cfg.DAGParams.PowLimit, s.cfg.TimeSource)
 			if err != nil {
 				log.Errorf("Verify is unable to validate "+
 					"block at hash %v height %d: %v",
@@ -3425,7 +3424,7 @@ func verifyDAG(s *Server, level, depth int32) error {
 
 		currentHash = *block.MsgBlock().Header.SelectedParentHash()
 	}
-	log.Infof("Chain verify completed successfully")
+	log.Infof("DAG verify completed successfully")
 
 	return nil
 }
