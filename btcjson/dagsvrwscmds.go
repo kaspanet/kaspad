@@ -52,9 +52,10 @@ type NotifyNewTransactionsCmd struct {
 //
 // The parameters which are pointers indicate they are optional.  Passing nil
 // for optional parameters will use the default value.
-func NewNotifyNewTransactionsCmd(verbose *bool) *NotifyNewTransactionsCmd {
+func NewNotifyNewTransactionsCmd(verbose *bool, subnetworkID *string) *NotifyNewTransactionsCmd {
 	return &NotifyNewTransactionsCmd{
-		Verbose: verbose,
+		Verbose:    verbose,
+		Subnetwork: subnetworkID,
 	}
 }
 
