@@ -283,7 +283,7 @@ func CheckTransactionSanity(tx *util.Tx, subnetworkID *subnetworkid.SubnetworkID
 // The flags modify the behavior of this function as follows:
 //  - BFNoPoWCheck: The check to ensure the block hash is less than the target
 //    difficulty is not performed.
-func checkProofOfWork(header *wire.BlockHeader, powLimit *big.Int, flags BehaviorFlags) error {
+func (dag *BlockDAG) checkProofOfWork(header *wire.BlockHeader, flags BehaviorFlags) error {
 	// The target difficulty must be larger than zero.
 	target := CompactToBig(header.Bits)
 	if target.Sign() <= 0 {
@@ -293,9 +293,9 @@ func checkProofOfWork(header *wire.BlockHeader, powLimit *big.Int, flags Behavio
 	}
 
 	// The target difficulty must be less than the maximum allowed.
-	if target.Cmp(powLimit) > 0 {
+	if target.Cmp(dag.dagParams.PowLimit) > 0 {
 		str := fmt.Sprintf("block target difficulty of %064x is "+
-			"higher than max of %064x", target, powLimit)
+			"higher than max of %064x", target, dag.dagParams.PowLimit)
 		return ruleError(ErrUnexpectedDifficulty, str)
 	}
 
@@ -399,11 +399,11 @@ func CountP2SHSigOps(tx *util.Tx, isCoinBaseTx bool, utxoSet UTXOSet) (int, erro
 //
 // The flags do not modify the behavior of this function directly, however they
 // are needed to pass along to checkProofOfWork.
-func checkBlockHeaderSanity(header *wire.BlockHeader, powLimit *big.Int, timeSource MedianTimeSource, flags BehaviorFlags) error {
+func (dag *BlockDAG) checkBlockHeaderSanity(header *wire.BlockHeader, flags BehaviorFlags) error {
 	// Ensure the proof of work bits in the block header is in min/max range
 	// and the block hash is less than the target value described by the
 	// bits.
-	err := checkProofOfWork(header, powLimit, flags)
+	err := dag.checkProofOfWork(header, flags)
 	if err != nil {
 		return err
 	}
@@ -425,7 +425,7 @@ func checkBlockHeaderSanity(header *wire.BlockHeader, powLimit *big.Int, timeSou
 	}
 
 	// Ensure the block time is not too far in the future.
-	maxTimestamp := timeSource.AdjustedTime().Add(time.Second *
+	maxTimestamp := dag.timeSource.AdjustedTime().Add(time.Second *
 		MaxTimeOffsetSeconds)
 	if header.Timestamp.After(maxTimestamp) {
 		str := fmt.Sprintf("block timestamp of %v is too far in the "+
@@ -456,12 +456,11 @@ func checkBlockParentsOrder(header *wire.BlockHeader) error {
 //
 // The flags do not modify the behavior of this function directly, however they
 // are needed to pass along to checkBlockHeaderSanity.
-func (dag *BlockDAG) checkBlockSanity(block *util.Block, powLimit *big.Int, timeSource MedianTimeSource,
-	flags BehaviorFlags) error {
+func (dag *BlockDAG) checkBlockSanity(block *util.Block, flags BehaviorFlags) error {
 
 	msgBlock := block.MsgBlock()
 	header := &msgBlock.Header
-	err := checkBlockHeaderSanity(header, powLimit, timeSource, flags)
+	err := dag.checkBlockHeaderSanity(header, flags)
 	if err != nil {
 		return err
 	}
@@ -582,7 +581,7 @@ func (dag *BlockDAG) checkBlockSanity(block *util.Block, powLimit *big.Int, time
 		if msgTx.SubnetworkID != wire.SubnetworkIDNative && msgTx.SubnetworkID != wire.SubnetworkIDRegistry {
 			gasUsageInSubnetwork := gasUsageInAllSubnetworks[msgTx.SubnetworkID]
 			gasUsageInSubnetwork += msgTx.Gas
-			if gasUsageInSubnetwork < gasUsageInAllSubnetworks[msgTx.SubnetworkID] { // protect form overflows
+			if gasUsageInSubnetwork < gasUsageInAllSubnetworks[msgTx.SubnetworkID] { // protect from overflows
 				str := fmt.Sprintf("Block gas usage in subnetwork with ID %s has overflown", msgTx.SubnetworkID)
 				return ruleError(ErrInvalidGas, str)
 			}
@@ -607,7 +606,7 @@ func (dag *BlockDAG) checkBlockSanity(block *util.Block, powLimit *big.Int, time
 func (dag *BlockDAG) CheckBlockSanity(block *util.Block, powLimit *big.Int,
 	timeSource MedianTimeSource) error {
 
-	return dag.checkBlockSanity(block, powLimit, timeSource, BFNone)
+	return dag.checkBlockSanity(block, BFNone)
 }
 
 // ExtractCoinbaseHeight attempts to extract the height of the block from the
@@ -1135,7 +1134,7 @@ func (dag *BlockDAG) CheckConnectBlockTemplate(block *util.Block) error {
 		return ruleError(ErrParentBlockNotCurrentTips, str)
 	}
 
-	err := dag.checkBlockSanity(block, dag.dagParams.PowLimit, dag.timeSource, flags)
+	err := dag.checkBlockSanity(block, flags)
 	if err != nil {
 		return err
 	}
