@@ -836,6 +836,10 @@ func (m *wsNotificationManager) notifyForNewTx(clients map[chan struct{}]*wsClie
 		return
 	}
 
+	// To avoid unnecessary marshalling of verbose transactions, only initialize
+	// marshalledJSONVerboseFull and marshalledJSONVerbosePartial if required.
+	// Note: both are initialized at the same time
+	// Note: for simplicity's sake, this operation modifies mtx in place
 	var marshalledJSONVerboseFull []byte
 	var marshalledJSONVerbosePartial []byte
 	initializeMarshalledJSONVerbose := func() bool {
@@ -855,13 +859,17 @@ func (m *wsNotificationManager) notifyForNewTx(clients map[chan struct{}]*wsClie
 			return marshalledJSONVerbose, true
 		}
 
+		// First, build the given mtx for a Full version of the transaction
 		var ok bool
 		marshalledJSONVerboseFull, ok = build()
 		if !ok {
 			return false
 		}
 
+		// Second, modify the given mtx to make it partial
 		mtx.Payload = []byte{}
+
+		// Third, build again, now with the modified mtx, for a Partial version
 		marshalledJSONVerbosePartial, ok = build()
 		if !ok {
 			return false
