@@ -432,7 +432,7 @@ func (sp *Peer) OnVersion(_ *peer.Peer, msg *wire.MsgVersion) {
 			}
 
 			// Mark the address as a known good address.
-			addrManager.Good(sp.NA())
+			addrManager.Good(sp.NA(), &msg.SubnetworkID)
 		}
 	}
 

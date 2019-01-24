@@ -7,25 +7,33 @@ package addrmgr
 import (
 	"time"
 
+	"github.com/daglabs/btcd/util/subnetworkid"
+
 	"github.com/daglabs/btcd/wire"
 )
 
 // KnownAddress tracks information about a known network address that is used
 // to determine how viable an address is.
 type KnownAddress struct {
-	na          *wire.NetAddress
-	srcAddr     *wire.NetAddress
-	attempts    int
-	lastattempt time.Time
-	lastsuccess time.Time
-	tried       bool
-	refs        int // reference count of new buckets
+	na           *wire.NetAddress
+	srcAddr      *wire.NetAddress
+	attempts     int
+	lastattempt  time.Time
+	lastsuccess  time.Time
+	tried        bool
+	refs         int // reference count of new buckets
+	subnetworkID *subnetworkid.SubnetworkID
 }
 
 // NetAddress returns the underlying wire.NetAddress associated with the
 // known address.
 func (ka *KnownAddress) NetAddress() *wire.NetAddress {
 	return ka.na
+}
+
+// SubnetworkID returns the subnetwork ID of the known address.
+func (ka *KnownAddress) SubnetworkID() *subnetworkid.SubnetworkID {
+	return ka.subnetworkID
 }
 
 // LastAttempt returns the last time the known address was attempted.
