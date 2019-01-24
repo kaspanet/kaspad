@@ -1917,23 +1917,25 @@ func handleNotifyNewTransactions(wsc *wsClient, icmd interface{}) (interface{}, 
 		}
 	}
 
-	nodeSubnetworkID := wsc.server.cfg.DAG.SubnetworkID()
-	if nodeSubnetworkID.IsEqual(&wire.SubnetworkIDNative) && subnetworkID != nil {
-		return nil, &btcjson.RPCError{
-			Code:    btcjson.ErrRPCInvalidParameter,
-			Message: "Subnetwork switch is disabled when node is in Native subnetwork",
-		}
-	} else if !nodeSubnetworkID.IsEqual(&wire.SubnetworkIDSupportsAll) {
-		if subnetworkID == nil {
+	if isVerbose {
+		nodeSubnetworkID := wsc.server.cfg.DAG.SubnetworkID()
+		if nodeSubnetworkID.IsEqual(&wire.SubnetworkIDNative) && subnetworkID != nil {
 			return nil, &btcjson.RPCError{
 				Code:    btcjson.ErrRPCInvalidParameter,
-				Message: "Subnetwork switch is required when node is partial",
+				Message: "Subnetwork switch is disabled when node is in Native subnetwork",
 			}
-		}
-		if !nodeSubnetworkID.IsEqual(subnetworkID) {
-			return nil, &btcjson.RPCError{
-				Code:    btcjson.ErrRPCInvalidParameter,
-				Message: "Subnetwork must equal the node's subnetwork when the node is partial",
+		} else if !nodeSubnetworkID.IsEqual(&wire.SubnetworkIDSupportsAll) {
+			if subnetworkID == nil {
+				return nil, &btcjson.RPCError{
+					Code:    btcjson.ErrRPCInvalidParameter,
+					Message: "Subnetwork switch is required when node is partial",
+				}
+			}
+			if !nodeSubnetworkID.IsEqual(subnetworkID) {
+				return nil, &btcjson.RPCError{
+					Code:    btcjson.ErrRPCInvalidParameter,
+					Message: "Subnetwork must equal the node's subnetwork when the node is partial",
+				}
 			}
 		}
 	}
