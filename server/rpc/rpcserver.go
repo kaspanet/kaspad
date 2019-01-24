@@ -3413,8 +3413,7 @@ func verifyDAG(s *Server, level, depth int32) error {
 
 		// Level 1 does basic chain sanity checks.
 		if level > 0 {
-			err := s.cfg.DAG.CheckBlockSanity(block, s.cfg.DAGParams.PowLimit, s.cfg.TimeSource,
-				config.MainConfig().SubnetworkID)
+			err := s.cfg.DAG.CheckBlockSanity(block, s.cfg.DAGParams.PowLimit, s.cfg.TimeSource)
 			if err != nil {
 				log.Errorf("Verify is unable to validate "+
 					"block at hash %v height %d: %v",

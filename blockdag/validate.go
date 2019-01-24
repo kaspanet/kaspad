@@ -457,7 +457,7 @@ func checkBlockParentsOrder(header *wire.BlockHeader) error {
 // The flags do not modify the behavior of this function directly, however they
 // are needed to pass along to checkBlockHeaderSanity.
 func (dag *BlockDAG) checkBlockSanity(block *util.Block, powLimit *big.Int, timeSource MedianTimeSource,
-	subnetworkID *subnetworkid.SubnetworkID, flags BehaviorFlags) error {
+	flags BehaviorFlags) error {
 
 	msgBlock := block.MsgBlock()
 	header := &msgBlock.Header
@@ -513,7 +513,7 @@ func (dag *BlockDAG) checkBlockSanity(block *util.Block, powLimit *big.Int, time
 	// Do some preliminary checks on each transaction to ensure they are
 	// sane before continuing.
 	for _, tx := range transactions {
-		err := CheckTransactionSanity(tx, subnetworkID)
+		err := CheckTransactionSanity(tx, dag.subnetworkID)
 		if err != nil {
 			return err
 		}
@@ -600,9 +600,9 @@ func (dag *BlockDAG) checkBlockSanity(block *util.Block, powLimit *big.Int, time
 // CheckBlockSanity performs some preliminary checks on a block to ensure it is
 // sane before continuing with block processing.  These checks are context free.
 func (dag *BlockDAG) CheckBlockSanity(block *util.Block, powLimit *big.Int,
-	timeSource MedianTimeSource, subnetworkID *subnetworkid.SubnetworkID) error {
+	timeSource MedianTimeSource) error {
 
-	return dag.checkBlockSanity(block, powLimit, timeSource, subnetworkID, BFNone)
+	return dag.checkBlockSanity(block, powLimit, timeSource, BFNone)
 }
 
 // ExtractCoinbaseHeight attempts to extract the height of the block from the
@@ -1130,7 +1130,7 @@ func (dag *BlockDAG) CheckConnectBlockTemplate(block *util.Block) error {
 		return ruleError(ErrParentBlockNotCurrentTips, str)
 	}
 
-	err := dag.checkBlockSanity(block, dag.dagParams.PowLimit, dag.timeSource, dag.SubnetworkID(), flags)
+	err := dag.checkBlockSanity(block, dag.dagParams.PowLimit, dag.timeSource, flags)
 	if err != nil {
 		return err
 	}
