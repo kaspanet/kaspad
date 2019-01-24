@@ -15,6 +15,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/daglabs/btcd/util/subnetworkid"
 	"io"
 	"sync"
 	"time"
@@ -835,31 +836,57 @@ func (m *wsNotificationManager) notifyForNewTx(clients map[chan struct{}]*wsClie
 		return
 	}
 
-	var verboseNtfn *btcjson.TxAcceptedVerboseNtfn
-	var marshalledJSONVerbose []byte
+	var marshalledJSONVerboseFull []byte
+	var marshalledJSONVerbosePartial []byte
+	initializeMarshalledJSONVerbose := func() bool {
+		net := m.server.cfg.DAGParams
+		build := func() ([]byte, bool) {
+			rawTx, err := createTxRawResult(net, mtx, txIDStr, nil, "", 0, 0, nil)
+			if err != nil {
+				return nil, false
+			}
+			verboseNtfn := btcjson.NewTxAcceptedVerboseNtfn(*rawTx)
+			marshalledJSONVerbose, err := btcjson.MarshalCmd(nil, verboseNtfn)
+			if err != nil {
+				log.Errorf("Failed to marshal verbose tx notification: %s", err.Error())
+				return nil, false
+			}
+
+			return marshalledJSONVerbose, true
+		}
+
+		var ok bool
+		marshalledJSONVerboseFull, ok = build()
+		if !ok {
+			return false
+		}
+
+		mtx.Payload = []byte{}
+		marshalledJSONVerbosePartial, ok = build()
+		if !ok {
+			return false
+		}
+
+		return true
+	}
+
 	for _, wsc := range clients {
 		if wsc.verboseTxUpdates {
-			if marshalledJSONVerbose != nil {
-				wsc.QueueNotification(marshalledJSONVerbose)
-				continue
+			if wsc.TxUpdateSubnetworkID == nil || wsc.TxUpdateSubnetworkID.IsEqual(m.server.cfg.DAG.SubnetworkID()) {
+				if marshalledJSONVerboseFull == nil {
+					if ok := initializeMarshalledJSONVerbose(); !ok {
+						return
+					}
+				}
+				wsc.QueueNotification(marshalledJSONVerboseFull)
+			} else {
+				if marshalledJSONVerbosePartial == nil {
+					if ok := initializeMarshalledJSONVerbose(); !ok {
+						return
+					}
+				}
+				wsc.QueueNotification(marshalledJSONVerbosePartial)
 			}
-
-			net := m.server.cfg.DAGParams
-			rawTx, err := createTxRawResult(net, mtx, txIDStr, nil,
-				"", 0, 0, nil)
-			if err != nil {
-				return
-			}
-
-			verboseNtfn = btcjson.NewTxAcceptedVerboseNtfn(*rawTx)
-			marshalledJSONVerbose, err = btcjson.MarshalCmd(nil,
-				verboseNtfn)
-			if err != nil {
-				log.Errorf("Failed to marshal verbose tx "+
-					"notification: %s", err.Error())
-				return
-			}
-			wsc.QueueNotification(marshalledJSONVerbose)
 		} else {
 			wsc.QueueNotification(marshalledJSON)
 		}
@@ -1274,6 +1301,10 @@ type wsClient struct {
 	// verboseTxUpdates specifies whether a client has requested verbose
 	// information about all new transactions.
 	verboseTxUpdates bool
+
+	// TxUpdateSubnetworkID specifies whether a client has requested to receive
+	// new transaction information from a specific subnetwork.
+	TxUpdateSubnetworkID *subnetworkid.SubnetworkID
 
 	// addrRequests is a set of addresses the caller has requested to be
 	// notified about.  It is maintained here so all requests can be removed
