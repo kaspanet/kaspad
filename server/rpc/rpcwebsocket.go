@@ -880,7 +880,7 @@ func (m *wsNotificationManager) notifyForNewTx(clients map[chan struct{}]*wsClie
 			}
 
 			nodeSubnetworkID := m.server.cfg.DAG.SubnetworkID()
-			if wsc.txUpdateSubnetworkID == nil || wsc.txUpdateSubnetworkID.IsEqual(nodeSubnetworkID) {
+			if wsc.subnetworkIDForTxUpdates == nil || wsc.subnetworkIDForTxUpdates.IsEqual(nodeSubnetworkID) {
 				wsc.QueueNotification(marshalledJSONVerboseFull)
 			} else {
 				wsc.QueueNotification(marshalledJSONVerbosePartial)
@@ -1300,9 +1300,9 @@ type wsClient struct {
 	// information about all new transactions.
 	verboseTxUpdates bool
 
-	// txUpdateSubnetworkID specifies whether a client has requested to receive
+	// subnetworkIDForTxUpdates specifies whether a client has requested to receive
 	// new transaction information from a specific subnetwork.
-	txUpdateSubnetworkID *subnetworkid.SubnetworkID
+	subnetworkIDForTxUpdates *subnetworkid.SubnetworkID
 
 	// addrRequests is a set of addresses the caller has requested to be
 	// notified about.  It is maintained here so all requests can be removed
@@ -1939,7 +1939,7 @@ func handleNotifyNewTransactions(wsc *wsClient, icmd interface{}) (interface{}, 
 	}
 
 	wsc.verboseTxUpdates = isVerbose
-	wsc.txUpdateSubnetworkID = subnetworkID
+	wsc.subnetworkIDForTxUpdates = subnetworkID
 	wsc.server.ntfnMgr.RegisterNewMempoolTxsUpdates(wsc)
 	return nil, nil
 }
