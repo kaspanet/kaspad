@@ -581,7 +581,12 @@ func (dag *BlockDAG) checkBlockSanity(block *util.Block, powLimit *big.Int, time
 		// Therefore - no need to check them here.
 		if msgTx.SubnetworkID != wire.SubnetworkIDNative && msgTx.SubnetworkID != wire.SubnetworkIDRegistry {
 			gasUsageInSubnetwork := gasUsageInAllSubnetworks[msgTx.SubnetworkID]
-			gasUsageInAllSubnetworks[msgTx.SubnetworkID] = gasUsageInSubnetwork + msgTx.Gas
+			gasUsageInSubnetwork += msgTx.Gas
+			if gasUsageInSubnetwork < gasUsageInAllSubnetworks[msgTx.SubnetworkID] { // protect form overflows
+				str := fmt.Sprintf("Block gas usage in subnetwork with ID %s has overflown", msgTx.SubnetworkID)
+				return ruleError(ErrInvalidGas, str)
+			}
+			gasUsageInAllSubnetworks[msgTx.SubnetworkID] = gasUsageInSubnetwork
 
 			gasLimit, err := dag.SubnetworkStore.GasLimit(&msgTx.SubnetworkID)
 			if err != nil {
