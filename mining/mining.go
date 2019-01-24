@@ -7,7 +7,6 @@ package mining
 import (
 	"container/heap"
 	"fmt"
-	"math/rand"
 	"sort"
 	"time"
 
@@ -396,9 +395,10 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 	// ensure the transaction is not a duplicate transaction (paying the
 	// same value to the same public key address would otherwise be an
 	// identical transaction for block version 1).
-	seed := rand.NewSource(time.Now().UnixNano())
-	randomGenerator := rand.New(seed)
-	extraNonce := randomGenerator.Uint64()
+	extraNonce, err := wire.RandomUint64()
+	if err != nil {
+		return nil, err
+	}
 	coinbaseScript, err := standardCoinbaseScript(nextBlockHeight, extraNonce)
 	if err != nil {
 		return nil, err
