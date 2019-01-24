@@ -601,8 +601,9 @@ var helpDescsEnUS = map[string]string{
 	"stopNotifyBlocks--synopsis": "Cancel registered notifications for whenever a block is connected or disconnected from the main (best) chain.",
 
 	// NotifyNewTransactionsCmd help.
-	"notifyNewTransactions--synopsis": "Send either a txaccepted or a txacceptedverbose notification when a new transaction is accepted into the mempool.",
-	"notifyNewTransactions-verbose":   "Specifies which type of notification to receive. If verbose is true, then the caller receives txacceptedverbose, otherwise the caller receives txaccepted",
+	"notifyNewTransactions--synopsis":  "Send either a txaccepted or a txacceptedverbose notification when a new transaction is accepted into the mempool.",
+	"notifyNewTransactions-verbose":    "Specifies which type of notification to receive. If verbose is true, then the caller receives txacceptedverbose, otherwise the caller receives txaccepted",
+	"notifyNewTransactions-subnetwork": "Specifies which subnetwork to receive full transactions of. Requires verbose=true. Not allowed when node subnetwork is Native. Must be equal to node subnetwork when node is partial.",
 
 	// StopNotifyNewTransactionsCmd help.
 	"stopNotifyNewTransactions--synopsis": "Stop sending either a txaccepted or a txacceptedverbose notification when a new transaction is accepted into the mempool.",

@@ -69,7 +69,7 @@ func TestDAGSvrWsCmds(t *testing.T) {
 				return btcjson.NewCmd("notifyNewTransactions")
 			},
 			staticCmd: func() interface{} {
-				return btcjson.NewNotifyNewTransactionsCmd(nil)
+				return btcjson.NewNotifyNewTransactionsCmd(nil, nil)
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"notifyNewTransactions","params":[],"id":1}`,
 			unmarshalled: &btcjson.NotifyNewTransactionsCmd{
@@ -82,11 +82,25 @@ func TestDAGSvrWsCmds(t *testing.T) {
 				return btcjson.NewCmd("notifyNewTransactions", true)
 			},
 			staticCmd: func() interface{} {
-				return btcjson.NewNotifyNewTransactionsCmd(btcjson.Bool(true))
+				return btcjson.NewNotifyNewTransactionsCmd(btcjson.Bool(true), nil)
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"notifyNewTransactions","params":[true],"id":1}`,
 			unmarshalled: &btcjson.NotifyNewTransactionsCmd{
 				Verbose: btcjson.Bool(true),
+			},
+		},
+		{
+			name: "notifyNewTransactions optional 2",
+			newCmd: func() (interface{}, error) {
+				return btcjson.NewCmd("notifyNewTransactions", true, "0000000000000000000000000000000000000123")
+			},
+			staticCmd: func() interface{} {
+				return btcjson.NewNotifyNewTransactionsCmd(btcjson.Bool(true), btcjson.String("0000000000000000000000000000000000000123"))
+			},
+			marshalled: `{"jsonrpc":"1.0","method":"notifyNewTransactions","params":[true,"0000000000000000000000000000000000000123"],"id":1}`,
+			unmarshalled: &btcjson.NotifyNewTransactionsCmd{
+				Verbose:    btcjson.Bool(true),
+				Subnetwork: btcjson.String("0000000000000000000000000000000000000123"),
 			},
 		},
 		{
