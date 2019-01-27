@@ -2313,7 +2313,7 @@ func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params
 		services &^= wire.SFNodeCF
 	}
 
-	amgr := addrmgr.New(config.MainConfig().DataDir, serverutils.BTCDLookup)
+	amgr := addrmgr.New(config.MainConfig().DataDir, serverutils.BTCDLookup, config.MainConfig().SubnetworkID)
 
 	var listeners []net.Listener
 	var nat serverutils.NAT
@@ -2403,6 +2403,7 @@ func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params
 		TimeSource:   s.TimeSource,
 		SigCache:     s.SigCache,
 		IndexManager: indexManager,
+		SubnetworkID: config.MainConfig().SubnetworkID,
 	})
 	if err != nil {
 		return nil, err
