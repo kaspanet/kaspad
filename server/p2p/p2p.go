@@ -474,7 +474,7 @@ func (sp *Peer) OnMemPool(_ *peer.Peer, msg *wire.MsgMemPool) {
 		// or only the transactions that match the filter when there is
 		// one.
 		if !sp.filter.IsLoaded() || sp.filter.MatchTxAndUpdate(txDesc.Tx) {
-			iv := wire.NewInvVect(wire.InvTypeTx, txDesc.Tx.ID())
+			iv := wire.NewInvVect(wire.InvTypeTx, (*daghash.Hash)(txDesc.Tx.ID()))
 			invMsg.AddInvVect(iv)
 			if len(invMsg.InvList)+1 > wire.MaxInvPerMsg {
 				break
@@ -503,7 +503,7 @@ func (sp *Peer) OnTx(_ *peer.Peer, msg *wire.MsgTx) {
 	// Convert the raw MsgTx to a util.Tx which provides some convenience
 	// methods and things such as hash caching.
 	tx := util.NewTx(msg)
-	iv := wire.NewInvVect(wire.InvTypeTx, tx.ID())
+	iv := wire.NewInvVect(wire.InvTypeTx, (*daghash.Hash)(tx.ID()))
 	sp.AddKnownInventory(iv)
 
 	// Queue the transaction up to be handled by the sync manager and
@@ -619,7 +619,7 @@ func (sp *Peer) OnGetData(_ *peer.Peer, msg *wire.MsgGetData) {
 		var err error
 		switch iv.Type {
 		case wire.InvTypeTx:
-			err = sp.server.pushTxMsg(sp, &iv.Hash, c, waitChan)
+			err = sp.server.pushTxMsg(sp, (*daghash.TxID)(&iv.Hash), c, waitChan)
 		case wire.InvTypeBlock:
 			err = sp.server.pushBlockMsg(sp, &iv.Hash, c, waitChan)
 		case wire.InvTypeFilteredBlock:
@@ -1217,23 +1217,23 @@ func (s *Server) RemoveRebroadcastInventory(iv *wire.InvVect) {
 // passed transactions to all connected peers.
 func (s *Server) RelayTransactions(txns []*mempool.TxDesc) {
 	for _, txD := range txns {
-		iv := wire.NewInvVect(wire.InvTypeTx, txD.Tx.ID())
+		iv := wire.NewInvVect(wire.InvTypeTx, (*daghash.Hash)(txD.Tx.ID()))
 		s.RelayInventory(iv, txD)
 	}
 }
 
 // pushTxMsg sends a tx message for the provided transaction hash to the
 // connected peer.  An error is returned if the transaction hash is not known.
-func (s *Server) pushTxMsg(sp *Peer, hash *daghash.Hash, doneChan chan<- struct{},
+func (s *Server) pushTxMsg(sp *Peer, txID *daghash.TxID, doneChan chan<- struct{},
 	waitChan <-chan struct{}) error {
 
 	// Attempt to fetch the requested transaction from the pool.  A
 	// call could be made to check for existence first, but simply trying
 	// to fetch a missing transaction results in the same behavior.
-	tx, err := s.TxMemPool.FetchTransaction(hash)
+	tx, err := s.TxMemPool.FetchTransaction(txID)
 	if err != nil {
 		peerLog.Tracef("Unable to fetch tx %v from transaction "+
-			"pool: %v", hash, err)
+			"pool: %v", txID, err)
 
 		if doneChan != nil {
 			doneChan <- struct{}{}
@@ -2862,6 +2862,6 @@ func (s *Server) TransactionConfirmed(tx *util.Tx) {
 		return
 	}
 
-	iv := wire.NewInvVect(wire.InvTypeTx, tx.ID())
+	iv := wire.NewInvVect(wire.InvTypeTx, (*daghash.Hash)(tx.ID()))
 	s.RemoveRebroadcastInventory(iv)
 }

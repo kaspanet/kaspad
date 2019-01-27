@@ -171,8 +171,8 @@ func putAcceptingBlocksEntry(target []byte, includingBlockID uint32) {
 	byteOrder.PutUint32(target, includingBlockID)
 }
 
-func dbPutIncludingBlocksEntry(dbTx database.Tx, txHash *daghash.Hash, blockID uint32, serializedData []byte) error {
-	bucket, err := dbTx.Metadata().Bucket(includingBlocksIndexKey).CreateBucketIfNotExists(txHash[:])
+func dbPutIncludingBlocksEntry(dbTx database.Tx, txID *daghash.TxID, blockID uint32, serializedData []byte) error {
+	bucket, err := dbTx.Metadata().Bucket(includingBlocksIndexKey).CreateBucketIfNotExists(txID[:])
 	if err != nil {
 		return err
 	}
@@ -181,8 +181,8 @@ func dbPutIncludingBlocksEntry(dbTx database.Tx, txHash *daghash.Hash, blockID u
 	return bucket.Put(blockIDBytes, serializedData)
 }
 
-func dbPutAcceptingBlocksEntry(dbTx database.Tx, txHash *daghash.Hash, blockID uint32, serializedData []byte) error {
-	bucket, err := dbTx.Metadata().Bucket(acceptingBlocksIndexKey).CreateBucketIfNotExists(txHash[:])
+func dbPutAcceptingBlocksEntry(dbTx database.Tx, txID *daghash.TxID, blockID uint32, serializedData []byte) error {
+	bucket, err := dbTx.Metadata().Bucket(acceptingBlocksIndexKey).CreateBucketIfNotExists(txID[:])
 	if err != nil {
 		return err
 	}
@@ -198,14 +198,14 @@ func dbPutAcceptingBlocksEntry(dbTx database.Tx, txHash *daghash.Hash, blockID u
 //
 // P.S Because the transaction can be found in multiple blocks, this function arbitarily
 // returns the first block region that is stored in the txindex.
-func dbFetchFirstTxRegion(dbTx database.Tx, txHash *daghash.Hash) (*database.BlockRegion, error) {
+func dbFetchFirstTxRegion(dbTx database.Tx, txID *daghash.TxID) (*database.BlockRegion, error) {
 	// Load the record from the database and return now if it doesn't exist.
-	txBucket := dbTx.Metadata().Bucket(includingBlocksIndexKey).Bucket(txHash[:])
+	txBucket := dbTx.Metadata().Bucket(includingBlocksIndexKey).Bucket(txID[:])
 	if txBucket == nil {
 		return nil, database.Error{
 			ErrorCode: database.ErrCorruption,
 			Description: fmt.Sprintf("No block region"+
-				"was found for %s", txHash),
+				"was found for %s", txID),
 		}
 	}
 	cursor := txBucket.Cursor()
@@ -213,7 +213,7 @@ func dbFetchFirstTxRegion(dbTx database.Tx, txHash *daghash.Hash) (*database.Blo
 		return nil, database.Error{
 			ErrorCode: database.ErrCorruption,
 			Description: fmt.Sprintf("No block region"+
-				"was found for %s", txHash),
+				"was found for %s", txID),
 		}
 	}
 	blockIDBytes := cursor.Key()
@@ -227,7 +227,7 @@ func dbFetchFirstTxRegion(dbTx database.Tx, txHash *daghash.Hash) (*database.Blo
 		return nil, database.Error{
 			ErrorCode: database.ErrCorruption,
 			Description: fmt.Sprintf("corrupt transaction index "+
-				"entry for %s", txHash),
+				"entry for %s", txID),
 		}
 	}
 
@@ -237,7 +237,7 @@ func dbFetchFirstTxRegion(dbTx database.Tx, txHash *daghash.Hash) (*database.Blo
 		return nil, database.Error{
 			ErrorCode: database.ErrCorruption,
 			Description: fmt.Sprintf("corrupt transaction index "+
-				"entry for %s: %v", txHash, err),
+				"entry for %s: %v", txID, err),
 		}
 	}
 
@@ -449,11 +449,11 @@ func (idx *TxIndex) ConnectBlock(dbTx database.Tx, block *util.Block, _ *blockda
 // will be returned for the both the entry and the error.
 //
 // This function is safe for concurrent access.
-func (idx *TxIndex) TxFirstBlockRegion(hash *daghash.Hash) (*database.BlockRegion, error) {
+func (idx *TxIndex) TxFirstBlockRegion(txID *daghash.TxID) (*database.BlockRegion, error) {
 	var region *database.BlockRegion
 	err := idx.db.View(func(dbTx database.Tx) error {
 		var err error
-		region, err = dbFetchFirstTxRegion(dbTx, hash)
+		region, err = dbFetchFirstTxRegion(dbTx, txID)
 		return err
 	})
 	return region, err
@@ -499,23 +499,23 @@ func dbFetchTxBlocks(dbTx database.Tx, txHash *daghash.Hash) ([]daghash.Hash, er
 }
 
 // BlockThatAcceptedTx returns the hash of the block where the transaction got accepted (from the virtual block point of view)
-func (idx *TxIndex) BlockThatAcceptedTx(dag *blockdag.BlockDAG, txHash *daghash.Hash) (*daghash.Hash, error) {
+func (idx *TxIndex) BlockThatAcceptedTx(dag *blockdag.BlockDAG, txID *daghash.TxID) (*daghash.Hash, error) {
 	var acceptingBlock *daghash.Hash
 	err := idx.db.View(func(dbTx database.Tx) error {
 		var err error
-		acceptingBlock, err = dbFetchTxAcceptingBlock(dbTx, txHash, dag)
+		acceptingBlock, err = dbFetchTxAcceptingBlock(dbTx, txID, dag)
 		return err
 	})
 	return acceptingBlock, err
 }
 
-func dbFetchTxAcceptingBlock(dbTx database.Tx, txHash *daghash.Hash, dag *blockdag.BlockDAG) (*daghash.Hash, error) {
-	bucket := dbTx.Metadata().Bucket(acceptingBlocksIndexKey).Bucket(txHash[:])
+func dbFetchTxAcceptingBlock(dbTx database.Tx, txID *daghash.TxID, dag *blockdag.BlockDAG) (*daghash.Hash, error) {
+	bucket := dbTx.Metadata().Bucket(acceptingBlocksIndexKey).Bucket(txID[:])
 	if bucket == nil {
 		return nil, database.Error{
 			ErrorCode: database.ErrCorruption,
 			Description: fmt.Sprintf("No accepting blocks "+
-				"were found for %s", txHash),
+				"were found for %s", txID),
 		}
 	}
 	cursor := bucket.Cursor()
@@ -523,7 +523,7 @@ func dbFetchTxAcceptingBlock(dbTx database.Tx, txHash *daghash.Hash, dag *blockd
 		return nil, database.Error{
 			ErrorCode: database.ErrCorruption,
 			Description: fmt.Sprintf("No accepting blocks "+
-				"were found for %s", txHash),
+				"were found for %s", txID),
 		}
 	}
 	for ; cursor.Key() != nil; cursor.Next() {

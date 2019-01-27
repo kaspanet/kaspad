@@ -414,12 +414,12 @@ func TestFilterBloomMatch(t *testing.T) {
 
 	f = bloom.NewFilter(10, 0, 0.000001, wire.BloomUpdateAll)
 	inputStr = "90c122d70786e899529d71dbeba91ba216982fb6ba58f3bdaab65e73b7e9260b"
-	hash, err = daghash.NewHashFromStr(inputStr)
+	txID, err := daghash.NewTxIDFromStr(inputStr)
 	if err != nil {
 		t.Errorf("TestFilterBloomMatch NewHashFromStr failed: %v\n", err)
 		return
 	}
-	outpoint := wire.NewOutPoint(hash, 0)
+	outpoint := wire.NewOutPoint(txID, 0)
 	f.AddOutPoint(outpoint)
 	if !f.MatchTxAndUpdate(tx) {
 		t.Errorf("TestFilterBloomMatch didn't match outpoint %s", inputStr)
@@ -451,12 +451,12 @@ func TestFilterBloomMatch(t *testing.T) {
 
 	f = bloom.NewFilter(10, 0, 0.000001, wire.BloomUpdateAll)
 	inputStr = "90c122d70786e899529d71dbeba91ba216982fb6ba58f3bdaab65e73b7e9260b"
-	hash, err = daghash.NewHashFromStr(inputStr)
+	txID, err = daghash.NewTxIDFromStr(inputStr)
 	if err != nil {
 		t.Errorf("TestFilterBloomMatch NewHashFromStr failed: %v\n", err)
 		return
 	}
-	outpoint = wire.NewOutPoint(hash, 1)
+	outpoint = wire.NewOutPoint(txID, 1)
 	f.AddOutPoint(outpoint)
 	if f.MatchTxAndUpdate(tx) {
 		t.Errorf("TestFilterBloomMatch matched outpoint %s", inputStr)
@@ -464,12 +464,12 @@ func TestFilterBloomMatch(t *testing.T) {
 
 	f = bloom.NewFilter(10, 0, 0.000001, wire.BloomUpdateAll)
 	inputStr = "000000d70786e899529d71dbeba91ba216982fb6ba58f3bdaab65e73b7e9260b"
-	hash, err = daghash.NewHashFromStr(inputStr)
+	txID, err = daghash.NewTxIDFromStr(inputStr)
 	if err != nil {
 		t.Errorf("TestFilterBloomMatch NewHashFromStr failed: %v\n", err)
 		return
 	}
-	outpoint = wire.NewOutPoint(hash, 0)
+	outpoint = wire.NewOutPoint(txID, 0)
 	f.AddOutPoint(outpoint)
 	if f.MatchTxAndUpdate(tx) {
 		t.Errorf("TestFilterBloomMatch matched outpoint %s", inputStr)
@@ -500,12 +500,12 @@ func TestFilterInsertUpdateNone(t *testing.T) {
 	f.Add(inputBytes)
 
 	inputStr = "147caa76786596590baa4e98f5d9f48b86c7765e489f7a6ff3360fe5c674360b"
-	hash, err := daghash.NewHashFromStr(inputStr)
+	txID, err := daghash.NewTxIDFromStr(inputStr)
 	if err != nil {
 		t.Errorf("TestFilterInsertUpdateNone NewHashFromStr failed: %v", err)
 		return
 	}
-	outpoint := wire.NewOutPoint(hash, 0)
+	outpoint := wire.NewOutPoint(txID, 0)
 
 	if f.MatchesOutPoint(outpoint) {
 		t.Errorf("TestFilterInsertUpdateNone matched outpoint %s", inputStr)
@@ -513,12 +513,12 @@ func TestFilterInsertUpdateNone(t *testing.T) {
 	}
 
 	inputStr = "02981fa052f0481dbc5868f4fc2166035a10f27a03cfd2de67326471df5bc041"
-	hash, err = daghash.NewHashFromStr(inputStr)
+	txID, err = daghash.NewTxIDFromStr(inputStr)
 	if err != nil {
 		t.Errorf("TestFilterInsertUpdateNone NewHashFromStr failed: %v", err)
 		return
 	}
-	outpoint = wire.NewOutPoint(hash, 0)
+	outpoint = wire.NewOutPoint(txID, 0)
 
 	if f.MatchesOutPoint(outpoint) {
 		t.Errorf("TestFilterInsertUpdateNone matched outpoint %s", inputStr)
@@ -826,12 +826,12 @@ func TestFilterInsertP2PubKeyOnly(t *testing.T) {
 
 	// We should match the generation pubkey
 	inputStr = "042aaac8c54b07f1e729e01d38b1fb26c6d595ed5920b856faf4070db79ce933" //0st tx hash
-	hash, err := daghash.NewHashFromStr(inputStr)
+	txID, err := daghash.NewTxIDFromStr(inputStr)
 	if err != nil {
 		t.Errorf("TestMerkleBlockP2PubKeyOnly NewHashFromStr failed: %v", err)
 		return
 	}
-	outpoint := wire.NewOutPoint(hash, 0)
+	outpoint := wire.NewOutPoint(txID, 0)
 	if !f.MatchesOutPoint(outpoint) {
 		t.Errorf("TestMerkleBlockP2PubKeyOnly didn't match the generation "+
 			"outpoint %s", inputStr)
@@ -840,12 +840,12 @@ func TestFilterInsertP2PubKeyOnly(t *testing.T) {
 
 	// We should not match the 4th transaction, which is not p2pk
 	inputStr = "f9a116ecc107b6b1b0bdcd0d727bfaa3355f27f8fed08347bf0004244949d9eb"
-	hash, err = daghash.NewHashFromStr(inputStr)
+	txID, err = daghash.NewTxIDFromStr(inputStr)
 	if err != nil {
 		t.Errorf("TestMerkleBlockP2PubKeyOnly NewHashFromStr failed: %v", err)
 		return
 	}
-	outpoint = wire.NewOutPoint(hash, 0)
+	outpoint = wire.NewOutPoint(txID, 0)
 	if f.MatchesOutPoint(outpoint) {
 		t.Errorf("TestMerkleBlockP2PubKeyOnly matched outpoint %s", inputStr)
 		return

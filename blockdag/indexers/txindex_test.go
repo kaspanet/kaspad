@@ -136,7 +136,7 @@ var block1 = wire.MsgBlock{
 			TxIn: []*wire.TxIn{
 				{
 					PreviousOutPoint: wire.OutPoint{
-						TxID:  daghash.Hash{},
+						TxID:  daghash.TxID{},
 						Index: 0xffffffff,
 					},
 					SignatureScript: []byte{
@@ -194,7 +194,7 @@ var block2 = wire.MsgBlock{
 			TxIn: []*wire.TxIn{
 				{
 					PreviousOutPoint: wire.OutPoint{
-						TxID:  daghash.Hash{},
+						TxID:  daghash.TxID{},
 						Index: 0xffffffff,
 					},
 					SignatureScript: []byte{
@@ -221,7 +221,7 @@ var block2 = wire.MsgBlock{
 			TxIn: []*wire.TxIn{
 				{
 					PreviousOutPoint: wire.OutPoint{
-						TxID: daghash.Hash{
+						TxID: daghash.TxID{
 							0x71, 0x17, 0x72, 0x40, 0x46, 0x3e, 0x00, 0x87,
 							0x00, 0x55, 0x61, 0xbf, 0x85, 0x88, 0x16, 0x2d,
 							0xe9, 0x75, 0x89, 0x10, 0x8f, 0x27, 0x7c, 0xb6,
@@ -255,7 +255,7 @@ var block3Tx = &wire.MsgTx{
 	TxIn: []*wire.TxIn{
 		{
 			PreviousOutPoint: wire.OutPoint{
-				TxID: daghash.Hash{
+				TxID: daghash.TxID{
 					0x54, 0x87, 0x57, 0x84, 0xed, 0x18, 0xc2, 0xde,
 					0x6c, 0xdb, 0x54, 0xfa, 0xab, 0x4f, 0x1f, 0x52,
 					0x73, 0x4b, 0xbb, 0x62, 0x79, 0x84, 0x95, 0xbe,
@@ -330,7 +330,7 @@ var block3 = wire.MsgBlock{
 			TxIn: []*wire.TxIn{
 				{
 					PreviousOutPoint: wire.OutPoint{
-						TxID:  daghash.Hash{},
+						TxID:  daghash.TxID{},
 						Index: 0xffffffff,
 					},
 					SignatureScript: []byte{
@@ -389,7 +389,7 @@ var block3A = wire.MsgBlock{
 			TxIn: []*wire.TxIn{
 				{
 					PreviousOutPoint: wire.OutPoint{
-						TxID:  daghash.Hash{},
+						TxID:  daghash.TxID{},
 						Index: 0xffffffff,
 					},
 					SignatureScript: []byte{
@@ -448,7 +448,7 @@ var block4 = wire.MsgBlock{
 			TxIn: []*wire.TxIn{
 				{
 					PreviousOutPoint: wire.OutPoint{
-						TxID:  daghash.Hash{},
+						TxID:  daghash.TxID{},
 						Index: 0xffffffff,
 					},
 					SignatureScript: []byte{
@@ -512,7 +512,7 @@ var block5 = wire.MsgBlock{
 			TxIn: []*wire.TxIn{
 				{
 					PreviousOutPoint: wire.OutPoint{
-						TxID:  daghash.Hash{},
+						TxID:  daghash.TxID{},
 						Index: 0xffffffff,
 					},
 					SignatureScript: []byte{

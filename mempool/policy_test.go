@@ -279,7 +279,7 @@ func TestDust(t *testing.T) {
 // TestCheckTransactionStandard tests the checkTransactionStandard API.
 func TestCheckTransactionStandard(t *testing.T) {
 	// Create some dummy, but otherwise standard, data for transactions.
-	prevOutHash, err := daghash.NewHashFromStr("01")
+	prevOutHash, err := daghash.NewTxIDFromStr("01")
 	if err != nil {
 		t.Fatalf("NewShaHashFromStr: unexpected error: %v", err)
 	}

@@ -135,7 +135,7 @@ type headerNode struct {
 type peerSyncState struct {
 	syncCandidate   bool
 	requestQueue    []*wire.InvVect
-	requestedTxns   map[daghash.Hash]struct{}
+	requestedTxns   map[daghash.TxID]struct{}
 	requestedBlocks map[daghash.Hash]struct{}
 }
 
@@ -157,8 +157,8 @@ type SyncManager struct {
 	quit           chan struct{}
 
 	// These fields should only be accessed from the blockHandler thread
-	rejectedTxns    map[daghash.Hash]struct{}
-	requestedTxns   map[daghash.Hash]struct{}
+	rejectedTxns    map[daghash.TxID]struct{}
+	requestedTxns   map[daghash.TxID]struct{}
 	requestedBlocks map[daghash.Hash]struct{}
 	syncPeer        *peerpkg.Peer
 	peerStates      map[*peerpkg.Peer]*peerSyncState
@@ -346,7 +346,7 @@ func (sm *SyncManager) handleNewPeerMsg(peer *peerpkg.Peer) {
 	isSyncCandidate := sm.isSyncCandidate(peer)
 	sm.peerStates[peer] = &peerSyncState{
 		syncCandidate:   isSyncCandidate,
-		requestedTxns:   make(map[daghash.Hash]struct{}),
+		requestedTxns:   make(map[daghash.TxID]struct{}),
 		requestedBlocks: make(map[daghash.Hash]struct{}),
 	}
 
@@ -442,7 +442,7 @@ func (sm *SyncManager) handleTxMsg(tmsg *txMsg) {
 		// Do not request this transaction again until a new block
 		// has been processed.
 		sm.rejectedTxns[*txID] = struct{}{}
-		sm.limitMap(sm.rejectedTxns, maxRejectedTxns)
+		sm.limitTxIDMap(sm.rejectedTxns, maxRejectedTxns)
 
 		// When the error is a rule error, it means the transaction was
 		// simply rejected as opposed to something actually going wrong,
@@ -459,7 +459,7 @@ func (sm *SyncManager) handleTxMsg(tmsg *txMsg) {
 		// Convert the error into an appropriate reject message and
 		// send it.
 		code, reason := mempool.ErrToRejectErr(err)
-		peer.PushRejectMsg(wire.CmdTx, code, reason, txID, false)
+		peer.PushRejectMsg(wire.CmdTx, code, reason, (*daghash.Hash)(txID), false)
 		return
 	}
 
@@ -619,7 +619,7 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 		blkHashUpdate = &highestTipHash
 
 		// Clear the rejected transactions.
-		sm.rejectedTxns = make(map[daghash.Hash]struct{})
+		sm.rejectedTxns = make(map[daghash.TxID]struct{})
 	}
 
 	// Update the block height for this peer. But only send a message to
@@ -856,7 +856,7 @@ func (sm *SyncManager) haveInventory(invVect *wire.InvVect) (bool, error) {
 	case wire.InvTypeTx:
 		// Ask the transaction memory pool if the transaction is known
 		// to it in any form (main pool or orphan).
-		if sm.txMemPool.HaveTransaction(&invVect.Hash) {
+		if sm.txMemPool.HaveTransaction((*daghash.TxID)(&invVect.Hash)) {
 			return true, nil
 		}
 
@@ -868,7 +868,7 @@ func (sm *SyncManager) haveInventory(invVect *wire.InvVect) (bool, error) {
 		// checked because the vast majority of transactions consist of
 		// two outputs where one is some form of "pay-to-somebody-else"
 		// and the other is a change output.
-		prevOut := wire.OutPoint{TxID: invVect.Hash}
+		prevOut := wire.OutPoint{TxID: daghash.TxID(invVect.Hash)}
 		for i := uint32(0); i < 2; i++ {
 			prevOut.Index = i
 			entry, ok := sm.dag.GetUTXOEntry(prevOut)
@@ -961,7 +961,7 @@ func (sm *SyncManager) handleInvMsg(imsg *invMsg) {
 			if iv.Type == wire.InvTypeTx {
 				// Skip the transaction if it has already been
 				// rejected.
-				if _, exists := sm.rejectedTxns[iv.Hash]; exists {
+				if _, exists := sm.rejectedTxns[daghash.TxID(iv.Hash)]; exists {
 					continue
 				}
 			}
@@ -1028,7 +1028,7 @@ func (sm *SyncManager) handleInvMsg(imsg *invMsg) {
 			// request.
 			if _, exists := sm.requestedBlocks[iv.Hash]; !exists {
 				sm.requestedBlocks[iv.Hash] = struct{}{}
-				sm.limitMap(sm.requestedBlocks, maxRequestedBlocks)
+				sm.limitHashMap(sm.requestedBlocks, maxRequestedBlocks)
 				state.requestedBlocks[iv.Hash] = struct{}{}
 
 				gdmsg.AddInvVect(iv)
@@ -1038,10 +1038,10 @@ func (sm *SyncManager) handleInvMsg(imsg *invMsg) {
 		case wire.InvTypeTx:
 			// Request the transaction if there is not already a
 			// pending request.
-			if _, exists := sm.requestedTxns[iv.Hash]; !exists {
-				sm.requestedTxns[iv.Hash] = struct{}{}
-				sm.limitMap(sm.requestedTxns, maxRequestedTxns)
-				state.requestedTxns[iv.Hash] = struct{}{}
+			if _, exists := sm.requestedTxns[daghash.TxID(iv.Hash)]; !exists {
+				sm.requestedTxns[daghash.TxID(iv.Hash)] = struct{}{}
+				sm.limitTxIDMap(sm.requestedTxns, maxRequestedTxns)
+				state.requestedTxns[daghash.TxID(iv.Hash)] = struct{}{}
 
 				gdmsg.AddInvVect(iv)
 				numRequested++
@@ -1058,10 +1058,28 @@ func (sm *SyncManager) handleInvMsg(imsg *invMsg) {
 	}
 }
 
-// limitMap is a helper function for maps that require a maximum limit by
+// limitTxIDMap is a helper function for maps that require a maximum limit by
 // evicting a random transaction if adding a new value would cause it to
 // overflow the maximum allowed.
-func (sm *SyncManager) limitMap(m map[daghash.Hash]struct{}, limit int) {
+func (sm *SyncManager) limitTxIDMap(m map[daghash.TxID]struct{}, limit int) {
+	if len(m)+1 > limit {
+		// Remove a random entry from the map.  For most compilers, Go's
+		// range statement iterates starting at a random item although
+		// that is not 100% guaranteed by the spec.  The iteration order
+		// is not important here because an adversary would have to be
+		// able to pull off preimage attacks on the hashing function in
+		// order to target eviction of specific entries anyways.
+		for txHash := range m {
+			delete(m, txHash)
+			return
+		}
+	}
+}
+
+// limitHashMap is a helper function for maps that require a maximum limit by
+// evicting a random transaction if adding a new value would cause it to
+// overflow the maximum allowed.
+func (sm *SyncManager) limitHashMap(m map[daghash.Hash]struct{}, limit int) {
 	if len(m)+1 > limit {
 		// Remove a random entry from the map.  For most compilers, Go's
 		// range statement iterates starting at a random item although
@@ -1349,8 +1367,8 @@ func New(config *Config) (*SyncManager, error) {
 		dag:             config.DAG,
 		txMemPool:       config.TxMemPool,
 		chainParams:     config.ChainParams,
-		rejectedTxns:    make(map[daghash.Hash]struct{}),
-		requestedTxns:   make(map[daghash.Hash]struct{}),
+		rejectedTxns:    make(map[daghash.TxID]struct{}),
+		requestedTxns:   make(map[daghash.TxID]struct{}),
 		requestedBlocks: make(map[daghash.Hash]struct{}),
 		peerStates:      make(map[*peerpkg.Peer]*peerSyncState),
 		progressLogger:  newBlockProgressLogger("Processed", log),

@@ -569,8 +569,8 @@ type AddrIndex struct {
 	// This allows fairly efficient updates when transactions are removed
 	// once they are included into a block.
 	unconfirmedLock sync.RWMutex
-	txnsByAddr      map[[addrKeySize]byte]map[daghash.Hash]*util.Tx
-	addrsByTx       map[daghash.Hash]map[[addrKeySize]byte]struct{}
+	txnsByAddr      map[[addrKeySize]byte]map[daghash.TxID]*util.Tx
+	addrsByTx       map[daghash.TxID]map[[addrKeySize]byte]struct{}
 }
 
 // Ensure the AddrIndex type implements the Indexer interface.
@@ -808,7 +808,7 @@ func (idx *AddrIndex) indexUnconfirmedAddresses(pkScript []byte, tx *util.Tx) {
 		idx.unconfirmedLock.Lock()
 		addrIndexEntry := idx.txnsByAddr[addrKey]
 		if addrIndexEntry == nil {
-			addrIndexEntry = make(map[daghash.Hash]*util.Tx)
+			addrIndexEntry = make(map[daghash.TxID]*util.Tx)
 			idx.txnsByAddr[addrKey] = addrIndexEntry
 		}
 		addrIndexEntry[*tx.ID()] = tx
@@ -860,22 +860,22 @@ func (idx *AddrIndex) AddUnconfirmedTx(tx *util.Tx, utxoSet blockdag.UTXOSet) {
 // (memory-only) address index.
 //
 // This function is safe for concurrent access.
-func (idx *AddrIndex) RemoveUnconfirmedTx(hash *daghash.Hash) {
+func (idx *AddrIndex) RemoveUnconfirmedTx(txID *daghash.TxID) {
 	idx.unconfirmedLock.Lock()
 	defer idx.unconfirmedLock.Unlock()
 
 	// Remove all address references to the transaction from the address
 	// index and remove the entry for the address altogether if it no longer
 	// references any transactions.
-	for addrKey := range idx.addrsByTx[*hash] {
-		delete(idx.txnsByAddr[addrKey], *hash)
+	for addrKey := range idx.addrsByTx[*txID] {
+		delete(idx.txnsByAddr[addrKey], *txID)
 		if len(idx.txnsByAddr[addrKey]) == 0 {
 			delete(idx.txnsByAddr, addrKey)
 		}
 	}
 
 	// Remove the entry from the transaction to address lookup map as well.
-	delete(idx.addrsByTx, *hash)
+	delete(idx.addrsByTx, *txID)
 }
 
 // UnconfirmedTxnsForAddress returns all transactions currently in the
@@ -917,8 +917,8 @@ func (idx *AddrIndex) UnconfirmedTxnsForAddress(addr util.Address) []*util.Tx {
 func NewAddrIndex(dagParams *dagconfig.Params) *AddrIndex {
 	return &AddrIndex{
 		dagParams:  dagParams,
-		txnsByAddr: make(map[[addrKeySize]byte]map[daghash.Hash]*util.Tx),
-		addrsByTx:  make(map[daghash.Hash]map[[addrKeySize]byte]struct{}),
+		txnsByAddr: make(map[[addrKeySize]byte]map[daghash.TxID]*util.Tx),
+		addrsByTx:  make(map[daghash.TxID]map[[addrKeySize]byte]struct{}),
 	}
 }
 

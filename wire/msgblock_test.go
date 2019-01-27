@@ -551,7 +551,7 @@ var blockOne = MsgBlock{
 			TxIn: []*TxIn{
 				{
 					PreviousOutPoint: OutPoint{
-						TxID:  daghash.Hash{},
+						TxID:  daghash.TxID{},
 						Index: 0xffffffff,
 					},
 					SignatureScript: []byte{

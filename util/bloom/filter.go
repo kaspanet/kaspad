@@ -250,15 +250,15 @@ func (bf *Filter) AddOutPoint(outpoint *wire.OutPoint) {
 // script.
 //
 // This function MUST be called with the filter lock held.
-func (bf *Filter) maybeAddOutpoint(pkScript []byte, outHash *daghash.Hash, outIdx uint32) {
+func (bf *Filter) maybeAddOutpoint(pkScript []byte, outTxID *daghash.TxID, outIdx uint32) {
 	switch bf.msgFilterLoad.Flags {
 	case wire.BloomUpdateAll:
-		outpoint := wire.NewOutPoint(outHash, outIdx)
+		outpoint := wire.NewOutPoint(outTxID, outIdx)
 		bf.addOutPoint(outpoint)
 	case wire.BloomUpdateP2PubkeyOnly:
 		class := txscript.GetScriptClass(pkScript)
 		if class == txscript.PubKeyTy || class == txscript.MultiSigTy {
-			outpoint := wire.NewOutPoint(outHash, outIdx)
+			outpoint := wire.NewOutPoint(outTxID, outIdx)
 			bf.addOutPoint(outpoint)
 		}
 	}

@@ -938,7 +938,7 @@ func (c *Client) notifySpentInternal(outpoints []btcjson.OutPoint) FutureNotifyS
 // outpoint from the wire type.
 func newOutPointFromWire(op *wire.OutPoint) btcjson.OutPoint {
 	return btcjson.OutPoint{
-		Hash:  op.TxID.String(),
+		TxID:  op.TxID.String(),
 		Index: op.Index,
 	}
 }
@@ -1171,7 +1171,7 @@ func (c *Client) LoadTxFilterAsync(reload bool, addresses []util.Address,
 	outPointObjects := make([]btcjson.OutPoint, len(outPoints))
 	for i := range outPoints {
 		outPointObjects[i] = btcjson.OutPoint{
-			Hash:  outPoints[i].TxID.String(),
+			TxID:  outPoints[i].TxID.String(),
 			Index: outPoints[i].Index,
 		}
 	}

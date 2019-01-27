@@ -70,7 +70,7 @@ type TxSource interface {
 
 	// HaveTransaction returns whether or not the passed transaction hash
 	// exists in the source pool.
-	HaveTransaction(hash *daghash.Hash) bool
+	HaveTransaction(txID *daghash.TxID) bool
 }
 
 // txPrioItem houses a transaction along with extra information that allows the
@@ -248,7 +248,7 @@ func createCoinbaseTx(params *dagconfig.Params, coinbaseScript []byte, nextBlock
 	tx.AddTxIn(&wire.TxIn{
 		// Coinbase transactions have no inputs, so previous outpoint is
 		// zero hash and max index.
-		PreviousOutPoint: *wire.NewOutPoint(&daghash.Hash{},
+		PreviousOutPoint: *wire.NewOutPoint(&daghash.TxID{},
 			wire.MaxPrevOutIndex),
 		SignatureScript: coinbaseScript,
 		Sequence:        wire.MaxTxInSequenceNum,

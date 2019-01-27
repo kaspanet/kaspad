@@ -57,7 +57,7 @@ const (
 	defaultTxInOutAlloc = 15
 
 	// minTxInPayload is the minimum payload size for a transaction input.
-	// PreviousOutPoint.Hash + PreviousOutPoint.Index 4 bytes + Varint for
+	// PreviousOutPoint.TxID + PreviousOutPoint.Index 4 bytes + Varint for
 	// SignatureScript length 1 byte + Sequence 4 bytes.
 	minTxInPayload = 9 + daghash.HashSize
 
@@ -181,22 +181,22 @@ var scriptPool scriptFreeList = make(chan []byte, freeListMaxItems)
 // OutPoint defines a bitcoin data type that is used to track previous
 // transaction outputs.
 type OutPoint struct {
-	TxID  daghash.Hash
+	TxID  daghash.TxID
 	Index uint32
 }
 
 // NewOutPoint returns a new bitcoin transaction outpoint point with the
 // provided hash and index.
-func NewOutPoint(hash *daghash.Hash, index uint32) *OutPoint {
+func NewOutPoint(txID *daghash.TxID, index uint32) *OutPoint {
 	return &OutPoint{
-		TxID:  *hash,
+		TxID:  *txID,
 		Index: index,
 	}
 }
 
-// String returns the OutPoint in the human-readable form "hash:index".
+// String returns the OutPoint in the human-readable form "txID:index".
 func (o OutPoint) String() string {
-	// Allocate enough for hash string, colon, and 10 digits.  Although
+	// Allocate enough for ID string, colon, and 10 digits.  Although
 	// at the time of writing, the number of digits can be no greater than
 	// the length of the decimal representation of maxTxOutPerMessage, the
 	// maximum message payload may increase in the future and this
@@ -223,7 +223,7 @@ func (t *TxIn) SerializeSize() int {
 }
 
 func (t *TxIn) serializeSize(encodingFlags txEncoding) int {
-	// Outpoint Hash 32 bytes + Outpoint Index 4 bytes + Sequence 8 bytes +
+	// Outpoint ID 32 bytes + Outpoint Index 4 bytes + Sequence 8 bytes +
 	// serialized varint size for the length of SignatureScript +
 	// SignatureScript bytes.
 	return 44 + serializeSignatureScriptSize(t.SignatureScript, encodingFlags)
@@ -301,7 +301,7 @@ func (msg *MsgTx) AddTxOut(to *TxOut) {
 // is a special transaction created by miners that has no inputs.  This is
 // represented in the block dag by a transaction with a single input that has
 // a previous output transaction index set to the maximum value along with a
-// zero hash.
+// zero TxID.
 func (msg *MsgTx) IsCoinBase() bool {
 	// A coin base must only have one transaction input.
 	if len(msg.TxIn) != 1 {
@@ -309,9 +309,9 @@ func (msg *MsgTx) IsCoinBase() bool {
 	}
 
 	// The previous output of a coinbase must have a max value index and
-	// a zero hash.
+	// a zero TxID.
 	prevOut := &msg.TxIn[0].PreviousOutPoint
-	return prevOut.Index == math.MaxUint32 && prevOut.TxID == daghash.Zero
+	return prevOut.Index == math.MaxUint32 && prevOut.TxID == daghash.ZeroTxID
 }
 
 // TxHash generates the Hash for the transaction.
@@ -326,7 +326,7 @@ func (msg *MsgTx) TxHash() daghash.Hash {
 }
 
 // TxID generates the Hash for the transaction without the signature script, gas and payload fields.
-func (msg *MsgTx) TxID() daghash.Hash {
+func (msg *MsgTx) TxID() daghash.TxID {
 	// Encode the transaction, replace signature script, payload and gas with
 	// zeroes, and calculate double sha256 on the result.
 	// Ignore the error returns since the only way the encode could fail
@@ -338,7 +338,7 @@ func (msg *MsgTx) TxID() daghash.Hash {
 	}
 	buf := bytes.NewBuffer(make([]byte, 0, msg.serializeSize(encodingFlags)))
 	_ = msg.serialize(buf, encodingFlags)
-	return daghash.DoubleHashH(buf.Bytes())
+	return daghash.TxID(daghash.DoubleHashH(buf.Bytes()))
 }
 
 // Copy creates a deep copy of a transaction so that the original does not get

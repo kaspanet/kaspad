@@ -104,21 +104,21 @@ func TestSignTxOutput(t *testing.T) {
 		TxIn: []*wire.TxIn{
 			{
 				PreviousOutPoint: wire.OutPoint{
-					TxID:  daghash.Hash{},
+					TxID:  daghash.TxID{},
 					Index: 0,
 				},
 				Sequence: 4294967295,
 			},
 			{
 				PreviousOutPoint: wire.OutPoint{
-					TxID:  daghash.Hash{},
+					TxID:  daghash.TxID{},
 					Index: 1,
 				},
 				Sequence: 4294967295,
 			},
 			{
 				PreviousOutPoint: wire.OutPoint{
-					TxID:  daghash.Hash{},
+					TxID:  daghash.TxID{},
 					Index: 2,
 				},
 				Sequence: 4294967295,

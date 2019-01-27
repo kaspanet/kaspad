@@ -617,7 +617,7 @@ var helpDescsEnUS = map[string]string{
 	"stopNotifyReceived-addresses": "List of address to cancel receive notifications for",
 
 	// OutPoint help.
-	"outPoint-hash":  "The hex-encoded bytes of the outPoint hash",
+	"outPoint-txid":  "The hex-encoded bytes of the outPoint transaction ID",
 	"outPoint-index": "The index of the outPoint",
 
 	// NotifySpentCmd help.

@@ -24,7 +24,7 @@ const TxIndexUnknown = -1
 type Tx struct {
 	msgTx   *wire.MsgTx   // Underlying MsgTx
 	txHash  *daghash.Hash // Cached transaction hash
-	txID    *daghash.Hash // Cached transaction ID
+	txID    *daghash.TxID // Cached transaction ID
 	txIndex int           // Position within a block or TxIndexUnknown
 }
 
@@ -52,7 +52,7 @@ func (t *Tx) Hash() *daghash.Hash {
 // ID returns the id of the transaction.  This is equivalent to
 // calling TxID on the underlying wire.MsgTx, however it caches the
 // result so subsequent calls are more efficient.
-func (t *Tx) ID() *daghash.Hash {
+func (t *Tx) ID() *daghash.TxID {
 	// Return the cached hash if it has already been generated.
 	if t.txID != nil {
 		return t.txID
