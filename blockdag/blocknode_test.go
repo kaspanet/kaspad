@@ -78,6 +78,9 @@ func TestChainHeight(t *testing.T) {
 		if test.node.chainHeight != test.expectedChainHeight {
 			t.Errorf("block %v expected chain height %v but got %v", test.node, test.expectedChainHeight, test.node.chainHeight)
 		}
+		if calculateChainHeight(test.node) != test.expectedChainHeight {
+			t.Errorf("block %v expected calculated chain height %v but got %v", test.node, test.expectedChainHeight, test.node.chainHeight)
+		}
 	}
 
 }
