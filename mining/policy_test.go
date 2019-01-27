@@ -65,7 +65,7 @@ func createTxIn(originTx *wire.MsgTx, outputIndex uint32) *wire.TxIn {
 		prevOut = wire.NewOutPoint(&originTxID, 0)
 	} else {
 		prevOut = &wire.OutPoint{
-			TxID:  daghash.Hash{},
+			TxID:  daghash.TxID{},
 			Index: 0xFFFFFFFF,
 		}
 	}

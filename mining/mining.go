@@ -7,7 +7,6 @@ package mining
 import (
 	"container/heap"
 	"fmt"
-	"math/rand"
 	"sort"
 	"time"
 
@@ -71,7 +70,7 @@ type TxSource interface {
 
 	// HaveTransaction returns whether or not the passed transaction hash
 	// exists in the source pool.
-	HaveTransaction(hash *daghash.Hash) bool
+	HaveTransaction(txID *daghash.TxID) bool
 }
 
 // txPrioItem houses a transaction along with extra information that allows the
@@ -249,7 +248,7 @@ func createCoinbaseTx(params *dagconfig.Params, coinbaseScript []byte, nextBlock
 	tx.AddTxIn(&wire.TxIn{
 		// Coinbase transactions have no inputs, so previous outpoint is
 		// zero hash and max index.
-		PreviousOutPoint: *wire.NewOutPoint(&daghash.Hash{},
+		PreviousOutPoint: *wire.NewOutPoint(&daghash.TxID{},
 			wire.MaxPrevOutIndex),
 		SignatureScript: coinbaseScript,
 		Sequence:        wire.MaxTxInSequenceNum,
@@ -396,9 +395,10 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 	// ensure the transaction is not a duplicate transaction (paying the
 	// same value to the same public key address would otherwise be an
 	// identical transaction for block version 1).
-	seed := rand.NewSource(time.Now().UnixNano())
-	randomGenerator := rand.New(seed)
-	extraNonce := randomGenerator.Uint64()
+	extraNonce, err := wire.RandomUint64()
+	if err != nil {
+		return nil, err
+	}
 	coinbaseScript, err := standardCoinbaseScript(nextBlockHeight, extraNonce)
 	if err != nil {
 		return nil, err
@@ -494,7 +494,7 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 			if !ok {
 				gasUsage = 0
 			}
-			gasLimit, err := g.dag.GasLimit(&subnetworkID)
+			gasLimit, err := g.dag.SubnetworkStore.GasLimit(&subnetworkID)
 			if err != nil {
 				log.Errorf("Cannot get GAS limit for subnetwork %v", subnetworkID)
 				continue

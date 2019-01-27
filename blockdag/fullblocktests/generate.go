@@ -285,7 +285,7 @@ func (g *testGenerator) createCoinbaseTx(blockHeight int32) *wire.MsgTx {
 	tx.AddTxIn(&wire.TxIn{
 		// Coinbase transactions have no inputs, so previous outpoint is
 		// zero hash and max index.
-		PreviousOutPoint: *wire.NewOutPoint(&daghash.Hash{},
+		PreviousOutPoint: *wire.NewOutPoint(&daghash.TxID{},
 			wire.MaxPrevOutIndex),
 		Sequence:        wire.MaxTxInSequenceNum,
 		SignatureScript: coinbaseScript,
@@ -1529,9 +1529,9 @@ func Generate(includeLargeReorg bool) (tests [][]TestInstance, err error) {
 	//                 \-> b52(14)
 	g.setTip("b43")
 	g.nextBlock("b52", outs[14], func(b *wire.MsgBlock) {
-		hash := newHashFromStr("00000000000000000000000000000000" +
+		txID := newTxIDFromStr("00000000000000000000000000000000" +
 			"00000000000000000123456789abcdef")
-		b.Transactions[1].TxIn[0].PreviousOutPoint.TxID = *hash
+		b.Transactions[1].TxIn[0].PreviousOutPoint.TxID = *txID
 		b.Transactions[1].TxIn[0].PreviousOutPoint.Index = 0
 	})
 	rejected(blockdag.ErrMissingTxOut)

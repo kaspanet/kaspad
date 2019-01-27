@@ -32,11 +32,12 @@ var (
 // registered notification so the state can be automatically re-established on
 // reconnect.
 type notificationState struct {
-	notifyBlocks       bool
-	notifyNewTx        bool
-	notifyNewTxVerbose bool
-	notifyReceived     map[string]struct{}
-	notifySpent        map[btcjson.OutPoint]struct{}
+	notifyBlocks            bool
+	notifyNewTx             bool
+	notifyNewTxVerbose      bool
+	notifyNewTxSubnetworkID *string
+	notifyReceived          map[string]struct{}
+	notifySpent             map[btcjson.OutPoint]struct{}
 }
 
 // Copy returns a deep copy of the receiver.
@@ -45,6 +46,7 @@ func (s *notificationState) Copy() *notificationState {
 	stateCopy.notifyBlocks = s.notifyBlocks
 	stateCopy.notifyNewTx = s.notifyNewTx
 	stateCopy.notifyNewTxVerbose = s.notifyNewTxVerbose
+	stateCopy.notifyNewTxSubnetworkID = s.notifyNewTxSubnetworkID
 	stateCopy.notifyReceived = make(map[string]struct{})
 	for addr := range s.notifyReceived {
 		stateCopy.notifyReceived[addr] = struct{}{}
@@ -938,7 +940,7 @@ func (c *Client) notifySpentInternal(outpoints []btcjson.OutPoint) FutureNotifyS
 // outpoint from the wire type.
 func newOutPointFromWire(op *wire.OutPoint) btcjson.OutPoint {
 	return btcjson.OutPoint{
-		Hash:  op.TxID.String(),
+		TxID:  op.TxID.String(),
 		Index: op.Index,
 	}
 }
@@ -1006,7 +1008,7 @@ func (r FutureNotifyNewTransactionsResult) Receive() error {
 // See NotifyNewTransactionsAsync for the blocking version and more details.
 //
 // NOTE: This is a btcd extension and requires a websocket connection.
-func (c *Client) NotifyNewTransactionsAsync(verbose bool) FutureNotifyNewTransactionsResult {
+func (c *Client) NotifyNewTransactionsAsync(verbose bool, subnetworkID *string) FutureNotifyNewTransactionsResult {
 	// Not supported in HTTP POST mode.
 	if c.config.HTTPPostMode {
 		return newFutureError(ErrWebsocketsRequired)
@@ -1018,7 +1020,7 @@ func (c *Client) NotifyNewTransactionsAsync(verbose bool) FutureNotifyNewTransac
 		return newNilFutureResult()
 	}
 
-	cmd := btcjson.NewNotifyNewTransactionsCmd(&verbose)
+	cmd := btcjson.NewNotifyNewTransactionsCmd(&verbose, subnetworkID)
 	return c.sendCmd(cmd)
 }
 
@@ -1033,8 +1035,8 @@ func (c *Client) NotifyNewTransactionsAsync(verbose bool) FutureNotifyNewTransac
 // true).
 //
 // NOTE: This is a btcd extension and requires a websocket connection.
-func (c *Client) NotifyNewTransactions(verbose bool) error {
-	return c.NotifyNewTransactionsAsync(verbose).Receive()
+func (c *Client) NotifyNewTransactions(verbose bool, subnetworkID *string) error {
+	return c.NotifyNewTransactionsAsync(verbose, subnetworkID).Receive()
 }
 
 // FutureNotifyReceivedResult is a future promise to deliver the result of a
@@ -1171,7 +1173,7 @@ func (c *Client) LoadTxFilterAsync(reload bool, addresses []util.Address,
 	outPointObjects := make([]btcjson.OutPoint, len(outPoints))
 	for i := range outPoints {
 		outPointObjects[i] = btcjson.OutPoint{
-			Hash:  outPoints[i].TxID.String(),
+			TxID:  outPoints[i].TxID.String(),
 			Index: outPoints[i].Index,
 		}
 	}

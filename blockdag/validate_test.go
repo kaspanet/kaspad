@@ -73,7 +73,7 @@ func TestCheckConnectBlockTemplate(t *testing.T) {
 		SubnetworkID: &wire.SubnetworkIDSupportsAll,
 	})
 	if err != nil {
-		t.Errorf("Failed to setup chain instance: %v", err)
+		t.Errorf("Failed to setup dag instance: %v", err)
 		return
 	}
 	defer teardownFunc()
@@ -152,19 +152,30 @@ func TestCheckConnectBlockTemplate(t *testing.T) {
 // TestCheckBlockSanity tests the CheckBlockSanity function to ensure it works
 // as expected.
 func TestCheckBlockSanity(t *testing.T) {
+	// Create a new database and dag instance to run tests against.
+	dag, teardownFunc, err := DAGSetup("TestCheckBlockSanity", Config{
+		DAGParams:    &dagconfig.SimNetParams,
+		SubnetworkID: &wire.SubnetworkIDSupportsAll,
+	})
+	if err != nil {
+		t.Errorf("Failed to setup dag instance: %v", err)
+		return
+	}
+	defer teardownFunc()
+
 	powLimit := dagconfig.MainNetParams.PowLimit
 	block := util.NewBlock(&Block100000)
 	timeSource := NewMedianTime()
 	if len(block.Transactions()) < 3 {
 		t.Fatalf("Too few transactions in block, expect at least 3, got %v", len(block.Transactions()))
 	}
-	err := CheckBlockSanity(block, powLimit, timeSource, &wire.SubnetworkIDNative)
+	err = dag.CheckBlockSanity(block, powLimit, timeSource)
 	if err != nil {
 		t.Errorf("CheckBlockSanity: %v", err)
 	}
 	// Test with block with wrong transactions sorting order
 	blockWithWrongTxOrder := util.NewBlock(&BlockWithWrongTxOrder)
-	err = CheckBlockSanity(blockWithWrongTxOrder, powLimit, timeSource, &wire.SubnetworkIDNative)
+	err = dag.CheckBlockSanity(blockWithWrongTxOrder, powLimit, timeSource)
 	if err == nil {
 		t.Errorf("CheckBlockSanity: transactions disorder is not detected")
 	}
@@ -179,7 +190,7 @@ func TestCheckBlockSanity(t *testing.T) {
 	// second fails.
 	timestamp := block.MsgBlock().Header.Timestamp
 	block.MsgBlock().Header.Timestamp = timestamp.Add(time.Nanosecond)
-	err = CheckBlockSanity(block, powLimit, timeSource, &wire.SubnetworkIDNative)
+	err = dag.CheckBlockSanity(block, powLimit, timeSource)
 	if err == nil {
 		t.Errorf("CheckBlockSanity: error is nil when it shouldn't be")
 	}
@@ -223,7 +234,7 @@ func TestCheckBlockSanity(t *testing.T) {
 				TxIn: []*wire.TxIn{
 					{
 						PreviousOutPoint: wire.OutPoint{
-							TxID:  daghash.Hash{},
+							TxID:  daghash.TxID{},
 							Index: 0xffffffff,
 						},
 						SignatureScript: []byte{
@@ -250,7 +261,7 @@ func TestCheckBlockSanity(t *testing.T) {
 				TxIn: []*wire.TxIn{
 					{
 						PreviousOutPoint: wire.OutPoint{
-							TxID: daghash.Hash([32]byte{ // Make go vet happy.
+							TxID: daghash.TxID([32]byte{ // Make go vet happy.
 								0x03, 0x2e, 0x38, 0xe9, 0xc0, 0xa8, 0x4c, 0x60,
 								0x46, 0xd6, 0x87, 0xd1, 0x05, 0x56, 0xdc, 0xac,
 								0xc4, 0x1d, 0x27, 0x5e, 0xc5, 0x5f, 0xc0, 0x07,
@@ -320,7 +331,7 @@ func TestCheckBlockSanity(t *testing.T) {
 				TxIn: []*wire.TxIn{
 					{
 						PreviousOutPoint: wire.OutPoint{
-							TxID: daghash.Hash([32]byte{ // Make go vet happy.
+							TxID: daghash.TxID([32]byte{ // Make go vet happy.
 								0xc3, 0x3e, 0xbf, 0xf2, 0xa7, 0x09, 0xf1, 0x3d,
 								0x9f, 0x9a, 0x75, 0x69, 0xab, 0x16, 0xa3, 0x27,
 								0x86, 0xaf, 0x7d, 0x7e, 0x2d, 0xe0, 0x92, 0x65,
@@ -389,7 +400,7 @@ func TestCheckBlockSanity(t *testing.T) {
 				TxIn: []*wire.TxIn{
 					{
 						PreviousOutPoint: wire.OutPoint{
-							TxID: daghash.Hash([32]byte{ // Make go vet happy.
+							TxID: daghash.TxID([32]byte{ // Make go vet happy.
 								0x0b, 0x60, 0x72, 0xb3, 0x86, 0xd4, 0xa7, 0x73,
 								0x23, 0x52, 0x37, 0xf6, 0x4c, 0x11, 0x26, 0xac,
 								0x3b, 0x24, 0x0c, 0x84, 0xb9, 0x17, 0xa3, 0x90,
@@ -445,7 +456,7 @@ func TestCheckBlockSanity(t *testing.T) {
 	}
 
 	btcutilInvalidBlock := util.NewBlock(&invalidParentsOrderBlock)
-	err = CheckBlockSanity(btcutilInvalidBlock, powLimit, timeSource, &wire.SubnetworkIDNative)
+	err = dag.CheckBlockSanity(btcutilInvalidBlock, powLimit, timeSource)
 	if err == nil {
 		t.Errorf("CheckBlockSanity: error is nil when it shouldn't be")
 	}
@@ -460,7 +471,7 @@ func TestCheckBlockSanity(t *testing.T) {
 // and handled properly.
 func TestCheckSerializedHeight(t *testing.T) {
 	// Create an empty coinbase template to be used in the tests below.
-	coinbaseOutpoint := wire.NewOutPoint(&daghash.Hash{}, math.MaxUint32)
+	coinbaseOutpoint := wire.NewOutPoint(&daghash.TxID{}, math.MaxUint32)
 	coinbaseTx := wire.NewMsgTx(1)
 	coinbaseTx.AddTxIn(wire.NewTxIn(coinbaseOutpoint, nil))
 
@@ -665,7 +676,7 @@ var Block100000 = wire.MsgBlock{
 			TxIn: []*wire.TxIn{
 				{
 					PreviousOutPoint: wire.OutPoint{
-						TxID:  daghash.Hash{},
+						TxID:  daghash.TxID{},
 						Index: 0xffffffff,
 					},
 					SignatureScript: []byte{
@@ -692,7 +703,7 @@ var Block100000 = wire.MsgBlock{
 			TxIn: []*wire.TxIn{
 				{
 					PreviousOutPoint: wire.OutPoint{
-						TxID: daghash.Hash([32]byte{ // Make go vet happy.
+						TxID: daghash.TxID([32]byte{ // Make go vet happy.
 							0x03, 0x2e, 0x38, 0xe9, 0xc0, 0xa8, 0x4c, 0x60,
 							0x46, 0xd6, 0x87, 0xd1, 0x05, 0x56, 0xdc, 0xac,
 							0xc4, 0x1d, 0x27, 0x5e, 0xc5, 0x5f, 0xc0, 0x07,
@@ -762,7 +773,7 @@ var Block100000 = wire.MsgBlock{
 			TxIn: []*wire.TxIn{
 				{
 					PreviousOutPoint: wire.OutPoint{
-						TxID: daghash.Hash([32]byte{ // Make go vet happy.
+						TxID: daghash.TxID([32]byte{ // Make go vet happy.
 							0xc3, 0x3e, 0xbf, 0xf2, 0xa7, 0x09, 0xf1, 0x3d,
 							0x9f, 0x9a, 0x75, 0x69, 0xab, 0x16, 0xa3, 0x27,
 							0x86, 0xaf, 0x7d, 0x7e, 0x2d, 0xe0, 0x92, 0x65,
@@ -831,7 +842,7 @@ var Block100000 = wire.MsgBlock{
 			TxIn: []*wire.TxIn{
 				{
 					PreviousOutPoint: wire.OutPoint{
-						TxID: daghash.Hash([32]byte{ // Make go vet happy.
+						TxID: daghash.TxID([32]byte{ // Make go vet happy.
 							0x0b, 0x60, 0x72, 0xb3, 0x86, 0xd4, 0xa7, 0x73,
 							0x23, 0x52, 0x37, 0xf6, 0x4c, 0x11, 0x26, 0xac,
 							0x3b, 0x24, 0x0c, 0x84, 0xb9, 0x17, 0xa3, 0x90,
@@ -920,7 +931,7 @@ var BlockWithWrongTxOrder = wire.MsgBlock{
 			TxIn: []*wire.TxIn{
 				{
 					PreviousOutPoint: wire.OutPoint{
-						TxID:  daghash.Hash{},
+						TxID:  daghash.TxID{},
 						Index: 0xffffffff,
 					},
 					SignatureScript: []byte{
@@ -954,7 +965,7 @@ var BlockWithWrongTxOrder = wire.MsgBlock{
 			TxIn: []*wire.TxIn{
 				{
 					PreviousOutPoint: wire.OutPoint{
-						TxID: daghash.Hash([32]byte{ // Make go vet happy.
+						TxID: daghash.TxID([32]byte{ // Make go vet happy.
 							0x03, 0x2e, 0x38, 0xe9, 0xc0, 0xa8, 0x4c, 0x60,
 							0x46, 0xd6, 0x87, 0xd1, 0x05, 0x56, 0xdc, 0xac,
 							0xc4, 0x1d, 0x27, 0x5e, 0xc5, 0x5f, 0xc0, 0x07,
@@ -1024,7 +1035,7 @@ var BlockWithWrongTxOrder = wire.MsgBlock{
 			TxIn: []*wire.TxIn{
 				{
 					PreviousOutPoint: wire.OutPoint{
-						TxID: daghash.Hash([32]byte{ // Make go vet happy.
+						TxID: daghash.TxID([32]byte{ // Make go vet happy.
 							0xc3, 0x3e, 0xbf, 0xf2, 0xa7, 0x09, 0xf1, 0x3d,
 							0x9f, 0x9a, 0x75, 0x69, 0xab, 0x16, 0xa3, 0x27,
 							0x86, 0xaf, 0x7d, 0x7e, 0x2d, 0xe0, 0x92, 0x65,
@@ -1093,7 +1104,7 @@ var BlockWithWrongTxOrder = wire.MsgBlock{
 			TxIn: []*wire.TxIn{
 				{
 					PreviousOutPoint: wire.OutPoint{
-						TxID: daghash.Hash([32]byte{ // Make go vet happy.
+						TxID: daghash.TxID([32]byte{ // Make go vet happy.
 							0x0b, 0x60, 0x72, 0xb3, 0x86, 0xd4, 0xa7, 0x73,
 							0x23, 0x52, 0x37, 0xf6, 0x4c, 0x11, 0x26, 0xac,
 							0x3b, 0x24, 0x0c, 0x84, 0xb9, 0x17, 0xa3, 0x90,

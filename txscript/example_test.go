@@ -101,7 +101,7 @@ func ExampleSignTxOutput() {
 	// would ordinarily be the real transaction that is being spent.  It
 	// contains a single output that pays to address in the amount of 1 BTC.
 	originTx := wire.NewMsgTx(wire.TxVersion)
-	prevOut := wire.NewOutPoint(&daghash.Hash{}, ^uint32(0))
+	prevOut := wire.NewOutPoint(&daghash.TxID{}, ^uint32(0))
 	txIn := wire.NewTxIn(prevOut, []byte{txscript.Op0, txscript.Op0})
 	originTx.AddTxIn(txIn)
 	pkScript, err := txscript.PayToAddrScript(addr)

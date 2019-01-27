@@ -61,7 +61,7 @@ func BuildHashMerkleTreeStore(transactions []*util.Tx) MerkleTree {
 func BuildIDMerkleTreeStore(transactions []*util.Tx) MerkleTree {
 	txIDs := make([]*daghash.Hash, len(transactions))
 	for i, tx := range transactions {
-		txIDs[i] = tx.ID()
+		txIDs[i] = (*daghash.Hash)(tx.ID())
 	}
 	return buildMerkleTreeStore(txIDs)
 }

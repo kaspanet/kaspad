@@ -326,10 +326,10 @@ func rpcDecodeHexError(gotHex string) *btcjson.RPCError {
 // rpcNoTxInfoError is a convenience function for returning a nicely formatted
 // RPC error which indicates there is no information available for the provided
 // transaction hash.
-func rpcNoTxInfoError(txHash *daghash.Hash) *btcjson.RPCError {
+func rpcNoTxInfoError(txID *daghash.TxID) *btcjson.RPCError {
 	return btcjson.NewRPCError(btcjson.ErrRPCNoTxInfo,
 		fmt.Sprintf("No information available about transaction %v",
-			txHash))
+			txID))
 }
 
 // gbtWorkState houses state that is used in between multiple RPC invocations to
@@ -545,12 +545,12 @@ func handleCreateRawTransaction(s *Server, cmd interface{}, closeChan <-chan str
 	// some validity checks.
 	mtx := wire.NewMsgTx(wire.TxVersion)
 	for _, input := range c.Inputs {
-		txHash, err := daghash.NewHashFromStr(input.TxID)
+		txID, err := daghash.NewTxIDFromStr(input.TxID)
 		if err != nil {
 			return nil, rpcDecodeHexError(input.TxID)
 		}
 
-		prevOut := wire.NewOutPoint(txHash, input.Vout)
+		prevOut := wire.NewOutPoint(txID, input.Vout)
 		txIn := wire.NewTxIn(prevOut, []byte{})
 		if c.LockTime != nil && *c.LockTime != 0 {
 			txIn.Sequence = wire.MaxTxInSequenceNum - 1
@@ -1679,7 +1679,7 @@ func (state *gbtWorkState) blockTemplateResult(useCoinbaseValue bool, submitOld 
 	// the adjustments to the various lengths and indices.
 	numTx := len(msgBlock.Transactions)
 	transactions := make([]btcjson.GetBlockTemplateResultTx, 0, numTx-1)
-	txIndex := make(map[daghash.Hash]int64, numTx)
+	txIndex := make(map[daghash.TxID]int64, numTx)
 	for i, tx := range msgBlock.Transactions {
 		txID := tx.TxID()
 		txIndex[txID] = int64(i)
@@ -2456,7 +2456,7 @@ func handleGetRawTransaction(s *Server, cmd interface{}, closeChan <-chan struct
 	c := cmd.(*btcjson.GetRawTransactionCmd)
 
 	// Convert the provided transaction hash hex to a Hash.
-	txHash, err := daghash.NewHashFromStr(c.TxID)
+	txID, err := daghash.NewTxIDFromStr(c.TxID)
 	if err != nil {
 		return nil, rpcDecodeHexError(c.TxID)
 	}
@@ -2471,7 +2471,7 @@ func handleGetRawTransaction(s *Server, cmd interface{}, closeChan <-chan struct
 	var mtx *wire.MsgTx
 	var blkHash *daghash.Hash
 	var blkHeight int32
-	tx, err := s.cfg.TxMemPool.FetchTransaction(txHash)
+	tx, err := s.cfg.TxMemPool.FetchTransaction(txID)
 	if err != nil {
 		if s.cfg.TxIndex == nil {
 			return nil, &btcjson.RPCError{
@@ -2483,13 +2483,13 @@ func handleGetRawTransaction(s *Server, cmd interface{}, closeChan <-chan struct
 		}
 
 		// Look up the location of the transaction.
-		blockRegion, err := s.cfg.TxIndex.TxFirstBlockRegion(txHash)
+		blockRegion, err := s.cfg.TxIndex.TxFirstBlockRegion(txID)
 		if err != nil {
 			context := "Failed to retrieve transaction location"
 			return nil, internalRPCError(err.Error(), context)
 		}
 		if blockRegion == nil {
-			return nil, rpcNoTxInfoError(txHash)
+			return nil, rpcNoTxInfoError(txID)
 		}
 
 		// Load the raw transaction bytes from the database.
@@ -2500,7 +2500,7 @@ func handleGetRawTransaction(s *Server, cmd interface{}, closeChan <-chan struct
 			return err
 		})
 		if err != nil {
-			return nil, rpcNoTxInfoError(txHash)
+			return nil, rpcNoTxInfoError(txID)
 		}
 
 		// When the verbose flag isn't set, simply return the serialized
@@ -2562,7 +2562,7 @@ func handleGetRawTransaction(s *Server, cmd interface{}, closeChan <-chan struct
 		dagHeight = s.cfg.DAG.Height()
 	}
 
-	rawTxn, err := createTxRawResult(s.cfg.DAGParams, mtx, txHash.String(),
+	rawTxn, err := createTxRawResult(s.cfg.DAGParams, mtx, txID.String(),
 		blkHeader, blkHashStr, blkHeight, dagHeight, nil)
 	if err != nil {
 		return nil, err
@@ -2575,7 +2575,7 @@ func handleGetTxOut(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 	c := cmd.(*btcjson.GetTxOutCmd)
 
 	// Convert the provided transaction hash hex to a Hash.
-	txHash, err := daghash.NewHashFromStr(c.TxID)
+	txID, err := daghash.NewTxIDFromStr(c.TxID)
 	if err != nil {
 		return nil, rpcDecodeHexError(c.TxID)
 	}
@@ -2593,10 +2593,10 @@ func handleGetTxOut(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 	}
 	// TODO: This is racy.  It should attempt to fetch it directly and check
 	// the error.
-	if includeMempool && s.cfg.TxMemPool.HaveTransaction(txHash) {
-		tx, err := s.cfg.TxMemPool.FetchTransaction(txHash)
+	if includeMempool && s.cfg.TxMemPool.HaveTransaction(txID) {
+		tx, err := s.cfg.TxMemPool.FetchTransaction(txID)
 		if err != nil {
-			return nil, rpcNoTxInfoError(txHash)
+			return nil, rpcNoTxInfoError(txID)
 		}
 
 		mtx := tx.MsgTx()
@@ -2611,7 +2611,7 @@ func handleGetTxOut(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 		txOut := mtx.TxOut[c.Vout]
 		if txOut == nil {
 			errStr := fmt.Sprintf("Output index: %d for txid: %s "+
-				"does not exist", c.Vout, txHash)
+				"does not exist", c.Vout, txID)
 			return nil, internalRPCError(errStr, "")
 		}
 
@@ -2621,10 +2621,10 @@ func handleGetTxOut(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 		pkScript = txOut.PkScript
 		isCoinbase = mtx.IsCoinBase()
 	} else {
-		out := wire.OutPoint{TxID: *txHash, Index: c.Vout}
+		out := wire.OutPoint{TxID: *txID, Index: c.Vout}
 		entry, ok := s.cfg.DAG.GetUTXOEntry(out)
 		if !ok {
-			return nil, rpcNoTxInfoError(txHash)
+			return nil, rpcNoTxInfoError(txID)
 		}
 
 		// To match the behavior of the reference client, return nil
@@ -3280,7 +3280,7 @@ func handleSendRawTransaction(s *Server, cmd interface{}, closeChan <-chan struc
 	// Keep track of all the sendRawTransaction request txns so that they
 	// can be rebroadcast if they don't make their way into a block.
 	txD := acceptedTxs[0]
-	iv := wire.NewInvVect(wire.InvTypeTx, txD.Tx.ID())
+	iv := wire.NewInvVect(wire.InvTypeTx, (*daghash.Hash)(txD.Tx.ID()))
 	s.cfg.ConnMgr.AddRebroadcastInventory(iv, txD)
 
 	return tx.ID().String(), nil
@@ -3398,7 +3398,7 @@ func verifyDAG(s *Server, level, depth int32) error {
 	if finishHeight < 0 {
 		finishHeight = 0
 	}
-	log.Infof("Verifying chain for %d blocks at level %d",
+	log.Infof("Verifying DAG for %d blocks at level %d",
 		s.cfg.DAG.Height()-finishHeight, level) //TODO: (Ori) This is probably wrong. Done only for compilation
 
 	currentHash := s.cfg.DAG.HighestTipHash()
@@ -3411,10 +3411,9 @@ func verifyDAG(s *Server, level, depth int32) error {
 			return err
 		}
 
-		// Level 1 does basic chain sanity checks.
+		// Level 1 does basic DAG sanity checks.
 		if level > 0 {
-			err := blockdag.CheckBlockSanity(block, s.cfg.DAGParams.PowLimit,
-				s.cfg.TimeSource, config.MainConfig().SubnetworkID)
+			err := s.cfg.DAG.CheckBlockSanity(block, s.cfg.DAGParams.PowLimit, s.cfg.TimeSource)
 			if err != nil {
 				log.Errorf("Verify is unable to validate "+
 					"block at hash %v height %d: %v",
@@ -3425,7 +3424,7 @@ func verifyDAG(s *Server, level, depth int32) error {
 
 		currentHash = *block.MsgBlock().Header.SelectedParentHash()
 	}
-	log.Infof("Chain verify completed successfully")
+	log.Infof("DAG verify completed successfully")
 
 	return nil
 }

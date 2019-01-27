@@ -15,6 +15,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/daglabs/btcd/util/subnetworkid"
 	"io"
 	"sync"
 	"time"
@@ -835,31 +836,63 @@ func (m *wsNotificationManager) notifyForNewTx(clients map[chan struct{}]*wsClie
 		return
 	}
 
-	var verboseNtfn *btcjson.TxAcceptedVerboseNtfn
-	var marshalledJSONVerbose []byte
+	// To avoid unnecessary marshalling of verbose transactions, only initialize
+	// marshalledJSONVerboseFull and marshalledJSONVerbosePartial if required.
+	// Note: both are initialized at the same time
+	// Note: for simplicity's sake, this operation modifies mtx in place
+	var marshalledJSONVerboseFull []byte
+	var marshalledJSONVerbosePartial []byte
+	initializeMarshalledJSONVerbose := func() bool {
+		net := m.server.cfg.DAGParams
+		build := func() ([]byte, bool) {
+			rawTx, err := createTxRawResult(net, mtx, txIDStr, nil, "", 0, 0, nil)
+			if err != nil {
+				return nil, false
+			}
+			verboseNtfn := btcjson.NewTxAcceptedVerboseNtfn(*rawTx)
+			marshalledJSONVerbose, err := btcjson.MarshalCmd(nil, verboseNtfn)
+			if err != nil {
+				log.Errorf("Failed to marshal verbose tx notification: %s", err.Error())
+				return nil, false
+			}
+
+			return marshalledJSONVerbose, true
+		}
+
+		// First, build the given mtx for a Full version of the transaction
+		var ok bool
+		marshalledJSONVerboseFull, ok = build()
+		if !ok {
+			return false
+		}
+
+		// Second, modify the given mtx to make it partial
+		mtx.Payload = []byte{}
+
+		// Third, build again, now with the modified mtx, for a Partial version
+		marshalledJSONVerbosePartial, ok = build()
+		if !ok {
+			return false
+		}
+
+		return true
+	}
+
 	for _, wsc := range clients {
 		if wsc.verboseTxUpdates {
-			if marshalledJSONVerbose != nil {
-				wsc.QueueNotification(marshalledJSONVerbose)
-				continue
+			if marshalledJSONVerboseFull == nil {
+				ok := initializeMarshalledJSONVerbose()
+				if !ok {
+					return
+				}
 			}
 
-			net := m.server.cfg.DAGParams
-			rawTx, err := createTxRawResult(net, mtx, txIDStr, nil,
-				"", 0, 0, nil)
-			if err != nil {
-				return
+			nodeSubnetworkID := m.server.cfg.DAG.SubnetworkID()
+			if wsc.subnetworkIDForTxUpdates == nil || wsc.subnetworkIDForTxUpdates.IsEqual(nodeSubnetworkID) {
+				wsc.QueueNotification(marshalledJSONVerboseFull)
+			} else {
+				wsc.QueueNotification(marshalledJSONVerbosePartial)
 			}
-
-			verboseNtfn = btcjson.NewTxAcceptedVerboseNtfn(*rawTx)
-			marshalledJSONVerbose, err = btcjson.MarshalCmd(nil,
-				verboseNtfn)
-			if err != nil {
-				log.Errorf("Failed to marshal verbose tx "+
-					"notification: %s", err.Error())
-				return
-			}
-			wsc.QueueNotification(marshalledJSONVerbose)
 		} else {
 			wsc.QueueNotification(marshalledJSON)
 		}
@@ -1274,6 +1307,10 @@ type wsClient struct {
 	// verboseTxUpdates specifies whether a client has requested verbose
 	// information about all new transactions.
 	verboseTxUpdates bool
+
+	// subnetworkIDForTxUpdates specifies whether a client has requested to receive
+	// new transaction information from a specific subnetwork.
+	subnetworkIDForTxUpdates *subnetworkid.SubnetworkID
 
 	// addrRequests is a set of addresses the caller has requested to be
 	// notified about.  It is maintained here so all requests can be removed
@@ -1787,7 +1824,7 @@ func handleLoadTxFilter(wsc *wsClient, icmd interface{}) (interface{}, error) {
 
 	outPoints := make([]wire.OutPoint, len(cmd.OutPoints))
 	for i := range cmd.OutPoints {
-		hash, err := daghash.NewHashFromStr(cmd.OutPoints[i].Hash)
+		txID, err := daghash.NewTxIDFromStr(cmd.OutPoints[i].TxID)
 		if err != nil {
 			return nil, &btcjson.RPCError{
 				Code:    btcjson.ErrRPCInvalidParameter,
@@ -1795,7 +1832,7 @@ func handleLoadTxFilter(wsc *wsClient, icmd interface{}) (interface{}, error) {
 			}
 		}
 		outPoints[i] = wire.OutPoint{
-			TxID:  *hash,
+			TxID:  *txID,
 			Index: cmd.OutPoints[i].Index,
 		}
 	}
@@ -1868,7 +1905,51 @@ func handleNotifyNewTransactions(wsc *wsClient, icmd interface{}) (interface{}, 
 		return nil, btcjson.ErrRPCInternal
 	}
 
-	wsc.verboseTxUpdates = cmd.Verbose != nil && *cmd.Verbose
+	isVerbose := cmd.Verbose != nil && *cmd.Verbose
+	if isVerbose == false && cmd.Subnetwork != nil {
+		return nil, &btcjson.RPCError{
+			Code:    btcjson.ErrRPCInvalidParameter,
+			Message: "Subnetwork switch is only allowed if verbose=true",
+		}
+	}
+
+	var subnetworkID *subnetworkid.SubnetworkID
+	if cmd.Subnetwork != nil {
+		var err error
+		subnetworkID, err = subnetworkid.NewFromStr(*cmd.Subnetwork)
+		if err != nil {
+			return nil, &btcjson.RPCError{
+				Code:    btcjson.ErrRPCInvalidParameter,
+				Message: "Subnetwork is malformed",
+			}
+		}
+	}
+
+	if isVerbose {
+		nodeSubnetworkID := wsc.server.cfg.DAG.SubnetworkID()
+		if nodeSubnetworkID.IsEqual(&wire.SubnetworkIDNative) && subnetworkID != nil {
+			return nil, &btcjson.RPCError{
+				Code:    btcjson.ErrRPCInvalidParameter,
+				Message: "Subnetwork switch is disabled when node is in Native subnetwork",
+			}
+		} else if !nodeSubnetworkID.IsEqual(&wire.SubnetworkIDSupportsAll) {
+			if subnetworkID == nil {
+				return nil, &btcjson.RPCError{
+					Code:    btcjson.ErrRPCInvalidParameter,
+					Message: "Subnetwork switch is required when node is partial",
+				}
+			}
+			if !nodeSubnetworkID.IsEqual(subnetworkID) {
+				return nil, &btcjson.RPCError{
+					Code:    btcjson.ErrRPCInvalidParameter,
+					Message: "Subnetwork must equal the node's subnetwork when the node is partial",
+				}
+			}
+		}
+	}
+
+	wsc.verboseTxUpdates = isVerbose
+	wsc.subnetworkIDForTxUpdates = subnetworkID
 	wsc.server.ntfnMgr.RegisterNewMempoolTxsUpdates(wsc)
 	return nil, nil
 }
@@ -1963,12 +2044,12 @@ func checkAddressValidity(addrs []string, params *dagconfig.Params) error {
 func deserializeOutpoints(serializedOuts []btcjson.OutPoint) ([]*wire.OutPoint, error) {
 	outpoints := make([]*wire.OutPoint, 0, len(serializedOuts))
 	for i := range serializedOuts {
-		blockHash, err := daghash.NewHashFromStr(serializedOuts[i].Hash)
+		txID, err := daghash.NewTxIDFromStr(serializedOuts[i].TxID)
 		if err != nil {
-			return nil, rpcDecodeHexError(serializedOuts[i].Hash)
+			return nil, rpcDecodeHexError(serializedOuts[i].TxID)
 		}
 		index := serializedOuts[i].Index
-		outpoints = append(outpoints, wire.NewOutPoint(blockHash, index))
+		outpoints = append(outpoints, wire.NewOutPoint(txID, index))
 	}
 
 	return outpoints, nil
