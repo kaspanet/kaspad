@@ -1042,7 +1042,7 @@ func TestUTXOSetRemoveTxOuts(t *testing.T) {
 			},
 		},
 		{
-			name:           "remove first entry again",
+			name:       "remove first entry again",
 			txToRemove: tx0,
 			expectedUTXODiff: &UTXODiff{
 				toAdd:    utxoCollection{},
