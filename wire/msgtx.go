@@ -57,7 +57,7 @@ const (
 	defaultTxInOutAlloc = 15
 
 	// minTxInPayload is the minimum payload size for a transaction input.
-	// PreviousOutPoint.Hash + PreviousOutPoint.Index 4 bytes + Varint for
+	// PreviousOutPoint.TxID + PreviousOutPoint.Index 4 bytes + Varint for
 	// SignatureScript length 1 byte + Sequence 4 bytes.
 	minTxInPayload = 9 + daghash.HashSize
 
@@ -98,15 +98,27 @@ const (
 	freeListMaxItems = 12500
 )
 
+// txEncoding is a bitmask defining which transaction fields we
+// want to encode and which to ignore.
+type txEncoding uint8
+
+const (
+	txEncodingFull txEncoding = 0
+
+	txEncodingExcludeSubNetworkData txEncoding = 1 << iota
+
+	txEncodingExcludeSignatureScript
+)
+
 var (
-	// SubNetworkSupportsAll is the sub-network id that is used to signal to peers that you support all sub-networks
-	SubNetworkSupportsAll = subnetworkid.SubNetworkID{}
+	// SubnetworkIDSupportsAll is the subnetwork ID that is used to signal to peers that you support all subnetworks
+	SubnetworkIDSupportsAll = subnetworkid.SubnetworkID{}
 
-	// SubNetworkDAGCoin is the default sub-network which is used for transactions without related payload data
-	SubNetworkDAGCoin = subnetworkid.SubNetworkID{1}
+	// SubnetworkIDNative is the default subnetwork ID which is used for transactions without related payload data
+	SubnetworkIDNative = subnetworkid.SubnetworkID{1}
 
-	// SubNetworkRegistry is the sub-network which is used for adding new sub networks to the registry
-	SubNetworkRegistry = subnetworkid.SubNetworkID{2}
+	// SubnetworkIDRegistry is the subnetwork ID which is used for adding new sub networks to the registry
+	SubnetworkIDRegistry = subnetworkid.SubnetworkID{2}
 )
 
 // scriptFreeList defines a free list of byte slices (up to the maximum number
@@ -169,29 +181,29 @@ var scriptPool scriptFreeList = make(chan []byte, freeListMaxItems)
 // OutPoint defines a bitcoin data type that is used to track previous
 // transaction outputs.
 type OutPoint struct {
-	Hash  daghash.Hash
+	TxID  daghash.TxID
 	Index uint32
 }
 
 // NewOutPoint returns a new bitcoin transaction outpoint point with the
 // provided hash and index.
-func NewOutPoint(hash *daghash.Hash, index uint32) *OutPoint {
+func NewOutPoint(txID *daghash.TxID, index uint32) *OutPoint {
 	return &OutPoint{
-		Hash:  *hash,
+		TxID:  *txID,
 		Index: index,
 	}
 }
 
-// String returns the OutPoint in the human-readable form "hash:index".
+// String returns the OutPoint in the human-readable form "txID:index".
 func (o OutPoint) String() string {
-	// Allocate enough for hash string, colon, and 10 digits.  Although
+	// Allocate enough for ID string, colon, and 10 digits.  Although
 	// at the time of writing, the number of digits can be no greater than
 	// the length of the decimal representation of maxTxOutPerMessage, the
 	// maximum message payload may increase in the future and this
 	// optimization may go unnoticed, so allocate space for 10 decimal
 	// digits, which will fit any uint32.
 	buf := make([]byte, 2*daghash.HashSize+1, 2*daghash.HashSize+1+10)
-	copy(buf, o.Hash.String())
+	copy(buf, o.TxID.String())
 	buf[2*daghash.HashSize] = ':'
 	buf = strconv.AppendUint(buf, uint64(o.Index), 10)
 	return string(buf)
@@ -207,11 +219,22 @@ type TxIn struct {
 // SerializeSize returns the number of bytes it would take to serialize the
 // the transaction input.
 func (t *TxIn) SerializeSize() int {
-	// Outpoint Hash 32 bytes + Outpoint Index 4 bytes + Sequence 8 bytes +
+	return t.serializeSize(txEncodingFull)
+}
+
+func (t *TxIn) serializeSize(encodingFlags txEncoding) int {
+	// Outpoint ID 32 bytes + Outpoint Index 4 bytes + Sequence 8 bytes +
 	// serialized varint size for the length of SignatureScript +
 	// SignatureScript bytes.
-	return 44 + VarIntSerializeSize(uint64(len(t.SignatureScript))) +
-		len(t.SignatureScript)
+	return 44 + serializeSignatureScriptSize(t.SignatureScript, encodingFlags)
+}
+
+func serializeSignatureScriptSize(signatureScript []byte, encodingFlags txEncoding) int {
+	if encodingFlags&txEncodingExcludeSignatureScript != txEncodingExcludeSignatureScript {
+		return VarIntSerializeSize(uint64(len(signatureScript))) +
+			len(signatureScript)
+	}
+	return VarIntSerializeSize(0)
 }
 
 // NewTxIn returns a new bitcoin transaction input with the provided
@@ -259,7 +282,7 @@ type MsgTx struct {
 	TxIn         []*TxIn
 	TxOut        []*TxOut
 	LockTime     uint64
-	SubNetworkID subnetworkid.SubNetworkID
+	SubnetworkID subnetworkid.SubnetworkID
 	Gas          uint64
 	Payload      []byte
 }
@@ -274,6 +297,23 @@ func (msg *MsgTx) AddTxOut(to *TxOut) {
 	msg.TxOut = append(msg.TxOut, to)
 }
 
+// IsCoinBase determines whether or not a transaction is a coinbase.  A coinbase
+// is a special transaction created by miners that has no inputs.  This is
+// represented in the block dag by a transaction with a single input that has
+// a previous output transaction index set to the maximum value along with a
+// zero TxID.
+func (msg *MsgTx) IsCoinBase() bool {
+	// A coin base must only have one transaction input.
+	if len(msg.TxIn) != 1 {
+		return false
+	}
+
+	// The previous output of a coinbase must have a max value index and
+	// a zero TxID.
+	prevOut := &msg.TxIn[0].PreviousOutPoint
+	return prevOut.Index == math.MaxUint32 && prevOut.TxID == daghash.ZeroTxID
+}
+
 // TxHash generates the Hash for the transaction.
 func (msg *MsgTx) TxHash() daghash.Hash {
 	// Encode the transaction and calculate double sha256 on the result.
@@ -283,6 +323,22 @@ func (msg *MsgTx) TxHash() daghash.Hash {
 	buf := bytes.NewBuffer(make([]byte, 0, msg.SerializeSize()))
 	_ = msg.Serialize(buf)
 	return daghash.DoubleHashH(buf.Bytes())
+}
+
+// TxID generates the Hash for the transaction without the signature script, gas and payload fields.
+func (msg *MsgTx) TxID() daghash.TxID {
+	// Encode the transaction, replace signature script, payload and gas with
+	// zeroes, and calculate double sha256 on the result.
+	// Ignore the error returns since the only way the encode could fail
+	// is being out of memory or due to nil pointers, both of which would
+	// cause a run-time panic.
+	var encodingFlags txEncoding
+	if !msg.IsCoinBase() {
+		encodingFlags = txEncodingExcludeSignatureScript | txEncodingExcludeSubNetworkData
+	}
+	buf := bytes.NewBuffer(make([]byte, 0, msg.serializeSize(encodingFlags)))
+	_ = msg.serialize(buf, encodingFlags)
+	return daghash.TxID(daghash.DoubleHashH(buf.Bytes()))
 }
 
 // Copy creates a deep copy of a transaction so that the original does not get
@@ -295,7 +351,7 @@ func (msg *MsgTx) Copy() *MsgTx {
 		TxIn:         make([]*TxIn, 0, len(msg.TxIn)),
 		TxOut:        make([]*TxOut, 0, len(msg.TxOut)),
 		LockTime:     msg.LockTime,
-		SubNetworkID: msg.SubNetworkID,
+		SubnetworkID: msg.SubnetworkID,
 		Gas:          msg.Gas,
 	}
 
@@ -309,7 +365,7 @@ func (msg *MsgTx) Copy() *MsgTx {
 		// Deep copy the old previous outpoint.
 		oldOutPoint := oldTxIn.PreviousOutPoint
 		newOutPoint := OutPoint{}
-		newOutPoint.Hash.SetBytes(oldOutPoint.Hash[:])
+		newOutPoint.TxID.SetBytes(oldOutPoint.TxID[:])
 		newOutPoint.Index = oldOutPoint.Index
 
 		// Deep copy the old signature script.
@@ -458,40 +514,28 @@ func (msg *MsgTx) BtcDecode(r io.Reader, pver uint32) error {
 		return err
 	}
 
-	_, err = io.ReadFull(r, msg.SubNetworkID[:])
+	_, err = io.ReadFull(r, msg.SubnetworkID[:])
 	if err != nil {
 		returnScriptBuffers()
 		return err
 	}
 
-	if msg.SubNetworkID == SubNetworkSupportsAll {
-		str := fmt.Sprintf("%v is a reserved sub network and cannot be used as part of a transaction", msg.SubNetworkID)
+	if msg.SubnetworkID == SubnetworkIDSupportsAll {
+		str := fmt.Sprintf("%v is a reserved sub network and cannot be used as part of a transaction", msg.SubnetworkID)
 		return messageError("MsgTx.BtcDecode", str)
 	}
 
-	if msg.SubNetworkID != SubNetworkDAGCoin {
+	if msg.SubnetworkID != SubnetworkIDNative {
 		msg.Gas, err = binarySerializer.Uint64(r, littleEndian)
 		if err != nil {
 			returnScriptBuffers()
 			return err
 		}
 
-		isRegistrySubNetwork := msg.SubNetworkID == SubNetworkRegistry
-
-		if isRegistrySubNetwork && msg.Gas != 0 {
-			str := fmt.Sprintf("Transactions from subnetwork %v should have 0 gas", msg.SubNetworkID)
-			return messageError("MsgTx.BtcDecode", str)
-		}
-
 		payloadLength, err := ReadVarInt(r, pver)
 		if err != nil {
 			returnScriptBuffers()
 			return err
-		}
-
-		if isRegistrySubNetwork && payloadLength != 8 {
-			str := fmt.Sprintf("For registry sub network the payload should always be uint64 (8 bytes length)")
-			return messageError("MsgTx.BtcDecode", str)
 		}
 
 		msg.Payload = make([]byte, payloadLength)
@@ -572,6 +616,10 @@ func (msg *MsgTx) Deserialize(r io.Reader) error {
 // See Serialize for encoding transactions to be stored to disk, such as in a
 // database, as opposed to encoding transactions for the wire.
 func (msg *MsgTx) BtcEncode(w io.Writer, pver uint32) error {
+	return msg.encode(w, pver, txEncodingFull)
+}
+
+func (msg *MsgTx) encode(w io.Writer, pver uint32, encodingFlags txEncoding) error {
 	err := binarySerializer.PutUint32(w, littleEndian, uint32(msg.Version))
 	if err != nil {
 		return err
@@ -584,7 +632,7 @@ func (msg *MsgTx) BtcEncode(w io.Writer, pver uint32) error {
 	}
 
 	for _, ti := range msg.TxIn {
-		err = writeTxIn(w, pver, msg.Version, ti)
+		err = writeTxIn(w, pver, msg.Version, ti, encodingFlags)
 		if err != nil {
 			return err
 		}
@@ -608,14 +656,14 @@ func (msg *MsgTx) BtcEncode(w io.Writer, pver uint32) error {
 		return err
 	}
 
-	_, err = w.Write(msg.SubNetworkID[:])
+	_, err = w.Write(msg.SubnetworkID[:])
 	if err != nil {
 		return err
 	}
 
-	if msg.SubNetworkID != SubNetworkDAGCoin {
-		if msg.SubNetworkID == SubNetworkRegistry && msg.Gas != 0 {
-			str := fmt.Sprintf("Transactions from subnetwork %v should have 0 gas", msg.SubNetworkID)
+	if msg.SubnetworkID != SubnetworkIDNative {
+		if msg.SubnetworkID == SubnetworkIDRegistry && msg.Gas != 0 {
+			str := fmt.Sprintf("Transactions from subnetwork %v should have 0 gas", msg.SubnetworkID)
 			return messageError("MsgTx.BtcEncode", str)
 		}
 
@@ -624,19 +672,20 @@ func (msg *MsgTx) BtcEncode(w io.Writer, pver uint32) error {
 			return err
 		}
 
-		err = WriteVarInt(w, pver, uint64(len(msg.Payload)))
-		if err != nil {
-			return err
+		if encodingFlags&txEncodingExcludeSubNetworkData != txEncodingExcludeSubNetworkData {
+			err = WriteVarInt(w, pver, uint64(len(msg.Payload)))
+			w.Write(msg.Payload)
+		} else {
+			err = WriteVarInt(w, pver, 0)
 		}
-		_, err := w.Write(msg.Payload)
 		if err != nil {
 			return err
 		}
 	} else if msg.Payload != nil {
-		str := fmt.Sprintf("Transactions from subnetwork %v should have <nil> payload", msg.SubNetworkID)
+		str := fmt.Sprintf("Transactions from subnetwork %v should have <nil> payload", msg.SubnetworkID)
 		return messageError("MsgTx.BtcEncode", str)
 	} else if msg.Gas != 0 {
-		str := fmt.Sprintf("Transactions from subnetwork %v should have 0 gas", msg.SubNetworkID)
+		str := fmt.Sprintf("Transactions from subnetwork %v should have 0 gas", msg.SubnetworkID)
 		return messageError("MsgTx.BtcEncode", str)
 	}
 
@@ -660,29 +709,51 @@ func (msg *MsgTx) Serialize(w io.Writer) error {
 	return msg.BtcEncode(w, 0)
 }
 
-// SerializeSize returns the number of bytes it would take to serialize the
+func (msg *MsgTx) serialize(w io.Writer, encodingFlags txEncoding) error {
+	// At the current time, there is no difference between the wire encoding
+	// at protocol version 0 and the stable long-term storage format.  As
+	// a result, make use of `encode`.
+	return msg.encode(w, 0, encodingFlags)
+}
+
+// SerializeSize returns the number of bytes it would take to serialize
 // the transaction.
 func (msg *MsgTx) SerializeSize() int {
-	// Version 4 bytes + LockTime 8 bytes + Subnetwork ID 20
+	return msg.serializeSize(txEncodingFull)
+}
+
+// SerializeSize returns the number of bytes it would take to serialize
+// the transaction.
+func (msg *MsgTx) serializeSize(encodingFlags txEncoding) int {
+	// Version 4 bytes + LockTime 8 bytes + SubnetworkID 20
 	// bytes + Serialized varint size for the number of transaction
 	// inputs and outputs.
 	n := 32 + VarIntSerializeSize(uint64(len(msg.TxIn))) +
 		VarIntSerializeSize(uint64(len(msg.TxOut)))
 
-	if msg.SubNetworkID != SubNetworkDAGCoin {
-		// Gas 8 bytes + Serialized varint size for the length of the payload
-		n += 8 + VarIntSerializeSize(uint64(len(msg.Payload)))
+	if msg.SubnetworkID != SubnetworkIDNative {
+		// Gas 8 bytes
+		n += 8
+
+		// Serialized varint size for the length of the payload
+		if encodingFlags&txEncodingExcludeSubNetworkData != txEncodingExcludeSubNetworkData {
+			n += VarIntSerializeSize(uint64(len(msg.Payload)))
+		} else {
+			n += VarIntSerializeSize(0)
+		}
 	}
 
 	for _, txIn := range msg.TxIn {
-		n += txIn.SerializeSize()
+		n += txIn.serializeSize(encodingFlags)
 	}
 
 	for _, txOut := range msg.TxOut {
 		n += txOut.SerializeSize()
 	}
 
-	n += len(msg.Payload)
+	if encodingFlags&txEncodingExcludeSubNetworkData != txEncodingExcludeSubNetworkData {
+		n += len(msg.Payload)
+	}
 
 	return n
 }
@@ -737,6 +808,16 @@ func (msg *MsgTx) PkScriptLocs() []int {
 	return pkScriptLocs
 }
 
+// IsSubnetworkCompatible return true iff subnetworkID is one or more of the following:
+// 1. The SupportsAll subnetwork (full node)
+// 2. The native subnetwork
+// 3. The transaction's subnetwork
+func (msg *MsgTx) IsSubnetworkCompatible(subnetworkID *subnetworkid.SubnetworkID) bool {
+	return subnetworkID.IsEqual(&SubnetworkIDSupportsAll) ||
+		subnetworkID.IsEqual(&SubnetworkIDNative) ||
+		subnetworkID.IsEqual(&msg.SubnetworkID)
+}
+
 // NewMsgTx returns a new bitcoin tx message that conforms to the Message
 // interface.  The return instance has a default version of TxVersion and there
 // are no transaction inputs or outputs.  Also, the lock time is set to zero
@@ -747,13 +828,13 @@ func NewMsgTx(version int32) *MsgTx {
 		Version:      version,
 		TxIn:         make([]*TxIn, 0, defaultTxInOutAlloc),
 		TxOut:        make([]*TxOut, 0, defaultTxInOutAlloc),
-		SubNetworkID: SubNetworkDAGCoin,
+		SubnetworkID: SubnetworkIDNative,
 	}
 }
 
 func newRegistryMsgTx(version int32, gasLimit uint64) *MsgTx {
 	tx := NewMsgTx(version)
-	tx.SubNetworkID = SubNetworkRegistry
+	tx.SubnetworkID = SubnetworkIDRegistry
 	tx.Payload = make([]byte, 8)
 	binary.LittleEndian.PutUint64(tx.Payload, gasLimit)
 	return tx
@@ -761,7 +842,7 @@ func newRegistryMsgTx(version int32, gasLimit uint64) *MsgTx {
 
 // readOutPoint reads the next sequence of bytes from r as an OutPoint.
 func readOutPoint(r io.Reader, pver uint32, version int32, op *OutPoint) error {
-	_, err := io.ReadFull(r, op.Hash[:])
+	_, err := io.ReadFull(r, op.TxID[:])
 	if err != nil {
 		return err
 	}
@@ -773,7 +854,7 @@ func readOutPoint(r io.Reader, pver uint32, version int32, op *OutPoint) error {
 // writeOutPoint encodes op to the bitcoin protocol encoding for an OutPoint
 // to w.
 func writeOutPoint(w io.Writer, pver uint32, version int32, op *OutPoint) error {
-	_, err := w.Write(op.Hash[:])
+	_, err := w.Write(op.TxID[:])
 	if err != nil {
 		return err
 	}
@@ -831,13 +912,17 @@ func readTxIn(r io.Reader, pver uint32, version int32, ti *TxIn) error {
 
 // writeTxIn encodes ti to the bitcoin protocol encoding for a transaction
 // input (TxIn) to w.
-func writeTxIn(w io.Writer, pver uint32, version int32, ti *TxIn) error {
+func writeTxIn(w io.Writer, pver uint32, version int32, ti *TxIn, encodingFlags txEncoding) error {
 	err := writeOutPoint(w, pver, version, &ti.PreviousOutPoint)
 	if err != nil {
 		return err
 	}
 
-	err = WriteVarBytes(w, pver, ti.SignatureScript)
+	if encodingFlags&txEncodingExcludeSignatureScript != txEncodingExcludeSignatureScript {
+		err = WriteVarBytes(w, pver, ti.SignatureScript)
+	} else {
+		err = WriteVarBytes(w, pver, []byte{})
+	}
 	if err != nil {
 		return err
 	}

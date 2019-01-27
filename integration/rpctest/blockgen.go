@@ -109,7 +109,7 @@ func createCoinbaseTx(coinbaseScript []byte, nextBlockHeight int32,
 	tx.AddTxIn(&wire.TxIn{
 		// Coinbase transactions have no inputs, so previous outpoint is
 		// zero hash and max index.
-		PreviousOutPoint: *wire.NewOutPoint(&daghash.Hash{},
+		PreviousOutPoint: *wire.NewOutPoint(&daghash.TxID{},
 			wire.MaxPrevOutIndex),
 		SignatureScript: coinbaseScript,
 		Sequence:        wire.MaxTxInSequenceNum,
@@ -181,14 +181,16 @@ func CreateBlock(parentBlock *util.Block, inclusionTxs []*util.Tx,
 	if inclusionTxs != nil {
 		blockTxns = append(blockTxns, inclusionTxs...)
 	}
-	merkles := blockdag.BuildMerkleTreeStore(blockTxns)
+	hashMerkleTree := blockdag.BuildHashMerkleTreeStore(blockTxns)
+	idMerkleTree := blockdag.BuildIDMerkleTreeStore(blockTxns)
 	var block wire.MsgBlock
 	block.Header = wire.BlockHeader{
-		Version:      blockVersion,
-		ParentHashes: []daghash.Hash{*parentHash},
-		MerkleRoot:   *merkles[len(merkles)-1],
-		Timestamp:    ts,
-		Bits:         net.PowLimitBits,
+		Version:        blockVersion,
+		ParentHashes:   []daghash.Hash{*parentHash},
+		HashMerkleRoot: *hashMerkleTree.Root(),
+		IDMerkleRoot:   *idMerkleTree.Root(),
+		Timestamp:      ts,
+		Bits:           net.PowLimitBits,
 	}
 	for _, tx := range blockTxns {
 		if err := block.AddTransaction(tx.MsgTx()); err != nil {

@@ -109,7 +109,7 @@ func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params
 	blockTemplateGenerator := mining.NewBlkTmplGenerator(&policy,
 		s.p2pServer.DAGParams, s.p2pServer.TxMemPool, s.p2pServer.DAG, s.p2pServer.TimeSource, s.p2pServer.SigCache)
 	s.cpuminer = cpuminer.New(&cpuminer.Config{
-		ChainParams:            dagParams,
+		DAGParams:              dagParams,
 		BlockTemplateGenerator: blockTemplateGenerator,
 		MiningAddrs:            cfg.MiningAddrs,
 		ProcessBlock:           s.p2pServer.SyncManager.ProcessBlock,

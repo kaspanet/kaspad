@@ -24,10 +24,6 @@ const (
 	// maxNonce is the maximum value a nonce can be in a block header.
 	maxNonce = ^uint64(0) // 2^64 - 1
 
-	// maxExtraNonce is the maximum value an extra nonce used in a coinbase
-	// transaction can be.
-	maxExtraNonce = ^uint64(0) // 2^64 - 1
-
 	// hpsUpdateSecs is the number of seconds to wait in between each
 	// update to the hashes per second monitor.
 	hpsUpdateSecs = 10
@@ -49,9 +45,9 @@ var (
 
 // Config is a descriptor containing the cpu miner configuration.
 type Config struct {
-	// ChainParams identifies which chain parameters the cpu miner is
+	// DAGParams identifies which DAG parameters the cpu miner is
 	// associated with.
-	ChainParams *dagconfig.Params
+	DAGParams *dagconfig.Params
 
 	// BlockTemplateGenerator identifies the instance to use in order to
 	// generate block templates that the miner will attempt to solve.
@@ -207,15 +203,6 @@ func (m *CPUMiner) submitBlock(block *util.Block) bool {
 func (m *CPUMiner) solveBlock(msgBlock *wire.MsgBlock, blockHeight int32,
 	ticker *time.Ticker, quit chan struct{}) bool {
 
-	// Choose a random extra nonce offset for this block template and
-	// worker.
-	enOffset, err := wire.RandomUint64()
-	if err != nil {
-		log.Errorf("Unexpected error while generating random "+
-			"extra nonce offset: %v", err)
-		enOffset = 0
-	}
-
 	// Create some convenience variables.
 	header := &msgBlock.Header
 	targetDifficulty := blockdag.CompactToBig(header.Bits)
@@ -225,62 +212,64 @@ func (m *CPUMiner) solveBlock(msgBlock *wire.MsgBlock, blockHeight int32,
 	lastTxUpdate := m.g.TxSource().LastUpdated()
 	hashesCompleted := uint64(0)
 
-	// Note that the entire extra nonce range is iterated and the offset is
-	// added relying on the fact that overflow will wrap around 0 as
-	// provided by the Go spec.
-	for extraNonce := uint64(0); extraNonce < maxExtraNonce; extraNonce++ {
-		// Update the extra nonce in the block template with the
-		// new value by regenerating the coinbase script and
-		// setting the merkle root to the new value.
-		m.g.UpdateExtraNonce(msgBlock, blockHeight, extraNonce+enOffset)
+	// Choose a random extra nonce for this block template and worker.
+	extraNonce, err := wire.RandomUint64()
+	if err != nil {
+		log.Errorf("Unexpected error while generating random "+
+			"extra nonce offset: %v", err)
+	}
 
-		// Search through the entire nonce range for a solution while
-		// periodically checking for early quit and stale block
-		// conditions along with updates to the speed monitor.
-		for i := uint64(0); i <= maxNonce; i++ {
-			select {
-			case <-quit:
+	// Update the extra nonce in the block template with the
+	// new value by regenerating the coinbase script and
+	// setting the merkle root to the new value.
+	m.g.UpdateExtraNonce(msgBlock, blockHeight, extraNonce)
+
+	// Search through the entire nonce range for a solution while
+	// periodically checking for early quit and stale block
+	// conditions along with updates to the speed monitor.
+	for i := uint64(0); i <= maxNonce; i++ {
+		select {
+		case <-quit:
+			return false
+
+		case <-ticker.C:
+			m.updateHashes <- hashesCompleted
+			hashesCompleted = 0
+
+			// The current block is stale if the DAG has changed.
+			if !daghash.AreEqual(header.ParentHashes, m.g.TipHashes()) {
 				return false
-
-			case <-ticker.C:
-				m.updateHashes <- hashesCompleted
-				hashesCompleted = 0
-
-				// The current block is stale if the DAG has changed.
-				if !daghash.AreEqual(header.ParentHashes, m.g.TipHashes()) {
-					return false
-				}
-
-				// The current block is stale if the memory pool
-				// has been updated since the block template was
-				// generated and it has been at least one
-				// minute.
-				if lastTxUpdate != m.g.TxSource().LastUpdated() &&
-					time.Now().After(lastGenerated.Add(time.Minute)) {
-
-					return false
-				}
-
-				m.g.UpdateBlockTime(msgBlock)
-
-			default:
-				// Non-blocking select to fall through
 			}
 
-			// Update the nonce and hash the block header.  Each
-			// hash is actually a double sha256 (two hashes), so
-			// increment the number of hashes completed for each
-			// attempt accordingly.
-			header.Nonce = i
-			hash := header.BlockHash()
-			hashesCompleted += 2
+			// The current block is stale if the memory pool
+			// has been updated since the block template was
+			// generated and it has been at least one
+			// minute.
+			if lastTxUpdate != m.g.TxSource().LastUpdated() &&
+				time.Now().After(lastGenerated.Add(time.Minute)) {
 
-			// The block is solved when the new block hash is less
-			// than the target difficulty.  Yay!
-			if daghash.HashToBig(&hash).Cmp(targetDifficulty) <= 0 {
-				m.updateHashes <- hashesCompleted
-				return true
+				return false
 			}
+
+			m.g.UpdateBlockTime(msgBlock)
+
+		default:
+			// Non-blocking select to fall through
+		}
+
+		// Update the nonce and hash the block header.  Each
+		// hash is actually a double sha256 (two hashes), so
+		// increment the number of hashes completed for each
+		// attempt accordingly.
+		header.Nonce = i
+		hash := header.BlockHash()
+		hashesCompleted += 2
+
+		// The block is solved when the new block hash is less
+		// than the target difficulty.  Yay!
+		if daghash.HashToBig(&hash).Cmp(targetDifficulty) <= 0 {
+			m.updateHashes <- hashesCompleted
+			return true
 		}
 	}
 

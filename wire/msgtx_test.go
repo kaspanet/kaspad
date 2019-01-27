@@ -22,11 +22,10 @@ import (
 func TestTx(t *testing.T) {
 	pver := ProtocolVersion
 
-	// Block 100000 hash.
-	hashStr := "3ba27aa200b1cecaad478d2b00432346c3f1f3986da1afd33e506"
-	hash, err := daghash.NewHashFromStr(hashStr)
+	txIDStr := "3ba27aa200b1cecaad478d2b00432346c3f1f3986da1afd33e506"
+	txID, err := daghash.NewTxIDFromStr(txIDStr)
 	if err != nil {
-		t.Errorf("NewHashFromStr: %v", err)
+		t.Errorf("NewTxIDFromStr: %v", err)
 	}
 
 	// Ensure the command is expected value.
@@ -50,16 +49,16 @@ func TestTx(t *testing.T) {
 	// NOTE: This is a block hash and made up index, but we're only
 	// testing package functionality.
 	prevOutIndex := uint32(1)
-	prevOut := NewOutPoint(hash, prevOutIndex)
-	if !prevOut.Hash.IsEqual(hash) {
-		t.Errorf("NewOutPoint: wrong hash - got %v, want %v",
-			spew.Sprint(&prevOut.Hash), spew.Sprint(hash))
+	prevOut := NewOutPoint(txID, prevOutIndex)
+	if !prevOut.TxID.IsEqual(txID) {
+		t.Errorf("NewOutPoint: wrong ID - got %v, want %v",
+			spew.Sprint(&prevOut.TxID), spew.Sprint(txID))
 	}
 	if prevOut.Index != prevOutIndex {
 		t.Errorf("NewOutPoint: wrong index - got %v, want %v",
 			prevOut.Index, prevOutIndex)
 	}
-	prevOutStr := fmt.Sprintf("%s:%d", hash.String(), prevOutIndex)
+	prevOutStr := fmt.Sprintf("%s:%d", txID.String(), prevOutIndex)
 	if s := prevOut.String(); s != prevOutStr {
 		t.Errorf("OutPoint.String: unexpected result - got %v, "+
 			"want %v", s, prevOutStr)
@@ -129,20 +128,19 @@ func TestTx(t *testing.T) {
 }
 
 // TestTxHash tests the ability to generate the hash of a transaction accurately.
-func TestTxHash(t *testing.T) {
-	// Hash of first transaction from block 113875.
-	hashStr := "2d0dd1e05410fe76afbd90f577f615d603ca00b2fa53f963e6375ce742343faa"
-	wantHash, err := daghash.NewHashFromStr(hashStr)
+func TestTxHashAndID(t *testing.T) {
+	txID1Str := "2d0dd1e05410fe76afbd90f577f615d603ca00b2fa53f963e6375ce742343faa"
+	wantTxID1, err := daghash.NewTxIDFromStr(txID1Str)
 	if err != nil {
 		t.Errorf("NewHashFromStr: %v", err)
 		return
 	}
 
 	// First transaction from block 113875.
-	msgTx := NewMsgTx(1)
+	tx1 := NewMsgTx(1)
 	txIn := TxIn{
 		PreviousOutPoint: OutPoint{
-			Hash:  daghash.Hash{},
+			TxID:  daghash.TxID{},
 			Index: 0xffffffff,
 		},
 		SignatureScript: []byte{0x04, 0x31, 0xdc, 0x00, 0x1b, 0x01, 0x62},
@@ -164,15 +162,103 @@ func TestTxHash(t *testing.T) {
 			0xac, // OP_CHECKSIG
 		},
 	}
-	msgTx.AddTxIn(&txIn)
-	msgTx.AddTxOut(&txOut)
-	msgTx.LockTime = 0
+	tx1.AddTxIn(&txIn)
+	tx1.AddTxOut(&txOut)
+	tx1.LockTime = 0
 
 	// Ensure the hash produced is expected.
-	txHash := msgTx.TxHash()
-	if !txHash.IsEqual(wantHash) {
+	tx1Hash := tx1.TxHash()
+	if !tx1Hash.IsEqual((*daghash.Hash)(wantTxID1)) {
 		t.Errorf("TxHash: wrong hash - got %v, want %v",
-			spew.Sprint(txHash), spew.Sprint(wantHash))
+			spew.Sprint(tx1Hash), spew.Sprint(wantTxID1))
+	}
+
+	// Ensure the TxID for coinbase transaction is the same as TxHash.
+	tx1ID := tx1.TxID()
+	if !tx1ID.IsEqual(wantTxID1) {
+		t.Errorf("TxID: wrong ID - got %v, want %v",
+			spew.Sprint(tx1ID), spew.Sprint(wantTxID1))
+	}
+
+	hash2Str := "ef55c85be28615b699bef1470d0d041982a6f3af5f900c978c3837b967b168b3"
+	wantHash2, err := daghash.NewHashFromStr(hash2Str)
+	if err != nil {
+		t.Errorf("NewHashFromStr: %v", err)
+		return
+	}
+
+	id2Str := "12063f97b5fbbf441bd7962f88631a36a4b4a67649045c02ed840bedc97e88ea"
+	wantID2, err := daghash.NewTxIDFromStr(id2Str)
+	if err != nil {
+		t.Errorf("NewHashFromStr: %v", err)
+		return
+	}
+	tx2 := &MsgTx{
+		Version: 1,
+		TxIn: []*TxIn{
+			{
+				PreviousOutPoint: OutPoint{
+					Index: 0,
+					TxID:  daghash.TxID{1, 2, 3},
+				},
+				SignatureScript: []byte{
+					0x49, 0x30, 0x46, 0x02, 0x21, 0x00, 0xDA, 0x0D, 0xC6, 0xAE, 0xCE, 0xFE, 0x1E, 0x06, 0xEF, 0xDF,
+					0x05, 0x77, 0x37, 0x57, 0xDE, 0xB1, 0x68, 0x82, 0x09, 0x30, 0xE3, 0xB0, 0xD0, 0x3F, 0x46, 0xF5,
+					0xFC, 0xF1, 0x50, 0xBF, 0x99, 0x0C, 0x02, 0x21, 0x00, 0xD2, 0x5B, 0x5C, 0x87, 0x04, 0x00, 0x76,
+					0xE4, 0xF2, 0x53, 0xF8, 0x26, 0x2E, 0x76, 0x3E, 0x2D, 0xD5, 0x1E, 0x7F, 0xF0, 0xBE, 0x15, 0x77,
+					0x27, 0xC4, 0xBC, 0x42, 0x80, 0x7F, 0x17, 0xBD, 0x39, 0x01, 0x41, 0x04, 0xE6, 0xC2, 0x6E, 0xF6,
+					0x7D, 0xC6, 0x10, 0xD2, 0xCD, 0x19, 0x24, 0x84, 0x78, 0x9A, 0x6C, 0xF9, 0xAE, 0xA9, 0x93, 0x0B,
+					0x94, 0x4B, 0x7E, 0x2D, 0xB5, 0x34, 0x2B, 0x9D, 0x9E, 0x5B, 0x9F, 0xF7, 0x9A, 0xFF, 0x9A, 0x2E,
+					0xE1, 0x97, 0x8D, 0xD7, 0xFD, 0x01, 0xDF, 0xC5, 0x22, 0xEE, 0x02, 0x28, 0x3D, 0x3B, 0x06, 0xA9,
+					0xD0, 0x3A, 0xCF, 0x80, 0x96, 0x96, 0x8D, 0x7D, 0xBB, 0x0F, 0x91, 0x78,
+				},
+				Sequence: math.MaxUint64,
+			},
+		},
+		TxOut: []*TxOut{
+			{
+				Value: 244623243,
+				PkScript: []byte{
+					0x76, 0xA9, 0x14, 0xBA, 0xDE, 0xEC, 0xFD, 0xEF, 0x05, 0x07, 0x24, 0x7F, 0xC8, 0xF7, 0x42, 0x41,
+					0xD7, 0x3B, 0xC0, 0x39, 0x97, 0x2D, 0x7B, 0x88, 0xAC,
+				},
+			},
+			{
+				Value: 44602432,
+				PkScript: []byte{
+					0x76, 0xA9, 0x14, 0xC1, 0x09, 0x32, 0x48, 0x3F, 0xEC, 0x93, 0xED, 0x51, 0xF5, 0xFE, 0x95, 0xE7,
+					0x25, 0x59, 0xF2, 0xCC, 0x70, 0x43, 0xF9, 0x88, 0xAC,
+				},
+			},
+		},
+		LockTime:     0,
+		SubnetworkID: subnetworkid.SubnetworkID{1, 2, 3},
+		Payload:      []byte{1, 2, 3},
+	}
+
+	// Ensure the hash produced is expected.
+	tx2Hash := tx2.TxHash()
+	if !tx2Hash.IsEqual(wantHash2) {
+		t.Errorf("TxHash: wrong hash - got %v, want %v",
+			spew.Sprint(tx2Hash), spew.Sprint(wantHash2))
+	}
+
+	// Ensure the TxID for coinbase transaction is the same as TxHash.
+	tx2ID := tx2.TxID()
+	if !tx2ID.IsEqual(wantID2) {
+		t.Errorf("TxID: wrong ID - got %v, want %v",
+			spew.Sprint(tx2ID), spew.Sprint(wantID2))
+	}
+
+	if tx2ID.IsEqual((*daghash.TxID)(&tx2Hash)) {
+		t.Errorf("tx2ID and tx2Hash shouldn't be the same for non-coinbase transaction with signature and/or payload")
+	}
+
+	tx2.Payload = []byte{}
+	tx2.TxIn[0].SignatureScript = []byte{}
+	newTx2Hash := tx2.TxHash()
+	if !tx2ID.IsEqual((*daghash.TxID)(&newTx2Hash)) {
+		t.Errorf("tx2ID and newTx2Hash should be the same for transaction without empty signature and payload")
 	}
 }
 
@@ -403,12 +489,12 @@ func TestTxSerialize(t *testing.T) {
 		0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Payload / Gas limit
 	}
 
-	subNetworkTx := NewMsgTx(1)
-	subNetworkTx.SubNetworkID = subnetworkid.SubNetworkID{0xff}
-	subNetworkTx.Gas = 5
-	subNetworkTx.Payload = []byte{0, 1, 2}
+	subnetworkTx := NewMsgTx(1)
+	subnetworkTx.SubnetworkID = subnetworkid.SubnetworkID{0xff}
+	subnetworkTx.Gas = 5
+	subnetworkTx.Payload = []byte{0, 1, 2}
 
-	subNetworkTxEncoded := []byte{
+	subnetworkTxEncoded := []byte{
 		0x01, 0x00, 0x00, 0x00, // Version
 		0x00,                                           // Varint for number of input transactions
 		0x00,                                           // Varint for number of output transactions
@@ -445,9 +531,9 @@ func TestTxSerialize(t *testing.T) {
 
 		// Sub Network Transaction.
 		{
-			subNetworkTx,
-			subNetworkTx,
-			subNetworkTxEncoded,
+			subnetworkTx,
+			subnetworkTx,
+			subnetworkTxEncoded,
 			nil,
 		},
 
@@ -569,34 +655,34 @@ func TestTxSerializeErrors(t *testing.T) {
 	}
 
 	registryTx := NewMsgTx(1)
-	registryTx.SubNetworkID = SubNetworkRegistry
+	registryTx.SubnetworkID = SubnetworkIDRegistry
 	registryTx.Gas = 1
 
 	w := bytes.NewBuffer(make([]byte, 0, registryTx.SerializeSize()))
 	err := registryTx.Serialize(w)
-	str := fmt.Sprintf("Transactions from subnetwork %v should have 0 gas", SubNetworkRegistry)
+	str := fmt.Sprintf("Transactions from subnetwork %v should have 0 gas", SubnetworkIDRegistry)
 	expectedErr := messageError("MsgTx.BtcEncode", str)
 	if err == nil || err.Error() != expectedErr.Error() {
 		t.Errorf("TestTxSerializeErrors: expected error %v but got %v", expectedErr, err)
 	}
 
-	dagCoinTx := NewMsgTx(1)
-	dagCoinTx.Gas = 1
+	nativeTx := NewMsgTx(1)
+	nativeTx.Gas = 1
 	w = bytes.NewBuffer(make([]byte, 0, registryTx.SerializeSize()))
-	err = dagCoinTx.Serialize(w)
+	err = nativeTx.Serialize(w)
 
-	str = fmt.Sprintf("Transactions from subnetwork %v should have 0 gas", SubNetworkDAGCoin)
+	str = fmt.Sprintf("Transactions from subnetwork %v should have 0 gas", SubnetworkIDNative)
 	expectedErr = messageError("MsgTx.BtcEncode", str)
 	if err == nil || err.Error() != expectedErr.Error() {
 		t.Errorf("TestTxSerializeErrors: expected error %v but got %v", expectedErr, err)
 	}
 
-	dagCoinTx.Gas = 0
-	dagCoinTx.Payload = []byte{1, 2, 3}
+	nativeTx.Gas = 0
+	nativeTx.Payload = []byte{1, 2, 3}
 	w = bytes.NewBuffer(make([]byte, 0, registryTx.SerializeSize()))
-	err = dagCoinTx.Serialize(w)
+	err = nativeTx.Serialize(w)
 
-	str = fmt.Sprintf("Transactions from subnetwork %v should have <nil> payload", SubNetworkDAGCoin)
+	str = fmt.Sprintf("Transactions from subnetwork %v should have <nil> payload", SubnetworkIDNative)
 	expectedErr = messageError("MsgTx.BtcEncode", str)
 	if err == nil || err.Error() != expectedErr.Error() {
 		t.Errorf("TestTxSerializeErrors: expected error %v but got %v", expectedErr, err)
@@ -619,51 +705,7 @@ func TestTxSerializeErrors(t *testing.T) {
 	var tx MsgTx
 	err = tx.Deserialize(r)
 
-	str = fmt.Sprintf("%v is a reserved sub network and cannot be used as part of a transaction", SubNetworkSupportsAll)
-	expectedErr = messageError("MsgTx.BtcDecode", str)
-	if err == nil || err.Error() != expectedErr.Error() {
-		t.Errorf("TestTxSerializeErrors: expected error %v but got %v", expectedErr, err)
-	}
-
-	registryWithGasTxEncoded := []byte{
-		0x01, 0x00, 0x00, 0x00, // Version
-		0x00,                                           // Varint for number of input transactions
-		0x00,                                           // Varint for number of output transactions
-		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Lock time
-		0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-		0x00, 0x00, 0x00, 0x00, // Sub Network ID
-		0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Gas
-		0x08,                                           // Payload length varint
-		0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Payload / Gas limit
-	}
-
-	r = bytes.NewReader(registryWithGasTxEncoded)
-	err = tx.Deserialize(r)
-
-	str = fmt.Sprintf("Transactions from subnetwork %v should have 0 gas", SubNetworkRegistry)
-	expectedErr = messageError("MsgTx.BtcDecode", str)
-	if err == nil || err.Error() != expectedErr.Error() {
-		t.Errorf("TestTxSerializeErrors: expected error %v but got %v", expectedErr, err)
-	}
-
-	registryWithWrongPayloadTxEncoded := []byte{
-		0x01, 0x00, 0x00, 0x00, // Version
-		0x00,                                           // Varint for number of input transactions
-		0x00,                                           // Varint for number of output transactions
-		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Lock time
-		0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-		0x00, 0x00, 0x00, 0x00, // Sub Network ID
-		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Gas
-		0x03,             // Payload length varint
-		0x01, 0x02, 0x03, // Payload / Gas limit
-	}
-
-	r = bytes.NewReader(registryWithWrongPayloadTxEncoded)
-	err = tx.Deserialize(r)
-
-	str = fmt.Sprintf("For registry sub network the payload should always be uint64 (8 bytes length)")
+	str = fmt.Sprintf("%v is a reserved sub network and cannot be used as part of a transaction", SubnetworkIDSupportsAll)
 	expectedErr = messageError("MsgTx.BtcDecode", str)
 	if err == nil || err.Error() != expectedErr.Error() {
 		t.Errorf("TestTxSerializeErrors: expected error %v but got %v", expectedErr, err)
@@ -795,6 +837,44 @@ func TestTxSerializeSize(t *testing.T) {
 	}
 }
 
+func TestIsSubnetworkCompatible(t *testing.T) {
+	testTx := MsgTx{SubnetworkID: subnetworkid.SubnetworkID{123}}
+	tests := []struct {
+		name           string
+		subnetworkID   *subnetworkid.SubnetworkID
+		expectedResult bool
+	}{
+		{
+			name:           "SupportsAll subnetwork",
+			subnetworkID:   &SubnetworkIDSupportsAll,
+			expectedResult: true,
+		},
+		{
+			name:           "Native subnetwork",
+			subnetworkID:   &SubnetworkIDNative,
+			expectedResult: true,
+		},
+		{
+			name:           "same subnetwork as test tx",
+			subnetworkID:   &subnetworkid.SubnetworkID{123},
+			expectedResult: true,
+		},
+		{
+			name:           "other subnetwork",
+			subnetworkID:   &subnetworkid.SubnetworkID{234},
+			expectedResult: false,
+		},
+	}
+
+	for _, test := range tests {
+		result := testTx.IsSubnetworkCompatible(test.subnetworkID)
+		if result != test.expectedResult {
+			t.Errorf("IsSubnetworkCompatible got unexpected result in test '%s': "+
+				"expected: %t, want: %t", test.name, test.expectedResult, result)
+		}
+	}
+}
+
 func TestScriptFreeList(t *testing.T) {
 	var list scriptFreeList = make(chan []byte, freeListMaxItems)
 
@@ -870,7 +950,7 @@ var multiTx = &MsgTx{
 	TxIn: []*TxIn{
 		{
 			PreviousOutPoint: OutPoint{
-				Hash:  daghash.Hash{},
+				TxID:  daghash.TxID{},
 				Index: 0xffffffff,
 			},
 			SignatureScript: []byte{
@@ -914,7 +994,7 @@ var multiTx = &MsgTx{
 		},
 	},
 	LockTime:     0,
-	SubNetworkID: SubNetworkDAGCoin,
+	SubnetworkID: SubnetworkIDNative,
 }
 
 // multiTxEncoded is the wire encoded bytes for multiTx using protocol version

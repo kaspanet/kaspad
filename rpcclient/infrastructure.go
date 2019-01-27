@@ -246,8 +246,8 @@ func (c *Client) trackRegisteredNtfns(cmd interface{}) {
 			c.ntfnState.notifyNewTxVerbose = true
 		} else {
 			c.ntfnState.notifyNewTx = true
-
 		}
+		c.ntfnState.notifyNewTxSubnetworkID = bcmd.Subnetwork
 
 	case *btcjson.NotifySpentCmd:
 		for _, op := range bcmd.OutPoints {
@@ -517,7 +517,7 @@ func (c *Client) reregisterNtfns() error {
 	if stateCopy.notifyNewTx || stateCopy.notifyNewTxVerbose {
 		log.Debugf("Reregistering [notifynewtransactions] (verbose=%v)",
 			stateCopy.notifyNewTxVerbose)
-		err := c.NotifyNewTransactions(stateCopy.notifyNewTxVerbose)
+		err := c.NotifyNewTransactions(stateCopy.notifyNewTxVerbose, stateCopy.notifyNewTxSubnetworkID)
 		if err != nil {
 			return err
 		}

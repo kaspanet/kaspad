@@ -24,7 +24,7 @@ var genesisCoinbaseTx = MsgTx{
 	TxIn: []*TxIn{
 		{
 			PreviousOutPoint: OutPoint{
-				Hash:  daghash.Hash{},
+				TxID:  daghash.TxID{},
 				Index: 0xffffffff,
 			},
 			SignatureScript: []byte{
@@ -197,7 +197,7 @@ func BenchmarkReadOutPoint(b *testing.B) {
 // transaction output point.
 func BenchmarkWriteOutPoint(b *testing.B) {
 	op := &OutPoint{
-		Hash:  daghash.Hash{},
+		TxID:  daghash.TxID{},
 		Index: 0,
 	}
 	for i := 0; i < b.N; i++ {
@@ -268,7 +268,7 @@ func BenchmarkReadTxIn(b *testing.B) {
 func BenchmarkWriteTxIn(b *testing.B) {
 	txIn := blockOne.Transactions[0].TxIn[0]
 	for i := 0; i < b.N; i++ {
-		writeTxIn(ioutil.Discard, 0, 0, txIn)
+		writeTxIn(ioutil.Discard, 0, 0, txIn, txEncodingFull)
 	}
 }
 
@@ -429,7 +429,7 @@ func BenchmarkDecodeHeaders(b *testing.B) {
 			}
 			parentHashes[i] = *hash
 		}
-		m.AddBlockHeader(NewBlockHeader(1, parentHashes, hash, 0, uint64(i)))
+		m.AddBlockHeader(NewBlockHeader(1, parentHashes, hash, hash, 0, uint64(i)))
 	}
 
 	// Serialize it so the bytes are available to test the decode below.
@@ -575,7 +575,7 @@ func BenchmarkDecodeMerkleBlock(b *testing.B) {
 	if err != nil {
 		b.Fatalf("NewHashFromStr: unexpected error: %v", err)
 	}
-	m.Header = *NewBlockHeader(1, []daghash.Hash{*hash}, hash, 0, uint64(10000))
+	m.Header = *NewBlockHeader(1, []daghash.Hash{*hash}, hash, hash, 0, uint64(10000))
 	for i := 0; i < 105; i++ {
 		hash, err := daghash.NewHashFromStr(fmt.Sprintf("%x", i))
 		if err != nil {

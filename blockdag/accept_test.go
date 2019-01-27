@@ -2,6 +2,7 @@ package blockdag
 
 import (
 	"errors"
+	"github.com/daglabs/btcd/wire"
 	"strings"
 	"testing"
 
@@ -14,7 +15,8 @@ import (
 func TestMaybeAcceptBlockErrors(t *testing.T) {
 	// Create a new database and DAG instance to run tests against.
 	dag, teardownFunc, err := DAGSetup("TestMaybeAcceptBlockErrors", Config{
-		DAGParams: &dagconfig.SimNetParams,
+		DAGParams:    &dagconfig.SimNetParams,
+		SubnetworkID: &wire.SubnetworkIDSupportsAll,
 	})
 	if err != nil {
 		t.Fatalf("TestMaybeAcceptBlockErrors: Failed to setup DAG instance: %v", err)
@@ -27,7 +29,7 @@ func TestMaybeAcceptBlockErrors(t *testing.T) {
 	orphanBlockFile := "blk_3B.dat"
 	loadedBlocks, err := loadBlocks(orphanBlockFile)
 	if err != nil {
-		t.Fatalf("TestMaybeAcceptBlockErrors: rejecting the block if its parents are missing: "+
+		t.Fatalf("TestMaybeAcceptBlockErrors: "+
 			"Error loading file '%s': %s\n", orphanBlockFile, err)
 	}
 	block := loadedBlocks[0]
@@ -50,7 +52,7 @@ func TestMaybeAcceptBlockErrors(t *testing.T) {
 	blocksFile := "blk_0_to_4.dat"
 	blocks, err := loadBlocks(blocksFile)
 	if err != nil {
-		t.Fatalf("TestMaybeAcceptBlockErrors: rejecting the block if its parents are invalid: "+
+		t.Fatalf("TestMaybeAcceptBlockErrors: "+
 			"Error loading file '%s': %s\n", blocksFile, err)
 	}
 

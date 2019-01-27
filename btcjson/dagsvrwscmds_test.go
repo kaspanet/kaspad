@@ -69,7 +69,7 @@ func TestDAGSvrWsCmds(t *testing.T) {
 				return btcjson.NewCmd("notifyNewTransactions")
 			},
 			staticCmd: func() interface{} {
-				return btcjson.NewNotifyNewTransactionsCmd(nil)
+				return btcjson.NewNotifyNewTransactionsCmd(nil, nil)
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"notifyNewTransactions","params":[],"id":1}`,
 			unmarshalled: &btcjson.NotifyNewTransactionsCmd{
@@ -82,11 +82,25 @@ func TestDAGSvrWsCmds(t *testing.T) {
 				return btcjson.NewCmd("notifyNewTransactions", true)
 			},
 			staticCmd: func() interface{} {
-				return btcjson.NewNotifyNewTransactionsCmd(btcjson.Bool(true))
+				return btcjson.NewNotifyNewTransactionsCmd(btcjson.Bool(true), nil)
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"notifyNewTransactions","params":[true],"id":1}`,
 			unmarshalled: &btcjson.NotifyNewTransactionsCmd{
 				Verbose: btcjson.Bool(true),
+			},
+		},
+		{
+			name: "notifyNewTransactions optional 2",
+			newCmd: func() (interface{}, error) {
+				return btcjson.NewCmd("notifyNewTransactions", true, "0000000000000000000000000000000000000123")
+			},
+			staticCmd: func() interface{} {
+				return btcjson.NewNotifyNewTransactionsCmd(btcjson.Bool(true), btcjson.String("0000000000000000000000000000000000000123"))
+			},
+			marshalled: `{"jsonrpc":"1.0","method":"notifyNewTransactions","params":[true,"0000000000000000000000000000000000000123"],"id":1}`,
+			unmarshalled: &btcjson.NotifyNewTransactionsCmd{
+				Verbose:    btcjson.Bool(true),
+				Subnetwork: btcjson.String("0000000000000000000000000000000000000123"),
 			},
 		},
 		{
@@ -129,49 +143,49 @@ func TestDAGSvrWsCmds(t *testing.T) {
 		{
 			name: "notifySpent",
 			newCmd: func() (interface{}, error) {
-				return btcjson.NewCmd("notifySpent", `[{"hash":"123","index":0}]`)
+				return btcjson.NewCmd("notifySpent", `[{"txid":"123","index":0}]`)
 			},
 			staticCmd: func() interface{} {
-				ops := []btcjson.OutPoint{{Hash: "123", Index: 0}}
+				ops := []btcjson.OutPoint{{TxID: "123", Index: 0}}
 				return btcjson.NewNotifySpentCmd(ops)
 			},
-			marshalled: `{"jsonrpc":"1.0","method":"notifySpent","params":[[{"hash":"123","index":0}]],"id":1}`,
+			marshalled: `{"jsonrpc":"1.0","method":"notifySpent","params":[[{"txid":"123","index":0}]],"id":1}`,
 			unmarshalled: &btcjson.NotifySpentCmd{
-				OutPoints: []btcjson.OutPoint{{Hash: "123", Index: 0}},
+				OutPoints: []btcjson.OutPoint{{TxID: "123", Index: 0}},
 			},
 		},
 		{
 			name: "stopNotifySpent",
 			newCmd: func() (interface{}, error) {
-				return btcjson.NewCmd("stopNotifySpent", `[{"hash":"123","index":0}]`)
+				return btcjson.NewCmd("stopNotifySpent", `[{"txid":"123","index":0}]`)
 			},
 			staticCmd: func() interface{} {
-				ops := []btcjson.OutPoint{{Hash: "123", Index: 0}}
+				ops := []btcjson.OutPoint{{TxID: "123", Index: 0}}
 				return btcjson.NewStopNotifySpentCmd(ops)
 			},
-			marshalled: `{"jsonrpc":"1.0","method":"stopNotifySpent","params":[[{"hash":"123","index":0}]],"id":1}`,
+			marshalled: `{"jsonrpc":"1.0","method":"stopNotifySpent","params":[[{"txid":"123","index":0}]],"id":1}`,
 			unmarshalled: &btcjson.StopNotifySpentCmd{
-				OutPoints: []btcjson.OutPoint{{Hash: "123", Index: 0}},
+				OutPoints: []btcjson.OutPoint{{TxID: "123", Index: 0}},
 			},
 		},
 		{
 			name: "loadTxFilter",
 			newCmd: func() (interface{}, error) {
-				return btcjson.NewCmd("loadTxFilter", false, `["1Address"]`, `[{"hash":"0000000000000000000000000000000000000000000000000000000000000123","index":0}]`)
+				return btcjson.NewCmd("loadTxFilter", false, `["1Address"]`, `[{"txid":"0000000000000000000000000000000000000000000000000000000000000123","index":0}]`)
 			},
 			staticCmd: func() interface{} {
 				addrs := []string{"1Address"}
 				ops := []btcjson.OutPoint{{
-					Hash:  "0000000000000000000000000000000000000000000000000000000000000123",
+					TxID:  "0000000000000000000000000000000000000000000000000000000000000123",
 					Index: 0,
 				}}
 				return btcjson.NewLoadTxFilterCmd(false, addrs, ops)
 			},
-			marshalled: `{"jsonrpc":"1.0","method":"loadTxFilter","params":[false,["1Address"],[{"hash":"0000000000000000000000000000000000000000000000000000000000000123","index":0}]],"id":1}`,
+			marshalled: `{"jsonrpc":"1.0","method":"loadTxFilter","params":[false,["1Address"],[{"txid":"0000000000000000000000000000000000000000000000000000000000000123","index":0}]],"id":1}`,
 			unmarshalled: &btcjson.LoadTxFilterCmd{
 				Reload:    false,
 				Addresses: []string{"1Address"},
-				OutPoints: []btcjson.OutPoint{{Hash: "0000000000000000000000000000000000000000000000000000000000000123", Index: 0}},
+				OutPoints: []btcjson.OutPoint{{TxID: "0000000000000000000000000000000000000000000000000000000000000123", Index: 0}},
 			},
 		},
 		{

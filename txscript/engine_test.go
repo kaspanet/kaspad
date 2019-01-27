@@ -30,7 +30,7 @@ func TestBadPC(t *testing.T) {
 		TxIn: []*wire.TxIn{
 			{
 				PreviousOutPoint: wire.OutPoint{
-					Hash: daghash.Hash([32]byte{
+					TxID: daghash.TxID([32]byte{
 						0xc9, 0x97, 0xa5, 0xe5,
 						0x6e, 0x10, 0x41, 0x02,
 						0xfa, 0x20, 0x9c, 0x6a,
@@ -105,7 +105,7 @@ func TestCheckErrorCondition(t *testing.T) {
 				Version: 1,
 				TxIn: []*wire.TxIn{{
 					PreviousOutPoint: wire.OutPoint{
-						Hash: daghash.Hash([32]byte{
+						TxID: daghash.TxID([32]byte{
 							0xc9, 0x97, 0xa5, 0xe5,
 							0x6e, 0x10, 0x41, 0x02,
 							0xfa, 0x20, 0x9c, 0x6a,
@@ -156,7 +156,7 @@ func TestCheckErrorCondition(t *testing.T) {
 			}
 
 			err = vm.CheckErrorCondition(test.finalScript)
-			if e := tstCheckScriptError(err, test.expectedErr); e != nil {
+			if e := checkScriptError(err, test.expectedErr); e != nil {
 				t.Errorf("TestCheckErrorCondition: %d: %s", i, e)
 			}
 		}()
@@ -402,7 +402,7 @@ func TestDisasmPC(t *testing.T) {
 		Version: 1,
 		TxIn: []*wire.TxIn{{
 			PreviousOutPoint: wire.OutPoint{
-				Hash: daghash.Hash([32]byte{
+				TxID: daghash.TxID([32]byte{
 					0xc9, 0x97, 0xa5, 0xe5,
 					0x6e, 0x10, 0x41, 0x02,
 					0xfa, 0x20, 0x9c, 0x6a,
@@ -443,7 +443,7 @@ func TestDisasmPC(t *testing.T) {
 
 	for i, test := range tests {
 		actual, err := vm.DisasmPC()
-		if e := tstCheckScriptError(err, test.expectedErr); e != nil {
+		if e := checkScriptError(err, test.expectedErr); e != nil {
 			t.Errorf("TestDisasmPC: %d: %s", i, e)
 		}
 
@@ -464,7 +464,7 @@ func TestDisasmScript(t *testing.T) {
 		Version: 1,
 		TxIn: []*wire.TxIn{{
 			PreviousOutPoint: wire.OutPoint{
-				Hash: daghash.Hash([32]byte{
+				TxID: daghash.TxID([32]byte{
 					0xc9, 0x97, 0xa5, 0xe5,
 					0x6e, 0x10, 0x41, 0x02,
 					0xfa, 0x20, 0x9c, 0x6a,
@@ -505,7 +505,7 @@ func TestDisasmScript(t *testing.T) {
 
 	for _, test := range tests {
 		actual, err := vm.DisasmScript(test.index)
-		if e := tstCheckScriptError(err, test.expectedErr); e != nil {
+		if e := checkScriptError(err, test.expectedErr); e != nil {
 			t.Errorf("TestDisasmScript: %d: %s", test.index, e)
 		}
 

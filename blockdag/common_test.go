@@ -7,9 +7,11 @@ package blockdag
 import (
 	"compress/bzip2"
 	"encoding/binary"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"time"
 
@@ -104,9 +106,9 @@ func loadUTXOSet(filename string) (UTXOSet, error) {
 
 	utxoSet := NewFullUTXOSet()
 	for {
-		// Hash of the utxo entry.
-		var hash daghash.Hash
-		_, err := io.ReadAtLeast(r, hash[:], len(hash[:]))
+		// Tx ID of the utxo entry.
+		var txID daghash.TxID
+		_, err := io.ReadAtLeast(r, txID[:], len(txID[:]))
 		if err != nil {
 			// Expected EOF at the right offset.
 			if err == io.EOF {
@@ -141,7 +143,7 @@ func loadUTXOSet(filename string) (UTXOSet, error) {
 		if err != nil {
 			return nil, err
 		}
-		utxoSet.utxoCollection[wire.OutPoint{Hash: hash, Index: index}] = entry
+		utxoSet.utxoCollection[wire.OutPoint{TxID: txID, Index: index}] = entry
 	}
 
 	return utxoSet, nil
@@ -219,4 +221,36 @@ func buildNodeGenerator(phantomK uint32, withChildren bool) func(parents blockSe
 		}
 	}
 	return buildNode
+}
+
+// checkRuleError ensures the type of the two passed errors are of the
+// same type (either both nil or both of type RuleError) and their error codes
+// match when not nil.
+func checkRuleError(gotErr, wantErr error) error {
+	// Ensure the error code is of the expected type and the error
+	// code matches the value specified in the test instance.
+	if reflect.TypeOf(gotErr) != reflect.TypeOf(wantErr) {
+		return fmt.Errorf("wrong error - got %T (%[1]v), want %T",
+			gotErr, wantErr)
+	}
+	if gotErr == nil {
+		return nil
+	}
+
+	// Ensure the want error type is a script error.
+	werr, ok := wantErr.(RuleError)
+	if !ok {
+		return fmt.Errorf("unexpected test error type %T", wantErr)
+	}
+
+	// Ensure the error codes match.  It's safe to use a raw type assert
+	// here since the code above already proved they are the same type and
+	// the want error is a script error.
+	gotErrorCode := gotErr.(RuleError).ErrorCode
+	if gotErrorCode != werr.ErrorCode {
+		return fmt.Errorf("mismatched error code - got %v (%v), want %v",
+			gotErrorCode, gotErr, werr.ErrorCode)
+	}
+
+	return nil
 }

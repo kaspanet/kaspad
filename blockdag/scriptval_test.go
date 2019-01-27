@@ -15,6 +15,7 @@ import (
 // TestCheckBlockScripts ensures that validating the all of the scripts in a
 // known-good block doesn't return an error.
 func TestCheckBlockScripts(t *testing.T) {
+	t.Skip() // TODO: Reactivate this test once we have blocks from testnet.
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
 	testBlockNum := 277647
@@ -40,15 +41,12 @@ func TestCheckBlockScripts(t *testing.T) {
 		return
 	}
 
-	node := &provisionalNode{
-		original: &blockNode{
-			hash: *blocks[0].Hash(),
-		},
-		transactions: blocks[0].Transactions(),
+	node := &blockNode{
+		hash: *blocks[0].Hash(),
 	}
 
 	scriptFlags := txscript.ScriptNoFlags
-	err = checkBlockScripts(node, utxoSet, scriptFlags, nil)
+	err = checkBlockScripts(node, utxoSet, blocks[0].Transactions(), scriptFlags, nil)
 	if err != nil {
 		t.Errorf("Transaction script validation failed: %v\n", err)
 		return

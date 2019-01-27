@@ -180,7 +180,7 @@ func TestMakeScriptNum(t *testing.T) {
 		// code matches the value specified in the test instance.
 		gotNum, err := makeScriptNum(test.serialized,
 			test.numLen)
-		if e := tstCheckScriptError(err, test.err); e != nil {
+		if e := checkScriptError(err, test.err); e != nil {
 			t.Errorf("makeScriptNum(%#x): %v", test.serialized, e)
 			continue
 		}

@@ -53,17 +53,9 @@ var (
 	// unspent transaction output set.
 	utxoSetBucketName = []byte("utxoset")
 
-	// pendingSubNetworksBucketName is the name of the db bucket used to store the
-	// pending sub-networks.
-	pendingSubNetworksBucketName = []byte("pendingsubnetworks")
-
-	// registeredSubNetworkTxsBucketName is the name of the db bucket used to house
-	// the transactions that have been used to register sub-networks.
-	registeredSubNetworkTxsBucketName = []byte("registeredsubnetworktxs")
-
-	// subNetworksBucketName is the name of the db bucket used to store the
-	// sub-network registry.
-	subNetworksBucketName = []byte("subnetworks")
+	// subnetworksBucketName is the name of the db bucket used to store the
+	// subnetwork registry.
+	subnetworksBucketName = []byte("subnetworks")
 
 	// byteOrder is the preferred byte order used for serializing numeric
 	// fields for storage in the database.
@@ -481,7 +473,7 @@ func outpointKey(outpoint wire.OutPoint) *[]byte {
 	key := outpointKeyPool.Get().(*[]byte)
 	idx := uint64(outpoint.Index)
 	*key = (*key)[:daghash.HashSize+serializeSizeVLQ(idx)]
-	copy(*key, outpoint.Hash[:])
+	copy(*key, outpoint.TxID[:])
 	putVLQ((*key)[daghash.HashSize:], idx)
 	return key
 }
@@ -536,10 +528,10 @@ func deserializeOutPoint(serialized []byte) (*wire.OutPoint, error) {
 		return nil, errDeserialize("unexpected end of data")
 	}
 
-	hash := daghash.Hash{}
-	hash.SetBytes(serialized[:daghash.HashSize])
+	txID := daghash.TxID{}
+	txID.SetBytes(serialized[:daghash.HashSize])
 	index, _ := deserializeVLQ(serialized[daghash.HashSize:])
-	return wire.NewOutPoint(&hash, uint32(index)), nil
+	return wire.NewOutPoint(&txID, uint32(index)), nil
 }
 
 // deserializeUTXOEntry decodes a UTXO entry from the passed serialized byte
@@ -670,7 +662,6 @@ func dbFetchHeightByHash(dbTx database.Tx, hash *daghash.Hash) (int32, error) {
 type dagState struct {
 	TipHashes         []daghash.Hash
 	LastFinalityPoint daghash.Hash
-	LastSubNetworkID  uint64
 }
 
 // serializeDAGState returns the serialization of the DAG state.
@@ -721,7 +712,7 @@ func (dag *BlockDAG) createDAGState() error {
 	genesisCoinbase := genesisBlock.Transactions()[0].MsgTx()
 	genesisCoinbaseTxIn := genesisCoinbase.TxIn[0]
 	genesisCoinbaseTxOut := genesisCoinbase.TxOut[0]
-	genesisCoinbaseOutpoint := *wire.NewOutPoint(&genesisCoinbaseTxIn.PreviousOutPoint.Hash, genesisCoinbaseTxIn.PreviousOutPoint.Index)
+	genesisCoinbaseOutpoint := *wire.NewOutPoint(&genesisCoinbaseTxIn.PreviousOutPoint.TxID, genesisCoinbaseTxIn.PreviousOutPoint.Index)
 	genesisCoinbaseUTXOEntry := NewUTXOEntry(genesisCoinbaseTxOut, true, 0)
 	node.diff = &UTXODiff{
 		toAdd:    utxoCollection{genesisCoinbaseOutpoint: genesisCoinbaseUTXOEntry},
@@ -776,21 +767,8 @@ func (dag *BlockDAG) createDAGState() error {
 			return err
 		}
 
-		// Create the bucket that houses the pending sub-networks.
-		_, err = meta.CreateBucket(pendingSubNetworksBucketName)
-		if err != nil {
-			return err
-		}
-
-		// Create the bucket that houses the registered sub-networks to
-		// their registry transactions index.
-		_, err = meta.CreateBucket(registeredSubNetworkTxsBucketName)
-		if err != nil {
-			return err
-		}
-
-		// Create the bucket that houses the registered sub-networks.
-		_, err = meta.CreateBucket(subNetworksBucketName)
+		// Create the bucket that houses the registered subnetworks.
+		_, err = meta.CreateBucket(subnetworksBucketName)
 		if err != nil {
 			return err
 		}
@@ -821,6 +799,7 @@ func (dag *BlockDAG) createDAGState() error {
 		// Store the genesis block into the database.
 		return dbStoreBlock(dbTx, genesisBlock)
 	})
+
 	return err
 }
 

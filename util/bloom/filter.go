@@ -168,7 +168,7 @@ func (bf *Filter) Matches(data []byte) bool {
 func (bf *Filter) matchesOutPoint(outpoint *wire.OutPoint) bool {
 	// Serialize
 	var buf [daghash.HashSize + 4]byte
-	copy(buf[:], outpoint.Hash[:])
+	copy(buf[:], outpoint.TxID[:])
 	binary.LittleEndian.PutUint32(buf[daghash.HashSize:], outpoint.Index)
 
 	return bf.matches(buf[:])
@@ -230,7 +230,7 @@ func (bf *Filter) AddHash(hash *daghash.Hash) {
 func (bf *Filter) addOutPoint(outpoint *wire.OutPoint) {
 	// Serialize
 	var buf [daghash.HashSize + 4]byte
-	copy(buf[:], outpoint.Hash[:])
+	copy(buf[:], outpoint.TxID[:])
 	binary.LittleEndian.PutUint32(buf[daghash.HashSize:], outpoint.Index)
 
 	bf.add(buf[:])
@@ -250,15 +250,15 @@ func (bf *Filter) AddOutPoint(outpoint *wire.OutPoint) {
 // script.
 //
 // This function MUST be called with the filter lock held.
-func (bf *Filter) maybeAddOutpoint(pkScript []byte, outHash *daghash.Hash, outIdx uint32) {
+func (bf *Filter) maybeAddOutpoint(pkScript []byte, outTxID *daghash.TxID, outIdx uint32) {
 	switch bf.msgFilterLoad.Flags {
 	case wire.BloomUpdateAll:
-		outpoint := wire.NewOutPoint(outHash, outIdx)
+		outpoint := wire.NewOutPoint(outTxID, outIdx)
 		bf.addOutPoint(outpoint)
 	case wire.BloomUpdateP2PubkeyOnly:
 		class := txscript.GetScriptClass(pkScript)
 		if class == txscript.PubKeyTy || class == txscript.MultiSigTy {
-			outpoint := wire.NewOutPoint(outHash, outIdx)
+			outpoint := wire.NewOutPoint(outTxID, outIdx)
 			bf.addOutPoint(outpoint)
 		}
 	}
@@ -271,9 +271,9 @@ func (bf *Filter) maybeAddOutpoint(pkScript []byte, outHash *daghash.Hash, outId
 //
 // This function MUST be called with the filter lock held.
 func (bf *Filter) matchTxAndUpdate(tx *util.Tx) bool {
-	// Check if the filter matches the hash of the transaction.
+	// Check if the filter matches the ID of the transaction.
 	// This is useful for finding transactions when they appear in a block.
-	matched := bf.matches(tx.Hash()[:])
+	matched := bf.matches(tx.ID()[:])
 
 	// Check if the filter matches any data elements in the public key
 	// scripts of any of the outputs.  When it does, add the outpoint that
@@ -295,7 +295,7 @@ func (bf *Filter) matchTxAndUpdate(tx *util.Tx) bool {
 			}
 
 			matched = true
-			bf.maybeAddOutpoint(txOut.PkScript, tx.Hash(), uint32(i))
+			bf.maybeAddOutpoint(txOut.PkScript, tx.ID(), uint32(i))
 			break
 		}
 	}

@@ -84,24 +84,10 @@ func traverseCandidates(newBlock *blockNode, candidates blockSet, selectedParent
 		queue.Push(parent)
 	}
 
-	// TODO (Ori): This is temporary until children bug is fixed. After it we should return it to `selectedParentPast.anyChildInSet(current)`
-	isInSelectedParentPast := func(block *blockNode) bool {
-		if selectedParent.parents.contains(block) {
-			return true
-		}
-		for _, child := range block.children {
-			if selectedParentPast.contains(child) {
-				return true
-			}
-		}
-
-		return false
-	}
-
 	for queue.Len() > 0 {
 		current := queue.pop()
 		if candidates.contains(current) {
-			if current == selectedParent || isInSelectedParentPast(current) {
+			if current == selectedParent || selectedParentPast.anyChildInSet(current) {
 				selectedParentPast.add(current)
 			} else {
 				blues = append(blues, current)

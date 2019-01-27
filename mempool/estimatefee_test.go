@@ -24,7 +24,7 @@ func newTestFeeEstimator(binSize, maxReplacements, maxRollback uint32) *FeeEstim
 		binSize:             int32(binSize),
 		minRegisteredBlocks: 0,
 		maxReplacements:     int32(maxReplacements),
-		observed:            make(map[daghash.Hash]*observedTransaction),
+		observed:            make(map[daghash.TxID]*observedTransaction),
 		dropped:             make([]*registeredBlock, 0, maxRollback),
 	}
 }
@@ -292,7 +292,7 @@ func (eft *estimateFeeTester) round(txHistory [][]*TxDesc,
 	mempool := make(map[*observedTransaction]*TxDesc)
 	for _, h := range txHistory {
 		for _, t := range h {
-			if o, exists := eft.ef.observed[*t.Tx.Hash()]; exists && o.mined == mining.UnminedHeight {
+			if o, exists := eft.ef.observed[*t.Tx.ID()]; exists && o.mined == mining.UnminedHeight {
 				mempool[o] = t
 			}
 		}

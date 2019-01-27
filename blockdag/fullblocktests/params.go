@@ -29,6 +29,18 @@ func newHashFromStr(hexStr string) *daghash.Hash {
 	return hash
 }
 
+// newTxIDFromStr converts the passed big-endian hex string into a
+// wire.TxID.  It only differs from the one available in daghash in that
+// it panics on an error since it will only (and must only) be called with
+// hard-coded, and therefore known good, hashes.
+func newTxIDFromStr(hexStr string) *daghash.TxID {
+	txID, err := daghash.NewTxIDFromStr(hexStr)
+	if err != nil {
+		panic(err)
+	}
+	return txID
+}
+
 // fromHex converts the passed hex string into a byte slice and will panic if
 // there is an error.  This is only provided for the hard-coded constants so
 // errors in the source code can be detected. It will only (and must only) be
@@ -54,18 +66,18 @@ var (
 	// as the public transaction ledger for the regression test network.
 	regTestGenesisBlock = wire.MsgBlock{
 		Header: wire.BlockHeader{
-			Version:      1,
-			ParentHashes: []daghash.Hash{},
-			MerkleRoot:   *newHashFromStr("4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b"),
-			Timestamp:    time.Unix(0x5b28c636, 0), // 2018-06-19 09:00:38 +0000 UTC
-			Bits:         0x207fffff,               // 545259519 [7fffff0000000000000000000000000000000000000000000000000000000000]
-			Nonce:        1,
+			Version:        1,
+			ParentHashes:   []daghash.Hash{},
+			HashMerkleRoot: *newHashFromStr("4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b"),
+			Timestamp:      time.Unix(0x5b28c636, 0), // 2018-06-19 09:00:38 +0000 UTC
+			Bits:           0x207fffff,               // 545259519 [7fffff0000000000000000000000000000000000000000000000000000000000]
+			Nonce:          1,
 		},
 		Transactions: []*wire.MsgTx{{
 			Version: 1,
 			TxIn: []*wire.TxIn{{
 				PreviousOutPoint: wire.OutPoint{
-					Hash:  daghash.Hash{},
+					TxID:  daghash.TxID{},
 					Index: 0xffffffff,
 				},
 				SignatureScript: fromHex("04ffff001d010445" +
@@ -84,7 +96,7 @@ var (
 					"4c702b6bf11d5fac"),
 			}},
 			LockTime:     0,
-			SubNetworkID: wire.SubNetworkDAGCoin,
+			SubnetworkID: wire.SubnetworkIDNative,
 		}},
 	}
 )

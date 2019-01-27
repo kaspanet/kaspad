@@ -17,19 +17,21 @@ import (
 
 // TestTx tests the API for Tx.
 func TestTx(t *testing.T) {
-	testTx := Block100000.Transactions[0]
-	tx := util.NewTx(testTx)
+	firstTestTx := Block100000.Transactions[0]
+	firstTx := util.NewTx(firstTestTx)
+	secondTestTx := Block100000.Transactions[1]
+	secondTx := util.NewTx(secondTestTx)
 
 	// Ensure we get the same data back out.
-	if msgTx := tx.MsgTx(); !reflect.DeepEqual(msgTx, testTx) {
+	if msgTx := firstTx.MsgTx(); !reflect.DeepEqual(msgTx, firstTestTx) {
 		t.Errorf("MsgTx: mismatched MsgTx - got %v, want %v",
-			spew.Sdump(msgTx), spew.Sdump(testTx))
+			spew.Sdump(msgTx), spew.Sdump(firstTestTx))
 	}
 
 	// Ensure transaction index set and get work properly.
 	wantIndex := 0
-	tx.SetIndex(0)
-	if gotIndex := tx.Index(); gotIndex != wantIndex {
+	firstTx.SetIndex(0)
+	if gotIndex := firstTx.Index(); gotIndex != wantIndex {
 		t.Errorf("Index: mismatched index - got %v, want %v",
 			gotIndex, wantIndex)
 	}
@@ -43,10 +45,22 @@ func TestTx(t *testing.T) {
 
 	// Request the hash multiple times to test generation and caching.
 	for i := 0; i < 2; i++ {
-		hash := tx.Hash()
+		hash := firstTx.Hash()
 		if !hash.IsEqual(wantHash) {
 			t.Errorf("Hash #%d mismatched hash - got %v, want %v", i,
 				hash, wantHash)
+		}
+	}
+
+	// ID for block 100,000 transaction 1.
+	wantIDStr := "1742649144632997855e06650c1df5fd27cad915419a8f14f2f1b5a652257342"
+	wantID, err := daghash.NewTxIDFromStr(wantIDStr)
+	// Request the ID multiple times to test generation and caching.
+	for i := 0; i < 2; i++ {
+		id := secondTx.ID()
+		if !id.IsEqual(wantID) {
+			t.Errorf("Hash #%d mismatched hash - got %v, want %v", i,
+				id, wantID)
 		}
 	}
 }

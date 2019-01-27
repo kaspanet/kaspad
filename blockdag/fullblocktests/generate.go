@@ -161,7 +161,7 @@ type spendableOut struct {
 func makeSpendableOutForTx(tx *wire.MsgTx, txOutIndex uint32) spendableOut {
 	return spendableOut{
 		prevOut: wire.OutPoint{
-			Hash:  tx.TxHash(),
+			TxID:  tx.TxID(),
 			Index: txOutIndex,
 		},
 		amount: util.Amount(tx.TxOut[txOutIndex].Value),
@@ -285,7 +285,7 @@ func (g *testGenerator) createCoinbaseTx(blockHeight int32) *wire.MsgTx {
 	tx.AddTxIn(&wire.TxIn{
 		// Coinbase transactions have no inputs, so previous outpoint is
 		// zero hash and max index.
-		PreviousOutPoint: *wire.NewOutPoint(&daghash.Hash{},
+		PreviousOutPoint: *wire.NewOutPoint(&daghash.TxID{},
 			wire.MaxPrevOutIndex),
 		Sequence:        wire.MaxTxInSequenceNum,
 		SignatureScript: coinbaseScript,
@@ -297,9 +297,9 @@ func (g *testGenerator) createCoinbaseTx(blockHeight int32) *wire.MsgTx {
 	return tx
 }
 
-// calcMerkleRoot creates a merkle tree from the slice of transactions and
+// calcHashMerkleRoot creates a merkle tree from the slice of transactions and
 // returns the root of the tree.
-func calcMerkleRoot(txns []*wire.MsgTx) daghash.Hash {
+func calcHashMerkleRoot(txns []*wire.MsgTx) daghash.Hash {
 	if len(txns) == 0 {
 		return daghash.Hash{}
 	}
@@ -308,8 +308,8 @@ func calcMerkleRoot(txns []*wire.MsgTx) daghash.Hash {
 	for _, tx := range txns {
 		utilTxns = append(utilTxns, util.NewTx(tx))
 	}
-	merkles := blockdag.BuildMerkleTreeStore(utilTxns)
-	return *merkles[len(merkles)-1]
+	merkleTree := blockdag.BuildHashMerkleTreeStore(utilTxns)
+	return *merkleTree.Root()
 }
 
 // solveBlock attempts to find a nonce which makes the passed block header hash
@@ -509,25 +509,25 @@ func (g *testGenerator) nextBlock(blockName string, spend *spendableOut, mungers
 
 	block := wire.MsgBlock{
 		Header: wire.BlockHeader{
-			Version:      1,
-			ParentHashes: []daghash.Hash{g.tip.BlockHash()}, // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
-			MerkleRoot:   calcMerkleRoot(txns),
-			Bits:         g.params.PowLimitBits,
-			Timestamp:    ts,
-			Nonce:        0, // To be solved.
+			Version:        1,
+			ParentHashes:   []daghash.Hash{g.tip.BlockHash()}, // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
+			HashMerkleRoot: calcHashMerkleRoot(txns),
+			Bits:           g.params.PowLimitBits,
+			Timestamp:      ts,
+			Nonce:          0, // To be solved.
 		},
 		Transactions: txns,
 	}
 
 	// Perform any block munging just before solving.  Only recalculate the
 	// merkle root if it wasn't manually changed by a munge function.
-	curMerkleRoot := block.Header.MerkleRoot
+	curMerkleRoot := block.Header.HashMerkleRoot
 	curNonce := block.Header.Nonce
 	for _, f := range mungers {
 		f(&block)
 	}
-	if block.Header.MerkleRoot == curMerkleRoot {
-		block.Header.MerkleRoot = calcMerkleRoot(block.Transactions)
+	if block.Header.HashMerkleRoot == curMerkleRoot {
+		block.Header.HashMerkleRoot = calcHashMerkleRoot(block.Transactions)
 	}
 
 	// Only solve the block if the nonce wasn't manually changed by a munge
@@ -747,7 +747,7 @@ func (g *testGenerator) assertTipBlockHash(expected daghash.Hash) {
 // assertTipBlockMerkleRoot panics if the merkle root in header of the current
 // tip block associated with the generator does not match the specified hash.
 func (g *testGenerator) assertTipBlockMerkleRoot(expected daghash.Hash) {
-	hash := g.tip.Header.MerkleRoot
+	hash := g.tip.Header.HashMerkleRoot
 	if hash != expected {
 		panic(fmt.Sprintf("merkle root of block %q (height %d) is %v "+
 			"instead of expected %v", g.tipName, g.tipHeight, hash,
@@ -1470,7 +1470,7 @@ func Generate(includeLargeReorg bool) (tests [][]TestInstance, err error) {
 	//                 \-> b48(14)
 	g.setTip("b43")
 	g.nextBlock("b48", outs[14], func(b *wire.MsgBlock) {
-		b.Header.MerkleRoot = daghash.Hash{}
+		b.Header.HashMerkleRoot = daghash.Hash{}
 	})
 	rejected(blockdag.ErrBadMerkleRoot)
 
@@ -1529,9 +1529,9 @@ func Generate(includeLargeReorg bool) (tests [][]TestInstance, err error) {
 	//                 \-> b52(14)
 	g.setTip("b43")
 	g.nextBlock("b52", outs[14], func(b *wire.MsgBlock) {
-		hash := newHashFromStr("00000000000000000000000000000000" +
+		txID := newTxIDFromStr("00000000000000000000000000000000" +
 			"00000000000000000123456789abcdef")
-		b.Transactions[1].TxIn[0].PreviousOutPoint.Hash = *hash
+		b.Transactions[1].TxIn[0].PreviousOutPoint.TxID = *txID
 		b.Transactions[1].TxIn[0].PreviousOutPoint.Index = 0
 	})
 	rejected(blockdag.ErrMissingTxOut)
@@ -1629,7 +1629,7 @@ func Generate(includeLargeReorg bool) (tests [][]TestInstance, err error) {
 	})
 	g.assertTipBlockNumTxns(4)
 	g.assertTipBlockHash(b57.BlockHash())
-	g.assertTipBlockMerkleRoot(b57.Header.MerkleRoot)
+	g.assertTipBlockMerkleRoot(b57.Header.HashMerkleRoot)
 	rejected(blockdag.ErrDuplicateTx)
 
 	// Since the two blocks have the same hash and the generator state now

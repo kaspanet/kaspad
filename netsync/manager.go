@@ -41,9 +41,6 @@ const (
 	maxRequestedTxns = wire.MaxInvPerMsg
 )
 
-// zeroHash is the zero value hash (all zeros).  It is defined as a convenience.
-var zeroHash daghash.Hash
-
 // newPeerMsg signifies a newly connected peer to the block handler.
 type newPeerMsg struct {
 	peer *peerpkg.Peer
@@ -135,7 +132,7 @@ type headerNode struct {
 type peerSyncState struct {
 	syncCandidate   bool
 	requestQueue    []*wire.InvVect
-	requestedTxns   map[daghash.Hash]struct{}
+	requestedTxns   map[daghash.TxID]struct{}
 	requestedBlocks map[daghash.Hash]struct{}
 }
 
@@ -157,8 +154,8 @@ type SyncManager struct {
 	quit           chan struct{}
 
 	// These fields should only be accessed from the blockHandler thread
-	rejectedTxns    map[daghash.Hash]struct{}
-	requestedTxns   map[daghash.Hash]struct{}
+	rejectedTxns    map[daghash.TxID]struct{}
+	requestedTxns   map[daghash.TxID]struct{}
 	requestedBlocks map[daghash.Hash]struct{}
 	syncPeer        *peerpkg.Peer
 	peerStates      map[*peerpkg.Peer]*peerSyncState
@@ -293,7 +290,7 @@ func (sm *SyncManager) startSync() {
 				"%d from peer %s", sm.dag.Height()+1,
 				sm.nextCheckpoint.Height, bestPeer.Addr()) //TODO: (Ori) This is probably wrong. Done only for compilation
 		} else {
-			bestPeer.PushGetBlocksMsg(locator, &zeroHash)
+			bestPeer.PushGetBlocksMsg(locator, &daghash.ZeroHash)
 		}
 		sm.syncPeer = bestPeer
 	} else {
@@ -346,7 +343,7 @@ func (sm *SyncManager) handleNewPeerMsg(peer *peerpkg.Peer) {
 	isSyncCandidate := sm.isSyncCandidate(peer)
 	sm.peerStates[peer] = &peerSyncState{
 		syncCandidate:   isSyncCandidate,
-		requestedTxns:   make(map[daghash.Hash]struct{}),
+		requestedTxns:   make(map[daghash.TxID]struct{}),
 		requestedBlocks: make(map[daghash.Hash]struct{}),
 	}
 
@@ -408,22 +405,21 @@ func (sm *SyncManager) handleTxMsg(tmsg *txMsg) {
 		return
 	}
 
-	// NOTE:  BitcoinJ, and possibly other wallets, don't follow the spec of
-	// sending an inventory message and allowing the remote peer to decide
-	// whether or not they want to request the transaction via a getdata
-	// message.  Unfortunately, the reference implementation permits
-	// unrequested data, so it has allowed wallets that don't follow the
-	// spec to proliferate.  While this is not ideal, there is no check here
-	// to disconnect peers for sending unsolicited transactions to provide
-	// interoperability.
-	txHash := tmsg.tx.Hash()
+	// If we didn't ask for this transaction then the peer is misbehaving.
+	txID := tmsg.tx.ID()
+	if _, exists = state.requestedTxns[*txID]; !exists {
+		log.Warnf("Got unrequested transaction %v from %s -- "+
+			"disconnecting", txID, peer.Addr())
+		peer.Disconnect()
+		return
+	}
 
 	// Ignore transactions that we have already rejected.  Do not
 	// send a reject message here because if the transaction was already
 	// rejected, the transaction was unsolicited.
-	if _, exists = sm.rejectedTxns[*txHash]; exists {
+	if _, exists = sm.rejectedTxns[*txID]; exists {
 		log.Debugf("Ignoring unsolicited previously rejected "+
-			"transaction %v from %s", txHash, peer)
+			"transaction %v from %s", txID, peer)
 		return
 	}
 
@@ -436,14 +432,14 @@ func (sm *SyncManager) handleTxMsg(tmsg *txMsg) {
 	// already knows about it and as such we shouldn't have any more
 	// instances of trying to fetch it, or we failed to insert and thus
 	// we'll retry next time we get an inv.
-	delete(state.requestedTxns, *txHash)
-	delete(sm.requestedTxns, *txHash)
+	delete(state.requestedTxns, *txID)
+	delete(sm.requestedTxns, *txID)
 
 	if err != nil {
 		// Do not request this transaction again until a new block
 		// has been processed.
-		sm.rejectedTxns[*txHash] = struct{}{}
-		sm.limitMap(sm.rejectedTxns, maxRejectedTxns)
+		sm.rejectedTxns[*txID] = struct{}{}
+		sm.limitTxIDMap(sm.rejectedTxns, maxRejectedTxns)
 
 		// When the error is a rule error, it means the transaction was
 		// simply rejected as opposed to something actually going wrong,
@@ -451,16 +447,16 @@ func (sm *SyncManager) handleTxMsg(tmsg *txMsg) {
 		// so log it as an actual error.
 		if _, ok := err.(mempool.RuleError); ok {
 			log.Debugf("Rejected transaction %v from %s: %v",
-				txHash, peer, err)
+				txID, peer, err)
 		} else {
 			log.Errorf("Failed to process transaction %v: %v",
-				txHash, err)
+				txID, err)
 		}
 
 		// Convert the error into an appropriate reject message and
 		// send it.
 		code, reason := mempool.ErrToRejectErr(err)
-		peer.PushRejectMsg(wire.CmdTx, code, reason, txHash, false)
+		peer.PushRejectMsg(wire.CmdTx, code, reason, (*daghash.Hash)(txID), false)
 		return
 	}
 
@@ -620,7 +616,7 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 		blkHashUpdate = &highestTipHash
 
 		// Clear the rejected transactions.
-		sm.rejectedTxns = make(map[daghash.Hash]struct{})
+		sm.rejectedTxns = make(map[daghash.TxID]struct{})
 	}
 
 	// Update the block height for this peer. But only send a message to
@@ -679,7 +675,7 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 	sm.headerList.Init()
 	log.Infof("Reached the final checkpoint -- switching to normal mode")
 	locator := blockdag.BlockLocator([]*daghash.Hash{blockHash})
-	err = peer.PushGetBlocksMsg(locator, &zeroHash)
+	err = peer.PushGetBlocksMsg(locator, &daghash.ZeroHash)
 	if err != nil {
 		log.Warnf("Failed to send getblocks message to peer %s: %v",
 			peer.Addr(), err)
@@ -857,7 +853,7 @@ func (sm *SyncManager) haveInventory(invVect *wire.InvVect) (bool, error) {
 	case wire.InvTypeTx:
 		// Ask the transaction memory pool if the transaction is known
 		// to it in any form (main pool or orphan).
-		if sm.txMemPool.HaveTransaction(&invVect.Hash) {
+		if sm.txMemPool.HaveTransaction((*daghash.TxID)(&invVect.Hash)) {
 			return true, nil
 		}
 
@@ -869,7 +865,7 @@ func (sm *SyncManager) haveInventory(invVect *wire.InvVect) (bool, error) {
 		// checked because the vast majority of transactions consist of
 		// two outputs where one is some form of "pay-to-somebody-else"
 		// and the other is a change output.
-		prevOut := wire.OutPoint{Hash: invVect.Hash}
+		prevOut := wire.OutPoint{TxID: daghash.TxID(invVect.Hash)}
 		for i := uint32(0); i < 2; i++ {
 			prevOut.Index = i
 			entry, ok := sm.dag.GetUTXOEntry(prevOut)
@@ -962,7 +958,7 @@ func (sm *SyncManager) handleInvMsg(imsg *invMsg) {
 			if iv.Type == wire.InvTypeTx {
 				// Skip the transaction if it has already been
 				// rejected.
-				if _, exists := sm.rejectedTxns[iv.Hash]; exists {
+				if _, exists := sm.rejectedTxns[daghash.TxID(iv.Hash)]; exists {
 					continue
 				}
 			}
@@ -1008,7 +1004,7 @@ func (sm *SyncManager) handleInvMsg(imsg *invMsg) {
 				// final one the remote peer knows about (zero
 				// stop hash).
 				locator := sm.dag.BlockLocatorFromHash(&iv.Hash)
-				peer.PushGetBlocksMsg(locator, &zeroHash)
+				peer.PushGetBlocksMsg(locator, &daghash.ZeroHash)
 			}
 		}
 	}
@@ -1029,7 +1025,7 @@ func (sm *SyncManager) handleInvMsg(imsg *invMsg) {
 			// request.
 			if _, exists := sm.requestedBlocks[iv.Hash]; !exists {
 				sm.requestedBlocks[iv.Hash] = struct{}{}
-				sm.limitMap(sm.requestedBlocks, maxRequestedBlocks)
+				sm.limitHashMap(sm.requestedBlocks, maxRequestedBlocks)
 				state.requestedBlocks[iv.Hash] = struct{}{}
 
 				gdmsg.AddInvVect(iv)
@@ -1039,10 +1035,10 @@ func (sm *SyncManager) handleInvMsg(imsg *invMsg) {
 		case wire.InvTypeTx:
 			// Request the transaction if there is not already a
 			// pending request.
-			if _, exists := sm.requestedTxns[iv.Hash]; !exists {
-				sm.requestedTxns[iv.Hash] = struct{}{}
-				sm.limitMap(sm.requestedTxns, maxRequestedTxns)
-				state.requestedTxns[iv.Hash] = struct{}{}
+			if _, exists := sm.requestedTxns[daghash.TxID(iv.Hash)]; !exists {
+				sm.requestedTxns[daghash.TxID(iv.Hash)] = struct{}{}
+				sm.limitTxIDMap(sm.requestedTxns, maxRequestedTxns)
+				state.requestedTxns[daghash.TxID(iv.Hash)] = struct{}{}
 
 				gdmsg.AddInvVect(iv)
 				numRequested++
@@ -1059,10 +1055,10 @@ func (sm *SyncManager) handleInvMsg(imsg *invMsg) {
 	}
 }
 
-// limitMap is a helper function for maps that require a maximum limit by
+// limitTxIDMap is a helper function for maps that require a maximum limit by
 // evicting a random transaction if adding a new value would cause it to
 // overflow the maximum allowed.
-func (sm *SyncManager) limitMap(m map[daghash.Hash]struct{}, limit int) {
+func (sm *SyncManager) limitTxIDMap(m map[daghash.TxID]struct{}, limit int) {
 	if len(m)+1 > limit {
 		// Remove a random entry from the map.  For most compilers, Go's
 		// range statement iterates starting at a random item although
@@ -1070,8 +1066,26 @@ func (sm *SyncManager) limitMap(m map[daghash.Hash]struct{}, limit int) {
 		// is not important here because an adversary would have to be
 		// able to pull off preimage attacks on the hashing function in
 		// order to target eviction of specific entries anyways.
-		for txHash := range m {
-			delete(m, txHash)
+		for txID := range m {
+			delete(m, txID)
+			return
+		}
+	}
+}
+
+// limitHashMap is a helper function for maps that require a maximum limit by
+// evicting a random item if adding a new value would cause it to
+// overflow the maximum allowed.
+func (sm *SyncManager) limitHashMap(m map[daghash.Hash]struct{}, limit int) {
+	if len(m)+1 > limit {
+		// Remove a random entry from the map.  For most compilers, Go's
+		// range statement iterates starting at a random item although
+		// that is not 100% guaranteed by the spec.  The iteration order
+		// is not important here because an adversary would have to be
+		// able to pull off preimage attacks on the hashing function in
+		// order to target eviction of specific entries anyways.
+		for hash := range m {
+			delete(m, hash)
 			return
 		}
 	}
@@ -1209,32 +1223,6 @@ func (sm *SyncManager) handleBlockDAGNotification(notification *blockdag.Notific
 					mempool.DefaultEstimateFeeMaxRollback,
 					mempool.DefaultEstimateFeeMinRegisteredBlocks)
 			}
-		}
-
-	// A block has been disconnected from the block DAG.
-	case blockdag.NTBlockDisconnected:
-		block, ok := notification.Data.(*util.Block)
-		if !ok {
-			log.Warnf("Chain disconnected notification is not a block.")
-			break
-		}
-
-		// Reinsert all of the transactions (except the coinbase) into
-		// the transaction pool.
-		for _, tx := range block.Transactions()[1:] {
-			_, _, err := sm.txMemPool.MaybeAcceptTransaction(tx,
-				false, false)
-			if err != nil {
-				// Remove the transaction and all transactions
-				// that depend on it if it wasn't accepted into
-				// the transaction pool.
-				sm.txMemPool.RemoveTransaction(tx, true, true)
-			}
-		}
-
-		// Rollback previous block recorded by the fee estimator.
-		if sm.feeEstimator != nil {
-			sm.feeEstimator.Rollback(block.Hash())
 		}
 	}
 }
@@ -1376,8 +1364,8 @@ func New(config *Config) (*SyncManager, error) {
 		dag:             config.DAG,
 		txMemPool:       config.TxMemPool,
 		chainParams:     config.ChainParams,
-		rejectedTxns:    make(map[daghash.Hash]struct{}),
-		requestedTxns:   make(map[daghash.Hash]struct{}),
+		rejectedTxns:    make(map[daghash.TxID]struct{}),
+		requestedTxns:   make(map[daghash.TxID]struct{}),
 		requestedBlocks: make(map[daghash.Hash]struct{}),
 		peerStates:      make(map[*peerpkg.Peer]*peerSyncState),
 		progressLogger:  newBlockProgressLogger("Processed", log),

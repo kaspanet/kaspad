@@ -46,7 +46,7 @@ func TestMessage(t *testing.T) {
 	addrMe := &net.TCPAddr{IP: net.ParseIP("127.0.0.1"), Port: 8333}
 	me := NewNetAddress(addrMe, SFNodeNetwork)
 	me.Timestamp = time.Time{} // Version message has zero value timestamp.
-	msgVersion := NewMsgVersion(me, you, 123123, 0)
+	msgVersion := NewMsgVersion(me, you, 123123, 0, &SubnetworkIDSupportsAll)
 
 	msgVerack := NewMsgVerAck()
 	msgGetAddr := NewMsgGetAddr()
@@ -68,7 +68,7 @@ func TestMessage(t *testing.T) {
 	msgFilterAdd := NewMsgFilterAdd([]byte{0x01})
 	msgFilterClear := NewMsgFilterClear()
 	msgFilterLoad := NewMsgFilterLoad([]byte{0x01}, 10, 0, BloomUpdateNone)
-	bh := NewBlockHeader(1, []daghash.Hash{mainNetGenesisHash, simNetGenesisHash}, &daghash.Hash{}, 0, 0)
+	bh := NewBlockHeader(1, []daghash.Hash{mainNetGenesisHash, simNetGenesisHash}, &daghash.Hash{}, &daghash.Hash{}, 0, 0)
 	msgMerkleBlock := NewMsgMerkleBlock(bh)
 	msgReject := NewMsgReject("block", RejectDuplicate, "duplicate block")
 	msgGetCFilters := NewMsgGetCFilters(GCSFilterExtended, 0, &daghash.Hash{})
@@ -86,12 +86,12 @@ func TestMessage(t *testing.T) {
 		btcnet BitcoinNet // Network to use for wire encoding
 		bytes  int        // Expected num bytes read/written
 	}{
-		{msgVersion, msgVersion, pver, MainNet, 125},
+		{msgVersion, msgVersion, pver, MainNet, 145},
 		{msgVerack, msgVerack, pver, MainNet, 24},
 		{msgGetAddr, msgGetAddr, pver, MainNet, 24},
 		{msgAddr, msgAddr, pver, MainNet, 25},
 		{msgGetBlocks, msgGetBlocks, pver, MainNet, 61},
-		{msgBlock, msgBlock, pver, MainNet, 308},
+		{msgBlock, msgBlock, pver, MainNet, 340},
 		{msgInv, msgInv, pver, MainNet, 25},
 		{msgGetData, msgGetData, pver, MainNet, 25},
 		{msgNotFound, msgNotFound, pver, MainNet, 25},
@@ -107,7 +107,7 @@ func TestMessage(t *testing.T) {
 		{msgFilterAdd, msgFilterAdd, pver, MainNet, 26},
 		{msgFilterClear, msgFilterClear, pver, MainNet, 24},
 		{msgFilterLoad, msgFilterLoad, pver, MainNet, 35},
-		{msgMerkleBlock, msgMerkleBlock, pver, MainNet, 151},
+		{msgMerkleBlock, msgMerkleBlock, pver, MainNet, 183},
 		{msgReject, msgReject, pver, MainNet, 79},
 		{msgGetCFilters, msgGetCFilters, pver, MainNet, 61},
 		{msgGetCFHeaders, msgGetCFHeaders, pver, MainNet, 61},

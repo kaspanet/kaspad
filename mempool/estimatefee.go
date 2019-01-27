@@ -93,8 +93,8 @@ func NewSatoshiPerByte(fee util.Amount, size uint32) SatoshiPerByte {
 // observedTransaction represents an observed transaction and some
 // additional data required for the fee estimation algorithm.
 type observedTransaction struct {
-	// A transaction hash.
-	hash daghash.Hash
+	// A transaction ID.
+	id daghash.TxID
 
 	// The fee per byte of the transaction in satoshis.
 	feeRate SatoshiPerByte
@@ -108,7 +108,7 @@ type observedTransaction struct {
 }
 
 func (o *observedTransaction) Serialize(w io.Writer) {
-	binary.Write(w, binary.BigEndian, o.hash)
+	binary.Write(w, binary.BigEndian, o.id)
 	binary.Write(w, binary.BigEndian, o.feeRate)
 	binary.Write(w, binary.BigEndian, o.observed)
 	binary.Write(w, binary.BigEndian, o.mined)
@@ -118,7 +118,7 @@ func deserializeObservedTransaction(r io.Reader) (*observedTransaction, error) {
 	ot := observedTransaction{}
 
 	// The first 32 bytes should be a hash.
-	binary.Read(r, binary.BigEndian, &ot.hash)
+	binary.Read(r, binary.BigEndian, &ot.id)
 
 	// The next 8 are SatoshiPerByte
 	binary.Read(r, binary.BigEndian, &ot.feeRate)
@@ -169,7 +169,7 @@ type FeeEstimator struct {
 	numBlocksRegistered uint32
 
 	mtx      sync.RWMutex
-	observed map[daghash.Hash]*observedTransaction
+	observed map[daghash.TxID]*observedTransaction
 	bin      [estimateFeeDepth][]*observedTransaction
 
 	// The cached estimates.
@@ -190,7 +190,7 @@ func NewFeeEstimator(maxRollback, minRegisteredBlocks uint32) *FeeEstimator {
 		lastKnownHeight:     mining.UnminedHeight,
 		binSize:             estimateFeeBinSize,
 		maxReplacements:     estimateFeeMaxReplacements,
-		observed:            make(map[daghash.Hash]*observedTransaction),
+		observed:            make(map[daghash.TxID]*observedTransaction),
 		dropped:             make([]*registeredBlock, 0, maxRollback),
 	}
 }
@@ -206,12 +206,12 @@ func (ef *FeeEstimator) ObserveTransaction(t *TxDesc) {
 		return
 	}
 
-	hash := *t.Tx.Hash()
-	if _, ok := ef.observed[hash]; !ok {
+	txID := *t.Tx.ID()
+	if _, ok := ef.observed[txID]; !ok {
 		size := uint32(t.Tx.MsgTx().SerializeSize())
 
-		ef.observed[hash] = &observedTransaction{
-			hash:     hash,
+		ef.observed[txID] = &observedTransaction{
+			id:       txID,
 			feeRate:  NewSatoshiPerByte(util.Amount(t.Fee), size),
 			observed: t.Height,
 			mined:    mining.UnminedHeight,
@@ -255,10 +255,10 @@ func (ef *FeeEstimator) RegisterBlock(block *util.Block) error {
 
 	// Go through the txs in the block.
 	for t := range transactions {
-		hash := *t.Hash()
+		txID := *t.ID()
 
 		// Have we observed this tx in the mempool?
-		o, ok := ef.observed[hash]
+		o, ok := ef.observed[txID]
 		if !ok {
 			continue
 		}
@@ -269,7 +269,7 @@ func (ef *FeeEstimator) RegisterBlock(block *util.Block) error {
 		// This shouldn't happen if the fee estimator works correctly,
 		// but return an error if it does.
 		if o.mined != mining.UnminedHeight {
-			log.Error("Estimate fee: transaction ", hash.String(), " has already been mined")
+			log.Error("Estimate fee: transaction ", txID.String(), " has already been mined")
 			return errors.New("Transaction has already been mined")
 		}
 
@@ -610,7 +610,7 @@ type observedTxSet []*observedTransaction
 func (q observedTxSet) Len() int { return len(q) }
 
 func (q observedTxSet) Less(i, j int) bool {
-	return strings.Compare(q[i].hash.String(), q[j].hash.String()) < 0
+	return strings.Compare(q[i].id.String(), q[j].id.String()) < 0
 }
 
 func (q observedTxSet) Swap(i, j int) {
@@ -691,7 +691,7 @@ func RestoreFeeEstimator(data FeeEstimatorState) (*FeeEstimator, error) {
 	}
 
 	ef := &FeeEstimator{
-		observed: make(map[daghash.Hash]*observedTransaction),
+		observed: make(map[daghash.TxID]*observedTransaction),
 	}
 
 	// Read basic parameters.
@@ -712,7 +712,7 @@ func RestoreFeeEstimator(data FeeEstimatorState) (*FeeEstimator, error) {
 			return nil, err
 		}
 		observed[i] = ot
-		ef.observed[ot.hash] = ot
+		ef.observed[ot.id] = ot
 	}
 
 	// Read bins.

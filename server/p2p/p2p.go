@@ -69,9 +69,6 @@ var (
 	userAgentVersion = fmt.Sprintf("%d.%d.%d", version.AppMajor, version.AppMinor, version.AppPatch)
 )
 
-// zeroHash is the zero value hash (all zeros).  It is defined as a convenience.
-var zeroHash daghash.Hash
-
 // onionAddr implements the net.Addr interface and represents a tor address.
 type onionAddr struct {
 	addr string
@@ -474,7 +471,7 @@ func (sp *Peer) OnMemPool(_ *peer.Peer, msg *wire.MsgMemPool) {
 		// or only the transactions that match the filter when there is
 		// one.
 		if !sp.filter.IsLoaded() || sp.filter.MatchTxAndUpdate(txDesc.Tx) {
-			iv := wire.NewInvVect(wire.InvTypeTx, txDesc.Tx.Hash())
+			iv := wire.NewInvVect(wire.InvTypeTx, (*daghash.Hash)(txDesc.Tx.ID()))
 			invMsg.AddInvVect(iv)
 			if len(invMsg.InvList)+1 > wire.MaxInvPerMsg {
 				break
@@ -495,7 +492,7 @@ func (sp *Peer) OnMemPool(_ *peer.Peer, msg *wire.MsgMemPool) {
 func (sp *Peer) OnTx(_ *peer.Peer, msg *wire.MsgTx) {
 	if config.MainConfig().BlocksOnly {
 		peerLog.Tracef("Ignoring tx %v from %v - blocksonly enabled",
-			msg.TxHash(), sp)
+			msg.TxID(), sp)
 		return
 	}
 
@@ -503,7 +500,7 @@ func (sp *Peer) OnTx(_ *peer.Peer, msg *wire.MsgTx) {
 	// Convert the raw MsgTx to a util.Tx which provides some convenience
 	// methods and things such as hash caching.
 	tx := util.NewTx(msg)
-	iv := wire.NewInvVect(wire.InvTypeTx, tx.Hash())
+	iv := wire.NewInvVect(wire.InvTypeTx, (*daghash.Hash)(tx.ID()))
 	sp.AddKnownInventory(iv)
 
 	// Queue the transaction up to be handled by the sync manager and
@@ -619,7 +616,7 @@ func (sp *Peer) OnGetData(_ *peer.Peer, msg *wire.MsgGetData) {
 		var err error
 		switch iv.Type {
 		case wire.InvTypeTx:
-			err = sp.server.pushTxMsg(sp, &iv.Hash, c, waitChan)
+			err = sp.server.pushTxMsg(sp, (*daghash.TxID)(&iv.Hash), c, waitChan)
 		case wire.InvTypeBlock:
 			err = sp.server.pushBlockMsg(sp, &iv.Hash, c, waitChan)
 		case wire.InvTypeFilteredBlock:
@@ -661,7 +658,7 @@ func (sp *Peer) OnGetData(_ *peer.Peer, msg *wire.MsgGetData) {
 // OnGetBlocks is invoked when a peer receives a getblocks bitcoin
 // message.
 func (sp *Peer) OnGetBlocks(_ *peer.Peer, msg *wire.MsgGetBlocks) {
-	// Find the most recent known block in the best chain based on the block
+	// Find the most recent known block in the dag based on the block
 	// locator and fetch all of the block hashes after it until either
 	// wire.MaxBlocksPerMsg have been fetched or the provided stop hash is
 	// encountered.
@@ -671,8 +668,8 @@ func (sp *Peer) OnGetBlocks(_ *peer.Peer, msg *wire.MsgGetBlocks) {
 	// over with the genesis block if unknown block locators are provided.
 	//
 	// This mirrors the behavior in the reference implementation.
-	chain := sp.server.DAG
-	hashList := chain.LocateBlocks(msg.BlockLocatorHashes, &msg.HashStop,
+	dag := sp.server.DAG
+	hashList := dag.LocateBlocks(msg.BlockLocatorHashes, &msg.HashStop,
 		wire.MaxBlocksPerMsg)
 
 	// Generate inventory message.
@@ -1217,23 +1214,23 @@ func (s *Server) RemoveRebroadcastInventory(iv *wire.InvVect) {
 // passed transactions to all connected peers.
 func (s *Server) RelayTransactions(txns []*mempool.TxDesc) {
 	for _, txD := range txns {
-		iv := wire.NewInvVect(wire.InvTypeTx, txD.Tx.Hash())
+		iv := wire.NewInvVect(wire.InvTypeTx, (*daghash.Hash)(txD.Tx.ID()))
 		s.RelayInventory(iv, txD)
 	}
 }
 
 // pushTxMsg sends a tx message for the provided transaction hash to the
 // connected peer.  An error is returned if the transaction hash is not known.
-func (s *Server) pushTxMsg(sp *Peer, hash *daghash.Hash, doneChan chan<- struct{},
+func (s *Server) pushTxMsg(sp *Peer, txID *daghash.TxID, doneChan chan<- struct{},
 	waitChan <-chan struct{}) error {
 
 	// Attempt to fetch the requested transaction from the pool.  A
 	// call could be made to check for existence first, but simply trying
 	// to fetch a missing transaction results in the same behavior.
-	tx, err := s.TxMemPool.FetchTransaction(hash)
+	tx, err := s.TxMemPool.FetchTransaction(txID)
 	if err != nil {
 		peerLog.Tracef("Unable to fetch tx %v from transaction "+
-			"pool: %v", hash, err)
+			"pool: %v", txID, err)
 
 		if doneChan != nil {
 			doneChan <- struct{}{}
@@ -1284,6 +1281,16 @@ func (s *Server) pushBlockMsg(sp *Peer, hash *daghash.Hash, doneChan chan<- stru
 			doneChan <- struct{}{}
 		}
 		return err
+	}
+
+	// If we are a full node and the peer is a partial node, we must convert
+	// the block to a partial block.
+	nodeSubnetworkID := s.DAG.SubnetworkID()
+	peerSubnetworkID := sp.Peer.SubnetworkID()
+	isNodeFull := nodeSubnetworkID.IsEqual(&wire.SubnetworkIDSupportsAll)
+	isPeerFull := peerSubnetworkID.IsEqual(&wire.SubnetworkIDSupportsAll)
+	if isNodeFull && !isPeerFull {
+		msgBlock.ConvertToPartial(peerSubnetworkID)
 	}
 
 	// Once we have fetched data wait for any previous operation to finish.
@@ -1574,6 +1581,12 @@ func (s *Server) handleRelayInvMsg(state *peerState, msg relayMsg) {
 					return
 				}
 			}
+
+			// Don't relay the transaction if the peer's subnetwork is
+			// incompatible with it.
+			if !txD.Tx.MsgTx().IsSubnetworkCompatible(sp.Peer.SubnetworkID()) {
+				return
+			}
 		}
 
 		// Queue the inventory to be relayed with the next batch.
@@ -1812,10 +1825,11 @@ func newPeerConfig(sp *Peer) *peer.Config {
 		UserAgentName:     userAgentName,
 		UserAgentVersion:  userAgentVersion,
 		UserAgentComments: config.MainConfig().UserAgentComments,
-		ChainParams:       sp.server.DAGParams,
+		DAGParams:         sp.server.DAGParams,
 		Services:          sp.server.services,
 		DisableRelayTx:    config.MainConfig().BlocksOnly,
 		ProtocolVersion:   peer.MaxProtocolVersion,
+		SubnetworkID:      config.MainConfig().SubnetworkID,
 	}
 }
 
@@ -2845,6 +2859,6 @@ func (s *Server) TransactionConfirmed(tx *util.Tx) {
 		return
 	}
 
-	iv := wire.NewInvVect(wire.InvTypeTx, tx.Hash())
+	iv := wire.NewInvVect(wire.InvTypeTx, (*daghash.Hash)(tx.ID()))
 	s.RemoveRebroadcastInventory(iv)
 }

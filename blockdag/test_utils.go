@@ -3,10 +3,11 @@ package blockdag
 import (
 	"encoding/binary"
 	"fmt"
-	"github.com/daglabs/btcd/util/subnetworkid"
 	"os"
 	"path/filepath"
 	"time"
+
+	"github.com/daglabs/btcd/util/subnetworkid"
 
 	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/dagconfig/daghash"
@@ -104,6 +105,41 @@ func DAGSetup(dbName string, config Config) (*BlockDAG, func(), error) {
 // OpTrueScript is script returning TRUE
 var OpTrueScript = []byte{txscript.OpTrue}
 
+type txSubnetworkData struct {
+	subnetworkID subnetworkid.SubnetworkID
+	Gas          uint64
+	Payload      []byte
+}
+
+func createTxForTest(numInputs uint32, numOutputs uint32, outputValue uint64, subnetworkData *txSubnetworkData) *wire.MsgTx {
+	tx := wire.NewMsgTx(wire.TxVersion)
+
+	for i := uint32(0); i < numInputs; i++ {
+		tx.AddTxIn(&wire.TxIn{
+			PreviousOutPoint: *wire.NewOutPoint(&daghash.TxID{}, i),
+			SignatureScript:  []byte{},
+			Sequence:         wire.MaxTxInSequenceNum,
+		})
+	}
+	for i := uint32(0); i < numOutputs; i++ {
+		tx.AddTxOut(&wire.TxOut{
+			PkScript: OpTrueScript,
+			Value:    outputValue,
+		})
+	}
+
+	if subnetworkData != nil {
+		tx.SubnetworkID = subnetworkData.subnetworkID
+		tx.Gas = subnetworkData.Gas
+		tx.Payload = subnetworkData.Payload
+	} else {
+		tx.SubnetworkID = wire.SubnetworkIDNative
+		tx.Gas = 0
+		tx.Payload = []byte{}
+	}
+	return tx
+}
+
 // createCoinbaseTxForTest returns a coinbase transaction with the requested number of
 // outputs paying an appropriate subsidy based on the passed block height to the
 // address associated with the harness.  It automatically uses a standard
@@ -120,7 +156,7 @@ func createCoinbaseTxForTest(blockHeight int32, numOutputs uint32, extraNonce in
 	tx.AddTxIn(&wire.TxIn{
 		// Coinbase transactions have no inputs, so previous outpoint is
 		// zero hash and max index.
-		PreviousOutPoint: *wire.NewOutPoint(&daghash.Hash{},
+		PreviousOutPoint: *wire.NewOutPoint(&daghash.TxID{},
 			wire.MaxPrevOutIndex),
 		SignatureScript: coinbaseScript,
 		Sequence:        wire.MaxTxInSequenceNum,
@@ -144,8 +180,8 @@ func createCoinbaseTxForTest(blockHeight int32, numOutputs uint32, extraNonce in
 	return tx, nil
 }
 
-// RegisterSubNetworkForTest is used to register network on DAG with specified gas limit
-func RegisterSubNetworkForTest(dag *BlockDAG, gasLimit uint64) (*subnetworkid.SubNetworkID, error) {
+// RegisterSubnetworkForTest is used to register network on DAG with specified gas limit
+func RegisterSubnetworkForTest(dag *BlockDAG, gasLimit uint64) (*subnetworkid.SubnetworkID, error) {
 	blockTime := time.Unix(dag.selectedTip().timestamp, 0)
 	extraNonce := int64(0)
 
@@ -191,9 +227,9 @@ func RegisterSubNetworkForTest(dag *BlockDAG, gasLimit uint64) (*subnetworkid.Su
 
 	currentNode := dag.selectedTip()
 
-	// Create a block with a valid sub-network registry transaction
+	// Create a block with a valid subnetwork registry transaction
 	registryTx := wire.NewMsgTx(wire.TxVersion)
-	registryTx.SubNetworkID = wire.SubNetworkRegistry
+	registryTx.SubnetworkID = wire.SubnetworkIDRegistry
 	registryTx.Payload = make([]byte, 8)
 	binary.LittleEndian.PutUint64(registryTx.Payload, gasLimit)
 
@@ -207,10 +243,10 @@ func RegisterSubNetworkForTest(dag *BlockDAG, gasLimit uint64) (*subnetworkid.Su
 		return nil, fmt.Errorf("could not add registry block to DAG: %s", err)
 	}
 
-	// Build a sub-network ID from the registry transaction
-	subNetworkID, err := txToSubNetworkID(registryTx)
+	// Build a subnetwork ID from the registry transaction
+	subnetworkID, err := txToSubnetworkID(registryTx)
 	if err != nil {
-		return nil, fmt.Errorf("could not build sub-network ID: %s", err)
+		return nil, fmt.Errorf("could not build subnetwork ID: %s", err)
 	}
-	return subNetworkID, nil
+	return subnetworkID, nil
 }

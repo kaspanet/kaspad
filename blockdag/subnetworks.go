@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+
 	"github.com/daglabs/btcd/util"
 
 	"github.com/daglabs/btcd/database"
@@ -11,44 +12,54 @@ import (
 	"github.com/daglabs/btcd/wire"
 )
 
-// registerSubNetworks scans a list of accepted transactions, singles out
-// sub-network registry transactions, validates them, and registers a new
-// sub-network based on it.
+type subnetworkStore struct {
+	db database.DB
+}
+
+func newSubnetworkStore(db database.DB) *subnetworkStore {
+	return &subnetworkStore{
+		db: db,
+	}
+}
+
+// registerSubnetworks scans a list of accepted transactions, singles out
+// subnetwork registry transactions, validates them, and registers a new
+// subnetwork based on it.
 // This function returns an error if one or more transactions are invalid
-func registerSubNetworks(dbTx database.Tx, txs []*TxWithBlockHash) error {
-	validSubNetworkRegistryTxs := make([]*wire.MsgTx, 0)
+func registerSubnetworks(dbTx database.Tx, txs []*TxWithBlockHash) error {
+	validSubnetworkRegistryTxs := make([]*wire.MsgTx, 0)
 	for _, txData := range txs {
 		tx := txData.Tx.MsgTx()
-		if tx.SubNetworkID == wire.SubNetworkRegistry {
-			err := validateSubNetworkRegistryTransaction(tx)
+		if tx.SubnetworkID == wire.SubnetworkIDRegistry {
+			err := validateSubnetworkRegistryTransaction(tx)
 			if err != nil {
 				return err
 			}
-			validSubNetworkRegistryTxs = append(validSubNetworkRegistryTxs, tx)
+			validSubnetworkRegistryTxs = append(validSubnetworkRegistryTxs, tx)
 		}
 
-		if subnetworkid.Less(&wire.SubNetworkRegistry, &tx.SubNetworkID) {
-			// Transactions are ordered by sub-network, so we can safely assume
-			// that the rest of the transactions will not be sub-network registry
+		if subnetworkid.Less(&wire.SubnetworkIDRegistry, &tx.SubnetworkID) {
+			// Transactions are ordered by subnetwork, so we can safely assume
+			// that the rest of the transactions will not be subnetwork registry
 			// transactions.
 			break
 		}
 	}
 
-	for _, registryTx := range validSubNetworkRegistryTxs {
-		subNetworkID, err := txToSubNetworkID(registryTx)
+	for _, registryTx := range validSubnetworkRegistryTxs {
+		subnetworkID, err := txToSubnetworkID(registryTx)
 		if err != nil {
 			return err
 		}
-		sNet, err := dbGetSubNetwork(dbTx, subNetworkID)
+		sNet, err := dbGetSubnetwork(dbTx, subnetworkID)
 		if err != nil {
 			return err
 		}
 		if sNet == nil {
-			createdSubNetwork := newSubNetwork(registryTx)
-			err := dbRegisterSubNetwork(dbTx, subNetworkID, createdSubNetwork)
+			createdSubnetwork := newSubnetwork(registryTx)
+			err := dbRegisterSubnetwork(dbTx, subnetworkID, createdSubnetwork)
 			if err != nil {
-				return fmt.Errorf("failed registering sub-network"+
+				return fmt.Errorf("failed registering subnetwork"+
 					"for tx '%s': %s", registryTx.TxHash(), err)
 			}
 		}
@@ -57,125 +68,125 @@ func registerSubNetworks(dbTx database.Tx, txs []*TxWithBlockHash) error {
 	return nil
 }
 
-// validateSubNetworkRegistryTransaction makes sure that a given sub-network registry
+// validateSubnetworkRegistryTransaction makes sure that a given subnetwork registry
 // transaction is valid. Such a transaction is valid iff:
 // - Its entire payload is a uint64 (8 bytes)
-func validateSubNetworkRegistryTransaction(tx *wire.MsgTx) error {
+func validateSubnetworkRegistryTransaction(tx *wire.MsgTx) error {
 	if len(tx.Payload) != 8 {
-		return ruleError(ErrSubNetworkRegistry, fmt.Sprintf("validation failed: subnetwork registry"+
+		return ruleError(ErrSubnetworkRegistry, fmt.Sprintf("validation failed: subnetwork registry"+
 			"tx '%s' has an invalid payload", tx.TxHash()))
 	}
 
 	return nil
 }
 
-// txToSubNetworkID creates a sub-network ID from a sub-network registry transaction
-func txToSubNetworkID(tx *wire.MsgTx) (*subnetworkid.SubNetworkID, error) {
+// txToSubnetworkID creates a subnetwork ID from a subnetwork registry transaction
+func txToSubnetworkID(tx *wire.MsgTx) (*subnetworkid.SubnetworkID, error) {
 	txHash := tx.TxHash()
 	return subnetworkid.New(util.Hash160(txHash[:]))
 }
 
-// subNetwork returns a registered sub-network. If the sub-network does not exist
+// subnetwork returns a registered subnetwork. If the subnetwork does not exist
 // this method returns an error.
-func (dag *BlockDAG) subNetwork(subNetworkID *subnetworkid.SubNetworkID) (*subNetwork, error) {
-	var sNet *subNetwork
+func (s *subnetworkStore) subnetwork(subnetworkID *subnetworkid.SubnetworkID) (*subnetwork, error) {
+	var sNet *subnetwork
 	var err error
-	dbErr := dag.db.View(func(dbTx database.Tx) error {
-		sNet, err = dbGetSubNetwork(dbTx, subNetworkID)
+	dbErr := s.db.View(func(dbTx database.Tx) error {
+		sNet, err = dbGetSubnetwork(dbTx, subnetworkID)
 		return nil
 	})
 	if dbErr != nil {
-		return nil, fmt.Errorf("could not retrieve sub-network '%d': %s", subNetworkID, dbErr)
+		return nil, fmt.Errorf("could not retrieve subnetwork '%d': %s", subnetworkID, dbErr)
 	}
 	if err != nil {
-		return nil, fmt.Errorf("could not retrieve sub-network '%d': %s", subNetworkID, err)
+		return nil, fmt.Errorf("could not retrieve subnetwork '%d': %s", subnetworkID, err)
 	}
 
 	return sNet, nil
 }
 
-// GasLimit returns the gas limit of a registered sub-network. If the sub-network does not
+// GasLimit returns the gas limit of a registered subnetwork. If the subnetwork does not
 // exist this method returns an error.
-func (dag *BlockDAG) GasLimit(subNetworkID *subnetworkid.SubNetworkID) (uint64, error) {
-	sNet, err := dag.subNetwork(subNetworkID)
+func (s *subnetworkStore) GasLimit(subnetworkID *subnetworkid.SubnetworkID) (uint64, error) {
+	sNet, err := s.subnetwork(subnetworkID)
 	if err != nil {
 		return 0, err
 	}
 	if sNet == nil {
-		return 0, fmt.Errorf("sub-network '%s' not found", subNetworkID)
+		return 0, fmt.Errorf("subnetwork '%s' not found", subnetworkID)
 	}
 
 	return sNet.gasLimit, nil
 }
 
-// dbRegisterSubNetwork stores mappings from ID of the sub-network to the sub-network data.
-func dbRegisterSubNetwork(dbTx database.Tx, subNetworkID *subnetworkid.SubNetworkID, network *subNetwork) error {
-	// Serialize the sub-network
-	serializedSubNetwork, err := serializeSubNetwork(network)
+// dbRegisterSubnetwork stores mappings from ID of the subnetwork to the subnetwork data.
+func dbRegisterSubnetwork(dbTx database.Tx, subnetworkID *subnetworkid.SubnetworkID, network *subnetwork) error {
+	// Serialize the subnetwork
+	serializedSubnetwork, err := serializeSubnetwork(network)
 	if err != nil {
-		return fmt.Errorf("failed to serialize sub-netowrk '%s': %s", subNetworkID, err)
+		return fmt.Errorf("failed to serialize sub-netowrk '%s': %s", subnetworkID, err)
 	}
 
-	// Store the sub-network
-	subNetworksBucket := dbTx.Metadata().Bucket(subNetworksBucketName)
-	err = subNetworksBucket.Put(subNetworkID[:], serializedSubNetwork)
+	// Store the subnetwork
+	subnetworksBucket := dbTx.Metadata().Bucket(subnetworksBucketName)
+	err = subnetworksBucket.Put(subnetworkID[:], serializedSubnetwork)
 	if err != nil {
-		return fmt.Errorf("failed to write sub-netowrk '%s': %s", subNetworkID, err)
+		return fmt.Errorf("failed to write sub-netowrk '%s': %s", subnetworkID, err)
 	}
 
 	return nil
 }
 
-// dbGetSubNetwork returns the sub-network associated with subNetworkID or nil if the sub-network was not found.
-func dbGetSubNetwork(dbTx database.Tx, subNetworkID *subnetworkid.SubNetworkID) (*subNetwork, error) {
-	bucket := dbTx.Metadata().Bucket(subNetworksBucketName)
-	serializedSubNetwork := bucket.Get(subNetworkID[:])
-	if serializedSubNetwork == nil {
+// dbGetSubnetwork returns the subnetwork associated with subnetworkID or nil if the subnetwork was not found.
+func dbGetSubnetwork(dbTx database.Tx, subnetworkID *subnetworkid.SubnetworkID) (*subnetwork, error) {
+	bucket := dbTx.Metadata().Bucket(subnetworksBucketName)
+	serializedSubnetwork := bucket.Get(subnetworkID[:])
+	if serializedSubnetwork == nil {
 		return nil, nil
 	}
 
-	return deserializeSubNetwork(serializedSubNetwork)
+	return deserializeSubnetwork(serializedSubnetwork)
 }
 
-type subNetwork struct {
+type subnetwork struct {
 	gasLimit uint64
 }
 
-func newSubNetwork(tx *wire.MsgTx) *subNetwork {
+func newSubnetwork(tx *wire.MsgTx) *subnetwork {
 	gasLimit := binary.LittleEndian.Uint64(tx.Payload[:8])
 
-	return &subNetwork{
+	return &subnetwork{
 		gasLimit: gasLimit,
 	}
 }
 
-// serializeSubNetwork serializes a subNetwork into the following binary format:
+// serializeSubnetwork serializes a subnetwork into the following binary format:
 // | gasLimit (8 bytes) |
-func serializeSubNetwork(sNet *subNetwork) ([]byte, error) {
+func serializeSubnetwork(sNet *subnetwork) ([]byte, error) {
 	serializedSNet := bytes.NewBuffer(make([]byte, 0, 8))
 
 	// Write the gas limit
 	err := binary.Write(serializedSNet, byteOrder, sNet.gasLimit)
 	if err != nil {
-		return nil, fmt.Errorf("failed to serialize sub-network: %s", err)
+		return nil, fmt.Errorf("failed to serialize subnetwork: %s", err)
 	}
 
 	return serializedSNet.Bytes(), nil
 }
 
-// deserializeSubNetwork deserializes a byte slice into a subNetwork.
-// See serializeSubNetwork for the binary format.
-func deserializeSubNetwork(serializedSNetBytes []byte) (*subNetwork, error) {
+// deserializeSubnetwork deserializes a byte slice into a subnetwork.
+// See serializeSubnetwork for the binary format.
+func deserializeSubnetwork(serializedSNetBytes []byte) (*subnetwork, error) {
 	serializedSNet := bytes.NewBuffer(serializedSNetBytes)
 
 	// Read the gas limit
 	var gasLimit uint64
 	err := binary.Read(serializedSNet, byteOrder, &gasLimit)
 	if err != nil {
-		return nil, fmt.Errorf("failed to deserialize sub-network: %s", err)
+		return nil, fmt.Errorf("failed to deserialize subnetwork: %s", err)
 	}
 
-	return &subNetwork{
+	return &subnetwork{
 		gasLimit: gasLimit,
 	}, nil
 }

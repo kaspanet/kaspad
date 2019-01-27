@@ -83,7 +83,7 @@ func (uc utxoCollection) String() string {
 
 	i := 0
 	for outPoint, utxoEntry := range uc {
-		utxoStrings[i] = fmt.Sprintf("(%s, %d) => %d", outPoint.Hash, outPoint.Index, utxoEntry.amount)
+		utxoStrings[i] = fmt.Sprintf("(%s, %d) => %d", outPoint.TxID, outPoint.Index, utxoEntry.amount)
 		i++
 	}
 
@@ -304,7 +304,7 @@ func (d *UTXODiff) clone() *UTXODiff {
 //RemoveTxOuts marks the transaction's outputs to removal
 func (d *UTXODiff) RemoveTxOuts(tx *wire.MsgTx) {
 	for idx := range tx.TxOut {
-		hash := tx.TxHash()
+		hash := tx.TxID()
 		d.toRemove.add(*wire.NewOutPoint(&hash, uint32(idx)), nil)
 	}
 }
@@ -361,7 +361,7 @@ type UTXOSet interface {
 // or an error if provided transaction is not valid in the context of this UTXOSet
 func diffFromTx(u UTXOSet, tx *wire.MsgTx, containingNode *blockNode) (*UTXODiff, error) {
 	diff := NewUTXODiff()
-	isCoinbase := IsCoinBaseTx(tx)
+	isCoinbase := tx.IsCoinBase()
 	if !isCoinbase {
 		for _, txIn := range tx.TxIn {
 			if entry, ok := u.Get(txIn.PreviousOutPoint); ok {
@@ -369,12 +369,12 @@ func diffFromTx(u UTXOSet, tx *wire.MsgTx, containingNode *blockNode) (*UTXODiff
 			} else {
 				return nil, ruleError(ErrMissingTxOut, fmt.Sprintf(
 					"Transaction %s is invalid because spends outpoint %s that is not in utxo set",
-					tx.TxHash(), txIn.PreviousOutPoint))
+					tx.TxID(), txIn.PreviousOutPoint))
 			}
 		}
 	}
 	for i, txOut := range tx.TxOut {
-		hash := tx.TxHash()
+		hash := tx.TxID()
 		entry := NewUTXOEntry(txOut, isCoinbase, containingNode.height)
 		outPoint := *wire.NewOutPoint(&hash, uint32(i))
 		diff.toAdd.add(outPoint, entry)
@@ -416,20 +416,20 @@ func (fus *FullUTXOSet) WithDiff(other *UTXODiff) (UTXOSet, error) {
 
 // AddTx adds a transaction to this utxoSet and returns true iff it's valid in this UTXO's context
 func (fus *FullUTXOSet) AddTx(tx *wire.MsgTx, blockHeight int32) bool {
-	isCoinbase := IsCoinBaseTx(tx)
+	isCoinbase := tx.IsCoinBase()
 	if !isCoinbase {
 		if !fus.containsInputs(tx) {
 			return false
 		}
 
 		for _, txIn := range tx.TxIn {
-			outPoint := *wire.NewOutPoint(&txIn.PreviousOutPoint.Hash, txIn.PreviousOutPoint.Index)
+			outPoint := *wire.NewOutPoint(&txIn.PreviousOutPoint.TxID, txIn.PreviousOutPoint.Index)
 			fus.remove(outPoint)
 		}
 	}
 
 	for i, txOut := range tx.TxOut {
-		hash := tx.TxHash()
+		hash := tx.TxID()
 		outPoint := *wire.NewOutPoint(&hash, uint32(i))
 		entry := NewUTXOEntry(txOut, isCoinbase, blockHeight)
 
@@ -447,7 +447,7 @@ func (fus *FullUTXOSet) diffFromTx(tx *wire.MsgTx, node *blockNode) (*UTXODiff, 
 
 func (fus *FullUTXOSet) containsInputs(tx *wire.MsgTx) bool {
 	for _, txIn := range tx.TxIn {
-		outPoint := *wire.NewOutPoint(&txIn.PreviousOutPoint.Hash, txIn.PreviousOutPoint.Index)
+		outPoint := *wire.NewOutPoint(&txIn.PreviousOutPoint.TxID, txIn.PreviousOutPoint.Index)
 		if !fus.contains(outPoint) {
 			return false
 		}
@@ -508,7 +508,7 @@ func (dus *DiffUTXOSet) WithDiff(other *UTXODiff) (UTXOSet, error) {
 
 // AddTx adds a transaction to this utxoSet and returns true iff it's valid in this UTXO's context
 func (dus *DiffUTXOSet) AddTx(tx *wire.MsgTx, blockHeight int32) bool {
-	isCoinBase := IsCoinBaseTx(tx)
+	isCoinBase := tx.IsCoinBase()
 	if !isCoinBase && !dus.containsInputs(tx) {
 		return false
 	}
@@ -522,7 +522,7 @@ func (dus *DiffUTXOSet) appendTx(tx *wire.MsgTx, blockHeight int32, isCoinBase b
 	if !isCoinBase {
 
 		for _, txIn := range tx.TxIn {
-			outPoint := *wire.NewOutPoint(&txIn.PreviousOutPoint.Hash, txIn.PreviousOutPoint.Index)
+			outPoint := *wire.NewOutPoint(&txIn.PreviousOutPoint.TxID, txIn.PreviousOutPoint.Index)
 			if dus.UTXODiff.toAdd.contains(outPoint) {
 				dus.UTXODiff.toAdd.remove(outPoint)
 			} else {
@@ -533,7 +533,7 @@ func (dus *DiffUTXOSet) appendTx(tx *wire.MsgTx, blockHeight int32, isCoinBase b
 	}
 
 	for i, txOut := range tx.TxOut {
-		hash := tx.TxHash()
+		hash := tx.TxID()
 		outPoint := *wire.NewOutPoint(&hash, uint32(i))
 		entry := NewUTXOEntry(txOut, isCoinBase, blockHeight)
 
@@ -547,7 +547,7 @@ func (dus *DiffUTXOSet) appendTx(tx *wire.MsgTx, blockHeight int32, isCoinBase b
 
 func (dus *DiffUTXOSet) containsInputs(tx *wire.MsgTx) bool {
 	for _, txIn := range tx.TxIn {
-		outPoint := *wire.NewOutPoint(&txIn.PreviousOutPoint.Hash, txIn.PreviousOutPoint.Index)
+		outPoint := *wire.NewOutPoint(&txIn.PreviousOutPoint.TxID, txIn.PreviousOutPoint.Index)
 		isInBase := dus.base.contains(outPoint)
 		isInDiffToAdd := dus.UTXODiff.toAdd.contains(outPoint)
 		isInDiffToRemove := dus.UTXODiff.toRemove.contains(outPoint)

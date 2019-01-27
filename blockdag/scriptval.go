@@ -60,7 +60,7 @@ out:
 				str := fmt.Sprintf("unable to find unspent "+
 					"output %v referenced from "+
 					"transaction %s:%d",
-					txIn.PreviousOutPoint, txVI.tx.Hash(),
+					txIn.PreviousOutPoint, txVI.tx.ID(),
 					txVI.txInIndex)
 				err := ruleError(ErrMissingTxOut, str)
 				v.sendResult(err)
@@ -77,7 +77,7 @@ out:
 					"%s:%d which references output %v - "+
 					"%v (input script bytes %x, prev "+
 					"output script bytes %x)",
-					txVI.tx.Hash(), txVI.txInIndex,
+					txVI.tx.ID(), txVI.txInIndex,
 					txIn.PreviousOutPoint, err, sigScript, pkScript)
 				err := ruleError(ErrScriptMalformed, str)
 				v.sendResult(err)
@@ -90,7 +90,7 @@ out:
 					"%s:%d which references output %v - "+
 					"%v (input script bytes %x, prev output "+
 					"script bytes %x)",
-					txVI.tx.Hash(), txVI.txInIndex,
+					txVI.tx.ID(), txVI.txInIndex,
 					txIn.PreviousOutPoint, err, sigScript, pkScript)
 				err := ruleError(ErrScriptValidation, str)
 				v.sendResult(err)
@@ -205,15 +205,15 @@ func ValidateTransactionScripts(tx *util.Tx, utxoSet UTXOSet, flags txscript.Scr
 
 // checkBlockScripts executes and validates the scripts for all transactions in
 // the passed block using multiple goroutines.
-func checkBlockScripts(block *provisionalNode, utxoSet UTXOSet, scriptFlags txscript.ScriptFlags, sigCache *txscript.SigCache) error {
+func checkBlockScripts(block *blockNode, utxoSet UTXOSet, transactions []*util.Tx, scriptFlags txscript.ScriptFlags, sigCache *txscript.SigCache) error {
 	// Collect all of the transaction inputs and required information for
 	// validation for all transactions in the block into a single slice.
 	numInputs := 0
-	for _, tx := range block.transactions {
+	for _, tx := range transactions {
 		numInputs += len(tx.MsgTx().TxIn)
 	}
 	txValItems := make([]*txValidateItem, 0, numInputs)
-	for _, tx := range block.transactions {
+	for _, tx := range transactions {
 		for txInIdx, txIn := range tx.MsgTx().TxIn {
 			// Skip coinbases.
 			if txIn.PreviousOutPoint.Index == math.MaxUint32 {
@@ -237,7 +237,7 @@ func checkBlockScripts(block *provisionalNode, utxoSet UTXOSet, scriptFlags txsc
 	}
 	elapsed := time.Since(start)
 
-	log.Tracef("block %v took %v to verify", block.original.hash, elapsed)
+	log.Tracef("block %v took %v to verify", block.hash, elapsed)
 
 	return nil
 }
