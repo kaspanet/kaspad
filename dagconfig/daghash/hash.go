@@ -27,6 +27,9 @@ var ErrHashStrSize = fmt.Errorf("max hash string length is %v bytes", MaxHashStr
 // typically represents the double sha256 of data.
 type Hash [HashSize]byte
 
+// TxID is transaction hash not including payload and signature.
+type TxID Hash
+
 // String returns the Hash as the hexadecimal string of the byte-reversed
 // hash.
 func (hash Hash) String() string {
@@ -34,6 +37,12 @@ func (hash Hash) String() string {
 		hash[i], hash[HashSize-1-i] = hash[HashSize-1-i], hash[i]
 	}
 	return hex.EncodeToString(hash[:])
+}
+
+// String returns the TxId as the hexadecimal string of the byte-reversed
+// hash.
+func (txID TxID) String() string {
+	return Hash(txID).String()
 }
 
 // Strings returns a slice of strings representing the hashes in the given slice of hashes
@@ -58,6 +67,15 @@ func (hash *Hash) CloneBytes() []byte {
 	return newHash
 }
 
+// CloneBytes returns a copy of the bytes which represent the TxID as a byte
+// slice.
+//
+// NOTE: It is generally cheaper to just slice the hash directly thereby reusing
+// the same bytes rather than calling this method.
+func (txID *TxID) CloneBytes() []byte {
+	return (*Hash)(txID).CloneBytes()
+}
+
 // SetBytes sets the bytes which represent the hash.  An error is returned if
 // the number of bytes passed in is not HashSize.
 func (hash *Hash) SetBytes(newHash []byte) error {
@@ -71,6 +89,12 @@ func (hash *Hash) SetBytes(newHash []byte) error {
 	return nil
 }
 
+// SetBytes sets the bytes which represent the TxID.  An error is returned if
+// the number of bytes passed in is not HashSize.
+func (txID *TxID) SetBytes(newID []byte) error {
+	return (*Hash)(txID).SetBytes(newID)
+}
+
 // IsEqual returns true if target is the same as hash.
 func (hash *Hash) IsEqual(target *Hash) bool {
 	if hash == nil && target == nil {
@@ -80,6 +104,11 @@ func (hash *Hash) IsEqual(target *Hash) bool {
 		return false
 	}
 	return *hash == *target
+}
+
+// IsEqual returns true if target is the same as TxID.
+func (txID *TxID) IsEqual(target *TxID) bool {
+	return (*Hash)(txID).IsEqual((*Hash)(target))
 }
 
 // AreEqual returns true if both slices contain the same hashes.
@@ -109,6 +138,13 @@ func NewHash(newHash []byte) (*Hash, error) {
 	return &sh, err
 }
 
+// NewTxID returns a new TxID from a byte slice.  An error is returned if
+// the number of bytes passed in is not HashSize.
+func NewTxID(newTxID []byte) (*TxID, error) {
+	hash, err := NewHash(newTxID)
+	return (*TxID)(hash), err
+}
+
 // NewHashFromStr creates a Hash from a hash string.  The string should be
 // the hexadecimal string of a byte-reversed hash, but any missing characters
 // result in zero padding at the end of the Hash.
@@ -119,6 +155,14 @@ func NewHashFromStr(hash string) (*Hash, error) {
 		return nil, err
 	}
 	return ret, nil
+}
+
+// NewTxIDFromStr creates a TxID from a hash string.  The string should be
+// the hexadecimal string of a byte-reversed hash, but any missing characters
+// result in zero padding at the end of the Hash.
+func NewTxIDFromStr(idStr string) (*TxID, error) {
+	hash, err := NewHashFromStr(idStr)
+	return (*TxID)(hash), err
 }
 
 // Decode decodes the byte-reversed hexadecimal string encoding of a Hash to a
@@ -197,6 +241,10 @@ func Sort(hashes []Hash) {
 	})
 }
 
-// Zero is the Hash value of all zero bytes, defined here for
+// ZeroHash is the Hash value of all zero bytes, defined here for
 // convenience.
-var Zero Hash
+var ZeroHash Hash
+
+// ZeroTxID is the Hash value of all zero bytes, defined here for
+// convenience.
+var ZeroTxID TxID

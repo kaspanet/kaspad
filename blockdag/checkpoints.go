@@ -27,6 +27,15 @@ func newHashFromStr(hexStr string) *daghash.Hash {
 	return hash
 }
 
+// newTxIDFromStr converts the passed big-endian hex string into a
+// daghash.TxID.  It only differs from the one available in daghash in that
+// it ignores the error since it will only (and must only) be called with
+// hard-coded, and therefore known good, IDs.
+func newTxIDFromStr(hexStr string) *daghash.TxID {
+	txID, _ := daghash.NewTxIDFromStr(hexStr)
+	return txID
+}
+
 // Checkpoints returns a slice of checkpoints (regardless of whether they are
 // already known).  When there are no checkpoints for the chain, it will return
 // nil.

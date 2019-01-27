@@ -246,7 +246,7 @@ func (m *memWallet) chainSyncer() {
 
 // evalOutputs evaluates each of the passed outputs, creating a new matching
 // utxo within the wallet if we're able to spend the output.
-func (m *memWallet) evalOutputs(outputs []*wire.TxOut, txHash *daghash.Hash,
+func (m *memWallet) evalOutputs(outputs []*wire.TxOut, txID *daghash.TxID,
 	isCoinbase bool, undo *undoEntry) {
 
 	for i, output := range outputs {
@@ -268,7 +268,7 @@ func (m *memWallet) evalOutputs(outputs []*wire.TxOut, txHash *daghash.Hash,
 				maturityHeight = m.currentHeight + int32(m.net.CoinbaseMaturity)
 			}
 
-			op := wire.OutPoint{TxID: *txHash, Index: uint32(i)}
+			op := wire.OutPoint{TxID: *txID, Index: uint32(i)}
 			m.utxos[op] = &utxo{
 				value:          util.Amount(output.Value),
 				keyIndex:       keyIndex,

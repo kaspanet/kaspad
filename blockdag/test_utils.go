@@ -116,7 +116,7 @@ func createTxForTest(numInputs uint32, numOutputs uint32, outputValue uint64, su
 
 	for i := uint32(0); i < numInputs; i++ {
 		tx.AddTxIn(&wire.TxIn{
-			PreviousOutPoint: *wire.NewOutPoint(&daghash.Hash{}, i),
+			PreviousOutPoint: *wire.NewOutPoint(&daghash.TxID{}, i),
 			SignatureScript:  []byte{},
 			Sequence:         wire.MaxTxInSequenceNum,
 		})
@@ -156,7 +156,7 @@ func createCoinbaseTxForTest(blockHeight int32, numOutputs uint32, extraNonce in
 	tx.AddTxIn(&wire.TxIn{
 		// Coinbase transactions have no inputs, so previous outpoint is
 		// zero hash and max index.
-		PreviousOutPoint: *wire.NewOutPoint(&daghash.Hash{},
+		PreviousOutPoint: *wire.NewOutPoint(&daghash.TxID{},
 			wire.MaxPrevOutIndex),
 		SignatureScript: coinbaseScript,
 		Sequence:        wire.MaxTxInSequenceNum,

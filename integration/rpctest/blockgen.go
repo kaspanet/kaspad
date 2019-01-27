@@ -109,7 +109,7 @@ func createCoinbaseTx(coinbaseScript []byte, nextBlockHeight int32,
 	tx.AddTxIn(&wire.TxIn{
 		// Coinbase transactions have no inputs, so previous outpoint is
 		// zero hash and max index.
-		PreviousOutPoint: *wire.NewOutPoint(&daghash.Hash{},
+		PreviousOutPoint: *wire.NewOutPoint(&daghash.TxID{},
 			wire.MaxPrevOutIndex),
 		SignatureScript: coinbaseScript,
 		Sequence:        wire.MaxTxInSequenceNum,

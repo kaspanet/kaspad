@@ -24,7 +24,7 @@ func newTestFeeEstimator(binSize, maxReplacements, maxRollback uint32) *FeeEstim
 		binSize:             int32(binSize),
 		minRegisteredBlocks: 0,
 		maxReplacements:     int32(maxReplacements),
-		observed:            make(map[daghash.Hash]*observedTransaction),
+		observed:            make(map[daghash.TxID]*observedTransaction),
 		dropped:             make([]*registeredBlock, 0, maxRollback),
 	}
 }

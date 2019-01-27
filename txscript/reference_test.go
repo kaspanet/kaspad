@@ -217,7 +217,7 @@ func parseExpectedResult(expected string) ([]ErrorCode, error) {
 func createSpendingTx(sigScript, pkScript []byte) *wire.MsgTx {
 	coinbaseTx := wire.NewMsgTx(wire.TxVersion)
 
-	outPoint := wire.NewOutPoint(&daghash.Hash{}, ^uint32(0))
+	outPoint := wire.NewOutPoint(&daghash.TxID{}, ^uint32(0))
 	txIn := wire.NewTxIn(outPoint, []byte{Op0, Op0})
 	txOut := wire.NewTxOut(0, pkScript)
 	coinbaseTx.AddTxIn(txIn)
