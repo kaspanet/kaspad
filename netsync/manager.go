@@ -41,9 +41,6 @@ const (
 	maxRequestedTxns = wire.MaxInvPerMsg
 )
 
-// zeroHash is the zero value hash (all zeros).  It is defined as a convenience.
-var zeroHash daghash.Hash
-
 // newPeerMsg signifies a newly connected peer to the block handler.
 type newPeerMsg struct {
 	peer *peerpkg.Peer
@@ -293,7 +290,7 @@ func (sm *SyncManager) startSync() {
 				"%d from peer %s", sm.dag.Height()+1,
 				sm.nextCheckpoint.Height, bestPeer.Addr()) //TODO: (Ori) This is probably wrong. Done only for compilation
 		} else {
-			bestPeer.PushGetBlocksMsg(locator, &zeroHash)
+			bestPeer.PushGetBlocksMsg(locator, &daghash.ZeroHash)
 		}
 		sm.syncPeer = bestPeer
 	} else {
@@ -678,7 +675,7 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 	sm.headerList.Init()
 	log.Infof("Reached the final checkpoint -- switching to normal mode")
 	locator := blockdag.BlockLocator([]*daghash.Hash{blockHash})
-	err = peer.PushGetBlocksMsg(locator, &zeroHash)
+	err = peer.PushGetBlocksMsg(locator, &daghash.ZeroHash)
 	if err != nil {
 		log.Warnf("Failed to send getblocks message to peer %s: %v",
 			peer.Addr(), err)
@@ -1007,7 +1004,7 @@ func (sm *SyncManager) handleInvMsg(imsg *invMsg) {
 				// final one the remote peer knows about (zero
 				// stop hash).
 				locator := sm.dag.BlockLocatorFromHash(&iv.Hash)
-				peer.PushGetBlocksMsg(locator, &zeroHash)
+				peer.PushGetBlocksMsg(locator, &daghash.ZeroHash)
 			}
 		}
 	}
@@ -1069,8 +1066,8 @@ func (sm *SyncManager) limitTxIDMap(m map[daghash.TxID]struct{}, limit int) {
 		// is not important here because an adversary would have to be
 		// able to pull off preimage attacks on the hashing function in
 		// order to target eviction of specific entries anyways.
-		for txHash := range m {
-			delete(m, txHash)
+		for txID := range m {
+			delete(m, txID)
 			return
 		}
 	}
@@ -1087,8 +1084,8 @@ func (sm *SyncManager) limitHashMap(m map[daghash.Hash]struct{}, limit int) {
 		// is not important here because an adversary would have to be
 		// able to pull off preimage attacks on the hashing function in
 		// order to target eviction of specific entries anyways.
-		for txHash := range m {
-			delete(m, txHash)
+		for hash := range m {
+			delete(m, hash)
 			return
 		}
 	}
