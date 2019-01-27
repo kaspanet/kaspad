@@ -12,7 +12,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/database"
 	"github.com/daglabs/btcd/util"
 	"github.com/daglabs/btcd/wire"
@@ -30,10 +29,6 @@ var (
 		InFile:   "bootstrap.dat",
 		Progress: 10,
 	}
-
-	// zeroHash is a simply a hash with all zeros.  It is defined here to
-	// avoid creating it multiple times.
-	zeroHash = daghash.Hash{}
 )
 
 // importResults houses the stats and result as an import operation.

@@ -22,11 +22,10 @@ import (
 func TestTx(t *testing.T) {
 	pver := ProtocolVersion
 
-	// Block 100000 hash.
-	hashStr := "3ba27aa200b1cecaad478d2b00432346c3f1f3986da1afd33e506"
-	hash, err := daghash.NewHashFromStr(hashStr)
+	txIDStr := "3ba27aa200b1cecaad478d2b00432346c3f1f3986da1afd33e506"
+	txID, err := daghash.NewTxIDFromStr(txIDStr)
 	if err != nil {
-		t.Errorf("NewHashFromStr: %v", err)
+		t.Errorf("NewTxIDFromStr: %v", err)
 	}
 
 	// Ensure the command is expected value.
@@ -50,16 +49,16 @@ func TestTx(t *testing.T) {
 	// NOTE: This is a block hash and made up index, but we're only
 	// testing package functionality.
 	prevOutIndex := uint32(1)
-	prevOut := NewOutPoint(hash, prevOutIndex)
-	if !prevOut.TxID.IsEqual(hash) {
-		t.Errorf("NewOutPoint: wrong hash - got %v, want %v",
-			spew.Sprint(&prevOut.TxID), spew.Sprint(hash))
+	prevOut := NewOutPoint(txID, prevOutIndex)
+	if !prevOut.TxID.IsEqual(txID) {
+		t.Errorf("NewOutPoint: wrong ID - got %v, want %v",
+			spew.Sprint(&prevOut.TxID), spew.Sprint(txID))
 	}
 	if prevOut.Index != prevOutIndex {
 		t.Errorf("NewOutPoint: wrong index - got %v, want %v",
 			prevOut.Index, prevOutIndex)
 	}
-	prevOutStr := fmt.Sprintf("%s:%d", hash.String(), prevOutIndex)
+	prevOutStr := fmt.Sprintf("%s:%d", txID.String(), prevOutIndex)
 	if s := prevOut.String(); s != prevOutStr {
 		t.Errorf("OutPoint.String: unexpected result - got %v, "+
 			"want %v", s, prevOutStr)
@@ -130,8 +129,8 @@ func TestTx(t *testing.T) {
 
 // TestTxHash tests the ability to generate the hash of a transaction accurately.
 func TestTxHashAndID(t *testing.T) {
-	hash1Str := "2d0dd1e05410fe76afbd90f577f615d603ca00b2fa53f963e6375ce742343faa"
-	wantHash1, err := daghash.NewHashFromStr(hash1Str)
+	txID1Str := "2d0dd1e05410fe76afbd90f577f615d603ca00b2fa53f963e6375ce742343faa"
+	wantTxID1, err := daghash.NewTxIDFromStr(txID1Str)
 	if err != nil {
 		t.Errorf("NewHashFromStr: %v", err)
 		return
@@ -141,7 +140,7 @@ func TestTxHashAndID(t *testing.T) {
 	tx1 := NewMsgTx(1)
 	txIn := TxIn{
 		PreviousOutPoint: OutPoint{
-			TxID:  daghash.Hash{},
+			TxID:  daghash.TxID{},
 			Index: 0xffffffff,
 		},
 		SignatureScript: []byte{0x04, 0x31, 0xdc, 0x00, 0x1b, 0x01, 0x62},
@@ -169,16 +168,16 @@ func TestTxHashAndID(t *testing.T) {
 
 	// Ensure the hash produced is expected.
 	tx1Hash := tx1.TxHash()
-	if !tx1Hash.IsEqual(wantHash1) {
+	if !tx1Hash.IsEqual((*daghash.Hash)(wantTxID1)) {
 		t.Errorf("TxHash: wrong hash - got %v, want %v",
-			spew.Sprint(tx1Hash), spew.Sprint(wantHash1))
+			spew.Sprint(tx1Hash), spew.Sprint(wantTxID1))
 	}
 
 	// Ensure the TxID for coinbase transaction is the same as TxHash.
 	tx1ID := tx1.TxID()
-	if !tx1ID.IsEqual(wantHash1) {
+	if !tx1ID.IsEqual(wantTxID1) {
 		t.Errorf("TxID: wrong ID - got %v, want %v",
-			spew.Sprint(tx1ID), spew.Sprint(wantHash1))
+			spew.Sprint(tx1ID), spew.Sprint(wantTxID1))
 	}
 
 	hash2Str := "ef55c85be28615b699bef1470d0d041982a6f3af5f900c978c3837b967b168b3"
@@ -189,7 +188,7 @@ func TestTxHashAndID(t *testing.T) {
 	}
 
 	id2Str := "12063f97b5fbbf441bd7962f88631a36a4b4a67649045c02ed840bedc97e88ea"
-	wantID2, err := daghash.NewHashFromStr(id2Str)
+	wantID2, err := daghash.NewTxIDFromStr(id2Str)
 	if err != nil {
 		t.Errorf("NewHashFromStr: %v", err)
 		return
@@ -200,7 +199,7 @@ func TestTxHashAndID(t *testing.T) {
 			{
 				PreviousOutPoint: OutPoint{
 					Index: 0,
-					TxID:  daghash.Hash{1, 2, 3},
+					TxID:  daghash.TxID{1, 2, 3},
 				},
 				SignatureScript: []byte{
 					0x49, 0x30, 0x46, 0x02, 0x21, 0x00, 0xDA, 0x0D, 0xC6, 0xAE, 0xCE, 0xFE, 0x1E, 0x06, 0xEF, 0xDF,
@@ -251,14 +250,14 @@ func TestTxHashAndID(t *testing.T) {
 			spew.Sprint(tx2ID), spew.Sprint(wantID2))
 	}
 
-	if tx2ID.IsEqual(&tx2Hash) {
+	if tx2ID.IsEqual((*daghash.TxID)(&tx2Hash)) {
 		t.Errorf("tx2ID and tx2Hash shouldn't be the same for non-coinbase transaction with signature and/or payload")
 	}
 
 	tx2.Payload = []byte{}
 	tx2.TxIn[0].SignatureScript = []byte{}
 	newTx2Hash := tx2.TxHash()
-	if !tx2ID.IsEqual(&newTx2Hash) {
+	if !tx2ID.IsEqual((*daghash.TxID)(&newTx2Hash)) {
 		t.Errorf("tx2ID and newTx2Hash should be the same for transaction without empty signature and payload")
 	}
 }
@@ -951,7 +950,7 @@ var multiTx = &MsgTx{
 	TxIn: []*TxIn{
 		{
 			PreviousOutPoint: OutPoint{
-				TxID:  daghash.Hash{},
+				TxID:  daghash.TxID{},
 				Index: 0xffffffff,
 			},
 			SignatureScript: []byte{

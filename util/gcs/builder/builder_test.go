@@ -50,7 +50,7 @@ var (
 // TestUseBlockHash tests using a block hash as a filter key.
 func TestUseBlockHash(t *testing.T) {
 	// Block hash #448710, pretty high difficulty.
-	txID, err := daghash.NewHashFromStr(testHash)
+	txID, err := daghash.NewTxIDFromStr(testHash)
 	if err != nil {
 		t.Fatalf("Hash from string failed: %s", err.Error())
 	}
@@ -73,7 +73,7 @@ func TestUseBlockHash(t *testing.T) {
 
 	// Create a GCSBuilder with a key hash and check that the key is derived
 	// correctly, then test it.
-	b := builder.WithKeyHash(txID)
+	b := builder.WithKeyTxID(txID)
 	key, err := b.Key()
 	if err != nil {
 		t.Fatalf("Builder instantiation with key hash failed: %s",
@@ -87,13 +87,13 @@ func TestUseBlockHash(t *testing.T) {
 	BuilderTest(b, txID, builder.DefaultP, outPoint, addrBytes, t)
 
 	// Create a GCSBuilder with a key hash and non-default P and test it.
-	b = builder.WithKeyHashP(txID, 30)
+	b = builder.WithKeyTxIDP(txID, 30)
 	BuilderTest(b, txID, 30, outPoint, addrBytes, t)
 
 	// Create a GCSBuilder with a random key, set the key from a hash
 	// manually, check that the key is correct, and test it.
 	b = builder.WithRandomKey()
-	b.SetKeyFromHash(txID)
+	b.SetKeyFromTxID(txID)
 	key, err = b.Key()
 	if err != nil {
 		t.Fatalf("Builder instantiation with known key failed: %s",
@@ -159,9 +159,9 @@ func TestUseBlockHash(t *testing.T) {
 
 	// Create a GCSBuilder with a known key and too-high P and ensure error
 	// works throughout all functions that use it.
-	b = builder.WithRandomKeyP(33).SetKeyFromHash(txID).SetKey(testKey)
+	b = builder.WithRandomKeyP(33).SetKeyFromTxID(txID).SetKey(testKey)
 	b.SetP(30).AddEntry(txID.CloneBytes()).AddEntries(contents)
-	b.AddOutPoint(outPoint).AddHash(txID).AddScript(addrBytes)
+	b.AddOutPoint(outPoint).AddTxID(txID).AddScript(addrBytes)
 	_, err = b.Key()
 	if err != gcs.ErrPTooBig {
 		t.Fatalf("No error on P too big!")
@@ -172,7 +172,7 @@ func TestUseBlockHash(t *testing.T) {
 	}
 }
 
-func BuilderTest(b *builder.GCSBuilder, hash *daghash.Hash, p uint8,
+func BuilderTest(b *builder.GCSBuilder, txID *daghash.TxID, p uint8,
 	outPoint wire.OutPoint, addrBytes []byte, t *testing.T) {
 
 	key, err := b.Key()
@@ -206,13 +206,13 @@ func BuilderTest(b *builder.GCSBuilder, hash *daghash.Hash, p uint8,
 			builder.DefaultP)
 	}
 
-	// Add a hash, build a filter, and test matches
-	b.AddHash(hash)
+	// Add a txID, build a filter, and test matches
+	b.AddTxID(txID)
 	f, err = b.Build()
 	if err != nil {
 		t.Fatalf("Filter build failed: %s", err.Error())
 	}
-	match, err = f.Match(key, hash.CloneBytes())
+	match, err = f.Match(key, txID.CloneBytes())
 	if err != nil {
 		t.Fatalf("Filter match failed: %s", err)
 	}
@@ -226,7 +226,7 @@ func BuilderTest(b *builder.GCSBuilder, hash *daghash.Hash, p uint8,
 	if err != nil {
 		t.Fatalf("Filter build failed: %s", err.Error())
 	}
-	match, err = f.Match(key, hash.CloneBytes())
+	match, err = f.Match(key, txID.CloneBytes())
 	if err != nil {
 		t.Fatalf("Filter match failed: %s", err)
 	}

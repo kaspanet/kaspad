@@ -386,11 +386,11 @@ func (r FutureListLockUnspentResult) Receive() ([]*wire.OutPoint, error) {
 	// Create a slice of outpoints from the transaction input structs.
 	ops := make([]*wire.OutPoint, len(inputs))
 	for i, input := range inputs {
-		sha, err := daghash.NewHashFromStr(input.TxID)
+		txID, err := daghash.NewTxIDFromStr(input.TxID)
 		if err != nil {
 			return nil, err
 		}
-		ops[i] = wire.NewOutPoint(sha, input.Vout)
+		ops[i] = wire.NewOutPoint(txID, input.Vout)
 	}
 
 	return ops, nil

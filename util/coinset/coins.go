@@ -17,7 +17,7 @@ import (
 // Coin represents a spendable transaction outpoint
 type Coin interface {
 	Hash() *daghash.Hash
-	ID() *daghash.Hash
+	ID() *daghash.TxID
 	Index() uint32
 	Value() util.Amount
 	PkScript() []byte
@@ -361,7 +361,7 @@ func (c *SimpleCoin) Hash() *daghash.Hash {
 }
 
 // ID returns the ID of the transaction on which the Coin is an output
-func (c *SimpleCoin) ID() *daghash.Hash {
+func (c *SimpleCoin) ID() *daghash.TxID {
 	return c.Tx.ID()
 }
 

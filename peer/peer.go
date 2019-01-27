@@ -77,10 +77,6 @@ var (
 	// and is used to assign an id to a peer.
 	nodeCount int32
 
-	// zeroHash is the zero value hash (all zeros).  It is defined as a
-	// convenience.
-	zeroHash daghash.Hash
-
 	// sentNonces houses the unique nonces that are generated when pushing
 	// version messages that are used to detect self connections.
 	sentNonces = newMruNonceMap(50)
@@ -613,6 +609,7 @@ func (p *Peer) UserAgent() string {
 	return userAgent
 }
 
+// SubnetworkID returns peer subnetwork ID
 func (p *Peer) SubnetworkID() *subnetworkid.SubnetworkID {
 	p.flagsMtx.Lock()
 	subnetworkID := p.cfg.SubnetworkID
@@ -1012,7 +1009,7 @@ func (p *Peer) PushRejectMsg(command string, code wire.RejectCode, reason string
 			log.Warnf("Sending a reject message for command "+
 				"type %v which should have specified a hash "+
 				"but does not", command)
-			hash = &zeroHash
+			hash = &daghash.ZeroHash
 		}
 		msg.Hash = *hash
 	}

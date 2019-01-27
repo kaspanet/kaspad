@@ -174,7 +174,7 @@ func storeFilter(dbTx database.Tx, block *util.Block, f *gcs.Filter,
 	var prevHeader *daghash.Hash
 	header := block.MsgBlock().Header
 	if header.IsGenesis() {
-		prevHeader = &daghash.Zero
+		prevHeader = &daghash.ZeroHash
 	} else {
 		ph := header.SelectedParentHash()
 		pfh, err := dbFetchFilterIdxEntry(dbTx, hkey, ph)

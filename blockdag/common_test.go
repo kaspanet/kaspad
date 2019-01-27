@@ -107,7 +107,7 @@ func loadUTXOSet(filename string) (UTXOSet, error) {
 	utxoSet := NewFullUTXOSet()
 	for {
 		// Tx ID of the utxo entry.
-		var txID daghash.Hash
+		var txID daghash.TxID
 		_, err := io.ReadAtLeast(r, txID[:], len(txID[:]))
 		if err != nil {
 			// Expected EOF at the right offset.

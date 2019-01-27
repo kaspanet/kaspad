@@ -100,7 +100,7 @@ func NewNotifyReceivedCmd(addresses []string) *NotifyReceivedCmd {
 // OutPoint describes a transaction outpoint that will be marshalled to and
 // from JSON.
 type OutPoint struct {
-	Hash  string `json:"hash"`
+	TxID  string `json:"txid"`
 	Index uint32 `json:"index"`
 }
 

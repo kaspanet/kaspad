@@ -262,10 +262,10 @@ func deserializeOutPoint(serialized []byte) (*wire.OutPoint, error) {
 		return nil, errDeserialize("unexpected end of data")
 	}
 
-	hash := daghash.Hash{}
-	hash.SetBytes(serialized[:daghash.HashSize])
+	txID := daghash.TxID{}
+	txID.SetBytes(serialized[:daghash.HashSize])
 	index, _ := deserializeVLQ(serialized[daghash.HashSize:])
-	return wire.NewOutPoint(&hash, uint32(index)), nil
+	return wire.NewOutPoint(&txID, uint32(index)), nil
 }
 
 // deserializeUTXOEntry decodes a UTXO entry from the passed serialized byte

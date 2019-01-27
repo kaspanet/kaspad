@@ -102,6 +102,11 @@ func (b *GCSBuilder) SetKeyFromHash(keyHash *daghash.Hash) *GCSBuilder {
 	return b.SetKey(DeriveKey(keyHash))
 }
 
+// SetKeyFromTxID is wrapper of SetKeyFromHash for TxID
+func (b *GCSBuilder) SetKeyFromTxID(keyTxID *daghash.TxID) *GCSBuilder {
+	return b.SetKeyFromHash((*daghash.Hash)(keyTxID))
+}
+
 // SetP sets the filter's probability after calling Builder().
 func (b *GCSBuilder) SetP(p uint8) *GCSBuilder {
 	// Do nothing if the builder's already errored out.
@@ -183,6 +188,12 @@ func (b *GCSBuilder) AddHash(hash *daghash.Hash) *GCSBuilder {
 	return b.AddEntry(hash.CloneBytes())
 }
 
+// AddTxID adds a daghash.TxID to the list of entries to be included in the
+// GCS filter when it's built.
+func (b *GCSBuilder) AddTxID(txID *daghash.TxID) *GCSBuilder {
+	return b.AddHash((*daghash.Hash)(txID))
+}
+
 // AddScript adds all the data pushed in the script serialized as the passed
 // []byte to the list of entries to be included in the GCS filter when it's
 // built.
@@ -251,12 +262,22 @@ func WithKeyHashP(keyHash *daghash.Hash, p uint8) *GCSBuilder {
 	return WithKeyHashPN(keyHash, p, 0)
 }
 
+// WithKeyTxIDP is wrapper of WithKeyHashP for TxID
+func WithKeyTxIDP(keyTxID *daghash.TxID, p uint8) *GCSBuilder {
+	return WithKeyHashP((*daghash.Hash)(keyTxID), p)
+}
+
 // WithKeyHash creates a GCSBuilder with key derived from the specified
 // daghash.Hash. Probability is set to 20 (2^-20 collision probability).
 // Estimated filter size is set to zero, which means more reallocations are
 // done when building the filter.
 func WithKeyHash(keyHash *daghash.Hash) *GCSBuilder {
 	return WithKeyHashPN(keyHash, DefaultP, 0)
+}
+
+// WithKeyTxID is wrapper of WithKeyHash for transaction ID
+func WithKeyTxID(keyTxID *daghash.TxID) *GCSBuilder {
+	return WithKeyHash((*daghash.Hash)(keyTxID))
 }
 
 // WithRandomKeyPN creates a GCSBuilder with a cryptographically random key and
@@ -306,7 +327,7 @@ func BuildBasicFilter(block *wire.MsgBlock) (*gcs.Filter, error) {
 		// First we'll compute the bash of the transaction and add that
 		// directly to the filter.
 		txID := tx.TxID()
-		b.AddHash(&txID)
+		b.AddTxID(&txID)
 
 		// Skip the inputs for the coinbase transaction
 		if i != 0 {

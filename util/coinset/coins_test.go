@@ -19,14 +19,14 @@ import (
 
 type TestCoin struct {
 	TxHash     *daghash.Hash
-	TxID       *daghash.Hash
+	TxID       *daghash.TxID
 	TxIndex    uint32
 	TxValue    util.Amount
 	TxNumConfs int64
 }
 
 func (c *TestCoin) Hash() *daghash.Hash { return c.TxHash }
-func (c *TestCoin) ID() *daghash.Hash   { return c.TxID }
+func (c *TestCoin) ID() *daghash.TxID   { return c.TxID }
 func (c *TestCoin) Index() uint32       { return c.TxIndex }
 func (c *TestCoin) Value() util.Amount  { return c.TxValue }
 func (c *TestCoin) PkScript() []byte    { return nil }
@@ -37,7 +37,7 @@ func NewCoin(index int64, value util.Amount, numConfs int64) coinset.Coin {
 	h := sha256.New()
 	h.Write([]byte(fmt.Sprintf("%d", index)))
 	hash, _ := daghash.NewHash(h.Sum(nil))
-	id, _ := daghash.NewHash(h.Sum(nil))
+	id, _ := daghash.NewTxID(h.Sum(nil))
 	c := &TestCoin{
 		TxHash:     hash,
 		TxID:       id,
@@ -119,7 +119,7 @@ func TestCoinSet(t *testing.T) {
 		t.Errorf("Expected only 1 TxIn, got %d", len(mtx.TxIn))
 	}
 	op := mtx.TxIn[0].PreviousOutPoint
-	if !op.TxID.IsEqual(coins[1].Hash()) || op.Index != coins[1].Index() {
+	if !op.TxID.IsEqual(coins[1].ID()) || op.Index != coins[1].Index() {
 		t.Errorf("Expected the second coin to be added as input to mtx")
 	}
 }

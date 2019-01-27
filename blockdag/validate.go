@@ -49,17 +49,10 @@ const (
 	MaxOutputsPerBlock = wire.MaxBlockPayload / wire.MinTxOutPayload
 )
 
-var (
-	// zeroHash is the zero value for a daghash.Hash and is defined as
-	// a package level variable to avoid the need to create a new instance
-	// every time a check is needed.
-	zeroHash daghash.Hash
-)
-
 // isNullOutpoint determines whether or not a previous transaction output point
 // is set.
 func isNullOutpoint(outpoint *wire.OutPoint) bool {
-	if outpoint.Index == math.MaxUint32 && outpoint.TxID == zeroHash {
+	if outpoint.Index == math.MaxUint32 && outpoint.TxID == daghash.ZeroTxID {
 		return true
 	}
 	return false
@@ -545,7 +538,7 @@ func (dag *BlockDAG) checkBlockSanity(block *util.Block, flags BehaviorFlags) er
 	// Check for duplicate transactions.  This check will be fairly quick
 	// since the transaction IDs are already cached due to building the
 	// merkle tree above.
-	existingTxIDs := make(map[daghash.Hash]struct{})
+	existingTxIDs := make(map[daghash.TxID]struct{})
 	for _, tx := range transactions {
 		id := tx.ID()
 		if _, exists := existingTxIDs[*id]; exists {

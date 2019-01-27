@@ -1824,7 +1824,7 @@ func handleLoadTxFilter(wsc *wsClient, icmd interface{}) (interface{}, error) {
 
 	outPoints := make([]wire.OutPoint, len(cmd.OutPoints))
 	for i := range cmd.OutPoints {
-		hash, err := daghash.NewHashFromStr(cmd.OutPoints[i].Hash)
+		txID, err := daghash.NewTxIDFromStr(cmd.OutPoints[i].TxID)
 		if err != nil {
 			return nil, &btcjson.RPCError{
 				Code:    btcjson.ErrRPCInvalidParameter,
@@ -1832,7 +1832,7 @@ func handleLoadTxFilter(wsc *wsClient, icmd interface{}) (interface{}, error) {
 			}
 		}
 		outPoints[i] = wire.OutPoint{
-			TxID:  *hash,
+			TxID:  *txID,
 			Index: cmd.OutPoints[i].Index,
 		}
 	}
@@ -2044,12 +2044,12 @@ func checkAddressValidity(addrs []string, params *dagconfig.Params) error {
 func deserializeOutpoints(serializedOuts []btcjson.OutPoint) ([]*wire.OutPoint, error) {
 	outpoints := make([]*wire.OutPoint, 0, len(serializedOuts))
 	for i := range serializedOuts {
-		blockHash, err := daghash.NewHashFromStr(serializedOuts[i].Hash)
+		txID, err := daghash.NewTxIDFromStr(serializedOuts[i].TxID)
 		if err != nil {
-			return nil, rpcDecodeHexError(serializedOuts[i].Hash)
+			return nil, rpcDecodeHexError(serializedOuts[i].TxID)
 		}
 		index := serializedOuts[i].Index
-		outpoints = append(outpoints, wire.NewOutPoint(blockHash, index))
+		outpoints = append(outpoints, wire.NewOutPoint(txID, index))
 	}
 
 	return outpoints, nil

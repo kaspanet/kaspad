@@ -133,7 +133,7 @@ func (p *poolHarness) CreateCoinbaseTx(blockHeight int32, numOutputs uint32) (*u
 	tx.AddTxIn(&wire.TxIn{
 		// Coinbase transactions have no inputs, so previous outpoint is
 		// zero hash and max index.
-		PreviousOutPoint: *wire.NewOutPoint(&daghash.Hash{},
+		PreviousOutPoint: *wire.NewOutPoint(&daghash.TxID{},
 			wire.MaxPrevOutIndex),
 		SignatureScript: coinbaseScript,
 		Sequence:        wire.MaxTxInSequenceNum,
@@ -484,7 +484,7 @@ func TestProcessTransaction(t *testing.T) {
 
 	orphanedTx, err := harness.CreateSignedTx([]spendableOutpoint{{
 		amount:   util.Amount(5000000000),
-		outPoint: wire.OutPoint{TxID: daghash.Hash{}, Index: 1},
+		outPoint: wire.OutPoint{TxID: daghash.TxID{}, Index: 1},
 	}}, 1)
 	if err != nil {
 		t.Fatalf("unable to create signed tx: %v", err)
@@ -594,7 +594,7 @@ func TestProcessTransaction(t *testing.T) {
 		t.Fatalf("Script: error creating wrappedP2shNonSigScript: %v", err)
 	}
 
-	dummyPrevOutHash, err := daghash.NewHashFromStr("01")
+	dummyPrevOutHash, err := daghash.NewTxIDFromStr("01")
 	if err != nil {
 		t.Fatalf("NewShaHashFromStr: unexpected error: %v", err)
 	}
@@ -782,7 +782,7 @@ func TestAddrIndex(t *testing.T) {
 	})
 	defer guard.Unpatch()
 	enteredRemoveUnconfirmedTx := false
-	guard = monkey.Patch((*indexers.AddrIndex).RemoveUnconfirmedTx, func(idx *indexers.AddrIndex, hash *daghash.Hash) {
+	guard = monkey.Patch((*indexers.AddrIndex).RemoveUnconfirmedTx, func(idx *indexers.AddrIndex, hash *daghash.TxID) {
 		enteredRemoveUnconfirmedTx = true
 	})
 	defer guard.Unpatch()
@@ -897,7 +897,7 @@ func TestFetchTransaction(t *testing.T) {
 
 	orphanedTx, err := harness.CreateSignedTx([]spendableOutpoint{{
 		amount:   util.Amount(5000000000),
-		outPoint: wire.OutPoint{TxID: daghash.Hash{1}, Index: 1},
+		outPoint: wire.OutPoint{TxID: daghash.TxID{1}, Index: 1},
 	}}, 1)
 	if err != nil {
 		t.Fatalf("unable to create signed tx: %v", err)
@@ -1060,7 +1060,7 @@ func TestOrphanExpiration(t *testing.T) {
 
 	expiredTx, err := harness.CreateSignedTx([]spendableOutpoint{{
 		amount:   util.Amount(5000000000),
-		outPoint: wire.OutPoint{TxID: daghash.Hash{}, Index: 0},
+		outPoint: wire.OutPoint{TxID: daghash.TxID{}, Index: 0},
 	}}, 1)
 	harness.txPool.ProcessTransaction(expiredTx, true,
 		false, 0)
@@ -1068,7 +1068,7 @@ func TestOrphanExpiration(t *testing.T) {
 
 	tx1, err := harness.CreateSignedTx([]spendableOutpoint{{
 		amount:   util.Amount(5000000000),
-		outPoint: wire.OutPoint{TxID: daghash.Hash{1}, Index: 0},
+		outPoint: wire.OutPoint{TxID: daghash.TxID{1}, Index: 0},
 	}}, 1)
 	harness.txPool.ProcessTransaction(tx1, true,
 		false, 0)
@@ -1083,7 +1083,7 @@ func TestOrphanExpiration(t *testing.T) {
 
 	tx2, err := harness.CreateSignedTx([]spendableOutpoint{{
 		amount:   util.Amount(5000000000),
-		outPoint: wire.OutPoint{TxID: daghash.Hash{2}, Index: 0},
+		outPoint: wire.OutPoint{TxID: daghash.TxID{2}, Index: 0},
 	}}, 1)
 	harness.txPool.ProcessTransaction(tx2, true,
 		false, 0)
@@ -1106,7 +1106,7 @@ func TestMaxOrphanTxSize(t *testing.T) {
 
 	tx, err := harness.CreateSignedTx([]spendableOutpoint{{
 		amount:   util.Amount(5000000000),
-		outPoint: wire.OutPoint{TxID: daghash.Hash{}, Index: 0},
+		outPoint: wire.OutPoint{TxID: daghash.TxID{}, Index: 0},
 	}}, 1)
 	if err != nil {
 		t.Fatalf("unable to create signed tx: %v", err)
@@ -1241,7 +1241,7 @@ func TestRemoveOrphansByTag(t *testing.T) {
 
 	orphanedTx1, err := harness.CreateSignedTx([]spendableOutpoint{{
 		amount:   util.Amount(5000000000),
-		outPoint: wire.OutPoint{TxID: daghash.Hash{1}, Index: 1},
+		outPoint: wire.OutPoint{TxID: daghash.TxID{1}, Index: 1},
 	}}, 1)
 	if err != nil {
 		t.Fatalf("unable to create signed tx: %v", err)
@@ -1250,7 +1250,7 @@ func TestRemoveOrphansByTag(t *testing.T) {
 		false, 1)
 	orphanedTx2, err := harness.CreateSignedTx([]spendableOutpoint{{
 		amount:   util.Amount(5000000000),
-		outPoint: wire.OutPoint{TxID: daghash.Hash{2}, Index: 2},
+		outPoint: wire.OutPoint{TxID: daghash.TxID{2}, Index: 2},
 	}}, 1)
 	if err != nil {
 		t.Fatalf("unable to create signed tx: %v", err)
@@ -1259,7 +1259,7 @@ func TestRemoveOrphansByTag(t *testing.T) {
 		false, 1)
 	orphanedTx3, err := harness.CreateSignedTx([]spendableOutpoint{{
 		amount:   util.Amount(5000000000),
-		outPoint: wire.OutPoint{TxID: daghash.Hash{3}, Index: 3},
+		outPoint: wire.OutPoint{TxID: daghash.TxID{3}, Index: 3},
 	}}, 1)
 	if err != nil {
 		t.Fatalf("unable to create signed tx: %v", err)
@@ -1269,7 +1269,7 @@ func TestRemoveOrphansByTag(t *testing.T) {
 
 	orphanedTx4, err := harness.CreateSignedTx([]spendableOutpoint{{
 		amount:   util.Amount(5000000000),
-		outPoint: wire.OutPoint{TxID: daghash.Hash{4}, Index: 4},
+		outPoint: wire.OutPoint{TxID: daghash.TxID{4}, Index: 4},
 	}}, 1)
 	if err != nil {
 		t.Fatalf("unable to create signed tx: %v", err)
@@ -1330,7 +1330,7 @@ func TestBasicOrphanRemoval(t *testing.T) {
 	// and ensure the state of all other orphans are unaffected.
 	nonChainedOrphanTx, err := harness.CreateSignedTx([]spendableOutpoint{{
 		amount:   util.Amount(5000000000),
-		outPoint: wire.OutPoint{TxID: daghash.Hash{}, Index: 0},
+		outPoint: wire.OutPoint{TxID: daghash.TxID{}, Index: 0},
 	}}, 1)
 	if err != nil {
 		t.Fatalf("unable to create signed tx: %v", err)
@@ -1740,7 +1740,7 @@ func TestHandleNewBlock(t *testing.T) {
 	}()
 
 	// process messages pushed by HandleNewBlock
-	blockTransnactions := make(map[daghash.Hash]int)
+	blockTransnactions := make(map[daghash.TxID]int)
 	for msg := range ch {
 		blockTransnactions[*msg.Tx.ID()] = 1
 		if *msg.Tx.ID() != *blockTx1.ID() {
@@ -1811,7 +1811,7 @@ var dummyBlock = wire.MsgBlock{
 			TxIn: []*wire.TxIn{
 				{
 					PreviousOutPoint: wire.OutPoint{
-						TxID:  daghash.Hash{},
+						TxID:  daghash.TxID{},
 						Index: 0xffffffff,
 					},
 					SignatureScript: []byte{
