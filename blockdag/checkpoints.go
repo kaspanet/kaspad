@@ -30,7 +30,7 @@ func newHashFromStr(hexStr string) *daghash.Hash {
 // newTxIDFromStr converts the passed big-endian hex string into a
 // daghash.TxID.  It only differs from the one available in daghash in that
 // it ignores the error since it will only (and must only) be called with
-// hard-coded, and therefore known good, hashes.
+// hard-coded, and therefore known good, IDs.
 func newTxIDFromStr(hexStr string) *daghash.TxID {
 	txID, _ := daghash.NewTxIDFromStr(hexStr)
 	return txID

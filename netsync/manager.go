@@ -1074,7 +1074,7 @@ func (sm *SyncManager) limitTxIDMap(m map[daghash.TxID]struct{}, limit int) {
 }
 
 // limitHashMap is a helper function for maps that require a maximum limit by
-// evicting a random transaction if adding a new value would cause it to
+// evicting a random item if adding a new value would cause it to
 // overflow the maximum allowed.
 func (sm *SyncManager) limitHashMap(m map[daghash.Hash]struct{}, limit int) {
 	if len(m)+1 > limit {
