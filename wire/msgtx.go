@@ -119,6 +119,9 @@ var (
 
 	// SubnetworkIDRegistry is the subnetwork ID which is used for adding new sub networks to the registry
 	SubnetworkIDRegistry = subnetworkid.SubnetworkID{2}
+
+	// SubnetworkIDUnknown is the subnetwork ID which is used for marking subnetwork ID as unknown in the adress manager
+	SubnetworkIDUnknown = subnetworkid.SubnetworkID{3}
 )
 
 // scriptFreeList defines a free list of byte slices (up to the maximum number
