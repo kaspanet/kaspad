@@ -249,9 +249,7 @@ func (a *AddrManager) updateAddrNew(bucket int, addr string, ka *KnownAddress) {
 	if _, ok := a.addrNew[*ka.subnetworkID]; !ok {
 		a.addrNew[*ka.subnetworkID] = &newBucket{}
 		for i := range a.addrNew[*ka.subnetworkID] {
-			if a.addrNew[*ka.subnetworkID][i] == nil {
-				a.addrNew[*ka.subnetworkID][i] = make(map[string]*KnownAddress)
-			}
+			a.addrNew[*ka.subnetworkID][i] = make(map[string]*KnownAddress)
 		}
 	}
 	a.addrNew[*ka.subnetworkID][bucket][addr] = ka
@@ -261,9 +259,7 @@ func (a *AddrManager) updateAddrTried(bucket int, ka *KnownAddress) {
 	if _, ok := a.addrTried[*ka.subnetworkID]; !ok {
 		a.addrTried[*ka.subnetworkID] = &triedBucket{}
 		for i := range a.addrTried[*ka.subnetworkID] {
-			if a.addrTried[*ka.subnetworkID][i] == nil {
-				a.addrTried[*ka.subnetworkID][i] = list.New()
-			}
+			a.addrTried[*ka.subnetworkID][i] = list.New()
 		}
 	}
 	a.addrTried[*ka.subnetworkID][bucket].PushBack(ka)
