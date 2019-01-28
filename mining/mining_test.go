@@ -6,15 +6,15 @@ package mining
 
 import (
 	"container/heap"
-	"encoding/hex"
 	"errors"
 	"math/rand"
 	"testing"
 	"time"
 
+	"github.com/daglabs/btcd/util/subnetworkid"
+
 	"bou.ke/monkey"
 	"github.com/daglabs/btcd/blockdag"
-	"github.com/daglabs/btcd/btcec"
 	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/txscript"
@@ -132,9 +132,9 @@ func (txs *fakeTxSource) MiningDescs() []*TxDesc {
 	return txs.txDescs
 }
 
-func (txs *fakeTxSource) HaveTransaction(hash *daghash.Hash) bool {
+func (txs *fakeTxSource) HaveTransaction(txID *daghash.TxID) bool {
 	for _, desc := range txs.txDescs {
-		if *desc.Tx.Hash() == *hash {
+		if *desc.Tx.ID() == *txID {
 			return true
 		}
 	}
@@ -142,30 +142,16 @@ func (txs *fakeTxSource) HaveTransaction(hash *daghash.Hash) bool {
 }
 
 func TestNewBlockTemplate(t *testing.T) {
-	params := &dagconfig.SimNetParams
+	params := dagconfig.SimNetParams
+	params.CoinbaseMaturity = 0
 
-	// Use a hard coded key pair for deterministic results.
-	keyBytes, err := hex.DecodeString("700868df1838811ffbdf918fb482c1f7e" +
-		"ad62db4b97bd7012c23e726485e577d")
+	pkScript, err := txscript.NewScriptBuilder().AddOp(txscript.OpTrue).Script()
 	if err != nil {
-		t.Fatalf("hex.DecodeString: %v", err)
+		t.Fatalf("Failed to create pkScript: %v", err)
 	}
-	signKey, signPub := btcec.PrivKeyFromBytes(btcec.S256(), keyBytes)
-
-	// Generate associated pay-to-script-hash address and resulting payment
-	// script.
-	pubKeyBytes := signPub.SerializeCompressed()
-	payPubKeyAddr, err := util.NewAddressPubKey(pubKeyBytes, params.Prefix)
-	if err != nil {
-		t.Fatalf("NewAddressPubKey: %v", err)
-	}
-	pkHashAddr := payPubKeyAddr.AddressPubKeyHash()
-	pkScript, err := txscript.PayToAddrScript(pkHashAddr)
-	payAddr, err := util.NewAddressPubKeyHash(
-		util.Hash160(pubKeyBytes), util.Bech32PrefixDAGTest)
 
 	dag, teardownFunc, err := blockdag.DAGSetup("TestNewBlockTemplate", blockdag.Config{
-		DAGParams: params,
+		DAGParams: &params,
 	})
 	if err != nil {
 		t.Fatalf("Failed to setup DAG instance: %v", err)
@@ -174,17 +160,36 @@ func TestNewBlockTemplate(t *testing.T) {
 	policy := Policy{
 		BlockMaxSize:      50000,
 		BlockPrioritySize: 750000,
-		TxMinFreeFee:      util.Amount(1000),
+		TxMinFreeFee:      util.Amount(0),
 	}
 
 	txSource := &fakeTxSource{
 		txDescs: []*TxDesc{},
 	}
 
-	blockTemplateGenerator := NewBlkTmplGenerator(&policy,
-		params, txSource, dag, blockdag.NewMedianTime(), txscript.NewSigCache(100000))
+	var createCoinbaseTxPatch *monkey.PatchGuard
+	createCoinbaseTxPatch = monkey.Patch(createCoinbaseTx, func(params *dagconfig.Params, coinbaseScript []byte, nextBlockHeight int32, addr util.Address) (*util.Tx, error) {
+		createCoinbaseTxPatch.Unpatch()
+		defer createCoinbaseTxPatch.Restore()
+		tx, err := createCoinbaseTx(params, coinbaseScript, nextBlockHeight, addr)
+		if err != nil {
+			return nil, err
+		}
+		msgTx := tx.MsgTx()
+		out := msgTx.TxOut[0]
+		out.Value /= 10
+		for i := 0; i < 9; i++ {
+			msgTx.AddTxOut(&*out)
+		}
+		return tx, nil
+	})
+	defer createCoinbaseTxPatch.Unpatch()
 
-	template1, err := blockTemplateGenerator.NewBlockTemplate(payAddr)
+	blockTemplateGenerator := NewBlkTmplGenerator(&policy,
+		&params, txSource, dag, blockdag.NewMedianTime(), txscript.NewSigCache(100000))
+
+	template1, err := blockTemplateGenerator.NewBlockTemplate(nil)
+	createCoinbaseTxPatch.Unpatch()
 	if err != nil {
 		t.Fatalf("NewBlockTemplate: %v", err)
 	}
@@ -203,7 +208,7 @@ func TestNewBlockTemplate(t *testing.T) {
 		t.Fatalf("standardCoinbaseScript: %v", err)
 	}
 
-	cbTx, err := createCoinbaseTx(params, cbScript, dag.Height()+1, nil)
+	cbTx, err := createCoinbaseTx(&params, cbScript, dag.Height()+1, nil)
 	if err != nil {
 		t.Fatalf("createCoinbaseTx: %v", err)
 	}
@@ -213,7 +218,7 @@ func TestNewBlockTemplate(t *testing.T) {
 	tx := wire.NewMsgTx(wire.TxVersion)
 	tx.AddTxIn(&wire.TxIn{
 		PreviousOutPoint: wire.OutPoint{
-			Hash:  template1CbTx.TxHash(),
+			TxID:  template1CbTx.TxID(),
 			Index: 0,
 		},
 		Sequence: wire.MaxTxInSequenceNum,
@@ -227,8 +232,8 @@ func TestNewBlockTemplate(t *testing.T) {
 	nonFinalizedTx.LockTime = uint64(dag.Height() + 2)
 	nonFinalizedTx.AddTxIn(&wire.TxIn{
 		PreviousOutPoint: wire.OutPoint{
-			Hash:  template1CbTx.TxHash(),
-			Index: 0,
+			TxID:  template1CbTx.TxID(),
+			Index: 1,
 		},
 		Sequence: 0,
 	})
@@ -237,12 +242,53 @@ func TestNewBlockTemplate(t *testing.T) {
 		Value:    1,
 	})
 
-	// Sign the new transaction.
-	tx.TxIn[0].SignatureScript, err = txscript.SignatureScript(tx, 0, pkScript,
-		txscript.SigHashAll, signKey, true)
-	if err != nil {
-		t.Fatalf("SignatureScript: %v", err)
-	}
+	existingSubnetwork := subnetworkid.SubnetworkID{0xff}
+	nonExistingSubnetwork := subnetworkid.SubnetworkID{0xfe}
+
+	nonExistingSubnetworkTx := wire.NewMsgTx(wire.TxVersion)
+	nonExistingSubnetworkTx.SubnetworkID = nonExistingSubnetwork
+	nonExistingSubnetworkTx.Gas = 1
+	nonExistingSubnetworkTx.AddTxIn(&wire.TxIn{
+		PreviousOutPoint: wire.OutPoint{
+			TxID:  template1CbTx.TxID(),
+			Index: 2,
+		},
+		Sequence: 0,
+	})
+	nonExistingSubnetworkTx.AddTxOut(&wire.TxOut{
+		PkScript: pkScript,
+		Value:    1,
+	})
+
+	subnetworkTx1 := wire.NewMsgTx(wire.TxVersion)
+	subnetworkTx1.SubnetworkID = existingSubnetwork
+	subnetworkTx1.Gas = 1
+	subnetworkTx1.AddTxIn(&wire.TxIn{
+		PreviousOutPoint: wire.OutPoint{
+			TxID:  template1CbTx.TxID(),
+			Index: 3,
+		},
+		Sequence: 0,
+	})
+	subnetworkTx1.AddTxOut(&wire.TxOut{
+		PkScript: pkScript,
+		Value:    1,
+	})
+
+	subnetworkTx2 := wire.NewMsgTx(wire.TxVersion)
+	subnetworkTx2.SubnetworkID = existingSubnetwork
+	subnetworkTx2.Gas = 100
+	subnetworkTx2.AddTxIn(&wire.TxIn{
+		PreviousOutPoint: wire.OutPoint{
+			TxID:  template1CbTx.TxID(),
+			Index: 4,
+		},
+		Sequence: 0,
+	})
+	subnetworkTx2.AddTxOut(&wire.TxOut{
+		PkScript: pkScript,
+		Value:    1,
+	})
 
 	txSource.txDescs = []*TxDesc{
 		{
@@ -254,18 +300,27 @@ func TestNewBlockTemplate(t *testing.T) {
 		{
 			Tx: util.NewTx(nonFinalizedTx),
 		},
+		{
+			Tx: util.NewTx(subnetworkTx1),
+		},
+		{
+			Tx: util.NewTx(subnetworkTx2),
+		},
+		{
+			Tx: util.NewTx(nonExistingSubnetworkTx),
+		},
 	}
 
 	standardCoinbaseScriptErrString := "standardCoinbaseScript err"
 
-	var guard *monkey.PatchGuard
-	guard = monkey.Patch(standardCoinbaseScript, func(nextBlockHeight int32, extraNonce uint64) ([]byte, error) {
+	var standardCoinbaseScriptPatch *monkey.PatchGuard
+	standardCoinbaseScriptPatch = monkey.Patch(standardCoinbaseScript, func(nextBlockHeight int32, extraNonce uint64) ([]byte, error) {
 		return nil, errors.New(standardCoinbaseScriptErrString)
 	})
-	defer guard.Unpatch()
+	defer standardCoinbaseScriptPatch.Unpatch()
 
-	_, err = blockTemplateGenerator.NewBlockTemplate(payAddr)
-	guard.Unpatch()
+	_, err = blockTemplateGenerator.NewBlockTemplate(nil)
+	standardCoinbaseScriptPatch.Unpatch()
 
 	if err == nil || err.Error() != standardCoinbaseScriptErrString {
 		t.Errorf("expected an error \"%v\" but got \"%v\"", standardCoinbaseScriptErrString, err)
@@ -274,32 +329,47 @@ func TestNewBlockTemplate(t *testing.T) {
 		t.Errorf("expected an error but got <nil>")
 	}
 
-	popCalled := false
+	popCalled := 0
 	popReturnedUnexpectedValue := false
-	firstCall := true
-	guard = monkey.Patch((*txPriorityQueue).Pop, func(pq *txPriorityQueue) interface{} {
-		guard.Unpatch()
-		defer guard.Restore()
+	expectedPops := map[daghash.TxID]bool{
+		tx.TxID():                      false,
+		subnetworkTx1.TxID():           false,
+		subnetworkTx2.TxID():           false,
+		nonExistingSubnetworkTx.TxID(): false,
+	}
+	var popPatch *monkey.PatchGuard
+	popPatch = monkey.Patch((*txPriorityQueue).Pop, func(pq *txPriorityQueue) interface{} {
+		popPatch.Unpatch()
+		defer popPatch.Restore()
 
-		if firstCall {
-			popCalled = true
-			firstCall = false
-		}
 		item, ok := pq.Pop().(*txPrioItem)
-		// Because NewBlockTemplate filters coinbase transaction
-		// and non-finalized transactions, the only transaction
-		// in the queue should be `tx`
-		if !ok || *item.tx.Hash() != tx.TxHash() {
-			popReturnedUnexpectedValue = false
+		if _, expected := expectedPops[*item.tx.ID()]; expected && ok {
+			expectedPops[*item.tx.ID()] = true
+		} else {
+			popReturnedUnexpectedValue = true
 		}
+		popCalled++
 		return item
 	})
-	defer guard.Unpatch()
+	defer popPatch.Unpatch()
 
-	_, err = blockTemplateGenerator.NewBlockTemplate(payAddr)
-	guard.Unpatch()
+	gasLimitPatch := monkey.Patch((*blockdag.SubnetworkStore).GasLimit, func(_ *blockdag.SubnetworkStore, subnetworkID *subnetworkid.SubnetworkID) (uint64, error) {
+		if *subnetworkID == nonExistingSubnetwork {
+			return 0, errors.New("not found")
+		}
+		return 90, nil
+	})
+	defer gasLimitPatch.Unpatch()
 
-	if !popCalled {
+	template2, err := blockTemplateGenerator.NewBlockTemplate(nil)
+	popPatch.Unpatch()
+	gasLimitPatch.Unpatch()
+
+	if err != nil {
+		t.Errorf("NewBlockTemplate: unexpected error: %v", err)
+	}
+
+	if popCalled == 0 {
 		t.Errorf("(*txPriorityQueue).Pop wasn't called")
 	}
 
@@ -307,7 +377,28 @@ func TestNewBlockTemplate(t *testing.T) {
 		t.Errorf("(*txPriorityQueue).Pop returned unexpected value")
 	}
 
-	if err != nil {
-		t.Errorf("NewBlockTemplate: unexpected error: %v", err)
+	for id, popped := range expectedPops {
+		if !popped {
+			t.Errorf("tx %v was expected to pop, but wasn't", id)
+		}
+	}
+
+	expectedTxs := map[daghash.TxID]bool{
+		tx.TxID():            false,
+		subnetworkTx1.TxID(): false,
+	}
+
+	for _, tx := range template2.Block.Transactions[1:] {
+		id := tx.TxID()
+		if _, ok := expectedTxs[id]; !ok {
+			t.Errorf("Unexpected tx %v in template2's candidate block", id)
+		}
+		expectedTxs[id] = true
+	}
+
+	for id, exists := range expectedTxs {
+		if !exists {
+			t.Errorf("tx %v was expected to be in template2's candidate block, but wasn't", id)
+		}
 	}
 }

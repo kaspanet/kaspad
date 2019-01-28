@@ -89,6 +89,10 @@ func DAGSetup(dbName string, config Config) (*BlockDAG, func(), error) {
 		}
 	}
 
+	if config.SubnetworkID == nil {
+		config.SubnetworkID = &wire.SubnetworkIDSupportsAll
+	}
+
 	config.TimeSource = NewMedianTime()
 	config.SigCache = txscript.NewSigCache(1000)
 
