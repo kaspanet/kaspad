@@ -52,20 +52,6 @@ func (entry *UTXOEntry) PkScript() []byte {
 	return entry.pkScript
 }
 
-// Clone returns a shallow copy of the utxo entry.
-func (entry *UTXOEntry) Clone() *UTXOEntry {
-	if entry == nil {
-		return nil
-	}
-
-	return &UTXOEntry{
-		amount:      entry.amount,
-		pkScript:    entry.pkScript,
-		blockHeight: entry.blockHeight,
-		packedFlags: entry.packedFlags,
-	}
-}
-
 // txoFlags is a bitmask defining additional information and state for a
 // transaction output in a UTXO set.
 type txoFlags uint8
