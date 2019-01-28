@@ -120,6 +120,7 @@ func TestTxFeePrioHeap(t *testing.T) {
 	}
 }
 
+// fakeTxSource is a simple implementation of TxSource interface
 type fakeTxSource struct {
 	txDescs []*TxDesc
 }
@@ -145,11 +146,6 @@ func TestNewBlockTemplate(t *testing.T) {
 	params := dagconfig.SimNetParams
 	params.CoinbaseMaturity = 0
 
-	pkScript, err := txscript.NewScriptBuilder().AddOp(txscript.OpTrue).Script()
-	if err != nil {
-		t.Fatalf("Failed to create pkScript: %v", err)
-	}
-
 	dag, teardownFunc, err := blockdag.DAGSetup("TestNewBlockTemplate", blockdag.Config{
 		DAGParams: &params,
 	})
@@ -157,12 +153,19 @@ func TestNewBlockTemplate(t *testing.T) {
 		t.Fatalf("Failed to setup DAG instance: %v", err)
 	}
 	defer teardownFunc()
+
+	pkScript, err := txscript.NewScriptBuilder().AddOp(txscript.OpTrue).Script()
+	if err != nil {
+		t.Fatalf("Failed to create pkScript: %v", err)
+	}
+
 	policy := Policy{
 		BlockMaxSize:      50000,
 		BlockPrioritySize: 750000,
 		TxMinFreeFee:      util.Amount(0),
 	}
 
+	// First we create a block to have coinbase funds for the rest of the test.
 	txSource := &fakeTxSource{
 		txDescs: []*TxDesc{},
 	}
@@ -176,6 +179,7 @@ func TestNewBlockTemplate(t *testing.T) {
 			return nil, err
 		}
 		msgTx := tx.MsgTx()
+		//Here we split the coinbase to 10 outputs, so we'll be able to use it in many transactions
 		out := msgTx.TxOut[0]
 		out.Value /= 10
 		for i := 0; i < 9; i++ {
@@ -208,6 +212,7 @@ func TestNewBlockTemplate(t *testing.T) {
 		t.Fatalf("standardCoinbaseScript: %v", err)
 	}
 
+	// We want to check that the miner filters coinbase transaction
 	cbTx, err := createCoinbaseTx(&params, cbScript, dag.Height()+1, nil)
 	if err != nil {
 		t.Fatalf("createCoinbaseTx: %v", err)
@@ -215,6 +220,7 @@ func TestNewBlockTemplate(t *testing.T) {
 
 	template1CbTx := template1.Block.Transactions[0]
 
+	// tx is a regular transaction, and should not be filtered by the miner
 	tx := wire.NewMsgTx(wire.TxVersion)
 	tx.AddTxIn(&wire.TxIn{
 		PreviousOutPoint: wire.OutPoint{
@@ -228,6 +234,7 @@ func TestNewBlockTemplate(t *testing.T) {
 		Value:    1,
 	})
 
+	// We want to check that the miner filters non finalized transactions
 	nonFinalizedTx := wire.NewMsgTx(wire.TxVersion)
 	nonFinalizedTx.LockTime = uint64(dag.Height() + 2)
 	nonFinalizedTx.AddTxIn(&wire.TxIn{
@@ -245,6 +252,7 @@ func TestNewBlockTemplate(t *testing.T) {
 	existingSubnetwork := subnetworkid.SubnetworkID{0xff}
 	nonExistingSubnetwork := subnetworkid.SubnetworkID{0xfe}
 
+	// We want to check that the miner filters transactions with non-existing subnetwork id. (It should first push it to the priority queue, and then ignore it)
 	nonExistingSubnetworkTx := wire.NewMsgTx(wire.TxVersion)
 	nonExistingSubnetworkTx.SubnetworkID = nonExistingSubnetwork
 	nonExistingSubnetworkTx.Gas = 1
@@ -260,6 +268,7 @@ func TestNewBlockTemplate(t *testing.T) {
 		Value:    1,
 	})
 
+	// We want to check that the miner doesn't filters transactions that do not exceed the subnetwork gas limit
 	subnetworkTx1 := wire.NewMsgTx(wire.TxVersion)
 	subnetworkTx1.SubnetworkID = existingSubnetwork
 	subnetworkTx1.Gas = 1
@@ -275,9 +284,10 @@ func TestNewBlockTemplate(t *testing.T) {
 		Value:    1,
 	})
 
+	// We want to check that the miner filters transactions that exceed the subnetwork gas limit. (It should first push it to the priority queue, and then ignore it)
 	subnetworkTx2 := wire.NewMsgTx(wire.TxVersion)
 	subnetworkTx2.SubnetworkID = existingSubnetwork
-	subnetworkTx2.Gas = 100
+	subnetworkTx2.Gas = 100 // Subnetwork gas limit is 90
 	subnetworkTx2.AddTxIn(&wire.TxIn{
 		PreviousOutPoint: wire.OutPoint{
 			TxID:  template1CbTx.TxID(),
@@ -319,6 +329,7 @@ func TestNewBlockTemplate(t *testing.T) {
 	})
 	defer standardCoinbaseScriptPatch.Unpatch()
 
+	// We want to check that NewBlockTemplate will fail if standardCoinbaseScript returns an error
 	_, err = blockTemplateGenerator.NewBlockTemplate(nil)
 	standardCoinbaseScriptPatch.Unpatch()
 
@@ -329,7 +340,7 @@ func TestNewBlockTemplate(t *testing.T) {
 		t.Errorf("expected an error but got <nil>")
 	}
 
-	popCalled := 0
+	// Here we check that the miner's priorty queue has the expected transactions after filtering.
 	popReturnedUnexpectedValue := false
 	expectedPops := map[daghash.TxID]bool{
 		tx.TxID():                      false,
@@ -348,11 +359,11 @@ func TestNewBlockTemplate(t *testing.T) {
 		} else {
 			popReturnedUnexpectedValue = true
 		}
-		popCalled++
 		return item
 	})
 	defer popPatch.Unpatch()
 
+	// Here we define nonExistingSubnetwork to be non-exist, and existingSubnetwork to have a gas limit of 90
 	gasLimitPatch := monkey.Patch((*blockdag.SubnetworkStore).GasLimit, func(_ *blockdag.SubnetworkStore, subnetworkID *subnetworkid.SubnetworkID) (uint64, error) {
 		if *subnetworkID == nonExistingSubnetwork {
 			return 0, errors.New("not found")
@@ -367,10 +378,6 @@ func TestNewBlockTemplate(t *testing.T) {
 
 	if err != nil {
 		t.Errorf("NewBlockTemplate: unexpected error: %v", err)
-	}
-
-	if popCalled == 0 {
-		t.Errorf("(*txPriorityQueue).Pop wasn't called")
 	}
 
 	if popReturnedUnexpectedValue {
