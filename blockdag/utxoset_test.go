@@ -955,3 +955,107 @@ func (dus *DiffUTXOSet) collection() utxoCollection {
 
 	return clone.base.collection()
 }
+
+func TestUTXOSetAddEntry(t *testing.T) {
+	hash0, _ := daghash.NewTxIDFromStr("0000000000000000000000000000000000000000000000000000000000000000")
+	hash1, _ := daghash.NewTxIDFromStr("1111111111111111111111111111111111111111111111111111111111111111")
+	outPoint0 := wire.NewOutPoint(hash0, 0)
+	outPoint1 := wire.NewOutPoint(hash1, 0)
+	utxoEntry0 := NewUTXOEntry(&wire.TxOut{PkScript: []byte{}, Value: 10}, true, 0)
+	utxoEntry1 := NewUTXOEntry(&wire.TxOut{PkScript: []byte{}, Value: 20}, false, 1)
+
+	utxoDiff := NewUTXODiff()
+
+	tests := []struct {
+		name             string
+		outPointToAdd    *wire.OutPoint
+		utxoEntryToAdd   *UTXOEntry
+		expectedUTXODiff *UTXODiff
+	}{
+		{
+			name:           "add an entry",
+			outPointToAdd:  outPoint0,
+			utxoEntryToAdd: utxoEntry0,
+			expectedUTXODiff: &UTXODiff{
+				toAdd:    utxoCollection{*outPoint0: utxoEntry0},
+				toRemove: utxoCollection{},
+			},
+		},
+		{
+			name:           "add another entry",
+			outPointToAdd:  outPoint1,
+			utxoEntryToAdd: utxoEntry1,
+			expectedUTXODiff: &UTXODiff{
+				toAdd:    utxoCollection{*outPoint0: utxoEntry0, *outPoint1: utxoEntry1},
+				toRemove: utxoCollection{},
+			},
+		},
+		{
+			name:           "add first entry again",
+			outPointToAdd:  outPoint0,
+			utxoEntryToAdd: utxoEntry0,
+			expectedUTXODiff: &UTXODiff{
+				toAdd:    utxoCollection{*outPoint0: utxoEntry0, *outPoint1: utxoEntry1},
+				toRemove: utxoCollection{},
+			},
+		},
+	}
+
+	for _, test := range tests {
+		utxoDiff.AddEntry(*test.outPointToAdd, test.utxoEntryToAdd)
+		if !reflect.DeepEqual(utxoDiff, test.expectedUTXODiff) {
+			t.Fatalf("utxoDiff.AddEntry: unexpected utxoDiff in test '%s'. "+
+				"Expected: %v, got: %v", test.name, test.expectedUTXODiff, utxoDiff)
+		}
+	}
+}
+
+func TestUTXOSetRemoveTxOuts(t *testing.T) {
+	tx0 := &wire.MsgTx{TxOut: []*wire.TxOut{{PkScript: []byte{1}, Value: 10}}}
+	tx1 := &wire.MsgTx{TxOut: []*wire.TxOut{{PkScript: []byte{2}, Value: 20}}}
+	hash0 := tx0.TxID()
+	hash1 := tx1.TxID()
+	outPoint0 := wire.NewOutPoint(&hash0, 0)
+	outPoint1 := wire.NewOutPoint(&hash1, 0)
+
+	utxoDiff := NewUTXODiff()
+
+	tests := []struct {
+		name             string
+		txToRemove       *wire.MsgTx
+		expectedUTXODiff *UTXODiff
+	}{
+		{
+			name:       "remove a transaction",
+			txToRemove: tx0,
+			expectedUTXODiff: &UTXODiff{
+				toAdd:    utxoCollection{},
+				toRemove: utxoCollection{*outPoint0: nil},
+			},
+		},
+		{
+			name:       "remove another transaction",
+			txToRemove: tx1,
+			expectedUTXODiff: &UTXODiff{
+				toAdd:    utxoCollection{},
+				toRemove: utxoCollection{*outPoint0: nil, *outPoint1: nil},
+			},
+		},
+		{
+			name:       "remove first entry again",
+			txToRemove: tx0,
+			expectedUTXODiff: &UTXODiff{
+				toAdd:    utxoCollection{},
+				toRemove: utxoCollection{*outPoint0: nil, *outPoint1: nil},
+			},
+		},
+	}
+
+	for _, test := range tests {
+		utxoDiff.RemoveTxOuts(test.txToRemove)
+		if !reflect.DeepEqual(utxoDiff, test.expectedUTXODiff) {
+			t.Fatalf("utxoDiff.AddEntry: unexpected utxoDiff in test '%s'. "+
+				"Expected: %v, got: %v", test.name, test.expectedUTXODiff, utxoDiff)
+		}
+	}
+}
