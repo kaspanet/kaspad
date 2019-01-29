@@ -352,7 +352,7 @@ func (dag *BlockDAG) calcSequenceLock(node *blockNode, utxoSet UTXOSet, tx *util
 	// Sequence locks don't apply to coinbase transactions Therefore, we
 	// return sequence lock values of -1 indicating that this transaction
 	// can be included within a block at any given height or time.
-	if IsCoinBase(tx) {
+	if IsBlockReward(tx) {
 		return sequenceLock, nil
 	}
 
@@ -731,11 +731,164 @@ func (node *blockNode) verifyAndBuildUTXO(virtual *virtualBlock, dag *BlockDAG,
 		})
 	}
 
+	err = node.validateFeeTransactions(dag, acceptedTxData, transactions)
+	if err != nil {
+		return nil, nil, err
+	}
+
 	utxo, err := pastUTXO.WithDiff(diff)
 	if err != nil {
 		return nil, nil, err
 	}
 	return utxo, acceptedTxData, nil
+}
+
+type blockFeeData struct {
+	pkScript     []byte
+	transactions []*wire.MsgTx
+	txCount      uint64
+}
+
+func (node *blockNode) validateFeeTransactions(dag *BlockDAG, acceptedTxData []*TxWithBlockHash, nodeTransactions []*util.Tx) error {
+	blocksData := make(map[daghash.Hash]*blockFeeData)
+	for _, acceptedTx := range acceptedTxData {
+		if node.parents.containsHash(acceptedTx.InBlock) {
+			if _, ok := blocksData[*acceptedTx.InBlock]; !ok {
+				blocksData[*acceptedTx.InBlock] = &blockFeeData{}
+			}
+			blocksData[*acceptedTx.InBlock].txCount++
+		}
+	}
+	for _, acceptedTx := range acceptedTxData {
+		if blocksData[*acceptedTx.InBlock] != nil {
+			if blocksData[*acceptedTx.InBlock].transactions == nil {
+				blocksData[*acceptedTx.InBlock].transactions = make([]*wire.MsgTx, 0, blocksData[*acceptedTx.InBlock].txCount)
+			}
+			msgTx := acceptedTx.Tx.MsgTx()
+			if msgTx.IsCoinBase() {
+				blocksData[*acceptedTx.InBlock].pkScript = msgTx.TxOut[0].PkScript
+			} else {
+				blocksData[*acceptedTx.InBlock].transactions = append(blocksData[*acceptedTx.InBlock].transactions, msgTx)
+			}
+		}
+	}
+
+	blocksData[node.selectedParent.hash] = &blockFeeData{}
+	err := dag.db.View(func(dbTx database.Tx) error {
+		selectedParnetBlock, err := dbFetchBlockByNode(dbTx, node.selectedParent)
+		if err != nil {
+			return err
+		}
+		blocksData[node.selectedParent.hash].transactions = make([]*wire.MsgTx, 0, len(selectedParnetBlock.Transactions()))
+		for _, tx := range selectedParnetBlock.Transactions() {
+			blocksData[node.selectedParent.hash].transactions = append(blocksData[node.selectedParent.hash].transactions, tx.MsgTx())
+		}
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+
+	blockHashes := make([]daghash.Hash, 0, len(blocksData))
+	for hash := range blocksData {
+		blockHashes = append(blockHashes, hash)
+	}
+	daghash.Sort(blockHashes)
+
+	for i, hash := range blockHashes {
+		parentNode := dag.index.LookupNode(&hash)
+		totalFees, err := calculateFees(blocksData[hash].transactions, func(outpoint wire.OutPoint) (*wire.TxOut, error) {
+			visited := newSet()
+			queue := make([]*blockNode, len(parentNode.blues))
+			copy(queue, parentNode.blues)
+			for len(queue) > 0 {
+				var current *blockNode
+				current, queue = queue[0], queue[1:]
+				if !visited.contains(current) {
+					visited.add(current)
+					var block *util.Block
+					err := dag.db.View(func(dbTx database.Tx) error {
+						block, err = dbFetchBlockByNode(dbTx, current)
+						if err != nil {
+							return err
+						}
+						return nil
+					})
+					if err != nil {
+						return nil, err
+					}
+					for _, tx := range block.Transactions() {
+						if *tx.ID() == outpoint.TxID {
+							return tx.MsgTx().TxOut[outpoint.Index], nil
+						}
+					}
+					for _, blue := range current.blues {
+						queue = append(queue, blue)
+					}
+				}
+			}
+			return nil, fmt.Errorf("Couldn't find txo %v", outpoint)
+		})
+		if err != nil {
+			return err
+		}
+
+		feeTx := nodeTransactions[i+1]
+		feeMsgTx := feeTx.MsgTx()
+		if feeMsgTx.SubnetworkID != wire.SubnetworkIDNative {
+			return ruleError(0, fmt.Sprintf("Fee transaction %v is not in native subnetwork", feeTx.ID()))
+		}
+		if len(feeMsgTx.TxIn) != 0 {
+			return ruleError(0, fmt.Sprintf("Fee transaction %v has %v inputs instead of one", feeTx.ID(), len(feeMsgTx.TxIn)))
+		}
+		if len(feeMsgTx.TxIn[0].SignatureScript) != 0 {
+			return ruleError(0, fmt.Sprintf("Fee transaction %v has SignatureScript although it shouldn't", feeTx.ID()))
+		}
+		if feeMsgTx.TxIn[0].PreviousOutPoint.Index != math.MaxUint32 {
+			return ruleError(0, fmt.Sprintf("Fee transaction %v input index should be %v instead of %v", feeTx.ID(), math.MaxUint32, feeMsgTx.TxIn[0].PreviousOutPoint.Index))
+		}
+		if feeMsgTx.TxIn[0].PreviousOutPoint.TxID != daghash.TxID(hash) {
+			return ruleError(0, fmt.Sprintf("Fee transaction %v input previous outpoint transaction id should be %v instead of %v", feeTx.ID(), daghash.TxID(hash), feeMsgTx.TxIn[0].PreviousOutPoint.TxID))
+		}
+		if len(feeMsgTx.TxOut) != 0 {
+			return ruleError(0, fmt.Sprintf("Fee transaction %v has %v outputs instead of one", feeTx.ID(), len(feeMsgTx.TxOut)))
+		}
+		if feeMsgTx.TxOut[0].Value != totalFees {
+			return ruleError(0, fmt.Sprintf("Fee transaction %v has %v fees instead of %v", feeTx.ID(), feeMsgTx.TxOut[0].Value, totalFees))
+		}
+	}
+
+	for _, tx := range nodeTransactions[len(blockHashes)+1:] {
+		if IsFeeTransaction(tx) {
+			return ruleError(0, fmt.Sprintf("Found more fee transactions then what is allowed"))
+		}
+	}
+	return nil
+}
+
+func calculateFees(transactions []*wire.MsgTx, getTXO func(wire.OutPoint) (*wire.TxOut, error)) (uint64, error) {
+	totalFees := uint64(0)
+	for _, tx := range transactions {
+		if !tx.IsCoinBase() {
+			for _, txo := range tx.TxOut {
+				if totalFees+txo.Value < totalFees {
+					return 0, ruleError(ErrBadFees, "total fees overflows accumulator")
+				}
+				totalFees += txo.Value
+			}
+			for _, txin := range tx.TxIn {
+				prevTxOut, err := getTXO(txin.PreviousOutPoint)
+				if err != nil {
+					return 0, err
+				}
+				if totalFees-prevTxOut.Value > totalFees {
+					return 0, ruleError(ErrBadFees, "total fees overflows accumulator")
+				}
+				totalFees -= prevTxOut.Value
+			}
+		}
+	}
+	return totalFees, nil
 }
 
 // TxWithBlockHash is a type that holds data about in which block a transaction was found

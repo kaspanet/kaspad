@@ -226,7 +226,7 @@ func utxoEntryHeaderCode(entry *UTXOEntry) uint64 {
 	// encodes the height shifted over one bit and the coinbase flag in the
 	// lowest bit.
 	headerCode := uint64(entry.BlockHeight()) << 1
-	if entry.IsCoinBase() {
+	if entry.IsBlockReward() {
 		headerCode |= 0x01
 	}
 
@@ -299,7 +299,7 @@ func deserializeUTXOEntry(serialized []byte) (*UTXOEntry, error) {
 		packedFlags: 0,
 	}
 	if isCoinBase {
-		entry.packedFlags |= tfCoinBase
+		entry.packedFlags |= tfBlockReward
 	}
 
 	return entry, nil

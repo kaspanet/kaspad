@@ -2640,7 +2640,7 @@ func handleGetTxOut(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 		confirmations = 1 + s.cfg.DAG.Height() - entry.BlockHeight() //TODO: (Ori) This is probably wrong. Done only for compilation
 		value = entry.Amount()
 		pkScript = entry.PkScript()
-		isCoinbase = entry.IsCoinBase()
+		isCoinbase = entry.IsBlockReward()
 	}
 
 	// Disassemble script into single line printable format.

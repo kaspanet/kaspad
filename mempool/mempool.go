@@ -767,9 +767,9 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rateLimit, rejectDu
 		}
 	}
 
-	// A standalone transaction must not be a coinbase transaction.
-	if blockdag.IsCoinBase(tx) {
-		str := fmt.Sprintf("transaction %v is an individual coinbase",
+	// A standalone transaction must not be a block reward transaction.
+	if blockdag.IsBlockReward(tx) {
+		str := fmt.Sprintf("transaction %v is an individual block reward transaction",
 			txID)
 		return nil, nil, txRuleError(wire.RejectInvalid, str)
 	}

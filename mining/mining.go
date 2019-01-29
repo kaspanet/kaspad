@@ -446,8 +446,8 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 		// A block can't have more than one coinbase or contain
 		// non-finalized transactions.
 		tx := txDesc.Tx
-		if blockdag.IsCoinBase(tx) {
-			log.Tracef("Skipping coinbase tx %s", tx.ID())
+		if blockdag.IsBlockReward(tx) {
+			log.Tracef("Skipping block reward tx %s", tx.ID())
 			continue
 		}
 		if !blockdag.IsFinalizedTransaction(tx, nextBlockHeight,

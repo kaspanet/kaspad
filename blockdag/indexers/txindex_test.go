@@ -32,7 +32,7 @@ func TestTxIndexConnectBlock(t *testing.T) {
 	indexManager := NewManager([]Indexer{txIndex})
 
 	params := dagconfig.SimNetParams
-	params.CoinbaseMaturity = 1
+	params.BlockRewardMaturity = 1
 	params.K = 1
 
 	config := blockdag.Config{

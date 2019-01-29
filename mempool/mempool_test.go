@@ -340,7 +340,7 @@ func newPoolHarness(dagParams *dagconfig.Params, numOutputs uint32, dbName strin
 	for i := uint32(0); i < numOutputs; i++ {
 		outpoints = append(outpoints, txOutToSpendableOutpoint(coinbase, i))
 	}
-	harness.chain.SetHeight(int32(dagParams.CoinbaseMaturity) + curHeight)
+	harness.chain.SetHeight(int32(dagParams.BlockRewardMaturity) + curHeight)
 	harness.chain.SetMedianTimePast(time.Now())
 
 	return &harness, outpoints, teardownFunc, nil

@@ -317,6 +317,33 @@ func (msg *MsgTx) IsCoinBase() bool {
 	return prevOut.Index == math.MaxUint32 && prevOut.TxID == daghash.ZeroTxID
 }
 
+// IsFeeTransaction determines whether or not a transaction is a fee transaction.  A fee
+// transaction is a special transaction created by miners that distributes fees to the
+// previous blocks' miners.  This is represented in the block dag by a transaction with
+// a single input that has a previous output transaction index set to the maximum value
+// and the relevant block hash, instead of previous transaction id.
+func (msg *MsgTx) IsFeeTransaction() bool {
+	// A fee transaction must only have one transaction input.
+	if len(msg.TxIn) != 1 {
+		return false
+	}
+
+	// A fee transaction must only have one transaction output.
+	if len(msg.TxOut) != 1 {
+		return false
+	}
+
+	// The previous output of a fee transaction have a max value index and
+	// a non-zero TxID (to differentiate from coinbase).
+	prevOut := &msg.TxIn[0].PreviousOutPoint
+	return prevOut.Index == math.MaxUint32 && prevOut.TxID != daghash.ZeroTxID
+}
+
+// IsBlockReward determins whether or not a transaction is a block reward (a fee transaction or block reward)
+func (msg *MsgTx) IsBlockReward() bool {
+	return msg.IsFeeTransaction() || msg.IsCoinBase()
+}
+
 // TxHash generates the Hash for the transaction.
 func (msg *MsgTx) TxHash() daghash.Hash {
 	// Encode the transaction and calculate double sha256 on the result.
