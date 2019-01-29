@@ -148,7 +148,7 @@ type BlockDAG struct {
 
 	lastFinalityPoint *blockNode
 
-	SubnetworkStore *subnetworkStore
+	SubnetworkStore *SubnetworkStore
 }
 
 // HaveBlock returns whether or not the DAG instance has the block represented

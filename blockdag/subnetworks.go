@@ -12,12 +12,13 @@ import (
 	"github.com/daglabs/btcd/wire"
 )
 
-type subnetworkStore struct {
+// SubnetworkStore stores the subnetworks data
+type SubnetworkStore struct {
 	db database.DB
 }
 
-func newSubnetworkStore(db database.DB) *subnetworkStore {
-	return &subnetworkStore{
+func newSubnetworkStore(db database.DB) *SubnetworkStore {
+	return &SubnetworkStore{
 		db: db,
 	}
 }
@@ -88,7 +89,7 @@ func txToSubnetworkID(tx *wire.MsgTx) (*subnetworkid.SubnetworkID, error) {
 
 // subnetwork returns a registered subnetwork. If the subnetwork does not exist
 // this method returns an error.
-func (s *subnetworkStore) subnetwork(subnetworkID *subnetworkid.SubnetworkID) (*subnetwork, error) {
+func (s *SubnetworkStore) subnetwork(subnetworkID *subnetworkid.SubnetworkID) (*subnetwork, error) {
 	var sNet *subnetwork
 	var err error
 	dbErr := s.db.View(func(dbTx database.Tx) error {
@@ -107,7 +108,7 @@ func (s *subnetworkStore) subnetwork(subnetworkID *subnetworkid.SubnetworkID) (*
 
 // GasLimit returns the gas limit of a registered subnetwork. If the subnetwork does not
 // exist this method returns an error.
-func (s *subnetworkStore) GasLimit(subnetworkID *subnetworkid.SubnetworkID) (uint64, error) {
+func (s *SubnetworkStore) GasLimit(subnetworkID *subnetworkid.SubnetworkID) (uint64, error) {
 	sNet, err := s.subnetwork(subnetworkID)
 	if err != nil {
 		return 0, err

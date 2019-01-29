@@ -6,8 +6,19 @@ package mining
 
 import (
 	"container/heap"
+	"errors"
 	"math/rand"
 	"testing"
+	"time"
+
+	"github.com/daglabs/btcd/util/subnetworkid"
+
+	"bou.ke/monkey"
+	"github.com/daglabs/btcd/blockdag"
+	"github.com/daglabs/btcd/dagconfig"
+	"github.com/daglabs/btcd/dagconfig/daghash"
+	"github.com/daglabs/btcd/txscript"
+	"github.com/daglabs/btcd/wire"
 
 	"github.com/daglabs/btcd/util"
 )
@@ -106,5 +117,295 @@ func TestTxFeePrioHeap(t *testing.T) {
 				highest.feePerKB, highest.priority)
 		}
 		highest = prioItem
+	}
+}
+
+// fakeTxSource is a simple implementation of TxSource interface
+type fakeTxSource struct {
+	txDescs []*TxDesc
+}
+
+func (txs *fakeTxSource) LastUpdated() time.Time {
+	return time.Unix(0, 0)
+}
+
+func (txs *fakeTxSource) MiningDescs() []*TxDesc {
+	return txs.txDescs
+}
+
+func (txs *fakeTxSource) HaveTransaction(txID *daghash.TxID) bool {
+	for _, desc := range txs.txDescs {
+		if *desc.Tx.ID() == *txID {
+			return true
+		}
+	}
+	return false
+}
+
+func TestNewBlockTemplate(t *testing.T) {
+	params := dagconfig.SimNetParams
+	params.CoinbaseMaturity = 0
+
+	dag, teardownFunc, err := blockdag.DAGSetup("TestNewBlockTemplate", blockdag.Config{
+		DAGParams: &params,
+	})
+	if err != nil {
+		t.Fatalf("Failed to setup DAG instance: %v", err)
+	}
+	defer teardownFunc()
+
+	pkScript, err := txscript.NewScriptBuilder().AddOp(txscript.OpTrue).Script()
+	if err != nil {
+		t.Fatalf("Failed to create pkScript: %v", err)
+	}
+
+	policy := Policy{
+		BlockMaxSize:      50000,
+		BlockPrioritySize: 750000,
+		TxMinFreeFee:      util.Amount(0),
+	}
+
+	// First we create a block to have coinbase funds for the rest of the test.
+	txSource := &fakeTxSource{
+		txDescs: []*TxDesc{},
+	}
+
+	var createCoinbaseTxPatch *monkey.PatchGuard
+	createCoinbaseTxPatch = monkey.Patch(createCoinbaseTx, func(params *dagconfig.Params, coinbaseScript []byte, nextBlockHeight int32, addr util.Address) (*util.Tx, error) {
+		createCoinbaseTxPatch.Unpatch()
+		defer createCoinbaseTxPatch.Restore()
+		tx, err := createCoinbaseTx(params, coinbaseScript, nextBlockHeight, addr)
+		if err != nil {
+			return nil, err
+		}
+		msgTx := tx.MsgTx()
+		//Here we split the coinbase to 10 outputs, so we'll be able to use it in many transactions
+		out := msgTx.TxOut[0]
+		out.Value /= 10
+		for i := 0; i < 9; i++ {
+			msgTx.AddTxOut(&*out)
+		}
+		return tx, nil
+	})
+	defer createCoinbaseTxPatch.Unpatch()
+
+	blockTemplateGenerator := NewBlkTmplGenerator(&policy,
+		&params, txSource, dag, blockdag.NewMedianTime(), txscript.NewSigCache(100000))
+
+	template1, err := blockTemplateGenerator.NewBlockTemplate(nil)
+	createCoinbaseTxPatch.Unpatch()
+	if err != nil {
+		t.Fatalf("NewBlockTemplate: %v", err)
+	}
+
+	isOrphan, err := dag.ProcessBlock(util.NewBlock(template1.Block), blockdag.BFNoPoWCheck)
+	if err != nil {
+		t.Fatalf("ProcessBlock: %v", err)
+	}
+
+	if isOrphan {
+		t.Fatalf("ProcessBlock: template1 got unexpectedly orphan")
+	}
+
+	cbScript, err := standardCoinbaseScript(dag.Height()+1, 0)
+	if err != nil {
+		t.Fatalf("standardCoinbaseScript: %v", err)
+	}
+
+	// We want to check that the miner filters coinbase transaction
+	cbTx, err := createCoinbaseTx(&params, cbScript, dag.Height()+1, nil)
+	if err != nil {
+		t.Fatalf("createCoinbaseTx: %v", err)
+	}
+
+	template1CbTx := template1.Block.Transactions[0]
+
+	// tx is a regular transaction, and should not be filtered by the miner
+	tx := wire.NewMsgTx(wire.TxVersion)
+	tx.AddTxIn(&wire.TxIn{
+		PreviousOutPoint: wire.OutPoint{
+			TxID:  template1CbTx.TxID(),
+			Index: 0,
+		},
+		Sequence: wire.MaxTxInSequenceNum,
+	})
+	tx.AddTxOut(&wire.TxOut{
+		PkScript: pkScript,
+		Value:    1,
+	})
+
+	// We want to check that the miner filters non finalized transactions
+	nonFinalizedTx := wire.NewMsgTx(wire.TxVersion)
+	nonFinalizedTx.LockTime = uint64(dag.Height() + 2)
+	nonFinalizedTx.AddTxIn(&wire.TxIn{
+		PreviousOutPoint: wire.OutPoint{
+			TxID:  template1CbTx.TxID(),
+			Index: 1,
+		},
+		Sequence: 0,
+	})
+	nonFinalizedTx.AddTxOut(&wire.TxOut{
+		PkScript: pkScript,
+		Value:    1,
+	})
+
+	existingSubnetwork := subnetworkid.SubnetworkID{0xff}
+	nonExistingSubnetwork := subnetworkid.SubnetworkID{0xfe}
+
+	// We want to check that the miner filters transactions with non-existing subnetwork id. (It should first push it to the priority queue, and then ignore it)
+	nonExistingSubnetworkTx := wire.NewMsgTx(wire.TxVersion)
+	nonExistingSubnetworkTx.SubnetworkID = nonExistingSubnetwork
+	nonExistingSubnetworkTx.Gas = 1
+	nonExistingSubnetworkTx.AddTxIn(&wire.TxIn{
+		PreviousOutPoint: wire.OutPoint{
+			TxID:  template1CbTx.TxID(),
+			Index: 2,
+		},
+		Sequence: 0,
+	})
+	nonExistingSubnetworkTx.AddTxOut(&wire.TxOut{
+		PkScript: pkScript,
+		Value:    1,
+	})
+
+	// We want to check that the miner doesn't filters transactions that do not exceed the subnetwork gas limit
+	subnetworkTx1 := wire.NewMsgTx(wire.TxVersion)
+	subnetworkTx1.SubnetworkID = existingSubnetwork
+	subnetworkTx1.Gas = 1
+	subnetworkTx1.AddTxIn(&wire.TxIn{
+		PreviousOutPoint: wire.OutPoint{
+			TxID:  template1CbTx.TxID(),
+			Index: 3,
+		},
+		Sequence: 0,
+	})
+	subnetworkTx1.AddTxOut(&wire.TxOut{
+		PkScript: pkScript,
+		Value:    1,
+	})
+
+	// We want to check that the miner filters transactions that exceed the subnetwork gas limit. (It should first push it to the priority queue, and then ignore it)
+	subnetworkTx2 := wire.NewMsgTx(wire.TxVersion)
+	subnetworkTx2.SubnetworkID = existingSubnetwork
+	subnetworkTx2.Gas = 100 // Subnetwork gas limit is 90
+	subnetworkTx2.AddTxIn(&wire.TxIn{
+		PreviousOutPoint: wire.OutPoint{
+			TxID:  template1CbTx.TxID(),
+			Index: 4,
+		},
+		Sequence: 0,
+	})
+	subnetworkTx2.AddTxOut(&wire.TxOut{
+		PkScript: pkScript,
+		Value:    1,
+	})
+
+	txSource.txDescs = []*TxDesc{
+		{
+			Tx: cbTx,
+		},
+		{
+			Tx: util.NewTx(tx),
+		},
+		{
+			Tx: util.NewTx(nonFinalizedTx),
+		},
+		{
+			Tx: util.NewTx(subnetworkTx1),
+		},
+		{
+			Tx: util.NewTx(subnetworkTx2),
+		},
+		{
+			Tx: util.NewTx(nonExistingSubnetworkTx),
+		},
+	}
+
+	standardCoinbaseScriptErrString := "standardCoinbaseScript err"
+
+	var standardCoinbaseScriptPatch *monkey.PatchGuard
+	standardCoinbaseScriptPatch = monkey.Patch(standardCoinbaseScript, func(nextBlockHeight int32, extraNonce uint64) ([]byte, error) {
+		return nil, errors.New(standardCoinbaseScriptErrString)
+	})
+	defer standardCoinbaseScriptPatch.Unpatch()
+
+	// We want to check that NewBlockTemplate will fail if standardCoinbaseScript returns an error
+	_, err = blockTemplateGenerator.NewBlockTemplate(nil)
+	standardCoinbaseScriptPatch.Unpatch()
+
+	if err == nil || err.Error() != standardCoinbaseScriptErrString {
+		t.Errorf("expected an error \"%v\" but got \"%v\"", standardCoinbaseScriptErrString, err)
+	}
+	if err == nil {
+		t.Errorf("expected an error but got <nil>")
+	}
+
+	// Here we check that the miner's priorty queue has the expected transactions after filtering.
+	popReturnedUnexpectedValue := false
+	expectedPops := map[daghash.TxID]bool{
+		tx.TxID():                      false,
+		subnetworkTx1.TxID():           false,
+		subnetworkTx2.TxID():           false,
+		nonExistingSubnetworkTx.TxID(): false,
+	}
+	var popPatch *monkey.PatchGuard
+	popPatch = monkey.Patch((*txPriorityQueue).Pop, func(pq *txPriorityQueue) interface{} {
+		popPatch.Unpatch()
+		defer popPatch.Restore()
+
+		item, ok := pq.Pop().(*txPrioItem)
+		if _, expected := expectedPops[*item.tx.ID()]; expected && ok {
+			expectedPops[*item.tx.ID()] = true
+		} else {
+			popReturnedUnexpectedValue = true
+		}
+		return item
+	})
+	defer popPatch.Unpatch()
+
+	// Here we define nonExistingSubnetwork to be non-exist, and existingSubnetwork to have a gas limit of 90
+	gasLimitPatch := monkey.Patch((*blockdag.SubnetworkStore).GasLimit, func(_ *blockdag.SubnetworkStore, subnetworkID *subnetworkid.SubnetworkID) (uint64, error) {
+		if *subnetworkID == nonExistingSubnetwork {
+			return 0, errors.New("not found")
+		}
+		return 90, nil
+	})
+	defer gasLimitPatch.Unpatch()
+
+	template2, err := blockTemplateGenerator.NewBlockTemplate(nil)
+	popPatch.Unpatch()
+	gasLimitPatch.Unpatch()
+
+	if err != nil {
+		t.Errorf("NewBlockTemplate: unexpected error: %v", err)
+	}
+
+	if popReturnedUnexpectedValue {
+		t.Errorf("(*txPriorityQueue).Pop returned unexpected value")
+	}
+
+	for id, popped := range expectedPops {
+		if !popped {
+			t.Errorf("tx %v was expected to pop, but wasn't", id)
+		}
+	}
+
+	expectedTxs := map[daghash.TxID]bool{
+		tx.TxID():            false,
+		subnetworkTx1.TxID(): false,
+	}
+
+	for _, tx := range template2.Block.Transactions[1:] {
+		id := tx.TxID()
+		if _, ok := expectedTxs[id]; !ok {
+			t.Errorf("Unexpected tx %v in template2's candidate block", id)
+		}
+		expectedTxs[id] = true
+	}
+
+	for id, exists := range expectedTxs {
+		if !exists {
+			t.Errorf("tx %v was expected to be in template2's candidate block, but wasn't", id)
+		}
 	}
 }
