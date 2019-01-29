@@ -625,6 +625,16 @@ func (dag *BlockDAG) checkFinalityRulesAndGetFinalityPointCandidate(node *blockN
 	return finalityPointCandidate, nil
 }
 
+// NextBlockFeeTransactions prepares the fee transactions for the next mined block
+func (dag *BlockDAG) NextBlockFeeTransactions() ([]*wire.MsgTx, error) {
+	virtualTransactions := []*util.Tx{}
+	_, acceptedTxData, err := dag.virtual.blockNode.verifyAndBuildUTXO(dag.virtual, dag, virtualTransactions, true)
+	if err != nil {
+		return nil, err
+	}
+	return dag.virtual.blockNode.buildFeeTransactions(dag, acceptedTxData)
+}
+
 // applyUTXOChanges does the following:
 // 1. Verifies that each transaction within the new block could spend an existing UTXO.
 // 2. Connects each of the new block's parents to the block.
@@ -644,6 +654,11 @@ func (dag *BlockDAG) applyUTXOChanges(node *blockNode, block *util.Block, fastAd
 			return nil, nil, ruleError(err.ErrorCode, newErrString)
 		}
 		return nil, nil, errors.New(newErrString)
+	}
+
+	err = node.validateFeeTransactions(dag, acceptedTxData, block.Transactions())
+	if err != nil {
+		return nil, nil, err
 	}
 
 	// since verifyAndBuildUTXO ran, we know for sure that block is valid -
@@ -731,11 +746,6 @@ func (node *blockNode) verifyAndBuildUTXO(virtual *virtualBlock, dag *BlockDAG,
 		})
 	}
 
-	err = node.validateFeeTransactions(dag, acceptedTxData, transactions)
-	if err != nil {
-		return nil, nil, err
-	}
-
 	utxo, err := pastUTXO.WithDiff(diff)
 	if err != nil {
 		return nil, nil, err
@@ -749,7 +759,7 @@ type blockFeeData struct {
 	txCount      uint64
 }
 
-func (node *blockNode) validateFeeTransactions(dag *BlockDAG, acceptedTxData []*TxWithBlockHash, nodeTransactions []*util.Tx) error {
+func (node *blockNode) buildFeeTransactions(dag *BlockDAG, acceptedTxData []*TxWithBlockHash) ([]*wire.MsgTx, error) {
 	blocksData := make(map[daghash.Hash]*blockFeeData)
 	for _, acceptedTx := range acceptedTxData {
 		if node.parents.containsHash(acceptedTx.InBlock) {
@@ -786,7 +796,7 @@ func (node *blockNode) validateFeeTransactions(dag *BlockDAG, acceptedTxData []*
 		return nil
 	})
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	blockHashes := make([]daghash.Hash, 0, len(blocksData))
@@ -795,7 +805,9 @@ func (node *blockNode) validateFeeTransactions(dag *BlockDAG, acceptedTxData []*
 	}
 	daghash.Sort(blockHashes)
 
-	for i, hash := range blockHashes {
+	feeTransactions := make([]*wire.MsgTx, 0, len(blockHashes))
+
+	for _, hash := range blockHashes {
 		parentNode := dag.index.LookupNode(&hash)
 		totalFees, err := calculateFees(blocksData[hash].transactions, func(outpoint wire.OutPoint) (*wire.TxOut, error) {
 			visited := newSet()
@@ -830,35 +842,46 @@ func (node *blockNode) validateFeeTransactions(dag *BlockDAG, acceptedTxData []*
 			return nil, fmt.Errorf("Couldn't find txo %v", outpoint)
 		})
 		if err != nil {
-			return err
+			return nil, err
 		}
 
-		feeTx := nodeTransactions[i+1]
-		feeMsgTx := feeTx.MsgTx()
-		if feeMsgTx.SubnetworkID != wire.SubnetworkIDNative {
-			return ruleError(0, fmt.Sprintf("Fee transaction %v is not in native subnetwork", feeTx.ID()))
+		feeTx := &wire.MsgTx{
+			TxIn: []*wire.TxIn{
+				{
+					SignatureScript: []byte{},
+					PreviousOutPoint: wire.OutPoint{
+						TxID:  daghash.TxID(hash),
+						Index: math.MaxUint32,
+					},
+				},
+			},
+			TxOut: []*wire.TxOut{
+				{
+					Value:    totalFees,
+					PkScript: blocksData[hash].pkScript,
+				},
+			},
+			LockTime:     0,
+			SubnetworkID: wire.SubnetworkIDNative,
 		}
-		if len(feeMsgTx.TxIn) != 0 {
-			return ruleError(0, fmt.Sprintf("Fee transaction %v has %v inputs instead of one", feeTx.ID(), len(feeMsgTx.TxIn)))
-		}
-		if len(feeMsgTx.TxIn[0].SignatureScript) != 0 {
-			return ruleError(0, fmt.Sprintf("Fee transaction %v has SignatureScript although it shouldn't", feeTx.ID()))
-		}
-		if feeMsgTx.TxIn[0].PreviousOutPoint.Index != math.MaxUint32 {
-			return ruleError(0, fmt.Sprintf("Fee transaction %v input index should be %v instead of %v", feeTx.ID(), math.MaxUint32, feeMsgTx.TxIn[0].PreviousOutPoint.Index))
-		}
-		if feeMsgTx.TxIn[0].PreviousOutPoint.TxID != daghash.TxID(hash) {
-			return ruleError(0, fmt.Sprintf("Fee transaction %v input previous outpoint transaction id should be %v instead of %v", feeTx.ID(), daghash.TxID(hash), feeMsgTx.TxIn[0].PreviousOutPoint.TxID))
-		}
-		if len(feeMsgTx.TxOut) != 0 {
-			return ruleError(0, fmt.Sprintf("Fee transaction %v has %v outputs instead of one", feeTx.ID(), len(feeMsgTx.TxOut)))
-		}
-		if feeMsgTx.TxOut[0].Value != totalFees {
-			return ruleError(0, fmt.Sprintf("Fee transaction %v has %v fees instead of %v", feeTx.ID(), feeMsgTx.TxOut[0].Value, totalFees))
+		feeTransactions = append(feeTransactions, feeTx)
+	}
+	return feeTransactions, nil
+}
+
+func (node *blockNode) validateFeeTransactions(dag *BlockDAG, acceptedTxData []*TxWithBlockHash, nodeTransactions []*util.Tx) error {
+	expectedFeeTransactions, err := node.buildFeeTransactions(dag, acceptedTxData)
+	if err != nil {
+		return err
+	}
+
+	for i, tx := range nodeTransactions[1 : len(expectedFeeTransactions)+1] {
+		if expectedFeeTransactions[i].TxHash() != *tx.Hash() {
+			return ruleError(0, fmt.Sprintf("Fee transaction %v is not built as expected", tx.Hash()))
 		}
 	}
 
-	for _, tx := range nodeTransactions[len(blockHashes)+1:] {
+	for _, tx := range nodeTransactions[len(expectedFeeTransactions)+1:] {
 		if IsFeeTransaction(tx) {
 			return ruleError(0, fmt.Sprintf("Found more fee transactions then what is allowed"))
 		}
