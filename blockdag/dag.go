@@ -627,8 +627,7 @@ func (dag *BlockDAG) checkFinalityRulesAndGetFinalityPointCandidate(node *blockN
 
 // NextBlockFeeTransactions prepares the fee transactions for the next mined block
 func (dag *BlockDAG) NextBlockFeeTransactions() ([]*wire.MsgTx, error) {
-	virtualTransactions := []*util.Tx{}
-	_, acceptedTxData, err := dag.virtual.blockNode.verifyAndBuildUTXO(dag.virtual, dag, virtualTransactions, true)
+	_, acceptedTxData, err := dag.virtual.blockNode.verifyAndBuildUTXO(dag.virtual, dag, nil, true)
 	if err != nil {
 		return nil, err
 	}
@@ -783,6 +782,7 @@ func (node *blockNode) buildFeeTransactions(dag *BlockDAG, acceptedTxData []*TxW
 		}
 	}
 
+	// acceptedTxData doesn't include the selected parent transactions, so we need to manually add them
 	blocksData[node.selectedParent.hash] = &blockFeeData{}
 	err := dag.db.View(func(dbTx database.Tx) error {
 		selectedParnetBlock, err := dbFetchBlockByNode(dbTx, node.selectedParent)
@@ -810,6 +810,7 @@ func (node *blockNode) buildFeeTransactions(dag *BlockDAG, acceptedTxData []*TxW
 	for _, hash := range blockHashes {
 		parentNode := dag.index.LookupNode(&hash)
 		totalFees, err := calculateFees(blocksData[hash].transactions, func(outpoint wire.OutPoint) (*wire.TxOut, error) {
+			// TODO: (Ori) this is a very ineffecient workaround. We need to find more efficient solution for calculating fees.
 			visited := newSet()
 			queue := make([]*blockNode, len(parentNode.blues))
 			copy(queue, parentNode.blues)
