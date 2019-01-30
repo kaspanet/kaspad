@@ -809,39 +809,7 @@ func (node *blockNode) buildFeeTransactions(dag *BlockDAG, acceptedTxData []*TxW
 
 	for _, hash := range blockHashes {
 		parentNode := dag.index.LookupNode(&hash)
-		totalFees, err := calculateFees(blocksData[hash].transactions, func(outpoint wire.OutPoint) (*wire.TxOut, error) {
-			// TODO: (Ori) this is a very ineffecient workaround. We need to find more efficient solution for calculating fees.
-			visited := newSet()
-			queue := make([]*blockNode, len(parentNode.blues))
-			copy(queue, parentNode.blues)
-			for len(queue) > 0 {
-				var current *blockNode
-				current, queue = queue[0], queue[1:]
-				if !visited.contains(current) {
-					visited.add(current)
-					var block *util.Block
-					err := dag.db.View(func(dbTx database.Tx) error {
-						block, err = dbFetchBlockByNode(dbTx, current)
-						if err != nil {
-							return err
-						}
-						return nil
-					})
-					if err != nil {
-						return nil, err
-					}
-					for _, tx := range block.Transactions() {
-						if *tx.ID() == outpoint.TxID {
-							return tx.MsgTx().TxOut[outpoint.Index], nil
-						}
-					}
-					for _, blue := range current.blues {
-						queue = append(queue, blue)
-					}
-				}
-			}
-			return nil, fmt.Errorf("Couldn't find txo %v", outpoint)
-		})
+		totalFees, err := calculateFees(parentNode, blocksData[hash].transactions, dag)
 		if err != nil {
 			return nil, err
 		}
@@ -870,6 +838,41 @@ func (node *blockNode) buildFeeTransactions(dag *BlockDAG, acceptedTxData []*TxW
 	return feeTransactions, nil
 }
 
+func (dag *BlockDAG) getTXO(outpointBlockNode *blockNode, outpoint wire.OutPoint) (*wire.TxOut, error) {
+	// TODO: (Ori) this is a very ineffecient workaround. We need to find more efficient solution for calculating fees.
+	visited := newSet()
+	queue := make([]*blockNode, len(outpointBlockNode.blues))
+	copy(queue, outpointBlockNode.blues)
+	for len(queue) > 0 {
+		var current *blockNode
+		current, queue = queue[0], queue[1:]
+		if !visited.contains(current) {
+			visited.add(current)
+			var block *util.Block
+			err := dag.db.View(func(dbTx database.Tx) error {
+				var err error
+				block, err = dbFetchBlockByNode(dbTx, current)
+				if err != nil {
+					return err
+				}
+				return nil
+			})
+			if err != nil {
+				return nil, err
+			}
+			for _, tx := range block.Transactions() {
+				if *tx.ID() == outpoint.TxID {
+					return tx.MsgTx().TxOut[outpoint.Index], nil
+				}
+			}
+			for _, blue := range current.blues {
+				queue = append(queue, blue)
+			}
+		}
+	}
+	return nil, fmt.Errorf("Couldn't find txo %v", outpoint)
+}
+
 func (node *blockNode) validateFeeTransactions(dag *BlockDAG, acceptedTxData []*TxWithBlockHash, nodeTransactions []*util.Tx) error {
 	expectedFeeTransactions, err := node.buildFeeTransactions(dag, acceptedTxData)
 	if err != nil {
@@ -890,7 +893,7 @@ func (node *blockNode) validateFeeTransactions(dag *BlockDAG, acceptedTxData []*
 	return nil
 }
 
-func calculateFees(transactions []*wire.MsgTx, getTXO func(wire.OutPoint) (*wire.TxOut, error)) (uint64, error) {
+func calculateFees(node *blockNode, transactions []*wire.MsgTx, dag *BlockDAG) (uint64, error) {
 	totalFees := uint64(0)
 	for _, tx := range transactions {
 		if !tx.IsCoinBase() {
@@ -901,7 +904,7 @@ func calculateFees(transactions []*wire.MsgTx, getTXO func(wire.OutPoint) (*wire
 				totalFees += txo.Value
 			}
 			for _, txin := range tx.TxIn {
-				prevTxOut, err := getTXO(txin.PreviousOutPoint)
+				prevTxOut, err := dag.getTXO(node, txin.PreviousOutPoint)
 				if err != nil {
 					return 0, err
 				}
