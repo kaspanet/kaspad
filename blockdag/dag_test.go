@@ -6,13 +6,13 @@ package blockdag
 
 import (
 	"errors"
+	"fmt"
 	"reflect"
 	"strings"
 	"testing"
 	"time"
 
 	"bou.ke/monkey"
-	"github.com/daglabs/btcd/database"
 
 	"math/rand"
 
@@ -768,10 +768,11 @@ func TestIntervalBlockHashes(t *testing.T) {
 	}
 }
 
-// TestPastUTXOErrors tests all error-cases in restoreUTXO.
-// The non-error-cases are tested in the more general tests.
-func TestPastUTXOErrors(t *testing.T) {
-	targetErrorMessage := "dbFetchBlockByNode error"
+// TestApplyUTXOChangesErrors tests that
+// dag.applyUTXOChanges panics when unexpected
+// error occurs
+func TestApplyUTXOChangesPanic(t *testing.T) {
+	targetErrorMessage := "updateParents error"
 	defer func() {
 		if recover() == nil {
 			t.Errorf("Got no panic on past UTXO error, while expected panic")
@@ -780,9 +781,9 @@ func TestPastUTXOErrors(t *testing.T) {
 	testErrorThroughPatching(
 		t,
 		targetErrorMessage,
-		dbFetchBlockByNode,
-		func(dbTx database.Tx, node *blockNode) (*util.Block, error) {
-			return nil, errors.New(targetErrorMessage)
+		(*blockNode).updateParents,
+		func(_ *blockNode, _ *virtualBlock, _ UTXOSet) error {
+			return errors.New(targetErrorMessage)
 		},
 	)
 }
@@ -845,6 +846,7 @@ func testErrorThroughPatching(t *testing.T, expectedErrorMessage string, targetF
 				"is an orphan\n", i)
 		}
 		if err != nil {
+			fmt.Printf("ERROR %v\n", err)
 			break
 		}
 	}

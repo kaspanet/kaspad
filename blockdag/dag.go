@@ -758,7 +758,8 @@ type blockFeeData struct {
 	txCount      uint64
 }
 
-func (node *blockNode) buildFeeTransactions(dag *BlockDAG, acceptedTxData []*TxWithBlockHash) ([]*wire.MsgTx, error) {
+// getParentsFeeData returns the data that is needed in order to build the block's fee transactions
+func (node *blockNode) getParentsFeeData(dag *BlockDAG, acceptedTxData []*TxWithBlockHash) (map[daghash.Hash]*blockFeeData, error) {
 	blocksData := make(map[daghash.Hash]*blockFeeData)
 	for _, acceptedTx := range acceptedTxData {
 		if node.parents.containsHash(acceptedTx.InBlock) {
@@ -798,9 +799,18 @@ func (node *blockNode) buildFeeTransactions(dag *BlockDAG, acceptedTxData []*TxW
 	if err != nil {
 		return nil, err
 	}
+	return blocksData, nil
+}
 
-	blockHashes := make([]daghash.Hash, 0, len(blocksData))
-	for hash := range blocksData {
+// buildFeeTransactions returns an ordered slice of all of the fee transactions that should exist on this block
+func (node *blockNode) buildFeeTransactions(dag *BlockDAG, acceptedTxData []*TxWithBlockHash) ([]*wire.MsgTx, error) {
+	parentsFeeData, err := node.getParentsFeeData(dag, acceptedTxData)
+	if err != nil {
+		return nil, err
+	}
+
+	blockHashes := make([]daghash.Hash, 0, len(parentsFeeData))
+	for hash := range parentsFeeData {
 		blockHashes = append(blockHashes, hash)
 	}
 	daghash.Sort(blockHashes)
@@ -809,9 +819,12 @@ func (node *blockNode) buildFeeTransactions(dag *BlockDAG, acceptedTxData []*TxW
 
 	for _, hash := range blockHashes {
 		parentNode := dag.index.LookupNode(&hash)
-		totalFees, err := calculateFees(parentNode, blocksData[hash].transactions, dag)
+		totalFees, err := calculateFees(parentNode, parentsFeeData[hash].transactions, dag)
 		if err != nil {
 			return nil, err
+		}
+		if totalFees == 0 {
+			continue
 		}
 
 		feeTx := &wire.MsgTx{
@@ -827,7 +840,7 @@ func (node *blockNode) buildFeeTransactions(dag *BlockDAG, acceptedTxData []*TxW
 			TxOut: []*wire.TxOut{
 				{
 					Value:    totalFees,
-					PkScript: blocksData[hash].pkScript,
+					PkScript: parentsFeeData[hash].pkScript,
 				},
 			},
 			LockTime:     0,
