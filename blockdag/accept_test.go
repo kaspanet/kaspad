@@ -2,9 +2,10 @@ package blockdag
 
 import (
 	"errors"
-	"github.com/daglabs/btcd/wire"
 	"strings"
 	"testing"
+
+	"github.com/daglabs/btcd/wire"
 
 	"bou.ke/monkey"
 	"github.com/daglabs/btcd/dagconfig"
@@ -23,7 +24,7 @@ func TestMaybeAcceptBlockErrors(t *testing.T) {
 	}
 	defer teardownFunc()
 
-	dag.TstSetCoinbaseMaturity(1)
+	dag.TstSetBlockRewardMaturity(1)
 
 	// Test rejecting the block if its parents are missing
 	orphanBlockFile := "blk_3B.dat"

@@ -185,7 +185,7 @@ func ValidateTransactionScripts(tx *util.Tx, utxoSet UTXOSet, flags txscript.Scr
 	txIns := tx.MsgTx().TxIn
 	txValItems := make([]*txValidateItem, 0, len(txIns))
 	for txInIdx, txIn := range txIns {
-		// Skip coinbases.
+		// Skip block reward transactions.
 		if txIn.PreviousOutPoint.Index == math.MaxUint32 {
 			continue
 		}
@@ -215,7 +215,7 @@ func checkBlockScripts(block *blockNode, utxoSet UTXOSet, transactions []*util.T
 	txValItems := make([]*txValidateItem, 0, numInputs)
 	for _, tx := range transactions {
 		for txInIdx, txIn := range tx.MsgTx().TxIn {
-			// Skip coinbases.
+			// Skip block reward transactions.
 			if txIn.PreviousOutPoint.Index == math.MaxUint32 {
 				continue
 			}

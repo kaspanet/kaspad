@@ -410,6 +410,15 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 	}
 	numCoinbaseSigOps := int64(blockdag.CountSigOps(coinbaseTx))
 
+	msgFeeTransactions, err := g.dag.NextBlockFeeTransactions()
+	if err != nil {
+		return nil, err
+	}
+	feeTransactions := make([]*util.Tx, len(msgFeeTransactions))
+	for i, msgTx := range msgFeeTransactions {
+		feeTransactions[i] = util.NewTx(msgTx)
+	}
+
 	// Get the current source transactions and create a priority queue to
 	// hold the transactions which are ready for inclusion into a block
 	// along with some priority related and fee metadata.  Reserve the same
@@ -424,9 +433,17 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 	// generated block with reserved space.  Also create a utxo view to
 	// house all of the input transactions so multiple lookups can be
 	// avoided.
-	blockTxns := make([]*util.Tx, 0, len(sourceTxns))
+	blockTxns := make([]*util.Tx, 0, len(sourceTxns)+len(feeTransactions)+1)
 	blockTxns = append(blockTxns, coinbaseTx)
+	blockTxns = append(blockTxns, feeTransactions...)
 	blockUtxos := blockdag.NewDiffUTXOSet(g.dag.UTXOSet(), blockdag.NewUTXODiff())
+
+	// The starting block size is the size of the block header plus the max
+	// possible transaction count size, plus the size of the coinbase
+	// transaction.
+	blockSize := blockHeaderOverhead + uint32(coinbaseTx.MsgTx().SerializeSize())
+	blockSigOps := numCoinbaseSigOps
+	totalFees := uint64(0)
 
 	// Create slices to hold the fees and number of signature operations
 	// for each of the selected transactions and add an entry for the
@@ -438,6 +455,11 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 	txSigOpCounts := make([]int64, 0, len(sourceTxns))
 	txFees = append(txFees, 0) // Updated once known
 	txSigOpCounts = append(txSigOpCounts, numCoinbaseSigOps)
+	for _, tx := range feeTransactions {
+		txSigOps := int64(blockdag.CountSigOps(tx))
+		txSigOpCounts = append(txSigOpCounts, txSigOps)
+		blockSigOps += txSigOps
+	}
 
 	log.Debugf("Considering %d transactions for inclusion to new block",
 		len(sourceTxns))
@@ -470,13 +492,6 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 
 		heap.Push(priorityQueue, prioItem)
 	}
-
-	// The starting block size is the size of the block header plus the max
-	// possible transaction count size, plus the size of the coinbase
-	// transaction.
-	blockSize := blockHeaderOverhead + uint32(coinbaseTx.MsgTx().SerializeSize())
-	blockSigOps := numCoinbaseSigOps
-	totalFees := uint64(0)
 
 	// Create map of GAS usage per subnetwork
 	gasUsageMap := make(map[subnetworkid.SubnetworkID]uint64)

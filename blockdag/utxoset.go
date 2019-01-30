@@ -10,7 +10,7 @@ import (
 )
 
 // UTXOEntry houses details about an individual transaction output in a utxo
-// set such as whether or not it was contained in a coinbase tx, the height of
+// set such as whether or not it was contained in a block reward tx, the height of
 // the block that contains the tx, whether or not it is spent, its public key
 // script, and how much it pays.
 type UTXOEntry struct {
@@ -25,7 +25,7 @@ type UTXOEntry struct {
 	blockHeight int32  // Height of block containing tx.
 
 	// packedFlags contains additional info about output such as whether it
-	// is a coinbase, whether it is spent, and whether it has been modified
+	// is a block reward, and whether it has been modified
 	// since it was loaded.  This approach is used in order to reduce memory
 	// usage since there will be a lot of these in memory.
 	packedFlags txoFlags

@@ -349,7 +349,7 @@ func (dag *BlockDAG) calcSequenceLock(node *blockNode, utxoSet UTXOSet, tx *util
 	// at any given height or time.
 	sequenceLock := &SequenceLock{Seconds: -1, BlockHeight: -1}
 
-	// Sequence locks don't apply to coinbase transactions Therefore, we
+	// Sequence locks don't apply to block reward transactions Therefore, we
 	// return sequence lock values of -1 indicating that this transaction
 	// can be included within a block at any given height or time.
 	if IsBlockReward(tx) {
@@ -877,13 +877,13 @@ func (node *blockNode) validateFeeTransactions(dag *BlockDAG, acceptedTxData []*
 
 	for i, tx := range nodeTransactions[1 : len(expectedFeeTransactions)+1] {
 		if expectedFeeTransactions[i].TxHash() != *tx.Hash() {
-			return ruleError(0, fmt.Sprintf("Fee transaction %v is not built as expected", tx.Hash()))
+			return ruleError(ErrBadFeeTransaction, fmt.Sprintf("Fee transaction %v is not built as expected", tx.Hash()))
 		}
 	}
 
 	for _, tx := range nodeTransactions[len(expectedFeeTransactions)+1:] {
 		if IsFeeTransaction(tx) {
-			return ruleError(0, fmt.Sprintf("Found more fee transactions then what is allowed"))
+			return ruleError(ErrTooManyFeeTransactions, fmt.Sprintf("Found more fee transactions then what is allowed"))
 		}
 	}
 	return nil

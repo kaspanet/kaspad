@@ -78,9 +78,9 @@ func TestCheckConnectBlockTemplate(t *testing.T) {
 	}
 	defer teardownFunc()
 
-	// Since we're not dealing with the real block chain, set the coinbase
+	// Since we're not dealing with the real block DAG, set the block reward
 	// maturity to 1.
-	dag.TstSetCoinbaseMaturity(1)
+	dag.TstSetBlockRewardMaturity(1)
 
 	// Load up blocks such that there is a side chain.
 	// (genesis block) -> 1 -> 2 -> 3 -> 4

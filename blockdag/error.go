@@ -142,7 +142,7 @@ const (
 	ErrOverwriteTx
 
 	// ErrImmatureSpend indicates a transaction is attempting to spend a
-	// coinbase that has not yet reached the required maturity.
+	// block reward that has not yet reached the required maturity.
 	ErrImmatureSpend
 
 	// ErrSpendTooHigh indicates a transaction is attempting to spend more
@@ -182,6 +182,12 @@ const (
 	// coinbase transaction for version 2 and higher blocks does not match
 	// the expected value.
 	ErrBadCoinbaseHeight
+
+	// ErrBadFeeTransaction indicates that the relevant fee transaction is not build as expected
+	ErrBadFeeTransaction
+
+	// ErrTooManyFeeTransactions indicates a block contains more fee transactions than it should (one transaction for each blue parent)
+	ErrTooManyFeeTransactions
 
 	// ErrScriptMalformed indicates a transaction script is malformed in
 	// some way.  For example, it might be longer than the maximum allowed
@@ -265,6 +271,8 @@ var errorCodeStrings = map[ErrorCode]string{
 	ErrBadCoinbaseValue:          "ErrBadCoinbaseValue",
 	ErrMissingCoinbaseHeight:     "ErrMissingCoinbaseHeight",
 	ErrBadCoinbaseHeight:         "ErrBadCoinbaseHeight",
+	ErrBadFeeTransaction:         "ErrBadFeeTransaction",
+	ErrTooManyFeeTransactions:    "ErrTooManyFeeTransactions",
 	ErrScriptMalformed:           "ErrScriptMalformed",
 	ErrScriptValidation:          "ErrScriptValidation",
 	ErrParentBlockUnknown:        "ErrParentBlockUnknown",

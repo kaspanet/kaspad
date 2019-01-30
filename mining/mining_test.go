@@ -144,7 +144,7 @@ func (txs *fakeTxSource) HaveTransaction(txID *daghash.TxID) bool {
 
 func TestNewBlockTemplate(t *testing.T) {
 	params := dagconfig.SimNetParams
-	params.CoinbaseMaturity = 0
+	params.BlockRewardMaturity = 0
 
 	dag, teardownFunc, err := blockdag.DAGSetup("TestNewBlockTemplate", blockdag.Config{
 		DAGParams: &params,

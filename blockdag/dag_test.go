@@ -50,9 +50,9 @@ func TestBlockCount(t *testing.T) {
 	}
 	defer teardownFunc()
 
-	// Since we're not dealing with the real block DAG, set the coinbase
+	// Since we're not dealing with the real block DAG, set the block reward
 	// maturity to 1.
-	dag.TstSetCoinbaseMaturity(1)
+	dag.TstSetBlockRewardMaturity(1)
 
 	for i := 1; i < len(blocks); i++ {
 		isOrphan, err := dag.ProcessBlock(blocks[i], BFNone)
@@ -90,7 +90,7 @@ func TestHaveBlock(t *testing.T) {
 		blocks = append(blocks, blockTmp...)
 	}
 
-	// Create a new database and chain instance to run tests against.
+	// Create a new database and DAG instance to run tests against.
 	dag, teardownFunc, err := DAGSetup("haveblock", Config{
 		DAGParams:    &dagconfig.SimNetParams,
 		SubnetworkID: &wire.SubnetworkIDSupportsAll,
@@ -100,9 +100,9 @@ func TestHaveBlock(t *testing.T) {
 	}
 	defer teardownFunc()
 
-	// Since we're not dealing with the real block chain, set the coinbase
+	// Since we're not dealing with the real block DAG, set the block reward
 	// maturity to 1.
-	dag.TstSetCoinbaseMaturity(1)
+	dag.TstSetBlockRewardMaturity(1)
 
 	for i := 1; i < len(blocks); i++ {
 		isOrphan, err := dag.ProcessBlock(blocks[i], BFNone)
@@ -829,9 +829,9 @@ func testErrorThroughPatching(t *testing.T, expectedErrorMessage string, targetF
 	}
 	defer teardownFunc()
 
-	// Since we're not dealing with the real block chain, set the coinbase
+	// Since we're not dealing with the real block chain, set the block reward
 	// maturity to 1.
-	dag.TstSetCoinbaseMaturity(1)
+	dag.TstSetBlockRewardMaturity(1)
 
 	guard := monkey.Patch(targetFunction, replacementFunction)
 	defer guard.Unpatch()

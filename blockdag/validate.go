@@ -861,7 +861,7 @@ func ensureNoDuplicateTx(block *blockNode, utxoSet UTXOSet,
 
 // CheckTransactionInputs performs a series of checks on the inputs to a
 // transaction to ensure they are valid.  An example of some of the checks
-// include verifying all inputs exist, ensuring the coinbase seasoning
+// include verifying all inputs exist, ensuring the block reward seasoning
 // requirements are met, detecting double spends, validating all values and fees
 // are in the legal range and the total output amount doesn't exceed the input
 // amount, and verifying the signatures to prove the spender was the owner of
@@ -894,14 +894,14 @@ func CheckTransactionInputs(tx *util.Tx, txHeight int32, utxoSet UTXOSet, dagPar
 		if entry.IsBlockReward() {
 			originHeight := entry.BlockHeight()
 			blocksSincePrev := txHeight - originHeight
-			coinbaseMaturity := int32(dagParams.BlockRewardMaturity)
-			if blocksSincePrev < coinbaseMaturity {
-				str := fmt.Sprintf("tried to spend coinbase "+
+			blockRewardMaturity := int32(dagParams.BlockRewardMaturity)
+			if blocksSincePrev < blockRewardMaturity {
+				str := fmt.Sprintf("tried to spend block reward "+
 					"transaction output %v from height %v "+
 					"at height %v before required maturity "+
 					"of %v blocks", txIn.PreviousOutPoint,
 					originHeight, txHeight,
-					coinbaseMaturity)
+					blockRewardMaturity)
 				return 0, ruleError(ErrImmatureSpend, str)
 			}
 		}
@@ -986,12 +986,6 @@ func (dag *BlockDAG) checkConnectToPastUTXO(block *blockNode, pastUTXO UTXOSet,
 	totalSigOps := 0
 	for _, tx := range transactions {
 		numsigOps := CountSigOps(tx)
-		// Since the first (and only the first) transaction has
-		// already been verified to be a coinbase transaction,
-		// use i == 0 as an optimization for the flag to
-		// countP2SHSigOps for whether or not the transaction is
-		// a coinbase transaction rather than having to do a
-		// full coinbase check again.
 		numP2SHSigOps, err := CountP2SHSigOps(tx, IsBlockReward(tx), pastUTXO)
 		if err != nil {
 			return err
@@ -1106,10 +1100,12 @@ func (dag *BlockDAG) checkConnectToPastUTXO(block *blockNode, pastUTXO UTXOSet,
 
 // countSpentOutputs returns the number of utxos the passed block spends.
 func countSpentOutputs(block *util.Block) int {
-	// Exclude the coinbase transaction since it can't spend anything.
+	// Exclude the block reward transactions since they can't spend anything.
 	var numSpent int
 	for _, tx := range block.Transactions()[1:] {
-		numSpent += len(tx.MsgTx().TxIn)
+		if !IsFeeTransaction(tx) {
+			numSpent += len(tx.MsgTx().TxIn)
+		}
 	}
 	return numSpent
 }

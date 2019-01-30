@@ -50,6 +50,8 @@ func TestErrorCodeStringer(t *testing.T) {
 		{ErrBadCoinbaseValue, "ErrBadCoinbaseValue"},
 		{ErrMissingCoinbaseHeight, "ErrMissingCoinbaseHeight"},
 		{ErrBadCoinbaseHeight, "ErrBadCoinbaseHeight"},
+		{ErrBadFeeTransaction, "ErrBadFeeTransaction"},
+		{ErrTooManyFeeTransactions, "ErrTooManyFeeTransactions"},
 		{ErrScriptMalformed, "ErrScriptMalformed"},
 		{ErrScriptValidation, "ErrScriptValidation"},
 		{ErrParentBlockUnknown, "ErrParentBlockUnknown"},
