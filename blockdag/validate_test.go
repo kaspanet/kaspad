@@ -635,6 +635,78 @@ func TestValidateParents(t *testing.T) {
 	}
 }
 
+func TestCheckTransactionSanity(t *testing.T) {
+	tests := []struct {
+		name                   string
+		numInputs              uint32
+		numOutputs             uint32
+		outputValue            uint64
+		nodeSubnetworkID       subnetworkid.SubnetworkID
+		txSubnetworkData       *txSubnetworkData
+		extraModificationsFunc func(*wire.MsgTx)
+		expectedErr            error
+	}{
+		{"good one", 1, 1, 1, wire.SubnetworkIDNative, nil, nil, nil},
+		{"no inputs", 0, 1, 1, wire.SubnetworkIDNative, nil, nil, ruleError(ErrNoTxInputs, "")},
+		{"no outputs", 1, 0, 1, wire.SubnetworkIDNative, nil, nil, ruleError(ErrNoTxOutputs, "")},
+		{"too big", 100000, 1, 1, wire.SubnetworkIDNative, nil, nil, ruleError(ErrTxTooBig, "")},
+		{"too much satoshi in one output", 1, 1, util.MaxSatoshi + 1,
+			wire.SubnetworkIDNative,
+			nil,
+			nil,
+			ruleError(ErrBadTxOutValue, "")},
+		{"too much satoshi in total outputs", 1, 2, util.MaxSatoshi - 1,
+			wire.SubnetworkIDNative,
+			nil,
+			nil,
+			ruleError(ErrBadTxOutValue, "")},
+		{"duplicate inputs", 2, 1, 1,
+			wire.SubnetworkIDNative,
+			nil,
+			func(tx *wire.MsgTx) { tx.TxIn[1].PreviousOutPoint.Index = 0 },
+			ruleError(ErrDuplicateTxInputs, "")},
+		{"non-zero gas in DAGCoin", 1, 1, 0,
+			wire.SubnetworkIDNative,
+			&txSubnetworkData{wire.SubnetworkIDNative, 1, []byte{}},
+			nil,
+			ruleError(ErrInvalidGas, "")},
+		{"non-zero gas in subnetwork registry", 1, 1, 0,
+			wire.SubnetworkIDNative,
+			&txSubnetworkData{wire.SubnetworkIDNative, 1, []byte{}},
+			nil,
+			ruleError(ErrInvalidGas, "")},
+		{"non-zero payload in DAGCoin", 1, 1, 0,
+			wire.SubnetworkIDNative,
+			&txSubnetworkData{wire.SubnetworkIDNative, 0, []byte{1}},
+			nil,
+			ruleError(ErrInvalidPayload, "")},
+		{"payload in subnetwork registry isn't 8 bytes", 1, 1, 0,
+			wire.SubnetworkIDNative,
+			&txSubnetworkData{wire.SubnetworkIDNative, 0, []byte{1, 2, 3, 4, 5, 6, 7}},
+			nil,
+			ruleError(ErrInvalidPayload, "")},
+		{"payload in other subnetwork isn't 0 bytes", 1, 1, 0,
+			subnetworkid.SubnetworkID{123},
+			&txSubnetworkData{subnetworkid.SubnetworkID{234}, 0, []byte{1}},
+			nil,
+			ruleError(ErrInvalidPayload, "")},
+	}
+
+	for _, test := range tests {
+		tx := createTxForTest(test.numInputs, test.numOutputs, test.outputValue, test.txSubnetworkData)
+
+		if test.extraModificationsFunc != nil {
+			test.extraModificationsFunc(tx)
+		}
+
+		err := CheckTransactionSanity(util.NewTx(tx), &test.nodeSubnetworkID)
+		if e := checkRuleError(err, test.expectedErr); e != nil {
+			t.Errorf("TestCheckTransactionSanity: '%s': %v", test.name, e)
+			continue
+		}
+	}
+}
+
 // Block100000 defines block 100,000 of the block DAG.  It is used to
 // test Block operations.
 var Block100000 = wire.MsgBlock{
@@ -1157,76 +1229,4 @@ var BlockWithWrongTxOrder = wire.MsgBlock{
 			SubnetworkID: wire.SubnetworkIDNative,
 		},
 	},
-}
-
-func TestCheckTransactionSanity(t *testing.T) {
-	tests := []struct {
-		name                   string
-		numInputs              uint32
-		numOutputs             uint32
-		outputValue            uint64
-		nodeSubnetworkID       subnetworkid.SubnetworkID
-		txSubnetworkData       *txSubnetworkData
-		extraModificationsFunc func(*wire.MsgTx)
-		expectedErr            error
-	}{
-		{"good one", 1, 1, 1, wire.SubnetworkIDNative, nil, nil, nil},
-		{"no inputs", 0, 1, 1, wire.SubnetworkIDNative, nil, nil, ruleError(ErrNoTxInputs, "")},
-		{"no outputs", 1, 0, 1, wire.SubnetworkIDNative, nil, nil, ruleError(ErrNoTxOutputs, "")},
-		{"too big", 100000, 1, 1, wire.SubnetworkIDNative, nil, nil, ruleError(ErrTxTooBig, "")},
-		{"too much satoshi in one output", 1, 1, util.MaxSatoshi + 1,
-			wire.SubnetworkIDNative,
-			nil,
-			nil,
-			ruleError(ErrBadTxOutValue, "")},
-		{"too much satoshi in total outputs", 1, 2, util.MaxSatoshi - 1,
-			wire.SubnetworkIDNative,
-			nil,
-			nil,
-			ruleError(ErrBadTxOutValue, "")},
-		{"duplicate inputs", 2, 1, 1,
-			wire.SubnetworkIDNative,
-			nil,
-			func(tx *wire.MsgTx) { tx.TxIn[1].PreviousOutPoint.Index = 0 },
-			ruleError(ErrDuplicateTxInputs, "")},
-		{"non-zero gas in DAGCoin", 1, 1, 0,
-			wire.SubnetworkIDNative,
-			&txSubnetworkData{wire.SubnetworkIDNative, 1, []byte{}},
-			nil,
-			ruleError(ErrInvalidGas, "")},
-		{"non-zero gas in subnetwork registry", 1, 1, 0,
-			wire.SubnetworkIDNative,
-			&txSubnetworkData{wire.SubnetworkIDNative, 1, []byte{}},
-			nil,
-			ruleError(ErrInvalidGas, "")},
-		{"non-zero payload in DAGCoin", 1, 1, 0,
-			wire.SubnetworkIDNative,
-			&txSubnetworkData{wire.SubnetworkIDNative, 0, []byte{1}},
-			nil,
-			ruleError(ErrInvalidPayload, "")},
-		{"payload in subnetwork registry isn't 8 bytes", 1, 1, 0,
-			wire.SubnetworkIDNative,
-			&txSubnetworkData{wire.SubnetworkIDNative, 0, []byte{1, 2, 3, 4, 5, 6, 7}},
-			nil,
-			ruleError(ErrInvalidPayload, "")},
-		{"payload in other subnetwork isn't 0 bytes", 1, 1, 0,
-			subnetworkid.SubnetworkID{123},
-			&txSubnetworkData{subnetworkid.SubnetworkID{234}, 0, []byte{1}},
-			nil,
-			ruleError(ErrInvalidPayload, "")},
-	}
-
-	for _, test := range tests {
-		tx := createTxForTest(test.numInputs, test.numOutputs, test.outputValue, test.txSubnetworkData)
-
-		if test.extraModificationsFunc != nil {
-			test.extraModificationsFunc(tx)
-		}
-
-		err := CheckTransactionSanity(util.NewTx(tx), &test.nodeSubnetworkID)
-		if e := checkRuleError(err, test.expectedErr); e != nil {
-			t.Errorf("TestCheckTransactionSanity: '%s': %v", test.name, e)
-			continue
-		}
-	}
 }
