@@ -760,8 +760,27 @@ type blockFeeData struct {
 
 // getParentsFeeData returns the data that is needed in order to build the block's fee transactions
 func (node *blockNode) getParentsFeeData(dag *BlockDAG, acceptedTxData []*TxWithBlockHash) (map[daghash.Hash]*blockFeeData, error) {
+	var acceptedTxDataWithSelectedParent []*TxWithBlockHash
+	// acceptedTxData doesn't include the selected parent transactions, so we need to manually add them
+	err := dag.db.View(func(dbTx database.Tx) error {
+		selectedParnetBlock, err := dbFetchBlockByNode(dbTx, node.selectedParent)
+		if err != nil {
+			return err
+		}
+		acceptedTxDataWithSelectedParent = make([]*TxWithBlockHash, len(acceptedTxData), len(acceptedTxData)+len(selectedParnetBlock.Transactions()))
+		copy(acceptedTxDataWithSelectedParent, acceptedTxData)
+		for _, tx := range selectedParnetBlock.Transactions() {
+			acceptedTx := &TxWithBlockHash{
+				InBlock: &node.selectedParent.hash,
+				Tx:      tx,
+			}
+			acceptedTxDataWithSelectedParent = append(acceptedTxDataWithSelectedParent, acceptedTx)
+		}
+		return nil
+	})
+
 	blocksData := make(map[daghash.Hash]*blockFeeData)
-	for _, acceptedTx := range acceptedTxData {
+	for _, acceptedTx := range acceptedTxDataWithSelectedParent {
 		if node.parents.containsHash(acceptedTx.InBlock) {
 			if _, ok := blocksData[*acceptedTx.InBlock]; !ok {
 				blocksData[*acceptedTx.InBlock] = &blockFeeData{}
@@ -769,7 +788,7 @@ func (node *blockNode) getParentsFeeData(dag *BlockDAG, acceptedTxData []*TxWith
 			blocksData[*acceptedTx.InBlock].txCount++
 		}
 	}
-	for _, acceptedTx := range acceptedTxData {
+	for _, acceptedTx := range acceptedTxDataWithSelectedParent {
 		if blocksData[*acceptedTx.InBlock] != nil {
 			if blocksData[*acceptedTx.InBlock].transactions == nil {
 				blocksData[*acceptedTx.InBlock].transactions = make([]*wire.MsgTx, 0, blocksData[*acceptedTx.InBlock].txCount)
@@ -782,20 +801,6 @@ func (node *blockNode) getParentsFeeData(dag *BlockDAG, acceptedTxData []*TxWith
 			}
 		}
 	}
-
-	// acceptedTxData doesn't include the selected parent transactions, so we need to manually add them
-	blocksData[node.selectedParent.hash] = &blockFeeData{}
-	err := dag.db.View(func(dbTx database.Tx) error {
-		selectedParnetBlock, err := dbFetchBlockByNode(dbTx, node.selectedParent)
-		if err != nil {
-			return err
-		}
-		blocksData[node.selectedParent.hash].transactions = make([]*wire.MsgTx, 0, len(selectedParnetBlock.Transactions()))
-		for _, tx := range selectedParnetBlock.Transactions() {
-			blocksData[node.selectedParent.hash].transactions = append(blocksData[node.selectedParent.hash].transactions, tx.MsgTx())
-		}
-		return nil
-	})
 	if err != nil {
 		return nil, err
 	}
@@ -835,6 +840,7 @@ func (node *blockNode) buildFeeTransactions(dag *BlockDAG, acceptedTxData []*TxW
 						TxID:  daghash.TxID(hash),
 						Index: math.MaxUint32,
 					},
+					Sequence: wire.MaxTxInSequenceNum,
 				},
 			},
 			TxOut: []*wire.TxOut{
@@ -900,7 +906,7 @@ func (node *blockNode) validateFeeTransactions(dag *BlockDAG, acceptedTxData []*
 
 	for _, tx := range nodeTransactions[len(expectedFeeTransactions)+1:] {
 		if IsFeeTransaction(tx) {
-			return ruleError(ErrTooManyFeeTransactions, fmt.Sprintf("Found more fee transactions then what is allowed"))
+			return ruleError(ErrTooManyFeeTransactions, fmt.Sprintf("Found more fee transactions than what is allowed"))
 		}
 	}
 	return nil
