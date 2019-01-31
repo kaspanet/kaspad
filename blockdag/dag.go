@@ -910,21 +910,21 @@ func calculateFees(node *blockNode, transactions []*wire.MsgTx, dag *BlockDAG) (
 	totalFees := uint64(0)
 	for _, tx := range transactions {
 		if !tx.IsCoinBase() {
-			for _, txo := range tx.TxOut {
-				if totalFees+txo.Value < totalFees {
-					return 0, ruleError(ErrBadFees, "total fees overflows accumulator")
-				}
-				totalFees += txo.Value
-			}
 			for _, txin := range tx.TxIn {
 				prevTxOut, err := dag.getTXO(node, txin.PreviousOutPoint)
 				if err != nil {
 					return 0, err
 				}
-				if totalFees-prevTxOut.Value > totalFees {
+				if totalFees+prevTxOut.Value < totalFees {
 					return 0, ruleError(ErrBadFees, "total fees overflows accumulator")
 				}
-				totalFees -= prevTxOut.Value
+				totalFees += prevTxOut.Value
+			}
+			for _, txo := range tx.TxOut {
+				if totalFees-txo.Value > totalFees {
+					return 0, ruleError(ErrBadFees, "total fees overflows accumulator")
+				}
+				totalFees -= txo.Value
 			}
 		}
 	}
