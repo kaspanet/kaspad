@@ -67,16 +67,15 @@ func IsCoinBase(tx *util.Tx) bool {
 	return tx.MsgTx().IsCoinBase()
 }
 
-// IsBlockReward determins whether or not a transaction is a block reward (a fee transaction or block reward)
+// IsBlockReward determines whether or not a transaction is a block reward (a fee transaction or block reward)
 func IsBlockReward(tx *util.Tx) bool {
 	return tx.MsgTx().IsBlockReward()
 }
 
 // IsFeeTransaction determines whether or not a transaction is a fee transaction.  A fee
 // transaction is a special transaction created by miners that distributes fees to the
-// previous blocks' miners.  This is represented in the block dag by a transaction with
-// a single input that has a previous output transaction index set to the maximum value
-// and the relevant block hash, instead of previous transaction id.
+// previous blocks' miners.  Each input of the fee transaction should set index to maximum
+// value and reference the relevant block id, instead of previous transaction id.
 func IsFeeTransaction(tx *util.Tx) bool {
 	return tx.MsgTx().IsFeeTransaction()
 }
@@ -154,16 +153,18 @@ func CalcBlockSubsidy(height int32, dagParams *dagconfig.Params) uint64 {
 
 // CheckTransactionSanity performs some preliminary checks on a transaction to
 // ensure it is sane.  These checks are context free.
-func CheckTransactionSanity(tx *util.Tx, subnetworkID *subnetworkid.SubnetworkID) error {
+func CheckTransactionSanity(tx *util.Tx, subnetworkID *subnetworkid.SubnetworkID, isFeeTransaction bool) error {
 	// A transaction must have at least one input.
 	msgTx := tx.MsgTx()
 	if len(msgTx.TxIn) == 0 {
 		return ruleError(ErrNoTxInputs, "transaction has no inputs")
 	}
 
-	// A transaction must have at least one output.
-	if len(msgTx.TxOut) == 0 {
-		return ruleError(ErrNoTxOutputs, "transaction has no outputs")
+	if !isFeeTransaction {
+		// A transaction must have at least one output.
+		if len(msgTx.TxOut) == 0 {
+			return ruleError(ErrNoTxOutputs, "transaction has no outputs")
+		}
 	}
 
 	// A transaction must not exceed the maximum allowed block payload when
@@ -500,13 +501,23 @@ func (dag *BlockDAG) checkBlockSanity(block *util.Block, flags BehaviorFlags) er
 			"block is not a coinbase")
 	}
 
+	if !IsFeeTransaction(transactions[1]) {
+		return ruleError(ErrSecondTxNotFeeTransaction, "second transaction in "+
+			"block is not a fee transaction")
+	}
+
 	// A block must not have more than one coinbase. And transactions must be
 	// ordered by subnetwork
-	for i, tx := range transactions[1:] {
+	for i, tx := range transactions[2:] {
 		if IsCoinBase(tx) {
 			str := fmt.Sprintf("block contains second coinbase at "+
-				"index %d", i+1)
+				"index %d", i+2)
 			return ruleError(ErrMultipleCoinbases, str)
+		}
+		if IsFeeTransaction(tx) {
+			str := fmt.Sprintf("block contains second fee transaction at "+
+				"index %d", i+2)
+			return ruleError(ErrMultipleFeeTransactions, str)
 		}
 		if subnetworkid.Less(&tx.MsgTx().SubnetworkID, &transactions[i].MsgTx().SubnetworkID) {
 			return ruleError(ErrTransactionsNotSorted, "transactions must be sorted by subnetwork")
@@ -515,8 +526,9 @@ func (dag *BlockDAG) checkBlockSanity(block *util.Block, flags BehaviorFlags) er
 
 	// Do some preliminary checks on each transaction to ensure they are
 	// sane before continuing.
-	for _, tx := range transactions {
-		err := CheckTransactionSanity(tx, dag.subnetworkID)
+	for i, tx := range transactions {
+		isFeeTransaction := i == 1
+		err := CheckTransactionSanity(tx, dag.subnetworkID, isFeeTransaction)
 		if err != nil {
 			return err
 		}
@@ -984,9 +996,15 @@ func (dag *BlockDAG) checkConnectToPastUTXO(block *blockNode, pastUTXO UTXOSet,
 	// signature operations in each of the input transaction public key
 	// scripts.
 	totalSigOps := 0
-	for _, tx := range transactions {
+	for i, tx := range transactions {
 		numsigOps := CountSigOps(tx)
-		numP2SHSigOps, err := CountP2SHSigOps(tx, IsBlockReward(tx), pastUTXO)
+		// Since the first transaction has already been verified to be a
+		// coinbase transaction, and the second transaction has already
+		// been verified to be a fee transaction, use i < 2 as an
+		// optimization for the flag to countP2SHSigOps for whether or
+		// not the transaction is a block reward transaction rather than
+		// having to do a full coinbase and fee transaction check again.
+		numP2SHSigOps, err := CountP2SHSigOps(tx, i < 2, pastUTXO)
 		if err != nil {
 			return err
 		}

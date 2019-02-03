@@ -183,11 +183,16 @@ const (
 	// the expected value.
 	ErrBadCoinbaseHeight
 
-	// ErrBadFeeTransaction indicates that the relevant fee transaction is not build as expected
+	// ErrSecondTxNotFeeTransaction indicates the second transaction in
+	// a block is not a fee transaction.
+	ErrSecondTxNotFeeTransaction
+
+	// ErrBadFeeTransaction indicates that the block's fee transaction is not build as expected
 	ErrBadFeeTransaction
 
-	// ErrTooManyFeeTransactions indicates a block contains more fee transactions than it should (one transaction for each blue parent)
-	ErrTooManyFeeTransactions
+	// ErrMultipleFeeTransactions indicates a block contains more than one
+	// fee transaction.
+	ErrMultipleFeeTransactions
 
 	// ErrScriptMalformed indicates a transaction script is malformed in
 	// some way.  For example, it might be longer than the maximum allowed
@@ -272,7 +277,7 @@ var errorCodeStrings = map[ErrorCode]string{
 	ErrMissingCoinbaseHeight:     "ErrMissingCoinbaseHeight",
 	ErrBadCoinbaseHeight:         "ErrBadCoinbaseHeight",
 	ErrBadFeeTransaction:         "ErrBadFeeTransaction",
-	ErrTooManyFeeTransactions:    "ErrTooManyFeeTransactions",
+	ErrMultipleFeeTransactions:   "ErrMultipleFeeTransactions",
 	ErrScriptMalformed:           "ErrScriptMalformed",
 	ErrScriptValidation:          "ErrScriptValidation",
 	ErrParentBlockUnknown:        "ErrParentBlockUnknown",

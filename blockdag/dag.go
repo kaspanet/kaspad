@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/daglabs/btcd/util/subnetworkid"
+	"github.com/daglabs/btcd/util/txsort"
 
 	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/dagconfig/daghash"
@@ -625,13 +626,13 @@ func (dag *BlockDAG) checkFinalityRulesAndGetFinalityPointCandidate(node *blockN
 	return finalityPointCandidate, nil
 }
 
-// NextBlockFeeTransactions prepares the fee transactions for the next mined block
-func (dag *BlockDAG) NextBlockFeeTransactions() ([]*wire.MsgTx, error) {
+// NextBlockFeeTransaction prepares the fee transaction for the next mined block
+func (dag *BlockDAG) NextBlockFeeTransaction() (*wire.MsgTx, error) {
 	_, acceptedTxData, err := dag.virtual.blockNode.verifyAndBuildUTXO(dag.virtual, dag, nil, true)
 	if err != nil {
 		return nil, err
 	}
-	return dag.virtual.blockNode.buildFeeTransactions(dag, acceptedTxData)
+	return dag.virtual.blockNode.buildFeeTransaction(dag, acceptedTxData)
 }
 
 // applyUTXOChanges does the following:
@@ -655,7 +656,7 @@ func (dag *BlockDAG) applyUTXOChanges(node *blockNode, block *util.Block, fastAd
 		return nil, nil, errors.New(newErrString)
 	}
 
-	err = node.validateFeeTransactions(dag, acceptedTxData, block.Transactions())
+	err = node.validateFeeTransaction(dag, acceptedTxData, block.Transactions())
 	if err != nil {
 		return nil, nil, err
 	}
@@ -758,8 +759,8 @@ type blockFeeData struct {
 	txCount      uint64
 }
 
-// getParentsFeeData returns the data that is needed in order to build the block's fee transactions
-func (node *blockNode) getParentsFeeData(dag *BlockDAG, acceptedTxData []*TxWithBlockHash) (map[daghash.Hash]*blockFeeData, error) {
+// getBluesFeeData returns the data that is needed in order to build the block's fee transaction
+func (node *blockNode) getBluesFeeData(dag *BlockDAG, acceptedTxData []*TxWithBlockHash) (map[daghash.Hash]*blockFeeData, error) {
 	var acceptedTxDataWithSelectedParent []*TxWithBlockHash
 	// acceptedTxData doesn't include the selected parent transactions, so we need to manually add them
 	err := dag.db.View(func(dbTx database.Tx) error {
@@ -781,12 +782,10 @@ func (node *blockNode) getParentsFeeData(dag *BlockDAG, acceptedTxData []*TxWith
 
 	blocksData := make(map[daghash.Hash]*blockFeeData)
 	for _, acceptedTx := range acceptedTxDataWithSelectedParent {
-		if node.parents.containsHash(acceptedTx.InBlock) {
-			if _, ok := blocksData[*acceptedTx.InBlock]; !ok {
-				blocksData[*acceptedTx.InBlock] = &blockFeeData{}
-			}
-			blocksData[*acceptedTx.InBlock].txCount++
+		if _, ok := blocksData[*acceptedTx.InBlock]; !ok {
+			blocksData[*acceptedTx.InBlock] = &blockFeeData{}
 		}
+		blocksData[*acceptedTx.InBlock].txCount++
 	}
 	for _, acceptedTx := range acceptedTxDataWithSelectedParent {
 		if blocksData[*acceptedTx.InBlock] != nil {
@@ -807,54 +806,45 @@ func (node *blockNode) getParentsFeeData(dag *BlockDAG, acceptedTxData []*TxWith
 	return blocksData, nil
 }
 
-// buildFeeTransactions returns an ordered slice of all of the fee transactions that should exist on this block
-func (node *blockNode) buildFeeTransactions(dag *BlockDAG, acceptedTxData []*TxWithBlockHash) ([]*wire.MsgTx, error) {
-	parentsFeeData, err := node.getParentsFeeData(dag, acceptedTxData)
+// buildFeeTransaction returns the expected fee transaction for the current block
+func (node *blockNode) buildFeeTransaction(dag *BlockDAG, acceptedTxData []*TxWithBlockHash) (*wire.MsgTx, error) {
+	bluesFeeData, err := node.getBluesFeeData(dag, acceptedTxData)
 	if err != nil {
 		return nil, err
 	}
 
-	blockHashes := make([]daghash.Hash, 0, len(parentsFeeData))
-	for hash := range parentsFeeData {
-		blockHashes = append(blockHashes, hash)
-	}
-	daghash.Sort(blockHashes)
+	feeTx := wire.NewMsgTx(1)
 
-	feeTransactions := make([]*wire.MsgTx, 0, len(blockHashes))
+	for _, blue := range node.blues {
 
-	for _, hash := range blockHashes {
-		parentNode := dag.index.LookupNode(&hash)
-		totalFees, err := calculateFees(parentNode, parentsFeeData[hash].transactions, dag)
+		feeTx.AddTxIn(&wire.TxIn{
+			SignatureScript: []byte{},
+			PreviousOutPoint: wire.OutPoint{
+				TxID:  daghash.TxID(blue.hash),
+				Index: math.MaxUint32,
+			},
+			Sequence: wire.MaxTxInSequenceNum,
+		})
+
+		if _, ok := bluesFeeData[blue.hash]; !ok {
+			continue
+		}
+
+		totalFees, err := calculateFees(blue, bluesFeeData[blue.hash].transactions, dag)
 		if err != nil {
 			return nil, err
 		}
+
 		if totalFees == 0 {
 			continue
 		}
 
-		feeTx := &wire.MsgTx{
-			TxIn: []*wire.TxIn{
-				{
-					SignatureScript: []byte{},
-					PreviousOutPoint: wire.OutPoint{
-						TxID:  daghash.TxID(hash),
-						Index: math.MaxUint32,
-					},
-					Sequence: wire.MaxTxInSequenceNum,
-				},
-			},
-			TxOut: []*wire.TxOut{
-				{
-					Value:    totalFees,
-					PkScript: parentsFeeData[hash].pkScript,
-				},
-			},
-			LockTime:     0,
-			SubnetworkID: wire.SubnetworkIDNative,
-		}
-		feeTransactions = append(feeTransactions, feeTx)
+		feeTx.AddTxOut(&wire.TxOut{
+			Value:    totalFees,
+			PkScript: bluesFeeData[blue.hash].pkScript,
+		})
 	}
-	return feeTransactions, nil
+	return txsort.Sort(feeTx), nil
 }
 
 func (dag *BlockDAG) getTXO(outpointBlockNode *blockNode, outpoint wire.OutPoint) (*wire.TxOut, error) {
@@ -892,30 +882,23 @@ func (dag *BlockDAG) getTXO(outpointBlockNode *blockNode, outpoint wire.OutPoint
 	return nil, fmt.Errorf("Couldn't find txo %v", outpoint)
 }
 
-func (node *blockNode) validateFeeTransactions(dag *BlockDAG, acceptedTxData []*TxWithBlockHash, nodeTransactions []*util.Tx) error {
-	expectedFeeTransactions, err := node.buildFeeTransactions(dag, acceptedTxData)
+func (node *blockNode) validateFeeTransaction(dag *BlockDAG, acceptedTxData []*TxWithBlockHash, nodeTransactions []*util.Tx) error {
+	expectedFeeTransaction, err := node.buildFeeTransaction(dag, acceptedTxData)
 	if err != nil {
 		return err
 	}
 
-	for i, tx := range nodeTransactions[1 : len(expectedFeeTransactions)+1] {
-		if expectedFeeTransactions[i].TxHash() != *tx.Hash() {
-			return ruleError(ErrBadFeeTransaction, fmt.Sprintf("Fee transaction %v is not built as expected", tx.Hash()))
-		}
+	if expectedFeeTransaction.TxHash() != *nodeTransactions[1].Hash() {
+		return ruleError(ErrBadFeeTransaction, fmt.Sprintf("Fee transaction is not built as expected"))
 	}
 
-	for _, tx := range nodeTransactions[len(expectedFeeTransactions)+1:] {
-		if IsFeeTransaction(tx) {
-			return ruleError(ErrTooManyFeeTransactions, fmt.Sprintf("Found more fee transactions than what is allowed"))
-		}
-	}
 	return nil
 }
 
 func calculateFees(node *blockNode, transactions []*wire.MsgTx, dag *BlockDAG) (uint64, error) {
 	totalFees := uint64(0)
 	for _, tx := range transactions {
-		if !tx.IsCoinBase() {
+		if !tx.IsBlockReward() {
 			for _, txin := range tx.TxIn {
 				prevTxOut, err := dag.getTXO(node, txin.PreviousOutPoint)
 				if err != nil {

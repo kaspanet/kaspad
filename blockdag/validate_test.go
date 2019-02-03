@@ -699,7 +699,7 @@ func TestCheckTransactionSanity(t *testing.T) {
 			test.extraModificationsFunc(tx)
 		}
 
-		err := CheckTransactionSanity(util.NewTx(tx), &test.nodeSubnetworkID)
+		err := CheckTransactionSanity(util.NewTx(tx), &test.nodeSubnetworkID, false)
 		if e := checkRuleError(err, test.expectedErr); e != nil {
 			t.Errorf("TestCheckTransactionSanity: '%s': %v", test.name, e)
 			continue

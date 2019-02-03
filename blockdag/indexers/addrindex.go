@@ -664,8 +664,11 @@ func (idx *AddrIndex) indexPkScript(data writeIndexData, pkScript []byte, txIdx 
 // the passed map.
 func (idx *AddrIndex) indexBlock(data writeIndexData, block *util.Block, dag *blockdag.BlockDAG) {
 	for txIdx, tx := range block.Transactions() {
-		// Block Reward transactions do not reference any inputs
-		if !blockdag.IsBlockReward(tx) {
+		// Coinbases do not reference any inputs.  Since the block is
+		// required to have already gone through full validation, it has
+		// already been proven on the first transaction in the block is
+		// a coinbase, and the second one is a fee transaction.
+		if txIdx > 1 {
 			for _, txIn := range tx.MsgTx().TxIn {
 				// The UTXO should always have the input since
 				// the index contract requires it, however, be
