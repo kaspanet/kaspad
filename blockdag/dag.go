@@ -27,7 +27,8 @@ const (
 	// queued.
 	maxOrphanBlocks = 100
 
-	finalityInterval = 100
+	// FinalityInterval is the interval that determines the finality window of the DAG.
+	FinalityInterval = 100
 )
 
 // BlockLocator is used to help locate a specific block.  The algorithm for
@@ -603,6 +604,14 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block, fastAdd bo
 	dag.dagLock.Lock()
 
 	return nil
+}
+
+// LastFinalityPointHash returns the hash of the last finality point
+func (dag *BlockDAG) LastFinalityPointHash() *daghash.Hash {
+	if dag.lastFinalityPoint == nil {
+		return nil
+	}
+	return &dag.lastFinalityPoint.hash
 }
 
 func (dag *BlockDAG) checkFinalityRulesAndGetFinalityPointCandidate(node *blockNode) (*blockNode, error) {

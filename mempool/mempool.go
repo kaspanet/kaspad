@@ -739,9 +739,9 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rateLimit, rejectDu
 	}
 
 	// Perform preliminary sanity checks on the transaction.  This makes
-	// use of blockchain which contains the invariant rules for what
+	// use of blockDAG which contains the invariant rules for what
 	// transactions are allowed into blocks.
-	err := blockdag.CheckTransactionSanity(tx, subnetworkID)
+	err := blockdag.CheckTransactionSanity(tx, subnetworkID, false)
 	if err != nil {
 		if cerr, ok := err.(blockdag.RuleError); ok {
 			return nil, nil, dagRuleError(cerr)

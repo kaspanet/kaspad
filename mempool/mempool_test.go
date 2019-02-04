@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/daglabs/btcd/util/subnetworkid"
+	"github.com/daglabs/btcd/util/testtools"
 
 	"bou.ke/monkey"
 	"github.com/daglabs/btcd/blockdag"
@@ -284,7 +285,7 @@ func newPoolHarness(dagParams *dagconfig.Params, numOutputs uint32, dbName strin
 
 	// Create a new database and chain instance to run tests against.
 	dag, teardownFunc, err := blockdag.DAGSetup(dbName, blockdag.Config{
-		DAGParams:    &dagconfig.MainNetParams,
+		DAGParams:    dagParams,
 		SubnetworkID: &wire.SubnetworkIDSupportsAll,
 	})
 	if err != nil {
@@ -340,7 +341,11 @@ func newPoolHarness(dagParams *dagconfig.Params, numOutputs uint32, dbName strin
 	for i := uint32(0); i < numOutputs; i++ {
 		outpoints = append(outpoints, txOutToSpendableOutpoint(coinbase, i))
 	}
-	harness.chain.SetHeight(int32(dagParams.BlockRewardMaturity) + curHeight)
+	if dagParams.BlockRewardMaturity != 0 {
+		harness.chain.SetHeight(int32(dagParams.BlockRewardMaturity) + curHeight)
+	} else {
+		harness.chain.SetHeight(curHeight + 1)
+	}
 	harness.chain.SetMedianTimePast(time.Now())
 
 	return &harness, outpoints, teardownFunc, nil
@@ -458,7 +463,9 @@ func (p *poolHarness) createTx(outpoint spendableOutpoint, fee uint64, numOutput
 }
 
 func TestProcessTransaction(t *testing.T) {
-	harness, spendableOuts, teardownFunc, err := newPoolHarness(&dagconfig.MainNetParams, 6, "TestProcessTransaction")
+	params := dagconfig.SimNetParams
+	params.BlockRewardMaturity = 0
+	harness, spendableOuts, teardownFunc, err := newPoolHarness(&params, 6, "TestProcessTransaction")
 	if err != nil {
 		t.Fatalf("unable to create test pool: %v", err)
 	}
@@ -720,6 +727,8 @@ func TestProcessTransaction(t *testing.T) {
 	}
 	harness.txPool.cfg.CalcSequenceLock = calcSequenceLock
 
+	// This is done in order to increase the input age, so the tx priority will be higher
+	harness.chain.SetHeight(curHeight + 100)
 	harness.txPool.cfg.Policy.DisableRelayPriority = false
 	//Transaction should be accepted to mempool although it has low fee, because its priority is above mining.MinHighPriority
 	tx, err = harness.createTx(spendableOuts[3], 0, 1)
@@ -1845,7 +1854,9 @@ var dummyBlock = wire.MsgBlock{
 }
 
 func TestTransactionGas(t *testing.T) {
-	harness, spendableOuts, teardownFunc, err := newPoolHarness(&dagconfig.MainNetParams, 6, "TestTransactionGas")
+	params := dagconfig.SimNetParams
+	params.BlockRewardMaturity = 1
+	harness, spendableOuts, teardownFunc, err := newPoolHarness(&params, 6, "TestTransactionGas")
 	if err != nil {
 		t.Fatalf("unable to create test pool: %v", err)
 	}
@@ -1853,7 +1864,7 @@ func TestTransactionGas(t *testing.T) {
 	//	tc := &testContext{t, harness}
 
 	const gasLimit = 10000
-	subnetworkID, err := blockdag.RegisterSubnetworkForTest(harness.txPool.cfg.DAG, gasLimit)
+	subnetworkID, err := testtools.RegisterSubnetworkForTest(harness.txPool.cfg.DAG, &params, gasLimit)
 	if err != nil {
 		t.Fatalf("unable to register network: %v", err)
 	}

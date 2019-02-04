@@ -243,7 +243,7 @@ func (d *UTXODiff) WithDiff(diff *UTXODiff) (*UTXODiff, error) {
 			result.toAdd.add(outPoint, utxoEntry)
 		}
 		if diff.toAdd.contains(outPoint) {
-			return nil, ruleError(ErrWithDiff, "WithDiff: transaction both in d.toAdd and in other.toAdd")
+			return nil, ruleError(ErrWithDiff, fmt.Sprintf("WithDiff: outpoint %v both in d.toAdd and in other.toAdd", outPoint))
 		}
 	}
 

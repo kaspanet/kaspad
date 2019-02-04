@@ -276,6 +276,7 @@ var errorCodeStrings = map[ErrorCode]string{
 	ErrBadCoinbaseValue:          "ErrBadCoinbaseValue",
 	ErrMissingCoinbaseHeight:     "ErrMissingCoinbaseHeight",
 	ErrBadCoinbaseHeight:         "ErrBadCoinbaseHeight",
+	ErrSecondTxNotFeeTransaction: "ErrSecondTxNotFeeTransaction",
 	ErrBadFeeTransaction:         "ErrBadFeeTransaction",
 	ErrMultipleFeeTransactions:   "ErrMultipleFeeTransactions",
 	ErrScriptMalformed:           "ErrScriptMalformed",

@@ -208,23 +208,23 @@ type BlockTemplate struct {
 	ValidPayAddress bool
 }
 
-// standardCoinbaseScript returns a standard script suitable for use as the
+// StandardCoinbaseScript returns a standard script suitable for use as the
 // signature script of the coinbase transaction of a new block.  In particular,
 // it starts with the block height that is required by version 2 blocks and adds
 // the extra nonce as well as additional coinbase flags.
-func standardCoinbaseScript(nextBlockHeight int32, extraNonce uint64) ([]byte, error) {
+func StandardCoinbaseScript(nextBlockHeight int32, extraNonce uint64) ([]byte, error) {
 	return txscript.NewScriptBuilder().AddInt64(int64(nextBlockHeight)).
 		AddInt64(int64(extraNonce)).AddData([]byte(CoinbaseFlags)).
 		Script()
 }
 
-// createCoinbaseTx returns a coinbase transaction paying an appropriate subsidy
+// CreateCoinbaseTx returns a coinbase transaction paying an appropriate subsidy
 // based on the passed block height to the provided address.  When the address
 // is nil, the coinbase transaction will instead be redeemable by anyone.
 //
 // See the comment for NewBlockTemplate for more information about why the nil
 // address handling is useful.
-func createCoinbaseTx(params *dagconfig.Params, coinbaseScript []byte, nextBlockHeight int32, addr util.Address) (*util.Tx, error) {
+func CreateCoinbaseTx(params *dagconfig.Params, coinbaseScript []byte, nextBlockHeight int32, addr util.Address) (*util.Tx, error) {
 	// Create the script to pay to the provided payment address if one was
 	// specified.  Otherwise create a script that allows the coinbase to be
 	// redeemable by anyone.
@@ -399,25 +399,23 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 	if err != nil {
 		return nil, err
 	}
-	coinbaseScript, err := standardCoinbaseScript(nextBlockHeight, extraNonce)
+	coinbaseScript, err := StandardCoinbaseScript(nextBlockHeight, extraNonce)
 	if err != nil {
 		return nil, err
 	}
-	coinbaseTx, err := createCoinbaseTx(g.dagParams, coinbaseScript,
+	coinbaseTx, err := CreateCoinbaseTx(g.dagParams, coinbaseScript,
 		nextBlockHeight, payToAddress)
 	if err != nil {
 		return nil, err
 	}
 	numCoinbaseSigOps := int64(blockdag.CountSigOps(coinbaseTx))
 
-	msgFeeTransactions, err := g.dag.NextBlockFeeTransactions()
+	msgFeeTransaction, err := g.dag.NextBlockFeeTransaction()
 	if err != nil {
 		return nil, err
 	}
-	feeTransactions := make([]*util.Tx, len(msgFeeTransactions))
-	for i, msgTx := range msgFeeTransactions {
-		feeTransactions[i] = util.NewTx(msgTx)
-	}
+	feeTransaction := util.NewTx(msgFeeTransaction)
+	feeTxSigOps := int64(blockdag.CountSigOps(feeTransaction))
 
 	// Get the current source transactions and create a priority queue to
 	// hold the transactions which are ready for inclusion into a block
@@ -433,16 +431,15 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 	// generated block with reserved space.  Also create a utxo view to
 	// house all of the input transactions so multiple lookups can be
 	// avoided.
-	blockTxns := make([]*util.Tx, 0, len(sourceTxns)+len(feeTransactions)+1)
-	blockTxns = append(blockTxns, coinbaseTx)
-	blockTxns = append(blockTxns, feeTransactions...)
+	blockTxns := make([]*util.Tx, 0, len(sourceTxns)+2)
+	blockTxns = append(blockTxns, coinbaseTx, feeTransaction)
 	blockUtxos := blockdag.NewDiffUTXOSet(g.dag.UTXOSet(), blockdag.NewUTXODiff())
 
 	// The starting block size is the size of the block header plus the max
 	// possible transaction count size, plus the size of the coinbase
 	// transaction.
 	blockSize := blockHeaderOverhead + uint32(coinbaseTx.MsgTx().SerializeSize())
-	blockSigOps := numCoinbaseSigOps
+	blockSigOps := numCoinbaseSigOps + feeTxSigOps
 	totalFees := uint64(0)
 
 	// Create slices to hold the fees and number of signature operations
@@ -454,12 +451,7 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 	txFees := make([]uint64, 0, len(sourceTxns))
 	txSigOpCounts := make([]int64, 0, len(sourceTxns))
 	txFees = append(txFees, 0) // Updated once known
-	txSigOpCounts = append(txSigOpCounts, numCoinbaseSigOps)
-	for _, tx := range feeTransactions {
-		txSigOps := int64(blockdag.CountSigOps(tx))
-		txSigOpCounts = append(txSigOpCounts, txSigOps)
-		blockSigOps += txSigOps
-	}
+	txSigOpCounts = append(txSigOpCounts, numCoinbaseSigOps, feeTxSigOps)
 
 	log.Debugf("Considering %d transactions for inclusion to new block",
 		len(sourceTxns))
@@ -503,7 +495,7 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 		prioItem := heap.Pop(priorityQueue).(*txPrioItem)
 		tx := prioItem.tx
 
-		if tx.MsgTx().SubnetworkID != wire.SubnetworkIDNative {
+		if tx.MsgTx().SubnetworkID != wire.SubnetworkIDNative && tx.MsgTx().SubnetworkID != wire.SubnetworkIDRegistry {
 			subnetworkID := tx.MsgTx().SubnetworkID
 			gasUsage, ok := gasUsageMap[subnetworkID]
 			if !ok {
@@ -739,7 +731,7 @@ func (g *BlkTmplGenerator) UpdateBlockTime(msgBlock *wire.MsgBlock) error {
 // height.  It also recalculates and updates the new merkle root that results
 // from changing the coinbase script.
 func (g *BlkTmplGenerator) UpdateExtraNonce(msgBlock *wire.MsgBlock, blockHeight int32, extraNonce uint64) error {
-	coinbaseScript, err := standardCoinbaseScript(blockHeight, extraNonce)
+	coinbaseScript, err := StandardCoinbaseScript(blockHeight, extraNonce)
 	if err != nil {
 		return err
 	}
