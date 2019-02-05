@@ -1120,28 +1120,28 @@ func handleGetBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 		}
 		nodeSubnetworkID := config.MainConfig().SubnetworkID
 
-		if requestSubnetworkID.IsEqual(&wire.SubnetworkIDSupportsAll) {
-			// nothing to do - no filtering
-		} else if !nodeSubnetworkID.IsEqual(&wire.SubnetworkIDSupportsAll) {
-			if !nodeSubnetworkID.IsEqual(requestSubnetworkID) {
-				return nil, &btcjson.RPCError{
-					Code:    btcjson.ErrRPCInvalidRequest.Code,
-					Message: "subnetwork does not partial node subnetwork ID",
+		if !requestSubnetworkID.IsEqual(&wire.SubnetworkIDSupportsAll) {
+			if !nodeSubnetworkID.IsEqual(&wire.SubnetworkIDSupportsAll) {
+				if !nodeSubnetworkID.IsEqual(requestSubnetworkID) {
+					return nil, &btcjson.RPCError{
+						Code:    btcjson.ErrRPCInvalidRequest.Code,
+						Message: "subnetwork does not match this partial node",
+					}
 				}
 				// nothing to do - partial node stores partial blocks
+			} else {
+				// Deserialize the block.
+				var msgBlock wire.MsgBlock
+				err = msgBlock.Deserialize(bytes.NewReader(blkBytes))
+				if err != nil {
+					context := "Failed to deserialize block"
+					return nil, internalRPCError(err.Error(), context)
+				}
+				msgBlock.ConvertToPartial(requestSubnetworkID)
+				var b bytes.Buffer
+				msgBlock.Serialize(bufio.NewWriter(&b))
+				blkBytes = b.Bytes()
 			}
-		} else {
-			// Deserialize the block.
-			var msgBlock wire.MsgBlock
-			err = msgBlock.Deserialize(bytes.NewReader(blkBytes))
-			if err != nil {
-				context := "Failed to deserialize block"
-				return nil, internalRPCError(err.Error(), context)
-			}
-			msgBlock.ConvertToPartial(requestSubnetworkID)
-			var b bytes.Buffer
-			msgBlock.Serialize(bufio.NewWriter(&b))
-			blkBytes = b.Bytes()
 		}
 	}
 
