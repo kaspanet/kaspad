@@ -131,7 +131,7 @@ func TestDAGSvrCmds(t *testing.T) {
 				return btcjson.NewCmd("getBlock", "123")
 			},
 			staticCmd: func() interface{} {
-				return btcjson.NewGetBlockCmd("123", nil, nil)
+				return btcjson.NewGetBlockCmd("123", nil, nil, nil)
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"getBlock","params":["123"],"id":1}`,
 			unmarshalled: &btcjson.GetBlockCmd{
@@ -150,7 +150,7 @@ func TestDAGSvrCmds(t *testing.T) {
 				return btcjson.NewCmd("getBlock", "123", &verbosePtr)
 			},
 			staticCmd: func() interface{} {
-				return btcjson.NewGetBlockCmd("123", btcjson.Bool(true), nil)
+				return btcjson.NewGetBlockCmd("123", btcjson.Bool(true), nil, nil)
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"getBlock","params":["123",true],"id":1}`,
 			unmarshalled: &btcjson.GetBlockCmd{
@@ -165,13 +165,29 @@ func TestDAGSvrCmds(t *testing.T) {
 				return btcjson.NewCmd("getBlock", "123", true, true)
 			},
 			staticCmd: func() interface{} {
-				return btcjson.NewGetBlockCmd("123", btcjson.Bool(true), btcjson.Bool(true))
+				return btcjson.NewGetBlockCmd("123", btcjson.Bool(true), btcjson.Bool(true), nil)
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"getBlock","params":["123",true,true],"id":1}`,
 			unmarshalled: &btcjson.GetBlockCmd{
 				Hash:      "123",
 				Verbose:   btcjson.Bool(true),
 				VerboseTx: btcjson.Bool(true),
+			},
+		},
+		{
+			name: "getBlock required optional3",
+			newCmd: func() (interface{}, error) {
+				return btcjson.NewCmd("getBlock", "123", true, true, "456")
+			},
+			staticCmd: func() interface{} {
+				return btcjson.NewGetBlockCmd("123", btcjson.Bool(true), btcjson.Bool(true), btcjson.String("456"))
+			},
+			marshalled: `{"jsonrpc":"1.0","method":"getBlock","params":["123",true,true,"456"],"id":1}`,
+			unmarshalled: &btcjson.GetBlockCmd{
+				Hash:       "123",
+				Verbose:    btcjson.Bool(true),
+				VerboseTx:  btcjson.Bool(true),
+				Subnetwork: btcjson.String("456"),
 			},
 		},
 		{

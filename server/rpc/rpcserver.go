@@ -6,6 +6,7 @@
 package rpc
 
 import (
+	"bufio"
 	"bytes"
 	"crypto/sha256"
 	"crypto/subtle"
@@ -47,6 +48,7 @@ import (
 	"github.com/daglabs/btcd/util"
 	"github.com/daglabs/btcd/util/fs"
 	"github.com/daglabs/btcd/util/network"
+	"github.com/daglabs/btcd/util/subnetworkid"
 	"github.com/daglabs/btcd/version"
 	"github.com/daglabs/btcd/wire"
 )
@@ -1104,6 +1106,42 @@ func handleGetBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 		return nil, &btcjson.RPCError{
 			Code:    btcjson.ErrRPCBlockNotFound,
 			Message: "Block not found",
+		}
+	}
+
+	// Handle partial blocks
+	if c.Subnetwork != nil {
+		requestSubnetworkID, err := subnetworkid.NewFromStr(*c.Subnetwork)
+		if err != nil {
+			return nil, &btcjson.RPCError{
+				Code:    btcjson.ErrRPCInvalidRequest.Code,
+				Message: "invalid subnetwork string",
+			}
+		}
+		nodeSubnetworkID := config.MainConfig().SubnetworkID
+
+		if !requestSubnetworkID.IsEqual(&wire.SubnetworkIDSupportsAll) {
+			if !nodeSubnetworkID.IsEqual(&wire.SubnetworkIDSupportsAll) {
+				if !nodeSubnetworkID.IsEqual(requestSubnetworkID) {
+					return nil, &btcjson.RPCError{
+						Code:    btcjson.ErrRPCInvalidRequest.Code,
+						Message: "subnetwork does not match this partial node",
+					}
+				}
+				// nothing to do - partial node stores partial blocks
+			} else {
+				// Deserialize the block.
+				var msgBlock wire.MsgBlock
+				err = msgBlock.Deserialize(bytes.NewReader(blkBytes))
+				if err != nil {
+					context := "Failed to deserialize block"
+					return nil, internalRPCError(err.Error(), context)
+				}
+				msgBlock.ConvertToPartial(requestSubnetworkID)
+				var b bytes.Buffer
+				msgBlock.Serialize(bufio.NewWriter(&b))
+				blkBytes = b.Bytes()
+			}
 		}
 	}
 
