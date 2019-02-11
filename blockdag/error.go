@@ -102,10 +102,6 @@ const (
 	// valid transaction must have at least one input.
 	ErrNoTxInputs
 
-	// ErrNoTxOutputs indicates a transaction does not have any outputs.  A
-	// valid transaction must have at least one output.
-	ErrNoTxOutputs
-
 	// ErrTxTooBig indicates a transaction exceeds the maximum allowed size
 	// when serialized.
 	ErrTxTooBig
@@ -246,7 +242,6 @@ var errorCodeStrings = map[ErrorCode]string{
 	ErrCheckpointTimeTooOld:      "ErrCheckpointTimeTooOld",
 	ErrNoTransactions:            "ErrNoTransactions",
 	ErrNoTxInputs:                "ErrNoTxInputs",
-	ErrNoTxOutputs:               "ErrNoTxOutputs",
 	ErrTxTooBig:                  "ErrTxTooBig",
 	ErrBadTxOutValue:             "ErrBadTxOutValue",
 	ErrDuplicateTxInputs:         "ErrDuplicateTxInputs",

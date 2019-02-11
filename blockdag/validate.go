@@ -150,11 +150,6 @@ func CheckTransactionSanity(tx *util.Tx, subnetworkID *subnetworkid.SubnetworkID
 		return ruleError(ErrNoTxInputs, "transaction has no inputs")
 	}
 
-	// A transaction must have at least one output.
-	if len(msgTx.TxOut) == 0 {
-		return ruleError(ErrNoTxOutputs, "transaction has no outputs")
-	}
-
 	// A transaction must not exceed the maximum allowed block payload when
 	// serialized.
 	serializedTxSize := msgTx.SerializeSize()

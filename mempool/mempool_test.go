@@ -670,7 +670,7 @@ func TestProcessTransaction(t *testing.T) {
 	}
 	harness.txPool.cfg.Policy.AcceptNonStd = false
 
-	//Checks that a transaction with no outputs will get rejected
+	//Checks that a transaction with no outputs will not get rejected
 	noOutsTx := util.NewTx(&wire.MsgTx{
 		Version: 1,
 		TxIn: []*wire.TxIn{{
@@ -683,15 +683,8 @@ func TestProcessTransaction(t *testing.T) {
 		SubnetworkID: wire.SubnetworkIDNative,
 	})
 	_, err = harness.txPool.ProcessTransaction(noOutsTx, true, false, 0)
-	if err == nil {
-		t.Errorf("ProcessTransaction: expected an error, not nil")
-	}
-	if code, _ := extractRejectCode(err); code != wire.RejectInvalid {
-		t.Errorf("Unexpected error code. Expected %v but got %v", wire.RejectInvalid, code)
-	}
-	expectedErrStr = "transaction has no outputs"
-	if err.Error() != "transaction has no outputs" {
-		t.Errorf("Unexpected error message. Expected \"%s\" but got \"%s\"", expectedErrStr, err.Error())
+	if err != nil {
+		t.Errorf("ProcessTransaction: %v", err)
 	}
 
 	//Checks that transactions get rejected from mempool if sequence lock is not active

@@ -1172,7 +1172,7 @@ func TestCheckTransactionSanity(t *testing.T) {
 	}{
 		{"good one", 1, 1, 1, wire.SubnetworkIDNative, nil, nil, nil},
 		{"no inputs", 0, 1, 1, wire.SubnetworkIDNative, nil, nil, ruleError(ErrNoTxInputs, "")},
-		{"no outputs", 1, 0, 1, wire.SubnetworkIDNative, nil, nil, ruleError(ErrNoTxOutputs, "")},
+		{"no outputs", 1, 0, 1, wire.SubnetworkIDNative, nil, nil, nil},
 		{"too big", 100000, 1, 1, wire.SubnetworkIDNative, nil, nil, ruleError(ErrTxTooBig, "")},
 		{"too much satoshi in one output", 1, 1, util.MaxSatoshi + 1,
 			wire.SubnetworkIDNative,
