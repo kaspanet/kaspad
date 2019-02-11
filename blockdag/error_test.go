@@ -30,7 +30,6 @@ func TestErrorCodeStringer(t *testing.T) {
 		{ErrCheckpointTimeTooOld, "ErrCheckpointTimeTooOld"},
 		{ErrNoTransactions, "ErrNoTransactions"},
 		{ErrNoTxInputs, "ErrNoTxInputs"},
-		{ErrNoTxOutputs, "ErrNoTxOutputs"},
 		{ErrTxTooBig, "ErrTxTooBig"},
 		{ErrBadTxOutValue, "ErrBadTxOutValue"},
 		{ErrDuplicateTxInputs, "ErrDuplicateTxInputs"},
