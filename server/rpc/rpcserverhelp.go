@@ -169,6 +169,7 @@ var helpDescsEnUS = map[string]string{
 	"getBlock-hash":        "The hash of the block",
 	"getBlock-verbose":     "Specifies the block is returned as a JSON object instead of hex-encoded string",
 	"getBlock-verboseTx":   "Specifies that each transaction is returned as a JSON object and only applies if the verbose flag is true (btcd extension)",
+	"getBlock-subnetwork":  "If passed, the returned block will be a partial block of the specified subnetwork",
 	"getBlock--condition0": "verbose=false",
 	"getBlock--condition1": "verbose=true",
 	"getBlock-acceptedTx":  "Specifies if the transaction got accepted",

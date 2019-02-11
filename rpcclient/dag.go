@@ -91,13 +91,13 @@ func (r FutureGetBlockResult) Receive() (*wire.MsgBlock, error) {
 // returned instance.
 //
 // See GetBlock for the blocking version and more details.
-func (c *Client) GetBlockAsync(blockHash *daghash.Hash) FutureGetBlockResult {
+func (c *Client) GetBlockAsync(blockHash *daghash.Hash, subnetworkID *string) FutureGetBlockResult {
 	hash := ""
 	if blockHash != nil {
 		hash = blockHash.String()
 	}
 
-	cmd := btcjson.NewGetBlockCmd(hash, btcjson.Bool(false), nil)
+	cmd := btcjson.NewGetBlockCmd(hash, btcjson.Bool(false), btcjson.Bool(false), subnetworkID)
 	return c.sendCmd(cmd)
 }
 
@@ -105,8 +105,8 @@ func (c *Client) GetBlockAsync(blockHash *daghash.Hash) FutureGetBlockResult {
 //
 // See GetBlockVerbose to retrieve a data structure with information about the
 // block instead.
-func (c *Client) GetBlock(blockHash *daghash.Hash) (*wire.MsgBlock, error) {
-	return c.GetBlockAsync(blockHash).Receive()
+func (c *Client) GetBlock(blockHash *daghash.Hash, subnetworkID *string) (*wire.MsgBlock, error) {
+	return c.GetBlockAsync(blockHash, subnetworkID).Receive()
 }
 
 // FutureGetBlockVerboseResult is a future promise to deliver the result of a
@@ -135,13 +135,13 @@ func (r FutureGetBlockVerboseResult) Receive() (*btcjson.GetBlockVerboseResult, 
 // the returned instance.
 //
 // See GetBlockVerbose for the blocking version and more details.
-func (c *Client) GetBlockVerboseAsync(blockHash *daghash.Hash) FutureGetBlockVerboseResult {
+func (c *Client) GetBlockVerboseAsync(blockHash *daghash.Hash, subnetworkID *string) FutureGetBlockVerboseResult {
 	hash := ""
 	if blockHash != nil {
 		hash = blockHash.String()
 	}
 
-	cmd := btcjson.NewGetBlockCmd(hash, btcjson.Bool(true), nil)
+	cmd := btcjson.NewGetBlockCmd(hash, btcjson.Bool(true), btcjson.Bool(false), subnetworkID)
 	return c.sendCmd(cmd)
 }
 
@@ -150,8 +150,8 @@ func (c *Client) GetBlockVerboseAsync(blockHash *daghash.Hash) FutureGetBlockVer
 //
 // See GetBlockVerboseTx to retrieve transaction data structures as well.
 // See GetBlock to retrieve a raw block instead.
-func (c *Client) GetBlockVerbose(blockHash *daghash.Hash) (*btcjson.GetBlockVerboseResult, error) {
-	return c.GetBlockVerboseAsync(blockHash).Receive()
+func (c *Client) GetBlockVerbose(blockHash *daghash.Hash, subnetworkID *string) (*btcjson.GetBlockVerboseResult, error) {
+	return c.GetBlockVerboseAsync(blockHash, subnetworkID).Receive()
 }
 
 // GetBlockVerboseTxAsync returns an instance of a type that can be used to get
@@ -159,13 +159,13 @@ func (c *Client) GetBlockVerbose(blockHash *daghash.Hash) (*btcjson.GetBlockVerb
 // the returned instance.
 //
 // See GetBlockVerboseTx or the blocking version and more details.
-func (c *Client) GetBlockVerboseTxAsync(blockHash *daghash.Hash) FutureGetBlockVerboseResult {
+func (c *Client) GetBlockVerboseTxAsync(blockHash *daghash.Hash, subnetworkID *string) FutureGetBlockVerboseResult {
 	hash := ""
 	if blockHash != nil {
 		hash = blockHash.String()
 	}
 
-	cmd := btcjson.NewGetBlockCmd(hash, btcjson.Bool(true), btcjson.Bool(true))
+	cmd := btcjson.NewGetBlockCmd(hash, btcjson.Bool(true), btcjson.Bool(true), subnetworkID)
 	return c.sendCmd(cmd)
 }
 
@@ -174,8 +174,8 @@ func (c *Client) GetBlockVerboseTxAsync(blockHash *daghash.Hash) FutureGetBlockV
 //
 // See GetBlockVerbose if only transaction hashes are preferred.
 // See GetBlock to retrieve a raw block instead.
-func (c *Client) GetBlockVerboseTx(blockHash *daghash.Hash) (*btcjson.GetBlockVerboseResult, error) {
-	return c.GetBlockVerboseTxAsync(blockHash).Receive()
+func (c *Client) GetBlockVerboseTx(blockHash *daghash.Hash, subnetworkID *string) (*btcjson.GetBlockVerboseResult, error) {
+	return c.GetBlockVerboseTxAsync(blockHash, subnetworkID).Receive()
 }
 
 // FutureGetBlockCountResult is a future promise to deliver the result of a
