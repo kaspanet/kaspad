@@ -2048,8 +2048,6 @@ func chainErrToGBTErrString(err error) string {
 		return "bad-txns-none"
 	case blockdag.ErrNoTxInputs:
 		return "bad-txns-noinputs"
-	case blockdag.ErrNoTxOutputs:
-		return "bad-txns-nooutputs"
 	case blockdag.ErrTxTooBig:
 		return "bad-txns-size"
 	case blockdag.ErrBadTxOutValue:
