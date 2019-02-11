@@ -340,7 +340,12 @@ var TestNet3Params = Params{
 	Net:         wire.TestNet3,
 	RPCPort:     "18334",
 	DefaultPort: "18333",
-	DNSSeeds:    []DNSSeed{},
+	DNSSeeds: []DNSSeed{
+		{"testnet-seed.alexykot.me", false},
+		{"testnet-seed.bitcoin.petertodd.org", false},
+		{"testnet-seed.bluematt.me", false},
+		{"testnet-seed.bitcoin.schildbach.de", false},
+	},
 
 	// Chain parameters
 	GenesisBlock:             &testNet3GenesisBlock,
