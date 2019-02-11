@@ -739,9 +739,9 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rateLimit, rejectDu
 	}
 
 	// Perform preliminary sanity checks on the transaction.  This makes
-	// use of blockchain which contains the invariant rules for what
+	// use of blockDAG which contains the invariant rules for what
 	// transactions are allowed into blocks.
-	err := blockdag.CheckTransactionSanity(tx, subnetworkID)
+	err := blockdag.CheckTransactionSanity(tx, subnetworkID, false)
 	if err != nil {
 		if cerr, ok := err.(blockdag.RuleError); ok {
 			return nil, nil, dagRuleError(cerr)
@@ -767,9 +767,9 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rateLimit, rejectDu
 		}
 	}
 
-	// A standalone transaction must not be a coinbase transaction.
-	if blockdag.IsCoinBase(tx) {
-		str := fmt.Sprintf("transaction %v is an individual coinbase",
+	// A standalone transaction must not be a block reward transaction.
+	if blockdag.IsBlockReward(tx) {
+		str := fmt.Sprintf("transaction %v is an individual block reward transaction",
 			txID)
 		return nil, nil, txRuleError(wire.RejectInvalid, str)
 	}

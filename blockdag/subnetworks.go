@@ -48,7 +48,7 @@ func registerSubnetworks(dbTx database.Tx, txs []*TxWithBlockHash) error {
 	}
 
 	for _, registryTx := range validSubnetworkRegistryTxs {
-		subnetworkID, err := txToSubnetworkID(registryTx)
+		subnetworkID, err := TxToSubnetworkID(registryTx)
 		if err != nil {
 			return err
 		}
@@ -81,8 +81,8 @@ func validateSubnetworkRegistryTransaction(tx *wire.MsgTx) error {
 	return nil
 }
 
-// txToSubnetworkID creates a subnetwork ID from a subnetwork registry transaction
-func txToSubnetworkID(tx *wire.MsgTx) (*subnetworkid.SubnetworkID, error) {
+// TxToSubnetworkID creates a subnetwork ID from a subnetwork registry transaction
+func TxToSubnetworkID(tx *wire.MsgTx) (*subnetworkid.SubnetworkID, error) {
 	txHash := tx.TxHash()
 	return subnetworkid.New(util.Hash160(txHash[:]))
 }

@@ -149,10 +149,10 @@ func loadUTXOSet(filename string) (UTXOSet, error) {
 	return utxoSet, nil
 }
 
-// TstSetCoinbaseMaturity makes the ability to set the coinbase maturity
+// TestSetBlockRewardMaturity makes the ability to set the block reward maturity
 // available when running tests.
-func (dag *BlockDAG) TstSetCoinbaseMaturity(maturity uint16) {
-	dag.dagParams.CoinbaseMaturity = maturity
+func (dag *BlockDAG) TestSetBlockRewardMaturity(maturity uint16) {
+	dag.dagParams.BlockRewardMaturity = maturity
 }
 
 // newTestDAG returns a DAG that is usable for syntetic tests.  It is

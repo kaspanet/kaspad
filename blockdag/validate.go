@@ -47,6 +47,9 @@ const (
 	// MaxOutputsPerBlock is the maximum number of transaction outputs there
 	// can be in a block of max size.
 	MaxOutputsPerBlock = wire.MaxBlockPayload / wire.MinTxOutPayload
+
+	// feeTransactionIndex is the index of the fee transaction in a block.
+	feeTransactionIndex = 1
 )
 
 // isNullOutpoint determines whether or not a previous transaction output point
@@ -63,11 +66,21 @@ func isNullOutpoint(outpoint *wire.OutPoint) bool {
 // represented in the block dag by a transaction with a single input that has
 // a previous output transaction index set to the maximum value along with a
 // zero hash.
-//
-// This function only differs from IsCoinBaseTx in that it works with a higher
-// level util transaction as opposed to a raw wire transaction.
 func IsCoinBase(tx *util.Tx) bool {
 	return tx.MsgTx().IsCoinBase()
+}
+
+// IsBlockReward determines whether or not a transaction is a block reward (a fee transaction or block reward)
+func IsBlockReward(tx *util.Tx) bool {
+	return tx.MsgTx().IsBlockReward()
+}
+
+// IsFeeTransaction determines whether or not a transaction is a fee transaction.  A fee
+// transaction is a special transaction created by miners that distributes fees to the
+// previous blocks' miners.  Each input of the fee transaction should set index to maximum
+// value and reference the relevant block id, instead of previous transaction id.
+func IsFeeTransaction(tx *util.Tx) bool {
+	return tx.MsgTx().IsFeeTransaction()
 }
 
 // SequenceLockActive determines if a transaction's sequence locks have been
@@ -143,7 +156,7 @@ func CalcBlockSubsidy(height int32, dagParams *dagconfig.Params) uint64 {
 
 // CheckTransactionSanity performs some preliminary checks on a transaction to
 // ensure it is sane.  These checks are context free.
-func CheckTransactionSanity(tx *util.Tx, subnetworkID *subnetworkid.SubnetworkID) error {
+func CheckTransactionSanity(tx *util.Tx, subnetworkID *subnetworkid.SubnetworkID, isFeeTransaction bool) error {
 	// A transaction must have at least one input.
 	msgTx := tx.MsgTx()
 	if len(msgTx.TxIn) == 0 {
@@ -332,9 +345,9 @@ func CountSigOps(tx *util.Tx) int {
 // transactions which are of the pay-to-script-hash type.  This uses the
 // precise, signature operation counting mechanism from the script engine which
 // requires access to the input transaction scripts.
-func CountP2SHSigOps(tx *util.Tx, isCoinBaseTx bool, utxoSet UTXOSet) (int, error) {
-	// Coinbase transactions have no interesting inputs.
-	if isCoinBaseTx {
+func CountP2SHSigOps(tx *util.Tx, isBlockReward bool, utxoSet UTXOSet) (int, error) {
+	// Block reward transactions have no interesting inputs.
+	if isBlockReward {
 		return 0, nil
 	}
 
@@ -484,13 +497,23 @@ func (dag *BlockDAG) checkBlockSanity(block *util.Block, flags BehaviorFlags) er
 			"block is not a coinbase")
 	}
 
+	if !IsFeeTransaction(transactions[1]) {
+		return ruleError(ErrSecondTxNotFeeTransaction, "second transaction in "+
+			"block is not a fee transaction")
+	}
+
 	// A block must not have more than one coinbase. And transactions must be
 	// ordered by subnetwork
-	for i, tx := range transactions[1:] {
+	for i, tx := range transactions[2:] {
 		if IsCoinBase(tx) {
 			str := fmt.Sprintf("block contains second coinbase at "+
-				"index %d", i+1)
+				"index %d", i+2)
 			return ruleError(ErrMultipleCoinbases, str)
+		}
+		if IsFeeTransaction(tx) {
+			str := fmt.Sprintf("block contains second fee transaction at "+
+				"index %d", i+2)
+			return ruleError(ErrMultipleFeeTransactions, str)
 		}
 		if subnetworkid.Less(&tx.MsgTx().SubnetworkID, &transactions[i].MsgTx().SubnetworkID) {
 			return ruleError(ErrTransactionsNotSorted, "transactions must be sorted by subnetwork")
@@ -499,8 +522,9 @@ func (dag *BlockDAG) checkBlockSanity(block *util.Block, flags BehaviorFlags) er
 
 	// Do some preliminary checks on each transaction to ensure they are
 	// sane before continuing.
-	for _, tx := range transactions {
-		err := CheckTransactionSanity(tx, dag.subnetworkID)
+	for i, tx := range transactions {
+		isFeeTransaction := i == feeTransactionIndex
+		err := CheckTransactionSanity(tx, dag.subnetworkID, isFeeTransaction)
 		if err != nil {
 			return err
 		}
@@ -753,7 +777,7 @@ func validateParents(blockHeader *wire.BlockHeader, parents blockSet) error {
 }
 
 // checkBlockContext peforms several validation checks on the block which depend
-// on its position within the block dag.
+// on its position within the block DAG.
 //
 // The flags modify the behavior of this function as follows:
 //  - BFFastAdd: The transaction are not checked to see if they are finalized
@@ -845,7 +869,7 @@ func ensureNoDuplicateTx(block *blockNode, utxoSet UTXOSet,
 
 // CheckTransactionInputs performs a series of checks on the inputs to a
 // transaction to ensure they are valid.  An example of some of the checks
-// include verifying all inputs exist, ensuring the coinbase seasoning
+// include verifying all inputs exist, ensuring the block reward seasoning
 // requirements are met, detecting double spends, validating all values and fees
 // are in the legal range and the total output amount doesn't exceed the input
 // amount, and verifying the signatures to prove the spender was the owner of
@@ -855,8 +879,8 @@ func ensureNoDuplicateTx(block *blockNode, utxoSet UTXOSet,
 // NOTE: The transaction MUST have already been sanity checked with the
 // CheckTransactionSanity function prior to calling this function.
 func CheckTransactionInputs(tx *util.Tx, txHeight int32, utxoSet UTXOSet, dagParams *dagconfig.Params) (uint64, error) {
-	// Coinbase transactions have no inputs.
-	if IsCoinBase(tx) {
+	// Block reward transactions have no inputs.
+	if IsBlockReward(tx) {
 		return 0, nil
 	}
 
@@ -874,18 +898,18 @@ func CheckTransactionInputs(tx *util.Tx, txHeight int32, utxoSet UTXOSet, dagPar
 		}
 
 		// Ensure the transaction is not spending coins which have not
-		// yet reached the required coinbase maturity.
-		if entry.IsCoinBase() {
+		// yet reached the required block reward maturity.
+		if entry.IsBlockReward() {
 			originHeight := entry.BlockHeight()
 			blocksSincePrev := txHeight - originHeight
-			coinbaseMaturity := int32(dagParams.CoinbaseMaturity)
-			if blocksSincePrev < coinbaseMaturity {
-				str := fmt.Sprintf("tried to spend coinbase "+
+			blockRewardMaturity := int32(dagParams.BlockRewardMaturity)
+			if blocksSincePrev < blockRewardMaturity {
+				str := fmt.Sprintf("tried to spend block reward "+
 					"transaction output %v from height %v "+
 					"at height %v before required maturity "+
 					"of %v blocks", txIn.PreviousOutPoint,
 					originHeight, txHeight,
-					coinbaseMaturity)
+					blockRewardMaturity)
 				return 0, ruleError(ErrImmatureSpend, str)
 			}
 		}
@@ -970,13 +994,13 @@ func (dag *BlockDAG) checkConnectToPastUTXO(block *blockNode, pastUTXO UTXOSet,
 	totalSigOps := 0
 	for i, tx := range transactions {
 		numsigOps := CountSigOps(tx)
-		// Since the first (and only the first) transaction has
-		// already been verified to be a coinbase transaction,
-		// use i == 0 as an optimization for the flag to
-		// countP2SHSigOps for whether or not the transaction is
-		// a coinbase transaction rather than having to do a
-		// full coinbase check again.
-		numP2SHSigOps, err := CountP2SHSigOps(tx, i == 0, pastUTXO)
+		// Since the first transaction has already been verified to be a
+		// coinbase transaction, and the second transaction has already
+		// been verified to be a fee transaction, use i < 2 as an
+		// optimization for the flag to countP2SHSigOps for whether or
+		// not the transaction is a block reward transaction rather than
+		// having to do a full coinbase and fee transaction check again.
+		numP2SHSigOps, err := CountP2SHSigOps(tx, i < 2, pastUTXO)
 		if err != nil {
 			return err
 		}
@@ -1028,8 +1052,7 @@ func (dag *BlockDAG) checkConnectToPastUTXO(block *blockNode, pastUTXO UTXOSet,
 	for _, txOut := range transactions[0].MsgTx().TxOut {
 		totalSatoshiOut += txOut.Value
 	}
-	expectedSatoshiOut := CalcBlockSubsidy(block.height, dag.dagParams) +
-		totalFees
+	expectedSatoshiOut := CalcBlockSubsidy(block.height, dag.dagParams)
 	if totalSatoshiOut > expectedSatoshiOut {
 		str := fmt.Sprintf("coinbase transaction for block pays %v "+
 			"which is more than expected value of %v",
@@ -1091,16 +1114,18 @@ func (dag *BlockDAG) checkConnectToPastUTXO(block *blockNode, pastUTXO UTXOSet,
 
 // countSpentOutputs returns the number of utxos the passed block spends.
 func countSpentOutputs(block *util.Block) int {
-	// Exclude the coinbase transaction since it can't spend anything.
+	// Exclude the block reward transactions since they can't spend anything.
 	var numSpent int
 	for _, tx := range block.Transactions()[1:] {
-		numSpent += len(tx.MsgTx().TxIn)
+		if !IsFeeTransaction(tx) {
+			numSpent += len(tx.MsgTx().TxIn)
+		}
 	}
 	return numSpent
 }
 
 // CheckConnectBlockTemplate fully validates that connecting the passed block to
-// the main dag does not violate any consensus rules, aside from the proof of
+// the DAG does not violate any consensus rules, aside from the proof of
 // work requirement. The block must connect to the current tip of the main dag.
 //
 // This function is safe for concurrent access.

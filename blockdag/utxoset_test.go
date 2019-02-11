@@ -7,7 +7,6 @@ import (
 
 	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/dagconfig/daghash"
-	"github.com/daglabs/btcd/util"
 	"github.com/daglabs/btcd/wire"
 )
 
@@ -793,88 +792,6 @@ func TestDiffUTXOSet_addTx(t *testing.T) {
 			t.Errorf("unexpected diffSet in test \"%s\". "+
 				"Expected: \"%v\", got: \"%v\".", test.name, test.expectedSet, diffSet)
 		}
-	}
-}
-
-func TestApplyUTXOChanges(t *testing.T) {
-	// Create a new database and dag instance to run tests against.
-	dag, teardownFunc, err := DAGSetup("TestApplyUTXOChanges", Config{
-		DAGParams:    &dagconfig.SimNetParams,
-		SubnetworkID: &wire.SubnetworkIDSupportsAll,
-	})
-	if err != nil {
-		t.Fatalf("Failed to setup dag instance: %v", err)
-	}
-	defer teardownFunc()
-
-	dag.dagParams.CoinbaseMaturity = 1
-	// Create artificial checkpoint in order to prevent script validation for blocks that comes before it
-	dag.checkpoints = []dagconfig.Checkpoint{
-		{
-			Height: 1000,
-		},
-	}
-
-	cbTx, err := createCoinbaseTxForTest(1, 1, 0, dag.dagParams)
-	if err != nil {
-		t.Errorf("createCoinbaseTxForTest: %v", err)
-	}
-
-	chainedTx := wire.NewMsgTx(wire.TxVersion)
-	chainedTx.AddTxIn(&wire.TxIn{
-		PreviousOutPoint: wire.OutPoint{TxID: cbTx.TxID(), Index: 0},
-		SignatureScript:  nil,
-		Sequence:         wire.MaxTxInSequenceNum,
-	})
-	chainedTx.AddTxOut(&wire.TxOut{
-		PkScript: OpTrueScript,
-		Value:    uint64(1),
-	})
-
-	//Fake block header
-	blockHeader := wire.NewBlockHeader(1, []daghash.Hash{dag.genesis.hash}, &daghash.Hash{}, &daghash.Hash{}, 0, 0)
-
-	msgBlock1 := &wire.MsgBlock{
-		Header:       *blockHeader,
-		Transactions: []*wire.MsgTx{cbTx, chainedTx},
-	}
-
-	block1 := util.NewBlock(msgBlock1)
-
-	var node1 blockNode
-	initBlockNode(&node1, blockHeader, setFromSlice(dag.genesis), dagconfig.MainNetParams.K)
-
-	//Checks that dag.applyUTXOChanges fails because we don't allow a transaction to spend another transaction from the same block
-	_, _, err = dag.applyUTXOChanges(&node1, block1, false)
-	if err == nil {
-		t.Errorf("applyUTXOChanges expected an error\n")
-	}
-
-	nonChainedTx := wire.NewMsgTx(wire.TxVersion)
-	nonChainedTx.AddTxIn(&wire.TxIn{
-		PreviousOutPoint: wire.OutPoint{TxID: dag.dagParams.GenesisBlock.Transactions[0].TxID(), Index: 0},
-		SignatureScript:  nil, //Fake SigScript, because we don't check scripts validity in this test
-		Sequence:         wire.MaxTxInSequenceNum,
-	})
-	nonChainedTx.AddTxOut(&wire.TxOut{
-		PkScript: OpTrueScript,
-		Value:    uint64(1),
-	})
-
-	msgBlock2 := &wire.MsgBlock{
-		Header:       *blockHeader,
-		Transactions: []*wire.MsgTx{cbTx, nonChainedTx},
-	}
-
-	block2 := util.NewBlock(msgBlock2)
-
-	var node2 blockNode
-	initBlockNode(&node2, blockHeader, setFromSlice(dag.genesis), dagconfig.MainNetParams.K)
-
-	//Checks that dag.applyUTXOChanges doesn't fail because all of its transaction are dependant on transactions from previous blocks
-	_, _, err = dag.applyUTXOChanges(&node2, block2, false)
-	if err != nil {
-		t.Errorf("applyUTXOChanges: %v", err)
 	}
 }
 

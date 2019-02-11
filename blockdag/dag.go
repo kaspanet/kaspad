@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/daglabs/btcd/util/subnetworkid"
+	"github.com/daglabs/btcd/util/txsort"
 
 	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/dagconfig/daghash"
@@ -26,7 +27,8 @@ const (
 	// queued.
 	maxOrphanBlocks = 100
 
-	finalityInterval = 100
+	// FinalityInterval is the interval that determines the finality window of the DAG.
+	FinalityInterval = 100
 )
 
 // BlockLocator is used to help locate a specific block.  The algorithm for
@@ -349,10 +351,10 @@ func (dag *BlockDAG) calcSequenceLock(node *blockNode, utxoSet UTXOSet, tx *util
 	// at any given height or time.
 	sequenceLock := &SequenceLock{Seconds: -1, BlockHeight: -1}
 
-	// Sequence locks don't apply to coinbase transactions Therefore, we
+	// Sequence locks don't apply to block reward transactions Therefore, we
 	// return sequence lock values of -1 indicating that this transaction
 	// can be included within a block at any given height or time.
-	if IsCoinBase(tx) {
+	if IsBlockReward(tx) {
 		return sequenceLock, nil
 	}
 
@@ -604,6 +606,14 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block, fastAdd bo
 	return nil
 }
 
+// LastFinalityPointHash returns the hash of the last finality point
+func (dag *BlockDAG) LastFinalityPointHash() *daghash.Hash {
+	if dag.lastFinalityPoint == nil {
+		return nil
+	}
+	return &dag.lastFinalityPoint.hash
+}
+
 func (dag *BlockDAG) checkFinalityRulesAndGetFinalityPointCandidate(node *blockNode) (*blockNode, error) {
 	var finalityPointCandidate *blockNode
 	finalityErr := ruleError(ErrFinality, "The last finality point is not in the selected chain of this block")
@@ -625,6 +635,15 @@ func (dag *BlockDAG) checkFinalityRulesAndGetFinalityPointCandidate(node *blockN
 	return finalityPointCandidate, nil
 }
 
+// NextBlockFeeTransaction prepares the fee transaction for the next mined block
+func (dag *BlockDAG) NextBlockFeeTransaction() (*wire.MsgTx, error) {
+	_, acceptedTxData, err := dag.virtual.blockNode.verifyAndBuildUTXO(dag.virtual, dag, nil, true)
+	if err != nil {
+		return nil, err
+	}
+	return dag.virtual.blockNode.buildFeeTransaction(dag, acceptedTxData)
+}
+
 // applyUTXOChanges does the following:
 // 1. Verifies that each transaction within the new block could spend an existing UTXO.
 // 2. Connects each of the new block's parents to the block.
@@ -644,6 +663,11 @@ func (dag *BlockDAG) applyUTXOChanges(node *blockNode, block *util.Block, fastAd
 			return nil, nil, ruleError(err.ErrorCode, newErrString)
 		}
 		return nil, nil, errors.New(newErrString)
+	}
+
+	err = node.validateFeeTransaction(dag, acceptedTxData, block.Transactions())
+	if err != nil {
+		return nil, nil, err
 	}
 
 	// since verifyAndBuildUTXO ran, we know for sure that block is valid -
@@ -736,6 +760,171 @@ func (node *blockNode) verifyAndBuildUTXO(virtual *virtualBlock, dag *BlockDAG,
 		return nil, nil, err
 	}
 	return utxo, acceptedTxData, nil
+}
+
+type blockFeeData struct {
+	pkScript     []byte
+	transactions []*wire.MsgTx
+	txCount      uint64
+}
+
+// getBluesFeeData returns the data that is needed in order to build the block's fee transaction
+func (node *blockNode) getBluesFeeData(dag *BlockDAG, acceptedTxData []*TxWithBlockHash) (map[daghash.Hash]*blockFeeData, error) {
+	var acceptedTxDataWithSelectedParent []*TxWithBlockHash
+	// acceptedTxData doesn't include the selected parent transactions, so we need to manually add them
+	err := dag.db.View(func(dbTx database.Tx) error {
+		selectedParnetBlock, err := dbFetchBlockByNode(dbTx, node.selectedParent)
+		if err != nil {
+			return err
+		}
+		acceptedTxDataWithSelectedParent = make([]*TxWithBlockHash, len(acceptedTxData), len(acceptedTxData)+len(selectedParnetBlock.Transactions()))
+		copy(acceptedTxDataWithSelectedParent, acceptedTxData)
+		for _, tx := range selectedParnetBlock.Transactions() {
+			acceptedTx := &TxWithBlockHash{
+				InBlock: &node.selectedParent.hash,
+				Tx:      tx,
+			}
+			acceptedTxDataWithSelectedParent = append(acceptedTxDataWithSelectedParent, acceptedTx)
+		}
+		return nil
+	})
+
+	blocksData := make(map[daghash.Hash]*blockFeeData)
+	for _, acceptedTx := range acceptedTxDataWithSelectedParent {
+		if _, ok := blocksData[*acceptedTx.InBlock]; !ok {
+			blocksData[*acceptedTx.InBlock] = &blockFeeData{}
+		}
+		blocksData[*acceptedTx.InBlock].txCount++
+	}
+	for _, acceptedTx := range acceptedTxDataWithSelectedParent {
+		if blocksData[*acceptedTx.InBlock].transactions == nil {
+			blocksData[*acceptedTx.InBlock].transactions = make([]*wire.MsgTx, 0, blocksData[*acceptedTx.InBlock].txCount)
+		}
+		msgTx := acceptedTx.Tx.MsgTx()
+		if msgTx.IsCoinBase() {
+			blocksData[*acceptedTx.InBlock].pkScript = msgTx.TxOut[0].PkScript
+		} else {
+			blocksData[*acceptedTx.InBlock].transactions = append(blocksData[*acceptedTx.InBlock].transactions, msgTx)
+		}
+	}
+	if err != nil {
+		return nil, err
+	}
+	return blocksData, nil
+}
+
+// buildFeeTransaction returns the expected fee transaction for the current block
+func (node *blockNode) buildFeeTransaction(dag *BlockDAG, acceptedTxData []*TxWithBlockHash) (*wire.MsgTx, error) {
+	bluesFeeData, err := node.getBluesFeeData(dag, acceptedTxData)
+	if err != nil {
+		return nil, err
+	}
+
+	feeTx := wire.NewMsgTx(wire.TxVersion)
+
+	for _, blue := range node.blues {
+
+		feeTx.AddTxIn(&wire.TxIn{
+			SignatureScript: []byte{},
+			PreviousOutPoint: wire.OutPoint{
+				TxID:  daghash.TxID(blue.hash),
+				Index: math.MaxUint32,
+			},
+			Sequence: wire.MaxTxInSequenceNum,
+		})
+
+		if _, ok := bluesFeeData[blue.hash]; !ok {
+			continue
+		}
+
+		totalFees, err := calculateFees(blue, bluesFeeData[blue.hash].transactions, dag)
+		if err != nil {
+			return nil, err
+		}
+
+		if totalFees == 0 {
+			continue
+		}
+
+		feeTx.AddTxOut(&wire.TxOut{
+			Value:    totalFees,
+			PkScript: bluesFeeData[blue.hash].pkScript,
+		})
+	}
+	return txsort.Sort(feeTx), nil
+}
+
+func (dag *BlockDAG) getTXO(outpointBlockNode *blockNode, outpoint wire.OutPoint) (*wire.TxOut, error) {
+	// TODO: (Ori) this is a very ineffecient workaround. We need to find more efficient solution for calculating fees.
+	visited := newSet()
+	queue := make([]*blockNode, len(outpointBlockNode.blues))
+	copy(queue, outpointBlockNode.blues)
+	for len(queue) > 0 {
+		var current *blockNode
+		current, queue = queue[0], queue[1:]
+		if !visited.contains(current) {
+			visited.add(current)
+			var block *util.Block
+			err := dag.db.View(func(dbTx database.Tx) error {
+				var err error
+				block, err = dbFetchBlockByNode(dbTx, current)
+				if err != nil {
+					return err
+				}
+				return nil
+			})
+			if err != nil {
+				return nil, err
+			}
+			for _, tx := range block.Transactions() {
+				if *tx.ID() == outpoint.TxID {
+					return tx.MsgTx().TxOut[outpoint.Index], nil
+				}
+			}
+			for _, blue := range current.blues {
+				queue = append(queue, blue)
+			}
+		}
+	}
+	return nil, fmt.Errorf("Couldn't find txo %v", outpoint)
+}
+
+func (node *blockNode) validateFeeTransaction(dag *BlockDAG, acceptedTxData []*TxWithBlockHash, nodeTransactions []*util.Tx) error {
+	expectedFeeTransaction, err := node.buildFeeTransaction(dag, acceptedTxData)
+	if err != nil {
+		return err
+	}
+
+	if expectedFeeTransaction.TxHash() != *nodeTransactions[1].Hash() {
+		return ruleError(ErrBadFeeTransaction, fmt.Sprintf("Fee transaction is not built as expected"))
+	}
+
+	return nil
+}
+
+func calculateFees(node *blockNode, transactions []*wire.MsgTx, dag *BlockDAG) (uint64, error) {
+	totalFees := uint64(0)
+	for _, tx := range transactions {
+		if !tx.IsBlockReward() {
+			for _, txin := range tx.TxIn {
+				prevTxOut, err := dag.getTXO(node, txin.PreviousOutPoint)
+				if err != nil {
+					return 0, err
+				}
+				if totalFees+prevTxOut.Value < totalFees {
+					return 0, ruleError(ErrBadFees, "total fees overflows accumulator")
+				}
+				totalFees += prevTxOut.Value
+			}
+			for _, txo := range tx.TxOut {
+				if totalFees-txo.Value > totalFees {
+					return 0, ruleError(ErrBadFees, "total fees overflows accumulator")
+				}
+				totalFees -= txo.Value
+			}
+		}
+	}
+	return totalFees, nil
 }
 
 // TxWithBlockHash is a type that holds data about in which block a transaction was found

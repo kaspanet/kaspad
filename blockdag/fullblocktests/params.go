@@ -118,7 +118,7 @@ var regressionNetParams = &dagconfig.Params{
 	GenesisHash:              newHashFromStr("5bec7567af40504e0994db3b573c186fffcc4edefe096ff2e58d00523bd7e8a6"),
 	PowLimit:                 regressionPowLimit,
 	PowLimitBits:             0x207fffff,
-	CoinbaseMaturity:         100,
+	BlockRewardMaturity:      100,
 	SubsidyReductionInterval: 150,
 	TargetTimespan:           time.Hour * 24 * 14, // 14 days
 	TargetTimePerBlock:       time.Second * 10,    // 10 seconds

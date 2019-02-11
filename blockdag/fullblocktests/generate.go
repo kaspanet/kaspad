@@ -910,7 +910,7 @@ func Generate(includeLargeReorg bool) (tests [][]TestInstance, err error) {
 	//   genesis -> bm0 -> bm1 -> ... -> bm99
 	// ---------------------------------------------------------------------
 
-	coinbaseMaturity := g.params.CoinbaseMaturity
+	coinbaseMaturity := g.params.BlockRewardMaturity
 	var testInstances []TestInstance
 	for i := uint16(0); i < coinbaseMaturity; i++ {
 		blockName := fmt.Sprintf("bm%d", i)

@@ -132,7 +132,7 @@ func dbPutVersion(dbTx database.Tx, key []byte, version uint32) error {
 //     compressed script  []byte   variable
 //
 // The serialized header code format is:
-//   bit 0 - containing transaction is a coinbase
+//   bit 0 - containing transaction is a block reward
 //   bits 1-x - height of the block that contains the unspent txout
 //
 // Example 1:
@@ -223,10 +223,10 @@ func recycleOutpointKey(key *[]byte) {
 func utxoEntryHeaderCode(entry *UTXOEntry) uint64 {
 
 	// As described in the serialization format comments, the header code
-	// encodes the height shifted over one bit and the coinbase flag in the
+	// encodes the height shifted over one bit and the block reward flag in the
 	// lowest bit.
 	headerCode := uint64(entry.BlockHeight()) << 1
-	if entry.IsCoinBase() {
+	if entry.IsBlockReward() {
 		headerCode |= 0x01
 	}
 
@@ -280,9 +280,9 @@ func deserializeUTXOEntry(serialized []byte) (*UTXOEntry, error) {
 
 	// Decode the header code.
 	//
-	// Bit 0 indicates whether the containing transaction is a coinbase.
+	// Bit 0 indicates whether the containing transaction is a block reward.
 	// Bits 1-x encode height of containing transaction.
-	isCoinBase := code&0x01 != 0
+	isBlockReward := code&0x01 != 0
 	blockHeight := int32(code >> 1)
 
 	// Decode the compressed unspent transaction output.
@@ -298,8 +298,8 @@ func deserializeUTXOEntry(serialized []byte) (*UTXOEntry, error) {
 		blockHeight: blockHeight,
 		packedFlags: 0,
 	}
-	if isCoinBase {
-		entry.packedFlags |= tfCoinBase
+	if isBlockReward {
+		entry.packedFlags |= tfBlockReward
 	}
 
 	return entry, nil
