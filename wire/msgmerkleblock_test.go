@@ -130,14 +130,6 @@ func TestMerkleBlockCrossProtocol(t *testing.T) {
 		t.Errorf("encode of NewMsgFilterLoad failed %v err <%v>", msg,
 			err)
 	}
-
-	// Decode with old protocol version.
-	var readmsg MsgFilterLoad
-	err = readmsg.BtcDecode(&buf, BIP0031Version)
-	if err == nil {
-		t.Errorf("decode of MsgFilterLoad succeeded when it shouldn't have %v",
-			msg)
-	}
 }
 
 // TestMerkleBlockWire tests the MsgMerkleBlock wire encode and decode for
@@ -152,11 +144,6 @@ func TestMerkleBlockWire(t *testing.T) {
 		// Latest protocol version.
 		{
 			&merkleBlockOne, &merkleBlockOne, merkleBlockOneBytes, ProtocolVersion,
-		},
-
-		// Protocol version BIP0037Version.
-		{
-			&merkleBlockOne, &merkleBlockOne, merkleBlockOneBytes, BIP0037Version,
 		},
 	}
 
@@ -194,12 +181,7 @@ func TestMerkleBlockWire(t *testing.T) {
 // TestMerkleBlockWireErrors performs negative tests against wire encode and
 // decode of MsgBlock to confirm error paths work correctly.
 func TestMerkleBlockWireErrors(t *testing.T) {
-	// Use protocol version 70001 specifically here instead of the latest
-	// because the test data is using bytes encoded with that protocol
-	// version.
-	pver := uint32(70001)
-	pverNoMerkleBlock := BIP0037Version - 1
-	wireErr := &MessageError{}
+	pver := ProtocolVersion
 
 	tests := []struct {
 		in       *MsgMerkleBlock // Value to encode
@@ -237,8 +219,6 @@ func TestMerkleBlockWireErrors(t *testing.T) {
 		{&merkleBlockOne, merkleBlockOneBytes, pver, 190, io.ErrShortWrite, io.EOF},
 		// Force error in flag bytes.
 		{&merkleBlockOne, merkleBlockOneBytes, pver, 191, io.ErrShortWrite, io.EOF},
-		// Force error due to unsupported protocol version.
-		{&merkleBlockOne, merkleBlockOneBytes, pverNoMerkleBlock, 191, wireErr, wireErr},
 	}
 
 	t.Logf("Running %d tests", len(tests))
@@ -289,10 +269,7 @@ func TestMerkleBlockWireErrors(t *testing.T) {
 // number of hashes and flags are handled properly.  This could otherwise
 // potentially be used as an attack vector.
 func TestMerkleBlockOverflowErrors(t *testing.T) {
-	// Use protocol version 70001 specifically here instead of the latest
-	// protocol version because the test data is using bytes encoded with
-	// that version.
-	pver := uint32(70001)
+	pver := ProtocolVersion
 
 	// Create bytes for a merkle block that claims to have more than the max
 	// allowed tx hashes.

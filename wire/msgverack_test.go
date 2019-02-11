@@ -53,38 +53,6 @@ func TestVerAckWire(t *testing.T) {
 			msgVerAckEncoded,
 			ProtocolVersion,
 		},
-
-		// Protocol version BIP0035Version.
-		{
-			msgVerAck,
-			msgVerAck,
-			msgVerAckEncoded,
-			BIP0035Version,
-		},
-
-		// Protocol version BIP0031Version.
-		{
-			msgVerAck,
-			msgVerAck,
-			msgVerAckEncoded,
-			BIP0031Version,
-		},
-
-		// Protocol version NetAddressTimeVersion.
-		{
-			msgVerAck,
-			msgVerAck,
-			msgVerAckEncoded,
-			NetAddressTimeVersion,
-		},
-
-		// Protocol version MultipleAddressVersion.
-		{
-			msgVerAck,
-			msgVerAck,
-			msgVerAckEncoded,
-			MultipleAddressVersion,
-		},
 	}
 
 	t.Logf("Running %d tests", len(tests))

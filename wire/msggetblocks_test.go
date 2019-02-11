@@ -84,7 +84,7 @@ func TestGetBlocks(t *testing.T) {
 // numbers of block locator hashes and protocol versions.
 func TestGetBlocksWire(t *testing.T) {
 	// Set protocol inside getblocks message.
-	pver := uint32(60002)
+	pver := uint32(1)
 
 	// Block 99499 hash.
 	hashStr := "2710f40c87ec93d010a6fd95f42c59a2cbacc60b18cf6b7957535"
@@ -111,7 +111,7 @@ func TestGetBlocksWire(t *testing.T) {
 	noLocators := NewMsgGetBlocks(&daghash.Hash{})
 	noLocators.ProtocolVersion = pver
 	noLocatorsEncoded := []byte{
-		0x62, 0xea, 0x00, 0x00, // Protocol version 60002
+		0x01, 0x00, 0x00, 0x00, // Protocol version 1
 		0x00, // Varint for number of block locator hashes
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -125,7 +125,7 @@ func TestGetBlocksWire(t *testing.T) {
 	multiLocators.AddBlockLocatorHash(hashLocator)
 	multiLocators.ProtocolVersion = pver
 	multiLocatorsEncoded := []byte{
-		0x62, 0xea, 0x00, 0x00, // Protocol version 60002
+		0x01, 0x00, 0x00, 0x00, // Protocol version 1
 		0x02, // Varint for number of block locator hashes
 		0xe0, 0xde, 0x06, 0x44, 0x68, 0x13, 0x2c, 0x63,
 		0xd2, 0x20, 0xcc, 0x69, 0x12, 0x83, 0xcb, 0x65,
@@ -161,70 +161,6 @@ func TestGetBlocksWire(t *testing.T) {
 			multiLocators,
 			multiLocatorsEncoded,
 			ProtocolVersion,
-		},
-
-		// Protocol version BIP0035Version with no block locators.
-		{
-			noLocators,
-			noLocators,
-			noLocatorsEncoded,
-			BIP0035Version,
-		},
-
-		// Protocol version BIP0035Version with multiple block locators.
-		{
-			multiLocators,
-			multiLocators,
-			multiLocatorsEncoded,
-			BIP0035Version,
-		},
-
-		// Protocol version BIP0031Version with no block locators.
-		{
-			noLocators,
-			noLocators,
-			noLocatorsEncoded,
-			BIP0031Version,
-		},
-
-		// Protocol version BIP0031Versionwith multiple block locators.
-		{
-			multiLocators,
-			multiLocators,
-			multiLocatorsEncoded,
-			BIP0031Version,
-		},
-
-		// Protocol version NetAddressTimeVersion with no block locators.
-		{
-			noLocators,
-			noLocators,
-			noLocatorsEncoded,
-			NetAddressTimeVersion,
-		},
-
-		// Protocol version NetAddressTimeVersion multiple block locators.
-		{
-			multiLocators,
-			multiLocators,
-			multiLocatorsEncoded,
-			NetAddressTimeVersion,
-		},
-
-		// Protocol version MultipleAddressVersion with no block locators.
-		{
-			noLocators,
-			noLocators,
-			noLocatorsEncoded,
-			MultipleAddressVersion,
-		},
-
-		// Protocol version MultipleAddressVersion multiple block locators.
-		{
-			multiLocators,
-			multiLocators,
-			multiLocatorsEncoded,
-			MultipleAddressVersion,
 		},
 	}
 
@@ -262,10 +198,10 @@ func TestGetBlocksWire(t *testing.T) {
 // TestGetBlocksWireErrors performs negative tests against wire encode and
 // decode of MsgGetBlocks to confirm error paths work correctly.
 func TestGetBlocksWireErrors(t *testing.T) {
-	// Set protocol inside getheaders message.  Use protocol version 60002
+	// Set protocol inside getheaders message.  Use protocol version 1
 	// specifically here instead of the latest because the test data is
 	// using bytes encoded with that protocol version.
-	pver := uint32(60002)
+	pver := uint32(1)
 	wireErr := &MessageError{}
 
 	// Block 99499 hash.
@@ -295,7 +231,7 @@ func TestGetBlocksWireErrors(t *testing.T) {
 	baseGetBlocks.AddBlockLocatorHash(hashLocator2)
 	baseGetBlocks.AddBlockLocatorHash(hashLocator)
 	baseGetBlocksEncoded := []byte{
-		0x62, 0xea, 0x00, 0x00, // Protocol version 60002
+		0x01, 0x00, 0x00, 0x00, // Protocol version 1
 		0x02, // Varint for number of block locator hashes
 		0xe0, 0xde, 0x06, 0x44, 0x68, 0x13, 0x2c, 0x63,
 		0xd2, 0x20, 0xcc, 0x69, 0x12, 0x83, 0xcb, 0x65,
@@ -320,7 +256,7 @@ func TestGetBlocksWireErrors(t *testing.T) {
 	maxGetBlocks.BlockLocatorHashes = append(maxGetBlocks.BlockLocatorHashes,
 		&mainNetGenesisHash)
 	maxGetBlocksEncoded := []byte{
-		0x62, 0xea, 0x00, 0x00, // Protocol version 60002
+		0x01, 0x00, 0x00, 0x00, // Protocol version 1
 		0xfd, 0xf5, 0x01, // Varint for number of block loc hashes (501)
 	}
 

@@ -43,12 +43,6 @@ func (msg *MsgMerkleBlock) AddTxHash(hash *daghash.Hash) error {
 // BtcDecode decodes r using the bitcoin protocol encoding into the receiver.
 // This is part of the Message interface implementation.
 func (msg *MsgMerkleBlock) BtcDecode(r io.Reader, pver uint32) error {
-	if pver < BIP0037Version {
-		str := fmt.Sprintf("merkleblock message invalid for protocol "+
-			"version %d", pver)
-		return messageError("MsgMerkleBlock.BtcDecode", str)
-	}
-
 	err := readBlockHeader(r, pver, &msg.Header)
 	if err != nil {
 		return err
@@ -91,12 +85,6 @@ func (msg *MsgMerkleBlock) BtcDecode(r io.Reader, pver uint32) error {
 // BtcEncode encodes the receiver to w using the bitcoin protocol encoding.
 // This is part of the Message interface implementation.
 func (msg *MsgMerkleBlock) BtcEncode(w io.Writer, pver uint32) error {
-	if pver < BIP0037Version {
-		str := fmt.Sprintf("merkleblock message invalid for protocol "+
-			"version %d", pver)
-		return messageError("MsgMerkleBlock.BtcEncode", str)
-	}
-
 	// Read num transaction hashes and limit to max.
 	numHashes := len(msg.Hashes)
 	if numHashes > maxTxPerBlock {

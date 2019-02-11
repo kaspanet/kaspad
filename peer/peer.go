@@ -9,7 +9,6 @@ import (
 	"container/list"
 	"errors"
 	"fmt"
-	"github.com/daglabs/btcd/util/subnetworkid"
 	"io"
 	"math/rand"
 	"net"
@@ -17,6 +16,8 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/daglabs/btcd/util/subnetworkid"
 
 	"github.com/btcsuite/go-socks/socks"
 	"github.com/daglabs/btcd/blockdag"
@@ -29,11 +30,11 @@ import (
 
 const (
 	// MaxProtocolVersion is the max protocol version the peer supports.
-	MaxProtocolVersion = wire.FeeFilterVersion
+	MaxProtocolVersion = wire.ProtocolVersion
 
 	// minAcceptableProtocolVersion is the lowest protocol version that a
 	// connected peer may support.
-	minAcceptableProtocolVersion = wire.MultipleAddressVersion
+	minAcceptableProtocolVersion = wire.ProtocolVersion
 
 	// outputBufferSize is the number of elements the output channels use.
 	outputBufferSize = 50
@@ -997,12 +998,6 @@ func (p *Peer) PushGetHeadersMsg(locator blockdag.BlockLocator, stopHash *daghas
 //
 // This function is safe for concurrent access.
 func (p *Peer) PushRejectMsg(command string, code wire.RejectCode, reason string, hash *daghash.Hash, wait bool) {
-	// Don't bother sending the reject message if the protocol version
-	// is too low.
-	if p.VersionKnown() && p.ProtocolVersion() < wire.RejectVersion {
-		return
-	}
-
 	msg := wire.NewMsgReject(command, code, reason)
 	if command == wire.CmdTx || command == wire.CmdBlock {
 		if hash == nil {
@@ -1094,17 +1089,12 @@ func (p *Peer) handleRemoteVersionMsg(msg *wire.MsgVersion) error {
 // message.  For older clients, it does nothing and anything other than failure
 // is considered a successful ping.
 func (p *Peer) handlePingMsg(msg *wire.MsgPing) {
-	// Only reply with pong if the message is from a new enough client.
-	if p.ProtocolVersion() > wire.BIP0031Version {
-		// Include nonce from ping so pong can be identified.
-		p.QueueMessage(wire.NewMsgPong(msg.Nonce), nil)
-	}
+	// Include nonce from ping so pong can be identified.
+	p.QueueMessage(wire.NewMsgPong(msg.Nonce), nil)
 }
 
 // handlePongMsg is invoked when a peer receives a pong bitcoin message.  It
-// updates the ping statistics as required for recent clients (protocol
-// version > BIP0031Version).  There is no effect for older clients or when a
-// ping was not previously sent.
+// updates the ping statistics as required for recent clients.
 func (p *Peer) handlePongMsg(msg *wire.MsgPong) {
 	// Arguably we could use a buffered channel here sending data
 	// in a fifo manner whenever we send a ping, or a list keeping track of
@@ -1113,15 +1103,13 @@ func (p *Peer) handlePongMsg(msg *wire.MsgPong) {
 	// and overlapping pings will be ignored. It is unlikely to occur
 	// without large usage of the ping rpc call since we ping infrequently
 	// enough that if they overlap we would have timed out the peer.
-	if p.ProtocolVersion() > wire.BIP0031Version {
-		p.statsMtx.Lock()
-		if p.lastPingNonce != 0 && msg.Nonce == p.lastPingNonce {
-			p.lastPingMicros = time.Since(p.lastPingTime).Nanoseconds()
-			p.lastPingMicros /= 1000 // convert to usec.
-			p.lastPingNonce = 0
-		}
-		p.statsMtx.Unlock()
+	p.statsMtx.Lock()
+	if p.lastPingNonce != 0 && msg.Nonce == p.lastPingNonce {
+		p.lastPingMicros = time.Since(p.lastPingTime).Nanoseconds()
+		p.lastPingMicros /= 1000 // convert to usec.
+		p.lastPingNonce = 0
 	}
+	p.statsMtx.Unlock()
 }
 
 // readMessage reads the next bitcoin message from the peer with logging.
@@ -1835,14 +1823,10 @@ out:
 		case msg := <-p.sendQueue:
 			switch m := msg.msg.(type) {
 			case *wire.MsgPing:
-				// Only expects a pong message in later protocol
-				// versions.  Also set up statistics.
-				if p.ProtocolVersion() > wire.BIP0031Version {
-					p.statsMtx.Lock()
-					p.lastPingNonce = m.Nonce
-					p.lastPingTime = time.Now()
-					p.statsMtx.Unlock()
-				}
+				p.statsMtx.Lock()
+				p.lastPingNonce = m.Nonce
+				p.lastPingTime = time.Now()
+				p.statsMtx.Unlock()
 			}
 
 			p.stallControl <- stallControlMsg{sccSendMessage, msg.msg}

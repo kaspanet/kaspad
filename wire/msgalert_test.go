@@ -106,38 +106,6 @@ func TestMsgAlertWire(t *testing.T) {
 			baseMsgAlertEncoded,
 			ProtocolVersion,
 		},
-
-		// Protocol version BIP0035Version.
-		{
-			baseMsgAlert,
-			baseMsgAlert,
-			baseMsgAlertEncoded,
-			BIP0035Version,
-		},
-
-		// Protocol version BIP0031Version.
-		{
-			baseMsgAlert,
-			baseMsgAlert,
-			baseMsgAlertEncoded,
-			BIP0031Version,
-		},
-
-		// Protocol version NetAddressTimeVersion.
-		{
-			baseMsgAlert,
-			baseMsgAlert,
-			baseMsgAlertEncoded,
-			NetAddressTimeVersion,
-		},
-
-		// Protocol version MultipleAddressVersion.
-		{
-			baseMsgAlert,
-			baseMsgAlert,
-			baseMsgAlertEncoded,
-			MultipleAddressVersion,
-		},
 	}
 
 	t.Logf("Running %d tests", len(tests))

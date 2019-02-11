@@ -420,11 +420,8 @@ func (sp *Peer) OnVersion(_ *peer.Peer, msg *wire.MsgVersion) {
 			}
 
 			// Request known addresses if the server address manager needs
-			// more and the peer has a protocol version new enough to
-			// include a timestamp with addresses.
-			hasTimestamp := sp.ProtocolVersion() >=
-				wire.NetAddressTimeVersion
-			if addrManager.NeedMoreAddresses() && hasTimestamp {
+			// more.
+			if addrManager.NeedMoreAddresses() {
 				sp.QueueMessage(wire.NewMsgGetAddr(), nil)
 			}
 
@@ -555,13 +552,10 @@ func (sp *Peer) OnInv(_ *peer.Peer, msg *wire.MsgInv) {
 		if invVect.Type == wire.InvTypeTx {
 			peerLog.Tracef("Ignoring tx %v in inv from %v -- "+
 				"blocksonly enabled", invVect.Hash, sp)
-			if sp.ProtocolVersion() >= wire.BIP0037Version {
-				peerLog.Infof("Peer %v is announcing "+
-					"transactions -- disconnecting", sp)
-				sp.Disconnect()
-				return
-			}
-			continue
+			peerLog.Infof("Peer %v is announcing "+
+				"transactions -- disconnecting", sp)
+			sp.Disconnect()
+			return
 		}
 		err := newInv.AddInvVect(invVect)
 		if err != nil {
@@ -968,16 +962,11 @@ func (sp *Peer) OnGetCFCheckpt(_ *peer.Peer, msg *wire.MsgGetCFCheckpt) {
 // it will be banned since it is intentionally violating the protocol.
 func (sp *Peer) enforceNodeBloomFlag(cmd string) bool {
 	if sp.server.services&wire.SFNodeBloom != wire.SFNodeBloom {
-		// Ban the peer if the protocol version is high enough that the
-		// peer is knowingly violating the protocol and banning is
-		// enabled.
-		//
 		// NOTE: Even though the addBanScore function already examines
 		// whether or not banning is enabled, it is checked here as well
 		// to ensure the violation is logged and the peer is
 		// disconnected regardless.
-		if sp.ProtocolVersion() >= wire.BIP0111Version &&
-			!config.MainConfig().DisableBanning {
+		if !config.MainConfig().DisableBanning {
 
 			// Disconnect the peer regardless of whether it was
 			// banned.
@@ -1116,11 +1105,6 @@ func (sp *Peer) OnAddr(_ *peer.Peer, msg *wire.MsgAddr) {
 	// since it will not be able to learn about other peers that have not
 	// specifically been provided.
 	if config.MainConfig().SimNet {
-		return
-	}
-
-	// Ignore old style addresses which don't include a timestamp.
-	if sp.ProtocolVersion() < wire.NetAddressTimeVersion {
 		return
 	}
 
