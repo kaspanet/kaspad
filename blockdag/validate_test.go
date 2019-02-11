@@ -80,7 +80,7 @@ func TestCheckConnectBlockTemplate(t *testing.T) {
 
 	// Since we're not dealing with the real block DAG, set the block reward
 	// maturity to 1.
-	dag.TstSetBlockRewardMaturity(1)
+	dag.TestSetBlockRewardMaturity(1)
 
 	// Load up blocks such that there is a side chain.
 	// (genesis block) -> 1 -> 2 -> 3 -> 4

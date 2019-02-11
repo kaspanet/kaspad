@@ -70,7 +70,7 @@ func PrepareBlockForTest(dag *blockdag.BlockDAG, params *dagconfig.Params, paren
 	}
 
 	// In order of creating deterministic coinbase tx ids.
-	blockTemplateGenerator.UpdateExtraNonce(template.Block, dag.Height()+1, GetDeterministicExtraNonceForTest())
+	blockTemplateGenerator.UpdateExtraNonce(template.Block, dag.Height()+1, GenerateDeterministicExtraNonceForTest())
 
 	for _, tx := range transactions {
 		found := false
@@ -87,8 +87,8 @@ func PrepareBlockForTest(dag *blockdag.BlockDAG, params *dagconfig.Params, paren
 	return template.Block, nil
 }
 
-// GetDeterministicExtraNonceForTest returns a unique deterministic extra nonce for coinbase data, in order to create unique coinbase transactions.
-func GetDeterministicExtraNonceForTest() uint64 {
+// GenerateDeterministicExtraNonceForTest returns a unique deterministic extra nonce for coinbase data, in order to create unique coinbase transactions.
+func GenerateDeterministicExtraNonceForTest() uint64 {
 	extraNonceForTest++
 	return extraNonceForTest
 }

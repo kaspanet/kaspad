@@ -55,7 +55,7 @@ func TestBlockCount(t *testing.T) {
 
 	// Since we're not dealing with the real block DAG, set the block reward
 	// maturity to 1.
-	dag.TstSetBlockRewardMaturity(1)
+	dag.TestSetBlockRewardMaturity(1)
 
 	for i := 1; i < len(blocks); i++ {
 		isOrphan, err := dag.ProcessBlock(blocks[i], BFNone)
@@ -105,7 +105,7 @@ func TestHaveBlock(t *testing.T) {
 
 	// Since we're not dealing with the real block DAG, set the block reward
 	// maturity to 1.
-	dag.TstSetBlockRewardMaturity(1)
+	dag.TestSetBlockRewardMaturity(1)
 
 	for i := 1; i < len(blocks); i++ {
 		isOrphan, err := dag.ProcessBlock(blocks[i], BFNone)
@@ -835,7 +835,7 @@ func testErrorThroughPatching(t *testing.T, expectedErrorMessage string, targetF
 
 	// Since we're not dealing with the real block chain, set the block reward
 	// maturity to 1.
-	dag.TstSetBlockRewardMaturity(1)
+	dag.TestSetBlockRewardMaturity(1)
 
 	guard := monkey.Patch(targetFunction, replacementFunction)
 	defer guard.Unpatch()
@@ -1232,7 +1232,11 @@ func TestValidateFeeTransaction(t *testing.T) {
 // output to a 20-byte pubkey hash. It is expected that the input is a valid
 // hash.
 func payToPubKeyHashScript(pubKeyHash []byte) ([]byte, error) {
-	return txscript.NewScriptBuilder().AddOp(txscript.OpDup).AddOp(txscript.OpHash160).
-		AddData(pubKeyHash).AddOp(txscript.OpEqualVerify).AddOp(txscript.OpCheckSig).
+	return txscript.NewScriptBuilder().
+		AddOp(txscript.OpDup).
+		AddOp(txscript.OpHash160).
+		AddData(pubKeyHash).
+		AddOp(txscript.OpEqualVerify).
+		AddOp(txscript.OpCheckSig).
 		Script()
 }

@@ -47,6 +47,9 @@ const (
 	// MaxOutputsPerBlock is the maximum number of transaction outputs there
 	// can be in a block of max size.
 	MaxOutputsPerBlock = wire.MaxBlockPayload / wire.MinTxOutPayload
+
+	// feeTransactionIndex is the index of the fee transaction in a block.
+	feeTransactionIndex = 1
 )
 
 // isNullOutpoint determines whether or not a previous transaction output point
@@ -520,7 +523,7 @@ func (dag *BlockDAG) checkBlockSanity(block *util.Block, flags BehaviorFlags) er
 	// Do some preliminary checks on each transaction to ensure they are
 	// sane before continuing.
 	for i, tx := range transactions {
-		isFeeTransaction := i == 1
+		isFeeTransaction := i == feeTransactionIndex
 		err := CheckTransactionSanity(tx, dag.subnetworkID, isFeeTransaction)
 		if err != nil {
 			return err

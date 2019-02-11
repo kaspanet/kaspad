@@ -333,7 +333,7 @@ func (msg *MsgTx) IsFeeTransaction() bool {
 	return true
 }
 
-// IsBlockReward determins whether or not a transaction is a block reward (a fee transaction or block reward)
+// IsBlockReward determines whether or not a transaction is a block reward (a fee transaction or a coinbase)
 func (msg *MsgTx) IsBlockReward() bool {
 	return msg.IsFeeTransaction() || msg.IsCoinBase()
 }

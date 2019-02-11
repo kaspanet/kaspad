@@ -149,9 +149,9 @@ func loadUTXOSet(filename string) (UTXOSet, error) {
 	return utxoSet, nil
 }
 
-// TstSetBlockRewardMaturity makes the ability to set the block reward maturity
+// TestSetBlockRewardMaturity makes the ability to set the block reward maturity
 // available when running tests.
-func (dag *BlockDAG) TstSetBlockRewardMaturity(maturity uint16) {
+func (dag *BlockDAG) TestSetBlockRewardMaturity(maturity uint16) {
 	dag.dagParams.BlockRewardMaturity = maturity
 }
 

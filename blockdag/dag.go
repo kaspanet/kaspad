@@ -797,16 +797,14 @@ func (node *blockNode) getBluesFeeData(dag *BlockDAG, acceptedTxData []*TxWithBl
 		blocksData[*acceptedTx.InBlock].txCount++
 	}
 	for _, acceptedTx := range acceptedTxDataWithSelectedParent {
-		if blocksData[*acceptedTx.InBlock] != nil {
-			if blocksData[*acceptedTx.InBlock].transactions == nil {
-				blocksData[*acceptedTx.InBlock].transactions = make([]*wire.MsgTx, 0, blocksData[*acceptedTx.InBlock].txCount)
-			}
-			msgTx := acceptedTx.Tx.MsgTx()
-			if msgTx.IsCoinBase() {
-				blocksData[*acceptedTx.InBlock].pkScript = msgTx.TxOut[0].PkScript
-			} else {
-				blocksData[*acceptedTx.InBlock].transactions = append(blocksData[*acceptedTx.InBlock].transactions, msgTx)
-			}
+		if blocksData[*acceptedTx.InBlock].transactions == nil {
+			blocksData[*acceptedTx.InBlock].transactions = make([]*wire.MsgTx, 0, blocksData[*acceptedTx.InBlock].txCount)
+		}
+		msgTx := acceptedTx.Tx.MsgTx()
+		if msgTx.IsCoinBase() {
+			blocksData[*acceptedTx.InBlock].pkScript = msgTx.TxOut[0].PkScript
+		} else {
+			blocksData[*acceptedTx.InBlock].transactions = append(blocksData[*acceptedTx.InBlock].transactions, msgTx)
 		}
 	}
 	if err != nil {
@@ -822,7 +820,7 @@ func (node *blockNode) buildFeeTransaction(dag *BlockDAG, acceptedTxData []*TxWi
 		return nil, err
 	}
 
-	feeTx := wire.NewMsgTx(1)
+	feeTx := wire.NewMsgTx(wire.TxVersion)
 
 	for _, blue := range node.blues {
 
