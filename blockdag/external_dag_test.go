@@ -259,13 +259,3 @@ func TestChainedTransactions(t *testing.T) {
 		t.Errorf("ProcessBlock: block3 got unexpectedly orphaned")
 	}
 }
-
-func addTxToBlock(block *wire.MsgBlock, tx *wire.MsgTx) {
-	block.Transactions = append(block.Transactions, tx)
-	utilTxs := make([]*util.Tx, len(block.Transactions))
-	for i, tx := range block.Transactions {
-		utilTxs[i] = util.NewTx(tx)
-	}
-	block.Header.HashMerkleRoot = *blockdag.BuildHashMerkleTreeStore(utilTxs).Root()
-	block.Header.IDMerkleRoot = *blockdag.BuildIDMerkleTreeStore(utilTxs).Root()
-}
