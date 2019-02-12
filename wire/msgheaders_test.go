@@ -16,7 +16,7 @@ import (
 
 // TestHeaders tests the MsgHeaders API.
 func TestHeaders(t *testing.T) {
-	pver := uint32(60002)
+	pver := ProtocolVersion
 
 	// Ensure the command is expected value.
 	wantCmd := "headers"
@@ -125,69 +125,6 @@ func TestHeadersWire(t *testing.T) {
 			oneHeader,
 			oneHeaderEncoded,
 			ProtocolVersion,
-		},
-
-		// Protocol version BIP0035Version with no headers.
-		{
-			noHeaders,
-			noHeaders,
-			noHeadersEncoded,
-			BIP0035Version,
-		},
-
-		// Protocol version BIP0035Version with one header.
-		{
-			oneHeader,
-			oneHeader,
-			oneHeaderEncoded,
-			BIP0035Version,
-		},
-
-		// Protocol version BIP0031Version with no headers.
-		{
-			noHeaders,
-			noHeaders,
-			noHeadersEncoded,
-			BIP0031Version,
-		},
-
-		// Protocol version BIP0031Version with one header.
-		{
-			oneHeader,
-			oneHeader,
-			oneHeaderEncoded,
-			BIP0031Version,
-		},
-		// Protocol version NetAddressTimeVersion with no headers.
-		{
-			noHeaders,
-			noHeaders,
-			noHeadersEncoded,
-			NetAddressTimeVersion,
-		},
-
-		// Protocol version NetAddressTimeVersion with one header.
-		{
-			oneHeader,
-			oneHeader,
-			oneHeaderEncoded,
-			NetAddressTimeVersion,
-		},
-
-		// Protocol version MultipleAddressVersion with no headers.
-		{
-			noHeaders,
-			noHeaders,
-			noHeadersEncoded,
-			MultipleAddressVersion,
-		},
-
-		// Protocol version MultipleAddressVersion with one header.
-		{
-			oneHeader,
-			oneHeader,
-			oneHeaderEncoded,
-			MultipleAddressVersion,
 		},
 	}
 

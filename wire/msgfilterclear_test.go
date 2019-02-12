@@ -36,8 +36,7 @@ func TestFilterClearLatest(t *testing.T) {
 	}
 }
 
-// TestFilterClearCrossProtocol tests the MsgFilterClear API when encoding with
-// the latest protocol version and decoding with BIP0031Version.
+// TestFilterClearCrossProtocol tests the MsgFilterClear API.
 func TestFilterClearCrossProtocol(t *testing.T) {
 	msg := NewMsgFilterClear()
 
@@ -46,14 +45,6 @@ func TestFilterClearCrossProtocol(t *testing.T) {
 	err := msg.BtcEncode(&buf, ProtocolVersion)
 	if err != nil {
 		t.Errorf("encode of MsgFilterClear failed %v err <%v>", msg, err)
-	}
-
-	// Decode with old protocol version.
-	var readmsg MsgFilterClear
-	err = readmsg.BtcDecode(&buf, BIP0031Version)
-	if err == nil {
-		t.Errorf("decode of MsgFilterClear succeeded when it "+
-			"shouldn't have %v", msg)
 	}
 }
 
@@ -75,22 +66,6 @@ func TestFilterClearWire(t *testing.T) {
 			msgFilterClear,
 			msgFilterClearEncoded,
 			ProtocolVersion,
-		},
-
-		// Protocol version BIP0037Version + 1.
-		{
-			msgFilterClear,
-			msgFilterClear,
-			msgFilterClearEncoded,
-			BIP0037Version + 1,
-		},
-
-		// Protocol version BIP0037Version.
-		{
-			msgFilterClear,
-			msgFilterClear,
-			msgFilterClearEncoded,
-			BIP0037Version,
 		},
 	}
 
@@ -122,72 +97,5 @@ func TestFilterClearWire(t *testing.T) {
 				spew.Sdump(msg), spew.Sdump(test.out))
 			continue
 		}
-	}
-}
-
-// TestFilterClearWireErrors performs negative tests against wire encode and
-// decode of MsgFilterClear to confirm error paths work correctly.
-func TestFilterClearWireErrors(t *testing.T) {
-	pverNoFilterClear := BIP0037Version - 1
-	wireErr := &MessageError{}
-
-	baseFilterClear := NewMsgFilterClear()
-	baseFilterClearEncoded := []byte{}
-
-	tests := []struct {
-		in       *MsgFilterClear // Value to encode
-		buf      []byte          // Wire encoding
-		pver     uint32          // Protocol version for wire encoding
-		max      int             // Max size of fixed buffer to induce errors
-		writeErr error           // Expected write error
-		readErr  error           // Expected read error
-	}{
-		// Force error due to unsupported protocol version.
-		{
-			baseFilterClear, baseFilterClearEncoded, pverNoFilterClear, 4, wireErr, wireErr,
-		},
-	}
-
-	t.Logf("Running %d tests", len(tests))
-	for i, test := range tests {
-		// Encode to wire format.
-		w := newFixedWriter(test.max)
-		err := test.in.BtcEncode(w, test.pver)
-		if reflect.TypeOf(err) != reflect.TypeOf(test.writeErr) {
-			t.Errorf("BtcEncode #%d wrong error got: %v, want: %v",
-				i, err, test.writeErr)
-			continue
-		}
-
-		// For errors which are not of type MessageError, check them for
-		// equality.
-		if _, ok := err.(*MessageError); !ok {
-			if err != test.writeErr {
-				t.Errorf("BtcEncode #%d wrong error got: %v, "+
-					"want: %v", i, err, test.writeErr)
-				continue
-			}
-		}
-
-		// Decode from wire format.
-		var msg MsgFilterClear
-		r := newFixedReader(test.max, test.buf)
-		err = msg.BtcDecode(r, test.pver)
-		if reflect.TypeOf(err) != reflect.TypeOf(test.readErr) {
-			t.Errorf("BtcDecode #%d wrong error got: %v, want: %v",
-				i, err, test.readErr)
-			continue
-		}
-
-		// For errors which are not of type MessageError, check them for
-		// equality.
-		if _, ok := err.(*MessageError); !ok {
-			if err != test.readErr {
-				t.Errorf("BtcDecode #%d wrong error got: %v, "+
-					"want: %v", i, err, test.readErr)
-				continue
-			}
-		}
-
 	}
 }
