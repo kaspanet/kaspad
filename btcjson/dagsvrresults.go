@@ -444,6 +444,9 @@ type TxRawResult struct {
 	Size          int32   `json:"size,omitempty"`
 	Version       int32   `json:"version"`
 	LockTime      uint64  `json:"lockTime"`
+	Subnetwork    string  `json:"subnetwork"`
+	Gas           uint64  `json:"gas"`
+	Payload       string  `json:"payload"`
 	Vin           []Vin   `json:"vin"`
 	Vout          []Vout  `json:"vout"`
 	BlockHash     string  `json:"blockHash,omitempty"`
