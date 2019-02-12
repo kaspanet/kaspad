@@ -54,7 +54,7 @@ func TestTxIndexConnectBlock(t *testing.T) {
 	}
 
 	prepareAndProcessBlock := func(parentHashes []daghash.Hash, transactions []*wire.MsgTx, blockName string) *wire.MsgBlock {
-		block, err := mining.PrepareBlockForTest(dag, &params, parentHashes, transactions)
+		block, err := mining.PrepareBlockForTest(dag, &params, parentHashes, transactions, false)
 		if err != nil {
 			t.Fatalf("TestTxIndexConnectBlock: block %v got unexpected error from PrepareBlockForTest: %v", blockName, err)
 		}
