@@ -2,7 +2,10 @@ package blockdag_test
 
 import (
 	"fmt"
+	"math"
 	"testing"
+
+	"github.com/daglabs/btcd/util/subnetworkid"
 
 	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/util/testtools"
@@ -43,7 +46,7 @@ func TestFinality(t *testing.T) {
 	}
 	defer teardownFunc()
 	buildNodeToDag := func(parentHashes []daghash.Hash) (*util.Block, error) {
-		msgBlock, err := mining.PrepareBlockForTest(dag, &params, parentHashes, nil)
+		msgBlock, err := mining.PrepareBlockForTest(dag, &params, parentHashes, nil, false, 1)
 		if err != nil {
 			return nil, err
 		}
@@ -179,7 +182,7 @@ func TestChainedTransactions(t *testing.T) {
 	}
 	defer teardownFunc()
 
-	block1, err := mining.PrepareBlockForTest(dag, &params, []daghash.Hash{*params.GenesisHash}, nil)
+	block1, err := mining.PrepareBlockForTest(dag, &params, []daghash.Hash{*params.GenesisHash}, nil, false, 1)
 	if err != nil {
 		t.Fatalf("PrepareBlockForTest: %v", err)
 	}
@@ -214,23 +217,15 @@ func TestChainedTransactions(t *testing.T) {
 		Value:    uint64(1),
 	})
 
-	block2, err := mining.PrepareBlockForTest(dag, &params, []daghash.Hash{block1.BlockHash()}, []*wire.MsgTx{tx})
+	block2, err := mining.PrepareBlockForTest(dag, &params, []daghash.Hash{block1.BlockHash()}, []*wire.MsgTx{tx, chainedTx}, true, 1)
 	if err != nil {
 		t.Fatalf("PrepareBlockForTest: %v", err)
 	}
 
-	block2.Transactions = append(block2.Transactions, chainedTx)
-	utilTxs := make([]*util.Tx, len(block2.Transactions))
-	for i, tx := range block2.Transactions {
-		utilTxs[i] = util.NewTx(tx)
-	}
-	block2.Header.HashMerkleRoot = *blockdag.BuildHashMerkleTreeStore(utilTxs).Root()
-	block2.Header.IDMerkleRoot = *blockdag.BuildIDMerkleTreeStore(utilTxs).Root()
-
 	//Checks that dag.ProcessBlock fails because we don't allow a transaction to spend another transaction from the same block
 	isOrphan, err = dag.ProcessBlock(util.NewBlock(block2), blockdag.BFNoPoWCheck)
 	if err == nil {
-		t.Errorf("ProcessBlock expected an error\n")
+		t.Errorf("ProcessBlock expected an error")
 	} else if rErr, ok := err.(blockdag.RuleError); ok {
 		if rErr.ErrorCode != blockdag.ErrMissingTxOut {
 			t.Errorf("ProcessBlock expected an %v error code but got %v", blockdag.ErrMissingTxOut, rErr.ErrorCode)
@@ -253,7 +248,7 @@ func TestChainedTransactions(t *testing.T) {
 		Value:    uint64(1),
 	})
 
-	block3, err := mining.PrepareBlockForTest(dag, &params, []daghash.Hash{block1.BlockHash()}, []*wire.MsgTx{nonChainedTx})
+	block3, err := mining.PrepareBlockForTest(dag, &params, []daghash.Hash{block1.BlockHash()}, []*wire.MsgTx{nonChainedTx}, false, 1)
 	if err != nil {
 		t.Fatalf("PrepareBlockForTest: %v", err)
 	}
@@ -288,7 +283,7 @@ func TestGasLimit(t *testing.T) {
 		t.Fatalf("could not register network: %s", err)
 	}
 
-	fundsBlock, err := mining.PrepareBlockForTest(dag, &params, dag.TipHashes(), nil, false)
+	fundsBlock, err := mining.PrepareBlockForTest(dag, &params, dag.TipHashes(), nil, false, 2)
 	if err != nil {
 		t.Fatalf("PrepareBlockForTest: %v", err)
 	}
@@ -315,12 +310,94 @@ func TestGasLimit(t *testing.T) {
 	overLimitTx.SubnetworkID = *subnetworkID
 	overLimitTx.Gas = 123456
 
-	overLimitBlock, err := mining.PrepareBlockForTest(dag, &params, dag.TipHashes(), nil, false)
+	overLimitBlock, err := mining.PrepareBlockForTest(dag, &params, dag.TipHashes(), []*wire.MsgTx{overLimitTx}, true, 1)
 	if err != nil {
 		t.Fatalf("PrepareBlockForTest: %v", err)
 	}
-	addTxToBlock(overLimitBlock, overLimitTx)
 	isOrphan, err = dag.ProcessBlock(util.NewBlock(overLimitBlock), blockdag.BFNoPoWCheck)
+	if err == nil {
+		t.Fatalf("ProcessBlock expected to have an error")
+	}
+	rErr, ok := err.(blockdag.RuleError)
+	if !ok {
+		t.Fatalf("ProcessBlock expected a RuleError, but got %v", err)
+	} else if rErr.ErrorCode != blockdag.ErrInvalidGas {
+		t.Fatalf("ProcessBlock expected error code %s but got %s", blockdag.ErrInvalidGas, rErr.ErrorCode)
+	}
+	if isOrphan {
+		t.Fatalf("ProcessBlock: overLimitBlock got unexpectedly orphan")
+	}
+
+	normalGasTx := wire.NewMsgTx(wire.TxVersion)
+	normalGasTx.AddTxIn(&wire.TxIn{
+		PreviousOutPoint: *wire.NewOutPoint(&cbTxID, 0),
+		Sequence:         wire.MaxTxInSequenceNum,
+	})
+	normalGasTx.AddTxOut(&wire.TxOut{
+		Value:    cbTxValue,
+		PkScript: blockdag.OpTrueScript,
+	})
+	normalGasTx.SubnetworkID = *subnetworkID
+	normalGasTx.Gas = 1
+
+	overflowGasTx := wire.NewMsgTx(wire.TxVersion)
+	overflowGasTx.AddTxIn(&wire.TxIn{
+		PreviousOutPoint: *wire.NewOutPoint(&cbTxID, 1),
+		Sequence:         wire.MaxTxInSequenceNum,
+	})
+	overflowGasTx.AddTxOut(&wire.TxOut{
+		Value:    cbTxValue,
+		PkScript: blockdag.OpTrueScript,
+	})
+	overflowGasTx.SubnetworkID = *subnetworkID
+	overflowGasTx.Gas = math.MaxUint64
+
+	overflowGasBlock, err := mining.PrepareBlockForTest(dag, &params, dag.TipHashes(), []*wire.MsgTx{normalGasTx, overflowGasTx}, true, 1)
+	if err != nil {
+		t.Fatalf("PrepareBlockForTest: %v", err)
+	}
+	isOrphan, err = dag.ProcessBlock(util.NewBlock(overflowGasBlock), blockdag.BFNoPoWCheck)
+	if err == nil {
+		t.Fatalf("ProcessBlock expected to have an error")
+	}
+	rErr, ok = err.(blockdag.RuleError)
+	if !ok {
+		t.Fatalf("ProcessBlock expected a RuleError, but got %v", err)
+	} else if rErr.ErrorCode != blockdag.ErrInvalidGas {
+		t.Fatalf("ProcessBlock expected error code %s but got %s", blockdag.ErrInvalidGas, rErr.ErrorCode)
+	}
+	if isOrphan {
+		t.Fatalf("ProcessBlock: overLimitBlock got unexpectedly orphan")
+	}
+
+	nonExistentSubnetwork := subnetworkid.SubnetworkID{123}
+	nonExistentSubnetworkTx := wire.NewMsgTx(wire.TxVersion)
+	nonExistentSubnetworkTx.AddTxIn(&wire.TxIn{
+		PreviousOutPoint: *wire.NewOutPoint(&cbTxID, 0),
+		Sequence:         wire.MaxTxInSequenceNum,
+	})
+	nonExistentSubnetworkTx.AddTxOut(&wire.TxOut{
+		Value:    cbTxValue,
+		PkScript: blockdag.OpTrueScript,
+	})
+	nonExistentSubnetworkTx.SubnetworkID = nonExistentSubnetwork
+	nonExistentSubnetworkTx.Gas = 1
+
+	nonExistentSubnetworkBlock, err := mining.PrepareBlockForTest(dag, &params, dag.TipHashes(), []*wire.MsgTx{nonExistentSubnetworkTx, overflowGasTx}, true, 1)
+	if err != nil {
+		t.Fatalf("PrepareBlockForTest: %v", err)
+	}
+	isOrphan, err = dag.ProcessBlock(util.NewBlock(nonExistentSubnetworkBlock), blockdag.BFNoPoWCheck)
+	expectedErrStr := fmt.Sprintf("subnetwork '%s' not found", nonExistentSubnetwork)
+	if err.Error() != expectedErrStr {
+		t.Fatalf("ProcessBlock expected error %v but got %v", expectedErrStr, err)
+	}
+
+	validBlock, err := mining.PrepareBlockForTest(dag, &params, dag.TipHashes(), []*wire.MsgTx{normalGasTx}, true, 1)
+	if err != nil {
+		t.Fatalf("PrepareBlockForTest: %v", err)
+	}
+	isOrphan, err = dag.ProcessBlock(util.NewBlock(validBlock), blockdag.BFNoPoWCheck)
 	if err != nil {
 		t.Fatalf("ProcessBlock: %v", err)
 	}

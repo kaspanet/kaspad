@@ -530,7 +530,10 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block, fastAdd bo
 		}
 	}
 
-	dag.validateGasLimit(block)
+	err := dag.validateGasLimit(block)
+	if err != nil {
+		return err
+	}
 
 	// Add the node to the virtual and update the UTXO set of the DAG.
 	utxoDiff, acceptedTxsData, err := dag.applyUTXOChanges(node, block, fastAdd)
