@@ -14,16 +14,8 @@ import (
 // maxNetAddressPayload returns the max payload size for a bitcoin NetAddress
 // based on the protocol version.
 func maxNetAddressPayload(pver uint32) uint32 {
-	// Services 8 bytes + ip 16 bytes + port 2 bytes.
-	plen := uint32(26)
-
-	// NetAddressTimeVersion added a timestamp field.
-	if pver >= NetAddressTimeVersion {
-		// Timestamp 8 bytes.
-		plen += 8
-	}
-
-	return plen
+	// Services 8 bytes + ip 16 bytes + port 2 bytes + timestamp 8 bytes.
+	return uint32(34)
 }
 
 // NetAddress defines information about a peer on the network including the time
@@ -88,7 +80,7 @@ func NewNetAddress(addr *net.TCPAddr, services ServiceFlag) *NetAddress {
 func readNetAddress(r io.Reader, pver uint32, na *NetAddress, ts bool) error {
 	var ip [16]byte
 
-	if ts && pver >= NetAddressTimeVersion {
+	if ts {
 		err := readElement(r, (*int64Time)(&na.Timestamp))
 		if err != nil {
 			return err
@@ -118,8 +110,7 @@ func readNetAddress(r io.Reader, pver uint32, na *NetAddress, ts bool) error {
 // version and whether or not the timestamp is included per ts.  Some messages
 // like version do not include the timestamp.
 func writeNetAddress(w io.Writer, pver uint32, na *NetAddress, ts bool) error {
-	// Timestamp wasn't added until protocol version >= NetAddressTimeVersion.
-	if ts && pver >= NetAddressTimeVersion {
+	if ts {
 		err := writeElement(w, int64(na.Timestamp.Unix()))
 		if err != nil {
 			return err

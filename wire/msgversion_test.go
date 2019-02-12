@@ -151,56 +151,6 @@ func TestVersionWire(t *testing.T) {
 			baseVersionBIP0037Encoded,
 			ProtocolVersion,
 		},
-
-		// Protocol version BIP0037Version with relay transactions field
-		// true.
-		{
-			baseVersionBIP0037,
-			baseVersionBIP0037,
-			baseVersionBIP0037Encoded,
-			BIP0037Version,
-		},
-
-		// Protocol version BIP0037Version with relay transactions field
-		// false.
-		{
-			verRelayTxFalse,
-			verRelayTxFalse,
-			verRelayTxFalseEncoded,
-			BIP0037Version,
-		},
-
-		// Protocol version BIP0035Version.
-		{
-			baseVersion,
-			baseVersion,
-			baseVersionEncoded,
-			BIP0035Version,
-		},
-
-		// Protocol version BIP0031Version.
-		{
-			baseVersion,
-			baseVersion,
-			baseVersionEncoded,
-			BIP0031Version,
-		},
-
-		// Protocol version NetAddressTimeVersion.
-		{
-			baseVersion,
-			baseVersion,
-			baseVersionEncoded,
-			NetAddressTimeVersion,
-		},
-
-		// Protocol version MultipleAddressVersion.
-		{
-			baseVersion,
-			baseVersion,
-			baseVersionEncoded,
-			MultipleAddressVersion,
-		},
 	}
 
 	t.Logf("Running %d tests", len(tests))
@@ -237,10 +187,7 @@ func TestVersionWire(t *testing.T) {
 // TestVersionWireErrors performs negative tests against wire encode and
 // decode of MsgGetHeaders to confirm error paths work correctly.
 func TestVersionWireErrors(t *testing.T) {
-	// Use protocol version 60002 specifically here instead of the latest
-	// because the test data is using bytes encoded with that protocol
-	// version.
-	pver := uint32(60002)
+	pver := ProtocolVersion
 	wireErr := &MessageError{}
 
 	// Ensure calling MsgVersion.BtcDecode with a non *bytes.Buffer returns
@@ -303,12 +250,6 @@ func TestVersionWireErrors(t *testing.T) {
 		{baseVersion, baseVersionEncoded, pver, 102, io.ErrShortWrite, io.ErrUnexpectedEOF},
 		// Force error in last block.
 		{baseVersion, baseVersionEncoded, pver, 118, io.ErrShortWrite, io.ErrUnexpectedEOF},
-		// Force error in relay tx - no read error should happen since
-		// it's optional.
-		{
-			baseVersionBIP0037, baseVersionBIP0037Encoded,
-			BIP0037Version, 121, io.ErrShortWrite, nil,
-		},
 		// Force error due to user agent too big
 		{exceedUAVer, exceedUAVerEncoded, pver, newLen, wireErr, wireErr},
 	}

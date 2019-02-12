@@ -50,8 +50,7 @@ func TestFilterLoadLatest(t *testing.T) {
 	}
 }
 
-// TestFilterLoadCrossProtocol tests the MsgFilterLoad API when encoding with
-// the latest protocol version and decoding with BIP0031Version.
+// TestFilterLoadCrossProtocol tests the MsgFilterLoad API.
 func TestFilterLoadCrossProtocol(t *testing.T) {
 	data := []byte{0x01, 0x02}
 	msg := NewMsgFilterLoad(data, 10, 0, 0)
@@ -62,14 +61,6 @@ func TestFilterLoadCrossProtocol(t *testing.T) {
 	if err != nil {
 		t.Errorf("encode of NewMsgFilterLoad failed %v err <%v>", msg,
 			err)
-	}
-
-	// Decode with old protocol version.
-	var readmsg MsgFilterLoad
-	err = readmsg.BtcDecode(&buf, BIP0031Version)
-	if err == nil {
-		t.Errorf("decode of MsgFilterLoad succeeded when it shouldn't have %v",
-			msg)
 	}
 }
 
@@ -128,8 +119,6 @@ func TestFilterLoadMaxHashFuncsSize(t *testing.T) {
 // of MsgFilterLoad to confirm error paths work correctly.
 func TestFilterLoadWireErrors(t *testing.T) {
 	pver := ProtocolVersion
-	pverNoFilterLoad := BIP0037Version - 1
-	wireErr := &MessageError{}
 
 	baseFilter := []byte{0x01, 0x02, 0x03, 0x04}
 	baseFilterLoad := NewMsgFilterLoad(baseFilter, 10, 0, BloomUpdateNone)
@@ -167,10 +156,6 @@ func TestFilterLoadWireErrors(t *testing.T) {
 		// Force error in flags.
 		{
 			baseFilterLoad, baseFilterLoadEncoded, pver, 13, io.ErrShortWrite, io.EOF,
-		},
-		// Force error due to unsupported protocol version.
-		{
-			baseFilterLoad, baseFilterLoadEncoded, pverNoFilterLoad, 10, wireErr, wireErr,
 		},
 	}
 

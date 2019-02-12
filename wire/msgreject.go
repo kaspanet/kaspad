@@ -74,12 +74,6 @@ type MsgReject struct {
 // BtcDecode decodes r using the bitcoin protocol encoding into the receiver.
 // This is part of the Message interface implementation.
 func (msg *MsgReject) BtcDecode(r io.Reader, pver uint32) error {
-	if pver < RejectVersion {
-		str := fmt.Sprintf("reject message invalid for protocol "+
-			"version %d", pver)
-		return messageError("MsgReject.BtcDecode", str)
-	}
-
 	// Command that was rejected.
 	cmd, err := ReadVarString(r, pver)
 	if err != nil {
@@ -116,12 +110,6 @@ func (msg *MsgReject) BtcDecode(r io.Reader, pver uint32) error {
 // BtcEncode encodes the receiver to w using the bitcoin protocol encoding.
 // This is part of the Message interface implementation.
 func (msg *MsgReject) BtcEncode(w io.Writer, pver uint32) error {
-	if pver < RejectVersion {
-		str := fmt.Sprintf("reject message invalid for protocol "+
-			"version %d", pver)
-		return messageError("MsgReject.BtcEncode", str)
-	}
-
 	// Command that was rejected.
 	err := WriteVarString(w, pver, msg.Cmd)
 	if err != nil {
@@ -162,17 +150,10 @@ func (msg *MsgReject) Command() string {
 // MaxPayloadLength returns the maximum length the payload can be for the
 // receiver.  This is part of the Message interface implementation.
 func (msg *MsgReject) MaxPayloadLength(pver uint32) uint32 {
-	plen := uint32(0)
-	// The reject message did not exist before protocol version
-	// RejectVersion.
-	if pver >= RejectVersion {
-		// Unfortunately the bitcoin protocol does not enforce a sane
-		// limit on the length of the reason, so the max payload is the
-		// overall maximum message payload.
-		plen = MaxMessagePayload
-	}
-
-	return plen
+	// Unfortunately the bitcoin protocol does not enforce a sane
+	// limit on the length of the reason, so the max payload is the
+	// overall maximum message payload.
+	return uint32(MaxMessagePayload)
 }
 
 // NewMsgReject returns a new bitcoin reject message that conforms to the

@@ -51,7 +51,7 @@ func TestBlockHeader(t *testing.T) {
 // protocol versions.
 func TestBlockHeaderWire(t *testing.T) {
 	nonce := uint64(123123) // 0x000000000001e0f3
-	pver := uint32(70001)
+	pver := ProtocolVersion
 
 	// baseBlockHdr is used in the various tests as a baseline BlockHeader.
 	bits := uint32(0x1d00ffff)
@@ -102,38 +102,6 @@ func TestBlockHeaderWire(t *testing.T) {
 			baseBlockHdr,
 			baseBlockHdrEncoded,
 			ProtocolVersion,
-		},
-
-		// Protocol version BIP0035Version.
-		{
-			baseBlockHdr,
-			baseBlockHdr,
-			baseBlockHdrEncoded,
-			BIP0035Version,
-		},
-
-		// Protocol version BIP0031Version.
-		{
-			baseBlockHdr,
-			baseBlockHdr,
-			baseBlockHdrEncoded,
-			BIP0031Version,
-		},
-
-		// Protocol version NetAddressTimeVersion.
-		{
-			baseBlockHdr,
-			baseBlockHdr,
-			baseBlockHdrEncoded,
-			NetAddressTimeVersion,
-		},
-
-		// Protocol version MultipleAddressVersion.
-		{
-			baseBlockHdr,
-			baseBlockHdr,
-			baseBlockHdrEncoded,
-			MultipleAddressVersion,
 		},
 	}
 
