@@ -267,3 +267,64 @@ func TestChainedTransactions(t *testing.T) {
 		t.Errorf("ProcessBlock: block3 got unexpectedly orphaned")
 	}
 }
+
+// TestGasLimit tests the gas limit rules
+func TestGasLimit(t *testing.T) {
+	params := dagconfig.SimNetParams
+	params.K = 1
+	params.BlockRewardMaturity = 1
+	dag, teardownFunc, err := blockdag.DAGSetup("TestSubnetworkRegistry", blockdag.Config{
+		DAGParams:    &params,
+		SubnetworkID: &wire.SubnetworkIDSupportsAll,
+	})
+	if err != nil {
+		t.Fatalf("Failed to setup DAG instance: %v", err)
+	}
+	defer teardownFunc()
+
+	gasLimit := uint64(12345)
+	subnetworkID, err := testtools.RegisterSubnetworkForTest(dag, &params, gasLimit)
+	if err != nil {
+		t.Fatalf("could not register network: %s", err)
+	}
+
+	fundsBlock, err := mining.PrepareBlockForTest(dag, &params, dag.TipHashes(), nil, false)
+	if err != nil {
+		t.Fatalf("PrepareBlockForTest: %v", err)
+	}
+	isOrphan, err := dag.ProcessBlock(util.NewBlock(fundsBlock), blockdag.BFNoPoWCheck)
+	if err != nil {
+		t.Fatalf("ProcessBlock: %v", err)
+	}
+	if isOrphan {
+		t.Fatalf("ProcessBlock: funds block got unexpectedly orphan")
+	}
+
+	cbTxValue := fundsBlock.Transactions[0].TxOut[0].Value
+	cbTxID := fundsBlock.Transactions[0].TxID()
+
+	overLimitTx := wire.NewMsgTx(wire.TxVersion)
+	overLimitTx.AddTxIn(&wire.TxIn{
+		PreviousOutPoint: *wire.NewOutPoint(&cbTxID, 0),
+		Sequence:         wire.MaxTxInSequenceNum,
+	})
+	overLimitTx.AddTxOut(&wire.TxOut{
+		Value:    cbTxValue,
+		PkScript: blockdag.OpTrueScript,
+	})
+	overLimitTx.SubnetworkID = *subnetworkID
+	overLimitTx.Gas = 123456
+
+	overLimitBlock, err := mining.PrepareBlockForTest(dag, &params, dag.TipHashes(), nil, false)
+	if err != nil {
+		t.Fatalf("PrepareBlockForTest: %v", err)
+	}
+	addTxToBlock(overLimitBlock, overLimitTx)
+	isOrphan, err = dag.ProcessBlock(util.NewBlock(overLimitBlock), blockdag.BFNoPoWCheck)
+	if err != nil {
+		t.Fatalf("ProcessBlock: %v", err)
+	}
+	if isOrphan {
+		t.Fatalf("ProcessBlock: overLimitBlock got unexpectedly orphan")
+	}
+}
