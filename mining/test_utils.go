@@ -38,7 +38,7 @@ func (txs *fakeTxSource) HaveTransaction(txID *daghash.TxID) bool {
 }
 
 // PrepareBlockForTest generates a block with the proper merkle roots, coinbase/fee transactions etc. This function is used for test purposes only
-func PrepareBlockForTest(dag *blockdag.BlockDAG, params *dagconfig.Params, parentHashes []daghash.Hash, transactions []*wire.MsgTx) (*wire.MsgBlock, error) {
+func PrepareBlockForTest(dag *blockdag.BlockDAG, params *dagconfig.Params, parentHashes []daghash.Hash, transactions []*wire.MsgTx, forceTransactions bool) (*wire.MsgBlock, error) {
 	newVirtual, err := blockdag.GetVirtualFromParentsForTest(dag, parentHashes)
 	if err != nil {
 		return nil, err
@@ -72,6 +72,7 @@ func PrepareBlockForTest(dag *blockdag.BlockDAG, params *dagconfig.Params, paren
 	// In order of creating deterministic coinbase tx ids.
 	blockTemplateGenerator.UpdateExtraNonce(template.Block, dag.Height()+1, GenerateDeterministicExtraNonceForTest())
 
+	txsToAdd := make([]*wire.MsgTx, 0)
 	for _, tx := range transactions {
 		found := false
 		for _, blockTx := range template.Block.Transactions {
@@ -81,8 +82,22 @@ func PrepareBlockForTest(dag *blockdag.BlockDAG, params *dagconfig.Params, paren
 			}
 		}
 		if !found {
-			return nil, fmt.Errorf("tx %v wasn't found in the block", tx.TxHash())
+			if !forceTransactions {
+				return nil, fmt.Errorf("tx %v wasn't found in the block", tx.TxHash())
+			}
+			txsToAdd = append(txsToAdd, tx)
 		}
+	}
+	if forceTransactions && len(txsToAdd) > 0 {
+		for _, tx := range txsToAdd {
+			template.Block.Transactions = append(template.Block.Transactions, tx)
+		}
+		utilTxs := make([]*util.Tx, len(template.Block.Transactions))
+		for i, tx := range template.Block.Transactions {
+			utilTxs[i] = util.NewTx(tx)
+		}
+		template.Block.Header.HashMerkleRoot = *blockdag.BuildHashMerkleTreeStore(utilTxs).Root()
+		template.Block.Header.IDMerkleRoot = *blockdag.BuildIDMerkleTreeStore(utilTxs).Root()
 	}
 	return template.Block, nil
 }

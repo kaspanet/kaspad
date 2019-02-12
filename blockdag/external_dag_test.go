@@ -43,7 +43,7 @@ func TestFinality(t *testing.T) {
 	}
 	defer teardownFunc()
 	buildNodeToDag := func(parentHashes []daghash.Hash) (*util.Block, error) {
-		msgBlock, err := mining.PrepareBlockForTest(dag, &params, parentHashes, nil)
+		msgBlock, err := mining.PrepareBlockForTest(dag, &params, parentHashes, nil, false)
 		if err != nil {
 			return nil, err
 		}
@@ -179,7 +179,7 @@ func TestChainedTransactions(t *testing.T) {
 	}
 	defer teardownFunc()
 
-	block1, err := mining.PrepareBlockForTest(dag, &params, []daghash.Hash{*params.GenesisHash}, nil)
+	block1, err := mining.PrepareBlockForTest(dag, &params, []daghash.Hash{*params.GenesisHash}, nil, false)
 	if err != nil {
 		t.Fatalf("PrepareBlockForTest: %v", err)
 	}
@@ -214,18 +214,10 @@ func TestChainedTransactions(t *testing.T) {
 		Value:    uint64(1),
 	})
 
-	block2, err := mining.PrepareBlockForTest(dag, &params, []daghash.Hash{block1.BlockHash()}, []*wire.MsgTx{tx})
+	block2, err := mining.PrepareBlockForTest(dag, &params, []daghash.Hash{block1.BlockHash()}, []*wire.MsgTx{tx, chainedTx}, true)
 	if err != nil {
 		t.Fatalf("PrepareBlockForTest: %v", err)
 	}
-
-	block2.Transactions = append(block2.Transactions, chainedTx)
-	utilTxs := make([]*util.Tx, len(block2.Transactions))
-	for i, tx := range block2.Transactions {
-		utilTxs[i] = util.NewTx(tx)
-	}
-	block2.Header.HashMerkleRoot = *blockdag.BuildHashMerkleTreeStore(utilTxs).Root()
-	block2.Header.IDMerkleRoot = *blockdag.BuildIDMerkleTreeStore(utilTxs).Root()
 
 	//Checks that dag.ProcessBlock fails because we don't allow a transaction to spend another transaction from the same block
 	isOrphan, err = dag.ProcessBlock(util.NewBlock(block2), blockdag.BFNoPoWCheck)
@@ -253,7 +245,7 @@ func TestChainedTransactions(t *testing.T) {
 		Value:    uint64(1),
 	})
 
-	block3, err := mining.PrepareBlockForTest(dag, &params, []daghash.Hash{block1.BlockHash()}, []*wire.MsgTx{nonChainedTx})
+	block3, err := mining.PrepareBlockForTest(dag, &params, []daghash.Hash{block1.BlockHash()}, []*wire.MsgTx{nonChainedTx}, false)
 	if err != nil {
 		t.Fatalf("PrepareBlockForTest: %v", err)
 	}

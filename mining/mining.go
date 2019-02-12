@@ -433,7 +433,6 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 	// avoided.
 	blockTxns := make([]*util.Tx, 0, len(sourceTxns)+2)
 	blockTxns = append(blockTxns, coinbaseTx, feeTransaction)
-	blockUtxos := blockdag.NewDiffUTXOSet(g.dag.UTXOSet(), blockdag.NewUTXODiff())
 
 	// The starting block size is the size of the block header plus the max
 	// possible transaction count size, plus the size of the coinbase
@@ -475,7 +474,7 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 		// value age sum as well as the adjusted transaction size.  The
 		// formula is: sum(inputValue * inputAge) / adjustedTxSize
 		prioItem := &txPrioItem{tx: tx}
-		prioItem.priority = CalcPriority(tx.MsgTx(), blockUtxos,
+		prioItem.priority = CalcPriority(tx.MsgTx(), g.dag.UTXOSet(),
 			nextBlockHeight)
 
 		// Calculate the fee in Satoshi/kB.
@@ -536,7 +535,7 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 			continue
 		}
 		numP2SHSigOps, err := blockdag.CountP2SHSigOps(tx, false,
-			blockUtxos)
+			g.dag.UTXOSet())
 		if err != nil {
 			log.Tracef("Skipping tx %s due to error in "+
 				"GetSigOpCost: %v", tx.ID(), err)
@@ -596,25 +595,19 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 		// Ensure the transaction inputs pass all of the necessary
 		// preconditions before allowing it to be added to the block.
 		_, err = blockdag.CheckTransactionInputs(tx, nextBlockHeight,
-			blockUtxos, g.dagParams)
+			g.dag.UTXOSet(), g.dagParams)
 		if err != nil {
 			log.Tracef("Skipping tx %s due to error in "+
 				"CheckTransactionInputs: %v", tx.ID(), err)
 			continue
 		}
-		err = blockdag.ValidateTransactionScripts(tx, blockUtxos,
+		err = blockdag.ValidateTransactionScripts(tx, g.dag.UTXOSet(),
 			txscript.StandardVerifyFlags, g.sigCache)
 		if err != nil {
 			log.Tracef("Skipping tx %s due to error in "+
 				"ValidateTransactionScripts: %v", tx.ID(), err)
 			continue
 		}
-
-		// Spend the transaction inputs in the block utxo view and add
-		// an entry for it to ensure any transactions which reference
-		// this one have it available as an input and can ensure they
-		// aren't double spending.
-		blockUtxos.AddTx(tx.MsgTx(), nextBlockHeight)
 
 		// Add the transaction to the block, increment counters, and
 		// save the fees and signature operation counts to the block
