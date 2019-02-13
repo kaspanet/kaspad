@@ -21,6 +21,8 @@ func TestErrorCodeStringer(t *testing.T) {
 		{ErrInvalidTime, "ErrInvalidTime"},
 		{ErrTimeTooOld, "ErrTimeTooOld"},
 		{ErrTimeTooNew, "ErrTimeTooNew"},
+		{ErrNoParents, "ErrNoParents"},
+		{ErrWrongParentsOrder, "ErrWrongParentsOrder"},
 		{ErrDifficultyTooLow, "ErrDifficultyTooLow"},
 		{ErrUnexpectedDifficulty, "ErrUnexpectedDifficulty"},
 		{ErrHighHash, "ErrHighHash"},

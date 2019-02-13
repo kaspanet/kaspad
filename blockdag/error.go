@@ -60,6 +60,9 @@ const (
 	// the current time.
 	ErrTimeTooNew
 
+	// ErrNoParents indicates that the block is missing parents
+	ErrNoParents
+
 	// ErrWrongParentsOrder indicates that the block's parents are not ordered by hash, as expected
 	ErrWrongParentsOrder
 
@@ -244,6 +247,8 @@ var errorCodeStrings = map[ErrorCode]string{
 	ErrInvalidTime:               "ErrInvalidTime",
 	ErrTimeTooOld:                "ErrTimeTooOld",
 	ErrTimeTooNew:                "ErrTimeTooNew",
+	ErrNoParents:                 "ErrNoParents",
+	ErrWrongParentsOrder:         "ErrWrongParentsOrder",
 	ErrDifficultyTooLow:          "ErrDifficultyTooLow",
 	ErrUnexpectedDifficulty:      "ErrUnexpectedDifficulty",
 	ErrHighHash:                  "ErrHighHash",

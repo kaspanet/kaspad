@@ -498,12 +498,6 @@ func (dag *BlockDAG) connectToDAG(node *blockNode, parentNodes blockSet, block *
 //
 // This function MUST be called with the chain state lock held (for writes).
 func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block, fastAdd bool) error {
-	// The coinbase for the Genesis block is not spendable, so just return
-	// an error now.
-	if node.hash.IsEqual(dag.dagParams.GenesisHash) {
-		str := "the coinbase for the genesis block is not spendable"
-		return ruleError(ErrMissingTxOut, str)
-	}
 
 	// No warnings about unknown rules or versions until the DAG is
 	// current.
@@ -615,6 +609,9 @@ func (dag *BlockDAG) LastFinalityPointHash() *daghash.Hash {
 }
 
 func (dag *BlockDAG) checkFinalityRulesAndGetFinalityPointCandidate(node *blockNode) (*blockNode, error) {
+	if node.isGenesis() {
+		return node, nil
+	}
 	var finalityPointCandidate *blockNode
 	finalityErr := ruleError(ErrFinality, "The last finality point is not in the selected chain of this block")
 
@@ -890,6 +887,9 @@ func (dag *BlockDAG) getTXO(outpointBlockNode *blockNode, outpoint wire.OutPoint
 }
 
 func (node *blockNode) validateFeeTransaction(dag *BlockDAG, acceptedTxData []*TxWithBlockHash, nodeTransactions []*util.Tx) error {
+	if node.isGenesis() {
+		return nil
+	}
 	expectedFeeTransaction, err := node.buildFeeTransaction(dag, acceptedTxData)
 	if err != nil {
 		return err
@@ -935,6 +935,9 @@ type TxWithBlockHash struct {
 
 // pastUTXO returns the UTXO of a given block's past
 func (node *blockNode) pastUTXO(virtual *virtualBlock, db database.DB) (pastUTXO UTXOSet, acceptedTxData []*TxWithBlockHash, err error) {
+	if node.isGenesis() {
+		return UTXOSet(virtual.utxoSet), nil, nil
+	}
 	pastUTXO, err = node.selectedParent.restoreUTXO(virtual)
 	if err != nil {
 		return nil, nil, err
@@ -1076,8 +1079,12 @@ func (dag *BlockDAG) isCurrent() bool {
 	//
 	// The chain appears to be current if none of the checks reported
 	// otherwise.
+	selectedTip := dag.selectedTip()
+	if selectedTip == nil {
+		return false
+	}
 	minus24Hours := dag.timeSource.AdjustedTime().Add(-24 * time.Hour).Unix()
-	return dag.selectedTip().timestamp >= minus24Hours
+	return selectedTip.timestamp >= minus24Hours
 }
 
 // IsCurrent returns whether or not the chain believes it is current.  Several
@@ -1641,7 +1648,7 @@ func New(config *Config) (*BlockDAG, error) {
 		for i := range config.Checkpoints {
 			checkpoint := &config.Checkpoints[i]
 			if checkpoint.Height <= prevCheckpointHeight {
-				return nil, AssertError("blockchain.New " +
+				return nil, AssertError("blockdag.New " +
 					"checkpoints are not sorted by height")
 			}
 
@@ -1672,7 +1679,7 @@ func New(config *Config) (*BlockDAG, error) {
 		prevOrphans:         make(map[daghash.Hash][]*orphanBlock),
 		warningCaches:       newThresholdCaches(vbNumBits),
 		deploymentCaches:    newThresholdCaches(dagconfig.DefinedDeployments),
-		blockCount:          1,
+		blockCount:          0,
 		SubnetworkStore:     newSubnetworkStore(config.DB),
 		subnetworkID:        config.SubnetworkID,
 	}
@@ -1684,11 +1691,6 @@ func New(config *Config) (*BlockDAG, error) {
 		return nil, err
 	}
 
-	// Save a reference to the genesis block. Note that we may only get
-	// an index reference to it here because the index is uninitialized
-	// before initDAGState.
-	dag.genesis = index.LookupNode(params.GenesisHash)
-
 	// Initialize and catch up all of the currently active optional indexes
 	// as needed.
 	if config.IndexManager != nil {
@@ -1697,6 +1699,22 @@ func New(config *Config) (*BlockDAG, error) {
 			return nil, err
 		}
 	}
+
+	if index.LookupNode(params.GenesisHash) == nil {
+		genesisBlock := util.NewBlock(dag.dagParams.GenesisBlock)
+		isOrphan, err := dag.ProcessBlock(genesisBlock, BFNone)
+		if err != nil {
+			return nil, err
+		}
+		if isOrphan {
+			return nil, errors.New("Genesis block got unexpectedly orphan")
+		}
+	}
+
+	// Save a reference to the genesis block. Note that we may only get
+	// an index reference to it here because the index is uninitialized
+	// before initDAGState.
+	dag.genesis = index.LookupNode(params.GenesisHash)
 
 	// Initialize rule change threshold state caches.
 	if err := dag.initThresholdCaches(); err != nil {

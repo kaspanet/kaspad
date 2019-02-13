@@ -29,7 +29,10 @@ func (dag *BlockDAG) maybeAcceptBlock(block *util.Block, flags BehaviorFlags) er
 	}
 
 	bluestParent := parents.bluest()
-	blockHeight := parents.maxHeight() + 1
+	blockHeight := int32(0)
+	if len(parents) != 0 {
+		blockHeight = parents.maxHeight() + 1
+	}
 	block.SetHeight(blockHeight)
 
 	// The block must pass all of the validation rules which depend on the

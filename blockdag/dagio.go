@@ -433,36 +433,10 @@ func dbPutDAGState(dbTx database.Tx, state *dagState) error {
 }
 
 // createDAGState initializes both the database and the DAG state to the
-// genesis block.  This includes creating the necessary buckets and inserting
-// the genesis block, so it must only be called on an uninitialized database.
+// genesis block.  This includes creating the necessary buckets, so it
+// must only be called on an uninitialized database.
 func (dag *BlockDAG) createDAGState() error {
-	// Create a new node from the genesis block and set it as the DAG.
-	genesisBlock := util.NewBlock(dag.dagParams.GenesisBlock)
-	genesisBlock.SetHeight(0)
-	header := &genesisBlock.MsgBlock().Header
-	node := newBlockNode(header, newSet(), dag.dagParams.K)
-	node.status = statusDataStored | statusValid
-
-	genesisCoinbase := genesisBlock.Transactions()[0].MsgTx()
-	genesisCoinbaseTxIn := genesisCoinbase.TxIn[0]
-	genesisCoinbaseTxOut := genesisCoinbase.TxOut[0]
-	genesisCoinbaseOutpoint := *wire.NewOutPoint(&genesisCoinbaseTxIn.PreviousOutPoint.TxID, genesisCoinbaseTxIn.PreviousOutPoint.Index)
-	genesisCoinbaseUTXOEntry := NewUTXOEntry(genesisCoinbaseTxOut, true, 0)
-	node.diff = &UTXODiff{
-		toAdd:    utxoCollection{genesisCoinbaseOutpoint: genesisCoinbaseUTXOEntry},
-		toRemove: utxoCollection{},
-	}
-
-	dag.virtual.utxoSet.AddTx(genesisCoinbase, 0)
-	dag.virtual.SetTips(setFromSlice(node))
-
-	// Add the new node to the index which is used for faster lookups.
-	dag.index.addNode(node)
-
-	// Initiate the last finality point to the genesis block
-	dag.lastFinalityPoint = node
-
-	// Create the initial the database chain state including creating the
+	// Create the initial the database DAG state including creating the
 	// necessary index buckets and inserting the genesis block.
 	err := dag.db.Update(func(dbTx database.Tx) error {
 		meta := dbTx.Metadata()
@@ -506,35 +480,13 @@ func (dag *BlockDAG) createDAGState() error {
 		if err != nil {
 			return err
 		}
-
-		// Save the genesis block to the block index database.
-		err = dbStoreBlockNode(dbTx, node)
-		if err != nil {
-			return err
-		}
-
-		// Add the genesis block hash to height and height to hash
-		// mappings to the index.
-		err = dbPutBlockIndex(dbTx, &node.hash, node.height)
-		if err != nil {
-			return err
-		}
-
-		// Store the current DAG state into the database.
-		state := &dagState{
-			TipHashes:         dag.TipHashes(),
-			LastFinalityPoint: *genesisBlock.Hash(),
-		}
-		err = dbPutDAGState(dbTx, state)
-		if err != nil {
-			return err
-		}
-
-		// Store the genesis block into the database.
-		return dbStoreBlock(dbTx, genesisBlock)
+		return nil
 	})
 
-	return err
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // initDAGState attempts to load and initialize the DAG state from the

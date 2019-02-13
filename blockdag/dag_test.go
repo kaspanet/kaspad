@@ -190,7 +190,7 @@ func TestHaveBlock(t *testing.T) {
 		{hash: dagconfig.SimNetParams.GenesisHash.String(), want: true},
 
 		// Block 3b should be present (as a second child of Block 2).
-		{hash: "7592764c1af29786ad0bdd21bd8ada1efe7f78f42f5f26a5c58d43531b39f0c4", want: true},
+		{hash: "08a3f0182ac8ff0326497f592d2e28b8b3b2b7e3fd77c7cb6f31ca872536cf7b", want: true},
 
 		// Block 100000 should be present (as an orphan).
 		{hash: "25d5494f3e1f895774c58034f1bd50f7b279e75db6007514affec8573ace4389", want: true},
@@ -895,6 +895,7 @@ func TestValidateFeeTransaction(t *testing.T) {
 		for i, tx := range transactions {
 			utilTxs[i] = util.NewTx(tx)
 		}
+		daghash.Sort(parentHashes)
 		msgBlock := &wire.MsgBlock{
 			Header: wire.BlockHeader{
 				Bits:           dag.genesis.Header().Bits,

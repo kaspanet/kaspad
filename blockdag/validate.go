@@ -409,9 +409,15 @@ func (dag *BlockDAG) checkBlockHeaderSanity(header *wire.BlockHeader, flags Beha
 		return err
 	}
 
-	err = checkBlockParentsOrder(header)
-	if err != nil {
-		return err
+	if len(header.ParentHashes) == 0 {
+		if header.BlockHash() != *dag.dagParams.GenesisHash {
+			return ruleError(ErrInvalidTime, "block has no parents")
+		}
+	} else {
+		err = checkBlockParentsOrder(header)
+		if err != nil {
+			return err
+		}
 	}
 
 	// A block timestamp must not have a greater precision than one second.
@@ -497,14 +503,20 @@ func (dag *BlockDAG) checkBlockSanity(block *util.Block, flags BehaviorFlags) er
 			"block is not a coinbase")
 	}
 
-	if !IsFeeTransaction(transactions[1]) {
+	isGenesis := block.MsgBlock().Header.IsGenesis()
+	if !isGenesis && !IsFeeTransaction(transactions[1]) {
 		return ruleError(ErrSecondTxNotFeeTransaction, "second transaction in "+
 			"block is not a fee transaction")
 	}
 
+	txOffset := 2
+	if isGenesis {
+		txOffset = 1
+	}
+
 	// A block must not have more than one coinbase. And transactions must be
 	// ordered by subnetwork
-	for i, tx := range transactions[2:] {
+	for i, tx := range transactions[txOffset:] {
 		if IsCoinBase(tx) {
 			str := fmt.Sprintf("block contains second coinbase at "+
 				"index %d", i+2)
@@ -704,13 +716,15 @@ func (dag *BlockDAG) checkBlockHeaderContext(header *wire.BlockHeader, bluestPar
 			return ruleError(ErrUnexpectedDifficulty, str)
 		}
 
-		// Ensure the timestamp for the block header is not before the
-		// median time of the last several blocks (medianTimeBlocks).
-		medianTime := bluestParent.CalcPastMedianTime()
-		if header.Timestamp.Before(medianTime) {
-			str := "block timestamp of %v is not after expected %v"
-			str = fmt.Sprintf(str, header.Timestamp, medianTime)
-			return ruleError(ErrTimeTooOld, str)
+		if !header.IsGenesis() {
+			// Ensure the timestamp for the block header is not before the
+			// median time of the last several blocks (medianTimeBlocks).
+			medianTime := bluestParent.CalcPastMedianTime()
+			if header.Timestamp.Before(medianTime) {
+				str := "block timestamp of %v is not after expected %v"
+				str = fmt.Sprintf(str, header.Timestamp, medianTime)
+				return ruleError(ErrTimeTooOld, str)
+			}
 		}
 	}
 
@@ -802,7 +816,10 @@ func (dag *BlockDAG) checkBlockContext(block *util.Block, parents blockSet, blue
 
 	fastAdd := flags&BFFastAdd == BFFastAdd
 	if !fastAdd {
-		blockTime := bluestParent.CalcPastMedianTime()
+		blockTime := header.Timestamp
+		if bluestParent != nil {
+			blockTime = bluestParent.CalcPastMedianTime()
+		}
 
 		// Ensure all transactions in the block are finalized.
 		for _, tx := range block.Transactions() {
@@ -1074,9 +1091,12 @@ func (dag *BlockDAG) checkConnectToPastUTXO(block *blockNode, pastUTXO UTXOSet,
 
 	scriptFlags := txscript.ScriptNoFlags
 
-	// We obtain the MTP of the *previous* block in order to
-	// determine if transactions in the current block are final.
-	medianTime := block.selectedParent.CalcPastMedianTime()
+	// We obtain the MTP of the *previous* block (unless it's genesis block)
+	// in order to determine if transactions in the current block are final.
+	medianTime := block.Header().Timestamp
+	if !block.isGenesis() {
+		medianTime = block.selectedParent.CalcPastMedianTime()
+	}
 
 	// We also enforce the relative sequence number based
 	// lock-times within the inputs of all transactions in this
