@@ -277,6 +277,7 @@ func TestGasLimit(t *testing.T) {
 	}
 	defer teardownFunc()
 
+	// First we prepare a subnetwrok and a block with coinbase outputs to fund our tests
 	gasLimit := uint64(12345)
 	subnetworkID, err := testtools.RegisterSubnetworkForTest(dag, &params, gasLimit)
 	if err != nil {
@@ -298,19 +299,32 @@ func TestGasLimit(t *testing.T) {
 	cbTxValue := fundsBlock.Transactions[0].TxOut[0].Value
 	cbTxID := fundsBlock.Transactions[0].TxID()
 
-	overLimitTx := wire.NewMsgTx(wire.TxVersion)
-	overLimitTx.AddTxIn(&wire.TxIn{
+	tx1 := wire.NewMsgTx(wire.TxVersion)
+	tx1.AddTxIn(&wire.TxIn{
 		PreviousOutPoint: *wire.NewOutPoint(&cbTxID, 0),
 		Sequence:         wire.MaxTxInSequenceNum,
 	})
-	overLimitTx.AddTxOut(&wire.TxOut{
+	tx1.AddTxOut(&wire.TxOut{
 		Value:    cbTxValue,
 		PkScript: blockdag.OpTrueScript,
 	})
-	overLimitTx.SubnetworkID = *subnetworkID
-	overLimitTx.Gas = 123456
+	tx1.SubnetworkID = *subnetworkID
+	tx1.Gas = 10000
 
-	overLimitBlock, err := mining.PrepareBlockForTest(dag, &params, dag.TipHashes(), []*wire.MsgTx{overLimitTx}, true, 1)
+	tx2 := wire.NewMsgTx(wire.TxVersion)
+	tx2.AddTxIn(&wire.TxIn{
+		PreviousOutPoint: *wire.NewOutPoint(&cbTxID, 1),
+		Sequence:         wire.MaxTxInSequenceNum,
+	})
+	tx2.AddTxOut(&wire.TxOut{
+		Value:    cbTxValue,
+		PkScript: blockdag.OpTrueScript,
+	})
+	tx2.SubnetworkID = *subnetworkID
+	tx2.Gas = 10000
+
+	// Here we check that we can't process a block that has transactions that exceed the gas limit
+	overLimitBlock, err := mining.PrepareBlockForTest(dag, &params, dag.TipHashes(), []*wire.MsgTx{tx1, tx2}, true, 1)
 	if err != nil {
 		t.Fatalf("PrepareBlockForTest: %v", err)
 	}
@@ -328,18 +342,6 @@ func TestGasLimit(t *testing.T) {
 		t.Fatalf("ProcessBlock: overLimitBlock got unexpectedly orphan")
 	}
 
-	normalGasTx := wire.NewMsgTx(wire.TxVersion)
-	normalGasTx.AddTxIn(&wire.TxIn{
-		PreviousOutPoint: *wire.NewOutPoint(&cbTxID, 0),
-		Sequence:         wire.MaxTxInSequenceNum,
-	})
-	normalGasTx.AddTxOut(&wire.TxOut{
-		Value:    cbTxValue,
-		PkScript: blockdag.OpTrueScript,
-	})
-	normalGasTx.SubnetworkID = *subnetworkID
-	normalGasTx.Gas = 1
-
 	overflowGasTx := wire.NewMsgTx(wire.TxVersion)
 	overflowGasTx.AddTxIn(&wire.TxIn{
 		PreviousOutPoint: *wire.NewOutPoint(&cbTxID, 1),
@@ -352,7 +354,8 @@ func TestGasLimit(t *testing.T) {
 	overflowGasTx.SubnetworkID = *subnetworkID
 	overflowGasTx.Gas = math.MaxUint64
 
-	overflowGasBlock, err := mining.PrepareBlockForTest(dag, &params, dag.TipHashes(), []*wire.MsgTx{normalGasTx, overflowGasTx}, true, 1)
+	// Here we check that we can't process a block that its transactions' gas overflows uint64
+	overflowGasBlock, err := mining.PrepareBlockForTest(dag, &params, dag.TipHashes(), []*wire.MsgTx{tx1, overflowGasTx}, true, 1)
 	if err != nil {
 		t.Fatalf("PrepareBlockForTest: %v", err)
 	}
@@ -387,13 +390,16 @@ func TestGasLimit(t *testing.T) {
 	if err != nil {
 		t.Fatalf("PrepareBlockForTest: %v", err)
 	}
+
+	// Here we check that we can't process a block with a transaction from a non-existent subnetwork
 	isOrphan, err = dag.ProcessBlock(util.NewBlock(nonExistentSubnetworkBlock), blockdag.BFNoPoWCheck)
 	expectedErrStr := fmt.Sprintf("subnetwork '%s' not found", nonExistentSubnetwork)
 	if err.Error() != expectedErrStr {
 		t.Fatalf("ProcessBlock expected error %v but got %v", expectedErrStr, err)
 	}
 
-	validBlock, err := mining.PrepareBlockForTest(dag, &params, dag.TipHashes(), []*wire.MsgTx{normalGasTx}, true, 1)
+	// Here we check that we can process a block with a transaction that doesn't exceed the gas limit
+	validBlock, err := mining.PrepareBlockForTest(dag, &params, dag.TipHashes(), []*wire.MsgTx{tx1}, true, 1)
 	if err != nil {
 		t.Fatalf("PrepareBlockForTest: %v", err)
 	}
