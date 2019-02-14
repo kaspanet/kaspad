@@ -11,6 +11,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/daglabs/btcd/util/subnetworkid"
+
 	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/wire"
 )
@@ -30,7 +32,7 @@ type OnSeed func(addrs []*wire.NetAddress)
 type LookupFunc func(string) ([]net.IP, error)
 
 // SeedFromDNS uses DNS seeding to populate the address manager with peers.
-func SeedFromDNS(dagParams *dagconfig.Params, reqServices wire.ServiceFlag,
+func SeedFromDNS(dagParams *dagconfig.Params, reqServices wire.ServiceFlag, subnetworkID *subnetworkid.SubnetworkID,
 	lookupFn LookupFunc, seedFn OnSeed) {
 
 	for _, dnsseed := range dagParams.DNSSeeds {
@@ -39,6 +41,10 @@ func SeedFromDNS(dagParams *dagconfig.Params, reqServices wire.ServiceFlag,
 			host = dnsseed.Host
 		} else {
 			host = fmt.Sprintf("x%x.%s", uint64(reqServices), dnsseed.Host)
+		}
+
+		if !subnetworkID.IsEqual(&wire.SubnetworkIDSupportsAll) {
+			host = fmt.Sprintf("n%s.%s", subnetworkID, host)
 		}
 
 		go func(host string) {

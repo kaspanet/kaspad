@@ -476,7 +476,7 @@ func TestPeerListeners(t *testing.T) {
 	}{
 		{
 			"OnGetAddr",
-			wire.NewMsgGetAddr(),
+			wire.NewMsgGetAddr(&wire.SubnetworkIDSupportsAll),
 		},
 		{
 			"OnAddr",
@@ -733,7 +733,7 @@ func TestOutboundPeer(t *testing.T) {
 	p2.PushRejectMsg("block", wire.RejectInvalid, "invalid", nil, false)
 
 	// Test Queue Messages
-	p2.QueueMessage(wire.NewMsgGetAddr(), nil)
+	p2.QueueMessage(wire.NewMsgGetAddr(&wire.SubnetworkIDSupportsAll), nil)
 	p2.QueueMessage(wire.NewMsgPing(1), nil)
 	p2.QueueMessage(wire.NewMsgMemPool(), nil)
 	p2.QueueMessage(wire.NewMsgGetData(), nil)

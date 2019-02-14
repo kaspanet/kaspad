@@ -7,6 +7,8 @@ package wire
 import (
 	"fmt"
 	"io"
+
+	"github.com/daglabs/btcd/util/subnetworkid"
 )
 
 // MaxAddrPerMsg is the maximum number of addresses that can be in a single
@@ -24,7 +26,8 @@ const MaxAddrPerMsg = 1000
 // Use the AddAddress function to build up the list of known addresses when
 // sending an addr message to another peer.
 type MsgAddr struct {
-	AddrList []*NetAddress
+	SubnetworkID *subnetworkid.SubnetworkID
+	AddrList     []*NetAddress
 }
 
 // AddAddress adds a known active peer to the message.
@@ -58,7 +61,25 @@ func (msg *MsgAddr) ClearAddresses() {
 // BtcDecode decodes r using the bitcoin protocol encoding into the receiver.
 // This is part of the Message interface implementation.
 func (msg *MsgAddr) BtcDecode(r io.Reader, pver uint32) error {
-	count, err := ReadVarInt(r, pver)
+	// Read subnetwork
+	var allSubnetworks bool
+	err := readElement(r, &allSubnetworks)
+	if err != nil {
+		return err
+	}
+	if allSubnetworks {
+		msg.SubnetworkID = nil
+	} else {
+		var subnetworkID subnetworkid.SubnetworkID
+		_, err = io.ReadFull(r, subnetworkID.ToBytes())
+		if err != nil {
+			return err
+		}
+		msg.SubnetworkID = &subnetworkID
+	}
+
+	// Read addresses array
+	count, err := ReadVarInt(r)
 	if err != nil {
 		return err
 	}
@@ -74,7 +95,7 @@ func (msg *MsgAddr) BtcDecode(r io.Reader, pver uint32) error {
 	msg.AddrList = make([]*NetAddress, 0, count)
 	for i := uint64(0); i < count; i++ {
 		na := &addrList[i]
-		err := readNetAddress(r, pver, na, true)
+		err = readNetAddress(r, na)
 		if err != nil {
 			return err
 		}
@@ -86,28 +107,33 @@ func (msg *MsgAddr) BtcDecode(r io.Reader, pver uint32) error {
 // BtcEncode encodes the receiver to w using the bitcoin protocol encoding.
 // This is part of the Message interface implementation.
 func (msg *MsgAddr) BtcEncode(w io.Writer, pver uint32) error {
-	// Protocol versions before MultipleAddressVersion only allowed 1 address
-	// per message.
 	count := len(msg.AddrList)
-	if pver < MultipleAddressVersion && count > 1 {
-		str := fmt.Sprintf("too many addresses for message of "+
-			"protocol version %v [count %v, max 1]", pver, count)
-		return messageError("MsgAddr.BtcEncode", str)
-
-	}
 	if count > MaxAddrPerMsg {
 		str := fmt.Sprintf("too many addresses for message "+
 			"[count %v, max %v]", count, MaxAddrPerMsg)
 		return messageError("MsgAddr.BtcEncode", str)
 	}
 
-	err := WriteVarInt(w, pver, uint64(count))
+	// Write subnetwork ID
+	allSubnetworks := msg.SubnetworkID == nil
+	err := writeElement(w, allSubnetworks)
+	if err != nil {
+		return err
+	}
+	if !allSubnetworks {
+		_, err := w.Write(msg.SubnetworkID.ToBytes())
+		if err != nil {
+			return err
+		}
+	}
+
+	err = WriteVarInt(w, uint64(count))
 	if err != nil {
 		return err
 	}
 
 	for _, na := range msg.AddrList {
-		err = writeNetAddress(w, pver, na, true)
+		err = writeNetAddress(w, na)
 		if err != nil {
 			return err
 		}
@@ -124,20 +150,16 @@ func (msg *MsgAddr) Command() string {
 
 // MaxPayloadLength returns the maximum length the payload can be for the
 // receiver.  This is part of the Message interface implementation.
-func (msg *MsgAddr) MaxPayloadLength(pver uint32) uint32 {
-	if pver < MultipleAddressVersion {
-		// Num addresses (varInt) + a single net addresses.
-		return MaxVarIntPayload + maxNetAddressPayload(pver)
-	}
-
+func (msg *MsgAddr) MaxPayloadLength() uint32 {
 	// Num addresses (varInt) + max allowed addresses.
-	return MaxVarIntPayload + (MaxAddrPerMsg * maxNetAddressPayload(pver))
+	return MaxVarIntPayload + (MaxAddrPerMsg * maxNetAddressPayload())
 }
 
 // NewMsgAddr returns a new bitcoin addr message that conforms to the
 // Message interface.  See MsgAddr for details.
-func NewMsgAddr() *MsgAddr {
+func NewMsgAddr(subnetworkID *subnetworkid.SubnetworkID) *MsgAddr {
 	return &MsgAddr{
-		AddrList: make([]*NetAddress, 0, MaxAddrPerMsg),
+		SubnetworkID: subnetworkID,
+		AddrList:     make([]*NetAddress, 0, MaxAddrPerMsg),
 	}
 }

@@ -196,3 +196,8 @@ func Sort(ids []SubnetworkID) {
 		return Less(&ids[i], &ids[j])
 	})
 }
+
+// ToBytes converts subnetwork ID to bytes slice.
+func (id *SubnetworkID) ToBytes() []byte {
+	return id[:]
+}

@@ -21,6 +21,8 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/daglabs/btcd/util/subnetworkid"
+
 	"github.com/daglabs/btcd/addrmgr"
 	"github.com/daglabs/btcd/blockdag"
 	"github.com/daglabs/btcd/blockdag/indexers"
@@ -326,7 +328,7 @@ func (sp *Peer) relayTxDisabled() bool {
 
 // pushAddrMsg sends an addr message to the connected peer using the provided
 // addresses.
-func (sp *Peer) pushAddrMsg(addresses []*wire.NetAddress) {
+func (sp *Peer) pushAddrMsg(addresses []*wire.NetAddress, subnetworkID *subnetworkid.SubnetworkID) {
 	// Filter addresses already known to the peer.
 	addrs := make([]*wire.NetAddress, 0, len(addresses))
 	for _, addr := range addresses {
@@ -425,7 +427,11 @@ func (sp *Peer) OnVersion(_ *peer.Peer, msg *wire.MsgVersion) {
 			hasTimestamp := sp.ProtocolVersion() >=
 				wire.NetAddressTimeVersion
 			if addrManager.NeedMoreAddresses() && hasTimestamp {
-				sp.QueueMessage(wire.NewMsgGetAddr(), nil)
+				sp.QueueMessage(wire.NewMsgGetAddr(sp.SubnetworkID()), nil)
+
+				if !sp.SubnetworkID().IsEqual(&wire.SubnetworkIDSupportsAll) {
+					sp.QueueMessage(wire.NewMsgGetAddr(&wire.SubnetworkIDSupportsAll), nil)
+				}
 			}
 
 			// Mark the address as a known good address.
@@ -1102,7 +1108,7 @@ func (sp *Peer) OnGetAddr(_ *peer.Peer, msg *wire.MsgGetAddr) {
 	sp.sentAddrs = true
 
 	// Get the current known addresses from the address manager.
-	addrCache := sp.server.addrManager.AddressCache()
+	addrCache := sp.server.addrManager.AddressCache(msg.SubnetworkID)
 
 	// Push the addresses.
 	sp.pushAddrMsg(addrCache)
@@ -1910,7 +1916,7 @@ func (s *Server) peerHandler() {
 
 	if !config.MainConfig().DisableDNSSeed {
 		// Add peers discovered through DNS to the address manager.
-		connmgr.SeedFromDNS(config.ActiveNetParams(), defaultRequiredServices,
+		connmgr.SeedFromDNS(config.ActiveNetParams(), defaultRequiredServices, config.MainConfig().SubnetworkID,
 			serverutils.BTCDLookup, func(addrs []*wire.NetAddress) {
 				// Bitcoind uses a lookup of the dns seeder here. This
 				// is rather strange since the values looked up by the
@@ -1919,6 +1925,18 @@ func (s *Server) peerHandler() {
 				// having come from the first one.
 				s.addrManager.AddAddresses(addrs, addrs[0])
 			})
+		if !config.MainConfig().SubnetworkID.IsEqual(&wire.SubnetworkIDSupportsAll) {
+			// Node is partial - fetch full nodes
+			connmgr.SeedFromDNS(config.ActiveNetParams(), defaultRequiredServices, &wire.SubnetworkIDSupportsAll,
+				serverutils.BTCDLookup, func(addrs []*wire.NetAddress) {
+					// Bitcoind uses a lookup of the dns seeder here. This
+					// is rather strange since the values looked up by the
+					// DNS seed lookups will vary quite a lot.
+					// to replicate this behaviour we put all addresses as
+					// having come from the first one.
+					s.addrManager.AddAddresses(addrs, addrs[0])
+				})
+		}
 	}
 	go s.connManager.Start()
 
@@ -2233,7 +2251,14 @@ func ParseListeners(addrs []string) ([]net.Addr, error) {
 		// Parse the IP.
 		ip := net.ParseIP(host)
 		if ip == nil {
-			return nil, fmt.Errorf("'%s' is not a valid IP address", host)
+			hostAdrs, err := net.LookupHost(host)
+			if err != nil {
+				return nil, err
+			}
+			ip = net.ParseIP(hostAdrs[0])
+			if ip == nil {
+				return nil, fmt.Errorf("Cannot resolve IP address for host '%s'", host)
+			}
 		}
 
 		// To4 returns nil when the IP is not an IPv4 address, so use

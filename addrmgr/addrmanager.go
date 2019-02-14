@@ -713,22 +713,23 @@ func (a *AddrManager) NeedMoreAddresses() bool {
 
 // AddressCache returns the current address cache.  It must be treated as
 // read-only (but since it is a copy now, this is not as dangerous).
-func (a *AddrManager) AddressCache() []*wire.NetAddress {
+func (a *AddrManager) AddressCache(subnetworkID subnetworkid.SubnetworkID) []*wire.NetAddress {
 	a.mtx.Lock()
 	defer a.mtx.Unlock()
 
-	addrIndexLen := len(a.addrIndex)
-	if addrIndexLen == 0 {
+	if len(a.addrIndex) == 0 {
 		return nil
 	}
 
-	allAddr := make([]*wire.NetAddress, 0, addrIndexLen)
+	allAddr := make([]*wire.NetAddress, 0, len(a.addrIndex))
 	// Iteration order is undefined here, but we randomise it anyway.
 	for _, v := range a.addrIndex {
-		allAddr = append(allAddr, v.na)
+		if subnetworkID != nil && v.SubnetworkID().IsEqual(subnetworkID) {
+			allAddr = append(allAddr, v.na)
+		}
 	}
 
-	numAddresses := addrIndexLen * getAddrPercent / 100
+	numAddresses := len(allAddr) * getAddrPercent / 100
 	if numAddresses > getAddrMax {
 		numAddresses = getAddrMax
 	}

@@ -9,7 +9,6 @@ import (
 	"container/list"
 	"errors"
 	"fmt"
-	"github.com/daglabs/btcd/util/subnetworkid"
 	"io"
 	"math/rand"
 	"net"
@@ -17,6 +16,8 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/daglabs/btcd/util/subnetworkid"
 
 	"github.com/btcsuite/go-socks/socks"
 	"github.com/daglabs/btcd/blockdag"
@@ -269,6 +270,10 @@ type Config struct {
 
 	// SubnetworkID specifies which subnetwork the peer is associated with.
 	SubnetworkID *subnetworkid.SubnetworkID
+
+	// DnsSeederPeer set by DNS seeder in order to allow some actions disbled for normal nodes. For example,
+	// allow outgoing connections to partial nodes
+	DnsSeederPeer bool
 }
 
 // minUint32 is a helper function to return the minimum of two uint32s.
@@ -873,7 +878,7 @@ func (p *Peer) localVersionMsg() (*wire.MsgVersion, error) {
 // message will be sent if there are no entries in the provided addresses slice.
 //
 // This function is safe for concurrent access.
-func (p *Peer) PushAddrMsg(addresses []*wire.NetAddress) ([]*wire.NetAddress, error) {
+func (p *Peer) PushAddrMsg(addresses []*wire.NetAddress, subnetworkID *subnetworkid.SubnetworkID) ([]*wire.NetAddress, error) {
 	addressCount := len(addresses)
 
 	// Nothing to send.
@@ -881,7 +886,7 @@ func (p *Peer) PushAddrMsg(addresses []*wire.NetAddress) ([]*wire.NetAddress, er
 		return nil, nil
 	}
 
-	msg := wire.NewMsgAddr()
+	msg := wire.NewMsgAddr(subnetworkID)
 	msg.AddrList = make([]*wire.NetAddress, addressCount)
 	copy(msg.AddrList, addresses)
 
@@ -1047,15 +1052,20 @@ func (p *Peer) handleRemoteVersionMsg(msg *wire.MsgVersion) error {
 		return errors.New(reason)
 	}
 
-	// Disconnect if:
-	// - we are a full node and the outbound connection we've initiated is a partial node
-	// - the remote node is partial and our subnetwork doesn't match their subnetwork
-	isLocalNodeFull := p.cfg.SubnetworkID.IsEqual(&wire.SubnetworkIDSupportsAll)
-	isRemoteNodeFull := msg.SubnetworkID.IsEqual(&wire.SubnetworkIDSupportsAll)
-	if (isLocalNodeFull && !isRemoteNodeFull && !p.inbound) ||
-		(!isRemoteNodeFull && !msg.SubnetworkID.IsEqual(p.cfg.SubnetworkID)) {
+	if p.cfg.DnsSeederPeer {
+		// Update subnetwork ID
+		p.cfg.SubnetworkID = &msg.SubnetworkID
+	} else {
+		// Disconnect if:
+		// - we are a full node and the outbound connection we've initiated is a partial node
+		// - the remote node is partial and our subnetwork doesn't match their subnetwork
+		isLocalNodeFull := p.cfg.SubnetworkID.IsEqual(&wire.SubnetworkIDSupportsAll)
+		isRemoteNodeFull := msg.SubnetworkID.IsEqual(&wire.SubnetworkIDSupportsAll)
+		if (isLocalNodeFull && !isRemoteNodeFull && !p.inbound) ||
+			(!isLocalNodeFull && !isRemoteNodeFull && !msg.SubnetworkID.IsEqual(p.cfg.SubnetworkID)) {
 
-		return errors.New("incompatible subnetworks")
+			return errors.New("incompatible subnetworks")
+		}
 	}
 
 	// Updating a bunch of stats including block based stats, and the

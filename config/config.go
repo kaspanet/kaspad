@@ -758,6 +758,8 @@ func loadConfig() (*Config, []string, error) {
 		if err != nil {
 			return nil, nil, err
 		}
+	} else {
+		cfg.SubnetworkID = &wire.SubnetworkIDSupportsAll
 	}
 
 	// Check that 'generate' and 'subnetwork' flags do not conflict
