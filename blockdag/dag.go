@@ -530,6 +530,11 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block, fastAdd bo
 		}
 	}
 
+	err := dag.validateGasLimit(block)
+	if err != nil {
+		return err
+	}
+
 	// Add the node to the virtual and update the UTXO set of the DAG.
 	utxoDiff, acceptedTxsData, err := dag.applyUTXOChanges(node, block, fastAdd)
 	if err != nil {
@@ -603,6 +608,36 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block, fastAdd bo
 	dag.sendNotification(NTBlockConnected, block)
 	dag.dagLock.Lock()
 
+	return nil
+}
+
+func (dag *BlockDAG) validateGasLimit(block *util.Block) error {
+	transactions := block.Transactions()
+	// Amount of gas consumed per sub-network shouldn't be more than the subnetwork's limit
+	gasUsageInAllSubnetworks := map[subnetworkid.SubnetworkID]uint64{}
+	for _, tx := range transactions {
+		msgTx := tx.MsgTx()
+		// In DAGCoin and Registry sub-networks all txs must have Gas = 0, and that is validated in checkTransactionSanity
+		// Therefore - no need to check them here.
+		if msgTx.SubnetworkID != wire.SubnetworkIDNative && msgTx.SubnetworkID != wire.SubnetworkIDRegistry {
+			gasUsageInSubnetwork := gasUsageInAllSubnetworks[msgTx.SubnetworkID]
+			gasUsageInSubnetwork += msgTx.Gas
+			if gasUsageInSubnetwork < gasUsageInAllSubnetworks[msgTx.SubnetworkID] { // protect from overflows
+				str := fmt.Sprintf("Block gas usage in subnetwork with ID %s has overflown", msgTx.SubnetworkID)
+				return ruleError(ErrInvalidGas, str)
+			}
+			gasUsageInAllSubnetworks[msgTx.SubnetworkID] = gasUsageInSubnetwork
+
+			gasLimit, err := dag.SubnetworkStore.GasLimit(&msgTx.SubnetworkID)
+			if err != nil {
+				return err
+			}
+			if gasUsageInSubnetwork > gasLimit {
+				str := fmt.Sprintf("Block wastes too much gas in subnetwork with ID %s", msgTx.SubnetworkID)
+				return ruleError(ErrInvalidGas, str)
+			}
+		}
+	}
 	return nil
 }
 
