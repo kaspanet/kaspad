@@ -936,7 +936,15 @@ type TxWithBlockHash struct {
 // pastUTXO returns the UTXO of a given block's past
 func (node *blockNode) pastUTXO(virtual *virtualBlock, db database.DB) (pastUTXO UTXOSet, acceptedTxData []*TxWithBlockHash, err error) {
 	if node.isGenesis() {
-		return UTXOSet(virtual.utxoSet), nil, nil
+		// The genesis has no past UTXO, so we create an empty UTXO
+		// set by creating a diff UTXO set with the virtual UTXO
+		// set, and adding all of its entries in toRemove
+		diff := NewUTXODiff()
+		for outPoint, entry := range virtual.utxoSet.utxoCollection {
+			diff.toRemove[outPoint] = entry
+		}
+		genesisPastUTXO := UTXOSet(NewDiffUTXOSet(virtual.utxoSet, diff))
+		return genesisPastUTXO, nil, nil
 	}
 	pastUTXO, err = node.selectedParent.restoreUTXO(virtual)
 	if err != nil {
@@ -1067,24 +1075,28 @@ func updateTipsUTXO(tips blockSet, virtual *virtualBlock, virtualUTXO UTXOSet) e
 //
 // This function MUST be called with the chain state lock held (for reads).
 func (dag *BlockDAG) isCurrent() bool {
-	// Not current if the latest main (best) chain height is before the
-	// latest known good checkpoint (when checkpoints are enabled).
+	// Not current if the virtual's selected tip height is less than
+	// the latest known good checkpoint (when checkpoints are enabled).
 	checkpoint := dag.LatestCheckpoint()
 	if checkpoint != nil && dag.selectedTip().height < checkpoint.Height {
 		return false
 	}
 
-	// Not current if the latest best block has a timestamp before 24 hours
-	// ago.
+	// Not current if the virtual's selected parent has a timestamp
+	// before 24 hours ago. If the DAG is empty, we take the genesis
+	// block timestamp.
 	//
-	// The chain appears to be current if none of the checks reported
+	// The DAG appears to be current if none of the checks reported
 	// otherwise.
+	var dagTimestamp int64
 	selectedTip := dag.selectedTip()
 	if selectedTip == nil {
-		return false
+		dagTimestamp = dag.dagParams.GenesisBlock.Header.Timestamp.Unix()
+	} else {
+		dagTimestamp = selectedTip.timestamp
 	}
 	minus24Hours := dag.timeSource.AdjustedTime().Add(-24 * time.Hour).Unix()
-	return selectedTip.timestamp >= minus24Hours
+	return dagTimestamp >= minus24Hours
 }
 
 // IsCurrent returns whether or not the chain believes it is current.  Several
@@ -1700,21 +1712,22 @@ func New(config *Config) (*BlockDAG, error) {
 		}
 	}
 
-	if index.LookupNode(params.GenesisHash) == nil {
+	genesis := index.LookupNode(params.GenesisHash)
+
+	if genesis == nil {
 		genesisBlock := util.NewBlock(dag.dagParams.GenesisBlock)
 		isOrphan, err := dag.ProcessBlock(genesisBlock, BFNone)
 		if err != nil {
 			return nil, err
 		}
 		if isOrphan {
-			return nil, errors.New("Genesis block got unexpectedly orphan")
+			return nil, errors.New("Genesis block is unexpectedly orphan")
 		}
+		genesis = index.LookupNode(params.GenesisHash)
 	}
 
-	// Save a reference to the genesis block. Note that we may only get
-	// an index reference to it here because the index is uninitialized
-	// before initDAGState.
-	dag.genesis = index.LookupNode(params.GenesisHash)
+	// Save a reference to the genesis block.
+	dag.genesis = genesis
 
 	// Initialize rule change threshold state caches.
 	if err := dag.initThresholdCaches(); err != nil {

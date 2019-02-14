@@ -411,7 +411,7 @@ func (dag *BlockDAG) checkBlockHeaderSanity(header *wire.BlockHeader, flags Beha
 
 	if len(header.ParentHashes) == 0 {
 		if header.BlockHash() != *dag.dagParams.GenesisHash {
-			return ruleError(ErrInvalidTime, "block has no parents")
+			return ruleError(ErrNoParents, "block has no parents")
 		}
 	} else {
 		err = checkBlockParentsOrder(header)
@@ -721,8 +721,8 @@ func (dag *BlockDAG) checkBlockHeaderContext(header *wire.BlockHeader, bluestPar
 			// median time of the last several blocks (medianTimeBlocks).
 			medianTime := bluestParent.CalcPastMedianTime()
 			if header.Timestamp.Before(medianTime) {
-				str := "block timestamp of %v is not after expected %v"
-				str = fmt.Sprintf(str, header.Timestamp, medianTime)
+				str := "block timestamp of %s is not after expected %s"
+				str = fmt.Sprintf(str, header.Timestamp.String(), medianTime.String())
 				return ruleError(ErrTimeTooOld, str)
 			}
 		}
@@ -817,7 +817,7 @@ func (dag *BlockDAG) checkBlockContext(block *util.Block, parents blockSet, blue
 	fastAdd := flags&BFFastAdd == BFFastAdd
 	if !fastAdd {
 		blockTime := header.Timestamp
-		if bluestParent != nil {
+		if !block.IsGenesis() {
 			blockTime = bluestParent.CalcPastMedianTime()
 		}
 
