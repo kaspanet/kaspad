@@ -429,6 +429,9 @@ func (idx *TxIndex) ConnectBlock(dbTx database.Tx, block *util.Block, _ *blockda
 	// Increment the internal block ID to use for the block being connected
 	// and add all of the transactions in the block to the index.
 	newBlockID := idx.curBlockID + 1
+	if block.MsgBlock().Header.IsGenesis() {
+		newBlockID = 0
+	}
 	if err := dbAddTxIndexEntries(dbTx, block, newBlockID, acceptedTxsData); err != nil {
 		return err
 	}

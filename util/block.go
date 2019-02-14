@@ -194,6 +194,11 @@ func (b *Block) SetHeight(height int32) {
 	b.blockHeight = height
 }
 
+// IsGenesis returns whether or not this block is the genesis block.
+func (b *Block) IsGenesis() bool {
+	return b.MsgBlock().Header.IsGenesis()
+}
+
 // NewBlock returns a new instance of a bitcoin block given an underlying
 // wire.MsgBlock.  See Block.
 func NewBlock(msgBlock *wire.MsgBlock) *Block {
