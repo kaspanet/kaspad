@@ -933,18 +933,22 @@ type TxWithBlockHash struct {
 	InBlock *daghash.Hash
 }
 
+func genesisPastUTXO(virtual *virtualBlock) UTXOSet {
+	// The genesis has no past UTXO, so we create an empty UTXO
+	// set by creating a diff UTXO set with the virtual UTXO
+	// set, and adding all of its entries in toRemove
+	diff := NewUTXODiff()
+	for outPoint, entry := range virtual.utxoSet.utxoCollection {
+		diff.toRemove[outPoint] = entry
+	}
+	genesisPastUTXO := UTXOSet(NewDiffUTXOSet(virtual.utxoSet, diff))
+	return genesisPastUTXO
+}
+
 // pastUTXO returns the UTXO of a given block's past
 func (node *blockNode) pastUTXO(virtual *virtualBlock, db database.DB) (pastUTXO UTXOSet, acceptedTxData []*TxWithBlockHash, err error) {
 	if node.isGenesis() {
-		// The genesis has no past UTXO, so we create an empty UTXO
-		// set by creating a diff UTXO set with the virtual UTXO
-		// set, and adding all of its entries in toRemove
-		diff := NewUTXODiff()
-		for outPoint, entry := range virtual.utxoSet.utxoCollection {
-			diff.toRemove[outPoint] = entry
-		}
-		genesisPastUTXO := UTXOSet(NewDiffUTXOSet(virtual.utxoSet, diff))
-		return genesisPastUTXO, nil, nil
+		return genesisPastUTXO(virtual), nil, nil
 	}
 	pastUTXO, err = node.selectedParent.restoreUTXO(virtual)
 	if err != nil {
