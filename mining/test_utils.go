@@ -92,12 +92,14 @@ func PrepareBlockForTest(dag *blockdag.BlockDAG, params *dagconfig.Params, paren
 		cb := template.Block.Transactions[0]
 		originalValue := cb.TxOut[0].Value
 		pkScript := cb.TxOut[0].PkScript
-		newOutValue := originalValue / coinbaseOutputs
 		cb.TxOut = make([]*wire.TxOut, coinbaseOutputs)
-		for i := uint64(0); i < coinbaseOutputs; i++ {
-			cb.TxOut[i] = &wire.TxOut{
-				Value:    newOutValue,
-				PkScript: pkScript,
+		if coinbaseOutputs != 0 {
+			newOutValue := originalValue / coinbaseOutputs
+			for i := uint64(0); i < coinbaseOutputs; i++ {
+				cb.TxOut[i] = &wire.TxOut{
+					Value:    newOutValue,
+					PkScript: pkScript,
+				}
 			}
 		}
 	}
