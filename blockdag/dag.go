@@ -498,12 +498,6 @@ func (dag *BlockDAG) connectToDAG(node *blockNode, parentNodes blockSet, block *
 //
 // This function MUST be called with the chain state lock held (for writes).
 func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block, fastAdd bool) error {
-	// The coinbase for the Genesis block is not spendable, so just return
-	// an error now.
-	if node.hash.IsEqual(dag.dagParams.GenesisHash) {
-		str := "the coinbase for the genesis block is not spendable"
-		return ruleError(ErrMissingTxOut, str)
-	}
 
 	// No warnings about unknown rules or versions until the DAG is
 	// current.
@@ -528,6 +522,11 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block, fastAdd bo
 		if err != nil {
 			return err
 		}
+	}
+
+	err := dag.validateGasLimit(block)
+	if err != nil {
+		return err
 	}
 
 	// Add the node to the virtual and update the UTXO set of the DAG.
@@ -606,6 +605,36 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block, fastAdd bo
 	return nil
 }
 
+func (dag *BlockDAG) validateGasLimit(block *util.Block) error {
+	transactions := block.Transactions()
+	// Amount of gas consumed per sub-network shouldn't be more than the subnetwork's limit
+	gasUsageInAllSubnetworks := map[subnetworkid.SubnetworkID]uint64{}
+	for _, tx := range transactions {
+		msgTx := tx.MsgTx()
+		// In DAGCoin and Registry sub-networks all txs must have Gas = 0, and that is validated in checkTransactionSanity
+		// Therefore - no need to check them here.
+		if msgTx.SubnetworkID != wire.SubnetworkIDNative && msgTx.SubnetworkID != wire.SubnetworkIDRegistry {
+			gasUsageInSubnetwork := gasUsageInAllSubnetworks[msgTx.SubnetworkID]
+			gasUsageInSubnetwork += msgTx.Gas
+			if gasUsageInSubnetwork < gasUsageInAllSubnetworks[msgTx.SubnetworkID] { // protect from overflows
+				str := fmt.Sprintf("Block gas usage in subnetwork with ID %s has overflown", msgTx.SubnetworkID)
+				return ruleError(ErrInvalidGas, str)
+			}
+			gasUsageInAllSubnetworks[msgTx.SubnetworkID] = gasUsageInSubnetwork
+
+			gasLimit, err := dag.SubnetworkStore.GasLimit(&msgTx.SubnetworkID)
+			if err != nil {
+				return err
+			}
+			if gasUsageInSubnetwork > gasLimit {
+				str := fmt.Sprintf("Block wastes too much gas in subnetwork with ID %s", msgTx.SubnetworkID)
+				return ruleError(ErrInvalidGas, str)
+			}
+		}
+	}
+	return nil
+}
+
 // LastFinalityPointHash returns the hash of the last finality point
 func (dag *BlockDAG) LastFinalityPointHash() *daghash.Hash {
 	if dag.lastFinalityPoint == nil {
@@ -615,6 +644,9 @@ func (dag *BlockDAG) LastFinalityPointHash() *daghash.Hash {
 }
 
 func (dag *BlockDAG) checkFinalityRulesAndGetFinalityPointCandidate(node *blockNode) (*blockNode, error) {
+	if node.isGenesis() {
+		return node, nil
+	}
 	var finalityPointCandidate *blockNode
 	finalityErr := ruleError(ErrFinality, "The last finality point is not in the selected chain of this block")
 
@@ -890,6 +922,9 @@ func (dag *BlockDAG) getTXO(outpointBlockNode *blockNode, outpoint wire.OutPoint
 }
 
 func (node *blockNode) validateFeeTransaction(dag *BlockDAG, acceptedTxData []*TxWithBlockHash, nodeTransactions []*util.Tx) error {
+	if node.isGenesis() {
+		return nil
+	}
 	expectedFeeTransaction, err := node.buildFeeTransaction(dag, acceptedTxData)
 	if err != nil {
 		return err
@@ -933,8 +968,23 @@ type TxWithBlockHash struct {
 	InBlock *daghash.Hash
 }
 
+func genesisPastUTXO(virtual *virtualBlock) UTXOSet {
+	// The genesis has no past UTXO, so we create an empty UTXO
+	// set by creating a diff UTXO set with the virtual UTXO
+	// set, and adding all of its entries in toRemove
+	diff := NewUTXODiff()
+	for outPoint, entry := range virtual.utxoSet.utxoCollection {
+		diff.toRemove[outPoint] = entry
+	}
+	genesisPastUTXO := UTXOSet(NewDiffUTXOSet(virtual.utxoSet, diff))
+	return genesisPastUTXO
+}
+
 // pastUTXO returns the UTXO of a given block's past
 func (node *blockNode) pastUTXO(virtual *virtualBlock, db database.DB) (pastUTXO UTXOSet, acceptedTxData []*TxWithBlockHash, err error) {
+	if node.isGenesis() {
+		return genesisPastUTXO(virtual), nil, nil
+	}
 	pastUTXO, err = node.selectedParent.restoreUTXO(virtual)
 	if err != nil {
 		return nil, nil, err
@@ -1064,20 +1114,28 @@ func updateTipsUTXO(tips blockSet, virtual *virtualBlock, virtualUTXO UTXOSet) e
 //
 // This function MUST be called with the chain state lock held (for reads).
 func (dag *BlockDAG) isCurrent() bool {
-	// Not current if the latest main (best) chain height is before the
-	// latest known good checkpoint (when checkpoints are enabled).
+	// Not current if the virtual's selected tip height is less than
+	// the latest known good checkpoint (when checkpoints are enabled).
 	checkpoint := dag.LatestCheckpoint()
 	if checkpoint != nil && dag.selectedTip().height < checkpoint.Height {
 		return false
 	}
 
-	// Not current if the latest best block has a timestamp before 24 hours
-	// ago.
+	// Not current if the virtual's selected parent has a timestamp
+	// before 24 hours ago. If the DAG is empty, we take the genesis
+	// block timestamp.
 	//
-	// The chain appears to be current if none of the checks reported
+	// The DAG appears to be current if none of the checks reported
 	// otherwise.
+	var dagTimestamp int64
+	selectedTip := dag.selectedTip()
+	if selectedTip == nil {
+		dagTimestamp = dag.dagParams.GenesisBlock.Header.Timestamp.Unix()
+	} else {
+		dagTimestamp = selectedTip.timestamp
+	}
 	minus24Hours := dag.timeSource.AdjustedTime().Add(-24 * time.Hour).Unix()
-	return dag.selectedTip().timestamp >= minus24Hours
+	return dagTimestamp >= minus24Hours
 }
 
 // IsCurrent returns whether or not the chain believes it is current.  Several
@@ -1641,7 +1699,7 @@ func New(config *Config) (*BlockDAG, error) {
 		for i := range config.Checkpoints {
 			checkpoint := &config.Checkpoints[i]
 			if checkpoint.Height <= prevCheckpointHeight {
-				return nil, AssertError("blockchain.New " +
+				return nil, AssertError("blockdag.New " +
 					"checkpoints are not sorted by height")
 			}
 
@@ -1672,7 +1730,7 @@ func New(config *Config) (*BlockDAG, error) {
 		prevOrphans:         make(map[daghash.Hash][]*orphanBlock),
 		warningCaches:       newThresholdCaches(vbNumBits),
 		deploymentCaches:    newThresholdCaches(dagconfig.DefinedDeployments),
-		blockCount:          1,
+		blockCount:          0,
 		SubnetworkStore:     newSubnetworkStore(config.DB),
 		subnetworkID:        config.SubnetworkID,
 	}
@@ -1684,11 +1742,6 @@ func New(config *Config) (*BlockDAG, error) {
 		return nil, err
 	}
 
-	// Save a reference to the genesis block. Note that we may only get
-	// an index reference to it here because the index is uninitialized
-	// before initDAGState.
-	dag.genesis = index.LookupNode(params.GenesisHash)
-
 	// Initialize and catch up all of the currently active optional indexes
 	// as needed.
 	if config.IndexManager != nil {
@@ -1697,6 +1750,23 @@ func New(config *Config) (*BlockDAG, error) {
 			return nil, err
 		}
 	}
+
+	genesis := index.LookupNode(params.GenesisHash)
+
+	if genesis == nil {
+		genesisBlock := util.NewBlock(dag.dagParams.GenesisBlock)
+		isOrphan, err := dag.ProcessBlock(genesisBlock, BFNone)
+		if err != nil {
+			return nil, err
+		}
+		if isOrphan {
+			return nil, errors.New("Genesis block is unexpectedly orphan")
+		}
+		genesis = index.LookupNode(params.GenesisHash)
+	}
+
+	// Save a reference to the genesis block.
+	dag.genesis = genesis
 
 	// Initialize rule change threshold state caches.
 	if err := dag.initThresholdCaches(); err != nil {
