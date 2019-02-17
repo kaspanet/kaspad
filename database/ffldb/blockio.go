@@ -241,7 +241,7 @@ func (s *blockStore) openWriteFile(fileNum uint32) (filer, error) {
 	filePath := blockFilePath(s.basePath, fileNum)
 	file, err := os.OpenFile(filePath, os.O_RDWR|os.O_CREATE, 0666)
 	if err != nil {
-		str := fmt.Sprintf("failed to open file %q: %v", filePath, err)
+		str := fmt.Sprintf("failed to open file %q: %s", filePath, err)
 		return nil, makeDbErr(database.ErrDriverSpecific, str, err)
 	}
 
@@ -387,7 +387,7 @@ func (s *blockStore) writeData(data []byte, fieldName string) error {
 	wc.curOffset += uint32(n)
 	if err != nil {
 		str := fmt.Sprintf("failed to write %s to file %d at "+
-			"offset %d: %v", fieldName, wc.curFileNum,
+			"offset %d: %s", fieldName, wc.curFileNum,
 			wc.curOffset-uint32(n), err)
 		return makeDbErr(database.ErrDriverSpecific, str, err)
 	}
@@ -525,7 +525,7 @@ func (s *blockStore) readBlock(hash *daghash.Hash, loc blockLocation) ([]byte, e
 	blockFile.RUnlock()
 	if err != nil {
 		str := fmt.Sprintf("failed to read block %s from file %d, "+
-			"offset %d: %v", hash, loc.blockFileNum, loc.fileOffset,
+			"offset %d: %s", hash, loc.blockFileNum, loc.fileOffset,
 			err)
 		return nil, makeDbErr(database.ErrDriverSpecific, str, err)
 	}
@@ -585,7 +585,7 @@ func (s *blockStore) readBlockRegion(loc blockLocation, offset, numBytes uint32)
 	blockFile.RUnlock()
 	if err != nil {
 		str := fmt.Sprintf("failed to read region from block file %d, "+
-			"offset %d, len %d: %v", loc.blockFileNum, readOffset,
+			"offset %d, len %d: %s", loc.blockFileNum, readOffset,
 			numBytes, err)
 		return nil, makeDbErr(database.ErrDriverSpecific, str, err)
 	}
@@ -615,7 +615,7 @@ func (s *blockStore) syncBlocks() error {
 
 	// Sync the file to disk.
 	if err := wc.curFile.file.Sync(); err != nil {
-		str := fmt.Sprintf("failed to sync file %d: %v", wc.curFileNum,
+		str := fmt.Sprintf("failed to sync file %d: %s", wc.curFileNum,
 			err)
 		return makeDbErr(database.ErrDriverSpecific, str, err)
 	}
@@ -683,7 +683,7 @@ func (s *blockStore) handleRollback(oldBlockFileNum, oldBlockOffset uint32) {
 	for ; wc.curFileNum > oldBlockFileNum; wc.curFileNum-- {
 		if err := s.deleteFileFunc(wc.curFileNum); err != nil {
 			log.Warnf("ROLLBACK: Failed to delete block file "+
-				"number %d: %v", wc.curFileNum, err)
+				"number %d: %s", wc.curFileNum, err)
 			return
 		}
 	}
@@ -694,7 +694,7 @@ func (s *blockStore) handleRollback(oldBlockFileNum, oldBlockOffset uint32) {
 		obf, err := s.openWriteFileFunc(wc.curFileNum)
 		if err != nil {
 			wc.curFile.Unlock()
-			log.Warnf("ROLLBACK: %v", err)
+			log.Warnf("ROLLBACK: %s", err)
 			return
 		}
 		wc.curFile.file = obf
@@ -703,7 +703,7 @@ func (s *blockStore) handleRollback(oldBlockFileNum, oldBlockOffset uint32) {
 	// Truncate the to the provided rollback offset.
 	if err := wc.curFile.file.Truncate(int64(oldBlockOffset)); err != nil {
 		wc.curFile.Unlock()
-		log.Warnf("ROLLBACK: Failed to truncate file %d: %v",
+		log.Warnf("ROLLBACK: Failed to truncate file %d: %s",
 			wc.curFileNum, err)
 		return
 	}
@@ -712,7 +712,7 @@ func (s *blockStore) handleRollback(oldBlockFileNum, oldBlockOffset uint32) {
 	err := wc.curFile.file.Sync()
 	wc.curFile.Unlock()
 	if err != nil {
-		log.Warnf("ROLLBACK: Failed to sync file %d: %v",
+		log.Warnf("ROLLBACK: Failed to sync file %d: %s",
 			wc.curFileNum, err)
 		return
 	}

@@ -254,7 +254,7 @@ func NewMsgVersion(me *NetAddress, you *NetAddress, nonce uint64,
 // validateUserAgent checks userAgent length against MaxUserAgentLen
 func validateUserAgent(userAgent string) error {
 	if len(userAgent) > MaxUserAgentLen {
-		str := fmt.Sprintf("user agent too long [len %v, max %v]",
+		str := fmt.Sprintf("user agent too long [len %d, max %d]",
 			len(userAgent), MaxUserAgentLen)
 		return messageError("MsgVersion", str)
 	}

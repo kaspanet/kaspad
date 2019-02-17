@@ -1205,15 +1205,15 @@ func main() {
 	}
 
 	// Display some details about the returned block.
-	log.Printf("Hash: %v\n", block.Hash)
-	log.Printf("Previous Block: %v\n", block.PreviousHash)
-	log.Printf("Next Block: %v\n", block.NextHash)
-	log.Printf("Merkle root: %v\n", block.MerkleRoot)
-	log.Printf("Timestamp: %v\n", time.Unix(block.Time, 0).UTC())
-	log.Printf("Confirmations: %v\n", block.Confirmations)
+	log.Printf("Hash: %s\n", block.Hash)
+	log.Printf("Previous Block: %s\n", block.PreviousHash)
+	log.Printf("Next Block: %s\n", block.NextHash)
+	log.Printf("Merkle root: %s\n", block.MerkleRoot)
+	log.Printf("Timestamp: %s\n", time.Unix(block.Time, 0).UTC())
+	log.Printf("Confirmations: %d\n", block.Confirmations)
 	log.Printf("Difficulty: %f\n", block.Difficulty)
-	log.Printf("Size (in bytes): %v\n", block.Size)
-	log.Printf("Num transactions: %v\n", len(block.Tx))
+	log.Printf("Size (in bytes): %d\n", block.Size)
+	log.Printf("Num transactions: %d\n", len(block.Tx))
 }
 ```
 
@@ -1262,10 +1262,10 @@ func main() {
 	// notifications.
 	ntfnHandlers := btcrpcclient.NotificationHandlers{
 		OnBlockConnected: func(hash *chainhash.Hash, height int32) {
-			log.Printf("Block connected: %v (%d)", hash, height)
+			log.Printf("Block connected: %s (%d)", hash, height)
 		},
 		OnBlockDisconnected: func(hash *chainhash.Hash, height int32) {
-			log.Printf("Block disconnected: %v", hash, height)
+			log.Printf("Block disconnected: %s", hash, height)
 		},
 	}
 

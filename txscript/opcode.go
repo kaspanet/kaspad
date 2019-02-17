@@ -945,8 +945,8 @@ func popIfBool(vm *Engine) (bool, error) {
 	}
 
 	str := fmt.Sprintf("with OP_IF or OP_NOTIF top stack item MUST "+
-		"be an empty byte array or 0x01, and is instead: %v",
-		so[0])
+		"be an empty byte array or 0x01, and is instead: %x",
+		so)
 	return false, scriptError(ErrMinimalIf, str)
 }
 

@@ -66,7 +66,7 @@ func (msg *MsgFilterLoad) BtcDecode(r io.Reader, pver uint32) error {
 
 	if msg.HashFuncs > MaxFilterLoadHashFuncs {
 		str := fmt.Sprintf("too many filter hash functions for message "+
-			"[count %v, max %v]", msg.HashFuncs, MaxFilterLoadHashFuncs)
+			"[count %d, max %d]", msg.HashFuncs, MaxFilterLoadHashFuncs)
 		return messageError("MsgFilterLoad.BtcDecode", str)
 	}
 
@@ -79,13 +79,13 @@ func (msg *MsgFilterLoad) BtcEncode(w io.Writer, pver uint32) error {
 	size := len(msg.Filter)
 	if size > MaxFilterLoadFilterSize {
 		str := fmt.Sprintf("filterload filter size too large for message "+
-			"[size %v, max %v]", size, MaxFilterLoadFilterSize)
+			"[size %d, max %d]", size, MaxFilterLoadFilterSize)
 		return messageError("MsgFilterLoad.BtcEncode", str)
 	}
 
 	if msg.HashFuncs > MaxFilterLoadHashFuncs {
 		str := fmt.Sprintf("too many filter hash functions for message "+
-			"[count %v, max %v]", msg.HashFuncs, MaxFilterLoadHashFuncs)
+			"[count %d, max %d]", msg.HashFuncs, MaxFilterLoadHashFuncs)
 		return messageError("MsgFilterLoad.BtcEncode", str)
 	}
 

@@ -18,7 +18,7 @@ func init() {
 	log, _ = logger.Get(logger.SubsystemTags.SCRP)
 }
 
-// LogClosure is a closure that can be printed with %v to be used to
+// LogClosure is a closure that can be printed with %s to be used to
 // generate expensive-to-create data for a detailed log level and avoid doing
 // the work if the data isn't printed.
 type logClosure func() string

@@ -83,7 +83,7 @@ func PrepareBlockForTest(dag *blockdag.BlockDAG, params *dagconfig.Params, paren
 		}
 		if !found {
 			if !forceTransactions {
-				return nil, fmt.Errorf("tx %v wasn't found in the block", tx.TxHash())
+				return nil, fmt.Errorf("tx %s wasn't found in the block", tx.TxHash())
 			}
 			txsToAdd = append(txsToAdd, tx)
 		}

@@ -281,7 +281,7 @@ func shallowCopyTx(tx *wire.MsgTx) wire.MsgTx {
 func CalcSignatureHash(script []byte, hashType SigHashType, tx *wire.MsgTx, idx int) ([]byte, error) {
 	parsedScript, err := parseScript(script)
 	if err != nil {
-		return nil, fmt.Errorf("cannot parse output script: %v", err)
+		return nil, fmt.Errorf("cannot parse output script: %s", err)
 	}
 	return calcSignatureHash(parsedScript, hashType, tx, idx)
 }

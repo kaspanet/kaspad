@@ -237,7 +237,7 @@ func dbFetchFirstTxRegion(dbTx database.Tx, txID *daghash.TxID) (*database.Block
 		return nil, database.Error{
 			ErrorCode: database.ErrCorruption,
 			Description: fmt.Sprintf("corrupt transaction index "+
-				"entry for %s: %v", txID, err),
+				"entry for %s: %s", txID, err),
 		}
 	}
 

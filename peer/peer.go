@@ -485,7 +485,7 @@ func (p *Peer) String() string {
 // This function is safe for concurrent access.
 func (p *Peer) UpdateLastBlockHeight(newHeight int32) {
 	p.statsMtx.Lock()
-	log.Tracef("Updating last block height of peer %v from %v to %v",
+	log.Tracef("Updating last block height of peer %s from %s to %s",
 		p.addr, p.lastBlock, newHeight)
 	p.lastBlock = newHeight
 	p.statsMtx.Unlock()
@@ -496,7 +496,7 @@ func (p *Peer) UpdateLastBlockHeight(newHeight int32) {
 //
 // This function is safe for concurrent access.
 func (p *Peer) UpdateLastAnnouncedBlock(blkHash *daghash.Hash) {
-	log.Tracef("Updating last blk for peer %v, %v", p.addr, blkHash)
+	log.Tracef("Updating last blk for peer %s, %s", p.addr, blkHash)
 
 	p.statsMtx.Lock()
 	p.lastAnnouncedBlock = blkHash
@@ -923,7 +923,7 @@ func (p *Peer) PushGetBlocksMsg(locator blockdag.BlockLocator, stopHash *daghash
 
 	if isDuplicate {
 		log.Tracef("Filtering duplicate [getblocks] with begin "+
-			"hash %v, stop hash %v", beginHash, stopHash)
+			"hash %s, stop hash %s", beginHash, stopHash)
 		return nil
 	}
 
@@ -966,7 +966,7 @@ func (p *Peer) PushGetHeadersMsg(locator blockdag.BlockLocator, stopHash *daghas
 	p.prevGetHdrsMtx.Unlock()
 
 	if isDuplicate {
-		log.Tracef("Filtering duplicate [getheaders] with begin hash %v",
+		log.Tracef("Filtering duplicate [getheaders] with begin hash %s",
 			beginHash)
 		return nil
 	}
@@ -1002,7 +1002,7 @@ func (p *Peer) PushRejectMsg(command string, code wire.RejectCode, reason string
 	if command == wire.CmdTx || command == wire.CmdBlock {
 		if hash == nil {
 			log.Warnf("Sending a reject message for command "+
-				"type %v which should have specified a hash "+
+				"type %s which should have specified a hash "+
 				"but does not", command)
 			hash = &daghash.ZeroHash
 		}
@@ -1126,19 +1126,19 @@ func (p *Peer) readMessage() (wire.Message, []byte, error) {
 
 	// Use closures to log expensive operations so they are only run when
 	// the logging level requires it.
-	log.Debugf("%v", newLogClosure(func() string {
+	log.Debugf("%s", newLogClosure(func() string {
 		// Debug summary of message.
 		summary := messageSummary(msg)
 		if len(summary) > 0 {
 			summary = " (" + summary + ")"
 		}
-		return fmt.Sprintf("Received %v%s from %s",
+		return fmt.Sprintf("Received %s%s from %s",
 			msg.Command(), summary, p)
 	}))
-	log.Tracef("%v", newLogClosure(func() string {
+	log.Tracef("%s", newLogClosure(func() string {
 		return spew.Sdump(msg)
 	}))
-	log.Tracef("%v", newLogClosure(func() string {
+	log.Tracef("%s", newLogClosure(func() string {
 		return spew.Sdump(buf)
 	}))
 
@@ -1154,19 +1154,19 @@ func (p *Peer) writeMessage(msg wire.Message) error {
 
 	// Use closures to log expensive operations so they are only run when
 	// the logging level requires it.
-	log.Debugf("%v", newLogClosure(func() string {
+	log.Debugf("%s", newLogClosure(func() string {
 		// Debug summary of message.
 		summary := messageSummary(msg)
 		if len(summary) > 0 {
 			summary = " (" + summary + ")"
 		}
-		return fmt.Sprintf("Sending %v%s to %s", msg.Command(),
+		return fmt.Sprintf("Sending %s%s to %s", msg.Command(),
 			summary, p)
 	}))
-	log.Tracef("%v", newLogClosure(func() string {
+	log.Tracef("%s", newLogClosure(func() string {
 		return spew.Sdump(msg)
 	}))
-	log.Tracef("%v", newLogClosure(func() string {
+	log.Tracef("%s", newLogClosure(func() string {
 		var buf bytes.Buffer
 		_, err := wire.WriteMessageN(&buf, msg, p.ProtocolVersion(),
 			p.cfg.DAGParams.Net)
@@ -1362,7 +1362,7 @@ out:
 				handlerActive = false
 
 			default:
-				log.Warnf("Unsupported message command %v",
+				log.Warnf("Unsupported message command %s",
 					msg.command)
 			}
 
@@ -1446,7 +1446,7 @@ out:
 			// disconnect the peer when we're in regression test mode and the
 			// error is one of the allowed errors.
 			if p.isAllowedReadError(err) {
-				log.Errorf("Allowed test error from %s: %v", p, err)
+				log.Errorf("Allowed test error from %s: %s", p, err)
 				idleTimer.Reset(idleTimeout)
 				continue
 			}
@@ -1455,7 +1455,7 @@ out:
 			// local peer is not forcibly disconnecting and the
 			// remote peer has not disconnected.
 			if p.shouldHandleReadError(err) {
-				errMsg := fmt.Sprintf("Can't read message from %s: %v", p, err)
+				errMsg := fmt.Sprintf("Can't read message from %s: %s", p, err)
 				if err != io.ErrUnexpectedEOF {
 					log.Errorf(errMsg)
 				}
@@ -1489,7 +1489,7 @@ out:
 			// No read lock is necessary because verAckReceived is not written
 			// to in any other goroutine.
 			if p.verAckReceived {
-				log.Infof("Already received 'verack' from peer %v -- "+
+				log.Infof("Already received 'verack' from peer %s -- "+
 					"disconnecting", p)
 				break out
 			}
@@ -1637,8 +1637,8 @@ out:
 			}
 
 		default:
-			log.Debugf("Received unhandled message of type %v "+
-				"from %v", rmsg.Command(), p)
+			log.Debugf("Received unhandled message of type %s "+
+				"from %s", rmsg.Command(), p)
 		}
 		p.stallControl <- stallControlMsg{sccHandlerDone, rmsg}
 
@@ -1836,7 +1836,7 @@ out:
 				p.Disconnect()
 				if p.shouldLogWriteError(err) {
 					log.Errorf("Failed to send message to "+
-						"%s: %v", p, err)
+						"%s: %s", p, err)
 				}
 				if msg.doneChan != nil {
 					msg.doneChan <- struct{}{}
@@ -1893,7 +1893,7 @@ out:
 		case <-pingTicker.C:
 			nonce, err := wire.RandomUint64()
 			if err != nil {
-				log.Errorf("Not sending ping to %s: %v", p, err)
+				log.Errorf("Not sending ping to %s: %s", p, err)
 				continue
 			}
 			p.QueueMessage(wire.NewMsgPing(nonce), nil)
@@ -1963,7 +1963,7 @@ func (p *Peer) AssociateConnection(conn net.Conn) {
 		// and no point recomputing.
 		na, err := newNetAddress(p.conn.RemoteAddr(), p.services)
 		if err != nil {
-			log.Errorf("Cannot create remote net address: %v", err)
+			log.Errorf("Cannot create remote net address: %s", err)
 			p.Disconnect()
 			return
 		}
@@ -1972,7 +1972,7 @@ func (p *Peer) AssociateConnection(conn net.Conn) {
 
 	go func() {
 		if err := p.start(); err != nil {
-			log.Debugf("Cannot start peer %v: %v", p, err)
+			log.Debugf("Cannot start peer %s: %s", p, err)
 			p.Disconnect()
 		}
 	}()

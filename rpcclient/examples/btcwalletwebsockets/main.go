@@ -22,7 +22,7 @@ func main() {
 	// NotificationHandlers type for more details about each handler.
 	ntfnHandlers := rpcclient.NotificationHandlers{
 		OnAccountBalance: func(account string, balance util.Amount, confirmed bool) {
-			log.Printf("New balance for account %s: %v", account,
+			log.Printf("New balance for account %s: %s", account,
 				balance)
 		},
 	}
@@ -53,7 +53,7 @@ func main() {
 	}
 	log.Printf("Num unspent outputs (utxos): %d", len(unspent))
 	if len(unspent) > 0 {
-		log.Printf("First utxo:\n%v", spew.Sdump(unspent[0]))
+		log.Printf("First utxo:\n%s", spew.Sdump(unspent[0]))
 	}
 
 	// For this example gracefully shutdown the client after 10 seconds.

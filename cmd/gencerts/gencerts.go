@@ -52,7 +52,7 @@ func main() {
 
 	if !cfg.Force {
 		if fileExists(certFile) || fileExists(keyFile) {
-			fmt.Fprintf(os.Stderr, "%v: certificate and/or key files exist; use -f to force\n", cfg.Directory)
+			fmt.Fprintf(os.Stderr, "%s: certificate and/or key files exist; use -f to force\n", cfg.Directory)
 			os.Exit(1)
 		}
 	}
@@ -60,18 +60,18 @@ func main() {
 	validUntil := time.Now().Add(time.Duration(cfg.Years) * 365 * 24 * time.Hour)
 	cert, key, err := util.NewTLSCertPair(cfg.Organization, validUntil, cfg.ExtraHosts)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "cannot generate certificate pair: %v\n", err)
+		fmt.Fprintf(os.Stderr, "cannot generate certificate pair: %s\n", err)
 		os.Exit(1)
 	}
 
 	// Write cert and key files.
 	if err = ioutil.WriteFile(certFile, cert, 0666); err != nil {
-		fmt.Fprintf(os.Stderr, "cannot write cert: %v\n", err)
+		fmt.Fprintf(os.Stderr, "cannot write cert: %s\n", err)
 		os.Exit(1)
 	}
 	if err = ioutil.WriteFile(keyFile, key, 0600); err != nil {
 		os.Remove(certFile)
-		fmt.Fprintf(os.Stderr, "cannot write key: %v\n", err)
+		fmt.Fprintf(os.Stderr, "cannot write key: %s\n", err)
 		os.Exit(1)
 	}
 }

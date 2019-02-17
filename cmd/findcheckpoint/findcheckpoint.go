@@ -122,12 +122,12 @@ func findCandidates(dag *blockdag.BlockDAG, highestTipHash *daghash.Hash) ([]*da
 // uses the format the btcchain code expects for checkpoints added to the list.
 func showCandidate(candidateNum int, checkpoint *dagconfig.Checkpoint) {
 	if cfg.UseGoOutput {
-		fmt.Printf("Candidate %d -- {%d, newShaHashFromStr(\"%v\")},\n",
+		fmt.Printf("Candidate %d -- {%d, newShaHashFromStr(\"%s\")},\n",
 			candidateNum, checkpoint.Height, checkpoint.Hash)
 		return
 	}
 
-	fmt.Printf("Candidate %d -- Height: %d, Hash: %v\n", candidateNum,
+	fmt.Printf("Candidate %d -- Height: %d, Hash: %s\n", candidateNum,
 		checkpoint.Height, checkpoint.Hash)
 
 }
@@ -156,7 +156,7 @@ func main() {
 		TimeSource: blockdag.NewMedianTime(),
 	})
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to initialize chain: %v\n", err)
+		fmt.Fprintf(os.Stderr, "failed to initialize chain: %s\n", err)
 		return
 	}
 

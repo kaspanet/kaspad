@@ -545,7 +545,7 @@ func (msg *MsgTx) BtcDecode(r io.Reader, pver uint32) error {
 	}
 
 	if msg.SubnetworkID == SubnetworkIDSupportsAll {
-		str := fmt.Sprintf("%v is a reserved sub network and cannot be used as part of a transaction", msg.SubnetworkID)
+		str := fmt.Sprintf("%s is a reserved sub network and cannot be used as part of a transaction", msg.SubnetworkID)
 		return messageError("MsgTx.BtcDecode", str)
 	}
 
@@ -687,7 +687,7 @@ func (msg *MsgTx) encode(w io.Writer, pver uint32, encodingFlags txEncoding) err
 
 	if msg.SubnetworkID != SubnetworkIDNative {
 		if msg.SubnetworkID == SubnetworkIDRegistry && msg.Gas != 0 {
-			str := fmt.Sprintf("Transactions from subnetwork %v should have 0 gas", msg.SubnetworkID)
+			str := fmt.Sprintf("Transactions from subnetwork %s should have 0 gas", msg.SubnetworkID)
 			return messageError("MsgTx.BtcEncode", str)
 		}
 
@@ -706,10 +706,10 @@ func (msg *MsgTx) encode(w io.Writer, pver uint32, encodingFlags txEncoding) err
 			return err
 		}
 	} else if msg.Payload != nil {
-		str := fmt.Sprintf("Transactions from subnetwork %v should have <nil> payload", msg.SubnetworkID)
+		str := fmt.Sprintf("Transactions from subnetwork %s should have <nil> payload", msg.SubnetworkID)
 		return messageError("MsgTx.BtcEncode", str)
 	} else if msg.Gas != 0 {
-		str := fmt.Sprintf("Transactions from subnetwork %v should have 0 gas", msg.SubnetworkID)
+		str := fmt.Sprintf("Transactions from subnetwork %s should have 0 gas", msg.SubnetworkID)
 		return messageError("MsgTx.BtcEncode", str)
 	}
 
