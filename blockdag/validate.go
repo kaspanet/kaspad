@@ -971,9 +971,9 @@ func CheckTransactionInputs(tx *util.Tx, txHeight int32, utxoSet UTXOSet, dagPar
 //
 // This function MUST be called with the dag state lock held (for writes).
 func (dag *BlockDAG) checkConnectToPastUTXO(block *blockNode, pastUTXO UTXOSet,
-	transactions []*util.Tx) (feeData []byte, err error) {
+	transactions []*util.Tx) (compactFeeData, error) {
 
-	err = ensureNoDuplicateTx(block, pastUTXO, transactions)
+	err := ensureNoDuplicateTx(block, pastUTXO, transactions)
 	if err != nil {
 		return nil, err
 	}
@@ -1021,7 +1021,7 @@ func (dag *BlockDAG) checkConnectToPastUTXO(block *blockNode, pastUTXO UTXOSet,
 	// In addition - add all fees into a fee accumulator, to be stored and checked
 	// when validating descendants' fee transactions.
 	var totalFees uint64
-	feeAccumulator := newFeeAccumulatorWriter()
+	feeAccumulator := newCompactFeeFactory()
 
 	for _, tx := range transactions {
 		txFee, err := CheckTransactionInputs(tx, block.height, pastUTXO,
@@ -1039,7 +1039,7 @@ func (dag *BlockDAG) checkConnectToPastUTXO(block *blockNode, pastUTXO UTXOSet,
 				"overflows accumulator")
 		}
 
-		err = feeAccumulator.addTxFee(txFee)
+		err = feeAccumulator.add(txFee)
 		if err != nil {
 			return nil, fmt.Errorf("Error adding tx %s fee to feeAccumulatorWriter: %s", tx.ID(), err)
 		}
@@ -1114,7 +1114,7 @@ func (dag *BlockDAG) checkConnectToPastUTXO(block *blockNode, pastUTXO UTXOSet,
 		}
 	}
 
-	feeData, err = feeAccumulator.bytes()
+	feeData, err := feeAccumulator.data()
 	if err != nil {
 		return nil, fmt.Errorf("Error getting bytes of fee data: %s", err)
 	}

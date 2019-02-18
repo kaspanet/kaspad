@@ -688,7 +688,7 @@ func (dag *BlockDAG) NextBlockFeeTransaction() (*wire.MsgTx, error) {
 //
 // This function MUST be called with the chain state lock held (for writes).
 func (dag *BlockDAG) applyUTXOChanges(node *blockNode, block *util.Block, fastAdd bool) (
-	utxoDiff *UTXODiff, acceptedTxData []*TxWithBlockHash, feeData []byte, err error) {
+	utxoDiff *UTXODiff, acceptedTxData []*TxWithBlockHash, feeData compactFeeData, err error) {
 	// Clone the virtual block so that we don't modify the existing one.
 	virtualClone := dag.virtual.clone()
 
@@ -759,7 +759,7 @@ func (dag *BlockDAG) updateVirtualUTXO(newVirtualUTXODiffSet *DiffUTXOSet) {
 func (node *blockNode) verifyAndBuildUTXO(virtual *virtualBlock, dag *BlockDAG,
 	transactions []*util.Tx, fastAdd bool,
 ) (
-	utxoSet UTXOSet, acceptedTxData []*TxWithBlockHash, feeData []byte, err error) {
+	utxoSet UTXOSet, acceptedTxData []*TxWithBlockHash, feeData compactFeeData, err error) {
 
 	pastUTXO, pastUTXOAcceptedTxData, err := node.pastUTXO(virtual, dag.db)
 	if err != nil {

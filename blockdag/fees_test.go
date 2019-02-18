@@ -9,16 +9,16 @@ import (
 func TestFeeAccumulators(t *testing.T) {
 	fees := []uint64{1, 2, 3, 4, 5, 6, 7, 0xffffffffffffffff}
 
-	writer := newFeeAccumulatorWriter()
+	factory := newCompactFeeFactory()
 
 	for _, fee := range fees {
-		err := writer.addTxFee(fee)
+		err := factory.add(fee)
 		if err != nil {
 			t.Fatalf("Error writing %d as tx fee: %s", fee, err)
 		}
 	}
 
-	expectedBytes := []byte{
+	expectedData := compactFeeData{
 		1, 0, 0, 0, 0, 0, 0, 0,
 		2, 0, 0, 0, 0, 0, 0, 0,
 		3, 0, 0, 0, 0, 0, 0, 0,
@@ -28,19 +28,19 @@ func TestFeeAccumulators(t *testing.T) {
 		7, 0, 0, 0, 0, 0, 0, 0,
 		255, 255, 255, 255, 255, 255, 255, 255,
 	}
-	actualBytes, err := writer.bytes()
+	actualData, err := factory.data()
 
 	if err != nil {
 		t.Fatalf("Error getting bytes from writer: %s", err)
 	}
-	if !reflect.DeepEqual(expectedBytes, actualBytes) {
-		t.Errorf("Expected bytes: %v, but got: %v", expectedBytes, actualBytes)
+	if !reflect.DeepEqual(expectedData, actualData) {
+		t.Errorf("Expected bytes: %v, but got: %v", expectedData, actualData)
 	}
 
-	reader := newFeeAccumulatorReader(actualBytes)
+	iterator := actualData.iterator()
 
 	for i, expectedFee := range fees {
-		actualFee, err := reader.nextTxFee()
+		actualFee, err := iterator.next()
 		if err != nil {
 			t.Fatalf("Error getting fee for Tx#%d: %s", i, err)
 		}
@@ -50,11 +50,11 @@ func TestFeeAccumulators(t *testing.T) {
 		}
 	}
 
-	_, err = reader.nextTxFee()
+	_, err = iterator.next()
 	if err == nil {
-		t.Fatal("No error from reader.nextTxFee after done reading all transactions")
+		t.Fatal("No error from iterator.nextTxFee after done reading all transactions")
 	}
 	if err != io.EOF {
-		t.Fatalf("Error from reader.nextTxFee after done reading all transactions is not io.EOF: %s", err)
+		t.Fatalf("Error from iterator.nextTxFee after done reading all transactions is not io.EOF: %s", err)
 	}
 }
