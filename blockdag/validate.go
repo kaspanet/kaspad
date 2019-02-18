@@ -967,13 +967,15 @@ func CheckTransactionInputs(tx *util.Tx, txHeight int32, utxoSet UTXOSet, dagPar
 // signature operations per block, invalid values in relation to the expected
 // block subsidy, or fail transaction script validation.
 //
+// It also returns the feeAccumulator for this block.
+//
 // This function MUST be called with the dag state lock held (for writes).
 func (dag *BlockDAG) checkConnectToPastUTXO(block *blockNode, pastUTXO UTXOSet,
-	transactions []*util.Tx) error {
+	transactions []*util.Tx) (feeData []byte, err error) {
 
-	err := ensureNoDuplicateTx(block, pastUTXO, transactions)
+	err = ensureNoDuplicateTx(block, pastUTXO, transactions)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// The number of signature operations must be less than the maximum
@@ -993,7 +995,7 @@ func (dag *BlockDAG) checkConnectToPastUTXO(block *blockNode, pastUTXO UTXOSet,
 		// having to do a full coinbase and fee transaction check again.
 		numP2SHSigOps, err := CountP2SHSigOps(tx, i < 2, pastUTXO)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		numsigOps += numP2SHSigOps
 
@@ -1005,7 +1007,7 @@ func (dag *BlockDAG) checkConnectToPastUTXO(block *blockNode, pastUTXO UTXOSet,
 			str := fmt.Sprintf("block contains too many "+
 				"signature operations - got %v, max %v",
 				totalSigOps, MaxSigOpsPerBlock)
-			return ruleError(ErrTooManySigOps, str)
+			return nil, ruleError(ErrTooManySigOps, str)
 		}
 	}
 
@@ -1016,12 +1018,16 @@ func (dag *BlockDAG) checkConnectToPastUTXO(block *blockNode, pastUTXO UTXOSet,
 	// still relatively cheap as compared to running the scripts) checks
 	// against all the inputs when the signature operations are out of
 	// bounds.
+	// In addition - add all fees into a fee accumulator, to be stored and checked
+	// when validating descendants' fee transactions.
 	var totalFees uint64
+	feeAccumulator := newFeeAccumulatorWriter()
+
 	for _, tx := range transactions {
 		txFee, err := CheckTransactionInputs(tx, block.height, pastUTXO,
 			dag.dagParams)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		// Sum the total fees and ensure we don't overflow the
@@ -1029,8 +1035,13 @@ func (dag *BlockDAG) checkConnectToPastUTXO(block *blockNode, pastUTXO UTXOSet,
 		lastTotalFees := totalFees
 		totalFees += txFee
 		if totalFees < lastTotalFees {
-			return ruleError(ErrBadFees, "total fees for block "+
+			return nil, ruleError(ErrBadFees, "total fees for block "+
 				"overflows accumulator")
+		}
+
+		err = feeAccumulator.addTxFee(txFee)
+		if err != nil {
+			return nil, fmt.Errorf("Error adding tx %s fee to feeAccumulatorWriter: %s", tx.ID(), err)
 		}
 	}
 
@@ -1048,7 +1059,7 @@ func (dag *BlockDAG) checkConnectToPastUTXO(block *blockNode, pastUTXO UTXOSet,
 		str := fmt.Sprintf("coinbase transaction for block pays %v "+
 			"which is more than expected value of %v",
 			totalSatoshiOut, expectedSatoshiOut)
-		return ruleError(ErrBadCoinbaseValue, str)
+		return nil, ruleError(ErrBadCoinbaseValue, str)
 	}
 
 	// Don't run scripts if this node is before the latest known good
@@ -1081,14 +1092,14 @@ func (dag *BlockDAG) checkConnectToPastUTXO(block *blockNode, pastUTXO UTXOSet,
 		// active.
 		sequenceLock, err := dag.calcSequenceLock(block, pastUTXO, tx, false)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		if !SequenceLockActive(sequenceLock, block.height,
 			medianTime) {
 			str := fmt.Sprintf("block contains " +
 				"transaction whose input sequence " +
 				"locks are not met")
-			return ruleError(ErrUnfinalizedTx, str)
+			return nil, ruleError(ErrUnfinalizedTx, str)
 		}
 	}
 
@@ -1099,11 +1110,15 @@ func (dag *BlockDAG) checkConnectToPastUTXO(block *blockNode, pastUTXO UTXOSet,
 	if runScripts {
 		err := checkBlockScripts(block, pastUTXO, transactions, scriptFlags, dag.sigCache)
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
 
-	return nil
+	feeData, err = feeAccumulator.bytes()
+	if err != nil {
+		return nil, fmt.Errorf("Error getting bytes of fee data: %s", err)
+	}
+	return feeData, nil
 }
 
 // countSpentOutputs returns the number of utxos the passed block spends.
@@ -1156,6 +1171,8 @@ func (dag *BlockDAG) CheckConnectBlockTemplate(block *util.Block) error {
 		return err
 	}
 
-	return dag.checkConnectToPastUTXO(newBlockNode(&header, dag.virtual.tips(), dag.dagParams.K),
+	_, err = dag.checkConnectToPastUTXO(newBlockNode(&header, dag.virtual.tips(), dag.dagParams.K),
 		dag.UTXOSet(), block.Transactions())
+
+	return err
 }

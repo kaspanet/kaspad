@@ -4,7 +4,11 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/binary"
+	"fmt"
 	"io"
+
+	"github.com/daglabs/btcd/dagconfig/daghash"
+	"github.com/daglabs/btcd/database"
 )
 
 // The fee accumulator is a specialized data type to store a compact list of fees
@@ -58,4 +62,15 @@ func (far *feeAccumulatorReader) nextTxFee() (uint64, error) {
 	err := binary.Read(far.reader, binary.LittleEndian, &txFee)
 
 	return txFee, err
+}
+
+// following functions relate to storing and retreiving fee data from the dabase
+
+func dbStoreFeeData(dbTx database.Tx, blockHash *daghash.Hash, feeData []byte) error {
+	feeBucket, err := dbTx.Metadata().CreateBucketIfNotExists([]byte("fees"))
+	if err != nil {
+		return fmt.Errorf("Error creating or retrieving fee bucket: %s", err)
+	}
+
+	return feeBucket.Put(blockHash.CloneBytes(), feeData)
 }

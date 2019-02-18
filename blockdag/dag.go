@@ -530,7 +530,7 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block, fastAdd bo
 	}
 
 	// Add the node to the virtual and update the UTXO set of the DAG.
-	utxoDiff, acceptedTxsData, err := dag.applyUTXOChanges(node, block, fastAdd)
+	utxoDiff, acceptedTxsData, feeData, err := dag.applyUTXOChanges(node, block, fastAdd)
 	if err != nil {
 		return err
 	}
@@ -588,6 +588,9 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block, fastAdd bo
 				return err
 			}
 		}
+
+		// Apply the fee data into the database
+		return dbStoreFeeData(dbTx, block.Hash(), feeData)
 
 		return nil
 	})
@@ -669,7 +672,7 @@ func (dag *BlockDAG) checkFinalityRulesAndGetFinalityPointCandidate(node *blockN
 
 // NextBlockFeeTransaction prepares the fee transaction for the next mined block
 func (dag *BlockDAG) NextBlockFeeTransaction() (*wire.MsgTx, error) {
-	_, acceptedTxData, err := dag.virtual.blockNode.verifyAndBuildUTXO(dag.virtual, dag, nil, true)
+	_, acceptedTxData, _, err := dag.virtual.blockNode.verifyAndBuildUTXO(dag.virtual, dag, nil, true)
 	if err != nil {
 		return nil, err
 	}
@@ -684,22 +687,23 @@ func (dag *BlockDAG) NextBlockFeeTransaction() (*wire.MsgTx, error) {
 // 5. Updates each of the tips' utxoDiff.
 //
 // This function MUST be called with the chain state lock held (for writes).
-func (dag *BlockDAG) applyUTXOChanges(node *blockNode, block *util.Block, fastAdd bool) (utxoDiff *UTXODiff, acceptedTxData []*TxWithBlockHash, err error) {
+func (dag *BlockDAG) applyUTXOChanges(node *blockNode, block *util.Block, fastAdd bool) (
+	utxoDiff *UTXODiff, acceptedTxData []*TxWithBlockHash, feeData []byte, err error) {
 	// Clone the virtual block so that we don't modify the existing one.
 	virtualClone := dag.virtual.clone()
 
-	newBlockUTXO, acceptedTxData, err := node.verifyAndBuildUTXO(virtualClone, dag, block.Transactions(), fastAdd)
+	newBlockUTXO, acceptedTxData, feeData, err := node.verifyAndBuildUTXO(virtualClone, dag, block.Transactions(), fastAdd)
 	if err != nil {
 		newErrString := fmt.Sprintf("error verifying UTXO for %v: %s", node, err)
 		if err, ok := err.(RuleError); ok {
-			return nil, nil, ruleError(err.ErrorCode, newErrString)
+			return nil, nil, nil, ruleError(err.ErrorCode, newErrString)
 		}
-		return nil, nil, errors.New(newErrString)
+		return nil, nil, nil, errors.New(newErrString)
 	}
 
 	err = node.validateFeeTransaction(dag, acceptedTxData, block.Transactions())
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	// since verifyAndBuildUTXO ran, we know for sure that block is valid -
@@ -742,7 +746,7 @@ func (dag *BlockDAG) applyUTXOChanges(node *blockNode, block *util.Block, fastAd
 	// It is now safe to apply the new virtual block
 	dag.virtual = virtualClone
 
-	return utxoDiff, acceptedTxData, nil
+	return utxoDiff, acceptedTxData, feeData, nil
 }
 
 func (dag *BlockDAG) updateVirtualUTXO(newVirtualUTXODiffSet *DiffUTXOSet) {
@@ -753,45 +757,49 @@ func (dag *BlockDAG) updateVirtualUTXO(newVirtualUTXODiffSet *DiffUTXOSet) {
 
 // verifyAndBuildUTXO verifies all transactions in the given block and builds its UTXO
 func (node *blockNode) verifyAndBuildUTXO(virtual *virtualBlock, dag *BlockDAG,
-	transactions []*util.Tx, fastAdd bool) (utxoSet UTXOSet, acceptedTxData []*TxWithBlockHash, err error) {
-	pastUTXO, pastUTXOaccpetedTxData, err := node.pastUTXO(virtual, dag.db)
+	transactions []*util.Tx, fastAdd bool,
+) (
+	utxoSet UTXOSet, acceptedTxData []*TxWithBlockHash, feeData []byte, err error) {
+
+	pastUTXO, pastUTXOAcceptedTxData, err := node.pastUTXO(virtual, dag.db)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	if !fastAdd {
-		err = dag.checkConnectToPastUTXO(node, pastUTXO, transactions)
+		feeData, err = dag.checkConnectToPastUTXO(node, pastUTXO, transactions)
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, nil, err
 		}
 	}
 
 	diff := NewUTXODiff()
-	acceptedTxData = make([]*TxWithBlockHash, 0, len(pastUTXOaccpetedTxData)+len(transactions))
-	if len(pastUTXOaccpetedTxData) != 0 {
-		acceptedTxData = append(acceptedTxData, pastUTXOaccpetedTxData...)
+	acceptedTxData = make([]*TxWithBlockHash, 0, len(pastUTXOAcceptedTxData)+len(transactions))
+	if len(pastUTXOAcceptedTxData) != 0 {
+		acceptedTxData = append(acceptedTxData, pastUTXOAcceptedTxData...)
 	}
 
 	for _, tx := range transactions {
 		txDiff, err := pastUTXO.diffFromTx(tx.MsgTx(), node)
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, nil, err
 		}
 		diff, err = diff.WithDiff(txDiff)
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, nil, err
 		}
 		acceptedTxData = append(acceptedTxData, &TxWithBlockHash{
 			Tx:      tx,
 			InBlock: &node.hash,
 		})
+
 	}
 
 	utxo, err := pastUTXO.WithDiff(diff)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
-	return utxo, acceptedTxData, nil
+	return utxo, acceptedTxData, feeData, nil
 }
 
 type blockFeeData struct {
@@ -855,7 +863,6 @@ func (node *blockNode) buildFeeTransaction(dag *BlockDAG, acceptedTxData []*TxWi
 	feeTx := wire.NewMsgTx(wire.TxVersion)
 
 	for _, blue := range node.blues {
-
 		feeTx.AddTxIn(&wire.TxIn{
 			SignatureScript: []byte{},
 			PreviousOutPoint: wire.OutPoint{
