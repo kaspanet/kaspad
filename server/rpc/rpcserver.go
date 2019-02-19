@@ -3455,7 +3455,7 @@ func verifyDAG(s *Server, level, depth int32) error {
 			err := s.cfg.DAG.CheckBlockSanity(block, s.cfg.DAGParams.PowLimit, s.cfg.TimeSource)
 			if err != nil {
 				log.Errorf("Verify is unable to validate "+
-					"block at hash %d height %d: %s",
+					"block at hash %s height %d: %s",
 					block.Hash(), height, err)
 				return err
 			}

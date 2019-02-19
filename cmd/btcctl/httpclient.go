@@ -98,7 +98,7 @@ func sendPostRequest(marshalledJSON []byte, cfg *config) ([]byte, error) {
 	respBytes, err := ioutil.ReadAll(httpResponse.Body)
 	httpResponse.Body.Close()
 	if err != nil {
-		err = fmt.Errorf("error reading json reply: %d", err)
+		err = fmt.Errorf("error reading json reply: %s", err)
 		return nil, err
 	}
 

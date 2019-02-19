@@ -1265,7 +1265,7 @@ func main() {
 			log.Printf("Block connected: %s (%d)", hash, height)
 		},
 		OnBlockDisconnected: func(hash *chainhash.Hash, height int32) {
-			log.Printf("Block disconnected: %s", hash, height)
+			log.Printf("Block disconnected: %s (%d)", hash, height)
 		},
 	}
 

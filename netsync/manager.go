@@ -590,7 +590,7 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 			log.Warnf("Unable to extract height from "+
 				"coinbase tx: %s", err)
 		} else {
-			log.Debugf("Extracted height of %s from "+
+			log.Debugf("Extracted height of %d from "+
 				"orphan block", cbHeight)
 			heightUpdate = cbHeight
 			blkHashUpdate = blockHash
