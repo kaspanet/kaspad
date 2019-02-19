@@ -199,6 +199,16 @@ func (b *Block) IsGenesis() bool {
 	return b.MsgBlock().Header.IsGenesis()
 }
 
+// FeeTransaction returns this block's fee transaction
+// If this block is a genesis block, it has no fee transaction, and therefore
+// nil is returned.
+func (b *Block) FeeTransaction() *Tx {
+	if b.IsGenesis() {
+		return nil
+	}
+	return b.Transactions()[1]
+}
+
 // NewBlock returns a new instance of a bitcoin block given an underlying
 // wire.MsgBlock.  See Block.
 func NewBlock(msgBlock *wire.MsgBlock) *Block {

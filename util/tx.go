@@ -45,8 +45,8 @@ func (t *Tx) Hash() *daghash.Hash {
 
 	// Cache the hash and return it.
 	hash := t.msgTx.TxHash()
-	t.txHash = &hash
-	return &hash
+	t.txHash = hash
+	return hash
 }
 
 // ID returns the id of the transaction.  This is equivalent to

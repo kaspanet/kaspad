@@ -937,7 +937,7 @@ func (node *blockNode) validateFeeTransaction(dag *BlockDAG, acceptedTxData []*T
 		return err
 	}
 
-	if expectedFeeTransaction.TxHash() != *nodeTransactions[1].Hash() {
+	if !expectedFeeTransaction.TxHash().IsEqual(nodeTransactions[1].Hash()) {
 		return ruleError(ErrBadFeeTransaction, fmt.Sprintf("Fee transaction is not built as expected"))
 	}
 
