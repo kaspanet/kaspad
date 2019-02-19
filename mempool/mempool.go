@@ -734,7 +734,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rateLimit, rejectDu
 	// Don't accept the transaction if it's from an incompatible subnetwork.
 	subnetworkID := mp.cfg.DAG.SubnetworkID()
 	if !tx.MsgTx().IsSubnetworkCompatible(subnetworkID) {
-		str := "tx %s belongs to an invalid subnetwork"
+		str := fmt.Sprintf("tx %s belongs to an invalid subnetwork", tx.ID())
 		return nil, nil, txRuleError(wire.RejectInvalid, str)
 	}
 
