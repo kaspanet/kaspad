@@ -701,7 +701,7 @@ func (dag *BlockDAG) applyUTXOChanges(node *blockNode, block *util.Block, fastAd
 		return nil, nil, nil, errors.New(newErrString)
 	}
 
-	err = node.validateFeeTransaction(dag, acceptedTxData, block.Transactions())
+	err = node.validateFeeTransaction(dag, block, feeData, acceptedTxData)
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -854,7 +854,8 @@ func (node *blockNode) getBluesFeeData(dag *BlockDAG, acceptedTxData []*TxWithBl
 }
 
 // buildFeeTransaction returns the expected fee transaction for the current block
-func (node *blockNode) buildFeeTransaction(dag *BlockDAG, acceptedTxData []*TxWithBlockHash) (*wire.MsgTx, error) {
+func (node *blockNode) buildFeeTransaction(dag *BlockDAG, block *util.Block,
+	feeData compactFeeData, acceptedTxData []*TxWithBlockHash) (*wire.MsgTx, error) {
 	bluesFeeData, err := node.getBluesFeeData(dag, acceptedTxData)
 	if err != nil {
 		return nil, err
@@ -928,17 +929,18 @@ func (dag *BlockDAG) getTXO(outpointBlockNode *blockNode, outpoint wire.OutPoint
 	return nil, fmt.Errorf("Couldn't find txo %v", outpoint)
 }
 
-func (node *blockNode) validateFeeTransaction(dag *BlockDAG, acceptedTxData []*TxWithBlockHash, nodeTransactions []*util.Tx) error {
+func (node *blockNode) validateFeeTransaction(dag *BlockDAG, block *util.Block,
+	feeData compactFeeData, acceptedTxData []*TxWithBlockHash) error {
 	if node.isGenesis() {
 		return nil
 	}
-	expectedFeeTransaction, err := node.buildFeeTransaction(dag, acceptedTxData)
+	expectedFeeTransaction, err := node.buildFeeTransaction(dag, block, feeData, acceptedTxData)
 	if err != nil {
 		return err
 	}
 
-	if !expectedFeeTransaction.TxHash().IsEqual(nodeTransactions[1].Hash()) {
-		return ruleError(ErrBadFeeTransaction, fmt.Sprintf("Fee transaction is not built as expected"))
+	if !expectedFeeTransaction.TxHash().IsEqual(block.FeeTransaction().Hash()) {
+		return ruleError(ErrBadFeeTransaction, "Fee transaction is not built as expected")
 	}
 
 	return nil
