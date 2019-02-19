@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/daglabs/btcd/util/subnetworkid"
-	"github.com/daglabs/btcd/util/txsort"
 
 	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/dagconfig/daghash"
@@ -591,8 +590,6 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block, fastAdd bo
 
 		// Apply the fee data into the database
 		return dbStoreFeeData(dbTx, block.Hash(), feeData)
-
-		return nil
 	})
 	if err != nil {
 		return err
@@ -672,11 +669,11 @@ func (dag *BlockDAG) checkFinalityRulesAndGetFinalityPointCandidate(node *blockN
 
 // NextBlockFeeTransaction prepares the fee transaction for the next mined block
 func (dag *BlockDAG) NextBlockFeeTransaction() (*wire.MsgTx, error) {
-	_, acceptedTxData, _, err := dag.virtual.blockNode.verifyAndBuildUTXO(dag.virtual, dag, nil, true)
+	_, acceptedTxsData, _, err := dag.virtual.blockNode.verifyAndBuildUTXO(dag.virtual, dag, nil, true)
 	if err != nil {
 		return nil, err
 	}
-	return dag.virtual.blockNode.buildFeeTransaction(dag, acceptedTxData)
+	return dag.virtual.blockNode.buildFeeTransaction(dag, acceptedTxsData)
 }
 
 // applyUTXOChanges does the following:
@@ -688,11 +685,11 @@ func (dag *BlockDAG) NextBlockFeeTransaction() (*wire.MsgTx, error) {
 //
 // This function MUST be called with the chain state lock held (for writes).
 func (dag *BlockDAG) applyUTXOChanges(node *blockNode, block *util.Block, fastAdd bool) (
-	utxoDiff *UTXODiff, acceptedTxData []*TxWithBlockHash, feeData compactFeeData, err error) {
+	utxoDiff *UTXODiff, acceptedTxsData AcceptedTxsData, feeData compactFeeData, err error) {
 	// Clone the virtual block so that we don't modify the existing one.
 	virtualClone := dag.virtual.clone()
 
-	newBlockUTXO, acceptedTxData, feeData, err := node.verifyAndBuildUTXO(virtualClone, dag, block.Transactions(), fastAdd)
+	newBlockUTXO, acceptedTxsData, feeData, err := node.verifyAndBuildUTXO(virtualClone, dag, block.Transactions(), fastAdd)
 	if err != nil {
 		newErrString := fmt.Sprintf("error verifying UTXO for %v: %s", node, err)
 		if err, ok := err.(RuleError); ok {
@@ -701,7 +698,7 @@ func (dag *BlockDAG) applyUTXOChanges(node *blockNode, block *util.Block, fastAd
 		return nil, nil, nil, errors.New(newErrString)
 	}
 
-	err = node.validateFeeTransaction(dag, block, feeData, acceptedTxData)
+	err = node.validateFeeTransaction(dag, block, acceptedTxsData)
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -746,7 +743,7 @@ func (dag *BlockDAG) applyUTXOChanges(node *blockNode, block *util.Block, fastAd
 	// It is now safe to apply the new virtual block
 	dag.virtual = virtualClone
 
-	return utxoDiff, acceptedTxData, feeData, nil
+	return utxoDiff, acceptedTxsData, feeData, nil
 }
 
 func (dag *BlockDAG) updateVirtualUTXO(newVirtualUTXODiffSet *DiffUTXOSet) {
@@ -756,16 +753,15 @@ func (dag *BlockDAG) updateVirtualUTXO(newVirtualUTXODiffSet *DiffUTXOSet) {
 }
 
 // verifyAndBuildUTXO verifies all transactions in the given block and builds its UTXO
-func (node *blockNode) verifyAndBuildUTXO(virtual *virtualBlock, dag *BlockDAG,
-	transactions []*util.Tx, fastAdd bool,
-) (
-	utxoSet UTXOSet, acceptedTxData []*TxWithBlockHash, feeData compactFeeData, err error) {
+func (node *blockNode) verifyAndBuildUTXO(virtual *virtualBlock, dag *BlockDAG, transactions []*util.Tx, fastAdd bool) (
+	UTXOSet, AcceptedTxsData, compactFeeData, error) {
 
-	pastUTXO, pastUTXOAcceptedTxData, err := node.pastUTXO(virtual, dag.db)
+	pastUTXO, acceptedTxsData, err := node.pastUTXO(virtual, dag.db)
 	if err != nil {
 		return nil, nil, nil, err
 	}
 
+	var feeData compactFeeData
 	if !fastAdd {
 		feeData, err = dag.checkConnectToPastUTXO(node, pastUTXO, transactions)
 		if err != nil {
@@ -774,11 +770,8 @@ func (node *blockNode) verifyAndBuildUTXO(virtual *virtualBlock, dag *BlockDAG,
 	}
 
 	diff := NewUTXODiff()
-	acceptedTxData = make([]*TxWithBlockHash, 0, len(pastUTXOAcceptedTxData)+len(transactions))
-	if len(pastUTXOAcceptedTxData) != 0 {
-		acceptedTxData = append(acceptedTxData, pastUTXOAcceptedTxData...)
-	}
 
+	blockAcceptedTxsData := BlockAcceptedTxsData{}
 	for _, tx := range transactions {
 		txDiff, err := pastUTXO.diffFromTx(tx.MsgTx(), node)
 		if err != nil {
@@ -788,110 +781,40 @@ func (node *blockNode) verifyAndBuildUTXO(virtual *virtualBlock, dag *BlockDAG,
 		if err != nil {
 			return nil, nil, nil, err
 		}
-		acceptedTxData = append(acceptedTxData, &TxWithBlockHash{
-			Tx:      tx,
-			InBlock: &node.hash,
+		blockAcceptedTxsData = append(blockAcceptedTxsData, TxAcceptedData{
+			Tx:         tx,
+			IsAccepted: true,
 		})
 
 	}
+	acceptedTxsData[node.hash] = blockAcceptedTxsData
 
 	utxo, err := pastUTXO.WithDiff(diff)
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	return utxo, acceptedTxData, feeData, nil
+	return utxo, acceptedTxsData, feeData, nil
 }
 
-type blockFeeData struct {
-	pkScript     []byte
-	transactions []*wire.MsgTx
-	txCount      uint64
-}
+// getBluesFeeData returns the compactFeeData for all nodes's blues,
+// used to calculate the fees this blockNode needs to pay
+func (node *blockNode) getBluesFeeData(dag *BlockDAG) (map[daghash.Hash]compactFeeData, error) {
+	bluesFeeData := make(map[daghash.Hash]compactFeeData)
 
-// getBluesFeeData returns the data that is needed in order to build the block's fee transaction
-func (node *blockNode) getBluesFeeData(dag *BlockDAG, acceptedTxData []*TxWithBlockHash) (map[daghash.Hash]*blockFeeData, error) {
-	var acceptedTxDataWithSelectedParent []*TxWithBlockHash
-	// acceptedTxData doesn't include the selected parent transactions, so we need to manually add them
-	err := dag.db.View(func(dbTx database.Tx) error {
-		selectedParnetBlock, err := dbFetchBlockByNode(dbTx, node.selectedParent)
-		if err != nil {
-			return err
-		}
-		acceptedTxDataWithSelectedParent = make([]*TxWithBlockHash, len(acceptedTxData), len(acceptedTxData)+len(selectedParnetBlock.Transactions()))
-		copy(acceptedTxDataWithSelectedParent, acceptedTxData)
-		for _, tx := range selectedParnetBlock.Transactions() {
-			acceptedTx := &TxWithBlockHash{
-				InBlock: &node.selectedParent.hash,
-				Tx:      tx,
+	dag.db.View(func(dbTx database.Tx) error {
+		for _, blueBlock := range node.blues {
+			feeData, err := dbFetchFeeData(dbTx, &blueBlock.hash)
+			if err != nil {
+				return fmt.Errorf("Error getting fee data for block %s: %s", blueBlock.hash, err)
 			}
-			acceptedTxDataWithSelectedParent = append(acceptedTxDataWithSelectedParent, acceptedTx)
+
+			bluesFeeData[blueBlock.hash] = feeData
 		}
+
 		return nil
 	})
 
-	blocksData := make(map[daghash.Hash]*blockFeeData)
-	for _, acceptedTx := range acceptedTxDataWithSelectedParent {
-		if _, ok := blocksData[*acceptedTx.InBlock]; !ok {
-			blocksData[*acceptedTx.InBlock] = &blockFeeData{}
-		}
-		blocksData[*acceptedTx.InBlock].txCount++
-	}
-	for _, acceptedTx := range acceptedTxDataWithSelectedParent {
-		if blocksData[*acceptedTx.InBlock].transactions == nil {
-			blocksData[*acceptedTx.InBlock].transactions = make([]*wire.MsgTx, 0, blocksData[*acceptedTx.InBlock].txCount)
-		}
-		msgTx := acceptedTx.Tx.MsgTx()
-		if msgTx.IsCoinBase() {
-			blocksData[*acceptedTx.InBlock].pkScript = msgTx.TxOut[0].PkScript
-		} else {
-			blocksData[*acceptedTx.InBlock].transactions = append(blocksData[*acceptedTx.InBlock].transactions, msgTx)
-		}
-	}
-	if err != nil {
-		return nil, err
-	}
-	return blocksData, nil
-}
-
-// buildFeeTransaction returns the expected fee transaction for the current block
-func (node *blockNode) buildFeeTransaction(dag *BlockDAG, block *util.Block,
-	feeData compactFeeData, acceptedTxData []*TxWithBlockHash) (*wire.MsgTx, error) {
-	bluesFeeData, err := node.getBluesFeeData(dag, acceptedTxData)
-	if err != nil {
-		return nil, err
-	}
-
-	feeTx := wire.NewMsgTx(wire.TxVersion)
-
-	for _, blue := range node.blues {
-		feeTx.AddTxIn(&wire.TxIn{
-			SignatureScript: []byte{},
-			PreviousOutPoint: wire.OutPoint{
-				TxID:  daghash.TxID(blue.hash),
-				Index: math.MaxUint32,
-			},
-			Sequence: wire.MaxTxInSequenceNum,
-		})
-
-		if _, ok := bluesFeeData[blue.hash]; !ok {
-			continue
-		}
-
-		totalFees, err := calculateFees(blue, bluesFeeData[blue.hash].transactions, dag)
-		if err != nil {
-			return nil, err
-		}
-
-		if totalFees == 0 {
-			continue
-		}
-
-		feeTx.AddTxOut(&wire.TxOut{
-			Value:    totalFees,
-			PkScript: bluesFeeData[blue.hash].pkScript,
-		})
-	}
-	return txsort.Sort(feeTx), nil
+	return bluesFeeData, nil
 }
 
 func (dag *BlockDAG) getTXO(outpointBlockNode *blockNode, outpoint wire.OutPoint) (*wire.TxOut, error) {
@@ -929,12 +852,11 @@ func (dag *BlockDAG) getTXO(outpointBlockNode *blockNode, outpoint wire.OutPoint
 	return nil, fmt.Errorf("Couldn't find txo %v", outpoint)
 }
 
-func (node *blockNode) validateFeeTransaction(dag *BlockDAG, block *util.Block,
-	feeData compactFeeData, acceptedTxData []*TxWithBlockHash) error {
+func (node *blockNode) validateFeeTransaction(dag *BlockDAG, block *util.Block, acceptedTxsData AcceptedTxsData) error {
 	if node.isGenesis() {
 		return nil
 	}
-	expectedFeeTransaction, err := node.buildFeeTransaction(dag, block, feeData, acceptedTxData)
+	expectedFeeTransaction, err := node.buildFeeTransaction(dag, acceptedTxsData)
 	if err != nil {
 		return err
 	}
@@ -946,36 +868,20 @@ func (node *blockNode) validateFeeTransaction(dag *BlockDAG, block *util.Block,
 	return nil
 }
 
-func calculateFees(node *blockNode, transactions []*wire.MsgTx, dag *BlockDAG) (uint64, error) {
-	totalFees := uint64(0)
-	for _, tx := range transactions {
-		if !tx.IsBlockReward() {
-			for _, txin := range tx.TxIn {
-				prevTxOut, err := dag.getTXO(node, txin.PreviousOutPoint)
-				if err != nil {
-					return 0, err
-				}
-				if totalFees+prevTxOut.Value < totalFees {
-					return 0, ruleError(ErrBadFees, "total fees overflows accumulator")
-				}
-				totalFees += prevTxOut.Value
-			}
-			for _, txo := range tx.TxOut {
-				if totalFees-txo.Value > totalFees {
-					return 0, ruleError(ErrBadFees, "total fees overflows accumulator")
-				}
-				totalFees -= txo.Value
-			}
-		}
-	}
-	return totalFees, nil
+// TxAcceptedData stores a transaction together with an indication
+// if it was accepted or not by some block
+type TxAcceptedData struct {
+	Tx         *util.Tx
+	IsAccepted bool
 }
 
-// TxWithBlockHash is a type that holds data about in which block a transaction was found
-type TxWithBlockHash struct {
-	Tx      *util.Tx
-	InBlock *daghash.Hash
-}
+// BlockAcceptedTxsData  stores all transactions in a block with an indication
+// if they were accepted or not by some other block
+type BlockAcceptedTxsData []TxAcceptedData
+
+// AcceptedTxsData  stores data about which transactions were accepted by a block
+// It's a map from the block's blues block IDs to the transaction acceptance data
+type AcceptedTxsData map[daghash.Hash]BlockAcceptedTxsData
 
 func genesisPastUTXO(virtual *virtualBlock) UTXOSet {
 	// The genesis has no past UTXO, so we create an empty UTXO
@@ -990,7 +896,7 @@ func genesisPastUTXO(virtual *virtualBlock) UTXOSet {
 }
 
 // pastUTXO returns the UTXO of a given block's past
-func (node *blockNode) pastUTXO(virtual *virtualBlock, db database.DB) (pastUTXO UTXOSet, acceptedTxData []*TxWithBlockHash, err error) {
+func (node *blockNode) pastUTXO(virtual *virtualBlock, db database.DB) (pastUTXO UTXOSet, acceptedTxsData AcceptedTxsData, err error) {
 	if node.isGenesis() {
 		return genesisPastUTXO(virtual), nil, nil
 	}
@@ -999,15 +905,13 @@ func (node *blockNode) pastUTXO(virtual *virtualBlock, db database.DB) (pastUTXO
 		return nil, nil, err
 	}
 
-	// Fetch from the database all the transactions for this block's blue set (besides the selected parent)
-	var blueBlockTransactions []*TxWithBlockHash
-	transactionCount := 0
+	// Fetch from the database all the transactions for this block's blue set
+	blueBlocks := make([]*util.Block, 0, len(node.blues))
 	err = db.View(func(dbTx database.Tx) error {
 		// Precalculate the amount of transactions in this block's blue set, besides the selected parent.
 		// This is to avoid an attack in which an attacker fabricates a block that will deliberately cause
 		// a lot of copying, causing a high cost to the whole network.
-		blueBlocks := make([]*util.Block, 0, len(node.blues)-1)
-		for i := len(node.blues) - 1; i >= 0; i-- {
+		for i := len(node.blues); i >= 0; i-- {
 			blueBlockNode := node.blues[i]
 			if blueBlockNode == node.selectedParent {
 				continue
@@ -1018,15 +922,7 @@ func (node *blockNode) pastUTXO(virtual *virtualBlock, db database.DB) (pastUTXO
 				return err
 			}
 
-			transactionCount += len(blueBlock.Transactions())
 			blueBlocks = append(blueBlocks, blueBlock)
-		}
-
-		blueBlockTransactions = make([]*TxWithBlockHash, 0, transactionCount)
-		for _, blueBlock := range blueBlocks {
-			for _, tx := range blueBlock.Transactions() {
-				blueBlockTransactions = append(blueBlockTransactions, &TxWithBlockHash{Tx: tx, InBlock: blueBlock.Hash()})
-			}
 		}
 
 		return nil
@@ -1034,19 +930,27 @@ func (node *blockNode) pastUTXO(virtual *virtualBlock, db database.DB) (pastUTXO
 	if err != nil {
 		return nil, nil, err
 	}
-
-	acceptedTxData = make([]*TxWithBlockHash, 0, transactionCount)
+	acceptedTxsData = AcceptedTxsData{}
 
 	// Add all transactions to the pastUTXO
 	// Purposefully ignore failures - these are just unaccepted transactions
-	for _, tx := range blueBlockTransactions {
-		isAccepted := pastUTXO.AddTx(tx.Tx.MsgTx(), node.height)
-		if isAccepted {
-			acceptedTxData = append(acceptedTxData, tx)
+	// Write down which transactions were accepted or not in acceptedTxData
+	for _, blueBlock := range blueBlocks {
+		transactions := blueBlock.Transactions()
+		blockAcceptedTxsData := make(BlockAcceptedTxsData, len(transactions))
+		for _, tx := range blueBlock.Transactions() {
+			var isAccepted bool
+			if blueBlock.Hash().IsEqual(&node.selectedParent.hash) { // selectedParent txs are always accepted
+				isAccepted = true
+			} else {
+				isAccepted = pastUTXO.AddTx(tx.MsgTx(), node.height)
+			}
+			blockAcceptedTxsData = append(blockAcceptedTxsData, TxAcceptedData{Tx: tx, IsAccepted: isAccepted})
 		}
+		acceptedTxsData[*blueBlock.Hash()] = blockAcceptedTxsData
 	}
 
-	return pastUTXO, acceptedTxData, nil
+	return pastUTXO, acceptedTxsData, nil
 }
 
 // restoreUTXO restores the UTXO of a given block from its diff
@@ -1620,7 +1524,7 @@ type IndexManager interface {
 
 	// ConnectBlock is invoked when a new block has been connected to the
 	// DAG.
-	ConnectBlock(database.Tx, *util.Block, *BlockDAG, []*TxWithBlockHash) error
+	ConnectBlock(database.Tx, *util.Block, *BlockDAG, AcceptedTxsData) error
 }
 
 // Config is a descriptor which specifies the blockchain instance configuration.
