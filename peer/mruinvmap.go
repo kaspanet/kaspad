@@ -34,7 +34,7 @@ func (m *mruInventoryMap) String() string {
 	curEntry := 0
 	buf := bytes.NewBufferString("[")
 	for iv := range m.invMap {
-		buf.WriteString(fmt.Sprintf("%s", iv))
+		buf.WriteString(iv.String())
 		if curEntry < lastEntryNum {
 			buf.WriteString(", ")
 		}

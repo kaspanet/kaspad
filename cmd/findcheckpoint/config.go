@@ -123,7 +123,7 @@ func loadConfig() (*config, []string, error) {
 	if !validDbType(cfg.DbType) {
 		str := "%s: The specified database type [%s] is invalid -- " +
 			"supported types %s"
-		err := fmt.Errorf(str, "loadConfig", cfg.DbType, strings.Join(knownDbTypes, ", "))
+		err := fmt.Errorf(str, funcName, cfg.DbType, strings.Join(knownDbTypes, ", "))
 		fmt.Fprintln(os.Stderr, err)
 		parser.WriteHelp(os.Stderr)
 		return nil, nil, err
@@ -141,7 +141,7 @@ func loadConfig() (*config, []string, error) {
 	if cfg.NumCandidates < minCandidates || cfg.NumCandidates > maxCandidates {
 		str := "%s: The specified number of candidates is out of " +
 			"range -- parsed [%d]"
-		err = fmt.Errorf(str, "loadConfig", cfg.NumCandidates)
+		err = fmt.Errorf(str, funcName, cfg.NumCandidates)
 		fmt.Fprintln(os.Stderr, err)
 		parser.WriteHelp(os.Stderr)
 		return nil, nil, err
