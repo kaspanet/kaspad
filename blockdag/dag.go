@@ -913,9 +913,6 @@ func (node *blockNode) pastUTXO(virtual *virtualBlock, db database.DB) (pastUTXO
 		// a lot of copying, causing a high cost to the whole network.
 		for i := len(node.blues) - 1; i >= 0; i-- {
 			blueBlockNode := node.blues[i]
-			if blueBlockNode == node.selectedParent {
-				continue
-			}
 
 			blueBlock, err := dbFetchBlockByNode(dbTx, blueBlockNode)
 			if err != nil {
@@ -938,14 +935,15 @@ func (node *blockNode) pastUTXO(virtual *virtualBlock, db database.DB) (pastUTXO
 	for _, blueBlock := range blueBlocks {
 		transactions := blueBlock.Transactions()
 		blockAcceptedTxsData := make(BlockAcceptedTxsData, len(transactions))
-		for _, tx := range blueBlock.Transactions() {
+		isSelectedParent := blueBlock.Hash().IsEqual(&node.selectedParent.hash)
+		for i, tx := range blueBlock.Transactions() {
 			var isAccepted bool
-			if blueBlock.Hash().IsEqual(&node.selectedParent.hash) { // selectedParent txs are always accepted
+			if isSelectedParent {
 				isAccepted = true
 			} else {
 				isAccepted = pastUTXO.AddTx(tx.MsgTx(), node.height)
 			}
-			blockAcceptedTxsData = append(blockAcceptedTxsData, TxAcceptedData{Tx: tx, IsAccepted: isAccepted})
+			blockAcceptedTxsData[i] = TxAcceptedData{Tx: tx, IsAccepted: isAccepted}
 		}
 		acceptedTxsData[*blueBlock.Hash()] = blockAcceptedTxsData
 	}

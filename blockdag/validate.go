@@ -1021,7 +1021,7 @@ func (dag *BlockDAG) checkConnectToPastUTXO(block *blockNode, pastUTXO UTXOSet,
 	// In addition - add all fees into a fee accumulator, to be stored and checked
 	// when validating descendants' fee transactions.
 	var totalFees uint64
-	feeAccumulator := newCompactFeeFactory()
+	compactFeeFactory := newCompactFeeFactory()
 
 	for _, tx := range transactions {
 		txFee, err := CheckTransactionInputs(tx, block.height, pastUTXO,
@@ -1039,7 +1039,7 @@ func (dag *BlockDAG) checkConnectToPastUTXO(block *blockNode, pastUTXO UTXOSet,
 				"overflows accumulator")
 		}
 
-		err = feeAccumulator.add(txFee)
+		err = compactFeeFactory.add(txFee)
 		if err != nil {
 			return nil, fmt.Errorf("Error adding tx %s fee to feeAccumulatorWriter: %s", tx.ID(), err)
 		}
@@ -1114,7 +1114,7 @@ func (dag *BlockDAG) checkConnectToPastUTXO(block *blockNode, pastUTXO UTXOSet,
 		}
 	}
 
-	feeData, err := feeAccumulator.data()
+	feeData, err := compactFeeFactory.data()
 	if err != nil {
 		return nil, fmt.Errorf("Error getting bytes of fee data: %s", err)
 	}

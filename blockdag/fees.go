@@ -113,28 +113,33 @@ func (node *blockNode) buildFeeTransaction(dag *BlockDAG, acceptedTxsData Accept
 		if err != nil {
 			return nil, err
 		}
-		if txIn == nil && txOut == nil {
-			continue
-		}
-
 		feeTx.AddTxIn(txIn)
-		feeTx.AddTxOut(txOut)
+		if txOut != nil {
+			feeTx.AddTxOut(txOut)
+		}
 	}
 	return txsort.Sort(feeTx), nil
 }
 
 // feeInputAndOutputForBlueBlock calculatres the input and output that should go into the fee transaction
 // for given blueNode
-// If block gets no fee - returns nil in all return values
+// If block gets no fee - returns only txIn and nil for txOut
 func feeInputAndOutputForBlueBlock(blueBlock *blockNode, acceptedTxsData AcceptedTxsData, feeData map[daghash.Hash]compactFeeData) (
 	*wire.TxIn, *wire.TxOut, error) {
 
-	blockAcceptedTxsData := acceptedTxsData[blueBlock.hash]
-	blockFeeData := feeData[blueBlock.hash]
+	blockAcceptedTxsData, ok := acceptedTxsData[blueBlock.hash]
+	if !ok {
+		return nil, nil, fmt.Errorf("No acceptedTxsData for block %s", blueBlock.hash)
+	}
+	blockFeeData, ok := feeData[blueBlock.hash]
+	if !ok {
+		return nil, nil, fmt.Errorf("No feeData for block %s", blueBlock.hash)
+	}
 
 	if len(blockAcceptedTxsData) != blockFeeData.Len() {
 		return nil, nil, fmt.Errorf(
-			"length of accepted transaction data and fee data is not equal for block %s", blueBlock.hash)
+			"length of accepted transaction data(%d) and fee data(%d) is not equal for block %s",
+			len(blockAcceptedTxsData), blockFeeData.Len(), blueBlock.hash)
 	}
 
 	txIn := &wire.TxIn{
@@ -160,7 +165,7 @@ func feeInputAndOutputForBlueBlock(blueBlock *blockNode, acceptedTxsData Accepte
 	}
 
 	if totalFees == 0 {
-		return nil, nil, nil
+		return txIn, nil, nil
 	}
 
 	// the scriptPubKey for the fee is the same as the coinbase's first scriptPubKey
