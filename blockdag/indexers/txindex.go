@@ -27,7 +27,7 @@ var (
 
 	acceptingBlocksIndexKey = []byte("acceptingblocksidx")
 
-	acceptingBlocksIndexKeyEntrySize = 4 // 4 bytes for including block ID
+	acceptingBlocksIndexKeyEntrySize = 4 // 4 bytes for accepting block ID
 
 	// idByHashIndexBucketName is the name of the db bucket used to house
 	// the block id -> block hash index.
@@ -252,7 +252,7 @@ func dbFetchFirstTxRegion(dbTx database.Tx, txID *daghash.TxID) (*database.Block
 
 // dbAddTxIndexEntries uses an existing database transaction to add a
 // transaction index entry for every transaction in the passed block.
-func dbAddTxIndexEntries(dbTx database.Tx, block *util.Block, blockID uint32, acceptedTxData []*blockdag.TxWithBlockHash) error {
+func dbAddTxIndexEntries(dbTx database.Tx, block *util.Block, blockID uint32, acceptedTxData blockdag.AcceptedTxsData) error {
 	// The offset and length of the transactions within the serialized
 	// block.
 	txLocs, err := block.TxLoc()
@@ -278,33 +278,24 @@ func dbAddTxIndexEntries(dbTx database.Tx, block *util.Block, blockID uint32, ac
 		includingBlocksOffset += includingBlocksIndexKeyEntrySize
 	}
 
-	blockHashToID := make(map[daghash.Hash]uint32)
-	blockHashToID[*block.Hash()] = blockID
-
 	acceptingBlocksOffset := 0
 
-	serializedAcceptingBlocksValues := make([]byte, len(acceptedTxData)*acceptingBlocksIndexKeyEntrySize)
-	for _, tx := range acceptedTxData {
-		var includingBlockID uint32
-		var err error
-		var ok bool
-
-		if includingBlockID, ok = blockHashToID[*tx.InBlock]; !ok {
-			includingBlockID, err = dbFetchBlockIDByHash(dbTx, tx.InBlock)
-			if err != nil {
-				return err
-			}
-			blockHashToID[*tx.InBlock] = includingBlockID
-		}
-
-		putAcceptingBlocksEntry(serializedAcceptingBlocksValues[acceptingBlocksOffset:], includingBlockID)
-		endOffset := acceptingBlocksOffset + acceptingBlocksIndexKeyEntrySize
-		err = dbPutAcceptingBlocksEntry(dbTx, tx.Tx.ID(), blockID,
-			serializedAcceptingBlocksValues[acceptingBlocksOffset:endOffset:endOffset])
+	for includingBlockHash, blockAcceptedTxData := range acceptedTxData {
+		includingBlockID, err := dbFetchBlockIDByHash(dbTx, &includingBlockHash)
 		if err != nil {
 			return err
 		}
-		acceptingBlocksOffset += acceptingBlocksIndexKeyEntrySize
+
+		includingBlockIDBytes := make([]byte, 4)
+		byteOrder.PutUint32(includingBlockIDBytes, uint32(includingBlockID))
+
+		for _, txAcceptedData := range blockAcceptedTxData {
+			err = dbPutAcceptingBlocksEntry(dbTx, txAcceptedData.Tx.ID(), blockID, includingBlockIDBytes)
+			if err != nil {
+				return err
+			}
+			acceptingBlocksOffset += acceptingBlocksIndexKeyEntrySize
+		}
 	}
 
 	return nil
@@ -425,7 +416,7 @@ func (idx *TxIndex) Create(dbTx database.Tx) error {
 // for every transaction in the passed block.
 //
 // This is part of the Indexer interface.
-func (idx *TxIndex) ConnectBlock(dbTx database.Tx, block *util.Block, _ *blockdag.BlockDAG, acceptedTxsData []*blockdag.TxWithBlockHash) error {
+func (idx *TxIndex) ConnectBlock(dbTx database.Tx, block *util.Block, _ *blockdag.BlockDAG, acceptedTxsData blockdag.AcceptedTxsData) error {
 	// Increment the internal block ID to use for the block being connected
 	// and add all of the transactions in the block to the index.
 	newBlockID := idx.curBlockID + 1
