@@ -26,6 +26,10 @@ import (
 
 type compactFeeData []byte
 
+func (cfd compactFeeData) Len() int {
+	return len(cfd) / 8
+}
+
 type compactFeeFactory struct {
 	buffer *bytes.Buffer
 	writer *bufio.Writer
@@ -128,7 +132,7 @@ func feeInputAndOutputForBlueBlock(blueBlock *blockNode, acceptedTxsData Accepte
 	blockAcceptedTxsData := acceptedTxsData[blueBlock.hash]
 	blockFeeData := feeData[blueBlock.hash]
 
-	if len(blockAcceptedTxsData) != len(blockFeeData) {
+	if len(blockAcceptedTxsData) != blockFeeData.Len() {
 		return nil, nil, fmt.Errorf(
 			"length of accepted transaction data and fee data is not equal for block %s", blueBlock.hash)
 	}
