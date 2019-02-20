@@ -911,7 +911,7 @@ func (node *blockNode) pastUTXO(virtual *virtualBlock, db database.DB) (pastUTXO
 		// Precalculate the amount of transactions in this block's blue set, besides the selected parent.
 		// This is to avoid an attack in which an attacker fabricates a block that will deliberately cause
 		// a lot of copying, causing a high cost to the whole network.
-		for i := len(node.blues); i >= 0; i-- {
+		for i := len(node.blues) - 1; i >= 0; i-- {
 			blueBlockNode := node.blues[i]
 			if blueBlockNode == node.selectedParent {
 				continue
