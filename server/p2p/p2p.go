@@ -993,7 +993,7 @@ func (sp *Peer) enforceNodeBloomFlag(cmd string) bool {
 func (sp *Peer) OnFeeFilter(_ *peer.Peer, msg *wire.MsgFeeFilter) {
 	// Check that the passed minimum fee is a valid amount.
 	if msg.MinFee < 0 || msg.MinFee > util.MaxSatoshi {
-		peerLog.Debugf("Peer %s sent an invalid feefilter '%d' -- "+
+		peerLog.Debugf("Peer %s sent an invalid feefilter '%s' -- "+
 			"disconnecting", sp, util.Amount(msg.MinFee))
 		sp.Disconnect()
 		return
