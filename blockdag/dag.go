@@ -898,7 +898,7 @@ func genesisPastUTXO(virtual *virtualBlock) UTXOSet {
 // pastUTXO returns the UTXO of a given block's past
 func (node *blockNode) pastUTXO(virtual *virtualBlock, db database.DB) (pastUTXO UTXOSet, acceptedTxsData AcceptedTxsData, err error) {
 	if node.isGenesis() {
-		return genesisPastUTXO(virtual), nil, nil
+		return genesisPastUTXO(virtual), AcceptedTxsData{}, nil
 	}
 	pastUTXO, err = node.selectedParent.restoreUTXO(virtual)
 	if err != nil {
