@@ -366,7 +366,7 @@ func (dag *BlockDAG) calcSequenceLock(node *blockNode, utxoSet UTXOSet, tx *util
 	for txInIndex, txIn := range mTx.TxIn {
 		entry, ok := utxoSet.Get(txIn.PreviousOutPoint)
 		if !ok {
-			str := fmt.Sprintf("output %v referenced from "+
+			str := fmt.Sprintf("output %s referenced from "+
 				"transaction %s:%d either does not exist or "+
 				"has already been spent", txIn.PreviousOutPoint,
 				tx.ID(), txInIndex)
@@ -482,7 +482,7 @@ func (dag *BlockDAG) connectToDAG(node *blockNode, parentNodes blockSet, block *
 	// invalid, the worst that can happen is we revalidate the block
 	// after a restart.
 	if writeErr := dag.index.flushToDB(); writeErr != nil {
-		log.Warnf("Error flushing block index changes to disk: %v",
+		log.Warnf("Error flushing block index changes to disk: %s",
 			writeErr)
 	}
 
@@ -690,7 +690,7 @@ func (dag *BlockDAG) applyUTXOChanges(node *blockNode, block *util.Block, fastAd
 
 	newBlockUTXO, acceptedTxData, err := node.verifyAndBuildUTXO(virtualClone, dag, block.Transactions(), fastAdd)
 	if err != nil {
-		newErrString := fmt.Sprintf("error verifying UTXO for %v: %s", node, err)
+		newErrString := fmt.Sprintf("error verifying UTXO for %s: %s", node, err)
 		if err, ok := err.(RuleError); ok {
 			return nil, nil, ruleError(err.ErrorCode, newErrString)
 		}
@@ -709,7 +709,7 @@ func (dag *BlockDAG) applyUTXOChanges(node *blockNode, block *util.Block, fastAd
 
 	err = node.updateParents(virtualClone, newBlockUTXO)
 	if err != nil {
-		panic(fmt.Errorf("failed updating parents of %v: %s", node, err))
+		panic(fmt.Errorf("failed updating parents of %s: %s", node, err))
 	}
 
 	// Update the virtual block's children (the DAG tips) to include the new block.
@@ -718,7 +718,7 @@ func (dag *BlockDAG) applyUTXOChanges(node *blockNode, block *util.Block, fastAd
 	// Build a UTXO set for the new virtual block and update the DAG tips' diffs.
 	newVirtualUTXO, _, err := virtualClone.blockNode.pastUTXO(virtualClone, dag.db)
 	if err != nil {
-		panic(fmt.Sprintf("could not restore past UTXO for virtual %v: %s", virtualClone, err))
+		panic(fmt.Sprintf("could not restore past UTXO for virtual %s: %s", virtualClone, err))
 	}
 
 	// Apply new utxoDiffs to all the tips
@@ -918,7 +918,7 @@ func (dag *BlockDAG) getTXO(outpointBlockNode *blockNode, outpoint wire.OutPoint
 			}
 		}
 	}
-	return nil, fmt.Errorf("Couldn't find txo %v", outpoint)
+	return nil, fmt.Errorf("Couldn't find txo %s", outpoint)
 }
 
 func (node *blockNode) validateFeeTransaction(dag *BlockDAG, acceptedTxData []*TxWithBlockHash, nodeTransactions []*util.Tx) error {
@@ -1368,10 +1368,10 @@ func (dag *BlockDAG) HeightToHashRange(startHeight int32,
 
 	endNode := dag.index.LookupNode(endHash)
 	if endNode == nil {
-		return nil, fmt.Errorf("no known block header with hash %v", endHash)
+		return nil, fmt.Errorf("no known block header with hash %s", endHash)
 	}
 	if !dag.index.NodeStatus(endNode).KnownValid() {
-		return nil, fmt.Errorf("block %v is not yet validated", endHash)
+		return nil, fmt.Errorf("block %s is not yet validated", endHash)
 	}
 	endHeight := endNode.height
 
@@ -1408,10 +1408,10 @@ func (dag *BlockDAG) IntervalBlockHashes(endHash *daghash.Hash, interval int,
 
 	endNode := dag.index.LookupNode(endHash)
 	if endNode == nil {
-		return nil, fmt.Errorf("no known block header with hash %v", endHash)
+		return nil, fmt.Errorf("no known block header with hash %s", endHash)
 	}
 	if !dag.index.NodeStatus(endNode).KnownValid() {
-		return nil, fmt.Errorf("block %v is not yet validated", endHash)
+		return nil, fmt.Errorf("block %s is not yet validated", endHash)
 	}
 	endHeight := endNode.height
 
@@ -1774,7 +1774,7 @@ func New(config *Config) (*BlockDAG, error) {
 	}
 
 	selectedTip := dag.selectedTip()
-	log.Infof("DAG state (height %d, hash %v, work %v)",
+	log.Infof("DAG state (height %d, hash %s, work %d)",
 		selectedTip.height, selectedTip.hash, selectedTip.workSum)
 
 	return &dag, nil

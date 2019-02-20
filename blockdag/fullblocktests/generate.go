@@ -738,8 +738,8 @@ func (g *testGenerator) assertTipBlockNumTxns(expected int) {
 func (g *testGenerator) assertTipBlockHash(expected daghash.Hash) {
 	hash := g.tip.BlockHash()
 	if hash != expected {
-		panic(fmt.Sprintf("block hash of block %q (height %d) is %v "+
-			"instead of expected %v", g.tipName, g.tipHeight, hash,
+		panic(fmt.Sprintf("block hash of block %q (height %d) is %s "+
+			"instead of expected %s", g.tipName, g.tipHeight, hash,
 			expected))
 	}
 }
@@ -749,8 +749,8 @@ func (g *testGenerator) assertTipBlockHash(expected daghash.Hash) {
 func (g *testGenerator) assertTipBlockMerkleRoot(expected daghash.Hash) {
 	hash := g.tip.Header.HashMerkleRoot
 	if hash != expected {
-		panic(fmt.Sprintf("merkle root of block %q (height %d) is %v "+
-			"instead of expected %v", g.tipName, g.tipHeight, hash,
+		panic(fmt.Sprintf("merkle root of block %q (height %d) is %s "+
+			"instead of expected %s", g.tipName, g.tipHeight, hash,
 			expected))
 	}
 }

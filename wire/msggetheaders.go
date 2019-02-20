@@ -36,7 +36,7 @@ type MsgGetHeaders struct {
 // AddBlockLocatorHash adds a new block locator hash to the message.
 func (msg *MsgGetHeaders) AddBlockLocatorHash(hash *daghash.Hash) error {
 	if len(msg.BlockLocatorHashes)+1 > MaxBlockLocatorsPerMsg {
-		str := fmt.Sprintf("too many block locator hashes for message [max %v]",
+		str := fmt.Sprintf("too many block locator hashes for message [max %d]",
 			MaxBlockLocatorsPerMsg)
 		return messageError("MsgGetHeaders.AddBlockLocatorHash", str)
 	}
@@ -60,7 +60,7 @@ func (msg *MsgGetHeaders) BtcDecode(r io.Reader, pver uint32) error {
 	}
 	if count > MaxBlockLocatorsPerMsg {
 		str := fmt.Sprintf("too many block locator hashes for message "+
-			"[count %v, max %v]", count, MaxBlockLocatorsPerMsg)
+			"[count %d, max %d]", count, MaxBlockLocatorsPerMsg)
 		return messageError("MsgGetHeaders.BtcDecode", str)
 	}
 
@@ -87,7 +87,7 @@ func (msg *MsgGetHeaders) BtcEncode(w io.Writer, pver uint32) error {
 	count := len(msg.BlockLocatorHashes)
 	if count > MaxBlockLocatorsPerMsg {
 		str := fmt.Sprintf("too many block locator hashes for message "+
-			"[count %v, max %v]", count, MaxBlockLocatorsPerMsg)
+			"[count %d, max %d]", count, MaxBlockLocatorsPerMsg)
 		return messageError("MsgGetHeaders.BtcEncode", str)
 	}
 

@@ -377,7 +377,7 @@ func loadConfig() (*Config, []string, error) {
 			err := createDefaultConfigFile(preCfg.ConfigFile)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Error creating a "+
-					"default config file: %v\n", err)
+					"default config file: %s\n", err)
 			}
 		}
 
@@ -385,7 +385,7 @@ func loadConfig() (*Config, []string, error) {
 		if err != nil {
 			if _, ok := err.(*os.PathError); !ok {
 				fmt.Fprintf(os.Stderr, "Error parsing config "+
-					"file: %v\n", err)
+					"file: %s\n", err)
 				fmt.Fprintln(os.Stderr, usageMessage)
 				return nil, nil, err
 			}
@@ -421,7 +421,7 @@ func loadConfig() (*Config, []string, error) {
 			}
 		}
 
-		str := "%s: Failed to create home directory: %v"
+		str := "%s: Failed to create home directory: %s"
 		err := fmt.Errorf(str, funcName, err)
 		fmt.Fprintln(os.Stderr, err)
 		return nil, nil, err
@@ -500,7 +500,7 @@ func loadConfig() (*Config, []string, error) {
 
 	// Parse, validate, and set debug log level(s).
 	if err := logger.ParseAndSetDebugLevels(cfg.DebugLevel); err != nil {
-		err := fmt.Errorf("%s: %v", funcName, err.Error())
+		err := fmt.Errorf("%s: %s", funcName, err.Error())
 		fmt.Fprintln(os.Stderr, err)
 		fmt.Fprintln(os.Stderr, usageMessage)
 		return nil, nil, err
@@ -508,8 +508,8 @@ func loadConfig() (*Config, []string, error) {
 
 	// Validate database type.
 	if !validDbType(cfg.DbType) {
-		str := "%s: The specified database type [%v] is invalid -- " +
-			"supported types %v"
+		str := "%s: The specified database type [%s] is invalid -- " +
+			"supported types %s"
 		err := fmt.Errorf(str, funcName, cfg.DbType, knownDbTypes)
 		fmt.Fprintln(os.Stderr, err)
 		fmt.Fprintln(os.Stderr, usageMessage)
@@ -530,7 +530,7 @@ func loadConfig() (*Config, []string, error) {
 
 	// Don't allow ban durations that are too short.
 	if cfg.BanDuration < time.Second {
-		str := "%s: The banduration option may not be less than 1s -- parsed [%v]"
+		str := "%s: The banduration option may not be less than 1s -- parsed [%s]"
 		err := fmt.Errorf(str, funcName, cfg.BanDuration)
 		fmt.Fprintln(os.Stderr, err)
 		fmt.Fprintln(os.Stderr, usageMessage)
@@ -654,7 +654,7 @@ func loadConfig() (*Config, []string, error) {
 	// Validate the the minrelaytxfee.
 	cfg.MinRelayTxFee, err = util.NewAmount(cfg.configFlags.MinRelayTxFee)
 	if err != nil {
-		str := "%s: invalid minrelaytxfee: %v"
+		str := "%s: invalid minrelaytxfee: %s"
 		err := fmt.Errorf(str, funcName, err)
 		fmt.Fprintln(os.Stderr, err)
 		fmt.Fprintln(os.Stderr, usageMessage)
@@ -737,7 +737,7 @@ func loadConfig() (*Config, []string, error) {
 	for _, strAddr := range cfg.configFlags.MiningAddrs {
 		addr, err := util.DecodeAddress(strAddr, activeNetParams.Prefix)
 		if err != nil {
-			str := "%s: mining address '%s' failed to decode: %v"
+			str := "%s: mining address '%s' failed to decode: %s"
 			err := fmt.Errorf(str, funcName, strAddr, err)
 			fmt.Fprintln(os.Stderr, err)
 			fmt.Fprintln(os.Stderr, usageMessage)
@@ -802,7 +802,7 @@ func loadConfig() (*Config, []string, error) {
 			host, _, err := net.SplitHostPort(addr)
 			if err != nil {
 				str := "%s: RPC listen interface '%s' is " +
-					"invalid: %v"
+					"invalid: %s"
 				err := fmt.Errorf(str, funcName, addr, err)
 				fmt.Fprintln(os.Stderr, err)
 				fmt.Fprintln(os.Stderr, usageMessage)
@@ -839,7 +839,7 @@ func loadConfig() (*Config, []string, error) {
 	// Check the checkpoints for syntax errors.
 	cfg.AddCheckpoints, err = parseCheckpoints(cfg.configFlags.AddCheckpoints)
 	if err != nil {
-		str := "%s: Error parsing checkpoints: %v"
+		str := "%s: Error parsing checkpoints: %s"
 		err := fmt.Errorf(str, funcName, err)
 		fmt.Fprintln(os.Stderr, err)
 		fmt.Fprintln(os.Stderr, usageMessage)
@@ -867,7 +867,7 @@ func loadConfig() (*Config, []string, error) {
 	if cfg.Proxy != "" {
 		_, _, err := net.SplitHostPort(cfg.Proxy)
 		if err != nil {
-			str := "%s: Proxy address '%s' is invalid: %v"
+			str := "%s: Proxy address '%s' is invalid: %s"
 			err := fmt.Errorf(str, funcName, cfg.Proxy, err)
 			fmt.Fprintln(os.Stderr, err)
 			fmt.Fprintln(os.Stderr, usageMessage)
@@ -913,7 +913,7 @@ func loadConfig() (*Config, []string, error) {
 	if cfg.OnionProxy != "" {
 		_, _, err := net.SplitHostPort(cfg.OnionProxy)
 		if err != nil {
-			str := "%s: Onion proxy address '%s' is invalid: %v"
+			str := "%s: Onion proxy address '%s' is invalid: %s"
 			err := fmt.Errorf(str, funcName, cfg.OnionProxy, err)
 			fmt.Fprintln(os.Stderr, err)
 			fmt.Fprintln(os.Stderr, usageMessage)
@@ -964,7 +964,7 @@ func loadConfig() (*Config, []string, error) {
 	// done.  This prevents the warning on help messages and invalid
 	// options.  Note this should go directly before the return.
 	if configFileError != nil {
-		log.Warnf("%v", configFileError)
+		log.Warnf("%s", configFileError)
 	}
 
 	return &cfg, remainingArgs, nil

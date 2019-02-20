@@ -22,11 +22,11 @@ func main() {
 	// NotificationHandlers type for more details about each handler.
 	ntfnHandlers := rpcclient.NotificationHandlers{
 		OnFilteredBlockConnected: func(height int32, header *wire.BlockHeader, txns []*util.Tx) {
-			log.Printf("Block connected: %v (%d) %v",
+			log.Printf("Block connected: %s (%d) %s",
 				header.BlockHash(), height, header.Timestamp)
 		},
 		OnFilteredBlockDisconnected: func(height int32, header *wire.BlockHeader) {
-			log.Printf("Block disconnected: %v (%d) %v",
+			log.Printf("Block disconnected: %s (%d) %s",
 				header.BlockHash(), height, header.Timestamp)
 		},
 	}

@@ -330,7 +330,7 @@ func rpcDecodeHexError(gotHex string) *btcjson.RPCError {
 // transaction hash.
 func rpcNoTxInfoError(txID *daghash.TxID) *btcjson.RPCError {
 	return btcjson.NewRPCError(btcjson.ErrRPCNoTxInfo,
-		fmt.Sprintf("No information available about transaction %v",
+		fmt.Sprintf("No information available about transaction %s",
 			txID))
 }
 
@@ -641,7 +641,7 @@ func handleDebugLevel(s *Server, cmd interface{}, closeChan <-chan struct{}) (in
 
 	// Special show command to list supported subsystems.
 	if c.LevelSpec == "show" {
-		return fmt.Sprintf("Supported subsystems %v",
+		return fmt.Sprintf("Supported subsystems %s",
 			logger.SupportedSubsystems()), nil
 	}
 
@@ -1084,7 +1084,7 @@ func getDifficultyRatio(bits uint32, params *dagconfig.Params) float64 {
 	outString := difficulty.FloatString(8)
 	diff, err := strconv.ParseFloat(outString, 64)
 	if err != nil {
-		log.Errorf("Cannot get difficulty: %v", err)
+		log.Errorf("Cannot get difficulty: %s", err)
 		return 0
 	}
 	return diff
@@ -1248,7 +1248,7 @@ func softForkStatus(state blockdag.ThresholdState) (string, error) {
 	case blockdag.ThresholdFailed:
 		return "failed", nil
 	default:
-		return "", fmt.Errorf("unknown deployment state: %v", state)
+		return "", fmt.Errorf("unknown deployment state: %s", state)
 	}
 }
 
@@ -1283,7 +1283,7 @@ func handleGetBlockDAGInfo(s *Server, cmd interface{}, closeChan <-chan struct{}
 		default:
 			return nil, &btcjson.RPCError{
 				Code: btcjson.ErrRPCInternal.Code,
-				Message: fmt.Sprintf("Unknown deployment %v "+
+				Message: fmt.Sprintf("Unknown deployment %d "+
 					"detected", deployment),
 			}
 		}
@@ -1303,7 +1303,7 @@ func handleGetBlockDAGInfo(s *Server, cmd interface{}, closeChan <-chan struct{}
 		if err != nil {
 			return nil, &btcjson.RPCError{
 				Code: btcjson.ErrRPCInternal.Code,
-				Message: fmt.Sprintf("unknown deployment status: %v",
+				Message: fmt.Sprintf("unknown deployment status: %d",
 					deploymentStatus),
 			}
 		}
@@ -1428,14 +1428,14 @@ func decodeLongPollID(longPollID string) ([]daghash.Hash, int64, error) {
 	for i := 0; i < len(parentHashesStr); i += daghash.HashSize {
 		hash, err := daghash.NewHashFromStr(parentHashesStr[i : i+daghash.HashSize])
 		if err != nil {
-			return nil, 0, fmt.Errorf("decodeLongPollID: NewHashFromStr: %v", err)
+			return nil, 0, fmt.Errorf("decodeLongPollID: NewHashFromStr: %s", err)
 		}
 		parentHashes = append(parentHashes, *hash)
 	}
 
 	lastGenerated, err := strconv.ParseInt(fields[1], 10, 64)
 	if err != nil {
-		return nil, 0, fmt.Errorf("decodeLongPollID: Cannot parse timestamp: %v", lastGenerated)
+		return nil, 0, fmt.Errorf("decodeLongPollID: Cannot parse timestamp %s: %s", fields[1], err)
 	}
 
 	return parentHashes, lastGenerated, nil
@@ -1628,7 +1628,7 @@ func (state *gbtWorkState) updateBlockTemplate(s *Server, useCoinbaseValue bool)
 		state.tipHashes = tipHashes
 		state.minTimestamp = minTimestamp
 
-		log.Debugf("Generated block template (timestamp %v, "+
+		log.Debugf("Generated block template (timestamp %s, "+
 			"target %s, merkle root %s)",
 			msgBlock.Header.Timestamp, targetDifficulty,
 			msgBlock.Header.HashMerkleRoot)
@@ -1682,7 +1682,7 @@ func (state *gbtWorkState) updateBlockTemplate(s *Server, useCoinbaseValue bool)
 		generator.UpdateBlockTime(msgBlock)
 		msgBlock.Header.Nonce = 0
 
-		log.Debugf("Updated block template (timestamp %v, "+
+		log.Debugf("Updated block template (timestamp %s, "+
 			"target %s)", msgBlock.Header.Timestamp,
 			targetDifficulty)
 	}
@@ -1710,7 +1710,7 @@ func (state *gbtWorkState) blockTemplateResult(useCoinbaseValue bool, submitOld 
 			Code: btcjson.ErrRPCOutOfRange,
 			Message: fmt.Sprintf("The template time is after the "+
 				"maximum allowed time for a block - template "+
-				"time %v, maximum time %v", adjustedTime,
+				"time %s, maximum time %s", adjustedTime,
 				maxTime),
 		}
 	}
@@ -2147,7 +2147,7 @@ func handleGetBlockTemplateProposal(s *Server, request *btcjson.TemplateRequest)
 
 	if err := s.cfg.DAG.CheckConnectBlockTemplate(block); err != nil {
 		if _, ok := err.(blockdag.RuleError); !ok {
-			errStr := fmt.Sprintf("Failed to process block proposal: %v", err)
+			errStr := fmt.Sprintf("Failed to process block proposal: %s", err)
 			log.Error(errStr)
 			return nil, &btcjson.RPCError{
 				Code:    btcjson.ErrRPCVerify,
@@ -2155,7 +2155,7 @@ func handleGetBlockTemplateProposal(s *Server, request *btcjson.TemplateRequest)
 			}
 		}
 
-		log.Infof("Rejected block proposal: %v", err)
+		log.Infof("Rejected block proposal: %s", err)
 		return chainErrToGBTErrString(err), nil
 	}
 
@@ -2206,7 +2206,7 @@ func handleGetCFilter(s *Server, cmd interface{}, closeChan <-chan struct{}) (in
 
 	filterBytes, err := s.cfg.CfIndex.FilterByBlockHash(hash, c.FilterType)
 	if err != nil {
-		log.Debugf("Could not find committed filter for %v: %v",
+		log.Debugf("Could not find committed filter for %s: %s",
 			hash, err)
 		return nil, &btcjson.RPCError{
 			Code:    btcjson.ErrRPCBlockNotFound,
@@ -2214,7 +2214,7 @@ func handleGetCFilter(s *Server, cmd interface{}, closeChan <-chan struct{}) (in
 		}
 	}
 
-	log.Debugf("Found committed filter for %v", hash)
+	log.Debugf("Found committed filter for %s", hash)
 	return hex.EncodeToString(filterBytes), nil
 }
 
@@ -2235,9 +2235,9 @@ func handleGetCFilterHeader(s *Server, cmd interface{}, closeChan <-chan struct{
 
 	headerBytes, err := s.cfg.CfIndex.FilterHeaderByBlockHash(hash, c.FilterType)
 	if len(headerBytes) > 0 {
-		log.Debugf("Found header of committed filter for %v", hash)
+		log.Debugf("Found header of committed filter for %s", hash)
 	} else {
-		log.Debugf("Could not find header of committed filter for %v: %v",
+		log.Debugf("Could not find header of committed filter for %s: %s",
 			hash, err)
 		return nil, &btcjson.RPCError{
 			Code:    btcjson.ErrRPCBlockNotFound,
@@ -2793,7 +2793,7 @@ func fetchInputTxos(s *Server, tx *wire.MsgTx) (map[wire.OutPoint]wire.TxOut, er
 			txOuts := originTx.MsgTx().TxOut
 			if origin.Index >= uint32(len(txOuts)) {
 				errStr := fmt.Sprintf("unable to find output "+
-					"%v referenced from transaction %s:%d",
+					"%s referenced from transaction %s:%d",
 					origin, tx.TxID(), txInIndex)
 				return nil, internalRPCError(errStr, "")
 			}
@@ -2833,7 +2833,7 @@ func fetchInputTxos(s *Server, tx *wire.MsgTx) (map[wire.OutPoint]wire.TxOut, er
 
 		// Add the referenced output to the map.
 		if origin.Index >= uint32(len(msgTx.TxOut)) {
-			errStr := fmt.Sprintf("unable to find output %v "+
+			errStr := fmt.Sprintf("unable to find output %s "+
 				"referenced from transaction %s:%d", origin,
 				tx.TxID(), txInIndex)
 			return nil, internalRPCError(errStr, "")
@@ -3277,10 +3277,10 @@ func handleSendRawTransaction(s *Server, cmd interface{}, closeChan <-chan struc
 		// error is returned to the client with the deserialization
 		// error code (to match bitcoind behavior).
 		if _, ok := err.(mempool.RuleError); ok {
-			log.Debugf("Rejected transaction %v: %v", tx.ID(),
+			log.Debugf("Rejected transaction %s: %s", tx.ID(),
 				err)
 		} else {
-			log.Errorf("Failed to process transaction %v: %v",
+			log.Errorf("Failed to process transaction %s: %s",
 				tx.ID(), err)
 		}
 		return nil, &btcjson.RPCError{
@@ -3302,7 +3302,7 @@ func handleSendRawTransaction(s *Server, cmd interface{}, closeChan <-chan struc
 			return nil, err
 		}
 
-		errStr := fmt.Sprintf("transaction %v is not in accepted list",
+		errStr := fmt.Sprintf("transaction %s is not in accepted list",
 			tx.ID())
 		return nil, internalRPCError(errStr, "")
 	}
@@ -3446,7 +3446,7 @@ func verifyDAG(s *Server, level, depth int32) error {
 		block, err := s.cfg.DAG.BlockByHash(&currentHash)
 		if err != nil {
 			log.Errorf("Verify is unable to fetch block at "+
-				"height %d: %v", height, err)
+				"height %d: %s", height, err)
 			return err
 		}
 
@@ -3455,7 +3455,7 @@ func verifyDAG(s *Server, level, depth int32) error {
 			err := s.cfg.DAG.CheckBlockSanity(block, s.cfg.DAGParams.PowLimit, s.cfg.TimeSource)
 			if err != nil {
 				log.Errorf("Verify is unable to validate "+
-					"block at hash %v height %d: %v",
+					"block at hash %s height %d: %s",
 					block.Hash(), height, err)
 				return err
 			}
@@ -3645,7 +3645,7 @@ func (s *Server) Stop() error {
 	for _, listener := range s.cfg.Listeners {
 		err := listener.Close()
 		if err != nil {
-			log.Errorf("Problem shutting down rpc: %v", err)
+			log.Errorf("Problem shutting down rpc: %s", err)
 			return err
 		}
 	}
@@ -3848,7 +3848,7 @@ func (s *Server) jsonRPCRead(w http.ResponseWriter, r *http.Request, isAdmin boo
 	r.Body.Close()
 	if err != nil {
 		errCode := http.StatusBadRequest
-		http.Error(w, fmt.Sprintf("%d error reading JSON message: %v",
+		http.Error(w, fmt.Sprintf("%d error reading JSON message: %s",
 			errCode, err), errCode)
 		return
 	}
@@ -3869,7 +3869,7 @@ func (s *Server) jsonRPCRead(w http.ResponseWriter, r *http.Request, isAdmin boo
 	}
 	conn, buf, err := hj.Hijack()
 	if err != nil {
-		log.Warnf("Failed to hijack HTTP connection: %v", err)
+		log.Warnf("Failed to hijack HTTP connection: %s", err)
 		errCode := http.StatusInternalServerError
 		http.Error(w, strconv.Itoa(errCode)+" "+err.Error(), errCode)
 		return
@@ -3951,7 +3951,7 @@ func (s *Server) jsonRPCRead(w http.ResponseWriter, r *http.Request, isAdmin boo
 	// Marshal the response.
 	msg, err := createMarshalledReply(responseID, result, jsonErr)
 	if err != nil {
-		log.Errorf("Failed to marshal reply: %v", err)
+		log.Errorf("Failed to marshal reply: %s", err)
 		return
 	}
 
@@ -3962,12 +3962,12 @@ func (s *Server) jsonRPCRead(w http.ResponseWriter, r *http.Request, isAdmin boo
 		return
 	}
 	if _, err := buf.Write(msg); err != nil {
-		log.Errorf("Failed to write marshalled reply: %v", err)
+		log.Errorf("Failed to write marshalled reply: %s", err)
 	}
 
 	// Terminate with newline to maintain compatibility with Bitcoin Core.
 	if err := buf.WriteByte('\n'); err != nil {
-		log.Errorf("Failed to append terminating newline to reply: %v", err)
+		log.Errorf("Failed to append terminating newline to reply: %s", err)
 	}
 }
 
@@ -4028,7 +4028,7 @@ func (s *Server) Start() {
 		ws, err := websocket.Upgrade(w, r, nil, 0, 0)
 		if err != nil {
 			if _, ok := err.(websocket.HandshakeError); !ok {
-				log.Errorf("Unexpected websocket error: %v",
+				log.Errorf("Unexpected websocket error: %s",
 					err)
 			}
 			http.Error(w, "400 Bad Request.", http.StatusBadRequest)
@@ -4249,7 +4249,7 @@ func setupRPCListeners() ([]net.Listener, error) {
 	for _, addr := range netAddrs {
 		listener, err := listenFunc(addr.Network(), addr.String())
 		if err != nil {
-			log.Warnf("Can't listen on %s: %v", addr, err)
+			log.Warnf("Can't listen on %s: %s", addr, err)
 			continue
 		}
 		listeners = append(listeners, listener)

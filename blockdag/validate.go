@@ -182,8 +182,8 @@ func CheckTransactionSanity(tx *util.Tx, subnetworkID *subnetworkid.SubnetworkID
 	for _, txOut := range msgTx.TxOut {
 		satoshi := txOut.Value
 		if satoshi > util.MaxSatoshi {
-			str := fmt.Sprintf("transaction output value of %v is "+
-				"higher than max allowed value of %v", satoshi,
+			str := fmt.Sprintf("transaction output value of %d is "+
+				"higher than max allowed value of %f", satoshi,
 				util.MaxSatoshi)
 			return ruleError(ErrBadTxOutValue, str)
 		}
@@ -194,15 +194,15 @@ func CheckTransactionSanity(tx *util.Tx, subnetworkID *subnetworkid.SubnetworkID
 		newTotalSatoshi := totalSatoshi + satoshi
 		if newTotalSatoshi < totalSatoshi {
 			str := fmt.Sprintf("total value of all transaction "+
-				"outputs exceeds max allowed value of %v",
+				"outputs exceeds max allowed value of %f",
 				util.MaxSatoshi)
 			return ruleError(ErrBadTxOutValue, str)
 		}
 		totalSatoshi = newTotalSatoshi
 		if totalSatoshi > util.MaxSatoshi {
 			str := fmt.Sprintf("total value of all transaction "+
-				"outputs is %v which is higher than max "+
-				"allowed value of %v", totalSatoshi,
+				"outputs is %d which is higher than max "+
+				"allowed value of %f", totalSatoshi,
 				util.MaxSatoshi)
 			return ruleError(ErrBadTxOutValue, str)
 		}
@@ -359,7 +359,7 @@ func CountP2SHSigOps(tx *util.Tx, isBlockReward bool, utxoSet UTXOSet) (int, err
 		// Ensure the referenced input transaction is available.
 		entry, ok := utxoSet.Get(txIn.PreviousOutPoint)
 		if !ok {
-			str := fmt.Sprintf("output %v referenced from "+
+			str := fmt.Sprintf("output %s referenced from "+
 				"transaction %s:%d either does not exist or "+
 				"has already been spent", txIn.PreviousOutPoint,
 				tx.ID(), txInIndex)
@@ -385,7 +385,7 @@ func CountP2SHSigOps(tx *util.Tx, isBlockReward bool, utxoSet UTXOSet) (int, err
 		totalSigOps += numSigOps
 		if totalSigOps < lastSigOps {
 			str := fmt.Sprintf("the public key script from output "+
-				"%v contains too many signature operations - "+
+				"%s contains too many signature operations - "+
 				"overflow", txIn.PreviousOutPoint)
 			return 0, ruleError(ErrTooManySigOps, str)
 		}
@@ -426,7 +426,7 @@ func (dag *BlockDAG) checkBlockHeaderSanity(header *wire.BlockHeader, flags Beha
 	// seconds and it's much nicer to deal with standard Go time values
 	// instead of converting to seconds everywhere.
 	if !header.Timestamp.Equal(time.Unix(header.Timestamp.Unix(), 0)) {
-		str := fmt.Sprintf("block timestamp of %v has a higher "+
+		str := fmt.Sprintf("block timestamp of %s has a higher "+
 			"precision than one second", header.Timestamp)
 		return ruleError(ErrInvalidTime, str)
 	}
@@ -435,7 +435,7 @@ func (dag *BlockDAG) checkBlockHeaderSanity(header *wire.BlockHeader, flags Beha
 	maxTimestamp := dag.timeSource.AdjustedTime().Add(time.Second *
 		MaxTimeOffsetSeconds)
 	if header.Timestamp.After(maxTimestamp) {
-		str := fmt.Sprintf("block timestamp of %v is too far in the "+
+		str := fmt.Sprintf("block timestamp of %s is too far in the "+
 			"future", header.Timestamp)
 		return ruleError(ErrTimeTooNew, str)
 	}
@@ -552,7 +552,7 @@ func (dag *BlockDAG) checkBlockSanity(block *util.Block, flags BehaviorFlags) er
 	calculatedHashMerkleRoot := hashMerkleTree.Root()
 	if !header.HashMerkleRoot.IsEqual(calculatedHashMerkleRoot) {
 		str := fmt.Sprintf("block hash merkle root is invalid - block "+
-			"header indicates %v, but calculated value is %v",
+			"header indicates %s, but calculated value is %s",
 			header.HashMerkleRoot, calculatedHashMerkleRoot)
 		return ruleError(ErrBadMerkleRoot, str)
 	}
@@ -561,7 +561,7 @@ func (dag *BlockDAG) checkBlockSanity(block *util.Block, flags BehaviorFlags) er
 	calculatedIDMerkleRoot := idMerkleTree.Root()
 	if !header.IDMerkleRoot.IsEqual(calculatedIDMerkleRoot) {
 		str := fmt.Sprintf("block ID merkle root is invalid - block "+
-			"header indicates %v, but calculated value is %v",
+			"header indicates %s, but calculated value is %s",
 			header.IDMerkleRoot, calculatedIDMerkleRoot)
 		return ruleError(ErrBadMerkleRoot, str)
 	}
@@ -574,7 +574,7 @@ func (dag *BlockDAG) checkBlockSanity(block *util.Block, flags BehaviorFlags) er
 		id := tx.ID()
 		if _, exists := existingTxIDs[*id]; exists {
 			str := fmt.Sprintf("block contains duplicate "+
-				"transaction %v", id)
+				"transaction %s", id)
 			return ruleError(ErrDuplicateTx, str)
 		}
 		existingTxIDs[*id] = struct{}{}
@@ -590,7 +590,7 @@ func (dag *BlockDAG) checkBlockSanity(block *util.Block, flags BehaviorFlags) er
 		totalSigOps += CountSigOps(tx)
 		if totalSigOps < lastSigOps || totalSigOps > MaxSigOpsPerBlock {
 			str := fmt.Sprintf("block contains too many signature "+
-				"operations - got %v, max %v", totalSigOps,
+				"operations - got %d, max %d", totalSigOps,
 				MaxSigOpsPerBlock)
 			return ruleError(ErrTooManySigOps, str)
 		}
@@ -696,7 +696,7 @@ func (dag *BlockDAG) checkBlockHeaderContext(header *wire.BlockHeader, bluestPar
 			medianTime := bluestParent.CalcPastMedianTime()
 			if header.Timestamp.Before(medianTime) {
 				str := "block timestamp of %s is not after expected %s"
-				str = fmt.Sprintf(str, header.Timestamp.String(), medianTime.String())
+				str = fmt.Sprintf(str, header.Timestamp, medianTime)
 				return ruleError(ErrTimeTooOld, str)
 			}
 		}
@@ -801,7 +801,7 @@ func (dag *BlockDAG) checkBlockContext(block *util.Block, parents blockSet, blue
 				blockTime) {
 
 				str := fmt.Sprintf("block contains unfinalized "+
-					"transaction %v", tx.ID())
+					"transaction %s", tx.ID())
 				return ruleError(ErrUnfinalizedTx, str)
 			}
 		}
@@ -848,7 +848,7 @@ func ensureNoDuplicateTx(block *blockNode, utxoSet UTXOSet,
 	for outpoint := range fetchSet {
 		utxo, ok := utxoSet.Get(outpoint)
 		if ok {
-			str := fmt.Sprintf("tried to overwrite transaction %v "+
+			str := fmt.Sprintf("tried to overwrite transaction %s "+
 				"at block height %d that is not fully spent",
 				outpoint.TxID, utxo.BlockHeight())
 			return ruleError(ErrOverwriteTx, str)
@@ -881,7 +881,7 @@ func CheckTransactionInputs(tx *util.Tx, txHeight int32, utxoSet UTXOSet, dagPar
 		// Ensure the referenced input transaction is available.
 		entry, ok := utxoSet.Get(txIn.PreviousOutPoint)
 		if !ok {
-			str := fmt.Sprintf("output %v referenced from "+
+			str := fmt.Sprintf("output %s referenced from "+
 				"transaction %s:%d either does not exist or "+
 				"has already been spent", txIn.PreviousOutPoint,
 				tx.ID(), txInIndex)
@@ -896,9 +896,9 @@ func CheckTransactionInputs(tx *util.Tx, txHeight int32, utxoSet UTXOSet, dagPar
 			blockRewardMaturity := int32(dagParams.BlockRewardMaturity)
 			if blocksSincePrev < blockRewardMaturity {
 				str := fmt.Sprintf("tried to spend block reward "+
-					"transaction output %v from height %v "+
-					"at height %v before required maturity "+
-					"of %v blocks", txIn.PreviousOutPoint,
+					"transaction output %s from height %d "+
+					"at height %d before required maturity "+
+					"of %d blocks", txIn.PreviousOutPoint,
 					originHeight, txHeight,
 					blockRewardMaturity)
 				return 0, ruleError(ErrImmatureSpend, str)
@@ -913,8 +913,8 @@ func CheckTransactionInputs(tx *util.Tx, txHeight int32, utxoSet UTXOSet, dagPar
 		// SatoshiPerBitcoin constant.
 		originTxSatoshi := entry.Amount()
 		if originTxSatoshi > util.MaxSatoshi {
-			str := fmt.Sprintf("transaction output value of %v is "+
-				"higher than max allowed value of %v",
+			str := fmt.Sprintf("transaction output value of %d is "+
+				"higher than max allowed value of %f",
 				util.Amount(originTxSatoshi),
 				util.MaxSatoshi)
 			return 0, ruleError(ErrBadTxOutValue, str)
@@ -928,8 +928,8 @@ func CheckTransactionInputs(tx *util.Tx, txHeight int32, utxoSet UTXOSet, dagPar
 		if totalSatoshiIn < lastSatoshiIn ||
 			totalSatoshiIn > util.MaxSatoshi {
 			str := fmt.Sprintf("total value of all transaction "+
-				"inputs is %v which is higher than max "+
-				"allowed value of %v", totalSatoshiIn,
+				"inputs is %d which is higher than max "+
+				"allowed value of %f", totalSatoshiIn,
 				util.MaxSatoshi)
 			return 0, ruleError(ErrBadTxOutValue, str)
 		}
@@ -946,8 +946,8 @@ func CheckTransactionInputs(tx *util.Tx, txHeight int32, utxoSet UTXOSet, dagPar
 	// Ensure the transaction does not spend more than its inputs.
 	if totalSatoshiIn < totalSatoshiOut {
 		str := fmt.Sprintf("total value of all transaction inputs for "+
-			"transaction %v is %v which is less than the amount "+
-			"spent of %v", txID, totalSatoshiIn, totalSatoshiOut)
+			"transaction %s is %d which is less than the amount "+
+			"spent of %d", txID, totalSatoshiIn, totalSatoshiOut)
 		return 0, ruleError(ErrSpendTooHigh, str)
 	}
 
@@ -1003,7 +1003,7 @@ func (dag *BlockDAG) checkConnectToPastUTXO(block *blockNode, pastUTXO UTXOSet,
 		totalSigOps += numsigOps
 		if totalSigOps < lastSigops || totalSigOps > MaxSigOpsPerBlock {
 			str := fmt.Sprintf("block contains too many "+
-				"signature operations - got %v, max %v",
+				"signature operations - got %d, max %d",
 				totalSigOps, MaxSigOpsPerBlock)
 			return ruleError(ErrTooManySigOps, str)
 		}
@@ -1045,8 +1045,8 @@ func (dag *BlockDAG) checkConnectToPastUTXO(block *blockNode, pastUTXO UTXOSet,
 	}
 	expectedSatoshiOut := CalcBlockSubsidy(block.height, dag.dagParams)
 	if totalSatoshiOut > expectedSatoshiOut {
-		str := fmt.Sprintf("coinbase transaction for block pays %v "+
-			"which is more than expected value of %v",
+		str := fmt.Sprintf("coinbase transaction for block pays %d "+
+			"which is more than expected value of %d",
 			totalSatoshiOut, expectedSatoshiOut)
 		return ruleError(ErrBadCoinbaseValue, str)
 	}
@@ -1136,8 +1136,8 @@ func (dag *BlockDAG) CheckConnectBlockTemplate(block *util.Block) error {
 	header := block.MsgBlock().Header
 	parentHashes := header.ParentHashes
 	if !tips.hashesEqual(parentHashes) {
-		str := fmt.Sprintf("parent blocks must be the currents tips %v, "+
-			"instead got %v", tips, parentHashes)
+		str := fmt.Sprintf("parent blocks must be the currents tips %s, "+
+			"instead got %s", tips, parentHashes)
 		return ruleError(ErrParentBlockNotCurrentTips, str)
 	}
 

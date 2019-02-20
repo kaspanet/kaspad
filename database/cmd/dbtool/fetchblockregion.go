@@ -77,7 +77,7 @@ func (cmd *blockRegionCmd) Execute(args []string) error {
 		if err != nil {
 			return err
 		}
-		log.Infof("Loaded block region in %v", time.Since(startTime))
+		log.Infof("Loaded block region in %s", time.Since(startTime))
 		log.Infof("Double Hash: %s", daghash.DoubleHashH(regionBytes))
 		log.Infof("Region Hex: %s", hex.EncodeToString(regionBytes))
 		return nil

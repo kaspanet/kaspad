@@ -134,7 +134,7 @@ func (m *medianTime) AddTimeSample(sourceID string, timeVal time.Time) {
 	sort.Sort(int64Sorter(sortedOffsets))
 
 	offsetDuration := time.Duration(offsetSecs) * time.Second
-	log.Debugf("Added time sample of %v (total: %v)", offsetDuration,
+	log.Debugf("Added time sample of %s (total: %d)", offsetDuration,
 		numOffsets)
 
 	// NOTE: The following code intentionally has a bug to mirror the
@@ -190,7 +190,7 @@ func (m *medianTime) AddTimeSample(sourceID string, timeVal time.Time) {
 	}
 
 	medianDuration := time.Duration(m.offsetSecs) * time.Second
-	log.Debugf("New time offset: %v", medianDuration)
+	log.Debugf("New time offset: %d", medianDuration)
 }
 
 // Offset returns the number of seconds to adjust the local clock based upon the

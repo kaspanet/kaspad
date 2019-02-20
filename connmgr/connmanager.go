@@ -200,7 +200,7 @@ func (cm *ConnManager) handleFailedConn(c *ConnReq) {
 		if d > maxRetryDuration {
 			d = maxRetryDuration
 		}
-		log.Debugf("Retrying connection to %v in %v", c, d)
+		log.Debugf("Retrying connection to %s in %s", c, d)
 		time.AfterFunc(d, func() {
 			cm.Connect(c)
 		})
@@ -208,7 +208,7 @@ func (cm *ConnManager) handleFailedConn(c *ConnReq) {
 		cm.failedAttempts++
 		if cm.failedAttempts >= maxFailedAttempts {
 			log.Debugf("Max failed connection attempts reached: [%d] "+
-				"-- retrying connection in: %v", maxFailedAttempts,
+				"-- retrying connection in: %s", maxFailedAttempts,
 				cm.cfg.RetryDuration)
 			time.AfterFunc(cm.cfg.RetryDuration, func() {
 				cm.NewConnReq()
@@ -256,14 +256,14 @@ out:
 						msg.conn.Close()
 					}
 					log.Debugf("Ignoring connection for "+
-						"canceled connreq=%v", connReq)
+						"canceled connreq=%s", connReq)
 					continue
 				}
 
 				connReq.updateState(ConnEstablished)
 				connReq.conn = msg.conn
 				conns[connReq.id] = connReq
-				log.Debugf("Connected to %v", connReq)
+				log.Debugf("Connected to %s", connReq)
 				connReq.retryCount = 0
 				cm.failedAttempts = 0
 
@@ -288,7 +288,7 @@ out:
 					// ignore a later, successful
 					// connection.
 					connReq.updateState(ConnCanceled)
-					log.Debugf("Canceling: %v", connReq)
+					log.Debugf("Canceling: %s", connReq)
 					delete(pending, msg.id)
 					continue
 
@@ -297,7 +297,7 @@ out:
 				// An existing connection was located, mark as
 				// disconnected and execute disconnection
 				// callback.
-				log.Debugf("Disconnected from %v", connReq)
+				log.Debugf("Disconnected from %s", connReq)
 				delete(conns, msg.id)
 
 				if connReq.conn != nil {
@@ -326,7 +326,7 @@ out:
 					connReq.Permanent {
 
 					connReq.updateState(ConnPending)
-					log.Debugf("Reconnecting to %v",
+					log.Debugf("Reconnecting to %s",
 						connReq)
 					pending[msg.id] = connReq
 					cm.handleFailedConn(connReq)
@@ -337,12 +337,12 @@ out:
 
 				if _, ok := pending[connReq.id]; !ok {
 					log.Debugf("Ignoring connection for "+
-						"canceled conn req: %v", connReq)
+						"canceled conn req: %s", connReq)
 					continue
 				}
 
 				connReq.updateState(ConnFailing)
-				log.Debugf("Failed to connect to %v: %v",
+				log.Debugf("Failed to connect to %s: %s",
 					connReq, msg.err)
 				cm.handleFailedConn(connReq)
 			}
@@ -431,7 +431,7 @@ func (cm *ConnManager) Connect(c *ConnReq) {
 		}
 	}
 
-	log.Debugf("Attempting to connect to %v", c)
+	log.Debugf("Attempting to connect to %s", c)
 
 	conn, err := cm.cfg.Dial(c.Addr)
 	if err != nil {
@@ -487,7 +487,7 @@ func (cm *ConnManager) listenHandler(listener net.Listener) {
 		if err != nil {
 			// Only log the error if not forcibly shutting down.
 			if atomic.LoadInt32(&cm.stop) == 0 {
-				log.Errorf("Can't accept connection: %v", err)
+				log.Errorf("Can't accept connection: %s", err)
 			}
 			continue
 		}

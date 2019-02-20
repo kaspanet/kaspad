@@ -289,7 +289,7 @@ func deserializeUTXOEntry(serialized []byte) (*UTXOEntry, error) {
 	amount, pkScript, _, err := decodeCompressedTxOut(serialized[offset:])
 	if err != nil {
 		return nil, errDeserialize(fmt.Sprintf("unable to decode "+
-			"UTXO: %v", err))
+			"UTXO: %s", err))
 	}
 
 	entry := &UTXOEntry{
@@ -614,7 +614,7 @@ func (dag *BlockDAG) initDAGState() error {
 				if isDeserializeErr(err) {
 					return database.Error{
 						ErrorCode:   database.ErrCorruption,
-						Description: fmt.Sprintf("corrupt outPoint: %v", err),
+						Description: fmt.Sprintf("corrupt outPoint: %s", err),
 					}
 				}
 
@@ -629,7 +629,7 @@ func (dag *BlockDAG) initDAGState() error {
 				if isDeserializeErr(err) {
 					return database.Error{
 						ErrorCode:   database.ErrCorruption,
-						Description: fmt.Sprintf("corrupt utxo entry: %v", err),
+						Description: fmt.Sprintf("corrupt utxo entry: %s", err),
 					}
 				}
 

@@ -171,7 +171,7 @@ func (n *nodeConfig) cleanup() error {
 	var err error
 	for _, dir := range dirs {
 		if err = os.RemoveAll(dir); err != nil {
-			log.Printf("Cannot remove dir %s: %v", dir, err)
+			log.Printf("Cannot remove dir %s: %s", dir, err)
 		}
 	}
 	return err
@@ -249,7 +249,7 @@ func (n *node) stop() error {
 func (n *node) cleanup() error {
 	if n.pidFile != "" {
 		if err := os.Remove(n.pidFile); err != nil {
-			log.Printf("unable to remove file %s: %v", n.pidFile,
+			log.Printf("unable to remove file %s: %s", n.pidFile,
 				err)
 		}
 	}

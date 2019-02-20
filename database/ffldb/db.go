@@ -640,7 +640,7 @@ func (b *bucket) CreateBucket(key []byte) (database.Bucket, error) {
 	// Ensure bucket does not already exist.
 	bidxKey := bucketIndexKey(b.id, key)
 	if b.tx.hasKey(bidxKey) {
-		str := fmt.Sprintf("bucket %v already exists", hex.EncodeToString(bidxKey))
+		str := fmt.Sprintf("bucket %s already exists", hex.EncodeToString(bidxKey))
 		return nil, makeDbErr(database.ErrBucketExists, str, nil)
 	}
 
@@ -2025,7 +2025,7 @@ func initDB(ldb *leveldb.DB) error {
 
 	// Write everything as a single batch.
 	if err := ldb.Write(batch, nil); err != nil {
-		str := fmt.Sprintf("failed to initialize metadata database: %v",
+		str := fmt.Sprintf("failed to initialize metadata database: %s",
 			err)
 		return convertErr(str, err)
 	}
