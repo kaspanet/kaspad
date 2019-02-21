@@ -97,7 +97,7 @@ func dbFetchFeeData(dbTx database.Tx, blockHash *daghash.Hash) (compactFeeData, 
 	return feeData, nil
 }
 
-// following function deal with building the fee transaction
+// following functions deal with building the fee transaction
 
 // buildFeeTransaction returns the expected fee transaction for the current block
 func (node *blockNode) buildFeeTransaction(dag *BlockDAG, acceptedTxsData AcceptedTxsData) (*wire.MsgTx, error) {
@@ -121,7 +121,7 @@ func (node *blockNode) buildFeeTransaction(dag *BlockDAG, acceptedTxsData Accept
 	return txsort.Sort(feeTx), nil
 }
 
-// feeInputAndOutputForBlueBlock calculatres the input and output that should go into the fee transaction
+// feeInputAndOutputForBlueBlock calculates the input and output that should go into the fee transaction
 // for given blueNode
 // If block gets no fee - returns only txIn and nil for txOut
 func feeInputAndOutputForBlueBlock(blueBlock *blockNode, acceptedTxsData AcceptedTxsData, feeData map[daghash.Hash]compactFeeData) (

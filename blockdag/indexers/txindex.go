@@ -18,16 +18,16 @@ import (
 const (
 	// txIndexName is the human-readable name for the index.
 	txIndexName = "transaction index"
+
+	includingBlocksIndexKeyEntrySize = 8 // 4 bytes for offset + 4 bytes for transaction length
+
+	acceptingBlocksIndexKeyEntrySize = 4 // 4 bytes for accepting block ID
 )
 
 var (
 	includingBlocksIndexKey = []byte("includingblocksidx")
 
-	includingBlocksIndexKeyEntrySize = 8 // 4 bytes for offset + 4 bytes for transaction length
-
 	acceptingBlocksIndexKey = []byte("acceptingblocksidx")
-
-	acceptingBlocksIndexKeyEntrySize = 4 // 4 bytes for accepting block ID
 
 	// idByHashIndexBucketName is the name of the db bucket used to house
 	// the block id -> block hash index.
