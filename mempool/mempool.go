@@ -870,7 +870,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rateLimit, rejectDu
 	// Also returns the fees associated with the transaction which will be
 	// used later.
 	txFee, err := blockdag.CheckTransactionInputs(tx, nextBlockHeight,
-		mp.mpUTXOSet, mp.cfg.DAGParams)
+		mp.mpUTXOSet, mp.cfg.DAGParams, false)
 	if err != nil {
 		if cerr, ok := err.(blockdag.RuleError); ok {
 			return nil, nil, dagRuleError(cerr)

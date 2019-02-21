@@ -762,11 +762,9 @@ func (node *blockNode) verifyAndBuildUTXO(virtual *virtualBlock, dag *BlockDAG, 
 	}
 
 	var feeData compactFeeData
-	if !fastAdd {
-		feeData, err = dag.checkConnectToPastUTXO(node, pastUTXO, transactions)
-		if err != nil {
-			return nil, nil, nil, err
-		}
+	feeData, err = dag.checkConnectToPastUTXO(node, pastUTXO, transactions, fastAdd)
+	if err != nil {
+		return nil, nil, nil, err
 	}
 
 	diff := NewUTXODiff()
