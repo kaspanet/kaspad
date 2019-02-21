@@ -31,7 +31,7 @@ type MsgMerkleBlock struct {
 // AddTxHash adds a new transaction hash to the message.
 func (msg *MsgMerkleBlock) AddTxHash(hash *daghash.Hash) error {
 	if len(msg.Hashes)+1 > maxTxPerBlock {
-		str := fmt.Sprintf("too many tx hashes for message [max %v]",
+		str := fmt.Sprintf("too many tx hashes for message [max %d]",
 			maxTxPerBlock)
 		return messageError("MsgMerkleBlock.AddTxHash", str)
 	}
@@ -60,7 +60,7 @@ func (msg *MsgMerkleBlock) BtcDecode(r io.Reader, pver uint32) error {
 	}
 	if count > maxTxPerBlock {
 		str := fmt.Sprintf("too many transaction hashes for message "+
-			"[count %v, max %v]", count, maxTxPerBlock)
+			"[count %d, max %d]", count, maxTxPerBlock)
 		return messageError("MsgMerkleBlock.BtcDecode", str)
 	}
 
@@ -89,13 +89,13 @@ func (msg *MsgMerkleBlock) BtcEncode(w io.Writer, pver uint32) error {
 	numHashes := len(msg.Hashes)
 	if numHashes > maxTxPerBlock {
 		str := fmt.Sprintf("too many transaction hashes for message "+
-			"[count %v, max %v]", numHashes, maxTxPerBlock)
+			"[count %d, max %d]", numHashes, maxTxPerBlock)
 		return messageError("MsgMerkleBlock.BtcDecode", str)
 	}
 	numFlagBytes := len(msg.Flags)
 	if numFlagBytes > maxFlagsPerMerkleBlock {
-		str := fmt.Sprintf("too many flag bytes for message [count %v, "+
-			"max %v]", numFlagBytes, maxFlagsPerMerkleBlock)
+		str := fmt.Sprintf("too many flag bytes for message [count %d, "+
+			"max %d]", numFlagBytes, maxFlagsPerMerkleBlock)
 		return messageError("MsgMerkleBlock.BtcDecode", str)
 	}
 

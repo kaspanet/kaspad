@@ -129,7 +129,7 @@ func checkPkScriptStandard(pkScript []byte, scriptClass txscript.ScriptClass) er
 		numPubKeys, numSigs, err := txscript.CalcMultiSigStats(pkScript)
 		if err != nil {
 			str := fmt.Sprintf("multi-signature script parse "+
-				"failure: %v", err)
+				"failure: %s", err)
 			return txRuleError(wire.RejectNonstandard, str)
 		}
 
@@ -270,8 +270,8 @@ func checkTransactionStandard(tx *util.Tx, height int32,
 	// attacks.
 	serializedLen := msgTx.SerializeSize()
 	if serializedLen > MaxStandardTxSize {
-		str := fmt.Sprintf("transaction size of %v is larger than max "+
-			"allowed size of %v", serializedLen, MaxStandardTxSize)
+		str := fmt.Sprintf("transaction size of %d is larger than max "+
+			"allowed size of %d", serializedLen, MaxStandardTxSize)
 		return txRuleError(wire.RejectNonstandard, str)
 	}
 
@@ -292,7 +292,7 @@ func checkTransactionStandard(tx *util.Tx, height int32,
 		// opcodes which push data onto the stack.
 		isPushOnly, err := txscript.IsPushOnlyScript(txIn.SignatureScript)
 		if err != nil {
-			str := fmt.Sprintf("transaction input %d: IsPushOnlyScript: %v", i, err)
+			str := fmt.Sprintf("transaction input %d: IsPushOnlyScript: %t. Error %s", i, isPushOnly, err)
 			return txRuleError(wire.RejectNonstandard, str)
 		}
 		if !isPushOnly {
@@ -316,7 +316,7 @@ func checkTransactionStandard(tx *util.Tx, height int32,
 			if rejCode, found := extractRejectCode(err); found {
 				rejectCode = rejCode
 			}
-			str := fmt.Sprintf("transaction output %d: %v", i, err)
+			str := fmt.Sprintf("transaction output %d: %s", i, err)
 			return txRuleError(rejectCode, str)
 		}
 

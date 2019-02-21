@@ -30,7 +30,7 @@ type MsgAddr struct {
 // AddAddress adds a known active peer to the message.
 func (msg *MsgAddr) AddAddress(na *NetAddress) error {
 	if len(msg.AddrList)+1 > MaxAddrPerMsg {
-		str := fmt.Sprintf("too many addresses in message [max %v]",
+		str := fmt.Sprintf("too many addresses in message [max %d]",
 			MaxAddrPerMsg)
 		return messageError("MsgAddr.AddAddress", str)
 	}
@@ -66,7 +66,7 @@ func (msg *MsgAddr) BtcDecode(r io.Reader, pver uint32) error {
 	// Limit to max addresses per message.
 	if count > MaxAddrPerMsg {
 		str := fmt.Sprintf("too many addresses for message "+
-			"[count %v, max %v]", count, MaxAddrPerMsg)
+			"[count %d, max %d]", count, MaxAddrPerMsg)
 		return messageError("MsgAddr.BtcDecode", str)
 	}
 
@@ -91,7 +91,7 @@ func (msg *MsgAddr) BtcEncode(w io.Writer, pver uint32) error {
 	count := len(msg.AddrList)
 	if count > MaxAddrPerMsg {
 		str := fmt.Sprintf("too many addresses for message "+
-			"[count %v, max %v]", count, MaxAddrPerMsg)
+			"[count %d, max %d]", count, MaxAddrPerMsg)
 		return messageError("MsgAddr.BtcEncode", str)
 	}
 

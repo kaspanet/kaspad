@@ -166,7 +166,7 @@ func RegisterCmd(method string, cmd interface{}, flags UsageFlag) error {
 	// Ensure that no unrecognized flag bits were specified.
 	if ^(highestUsageFlagBit-1)&flags != 0 {
 		str := fmt.Sprintf("invalid usage flags specified for method "+
-			"%s: %v", method, flags)
+			"%s: %s", method, flags)
 		return makeError(ErrInvalidUsageFlags, str)
 	}
 
@@ -271,7 +271,7 @@ func RegisterCmd(method string, cmd interface{}, flags UsageFlag) error {
 // functions.
 func MustRegisterCmd(method string, cmd interface{}, flags UsageFlag) {
 	if err := RegisterCmd(method, cmd, flags); err != nil {
-		panic(fmt.Sprintf("failed to register type %q: %v\n", method,
+		panic(fmt.Sprintf("failed to register type %q: %s\n", method,
 			err))
 	}
 }

@@ -131,12 +131,12 @@ func InitLogRotator(logFile string) {
 	logDir, _ := filepath.Split(logFile)
 	err := os.MkdirAll(logDir, 0700)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to create log directory: %v\n", err)
+		fmt.Fprintf(os.Stderr, "failed to create log directory: %s\n", err)
 		os.Exit(1)
 	}
 	r, err := rotator.New(logFile, 10*1024, false, 3)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to create file rotator: %v\n", err)
+		fmt.Fprintf(os.Stderr, "failed to create file rotator: %s\n", err)
 		os.Exit(1)
 	}
 
@@ -216,7 +216,7 @@ func ParseAndSetDebugLevels(debugLevel string) error {
 	if !strings.Contains(debugLevel, ",") && !strings.Contains(debugLevel, "=") {
 		// Validate debug log level.
 		if !validLogLevel(debugLevel) {
-			str := "The specified debug level [%v] is invalid"
+			str := "The specified debug level [%s] is invalid"
 			return fmt.Errorf(str, debugLevel)
 		}
 
@@ -231,7 +231,7 @@ func ParseAndSetDebugLevels(debugLevel string) error {
 	for _, logLevelPair := range strings.Split(debugLevel, ",") {
 		if !strings.Contains(logLevelPair, "=") {
 			str := "The specified debug level contains an invalid " +
-				"subsystem/level pair [%v]"
+				"subsystem/level pair [%s]"
 			return fmt.Errorf(str, logLevelPair)
 		}
 
@@ -241,14 +241,14 @@ func ParseAndSetDebugLevels(debugLevel string) error {
 
 		// Validate subsystem.
 		if _, exists := Get(subsysID); !exists {
-			str := "The specified subsystem [%v] is invalid -- " +
-				"supported subsytems %v"
-			return fmt.Errorf(str, subsysID, SupportedSubsystems())
+			str := "The specified subsystem [%s] is invalid -- " +
+				"supported subsytems %s"
+			return fmt.Errorf(str, subsysID, strings.Join(SupportedSubsystems(), ", "))
 		}
 
 		// Validate log level.
 		if !validLogLevel(logLevel) {
-			str := "The specified debug level [%v] is invalid"
+			str := "The specified debug level [%s] is invalid"
 			return fmt.Errorf(str, logLevel)
 		}
 

@@ -502,12 +502,12 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 			}
 			gasLimit, err := g.dag.SubnetworkStore.GasLimit(&subnetworkID)
 			if err != nil {
-				log.Errorf("Cannot get GAS limit for subnetwork %v", subnetworkID)
+				log.Errorf("Cannot get GAS limit for subnetwork %s", subnetworkID)
 				continue
 			}
 			txGas := tx.MsgTx().Gas
 			if gasLimit-gasUsage < txGas {
-				log.Tracef("Transaction %v (GAS=%v) ignored because gas overusage (GASUsage=%v) in subnetwork %v (GASLimit=%v)",
+				log.Tracef("Transaction %s (GAS=%d) ignored because gas overusage (GASUsage=%d) in subnetwork %s (GASLimit=%d)",
 					tx.MsgTx().TxID(), txGas, gasUsage, subnetworkID, gasLimit)
 				continue
 			}
@@ -538,7 +538,7 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 			g.dag.UTXOSet())
 		if err != nil {
 			log.Tracef("Skipping tx %s due to error in "+
-				"GetSigOpCost: %v", tx.ID(), err)
+				"GetSigOpCost: %s", tx.ID(), err)
 			continue
 		}
 		numSigOps += int64(numP2SHSigOps)
@@ -598,14 +598,14 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 			g.dag.UTXOSet(), g.dagParams, false)
 		if err != nil {
 			log.Tracef("Skipping tx %s due to error in "+
-				"CheckTransactionInputs: %v", tx.ID(), err)
+				"CheckTransactionInputs: %s", tx.ID(), err)
 			continue
 		}
 		err = blockdag.ValidateTransactionScripts(tx, g.dag.UTXOSet(),
 			txscript.StandardVerifyFlags, g.sigCache)
 		if err != nil {
 			log.Tracef("Skipping tx %s due to error in "+
-				"ValidateTransactionScripts: %v", tx.ID(), err)
+				"ValidateTransactionScripts: %s", tx.ID(), err)
 			continue
 		}
 

@@ -20,7 +20,10 @@ type OutOfRangeError string
 // BlockHeightUnknown is the value returned for a block height that is unknown.
 // This is typically because the block has not been inserted into the main chain
 // yet.
-const BlockHeightUnknown = int32(-1)
+const (
+	BlockHeightUnknown  = int32(-1)
+	FeeTransactionIndex = 1
+)
 
 // Error satisfies the error interface and prints human-readable errors.
 func (e OutOfRangeError) Error() string {
@@ -206,7 +209,7 @@ func (b *Block) FeeTransaction() *Tx {
 	if b.IsGenesis() {
 		return nil
 	}
-	return b.Transactions()[1]
+	return b.Transactions()[FeeTransactionIndex]
 }
 
 // NewBlock returns a new instance of a bitcoin block given an underlying

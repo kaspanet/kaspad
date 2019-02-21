@@ -36,7 +36,7 @@ type MsgCFHeaders struct {
 // AddCFHash adds a new filter hash to the message.
 func (msg *MsgCFHeaders) AddCFHash(hash *daghash.Hash) error {
 	if len(msg.FilterHashes)+1 > MaxCFHeadersPerMsg {
-		str := fmt.Sprintf("too many block headers in message [max %v]",
+		str := fmt.Sprintf("too many block headers in message [max %d]",
 			MaxBlockHeadersPerMsg)
 		return messageError("MsgCFHeaders.AddCFHash", str)
 	}
@@ -75,7 +75,7 @@ func (msg *MsgCFHeaders) BtcDecode(r io.Reader, pver uint32) error {
 	// Limit to max committed filter headers per message.
 	if count > MaxCFHeadersPerMsg {
 		str := fmt.Sprintf("too many committed filter headers for "+
-			"message [count %v, max %v]", count,
+			"message [count %d, max %d]", count,
 			MaxBlockHeadersPerMsg)
 		return messageError("MsgCFHeaders.BtcDecode", str)
 	}
@@ -120,7 +120,7 @@ func (msg *MsgCFHeaders) BtcEncode(w io.Writer, pver uint32) error {
 	count := len(msg.FilterHashes)
 	if count > MaxCFHeadersPerMsg {
 		str := fmt.Sprintf("too many committed filter headers for "+
-			"message [count %v, max %v]", count,
+			"message [count %d, max %d]", count,
 			MaxBlockHeadersPerMsg)
 		return messageError("MsgCFHeaders.BtcEncode", str)
 	}

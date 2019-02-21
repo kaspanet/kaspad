@@ -13,7 +13,7 @@ func registerDriver() {
 		Open:   openDBDriver,
 	}
 	if err := database.RegisterDriver(driver); err != nil {
-		panic(fmt.Sprintf("Failed to regiser database driver '%s': %v",
+		panic(fmt.Sprintf("Failed to regiser database driver '%s': %s",
 			dbType, err))
 	}
 }

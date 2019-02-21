@@ -341,7 +341,7 @@ func (mp *TxPool) addOrphan(tx *util.Tx, tag Tag) {
 		mp.orphansByPrev[txIn.PreviousOutPoint][*tx.ID()] = tx
 	}
 
-	log.Debugf("Stored orphan transaction %v (total: %d)", tx.ID(),
+	log.Debugf("Stored orphan transaction %s (total: %d)", tx.ID(),
 		len(mp.orphans))
 }
 
@@ -663,8 +663,8 @@ func (mp *TxPool) addTransaction(tx *util.Tx, height int32, fee uint64, parentsI
 func (mp *TxPool) checkPoolDoubleSpend(tx *util.Tx) error {
 	for _, txIn := range tx.MsgTx().TxIn {
 		if txR, exists := mp.outpoints[txIn.PreviousOutPoint]; exists {
-			str := fmt.Sprintf("output %v already spent by "+
-				"transaction %v in the memory pool",
+			str := fmt.Sprintf("output %s already spent by "+
+				"transaction %s in the memory pool",
 				txIn.PreviousOutPoint, txR.ID())
 			return txRuleError(wire.RejectDuplicate, str)
 		}
@@ -727,14 +727,14 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rateLimit, rejectDu
 	if mp.isTransactionInPool(txID) || (rejectDupOrphans &&
 		mp.isOrphanInPool(txID)) {
 
-		str := fmt.Sprintf("already have transaction %v", txID)
+		str := fmt.Sprintf("already have transaction %s", txID)
 		return nil, nil, txRuleError(wire.RejectDuplicate, str)
 	}
 
 	// Don't accept the transaction if it's from an incompatible subnetwork.
 	subnetworkID := mp.cfg.DAG.SubnetworkID()
 	if !tx.MsgTx().IsSubnetworkCompatible(subnetworkID) {
-		str := "tx %v belongs to an invalid subnetwork"
+		str := fmt.Sprintf("tx %s belongs to an invalid subnetwork", tx.ID())
 		return nil, nil, txRuleError(wire.RejectInvalid, str)
 	}
 
@@ -759,7 +759,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rateLimit, rejectDu
 			return nil, nil, err
 		}
 		if msgTx.Gas > gasLimit {
-			str := fmt.Sprintf("transaction wants more gas %v, than allowed %v",
+			str := fmt.Sprintf("transaction wants more gas %d, than allowed %d",
 				msgTx.Gas, gasLimit)
 			return nil, nil, dagRuleError(blockdag.RuleError{
 				ErrorCode:   blockdag.ErrInvalidGas,
@@ -769,7 +769,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rateLimit, rejectDu
 
 	// A standalone transaction must not be a block reward transaction.
 	if blockdag.IsBlockReward(tx) {
-		str := fmt.Sprintf("transaction %v is an individual block reward transaction",
+		str := fmt.Sprintf("transaction %s is an individual block reward transaction",
 			txID)
 		return nil, nil, txRuleError(wire.RejectInvalid, str)
 	}
@@ -795,7 +795,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rateLimit, rejectDu
 			if !found {
 				rejectCode = wire.RejectNonstandard
 			}
-			str := fmt.Sprintf("transaction %v is not standard: %v",
+			str := fmt.Sprintf("transaction %s is not standard: %s",
 				txID, err)
 			return nil, nil, txRuleError(rejectCode, str)
 		}
@@ -890,8 +890,8 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rateLimit, rejectDu
 			if !found {
 				rejectCode = wire.RejectNonstandard
 			}
-			str := fmt.Sprintf("transaction %v has a non-standard "+
-				"input: %v", txID, err)
+			str := fmt.Sprintf("transaction %s has a non-standard "+
+				"input: %s", txID, err)
 			return nil, nil, txRuleError(rejectCode, str)
 		}
 	}
@@ -913,7 +913,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rateLimit, rejectDu
 		return nil, nil, err
 	}
 	if sigOpCount > mp.cfg.Policy.MaxSigOpsPerTx {
-		str := fmt.Sprintf("transaction %v sigop count is too high: %d > %d",
+		str := fmt.Sprintf("transaction %s sigop count is too high: %d > %d",
 			txID, sigOpCount, mp.cfg.Policy.MaxSigOpsPerTx)
 		return nil, nil, txRuleError(wire.RejectNonstandard, str)
 	}
@@ -933,7 +933,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rateLimit, rejectDu
 	minFee := uint64(calcMinRequiredTxRelayFee(serializedSize,
 		mp.cfg.Policy.MinRelayTxFee))
 	if serializedSize >= (DefaultBlockPrioritySize-1000) && txFee < minFee {
-		str := fmt.Sprintf("transaction %v has %d fees which is under "+
+		str := fmt.Sprintf("transaction %s has %d fees which is under "+
 			"the required amount of %d", txID, txFee,
 			minFee)
 		return nil, nil, txRuleError(wire.RejectInsufficientFee, str)
@@ -947,7 +947,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rateLimit, rejectDu
 		currentPriority := mining.CalcPriority(tx.MsgTx(), mp.mpUTXOSet,
 			nextBlockHeight)
 		if currentPriority <= mining.MinHighPriority {
-			str := fmt.Sprintf("transaction %v has insufficient "+
+			str := fmt.Sprintf("transaction %s has insufficient "+
 				"priority (%g <= %g)", txID,
 				currentPriority, mining.MinHighPriority)
 			return nil, nil, txRuleError(wire.RejectInsufficientFee, str)
@@ -966,15 +966,15 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rateLimit, rejectDu
 
 		// Are we still over the limit?
 		if mp.pennyTotal >= mp.cfg.Policy.FreeTxRelayLimit*10*1000 {
-			str := fmt.Sprintf("transaction %v has been rejected "+
+			str := fmt.Sprintf("transaction %s has been rejected "+
 				"by the rate limiter due to low fees", txID)
 			return nil, nil, txRuleError(wire.RejectInsufficientFee, str)
 		}
 		oldTotal := mp.pennyTotal
 
 		mp.pennyTotal += float64(serializedSize)
-		log.Tracef("rate limit: curTotal %v, nextTotal: %v, "+
-			"limit %v", oldTotal, mp.pennyTotal,
+		log.Tracef("rate limit: curTotal %d, nextTotal: %d, "+
+			"limit %d", oldTotal, mp.pennyTotal,
 			mp.cfg.Policy.FreeTxRelayLimit*10*1000)
 	}
 
@@ -992,7 +992,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rateLimit, rejectDu
 	// Add to transaction pool.
 	txD := mp.addTransaction(tx, bestHeight, txFee, parentsInPool)
 
-	log.Debugf("Accepted transaction %v (pool size: %v)", txID,
+	log.Debugf("Accepted transaction %s (pool size: %d)", txID,
 		len(mp.pool))
 
 	return nil, txD, nil
@@ -1131,7 +1131,7 @@ func (mp *TxPool) ProcessOrphans(acceptedTx *util.Tx) []*TxDesc {
 //
 // This function is safe for concurrent access.
 func (mp *TxPool) ProcessTransaction(tx *util.Tx, allowOrphan, rateLimit bool, tag Tag) ([]*TxDesc, error) {
-	log.Tracef("Processing transaction %v", tx.ID())
+	log.Tracef("Processing transaction %s", tx.ID())
 
 	// Protect concurrent access.
 	mp.mtx.Lock()
@@ -1172,9 +1172,9 @@ func (mp *TxPool) ProcessTransaction(tx *util.Tx, allowOrphan, rateLimit bool, t
 		// to the limited number of reject codes.  Missing
 		// inputs is assumed to mean they are already spent
 		// which is not really always the case.
-		str := fmt.Sprintf("orphan transaction %v references "+
+		str := fmt.Sprintf("orphan transaction %s references "+
 			"outputs of unknown or fully-spent "+
-			"transaction %v", tx.ID(), missingParents[0])
+			"transaction %s", tx.ID(), missingParents[0])
 		return nil, txRuleError(wire.RejectDuplicate, str)
 	}
 

@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/database"
@@ -132,9 +133,9 @@ func loadConfig() (*config, []string, error) {
 
 	// Validate database type.
 	if !validDbType(cfg.DbType) {
-		str := "%s: The specified database type [%v] is invalid -- " +
-			"supported types %v"
-		err := fmt.Errorf(str, "loadConfig", cfg.DbType, knownDbTypes)
+		str := "%s: The specified database type [%s] is invalid -- " +
+			"supported types %s"
+		err := fmt.Errorf(str, "loadConfig", cfg.DbType, strings.Join(knownDbTypes, ", "))
 		fmt.Fprintln(os.Stderr, err)
 		parser.WriteHelp(os.Stderr)
 		return nil, nil, err
@@ -150,7 +151,7 @@ func loadConfig() (*config, []string, error) {
 
 	// Ensure the specified block file exists.
 	if !fileExists(cfg.InFile) {
-		str := "%s: The specified block file [%v] does not exist"
+		str := "%s: The specified block file [%s] does not exist"
 		err := fmt.Errorf(str, "loadConfig", cfg.InFile)
 		fmt.Fprintln(os.Stderr, err)
 		parser.WriteHelp(os.Stderr)

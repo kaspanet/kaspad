@@ -47,9 +47,6 @@ const (
 	// MaxOutputsPerBlock is the maximum number of transaction outputs there
 	// can be in a block of max size.
 	MaxOutputsPerBlock = wire.MaxBlockPayload / wire.MinTxOutPayload
-
-	// feeTransactionIndex is the index of the fee transaction in a block.
-	feeTransactionIndex = 1
 )
 
 // isNullOutpoint determines whether or not a previous transaction output point
@@ -535,7 +532,7 @@ func (dag *BlockDAG) checkBlockSanity(block *util.Block, flags BehaviorFlags) er
 	// Do some preliminary checks on each transaction to ensure they are
 	// sane before continuing.
 	for i, tx := range transactions {
-		isFeeTransaction := i == feeTransactionIndex
+		isFeeTransaction := i == util.FeeTransactionIndex
 		err := CheckTransactionSanity(tx, dag.subnetworkID, isFeeTransaction)
 		if err != nil {
 			return err
@@ -881,7 +878,7 @@ func CheckTransactionInputs(tx *util.Tx, txHeight int32, utxoSet UTXOSet, dagPar
 		// Ensure the referenced input transaction is available.
 		entry, ok := utxoSet.Get(txIn.PreviousOutPoint)
 		if !ok {
-			str := fmt.Sprintf("output %v referenced from "+
+			str := fmt.Sprintf("output %s referenced from "+
 				"transaction %s:%d either does not exist or "+
 				"has already been spent", txIn.PreviousOutPoint,
 				tx.ID(), txInIndex)
@@ -897,9 +894,9 @@ func CheckTransactionInputs(tx *util.Tx, txHeight int32, utxoSet UTXOSet, dagPar
 				blockRewardMaturity := int32(dagParams.BlockRewardMaturity)
 				if blocksSincePrev < blockRewardMaturity {
 					str := fmt.Sprintf("tried to spend block reward "+
-						"transaction output %v from height %v "+
-						"at height %v before required maturity "+
-						"of %v blocks", txIn.PreviousOutPoint,
+						"transaction output %s from height %d "+
+						"at height %d before required maturity "+
+						"of %d blocks", txIn.PreviousOutPoint,
 						originHeight, txHeight,
 						blockRewardMaturity)
 					return 0, ruleError(ErrImmatureSpend, str)
@@ -915,8 +912,8 @@ func CheckTransactionInputs(tx *util.Tx, txHeight int32, utxoSet UTXOSet, dagPar
 		// SatoshiPerBitcoin constant.
 		originTxSatoshi := entry.Amount()
 		if originTxSatoshi > util.MaxSatoshi {
-			str := fmt.Sprintf("transaction output value of %v is "+
-				"higher than max allowed value of %v",
+			str := fmt.Sprintf("transaction output value of %s is "+
+				"higher than max allowed value of %f",
 				util.Amount(originTxSatoshi),
 				util.MaxSatoshi)
 			return 0, ruleError(ErrBadTxOutValue, str)

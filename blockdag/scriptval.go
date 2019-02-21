@@ -58,7 +58,7 @@ out:
 			entry, ok := v.utxoSet.Get(txIn.PreviousOutPoint)
 			if !ok {
 				str := fmt.Sprintf("unable to find unspent "+
-					"output %v referenced from "+
+					"output %s referenced from "+
 					"transaction %s:%d",
 					txIn.PreviousOutPoint, txVI.tx.ID(),
 					txVI.txInIndex)
@@ -74,8 +74,8 @@ out:
 				txVI.txInIndex, v.flags, v.sigCache)
 			if err != nil {
 				str := fmt.Sprintf("failed to parse input "+
-					"%s:%d which references output %v - "+
-					"%v (input script bytes %x, prev "+
+					"%s:%d which references output %s - "+
+					"%s (input script bytes %x, prev "+
 					"output script bytes %x)",
 					txVI.tx.ID(), txVI.txInIndex,
 					txIn.PreviousOutPoint, err, sigScript, pkScript)
@@ -87,8 +87,8 @@ out:
 			// Execute the script pair.
 			if err := vm.Execute(); err != nil {
 				str := fmt.Sprintf("failed to validate input "+
-					"%s:%d which references output %v - "+
-					"%v (input script bytes %x, prev output "+
+					"%s:%d which references output %s - "+
+					"%s (input script bytes %x, prev output "+
 					"script bytes %x)",
 					txVI.tx.ID(), txVI.txInIndex,
 					txIn.PreviousOutPoint, err, sigScript, pkScript)
@@ -237,7 +237,7 @@ func checkBlockScripts(block *blockNode, utxoSet UTXOSet, transactions []*util.T
 	}
 	elapsed := time.Since(start)
 
-	log.Tracef("block %v took %v to verify", block.hash, elapsed)
+	log.Tracef("block %s took %s to verify", block.hash, elapsed)
 
 	return nil
 }

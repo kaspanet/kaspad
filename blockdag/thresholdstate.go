@@ -178,7 +178,7 @@ func (dag *BlockDAG) thresholdState(prevNode *blockNode, checker thresholdCondit
 		state, ok = cache.Lookup(&prevNode.hash)
 		if !ok {
 			return ThresholdFailed, AssertError(fmt.Sprintf(
-				"thresholdState: cache lookup failed for %v",
+				"thresholdState: cache lookup failed for %s",
 				prevNode.hash))
 		}
 	}

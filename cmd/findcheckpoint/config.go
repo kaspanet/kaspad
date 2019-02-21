@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/database"
@@ -120,9 +121,9 @@ func loadConfig() (*config, []string, error) {
 
 	// Validate database type.
 	if !validDbType(cfg.DbType) {
-		str := "%s: The specified database type [%v] is invalid -- " +
-			"supported types %v"
-		err := fmt.Errorf(str, "loadConfig", cfg.DbType, knownDbTypes)
+		str := "%s: The specified database type [%s] is invalid -- " +
+			"supported types %s"
+		err := fmt.Errorf(str, funcName, cfg.DbType, strings.Join(knownDbTypes, ", "))
 		fmt.Fprintln(os.Stderr, err)
 		parser.WriteHelp(os.Stderr)
 		return nil, nil, err
@@ -139,8 +140,8 @@ func loadConfig() (*config, []string, error) {
 	// Validate the number of candidates.
 	if cfg.NumCandidates < minCandidates || cfg.NumCandidates > maxCandidates {
 		str := "%s: The specified number of candidates is out of " +
-			"range -- parsed [%v]"
-		err = fmt.Errorf(str, "loadConfig", cfg.NumCandidates)
+			"range -- parsed [%d]"
+		err = fmt.Errorf(str, funcName, cfg.NumCandidates)
 		fmt.Fprintln(os.Stderr, err)
 		parser.WriteHelp(os.Stderr)
 		return nil, nil, err

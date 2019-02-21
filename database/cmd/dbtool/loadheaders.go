@@ -61,7 +61,7 @@ func (cmd *headersCmd) Execute(args []string) error {
 				numLoaded++
 				return nil
 			})
-			log.Infof("Loaded %d headers in %v", numLoaded,
+			log.Infof("Loaded %d headers in %s", numLoaded,
 				time.Since(startTime))
 			return nil
 		})
@@ -85,7 +85,7 @@ func (cmd *headersCmd) Execute(args []string) error {
 		if err != nil {
 			return err
 		}
-		log.Infof("Loaded %d headers in %v", len(hdrs),
+		log.Infof("Loaded %d headers in %s", len(hdrs),
 			time.Since(startTime))
 		return nil
 	})

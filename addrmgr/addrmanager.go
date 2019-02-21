@@ -277,7 +277,7 @@ func (a *AddrManager) expireNew(bucket int) {
 		var oldest *KnownAddress
 		for k, v := range a.addrNew[subnetworkID][bucket] {
 			if v.isBad() {
-				log.Tracef("expiring bad address %v", k)
+				log.Tracef("expiring bad address %s", k)
 				delete(a.addrNew[subnetworkID][bucket], k)
 				v.refs--
 				if v.refs == 0 {
@@ -295,7 +295,7 @@ func (a *AddrManager) expireNew(bucket int) {
 
 		if oldest != nil {
 			key := NetAddressKey(oldest.na)
-			log.Tracef("expiring oldest address %v", key)
+			log.Tracef("expiring oldest address %s", key)
 
 			delete(a.addrNew[subnetworkID][bucket], key)
 			oldest.refs--
@@ -449,13 +449,13 @@ func (a *AddrManager) savePeers() {
 
 	w, err := os.Create(a.peersFile)
 	if err != nil {
-		log.Errorf("Error opening file %s: %v", a.peersFile, err)
+		log.Errorf("Error opening file %s: %s", a.peersFile, err)
 		return
 	}
 	enc := json.NewEncoder(w)
 	defer w.Close()
 	if err := enc.Encode(&sam); err != nil {
-		log.Errorf("Failed to encode file %s: %v", a.peersFile, err)
+		log.Errorf("Failed to encode file %s: %s", a.peersFile, err)
 		return
 	}
 }
@@ -468,11 +468,11 @@ func (a *AddrManager) loadPeers() {
 
 	err := a.deserializePeers(a.peersFile)
 	if err != nil {
-		log.Errorf("Failed to parse file %s: %v", a.peersFile, err)
+		log.Errorf("Failed to parse file %s: %s", a.peersFile, err)
 		// if it is invalid we nuke the old one unconditionally.
 		err = os.Remove(a.peersFile)
 		if err != nil {
-			log.Warnf("Failed to remove corrupt peers file %s: %v",
+			log.Warnf("Failed to remove corrupt peers file %s: %s",
 				a.peersFile, err)
 		}
 		a.reset()
@@ -489,7 +489,7 @@ func (a *AddrManager) deserializePeers(filePath string) error {
 	}
 	r, err := os.Open(filePath)
 	if err != nil {
-		return fmt.Errorf("%s error opening file: %v", filePath, err)
+		return fmt.Errorf("%s error opening file: %s", filePath, err)
 	}
 	defer r.Close()
 
@@ -497,11 +497,11 @@ func (a *AddrManager) deserializePeers(filePath string) error {
 	dec := json.NewDecoder(r)
 	err = dec.Decode(&sam)
 	if err != nil {
-		return fmt.Errorf("error reading %s: %v", filePath, err)
+		return fmt.Errorf("error reading %s: %s", filePath, err)
 	}
 
 	if sam.Version != serialisationVersion {
-		return fmt.Errorf("unknown version %v in serialized "+
+		return fmt.Errorf("unknown version %d in serialized "+
 			"addrmanager", sam.Version)
 	}
 	copy(a.key[:], sam.Key[:])
@@ -511,17 +511,17 @@ func (a *AddrManager) deserializePeers(filePath string) error {
 		ka.na, err = a.DeserializeNetAddress(v.Addr)
 		if err != nil {
 			return fmt.Errorf("failed to deserialize netaddress "+
-				"%s: %v", v.Addr, err)
+				"%s: %s", v.Addr, err)
 		}
 		ka.srcAddr, err = a.DeserializeNetAddress(v.Src)
 		if err != nil {
 			return fmt.Errorf("failed to deserialize netaddress "+
-				"%s: %v", v.Src, err)
+				"%s: %s", v.Src, err)
 		}
 		ka.subnetworkID, err = subnetworkid.NewFromStr(v.SubnetworkID)
 		if err != nil {
 			return fmt.Errorf("failed to deserialize subnetwork id "+
-				"%s: %v", v.SubnetworkID, err)
+				"%s: %s", v.SubnetworkID, err)
 		}
 		ka.attempts = v.Attempts
 		ka.lastattempt = time.Unix(v.LastAttempt, 0)
@@ -669,7 +669,7 @@ func (a *AddrManager) AddAddressByIP(addrIP string) error {
 	}
 	port, err := strconv.ParseUint(portStr, 10, 0)
 	if err != nil {
-		return fmt.Errorf("invalid port %s: %v", portStr, err)
+		return fmt.Errorf("invalid port %s: %s", portStr, err)
 	}
 	na := wire.NewNetAddressIPPort(ip, uint16(port), 0)
 	a.AddAddress(na, na) // XXX use correct src address
@@ -847,7 +847,7 @@ func (a *AddrManager) GetAddress() *KnownAddress {
 			ka := e.Value.(*KnownAddress)
 			randval := a.rand.Intn(large)
 			if float64(randval) < (factor * ka.chance() * float64(large)) {
-				log.Tracef("Selected %v from tried bucket",
+				log.Tracef("Selected %s from tried bucket",
 					NetAddressKey(ka.na))
 				return ka
 			}
@@ -875,7 +875,7 @@ func (a *AddrManager) GetAddress() *KnownAddress {
 			}
 			randval := a.rand.Intn(large)
 			if float64(randval) < (factor * ka.chance() * float64(large)) {
-				log.Tracef("Selected %v from new bucket",
+				log.Tracef("Selected %s from new bucket",
 					NetAddressKey(ka.na))
 				return ka
 			}

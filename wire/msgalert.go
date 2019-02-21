@@ -158,7 +158,7 @@ func (alert *Alert) Serialize(w io.Writer, pver uint32) error {
 	count := len(alert.SetCancel)
 	if count > maxCountSetCancel {
 		str := fmt.Sprintf("too many cancel alert IDs for alert "+
-			"[count %v, max %v]", count, maxCountSetCancel)
+			"[count %d, max %d]", count, maxCountSetCancel)
 		return messageError("Alert.Serialize", str)
 	}
 	err = WriteVarInt(w, pver, uint64(count))
@@ -180,7 +180,7 @@ func (alert *Alert) Serialize(w io.Writer, pver uint32) error {
 	count = len(alert.SetSubVer)
 	if count > maxCountSetSubVer {
 		str := fmt.Sprintf("too many sub versions for alert "+
-			"[count %v, max %v]", count, maxCountSetSubVer)
+			"[count %d, max %d]", count, maxCountSetSubVer)
 		return messageError("Alert.Serialize", str)
 	}
 	err = WriteVarInt(w, pver, uint64(count))
@@ -227,7 +227,7 @@ func (alert *Alert) Deserialize(r io.Reader, pver uint32) error {
 	}
 	if count > maxCountSetCancel {
 		str := fmt.Sprintf("too many cancel alert IDs for alert "+
-			"[count %v, max %v]", count, maxCountSetCancel)
+			"[count %d, max %d]", count, maxCountSetCancel)
 		return messageError("Alert.Deserialize", str)
 	}
 	alert.SetCancel = make([]int32, count)
@@ -251,7 +251,7 @@ func (alert *Alert) Deserialize(r io.Reader, pver uint32) error {
 	}
 	if count > maxCountSetSubVer {
 		str := fmt.Sprintf("too many sub versions for alert "+
-			"[count %v, max %v]", count, maxCountSetSubVer)
+			"[count %d, max %d]", count, maxCountSetSubVer)
 		return messageError("Alert.Deserialize", str)
 	}
 	alert.SetSubVer = make([]string, count)

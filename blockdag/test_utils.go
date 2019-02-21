@@ -56,7 +56,7 @@ func fileExists(name string) bool {
 // a teardown function the caller should invoke when done testing to clean up.
 func DAGSetup(dbName string, config Config) (*BlockDAG, func(), error) {
 	if !isSupportedDbType(testDbType) {
-		return nil, nil, fmt.Errorf("unsupported db type %v", testDbType)
+		return nil, nil, fmt.Errorf("unsupported db type %s", testDbType)
 	}
 
 	var teardown func()
@@ -66,7 +66,7 @@ func DAGSetup(dbName string, config Config) (*BlockDAG, func(), error) {
 		if !fileExists(testDbRoot) {
 			if err := os.MkdirAll(testDbRoot, 0700); err != nil {
 				err := fmt.Errorf("unable to create test db "+
-					"root: %v", err)
+					"root: %s", err)
 				return nil, nil, err
 			}
 		}
@@ -76,7 +76,7 @@ func DAGSetup(dbName string, config Config) (*BlockDAG, func(), error) {
 		var err error
 		config.DB, err = database.Create(testDbType, dbPath, blockDataNet)
 		if err != nil {
-			return nil, nil, fmt.Errorf("error creating db: %v", err)
+			return nil, nil, fmt.Errorf("error creating db: %s", err)
 		}
 
 		// Setup a teardown function for cleaning up.  This function is
@@ -99,7 +99,7 @@ func DAGSetup(dbName string, config Config) (*BlockDAG, func(), error) {
 	dag, err := New(&config)
 	if err != nil {
 		teardown()
-		err := fmt.Errorf("failed to create dag instance: %v", err)
+		err := fmt.Errorf("failed to create dag instance: %s", err)
 		return nil, nil, err
 	}
 	return dag, teardown, nil
@@ -196,7 +196,7 @@ func GetVirtualFromParentsForTest(dag *BlockDAG, parentHashes []daghash.Hash) (*
 	for _, hash := range parentHashes {
 		parent := dag.index.LookupNode(&hash)
 		if parent == nil {
-			return nil, fmt.Errorf("GetVirtualFromParentsForTest: didn't found node for hash %v", hash)
+			return nil, fmt.Errorf("GetVirtualFromParentsForTest: didn't found node for hash %s", hash)
 		}
 		parents.add(parent)
 	}

@@ -32,7 +32,7 @@ func init() {
 	log, _ = logger.Get(logger.SubsystemTags.PEER)
 }
 
-// LogClosure is a closure that can be printed with %v to be used to
+// LogClosure is a closure that can be printed with %s to be used to
 // generate expensive-to-create data for a detailed log level and avoid doing
 // the work if the data isn't printed.
 type logClosure func() string
@@ -183,10 +183,10 @@ func messageSummary(msg wire.Message) string {
 		// logging.
 		rejCommand := sanitizeString(msg.Cmd, wire.CommandSize)
 		rejReason := sanitizeString(msg.Reason, maxRejectReasonLen)
-		summary := fmt.Sprintf("cmd %v, code %v, reason %v", rejCommand,
+		summary := fmt.Sprintf("cmd %s, code %s, reason %s", rejCommand,
 			msg.Code, rejReason)
 		if rejCommand == wire.CmdBlock || rejCommand == wire.CmdTx {
-			summary += fmt.Sprintf(", hash %v", msg.Hash)
+			summary += fmt.Sprintf(", hash %s", msg.Hash)
 		}
 		return summary
 	}

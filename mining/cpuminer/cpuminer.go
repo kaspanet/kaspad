@@ -172,11 +172,11 @@ func (m *CPUMiner) submitBlock(block *util.Block) bool {
 		// so log that error as an internal error.
 		if _, ok := err.(blockdag.RuleError); !ok {
 			log.Errorf("Unexpected error while processing "+
-				"block submitted via CPU miner: %v", err)
+				"block submitted via CPU miner: %s", err)
 			return false
 		}
 
-		log.Debugf("Block submitted via CPU miner rejected: %v", err)
+		log.Debugf("Block submitted via CPU miner rejected: %s", err)
 		return false
 	}
 	if isOrphan {
@@ -187,7 +187,7 @@ func (m *CPUMiner) submitBlock(block *util.Block) bool {
 	// The block was accepted.
 	coinbaseTx := block.MsgBlock().Transactions[0].TxOut[0]
 	log.Infof("Block submitted via CPU miner accepted (hash %s, "+
-		"amount %v)", block.Hash(), util.Amount(coinbaseTx.Value))
+		"amount %d)", block.Hash(), util.Amount(coinbaseTx.Value))
 	return true
 }
 
@@ -216,7 +216,7 @@ func (m *CPUMiner) solveBlock(msgBlock *wire.MsgBlock, blockHeight int32,
 	extraNonce, err := wire.RandomUint64()
 	if err != nil {
 		log.Errorf("Unexpected error while generating random "+
-			"extra nonce offset: %v", err)
+			"extra nonce offset: %s", err)
 	}
 
 	// Update the extra nonce in the block template with the
@@ -332,7 +332,7 @@ out:
 		m.submitBlockLock.Unlock()
 		if err != nil {
 			errStr := fmt.Sprintf("Failed to create new block "+
-				"template: %v", err)
+				"template: %s", err)
 			log.Errorf(errStr)
 			continue
 		}
@@ -586,7 +586,7 @@ func (m *CPUMiner) GenerateNBlocks(n uint32) ([]*daghash.Hash, error) {
 		m.submitBlockLock.Unlock()
 		if err != nil {
 			errStr := fmt.Sprintf("Failed to create new block "+
-				"template: %v", err)
+				"template: %s", err)
 			log.Errorf(errStr)
 			continue
 		}
