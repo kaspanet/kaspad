@@ -134,7 +134,7 @@ func dbFetchBlockIDByHash(dbTx database.Tx, hash *daghash.Hash) (uint32, error) 
 	hashIndex := dbTx.Metadata().Bucket(idByHashIndexBucketName)
 	serializedID := hashIndex.Get(hash[:])
 	if serializedID == nil {
-		return 0, errNoBlockIDEntry
+		return 0, fmt.Errorf("No entry in the block ID index for block with hash %s", hash)
 	}
 
 	return byteOrder.Uint32(serializedID), nil
@@ -146,7 +146,7 @@ func dbFetchBlockHashBySerializedID(dbTx database.Tx, serializedID []byte) (*dag
 	idIndex := dbTx.Metadata().Bucket(hashByIDIndexBucketName)
 	hashBytes := idIndex.Get(serializedID)
 	if hashBytes == nil {
-		return nil, errNoBlockIDEntry
+		return nil, fmt.Errorf("No entry in the block ID index for block with id %d", byteOrder.Uint32(serializedID))
 	}
 
 	var hash daghash.Hash
@@ -278,12 +278,15 @@ func dbAddTxIndexEntries(dbTx database.Tx, block *util.Block, blockID uint32, ac
 		includingBlocksOffset += includingBlocksIndexKeyEntrySize
 	}
 
-	acceptingBlocksOffset := 0
-
 	for includingBlockHash, blockAcceptedTxData := range acceptedTxData {
-		includingBlockID, err := dbFetchBlockIDByHash(dbTx, &includingBlockHash)
-		if err != nil {
-			return err
+		var includingBlockID uint32
+		if includingBlockHash.IsEqual(block.Hash()) {
+			includingBlockID = blockID
+		} else {
+			includingBlockID, err = dbFetchBlockIDByHash(dbTx, &includingBlockHash)
+			if err != nil {
+				return err
+			}
 		}
 
 		includingBlockIDBytes := make([]byte, 4)
@@ -294,7 +297,6 @@ func dbAddTxIndexEntries(dbTx database.Tx, block *util.Block, blockID uint32, ac
 			if err != nil {
 				return err
 			}
-			acceptingBlocksOffset += acceptingBlocksIndexKeyEntrySize
 		}
 	}
 
