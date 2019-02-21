@@ -11,6 +11,7 @@ import (
 
 	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/database"
+	"github.com/daglabs/btcd/util"
 	"github.com/daglabs/btcd/util/txsort"
 	"github.com/daglabs/btcd/wire"
 )
@@ -19,7 +20,7 @@ import (
 // inside a block.
 // Every transaction gets a single uint64 value, stored as a plain binary list.
 // The transactions are ordered the same way they are ordered inside the block, making it easy
-// to traverse all transactions in a block and extract it's fee from the fee accumulator.
+// to traverse every transaction in a block and extract its fee.
 //
 // compactFeeFactory is used to create such a list.
 // compactFeeIterator is used to iterate over such a list.
@@ -71,8 +72,29 @@ func (cfr *compactFeeIterator) next() (uint64, error) {
 	return txFee, err
 }
 
-// following functions relate to storing and retreiving fee data from the dabase
+// following functions relate to storing and retrieving fee data from the database
 var feeBucket = []byte("fees")
+
+// getBluesFeeData returns the compactFeeData for all nodes's blues,
+// used to calculate the fees this blockNode needs to pay
+func (node *blockNode) getBluesFeeData(dag *BlockDAG) (map[daghash.Hash]compactFeeData, error) {
+	bluesFeeData := make(map[daghash.Hash]compactFeeData)
+
+	dag.db.View(func(dbTx database.Tx) error {
+		for _, blueBlock := range node.blues {
+			feeData, err := dbFetchFeeData(dbTx, &blueBlock.hash)
+			if err != nil {
+				return fmt.Errorf("Error getting fee data for block %s: %s", blueBlock.hash, err)
+			}
+
+			bluesFeeData[blueBlock.hash] = feeData
+		}
+
+		return nil
+	})
+
+	return bluesFeeData, nil
+}
 
 func dbStoreFeeData(dbTx database.Tx, blockHash *daghash.Hash, feeData compactFeeData) error {
 	feeBucket, err := dbTx.Metadata().CreateBucketIfNotExists(feeBucket)
@@ -97,7 +119,23 @@ func dbFetchFeeData(dbTx database.Tx, blockHash *daghash.Hash) (compactFeeData, 
 	return feeData, nil
 }
 
-// following functions deal with building the fee transaction
+// following functions deal with building and validating the fee transaction
+
+func (node *blockNode) validateFeeTransaction(dag *BlockDAG, block *util.Block, acceptedTxsData AcceptedTxsData) error {
+	if node.isGenesis() {
+		return nil
+	}
+	expectedFeeTransaction, err := node.buildFeeTransaction(dag, acceptedTxsData)
+	if err != nil {
+		return err
+	}
+
+	if !expectedFeeTransaction.TxHash().IsEqual(block.FeeTransaction().Hash()) {
+		return ruleError(ErrBadFeeTransaction, "Fee transaction is not built as expected")
+	}
+
+	return nil
+}
 
 // buildFeeTransaction returns the expected fee transaction for the current block
 func (node *blockNode) buildFeeTransaction(dag *BlockDAG, acceptedTxsData AcceptedTxsData) (*wire.MsgTx, error) {
@@ -121,9 +159,8 @@ func (node *blockNode) buildFeeTransaction(dag *BlockDAG, acceptedTxsData Accept
 	return txsort.Sort(feeTx), nil
 }
 
-// feeInputAndOutputForBlueBlock calculates the input and output that should go into the fee transaction
-// for given blueNode
-// If block gets no fee - returns only txIn and nil for txOut
+// feeInputAndOutputForBlueBlock calculates the input and output that should go into the fee transaction of blueBlock
+// If blueBlock gets no fee - returns only txIn and nil for txOut
 func feeInputAndOutputForBlueBlock(blueBlock *blockNode, acceptedTxsData AcceptedTxsData, feeData map[daghash.Hash]compactFeeData) (
 	*wire.TxIn, *wire.TxOut, error) {
 

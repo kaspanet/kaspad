@@ -5,7 +5,6 @@
 package indexers
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/daglabs/btcd/blockdag"
@@ -36,10 +35,6 @@ var (
 	// hashByIDIndexBucketName is the name of the db bucket used to house
 	// the block hash -> block id index.
 	hashByIDIndexBucketName = []byte("hashbyididx")
-
-	// errNoBlockIDEntry is an error that indicates a requested entry does
-	// not exist in the block ID index.
-	errNoBlockIDEntry = errors.New("no entry in the block ID index")
 )
 
 // -----------------------------------------------------------------------------
