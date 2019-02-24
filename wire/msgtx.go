@@ -339,14 +339,16 @@ func (msg *MsgTx) IsBlockReward() bool {
 }
 
 // TxHash generates the Hash for the transaction.
-func (msg *MsgTx) TxHash() daghash.Hash {
+func (msg *MsgTx) TxHash() *daghash.Hash {
 	// Encode the transaction and calculate double sha256 on the result.
 	// Ignore the error returns since the only way the encode could fail
 	// is being out of memory or due to nil pointers, both of which would
 	// cause a run-time panic.
 	buf := bytes.NewBuffer(make([]byte, 0, msg.SerializeSize()))
 	_ = msg.Serialize(buf)
-	return daghash.DoubleHashH(buf.Bytes())
+
+	hash := daghash.Hash(daghash.DoubleHashH(buf.Bytes()))
+	return &hash
 }
 
 // TxID generates the Hash for the transaction without the signature script, gas and payload fields.

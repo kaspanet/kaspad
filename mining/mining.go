@@ -595,7 +595,7 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 		// Ensure the transaction inputs pass all of the necessary
 		// preconditions before allowing it to be added to the block.
 		_, err = blockdag.CheckTransactionInputs(tx, nextBlockHeight,
-			g.dag.UTXOSet(), g.dagParams)
+			g.dag.UTXOSet(), g.dagParams, false)
 		if err != nil {
 			log.Tracef("Skipping tx %s due to error in "+
 				"CheckTransactionInputs: %s", tx.ID(), err)

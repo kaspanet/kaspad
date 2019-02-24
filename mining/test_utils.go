@@ -76,7 +76,7 @@ func PrepareBlockForTest(dag *blockdag.BlockDAG, params *dagconfig.Params, paren
 	for _, tx := range transactions {
 		found := false
 		for _, blockTx := range template.Block.Transactions {
-			if blockTx.TxHash() == tx.TxHash() {
+			if blockTx.TxHash().IsEqual(tx.TxHash()) {
 				found = true
 				break
 			}

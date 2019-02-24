@@ -250,14 +250,14 @@ func TestTxHashAndID(t *testing.T) {
 			spew.Sprint(tx2ID), spew.Sprint(wantID2))
 	}
 
-	if tx2ID.IsEqual((*daghash.TxID)(&tx2Hash)) {
+	if tx2ID.IsEqual((*daghash.TxID)(tx2Hash)) {
 		t.Errorf("tx2ID and tx2Hash shouldn't be the same for non-coinbase transaction with signature and/or payload")
 	}
 
 	tx2.Payload = []byte{}
 	tx2.TxIn[0].SignatureScript = []byte{}
 	newTx2Hash := tx2.TxHash()
-	if !tx2ID.IsEqual((*daghash.TxID)(&newTx2Hash)) {
+	if !tx2ID.IsEqual((*daghash.TxID)(newTx2Hash)) {
 		t.Errorf("tx2ID and newTx2Hash should be the same for transaction without empty signature and payload")
 	}
 }
