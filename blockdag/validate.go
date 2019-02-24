@@ -693,7 +693,7 @@ func (dag *BlockDAG) checkBlockHeaderContext(header *wire.BlockHeader, bluestPar
 			medianTime := bluestParent.CalcPastMedianTime()
 			if header.Timestamp.Before(medianTime) {
 				str := "block timestamp of %s is not after expected %s"
-				str = fmt.Sprintf(str, header.Timestamp.String(), medianTime.String())
+				str = fmt.Sprintf(str, header.Timestamp, medianTime)
 				return ruleError(ErrTimeTooOld, str)
 			}
 		}
