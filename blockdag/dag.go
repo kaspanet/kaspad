@@ -511,13 +511,13 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block, fastAdd bo
 		}
 	}
 
-	var finalityPointCandidate *blockNode
 	if !fastAdd {
-		var err error
-		finalityPointCandidate, err = dag.checkFinalityRulesAndGetFinalityPointCandidate(node)
+		finalityPoint, err := dag.checkFinalityRulesAndGetFinalityPoint(node)
 		if err != nil {
 			return err
 		}
+
+		dag.lastFinalityPoint = finalityPoint
 	}
 
 	if err := dag.validateGasLimit(block); err != nil {
@@ -641,28 +641,37 @@ func (dag *BlockDAG) LastFinalityPointHash() *daghash.Hash {
 	return &dag.lastFinalityPoint.hash
 }
 
-func (dag *BlockDAG) checkFinalityRulesAndGetFinalityPointCandidate(node *blockNode) (*blockNode, error) {
+// checkFinalityRulesAndGetFinalityPoint checks the new block does not violate the finality rules
+// and if not - returns the (potentially new) finality point
+func (dag *BlockDAG) checkFinalityRulesAndGetFinalityPoint(node *blockNode) (*blockNode, error) {
 	if node.isGenesis() {
 		return node, nil
 	}
-	var finalityPointCandidate *blockNode
+	finalityPoint := dag.lastFinalityPoint
 	finalityErr := ruleError(ErrFinality, "The last finality point is not in the selected chain of this block")
 
 	if node.blueScore <= dag.lastFinalityPoint.blueScore {
 		return nil, finalityErr
 	}
 
-	shouldFindFinalityPointCandidate := node.finalityScore() > dag.lastFinalityPoint.finalityScore()
+	// We are looking for a new finality point only if the new block's finality score is higher
+	// than the existing finality point's
+	shouldFindNewFinalityPoint := node.finalityScore() > dag.lastFinalityPoint.finalityScore()
 
 	for currentNode := node.selectedParent; currentNode != dag.lastFinalityPoint; currentNode = currentNode.selectedParent {
+		// If we went past dag's last finality point without encountering it -
+		// the new block has violated finality.
 		if currentNode.blueScore <= dag.lastFinalityPoint.blueScore {
 			return nil, finalityErr
 		}
-		if shouldFindFinalityPointCandidate && currentNode.finalityScore() > currentNode.selectedParent.finalityScore() {
-			finalityPointCandidate = currentNode
+
+		// If current node's finality score is higher than it's selectedParent's -
+		// current node is the new finalityPoint
+		if shouldFindNewFinalityPoint && currentNode.finalityScore() > currentNode.selectedParent.finalityScore() {
+			finalityPoint = currentNode
 		}
 	}
-	return finalityPointCandidate, nil
+	return finalityPoint, nil
 }
 
 // NextBlockFeeTransaction prepares the fee transaction for the next mined block
