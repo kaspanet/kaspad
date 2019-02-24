@@ -646,12 +646,14 @@ func ExtractCoinbaseHeight(coinbaseTx *util.Tx) (int32, error) {
 
 // checkSerializedHeight checks if the signature script in the passed
 // transaction starts with the serialized block height of wantHeight.
-func checkSerializedHeight(coinbaseTx *util.Tx, wantHeight int32) error {
+func checkSerializedHeight(block *util.Block) error {
+	coinbaseTx := block.CoinbaseTransaction()
 	serializedHeight, err := ExtractCoinbaseHeight(coinbaseTx)
 	if err != nil {
 		return err
 	}
 
+	wantHeight := block.Height()
 	if serializedHeight != wantHeight {
 		str := fmt.Sprintf("the coinbase signature script serialized "+
 			"block height is %d when %d was expected",
@@ -669,36 +671,21 @@ func checkSerializedHeight(coinbaseTx *util.Tx, wantHeight int32) error {
 //    the checkpoints are not performed.
 //
 // This function MUST be called with the dag state lock held (for writes).
-func (dag *BlockDAG) checkBlockHeaderContext(header *wire.BlockHeader, bluestParent *blockNode, blockHeight int32, flags BehaviorFlags) error {
-	fastAdd := flags&BFFastAdd == BFFastAdd
+func (dag *BlockDAG) checkBlockHeaderContext(header *wire.BlockHeader, bluestParent *blockNode, blockHeight int32, fastAdd bool) error {
 	if !fastAdd {
-		// Ensure the difficulty specified in the block header matches
-		// the calculated difficulty based on the previous block and
-		// difficulty retarget rules.
-		expectedDifficulty, err := dag.calcNextRequiredDifficulty(bluestParent,
-			header.Timestamp)
-		if err != nil {
+		if err := dag.validateDifficulty(header, bluestParent); err != nil {
 			return err
 		}
-		blockDifficulty := header.Bits
-		if blockDifficulty != expectedDifficulty {
-			str := "block difficulty of %d is not the expected value of %d"
-			str = fmt.Sprintf(str, blockDifficulty, expectedDifficulty)
-			return ruleError(ErrUnexpectedDifficulty, str)
-		}
 
-		if !header.IsGenesis() {
-			// Ensure the timestamp for the block header is not before the
-			// median time of the last several blocks (medianTimeBlocks).
-			medianTime := bluestParent.CalcPastMedianTime()
-			if header.Timestamp.Before(medianTime) {
-				str := "block timestamp of %s is not after expected %s"
-				str = fmt.Sprintf(str, header.Timestamp, medianTime)
-				return ruleError(ErrTimeTooOld, str)
-			}
+		if err := dag.validateMedianTime(header, bluestParent); err != nil {
+			return err
 		}
 	}
 
+	return dag.validateCheckpoints(header, blockHeight)
+}
+
+func (dag *BlockDAG) validateCheckpoints(header *wire.BlockHeader, blockHeight int32) error {
 	// Ensure dag matches up to predetermined checkpoints.
 	blockHash := header.BlockHash()
 	if !dag.verifyCheckpoint(blockHeight, &blockHash) {
@@ -720,6 +707,40 @@ func (dag *BlockDAG) checkBlockHeaderContext(header *wire.BlockHeader, bluestPar
 			"before the previous checkpoint at height %d",
 			blockHeight, checkpointNode.height)
 		return ruleError(ErrForkTooOld, str)
+	}
+
+	return nil
+}
+
+func (dag *BlockDAG) validateMedianTime(header *wire.BlockHeader, bluestParent *blockNode) error {
+	if !header.IsGenesis() {
+		// Ensure the timestamp for the block header is not before the
+		// median time of the last several blocks (medianTimeBlocks).
+		medianTime := bluestParent.PastMedianTime()
+		if header.Timestamp.Before(medianTime) {
+			str := "block timestamp of %s is not after expected %s"
+			str = fmt.Sprintf(str, header.Timestamp, medianTime)
+			return ruleError(ErrTimeTooOld, str)
+		}
+	}
+
+	return nil
+}
+
+func (dag *BlockDAG) validateDifficulty(header *wire.BlockHeader, bluestParent *blockNode) error {
+	// Ensure the difficulty specified in the block header matches
+	// the calculated difficulty based on the previous block and
+	// difficulty retarget rules.
+	expectedDifficulty, err := dag.calcNextRequiredDifficulty(bluestParent,
+		header.Timestamp)
+	if err != nil {
+		return err
+	}
+	blockDifficulty := header.Bits
+	if blockDifficulty != expectedDifficulty {
+		str := "block difficulty of %d is not the expected value of %d"
+		str = fmt.Sprintf(str, blockDifficulty, expectedDifficulty)
+		return ruleError(ErrUnexpectedDifficulty, str)
 	}
 
 	return nil
@@ -773,6 +794,8 @@ func validateParents(blockHeader *wire.BlockHeader, parents blockSet) error {
 //
 // This function MUST be called with the dag state lock held (for writes).
 func (dag *BlockDAG) checkBlockContext(block *util.Block, parents blockSet, bluestParent *blockNode, flags BehaviorFlags) error {
+	fastAdd := flags&BFFastAdd == BFFastAdd
+
 	err := validateParents(&block.MsgBlock().Header, parents)
 	if err != nil {
 		return err
@@ -780,37 +803,40 @@ func (dag *BlockDAG) checkBlockContext(block *util.Block, parents blockSet, blue
 
 	// Perform all block header related validation checks.
 	header := &block.MsgBlock().Header
-	err = dag.checkBlockHeaderContext(header, bluestParent, block.Height(), flags)
-	if err != nil {
+	if err = dag.checkBlockHeaderContext(header, bluestParent, block.Height(), fastAdd); err != nil {
 		return err
 	}
 
-	fastAdd := flags&BFFastAdd == BFFastAdd
 	if !fastAdd {
-		blockTime := header.Timestamp
-		if !block.IsGenesis() {
-			blockTime = bluestParent.CalcPastMedianTime()
-		}
-
-		// Ensure all transactions in the block are finalized.
-		for _, tx := range block.Transactions() {
-			if !IsFinalizedTransaction(tx, block.Height(),
-				blockTime) {
-
-				str := fmt.Sprintf("block contains unfinalized "+
-					"transaction %s", tx.ID())
-				return ruleError(ErrUnfinalizedTx, str)
-			}
+		if err := dag.validateAllTxsFinalized(block, header, bluestParent); err != nil {
+			return err
 		}
 
 		// Ensure coinbase starts with serialized block heights
-
-		coinbaseTx := block.Transactions()[0]
-		err := checkSerializedHeight(coinbaseTx, block.Height())
+		err := checkSerializedHeight(block)
 		if err != nil {
 			return err
 		}
 
+	}
+
+	return nil
+}
+
+func (dag *BlockDAG) validateAllTxsFinalized(block *util.Block, header *wire.BlockHeader, bluestParent *blockNode) error {
+	blockTime := header.Timestamp
+	if !block.IsGenesis() {
+		blockTime = bluestParent.PastMedianTime()
+	}
+
+	// Ensure all transactions in the block are finalized.
+	for _, tx := range block.Transactions() {
+		if !IsFinalizedTransaction(tx, block.Height(), blockTime) {
+
+			str := fmt.Sprintf("block contains unfinalized "+
+				"transaction %s", tx.ID())
+			return ruleError(ErrUnfinalizedTx, str)
+		}
 	}
 
 	return nil
@@ -1087,7 +1113,7 @@ func (dag *BlockDAG) checkConnectToPastUTXO(block *blockNode, pastUTXO UTXOSet,
 		// in order to determine if transactions in the current block are final.
 		medianTime := block.Header().Timestamp
 		if !block.isGenesis() {
-			medianTime = block.selectedParent.CalcPastMedianTime()
+			medianTime = block.selectedParent.PastMedianTime()
 		}
 
 		// We also enforce the relative sequence number based

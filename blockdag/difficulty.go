@@ -202,15 +202,15 @@ func (dag *BlockDAG) findPrevTestNetDifficulty(startNode *blockNode) uint32 {
 // This function differs from the exported CalcNextRequiredDifficulty in that
 // the exported version uses the current best chain as the previous block node
 // while this function accepts any block node.
-func (dag *BlockDAG) calcNextRequiredDifficulty(lastNode *blockNode, newBlockTime time.Time) (uint32, error) {
+func (dag *BlockDAG) calcNextRequiredDifficulty(bluestParent *blockNode, newBlockTime time.Time) (uint32, error) {
 	// Genesis block.
-	if lastNode == nil {
+	if bluestParent == nil {
 		return dag.dagParams.PowLimitBits, nil
 	}
 
 	// Return the previous block's difficulty requirements if this block
 	// is not at a difficulty retarget interval.
-	if (lastNode.height+1)%dag.blocksPerRetarget != 0 {
+	if (bluestParent.height+1)%dag.blocksPerRetarget != 0 {
 		// For networks that support it, allow special reduction of the
 		// required difficulty once too much time has elapsed without
 		// mining a block.
@@ -219,7 +219,7 @@ func (dag *BlockDAG) calcNextRequiredDifficulty(lastNode *blockNode, newBlockTim
 			// amount of time has elapsed without mining a block.
 			reductionTime := int64(dag.dagParams.MinDiffReductionTime /
 				time.Second)
-			allowMinTime := lastNode.timestamp + reductionTime
+			allowMinTime := bluestParent.timestamp + reductionTime
 			if newBlockTime.Unix() > allowMinTime {
 				return dag.dagParams.PowLimitBits, nil
 			}
@@ -227,24 +227,24 @@ func (dag *BlockDAG) calcNextRequiredDifficulty(lastNode *blockNode, newBlockTim
 			// The block was mined within the desired timeframe, so
 			// return the difficulty for the last block which did
 			// not have the special minimum difficulty rule applied.
-			return dag.findPrevTestNetDifficulty(lastNode), nil
+			return dag.findPrevTestNetDifficulty(bluestParent), nil
 		}
 
 		// For the main network (or any unrecognized networks), simply
 		// return the previous block's difficulty requirements.
-		return lastNode.bits, nil
+		return bluestParent.bits, nil
 	}
 
 	// Get the block node at the previous retarget (targetTimespan days
 	// worth of blocks).
-	firstNode := lastNode.RelativeAncestor(dag.blocksPerRetarget - 1)
+	firstNode := bluestParent.RelativeAncestor(dag.blocksPerRetarget - 1)
 	if firstNode == nil {
 		return 0, AssertError("unable to obtain previous retarget block")
 	}
 
 	// Limit the amount of adjustment that can occur to the previous
 	// difficulty.
-	actualTimespan := lastNode.timestamp - firstNode.timestamp
+	actualTimespan := bluestParent.timestamp - firstNode.timestamp
 	adjustedTimespan := actualTimespan
 	if actualTimespan < dag.minRetargetTimespan {
 		adjustedTimespan = dag.minRetargetTimespan
@@ -257,7 +257,7 @@ func (dag *BlockDAG) calcNextRequiredDifficulty(lastNode *blockNode, newBlockTim
 	// The result uses integer division which means it will be slightly
 	// rounded down.  Bitcoind also uses integer division to calculate this
 	// result.
-	oldTarget := CompactToBig(lastNode.bits)
+	oldTarget := CompactToBig(bluestParent.bits)
 	newTarget := new(big.Int).Mul(oldTarget, big.NewInt(adjustedTimespan))
 	targetTimeSpan := int64(dag.dagParams.TargetTimespan / time.Second)
 	newTarget.Div(newTarget, big.NewInt(targetTimeSpan))
@@ -272,8 +272,8 @@ func (dag *BlockDAG) calcNextRequiredDifficulty(lastNode *blockNode, newBlockTim
 	// newTarget since conversion to the compact representation loses
 	// precision.
 	newTargetBits := BigToCompact(newTarget)
-	log.Debugf("Difficulty retarget at block height %d", lastNode.height+1)
-	log.Debugf("Old target %08x (%064x)", lastNode.bits, oldTarget)
+	log.Debugf("Difficulty retarget at block height %d", bluestParent.height+1)
+	log.Debugf("Old target %08x (%064x)", bluestParent.bits, oldTarget)
 	log.Debugf("New target %08x (%064x)", newTargetBits, CompactToBig(newTargetBits))
 	log.Debugf("Actual timespan %s, adjusted timespan %s, target timespan %s",
 		time.Duration(actualTimespan)*time.Second,

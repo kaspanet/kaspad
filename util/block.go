@@ -23,6 +23,9 @@ const (
 	// yet.
 	BlockHeightUnknown = int32(-1)
 
+	// CoinbaseTransactionIndex is the index of the fee transaction in every block
+	CoinbaseTransactionIndex = 0
+
 	// FeeTransactionIndex is the index of the fee transaction in every block (except genesis,
 	// which doesn't have a fee transaction)
 	FeeTransactionIndex = 1
@@ -203,6 +206,11 @@ func (b *Block) SetHeight(height int32) {
 // IsGenesis returns whether or not this block is the genesis block.
 func (b *Block) IsGenesis() bool {
 	return b.MsgBlock().Header.IsGenesis()
+}
+
+// CoinbaseTransaction returns this block's coinbase transaction
+func (b *Block) CoinbaseTransaction() *Tx {
+	return b.Transactions()[CoinbaseTransactionIndex]
 }
 
 // FeeTransaction returns this block's fee transaction

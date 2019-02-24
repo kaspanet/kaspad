@@ -510,9 +510,13 @@ func TestCheckSerializedHeight(t *testing.T) {
 	for i, test := range tests {
 		msgTx := coinbaseTx.Copy()
 		msgTx.TxIn[0].SignatureScript = test.sigScript
-		tx := util.NewTx(msgTx)
 
-		err := checkSerializedHeight(tx, test.wantHeight)
+		msgBlock := wire.NewMsgBlock(wire.NewBlockHeader(1, []daghash.Hash{}, &daghash.Hash{}, &daghash.Hash{}, 0, 0))
+		msgBlock.AddTransaction(msgTx)
+		block := util.NewBlock(msgBlock)
+		block.SetHeight(test.wantHeight)
+
+		err := checkSerializedHeight(block)
 		if reflect.TypeOf(err) != reflect.TypeOf(test.err) {
 			t.Errorf("checkSerializedHeight #%d wrong error type "+
 				"got: %v <%T>, want: %T", i, err, err, test.err)
@@ -552,11 +556,11 @@ func TestPastMedianTime(t *testing.T) {
 	node := newTestNode(setFromSlice(tip),
 		blockVersion,
 		0,
-		tip.CalcPastMedianTime(),
+		tip.PastMedianTime(),
 		dagconfig.MainNetParams.K)
 
 	header := node.Header()
-	err := dag.checkBlockHeaderContext(header, node.parents.bluest(), height, BFNone)
+	err := dag.checkBlockHeaderContext(header, node.parents.bluest(), height, false)
 	if err != nil {
 		t.Errorf("TestPastMedianTime: unexpected error from checkBlockHeaderContext: %v"+
 			"(a block with timestamp equals to past median time should be valid)", err)
@@ -567,11 +571,11 @@ func TestPastMedianTime(t *testing.T) {
 	node = newTestNode(setFromSlice(tip),
 		blockVersion,
 		0,
-		tip.CalcPastMedianTime().Add(time.Second),
+		tip.PastMedianTime().Add(time.Second),
 		dagconfig.MainNetParams.K)
 
 	header = node.Header()
-	err = dag.checkBlockHeaderContext(header, node.parents.bluest(), height, BFNone)
+	err = dag.checkBlockHeaderContext(header, node.parents.bluest(), height, false)
 	if err != nil {
 		t.Errorf("TestPastMedianTime: unexpected error from checkBlockHeaderContext: %v"+
 			"(a block with timestamp bigger than past median time should be valid)", err)
@@ -582,11 +586,11 @@ func TestPastMedianTime(t *testing.T) {
 	node = newTestNode(setFromSlice(tip),
 		blockVersion,
 		0,
-		tip.CalcPastMedianTime().Add(-time.Second),
+		tip.PastMedianTime().Add(-time.Second),
 		dagconfig.MainNetParams.K)
 
 	header = node.Header()
-	err = dag.checkBlockHeaderContext(header, node.parents.bluest(), height, BFNone)
+	err = dag.checkBlockHeaderContext(header, node.parents.bluest(), height, false)
 	if err == nil {
 		t.Errorf("TestPastMedianTime: unexpected success: block should be invalid if its timestamp is before past median time")
 	}

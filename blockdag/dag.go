@@ -403,7 +403,7 @@ func (dag *BlockDAG) calcSequenceLock(node *blockNode, utxoSet UTXOSet, tx *util
 				prevInputHeight = 0
 			}
 			blockNode := node.Ancestor(prevInputHeight)
-			medianTime := blockNode.CalcPastMedianTime()
+			medianTime := blockNode.PastMedianTime()
 
 			// Time based relative time-locks as defined by BIP 68
 			// have a time granularity of RelativeLockSeconds, so
@@ -1017,7 +1017,7 @@ func (dag *BlockDAG) UTXOSet() *FullUTXOSet {
 
 // CalcPastMedianTime returns the past median time of the DAG.
 func (dag *BlockDAG) CalcPastMedianTime() time.Time {
-	return dag.virtual.tips().bluest().CalcPastMedianTime()
+	return dag.virtual.tips().bluest().PastMedianTime()
 }
 
 // GetUTXOEntry returns the requested unspent transaction output. The returned
