@@ -470,9 +470,7 @@ func (dag *BlockDAG) connectToDAG(node *blockNode, parentNodes blockSet, block *
 		} else {
 			return err
 		}
-	}
-
-	if dag.index.NodeStatus(node).KnownValid() {
+	} else {
 		dag.blockCount++
 	}
 
