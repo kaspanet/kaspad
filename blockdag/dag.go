@@ -529,7 +529,7 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block, fastAdd bo
 	}
 
 	// Add the node to the virtual and update the UTXO set of the DAG.
-	utxoDiff, acceptedTxsData, feeData, err := dag.applyUTXOChanges(node, block, fastAdd)
+	utxoDiff, txsAcceptanceData, feeData, err := dag.applyUTXOChanges(node, block, fastAdd)
 	if err != nil {
 		return err
 	}
@@ -573,7 +573,7 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block, fastAdd bo
 		// Scan all accepted transactions and register any subnetwork registry
 		// transaction. If any subnetwork registry transaction is not well-formed,
 		// fail the entire block.
-		err = registerSubnetworks(dbTx, acceptedTxsData)
+		err = registerSubnetworks(dbTx, txsAcceptanceData)
 		if err != nil {
 			return err
 		}
@@ -582,7 +582,7 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block, fastAdd bo
 		// optional indexes with the block being connected so they can
 		// update themselves accordingly.
 		if dag.indexManager != nil {
-			err := dag.indexManager.ConnectBlock(dbTx, block, dag, acceptedTxsData)
+			err := dag.indexManager.ConnectBlock(dbTx, block, dag, txsAcceptanceData)
 			if err != nil {
 				return err
 			}
@@ -669,11 +669,11 @@ func (dag *BlockDAG) checkFinalityRulesAndGetFinalityPointCandidate(node *blockN
 
 // NextBlockFeeTransaction prepares the fee transaction for the next mined block
 func (dag *BlockDAG) NextBlockFeeTransaction() (*wire.MsgTx, error) {
-	_, acceptedTxsData, _, err := dag.virtual.blockNode.verifyAndBuildUTXO(dag.virtual, dag, nil, true)
+	_, txsAcceptanceData, _, err := dag.virtual.blockNode.verifyAndBuildUTXO(dag.virtual, dag, nil, true)
 	if err != nil {
 		return nil, err
 	}
-	return dag.virtual.blockNode.buildFeeTransaction(dag, acceptedTxsData)
+	return dag.virtual.blockNode.buildFeeTransaction(dag, txsAcceptanceData)
 }
 
 // applyUTXOChanges does the following:
@@ -685,11 +685,11 @@ func (dag *BlockDAG) NextBlockFeeTransaction() (*wire.MsgTx, error) {
 //
 // This function MUST be called with the chain state lock held (for writes).
 func (dag *BlockDAG) applyUTXOChanges(node *blockNode, block *util.Block, fastAdd bool) (
-	utxoDiff *UTXODiff, acceptedTxsData AcceptedTxsData, feeData compactFeeData, err error) {
+	utxoDiff *UTXODiff, txsAcceptanceData MultiblockTxsAcceptanceData, feeData compactFeeData, err error) {
 	// Clone the virtual block so that we don't modify the existing one.
 	virtualClone := dag.virtual.clone()
 
-	newBlockUTXO, acceptedTxsData, feeData, err := node.verifyAndBuildUTXO(virtualClone, dag, block.Transactions(), fastAdd)
+	newBlockUTXO, txsAcceptanceData, feeData, err := node.verifyAndBuildUTXO(virtualClone, dag, block.Transactions(), fastAdd)
 	if err != nil {
 		newErrString := fmt.Sprintf("error verifying UTXO for %s: %s", node, err)
 		if err, ok := err.(RuleError); ok {
@@ -698,7 +698,7 @@ func (dag *BlockDAG) applyUTXOChanges(node *blockNode, block *util.Block, fastAd
 		return nil, nil, nil, errors.New(newErrString)
 	}
 
-	err = node.validateFeeTransaction(dag, block, acceptedTxsData)
+	err = node.validateFeeTransaction(dag, block, txsAcceptanceData)
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -743,7 +743,7 @@ func (dag *BlockDAG) applyUTXOChanges(node *blockNode, block *util.Block, fastAd
 	// It is now safe to apply the new virtual block
 	dag.virtual = virtualClone
 
-	return utxoDiff, acceptedTxsData, feeData, nil
+	return utxoDiff, txsAcceptanceData, feeData, nil
 }
 
 func (dag *BlockDAG) updateVirtualUTXO(newVirtualUTXODiffSet *DiffUTXOSet) {
@@ -754,9 +754,9 @@ func (dag *BlockDAG) updateVirtualUTXO(newVirtualUTXODiffSet *DiffUTXOSet) {
 
 // verifyAndBuildUTXO verifies all transactions in the given block and builds its UTXO
 func (node *blockNode) verifyAndBuildUTXO(virtual *virtualBlock, dag *BlockDAG, transactions []*util.Tx, fastAdd bool) (
-	UTXOSet, AcceptedTxsData, compactFeeData, error) {
+	UTXOSet, MultiblockTxsAcceptanceData, compactFeeData, error) {
 
-	pastUTXO, acceptedTxsData, err := node.pastUTXO(virtual, dag.db)
+	pastUTXO, txsAcceptanceData, err := node.pastUTXO(virtual, dag.db)
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -769,7 +769,7 @@ func (node *blockNode) verifyAndBuildUTXO(virtual *virtualBlock, dag *BlockDAG, 
 
 	diff := NewUTXODiff()
 
-	blockAcceptedTxsData := BlockAcceptedTxsData{}
+	blockTxsAcceptanceData := BlockTxsAcceptanceData{}
 	for _, tx := range transactions {
 		txDiff, err := pastUTXO.diffFromTx(tx.MsgTx(), node)
 		if err != nil {
@@ -779,35 +779,35 @@ func (node *blockNode) verifyAndBuildUTXO(virtual *virtualBlock, dag *BlockDAG, 
 		if err != nil {
 			return nil, nil, nil, err
 		}
-		blockAcceptedTxsData = append(blockAcceptedTxsData, TxAcceptedData{
+		blockTxsAcceptanceData = append(blockTxsAcceptanceData, TxAcceptanceData{
 			Tx:         tx,
 			IsAccepted: true,
 		})
 
 	}
-	acceptedTxsData[node.hash] = blockAcceptedTxsData
+	txsAcceptanceData[node.hash] = blockTxsAcceptanceData
 
 	utxo, err := pastUTXO.WithDiff(diff)
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	return utxo, acceptedTxsData, feeData, nil
+	return utxo, txsAcceptanceData, feeData, nil
 }
 
-// TxAcceptedData stores a transaction together with an indication
+// TxAcceptanceData stores a transaction together with an indication
 // if it was accepted or not by some block
-type TxAcceptedData struct {
+type TxAcceptanceData struct {
 	Tx         *util.Tx
 	IsAccepted bool
 }
 
-// BlockAcceptedTxsData  stores all transactions in a block with an indication
+// BlockTxsAcceptanceData  stores all transactions in a block with an indication
 // if they were accepted or not by some other block
-type BlockAcceptedTxsData []TxAcceptedData
+type BlockTxsAcceptanceData []TxAcceptanceData
 
-// AcceptedTxsData  stores data about which transactions were accepted by a block
+// MultiblockTxsAcceptanceData  stores data about which transactions were accepted by a block
 // It's a map from the block's blues block IDs to the transaction acceptance data
-type AcceptedTxsData map[daghash.Hash]BlockAcceptedTxsData
+type MultiblockTxsAcceptanceData map[daghash.Hash]BlockTxsAcceptanceData
 
 func genesisPastUTXO(virtual *virtualBlock) UTXOSet {
 	// The genesis has no past UTXO, so we create an empty UTXO
@@ -822,9 +822,9 @@ func genesisPastUTXO(virtual *virtualBlock) UTXOSet {
 }
 
 // pastUTXO returns the UTXO of a given block's past
-func (node *blockNode) pastUTXO(virtual *virtualBlock, db database.DB) (pastUTXO UTXOSet, acceptedTxsData AcceptedTxsData, err error) {
+func (node *blockNode) pastUTXO(virtual *virtualBlock, db database.DB) (pastUTXO UTXOSet, txsAcceptanceData MultiblockTxsAcceptanceData, err error) {
 	if node.isGenesis() {
-		return genesisPastUTXO(virtual), AcceptedTxsData{}, nil
+		return genesisPastUTXO(virtual), MultiblockTxsAcceptanceData{}, nil
 	}
 	pastUTXO, err = node.selectedParent.restoreUTXO(virtual)
 	if err != nil {
@@ -853,14 +853,14 @@ func (node *blockNode) pastUTXO(virtual *virtualBlock, db database.DB) (pastUTXO
 	if err != nil {
 		return nil, nil, err
 	}
-	acceptedTxsData = AcceptedTxsData{}
+	txsAcceptanceData = MultiblockTxsAcceptanceData{}
 
 	// Add all transactions to the pastUTXO
 	// Purposefully ignore failures - these are just unaccepted transactions
 	// Write down which transactions were accepted or not in acceptedTxData
 	for _, blueBlock := range blueBlocks {
 		transactions := blueBlock.Transactions()
-		blockAcceptedTxsData := make(BlockAcceptedTxsData, len(transactions))
+		blockTxsAcceptanceData := make(BlockTxsAcceptanceData, len(transactions))
 		isSelectedParent := blueBlock.Hash().IsEqual(&node.selectedParent.hash)
 		for i, tx := range blueBlock.Transactions() {
 			var isAccepted bool
@@ -869,12 +869,12 @@ func (node *blockNode) pastUTXO(virtual *virtualBlock, db database.DB) (pastUTXO
 			} else {
 				isAccepted = pastUTXO.AddTx(tx.MsgTx(), node.height)
 			}
-			blockAcceptedTxsData[i] = TxAcceptedData{Tx: tx, IsAccepted: isAccepted}
+			blockTxsAcceptanceData[i] = TxAcceptanceData{Tx: tx, IsAccepted: isAccepted}
 		}
-		acceptedTxsData[*blueBlock.Hash()] = blockAcceptedTxsData
+		txsAcceptanceData[*blueBlock.Hash()] = blockTxsAcceptanceData
 	}
 
-	return pastUTXO, acceptedTxsData, nil
+	return pastUTXO, txsAcceptanceData, nil
 }
 
 // restoreUTXO restores the UTXO of a given block from its diff
@@ -1448,7 +1448,7 @@ type IndexManager interface {
 
 	// ConnectBlock is invoked when a new block has been connected to the
 	// DAG.
-	ConnectBlock(database.Tx, *util.Block, *BlockDAG, AcceptedTxsData) error
+	ConnectBlock(database.Tx, *util.Block, *BlockDAG, MultiblockTxsAcceptanceData) error
 }
 
 // Config is a descriptor which specifies the blockchain instance configuration.

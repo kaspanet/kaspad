@@ -168,12 +168,12 @@ func (m *Manager) Init(db database.DB, blockDAG *blockdag.BlockDAG, interrupt <-
 // checks, and invokes each indexer.
 //
 // This is part of the blockchain.IndexManager interface.
-func (m *Manager) ConnectBlock(dbTx database.Tx, block *util.Block, dag *blockdag.BlockDAG, acceptedTxsData blockdag.AcceptedTxsData) error {
+func (m *Manager) ConnectBlock(dbTx database.Tx, block *util.Block, dag *blockdag.BlockDAG, txsAcceptanceData blockdag.MultiblockTxsAcceptanceData) error {
 	// Call each of the currently active optional indexes with the block
 	// being connected so they can update accordingly.
 	for _, index := range m.enabledIndexes {
 		// Notify the indexer with the connected block so it can index it.
-		if err := index.ConnectBlock(dbTx, block, dag, acceptedTxsData); err != nil {
+		if err := index.ConnectBlock(dbTx, block, dag, txsAcceptanceData); err != nil {
 			return err
 		}
 	}

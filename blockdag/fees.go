@@ -121,11 +121,11 @@ func dbFetchFeeData(dbTx database.Tx, blockHash *daghash.Hash) (compactFeeData, 
 
 // following functions deal with building and validating the fee transaction
 
-func (node *blockNode) validateFeeTransaction(dag *BlockDAG, block *util.Block, acceptedTxsData AcceptedTxsData) error {
+func (node *blockNode) validateFeeTransaction(dag *BlockDAG, block *util.Block, txsAcceptanceData MultiblockTxsAcceptanceData) error {
 	if node.isGenesis() {
 		return nil
 	}
-	expectedFeeTransaction, err := node.buildFeeTransaction(dag, acceptedTxsData)
+	expectedFeeTransaction, err := node.buildFeeTransaction(dag, txsAcceptanceData)
 	if err != nil {
 		return err
 	}
@@ -138,7 +138,7 @@ func (node *blockNode) validateFeeTransaction(dag *BlockDAG, block *util.Block, 
 }
 
 // buildFeeTransaction returns the expected fee transaction for the current block
-func (node *blockNode) buildFeeTransaction(dag *BlockDAG, acceptedTxsData AcceptedTxsData) (*wire.MsgTx, error) {
+func (node *blockNode) buildFeeTransaction(dag *BlockDAG, txsAcceptanceData MultiblockTxsAcceptanceData) (*wire.MsgTx, error) {
 	bluesFeeData, err := node.getBluesFeeData(dag)
 	if err != nil {
 		return nil, err
@@ -147,7 +147,7 @@ func (node *blockNode) buildFeeTransaction(dag *BlockDAG, acceptedTxsData Accept
 	feeTx := wire.NewMsgTx(wire.TxVersion)
 
 	for _, blue := range node.blues {
-		txIn, txOut, err := feeInputAndOutputForBlueBlock(blue, acceptedTxsData, bluesFeeData)
+		txIn, txOut, err := feeInputAndOutputForBlueBlock(blue, txsAcceptanceData, bluesFeeData)
 		if err != nil {
 			return nil, err
 		}
@@ -161,22 +161,22 @@ func (node *blockNode) buildFeeTransaction(dag *BlockDAG, acceptedTxsData Accept
 
 // feeInputAndOutputForBlueBlock calculates the input and output that should go into the fee transaction of blueBlock
 // If blueBlock gets no fee - returns only txIn and nil for txOut
-func feeInputAndOutputForBlueBlock(blueBlock *blockNode, acceptedTxsData AcceptedTxsData, feeData map[daghash.Hash]compactFeeData) (
+func feeInputAndOutputForBlueBlock(blueBlock *blockNode, txsAcceptanceData MultiblockTxsAcceptanceData, feeData map[daghash.Hash]compactFeeData) (
 	*wire.TxIn, *wire.TxOut, error) {
 
-	blockAcceptedTxsData, ok := acceptedTxsData[blueBlock.hash]
+	blockTxsAcceptanceData, ok := txsAcceptanceData[blueBlock.hash]
 	if !ok {
-		return nil, nil, fmt.Errorf("No acceptedTxsData for block %s", blueBlock.hash)
+		return nil, nil, fmt.Errorf("No txsAcceptanceData for block %s", blueBlock.hash)
 	}
 	blockFeeData, ok := feeData[blueBlock.hash]
 	if !ok {
 		return nil, nil, fmt.Errorf("No feeData for block %s", blueBlock.hash)
 	}
 
-	if len(blockAcceptedTxsData) != blockFeeData.Len() {
+	if len(blockTxsAcceptanceData) != blockFeeData.Len() {
 		return nil, nil, fmt.Errorf(
 			"length of accepted transaction data(%d) and fee data(%d) is not equal for block %s",
-			len(blockAcceptedTxsData), blockFeeData.Len(), blueBlock.hash)
+			len(blockTxsAcceptanceData), blockFeeData.Len(), blueBlock.hash)
 	}
 
 	txIn := &wire.TxIn{
@@ -191,12 +191,12 @@ func feeInputAndOutputForBlueBlock(blueBlock *blockNode, acceptedTxsData Accepte
 	totalFees := uint64(0)
 	feeIterator := blockFeeData.iterator()
 
-	for _, txAcceptedData := range blockAcceptedTxsData {
+	for _, txAcceptanceData := range blockTxsAcceptanceData {
 		fee, err := feeIterator.next()
 		if err != nil {
 			return nil, nil, fmt.Errorf("Error retrieving fee from compactFeeData iterator: %s", err)
 		}
-		if txAcceptedData.IsAccepted {
+		if txAcceptanceData.IsAccepted {
 			totalFees += fee
 		}
 	}
@@ -206,7 +206,7 @@ func feeInputAndOutputForBlueBlock(blueBlock *blockNode, acceptedTxsData Accepte
 	}
 
 	// the scriptPubKey for the fee is the same as the coinbase's first scriptPubKey
-	pkScript := blockAcceptedTxsData[0].Tx.MsgTx().TxOut[0].PkScript
+	pkScript := blockTxsAcceptanceData[0].Tx.MsgTx().TxOut[0].PkScript
 
 	txOut := &wire.TxOut{
 		Value:    totalFees,

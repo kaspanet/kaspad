@@ -27,10 +27,10 @@ func newSubnetworkStore(db database.DB) *SubnetworkStore {
 // subnetwork registry transactions, validates them, and registers a new
 // subnetwork based on it.
 // This function returns an error if one or more transactions are invalid
-func registerSubnetworks(dbTx database.Tx, acceptedTxsData AcceptedTxsData) error {
+func registerSubnetworks(dbTx database.Tx, txsAcceptanceData MultiblockTxsAcceptanceData) error {
 	validSubnetworkRegistryTxs := make([]*wire.MsgTx, 0)
 
-	for _, txs := range acceptedTxsData {
+	for _, txs := range txsAcceptanceData {
 		for _, txData := range txs {
 			if !txData.IsAccepted {
 				continue
