@@ -17,11 +17,14 @@ import (
 // of range.
 type OutOfRangeError string
 
-// BlockHeightUnknown is the value returned for a block height that is unknown.
-// This is typically because the block has not been inserted into the main chain
-// yet.
 const (
-	BlockHeightUnknown  = int32(-1)
+	// BlockHeightUnknown is the value returned for a block height that is unknown.
+	// This is typically because the block has not been inserted into the main chain
+	// yet.
+	BlockHeightUnknown = int32(-1)
+
+	// FeeTransactionIndex is the index of the fee transaction in every block (except genesis,
+	// which doesn't have a fee transaction)
 	FeeTransactionIndex = 1
 )
 

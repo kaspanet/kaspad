@@ -72,7 +72,7 @@ func (cfr *compactFeeIterator) next() (uint64, error) {
 	return txFee, err
 }
 
-// following functions relate to storing and retrieving fee data from the database
+// The following functions relate to storing and retrieving fee data from the database
 var feeBucket = []byte("fees")
 
 // getBluesFeeData returns the compactFeeData for all nodes's blues,
@@ -119,7 +119,7 @@ func dbFetchFeeData(dbTx database.Tx, blockHash *daghash.Hash) (compactFeeData, 
 	return feeData, nil
 }
 
-// following functions deal with building and validating the fee transaction
+// The following functions deal with building and validating the fee transaction
 
 func (node *blockNode) validateFeeTransaction(dag *BlockDAG, block *util.Block, txsAcceptanceData MultiblockTxsAcceptanceData) error {
 	if node.isGenesis() {
