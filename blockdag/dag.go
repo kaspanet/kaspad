@@ -495,7 +495,6 @@ func (dag *BlockDAG) connectToDAG(node *blockNode, parentNodes blockSet, block *
 //
 // This function MUST be called with the chain state lock held (for writes).
 func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block, fastAdd bool) error {
-
 	// No warnings about unknown rules or versions until the DAG is
 	// current.
 	if dag.isCurrent() {
@@ -521,8 +520,7 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block, fastAdd bo
 		}
 	}
 
-	err := dag.validateGasLimit(block)
-	if err != nil {
+	if err := dag.validateGasLimit(block); err != nil {
 		return err
 	}
 
@@ -532,18 +530,32 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block, fastAdd bo
 		return err
 	}
 
-	if finalityPointCandidate != nil {
-		dag.lastFinalityPoint = finalityPointCandidate
-	}
-
 	// Write any block status changes to DB before updating the DAG state.
 	err = dag.index.flushToDB()
 	if err != nil {
 		return err
 	}
 
+	err = dag.saveChangesFromBlock(node, block, utxoDiff, txsAcceptanceData, feeData)
+	if err != nil {
+		return err
+	}
+
+	// Notify the caller that the block was connected to the main chain.
+	// The caller would typically want to react with actions such as
+	// updating wallets.
+	dag.dagLock.Unlock()
+	dag.sendNotification(NTBlockConnected, block)
+	dag.dagLock.Lock()
+
+	return nil
+}
+
+func (dag *BlockDAG) saveChangesFromBlock(node *blockNode, block *util.Block, utxoDiff *UTXODiff,
+	txsAcceptanceData MultiblockTxsAcceptanceData, feeData compactFeeData) error {
+
 	// Atomically insert info into the database.
-	err = dag.db.Update(func(dbTx database.Tx) error {
+	return dag.db.Update(func(dbTx database.Tx) error {
 		// Update best block state.
 		state := &dagState{
 			TipHashes:         dag.TipHashes(),
@@ -589,18 +601,6 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block, fastAdd bo
 		// Apply the fee data into the database
 		return dbStoreFeeData(dbTx, block.Hash(), feeData)
 	})
-	if err != nil {
-		return err
-	}
-
-	// Notify the caller that the block was connected to the main chain.
-	// The caller would typically want to react with actions such as
-	// updating wallets.
-	dag.dagLock.Unlock()
-	dag.sendNotification(NTBlockConnected, block)
-	dag.dagLock.Lock()
-
-	return nil
 }
 
 func (dag *BlockDAG) validateGasLimit(block *util.Block) error {

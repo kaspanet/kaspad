@@ -461,7 +461,6 @@ func checkBlockParentsOrder(header *wire.BlockHeader) error {
 // The flags do not modify the behavior of this function directly, however they
 // are needed to pass along to checkBlockHeaderSanity.
 func (dag *BlockDAG) checkBlockSanity(block *util.Block, flags BehaviorFlags) error {
-
 	msgBlock := block.MsgBlock()
 	header := &msgBlock.Header
 	err := dag.checkBlockHeaderSanity(header, flags)

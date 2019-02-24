@@ -49,7 +49,7 @@ func (dag *BlockDAG) maybeAcceptBlock(block *util.Block, flags BehaviorFlags) er
 	// disk with a bunch of blocks that fail to connect.  This is necessary
 	// since it allows block download to be decoupled from the much more
 	// expensive connection logic.  It also has some other nice properties
-	// such as making blocks that never become part of the main chain or
+	// such as making blocks that never become part of the main dag or
 	// blocks that fail to connect available for further analysis.
 	err = dag.db.Update(func(dbTx database.Tx) error {
 		return dbStoreBlock(dbTx, block)
@@ -58,9 +58,7 @@ func (dag *BlockDAG) maybeAcceptBlock(block *util.Block, flags BehaviorFlags) er
 		return err
 	}
 
-	// Create a new block node for the block and add it to the node index. Even
-	// if the block ultimately gets connected to the main chain, it starts out
-	// on a side chain.
+	// Create a new block node for the block and add it to the node index.
 	blockHeader := &block.MsgBlock().Header
 	newNode := newBlockNode(blockHeader, parents, dag.dagParams.K)
 	newNode.status = statusDataStored
