@@ -7,10 +7,11 @@ package btcjson
 import (
 	"bytes"
 	"fmt"
-	"github.com/daglabs/btcd/util"
 	"reflect"
 	"strings"
 	"text/tabwriter"
+
+	"github.com/daglabs/btcd/util"
 )
 
 // baseHelpDescs house the various help labels, types, and example values used
@@ -523,14 +524,14 @@ func GenerateHelp(method string, descs map[string]string, resultTypes ...interfa
 
 		rtp := reflect.TypeOf(resultType)
 		if rtp.Kind() != reflect.Ptr {
-			str := fmt.Sprintf("result #%d (%v) is not a pointer",
+			str := fmt.Sprintf("result #%d (%s) is not a pointer",
 				i, rtp.Kind())
 			return "", makeError(ErrInvalidType, str)
 		}
 
 		elemKind := rtp.Elem().Kind()
 		if !isValidResultType(elemKind) {
-			str := fmt.Sprintf("result #%d (%v) is not an allowed "+
+			str := fmt.Sprintf("result #%d (%s) is not an allowed "+
 				"type", i, elemKind)
 			return "", makeError(ErrInvalidType, str)
 		}

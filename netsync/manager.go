@@ -256,11 +256,11 @@ func (sm *SyncManager) startSync() {
 		locator, err := sm.dag.LatestBlockLocator()
 		if err != nil {
 			log.Errorf("Failed to get block locator for the "+
-				"latest block: %v", err)
+				"latest block: %s", err)
 			return
 		}
 
-		log.Infof("Syncing to block height %d from peer %v",
+		log.Infof("Syncing to block height %d from peer %s",
 			bestPeer.LastBlock(), bestPeer.Addr())
 
 		// When the current height is less than a known checkpoint we
@@ -408,7 +408,7 @@ func (sm *SyncManager) handleTxMsg(tmsg *txMsg) {
 	// If we didn't ask for this transaction then the peer is misbehaving.
 	txID := tmsg.tx.ID()
 	if _, exists = state.requestedTxns[*txID]; !exists {
-		log.Warnf("Got unrequested transaction %v from %s -- "+
+		log.Warnf("Got unrequested transaction %s from %s -- "+
 			"disconnecting", txID, peer.Addr())
 		peer.Disconnect()
 		return
@@ -419,7 +419,7 @@ func (sm *SyncManager) handleTxMsg(tmsg *txMsg) {
 	// rejected, the transaction was unsolicited.
 	if _, exists = sm.rejectedTxns[*txID]; exists {
 		log.Debugf("Ignoring unsolicited previously rejected "+
-			"transaction %v from %s", txID, peer)
+			"transaction %s from %s", txID, peer)
 		return
 	}
 
@@ -446,10 +446,10 @@ func (sm *SyncManager) handleTxMsg(tmsg *txMsg) {
 		// so log it as such.  Otherwise, something really did go wrong,
 		// so log it as an actual error.
 		if _, ok := err.(mempool.RuleError); ok {
-			log.Debugf("Rejected transaction %v from %s: %v",
+			log.Debugf("Rejected transaction %s from %s: %s",
 				txID, peer, err)
 		} else {
-			log.Errorf("Failed to process transaction %v: %v",
+			log.Errorf("Failed to process transaction %s: %s",
 				txID, err)
 		}
 
@@ -502,7 +502,7 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 		// mode in this case so the chain code is actually fed the
 		// duplicate blocks.
 		if sm.chainParams != &dagconfig.RegressionNetParams {
-			log.Warnf("Got unrequested block %v from %s -- "+
+			log.Warnf("Got unrequested block %s from %s -- "+
 				"disconnecting", blockHash, peer.Addr())
 			peer.Disconnect()
 			return
@@ -547,10 +547,10 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 		// it as such.  Otherwise, something really did go wrong, so log
 		// it as an actual error.
 		if _, ok := err.(blockdag.RuleError); ok {
-			log.Infof("Rejected block %v from %s: %v", blockHash,
+			log.Infof("Rejected block %s from %s: %s", blockHash,
 				peer, err)
 		} else {
-			log.Errorf("Failed to process block %v: %v",
+			log.Errorf("Failed to process block %s: %s",
 				blockHash, err)
 		}
 		if dbErr, ok := err.(database.Error); ok && dbErr.ErrorCode ==
@@ -588,9 +588,9 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 		cbHeight, err := blockdag.ExtractCoinbaseHeight(coinbaseTx)
 		if err != nil {
 			log.Warnf("Unable to extract height from "+
-				"coinbase tx: %v", err)
+				"coinbase tx: %s", err)
 		} else {
-			log.Debugf("Extracted height of %v from "+
+			log.Debugf("Extracted height of %d from "+
 				"orphan block", cbHeight)
 			heightUpdate = cbHeight
 			blkHashUpdate = blockHash
@@ -600,7 +600,7 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 		locator, err := sm.dag.LatestBlockLocator()
 		if err != nil {
 			log.Warnf("Failed to get block locator for the "+
-				"latest block: %v", err)
+				"latest block: %s", err)
 		} else {
 			peer.PushGetBlocksMsg(locator, orphanRoot)
 		}
@@ -659,7 +659,7 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 		err := peer.PushGetHeadersMsg(locator, sm.nextCheckpoint.Hash)
 		if err != nil {
 			log.Warnf("Failed to send getheaders message to "+
-				"peer %s: %v", peer.Addr(), err)
+				"peer %s: %s", peer.Addr(), err)
 			return
 		}
 		log.Infof("Downloading headers for blocks %d to %d from "+
@@ -677,7 +677,7 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 	locator := blockdag.BlockLocator([]*daghash.Hash{blockHash})
 	err = peer.PushGetBlocksMsg(locator, &daghash.ZeroHash)
 	if err != nil {
-		log.Warnf("Failed to send getblocks message to peer %s: %v",
+		log.Warnf("Failed to send getblocks message to peer %s: %s",
 			peer.Addr(), err)
 		return
 	}
@@ -709,7 +709,7 @@ func (sm *SyncManager) fetchHeaderBlocks() {
 		if err != nil {
 			log.Warnf("Unexpected failure when checking for "+
 				"existing inventory during header block "+
-				"fetch: %v", err)
+				"fetch: %s", err)
 		}
 		if !haveInv {
 			syncPeerState := sm.peerStates[sm.syncPeer]
@@ -819,7 +819,7 @@ func (sm *SyncManager) handleHeadersMsg(hmsg *headersMsg) {
 		// the next header links properly, it must be removed before
 		// fetching the blocks.
 		sm.headerList.Remove(sm.headerList.Front())
-		log.Infof("Received %v block headers: Fetching blocks",
+		log.Infof("Received %d block headers: Fetching blocks",
 			sm.headerList.Len())
 		sm.progressLogger.SetLastLogTime(time.Now())
 		sm.fetchHeaderBlocks()
@@ -833,7 +833,7 @@ func (sm *SyncManager) handleHeadersMsg(hmsg *headersMsg) {
 	err := peer.PushGetHeadersMsg(locator, sm.nextCheckpoint.Hash)
 	if err != nil {
 		log.Warnf("Failed to send getheaders message to "+
-			"peer %s: %v", peer.Addr(), err)
+			"peer %s: %s", peer.Addr(), err)
 		return
 	}
 }
@@ -951,7 +951,7 @@ func (sm *SyncManager) handleInvMsg(imsg *invMsg) {
 		if err != nil {
 			log.Warnf("Unexpected failure when checking for "+
 				"existing inventory during inv message "+
-				"processing: %v", err)
+				"processing: %s", err)
 			continue
 		}
 		if !haveInv {
@@ -988,7 +988,7 @@ func (sm *SyncManager) handleInvMsg(imsg *invMsg) {
 				if err != nil {
 					log.Errorf("PEER: Failed to get block "+
 						"locator for the latest block: "+
-						"%v", err)
+						"%s", err)
 					continue
 				}
 				peer.PushGetBlocksMsg(locator, orphanRoot)
@@ -1203,7 +1203,7 @@ func (sm *SyncManager) handleBlockDAGNotification(notification *blockdag.Notific
 			err := sm.txMemPool.HandleNewBlock(block, ch)
 			close(ch)
 			if err != nil {
-				panic(fmt.Sprintf("HandleNewBlock failed to handle block %v", block.Hash()))
+				panic(fmt.Sprintf("HandleNewBlock failed to handle block %s", block.Hash()))
 			}
 		}()
 		for msg := range ch {

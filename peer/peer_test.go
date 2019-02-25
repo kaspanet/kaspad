@@ -227,7 +227,7 @@ func TestPeerConnection(t *testing.T) {
 		UserAgentVersion:  "1.0",
 		UserAgentComments: []string{"comment"},
 		DAGParams:         &dagconfig.MainNetParams,
-		ProtocolVersion:   wire.RejectVersion, // Configure with older version
+		ProtocolVersion:   wire.ProtocolVersion, // Configure with older version
 		Services:          0,
 		SubnetworkID:      &wire.SubnetworkIDSupportsAll,
 	}
@@ -237,6 +237,7 @@ func TestPeerConnection(t *testing.T) {
 		UserAgentVersion:  "1.0",
 		UserAgentComments: []string{"comment"},
 		DAGParams:         &dagconfig.MainNetParams,
+		ProtocolVersion:   wire.ProtocolVersion + 1,
 		Services:          wire.SFNodeNetwork,
 		SubnetworkID:      &wire.SubnetworkIDSupportsAll,
 	}
@@ -244,7 +245,7 @@ func TestPeerConnection(t *testing.T) {
 	wantStats1 := peerStats{
 		wantUserAgent:       wire.DefaultUserAgent + "peer:1.0(comment)/",
 		wantServices:        0,
-		wantProtocolVersion: wire.RejectVersion,
+		wantProtocolVersion: wire.ProtocolVersion,
 		wantConnected:       true,
 		wantVersionKnown:    true,
 		wantVerAckReceived:  true,
@@ -258,7 +259,7 @@ func TestPeerConnection(t *testing.T) {
 	wantStats2 := peerStats{
 		wantUserAgent:       wire.DefaultUserAgent + "peer:1.0(comment)/",
 		wantServices:        wire.SFNodeNetwork,
-		wantProtocolVersion: wire.RejectVersion,
+		wantProtocolVersion: wire.ProtocolVersion,
 		wantConnected:       true,
 		wantVersionKnown:    true,
 		wantVerAckReceived:  true,
@@ -808,9 +809,9 @@ func TestUnsupportedVersionPeer(t *testing.T) {
 		t.Fatal("Peer did not send version message")
 	}
 
-	// Remote peer writes version message advertising invalid protocol version 1
+	// Remote peer writes version message advertising invalid protocol version 0
 	invalidVersionMsg := wire.NewMsgVersion(remoteNA, localNA, 0, 0, &wire.SubnetworkIDSupportsAll)
-	invalidVersionMsg.ProtocolVersion = 1
+	invalidVersionMsg.ProtocolVersion = 0
 
 	_, err = wire.WriteMessageN(
 		remoteConn.Writer,

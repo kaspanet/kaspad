@@ -194,13 +194,13 @@ func startService() error {
 
 	service, err := serviceManager.OpenService(svcName)
 	if err != nil {
-		return fmt.Errorf("could not access service: %v", err)
+		return fmt.Errorf("could not access service: %s", err)
 	}
 	defer service.Close()
 
 	err = service.Start(os.Args)
 	if err != nil {
-		return fmt.Errorf("could not start service: %v", err)
+		return fmt.Errorf("could not start service: %s", err)
 	}
 
 	return nil
@@ -219,13 +219,13 @@ func controlService(c svc.Cmd, to svc.State) error {
 
 	service, err := serviceManager.OpenService(svcName)
 	if err != nil {
-		return fmt.Errorf("could not access service: %v", err)
+		return fmt.Errorf("could not access service: %s", err)
 	}
 	defer service.Close()
 
 	status, err := service.Control(c)
 	if err != nil {
-		return fmt.Errorf("could not send control=%d: %v", c, err)
+		return fmt.Errorf("could not send control=%d: %s", c, err)
 	}
 
 	// Send the control message.
@@ -239,7 +239,7 @@ func controlService(c svc.Cmd, to svc.State) error {
 		status, err = service.Query()
 		if err != nil {
 			return fmt.Errorf("could not retrieve service "+
-				"status: %v", err)
+				"status: %s", err)
 		}
 	}
 
@@ -294,7 +294,7 @@ func serviceMain() (bool, error) {
 
 	err = svc.Run(svcName, &btcdService{})
 	if err != nil {
-		elog.Error(1, fmt.Sprintf("Service start failed: %v", err))
+		elog.Error(1, fmt.Sprintf("Service start failed: %s", err))
 		return true, err
 	}
 

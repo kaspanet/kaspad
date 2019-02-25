@@ -12,15 +12,9 @@ import (
 )
 
 // maxNetAddressPayload returns the max payload size for a bitcoin NetAddress
-// based on the protocol version.
 func maxNetAddressPayload() uint32 {
-	// Services 8 bytes + ip 16 bytes + port 2 bytes.
-	plen := uint32(26)
-
-	// Timestamp 8 bytes.
-	plen += 8
-
-	return plen
+	// Services 8 bytes + ip 16 bytes + port 2 bytes + timestamp 8 bytes.
+	return uint32(34)
 }
 
 // NetAddress defines information about a peer on the network including the time

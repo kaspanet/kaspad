@@ -231,7 +231,7 @@ func (c *Client) handleNotification(ntfn *rawNotification) {
 		blockHash, blockHeight, blockTime, err := parseChainNtfnParams(ntfn.Params)
 		if err != nil {
 			log.Warnf("Received invalid block connected "+
-				"notification: %v", err)
+				"notification: %s", err)
 			return
 		}
 
@@ -249,7 +249,7 @@ func (c *Client) handleNotification(ntfn *rawNotification) {
 			parseFilteredBlockConnectedParams(ntfn.Params)
 		if err != nil {
 			log.Warnf("Received invalid filtered block "+
-				"connected notification: %v", err)
+				"connected notification: %s", err)
 			return
 		}
 
@@ -267,7 +267,7 @@ func (c *Client) handleNotification(ntfn *rawNotification) {
 		blockHash, blockHeight, blockTime, err := parseChainNtfnParams(ntfn.Params)
 		if err != nil {
 			log.Warnf("Received invalid block connected "+
-				"notification: %v", err)
+				"notification: %s", err)
 			return
 		}
 
@@ -285,7 +285,7 @@ func (c *Client) handleNotification(ntfn *rawNotification) {
 			parseFilteredBlockDisconnectedParams(ntfn.Params)
 		if err != nil {
 			log.Warnf("Received invalid filtered block "+
-				"disconnected notification: %v", err)
+				"disconnected notification: %s", err)
 			return
 		}
 
@@ -302,7 +302,7 @@ func (c *Client) handleNotification(ntfn *rawNotification) {
 
 		tx, block, err := parseChainTxNtfnParams(ntfn.Params)
 		if err != nil {
-			log.Warnf("Received invalid recvtx notification: %v",
+			log.Warnf("Received invalid recvtx notification: %s",
 				err)
 			return
 		}
@@ -320,7 +320,7 @@ func (c *Client) handleNotification(ntfn *rawNotification) {
 		tx, block, err := parseChainTxNtfnParams(ntfn.Params)
 		if err != nil {
 			log.Warnf("Received invalid redeemingtx "+
-				"notification: %v", err)
+				"notification: %s", err)
 			return
 		}
 
@@ -337,7 +337,7 @@ func (c *Client) handleNotification(ntfn *rawNotification) {
 		transaction, err := parseRelevantTxAcceptedParams(ntfn.Params)
 		if err != nil {
 			log.Warnf("Received invalid relevanttxaccepted "+
-				"notification: %v", err)
+				"notification: %s", err)
 			return
 		}
 
@@ -354,7 +354,7 @@ func (c *Client) handleNotification(ntfn *rawNotification) {
 		hash, height, blkTime, err := parseRescanProgressParams(ntfn.Params)
 		if err != nil {
 			log.Warnf("Received invalid rescanfinished "+
-				"notification: %v", err)
+				"notification: %s", err)
 			return
 		}
 
@@ -371,7 +371,7 @@ func (c *Client) handleNotification(ntfn *rawNotification) {
 		hash, height, blkTime, err := parseRescanProgressParams(ntfn.Params)
 		if err != nil {
 			log.Warnf("Received invalid rescanprogress "+
-				"notification: %v", err)
+				"notification: %s", err)
 			return
 		}
 
@@ -388,7 +388,7 @@ func (c *Client) handleNotification(ntfn *rawNotification) {
 		hash, amt, err := parseTxAcceptedNtfnParams(ntfn.Params)
 		if err != nil {
 			log.Warnf("Received invalid tx accepted "+
-				"notification: %v", err)
+				"notification: %s", err)
 			return
 		}
 
@@ -405,7 +405,7 @@ func (c *Client) handleNotification(ntfn *rawNotification) {
 		rawTx, err := parseTxAcceptedVerboseNtfnParams(ntfn.Params)
 		if err != nil {
 			log.Warnf("Received invalid tx accepted verbose "+
-				"notification: %v", err)
+				"notification: %s", err)
 			return
 		}
 
@@ -422,7 +422,7 @@ func (c *Client) handleNotification(ntfn *rawNotification) {
 		connected, err := parseBtcdConnectedNtfnParams(ntfn.Params)
 		if err != nil {
 			log.Warnf("Received invalid btcd connected "+
-				"notification: %v", err)
+				"notification: %s", err)
 			return
 		}
 
@@ -439,7 +439,7 @@ func (c *Client) handleNotification(ntfn *rawNotification) {
 		account, bal, conf, err := parseAccountBalanceNtfnParams(ntfn.Params)
 		if err != nil {
 			log.Warnf("Received invalid account balance "+
-				"notification: %v", err)
+				"notification: %s", err)
 			return
 		}
 
@@ -458,7 +458,7 @@ func (c *Client) handleNotification(ntfn *rawNotification) {
 		_, locked, err := parseWalletLockStateNtfnParams(ntfn.Params)
 		if err != nil {
 			log.Warnf("Received invalid wallet lock state "+
-				"notification: %v", err)
+				"notification: %s", err)
 			return
 		}
 

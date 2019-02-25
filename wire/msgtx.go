@@ -317,15 +317,38 @@ func (msg *MsgTx) IsCoinBase() bool {
 	return prevOut.Index == math.MaxUint32 && prevOut.TxID == daghash.ZeroTxID
 }
 
+// IsFeeTransaction determines whether or not a transaction is a fee transaction.  A fee
+// transaction is a special transaction created by miners that distributes fees to the
+// previous blocks' miners.  Each input of the fee transaction should set index to maximum
+// value and reference the relevant block id, instead of previous transaction id.
+func (msg *MsgTx) IsFeeTransaction() bool {
+	for _, txIn := range msg.TxIn {
+		// The previous output of a fee transaction have a max value index and
+		// a non-zero TxID (to differentiate from coinbase).
+		prevOut := txIn.PreviousOutPoint
+		if prevOut.Index != math.MaxUint32 || prevOut.TxID == daghash.ZeroTxID {
+			return false
+		}
+	}
+	return true
+}
+
+// IsBlockReward determines whether or not a transaction is a block reward (a fee transaction or a coinbase)
+func (msg *MsgTx) IsBlockReward() bool {
+	return msg.IsFeeTransaction() || msg.IsCoinBase()
+}
+
 // TxHash generates the Hash for the transaction.
-func (msg *MsgTx) TxHash() daghash.Hash {
+func (msg *MsgTx) TxHash() *daghash.Hash {
 	// Encode the transaction and calculate double sha256 on the result.
 	// Ignore the error returns since the only way the encode could fail
 	// is being out of memory or due to nil pointers, both of which would
 	// cause a run-time panic.
 	buf := bytes.NewBuffer(make([]byte, 0, msg.SerializeSize()))
 	_ = msg.Serialize(buf)
-	return daghash.DoubleHashH(buf.Bytes())
+
+	hash := daghash.Hash(daghash.DoubleHashH(buf.Bytes()))
+	return &hash
 }
 
 // TxID generates the Hash for the transaction without the signature script, gas and payload fields.
@@ -524,7 +547,7 @@ func (msg *MsgTx) BtcDecode(r io.Reader, pver uint32) error {
 	}
 
 	if msg.SubnetworkID == SubnetworkIDSupportsAll {
-		str := fmt.Sprintf("%v is a reserved sub network and cannot be used as part of a transaction", msg.SubnetworkID)
+		str := fmt.Sprintf("%s is a reserved sub network and cannot be used as part of a transaction", msg.SubnetworkID)
 		return messageError("MsgTx.BtcDecode", str)
 	}
 
@@ -666,7 +689,7 @@ func (msg *MsgTx) encode(w io.Writer, pver uint32, encodingFlags txEncoding) err
 
 	if msg.SubnetworkID != SubnetworkIDNative {
 		if msg.SubnetworkID == SubnetworkIDRegistry && msg.Gas != 0 {
-			str := fmt.Sprintf("Transactions from subnetwork %v should have 0 gas", msg.SubnetworkID)
+			str := fmt.Sprintf("Transactions from subnetwork %s should have 0 gas", msg.SubnetworkID)
 			return messageError("MsgTx.BtcEncode", str)
 		}
 
@@ -685,10 +708,10 @@ func (msg *MsgTx) encode(w io.Writer, pver uint32, encodingFlags txEncoding) err
 			return err
 		}
 	} else if msg.Payload != nil {
-		str := fmt.Sprintf("Transactions from subnetwork %v should have <nil> payload", msg.SubnetworkID)
+		str := fmt.Sprintf("Transactions from subnetwork %s should have <nil> payload", msg.SubnetworkID)
 		return messageError("MsgTx.BtcEncode", str)
 	} else if msg.Gas != 0 {
-		str := fmt.Sprintf("Transactions from subnetwork %v should have 0 gas", msg.SubnetworkID)
+		str := fmt.Sprintf("Transactions from subnetwork %s should have 0 gas", msg.SubnetworkID)
 		return messageError("MsgTx.BtcEncode", str)
 	}
 

@@ -14,6 +14,7 @@ import (
 	"runtime"
 	"runtime/debug"
 	"runtime/pprof"
+	"strings"
 
 	"github.com/daglabs/btcd/blockdag/indexers"
 	"github.com/daglabs/btcd/config"
@@ -78,7 +79,7 @@ func btcdMain(serverChan chan<- *server.Server) error {
 			profileRedirect := http.RedirectHandler("/debug/pprof",
 				http.StatusSeeOther)
 			http.Handle("/", profileRedirect)
-			btcdLog.Errorf("%v", http.ListenAndServe(listenAddr, nil))
+			btcdLog.Errorf("%s", http.ListenAndServe(listenAddr, nil))
 		}()
 	}
 
@@ -86,7 +87,7 @@ func btcdMain(serverChan chan<- *server.Server) error {
 	if cfg.CPUProfile != "" {
 		f, err := os.Create(cfg.CPUProfile)
 		if err != nil {
-			btcdLog.Errorf("Unable to create cpu profile: %v", err)
+			btcdLog.Errorf("Unable to create cpu profile: %s", err)
 			return err
 		}
 		pprof.StartCPUProfile(f)
@@ -96,7 +97,7 @@ func btcdMain(serverChan chan<- *server.Server) error {
 
 	// Perform upgrades to btcd as new versions require it.
 	if err := doUpgrades(); err != nil {
-		btcdLog.Errorf("%v", err)
+		btcdLog.Errorf("%s", err)
 		return err
 	}
 
@@ -108,7 +109,7 @@ func btcdMain(serverChan chan<- *server.Server) error {
 	// Load the block database.
 	db, err := loadBlockDB()
 	if err != nil {
-		btcdLog.Errorf("%v", err)
+		btcdLog.Errorf("%s", err)
 		return err
 	}
 	defer func() {
@@ -128,7 +129,7 @@ func btcdMain(serverChan chan<- *server.Server) error {
 	// drops the address index since it relies on it.
 	if cfg.DropAddrIndex {
 		if err := indexers.DropAddrIndex(db, interrupt); err != nil {
-			btcdLog.Errorf("%v", err)
+			btcdLog.Errorf("%s", err)
 			return err
 		}
 
@@ -136,7 +137,7 @@ func btcdMain(serverChan chan<- *server.Server) error {
 	}
 	if cfg.DropTxIndex {
 		if err := indexers.DropTxIndex(db, interrupt); err != nil {
-			btcdLog.Errorf("%v", err)
+			btcdLog.Errorf("%s", err)
 			return err
 		}
 
@@ -144,7 +145,7 @@ func btcdMain(serverChan chan<- *server.Server) error {
 	}
 	if cfg.DropCfIndex {
 		if err := indexers.DropCfIndex(db, interrupt); err != nil {
-			btcdLog.Errorf("%v", err)
+			btcdLog.Errorf("%s", err)
 			return err
 		}
 
@@ -156,8 +157,8 @@ func btcdMain(serverChan chan<- *server.Server) error {
 		interrupt)
 	if err != nil {
 		// TODO: this logging could do with some beautifying.
-		btcdLog.Errorf("Unable to start server on %v: %v",
-			cfg.Listeners, err)
+		btcdLog.Errorf("Unable to start server on %s: %s",
+			strings.Join(cfg.Listeners, ", "), err)
 		return err
 	}
 	defer func() {
@@ -244,9 +245,9 @@ func warnMultipleDBs() {
 		btcdLog.Warnf("WARNING: There are multiple block chain databases "+
 			"using different database types.\nYou probably don't "+
 			"want to waste disk space by having more than one.\n"+
-			"Your current database is located at [%v].\nThe "+
-			"additional database is located at %v", selectedDbPath,
-			duplicateDbPaths)
+			"Your current database is located at [%s].\nThe "+
+			"additional database is located at %s", selectedDbPath,
+			strings.Join(duplicateDbPaths, ", "))
 	}
 }
 
@@ -315,7 +316,7 @@ func main() {
 
 	// Up some limits.
 	if err := limits.SetLimits(); err != nil {
-		fmt.Fprintf(os.Stderr, "failed to set limits: %v\n", err)
+		fmt.Fprintf(os.Stderr, "failed to set limits: %s\n", err)
 		os.Exit(1)
 	}
 

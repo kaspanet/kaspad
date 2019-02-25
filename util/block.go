@@ -17,10 +17,16 @@ import (
 // of range.
 type OutOfRangeError string
 
-// BlockHeightUnknown is the value returned for a block height that is unknown.
-// This is typically because the block has not been inserted into the main chain
-// yet.
-const BlockHeightUnknown = int32(-1)
+const (
+	// BlockHeightUnknown is the value returned for a block height that is unknown.
+	// This is typically because the block has not been inserted into the main chain
+	// yet.
+	BlockHeightUnknown = int32(-1)
+
+	// FeeTransactionIndex is the index of the fee transaction in every block (except genesis,
+	// which doesn't have a fee transaction)
+	FeeTransactionIndex = 1
+)
 
 // Error satisfies the error interface and prints human-readable errors.
 func (e OutOfRangeError) Error() string {
@@ -192,6 +198,21 @@ func (b *Block) Height() int32 {
 // SetHeight sets the height of the block in the block chain.
 func (b *Block) SetHeight(height int32) {
 	b.blockHeight = height
+}
+
+// IsGenesis returns whether or not this block is the genesis block.
+func (b *Block) IsGenesis() bool {
+	return b.MsgBlock().Header.IsGenesis()
+}
+
+// FeeTransaction returns this block's fee transaction
+// If this block is a genesis block, it has no fee transaction, and therefore
+// nil is returned.
+func (b *Block) FeeTransaction() *Tx {
+	if b.IsGenesis() {
+		return nil
+	}
+	return b.Transactions()[FeeTransactionIndex]
 }
 
 // NewBlock returns a new instance of a bitcoin block given an underlying

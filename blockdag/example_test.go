@@ -6,10 +6,11 @@ package blockdag_test
 
 import (
 	"fmt"
-	"github.com/daglabs/btcd/wire"
 	"math/big"
 	"os"
 	"path/filepath"
+
+	"github.com/daglabs/btcd/wire"
 
 	"github.com/daglabs/btcd/blockdag"
 	"github.com/daglabs/btcd/dagconfig"
@@ -70,7 +71,7 @@ func ExampleBlockDAG_ProcessBlock() {
 	fmt.Printf("Block accepted. Is it an orphan?: %v", isOrphan)
 
 	// Output:
-	// Failed to process block: already have block ccc309e79328f036bdd6964adbed68ff374cfb878c7a797c0aae3fec4bf9b853
+	// Failed to process block: already have block 4f0fbe497b98f0ab3dd92a3be968d5c7623cbaa844ff9f19e2b94756337eb0b8
 }
 
 // This example demonstrates how to convert the compact "bits" in a block header

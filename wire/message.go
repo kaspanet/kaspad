@@ -230,7 +230,7 @@ func WriteMessageN(w io.Writer, msg Message, pver uint32, btcnet BitcoinNet) (in
 	var command [CommandSize]byte
 	cmd := msg.Command()
 	if len(cmd) > CommandSize {
-		str := fmt.Sprintf("command [%s] is too long [max %v]",
+		str := fmt.Sprintf("command [%s] is too long [max %d]",
 			cmd, CommandSize)
 		return totalBytes, messageError("WriteMessage", str)
 	}
@@ -323,7 +323,7 @@ func ReadMessageN(r io.Reader, pver uint32, btcnet BitcoinNet) (int, Message, []
 	// Check for messages from the wrong bitcoin network.
 	if hdr.magic != btcnet {
 		discardInput(r, hdr.length)
-		str := fmt.Sprintf("message from other network [%v]", hdr.magic)
+		str := fmt.Sprintf("message from other network [%s]", hdr.magic)
 		return totalBytes, nil, nil, messageError("ReadMessage", str)
 	}
 
@@ -331,7 +331,7 @@ func ReadMessageN(r io.Reader, pver uint32, btcnet BitcoinNet) (int, Message, []
 	command := hdr.command
 	if !utf8.ValidString(command) {
 		discardInput(r, hdr.length)
-		str := fmt.Sprintf("invalid command %v", []byte(command))
+		str := fmt.Sprintf("invalid command %d", []byte(command))
 		return totalBytes, nil, nil, messageError("ReadMessage", str)
 	}
 
@@ -350,8 +350,8 @@ func ReadMessageN(r io.Reader, pver uint32, btcnet BitcoinNet) (int, Message, []
 	if hdr.length > mpl {
 		discardInput(r, hdr.length)
 		str := fmt.Sprintf("payload exceeds max length - header "+
-			"indicates %v bytes, but max payload size for "+
-			"messages of type [%v] is %v.", hdr.length, command, mpl)
+			"indicates %d bytes, but max payload size for "+
+			"messages of type [%s] is %d.", hdr.length, command, mpl)
 		return totalBytes, nil, nil, messageError("ReadMessage", str)
 	}
 
@@ -367,7 +367,7 @@ func ReadMessageN(r io.Reader, pver uint32, btcnet BitcoinNet) (int, Message, []
 	checksum := daghash.DoubleHashB(payload)[0:4]
 	if !bytes.Equal(checksum[:], hdr.checksum[:]) {
 		str := fmt.Sprintf("payload checksum failed - header "+
-			"indicates %v, but actual checksum is %v.",
+			"indicates %x, but actual checksum is %x.",
 			hdr.checksum, checksum)
 		return totalBytes, nil, nil, messageError("ReadMessage", str)
 	}

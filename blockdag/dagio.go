@@ -132,7 +132,7 @@ func dbPutVersion(dbTx database.Tx, key []byte, version uint32) error {
 //     compressed script  []byte   variable
 //
 // The serialized header code format is:
-//   bit 0 - containing transaction is a coinbase
+//   bit 0 - containing transaction is a block reward
 //   bits 1-x - height of the block that contains the unspent txout
 //
 // Example 1:
@@ -223,10 +223,10 @@ func recycleOutpointKey(key *[]byte) {
 func utxoEntryHeaderCode(entry *UTXOEntry) uint64 {
 
 	// As described in the serialization format comments, the header code
-	// encodes the height shifted over one bit and the coinbase flag in the
+	// encodes the height shifted over one bit and the block reward flag in the
 	// lowest bit.
 	headerCode := uint64(entry.BlockHeight()) << 1
-	if entry.IsCoinBase() {
+	if entry.IsBlockReward() {
 		headerCode |= 0x01
 	}
 
@@ -280,16 +280,16 @@ func deserializeUTXOEntry(serialized []byte) (*UTXOEntry, error) {
 
 	// Decode the header code.
 	//
-	// Bit 0 indicates whether the containing transaction is a coinbase.
+	// Bit 0 indicates whether the containing transaction is a block reward.
 	// Bits 1-x encode height of containing transaction.
-	isCoinBase := code&0x01 != 0
+	isBlockReward := code&0x01 != 0
 	blockHeight := int32(code >> 1)
 
 	// Decode the compressed unspent transaction output.
 	amount, pkScript, _, err := decodeCompressedTxOut(serialized[offset:])
 	if err != nil {
 		return nil, errDeserialize(fmt.Sprintf("unable to decode "+
-			"UTXO: %v", err))
+			"UTXO: %s", err))
 	}
 
 	entry := &UTXOEntry{
@@ -298,8 +298,8 @@ func deserializeUTXOEntry(serialized []byte) (*UTXOEntry, error) {
 		blockHeight: blockHeight,
 		packedFlags: 0,
 	}
-	if isCoinBase {
-		entry.packedFlags |= tfCoinBase
+	if isBlockReward {
+		entry.packedFlags |= tfBlockReward
 	}
 
 	return entry, nil
@@ -433,36 +433,10 @@ func dbPutDAGState(dbTx database.Tx, state *dagState) error {
 }
 
 // createDAGState initializes both the database and the DAG state to the
-// genesis block.  This includes creating the necessary buckets and inserting
-// the genesis block, so it must only be called on an uninitialized database.
+// genesis block.  This includes creating the necessary buckets, so it
+// must only be called on an uninitialized database.
 func (dag *BlockDAG) createDAGState() error {
-	// Create a new node from the genesis block and set it as the DAG.
-	genesisBlock := util.NewBlock(dag.dagParams.GenesisBlock)
-	genesisBlock.SetHeight(0)
-	header := &genesisBlock.MsgBlock().Header
-	node := newBlockNode(header, newSet(), dag.dagParams.K)
-	node.status = statusDataStored | statusValid
-
-	genesisCoinbase := genesisBlock.Transactions()[0].MsgTx()
-	genesisCoinbaseTxIn := genesisCoinbase.TxIn[0]
-	genesisCoinbaseTxOut := genesisCoinbase.TxOut[0]
-	genesisCoinbaseOutpoint := *wire.NewOutPoint(&genesisCoinbaseTxIn.PreviousOutPoint.TxID, genesisCoinbaseTxIn.PreviousOutPoint.Index)
-	genesisCoinbaseUTXOEntry := NewUTXOEntry(genesisCoinbaseTxOut, true, 0)
-	node.diff = &UTXODiff{
-		toAdd:    utxoCollection{genesisCoinbaseOutpoint: genesisCoinbaseUTXOEntry},
-		toRemove: utxoCollection{},
-	}
-
-	dag.virtual.utxoSet.AddTx(genesisCoinbase, 0)
-	dag.virtual.SetTips(setFromSlice(node))
-
-	// Add the new node to the index which is used for faster lookups.
-	dag.index.addNode(node)
-
-	// Initiate the last finality point to the genesis block
-	dag.lastFinalityPoint = node
-
-	// Create the initial the database chain state including creating the
+	// Create the initial the database DAG state including creating the
 	// necessary index buckets and inserting the genesis block.
 	err := dag.db.Update(func(dbTx database.Tx) error {
 		meta := dbTx.Metadata()
@@ -506,35 +480,13 @@ func (dag *BlockDAG) createDAGState() error {
 		if err != nil {
 			return err
 		}
-
-		// Save the genesis block to the block index database.
-		err = dbStoreBlockNode(dbTx, node)
-		if err != nil {
-			return err
-		}
-
-		// Add the genesis block hash to height and height to hash
-		// mappings to the index.
-		err = dbPutBlockIndex(dbTx, &node.hash, node.height)
-		if err != nil {
-			return err
-		}
-
-		// Store the current DAG state into the database.
-		state := &dagState{
-			TipHashes:         dag.TipHashes(),
-			LastFinalityPoint: *genesisBlock.Hash(),
-		}
-		err = dbPutDAGState(dbTx, state)
-		if err != nil {
-			return err
-		}
-
-		// Store the genesis block into the database.
-		return dbStoreBlock(dbTx, genesisBlock)
+		return nil
 	})
 
-	return err
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // initDAGState attempts to load and initialize the DAG state from the
@@ -662,7 +614,7 @@ func (dag *BlockDAG) initDAGState() error {
 				if isDeserializeErr(err) {
 					return database.Error{
 						ErrorCode:   database.ErrCorruption,
-						Description: fmt.Sprintf("corrupt outPoint: %v", err),
+						Description: fmt.Sprintf("corrupt outPoint: %s", err),
 					}
 				}
 
@@ -677,7 +629,7 @@ func (dag *BlockDAG) initDAGState() error {
 				if isDeserializeErr(err) {
 					return database.Error{
 						ErrorCode:   database.ErrCorruption,
-						Description: fmt.Sprintf("corrupt utxo entry: %v", err),
+						Description: fmt.Sprintf("corrupt utxo entry: %s", err),
 					}
 				}
 

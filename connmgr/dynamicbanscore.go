@@ -70,7 +70,7 @@ type DynamicBanScore struct {
 // String returns the ban score as a human-readable string.
 func (s *DynamicBanScore) String() string {
 	s.mtx.Lock()
-	r := fmt.Sprintf("persistent %v + transient %v at %v = %v as of now",
+	r := fmt.Sprintf("persistent %d + transient %f at %d = %d as of now",
 		s.persistent, s.transient, s.lastUnix, s.Int())
 	s.mtx.Unlock()
 	return r

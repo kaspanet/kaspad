@@ -55,38 +55,6 @@ func TestGetAddrWire(t *testing.T) {
 			msgGetAddrEncoded,
 			ProtocolVersion,
 		},
-
-		// Protocol version BIP0035Version.
-		{
-			msgGetAddr,
-			msgGetAddr,
-			msgGetAddrEncoded,
-			BIP0035Version,
-		},
-
-		// Protocol version BIP0031Version.
-		{
-			msgGetAddr,
-			msgGetAddr,
-			msgGetAddrEncoded,
-			BIP0031Version,
-		},
-
-		// Protocol version NetAddressTimeVersion.
-		{
-			msgGetAddr,
-			msgGetAddr,
-			msgGetAddrEncoded,
-			NetAddressTimeVersion,
-		},
-
-		// Protocol version MultipleAddressVersion.
-		{
-			msgGetAddr,
-			msgGetAddr,
-			msgGetAddrEncoded,
-			MultipleAddressVersion,
-		},
 	}
 
 	t.Logf("Running %d tests", len(tests))

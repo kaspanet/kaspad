@@ -314,7 +314,7 @@ func (c *Client) handleMessage(msg []byte) {
 	in.rawNotification = new(rawNotification)
 	err := json.Unmarshal(msg, &in)
 	if err != nil {
-		log.Warnf("Remote server sent invalid message: %v", err)
+		log.Warnf("Remote server sent invalid message: %s", err)
 		return
 	}
 
@@ -414,7 +414,7 @@ out:
 			// Log the error if it's not due to disconnecting.
 			if c.shouldLogReadError(err) {
 				log.Errorf("Websocket receive error from "+
-					"%s: %v", c.config.Host, err)
+					"%s: %s", c.config.Host, err)
 			}
 			break out
 		}
@@ -515,7 +515,7 @@ func (c *Client) reregisterNtfns() error {
 
 	// Reregister notifynewtransactions if needed.
 	if stateCopy.notifyNewTx || stateCopy.notifyNewTxVerbose {
-		log.Debugf("Reregistering [notifynewtransactions] (verbose=%v)",
+		log.Debugf("Reregistering [notifynewtransactions] (verbose=%t)",
 			stateCopy.notifyNewTxVerbose)
 		err := c.NotifyNewTransactions(stateCopy.notifyNewTxVerbose, stateCopy.notifyNewTxSubnetworkID)
 		if err != nil {
@@ -567,7 +567,7 @@ func (c *Client) resendRequests() {
 	// Set the notification state back up.  If anything goes wrong,
 	// disconnect the client.
 	if err := c.reregisterNtfns(); err != nil {
-		log.Warnf("Unable to re-establish notification state: %v", err)
+		log.Warnf("Unable to re-establish notification state: %s", err)
 		c.Disconnect()
 		return
 	}
@@ -639,7 +639,7 @@ out:
 			wsConn, err := dial(c.config)
 			if err != nil {
 				c.retryCount++
-				log.Infof("Failed to connect to %s: %v",
+				log.Infof("Failed to connect to %s: %s",
 					c.config.Host, err)
 
 				// Scale the retry interval by the number of
@@ -702,7 +702,7 @@ func (c *Client) handleSendPostMessage(details *sendPostDetails) {
 	respBytes, err := ioutil.ReadAll(httpResponse.Body)
 	httpResponse.Body.Close()
 	if err != nil {
-		err = fmt.Errorf("error reading json reply: %v", err)
+		err = fmt.Errorf("error reading json reply: %s", err)
 		jReq.responseChan <- &response{err: err}
 		return
 	}

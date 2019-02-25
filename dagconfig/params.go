@@ -133,9 +133,9 @@ type Params struct {
 	// block in compact form.
 	PowLimitBits uint32
 
-	// CoinbaseMaturity is the number of blocks required before newly mined
-	// coins (coinbase transactions) can be spent.
-	CoinbaseMaturity uint16
+	// BlockRewardMaturity is the number of blocks required before newly mined
+	// coins (coinbase or fee transactions) can be spent.
+	BlockRewardMaturity uint16
 
 	// SubsidyReductionInterval is the interval of blocks before the subsidy
 	// is reduced.
@@ -229,7 +229,7 @@ var MainNetParams = Params{
 	GenesisHash:              &genesisHash,
 	PowLimit:                 mainPowLimit,
 	PowLimitBits:             0x207fffff,
-	CoinbaseMaturity:         100,
+	BlockRewardMaturity:      100,
 	SubsidyReductionInterval: 210000,
 	TargetTimespan:           time.Hour * 24 * 14, // 14 days
 	TargetTimePerBlock:       time.Second * 10,    // 10 seconds
@@ -288,7 +288,7 @@ var RegressionNetParams = Params{
 	GenesisHash:              &regTestGenesisHash,
 	PowLimit:                 regressionPowLimit,
 	PowLimitBits:             0x207fffff,
-	CoinbaseMaturity:         100,
+	BlockRewardMaturity:      100,
 	SubsidyReductionInterval: 150,
 	TargetTimespan:           time.Hour * 24 * 14, // 14 days
 	TargetTimePerBlock:       time.Second * 10,    // 10 seconds
@@ -352,7 +352,7 @@ var TestNet3Params = Params{
 	GenesisHash:              &testNet3GenesisHash,
 	PowLimit:                 testNet3PowLimit,
 	PowLimitBits:             0x207fffff,
-	CoinbaseMaturity:         100,
+	BlockRewardMaturity:      100,
 	SubsidyReductionInterval: 210000,
 	TargetTimespan:           time.Hour * 24 * 14, // 14 days
 	TargetTimePerBlock:       time.Second * 10,    // 10 seconds
@@ -415,7 +415,7 @@ var SimNetParams = Params{
 	GenesisHash:              &simNetGenesisHash,
 	PowLimit:                 simNetPowLimit,
 	PowLimitBits:             0x207fffff,
-	CoinbaseMaturity:         100,
+	BlockRewardMaturity:      100,
 	SubsidyReductionInterval: 210000,
 	TargetTimespan:           time.Hour * 24 * 14, // 14 days
 	TargetTimePerBlock:       time.Second * 10,    // 10 seconds

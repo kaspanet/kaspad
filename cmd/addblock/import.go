@@ -133,7 +133,7 @@ func (bi *blockImporter) processBlock(serializedBlock []byte) (bool, error) {
 	}
 	if isOrphan {
 		return false, fmt.Errorf("import file contains an orphan "+
-			"block: %v", blockHash)
+			"block: %s", blockHash)
 	}
 
 	return true, nil
@@ -150,7 +150,7 @@ out:
 		serializedBlock, err := bi.readBlock()
 		if err != nil {
 			bi.errChan <- fmt.Errorf("Error reading from input "+
-				"file: %v", err.Error())
+				"file: %s", err.Error())
 			break out
 		}
 

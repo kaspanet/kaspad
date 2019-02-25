@@ -8,6 +8,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+
 	"github.com/daglabs/btcd/btcec"
 	"github.com/daglabs/btcd/util/bech32"
 	"golang.org/x/crypto/ripemd160"
@@ -67,7 +68,7 @@ var stringsToBech32Prefixes = map[string]Bech32Prefix{
 func ParsePrefix(prefixString string) (Bech32Prefix, error) {
 	prefix, ok := stringsToBech32Prefixes[prefixString]
 	if !ok {
-		return Bech32PrefixUnknown, fmt.Errorf("could not parse prefix %v", prefixString)
+		return Bech32PrefixUnknown, fmt.Errorf("could not parse prefix %s", prefixString)
 	}
 
 	return prefix, nil
@@ -131,15 +132,15 @@ type Address interface {
 func DecodeAddress(addr string, defaultPrefix Bech32Prefix) (Address, error) {
 	prefixString, decoded, version, err := bech32.Decode(addr)
 	if err != nil {
-		return nil, fmt.Errorf("decoded address is of unknown format: %v", err)
+		return nil, fmt.Errorf("decoded address is of unknown format: %s", err)
 	}
 
 	prefix, err := ParsePrefix(prefixString)
 	if err != nil {
-		return nil, fmt.Errorf("decoded address's prefix could not be parsed: %v", err)
+		return nil, fmt.Errorf("decoded address's prefix could not be parsed: %s", err)
 	}
 	if defaultPrefix != prefix {
-		return nil, fmt.Errorf("decoded address is of wrong network: %v", err)
+		return nil, fmt.Errorf("decoded address is of wrong network: %s", err)
 	}
 
 	// Switch on decoded length to determine the type.

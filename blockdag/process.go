@@ -104,7 +104,7 @@ func (dag *BlockDAG) processOrphans(hash *daghash.Hash, flags BehaviorFlags) err
 			orphan := dag.prevOrphans[*processHash][i]
 			if orphan == nil {
 				log.Warnf("Found a nil entry at index %d in the "+
-					"orphan dependency list for block %v", i,
+					"orphan dependency list for block %s", i,
 					processHash)
 				continue
 			}
@@ -145,7 +145,7 @@ func (dag *BlockDAG) ProcessBlock(block *util.Block, flags BehaviorFlags) (bool,
 	fastAdd := flags&BFFastAdd == BFFastAdd
 
 	blockHash := block.Hash()
-	log.Tracef("Processing block %v", blockHash)
+	log.Tracef("Processing block %s", blockHash)
 
 	// The block must not already exist in the main chain or side chains.
 	exists, err := dag.blockExists(blockHash)
@@ -153,13 +153,13 @@ func (dag *BlockDAG) ProcessBlock(block *util.Block, flags BehaviorFlags) (bool,
 		return false, err
 	}
 	if exists {
-		str := fmt.Sprintf("already have block %v", blockHash)
+		str := fmt.Sprintf("already have block %s", blockHash)
 		return false, ruleError(ErrDuplicateBlock, str)
 	}
 
 	// The block must not already exist as an orphan.
 	if _, exists := dag.orphans[*blockHash]; exists {
-		str := fmt.Sprintf("already have block (orphan) %v", blockHash)
+		str := fmt.Sprintf("already have block (orphan) %s", blockHash)
 		return false, ruleError(ErrDuplicateBlock, str)
 	}
 
@@ -184,8 +184,8 @@ func (dag *BlockDAG) ProcessBlock(block *util.Block, flags BehaviorFlags) (bool,
 		// Ensure the block timestamp is after the checkpoint timestamp.
 		checkpointTime := time.Unix(checkpointNode.timestamp, 0)
 		if blockHeader.Timestamp.Before(checkpointTime) {
-			str := fmt.Sprintf("block %v has timestamp %v before "+
-				"last checkpoint timestamp %v", blockHash,
+			str := fmt.Sprintf("block %s has timestamp %s before "+
+				"last checkpoint timestamp %s", blockHash,
 				blockHeader.Timestamp, checkpointTime)
 			return false, ruleError(ErrCheckpointTimeTooOld, str)
 		}
@@ -218,7 +218,7 @@ func (dag *BlockDAG) ProcessBlock(block *util.Block, flags BehaviorFlags) (bool,
 		}
 
 		if !parentExists {
-			log.Infof("Adding orphan block %v with parent %v", blockHash, parentHash)
+			log.Infof("Adding orphan block %s with parent %s", blockHash, parentHash)
 			dag.addOrphanBlock(block)
 
 			allParentsExist = false
@@ -244,7 +244,7 @@ func (dag *BlockDAG) ProcessBlock(block *util.Block, flags BehaviorFlags) (bool,
 		return false, err
 	}
 
-	log.Debugf("Accepted block %v", blockHash)
+	log.Debugf("Accepted block %s", blockHash)
 
 	return false, nil
 }

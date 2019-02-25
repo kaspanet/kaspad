@@ -6,19 +6,22 @@ package blockdag
 
 import (
 	"errors"
+	"fmt"
+	"math"
 	"reflect"
 	"strings"
 	"testing"
 	"time"
 
 	"bou.ke/monkey"
-	"github.com/daglabs/btcd/database"
 
 	"math/rand"
 
 	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/dagconfig/daghash"
+	"github.com/daglabs/btcd/txscript"
 	"github.com/daglabs/btcd/util"
+	"github.com/daglabs/btcd/util/txsort"
 	"github.com/daglabs/btcd/wire"
 )
 
@@ -50,9 +53,9 @@ func TestBlockCount(t *testing.T) {
 	}
 	defer teardownFunc()
 
-	// Since we're not dealing with the real block DAG, set the coinbase
+	// Since we're not dealing with the real block DAG, set the block reward
 	// maturity to 1.
-	dag.TstSetCoinbaseMaturity(1)
+	dag.TestSetBlockRewardMaturity(1)
 
 	for i := 1; i < len(blocks); i++ {
 		isOrphan, err := dag.ProcessBlock(blocks[i], BFNone)
@@ -90,7 +93,7 @@ func TestHaveBlock(t *testing.T) {
 		blocks = append(blocks, blockTmp...)
 	}
 
-	// Create a new database and chain instance to run tests against.
+	// Create a new database and DAG instance to run tests against.
 	dag, teardownFunc, err := DAGSetup("haveblock", Config{
 		DAGParams:    &dagconfig.SimNetParams,
 		SubnetworkID: &wire.SubnetworkIDSupportsAll,
@@ -100,9 +103,9 @@ func TestHaveBlock(t *testing.T) {
 	}
 	defer teardownFunc()
 
-	// Since we're not dealing with the real block chain, set the coinbase
+	// Since we're not dealing with the real block DAG, set the block reward
 	// maturity to 1.
-	dag.TstSetCoinbaseMaturity(1)
+	dag.TestSetBlockRewardMaturity(1)
 
 	for i := 1; i < len(blocks); i++ {
 		isOrphan, err := dag.ProcessBlock(blocks[i], BFNone)
@@ -170,7 +173,7 @@ func TestHaveBlock(t *testing.T) {
 
 	// Insert an orphan block.
 	isOrphan, err = dag.ProcessBlock(util.NewBlock(&Block100000),
-		BFNone)
+		BFNoPoWCheck)
 	if err != nil {
 		t.Fatalf("Unable to process block: %v", err)
 	}
@@ -187,10 +190,10 @@ func TestHaveBlock(t *testing.T) {
 		{hash: dagconfig.SimNetParams.GenesisHash.String(), want: true},
 
 		// Block 3b should be present (as a second child of Block 2).
-		{hash: "4b89947c906a2a95fa9b4a4b4cb11a51f87cae2cfa2c9bcddfd45140a7e62e1f", want: true},
+		{hash: "08a3f0182ac8ff0326497f592d2e28b8b3b2b7e3fd77c7cb6f31ca872536cf7b", want: true},
 
 		// Block 100000 should be present (as an orphan).
-		{hash: "22accd0c0281c0776dc3b5d5957bae3f61290e1075f97c99cd347c38cc26555a", want: true},
+		{hash: "25d5494f3e1f895774c58034f1bd50f7b279e75db6007514affec8573ace4389", want: true},
 
 		// Random hashes should not be available.
 		{hash: "123", want: false},
@@ -768,10 +771,11 @@ func TestIntervalBlockHashes(t *testing.T) {
 	}
 }
 
-// TestPastUTXOErrors tests all error-cases in restoreUTXO.
-// The non-error-cases are tested in the more general tests.
-func TestPastUTXOErrors(t *testing.T) {
-	targetErrorMessage := "dbFetchBlockByNode error"
+// TestApplyUTXOChangesErrors tests that
+// dag.applyUTXOChanges panics when unexpected
+// error occurs
+func TestApplyUTXOChangesPanic(t *testing.T) {
+	targetErrorMessage := "updateParents error"
 	defer func() {
 		if recover() == nil {
 			t.Errorf("Got no panic on past UTXO error, while expected panic")
@@ -780,9 +784,9 @@ func TestPastUTXOErrors(t *testing.T) {
 	testErrorThroughPatching(
 		t,
 		targetErrorMessage,
-		dbFetchBlockByNode,
-		func(dbTx database.Tx, node *blockNode) (*util.Block, error) {
-			return nil, errors.New(targetErrorMessage)
+		(*blockNode).updateParents,
+		func(_ *blockNode, _ *virtualBlock, _ UTXOSet) error {
+			return errors.New(targetErrorMessage)
 		},
 	)
 }
@@ -829,9 +833,9 @@ func testErrorThroughPatching(t *testing.T, expectedErrorMessage string, targetF
 	}
 	defer teardownFunc()
 
-	// Since we're not dealing with the real block chain, set the coinbase
+	// Since we're not dealing with the real block chain, set the block reward
 	// maturity to 1.
-	dag.TstSetCoinbaseMaturity(1)
+	dag.TestSetBlockRewardMaturity(1)
 
 	guard := monkey.Patch(targetFunction, replacementFunction)
 	defer guard.Unpatch()
@@ -845,6 +849,7 @@ func testErrorThroughPatching(t *testing.T, expectedErrorMessage string, targetF
 				"is an orphan\n", i)
 		}
 		if err != nil {
+			fmt.Printf("ERROR %v\n", err)
 			break
 		}
 	}
@@ -858,27 +863,10 @@ func testErrorThroughPatching(t *testing.T, expectedErrorMessage string, targetF
 	}
 }
 
-// TestFinality checks that the finality mechanism works as expected.
-// This is how the flow goes:
-// 1) We build a chain of finalityInterval blocks and call its tip altChainTip.
-// 2) We build another chain (let's call it mainChain) of 2 * finalityInterval
-// blocks, which points to genesis, and then we check that the block in that
-// chain with height of finalityInterval is marked as finality point (This is
-// very predictable, because the blue score of each new block in a chain is the
-// parents plus one).
-// 3) We make a new child to block with height (2 * finalityInterval - 1)
-// in mainChain, and we check that connecting it to the DAG
-// doesn't affect the last finality point.
-// 4) We make a block that points to genesis, and check that it
-// gets rejected because its blue score is lower then the last finality
-// point.
-// 5) We make a block that points to altChainTip, and check that it
-// gets rejected because it doesn't have the last finality point in
-// its selected parent chain.
-func TestFinality(t *testing.T) {
+func TestValidateFeeTransaction(t *testing.T) {
 	params := dagconfig.SimNetParams
 	params.K = 1
-	dag, teardownFunc, err := DAGSetup("TestFinality", Config{
+	dag, teardownFunc, err := DAGSetup("TestValidateFeeTransaction", Config{
 		DAGParams:    &params,
 		SubnetworkID: &wire.SubnetworkIDSupportsAll,
 	})
@@ -886,114 +874,370 @@ func TestFinality(t *testing.T) {
 		t.Fatalf("Failed to setup DAG instance: %v", err)
 	}
 	defer teardownFunc()
-	blockTime := time.Unix(dag.genesis.timestamp, 0)
 	extraNonce := int64(0)
-	buildNodeToDag := func(parents blockSet) (*blockNode, error) {
-		// We need to change the blockTime to keep all block hashes unique
-		blockTime = blockTime.Add(time.Second)
-
-		// We need to change the extraNonce to keep coinbase hashes unique
+	createCoinbase := func(pkScript []byte) *wire.MsgTx {
 		extraNonce++
-
-		bh := &wire.BlockHeader{
-			Version:      1,
-			Bits:         dag.genesis.bits,
-			ParentHashes: parents.hashes(),
-			Timestamp:    blockTime,
-		}
-		msgBlock := wire.NewMsgBlock(bh)
-		blockHeight := parents.maxHeight() + 1
-		coinbaseTx, err := createCoinbaseTxForTest(blockHeight, 1, extraNonce, dag.dagParams)
+		cbTx, err := createCoinbaseTxForTest(dag.Height()+1, 2, extraNonce, &params)
 		if err != nil {
-			return nil, err
+			t.Fatalf("createCoinbaseTxForTest: %v", err)
 		}
-		msgBlock.AddTransaction(coinbaseTx)
+		if pkScript != nil {
+			cbTx.TxOut[0].PkScript = pkScript
+		}
+		return cbTx
+	}
+
+	var flags BehaviorFlags
+	flags |= BFFastAdd | BFNoPoWCheck
+
+	buildBlock := func(blockName string, parentHashes []daghash.Hash, transactions []*wire.MsgTx, expectedErrorCode ErrorCode) *wire.MsgBlock {
+		utilTxs := make([]*util.Tx, len(transactions))
+		for i, tx := range transactions {
+			utilTxs[i] = util.NewTx(tx)
+		}
+		daghash.Sort(parentHashes)
+		msgBlock := &wire.MsgBlock{
+			Header: wire.BlockHeader{
+				Bits:           dag.genesis.Header().Bits,
+				ParentHashes:   parentHashes,
+				HashMerkleRoot: *BuildHashMerkleTreeStore(utilTxs).Root(),
+				IDMerkleRoot:   *BuildIDMerkleTreeStore(utilTxs).Root(),
+			},
+			Transactions: transactions,
+		}
 		block := util.NewBlock(msgBlock)
-
-		dag.dagLock.Lock()
-		defer dag.dagLock.Unlock()
-
-		err = dag.maybeAcceptBlock(block, BFNone)
-		if err != nil {
-			return nil, err
+		isOrphan, err := dag.ProcessBlock(block, flags)
+		if expectedErrorCode != 0 {
+			checkResult := checkRuleError(err, RuleError{
+				ErrorCode: expectedErrorCode,
+			})
+			if checkResult != nil {
+				t.Errorf("block %v: unexpected error code: %v", blockName, checkResult)
+			}
+		} else {
+			if err != nil {
+				t.Fatalf("block %v: unexpected error: %v", blockName, err)
+			}
+			if isOrphan {
+				t.Errorf("block %v unexpectely got orphaned", blockName)
+			}
 		}
-
-		return dag.index.LookupNode(block.Hash()), nil
+		return msgBlock
 	}
 
-	currentNode := dag.genesis
-
-	// First we build a chain of finalityInterval blocks for future use
-	for currentNode.blueScore < finalityInterval {
-		currentNode, err = buildNodeToDag(setFromSlice(currentNode))
-		if err != nil {
-			t.Fatalf("TestFinality: buildNodeToDag unexpectedly returned an error: %v", err)
-		}
+	cb1 := createCoinbase(nil)
+	blockWithExtraFeeTxTransactions := []*wire.MsgTx{
+		cb1,
+		{ // Fee Transaction
+			Version: 1,
+			TxIn: []*wire.TxIn{
+				{
+					PreviousOutPoint: wire.OutPoint{
+						TxID:  daghash.TxID(dag.genesis.hash),
+						Index: math.MaxUint32,
+					},
+					Sequence: wire.MaxTxInSequenceNum,
+				},
+			},
+			SubnetworkID: wire.SubnetworkIDNative,
+		},
+		{ // Extra Fee Transaction
+			TxIn: []*wire.TxIn{
+				{
+					PreviousOutPoint: wire.OutPoint{
+						TxID:  daghash.TxID(dag.genesis.hash),
+						Index: math.MaxUint32,
+					},
+					Sequence: wire.MaxTxInSequenceNum,
+				},
+			},
+			SubnetworkID: wire.SubnetworkIDNative,
+		},
 	}
+	buildBlock("blockWithExtraFeeTx", []daghash.Hash{dag.genesis.hash}, blockWithExtraFeeTxTransactions, ErrMultipleFeeTransactions)
 
-	altChainTip := currentNode
-
-	// Now we build a new chain of 2 * finalityInterval blocks, pointed to genesis, and
-	// we expect the block with height 1 * finalityInterval to be the last finality point
-	currentNode = dag.genesis
-	for currentNode.blueScore < finalityInterval {
-		currentNode, err = buildNodeToDag(setFromSlice(currentNode))
-		if err != nil {
-			t.Fatalf("TestFinality: buildNodeToDag unexpectedly returned an error: %v", err)
-		}
+	block1Txs := []*wire.MsgTx{
+		cb1,
+		{ // Fee Transaction
+			Version: 1,
+			TxIn: []*wire.TxIn{
+				{
+					PreviousOutPoint: wire.OutPoint{
+						TxID:  daghash.TxID(dag.genesis.hash),
+						Index: math.MaxUint32,
+					},
+					Sequence: wire.MaxTxInSequenceNum,
+				},
+			},
+			SubnetworkID: wire.SubnetworkIDNative,
+		},
 	}
+	block1 := buildBlock("block1", []daghash.Hash{dag.genesis.hash}, block1Txs, 0)
 
-	expectedFinalityPoint := currentNode
-
-	for currentNode.blueScore < 2*finalityInterval {
-		currentNode, err = buildNodeToDag(setFromSlice(currentNode))
-		if err != nil {
-			t.Fatalf("TestFinality: buildNodeToDag unexpectedly returned an error: %v", err)
-		}
+	cb1A := createCoinbase(nil)
+	block1ATxs := []*wire.MsgTx{
+		cb1A,
+		{ // Fee Transaction
+			Version: 1,
+			TxIn: []*wire.TxIn{
+				{
+					PreviousOutPoint: wire.OutPoint{
+						TxID:  daghash.TxID(dag.genesis.hash),
+						Index: math.MaxUint32,
+					},
+					Sequence: wire.MaxTxInSequenceNum,
+				},
+			},
+			SubnetworkID: wire.SubnetworkIDNative,
+		},
 	}
+	block1A := buildBlock("block1A", []daghash.Hash{dag.genesis.hash}, block1ATxs, 0)
 
-	if dag.lastFinalityPoint != expectedFinalityPoint {
-		t.Errorf("TestFinality: dag.lastFinalityPoint expected to be %v but got %v", expectedFinalityPoint, dag.lastFinalityPoint)
-	}
-
-	// Here we check that even if we create a parallel tip (a new tip with
-	// the same parents as the current one) with the same blue score as the
-	// current tip, it still won't affect the last finality point.
-	_, err = buildNodeToDag(setFromSlice(currentNode.selectedParent))
+	block1AChildCbPkScript, err := payToPubKeyHashScript((&[20]byte{0x1A, 0xC0})[:])
 	if err != nil {
-		t.Fatalf("TestFinality: buildNodeToDag unexpectedly returned an error: %v", err)
+		t.Fatalf("payToPubKeyHashScript: %v", err)
 	}
-	if dag.lastFinalityPoint != expectedFinalityPoint {
-		t.Errorf("TestFinality: dag.lastFinalityPoint was unexpectly changed")
+	cb1AChild := createCoinbase(block1AChildCbPkScript)
+	block1AChildTxs := []*wire.MsgTx{
+		cb1AChild,
+		{ // Fee Transaction
+			Version: 1,
+			TxIn: []*wire.TxIn{
+				{
+					PreviousOutPoint: wire.OutPoint{
+						TxID:  daghash.TxID(block1A.BlockHash()),
+						Index: math.MaxUint32,
+					},
+					Sequence: wire.MaxTxInSequenceNum,
+				},
+			},
+			SubnetworkID: wire.SubnetworkIDNative,
+		},
+		{
+			TxIn: []*wire.TxIn{
+				{
+					PreviousOutPoint: wire.OutPoint{
+						TxID:  cb1A.TxID(),
+						Index: 0,
+					},
+					Sequence: wire.MaxTxInSequenceNum,
+				},
+			},
+			TxOut: []*wire.TxOut{
+				{
+					PkScript: OpTrueScript,
+					Value:    1,
+				},
+			},
+			SubnetworkID: wire.SubnetworkIDNative,
+		},
+	}
+	block1AChild := buildBlock("block1AChild", []daghash.Hash{block1A.BlockHash()}, block1AChildTxs, 0)
+
+	cb2 := createCoinbase(nil)
+	block2Txs := []*wire.MsgTx{
+		cb2,
+		{ // Fee Transaction
+			Version: 1,
+			TxIn: []*wire.TxIn{
+				{
+					PreviousOutPoint: wire.OutPoint{
+						TxID:  daghash.TxID(block1.BlockHash()),
+						Index: math.MaxUint32,
+					},
+					Sequence: wire.MaxTxInSequenceNum,
+				},
+			},
+			SubnetworkID: wire.SubnetworkIDNative,
+		},
+	}
+	block2 := buildBlock("block2", []daghash.Hash{block1.BlockHash()}, block2Txs, 0)
+
+	cb3 := createCoinbase(nil)
+	block3Txs := []*wire.MsgTx{
+		cb3,
+		{ // Fee Transaction
+			Version: 1,
+			TxIn: []*wire.TxIn{
+				{
+					PreviousOutPoint: wire.OutPoint{
+						TxID:  daghash.TxID(block2.BlockHash()),
+						Index: math.MaxUint32,
+					},
+					Sequence: wire.MaxTxInSequenceNum,
+				},
+			},
+			SubnetworkID: wire.SubnetworkIDNative,
+		},
+	}
+	block3 := buildBlock("block3", []daghash.Hash{block2.BlockHash()}, block3Txs, 0)
+
+	block4CbPkScript, err := payToPubKeyHashScript((&[20]byte{0x40})[:])
+	if err != nil {
+		t.Fatalf("payToPubKeyHashScript: %v", err)
 	}
 
-	// Here we check that a block with lower blue score than the last finality
-	// point will get rejected
-	_, err = buildNodeToDag(setFromSlice(dag.genesis))
-	if err == nil {
-		t.Errorf("TestFinality: buildNodeToDag expected an error but got <nil>")
+	cb4 := createCoinbase(block4CbPkScript)
+	block4Txs := []*wire.MsgTx{
+		cb4,
+		{ // Fee Transaction
+			Version: 1,
+			TxIn: []*wire.TxIn{
+				{
+					PreviousOutPoint: wire.OutPoint{
+						TxID:  daghash.TxID(block3.BlockHash()),
+						Index: math.MaxUint32,
+					},
+					Sequence: wire.MaxTxInSequenceNum,
+				},
+			},
+			SubnetworkID: wire.SubnetworkIDNative,
+		},
+		{
+			TxIn: []*wire.TxIn{
+				{
+					PreviousOutPoint: wire.OutPoint{
+						TxID:  cb3.TxID(),
+						Index: 0,
+					},
+					Sequence: wire.MaxTxInSequenceNum,
+				},
+			},
+			TxOut: []*wire.TxOut{
+				{
+					PkScript: OpTrueScript,
+					Value:    1,
+				},
+			},
+			SubnetworkID: wire.SubnetworkIDNative,
+		},
 	}
-	rErr, ok := err.(RuleError)
-	if ok {
-		if rErr.ErrorCode != ErrFinality {
-			t.Errorf("TestFinality: buildNodeToDag expected an error with code %v but instead got %v", ErrFinality, rErr.ErrorCode)
-		}
-	} else {
-		t.Errorf("TestFinality: buildNodeToDag got unexpected error: %v", rErr)
+	block4 := buildBlock("block4", []daghash.Hash{block3.BlockHash()}, block4Txs, 0)
+
+	block4ACbPkScript, err := payToPubKeyHashScript((&[20]byte{0x4A})[:])
+	if err != nil {
+		t.Fatalf("payToPubKeyHashScript: %v", err)
+	}
+	cb4A := createCoinbase(block4ACbPkScript)
+	block4ATxs := []*wire.MsgTx{
+		cb4A,
+		{ // Fee Transaction
+			Version: 1,
+			TxIn: []*wire.TxIn{
+				{
+					PreviousOutPoint: wire.OutPoint{
+						TxID:  daghash.TxID(block3.BlockHash()),
+						Index: math.MaxUint32,
+					},
+					Sequence: wire.MaxTxInSequenceNum,
+				},
+			},
+			SubnetworkID: wire.SubnetworkIDNative,
+		},
+		{
+			TxIn: []*wire.TxIn{
+				{
+					PreviousOutPoint: wire.OutPoint{
+						TxID:  cb3.TxID(),
+						Index: 1,
+					},
+					Sequence: wire.MaxTxInSequenceNum,
+				},
+			},
+			TxOut: []*wire.TxOut{
+				{
+					PkScript: OpTrueScript,
+					Value:    1,
+				},
+			},
+			SubnetworkID: wire.SubnetworkIDNative,
+		},
+	}
+	block4A := buildBlock("block4A", []daghash.Hash{block3.BlockHash()}, block4ATxs, 0)
+
+	cb5 := createCoinbase(nil)
+	feeInOuts := map[daghash.Hash]*struct {
+		txIn  *wire.TxIn
+		txOut *wire.TxOut
+	}{
+		block4.BlockHash(): {
+			txIn: &wire.TxIn{
+				PreviousOutPoint: wire.OutPoint{
+					TxID:  daghash.TxID(block4.BlockHash()),
+					Index: math.MaxUint32,
+				},
+				Sequence: wire.MaxTxInSequenceNum,
+			},
+			txOut: &wire.TxOut{
+				PkScript: block4CbPkScript,
+				Value:    cb3.TxOut[0].Value - 1,
+			},
+		},
+		block4A.BlockHash(): {
+			txIn: &wire.TxIn{
+				PreviousOutPoint: wire.OutPoint{
+					TxID:  daghash.TxID(block4A.BlockHash()),
+					Index: math.MaxUint32,
+				},
+				Sequence: wire.MaxTxInSequenceNum,
+			},
+			txOut: &wire.TxOut{
+				PkScript: block4ACbPkScript,
+				Value:    cb3.TxOut[1].Value - 1,
+			},
+		},
 	}
 
-	// Here we check that a block that doesn't have the last finality point in
-	// its selected parent chain will get rejected
-	_, err = buildNodeToDag(setFromSlice(altChainTip))
-	if err == nil {
-		t.Errorf("TestFinality: buildNodeToDag expected an error but got <nil>")
+	block5FeeTx := wire.NewMsgTx(1)
+	for hash := range feeInOuts {
+		block5FeeTx.AddTxIn(feeInOuts[hash].txIn)
+		block5FeeTx.AddTxOut(feeInOuts[hash].txOut)
 	}
-	rErr, ok = err.(RuleError)
-	if ok {
-		if rErr.ErrorCode != ErrFinality {
-			t.Errorf("TestFinality: buildNodeToDag expected an error with code %v but instead got %v", ErrFinality, rErr.ErrorCode)
-		}
-	} else {
-		t.Errorf("TestFinality: buildNodeToDag got unexpected error: %v", rErr)
-	}
+	sortedBlock5FeeTx := txsort.Sort(block5FeeTx)
+
+	block5Txs := []*wire.MsgTx{cb5, sortedBlock5FeeTx}
+
+	block5ParentHashes := []daghash.Hash{block4.BlockHash(), block4A.BlockHash()}
+	buildBlock("block5", block5ParentHashes, block5Txs, 0)
+
+	sortedBlock5FeeTx.TxIn[0], sortedBlock5FeeTx.TxIn[1] = sortedBlock5FeeTx.TxIn[1], sortedBlock5FeeTx.TxIn[0]
+	buildBlock("block5WrongOrder", block5ParentHashes, block5Txs, ErrBadFeeTransaction)
+
+	block5FeeTxWith1Achild := block5FeeTx.Copy()
+
+	block5FeeTxWith1Achild.AddTxIn(&wire.TxIn{
+		PreviousOutPoint: wire.OutPoint{
+			TxID:  daghash.TxID(block1AChild.BlockHash()),
+			Index: math.MaxUint32,
+		},
+		Sequence: wire.MaxTxInSequenceNum,
+	})
+	block5FeeTxWith1Achild.AddTxOut(&wire.TxOut{
+		PkScript: block1AChildCbPkScript,
+		Value:    cb1AChild.TxOut[0].Value - 1,
+	})
+
+	sortedBlock5FeeTxWith1Achild := txsort.Sort(block5FeeTxWith1Achild)
+
+	block5Txs[1] = sortedBlock5FeeTxWith1Achild
+	buildBlock("block5WithRedBlockFees", block5ParentHashes, block5Txs, ErrBadFeeTransaction)
+
+	block5FeeTxWithWrongFees := block5FeeTx.Copy()
+	block5FeeTxWithWrongFees.TxOut[0].Value--
+	sortedBlock5FeeTxWithWrongFees := txsort.Sort(block5FeeTxWithWrongFees)
+	block5Txs[1] = sortedBlock5FeeTxWithWrongFees
+	buildBlock("block5WithRedBlockFees", block5ParentHashes, block5Txs, ErrBadFeeTransaction)
+}
+
+// payToPubKeyHashScript creates a new script to pay a transaction
+// output to a 20-byte pubkey hash. It is expected that the input is a valid
+// hash.
+func payToPubKeyHashScript(pubKeyHash []byte) ([]byte, error) {
+	return txscript.NewScriptBuilder().
+		AddOp(txscript.OpDup).
+		AddOp(txscript.OpHash160).
+		AddData(pubKeyHash).
+		AddOp(txscript.OpEqualVerify).
+		AddOp(txscript.OpCheckSig).
+		Script()
 }

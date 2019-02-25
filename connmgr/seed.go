@@ -52,7 +52,7 @@ func SeedFromDNS(dagParams *dagconfig.Params, reqServices wire.ServiceFlag, subn
 
 			seedpeers, err := lookupFn(host)
 			if err != nil {
-				log.Infof("DNS discovery failed on seed %s: %v", host, err)
+				log.Infof("DNS discovery failed on seed %s: %s", host, err)
 				return
 			}
 			numPeers := len(seedpeers)

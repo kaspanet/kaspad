@@ -138,14 +138,14 @@ func UnmarshalCmd(r *Request) (interface{}, error) {
 			fieldName := strings.ToLower(rt.Field(i).Name)
 			if jerr, ok := err.(*json.UnmarshalTypeError); ok {
 				str := fmt.Sprintf("parameter #%d '%s' must "+
-					"be type %v (got %v)", i+1, fieldName,
+					"be type %s (got %s)", i+1, fieldName,
 					jerr.Type, jerr.Value)
 				return nil, makeError(ErrInvalidType, str)
 			}
 
 			// Fallback to showing the underlying error.
 			str := fmt.Sprintf("parameter #%d '%s' failed to "+
-				"unmarshal: %v", i+1, fieldName, err)
+				"unmarshal: %s", i+1, fieldName, err)
 			return nil, makeError(ErrInvalidType, str)
 		}
 	}
@@ -238,8 +238,8 @@ func assignField(paramNum int, fieldName string, dest reflect.Value, src reflect
 	destBaseType, destIndirects := baseType(dest.Type())
 	srcBaseType, srcIndirects := baseType(src.Type())
 	if !typesMaybeCompatible(destBaseType, srcBaseType) {
-		str := fmt.Sprintf("parameter #%d '%s' must be type %v (got "+
-			"%v)", paramNum, fieldName, destBaseType, srcBaseType)
+		str := fmt.Sprintf("parameter #%d '%s' must be type %s (got "+
+			"%s)", paramNum, fieldName, destBaseType, srcBaseType)
 		return makeError(ErrInvalidType, str)
 	}
 
@@ -301,7 +301,7 @@ func assignField(paramNum int, fieldName string, dest reflect.Value, src reflect
 			srcInt := src.Int()
 			if dest.OverflowInt(srcInt) {
 				str := fmt.Sprintf("parameter #%d '%s' "+
-					"overflows destination type %v",
+					"overflows destination type %s",
 					paramNum, fieldName, destBaseType)
 				return makeError(ErrInvalidType, str)
 			}
@@ -315,7 +315,7 @@ func assignField(paramNum int, fieldName string, dest reflect.Value, src reflect
 			srcInt := src.Int()
 			if srcInt < 0 || dest.OverflowUint(uint64(srcInt)) {
 				str := fmt.Sprintf("parameter #%d '%s' "+
-					"overflows destination type %v",
+					"overflows destination type %s",
 					paramNum, fieldName, destBaseType)
 				return makeError(ErrInvalidType, str)
 			}
@@ -323,7 +323,7 @@ func assignField(paramNum int, fieldName string, dest reflect.Value, src reflect
 
 		default:
 			str := fmt.Sprintf("parameter #%d '%s' must be type "+
-				"%v (got %v)", paramNum, fieldName, destBaseType,
+				"%s (got %s)", paramNum, fieldName, destBaseType,
 				srcBaseType)
 			return makeError(ErrInvalidType, str)
 		}
@@ -340,13 +340,13 @@ func assignField(paramNum int, fieldName string, dest reflect.Value, src reflect
 			srcUint := src.Uint()
 			if srcUint > uint64(1<<63)-1 {
 				str := fmt.Sprintf("parameter #%d '%s' "+
-					"overflows destination type %v",
+					"overflows destination type %s",
 					paramNum, fieldName, destBaseType)
 				return makeError(ErrInvalidType, str)
 			}
 			if dest.OverflowInt(int64(srcUint)) {
 				str := fmt.Sprintf("parameter #%d '%s' "+
-					"overflows destination type %v",
+					"overflows destination type %s",
 					paramNum, fieldName, destBaseType)
 				return makeError(ErrInvalidType, str)
 			}
@@ -359,7 +359,7 @@ func assignField(paramNum int, fieldName string, dest reflect.Value, src reflect
 			srcUint := src.Uint()
 			if dest.OverflowUint(srcUint) {
 				str := fmt.Sprintf("parameter #%d '%s' "+
-					"overflows destination type %v",
+					"overflows destination type %s",
 					paramNum, fieldName, destBaseType)
 				return makeError(ErrInvalidType, str)
 			}
@@ -367,7 +367,7 @@ func assignField(paramNum int, fieldName string, dest reflect.Value, src reflect
 
 		default:
 			str := fmt.Sprintf("parameter #%d '%s' must be type "+
-				"%v (got %v)", paramNum, fieldName, destBaseType,
+				"%s (got %s)", paramNum, fieldName, destBaseType,
 				srcBaseType)
 			return makeError(ErrInvalidType, str)
 		}
@@ -377,7 +377,7 @@ func assignField(paramNum int, fieldName string, dest reflect.Value, src reflect
 		destKind := dest.Kind()
 		if destKind != reflect.Float32 && destKind != reflect.Float64 {
 			str := fmt.Sprintf("parameter #%d '%s' must be type "+
-				"%v (got %v)", paramNum, fieldName, destBaseType,
+				"%s (got %s)", paramNum, fieldName, destBaseType,
 				srcBaseType)
 			return makeError(ErrInvalidType, str)
 		}
@@ -385,7 +385,7 @@ func assignField(paramNum int, fieldName string, dest reflect.Value, src reflect
 		srcFloat := src.Float()
 		if dest.OverflowFloat(srcFloat) {
 			str := fmt.Sprintf("parameter #%d '%s' overflows "+
-				"destination type %v", paramNum, fieldName,
+				"destination type %s", paramNum, fieldName,
 				destBaseType)
 			return makeError(ErrInvalidType, str)
 		}
@@ -399,7 +399,7 @@ func assignField(paramNum int, fieldName string, dest reflect.Value, src reflect
 			b, err := strconv.ParseBool(src.String())
 			if err != nil {
 				str := fmt.Sprintf("parameter #%d '%s' must "+
-					"parse to a %v", paramNum, fieldName,
+					"parse to a %s", paramNum, fieldName,
 					destBaseType)
 				return makeError(ErrInvalidType, str)
 			}
@@ -412,13 +412,13 @@ func assignField(paramNum int, fieldName string, dest reflect.Value, src reflect
 			srcInt, err := strconv.ParseInt(src.String(), 0, 0)
 			if err != nil {
 				str := fmt.Sprintf("parameter #%d '%s' must "+
-					"parse to a %v", paramNum, fieldName,
+					"parse to a %s", paramNum, fieldName,
 					destBaseType)
 				return makeError(ErrInvalidType, str)
 			}
 			if dest.OverflowInt(srcInt) {
 				str := fmt.Sprintf("parameter #%d '%s' "+
-					"overflows destination type %v",
+					"overflows destination type %s",
 					paramNum, fieldName, destBaseType)
 				return makeError(ErrInvalidType, str)
 			}
@@ -431,13 +431,13 @@ func assignField(paramNum int, fieldName string, dest reflect.Value, src reflect
 			srcUint, err := strconv.ParseUint(src.String(), 0, 0)
 			if err != nil {
 				str := fmt.Sprintf("parameter #%d '%s' must "+
-					"parse to a %v", paramNum, fieldName,
+					"parse to a %s", paramNum, fieldName,
 					destBaseType)
 				return makeError(ErrInvalidType, str)
 			}
 			if dest.OverflowUint(srcUint) {
 				str := fmt.Sprintf("parameter #%d '%s' "+
-					"overflows destination type %v",
+					"overflows destination type %s",
 					paramNum, fieldName, destBaseType)
 				return makeError(ErrInvalidType, str)
 			}
@@ -448,13 +448,13 @@ func assignField(paramNum int, fieldName string, dest reflect.Value, src reflect
 			srcFloat, err := strconv.ParseFloat(src.String(), 0)
 			if err != nil {
 				str := fmt.Sprintf("parameter #%d '%s' must "+
-					"parse to a %v", paramNum, fieldName,
+					"parse to a %s", paramNum, fieldName,
 					destBaseType)
 				return makeError(ErrInvalidType, str)
 			}
 			if dest.OverflowFloat(srcFloat) {
 				str := fmt.Sprintf("parameter #%d '%s' "+
-					"overflows destination type %v",
+					"overflows destination type %s",
 					paramNum, fieldName, destBaseType)
 				return makeError(ErrInvalidType, str)
 			}
@@ -471,7 +471,7 @@ func assignField(paramNum int, fieldName string, dest reflect.Value, src reflect
 			err := json.Unmarshal([]byte(src.String()), &concreteVal)
 			if err != nil {
 				str := fmt.Sprintf("parameter #%d '%s' must "+
-					"be valid JSON which unsmarshals to a %v",
+					"be valid JSON which unsmarshals to a %s",
 					paramNum, fieldName, destBaseType)
 				return makeError(ErrInvalidType, str)
 			}

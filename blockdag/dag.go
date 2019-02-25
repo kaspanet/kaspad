@@ -26,7 +26,8 @@ const (
 	// queued.
 	maxOrphanBlocks = 100
 
-	finalityInterval = 100
+	// FinalityInterval is the interval that determines the finality window of the DAG.
+	FinalityInterval = 100
 )
 
 // BlockLocator is used to help locate a specific block.  The algorithm for
@@ -349,10 +350,10 @@ func (dag *BlockDAG) calcSequenceLock(node *blockNode, utxoSet UTXOSet, tx *util
 	// at any given height or time.
 	sequenceLock := &SequenceLock{Seconds: -1, BlockHeight: -1}
 
-	// Sequence locks don't apply to coinbase transactions Therefore, we
+	// Sequence locks don't apply to block reward transactions Therefore, we
 	// return sequence lock values of -1 indicating that this transaction
 	// can be included within a block at any given height or time.
-	if IsCoinBase(tx) {
+	if IsBlockReward(tx) {
 		return sequenceLock, nil
 	}
 
@@ -364,7 +365,7 @@ func (dag *BlockDAG) calcSequenceLock(node *blockNode, utxoSet UTXOSet, tx *util
 	for txInIndex, txIn := range mTx.TxIn {
 		entry, ok := utxoSet.Get(txIn.PreviousOutPoint)
 		if !ok {
-			str := fmt.Sprintf("output %v referenced from "+
+			str := fmt.Sprintf("output %s referenced from "+
 				"transaction %s:%d either does not exist or "+
 				"has already been spent", txIn.PreviousOutPoint,
 				tx.ID(), txInIndex)
@@ -480,7 +481,7 @@ func (dag *BlockDAG) connectToDAG(node *blockNode, parentNodes blockSet, block *
 	// invalid, the worst that can happen is we revalidate the block
 	// after a restart.
 	if writeErr := dag.index.flushToDB(); writeErr != nil {
-		log.Warnf("Error flushing block index changes to disk: %v",
+		log.Warnf("Error flushing block index changes to disk: %s",
 			writeErr)
 	}
 
@@ -496,12 +497,6 @@ func (dag *BlockDAG) connectToDAG(node *blockNode, parentNodes blockSet, block *
 //
 // This function MUST be called with the chain state lock held (for writes).
 func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block, fastAdd bool) error {
-	// The coinbase for the Genesis block is not spendable, so just return
-	// an error now.
-	if node.hash.IsEqual(dag.dagParams.GenesisHash) {
-		str := "the coinbase for the genesis block is not spendable"
-		return ruleError(ErrMissingTxOut, str)
-	}
 
 	// No warnings about unknown rules or versions until the DAG is
 	// current.
@@ -528,8 +523,13 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block, fastAdd bo
 		}
 	}
 
+	err := dag.validateGasLimit(block)
+	if err != nil {
+		return err
+	}
+
 	// Add the node to the virtual and update the UTXO set of the DAG.
-	utxoDiff, acceptedTxsData, err := dag.applyUTXOChanges(node, block, fastAdd)
+	utxoDiff, txsAcceptanceData, feeData, err := dag.applyUTXOChanges(node, block, fastAdd)
 	if err != nil {
 		return err
 	}
@@ -573,7 +573,7 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block, fastAdd bo
 		// Scan all accepted transactions and register any subnetwork registry
 		// transaction. If any subnetwork registry transaction is not well-formed,
 		// fail the entire block.
-		err = registerSubnetworks(dbTx, acceptedTxsData)
+		err = registerSubnetworks(dbTx, txsAcceptanceData)
 		if err != nil {
 			return err
 		}
@@ -582,13 +582,14 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block, fastAdd bo
 		// optional indexes with the block being connected so they can
 		// update themselves accordingly.
 		if dag.indexManager != nil {
-			err := dag.indexManager.ConnectBlock(dbTx, block, dag, acceptedTxsData)
+			err := dag.indexManager.ConnectBlock(dbTx, block, dag, txsAcceptanceData)
 			if err != nil {
 				return err
 			}
 		}
 
-		return nil
+		// Apply the fee data into the database
+		return dbStoreFeeData(dbTx, block.Hash(), feeData)
 	})
 	if err != nil {
 		return err
@@ -604,7 +605,48 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block, fastAdd bo
 	return nil
 }
 
+func (dag *BlockDAG) validateGasLimit(block *util.Block) error {
+	transactions := block.Transactions()
+	// Amount of gas consumed per sub-network shouldn't be more than the subnetwork's limit
+	gasUsageInAllSubnetworks := map[subnetworkid.SubnetworkID]uint64{}
+	for _, tx := range transactions {
+		msgTx := tx.MsgTx()
+		// In DAGCoin and Registry sub-networks all txs must have Gas = 0, and that is validated in checkTransactionSanity
+		// Therefore - no need to check them here.
+		if msgTx.SubnetworkID != wire.SubnetworkIDNative && msgTx.SubnetworkID != wire.SubnetworkIDRegistry {
+			gasUsageInSubnetwork := gasUsageInAllSubnetworks[msgTx.SubnetworkID]
+			gasUsageInSubnetwork += msgTx.Gas
+			if gasUsageInSubnetwork < gasUsageInAllSubnetworks[msgTx.SubnetworkID] { // protect from overflows
+				str := fmt.Sprintf("Block gas usage in subnetwork with ID %s has overflown", msgTx.SubnetworkID)
+				return ruleError(ErrInvalidGas, str)
+			}
+			gasUsageInAllSubnetworks[msgTx.SubnetworkID] = gasUsageInSubnetwork
+
+			gasLimit, err := dag.SubnetworkStore.GasLimit(&msgTx.SubnetworkID)
+			if err != nil {
+				return err
+			}
+			if gasUsageInSubnetwork > gasLimit {
+				str := fmt.Sprintf("Block wastes too much gas in subnetwork with ID %s", msgTx.SubnetworkID)
+				return ruleError(ErrInvalidGas, str)
+			}
+		}
+	}
+	return nil
+}
+
+// LastFinalityPointHash returns the hash of the last finality point
+func (dag *BlockDAG) LastFinalityPointHash() *daghash.Hash {
+	if dag.lastFinalityPoint == nil {
+		return nil
+	}
+	return &dag.lastFinalityPoint.hash
+}
+
 func (dag *BlockDAG) checkFinalityRulesAndGetFinalityPointCandidate(node *blockNode) (*blockNode, error) {
+	if node.isGenesis() {
+		return node, nil
+	}
 	var finalityPointCandidate *blockNode
 	finalityErr := ruleError(ErrFinality, "The last finality point is not in the selected chain of this block")
 
@@ -625,6 +667,15 @@ func (dag *BlockDAG) checkFinalityRulesAndGetFinalityPointCandidate(node *blockN
 	return finalityPointCandidate, nil
 }
 
+// NextBlockFeeTransaction prepares the fee transaction for the next mined block
+func (dag *BlockDAG) NextBlockFeeTransaction() (*wire.MsgTx, error) {
+	_, txsAcceptanceData, _, err := dag.virtual.blockNode.verifyAndBuildUTXO(dag.virtual, dag, nil, true)
+	if err != nil {
+		return nil, err
+	}
+	return dag.virtual.blockNode.buildFeeTransaction(dag, txsAcceptanceData)
+}
+
 // applyUTXOChanges does the following:
 // 1. Verifies that each transaction within the new block could spend an existing UTXO.
 // 2. Connects each of the new block's parents to the block.
@@ -633,17 +684,23 @@ func (dag *BlockDAG) checkFinalityRulesAndGetFinalityPointCandidate(node *blockN
 // 5. Updates each of the tips' utxoDiff.
 //
 // This function MUST be called with the chain state lock held (for writes).
-func (dag *BlockDAG) applyUTXOChanges(node *blockNode, block *util.Block, fastAdd bool) (utxoDiff *UTXODiff, acceptedTxData []*TxWithBlockHash, err error) {
+func (dag *BlockDAG) applyUTXOChanges(node *blockNode, block *util.Block, fastAdd bool) (
+	utxoDiff *UTXODiff, txsAcceptanceData MultiblockTxsAcceptanceData, feeData compactFeeData, err error) {
 	// Clone the virtual block so that we don't modify the existing one.
 	virtualClone := dag.virtual.clone()
 
-	newBlockUTXO, acceptedTxData, err := node.verifyAndBuildUTXO(virtualClone, dag, block.Transactions(), fastAdd)
+	newBlockUTXO, txsAcceptanceData, feeData, err := node.verifyAndBuildUTXO(virtualClone, dag, block.Transactions(), fastAdd)
 	if err != nil {
-		newErrString := fmt.Sprintf("error verifying UTXO for %v: %s", node, err)
+		newErrString := fmt.Sprintf("error verifying UTXO for %s: %s", node, err)
 		if err, ok := err.(RuleError); ok {
-			return nil, nil, ruleError(err.ErrorCode, newErrString)
+			return nil, nil, nil, ruleError(err.ErrorCode, newErrString)
 		}
-		return nil, nil, errors.New(newErrString)
+		return nil, nil, nil, errors.New(newErrString)
+	}
+
+	err = node.validateFeeTransaction(dag, block, txsAcceptanceData)
+	if err != nil {
+		return nil, nil, nil, err
 	}
 
 	// since verifyAndBuildUTXO ran, we know for sure that block is valid -
@@ -653,7 +710,7 @@ func (dag *BlockDAG) applyUTXOChanges(node *blockNode, block *util.Block, fastAd
 
 	err = node.updateParents(virtualClone, newBlockUTXO)
 	if err != nil {
-		panic(fmt.Errorf("failed updating parents of %v: %s", node, err))
+		panic(fmt.Errorf("failed updating parents of %s: %s", node, err))
 	}
 
 	// Update the virtual block's children (the DAG tips) to include the new block.
@@ -662,7 +719,7 @@ func (dag *BlockDAG) applyUTXOChanges(node *blockNode, block *util.Block, fastAd
 	// Build a UTXO set for the new virtual block and update the DAG tips' diffs.
 	newVirtualUTXO, _, err := virtualClone.blockNode.pastUTXO(virtualClone, dag.db)
 	if err != nil {
-		panic(fmt.Sprintf("could not restore past UTXO for virtual %v: %s", virtualClone, err))
+		panic(fmt.Sprintf("could not restore past UTXO for virtual %s: %s", virtualClone, err))
 	}
 
 	// Apply new utxoDiffs to all the tips
@@ -686,7 +743,7 @@ func (dag *BlockDAG) applyUTXOChanges(node *blockNode, block *util.Block, fastAd
 	// It is now safe to apply the new virtual block
 	dag.virtual = virtualClone
 
-	return utxoDiff, acceptedTxData, nil
+	return utxoDiff, txsAcceptanceData, feeData, nil
 }
 
 func (dag *BlockDAG) updateVirtualUTXO(newVirtualUTXODiffSet *DiffUTXOSet) {
@@ -696,89 +753,99 @@ func (dag *BlockDAG) updateVirtualUTXO(newVirtualUTXODiffSet *DiffUTXOSet) {
 }
 
 // verifyAndBuildUTXO verifies all transactions in the given block and builds its UTXO
-func (node *blockNode) verifyAndBuildUTXO(virtual *virtualBlock, dag *BlockDAG,
-	transactions []*util.Tx, fastAdd bool) (utxoSet UTXOSet, acceptedTxData []*TxWithBlockHash, err error) {
-	pastUTXO, pastUTXOaccpetedTxData, err := node.pastUTXO(virtual, dag.db)
+func (node *blockNode) verifyAndBuildUTXO(virtual *virtualBlock, dag *BlockDAG, transactions []*util.Tx, fastAdd bool) (
+	UTXOSet, MultiblockTxsAcceptanceData, compactFeeData, error) {
+
+	pastUTXO, txsAcceptanceData, err := node.pastUTXO(virtual, dag.db)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
-	if !fastAdd {
-		err = dag.checkConnectToPastUTXO(node, pastUTXO, transactions)
-		if err != nil {
-			return nil, nil, err
-		}
+	var feeData compactFeeData
+	feeData, err = dag.checkConnectToPastUTXO(node, pastUTXO, transactions, fastAdd)
+	if err != nil {
+		return nil, nil, nil, err
 	}
 
 	diff := NewUTXODiff()
-	acceptedTxData = make([]*TxWithBlockHash, 0, len(pastUTXOaccpetedTxData)+len(transactions))
-	if len(pastUTXOaccpetedTxData) != 0 {
-		acceptedTxData = append(acceptedTxData, pastUTXOaccpetedTxData...)
-	}
 
+	blockTxsAcceptanceData := BlockTxsAcceptanceData{}
 	for _, tx := range transactions {
 		txDiff, err := pastUTXO.diffFromTx(tx.MsgTx(), node)
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, nil, err
 		}
 		diff, err = diff.WithDiff(txDiff)
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, nil, err
 		}
-		acceptedTxData = append(acceptedTxData, &TxWithBlockHash{
-			Tx:      tx,
-			InBlock: &node.hash,
+		blockTxsAcceptanceData = append(blockTxsAcceptanceData, TxAcceptanceData{
+			Tx:         tx,
+			IsAccepted: true,
 		})
+
 	}
+	txsAcceptanceData[node.hash] = blockTxsAcceptanceData
 
 	utxo, err := pastUTXO.WithDiff(diff)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
-	return utxo, acceptedTxData, nil
+	return utxo, txsAcceptanceData, feeData, nil
 }
 
-// TxWithBlockHash is a type that holds data about in which block a transaction was found
-type TxWithBlockHash struct {
-	Tx      *util.Tx
-	InBlock *daghash.Hash
+// TxAcceptanceData stores a transaction together with an indication
+// if it was accepted or not by some block
+type TxAcceptanceData struct {
+	Tx         *util.Tx
+	IsAccepted bool
+}
+
+// BlockTxsAcceptanceData  stores all transactions in a block with an indication
+// if they were accepted or not by some other block
+type BlockTxsAcceptanceData []TxAcceptanceData
+
+// MultiblockTxsAcceptanceData  stores data about which transactions were accepted by a block
+// It's a map from the block's blues block IDs to the transaction acceptance data
+type MultiblockTxsAcceptanceData map[daghash.Hash]BlockTxsAcceptanceData
+
+func genesisPastUTXO(virtual *virtualBlock) UTXOSet {
+	// The genesis has no past UTXO, so we create an empty UTXO
+	// set by creating a diff UTXO set with the virtual UTXO
+	// set, and adding all of its entries in toRemove
+	diff := NewUTXODiff()
+	for outPoint, entry := range virtual.utxoSet.utxoCollection {
+		diff.toRemove[outPoint] = entry
+	}
+	genesisPastUTXO := UTXOSet(NewDiffUTXOSet(virtual.utxoSet, diff))
+	return genesisPastUTXO
 }
 
 // pastUTXO returns the UTXO of a given block's past
-func (node *blockNode) pastUTXO(virtual *virtualBlock, db database.DB) (pastUTXO UTXOSet, acceptedTxData []*TxWithBlockHash, err error) {
+func (node *blockNode) pastUTXO(virtual *virtualBlock, db database.DB) (pastUTXO UTXOSet, txsAcceptanceData MultiblockTxsAcceptanceData, err error) {
+	if node.isGenesis() {
+		return genesisPastUTXO(virtual), MultiblockTxsAcceptanceData{}, nil
+	}
 	pastUTXO, err = node.selectedParent.restoreUTXO(virtual)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	// Fetch from the database all the transactions for this block's blue set (besides the selected parent)
-	var blueBlockTransactions []*TxWithBlockHash
-	transactionCount := 0
+	// Fetch from the database all the transactions for this block's blue set
+	blueBlocks := make([]*util.Block, 0, len(node.blues))
 	err = db.View(func(dbTx database.Tx) error {
 		// Precalculate the amount of transactions in this block's blue set, besides the selected parent.
 		// This is to avoid an attack in which an attacker fabricates a block that will deliberately cause
 		// a lot of copying, causing a high cost to the whole network.
-		blueBlocks := make([]*util.Block, 0, len(node.blues)-1)
 		for i := len(node.blues) - 1; i >= 0; i-- {
 			blueBlockNode := node.blues[i]
-			if blueBlockNode == node.selectedParent {
-				continue
-			}
 
 			blueBlock, err := dbFetchBlockByNode(dbTx, blueBlockNode)
 			if err != nil {
 				return err
 			}
 
-			transactionCount += len(blueBlock.Transactions())
 			blueBlocks = append(blueBlocks, blueBlock)
-		}
-
-		blueBlockTransactions = make([]*TxWithBlockHash, 0, transactionCount)
-		for _, blueBlock := range blueBlocks {
-			for _, tx := range blueBlock.Transactions() {
-				blueBlockTransactions = append(blueBlockTransactions, &TxWithBlockHash{Tx: tx, InBlock: blueBlock.Hash()})
-			}
 		}
 
 		return nil
@@ -786,19 +853,28 @@ func (node *blockNode) pastUTXO(virtual *virtualBlock, db database.DB) (pastUTXO
 	if err != nil {
 		return nil, nil, err
 	}
-
-	acceptedTxData = make([]*TxWithBlockHash, 0, transactionCount)
+	txsAcceptanceData = MultiblockTxsAcceptanceData{}
 
 	// Add all transactions to the pastUTXO
 	// Purposefully ignore failures - these are just unaccepted transactions
-	for _, tx := range blueBlockTransactions {
-		isAccepted := pastUTXO.AddTx(tx.Tx.MsgTx(), node.height)
-		if isAccepted {
-			acceptedTxData = append(acceptedTxData, tx)
+	// Write down which transactions were accepted or not in acceptedTxData
+	for _, blueBlock := range blueBlocks {
+		transactions := blueBlock.Transactions()
+		blockTxsAcceptanceData := make(BlockTxsAcceptanceData, len(transactions))
+		isSelectedParent := blueBlock.Hash().IsEqual(&node.selectedParent.hash)
+		for i, tx := range blueBlock.Transactions() {
+			var isAccepted bool
+			if isSelectedParent {
+				isAccepted = true
+			} else {
+				isAccepted = pastUTXO.AddTx(tx.MsgTx(), node.height)
+			}
+			blockTxsAcceptanceData[i] = TxAcceptanceData{Tx: tx, IsAccepted: isAccepted}
 		}
+		txsAcceptanceData[*blueBlock.Hash()] = blockTxsAcceptanceData
 	}
 
-	return pastUTXO, acceptedTxData, nil
+	return pastUTXO, txsAcceptanceData, nil
 }
 
 // restoreUTXO restores the UTXO of a given block from its diff
@@ -875,20 +951,28 @@ func updateTipsUTXO(tips blockSet, virtual *virtualBlock, virtualUTXO UTXOSet) e
 //
 // This function MUST be called with the chain state lock held (for reads).
 func (dag *BlockDAG) isCurrent() bool {
-	// Not current if the latest main (best) chain height is before the
-	// latest known good checkpoint (when checkpoints are enabled).
+	// Not current if the virtual's selected tip height is less than
+	// the latest known good checkpoint (when checkpoints are enabled).
 	checkpoint := dag.LatestCheckpoint()
 	if checkpoint != nil && dag.selectedTip().height < checkpoint.Height {
 		return false
 	}
 
-	// Not current if the latest best block has a timestamp before 24 hours
-	// ago.
+	// Not current if the virtual's selected parent has a timestamp
+	// before 24 hours ago. If the DAG is empty, we take the genesis
+	// block timestamp.
 	//
-	// The chain appears to be current if none of the checks reported
+	// The DAG appears to be current if none of the checks reported
 	// otherwise.
+	var dagTimestamp int64
+	selectedTip := dag.selectedTip()
+	if selectedTip == nil {
+		dagTimestamp = dag.dagParams.GenesisBlock.Header.Timestamp.Unix()
+	} else {
+		dagTimestamp = selectedTip.timestamp
+	}
 	minus24Hours := dag.timeSource.AdjustedTime().Add(-24 * time.Hour).Unix()
-	return dag.selectedTip().timestamp >= minus24Hours
+	return dagTimestamp >= minus24Hours
 }
 
 // IsCurrent returns whether or not the chain believes it is current.  Several
@@ -1121,10 +1205,10 @@ func (dag *BlockDAG) HeightToHashRange(startHeight int32,
 
 	endNode := dag.index.LookupNode(endHash)
 	if endNode == nil {
-		return nil, fmt.Errorf("no known block header with hash %v", endHash)
+		return nil, fmt.Errorf("no known block header with hash %s", endHash)
 	}
 	if !dag.index.NodeStatus(endNode).KnownValid() {
-		return nil, fmt.Errorf("block %v is not yet validated", endHash)
+		return nil, fmt.Errorf("block %s is not yet validated", endHash)
 	}
 	endHeight := endNode.height
 
@@ -1161,10 +1245,10 @@ func (dag *BlockDAG) IntervalBlockHashes(endHash *daghash.Hash, interval int,
 
 	endNode := dag.index.LookupNode(endHash)
 	if endNode == nil {
-		return nil, fmt.Errorf("no known block header with hash %v", endHash)
+		return nil, fmt.Errorf("no known block header with hash %s", endHash)
 	}
 	if !dag.index.NodeStatus(endNode).KnownValid() {
-		return nil, fmt.Errorf("block %v is not yet validated", endHash)
+		return nil, fmt.Errorf("block %s is not yet validated", endHash)
 	}
 	endHeight := endNode.height
 
@@ -1364,7 +1448,7 @@ type IndexManager interface {
 
 	// ConnectBlock is invoked when a new block has been connected to the
 	// DAG.
-	ConnectBlock(database.Tx, *util.Block, *BlockDAG, []*TxWithBlockHash) error
+	ConnectBlock(database.Tx, *util.Block, *BlockDAG, MultiblockTxsAcceptanceData) error
 }
 
 // Config is a descriptor which specifies the blockchain instance configuration.
@@ -1452,7 +1536,7 @@ func New(config *Config) (*BlockDAG, error) {
 		for i := range config.Checkpoints {
 			checkpoint := &config.Checkpoints[i]
 			if checkpoint.Height <= prevCheckpointHeight {
-				return nil, AssertError("blockchain.New " +
+				return nil, AssertError("blockdag.New " +
 					"checkpoints are not sorted by height")
 			}
 
@@ -1483,7 +1567,7 @@ func New(config *Config) (*BlockDAG, error) {
 		prevOrphans:         make(map[daghash.Hash][]*orphanBlock),
 		warningCaches:       newThresholdCaches(vbNumBits),
 		deploymentCaches:    newThresholdCaches(dagconfig.DefinedDeployments),
-		blockCount:          1,
+		blockCount:          0,
 		SubnetworkStore:     newSubnetworkStore(config.DB),
 		subnetworkID:        config.SubnetworkID,
 	}
@@ -1495,11 +1579,6 @@ func New(config *Config) (*BlockDAG, error) {
 		return nil, err
 	}
 
-	// Save a reference to the genesis block. Note that we may only get
-	// an index reference to it here because the index is uninitialized
-	// before initDAGState.
-	dag.genesis = index.LookupNode(params.GenesisHash)
-
 	// Initialize and catch up all of the currently active optional indexes
 	// as needed.
 	if config.IndexManager != nil {
@@ -1509,13 +1588,30 @@ func New(config *Config) (*BlockDAG, error) {
 		}
 	}
 
+	genesis := index.LookupNode(params.GenesisHash)
+
+	if genesis == nil {
+		genesisBlock := util.NewBlock(dag.dagParams.GenesisBlock)
+		isOrphan, err := dag.ProcessBlock(genesisBlock, BFNone)
+		if err != nil {
+			return nil, err
+		}
+		if isOrphan {
+			return nil, errors.New("Genesis block is unexpectedly orphan")
+		}
+		genesis = index.LookupNode(params.GenesisHash)
+	}
+
+	// Save a reference to the genesis block.
+	dag.genesis = genesis
+
 	// Initialize rule change threshold state caches.
 	if err := dag.initThresholdCaches(); err != nil {
 		return nil, err
 	}
 
 	selectedTip := dag.selectedTip()
-	log.Infof("DAG state (height %d, hash %v, work %v)",
+	log.Infof("DAG state (height %d, hash %s, work %d)",
 		selectedTip.height, selectedTip.hash, selectedTip.workSum)
 
 	return &dag, nil

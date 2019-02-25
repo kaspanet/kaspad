@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/database"
@@ -104,9 +105,9 @@ func setupGlobalConfig() error {
 
 	// Validate database type.
 	if !validDbType(cfg.DbType) {
-		str := "The specified database type [%v] is invalid -- " +
-			"supported types %v"
-		return fmt.Errorf(str, cfg.DbType, knownDbTypes)
+		str := "The specified database type [%s] is invalid -- " +
+			"supported types: %s"
+		return fmt.Errorf(str, cfg.DbType, strings.Join(knownDbTypes, ", "))
 	}
 
 	// Append the network type to the data directory so it is "namespaced"

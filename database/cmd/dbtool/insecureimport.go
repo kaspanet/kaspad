@@ -138,7 +138,7 @@ func (bi *blockImporter) processBlock(serializedBlock []byte) (bool, error) {
 		}
 		if !exists {
 			return false, fmt.Errorf("import file contains block "+
-				"%v which does not link to the available "+
+				"%s which does not link to the available "+
 				"block chain", parentHash)
 		}
 	}
@@ -165,7 +165,7 @@ out:
 		serializedBlock, err := bi.readBlock()
 		if err != nil {
 			bi.errChan <- fmt.Errorf("Error reading from input "+
-				"file: %v", err.Error())
+				"file: %s", err.Error())
 			break out
 		}
 
@@ -328,7 +328,7 @@ func (cmd *importCmd) Execute(args []string) error {
 
 	// Ensure the specified block file exists.
 	if !fileExists(cmd.InFile) {
-		str := "The specified block file [%v] does not exist"
+		str := "The specified block file [%s] does not exist"
 		return fmt.Errorf(str, cmd.InFile)
 	}
 

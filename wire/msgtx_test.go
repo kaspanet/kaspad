@@ -250,14 +250,14 @@ func TestTxHashAndID(t *testing.T) {
 			spew.Sprint(tx2ID), spew.Sprint(wantID2))
 	}
 
-	if tx2ID.IsEqual((*daghash.TxID)(&tx2Hash)) {
+	if tx2ID.IsEqual((*daghash.TxID)(tx2Hash)) {
 		t.Errorf("tx2ID and tx2Hash shouldn't be the same for non-coinbase transaction with signature and/or payload")
 	}
 
 	tx2.Payload = []byte{}
 	tx2.TxIn[0].SignatureScript = []byte{}
 	newTx2Hash := tx2.TxHash()
-	if !tx2ID.IsEqual((*daghash.TxID)(&newTx2Hash)) {
+	if !tx2ID.IsEqual((*daghash.TxID)(newTx2Hash)) {
 		t.Errorf("tx2ID and newTx2Hash should be the same for transaction without empty signature and payload")
 	}
 }
@@ -299,70 +299,6 @@ func TestTxWire(t *testing.T) {
 			multiTxEncoded,
 			ProtocolVersion,
 		},
-
-		// Protocol version BIP0035Version with no transactions.
-		{
-			noTx,
-			noTx,
-			noTxEncoded,
-			BIP0035Version,
-		},
-
-		// Protocol version BIP0035Version with multiple transactions.
-		{
-			multiTx,
-			multiTx,
-			multiTxEncoded,
-			BIP0035Version,
-		},
-
-		// Protocol version BIP0031Version with no transactions.
-		{
-			noTx,
-			noTx,
-			noTxEncoded,
-			BIP0031Version,
-		},
-
-		// Protocol version BIP0031Version with multiple transactions.
-		{
-			multiTx,
-			multiTx,
-			multiTxEncoded,
-			BIP0031Version,
-		},
-
-		// Protocol version NetAddressTimeVersion with no transactions.
-		{
-			noTx,
-			noTx,
-			noTxEncoded,
-			NetAddressTimeVersion,
-		},
-
-		// Protocol version NetAddressTimeVersion with multiple transactions.
-		{
-			multiTx,
-			multiTx,
-			multiTxEncoded,
-			NetAddressTimeVersion,
-		},
-
-		// Protocol version MultipleAddressVersion with no transactions.
-		{
-			noTx,
-			noTx,
-			noTxEncoded,
-			MultipleAddressVersion,
-		},
-
-		// Protocol version MultipleAddressVersion with multiple transactions.
-		{
-			multiTx,
-			multiTx,
-			multiTxEncoded,
-			MultipleAddressVersion,
-		},
 	}
 
 	t.Logf("Running %d tests", len(tests))
@@ -399,10 +335,7 @@ func TestTxWire(t *testing.T) {
 // TestTxWireErrors performs negative tests against wire encode and decode
 // of MsgTx to confirm error paths work correctly.
 func TestTxWireErrors(t *testing.T) {
-	// Use protocol version 60002 specifically here instead of the latest
-	// because the test data is using bytes encoded with that protocol
-	// version.
-	pver := uint32(60002)
+	pver := ProtocolVersion
 
 	tests := []struct {
 		in       *MsgTx // Value to encode
@@ -717,10 +650,7 @@ func TestTxSerializeErrors(t *testing.T) {
 // of inputs and outputs are handled properly.  This could otherwise potentially
 // be used as an attack vector.
 func TestTxOverflowErrors(t *testing.T) {
-	// Use protocol version 70001 and transaction version 1 specifically
-	// here instead of the latest values because the test data is using
-	// bytes encoded with those versions.
-	pver := uint32(70001)
+	pver := ProtocolVersion
 	txVer := uint32(1)
 
 	tests := []struct {

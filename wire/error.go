@@ -23,7 +23,7 @@ type MessageError struct {
 // Error satisfies the error interface and prints human-readable errors.
 func (e *MessageError) Error() string {
 	if e.Func != "" {
-		return fmt.Sprintf("%v: %v", e.Func, e.Description)
+		return fmt.Sprintf("%s: %s", e.Func, e.Description)
 	}
 	return e.Description
 }

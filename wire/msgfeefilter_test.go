@@ -77,14 +77,6 @@ func TestFeeFilterWire(t *testing.T) {
 			[]byte{0xf3, 0xe0, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00},
 			ProtocolVersion,
 		},
-
-		// Protocol version FeeFilterVersion
-		{
-			MsgFeeFilter{MinFee: 456456}, // 0x6f708
-			MsgFeeFilter{MinFee: 456456}, // 0x6f708
-			[]byte{0x08, 0xf7, 0x06, 0x00, 0x00, 0x00, 0x00, 0x00},
-			FeeFilterVersion,
-		},
 	}
 
 	t.Logf("Running %d tests", len(tests))
@@ -122,8 +114,6 @@ func TestFeeFilterWire(t *testing.T) {
 // of MsgFeeFilter to confirm error paths work correctly.
 func TestFeeFilterWireErrors(t *testing.T) {
 	pver := ProtocolVersion
-	pverNoFeeFilter := FeeFilterVersion - 1
-	wireErr := &MessageError{}
 
 	baseFeeFilter := NewMsgFeeFilter(123123) // 0x1e0f3
 	baseFeeFilterEncoded := []byte{
@@ -141,8 +131,6 @@ func TestFeeFilterWireErrors(t *testing.T) {
 		// Latest protocol version with intentional read/write errors.
 		// Force error in minfee.
 		{baseFeeFilter, baseFeeFilterEncoded, pver, 0, io.ErrShortWrite, io.EOF},
-		// Force error due to unsupported protocol version.
-		{baseFeeFilter, baseFeeFilterEncoded, pverNoFeeFilter, 4, wireErr, wireErr},
 	}
 
 	t.Logf("Running %d tests", len(tests))

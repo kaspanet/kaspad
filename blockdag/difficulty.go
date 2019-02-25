@@ -275,7 +275,7 @@ func (dag *BlockDAG) calcNextRequiredDifficulty(lastNode *blockNode, newBlockTim
 	log.Debugf("Difficulty retarget at block height %d", lastNode.height+1)
 	log.Debugf("Old target %08x (%064x)", lastNode.bits, oldTarget)
 	log.Debugf("New target %08x (%064x)", newTargetBits, CompactToBig(newTargetBits))
-	log.Debugf("Actual timespan %v, adjusted timespan %v, target timespan %v",
+	log.Debugf("Actual timespan %s, adjusted timespan %s, target timespan %s",
 		time.Duration(actualTimespan)*time.Second,
 		time.Duration(adjustedTimespan)*time.Second,
 		dag.dagParams.TargetTimespan)

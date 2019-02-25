@@ -135,8 +135,8 @@ func TestMruInventoryMapStringer(t *testing.T) {
 	// Ensure the stringer gives the expected result.  Since map iteration
 	// is not ordered, either entry could be first, so account for both
 	// cases.
-	wantStr1 := fmt.Sprintf("<%d>[%s, %s]", 2, *iv1, *iv2)
-	wantStr2 := fmt.Sprintf("<%d>[%s, %s]", 2, *iv2, *iv1)
+	wantStr1 := fmt.Sprintf("<%d>[%s, %s]", 2, iv1, iv2)
+	wantStr2 := fmt.Sprintf("<%d>[%s, %s]", 2, iv2, iv1)
 	gotStr := mruInvMap.String()
 	if gotStr != wantStr1 && gotStr != wantStr2 {
 		t.Fatalf("unexpected string representation - got %q, want %q "+

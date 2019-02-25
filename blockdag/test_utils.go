@@ -1,11 +1,11 @@
 package blockdag
 
+// This file functions are not considered safe for regular use, and should be used for test purposes only.
+
 import (
-	"encoding/binary"
 	"fmt"
 	"os"
 	"path/filepath"
-	"time"
 
 	"github.com/daglabs/btcd/util/subnetworkid"
 
@@ -14,7 +14,6 @@ import (
 	"github.com/daglabs/btcd/database"
 	_ "github.com/daglabs/btcd/database/ffldb" // blank import ffldb so that its init() function runs before tests
 	"github.com/daglabs/btcd/txscript"
-	"github.com/daglabs/btcd/util"
 	"github.com/daglabs/btcd/wire"
 )
 
@@ -57,7 +56,7 @@ func fileExists(name string) bool {
 // a teardown function the caller should invoke when done testing to clean up.
 func DAGSetup(dbName string, config Config) (*BlockDAG, func(), error) {
 	if !isSupportedDbType(testDbType) {
-		return nil, nil, fmt.Errorf("unsupported db type %v", testDbType)
+		return nil, nil, fmt.Errorf("unsupported db type %s", testDbType)
 	}
 
 	var teardown func()
@@ -67,7 +66,7 @@ func DAGSetup(dbName string, config Config) (*BlockDAG, func(), error) {
 		if !fileExists(testDbRoot) {
 			if err := os.MkdirAll(testDbRoot, 0700); err != nil {
 				err := fmt.Errorf("unable to create test db "+
-					"root: %v", err)
+					"root: %s", err)
 				return nil, nil, err
 			}
 		}
@@ -77,7 +76,7 @@ func DAGSetup(dbName string, config Config) (*BlockDAG, func(), error) {
 		var err error
 		config.DB, err = database.Create(testDbType, dbPath, blockDataNet)
 		if err != nil {
-			return nil, nil, fmt.Errorf("error creating db: %v", err)
+			return nil, nil, fmt.Errorf("error creating db: %s", err)
 		}
 
 		// Setup a teardown function for cleaning up.  This function is
@@ -100,7 +99,7 @@ func DAGSetup(dbName string, config Config) (*BlockDAG, func(), error) {
 	dag, err := New(&config)
 	if err != nil {
 		teardown()
-		err := fmt.Errorf("failed to create dag instance: %v", err)
+		err := fmt.Errorf("failed to create dag instance: %s", err)
 		return nil, nil, err
 	}
 	return dag, teardown, nil
@@ -184,73 +183,32 @@ func createCoinbaseTxForTest(blockHeight int32, numOutputs uint32, extraNonce in
 	return tx, nil
 }
 
-// RegisterSubnetworkForTest is used to register network on DAG with specified gas limit
-func RegisterSubnetworkForTest(dag *BlockDAG, gasLimit uint64) (*subnetworkid.SubnetworkID, error) {
-	blockTime := time.Unix(dag.selectedTip().timestamp, 0)
-	extraNonce := int64(0)
+// SetVirtualForTest replaces the dag's virtual block. This function is used for test purposes only
+func SetVirtualForTest(dag *BlockDAG, virtual *virtualBlock) *virtualBlock {
+	oldVirtual := dag.virtual
+	dag.virtual = virtual
+	return oldVirtual
+}
 
-	buildNextBlock := func(parents blockSet, txs []*wire.MsgTx) (*util.Block, error) {
-		// We need to change the blockTime to keep all block hashes unique
-		blockTime = blockTime.Add(time.Second)
-
-		// We need to change the extraNonce to keep coinbase hashes unique
-		extraNonce++
-
-		bh := &wire.BlockHeader{
-			Version:      1,
-			Bits:         dag.genesis.bits,
-			ParentHashes: parents.hashes(),
-			Timestamp:    blockTime,
+// GetVirtualFromParentsForTest generates a virtual block with the given parents.
+func GetVirtualFromParentsForTest(dag *BlockDAG, parentHashes []daghash.Hash) (*virtualBlock, error) {
+	parents := newSet()
+	for _, hash := range parentHashes {
+		parent := dag.index.LookupNode(&hash)
+		if parent == nil {
+			return nil, fmt.Errorf("GetVirtualFromParentsForTest: didn't found node for hash %s", hash)
 		}
-		msgBlock := wire.NewMsgBlock(bh)
-		blockHeight := parents.maxHeight() + 1
-		coinbaseTx, err := createCoinbaseTxForTest(blockHeight, 1, extraNonce, dag.dagParams)
-		if err != nil {
-			return nil, err
-		}
-		_ = msgBlock.AddTransaction(coinbaseTx)
-
-		for _, tx := range txs {
-			_ = msgBlock.AddTransaction(tx)
-		}
-
-		return util.NewBlock(msgBlock), nil
+		parents.add(parent)
 	}
+	virtual := newVirtualBlock(parents, dag.dagParams.K)
 
-	addBlockToDAG := func(block *util.Block) (*blockNode, error) {
-		dag.dagLock.Lock()
-		defer dag.dagLock.Unlock()
-
-		err := dag.maybeAcceptBlock(block, BFNone)
-		if err != nil {
-			return nil, err
-		}
-
-		return dag.index.LookupNode(block.Hash()), nil
-	}
-
-	currentNode := dag.selectedTip()
-
-	// Create a block with a valid subnetwork registry transaction
-	registryTx := wire.NewMsgTx(wire.TxVersion)
-	registryTx.SubnetworkID = wire.SubnetworkIDRegistry
-	registryTx.Payload = make([]byte, 8)
-	binary.LittleEndian.PutUint64(registryTx.Payload, gasLimit)
-
-	// Add it to the DAG
-	registryBlock, err := buildNextBlock(setFromSlice(currentNode), []*wire.MsgTx{registryTx})
+	pastUTXO, _, err := virtual.pastUTXO(dag.virtual, dag.db)
 	if err != nil {
-		return nil, fmt.Errorf("could not build registry block: %s", err)
+		return nil, err
 	}
-	currentNode, err = addBlockToDAG(registryBlock)
-	if err != nil {
-		return nil, fmt.Errorf("could not add registry block to DAG: %s", err)
-	}
+	diffPastUTXO := pastUTXO.clone().(*DiffUTXOSet)
+	diffPastUTXO.meldToBase()
+	virtual.utxoSet = diffPastUTXO.base
 
-	// Build a subnetwork ID from the registry transaction
-	subnetworkID, err := txToSubnetworkID(registryTx)
-	if err != nil {
-		return nil, fmt.Errorf("could not build subnetwork ID: %s", err)
-	}
-	return subnetworkID, nil
+	return virtual, nil
 }

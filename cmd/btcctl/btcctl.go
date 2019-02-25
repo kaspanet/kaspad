@@ -86,7 +86,7 @@ func main() {
 			param, err := bio.ReadString('\n')
 			if err != nil && err != io.EOF {
 				fmt.Fprintf(os.Stderr, "Failed to read data "+
-					"from stdin: %v\n", err)
+					"from stdin: %s\n", err)
 				os.Exit(1)
 			}
 			if err == io.EOF && len(param) == 0 {
@@ -111,7 +111,7 @@ func main() {
 		// NewCmd function is only supposed to return errors of that
 		// type.
 		if jerr, ok := err.(btcjson.Error); ok {
-			fmt.Fprintf(os.Stderr, "%s command: %v (code: %s)\n",
+			fmt.Fprintf(os.Stderr, "%s error: %s (command code: %s)\n",
 				method, err, jerr.ErrorCode)
 			commandUsage(method)
 			os.Exit(1)
@@ -120,7 +120,7 @@ func main() {
 		// The error is not a btcjson.Error and this really should not
 		// happen.  Nevertheless, fallback to just showing the error
 		// if it should happen due to a bug in the package.
-		fmt.Fprintf(os.Stderr, "%s command: %v\n", method, err)
+		fmt.Fprintf(os.Stderr, "%s error: %s\n", method, err)
 		commandUsage(method)
 		os.Exit(1)
 	}
@@ -146,7 +146,7 @@ func main() {
 	if strings.HasPrefix(strResult, "{") || strings.HasPrefix(strResult, "[") {
 		var dst bytes.Buffer
 		if err := json.Indent(&dst, result, "", "  "); err != nil {
-			fmt.Fprintf(os.Stderr, "Failed to format result: %v",
+			fmt.Fprintf(os.Stderr, "Failed to format result: %s",
 				err)
 			os.Exit(1)
 		}
@@ -155,7 +155,7 @@ func main() {
 	} else if strings.HasPrefix(strResult, `"`) {
 		var str string
 		if err := json.Unmarshal(result, &str); err != nil {
-			fmt.Fprintf(os.Stderr, "Failed to unmarshal result: %v",
+			fmt.Fprintf(os.Stderr, "Failed to unmarshal result: %s",
 				err)
 			os.Exit(1)
 		}

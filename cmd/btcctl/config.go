@@ -221,7 +221,7 @@ func loadConfig() (*config, []string, error) {
 
 		err := createDefaultConfigFile(preCfg.ConfigFile, serverConfigPath)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error creating a default config file: %v\n", err)
+			fmt.Fprintf(os.Stderr, "Error creating a default config file: %s\n", err)
 		}
 	}
 
@@ -230,7 +230,7 @@ func loadConfig() (*config, []string, error) {
 	err = flags.NewIniParser(parser).ParseFile(preCfg.ConfigFile)
 	if err != nil {
 		if _, ok := err.(*os.PathError); !ok {
-			fmt.Fprintf(os.Stderr, "Error parsing config file: %v\n",
+			fmt.Fprintf(os.Stderr, "Error parsing config file: %s\n",
 				err)
 			fmt.Fprintln(os.Stderr, usageMessage)
 			return nil, nil, err

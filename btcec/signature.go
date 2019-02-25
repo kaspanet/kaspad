@@ -181,7 +181,7 @@ func parseSig(sigStr []byte, curve elliptic.Curve, der bool) (*Signature, error)
 
 	// sanity check length parsing
 	if index != len(sigStr) {
-		return nil, fmt.Errorf("malformed signature: bad final length %v != %v",
+		return nil, fmt.Errorf("malformed signature: bad final length %d != %d",
 			index, len(sigStr))
 	}
 

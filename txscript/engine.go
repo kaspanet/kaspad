@@ -140,12 +140,12 @@ func (vm *Engine) disasm(scriptIdx int, scriptOff int) string {
 // execution, nil otherwise.
 func (vm *Engine) validPC() error {
 	if vm.scriptIdx >= len(vm.scripts) {
-		str := fmt.Sprintf("past input scripts %v:%v %v:xxxx",
+		str := fmt.Sprintf("past input scripts %d:%d %d:xxxx",
 			vm.scriptIdx, vm.scriptOff, len(vm.scripts))
 		return scriptError(ErrInvalidProgramCounter, str)
 	}
 	if vm.scriptOff >= len(vm.scripts[vm.scriptIdx]) {
-		str := fmt.Sprintf("past input scripts %v:%v %v:%04d",
+		str := fmt.Sprintf("past input scripts %d:%d %d:%04d",
 			vm.scriptIdx, vm.scriptOff, vm.scriptIdx,
 			len(vm.scripts[vm.scriptIdx]))
 		return scriptError(ErrInvalidProgramCounter, str)
@@ -222,7 +222,7 @@ func (vm *Engine) CheckErrorCondition(finalScript bool) error {
 	}
 	if !v {
 		// Log interesting data.
-		log.Tracef("%v", newLogClosure(func() string {
+		log.Tracef("%s", newLogClosure(func() string {
 			dis0, _ := vm.DisasmScript(0)
 			dis1, _ := vm.DisasmScript(1)
 			return fmt.Sprintf("scripts failed: script0: %s\n"+
@@ -321,19 +321,19 @@ func (vm *Engine) Step() (done bool, err error) {
 func (vm *Engine) Execute() (err error) {
 	done := false
 	for !done {
-		log.Tracef("%v", newLogClosure(func() string {
+		log.Tracef("%s", newLogClosure(func() string {
 			dis, err := vm.DisasmPC()
 			if err != nil {
-				return fmt.Sprintf("stepping (%v)", err)
+				return fmt.Sprintf("stepping (%s)", err)
 			}
-			return fmt.Sprintf("stepping %v", dis)
+			return fmt.Sprintf("stepping %s", dis)
 		}))
 
 		done, err = vm.Step()
 		if err != nil {
 			return err
 		}
-		log.Tracef("%v", newLogClosure(func() string {
+		log.Tracef("%s", newLogClosure(func() string {
 			var dstr, astr string
 
 			// if we're tracing, dump the stacks.

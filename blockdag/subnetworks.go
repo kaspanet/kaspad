@@ -27,28 +27,35 @@ func newSubnetworkStore(db database.DB) *SubnetworkStore {
 // subnetwork registry transactions, validates them, and registers a new
 // subnetwork based on it.
 // This function returns an error if one or more transactions are invalid
-func registerSubnetworks(dbTx database.Tx, txs []*TxWithBlockHash) error {
+func registerSubnetworks(dbTx database.Tx, txsAcceptanceData MultiblockTxsAcceptanceData) error {
 	validSubnetworkRegistryTxs := make([]*wire.MsgTx, 0)
-	for _, txData := range txs {
-		tx := txData.Tx.MsgTx()
-		if tx.SubnetworkID == wire.SubnetworkIDRegistry {
-			err := validateSubnetworkRegistryTransaction(tx)
-			if err != nil {
-				return err
-			}
-			validSubnetworkRegistryTxs = append(validSubnetworkRegistryTxs, tx)
-		}
 
-		if subnetworkid.Less(&wire.SubnetworkIDRegistry, &tx.SubnetworkID) {
-			// Transactions are ordered by subnetwork, so we can safely assume
-			// that the rest of the transactions will not be subnetwork registry
-			// transactions.
-			break
+	for _, txs := range txsAcceptanceData {
+		for _, txData := range txs {
+			if !txData.IsAccepted {
+				continue
+			}
+
+			tx := txData.Tx.MsgTx()
+			if tx.SubnetworkID == wire.SubnetworkIDRegistry {
+				err := validateSubnetworkRegistryTransaction(tx)
+				if err != nil {
+					return err
+				}
+				validSubnetworkRegistryTxs = append(validSubnetworkRegistryTxs, tx)
+			}
+
+			if subnetworkid.Less(&wire.SubnetworkIDRegistry, &tx.SubnetworkID) {
+				// Transactions are ordered by subnetwork, so we can safely assume
+				// that the rest of the transactions will not be subnetwork registry
+				// transactions.
+				break
+			}
 		}
 	}
 
 	for _, registryTx := range validSubnetworkRegistryTxs {
-		subnetworkID, err := txToSubnetworkID(registryTx)
+		subnetworkID, err := TxToSubnetworkID(registryTx)
 		if err != nil {
 			return err
 		}
@@ -81,8 +88,8 @@ func validateSubnetworkRegistryTransaction(tx *wire.MsgTx) error {
 	return nil
 }
 
-// txToSubnetworkID creates a subnetwork ID from a subnetwork registry transaction
-func txToSubnetworkID(tx *wire.MsgTx) (*subnetworkid.SubnetworkID, error) {
+// TxToSubnetworkID creates a subnetwork ID from a subnetwork registry transaction
+func TxToSubnetworkID(tx *wire.MsgTx) (*subnetworkid.SubnetworkID, error) {
 	txHash := tx.TxHash()
 	return subnetworkid.New(util.Hash160(txHash[:]))
 }

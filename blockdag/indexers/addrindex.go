@@ -308,7 +308,7 @@ func dbFetchAddrIndexEntries(bucket internalBucket, addrKey [addrKeySize]byte, n
 					ErrorCode: database.ErrCorruption,
 					Description: fmt.Sprintf("failed to "+
 						"deserialized address index "+
-						"for key %x: %v", addrKey, err),
+						"for key %x: %s", addrKey, err),
 				}
 			}
 
@@ -667,8 +667,8 @@ func (idx *AddrIndex) indexBlock(data writeIndexData, block *util.Block, dag *bl
 		// Coinbases do not reference any inputs.  Since the block is
 		// required to have already gone through full validation, it has
 		// already been proven on the first transaction in the block is
-		// a coinbase.
-		if txIdx != 0 {
+		// a coinbase, and the second one is a fee transaction.
+		if txIdx > 1 {
 			for _, txIn := range tx.MsgTx().TxIn {
 				// The UTXO should always have the input since
 				// the index contract requires it, however, be
@@ -693,7 +693,7 @@ func (idx *AddrIndex) indexBlock(data writeIndexData, block *util.Block, dag *bl
 // the transactions in the block involve.
 //
 // This is part of the Indexer interface.
-func (idx *AddrIndex) ConnectBlock(dbTx database.Tx, block *util.Block, dag *blockdag.BlockDAG, _ []*blockdag.TxWithBlockHash) error {
+func (idx *AddrIndex) ConnectBlock(dbTx database.Tx, block *util.Block, dag *blockdag.BlockDAG, _ blockdag.MultiblockTxsAcceptanceData) error {
 	// The offset and length of the transactions within the serialized
 	// block.
 	txLocs, err := block.TxLoc()

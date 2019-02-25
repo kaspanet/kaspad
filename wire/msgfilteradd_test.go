@@ -50,8 +50,7 @@ func TestFilterAddLatest(t *testing.T) {
 	}
 }
 
-// TestFilterAddCrossProtocol tests the MsgFilterAdd API when encoding with the
-// latest protocol version and decoding with BIP0031Version.
+// TestFilterAddCrossProtocol tests the MsgFilterAdd API.
 func TestFilterAddCrossProtocol(t *testing.T) {
 	data := []byte{0x01, 0x02}
 	msg := NewMsgFilterAdd(data)
@@ -64,20 +63,6 @@ func TestFilterAddCrossProtocol(t *testing.T) {
 	err := msg.BtcEncode(&buf, ProtocolVersion)
 	if err != nil {
 		t.Errorf("encode of MsgFilterAdd failed %v err <%v>", msg, err)
-	}
-
-	// Decode with old protocol version.
-	var readmsg MsgFilterAdd
-	err = readmsg.BtcDecode(&buf, BIP0031Version)
-	if err == nil {
-		t.Errorf("decode of MsgFilterAdd succeeded when it shouldn't "+
-			"have %v", msg)
-	}
-
-	// Since one of the protocol versions doesn't support the filteradd
-	// message, make sure the data didn't get encoded and decoded back out.
-	if bytes.Equal(msg.Data, readmsg.Data) {
-		t.Error("should not get same data for cross protocol")
 	}
 
 }
@@ -108,8 +93,6 @@ func TestFilterAddMaxDataSize(t *testing.T) {
 // of MsgFilterAdd to confirm error paths work correctly.
 func TestFilterAddWireErrors(t *testing.T) {
 	pver := ProtocolVersion
-	pverNoFilterAdd := BIP0037Version - 1
-	wireErr := &MessageError{}
 
 	baseData := []byte{0x01, 0x02, 0x03, 0x04}
 	baseFilterAdd := NewMsgFilterAdd(baseData)
@@ -128,8 +111,6 @@ func TestFilterAddWireErrors(t *testing.T) {
 		{baseFilterAdd, baseFilterAddEncoded, pver, 0, io.ErrShortWrite, io.EOF},
 		// Force error in data.
 		{baseFilterAdd, baseFilterAddEncoded, pver, 1, io.ErrShortWrite, io.EOF},
-		// Force error due to unsupported protocol version.
-		{baseFilterAdd, baseFilterAddEncoded, pverNoFilterAdd, 5, wireErr, wireErr},
 	}
 
 	t.Logf("Running %d tests", len(tests))

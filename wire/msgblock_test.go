@@ -6,12 +6,13 @@ package wire
 
 import (
 	"bytes"
-	"github.com/daglabs/btcd/util/subnetworkid"
 	"io"
 	"math"
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/daglabs/btcd/util/subnetworkid"
 
 	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/davecgh/go-spew/spew"
@@ -163,42 +164,6 @@ func TestBlockWire(t *testing.T) {
 			blockOneTxLocs,
 			ProtocolVersion,
 		},
-
-		// Protocol version BIP0035Version.
-		{
-			&blockOne,
-			&blockOne,
-			blockOneBytes,
-			blockOneTxLocs,
-			BIP0035Version,
-		},
-
-		// Protocol version BIP0031Version.
-		{
-			&blockOne,
-			&blockOne,
-			blockOneBytes,
-			blockOneTxLocs,
-			BIP0031Version,
-		},
-
-		// Protocol version NetAddressTimeVersion.
-		{
-			&blockOne,
-			&blockOne,
-			blockOneBytes,
-			blockOneTxLocs,
-			NetAddressTimeVersion,
-		},
-
-		// Protocol version MultipleAddressVersion.
-		{
-			&blockOne,
-			&blockOne,
-			blockOneBytes,
-			blockOneTxLocs,
-			MultipleAddressVersion,
-		},
 	}
 
 	t.Logf("Running %d tests", len(tests))
@@ -235,10 +200,7 @@ func TestBlockWire(t *testing.T) {
 // TestBlockWireErrors performs negative tests against wire encode and decode
 // of MsgBlock to confirm error paths work correctly.
 func TestBlockWireErrors(t *testing.T) {
-	// Use protocol version 60002 specifically here instead of the latest
-	// because the test data is using bytes encoded with that protocol
-	// version.
-	pver := uint32(60002)
+	pver := ProtocolVersion
 
 	tests := []struct {
 		in       *MsgBlock // Value to encode
@@ -433,10 +395,7 @@ func TestBlockSerializeErrors(t *testing.T) {
 // are handled properly.  This could otherwise potentially be used as an attack
 // vector.
 func TestBlockOverflowErrors(t *testing.T) {
-	// Use protocol version 70001 specifically here instead of the latest
-	// protocol version because the test data is using bytes encoded with
-	// that version.
-	pver := uint32(70001)
+	pver := ProtocolVersion
 
 	tests := []struct {
 		buf  []byte // Wire encoding

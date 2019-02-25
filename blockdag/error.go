@@ -60,6 +60,9 @@ const (
 	// the current time.
 	ErrTimeTooNew
 
+	// ErrNoParents indicates that the block is missing parents
+	ErrNoParents
+
 	// ErrWrongParentsOrder indicates that the block's parents are not ordered by hash, as expected
 	ErrWrongParentsOrder
 
@@ -102,10 +105,6 @@ const (
 	// valid transaction must have at least one input.
 	ErrNoTxInputs
 
-	// ErrNoTxOutputs indicates a transaction does not have any outputs.  A
-	// valid transaction must have at least one output.
-	ErrNoTxOutputs
-
 	// ErrTxTooBig indicates a transaction exceeds the maximum allowed size
 	// when serialized.
 	ErrTxTooBig
@@ -142,7 +141,7 @@ const (
 	ErrOverwriteTx
 
 	// ErrImmatureSpend indicates a transaction is attempting to spend a
-	// coinbase that has not yet reached the required maturity.
+	// block reward that has not yet reached the required maturity.
 	ErrImmatureSpend
 
 	// ErrSpendTooHigh indicates a transaction is attempting to spend more
@@ -182,6 +181,17 @@ const (
 	// coinbase transaction for version 2 and higher blocks does not match
 	// the expected value.
 	ErrBadCoinbaseHeight
+
+	// ErrSecondTxNotFeeTransaction indicates the second transaction in
+	// a block is not a fee transaction.
+	ErrSecondTxNotFeeTransaction
+
+	// ErrBadFeeTransaction indicates that the block's fee transaction is not build as expected
+	ErrBadFeeTransaction
+
+	// ErrMultipleFeeTransactions indicates a block contains more than one
+	// fee transaction.
+	ErrMultipleFeeTransactions
 
 	// ErrScriptMalformed indicates a transaction script is malformed in
 	// some way.  For example, it might be longer than the maximum allowed
@@ -237,6 +247,8 @@ var errorCodeStrings = map[ErrorCode]string{
 	ErrInvalidTime:               "ErrInvalidTime",
 	ErrTimeTooOld:                "ErrTimeTooOld",
 	ErrTimeTooNew:                "ErrTimeTooNew",
+	ErrNoParents:                 "ErrNoParents",
+	ErrWrongParentsOrder:         "ErrWrongParentsOrder",
 	ErrDifficultyTooLow:          "ErrDifficultyTooLow",
 	ErrUnexpectedDifficulty:      "ErrUnexpectedDifficulty",
 	ErrHighHash:                  "ErrHighHash",
@@ -246,7 +258,6 @@ var errorCodeStrings = map[ErrorCode]string{
 	ErrCheckpointTimeTooOld:      "ErrCheckpointTimeTooOld",
 	ErrNoTransactions:            "ErrNoTransactions",
 	ErrNoTxInputs:                "ErrNoTxInputs",
-	ErrNoTxOutputs:               "ErrNoTxOutputs",
 	ErrTxTooBig:                  "ErrTxTooBig",
 	ErrBadTxOutValue:             "ErrBadTxOutValue",
 	ErrDuplicateTxInputs:         "ErrDuplicateTxInputs",
@@ -265,6 +276,9 @@ var errorCodeStrings = map[ErrorCode]string{
 	ErrBadCoinbaseValue:          "ErrBadCoinbaseValue",
 	ErrMissingCoinbaseHeight:     "ErrMissingCoinbaseHeight",
 	ErrBadCoinbaseHeight:         "ErrBadCoinbaseHeight",
+	ErrSecondTxNotFeeTransaction: "ErrSecondTxNotFeeTransaction",
+	ErrBadFeeTransaction:         "ErrBadFeeTransaction",
+	ErrMultipleFeeTransactions:   "ErrMultipleFeeTransactions",
 	ErrScriptMalformed:           "ErrScriptMalformed",
 	ErrScriptValidation:          "ErrScriptValidation",
 	ErrParentBlockUnknown:        "ErrParentBlockUnknown",

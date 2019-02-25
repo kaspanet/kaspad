@@ -21,7 +21,7 @@ const MaxStringSize = IDLength * 2
 
 // ErrIDStrSize describes an error that indicates the caller specified an ID
 // string that has too many characters.
-var ErrIDStrSize = fmt.Errorf("max ID string length is %v bytes", MaxStringSize)
+var ErrIDStrSize = fmt.Errorf("max ID string length is %d bytes", MaxStringSize)
 
 // SubnetworkID is used in several of the bitcoin messages and common structures.  It
 // typically represents ripmed160(sha256(data)).
@@ -63,7 +63,7 @@ func (id *SubnetworkID) CloneBytes() []byte {
 func (id *SubnetworkID) SetBytes(newID []byte) error {
 	nhlen := len(newID)
 	if nhlen != IDLength {
-		return fmt.Errorf("invalid ID length of %v, want %v", nhlen,
+		return fmt.Errorf("invalid ID length of %d, want %d", nhlen,
 			IDLength)
 	}
 	copy(id[:], newID)

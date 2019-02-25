@@ -7,10 +7,11 @@ package wire
 import (
 	"bytes"
 	"fmt"
-	"github.com/daglabs/btcd/util/subnetworkid"
 	"io"
 	"strings"
 	"time"
+
+	"github.com/daglabs/btcd/util/subnetworkid"
 )
 
 // MaxUserAgentLen is the maximum allowed length for the user agent field in a
@@ -200,14 +201,11 @@ func (msg *MsgVersion) BtcEncode(w io.Writer, pver uint32) error {
 		return err
 	}
 
-	// There was no relay transactions field before BIP0037Version.  Also,
-	// the wire encoding for the field is true when transactions should be
+	// The wire encoding for the field is true when transactions should be
 	// relayed, so reverse it from the DisableRelayTx field.
-	if pver >= BIP0037Version {
-		err = writeElement(w, !msg.DisableRelayTx)
-		if err != nil {
-			return err
-		}
+	err = writeElement(w, !msg.DisableRelayTx)
+	if err != nil {
+		return err
 	}
 	return nil
 }
@@ -256,7 +254,7 @@ func NewMsgVersion(me *NetAddress, you *NetAddress, nonce uint64,
 // validateUserAgent checks userAgent length against MaxUserAgentLen
 func validateUserAgent(userAgent string) error {
 	if len(userAgent) > MaxUserAgentLen {
-		str := fmt.Sprintf("user agent too long [len %v, max %v]",
+		str := fmt.Sprintf("user agent too long [len %d, max %d]",
 			len(userAgent), MaxUserAgentLen)
 		return messageError("MsgVersion", str)
 	}

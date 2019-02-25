@@ -21,7 +21,7 @@ const MaxHashStringSize = HashSize * 2
 
 // ErrHashStrSize describes an error that indicates the caller specified a hash
 // string that has too many characters.
-var ErrHashStrSize = fmt.Errorf("max hash string length is %v bytes", MaxHashStringSize)
+var ErrHashStrSize = fmt.Errorf("max hash string length is %d bytes", MaxHashStringSize)
 
 // Hash is used in several of the bitcoin messages and common structures.  It
 // typically represents the double sha256 of data.
@@ -81,7 +81,7 @@ func (txID *TxID) CloneBytes() []byte {
 func (hash *Hash) SetBytes(newHash []byte) error {
 	nhlen := len(newHash)
 	if nhlen != HashSize {
-		return fmt.Errorf("invalid hash length of %v, want %v", nhlen,
+		return fmt.Errorf("invalid hash length of %d, want %d", nhlen,
 			HashSize)
 	}
 	copy(hash[:], newHash)

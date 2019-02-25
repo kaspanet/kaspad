@@ -98,7 +98,7 @@ func decode(encoded string) (string, []byte, error) {
 	decoded, err := decodeFromBase32(data)
 	if err != nil {
 		return "", nil, fmt.Errorf("failed converting data to bytes: "+
-			"%v", err)
+			"%s", err)
 	}
 
 	if !verifyChecksum(prefix, decoded) {
@@ -137,7 +137,7 @@ func decodeFromBase32(base32String string) ([]byte, error) {
 		index := strings.IndexByte(charset, base32String[i])
 		if index < 0 {
 			return nil, fmt.Errorf("invalid character not part of "+
-				"charset: %v", base32String[i])
+				"charset: %c", base32String[i])
 		}
 		decoded = append(decoded, byte(index))
 	}

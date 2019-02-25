@@ -29,7 +29,7 @@ func SetLimits() error {
 		return nil
 	}
 	if rLimit.Max < fileLimitMin {
-		err = fmt.Errorf("need at least %v file descriptors",
+		err = fmt.Errorf("need at least %d file descriptors",
 			fileLimitMin)
 		return err
 	}
