@@ -55,7 +55,7 @@ func (msg *MsgCFCheckpt) BtcDecode(r io.Reader, pver uint32) error {
 	}
 
 	// Read number of filter headers
-	count, err := ReadVarInt(r, pver)
+	count, err := ReadVarInt(r)
 	if err != nil {
 		return err
 	}
@@ -92,7 +92,7 @@ func (msg *MsgCFCheckpt) BtcEncode(w io.Writer, pver uint32) error {
 
 	// Write length of FilterHeaders slice
 	count := len(msg.FilterHeaders)
-	err = WriteVarInt(w, pver, uint64(count))
+	err = WriteVarInt(w, uint64(count))
 	if err != nil {
 		return err
 	}

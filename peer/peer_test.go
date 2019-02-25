@@ -252,8 +252,8 @@ func TestPeerConnection(t *testing.T) {
 		wantLastPingNonce:   uint64(0),
 		wantLastPingMicros:  int64(0),
 		wantTimeOffset:      int64(0),
-		wantBytesSent:       187, // 163 version + 24 verack
-		wantBytesReceived:   187,
+		wantBytesSent:       203, // 179 version + 24 verack
+		wantBytesReceived:   203,
 	}
 	wantStats2 := peerStats{
 		wantUserAgent:       wire.DefaultUserAgent + "peer:1.0(comment)/",
@@ -266,8 +266,8 @@ func TestPeerConnection(t *testing.T) {
 		wantLastPingNonce:   uint64(0),
 		wantLastPingMicros:  int64(0),
 		wantTimeOffset:      int64(0),
-		wantBytesSent:       187, // 163 version + 24 verack
-		wantBytesReceived:   187,
+		wantBytesSent:       203, // 179 version + 24 verack
+		wantBytesReceived:   203,
 	}
 
 	tests := []struct {
@@ -480,7 +480,7 @@ func TestPeerListeners(t *testing.T) {
 		},
 		{
 			"OnAddr",
-			wire.NewMsgAddr(),
+			wire.NewMsgAddr(&wire.SubnetworkIDSupportsAll),
 		},
 		{
 			"OnPing",
@@ -716,7 +716,7 @@ func TestOutboundPeer(t *testing.T) {
 		na := wire.NetAddress{}
 		addrs = append(addrs, &na)
 	}
-	if _, err := p2.PushAddrMsg(addrs); err != nil {
+	if _, err := p2.PushAddrMsg(addrs, &wire.SubnetworkIDSupportsAll); err != nil {
 		t.Errorf("PushAddrMsg: unexpected err %v\n", err)
 		return
 	}

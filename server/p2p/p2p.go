@@ -336,7 +336,7 @@ func (sp *Peer) pushAddrMsg(addresses []*wire.NetAddress, subnetworkID *subnetwo
 			addrs = append(addrs, addr)
 		}
 	}
-	known, err := sp.PushAddrMsg(addrs)
+	known, err := sp.PushAddrMsg(addrs, subnetworkID)
 	if err != nil {
 		peerLog.Errorf("Can't push address message to %s: %v", sp.Peer, err)
 		sp.Disconnect()
@@ -417,16 +417,13 @@ func (sp *Peer) OnVersion(_ *peer.Peer, msg *wire.MsgVersion) {
 				if addrmgr.IsRoutable(lna) {
 					// Filter addresses the peer already knows about.
 					addresses := []*wire.NetAddress{lna}
-					sp.pushAddrMsg(addresses)
+					sp.pushAddrMsg(addresses, sp.SubnetworkID())
 				}
 			}
 
 			// Request known addresses if the server address manager needs
-			// more and the peer has a protocol version new enough to
-			// include a timestamp with addresses.
-			hasTimestamp := sp.ProtocolVersion() >=
-				wire.NetAddressTimeVersion
-			if addrManager.NeedMoreAddresses() && hasTimestamp {
+			// more.
+			if addrManager.NeedMoreAddresses() {
 				sp.QueueMessage(wire.NewMsgGetAddr(sp.SubnetworkID()), nil)
 
 				if !sp.SubnetworkID().IsEqual(&wire.SubnetworkIDSupportsAll) {
@@ -1111,7 +1108,7 @@ func (sp *Peer) OnGetAddr(_ *peer.Peer, msg *wire.MsgGetAddr) {
 	addrCache := sp.server.addrManager.AddressCache(msg.SubnetworkID)
 
 	// Push the addresses.
-	sp.pushAddrMsg(addrCache)
+	sp.pushAddrMsg(addrCache, sp.SubnetworkID())
 }
 
 // OnAddr is invoked when a peer receives an addr bitcoin message and is
@@ -1122,11 +1119,6 @@ func (sp *Peer) OnAddr(_ *peer.Peer, msg *wire.MsgAddr) {
 	// since it will not be able to learn about other peers that have not
 	// specifically been provided.
 	if config.MainConfig().SimNet {
-		return
-	}
-
-	// Ignore old style addresses which don't include a timestamp.
-	if sp.ProtocolVersion() < wire.NetAddressTimeVersion {
 		return
 	}
 

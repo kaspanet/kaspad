@@ -161,7 +161,7 @@ func (alert *Alert) Serialize(w io.Writer, pver uint32) error {
 			"[count %v, max %v]", count, maxCountSetCancel)
 		return messageError("Alert.Serialize", str)
 	}
-	err = WriteVarInt(w, pver, uint64(count))
+	err = WriteVarInt(w, uint64(count))
 	if err != nil {
 		return err
 	}
@@ -183,7 +183,7 @@ func (alert *Alert) Serialize(w io.Writer, pver uint32) error {
 			"[count %v, max %v]", count, maxCountSetSubVer)
 		return messageError("Alert.Serialize", str)
 	}
-	err = WriteVarInt(w, pver, uint64(count))
+	err = WriteVarInt(w, uint64(count))
 	if err != nil {
 		return err
 	}
@@ -221,7 +221,7 @@ func (alert *Alert) Deserialize(r io.Reader, pver uint32) error {
 	// SetCancel: first read a VarInt that contains
 	// count - the number of Cancel IDs, then
 	// iterate count times and read them
-	count, err := ReadVarInt(r, pver)
+	count, err := ReadVarInt(r)
 	if err != nil {
 		return err
 	}
@@ -245,7 +245,7 @@ func (alert *Alert) Deserialize(r io.Reader, pver uint32) error {
 
 	// SetSubVer: similar to SetCancel
 	// but read count number of sub-version strings
-	count, err = ReadVarInt(r, pver)
+	count, err = ReadVarInt(r)
 	if err != nil {
 		return err
 	}

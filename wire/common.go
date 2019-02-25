@@ -579,7 +579,7 @@ func VarIntSerializeSize(val uint64) int {
 // maximum block payload size since it helps protect against memory exhaustion
 // attacks and forced panics through malformed messages.
 func ReadVarString(r io.Reader, pver uint32) (string, error) {
-	count, err := ReadVarInt(r, pver)
+	count, err := ReadVarInt(r)
 	if err != nil {
 		return "", err
 	}
@@ -605,7 +605,7 @@ func ReadVarString(r io.Reader, pver uint32) (string, error) {
 // the length of the string followed by the bytes that represent the string
 // itself.
 func WriteVarString(w io.Writer, pver uint32, str string) error {
-	err := WriteVarInt(w, pver, uint64(len(str)))
+	err := WriteVarInt(w, uint64(len(str)))
 	if err != nil {
 		return err
 	}
@@ -623,7 +623,7 @@ func WriteVarString(w io.Writer, pver uint32, str string) error {
 func ReadVarBytes(r io.Reader, pver uint32, maxAllowed uint32,
 	fieldName string) ([]byte, error) {
 
-	count, err := ReadVarInt(r, pver)
+	count, err := ReadVarInt(r)
 	if err != nil {
 		return nil, err
 	}
@@ -649,7 +649,7 @@ func ReadVarBytes(r io.Reader, pver uint32, maxAllowed uint32,
 // containing the number of bytes, followed by the bytes themselves.
 func WriteVarBytes(w io.Writer, pver uint32, bytes []byte) error {
 	slen := uint64(len(bytes))
-	err := WriteVarInt(w, pver, slen)
+	err := WriteVarInt(w, slen)
 	if err != nil {
 		return err
 	}

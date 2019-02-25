@@ -38,7 +38,7 @@ func (msg *MsgGetData) AddInvVect(iv *InvVect) error {
 // BtcDecode decodes r using the bitcoin protocol encoding into the receiver.
 // This is part of the Message interface implementation.
 func (msg *MsgGetData) BtcDecode(r io.Reader, pver uint32) error {
-	count, err := ReadVarInt(r, pver)
+	count, err := ReadVarInt(r)
 	if err != nil {
 		return err
 	}
@@ -75,7 +75,7 @@ func (msg *MsgGetData) BtcEncode(w io.Writer, pver uint32) error {
 		return messageError("MsgGetData.BtcEncode", str)
 	}
 
-	err := WriteVarInt(w, pver, uint64(count))
+	err := WriteVarInt(w, uint64(count))
 	if err != nil {
 		return err
 	}

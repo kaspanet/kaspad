@@ -150,7 +150,7 @@ func (msg *MsgAddr) Command() string {
 
 // MaxPayloadLength returns the maximum length the payload can be for the
 // receiver.  This is part of the Message interface implementation.
-func (msg *MsgAddr) MaxPayloadLength() uint32 {
+func (msg *MsgAddr) MaxPayloadLength(pver uint32) uint32 {
 	// Num addresses (varInt) + max allowed addresses.
 	return MaxVarIntPayload + (MaxAddrPerMsg * maxNetAddressPayload())
 }

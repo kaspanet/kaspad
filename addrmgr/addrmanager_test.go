@@ -310,7 +310,7 @@ func TestGood(t *testing.T) {
 		t.Errorf("Number of addresses is too many: %d vs %d", numAddrs, addrsToAdd)
 	}
 
-	numCache := len(n.AddressCache())
+	numCache := len(n.AddressCache(nil))
 	if numCache >= numAddrs/4 {
 		t.Errorf("Number of addresses in cache: got %d, want %d", numCache, numAddrs/4)
 	}

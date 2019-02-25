@@ -67,7 +67,7 @@ func (msg *MsgBlock) BtcDecode(r io.Reader, pver uint32) error {
 		return err
 	}
 
-	txCount, err := ReadVarInt(r, pver)
+	txCount, err := ReadVarInt(r)
 	if err != nil {
 		return err
 	}
@@ -125,7 +125,7 @@ func (msg *MsgBlock) DeserializeTxLoc(r *bytes.Buffer) ([]TxLoc, error) {
 		return nil, err
 	}
 
-	txCount, err := ReadVarInt(r, 0)
+	txCount, err := ReadVarInt(r)
 	if err != nil {
 		return nil, err
 	}
@@ -167,7 +167,7 @@ func (msg *MsgBlock) BtcEncode(w io.Writer, pver uint32) error {
 		return err
 	}
 
-	err = WriteVarInt(w, pver, uint64(len(msg.Transactions)))
+	err = WriteVarInt(w, uint64(len(msg.Transactions)))
 	if err != nil {
 		return err
 	}

@@ -34,7 +34,7 @@ const (
 
 	// minAcceptableProtocolVersion is the lowest protocol version that a
 	// connected peer may support.
-	minAcceptableProtocolVersion = wire.MultipleAddressVersion
+	minAcceptableProtocolVersion = wire.BIP0031Version
 
 	// outputBufferSize is the number of elements the output channels use.
 	outputBufferSize = 50
@@ -271,9 +271,9 @@ type Config struct {
 	// SubnetworkID specifies which subnetwork the peer is associated with.
 	SubnetworkID *subnetworkid.SubnetworkID
 
-	// DnsSeederPeer set by DNS seeder in order to allow some actions disbled for normal nodes. For example,
+	// DNSSeederPeer set by DNS seeder in order to allow some actions disbled for normal nodes. For example,
 	// allow outgoing connections to partial nodes
-	DnsSeederPeer bool
+	DNSSeederPeer bool
 }
 
 // minUint32 is a helper function to return the minimum of two uint32s.
@@ -1052,7 +1052,7 @@ func (p *Peer) handleRemoteVersionMsg(msg *wire.MsgVersion) error {
 		return errors.New(reason)
 	}
 
-	if p.cfg.DnsSeederPeer {
+	if p.cfg.DNSSeederPeer {
 		// Update subnetwork ID
 		p.cfg.SubnetworkID = &msg.SubnetworkID
 	} else {
