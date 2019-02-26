@@ -253,8 +253,8 @@ func TestPeerConnection(t *testing.T) {
 		wantLastPingNonce:   uint64(0),
 		wantLastPingMicros:  int64(0),
 		wantTimeOffset:      int64(0),
-		wantBytesSent:       203, // 179 version + 24 verack
-		wantBytesReceived:   203,
+		wantBytesSent:       187, // 163 version + 24 verack
+		wantBytesReceived:   187,
 	}
 	wantStats2 := peerStats{
 		wantUserAgent:       wire.DefaultUserAgent + "peer:1.0(comment)/",
@@ -267,8 +267,8 @@ func TestPeerConnection(t *testing.T) {
 		wantLastPingNonce:   uint64(0),
 		wantLastPingMicros:  int64(0),
 		wantTimeOffset:      int64(0),
-		wantBytesSent:       203, // 179 version + 24 verack
-		wantBytesReceived:   203,
+		wantBytesSent:       187, // 163 version + 24 verack
+		wantBytesReceived:   187,
 	}
 
 	tests := []struct {
@@ -477,11 +477,11 @@ func TestPeerListeners(t *testing.T) {
 	}{
 		{
 			"OnGetAddr",
-			wire.NewMsgGetAddr(&wire.SubnetworkIDSupportsAll),
+			wire.NewMsgGetAddr(),
 		},
 		{
 			"OnAddr",
-			wire.NewMsgAddr(&wire.SubnetworkIDSupportsAll),
+			wire.NewMsgAddr(),
 		},
 		{
 			"OnPing",
@@ -717,7 +717,7 @@ func TestOutboundPeer(t *testing.T) {
 		na := wire.NetAddress{}
 		addrs = append(addrs, &na)
 	}
-	if _, err := p2.PushAddrMsg(addrs, &wire.SubnetworkIDSupportsAll); err != nil {
+	if _, err := p2.PushAddrMsg(addrs); err != nil {
 		t.Errorf("PushAddrMsg: unexpected err %v\n", err)
 		return
 	}
@@ -734,7 +734,7 @@ func TestOutboundPeer(t *testing.T) {
 	p2.PushRejectMsg("block", wire.RejectInvalid, "invalid", nil, false)
 
 	// Test Queue Messages
-	p2.QueueMessage(wire.NewMsgGetAddr(&wire.SubnetworkIDSupportsAll), nil)
+	p2.QueueMessage(wire.NewMsgGetAddr(), nil)
 	p2.QueueMessage(wire.NewMsgPing(1), nil)
 	p2.QueueMessage(wire.NewMsgMemPool(), nil)
 	p2.QueueMessage(wire.NewMsgGetData(), nil)

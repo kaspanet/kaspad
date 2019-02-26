@@ -57,7 +57,7 @@ func (msg *MsgGetBlocks) BtcDecode(r io.Reader, pver uint32) error {
 	}
 
 	// Read num block locator hashes and limit to max.
-	count, err := ReadVarInt(r)
+	count, err := ReadVarInt(r, pver)
 	if err != nil {
 		return err
 	}
@@ -98,7 +98,7 @@ func (msg *MsgGetBlocks) BtcEncode(w io.Writer, pver uint32) error {
 		return err
 	}
 
-	err = WriteVarInt(w, uint64(count))
+	err = WriteVarInt(w, pver, uint64(count))
 	if err != nil {
 		return err
 	}

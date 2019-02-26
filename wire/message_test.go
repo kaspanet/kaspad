@@ -14,7 +14,6 @@ import (
 	"time"
 
 	"github.com/daglabs/btcd/dagconfig/daghash"
-	"github.com/daglabs/btcd/wire"
 	"github.com/davecgh/go-spew/spew"
 )
 
@@ -50,7 +49,7 @@ func TestMessage(t *testing.T) {
 	msgVersion := NewMsgVersion(me, you, 123123, 0, &SubnetworkIDSupportsAll)
 
 	msgVerack := NewMsgVerAck()
-	msgGetAddr := NewMsgGetAddr(&wire.SubnetworkIDSupportsAll)
+	msgGetAddr := NewMsgGetAddr()
 	msgAddr := NewMsgAddr()
 	msgGetBlocks := NewMsgGetBlocks(&daghash.Hash{})
 	msgBlock := &blockOne

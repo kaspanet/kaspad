@@ -31,6 +31,10 @@ const (
 	// KeySize is the size of the byte array required for key material for
 	// the SipHash keyed hash function.
 	KeySize = 16
+
+	// varIntProtoVer is the protocol version to use for serializing N as a
+	// VarInt.
+	varIntProtoVer uint32 = 0
 )
 
 // fastReduction calculates a mapping that's more ore less equivalent to: x mod
@@ -191,7 +195,7 @@ func FromBytes(N uint32, P uint8, d []byte) (*Filter, error) {
 // filter as returned by NBytes().
 func FromNBytes(P uint8, d []byte) (*Filter, error) {
 	buffer := bytes.NewBuffer(d)
-	N, err := wire.ReadVarInt(buffer)
+	N, err := wire.ReadVarInt(buffer, varIntProtoVer)
 	if err != nil {
 		return nil, err
 	}
@@ -212,7 +216,7 @@ func FromPBytes(N uint32, d []byte) (*Filter, error) {
 func FromNPBytes(d []byte) (*Filter, error) {
 	buffer := bytes.NewBuffer(d)
 
-	N, err := wire.ReadVarInt(buffer)
+	N, err := wire.ReadVarInt(buffer, varIntProtoVer)
 	if err != nil {
 		return nil, err
 	}
@@ -242,7 +246,7 @@ func (f *Filter) NBytes() ([]byte, error) {
 	var buffer bytes.Buffer
 	buffer.Grow(wire.VarIntSerializeSize(uint64(f.n)) + len(f.filterData))
 
-	err := wire.WriteVarInt(&buffer, uint64(f.n))
+	err := wire.WriteVarInt(&buffer, varIntProtoVer, uint64(f.n))
 	if err != nil {
 		return nil, err
 	}
@@ -270,7 +274,7 @@ func (f *Filter) NPBytes() ([]byte, error) {
 	var buffer bytes.Buffer
 	buffer.Grow(wire.VarIntSerializeSize(uint64(f.n)) + 1 + len(f.filterData))
 
-	err := wire.WriteVarInt(&buffer, uint64(f.n))
+	err := wire.WriteVarInt(&buffer, varIntProtoVer, uint64(f.n))
 	if err != nil {
 		return nil, err
 	}

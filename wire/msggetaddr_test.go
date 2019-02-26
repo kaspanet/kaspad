@@ -9,7 +9,6 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/daglabs/btcd/wire"
 	"github.com/davecgh/go-spew/spew"
 )
 
@@ -19,7 +18,7 @@ func TestGetAddr(t *testing.T) {
 
 	// Ensure the command is expected value.
 	wantCmd := "getaddr"
-	msg := NewMsgGetAddr(&wire.SubnetworkIDSupportsAll)
+	msg := NewMsgGetAddr()
 	if cmd := msg.Command(); cmd != wantCmd {
 		t.Errorf("NewMsgGetAddr: wrong command - got %v want %v",
 			cmd, wantCmd)
@@ -39,7 +38,7 @@ func TestGetAddr(t *testing.T) {
 // TestGetAddrWire tests the MsgGetAddr wire encode and decode for various
 // protocol versions.
 func TestGetAddrWire(t *testing.T) {
-	msgGetAddr := NewMsgGetAddr(&wire.SubnetworkIDSupportsAll)
+	msgGetAddr := NewMsgGetAddr()
 	msgGetAddrEncoded := []byte{}
 
 	tests := []struct {
