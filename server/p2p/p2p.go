@@ -1902,22 +1902,15 @@ func (s *Server) peerHandler() {
 		// Add peers discovered through DNS to the address manager.
 		connmgr.SeedFromDNS(config.ActiveNetParams(), defaultRequiredServices, config.MainConfig().SubnetworkID,
 			serverutils.BTCDLookup, func(addrs []*wire.NetAddress) {
-				// Bitcoind uses a lookup of the dns seeder here. This
-				// is rather strange since the values looked up by the
-				// DNS seed lookups will vary quite a lot.
-				// to replicate this behaviour we put all addresses as
-				// having come from the first one.
+				// Bitcoind uses a lookup of the dns seeder here. Since seeder returns
+				// IPs of nodes and not its own IP, we can not know real IP of
+				// source. So we'll take first returned address as source.
 				s.addrManager.AddAddresses(addrs, addrs[0])
 			})
 		if !config.MainConfig().SubnetworkID.IsEqual(&wire.SubnetworkIDSupportsAll) {
 			// Node is partial - fetch full nodes
 			connmgr.SeedFromDNS(config.ActiveNetParams(), defaultRequiredServices, &wire.SubnetworkIDSupportsAll,
 				serverutils.BTCDLookup, func(addrs []*wire.NetAddress) {
-					// Bitcoind uses a lookup of the dns seeder here. This
-					// is rather strange since the values looked up by the
-					// DNS seed lookups will vary quite a lot.
-					// to replicate this behaviour we put all addresses as
-					// having come from the first one.
 					s.addrManager.AddAddresses(addrs, addrs[0])
 				})
 		}

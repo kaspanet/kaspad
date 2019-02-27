@@ -721,7 +721,7 @@ func (a *AddrManager) AddressCache(subnetworkID *subnetworkid.SubnetworkID) []*w
 		return nil
 	}
 
-	allAddr := make([]*wire.NetAddress, 0, len(a.addrIndex))
+	allAddr := make([]*wire.NetAddress, 0)
 	// Iteration order is undefined here, but we randomise it anyway.
 	for _, v := range a.addrIndex {
 		if subnetworkID == nil || v.SubnetworkID().IsEqual(subnetworkID) {

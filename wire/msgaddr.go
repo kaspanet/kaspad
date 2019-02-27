@@ -5,7 +5,6 @@
 package wire
 
 import (
-	"bytes"
 	"fmt"
 	"io"
 
@@ -63,20 +62,16 @@ func (msg *MsgAddr) ClearAddresses() {
 // This is part of the Message interface implementation.
 func (msg *MsgAddr) BtcDecode(r io.Reader, pver uint32) error {
 	// Read subnetwork
-	var allSubnetworks bool
-	err := readElement(r, &allSubnetworks)
+	var isAllSubnetworks bool
+	err := readElement(r, &isAllSubnetworks)
 	if err != nil {
 		return err
 	}
-	if allSubnetworks {
+	if isAllSubnetworks {
 		msg.SubnetworkID = nil
 	} else {
-		buf, ok := r.(*bytes.Buffer)
-		if !ok {
-			return fmt.Errorf("MsgAddr.BtcDecode reader is not a *bytes.Buffer")
-		}
 		var subnetworkID subnetworkid.SubnetworkID
-		err = readElement(buf, &subnetworkID)
+		err = readElement(r, &subnetworkID)
 		if err != nil {
 			return err
 		}
@@ -120,12 +115,12 @@ func (msg *MsgAddr) BtcEncode(w io.Writer, pver uint32) error {
 	}
 
 	// Write subnetwork ID
-	allSubnetworks := msg.SubnetworkID == nil
-	err := writeElement(w, allSubnetworks)
+	isAllSubnetworks := msg.SubnetworkID == nil
+	err := writeElement(w, isAllSubnetworks)
 	if err != nil {
 		return err
 	}
-	if !allSubnetworks {
+	if !isAllSubnetworks {
 		err = writeElement(w, msg.SubnetworkID)
 		if err != nil {
 			return err
@@ -156,7 +151,7 @@ func (msg *MsgAddr) Command() string {
 // MaxPayloadLength returns the maximum length the payload can be for the
 // receiver.  This is part of the Message interface implementation.
 func (msg *MsgAddr) MaxPayloadLength(pver uint32) uint32 {
-	// AllSubnetsFlag(1)+SubnetworkID.Len + Num addresses (varInt) + max allowed addresses.
+	// IsAllSubnetsFlag(1)+SubnetworkID.Len + Num addresses (varInt) + max allowed addresses.
 	return 1 + subnetworkid.IDLength + MaxVarIntPayload + (MaxAddrPerMsg * maxNetAddressPayload(pver))
 }
 

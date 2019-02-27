@@ -38,9 +38,19 @@ func TestGetAddr(t *testing.T) {
 // TestGetAddrWire tests the MsgGetAddr wire encode and decode for various
 // protocol versions.
 func TestGetAddrWire(t *testing.T) {
+	// With all subnetworks
 	msgGetAddr := NewMsgGetAddr(nil)
 	msgGetAddrEncoded := []byte{
 		0x01, // All subnetworks
+	}
+
+	// With specific subnetwork
+	msgGetAddrSubnet := NewMsgGetAddr(&SubnetworkIDNative)
+	msgGetAddrSubnetEncoded := []byte{
+		0x00,                                           // All subnetworks
+		0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Subnetwork ID
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+		0x00, 0x00, 0x00, 0x00,
 	}
 
 	tests := []struct {
@@ -49,11 +59,18 @@ func TestGetAddrWire(t *testing.T) {
 		buf  []byte      // Wire encoding
 		pver uint32      // Protocol version for wire encoding
 	}{
-		// Latest protocol version.
+		// Latest protocol version. All subnetworks
 		{
 			msgGetAddr,
 			msgGetAddr,
 			msgGetAddrEncoded,
+			ProtocolVersion,
+		},
+		// Latest protocol version. Specific subnetwork
+		{
+			msgGetAddrSubnet,
+			msgGetAddrSubnet,
+			msgGetAddrSubnetEncoded,
 			ProtocolVersion,
 		},
 	}

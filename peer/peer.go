@@ -271,9 +271,9 @@ type Config struct {
 	// SubnetworkID specifies which subnetwork the peer is associated with.
 	SubnetworkID *subnetworkid.SubnetworkID
 
-	// DNSSeederPeer set by DNS seeder in order to allow some actions disbled for normal nodes. For example,
+	// IsDNSSeederPeer set by DNS seeder in order to allow some actions disbled for normal nodes. For example,
 	// allow outgoing connections to partial nodes
-	DNSSeederPeer bool
+	IsDNSSeederPeer bool
 }
 
 // minUint32 is a helper function to return the minimum of two uint32s.
@@ -1046,7 +1046,7 @@ func (p *Peer) handleRemoteVersionMsg(msg *wire.MsgVersion) error {
 		return errors.New(reason)
 	}
 
-	if p.cfg.DNSSeederPeer {
+	if p.cfg.IsDNSSeederPeer {
 		// Update subnetwork ID
 		p.cfg.SubnetworkID = &msg.SubnetworkID
 	} else {

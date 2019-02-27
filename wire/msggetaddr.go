@@ -5,8 +5,6 @@
 package wire
 
 import (
-	"bytes"
-	"fmt"
 	"io"
 
 	"github.com/daglabs/btcd/util/subnetworkid"
@@ -25,20 +23,16 @@ type MsgGetAddr struct {
 // BtcDecode decodes r using the bitcoin protocol encoding into the receiver.
 // This is part of the Message interface implementation.
 func (msg *MsgGetAddr) BtcDecode(r io.Reader, pver uint32) error {
-	var allSubnetworks bool
-	err := readElement(r, &allSubnetworks)
+	var isAllSubnetworks bool
+	err := readElement(r, &isAllSubnetworks)
 	if err != nil {
 		return err
 	}
-	if allSubnetworks {
+	if isAllSubnetworks {
 		msg.SubnetworkID = nil
 	} else {
-		buf, ok := r.(*bytes.Buffer)
-		if !ok {
-			return fmt.Errorf("MsgAddr.BtcDecode reader is not a *bytes.Buffer")
-		}
 		var subnetworkID subnetworkid.SubnetworkID
-		err = readElement(buf, &subnetworkID)
+		err = readElement(r, &subnetworkID)
 		if err != nil {
 			return err
 		}
@@ -51,12 +45,12 @@ func (msg *MsgGetAddr) BtcDecode(r io.Reader, pver uint32) error {
 // BtcEncode encodes the receiver to w using the bitcoin protocol encoding.
 // This is part of the Message interface implementation.
 func (msg *MsgGetAddr) BtcEncode(w io.Writer, pver uint32) error {
-	allSubnetworks := msg.SubnetworkID == nil
-	err := writeElement(w, allSubnetworks)
+	isAllSubnetworks := msg.SubnetworkID == nil
+	err := writeElement(w, isAllSubnetworks)
 	if err != nil {
 		return err
 	}
-	if !allSubnetworks {
+	if !isAllSubnetworks {
 		err = writeElement(w, msg.SubnetworkID)
 		if err != nil {
 			return err
