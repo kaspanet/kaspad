@@ -5,6 +5,8 @@
 package wire
 
 import (
+	"bytes"
+	"fmt"
 	"io"
 
 	"github.com/daglabs/btcd/util/subnetworkid"
@@ -31,8 +33,12 @@ func (msg *MsgGetAddr) BtcDecode(r io.Reader, pver uint32) error {
 	if allSubnetworks {
 		msg.SubnetworkID = nil
 	} else {
+		buf, ok := r.(*bytes.Buffer)
+		if !ok {
+			return fmt.Errorf("MsgAddr.BtcDecode reader is not a *bytes.Buffer")
+		}
 		var subnetworkID subnetworkid.SubnetworkID
-		_, err = io.ReadFull(r, subnetworkID.ToBytes())
+		err = readElement(buf, &subnetworkID)
 		if err != nil {
 			return err
 		}
@@ -51,7 +57,7 @@ func (msg *MsgGetAddr) BtcEncode(w io.Writer, pver uint32) error {
 		return err
 	}
 	if !allSubnetworks {
-		_, err := w.Write(msg.SubnetworkID.ToBytes())
+		err = writeElement(w, msg.SubnetworkID)
 		if err != nil {
 			return err
 		}

@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/daglabs/btcd/dagconfig/daghash"
+	"github.com/daglabs/btcd/util/subnetworkid"
 )
 
 const (
@@ -271,6 +272,13 @@ func readElement(r io.Reader, element interface{}) error {
 		}
 		return nil
 
+	case *subnetworkid.SubnetworkID:
+		_, err := io.ReadFull(r, e[:])
+		if err != nil {
+			return err
+		}
+		return nil
+
 	case *ServiceFlag:
 		rv, err := binarySerializer.Uint64(r, littleEndian)
 		if err != nil {
@@ -399,6 +407,13 @@ func writeElement(w io.Writer, element interface{}) error {
 		return nil
 
 	case *daghash.Hash:
+		_, err := w.Write(e[:])
+		if err != nil {
+			return err
+		}
+		return nil
+
+	case *subnetworkid.SubnetworkID:
 		_, err := w.Write(e[:])
 		if err != nil {
 			return err

@@ -5,6 +5,7 @@
 package wire
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 
@@ -70,8 +71,12 @@ func (msg *MsgAddr) BtcDecode(r io.Reader, pver uint32) error {
 	if allSubnetworks {
 		msg.SubnetworkID = nil
 	} else {
+		buf, ok := r.(*bytes.Buffer)
+		if !ok {
+			return fmt.Errorf("MsgAddr.BtcDecode reader is not a *bytes.Buffer")
+		}
 		var subnetworkID subnetworkid.SubnetworkID
-		_, err = io.ReadFull(r, subnetworkID.ToBytes())
+		err = readElement(buf, &subnetworkID)
 		if err != nil {
 			return err
 		}
@@ -79,7 +84,7 @@ func (msg *MsgAddr) BtcDecode(r io.Reader, pver uint32) error {
 	}
 
 	// Read addresses array
-	count, err := ReadVarInt(r)
+	count, err := ReadVarInt(r, pver)
 	if err != nil {
 		return err
 	}
@@ -95,7 +100,7 @@ func (msg *MsgAddr) BtcDecode(r io.Reader, pver uint32) error {
 	msg.AddrList = make([]*NetAddress, 0, count)
 	for i := uint64(0); i < count; i++ {
 		na := &addrList[i]
-		err = readNetAddress(r, na)
+		err = readNetAddress(r, pver, na, true)
 		if err != nil {
 			return err
 		}
@@ -121,19 +126,19 @@ func (msg *MsgAddr) BtcEncode(w io.Writer, pver uint32) error {
 		return err
 	}
 	if !allSubnetworks {
-		_, err := w.Write(msg.SubnetworkID.ToBytes())
+		err = writeElement(w, msg.SubnetworkID)
 		if err != nil {
 			return err
 		}
 	}
 
-	err = WriteVarInt(w, uint64(count))
+	err = WriteVarInt(w, pver, uint64(count))
 	if err != nil {
 		return err
 	}
 
 	for _, na := range msg.AddrList {
-		err = writeNetAddress(w, na)
+		err = writeNetAddress(w, pver, na, true)
 		if err != nil {
 			return err
 		}
@@ -151,8 +156,8 @@ func (msg *MsgAddr) Command() string {
 // MaxPayloadLength returns the maximum length the payload can be for the
 // receiver.  This is part of the Message interface implementation.
 func (msg *MsgAddr) MaxPayloadLength(pver uint32) uint32 {
-	// Num addresses (varInt) + max allowed addresses.
-	return MaxVarIntPayload + (MaxAddrPerMsg * maxNetAddressPayload())
+	// AllSubnetsFlag(1)+SubnetworkID.Len + Num addresses (varInt) + max allowed addresses.
+	return 1 + subnetworkid.IDLength + MaxVarIntPayload + (MaxAddrPerMsg * maxNetAddressPayload(pver))
 }
 
 // NewMsgAddr returns a new bitcoin addr message that conforms to the

@@ -21,7 +21,7 @@ func TestAddr(t *testing.T) {
 
 	// Ensure the command is expected value.
 	wantCmd := "addr"
-	msg := NewMsgAddr()
+	msg := NewMsgAddr(nil)
 	if cmd := msg.Command(); cmd != wantCmd {
 		t.Errorf("NewMsgAddr: wrong command - got %v want %v",
 			cmd, wantCmd)
@@ -29,7 +29,7 @@ func TestAddr(t *testing.T) {
 
 	// Ensure max payload is expected value for latest protocol version.
 	// Num addresses (varInt) + max allowed addresses.
-	wantPayload := uint32(34009)
+	wantPayload := uint32(34030)
 	maxPayload := msg.MaxPayloadLength(pver)
 	if maxPayload != wantPayload {
 		t.Errorf("MaxPayloadLength: wrong max payload length for "+
@@ -91,15 +91,17 @@ func TestAddrWire(t *testing.T) {
 	}
 
 	// Empty address message.
-	noAddr := NewMsgAddr()
+	noAddr := NewMsgAddr(nil)
 	noAddrEncoded := []byte{
+		0x01, // All subnetworks
 		0x00, // Varint for number of addresses
 	}
 
 	// Address message with multiple addresses.
-	multiAddr := NewMsgAddr()
+	multiAddr := NewMsgAddr(nil)
 	multiAddr.AddAddresses(na, na2)
 	multiAddrEncoded := []byte{
+		0x01,                                           // All subnetworks
 		0x02,                                           // Varint for number of addresses
 		0x29, 0xab, 0x5f, 0x49, 0x00, 0x00, 0x00, 0x00, // Timestamp
 		0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // SFNodeNetwork
@@ -189,9 +191,10 @@ func TestAddrWireErrors(t *testing.T) {
 	}
 
 	// Address message with multiple addresses.
-	baseAddr := NewMsgAddr()
+	baseAddr := NewMsgAddr(nil)
 	baseAddr.AddAddresses(na, na2)
 	baseAddrEncoded := []byte{
+		0x01,                                           // All subnetworks
 		0x02,                                           // Varint for number of addresses
 		0x29, 0xab, 0x5f, 0x49, 0x00, 0x00, 0x00, 0x00, // Timestamp
 		0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // SFNodeNetwork
@@ -208,12 +211,13 @@ func TestAddrWireErrors(t *testing.T) {
 
 	// Message that forces an error by having more than the max allowed
 	// addresses.
-	maxAddr := NewMsgAddr()
+	maxAddr := NewMsgAddr(nil)
 	for i := 0; i < MaxAddrPerMsg; i++ {
 		maxAddr.AddAddress(na)
 	}
 	maxAddr.AddrList = append(maxAddr.AddrList, na)
 	maxAddrEncoded := []byte{
+		0x01,             // All subnetworks
 		0xfd, 0x03, 0xe9, // Varint for number of addresses (1001)
 	}
 
@@ -227,11 +231,11 @@ func TestAddrWireErrors(t *testing.T) {
 	}{
 		// Latest protocol version with intentional read/write errors.
 		// Force error in addresses count
-		{baseAddr, baseAddrEncoded, pver, 0, io.ErrShortWrite, io.EOF},
-		// Force error in address list.
 		{baseAddr, baseAddrEncoded, pver, 1, io.ErrShortWrite, io.EOF},
+		// Force error in address list.
+		{baseAddr, baseAddrEncoded, pver, 2, io.ErrShortWrite, io.EOF},
 		// Force error with greater than max inventory vectors.
-		{maxAddr, maxAddrEncoded, pver, 3, wireErr, wireErr},
+		{maxAddr, maxAddrEncoded, pver, 4, wireErr, wireErr},
 	}
 
 	t.Logf("Running %d tests", len(tests))
