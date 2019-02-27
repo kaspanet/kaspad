@@ -715,8 +715,7 @@ func (dag *BlockDAG) applyUTXOChanges(node *blockNode, block *util.Block, fastAd
 	// internal structure of block nodes, and it's irrecoverable - therefore
 	// panic
 
-	err = node.updateParents(virtualClone, newBlockUTXO)
-	if err != nil {
+	if err = node.updateParents(virtualClone, newBlockUTXO); err != nil {
 		panic(fmt.Errorf("failed updating parents of %s: %s", node, err))
 	}
 

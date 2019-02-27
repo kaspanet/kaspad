@@ -128,6 +128,7 @@ func initBlockNode(node *blockNode, blockHeader *wire.BlockHeader, parents block
 		timestamp: time.Now().Unix(),
 	}
 
+	// blockHeader is nil only for the virtual block
 	if blockHeader != nil {
 		node.hash = blockHeader.BlockHash()
 		node.workSum = CalcWork(blockHeader.Bits)
