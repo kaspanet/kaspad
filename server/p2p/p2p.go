@@ -1899,20 +1899,21 @@ func (s *Server) peerHandler() {
 	}
 
 	if !config.MainConfig().DisableDNSSeed {
-		// Add peers discovered through DNS to the address manager.
-		connmgr.SeedFromDNS(config.ActiveNetParams(), defaultRequiredServices, config.MainConfig().SubnetworkID,
-			serverutils.BTCDLookup, func(addrs []*wire.NetAddress) {
-				// Bitcoind uses a lookup of the dns seeder here. Since seeder returns
-				// IPs of nodes and not its own IP, we can not know real IP of
-				// source. So we'll take first returned address as source.
-				s.addrManager.AddAddresses(addrs, addrs[0])
-			})
+		seedFn := func(addrs []*wire.NetAddress) {
+			// Bitcoind uses a lookup of the dns seeder here. Since seeder returns
+			// IPs of nodes and not its own IP, we can not know real IP of
+			// source. So we'll take first returned address as source.
+			s.addrManager.AddAddresses(addrs, addrs[0])
+		}
+
+		// Add full nodes discovered through DNS to the address manager.
+		connmgr.SeedFromDNS(config.ActiveNetParams(), defaultRequiredServices,
+			&wire.SubnetworkIDSupportsAll, serverutils.BTCDLookup, seedFn)
+
 		if !config.MainConfig().SubnetworkID.IsEqual(&wire.SubnetworkIDSupportsAll) {
-			// Node is partial - fetch full nodes
-			connmgr.SeedFromDNS(config.ActiveNetParams(), defaultRequiredServices, &wire.SubnetworkIDSupportsAll,
-				serverutils.BTCDLookup, func(addrs []*wire.NetAddress) {
-					s.addrManager.AddAddresses(addrs, addrs[0])
-				})
+			// Node is partial - fetch nodes with same subnetwork
+			connmgr.SeedFromDNS(config.ActiveNetParams(), defaultRequiredServices,
+				config.MainConfig().SubnetworkID, serverutils.BTCDLookup, seedFn)
 		}
 	}
 	go s.connManager.Start()
