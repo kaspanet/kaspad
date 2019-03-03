@@ -885,13 +885,14 @@ func ensureNoDuplicateTx(block *blockNode, utxoSet UTXOSet,
 // include verifying all inputs exist, ensuring the block reward seasoning
 // requirements are met, detecting double spends, validating all values and fees
 // are in the legal range and the total output amount doesn't exceed the input
-// amount, and verifying the signatures to prove the spender was the owner of
-// the bitcoins and therefore allowed to spend them.  As it checks the inputs,
-// it also calculates the total fees for the transaction and returns that value.
+// amount.  As it checks the inputs, it also calculates the total fees for the
+// transaction and returns that value.
 //
 // NOTE: The transaction MUST have already been sanity checked with the
 // CheckTransactionSanity function prior to calling this function.
-func CheckTransactionInputs(tx *util.Tx, txHeight int32, utxoSet UTXOSet, dagParams *dagconfig.Params, fastAdd bool) (uint64, error) {
+func CheckTransactionInputs(tx *util.Tx, txHeight int32, utxoSet UTXOSet, dagParams *dagconfig.Params, fastAdd bool) (
+	txFeeInSatoshi uint64, err error) {
+
 	// Block reward transactions have no inputs.
 	if IsBlockReward(tx) {
 		return 0, nil
@@ -911,21 +912,8 @@ func CheckTransactionInputs(tx *util.Tx, txHeight int32, utxoSet UTXOSet, dagPar
 		}
 
 		if !fastAdd {
-			// Ensure the transaction is not spending coins which have not
-			// yet reached the required block reward maturity.
-			if entry.IsBlockReward() {
-				originHeight := entry.BlockHeight()
-				blocksSincePrev := txHeight - originHeight
-				blockRewardMaturity := int32(dagParams.BlockRewardMaturity)
-				if blocksSincePrev < blockRewardMaturity {
-					str := fmt.Sprintf("tried to spend block reward "+
-						"transaction output %s from height %d "+
-						"at height %d before required maturity "+
-						"of %d blocks", txIn.PreviousOutPoint,
-						originHeight, txHeight,
-						blockRewardMaturity)
-					return 0, ruleError(ErrImmatureSpend, str)
-				}
+			if err = validateBlockRewardMaturity(dagParams, entry, txHeight, txIn); err != nil {
+				return 0, err
 			}
 		}
 
@@ -978,8 +966,28 @@ func CheckTransactionInputs(tx *util.Tx, txHeight int32, utxoSet UTXOSet, dagPar
 	// NOTE: bitcoind checks if the transaction fees are < 0 here, but that
 	// is an impossible condition because of the check above that ensures
 	// the inputs are >= the outputs.
-	txFeeInSatoshi := totalSatoshiIn - totalSatoshiOut
+	txFeeInSatoshi = totalSatoshiIn - totalSatoshiOut
 	return txFeeInSatoshi, nil
+}
+
+func validateBlockRewardMaturity(dagParams *dagconfig.Params, entry *UTXOEntry, txHeight int32, txIn *wire.TxIn) error {
+	// Ensure the transaction is not spending coins which have not
+	// yet reached the required block reward maturity.
+	if entry.IsBlockReward() {
+		originHeight := entry.BlockHeight()
+		blocksSincePrev := txHeight - originHeight
+		blockRewardMaturity := int32(dagParams.BlockRewardMaturity)
+		if blocksSincePrev < blockRewardMaturity {
+			str := fmt.Sprintf("tried to spend block reward "+
+				"transaction output %s from height %d "+
+				"at height %d before required maturity "+
+				"of %d blocks", txIn.PreviousOutPoint,
+				originHeight, txHeight,
+				blockRewardMaturity)
+			return ruleError(ErrImmatureSpend, str)
+		}
+	}
+	return nil
 }
 
 // checkConnectToPastUTXO performs several checks to confirm connecting the passed
@@ -1003,37 +1011,8 @@ func (dag *BlockDAG) checkConnectToPastUTXO(block *blockNode, pastUTXO UTXOSet,
 			return nil, err
 		}
 
-		// The number of signature operations must be less than the maximum
-		// allowed per block.  Note that the preliminary sanity checks on a
-		// block also include a check similar to this one, but this check
-		// expands the count to include a precise count of pay-to-script-hash
-		// signature operations in each of the input transaction public key
-		// scripts.
-		totalSigOps := 0
-		for i, tx := range transactions {
-			numsigOps := CountSigOps(tx)
-			// Since the first transaction has already been verified to be a
-			// coinbase transaction, and the second transaction has already
-			// been verified to be a fee transaction, use i < 2 as an
-			// optimization for the flag to countP2SHSigOps for whether or
-			// not the transaction is a block reward transaction rather than
-			// having to do a full coinbase and fee transaction check again.
-			numP2SHSigOps, err := CountP2SHSigOps(tx, i < 2, pastUTXO)
-			if err != nil {
-				return nil, err
-			}
-			numsigOps += numP2SHSigOps
-
-			// Check for overflow or going over the limits.  We have to do
-			// this on every loop iteration to avoid overflow.
-			lastSigops := totalSigOps
-			totalSigOps += numsigOps
-			if totalSigOps < lastSigops || totalSigOps > MaxSigOpsPerBlock {
-				str := fmt.Sprintf("block contains too many "+
-					"signature operations - got %d, max %d",
-					totalSigOps, MaxSigOpsPerBlock)
-				return nil, ruleError(ErrTooManySigOps, str)
-			}
+		if err := dag.validateSigopsCount(pastUTXO, transactions); err != nil {
+			return nil, err
 		}
 	}
 
@@ -1148,6 +1127,43 @@ func (dag *BlockDAG) checkConnectToPastUTXO(block *blockNode, pastUTXO UTXOSet,
 
 	}
 	return feeData, nil
+}
+
+func (dag *BlockDAG) validateSigopsCount(pastUTXO UTXOSet, transactions []*util.Tx) error {
+	// The number of signature operations must be less than the maximum
+	// allowed per block.  Note that the preliminary sanity checks on a
+	// block also include a check similar to this one, but this check
+	// expands the count to include a precise count of pay-to-script-hash
+	// signature operations in each of the input transaction public key
+	// scripts.
+	totalSigOps := 0
+	for i, tx := range transactions {
+		numsigOps := CountSigOps(tx)
+		// Since the first transaction has already been verified to be a
+		// coinbase transaction, and the second transaction has already
+		// been verified to be a fee transaction, use i < 2 as an
+		// optimization for the flag to countP2SHSigOps for whether or
+		// not the transaction is a block reward transaction rather than
+		// having to do a full coinbase and fee transaction check again.
+		numP2SHSigOps, err := CountP2SHSigOps(tx, i < 2, pastUTXO)
+		if err != nil {
+			return err
+		}
+		numsigOps += numP2SHSigOps
+
+		// Check for overflow or going over the limits.  We have to do
+		// this on every loop iteration to avoid overflow.
+		lastSigops := totalSigOps
+		totalSigOps += numsigOps
+		if totalSigOps < lastSigops || totalSigOps > MaxSigOpsPerBlock {
+			str := fmt.Sprintf("block contains too many "+
+				"signature operations - got %d, max %d",
+				totalSigOps, MaxSigOpsPerBlock)
+			return ruleError(ErrTooManySigOps, str)
+		}
+	}
+
+	return nil
 }
 
 // countSpentOutputs returns the number of utxos the passed block spends.

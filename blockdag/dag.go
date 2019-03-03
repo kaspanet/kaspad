@@ -737,7 +737,7 @@ func (dag *BlockDAG) applyUTXOChanges(node *blockNode, block *util.Block, fastAd
 	// It is now safe to meld the UTXO set to base.
 	diffSet := newVirtualUTXO.(*DiffUTXOSet)
 	utxoDiff = diffSet.UTXODiff
-	dag.updateVirtualUTXO(diffSet)
+	dag.meldVirtualUTXO(diffSet)
 
 	// Set the status to valid for all index nodes to make sure the changes get
 	// written to the database.
@@ -752,7 +752,7 @@ func (dag *BlockDAG) applyUTXOChanges(node *blockNode, block *util.Block, fastAd
 	return utxoDiff, txsAcceptanceData, feeData, nil
 }
 
-func (dag *BlockDAG) updateVirtualUTXO(newVirtualUTXODiffSet *DiffUTXOSet) {
+func (dag *BlockDAG) meldVirtualUTXO(newVirtualUTXODiffSet *DiffUTXOSet) {
 	dag.utxoLock.Lock()
 	defer dag.utxoLock.Unlock()
 	newVirtualUTXODiffSet.meldToBase()
