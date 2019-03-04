@@ -708,7 +708,11 @@ func (a *AddrManager) NeedMoreAddresses() bool {
 	a.mtx.Lock()
 	defer a.mtx.Unlock()
 
-	return a.numAddresses(a.localSubnetworkID)+a.numAddresses(&wire.SubnetworkIDUnknown) < needAddressThreshold
+	allAddrs := a.numAddresses(a.localSubnetworkID) + a.numAddresses(&wire.SubnetworkIDUnknown)
+	if !a.localSubnetworkID.IsEqual(&wire.SubnetworkIDSupportsAll) {
+		allAddrs += a.numAddresses(&wire.SubnetworkIDSupportsAll)
+	}
+	return allAddrs < needAddressThreshold
 }
 
 // AddressCache returns the current address cache.  It must be treated as

@@ -288,8 +288,8 @@ func TestGood(t *testing.T) {
 	n := addrmgr.New("testgood", lookupFunc, &wire.SubnetworkIDSupportsAll)
 	addrsToAdd := 64 * 64
 	addrs := make([]*wire.NetAddress, addrsToAdd)
-	subnetsCount := 32
-	subnets := make([]*subnetworkid.SubnetworkID, subnetsCount)
+	subnetworkCount := 32
+	subnetworkIDs := make([]*subnetworkid.SubnetworkID, subnetworkCount)
 
 	var err error
 	for i := 0; i < addrsToAdd; i++ {
@@ -300,15 +300,15 @@ func TestGood(t *testing.T) {
 		}
 	}
 
-	for i := 0; i < subnetsCount; i++ {
-		subnets[i] = &subnetworkid.SubnetworkID{0xff - byte(i)}
+	for i := 0; i < subnetworkCount; i++ {
+		subnetworkIDs[i] = &subnetworkid.SubnetworkID{0xff - byte(i)}
 	}
 
 	srcAddr := wire.NewNetAddressIPPort(net.IPv4(173, 144, 173, 111), 8333, 0)
 
 	n.AddAddresses(addrs, srcAddr)
 	for i, addr := range addrs {
-		n.Good(addr, subnets[i%subnetsCount])
+		n.Good(addr, subnetworkIDs[i%subnetworkCount])
 	}
 
 	numAddrs := n.TotalNumAddresses()
@@ -322,11 +322,11 @@ func TestGood(t *testing.T) {
 			numCache, numAddrs/4)
 	}
 
-	for i := 0; i < subnetsCount; i++ {
-		numCache = len(n.AddressCache(subnets[i]))
-		if numCache == 0 || numCache >= numAddrs/subnetsCount {
+	for i := 0; i < subnetworkCount; i++ {
+		numCache = len(n.AddressCache(subnetworkIDs[i]))
+		if numCache == 0 || numCache >= numAddrs/subnetworkCount {
 			t.Errorf("Number of addresses in subnetwork cache: got %d, want positive and less than %d",
-				numCache, numAddrs/4/subnetsCount)
+				numCache, numAddrs/4/subnetworkCount)
 		}
 	}
 }

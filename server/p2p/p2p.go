@@ -2229,11 +2229,11 @@ func ParseListeners(addrs []string) ([]net.Addr, error) {
 		// Parse the IP.
 		ip := net.ParseIP(host)
 		if ip == nil {
-			hostAdrs, err := net.LookupHost(host)
+			hostAddrs, err := net.LookupHost(host)
 			if err != nil {
 				return nil, err
 			}
-			ip = net.ParseIP(hostAdrs[0])
+			ip = net.ParseIP(hostAddrs[0])
 			if ip == nil {
 				return nil, fmt.Errorf("Cannot resolve IP address for host '%s'", host)
 			}
