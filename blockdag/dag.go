@@ -513,12 +513,9 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block, fastAdd bo
 
 	var newFinalityPoint *blockNode
 	var err error
-	if !fastAdd {
-		newFinalityPoint, err = dag.checkFinalityRulesAndGetFinalityPoint(node)
-		if err != nil {
-			return err
-		}
-
+	newFinalityPoint, err = dag.checkFinalityRulesAndGetFinalityPoint(node)
+	if err != nil {
+		return err
 	}
 
 	if err := dag.validateGasLimit(block); err != nil {
@@ -532,6 +529,7 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block, fastAdd bo
 	}
 
 	dag.lastFinalityPoint = newFinalityPoint
+
 	// Write any block status changes to DB before updating the DAG state.
 	err = dag.index.flushToDB()
 	if err != nil {
