@@ -270,10 +270,6 @@ type Config struct {
 
 	// SubnetworkID specifies which subnetwork the peer is associated with.
 	SubnetworkID *subnetworkid.SubnetworkID
-
-	// IsDNSSeederPeer set by DNS seeder in order to allow some actions disbled for normal nodes. For example,
-	// allow outgoing connections to partial nodes
-	IsDNSSeederPeer bool
 }
 
 // minUint32 is a helper function to return the minimum of two uint32s.
@@ -1046,20 +1042,15 @@ func (p *Peer) handleRemoteVersionMsg(msg *wire.MsgVersion) error {
 		return errors.New(reason)
 	}
 
-	if p.cfg.IsDNSSeederPeer {
-		// Update subnetwork ID
-		p.cfg.SubnetworkID = &msg.SubnetworkID
-	} else {
-		// Disconnect if:
-		// - we are a full node and the outbound connection we've initiated is a partial node
-		// - the remote node is partial and our subnetwork doesn't match their subnetwork
-		isLocalNodeFull := p.cfg.SubnetworkID.IsEqual(&wire.SubnetworkIDSupportsAll)
-		isRemoteNodeFull := msg.SubnetworkID.IsEqual(&wire.SubnetworkIDSupportsAll)
-		if (isLocalNodeFull && !isRemoteNodeFull && !p.inbound) ||
-			(!isLocalNodeFull && !isRemoteNodeFull && !msg.SubnetworkID.IsEqual(p.cfg.SubnetworkID)) {
+	// Disconnect if:
+	// - we are a full node and the outbound connection we've initiated is a partial node
+	// - the remote node is partial and our subnetwork doesn't match their subnetwork
+	isLocalNodeFull := p.cfg.SubnetworkID.IsEqual(&wire.SubnetworkIDSupportsAll)
+	isRemoteNodeFull := msg.SubnetworkID.IsEqual(&wire.SubnetworkIDSupportsAll)
+	if (isLocalNodeFull && !isRemoteNodeFull && !p.inbound) ||
+		(!isLocalNodeFull && !isRemoteNodeFull && !msg.SubnetworkID.IsEqual(p.cfg.SubnetworkID)) {
 
-			return errors.New("incompatible subnetworks")
-		}
+		return errors.New("incompatible subnetworks")
 	}
 
 	// Updating a bunch of stats including block based stats, and the
