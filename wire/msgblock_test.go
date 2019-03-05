@@ -117,10 +117,12 @@ func TestConvertToPartial(t *testing.T) {
 	}
 
 	block := MsgBlock{}
+	payload := []byte{1}
 	for _, transaction := range transactions {
 		block.Transactions = append(block.Transactions, &MsgTx{
 			SubnetworkID: transaction.subnetworkID,
-			Payload:      []byte{1},
+			Payload:      payload,
+			PayloadHash:  daghash.DoubleHashH(payload),
 		})
 	}
 

@@ -208,6 +208,7 @@ var helpDescsEnUS = map[string]string{
 	"txRawResult-lockTime":      "The transaction lock time",
 	"txRawResult-subnetwork":    "The transaction subnetwork",
 	"txRawResult-gas":           "The transaction gas",
+	"txRawResult-payloadHash":   "The transaction payload hash",
 	"txRawResult-payload":       "The transaction payload",
 	"txRawResult-vin":           "The transaction inputs as JSON objects",
 	"txRawResult-vout":          "The transaction outputs as JSON objects",

@@ -690,6 +690,20 @@ func TestCheckTransactionSanity(t *testing.T) {
 			&txSubnetworkData{subnetworkid.SubnetworkID{234}, 0, []byte{1}},
 			nil,
 			ruleError(ErrInvalidPayload, "")},
+		{"invalid payload hash", 1, 1, 0,
+			subnetworkid.SubnetworkID{123},
+			&txSubnetworkData{subnetworkid.SubnetworkID{123}, 0, []byte{1}},
+			func(tx *wire.MsgTx) {
+				tx.PayloadHash = daghash.Hash{}
+			},
+			ruleError(ErrInvalidPayloadHash, "")},
+		{"invalid payload hash in native subnetwork", 1, 1, 0,
+			wire.SubnetworkIDNative,
+			nil,
+			func(tx *wire.MsgTx) {
+				tx.PayloadHash = daghash.DoubleHashH(tx.Payload)
+			},
+			ruleError(ErrInvalidPayloadHash, "")},
 	}
 
 	for _, test := range tests {

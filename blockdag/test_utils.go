@@ -135,6 +135,9 @@ func createTxForTest(numInputs uint32, numOutputs uint32, outputValue uint64, su
 		tx.SubnetworkID = subnetworkData.subnetworkID
 		tx.Gas = subnetworkData.Gas
 		tx.Payload = subnetworkData.Payload
+		if !subnetworkData.subnetworkID.IsEqual(&wire.SubnetworkIDNative) {
+			tx.PayloadHash = daghash.DoubleHashH(tx.Payload)
+		}
 	} else {
 		tx.SubnetworkID = wire.SubnetworkIDNative
 		tx.Gas = 0

@@ -751,17 +751,18 @@ func createTxRawResult(dagParams *dagconfig.Params, mtx *wire.MsgTx,
 	}
 
 	txReply := &btcjson.TxRawResult{
-		Hex:        mtxHex,
-		TxID:       txID,
-		Hash:       mtx.TxHash().String(),
-		Size:       int32(mtx.SerializeSize()),
-		Vin:        createVinList(mtx),
-		Vout:       createVoutList(mtx, dagParams, nil),
-		Version:    mtx.Version,
-		LockTime:   mtx.LockTime,
-		Subnetwork: mtx.SubnetworkID.String(),
-		Gas:        mtx.Gas,
-		Payload:    hex.EncodeToString(mtx.Payload),
+		Hex:         mtxHex,
+		TxID:        txID,
+		Hash:        mtx.TxHash().String(),
+		Size:        int32(mtx.SerializeSize()),
+		Vin:         createVinList(mtx),
+		Vout:        createVoutList(mtx, dagParams, nil),
+		Version:     mtx.Version,
+		LockTime:    mtx.LockTime,
+		Subnetwork:  mtx.SubnetworkID.String(),
+		Gas:         mtx.Gas,
+		PayloadHash: mtx.PayloadHash.String(),
+		Payload:     hex.EncodeToString(mtx.Payload),
 	}
 
 	if blkHeader != nil {

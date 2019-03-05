@@ -67,6 +67,7 @@ func RegisterSubnetworkForTest(dag *blockdag.BlockDAG, params *dagconfig.Params,
 	registryTx.SubnetworkID = wire.SubnetworkIDRegistry
 	registryTx.Payload = make([]byte, 8)
 	binary.LittleEndian.PutUint64(registryTx.Payload, gasLimit)
+	registryTx.PayloadHash = daghash.DoubleHashH(registryTx.Payload)
 
 	// Add it to the DAG
 	registryBlock, err := buildNextBlock([]daghash.Hash{*fundsBlock.Hash()}, []*wire.MsgTx{registryTx})
