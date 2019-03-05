@@ -831,7 +831,6 @@ func (dag *BlockDAG) validateAllTxsFinalized(block *util.Block, header *wire.Blo
 	// Ensure all transactions in the block are finalized.
 	for _, tx := range block.Transactions() {
 		if !IsFinalizedTransaction(tx, block.Height(), blockTime) {
-
 			str := fmt.Sprintf("block contains unfinalized "+
 				"transaction %s", tx.ID())
 			return ruleError(ErrUnfinalizedTx, str)
