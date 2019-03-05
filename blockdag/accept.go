@@ -49,7 +49,7 @@ func (dag *BlockDAG) maybeAcceptBlock(block *util.Block, flags BehaviorFlags) er
 	// disk with a bunch of blocks that fail to connect.  This is necessary
 	// since it allows block download to be decoupled from the much more
 	// expensive connection logic.  It also has some other nice properties
-	// such as making blocks that never become part of the main dag or
+	// such as making blocks that never become part of the DAG or
 	// blocks that fail to connect available for further analysis.
 	err = dag.db.Update(func(dbTx database.Tx) error {
 		return dbStoreBlock(dbTx, block)
