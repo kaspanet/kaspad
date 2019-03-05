@@ -23,7 +23,7 @@ const (
 	// yet.
 	BlockHeightUnknown = int32(-1)
 
-	// CoinbaseTransactionIndex is the index of the fee transaction in every block
+	// CoinbaseTransactionIndex is the index of the coinbase transaction in every block
 	CoinbaseTransactionIndex = 0
 
 	// FeeTransactionIndex is the index of the fee transaction in every block (except genesis,

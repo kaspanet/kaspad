@@ -676,7 +676,7 @@ func (dag *BlockDAG) checkBlockHeaderContext(header *wire.BlockHeader, bluestPar
 			return err
 		}
 
-		if err := dag.validateMedianTime(header, bluestParent); err != nil {
+		if err := validateMedianTime(header, bluestParent); err != nil {
 			return err
 		}
 	}
@@ -711,7 +711,7 @@ func (dag *BlockDAG) validateCheckpoints(header *wire.BlockHeader, blockHeight i
 	return nil
 }
 
-func (dag *BlockDAG) validateMedianTime(header *wire.BlockHeader, bluestParent *blockNode) error {
+func validateMedianTime(header *wire.BlockHeader, bluestParent *blockNode) error {
 	if !header.IsGenesis() {
 		// Ensure the timestamp for the block header is not before the
 		// median time of the last several blocks (medianTimeBlocks).
@@ -1010,7 +1010,7 @@ func (dag *BlockDAG) checkConnectToPastUTXO(block *blockNode, pastUTXO UTXOSet,
 			return nil, err
 		}
 
-		if err := dag.validateSigopsCount(pastUTXO, transactions); err != nil {
+		if err := validateSigopsCount(pastUTXO, transactions); err != nil {
 			return nil, err
 		}
 	}
@@ -1128,7 +1128,7 @@ func (dag *BlockDAG) checkConnectToPastUTXO(block *blockNode, pastUTXO UTXOSet,
 	return feeData, nil
 }
 
-func (dag *BlockDAG) validateSigopsCount(pastUTXO UTXOSet, transactions []*util.Tx) error {
+func validateSigopsCount(pastUTXO UTXOSet, transactions []*util.Tx) error {
 	// The number of signature operations must be less than the maximum
 	// allowed per block.  Note that the preliminary sanity checks on a
 	// block also include a check similar to this one, but this check
