@@ -477,11 +477,11 @@ func TestPeerListeners(t *testing.T) {
 	}{
 		{
 			"OnGetAddr",
-			wire.NewMsgGetAddr(),
+			wire.NewMsgGetAddr(nil),
 		},
 		{
 			"OnAddr",
-			wire.NewMsgAddr(),
+			wire.NewMsgAddr(nil),
 		},
 		{
 			"OnPing",
@@ -717,7 +717,7 @@ func TestOutboundPeer(t *testing.T) {
 		na := wire.NetAddress{}
 		addrs = append(addrs, &na)
 	}
-	if _, err := p2.PushAddrMsg(addrs); err != nil {
+	if _, err := p2.PushAddrMsg(addrs, nil); err != nil {
 		t.Errorf("PushAddrMsg: unexpected err %v\n", err)
 		return
 	}
@@ -734,7 +734,7 @@ func TestOutboundPeer(t *testing.T) {
 	p2.PushRejectMsg("block", wire.RejectInvalid, "invalid", nil, false)
 
 	// Test Queue Messages
-	p2.QueueMessage(wire.NewMsgGetAddr(), nil)
+	p2.QueueMessage(wire.NewMsgGetAddr(nil), nil)
 	p2.QueueMessage(wire.NewMsgPing(1), nil)
 	p2.QueueMessage(wire.NewMsgMemPool(), nil)
 	p2.QueueMessage(wire.NewMsgGetData(), nil)

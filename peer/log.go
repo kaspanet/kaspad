@@ -131,7 +131,7 @@ func messageSummary(msg wire.Message) string {
 		// No summary.
 
 	case *wire.MsgGetAddr:
-		// No summary.
+		return fmt.Sprintf("subnetwork ID %v", msg.SubnetworkID)
 
 	case *wire.MsgAddr:
 		return fmt.Sprintf("%d addr", len(msg.AddrList))

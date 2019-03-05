@@ -874,7 +874,7 @@ func (p *Peer) localVersionMsg() (*wire.MsgVersion, error) {
 // message will be sent if there are no entries in the provided addresses slice.
 //
 // This function is safe for concurrent access.
-func (p *Peer) PushAddrMsg(addresses []*wire.NetAddress) ([]*wire.NetAddress, error) {
+func (p *Peer) PushAddrMsg(addresses []*wire.NetAddress, subnetworkID *subnetworkid.SubnetworkID) ([]*wire.NetAddress, error) {
 	addressCount := len(addresses)
 
 	// Nothing to send.
@@ -882,7 +882,7 @@ func (p *Peer) PushAddrMsg(addresses []*wire.NetAddress) ([]*wire.NetAddress, er
 		return nil, nil
 	}
 
-	msg := wire.NewMsgAddr()
+	msg := wire.NewMsgAddr(subnetworkID)
 	msg.AddrList = make([]*wire.NetAddress, addressCount)
 	copy(msg.AddrList, addresses)
 
@@ -1048,7 +1048,7 @@ func (p *Peer) handleRemoteVersionMsg(msg *wire.MsgVersion) error {
 	isLocalNodeFull := p.cfg.SubnetworkID.IsEqual(&wire.SubnetworkIDSupportsAll)
 	isRemoteNodeFull := msg.SubnetworkID.IsEqual(&wire.SubnetworkIDSupportsAll)
 	if (isLocalNodeFull && !isRemoteNodeFull && !p.inbound) ||
-		(!isRemoteNodeFull && !msg.SubnetworkID.IsEqual(p.cfg.SubnetworkID)) {
+		(!isLocalNodeFull && !isRemoteNodeFull && !msg.SubnetworkID.IsEqual(p.cfg.SubnetworkID)) {
 
 		return errors.New("incompatible subnetworks")
 	}
