@@ -166,7 +166,7 @@ type configFlags struct {
 	DropAddrIndex        bool          `long:"dropaddrindex" description:"Deletes the address-based transaction index from the database on start up and then exits."`
 	RelayNonStd          bool          `long:"relaynonstd" description:"Relay non-standard transactions regardless of the default settings for the active network."`
 	RejectNonStd         bool          `long:"rejectnonstd" description:"Reject non-standard transactions regardless of the default settings for the active network."`
-	Subnetwork           string        `string:"subnetwork" description:"If subnetwork != 0, than node will request and process only payloads from specified subnetwork. And if subnetwork is 0, than payloads of all subnetworks are processed. Subnetworks 3 through 255 are reserved for future use and are currently not allowed."`
+	Subnetwork           string        `long:"subnetwork" description:"If subnetwork ID != 0, than node will request and process only payloads from specified subnetwork. And if subnetwork ID is 0, than payloads of all subnetworks are processed. Subnetworks with IDs 3 through 255 are reserved for future use and are currently not allowed."`
 }
 
 // Config defines the configuration options for btcd.
@@ -758,6 +758,8 @@ func loadConfig() (*Config, []string, error) {
 		if err != nil {
 			return nil, nil, err
 		}
+	} else {
+		cfg.SubnetworkID = &wire.SubnetworkIDSupportsAll
 	}
 
 	// Check that 'generate' and 'subnetwork' flags do not conflict

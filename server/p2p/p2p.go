@@ -21,6 +21,8 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/daglabs/btcd/util/subnetworkid"
+
 	"github.com/daglabs/btcd/addrmgr"
 	"github.com/daglabs/btcd/blockdag"
 	"github.com/daglabs/btcd/blockdag/indexers"
@@ -326,7 +328,7 @@ func (sp *Peer) relayTxDisabled() bool {
 
 // pushAddrMsg sends an addr message to the connected peer using the provided
 // addresses.
-func (sp *Peer) pushAddrMsg(addresses []*wire.NetAddress) {
+func (sp *Peer) pushAddrMsg(addresses []*wire.NetAddress, subnetworkID *subnetworkid.SubnetworkID) {
 	// Filter addresses already known to the peer.
 	addrs := make([]*wire.NetAddress, 0, len(addresses))
 	for _, addr := range addresses {
@@ -334,7 +336,7 @@ func (sp *Peer) pushAddrMsg(addresses []*wire.NetAddress) {
 			addrs = append(addrs, addr)
 		}
 	}
-	known, err := sp.PushAddrMsg(addrs)
+	known, err := sp.PushAddrMsg(addrs, subnetworkID)
 	if err != nil {
 		peerLog.Errorf("Can't push address message to %s: %s", sp.Peer, err)
 		sp.Disconnect()
@@ -415,14 +417,18 @@ func (sp *Peer) OnVersion(_ *peer.Peer, msg *wire.MsgVersion) {
 				if addrmgr.IsRoutable(lna) {
 					// Filter addresses the peer already knows about.
 					addresses := []*wire.NetAddress{lna}
-					sp.pushAddrMsg(addresses)
+					sp.pushAddrMsg(addresses, sp.SubnetworkID())
 				}
 			}
 
 			// Request known addresses if the server address manager needs
 			// more.
 			if addrManager.NeedMoreAddresses() {
-				sp.QueueMessage(wire.NewMsgGetAddr(), nil)
+				sp.QueueMessage(wire.NewMsgGetAddr(sp.SubnetworkID()), nil)
+
+				if !sp.SubnetworkID().IsEqual(&wire.SubnetworkIDSupportsAll) {
+					sp.QueueMessage(wire.NewMsgGetAddr(&wire.SubnetworkIDSupportsAll), nil)
+				}
 			}
 
 			// Mark the address as a known good address.
@@ -1091,10 +1097,10 @@ func (sp *Peer) OnGetAddr(_ *peer.Peer, msg *wire.MsgGetAddr) {
 	sp.sentAddrs = true
 
 	// Get the current known addresses from the address manager.
-	addrCache := sp.server.addrManager.AddressCache()
+	addrCache := sp.server.addrManager.AddressCache(msg.SubnetworkID)
 
 	// Push the addresses.
-	sp.pushAddrMsg(addrCache)
+	sp.pushAddrMsg(addrCache, sp.SubnetworkID())
 }
 
 // OnAddr is invoked when a peer receives an addr bitcoin message and is
@@ -1893,16 +1899,22 @@ func (s *Server) peerHandler() {
 	}
 
 	if !config.MainConfig().DisableDNSSeed {
-		// Add peers discovered through DNS to the address manager.
+		seedFn := func(addrs []*wire.NetAddress) {
+			// Bitcoind uses a lookup of the dns seeder here. Since seeder returns
+			// IPs of nodes and not its own IP, we can not know real IP of
+			// source. So we'll take first returned address as source.
+			s.addrManager.AddAddresses(addrs, addrs[0])
+		}
+
+		// Add full nodes discovered through DNS to the address manager.
 		connmgr.SeedFromDNS(config.ActiveNetParams(), defaultRequiredServices,
-			serverutils.BTCDLookup, func(addrs []*wire.NetAddress) {
-				// Bitcoind uses a lookup of the dns seeder here. This
-				// is rather strange since the values looked up by the
-				// DNS seed lookups will vary quite a lot.
-				// to replicate this behaviour we put all addresses as
-				// having come from the first one.
-				s.addrManager.AddAddresses(addrs, addrs[0])
-			})
+			&wire.SubnetworkIDSupportsAll, serverutils.BTCDLookup, seedFn)
+
+		if !config.MainConfig().SubnetworkID.IsEqual(&wire.SubnetworkIDSupportsAll) {
+			// Node is partial - fetch nodes with same subnetwork
+			connmgr.SeedFromDNS(config.ActiveNetParams(), defaultRequiredServices,
+				config.MainConfig().SubnetworkID, serverutils.BTCDLookup, seedFn)
+		}
 	}
 	go s.connManager.Start()
 
@@ -2217,7 +2229,14 @@ func ParseListeners(addrs []string) ([]net.Addr, error) {
 		// Parse the IP.
 		ip := net.ParseIP(host)
 		if ip == nil {
-			return nil, fmt.Errorf("'%s' is not a valid IP address", host)
+			hostAddrs, err := net.LookupHost(host)
+			if err != nil {
+				return nil, err
+			}
+			ip = net.ParseIP(hostAddrs[0])
+			if ip == nil {
+				return nil, fmt.Errorf("Cannot resolve IP address for host '%s'", host)
+			}
 		}
 
 		// To4 returns nil when the IP is not an IPv4 address, so use

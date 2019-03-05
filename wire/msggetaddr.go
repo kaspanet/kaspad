@@ -6,6 +6,8 @@ package wire
 
 import (
 	"io"
+
+	"github.com/daglabs/btcd/util/subnetworkid"
 )
 
 // MsgGetAddr implements the Message interface and represents a bitcoin
@@ -14,17 +16,46 @@ import (
 // via one or more addr messages (MsgAddr).
 //
 // This message has no payload.
-type MsgGetAddr struct{}
+type MsgGetAddr struct {
+	SubnetworkID *subnetworkid.SubnetworkID
+}
 
 // BtcDecode decodes r using the bitcoin protocol encoding into the receiver.
 // This is part of the Message interface implementation.
 func (msg *MsgGetAddr) BtcDecode(r io.Reader, pver uint32) error {
+	var isAllSubnetworks bool
+	err := readElement(r, &isAllSubnetworks)
+	if err != nil {
+		return err
+	}
+	if isAllSubnetworks {
+		msg.SubnetworkID = nil
+	} else {
+		var subnetworkID subnetworkid.SubnetworkID
+		err = readElement(r, &subnetworkID)
+		if err != nil {
+			return err
+		}
+		msg.SubnetworkID = &subnetworkID
+	}
+
 	return nil
 }
 
 // BtcEncode encodes the receiver to w using the bitcoin protocol encoding.
 // This is part of the Message interface implementation.
 func (msg *MsgGetAddr) BtcEncode(w io.Writer, pver uint32) error {
+	isAllSubnetworks := msg.SubnetworkID == nil
+	err := writeElement(w, isAllSubnetworks)
+	if err != nil {
+		return err
+	}
+	if !isAllSubnetworks {
+		err = writeElement(w, msg.SubnetworkID)
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -37,11 +68,13 @@ func (msg *MsgGetAddr) Command() string {
 // MaxPayloadLength returns the maximum length the payload can be for the
 // receiver.  This is part of the Message interface implementation.
 func (msg *MsgGetAddr) MaxPayloadLength(pver uint32) uint32 {
-	return 0
+	return subnetworkid.IDLength + 1
 }
 
 // NewMsgGetAddr returns a new bitcoin getaddr message that conforms to the
 // Message interface.  See MsgGetAddr for details.
-func NewMsgGetAddr() *MsgGetAddr {
-	return &MsgGetAddr{}
+func NewMsgGetAddr(subnetworkID *subnetworkid.SubnetworkID) *MsgGetAddr {
+	return &MsgGetAddr{
+		SubnetworkID: subnetworkID,
+	}
 }

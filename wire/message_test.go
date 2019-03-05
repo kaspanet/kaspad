@@ -49,8 +49,8 @@ func TestMessage(t *testing.T) {
 	msgVersion := NewMsgVersion(me, you, 123123, 0, &SubnetworkIDSupportsAll)
 
 	msgVerack := NewMsgVerAck()
-	msgGetAddr := NewMsgGetAddr()
-	msgAddr := NewMsgAddr()
+	msgGetAddr := NewMsgGetAddr(nil)
+	msgAddr := NewMsgAddr(nil)
 	msgGetBlocks := NewMsgGetBlocks(&daghash.Hash{})
 	msgBlock := &blockOne
 	msgInv := NewMsgInv()
@@ -88,8 +88,8 @@ func TestMessage(t *testing.T) {
 	}{
 		{msgVersion, msgVersion, pver, MainNet, 145},
 		{msgVerack, msgVerack, pver, MainNet, 24},
-		{msgGetAddr, msgGetAddr, pver, MainNet, 24},
-		{msgAddr, msgAddr, pver, MainNet, 25},
+		{msgGetAddr, msgGetAddr, pver, MainNet, 25},
+		{msgAddr, msgAddr, pver, MainNet, 26},
 		{msgGetBlocks, msgGetBlocks, pver, MainNet, 61},
 		{msgBlock, msgBlock, pver, MainNet, 340},
 		{msgInv, msgInv, pver, MainNet, 25},
@@ -221,7 +221,7 @@ func TestReadMessageWireErrors(t *testing.T) {
 
 	// Wire encoded bytes for a message which exceeds the max payload for
 	// a specific message type.
-	exceedTypePayloadBytes := makeHeader(btcnet, "getaddr", 1, 0)
+	exceedTypePayloadBytes := makeHeader(btcnet, "getaddr", 22, 0)
 
 	// Wire encoded bytes for a message which does not deliver the full
 	// payload according to the header length.

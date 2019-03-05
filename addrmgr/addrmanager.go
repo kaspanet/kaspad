@@ -708,27 +708,32 @@ func (a *AddrManager) NeedMoreAddresses() bool {
 	a.mtx.Lock()
 	defer a.mtx.Unlock()
 
-	return a.numAddresses(a.localSubnetworkID)+a.numAddresses(&wire.SubnetworkIDUnknown) < needAddressThreshold
+	allAddrs := a.numAddresses(a.localSubnetworkID) + a.numAddresses(&wire.SubnetworkIDUnknown)
+	if !a.localSubnetworkID.IsEqual(&wire.SubnetworkIDSupportsAll) {
+		allAddrs += a.numAddresses(&wire.SubnetworkIDSupportsAll)
+	}
+	return allAddrs < needAddressThreshold
 }
 
 // AddressCache returns the current address cache.  It must be treated as
 // read-only (but since it is a copy now, this is not as dangerous).
-func (a *AddrManager) AddressCache() []*wire.NetAddress {
+func (a *AddrManager) AddressCache(subnetworkID *subnetworkid.SubnetworkID) []*wire.NetAddress {
 	a.mtx.Lock()
 	defer a.mtx.Unlock()
 
-	addrIndexLen := len(a.addrIndex)
-	if addrIndexLen == 0 {
+	if len(a.addrIndex) == 0 {
 		return nil
 	}
 
-	allAddr := make([]*wire.NetAddress, 0, addrIndexLen)
+	allAddr := []*wire.NetAddress{}
 	// Iteration order is undefined here, but we randomise it anyway.
 	for _, v := range a.addrIndex {
-		allAddr = append(allAddr, v.na)
+		if subnetworkID == nil || v.SubnetworkID().IsEqual(subnetworkID) {
+			allAddr = append(allAddr, v.na)
+		}
 	}
 
-	numAddresses := addrIndexLen * getAddrPercent / 100
+	numAddresses := len(allAddr) * getAddrPercent / 100
 	if numAddresses > getAddrMax {
 		numAddresses = getAddrMax
 	}
@@ -737,7 +742,7 @@ func (a *AddrManager) AddressCache() []*wire.NetAddress {
 	// `numAddresses' since we are throwing the rest.
 	for i := 0; i < numAddresses; i++ {
 		// pick a number between current index and the end
-		j := rand.Intn(addrIndexLen-i) + i
+		j := rand.Intn(len(allAddr)-i) + i
 		allAddr[i], allAddr[j] = allAddr[j], allAddr[i]
 	}
 
