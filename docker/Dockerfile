@@ -1,5 +1,5 @@
 # -- multistage docker build: stage #1: build stage
-FROM golang:1.11-alpine AS build
+FROM golang:1.12-alpine AS build
 
 RUN mkdir -p /go/src/github.com/daglabs/btcd
 
@@ -7,7 +7,7 @@ WORKDIR /go/src/github.com/daglabs/btcd
 
 RUN apk add --no-cache curl git openssh binutils gcc musl-dev
 RUN curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
-RUN go get -u github.com/golang/lint/golint \
+RUN go get -u golang.org/x/lint/golint \
       github.com/kisielk/errcheck \
       github.com/opennota/check/cmd/aligncheck \
       github.com/opennota/check/cmd/structcheck \
