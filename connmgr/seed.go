@@ -23,10 +23,10 @@ const (
 	secondsIn3Days int32 = 24 * 60 * 60 * 3
 	secondsIn4Days int32 = 24 * 60 * 60 * 4
 
-	// SubnetworkIDPrefixChar is prefix of subnetworkID, when building DNS seed request
+	// SubnetworkIDPrefixChar is the prefix of subnetworkID, when building a DNS seed request
 	SubnetworkIDPrefixChar byte = 'n'
 
-	// ServiceFlagPrefixChar is prefix of service flag, when building DNS seed request
+	// ServiceFlagPrefixChar is the prefix of service flag, when building a DNS seed request
 	ServiceFlagPrefixChar byte = 'x'
 )
 
