@@ -1145,7 +1145,7 @@ func (sp *Peer) OnAddr(_ *peer.Peer, msg *wire.MsgAddr) {
 	// addresses, and last seen updates.
 	// XXX bitcoind gives a 2 hour time penalty here, do we want to do the
 	// same?
-	sp.server.addrManager.AddAddresses(msg.AddrList, sp.NA())
+	sp.server.addrManager.AddAddresses(msg.AddrList, sp.NA(), msg.SubnetworkID)
 }
 
 // OnRead is invoked when a peer receives a message and it is used to update
