@@ -169,7 +169,7 @@ const (
 
 // updateAddress is a helper function to either update an address already known
 // to the address manager, or to add the address if not already known.
-func (a *AddrManager) updateAddress(netAddr, srcAddr *wire.NetAddress) {
+func (a *AddrManager) updateAddress(netAddr, srcAddr *wire.NetAddress, subnetworkID *subnetworkid.SubnetworkID) {
 	// Filter out non-routable addresses. Note that non-routable
 	// also includes invalid and local addresses.
 	if !IsRoutable(netAddr) {
@@ -193,6 +193,7 @@ func (a *AddrManager) updateAddress(netAddr, srcAddr *wire.NetAddress) {
 			naCopy.Timestamp = netAddr.Timestamp
 			naCopy.AddService(netAddr.Services)
 			ka.na = &naCopy
+			ka.subnetworkID = subnetworkID
 		}
 
 		// If already in tried, we have nothing to do here.
@@ -216,9 +217,9 @@ func (a *AddrManager) updateAddress(netAddr, srcAddr *wire.NetAddress) {
 		// updated elsewhere in the addrmanager code and would otherwise
 		// change the actual netaddress on the peer.
 		netAddrCopy := *netAddr
-		ka = &KnownAddress{na: &netAddrCopy, srcAddr: srcAddr, subnetworkID: &wire.SubnetworkIDUnknown}
+		ka = &KnownAddress{na: &netAddrCopy, srcAddr: srcAddr, subnetworkID: subnetworkID}
 		a.addrIndex[addr] = ka
-		a.nNew[wire.SubnetworkIDUnknown]++
+		a.nNew[*subnetworkID]++
 		// XXX time penalty?
 	}
 
@@ -635,28 +636,28 @@ func (a *AddrManager) Stop() error {
 // AddAddresses adds new addresses to the address manager.  It enforces a max
 // number of addresses and silently ignores duplicate addresses.  It is
 // safe for concurrent access.
-func (a *AddrManager) AddAddresses(addrs []*wire.NetAddress, srcAddr *wire.NetAddress) {
+func (a *AddrManager) AddAddresses(addrs []*wire.NetAddress, srcAddr *wire.NetAddress, subnetworkID *subnetworkid.SubnetworkID) {
 	a.mtx.Lock()
 	defer a.mtx.Unlock()
 
 	for _, na := range addrs {
-		a.updateAddress(na, srcAddr)
+		a.updateAddress(na, srcAddr, subnetworkID)
 	}
 }
 
 // AddAddress adds a new address to the address manager.  It enforces a max
 // number of addresses and silently ignores duplicate addresses.  It is
 // safe for concurrent access.
-func (a *AddrManager) AddAddress(addr, srcAddr *wire.NetAddress) {
+func (a *AddrManager) AddAddress(addr, srcAddr *wire.NetAddress, subnetworkID *subnetworkid.SubnetworkID) {
 	a.mtx.Lock()
 	defer a.mtx.Unlock()
 
-	a.updateAddress(addr, srcAddr)
+	a.updateAddress(addr, srcAddr, subnetworkID)
 }
 
 // AddAddressByIP adds an address where we are given an ip:port and not a
 // wire.NetAddress.
-func (a *AddrManager) AddAddressByIP(addrIP string) error {
+func (a *AddrManager) AddAddressByIP(addrIP string, subnetworkID *subnetworkid.SubnetworkID) error {
 	// Split IP and port
 	addr, portStr, err := net.SplitHostPort(addrIP)
 	if err != nil {
@@ -672,7 +673,7 @@ func (a *AddrManager) AddAddressByIP(addrIP string) error {
 		return fmt.Errorf("invalid port %s: %s", portStr, err)
 	}
 	na := wire.NewNetAddressIPPort(ip, uint16(port), 0)
-	a.AddAddress(na, na) // XXX use correct src address
+	a.AddAddress(na, na, subnetworkID) // XXX use correct src address
 	return nil
 }
 
@@ -708,7 +709,7 @@ func (a *AddrManager) NeedMoreAddresses() bool {
 	a.mtx.Lock()
 	defer a.mtx.Unlock()
 
-	allAddrs := a.numAddresses(a.localSubnetworkID) + a.numAddresses(&wire.SubnetworkIDUnknown)
+	allAddrs := a.numAddresses(a.localSubnetworkID)
 	if !a.localSubnetworkID.IsEqual(&subnetworkid.SubnetworkIDSupportsAll) {
 		allAddrs += a.numAddresses(&subnetworkid.SubnetworkIDSupportsAll)
 	}
@@ -827,9 +828,6 @@ func (a *AddrManager) GetAddress() *KnownAddress {
 	defer a.mtx.Unlock()
 
 	subnetworkID := *a.localSubnetworkID
-	if a.nTried[subnetworkID] == 0 && a.nNew[subnetworkID] == 0 {
-		subnetworkID = wire.SubnetworkIDUnknown
-	}
 
 	// Use a 50% chance for choosing between tried and new table entries.
 	if a.nTried[subnetworkID] > 0 && (a.nNew[subnetworkID] == 0 || a.rand.Intn(2) == 0) {
