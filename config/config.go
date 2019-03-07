@@ -759,11 +759,11 @@ func loadConfig() (*Config, []string, error) {
 			return nil, nil, err
 		}
 	} else {
-		cfg.SubnetworkID = &wire.SubnetworkIDSupportsAll
+		cfg.SubnetworkID = &subnetworkid.SubnetworkIDSupportsAll
 	}
 
 	// Check that 'generate' and 'subnetwork' flags do not conflict
-	if cfg.Generate && *cfg.SubnetworkID != wire.SubnetworkIDSupportsAll {
+	if cfg.Generate && *cfg.SubnetworkID != subnetworkid.SubnetworkIDSupportsAll {
 		str := "%s: both generate flag and subnetwork filtering are set "
 		err := fmt.Errorf(str, funcName)
 		fmt.Fprintln(os.Stderr, err)

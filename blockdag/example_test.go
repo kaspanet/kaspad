@@ -10,13 +10,12 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/daglabs/btcd/wire"
-
 	"github.com/daglabs/btcd/blockdag"
 	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/database"
 	_ "github.com/daglabs/btcd/database/ffldb"
 	"github.com/daglabs/btcd/util"
+	"github.com/daglabs/btcd/util/subnetworkid"
 )
 
 // This example demonstrates how to create a new chain instance and use
@@ -51,7 +50,7 @@ func ExampleBlockDAG_ProcessBlock() {
 		DB:           db,
 		DAGParams:    &dagconfig.MainNetParams,
 		TimeSource:   blockdag.NewMedianTime(),
-		SubnetworkID: &wire.SubnetworkIDSupportsAll,
+		SubnetworkID: &subnetworkid.SubnetworkIDSupportsAll,
 	})
 	if err != nil {
 		fmt.Printf("Failed to create chain instance: %v\n", err)

@@ -426,8 +426,8 @@ func (sp *Peer) OnVersion(_ *peer.Peer, msg *wire.MsgVersion) {
 			if addrManager.NeedMoreAddresses() {
 				sp.QueueMessage(wire.NewMsgGetAddr(sp.SubnetworkID()), nil)
 
-				if !sp.SubnetworkID().IsEqual(&wire.SubnetworkIDSupportsAll) {
-					sp.QueueMessage(wire.NewMsgGetAddr(&wire.SubnetworkIDSupportsAll), nil)
+				if !sp.SubnetworkID().IsEqual(&subnetworkid.SubnetworkIDSupportsAll) {
+					sp.QueueMessage(wire.NewMsgGetAddr(&subnetworkid.SubnetworkIDSupportsAll), nil)
 				}
 			}
 
@@ -1277,8 +1277,8 @@ func (s *Server) pushBlockMsg(sp *Peer, hash *daghash.Hash, doneChan chan<- stru
 	// the block to a partial block.
 	nodeSubnetworkID := s.DAG.SubnetworkID()
 	peerSubnetworkID := sp.Peer.SubnetworkID()
-	isNodeFull := nodeSubnetworkID.IsEqual(&wire.SubnetworkIDSupportsAll)
-	isPeerFull := peerSubnetworkID.IsEqual(&wire.SubnetworkIDSupportsAll)
+	isNodeFull := nodeSubnetworkID.IsEqual(&subnetworkid.SubnetworkIDSupportsAll)
+	isPeerFull := peerSubnetworkID.IsEqual(&subnetworkid.SubnetworkIDSupportsAll)
 	if isNodeFull && !isPeerFull {
 		msgBlock.ConvertToPartial(peerSubnetworkID)
 	}
@@ -1908,9 +1908,9 @@ func (s *Server) peerHandler() {
 
 		// Add full nodes discovered through DNS to the address manager.
 		connmgr.SeedFromDNS(config.ActiveNetParams(), defaultRequiredServices,
-			&wire.SubnetworkIDSupportsAll, serverutils.BTCDLookup, seedFn)
+			&subnetworkid.SubnetworkIDSupportsAll, serverutils.BTCDLookup, seedFn)
 
-		if !config.MainConfig().SubnetworkID.IsEqual(&wire.SubnetworkIDSupportsAll) {
+		if !config.MainConfig().SubnetworkID.IsEqual(&subnetworkid.SubnetworkIDSupportsAll) {
 			// Node is partial - fetch nodes with same subnetwork
 			connmgr.SeedFromDNS(config.ActiveNetParams(), defaultRequiredServices,
 				config.MainConfig().SubnetworkID, serverutils.BTCDLookup, seedFn)

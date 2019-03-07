@@ -2,7 +2,6 @@ package blockdag
 
 import (
 	"errors"
-	"github.com/daglabs/btcd/wire"
 	"strings"
 	"testing"
 	"time"
@@ -10,6 +9,7 @@ import (
 	"bou.ke/monkey"
 	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/database"
+	"github.com/daglabs/btcd/util/subnetworkid"
 )
 
 func TestAncestorErrors(t *testing.T) {
@@ -25,7 +25,7 @@ func TestFlushToDBErrors(t *testing.T) {
 	// Create a new database and DAG instance to run tests against.
 	dag, teardownFunc, err := DAGSetup("TestFlushToDBErrors", Config{
 		DAGParams:    &dagconfig.SimNetParams,
-		SubnetworkID: &wire.SubnetworkIDSupportsAll,
+		SubnetworkID: &subnetworkid.SubnetworkIDSupportsAll,
 	})
 	if err != nil {
 		t.Fatalf("TestFlushToDBErrors: Failed to setup DAG instance: %s", err)

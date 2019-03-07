@@ -14,6 +14,7 @@ import (
 
 	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/util"
+	"github.com/daglabs/btcd/util/subnetworkid"
 	"github.com/daglabs/btcd/wire"
 	"github.com/davecgh/go-spew/spew"
 )
@@ -362,7 +363,7 @@ var Block100000 = wire.MsgBlock{
 				},
 			},
 			LockTime:     0,
-			SubnetworkID: wire.SubnetworkIDNative,
+			SubnetworkID: subnetworkid.SubnetworkIDNative,
 		},
 		{
 			Version: 1,
@@ -432,7 +433,7 @@ var Block100000 = wire.MsgBlock{
 				},
 			},
 			LockTime:     0,
-			SubnetworkID: wire.SubnetworkIDNative,
+			SubnetworkID: subnetworkid.SubnetworkIDNative,
 		},
 		{
 			Version: 1,
@@ -501,7 +502,7 @@ var Block100000 = wire.MsgBlock{
 				},
 			},
 			LockTime:     0,
-			SubnetworkID: wire.SubnetworkIDNative,
+			SubnetworkID: subnetworkid.SubnetworkIDNative,
 		},
 		{
 			Version: 1,
@@ -558,7 +559,7 @@ var Block100000 = wire.MsgBlock{
 				},
 			},
 			LockTime:     0,
-			SubnetworkID: wire.SubnetworkIDNative,
+			SubnetworkID: subnetworkid.SubnetworkIDNative,
 		},
 	},
 }

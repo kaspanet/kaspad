@@ -13,6 +13,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/daglabs/btcd/util/subnetworkid"
 	"github.com/davecgh/go-spew/spew"
 )
 
@@ -32,7 +33,7 @@ func TestVersion(t *testing.T) {
 	}
 
 	// Ensure we get the correct data back out.
-	msg := NewMsgVersion(me, you, nonce, lastBlock, &SubnetworkIDSupportsAll)
+	msg := NewMsgVersion(me, you, nonce, lastBlock, &subnetworkid.SubnetworkIDSupportsAll)
 	if msg.ProtocolVersion != int32(pver) {
 		t.Errorf("NewMsgVersion: wrong protocol version - got %v, want %v",
 			msg.ProtocolVersion, pver)

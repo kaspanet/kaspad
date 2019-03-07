@@ -95,12 +95,12 @@ func TestConvertToPartial(t *testing.T) {
 		expectedPayloadLength int
 	}{
 		{
-			subnetworkID:          SubnetworkIDNative,
+			subnetworkID:          subnetworkid.SubnetworkIDNative,
 			payload:               []byte{},
 			expectedPayloadLength: 0,
 		},
 		{
-			subnetworkID:          SubnetworkIDRegistry,
+			subnetworkID:          subnetworkid.SubnetworkIDRegistry,
 			payload:               []byte{0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08},
 			expectedPayloadLength: 0,
 		},
@@ -538,7 +538,7 @@ var blockOne = MsgBlock{
 				},
 			},
 			LockTime:     0,
-			SubnetworkID: SubnetworkIDNative,
+			SubnetworkID: subnetworkid.SubnetworkIDNative,
 		},
 	},
 }

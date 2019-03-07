@@ -37,7 +37,7 @@ func registerSubnetworks(dbTx database.Tx, txsAcceptanceData MultiblockTxsAccept
 			}
 
 			tx := txData.Tx.MsgTx()
-			if tx.SubnetworkID == wire.SubnetworkIDRegistry {
+			if tx.SubnetworkID == subnetworkid.SubnetworkIDRegistry {
 				err := validateSubnetworkRegistryTransaction(tx)
 				if err != nil {
 					return err
@@ -45,7 +45,7 @@ func registerSubnetworks(dbTx database.Tx, txsAcceptanceData MultiblockTxsAccept
 				validSubnetworkRegistryTxs = append(validSubnetworkRegistryTxs, tx)
 			}
 
-			if subnetworkid.Less(&wire.SubnetworkIDRegistry, &tx.SubnetworkID) {
+			if subnetworkid.Less(&subnetworkid.SubnetworkIDRegistry, &tx.SubnetworkID) {
 				// Transactions are ordered by subnetwork, so we can safely assume
 				// that the rest of the transactions will not be subnetwork registry
 				// transactions.

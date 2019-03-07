@@ -611,7 +611,7 @@ func (dag *BlockDAG) validateGasLimit(block *util.Block) error {
 		msgTx := tx.MsgTx()
 		// In DAGCoin and Registry sub-networks all txs must have Gas = 0, and that is validated in checkTransactionSanity
 		// Therefore - no need to check them here.
-		if msgTx.SubnetworkID != wire.SubnetworkIDNative && msgTx.SubnetworkID != wire.SubnetworkIDRegistry {
+		if msgTx.SubnetworkID != subnetworkid.SubnetworkIDNative && msgTx.SubnetworkID != subnetworkid.SubnetworkIDRegistry {
 			gasUsageInSubnetwork := gasUsageInAllSubnetworks[msgTx.SubnetworkID]
 			gasUsageInSubnetwork += msgTx.Gas
 			if gasUsageInSubnetwork < gasUsageInAllSubnetworks[msgTx.SubnetworkID] { // protect from overflows

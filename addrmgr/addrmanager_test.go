@@ -105,7 +105,7 @@ func lookupFunc(host string) ([]net.IP, error) {
 }
 
 func TestStartStop(t *testing.T) {
-	n := addrmgr.New("teststartstop", lookupFunc, &wire.SubnetworkIDSupportsAll)
+	n := addrmgr.New("teststartstop", lookupFunc, &subnetworkid.SubnetworkIDSupportsAll)
 	n.Start()
 	err := n.Stop()
 	if err != nil {
@@ -138,7 +138,7 @@ func TestAddAddressByIP(t *testing.T) {
 		},
 	}
 
-	amgr := addrmgr.New("testaddressbyip", nil, &wire.SubnetworkIDSupportsAll)
+	amgr := addrmgr.New("testaddressbyip", nil, &subnetworkid.SubnetworkIDSupportsAll)
 	for i, test := range tests {
 		err := amgr.AddAddressByIP(test.addrIP)
 		if test.err != nil && err == nil {
@@ -194,7 +194,7 @@ func TestAddLocalAddress(t *testing.T) {
 			true,
 		},
 	}
-	amgr := addrmgr.New("testaddlocaladdress", nil, &wire.SubnetworkIDSupportsAll)
+	amgr := addrmgr.New("testaddlocaladdress", nil, &subnetworkid.SubnetworkIDSupportsAll)
 	for x, test := range tests {
 		result := amgr.AddLocalAddress(&test.address, test.priority)
 		if result == nil && !test.valid {
@@ -211,7 +211,7 @@ func TestAddLocalAddress(t *testing.T) {
 }
 
 func TestAttempt(t *testing.T) {
-	n := addrmgr.New("testattempt", lookupFunc, &wire.SubnetworkIDSupportsAll)
+	n := addrmgr.New("testattempt", lookupFunc, &subnetworkid.SubnetworkIDSupportsAll)
 
 	// Add a new address and get it
 	err := n.AddAddressByIP(someIP + ":8333")
@@ -233,7 +233,7 @@ func TestAttempt(t *testing.T) {
 }
 
 func TestConnected(t *testing.T) {
-	n := addrmgr.New("testconnected", lookupFunc, &wire.SubnetworkIDSupportsAll)
+	n := addrmgr.New("testconnected", lookupFunc, &subnetworkid.SubnetworkIDSupportsAll)
 
 	// Add a new address and get it
 	err := n.AddAddressByIP(someIP + ":8333")
@@ -253,7 +253,7 @@ func TestConnected(t *testing.T) {
 }
 
 func TestNeedMoreAddresses(t *testing.T) {
-	n := addrmgr.New("testneedmoreaddresses", lookupFunc, &wire.SubnetworkIDSupportsAll)
+	n := addrmgr.New("testneedmoreaddresses", lookupFunc, &subnetworkid.SubnetworkIDSupportsAll)
 	addrsToAdd := 1500
 	b := n.NeedMoreAddresses()
 	if !b {
@@ -285,7 +285,7 @@ func TestNeedMoreAddresses(t *testing.T) {
 }
 
 func TestGood(t *testing.T) {
-	n := addrmgr.New("testgood", lookupFunc, &wire.SubnetworkIDSupportsAll)
+	n := addrmgr.New("testgood", lookupFunc, &subnetworkid.SubnetworkIDSupportsAll)
 	addrsToAdd := 64 * 64
 	addrs := make([]*wire.NetAddress, addrsToAdd)
 	subnetworkCount := 32
@@ -425,7 +425,7 @@ func TestGetBestLocalAddress(t *testing.T) {
 		*/
 	}
 
-	amgr := addrmgr.New("testgetbestlocaladdress", nil, &wire.SubnetworkIDSupportsAll)
+	amgr := addrmgr.New("testgetbestlocaladdress", nil, &subnetworkid.SubnetworkIDSupportsAll)
 
 	// Test against default when there's no address
 	for x, test := range tests {
