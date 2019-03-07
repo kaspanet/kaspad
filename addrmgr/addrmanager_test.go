@@ -350,7 +350,7 @@ func TestGetAddress(t *testing.T) {
 		t.Fatalf("Did not get an address where there is one in the pool")
 	}
 
-	// Checks that we don't get it if we find it that it has other subnetwork ID than expected.
+	// Checks that we don't get it if we find that it has other subnetwork ID than expected.
 	actualSubnetworkID := &subnetworkid.SubnetworkID{0xfe}
 	n.Good(ka.NetAddress(), actualSubnetworkID)
 	ka = n.GetAddress()
