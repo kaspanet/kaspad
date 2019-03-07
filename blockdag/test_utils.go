@@ -89,7 +89,7 @@ func DAGSetup(dbName string, config Config) (*BlockDAG, func(), error) {
 	}
 
 	if config.SubnetworkID == nil {
-		config.SubnetworkID = &subnetworkid.SubnetworkIDSupportsAll
+		config.SubnetworkID = subnetworkid.SubnetworkIDSupportsAll
 	}
 
 	config.TimeSource = NewMedianTime()
@@ -136,7 +136,7 @@ func createTxForTest(numInputs uint32, numOutputs uint32, outputValue uint64, su
 		tx.Gas = subnetworkData.Gas
 		tx.Payload = subnetworkData.Payload
 	} else {
-		tx.SubnetworkID = subnetworkid.SubnetworkIDNative
+		tx.SubnetworkID = *subnetworkid.SubnetworkIDNative
 		tx.Gas = 0
 		tx.Payload = []byte{}
 	}

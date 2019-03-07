@@ -532,12 +532,12 @@ func (msg *MsgTx) BtcDecode(r io.Reader, pver uint32) error {
 		return err
 	}
 
-	if msg.SubnetworkID == subnetworkid.SubnetworkIDSupportsAll {
+	if msg.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDSupportsAll) {
 		str := fmt.Sprintf("%s is a reserved sub network and cannot be used as part of a transaction", msg.SubnetworkID)
 		return messageError("MsgTx.BtcDecode", str)
 	}
 
-	if msg.SubnetworkID != subnetworkid.SubnetworkIDNative {
+	if !msg.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) {
 		msg.Gas, err = binarySerializer.Uint64(r, littleEndian)
 		if err != nil {
 			returnScriptBuffers()
@@ -673,8 +673,8 @@ func (msg *MsgTx) encode(w io.Writer, pver uint32, encodingFlags txEncoding) err
 		return err
 	}
 
-	if msg.SubnetworkID != subnetworkid.SubnetworkIDNative {
-		if msg.SubnetworkID == subnetworkid.SubnetworkIDRegistry && msg.Gas != 0 {
+	if !msg.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) {
+		if msg.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDRegistry) && msg.Gas != 0 {
 			str := fmt.Sprintf("Transactions from subnetwork %s should have 0 gas", msg.SubnetworkID)
 			return messageError("MsgTx.BtcEncode", str)
 		}
@@ -743,7 +743,7 @@ func (msg *MsgTx) serializeSize(encodingFlags txEncoding) int {
 	n := 32 + VarIntSerializeSize(uint64(len(msg.TxIn))) +
 		VarIntSerializeSize(uint64(len(msg.TxOut)))
 
-	if msg.SubnetworkID != subnetworkid.SubnetworkIDNative {
+	if !msg.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) {
 		// Gas 8 bytes
 		n += 8
 
@@ -825,8 +825,8 @@ func (msg *MsgTx) PkScriptLocs() []int {
 // 2. The native subnetwork
 // 3. The transaction's subnetwork
 func (msg *MsgTx) IsSubnetworkCompatible(subnetworkID *subnetworkid.SubnetworkID) bool {
-	return subnetworkID.IsEqual(&subnetworkid.SubnetworkIDSupportsAll) ||
-		subnetworkID.IsEqual(&subnetworkid.SubnetworkIDNative) ||
+	return subnetworkID.IsEqual(subnetworkid.SubnetworkIDSupportsAll) ||
+		subnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) ||
 		subnetworkID.IsEqual(&msg.SubnetworkID)
 }
 
@@ -840,13 +840,13 @@ func NewMsgTx(version int32) *MsgTx {
 		Version:      version,
 		TxIn:         make([]*TxIn, 0, defaultTxInOutAlloc),
 		TxOut:        make([]*TxOut, 0, defaultTxInOutAlloc),
-		SubnetworkID: subnetworkid.SubnetworkIDNative,
+		SubnetworkID: *subnetworkid.SubnetworkIDNative,
 	}
 }
 
 func newRegistryMsgTx(version int32, gasLimit uint64) *MsgTx {
 	tx := NewMsgTx(version)
-	tx.SubnetworkID = subnetworkid.SubnetworkIDRegistry
+	tx.SubnetworkID = *subnetworkid.SubnetworkIDRegistry
 	tx.Payload = make([]byte, 8)
 	binary.LittleEndian.PutUint64(tx.Payload, gasLimit)
 	return tx

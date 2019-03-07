@@ -39,7 +39,7 @@ func TestFinality(t *testing.T) {
 	params.K = 1
 	dag, teardownFunc, err := blockdag.DAGSetup("TestFinality", blockdag.Config{
 		DAGParams:    &params,
-		SubnetworkID: &subnetworkid.SubnetworkIDSupportsAll,
+		SubnetworkID: subnetworkid.SubnetworkIDSupportsAll,
 	})
 	if err != nil {
 		t.Fatalf("Failed to setup DAG instance: %v", err)
@@ -148,7 +148,7 @@ func TestSubnetworkRegistry(t *testing.T) {
 	params.BlockRewardMaturity = 1
 	dag, teardownFunc, err := blockdag.DAGSetup("TestSubnetworkRegistry", blockdag.Config{
 		DAGParams:    &params,
-		SubnetworkID: &subnetworkid.SubnetworkIDSupportsAll,
+		SubnetworkID: subnetworkid.SubnetworkIDSupportsAll,
 	})
 	if err != nil {
 		t.Fatalf("Failed to setup DAG instance: %v", err)
@@ -175,7 +175,7 @@ func TestChainedTransactions(t *testing.T) {
 	// Create a new database and dag instance to run tests against.
 	dag, teardownFunc, err := blockdag.DAGSetup("TestChainedTransactions", blockdag.Config{
 		DAGParams:    &params,
-		SubnetworkID: &subnetworkid.SubnetworkIDSupportsAll,
+		SubnetworkID: subnetworkid.SubnetworkIDSupportsAll,
 	})
 	if err != nil {
 		t.Fatalf("Failed to setup dag instance: %v", err)
@@ -270,7 +270,7 @@ func TestGasLimit(t *testing.T) {
 	params.BlockRewardMaturity = 1
 	dag, teardownFunc, err := blockdag.DAGSetup("TestSubnetworkRegistry", blockdag.Config{
 		DAGParams:    &params,
-		SubnetworkID: &subnetworkid.SubnetworkIDSupportsAll,
+		SubnetworkID: subnetworkid.SubnetworkIDSupportsAll,
 	})
 	if err != nil {
 		t.Fatalf("Failed to setup DAG instance: %v", err)

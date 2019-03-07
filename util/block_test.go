@@ -363,7 +363,7 @@ var Block100000 = wire.MsgBlock{
 				},
 			},
 			LockTime:     0,
-			SubnetworkID: subnetworkid.SubnetworkIDNative,
+			SubnetworkID: *subnetworkid.SubnetworkIDNative,
 		},
 		{
 			Version: 1,
@@ -433,7 +433,7 @@ var Block100000 = wire.MsgBlock{
 				},
 			},
 			LockTime:     0,
-			SubnetworkID: subnetworkid.SubnetworkIDNative,
+			SubnetworkID: *subnetworkid.SubnetworkIDNative,
 		},
 		{
 			Version: 1,
@@ -502,7 +502,7 @@ var Block100000 = wire.MsgBlock{
 				},
 			},
 			LockTime:     0,
-			SubnetworkID: subnetworkid.SubnetworkIDNative,
+			SubnetworkID: *subnetworkid.SubnetworkIDNative,
 		},
 		{
 			Version: 1,
@@ -559,7 +559,7 @@ var Block100000 = wire.MsgBlock{
 				},
 			},
 			LockTime:     0,
-			SubnetworkID: subnetworkid.SubnetworkIDNative,
+			SubnetworkID: *subnetworkid.SubnetworkIDNative,
 		},
 	},
 }

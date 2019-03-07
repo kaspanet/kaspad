@@ -710,8 +710,8 @@ func (a *AddrManager) NeedMoreAddresses() bool {
 	defer a.mtx.Unlock()
 
 	allAddrs := a.numAddresses(a.localSubnetworkID)
-	if !a.localSubnetworkID.IsEqual(&subnetworkid.SubnetworkIDSupportsAll) {
-		allAddrs += a.numAddresses(&subnetworkid.SubnetworkIDSupportsAll)
+	if !a.localSubnetworkID.IsEqual(subnetworkid.SubnetworkIDSupportsAll) {
+		allAddrs += a.numAddresses(subnetworkid.SubnetworkIDSupportsAll)
 	}
 	return allAddrs < needAddressThreshold
 }

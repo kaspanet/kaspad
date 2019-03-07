@@ -46,7 +46,7 @@ func TestGetAddrWire(t *testing.T) {
 	}
 
 	// With specific subnetwork
-	msgGetAddrSubnet := NewMsgGetAddr(&subnetworkid.SubnetworkIDNative)
+	msgGetAddrSubnet := NewMsgGetAddr(subnetworkid.SubnetworkIDNative)
 	msgGetAddrSubnetEncoded := []byte{
 		0x00,                                           // All subnetworks
 		0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Subnetwork ID

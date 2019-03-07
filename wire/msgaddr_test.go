@@ -117,7 +117,7 @@ func TestAddrWire(t *testing.T) {
 	}
 
 	// Address message with multiple addresses and subnetworkID.
-	multiAddrSubnet := NewMsgAddr(&subnetworkid.SubnetworkIDNative)
+	multiAddrSubnet := NewMsgAddr(subnetworkid.SubnetworkIDNative)
 	multiAddrSubnet.AddAddresses(na, na2)
 	multiAddrSubnetEncoded := []byte{
 		0x00,                                           // All subnetworks

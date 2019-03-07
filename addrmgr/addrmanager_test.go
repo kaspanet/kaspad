@@ -105,7 +105,7 @@ func lookupFunc(host string) ([]net.IP, error) {
 }
 
 func TestStartStop(t *testing.T) {
-	n := addrmgr.New("teststartstop", lookupFunc, &subnetworkid.SubnetworkIDSupportsAll)
+	n := addrmgr.New("teststartstop", lookupFunc, subnetworkid.SubnetworkIDSupportsAll)
 	n.Start()
 	err := n.Stop()
 	if err != nil {
@@ -138,9 +138,9 @@ func TestAddAddressByIP(t *testing.T) {
 		},
 	}
 
-	amgr := addrmgr.New("testaddressbyip", nil, &subnetworkid.SubnetworkIDSupportsAll)
+	amgr := addrmgr.New("testaddressbyip", nil, subnetworkid.SubnetworkIDSupportsAll)
 	for i, test := range tests {
-		err := amgr.AddAddressByIP(test.addrIP, &subnetworkid.SubnetworkIDSupportsAll)
+		err := amgr.AddAddressByIP(test.addrIP, subnetworkid.SubnetworkIDSupportsAll)
 		if test.err != nil && err == nil {
 			t.Errorf("TestGood test %d failed expected an error and got none", i)
 			continue
@@ -194,7 +194,7 @@ func TestAddLocalAddress(t *testing.T) {
 			true,
 		},
 	}
-	amgr := addrmgr.New("testaddlocaladdress", nil, &subnetworkid.SubnetworkIDSupportsAll)
+	amgr := addrmgr.New("testaddlocaladdress", nil, subnetworkid.SubnetworkIDSupportsAll)
 	for x, test := range tests {
 		result := amgr.AddLocalAddress(&test.address, test.priority)
 		if result == nil && !test.valid {
@@ -211,10 +211,10 @@ func TestAddLocalAddress(t *testing.T) {
 }
 
 func TestAttempt(t *testing.T) {
-	n := addrmgr.New("testattempt", lookupFunc, &subnetworkid.SubnetworkIDSupportsAll)
+	n := addrmgr.New("testattempt", lookupFunc, subnetworkid.SubnetworkIDSupportsAll)
 
 	// Add a new address and get it
-	err := n.AddAddressByIP(someIP+":8333", &subnetworkid.SubnetworkIDSupportsAll)
+	err := n.AddAddressByIP(someIP+":8333", subnetworkid.SubnetworkIDSupportsAll)
 	if err != nil {
 		t.Fatalf("Adding address failed: %v", err)
 	}
@@ -233,10 +233,10 @@ func TestAttempt(t *testing.T) {
 }
 
 func TestConnected(t *testing.T) {
-	n := addrmgr.New("testconnected", lookupFunc, &subnetworkid.SubnetworkIDSupportsAll)
+	n := addrmgr.New("testconnected", lookupFunc, subnetworkid.SubnetworkIDSupportsAll)
 
 	// Add a new address and get it
-	err := n.AddAddressByIP(someIP+":8333", &subnetworkid.SubnetworkIDSupportsAll)
+	err := n.AddAddressByIP(someIP+":8333", subnetworkid.SubnetworkIDSupportsAll)
 	if err != nil {
 		t.Fatalf("Adding address failed: %v", err)
 	}
@@ -253,7 +253,7 @@ func TestConnected(t *testing.T) {
 }
 
 func TestNeedMoreAddresses(t *testing.T) {
-	n := addrmgr.New("testneedmoreaddresses", lookupFunc, &subnetworkid.SubnetworkIDSupportsAll)
+	n := addrmgr.New("testneedmoreaddresses", lookupFunc, subnetworkid.SubnetworkIDSupportsAll)
 	addrsToAdd := 1500
 	b := n.NeedMoreAddresses()
 	if !b {
@@ -272,7 +272,7 @@ func TestNeedMoreAddresses(t *testing.T) {
 
 	srcAddr := wire.NewNetAddressIPPort(net.IPv4(173, 144, 173, 111), 8333, 0)
 
-	n.AddAddresses(addrs, srcAddr, &subnetworkid.SubnetworkIDSupportsAll)
+	n.AddAddresses(addrs, srcAddr, subnetworkid.SubnetworkIDSupportsAll)
 	numAddrs := n.TotalNumAddresses()
 	if numAddrs > addrsToAdd {
 		t.Errorf("Number of addresses is too many %d vs %d", numAddrs, addrsToAdd)
@@ -285,7 +285,7 @@ func TestNeedMoreAddresses(t *testing.T) {
 }
 
 func TestGood(t *testing.T) {
-	n := addrmgr.New("testgood", lookupFunc, &subnetworkid.SubnetworkIDSupportsAll)
+	n := addrmgr.New("testgood", lookupFunc, subnetworkid.SubnetworkIDSupportsAll)
 	addrsToAdd := 64 * 64
 	addrs := make([]*wire.NetAddress, addrsToAdd)
 	subnetworkCount := 32
@@ -306,7 +306,7 @@ func TestGood(t *testing.T) {
 
 	srcAddr := wire.NewNetAddressIPPort(net.IPv4(173, 144, 173, 111), 8333, 0)
 
-	n.AddAddresses(addrs, srcAddr, &subnetworkid.SubnetworkIDSupportsAll)
+	n.AddAddresses(addrs, srcAddr, subnetworkid.SubnetworkIDSupportsAll)
 	for i, addr := range addrs {
 		n.Good(addr, subnetworkIDs[i%subnetworkCount])
 	}
@@ -451,7 +451,7 @@ func TestGetBestLocalAddress(t *testing.T) {
 		*/
 	}
 
-	amgr := addrmgr.New("testgetbestlocaladdress", nil, &subnetworkid.SubnetworkIDSupportsAll)
+	amgr := addrmgr.New("testgetbestlocaladdress", nil, subnetworkid.SubnetworkIDSupportsAll)
 
 	// Test against default when there's no address
 	for x, test := range tests {

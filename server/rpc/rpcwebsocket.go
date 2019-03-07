@@ -1928,12 +1928,12 @@ func handleNotifyNewTransactions(wsc *wsClient, icmd interface{}) (interface{}, 
 
 	if isVerbose {
 		nodeSubnetworkID := wsc.server.cfg.DAG.SubnetworkID()
-		if nodeSubnetworkID.IsEqual(&subnetworkid.SubnetworkIDNative) && subnetworkID != nil {
+		if nodeSubnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) && subnetworkID != nil {
 			return nil, &btcjson.RPCError{
 				Code:    btcjson.ErrRPCInvalidParameter,
 				Message: "Subnetwork switch is disabled when node is in Native subnetwork",
 			}
-		} else if !nodeSubnetworkID.IsEqual(&subnetworkid.SubnetworkIDSupportsAll) {
+		} else if !nodeSubnetworkID.IsEqual(subnetworkid.SubnetworkIDSupportsAll) {
 			if subnetworkID == nil {
 				return nil, &btcjson.RPCError{
 					Code:    btcjson.ErrRPCInvalidParameter,

@@ -29,13 +29,13 @@ type SubnetworkID [IDLength]byte
 
 var (
 	// SubnetworkIDSupportsAll is the subnetwork ID that is used to signal to peers that you support all subnetworks
-	SubnetworkIDSupportsAll = SubnetworkID{}
+	SubnetworkIDSupportsAll = &SubnetworkID{}
 
 	// SubnetworkIDNative is the default subnetwork ID which is used for transactions without related payload data
-	SubnetworkIDNative = SubnetworkID{1}
+	SubnetworkIDNative = &SubnetworkID{1}
 
 	// SubnetworkIDRegistry is the subnetwork ID which is used for adding new sub networks to the registry
-	SubnetworkIDRegistry = SubnetworkID{2}
+	SubnetworkIDRegistry = &SubnetworkID{2}
 )
 
 // String returns the SubnetworkID as the hexadecimal string of the byte-reversed

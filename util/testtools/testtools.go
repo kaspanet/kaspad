@@ -64,7 +64,7 @@ func RegisterSubnetworkForTest(dag *blockdag.BlockDAG, params *dagconfig.Params,
 		PkScript: blockdag.OpTrueScript,
 		Value:    fundsBlockCbTx.TxOut[0].Value,
 	})
-	registryTx.SubnetworkID = subnetworkid.SubnetworkIDRegistry
+	registryTx.SubnetworkID = *subnetworkid.SubnetworkIDRegistry
 	registryTx.Payload = make([]byte, 8)
 	binary.LittleEndian.PutUint64(registryTx.Payload, gasLimit)
 

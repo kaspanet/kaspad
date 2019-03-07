@@ -50,7 +50,7 @@ func ExampleBlockDAG_ProcessBlock() {
 		DB:           db,
 		DAGParams:    &dagconfig.MainNetParams,
 		TimeSource:   blockdag.NewMedianTime(),
-		SubnetworkID: &subnetworkid.SubnetworkIDSupportsAll,
+		SubnetworkID: subnetworkid.SubnetworkIDSupportsAll,
 	})
 	if err != nil {
 		fmt.Printf("Failed to create chain instance: %v\n", err)

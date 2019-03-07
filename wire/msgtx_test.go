@@ -588,7 +588,7 @@ func TestTxSerializeErrors(t *testing.T) {
 	}
 
 	registryTx := NewMsgTx(1)
-	registryTx.SubnetworkID = subnetworkid.SubnetworkIDRegistry
+	registryTx.SubnetworkID = *subnetworkid.SubnetworkIDRegistry
 	registryTx.Gas = 1
 
 	w := bytes.NewBuffer(make([]byte, 0, registryTx.SerializeSize()))
@@ -776,12 +776,12 @@ func TestIsSubnetworkCompatible(t *testing.T) {
 	}{
 		{
 			name:           "SupportsAll subnetwork",
-			subnetworkID:   &subnetworkid.SubnetworkIDSupportsAll,
+			subnetworkID:   subnetworkid.SubnetworkIDSupportsAll,
 			expectedResult: true,
 		},
 		{
 			name:           "Native subnetwork",
-			subnetworkID:   &subnetworkid.SubnetworkIDNative,
+			subnetworkID:   subnetworkid.SubnetworkIDNative,
 			expectedResult: true,
 		},
 		{
@@ -924,7 +924,7 @@ var multiTx = &MsgTx{
 		},
 	},
 	LockTime:     0,
-	SubnetworkID: subnetworkid.SubnetworkIDNative,
+	SubnetworkID: *subnetworkid.SubnetworkIDNative,
 }
 
 // multiTxEncoded is the wire encoded bytes for multiTx using protocol version
