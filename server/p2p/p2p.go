@@ -1122,6 +1122,13 @@ func (sp *Peer) OnAddr(_ *peer.Peer, msg *wire.MsgAddr) {
 		return
 	}
 
+	if msg.SubnetworkID == nil {
+		peerLog.Errorf("Command [%s] from %s does not contain a subnetwork ID. Only seeder is allowed to get [%s] command with no subnetwork ID.",
+			msg.Command(), sp.Peer, msg.Command())
+		sp.Disconnect()
+		return
+	}
+
 	for _, na := range msg.AddrList {
 		// Don't add more address if we're disconnecting.
 		if !sp.Connected() {
@@ -1899,21 +1906,22 @@ func (s *Server) peerHandler() {
 	}
 
 	if !config.MainConfig().DisableDNSSeed {
-		seedFn := func(addrs []*wire.NetAddress) {
-			// Bitcoind uses a lookup of the dns seeder here. Since seeder returns
-			// IPs of nodes and not its own IP, we can not know real IP of
-			// source. So we'll take first returned address as source.
-			s.addrManager.AddAddresses(addrs, addrs[0])
+		seedFromSubNetwork := func(subnetworkID *subnetworkid.SubnetworkID) {
+			connmgr.SeedFromDNS(config.ActiveNetParams(), defaultRequiredServices,
+				&wire.SubnetworkIDSupportsAll, serverutils.BTCDLookup, func(addrs []*wire.NetAddress) {
+					// Bitcoind uses a lookup of the dns seeder here. Since seeder returns
+					// IPs of nodes and not its own IP, we can not know real IP of
+					// source. So we'll take first returned address as source.
+					s.addrManager.AddAddresses(addrs, addrs[0], subnetworkID)
+				})
 		}
 
 		// Add full nodes discovered through DNS to the address manager.
-		connmgr.SeedFromDNS(config.ActiveNetParams(), defaultRequiredServices,
-			&wire.SubnetworkIDSupportsAll, serverutils.BTCDLookup, seedFn)
+		seedFromSubNetwork(&wire.SubnetworkIDSupportsAll)
 
 		if !config.MainConfig().SubnetworkID.IsEqual(&wire.SubnetworkIDSupportsAll) {
 			// Node is partial - fetch nodes with same subnetwork
-			connmgr.SeedFromDNS(config.ActiveNetParams(), defaultRequiredServices,
-				config.MainConfig().SubnetworkID, serverutils.BTCDLookup, seedFn)
+			seedFromSubNetwork(config.MainConfig().SubnetworkID)
 		}
 	}
 	go s.connManager.Start()
