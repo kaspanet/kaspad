@@ -1122,9 +1122,9 @@ func (sp *Peer) OnAddr(_ *peer.Peer, msg *wire.MsgAddr) {
 		return
 	}
 
-	if msg.SubnetworkID == nil {
-		peerLog.Errorf("Command [%s] from %s does not contain a subnetwork ID. Only seeder is allowed to get [%s] command with no subnetwork ID.",
-			msg.Command(), sp.Peer, msg.Command())
+	if msg.SubnetworkID == nil || !msg.SubnetworkID.IsEqual(&wire.SubnetworkIDSupportsAll) && !msg.SubnetworkID.IsEqual(config.MainConfig().SubnetworkID) {
+		peerLog.Errorf("Only %s and %s subnetwork IDs are allowed in [%s] command, but got subnetwork ID %s from %s",
+			wire.SubnetworkIDSupportsAll, config.MainConfig().SubnetworkID, msg.Command(), msg.SubnetworkID, sp.Peer)
 		sp.Disconnect()
 		return
 	}
