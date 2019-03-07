@@ -1122,7 +1122,7 @@ func (sp *Peer) OnAddr(_ *peer.Peer, msg *wire.MsgAddr) {
 		return
 	}
 
-	if msg.SubnetworkID == nil || (!msg.SubnetworkID.IsEqual(&wire.SubnetworkIDSupportsAll) && !msg.SubnetworkID.IsEqual(config.MainConfig().SubnetworkID)) {
+	if msg.SubnetworkID == nil || (!msg.SubnetworkID.IsEqual(config.MainConfig().SubnetworkID) && !msg.SubnetworkID.IsEqual(&wire.SubnetworkIDSupportsAll)) {
 		peerLog.Errorf("Only %s and %s subnetwork IDs are allowed in [%s] command, but got subnetwork ID %s from %s",
 			wire.SubnetworkIDSupportsAll, config.MainConfig().SubnetworkID, msg.Command(), msg.SubnetworkID, sp.Peer)
 		sp.Disconnect()
