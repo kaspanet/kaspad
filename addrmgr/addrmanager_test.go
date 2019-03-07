@@ -140,7 +140,7 @@ func TestAddAddressByIP(t *testing.T) {
 
 	amgr := addrmgr.New("testaddressbyip", nil, &wire.SubnetworkIDSupportsAll)
 	for i, test := range tests {
-		err := amgr.AddAddressByIP(test.addrIP)
+		err := amgr.AddAddressByIP(test.addrIP, &wire.SubnetworkIDSupportsAll)
 		if test.err != nil && err == nil {
 			t.Errorf("TestGood test %d failed expected an error and got none", i)
 			continue
@@ -214,7 +214,7 @@ func TestAttempt(t *testing.T) {
 	n := addrmgr.New("testattempt", lookupFunc, &wire.SubnetworkIDSupportsAll)
 
 	// Add a new address and get it
-	err := n.AddAddressByIP(someIP + ":8333")
+	err := n.AddAddressByIP(someIP+":8333", &wire.SubnetworkIDSupportsAll)
 	if err != nil {
 		t.Fatalf("Adding address failed: %v", err)
 	}
@@ -236,7 +236,7 @@ func TestConnected(t *testing.T) {
 	n := addrmgr.New("testconnected", lookupFunc, &wire.SubnetworkIDSupportsAll)
 
 	// Add a new address and get it
-	err := n.AddAddressByIP(someIP + ":8333")
+	err := n.AddAddressByIP(someIP+":8333", &wire.SubnetworkIDSupportsAll)
 	if err != nil {
 		t.Fatalf("Adding address failed: %v", err)
 	}
@@ -272,7 +272,7 @@ func TestNeedMoreAddresses(t *testing.T) {
 
 	srcAddr := wire.NewNetAddressIPPort(net.IPv4(173, 144, 173, 111), 8333, 0)
 
-	n.AddAddresses(addrs, srcAddr)
+	n.AddAddresses(addrs, srcAddr, &wire.SubnetworkIDSupportsAll)
 	numAddrs := n.TotalNumAddresses()
 	if numAddrs > addrsToAdd {
 		t.Errorf("Number of addresses is too many %d vs %d", numAddrs, addrsToAdd)
@@ -306,7 +306,7 @@ func TestGood(t *testing.T) {
 
 	srcAddr := wire.NewNetAddressIPPort(net.IPv4(173, 144, 173, 111), 8333, 0)
 
-	n.AddAddresses(addrs, srcAddr)
+	n.AddAddresses(addrs, srcAddr, &wire.SubnetworkIDSupportsAll)
 	for i, addr := range addrs {
 		n.Good(addr, subnetworkIDs[i%subnetworkCount])
 	}
@@ -341,7 +341,7 @@ func TestGetAddress(t *testing.T) {
 	}
 
 	// Add a new address and get it
-	err := n.AddAddressByIP(someIP + ":8333")
+	err := n.AddAddressByIP(someIP+":8332", localSubnetworkID)
 	if err != nil {
 		t.Fatalf("Adding address failed: %v", err)
 	}
@@ -349,11 +349,37 @@ func TestGetAddress(t *testing.T) {
 	if ka == nil {
 		t.Fatalf("Did not get an address where there is one in the pool")
 	}
+
+	// Checks that we don't get it if we find that it has other subnetwork ID than expected.
+	actualSubnetworkID := &subnetworkid.SubnetworkID{0xfe}
+	n.Good(ka.NetAddress(), actualSubnetworkID)
+	ka = n.GetAddress()
+	if ka != nil {
+		t.Errorf("Didn't expect to get an address because there shouldn't be any address from subnetwork ID %s or %s", localSubnetworkID, wire.SubnetworkIDSupportsAll)
+	}
+
+	// Checks that the total number of addresses incremented although the new address is not full node or a partial node of the same subnetwork as the local node.
+	numAddrs := n.TotalNumAddresses()
+	if numAddrs != 1 {
+		t.Errorf("Wrong number of addresses: got %d, want %d", numAddrs, 1)
+	}
+
+	// Now we repeat the same process, but now the address has the expected subnetwork ID.
+
+	// Add a new address and get it
+	err = n.AddAddressByIP(someIP+":8333", localSubnetworkID)
+	if err != nil {
+		t.Fatalf("Adding address failed: %v", err)
+	}
+	ka = n.GetAddress()
+	if ka == nil {
+		t.Fatalf("Did not get an address where there is one in the pool")
+	}
 	if ka.NetAddress().IP.String() != someIP {
 		t.Errorf("Wrong IP: got %v, want %v", ka.NetAddress().IP.String(), someIP)
 	}
-	if *ka.SubnetworkID() != wire.SubnetworkIDUnknown {
-		t.Errorf("Wrong Subnetwork ID: got %v, want %v", *ka.SubnetworkID(), wire.SubnetworkIDUnknown)
+	if !ka.SubnetworkID().IsEqual(localSubnetworkID) {
+		t.Errorf("Wrong Subnetwork ID: got %v, want %v", *ka.SubnetworkID(), localSubnetworkID)
 	}
 
 	// Mark this as a good address and get it
@@ -369,8 +395,8 @@ func TestGetAddress(t *testing.T) {
 		t.Errorf("Wrong Subnetwork ID: got %v, want %v", ka.SubnetworkID(), localSubnetworkID)
 	}
 
-	numAddrs := n.TotalNumAddresses()
-	if numAddrs != 1 {
+	numAddrs = n.TotalNumAddresses()
+	if numAddrs != 2 {
 		t.Errorf("Wrong number of addresses: got %d, want %d", numAddrs, 1)
 	}
 }

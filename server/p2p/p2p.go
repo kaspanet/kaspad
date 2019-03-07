@@ -1122,6 +1122,13 @@ func (sp *Peer) OnAddr(_ *peer.Peer, msg *wire.MsgAddr) {
 		return
 	}
 
+	if msg.SubnetworkID == nil || (!msg.SubnetworkID.IsEqual(config.MainConfig().SubnetworkID) && !msg.SubnetworkID.IsEqual(&wire.SubnetworkIDSupportsAll)) {
+		peerLog.Errorf("Only %s and %s subnetwork IDs are allowed in [%s] command, but got subnetwork ID %s from %s",
+			wire.SubnetworkIDSupportsAll, config.MainConfig().SubnetworkID, msg.Command(), msg.SubnetworkID, sp.Peer)
+		sp.Disconnect()
+		return
+	}
+
 	for _, na := range msg.AddrList {
 		// Don't add more address if we're disconnecting.
 		if !sp.Connected() {
@@ -1145,7 +1152,7 @@ func (sp *Peer) OnAddr(_ *peer.Peer, msg *wire.MsgAddr) {
 	// addresses, and last seen updates.
 	// XXX bitcoind gives a 2 hour time penalty here, do we want to do the
 	// same?
-	sp.server.addrManager.AddAddresses(msg.AddrList, sp.NA())
+	sp.server.addrManager.AddAddresses(msg.AddrList, sp.NA(), msg.SubnetworkID)
 }
 
 // OnRead is invoked when a peer receives a message and it is used to update
@@ -1899,21 +1906,22 @@ func (s *Server) peerHandler() {
 	}
 
 	if !config.MainConfig().DisableDNSSeed {
-		seedFn := func(addrs []*wire.NetAddress) {
-			// Bitcoind uses a lookup of the dns seeder here. Since seeder returns
-			// IPs of nodes and not its own IP, we can not know real IP of
-			// source. So we'll take first returned address as source.
-			s.addrManager.AddAddresses(addrs, addrs[0])
+		seedFromSubNetwork := func(subnetworkID *subnetworkid.SubnetworkID) {
+			connmgr.SeedFromDNS(config.ActiveNetParams(), defaultRequiredServices,
+				&wire.SubnetworkIDSupportsAll, serverutils.BTCDLookup, func(addrs []*wire.NetAddress) {
+					// Bitcoind uses a lookup of the dns seeder here. Since seeder returns
+					// IPs of nodes and not its own IP, we can not know real IP of
+					// source. So we'll take first returned address as source.
+					s.addrManager.AddAddresses(addrs, addrs[0], subnetworkID)
+				})
 		}
 
 		// Add full nodes discovered through DNS to the address manager.
-		connmgr.SeedFromDNS(config.ActiveNetParams(), defaultRequiredServices,
-			&wire.SubnetworkIDSupportsAll, serverutils.BTCDLookup, seedFn)
+		seedFromSubNetwork(&wire.SubnetworkIDSupportsAll)
 
 		if !config.MainConfig().SubnetworkID.IsEqual(&wire.SubnetworkIDSupportsAll) {
 			// Node is partial - fetch nodes with same subnetwork
-			connmgr.SeedFromDNS(config.ActiveNetParams(), defaultRequiredServices,
-				config.MainConfig().SubnetworkID, serverutils.BTCDLookup, seedFn)
+			seedFromSubNetwork(config.MainConfig().SubnetworkID)
 		}
 	}
 	go s.connManager.Start()
