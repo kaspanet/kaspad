@@ -8,6 +8,8 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"os"
+	"path/filepath"
 	"reflect"
 	"strings"
 	"testing"
@@ -19,8 +21,10 @@ import (
 
 	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/dagconfig/daghash"
+	"github.com/daglabs/btcd/database"
 	"github.com/daglabs/btcd/txscript"
 	"github.com/daglabs/btcd/util"
+	"github.com/daglabs/btcd/util/subnetworkid"
 	"github.com/daglabs/btcd/util/txsort"
 	"github.com/daglabs/btcd/wire"
 )
@@ -860,6 +864,49 @@ func testErrorThroughPatching(t *testing.T, expectedErrorMessage string, targetF
 	if !strings.Contains(err.Error(), expectedErrorMessage) {
 		t.Errorf("ProcessBlock returned wrong error. "+
 			"Want: %s, got: %s", expectedErrorMessage, err)
+	}
+}
+
+func TestNew(t *testing.T) {
+	// Create the root directory for test databases.
+	if !fileExists(testDbRoot) {
+		if err := os.MkdirAll(testDbRoot, 0700); err != nil {
+			t.Fatalf("unable to create test db "+
+				"root: %s", err)
+		}
+	}
+
+	dbPath := filepath.Join(testDbRoot, "TestNew")
+	_ = os.RemoveAll(dbPath)
+	db, err := database.Create(testDbType, dbPath, blockDataNet)
+	if err != nil {
+		t.Fatalf("error creating db: %s", err)
+	}
+	defer func() {
+		db.Close()
+		os.RemoveAll(dbPath)
+		os.RemoveAll(testDbRoot)
+	}()
+	config := &Config{
+		DAGParams:    &dagconfig.SimNetParams,
+		SubnetworkID: &wire.SubnetworkIDSupportsAll,
+		DB:           db,
+		TimeSource:   NewMedianTime(),
+		SigCache:     txscript.NewSigCache(1000),
+	}
+	_, err = New(config)
+	if err != nil {
+		t.Fatalf("failed to create dag instance: %s", err)
+	}
+
+	config.SubnetworkID = &subnetworkid.SubnetworkID{0xff}
+	_, err = New(config)
+	expectedErrorMessage := fmt.Sprintf("Cannot start btcd with subnetwork ID %s because"+
+		" its database is already built with subnetwork ID %s. If you"+
+		" want to switch to a new database, please reset the"+
+		" database by starting btcd with --reset-db flag", config.SubnetworkID, wire.SubnetworkIDSupportsAll)
+	if err.Error() != expectedErrorMessage {
+		t.Errorf("Unexpected error. Expected error '%s' but got '%s'", expectedErrorMessage, err)
 	}
 }
 
