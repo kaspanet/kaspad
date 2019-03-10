@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/daglabs/btcd/util/hdkeychain"
+	"github.com/daglabs/btcd/util/subnetworkid"
 
 	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/dagconfig/daghash"
@@ -96,7 +97,7 @@ var (
 					"4c702b6bf11d5fac"),
 			}},
 			LockTime:     0,
-			SubnetworkID: wire.SubnetworkIDNative,
+			SubnetworkID: *subnetworkid.SubnetworkIDNative,
 		}},
 	}
 )

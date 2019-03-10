@@ -15,7 +15,6 @@ import (
 	"github.com/daglabs/btcd/util/subnetworkid"
 
 	"github.com/daglabs/btcd/btcjson"
-	"github.com/daglabs/btcd/wire"
 )
 
 // TestDAGSvrWsNtfns tests all of the dag server websocket-specific
@@ -196,7 +195,7 @@ func TestDAGSvrWsNtfns(t *testing.T) {
 					TxID:          "123",
 					Version:       1,
 					LockTime:      4294967295,
-					Subnetwork:    wire.SubnetworkIDNative.String(),
+					Subnetwork:    subnetworkid.SubnetworkIDNative.String(),
 					Vin:           nil,
 					Vout:          nil,
 					Confirmations: 0,
@@ -210,7 +209,7 @@ func TestDAGSvrWsNtfns(t *testing.T) {
 					TxID:          "123",
 					Version:       1,
 					LockTime:      4294967295,
-					Subnetwork:    wire.SubnetworkIDNative.String(),
+					Subnetwork:    subnetworkid.SubnetworkIDNative.String(),
 					Vin:           nil,
 					Vout:          nil,
 					Confirmations: 0,

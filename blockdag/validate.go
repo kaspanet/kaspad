@@ -237,22 +237,22 @@ func CheckTransactionSanity(tx *util.Tx, subnetworkID *subnetworkid.SubnetworkID
 	}
 
 	// Transactions in native and subnetwork registry subnetworks must have Gas = 0
-	if (msgTx.SubnetworkID == wire.SubnetworkIDNative ||
-		msgTx.SubnetworkID == wire.SubnetworkIDRegistry) &&
+	if (msgTx.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) ||
+		msgTx.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDRegistry)) &&
 		msgTx.Gas > 0 {
 
 		return ruleError(ErrInvalidGas, "transaction in the native or "+
 			"registry subnetworks has gas > 0 ")
 	}
 
-	if msgTx.SubnetworkID == wire.SubnetworkIDNative &&
+	if msgTx.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) &&
 		len(msgTx.Payload) > 0 {
 
 		return ruleError(ErrInvalidPayload,
 			"transaction in the native subnetwork includes a payload")
 	}
 
-	if msgTx.SubnetworkID == wire.SubnetworkIDRegistry &&
+	if msgTx.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDRegistry) &&
 		len(msgTx.Payload) != 8 {
 
 		return ruleError(ErrInvalidPayload,
@@ -262,8 +262,8 @@ func CheckTransactionSanity(tx *util.Tx, subnetworkID *subnetworkid.SubnetworkID
 
 	// If we are a partial node, only transactions on the Registry subnetwork
 	// or our own subnetwork may have a payload
-	isLocalNodeFull := subnetworkID.IsEqual(&wire.SubnetworkIDSupportsAll)
-	shouldTxBeFull := msgTx.SubnetworkID.IsEqual(&wire.SubnetworkIDRegistry) ||
+	isLocalNodeFull := subnetworkID.IsEqual(subnetworkid.SubnetworkIDSupportsAll)
+	shouldTxBeFull := msgTx.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDRegistry) ||
 		msgTx.SubnetworkID.IsEqual(subnetworkID)
 	if !isLocalNodeFull && !shouldTxBeFull && len(msgTx.Payload) > 0 {
 		return ruleError(ErrInvalidPayload,

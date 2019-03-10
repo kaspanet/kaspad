@@ -49,7 +49,7 @@ func SeedFromDNS(dagParams *dagconfig.Params, reqServices wire.ServiceFlag, subn
 			host = fmt.Sprintf("%c%x.%s", ServiceFlagPrefixChar, uint64(reqServices), dnsseed.Host)
 		}
 
-		if !subnetworkID.IsEqual(&wire.SubnetworkIDSupportsAll) {
+		if !subnetworkID.IsEqual(subnetworkid.SubnetworkIDSupportsAll) {
 			host = fmt.Sprintf("%c%s.%s", SubnetworkIDPrefixChar, subnetworkID, host)
 		}
 
