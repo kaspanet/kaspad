@@ -180,7 +180,7 @@ func CheckTransactionSanity(tx *util.Tx, subnetworkID *subnetworkid.SubnetworkID
 		satoshi := txOut.Value
 		if satoshi > util.MaxSatoshi {
 			str := fmt.Sprintf("transaction output value of %d is "+
-				"higher than max allowed value of %f", satoshi,
+				"higher than max allowed value of %d", satoshi,
 				util.MaxSatoshi)
 			return ruleError(ErrBadTxOutValue, str)
 		}
@@ -191,7 +191,7 @@ func CheckTransactionSanity(tx *util.Tx, subnetworkID *subnetworkid.SubnetworkID
 		newTotalSatoshi := totalSatoshi + satoshi
 		if newTotalSatoshi < totalSatoshi {
 			str := fmt.Sprintf("total value of all transaction "+
-				"outputs exceeds max allowed value of %f",
+				"outputs exceeds max allowed value of %d",
 				util.MaxSatoshi)
 			return ruleError(ErrBadTxOutValue, str)
 		}
@@ -199,7 +199,7 @@ func CheckTransactionSanity(tx *util.Tx, subnetworkID *subnetworkid.SubnetworkID
 		if totalSatoshi > util.MaxSatoshi {
 			str := fmt.Sprintf("total value of all transaction "+
 				"outputs is %d which is higher than max "+
-				"allowed value of %f", totalSatoshi,
+				"allowed value of %d", totalSatoshi,
 				util.MaxSatoshi)
 			return ruleError(ErrBadTxOutValue, str)
 		}
@@ -925,7 +925,7 @@ func CheckTransactionInputs(tx *util.Tx, txHeight int32, utxoSet UTXOSet, dagPar
 		originTxSatoshi := entry.Amount()
 		if originTxSatoshi > util.MaxSatoshi {
 			str := fmt.Sprintf("transaction output value of %s is "+
-				"higher than max allowed value of %f",
+				"higher than max allowed value of %d",
 				util.Amount(originTxSatoshi),
 				util.MaxSatoshi)
 			return 0, ruleError(ErrBadTxOutValue, str)
@@ -940,7 +940,7 @@ func CheckTransactionInputs(tx *util.Tx, txHeight int32, utxoSet UTXOSet, dagPar
 			totalSatoshiIn > util.MaxSatoshi {
 			str := fmt.Sprintf("total value of all transaction "+
 				"inputs is %d which is higher than max "+
-				"allowed value of %f", totalSatoshiIn,
+				"allowed value of %d", totalSatoshiIn,
 				util.MaxSatoshi)
 			return 0, ruleError(ErrBadTxOutValue, str)
 		}
