@@ -14,6 +14,7 @@ import (
 	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/database"
 	"github.com/daglabs/btcd/util"
+	"github.com/daglabs/btcd/util/subnetworkid"
 	"github.com/daglabs/btcd/wire"
 )
 
@@ -56,6 +57,10 @@ var (
 	// subnetworksBucketName is the name of the db bucket used to store the
 	// subnetwork registry.
 	subnetworksBucketName = []byte("subnetworks")
+
+	// localSubnetworkKeyName is the name of the db key used to store the
+	// node's local subnetwork ID.
+	localSubnetworkKeyName = []byte("localsubnetworkidkey")
 
 	// byteOrder is the preferred byte order used for serializing numeric
 	// fields for storage in the database.
@@ -480,6 +485,10 @@ func (dag *BlockDAG) createDAGState() error {
 		if err != nil {
 			return err
 		}
+
+		if err := dbPutLocalSubnetworkID(dbTx, dag.subnetworkID); err != nil {
+			return err
+		}
 		return nil
 	})
 
@@ -489,15 +498,30 @@ func (dag *BlockDAG) createDAGState() error {
 	return nil
 }
 
+func dbPutLocalSubnetworkID(dbTx database.Tx, subnetworkID *subnetworkid.SubnetworkID) error {
+	return dbTx.Metadata().Put(localSubnetworkKeyName, subnetworkID[:])
+}
+
 // initDAGState attempts to load and initialize the DAG state from the
 // database.  When the db does not yet contain any DAG state, both it and the
 // DAG state are initialized to the genesis block.
 func (dag *BlockDAG) initDAGState() error {
-	// Determine the state of the chain database. We may need to initialize
+	// Determine the state of the DAG database. We may need to initialize
 	// everything from scratch or upgrade certain buckets.
 	var initialized bool
 	err := dag.db.View(func(dbTx database.Tx) error {
 		initialized = dbTx.Metadata().Get(dagStateKeyName) != nil
+		if initialized {
+			localSubnetworkIDBytes := dbTx.Metadata().Get(localSubnetworkKeyName)
+			localSubnetworkID := &subnetworkid.SubnetworkID{}
+			localSubnetworkID.SetBytes(localSubnetworkIDBytes)
+			if !localSubnetworkID.IsEqual(dag.subnetworkID) {
+				return fmt.Errorf("Cannot start btcd with subnetwork ID %s because"+
+					" its database is already built with subnetwork ID %s. If you"+
+					" want to switch to a new database, please reset the"+
+					" database by starting btcd with --reset-db flag", dag.subnetworkID, localSubnetworkID)
+			}
+		}
 		return nil
 	})
 	if err != nil {
