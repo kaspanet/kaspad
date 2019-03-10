@@ -9,6 +9,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/daglabs/btcd/util/subnetworkid"
 	"github.com/davecgh/go-spew/spew"
 )
 
@@ -45,7 +46,7 @@ func TestGetAddrWire(t *testing.T) {
 	}
 
 	// With specific subnetwork
-	msgGetAddrSubnet := NewMsgGetAddr(&SubnetworkIDNative)
+	msgGetAddrSubnet := NewMsgGetAddr(subnetworkid.SubnetworkIDNative)
 	msgGetAddrSubnetEncoded := []byte{
 		0x00,                                           // All subnetworks
 		0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Subnetwork ID

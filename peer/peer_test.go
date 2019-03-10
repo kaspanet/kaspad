@@ -16,6 +16,7 @@ import (
 	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/peer"
+	"github.com/daglabs/btcd/util/subnetworkid"
 	"github.com/daglabs/btcd/wire"
 )
 
@@ -229,7 +230,7 @@ func TestPeerConnection(t *testing.T) {
 		DAGParams:         &dagconfig.MainNetParams,
 		ProtocolVersion:   wire.ProtocolVersion, // Configure with older version
 		Services:          0,
-		SubnetworkID:      &wire.SubnetworkIDSupportsAll,
+		SubnetworkID:      subnetworkid.SubnetworkIDSupportsAll,
 	}
 	peer2Cfg := &peer.Config{
 		Listeners:         peer1Cfg.Listeners,
@@ -239,7 +240,7 @@ func TestPeerConnection(t *testing.T) {
 		DAGParams:         &dagconfig.MainNetParams,
 		ProtocolVersion:   wire.ProtocolVersion + 1,
 		Services:          wire.SFNodeNetwork,
-		SubnetworkID:      &wire.SubnetworkIDSupportsAll,
+		SubnetworkID:      subnetworkid.SubnetworkIDSupportsAll,
 	}
 
 	wantStats1 := peerStats{
@@ -441,7 +442,7 @@ func TestPeerListeners(t *testing.T) {
 		UserAgentComments: []string{"comment"},
 		DAGParams:         &dagconfig.MainNetParams,
 		Services:          wire.SFNodeBloom,
-		SubnetworkID:      &wire.SubnetworkIDSupportsAll,
+		SubnetworkID:      subnetworkid.SubnetworkIDSupportsAll,
 	}
 	inConn, outConn := pipe(
 		&conn{raddr: "10.0.0.1:8333"},
@@ -612,7 +613,7 @@ func TestOutboundPeer(t *testing.T) {
 		UserAgentComments: []string{"comment"},
 		DAGParams:         &dagconfig.MainNetParams,
 		Services:          0,
-		SubnetworkID:      &wire.SubnetworkIDSupportsAll,
+		SubnetworkID:      subnetworkid.SubnetworkIDSupportsAll,
 	}
 
 	r, w := io.Pipe()
@@ -753,7 +754,7 @@ func TestUnsupportedVersionPeer(t *testing.T) {
 		UserAgentComments: []string{"comment"},
 		DAGParams:         &dagconfig.MainNetParams,
 		Services:          0,
-		SubnetworkID:      &wire.SubnetworkIDSupportsAll,
+		SubnetworkID:      subnetworkid.SubnetworkIDSupportsAll,
 	}
 
 	localNA := wire.NewNetAddressIPPort(
@@ -810,7 +811,7 @@ func TestUnsupportedVersionPeer(t *testing.T) {
 	}
 
 	// Remote peer writes version message advertising invalid protocol version 0
-	invalidVersionMsg := wire.NewMsgVersion(remoteNA, localNA, 0, 0, &wire.SubnetworkIDSupportsAll)
+	invalidVersionMsg := wire.NewMsgVersion(remoteNA, localNA, 0, 0, subnetworkid.SubnetworkIDSupportsAll)
 	invalidVersionMsg.ProtocolVersion = 0
 
 	_, err = wire.WriteMessageN(
