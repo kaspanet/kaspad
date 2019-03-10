@@ -21,6 +21,7 @@ import (
 	"github.com/daglabs/btcd/mining"
 	"github.com/daglabs/btcd/txscript"
 	"github.com/daglabs/btcd/util"
+	"github.com/daglabs/btcd/util/subnetworkid"
 	"github.com/daglabs/btcd/wire"
 )
 
@@ -751,9 +752,9 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rateLimit, rejectDu
 
 	// Check that transaction does not overuse GAS
 	msgTx := tx.MsgTx()
-	if msgTx.SubnetworkID == wire.SubnetworkIDSupportsAll {
+	if msgTx.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDSupportsAll) {
 		return nil, nil, txRuleError(wire.RejectInvalid, "SubnetworkIDSupportsAll is not permited in transaction")
-	} else if msgTx.SubnetworkID != wire.SubnetworkIDNative {
+	} else if !msgTx.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) {
 		gasLimit, err := mp.cfg.DAG.SubnetworkStore.GasLimit(&msgTx.SubnetworkID)
 		if err != nil {
 			return nil, nil, err

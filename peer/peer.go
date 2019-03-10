@@ -1045,8 +1045,8 @@ func (p *Peer) handleRemoteVersionMsg(msg *wire.MsgVersion) error {
 	// Disconnect if:
 	// - we are a full node and the outbound connection we've initiated is a partial node
 	// - the remote node is partial and our subnetwork doesn't match their subnetwork
-	isLocalNodeFull := p.cfg.SubnetworkID.IsEqual(&wire.SubnetworkIDSupportsAll)
-	isRemoteNodeFull := msg.SubnetworkID.IsEqual(&wire.SubnetworkIDSupportsAll)
+	isLocalNodeFull := p.cfg.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDSupportsAll)
+	isRemoteNodeFull := msg.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDSupportsAll)
 	if (isLocalNodeFull && !isRemoteNodeFull && !p.inbound) ||
 		(!isLocalNodeFull && !isRemoteNodeFull && !msg.SubnetworkID.IsEqual(p.cfg.SubnetworkID)) {
 

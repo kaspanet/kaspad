@@ -110,17 +110,6 @@ const (
 	txEncodingExcludeSignatureScript
 )
 
-var (
-	// SubnetworkIDSupportsAll is the subnetwork ID that is used to signal to peers that you support all subnetworks
-	SubnetworkIDSupportsAll = subnetworkid.SubnetworkID{}
-
-	// SubnetworkIDNative is the default subnetwork ID which is used for transactions without related payload data
-	SubnetworkIDNative = subnetworkid.SubnetworkID{1}
-
-	// SubnetworkIDRegistry is the subnetwork ID which is used for adding new sub networks to the registry
-	SubnetworkIDRegistry = subnetworkid.SubnetworkID{2}
-)
-
 // scriptFreeList defines a free list of byte slices (up to the maximum number
 // defined by the freeListMaxItems constant) that have a cap according to the
 // freeListMaxScriptSize constant.  It is used to provide temporary buffers for
@@ -543,12 +532,12 @@ func (msg *MsgTx) BtcDecode(r io.Reader, pver uint32) error {
 		return err
 	}
 
-	if msg.SubnetworkID == SubnetworkIDSupportsAll {
+	if msg.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDSupportsAll) {
 		str := fmt.Sprintf("%s is a reserved sub network and cannot be used as part of a transaction", msg.SubnetworkID)
 		return messageError("MsgTx.BtcDecode", str)
 	}
 
-	if msg.SubnetworkID != SubnetworkIDNative {
+	if !msg.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) {
 		msg.Gas, err = binarySerializer.Uint64(r, littleEndian)
 		if err != nil {
 			returnScriptBuffers()
@@ -684,8 +673,8 @@ func (msg *MsgTx) encode(w io.Writer, pver uint32, encodingFlags txEncoding) err
 		return err
 	}
 
-	if msg.SubnetworkID != SubnetworkIDNative {
-		if msg.SubnetworkID == SubnetworkIDRegistry && msg.Gas != 0 {
+	if !msg.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) {
+		if msg.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDRegistry) && msg.Gas != 0 {
 			str := fmt.Sprintf("Transactions from subnetwork %s should have 0 gas", msg.SubnetworkID)
 			return messageError("MsgTx.BtcEncode", str)
 		}
@@ -754,7 +743,7 @@ func (msg *MsgTx) serializeSize(encodingFlags txEncoding) int {
 	n := 32 + VarIntSerializeSize(uint64(len(msg.TxIn))) +
 		VarIntSerializeSize(uint64(len(msg.TxOut)))
 
-	if msg.SubnetworkID != SubnetworkIDNative {
+	if !msg.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) {
 		// Gas 8 bytes
 		n += 8
 
@@ -836,8 +825,8 @@ func (msg *MsgTx) PkScriptLocs() []int {
 // 2. The native subnetwork
 // 3. The transaction's subnetwork
 func (msg *MsgTx) IsSubnetworkCompatible(subnetworkID *subnetworkid.SubnetworkID) bool {
-	return subnetworkID.IsEqual(&SubnetworkIDSupportsAll) ||
-		subnetworkID.IsEqual(&SubnetworkIDNative) ||
+	return subnetworkID.IsEqual(subnetworkid.SubnetworkIDSupportsAll) ||
+		subnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) ||
 		subnetworkID.IsEqual(&msg.SubnetworkID)
 }
 
@@ -851,13 +840,13 @@ func NewMsgTx(version int32) *MsgTx {
 		Version:      version,
 		TxIn:         make([]*TxIn, 0, defaultTxInOutAlloc),
 		TxOut:        make([]*TxOut, 0, defaultTxInOutAlloc),
-		SubnetworkID: SubnetworkIDNative,
+		SubnetworkID: *subnetworkid.SubnetworkIDNative,
 	}
 }
 
 func newRegistryMsgTx(version int32, gasLimit uint64) *MsgTx {
 	tx := NewMsgTx(version)
-	tx.SubnetworkID = SubnetworkIDRegistry
+	tx.SubnetworkID = *subnetworkid.SubnetworkIDRegistry
 	tx.Payload = make([]byte, 8)
 	binary.LittleEndian.PutUint64(tx.Payload, gasLimit)
 	return tx
