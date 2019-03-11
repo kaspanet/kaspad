@@ -48,6 +48,7 @@ import (
 	"github.com/daglabs/btcd/util"
 	"github.com/daglabs/btcd/util/fs"
 	"github.com/daglabs/btcd/util/network"
+	"github.com/daglabs/btcd/util/random"
 	"github.com/daglabs/btcd/util/subnetworkid"
 	"github.com/daglabs/btcd/version"
 	"github.com/daglabs/btcd/wire"
@@ -2755,7 +2756,7 @@ func handleHelp(s *Server, cmd interface{}, closeChan <-chan struct{}) (interfac
 // handlePing implements the ping command.
 func handlePing(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
 	// Ask server to ping \o_
-	nonce, err := wire.RandomUint64()
+	nonce, err := random.Uint64()
 	if err != nil {
 		return nil, internalRPCError("Not sending ping - failed to "+
 			"generate nonce: "+err.Error(), "")

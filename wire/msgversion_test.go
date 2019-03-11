@@ -13,6 +13,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/daglabs/btcd/util/random"
 	"github.com/daglabs/btcd/util/subnetworkid"
 	"github.com/davecgh/go-spew/spew"
 )
@@ -27,9 +28,9 @@ func TestVersion(t *testing.T) {
 	me := NewNetAddress(tcpAddrMe, SFNodeNetwork)
 	tcpAddrYou := &net.TCPAddr{IP: net.ParseIP("192.168.0.1"), Port: 8333}
 	you := NewNetAddress(tcpAddrYou, SFNodeNetwork)
-	nonce, err := RandomUint64()
+	nonce, err := random.Uint64()
 	if err != nil {
-		t.Errorf("RandomUint64: error generating nonce: %v", err)
+		t.Errorf("random.Uint64: error generating nonce: %v", err)
 	}
 
 	// Ensure we get the correct data back out.

@@ -10,6 +10,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/daglabs/btcd/util/random"
 	"github.com/davecgh/go-spew/spew"
 )
 
@@ -17,9 +18,9 @@ import (
 func TestPongLatest(t *testing.T) {
 	pver := ProtocolVersion
 
-	nonce, err := RandomUint64()
+	nonce, err := random.Uint64()
 	if err != nil {
-		t.Errorf("RandomUint64: error generating nonce: %v", err)
+		t.Errorf("random.Uint64: error generating nonce: %v", err)
 	}
 	msg := NewMsgPong(nonce)
 	if msg.Nonce != nonce {
@@ -66,7 +67,7 @@ func TestPongLatest(t *testing.T) {
 // TestPongCrossProtocol tests the MsgPong API when encoding with the latest
 // protocol version and decoding with BIP0031Version.
 func TestPongCrossProtocol(t *testing.T) {
-	nonce, err := RandomUint64()
+	nonce, err := random.Uint64()
 	if err != nil {
 		t.Errorf("Error generating nonce: %v", err)
 	}

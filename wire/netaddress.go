@@ -9,6 +9,8 @@ import (
 	"io"
 	"net"
 	"time"
+
+	"github.com/daglabs/btcd/util/binaryserializer"
 )
 
 // maxNetAddressPayload returns the max payload size for a bitcoin NetAddress
@@ -92,7 +94,7 @@ func readNetAddress(r io.Reader, pver uint32, na *NetAddress, ts bool) error {
 		return err
 	}
 	// Sigh.  Bitcoin protocol mixes little and big endian.
-	port, err := binarySerializer.Uint16(r, bigEndian)
+	port, err := binaryserializer.Uint16(r, bigEndian)
 	if err != nil {
 		return err
 	}

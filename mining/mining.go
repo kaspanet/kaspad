@@ -15,6 +15,7 @@ import (
 	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/txscript"
 	"github.com/daglabs/btcd/util"
+	"github.com/daglabs/btcd/util/random"
 	"github.com/daglabs/btcd/util/subnetworkid"
 	"github.com/daglabs/btcd/wire"
 )
@@ -395,7 +396,7 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 	// ensure the transaction is not a duplicate transaction (paying the
 	// same value to the same public key address would otherwise be an
 	// identical transaction for block version 1).
-	extraNonce, err := wire.RandomUint64()
+	extraNonce, err := random.Uint64()
 	if err != nil {
 		return nil, err
 	}

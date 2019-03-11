@@ -24,6 +24,7 @@ import (
 	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/txscript"
 	"github.com/daglabs/btcd/util"
+	"github.com/daglabs/btcd/util/random"
 	"github.com/daglabs/btcd/wire"
 )
 
@@ -261,7 +262,7 @@ func opReturnScript(data []byte) []byte {
 // uniqueOpReturnScript returns a standard provably-pruneable OP_RETURN script
 // with a random uint64 encoded as the data.
 func uniqueOpReturnScript() []byte {
-	rand, err := wire.RandomUint64()
+	rand, err := random.Uint64()
 	if err != nil {
 		panic(err)
 	}
