@@ -287,7 +287,7 @@ type MsgTx struct {
 	LockTime     uint64
 	SubnetworkID subnetworkid.SubnetworkID
 	Gas          uint64
-	PayloadHash  daghash.Hash
+	PayloadHash  *daghash.Hash
 	Payload      []byte
 }
 
@@ -559,11 +559,13 @@ func (msg *MsgTx) BtcDecode(r io.Reader, pver uint32) error {
 			return err
 		}
 
-		err = readElement(r, &msg.PayloadHash)
+		var payloadHash daghash.Hash
+		err = readElement(r, &payloadHash)
 		if err != nil {
 			returnScriptBuffers()
 			return err
 		}
+		msg.PayloadHash = &payloadHash
 
 		payloadLength, err := ReadVarInt(r, pver)
 		if err != nil {
@@ -694,7 +696,7 @@ func (msg *MsgTx) encode(w io.Writer, pver uint32, encodingFlags txEncoding) err
 		return err
 	}
 
-	if msg.SubnetworkID != SubnetworkIDNative {
+	if !msg.SubnetworkID.IsEqual(&SubnetworkIDNative) {
 		if msg.SubnetworkID == SubnetworkIDRegistry && msg.Gas != 0 {
 			str := fmt.Sprintf("Transactions from subnetwork %s should have 0 gas", msg.SubnetworkID)
 			return messageError("MsgTx.BtcEncode", str)
@@ -705,7 +707,10 @@ func (msg *MsgTx) encode(w io.Writer, pver uint32, encodingFlags txEncoding) err
 			return err
 		}
 
-		err = writeElement(w, &msg.PayloadHash)
+		if msg.PayloadHash == nil {
+			fmt.Println("hi")
+		}
+		err = writeElement(w, msg.PayloadHash)
 		if err != nil {
 			return err
 		}
@@ -721,6 +726,9 @@ func (msg *MsgTx) encode(w io.Writer, pver uint32, encodingFlags txEncoding) err
 		}
 	} else if msg.Payload != nil {
 		str := fmt.Sprintf("Transactions from subnetwork %s should have <nil> payload", msg.SubnetworkID)
+		return messageError("MsgTx.BtcEncode", str)
+	} else if msg.PayloadHash != nil {
+		str := fmt.Sprintf("Transactions from subnetwork %s should have <nil> payload hash", msg.SubnetworkID)
 		return messageError("MsgTx.BtcEncode", str)
 	} else if msg.Gas != 0 {
 		str := fmt.Sprintf("Transactions from subnetwork %s should have 0 gas", msg.SubnetworkID)
@@ -874,7 +882,7 @@ func newRegistryMsgTx(version int32, gasLimit uint64) *MsgTx {
 	tx := NewMsgTx(version)
 	tx.SubnetworkID = SubnetworkIDRegistry
 	tx.Payload = make([]byte, 8)
-	tx.PayloadHash = daghash.DoubleHashH(tx.Payload)
+	tx.PayloadHash = daghash.DoubleHashP(tx.Payload)
 	binary.LittleEndian.PutUint64(tx.Payload, gasLimit)
 	return tx
 }

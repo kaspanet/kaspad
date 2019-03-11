@@ -243,7 +243,7 @@ func CheckTransactionSanity(tx *util.Tx, subnetworkID *subnetworkid.SubnetworkID
 			return ruleError(ErrInvalidPayloadHash, "invalid payload hash")
 		}
 	} else {
-		if !msgTx.PayloadHash.IsEqual(&daghash.Hash{}) {
+		if msgTx.PayloadHash != nil {
 			return ruleError(ErrInvalidPayloadHash, "invalid payload hash in native subnetwork")
 		}
 	}

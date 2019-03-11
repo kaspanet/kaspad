@@ -235,7 +235,7 @@ func TestTxHashAndID(t *testing.T) {
 		LockTime:     0,
 		SubnetworkID: subnetworkid.SubnetworkID{1, 2, 3},
 		Payload:      payload,
-		PayloadHash:  daghash.DoubleHashH(payload),
+		PayloadHash:  daghash.DoubleHashP(payload),
 	}
 
 	// Ensure the hash produced is expected.
@@ -428,7 +428,7 @@ func TestTxSerialize(t *testing.T) {
 	subnetworkTx.SubnetworkID = subnetworkid.SubnetworkID{0xff}
 	subnetworkTx.Gas = 5
 	subnetworkTx.Payload = []byte{0, 1, 2}
-	subnetworkTx.PayloadHash = daghash.DoubleHashH(subnetworkTx.Payload)
+	subnetworkTx.PayloadHash = daghash.DoubleHashP(subnetworkTx.Payload)
 
 	subnetworkTxEncoded := []byte{
 		0x01, 0x00, 0x00, 0x00, // Version
@@ -615,7 +615,7 @@ func TestTxSerializeErrors(t *testing.T) {
 
 	nativeTx.Gas = 0
 	nativeTx.Payload = []byte{1, 2, 3}
-	nativeTx.PayloadHash = daghash.DoubleHashH(nativeTx.Payload)
+	nativeTx.PayloadHash = daghash.DoubleHashP(nativeTx.Payload)
 	w = bytes.NewBuffer(make([]byte, 0, registryTx.SerializeSize()))
 	err = nativeTx.Serialize(w)
 

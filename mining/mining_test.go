@@ -233,6 +233,7 @@ func TestNewBlockTemplate(t *testing.T) {
 	nonExistingSubnetworkTx := wire.NewMsgTx(wire.TxVersion)
 	nonExistingSubnetworkTx.SubnetworkID = nonExistingSubnetwork
 	nonExistingSubnetworkTx.Gas = 1
+	nonExistingSubnetworkTx.PayloadHash = daghash.DoubleHashP(nonExistingSubnetworkTx.Payload)
 	nonExistingSubnetworkTx.AddTxIn(&wire.TxIn{
 		PreviousOutPoint: wire.OutPoint{
 			TxID:  template1CbTx.TxID(),
@@ -249,6 +250,7 @@ func TestNewBlockTemplate(t *testing.T) {
 	subnetworkTx1 := wire.NewMsgTx(wire.TxVersion)
 	subnetworkTx1.SubnetworkID = existingSubnetwork
 	subnetworkTx1.Gas = 1
+	subnetworkTx1.PayloadHash = daghash.DoubleHashP(subnetworkTx1.Payload)
 	subnetworkTx1.AddTxIn(&wire.TxIn{
 		PreviousOutPoint: wire.OutPoint{
 			TxID:  template1CbTx.TxID(),
@@ -265,6 +267,7 @@ func TestNewBlockTemplate(t *testing.T) {
 	subnetworkTx2 := wire.NewMsgTx(wire.TxVersion)
 	subnetworkTx2.SubnetworkID = existingSubnetwork
 	subnetworkTx2.Gas = 100 // Subnetwork gas limit is 90
+	subnetworkTx2.PayloadHash = daghash.DoubleHashP(subnetworkTx2.Payload)
 	subnetworkTx2.AddTxIn(&wire.TxIn{
 		PreviousOutPoint: wire.OutPoint{
 			TxID:  template1CbTx.TxID(),

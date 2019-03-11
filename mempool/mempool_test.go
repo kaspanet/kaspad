@@ -175,6 +175,9 @@ func (p *poolHarness) CreateSignedTxForSubnetwork(inputs []spendableOutpoint, nu
 	tx := wire.NewMsgTx(wire.TxVersion)
 	tx.SubnetworkID = *subnetworkID
 	tx.Gas = gas
+	if !subnetworkID.IsEqual(&wire.SubnetworkIDNative) {
+		tx.PayloadHash = daghash.DoubleHashP(tx.Payload)
+	}
 	for _, input := range inputs {
 		tx.AddTxIn(&wire.TxIn{
 			PreviousOutPoint: input.outPoint,

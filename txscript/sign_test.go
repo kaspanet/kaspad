@@ -135,7 +135,8 @@ func TestSignTxOutput(t *testing.T) {
 				Value: 3,
 			},
 		},
-		LockTime: 0,
+		LockTime:     0,
+		SubnetworkID: wire.SubnetworkIDNative,
 	}
 
 	// Pay to Pubkey Hash (uncompressed)

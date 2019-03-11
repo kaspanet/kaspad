@@ -928,8 +928,16 @@ func TestUTXOSetAddEntry(t *testing.T) {
 }
 
 func TestUTXOSetRemoveTxOuts(t *testing.T) {
-	tx0 := &wire.MsgTx{TxOut: []*wire.TxOut{{PkScript: []byte{1}, Value: 10}}}
-	tx1 := &wire.MsgTx{TxOut: []*wire.TxOut{{PkScript: []byte{2}, Value: 20}}}
+	tx0 := &wire.MsgTx{
+		TxOut: []*wire.TxOut{{
+			PkScript: []byte{1}, Value: 10}},
+		SubnetworkID: wire.SubnetworkIDNative,
+	}
+	tx1 := &wire.MsgTx{
+		TxOut: []*wire.TxOut{{
+			PkScript: []byte{2}, Value: 20}},
+		SubnetworkID: wire.SubnetworkIDNative,
+	}
 	hash0 := tx0.TxID()
 	hash1 := tx1.TxID()
 	outPoint0 := wire.NewOutPoint(&hash0, 0)

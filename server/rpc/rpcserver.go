@@ -750,6 +750,11 @@ func createTxRawResult(dagParams *dagconfig.Params, mtx *wire.MsgTx,
 		return nil, err
 	}
 
+	var payloadHash string
+	if mtx.PayloadHash != nil {
+		payloadHash = mtx.PayloadHash.String()
+	}
+
 	txReply := &btcjson.TxRawResult{
 		Hex:         mtxHex,
 		TxID:        txID,
@@ -761,7 +766,7 @@ func createTxRawResult(dagParams *dagconfig.Params, mtx *wire.MsgTx,
 		LockTime:    mtx.LockTime,
 		Subnetwork:  mtx.SubnetworkID.String(),
 		Gas:         mtx.Gas,
-		PayloadHash: mtx.PayloadHash.String(),
+		PayloadHash: payloadHash,
 		Payload:     hex.EncodeToString(mtx.Payload),
 	}
 

@@ -51,7 +51,8 @@ func (eft *estimateFeeTester) testTx(fee util.Amount) *TxDesc {
 	return &TxDesc{
 		TxDesc: mining.TxDesc{
 			Tx: util.NewTx(&wire.MsgTx{
-				Version: eft.version,
+				Version:      eft.version,
+				SubnetworkID: wire.SubnetworkIDNative,
 			}),
 			Height: eft.height,
 			Fee:    uint64(fee),
