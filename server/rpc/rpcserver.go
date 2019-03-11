@@ -900,7 +900,7 @@ func handleGenerate(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 		}
 	}
 
-	if !config.MainConfig().SubnetworkID.IsEqual(&wire.SubnetworkIDSupportsAll) {
+	if !config.MainConfig().SubnetworkID.IsEqual(subnetworkid.SubnetworkIDSupportsAll) {
 		return nil, &btcjson.RPCError{
 			Code:    btcjson.ErrRPCInvalidRequest.Code,
 			Message: "`generate` is not supported on partial nodes.",
@@ -1129,8 +1129,8 @@ func handleGetBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 		}
 		nodeSubnetworkID := config.MainConfig().SubnetworkID
 
-		if !requestSubnetworkID.IsEqual(&wire.SubnetworkIDSupportsAll) {
-			if !nodeSubnetworkID.IsEqual(&wire.SubnetworkIDSupportsAll) {
+		if !requestSubnetworkID.IsEqual(subnetworkid.SubnetworkIDSupportsAll) {
+			if !nodeSubnetworkID.IsEqual(subnetworkid.SubnetworkIDSupportsAll) {
 				if !nodeSubnetworkID.IsEqual(requestSubnetworkID) {
 					return nil, &btcjson.RPCError{
 						Code:    btcjson.ErrRPCInvalidRequest.Code,
@@ -2277,7 +2277,7 @@ func handleGetGenerate(s *Server, cmd interface{}, closeChan <-chan struct{}) (i
 
 // handleGetHashesPerSec implements the getHashesPerSec command.
 func handleGetHashesPerSec(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	if !config.MainConfig().SubnetworkID.IsEqual(&wire.SubnetworkIDSupportsAll) {
+	if !config.MainConfig().SubnetworkID.IsEqual(subnetworkid.SubnetworkIDSupportsAll) {
 		return nil, &btcjson.RPCError{
 			Code:    btcjson.ErrRPCInvalidRequest.Code,
 			Message: "`getHashesPerSec` is not supported on partial nodes.",
@@ -2366,7 +2366,7 @@ func handleGetMempoolInfo(s *Server, cmd interface{}, closeChan <-chan struct{})
 // handleGetMiningInfo implements the getMiningInfo command. We only return the
 // fields that are not related to wallet functionality.
 func handleGetMiningInfo(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	if !config.MainConfig().SubnetworkID.IsEqual(&wire.SubnetworkIDSupportsAll) {
+	if !config.MainConfig().SubnetworkID.IsEqual(subnetworkid.SubnetworkIDSupportsAll) {
 		return nil, &btcjson.RPCError{
 			Code:    btcjson.ErrRPCInvalidRequest.Code,
 			Message: "`getMiningInfo` is not supported on partial nodes.",
@@ -2428,7 +2428,7 @@ func handleGetNetTotals(s *Server, cmd interface{}, closeChan <-chan struct{}) (
 // This command had been (possibly temporarily) dropped.
 // Originally it relied on height, which no longer makes sense.
 func handleGetNetworkHashPS(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	if !config.MainConfig().SubnetworkID.IsEqual(&wire.SubnetworkIDSupportsAll) {
+	if !config.MainConfig().SubnetworkID.IsEqual(subnetworkid.SubnetworkIDSupportsAll) {
 		return nil, &btcjson.RPCError{
 			Code:    btcjson.ErrRPCInvalidRequest.Code,
 			Message: "`getNetworkHashPS` is not supported on partial nodes.",
@@ -3333,7 +3333,7 @@ func handleSendRawTransaction(s *Server, cmd interface{}, closeChan <-chan struc
 
 // handleSetGenerate implements the setGenerate command.
 func handleSetGenerate(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	if !config.MainConfig().SubnetworkID.IsEqual(&wire.SubnetworkIDSupportsAll) {
+	if !config.MainConfig().SubnetworkID.IsEqual(subnetworkid.SubnetworkIDSupportsAll) {
 		return nil, &btcjson.RPCError{
 			Code:    btcjson.ErrRPCInvalidRequest.Code,
 			Message: "`setGenerate` is not supported on partial nodes.",

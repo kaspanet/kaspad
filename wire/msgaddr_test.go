@@ -12,6 +12,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/daglabs/btcd/util/subnetworkid"
 	"github.com/davecgh/go-spew/spew"
 )
 
@@ -116,7 +117,7 @@ func TestAddrWire(t *testing.T) {
 	}
 
 	// Address message with multiple addresses and subnetworkID.
-	multiAddrSubnet := NewMsgAddr(&SubnetworkIDNative)
+	multiAddrSubnet := NewMsgAddr(subnetworkid.SubnetworkIDNative)
 	multiAddrSubnet.AddAddresses(na, na2)
 	multiAddrSubnetEncoded := []byte{
 		0x00,                                           // All subnetworks

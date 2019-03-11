@@ -403,7 +403,7 @@ func (dag *BlockDAG) calcSequenceLock(node *blockNode, utxoSet UTXOSet, tx *util
 				prevInputHeight = 0
 			}
 			blockNode := node.Ancestor(prevInputHeight)
-			medianTime := blockNode.CalcPastMedianTime()
+			medianTime := blockNode.PastMedianTime()
 
 			// Time based relative time-locks as defined by BIP 68
 			// have a time granularity of RelativeLockSeconds, so
@@ -470,9 +470,7 @@ func (dag *BlockDAG) connectToDAG(node *blockNode, parentNodes blockSet, block *
 		} else {
 			return err
 		}
-	}
-
-	if dag.index.NodeStatus(node).KnownValid() {
+	} else {
 		dag.blockCount++
 	}
 
@@ -497,7 +495,6 @@ func (dag *BlockDAG) connectToDAG(node *blockNode, parentNodes blockSet, block *
 //
 // This function MUST be called with the chain state lock held (for writes).
 func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block, fastAdd bool) error {
-
 	// No warnings about unknown rules or versions until the DAG is
 	// current.
 	if dag.isCurrent() {
@@ -514,17 +511,14 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block, fastAdd bo
 		}
 	}
 
-	var finalityPointCandidate *blockNode
-	if !fastAdd {
-		var err error
-		finalityPointCandidate, err = dag.checkFinalityRulesAndGetFinalityPointCandidate(node)
-		if err != nil {
-			return err
-		}
+	var newFinalityPoint *blockNode
+	var err error
+	newFinalityPoint, err = dag.checkFinalityRulesAndGetFinalityPoint(node)
+	if err != nil {
+		return err
 	}
 
-	err := dag.validateGasLimit(block)
-	if err != nil {
+	if err := dag.validateGasLimit(block); err != nil {
 		return err
 	}
 
@@ -534,9 +528,7 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block, fastAdd bo
 		return err
 	}
 
-	if finalityPointCandidate != nil {
-		dag.lastFinalityPoint = finalityPointCandidate
-	}
+	dag.lastFinalityPoint = newFinalityPoint
 
 	// Write any block status changes to DB before updating the DAG state.
 	err = dag.index.flushToDB()
@@ -544,8 +536,26 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block, fastAdd bo
 		return err
 	}
 
+	err = dag.saveChangesFromBlock(node, block, utxoDiff, txsAcceptanceData, feeData)
+	if err != nil {
+		return err
+	}
+
+	// Notify the caller that the block was connected to the DAG.
+	// The caller would typically want to react with actions such as
+	// updating wallets.
+	dag.dagLock.Unlock()
+	dag.sendNotification(NTBlockConnected, block)
+	dag.dagLock.Lock()
+
+	return nil
+}
+
+func (dag *BlockDAG) saveChangesFromBlock(node *blockNode, block *util.Block, utxoDiff *UTXODiff,
+	txsAcceptanceData MultiblockTxsAcceptanceData, feeData compactFeeData) error {
+
 	// Atomically insert info into the database.
-	err = dag.db.Update(func(dbTx database.Tx) error {
+	return dag.db.Update(func(dbTx database.Tx) error {
 		// Update best block state.
 		state := &dagState{
 			TipHashes:         dag.TipHashes(),
@@ -591,18 +601,6 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block, fastAdd bo
 		// Apply the fee data into the database
 		return dbStoreFeeData(dbTx, block.Hash(), feeData)
 	})
-	if err != nil {
-		return err
-	}
-
-	// Notify the caller that the block was connected to the main chain.
-	// The caller would typically want to react with actions such as
-	// updating wallets.
-	dag.dagLock.Unlock()
-	dag.sendNotification(NTBlockConnected, block)
-	dag.dagLock.Lock()
-
-	return nil
 }
 
 func (dag *BlockDAG) validateGasLimit(block *util.Block) error {
@@ -613,7 +611,7 @@ func (dag *BlockDAG) validateGasLimit(block *util.Block) error {
 		msgTx := tx.MsgTx()
 		// In DAGCoin and Registry sub-networks all txs must have Gas = 0, and that is validated in checkTransactionSanity
 		// Therefore - no need to check them here.
-		if msgTx.SubnetworkID != wire.SubnetworkIDNative && msgTx.SubnetworkID != wire.SubnetworkIDRegistry {
+		if !msgTx.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) && !msgTx.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDRegistry) {
 			gasUsageInSubnetwork := gasUsageInAllSubnetworks[msgTx.SubnetworkID]
 			gasUsageInSubnetwork += msgTx.Gas
 			if gasUsageInSubnetwork < gasUsageInAllSubnetworks[msgTx.SubnetworkID] { // protect from overflows
@@ -643,28 +641,37 @@ func (dag *BlockDAG) LastFinalityPointHash() *daghash.Hash {
 	return &dag.lastFinalityPoint.hash
 }
 
-func (dag *BlockDAG) checkFinalityRulesAndGetFinalityPointCandidate(node *blockNode) (*blockNode, error) {
+// checkFinalityRulesAndGetFinalityPoint checks the new block does not violate the finality rules
+// and if not - returns the (potentially new) finality point
+func (dag *BlockDAG) checkFinalityRulesAndGetFinalityPoint(node *blockNode) (*blockNode, error) {
 	if node.isGenesis() {
 		return node, nil
 	}
-	var finalityPointCandidate *blockNode
+	finalityPoint := dag.lastFinalityPoint
 	finalityErr := ruleError(ErrFinality, "The last finality point is not in the selected chain of this block")
 
 	if node.blueScore <= dag.lastFinalityPoint.blueScore {
 		return nil, finalityErr
 	}
 
-	shouldFindFinalityPointCandidate := node.finalityScore() > dag.lastFinalityPoint.finalityScore()
+	// We are looking for a new finality point only if the new block's finality score is higher
+	// than the existing finality point's
+	shouldFindNewFinalityPoint := node.finalityScore() > dag.lastFinalityPoint.finalityScore()
 
 	for currentNode := node.selectedParent; currentNode != dag.lastFinalityPoint; currentNode = currentNode.selectedParent {
+		// If we went past dag's last finality point without encountering it -
+		// the new block has violated finality.
 		if currentNode.blueScore <= dag.lastFinalityPoint.blueScore {
 			return nil, finalityErr
 		}
-		if shouldFindFinalityPointCandidate && currentNode.finalityScore() > currentNode.selectedParent.finalityScore() {
-			finalityPointCandidate = currentNode
+
+		// If current node's finality score is higher than it's selectedParent's -
+		// current node is the new finalityPoint
+		if shouldFindNewFinalityPoint && currentNode.finalityScore() > currentNode.selectedParent.finalityScore() {
+			finalityPoint = currentNode
 		}
 	}
-	return finalityPointCandidate, nil
+	return finalityPoint, nil
 }
 
 // NextBlockFeeTransaction prepares the fee transaction for the next mined block
@@ -708,8 +715,7 @@ func (dag *BlockDAG) applyUTXOChanges(node *blockNode, block *util.Block, fastAd
 	// internal structure of block nodes, and it's irrecoverable - therefore
 	// panic
 
-	err = node.updateParents(virtualClone, newBlockUTXO)
-	if err != nil {
+	if err = node.updateParents(virtualClone, newBlockUTXO); err != nil {
 		panic(fmt.Errorf("failed updating parents of %s: %s", node, err))
 	}
 
@@ -731,7 +737,7 @@ func (dag *BlockDAG) applyUTXOChanges(node *blockNode, block *util.Block, fastAd
 	// It is now safe to meld the UTXO set to base.
 	diffSet := newVirtualUTXO.(*DiffUTXOSet)
 	utxoDiff = diffSet.UTXODiff
-	dag.updateVirtualUTXO(diffSet)
+	dag.meldVirtualUTXO(diffSet)
 
 	// Set the status to valid for all index nodes to make sure the changes get
 	// written to the database.
@@ -746,7 +752,7 @@ func (dag *BlockDAG) applyUTXOChanges(node *blockNode, block *util.Block, fastAd
 	return utxoDiff, txsAcceptanceData, feeData, nil
 }
 
-func (dag *BlockDAG) updateVirtualUTXO(newVirtualUTXODiffSet *DiffUTXOSet) {
+func (dag *BlockDAG) meldVirtualUTXO(newVirtualUTXODiffSet *DiffUTXOSet) {
 	dag.utxoLock.Lock()
 	defer dag.utxoLock.Unlock()
 	newVirtualUTXODiffSet.meldToBase()
@@ -1017,7 +1023,7 @@ func (dag *BlockDAG) UTXOSet() *FullUTXOSet {
 
 // CalcPastMedianTime returns the past median time of the DAG.
 func (dag *BlockDAG) CalcPastMedianTime() time.Time {
-	return dag.virtual.tips().bluest().CalcPastMedianTime()
+	return dag.virtual.tips().bluest().PastMedianTime()
 }
 
 // GetUTXOEntry returns the requested unspent transaction output. The returned

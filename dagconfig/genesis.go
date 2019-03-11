@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/daglabs/btcd/dagconfig/daghash"
+	"github.com/daglabs/btcd/util/subnetworkid"
 	"github.com/daglabs/btcd/wire"
 )
 
@@ -38,7 +39,7 @@ var genesisCoinbaseTx = wire.MsgTx{
 		},
 	},
 	LockTime:     0,
-	SubnetworkID: wire.SubnetworkIDNative,
+	SubnetworkID: *subnetworkid.SubnetworkIDNative,
 }
 
 // genesisHash is the hash of the first block in the block chain for the main

@@ -152,7 +152,7 @@ func (dag *BlockDAG) thresholdState(prevNode *blockNode, checker thresholdCondit
 
 		// The start and expiration times are based on the median block
 		// time, so calculate it now.
-		medianTime := prevNode.CalcPastMedianTime()
+		medianTime := prevNode.PastMedianTime()
 
 		// The state is simply defined if the start time hasn't been
 		// been reached yet.
@@ -192,7 +192,7 @@ func (dag *BlockDAG) thresholdState(prevNode *blockNode, checker thresholdCondit
 		case ThresholdDefined:
 			// The deployment of the rule change fails if it expires
 			// before it is accepted and locked in.
-			medianTime := prevNode.CalcPastMedianTime()
+			medianTime := prevNode.PastMedianTime()
 			medianTimeUnix := uint64(medianTime.Unix())
 			if medianTimeUnix >= checker.EndTime() {
 				state = ThresholdFailed
@@ -209,7 +209,7 @@ func (dag *BlockDAG) thresholdState(prevNode *blockNode, checker thresholdCondit
 		case ThresholdStarted:
 			// The deployment of the rule change fails if it expires
 			// before it is accepted and locked in.
-			medianTime := prevNode.CalcPastMedianTime()
+			medianTime := prevNode.PastMedianTime()
 			if uint64(medianTime.Unix()) >= checker.EndTime() {
 				state = ThresholdFailed
 				break

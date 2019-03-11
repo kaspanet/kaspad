@@ -12,6 +12,7 @@ import (
 	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/mining"
 	"github.com/daglabs/btcd/util"
+	"github.com/daglabs/btcd/util/subnetworkid"
 	"github.com/daglabs/btcd/wire"
 )
 
@@ -52,7 +53,7 @@ func (eft *estimateFeeTester) testTx(fee util.Amount) *TxDesc {
 		TxDesc: mining.TxDesc{
 			Tx: util.NewTx(&wire.MsgTx{
 				Version:      eft.version,
-				SubnetworkID: wire.SubnetworkIDNative,
+				SubnetworkID: *subnetworkid.SubnetworkIDNative,
 			}),
 			Height: eft.height,
 			Fee:    uint64(fee),

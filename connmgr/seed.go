@@ -22,6 +22,12 @@ const (
 	// seen time.
 	secondsIn3Days int32 = 24 * 60 * 60 * 3
 	secondsIn4Days int32 = 24 * 60 * 60 * 4
+
+	// SubnetworkIDPrefixChar is the prefix of subnetworkID, when building a DNS seed request
+	SubnetworkIDPrefixChar byte = 'n'
+
+	// ServiceFlagPrefixChar is the prefix of service flag, when building a DNS seed request
+	ServiceFlagPrefixChar byte = 'x'
 )
 
 // OnSeed is the signature of the callback function which is invoked when DNS
@@ -40,11 +46,11 @@ func SeedFromDNS(dagParams *dagconfig.Params, reqServices wire.ServiceFlag, subn
 		if !dnsseed.HasFiltering || reqServices == wire.SFNodeNetwork {
 			host = dnsseed.Host
 		} else {
-			host = fmt.Sprintf("x%x.%s", uint64(reqServices), dnsseed.Host)
+			host = fmt.Sprintf("%c%x.%s", ServiceFlagPrefixChar, uint64(reqServices), dnsseed.Host)
 		}
 
-		if !subnetworkID.IsEqual(&wire.SubnetworkIDSupportsAll) {
-			host = fmt.Sprintf("n%s.%s", subnetworkID, host)
+		if !subnetworkID.IsEqual(subnetworkid.SubnetworkIDSupportsAll) {
+			host = fmt.Sprintf("%c%s.%s", SubnetworkIDPrefixChar, subnetworkID, host)
 		}
 
 		go func(host string) {

@@ -140,7 +140,7 @@ type configFlags struct {
 	SimNet               bool          `long:"simnet" description:"Use the simulation test network"`
 	AddCheckpoints       []string      `long:"addcheckpoint" description:"Add a custom checkpoint.  Format: '<height>:<hash>'"`
 	DisableCheckpoints   bool          `long:"nocheckpoints" description:"Disable built-in checkpoints.  Don't do this unless you know what you're doing."`
-	DbType               string        `long:"dbtype" description:"Database backend to use for the Block Chain"`
+	DbType               string        `long:"dbtype" description:"Database backend to use for the Block DAG"`
 	Profile              string        `long:"profile" description:"Enable HTTP profiling on given port -- NOTE port must be between 1024 and 65536"`
 	CPUProfile           string        `long:"cpuprofile" description:"Write CPU profile to the specified file"`
 	DebugLevel           string        `short:"d" long:"debuglevel" description:"Logging level for all subsystems {trace, debug, info, warn, error, critical} -- You may also specify <subsystem>=<level>,<subsystem2>=<level>,... to set the log level for individual subsystems -- Use show to list available subsystems"`
@@ -167,6 +167,7 @@ type configFlags struct {
 	RelayNonStd          bool          `long:"relaynonstd" description:"Relay non-standard transactions regardless of the default settings for the active network."`
 	RejectNonStd         bool          `long:"rejectnonstd" description:"Reject non-standard transactions regardless of the default settings for the active network."`
 	Subnetwork           string        `long:"subnetwork" description:"If subnetwork ID != 0, than node will request and process only payloads from specified subnetwork. And if subnetwork ID is 0, than payloads of all subnetworks are processed. Subnetworks with IDs 3 through 255 are reserved for future use and are currently not allowed."`
+	ResetDatabase        bool          `long:"reset-db" description:"Reset database before starting node. It's needed when switching between subnetworks."`
 }
 
 // Config defines the configuration options for btcd.
@@ -759,11 +760,11 @@ func loadConfig() (*Config, []string, error) {
 			return nil, nil, err
 		}
 	} else {
-		cfg.SubnetworkID = &wire.SubnetworkIDSupportsAll
+		cfg.SubnetworkID = subnetworkid.SubnetworkIDSupportsAll
 	}
 
 	// Check that 'generate' and 'subnetwork' flags do not conflict
-	if cfg.Generate && *cfg.SubnetworkID != wire.SubnetworkIDSupportsAll {
+	if cfg.Generate && cfg.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDSupportsAll) {
 		str := "%s: both generate flag and subnetwork filtering are set "
 		err := fmt.Errorf(str, funcName)
 		fmt.Fprintln(os.Stderr, err)

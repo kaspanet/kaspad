@@ -106,6 +106,14 @@ func btcdMain(serverChan chan<- *server.Server) error {
 		return nil
 	}
 
+	if cfg.ResetDatabase {
+		err := removeDatabase()
+		if err != nil {
+			btcdLog.Errorf("%s", err)
+			return err
+		}
+	}
+
 	// Load the block database.
 	db, err := loadBlockDB()
 	if err != nil {
@@ -177,6 +185,11 @@ func btcdMain(serverChan chan<- *server.Server) error {
 	// server.
 	<-interrupt
 	return nil
+}
+
+func removeDatabase() error {
+	dbPath := blockDbPath(cfg.DbType)
+	return os.RemoveAll(dbPath)
 }
 
 // removeRegressionDB removes the existing regression test database if running

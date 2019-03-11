@@ -8,6 +8,8 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"os"
+	"path/filepath"
 	"reflect"
 	"strings"
 	"testing"
@@ -19,8 +21,10 @@ import (
 
 	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/dagconfig/daghash"
+	"github.com/daglabs/btcd/database"
 	"github.com/daglabs/btcd/txscript"
 	"github.com/daglabs/btcd/util"
+	"github.com/daglabs/btcd/util/subnetworkid"
 	"github.com/daglabs/btcd/util/txsort"
 	"github.com/daglabs/btcd/wire"
 )
@@ -46,7 +50,7 @@ func TestBlockCount(t *testing.T) {
 	// Create a new database and DAG instance to run tests against.
 	dag, teardownFunc, err := DAGSetup("TestBlockCount", Config{
 		DAGParams:    &dagconfig.SimNetParams,
-		SubnetworkID: &wire.SubnetworkIDSupportsAll,
+		SubnetworkID: subnetworkid.SubnetworkIDSupportsAll,
 	})
 	if err != nil {
 		t.Fatalf("Failed to setup DAG instance: %v", err)
@@ -96,7 +100,7 @@ func TestHaveBlock(t *testing.T) {
 	// Create a new database and DAG instance to run tests against.
 	dag, teardownFunc, err := DAGSetup("haveblock", Config{
 		DAGParams:    &dagconfig.SimNetParams,
-		SubnetworkID: &wire.SubnetworkIDSupportsAll,
+		SubnetworkID: subnetworkid.SubnetworkIDSupportsAll,
 	})
 	if err != nil {
 		t.Fatalf("Failed to setup DAG instance: %v", err)
@@ -263,13 +267,13 @@ func TestCalcSequenceLock(t *testing.T) {
 	// Obtain the median time past from the PoV of the input created above.
 	// The MTP for the input is the MTP from the PoV of the block *prior*
 	// to the one that included it.
-	medianTime := node.RelativeAncestor(5).CalcPastMedianTime().Unix()
+	medianTime := node.RelativeAncestor(5).PastMedianTime().Unix()
 
 	// The median time calculated from the PoV of the best block in the
 	// test chain.  For unconfirmed inputs, this value will be used since
 	// the MTP will be calculated from the PoV of the yet-to-be-mined
 	// block.
-	nextMedianTime := node.CalcPastMedianTime().Unix()
+	nextMedianTime := node.PastMedianTime().Unix()
 	nextBlockHeight := int32(numBlocksToGenerate) + 1
 
 	// Add an additional transaction which will serve as our unconfirmed
@@ -305,7 +309,7 @@ func TestCalcSequenceLock(t *testing.T) {
 					PreviousOutPoint: utxo,
 					Sequence:         wire.MaxTxInSequenceNum,
 				}},
-				SubnetworkID: wire.SubnetworkIDNative,
+				SubnetworkID: *subnetworkid.SubnetworkIDNative,
 			},
 			utxoSet: utxoSet,
 			want: &SequenceLock{
@@ -326,7 +330,7 @@ func TestCalcSequenceLock(t *testing.T) {
 					PreviousOutPoint: utxo,
 					Sequence:         LockTimeToSequence(true, 2),
 				}},
-				SubnetworkID: wire.SubnetworkIDNative,
+				SubnetworkID: *subnetworkid.SubnetworkIDNative,
 			},
 			utxoSet: utxoSet,
 			want: &SequenceLock{
@@ -345,7 +349,7 @@ func TestCalcSequenceLock(t *testing.T) {
 					PreviousOutPoint: utxo,
 					Sequence:         LockTimeToSequence(true, 1024),
 				}},
-				SubnetworkID: wire.SubnetworkIDNative,
+				SubnetworkID: *subnetworkid.SubnetworkIDNative,
 			},
 			utxoSet: utxoSet,
 			want: &SequenceLock{
@@ -373,7 +377,7 @@ func TestCalcSequenceLock(t *testing.T) {
 					Sequence: LockTimeToSequence(false, 5) |
 						wire.SequenceLockTimeDisabled,
 				}},
-				SubnetworkID: wire.SubnetworkIDNative,
+				SubnetworkID: *subnetworkid.SubnetworkIDNative,
 			},
 			utxoSet: utxoSet,
 			want: &SequenceLock{
@@ -392,7 +396,7 @@ func TestCalcSequenceLock(t *testing.T) {
 					PreviousOutPoint: utxo,
 					Sequence:         LockTimeToSequence(false, 3),
 				}},
-				SubnetworkID: wire.SubnetworkIDNative,
+				SubnetworkID: *subnetworkid.SubnetworkIDNative,
 			},
 			utxoSet: utxoSet,
 			want: &SequenceLock{
@@ -413,7 +417,7 @@ func TestCalcSequenceLock(t *testing.T) {
 					PreviousOutPoint: utxo,
 					Sequence:         LockTimeToSequence(true, 2560),
 				}},
-				SubnetworkID: wire.SubnetworkIDNative,
+				SubnetworkID: *subnetworkid.SubnetworkIDNative,
 			},
 			utxoSet: utxoSet,
 			want: &SequenceLock{
@@ -435,7 +439,7 @@ func TestCalcSequenceLock(t *testing.T) {
 					PreviousOutPoint: utxo,
 					Sequence:         LockTimeToSequence(false, 11),
 				}},
-				SubnetworkID: wire.SubnetworkIDNative,
+				SubnetworkID: *subnetworkid.SubnetworkIDNative,
 			},
 			utxoSet: utxoSet,
 			want: &SequenceLock{
@@ -462,7 +466,7 @@ func TestCalcSequenceLock(t *testing.T) {
 					PreviousOutPoint: utxo,
 					Sequence:         LockTimeToSequence(false, 9),
 				}},
-				SubnetworkID: wire.SubnetworkIDNative,
+				SubnetworkID: *subnetworkid.SubnetworkIDNative,
 			},
 			utxoSet: utxoSet,
 			want: &SequenceLock{
@@ -483,7 +487,7 @@ func TestCalcSequenceLock(t *testing.T) {
 					PreviousOutPoint: unConfUtxo,
 					Sequence:         LockTimeToSequence(false, 2),
 				}},
-				SubnetworkID: wire.SubnetworkIDNative,
+				SubnetworkID: *subnetworkid.SubnetworkIDNative,
 			},
 			utxoSet: utxoSet,
 			mempool: true,
@@ -502,7 +506,7 @@ func TestCalcSequenceLock(t *testing.T) {
 					PreviousOutPoint: unConfUtxo,
 					Sequence:         LockTimeToSequence(true, 1024),
 				}},
-				SubnetworkID: wire.SubnetworkIDNative,
+				SubnetworkID: *subnetworkid.SubnetworkIDNative,
 			},
 			utxoSet: utxoSet,
 			mempool: true,
@@ -571,7 +575,7 @@ func TestCalcPastMedianTime(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		secondsSinceGenesis := nodes[test.blockNumber].CalcPastMedianTime().Unix() - dag.genesis.Header().Timestamp.Unix()
+		secondsSinceGenesis := nodes[test.blockNumber].PastMedianTime().Unix() - dag.genesis.Header().Timestamp.Unix()
 		if secondsSinceGenesis != test.expectedSecondsSinceGenesis {
 			t.Errorf("TestCalcPastMedianTime: expected past median time of block %v to be %v seconds from genesis but got %v", test.blockNumber, test.expectedSecondsSinceGenesis, secondsSinceGenesis)
 		}
@@ -836,7 +840,7 @@ func testErrorThroughPatching(t *testing.T, expectedErrorMessage string, targetF
 	// Create a new database and dag instance to run tests against.
 	dag, teardownFunc, err := DAGSetup("testErrorThroughPatching", Config{
 		DAGParams:    &dagconfig.SimNetParams,
-		SubnetworkID: &wire.SubnetworkIDSupportsAll,
+		SubnetworkID: subnetworkid.SubnetworkIDSupportsAll,
 	})
 	if err != nil {
 		t.Fatalf("Failed to setup dag instance: %v", err)
@@ -873,12 +877,55 @@ func testErrorThroughPatching(t *testing.T, expectedErrorMessage string, targetF
 	}
 }
 
+func TestNew(t *testing.T) {
+	// Create the root directory for test databases.
+	if !fileExists(testDbRoot) {
+		if err := os.MkdirAll(testDbRoot, 0700); err != nil {
+			t.Fatalf("unable to create test db "+
+				"root: %s", err)
+		}
+	}
+
+	dbPath := filepath.Join(testDbRoot, "TestNew")
+	_ = os.RemoveAll(dbPath)
+	db, err := database.Create(testDbType, dbPath, blockDataNet)
+	if err != nil {
+		t.Fatalf("error creating db: %s", err)
+	}
+	defer func() {
+		db.Close()
+		os.RemoveAll(dbPath)
+		os.RemoveAll(testDbRoot)
+	}()
+	config := &Config{
+		DAGParams:    &dagconfig.SimNetParams,
+		SubnetworkID: subnetworkid.SubnetworkIDSupportsAll,
+		DB:           db,
+		TimeSource:   NewMedianTime(),
+		SigCache:     txscript.NewSigCache(1000),
+	}
+	_, err = New(config)
+	if err != nil {
+		t.Fatalf("failed to create dag instance: %s", err)
+	}
+
+	config.SubnetworkID = &subnetworkid.SubnetworkID{0xff}
+	_, err = New(config)
+	expectedErrorMessage := fmt.Sprintf("Cannot start btcd with subnetwork ID %s because"+
+		" its database is already built with subnetwork ID %s. If you"+
+		" want to switch to a new database, please reset the"+
+		" database by starting btcd with --reset-db flag", config.SubnetworkID, subnetworkid.SubnetworkIDSupportsAll)
+	if err.Error() != expectedErrorMessage {
+		t.Errorf("Unexpected error. Expected error '%s' but got '%s'", expectedErrorMessage, err)
+	}
+}
+
 func TestValidateFeeTransaction(t *testing.T) {
 	params := dagconfig.SimNetParams
 	params.K = 1
 	dag, teardownFunc, err := DAGSetup("TestValidateFeeTransaction", Config{
 		DAGParams:    &params,
-		SubnetworkID: &wire.SubnetworkIDSupportsAll,
+		SubnetworkID: subnetworkid.SubnetworkIDSupportsAll,
 	})
 	if err != nil {
 		t.Fatalf("Failed to setup DAG instance: %v", err)
@@ -949,7 +996,7 @@ func TestValidateFeeTransaction(t *testing.T) {
 					Sequence: wire.MaxTxInSequenceNum,
 				},
 			},
-			SubnetworkID: wire.SubnetworkIDNative,
+			SubnetworkID: *subnetworkid.SubnetworkIDNative,
 		},
 		{ // Extra Fee Transaction
 			TxIn: []*wire.TxIn{
@@ -961,7 +1008,7 @@ func TestValidateFeeTransaction(t *testing.T) {
 					Sequence: wire.MaxTxInSequenceNum,
 				},
 			},
-			SubnetworkID: wire.SubnetworkIDNative,
+			SubnetworkID: *subnetworkid.SubnetworkIDNative,
 		},
 	}
 	buildBlock("blockWithExtraFeeTx", []daghash.Hash{dag.genesis.hash}, blockWithExtraFeeTxTransactions, ErrMultipleFeeTransactions)
@@ -979,7 +1026,7 @@ func TestValidateFeeTransaction(t *testing.T) {
 					Sequence: wire.MaxTxInSequenceNum,
 				},
 			},
-			SubnetworkID: wire.SubnetworkIDNative,
+			SubnetworkID: *subnetworkid.SubnetworkIDNative,
 		},
 	}
 	block1 := buildBlock("block1", []daghash.Hash{dag.genesis.hash}, block1Txs, 0)
@@ -998,7 +1045,7 @@ func TestValidateFeeTransaction(t *testing.T) {
 					Sequence: wire.MaxTxInSequenceNum,
 				},
 			},
-			SubnetworkID: wire.SubnetworkIDNative,
+			SubnetworkID: *subnetworkid.SubnetworkIDNative,
 		},
 	}
 	block1A := buildBlock("block1A", []daghash.Hash{dag.genesis.hash}, block1ATxs, 0)
@@ -1021,7 +1068,7 @@ func TestValidateFeeTransaction(t *testing.T) {
 					Sequence: wire.MaxTxInSequenceNum,
 				},
 			},
-			SubnetworkID: wire.SubnetworkIDNative,
+			SubnetworkID: *subnetworkid.SubnetworkIDNative,
 		},
 		{
 			TxIn: []*wire.TxIn{
@@ -1039,7 +1086,7 @@ func TestValidateFeeTransaction(t *testing.T) {
 					Value:    1,
 				},
 			},
-			SubnetworkID: wire.SubnetworkIDNative,
+			SubnetworkID: *subnetworkid.SubnetworkIDNative,
 		},
 	}
 	block1AChild := buildBlock("block1AChild", []daghash.Hash{block1A.BlockHash()}, block1AChildTxs, 0)
@@ -1058,7 +1105,7 @@ func TestValidateFeeTransaction(t *testing.T) {
 					Sequence: wire.MaxTxInSequenceNum,
 				},
 			},
-			SubnetworkID: wire.SubnetworkIDNative,
+			SubnetworkID: *subnetworkid.SubnetworkIDNative,
 		},
 	}
 	block2 := buildBlock("block2", []daghash.Hash{block1.BlockHash()}, block2Txs, 0)
@@ -1077,7 +1124,7 @@ func TestValidateFeeTransaction(t *testing.T) {
 					Sequence: wire.MaxTxInSequenceNum,
 				},
 			},
-			SubnetworkID: wire.SubnetworkIDNative,
+			SubnetworkID: *subnetworkid.SubnetworkIDNative,
 		},
 	}
 	block3 := buildBlock("block3", []daghash.Hash{block2.BlockHash()}, block3Txs, 0)
@@ -1101,7 +1148,7 @@ func TestValidateFeeTransaction(t *testing.T) {
 					Sequence: wire.MaxTxInSequenceNum,
 				},
 			},
-			SubnetworkID: wire.SubnetworkIDNative,
+			SubnetworkID: *subnetworkid.SubnetworkIDNative,
 		},
 		{
 			TxIn: []*wire.TxIn{
@@ -1119,7 +1166,7 @@ func TestValidateFeeTransaction(t *testing.T) {
 					Value:    1,
 				},
 			},
-			SubnetworkID: wire.SubnetworkIDNative,
+			SubnetworkID: *subnetworkid.SubnetworkIDNative,
 		},
 	}
 	block4 := buildBlock("block4", []daghash.Hash{block3.BlockHash()}, block4Txs, 0)
@@ -1142,7 +1189,7 @@ func TestValidateFeeTransaction(t *testing.T) {
 					Sequence: wire.MaxTxInSequenceNum,
 				},
 			},
-			SubnetworkID: wire.SubnetworkIDNative,
+			SubnetworkID: *subnetworkid.SubnetworkIDNative,
 		},
 		{
 			TxIn: []*wire.TxIn{
@@ -1160,7 +1207,7 @@ func TestValidateFeeTransaction(t *testing.T) {
 					Value:    1,
 				},
 			},
-			SubnetworkID: wire.SubnetworkIDNative,
+			SubnetworkID: *subnetworkid.SubnetworkIDNative,
 		},
 	}
 	block4A := buildBlock("block4A", []daghash.Hash{block3.BlockHash()}, block4ATxs, 0)

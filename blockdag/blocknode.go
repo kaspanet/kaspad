@@ -128,6 +128,7 @@ func initBlockNode(node *blockNode, blockHeader *wire.BlockHeader, parents block
 		timestamp: time.Now().Unix(),
 	}
 
+	// blockHeader is nil only for the virtual block
 	if blockHeader != nil {
 		node.hash = blockHeader.BlockHash()
 		node.workSum = CalcWork(blockHeader.Bits)
@@ -225,11 +226,11 @@ func (node *blockNode) RelativeAncestor(distance int32) *blockNode {
 	return node.Ancestor(node.height - distance)
 }
 
-// CalcPastMedianTime calculates the median time of the previous few blocks
+// PastMedianTime returns the median time of the previous few blocks
 // prior to, and including, the block node.
 //
 // This function is safe for concurrent access.
-func (node *blockNode) CalcPastMedianTime() time.Time {
+func (node *blockNode) PastMedianTime() time.Time {
 	// Create a slice of the previous few block timestamps used to calculate
 	// the median per the number defined by the constant medianTimeBlocks.
 	// If there aren't enough blocks yet - pad remaining with genesis block's timestamp.

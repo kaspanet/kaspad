@@ -13,6 +13,7 @@ import (
 	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/util"
+	"github.com/daglabs/btcd/util/subnetworkid"
 	"github.com/daglabs/btcd/wire"
 )
 
@@ -136,7 +137,7 @@ func TestSignTxOutput(t *testing.T) {
 			},
 		},
 		LockTime:     0,
-		SubnetworkID: wire.SubnetworkIDNative,
+		SubnetworkID: *subnetworkid.SubnetworkIDNative,
 	}
 
 	// Pay to Pubkey Hash (uncompressed)

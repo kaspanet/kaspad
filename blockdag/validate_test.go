@@ -70,7 +70,7 @@ func TestCheckConnectBlockTemplate(t *testing.T) {
 	// Create a new database and chain instance to run tests against.
 	dag, teardownFunc, err := DAGSetup("checkconnectblocktemplate", Config{
 		DAGParams:    &dagconfig.SimNetParams,
-		SubnetworkID: &wire.SubnetworkIDSupportsAll,
+		SubnetworkID: subnetworkid.SubnetworkIDSupportsAll,
 	})
 	if err != nil {
 		t.Errorf("Failed to setup dag instance: %v", err)
@@ -155,7 +155,7 @@ func TestCheckBlockSanity(t *testing.T) {
 	// Create a new database and dag instance to run tests against.
 	dag, teardownFunc, err := DAGSetup("TestCheckBlockSanity", Config{
 		DAGParams:    &dagconfig.SimNetParams,
-		SubnetworkID: &wire.SubnetworkIDSupportsAll,
+		SubnetworkID: subnetworkid.SubnetworkIDSupportsAll,
 	})
 	if err != nil {
 		t.Errorf("Failed to setup dag instance: %v", err)
@@ -254,7 +254,7 @@ func TestCheckBlockSanity(t *testing.T) {
 					},
 				},
 				LockTime:     0,
-				SubnetworkID: wire.SubnetworkIDNative,
+				SubnetworkID: *subnetworkid.SubnetworkIDNative,
 			},
 			{
 				Version: 1,
@@ -324,7 +324,7 @@ func TestCheckBlockSanity(t *testing.T) {
 					},
 				},
 				LockTime:     0,
-				SubnetworkID: wire.SubnetworkIDNative,
+				SubnetworkID: *subnetworkid.SubnetworkIDNative,
 			},
 			{
 				Version: 1,
@@ -393,7 +393,7 @@ func TestCheckBlockSanity(t *testing.T) {
 					},
 				},
 				LockTime:     0,
-				SubnetworkID: wire.SubnetworkIDNative,
+				SubnetworkID: *subnetworkid.SubnetworkIDNative,
 			},
 			{
 				Version: 1,
@@ -450,7 +450,7 @@ func TestCheckBlockSanity(t *testing.T) {
 					},
 				},
 				LockTime:     0,
-				SubnetworkID: wire.SubnetworkIDNative,
+				SubnetworkID: *subnetworkid.SubnetworkIDNative,
 			},
 		},
 	}
@@ -510,9 +510,13 @@ func TestCheckSerializedHeight(t *testing.T) {
 	for i, test := range tests {
 		msgTx := coinbaseTx.Copy()
 		msgTx.TxIn[0].SignatureScript = test.sigScript
-		tx := util.NewTx(msgTx)
 
-		err := checkSerializedHeight(tx, test.wantHeight)
+		msgBlock := wire.NewMsgBlock(wire.NewBlockHeader(1, []daghash.Hash{}, &daghash.Hash{}, &daghash.Hash{}, 0, 0))
+		msgBlock.AddTransaction(msgTx)
+		block := util.NewBlock(msgBlock)
+		block.SetHeight(test.wantHeight)
+
+		err := checkSerializedHeight(block)
 		if reflect.TypeOf(err) != reflect.TypeOf(test.err) {
 			t.Errorf("checkSerializedHeight #%d wrong error type "+
 				"got: %v <%T>, want: %T", i, err, err, test.err)
@@ -552,11 +556,11 @@ func TestPastMedianTime(t *testing.T) {
 	node := newTestNode(setFromSlice(tip),
 		blockVersion,
 		0,
-		tip.CalcPastMedianTime(),
+		tip.PastMedianTime(),
 		dagconfig.MainNetParams.K)
 
 	header := node.Header()
-	err := dag.checkBlockHeaderContext(header, node.parents.bluest(), height, BFNone)
+	err := dag.checkBlockHeaderContext(header, node.parents.bluest(), height, false)
 	if err != nil {
 		t.Errorf("TestPastMedianTime: unexpected error from checkBlockHeaderContext: %v"+
 			"(a block with timestamp equals to past median time should be valid)", err)
@@ -567,11 +571,11 @@ func TestPastMedianTime(t *testing.T) {
 	node = newTestNode(setFromSlice(tip),
 		blockVersion,
 		0,
-		tip.CalcPastMedianTime().Add(time.Second),
+		tip.PastMedianTime().Add(time.Second),
 		dagconfig.MainNetParams.K)
 
 	header = node.Header()
-	err = dag.checkBlockHeaderContext(header, node.parents.bluest(), height, BFNone)
+	err = dag.checkBlockHeaderContext(header, node.parents.bluest(), height, false)
 	if err != nil {
 		t.Errorf("TestPastMedianTime: unexpected error from checkBlockHeaderContext: %v"+
 			"(a block with timestamp bigger than past median time should be valid)", err)
@@ -582,11 +586,11 @@ func TestPastMedianTime(t *testing.T) {
 	node = newTestNode(setFromSlice(tip),
 		blockVersion,
 		0,
-		tip.CalcPastMedianTime().Add(-time.Second),
+		tip.PastMedianTime().Add(-time.Second),
 		dagconfig.MainNetParams.K)
 
 	header = node.Header()
-	err = dag.checkBlockHeaderContext(header, node.parents.bluest(), height, BFNone)
+	err = dag.checkBlockHeaderContext(header, node.parents.bluest(), height, false)
 	if err == nil {
 		t.Errorf("TestPastMedianTime: unexpected success: block should be invalid if its timestamp is before past median time")
 	}
@@ -646,43 +650,43 @@ func TestCheckTransactionSanity(t *testing.T) {
 		extraModificationsFunc func(*wire.MsgTx)
 		expectedErr            error
 	}{
-		{"good one", 1, 1, 1, wire.SubnetworkIDNative, nil, nil, nil},
-		{"no inputs", 0, 1, 1, wire.SubnetworkIDNative, nil, nil, ruleError(ErrNoTxInputs, "")},
-		{"no outputs", 1, 0, 1, wire.SubnetworkIDNative, nil, nil, nil},
-		{"too big", 100000, 1, 1, wire.SubnetworkIDNative, nil, nil, ruleError(ErrTxTooBig, "")},
+		{"good one", 1, 1, 1, *subnetworkid.SubnetworkIDNative, nil, nil, nil},
+		{"no inputs", 0, 1, 1, *subnetworkid.SubnetworkIDNative, nil, nil, ruleError(ErrNoTxInputs, "")},
+		{"no outputs", 1, 0, 1, *subnetworkid.SubnetworkIDNative, nil, nil, nil},
+		{"too big", 100000, 1, 1, *subnetworkid.SubnetworkIDNative, nil, nil, ruleError(ErrTxTooBig, "")},
 		{"too much satoshi in one output", 1, 1, util.MaxSatoshi + 1,
-			wire.SubnetworkIDNative,
+			*subnetworkid.SubnetworkIDNative,
 			nil,
 			nil,
 			ruleError(ErrBadTxOutValue, "")},
 		{"too much satoshi in total outputs", 1, 2, util.MaxSatoshi - 1,
-			wire.SubnetworkIDNative,
+			*subnetworkid.SubnetworkIDNative,
 			nil,
 			nil,
 			ruleError(ErrBadTxOutValue, "")},
 		{"duplicate inputs", 2, 1, 1,
-			wire.SubnetworkIDNative,
+			*subnetworkid.SubnetworkIDNative,
 			nil,
 			func(tx *wire.MsgTx) { tx.TxIn[1].PreviousOutPoint.Index = 0 },
 			ruleError(ErrDuplicateTxInputs, "")},
 		{"non-zero gas in DAGCoin", 1, 1, 0,
-			wire.SubnetworkIDNative,
-			&txSubnetworkData{wire.SubnetworkIDNative, 1, []byte{}},
+			*subnetworkid.SubnetworkIDNative,
+			&txSubnetworkData{*subnetworkid.SubnetworkIDNative, 1, []byte{}},
 			nil,
 			ruleError(ErrInvalidGas, "")},
 		{"non-zero gas in subnetwork registry", 1, 1, 0,
-			wire.SubnetworkIDNative,
-			&txSubnetworkData{wire.SubnetworkIDNative, 1, []byte{}},
+			*subnetworkid.SubnetworkIDNative,
+			&txSubnetworkData{*subnetworkid.SubnetworkIDNative, 1, []byte{}},
 			nil,
 			ruleError(ErrInvalidGas, "")},
 		{"non-zero payload in DAGCoin", 1, 1, 0,
-			wire.SubnetworkIDNative,
-			&txSubnetworkData{wire.SubnetworkIDNative, 0, []byte{1}},
+			*subnetworkid.SubnetworkIDNative,
+			&txSubnetworkData{*subnetworkid.SubnetworkIDNative, 0, []byte{1}},
 			nil,
 			ruleError(ErrInvalidPayload, "")},
 		{"payload in subnetwork registry isn't 8 bytes", 1, 1, 0,
-			wire.SubnetworkIDNative,
-			&txSubnetworkData{wire.SubnetworkIDNative, 0, []byte{1, 2, 3, 4, 5, 6, 7}},
+			*subnetworkid.SubnetworkIDNative,
+			&txSubnetworkData{*subnetworkid.SubnetworkIDNative, 0, []byte{1, 2, 3, 4, 5, 6, 7}},
 			nil,
 			ruleError(ErrInvalidPayload, "")},
 		{"payload in other subnetwork isn't 0 bytes", 1, 1, 0,
@@ -698,7 +702,7 @@ func TestCheckTransactionSanity(t *testing.T) {
 			},
 			ruleError(ErrInvalidPayloadHash, "")},
 		{"invalid payload hash in native subnetwork", 1, 1, 0,
-			wire.SubnetworkIDNative,
+			*subnetworkid.SubnetworkIDNative,
 			nil,
 			func(tx *wire.MsgTx) {
 				tx.PayloadHash = daghash.DoubleHashP(tx.Payload)
@@ -782,7 +786,7 @@ var Block100000 = wire.MsgBlock{
 				},
 			},
 			LockTime:     0,
-			SubnetworkID: wire.SubnetworkIDNative,
+			SubnetworkID: *subnetworkid.SubnetworkIDNative,
 		},
 		{
 			Version: 1,
@@ -812,7 +816,7 @@ var Block100000 = wire.MsgBlock{
 					Sequence: math.MaxUint64,
 				},
 			},
-			SubnetworkID: wire.SubnetworkIDNative,
+			SubnetworkID: *subnetworkid.SubnetworkIDNative,
 		},
 		{
 			Version: 1,
@@ -882,7 +886,7 @@ var Block100000 = wire.MsgBlock{
 				},
 			},
 			LockTime:     0,
-			SubnetworkID: wire.SubnetworkIDNative,
+			SubnetworkID: *subnetworkid.SubnetworkIDNative,
 		},
 		{
 			Version: 1,
@@ -951,7 +955,7 @@ var Block100000 = wire.MsgBlock{
 				},
 			},
 			LockTime:     0,
-			SubnetworkID: wire.SubnetworkIDNative,
+			SubnetworkID: *subnetworkid.SubnetworkIDNative,
 		},
 		{
 			Version: 1,
@@ -1008,7 +1012,7 @@ var Block100000 = wire.MsgBlock{
 				},
 			},
 			LockTime:     0,
-			SubnetworkID: wire.SubnetworkIDNative,
+			SubnetworkID: *subnetworkid.SubnetworkIDNative,
 		},
 	},
 }
@@ -1104,7 +1108,7 @@ var BlockWithWrongTxOrder = wire.MsgBlock{
 					Sequence: math.MaxUint64,
 				},
 			},
-			SubnetworkID: wire.SubnetworkIDNative,
+			SubnetworkID: *subnetworkid.SubnetworkIDNative,
 		},
 		{
 			Version: 1,
@@ -1243,7 +1247,7 @@ var BlockWithWrongTxOrder = wire.MsgBlock{
 				},
 			},
 			LockTime:     0,
-			SubnetworkID: wire.SubnetworkIDNative,
+			SubnetworkID: *subnetworkid.SubnetworkIDNative,
 		},
 		{
 			Version: 1,
@@ -1300,7 +1304,7 @@ var BlockWithWrongTxOrder = wire.MsgBlock{
 				},
 			},
 			LockTime:     0,
-			SubnetworkID: wire.SubnetworkIDNative,
+			SubnetworkID: *subnetworkid.SubnetworkIDNative,
 		},
 	},
 }
