@@ -693,9 +693,6 @@ func (msg *MsgTx) encode(w io.Writer, pver uint32, encodingFlags txEncoding) err
 			return err
 		}
 
-		if msg.PayloadHash == nil {
-			fmt.Println("hi")
-		}
 		err = writeElement(w, msg.PayloadHash)
 		if err != nil {
 			return err
