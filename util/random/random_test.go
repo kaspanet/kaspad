@@ -33,9 +33,6 @@ func TestRandomUint64(t *testing.T) {
 	tries := 1 << 8              // 2^8
 	watermark := uint64(1 << 56) // 2^56
 	maxHits := 5
-	badRNG := "The random number generator on this system is clearly " +
-		"terrible since we got %d values less than %d in %d runs " +
-		"when only %d was expected"
 
 	numHits := 0
 	for i := 0; i < tries; i++ {
@@ -49,7 +46,9 @@ func TestRandomUint64(t *testing.T) {
 			numHits++
 		}
 		if numHits > maxHits {
-			str := fmt.Sprintf(badRNG, numHits, watermark, tries, maxHits)
+			str := fmt.Sprintf("The random number generator on this system is clearly "+
+				"terrible since we got %d values less than %d in %d runs "+
+				"when only %d was expected", numHits, watermark, tries, maxHits)
 			t.Errorf("Random Uint64 iteration %d failed - %v %v", i,
 				str, numHits)
 			return

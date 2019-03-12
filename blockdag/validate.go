@@ -621,7 +621,6 @@ func ExtractCoinbaseHeight(coinbaseTx *util.Tx) (int32, error) {
 		str := "the coinbase signature script" +
 			"must start with the " +
 			"length of the serialized block height"
-		str = fmt.Sprintf(str)
 		return 0, ruleError(ErrMissingCoinbaseHeight, str)
 	}
 
@@ -642,7 +641,6 @@ func ExtractCoinbaseHeight(coinbaseTx *util.Tx) (int32, error) {
 		str := "the coinbase signature script " +
 			"must start with the " +
 			"serialized block height"
-		str = fmt.Sprintf(str, serializedLen)
 		return 0, ruleError(ErrMissingCoinbaseHeight, str)
 	}
 
@@ -727,8 +725,7 @@ func validateMedianTime(header *wire.BlockHeader, bluestParent *blockNode) error
 		// median time of the last several blocks (medianTimeBlocks).
 		medianTime := bluestParent.PastMedianTime()
 		if header.Timestamp.Before(medianTime) {
-			str := "block timestamp of %s is not after expected %s"
-			str = fmt.Sprintf(str, header.Timestamp, medianTime)
+			str := fmt.Sprintf("block timestamp of %s is not after expected %s", header.Timestamp, medianTime)
 			return ruleError(ErrTimeTooOld, str)
 		}
 	}
@@ -747,8 +744,7 @@ func (dag *BlockDAG) validateDifficulty(header *wire.BlockHeader, bluestParent *
 	}
 	blockDifficulty := header.Bits
 	if blockDifficulty != expectedDifficulty {
-		str := "block difficulty of %d is not the expected value of %d"
-		str = fmt.Sprintf(str, blockDifficulty, expectedDifficulty)
+		str := fmt.Sprintf("block difficulty of %d is not the expected value of %d", blockDifficulty, expectedDifficulty)
 		return ruleError(ErrUnexpectedDifficulty, str)
 	}
 
