@@ -17,6 +17,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/daglabs/btcd/util/random"
 	"github.com/daglabs/btcd/util/subnetworkid"
 
 	"github.com/btcsuite/go-socks/socks"
@@ -1891,7 +1892,7 @@ out:
 	for {
 		select {
 		case <-pingTicker.C:
-			nonce, err := wire.RandomUint64()
+			nonce, err := random.Uint64()
 			if err != nil {
 				log.Errorf("Not sending ping to %s: %s", p, err)
 				continue

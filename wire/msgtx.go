@@ -13,6 +13,7 @@ import (
 	"strconv"
 
 	"github.com/daglabs/btcd/dagconfig/daghash"
+	"github.com/daglabs/btcd/util/binaryserializer"
 	"github.com/daglabs/btcd/util/subnetworkid"
 )
 
@@ -429,7 +430,7 @@ func (msg *MsgTx) Copy() *MsgTx {
 // See Deserialize for decoding transactions stored to disk, such as in a
 // database, as opposed to decoding transactions from the wire.
 func (msg *MsgTx) BtcDecode(r io.Reader, pver uint32) error {
-	version, err := binarySerializer.Uint32(r, littleEndian)
+	version, err := binaryserializer.Uint32(r, littleEndian)
 	if err != nil {
 		return err
 	}
@@ -520,7 +521,7 @@ func (msg *MsgTx) BtcDecode(r io.Reader, pver uint32) error {
 		totalScriptSize += uint64(len(to.PkScript))
 	}
 
-	lockTime, err := binarySerializer.Uint64(r, littleEndian)
+	lockTime, err := binaryserializer.Uint64(r, littleEndian)
 	msg.LockTime = lockTime
 	if err != nil {
 		returnScriptBuffers()
@@ -539,7 +540,7 @@ func (msg *MsgTx) BtcDecode(r io.Reader, pver uint32) error {
 	}
 
 	if !msg.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) {
-		msg.Gas, err = binarySerializer.Uint64(r, littleEndian)
+		msg.Gas, err = binaryserializer.Uint64(r, littleEndian)
 		if err != nil {
 			returnScriptBuffers()
 			return err
@@ -641,7 +642,7 @@ func (msg *MsgTx) BtcEncode(w io.Writer, pver uint32) error {
 }
 
 func (msg *MsgTx) encode(w io.Writer, pver uint32, encodingFlags txEncoding) error {
-	err := binarySerializer.PutUint32(w, littleEndian, uint32(msg.Version))
+	err := binaryserializer.PutUint32(w, littleEndian, uint32(msg.Version))
 	if err != nil {
 		return err
 	}
@@ -672,7 +673,7 @@ func (msg *MsgTx) encode(w io.Writer, pver uint32, encodingFlags txEncoding) err
 		}
 	}
 
-	err = binarySerializer.PutUint64(w, littleEndian, msg.LockTime)
+	err = binaryserializer.PutUint64(w, littleEndian, msg.LockTime)
 	if err != nil {
 		return err
 	}
@@ -688,7 +689,7 @@ func (msg *MsgTx) encode(w io.Writer, pver uint32, encodingFlags txEncoding) err
 			return messageError("MsgTx.BtcEncode", str)
 		}
 
-		err = binarySerializer.PutUint64(w, littleEndian, msg.Gas)
+		err = binaryserializer.PutUint64(w, littleEndian, msg.Gas)
 		if err != nil {
 			return err
 		}
@@ -877,7 +878,7 @@ func readOutPoint(r io.Reader, pver uint32, version int32, op *OutPoint) error {
 		return err
 	}
 
-	op.Index, err = binarySerializer.Uint32(r, littleEndian)
+	op.Index, err = binaryserializer.Uint32(r, littleEndian)
 	return err
 }
 
@@ -889,7 +890,7 @@ func writeOutPoint(w io.Writer, pver uint32, version int32, op *OutPoint) error 
 		return err
 	}
 
-	return binarySerializer.PutUint32(w, littleEndian, op.Index)
+	return binaryserializer.PutUint32(w, littleEndian, op.Index)
 }
 
 // readScript reads a variable length byte array that represents a transaction
@@ -957,7 +958,7 @@ func writeTxIn(w io.Writer, pver uint32, version int32, ti *TxIn, encodingFlags 
 		return err
 	}
 
-	return binarySerializer.PutUint64(w, littleEndian, ti.Sequence)
+	return binaryserializer.PutUint64(w, littleEndian, ti.Sequence)
 }
 
 // readTxOut reads the next sequence of bytes from r as a transaction output
@@ -976,7 +977,7 @@ func readTxOut(r io.Reader, pver uint32, version int32, to *TxOut) error {
 // WriteTxOut encodes to into the bitcoin protocol encoding for a transaction
 // output (TxOut) to w.
 func WriteTxOut(w io.Writer, pver uint32, version int32, to *TxOut) error {
-	err := binarySerializer.PutUint64(w, littleEndian, uint64(to.Value))
+	err := binaryserializer.PutUint64(w, littleEndian, uint64(to.Value))
 	if err != nil {
 		return err
 	}

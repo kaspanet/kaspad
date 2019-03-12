@@ -17,6 +17,7 @@ import (
 	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/mining"
 	"github.com/daglabs/btcd/util"
+	"github.com/daglabs/btcd/util/random"
 	"github.com/daglabs/btcd/wire"
 )
 
@@ -213,7 +214,7 @@ func (m *CPUMiner) solveBlock(msgBlock *wire.MsgBlock, blockHeight int32,
 	hashesCompleted := uint64(0)
 
 	// Choose a random extra nonce for this block template and worker.
-	extraNonce, err := wire.RandomUint64()
+	extraNonce, err := random.Uint64()
 	if err != nil {
 		log.Errorf("Unexpected error while generating random "+
 			"extra nonce offset: %s", err)

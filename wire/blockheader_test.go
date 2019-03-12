@@ -11,14 +11,15 @@ import (
 	"time"
 
 	"github.com/daglabs/btcd/dagconfig/daghash"
+	"github.com/daglabs/btcd/util/random"
 	"github.com/davecgh/go-spew/spew"
 )
 
 // TestBlockHeader tests the BlockHeader API.
 func TestBlockHeader(t *testing.T) {
-	nonce, err := RandomUint64()
+	nonce, err := random.Uint64()
 	if err != nil {
-		t.Errorf("RandomUint64: Error generating nonce: %v", err)
+		t.Errorf("random.Uint64: Error generating nonce: %v", err)
 	}
 
 	hashes := []daghash.Hash{mainNetGenesisHash, simNetGenesisHash}

@@ -6,7 +6,6 @@ package wire
 
 import (
 	"bytes"
-	"fmt"
 	"io"
 	"reflect"
 	"strings"
@@ -48,23 +47,6 @@ var exampleIDMerkleRoot = daghash.Hash{
 	0x65, 0x9C, 0x79, 0x3C, 0xE3, 0x70, 0xD9, 0x5F,
 	0x09, 0x3B, 0xC7, 0xE3, 0x67, 0x11, 0x7B, 0x3C,
 	0x30, 0xC1, 0xF8, 0xFD, 0xD0, 0xD9, 0x72, 0x87,
-}
-
-// fakeRandReader implements the io.Reader interface and is used to force
-// errors in the RandomUint64 function.
-type fakeRandReader struct {
-	n   int
-	err error
-}
-
-// Read returns the fake reader error and the lesser of the fake reader value
-// and the length of p.
-func (r *fakeRandReader) Read(p []byte) (int, error) {
-	n := r.n
-	if n > len(p) {
-		n = len(p)
-	}
-	return n, r.err
 }
 
 // TestElementWire tests wire encode and decode for various element types.  This
@@ -726,101 +708,4 @@ func TestVarBytesOverflowErrors(t *testing.T) {
 		}
 	}
 
-}
-
-// TestRandomUint64 exercises the randomness of the random number generator on
-// the system by ensuring the probability of the generated numbers.  If the RNG
-// is evenly distributed as a proper cryptographic RNG should be, there really
-// should only be 1 number < 2^56 in 2^8 tries for a 64-bit number.  However,
-// use a higher number of 5 to really ensure the test doesn't fail unless the
-// RNG is just horrendous.
-func TestRandomUint64(t *testing.T) {
-	tries := 1 << 8              // 2^8
-	watermark := uint64(1 << 56) // 2^56
-	maxHits := 5
-	badRNG := "The random number generator on this system is clearly " +
-		"terrible since we got %d values less than %d in %d runs " +
-		"when only %d was expected"
-
-	numHits := 0
-	for i := 0; i < tries; i++ {
-		nonce, err := RandomUint64()
-		if err != nil {
-			t.Errorf("RandomUint64 iteration %d failed - err %v",
-				i, err)
-			return
-		}
-		if nonce < watermark {
-			numHits++
-		}
-		if numHits > maxHits {
-			str := fmt.Sprintf(badRNG, numHits, watermark, tries, maxHits)
-			t.Errorf("Random Uint64 iteration %d failed - %v %v", i,
-				str, numHits)
-			return
-		}
-	}
-}
-
-// TestRandomUint64Errors uses a fake reader to force error paths to be executed
-// and checks the results accordingly.
-func TestRandomUint64Errors(t *testing.T) {
-	// Test short reads.
-	fr := &fakeRandReader{n: 2, err: io.EOF}
-	nonce, err := randomUint64(fr)
-	if err != io.ErrUnexpectedEOF {
-		t.Errorf("Error not expected value of %v [%v]",
-			io.ErrUnexpectedEOF, err)
-	}
-	if nonce != 0 {
-		t.Errorf("Nonce is not 0 [%v]", nonce)
-	}
-}
-
-func TestBinaryFreeList(t *testing.T) {
-	var list binaryFreeList = make(chan []byte, binaryFreeListMaxItems)
-
-	expectedCapacity := 8
-	expectedLength := 8
-
-	first := list.Borrow()
-	if cap(first) != expectedCapacity {
-		t.Errorf("MsgTx.TestBinaryFreeList: Expected capacity for first %d, but got %d",
-			expectedCapacity, cap(first))
-	}
-	if len(first) != expectedLength {
-		t.Errorf("MsgTx.TestBinaryFreeList: Expected length for first %d, but got %d",
-			expectedLength, len(first))
-	}
-	list.Return(first)
-
-	// Borrow again, and check that the underlying array is re-used for second
-	second := list.Borrow()
-	if cap(second) != expectedCapacity {
-		t.Errorf("TestBinaryFreeList: Expected capacity for second %d, but got %d",
-			expectedCapacity, cap(second))
-	}
-	if len(second) != expectedLength {
-		t.Errorf("TestBinaryFreeList: Expected length for second %d, but got %d",
-			expectedLength, len(second))
-	}
-
-	firstArrayAddress := underlyingArrayAddress(first)
-	secondArrayAddress := underlyingArrayAddress(second)
-
-	if firstArrayAddress != secondArrayAddress {
-		t.Errorf("First underlying array is at address %d and second at address %d, "+
-			"which means memory was not re-used", firstArrayAddress, secondArrayAddress)
-	}
-
-	list.Return(second)
-
-	// test there's no crash when channel is full because borrowed too much
-	buffers := make([][]byte, binaryFreeListMaxItems+1)
-	for i := 0; i < binaryFreeListMaxItems+1; i++ {
-		buffers[i] = list.Borrow()
-	}
-	for i := 0; i < binaryFreeListMaxItems+1; i++ {
-		list.Return(buffers[i])
-	}
 }

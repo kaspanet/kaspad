@@ -10,6 +10,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/daglabs/btcd/util/random"
 	"github.com/davecgh/go-spew/spew"
 )
 
@@ -18,9 +19,9 @@ func TestPing(t *testing.T) {
 	pver := ProtocolVersion
 
 	// Ensure we get the same nonce back out.
-	nonce, err := RandomUint64()
+	nonce, err := random.Uint64()
 	if err != nil {
-		t.Errorf("RandomUint64: Error generating nonce: %v", err)
+		t.Errorf("random.Uint64: Error generating nonce: %v", err)
 	}
 	msg := NewMsgPing(nonce)
 	if msg.Nonce != nonce {
@@ -48,9 +49,9 @@ func TestPing(t *testing.T) {
 // TestPingCrossProtocol tests the MsgPing API when encoding with the latest
 // protocol version and decoding with BIP0031Version.
 func TestPingCrossProtocol(t *testing.T) {
-	nonce, err := RandomUint64()
+	nonce, err := random.Uint64()
 	if err != nil {
-		t.Errorf("RandomUint64: Error generating nonce: %v", err)
+		t.Errorf("random.Uint64: Error generating nonce: %v", err)
 	}
 	msg := NewMsgPing(nonce)
 	if msg.Nonce != nonce {

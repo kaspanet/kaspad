@@ -19,6 +19,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/daglabs/btcd/util/random"
 	"github.com/daglabs/btcd/util/subnetworkid"
 
 	"golang.org/x/crypto/ripemd160"
@@ -1747,7 +1748,7 @@ func (c *wsClient) WaitForShutdown() {
 func newWebsocketClient(server *Server, conn *websocket.Conn,
 	remoteAddr string, authenticated bool, isAdmin bool) (*wsClient, error) {
 
-	sessionID, err := wire.RandomUint64()
+	sessionID, err := random.Uint64()
 	if err != nil {
 		return nil, err
 	}
