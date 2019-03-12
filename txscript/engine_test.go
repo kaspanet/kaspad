@@ -79,8 +79,6 @@ func TestBadPC(t *testing.T) {
 }
 
 func TestCheckErrorCondition(t *testing.T) {
-	t.Parallel()
-
 	tests := []struct {
 		script      string
 		finalScript bool
