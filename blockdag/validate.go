@@ -236,6 +236,16 @@ func CheckTransactionSanity(tx *util.Tx, subnetworkID *subnetworkid.SubnetworkID
 		}
 	}
 
+	// Check payload's hash
+	if !msgTx.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) {
+		payloadHash := daghash.DoubleHashH(msgTx.Payload)
+		if !msgTx.PayloadHash.IsEqual(&payloadHash) {
+			return ruleError(ErrInvalidPayloadHash, "invalid payload hash")
+		}
+	} else if msgTx.PayloadHash != nil {
+		return ruleError(ErrInvalidPayloadHash, "unexpected non-empty payload hash in native subnetwork")
+	}
+
 	// Transactions in native and subnetwork registry subnetworks must have Gas = 0
 	if (msgTx.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) ||
 		msgTx.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDRegistry)) &&

@@ -31,3 +31,10 @@ func DoubleHashH(b []byte) Hash {
 	first := sha256.Sum256(b)
 	return Hash(sha256.Sum256(first[:]))
 }
+
+// DoubleHashP calculates hash(hash(b)) and returns the resulting bytes as a
+// pointer to Hash.
+func DoubleHashP(b []byte) *Hash {
+	h := DoubleHashH(b)
+	return &h
+}

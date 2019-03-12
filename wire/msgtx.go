@@ -273,6 +273,7 @@ type MsgTx struct {
 	LockTime     uint64
 	SubnetworkID subnetworkid.SubnetworkID
 	Gas          uint64
+	PayloadHash  *daghash.Hash
 	Payload      []byte
 }
 
@@ -339,11 +340,10 @@ func (msg *MsgTx) TxHash() *daghash.Hash {
 
 // TxID generates the Hash for the transaction without the signature script, gas and payload fields.
 func (msg *MsgTx) TxID() daghash.TxID {
-	// Encode the transaction, replace signature script, payload and gas with
-	// zeroes, and calculate double sha256 on the result.
-	// Ignore the error returns since the only way the encode could fail
-	// is being out of memory or due to nil pointers, both of which would
-	// cause a run-time panic.
+	// Encode the transaction, replace signature script with zeroes, cut off
+	// payload and calculate double sha256 on the result.  Ignore the error
+	// returns since the only way the encode could fail is being out of memory or
+	// due to nil pointers, both of which would cause a run-time panic.
 	var encodingFlags txEncoding
 	if !msg.IsCoinBase() {
 		encodingFlags = txEncodingExcludeSignatureScript | txEncodingExcludeSubNetworkData
@@ -365,6 +365,7 @@ func (msg *MsgTx) Copy() *MsgTx {
 		LockTime:     msg.LockTime,
 		SubnetworkID: msg.SubnetworkID,
 		Gas:          msg.Gas,
+		PayloadHash:  msg.PayloadHash,
 	}
 
 	if msg.Payload != nil {
@@ -544,6 +545,14 @@ func (msg *MsgTx) BtcDecode(r io.Reader, pver uint32) error {
 			return err
 		}
 
+		var payloadHash daghash.Hash
+		err = readElement(r, &payloadHash)
+		if err != nil {
+			returnScriptBuffers()
+			return err
+		}
+		msg.PayloadHash = &payloadHash
+
 		payloadLength, err := ReadVarInt(r, pver)
 		if err != nil {
 			returnScriptBuffers()
@@ -684,6 +693,11 @@ func (msg *MsgTx) encode(w io.Writer, pver uint32, encodingFlags txEncoding) err
 			return err
 		}
 
+		err = writeElement(w, msg.PayloadHash)
+		if err != nil {
+			return err
+		}
+
 		if encodingFlags&txEncodingExcludeSubNetworkData != txEncodingExcludeSubNetworkData {
 			err = WriteVarInt(w, pver, uint64(len(msg.Payload)))
 			w.Write(msg.Payload)
@@ -695,6 +709,9 @@ func (msg *MsgTx) encode(w io.Writer, pver uint32, encodingFlags txEncoding) err
 		}
 	} else if msg.Payload != nil {
 		str := fmt.Sprintf("Transactions from subnetwork %s should have <nil> payload", msg.SubnetworkID)
+		return messageError("MsgTx.BtcEncode", str)
+	} else if msg.PayloadHash != nil {
+		str := fmt.Sprintf("Transactions from subnetwork %s should have <nil> payload hash", msg.SubnetworkID)
 		return messageError("MsgTx.BtcEncode", str)
 	} else if msg.Gas != 0 {
 		str := fmt.Sprintf("Transactions from subnetwork %s should have 0 gas", msg.SubnetworkID)
@@ -747,9 +764,13 @@ func (msg *MsgTx) serializeSize(encodingFlags txEncoding) int {
 		// Gas 8 bytes
 		n += 8
 
+		// PayloadHash
+		n += daghash.HashSize
+
 		// Serialized varint size for the length of the payload
 		if encodingFlags&txEncodingExcludeSubNetworkData != txEncodingExcludeSubNetworkData {
 			n += VarIntSerializeSize(uint64(len(msg.Payload)))
+			n += len(msg.Payload)
 		} else {
 			n += VarIntSerializeSize(0)
 		}
@@ -761,10 +782,6 @@ func (msg *MsgTx) serializeSize(encodingFlags txEncoding) int {
 
 	for _, txOut := range msg.TxOut {
 		n += txOut.SerializeSize()
-	}
-
-	if encodingFlags&txEncodingExcludeSubNetworkData != txEncodingExcludeSubNetworkData {
-		n += len(msg.Payload)
 	}
 
 	return n
@@ -848,6 +865,7 @@ func newRegistryMsgTx(version int32, gasLimit uint64) *MsgTx {
 	tx := NewMsgTx(version)
 	tx.SubnetworkID = *subnetworkid.SubnetworkIDRegistry
 	tx.Payload = make([]byte, 8)
+	tx.PayloadHash = daghash.DoubleHashP(tx.Payload)
 	binary.LittleEndian.PutUint64(tx.Payload, gasLimit)
 	return tx
 }

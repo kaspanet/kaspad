@@ -7,6 +7,7 @@ import (
 
 	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/dagconfig/daghash"
+	"github.com/daglabs/btcd/util/subnetworkid"
 	"github.com/daglabs/btcd/wire"
 )
 
@@ -928,8 +929,16 @@ func TestUTXOSetAddEntry(t *testing.T) {
 }
 
 func TestUTXOSetRemoveTxOuts(t *testing.T) {
-	tx0 := &wire.MsgTx{TxOut: []*wire.TxOut{{PkScript: []byte{1}, Value: 10}}}
-	tx1 := &wire.MsgTx{TxOut: []*wire.TxOut{{PkScript: []byte{2}, Value: 20}}}
+	tx0 := &wire.MsgTx{
+		TxOut: []*wire.TxOut{{
+			PkScript: []byte{1}, Value: 10}},
+		SubnetworkID: *subnetworkid.SubnetworkIDNative,
+	}
+	tx1 := &wire.MsgTx{
+		TxOut: []*wire.TxOut{{
+			PkScript: []byte{2}, Value: 20}},
+		SubnetworkID: *subnetworkid.SubnetworkIDNative,
+	}
 	hash0 := tx0.TxID()
 	hash1 := tx1.TxID()
 	outPoint0 := wire.NewOutPoint(&hash0, 0)

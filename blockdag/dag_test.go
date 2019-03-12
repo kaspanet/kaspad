@@ -244,12 +244,12 @@ func TestCalcSequenceLock(t *testing.T) {
 	// Create a utxo view with a fake utxo for the inputs used in the
 	// transactions created below.  This utxo is added such that it has an
 	// age of 4 blocks.
-	targetTx := util.NewTx(&wire.MsgTx{
-		TxOut: []*wire.TxOut{{
-			PkScript: nil,
-			Value:    10,
-		}},
-	})
+	msgTx := wire.NewMsgTx(wire.TxVersion)
+	msgTx.TxOut = []*wire.TxOut{{
+		PkScript: nil,
+		Value:    10,
+	}}
+	targetTx := util.NewTx(msgTx)
 	utxoSet := NewFullUTXOSet()
 	utxoSet.AddTx(targetTx.MsgTx(), int32(numBlocksToGenerate)-4)
 
@@ -278,12 +278,12 @@ func TestCalcSequenceLock(t *testing.T) {
 
 	// Add an additional transaction which will serve as our unconfirmed
 	// output.
-	unConfTx := &wire.MsgTx{
-		TxOut: []*wire.TxOut{{
-			PkScript: nil,
-			Value:    5,
-		}},
-	}
+	unConfTx := wire.NewMsgTx(wire.TxVersion)
+	unConfTx.TxOut = []*wire.TxOut{{
+		PkScript: nil,
+		Value:    5,
+	}}
+
 	unConfUtxo := wire.OutPoint{
 		TxID:  unConfTx.TxID(),
 		Index: 0,
@@ -309,6 +309,7 @@ func TestCalcSequenceLock(t *testing.T) {
 					PreviousOutPoint: utxo,
 					Sequence:         wire.MaxTxInSequenceNum,
 				}},
+				SubnetworkID: *subnetworkid.SubnetworkIDNative,
 			},
 			utxoSet: utxoSet,
 			want: &SequenceLock{
@@ -329,6 +330,7 @@ func TestCalcSequenceLock(t *testing.T) {
 					PreviousOutPoint: utxo,
 					Sequence:         LockTimeToSequence(true, 2),
 				}},
+				SubnetworkID: *subnetworkid.SubnetworkIDNative,
 			},
 			utxoSet: utxoSet,
 			want: &SequenceLock{
@@ -347,6 +349,7 @@ func TestCalcSequenceLock(t *testing.T) {
 					PreviousOutPoint: utxo,
 					Sequence:         LockTimeToSequence(true, 1024),
 				}},
+				SubnetworkID: *subnetworkid.SubnetworkIDNative,
 			},
 			utxoSet: utxoSet,
 			want: &SequenceLock{
@@ -374,6 +377,7 @@ func TestCalcSequenceLock(t *testing.T) {
 					Sequence: LockTimeToSequence(false, 5) |
 						wire.SequenceLockTimeDisabled,
 				}},
+				SubnetworkID: *subnetworkid.SubnetworkIDNative,
 			},
 			utxoSet: utxoSet,
 			want: &SequenceLock{
@@ -392,6 +396,7 @@ func TestCalcSequenceLock(t *testing.T) {
 					PreviousOutPoint: utxo,
 					Sequence:         LockTimeToSequence(false, 3),
 				}},
+				SubnetworkID: *subnetworkid.SubnetworkIDNative,
 			},
 			utxoSet: utxoSet,
 			want: &SequenceLock{
@@ -412,6 +417,7 @@ func TestCalcSequenceLock(t *testing.T) {
 					PreviousOutPoint: utxo,
 					Sequence:         LockTimeToSequence(true, 2560),
 				}},
+				SubnetworkID: *subnetworkid.SubnetworkIDNative,
 			},
 			utxoSet: utxoSet,
 			want: &SequenceLock{
@@ -433,6 +439,7 @@ func TestCalcSequenceLock(t *testing.T) {
 					PreviousOutPoint: utxo,
 					Sequence:         LockTimeToSequence(false, 11),
 				}},
+				SubnetworkID: *subnetworkid.SubnetworkIDNative,
 			},
 			utxoSet: utxoSet,
 			want: &SequenceLock{
@@ -459,6 +466,7 @@ func TestCalcSequenceLock(t *testing.T) {
 					PreviousOutPoint: utxo,
 					Sequence:         LockTimeToSequence(false, 9),
 				}},
+				SubnetworkID: *subnetworkid.SubnetworkIDNative,
 			},
 			utxoSet: utxoSet,
 			want: &SequenceLock{
@@ -479,6 +487,7 @@ func TestCalcSequenceLock(t *testing.T) {
 					PreviousOutPoint: unConfUtxo,
 					Sequence:         LockTimeToSequence(false, 2),
 				}},
+				SubnetworkID: *subnetworkid.SubnetworkIDNative,
 			},
 			utxoSet: utxoSet,
 			mempool: true,
@@ -497,6 +506,7 @@ func TestCalcSequenceLock(t *testing.T) {
 					PreviousOutPoint: unConfUtxo,
 					Sequence:         LockTimeToSequence(true, 1024),
 				}},
+				SubnetworkID: *subnetworkid.SubnetworkIDNative,
 			},
 			utxoSet: utxoSet,
 			mempool: true,

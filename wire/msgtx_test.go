@@ -180,19 +180,20 @@ func TestTxHashAndID(t *testing.T) {
 			spew.Sprint(tx1ID), spew.Sprint(wantTxID1))
 	}
 
-	hash2Str := "ef55c85be28615b699bef1470d0d041982a6f3af5f900c978c3837b967b168b3"
+	hash2Str := "37fb9ab8fc0cb68a8cc2a3c94edd26897aa445596a5c97bc459ca9815d67490b"
 	wantHash2, err := daghash.NewHashFromStr(hash2Str)
 	if err != nil {
 		t.Errorf("NewHashFromStr: %v", err)
 		return
 	}
 
-	id2Str := "12063f97b5fbbf441bd7962f88631a36a4b4a67649045c02ed840bedc97e88ea"
+	id2Str := "750499ae9e6d44961ef8bad8af27a44dd4bcbea166b71baf181e8d3997e1ff72"
 	wantID2, err := daghash.NewTxIDFromStr(id2Str)
 	if err != nil {
 		t.Errorf("NewHashFromStr: %v", err)
 		return
 	}
+	payload := []byte{1, 2, 3}
 	tx2 := &MsgTx{
 		Version: 1,
 		TxIn: []*TxIn{
@@ -233,7 +234,8 @@ func TestTxHashAndID(t *testing.T) {
 		},
 		LockTime:     0,
 		SubnetworkID: subnetworkid.SubnetworkID{1, 2, 3},
-		Payload:      []byte{1, 2, 3},
+		Payload:      payload,
+		PayloadHash:  daghash.DoubleHashP(payload),
 	}
 
 	// Ensure the hash produced is expected.
@@ -418,6 +420,10 @@ func TestTxSerialize(t *testing.T) {
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 		0x00, 0x00, 0x00, 0x00, // Sub Network ID
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Gas
+		0x7e, 0xf0, 0xca, 0x62, 0x6b, 0xbb, 0x05, 0x8d,
+		0xd4, 0x43, 0xbb, 0x78, 0xe3, 0x3b, 0x88, 0x8b,
+		0xde, 0xc8, 0x29, 0x5c, 0x96, 0xe5, 0x1f, 0x55,
+		0x45, 0xf9, 0x63, 0x70, 0x87, 0x0c, 0x10, 0xb9, // Payload hash
 		0x08,                                           // Payload length varint
 		0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Payload / Gas limit
 	}
@@ -426,6 +432,7 @@ func TestTxSerialize(t *testing.T) {
 	subnetworkTx.SubnetworkID = subnetworkid.SubnetworkID{0xff}
 	subnetworkTx.Gas = 5
 	subnetworkTx.Payload = []byte{0, 1, 2}
+	subnetworkTx.PayloadHash = daghash.DoubleHashP(subnetworkTx.Payload)
 
 	subnetworkTxEncoded := []byte{
 		0x01, 0x00, 0x00, 0x00, // Version
@@ -436,6 +443,10 @@ func TestTxSerialize(t *testing.T) {
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 		0x00, 0x00, 0x00, 0x00, // Sub Network ID
 		0x05, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Gas
+		0x35, 0xf9, 0xf2, 0x93, 0x0e, 0xa3, 0x44, 0x61,
+		0x88, 0x22, 0x79, 0x5e, 0xee, 0xc5, 0x68, 0xae,
+		0x67, 0xab, 0x29, 0x87, 0xd8, 0xb1, 0x9e, 0x45,
+		0x91, 0xe1, 0x05, 0x27, 0xba, 0xa1, 0xdf, 0x3d, // Payload hash
 		0x03,             // Payload length varint
 		0x00, 0x01, 0x02, // Payload
 	}
@@ -612,6 +623,7 @@ func TestTxSerializeErrors(t *testing.T) {
 
 	nativeTx.Gas = 0
 	nativeTx.Payload = []byte{1, 2, 3}
+	nativeTx.PayloadHash = daghash.DoubleHashP(nativeTx.Payload)
 	w = bytes.NewBuffer(make([]byte, 0, registryTx.SerializeSize()))
 	err = nativeTx.Serialize(w)
 

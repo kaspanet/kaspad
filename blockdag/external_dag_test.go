@@ -310,6 +310,7 @@ func TestGasLimit(t *testing.T) {
 	})
 	tx1.SubnetworkID = *subnetworkID
 	tx1.Gas = 10000
+	tx1.PayloadHash = daghash.DoubleHashP(tx1.Payload)
 
 	tx2 := wire.NewMsgTx(wire.TxVersion)
 	tx2.AddTxIn(&wire.TxIn{
@@ -322,6 +323,7 @@ func TestGasLimit(t *testing.T) {
 	})
 	tx2.SubnetworkID = *subnetworkID
 	tx2.Gas = 10000
+	tx2.PayloadHash = daghash.DoubleHashP(tx2.Payload)
 
 	// Here we check that we can't process a block that has transactions that exceed the gas limit
 	overLimitBlock, err := mining.PrepareBlockForTest(dag, &params, dag.TipHashes(), []*wire.MsgTx{tx1, tx2}, true, 1)
@@ -353,6 +355,7 @@ func TestGasLimit(t *testing.T) {
 	})
 	overflowGasTx.SubnetworkID = *subnetworkID
 	overflowGasTx.Gas = math.MaxUint64
+	overflowGasTx.PayloadHash = daghash.DoubleHashP(overflowGasTx.Payload)
 
 	// Here we check that we can't process a block that its transactions' gas overflows uint64
 	overflowGasBlock, err := mining.PrepareBlockForTest(dag, &params, dag.TipHashes(), []*wire.MsgTx{tx1, overflowGasTx}, true, 1)
@@ -385,6 +388,7 @@ func TestGasLimit(t *testing.T) {
 	})
 	nonExistentSubnetworkTx.SubnetworkID = nonExistentSubnetwork
 	nonExistentSubnetworkTx.Gas = 1
+	nonExistentSubnetworkTx.PayloadHash = daghash.DoubleHashP(nonExistentSubnetworkTx.Payload)
 
 	nonExistentSubnetworkBlock, err := mining.PrepareBlockForTest(dag, &params, dag.TipHashes(), []*wire.MsgTx{nonExistentSubnetworkTx, overflowGasTx}, true, 1)
 	if err != nil {
