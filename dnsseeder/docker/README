@@ -1,0 +1,9 @@
+1. Since btcd is not public repository still, copy/checkout
+https://github.com/daglabs/btcd into vendor/github.com/daglabs/btcd before
+running "docker build".
+
+2. To build docker image invoke following command from dnsseeder directory:
+         docker build -t dnsseeder -f ./docker/Dockerfile .
+
+3. To run
+         sudo docker run -u root -p 53:53/udp dnsseeder

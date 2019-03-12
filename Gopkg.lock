@@ -2,10 +2,10 @@
 
 
 [[projects]]
-  branch = "master"
   name = "bou.ke/monkey"
   packages = ["."]
-  revision = "21d0bd9ad94e052d4a8117b0910ba026bec94c99"
+  revision = "bdf6dea004c6fd1cdf4b25da8ad45a606c09409a"
+  version = "v1.0.1"
 
 [[projects]]
   name = "github.com/aead/siphash"
@@ -27,20 +27,7 @@
 
 [[projects]]
   name = "github.com/btcsuite/goleveldb"
-  packages = [
-    "leveldb",
-    "leveldb/cache",
-    "leveldb/comparer",
-    "leveldb/errors",
-    "leveldb/filter",
-    "leveldb/iterator",
-    "leveldb/journal",
-    "leveldb/memdb",
-    "leveldb/opt",
-    "leveldb/storage",
-    "leveldb/table",
-    "leveldb/util"
-  ]
+  packages = ["leveldb","leveldb/cache","leveldb/comparer","leveldb/errors","leveldb/filter","leveldb/iterator","leveldb/journal","leveldb/memdb","leveldb/opt","leveldb/storage","leveldb/table","leveldb/util"]
   revision = "3fd0373267b6461dbefe91cef614278064d05465"
   version = "v1.0.0"
 
@@ -58,13 +45,7 @@
 
 [[projects]]
   name = "github.com/btcsuite/winsvc"
-  packages = [
-    "eventlog",
-    "mgr",
-    "registry",
-    "svc",
-    "winapi"
-  ]
+  packages = ["eventlog","mgr","registry","svc","winapi"]
   revision = "f8fb11f83f7e860e3769a08e6811d1b399a43722"
   version = "v1.0.0"
 
@@ -90,17 +71,35 @@
   branch = "master"
   name = "github.com/kkdai/bstream"
   packages = ["."]
-  revision = "f71540b9dfdcfe64dbf2818e9b66423c6aafcacd"
+  revision = "b3251f7901ec4dd4ec66b3210e8f4bd5c0f1c5a3"
+
+[[projects]]
+  name = "github.com/miekg/dns"
+  packages = ["."]
+  revision = "cc8cd02140663157ce797c6650488d6c8563f31f"
+  version = "v1.1.6"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/crypto"
-  packages = ["ripemd160"]
-  revision = "182538f80094b6a8efaade63a8fd8e0d9d5843dd"
+  packages = ["ed25519","ed25519/internal/edwards25519","ripemd160"]
+  revision = "c2843e01d9a2bc60bb26ad24e09734fdc2d9ec58"
+
+[[projects]]
+  branch = "master"
+  name = "golang.org/x/net"
+  packages = ["bpf","internal/iana","internal/socket","ipv4","ipv6"]
+  revision = "d8887717615a059821345a5c23649351b52a1c0b"
+
+[[projects]]
+  branch = "master"
+  name = "golang.org/x/sys"
+  packages = ["unix"]
+  revision = "fead79001313d15903fb4605b4a1b781532cd93e"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "5976f1edbea819ab26c66eb5e5604c255a72f174b7a47bb218f3b8a6733d0c3a"
+  inputs-digest = "00392a00928f96fc94e2c8c65ce3a98cc6f5e2f93dda64d3c4502f2f38026e96"
   solver-name = "gps-cdcl"
   solver-version = 1
