@@ -264,7 +264,7 @@ func shallowCopyTx(tx *wire.MsgTx) wire.MsgTx {
 		SubnetworkID: tx.SubnetworkID,
 		Gas:          tx.Gas,
 		PayloadHash:  tx.PayloadHash,
-		Payload:      []byte{},
+		Payload:      tx.Payload,
 	}
 	txIns := make([]wire.TxIn, len(tx.TxIn))
 	for i, oldTxIn := range tx.TxIn {
@@ -307,6 +307,7 @@ func calcSignatureHash(script []parsedOpcode, hashType SigHashType, tx *wire.Msg
 	// Make a shallow copy of the transaction, zeroing out the script for
 	// all inputs that are not currently being processed.
 	txCopy := shallowCopyTx(tx)
+	txCopy.Payload = []byte{}
 	for i := range txCopy.TxIn {
 		if i == idx {
 			// UnparseScript cannot fail here because removeOpcode
