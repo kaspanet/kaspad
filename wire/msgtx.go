@@ -738,6 +738,12 @@ func (msg *MsgTx) Serialize(w io.Writer) error {
 	return msg.BtcEncode(w, 0)
 }
 
+// SerializeForSignatureCalculation encodes the transaction to w using a format that suitable for
+// signature calculation.
+func (msg *MsgTx) SerializeForSignatureCalculation(w io.Writer) error {
+	return msg.serialize(w, txEncodingExcludeSubNetworkData)
+}
+
 func (msg *MsgTx) serialize(w io.Writer, encodingFlags txEncoding) error {
 	// At the current time, there is no difference between the wire encoding
 	// at protocol version 0 and the stable long-term storage format.  As
