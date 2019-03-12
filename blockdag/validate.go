@@ -242,10 +242,8 @@ func CheckTransactionSanity(tx *util.Tx, subnetworkID *subnetworkid.SubnetworkID
 		if !msgTx.PayloadHash.IsEqual(&payloadHash) {
 			return ruleError(ErrInvalidPayloadHash, "invalid payload hash")
 		}
-	} else {
-		if msgTx.PayloadHash != nil {
-			return ruleError(ErrInvalidPayloadHash, "invalid payload hash in native subnetwork")
-		}
+	} else if msgTx.PayloadHash != nil {
+		return ruleError(ErrInvalidPayloadHash, "unexpected non-empty payload hash in native subnetwork")
 	}
 
 	// Transactions in native and subnetwork registry subnetworks must have Gas = 0
