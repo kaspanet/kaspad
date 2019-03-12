@@ -5,12 +5,9 @@ import (
 	"io"
 )
 
-const (
-
-	// maxItems is the number of buffers to keep in the free
-	// list to use for binary serialization and deserialization.
-	maxItems = 1024
-)
+// maxItems is the number of buffers to keep in the free
+// list to use for binary serialization and deserialization.
+const maxItems = 1024
 
 // Borrow returns a byte slice from the free list with a length of 8.  A new
 // buffer is allocated if there are not any available on the free list.
