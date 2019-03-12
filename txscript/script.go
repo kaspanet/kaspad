@@ -264,7 +264,7 @@ func shallowCopyTx(tx *wire.MsgTx) wire.MsgTx {
 		SubnetworkID: tx.SubnetworkID,
 		Gas:          tx.Gas,
 		PayloadHash:  tx.PayloadHash,
-		Payload:      tx.Payload,
+		Payload:      []byte{},
 	}
 	txIns := make([]wire.TxIn, len(tx.TxIn))
 	for i, oldTxIn := range tx.TxIn {
@@ -361,7 +361,7 @@ func calcSignatureHash(script []parsedOpcode, hashType SigHashType, tx *wire.Msg
 	// transaction and the hash type (encoded as a 4-byte little-endian
 	// value) appended.
 	wbuf := bytes.NewBuffer(make([]byte, 0, txCopy.SerializeSize()+4))
-	txCopy.SerializeForSignatureCalculation(wbuf)
+	txCopy.Serialize(wbuf)
 	binary.Write(wbuf, binary.LittleEndian, hashType)
 	return daghash.DoubleHashB(wbuf.Bytes()), nil
 }
