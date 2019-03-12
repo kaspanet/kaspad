@@ -304,9 +304,10 @@ func calcSignatureHash(script []parsedOpcode, hashType SigHashType, tx *wire.Msg
 		return nil, scriptError(ErrInvalidSigHashSingleIndex, "sigHashSingle index out of bounds")
 	}
 
-	// Make a shallow copy of the transaction, zeroing out the script for
-	// all inputs that are not currently being processed.
+	// Make a shallow copy of the transaction, zeroing out the payload and the
+	// script for all inputs that are not currently being processed.
 	txCopy := shallowCopyTx(tx)
+	txCopy.Payload = []byte{}
 	for i := range txCopy.TxIn {
 		if i == idx {
 			// UnparseScript cannot fail here because removeOpcode
