@@ -618,9 +618,9 @@ func (dag *BlockDAG) CheckBlockSanity(block *util.Block, powLimit *big.Int,
 func ExtractCoinbaseHeight(coinbaseTx *util.Tx) (int32, error) {
 	sigScript := coinbaseTx.MsgTx().TxIn[0].SignatureScript
 	if len(sigScript) < 1 {
-		str := fmt.Sprintf("the coinbase signature script" +
+		str := "the coinbase signature script" +
 			"must start with the " +
-			"length of the serialized block height")
+			"length of the serialized block height"
 		return 0, ruleError(ErrMissingCoinbaseHeight, str)
 	}
 
@@ -638,9 +638,9 @@ func ExtractCoinbaseHeight(coinbaseTx *util.Tx) (int32, error) {
 	// encode in the block height.
 	serializedLen := int(sigScript[0])
 	if len(sigScript[1:]) < serializedLen {
-		str := fmt.Sprintf("the coinbase signature script " +
+		str := "the coinbase signature script " +
 			"must start with the " +
-			"serialized block height")
+			"serialized block height"
 		return 0, ruleError(ErrMissingCoinbaseHeight, str)
 	}
 
