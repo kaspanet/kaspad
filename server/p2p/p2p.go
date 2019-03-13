@@ -137,18 +137,6 @@ type relayMsg struct {
 	data    interface{}
 }
 
-// updatePeerHeightsMsg is a message sent from the blockmanager to the server
-// after a new block has been accepted. The purpose of the message is to update
-// the heights of peers that were known to announce the block before we
-// connected it to the main chain or recognized it as an orphan. With these
-// updates, peer heights will be kept up to date, allowing for fresh data when
-// selecting sync peer candidacy.
-type updatePeerHeightsMsg struct {
-	newHash    *daghash.Hash
-	newHeight  int32
-	originPeer *peer.Peer
-}
-
 // Peer extends the peer to maintain state shared by the server and
 // the blockmanager.
 type Peer struct {
@@ -243,7 +231,6 @@ type Server struct {
 	Query                chan interface{}
 	relayInv             chan relayMsg
 	broadcast            chan broadcastMsg
-	peerHeightsUpdate    chan updatePeerHeightsMsg
 	wg                   sync.WaitGroup
 	quit                 chan struct{}
 	nat                  serverutils.NAT
@@ -286,11 +273,9 @@ func newServerPeer(s *Server, isPersistent bool) *Peer {
 	}
 }
 
-// newestBlock returns the current best block hash and height using the format
-// required by the configuration for the peer package.
-func (sp *Peer) newestBlock() (*daghash.Hash, int32, error) {
-	highestTipHash := sp.server.DAG.HighestTipHash()
-	return &highestTipHash, sp.server.DAG.Height(), nil //TODO: (Ori) This is probably wrong. Done only for compilation
+// latestBlockLocator returns a block locator for the selected tip.
+func (sp *Peer) latestBlockLocator() blockdag.BlockLocator {
+	return sp.server.DAG.LatestBlockLocator()
 }
 
 // addKnownAddresses adds the given addresses to the set of known addresses to
@@ -1381,34 +1366,6 @@ func (s *Server) pushMerkleBlockMsg(sp *Peer, hash *daghash.Hash,
 	return nil
 }
 
-// handleUpdatePeerHeight updates the heights of all peers who were known to
-// announce a block we recently accepted.
-func (s *Server) handleUpdatePeerHeights(state *peerState, umsg updatePeerHeightsMsg) {
-	state.forAllPeers(func(sp *Peer) {
-		// The origin peer should already have the updated height.
-		if sp.Peer == umsg.originPeer {
-			return
-		}
-
-		// This is a pointer to the underlying memory which doesn't
-		// change.
-		latestBlkHash := sp.LastAnnouncedBlock()
-
-		// Skip this peer if it hasn't recently announced any new blocks.
-		if latestBlkHash == nil {
-			return
-		}
-
-		// If the peer has recently announced a block, and this block
-		// matches our newly accepted block, then update their block
-		// height.
-		if *latestBlkHash == *umsg.newHash {
-			sp.UpdateLastBlockHeight(umsg.newHeight)
-			sp.UpdateLastAnnouncedBlock(nil)
-		}
-	})
-}
-
 // handleAddPeerMsg deals with adding new peers.  It is invoked from the
 // peerHandler goroutine.
 func (s *Server) handleAddPeerMsg(state *peerState, sp *Peer) bool {
@@ -1816,17 +1773,17 @@ func newPeerConfig(sp *Peer) *peer.Config {
 			// other implementations' alert messages, we will not relay theirs.
 			OnAlert: nil,
 		},
-		NewestBlock:       sp.newestBlock,
-		HostToNetAddress:  sp.server.addrManager.HostToNetAddress,
-		Proxy:             config.MainConfig().Proxy,
-		UserAgentName:     userAgentName,
-		UserAgentVersion:  userAgentVersion,
-		UserAgentComments: config.MainConfig().UserAgentComments,
-		DAGParams:         sp.server.DAGParams,
-		Services:          sp.server.services,
-		DisableRelayTx:    config.MainConfig().BlocksOnly,
-		ProtocolVersion:   peer.MaxProtocolVersion,
-		SubnetworkID:      config.MainConfig().SubnetworkID,
+		LatestBlockLocator: sp.latestBlockLocator,
+		HostToNetAddress:   sp.server.addrManager.HostToNetAddress,
+		Proxy:              config.MainConfig().Proxy,
+		UserAgentName:      userAgentName,
+		UserAgentVersion:   userAgentVersion,
+		UserAgentComments:  config.MainConfig().UserAgentComments,
+		DAGParams:          sp.server.DAGParams,
+		Services:           sp.server.services,
+		DisableRelayTx:     config.MainConfig().BlocksOnly,
+		ProtocolVersion:    peer.MaxProtocolVersion,
+		SubnetworkID:       config.MainConfig().SubnetworkID,
 	}
 }
 
@@ -1937,10 +1894,6 @@ out:
 		case p := <-s.donePeers:
 			s.handleDonePeerMsg(state, p)
 
-		// Block accepted in mainchain or orphan, update peer height.
-		case umsg := <-s.peerHeightsUpdate:
-			s.handleUpdatePeerHeights(state, umsg)
-
 		// Peer to ban.
 		case p := <-s.banPeers:
 			s.handleBanPeerMsg(state, p)
@@ -1978,7 +1931,6 @@ cleanup:
 		select {
 		case <-s.newPeers:
 		case <-s.donePeers:
-		case <-s.peerHeightsUpdate:
 		case <-s.relayInv:
 		case <-s.broadcast:
 		case <-s.Query:
@@ -2049,18 +2001,6 @@ func (s *Server) AddBytesReceived(bytesReceived uint64) {
 func (s *Server) NetTotals() (uint64, uint64) {
 	return atomic.LoadUint64(&s.bytesReceived),
 		atomic.LoadUint64(&s.bytesSent)
-}
-
-// UpdatePeerHeights updates the heights of all peers who have have announced
-// the latest connected main chain block, or a recognized orphan. These height
-// updates allow us to dynamically refresh peer heights, ensuring sync peer
-// selection has access to the latest block heights for each peer.
-func (s *Server) UpdatePeerHeights(latestBlkHash *daghash.Hash, latestHeight int32, updateSource *peer.Peer) {
-	s.peerHeightsUpdate <- updatePeerHeightsMsg{
-		newHash:    latestBlkHash,
-		newHeight:  latestHeight,
-		originPeer: updateSource,
-	}
 }
 
 // rebroadcastHandler keeps track of user submitted inventories that we have
@@ -2350,7 +2290,6 @@ func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params
 		broadcast:             make(chan broadcastMsg, config.MainConfig().MaxPeers),
 		quit:                  make(chan struct{}),
 		modifyRebroadcastInv:  make(chan interface{}),
-		peerHeightsUpdate:     make(chan updatePeerHeightsMsg),
 		nat:                   nat,
 		db:                    db,
 		TimeSource:            blockdag.NewMedianTime(),

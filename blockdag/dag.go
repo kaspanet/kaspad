@@ -46,6 +46,11 @@ const (
 // [17a 16a 15 14 13 12 11 10 9 8 7 6 4 genesis]
 type BlockLocator []*daghash.Hash
 
+// Len returns the number of hashes stored in the block locator.
+func (locator BlockLocator) Len() int {
+	return len(locator)
+}
+
 // orphanBlock represents a block that we don't yet have the parent for.  It
 // is a normal block plus an expiration time to prevent caching the orphan
 // forever.
@@ -1101,15 +1106,14 @@ func (dag *BlockDAG) BlockLocatorFromHash(hash *daghash.Hash) BlockLocator {
 	return locator
 }
 
-// LatestBlockLocator returns a block locator for the latest known tip of the
-// main (best) chain.
+// LatestBlockLocator returns a block locator for the selected tip.
 //
 // This function is safe for concurrent access.
-func (dag *BlockDAG) LatestBlockLocator() (BlockLocator, error) {
+func (dag *BlockDAG) LatestBlockLocator() BlockLocator {
 	dag.dagLock.RLock()
 	locator := dag.blockLocator(nil)
 	dag.dagLock.RUnlock()
-	return locator, nil
+	return locator
 }
 
 // blockLocator returns a block locator for the passed block node.  The passed

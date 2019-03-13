@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/util/subnetworkid"
 )
 
@@ -53,7 +54,7 @@ type MsgVersion struct {
 	UserAgent string
 
 	// Last block seen by the generator of the version message.
-	LastBlock int32
+	BlockLocatorHashes []*daghash.Hash
 
 	// Don't announce transactions to peer.
 	DisableRelayTx bool
@@ -131,28 +132,32 @@ func (msg *MsgVersion) BtcDecode(r io.Reader, pver uint32) error {
 		msg.UserAgent = userAgent
 	}
 
-	// Protocol versions >= 209 added a last known block field.  It is only
-	// considered present if there are bytes remaining in the message.
-	if buf.Len() > 0 {
-		err = readElement(buf, &msg.LastBlock)
+	// Read num block locator hashes and limit to max.
+	count, err := ReadVarInt(r, pver)
+	if err != nil {
+		return err
+	}
+	if count > MaxBlockLocatorsPerMsg {
+		str := fmt.Sprintf("too many block locator hashes for message "+
+			"[count %d, max %d]", count, MaxBlockLocatorsPerMsg)
+		return messageError("MsgVersion.BtcDecode", str)
+	}
+	msg.BlockLocatorHashes = make([]*daghash.Hash, count)
+	for i := uint64(0); i < count; i++ {
+		err := readElement(r, msg.BlockLocatorHashes[i])
 		if err != nil {
 			return err
 		}
 	}
 
-	// There was no relay transactions field before BIP0037Version, but
-	// the default behavior prior to the addition of the field was to always
-	// relay transactions.
-	if buf.Len() > 0 {
-		// It's safe to ignore the error here since the buffer has at
-		// least one byte and that byte will result in a boolean value
-		// regardless of its value.  Also, the wire encoding for the
-		// field is true when transactions should be relayed, so reverse
-		// it for the DisableRelayTx field.
-		var relayTx bool
-		readElement(r, &relayTx)
-		msg.DisableRelayTx = !relayTx
+	// The wire encoding for the field is true when transactions
+	// should be relayed, so reverse it for the DisableRelayTx field.
+	var relayTx bool
+	err = readElement(r, &relayTx)
+	if err != nil {
+		return err
 	}
+	msg.DisableRelayTx = !relayTx
 
 	return nil
 }
@@ -160,6 +165,14 @@ func (msg *MsgVersion) BtcDecode(r io.Reader, pver uint32) error {
 // BtcEncode encodes the receiver to w using the bitcoin protocol encoding.
 // This is part of the Message interface implementation.
 func (msg *MsgVersion) BtcEncode(w io.Writer, pver uint32) error {
+	// Limit to max block locator hashes per message.
+	blockLocatorHashesCount := len(msg.BlockLocatorHashes)
+	if blockLocatorHashesCount > MaxBlockLocatorsPerMsg {
+		str := fmt.Sprintf("too many block locator hashes for message "+
+			"[count %d, max %d]", blockLocatorHashesCount, MaxBlockLocatorsPerMsg)
+		return messageError("MsgGetHeaders.BtcEncode", str)
+	}
+
 	err := validateUserAgent(msg.UserAgent)
 	if err != nil {
 		return err
@@ -196,9 +209,16 @@ func (msg *MsgVersion) BtcEncode(w io.Writer, pver uint32) error {
 		return err
 	}
 
-	err = writeElement(w, msg.LastBlock)
+	err = WriteVarInt(w, pver, uint64(blockLocatorHashesCount))
 	if err != nil {
 		return err
+	}
+
+	for _, hash := range msg.BlockLocatorHashes {
+		err := writeElement(w, hash)
+		if err != nil {
+			return err
+		}
 	}
 
 	// The wire encoding for the field is true when transactions should be
@@ -233,21 +253,21 @@ func (msg *MsgVersion) MaxPayloadLength(pver uint32) uint32 {
 // Message interface using the passed parameters and defaults for the remaining
 // fields.
 func NewMsgVersion(me *NetAddress, you *NetAddress, nonce uint64,
-	lastBlock int32, subnetworkID *subnetworkid.SubnetworkID) *MsgVersion {
+	blockLocatorHashes []*daghash.Hash, subnetworkID *subnetworkid.SubnetworkID) *MsgVersion {
 
 	// Limit the timestamp to one second precision since the protocol
 	// doesn't support better.
 	return &MsgVersion{
-		ProtocolVersion: int32(ProtocolVersion),
-		Services:        0,
-		Timestamp:       time.Unix(time.Now().Unix(), 0),
-		AddrYou:         *you,
-		AddrMe:          *me,
-		Nonce:           nonce,
-		UserAgent:       DefaultUserAgent,
-		LastBlock:       lastBlock,
-		DisableRelayTx:  false,
-		SubnetworkID:    *subnetworkID,
+		ProtocolVersion:    int32(ProtocolVersion),
+		Services:           0,
+		Timestamp:          time.Unix(time.Now().Unix(), 0),
+		AddrYou:            *you,
+		AddrMe:             *me,
+		Nonce:              nonce,
+		UserAgent:          DefaultUserAgent,
+		BlockLocatorHashes: blockLocatorHashes,
+		DisableRelayTx:     false,
+		SubnetworkID:       *subnetworkID,
 	}
 }
 

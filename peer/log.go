@@ -124,8 +124,8 @@ func sanitizeString(str string, maxLength uint) string {
 func messageSummary(msg wire.Message) string {
 	switch msg := msg.(type) {
 	case *wire.MsgVersion:
-		return fmt.Sprintf("agent %s, pver %d, block %d",
-			msg.UserAgent, msg.ProtocolVersion, msg.LastBlock)
+		return fmt.Sprintf("agent %s, pver %d, block %s",
+			msg.UserAgent, msg.ProtocolVersion, msg.BlockLocatorHashes)
 
 	case *wire.MsgVerAck:
 		// No summary.

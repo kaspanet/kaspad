@@ -2461,8 +2461,6 @@ func handleGetPeerInfo(s *Server, cmd interface{}, closeChan <-chan struct{}) (i
 			Version:        statsSnap.Version,
 			SubVer:         statsSnap.UserAgent,
 			Inbound:        statsSnap.Inbound,
-			StartingHeight: statsSnap.StartingHeight,
-			CurrentHeight:  statsSnap.LastBlock,
 			BanScore:       int32(p.BanScore()),
 			FeeFilter:      p.FeeFilter(),
 			SyncNode:       statsSnap.ID == syncPeerID,

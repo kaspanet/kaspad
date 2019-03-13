@@ -230,13 +230,7 @@ func (sm *SyncManager) startSync() {
 			continue
 		}
 
-		// Remove sync candidate peers that are no longer candidates due
-		// to passing their latest known block.  NOTE: The < is
-		// intentional as opposed to <=.  While technically the peer
-		// doesn't have a later block when it's equal, it will likely
-		// have one soon so it is a reasonable choice.  It also allows
-		// the case where both are at 0 such as during regression test.
-		if peer.LastBlock() < sm.dag.Height() { //TODO: (Ori) This is probably wrong. Done only for compilation
+		if !peer.IsSyncCandidate() {
 			state.syncCandidate = false
 			continue
 		}
@@ -253,15 +247,9 @@ func (sm *SyncManager) startSync() {
 		// to send.
 		sm.requestedBlocks = make(map[daghash.Hash]struct{})
 
-		locator, err := sm.dag.LatestBlockLocator()
-		if err != nil {
-			log.Errorf("Failed to get block locator for the "+
-				"latest block: %s", err)
-			return
-		}
+		locator := sm.dag.LatestBlockLocator()
 
-		log.Infof("Syncing to block height %d from peer %s",
-			bestPeer.LastBlock(), bestPeer.Addr())
+		log.Infof("Syncing from peer %s", bestPeer.Addr())
 
 		// When the current height is less than a known checkpoint we
 		// can use block headers to learn about which blocks comprise
@@ -478,7 +466,7 @@ func (sm *SyncManager) current() bool {
 
 	// No matter what chain thinks, if we are below the block we are syncing
 	// to we are not current.
-	if sm.dag.Height() < sm.syncPeer.LastBlock() { //TODO: (Ori) This is probably wrong. Done only for compilation
+	if sm.syncPeer.IsSyncCandidate() {
 		return false
 	}
 	return true
@@ -565,71 +553,24 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 		return
 	}
 
-	// Meta-data about the new block this peer is reporting. We use this
-	// below to update this peer's lastest block height and the heights of
-	// other peers based on their last announced block hash. This allows us
-	// to dynamically update the block heights of peers, avoiding stale
-	// heights when looking for a new sync peer. Upon acceptance of a block
-	// or recognition of an orphan, we also use this information to update
-	// the block heights over other peers who's invs may have been ignored
-	// if we are actively syncing while the chain is not yet current or
-	// who may have lost the lock announcment race.
-	var heightUpdate int32
-	var blkHashUpdate *daghash.Hash
-
 	// Request the parents for the orphan block from the peer that sent it.
 	if isOrphan {
-		// We've just received an orphan block from a peer. In order
-		// to update the height of the peer, we try to extract the
-		// block height from the scriptSig of the coinbase transaction.
-		// Extraction is only attempted if the block's version is
-		// high enough (ver 2+).
-		coinbaseTx := bmsg.block.Transactions()[0]
-		cbHeight, err := blockdag.ExtractCoinbaseHeight(coinbaseTx)
-		if err != nil {
-			log.Warnf("Unable to extract height from "+
-				"coinbase tx: %s", err)
-		} else {
-			log.Debugf("Extracted height of %d from "+
-				"orphan block", cbHeight)
-			heightUpdate = cbHeight
-			blkHashUpdate = blockHash
-		}
-
 		orphanRoot := sm.dag.GetOrphanRoot(blockHash)
-		locator, err := sm.dag.LatestBlockLocator()
-		if err != nil {
-			log.Warnf("Failed to get block locator for the "+
-				"latest block: %s", err)
-		} else {
-			peer.PushGetBlocksMsg(locator, orphanRoot)
-		}
+		locator := sm.dag.LatestBlockLocator()
+		peer.PushGetBlocksMsg(locator, orphanRoot)
 	} else {
 		// When the block is not an orphan, log information about it and
 		// update the chain state.
 		sm.progressLogger.LogBlockHeight(bmsg.block)
 
-		// Update this peer's latest block height, for future
-		// potential sync node candidacy.
-		highestTipHash := sm.dag.HighestTipHash()
-		heightUpdate = sm.dag.Height() //TODO: (Ori) This is probably wrong. Done only for compilation
-		blkHashUpdate = &highestTipHash
-
 		// Clear the rejected transactions.
 		sm.rejectedTxns = make(map[daghash.TxID]struct{})
 	}
 
-	// Update the block height for this peer. But only send a message to
-	// the server for updating peer heights if this is an orphan or our
-	// chain is "current". This avoids sending a spammy amount of messages
-	// if we're syncing the chain from scratch.
-	if blkHashUpdate != nil && heightUpdate != 0 {
-		peer.UpdateLastBlockHeight(heightUpdate)
-		if isOrphan || sm.current() {
-			go sm.peerNotifier.UpdatePeerHeights(blkHashUpdate, heightUpdate,
-				peer)
-		}
-	}
+	// TODO: (Ori netsync) Subscribe to a notification of block
+	// acceptance, and if the block is in our selected chain
+	// and higher than the peer's previous known chain block, we
+	// set it as the new known chain block
 
 	// Nothing more to do if we aren't in headers-first mode.
 	if !sm.headersFirstMode {
@@ -918,10 +859,8 @@ func (sm *SyncManager) handleInvMsg(imsg *invMsg) {
 	// If our chain is current and a peer announces a block we already
 	// know of, then update their current block height.
 	if lastBlock != -1 && sm.current() {
-		blkHeight, err := sm.dag.BlockHeightByHash(&invVects[lastBlock].Hash)
-		if err == nil {
-			peer.UpdateLastBlockHeight(blkHeight)
-		}
+		// TODO: (Ori netsync) If it's chain block and it's higher than
+		// previous known chain block, update last known chain block.
 	}
 
 	// Request the advertised inventory if we don't already have it.  Also,
@@ -984,13 +923,7 @@ func (sm *SyncManager) handleInvMsg(imsg *invMsg) {
 				// up to the root of the orphan that just came
 				// in.
 				orphanRoot := sm.dag.GetOrphanRoot(&iv.Hash)
-				locator, err := sm.dag.LatestBlockLocator()
-				if err != nil {
-					log.Errorf("PEER: Failed to get block "+
-						"locator for the latest block: "+
-						"%s", err)
-					continue
-				}
+				locator := sm.dag.LatestBlockLocator()
 				peer.PushGetBlocksMsg(locator, orphanRoot)
 				continue
 			}

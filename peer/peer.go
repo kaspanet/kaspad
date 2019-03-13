@@ -216,12 +216,12 @@ type MessageListeners struct {
 
 // Config is the struct to hold configuration options useful to Peer.
 type Config struct {
-	// NewestBlock specifies a callback which provides the newest block
-	// details to the peer as needed.  This can be nil in which case the
+	// LatestBlockLocator specifies a callback which provides the latest block
+	// locator to the peer as needed.  This can be nil in which case the
 	// peer will report a block height of 0, however it is good practice for
 	// peers to specify this so their currently best known is accurately
 	// reported.
-	NewestBlock HashFunc
+	LatestBlockLocator func() blockdag.BlockLocator
 
 	// HostToNetAddress returns the netaddress for the given host. This can be
 	// nil in  which case the host will be parsed as an IP address.
@@ -357,23 +357,22 @@ type stallControlMsg struct {
 
 // StatsSnap is a snapshot of peer stats at a point in time.
 type StatsSnap struct {
-	ID             int32
-	Addr           string
-	Services       wire.ServiceFlag
-	LastSend       time.Time
-	LastRecv       time.Time
-	BytesSent      uint64
-	BytesRecv      uint64
-	ConnTime       time.Time
-	TimeOffset     int64
-	Version        uint32
-	UserAgent      string
-	Inbound        bool
-	StartingHeight int32
-	LastBlock      int32
-	LastPingNonce  uint64
-	LastPingTime   time.Time
-	LastPingMicros int64
+	ID                  int32
+	Addr                string
+	Services            wire.ServiceFlag
+	LastSend            time.Time
+	LastRecv            time.Time
+	BytesSent           uint64
+	BytesRecv           uint64
+	ConnTime            time.Time
+	TimeOffset          int64
+	Version             uint32
+	UserAgent           string
+	Inbound             bool
+	LastKnownChainBlock *daghash.Hash
+	LastPingNonce       uint64
+	LastPingTime        time.Time
+	LastPingMicros      int64
 }
 
 // HashFunc is a function which returns a block hash, height and error
@@ -452,15 +451,15 @@ type Peer struct {
 
 	// These fields keep track of statistics for the peer and are protected
 	// by the statsMtx mutex.
-	statsMtx           sync.RWMutex
-	timeOffset         int64
-	timeConnected      time.Time
-	startingHeight     int32
-	lastBlock          int32
-	lastAnnouncedBlock *daghash.Hash
-	lastPingNonce      uint64    // Set to nonce if we have a pending ping.
-	lastPingTime       time.Time // Time we sent last ping.
-	lastPingMicros     int64     // Time for last ping to return.
+	statsMtx            sync.RWMutex
+	timeOffset          int64
+	timeConnected       time.Time
+	blockLocatorHashes  []*daghash.Hash
+	lastKnownChainBlock *daghash.Hash
+	lastAnnouncedBlock  *daghash.Hash
+	lastPingNonce       uint64    // Set to nonce if we have a pending ping.
+	lastPingTime        time.Time // Time we sent last ping.
+	lastPingMicros      int64     // Time for last ping to return.
 
 	stallControl  chan stallControlMsg
 	outputQueue   chan outMsg
@@ -479,17 +478,6 @@ type Peer struct {
 // This function is safe for concurrent access.
 func (p *Peer) String() string {
 	return fmt.Sprintf("%s (%s)", p.addr, logger.DirectionString(p.inbound))
-}
-
-// UpdateLastBlockHeight updates the last known block for the peer.
-//
-// This function is safe for concurrent access.
-func (p *Peer) UpdateLastBlockHeight(newHeight int32) {
-	p.statsMtx.Lock()
-	log.Tracef("Updating last block height of peer %s from %s to %s",
-		p.addr, p.lastBlock, newHeight)
-	p.lastBlock = newHeight
-	p.statsMtx.Unlock()
 }
 
 // UpdateLastAnnouncedBlock updates meta-data about the last block hash this
@@ -528,23 +516,22 @@ func (p *Peer) StatsSnapshot() *StatsSnap {
 
 	// Get a copy of all relevant flags and stats.
 	statsSnap := &StatsSnap{
-		ID:             id,
-		Addr:           addr,
-		UserAgent:      userAgent,
-		Services:       services,
-		LastSend:       p.LastSend(),
-		LastRecv:       p.LastRecv(),
-		BytesSent:      p.BytesSent(),
-		BytesRecv:      p.BytesReceived(),
-		ConnTime:       p.timeConnected,
-		TimeOffset:     p.timeOffset,
-		Version:        protocolVersion,
-		Inbound:        p.inbound,
-		StartingHeight: p.startingHeight,
-		LastBlock:      p.lastBlock,
-		LastPingNonce:  p.lastPingNonce,
-		LastPingMicros: p.lastPingMicros,
-		LastPingTime:   p.lastPingTime,
+		ID:                  id,
+		Addr:                addr,
+		UserAgent:           userAgent,
+		Services:            services,
+		LastSend:            p.LastSend(),
+		LastRecv:            p.LastRecv(),
+		BytesSent:           p.BytesSent(),
+		BytesRecv:           p.BytesReceived(),
+		ConnTime:            p.timeConnected,
+		TimeOffset:          p.timeOffset,
+		Version:             protocolVersion,
+		Inbound:             p.inbound,
+		LastKnownChainBlock: p.lastKnownChainBlock,
+		LastPingNonce:       p.lastPingNonce,
+		LastPingMicros:      p.lastPingMicros,
+		LastPingTime:        p.lastPingTime,
 	}
 
 	p.statsMtx.RUnlock()
@@ -699,15 +686,23 @@ func (p *Peer) ProtocolVersion() uint32 {
 	return protocolVersion
 }
 
-// LastBlock returns the last block of the peer.
+// LastKnownChainBlock returns the last known chain block of the peer.
 //
 // This function is safe for concurrent access.
-func (p *Peer) LastBlock() int32 {
+func (p *Peer) LastKnownChainBlock() *daghash.Hash {
 	p.statsMtx.RLock()
-	lastBlock := p.lastBlock
+	lastKnownChainBlock := p.lastKnownChainBlock
 	p.statsMtx.RUnlock()
 
-	return lastBlock
+	return lastKnownChainBlock
+}
+
+// IsSyncCandidate returns whether or not this peer is a sync candidate.
+//
+// This function is safe for concurrent access.
+func (p *Peer) IsSyncCandidate() bool {
+	// TODO: (Ori netsync) should return true if we don't know the first hash in its block locator.
+	return true
 }
 
 // LastSend returns the last send time of the peer.
@@ -762,18 +757,6 @@ func (p *Peer) TimeOffset() int64 {
 	return timeOffset
 }
 
-// StartingHeight returns the last known height the peer reported during the
-// initial negotiation phase.
-//
-// This function is safe for concurrent access.
-func (p *Peer) StartingHeight() int32 {
-	p.statsMtx.RLock()
-	startingHeight := p.startingHeight
-	p.statsMtx.RUnlock()
-
-	return startingHeight
-}
-
 // WantsHeaders returns if the peer wants header messages instead of
 // inventory vectors for blocks.
 //
@@ -789,12 +772,12 @@ func (p *Peer) WantsHeaders() bool {
 // localVersionMsg creates a version message that can be used to send to the
 // remote peer.
 func (p *Peer) localVersionMsg() (*wire.MsgVersion, error) {
-	var blockNum int32
-	if p.cfg.NewestBlock != nil {
-		var err error
-		_, blockNum, err = p.cfg.NewestBlock()
-		if err != nil {
-			return nil, err
+	var locator blockdag.BlockLocator
+	if p.cfg.LatestBlockLocator != nil {
+		locator := p.cfg.LatestBlockLocator()
+		if locator.Len() > wire.MaxBlockLocatorsPerMsg {
+			return nil, fmt.Errorf("localVersionMsg: Too many block locator hashes for version message [max %d]",
+				wire.MaxBlockLocatorsPerMsg)
 		}
 	}
 
@@ -833,7 +816,7 @@ func (p *Peer) localVersionMsg() (*wire.MsgVersion, error) {
 	subnetworkID := p.cfg.SubnetworkID
 
 	// Version message.
-	msg := wire.NewMsgVersion(ourNA, theirNA, nonce, blockNum, subnetworkID)
+	msg := wire.NewMsgVersion(ourNA, theirNA, nonce, locator, subnetworkID)
 	msg.AddUserAgent(p.cfg.UserAgentName, p.cfg.UserAgentVersion,
 		p.cfg.UserAgentComments...)
 
@@ -1057,8 +1040,8 @@ func (p *Peer) handleRemoteVersionMsg(msg *wire.MsgVersion) error {
 	// Updating a bunch of stats including block based stats, and the
 	// peer's time offset.
 	p.statsMtx.Lock()
-	p.lastBlock = msg.LastBlock
-	p.startingHeight = msg.LastBlock
+	p.blockLocatorHashes = msg.BlockLocatorHashes
+	//TODO: (Ori netsync) update last known block
 	p.timeOffset = msg.Timestamp.Unix() - time.Now().Unix()
 	p.statsMtx.Unlock()
 
