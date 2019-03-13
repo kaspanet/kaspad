@@ -511,10 +511,7 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block, fastAdd bo
 		}
 	}
 
-	var newFinalityPoint *blockNode
-	var err error
-	newFinalityPoint, err = dag.checkFinalityRulesAndGetFinalityPoint(node)
-	if err != nil {
+	if err := dag.checkFinalityRules(node); err != nil {
 		return err
 	}
 
@@ -528,7 +525,7 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block, fastAdd bo
 		return err
 	}
 
-	dag.lastFinalityPoint = newFinalityPoint
+	dag.lastFinalityPoint = dag.newFinalityPoint(node)
 
 	// Write any block status changes to DB before updating the DAG state.
 	err = dag.index.flushToDB()
@@ -641,37 +638,49 @@ func (dag *BlockDAG) LastFinalityPointHash() *daghash.Hash {
 	return &dag.lastFinalityPoint.hash
 }
 
-// checkFinalityRulesAndGetFinalityPoint checks the new block does not violate the finality rules
-// and if not - returns the (potentially new) finality point
-func (dag *BlockDAG) checkFinalityRulesAndGetFinalityPoint(node *blockNode) (*blockNode, error) {
-	if node.isGenesis() {
-		return node, nil
+// checkFinalityRules checks the new block does not violate the finality rules
+// specifically - the new block selectedParent chain should contain the old finality point
+func (dag *BlockDAG) checkFinalityRules(newNode *blockNode) error {
+	// the genesis block can not violate finality rules
+	if newNode.isGenesis() {
+		return nil
 	}
-	finalityPoint := dag.lastFinalityPoint
+
 	finalityErr := ruleError(ErrFinality, "The last finality point is not in the selected chain of this block")
 
-	if node.blueScore <= dag.lastFinalityPoint.blueScore {
-		return nil, finalityErr
+	for currentNode := newNode; currentNode != dag.lastFinalityPoint; currentNode = currentNode.selectedParent {
+		// If we went past dag's last finality point without encountering it -
+		// the new block has violated finality.
+		if currentNode.blueScore <= dag.lastFinalityPoint.blueScore {
+			return finalityErr
+		}
+	}
+	return nil
+}
+
+// newFinalityPoint return the (potentially) new finality point after the the introduction of a new block
+func (dag *BlockDAG) newFinalityPoint(newNode *blockNode) *blockNode {
+	// if the new node is the genesis block - it should be the new finality point
+	if newNode.isGenesis() {
+		return newNode
 	}
 
 	// We are looking for a new finality point only if the new block's finality score is higher
 	// than the existing finality point's
-	shouldFindNewFinalityPoint := node.finalityScore() > dag.lastFinalityPoint.finalityScore()
+	if newNode.finalityScore() <= dag.lastFinalityPoint.finalityScore() {
+		return dag.lastFinalityPoint
+	}
 
-	for currentNode := node.selectedParent; currentNode != dag.lastFinalityPoint; currentNode = currentNode.selectedParent {
-		// If we went past dag's last finality point without encountering it -
-		// the new block has violated finality.
-		if currentNode.blueScore <= dag.lastFinalityPoint.blueScore {
-			return nil, finalityErr
-		}
-
+	var currentNode *blockNode
+	for currentNode = newNode.selectedParent; ; currentNode = currentNode.selectedParent {
 		// If current node's finality score is higher than it's selectedParent's -
 		// current node is the new finalityPoint
-		if shouldFindNewFinalityPoint && currentNode.finalityScore() > currentNode.selectedParent.finalityScore() {
-			finalityPoint = currentNode
+		if currentNode.isGenesis() || currentNode.finalityScore() > currentNode.selectedParent.finalityScore() {
+			break
 		}
 	}
-	return finalityPoint, nil
+
+	return currentNode
 }
 
 // NextBlockFeeTransaction prepares the fee transaction for the next mined block
