@@ -525,7 +525,7 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block, fastAdd bo
 	}
 
 	// Add the node to the virtual and update the UTXO set of the DAG.
-	utxoDiff, txsAcceptanceData, feeData, err := dag.applyUTXOChanges(node, block, fastAdd)
+	utxoDiff, txsAcceptanceData, newBlockFeeData, err := dag.applyUTXOChanges(node, block, fastAdd)
 	if err != nil {
 		return err
 	}
@@ -538,7 +538,7 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block, fastAdd bo
 		return err
 	}
 
-	err = dag.saveChangesFromBlock(node, block, utxoDiff, txsAcceptanceData, feeData)
+	err = dag.saveChangesFromBlock(node, block, utxoDiff, txsAcceptanceData, newBlockFeeData)
 	if err != nil {
 		return err
 	}
@@ -699,11 +699,11 @@ func (dag *BlockDAG) NextBlockFeeTransaction() (*wire.MsgTx, error) {
 //
 // This function MUST be called with the chain state lock held (for writes).
 func (dag *BlockDAG) applyUTXOChanges(node *blockNode, block *util.Block, fastAdd bool) (
-	utxoDiff *UTXODiff, txsAcceptanceData MultiblockTxsAcceptanceData, feeData compactFeeData, err error) {
+	utxoDiff *UTXODiff, txsAcceptanceData MultiblockTxsAcceptanceData, newBlockFeeData compactFeeData, err error) {
 	// Clone the virtual block so that we don't modify the existing one.
 	virtualClone := dag.virtual.clone()
 
-	newBlockUTXO, txsAcceptanceData, feeData, err := node.verifyAndBuildUTXO(virtualClone, dag, block.Transactions(), fastAdd)
+	newBlockUTXO, txsAcceptanceData, newBlockFeeData, err := node.verifyAndBuildUTXO(virtualClone, dag, block.Transactions(), fastAdd)
 	if err != nil {
 		newErrString := fmt.Sprintf("error verifying UTXO for %s: %s", node, err)
 		if err, ok := err.(RuleError); ok {
@@ -756,7 +756,7 @@ func (dag *BlockDAG) applyUTXOChanges(node *blockNode, block *util.Block, fastAd
 	// It is now safe to apply the new virtual block
 	dag.virtual = virtualClone
 
-	return utxoDiff, txsAcceptanceData, feeData, nil
+	return utxoDiff, txsAcceptanceData, newBlockFeeData, nil
 }
 
 func (dag *BlockDAG) meldVirtualUTXO(newVirtualUTXODiffSet *DiffUTXOSet) {
@@ -767,7 +767,7 @@ func (dag *BlockDAG) meldVirtualUTXO(newVirtualUTXODiffSet *DiffUTXOSet) {
 
 // verifyAndBuildUTXO verifies all transactions in the given block and builds its UTXO
 func (node *blockNode) verifyAndBuildUTXO(virtual *virtualBlock, dag *BlockDAG, transactions []*util.Tx, fastAdd bool) (
-	UTXOSet, MultiblockTxsAcceptanceData, compactFeeData, error) {
+	newBlockUTXO UTXOSet, bluesTxsAcceptanceData MultiblockTxsAcceptanceData, newBlockFeeData compactFeeData, err error) {
 
 	pastUTXO, txsAcceptanceData, err := node.pastUTXO(virtual, dag.db)
 	if err != nil {
