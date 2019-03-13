@@ -451,14 +451,14 @@ func LockTimeToSequence(isSeconds bool, locktime uint64) uint64 {
 		locktime>>wire.SequenceLockTimeGranularity
 }
 
-// connectToDAG handles connecting the passed block to the DAG.
+// addBlock handles adding the passed block to the DAG.
 //
 // The flags modify the behavior of this function as follows:
 //  - BFFastAdd: Avoids several expensive transaction validation operations.
 //    This is useful when using checkpoints.
 //
 // This function MUST be called with the chain state lock held (for writes).
-func (dag *BlockDAG) connectToDAG(node *blockNode, parentNodes blockSet, block *util.Block, flags BehaviorFlags) error {
+func (dag *BlockDAG) addBlock(node *blockNode, parentNodes blockSet, block *util.Block, flags BehaviorFlags) error {
 	// Skip checks if node has already been fully validated.
 	fastAdd := flags&BFFastAdd == BFFastAdd || dag.index.NodeStatus(node).KnownValid()
 
@@ -474,6 +474,15 @@ func (dag *BlockDAG) connectToDAG(node *blockNode, parentNodes blockSet, block *
 		dag.blockCount++
 	}
 
+	if err != nil {
+		// Notify the caller that the block was connected to the DAG.
+		// The caller would typically want to react with actions such as
+		// updating wallets.
+		dag.dagLock.Unlock()
+		dag.sendNotification(NTBlockConnected, block)
+		dag.dagLock.Lock()
+	}
+
 	// Intentionally ignore errors writing updated node status to DB. If
 	// it fails to write, it's not the end of the world. If the block is
 	// invalid, the worst that can happen is we revalidate the block
@@ -484,11 +493,7 @@ func (dag *BlockDAG) connectToDAG(node *blockNode, parentNodes blockSet, block *
 	}
 
 	// If dag.connectBlock returned a rule error, return it here after updating DB
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }
 
 // connectBlock handles connecting the passed node/block to the DAG.
@@ -537,13 +542,6 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block, fastAdd bo
 	if err != nil {
 		return err
 	}
-
-	// Notify the caller that the block was connected to the DAG.
-	// The caller would typically want to react with actions such as
-	// updating wallets.
-	dag.dagLock.Unlock()
-	dag.sendNotification(NTBlockConnected, block)
-	dag.dagLock.Lock()
 
 	return nil
 }
