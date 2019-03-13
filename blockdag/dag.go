@@ -834,19 +834,10 @@ func genesisPastUTXO(virtual *virtualBlock) UTXOSet {
 	return genesisPastUTXO
 }
 
-// pastUTXO returns the UTXO of a given block's past
-func (node *blockNode) pastUTXO(virtual *virtualBlock, db database.DB) (pastUTXO UTXOSet, txsAcceptanceData MultiblockTxsAcceptanceData, err error) {
-	if node.isGenesis() {
-		return genesisPastUTXO(virtual), MultiblockTxsAcceptanceData{}, nil
-	}
-	pastUTXO, err = node.selectedParent.restoreUTXO(virtual)
-	if err != nil {
-		return nil, nil, err
-	}
-
+func (node *blockNode) fetchBlueBlocks(db database.DB) ([]*util.Block, error) {
 	// Fetch from the database all the transactions for this block's blue set
 	blueBlocks := make([]*util.Block, 0, len(node.blues))
-	err = db.View(func(dbTx database.Tx) error {
+	err := db.View(func(dbTx database.Tx) error {
 		// Precalculate the amount of transactions in this block's blue set, besides the selected parent.
 		// This is to avoid an attack in which an attacker fabricates a block that will deliberately cause
 		// a lot of copying, causing a high cost to the whole network.
@@ -863,14 +854,18 @@ func (node *blockNode) pastUTXO(virtual *virtualBlock, db database.DB) (pastUTXO
 
 		return nil
 	})
-	if err != nil {
-		return nil, nil, err
-	}
+	return blueBlocks, err
+}
+
+// applyBlueBlocks adds all transactions in the blue blocks to the pastUTXO
+// Purposefully ignoring failures - these are just unaccepted transactions
+// Writing down which transactions were accepted or not in txsAcceptanceData
+func (node *blockNode) applyBlueBlocks(selectedParentUTXO UTXOSet, blueBlocks []*util.Block) (
+	pastUTXO UTXOSet, txsAcceptanceData MultiblockTxsAcceptanceData, err error) {
+
+	pastUTXO = selectedParentUTXO
 	txsAcceptanceData = MultiblockTxsAcceptanceData{}
 
-	// Add all transactions to the pastUTXO
-	// Purposefully ignore failures - these are just unaccepted transactions
-	// Write down which transactions were accepted or not in acceptedTxData
 	for _, blueBlock := range blueBlocks {
 		transactions := blueBlock.Transactions()
 		blockTxsAcceptanceData := make(BlockTxsAcceptanceData, len(transactions))
@@ -888,6 +883,24 @@ func (node *blockNode) pastUTXO(virtual *virtualBlock, db database.DB) (pastUTXO
 	}
 
 	return pastUTXO, txsAcceptanceData, nil
+}
+
+// pastUTXO returns the UTXO of a given block's past
+func (node *blockNode) pastUTXO(virtual *virtualBlock, db database.DB) (pastUTXO UTXOSet, txsAcceptanceData MultiblockTxsAcceptanceData, err error) {
+	if node.isGenesis() {
+		return genesisPastUTXO(virtual), MultiblockTxsAcceptanceData{}, nil
+	}
+	selectedParentUTXO, err := node.selectedParent.restoreUTXO(virtual)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	blueBlocks, err := node.fetchBlueBlocks(db)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return node.applyBlueBlocks(selectedParentUTXO, blueBlocks)
 }
 
 // restoreUTXO restores the UTXO of a given block from its diff
