@@ -204,7 +204,7 @@ func (node *blockNode) Header() *wire.BlockHeader {
 // than zero.
 //
 // This function is safe for concurrent access.
-func (node *blockNode) Ancestor(height int32) *blockNode {
+func (node *blockNode) SelectedAncestor(height int32) *blockNode {
 	if height < 0 || height > node.height {
 		return nil
 	}
@@ -223,7 +223,7 @@ func (node *blockNode) Ancestor(height int32) *blockNode {
 //
 // This function is safe for concurrent access.
 func (node *blockNode) RelativeAncestor(distance int32) *blockNode {
-	return node.Ancestor(node.height - distance)
+	return node.SelectedAncestor(node.height - distance)
 }
 
 // PastMedianTime returns the median time of the previous few blocks
