@@ -198,13 +198,12 @@ func (node *blockNode) Header() *wire.BlockHeader {
 	}
 }
 
-// Ancestor returns the ancestor block node at the provided height by following
-// the chain backwards from this node.  The returned block will be nil when a
-// height is requested that is after the height of the passed node or is less
-// than zero.
+// SelectedAncestor returns the ancestor block node at the provided height by following
+// the selected chain backwards from this node.  The returned block will be nil when a
+// height is requested that is after the height of the passed node or is less than zero.
 //
 // This function is safe for concurrent access.
-func (node *blockNode) Ancestor(height int32) *blockNode {
+func (node *blockNode) SelectedAncestor(height int32) *blockNode {
 	if height < 0 || height > node.height {
 		return nil
 	}
@@ -223,7 +222,7 @@ func (node *blockNode) Ancestor(height int32) *blockNode {
 //
 // This function is safe for concurrent access.
 func (node *blockNode) RelativeAncestor(distance int32) *blockNode {
-	return node.Ancestor(node.height - distance)
+	return node.SelectedAncestor(node.height - distance)
 }
 
 // PastMedianTime returns the median time of the previous few blocks

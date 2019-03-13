@@ -137,7 +137,7 @@ func (dag *BlockDAG) thresholdState(prevNode *blockNode, checker thresholdCondit
 	// Get the ancestor that is the last block of the previous confirmation
 	// window in order to get its threshold state.  This can be done because
 	// the state is the same for all blocks within a given window.
-	prevNode = prevNode.Ancestor(prevNode.height -
+	prevNode = prevNode.SelectedAncestor(prevNode.height -
 		(prevNode.height+1)%confirmationWindow)
 
 	// Iterate backwards through each of the previous confirmation windows
