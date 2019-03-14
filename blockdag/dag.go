@@ -1019,6 +1019,9 @@ func (dag *BlockDAG) SelectedTipHeader() *wire.BlockHeader {
 //
 // This function is safe for concurrent access.
 func (dag *BlockDAG) SelectedTipHash() *daghash.Hash {
+	dag.dagLock.RLock()
+	defer dag.dagLock.RUnlock()
+	
 	selectedTip := dag.selectedTip()
 	if selectedTip == nil {
 		return nil
