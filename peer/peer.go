@@ -697,7 +697,7 @@ func (p *Peer) SelectedTip() *daghash.Hash {
 //
 // This function is safe for concurrent access.
 func (p *Peer) IsSyncCandidate() bool {
-	// TODO: (Ori netsync) should return true if we don't the peer's selected tip. (Don't forget to use p.statsMtx)
+	// TODO: (Ori netsync) should return true if we don't know the peer's selected tip. (Don't forget to use p.statsMtx)
 	return true
 }
 
