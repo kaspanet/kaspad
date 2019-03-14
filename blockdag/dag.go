@@ -997,8 +997,6 @@ func (dag *BlockDAG) IsCurrent() bool {
 
 // selectedTip returns the current selected tip for the DAG.
 // It will return nil if there is no tip.
-//
-// This function is safe for concurrent access.
 func (dag *BlockDAG) selectedTip() *blockNode {
 	return dag.virtual.selectedParent
 }
@@ -1014,6 +1012,19 @@ func (dag *BlockDAG) SelectedTipHeader() *wire.BlockHeader {
 	}
 
 	return selectedTip.Header()
+}
+
+// SelectedTipHash returns the hash of the current selected tip for the DAG.
+// It will return nil if there is no tip.
+//
+// This function is safe for concurrent access.
+func (dag *BlockDAG) SelectedTipHash() *daghash.Hash {
+	selectedTip := dag.selectedTip()
+	if selectedTip == nil {
+		return nil
+	}
+
+	return &selectedTip.hash
 }
 
 // UTXOSet returns the DAG's UTXO set

@@ -230,13 +230,7 @@ func (sm *SyncManager) startSync() {
 			continue
 		}
 
-		// Remove sync candidate peers that are no longer candidates due
-		// to passing their latest known block.  NOTE: The < is
-		// intentional as opposed to <=.  While technically the peer
-		// doesn't have a later block when it's equal, it will likely
-		// have one soon so it is a reasonable choice.  It also allows
-		// the case where both are at 0 such as during regression test.
-		if peer.LastBlock() < sm.dag.Height() { //TODO: (Ori) This is probably wrong. Done only for compilation
+		if !peer.IsSyncCandidate() {
 			state.syncCandidate = false
 			continue
 		}
@@ -260,8 +254,8 @@ func (sm *SyncManager) startSync() {
 			return
 		}
 
-		log.Infof("Syncing to block height %d from peer %s",
-			bestPeer.LastBlock(), bestPeer.Addr())
+		log.Infof("Syncing to block %s from peer %s",
+			bestPeer.SelectedTip(), bestPeer.Addr())
 
 		// When the current height is less than a known checkpoint we
 		// can use block headers to learn about which blocks comprise
@@ -470,15 +464,15 @@ func (sm *SyncManager) current() bool {
 		return false
 	}
 
-	// if blockChain thinks we are current and we have no syncPeer it
+	// if dag thinks we are current and we have no syncPeer it
 	// is probably right.
 	if sm.syncPeer == nil {
 		return true
 	}
 
-	// No matter what chain thinks, if we are below the block we are syncing
+	// No matter what dag thinks, if we are below the block we are syncing
 	// to we are not current.
-	if sm.dag.Height() < sm.syncPeer.LastBlock() { //TODO: (Ori) This is probably wrong. Done only for compilation
+	if sm.syncPeer.IsSyncCandidate() {
 		return false
 	}
 	return true
@@ -624,11 +618,10 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 	// chain is "current". This avoids sending a spammy amount of messages
 	// if we're syncing the chain from scratch.
 	if blkHashUpdate != nil && heightUpdate != 0 {
-		peer.UpdateLastBlockHeight(heightUpdate)
-		if isOrphan || sm.current() {
-			go sm.peerNotifier.UpdatePeerHeights(blkHashUpdate, heightUpdate,
-				peer)
-		}
+		// TODO: (Ori netsync) Subscribe to a notification of block
+		// acceptance, and if the block is in our selected chain
+		// and higher than the peer's previous known chain block, we
+		// set it as the new known chain block
 	}
 
 	// Nothing more to do if we aren't in headers-first mode.
@@ -918,10 +911,8 @@ func (sm *SyncManager) handleInvMsg(imsg *invMsg) {
 	// If our chain is current and a peer announces a block we already
 	// know of, then update their current block height.
 	if lastBlock != -1 && sm.current() {
-		blkHeight, err := sm.dag.BlockHeightByHash(&invVects[lastBlock].Hash)
-		if err == nil {
-			peer.UpdateLastBlockHeight(blkHeight)
-		}
+		// TODO: (Ori netsync) If it's chain block and it's higher than
+		// previous known chain block, update last known chain block.
 	}
 
 	// Request the advertised inventory if we don't already have it.  Also,

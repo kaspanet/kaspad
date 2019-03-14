@@ -32,7 +32,7 @@ func TestVirtualBlock(t *testing.T) {
 	// Set its tips to tipsToSet
 	// Add to it all the tips in tipsToAdd, one after the other
 	// Call .Tips() on it and compare the result to expectedTips
-	// Call .SelectedTip() on it and compare the result to expectedSelectedParent
+	// Call .selectedTip() on it and compare the result to expectedSelectedParent
 	tests := []struct {
 		name                   string
 		tipsToSet              []*blockNode
