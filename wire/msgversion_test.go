@@ -13,6 +13,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/util/random"
 	"github.com/daglabs/btcd/util/subnetworkid"
 	"github.com/davecgh/go-spew/spew"
@@ -23,7 +24,7 @@ func TestVersion(t *testing.T) {
 	pver := ProtocolVersion
 
 	// Create version message data.
-	lastBlock := int32(234234)
+	selectedTip := &daghash.Hash{12, 34}
 	tcpAddrMe := &net.TCPAddr{IP: net.ParseIP("127.0.0.1"), Port: 8333}
 	me := NewNetAddress(tcpAddrMe, SFNodeNetwork)
 	tcpAddrYou := &net.TCPAddr{IP: net.ParseIP("192.168.0.1"), Port: 8333}
@@ -34,7 +35,7 @@ func TestVersion(t *testing.T) {
 	}
 
 	// Ensure we get the correct data back out.
-	msg := NewMsgVersion(me, you, nonce, lastBlock, subnetworkid.SubnetworkIDSupportsAll)
+	msg := NewMsgVersion(me, you, nonce, selectedTip, subnetworkid.SubnetworkIDSupportsAll)
 	if msg.ProtocolVersion != int32(pver) {
 		t.Errorf("NewMsgVersion: wrong protocol version - got %v, want %v",
 			msg.ProtocolVersion, pver)
@@ -55,9 +56,9 @@ func TestVersion(t *testing.T) {
 		t.Errorf("NewMsgVersion: wrong user agent - got %v, want %v",
 			msg.UserAgent, DefaultUserAgent)
 	}
-	if msg.LastBlock != lastBlock {
-		t.Errorf("NewMsgVersion: wrong last block - got %v, want %v",
-			msg.LastBlock, lastBlock)
+	if !msg.SelectedTip.IsEqual(selectedTip) {
+		t.Errorf("NewMsgVersion: wrong selected tip - got %v, want %v",
+			msg.SelectedTip, selectedTip)
 	}
 	if msg.DisableRelayTx {
 		t.Errorf("NewMsgVersion: disable relay tx is not false by "+
@@ -347,7 +348,7 @@ func TestVersionOptionalFields(t *testing.T) {
 	// lastBlockVersion is a version message that contains all fields
 	// through the LastBlock field.
 	lastBlockVersion := uaVersion
-	lastBlockVersion.LastBlock = 234234 // 0x392fa
+	lastBlockVersion.SelectedTip = &daghash.Hash{12, 34}
 	lastBlockVersionEncoded := make([]byte, len(baseVersionEncoded))
 	copy(lastBlockVersionEncoded, baseVersionEncoded)
 
@@ -417,9 +418,9 @@ var baseVersion = &MsgVersion{
 		IP:        net.ParseIP("127.0.0.1"),
 		Port:      8333,
 	},
-	Nonce:     123123, // 0x1e0f3
-	UserAgent: "/btcdtest:0.0.1/",
-	LastBlock: 234234, // 0x392fa
+	Nonce:       123123, // 0x1e0f3
+	UserAgent:   "/btcdtest:0.0.1/",
+	SelectedTip: &daghash.Hash{12, 34},
 }
 
 // baseVersionEncoded is the wire encoded bytes for baseVersion using protocol
@@ -466,9 +467,9 @@ var baseVersionBIP0037 = &MsgVersion{
 		IP:        net.ParseIP("127.0.0.1"),
 		Port:      8333,
 	},
-	Nonce:     123123, // 0x1e0f3
-	UserAgent: "/btcdtest:0.0.1/",
-	LastBlock: 234234, // 0x392fa
+	Nonce:       123123, // 0x1e0f3
+	UserAgent:   "/btcdtest:0.0.1/",
+	SelectedTip: &daghash.Hash{12, 34},
 }
 
 // baseVersionBIP0037Encoded is the wire encoded bytes for baseVersionBIP0037

@@ -101,7 +101,6 @@ type peerStats struct {
 	wantConnected       bool
 	wantVersionKnown    bool
 	wantVerAckReceived  bool
-	wantLastBlock       int32
 	wantStartingHeight  int32
 	wantLastPingTime    time.Time
 	wantLastPingNonce   uint64
@@ -153,11 +152,6 @@ func testPeer(t *testing.T, p *peer.Peer, s peerStats) {
 		return
 	}
 
-	if p.LastBlock() != s.wantLastBlock {
-		t.Errorf("testPeer: wrong LastBlock - got %v, want %v", p.LastBlock(), s.wantLastBlock)
-		return
-	}
-
 	// Allow for a deviation of 1s, as the second may tick when the message is
 	// in transit and the protocol doesn't support any further precision.
 	if p.TimeOffset() != s.wantTimeOffset && p.TimeOffset() != s.wantTimeOffset-1 {
@@ -173,11 +167,6 @@ func testPeer(t *testing.T, p *peer.Peer, s peerStats) {
 
 	if p.BytesReceived() != s.wantBytesReceived {
 		t.Errorf("testPeer: wrong BytesReceived - got %v, want %v", p.BytesReceived(), s.wantBytesReceived)
-		return
-	}
-
-	if p.StartingHeight() != s.wantStartingHeight {
-		t.Errorf("testPeer: wrong StartingHeight - got %v, want %v", p.StartingHeight(), s.wantStartingHeight)
 		return
 	}
 
@@ -603,10 +592,10 @@ func TestPeerListeners(t *testing.T) {
 
 // TestOutboundPeer tests that the outbound peer works as expected.
 func TestOutboundPeer(t *testing.T) {
-
+	// TODO: (Ori netsync) fix this test
 	peerCfg := &peer.Config{
-		NewestBlock: func() (*daghash.Hash, int32, error) {
-			return nil, 0, errors.New("newest block not found")
+		SelectedTip: func() *daghash.Hash {
+			return &daghash.ZeroHash
 		},
 		UserAgentName:     "peer",
 		UserAgentVersion:  "1.0",
@@ -663,16 +652,16 @@ func TestOutboundPeer(t *testing.T) {
 	p.Disconnect()
 
 	// Test NewestBlock
-	var newestBlock = func() (*daghash.Hash, int32, error) {
+	var selectedTip = func() *daghash.Hash {
 		hashStr := "14a0810ac680a3eb3f82edc878cea25ec41d6b790744e5daeef"
 		hash, err := daghash.NewHashFromStr(hashStr)
 		if err != nil {
-			return nil, 0, err
+			t.Fatalf("daghash.NewHashFromStr: %s", err)
 		}
-		return hash, 234439, nil
+		return hash
 	}
 
-	peerCfg.NewestBlock = newestBlock
+	peerCfg.SelectedTip = selectedTip
 	r1, w1 := io.Pipe()
 	c1 := &conn{raddr: "10.0.0.1:8333", Writer: w1, Reader: r1}
 	p1, err := peer.NewOutboundPeer(peerCfg, "10.0.0.1:8333")
@@ -689,7 +678,7 @@ func TestOutboundPeer(t *testing.T) {
 		return
 	}
 	p1.UpdateLastAnnouncedBlock(latestBlockHash)
-	p1.UpdateLastBlockHeight(234440)
+	// TODO: (Ori netsync) Update last known chain block
 	if p1.LastAnnouncedBlock() != latestBlockHash {
 		t.Errorf("LastAnnouncedBlock: wrong block - got %v, want %v",
 			p1.LastAnnouncedBlock(), latestBlockHash)
@@ -811,7 +800,7 @@ func TestUnsupportedVersionPeer(t *testing.T) {
 	}
 
 	// Remote peer writes version message advertising invalid protocol version 0
-	invalidVersionMsg := wire.NewMsgVersion(remoteNA, localNA, 0, 0, subnetworkid.SubnetworkIDSupportsAll)
+	invalidVersionMsg := wire.NewMsgVersion(remoteNA, localNA, 0, &daghash.ZeroHash, subnetworkid.SubnetworkIDSupportsAll)
 	invalidVersionMsg.ProtocolVersion = 0
 
 	_, err = wire.WriteMessageN(
