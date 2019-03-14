@@ -57,7 +57,7 @@ func TestVersion(t *testing.T) {
 			msg.UserAgent, DefaultUserAgent)
 	}
 	if !msg.SelectedTip.IsEqual(selectedTip) {
-		t.Errorf("NewMsgVersion: wrong selected tip - got %v, want %v",
+		t.Errorf("NewMsgVersion: wrong selected tip - got %s, want %s",
 			msg.SelectedTip, selectedTip)
 	}
 	if msg.DisableRelayTx {

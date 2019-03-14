@@ -101,7 +101,6 @@ type peerStats struct {
 	wantConnected       bool
 	wantVersionKnown    bool
 	wantVerAckReceived  bool
-	wantStartingHeight  int32
 	wantLastPingTime    time.Time
 	wantLastPingNonce   uint64
 	wantLastPingMicros  int64
