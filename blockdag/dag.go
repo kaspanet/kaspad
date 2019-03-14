@@ -765,6 +765,34 @@ func (dag *BlockDAG) meldVirtualUTXO(newVirtualUTXODiffSet *DiffUTXOSet) {
 	newVirtualUTXODiffSet.meldToBase()
 }
 
+func (node *blockNode) diffFromTxs(pastUTXO UTXOSet, transactions []*util.Tx) (*UTXODiff, error) {
+	diff := NewUTXODiff()
+
+	for _, tx := range transactions {
+		txDiff, err := pastUTXO.diffFromTx(tx.MsgTx(), node)
+		if err != nil {
+			return nil, err
+		}
+		diff, err = diff.WithDiff(txDiff)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return diff, nil
+}
+
+func (node *blockNode) addTxsToAcceptanceData(txsAcceptanceData MultiblockTxsAcceptanceData, transactions []*util.Tx) {
+	blockTxsAcceptanceData := BlockTxsAcceptanceData{}
+	for _, tx := range transactions {
+		blockTxsAcceptanceData = append(blockTxsAcceptanceData, TxAcceptanceData{
+			Tx:         tx,
+			IsAccepted: true,
+		})
+	}
+	txsAcceptanceData[node.hash] = blockTxsAcceptanceData
+}
+
 // verifyAndBuildUTXO verifies all transactions in the given block and builds its UTXO
 func (node *blockNode) verifyAndBuildUTXO(virtual *virtualBlock, dag *BlockDAG, transactions []*util.Tx, fastAdd bool) (
 	newBlockUTXO UTXOSet, bluesTxsAcceptanceData MultiblockTxsAcceptanceData, newBlockFeeData compactFeeData, err error) {
@@ -774,31 +802,14 @@ func (node *blockNode) verifyAndBuildUTXO(virtual *virtualBlock, dag *BlockDAG, 
 		return nil, nil, nil, err
 	}
 
-	var feeData compactFeeData
-	feeData, err = dag.checkConnectToPastUTXO(node, pastUTXO, transactions, fastAdd)
+	feeData, err := dag.checkConnectToPastUTXO(node, pastUTXO, transactions, fastAdd)
 	if err != nil {
 		return nil, nil, nil, err
 	}
 
-	diff := NewUTXODiff()
+	diff, err := node.diffFromTxs(pastUTXO, transactions)
 
-	blockTxsAcceptanceData := BlockTxsAcceptanceData{}
-	for _, tx := range transactions {
-		txDiff, err := pastUTXO.diffFromTx(tx.MsgTx(), node)
-		if err != nil {
-			return nil, nil, nil, err
-		}
-		diff, err = diff.WithDiff(txDiff)
-		if err != nil {
-			return nil, nil, nil, err
-		}
-		blockTxsAcceptanceData = append(blockTxsAcceptanceData, TxAcceptanceData{
-			Tx:         tx,
-			IsAccepted: true,
-		})
-
-	}
-	txsAcceptanceData[node.hash] = blockTxsAcceptanceData
+	node.addTxsToAcceptanceData(txsAcceptanceData, transactions)
 
 	utxo, err := pastUTXO.WithDiff(diff)
 	if err != nil {
