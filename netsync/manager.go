@@ -472,7 +472,7 @@ func (sm *SyncManager) current() bool {
 
 	// No matter what dag thinks, if we are below the block we are syncing
 	// to we are not current.
-	if sm.syncPeer.IsSyncCandidate() { //TODO: (Ori) This is probably wrong. Done only for compilation
+	if sm.syncPeer.IsSyncCandidate() {
 		return false
 	}
 	return true
