@@ -173,3 +173,11 @@ func (bs blockSet) bluest() *blockNode {
 	}
 	return bluestNode
 }
+
+func (bs blockSet) toSlice() []*blockNode {
+	nodes := make([]*blockNode, 0, len(bs))
+	for _, node := range bs {
+		nodes = append(nodes, node)
+	}
+	return nodes
+}
