@@ -1319,24 +1319,16 @@ func (dag *BlockDAG) locateInventory(locator BlockLocator, hashStop *daghash.Has
 		}
 	}
 
-	// Start at the block after the most recently known block.  When there
-	// is no next block it means the most recently known block is the tip of
-	// the best chain, so there is nothing more to do.
-	startNode = startNode.diffChild
-	if startNode == nil {
-		return nil, 0
-	}
-
-	// Calculate how many entries are needed.
-	total := uint32((dag.selectedTip().height - startNode.height) + 1)
+	// Estimate how many entries are needed.
+	estimatedEntries := uint32((dag.selectedTip().height - startNode.height) + 1)
 	if stopNode != nil && stopNode.height >= startNode.height {
-		total = uint32((stopNode.height - startNode.height) + 1)
+		estimatedEntries = uint32((stopNode.height-startNode.height)+1) * (dag.dagParams.K + 1)
 	}
-	if total > maxEntries {
-		total = maxEntries
+	if estimatedEntries > maxEntries {
+		estimatedEntries = maxEntries
 	}
 
-	return startNode, total
+	return startNode, estimatedEntries
 }
 
 // locateBlocks returns the hashes of the blocks after the first known block in
@@ -1392,19 +1384,31 @@ func (dag *BlockDAG) LocateBlocks(locator BlockLocator, hashStop *daghash.Hash, 
 //
 // This function MUST be called with the chain state lock held (for reads).
 func (dag *BlockDAG) locateHeaders(locator BlockLocator, hashStop *daghash.Hash, maxHeaders uint32) []*wire.BlockHeader {
-	// Find the node after the first known block in the locator and the
-	// total number of nodes after it needed while respecting the stop hash
+	// Find the first known block in the locator and the
+	// estimated number of nodes after it needed while respecting the stop hash
 	// and max entries.
-	node, total := dag.locateInventory(locator, hashStop, maxHeaders)
-	if total == 0 {
+	node, estimatedEntries := dag.locateInventory(locator, hashStop, maxHeaders)
+	if estimatedEntries == 0 {
 		return nil
 	}
+	stopNode := dag.index.LookupNode(hashStop)
 
 	// Populate and return the found headers.
-	headers := make([]*wire.BlockHeader, 0, total)
-	for i := uint32(0); i < total; i++ {
-		headers = append(headers, node.Header())
-		node = node.diffChild
+	headers := make([]*wire.BlockHeader, 0, estimatedEntries)
+	queue := node.children.toSlice()
+	visited := newSet()
+	for i := uint32(0); len(queue) > 0 && i < maxHeaders; i++ {
+		var current *blockNode
+		current, queue = queue[0], queue[1:]
+		if !visited.contains(current) {
+			isBeforeStop := (stopNode == nil) || (current.height < stopNode.height)
+			if isBeforeStop || current.hash.IsEqual(hashStop) {
+				headers = append(headers, current.Header())
+			}
+			if isBeforeStop {
+				queue = append(queue, current.children.toSlice()...)
+			}
+		}
 	}
 	return headers
 }
