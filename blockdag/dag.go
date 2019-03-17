@@ -524,13 +524,29 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block, fastAdd bo
 		return err
 	}
 
-	// Add the node to the virtual and update the UTXO set of the DAG.
-	utxoDiff, txsAcceptanceData, newBlockFeeData, err := dag.applyUTXOChanges(node, block, fastAdd)
+	newBlockUTXO, txsAcceptanceData, newBlockFeeData, err := node.verifyAndBuildUTXO(dag, block.Transactions(), fastAdd)
+	if err != nil {
+		newErrString := fmt.Sprintf("error verifying UTXO for %s: %s", node, err)
+		if err, ok := err.(RuleError); ok {
+			return ruleError(err.ErrorCode, newErrString)
+		}
+		return errors.New(newErrString)
+	}
+
+	err = node.validateFeeTransaction(dag, block, txsAcceptanceData)
 	if err != nil {
 		return err
 	}
 
-	dag.lastFinalityPoint = dag.newFinalityPoint(node)
+	// Apply all changes to the DAG.
+	virtualUTXODiff, err := dag.applyDAGChanges(node, block, newBlockUTXO, fastAdd)
+	if err != nil {
+		// Since all validation logic has already ran, if applyDAGChanges errors out,
+		// this means we have a problem in the internal structure of the DAG - a problem which is
+		// irrecoverable, and it would be a bad idea to attempt adding any more blocks to the DAG.
+		// Therefore - in such cases we panic.
+		panic(err)
+	}
 
 	// Write any block status changes to DB before updating the DAG state.
 	err = dag.index.flushToDB()
@@ -538,7 +554,7 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block, fastAdd bo
 		return err
 	}
 
-	err = dag.saveChangesFromBlock(node, block, utxoDiff, txsAcceptanceData, newBlockFeeData)
+	err = dag.saveChangesFromBlock(node, block, virtualUTXODiff, txsAcceptanceData, newBlockFeeData)
 	if err != nil {
 		return err
 	}
@@ -546,7 +562,7 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block, fastAdd bo
 	return nil
 }
 
-func (dag *BlockDAG) saveChangesFromBlock(node *blockNode, block *util.Block, utxoDiff *UTXODiff,
+func (dag *BlockDAG) saveChangesFromBlock(node *blockNode, block *util.Block, virtualUTXODiff *UTXODiff,
 	txsAcceptanceData MultiblockTxsAcceptanceData, feeData compactFeeData) error {
 
 	// Atomically insert info into the database.
@@ -570,7 +586,7 @@ func (dag *BlockDAG) saveChangesFromBlock(node *blockNode, block *util.Block, ut
 
 		// Update the UTXO set using the diffSet that was melded into the
 		// full UTXO set.
-		err = dbPutUTXODiff(dbTx, utxoDiff)
+		err = dbPutUTXODiff(dbTx, virtualUTXODiff)
 		if err != nil {
 			return err
 		}
@@ -683,67 +699,51 @@ func (dag *BlockDAG) newFinalityPoint(newNode *blockNode) *blockNode {
 
 // NextBlockFeeTransaction prepares the fee transaction for the next mined block
 func (dag *BlockDAG) NextBlockFeeTransaction() (*wire.MsgTx, error) {
-	_, txsAcceptanceData, _, err := dag.virtual.blockNode.verifyAndBuildUTXO(dag.virtual, dag, nil, true)
+	_, txsAcceptanceData, _, err := dag.virtual.blockNode.verifyAndBuildUTXO(dag, nil, true)
 	if err != nil {
 		return nil, err
 	}
 	return dag.virtual.blockNode.buildFeeTransaction(dag, txsAcceptanceData)
 }
 
-// applyUTXOChanges does the following:
-// 1. Verifies that each transaction within the new block could spend an existing UTXO.
-// 2. Connects each of the new block's parents to the block.
-// 3. Adds the new block to the DAG's tips.
-// 4. Updates the DAG's full UTXO set.
-// 5. Updates each of the tips' utxoDiff.
+// applyDAGChanges does the following:
+// 1. Connects each of the new block's parents to the block.
+// 2. Adds the new block to the DAG's tips.
+// 3. Updates the DAG's full UTXO set.
+// 4. Updates each of the tips' utxoDiff.
+// 5. Update the finality point of the DAG (if required).
+//
+// It returns the diff in the virtual block's UTXO set.
 //
 // This function MUST be called with the chain state lock held (for writes).
-func (dag *BlockDAG) applyUTXOChanges(node *blockNode, block *util.Block, fastAdd bool) (
-	utxoDiff *UTXODiff, txsAcceptanceData MultiblockTxsAcceptanceData, newBlockFeeData compactFeeData, err error) {
+func (dag *BlockDAG) applyDAGChanges(node *blockNode, block *util.Block, newBlockUTXO UTXOSet, fastAdd bool) (
+	virtualUTXODiff *UTXODiff, err error) {
+
 	// Clone the virtual block so that we don't modify the existing one.
 	virtualClone := dag.virtual.clone()
 
-	newBlockUTXO, txsAcceptanceData, newBlockFeeData, err := node.verifyAndBuildUTXO(virtualClone, dag, block.Transactions(), fastAdd)
-	if err != nil {
-		newErrString := fmt.Sprintf("error verifying UTXO for %s: %s", node, err)
-		if err, ok := err.(RuleError); ok {
-			return nil, nil, nil, ruleError(err.ErrorCode, newErrString)
-		}
-		return nil, nil, nil, errors.New(newErrString)
-	}
-
-	err = node.validateFeeTransaction(dag, block, txsAcceptanceData)
-	if err != nil {
-		return nil, nil, nil, err
-	}
-
-	// since verifyAndBuildUTXO ran, we know for sure that block is valid -
-	// therefore, if an error occured - this means there's some problem in the
-	// internal structure of block nodes, and it's irrecoverable - therefore
-	// panic
-
 	if err = node.updateParents(virtualClone, newBlockUTXO); err != nil {
-		panic(fmt.Errorf("failed updating parents of %s: %s", node, err))
+		return nil, fmt.Errorf("failed updating parents of %s: %s", node, err)
 	}
 
 	// Update the virtual block's children (the DAG tips) to include the new block.
 	virtualClone.AddTip(node)
 
-	// Build a UTXO set for the new virtual block and update the DAG tips' diffs.
+	// Build a UTXO set for the new virtual block
 	newVirtualUTXO, _, err := virtualClone.blockNode.pastUTXO(virtualClone, dag.db)
 	if err != nil {
-		panic(fmt.Sprintf("could not restore past UTXO for virtual %s: %s", virtualClone, err))
+		return nil, fmt.Errorf("could not restore past UTXO for virtual %s: %s", virtualClone, err)
 	}
 
 	// Apply new utxoDiffs to all the tips
 	err = updateTipsUTXO(virtualClone.parents, virtualClone, newVirtualUTXO)
 	if err != nil {
-		panic(fmt.Sprintf("failed updating the tips' UTXO: %s", err))
+		return nil, fmt.Errorf("failed updating the tips' UTXO: %s", err)
 	}
 
 	// It is now safe to meld the UTXO set to base.
 	diffSet := newVirtualUTXO.(*DiffUTXOSet)
-	utxoDiff = diffSet.UTXODiff
+	virtualUTXODiff = diffSet.UTXODiff
 	dag.meldVirtualUTXO(diffSet)
 
 	// Set the status to valid for all index nodes to make sure the changes get
@@ -756,7 +756,10 @@ func (dag *BlockDAG) applyUTXOChanges(node *blockNode, block *util.Block, fastAd
 	// It is now safe to apply the new virtual block
 	dag.virtual = virtualClone
 
-	return utxoDiff, txsAcceptanceData, newBlockFeeData, nil
+	// And now we can update the finality point of the DAG (if required)
+	dag.lastFinalityPoint = dag.newFinalityPoint(node)
+
+	return virtualUTXODiff, nil
 }
 
 func (dag *BlockDAG) meldVirtualUTXO(newVirtualUTXODiffSet *DiffUTXOSet) {
@@ -794,10 +797,10 @@ func (node *blockNode) addTxsToAcceptanceData(txsAcceptanceData MultiblockTxsAcc
 }
 
 // verifyAndBuildUTXO verifies all transactions in the given block and builds its UTXO
-func (node *blockNode) verifyAndBuildUTXO(virtual *virtualBlock, dag *BlockDAG, transactions []*util.Tx, fastAdd bool) (
+func (node *blockNode) verifyAndBuildUTXO(dag *BlockDAG, transactions []*util.Tx, fastAdd bool) (
 	newBlockUTXO UTXOSet, bluesTxsAcceptanceData MultiblockTxsAcceptanceData, newBlockFeeData compactFeeData, err error) {
 
-	pastUTXO, txsAcceptanceData, err := node.pastUTXO(virtual, dag.db)
+	pastUTXO, txsAcceptanceData, err := node.pastUTXO(dag.virtual, dag.db)
 	if err != nil {
 		return nil, nil, nil, err
 	}
