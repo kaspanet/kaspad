@@ -460,22 +460,7 @@ func (sm *SyncManager) handleTxMsg(tmsg *txMsg) {
 // current returns true if we believe we are synced with our peers, false if we
 // still have blocks to check
 func (sm *SyncManager) current() bool {
-	if !sm.dag.IsCurrent() {
-		return false
-	}
-
-	// if dag thinks we are current and we have no syncPeer it
-	// is probably right.
-	if sm.syncPeer == nil {
-		return true
-	}
-
-	// No matter what dag thinks, if we are below the block we are syncing
-	// to we are not current.
-	if sm.syncPeer.IsSyncCandidate() {
-		return false
-	}
-	return true
+	return sm.dag.IsCurrent()
 }
 
 // handleBlockMsg handles block messages from all peers.
