@@ -15,7 +15,6 @@ import (
 
 	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/util/subnetworkid"
-	"github.com/daglabs/btcd/wire"
 	"github.com/davecgh/go-spew/spew"
 )
 
@@ -765,7 +764,7 @@ func TestTxSerializeSize(t *testing.T) {
 }
 
 func TestIsSubnetworkCompatible(t *testing.T) {
-	testTx := wire.NewMsgTx(1, nil, nil, subnetworkid.SubnetworkID{123}, 0, []byte{})
+	testTx := NewMsgTx(1, nil, nil, &subnetworkid.SubnetworkID{123}, 0, []byte{})
 	tests := []struct {
 		name           string
 		subnetworkID   *subnetworkid.SubnetworkID

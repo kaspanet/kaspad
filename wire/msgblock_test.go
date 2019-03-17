@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/daglabs/btcd/util/subnetworkid"
-	"github.com/daglabs/btcd/wire"
 
 	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/davecgh/go-spew/spew"
@@ -504,7 +503,7 @@ var blockOne = MsgBlock{
 		Nonce:          0x9962e301,               // 2573394689
 	},
 	Transactions: []*MsgTx{
-		wire.NewMsgTx(1,
+		NewMsgTx(1,
 			[]*TxIn{
 				{
 					PreviousOutPoint: OutPoint{

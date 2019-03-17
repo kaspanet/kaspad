@@ -15,7 +15,6 @@ import (
 	"testing"
 
 	"github.com/daglabs/btcd/dagconfig/daghash"
-	"github.com/daglabs/btcd/wire"
 )
 
 // genesisCoinbaseTx is the coinbase transaction for the genesis blocks for
@@ -57,7 +56,7 @@ var genesisCoinbaseTxOuts = []*TxOut{
 		},
 	},
 }
-var genesisCoinbaseTx = wire.NewMsgTx(1, genesisCoinbaseTxIns, genesisCoinbaseTxOuts, nil, 0, nil)
+var genesisCoinbaseTx = NewMsgTx(1, genesisCoinbaseTxIns, genesisCoinbaseTxOuts, nil, 0, nil)
 
 // BenchmarkWriteVarInt1 performs a benchmark on how long it takes to write
 // a single byte variable length integer.
