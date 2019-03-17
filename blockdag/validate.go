@@ -754,7 +754,7 @@ func (dag *BlockDAG) validateDifficulty(header *wire.BlockHeader, bluestParent *
 // validateParents validates that no parent is an ancestor of another parent
 func validateParents(blockHeader *wire.BlockHeader, parents blockSet) error {
 	minHeight := int32(math.MaxInt32)
-	queue := NewHeap(HeapDirectionDown)
+	queue := NewDownHeap()
 	visited := newSet()
 	for _, parent := range parents {
 		if parent.height < minHeight {

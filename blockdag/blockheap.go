@@ -51,23 +51,16 @@ type BlockHeap struct {
 	impl heap.Interface
 }
 
-// HeapDirection represents the direction the heap traverses it's children
-type HeapDirection bool
+// NewDownHeap initializes and returns a new BlockHeap
+func NewDownHeap() BlockHeap {
+	h := BlockHeap{impl: &downHeap{}}
+	heap.Init(h.impl)
+	return h
+}
 
-// HeapDirection possible values
-const (
-	HeapDirectionUp   HeapDirection = true
-	HeapDirectionDown HeapDirection = false
-)
-
-// NewHeap initializes and returns a new BlockHeap
-func NewHeap(direction HeapDirection) BlockHeap {
-	var h BlockHeap
-	if direction == HeapDirectionUp {
-		h = BlockHeap{impl: &upHeap{}}
-	} else {
-		h = BlockHeap{impl: &downHeap{}}
-	}
+// NewUpHeap initializes and returns a new BlockHeap
+func NewUpHeap() BlockHeap {
+	h := BlockHeap{impl: &upHeap{}}
 	heap.Init(h.impl)
 	return h
 }

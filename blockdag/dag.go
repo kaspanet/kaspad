@@ -1395,7 +1395,7 @@ func (dag *BlockDAG) locateHeaders(locator BlockLocator, hashStop *daghash.Hash,
 
 	// Populate and return the found headers.
 	headers := make([]*wire.BlockHeader, 0, estimatedEntries)
-	queue := NewHeap(HeapDirectionUp)
+	queue := NewUpHeap()
 	queue.pushMany(node.children.toSlice())
 
 	visited := newSet()

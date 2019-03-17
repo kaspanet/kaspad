@@ -19,87 +19,102 @@ func TestBlockHeap(t *testing.T) {
 	block0smallHash.hash = daghash.Hash{}
 
 	tests := []struct {
-		name           string
-		toPush         []*blockNode
-		expectedLength int
-		expectedPop    *blockNode
-		direction      HeapDirection
+		name            string
+		toPush          []*blockNode
+		expectedLength  int
+		expectedPopUp   *blockNode
+		expectedPopDown *blockNode
 	}{
 		{
-			name:           "empty heap must have length 0",
-			toPush:         []*blockNode{},
-			expectedLength: 0,
-			expectedPop:    nil,
-			direction:      HeapDirectionDown,
+			name:            "empty heap must have length 0",
+			toPush:          []*blockNode{},
+			expectedLength:  0,
+			expectedPopDown: nil,
+			expectedPopUp:   nil,
 		},
 		{
-			name:           "heap with one push must have length 1",
-			toPush:         []*blockNode{block0},
-			expectedLength: 1,
-			expectedPop:    nil,
-			direction:      HeapDirectionDown,
+			name:            "heap with one push must have length 1",
+			toPush:          []*blockNode{block0},
+			expectedLength:  1,
+			expectedPopDown: nil,
+			expectedPopUp:   nil,
 		},
 		{
-			name:           "heap with one push and one pop",
-			toPush:         []*blockNode{block0},
-			expectedLength: 0,
-			expectedPop:    block0,
-			direction:      HeapDirectionDown,
+			name:            "heap with one push and one pop",
+			toPush:          []*blockNode{block0},
+			expectedLength:  0,
+			expectedPopDown: block0,
+			expectedPopUp:   block0,
 		},
 		{
-			name:           "push two blocks with different heights, heap shouldn't have to rebalance",
-			toPush:         []*blockNode{block100000, block0},
-			expectedLength: 1,
-			expectedPop:    block100000,
-			direction:      HeapDirectionDown,
+			name: "push two blocks with different heights, heap shouldn't have to rebalance " +
+				"for down direction, but will have to rebalance for up direction",
+			toPush:          []*blockNode{block100000, block0},
+			expectedLength:  1,
+			expectedPopDown: block100000,
+			expectedPopUp:   block0,
 		},
 		{
-			name:           "push two blocks with different heights at HeapDirectionUp, heap shouldn't have to rebalance",
-			toPush:         []*blockNode{block100000, block0},
-			expectedLength: 1,
-			expectedPop:    block0,
-			direction:      HeapDirectionUp,
+			name: "push two blocks with different heights, heap shouldn't have to rebalance " +
+				"for up direction, but will have to rebalance for down direction",
+			toPush:          []*blockNode{block0, block100000},
+			expectedLength:  1,
+			expectedPopDown: block100000,
+			expectedPopUp:   block0,
 		},
 		{
-			name:           "push two blocks with different heights, heap must rebalance",
-			toPush:         []*blockNode{block0, block100000},
-			expectedLength: 1,
-			expectedPop:    block100000,
-			direction:      HeapDirectionDown,
+			name: "push two blocks with equal heights but different hashes, heap shouldn't have to rebalance " +
+				"for down direction, but will have to rebalance for up direction",
+			toPush:          []*blockNode{block0, block0smallHash},
+			expectedLength:  1,
+			expectedPopDown: block0,
+			expectedPopUp:   block0smallHash,
 		},
 		{
-			name:           "push two blocks with equal heights but different hashes, heap shouldn't have to rebalance",
-			toPush:         []*blockNode{block0, block0smallHash},
-			expectedLength: 1,
-			expectedPop:    block0,
-			direction:      HeapDirectionDown,
-		},
-		{
-			name:           "push two blocks with equal heights but different hashes, heap must rebalance",
-			toPush:         []*blockNode{block0smallHash, block0},
-			expectedLength: 1,
-			expectedPop:    block0,
-			direction:      HeapDirectionDown,
+			name: "push two blocks with equal heights but different hashes, heap shouldn't have to rebalance " +
+				"for up direction, but will have to rebalance for down direction",
+			toPush:          []*blockNode{block0smallHash, block0},
+			expectedLength:  1,
+			expectedPopDown: block0,
+			expectedPopUp:   block0smallHash,
 		},
 	}
 
 	for _, test := range tests {
-		heap := NewHeap(test.direction)
+		dHeap := NewDownHeap()
 		for _, block := range test.toPush {
-			heap.Push(block)
+			dHeap.Push(block)
 		}
 
 		var poppedBlock *blockNode
-		if test.expectedPop != nil {
-			poppedBlock = heap.pop()
+		if test.expectedPopDown != nil {
+			poppedBlock = dHeap.pop()
 		}
-		if heap.Len() != test.expectedLength {
-			t.Errorf("unexpected heap length in test \"%s\". "+
-				"Expected: %v, got: %v", test.name, test.expectedLength, heap.Len())
+		if dHeap.Len() != test.expectedLength {
+			t.Errorf("unexpected down heap length in test \"%s\". "+
+				"Expected: %v, got: %v", test.name, test.expectedLength, dHeap.Len())
 		}
-		if poppedBlock != test.expectedPop {
-			t.Errorf("unexpected popped block in test \"%s\". "+
-				"Expected: %v, got: %v", test.name, test.expectedPop, poppedBlock)
+		if poppedBlock != test.expectedPopDown {
+			t.Errorf("unexpected popped block for down heap in test \"%s\". "+
+				"Expected: %v, got: %v", test.name, test.expectedPopDown, poppedBlock)
+		}
+
+		uHeap := NewUpHeap()
+		for _, block := range test.toPush {
+			uHeap.Push(block)
+		}
+
+		poppedBlock = nil
+		if test.expectedPopUp != nil {
+			poppedBlock = uHeap.pop()
+		}
+		if uHeap.Len() != test.expectedLength {
+			t.Errorf("unexpected up heap length in test \"%s\". "+
+				"Expected: %v, got: %v", test.name, test.expectedLength, uHeap.Len())
+		}
+		if poppedBlock != test.expectedPopUp {
+			t.Errorf("unexpected popped block for up heap in test \"%s\". "+
+				"Expected: %v, got: %v", test.name, test.expectedPopDown, poppedBlock)
 		}
 	}
 }
