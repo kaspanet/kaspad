@@ -391,7 +391,7 @@ func (s *blockStore) writeData(data []byte, fieldName string) error {
 			"offset %d: %s", fieldName, wc.curFileNum,
 			wc.curOffset-uint32(n), err)
 		if pathErr, isOk := err.(*os.PathError); isOk && pathErr.Err == syscall.ENOSPC {
-			log.Errorf("%s. Exiting...", str)
+			log.Errorf("No space left on the hard disk, exiting...")
 			os.Exit(1)
 		}
 		return makeDbErr(database.ErrDriverSpecific, str, err)
