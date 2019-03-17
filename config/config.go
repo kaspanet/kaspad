@@ -764,7 +764,7 @@ func loadConfig() (*Config, []string, error) {
 	}
 
 	// Check that 'generate' and 'subnetwork' flags do not conflict
-	if cfg.Generate && cfg.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDSupportsAll) {
+	if cfg.Generate && !cfg.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDSupportsAll) {
 		str := "%s: both generate flag and subnetwork filtering are set "
 		err := fmt.Errorf(str, funcName)
 		fmt.Fprintln(os.Stderr, err)

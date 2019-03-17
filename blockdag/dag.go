@@ -402,7 +402,7 @@ func (dag *BlockDAG) calcSequenceLock(node *blockNode, utxoSet UTXOSet, tx *util
 			if prevInputHeight < 0 {
 				prevInputHeight = 0
 			}
-			blockNode := node.Ancestor(prevInputHeight)
+			blockNode := node.SelectedAncestor(prevInputHeight)
 			medianTime := blockNode.PastMedianTime()
 
 			// Time based relative time-locks as defined by BIP 68
@@ -1162,15 +1162,10 @@ func (dag *BlockDAG) blockLocator(node *blockNode) BlockLocator {
 	// Calculate the max number of entries that will ultimately be in the
 	// block locator.  See the description of the algorithm for how these
 	// numbers are derived.
-	var maxEntries uint8
-	if node.height <= 12 {
-		maxEntries = uint8(node.height) + 1
-	} else {
-		// Requested hash itself + previous 10 entries + genesis block.
-		// Then floor(log2(height-10)) entries for the skip portion.
-		adjustedHeight := uint32(node.height) - 10
-		maxEntries = 12 + util.FastLog2Floor(adjustedHeight)
-	}
+
+	// Requested hash itself + genesis block.
+	// Then floor(log2(height-10)) entries for the skip portion.
+	maxEntries := 2 + util.FastLog2Floor(uint32(node.height))
 	locator := make(BlockLocator, 0, maxEntries)
 
 	step := int32(1)
@@ -1190,13 +1185,10 @@ func (dag *BlockDAG) blockLocator(node *blockNode) BlockLocator {
 		}
 
 		// walk backwards through the nodes to the correct ancestor.
-		node = node.Ancestor(height)
+		node = node.SelectedAncestor(height)
 
-		// Once 11 entries have been included, start doubling the
-		// distance between included hashes.
-		if len(locator) > 10 {
-			step *= 2
-		}
+		// Double the distance between included hashes.
+		step *= 2
 	}
 
 	return locator
@@ -1298,7 +1290,7 @@ func (dag *BlockDAG) IntervalBlockHashes(endHash *daghash.Hash, interval int,
 	blockNode := endNode
 	for index := int(endHeight) / interval; index > 0; index-- {
 		blockHeight := int32(index * interval)
-		blockNode = blockNode.Ancestor(blockHeight)
+		blockNode = blockNode.SelectedAncestor(blockHeight)
 
 		hashes[index-1] = blockNode.hash
 	}
