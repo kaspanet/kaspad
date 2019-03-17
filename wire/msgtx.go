@@ -332,8 +332,8 @@ func (msg *MsgTx) TxHash() *daghash.Hash {
 	// Ignore the error returns since the only way the encode could fail
 	// is being out of memory or due to nil pointers, both of which would
 	// cause a run-time panic.
-	buf := bytes.NewBuffer(make([]byte, 0, msg.SerializeSize()))
-	_ = msg.Serialize(buf)
+	buf := bytes.NewBuffer(make([]byte, 0, msg.serializeSize(txEncodingExcludeSubNetworkData)))
+	_ = msg.serialize(buf, txEncodingExcludeSubNetworkData)
 
 	hash := daghash.Hash(daghash.DoubleHashH(buf.Bytes()))
 	return &hash
