@@ -848,11 +848,16 @@ func (msg *MsgTx) IsSubnetworkCompatible(subnetworkID *subnetworkid.SubnetworkID
 		subnetworkID.IsEqual(&msg.SubnetworkID)
 }
 
-// NewMsgTx returns a new bitcoin tx message that conforms to the Message
-// interface.  The return instance has a default version of TxVersion and there
-// are no transaction inputs or outputs.  Also, the lock time is set to zero
-// to indicate the transaction is valid immediately as opposed to some time in
-// future.
+// NewMsgTx returns a new tx message that conforms to the Message interface.
+//
+// All fields except version and gas has default values if nil is passed:
+// txIn, txOut - empty arrays
+// subnetworkID - the native subnetwork
+// payload - an empty payload
+//
+// The payload hash is calculated automatically according to provided payload.
+// Also, the lock time is set to zero to indicate the transaction is valid
+// immediately as opposed to some time in future.
 func NewMsgTx(version int32, txIn []*TxIn, txOut []*TxOut, subnetworkID *subnetworkid.SubnetworkID, gas uint64, payload []byte) *MsgTx {
 	if txIn == nil {
 		txIn = make([]*TxIn, 0, defaultTxInOutAlloc)
@@ -882,10 +887,11 @@ func NewMsgTx(version int32, txIn []*TxIn, txOut []*TxOut, subnetworkID *subnetw
 	}
 }
 
-func newRegistryMsgTx(version int32, gasLimit uint64) *MsgTx {
+// NewRegistryMsgTx creates a new MsgTx that registers a new subnetwork
+func NewRegistryMsgTx(version int32, txIn []*TxIn, txOut []*TxOut, gasLimit uint64) *MsgTx {
 	payload := make([]byte, 8)
 	binary.LittleEndian.PutUint64(payload, gasLimit)
-	tx := NewMsgTx(version, nil, nil, subnetworkid.SubnetworkIDRegistry, 0, payload)
+	tx := NewMsgTx(version, txIn, txOut, subnetworkid.SubnetworkIDRegistry, 0, payload)
 	return tx
 }
 

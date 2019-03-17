@@ -1622,15 +1622,13 @@ func TestSignatureScript(t *testing.T) {
 
 nexttest:
 	for i := range sigScriptTests {
-		tx := wire.NewMsgTx(wire.TxVersion)
+		txOuts := []*wire.TxOut{wire.NewTxOut(500, []byte{OpReturn})}
 
-		output := wire.NewTxOut(500, []byte{OpReturn})
-		tx.AddTxOut(output)
-
+		txIns := []*wire.TxIn{}
 		for range sigScriptTests[i].inputs {
-			txin := wire.NewTxIn(coinbaseOutPoint, nil)
-			tx.AddTxIn(txin)
+			txIns = append(txIns, wire.NewTxIn(coinbaseOutPoint, nil))
 		}
+		tx := wire.NewMsgTx(wire.TxVersion, txIns, txOuts, nil, 0, nil)
 
 		var script []byte
 		var err error

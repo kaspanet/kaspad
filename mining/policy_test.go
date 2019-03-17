@@ -83,10 +83,7 @@ func createTransaction(value uint64, originTx *wire.MsgTx, originTxoutputIndex u
 		return privKey, true, nil
 	}
 
-	tx := wire.NewMsgTx(wire.TxVersion)
-
-	tx.AddTxIn(createTxIn(originTx, originTxoutputIndex))
-
+	txIn := createTxIn(originTx, originTxoutputIndex)
 	pkScript, err := txscript.PayToAddrScript(addr)
 	if err != nil {
 		fmt.Println(err)
@@ -94,7 +91,9 @@ func createTransaction(value uint64, originTx *wire.MsgTx, originTxoutputIndex u
 	}
 
 	txOut := wire.NewTxOut(value, pkScript)
-	tx.AddTxOut(txOut)
+
+	tx := wire.NewMsgTx(wire.TxVersion, []*wire.TxIn{txIn}, []*wire.TxOut{txOut}, nil, 0, nil)
+
 	if sigScript == nil {
 		sigScript, err = txscript.SignTxOutput(&dagconfig.MainNetParams,
 			tx, 0, originTx.TxOut[0].PkScript, txscript.SigHashAll,

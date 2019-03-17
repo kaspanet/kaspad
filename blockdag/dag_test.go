@@ -244,11 +244,7 @@ func TestCalcSequenceLock(t *testing.T) {
 	// Create a utxo view with a fake utxo for the inputs used in the
 	// transactions created below.  This utxo is added such that it has an
 	// age of 4 blocks.
-	msgTx := wire.NewMsgTx(wire.TxVersion)
-	msgTx.TxOut = []*wire.TxOut{{
-		PkScript: nil,
-		Value:    10,
-	}}
+	msgTx := wire.NewMsgTx(wire.TxVersion, nil, []*wire.TxOut{{PkScript: nil, Value: 10}}, nil, 0, nil)
 	targetTx := util.NewTx(msgTx)
 	utxoSet := NewFullUTXOSet()
 	utxoSet.AddTx(targetTx.MsgTx(), int32(numBlocksToGenerate)-4)
@@ -278,12 +274,7 @@ func TestCalcSequenceLock(t *testing.T) {
 
 	// Add an additional transaction which will serve as our unconfirmed
 	// output.
-	unConfTx := wire.NewMsgTx(wire.TxVersion)
-	unConfTx.TxOut = []*wire.TxOut{{
-		PkScript: nil,
-		Value:    5,
-	}}
-
+	unConfTx := wire.NewMsgTx(wire.TxVersion, nil, []*wire.TxOut{{PkScript: nil, Value: 5}}, nil, 0, nil)
 	unConfUtxo := wire.OutPoint{
 		TxID:  unConfTx.TxID(),
 		Index: 0,
@@ -364,9 +355,8 @@ func TestCalcSequenceLock(t *testing.T) {
 		// bit set.  So the first lock should be selected as it's the
 		// latest lock that isn't disabled.
 		{
-			tx: &wire.MsgTx{
-				Version: 1,
-				TxIn: []*wire.TxIn{{
+			tx: wire.NewMsgTx(1,
+				[]*wire.TxIn{{
 					PreviousOutPoint: utxo,
 					Sequence:         LockTimeToSequence(true, 2560),
 				}, {
@@ -377,8 +367,7 @@ func TestCalcSequenceLock(t *testing.T) {
 					Sequence: LockTimeToSequence(false, 5) |
 						wire.SequenceLockTimeDisabled,
 				}},
-				SubnetworkID: *subnetworkid.SubnetworkIDNative,
-			},
+				nil, nil, 0, nil),
 			utxoSet: utxoSet,
 			want: &SequenceLock{
 				Seconds:     medianTime + (5 << wire.SequenceLockTimeGranularity) - 1,
@@ -1245,11 +1234,13 @@ func TestValidateFeeTransaction(t *testing.T) {
 		},
 	}
 
-	block5FeeTx := wire.NewMsgTx(1)
+	txIns := []*wire.TxIn{}
+	txOuts := []*wire.TxOut{}
 	for hash := range feeInOuts {
-		block5FeeTx.AddTxIn(feeInOuts[hash].txIn)
-		block5FeeTx.AddTxOut(feeInOuts[hash].txOut)
+		txIns = append(txIns, feeInOuts[hash].txIn)
+		txOuts = append(txOuts, feeInOuts[hash].txOut)
 	}
+	block5FeeTx := wire.NewMsgTx(1, txIns, txOuts, nil, 0, nil)
 	sortedBlock5FeeTx := txsort.Sort(block5FeeTx)
 
 	block5Txs := []*wire.MsgTx{cb5, sortedBlock5FeeTx}

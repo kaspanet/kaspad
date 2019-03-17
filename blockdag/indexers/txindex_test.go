@@ -15,17 +15,15 @@ import (
 )
 
 func createTransaction(value uint64, originTx *wire.MsgTx, outputIndex uint32) *wire.MsgTx {
-	tx := wire.NewMsgTx(wire.TxVersion)
-
-	tx.AddTxIn(&wire.TxIn{
+	txIn := &wire.TxIn{
 		PreviousOutPoint: wire.OutPoint{
 			TxID:  originTx.TxID(),
 			Index: outputIndex,
 		},
 		Sequence: wire.MaxTxInSequenceNum,
-	})
+	}
 	txOut := wire.NewTxOut(value, blockdag.OpTrueScript)
-	tx.AddTxOut(txOut)
+	tx := wire.NewMsgTx(wire.TxVersion, []*wire.TxIn{txIn}, []*wire.TxOut{txOut}, nil, 0, nil)
 
 	return tx
 }

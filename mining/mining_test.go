@@ -198,87 +198,81 @@ func TestNewBlockTemplate(t *testing.T) {
 	template1CbTx := template1.Block.Transactions[0]
 
 	// tx is a regular transaction, and should not be filtered by the miner
-	tx := wire.NewMsgTx(wire.TxVersion)
-	tx.AddTxIn(&wire.TxIn{
+	txIn := &wire.TxIn{
 		PreviousOutPoint: wire.OutPoint{
 			TxID:  template1CbTx.TxID(),
 			Index: 0,
 		},
 		Sequence: wire.MaxTxInSequenceNum,
-	})
-	tx.AddTxOut(&wire.TxOut{
+	}
+	txOut := &wire.TxOut{
 		PkScript: pkScript,
 		Value:    1,
-	})
+	}
+	tx := wire.NewMsgTx(wire.TxVersion, []*wire.TxIn{txIn}, []*wire.TxOut{txOut}, nil, 0, nil)
 
 	// We want to check that the miner filters non finalized transactions
-	nonFinalizedTx := wire.NewMsgTx(wire.TxVersion)
-	nonFinalizedTx.LockTime = uint64(dag.Height() + 2)
-	nonFinalizedTx.AddTxIn(&wire.TxIn{
+	txIn = &wire.TxIn{
 		PreviousOutPoint: wire.OutPoint{
 			TxID:  template1CbTx.TxID(),
 			Index: 1,
 		},
 		Sequence: 0,
-	})
-	nonFinalizedTx.AddTxOut(&wire.TxOut{
+	}
+	txOut = &wire.TxOut{
 		PkScript: pkScript,
 		Value:    1,
-	})
+	}
+	nonFinalizedTx := wire.NewMsgTx(wire.TxVersion, []*wire.TxIn{txIn}, []*wire.TxOut{txOut}, nil, 0, nil)
+	nonFinalizedTx.LockTime = uint64(dag.Height() + 2)
 
-	existingSubnetwork := subnetworkid.SubnetworkID{0xff}
-	nonExistingSubnetwork := subnetworkid.SubnetworkID{0xfe}
+	existingSubnetwork := &subnetworkid.SubnetworkID{0xff}
+	nonExistingSubnetwork := &subnetworkid.SubnetworkID{0xfe}
 
 	// We want to check that the miner filters transactions with non-existing subnetwork id. (It should first push it to the priority queue, and then ignore it)
-	nonExistingSubnetworkTx := wire.NewMsgTx(wire.TxVersion)
-	nonExistingSubnetworkTx.SubnetworkID = nonExistingSubnetwork
-	nonExistingSubnetworkTx.Gas = 1
-	nonExistingSubnetworkTx.PayloadHash = daghash.DoubleHashP(nonExistingSubnetworkTx.Payload)
-	nonExistingSubnetworkTx.AddTxIn(&wire.TxIn{
+	txIn = &wire.TxIn{
 		PreviousOutPoint: wire.OutPoint{
 			TxID:  template1CbTx.TxID(),
 			Index: 2,
 		},
 		Sequence: 0,
-	})
-	nonExistingSubnetworkTx.AddTxOut(&wire.TxOut{
+	}
+	txOut = &wire.TxOut{
 		PkScript: pkScript,
 		Value:    1,
-	})
+	}
+	nonExistingSubnetworkTx := wire.NewMsgTx(wire.TxVersion, []*wire.TxIn{txIn}, []*wire.TxOut{txOut},
+		nonExistingSubnetwork, 1, []byte{})
 
 	// We want to check that the miner doesn't filters transactions that do not exceed the subnetwork gas limit
-	subnetworkTx1 := wire.NewMsgTx(wire.TxVersion)
-	subnetworkTx1.SubnetworkID = existingSubnetwork
-	subnetworkTx1.Gas = 1
-	subnetworkTx1.PayloadHash = daghash.DoubleHashP(subnetworkTx1.Payload)
-	subnetworkTx1.AddTxIn(&wire.TxIn{
+	txIn = &wire.TxIn{
 		PreviousOutPoint: wire.OutPoint{
 			TxID:  template1CbTx.TxID(),
 			Index: 3,
 		},
 		Sequence: 0,
-	})
-	subnetworkTx1.AddTxOut(&wire.TxOut{
+	}
+	txOut = &wire.TxOut{
 		PkScript: pkScript,
 		Value:    1,
-	})
+	}
+	subnetworkTx1 := wire.NewMsgTx(wire.TxVersion, []*wire.TxIn{txIn}, []*wire.TxOut{txOut}, existingSubnetwork, 1, []byte{})
 
 	// We want to check that the miner filters transactions that exceed the subnetwork gas limit. (It should first push it to the priority queue, and then ignore it)
-	subnetworkTx2 := wire.NewMsgTx(wire.TxVersion)
-	subnetworkTx2.SubnetworkID = existingSubnetwork
-	subnetworkTx2.Gas = 100 // Subnetwork gas limit is 90
-	subnetworkTx2.PayloadHash = daghash.DoubleHashP(subnetworkTx2.Payload)
-	subnetworkTx2.AddTxIn(&wire.TxIn{
+	txIn = &wire.TxIn{
 		PreviousOutPoint: wire.OutPoint{
 			TxID:  template1CbTx.TxID(),
 			Index: 4,
 		},
 		Sequence: 0,
-	})
-	subnetworkTx2.AddTxOut(&wire.TxOut{
+	}
+	txOut = &wire.TxOut{
 		PkScript: pkScript,
 		Value:    1,
-	})
+	}
+	subnetworkTx2 := wire.NewMsgTx(wire.TxVersion, []*wire.TxIn{txIn}, []*wire.TxOut{txOut}, existingSubnetwork,
+		100, // Subnetwork gas limit is 90
+		[]byte{})
 
 	txSource.txDescs = []*TxDesc{
 		{
@@ -345,7 +339,7 @@ func TestNewBlockTemplate(t *testing.T) {
 
 	// Here we define nonExistingSubnetwork to be non-exist, and existingSubnetwork to have a gas limit of 90
 	gasLimitPatch := monkey.Patch((*blockdag.SubnetworkStore).GasLimit, func(_ *blockdag.SubnetworkStore, subnetworkID *subnetworkid.SubnetworkID) (uint64, error) {
-		if *subnetworkID == nonExistingSubnetwork {
+		if subnetworkID.IsEqual(nonExistingSubnetwork) {
 			return 0, errors.New("not found")
 		}
 		return 90, nil

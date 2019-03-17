@@ -405,7 +405,7 @@ func TestTxSerialize(t *testing.T) {
 		0x00, 0x00, 0x00, 0x00, // Sub Network ID
 	}
 
-	registryTx := newRegistryMsgTx(1, 16)
+	registryTx := NewRegistryMsgTx(1, nil, nil, 16)
 	registryTxEncoded := []byte{
 		0x01, 0x00, 0x00, 0x00, // Version
 		0x00,                                           // Varint for number of input transactions
