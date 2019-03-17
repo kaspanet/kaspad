@@ -106,7 +106,7 @@ type txEncoding uint8
 const (
 	txEncodingFull txEncoding = 0
 
-	txEncodingExcludeSubNetworkData txEncoding = 1 << iota
+	txEncodingExcludePayload txEncoding = 1 << iota
 
 	txEncodingExcludeSignatureScript
 )
@@ -332,8 +332,8 @@ func (msg *MsgTx) TxHash() *daghash.Hash {
 	// Ignore the error returns since the only way the encode could fail
 	// is being out of memory or due to nil pointers, both of which would
 	// cause a run-time panic.
-	buf := bytes.NewBuffer(make([]byte, 0, msg.serializeSize(txEncodingExcludeSubNetworkData)))
-	_ = msg.serialize(buf, txEncodingExcludeSubNetworkData)
+	buf := bytes.NewBuffer(make([]byte, 0, msg.serializeSize(txEncodingExcludePayload)))
+	_ = msg.serialize(buf, txEncodingExcludePayload)
 
 	hash := daghash.Hash(daghash.DoubleHashH(buf.Bytes()))
 	return &hash
@@ -347,7 +347,7 @@ func (msg *MsgTx) TxID() daghash.TxID {
 	// due to nil pointers, both of which would cause a run-time panic.
 	var encodingFlags txEncoding
 	if !msg.IsCoinBase() {
-		encodingFlags = txEncodingExcludeSignatureScript | txEncodingExcludeSubNetworkData
+		encodingFlags = txEncodingExcludeSignatureScript | txEncodingExcludePayload
 	}
 	buf := bytes.NewBuffer(make([]byte, 0, msg.serializeSize(encodingFlags)))
 	_ = msg.serialize(buf, encodingFlags)
@@ -699,7 +699,7 @@ func (msg *MsgTx) encode(w io.Writer, pver uint32, encodingFlags txEncoding) err
 			return err
 		}
 
-		if encodingFlags&txEncodingExcludeSubNetworkData != txEncodingExcludeSubNetworkData {
+		if encodingFlags&txEncodingExcludePayload != txEncodingExcludePayload {
 			err = WriteVarInt(w, pver, uint64(len(msg.Payload)))
 			w.Write(msg.Payload)
 		} else {
@@ -769,7 +769,7 @@ func (msg *MsgTx) serializeSize(encodingFlags txEncoding) int {
 		n += daghash.HashSize
 
 		// Serialized varint size for the length of the payload
-		if encodingFlags&txEncodingExcludeSubNetworkData != txEncodingExcludeSubNetworkData {
+		if encodingFlags&txEncodingExcludePayload != txEncodingExcludePayload {
 			n += VarIntSerializeSize(uint64(len(msg.Payload)))
 			n += len(msg.Payload)
 		} else {
