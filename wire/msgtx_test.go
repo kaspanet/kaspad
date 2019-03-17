@@ -177,7 +177,7 @@ func TestTxHashAndID(t *testing.T) {
 			spew.Sprint(tx1ID), spew.Sprint(wantTxID1))
 	}
 
-	hash2Str := "37fb9ab8fc0cb68a8cc2a3c94edd26897aa445596a5c97bc459ca9815d67490b"
+	hash2Str := "b11924b7eeffea821522222576c53dc5b8ddd97602f81e5e124d2626646d74ca"
 	wantHash2, err := daghash.NewHashFromStr(hash2Str)
 	if err != nil {
 		t.Errorf("NewHashFromStr: %v", err)

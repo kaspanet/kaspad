@@ -16,6 +16,7 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
+	"syscall"
 
 	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/database"
@@ -385,6 +386,10 @@ func (s *blockStore) writeData(data []byte, fieldName string) error {
 	n, err := wc.curFile.file.WriteAt(data, int64(wc.curOffset))
 	wc.curOffset += uint32(n)
 	if err != nil {
+		if pathErr, isOk := err.(*os.PathError); isOk && pathErr.Err == syscall.ENOSPC {
+			log.Errorf("No space left on the hard disk, exiting...")
+			os.Exit(1)
+		}
 		str := fmt.Sprintf("failed to write %s to file %d at "+
 			"offset %d: %s", fieldName, wc.curFileNum,
 			wc.curOffset-uint32(n), err)
