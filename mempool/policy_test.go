@@ -306,159 +306,109 @@ func TestCheckTransactionStandard(t *testing.T) {
 
 	tests := []struct {
 		name       string
-		tx         wire.MsgTx
+		tx         *wire.MsgTx
 		height     int32
 		isStandard bool
 		code       wire.RejectCode
 	}{
 		{
-			name: "Typical pay-to-pubkey-hash transaction",
-			tx: wire.MsgTx{
-				Version:  1,
-				TxIn:     []*wire.TxIn{&dummyTxIn},
-				TxOut:    []*wire.TxOut{&dummyTxOut},
-				LockTime: 0,
-			},
+			name:       "Typical pay-to-pubkey-hash transaction",
+			tx:         wire.NewMsgTx(1, []*wire.TxIn{&dummyTxIn}, []*wire.TxOut{&dummyTxOut}, nil, 0, nil),
 			height:     300000,
 			isStandard: true,
 		},
 		{
-			name: "Transaction version too high",
-			tx: wire.MsgTx{
-				Version:  wire.TxVersion + 1,
-				TxIn:     []*wire.TxIn{&dummyTxIn},
-				TxOut:    []*wire.TxOut{&dummyTxOut},
-				LockTime: 0,
-			},
+			name:       "Transaction version too high",
+			tx:         wire.NewMsgTx(wire.TxVersion+1, []*wire.TxIn{&dummyTxIn}, []*wire.TxOut{&dummyTxOut}, nil, 0, nil),
 			height:     300000,
 			isStandard: false,
 			code:       wire.RejectNonstandard,
 		},
 		{
 			name: "Transaction is not finalized",
-			tx: wire.MsgTx{
-				Version: 1,
-				TxIn: []*wire.TxIn{{
-					PreviousOutPoint: dummyPrevOut,
-					SignatureScript:  dummySigScript,
-					Sequence:         0,
-				}},
-				TxOut:    []*wire.TxOut{&dummyTxOut},
-				LockTime: 300001,
-			},
+			tx: wire.NewMsgTxWithLocktime(1, []*wire.TxIn{{
+				PreviousOutPoint: dummyPrevOut,
+				SignatureScript:  dummySigScript,
+				Sequence:         0,
+			}}, []*wire.TxOut{&dummyTxOut}, nil, 0, nil, 300001),
 			height:     300000,
 			isStandard: false,
 			code:       wire.RejectNonstandard,
 		},
 		{
 			name: "Transaction size is too large",
-			tx: wire.MsgTx{
-				Version: 1,
-				TxIn:    []*wire.TxIn{&dummyTxIn},
-				TxOut: []*wire.TxOut{{
-					Value: 0,
-					PkScript: bytes.Repeat([]byte{0x00},
-						MaxStandardTxSize+1),
-				}},
-				LockTime: 0,
-			},
+			tx: wire.NewMsgTx(1, []*wire.TxIn{&dummyTxIn}, []*wire.TxOut{{
+				Value: 0,
+				PkScript: bytes.Repeat([]byte{0x00},
+					MaxStandardTxSize+1),
+			}}, nil, 0, nil),
 			height:     300000,
 			isStandard: false,
 			code:       wire.RejectNonstandard,
 		},
 		{
 			name: "Signature script size is too large",
-			tx: wire.MsgTx{
-				Version: 1,
-				TxIn: []*wire.TxIn{{
-					PreviousOutPoint: dummyPrevOut,
-					SignatureScript: bytes.Repeat([]byte{0x00},
-						maxStandardSigScriptSize+1),
-					Sequence: wire.MaxTxInSequenceNum,
-				}},
-				TxOut:    []*wire.TxOut{&dummyTxOut},
-				LockTime: 0,
-			},
+			tx: wire.NewMsgTx(1, []*wire.TxIn{{
+				PreviousOutPoint: dummyPrevOut,
+				SignatureScript: bytes.Repeat([]byte{0x00},
+					maxStandardSigScriptSize+1),
+				Sequence: wire.MaxTxInSequenceNum,
+			}}, []*wire.TxOut{&dummyTxOut}, nil, 0, nil),
 			height:     300000,
 			isStandard: false,
 			code:       wire.RejectNonstandard,
 		},
 		{
 			name: "Signature script that does more than push data",
-			tx: wire.MsgTx{
-				Version: 1,
-				TxIn: []*wire.TxIn{{
-					PreviousOutPoint: dummyPrevOut,
-					SignatureScript: []byte{
-						txscript.OpCheckSigVerify},
-					Sequence: wire.MaxTxInSequenceNum,
-				}},
-				TxOut:    []*wire.TxOut{&dummyTxOut},
-				LockTime: 0,
-			},
+			tx: wire.NewMsgTx(1, []*wire.TxIn{{
+				PreviousOutPoint: dummyPrevOut,
+				SignatureScript: []byte{
+					txscript.OpCheckSigVerify},
+				Sequence: wire.MaxTxInSequenceNum,
+			}}, []*wire.TxOut{&dummyTxOut}, nil, 0, nil),
 			height:     300000,
 			isStandard: false,
 			code:       wire.RejectNonstandard,
 		},
 		{
 			name: "Valid but non standard public key script",
-			tx: wire.MsgTx{
-				Version: 1,
-				TxIn:    []*wire.TxIn{&dummyTxIn},
-				TxOut: []*wire.TxOut{{
-					Value:    100000000,
-					PkScript: []byte{txscript.OpTrue},
-				}},
-				LockTime: 0,
-			},
+			tx: wire.NewMsgTx(1, []*wire.TxIn{&dummyTxIn}, []*wire.TxOut{{
+				Value:    100000000,
+				PkScript: []byte{txscript.OpTrue},
+			}}, nil, 0, nil),
 			height:     300000,
 			isStandard: false,
 			code:       wire.RejectNonstandard,
 		},
 		{
 			name: "More than one nulldata output",
-			tx: wire.MsgTx{
-				Version: 1,
-				TxIn:    []*wire.TxIn{&dummyTxIn},
-				TxOut: []*wire.TxOut{{
-					Value:    0,
-					PkScript: []byte{txscript.OpReturn},
-				}, {
-					Value:    0,
-					PkScript: []byte{txscript.OpReturn},
-				}},
-				LockTime: 0,
-			},
+			tx: wire.NewMsgTx(1, []*wire.TxIn{&dummyTxIn}, []*wire.TxOut{{
+				Value:    0,
+				PkScript: []byte{txscript.OpReturn},
+			}, {
+				Value:    0,
+				PkScript: []byte{txscript.OpReturn},
+			}}, nil, 0, nil),
 			height:     300000,
 			isStandard: false,
 			code:       wire.RejectNonstandard,
 		},
 		{
 			name: "Dust output",
-			tx: wire.MsgTx{
-				Version: 1,
-				TxIn:    []*wire.TxIn{&dummyTxIn},
-				TxOut: []*wire.TxOut{{
-					Value:    0,
-					PkScript: dummyPkScript,
-				}},
-				LockTime: 0,
-			},
+			tx: wire.NewMsgTx(1, []*wire.TxIn{&dummyTxIn}, []*wire.TxOut{{
+				Value:    0,
+				PkScript: dummyPkScript,
+			}}, nil, 0, nil),
 			height:     300000,
 			isStandard: false,
 			code:       wire.RejectDust,
 		},
 		{
 			name: "One nulldata output with 0 amount (standard)",
-			tx: wire.MsgTx{
-				Version: 1,
-				TxIn:    []*wire.TxIn{&dummyTxIn},
-				TxOut: []*wire.TxOut{{
-					Value:    0,
-					PkScript: []byte{txscript.OpReturn},
-				}},
-				LockTime: 0,
-			},
+			tx: wire.NewMsgTx(1, []*wire.TxIn{&dummyTxIn}, []*wire.TxOut{{
+				Value:    0,
+				PkScript: []byte{txscript.OpReturn},
+			}}, nil, 0, nil),
 			height:     300000,
 			isStandard: true,
 		},
@@ -467,7 +417,7 @@ func TestCheckTransactionStandard(t *testing.T) {
 	pastMedianTime := time.Now()
 	for _, test := range tests {
 		// Ensure standardness is as expected.
-		err := checkTransactionStandard(util.NewTx(&test.tx),
+		err := checkTransactionStandard(util.NewTx(test.tx),
 			test.height, pastMedianTime, &Policy{MinRelayTxFee: DefaultMinRelayTxFee, MaxTxVersion: 1})
 		if err == nil && test.isStandard {
 			// Test passes since function returned standard for a

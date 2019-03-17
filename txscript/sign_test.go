@@ -100,45 +100,41 @@ func TestSignTxOutput(t *testing.T) {
 		SigHashNone | SigHashAnyOneCanPay,
 		SigHashSingle | SigHashAnyOneCanPay,
 	}
-	tx := &wire.MsgTx{
-		Version: 1,
-		TxIn: []*wire.TxIn{
-			{
-				PreviousOutPoint: wire.OutPoint{
-					TxID:  daghash.TxID{},
-					Index: 0,
-				},
-				Sequence: 4294967295,
+	txIns := []*wire.TxIn{
+		{
+			PreviousOutPoint: wire.OutPoint{
+				TxID:  daghash.TxID{},
+				Index: 0,
 			},
-			{
-				PreviousOutPoint: wire.OutPoint{
-					TxID:  daghash.TxID{},
-					Index: 1,
-				},
-				Sequence: 4294967295,
-			},
-			{
-				PreviousOutPoint: wire.OutPoint{
-					TxID:  daghash.TxID{},
-					Index: 2,
-				},
-				Sequence: 4294967295,
-			},
+			Sequence: 4294967295,
 		},
-		TxOut: []*wire.TxOut{
-			{
-				Value: 1,
+		{
+			PreviousOutPoint: wire.OutPoint{
+				TxID:  daghash.TxID{},
+				Index: 1,
 			},
-			{
-				Value: 2,
-			},
-			{
-				Value: 3,
-			},
+			Sequence: 4294967295,
 		},
-		LockTime:     0,
-		SubnetworkID: *subnetworkid.SubnetworkIDNative,
+		{
+			PreviousOutPoint: wire.OutPoint{
+				TxID:  daghash.TxID{},
+				Index: 2,
+			},
+			Sequence: 4294967295,
+		},
 	}
+	txOuts := []*wire.TxOut{
+		{
+			Value: 1,
+		},
+		{
+			Value: 2,
+		},
+		{
+			Value: 3,
+		},
+	}
+	tx := wire.NewMsgTx(1, txIns, txOuts, subnetworkid.SubnetworkIDNative, 0, nil)
 
 	// Pay to Pubkey Hash (uncompressed)
 	for _, hashType := range hashTypes {

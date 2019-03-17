@@ -623,32 +623,19 @@ func TestProcessTransaction(t *testing.T) {
 	if err != nil {
 		t.Fatalf("PayToAddrScript: unexpected error: %v", err)
 	}
-
-	p2shTx := util.NewTx(&wire.MsgTx{
-		Version: 1,
-		TxOut: []*wire.TxOut{{
-			Value:    5000000000,
-			PkScript: p2shPKScript,
-		}},
-		LockTime:     0,
-		SubnetworkID: *subnetworkid.SubnetworkIDNative,
-	})
+	p2shTx := util.NewTx(wire.NewMsgTx(1, nil, []*wire.TxOut{{Value: 5000000000, PkScript: p2shPKScript}}, nil, 0, nil))
 	harness.txPool.mpUTXOSet.AddTx(p2shTx.MsgTx(), curHeight+1)
 
-	nonStdSigScriptTx := util.NewTx(&wire.MsgTx{
-		Version: 1,
-		TxIn: []*wire.TxIn{{
-			PreviousOutPoint: wire.OutPoint{TxID: *p2shTx.ID(), Index: 0},
-			SignatureScript:  wrappedP2SHNonStdSigScript,
-			Sequence:         wire.MaxTxInSequenceNum,
-		}},
-		TxOut: []*wire.TxOut{{
-			Value:    5000000000,
-			PkScript: dummyPkScript,
-		}},
-		LockTime:     0,
-		SubnetworkID: *subnetworkid.SubnetworkIDNative,
-	})
+	txIns := []*wire.TxIn{{
+		PreviousOutPoint: wire.OutPoint{TxID: *p2shTx.ID(), Index: 0},
+		SignatureScript:  wrappedP2SHNonStdSigScript,
+		Sequence:         wire.MaxTxInSequenceNum,
+	}}
+	txOuts := []*wire.TxOut{{
+		Value:    5000000000,
+		PkScript: dummyPkScript,
+	}}
+	nonStdSigScriptTx := util.NewTx(wire.NewMsgTx(1, txIns, txOuts, nil, 0, nil))
 	_, err = harness.txPool.ProcessTransaction(nonStdSigScriptTx, true, false, 0)
 	if err == nil {
 		t.Errorf("ProcessTransaction: expected an error, not nil")
@@ -683,17 +670,12 @@ func TestProcessTransaction(t *testing.T) {
 	harness.txPool.cfg.Policy.AcceptNonStd = false
 
 	//Checks that a transaction with no outputs will not get rejected
-	noOutsTx := util.NewTx(&wire.MsgTx{
-		Version: 1,
-		TxIn: []*wire.TxIn{{
-			PreviousOutPoint: dummyPrevOut,
-			SignatureScript:  dummySigScript,
-			Sequence:         wire.MaxTxInSequenceNum,
-		}},
-		TxOut:        []*wire.TxOut{},
-		LockTime:     0,
-		SubnetworkID: *subnetworkid.SubnetworkIDNative,
-	})
+	noOutsTx := util.NewTx(wire.NewMsgTx(1, []*wire.TxIn{{
+		PreviousOutPoint: dummyPrevOut,
+		SignatureScript:  dummySigScript,
+		Sequence:         wire.MaxTxInSequenceNum,
+	}},
+		nil, nil, 0, nil))
 	_, err = harness.txPool.ProcessTransaction(noOutsTx, true, false, 0)
 	if err != nil {
 		t.Errorf("ProcessTransaction: %v", err)
@@ -752,20 +734,16 @@ func TestProcessTransaction(t *testing.T) {
 	}
 	harness.txPool.cfg.Policy.DisableRelayPriority = true
 
-	tx = util.NewTx(&wire.MsgTx{
-		Version: 1,
-		TxIn: []*wire.TxIn{{
-			PreviousOutPoint: spendableOuts[5].outPoint,
-			SignatureScript:  []byte{02, 01}, //Unparsable script
-			Sequence:         wire.MaxTxInSequenceNum,
-		}},
-		TxOut: []*wire.TxOut{{
-			Value:    1,
-			PkScript: dummyPkScript,
-		}},
-		LockTime:     0,
-		SubnetworkID: *subnetworkid.SubnetworkIDNative,
-	})
+	txIns = []*wire.TxIn{{
+		PreviousOutPoint: spendableOuts[5].outPoint,
+		SignatureScript:  []byte{02, 01}, //Unparsable script
+		Sequence:         wire.MaxTxInSequenceNum,
+	}}
+	txOuts = []*wire.TxOut{{
+		Value:    1,
+		PkScript: dummyPkScript,
+	}}
+	tx = util.NewTx(wire.NewMsgTx(1, txIns, txOuts, nil, 0, nil))
 	_, err = harness.txPool.ProcessTransaction(tx, true, false, 0)
 	fmt.Println(err)
 	if err == nil {

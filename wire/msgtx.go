@@ -887,6 +887,17 @@ func NewMsgTx(version int32, txIn []*TxIn, txOut []*TxOut, subnetworkID *subnetw
 	}
 }
 
+// NewMsgTxWithLocktime returns a new tx message with a locktime that conforms to the Message interface.
+//
+// See NewMsgTx for further documntation of the parameters
+func NewMsgTxWithLocktime(version int32, txIn []*TxIn, txOut []*TxOut, subnetworkID *subnetworkid.SubnetworkID,
+	gas uint64, payload []byte, locktime uint64) *MsgTx {
+
+	tx := NewMsgTx(version, txIn, txOut, subnetworkID, gas, payload)
+	tx.LockTime = locktime
+	return tx
+}
+
 // NewRegistryMsgTx creates a new MsgTx that registers a new subnetwork
 func NewRegistryMsgTx(version int32, txIn []*TxIn, txOut []*TxOut, gasLimit uint64) *MsgTx {
 	payload := make([]byte, 8)

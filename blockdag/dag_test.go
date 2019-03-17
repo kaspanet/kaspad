@@ -294,14 +294,8 @@ func TestCalcSequenceLock(t *testing.T) {
 		// This sequence number has the high bit set, so sequence locks
 		// should be disabled.
 		{
-			tx: &wire.MsgTx{
-				Version: 1,
-				TxIn: []*wire.TxIn{{
-					PreviousOutPoint: utxo,
-					Sequence:         wire.MaxTxInSequenceNum,
-				}},
-				SubnetworkID: *subnetworkid.SubnetworkIDNative,
-			},
+			tx: wire.NewMsgTx(1, []*wire.TxIn{{PreviousOutPoint: utxo, Sequence: wire.MaxTxInSequenceNum}},
+				nil, nil, 0, nil),
 			utxoSet: utxoSet,
 			want: &SequenceLock{
 				Seconds:     -1,
@@ -315,14 +309,8 @@ func TestCalcSequenceLock(t *testing.T) {
 		// seconds lock-time should be just before the median time of
 		// the targeted block.
 		{
-			tx: &wire.MsgTx{
-				Version: 1,
-				TxIn: []*wire.TxIn{{
-					PreviousOutPoint: utxo,
-					Sequence:         LockTimeToSequence(true, 2),
-				}},
-				SubnetworkID: *subnetworkid.SubnetworkIDNative,
-			},
+			tx: wire.NewMsgTx(1, []*wire.TxIn{{PreviousOutPoint: utxo, Sequence: LockTimeToSequence(true, 2)}},
+				nil, nil, 0, nil),
 			utxoSet: utxoSet,
 			want: &SequenceLock{
 				Seconds:     medianTime - 1,
@@ -334,14 +322,8 @@ func TestCalcSequenceLock(t *testing.T) {
 		// seconds after the median past time of the last block in the
 		// chain.
 		{
-			tx: &wire.MsgTx{
-				Version: 1,
-				TxIn: []*wire.TxIn{{
-					PreviousOutPoint: utxo,
-					Sequence:         LockTimeToSequence(true, 1024),
-				}},
-				SubnetworkID: *subnetworkid.SubnetworkIDNative,
-			},
+			tx: wire.NewMsgTx(1, []*wire.TxIn{{PreviousOutPoint: utxo, Sequence: LockTimeToSequence(true, 1024)}},
+				nil, nil, 0, nil),
 			utxoSet: utxoSet,
 			want: &SequenceLock{
 				Seconds:     medianTime + 1023,
@@ -379,14 +361,8 @@ func TestCalcSequenceLock(t *testing.T) {
 		// sequence lock should  have a value of -1 for seconds, but a
 		// height of 2 meaning it can be included at height 3.
 		{
-			tx: &wire.MsgTx{
-				Version: 1,
-				TxIn: []*wire.TxIn{{
-					PreviousOutPoint: utxo,
-					Sequence:         LockTimeToSequence(false, 3),
-				}},
-				SubnetworkID: *subnetworkid.SubnetworkIDNative,
-			},
+			tx: wire.NewMsgTx(1, []*wire.TxIn{{PreviousOutPoint: utxo, Sequence: LockTimeToSequence(false, 3)}},
+				nil, nil, 0, nil),
 			utxoSet: utxoSet,
 			want: &SequenceLock{
 				Seconds:     -1,
@@ -397,17 +373,13 @@ func TestCalcSequenceLock(t *testing.T) {
 		// seconds.  The selected sequence lock value for seconds should
 		// be the time further in the future.
 		{
-			tx: &wire.MsgTx{
-				Version: 1,
-				TxIn: []*wire.TxIn{{
-					PreviousOutPoint: utxo,
-					Sequence:         LockTimeToSequence(true, 5120),
-				}, {
-					PreviousOutPoint: utxo,
-					Sequence:         LockTimeToSequence(true, 2560),
-				}},
-				SubnetworkID: *subnetworkid.SubnetworkIDNative,
-			},
+			tx: wire.NewMsgTx(1, []*wire.TxIn{{
+				PreviousOutPoint: utxo,
+				Sequence:         LockTimeToSequence(true, 5120),
+			}, {
+				PreviousOutPoint: utxo,
+				Sequence:         LockTimeToSequence(true, 2560),
+			}}, nil, nil, 0, nil),
 			utxoSet: utxoSet,
 			want: &SequenceLock{
 				Seconds:     medianTime + (10 << wire.SequenceLockTimeGranularity) - 1,
@@ -419,17 +391,15 @@ func TestCalcSequenceLock(t *testing.T) {
 		// be the height further in the future, so a height of 10
 		// indicating it can be included at height 11.
 		{
-			tx: &wire.MsgTx{
-				Version: 1,
-				TxIn: []*wire.TxIn{{
+			tx: wire.NewMsgTx(1,
+				[]*wire.TxIn{{
 					PreviousOutPoint: utxo,
 					Sequence:         LockTimeToSequence(false, 1),
 				}, {
 					PreviousOutPoint: utxo,
 					Sequence:         LockTimeToSequence(false, 11),
 				}},
-				SubnetworkID: *subnetworkid.SubnetworkIDNative,
-			},
+				nil, nil, 0, nil),
 			utxoSet: utxoSet,
 			want: &SequenceLock{
 				Seconds:     -1,
@@ -440,9 +410,8 @@ func TestCalcSequenceLock(t *testing.T) {
 		// based, and the other two are block based. The lock lying
 		// further into the future for both inputs should be chosen.
 		{
-			tx: &wire.MsgTx{
-				Version: 1,
-				TxIn: []*wire.TxIn{{
+			tx: wire.NewMsgTx(1,
+				[]*wire.TxIn{{
 					PreviousOutPoint: utxo,
 					Sequence:         LockTimeToSequence(true, 2560),
 				}, {
@@ -455,8 +424,7 @@ func TestCalcSequenceLock(t *testing.T) {
 					PreviousOutPoint: utxo,
 					Sequence:         LockTimeToSequence(false, 9),
 				}},
-				SubnetworkID: *subnetworkid.SubnetworkIDNative,
-			},
+				nil, nil, 0, nil),
 			utxoSet: utxoSet,
 			want: &SequenceLock{
 				Seconds:     medianTime + (13 << wire.SequenceLockTimeGranularity) - 1,
@@ -470,14 +438,8 @@ func TestCalcSequenceLock(t *testing.T) {
 		// *next* block height, indicating it can be included 2 blocks
 		// after that.
 		{
-			tx: &wire.MsgTx{
-				Version: 1,
-				TxIn: []*wire.TxIn{{
-					PreviousOutPoint: unConfUtxo,
-					Sequence:         LockTimeToSequence(false, 2),
-				}},
-				SubnetworkID: *subnetworkid.SubnetworkIDNative,
-			},
+			tx: wire.NewMsgTx(1, []*wire.TxIn{{PreviousOutPoint: unConfUtxo, Sequence: LockTimeToSequence(false, 2)}},
+				nil, nil, 0, nil),
 			utxoSet: utxoSet,
 			mempool: true,
 			want: &SequenceLock{
@@ -489,14 +451,8 @@ func TestCalcSequenceLock(t *testing.T) {
 		// a time based lock, so the lock time should be based off the
 		// MTP of the *next* block.
 		{
-			tx: &wire.MsgTx{
-				Version: 1,
-				TxIn: []*wire.TxIn{{
-					PreviousOutPoint: unConfUtxo,
-					Sequence:         LockTimeToSequence(true, 1024),
-				}},
-				SubnetworkID: *subnetworkid.SubnetworkIDNative,
-			},
+			tx: wire.NewMsgTx(1, []*wire.TxIn{{PreviousOutPoint: unConfUtxo, Sequence: LockTimeToSequence(true, 1024)}},
+				nil, nil, 0, nil),
 			utxoSet: utxoSet,
 			mempool: true,
 			want: &SequenceLock{
