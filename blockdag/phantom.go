@@ -77,7 +77,7 @@ func blueCandidates(chainStart *blockNode) blockSet {
 func traverseCandidates(newBlock *blockNode, candidates blockSet, selectedParent *blockNode) []*blockNode {
 	blues := []*blockNode{}
 	selectedParentPast := newSet()
-	queue := NewHeap()
+	queue := NewHeap(HeapDirectionDown)
 	visited := newSet()
 
 	for _, parent := range newBlock.parents {

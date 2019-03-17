@@ -1320,9 +1320,9 @@ func (dag *BlockDAG) locateInventory(locator BlockLocator, hashStop *daghash.Has
 	}
 
 	// Estimate how many entries are needed.
-	estimatedEntries := uint32((dag.selectedTip().height - startNode.height) + 1)
+	estimatedEntries := uint32((dag.selectedTip().blueScore - startNode.blueScore) + 1)
 	if stopNode != nil && stopNode.height >= startNode.height {
-		estimatedEntries = uint32((stopNode.height-startNode.height)+1) * (dag.dagParams.K + 1)
+		estimatedEntries = uint32((stopNode.blueScore - startNode.blueScore) + 1)
 	}
 	if estimatedEntries > maxEntries {
 		estimatedEntries = maxEntries
@@ -1395,18 +1395,20 @@ func (dag *BlockDAG) locateHeaders(locator BlockLocator, hashStop *daghash.Hash,
 
 	// Populate and return the found headers.
 	headers := make([]*wire.BlockHeader, 0, estimatedEntries)
-	queue := node.children.toSlice()
+	queue := NewHeap(HeapDirectionUp)
+	queue.pushMany(node.children.toSlice())
+
 	visited := newSet()
-	for i := uint32(0); len(queue) > 0 && i < maxHeaders; i++ {
+	for i := uint32(0); queue.Len() > 0 && i < maxHeaders; i++ {
 		var current *blockNode
-		current, queue = queue[0], queue[1:]
+		current = queue.pop()
 		if !visited.contains(current) {
 			isBeforeStop := (stopNode == nil) || (current.height < stopNode.height)
 			if isBeforeStop || current.hash.IsEqual(hashStop) {
 				headers = append(headers, current.Header())
 			}
 			if isBeforeStop {
-				queue = append(queue, current.children.toSlice()...)
+				queue.pushMany(current.children.toSlice())
 			}
 		}
 	}

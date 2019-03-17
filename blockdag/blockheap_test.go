@@ -23,53 +23,68 @@ func TestBlockHeap(t *testing.T) {
 		toPush         []*blockNode
 		expectedLength int
 		expectedPop    *blockNode
+		direction      HeapDirection
 	}{
 		{
 			name:           "empty heap must have length 0",
 			toPush:         []*blockNode{},
 			expectedLength: 0,
 			expectedPop:    nil,
+			direction:      HeapDirectionDown,
 		},
 		{
 			name:           "heap with one push must have length 1",
 			toPush:         []*blockNode{block0},
 			expectedLength: 1,
 			expectedPop:    nil,
+			direction:      HeapDirectionDown,
 		},
 		{
 			name:           "heap with one push and one pop",
 			toPush:         []*blockNode{block0},
 			expectedLength: 0,
 			expectedPop:    block0,
+			direction:      HeapDirectionDown,
 		},
 		{
 			name:           "push two blocks with different heights, heap shouldn't have to rebalance",
 			toPush:         []*blockNode{block100000, block0},
 			expectedLength: 1,
 			expectedPop:    block100000,
+			direction:      HeapDirectionDown,
+		},
+		{
+			name:           "push two blocks with different heights at HeapDirectionUp, heap shouldn't have to rebalance",
+			toPush:         []*blockNode{block100000, block0},
+			expectedLength: 1,
+			expectedPop:    block0,
+			direction:      HeapDirectionUp,
 		},
 		{
 			name:           "push two blocks with different heights, heap must rebalance",
 			toPush:         []*blockNode{block0, block100000},
 			expectedLength: 1,
 			expectedPop:    block100000,
+			direction:      HeapDirectionDown,
 		},
 		{
 			name:           "push two blocks with equal heights but different hashes, heap shouldn't have to rebalance",
 			toPush:         []*blockNode{block0, block0smallHash},
 			expectedLength: 1,
 			expectedPop:    block0,
+			direction:      HeapDirectionDown,
 		},
 		{
 			name:           "push two blocks with equal heights but different hashes, heap must rebalance",
 			toPush:         []*blockNode{block0smallHash, block0},
 			expectedLength: 1,
 			expectedPop:    block0,
+			direction:      HeapDirectionDown,
 		},
 	}
 
 	for _, test := range tests {
-		heap := NewHeap()
+		heap := NewHeap(test.direction)
 		for _, block := range test.toPush {
 			heap.Push(block)
 		}
