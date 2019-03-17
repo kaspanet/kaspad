@@ -872,7 +872,7 @@ func NewMsgTx(version int32, txIn []*TxIn, txOut []*TxOut, subnetworkID *subnetw
 	}
 
 	var payloadHash *daghash.Hash
-	if payload != nil {
+	if !subnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) {
 		payloadHash = daghash.DoubleHashP(payload)
 	}
 
