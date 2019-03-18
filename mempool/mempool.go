@@ -870,7 +870,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rateLimit, rejectDu
 	// rules in blockchain for what transactions are allowed into blocks.
 	// Also returns the fees associated with the transaction which will be
 	// used later.
-	txFee, err := blockdag.CheckTransactionInputs(tx, nextBlockHeight,
+	txFee, err := blockdag.CheckTransactionInputsAndCalulateFee(tx, nextBlockHeight,
 		mp.mpUTXOSet, mp.cfg.DAGParams, false)
 	if err != nil {
 		if cerr, ok := err.(blockdag.RuleError); ok {
