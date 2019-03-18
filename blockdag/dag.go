@@ -797,8 +797,9 @@ func (node *blockNode) addTxsToAcceptanceData(txsAcceptanceData MultiblockTxsAcc
 }
 
 // verifyAndBuildUTXO verifies all transactions in the given block and builds its UTXO
+// as a by-product it returns the transactions acceptance data and the compactFeeData for the new block
 func (node *blockNode) verifyAndBuildUTXO(dag *BlockDAG, transactions []*util.Tx, fastAdd bool) (
-	newBlockUTXO UTXOSet, bluesTxsAcceptanceData MultiblockTxsAcceptanceData, newBlockFeeData compactFeeData, err error) {
+	newBlockUTXO UTXOSet, txsAcceptanceData MultiblockTxsAcceptanceData, newBlockFeeData compactFeeData, err error) {
 
 	pastUTXO, txsAcceptanceData, err := node.pastUTXO(dag.virtual, dag.db)
 	if err != nil {
@@ -871,7 +872,7 @@ func (node *blockNode) fetchBlueBlocks(db database.DB) ([]*util.Block, error) {
 	return blueBlocks, err
 }
 
-// applyBlueBlocks adds all transactions in the blue blocks to the pastUTXO
+// applyBlueBlocks adds all transactions in the blue blocks to the selectedParent's UTXO set
 // Purposefully ignoring failures - these are just unaccepted transactions
 // Writing down which transactions were accepted or not in txsAcceptanceData
 func (node *blockNode) applyBlueBlocks(selectedParentUTXO UTXOSet, blueBlocks []*util.Block) (
@@ -900,7 +901,11 @@ func (node *blockNode) applyBlueBlocks(selectedParentUTXO UTXOSet, blueBlocks []
 }
 
 // pastUTXO returns the UTXO of a given block's past
-func (node *blockNode) pastUTXO(virtual *virtualBlock, db database.DB) (pastUTXO UTXOSet, txsAcceptanceData MultiblockTxsAcceptanceData, err error) {
+// as a by-product it also returns the transaction acceptance data for
+// all blue blocks
+func (node *blockNode) pastUTXO(virtual *virtualBlock, db database.DB) (
+	pastUTXO UTXOSet, bluesTxsAcceptanceData MultiblockTxsAcceptanceData, err error) {
+
 	if node.isGenesis() {
 		return genesisPastUTXO(virtual), MultiblockTxsAcceptanceData{}, nil
 	}
