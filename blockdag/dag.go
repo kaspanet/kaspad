@@ -158,7 +158,7 @@ type BlockDAG struct {
 //
 // This function is safe for concurrent access.
 func (dag *BlockDAG) HaveBlock(hash *daghash.Hash) (bool, error) {
-	exists, err := dag.blockExists(hash)
+	exists, err := dag.BlockExists(hash)
 	if err != nil {
 		return false, err
 	}
@@ -1116,11 +1116,11 @@ func (dag *BlockDAG) BlockLocatorFromHash(hash *daghash.Hash) BlockLocator {
 // main (best) chain.
 //
 // This function is safe for concurrent access.
-func (dag *BlockDAG) LatestBlockLocator() (BlockLocator, error) {
+func (dag *BlockDAG) LatestBlockLocator() BlockLocator {
 	dag.dagLock.RLock()
 	locator := dag.blockLocator(nil)
 	dag.dagLock.RUnlock()
-	return locator, nil
+	return locator
 }
 
 // blockLocator returns a block locator for the passed block node.  The passed
