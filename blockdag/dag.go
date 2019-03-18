@@ -1339,19 +1339,33 @@ func (dag *BlockDAG) locateInventory(locator BlockLocator, hashStop *daghash.Has
 //
 // This function MUST be called with the chain state lock held (for reads).
 func (dag *BlockDAG) locateBlocks(locator BlockLocator, hashStop *daghash.Hash, maxHashes uint32) []daghash.Hash {
-	// Find the node after the first known block in the locator and the
-	// total number of nodes after it needed while respecting the stop hash
+	// Find the first known block in the locator and the
+	// estimated number of nodes after it needed while respecting the stop hash
 	// and max entries.
-	node, total := dag.locateInventory(locator, hashStop, maxHashes)
-	if total == 0 {
+	node, estimatedEntries := dag.locateInventory(locator, hashStop, maxHashes)
+	if estimatedEntries == 0 {
 		return nil
 	}
+	stopNode := dag.index.LookupNode(hashStop)
 
 	// Populate and return the found hashes.
-	hashes := make([]daghash.Hash, 0, total)
-	for i := uint32(0); i < total; i++ {
-		hashes = append(hashes, node.hash)
-		node = node.diffChild
+	hashes := make([]daghash.Hash, 0, estimatedEntries)
+	queue := NewUpHeap()
+	queue.pushMany(node.children.toSlice())
+
+	visited := newSet()
+	for i := uint32(0); queue.Len() > 0 && i < maxHashes; i++ {
+		var current *blockNode
+		current = queue.pop()
+		if !visited.contains(current) {
+			isBeforeStop := (stopNode == nil) || (current.height < stopNode.height)
+			if isBeforeStop || current.hash.IsEqual(hashStop) {
+				hashes = append(hashes, current.hash)
+			}
+			if isBeforeStop {
+				queue.pushMany(current.children.toSlice())
+			}
+		}
 	}
 	return hashes
 }
