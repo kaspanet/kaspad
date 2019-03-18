@@ -343,7 +343,7 @@ func (dag *BlockDAG) CalcSequenceLock(tx *util.Tx, utxoSet UTXOSet, mempool bool
 // calcSequenceLock computes the relative lock-times for the passed
 // transaction. See the exported version, CalcSequenceLock for further details.
 //
-// This function MUST be called with the chain state lock held (for writes).
+// This function MUST be called with the DAG state lock held (for writes).
 func (dag *BlockDAG) calcSequenceLock(node *blockNode, utxoSet UTXOSet, tx *util.Tx, mempool bool) (*SequenceLock, error) {
 	// A value of -1 for each relative lock type represents a relative time
 	// lock value that will allow a transaction to be included in a block
@@ -457,7 +457,7 @@ func LockTimeToSequence(isSeconds bool, locktime uint64) uint64 {
 //  - BFFastAdd: Avoids several expensive transaction validation operations.
 //    This is useful when using checkpoints.
 //
-// This function MUST be called with the chain state lock held (for writes).
+// This function MUST be called with the DAG state lock held (for writes).
 func (dag *BlockDAG) addBlock(node *blockNode, parentNodes blockSet, block *util.Block, flags BehaviorFlags) error {
 	// Skip checks if node has already been fully validated.
 	fastAdd := flags&BFFastAdd == BFFastAdd || dag.index.NodeStatus(node).KnownValid()
@@ -498,7 +498,7 @@ func (dag *BlockDAG) addBlock(node *blockNode, parentNodes blockSet, block *util
 
 // connectBlock handles connecting the passed node/block to the DAG.
 //
-// This function MUST be called with the chain state lock held (for writes).
+// This function MUST be called with the DAG state lock held (for writes).
 func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block, fastAdd bool) error {
 	// No warnings about unknown rules or versions until the DAG is
 	// current.
@@ -713,7 +713,7 @@ func (dag *BlockDAG) NextBlockFeeTransaction() (*wire.MsgTx, error) {
 //
 // It returns the diff in the virtual block's UTXO set.
 //
-// This function MUST be called with the chain state lock held (for writes).
+// This function MUST be called with the DAG state lock held (for writes).
 func (dag *BlockDAG) applyDAGChanges(node *blockNode, block *util.Block, newBlockUTXO UTXOSet, fastAdd bool) (
 	virtualUTXODiff *UTXODiff, err error) {
 
@@ -986,13 +986,13 @@ func updateTipsUTXO(tips blockSet, virtual *virtualBlock, virtualUTXO UTXOSet) e
 	return nil
 }
 
-// isCurrent returns whether or not the chain believes it is current.  Several
-// factors are used to guess, but the key factors that allow the chain to
+// isCurrent returns whether or not the DAG believes it is current.  Several
+// factors are used to guess, but the key factors that allow the DAG to
 // believe it is current are:
 //  - Latest block height is after the latest checkpoint (if enabled)
 //  - Latest block has a timestamp newer than 24 hours ago
 //
-// This function MUST be called with the chain state lock held (for reads).
+// This function MUST be called with the DAG state lock held (for reads).
 func (dag *BlockDAG) isCurrent() bool {
 	// Not current if the virtual's selected tip height is less than
 	// the latest known good checkpoint (when checkpoints are enabled).
@@ -1155,7 +1155,7 @@ func (dag *BlockDAG) LatestBlockLocator() (BlockLocator, error) {
 //
 // See the BlockLocator type comments for more details.
 //
-// This function MUST be called with the chain state lock held (for reads).
+// This function MUST be called with the DAG state lock held (for reads).
 func (dag *BlockDAG) blockLocator(node *blockNode) BlockLocator {
 	// Use the selected tip if requested.
 	if node == nil {
@@ -1319,7 +1319,7 @@ func (dag *BlockDAG) IntervalBlockHashes(endHash *daghash.Hash, interval int,
 // This is primarily a helper function for the locateBlocks and locateHeaders
 // functions.
 //
-// This function MUST be called with the chain state lock held (for reads).
+// This function MUST be called with the DAG state lock held (for reads).
 func (dag *BlockDAG) locateInventory(locator BlockLocator, hashStop *daghash.Hash, maxEntries uint32) (*blockNode, uint32) {
 	// There are no block locators so a specific block is being requested
 	// as identified by the stop hash.
@@ -1371,7 +1371,7 @@ func (dag *BlockDAG) locateInventory(locator BlockLocator, hashStop *daghash.Has
 //
 // See the comment on the exported function for more details on special cases.
 //
-// This function MUST be called with the chain state lock held (for reads).
+// This function MUST be called with the DAG state lock held (for reads).
 func (dag *BlockDAG) locateBlocks(locator BlockLocator, hashStop *daghash.Hash, maxHashes uint32) []daghash.Hash {
 	// Find the node after the first known block in the locator and the
 	// total number of nodes after it needed while respecting the stop hash
@@ -1416,7 +1416,7 @@ func (dag *BlockDAG) LocateBlocks(locator BlockLocator, hashStop *daghash.Hash, 
 //
 // See the comment on the exported function for more details on special cases.
 //
-// This function MUST be called with the chain state lock held (for reads).
+// This function MUST be called with the DAG state lock held (for reads).
 func (dag *BlockDAG) locateHeaders(locator BlockLocator, hashStop *daghash.Hash, maxHeaders uint32) []*wire.BlockHeader {
 	// Find the node after the first known block in the locator and the
 	// total number of nodes after it needed while respecting the stop hash
