@@ -313,102 +313,102 @@ func TestCheckTransactionStandard(t *testing.T) {
 	}{
 		{
 			name:       "Typical pay-to-pubkey-hash transaction",
-			tx:         wire.NewMsgTx(1, []*wire.TxIn{&dummyTxIn}, []*wire.TxOut{&dummyTxOut}, nil, 0, nil),
+			tx:         wire.NewNativeMsgTx(1, []*wire.TxIn{&dummyTxIn}, []*wire.TxOut{&dummyTxOut}),
 			height:     300000,
 			isStandard: true,
 		},
 		{
 			name:       "Transaction version too high",
-			tx:         wire.NewMsgTx(wire.TxVersion+1, []*wire.TxIn{&dummyTxIn}, []*wire.TxOut{&dummyTxOut}, nil, 0, nil),
+			tx:         wire.NewNativeMsgTx(wire.TxVersion+1, []*wire.TxIn{&dummyTxIn}, []*wire.TxOut{&dummyTxOut}),
 			height:     300000,
 			isStandard: false,
 			code:       wire.RejectNonstandard,
 		},
 		{
 			name: "Transaction is not finalized",
-			tx: wire.NewMsgTxWithLocktime(1, []*wire.TxIn{{
+			tx: wire.NewNativeMsgTxWithLocktime(1, []*wire.TxIn{{
 				PreviousOutPoint: dummyPrevOut,
 				SignatureScript:  dummySigScript,
 				Sequence:         0,
-			}}, []*wire.TxOut{&dummyTxOut}, nil, 0, nil, 300001),
+			}}, []*wire.TxOut{&dummyTxOut}, 300001),
 			height:     300000,
 			isStandard: false,
 			code:       wire.RejectNonstandard,
 		},
 		{
 			name: "Transaction size is too large",
-			tx: wire.NewMsgTx(1, []*wire.TxIn{&dummyTxIn}, []*wire.TxOut{{
+			tx: wire.NewNativeMsgTx(1, []*wire.TxIn{&dummyTxIn}, []*wire.TxOut{{
 				Value: 0,
 				PkScript: bytes.Repeat([]byte{0x00},
 					MaxStandardTxSize+1),
-			}}, nil, 0, nil),
+			}}),
 			height:     300000,
 			isStandard: false,
 			code:       wire.RejectNonstandard,
 		},
 		{
 			name: "Signature script size is too large",
-			tx: wire.NewMsgTx(1, []*wire.TxIn{{
+			tx: wire.NewNativeMsgTx(1, []*wire.TxIn{{
 				PreviousOutPoint: dummyPrevOut,
 				SignatureScript: bytes.Repeat([]byte{0x00},
 					maxStandardSigScriptSize+1),
 				Sequence: wire.MaxTxInSequenceNum,
-			}}, []*wire.TxOut{&dummyTxOut}, nil, 0, nil),
+			}}, []*wire.TxOut{&dummyTxOut}),
 			height:     300000,
 			isStandard: false,
 			code:       wire.RejectNonstandard,
 		},
 		{
 			name: "Signature script that does more than push data",
-			tx: wire.NewMsgTx(1, []*wire.TxIn{{
+			tx: wire.NewNativeMsgTx(1, []*wire.TxIn{{
 				PreviousOutPoint: dummyPrevOut,
 				SignatureScript: []byte{
 					txscript.OpCheckSigVerify},
 				Sequence: wire.MaxTxInSequenceNum,
-			}}, []*wire.TxOut{&dummyTxOut}, nil, 0, nil),
+			}}, []*wire.TxOut{&dummyTxOut}),
 			height:     300000,
 			isStandard: false,
 			code:       wire.RejectNonstandard,
 		},
 		{
 			name: "Valid but non standard public key script",
-			tx: wire.NewMsgTx(1, []*wire.TxIn{&dummyTxIn}, []*wire.TxOut{{
+			tx: wire.NewNativeMsgTx(1, []*wire.TxIn{&dummyTxIn}, []*wire.TxOut{{
 				Value:    100000000,
 				PkScript: []byte{txscript.OpTrue},
-			}}, nil, 0, nil),
+			}}),
 			height:     300000,
 			isStandard: false,
 			code:       wire.RejectNonstandard,
 		},
 		{
 			name: "More than one nulldata output",
-			tx: wire.NewMsgTx(1, []*wire.TxIn{&dummyTxIn}, []*wire.TxOut{{
+			tx: wire.NewNativeMsgTx(1, []*wire.TxIn{&dummyTxIn}, []*wire.TxOut{{
 				Value:    0,
 				PkScript: []byte{txscript.OpReturn},
 			}, {
 				Value:    0,
 				PkScript: []byte{txscript.OpReturn},
-			}}, nil, 0, nil),
+			}}),
 			height:     300000,
 			isStandard: false,
 			code:       wire.RejectNonstandard,
 		},
 		{
 			name: "Dust output",
-			tx: wire.NewMsgTx(1, []*wire.TxIn{&dummyTxIn}, []*wire.TxOut{{
+			tx: wire.NewNativeMsgTx(1, []*wire.TxIn{&dummyTxIn}, []*wire.TxOut{{
 				Value:    0,
 				PkScript: dummyPkScript,
-			}}, nil, 0, nil),
+			}}),
 			height:     300000,
 			isStandard: false,
 			code:       wire.RejectDust,
 		},
 		{
 			name: "One nulldata output with 0 amount (standard)",
-			tx: wire.NewMsgTx(1, []*wire.TxIn{&dummyTxIn}, []*wire.TxOut{{
+			tx: wire.NewNativeMsgTx(1, []*wire.TxIn{&dummyTxIn}, []*wire.TxOut{{
 				Value:    0,
 				PkScript: []byte{txscript.OpReturn},
-			}}, nil, 0, nil),
+			}}),
 			height:     300000,
 			isStandard: true,
 		},

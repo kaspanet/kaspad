@@ -360,7 +360,7 @@ func TestFullUTXOSet(t *testing.T) {
 
 	// Test fullUTXOSet addTx
 	txIn0 := &wire.TxIn{SignatureScript: []byte{}, PreviousOutPoint: wire.OutPoint{TxID: *txID0, Index: 0}, Sequence: 0}
-	transaction0 := wire.NewMsgTx(1, []*wire.TxIn{txIn0}, []*wire.TxOut{txOut0}, nil, 0, nil)
+	transaction0 := wire.NewNativeMsgTx(1, []*wire.TxIn{txIn0}, []*wire.TxOut{txOut0})
 	if ok = emptySet.AddTx(transaction0, 0); ok {
 		t.Errorf("addTx unexpectedly succeeded")
 	}
@@ -635,7 +635,7 @@ func TestDiffUTXOSet_addTx(t *testing.T) {
 	txIn0 := &wire.TxIn{SignatureScript: []byte{}, PreviousOutPoint: wire.OutPoint{TxID: *txID0, Index: math.MaxUint32}, Sequence: 0}
 	txOut0 := &wire.TxOut{PkScript: []byte{0}, Value: 10}
 	utxoEntry0 := NewUTXOEntry(txOut0, true, 0)
-	transaction0 := wire.NewMsgTx(1, []*wire.TxIn{txIn0}, []*wire.TxOut{txOut0}, nil, 0, nil)
+	transaction0 := wire.NewNativeMsgTx(1, []*wire.TxIn{txIn0}, []*wire.TxOut{txOut0})
 
 	// transaction1 spends transaction0
 	id1 := transaction0.TxID()
@@ -643,7 +643,7 @@ func TestDiffUTXOSet_addTx(t *testing.T) {
 	txIn1 := &wire.TxIn{SignatureScript: []byte{}, PreviousOutPoint: wire.OutPoint{TxID: id1, Index: 0}, Sequence: 0}
 	txOut1 := &wire.TxOut{PkScript: []byte{1}, Value: 20}
 	utxoEntry1 := NewUTXOEntry(txOut1, false, 1)
-	transaction1 := wire.NewMsgTx(1, []*wire.TxIn{txIn1}, []*wire.TxOut{txOut1}, nil, 0, nil)
+	transaction1 := wire.NewNativeMsgTx(1, []*wire.TxIn{txIn1}, []*wire.TxOut{txOut1})
 
 	// transaction2 spends transaction1
 	id2 := transaction1.TxID()
@@ -651,7 +651,7 @@ func TestDiffUTXOSet_addTx(t *testing.T) {
 	txIn2 := &wire.TxIn{SignatureScript: []byte{}, PreviousOutPoint: wire.OutPoint{TxID: id2, Index: 0}, Sequence: 0}
 	txOut2 := &wire.TxOut{PkScript: []byte{2}, Value: 30}
 	utxoEntry2 := NewUTXOEntry(txOut2, false, 2)
-	transaction2 := wire.NewMsgTx(1, []*wire.TxIn{txIn2}, []*wire.TxOut{txOut2}, nil, 0, nil)
+	transaction2 := wire.NewNativeMsgTx(1, []*wire.TxIn{txIn2}, []*wire.TxOut{txOut2})
 
 	// outpoint3 is the outpoint for transaction2
 	id3 := transaction2.TxID()
@@ -807,7 +807,7 @@ func TestDiffFromTx(t *testing.T) {
 		PkScript: OpTrueScript,
 		Value:    uint64(1),
 	}}
-	tx := wire.NewMsgTx(wire.TxVersion, txIns, txOuts, nil, 0, nil)
+	tx := wire.NewNativeMsgTx(wire.TxVersion, txIns, txOuts)
 	diff, err := fus.diffFromTx(tx, node)
 	if err != nil {
 		t.Errorf("diffFromTx: %v", err)
@@ -834,7 +834,7 @@ func TestDiffFromTx(t *testing.T) {
 		PkScript: OpTrueScript,
 		Value:    uint64(1),
 	}}
-	invalidTx := wire.NewMsgTx(wire.TxVersion, invalidTxIns, invalidTxOuts, nil, 0, nil)
+	invalidTx := wire.NewNativeMsgTx(wire.TxVersion, invalidTxIns, invalidTxOuts)
 	_, err = fus.diffFromTx(invalidTx, node)
 	if err == nil {
 		t.Errorf("diffFromTx: expected an error but got <nil>")
@@ -920,8 +920,8 @@ func TestUTXOSetAddEntry(t *testing.T) {
 }
 
 func TestUTXOSetRemoveTxOuts(t *testing.T) {
-	tx0 := wire.NewMsgTx(1, nil, []*wire.TxOut{{PkScript: []byte{1}, Value: 10}}, nil, 0, nil)
-	tx1 := wire.NewMsgTx(1, nil, []*wire.TxOut{{PkScript: []byte{2}, Value: 20}}, nil, 0, nil)
+	tx0 := wire.NewNativeMsgTx(1, nil, []*wire.TxOut{{PkScript: []byte{1}, Value: 10}})
+	tx1 := wire.NewNativeMsgTx(1, nil, []*wire.TxOut{{PkScript: []byte{2}, Value: 20}})
 	hash0 := tx0.TxID()
 	hash1 := tx1.TxID()
 	outPoint0 := wire.NewOutPoint(&hash0, 0)

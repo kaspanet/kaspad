@@ -219,13 +219,13 @@ func createSpendingTx(sigScript, pkScript []byte) *wire.MsgTx {
 	outPoint := wire.NewOutPoint(&daghash.TxID{}, ^uint32(0))
 	txIn := wire.NewTxIn(outPoint, []byte{Op0, Op0})
 	txOut := wire.NewTxOut(0, pkScript)
-	coinbaseTx := wire.NewMsgTx(wire.TxVersion, []*wire.TxIn{txIn}, []*wire.TxOut{txOut}, nil, 0, nil)
+	coinbaseTx := wire.NewNativeMsgTx(wire.TxVersion, []*wire.TxIn{txIn}, []*wire.TxOut{txOut})
 
 	coinbaseTxID := coinbaseTx.TxID()
 	outPoint = wire.NewOutPoint(&coinbaseTxID, 0)
 	txIn = wire.NewTxIn(outPoint, sigScript)
 	txOut = wire.NewTxOut(0, nil)
-	spendingTx := wire.NewMsgTx(wire.TxVersion, []*wire.TxIn{txIn}, []*wire.TxOut{txOut}, nil, 0, nil)
+	spendingTx := wire.NewNativeMsgTx(wire.TxVersion, []*wire.TxIn{txIn}, []*wire.TxOut{txOut})
 
 	return spendingTx
 }

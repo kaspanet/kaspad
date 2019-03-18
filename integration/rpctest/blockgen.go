@@ -125,7 +125,7 @@ func createCoinbaseTx(coinbaseScript []byte, nextBlockHeight int32,
 		}
 	}
 
-	return util.NewTx(wire.NewMsgTx(wire.TxVersion, txIns, txOuts, nil, 0, nil)), nil
+	return util.NewTx(wire.NewNativeMsgTx(wire.TxVersion, txIns, txOuts)), nil
 }
 
 // CreateBlock creates a new block building from the previous block with a

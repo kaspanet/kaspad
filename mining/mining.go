@@ -257,7 +257,7 @@ func CreateCoinbaseTx(params *dagconfig.Params, coinbaseScript []byte, nextBlock
 		Value:    blockdag.CalcBlockSubsidy(nextBlockHeight, params),
 		PkScript: pkScript,
 	}
-	return util.NewTx(wire.NewMsgTx(wire.TxVersion, []*wire.TxIn{txIn}, []*wire.TxOut{txOut}, nil, 0, nil)), nil
+	return util.NewTx(wire.NewNativeMsgTx(wire.TxVersion, []*wire.TxIn{txIn}, []*wire.TxOut{txOut})), nil
 }
 
 // MinimumMedianTime returns the minimum allowed timestamp for a block building

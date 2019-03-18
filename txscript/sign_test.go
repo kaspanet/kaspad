@@ -13,7 +13,6 @@ import (
 	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/util"
-	"github.com/daglabs/btcd/util/subnetworkid"
 	"github.com/daglabs/btcd/wire"
 )
 
@@ -134,7 +133,7 @@ func TestSignTxOutput(t *testing.T) {
 			Value: 3,
 		},
 	}
-	tx := wire.NewMsgTx(1, txIns, txOuts, subnetworkid.SubnetworkIDNative, 0, nil)
+	tx := wire.NewNativeMsgTx(1, txIns, txOuts)
 
 	// Pay to Pubkey Hash (uncompressed)
 	for _, hashType := range hashTypes {
@@ -1624,7 +1623,7 @@ nexttest:
 		for range sigScriptTests[i].inputs {
 			txIns = append(txIns, wire.NewTxIn(coinbaseOutPoint, nil))
 		}
-		tx := wire.NewMsgTx(wire.TxVersion, txIns, txOuts, nil, 0, nil)
+		tx := wire.NewNativeMsgTx(wire.TxVersion, txIns, txOuts)
 
 		var script []byte
 		var err error

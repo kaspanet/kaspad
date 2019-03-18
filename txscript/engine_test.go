@@ -48,7 +48,7 @@ func TestBadPC(t *testing.T) {
 		Value:    1000000000,
 		PkScript: nil,
 	}}
-	tx := wire.NewMsgTx(1, txIns, txOuts, nil, 0, nil)
+	tx := wire.NewNativeMsgTx(1, txIns, txOuts)
 	pkScript := mustParseShortForm("NOP")
 
 	for _, test := range tests {
@@ -117,7 +117,7 @@ func TestCheckErrorCondition(t *testing.T) {
 				Value:    1000000000,
 				PkScript: nil,
 			}}
-			tx := wire.NewMsgTx(1, txIns, txOuts, nil, 0, nil)
+			tx := wire.NewNativeMsgTx(1, txIns, txOuts)
 
 			pkScript := mustParseShortForm(test.script)
 
@@ -412,7 +412,7 @@ func TestDisasmPC(t *testing.T) {
 		Value:    1000000000,
 		PkScript: nil,
 	}}
-	tx := wire.NewMsgTx(1, txIns, txOuts, nil, 0, nil)
+	tx := wire.NewNativeMsgTx(1, txIns, txOuts)
 
 	pkScript := mustParseShortForm("OP_DROP NOP TRUE")
 
@@ -472,7 +472,7 @@ func TestDisasmScript(t *testing.T) {
 		Value:    1000000000,
 		PkScript: nil,
 	}}
-	tx := wire.NewMsgTx(1, txIns, txOuts, nil, 0, nil)
+	tx := wire.NewNativeMsgTx(1, txIns, txOuts)
 	pkScript := mustParseShortForm("OP_DROP NOP TRUE")
 
 	vm, err := NewEngine(pkScript, tx, 0, 0, nil)

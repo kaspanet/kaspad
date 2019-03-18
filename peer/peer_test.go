@@ -502,7 +502,7 @@ func TestPeerListeners(t *testing.T) {
 		},
 		{
 			"OnTx",
-			wire.NewMsgTx(wire.TxVersion, nil, nil, nil, 0, nil),
+			wire.NewNativeMsgTx(wire.TxVersion, nil, nil),
 		},
 		{
 			"OnBlock",

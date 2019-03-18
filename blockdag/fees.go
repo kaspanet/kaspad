@@ -157,7 +157,7 @@ func (node *blockNode) buildFeeTransaction(dag *BlockDAG, txsAcceptanceData Mult
 			txOuts = append(txOuts, txOut)
 		}
 	}
-	feeTx := wire.NewMsgTx(wire.TxVersion, txIns, txOuts, nil, 0, nil)
+	feeTx := wire.NewNativeMsgTx(wire.TxVersion, txIns, txOuts)
 	return txsort.Sort(feeTx), nil
 }
 

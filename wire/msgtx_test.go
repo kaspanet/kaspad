@@ -30,7 +30,7 @@ func TestTx(t *testing.T) {
 
 	// Ensure the command is expected value.
 	wantCmd := "tx"
-	msg := NewMsgTx(1, nil, nil, nil, 0, nil)
+	msg := NewNativeMsgTx(1, nil, nil)
 	if cmd := msg.Command(); cmd != wantCmd {
 		t.Errorf("NewMsgAddr: wrong command - got %v want %v",
 			cmd, wantCmd)
@@ -161,7 +161,7 @@ func TestTxHashAndID(t *testing.T) {
 			0xac, // OP_CHECKSIG
 		},
 	}
-	tx1 := NewMsgTx(1, []*TxIn{txIn}, []*TxOut{txOut}, nil, 0, nil)
+	tx1 := NewNativeMsgTx(1, []*TxIn{txIn}, []*TxOut{txOut})
 
 	// Ensure the hash produced is expected.
 	tx1Hash := tx1.TxHash()
@@ -225,7 +225,7 @@ func TestTxHashAndID(t *testing.T) {
 			},
 		},
 	}
-	tx2 := NewMsgTx(1, txIns, txOuts, &subnetworkid.SubnetworkID{1, 2, 3}, 0, payload)
+	tx2 := NewSubnetworkMsgTx(1, txIns, txOuts, &subnetworkid.SubnetworkID{1, 2, 3}, 0, payload)
 
 	// Ensure the hash produced is expected.
 	tx2Hash := tx2.TxHash()
@@ -257,7 +257,7 @@ func TestTxHashAndID(t *testing.T) {
 // of transaction inputs and outputs and protocol versions.
 func TestTxWire(t *testing.T) {
 	// Empty tx message.
-	noTx := NewMsgTx(1, nil, nil, nil, 0, nil)
+	noTx := NewNativeMsgTx(1, nil, nil)
 	noTxEncoded := []byte{
 		0x01, 0x00, 0x00, 0x00, // Version
 		0x00,                                           // Varint for number of input transactions
@@ -386,7 +386,7 @@ func TestTxWireErrors(t *testing.T) {
 
 // TestTxSerialize tests MsgTx serialize and deserialize.
 func TestTxSerialize(t *testing.T) {
-	noTx := NewMsgTx(1, nil, nil, nil, 0, nil)
+	noTx := NewNativeMsgTx(1, nil, nil)
 	noTxEncoded := []byte{
 		0x01, 0x00, 0x00, 0x00, // Version
 		0x00,                                           // Varint for number of input transactions
@@ -415,7 +415,7 @@ func TestTxSerialize(t *testing.T) {
 		0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Payload / Gas limit
 	}
 
-	subnetworkTx := NewMsgTx(1, nil, nil, &subnetworkid.SubnetworkID{0xff}, 5, []byte{0, 1, 2})
+	subnetworkTx := NewSubnetworkMsgTx(1, nil, nil, &subnetworkid.SubnetworkID{0xff}, 5, []byte{0, 1, 2})
 
 	subnetworkTxEncoded := []byte{
 		0x01, 0x00, 0x00, 0x00, // Version
@@ -586,7 +586,7 @@ func TestTxSerializeErrors(t *testing.T) {
 		}
 	}
 
-	registryTx := NewMsgTx(1, nil, nil, subnetworkid.SubnetworkIDRegistry, 1, nil)
+	registryTx := NewSubnetworkMsgTx(1, nil, nil, subnetworkid.SubnetworkIDRegistry, 1, nil)
 
 	w := bytes.NewBuffer(make([]byte, 0, registryTx.SerializeSize()))
 	err := registryTx.Serialize(w)
@@ -596,7 +596,7 @@ func TestTxSerializeErrors(t *testing.T) {
 		t.Errorf("TestTxSerializeErrors: expected error %v but got %v", expectedErr, err)
 	}
 
-	nativeTx := NewMsgTx(1, nil, nil, nil, 1, nil)
+	nativeTx := NewSubnetworkMsgTx(1, nil, nil, subnetworkid.SubnetworkIDNative, 1, nil)
 	w = bytes.NewBuffer(make([]byte, 0, registryTx.SerializeSize()))
 	err = nativeTx.Serialize(w)
 
@@ -739,7 +739,7 @@ func TestTxOverflowErrors(t *testing.T) {
 // various transactions is accurate.
 func TestTxSerializeSize(t *testing.T) {
 	// Empty tx message.
-	noTx := NewMsgTx(1, nil, nil, nil, 0, nil)
+	noTx := NewNativeMsgTx(1, nil, nil)
 
 	tests := []struct {
 		in   *MsgTx // Tx to encode
@@ -764,7 +764,7 @@ func TestTxSerializeSize(t *testing.T) {
 }
 
 func TestIsSubnetworkCompatible(t *testing.T) {
-	testTx := NewMsgTx(1, nil, nil, &subnetworkid.SubnetworkID{123}, 0, []byte{})
+	testTx := NewSubnetworkMsgTx(1, nil, nil, &subnetworkid.SubnetworkID{123}, 0, []byte{})
 	tests := []struct {
 		name           string
 		subnetworkID   *subnetworkid.SubnetworkID
@@ -917,7 +917,7 @@ var multiTxOuts = []*TxOut{
 		},
 	},
 }
-var multiTx = NewMsgTx(1, multiTxIns, multiTxOuts, nil, 0, nil)
+var multiTx = NewNativeMsgTx(1, multiTxIns, multiTxOuts)
 
 // multiTxEncoded is the wire encoded bytes for multiTx using protocol version
 // 60002 and is used in the various tests.

@@ -108,7 +108,7 @@ func ExampleSignTxOutput() {
 		return
 	}
 	txOut := wire.NewTxOut(100000000, pkScript)
-	originTx := wire.NewMsgTx(wire.TxVersion, []*wire.TxIn{txIn}, []*wire.TxOut{txOut}, nil, 0, nil)
+	originTx := wire.NewNativeMsgTx(wire.TxVersion, []*wire.TxIn{txIn}, []*wire.TxOut{txOut})
 	originTxID := originTx.TxID()
 
 	// Create the transaction to redeem the fake transaction.
@@ -123,7 +123,7 @@ func ExampleSignTxOutput() {
 	// but for this example don't bother.
 	txOut = wire.NewTxOut(0, nil)
 
-	redeemTx := wire.NewMsgTx(wire.TxVersion, []*wire.TxIn{txIn}, []*wire.TxOut{txOut}, nil, 0, nil)
+	redeemTx := wire.NewNativeMsgTx(wire.TxVersion, []*wire.TxIn{txIn}, []*wire.TxOut{txOut})
 
 	// Sign the redeeming transaction.
 	lookupKey := func(a util.Address) (*btcec.PrivateKey, bool, error) {

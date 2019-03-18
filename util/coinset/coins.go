@@ -138,7 +138,7 @@ func NewMsgTxWithInputCoins(txVersion int32, inputCoins Coins) *wire.MsgTx {
 			Sequence:        wire.MaxTxInSequenceNum,
 		}
 	}
-	msgTx := wire.NewMsgTx(txVersion, txIn, nil, nil, 0, nil)
+	msgTx := wire.NewNativeMsgTx(txVersion, txIn, nil)
 	return msgTx
 }
 

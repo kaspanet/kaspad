@@ -92,7 +92,7 @@ func createTransaction(value uint64, originTx *wire.MsgTx, originTxoutputIndex u
 
 	txOut := wire.NewTxOut(value, pkScript)
 
-	tx := wire.NewMsgTx(wire.TxVersion, []*wire.TxIn{txIn}, []*wire.TxOut{txOut}, nil, 0, nil)
+	tx := wire.NewNativeMsgTx(wire.TxVersion, []*wire.TxIn{txIn}, []*wire.TxOut{txOut})
 
 	if sigScript == nil {
 		sigScript, err = txscript.SignTxOutput(&dagconfig.MainNetParams,

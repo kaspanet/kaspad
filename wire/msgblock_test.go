@@ -119,7 +119,7 @@ func TestConvertToPartial(t *testing.T) {
 	block := MsgBlock{}
 	payload := []byte{1}
 	for _, transaction := range transactions {
-		block.Transactions = append(block.Transactions, NewMsgTx(1, nil, nil, transaction.subnetworkID, 0, payload))
+		block.Transactions = append(block.Transactions, NewSubnetworkMsgTx(1, nil, nil, transaction.subnetworkID, 0, payload))
 	}
 
 	block.ConvertToPartial(&subnetworkid.SubnetworkID{123})
@@ -503,7 +503,7 @@ var blockOne = MsgBlock{
 		Nonce:          0x9962e301,               // 2573394689
 	},
 	Transactions: []*MsgTx{
-		NewMsgTx(1,
+		NewNativeMsgTx(1,
 			[]*TxIn{
 				{
 					PreviousOutPoint: OutPoint{
@@ -533,8 +533,7 @@ var blockOne = MsgBlock{
 						0xac, // OP_CHECKSIG
 					},
 				},
-			},
-			nil, 0, nil),
+			}),
 	},
 }
 

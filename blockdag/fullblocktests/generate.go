@@ -294,7 +294,7 @@ func (g *testGenerator) createCoinbaseTx(blockHeight int32) *wire.MsgTx {
 		Value:    blockdag.CalcBlockSubsidy(blockHeight, g.params),
 		PkScript: opTrueScript,
 	}
-	return wire.NewMsgTx(1, []*wire.TxIn{txIn}, []*wire.TxOut{txOut}, nil, 0, nil)
+	return wire.NewNativeMsgTx(1, []*wire.TxIn{txIn}, []*wire.TxOut{txOut})
 }
 
 // calcHashMerkleRoot creates a merkle tree from the slice of transactions and
@@ -440,7 +440,7 @@ func createSpendTx(spend *spendableOut, fee util.Amount) *wire.MsgTx {
 		Sequence:         wire.MaxTxInSequenceNum,
 		SignatureScript:  nil,
 	}
-	spendTx := wire.NewMsgTx(1, []*wire.TxIn{txIn}, nil, nil, 0, nil)
+	spendTx := wire.NewNativeMsgTx(1, []*wire.TxIn{txIn}, nil)
 	spendTx.AddTxOut(wire.NewTxOut(uint64(spend.amount-fee),
 		opTrueScript))
 	spendTx.AddTxOut(wire.NewTxOut(0, uniqueOpReturnScript()))

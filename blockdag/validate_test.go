@@ -472,7 +472,7 @@ func TestCheckBlockSanity(t *testing.T) {
 func TestCheckSerializedHeight(t *testing.T) {
 	// Create an empty coinbase template to be used in the tests below.
 	coinbaseOutpoint := wire.NewOutPoint(&daghash.TxID{}, math.MaxUint32)
-	coinbaseTx := wire.NewMsgTx(1, []*wire.TxIn{wire.NewTxIn(coinbaseOutpoint, nil)}, nil, nil, 0, nil)
+	coinbaseTx := wire.NewNativeMsgTx(1, []*wire.TxIn{wire.NewTxIn(coinbaseOutpoint, nil)}, nil)
 
 	// Expected rule errors.
 	missingHeightError := RuleError{

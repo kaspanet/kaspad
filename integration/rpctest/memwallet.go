@@ -464,7 +464,7 @@ func (m *memWallet) CreateTransaction(outputs []*wire.TxOut, feeRate util.Amount
 	m.Lock()
 	defer m.Unlock()
 
-	tx := wire.NewMsgTx(wire.TxVersion, nil, nil, nil, 0, nil)
+	tx := wire.NewNativeMsgTx(wire.TxVersion, nil, nil)
 
 	// Tally up the total amount to be sent in order to perform coin
 	// selection shortly below.

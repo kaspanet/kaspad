@@ -848,7 +848,7 @@ func (msg *MsgTx) IsSubnetworkCompatible(subnetworkID *subnetworkid.SubnetworkID
 		subnetworkID.IsEqual(&msg.SubnetworkID)
 }
 
-// NewMsgTx returns a new tx message that conforms to the Message interface.
+// newMsgTx returns a new tx message that conforms to the Message interface.
 //
 // All fields except version and gas has default values if nil is passed:
 // txIn, txOut - empty arrays
@@ -858,7 +858,9 @@ func (msg *MsgTx) IsSubnetworkCompatible(subnetworkID *subnetworkid.SubnetworkID
 // The payload hash is calculated automatically according to provided payload.
 // Also, the lock time is set to zero to indicate the transaction is valid
 // immediately as opposed to some time in future.
-func NewMsgTx(version int32, txIn []*TxIn, txOut []*TxOut, subnetworkID *subnetworkid.SubnetworkID, gas uint64, payload []byte) *MsgTx {
+func newMsgTx(version int32, txIn []*TxIn, txOut []*TxOut, subnetworkID *subnetworkid.SubnetworkID,
+	gas uint64, payload []byte, lockTime uint64) *MsgTx {
+
 	if txIn == nil {
 		txIn = make([]*TxIn, 0, defaultTxInOutAlloc)
 	}
@@ -884,26 +886,35 @@ func NewMsgTx(version int32, txIn []*TxIn, txOut []*TxOut, subnetworkID *subnetw
 		Gas:          gas,
 		PayloadHash:  payloadHash,
 		Payload:      payload,
+		LockTime:     lockTime,
 	}
 }
 
-// NewMsgTxWithLocktime returns a new tx message with a locktime that conforms to the Message interface.
-//
-// See NewMsgTx for further documntation of the parameters
-func NewMsgTxWithLocktime(version int32, txIn []*TxIn, txOut []*TxOut, subnetworkID *subnetworkid.SubnetworkID,
-	gas uint64, payload []byte, locktime uint64) *MsgTx {
+// NewNativeMsgTx returns a new tx message in the native subnetwork
+func NewNativeMsgTx(version int32, txIn []*TxIn, txOut []*TxOut) *MsgTx {
+	return newMsgTx(version, txIn, txOut, nil, 0, nil, 0)
+}
 
-	tx := NewMsgTx(version, txIn, txOut, subnetworkID, gas, payload)
-	tx.LockTime = locktime
-	return tx
+// NewSubnetworkMsgTx returns a new tx message in the specified subnetwork with specified gas and payload
+func NewSubnetworkMsgTx(version int32, txIn []*TxIn, txOut []*TxOut, subnetworkID *subnetworkid.SubnetworkID,
+	gas uint64, payload []byte) *MsgTx {
+
+	return newMsgTx(version, txIn, txOut, subnetworkID, gas, payload, 0)
+}
+
+// NewNativeMsgTxWithLocktime returns a new tx message in the native subnetwork with a locktime.
+//
+// See newMsgTx for further documntation of the parameters
+func NewNativeMsgTxWithLocktime(version int32, txIn []*TxIn, txOut []*TxOut, locktime uint64) *MsgTx {
+	return newMsgTx(version, txIn, txOut, nil, 0, nil, locktime)
 }
 
 // NewRegistryMsgTx creates a new MsgTx that registers a new subnetwork
 func NewRegistryMsgTx(version int32, txIn []*TxIn, txOut []*TxOut, gasLimit uint64) *MsgTx {
 	payload := make([]byte, 8)
 	binary.LittleEndian.PutUint64(payload, gasLimit)
-	tx := NewMsgTx(version, txIn, txOut, subnetworkid.SubnetworkIDRegistry, 0, payload)
-	return tx
+
+	return NewSubnetworkMsgTx(version, txIn, txOut, subnetworkid.SubnetworkIDRegistry, 0, payload)
 }
 
 // readOutPoint reads the next sequence of bytes from r as an OutPoint.

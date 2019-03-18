@@ -50,7 +50,7 @@ func (eft *estimateFeeTester) testTx(fee util.Amount) *TxDesc {
 	eft.version++
 	return &TxDesc{
 		TxDesc: mining.TxDesc{
-			Tx:     util.NewTx(wire.NewMsgTx(eft.version, nil, nil, nil, 0, nil)),
+			Tx:     util.NewTx(wire.NewNativeMsgTx(eft.version, nil, nil)),
 			Height: eft.height,
 			Fee:    uint64(fee),
 		},

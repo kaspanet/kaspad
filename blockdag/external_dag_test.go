@@ -204,7 +204,7 @@ func TestChainedTransactions(t *testing.T) {
 		PkScript: blockdag.OpTrueScript,
 		Value:    uint64(1),
 	}
-	tx := wire.NewMsgTx(wire.TxVersion, []*wire.TxIn{txIn}, []*wire.TxOut{txOut}, nil, 0, nil)
+	tx := wire.NewNativeMsgTx(wire.TxVersion, []*wire.TxIn{txIn}, []*wire.TxOut{txOut})
 
 	chainedTxIn := &wire.TxIn{
 		PreviousOutPoint: wire.OutPoint{TxID: tx.TxID(), Index: 0},
@@ -215,7 +215,7 @@ func TestChainedTransactions(t *testing.T) {
 		PkScript: blockdag.OpTrueScript,
 		Value:    uint64(1),
 	}
-	chainedTx := wire.NewMsgTx(wire.TxVersion, []*wire.TxIn{chainedTxIn}, []*wire.TxOut{chainedTxOut}, nil, 0, nil)
+	chainedTx := wire.NewNativeMsgTx(wire.TxVersion, []*wire.TxIn{chainedTxIn}, []*wire.TxOut{chainedTxOut})
 
 	block2, err := mining.PrepareBlockForTest(dag, &params, []daghash.Hash{block1.BlockHash()}, []*wire.MsgTx{tx, chainedTx}, true, 1)
 	if err != nil {
@@ -246,7 +246,7 @@ func TestChainedTransactions(t *testing.T) {
 		PkScript: blockdag.OpTrueScript,
 		Value:    uint64(1),
 	}
-	nonChainedTx := wire.NewMsgTx(wire.TxVersion, []*wire.TxIn{nonChainedTxIn}, []*wire.TxOut{nonChainedTxOut}, nil, 0, nil)
+	nonChainedTx := wire.NewNativeMsgTx(wire.TxVersion, []*wire.TxIn{nonChainedTxIn}, []*wire.TxOut{nonChainedTxOut})
 
 	block3, err := mining.PrepareBlockForTest(dag, &params, []daghash.Hash{block1.BlockHash()}, []*wire.MsgTx{nonChainedTx}, false, 1)
 	if err != nil {
@@ -307,7 +307,7 @@ func TestGasLimit(t *testing.T) {
 		Value:    cbTxValue,
 		PkScript: blockdag.OpTrueScript,
 	}
-	tx1 := wire.NewMsgTx(wire.TxVersion, []*wire.TxIn{tx1In}, []*wire.TxOut{tx1Out}, subnetworkID, 10000, []byte{})
+	tx1 := wire.NewSubnetworkMsgTx(wire.TxVersion, []*wire.TxIn{tx1In}, []*wire.TxOut{tx1Out}, subnetworkID, 10000, []byte{})
 
 	tx2In := &wire.TxIn{
 		PreviousOutPoint: *wire.NewOutPoint(&cbTxID, 1),
@@ -317,7 +317,7 @@ func TestGasLimit(t *testing.T) {
 		Value:    cbTxValue,
 		PkScript: blockdag.OpTrueScript,
 	}
-	tx2 := wire.NewMsgTx(wire.TxVersion, []*wire.TxIn{tx2In}, []*wire.TxOut{tx2Out}, subnetworkID, 10000, []byte{})
+	tx2 := wire.NewSubnetworkMsgTx(wire.TxVersion, []*wire.TxIn{tx2In}, []*wire.TxOut{tx2Out}, subnetworkID, 10000, []byte{})
 
 	// Here we check that we can't process a block that has transactions that exceed the gas limit
 	overLimitBlock, err := mining.PrepareBlockForTest(dag, &params, dag.TipHashes(), []*wire.MsgTx{tx1, tx2}, true, 1)
@@ -346,7 +346,7 @@ func TestGasLimit(t *testing.T) {
 		Value:    cbTxValue,
 		PkScript: blockdag.OpTrueScript,
 	}
-	overflowGasTx := wire.NewMsgTx(wire.TxVersion, []*wire.TxIn{overflowGasTxIn}, []*wire.TxOut{overflowGasTxOut},
+	overflowGasTx := wire.NewSubnetworkMsgTx(wire.TxVersion, []*wire.TxIn{overflowGasTxIn}, []*wire.TxOut{overflowGasTxOut},
 		subnetworkID, math.MaxUint64, []byte{})
 
 	// Here we check that we can't process a block that its transactions' gas overflows uint64
@@ -377,7 +377,7 @@ func TestGasLimit(t *testing.T) {
 		Value:    cbTxValue,
 		PkScript: blockdag.OpTrueScript,
 	}
-	nonExistentSubnetworkTx := wire.NewMsgTx(wire.TxVersion, []*wire.TxIn{nonExistentSubnetworkTxIn},
+	nonExistentSubnetworkTx := wire.NewSubnetworkMsgTx(wire.TxVersion, []*wire.TxIn{nonExistentSubnetworkTxIn},
 		[]*wire.TxOut{nonExistentSubnetworkTxOut}, nonExistentSubnetwork, 1, []byte{})
 
 	nonExistentSubnetworkBlock, err := mining.PrepareBlockForTest(dag, &params, dag.TipHashes(), []*wire.MsgTx{nonExistentSubnetworkTx, overflowGasTx}, true, 1)

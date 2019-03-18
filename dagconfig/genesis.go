@@ -36,7 +36,7 @@ var genesisTxOuts = []*wire.TxOut{
 
 // genesisCoinbaseTx is the coinbase transaction for the genesis blocks for
 // the main network, regression test network, and test network (version 3).
-var genesisCoinbaseTx = wire.NewMsgTx(1, genesisTxIns, genesisTxOuts, nil, 0, nil)
+var genesisCoinbaseTx = wire.NewNativeMsgTx(1, genesisTxIns, genesisTxOuts)
 
 // genesisHash is the hash of the first block in the block chain for the main
 // network (genesis block).

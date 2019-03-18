@@ -209,7 +209,7 @@ func TestNewBlockTemplate(t *testing.T) {
 		PkScript: pkScript,
 		Value:    1,
 	}
-	tx := wire.NewMsgTx(wire.TxVersion, []*wire.TxIn{txIn}, []*wire.TxOut{txOut}, nil, 0, nil)
+	tx := wire.NewNativeMsgTx(wire.TxVersion, []*wire.TxIn{txIn}, []*wire.TxOut{txOut})
 
 	// We want to check that the miner filters non finalized transactions
 	txIn = &wire.TxIn{
@@ -223,7 +223,7 @@ func TestNewBlockTemplate(t *testing.T) {
 		PkScript: pkScript,
 		Value:    1,
 	}
-	nonFinalizedTx := wire.NewMsgTx(wire.TxVersion, []*wire.TxIn{txIn}, []*wire.TxOut{txOut}, nil, 0, nil)
+	nonFinalizedTx := wire.NewNativeMsgTx(wire.TxVersion, []*wire.TxIn{txIn}, []*wire.TxOut{txOut})
 	nonFinalizedTx.LockTime = uint64(dag.Height() + 2)
 
 	existingSubnetwork := &subnetworkid.SubnetworkID{0xff}
@@ -241,7 +241,7 @@ func TestNewBlockTemplate(t *testing.T) {
 		PkScript: pkScript,
 		Value:    1,
 	}
-	nonExistingSubnetworkTx := wire.NewMsgTx(wire.TxVersion, []*wire.TxIn{txIn}, []*wire.TxOut{txOut},
+	nonExistingSubnetworkTx := wire.NewSubnetworkMsgTx(wire.TxVersion, []*wire.TxIn{txIn}, []*wire.TxOut{txOut},
 		nonExistingSubnetwork, 1, []byte{})
 
 	// We want to check that the miner doesn't filters transactions that do not exceed the subnetwork gas limit
@@ -256,7 +256,7 @@ func TestNewBlockTemplate(t *testing.T) {
 		PkScript: pkScript,
 		Value:    1,
 	}
-	subnetworkTx1 := wire.NewMsgTx(wire.TxVersion, []*wire.TxIn{txIn}, []*wire.TxOut{txOut}, existingSubnetwork, 1, []byte{})
+	subnetworkTx1 := wire.NewSubnetworkMsgTx(wire.TxVersion, []*wire.TxIn{txIn}, []*wire.TxOut{txOut}, existingSubnetwork, 1, []byte{})
 
 	// We want to check that the miner filters transactions that exceed the subnetwork gas limit. (It should first push it to the priority queue, and then ignore it)
 	txIn = &wire.TxIn{
@@ -270,7 +270,7 @@ func TestNewBlockTemplate(t *testing.T) {
 		PkScript: pkScript,
 		Value:    1,
 	}
-	subnetworkTx2 := wire.NewMsgTx(wire.TxVersion, []*wire.TxIn{txIn}, []*wire.TxOut{txOut}, existingSubnetwork,
+	subnetworkTx2 := wire.NewSubnetworkMsgTx(wire.TxVersion, []*wire.TxIn{txIn}, []*wire.TxOut{txOut}, existingSubnetwork,
 		100, // Subnetwork gas limit is 90
 		[]byte{})
 

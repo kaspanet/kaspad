@@ -56,7 +56,7 @@ var genesisCoinbaseTxOuts = []*TxOut{
 		},
 	},
 }
-var genesisCoinbaseTx = NewMsgTx(1, genesisCoinbaseTxIns, genesisCoinbaseTxOuts, nil, 0, nil)
+var genesisCoinbaseTx = NewNativeMsgTx(1, genesisCoinbaseTxIns, genesisCoinbaseTxOuts)
 
 // BenchmarkWriteVarInt1 performs a benchmark on how long it takes to write
 // a single byte variable length integer.

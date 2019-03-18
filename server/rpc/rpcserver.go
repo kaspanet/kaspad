@@ -560,7 +560,7 @@ func handleCreateRawTransaction(s *Server, cmd interface{}, closeChan <-chan str
 		}
 		txIns = append(txIns, txIn)
 	}
-	mtx := wire.NewMsgTx(wire.TxVersion, txIns, nil, nil, 0, nil)
+	mtx := wire.NewNativeMsgTx(wire.TxVersion, txIns, nil)
 
 	// Add all transaction outputs to the transaction after performing
 	// some validity checks.

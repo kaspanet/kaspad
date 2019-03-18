@@ -134,10 +134,10 @@ func createTxForTest(numInputs uint32, numOutputs uint32, outputValue uint64, su
 	}
 
 	if subnetworkData != nil {
-		return wire.NewMsgTx(wire.TxVersion, txIns, txOuts, subnetworkData.subnetworkID, subnetworkData.Gas, subnetworkData.Payload)
+		return wire.NewSubnetworkMsgTx(wire.TxVersion, txIns, txOuts, subnetworkData.subnetworkID, subnetworkData.Gas, subnetworkData.Payload)
 	}
 
-	return wire.NewMsgTx(wire.TxVersion, txIns, txOuts, nil, 0, nil)
+	return wire.NewNativeMsgTx(wire.TxVersion, txIns, txOuts)
 }
 
 // createCoinbaseTxForTest returns a coinbase transaction with the requested number of
@@ -179,7 +179,7 @@ func createCoinbaseTxForTest(blockHeight int32, numOutputs uint32, extraNonce in
 		})
 	}
 
-	return wire.NewMsgTx(wire.TxVersion, txIns, txOuts, nil, 0, nil), nil
+	return wire.NewNativeMsgTx(wire.TxVersion, txIns, txOuts), nil
 }
 
 // SetVirtualForTest replaces the dag's virtual block. This function is used for test purposes only

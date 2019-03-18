@@ -23,7 +23,7 @@ func createTransaction(value uint64, originTx *wire.MsgTx, outputIndex uint32) *
 		Sequence: wire.MaxTxInSequenceNum,
 	}
 	txOut := wire.NewTxOut(value, blockdag.OpTrueScript)
-	tx := wire.NewMsgTx(wire.TxVersion, []*wire.TxIn{txIn}, []*wire.TxOut{txOut}, nil, 0, nil)
+	tx := wire.NewNativeMsgTx(wire.TxVersion, []*wire.TxIn{txIn}, []*wire.TxOut{txOut})
 
 	return tx
 }
