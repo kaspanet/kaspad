@@ -660,13 +660,11 @@ func (dag *BlockDAG) checkFinalityRules(newNode *blockNode) error {
 		return nil
 	}
 
-	finalityErr := ruleError(ErrFinality, "The last finality point is not in the selected chain of this block")
-
 	for currentNode := newNode; currentNode != dag.lastFinalityPoint; currentNode = currentNode.selectedParent {
 		// If we went past dag's last finality point without encountering it -
 		// the new block has violated finality.
 		if currentNode.blueScore <= dag.lastFinalityPoint.blueScore {
-			return finalityErr
+			return ruleError(ErrFinality, "The last finality point is not in the selected chain of this block")
 		}
 	}
 	return nil
