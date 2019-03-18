@@ -1034,7 +1034,6 @@ func (dag *BlockDAG) checkConnectToPastUTXO(block *blockNode, pastUTXO UTXOSet,
 	var totalFees uint64
 	compactFeeFactory := newCompactFeeFactory()
 
-	var feeData compactFeeData
 	for _, tx := range transactions {
 		txFee, err := CheckTransactionInputsAndCalulateFee(tx, block.height, pastUTXO,
 			dag.dagParams, fastAdd)
