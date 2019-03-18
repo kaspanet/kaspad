@@ -795,7 +795,7 @@ func (node *blockNode) addTxsToAcceptanceData(txsAcceptanceData MultiblockTxsAcc
 }
 
 // verifyAndBuildUTXO verifies all transactions in the given block and builds its UTXO
-// as a by-product it returns the transactions acceptance data and the compactFeeData for the new block
+// to save extra traversals it returns the transactions acceptance data and the compactFeeData for the new block
 func (node *blockNode) verifyAndBuildUTXO(dag *BlockDAG, transactions []*util.Tx, fastAdd bool) (
 	newBlockUTXO UTXOSet, txsAcceptanceData MultiblockTxsAcceptanceData, newBlockFeeData compactFeeData, err error) {
 
@@ -899,7 +899,7 @@ func (node *blockNode) applyBlueBlocks(selectedParentUTXO UTXOSet, blueBlocks []
 }
 
 // pastUTXO returns the UTXO of a given block's past
-// as a by-product it also returns the transaction acceptance data for
+// To save traversals over the blue blocks, it also returns the transaction acceptance data for
 // all blue blocks
 func (node *blockNode) pastUTXO(virtual *virtualBlock, db database.DB) (
 	pastUTXO UTXOSet, bluesTxsAcceptanceData MultiblockTxsAcceptanceData, err error) {
