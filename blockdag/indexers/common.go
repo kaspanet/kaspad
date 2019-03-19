@@ -52,7 +52,7 @@ type Indexer interface {
 
 	// ConnectBlock is invoked when the index manager is notified that a new
 	// block has been connected to the DAG.
-	ConnectBlock(dbTx database.Tx, block *util.Block, dag *blockdag.BlockDAG, _ blockdag.MultiblockTxsAcceptanceData) error
+	ConnectBlock(dbTx database.Tx, block *util.Block, dag *blockdag.BlockDAG, _ blockdag.MultiBlockTxsAcceptanceData) error
 }
 
 // AssertError identifies an error that indicates an internal code consistency

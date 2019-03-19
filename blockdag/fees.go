@@ -121,7 +121,7 @@ func dbFetchFeeData(dbTx database.Tx, blockHash *daghash.Hash) (compactFeeData, 
 
 // The following functions deal with building and validating the fee transaction
 
-func (node *blockNode) validateFeeTransaction(dag *BlockDAG, block *util.Block, txsAcceptanceData MultiblockTxsAcceptanceData) error {
+func (node *blockNode) validateFeeTransaction(dag *BlockDAG, block *util.Block, txsAcceptanceData MultiBlockTxsAcceptanceData) error {
 	if node.isGenesis() {
 		return nil
 	}
@@ -138,7 +138,7 @@ func (node *blockNode) validateFeeTransaction(dag *BlockDAG, block *util.Block, 
 }
 
 // buildFeeTransaction returns the expected fee transaction for the current block
-func (node *blockNode) buildFeeTransaction(dag *BlockDAG, txsAcceptanceData MultiblockTxsAcceptanceData) (*wire.MsgTx, error) {
+func (node *blockNode) buildFeeTransaction(dag *BlockDAG, txsAcceptanceData MultiBlockTxsAcceptanceData) (*wire.MsgTx, error) {
 	bluesFeeData, err := node.getBluesFeeData(dag)
 	if err != nil {
 		return nil, err
@@ -161,7 +161,7 @@ func (node *blockNode) buildFeeTransaction(dag *BlockDAG, txsAcceptanceData Mult
 
 // feeInputAndOutputForBlueBlock calculates the input and output that should go into the fee transaction of blueBlock
 // If blueBlock gets no fee - returns only txIn and nil for txOut
-func feeInputAndOutputForBlueBlock(blueBlock *blockNode, txsAcceptanceData MultiblockTxsAcceptanceData, feeData map[daghash.Hash]compactFeeData) (
+func feeInputAndOutputForBlueBlock(blueBlock *blockNode, txsAcceptanceData MultiBlockTxsAcceptanceData, feeData map[daghash.Hash]compactFeeData) (
 	*wire.TxIn, *wire.TxOut, error) {
 
 	blockTxsAcceptanceData, ok := txsAcceptanceData[blueBlock.hash]
