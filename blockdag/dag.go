@@ -563,7 +563,7 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block, fastAdd bo
 }
 
 func (dag *BlockDAG) saveChangesFromBlock(node *blockNode, block *util.Block, virtualUTXODiff *UTXODiff,
-	txsAcceptanceData MultiblockTxsAcceptanceData, feeData compactFeeData) error {
+	txsAcceptanceData MultiBlockTxsAcceptanceData, feeData compactFeeData) error {
 
 	// Atomically insert info into the database.
 	return dag.db.Update(func(dbTx database.Tx) error {
@@ -783,7 +783,7 @@ func (node *blockNode) diffFromTxs(pastUTXO UTXOSet, transactions []*util.Tx) (*
 	return diff, nil
 }
 
-func (node *blockNode) addTxsToAcceptanceData(txsAcceptanceData MultiblockTxsAcceptanceData, transactions []*util.Tx) {
+func (node *blockNode) addTxsToAcceptanceData(txsAcceptanceData MultiBlockTxsAcceptanceData, transactions []*util.Tx) {
 	blockTxsAcceptanceData := BlockTxsAcceptanceData{}
 	for _, tx := range transactions {
 		blockTxsAcceptanceData = append(blockTxsAcceptanceData, TxAcceptanceData{
@@ -797,7 +797,7 @@ func (node *blockNode) addTxsToAcceptanceData(txsAcceptanceData MultiblockTxsAcc
 // verifyAndBuildUTXO verifies all transactions in the given block and builds its UTXO
 // to save extra traversals it returns the transactions acceptance data and the compactFeeData for the new block
 func (node *blockNode) verifyAndBuildUTXO(dag *BlockDAG, transactions []*util.Tx, fastAdd bool) (
-	newBlockUTXO UTXOSet, txsAcceptanceData MultiblockTxsAcceptanceData, newBlockFeeData compactFeeData, err error) {
+	newBlockUTXO UTXOSet, txsAcceptanceData MultiBlockTxsAcceptanceData, newBlockFeeData compactFeeData, err error) {
 
 	pastUTXO, txsAcceptanceData, err := node.pastUTXO(dag.virtual, dag.db)
 	if err != nil {
@@ -831,9 +831,9 @@ type TxAcceptanceData struct {
 // if they were accepted or not by some other block
 type BlockTxsAcceptanceData []TxAcceptanceData
 
-// MultiblockTxsAcceptanceData  stores data about which transactions were accepted by a block
+// MultiBlockTxsAcceptanceData  stores data about which transactions were accepted by a block
 // It's a map from the block's blues block IDs to the transaction acceptance data
-type MultiblockTxsAcceptanceData map[daghash.Hash]BlockTxsAcceptanceData
+type MultiBlockTxsAcceptanceData map[daghash.Hash]BlockTxsAcceptanceData
 
 func genesisPastUTXO(virtual *virtualBlock) UTXOSet {
 	// The genesis has no past UTXO, so we create an empty UTXO
@@ -874,10 +874,10 @@ func (node *blockNode) fetchBlueBlocks(db database.DB) ([]*util.Block, error) {
 // Purposefully ignoring failures - these are just unaccepted transactions
 // Writing down which transactions were accepted or not in txsAcceptanceData
 func (node *blockNode) applyBlueBlocks(selectedParentUTXO UTXOSet, blueBlocks []*util.Block) (
-	pastUTXO UTXOSet, txsAcceptanceData MultiblockTxsAcceptanceData, err error) {
+	pastUTXO UTXOSet, txsAcceptanceData MultiBlockTxsAcceptanceData, err error) {
 
 	pastUTXO = selectedParentUTXO
-	txsAcceptanceData = MultiblockTxsAcceptanceData{}
+	txsAcceptanceData = MultiBlockTxsAcceptanceData{}
 
 	for _, blueBlock := range blueBlocks {
 		transactions := blueBlock.Transactions()
@@ -902,10 +902,10 @@ func (node *blockNode) applyBlueBlocks(selectedParentUTXO UTXOSet, blueBlocks []
 // To save traversals over the blue blocks, it also returns the transaction acceptance data for
 // all blue blocks
 func (node *blockNode) pastUTXO(virtual *virtualBlock, db database.DB) (
-	pastUTXO UTXOSet, bluesTxsAcceptanceData MultiblockTxsAcceptanceData, err error) {
+	pastUTXO UTXOSet, bluesTxsAcceptanceData MultiBlockTxsAcceptanceData, err error) {
 
 	if node.isGenesis() {
-		return genesisPastUTXO(virtual), MultiblockTxsAcceptanceData{}, nil
+		return genesisPastUTXO(virtual), MultiBlockTxsAcceptanceData{}, nil
 	}
 	selectedParentUTXO, err := node.selectedParent.restoreUTXO(virtual)
 	if err != nil {
@@ -1483,7 +1483,7 @@ type IndexManager interface {
 
 	// ConnectBlock is invoked when a new block has been connected to the
 	// DAG.
-	ConnectBlock(database.Tx, *util.Block, *BlockDAG, MultiblockTxsAcceptanceData) error
+	ConnectBlock(database.Tx, *util.Block, *BlockDAG, MultiBlockTxsAcceptanceData) error
 }
 
 // Config is a descriptor which specifies the blockchain instance configuration.
