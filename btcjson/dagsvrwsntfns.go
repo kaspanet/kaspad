@@ -9,34 +9,22 @@
 package btcjson
 
 const (
-	// BlockConnectedNtfnMethod is the legacy, deprecated method used for
+	// BlockAddedNtfnMethod is the legacy, deprecated method used for
 	// notifications from the dag server that a block has been connected.
 	//
-	// NOTE: Deprecated. Use FilteredBlockConnectedNtfnMethod instead.
-	BlockConnectedNtfnMethod = "blockConnected"
+	// NOTE: Deprecated. Use FilteredBlockAddedNtfnMethod instead.
+	BlockAddedNtfnMethod = "blockAdded"
 
-	// BlockDisconnectedNtfnMethod is the legacy, deprecated method used for
-	// notifications from the dag server that a block has been
-	// disconnected.
-	//
-	// NOTE: Deprecated. Use FilteredBlockDisconnectedNtfnMethod instead.
-	BlockDisconnectedNtfnMethod = "blockDisconnected"
-
-	// FilteredBlockConnectedNtfnMethod is the new method used for
+	// FilteredBlockAddedNtfnMethod is the new method used for
 	// notifications from the dag server that a block has been connected.
-	FilteredBlockConnectedNtfnMethod = "filteredBlockConnected"
-
-	// FilteredBlockDisconnectedNtfnMethod is the new method used for
-	// notifications from the dag server that a block has been
-	// disconnected.
-	FilteredBlockDisconnectedNtfnMethod = "filteredBlockDisconnected"
+	FilteredBlockAddedNtfnMethod = "filteredBlockAdded"
 
 	// RecvTxNtfnMethod is the legacy, deprecated method used for
 	// notifications from the dag server that a transaction which pays to
 	// a registered address has been processed.
 	//
 	// NOTE: Deprecated. Use RelevantTxAcceptedNtfnMethod and
-	// FilteredBlockConnectedNtfnMethod instead.
+	// FilteredBlockAddedNtfnMethod instead.
 	RecvTxNtfnMethod = "recvTx"
 
 	// RedeemingTxNtfnMethod is the legacy, deprecated method used for
@@ -44,7 +32,7 @@ const (
 	// registered outpoint has been processed.
 	//
 	// NOTE: Deprecated. Use RelevantTxAcceptedNtfnMethod and
-	// FilteredBlockConnectedNtfnMethod instead.
+	// FilteredBlockAddedNtfnMethod instead.
 	RedeemingTxNtfnMethod = "redeemingTx"
 
 	// RescanFinishedNtfnMethod is the legacy, deprecated method used for
@@ -77,79 +65,42 @@ const (
 	RelevantTxAcceptedNtfnMethod = "relevantTxAccepted"
 )
 
-// BlockConnectedNtfn defines the blockConnected JSON-RPC notification.
+// BlockAddedNtfn defines the blockAdded JSON-RPC notification.
 //
-// NOTE: Deprecated. Use FilteredBlockConnectedNtfn instead.
-type BlockConnectedNtfn struct {
+// NOTE: Deprecated. Use FilteredBlockAddedNtfn instead.
+type BlockAddedNtfn struct {
 	Hash   string
 	Height int32
 	Time   int64
 }
 
-// NewBlockConnectedNtfn returns a new instance which can be used to issue a
-// blockConnected JSON-RPC notification.
+// NewBlockAddedNtfn returns a new instance which can be used to issue a
+// blockAdded JSON-RPC notification.
 //
-// NOTE: Deprecated. Use NewFilteredBlockConnectedNtfn instead.
-func NewBlockConnectedNtfn(hash string, height int32, time int64) *BlockConnectedNtfn {
-	return &BlockConnectedNtfn{
+// NOTE: Deprecated. Use NewFilteredBlockAddedNtfn instead.
+func NewBlockAddedNtfn(hash string, height int32, time int64) *BlockAddedNtfn {
+	return &BlockAddedNtfn{
 		Hash:   hash,
 		Height: height,
 		Time:   time,
 	}
 }
 
-// BlockDisconnectedNtfn defines the blockDisconnected JSON-RPC notification.
-//
-// NOTE: Deprecated. Use FilteredBlockDisconnectedNtfn instead.
-type BlockDisconnectedNtfn struct {
-	Hash   string
-	Height int32
-	Time   int64
-}
-
-// NewBlockDisconnectedNtfn returns a new instance which can be used to issue a
-// blockDisconnected JSON-RPC notification.
-//
-// NOTE: Deprecated. Use NewFilteredBlockDisconnectedNtfn instead.
-func NewBlockDisconnectedNtfn(hash string, height int32, time int64) *BlockDisconnectedNtfn {
-	return &BlockDisconnectedNtfn{
-		Hash:   hash,
-		Height: height,
-		Time:   time,
-	}
-}
-
-// FilteredBlockConnectedNtfn defines the filteredBlockConnected JSON-RPC
+// FilteredBlockAddedNtfn defines the filteredBlockAdded JSON-RPC
 // notification.
-type FilteredBlockConnectedNtfn struct {
+type FilteredBlockAddedNtfn struct {
 	Height        int32
 	Header        string
 	SubscribedTxs []string
 }
 
-// NewFilteredBlockConnectedNtfn returns a new instance which can be used to
-// issue a filteredBlockConnected JSON-RPC notification.
-func NewFilteredBlockConnectedNtfn(height int32, header string, subscribedTxs []string) *FilteredBlockConnectedNtfn {
-	return &FilteredBlockConnectedNtfn{
+// NewFilteredBlockAddedNtfn returns a new instance which can be used to
+// issue a filteredBlockAdded JSON-RPC notification.
+func NewFilteredBlockAddedNtfn(height int32, header string, subscribedTxs []string) *FilteredBlockAddedNtfn {
+	return &FilteredBlockAddedNtfn{
 		Height:        height,
 		Header:        header,
 		SubscribedTxs: subscribedTxs,
-	}
-}
-
-// FilteredBlockDisconnectedNtfn defines the filteredBlockDisconnected JSON-RPC
-// notification.
-type FilteredBlockDisconnectedNtfn struct {
-	Height int32
-	Header string
-}
-
-// NewFilteredBlockDisconnectedNtfn returns a new instance which can be used to
-// issue a filteredBlockDisconnected JSON-RPC notification.
-func NewFilteredBlockDisconnectedNtfn(height int32, header string) *FilteredBlockDisconnectedNtfn {
-	return &FilteredBlockDisconnectedNtfn{
-		Height: height,
-		Header: header,
 	}
 }
 
@@ -163,7 +114,7 @@ type BlockDetails struct {
 
 // RecvTxNtfn defines the recvTx JSON-RPC notification.
 //
-// NOTE: Deprecated. Use RelevantTxAcceptedNtfn and FilteredBlockConnectedNtfn
+// NOTE: Deprecated. Use RelevantTxAcceptedNtfn and FilteredBlockAddedNtfn
 // instead.
 type RecvTxNtfn struct {
 	HexTx string
@@ -174,7 +125,7 @@ type RecvTxNtfn struct {
 // JSON-RPC notification.
 //
 // NOTE: Deprecated. Use NewRelevantTxAcceptedNtfn and
-// NewFilteredBlockConnectedNtfn instead.
+// NewFilteredBlockAddedNtfn instead.
 func NewRecvTxNtfn(hexTx string, block *BlockDetails) *RecvTxNtfn {
 	return &RecvTxNtfn{
 		HexTx: hexTx,
@@ -184,7 +135,7 @@ func NewRecvTxNtfn(hexTx string, block *BlockDetails) *RecvTxNtfn {
 
 // RedeemingTxNtfn defines the redeemingTx JSON-RPC notification.
 //
-// NOTE: Deprecated. Use RelevantTxAcceptedNtfn and FilteredBlockConnectedNtfn
+// NOTE: Deprecated. Use RelevantTxAcceptedNtfn and FilteredBlockAddedNtfn
 // instead.
 type RedeemingTxNtfn struct {
 	HexTx string
@@ -195,7 +146,7 @@ type RedeemingTxNtfn struct {
 // redeemingTx JSON-RPC notification.
 //
 // NOTE: Deprecated. Use NewRelevantTxAcceptedNtfn and
-// NewFilteredBlockConnectedNtfn instead.
+// NewFilteredBlockAddedNtfn instead.
 func NewRedeemingTxNtfn(hexTx string, block *BlockDetails) *RedeemingTxNtfn {
 	return &RedeemingTxNtfn{
 		HexTx: hexTx,
@@ -290,10 +241,8 @@ func init() {
 	// notifications.
 	flags := UFWebsocketOnly | UFNotification
 
-	MustRegisterCmd(BlockConnectedNtfnMethod, (*BlockConnectedNtfn)(nil), flags)
-	MustRegisterCmd(BlockDisconnectedNtfnMethod, (*BlockDisconnectedNtfn)(nil), flags)
-	MustRegisterCmd(FilteredBlockConnectedNtfnMethod, (*FilteredBlockConnectedNtfn)(nil), flags)
-	MustRegisterCmd(FilteredBlockDisconnectedNtfnMethod, (*FilteredBlockDisconnectedNtfn)(nil), flags)
+	MustRegisterCmd(BlockAddedNtfnMethod, (*BlockAddedNtfn)(nil), flags)
+	MustRegisterCmd(FilteredBlockAddedNtfnMethod, (*FilteredBlockAddedNtfn)(nil), flags)
 	MustRegisterCmd(RecvTxNtfnMethod, (*RecvTxNtfn)(nil), flags)
 	MustRegisterCmd(RedeemingTxNtfnMethod, (*RedeemingTxNtfn)(nil), flags)
 	MustRegisterCmd(RescanFinishedNtfnMethod, (*RescanFinishedNtfn)(nil), flags)

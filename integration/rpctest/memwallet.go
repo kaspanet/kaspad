@@ -49,10 +49,10 @@ func (u *utxo) isMature(height int32) bool {
 	return height >= u.maturityHeight
 }
 
-// chainUpdate encapsulates an update to the current main chain. This struct is
+// dagUpdate encapsulates an update to the current dag. This struct is
 // used to sync up the memWallet each time a new block is connected to the main
 // chain.
-type chainUpdate struct {
+type dagUpdate struct {
 	blockHeight  int32
 	filteredTxns []*util.Tx
 	isConnect    bool // True if connect, false if disconnect
@@ -96,7 +96,7 @@ type memWallet struct {
 	// disconnected block on the wallet's set of spendable utxos.
 	reorgJournal map[int32]*undoEntry
 
-	chainUpdates      []*chainUpdate
+	chainUpdates      []*dagUpdate
 	chainUpdateSignal chan struct{}
 	chainMtx          sync.Mutex
 
@@ -157,7 +157,7 @@ func newMemWallet(net *dagconfig.Params, harnessID uint32) (*memWallet, error) {
 
 // Start launches all goroutines required for the wallet to function properly.
 func (m *memWallet) Start() {
-	go m.chainSyncer()
+	go m.dagSyncer()
 }
 
 // SyncedHeight returns the height the wallet is known to be synced to.
@@ -182,7 +182,7 @@ func (m *memWallet) IngestBlock(height int32, header *wire.BlockHeader, filtered
 	// Append this new chain update to the end of the queue of new chain
 	// updates.
 	m.chainMtx.Lock()
-	m.chainUpdates = append(m.chainUpdates, &chainUpdate{height,
+	m.chainUpdates = append(m.chainUpdates, &dagUpdate{height,
 		filteredTxns, true})
 	m.chainMtx.Unlock()
 
@@ -196,7 +196,7 @@ func (m *memWallet) IngestBlock(height int32, header *wire.BlockHeader, filtered
 
 // ingestBlock updates the wallet's internal utxo state based on the outputs
 // created and destroyed within each block.
-func (m *memWallet) ingestBlock(update *chainUpdate) {
+func (m *memWallet) ingestBlock(update *dagUpdate) {
 	// Update the latest synced height, then process each filtered
 	// transaction in the block creating and destroying utxos within
 	// the wallet as a result.
@@ -218,12 +218,12 @@ func (m *memWallet) ingestBlock(update *chainUpdate) {
 	m.reorgJournal[update.blockHeight] = undo
 }
 
-// chainSyncer is a goroutine dedicated to processing new blocks in order to
+// dagSyncer is a goroutine dedicated to processing new blocks in order to
 // keep the wallet's utxo state up to date.
 //
 // NOTE: This MUST be run as a goroutine.
-func (m *memWallet) chainSyncer() {
-	var update *chainUpdate
+func (m *memWallet) dagSyncer() {
+	var update *dagUpdate
 
 	for range m.chainUpdateSignal {
 		// A new update is available, so pop the new chain update from
@@ -237,8 +237,6 @@ func (m *memWallet) chainSyncer() {
 		m.Lock()
 		if update.isConnect {
 			m.ingestBlock(update)
-		} else {
-			m.unwindBlock(update)
 		}
 		m.Unlock()
 	}
@@ -293,41 +291,6 @@ func (m *memWallet) evalInputs(inputs []*wire.TxIn, undo *undoEntry) {
 		undo.utxosDestroyed[op] = oldUtxo
 		delete(m.utxos, op)
 	}
-}
-
-// UnwindBlock is a call-back which is to be executed each time a block is
-// disconnected from the main chain. It queues the update for the chain syncer,
-// calling the private version in sequential order.
-func (m *memWallet) UnwindBlock(height int32, header *wire.BlockHeader) {
-	// Append this new chain update to the end of the queue of new chain
-	// updates.
-	m.chainMtx.Lock()
-	m.chainUpdates = append(m.chainUpdates, &chainUpdate{height,
-		nil, false})
-	m.chainMtx.Unlock()
-
-	// Launch a goroutine to signal the chainSyncer that a new update is
-	// available. We do this in a new goroutine in order to avoid blocking
-	// the main loop of the rpc client.
-	go func() {
-		m.chainUpdateSignal <- struct{}{}
-	}()
-}
-
-// unwindBlock undoes the effect that a particular block had on the wallet's
-// internal utxo state.
-func (m *memWallet) unwindBlock(update *chainUpdate) {
-	undo := m.reorgJournal[update.blockHeight]
-
-	for _, utxo := range undo.utxosCreated {
-		delete(m.utxos, utxo)
-	}
-
-	for outPoint, utxo := range undo.utxosDestroyed {
-		m.utxos[outPoint] = utxo
-	}
-
-	delete(m.reorgJournal, update.blockHeight)
 }
 
 // newAddress returns a new address from the wallet's hd key chain.  It also

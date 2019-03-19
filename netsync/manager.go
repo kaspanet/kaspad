@@ -1173,7 +1173,7 @@ func (sm *SyncManager) handleBlockDAGNotification(notification *blockdag.Notific
 	switch notification.Type {
 	// A block has been accepted into the block chain.  Relay it to other
 	// peers.
-	case blockdag.NTBlockAccepted:
+	case blockdag.NTBlockAdded:
 		// Don't relay if we are not current. Other peers that are
 		// current should already know about it.
 		if !sm.current() {
@@ -1182,7 +1182,7 @@ func (sm *SyncManager) handleBlockDAGNotification(notification *blockdag.Notific
 
 		block, ok := notification.Data.(*util.Block)
 		if !ok {
-			log.Warnf("Chain accepted notification is not a block.")
+			log.Warnf("Block Added notification data is not a block.")
 			break
 		}
 
@@ -1190,14 +1190,7 @@ func (sm *SyncManager) handleBlockDAGNotification(notification *blockdag.Notific
 		iv := wire.NewInvVect(wire.InvTypeBlock, block.Hash())
 		sm.peerNotifier.RelayInventory(iv, block.MsgBlock().Header)
 
-	// A block has been connected to the block DAG.
-	case blockdag.NTBlockConnected:
-		block, ok := notification.Data.(*util.Block)
-		if !ok {
-			log.Warnf("Chain connected notification is not a block.")
-			break
-		}
-
+		// Update mempool
 		ch := make(chan mempool.NewBlockMsg)
 		go func() {
 			err := sm.txMemPool.HandleNewBlock(block, ch)

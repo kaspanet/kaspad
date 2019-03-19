@@ -30,7 +30,7 @@ func TestNotifications(t *testing.T) {
 
 	notificationCount := 0
 	callback := func(notification *Notification) {
-		if notification.Type == NTBlockAccepted {
+		if notification.Type == NTBlockAdded {
 			notificationCount++
 		}
 	}
