@@ -57,7 +57,7 @@ func TestMessage(t *testing.T) {
 	msgInv := NewMsgInv()
 	msgGetData := NewMsgGetData()
 	msgNotFound := NewMsgNotFound()
-	msgTx := NewMsgTx(1)
+	msgTx := NewNativeMsgTx(1, nil, nil)
 	msgPing := NewMsgPing(123123)
 	msgPong := NewMsgPong(123123)
 	msgGetHeaders := NewMsgGetHeaders()

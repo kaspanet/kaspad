@@ -144,18 +144,20 @@ func (node *blockNode) buildFeeTransaction(dag *BlockDAG, txsAcceptanceData Mult
 		return nil, err
 	}
 
-	feeTx := wire.NewMsgTx(wire.TxVersion)
+	txIns := []*wire.TxIn{}
+	txOuts := []*wire.TxOut{}
 
 	for _, blue := range node.blues {
 		txIn, txOut, err := feeInputAndOutputForBlueBlock(blue, txsAcceptanceData, bluesFeeData)
 		if err != nil {
 			return nil, err
 		}
-		feeTx.AddTxIn(txIn)
+		txIns = append(txIns, txIn)
 		if txOut != nil {
-			feeTx.AddTxOut(txOut)
+			txOuts = append(txOuts, txOut)
 		}
 	}
+	feeTx := wire.NewNativeMsgTx(wire.TxVersion, txIns, txOuts)
 	return txsort.Sort(feeTx), nil
 }
 

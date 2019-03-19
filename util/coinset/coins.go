@@ -126,11 +126,10 @@ func (cs *CoinSet) removeElement(e *list.Element) Coin {
 // NewMsgTxWithInputCoins takes the coins in the CoinSet and makes them
 // the inputs to a new wire.MsgTx which is returned.
 func NewMsgTxWithInputCoins(txVersion int32, inputCoins Coins) *wire.MsgTx {
-	msgTx := wire.NewMsgTx(txVersion)
 	coins := inputCoins.Coins()
-	msgTx.TxIn = make([]*wire.TxIn, len(coins))
+	txIn := make([]*wire.TxIn, len(coins))
 	for i, coin := range coins {
-		msgTx.TxIn[i] = &wire.TxIn{
+		txIn[i] = &wire.TxIn{
 			PreviousOutPoint: wire.OutPoint{
 				TxID:  *coin.ID(),
 				Index: coin.Index(),
@@ -139,6 +138,7 @@ func NewMsgTxWithInputCoins(txVersion int32, inputCoins Coins) *wire.MsgTx {
 			Sequence:        wire.MaxTxInSequenceNum,
 		}
 	}
+	msgTx := wire.NewNativeMsgTx(txVersion, txIn, nil)
 	return msgTx
 }
 

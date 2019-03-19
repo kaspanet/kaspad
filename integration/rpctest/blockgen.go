@@ -105,26 +105,27 @@ func createCoinbaseTx(coinbaseScript []byte, nextBlockHeight int32,
 		return nil, err
 	}
 
-	tx := wire.NewMsgTx(wire.TxVersion)
-	tx.AddTxIn(&wire.TxIn{
+	txIns := []*wire.TxIn{&wire.TxIn{
 		// Coinbase transactions have no inputs, so previous outpoint is
 		// zero hash and max index.
 		PreviousOutPoint: *wire.NewOutPoint(&daghash.TxID{},
 			wire.MaxPrevOutIndex),
 		SignatureScript: coinbaseScript,
 		Sequence:        wire.MaxTxInSequenceNum,
-	})
+	}}
+	txOuts := []*wire.TxOut{}
 	if len(mineTo) == 0 {
-		tx.AddTxOut(&wire.TxOut{
+		txOuts = append(txOuts, &wire.TxOut{
 			Value:    blockdag.CalcBlockSubsidy(nextBlockHeight, net),
 			PkScript: pkScript,
 		})
 	} else {
 		for i := range mineTo {
-			tx.AddTxOut(&mineTo[i])
+			txOuts = append(txOuts, &mineTo[i])
 		}
 	}
-	return util.NewTx(tx), nil
+
+	return util.NewTx(wire.NewNativeMsgTx(wire.TxVersion, txIns, txOuts)), nil
 }
 
 // CreateBlock creates a new block building from the previous block with a

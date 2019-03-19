@@ -9,38 +9,34 @@ import (
 	"time"
 
 	"github.com/daglabs/btcd/dagconfig/daghash"
-	"github.com/daglabs/btcd/util/subnetworkid"
 	"github.com/daglabs/btcd/wire"
 )
 
+var genesisTxIns = []*wire.TxIn{
+	{
+		PreviousOutPoint: wire.OutPoint{
+			TxID:  daghash.TxID{},
+			Index: 0xffffffff,
+		},
+		SignatureScript: []byte{
+			0x00, 0x00, 0x0b, 0x2f, 0x50, 0x32, 0x53, 0x48,
+			0x2f, 0x62, 0x74, 0x63, 0x64, 0x2f,
+		},
+		Sequence: math.MaxUint64,
+	},
+}
+var genesisTxOuts = []*wire.TxOut{
+	{
+		Value: 0x12a05f200,
+		PkScript: []byte{
+			0x51,
+		},
+	},
+}
+
 // genesisCoinbaseTx is the coinbase transaction for the genesis blocks for
 // the main network, regression test network, and test network (version 3).
-var genesisCoinbaseTx = wire.MsgTx{
-	Version: 1,
-	TxIn: []*wire.TxIn{
-		{
-			PreviousOutPoint: wire.OutPoint{
-				TxID:  daghash.TxID{},
-				Index: 0xffffffff,
-			},
-			SignatureScript: []byte{
-				0x00, 0x00, 0x0b, 0x2f, 0x50, 0x32, 0x53, 0x48,
-				0x2f, 0x62, 0x74, 0x63, 0x64, 0x2f,
-			},
-			Sequence: math.MaxUint64,
-		},
-	},
-	TxOut: []*wire.TxOut{
-		{
-			Value: 0x12a05f200,
-			PkScript: []byte{
-				0x51,
-			},
-		},
-	},
-	LockTime:     0,
-	SubnetworkID: *subnetworkid.SubnetworkIDNative,
-}
+var genesisCoinbaseTx = wire.NewNativeMsgTx(1, genesisTxIns, genesisTxOuts)
 
 // genesisHash is the hash of the first block in the block chain for the main
 // network (genesis block).
@@ -72,7 +68,7 @@ var genesisBlock = wire.MsgBlock{
 		Bits:           0x207fffff,
 		Nonce:          0,
 	},
-	Transactions: []*wire.MsgTx{&genesisCoinbaseTx},
+	Transactions: []*wire.MsgTx{genesisCoinbaseTx},
 }
 
 // regTestGenesisHash is the hash of the first block in the block chain for the

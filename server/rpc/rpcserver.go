@@ -544,9 +544,9 @@ func handleCreateRawTransaction(s *Server, cmd interface{}, closeChan <-chan str
 		}
 	}
 
+	txIns := []*wire.TxIn{}
 	// Add all transaction inputs to a new transaction after performing
 	// some validity checks.
-	mtx := wire.NewMsgTx(wire.TxVersion)
 	for _, input := range c.Inputs {
 		txID, err := daghash.NewTxIDFromStr(input.TxID)
 		if err != nil {
@@ -558,8 +558,9 @@ func handleCreateRawTransaction(s *Server, cmd interface{}, closeChan <-chan str
 		if c.LockTime != nil && *c.LockTime != 0 {
 			txIn.Sequence = wire.MaxTxInSequenceNum - 1
 		}
-		mtx.AddTxIn(txIn)
+		txIns = append(txIns, txIn)
 	}
+	mtx := wire.NewNativeMsgTx(wire.TxVersion, txIns, nil)
 
 	// Add all transaction outputs to the transaction after performing
 	// some validity checks.
