@@ -220,6 +220,10 @@ type Config struct {
 	// to the peer as needed.
 	SelectedTip func() *daghash.Hash
 
+	// SelectedTip specifies a callback which provides the selected tip
+	// to the peer as needed.
+	BlockExists func(*daghash.Hash) (bool, error)
+
 	// HostToNetAddress returns the netaddress for the given host. This can be
 	// nil in  which case the host will be parsed as an IP address.
 	HostToNetAddress HostToNetAddrFunc
@@ -448,14 +452,13 @@ type Peer struct {
 
 	// These fields keep track of statistics for the peer and are protected
 	// by the statsMtx mutex.
-	statsMtx           sync.RWMutex
-	timeOffset         int64
-	timeConnected      time.Time
-	selectedTip        *daghash.Hash
-	lastAnnouncedBlock *daghash.Hash
-	lastPingNonce      uint64    // Set to nonce if we have a pending ping.
-	lastPingTime       time.Time // Time we sent last ping.
-	lastPingMicros     int64     // Time for last ping to return.
+	statsMtx       sync.RWMutex
+	timeOffset     int64
+	timeConnected  time.Time
+	selectedTip    *daghash.Hash
+	lastPingNonce  uint64    // Set to nonce if we have a pending ping.
+	lastPingTime   time.Time // Time we sent last ping.
+	lastPingMicros int64     // Time for last ping to return.
 
 	stallControl  chan stallControlMsg
 	outputQueue   chan outMsg
@@ -474,18 +477,6 @@ type Peer struct {
 // This function is safe for concurrent access.
 func (p *Peer) String() string {
 	return fmt.Sprintf("%s (%s)", p.addr, logger.DirectionString(p.inbound))
-}
-
-// UpdateLastAnnouncedBlock updates meta-data about the last block hash this
-// peer is known to have announced.
-//
-// This function is safe for concurrent access.
-func (p *Peer) UpdateLastAnnouncedBlock(blkHash *daghash.Hash) {
-	log.Tracef("Updating last blk for peer %s, %s", p.addr, blkHash)
-
-	p.statsMtx.Lock()
-	p.lastAnnouncedBlock = blkHash
-	p.statsMtx.Unlock()
 }
 
 // AddKnownInventory adds the passed inventory to the cache of known inventory
@@ -603,17 +594,6 @@ func (p *Peer) SubnetworkID() *subnetworkid.SubnetworkID {
 	return subnetworkID
 }
 
-// LastAnnouncedBlock returns the last announced block of the remote peer.
-//
-// This function is safe for concurrent access.
-func (p *Peer) LastAnnouncedBlock() *daghash.Hash {
-	p.statsMtx.RLock()
-	lastAnnouncedBlock := p.lastAnnouncedBlock
-	p.statsMtx.RUnlock()
-
-	return lastAnnouncedBlock
-}
-
 // LastPingNonce returns the last ping nonce of the remote peer.
 //
 // This function is safe for concurrent access.
@@ -696,9 +676,12 @@ func (p *Peer) SelectedTip() *daghash.Hash {
 // IsSyncCandidate returns whether or not this peer is a sync candidate.
 //
 // This function is safe for concurrent access.
-func (p *Peer) IsSyncCandidate() bool {
-	// TODO: (Ori netsync) should return true if we don't know the peer's selected tip. (Don't forget to use p.statsMtx)
-	return true
+func (p *Peer) IsSyncCandidate() (bool, error) {
+	exists, err := p.cfg.BlockExists(p.selectedTip)
+	if err != nil {
+		return false, err
+	}
+	return !exists, nil
 }
 
 // LastSend returns the last send time of the peer.

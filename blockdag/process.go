@@ -33,11 +33,11 @@ const (
 	BFNone BehaviorFlags = 0
 )
 
-// blockExists determines whether a block with the given hash exists either in
-// the main chain or any side chains.
+// BlockExists determines whether a block with the given hash exists in
+// the DAG.
 //
 // This function is safe for concurrent access.
-func (dag *BlockDAG) blockExists(hash *daghash.Hash) (bool, error) {
+func (dag *BlockDAG) BlockExists(hash *daghash.Hash) (bool, error) {
 	// Check block index first (could be main chain or side chain blocks).
 	if dag.index.HaveBlock(hash) {
 		return true, nil
@@ -148,7 +148,7 @@ func (dag *BlockDAG) ProcessBlock(block *util.Block, flags BehaviorFlags) (bool,
 	log.Tracef("Processing block %s", blockHash)
 
 	// The block must not already exist in the main chain or side chains.
-	exists, err := dag.blockExists(blockHash)
+	exists, err := dag.BlockExists(blockHash)
 	if err != nil {
 		return false, err
 	}
@@ -212,7 +212,7 @@ func (dag *BlockDAG) ProcessBlock(block *util.Block, flags BehaviorFlags) (bool,
 	// Handle orphan blocks.
 	allParentsExist := true
 	for _, parentHash := range blockHeader.ParentHashes {
-		parentExists, err := dag.blockExists(&parentHash)
+		parentExists, err := dag.BlockExists(&parentHash)
 		if err != nil {
 			return false, err
 		}
