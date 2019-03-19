@@ -892,7 +892,7 @@ func newMsgTx(version int32, txIn []*TxIn, txOut []*TxOut, subnetworkID *subnetw
 
 // NewNativeMsgTx returns a new tx message in the native subnetwork
 func NewNativeMsgTx(version int32, txIn []*TxIn, txOut []*TxOut) *MsgTx {
-	return newMsgTx(version, txIn, txOut, nil, 0, nil, 0)
+	return newMsgTx(version, txIn, txOut, subnetworkid.SubnetworkIDNative, 0, nil, 0)
 }
 
 // NewSubnetworkMsgTx returns a new tx message in the specified subnetwork with specified gas and payload
@@ -906,7 +906,7 @@ func NewSubnetworkMsgTx(version int32, txIn []*TxIn, txOut []*TxOut, subnetworkI
 //
 // See newMsgTx for further documntation of the parameters
 func NewNativeMsgTxWithLocktime(version int32, txIn []*TxIn, txOut []*TxOut, locktime uint64) *MsgTx {
-	return newMsgTx(version, txIn, txOut, nil, 0, nil, locktime)
+	return newMsgTx(version, txIn, txOut, subnetworkid.SubnetworkIDNative, 0, nil, locktime)
 }
 
 // NewRegistryMsgTx creates a new MsgTx that registers a new subnetwork
