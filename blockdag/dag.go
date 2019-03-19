@@ -204,30 +204,41 @@ func (dag *BlockDAG) IsKnownOrphan(hash *daghash.Hash) bool {
 	return exists
 }
 
-// GetOrphanRoot returns the head of the chain for the provided hash from the
-// map of orphan blocks.
+// GetOrphanMissingAncestors returns all of the missing parents in the orphan's sub-DAG
 //
 // This function is safe for concurrent access.
-func (dag *BlockDAG) GetOrphanRoot(hash *daghash.Hash) *daghash.Hash {
+func (dag *BlockDAG) GetOrphanMissingAncestors(hash *daghash.Hash) ([]*daghash.Hash, error) {
 	// Protect concurrent access.  Using a read lock only so multiple
 	// readers can query without blocking each other.
 	dag.orphanLock.RLock()
 	defer dag.orphanLock.RUnlock()
 
-	// Keep looping while the parent of each orphaned block is
-	// known and is an orphan itself.
-	orphanRoot := hash
-	parentHash := hash
-	for {
-		orphan, exists := dag.orphans[*parentHash]
-		if !exists {
-			break
-		}
-		orphanRoot = parentHash
-		parentHash = orphan.block.MsgBlock().Header.SelectedParentHash()
-	}
+	missingParentsHashes := make([]*daghash.Hash, 0)
 
-	return orphanRoot
+	visited := make(map[daghash.Hash]bool)
+	queue := []*daghash.Hash{hash}
+	for len(queue) > 0 {
+		var current *daghash.Hash
+		current, queue = queue[0], queue[1:]
+		if !visited[*current] {
+			visited[*current] = true
+			orphan, orphanExists := dag.orphans[*current]
+			if orphanExists {
+				for _, parentHash := range orphan.block.MsgBlock().Header.ParentHashes {
+					queue = append(queue, &parentHash)
+				}
+			} else {
+				existsInDag, err := dag.BlockExists(current)
+				if err != nil {
+					return nil, err
+				}
+				if !existsInDag {
+					missingParentsHashes = append(missingParentsHashes, current)
+				}
+			}
+		}
+	}
+	return missingParentsHashes, nil
 }
 
 // removeOrphanBlock removes the passed orphan block from the orphan pool and
