@@ -233,7 +233,7 @@ func (sm *SyncManager) startSync() {
 		isCandidate, err := peer.IsSyncCandidate()
 		if err != nil {
 			log.Errorf("Failed to check if peer %s is"+
-				"a peer candidate: %s", peer, err)
+				"a sync candidate: %s", peer, err)
 			return
 		}
 
