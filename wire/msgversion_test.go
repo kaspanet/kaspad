@@ -153,6 +153,12 @@ func TestVersionWire(t *testing.T) {
 			baseVersionWithRelayTxEncoded,
 			ProtocolVersion,
 		},
+		{
+			verRelayTxFalse,
+			verRelayTxFalse,
+			verRelayTxFalseEncoded,
+			ProtocolVersion,
+		},
 	}
 
 	t.Logf("Running %d tests", len(tests))
