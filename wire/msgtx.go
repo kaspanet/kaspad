@@ -852,7 +852,6 @@ func (msg *MsgTx) IsSubnetworkCompatible(subnetworkID *subnetworkid.SubnetworkID
 //
 // All fields except version and gas has default values if nil is passed:
 // txIn, txOut - empty arrays
-// subnetworkID - the native subnetwork
 // payload - an empty payload
 //
 // The payload hash is calculated automatically according to provided payload.
@@ -867,10 +866,6 @@ func newMsgTx(version int32, txIn []*TxIn, txOut []*TxOut, subnetworkID *subnetw
 
 	if txOut == nil {
 		txOut = make([]*TxOut, 0, defaultTxInOutAlloc)
-	}
-
-	if subnetworkID == nil {
-		subnetworkID = subnetworkid.SubnetworkIDNative
 	}
 
 	var payloadHash *daghash.Hash
