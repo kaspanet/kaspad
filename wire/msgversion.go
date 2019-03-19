@@ -105,34 +105,26 @@ func (msg *MsgVersion) BtcDecode(r io.Reader, pver uint32) error {
 		return err
 	}
 
-	// Protocol versions >= 106 added a from address, nonce, and user agent
-	// field and they are only considered present if there are bytes
-	// remaining in the message.
-	if buf.Len() > 0 {
-		err = readNetAddress(buf, pver, &msg.AddrMe, false)
-		if err != nil {
-			return err
-		}
+	err = readNetAddress(buf, pver, &msg.AddrMe, false)
+	if err != nil {
+		return err
 	}
-	if buf.Len() > 0 {
-		err = readElement(buf, &msg.Nonce)
-		if err != nil {
-			return err
-		}
+	err = readElement(buf, &msg.Nonce)
+	if err != nil {
+		return err
 	}
-	if buf.Len() > 0 {
-		userAgent, err := ReadVarString(buf, pver)
-		if err != nil {
-			return err
-		}
-		err = validateUserAgent(userAgent)
-		if err != nil {
-			return err
-		}
-		msg.UserAgent = userAgent
+	userAgent, err := ReadVarString(buf, pver)
+	if err != nil {
+		return err
 	}
+	err = validateUserAgent(userAgent)
+	if err != nil {
+		return err
+	}
+	msg.UserAgent = userAgent
 
-	err = readElement(buf, &msg.SelectedTip)
+	msg.SelectedTip = &daghash.Hash{}
+	err = readElement(buf, msg.SelectedTip)
 	if err != nil {
 		return err
 	}

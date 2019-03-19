@@ -219,6 +219,7 @@ func TestPeerConnection(t *testing.T) {
 		ProtocolVersion:   wire.ProtocolVersion, // Configure with older version
 		Services:          0,
 		SubnetworkID:      subnetworkid.SubnetworkIDSupportsAll,
+		SelectedTip:       fakeSelectedTipFn,
 	}
 	peer2Cfg := &peer.Config{
 		Listeners:         peer1Cfg.Listeners,
@@ -229,6 +230,7 @@ func TestPeerConnection(t *testing.T) {
 		ProtocolVersion:   wire.ProtocolVersion + 1,
 		Services:          wire.SFNodeNetwork,
 		SubnetworkID:      subnetworkid.SubnetworkIDSupportsAll,
+		SelectedTip:       fakeSelectedTipFn,
 	}
 
 	wantStats1 := peerStats{
@@ -242,8 +244,8 @@ func TestPeerConnection(t *testing.T) {
 		wantLastPingNonce:   uint64(0),
 		wantLastPingMicros:  int64(0),
 		wantTimeOffset:      int64(0),
-		wantBytesSent:       187, // 163 version + 24 verack
-		wantBytesReceived:   187,
+		wantBytesSent:       215, // 191 version + 24 verack
+		wantBytesReceived:   215,
 	}
 	wantStats2 := peerStats{
 		wantUserAgent:       wire.DefaultUserAgent + "peer:1.0(comment)/",
@@ -256,8 +258,8 @@ func TestPeerConnection(t *testing.T) {
 		wantLastPingNonce:   uint64(0),
 		wantLastPingMicros:  int64(0),
 		wantTimeOffset:      int64(0),
-		wantBytesSent:       187, // 163 version + 24 verack
-		wantBytesReceived:   187,
+		wantBytesSent:       215, // 191 version + 24 verack
+		wantBytesReceived:   215,
 	}
 
 	tests := []struct {
@@ -431,6 +433,7 @@ func TestPeerListeners(t *testing.T) {
 		DAGParams:         &dagconfig.MainNetParams,
 		Services:          wire.SFNodeBloom,
 		SubnetworkID:      subnetworkid.SubnetworkIDSupportsAll,
+		SelectedTip:       fakeSelectedTipFn,
 	}
 	inConn, outConn := pipe(
 		&conn{raddr: "10.0.0.1:8333"},
@@ -591,7 +594,6 @@ func TestPeerListeners(t *testing.T) {
 
 // TestOutboundPeer tests that the outbound peer works as expected.
 func TestOutboundPeer(t *testing.T) {
-	// TODO: (Ori netsync) fix this test
 	peerCfg := &peer.Config{
 		SelectedTip: func() *daghash.Hash {
 			return &daghash.ZeroHash
@@ -616,23 +618,7 @@ func TestOutboundPeer(t *testing.T) {
 	// Test trying to connect twice.
 	p.AssociateConnection(c)
 	p.AssociateConnection(c)
-
-	disconnected := make(chan struct{})
-	go func() {
-		p.WaitForDisconnect()
-		disconnected <- struct{}{}
-	}()
-
-	select {
-	case <-disconnected:
-		close(disconnected)
-	case <-time.After(time.Second):
-		t.Fatal("Peer did not automatically disconnect.")
-	}
-
-	if p.Connected() {
-		t.Fatalf("Should not be connected as NewestBlock produces error.")
-	}
+	p.Disconnect()
 
 	// Test Queue Inv
 	fakeBlockHash := &daghash.Hash{0: 0x00, 1: 0x01}
@@ -650,7 +636,7 @@ func TestOutboundPeer(t *testing.T) {
 	<-done
 	p.Disconnect()
 
-	// Test NewestBlock
+	// Test SelectedTip
 	var selectedTip = func() *daghash.Hash {
 		hashStr := "14a0810ac680a3eb3f82edc878cea25ec41d6b790744e5daeef"
 		hash, err := daghash.NewHashFromStr(hashStr)
@@ -729,6 +715,7 @@ func TestUnsupportedVersionPeer(t *testing.T) {
 		DAGParams:         &dagconfig.MainNetParams,
 		Services:          0,
 		SubnetworkID:      subnetworkid.SubnetworkIDSupportsAll,
+		SelectedTip:       fakeSelectedTipFn,
 	}
 
 	localNA := wire.NewNetAddressIPPort(
@@ -826,4 +813,8 @@ func TestUnsupportedVersionPeer(t *testing.T) {
 func init() {
 	// Allow self connection when running the tests.
 	peer.TstAllowSelfConns()
+}
+
+func fakeSelectedTipFn() *daghash.Hash {
+	return &daghash.Hash{0x12, 0x34}
 }
