@@ -119,7 +119,7 @@ func loadConfig() (*config, error) {
 
 	cfg.Listen = normalizeAddress(cfg.Listen, defaultListenPort)
 
-	if cfg.Testnet && cfg.DevNet {
+	if cfg.TestNet && cfg.DevNet {
 		str := "Both testnet and devnet are specified"
 		err := fmt.Errorf(str)
 		fmt.Fprintln(os.Stderr, err)
