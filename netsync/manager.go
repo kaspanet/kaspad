@@ -959,7 +959,7 @@ func (sm *SyncManager) handleInvMsg(imsg *invMsg) {
 
 func (sm *SyncManager) sendInvsFromRequestedQueue(peer *peerpkg.Peer, state *peerSyncState) {
 	state.requestQueueMtx.Lock()
-	defer state.requestQueueMtx.Lock()
+	defer state.requestQueueMtx.Unlock()
 	numRequested := 0
 	gdmsg := wire.NewMsgGetData()
 	requestQueue := state.requestQueue
