@@ -133,6 +133,7 @@ type peerSyncState struct {
 	syncCandidate   bool
 	requestQueueMtx sync.Mutex
 	requestQueue    []*wire.InvVect
+	requestQueueSet map[daghash.Hash]struct{}
 	requestedTxns   map[daghash.TxID]struct{}
 	requestedBlocks map[daghash.Hash]struct{}
 }
@@ -549,7 +550,7 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 
 	// Request the parents for the orphan block from the peer that sent it.
 	if isOrphan {
-		missingAncestors, err := sm.dag.GetOrphanMissingAncestors(blockHash)
+		missingAncestors, err := sm.dag.GetOrphanMissingAncestorHashes(blockHash)
 		if err != nil {
 			log.Errorf("Failed to find missing ancestors for block %s: %s",
 				blockHash, err)
@@ -625,6 +626,8 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 }
 
 func (sm *SyncManager) addBlocksToRequestQueue(state *peerSyncState, hashes []*daghash.Hash) {
+	state.requestQueueMtx.Lock()
+	defer state.requestQueueMtx.Unlock()
 	for _, hash := range hashes {
 		if _, exists := sm.requestedBlocks[*hash]; !exists {
 			iv := wire.NewInvVect(wire.InvTypeBlock, hash)
@@ -634,9 +637,16 @@ func (sm *SyncManager) addBlocksToRequestQueue(state *peerSyncState, hashes []*d
 }
 
 func (state *peerSyncState) addInvToRequestQueue(iv *wire.InvVect) {
+	if _, exists := state.requestQueueSet[iv.Hash]; !exists {
+		state.requestQueueSet[iv.Hash] = struct{}{}
+		state.requestQueue = append(state.requestQueue, iv)
+	}
+}
+
+func (state *peerSyncState) addInvToRequestQueueWithLock(iv *wire.InvVect) {
 	state.requestQueueMtx.Lock()
 	defer state.requestQueueMtx.Unlock()
-	state.requestQueue = append(state.requestQueue, iv)
+	state.addInvToRequestQueue(iv)
 }
 
 // fetchHeaderBlocks creates and sends a request to the syncPeer for the next
@@ -902,7 +912,7 @@ func (sm *SyncManager) handleInvMsg(imsg *invMsg) {
 			}
 
 			// Add it to the request queue.
-			state.addInvToRequestQueue(iv)
+			state.addInvToRequestQueueWithLock(iv)
 			continue
 		}
 
@@ -918,7 +928,7 @@ func (sm *SyncManager) handleInvMsg(imsg *invMsg) {
 			// to signal there are more missing blocks that need to
 			// be requested.
 			if sm.dag.IsKnownOrphan(&iv.Hash) {
-				missingAncestors, err := sm.dag.GetOrphanMissingAncestors(&iv.Hash)
+				missingAncestors, err := sm.dag.GetOrphanMissingAncestorHashes(&iv.Hash)
 				if err != nil {
 					log.Errorf("Failed to find missing ancestors for block %s: %s",
 						iv.Hash, err)
@@ -948,14 +958,16 @@ func (sm *SyncManager) handleInvMsg(imsg *invMsg) {
 }
 
 func (sm *SyncManager) sendInvsFromRequestedQueue(peer *peerpkg.Peer, state *peerSyncState) {
+	state.requestQueueMtx.Lock()
+	defer state.requestQueueMtx.Lock()
 	numRequested := 0
 	gdmsg := wire.NewMsgGetData()
-	state.requestQueueMtx.Lock()
 	requestQueue := state.requestQueue
 	for len(requestQueue) != 0 {
 		iv := requestQueue[0]
 		requestQueue[0] = nil
 		requestQueue = requestQueue[1:]
+		delete(state.requestQueueSet, iv.Hash)
 
 		switch iv.Type {
 		case wire.InvTypeBlock:
@@ -988,7 +1000,6 @@ func (sm *SyncManager) sendInvsFromRequestedQueue(peer *peerpkg.Peer, state *pee
 		}
 	}
 	state.requestQueue = requestQueue
-	state.requestQueueMtx.Unlock()
 	if len(gdmsg.InvList) > 0 {
 		peer.QueueMessage(gdmsg, nil)
 	}
