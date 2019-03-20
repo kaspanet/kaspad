@@ -665,11 +665,11 @@ func (m *wsNotificationManager) subscribedClients(tx *util.Tx,
 }
 
 // notifyBlockAdded notifies websocket clients that have registered for
-// block updates when a block is connected to the main chain.
+// block updates when a block is added to the blockDAG.
 func (*wsNotificationManager) notifyBlockAdded(clients map[chan struct{}]*wsClient,
 	block *util.Block) {
 
-	// Notify interested websocket clients about the connected block.
+	// Notify interested websocket clients about the added block.
 	ntfn := btcjson.NewBlockAddedNtfn(block.Hash().String(), block.Height(),
 		block.MsgBlock().Header.Timestamp.Unix())
 	marshalledJSON, err := btcjson.MarshalCmd(nil, ntfn)
@@ -684,7 +684,7 @@ func (*wsNotificationManager) notifyBlockAdded(clients map[chan struct{}]*wsClie
 }
 
 // notifyFilteredBlockAdded notifies websocket clients that have registered for
-// block updates when a block is connected to the main chain.
+// block updates when a block is added to the blockDAG.
 func (m *wsNotificationManager) notifyFilteredBlockAdded(clients map[chan struct{}]*wsClient,
 	block *util.Block) {
 

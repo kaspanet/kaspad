@@ -92,16 +92,15 @@ type NotificationHandlers struct {
 	// notification handlers, and is safe for blocking client requests.
 	OnClientConnected func()
 
-	// OnBlockAdded is invoked when a block is connected to the longest
-	// (best) chain.  It will only be invoked if a preceding call to
-	// NotifyBlocks has been made to register for the notification and the
-	// function is non-nil.
+	// OnBlockAdded is invoked when a block is connected to the DAG.
+	// It will only be invoked if a preceding call to NotifyBlocks has been made
+	// to register for the notification and the function is non-nil.
 	//
 	// NOTE: Deprecated. Use OnFilteredBlockAdded instead.
 	OnBlockAdded func(hash *daghash.Hash, height int32, t time.Time)
 
 	// OnFilteredBlockAdded is invoked when a block is connected to the
-	// longest (best) chain.  It will only be invoked if a preceding call to
+	// bloackDAG.  It will only be invoked if a preceding call to
 	// NotifyBlocks has been made to register for the notification and the
 	// function is non-nil.  Its parameters differ from OnBlockAdded: it
 	// receives the block's height, header, and relevant transactions.
@@ -110,7 +109,7 @@ type NotificationHandlers struct {
 
 	// OnRecvTx is invoked when a transaction that receives funds to a
 	// registered address is received into the memory pool and also
-	// connected to the longest (best) chain.  It will only be invoked if a
+	// connected to the BlockDAG.  It will only be invoked if a
 	// preceding call to NotifyReceived, Rescan, or RescanEndHeight has been
 	// made to register for the notification and the function is non-nil.
 	//
@@ -119,7 +118,7 @@ type NotificationHandlers struct {
 
 	// OnRedeemingTx is invoked when a transaction that spends a registered
 	// outpoint is received into the memory pool and also connected to the
-	// longest (best) chain.  It will only be invoked if a preceding call to
+	// blockDAG.  It will only be invoked if a preceding call to
 	// NotifySpent, Rescan, or RescanEndHeight has been made to register for
 	// the notification and the function is non-nil.
 	//

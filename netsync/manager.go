@@ -1171,8 +1171,7 @@ out:
 // connected peers.
 func (sm *SyncManager) handleBlockDAGNotification(notification *blockdag.Notification) {
 	switch notification.Type {
-	// A block has been accepted into the block chain.  Relay it to other
-	// peers.
+	// A block has been accepted into the blockDAG.  Relay it to other peers.
 	case blockdag.NTBlockAdded:
 		// Don't relay if we are not current. Other peers that are
 		// current should already know about it.
@@ -1322,8 +1321,7 @@ func (sm *SyncManager) SyncPeerID() int32 {
 	return <-reply
 }
 
-// ProcessBlock makes use of ProcessBlock on an internal instance of a block
-// chain.
+// ProcessBlock makes use of ProcessBlock on an internal instance of a blockDAG.
 func (sm *SyncManager) ProcessBlock(block *util.Block, flags blockdag.BehaviorFlags) (bool, error) {
 	reply := make(chan processBlockResponse, 1)
 	sm.msgChan <- processBlockMsg{block: block, flags: flags, reply: reply}
