@@ -474,15 +474,6 @@ func (dag *BlockDAG) addBlock(node *blockNode, parentNodes blockSet, block *util
 		dag.blockCount++
 	}
 
-	if err != nil {
-		// Notify the caller that the block was connected to the DAG.
-		// The caller would typically want to react with actions such as
-		// updating wallets.
-		dag.dagLock.Unlock()
-		dag.sendNotification(NTBlockConnected, block)
-		dag.dagLock.Lock()
-	}
-
 	// Intentionally ignore errors writing updated node status to DB. If
 	// it fails to write, it's not the end of the world. If the block is
 	// invalid, the worst that can happen is we revalidate the block

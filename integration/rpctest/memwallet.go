@@ -49,16 +49,15 @@ func (u *utxo) isMature(height int32) bool {
 	return height >= u.maturityHeight
 }
 
-// chainUpdate encapsulates an update to the current main chain. This struct is
-// used to sync up the memWallet each time a new block is connected to the main
-// chain.
-type chainUpdate struct {
+// dagUpdate encapsulates an update to the current DAG. This struct is
+// used to sync up the memWallet each time a new block is connected to the DAG.
+type dagUpdate struct {
 	blockHeight  int32
 	filteredTxns []*util.Tx
 	isConnect    bool // True if connect, false if disconnect
 }
 
-// undoEntry is functionally the opposite of a chainUpdate. An undoEntry is
+// undoEntry is functionally the opposite of a dagUpdate. An undoEntry is
 // created for each new block received, then stored in a log in order to
 // properly handle block re-orgs.
 type undoEntry struct {
@@ -96,9 +95,9 @@ type memWallet struct {
 	// disconnected block on the wallet's set of spendable utxos.
 	reorgJournal map[int32]*undoEntry
 
-	chainUpdates      []*chainUpdate
-	chainUpdateSignal chan struct{}
-	chainMtx          sync.Mutex
+	dagUpdates      []*dagUpdate
+	dagUpdateSignal chan struct{}
+	dagMtx          sync.Mutex
 
 	net *dagconfig.Params
 
@@ -143,21 +142,21 @@ func newMemWallet(net *dagconfig.Params, harnessID uint32) (*memWallet, error) {
 	addrs[0] = coinbaseAddr
 
 	return &memWallet{
-		net:               net,
-		coinbaseKey:       coinbaseKey,
-		coinbaseAddr:      coinbaseAddr,
-		hdIndex:           1,
-		hdRoot:            hdRoot,
-		addrs:             addrs,
-		utxos:             make(map[wire.OutPoint]*utxo),
-		chainUpdateSignal: make(chan struct{}),
-		reorgJournal:      make(map[int32]*undoEntry),
+		net:             net,
+		coinbaseKey:     coinbaseKey,
+		coinbaseAddr:    coinbaseAddr,
+		hdIndex:         1,
+		hdRoot:          hdRoot,
+		addrs:           addrs,
+		utxos:           make(map[wire.OutPoint]*utxo),
+		dagUpdateSignal: make(chan struct{}),
+		reorgJournal:    make(map[int32]*undoEntry),
 	}, nil
 }
 
 // Start launches all goroutines required for the wallet to function properly.
 func (m *memWallet) Start() {
-	go m.chainSyncer()
+	go m.dagSyncer()
 }
 
 // SyncedHeight returns the height the wallet is known to be synced to.
@@ -176,27 +175,27 @@ func (m *memWallet) SetRPCClient(rpcClient *rpcclient.Client) {
 }
 
 // IngestBlock is a call-back which is to be triggered each time a new block is
-// connected to the main chain. It queues the update for the chain syncer,
+// connected to the blockDAG. It queues the update for the DAG syncer,
 // calling the private version in sequential order.
 func (m *memWallet) IngestBlock(height int32, header *wire.BlockHeader, filteredTxns []*util.Tx) {
-	// Append this new chain update to the end of the queue of new chain
+	// Append this new DAG update to the end of the queue of new DAG
 	// updates.
-	m.chainMtx.Lock()
-	m.chainUpdates = append(m.chainUpdates, &chainUpdate{height,
+	m.dagMtx.Lock()
+	m.dagUpdates = append(m.dagUpdates, &dagUpdate{height,
 		filteredTxns, true})
-	m.chainMtx.Unlock()
+	m.dagMtx.Unlock()
 
-	// Launch a goroutine to signal the chainSyncer that a new update is
+	// Launch a goroutine to signal the dagSyncer that a new update is
 	// available. We do this in a new goroutine in order to avoid blocking
 	// the main loop of the rpc client.
 	go func() {
-		m.chainUpdateSignal <- struct{}{}
+		m.dagUpdateSignal <- struct{}{}
 	}()
 }
 
 // ingestBlock updates the wallet's internal utxo state based on the outputs
 // created and destroyed within each block.
-func (m *memWallet) ingestBlock(update *chainUpdate) {
+func (m *memWallet) ingestBlock(update *dagUpdate) {
 	// Update the latest synced height, then process each filtered
 	// transaction in the block creating and destroying utxos within
 	// the wallet as a result.
@@ -218,27 +217,25 @@ func (m *memWallet) ingestBlock(update *chainUpdate) {
 	m.reorgJournal[update.blockHeight] = undo
 }
 
-// chainSyncer is a goroutine dedicated to processing new blocks in order to
+// dagSyncer is a goroutine dedicated to processing new blocks in order to
 // keep the wallet's utxo state up to date.
 //
 // NOTE: This MUST be run as a goroutine.
-func (m *memWallet) chainSyncer() {
-	var update *chainUpdate
+func (m *memWallet) dagSyncer() {
+	var update *dagUpdate
 
-	for range m.chainUpdateSignal {
+	for range m.dagUpdateSignal {
 		// A new update is available, so pop the new chain update from
 		// the front of the update queue.
-		m.chainMtx.Lock()
-		update = m.chainUpdates[0]
-		m.chainUpdates[0] = nil // Set to nil to prevent GC leak.
-		m.chainUpdates = m.chainUpdates[1:]
-		m.chainMtx.Unlock()
+		m.dagMtx.Lock()
+		update = m.dagUpdates[0]
+		m.dagUpdates[0] = nil // Set to nil to prevent GC leak.
+		m.dagUpdates = m.dagUpdates[1:]
+		m.dagMtx.Unlock()
 
 		m.Lock()
 		if update.isConnect {
 			m.ingestBlock(update)
-		} else {
-			m.unwindBlock(update)
 		}
 		m.Unlock()
 	}
@@ -293,41 +290,6 @@ func (m *memWallet) evalInputs(inputs []*wire.TxIn, undo *undoEntry) {
 		undo.utxosDestroyed[op] = oldUtxo
 		delete(m.utxos, op)
 	}
-}
-
-// UnwindBlock is a call-back which is to be executed each time a block is
-// disconnected from the main chain. It queues the update for the chain syncer,
-// calling the private version in sequential order.
-func (m *memWallet) UnwindBlock(height int32, header *wire.BlockHeader) {
-	// Append this new chain update to the end of the queue of new chain
-	// updates.
-	m.chainMtx.Lock()
-	m.chainUpdates = append(m.chainUpdates, &chainUpdate{height,
-		nil, false})
-	m.chainMtx.Unlock()
-
-	// Launch a goroutine to signal the chainSyncer that a new update is
-	// available. We do this in a new goroutine in order to avoid blocking
-	// the main loop of the rpc client.
-	go func() {
-		m.chainUpdateSignal <- struct{}{}
-	}()
-}
-
-// unwindBlock undoes the effect that a particular block had on the wallet's
-// internal utxo state.
-func (m *memWallet) unwindBlock(update *chainUpdate) {
-	undo := m.reorgJournal[update.blockHeight]
-
-	for _, utxo := range undo.utxosCreated {
-		delete(m.utxos, utxo)
-	}
-
-	for outPoint, utxo := range undo.utxosDestroyed {
-		m.utxos[outPoint] = utxo
-	}
-
-	delete(m.reorgJournal, update.blockHeight)
 }
 
 // newAddress returns a new address from the wallet's hd key chain.  It also

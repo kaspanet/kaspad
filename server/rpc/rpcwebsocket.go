@@ -200,29 +200,16 @@ func (m *wsNotificationManager) queueHandler() {
 	m.wg.Done()
 }
 
-// NotifyBlockConnected passes a block newly-connected to the best chain
+// NotifyBlockAdded passes a block newly-added to the blockDAG
 // to the notification manager for block and transaction notification
 // processing.
-func (m *wsNotificationManager) NotifyBlockConnected(block *util.Block) {
-	// As NotifyBlockConnected will be called by the block manager
+func (m *wsNotificationManager) NotifyBlockAdded(block *util.Block) {
+	// As NotifyBlockAdded will be called by the block manager
 	// and the RPC server may no longer be running, use a select
 	// statement to unblock enqueuing the notification once the RPC
 	// server has begun shutting down.
 	select {
-	case m.queueNotification <- (*notificationBlockConnected)(block):
-	case <-m.quit:
-	}
-}
-
-// NotifyBlockDisconnected passes a block disconnected from the best chain
-// to the notification manager for block notification processing.
-func (m *wsNotificationManager) NotifyBlockDisconnected(block *util.Block) {
-	// As NotifyBlockDisconnected will be called by the block manager
-	// and the RPC server may no longer be running, use a select
-	// statement to unblock enqueuing the notification once the RPC
-	// server has begun shutting down.
-	select {
-	case m.queueNotification <- (*notificationBlockDisconnected)(block):
+	case m.queueNotification <- (*notificationBlockAdded)(block):
 	case <-m.quit:
 	}
 }
@@ -446,8 +433,7 @@ func (f *wsClientFilter) removeUnspentOutPoint(op *wire.OutPoint) {
 }
 
 // Notification types
-type notificationBlockConnected util.Block
-type notificationBlockDisconnected util.Block
+type notificationBlockAdded util.Block
 type notificationTxAcceptedByMempool struct {
 	isNew bool
 	tx    *util.Tx
@@ -504,7 +490,7 @@ out:
 				break out
 			}
 			switch n := n.(type) {
-			case *notificationBlockConnected:
+			case *notificationBlockAdded:
 				block := (*util.Block)(n)
 
 				// Skip iterating through all txs if no
@@ -517,19 +503,9 @@ out:
 				}
 
 				if len(blockNotifications) != 0 {
-					m.notifyBlockConnected(blockNotifications,
+					m.notifyBlockAdded(blockNotifications,
 						block)
-					m.notifyFilteredBlockConnected(blockNotifications,
-						block)
-				}
-
-			case *notificationBlockDisconnected:
-				block := (*util.Block)(n)
-
-				if len(blockNotifications) != 0 {
-					m.notifyBlockDisconnected(blockNotifications,
-						block)
-					m.notifyFilteredBlockDisconnected(blockNotifications,
+					m.notifyFilteredBlockAdded(blockNotifications,
 						block)
 				}
 
@@ -688,17 +664,17 @@ func (m *wsNotificationManager) subscribedClients(tx *util.Tx,
 	return subscribed
 }
 
-// notifyBlockConnected notifies websocket clients that have registered for
-// block updates when a block is connected to the main chain.
-func (*wsNotificationManager) notifyBlockConnected(clients map[chan struct{}]*wsClient,
+// notifyBlockAdded notifies websocket clients that have registered for
+// block updates when a block is added to the blockDAG.
+func (*wsNotificationManager) notifyBlockAdded(clients map[chan struct{}]*wsClient,
 	block *util.Block) {
 
-	// Notify interested websocket clients about the connected block.
-	ntfn := btcjson.NewBlockConnectedNtfn(block.Hash().String(), block.Height(),
+	// Notify interested websocket clients about the added block.
+	ntfn := btcjson.NewBlockAddedNtfn(block.Hash().String(), block.Height(),
 		block.MsgBlock().Header.Timestamp.Unix())
 	marshalledJSON, err := btcjson.MarshalCmd(nil, ntfn)
 	if err != nil {
-		log.Errorf("Failed to marshal block connected notification: "+
+		log.Errorf("Failed to marshal block added notification: "+
 			"%s", err)
 		return
 	}
@@ -707,33 +683,9 @@ func (*wsNotificationManager) notifyBlockConnected(clients map[chan struct{}]*ws
 	}
 }
 
-// notifyBlockDisconnected notifies websocket clients that have registered for
-// block updates when a block is disconnected from the main chain (due to a
-// reorganize).
-func (*wsNotificationManager) notifyBlockDisconnected(clients map[chan struct{}]*wsClient, block *util.Block) {
-	// Skip notification creation if no clients have requested block
-	// connected/disconnected notifications.
-	if len(clients) == 0 {
-		return
-	}
-
-	// Notify interested websocket clients about the disconnected block.
-	ntfn := btcjson.NewBlockDisconnectedNtfn(block.Hash().String(),
-		block.Height(), block.MsgBlock().Header.Timestamp.Unix())
-	marshalledJSON, err := btcjson.MarshalCmd(nil, ntfn)
-	if err != nil {
-		log.Errorf("Failed to marshal block disconnected "+
-			"notification: %s", err)
-		return
-	}
-	for _, wsc := range clients {
-		wsc.QueueNotification(marshalledJSON)
-	}
-}
-
-// notifyFilteredBlockConnected notifies websocket clients that have registered for
-// block updates when a block is connected to the main chain.
-func (m *wsNotificationManager) notifyFilteredBlockConnected(clients map[chan struct{}]*wsClient,
+// notifyFilteredBlockAdded notifies websocket clients that have registered for
+// block updates when a block is added to the blockDAG.
+func (m *wsNotificationManager) notifyFilteredBlockAdded(clients map[chan struct{}]*wsClient,
 	block *util.Block) {
 
 	// Create the common portion of the notification that is the same for
@@ -742,10 +694,10 @@ func (m *wsNotificationManager) notifyFilteredBlockConnected(clients map[chan st
 	err := block.MsgBlock().Header.Serialize(&w)
 	if err != nil {
 		log.Errorf("Failed to serialize header for filtered block "+
-			"connected notification: %s", err)
+			"added notification: %s", err)
 		return
 	}
-	ntfn := btcjson.NewFilteredBlockConnectedNtfn(block.Height(),
+	ntfn := btcjson.NewFilteredBlockAddedNtfn(block.Height(),
 		hex.EncodeToString(w.Bytes()), nil)
 
 	// Search for relevant transactions for each client and save them
@@ -772,38 +724,6 @@ func (m *wsNotificationManager) notifyFilteredBlockConnected(clients map[chan st
 				"connected notification: %s", err)
 			return
 		}
-		wsc.QueueNotification(marshalledJSON)
-	}
-}
-
-// notifyFilteredBlockDisconnected notifies websocket clients that have registered for
-// block updates when a block is disconnected from the main chain (due to a
-// reorganize).
-func (*wsNotificationManager) notifyFilteredBlockDisconnected(clients map[chan struct{}]*wsClient,
-	block *util.Block) {
-	// Skip notification creation if no clients have requested block
-	// connected/disconnected notifications.
-	if len(clients) == 0 {
-		return
-	}
-
-	// Notify interested websocket clients about the disconnected block.
-	var w bytes.Buffer
-	err := block.MsgBlock().Header.Serialize(&w)
-	if err != nil {
-		log.Errorf("Failed to serialize header for filtered block "+
-			"disconnected notification: %s", err)
-		return
-	}
-	ntfn := btcjson.NewFilteredBlockDisconnectedNtfn(block.Height(),
-		hex.EncodeToString(w.Bytes()))
-	marshalledJSON, err := btcjson.MarshalCmd(nil, ntfn)
-	if err != nil {
-		log.Errorf("Failed to marshal filtered block disconnected "+
-			"notification: %s", err)
-		return
-	}
-	for _, wsc := range clients {
 		wsc.QueueNotification(marshalledJSON)
 	}
 }
@@ -902,8 +822,8 @@ func (m *wsNotificationManager) notifyForNewTx(clients map[chan struct{}]*wsClie
 }
 
 // RegisterSpentRequests requests a notification when each of the passed
-// outpoints is confirmed spent (contained in a block connected to the main
-// chain) for the passed websocket client.  The request is automatically
+// outpoints is confirmed spent (contained in a block added to the blockDAG)
+// for the passed websocket client.  The request is automatically
 // removed once the notification has been sent.
 func (m *wsNotificationManager) RegisterSpentRequests(wsc *wsClient, ops []*wire.OutPoint) {
 	m.queueNotification <- &notificationRegisterSpent{
@@ -952,7 +872,7 @@ func (m *wsNotificationManager) addSpentRequests(opMap map[wire.OutPoint]map[cha
 
 // UnregisterSpentRequest removes a request from the passed websocket client
 // to be notified when the passed outpoint is confirmed spent (contained in a
-// block connected to the main chain).
+// block added to the blockDAG).
 func (m *wsNotificationManager) UnregisterSpentRequest(wsc *wsClient, op *wire.OutPoint) {
 	m.queueNotification <- &notificationUnregisterSpent{
 		wsc: wsc,
