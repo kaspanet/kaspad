@@ -92,40 +92,24 @@ type NotificationHandlers struct {
 	// notification handlers, and is safe for blocking client requests.
 	OnClientConnected func()
 
-	// OnBlockConnected is invoked when a block is connected to the longest
-	// (best) chain.  It will only be invoked if a preceding call to
-	// NotifyBlocks has been made to register for the notification and the
-	// function is non-nil.
+	// OnBlockAdded is invoked when a block is connected to the DAG.
+	// It will only be invoked if a preceding call to NotifyBlocks has been made
+	// to register for the notification and the function is non-nil.
 	//
-	// NOTE: Deprecated. Use OnFilteredBlockConnected instead.
-	OnBlockConnected func(hash *daghash.Hash, height int32, t time.Time)
+	// NOTE: Deprecated. Use OnFilteredBlockAdded instead.
+	OnBlockAdded func(hash *daghash.Hash, height int32, t time.Time)
 
-	// OnFilteredBlockConnected is invoked when a block is connected to the
-	// longest (best) chain.  It will only be invoked if a preceding call to
+	// OnFilteredBlockAdded is invoked when a block is connected to the
+	// bloackDAG.  It will only be invoked if a preceding call to
 	// NotifyBlocks has been made to register for the notification and the
-	// function is non-nil.  Its parameters differ from OnBlockConnected: it
+	// function is non-nil.  Its parameters differ from OnBlockAdded: it
 	// receives the block's height, header, and relevant transactions.
-	OnFilteredBlockConnected func(height int32, header *wire.BlockHeader,
+	OnFilteredBlockAdded func(height int32, header *wire.BlockHeader,
 		txs []*util.Tx)
-
-	// OnBlockDisconnected is invoked when a block is disconnected from the
-	// longest (best) chain.  It will only be invoked if a preceding call to
-	// NotifyBlocks has been made to register for the notification and the
-	// function is non-nil.
-	//
-	// NOTE: Deprecated. Use OnFilteredBlockDisconnected instead.
-	OnBlockDisconnected func(hash *daghash.Hash, height int32, t time.Time)
-
-	// OnFilteredBlockDisconnected is invoked when a block is disconnected
-	// from the longest (best) chain.  It will only be invoked if a
-	// preceding NotifyBlocks has been made to register for the notification
-	// and the call to function is non-nil.  Its parameters differ from
-	// OnBlockDisconnected: it receives the block's height and header.
-	OnFilteredBlockDisconnected func(height int32, header *wire.BlockHeader)
 
 	// OnRecvTx is invoked when a transaction that receives funds to a
 	// registered address is received into the memory pool and also
-	// connected to the longest (best) chain.  It will only be invoked if a
+	// connected to the BlockDAG.  It will only be invoked if a
 	// preceding call to NotifyReceived, Rescan, or RescanEndHeight has been
 	// made to register for the notification and the function is non-nil.
 	//
@@ -134,7 +118,7 @@ type NotificationHandlers struct {
 
 	// OnRedeemingTx is invoked when a transaction that spends a registered
 	// outpoint is received into the memory pool and also connected to the
-	// longest (best) chain.  It will only be invoked if a preceding call to
+	// blockDAG.  It will only be invoked if a preceding call to
 	// NotifySpent, Rescan, or RescanEndHeight has been made to register for
 	// the notification and the function is non-nil.
 	//
@@ -220,77 +204,41 @@ func (c *Client) handleNotification(ntfn *rawNotification) {
 	}
 
 	switch ntfn.Method {
-	// OnBlockConnected
-	case btcjson.BlockConnectedNtfnMethod:
+	// OnBlockAdded
+	case btcjson.BlockAddedNtfnMethod:
 		// Ignore the notification if the client is not interested in
 		// it.
-		if c.ntfnHandlers.OnBlockConnected == nil {
+		if c.ntfnHandlers.OnBlockAdded == nil {
 			return
 		}
 
-		blockHash, blockHeight, blockTime, err := parseChainNtfnParams(ntfn.Params)
+		blockHash, blockHeight, blockTime, err := parseDAGNtfnParams(ntfn.Params)
 		if err != nil {
-			log.Warnf("Received invalid block connected "+
+			log.Warnf("Received invalid block added "+
 				"notification: %s", err)
 			return
 		}
 
-		c.ntfnHandlers.OnBlockConnected(blockHash, blockHeight, blockTime)
+		c.ntfnHandlers.OnBlockAdded(blockHash, blockHeight, blockTime)
 
-	// OnFilteredBlockConnected
-	case btcjson.FilteredBlockConnectedNtfnMethod:
+	// OnFilteredBlockAdded
+	case btcjson.FilteredBlockAddedNtfnMethod:
 		// Ignore the notification if the client is not interested in
 		// it.
-		if c.ntfnHandlers.OnFilteredBlockConnected == nil {
+		if c.ntfnHandlers.OnFilteredBlockAdded == nil {
 			return
 		}
 
 		blockHeight, blockHeader, transactions, err :=
-			parseFilteredBlockConnectedParams(ntfn.Params)
+			parseFilteredBlockAddedParams(ntfn.Params)
 		if err != nil {
 			log.Warnf("Received invalid filtered block "+
 				"connected notification: %s", err)
 			return
 		}
 
-		c.ntfnHandlers.OnFilteredBlockConnected(blockHeight,
+		c.ntfnHandlers.OnFilteredBlockAdded(blockHeight,
 			blockHeader, transactions)
-
-	// OnBlockDisconnected
-	case btcjson.BlockDisconnectedNtfnMethod:
-		// Ignore the notification if the client is not interested in
-		// it.
-		if c.ntfnHandlers.OnBlockDisconnected == nil {
-			return
-		}
-
-		blockHash, blockHeight, blockTime, err := parseChainNtfnParams(ntfn.Params)
-		if err != nil {
-			log.Warnf("Received invalid block connected "+
-				"notification: %s", err)
-			return
-		}
-
-		c.ntfnHandlers.OnBlockDisconnected(blockHash, blockHeight, blockTime)
-
-	// OnFilteredBlockDisconnected
-	case btcjson.FilteredBlockDisconnectedNtfnMethod:
-		// Ignore the notification if the client is not interested in
-		// it.
-		if c.ntfnHandlers.OnFilteredBlockDisconnected == nil {
-			return
-		}
-
-		blockHeight, blockHeader, err :=
-			parseFilteredBlockDisconnectedParams(ntfn.Params)
-		if err != nil {
-			log.Warnf("Received invalid filtered block "+
-				"disconnected notification: %s", err)
-			return
-		}
-
-		c.ntfnHandlers.OnFilteredBlockDisconnected(blockHeight,
-			blockHeader)
 
 	// OnRecvTx
 	case btcjson.RecvTxNtfnMethod:
@@ -485,9 +433,9 @@ func (e wrongNumParams) Error() string {
 	return fmt.Sprintf("wrong number of parameters (%d)", e)
 }
 
-// parseChainNtfnParams parses out the block hash and height from the parameters
-// of blockconnected and blockdisconnected notifications.
-func parseChainNtfnParams(params []json.RawMessage) (*daghash.Hash,
+// parseDAGNtfnParams parses out the block hash and height from the parameters
+// of blockadded.
+func parseDAGNtfnParams(params []json.RawMessage) (*daghash.Hash,
 	int32, time.Time, error) {
 
 	if len(params) != 3 {
@@ -527,12 +475,12 @@ func parseChainNtfnParams(params []json.RawMessage) (*daghash.Hash,
 	return blockHash, blockHeight, blockTime, nil
 }
 
-// parseFilteredBlockConnectedParams parses out the parameters included in a
-// filteredblockconnected notification.
+// parseFilteredBlockAddedParams parses out the parameters included in a
+// filteredblockadded notification.
 //
 // NOTE: This is a btcd extension ported from github.com/decred/dcrrpcclient
 // and requires a websocket connection.
-func parseFilteredBlockConnectedParams(params []json.RawMessage) (int32,
+func parseFilteredBlockAddedParams(params []json.RawMessage) (int32,
 	*wire.BlockHeader, []*util.Tx, error) {
 
 	if len(params) < 3 {
@@ -581,40 +529,6 @@ func parseFilteredBlockConnectedParams(params []json.RawMessage) (int32,
 	}
 
 	return blockHeight, &blockHeader, transactions, nil
-}
-
-// parseFilteredBlockDisconnectedParams parses out the parameters included in a
-// filteredblockdisconnected notification.
-//
-// NOTE: This is a btcd extension ported from github.com/decred/dcrrpcclient
-// and requires a websocket connection.
-func parseFilteredBlockDisconnectedParams(params []json.RawMessage) (int32,
-	*wire.BlockHeader, error) {
-	if len(params) < 2 {
-		return 0, nil, wrongNumParams(len(params))
-	}
-
-	// Unmarshal first parameter as an integer.
-	var blockHeight int32
-	err := json.Unmarshal(params[0], &blockHeight)
-	if err != nil {
-		return 0, nil, err
-	}
-
-	// Unmarshal second parmeter as a slice of bytes.
-	blockHeaderBytes, err := parseHexParam(params[1])
-	if err != nil {
-		return 0, nil, err
-	}
-
-	// Deserialize block header from slice of bytes.
-	var blockHeader wire.BlockHeader
-	err = blockHeader.Deserialize(bytes.NewReader(blockHeaderBytes))
-	if err != nil {
-		return 0, nil, err
-	}
-
-	return blockHeight, &blockHeader, nil
 }
 
 func parseHexParam(param json.RawMessage) ([]byte, error) {
@@ -896,8 +810,7 @@ func (c *Client) NotifyBlocksAsync() FutureNotifyBlocksResult {
 // this function has no effect if there are no notification handlers and will
 // result in an error if the client is configured to run in HTTP POST mode.
 //
-// The notifications delivered as a result of this call will be via one of
-// OnBlockConnected or OnBlockDisconnected.
+// The notifications delivered as a result of this call will be via OnBlockAdded
 //
 // NOTE: This is a btcd extension and requires a websocket connection.
 func (c *Client) NotifyBlocks() error {
@@ -1104,7 +1017,7 @@ func (c *Client) NotifyReceivedAsync(addresses []util.Address) FutureNotifyRecei
 
 // NotifyReceived registers the client to receive notifications every time a
 // new transaction which pays to one of the passed addresses is accepted to
-// memory pool or in a block connected to the block chain.  In addition, when
+// memory pool or in a block added to the block DAG.  In addition, when
 // one of these transactions is detected, the client is also automatically
 // registered for notifications when the new transaction outpoints the address
 // now has available are spent (See NotifySpent).  The notifications are

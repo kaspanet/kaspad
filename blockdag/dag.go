@@ -343,7 +343,7 @@ func (dag *BlockDAG) CalcSequenceLock(tx *util.Tx, utxoSet UTXOSet, mempool bool
 // calcSequenceLock computes the relative lock-times for the passed
 // transaction. See the exported version, CalcSequenceLock for further details.
 //
-// This function MUST be called with the chain state lock held (for writes).
+// This function MUST be called with the DAG state lock held (for writes).
 func (dag *BlockDAG) calcSequenceLock(node *blockNode, utxoSet UTXOSet, tx *util.Tx, mempool bool) (*SequenceLock, error) {
 	// A value of -1 for each relative lock type represents a relative time
 	// lock value that will allow a transaction to be included in a block
@@ -451,14 +451,14 @@ func LockTimeToSequence(isSeconds bool, locktime uint64) uint64 {
 		locktime>>wire.SequenceLockTimeGranularity
 }
 
-// connectToDAG handles connecting the passed block to the DAG.
+// addBlock handles adding the passed block to the DAG.
 //
 // The flags modify the behavior of this function as follows:
 //  - BFFastAdd: Avoids several expensive transaction validation operations.
 //    This is useful when using checkpoints.
 //
-// This function MUST be called with the chain state lock held (for writes).
-func (dag *BlockDAG) connectToDAG(node *blockNode, parentNodes blockSet, block *util.Block, flags BehaviorFlags) error {
+// This function MUST be called with the DAG state lock held (for writes).
+func (dag *BlockDAG) addBlock(node *blockNode, parentNodes blockSet, block *util.Block, flags BehaviorFlags) error {
 	// Skip checks if node has already been fully validated.
 	fastAdd := flags&BFFastAdd == BFFastAdd || dag.index.NodeStatus(node).KnownValid()
 
@@ -484,16 +484,12 @@ func (dag *BlockDAG) connectToDAG(node *blockNode, parentNodes blockSet, block *
 	}
 
 	// If dag.connectBlock returned a rule error, return it here after updating DB
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }
 
 // connectBlock handles connecting the passed node/block to the DAG.
 //
-// This function MUST be called with the chain state lock held (for writes).
+// This function MUST be called with the DAG state lock held (for writes).
 func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block, fastAdd bool) error {
 	// No warnings about unknown rules or versions until the DAG is
 	// current.
@@ -511,10 +507,7 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block, fastAdd bo
 		}
 	}
 
-	var newFinalityPoint *blockNode
-	var err error
-	newFinalityPoint, err = dag.checkFinalityRulesAndGetFinalityPoint(node)
-	if err != nil {
+	if err := dag.checkFinalityRules(node); err != nil {
 		return err
 	}
 
@@ -522,13 +515,29 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block, fastAdd bo
 		return err
 	}
 
-	// Add the node to the virtual and update the UTXO set of the DAG.
-	utxoDiff, txsAcceptanceData, feeData, err := dag.applyUTXOChanges(node, block, fastAdd)
+	newBlockUTXO, txsAcceptanceData, newBlockFeeData, err := node.verifyAndBuildUTXO(dag, block.Transactions(), fastAdd)
+	if err != nil {
+		newErrString := fmt.Sprintf("error verifying UTXO for %s: %s", node, err)
+		if err, ok := err.(RuleError); ok {
+			return ruleError(err.ErrorCode, newErrString)
+		}
+		return errors.New(newErrString)
+	}
+
+	err = node.validateFeeTransaction(dag, block, txsAcceptanceData)
 	if err != nil {
 		return err
 	}
 
-	dag.lastFinalityPoint = newFinalityPoint
+	// Apply all changes to the DAG.
+	virtualUTXODiff, err := dag.applyDAGChanges(node, block, newBlockUTXO, fastAdd)
+	if err != nil {
+		// Since all validation logic has already ran, if applyDAGChanges errors out,
+		// this means we have a problem in the internal structure of the DAG - a problem which is
+		// irrecoverable, and it would be a bad idea to attempt adding any more blocks to the DAG.
+		// Therefore - in such cases we panic.
+		panic(err)
+	}
 
 	// Write any block status changes to DB before updating the DAG state.
 	err = dag.index.flushToDB()
@@ -536,23 +545,16 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block, fastAdd bo
 		return err
 	}
 
-	err = dag.saveChangesFromBlock(node, block, utxoDiff, txsAcceptanceData, feeData)
+	err = dag.saveChangesFromBlock(node, block, virtualUTXODiff, txsAcceptanceData, newBlockFeeData)
 	if err != nil {
 		return err
 	}
 
-	// Notify the caller that the block was connected to the DAG.
-	// The caller would typically want to react with actions such as
-	// updating wallets.
-	dag.dagLock.Unlock()
-	dag.sendNotification(NTBlockConnected, block)
-	dag.dagLock.Lock()
-
 	return nil
 }
 
-func (dag *BlockDAG) saveChangesFromBlock(node *blockNode, block *util.Block, utxoDiff *UTXODiff,
-	txsAcceptanceData MultiblockTxsAcceptanceData, feeData compactFeeData) error {
+func (dag *BlockDAG) saveChangesFromBlock(node *blockNode, block *util.Block, virtualUTXODiff *UTXODiff,
+	txsAcceptanceData MultiBlockTxsAcceptanceData, feeData compactFeeData) error {
 
 	// Atomically insert info into the database.
 	return dag.db.Update(func(dbTx database.Tx) error {
@@ -575,7 +577,7 @@ func (dag *BlockDAG) saveChangesFromBlock(node *blockNode, block *util.Block, ut
 
 		// Update the UTXO set using the diffSet that was melded into the
 		// full UTXO set.
-		err = dbPutUTXODiff(dbTx, utxoDiff)
+		err = dbPutUTXODiff(dbTx, virtualUTXODiff)
 		if err != nil {
 			return err
 		}
@@ -641,102 +643,96 @@ func (dag *BlockDAG) LastFinalityPointHash() *daghash.Hash {
 	return &dag.lastFinalityPoint.hash
 }
 
-// checkFinalityRulesAndGetFinalityPoint checks the new block does not violate the finality rules
-// and if not - returns the (potentially new) finality point
-func (dag *BlockDAG) checkFinalityRulesAndGetFinalityPoint(node *blockNode) (*blockNode, error) {
-	if node.isGenesis() {
-		return node, nil
+// checkFinalityRules checks the new block does not violate the finality rules
+// specifically - the new block selectedParent chain should contain the old finality point
+func (dag *BlockDAG) checkFinalityRules(newNode *blockNode) error {
+	// the genesis block can not violate finality rules
+	if newNode.isGenesis() {
+		return nil
 	}
-	finalityPoint := dag.lastFinalityPoint
-	finalityErr := ruleError(ErrFinality, "The last finality point is not in the selected chain of this block")
 
-	if node.blueScore <= dag.lastFinalityPoint.blueScore {
-		return nil, finalityErr
+	for currentNode := newNode; currentNode != dag.lastFinalityPoint; currentNode = currentNode.selectedParent {
+		// If we went past dag's last finality point without encountering it -
+		// the new block has violated finality.
+		if currentNode.blueScore <= dag.lastFinalityPoint.blueScore {
+			return ruleError(ErrFinality, "The last finality point is not in the selected chain of this block")
+		}
+	}
+	return nil
+}
+
+// newFinalityPoint return the (potentially) new finality point after the the introduction of a new block
+func (dag *BlockDAG) newFinalityPoint(newNode *blockNode) *blockNode {
+	// if the new node is the genesis block - it should be the new finality point
+	if newNode.isGenesis() {
+		return newNode
 	}
 
 	// We are looking for a new finality point only if the new block's finality score is higher
 	// than the existing finality point's
-	shouldFindNewFinalityPoint := node.finalityScore() > dag.lastFinalityPoint.finalityScore()
+	if newNode.finalityScore() <= dag.lastFinalityPoint.finalityScore() {
+		return dag.lastFinalityPoint
+	}
 
-	for currentNode := node.selectedParent; currentNode != dag.lastFinalityPoint; currentNode = currentNode.selectedParent {
-		// If we went past dag's last finality point without encountering it -
-		// the new block has violated finality.
-		if currentNode.blueScore <= dag.lastFinalityPoint.blueScore {
-			return nil, finalityErr
-		}
-
+	var currentNode *blockNode
+	for currentNode = newNode.selectedParent; ; currentNode = currentNode.selectedParent {
 		// If current node's finality score is higher than it's selectedParent's -
 		// current node is the new finalityPoint
-		if shouldFindNewFinalityPoint && currentNode.finalityScore() > currentNode.selectedParent.finalityScore() {
-			finalityPoint = currentNode
+		if currentNode.isGenesis() || currentNode.finalityScore() > currentNode.selectedParent.finalityScore() {
+			break
 		}
 	}
-	return finalityPoint, nil
+
+	return currentNode
 }
 
 // NextBlockFeeTransaction prepares the fee transaction for the next mined block
 func (dag *BlockDAG) NextBlockFeeTransaction() (*wire.MsgTx, error) {
-	_, txsAcceptanceData, _, err := dag.virtual.blockNode.verifyAndBuildUTXO(dag.virtual, dag, nil, true)
+	_, txsAcceptanceData, _, err := dag.virtual.blockNode.verifyAndBuildUTXO(dag, nil, true)
 	if err != nil {
 		return nil, err
 	}
 	return dag.virtual.blockNode.buildFeeTransaction(dag, txsAcceptanceData)
 }
 
-// applyUTXOChanges does the following:
-// 1. Verifies that each transaction within the new block could spend an existing UTXO.
-// 2. Connects each of the new block's parents to the block.
-// 3. Adds the new block to the DAG's tips.
-// 4. Updates the DAG's full UTXO set.
-// 5. Updates each of the tips' utxoDiff.
+// applyDAGChanges does the following:
+// 1. Connects each of the new block's parents to the block.
+// 2. Adds the new block to the DAG's tips.
+// 3. Updates the DAG's full UTXO set.
+// 4. Updates each of the tips' utxoDiff.
+// 5. Update the finality point of the DAG (if required).
 //
-// This function MUST be called with the chain state lock held (for writes).
-func (dag *BlockDAG) applyUTXOChanges(node *blockNode, block *util.Block, fastAdd bool) (
-	utxoDiff *UTXODiff, txsAcceptanceData MultiblockTxsAcceptanceData, feeData compactFeeData, err error) {
+// It returns the diff in the virtual block's UTXO set.
+//
+// This function MUST be called with the DAG state lock held (for writes).
+func (dag *BlockDAG) applyDAGChanges(node *blockNode, block *util.Block, newBlockUTXO UTXOSet, fastAdd bool) (
+	virtualUTXODiff *UTXODiff, err error) {
+
 	// Clone the virtual block so that we don't modify the existing one.
 	virtualClone := dag.virtual.clone()
 
-	newBlockUTXO, txsAcceptanceData, feeData, err := node.verifyAndBuildUTXO(virtualClone, dag, block.Transactions(), fastAdd)
-	if err != nil {
-		newErrString := fmt.Sprintf("error verifying UTXO for %s: %s", node, err)
-		if err, ok := err.(RuleError); ok {
-			return nil, nil, nil, ruleError(err.ErrorCode, newErrString)
-		}
-		return nil, nil, nil, errors.New(newErrString)
-	}
-
-	err = node.validateFeeTransaction(dag, block, txsAcceptanceData)
-	if err != nil {
-		return nil, nil, nil, err
-	}
-
-	// since verifyAndBuildUTXO ran, we know for sure that block is valid -
-	// therefore, if an error occured - this means there's some problem in the
-	// internal structure of block nodes, and it's irrecoverable - therefore
-	// panic
-
 	if err = node.updateParents(virtualClone, newBlockUTXO); err != nil {
-		panic(fmt.Errorf("failed updating parents of %s: %s", node, err))
+		return nil, fmt.Errorf("failed updating parents of %s: %s", node, err)
 	}
 
 	// Update the virtual block's children (the DAG tips) to include the new block.
 	virtualClone.AddTip(node)
 
-	// Build a UTXO set for the new virtual block and update the DAG tips' diffs.
+	// Build a UTXO set for the new virtual block
 	newVirtualUTXO, _, err := virtualClone.blockNode.pastUTXO(virtualClone, dag.db)
 	if err != nil {
-		panic(fmt.Sprintf("could not restore past UTXO for virtual %s: %s", virtualClone, err))
+		return nil, fmt.Errorf("could not restore past UTXO for virtual %s: %s", virtualClone, err)
 	}
 
 	// Apply new utxoDiffs to all the tips
 	err = updateTipsUTXO(virtualClone.parents, virtualClone, newVirtualUTXO)
 	if err != nil {
-		panic(fmt.Sprintf("failed updating the tips' UTXO: %s", err))
+		return nil, fmt.Errorf("failed updating the tips' UTXO: %s", err)
 	}
 
 	// It is now safe to meld the UTXO set to base.
 	diffSet := newVirtualUTXO.(*DiffUTXOSet)
-	utxoDiff = diffSet.UTXODiff
+	virtualUTXODiff = diffSet.UTXODiff
 	dag.meldVirtualUTXO(diffSet)
 
 	// Set the status to valid for all index nodes to make sure the changes get
@@ -749,7 +745,10 @@ func (dag *BlockDAG) applyUTXOChanges(node *blockNode, block *util.Block, fastAd
 	// It is now safe to apply the new virtual block
 	dag.virtual = virtualClone
 
-	return utxoDiff, txsAcceptanceData, feeData, nil
+	// And now we can update the finality point of the DAG (if required)
+	dag.lastFinalityPoint = dag.newFinalityPoint(node)
+
+	return virtualUTXODiff, nil
 }
 
 func (dag *BlockDAG) meldVirtualUTXO(newVirtualUTXODiffSet *DiffUTXOSet) {
@@ -758,40 +757,52 @@ func (dag *BlockDAG) meldVirtualUTXO(newVirtualUTXODiffSet *DiffUTXOSet) {
 	newVirtualUTXODiffSet.meldToBase()
 }
 
-// verifyAndBuildUTXO verifies all transactions in the given block and builds its UTXO
-func (node *blockNode) verifyAndBuildUTXO(virtual *virtualBlock, dag *BlockDAG, transactions []*util.Tx, fastAdd bool) (
-	UTXOSet, MultiblockTxsAcceptanceData, compactFeeData, error) {
-
-	pastUTXO, txsAcceptanceData, err := node.pastUTXO(virtual, dag.db)
-	if err != nil {
-		return nil, nil, nil, err
-	}
-
-	var feeData compactFeeData
-	feeData, err = dag.checkConnectToPastUTXO(node, pastUTXO, transactions, fastAdd)
-	if err != nil {
-		return nil, nil, nil, err
-	}
-
+func (node *blockNode) diffFromTxs(pastUTXO UTXOSet, transactions []*util.Tx) (*UTXODiff, error) {
 	diff := NewUTXODiff()
 
-	blockTxsAcceptanceData := BlockTxsAcceptanceData{}
 	for _, tx := range transactions {
 		txDiff, err := pastUTXO.diffFromTx(tx.MsgTx(), node)
 		if err != nil {
-			return nil, nil, nil, err
+			return nil, err
 		}
 		diff, err = diff.WithDiff(txDiff)
 		if err != nil {
-			return nil, nil, nil, err
+			return nil, err
 		}
+	}
+
+	return diff, nil
+}
+
+func (node *blockNode) addTxsToAcceptanceData(txsAcceptanceData MultiBlockTxsAcceptanceData, transactions []*util.Tx) {
+	blockTxsAcceptanceData := BlockTxsAcceptanceData{}
+	for _, tx := range transactions {
 		blockTxsAcceptanceData = append(blockTxsAcceptanceData, TxAcceptanceData{
 			Tx:         tx,
 			IsAccepted: true,
 		})
-
 	}
 	txsAcceptanceData[node.hash] = blockTxsAcceptanceData
+}
+
+// verifyAndBuildUTXO verifies all transactions in the given block and builds its UTXO
+// to save extra traversals it returns the transactions acceptance data and the compactFeeData for the new block
+func (node *blockNode) verifyAndBuildUTXO(dag *BlockDAG, transactions []*util.Tx, fastAdd bool) (
+	newBlockUTXO UTXOSet, txsAcceptanceData MultiBlockTxsAcceptanceData, newBlockFeeData compactFeeData, err error) {
+
+	pastUTXO, txsAcceptanceData, err := node.pastUTXO(dag.virtual, dag.db)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	feeData, err := dag.checkConnectToPastUTXO(node, pastUTXO, transactions, fastAdd)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	diff, err := node.diffFromTxs(pastUTXO, transactions)
+
+	node.addTxsToAcceptanceData(txsAcceptanceData, transactions)
 
 	utxo, err := pastUTXO.WithDiff(diff)
 	if err != nil {
@@ -811,9 +822,9 @@ type TxAcceptanceData struct {
 // if they were accepted or not by some other block
 type BlockTxsAcceptanceData []TxAcceptanceData
 
-// MultiblockTxsAcceptanceData  stores data about which transactions were accepted by a block
+// MultiBlockTxsAcceptanceData  stores data about which transactions were accepted by a block
 // It's a map from the block's blues block IDs to the transaction acceptance data
-type MultiblockTxsAcceptanceData map[daghash.Hash]BlockTxsAcceptanceData
+type MultiBlockTxsAcceptanceData map[daghash.Hash]BlockTxsAcceptanceData
 
 func genesisPastUTXO(virtual *virtualBlock) UTXOSet {
 	// The genesis has no past UTXO, so we create an empty UTXO
@@ -827,19 +838,10 @@ func genesisPastUTXO(virtual *virtualBlock) UTXOSet {
 	return genesisPastUTXO
 }
 
-// pastUTXO returns the UTXO of a given block's past
-func (node *blockNode) pastUTXO(virtual *virtualBlock, db database.DB) (pastUTXO UTXOSet, txsAcceptanceData MultiblockTxsAcceptanceData, err error) {
-	if node.isGenesis() {
-		return genesisPastUTXO(virtual), MultiblockTxsAcceptanceData{}, nil
-	}
-	pastUTXO, err = node.selectedParent.restoreUTXO(virtual)
-	if err != nil {
-		return nil, nil, err
-	}
-
+func (node *blockNode) fetchBlueBlocks(db database.DB) ([]*util.Block, error) {
 	// Fetch from the database all the transactions for this block's blue set
 	blueBlocks := make([]*util.Block, 0, len(node.blues))
-	err = db.View(func(dbTx database.Tx) error {
+	err := db.View(func(dbTx database.Tx) error {
 		// Precalculate the amount of transactions in this block's blue set, besides the selected parent.
 		// This is to avoid an attack in which an attacker fabricates a block that will deliberately cause
 		// a lot of copying, causing a high cost to the whole network.
@@ -856,14 +858,18 @@ func (node *blockNode) pastUTXO(virtual *virtualBlock, db database.DB) (pastUTXO
 
 		return nil
 	})
-	if err != nil {
-		return nil, nil, err
-	}
-	txsAcceptanceData = MultiblockTxsAcceptanceData{}
+	return blueBlocks, err
+}
 
-	// Add all transactions to the pastUTXO
-	// Purposefully ignore failures - these are just unaccepted transactions
-	// Write down which transactions were accepted or not in acceptedTxData
+// applyBlueBlocks adds all transactions in the blue blocks to the selectedParent's UTXO set
+// Purposefully ignoring failures - these are just unaccepted transactions
+// Writing down which transactions were accepted or not in txsAcceptanceData
+func (node *blockNode) applyBlueBlocks(selectedParentUTXO UTXOSet, blueBlocks []*util.Block) (
+	pastUTXO UTXOSet, txsAcceptanceData MultiBlockTxsAcceptanceData, err error) {
+
+	pastUTXO = selectedParentUTXO
+	txsAcceptanceData = MultiBlockTxsAcceptanceData{}
+
 	for _, blueBlock := range blueBlocks {
 		transactions := blueBlock.Transactions()
 		blockTxsAcceptanceData := make(BlockTxsAcceptanceData, len(transactions))
@@ -881,6 +887,28 @@ func (node *blockNode) pastUTXO(virtual *virtualBlock, db database.DB) (pastUTXO
 	}
 
 	return pastUTXO, txsAcceptanceData, nil
+}
+
+// pastUTXO returns the UTXO of a given block's past
+// To save traversals over the blue blocks, it also returns the transaction acceptance data for
+// all blue blocks
+func (node *blockNode) pastUTXO(virtual *virtualBlock, db database.DB) (
+	pastUTXO UTXOSet, bluesTxsAcceptanceData MultiBlockTxsAcceptanceData, err error) {
+
+	if node.isGenesis() {
+		return genesisPastUTXO(virtual), MultiBlockTxsAcceptanceData{}, nil
+	}
+	selectedParentUTXO, err := node.selectedParent.restoreUTXO(virtual)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	blueBlocks, err := node.fetchBlueBlocks(db)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return node.applyBlueBlocks(selectedParentUTXO, blueBlocks)
 }
 
 // restoreUTXO restores the UTXO of a given block from its diff
@@ -949,13 +977,13 @@ func updateTipsUTXO(tips blockSet, virtual *virtualBlock, virtualUTXO UTXOSet) e
 	return nil
 }
 
-// isCurrent returns whether or not the chain believes it is current.  Several
-// factors are used to guess, but the key factors that allow the chain to
+// isCurrent returns whether or not the DAG believes it is current.  Several
+// factors are used to guess, but the key factors that allow the DAG to
 // believe it is current are:
 //  - Latest block height is after the latest checkpoint (if enabled)
 //  - Latest block has a timestamp newer than 24 hours ago
 //
-// This function MUST be called with the chain state lock held (for reads).
+// This function MUST be called with the DAG state lock held (for reads).
 func (dag *BlockDAG) isCurrent() bool {
 	// Not current if the virtual's selected tip height is less than
 	// the latest known good checkpoint (when checkpoints are enabled).
@@ -1118,7 +1146,7 @@ func (dag *BlockDAG) LatestBlockLocator() (BlockLocator, error) {
 //
 // See the BlockLocator type comments for more details.
 //
-// This function MUST be called with the chain state lock held (for reads).
+// This function MUST be called with the DAG state lock held (for reads).
 func (dag *BlockDAG) blockLocator(node *blockNode) BlockLocator {
 	// Use the selected tip if requested.
 	if node == nil {
@@ -1282,7 +1310,7 @@ func (dag *BlockDAG) IntervalBlockHashes(endHash *daghash.Hash, interval int,
 // This is primarily a helper function for the locateBlocks and locateHeaders
 // functions.
 //
-// This function MUST be called with the chain state lock held (for reads).
+// This function MUST be called with the DAG state lock held (for reads).
 func (dag *BlockDAG) locateInventory(locator BlockLocator, hashStop *daghash.Hash, maxEntries uint32) (*blockNode, uint32) {
 	// There are no block locators so a specific block is being requested
 	// as identified by the stop hash.
@@ -1334,7 +1362,7 @@ func (dag *BlockDAG) locateInventory(locator BlockLocator, hashStop *daghash.Has
 //
 // See the comment on the exported function for more details on special cases.
 //
-// This function MUST be called with the chain state lock held (for reads).
+// This function MUST be called with the DAG state lock held (for reads).
 func (dag *BlockDAG) locateBlocks(locator BlockLocator, hashStop *daghash.Hash, maxHashes uint32) []daghash.Hash {
 	// Find the node after the first known block in the locator and the
 	// total number of nodes after it needed while respecting the stop hash
@@ -1379,7 +1407,7 @@ func (dag *BlockDAG) LocateBlocks(locator BlockLocator, hashStop *daghash.Hash, 
 //
 // See the comment on the exported function for more details on special cases.
 //
-// This function MUST be called with the chain state lock held (for reads).
+// This function MUST be called with the DAG state lock held (for reads).
 func (dag *BlockDAG) locateHeaders(locator BlockLocator, hashStop *daghash.Hash, maxHeaders uint32) []*wire.BlockHeader {
 	// Find the node after the first known block in the locator and the
 	// total number of nodes after it needed while respecting the stop hash
@@ -1446,7 +1474,7 @@ type IndexManager interface {
 
 	// ConnectBlock is invoked when a new block has been connected to the
 	// DAG.
-	ConnectBlock(database.Tx, *util.Block, *BlockDAG, MultiblockTxsAcceptanceData) error
+	ConnectBlock(database.Tx, *util.Block, *BlockDAG, MultiBlockTxsAcceptanceData) error
 }
 
 // Config is a descriptor which specifies the blockchain instance configuration.

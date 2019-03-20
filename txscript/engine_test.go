@@ -25,33 +25,30 @@ func TestBadPC(t *testing.T) {
 	}
 
 	// tx with almost empty scripts.
-	tx := &wire.MsgTx{
-		Version: 1,
-		TxIn: []*wire.TxIn{
-			{
-				PreviousOutPoint: wire.OutPoint{
-					TxID: daghash.TxID([32]byte{
-						0xc9, 0x97, 0xa5, 0xe5,
-						0x6e, 0x10, 0x41, 0x02,
-						0xfa, 0x20, 0x9c, 0x6a,
-						0x85, 0x2d, 0xd9, 0x06,
-						0x60, 0xa2, 0x0b, 0x2d,
-						0x9c, 0x35, 0x24, 0x23,
-						0xed, 0xce, 0x25, 0x85,
-						0x7f, 0xcd, 0x37, 0x04,
-					}),
-					Index: 0,
-				},
-				SignatureScript: mustParseShortForm(""),
-				Sequence:        4294967295,
+	txIns := []*wire.TxIn{
+		{
+			PreviousOutPoint: wire.OutPoint{
+				TxID: daghash.TxID([32]byte{
+					0xc9, 0x97, 0xa5, 0xe5,
+					0x6e, 0x10, 0x41, 0x02,
+					0xfa, 0x20, 0x9c, 0x6a,
+					0x85, 0x2d, 0xd9, 0x06,
+					0x60, 0xa2, 0x0b, 0x2d,
+					0x9c, 0x35, 0x24, 0x23,
+					0xed, 0xce, 0x25, 0x85,
+					0x7f, 0xcd, 0x37, 0x04,
+				}),
+				Index: 0,
 			},
+			SignatureScript: mustParseShortForm(""),
+			Sequence:        4294967295,
 		},
-		TxOut: []*wire.TxOut{{
-			Value:    1000000000,
-			PkScript: nil,
-		}},
-		LockTime: 0,
 	}
+	txOuts := []*wire.TxOut{{
+		Value:    1000000000,
+		PkScript: nil,
+	}}
+	tx := wire.NewNativeMsgTx(1, txIns, txOuts)
 	pkScript := mustParseShortForm("NOP")
 
 	for _, test := range tests {
@@ -99,31 +96,29 @@ func TestCheckErrorCondition(t *testing.T) {
 
 	for i, test := range tests {
 		func() {
-			tx := &wire.MsgTx{
-				Version: 1,
-				TxIn: []*wire.TxIn{{
-					PreviousOutPoint: wire.OutPoint{
-						TxID: daghash.TxID([32]byte{
-							0xc9, 0x97, 0xa5, 0xe5,
-							0x6e, 0x10, 0x41, 0x02,
-							0xfa, 0x20, 0x9c, 0x6a,
-							0x85, 0x2d, 0xd9, 0x06,
-							0x60, 0xa2, 0x0b, 0x2d,
-							0x9c, 0x35, 0x24, 0x23,
-							0xed, 0xce, 0x25, 0x85,
-							0x7f, 0xcd, 0x37, 0x04,
-						}),
-						Index: 0,
-					},
-					SignatureScript: nil,
-					Sequence:        4294967295,
-				}},
-				TxOut: []*wire.TxOut{{
-					Value:    1000000000,
-					PkScript: nil,
-				}},
-				LockTime: 0,
-			}
+			txIns := []*wire.TxIn{{
+				PreviousOutPoint: wire.OutPoint{
+					TxID: daghash.TxID([32]byte{
+						0xc9, 0x97, 0xa5, 0xe5,
+						0x6e, 0x10, 0x41, 0x02,
+						0xfa, 0x20, 0x9c, 0x6a,
+						0x85, 0x2d, 0xd9, 0x06,
+						0x60, 0xa2, 0x0b, 0x2d,
+						0x9c, 0x35, 0x24, 0x23,
+						0xed, 0xce, 0x25, 0x85,
+						0x7f, 0xcd, 0x37, 0x04,
+					}),
+					Index: 0,
+				},
+				SignatureScript: nil,
+				Sequence:        4294967295,
+			}}
+			txOuts := []*wire.TxOut{{
+				Value:    1000000000,
+				PkScript: nil,
+			}}
+			tx := wire.NewNativeMsgTx(1, txIns, txOuts)
+
 			pkScript := mustParseShortForm(test.script)
 
 			vm, err := NewEngine(pkScript, tx, 0, 0, nil)
@@ -396,31 +391,29 @@ func TestDisasmPC(t *testing.T) {
 	t.Parallel()
 
 	// tx with almost empty scripts.
-	tx := &wire.MsgTx{
-		Version: 1,
-		TxIn: []*wire.TxIn{{
-			PreviousOutPoint: wire.OutPoint{
-				TxID: daghash.TxID([32]byte{
-					0xc9, 0x97, 0xa5, 0xe5,
-					0x6e, 0x10, 0x41, 0x02,
-					0xfa, 0x20, 0x9c, 0x6a,
-					0x85, 0x2d, 0xd9, 0x06,
-					0x60, 0xa2, 0x0b, 0x2d,
-					0x9c, 0x35, 0x24, 0x23,
-					0xed, 0xce, 0x25, 0x85,
-					0x7f, 0xcd, 0x37, 0x04,
-				}),
-				Index: 0,
-			},
-			SignatureScript: mustParseShortForm("OP_2"),
-			Sequence:        4294967295,
-		}},
-		TxOut: []*wire.TxOut{{
-			Value:    1000000000,
-			PkScript: nil,
-		}},
-		LockTime: 0,
-	}
+	txIns := []*wire.TxIn{{
+		PreviousOutPoint: wire.OutPoint{
+			TxID: daghash.TxID([32]byte{
+				0xc9, 0x97, 0xa5, 0xe5,
+				0x6e, 0x10, 0x41, 0x02,
+				0xfa, 0x20, 0x9c, 0x6a,
+				0x85, 0x2d, 0xd9, 0x06,
+				0x60, 0xa2, 0x0b, 0x2d,
+				0x9c, 0x35, 0x24, 0x23,
+				0xed, 0xce, 0x25, 0x85,
+				0x7f, 0xcd, 0x37, 0x04,
+			}),
+			Index: 0,
+		},
+		SignatureScript: mustParseShortForm("OP_2"),
+		Sequence:        4294967295,
+	}}
+	txOuts := []*wire.TxOut{{
+		Value:    1000000000,
+		PkScript: nil,
+	}}
+	tx := wire.NewNativeMsgTx(1, txIns, txOuts)
+
 	pkScript := mustParseShortForm("OP_DROP NOP TRUE")
 
 	vm, err := NewEngine(pkScript, tx, 0, 0, nil)
@@ -458,31 +451,28 @@ func TestDisasmScript(t *testing.T) {
 	t.Parallel()
 
 	// tx with almost empty scripts.
-	tx := &wire.MsgTx{
-		Version: 1,
-		TxIn: []*wire.TxIn{{
-			PreviousOutPoint: wire.OutPoint{
-				TxID: daghash.TxID([32]byte{
-					0xc9, 0x97, 0xa5, 0xe5,
-					0x6e, 0x10, 0x41, 0x02,
-					0xfa, 0x20, 0x9c, 0x6a,
-					0x85, 0x2d, 0xd9, 0x06,
-					0x60, 0xa2, 0x0b, 0x2d,
-					0x9c, 0x35, 0x24, 0x23,
-					0xed, 0xce, 0x25, 0x85,
-					0x7f, 0xcd, 0x37, 0x04,
-				}),
-				Index: 0,
-			},
-			SignatureScript: mustParseShortForm("OP_2"),
-			Sequence:        4294967295,
-		}},
-		TxOut: []*wire.TxOut{{
-			Value:    1000000000,
-			PkScript: nil,
-		}},
-		LockTime: 0,
-	}
+	txIns := []*wire.TxIn{{
+		PreviousOutPoint: wire.OutPoint{
+			TxID: daghash.TxID([32]byte{
+				0xc9, 0x97, 0xa5, 0xe5,
+				0x6e, 0x10, 0x41, 0x02,
+				0xfa, 0x20, 0x9c, 0x6a,
+				0x85, 0x2d, 0xd9, 0x06,
+				0x60, 0xa2, 0x0b, 0x2d,
+				0x9c, 0x35, 0x24, 0x23,
+				0xed, 0xce, 0x25, 0x85,
+				0x7f, 0xcd, 0x37, 0x04,
+			}),
+			Index: 0,
+		},
+		SignatureScript: mustParseShortForm("OP_2"),
+		Sequence:        4294967295,
+	}}
+	txOuts := []*wire.TxOut{{
+		Value:    1000000000,
+		PkScript: nil,
+	}}
+	tx := wire.NewNativeMsgTx(1, txIns, txOuts)
 	pkScript := mustParseShortForm("OP_DROP NOP TRUE")
 
 	vm, err := NewEngine(pkScript, tx, 0, 0, nil)

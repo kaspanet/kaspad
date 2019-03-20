@@ -33,62 +33,33 @@ func TestDAGSvrWsNtfns(t *testing.T) {
 		unmarshalled interface{}
 	}{
 		{
-			name: "blockConnected",
+			name: "blockAdded",
 			newNtfn: func() (interface{}, error) {
-				return btcjson.NewCmd("blockConnected", "123", 100000, 123456789)
+				return btcjson.NewCmd("blockAdded", "123", 100000, 123456789)
 			},
 			staticNtfn: func() interface{} {
-				return btcjson.NewBlockConnectedNtfn("123", 100000, 123456789)
+				return btcjson.NewBlockAddedNtfn("123", 100000, 123456789)
 			},
-			marshalled: `{"jsonrpc":"1.0","method":"blockConnected","params":["123",100000,123456789],"id":null}`,
-			unmarshalled: &btcjson.BlockConnectedNtfn{
+			marshalled: `{"jsonrpc":"1.0","method":"blockAdded","params":["123",100000,123456789],"id":null}`,
+			unmarshalled: &btcjson.BlockAddedNtfn{
 				Hash:   "123",
 				Height: 100000,
 				Time:   123456789,
 			},
 		},
 		{
-			name: "blockDisconnected",
+			name: "filteredBlockAdded",
 			newNtfn: func() (interface{}, error) {
-				return btcjson.NewCmd("blockDisconnected", "123", 100000, 123456789)
+				return btcjson.NewCmd("filteredBlockAdded", 100000, "header", []string{"tx0", "tx1"})
 			},
 			staticNtfn: func() interface{} {
-				return btcjson.NewBlockDisconnectedNtfn("123", 100000, 123456789)
+				return btcjson.NewFilteredBlockAddedNtfn(100000, "header", []string{"tx0", "tx1"})
 			},
-			marshalled: `{"jsonrpc":"1.0","method":"blockDisconnected","params":["123",100000,123456789],"id":null}`,
-			unmarshalled: &btcjson.BlockDisconnectedNtfn{
-				Hash:   "123",
-				Height: 100000,
-				Time:   123456789,
-			},
-		},
-		{
-			name: "filteredBlockConnected",
-			newNtfn: func() (interface{}, error) {
-				return btcjson.NewCmd("filteredBlockConnected", 100000, "header", []string{"tx0", "tx1"})
-			},
-			staticNtfn: func() interface{} {
-				return btcjson.NewFilteredBlockConnectedNtfn(100000, "header", []string{"tx0", "tx1"})
-			},
-			marshalled: `{"jsonrpc":"1.0","method":"filteredBlockConnected","params":[100000,"header",["tx0","tx1"]],"id":null}`,
-			unmarshalled: &btcjson.FilteredBlockConnectedNtfn{
+			marshalled: `{"jsonrpc":"1.0","method":"filteredBlockAdded","params":[100000,"header",["tx0","tx1"]],"id":null}`,
+			unmarshalled: &btcjson.FilteredBlockAddedNtfn{
 				Height:        100000,
 				Header:        "header",
 				SubscribedTxs: []string{"tx0", "tx1"},
-			},
-		},
-		{
-			name: "filteredBlockDisconnected",
-			newNtfn: func() (interface{}, error) {
-				return btcjson.NewCmd("filteredBlockDisconnected", 100000, "header")
-			},
-			staticNtfn: func() interface{} {
-				return btcjson.NewFilteredBlockDisconnectedNtfn(100000, "header")
-			},
-			marshalled: `{"jsonrpc":"1.0","method":"filteredBlockDisconnected","params":[100000,"header"],"id":null}`,
-			unmarshalled: &btcjson.FilteredBlockDisconnectedNtfn{
-				Height: 100000,
-				Header: "header",
 			},
 		},
 		{
