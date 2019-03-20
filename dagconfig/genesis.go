@@ -5,10 +5,14 @@
 package dagconfig
 
 import (
+	"encoding/hex"
+	"fmt"
 	"math"
+	"math/big"
 	"time"
 
 	"github.com/daglabs/btcd/dagconfig/daghash"
+	"github.com/daglabs/btcd/util"
 	"github.com/daglabs/btcd/util/subnetworkid"
 	"github.com/daglabs/btcd/wire"
 )
@@ -113,3 +117,75 @@ var simNetGenesisMerkleRoot = genesisMerkleRoot
 // simNetGenesisBlock defines the genesis block of the block chain which serves
 // as the public transaction ledger for the simulation test network.
 var simNetGenesisBlock = genesisBlock
+
+// devNetGenesisCoinbaseTx is the coinbase transaction for the genesis blocks for
+// the main network, regression test network, and test network (version 3).
+var devNetGenesisCoinbaseTx = genesisCoinbaseTx
+
+// devGenesisHash is the hash of the first block in the block chain for the development
+// network (genesis block).
+var devNetGenesisHash = daghash.Hash([daghash.HashSize]byte{ // Make go vet happy.
+	0x4d, 0x6a, 0xc5, 0x8c, 0xfd, 0x73, 0xff, 0x60,
+	0x5e, 0x0b, 0x03, 0x4f, 0x05, 0xcf, 0x8b, 0xa2,
+	0x21, 0x50, 0x05, 0xf4, 0x16, 0xd2, 0xa6, 0x75,
+	0x11, 0x36, 0xa9, 0xa3, 0x21, 0x3f, 0x00, 0x00,
+})
+
+// devNetGenesisMerkleRoot is the hash of the first transaction in the genesis block
+// for the devopment network.
+var devNetGenesisMerkleRoot = genesisMerkleRoot
+
+// devNetGenesisBlock defines the genesis block of the block chain which serves as the
+// public transaction ledger for the development network.
+var devNetGenesisBlock = wire.MsgBlock{
+	Header: wire.BlockHeader{
+		Version:        1,
+		ParentHashes:   []daghash.Hash{},
+		HashMerkleRoot: devNetGenesisMerkleRoot,
+		IDMerkleRoot:   devNetGenesisMerkleRoot,
+		Timestamp:      time.Unix(0x5c922d07, 0),
+		Bits:           0x1e7fffff,
+		Nonce:          0x2633,
+	},
+	Transactions: []*wire.MsgTx{&devNetGenesisCoinbaseTx},
+}
+
+// SolveGenesisBlock attempts to find some combination of a nonce and
+// current timestamp which makes the passed block hash to a value less than the
+// target difficulty.
+func SolveGenesisBlock() {
+	// Create some convenience variables.
+	header := &devNetGenesisBlock.Header
+	targetDifficulty := util.CompactToBig(header.Bits)
+
+	// set POW limit to 2^239 - 1.
+	bigOne := big.NewInt(1)
+	header.Bits = util.BigToCompact(new(big.Int).Sub(new(big.Int).Lsh(bigOne, 239), bigOne))
+
+	// Search through the entire nonce range for a solution while
+	// periodically checking for early quit and stale block
+	// conditions along with updates to the speed monitor.
+	maxNonce := ^uint64(0) // 2^64 - 1
+	for {
+		header.Timestamp = time.Unix(time.Now().Unix(), 0)
+		for i := uint64(0); i <= maxNonce; i++ {
+			// Update the nonce and hash the block header.  Each
+			// hash is actually a double sha256 (two hashes), so
+			// increment the number of hashes completed for each
+			// attempt accordingly.
+			header.Nonce = i
+			hash := header.BlockHash()
+
+			// The block is solved when the new block hash is less
+			// than the target difficulty.  Yay!
+			if daghash.HashToBig(&hash).Cmp(targetDifficulty) <= 0 {
+				fmt.Printf("\n\nGenesis block solved:\n")
+				fmt.Printf("timestamp: 0x%x\n", header.Timestamp.Unix())
+				fmt.Printf("bits (difficulty): 0x%x\n", header.Bits)
+				fmt.Printf("nonce: 0x%x\n", header.Nonce)
+				fmt.Printf("hash: %v\n\n\n", hex.EncodeToString(hash[:]))
+				return
+			}
+		}
+	}
+}

@@ -39,6 +39,7 @@ type config struct {
 	Nameserver string `short:"n" long:"nameserver" description:"hostname of nameserver"`
 	Seeder     string `short:"s" long:"default seeder" description:"IP address of a  working node"`
 	TestNet    bool   `long:"testnet" description:"Use testnet"`
+	DevNet     bool   `long:"devnet" description:"Use devnet"`
 }
 
 func loadConfig() (*config, error) {
@@ -118,8 +119,15 @@ func loadConfig() (*config, error) {
 
 	cfg.Listen = normalizeAddress(cfg.Listen, defaultListenPort)
 
-	if cfg.TestNet {
+	if cfg.Testnet && cfg.DevNet {
+		str := "Both testnet and devnet are specified"
+		err := fmt.Errorf(str)
+		fmt.Fprintln(os.Stderr, err)
+		return nil, err
+	} else if cfg.TestNet {
 		activeNetParams = &dagconfig.TestNet3Params
+	} else if cfg.DevNet {
+		activeNetParams = &dagconfig.DevNetParams
 	}
 
 	return &cfg, nil

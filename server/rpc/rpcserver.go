@@ -1084,8 +1084,8 @@ func getDifficultyRatio(bits uint32, params *dagconfig.Params) float64 {
 	// converted back to a number.  Note this is not the same as the proof of
 	// work limit directly because the block difficulty is encoded in a block
 	// with the compact form which loses precision.
-	max := blockdag.CompactToBig(params.PowLimitBits)
-	target := blockdag.CompactToBig(bits)
+	max := util.CompactToBig(params.PowLimitBits)
+	target := util.CompactToBig(bits)
 
 	difficulty := new(big.Rat).SetFrac(max, target)
 	outString := difficulty.FloatString(8)
@@ -1620,7 +1620,7 @@ func (state *gbtWorkState) updateBlockTemplate(s *Server, useCoinbaseValue bool)
 		template = blkTemplate
 		msgBlock = template.Block
 		targetDifficulty = fmt.Sprintf("%064x",
-			blockdag.CompactToBig(msgBlock.Header.Bits))
+			util.CompactToBig(msgBlock.Header.Bits))
 
 		// Get the minimum allowed timestamp for the block based on the
 		// median timestamp of the last several blocks per the chain
@@ -1681,7 +1681,7 @@ func (state *gbtWorkState) updateBlockTemplate(s *Server, useCoinbaseValue bool)
 		// Set locals for convenience.
 		msgBlock = template.Block
 		targetDifficulty = fmt.Sprintf("%064x",
-			blockdag.CompactToBig(msgBlock.Header.Bits))
+			util.CompactToBig(msgBlock.Header.Bits))
 
 		// Update the time of the block template to the current time
 		// while accounting for the median time of the past several
@@ -1775,7 +1775,7 @@ func (state *gbtWorkState) blockTemplateResult(useCoinbaseValue bool, submitOld 
 	// implied by the included or omission of fields:
 	//  Including MinTime -> time/decrement
 	//  Omitting CoinbaseTxn -> coinbase, generation
-	targetDifficulty := fmt.Sprintf("%064x", blockdag.CompactToBig(header.Bits))
+	targetDifficulty := fmt.Sprintf("%064x", util.CompactToBig(header.Bits))
 	longPollID := encodeLongPollID(state.tipHashes, state.lastGenerated)
 	reply := btcjson.GetBlockTemplateResult{
 		Bits:         strconv.FormatInt(int64(header.Bits), 16),
@@ -2341,6 +2341,7 @@ func handleGetInfo(s *Server, cmd interface{}, closeChan <-chan struct{}) (inter
 		Proxy:           config.MainConfig().Proxy,
 		Difficulty:      getDifficultyRatio(s.cfg.DAG.CurrentBits(), s.cfg.DAGParams),
 		TestNet:         config.MainConfig().TestNet3,
+		DevNet:          config.MainConfig().DevNet,
 		RelayFee:        config.MainConfig().MinRelayTxFee.ToBTC(),
 	}
 
@@ -2410,6 +2411,7 @@ func handleGetMiningInfo(s *Server, cmd interface{}, closeChan <-chan struct{}) 
 		NetworkHashPS:    networkHashesPerSec,
 		PooledTx:         uint64(s.cfg.TxMemPool.Count()),
 		TestNet:          config.MainConfig().TestNet3,
+		DevNet:           config.MainConfig().DevNet,
 	}
 	return &result, nil
 }
