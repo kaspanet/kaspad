@@ -175,7 +175,7 @@ func (m *memWallet) SetRPCClient(rpcClient *rpcclient.Client) {
 }
 
 // IngestBlock is a call-back which is to be triggered each time a new block is
-// connected to the main chain. It queues the update for the chain syncer,
+// connected to the blockDAG. It queues the update for the DAG syncer,
 // calling the private version in sequential order.
 func (m *memWallet) IngestBlock(height int32, header *wire.BlockHeader, filteredTxns []*util.Tx) {
 	// Append this new DAG update to the end of the queue of new DAG
@@ -185,7 +185,7 @@ func (m *memWallet) IngestBlock(height int32, header *wire.BlockHeader, filtered
 		filteredTxns, true})
 	m.dagMtx.Unlock()
 
-	// Launch a goroutine to signal the chainSyncer that a new update is
+	// Launch a goroutine to signal the dagSyncer that a new update is
 	// available. We do this in a new goroutine in order to avoid blocking
 	// the main loop of the rpc client.
 	go func() {
