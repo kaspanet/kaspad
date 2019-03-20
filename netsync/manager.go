@@ -565,6 +565,13 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 		sm.rejectedTxns = make(map[daghash.TxID]struct{})
 	}
 
+	// We don't want to flood our sync peer with getdata messages, so
+	// instead of asking it immediately about missing ancestors, we first
+	// wait until it finishes to send us all of the requested blocks.
+	if (isOrphan && peer != sm.syncPeer) || (peer == sm.syncPeer && len(state.requestedBlocks) == 0) {
+		sm.sendInvsFromRequestedQueue(peer, state)
+	}
+
 	// Nothing more to do if we aren't in headers-first mode.
 	if !sm.headersFirstMode {
 		return
@@ -937,8 +944,10 @@ func (sm *SyncManager) handleInvMsg(imsg *invMsg) {
 		}
 	}
 
-	// Request as much as possible at once.  Anything that won't fit into
-	// the request will be requested on the next inv message.
+	sm.sendInvsFromRequestedQueue(peer, state)
+}
+
+func (sm *SyncManager) sendInvsFromRequestedQueue(peer *peerpkg.Peer, state *peerSyncState) {
 	numRequested := 0
 	gdmsg := wire.NewMsgGetData()
 	state.requestQueueMtx.Lock()
