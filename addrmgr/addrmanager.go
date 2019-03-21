@@ -547,17 +547,17 @@ func (a *AddrManager) deserializePeers(filePath string) error {
 					a.nNew[*subnetworkID]++
 				}
 				ka.refs++
-				a.addrNew[*subnetworkID][i][val] = ka
+				a.updateAddrNew(i, val, ka)
 			}
 		}
 	}
-	for subnetworkIDStr := range sam.NewBuckets {
+	for subnetworkIDStr := range sam.TriedBuckets {
 		subnetworkID, err := subnetworkid.NewFromStr(subnetworkIDStr)
 		if err != nil {
 			return err
 		}
-		for i := range sam.TriedBuckets[subnetworkIDStr] {
-			for _, val := range sam.TriedBuckets[subnetworkIDStr][i] {
+		for i, subnetworkTriedBucket := range sam.TriedBuckets[subnetworkIDStr] {
+			for _, val := range subnetworkTriedBucket {
 				ka, ok := a.addrIndex[val]
 				if !ok {
 					return fmt.Errorf("Newbucket contains %s but "+
