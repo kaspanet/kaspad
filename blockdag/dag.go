@@ -1107,17 +1107,24 @@ func (dag *BlockDAG) HeaderByHash(hash *daghash.Hash) (*wire.BlockHeader, error)
 	return node.Header(), nil
 }
 
-// BlockLocatorFromHash returns a block locator for the passed block hash.
+// BlockLocatorFromHash traverses the selected parent chain of the given block hash
+// until it finds a block that exists in the virtual's selected parenth chain, and
+// then it returns its block locator.
 // See BlockLocator for details on the algorithm used to create a block locator.
 //
 // In addition to the general algorithm referenced above, this function will
-// return the block locator for the latest known tip of the main (best) chain if
+// return the block locator for the selected tip if
 // the passed hash is not currently known.
 //
 // This function is safe for concurrent access.
 func (dag *BlockDAG) BlockLocatorFromHash(hash *daghash.Hash) BlockLocator {
 	dag.dagLock.RLock()
 	node := dag.index.LookupNode(hash)
+	if node != nil {
+		for !dag.IsInSelectedPathChain(&node.hash) {
+			node = node.selectedParent
+		}
+	}
 	locator := dag.blockLocator(node)
 	dag.dagLock.RUnlock()
 	return locator
