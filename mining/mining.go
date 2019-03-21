@@ -245,20 +245,19 @@ func CreateCoinbaseTx(params *dagconfig.Params, coinbaseScript []byte, nextBlock
 		}
 	}
 
-	tx := wire.NewMsgTx(wire.TxVersion)
-	tx.AddTxIn(&wire.TxIn{
+	txIn := &wire.TxIn{
 		// Coinbase transactions have no inputs, so previous outpoint is
 		// zero hash and max index.
 		PreviousOutPoint: *wire.NewOutPoint(&daghash.TxID{},
 			wire.MaxPrevOutIndex),
 		SignatureScript: coinbaseScript,
 		Sequence:        wire.MaxTxInSequenceNum,
-	})
-	tx.AddTxOut(&wire.TxOut{
+	}
+	txOut := &wire.TxOut{
 		Value:    blockdag.CalcBlockSubsidy(nextBlockHeight, params),
 		PkScript: pkScript,
-	})
-	return util.NewTx(tx), nil
+	}
+	return util.NewTx(wire.NewNativeMsgTx(wire.TxVersion, []*wire.TxIn{txIn}, []*wire.TxOut{txOut})), nil
 }
 
 // MinimumMedianTime returns the minimum allowed timestamp for a block building
@@ -595,7 +594,7 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 
 		// Ensure the transaction inputs pass all of the necessary
 		// preconditions before allowing it to be added to the block.
-		_, err = blockdag.CheckTransactionInputs(tx, nextBlockHeight,
+		_, err = blockdag.CheckTransactionInputsAndCalulateFee(tx, nextBlockHeight,
 			g.dag.UTXOSet(), g.dagParams, false)
 		if err != nil {
 			log.Tracef("Skipping tx %s due to error in "+

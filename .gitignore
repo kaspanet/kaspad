@@ -44,3 +44,4 @@ version.txt
 coverage.txt
 
 testdbs/
+coverage.tmp

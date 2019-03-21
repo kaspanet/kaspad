@@ -1,7 +1,6 @@
 package testtools
 
 import (
-	"encoding/binary"
 	"fmt"
 
 	"github.com/daglabs/btcd/dagconfig"
@@ -55,19 +54,15 @@ func RegisterSubnetworkForTest(dag *blockdag.BlockDAG, params *dagconfig.Params,
 	fundsBlockCbTxID := fundsBlockCbTx.TxID()
 
 	// Create a block with a valid subnetwork registry transaction
-	registryTx := wire.NewMsgTx(wire.TxVersion)
-	registryTx.AddTxIn(&wire.TxIn{
+	txIn := &wire.TxIn{
 		PreviousOutPoint: *wire.NewOutPoint(&fundsBlockCbTxID, 0),
 		Sequence:         wire.MaxTxInSequenceNum,
-	})
-	registryTx.AddTxOut(&wire.TxOut{
+	}
+	txOut := &wire.TxOut{
 		PkScript: blockdag.OpTrueScript,
 		Value:    fundsBlockCbTx.TxOut[0].Value,
-	})
-	registryTx.SubnetworkID = *subnetworkid.SubnetworkIDRegistry
-	registryTx.Payload = make([]byte, 8)
-	binary.LittleEndian.PutUint64(registryTx.Payload, gasLimit)
-	registryTx.PayloadHash = daghash.DoubleHashP(registryTx.Payload)
+	}
+	registryTx := wire.NewRegistryMsgTx(1, []*wire.TxIn{txIn}, []*wire.TxOut{txOut}, gasLimit)
 
 	// Add it to the DAG
 	registryBlock, err := buildNextBlock([]daghash.Hash{*fundsBlock.Hash()}, []*wire.MsgTx{registryTx})

@@ -885,7 +885,7 @@ func ensureNoDuplicateTx(block *blockNode, utxoSet UTXOSet,
 	return nil
 }
 
-// CheckTransactionInputs performs a series of checks on the inputs to a
+// CheckTransactionInputsAndCalulateFee performs a series of checks on the inputs to a
 // transaction to ensure they are valid.  An example of some of the checks
 // include verifying all inputs exist, ensuring the block reward seasoning
 // requirements are met, detecting double spends, validating all values and fees
@@ -895,10 +895,11 @@ func ensureNoDuplicateTx(block *blockNode, utxoSet UTXOSet,
 //
 // NOTE: The transaction MUST have already been sanity checked with the
 // CheckTransactionSanity function prior to calling this function.
-func CheckTransactionInputs(tx *util.Tx, txHeight int32, utxoSet UTXOSet, dagParams *dagconfig.Params, fastAdd bool) (
+func CheckTransactionInputsAndCalulateFee(tx *util.Tx, txHeight int32, utxoSet UTXOSet, dagParams *dagconfig.Params, fastAdd bool) (
 	txFeeInSatoshi uint64, err error) {
 
-	// Block reward transactions have no inputs.
+	// Block reward transactions (a.k.a. coinbase or fee transactions)
+	// have no standard inputs to validate.
 	if IsBlockReward(tx) {
 		return 0, nil
 	}
@@ -1033,9 +1034,8 @@ func (dag *BlockDAG) checkConnectToPastUTXO(block *blockNode, pastUTXO UTXOSet,
 	var totalFees uint64
 	compactFeeFactory := newCompactFeeFactory()
 
-	var feeData compactFeeData
 	for _, tx := range transactions {
-		txFee, err := CheckTransactionInputs(tx, block.height, pastUTXO,
+		txFee, err := CheckTransactionInputsAndCalulateFee(tx, block.height, pastUTXO,
 			dag.dagParams, fastAdd)
 		if err != nil {
 			return nil, err
@@ -1052,12 +1052,12 @@ func (dag *BlockDAG) checkConnectToPastUTXO(block *blockNode, pastUTXO UTXOSet,
 
 		err = compactFeeFactory.add(txFee)
 		if err != nil {
-			return nil, fmt.Errorf("Error adding tx %s fee to feeAccumulatorWriter: %s", tx.ID(), err)
+			return nil, fmt.Errorf("Error adding tx %s fee to compactFeeFactory: %s", tx.ID(), err)
 		}
-		feeData, err = compactFeeFactory.data()
-		if err != nil {
-			return nil, fmt.Errorf("Error getting bytes of fee data: %s", err)
-		}
+	}
+	feeData, err := compactFeeFactory.data()
+	if err != nil {
+		return nil, fmt.Errorf("Error getting bytes of fee data: %s", err)
 	}
 
 	if !fastAdd {
