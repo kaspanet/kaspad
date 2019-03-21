@@ -307,7 +307,6 @@ func (r FutureSubmitBlockResult) Receive() error {
 	}
 
 	return nil
-
 }
 
 // SubmitBlockAsync returns an instance of a type that can be used to get the
@@ -335,4 +334,39 @@ func (c *Client) SubmitBlock(block *util.Block, options *btcjson.SubmitBlockOpti
 	return c.SubmitBlockAsync(block, options).Receive()
 }
 
-// TODO(davec): Implement GetBlockTemplate
+// FutureGetBlockTemplateResult is a future promise to deliver the result of a
+// GetBlockTemplate RPC invocation (or an applicable error).
+type FutureGetBlockTemplateResult chan *response
+
+// GetBlockTemplateAsync returns an instance of a type that can be used to get
+// the result of the RPC at some future time by invoking the Receive function on
+// the returned instance.
+//
+// See GetBlockTemplate for the blocking version and more details
+func (c *Client) GetBlockTemplateAsync() FutureGetBlockTemplateResult {
+	request := &btcjson.TemplateRequest{
+		Mode: "template",
+	}
+	cmd := btcjson.NewGetBlockTemplateCmd(request)
+	return c.sendCmd(cmd)
+}
+
+// Receive waits for the response promised by the future and returns an error if
+// any occurred when submitting the block.
+func (r FutureGetBlockTemplateResult) Receive() (*btcjson.GetBlockTemplateResult, error) {
+	res, err := receiveFuture(r)
+	if err != nil {
+		return nil, err
+	}
+
+	var result btcjson.GetBlockTemplateResult
+	if err := json.Unmarshal(res, &result); err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
+// GetBlockTemplate request a block template from the server, to mine upon
+func (c *Client) GetBlockTemplate() (*btcjson.GetBlockTemplateResult, error) {
+	return c.GetBlockTemplateAsync().Receive()
+}
