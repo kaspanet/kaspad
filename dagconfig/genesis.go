@@ -8,7 +8,6 @@ import (
 	"encoding/hex"
 	"fmt"
 	"math"
-	"math/big"
 	"time"
 
 	"github.com/daglabs/btcd/dagconfig/daghash"
@@ -149,14 +148,11 @@ var devNetGenesisBlock = wire.MsgBlock{
 // SolveGenesisBlock attempts to find some combination of a nonce and
 // current timestamp which makes the passed block hash to a value less than the
 // target difficulty.
-func SolveGenesisBlock() {
+func SolveGenesisBlock(block *wire.MsgBlock, powBits uint32, netName string) {
 	// Create some convenience variables.
-	header := &devNetGenesisBlock.Header
+	header := &block.Header
 	targetDifficulty := util.CompactToBig(header.Bits)
-
-	// set POW limit to 2^239 - 1.
-	bigOne := big.NewInt(1)
-	header.Bits = util.BigToCompact(new(big.Int).Sub(new(big.Int).Lsh(bigOne, 239), bigOne))
+	header.Bits = powBits
 
 	// Search through the entire nonce range for a solution while
 	// periodically checking for early quit and stale block
@@ -175,7 +171,7 @@ func SolveGenesisBlock() {
 			// The block is solved when the new block hash is less
 			// than the target difficulty.  Yay!
 			if daghash.HashToBig(&hash).Cmp(targetDifficulty) <= 0 {
-				fmt.Printf("\n\nGenesis block solved:\n")
+				fmt.Printf("\n\nGenesis block of %s is solved:\n", netName)
 				fmt.Printf("timestamp: 0x%x\n", header.Timestamp.Unix())
 				fmt.Printf("bits (difficulty): 0x%x\n", header.Bits)
 				fmt.Printf("nonce: 0x%x\n", header.Nonce)
