@@ -535,8 +535,8 @@ func (a *AddrManager) deserializePeers(filePath string) error {
 		if err != nil {
 			return err
 		}
-		for i := range sam.NewBuckets[subnetworkIDStr] {
-			for _, val := range sam.NewBuckets[subnetworkIDStr][i] {
+		for i, subnetworkNewBucket := range sam.NewBuckets[subnetworkIDStr] {
+			for _, val := range subnetworkNewBucket {
 				ka, ok := a.addrIndex[val]
 				if !ok {
 					return fmt.Errorf("newbucket contains %s but "+
