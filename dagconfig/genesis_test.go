@@ -6,10 +6,8 @@ package dagconfig
 
 import (
 	"bytes"
-	"math/big"
 	"testing"
 
-	"github.com/daglabs/btcd/util"
 	"github.com/davecgh/go-spew/spew"
 )
 
@@ -118,15 +116,6 @@ func TestSimNetGenesisBlock(t *testing.T) {
 			"not appear valid - got %v, want %v", spew.Sdump(hash),
 			spew.Sdump(SimNetParams.GenesisHash))
 	}
-}
-
-// TestSolveGenesisBlock tests SolveGenesisBlock function
-func TestSolveGenesisBlock(t *testing.T) {
-	bigOne := big.NewInt(1)
-	SolveGenesisBlock(&genesisBlock,
-		util.BigToCompact(new(big.Int).Sub(new(big.Int).Lsh(bigOne, 255), bigOne)), "mainnet")
-	SolveGenesisBlock(&devNetGenesisBlock,
-		util.BigToCompact(new(big.Int).Sub(new(big.Int).Lsh(bigOne, 239), bigOne)), "devnet")
 }
 
 // genesisBlockBytes are the wire encoded bytes for the genesis block of the
