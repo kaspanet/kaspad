@@ -41,6 +41,7 @@ type config struct {
 	TestNet3       bool   `long:"testnet" description:"Use the test network"`
 	RegressionTest bool   `long:"regtest" description:"Use the regression test network"`
 	SimNet         bool   `long:"simnet" description:"Use the simulation test network"`
+	DevNet         bool   `long:"devnet" description:"Use the development test network"`
 	NumCandidates  int    `short:"n" long:"numcandidates" description:"Max num of checkpoint candidates to show {1-20}"`
 	UseGoOutput    bool   `short:"g" long:"gooutput" description:"Display the candidates using Go syntax that is ready to insert into the btcchain checkpoint list"`
 }
@@ -110,9 +111,13 @@ func loadConfig() (*config, []string, error) {
 		numNets++
 		activeNetParams = &dagconfig.SimNetParams
 	}
+	if cfg.DevNet {
+		numNets++
+		activeNetParams = &dagconfig.DevNetParams
+	}
 	if numNets > 1 {
-		str := "%s: The testnet, regtest, and simnet params can't be " +
-			"used together -- choose one of the three"
+		str := "%s: The testnet, regtest, simnet and devnet params can't be " +
+			"used together -- choose one of the four"
 		err := fmt.Errorf(str, funcName)
 		fmt.Fprintln(os.Stderr, err)
 		parser.WriteHelp(os.Stderr)

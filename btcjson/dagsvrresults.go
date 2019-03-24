@@ -412,6 +412,7 @@ type GetMiningInfoResult struct {
 	NetworkHashPS    int64   `json:"networkHashPs"`
 	PooledTx         uint64  `json:"pooledTx"`
 	TestNet          bool    `json:"testNet"`
+	DevNet           bool    `json:"devNet"`
 }
 
 // GetWorkResult models the data from the getwork command.
@@ -432,6 +433,7 @@ type InfoDAGResult struct {
 	Proxy           string  `json:"proxy"`
 	Difficulty      float64 `json:"difficulty"`
 	TestNet         bool    `json:"testNet"`
+	DevNet          bool    `json:"devNet"`
 	RelayFee        float64 `json:"relayFee"`
 	Errors          string  `json:"errors"`
 }
