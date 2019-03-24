@@ -682,7 +682,7 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 	log.Debugf("Created new block template (%d transactions, %d in fees, "+
 		"%d signature operations, %d bytes, target difficulty %064x)",
 		len(msgBlock.Transactions), totalFees, blockSigOps, blockSize,
-		blockdag.CompactToBig(msgBlock.Header.Bits))
+		util.CompactToBig(msgBlock.Header.Bits))
 
 	return &BlockTemplate{
 		Block:           &msgBlock,

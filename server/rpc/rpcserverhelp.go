@@ -379,6 +379,7 @@ var helpDescsEnUS = map[string]string{
 	"infoDagResult-proxy":           "The proxy used by the server",
 	"infoDagResult-difficulty":      "The current target difficulty",
 	"infoDagResult-testNet":         "Whether or not server is using testnet",
+	"infoDagResult-devNet":          "Whether or not server is using devnet",
 	"infoDagResult-relayFee":        "The minimum relay fee for non-free transactions in BTC/KB",
 	"infoDagResult-errors":          "Any current errors",
 
@@ -393,6 +394,7 @@ var helpDescsEnUS = map[string]string{
 	"infoWalletResult-proxy":           "The proxy used by the server",
 	"infoWalletResult-difficulty":      "The current target difficulty",
 	"infoWalletResult-testNet":         "Whether or not server is using testnet",
+	"infoWalletResult-devNet":          "Whether or not server is using devnet",
 	"infoWalletResult-keypoolOldest":   "Seconds since 1 Jan 1970 GMT of the oldest pre-generated key in the key pool",
 	"infoWalletResult-keypoolSize":     "The number of new keys that are pre-generated",
 	"infoWalletResult-unlockedUntil":   "The timestamp in seconds since 1 Jan 1970 GMT that the wallet is unlocked for transfers, or 0 if the wallet is locked",
@@ -428,6 +430,7 @@ var helpDescsEnUS = map[string]string{
 	"getMiningInfoResult-networkHashPs":    "Estimated network hashes per second for the most recent blocks",
 	"getMiningInfoResult-pooledTx":         "Number of transactions in the memory pool",
 	"getMiningInfoResult-testNet":          "Whether or not server is using testnet",
+	"getMiningInfoResult-devNet":           "Whether or not server is using devnet",
 
 	// GetMiningInfoCmd help.
 	"getMiningInfo--synopsis": "Returns a JSON object containing mining-related information.",

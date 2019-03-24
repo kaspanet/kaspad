@@ -7,6 +7,8 @@ package blockdag
 import (
 	"math/big"
 	"testing"
+
+	"github.com/daglabs/btcd/util"
 )
 
 // TestBigToCompact ensures BigToCompact converts big integers to the expected
@@ -22,7 +24,7 @@ func TestBigToCompact(t *testing.T) {
 
 	for x, test := range tests {
 		n := big.NewInt(test.in)
-		r := BigToCompact(n)
+		r := util.BigToCompact(n)
 		if r != test.out {
 			t.Errorf("TestBigToCompact test #%d failed: got %d want %d\n",
 				x, r, test.out)
@@ -42,7 +44,7 @@ func TestCompactToBig(t *testing.T) {
 	}
 
 	for x, test := range tests {
-		n := CompactToBig(test.in)
+		n := util.CompactToBig(test.in)
 		want := big.NewInt(test.out)
 		if n.Cmp(want) != 0 {
 			t.Errorf("TestCompactToBig test #%d failed: got %d want %d\n",
@@ -65,7 +67,7 @@ func TestCalcWork(t *testing.T) {
 	for x, test := range tests {
 		bits := uint32(test.in)
 
-		r := CalcWork(bits)
+		r := util.CalcWork(bits)
 		if r.Int64() != test.out {
 			t.Errorf("TestCalcWork test #%d failed: got %v want %d\n",
 				x, r.Int64(), test.out)

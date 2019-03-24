@@ -40,6 +40,7 @@ type config struct {
 	TestNet3       bool   `long:"testnet" description:"Use the test network"`
 	RegressionTest bool   `long:"regtest" description:"Use the regression test network"`
 	SimNet         bool   `long:"simnet" description:"Use the simulation test network"`
+	DevNet         bool   `long:"devnet" description:"Use the development test network"`
 	InFile         string `short:"i" long:"infile" description:"File containing the block(s)"`
 	TxIndex        bool   `long:"txindex" description:"Build a full hash-based transaction index which makes all transactions available via the getrawtransaction RPC"`
 	AddrIndex      bool   `long:"addrindex" description:"Build a full address-based transaction index which makes the searchrawtransactions RPC available"`
@@ -122,9 +123,13 @@ func loadConfig() (*config, []string, error) {
 		numNets++
 		activeNetParams = &dagconfig.SimNetParams
 	}
+	if cfg.DevNet {
+		numNets++
+		activeNetParams = &dagconfig.DevNetParams
+	}
 	if numNets > 1 {
-		str := "%s: The testnet, regtest, and simnet params can't be " +
-			"used together -- choose one of the three"
+		str := "%s: The testnet, regtest, simnet and devent params can't be " +
+			"used together -- choose one of the four"
 		err := fmt.Errorf(str, funcName)
 		fmt.Fprintln(os.Stderr, err)
 		parser.WriteHelp(os.Stderr)
