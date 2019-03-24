@@ -343,6 +343,7 @@ func (sm *SyncManager) handleNewPeerMsg(peer *peerpkg.Peer) {
 		syncCandidate:   isSyncCandidate,
 		requestedTxns:   make(map[daghash.TxID]struct{}),
 		requestedBlocks: make(map[daghash.Hash]struct{}),
+		requestQueueSet: make(map[daghash.Hash]struct{}),
 	}
 
 	// Start syncing by choosing the best candidate if needed.
@@ -467,6 +468,25 @@ func (sm *SyncManager) current() bool {
 	return sm.dag.IsCurrent()
 }
 
+// restartSyncIfNeeded finds a new sync candidate if we're not expecting any
+// blocks from the current one.
+func (sm *SyncManager) restartSyncIfNeeded() {
+	if sm.syncPeer != nil {
+		syncPeerState, exists := sm.peerStates[sm.syncPeer]
+		if exists {
+			isWaitingForBlocks := func() bool {
+				syncPeerState.requestQueueMtx.Lock()
+				defer syncPeerState.requestQueueMtx.Unlock()
+				return len(syncPeerState.requestedBlocks) != 0 || len(syncPeerState.requestQueue) != 0
+			}()
+			if isWaitingForBlocks {
+				return
+			}
+		}
+	}
+	sm.startSync()
+}
+
 // handleBlockMsg handles block messages from all peers.
 func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 	peer := bmsg.peer
@@ -521,6 +541,8 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 	// will fail the insert and thus we'll retry next time we get an inv.
 	delete(state.requestedBlocks, *blockHash)
 	delete(sm.requestedBlocks, *blockHash)
+
+	sm.restartSyncIfNeeded()
 
 	// Process the block to include validation, orphan handling, etc.
 	isOrphan, err := sm.dag.ProcessBlock(bmsg.block, behaviorFlags)
@@ -940,12 +962,11 @@ func (sm *SyncManager) handleInvMsg(imsg *invMsg) {
 
 			// We already have the final block advertised by this
 			// inventory message, so force a request for more.  This
-			// should only happen if we're on a really long side
-			// chain.
-			if i == lastBlock {
-				// TODO: (Ori netsync) Check if it's needed
-
-				// Request blocks after this one up to the
+			// should only happen if our DAG and the peer's DAG have
+			// diverged long time ago.
+			if i == lastBlock && peer == sm.syncPeer {
+				// Request blocks after the first block's ancestor that exists
+				// in the selected path chain, one up to the
 				// final one the remote peer knows about (zero
 				// stop hash).
 				locator := sm.dag.BlockLocatorFromHash(&iv.Hash)
