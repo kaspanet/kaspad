@@ -282,20 +282,19 @@ func (g *testGenerator) createCoinbaseTx(blockHeight int32) *wire.MsgTx {
 		panic(err)
 	}
 
-	tx := wire.NewMsgTx(1)
-	tx.AddTxIn(&wire.TxIn{
+	txIn := &wire.TxIn{
 		// Coinbase transactions have no inputs, so previous outpoint is
 		// zero hash and max index.
 		PreviousOutPoint: *wire.NewOutPoint(&daghash.TxID{},
 			wire.MaxPrevOutIndex),
 		Sequence:        wire.MaxTxInSequenceNum,
 		SignatureScript: coinbaseScript,
-	})
-	tx.AddTxOut(&wire.TxOut{
+	}
+	txOut := &wire.TxOut{
 		Value:    blockdag.CalcBlockSubsidy(blockHeight, g.params),
 		PkScript: opTrueScript,
-	})
-	return tx
+	}
+	return wire.NewNativeMsgTx(1, []*wire.TxIn{txIn}, []*wire.TxOut{txOut})
 }
 
 // calcHashMerkleRoot creates a merkle tree from the slice of transactions and
@@ -330,7 +329,7 @@ func solveBlock(header *wire.BlockHeader) bool {
 
 	// solver accepts a block header and a nonce range to test. It is
 	// intended to be run as a goroutine.
-	targetDifficulty := blockdag.CompactToBig(header.Bits)
+	targetDifficulty := util.CompactToBig(header.Bits)
 	quit := make(chan bool)
 	results := make(chan sbResult)
 	solver := func(hdr wire.BlockHeader, startNonce, stopNonce uint64) {
@@ -436,12 +435,12 @@ func additionalTx(tx *wire.MsgTx) func(*wire.MsgBlock) {
 // script which avoids the need to track addresses and signature scripts in the
 // tests.
 func createSpendTx(spend *spendableOut, fee util.Amount) *wire.MsgTx {
-	spendTx := wire.NewMsgTx(1)
-	spendTx.AddTxIn(&wire.TxIn{
+	txIn := &wire.TxIn{
 		PreviousOutPoint: spend.prevOut,
 		Sequence:         wire.MaxTxInSequenceNum,
 		SignatureScript:  nil,
-	})
+	}
+	spendTx := wire.NewNativeMsgTx(1, []*wire.TxIn{txIn}, nil)
 	spendTx.AddTxOut(wire.NewTxOut(uint64(spend.amount-fee),
 		opTrueScript))
 	spendTx.AddTxOut(wire.NewTxOut(0, uniqueOpReturnScript()))

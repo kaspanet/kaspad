@@ -206,7 +206,7 @@ func (m *CPUMiner) solveBlock(msgBlock *wire.MsgBlock, blockHeight int32,
 
 	// Create some convenience variables.
 	header := &msgBlock.Header
-	targetDifficulty := blockdag.CompactToBig(header.Bits)
+	targetDifficulty := util.CompactToBig(header.Bits)
 
 	// Initial state.
 	lastGenerated := time.Now()
@@ -436,7 +436,7 @@ func (m *CPUMiner) Start() {
 	go m.miningWorkerController()
 
 	m.started = true
-	log.Infof("CPU miner started")
+	log.Infof("CPU miner started, number of workers %d", m.numWorkers)
 }
 
 // Stop gracefully stops the mining process by signalling all workers, and the

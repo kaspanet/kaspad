@@ -138,6 +138,7 @@ type configFlags struct {
 	TestNet3             bool          `long:"testnet" description:"Use the test network"`
 	RegressionTest       bool          `long:"regtest" description:"Use the regression test network"`
 	SimNet               bool          `long:"simnet" description:"Use the simulation test network"`
+	DevNet               bool          `long:"devnet" description:"Use the development test network"`
 	AddCheckpoints       []string      `long:"addcheckpoint" description:"Add a custom checkpoint.  Format: '<height>:<hash>'"`
 	DisableCheckpoints   bool          `long:"nocheckpoints" description:"Disable built-in checkpoints.  Don't do this unless you know what you're doing."`
 	DbType               string        `long:"dbtype" description:"Database backend to use for the Block DAG"`
@@ -446,8 +447,12 @@ func loadConfig() (*Config, []string, error) {
 		activeNetParams = &dagconfig.SimNetParams
 		cfg.DisableDNSSeed = true
 	}
+	if cfg.DevNet {
+		numNets++
+		activeNetParams = &dagconfig.DevNetParams
+	}
 	if numNets > 1 {
-		str := "%s: The testnet, regtest, segnet, and simnet params " +
+		str := "%s: The testnet, regtest, devnet, and simnet params " +
 			"can't be used together -- choose one of the four"
 		err := fmt.Errorf(str, funcName)
 		fmt.Fprintln(os.Stderr, err)
@@ -764,7 +769,7 @@ func loadConfig() (*Config, []string, error) {
 	}
 
 	// Check that 'generate' and 'subnetwork' flags do not conflict
-	if cfg.Generate && cfg.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDSupportsAll) {
+	if cfg.Generate && !cfg.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDSupportsAll) {
 		str := "%s: both generate flag and subnetwork filtering are set "
 		err := fmt.Errorf(str, funcName)
 		fmt.Fprintln(os.Stderr, err)

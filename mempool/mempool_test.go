@@ -130,15 +130,16 @@ func (p *poolHarness) CreateCoinbaseTx(blockHeight int32, numOutputs uint32) (*u
 		return nil, err
 	}
 
-	tx := wire.NewMsgTx(wire.TxVersion)
-	tx.AddTxIn(&wire.TxIn{
+	txIns := []*wire.TxIn{&wire.TxIn{
 		// Coinbase transactions have no inputs, so previous outpoint is
 		// zero hash and max index.
 		PreviousOutPoint: *wire.NewOutPoint(&daghash.TxID{},
 			wire.MaxPrevOutIndex),
 		SignatureScript: coinbaseScript,
 		Sequence:        wire.MaxTxInSequenceNum,
-	})
+	}}
+
+	txOuts := []*wire.TxOut{}
 	totalInput := blockdag.CalcBlockSubsidy(blockHeight, p.chainParams)
 	amountPerOutput := totalInput / uint64(numOutputs)
 	remainder := totalInput - amountPerOutput*uint64(numOutputs)
@@ -149,13 +150,13 @@ func (p *poolHarness) CreateCoinbaseTx(blockHeight int32, numOutputs uint32) (*u
 		if i == numOutputs-1 {
 			amount = amountPerOutput + remainder
 		}
-		tx.AddTxOut(&wire.TxOut{
+		txOuts = append(txOuts, &wire.TxOut{
 			PkScript: p.payScript,
 			Value:    amount,
 		})
 	}
 
-	return util.NewTx(tx), nil
+	return util.NewTx(wire.NewNativeMsgTx(wire.TxVersion, txIns, txOuts)), nil
 }
 
 // CreateSignedTxForSubnetwork creates a new signed transaction that consumes the provided
@@ -172,19 +173,16 @@ func (p *poolHarness) CreateSignedTxForSubnetwork(inputs []spendableOutpoint, nu
 	amountPerOutput := uint64(totalInput) / uint64(numOutputs)
 	remainder := uint64(totalInput) - amountPerOutput*uint64(numOutputs)
 
-	tx := wire.NewMsgTx(wire.TxVersion)
-	tx.SubnetworkID = *subnetworkID
-	tx.Gas = gas
-	if !subnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) {
-		tx.PayloadHash = daghash.DoubleHashP(tx.Payload)
-	}
+	txIns := []*wire.TxIn{}
 	for _, input := range inputs {
-		tx.AddTxIn(&wire.TxIn{
+		txIns = append(txIns, &wire.TxIn{
 			PreviousOutPoint: input.outPoint,
 			SignatureScript:  nil,
 			Sequence:         wire.MaxTxInSequenceNum,
 		})
 	}
+
+	txOuts := []*wire.TxOut{}
 	for i := uint32(0); i < numOutputs; i++ {
 		// Ensure the final output accounts for any remainder that might
 		// be left from splitting the input amount.
@@ -192,11 +190,13 @@ func (p *poolHarness) CreateSignedTxForSubnetwork(inputs []spendableOutpoint, nu
 		if i == numOutputs-1 {
 			amount = amountPerOutput + remainder
 		}
-		tx.AddTxOut(&wire.TxOut{
+		txOuts = append(txOuts, &wire.TxOut{
 			PkScript: p.payScript,
 			Value:    amount,
 		})
 	}
+
+	tx := wire.NewSubnetworkMsgTx(wire.TxVersion, txIns, txOuts, subnetworkID, gas, []byte{})
 
 	// Sign the new transaction.
 	for i := range tx.TxIn {
@@ -231,16 +231,16 @@ func (p *poolHarness) CreateTxChain(firstOutput spendableOutpoint, numTxns uint3
 		// Create the transaction using the previous transaction output
 		// and paying the full amount to the payment address associated
 		// with the harness.
-		tx := wire.NewMsgTx(wire.TxVersion)
-		tx.AddTxIn(&wire.TxIn{
+		txIn := &wire.TxIn{
 			PreviousOutPoint: prevOutPoint,
 			SignatureScript:  nil,
 			Sequence:         wire.MaxTxInSequenceNum,
-		})
-		tx.AddTxOut(&wire.TxOut{
+		}
+		txOut := &wire.TxOut{
 			PkScript: p.payScript,
 			Value:    uint64(spendableAmount),
-		})
+		}
+		tx := wire.NewNativeMsgTx(wire.TxVersion, []*wire.TxIn{txIn}, []*wire.TxOut{txOut})
 
 		// Sign the new transaction.
 		sigScript, err := txscript.SignatureScript(tx, 0, p.payScript,
@@ -441,19 +441,21 @@ func testPoolMembership(tc *testContext, tx *util.Tx, inOrphanPool, inTxPool boo
 }
 
 func (p *poolHarness) createTx(outpoint spendableOutpoint, fee uint64, numOutputs int64) (*util.Tx, error) {
-	tx := wire.NewMsgTx(wire.TxVersion)
-	tx.AddTxIn(&wire.TxIn{
+	txIns := []*wire.TxIn{&wire.TxIn{
 		PreviousOutPoint: outpoint.outPoint,
 		SignatureScript:  nil,
 		Sequence:         wire.MaxTxInSequenceNum,
-	})
+	}}
+
+	txOuts := []*wire.TxOut{}
 	amountPerOutput := (uint64(outpoint.amount) - fee) / uint64(numOutputs)
 	for i := int64(0); i < numOutputs; i++ {
-		tx.AddTxOut(&wire.TxOut{
+		txOuts = append(txOuts, &wire.TxOut{
 			PkScript: p.payScript,
 			Value:    amountPerOutput,
 		})
 	}
+	tx := wire.NewNativeMsgTx(wire.TxVersion, txIns, txOuts)
 
 	// Sign the new transaction.
 	sigScript, err := txscript.SignatureScript(tx, 0, p.payScript,
@@ -621,32 +623,19 @@ func TestProcessTransaction(t *testing.T) {
 	if err != nil {
 		t.Fatalf("PayToAddrScript: unexpected error: %v", err)
 	}
-
-	p2shTx := util.NewTx(&wire.MsgTx{
-		Version: 1,
-		TxOut: []*wire.TxOut{{
-			Value:    5000000000,
-			PkScript: p2shPKScript,
-		}},
-		LockTime:     0,
-		SubnetworkID: *subnetworkid.SubnetworkIDNative,
-	})
+	p2shTx := util.NewTx(wire.NewNativeMsgTx(1, nil, []*wire.TxOut{{Value: 5000000000, PkScript: p2shPKScript}}))
 	harness.txPool.mpUTXOSet.AddTx(p2shTx.MsgTx(), curHeight+1)
 
-	nonStdSigScriptTx := util.NewTx(&wire.MsgTx{
-		Version: 1,
-		TxIn: []*wire.TxIn{{
-			PreviousOutPoint: wire.OutPoint{TxID: *p2shTx.ID(), Index: 0},
-			SignatureScript:  wrappedP2SHNonStdSigScript,
-			Sequence:         wire.MaxTxInSequenceNum,
-		}},
-		TxOut: []*wire.TxOut{{
-			Value:    5000000000,
-			PkScript: dummyPkScript,
-		}},
-		LockTime:     0,
-		SubnetworkID: *subnetworkid.SubnetworkIDNative,
-	})
+	txIns := []*wire.TxIn{{
+		PreviousOutPoint: wire.OutPoint{TxID: *p2shTx.ID(), Index: 0},
+		SignatureScript:  wrappedP2SHNonStdSigScript,
+		Sequence:         wire.MaxTxInSequenceNum,
+	}}
+	txOuts := []*wire.TxOut{{
+		Value:    5000000000,
+		PkScript: dummyPkScript,
+	}}
+	nonStdSigScriptTx := util.NewTx(wire.NewNativeMsgTx(1, txIns, txOuts))
 	_, err = harness.txPool.ProcessTransaction(nonStdSigScriptTx, true, false, 0)
 	if err == nil {
 		t.Errorf("ProcessTransaction: expected an error, not nil")
@@ -681,17 +670,12 @@ func TestProcessTransaction(t *testing.T) {
 	harness.txPool.cfg.Policy.AcceptNonStd = false
 
 	//Checks that a transaction with no outputs will not get rejected
-	noOutsTx := util.NewTx(&wire.MsgTx{
-		Version: 1,
-		TxIn: []*wire.TxIn{{
-			PreviousOutPoint: dummyPrevOut,
-			SignatureScript:  dummySigScript,
-			Sequence:         wire.MaxTxInSequenceNum,
-		}},
-		TxOut:        []*wire.TxOut{},
-		LockTime:     0,
-		SubnetworkID: *subnetworkid.SubnetworkIDNative,
-	})
+	noOutsTx := util.NewTx(wire.NewNativeMsgTx(1, []*wire.TxIn{{
+		PreviousOutPoint: dummyPrevOut,
+		SignatureScript:  dummySigScript,
+		Sequence:         wire.MaxTxInSequenceNum,
+	}},
+		nil))
 	_, err = harness.txPool.ProcessTransaction(noOutsTx, true, false, 0)
 	if err != nil {
 		t.Errorf("ProcessTransaction: %v", err)
@@ -750,20 +734,16 @@ func TestProcessTransaction(t *testing.T) {
 	}
 	harness.txPool.cfg.Policy.DisableRelayPriority = true
 
-	tx = util.NewTx(&wire.MsgTx{
-		Version: 1,
-		TxIn: []*wire.TxIn{{
-			PreviousOutPoint: spendableOuts[5].outPoint,
-			SignatureScript:  []byte{02, 01}, //Unparsable script
-			Sequence:         wire.MaxTxInSequenceNum,
-		}},
-		TxOut: []*wire.TxOut{{
-			Value:    1,
-			PkScript: dummyPkScript,
-		}},
-		LockTime:     0,
-		SubnetworkID: *subnetworkid.SubnetworkIDNative,
-	})
+	txIns = []*wire.TxIn{{
+		PreviousOutPoint: spendableOuts[5].outPoint,
+		SignatureScript:  []byte{02, 01}, //Unparsable script
+		Sequence:         wire.MaxTxInSequenceNum,
+	}}
+	txOuts = []*wire.TxOut{{
+		Value:    1,
+		PkScript: dummyPkScript,
+	}}
+	tx = util.NewTx(wire.NewNativeMsgTx(1, txIns, txOuts))
 	_, err = harness.txPool.ProcessTransaction(tx, true, false, 0)
 	fmt.Println(err)
 	if err == nil {

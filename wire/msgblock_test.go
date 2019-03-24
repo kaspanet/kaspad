@@ -90,27 +90,27 @@ func TestBlockHash(t *testing.T) {
 
 func TestConvertToPartial(t *testing.T) {
 	transactions := []struct {
-		subnetworkID          subnetworkid.SubnetworkID
+		subnetworkID          *subnetworkid.SubnetworkID
 		payload               []byte
 		expectedPayloadLength int
 	}{
 		{
-			subnetworkID:          *subnetworkid.SubnetworkIDNative,
+			subnetworkID:          subnetworkid.SubnetworkIDNative,
 			payload:               []byte{},
 			expectedPayloadLength: 0,
 		},
 		{
-			subnetworkID:          *subnetworkid.SubnetworkIDRegistry,
+			subnetworkID:          subnetworkid.SubnetworkIDRegistry,
 			payload:               []byte{0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08},
 			expectedPayloadLength: 0,
 		},
 		{
-			subnetworkID:          subnetworkid.SubnetworkID{123},
+			subnetworkID:          &subnetworkid.SubnetworkID{123},
 			payload:               []byte{0x01},
 			expectedPayloadLength: 1,
 		},
 		{
-			subnetworkID:          subnetworkid.SubnetworkID{234},
+			subnetworkID:          &subnetworkid.SubnetworkID{234},
 			payload:               []byte{0x02},
 			expectedPayloadLength: 0,
 		},
@@ -119,11 +119,7 @@ func TestConvertToPartial(t *testing.T) {
 	block := MsgBlock{}
 	payload := []byte{1}
 	for _, transaction := range transactions {
-		block.Transactions = append(block.Transactions, &MsgTx{
-			SubnetworkID: transaction.subnetworkID,
-			Payload:      payload,
-			PayloadHash:  daghash.DoubleHashP(payload),
-		})
+		block.Transactions = append(block.Transactions, NewSubnetworkMsgTx(1, nil, nil, transaction.subnetworkID, 0, payload))
 	}
 
 	block.ConvertToPartial(&subnetworkid.SubnetworkID{123})
@@ -131,7 +127,7 @@ func TestConvertToPartial(t *testing.T) {
 	for _, transaction := range transactions {
 		var subnetworkTx *MsgTx
 		for _, tx := range block.Transactions {
-			if tx.SubnetworkID.IsEqual(&transaction.subnetworkID) {
+			if tx.SubnetworkID.IsEqual(transaction.subnetworkID) {
 				subnetworkTx = tx
 			}
 		}
@@ -507,9 +503,8 @@ var blockOne = MsgBlock{
 		Nonce:          0x9962e301,               // 2573394689
 	},
 	Transactions: []*MsgTx{
-		{
-			Version: 1,
-			TxIn: []*TxIn{
+		NewNativeMsgTx(1,
+			[]*TxIn{
 				{
 					PreviousOutPoint: OutPoint{
 						TxID:  daghash.TxID{},
@@ -521,7 +516,7 @@ var blockOne = MsgBlock{
 					Sequence: math.MaxUint64,
 				},
 			},
-			TxOut: []*TxOut{
+			[]*TxOut{
 				{
 					Value: 0x12a05f200,
 					PkScript: []byte{
@@ -538,10 +533,7 @@ var blockOne = MsgBlock{
 						0xac, // OP_CHECKSIG
 					},
 				},
-			},
-			LockTime:     0,
-			SubnetworkID: *subnetworkid.SubnetworkIDNative,
-		},
+			}),
 	},
 }
 

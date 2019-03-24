@@ -256,6 +256,8 @@ func shallowCopyTx(tx *wire.MsgTx) wire.MsgTx {
 	// for the copied inputs and outputs and point the final slice of
 	// pointers into the contiguous arrays.  This avoids a lot of small
 	// allocations.
+	// Specifically avoid using wire.NewMsgTx() to prevent correcting errors by
+	// auto-generating various fields.
 	txCopy := wire.MsgTx{
 		Version:      tx.Version,
 		TxIn:         make([]*wire.TxIn, len(tx.TxIn)),

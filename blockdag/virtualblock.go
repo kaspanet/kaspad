@@ -34,7 +34,7 @@ func newVirtualBlock(tips blockSet, phantomK uint32) *virtualBlock {
 func (v *virtualBlock) clone() *virtualBlock {
 	return &virtualBlock{
 		phantomK:             v.phantomK,
-		utxoSet:              v.utxoSet.clone().(*FullUTXOSet),
+		utxoSet:              v.utxoSet,
 		blockNode:            v.blockNode,
 		selectedPathChainSet: v.selectedPathChainSet,
 	}

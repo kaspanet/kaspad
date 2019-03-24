@@ -79,7 +79,7 @@ func (dag *BlockDAG) maybeAcceptBlock(block *util.Block, flags BehaviorFlags) er
 
 	// Connect the passed block to the DAG. This also handles validation of the
 	// transaction scripts.
-	err = dag.connectToDAG(newNode, parents, block, flags)
+	err = dag.addBlock(newNode, parents, block, flags)
 	if err != nil {
 		return err
 	}
@@ -88,7 +88,7 @@ func (dag *BlockDAG) maybeAcceptBlock(block *util.Block, flags BehaviorFlags) er
 	// DAG.  The caller would typically want to react by relaying the
 	// inventory to other peers.
 	dag.dagLock.Unlock()
-	dag.sendNotification(NTBlockAccepted, block)
+	dag.sendNotification(NTBlockAdded, block)
 	dag.dagLock.Lock()
 
 	isOk = true

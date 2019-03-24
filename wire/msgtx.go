@@ -106,7 +106,7 @@ type txEncoding uint8
 const (
 	txEncodingFull txEncoding = 0
 
-	txEncodingExcludeSubNetworkData txEncoding = 1 << iota
+	txEncodingExcludePayload txEncoding = 1 << iota
 
 	txEncodingExcludeSignatureScript
 )
@@ -332,8 +332,8 @@ func (msg *MsgTx) TxHash() *daghash.Hash {
 	// Ignore the error returns since the only way the encode could fail
 	// is being out of memory or due to nil pointers, both of which would
 	// cause a run-time panic.
-	buf := bytes.NewBuffer(make([]byte, 0, msg.SerializeSize()))
-	_ = msg.Serialize(buf)
+	buf := bytes.NewBuffer(make([]byte, 0, msg.serializeSize(txEncodingExcludePayload)))
+	_ = msg.serialize(buf, txEncodingExcludePayload)
 
 	hash := daghash.Hash(daghash.DoubleHashH(buf.Bytes()))
 	return &hash
@@ -347,7 +347,7 @@ func (msg *MsgTx) TxID() daghash.TxID {
 	// due to nil pointers, both of which would cause a run-time panic.
 	var encodingFlags txEncoding
 	if !msg.IsCoinBase() {
-		encodingFlags = txEncodingExcludeSignatureScript | txEncodingExcludeSubNetworkData
+		encodingFlags = txEncodingExcludeSignatureScript | txEncodingExcludePayload
 	}
 	buf := bytes.NewBuffer(make([]byte, 0, msg.serializeSize(encodingFlags)))
 	_ = msg.serialize(buf, encodingFlags)
@@ -685,7 +685,7 @@ func (msg *MsgTx) encode(w io.Writer, pver uint32, encodingFlags txEncoding) err
 
 	if !msg.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) {
 		if msg.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDRegistry) && msg.Gas != 0 {
-			str := fmt.Sprintf("Transactions from subnetwork %s should have 0 gas", msg.SubnetworkID)
+			str := "Transactions from registry subnetwork should have 0 gas"
 			return messageError("MsgTx.BtcEncode", str)
 		}
 
@@ -699,7 +699,7 @@ func (msg *MsgTx) encode(w io.Writer, pver uint32, encodingFlags txEncoding) err
 			return err
 		}
 
-		if encodingFlags&txEncodingExcludeSubNetworkData != txEncodingExcludeSubNetworkData {
+		if encodingFlags&txEncodingExcludePayload != txEncodingExcludePayload {
 			err = WriteVarInt(w, pver, uint64(len(msg.Payload)))
 			w.Write(msg.Payload)
 		} else {
@@ -709,13 +709,13 @@ func (msg *MsgTx) encode(w io.Writer, pver uint32, encodingFlags txEncoding) err
 			return err
 		}
 	} else if msg.Payload != nil {
-		str := fmt.Sprintf("Transactions from subnetwork %s should have <nil> payload", msg.SubnetworkID)
+		str := "Transactions from native subnetwork should have <nil> payload"
 		return messageError("MsgTx.BtcEncode", str)
 	} else if msg.PayloadHash != nil {
-		str := fmt.Sprintf("Transactions from subnetwork %s should have <nil> payload hash", msg.SubnetworkID)
+		str := "Transactions from native subnetwork should have <nil> payload hash"
 		return messageError("MsgTx.BtcEncode", str)
 	} else if msg.Gas != 0 {
-		str := fmt.Sprintf("Transactions from subnetwork %s should have 0 gas", msg.SubnetworkID)
+		str := "Transactions from native subnetwork should have 0 gas"
 		return messageError("MsgTx.BtcEncode", str)
 	}
 
@@ -769,7 +769,7 @@ func (msg *MsgTx) serializeSize(encodingFlags txEncoding) int {
 		n += daghash.HashSize
 
 		// Serialized varint size for the length of the payload
-		if encodingFlags&txEncodingExcludeSubNetworkData != txEncodingExcludeSubNetworkData {
+		if encodingFlags&txEncodingExcludePayload != txEncodingExcludePayload {
 			n += VarIntSerializeSize(uint64(len(msg.Payload)))
 			n += len(msg.Payload)
 		} else {
@@ -848,27 +848,68 @@ func (msg *MsgTx) IsSubnetworkCompatible(subnetworkID *subnetworkid.SubnetworkID
 		subnetworkID.IsEqual(&msg.SubnetworkID)
 }
 
-// NewMsgTx returns a new bitcoin tx message that conforms to the Message
-// interface.  The return instance has a default version of TxVersion and there
-// are no transaction inputs or outputs.  Also, the lock time is set to zero
-// to indicate the transaction is valid immediately as opposed to some time in
-// future.
-func NewMsgTx(version int32) *MsgTx {
+// newMsgTx returns a new tx message that conforms to the Message interface.
+//
+// All fields except version and gas has default values if nil is passed:
+// txIn, txOut - empty arrays
+// payload - an empty payload
+//
+// The payload hash is calculated automatically according to provided payload.
+// Also, the lock time is set to zero to indicate the transaction is valid
+// immediately as opposed to some time in future.
+func newMsgTx(version int32, txIn []*TxIn, txOut []*TxOut, subnetworkID *subnetworkid.SubnetworkID,
+	gas uint64, payload []byte, lockTime uint64) *MsgTx {
+
+	if txIn == nil {
+		txIn = make([]*TxIn, 0, defaultTxInOutAlloc)
+	}
+
+	if txOut == nil {
+		txOut = make([]*TxOut, 0, defaultTxInOutAlloc)
+	}
+
+	var payloadHash *daghash.Hash
+	if !subnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) {
+		payloadHash = daghash.DoubleHashP(payload)
+	}
+
 	return &MsgTx{
 		Version:      version,
-		TxIn:         make([]*TxIn, 0, defaultTxInOutAlloc),
-		TxOut:        make([]*TxOut, 0, defaultTxInOutAlloc),
-		SubnetworkID: *subnetworkid.SubnetworkIDNative,
+		TxIn:         txIn,
+		TxOut:        txOut,
+		SubnetworkID: *subnetworkID,
+		Gas:          gas,
+		PayloadHash:  payloadHash,
+		Payload:      payload,
+		LockTime:     lockTime,
 	}
 }
 
-func newRegistryMsgTx(version int32, gasLimit uint64) *MsgTx {
-	tx := NewMsgTx(version)
-	tx.SubnetworkID = *subnetworkid.SubnetworkIDRegistry
-	tx.Payload = make([]byte, 8)
-	tx.PayloadHash = daghash.DoubleHashP(tx.Payload)
-	binary.LittleEndian.PutUint64(tx.Payload, gasLimit)
-	return tx
+// NewNativeMsgTx returns a new tx message in the native subnetwork
+func NewNativeMsgTx(version int32, txIn []*TxIn, txOut []*TxOut) *MsgTx {
+	return newMsgTx(version, txIn, txOut, subnetworkid.SubnetworkIDNative, 0, nil, 0)
+}
+
+// NewSubnetworkMsgTx returns a new tx message in the specified subnetwork with specified gas and payload
+func NewSubnetworkMsgTx(version int32, txIn []*TxIn, txOut []*TxOut, subnetworkID *subnetworkid.SubnetworkID,
+	gas uint64, payload []byte) *MsgTx {
+
+	return newMsgTx(version, txIn, txOut, subnetworkID, gas, payload, 0)
+}
+
+// NewNativeMsgTxWithLocktime returns a new tx message in the native subnetwork with a locktime.
+//
+// See newMsgTx for further documntation of the parameters
+func NewNativeMsgTxWithLocktime(version int32, txIn []*TxIn, txOut []*TxOut, locktime uint64) *MsgTx {
+	return newMsgTx(version, txIn, txOut, subnetworkid.SubnetworkIDNative, 0, nil, locktime)
+}
+
+// NewRegistryMsgTx creates a new MsgTx that registers a new subnetwork
+func NewRegistryMsgTx(version int32, txIn []*TxIn, txOut []*TxOut, gasLimit uint64) *MsgTx {
+	payload := make([]byte, 8)
+	binary.LittleEndian.PutUint64(payload, gasLimit)
+
+	return NewSubnetworkMsgTx(version, txIn, txOut, subnetworkid.SubnetworkIDRegistry, 0, payload)
 }
 
 // readOutPoint reads the next sequence of bytes from r as an OutPoint.

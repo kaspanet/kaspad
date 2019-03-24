@@ -169,24 +169,15 @@ func New(activeNet *dagconfig.Params, handlers *rpcclient.NotificationHandlers,
 	// callback has already been set, then create a wrapper callback which
 	// executes both the currently registered callback and the mem wallet's
 	// callback.
-	if handlers.OnFilteredBlockConnected != nil {
-		obc := handlers.OnFilteredBlockConnected
-		handlers.OnFilteredBlockConnected = func(height int32, header *wire.BlockHeader, filteredTxns []*util.Tx) {
+	if handlers.OnFilteredBlockAdded != nil {
+		obc := handlers.OnFilteredBlockAdded
+		handlers.OnFilteredBlockAdded = func(height int32, header *wire.BlockHeader, filteredTxns []*util.Tx) {
 			wallet.IngestBlock(height, header, filteredTxns)
 			obc(height, header, filteredTxns)
 		}
 	} else {
 		// Otherwise, we can claim the callback ourselves.
-		handlers.OnFilteredBlockConnected = wallet.IngestBlock
-	}
-	if handlers.OnFilteredBlockDisconnected != nil {
-		obd := handlers.OnFilteredBlockDisconnected
-		handlers.OnFilteredBlockDisconnected = func(height int32, header *wire.BlockHeader) {
-			wallet.UnwindBlock(height, header)
-			obd(height, header)
-		}
-	} else {
-		handlers.OnFilteredBlockDisconnected = wallet.UnwindBlock
+		handlers.OnFilteredBlockAdded = wallet.IngestBlock
 	}
 
 	h := &Harness{
