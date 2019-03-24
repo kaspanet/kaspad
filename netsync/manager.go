@@ -343,6 +343,7 @@ func (sm *SyncManager) handleNewPeerMsg(peer *peerpkg.Peer) {
 		syncCandidate:   isSyncCandidate,
 		requestedTxns:   make(map[daghash.TxID]struct{}),
 		requestedBlocks: make(map[daghash.Hash]struct{}),
+		requestQueueSet: make(map[daghash.Hash]struct{}),
 	}
 
 	// Start syncing by choosing the best candidate if needed.
@@ -473,9 +474,12 @@ func (sm *SyncManager) restartSyncIfNeeded() {
 	if sm.syncPeer != nil {
 		syncPeerState, exists := sm.peerStates[sm.syncPeer]
 		if exists {
-			syncPeerState.requestQueueMtx.Lock()
-			defer syncPeerState.requestQueueMtx.Unlock()
-			if len(syncPeerState.requestedBlocks) != 0 || len(syncPeerState.requestQueue) != 0 {
+			isSyncPeerFree := func() bool {
+				syncPeerState.requestQueueMtx.Lock()
+				defer syncPeerState.requestQueueMtx.Unlock()
+				return len(syncPeerState.requestedBlocks) != 0 || len(syncPeerState.requestQueue) != 0
+			}()
+			if isSyncPeerFree {
 				return
 			}
 		}
