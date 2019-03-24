@@ -40,6 +40,11 @@ var (
 	// simNetPowLimit is the highest proof of work value a Bitcoin block
 	// can have for the simulation test network.  It is the value 2^255 - 1.
 	simNetPowLimit = new(big.Int).Sub(new(big.Int).Lsh(bigOne, 255), bigOne)
+
+	// devNetPowLimit is the highest proof of work value a Bitcoin block
+	// can have for the development network.  It is the value
+	// 2^239 - 1.
+	devNetPowLimit = new(big.Int).Sub(new(big.Int).Lsh(bigOne, 239), bigOne)
 )
 
 const phantomK = 10
@@ -231,9 +236,9 @@ var MainNetParams = Params{
 	PowLimitBits:             0x207fffff,
 	BlockRewardMaturity:      100,
 	SubsidyReductionInterval: 210000,
-	TargetTimespan:           time.Hour * 24 * 14, // 14 days
-	TargetTimePerBlock:       time.Second * 10,    // 10 seconds
-	RetargetAdjustmentFactor: 4,                   // 25% less, 400% more
+	TargetTimespan:           time.Hour * 1,   // 1 hour
+	TargetTimePerBlock:       time.Second * 1, // 1 second
+	RetargetAdjustmentFactor: 4,               // 25% less, 400% more
 	ReduceMinDifficulty:      false,
 	MinDiffReductionTime:     0,
 	GenerateSupported:        false,
@@ -290,9 +295,9 @@ var RegressionNetParams = Params{
 	PowLimitBits:             0x207fffff,
 	BlockRewardMaturity:      100,
 	SubsidyReductionInterval: 150,
-	TargetTimespan:           time.Hour * 24 * 14, // 14 days
-	TargetTimePerBlock:       time.Second * 10,    // 10 seconds
-	RetargetAdjustmentFactor: 4,                   // 25% less, 400% more
+	TargetTimespan:           time.Hour * 1,   // 1 hour
+	TargetTimePerBlock:       time.Second * 1, // 1 second
+	RetargetAdjustmentFactor: 4,               // 25% less, 400% more
 	ReduceMinDifficulty:      true,
 	MinDiffReductionTime:     time.Minute * 20, // TargetTimePerBlock * 2
 	GenerateSupported:        true,
@@ -354,9 +359,9 @@ var TestNet3Params = Params{
 	PowLimitBits:             0x207fffff,
 	BlockRewardMaturity:      100,
 	SubsidyReductionInterval: 210000,
-	TargetTimespan:           time.Hour * 24 * 14, // 14 days
-	TargetTimePerBlock:       time.Second * 10,    // 10 seconds
-	RetargetAdjustmentFactor: 4,                   // 25% less, 400% more
+	TargetTimespan:           time.Hour * 1,   // 1 hour
+	TargetTimePerBlock:       time.Second * 1, // 1 second
+	RetargetAdjustmentFactor: 4,               // 25% less, 400% more
 	ReduceMinDifficulty:      true,
 	MinDiffReductionTime:     time.Minute * 20, // TargetTimePerBlock * 2
 	GenerateSupported:        true,
@@ -417,9 +422,9 @@ var SimNetParams = Params{
 	PowLimitBits:             0x207fffff,
 	BlockRewardMaturity:      100,
 	SubsidyReductionInterval: 210000,
-	TargetTimespan:           time.Hour * 24 * 14, // 14 days
-	TargetTimePerBlock:       time.Second * 10,    // 10 seconds
-	RetargetAdjustmentFactor: 4,                   // 25% less, 400% more
+	TargetTimespan:           time.Hour * 1,   // 1 hour
+	TargetTimePerBlock:       time.Second * 1, // 1 second
+	RetargetAdjustmentFactor: 4,               // 25% less, 400% more
 	ReduceMinDifficulty:      true,
 	MinDiffReductionTime:     time.Minute * 20, // TargetTimePerBlock * 2
 	GenerateSupported:        true,
@@ -454,6 +459,65 @@ var SimNetParams = Params{
 	// BIP44 coin type used in the hierarchical deterministic path for
 	// address generation.
 	HDCoinType: 115, // ASCII for s
+}
+
+// DevNetParams defines the network parameters for the development Bitcoin network.
+var DevNetParams = Params{
+	K:           phantomK,
+	Name:        "devnet",
+	Net:         wire.DevNet,
+	RPCPort:     "18334",
+	DefaultPort: "18333",
+	DNSSeeds: []DNSSeed{
+		{"devnet-dnsseed.daglabs.com", true},
+	},
+
+	// Chain parameters
+	GenesisBlock:             &devNetGenesisBlock,
+	GenesisHash:              &devNetGenesisHash,
+	PowLimit:                 devNetPowLimit,
+	PowLimitBits:             util.BigToCompact(devNetPowLimit), // 0x1e7fffff
+	BlockRewardMaturity:      100,
+	SubsidyReductionInterval: 210000,
+	TargetTimespan:           time.Hour * 1,   // 1 hour
+	TargetTimePerBlock:       time.Second * 1, // 1 second
+	RetargetAdjustmentFactor: 4,               // 25% less, 400% more
+	ReduceMinDifficulty:      true,
+	MinDiffReductionTime:     time.Minute * 20, // TargetTimePerBlock * 2
+	GenerateSupported:        true,
+
+	// Checkpoints ordered from oldest to newest.
+	Checkpoints: nil,
+
+	// Consensus rule change deployments.
+	//
+	// The miner confirmation window is defined as:
+	//   target proof of work timespan / target proof of work spacing
+	RuleChangeActivationThreshold: 1512, // 75% of MinerConfirmationWindow
+	MinerConfirmationWindow:       2016,
+	Deployments: [DefinedDeployments]ConsensusDeployment{
+		DeploymentTestDummy: {
+			BitNumber:  28,
+			StartTime:  1199145601, // January 1, 2008 UTC
+			ExpireTime: 1230767999, // December 31, 2008 UTC
+		},
+	},
+
+	// Mempool parameters
+	RelayNonStdTxs: true,
+
+	// Human-readable part for Bech32 encoded addresses
+	Prefix: util.Bech32PrefixDAGTest,
+
+	// Address encoding magics
+	PrivateKeyID: 0xef, // starts with 9 (uncompressed) or c (compressed)
+
+	// BIP32 hierarchical deterministic extended key magics
+	HDKeyIDPair: hdkeychain.HDKeyPairDevNet,
+
+	// BIP44 coin type used in the hierarchical deterministic path for
+	// address generation.
+	HDCoinType: 1,
 }
 
 var (
