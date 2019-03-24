@@ -290,6 +290,12 @@ func (sp *Peer) selectedTip() *daghash.Hash {
 	return sp.server.DAG.SelectedTipHash()
 }
 
+// blockExists determines whether a block with the given hash exists in
+// the DAG.
+func (sp *Peer) blockExists(hash *daghash.Hash) (bool, error) {
+	return sp.server.DAG.BlockExists(hash)
+}
+
 // addKnownAddresses adds the given addresses to the set of known addresses to
 // the peer to prevent sending duplicate addresses.
 func (sp *Peer) addKnownAddresses(addresses []*wire.NetAddress) {
@@ -1786,6 +1792,7 @@ func newPeerConfig(sp *Peer) *peer.Config {
 			OnAlert: nil,
 		},
 		SelectedTip:       sp.selectedTip,
+		BlockExists:       sp.blockExists,
 		HostToNetAddress:  sp.server.addrManager.HostToNetAddress,
 		Proxy:             config.MainConfig().Proxy,
 		UserAgentName:     userAgentName,

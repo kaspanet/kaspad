@@ -1136,7 +1136,7 @@ func (dag *BlockDAG) HeaderByHash(hash *daghash.Hash) (*wire.BlockHeader, error)
 }
 
 // BlockLocatorFromHash traverses the selected parent chain of the given block hash
-// until it finds a block that exists in the virtual's selected parenth chain, and
+// until it finds a block that exists in the virtual's selected parent chain, and
 // then it returns its block locator.
 // See BlockLocator for details on the algorithm used to create a block locator.
 //
@@ -1413,6 +1413,7 @@ func (dag *BlockDAG) locateBlockNodes(locator BlockLocator, hashStop *daghash.Ha
 		var current *blockNode
 		current = queue.pop()
 		if !visited.contains(current) {
+			visited.add(current)
 			isBeforeStop := (stopNode == nil) || (current.height < stopNode.height)
 			if isBeforeStop || current.hash.IsEqual(hashStop) {
 				nodes = append(nodes, current)
