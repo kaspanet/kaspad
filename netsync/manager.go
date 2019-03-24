@@ -474,12 +474,12 @@ func (sm *SyncManager) restartSyncIfNeeded() {
 	if sm.syncPeer != nil {
 		syncPeerState, exists := sm.peerStates[sm.syncPeer]
 		if exists {
-			isSyncPeerFree := func() bool {
+			isWaitingForBlocks := func() bool {
 				syncPeerState.requestQueueMtx.Lock()
 				defer syncPeerState.requestQueueMtx.Unlock()
 				return len(syncPeerState.requestedBlocks) != 0 || len(syncPeerState.requestQueue) != 0
 			}()
-			if isSyncPeerFree {
+			if isWaitingForBlocks {
 				return
 			}
 		}
