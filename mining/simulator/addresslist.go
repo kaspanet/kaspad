@@ -5,7 +5,7 @@ import (
 	"os"
 )
 
-const addressListPath = "addresses"
+var addressListPath string
 
 func getAddressList() ([]string, error) {
 	file, err := os.Open(addressListPath)

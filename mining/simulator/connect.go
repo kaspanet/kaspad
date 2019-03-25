@@ -3,11 +3,12 @@ package main
 import (
 	"fmt"
 	"io/ioutil"
+	"log"
 
 	"github.com/daglabs/btcd/rpcclient"
 )
 
-const certificatePath = "rpc.cert"
+var certificatePath string
 
 func connectToServers(addressList []string) ([]*rpcclient.Client, error) {
 	clients := make([]*rpcclient.Client, len(addressList))
@@ -32,6 +33,8 @@ func connectToServers(addressList []string) ([]*rpcclient.Client, error) {
 		}
 
 		clients[i] = client
+
+		log.Printf("Connected to server %s", address)
 	}
 
 	return clients, nil

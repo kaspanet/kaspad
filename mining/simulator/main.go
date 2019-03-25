@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"log"
+	"os/user"
+	"path"
 	"sync/atomic"
 
 	"github.com/daglabs/btcd/rpcclient"
@@ -19,6 +21,9 @@ func main() {
 	}
 
 	clients, err := connectToServers(addressList)
+	if err != nil {
+		panic(fmt.Errorf("Error connecting to servers: %s", err))
+	}
 	defer disconnect(clients)
 
 	atomic.StoreInt32(&isRunning, 1)
@@ -27,6 +32,15 @@ func main() {
 	if err != nil {
 		panic(fmt.Errorf("Error in main loop: %s", err))
 	}
+}
+
+func init() {
+	usr, err := user.Current()
+	if err != nil {
+		panic(fmt.Errorf("Error getting current user: %s", err))
+	}
+	certificatePath = path.Join(usr.HomeDir, ".btcd/simulator/rpc.cert")
+	addressListPath = path.Join(usr.HomeDir, ".btcd/simulator/addresses")
 }
 
 func disconnect(clients []*rpcclient.Client) {
