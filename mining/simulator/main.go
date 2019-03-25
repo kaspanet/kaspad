@@ -5,6 +5,7 @@ import (
 	"log"
 	"os/user"
 	"path"
+	"runtime/debug"
 	"sync/atomic"
 
 	"github.com/daglabs/btcd/rpcclient"
@@ -53,5 +54,6 @@ func handlePanic() {
 	err := recover()
 	if err != nil {
 		log.Printf("Fatal error: %s", err)
+		log.Printf("Stack trace: %s", debug.Stack())
 	}
 }

@@ -20,6 +20,52 @@ import (
 
 var r = rand.New(rand.NewSource(time.Now().UnixNano()))
 
+func parseBlock(template *btcjson.GetBlockTemplateResult) (*util.Block, error) {
+	// parse parent hashes
+	parentHashes := make([]daghash.Hash, len(template.ParentHashes))
+	for i, parentHash := range template.ParentHashes {
+		hash, err := daghash.NewHashFromStr(parentHash)
+		if err != nil {
+			return nil, fmt.Errorf("Error decoding hash %s: %s", parentHash, err)
+		}
+		parentHashes[i] = *hash
+	}
+
+	// parse Bits
+	bitsInt64, err := strconv.ParseInt(template.Bits, 16, 32)
+	if err != nil {
+		return nil, fmt.Errorf("Error decoding bits %s: %s", template.Bits, err)
+	}
+	bits := uint32(bitsInt64)
+
+	// parse rest of block
+	msgBlock := wire.NewMsgBlock(wire.NewBlockHeader(template.Version, parentHashes, &daghash.Hash{}, &daghash.Hash{}, uint32(bits), 0))
+
+	for i, txResult := range append([]btcjson.GetBlockTemplateResultTx{*template.CoinbaseTxn}, template.Transactions...) {
+		reader := hex.NewDecoder(strings.NewReader(txResult.Data))
+		tx := &wire.MsgTx{}
+		if err := tx.BtcDecode(reader, 0); err != nil {
+			return nil, fmt.Errorf("Error decoding tx #%d: %s", i, err)
+		}
+		msgBlock.AddTransaction(tx)
+	}
+
+	return util.NewBlock(msgBlock), nil
+}
+
+func solveBlock(msgBlock *wire.MsgBlock) {
+	maxNonce := ^uint64(0) // 2^64 - 1
+	targetDifficulty := util.CompactToBig(msgBlock.Header.Bits)
+	for i := uint64(0); i < maxNonce; i++ {
+		msgBlock.Header.Nonce = i
+		hash := msgBlock.BlockHash()
+		if daghash.HashToBig(&hash).Cmp(targetDifficulty) <= 0 {
+			break
+		}
+	}
+
+}
+
 func mineLoop(clients []*rpcclient.Client) error {
 	clientsCount := int64(len(clients))
 
@@ -37,44 +83,17 @@ func mineLoop(clients []*rpcclient.Client) error {
 			return fmt.Errorf("Error getting block template: %s", err)
 		}
 
-		log.Printf("Height: %d", template.Height)
-
-		parentHashes := make([]daghash.Hash, len(template.ParentHashes))
-		for i, parentHash := range template.ParentHashes {
-			hash, err := daghash.NewHashFromStr(parentHash)
-			if err != nil {
-				return fmt.Errorf("Error decoding hash %s: %s", parentHash, err)
-			}
-			parentHashes[i] = *hash
-		}
-
-		b, err := strconv.ParseInt(template.Bits, 16, 32)
+		block, err := parseBlock(template)
 		if err != nil {
-			return fmt.Errorf("Error decoding bits %s: %s", template.Bits, err)
+			return fmt.Errorf("Error parsing block: %s", err)
 		}
-		bits := uint32(b)
-		msgBlock := wire.NewMsgBlock(wire.NewBlockHeader(template.Version, parentHashes, &daghash.Hash{}, &daghash.Hash{}, uint32(bits), 0))
-		for i, txResult := range append([]btcjson.GetBlockTemplateResultTx{*template.CoinbaseTxn}, template.Transactions...) {
-			reader := hex.NewDecoder(strings.NewReader(txResult.Data))
-			tx := &wire.MsgTx{}
-			if err := tx.BtcDecode(reader, 0); err != nil {
-				return fmt.Errorf("Error decoding tx #%d: %s", i, err)
-			}
-			msgBlock.AddTransaction(tx)
-		}
-		block := util.NewBlock(msgBlock)
-		block.MsgBlock().Header.HashMerkleRoot = *blockdag.BuildHashMerkleTreeStore(block.Transactions()).Root()
-		block.MsgBlock().Header.IDMerkleRoot = *blockdag.BuildIDMerkleTreeStore(block.Transactions()).Root()
 
-		maxNonce := ^uint64(0) // 2^64 - 1
-		targetDifficulty := util.CompactToBig(bits)
-		for i := uint64(0); i < maxNonce; i++ {
-			msgBlock.Header.Nonce = i
-			hash := msgBlock.BlockHash()
-			if daghash.HashToBig(&hash).Cmp(targetDifficulty) <= 0 {
-				break
-			}
-		}
+		msgBlock := block.MsgBlock()
+
+		msgBlock.Header.HashMerkleRoot = *blockdag.BuildHashMerkleTreeStore(block.Transactions()).Root()
+		msgBlock.Header.IDMerkleRoot = *blockdag.BuildIDMerkleTreeStore(block.Transactions()).Root()
+
+		solveBlock(msgBlock)
 
 		log.Printf("Found block %s! Submitting", block.Hash())
 
