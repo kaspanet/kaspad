@@ -197,9 +197,9 @@ func (dag *BlockDAG) ProcessBlock(block *util.Block, flags BehaviorFlags) (bool,
 			// expected based on elapsed time since the last checkpoint and
 			// maximum adjustment allowed by the retarget rules.
 			duration := blockHeader.Timestamp.Sub(checkpointTime)
-			requiredTarget := CompactToBig(dag.calcEasiestDifficulty(
+			requiredTarget := util.CompactToBig(dag.calcEasiestDifficulty(
 				checkpointNode.bits, duration))
-			currentTarget := CompactToBig(blockHeader.Bits)
+			currentTarget := util.CompactToBig(blockHeader.Bits)
 			if currentTarget.Cmp(requiredTarget) > 0 {
 				str := fmt.Sprintf("block target difficulty of %064x "+
 					"is too low when compared to the previous "+

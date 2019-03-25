@@ -204,11 +204,9 @@ func (m *CPUMiner) submitBlock(block *util.Block) bool {
 func (m *CPUMiner) solveBlock(msgBlock *wire.MsgBlock, blockHeight int32,
 	ticker *time.Ticker, quit chan struct{}) bool {
 
-	time.Sleep(time.Second)
-
 	// Create some convenience variables.
 	header := &msgBlock.Header
-	targetDifficulty := blockdag.CompactToBig(header.Bits)
+	targetDifficulty := util.CompactToBig(header.Bits)
 
 	// Initial state.
 	lastGenerated := time.Now()

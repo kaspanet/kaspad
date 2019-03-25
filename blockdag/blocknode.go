@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/daglabs/btcd/dagconfig/daghash"
+	"github.com/daglabs/btcd/util"
 	"github.com/daglabs/btcd/wire"
 )
 
@@ -131,7 +132,7 @@ func initBlockNode(node *blockNode, blockHeader *wire.BlockHeader, parents block
 	// blockHeader is nil only for the virtual block
 	if blockHeader != nil {
 		node.hash = blockHeader.BlockHash()
-		node.workSum = CalcWork(blockHeader.Bits)
+		node.workSum = util.CalcWork(blockHeader.Bits)
 		node.version = blockHeader.Version
 		node.bits = blockHeader.Bits
 		node.nonce = blockHeader.Nonce

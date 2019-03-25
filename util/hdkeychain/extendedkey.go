@@ -387,6 +387,10 @@ var (
 		PrivateKeyID: [4]byte{0x04, 0x20, 0xb9, 0x00}, // starts with sprv
 		PublicKeyID:  [4]byte{0x04, 0x20, 0xbd, 0x3a}, // starts with spub
 	}
+	HDKeyPairDevNet = HDKeyIDPair{
+		PrivateKeyID: [4]byte{0x04, 0x88, 0xad, 0xe4}, // starts with xprv
+		PublicKeyID:  [4]byte{0x04, 0x88, 0xb2, 0x1e}, // starts with xpub
+	}
 )
 
 // RegisterHDKeyIDPair registers an HDKeyIDPair in the private to public key map
@@ -637,4 +641,5 @@ func init() {
 	RegisterHDKeyIDPair(HDKeyPairTestNet)
 	RegisterHDKeyIDPair(HDKeyPairRegressionNet)
 	RegisterHDKeyIDPair(HDKeyPairSimNet)
+	RegisterHDKeyIDPair(HDKeyPairDevNet)
 }

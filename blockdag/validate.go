@@ -293,7 +293,7 @@ func CheckTransactionSanity(tx *util.Tx, subnetworkID *subnetworkid.SubnetworkID
 //    difficulty is not performed.
 func (dag *BlockDAG) checkProofOfWork(header *wire.BlockHeader, flags BehaviorFlags) error {
 	// The target difficulty must be larger than zero.
-	target := CompactToBig(header.Bits)
+	target := util.CompactToBig(header.Bits)
 	if target.Sign() <= 0 {
 		str := fmt.Sprintf("block target difficulty of %064x is too low",
 			target)
@@ -1201,7 +1201,7 @@ func (dag *BlockDAG) CheckConnectBlockTemplate(block *util.Block) error {
 	header := block.MsgBlock().Header
 	parentHashes := header.ParentHashes
 	if !tips.hashesEqual(parentHashes) {
-		str := fmt.Sprintf("parent blocks must be the currents tips %s, "+
+		str := fmt.Sprintf("parent blocks must be the current tips %s, "+
 			"instead got %v", tips, parentHashes)
 		return ruleError(ErrParentBlockNotCurrentTips, str)
 	}
@@ -1221,7 +1221,10 @@ func (dag *BlockDAG) CheckConnectBlockTemplate(block *util.Block) error {
 		return err
 	}
 
-	_, err = dag.checkConnectToPastUTXO(newBlockNode(&header, dag.virtual.tips(), dag.dagParams.K),
+	templateNode := newBlockNode(&header, dag.virtual.tips(), dag.dagParams.K)
+	defer templateNode.detachFromParents()
+
+	_, err = dag.checkConnectToPastUTXO(templateNode,
 		dag.UTXOSet(), block.Transactions(), false)
 
 	return err

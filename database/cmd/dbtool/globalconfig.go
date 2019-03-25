@@ -37,6 +37,7 @@ type config struct {
 	TestNet3       bool   `long:"testnet" description:"Use the test network"`
 	RegressionTest bool   `long:"regtest" description:"Use the regression test network"`
 	SimNet         bool   `long:"simnet" description:"Use the simulation test network"`
+	DevNet         bool   `long:"devnet" description:"Use the development test network"`
 }
 
 // fileExists reports whether the named file or directory exists.
@@ -98,9 +99,13 @@ func setupGlobalConfig() error {
 		numNets++
 		activeNetParams = &dagconfig.SimNetParams
 	}
+	if cfg.DevNet {
+		numNets++
+		activeNetParams = &dagconfig.DevNetParams
+	}
 	if numNets > 1 {
-		return errors.New("The testnet, regtest, and simnet params " +
-			"can't be used together -- choose one of the three")
+		return errors.New("The testnet, regtest, simnet and devnet params " +
+			"can't be used together -- choose one of the four")
 	}
 
 	// Validate database type.
