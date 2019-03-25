@@ -40,8 +40,11 @@ func init() {
 	if err != nil {
 		panic(fmt.Errorf("Error getting current user: %s", err))
 	}
-	certificatePath = path.Join(usr.HomeDir, ".btcd/simulator/rpc.cert")
-	addressListPath = path.Join(usr.HomeDir, ".btcd/simulator/addresses")
+
+	basePath := ".btcd/mining_simulator"
+
+	certificatePath = path.Join(usr.HomeDir, basePath, "rpc.cert")
+	addressListPath = path.Join(usr.HomeDir, basePath, "addresses")
 }
 
 func disconnect(clients []*rpcclient.Client) {
