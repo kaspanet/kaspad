@@ -955,21 +955,20 @@ func (a *AddrManager) Good(addr *wire.NetAddress, subnetworkID *subnetworkid.Sub
 	addrKey := NetAddressKey(addr)
 	triedBucketIndex := a.getTriedBucket(ka.na)
 
-	// if this address was already tried - don't do anything, except making sure the
-	// subnetworkID
 	if ka.tried {
-		// if this adress was already tried, but sunetworkID changed -
-		// update subnetworkID
-		if !subnetworkID.IsEqual(oldSubnetworkID) {
-			bucketList := a.addrTried[*oldSubnetworkID][triedBucketIndex]
-			for e := bucketList.Front(); e != nil; e = e.Next() {
-				if NetAddressKey(e.Value.(*KnownAddress).NetAddress()) == addrKey {
-					bucketList.Remove(e)
-					break
-				}
-			}
-		} else {
+		// if this address was already tried, and subnetworkID didn't change - don't do anything
+		if subnetworkID.IsEqual(oldSubnetworkID) {
 			return
+		}
+
+		// if this adress was already tried, but subnetworkID did changed -
+		// update subnetworkID, than continue as though this is a new address
+		bucketList := a.addrTried[*oldSubnetworkID][triedBucketIndex]
+		for e := bucketList.Front(); e != nil; e = e.Next() {
+			if NetAddressKey(e.Value.(*KnownAddress).NetAddress()) == addrKey {
+				bucketList.Remove(e)
+				break
+			}
 		}
 	}
 
