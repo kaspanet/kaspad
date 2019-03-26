@@ -130,12 +130,14 @@ type headerNode struct {
 // peerSyncState stores additional information that the SyncManager tracks
 // about a peer.
 type peerSyncState struct {
-	syncCandidate   bool
-	requestQueueMtx sync.Mutex
-	requestQueue    []*wire.InvVect
-	requestQueueSet map[daghash.Hash]struct{}
-	requestedTxns   map[daghash.TxID]struct{}
-	requestedBlocks map[daghash.Hash]struct{}
+	syncCandidate         bool
+	requestQueueMtx       sync.Mutex
+	syncedRequestQueue    []*wire.InvVect
+	requestQueue          []*wire.InvVect
+	syncedRequestQueueSet map[daghash.Hash]struct{}
+	requestQueueSet       map[daghash.Hash]struct{}
+	requestedTxns         map[daghash.TxID]struct{}
+	requestedBlocks       map[daghash.Hash]struct{}
 }
 
 // SyncManager is used to communicate block related messages with peers. The
@@ -340,10 +342,11 @@ func (sm *SyncManager) handleNewPeerMsg(peer *peerpkg.Peer) {
 	// Initialize the peer state
 	isSyncCandidate := sm.isSyncCandidate(peer)
 	sm.peerStates[peer] = &peerSyncState{
-		syncCandidate:   isSyncCandidate,
-		requestedTxns:   make(map[daghash.TxID]struct{}),
-		requestedBlocks: make(map[daghash.Hash]struct{}),
-		requestQueueSet: make(map[daghash.Hash]struct{}),
+		syncCandidate:         isSyncCandidate,
+		requestedTxns:         make(map[daghash.TxID]struct{}),
+		requestedBlocks:       make(map[daghash.Hash]struct{}),
+		requestQueueSet:       make(map[daghash.Hash]struct{}),
+		syncedRequestQueueSet: make(map[daghash.Hash]struct{}),
 	}
 
 	// Start syncing by choosing the best candidate if needed.
@@ -536,16 +539,17 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 		}
 	}
 
-	// Remove block from request maps. Either chain will know about it and
-	// so we shouldn't have any more instances of trying to fetch it, or we
-	// will fail the insert and thus we'll retry next time we get an inv.
+	// Process the block to include validation, orphan handling, etc.
+	isOrphan, err := sm.dag.ProcessBlock(bmsg.block, behaviorFlags)
+
+	// Remove block from request maps. Either DAG knows about it and
+	// so we shouldn't have any more instances of trying to fetch it, or
+	// the insertion fails and thus we'll retry next time we get an inv.
 	delete(state.requestedBlocks, *blockHash)
 	delete(sm.requestedBlocks, *blockHash)
 
 	sm.restartSyncIfNeeded()
 
-	// Process the block to include validation, orphan handling, etc.
-	isOrphan, err := sm.dag.ProcessBlock(bmsg.block, behaviorFlags)
 	if err != nil {
 		// When the error is a rule error, it means the block was simply
 		// rejected as opposed to something actually going wrong, so log
@@ -578,7 +582,7 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 				blockHash, err)
 			return
 		}
-		sm.addBlocksToRequestQueue(state, missingAncestors)
+		sm.addBlocksToRequestQueue(state, missingAncestors, false)
 	} else {
 		// When the block is not an orphan, log information about it and
 		// update the chain state.
@@ -592,7 +596,11 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 	// instead of asking it immediately about missing ancestors, we first
 	// wait until it finishes to send us all of the requested blocks.
 	if (isOrphan && peer != sm.syncPeer) || (peer == sm.syncPeer && len(state.requestedBlocks) == 0) {
-		sm.sendInvsFromRequestedQueue(peer, state)
+		err := sm.sendInvsFromRequestQueue(peer, state)
+		if err != nil {
+			log.Errorf("Failed to send invs from queue: %s", err)
+			return
+		}
 	}
 
 	// Nothing more to do if we aren't in headers-first mode.
@@ -647,28 +655,34 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 	}
 }
 
-func (sm *SyncManager) addBlocksToRequestQueue(state *peerSyncState, hashes []*daghash.Hash) {
+func (sm *SyncManager) addBlocksToRequestQueue(state *peerSyncState, hashes []*daghash.Hash, addToSyncedQueue bool) {
 	state.requestQueueMtx.Lock()
 	defer state.requestQueueMtx.Unlock()
 	for _, hash := range hashes {
 		if _, exists := sm.requestedBlocks[*hash]; !exists {
 			iv := wire.NewInvVect(wire.InvTypeBlock, hash)
-			state.addInvToRequestQueue(iv)
+			state.addInvToRequestQueue(iv, addToSyncedQueue)
 		}
 	}
 }
 
-func (state *peerSyncState) addInvToRequestQueue(iv *wire.InvVect) {
+func (state *peerSyncState) addInvToRequestQueue(iv *wire.InvVect, addToSyncedQueue bool) {
+	if addToSyncedQueue {
+		if _, exists := state.syncedRequestQueueSet[iv.Hash]; !exists {
+			state.syncedRequestQueueSet[iv.Hash] = struct{}{}
+			state.syncedRequestQueue = append(state.syncedRequestQueue, iv)
+		}
+	}
 	if _, exists := state.requestQueueSet[iv.Hash]; !exists {
 		state.requestQueueSet[iv.Hash] = struct{}{}
 		state.requestQueue = append(state.requestQueue, iv)
 	}
 }
 
-func (state *peerSyncState) addInvToRequestQueueWithLock(iv *wire.InvVect) {
+func (state *peerSyncState) addInvToRequestQueueWithLock(iv *wire.InvVect, addToSyncedQueue bool) {
 	state.requestQueueMtx.Lock()
 	defer state.requestQueueMtx.Unlock()
-	state.addInvToRequestQueue(iv)
+	state.addInvToRequestQueue(iv, addToSyncedQueue)
 }
 
 // fetchHeaderBlocks creates and sends a request to the syncPeer for the next
@@ -833,9 +847,10 @@ func (sm *SyncManager) handleHeadersMsg(hmsg *headersMsg) {
 // are in the memory pool (either the main pool or orphan pool).
 func (sm *SyncManager) haveInventory(invVect *wire.InvVect) (bool, error) {
 	switch invVect.Type {
+	case wire.InvTypeSyncBlock:
+		fallthrough
 	case wire.InvTypeBlock:
-		// Ask chain if the block is known to it in any form (main
-		// chain, side chain, or orphan).
+		// Ask DAG if the block is known to it in any form (in DAG or as an orphan).
 		return sm.dag.HaveBlock(&invVect.Hash)
 
 	case wire.InvTypeTx:
@@ -888,7 +903,7 @@ func (sm *SyncManager) handleInvMsg(imsg *invMsg) {
 	lastBlock := -1
 	invVects := imsg.inv.InvList
 	for i := len(invVects) - 1; i >= 0; i-- {
-		if invVects[i].Type == wire.InvTypeBlock {
+		if invVects[i].IsBlockType() {
 			lastBlock = i
 			break
 		}
@@ -902,6 +917,7 @@ func (sm *SyncManager) handleInvMsg(imsg *invMsg) {
 		// Ignore unsupported inventory types.
 		switch iv.Type {
 		case wire.InvTypeBlock:
+		case wire.InvTypeSyncBlock:
 		case wire.InvTypeTx:
 		default:
 			continue
@@ -934,11 +950,11 @@ func (sm *SyncManager) handleInvMsg(imsg *invMsg) {
 			}
 
 			// Add it to the request queue.
-			state.addInvToRequestQueueWithLock(iv)
+			state.addInvToRequestQueueWithLock(iv, iv.Type != wire.InvTypeSyncBlock)
 			continue
 		}
 
-		if iv.Type == wire.InvTypeBlock {
+		if iv.IsBlockType() {
 			// The block is an orphan block that we already have.
 			// When the existing orphan was processed, it requested
 			// the missing parent blocks.  When this scenario
@@ -956,7 +972,7 @@ func (sm *SyncManager) handleInvMsg(imsg *invMsg) {
 						iv.Hash, err)
 					return
 				}
-				sm.addBlocksToRequestQueue(state, missingAncestors)
+				sm.addBlocksToRequestQueue(state, missingAncestors, iv.Type != wire.InvTypeSyncBlock)
 				continue
 			}
 
@@ -975,35 +991,58 @@ func (sm *SyncManager) handleInvMsg(imsg *invMsg) {
 		}
 	}
 
-	sm.sendInvsFromRequestedQueue(peer, state)
+	err := sm.sendInvsFromRequestQueue(peer, state)
+	if err != nil {
+		log.Errorf("Failed to send invs from queue: %s", err)
+	}
 }
 
-func (sm *SyncManager) sendInvsFromRequestedQueue(peer *peerpkg.Peer, state *peerSyncState) {
-	state.requestQueueMtx.Lock()
-	defer state.requestQueueMtx.Unlock()
-	numRequested := 0
-	gdmsg := wire.NewMsgGetData()
-	requestQueue := state.requestQueue
+func (sm *SyncManager) addInvsToGetDataMessageFromQueue(gdmsg *wire.MsgGetData, state *peerSyncState, requestQueue []*wire.InvVect) ([]*wire.InvVect, error) {
+	numRequested := len(gdmsg.InvList)
+	maxInvsNum := wire.MaxInvPerMsg - numRequested
+	invsNum := len(requestQueue)
+	if invsNum > maxInvsNum {
+		invsNum = maxInvsNum
+	}
+	invsToAdd := make([]*wire.InvVect, 0, invsNum)
+
 	for len(requestQueue) != 0 {
 		iv := requestQueue[0]
 		requestQueue[0] = nil
 		requestQueue = requestQueue[1:]
-		delete(state.requestQueueSet, iv.Hash)
 
+		exists, err := sm.haveInventory(iv)
+		if err != nil {
+			return nil, err
+		}
+		if !exists {
+			invsToAdd = append(invsToAdd, iv)
+		}
+	}
+
+	addBlockInv := func(iv *wire.InvVect) {
+		// Request the block if there is not already a pending
+		// request.
+		if _, exists := sm.requestedBlocks[iv.Hash]; !exists {
+			sm.requestedBlocks[iv.Hash] = struct{}{}
+			sm.limitHashMap(sm.requestedBlocks, maxRequestedBlocks)
+			state.requestedBlocks[iv.Hash] = struct{}{}
+
+			gdmsg.AddInvVect(iv)
+			numRequested++
+		}
+	}
+	for _, iv := range invsToAdd {
 		switch iv.Type {
+		case wire.InvTypeSyncBlock:
+			delete(state.requestQueueSet, iv.Hash)
+			addBlockInv(iv)
 		case wire.InvTypeBlock:
-			// Request the block if there is not already a pending
-			// request.
-			if _, exists := sm.requestedBlocks[iv.Hash]; !exists {
-				sm.requestedBlocks[iv.Hash] = struct{}{}
-				sm.limitHashMap(sm.requestedBlocks, maxRequestedBlocks)
-				state.requestedBlocks[iv.Hash] = struct{}{}
-
-				gdmsg.AddInvVect(iv)
-				numRequested++
-			}
+			delete(state.syncedRequestQueueSet, iv.Hash)
+			addBlockInv(iv)
 
 		case wire.InvTypeTx:
+			delete(state.syncedRequestQueueSet, iv.Hash)
 			// Request the transaction if there is not already a
 			// pending request.
 			if _, exists := sm.requestedTxns[daghash.TxID(iv.Hash)]; !exists {
@@ -1020,10 +1059,29 @@ func (sm *SyncManager) sendInvsFromRequestedQueue(peer *peerpkg.Peer, state *pee
 			break
 		}
 	}
-	state.requestQueue = requestQueue
+	return requestQueue, nil
+}
+
+func (sm *SyncManager) sendInvsFromRequestQueue(peer *peerpkg.Peer, state *peerSyncState) error {
+	state.requestQueueMtx.Lock()
+	defer state.requestQueueMtx.Unlock()
+	gdmsg := wire.NewMsgGetData()
+	newRequestQueue, err := sm.addInvsToGetDataMessageFromQueue(gdmsg, state, state.requestQueue)
+	if err != nil {
+		return err
+	}
+	state.requestQueue = newRequestQueue
+	if sm.current() {
+		newRequestQueue, err := sm.addInvsToGetDataMessageFromQueue(gdmsg, state, state.syncedRequestQueue)
+		if err != nil {
+			return err
+		}
+		state.syncedRequestQueue = newRequestQueue
+	}
 	if len(gdmsg.InvList) > 0 {
 		peer.QueueMessage(gdmsg, nil)
 	}
+	return nil
 }
 
 // limitTxIDMap is a helper function for maps that require a maximum limit by
