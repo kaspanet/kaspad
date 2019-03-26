@@ -664,9 +664,7 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 		Bits:           reqDifficulty,
 	}
 	for _, tx := range blockTxns {
-		if err := msgBlock.AddTransaction(tx.MsgTx()); err != nil {
-			return nil, err
-		}
+		msgBlock.AddTransaction(tx.MsgTx())
 	}
 
 	// Finally, perform a full check on the created block against the chain
