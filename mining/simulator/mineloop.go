@@ -18,7 +18,7 @@ import (
 	"github.com/daglabs/btcd/wire"
 )
 
-var r = rand.New(rand.NewSource(time.Now().UnixNano()))
+var random = rand.New(rand.NewSource(time.Now().UnixNano()))
 
 func parseBlock(template *btcjson.GetBlockTemplateResult) (*util.Block, error) {
 	// parse parent hashes
@@ -74,7 +74,7 @@ func mineLoop(clients []*rpcclient.Client) error {
 		if clientsCount == 1 {
 			currentClient = clients[0]
 		} else {
-			currentClient = clients[r.Int63n(clientsCount)]
+			currentClient = clients[random.Int63n(clientsCount)]
 		}
 		log.Printf("Next block will be mined by: %s", currentClient.Host())
 
