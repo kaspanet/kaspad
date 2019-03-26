@@ -16,6 +16,11 @@ var isRunning int32
 func main() {
 	defer handlePanic()
 
+	err := initPaths()
+	if err != nil {
+		panic(fmt.Errorf("Error initializing paths: %s", err))
+	}
+
 	addressList, err := getAddressList()
 	if err != nil {
 		panic(fmt.Errorf("Couldn't load address list: %s", err))
@@ -35,16 +40,18 @@ func main() {
 	}
 }
 
-func init() {
+func initPaths() error {
 	usr, err := user.Current()
 	if err != nil {
-		panic(fmt.Errorf("Error getting current user: %s", err))
+		return fmt.Errorf("Error getting current user: %s", err)
 	}
 
 	basePath := ".btcd/mining_simulator"
 
 	certificatePath = path.Join(usr.HomeDir, basePath, "rpc.cert")
 	addressListPath = path.Join(usr.HomeDir, basePath, "addresses")
+
+	return nil
 }
 
 func disconnect(clients []*rpcclient.Client) {
