@@ -953,46 +953,61 @@ func (a *AddrManager) Good(addr *wire.NetAddress, subnetworkID *subnetworkid.Sub
 	ka.attempts = 0
 	ka.subnetworkID = subnetworkID
 
-	// move to tried set, optionally evicting other addresses if neeed.
+	addrKey := NetAddressKey(addr)
+	triedBucketIndex := a.getTriedBucket(ka.na)
+
+	// if this address was already tried - don't do anything, except making sure the
+	// subnetworkID
 	if ka.tried {
-		return
+		// if this adress was already tried, but sunetworkID changed -
+		// update subnetworkID
+		if !subnetworkID.IsEqual(oldSubnetworkID) {
+			bucketList := a.addrTried[*oldSubnetworkID][triedBucketIndex]
+			for e := bucketList.Front(); e != nil; e = e.Next() {
+				if NetAddressKey(e.Value.(*KnownAddress).NetAddress()) == addrKey {
+					bucketList.Remove(e)
+					break
+				}
+			}
+		} else {
+			return
+		}
 	}
 
 	// ok, need to move it to tried.
 
 	// remove from all new buckets.
 	// record one of the buckets in question and call it the `first'
-	addrKey := NetAddressKey(addr)
 	oldBucket := -1
-	for i := range a.addrNew[*oldSubnetworkID] {
-		// we check for existence so we can record the first one
-		if _, ok := a.addrNew[*oldSubnetworkID][i][addrKey]; ok {
-			delete(a.addrNew[*oldSubnetworkID][i], addrKey)
-			ka.refs--
-			if oldBucket == -1 {
-				oldBucket = i
+	if !ka.tried {
+		for i := range a.addrNew[*oldSubnetworkID] {
+			// we check for existence so we can record the first one
+			if _, ok := a.addrNew[*oldSubnetworkID][i][addrKey]; ok {
+				delete(a.addrNew[*oldSubnetworkID][i], addrKey)
+				ka.refs--
+				if oldBucket == -1 {
+					oldBucket = i
+				}
 			}
 		}
-	}
-	a.nNew[*oldSubnetworkID]--
+		a.nNew[*oldSubnetworkID]--
 
-	if oldBucket == -1 {
-		// What? wasn't in a bucket after all.... Panic?
-		return
+		if oldBucket == -1 {
+			// What? wasn't in a bucket after all.... Panic?
+			return
+		}
 	}
-
-	bucket := a.getTriedBucket(ka.na)
 
 	// Room in this tried bucket?
-	if a.nTried[*ka.subnetworkID] == 0 || a.addrTried[*ka.subnetworkID][bucket].Len() < triedBucketSize {
+	if a.nTried[*ka.subnetworkID] == 0 || a.addrTried[*ka.subnetworkID][triedBucketIndex].Len() < triedBucketSize {
 		ka.tried = true
-		a.updateAddrTried(bucket, ka)
+		a.updateAddrTried(triedBucketIndex, ka)
 		a.nTried[*ka.subnetworkID]++
 		return
 	}
 
 	// No room, we have to evict something else.
-	entry := a.pickTried(ka.subnetworkID, bucket)
+	entry := a.pickTried(ka.subnetworkID, triedBucketIndex)
 	rmka := entry.Value.(*KnownAddress)
 
 	// First bucket it would have been put in.
@@ -1001,7 +1016,18 @@ func (a *AddrManager) Good(addr *wire.NetAddress, subnetworkID *subnetworkid.Sub
 	// If no room in the original bucket, we put it in a bucket we just
 	// freed up a space in.
 	if len(a.addrNew[*ka.subnetworkID][newBucket]) >= newBucketSize {
-		newBucket = oldBucket
+		if oldBucket == -1 {
+			// if addr was a tried bucket with updated subnetworkID - oldBucket will be equal 0
+			// in that case - find some non-full bucket.
+			// if no such bucket exists - throw rmka away
+			for newBucket := range a.addrNew[*ka.subnetworkID] {
+				if len(a.addrNew[*ka.subnetworkID][newBucket]) < newBucketSize {
+					break
+				}
+			}
+		} else {
+			newBucket = oldBucket
+		}
 	}
 
 	// replace with ka in list.
