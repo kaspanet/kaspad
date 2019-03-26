@@ -5,13 +5,8 @@ RUN mkdir -p /go/src/github.com/daglabs/btcd
 
 WORKDIR /go/src/github.com/daglabs/btcd
 
-RUN apk add --no-cache curl git openssh binutils gcc musl-dev
+RUN apk add --no-cache curl git 
 RUN curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
-RUN go get -u golang.org/x/lint/golint \
-      github.com/kisielk/errcheck \
-      github.com/opennota/check/cmd/aligncheck \
-      github.com/opennota/check/cmd/structcheck \
-      github.com/opennota/check/cmd/varcheck
 
 COPY ./Gopkg.* ./
 
@@ -25,8 +20,10 @@ RUN cd mining/simulator && CGO_ENABLED=0 GOOS=linux go build -a -installsuffix c
 FROM alpine
 WORKDIR /app
 
-RUN apk add --no-cache ca-certificates tini
+RUN apk add --no-cache tini
 
 COPY --from=build /go/src/github.com/daglabs/btcd/mining/simulator/mining_simulator /app/
+
+ENTRYPOINT ["/sbin/tini"]
 
 CMD ["/app/mining_simulator"]
