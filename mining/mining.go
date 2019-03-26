@@ -447,9 +447,9 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 	// a transaction as it is selected for inclusion in the final block.
 	// However, since the total fees aren't known yet, use a dummy value for
 	// the coinbase fee which will be updated later.
-	txFees := make([]uint64, 0, len(sourceTxns))
-	txSigOpCounts := make([]int64, 0, len(sourceTxns))
-	txFees = append(txFees, 0) // Updated once known
+	txFees := make([]uint64, 0, len(sourceTxns)+2)
+	txSigOpCounts := make([]int64, 0, len(sourceTxns)+2)
+	txFees = append(txFees, 0, 0) // For coinbase and fee txs
 	txSigOpCounts = append(txSigOpCounts, numCoinbaseSigOps, feeTxSigOps)
 
 	log.Debugf("Considering %d transactions for inclusion to new block",
@@ -629,7 +629,6 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 	blockSize -= wire.MaxVarIntPayload -
 		uint32(wire.VarIntSerializeSize(uint64(len(blockTxns))))
 	coinbaseTx.MsgTx().TxOut[0].Value += totalFees
-	txFees[0] = -totalFees
 
 	// Calculate the required difficulty for the block.  The timestamp
 	// is potentially adjusted to ensure it comes after the median time of
@@ -665,9 +664,7 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 		Bits:           reqDifficulty,
 	}
 	for _, tx := range blockTxns {
-		if err := msgBlock.AddTransaction(tx.MsgTx()); err != nil {
-			return nil, err
-		}
+		msgBlock.AddTransaction(tx.MsgTx())
 	}
 
 	// Finally, perform a full check on the created block against the chain
