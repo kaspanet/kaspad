@@ -34,4 +34,5 @@ RUN apk add --no-cache ca-certificates tini
 COPY --from=build /go/src/github.com/daglabs/btcd/dnsseeder/ /app/
 
 USER nobody
-ENTRYPOINT ["/app/dnsseeder", "-H", "dnsseed.my.home", "-n", "192.168.16.104", "-l", "0.0.0.0:53", "-s", "localhost", "--testnet"]
+CMD [ "/app/dnsseeder", "-H", "dnsseed.my.home", "-n", "192.168.16.104", "-l", "0.0.0.0:53", "-s", "localhost", "--testnet" ]
+ENTRYPOINT [ "/sbin/tini", "--" ]
