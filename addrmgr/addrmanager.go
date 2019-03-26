@@ -193,7 +193,6 @@ func (a *AddrManager) updateAddress(netAddr, srcAddr *wire.NetAddress, subnetwor
 			naCopy.Timestamp = netAddr.Timestamp
 			naCopy.AddService(netAddr.Services)
 			ka.na = &naCopy
-			ka.subnetworkID = subnetworkID
 		}
 
 		// If already in tried, we have nothing to do here.
