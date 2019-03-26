@@ -13,7 +13,6 @@ import (
 	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/util"
-	"github.com/daglabs/btcd/util/subnetworkid"
 	"github.com/daglabs/btcd/wire"
 )
 
@@ -100,45 +99,41 @@ func TestSignTxOutput(t *testing.T) {
 		SigHashNone | SigHashAnyOneCanPay,
 		SigHashSingle | SigHashAnyOneCanPay,
 	}
-	tx := &wire.MsgTx{
-		Version: 1,
-		TxIn: []*wire.TxIn{
-			{
-				PreviousOutPoint: wire.OutPoint{
-					TxID:  daghash.TxID{},
-					Index: 0,
-				},
-				Sequence: 4294967295,
+	txIns := []*wire.TxIn{
+		{
+			PreviousOutPoint: wire.OutPoint{
+				TxID:  daghash.TxID{},
+				Index: 0,
 			},
-			{
-				PreviousOutPoint: wire.OutPoint{
-					TxID:  daghash.TxID{},
-					Index: 1,
-				},
-				Sequence: 4294967295,
-			},
-			{
-				PreviousOutPoint: wire.OutPoint{
-					TxID:  daghash.TxID{},
-					Index: 2,
-				},
-				Sequence: 4294967295,
-			},
+			Sequence: 4294967295,
 		},
-		TxOut: []*wire.TxOut{
-			{
-				Value: 1,
+		{
+			PreviousOutPoint: wire.OutPoint{
+				TxID:  daghash.TxID{},
+				Index: 1,
 			},
-			{
-				Value: 2,
-			},
-			{
-				Value: 3,
-			},
+			Sequence: 4294967295,
 		},
-		LockTime:     0,
-		SubnetworkID: *subnetworkid.SubnetworkIDNative,
+		{
+			PreviousOutPoint: wire.OutPoint{
+				TxID:  daghash.TxID{},
+				Index: 2,
+			},
+			Sequence: 4294967295,
+		},
 	}
+	txOuts := []*wire.TxOut{
+		{
+			Value: 1,
+		},
+		{
+			Value: 2,
+		},
+		{
+			Value: 3,
+		},
+	}
+	tx := wire.NewNativeMsgTx(1, txIns, txOuts)
 
 	// Pay to Pubkey Hash (uncompressed)
 	for _, hashType := range hashTypes {
@@ -1622,15 +1617,13 @@ func TestSignatureScript(t *testing.T) {
 
 nexttest:
 	for i := range sigScriptTests {
-		tx := wire.NewMsgTx(wire.TxVersion)
+		txOuts := []*wire.TxOut{wire.NewTxOut(500, []byte{OpReturn})}
 
-		output := wire.NewTxOut(500, []byte{OpReturn})
-		tx.AddTxOut(output)
-
+		txIns := []*wire.TxIn{}
 		for range sigScriptTests[i].inputs {
-			txin := wire.NewTxIn(coinbaseOutPoint, nil)
-			tx.AddTxIn(txin)
+			txIns = append(txIns, wire.NewTxIn(coinbaseOutPoint, nil))
 		}
+		tx := wire.NewNativeMsgTx(wire.TxVersion, txIns, txOuts)
 
 		var script []byte
 		var err error

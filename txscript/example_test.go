@@ -100,33 +100,30 @@ func ExampleSignTxOutput() {
 	// For this example, create a fake transaction that represents what
 	// would ordinarily be the real transaction that is being spent.  It
 	// contains a single output that pays to address in the amount of 1 BTC.
-	originTx := wire.NewMsgTx(wire.TxVersion)
 	prevOut := wire.NewOutPoint(&daghash.TxID{}, ^uint32(0))
 	txIn := wire.NewTxIn(prevOut, []byte{txscript.Op0, txscript.Op0})
-	originTx.AddTxIn(txIn)
 	pkScript, err := txscript.PayToAddrScript(addr)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 	txOut := wire.NewTxOut(100000000, pkScript)
-	originTx.AddTxOut(txOut)
+	originTx := wire.NewNativeMsgTx(wire.TxVersion, []*wire.TxIn{txIn}, []*wire.TxOut{txOut})
 	originTxID := originTx.TxID()
 
 	// Create the transaction to redeem the fake transaction.
-	redeemTx := wire.NewMsgTx(wire.TxVersion)
 
 	// Add the input(s) the redeeming transaction will spend.  There is no
 	// signature script at this point since it hasn't been created or signed
 	// yet, hence nil is provided for it.
 	prevOut = wire.NewOutPoint(&originTxID, 0)
 	txIn = wire.NewTxIn(prevOut, nil)
-	redeemTx.AddTxIn(txIn)
 
 	// Ordinarily this would contain that actual destination of the funds,
 	// but for this example don't bother.
 	txOut = wire.NewTxOut(0, nil)
-	redeemTx.AddTxOut(txOut)
+
+	redeemTx := wire.NewNativeMsgTx(wire.TxVersion, []*wire.TxIn{txIn}, []*wire.TxOut{txOut})
 
 	// Sign the redeeming transaction.
 	lookupKey := func(a util.Address) (*btcec.PrivateKey, bool, error) {

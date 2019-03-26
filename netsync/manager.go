@@ -1171,9 +1171,8 @@ out:
 // connected peers.
 func (sm *SyncManager) handleBlockDAGNotification(notification *blockdag.Notification) {
 	switch notification.Type {
-	// A block has been accepted into the block chain.  Relay it to other
-	// peers.
-	case blockdag.NTBlockAccepted:
+	// A block has been accepted into the blockDAG.  Relay it to other peers.
+	case blockdag.NTBlockAdded:
 		// Don't relay if we are not current. Other peers that are
 		// current should already know about it.
 		if !sm.current() {
@@ -1182,7 +1181,7 @@ func (sm *SyncManager) handleBlockDAGNotification(notification *blockdag.Notific
 
 		block, ok := notification.Data.(*util.Block)
 		if !ok {
-			log.Warnf("Chain accepted notification is not a block.")
+			log.Warnf("Block Added notification data is not a block.")
 			break
 		}
 
@@ -1190,14 +1189,7 @@ func (sm *SyncManager) handleBlockDAGNotification(notification *blockdag.Notific
 		iv := wire.NewInvVect(wire.InvTypeBlock, block.Hash())
 		sm.peerNotifier.RelayInventory(iv, block.MsgBlock().Header)
 
-	// A block has been connected to the block DAG.
-	case blockdag.NTBlockConnected:
-		block, ok := notification.Data.(*util.Block)
-		if !ok {
-			log.Warnf("Chain connected notification is not a block.")
-			break
-		}
-
+		// Update mempool
 		ch := make(chan mempool.NewBlockMsg)
 		go func() {
 			err := sm.txMemPool.HandleNewBlock(block, ch)
@@ -1329,8 +1321,7 @@ func (sm *SyncManager) SyncPeerID() int32 {
 	return <-reply
 }
 
-// ProcessBlock makes use of ProcessBlock on an internal instance of a block
-// chain.
+// ProcessBlock makes use of ProcessBlock on an internal instance of a blockDAG.
 func (sm *SyncManager) ProcessBlock(block *util.Block, flags blockdag.BehaviorFlags) (bool, error) {
 	reply := make(chan processBlockResponse, 1)
 	sm.msgChan <- processBlockMsg{block: block, flags: flags, reply: reply}

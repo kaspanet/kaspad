@@ -544,9 +544,9 @@ func handleCreateRawTransaction(s *Server, cmd interface{}, closeChan <-chan str
 		}
 	}
 
+	txIns := []*wire.TxIn{}
 	// Add all transaction inputs to a new transaction after performing
 	// some validity checks.
-	mtx := wire.NewMsgTx(wire.TxVersion)
 	for _, input := range c.Inputs {
 		txID, err := daghash.NewTxIDFromStr(input.TxID)
 		if err != nil {
@@ -558,8 +558,9 @@ func handleCreateRawTransaction(s *Server, cmd interface{}, closeChan <-chan str
 		if c.LockTime != nil && *c.LockTime != 0 {
 			txIn.Sequence = wire.MaxTxInSequenceNum - 1
 		}
-		mtx.AddTxIn(txIn)
+		txIns = append(txIns, txIn)
 	}
+	mtx := wire.NewNativeMsgTx(wire.TxVersion, txIns, nil)
 
 	// Add all transaction outputs to the transaction after performing
 	// some validity checks.
@@ -1084,8 +1085,8 @@ func getDifficultyRatio(bits uint32, params *dagconfig.Params) float64 {
 	// converted back to a number.  Note this is not the same as the proof of
 	// work limit directly because the block difficulty is encoded in a block
 	// with the compact form which loses precision.
-	max := blockdag.CompactToBig(params.PowLimitBits)
-	target := blockdag.CompactToBig(bits)
+	max := util.CompactToBig(params.PowLimitBits)
+	target := util.CompactToBig(bits)
 
 	difficulty := new(big.Rat).SetFrac(max, target)
 	outString := difficulty.FloatString(8)
@@ -1497,10 +1498,10 @@ func (state *gbtWorkState) notifyLongPollers(tipHashes []daghash.Hash, lastGener
 	}
 }
 
-// NotifyBlockConnected uses the newly-connected block to notify any long poll
+// NotifyBlockAdded uses the newly-added block to notify any long poll
 // clients with a new block template when their existing block template is
-// stale due to the newly connected block.
-func (state *gbtWorkState) NotifyBlockConnected(tipHashes []daghash.Hash) {
+// stale due to the newly added block.
+func (state *gbtWorkState) NotifyBlockAdded(tipHashes []daghash.Hash) {
 	go func() {
 		state.Lock()
 		defer state.Unlock()
@@ -1620,7 +1621,7 @@ func (state *gbtWorkState) updateBlockTemplate(s *Server, useCoinbaseValue bool)
 		template = blkTemplate
 		msgBlock = template.Block
 		targetDifficulty = fmt.Sprintf("%064x",
-			blockdag.CompactToBig(msgBlock.Header.Bits))
+			util.CompactToBig(msgBlock.Header.Bits))
 
 		// Get the minimum allowed timestamp for the block based on the
 		// median timestamp of the last several blocks per the chain
@@ -1681,7 +1682,7 @@ func (state *gbtWorkState) updateBlockTemplate(s *Server, useCoinbaseValue bool)
 		// Set locals for convenience.
 		msgBlock = template.Block
 		targetDifficulty = fmt.Sprintf("%064x",
-			blockdag.CompactToBig(msgBlock.Header.Bits))
+			util.CompactToBig(msgBlock.Header.Bits))
 
 		// Update the time of the block template to the current time
 		// while accounting for the median time of the past several
@@ -1775,7 +1776,7 @@ func (state *gbtWorkState) blockTemplateResult(useCoinbaseValue bool, submitOld 
 	// implied by the included or omission of fields:
 	//  Including MinTime -> time/decrement
 	//  Omitting CoinbaseTxn -> coinbase, generation
-	targetDifficulty := fmt.Sprintf("%064x", blockdag.CompactToBig(header.Bits))
+	targetDifficulty := fmt.Sprintf("%064x", util.CompactToBig(header.Bits))
 	longPollID := encodeLongPollID(state.tipHashes, state.lastGenerated)
 	reply := btcjson.GetBlockTemplateResult{
 		Bits:         strconv.FormatInt(int64(header.Bits), 16),
@@ -2341,6 +2342,7 @@ func handleGetInfo(s *Server, cmd interface{}, closeChan <-chan struct{}) (inter
 		Proxy:           config.MainConfig().Proxy,
 		Difficulty:      getDifficultyRatio(s.cfg.DAG.CurrentBits(), s.cfg.DAGParams),
 		TestNet:         config.MainConfig().TestNet3,
+		DevNet:          config.MainConfig().DevNet,
 		RelayFee:        config.MainConfig().MinRelayTxFee.ToBTC(),
 	}
 
@@ -2410,6 +2412,7 @@ func handleGetMiningInfo(s *Server, cmd interface{}, closeChan <-chan struct{}) 
 		NetworkHashPS:    networkHashesPerSec,
 		PooledTx:         uint64(s.cfg.TxMemPool.Count()),
 		TestNet:          config.MainConfig().TestNet3,
+		DevNet:           config.MainConfig().DevNet,
 	}
 	return &result, nil
 }
@@ -4324,27 +4327,26 @@ func NewRPCServer(
 	return &rpc, nil
 }
 
-// Callback for notifications from blockchain.  It notifies clients that are
+// Callback for notifications from blockdag.  It notifies clients that are
 // long polling for changes or subscribed to websockets notifications.
 func (s *Server) handleBlockchainNotification(notification *blockdag.Notification) {
 	switch notification.Type {
-	case blockdag.NTBlockAccepted:
+	case blockdag.NTBlockAdded:
+		block, ok := notification.Data.(*util.Block)
+		if !ok {
+			log.Warnf("Block added notification data is not a block.")
+			break
+		}
+
 		tipHashes := s.cfg.DAG.TipHashes()
 
 		// Allow any clients performing long polling via the
 		// getBlockTemplate RPC to be notified when the new block causes
 		// their old block template to become stale.
-		s.gbtWorkState.NotifyBlockConnected(tipHashes)
-
-	case blockdag.NTBlockConnected:
-		block, ok := notification.Data.(*util.Block)
-		if !ok {
-			log.Warnf("Chain connected notification is not a block.")
-			break
-		}
+		s.gbtWorkState.NotifyBlockAdded(tipHashes)
 
 		// Notify registered websocket clients of incoming block.
-		s.ntfnMgr.NotifyBlockConnected(block)
+		s.ntfnMgr.NotifyBlockAdded(block)
 	}
 }
 

@@ -121,6 +121,11 @@ func TestCheckConnectBlockTemplate(t *testing.T) {
 			"block 4: %v", err)
 	}
 
+	blockNode3 := dag.index.LookupNode(blocks[3].Hash())
+	if blockNode3.children.containsHash(blocks[4].Hash()) {
+		t.Errorf("Block 4 wasn't successfully detached as a child from block3")
+	}
+
 	// Block 3a should fail to connect since does not build on chain tip.
 	err = dag.CheckConnectBlockTemplate(blocks[5])
 	if err == nil {
@@ -472,8 +477,7 @@ func TestCheckBlockSanity(t *testing.T) {
 func TestCheckSerializedHeight(t *testing.T) {
 	// Create an empty coinbase template to be used in the tests below.
 	coinbaseOutpoint := wire.NewOutPoint(&daghash.TxID{}, math.MaxUint32)
-	coinbaseTx := wire.NewMsgTx(1)
-	coinbaseTx.AddTxIn(wire.NewTxIn(coinbaseOutpoint, nil))
+	coinbaseTx := wire.NewNativeMsgTx(1, []*wire.TxIn{wire.NewTxIn(coinbaseOutpoint, nil)}, nil)
 
 	// Expected rule errors.
 	missingHeightError := RuleError{
@@ -671,32 +675,32 @@ func TestCheckTransactionSanity(t *testing.T) {
 			ruleError(ErrDuplicateTxInputs, "")},
 		{"non-zero gas in DAGCoin", 1, 1, 0,
 			*subnetworkid.SubnetworkIDNative,
-			&txSubnetworkData{*subnetworkid.SubnetworkIDNative, 1, []byte{}},
+			&txSubnetworkData{subnetworkid.SubnetworkIDNative, 1, []byte{}},
 			nil,
 			ruleError(ErrInvalidGas, "")},
 		{"non-zero gas in subnetwork registry", 1, 1, 0,
 			*subnetworkid.SubnetworkIDNative,
-			&txSubnetworkData{*subnetworkid.SubnetworkIDNative, 1, []byte{}},
+			&txSubnetworkData{subnetworkid.SubnetworkIDNative, 1, []byte{}},
 			nil,
 			ruleError(ErrInvalidGas, "")},
 		{"non-zero payload in DAGCoin", 1, 1, 0,
 			*subnetworkid.SubnetworkIDNative,
-			&txSubnetworkData{*subnetworkid.SubnetworkIDNative, 0, []byte{1}},
+			&txSubnetworkData{subnetworkid.SubnetworkIDNative, 0, []byte{1}},
 			nil,
 			ruleError(ErrInvalidPayload, "")},
 		{"payload in subnetwork registry isn't 8 bytes", 1, 1, 0,
 			*subnetworkid.SubnetworkIDNative,
-			&txSubnetworkData{*subnetworkid.SubnetworkIDNative, 0, []byte{1, 2, 3, 4, 5, 6, 7}},
+			&txSubnetworkData{subnetworkid.SubnetworkIDNative, 0, []byte{1, 2, 3, 4, 5, 6, 7}},
 			nil,
 			ruleError(ErrInvalidPayload, "")},
 		{"payload in other subnetwork isn't 0 bytes", 1, 1, 0,
 			subnetworkid.SubnetworkID{123},
-			&txSubnetworkData{subnetworkid.SubnetworkID{234}, 0, []byte{1}},
+			&txSubnetworkData{&subnetworkid.SubnetworkID{234}, 0, []byte{1}},
 			nil,
 			ruleError(ErrInvalidPayload, "")},
 		{"invalid payload hash", 1, 1, 0,
 			subnetworkid.SubnetworkID{123},
-			&txSubnetworkData{subnetworkid.SubnetworkID{123}, 0, []byte{1}},
+			&txSubnetworkData{&subnetworkid.SubnetworkID{123}, 0, []byte{1}},
 			func(tx *wire.MsgTx) {
 				tx.PayloadHash = &daghash.Hash{}
 			},
