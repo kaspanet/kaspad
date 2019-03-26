@@ -961,7 +961,7 @@ func (a *AddrManager) Good(addr *wire.NetAddress, subnetworkID *subnetworkid.Sub
 			return
 		}
 
-		// If this adress was already tried, but subnetworkID was changed -
+		// If this address was already tried, but subnetworkID was changed -
 		// update subnetworkID, than continue as though this is a new address
 		bucketList := a.addrTried[*oldSubnetworkID][triedBucketIndex]
 		for e := bucketList.Front(); e != nil; e = e.Next() {
