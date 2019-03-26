@@ -956,12 +956,12 @@ func (a *AddrManager) Good(addr *wire.NetAddress, subnetworkID *subnetworkid.Sub
 	triedBucketIndex := a.getTriedBucket(ka.na)
 
 	if ka.tried {
-		// if this address was already tried, and subnetworkID didn't change - don't do anything
+		// If this address was already tried, and subnetworkID didn't change - don't do anything
 		if subnetworkID.IsEqual(oldSubnetworkID) {
 			return
 		}
 
-		// if this adress was already tried, but subnetworkID did changed -
+		// If this adress was already tried, but subnetworkID was changed -
 		// update subnetworkID, than continue as though this is a new address
 		bucketList := a.addrTried[*oldSubnetworkID][triedBucketIndex]
 		for e := bucketList.Front(); e != nil; e = e.Next() {
@@ -972,10 +972,10 @@ func (a *AddrManager) Good(addr *wire.NetAddress, subnetworkID *subnetworkid.Sub
 		}
 	}
 
-	// ok, need to move it to tried.
+	// Ok, need to move it to tried.
 
-	// remove from all new buckets.
-	// record one of the buckets in question and call it the `first'
+	// Remove from all new buckets.
+	// Record one of the buckets in question and call it the `first'
 	oldBucket := -1
 	if !ka.tried {
 		for i := range a.addrNew[*oldSubnetworkID] {
@@ -1015,9 +1015,9 @@ func (a *AddrManager) Good(addr *wire.NetAddress, subnetworkID *subnetworkid.Sub
 	// freed up a space in.
 	if len(a.addrNew[*ka.subnetworkID][newBucket]) >= newBucketSize {
 		if oldBucket == -1 {
-			// if addr was a tried bucket with updated subnetworkID - oldBucket will be equal 0
-			// in that case - find some non-full bucket.
-			// if no such bucket exists - throw rmka away
+			// If addr was a tried bucket with updated subnetworkID - oldBucket will be equal to -1.
+			// In that case - find some non-full bucket.
+			// If no such bucket exists - throw rmka away
 			for newBucket := range a.addrNew[*ka.subnetworkID] {
 				if len(a.addrNew[*ka.subnetworkID][newBucket]) < newBucketSize {
 					break
@@ -1028,7 +1028,7 @@ func (a *AddrManager) Good(addr *wire.NetAddress, subnetworkID *subnetworkid.Sub
 		}
 	}
 
-	// replace with ka in list.
+	// Replace with ka in list.
 	ka.tried = true
 	entry.Value = ka
 
