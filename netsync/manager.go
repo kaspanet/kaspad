@@ -130,14 +130,18 @@ type headerNode struct {
 // peerSyncState stores additional information that the SyncManager tracks
 // about a peer.
 type peerSyncState struct {
-	syncCandidate         bool
-	requestQueueMtx       sync.Mutex
-	syncedRequestQueue    []*wire.InvVect
-	requestQueue          []*wire.InvVect
-	syncedRequestQueueSet map[daghash.Hash]struct{}
-	requestQueueSet       map[daghash.Hash]struct{}
-	requestedTxns         map[daghash.TxID]struct{}
-	requestedBlocks       map[daghash.Hash]struct{}
+	syncCandidate   bool
+	requestQueueMtx sync.Mutex
+	// relayedInvsRequestQueue contains invs of blocks and transactions
+	// which are relayed to our node.
+	relayedInvsRequestQueue []*wire.InvVect
+	// requestQueue contains all of the invs that are not relayed to
+	// us; we get them by requesting them or by manually creating them.
+	requestQueue               []*wire.InvVect
+	relayedInvsRequestQueueSet map[daghash.Hash]struct{}
+	requestQueueSet            map[daghash.Hash]struct{}
+	requestedTxns              map[daghash.TxID]struct{}
+	requestedBlocks            map[daghash.Hash]struct{}
 }
 
 // SyncManager is used to communicate block related messages with peers. The
@@ -342,11 +346,11 @@ func (sm *SyncManager) handleNewPeerMsg(peer *peerpkg.Peer) {
 	// Initialize the peer state
 	isSyncCandidate := sm.isSyncCandidate(peer)
 	sm.peerStates[peer] = &peerSyncState{
-		syncCandidate:         isSyncCandidate,
-		requestedTxns:         make(map[daghash.TxID]struct{}),
-		requestedBlocks:       make(map[daghash.Hash]struct{}),
-		requestQueueSet:       make(map[daghash.Hash]struct{}),
-		syncedRequestQueueSet: make(map[daghash.Hash]struct{}),
+		syncCandidate:              isSyncCandidate,
+		requestedTxns:              make(map[daghash.TxID]struct{}),
+		requestedBlocks:            make(map[daghash.Hash]struct{}),
+		requestQueueSet:            make(map[daghash.Hash]struct{}),
+		relayedInvsRequestQueueSet: make(map[daghash.Hash]struct{}),
 	}
 
 	// Start syncing by choosing the best candidate if needed.
@@ -655,34 +659,35 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 	}
 }
 
-func (sm *SyncManager) addBlocksToRequestQueue(state *peerSyncState, hashes []*daghash.Hash, addToSyncedQueue bool) {
+func (sm *SyncManager) addBlocksToRequestQueue(state *peerSyncState, hashes []*daghash.Hash, isRelayedInv bool) {
 	state.requestQueueMtx.Lock()
 	defer state.requestQueueMtx.Unlock()
 	for _, hash := range hashes {
 		if _, exists := sm.requestedBlocks[*hash]; !exists {
 			iv := wire.NewInvVect(wire.InvTypeBlock, hash)
-			state.addInvToRequestQueue(iv, addToSyncedQueue)
+			state.addInvToRequestQueue(iv, isRelayedInv)
 		}
 	}
 }
 
-func (state *peerSyncState) addInvToRequestQueue(iv *wire.InvVect, addToSyncedQueue bool) {
-	if addToSyncedQueue {
-		if _, exists := state.syncedRequestQueueSet[iv.Hash]; !exists {
-			state.syncedRequestQueueSet[iv.Hash] = struct{}{}
-			state.syncedRequestQueue = append(state.syncedRequestQueue, iv)
+func (state *peerSyncState) addInvToRequestQueue(iv *wire.InvVect, isRelayedInv bool) {
+	if isRelayedInv {
+		if _, exists := state.relayedInvsRequestQueueSet[iv.Hash]; !exists {
+			state.relayedInvsRequestQueueSet[iv.Hash] = struct{}{}
+			state.relayedInvsRequestQueue = append(state.relayedInvsRequestQueue, iv)
 		}
-	}
-	if _, exists := state.requestQueueSet[iv.Hash]; !exists {
-		state.requestQueueSet[iv.Hash] = struct{}{}
-		state.requestQueue = append(state.requestQueue, iv)
+	} else {
+		if _, exists := state.requestQueueSet[iv.Hash]; !exists {
+			state.requestQueueSet[iv.Hash] = struct{}{}
+			state.requestQueue = append(state.requestQueue, iv)
+		}
 	}
 }
 
-func (state *peerSyncState) addInvToRequestQueueWithLock(iv *wire.InvVect, addToSyncedQueue bool) {
+func (state *peerSyncState) addInvToRequestQueueWithLock(iv *wire.InvVect, isRelayedInv bool) {
 	state.requestQueueMtx.Lock()
 	defer state.requestQueueMtx.Unlock()
-	state.addInvToRequestQueue(iv, addToSyncedQueue)
+	state.addInvToRequestQueue(iv, isRelayedInv)
 }
 
 // fetchHeaderBlocks creates and sends a request to the syncPeer for the next
@@ -903,7 +908,7 @@ func (sm *SyncManager) handleInvMsg(imsg *invMsg) {
 	lastBlock := -1
 	invVects := imsg.inv.InvList
 	for i := len(invVects) - 1; i >= 0; i-- {
-		if invVects[i].IsBlockType() {
+		if invVects[i].IsBlockOrSyncBlock() {
 			lastBlock = i
 			break
 		}
@@ -954,7 +959,7 @@ func (sm *SyncManager) handleInvMsg(imsg *invMsg) {
 			continue
 		}
 
-		if iv.IsBlockType() {
+		if iv.IsBlockOrSyncBlock() {
 			// The block is an orphan block that we already have.
 			// When the existing orphan was processed, it requested
 			// the missing parent blocks.  When this scenario
@@ -998,11 +1003,12 @@ func (sm *SyncManager) handleInvMsg(imsg *invMsg) {
 }
 
 func (sm *SyncManager) addInvsToGetDataMessageFromQueue(gdmsg *wire.MsgGetData, state *peerSyncState, requestQueue []*wire.InvVect) ([]*wire.InvVect, error) {
-	numRequested := len(gdmsg.InvList)
-	maxInvsNum := wire.MaxInvPerMsg - numRequested
-	invsNum := len(requestQueue)
-	if invsNum > maxInvsNum {
-		invsNum = maxInvsNum
+	var invsNum int
+	leftSpaceInGdmsg := wire.MaxInvPerMsg - len(gdmsg.InvList)
+	if len(requestQueue) > leftSpaceInGdmsg {
+		invsNum = leftSpaceInGdmsg
+	} else {
+		invsNum = len(requestQueue)
 	}
 	invsToAdd := make([]*wire.InvVect, 0, invsNum)
 
@@ -1029,7 +1035,6 @@ func (sm *SyncManager) addInvsToGetDataMessageFromQueue(gdmsg *wire.MsgGetData, 
 			state.requestedBlocks[iv.Hash] = struct{}{}
 
 			gdmsg.AddInvVect(iv)
-			numRequested++
 		}
 	}
 	for _, iv := range invsToAdd {
@@ -1038,11 +1043,11 @@ func (sm *SyncManager) addInvsToGetDataMessageFromQueue(gdmsg *wire.MsgGetData, 
 			delete(state.requestQueueSet, iv.Hash)
 			addBlockInv(iv)
 		case wire.InvTypeBlock:
-			delete(state.syncedRequestQueueSet, iv.Hash)
+			delete(state.relayedInvsRequestQueueSet, iv.Hash)
 			addBlockInv(iv)
 
 		case wire.InvTypeTx:
-			delete(state.syncedRequestQueueSet, iv.Hash)
+			delete(state.relayedInvsRequestQueueSet, iv.Hash)
 			// Request the transaction if there is not already a
 			// pending request.
 			if _, exists := sm.requestedTxns[daghash.TxID(iv.Hash)]; !exists {
@@ -1051,11 +1056,10 @@ func (sm *SyncManager) addInvsToGetDataMessageFromQueue(gdmsg *wire.MsgGetData, 
 				state.requestedTxns[daghash.TxID(iv.Hash)] = struct{}{}
 
 				gdmsg.AddInvVect(iv)
-				numRequested++
 			}
 		}
 
-		if numRequested >= wire.MaxInvPerMsg {
+		if len(requestQueue) >= wire.MaxInvPerMsg {
 			break
 		}
 	}
@@ -1072,11 +1076,11 @@ func (sm *SyncManager) sendInvsFromRequestQueue(peer *peerpkg.Peer, state *peerS
 	}
 	state.requestQueue = newRequestQueue
 	if sm.current() {
-		newRequestQueue, err := sm.addInvsToGetDataMessageFromQueue(gdmsg, state, state.syncedRequestQueue)
+		newRequestQueue, err := sm.addInvsToGetDataMessageFromQueue(gdmsg, state, state.relayedInvsRequestQueue)
 		if err != nil {
 			return err
 		}
-		state.syncedRequestQueue = newRequestQueue
+		state.relayedInvsRequestQueue = newRequestQueue
 	}
 	if len(gdmsg.InvList) > 0 {
 		peer.QueueMessage(gdmsg, nil)

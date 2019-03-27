@@ -81,7 +81,7 @@ func (iv *InvVect) String() string {
 	return fmt.Sprintf("{%s:%s}", iv.Type, iv.Hash)
 }
 
-// IsBlockType returns true if the inv type is InvTypeBlock or InvTypeSyncBlock
-func (iv *InvVect) IsBlockType() bool {
+// IsBlockOrSyncBlock returns true if the inv type is InvTypeBlock or InvTypeSyncBlock
+func (iv *InvVect) IsBlockOrSyncBlock() bool {
 	return iv.Type == InvTypeBlock || iv.Type == InvTypeSyncBlock
 }
