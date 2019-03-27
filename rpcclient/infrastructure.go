@@ -158,6 +158,11 @@ type Client struct {
 	wg              sync.WaitGroup
 }
 
+// Host returns the host name of the server this client is connected to
+func (c *Client) Host() string {
+	return c.config.Host
+}
+
 // NextID returns the next id to be used when sending a JSON-RPC message.  This
 // ID allows responses to be associated with particular requests per the
 // JSON-RPC specification.  Typically the consumer of the client does not need

@@ -194,9 +194,7 @@ func CreateBlock(parentBlock *util.Block, inclusionTxs []*util.Tx,
 		Bits:           net.PowLimitBits,
 	}
 	for _, tx := range blockTxns {
-		if err := block.AddTransaction(tx.MsgTx()); err != nil {
-			return nil, err
-		}
+		block.AddTransaction(tx.MsgTx())
 	}
 
 	found := solveBlock(&block.Header, net.PowLimit)
