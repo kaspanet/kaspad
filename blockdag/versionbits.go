@@ -220,9 +220,9 @@ func (dag *BlockDAG) calcNextBlockVersion(prevNode *blockNode) (int32, error) {
 //
 // This function is safe for concurrent access.
 func (dag *BlockDAG) CalcNextBlockVersion() (int32, error) {
-	dag.dagLock.Lock()
+	dag.dagLock.RLock()
 	version, err := dag.calcNextBlockVersion(dag.selectedTip())
-	dag.dagLock.Unlock()
+	dag.dagLock.RUnlock()
 	return version, err
 }
 
