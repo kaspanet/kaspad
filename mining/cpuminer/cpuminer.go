@@ -71,6 +71,11 @@ type Config struct {
 	// found blocks to.
 	ConnectedCount func() int32
 
+	// ShouldMineOnGenesis checks if you at least one peer, and at least one
+	// of your peers knows of any blocks that was mined on top of the genesis
+	// block.
+	ShouldMineOnGenesis func() bool
+
 	// IsCurrent defines the function to use to obtain whether or not the
 	// block chain is current.  This is used by the automatic persistent
 	// mining routine to determine whether or it should attempt mining.
@@ -309,14 +314,14 @@ out:
 			continue
 		}
 
-		// No point in searching for a solution before the chain is
+		// No point in searching for a solution before the DAG is
 		// synced.  Also, grab the same lock as used for block
 		// submission, since the current block will be changing and
 		// this would otherwise end up building a new block template on
 		// a block that is in the process of becoming stale.
 		m.submitBlockLock.Lock()
 		curHeight := m.g.DAGHeight()
-		if curHeight != 0 && !m.cfg.IsCurrent() {
+		if (curHeight != 0 && !m.cfg.IsCurrent()) || (curHeight == 0 && !m.cfg.ShouldMineOnGenesis()) {
 			m.submitBlockLock.Unlock()
 			time.Sleep(time.Second)
 			continue

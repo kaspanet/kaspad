@@ -192,20 +192,29 @@ func (ps *peerState) Count() int {
 
 // forAllOutboundPeers is a helper function that runs closure on all outbound
 // peers known to peerState.
-func (ps *peerState) forAllOutboundPeers(closure func(sp *Peer)) {
+func (ps *peerState) forAllOutboundPeers(closure func(sp *Peer) bool) {
 	for _, e := range ps.outboundPeers {
-		closure(e)
+		shouldContinue := closure(e)
+		if !shouldContinue {
+			return
+		}
 	}
 	for _, e := range ps.persistentPeers {
-		closure(e)
+		shouldContinue := closure(e)
+		if !shouldContinue {
+			return
+		}
 	}
 }
 
 // forAllPeers is a helper function that runs closure on all peers known to
 // peerState.
-func (ps *peerState) forAllPeers(closure func(sp *Peer)) {
+func (ps *peerState) forAllPeers(closure func(sp *Peer) bool) {
 	for _, e := range ps.inboundPeers {
-		closure(e)
+		shouldContinue := closure(e)
+		if !shouldContinue {
+			return
+		}
 	}
 	ps.forAllOutboundPeers(closure)
 }
@@ -1499,9 +1508,9 @@ func (s *Server) handleBanPeerMsg(state *peerState, sp *Peer) {
 // handleRelayInvMsg deals with relaying inventory to peers that are not already
 // known to have it.  It is invoked from the peerHandler goroutine.
 func (s *Server) handleRelayInvMsg(state *peerState, msg relayMsg) {
-	state.forAllPeers(func(sp *Peer) {
+	state.forAllPeers(func(sp *Peer) bool {
 		if !sp.Connected() {
-			return
+			return true
 		}
 
 		// If the inventory is a block and the peer prefers headers,
@@ -1512,23 +1521,23 @@ func (s *Server) handleRelayInvMsg(state *peerState, msg relayMsg) {
 			if !ok {
 				peerLog.Warnf("Underlying data for headers" +
 					" is not a block header")
-				return
+				return true
 			}
 			msgHeaders := wire.NewMsgHeaders()
 			if err := msgHeaders.AddBlockHeader(&blockHeader); err != nil {
 				peerLog.Errorf("Failed to add block"+
 					" header: %s", err)
-				return
+				return true
 			}
 			sp.QueueMessage(msgHeaders, nil)
-			return
+			return true
 		}
 
 		if msg.invVect.Type == wire.InvTypeTx {
 			// Don't relay the transaction to the peer when it has
 			// transaction relaying disabled.
 			if sp.relayTxDisabled() {
-				return
+				return true
 			}
 
 			txD, ok := msg.data.(*mempool.TxDesc)
@@ -1536,28 +1545,28 @@ func (s *Server) handleRelayInvMsg(state *peerState, msg relayMsg) {
 				peerLog.Warnf("Underlying data for tx inv "+
 					"relay is not a *mempool.TxDesc: %T",
 					msg.data)
-				return
+				return true
 			}
 
 			// Don't relay the transaction if the transaction fee-per-kb
 			// is less than the peer's feefilter.
 			feeFilter := uint64(atomic.LoadInt64(&sp.FeeFilterInt))
 			if feeFilter > 0 && txD.FeePerKB < feeFilter {
-				return
+				return true
 			}
 
 			// Don't relay the transaction if there is a bloom
 			// filter loaded and the transaction doesn't match it.
 			if sp.filter.IsLoaded() {
 				if !sp.filter.MatchTxAndUpdate(txD.Tx) {
-					return
+					return true
 				}
 			}
 
 			// Don't relay the transaction if the peer's subnetwork is
 			// incompatible with it.
 			if !txD.Tx.MsgTx().IsSubnetworkCompatible(sp.Peer.SubnetworkID()) {
-				return
+				return true
 			}
 		}
 
@@ -1565,29 +1574,35 @@ func (s *Server) handleRelayInvMsg(state *peerState, msg relayMsg) {
 		// It will be ignored if the peer is already known to
 		// have the inventory.
 		sp.QueueInventory(msg.invVect)
+		return true
 	})
 }
 
 // handleBroadcastMsg deals with broadcasting messages to peers.  It is invoked
 // from the peerHandler goroutine.
 func (s *Server) handleBroadcastMsg(state *peerState, bmsg *broadcastMsg) {
-	state.forAllPeers(func(sp *Peer) {
+	state.forAllPeers(func(sp *Peer) bool {
 		if !sp.Connected() {
-			return
+			return true
 		}
 
 		for _, ep := range bmsg.excludePeers {
 			if sp == ep {
-				return
+				return true
 			}
 		}
 
 		sp.QueueMessage(bmsg.message, nil)
+		return true
 	})
 }
 
 type getConnCountMsg struct {
 	reply chan int32
+}
+
+type getShouldMineOnGenesisMsg struct {
+	reply chan bool
 }
 
 //GetPeersMsg is the message type which is used by the rpc server to get the peers list from the p2p server
@@ -1630,20 +1645,37 @@ func (s *Server) handleQuery(state *peerState, querymsg interface{}) {
 	switch msg := querymsg.(type) {
 	case getConnCountMsg:
 		nconnected := int32(0)
-		state.forAllPeers(func(sp *Peer) {
+		state.forAllPeers(func(sp *Peer) bool {
 			if sp.Connected() {
 				nconnected++
 			}
+			return true
 		})
 		msg.reply <- nconnected
 
+	case getShouldMineOnGenesisMsg:
+		shouldMineOnGenesis := true
+		if state.Count() != 0 {
+			state.forAllPeers(func(sp *Peer) bool {
+				if !sp.SelectedTip().IsEqual(s.DAGParams.GenesisHash) {
+					shouldMineOnGenesis = false
+					return false
+				}
+				return true
+			})
+		} else {
+			shouldMineOnGenesis = false
+		}
+		msg.reply <- shouldMineOnGenesis
+
 	case GetPeersMsg:
 		peers := make([]*Peer, 0, state.Count())
-		state.forAllPeers(func(sp *Peer) {
+		state.forAllPeers(func(sp *Peer) bool {
 			if !sp.Connected() {
-				return
+				return true
 			}
 			peers = append(peers, sp)
+			return true
 		})
 		msg.Reply <- peers
 
@@ -1931,9 +1963,10 @@ out:
 
 		case <-s.quit:
 			// Disconnect all peers on server shutdown.
-			state.forAllPeers(func(sp *Peer) {
+			state.forAllPeers(func(sp *Peer) bool {
 				srvrLog.Tracef("Shutdown peer %s", sp)
 				sp.Disconnect()
+				return true
 			})
 			break out
 		}
@@ -1991,6 +2024,17 @@ func (s *Server) ConnectedCount() int32 {
 	replyChan := make(chan int32)
 
 	s.Query <- getConnCountMsg{reply: replyChan}
+
+	return <-replyChan
+}
+
+// ShouldMineOnGenesis checks if you at least one peer, and at least one
+// of your peers knows of any blocks that was mined on top of the genesis
+// block.
+func (s *Server) ShouldMineOnGenesis() bool {
+	replyChan := make(chan bool)
+
+	s.Query <- getShouldMineOnGenesisMsg{reply: replyChan}
 
 	return <-replyChan
 }
