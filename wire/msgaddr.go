@@ -26,8 +26,9 @@ const MaxAddrPerMsg = 1000
 // Use the AddAddress function to build up the list of known addresses when
 // sending an addr message to another peer.
 type MsgAddr struct {
-	SubnetworkID *subnetworkid.SubnetworkID
-	AddrList     []*NetAddress
+	IsAllSubnetworks bool
+	SubnetworkID     *subnetworkid.SubnetworkID
+	AddrList         []*NetAddress
 }
 
 // AddAddress adds a known active peer to the message.
@@ -61,21 +62,27 @@ func (msg *MsgAddr) ClearAddresses() {
 // BtcDecode decodes r using the bitcoin protocol encoding into the receiver.
 // This is part of the Message interface implementation.
 func (msg *MsgAddr) BtcDecode(r io.Reader, pver uint32) error {
-	// Read subnetwork
-	var isAllSubnetworks bool
-	err := readElement(r, &isAllSubnetworks)
+	msg.SubnetworkID = nil
+
+	err := readElement(r, &msg.IsAllSubnetworks)
 	if err != nil {
 		return err
 	}
-	if isAllSubnetworks {
-		msg.SubnetworkID = nil
-	} else {
-		var subnetworkID subnetworkid.SubnetworkID
-		err = readElement(r, &subnetworkID)
+
+	if !msg.IsAllSubnetworks {
+		var isFullNode bool
+		err := readElement(r, &isFullNode)
 		if err != nil {
 			return err
 		}
-		msg.SubnetworkID = &subnetworkID
+		if !isFullNode {
+			var subnetworkID subnetworkid.SubnetworkID
+			err = readElement(r, &subnetworkID)
+			if err != nil {
+				return err
+			}
+			msg.SubnetworkID = &subnetworkID
+		}
 	}
 
 	// Read addresses array
@@ -114,16 +121,23 @@ func (msg *MsgAddr) BtcEncode(w io.Writer, pver uint32) error {
 		return messageError("MsgAddr.BtcEncode", str)
 	}
 
-	// Write subnetwork ID
-	isAllSubnetworks := msg.SubnetworkID == nil
-	err := writeElement(w, isAllSubnetworks)
+	err := writeElement(w, msg.IsAllSubnetworks)
 	if err != nil {
 		return err
 	}
-	if !isAllSubnetworks {
-		err = writeElement(w, msg.SubnetworkID)
+
+	if !msg.IsAllSubnetworks {
+		// Write subnetwork ID
+		isFullNode := msg.SubnetworkID == nil
+		err = writeElement(w, isFullNode)
 		if err != nil {
 			return err
+		}
+		if !isFullNode {
+			err = writeElement(w, msg.SubnetworkID)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
@@ -151,15 +165,16 @@ func (msg *MsgAddr) Command() string {
 // MaxPayloadLength returns the maximum length the payload can be for the
 // receiver.  This is part of the Message interface implementation.
 func (msg *MsgAddr) MaxPayloadLength(pver uint32) uint32 {
-	// IsAllSubnetworks flag 1 byte + SubnetworkID length + Num addresses (varInt) + max allowed addresses.
-	return 1 + subnetworkid.IDLength + MaxVarIntPayload + (MaxAddrPerMsg * maxNetAddressPayload(pver))
+	// IsAllSubnetworks flag 1 byte + isFullNode 1 byte + SubnetworkID length + Num addresses (varInt) + max allowed addresses.
+	return 1 + 1 + subnetworkid.IDLength + MaxVarIntPayload + (MaxAddrPerMsg * maxNetAddressPayload(pver))
 }
 
 // NewMsgAddr returns a new bitcoin addr message that conforms to the
 // Message interface.  See MsgAddr for details.
-func NewMsgAddr(subnetworkID *subnetworkid.SubnetworkID) *MsgAddr {
+func NewMsgAddr(isAllSubnetworks bool, subnetworkID *subnetworkid.SubnetworkID) *MsgAddr {
 	return &MsgAddr{
-		SubnetworkID: subnetworkID,
-		AddrList:     make([]*NetAddress, 0, MaxAddrPerMsg),
+		IsAllSubnetworks: isAllSubnetworks,
+		SubnetworkID:     subnetworkID,
+		AddrList:         make([]*NetAddress, 0, MaxAddrPerMsg),
 	}
 }

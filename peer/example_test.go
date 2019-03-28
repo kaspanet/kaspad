@@ -11,7 +11,6 @@ import (
 
 	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/peer"
-	"github.com/daglabs/btcd/util/subnetworkid"
 	"github.com/daglabs/btcd/wire"
 )
 
@@ -24,7 +23,6 @@ func mockRemotePeer() error {
 		UserAgentName:    "peer",  // User agent name to advertise.
 		UserAgentVersion: "1.0.0", // User agent version to advertise.
 		DAGParams:        &dagconfig.SimNetParams,
-		SubnetworkID:     subnetworkid.SubnetworkIDSupportsAll,
 	}
 
 	// Accept connections on the simnet port.
@@ -79,7 +77,6 @@ func Example_newOutboundPeer() {
 				verack <- struct{}{}
 			},
 		},
-		SubnetworkID: subnetworkid.SubnetworkIDSupportsAll,
 	}
 	p, err := peer.NewOutboundPeer(peerCfg, "127.0.0.1:18555")
 	if err != nil {

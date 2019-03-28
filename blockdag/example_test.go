@@ -14,7 +14,6 @@ import (
 	"github.com/daglabs/btcd/database"
 	_ "github.com/daglabs/btcd/database/ffldb"
 	"github.com/daglabs/btcd/util"
-	"github.com/daglabs/btcd/util/subnetworkid"
 )
 
 // This example demonstrates how to create a new chain instance and use
@@ -46,10 +45,9 @@ func ExampleBlockDAG_ProcessBlock() {
 	// values obtained from other peers on the network so the local time is
 	// adjusted to be in agreement with other peers.
 	chain, err := blockdag.New(&blockdag.Config{
-		DB:           db,
-		DAGParams:    &dagconfig.MainNetParams,
-		TimeSource:   blockdag.NewMedianTime(),
-		SubnetworkID: subnetworkid.SubnetworkIDSupportsAll,
+		DB:         db,
+		DAGParams:  &dagconfig.MainNetParams,
+		TimeSource: blockdag.NewMedianTime(),
 	})
 	if err != nil {
 		fmt.Printf("Failed to create chain instance: %v\n", err)

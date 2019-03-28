@@ -481,7 +481,7 @@ func BenchmarkDecodeAddr(b *testing.B) {
 	// Create a message with the maximum number of addresses.
 	pver := ProtocolVersion
 	ip := net.ParseIP("127.0.0.1")
-	ma := NewMsgAddr(nil)
+	ma := NewMsgAddr(false, nil)
 	for port := uint16(0); port < MaxAddrPerMsg; port++ {
 		ma.AddAddress(NewNetAddressIPPort(ip, port, SFNodeNetwork))
 	}

@@ -499,6 +499,9 @@ func (dag *BlockDAG) createDAGState() error {
 }
 
 func dbPutLocalSubnetworkID(dbTx database.Tx, subnetworkID *subnetworkid.SubnetworkID) error {
+	if subnetworkID == nil {
+		return dbTx.Metadata().Put(localSubnetworkKeyName, []byte{})
+	}
 	return dbTx.Metadata().Put(localSubnetworkKeyName, subnetworkID[:])
 }
 

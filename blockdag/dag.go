@@ -1549,9 +1549,6 @@ func New(config *Config) (*BlockDAG, error) {
 	if config.TimeSource == nil {
 		return nil, AssertError("BlockDAG.New timesource is nil")
 	}
-	if config.SubnetworkID == nil {
-		return nil, AssertError("BlockDAG.New subnetworkID is nil")
-	}
 
 	// Generate a checkpoint by height map from the provided checkpoints
 	// and assert the provided checkpoints are sorted by height as required.

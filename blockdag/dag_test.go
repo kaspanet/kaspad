@@ -49,8 +49,7 @@ func TestBlockCount(t *testing.T) {
 
 	// Create a new database and DAG instance to run tests against.
 	dag, teardownFunc, err := DAGSetup("TestBlockCount", Config{
-		DAGParams:    &dagconfig.SimNetParams,
-		SubnetworkID: subnetworkid.SubnetworkIDSupportsAll,
+		DAGParams: &dagconfig.SimNetParams,
 	})
 	if err != nil {
 		t.Fatalf("Failed to setup DAG instance: %v", err)
@@ -99,8 +98,7 @@ func TestHaveBlock(t *testing.T) {
 
 	// Create a new database and DAG instance to run tests against.
 	dag, teardownFunc, err := DAGSetup("haveblock", Config{
-		DAGParams:    &dagconfig.SimNetParams,
-		SubnetworkID: subnetworkid.SubnetworkIDSupportsAll,
+		DAGParams: &dagconfig.SimNetParams,
 	})
 	if err != nil {
 		t.Fatalf("Failed to setup DAG instance: %v", err)
@@ -778,8 +776,7 @@ func testErrorThroughPatching(t *testing.T, expectedErrorMessage string, targetF
 
 	// Create a new database and dag instance to run tests against.
 	dag, teardownFunc, err := DAGSetup("testErrorThroughPatching", Config{
-		DAGParams:    &dagconfig.SimNetParams,
-		SubnetworkID: subnetworkid.SubnetworkIDSupportsAll,
+		DAGParams: &dagconfig.SimNetParams,
 	})
 	if err != nil {
 		t.Fatalf("Failed to setup dag instance: %v", err)
@@ -837,11 +834,10 @@ func TestNew(t *testing.T) {
 		os.RemoveAll(testDbRoot)
 	}()
 	config := &Config{
-		DAGParams:    &dagconfig.SimNetParams,
-		SubnetworkID: subnetworkid.SubnetworkIDSupportsAll,
-		DB:           db,
-		TimeSource:   NewMedianTime(),
-		SigCache:     txscript.NewSigCache(1000),
+		DAGParams:  &dagconfig.SimNetParams,
+		DB:         db,
+		TimeSource: NewMedianTime(),
+		SigCache:   txscript.NewSigCache(1000),
 	}
 	_, err = New(config)
 	if err != nil {
@@ -851,9 +847,9 @@ func TestNew(t *testing.T) {
 	config.SubnetworkID = &subnetworkid.SubnetworkID{0xff}
 	_, err = New(config)
 	expectedErrorMessage := fmt.Sprintf("Cannot start btcd with subnetwork ID %s because"+
-		" its database is already built with subnetwork ID %s. If you"+
+		" its database is already built without subnetwork ID. If you"+
 		" want to switch to a new database, please reset the"+
-		" database by starting btcd with --reset-db flag", config.SubnetworkID, subnetworkid.SubnetworkIDSupportsAll)
+		" database by starting btcd with --reset-db flag", config.SubnetworkID)
 	if err.Error() != expectedErrorMessage {
 		t.Errorf("Unexpected error. Expected error '%s' but got '%s'", expectedErrorMessage, err)
 	}
@@ -863,8 +859,7 @@ func TestValidateFeeTransaction(t *testing.T) {
 	params := dagconfig.SimNetParams
 	params.K = 1
 	dag, teardownFunc, err := DAGSetup("TestValidateFeeTransaction", Config{
-		DAGParams:    &params,
-		SubnetworkID: subnetworkid.SubnetworkIDSupportsAll,
+		DAGParams: &params,
 	})
 	if err != nil {
 		t.Fatalf("Failed to setup DAG instance: %v", err)

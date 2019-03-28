@@ -38,8 +38,8 @@ type OnSeed func(addrs []*wire.NetAddress)
 type LookupFunc func(string) ([]net.IP, error)
 
 // SeedFromDNS uses DNS seeding to populate the address manager with peers.
-func SeedFromDNS(dagParams *dagconfig.Params, reqServices wire.ServiceFlag, subnetworkID *subnetworkid.SubnetworkID,
-	lookupFn LookupFunc, seedFn OnSeed) {
+func SeedFromDNS(dagParams *dagconfig.Params, reqServices wire.ServiceFlag, isAllSubnetworks bool,
+	subnetworkID *subnetworkid.SubnetworkID, lookupFn LookupFunc, seedFn OnSeed) {
 
 	for _, dnsseed := range dagParams.DNSSeeds {
 		var host string
@@ -49,8 +49,12 @@ func SeedFromDNS(dagParams *dagconfig.Params, reqServices wire.ServiceFlag, subn
 			host = fmt.Sprintf("%c%x.%s", ServiceFlagPrefixChar, uint64(reqServices), dnsseed.Host)
 		}
 
-		if !subnetworkID.IsEqual(subnetworkid.SubnetworkIDSupportsAll) {
-			host = fmt.Sprintf("%c%s.%s", SubnetworkIDPrefixChar, subnetworkID, host)
+		if !isAllSubnetworks {
+			if subnetworkID != nil {
+				host = fmt.Sprintf("%c%s.%s", SubnetworkIDPrefixChar, subnetworkID, host)
+			} else {
+				host = fmt.Sprintf("%c.%s", SubnetworkIDPrefixChar, host)
+			}
 		}
 
 		go func(host string) {

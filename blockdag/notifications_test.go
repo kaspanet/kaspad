@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	"github.com/daglabs/btcd/dagconfig"
-	"github.com/daglabs/btcd/util/subnetworkid"
 )
 
 // TestNotifications ensures that notification callbacks are fired on events.
@@ -20,8 +19,7 @@ func TestNotifications(t *testing.T) {
 
 	// Create a new database and dag instance to run tests against.
 	dag, teardownFunc, err := DAGSetup("notifications", Config{
-		DAGParams:    &dagconfig.SimNetParams,
-		SubnetworkID: subnetworkid.SubnetworkIDSupportsAll,
+		DAGParams: &dagconfig.SimNetParams,
 	})
 	if err != nil {
 		t.Fatalf("Failed to setup dag instance: %v", err)

@@ -270,6 +270,7 @@ type Config struct {
 	Listeners MessageListeners
 
 	// SubnetworkID specifies which subnetwork the peer is associated with.
+	// It is nil in full nodes.
 	SubnetworkID *subnetworkid.SubnetworkID
 }
 
@@ -883,7 +884,7 @@ func (p *Peer) PushAddrMsg(addresses []*wire.NetAddress, subnetworkID *subnetwor
 		return nil, nil
 	}
 
-	msg := wire.NewMsgAddr(subnetworkID)
+	msg := wire.NewMsgAddr(false, subnetworkID)
 	msg.AddrList = make([]*wire.NetAddress, addressCount)
 	copy(msg.AddrList, addresses)
 
@@ -1046,8 +1047,8 @@ func (p *Peer) handleRemoteVersionMsg(msg *wire.MsgVersion) error {
 	// Disconnect if:
 	// - we are a full node and the outbound connection we've initiated is a partial node
 	// - the remote node is partial and our subnetwork doesn't match their subnetwork
-	isLocalNodeFull := p.cfg.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDSupportsAll)
-	isRemoteNodeFull := msg.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDSupportsAll)
+	isLocalNodeFull := p.cfg.SubnetworkID == nil
+	isRemoteNodeFull := msg.SubnetworkID == nil
 	if (isLocalNodeFull && !isRemoteNodeFull && !p.inbound) ||
 		(!isLocalNodeFull && !isRemoteNodeFull && !msg.SubnetworkID.IsEqual(p.cfg.SubnetworkID)) {
 

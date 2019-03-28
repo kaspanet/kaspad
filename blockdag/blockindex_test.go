@@ -9,7 +9,6 @@ import (
 	"bou.ke/monkey"
 	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/database"
-	"github.com/daglabs/btcd/util/subnetworkid"
 )
 
 func TestAncestorErrors(t *testing.T) {
@@ -24,8 +23,7 @@ func TestAncestorErrors(t *testing.T) {
 func TestFlushToDBErrors(t *testing.T) {
 	// Create a new database and DAG instance to run tests against.
 	dag, teardownFunc, err := DAGSetup("TestFlushToDBErrors", Config{
-		DAGParams:    &dagconfig.SimNetParams,
-		SubnetworkID: subnetworkid.SubnetworkIDSupportsAll,
+		DAGParams: &dagconfig.SimNetParams,
 	})
 	if err != nil {
 		t.Fatalf("TestFlushToDBErrors: Failed to setup DAG instance: %s", err)

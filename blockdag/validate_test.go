@@ -69,8 +69,7 @@ func TestSequenceLocksActive(t *testing.T) {
 func TestCheckConnectBlockTemplate(t *testing.T) {
 	// Create a new database and chain instance to run tests against.
 	dag, teardownFunc, err := DAGSetup("checkconnectblocktemplate", Config{
-		DAGParams:    &dagconfig.SimNetParams,
-		SubnetworkID: subnetworkid.SubnetworkIDSupportsAll,
+		DAGParams: &dagconfig.SimNetParams,
 	})
 	if err != nil {
 		t.Errorf("Failed to setup dag instance: %v", err)
@@ -154,8 +153,7 @@ func TestCheckConnectBlockTemplate(t *testing.T) {
 func TestCheckBlockSanity(t *testing.T) {
 	// Create a new database and dag instance to run tests against.
 	dag, teardownFunc, err := DAGSetup("TestCheckBlockSanity", Config{
-		DAGParams:    &dagconfig.SimNetParams,
-		SubnetworkID: subnetworkid.SubnetworkIDSupportsAll,
+		DAGParams: &dagconfig.SimNetParams,
 	})
 	if err != nil {
 		t.Errorf("Failed to setup dag instance: %v", err)

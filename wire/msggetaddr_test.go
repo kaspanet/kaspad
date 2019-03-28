@@ -19,7 +19,7 @@ func TestGetAddr(t *testing.T) {
 
 	// Ensure the command is expected value.
 	wantCmd := "getaddr"
-	msg := NewMsgGetAddr(nil)
+	msg := NewMsgGetAddr(false, nil)
 	if cmd := msg.Command(); cmd != wantCmd {
 		t.Errorf("NewMsgGetAddr: wrong command - got %v want %v",
 			cmd, wantCmd)
@@ -40,15 +40,16 @@ func TestGetAddr(t *testing.T) {
 // protocol versions.
 func TestGetAddrWire(t *testing.T) {
 	// With all subnetworks
-	msgGetAddr := NewMsgGetAddr(nil)
+	msgGetAddr := NewMsgGetAddr(false, nil)
 	msgGetAddrEncoded := []byte{
 		0x01, // All subnetworks
 	}
 
 	// With specific subnetwork
-	msgGetAddrSubnet := NewMsgGetAddr(subnetworkid.SubnetworkIDNative)
+	msgGetAddrSubnet := NewMsgGetAddr(false, subnetworkid.SubnetworkIDNative)
 	msgGetAddrSubnetEncoded := []byte{
-		0x00,                                           // All subnetworks
+		0x00,                                           // Is all subnetworks
+		0x00,                                           // Is full node
 		0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Subnetwork ID
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 		0x00, 0x00, 0x00, 0x00,

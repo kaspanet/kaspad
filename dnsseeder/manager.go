@@ -196,7 +196,7 @@ func (m *Manager) AddressCount() int {
 
 // GoodAddresses returns good working IPs that match both the
 // passed DNS query type and have the requested services.
-func (m *Manager) GoodAddresses(qtype uint16, services wire.ServiceFlag, subnetworkID *subnetworkid.SubnetworkID) []*wire.NetAddress {
+func (m *Manager) GoodAddresses(qtype uint16, services wire.ServiceFlag, isAllSubnetworks bool, subnetworkID *subnetworkid.SubnetworkID) []*wire.NetAddress {
 	addrs := make([]*wire.NetAddress, 0, defaultMaxAddresses)
 	i := defaultMaxAddresses
 
@@ -215,7 +215,7 @@ func (m *Manager) GoodAddresses(qtype uint16, services wire.ServiceFlag, subnetw
 			continue
 		}
 
-		if node.SubnetworkID == nil || !node.SubnetworkID.IsEqual(subnetworkID) {
+		if !isAllSubnetworks && !node.SubnetworkID.IsEqual(subnetworkID) {
 			continue
 		}
 

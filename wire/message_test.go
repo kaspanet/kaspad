@@ -14,7 +14,6 @@ import (
 	"time"
 
 	"github.com/daglabs/btcd/dagconfig/daghash"
-	"github.com/daglabs/btcd/util/subnetworkid"
 	"github.com/davecgh/go-spew/spew"
 )
 
@@ -47,11 +46,11 @@ func TestMessage(t *testing.T) {
 	addrMe := &net.TCPAddr{IP: net.ParseIP("127.0.0.1"), Port: 8333}
 	me := NewNetAddress(addrMe, SFNodeNetwork)
 	me.Timestamp = time.Time{} // Version message has zero value timestamp.
-	msgVersion := NewMsgVersion(me, you, 123123, 0, subnetworkid.SubnetworkIDSupportsAll)
+	msgVersion := NewMsgVersion(me, you, 123123, 0, nil)
 
 	msgVerack := NewMsgVerAck()
-	msgGetAddr := NewMsgGetAddr(nil)
-	msgAddr := NewMsgAddr(nil)
+	msgGetAddr := NewMsgGetAddr(false, nil)
+	msgAddr := NewMsgAddr(false, nil)
 	msgGetBlocks := NewMsgGetBlocks(&daghash.Hash{})
 	msgBlock := &blockOne
 	msgInv := NewMsgInv()

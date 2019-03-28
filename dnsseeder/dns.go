@@ -95,21 +95,25 @@ func NewDNSServer(hostname, nameserver, listen string) *DNSServer {
 	}
 }
 
-func (d *DNSServer) extractServicesSubnetworkID(addr *net.UDPAddr, domainName string) (wire.ServiceFlag, *subnetworkid.SubnetworkID, error) {
+func (d *DNSServer) extractServicesSubnetworkID(addr *net.UDPAddr, domainName string) (wire.ServiceFlag, *subnetworkid.SubnetworkID, bool, error) {
 	// Domain name may be in following format:
-	//   [nsubnetwork.][xservice.]hostname
+	//   [n[subnetwork].][xservice.]hostname
 	// where connmgr.SubnetworkIDPrefixChar and connmgr.ServiceFlagPrefixChar are prefexes
 	wantedSF := wire.SFNodeNetwork
-	subnetworkID := subnetworkid.SubnetworkIDSupportsAll
+	var subnetworkID *subnetworkid.SubnetworkID
+	isAllSubnetworks := true
 	if d.hostname != domainName {
 		idx := 0
 		labels := dns.SplitDomainName(domainName)
-		if labels[0][0] == connmgr.SubnetworkIDPrefixChar && len(labels[0]) > 1 {
-			idx = 1
-			subnetworkID, err := subnetworkid.NewFromStr(labels[0][1:])
-			if err != nil {
-				log.Printf("%s: subnetworkid.NewFromStr: %v", addr, err)
-				return wantedSF, subnetworkID, err
+		if labels[0][0] == connmgr.SubnetworkIDPrefixChar {
+			isAllSubnetworks = false
+			if len(labels[0]) > 1 {
+				idx = 1
+				subnetworkID, err := subnetworkid.NewFromStr(labels[0][1:])
+				if err != nil {
+					log.Printf("%s: subnetworkid.NewFromStr: %v", addr, err)
+					return wantedSF, subnetworkID, isAllSubnetworks, err
+				}
 			}
 		}
 		if labels[idx][0] == connmgr.ServiceFlagPrefixChar && len(labels[idx]) > 1 {
@@ -117,12 +121,12 @@ func (d *DNSServer) extractServicesSubnetworkID(addr *net.UDPAddr, domainName st
 			u, err := strconv.ParseUint(wantedSFStr, 10, 64)
 			if err != nil {
 				log.Printf("%s: ParseUint: %v", addr, err)
-				return wantedSF, subnetworkID, err
+				return wantedSF, subnetworkID, isAllSubnetworks, err
 			}
 			wantedSF = wire.ServiceFlag(u)
 		}
 	}
-	return wantedSF, subnetworkID, nil
+	return wantedSF, subnetworkID, isAllSubnetworks, nil
 }
 
 func (d *DNSServer) validateDNSRequest(addr *net.UDPAddr, b []byte) (dnsMsg *dns.Msg, domainName string, atype string, err error) {
@@ -167,7 +171,7 @@ func translateDNSQuestion(addr *net.UDPAddr, dnsMsg *dns.Msg) (string, error) {
 }
 
 func (d *DNSServer) buildDNSResponse(addr *net.UDPAddr, authority dns.RR, dnsMsg *dns.Msg,
-	wantedSF wire.ServiceFlag, subnetworkID *subnetworkid.SubnetworkID, atype string) ([]byte, error) {
+	wantedSF wire.ServiceFlag, isAllSubnetworks bool, subnetworkID *subnetworkid.SubnetworkID, atype string) ([]byte, error) {
 	respMsg := dnsMsg.Copy()
 	respMsg.Authoritative = true
 	respMsg.Response = true
@@ -175,7 +179,7 @@ func (d *DNSServer) buildDNSResponse(addr *net.UDPAddr, authority dns.RR, dnsMsg
 	qtype := dnsMsg.Question[0].Qtype
 	if qtype != dns.TypeNS {
 		respMsg.Ns = append(respMsg.Ns, authority)
-		addrs := amgr.GoodAddresses(qtype, wantedSF, subnetworkID)
+		addrs := amgr.GoodAddresses(qtype, wantedSF, isAllSubnetworks, subnetworkID)
 		for _, a := range addrs {
 			rr := fmt.Sprintf("%s 30 IN %s %s", dnsMsg.Question[0].Name, atype, a.IP.String())
 			newRR, err := dns.NewRR(rr)
@@ -213,7 +217,7 @@ func (d *DNSServer) handleDNSRequest(addr *net.UDPAddr, authority dns.RR, udpLis
 		return
 	}
 
-	wantedSF, subnetworkID, err := d.extractServicesSubnetworkID(addr, domainName)
+	wantedSF, subnetworkID, isAllSubnetworks, err := d.extractServicesSubnetworkID(addr, domainName)
 	if err != nil {
 		return
 	}
@@ -221,7 +225,7 @@ func (d *DNSServer) handleDNSRequest(addr *net.UDPAddr, authority dns.RR, udpLis
 	log.Printf("%s: query %d for services %v, subnetwork ID %v",
 		addr, dnsMsg.Question[0].Qtype, wantedSF, subnetworkID)
 
-	sendBytes, err := d.buildDNSResponse(addr, authority, dnsMsg, wantedSF, subnetworkID, atype)
+	sendBytes, err := d.buildDNSResponse(addr, authority, dnsMsg, wantedSF, isAllSubnetworks, subnetworkID, atype)
 	if err != nil {
 		return
 	}
