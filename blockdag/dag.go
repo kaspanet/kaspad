@@ -1438,13 +1438,13 @@ func (dag *BlockDAG) locateHeaders(locator BlockLocator, hashStop *daghash.Hash,
 	return headers
 }
 
-// UTXORLock locks the DAG's UTXO set for reading.
-func (dag *BlockDAG) UTXORLock() {
+// RLock locks the DAG's UTXO set for reading.
+func (dag *BlockDAG) RLock() {
 	dag.dagLock.RLock()
 }
 
-// UTXORUnlock unlocks the DAG's UTXO set for reading.
-func (dag *BlockDAG) UTXORUnlock() {
+// RUnlock unlocks the DAG's UTXO set for reading.
+func (dag *BlockDAG) RUnlock() {
 	dag.dagLock.RUnlock()
 }
 
