@@ -114,6 +114,7 @@ func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params
 		MiningAddrs:            cfg.MiningAddrs,
 		ProcessBlock:           s.p2pServer.SyncManager.ProcessBlock,
 		ConnectedCount:         s.p2pServer.ConnectedCount,
+		ShouldMineOnGenesis:    s.p2pServer.ShouldMineOnGenesis,
 		IsCurrent:              s.p2pServer.SyncManager.IsCurrent,
 	})
 
