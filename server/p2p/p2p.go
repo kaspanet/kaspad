@@ -192,33 +192,49 @@ func (ps *peerState) Count() int {
 
 // forAllOutboundPeers is a helper function that runs closure on all outbound
 // peers known to peerState.
-// The loop stops if one of the closure calls returns false.
-func (ps *peerState) forAllOutboundPeers(closure func(sp *Peer) (shouldContinue bool)) {
+// The loop stops and returns false if one of the closure calls returns false.
+// Otherwise the function should return true.
+func (ps *peerState) forAllOutboundPeers(closure func(sp *Peer) bool) bool {
 	for _, e := range ps.outboundPeers {
 		shouldContinue := closure(e)
 		if !shouldContinue {
-			return
+			return false
 		}
 	}
 	for _, e := range ps.persistentPeers {
 		shouldContinue := closure(e)
 		if !shouldContinue {
-			return
+			return false
 		}
 	}
+	return true
+}
+
+// forAllInboundPeers is a helper function that runs closure on all inbound
+// peers known to peerState.
+// The loop stops and returns false if one of the closure calls returns false.
+// Otherwise the function should return true.
+func (ps *peerState) forAllInboundPeers(closure func(sp *Peer) bool) bool {
+	for _, e := range ps.inboundPeers {
+		shouldContinue := closure(e)
+		if !shouldContinue {
+			return false
+		}
+	}
+	return true
 }
 
 // forAllPeers is a helper function that runs closure on all peers known to
 // peerState.
-// The loop stops if one of the closure calls returns false.
-func (ps *peerState) forAllPeers(closure func(sp *Peer) (shouldContinue bool)) {
-	for _, e := range ps.inboundPeers {
-		shouldContinue := closure(e)
-		if !shouldContinue {
-			return
-		}
+// The loop stops and returns false if one of the closure calls returns false.
+// Otherwise the function should return true.
+func (ps *peerState) forAllPeers(closure func(sp *Peer) bool) bool {
+	shouldContinue := ps.forAllInboundPeers(closure)
+	if !shouldContinue {
+		return false
 	}
 	ps.forAllOutboundPeers(closure)
+	return true
 }
 
 // cfHeaderKV is a tuple of a filter header and its associated block hash. The
@@ -1658,9 +1674,8 @@ func (s *Server) handleQuery(state *peerState, querymsg interface{}) {
 	case getShouldMineOnGenesisMsg:
 		shouldMineOnGenesis := true
 		if state.Count() != 0 {
-			state.forAllPeers(func(sp *Peer) bool {
+			shouldMineOnGenesis = state.forAllPeers(func(sp *Peer) bool {
 				if !sp.SelectedTip().IsEqual(s.DAGParams.GenesisHash) {
-					shouldMineOnGenesis = false
 					return false
 				}
 				return true
