@@ -385,12 +385,12 @@ func NewBlkTmplGenerator(policy *Policy, params *dagconfig.Params,
 //   -----------------------------------  --
 func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTemplate, error) {
 	g.dag.RLock()
-	dagUnlocked := false
+	isDagLocked := true
 	// We need to read-unlock the DAG before calling CheckConnectBlockTemplate
 	// Therefore the deferred function is only relevant in cases where an
 	// error is returned before calling CheckConnectBlockTemplate
 	defer func() {
-		if !dagUnlocked {
+		if isDagLocked {
 			g.dag.RUnlock()
 		}
 	}()
@@ -684,7 +684,7 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 	block.SetHeight(nextBlockHeight)
 
 	g.dag.RUnlock()
-	dagUnlocked = true
+	isDagLocked = false
 
 	if err := g.dag.CheckConnectBlockTemplate(block); err != nil {
 		return nil, err
