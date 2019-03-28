@@ -163,11 +163,7 @@ func (dag *BlockDAG) calcNextRequiredDifficulty(bluestParent *blockNode, newBloc
 // rules.
 //
 // This function is safe for concurrent access.
-func (dag *BlockDAG) CalcNextRequiredDifficulty(timestamp time.Time, isLockHeld bool) (uint32, error) {
-	if !isLockHeld {
-		dag.dagLock.RLock()
-		defer dag.dagLock.RUnlock()
-	}
+func (dag *BlockDAG) CalcNextRequiredDifficulty(timestamp time.Time) (uint32, error) {
 	difficulty, err := dag.calcNextRequiredDifficulty(dag.selectedTip(), timestamp)
 	return difficulty, err
 }

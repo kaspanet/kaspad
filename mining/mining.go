@@ -421,7 +421,7 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 	}
 	numCoinbaseSigOps := int64(blockdag.CountSigOps(coinbaseTx))
 
-	msgFeeTransaction, err := g.dag.NextBlockFeeTransaction(true)
+	msgFeeTransaction, err := g.dag.NextBlockFeeTransaction()
 	if err != nil {
 		return nil, err
 	}
@@ -644,7 +644,7 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 	// is potentially adjusted to ensure it comes after the median time of
 	// the last several blocks per the chain consensus rules.
 	ts := medianAdjustedTime(g.dag.CalcPastMedianTime(), g.timeSource)
-	reqDifficulty, err := g.dag.CalcNextRequiredDifficulty(ts, true)
+	reqDifficulty, err := g.dag.CalcNextRequiredDifficulty(ts)
 	if err != nil {
 		return nil, err
 	}
@@ -720,7 +720,7 @@ func (g *BlkTmplGenerator) UpdateBlockTime(msgBlock *wire.MsgBlock) error {
 
 	// Recalculate the difficulty if running on a network that requires it.
 	if g.dagParams.ReduceMinDifficulty {
-		difficulty, err := g.dag.CalcNextRequiredDifficulty(newTime, false)
+		difficulty, err := g.dag.CalcNextRequiredDifficulty(newTime)
 		if err != nil {
 			return err
 		}
