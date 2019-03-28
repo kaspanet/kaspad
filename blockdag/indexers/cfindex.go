@@ -189,7 +189,7 @@ func storeFilter(dbTx database.Tx, block *util.Block, f *gcs.Filter,
 		}
 	}
 
-	fh, err := builder.MakeHeaderForFilter(f, *prevHeader)
+	fh, err := builder.MakeHeaderForFilter(f, prevHeader)
 	if err != nil {
 		return err
 	}

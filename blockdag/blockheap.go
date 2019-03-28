@@ -26,7 +26,7 @@ func (h *baseHeap) Pop() interface{} {
 
 func (h baseHeap) Less(i, j int) bool {
 	if h[i].height == h[j].height {
-		return daghash.HashToBig(&h[i].hash).Cmp(daghash.HashToBig(&h[j].hash)) > 0
+		return daghash.HashToBig(h[i].hash).Cmp(daghash.HashToBig(h[j].hash)) > 0
 	}
 
 	return h[i].height > h[j].height

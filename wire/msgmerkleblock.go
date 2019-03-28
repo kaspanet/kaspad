@@ -66,15 +66,16 @@ func (msg *MsgMerkleBlock) BtcDecode(r io.Reader, pver uint32) error {
 
 	// Create a contiguous slice of hashes to deserialize into in order to
 	// reduce the number of allocations.
-	hashes := make([]daghash.Hash, count)
+	hashes := make([]*daghash.Hash, count)
 	msg.Hashes = make([]*daghash.Hash, 0, count)
 	for i := uint64(0); i < count; i++ {
-		hash := &hashes[i]
+		hash := &daghash.Hash{}
 		err := readElement(r, hash)
 		if err != nil {
 			return err
 		}
 		msg.AddTxHash(hash)
+		hashes[i] = hash
 	}
 
 	msg.Flags, err = ReadVarBytes(r, pver, maxFlagsPerMerkleBlock,

@@ -23,7 +23,7 @@ const (
 // for details on requesting the headers.
 type MsgCFCheckpt struct {
 	FilterType    FilterType
-	StopHash      daghash.Hash
+	StopHash      *daghash.Hash
 	FilterHeaders []*daghash.Hash
 }
 
@@ -49,7 +49,8 @@ func (msg *MsgCFCheckpt) BtcDecode(r io.Reader, pver uint32) error {
 	}
 
 	// Read stop hash
-	err = readElement(r, &msg.StopHash)
+	msg.StopHash = &daghash.Hash{}
+	err = readElement(r, msg.StopHash)
 	if err != nil {
 		return err
 	}
@@ -143,7 +144,7 @@ func NewMsgCFCheckpt(filterType FilterType, stopHash *daghash.Hash,
 	headersCount int) *MsgCFCheckpt {
 	return &MsgCFCheckpt{
 		FilterType:    filterType,
-		StopHash:      *stopHash,
+		StopHash:      stopHash,
 		FilterHeaders: make([]*daghash.Hash, 0, headersCount),
 	}
 }

@@ -451,8 +451,8 @@ func (idx *TxIndex) TxFirstBlockRegion(txID *daghash.TxID) (*database.BlockRegio
 }
 
 // TxBlocks returns the hashes of the blocks where the transaction exists
-func (idx *TxIndex) TxBlocks(txHash *daghash.Hash) ([]daghash.Hash, error) {
-	blockHashes := make([]daghash.Hash, 0)
+func (idx *TxIndex) TxBlocks(txHash *daghash.Hash) ([]*daghash.Hash, error) {
+	blockHashes := make([]*daghash.Hash, 0)
 	err := idx.db.View(func(dbTx database.Tx) error {
 		var err error
 		blockHashes, err = dbFetchTxBlocks(dbTx, txHash)
@@ -464,8 +464,8 @@ func (idx *TxIndex) TxBlocks(txHash *daghash.Hash) ([]daghash.Hash, error) {
 	return blockHashes, err
 }
 
-func dbFetchTxBlocks(dbTx database.Tx, txHash *daghash.Hash) ([]daghash.Hash, error) {
-	blockHashes := make([]daghash.Hash, 0)
+func dbFetchTxBlocks(dbTx database.Tx, txHash *daghash.Hash) ([]*daghash.Hash, error) {
+	blockHashes := make([]*daghash.Hash, 0)
 	bucket := dbTx.Metadata().Bucket(includingBlocksIndexKey).Bucket(txHash[:])
 	if bucket == nil {
 		return nil, database.Error{
@@ -480,7 +480,7 @@ func dbFetchTxBlocks(dbTx database.Tx, txHash *daghash.Hash) ([]daghash.Hash, er
 		if err != nil {
 			return err
 		}
-		blockHashes = append(blockHashes, *blockHash)
+		blockHashes = append(blockHashes, blockHash)
 		return nil
 	})
 	if err != nil {

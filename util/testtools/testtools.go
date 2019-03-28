@@ -17,7 +17,7 @@ import (
 
 // RegisterSubnetworkForTest is used to register network on DAG with specified gas limit
 func RegisterSubnetworkForTest(dag *blockdag.BlockDAG, params *dagconfig.Params, gasLimit uint64) (*subnetworkid.SubnetworkID, error) {
-	buildNextBlock := func(parentHashes []daghash.Hash, txs []*wire.MsgTx) (*util.Block, error) {
+	buildNextBlock := func(parentHashes []*daghash.Hash, txs []*wire.MsgTx) (*util.Block, error) {
 		msgBlock, err := mining.PrepareBlockForTest(dag, params, parentHashes, txs, false, 1)
 		if err != nil {
 			return nil, err
@@ -65,7 +65,7 @@ func RegisterSubnetworkForTest(dag *blockdag.BlockDAG, params *dagconfig.Params,
 	registryTx := wire.NewRegistryMsgTx(1, []*wire.TxIn{txIn}, []*wire.TxOut{txOut}, gasLimit)
 
 	// Add it to the DAG
-	registryBlock, err := buildNextBlock([]daghash.Hash{*fundsBlock.Hash()}, []*wire.MsgTx{registryTx})
+	registryBlock, err := buildNextBlock([]*daghash.Hash{fundsBlock.Hash()}, []*wire.MsgTx{registryTx})
 	if err != nil {
 		return nil, fmt.Errorf("could not build registry block: %s", err)
 	}

@@ -10,35 +10,36 @@ import (
 func TestHashes(t *testing.T) {
 	bs := setFromSlice(
 		&blockNode{
-			hash: daghash.Hash{3},
+			hash: &daghash.Hash{3},
 		},
 		&blockNode{
-			hash: daghash.Hash{1},
+			hash: &daghash.Hash{1},
 		},
 		&blockNode{
-			hash: daghash.Hash{0},
+			hash: &daghash.Hash{0},
 		},
 		&blockNode{
-			hash: daghash.Hash{2},
+			hash: &daghash.Hash{2},
 		},
 	)
 
-	expected := []daghash.Hash{
+	expected := []*daghash.Hash{
 		{0},
 		{1},
 		{2},
 		{3},
 	}
 
-	if !daghash.AreEqual(bs.hashes(), expected) {
-		t.Errorf("TestHashes: hashes are not ordered as expected")
+	hashes := bs.hashes()
+	if !daghash.AreEqual(hashes, expected) {
+		t.Errorf("TestHashes: hashes order is %s but expected %s", hashes, expected)
 	}
 }
 func TestBlockSetHighest(t *testing.T) {
-	node1 := &blockNode{hash: daghash.Hash{10}, height: 1}
-	node2a := &blockNode{hash: daghash.Hash{20}, height: 2}
-	node2b := &blockNode{hash: daghash.Hash{21}, height: 2}
-	node3 := &blockNode{hash: daghash.Hash{30}, height: 3}
+	node1 := &blockNode{hash: &daghash.Hash{10}, height: 1}
+	node2a := &blockNode{hash: &daghash.Hash{20}, height: 2}
+	node2b := &blockNode{hash: &daghash.Hash{21}, height: 2}
+	node3 := &blockNode{hash: &daghash.Hash{30}, height: 3}
 
 	tests := []struct {
 		name            string
@@ -77,9 +78,9 @@ func TestBlockSetHighest(t *testing.T) {
 }
 
 func TestBlockSetSubtract(t *testing.T) {
-	node1 := &blockNode{hash: daghash.Hash{10}}
-	node2 := &blockNode{hash: daghash.Hash{20}}
-	node3 := &blockNode{hash: daghash.Hash{30}}
+	node1 := &blockNode{hash: &daghash.Hash{10}}
+	node2 := &blockNode{hash: &daghash.Hash{20}}
+	node3 := &blockNode{hash: &daghash.Hash{30}}
 
 	tests := []struct {
 		name           string
@@ -129,9 +130,9 @@ func TestBlockSetSubtract(t *testing.T) {
 }
 
 func TestBlockSetAddSet(t *testing.T) {
-	node1 := &blockNode{hash: daghash.Hash{10}}
-	node2 := &blockNode{hash: daghash.Hash{20}}
-	node3 := &blockNode{hash: daghash.Hash{30}}
+	node1 := &blockNode{hash: &daghash.Hash{10}}
+	node2 := &blockNode{hash: &daghash.Hash{20}}
+	node3 := &blockNode{hash: &daghash.Hash{30}}
 
 	tests := []struct {
 		name           string
@@ -181,9 +182,9 @@ func TestBlockSetAddSet(t *testing.T) {
 }
 
 func TestBlockSetAddSlice(t *testing.T) {
-	node1 := &blockNode{hash: daghash.Hash{10}}
-	node2 := &blockNode{hash: daghash.Hash{20}}
-	node3 := &blockNode{hash: daghash.Hash{30}}
+	node1 := &blockNode{hash: &daghash.Hash{10}}
+	node2 := &blockNode{hash: &daghash.Hash{20}}
+	node3 := &blockNode{hash: &daghash.Hash{30}}
 
 	tests := []struct {
 		name           string
@@ -233,9 +234,9 @@ func TestBlockSetAddSlice(t *testing.T) {
 }
 
 func TestBlockSetUnion(t *testing.T) {
-	node1 := &blockNode{hash: daghash.Hash{10}}
-	node2 := &blockNode{hash: daghash.Hash{20}}
-	node3 := &blockNode{hash: daghash.Hash{30}}
+	node1 := &blockNode{hash: &daghash.Hash{10}}
+	node2 := &blockNode{hash: &daghash.Hash{20}}
+	node3 := &blockNode{hash: &daghash.Hash{30}}
 
 	tests := []struct {
 		name           string
@@ -285,43 +286,43 @@ func TestBlockSetUnion(t *testing.T) {
 }
 
 func TestBlockSetHashesEqual(t *testing.T) {
-	node1 := &blockNode{hash: daghash.Hash{10}}
-	node2 := &blockNode{hash: daghash.Hash{20}}
+	node1 := &blockNode{hash: &daghash.Hash{10}}
+	node2 := &blockNode{hash: &daghash.Hash{20}}
 
 	tests := []struct {
 		name           string
 		set            blockSet
-		hashes         []daghash.Hash
+		hashes         []*daghash.Hash
 		expectedResult bool
 	}{
 		{
 			name:           "empty set, no hashes",
 			set:            setFromSlice(),
-			hashes:         []daghash.Hash{},
+			hashes:         []*daghash.Hash{},
 			expectedResult: true,
 		},
 		{
 			name:           "empty set, one hash",
 			set:            setFromSlice(),
-			hashes:         []daghash.Hash{node1.hash},
+			hashes:         []*daghash.Hash{node1.hash},
 			expectedResult: false,
 		},
 		{
 			name:           "set and hashes of different length",
 			set:            setFromSlice(node1, node2),
-			hashes:         []daghash.Hash{node1.hash},
+			hashes:         []*daghash.Hash{node1.hash},
 			expectedResult: false,
 		},
 		{
 			name:           "set equal to hashes",
 			set:            setFromSlice(node1, node2),
-			hashes:         []daghash.Hash{node1.hash, node2.hash},
+			hashes:         []*daghash.Hash{node1.hash, node2.hash},
 			expectedResult: true,
 		},
 		{
 			name:           "set equal to hashes, different order",
 			set:            setFromSlice(node1, node2),
-			hashes:         []daghash.Hash{node2.hash, node1.hash},
+			hashes:         []*daghash.Hash{node2.hash, node1.hash},
 			expectedResult: true,
 		},
 	}

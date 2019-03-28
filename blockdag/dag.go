@@ -170,9 +170,9 @@ func (dag *BlockDAG) HaveBlock(hash *daghash.Hash) (bool, error) {
 // be in, like part of the DAG or the orphan pool.
 //
 // This function is safe for concurrent access.
-func (dag *BlockDAG) HaveBlocks(hashes []daghash.Hash) (bool, error) {
+func (dag *BlockDAG) HaveBlocks(hashes []*daghash.Hash) (bool, error) {
 	for _, hash := range hashes {
-		haveBlock, err := dag.HaveBlock(&hash)
+		haveBlock, err := dag.HaveBlock(hash)
 		if err != nil {
 			return false, err
 		}
@@ -640,7 +640,7 @@ func (dag *BlockDAG) LastFinalityPointHash() *daghash.Hash {
 	if dag.lastFinalityPoint == nil {
 		return nil
 	}
-	return &dag.lastFinalityPoint.hash
+	return dag.lastFinalityPoint.hash
 }
 
 // checkFinalityRules checks the new block does not violate the finality rules
@@ -794,7 +794,7 @@ func (node *blockNode) addTxsToAcceptanceData(txsAcceptanceData MultiBlockTxsAcc
 			IsAccepted: true,
 		})
 	}
-	txsAcceptanceData[node.hash] = blockTxsAcceptanceData
+	txsAcceptanceData[*node.hash] = blockTxsAcceptanceData
 }
 
 // verifyAndBuildUTXO verifies all transactions in the given block and builds its UTXO
@@ -885,7 +885,7 @@ func (node *blockNode) applyBlueBlocks(selectedParentUTXO UTXOSet, blueBlocks []
 	for _, blueBlock := range blueBlocks {
 		transactions := blueBlock.Transactions()
 		blockTxsAcceptanceData := make(BlockTxsAcceptanceData, len(transactions))
-		isSelectedParent := blueBlock.Hash().IsEqual(&node.selectedParent.hash)
+		isSelectedParent := blueBlock.Hash().IsEqual(node.selectedParent.hash)
 		for i, tx := range blueBlock.Transactions() {
 			var isAccepted bool
 			if isSelectedParent {
@@ -1091,13 +1091,13 @@ func (dag *BlockDAG) BlockCount() uint64 {
 }
 
 // TipHashes returns the hashes of the DAG's tips
-func (dag *BlockDAG) TipHashes() []daghash.Hash {
+func (dag *BlockDAG) TipHashes() []*daghash.Hash {
 	return dag.virtual.tips().hashes()
 }
 
 // HighestTipHash returns the hash of the highest tip.
 // This function is a placeholder for places that aren't DAG-compatible, and it's needed to be removed in the future
-func (dag *BlockDAG) HighestTipHash() daghash.Hash {
+func (dag *BlockDAG) HighestTipHash() *daghash.Hash {
 	return dag.virtual.tips().highest().hash
 }
 
@@ -1179,7 +1179,7 @@ func (dag *BlockDAG) blockLocator(node *blockNode) BlockLocator {
 
 	step := int32(1)
 	for node != nil {
-		locator = append(locator, &node.hash)
+		locator = append(locator, node.hash)
 
 		// Nothing more to add once the genesis block has been added.
 		if node.height == 0 {
@@ -1221,7 +1221,7 @@ func (dag *BlockDAG) BlockHeightByHash(hash *daghash.Hash) (int32, error) {
 // DAG.
 //
 // This function is safe for concurrent access.
-func (dag *BlockDAG) ChildHashesByHash(hash *daghash.Hash) ([]daghash.Hash, error) {
+func (dag *BlockDAG) ChildHashesByHash(hash *daghash.Hash) ([]*daghash.Hash, error) {
 	node := dag.index.LookupNode(hash)
 	if node == nil {
 		str := fmt.Sprintf("block %s is not in the DAG", hash)
@@ -1239,7 +1239,7 @@ func (dag *BlockDAG) ChildHashesByHash(hash *daghash.Hash) ([]daghash.Hash, erro
 //
 // This function is safe for concurrent access.
 func (dag *BlockDAG) HeightToHashRange(startHeight int32,
-	endHash *daghash.Hash, maxResults int) ([]daghash.Hash, error) {
+	endHash *daghash.Hash, maxResults int) ([]*daghash.Hash, error) {
 
 	endNode := dag.index.LookupNode(endHash)
 	if endNode == nil {
@@ -1266,7 +1266,7 @@ func (dag *BlockDAG) HeightToHashRange(startHeight int32,
 
 	// Walk backwards from endHeight to startHeight, collecting block hashes.
 	node := endNode
-	hashes := make([]daghash.Hash, resultsLength)
+	hashes := make([]*daghash.Hash, resultsLength)
 	for i := resultsLength - 1; i >= 0; i-- {
 		hashes[i] = node.hash
 		node = node.selectedParent
@@ -1279,7 +1279,7 @@ func (dag *BlockDAG) HeightToHashRange(startHeight int32,
 //
 // This function is safe for concurrent access.
 func (dag *BlockDAG) IntervalBlockHashes(endHash *daghash.Hash, interval int,
-) ([]daghash.Hash, error) {
+) ([]*daghash.Hash, error) {
 
 	endNode := dag.index.LookupNode(endHash)
 	if endNode == nil {
@@ -1291,7 +1291,7 @@ func (dag *BlockDAG) IntervalBlockHashes(endHash *daghash.Hash, interval int,
 	endHeight := endNode.height
 
 	resultsLength := int(endHeight) / interval
-	hashes := make([]daghash.Hash, resultsLength)
+	hashes := make([]*daghash.Hash, resultsLength)
 
 	dag.virtual.mtx.Lock()
 	defer dag.virtual.mtx.Unlock()
@@ -1375,7 +1375,7 @@ func (dag *BlockDAG) locateInventory(locator BlockLocator, hashStop *daghash.Has
 // See the comment on the exported function for more details on special cases.
 //
 // This function MUST be called with the DAG state lock held (for reads).
-func (dag *BlockDAG) locateBlocks(locator BlockLocator, hashStop *daghash.Hash, maxHashes uint32) []daghash.Hash {
+func (dag *BlockDAG) locateBlocks(locator BlockLocator, hashStop *daghash.Hash, maxHashes uint32) []*daghash.Hash {
 	// Find the node after the first known block in the locator and the
 	// total number of nodes after it needed while respecting the stop hash
 	// and max entries.
@@ -1385,7 +1385,7 @@ func (dag *BlockDAG) locateBlocks(locator BlockLocator, hashStop *daghash.Hash, 
 	}
 
 	// Populate and return the found hashes.
-	hashes := make([]daghash.Hash, 0, total)
+	hashes := make([]*daghash.Hash, 0, total)
 	for i := uint32(0); i < total; i++ {
 		hashes = append(hashes, node.hash)
 		node = node.diffChild
@@ -1406,7 +1406,7 @@ func (dag *BlockDAG) locateBlocks(locator BlockLocator, hashStop *daghash.Hash, 
 //   after the genesis block will be returned
 //
 // This function is safe for concurrent access.
-func (dag *BlockDAG) LocateBlocks(locator BlockLocator, hashStop *daghash.Hash, maxHashes uint32) []daghash.Hash {
+func (dag *BlockDAG) LocateBlocks(locator BlockLocator, hashStop *daghash.Hash, maxHashes uint32) []*daghash.Hash {
 	dag.dagLock.RLock()
 	hashes := dag.locateBlocks(locator, hashStop, maxHashes)
 	dag.dagLock.RUnlock()

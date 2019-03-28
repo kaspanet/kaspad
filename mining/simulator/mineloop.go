@@ -22,13 +22,13 @@ var random = rand.New(rand.NewSource(time.Now().UnixNano()))
 
 func parseBlock(template *btcjson.GetBlockTemplateResult) (*util.Block, error) {
 	// parse parent hashes
-	parentHashes := make([]daghash.Hash, len(template.ParentHashes))
+	parentHashes := make([]*daghash.Hash, len(template.ParentHashes))
 	for i, parentHash := range template.ParentHashes {
 		hash, err := daghash.NewHashFromStr(parentHash)
 		if err != nil {
 			return nil, fmt.Errorf("Error decoding hash %s: %s", parentHash, err)
 		}
-		parentHashes[i] = *hash
+		parentHashes[i] = hash
 	}
 
 	// parse Bits
@@ -59,7 +59,7 @@ func solveBlock(msgBlock *wire.MsgBlock) {
 	for i := uint64(0); i < maxNonce; i++ {
 		msgBlock.Header.Nonce = i
 		hash := msgBlock.BlockHash()
-		if daghash.HashToBig(&hash).Cmp(targetDifficulty) <= 0 {
+		if daghash.HashToBig(hash).Cmp(targetDifficulty) <= 0 {
 			break
 		}
 	}
@@ -90,8 +90,8 @@ func mineLoop(clients []*rpcclient.Client) error {
 
 		msgBlock := block.MsgBlock()
 
-		msgBlock.Header.HashMerkleRoot = *blockdag.BuildHashMerkleTreeStore(block.Transactions()).Root()
-		msgBlock.Header.IDMerkleRoot = *blockdag.BuildIDMerkleTreeStore(block.Transactions()).Root()
+		msgBlock.Header.HashMerkleRoot = blockdag.BuildHashMerkleTreeStore(block.Transactions()).Root()
+		msgBlock.Header.IDMerkleRoot = blockdag.BuildIDMerkleTreeStore(block.Transactions()).Root()
 
 		solveBlock(msgBlock)
 

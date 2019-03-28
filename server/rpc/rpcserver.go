@@ -341,7 +341,7 @@ type gbtWorkState struct {
 	sync.Mutex
 	lastTxUpdate  time.Time
 	lastGenerated time.Time
-	tipHashes     []daghash.Hash
+	tipHashes     []*daghash.Hash
 	minTimestamp  time.Time
 	template      *mining.BlockTemplate
 	notifyMap     map[string]map[int64]chan struct{}
@@ -1410,7 +1410,7 @@ func handleGetBlockHeader(s *Server, cmd interface{}, closeChan <-chan struct{})
 
 // encodeLongPollID encodes the passed details into an ID that can be used to
 // uniquely identify a block template.
-func encodeLongPollID(parentHashes []daghash.Hash, lastGenerated time.Time) string {
+func encodeLongPollID(parentHashes []*daghash.Hash, lastGenerated time.Time) string {
 	return fmt.Sprintf("%s-%d", daghash.JoinHashesStrings(parentHashes, ""), lastGenerated.Unix())
 }
 
@@ -1419,7 +1419,7 @@ func encodeLongPollID(parentHashes []daghash.Hash, lastGenerated time.Time) stri
 // that are using long polling for block templates.  The ID consists of the
 // parent blocks hashes for the associated template and the time the associated
 // template was generated.
-func decodeLongPollID(longPollID string) ([]daghash.Hash, int64, error) {
+func decodeLongPollID(longPollID string) ([]*daghash.Hash, int64, error) {
 	fields := strings.Split(longPollID, "-")
 	if len(fields) != 2 {
 		return nil, 0, errors.New("decodeLongPollID: invalid number of fields")
@@ -1431,14 +1431,14 @@ func decodeLongPollID(longPollID string) ([]daghash.Hash, int64, error) {
 	}
 	numberOfHashes := len(parentHashesStr) / daghash.HashSize
 
-	parentHashes := make([]daghash.Hash, 0, numberOfHashes)
+	parentHashes := make([]*daghash.Hash, 0, numberOfHashes)
 
 	for i := 0; i < len(parentHashesStr); i += daghash.HashSize {
 		hash, err := daghash.NewHashFromStr(parentHashesStr[i : i+daghash.HashSize])
 		if err != nil {
 			return nil, 0, fmt.Errorf("decodeLongPollID: NewHashFromStr: %s", err)
 		}
-		parentHashes = append(parentHashes, *hash)
+		parentHashes = append(parentHashes, hash)
 	}
 
 	lastGenerated, err := strconv.ParseInt(fields[1], 10, 64)
@@ -1453,7 +1453,7 @@ func decodeLongPollID(longPollID string) ([]daghash.Hash, int64, error) {
 // notified when block templates are stale.
 //
 // This function MUST be called with the state locked.
-func (state *gbtWorkState) notifyLongPollers(tipHashes []daghash.Hash, lastGenerated time.Time) {
+func (state *gbtWorkState) notifyLongPollers(tipHashes []*daghash.Hash, lastGenerated time.Time) {
 	// Notify anything that is waiting for a block template update from a
 	// hash which is not the hash of the tip of the best chain since their
 	// work is now invalid.
@@ -1501,7 +1501,7 @@ func (state *gbtWorkState) notifyLongPollers(tipHashes []daghash.Hash, lastGener
 // NotifyBlockAdded uses the newly-added block to notify any long poll
 // clients with a new block template when their existing block template is
 // stale due to the newly added block.
-func (state *gbtWorkState) NotifyBlockAdded(tipHashes []daghash.Hash) {
+func (state *gbtWorkState) NotifyBlockAdded(tipHashes []*daghash.Hash) {
 	go func() {
 		state.Lock()
 		defer state.Unlock()
@@ -1540,7 +1540,7 @@ func (state *gbtWorkState) NotifyMempoolTx(lastUpdated time.Time) {
 // without requiring a different channel for each client.
 //
 // This function MUST be called with the state locked.
-func (state *gbtWorkState) templateUpdateChan(tipHashes []daghash.Hash, lastGenerated int64) chan struct{} {
+func (state *gbtWorkState) templateUpdateChan(tipHashes []*daghash.Hash, lastGenerated int64) chan struct{} {
 	tipHashesStr := daghash.JoinHashesStrings(tipHashes, "")
 	// Either get the current list of channels waiting for updates about
 	// changes to block template for the parent hashes or create a new one.
@@ -1674,9 +1674,9 @@ func (state *gbtWorkState) updateBlockTemplate(s *Server, useCoinbaseValue bool)
 			// Update the merkle root.
 			block := util.NewBlock(template.Block)
 			hashMerkleTree := blockdag.BuildHashMerkleTreeStore(block.Transactions())
-			template.Block.Header.HashMerkleRoot = *hashMerkleTree.Root()
+			template.Block.Header.HashMerkleRoot = hashMerkleTree.Root()
 			idMerkleTree := blockdag.BuildIDMerkleTreeStore(block.Transactions())
-			template.Block.Header.IDMerkleRoot = *idMerkleTree.Root()
+			template.Block.Header.IDMerkleRoot = idMerkleTree.Root()
 		}
 
 		// Set locals for convenience.
@@ -2393,7 +2393,7 @@ func handleGetMiningInfo(s *Server, cmd interface{}, closeChan <-chan struct{}) 
 	}
 
 	highestTipHash := s.cfg.DAG.HighestTipHash()
-	selectedBlock, err := s.cfg.DAG.BlockByHash(&highestTipHash)
+	selectedBlock, err := s.cfg.DAG.BlockByHash(highestTipHash)
 	if err != nil {
 		return nil, &btcjson.RPCError{
 			Code:    btcjson.ErrRPCInternal.Code,
@@ -3453,7 +3453,7 @@ func verifyDAG(s *Server, level, depth int32) error {
 	currentHash := s.cfg.DAG.HighestTipHash()
 	for height := s.cfg.DAG.Height(); height > finishHeight; { //TODO: (Ori) This is probably wrong. Done only for compilation
 		// Level 0 just looks up the block.
-		block, err := s.cfg.DAG.BlockByHash(&currentHash)
+		block, err := s.cfg.DAG.BlockByHash(currentHash)
 		if err != nil {
 			log.Errorf("Verify is unable to fetch block at "+
 				"height %d: %s", height, err)
@@ -3471,7 +3471,7 @@ func verifyDAG(s *Server, level, depth int32) error {
 			}
 		}
 
-		currentHash = *block.MsgBlock().Header.SelectedParentHash()
+		currentHash = block.MsgBlock().Header.SelectedParentHash()
 	}
 	log.Infof("DAG verify completed successfully")
 

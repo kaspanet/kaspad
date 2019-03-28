@@ -390,7 +390,7 @@ func (sm *SyncManager) handleDonePeerMsg(peer *peerpkg.Peer) {
 		sm.syncPeer = nil
 		if sm.headersFirstMode {
 			highestTipHash := sm.dag.HighestTipHash()
-			sm.resetHeaderState(&highestTipHash, sm.dag.Height()) //TODO: (Ori) This is probably wrong. Done only for compilation
+			sm.resetHeaderState(highestTipHash, sm.dag.Height()) //TODO: (Ori) This is probably wrong. Done only for compilation
 		}
 		sm.startSync()
 	}
@@ -613,7 +613,7 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 		// potential sync node candidacy.
 		highestTipHash := sm.dag.HighestTipHash()
 		heightUpdate = sm.dag.Height() //TODO: (Ori) This is probably wrong. Done only for compilation
-		blkHashUpdate = &highestTipHash
+		blkHashUpdate = highestTipHash
 
 		// Clear the rejected transactions.
 		sm.rejectedTxns = make(map[daghash.TxID]struct{})
@@ -761,7 +761,7 @@ func (sm *SyncManager) handleHeadersMsg(hmsg *headersMsg) {
 	var finalHash *daghash.Hash
 	for _, blockHeader := range msg.Headers {
 		blockHash := blockHeader.BlockHash()
-		finalHash = &blockHash
+		finalHash = blockHash
 
 		// Ensure there is a previous header to compare against.
 		prevNodeEl := sm.headerList.Back()
@@ -774,9 +774,9 @@ func (sm *SyncManager) handleHeadersMsg(hmsg *headersMsg) {
 
 		// Ensure the header properly connects to the previous one and
 		// add it to the list of headers.
-		node := headerNode{hash: &blockHash}
+		node := headerNode{hash: blockHash}
 		prevNode := prevNodeEl.Value.(*headerNode)
-		if prevNode.hash.IsEqual(&blockHeader.ParentHashes[0]) { // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
+		if prevNode.hash.IsEqual(blockHeader.ParentHashes[0]) { // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
 			node.height = prevNode.height + 1
 			e := sm.headerList.PushBack(&node)
 			if sm.startHeader == nil {
@@ -848,12 +848,12 @@ func (sm *SyncManager) haveInventory(invVect *wire.InvVect) (bool, error) {
 	case wire.InvTypeBlock:
 		// Ask chain if the block is known to it in any form (main
 		// chain, side chain, or orphan).
-		return sm.dag.HaveBlock(&invVect.Hash)
+		return sm.dag.HaveBlock(invVect.Hash)
 
 	case wire.InvTypeTx:
 		// Ask the transaction memory pool if the transaction is known
 		// to it in any form (main pool or orphan).
-		if sm.txMemPool.HaveTransaction((*daghash.TxID)(&invVect.Hash)) {
+		if sm.txMemPool.HaveTransaction((*daghash.TxID)(invVect.Hash)) {
 			return true, nil
 		}
 
@@ -865,7 +865,7 @@ func (sm *SyncManager) haveInventory(invVect *wire.InvVect) (bool, error) {
 		// checked because the vast majority of transactions consist of
 		// two outputs where one is some form of "pay-to-somebody-else"
 		// and the other is a change output.
-		prevOut := wire.OutPoint{TxID: daghash.TxID(invVect.Hash)}
+		prevOut := wire.OutPoint{TxID: daghash.TxID(*invVect.Hash)}
 		for i := uint32(0); i < 2; i++ {
 			prevOut.Index = i
 			entry, ok := sm.dag.GetUTXOEntry(prevOut)
@@ -912,13 +912,13 @@ func (sm *SyncManager) handleInvMsg(imsg *invMsg) {
 	// update the heights of peers based on blocks we've accepted that they
 	// previously announced.
 	if lastBlock != -1 && (peer != sm.syncPeer || sm.current()) {
-		peer.UpdateLastAnnouncedBlock(&invVects[lastBlock].Hash)
+		peer.UpdateLastAnnouncedBlock(invVects[lastBlock].Hash)
 	}
 
 	// If our chain is current and a peer announces a block we already
 	// know of, then update their current block height.
 	if lastBlock != -1 && sm.current() {
-		blkHeight, err := sm.dag.BlockHeightByHash(&invVects[lastBlock].Hash)
+		blkHeight, err := sm.dag.BlockHeightByHash(invVects[lastBlock].Hash)
 		if err == nil {
 			peer.UpdateLastBlockHeight(blkHeight)
 		}
@@ -958,7 +958,7 @@ func (sm *SyncManager) handleInvMsg(imsg *invMsg) {
 			if iv.Type == wire.InvTypeTx {
 				// Skip the transaction if it has already been
 				// rejected.
-				if _, exists := sm.rejectedTxns[daghash.TxID(iv.Hash)]; exists {
+				if _, exists := sm.rejectedTxns[daghash.TxID(*iv.Hash)]; exists {
 					continue
 				}
 			}
@@ -979,11 +979,11 @@ func (sm *SyncManager) handleInvMsg(imsg *invMsg) {
 			// resending the orphan block as an available block
 			// to signal there are more missing blocks that need to
 			// be requested.
-			if sm.dag.IsKnownOrphan(&iv.Hash) {
+			if sm.dag.IsKnownOrphan(iv.Hash) {
 				// Request blocks starting at the latest known
 				// up to the root of the orphan that just came
 				// in.
-				orphanRoot := sm.dag.GetOrphanRoot(&iv.Hash)
+				orphanRoot := sm.dag.GetOrphanRoot(iv.Hash)
 				locator, err := sm.dag.LatestBlockLocator()
 				if err != nil {
 					log.Errorf("PEER: Failed to get block "+
@@ -1003,7 +1003,7 @@ func (sm *SyncManager) handleInvMsg(imsg *invMsg) {
 				// Request blocks after this one up to the
 				// final one the remote peer knows about (zero
 				// stop hash).
-				locator := sm.dag.BlockLocatorFromHash(&iv.Hash)
+				locator := sm.dag.BlockLocatorFromHash(iv.Hash)
 				peer.PushGetBlocksMsg(locator, &daghash.ZeroHash)
 			}
 		}
@@ -1023,10 +1023,10 @@ func (sm *SyncManager) handleInvMsg(imsg *invMsg) {
 		case wire.InvTypeBlock:
 			// Request the block if there is not already a pending
 			// request.
-			if _, exists := sm.requestedBlocks[iv.Hash]; !exists {
-				sm.requestedBlocks[iv.Hash] = struct{}{}
+			if _, exists := sm.requestedBlocks[*iv.Hash]; !exists {
+				sm.requestedBlocks[*iv.Hash] = struct{}{}
 				sm.limitHashMap(sm.requestedBlocks, maxRequestedBlocks)
-				state.requestedBlocks[iv.Hash] = struct{}{}
+				state.requestedBlocks[*iv.Hash] = struct{}{}
 
 				gdmsg.AddInvVect(iv)
 				numRequested++
@@ -1035,10 +1035,10 @@ func (sm *SyncManager) handleInvMsg(imsg *invMsg) {
 		case wire.InvTypeTx:
 			// Request the transaction if there is not already a
 			// pending request.
-			if _, exists := sm.requestedTxns[daghash.TxID(iv.Hash)]; !exists {
-				sm.requestedTxns[daghash.TxID(iv.Hash)] = struct{}{}
+			if _, exists := sm.requestedTxns[daghash.TxID(*iv.Hash)]; !exists {
+				sm.requestedTxns[daghash.TxID(*iv.Hash)] = struct{}{}
 				sm.limitTxIDMap(sm.requestedTxns, maxRequestedTxns)
-				state.requestedTxns[daghash.TxID(iv.Hash)] = struct{}{}
+				state.requestedTxns[daghash.TxID(*iv.Hash)] = struct{}{}
 
 				gdmsg.AddInvVect(iv)
 				numRequested++
@@ -1371,7 +1371,7 @@ func New(config *Config) (*SyncManager, error) {
 		// Initialize the next checkpoint based on the current height.
 		sm.nextCheckpoint = sm.findNextHeaderCheckpoint(sm.dag.Height()) //TODO: (Ori) This is probably wrong. Done only for compilation
 		if sm.nextCheckpoint != nil {
-			sm.resetHeaderState(&highestTipHash, sm.dag.Height()) //TODO: (Ori) This is probably wrong. Done only for compilation)
+			sm.resetHeaderState(highestTipHash, sm.dag.Height()) //TODO: (Ori) This is probably wrong. Done only for compilation)
 		}
 	} else {
 		log.Info("Checkpoints are disabled")

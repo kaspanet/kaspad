@@ -212,7 +212,7 @@ func (dag *BlockDAG) ProcessBlock(block *util.Block, flags BehaviorFlags) (bool,
 	// Handle orphan blocks.
 	allParentsExist := true
 	for _, parentHash := range blockHeader.ParentHashes {
-		parentExists, err := dag.blockExists(&parentHash)
+		parentExists, err := dag.blockExists(parentHash)
 		if err != nil {
 			return false, err
 		}

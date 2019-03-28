@@ -974,7 +974,7 @@ func (p *Peer) PushGetHeadersMsg(locator blockdag.BlockLocator, stopHash *daghas
 
 	// Construct the getheaders request and queue it to be sent.
 	msg := wire.NewMsgGetHeaders()
-	msg.HashStop = *stopHash
+	msg.HashStop = stopHash
 	for _, hash := range locator {
 		err := msg.AddBlockLocatorHash(hash)
 		if err != nil {
@@ -1007,7 +1007,7 @@ func (p *Peer) PushRejectMsg(command string, code wire.RejectCode, reason string
 				"but does not", command)
 			hash = &daghash.ZeroHash
 		}
-		msg.Hash = *hash
+		msg.Hash = hash
 	}
 
 	// Send the message without waiting if the caller has not requested it.

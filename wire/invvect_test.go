@@ -68,7 +68,7 @@ func TestInvVectWire(t *testing.T) {
 	// errInvVect is an inventory vector with an error.
 	errInvVect := InvVect{
 		Type: InvTypeError,
-		Hash: daghash.Hash{},
+		Hash: &daghash.Hash{},
 	}
 
 	// errInvVectEncoded is the wire encoded bytes of errInvVect.
@@ -83,7 +83,7 @@ func TestInvVectWire(t *testing.T) {
 	// txInvVect is an inventory vector representing a transaction.
 	txInvVect := InvVect{
 		Type: InvTypeTx,
-		Hash: *baseHash,
+		Hash: baseHash,
 	}
 
 	// txInvVectEncoded is the wire encoded bytes of txInvVect.
@@ -98,7 +98,7 @@ func TestInvVectWire(t *testing.T) {
 	// blockInvVect is an inventory vector representing a block.
 	blockInvVect := InvVect{
 		Type: InvTypeBlock,
-		Hash: *baseHash,
+		Hash: baseHash,
 	}
 
 	// blockInvVectEncoded is the wire encoded bytes of blockInvVect.

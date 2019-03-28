@@ -227,7 +227,7 @@ func (msg *MsgBlock) MaxPayloadLength(pver uint32) uint32 {
 }
 
 // BlockHash computes the block identifier hash for this block.
-func (msg *MsgBlock) BlockHash() daghash.Hash {
+func (msg *MsgBlock) BlockHash() *daghash.Hash {
 	return msg.Header.BlockHash()
 }
 

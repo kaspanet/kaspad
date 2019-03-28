@@ -312,7 +312,7 @@ func (dag *BlockDAG) checkProofOfWork(header *wire.BlockHeader, flags BehaviorFl
 	if flags&BFNoPoWCheck != BFNoPoWCheck {
 		// The block hash must be less than the claimed target.
 		hash := header.BlockHash()
-		hashNum := daghash.HashToBig(&hash)
+		hashNum := daghash.HashToBig(hash)
 		if hashNum.Cmp(target) > 0 {
 			str := fmt.Sprintf("block hash of %064x is higher than "+
 				"expected max of %064x", hashNum, target)
@@ -417,7 +417,7 @@ func (dag *BlockDAG) checkBlockHeaderSanity(header *wire.BlockHeader, flags Beha
 	}
 
 	if len(header.ParentHashes) == 0 {
-		if header.BlockHash() != *dag.dagParams.GenesisHash {
+		if !header.BlockHash().IsEqual(dag.dagParams.GenesisHash) {
 			return ruleError(ErrNoParents, "block has no parents")
 		}
 	} else {
@@ -452,12 +452,12 @@ func (dag *BlockDAG) checkBlockHeaderSanity(header *wire.BlockHeader, flags Beha
 
 //checkBlockParentsOrder ensures that the block's parents are ordered by hash
 func checkBlockParentsOrder(header *wire.BlockHeader) error {
-	sortedHashes := make([]daghash.Hash, 0, header.NumParentBlocks())
+	sortedHashes := make([]*daghash.Hash, 0, header.NumParentBlocks())
 	for _, hash := range header.ParentHashes {
 		sortedHashes = append(sortedHashes, hash)
 	}
 	sort.Slice(sortedHashes, func(i, j int) bool {
-		return daghash.Less(&sortedHashes[i], &sortedHashes[j])
+		return daghash.Less(sortedHashes[i], sortedHashes[j])
 	})
 	if !daghash.AreEqual(header.ParentHashes, sortedHashes) {
 		return ruleError(ErrWrongParentsOrder, "block parents are not ordered by hash")
@@ -695,7 +695,7 @@ func (dag *BlockDAG) checkBlockHeaderContext(header *wire.BlockHeader, bluestPar
 func (dag *BlockDAG) validateCheckpoints(header *wire.BlockHeader, blockHeight int32) error {
 	// Ensure dag matches up to predetermined checkpoints.
 	blockHash := header.BlockHash()
-	if !dag.verifyCheckpoint(blockHeight, &blockHash) {
+	if !dag.verifyCheckpoint(blockHeight, blockHash) {
 		str := fmt.Sprintf("block at height %d does not match "+
 			"checkpoint hash", blockHeight)
 		return ruleError(ErrBadCheckpoint, str)

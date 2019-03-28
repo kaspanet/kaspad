@@ -61,12 +61,12 @@ func TestHeaders(t *testing.T) {
 // TestHeadersWire tests the MsgHeaders wire encode and decode for various
 // numbers of headers and protocol versions.
 func TestHeadersWire(t *testing.T) {
-	hashes := []daghash.Hash{mainNetGenesisHash, simNetGenesisHash}
+	hashes := []*daghash.Hash{mainNetGenesisHash, simNetGenesisHash}
 	hashMerkleRoot := blockOne.Header.HashMerkleRoot
 	idMerkleRoot := blockOne.Header.IDMerkleRoot
 	bits := uint32(0x1d00ffff)
 	nonce := uint64(0x9962e301)
-	bh := NewBlockHeader(1, hashes, &hashMerkleRoot, &idMerkleRoot, bits, nonce)
+	bh := NewBlockHeader(1, hashes, hashMerkleRoot, idMerkleRoot, bits, nonce)
 	bh.Version = blockOne.Header.Version
 	bh.Timestamp = blockOne.Header.Timestamp
 
@@ -165,12 +165,12 @@ func TestHeadersWireErrors(t *testing.T) {
 	pver := ProtocolVersion
 	wireErr := &MessageError{}
 
-	hashes := []daghash.Hash{mainNetGenesisHash, simNetGenesisHash}
+	hashes := []*daghash.Hash{mainNetGenesisHash, simNetGenesisHash}
 	hashMerkleRoot := blockOne.Header.HashMerkleRoot
 	idMerkleRoot := blockOne.Header.IDMerkleRoot
 	bits := uint32(0x1d00ffff)
 	nonce := uint64(0x9962e301)
-	bh := NewBlockHeader(1, hashes, &hashMerkleRoot, &idMerkleRoot, bits, nonce)
+	bh := NewBlockHeader(1, hashes, hashMerkleRoot, idMerkleRoot, bits, nonce)
 	bh.Version = blockOne.Header.Version
 	bh.Timestamp = blockOne.Header.Timestamp
 
@@ -216,7 +216,7 @@ func TestHeadersWireErrors(t *testing.T) {
 
 	// Intentionally invalid block header that has a transaction count used
 	// to force errors.
-	bhTrans := NewBlockHeader(1, hashes, &hashMerkleRoot, &idMerkleRoot, bits, nonce)
+	bhTrans := NewBlockHeader(1, hashes, hashMerkleRoot, idMerkleRoot, bits, nonce)
 	bhTrans.Version = blockOne.Header.Version
 	bhTrans.Timestamp = blockOne.Header.Timestamp
 

@@ -189,7 +189,7 @@ type testGenerator struct {
 
 	// Used for tracking spendable coinbase outputs.
 	spendableOuts     []spendableOut
-	prevCollectedHash daghash.Hash
+	prevCollectedHash *daghash.Hash
 
 	// Common key for any tests which require signed transactions.
 	privKey *btcec.PrivateKey
@@ -203,7 +203,7 @@ func makeTestGenerator(params *dagconfig.Params) (testGenerator, error) {
 	genesisHash := genesis.BlockHash()
 	return testGenerator{
 		params:       params,
-		blocks:       map[daghash.Hash]*wire.MsgBlock{genesisHash: genesis},
+		blocks:       map[daghash.Hash]*wire.MsgBlock{*genesisHash: genesis},
 		blocksByName: map[string]*wire.MsgBlock{"genesis": genesis},
 		blockHeights: map[string]int32{"genesis": 0},
 		tip:          genesis,
@@ -299,9 +299,9 @@ func (g *testGenerator) createCoinbaseTx(blockHeight int32) *wire.MsgTx {
 
 // calcHashMerkleRoot creates a merkle tree from the slice of transactions and
 // returns the root of the tree.
-func calcHashMerkleRoot(txns []*wire.MsgTx) daghash.Hash {
+func calcHashMerkleRoot(txns []*wire.MsgTx) *daghash.Hash {
 	if len(txns) == 0 {
-		return daghash.Hash{}
+		return &daghash.Hash{}
 	}
 
 	utilTxns := make([]*util.Tx, 0, len(txns))
@@ -309,7 +309,7 @@ func calcHashMerkleRoot(txns []*wire.MsgTx) daghash.Hash {
 		utilTxns = append(utilTxns, util.NewTx(tx))
 	}
 	merkleTree := blockdag.BuildHashMerkleTreeStore(utilTxns)
-	return *merkleTree.Root()
+	return merkleTree.Root()
 }
 
 // solveBlock attempts to find a nonce which makes the passed block header hash
@@ -342,7 +342,7 @@ func solveBlock(header *wire.BlockHeader) bool {
 			default:
 				hdr.Nonce = i
 				hash := hdr.BlockHash()
-				if daghash.HashToBig(&hash).Cmp(
+				if daghash.HashToBig(hash).Cmp(
 					targetDifficulty) <= 0 {
 
 					results <- sbResult{true, i}
@@ -510,7 +510,7 @@ func (g *testGenerator) nextBlock(blockName string, spend *spendableOut, mungers
 	block := wire.MsgBlock{
 		Header: wire.BlockHeader{
 			Version:        1,
-			ParentHashes:   []daghash.Hash{g.tip.BlockHash()}, // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
+			ParentHashes:   []*daghash.Hash{g.tip.BlockHash()}, // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
 			HashMerkleRoot: calcHashMerkleRoot(txns),
 			Bits:           g.params.PowLimitBits,
 			Timestamp:      ts,
@@ -539,7 +539,7 @@ func (g *testGenerator) nextBlock(blockName string, spend *spendableOut, mungers
 
 	// Update generator state and return the block.
 	blockHash := block.BlockHash()
-	g.blocks[blockHash] = &block
+	g.blocks[*blockHash] = &block
 	g.blocksByName[blockName] = &block
 	g.blockHeights[blockName] = nextHeight
 	g.tip = &block
@@ -552,18 +552,18 @@ func (g *testGenerator) nextBlock(blockName string, spend *spendableOut, mungers
 // map references to a block via its old hash and insert new ones for the new
 // block hash.  This is useful if the test code has to manually change a block
 // after 'nextBlock' has returned.
-func (g *testGenerator) updateBlockState(oldBlockName string, oldBlockHash daghash.Hash, newBlockName string, newBlock *wire.MsgBlock) {
+func (g *testGenerator) updateBlockState(oldBlockName string, oldBlockHash *daghash.Hash, newBlockName string, newBlock *wire.MsgBlock) {
 	// Look up the height from the existing entries.
 	blockHeight := g.blockHeights[oldBlockName]
 
 	// Remove existing entries.
-	delete(g.blocks, oldBlockHash)
+	delete(g.blocks, *oldBlockHash)
 	delete(g.blocksByName, oldBlockName)
 	delete(g.blockHeights, oldBlockName)
 
 	// Add new entries.
 	newBlockHash := newBlock.BlockHash()
-	g.blocks[newBlockHash] = newBlock
+	g.blocks[*newBlockHash] = newBlock
 	g.blocksByName[newBlockName] = newBlock
 	g.blockHeights[newBlockName] = blockHeight
 }
@@ -735,9 +735,9 @@ func (g *testGenerator) assertTipBlockNumTxns(expected int) {
 
 // assertTipBlockHash panics if the current tip block associated with the
 // generator does not match the specified hash.
-func (g *testGenerator) assertTipBlockHash(expected daghash.Hash) {
+func (g *testGenerator) assertTipBlockHash(expected *daghash.Hash) {
 	hash := g.tip.BlockHash()
-	if hash != expected {
+	if !hash.IsEqual(expected) {
 		panic(fmt.Sprintf("block hash of block %q (height %d) is %s "+
 			"instead of expected %s", g.tipName, g.tipHeight, hash,
 			expected))
@@ -746,9 +746,9 @@ func (g *testGenerator) assertTipBlockHash(expected daghash.Hash) {
 
 // assertTipBlockMerkleRoot panics if the merkle root in header of the current
 // tip block associated with the generator does not match the specified hash.
-func (g *testGenerator) assertTipBlockMerkleRoot(expected daghash.Hash) {
+func (g *testGenerator) assertTipBlockMerkleRoot(expected *daghash.Hash) {
 	hash := g.tip.Header.HashMerkleRoot
-	if hash != expected {
+	if !hash.IsEqual(expected) {
 		panic(fmt.Sprintf("merkle root of block %q (height %d) is %s "+
 			"instead of expected %s", g.tipName, g.tipHeight, hash,
 			expected))
@@ -1443,7 +1443,7 @@ func Generate(includeLargeReorg bool) (tests [][]TestInstance, err error) {
 			// a uint256 is higher than the limit.
 			b46.Header.Nonce++
 			blockHash := b46.BlockHash()
-			hashNum := daghash.HashToBig(&blockHash)
+			hashNum := daghash.HashToBig(blockHash)
 			if hashNum.Cmp(g.params.PowLimit) >= 0 {
 				break
 			}
@@ -1470,7 +1470,7 @@ func Generate(includeLargeReorg bool) (tests [][]TestInstance, err error) {
 	//                 \-> b48(14)
 	g.setTip("b43")
 	g.nextBlock("b48", outs[14], func(b *wire.MsgBlock) {
-		b.Header.HashMerkleRoot = daghash.Hash{}
+		b.Header.HashMerkleRoot = &daghash.Hash{}
 	})
 	rejected(blockdag.ErrBadMerkleRoot)
 

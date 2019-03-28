@@ -69,6 +69,7 @@ func (eft *estimateFeeTester) newBlock(txs []*wire.MsgTx) {
 	eft.height++
 
 	block := util.NewBlock(&wire.MsgBlock{
+		Header:       wire.BlockHeader{IDMerkleRoot: &daghash.ZeroHash, HashMerkleRoot: &daghash.ZeroHash},
 		Transactions: txs,
 	})
 	block.SetHeight(eft.height)
@@ -393,7 +394,7 @@ func (eft *estimateFeeTester) checkSaveAndRestore(
 	}
 }
 
-// TestSave tests saving and restoring to a []byte.
+// TestDatabase tests saving and restoring to a []byte.
 func TestDatabase(t *testing.T) {
 
 	txPerRound := uint32(7)
