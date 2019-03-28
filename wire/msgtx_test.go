@@ -617,29 +617,6 @@ func TestTxSerializeErrors(t *testing.T) {
 	if err == nil || err.Error() != expectedErr.Error() {
 		t.Errorf("TestTxSerializeErrors: expected error %v but got %v", expectedErr, err)
 	}
-
-	zeroSubnetworkTxEncoded := []byte{
-		0x01, 0x00, 0x00, 0x00, // Version
-		0x00,                                           // Varint for number of input transactions
-		0x00,                                           // Varint for number of output transactions
-		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Lock time
-		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-		0x00, 0x00, 0x00, 0x00, // Sub Network ID
-		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Gas
-		0x08,                                           // Payload length varint
-		0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Payload / Gas limit
-	}
-
-	r := bytes.NewReader(zeroSubnetworkTxEncoded)
-	var tx MsgTx
-	err = tx.Deserialize(r)
-
-	str = fmt.Sprintf("%v is a reserved sub network and cannot be used as part of a transaction", subnetworkid.SubnetworkIDSupportsAll)
-	expectedErr = messageError("MsgTx.BtcDecode", str)
-	if err == nil || err.Error() != expectedErr.Error() {
-		t.Errorf("TestTxSerializeErrors: expected error %v but got %v", expectedErr, err)
-	}
 }
 
 // TestTxOverflowErrors performs tests to ensure deserializing transactions
@@ -770,11 +747,6 @@ func TestIsSubnetworkCompatible(t *testing.T) {
 		subnetworkID   *subnetworkid.SubnetworkID
 		expectedResult bool
 	}{
-		{
-			name:           "SupportsAll subnetwork",
-			subnetworkID:   subnetworkid.SubnetworkIDSupportsAll,
-			expectedResult: true,
-		},
 		{
 			name:           "Native subnetwork",
 			subnetworkID:   subnetworkid.SubnetworkIDNative,

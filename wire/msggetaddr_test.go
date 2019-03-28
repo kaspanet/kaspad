@@ -27,7 +27,7 @@ func TestGetAddr(t *testing.T) {
 
 	// Ensure max payload is expected value for latest protocol version.
 	// Num addresses (varInt) + max allowed addresses.
-	wantPayload := uint32(21)
+	wantPayload := uint32(22)
 	maxPayload := msg.MaxPayloadLength(pver)
 	if maxPayload != wantPayload {
 		t.Errorf("MaxPayloadLength: wrong max payload length for "+
@@ -42,7 +42,8 @@ func TestGetAddrWire(t *testing.T) {
 	// With all subnetworks
 	msgGetAddr := NewMsgGetAddr(false, nil)
 	msgGetAddrEncoded := []byte{
-		0x01, // All subnetworks
+		0x00, // All subnetworks
+		0x01, // Get full nodes
 	}
 
 	// With specific subnetwork

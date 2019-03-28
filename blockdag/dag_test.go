@@ -847,7 +847,7 @@ func TestNew(t *testing.T) {
 	config.SubnetworkID = &subnetworkid.SubnetworkID{0xff}
 	_, err = New(config)
 	expectedErrorMessage := fmt.Sprintf("Cannot start btcd with subnetwork ID %s because"+
-		" its database is already built without subnetwork ID. If you"+
+		" its database is already built with subnetwork ID <nil>. If you"+
 		" want to switch to a new database, please reset the"+
 		" database by starting btcd with --reset-db flag", config.SubnetworkID)
 	if err.Error() != expectedErrorMessage {

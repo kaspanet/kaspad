@@ -251,8 +251,8 @@ func TestPeerConnection(t *testing.T) {
 		wantLastPingNonce:   uint64(0),
 		wantLastPingMicros:  int64(0),
 		wantTimeOffset:      int64(0),
-		wantBytesSent:       187, // 163 version + 24 verack
-		wantBytesReceived:   187,
+		wantBytesSent:       168, // 144 version + 24 verack
+		wantBytesReceived:   168,
 	}
 	wantStats2 := peerStats{
 		wantUserAgent:       wire.DefaultUserAgent + "peer:1.0(comment)/",
@@ -265,8 +265,8 @@ func TestPeerConnection(t *testing.T) {
 		wantLastPingNonce:   uint64(0),
 		wantLastPingMicros:  int64(0),
 		wantTimeOffset:      int64(0),
-		wantBytesSent:       187, // 163 version + 24 verack
-		wantBytesReceived:   187,
+		wantBytesSent:       168, // 144 version + 24 verack
+		wantBytesReceived:   168,
 	}
 
 	tests := []struct {

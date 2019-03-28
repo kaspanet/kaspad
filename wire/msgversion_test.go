@@ -218,10 +218,10 @@ func TestVersionWireErrors(t *testing.T) {
 	newLen := len(baseVersionEncoded) - len(baseVersion.UserAgent)
 	newLen = newLen + len(newUAVarIntBuf.Bytes()) - 1 + len(newUA)
 	exceedUAVerEncoded := make([]byte, newLen)
-	copy(exceedUAVerEncoded, baseVersionEncoded[0:100])
-	copy(exceedUAVerEncoded[100:], newUAVarIntBuf.Bytes())
-	copy(exceedUAVerEncoded[103:], []byte(newUA))
-	copy(exceedUAVerEncoded[103+len(newUA):], baseVersionEncoded[117:120])
+	copy(exceedUAVerEncoded, baseVersionEncoded[0:81])
+	copy(exceedUAVerEncoded[81:], newUAVarIntBuf.Bytes())
+	copy(exceedUAVerEncoded[84:], []byte(newUA))
+	copy(exceedUAVerEncoded[84+len(newUA):], baseVersionEncoded[98:101])
 
 	tests := []struct {
 		in       *MsgVersion // Value to encode
@@ -240,17 +240,17 @@ func TestVersionWireErrors(t *testing.T) {
 		// Force error in subnetworkID.
 		{baseVersion, baseVersionEncoded, pver, 20, io.ErrShortWrite, io.EOF},
 		// Force error in remote address.
-		{baseVersion, baseVersionEncoded, pver, 40, io.ErrShortWrite, io.EOF},
+		{baseVersion, baseVersionEncoded, pver, 21, io.ErrShortWrite, io.EOF},
 		// Force error in local address.
-		{baseVersion, baseVersionEncoded, pver, 67, io.ErrShortWrite, io.ErrUnexpectedEOF},
+		{baseVersion, baseVersionEncoded, pver, 48, io.ErrShortWrite, io.ErrUnexpectedEOF},
 		// Force error in nonce.
-		{baseVersion, baseVersionEncoded, pver, 93, io.ErrShortWrite, io.ErrUnexpectedEOF},
+		{baseVersion, baseVersionEncoded, pver, 74, io.ErrShortWrite, io.ErrUnexpectedEOF},
 		// Force error in user agent length.
-		{baseVersion, baseVersionEncoded, pver, 101, io.ErrShortWrite, io.EOF},
+		{baseVersion, baseVersionEncoded, pver, 82, io.ErrShortWrite, io.EOF},
 		// Force error in user agent.
-		{baseVersion, baseVersionEncoded, pver, 102, io.ErrShortWrite, io.ErrUnexpectedEOF},
+		{baseVersion, baseVersionEncoded, pver, 83, io.ErrShortWrite, io.ErrUnexpectedEOF},
 		// Force error in last block.
-		{baseVersion, baseVersionEncoded, pver, 118, io.ErrShortWrite, io.ErrUnexpectedEOF},
+		{baseVersion, baseVersionEncoded, pver, 99, io.ErrShortWrite, io.ErrUnexpectedEOF},
 		// Force error due to user agent too big
 		{exceedUAVer, exceedUAVerEncoded, pver, newLen, wireErr, wireErr},
 	}

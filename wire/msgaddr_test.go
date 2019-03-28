@@ -30,7 +30,7 @@ func TestAddr(t *testing.T) {
 
 	// Ensure max payload is expected value for latest protocol version.
 	// Num addresses (varInt) + max allowed addresses.
-	wantPayload := uint32(34030)
+	wantPayload := uint32(34031)
 	maxPayload := msg.MaxPayloadLength(pver)
 	if maxPayload != wantPayload {
 		t.Errorf("MaxPayloadLength: wrong max payload length for "+
@@ -94,12 +94,13 @@ func TestAddrWire(t *testing.T) {
 	// Empty address message.
 	noAddr := NewMsgAddr(false, nil)
 	noAddrEncoded := []byte{
-		0x01, // All subnetworks
+		0x00, // All subnetworks
+		0x01, // Is full node
 		0x00, // Varint for number of addresses
 	}
 
 	// Address message with multiple addresses.
-	multiAddr := NewMsgAddr(false, nil)
+	multiAddr := NewMsgAddr(true, nil)
 	multiAddr.AddAddresses(na, na2)
 	multiAddrEncoded := []byte{
 		0x01,                                           // All subnetworks
@@ -121,6 +122,7 @@ func TestAddrWire(t *testing.T) {
 	multiAddrSubnet.AddAddresses(na, na2)
 	multiAddrSubnetEncoded := []byte{
 		0x00,                                           // All subnetworks
+		0x00,                                           // Is full node
 		0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Subnetwork ID
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 		0x00, 0x00, 0x00, 0x00,

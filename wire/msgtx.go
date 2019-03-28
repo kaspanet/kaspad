@@ -838,7 +838,8 @@ func (msg *MsgTx) PkScriptLocs() []int {
 // 2. The native subnetwork
 // 3. The transaction's subnetwork
 func (msg *MsgTx) IsSubnetworkCompatible(subnetworkID *subnetworkid.SubnetworkID) bool {
-	return subnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) ||
+	return subnetworkID == nil ||
+		subnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) ||
 		subnetworkID.IsEqual(&msg.SubnetworkID)
 }
 

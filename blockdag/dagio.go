@@ -515,9 +515,12 @@ func (dag *BlockDAG) initDAGState() error {
 	err := dag.db.View(func(dbTx database.Tx) error {
 		initialized = dbTx.Metadata().Get(dagStateKeyName) != nil
 		if initialized {
+			var localSubnetworkID *subnetworkid.SubnetworkID
 			localSubnetworkIDBytes := dbTx.Metadata().Get(localSubnetworkKeyName)
-			localSubnetworkID := &subnetworkid.SubnetworkID{}
-			localSubnetworkID.SetBytes(localSubnetworkIDBytes)
+			if len(localSubnetworkIDBytes) != 0 {
+				localSubnetworkID = &subnetworkid.SubnetworkID{}
+				localSubnetworkID.SetBytes(localSubnetworkIDBytes)
+			}
 			if !localSubnetworkID.IsEqual(dag.subnetworkID) {
 				return fmt.Errorf("Cannot start btcd with subnetwork ID %s because"+
 					" its database is already built with subnetwork ID %s. If you"+
