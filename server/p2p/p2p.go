@@ -620,6 +620,8 @@ func (sp *Peer) OnGetData(_ *peer.Peer, msg *wire.MsgGetData) {
 		switch iv.Type {
 		case wire.InvTypeTx:
 			err = sp.server.pushTxMsg(sp, (*daghash.TxID)(&iv.Hash), c, waitChan)
+		case wire.InvTypeSyncBlock:
+			fallthrough
 		case wire.InvTypeBlock:
 			err = sp.server.pushBlockMsg(sp, &iv.Hash, c, waitChan)
 		case wire.InvTypeFilteredBlock:
@@ -678,7 +680,7 @@ func (sp *Peer) OnGetBlocks(_ *peer.Peer, msg *wire.MsgGetBlocks) {
 	// Generate inventory message.
 	invMsg := wire.NewMsgInv()
 	for i := range hashList {
-		iv := wire.NewInvVect(wire.InvTypeBlock, &hashList[i])
+		iv := wire.NewInvVect(wire.InvTypeSyncBlock, &hashList[i])
 		invMsg.AddInvVect(iv)
 	}
 
