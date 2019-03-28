@@ -384,6 +384,17 @@ func NewBlkTmplGenerator(policy *Policy, params *dagconfig.Params,
 //  |  <= policy.BlockMinSize)          |   |
 //   -----------------------------------  --
 func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTemplate, error) {
+	g.dag.UTXORLock()
+	dagUnlocked := false
+	// We need to read-unlock the DAG before calling CheckConnectBlockTemplate
+	// Therefore the deferred function is only relevant in cases where an
+	// error is returned before calling CheckConnectBlockTemplate
+	defer func() {
+		if !dagUnlocked {
+			g.dag.UTXORUnlock()
+		}
+	}()
+
 	// Extend the most recently known best block.
 	nextBlockHeight := g.dag.Height() + 1
 
@@ -410,7 +421,7 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 	}
 	numCoinbaseSigOps := int64(blockdag.CountSigOps(coinbaseTx))
 
-	msgFeeTransaction, err := g.dag.NextBlockFeeTransaction()
+	msgFeeTransaction, err := g.dag.NextBlockFeeTransaction(true)
 	if err != nil {
 		return nil, err
 	}
@@ -454,7 +465,6 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 
 	log.Debugf("Considering %d transactions for inclusion to new block",
 		len(sourceTxns))
-
 	for _, txDesc := range sourceTxns {
 		// A block can't have more than one coinbase or contain
 		// non-finalized transactions.
@@ -634,14 +644,14 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 	// is potentially adjusted to ensure it comes after the median time of
 	// the last several blocks per the chain consensus rules.
 	ts := medianAdjustedTime(g.dag.CalcPastMedianTime(), g.timeSource)
-	reqDifficulty, err := g.dag.CalcNextRequiredDifficulty(ts)
+	reqDifficulty, err := g.dag.CalcNextRequiredDifficulty(ts, true)
 	if err != nil {
 		return nil, err
 	}
 
 	// Calculate the next expected block version based on the state of the
 	// rule change deployments.
-	nextBlockVersion, err := g.dag.CalcNextBlockVersion()
+	nextBlockVersion, err := g.dag.CalcNextBlockVersion(true)
 	if err != nil {
 		return nil, err
 	}
@@ -672,6 +682,10 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 	// chain with no issues.
 	block := util.NewBlock(&msgBlock)
 	block.SetHeight(nextBlockHeight)
+
+	g.dag.UTXORUnlock()
+	dagUnlocked = true
+
 	if err := g.dag.CheckConnectBlockTemplate(block); err != nil {
 		return nil, err
 	}
@@ -706,7 +720,7 @@ func (g *BlkTmplGenerator) UpdateBlockTime(msgBlock *wire.MsgBlock) error {
 
 	// Recalculate the difficulty if running on a network that requires it.
 	if g.dagParams.ReduceMinDifficulty {
-		difficulty, err := g.dag.CalcNextRequiredDifficulty(newTime)
+		difficulty, err := g.dag.CalcNextRequiredDifficulty(newTime, false)
 		if err != nil {
 			return err
 		}

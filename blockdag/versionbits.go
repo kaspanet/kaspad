@@ -219,10 +219,12 @@ func (dag *BlockDAG) calcNextBlockVersion(prevNode *blockNode) (int32, error) {
 // rule change deployments.
 //
 // This function is safe for concurrent access.
-func (dag *BlockDAG) CalcNextBlockVersion() (int32, error) {
-	dag.dagLock.RLock()
+func (dag *BlockDAG) CalcNextBlockVersion(isLockHeld bool) (int32, error) {
+	if !isLockHeld {
+		dag.dagLock.RLock()
+		defer dag.dagLock.RUnlock()
+	}
 	version, err := dag.calcNextBlockVersion(dag.selectedTip())
-	dag.dagLock.RUnlock()
 	return version, err
 }
 

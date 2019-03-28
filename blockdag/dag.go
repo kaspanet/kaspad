@@ -687,7 +687,12 @@ func (dag *BlockDAG) newFinalityPoint(newNode *blockNode) *blockNode {
 }
 
 // NextBlockFeeTransaction prepares the fee transaction for the next mined block
-func (dag *BlockDAG) NextBlockFeeTransaction() (*wire.MsgTx, error) {
+func (dag *BlockDAG) NextBlockFeeTransaction(isLockHeld bool) (*wire.MsgTx, error) {
+	if !isLockHeld {
+		dag.dagLock.RLock()
+		defer dag.dagLock.RUnlock()
+	}
+
 	_, txsAcceptanceData, _, err := dag.virtual.blockNode.verifyAndBuildUTXO(dag, nil, true)
 	if err != nil {
 		return nil, err
