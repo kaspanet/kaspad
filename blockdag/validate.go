@@ -1189,8 +1189,8 @@ func countSpentOutputs(block *util.Block) int {
 //
 // This function is safe for concurrent access.
 func (dag *BlockDAG) CheckConnectBlockTemplate(block *util.Block) error {
-	dag.dagLock.Lock()
-	defer dag.dagLock.Unlock()
+	dag.dagLock.RLock()
+	defer dag.dagLock.RUnlock()
 
 	// Skip the proof of work check as this is just a block template.
 	flags := BFNoPoWCheck
@@ -1222,7 +1222,6 @@ func (dag *BlockDAG) CheckConnectBlockTemplate(block *util.Block) error {
 	}
 
 	templateNode := newBlockNode(&header, dag.virtual.tips(), dag.dagParams.K)
-	defer templateNode.detachFromParents()
 
 	_, err = dag.checkConnectToPastUTXO(templateNode,
 		dag.UTXOSet(), block.Transactions(), false)

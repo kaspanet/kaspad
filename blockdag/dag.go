@@ -708,24 +708,23 @@ func (dag *BlockDAG) NextBlockFeeTransaction() (*wire.MsgTx, error) {
 func (dag *BlockDAG) applyDAGChanges(node *blockNode, block *util.Block, newBlockUTXO UTXOSet, fastAdd bool) (
 	virtualUTXODiff *UTXODiff, err error) {
 
-	// Clone the virtual block so that we don't modify the existing one.
-	virtualClone := dag.virtual.clone()
+	node.updateParentsChildren()
 
-	if err = node.updateParents(virtualClone, newBlockUTXO); err != nil {
+	if err = node.updateParents(dag.virtual, newBlockUTXO); err != nil {
 		return nil, fmt.Errorf("failed updating parents of %s: %s", node, err)
 	}
 
-	// Update the virtual block's children (the DAG tips) to include the new block.
-	virtualClone.AddTip(node)
+	// Update the virtual block's parents (the DAG tips) to include the new block.
+	dag.virtual.AddTip(node)
 
 	// Build a UTXO set for the new virtual block
-	newVirtualUTXO, _, err := virtualClone.blockNode.pastUTXO(virtualClone, dag.db)
+	newVirtualUTXO, _, err := dag.virtual.blockNode.pastUTXO(dag.virtual, dag.db)
 	if err != nil {
-		return nil, fmt.Errorf("could not restore past UTXO for virtual %s: %s", virtualClone, err)
+		return nil, fmt.Errorf("could not restore past UTXO for virtual %s: %s", dag.virtual, err)
 	}
 
 	// Apply new utxoDiffs to all the tips
-	err = updateTipsUTXO(virtualClone.parents, virtualClone, newVirtualUTXO)
+	err = updateTipsUTXO(dag.virtual.parents, dag.virtual, newVirtualUTXO)
 	if err != nil {
 		return nil, fmt.Errorf("failed updating the tips' UTXO: %s", err)
 	}
@@ -741,9 +740,6 @@ func (dag *BlockDAG) applyDAGChanges(node *blockNode, block *util.Block, newBloc
 		dag.index.SetStatusFlags(p, statusValid)
 	}
 	dag.index.SetStatusFlags(node, statusValid)
-
-	// It is now safe to apply the new virtual block
-	dag.virtual = virtualClone
 
 	// And now we can update the finality point of the DAG (if required)
 	dag.lastFinalityPoint = dag.newFinalityPoint(node)
