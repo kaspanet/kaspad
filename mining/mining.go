@@ -651,7 +651,7 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 
 	// Calculate the next expected block version based on the state of the
 	// rule change deployments.
-	nextBlockVersion, err := g.dag.CalcNextBlockVersion(true)
+	nextBlockVersion, err := g.dag.CalcNextBlockVersion()
 	if err != nil {
 		return nil, err
 	}
