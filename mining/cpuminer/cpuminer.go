@@ -71,9 +71,9 @@ type Config struct {
 	// found blocks to.
 	ConnectedCount func() int32
 
-	// ShouldMineOnGenesis checks if you at least one peer, and at least one
-	// of your peers knows of any blocks that was mined on top of the genesis
-	// block.
+	// ShouldMineOnGenesis checks if the node is connected to at least one
+	// peer, and at least one of its peers knows of any blocks that were mined
+	// on top of the genesis block.
 	ShouldMineOnGenesis func() bool
 
 	// IsCurrent defines the function to use to obtain whether or not the

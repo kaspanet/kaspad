@@ -192,7 +192,8 @@ func (ps *peerState) Count() int {
 
 // forAllOutboundPeers is a helper function that runs closure on all outbound
 // peers known to peerState.
-func (ps *peerState) forAllOutboundPeers(closure func(sp *Peer) bool) {
+// The loop stops if one of the closure calls returns false.
+func (ps *peerState) forAllOutboundPeers(closure func(sp *Peer) (shouldContinue bool)) {
 	for _, e := range ps.outboundPeers {
 		shouldContinue := closure(e)
 		if !shouldContinue {
@@ -209,7 +210,8 @@ func (ps *peerState) forAllOutboundPeers(closure func(sp *Peer) bool) {
 
 // forAllPeers is a helper function that runs closure on all peers known to
 // peerState.
-func (ps *peerState) forAllPeers(closure func(sp *Peer) bool) {
+// The loop stops if one of the closure calls returns false.
+func (ps *peerState) forAllPeers(closure func(sp *Peer) (shouldContinue bool)) {
 	for _, e := range ps.inboundPeers {
 		shouldContinue := closure(e)
 		if !shouldContinue {
@@ -2028,9 +2030,9 @@ func (s *Server) ConnectedCount() int32 {
 	return <-replyChan
 }
 
-// ShouldMineOnGenesis checks if you at least one peer, and at least one
-// of your peers knows of any blocks that was mined on top of the genesis
-// block.
+// ShouldMineOnGenesis checks if the node is connected to at least one
+// peer, and at least one of its peers knows of any blocks that were mined
+// on top of the genesis block.
 func (s *Server) ShouldMineOnGenesis() bool {
 	replyChan := make(chan bool)
 
