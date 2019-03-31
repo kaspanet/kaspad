@@ -75,9 +75,9 @@ func (bh BlockHeap) Push(block *blockNode) {
 	heap.Push(bh.impl, block)
 }
 
-// pushMany pushes a slice of blocks to the heap.
-func (bh BlockHeap) pushMany(blocks []*blockNode) {
-	for _, block := range blocks {
+// pushSet pushes a blockset to the heap.
+func (bh BlockHeap) pushSet(bs blockSet) {
+	for _, block := range bs {
 		heap.Push(bh.impl, block)
 	}
 }

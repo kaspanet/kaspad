@@ -190,19 +190,19 @@ func (ps *peerState) Count() int {
 		len(ps.persistentPeers)
 }
 
-// forAllOutboundPeers is a helper function that runs closure on all outbound
+// forAllOutboundPeers is a helper function that runs a callback on all outbound
 // peers known to peerState.
-// The loop stops and returns false if one of the closure calls returns false.
+// The loop stops and returns false if one of the callback calls returns false.
 // Otherwise the function should return true.
-func (ps *peerState) forAllOutboundPeers(closure func(sp *Peer) bool) bool {
+func (ps *peerState) forAllOutboundPeers(callback func(sp *Peer) bool) bool {
 	for _, e := range ps.outboundPeers {
-		shouldContinue := closure(e)
+		shouldContinue := callback(e)
 		if !shouldContinue {
 			return false
 		}
 	}
 	for _, e := range ps.persistentPeers {
-		shouldContinue := closure(e)
+		shouldContinue := callback(e)
 		if !shouldContinue {
 			return false
 		}
@@ -210,13 +210,13 @@ func (ps *peerState) forAllOutboundPeers(closure func(sp *Peer) bool) bool {
 	return true
 }
 
-// forAllInboundPeers is a helper function that runs closure on all inbound
+// forAllInboundPeers is a helper function that runs a callback on all inbound
 // peers known to peerState.
-// The loop stops and returns false if one of the closure calls returns false.
+// The loop stops and returns false if one of the callback calls returns false.
 // Otherwise the function should return true.
-func (ps *peerState) forAllInboundPeers(closure func(sp *Peer) bool) bool {
+func (ps *peerState) forAllInboundPeers(callback func(sp *Peer) bool) bool {
 	for _, e := range ps.inboundPeers {
-		shouldContinue := closure(e)
+		shouldContinue := callback(e)
 		if !shouldContinue {
 			return false
 		}
@@ -224,16 +224,16 @@ func (ps *peerState) forAllInboundPeers(closure func(sp *Peer) bool) bool {
 	return true
 }
 
-// forAllPeers is a helper function that runs closure on all peers known to
+// forAllPeers is a helper function that runs a callback on all peers known to
 // peerState.
-// The loop stops and returns false if one of the closure calls returns false.
+// The loop stops and returns false if one of the callback calls returns false.
 // Otherwise the function should return true.
-func (ps *peerState) forAllPeers(closure func(sp *Peer) bool) bool {
-	shouldContinue := ps.forAllInboundPeers(closure)
+func (ps *peerState) forAllPeers(callback func(sp *Peer) bool) bool {
+	shouldContinue := ps.forAllInboundPeers(callback)
 	if !shouldContinue {
 		return false
 	}
-	ps.forAllOutboundPeers(closure)
+	ps.forAllOutboundPeers(callback)
 	return true
 }
 

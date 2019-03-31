@@ -213,7 +213,7 @@ func (dag *BlockDAG) GetOrphanMissingAncestorHashes(hash *daghash.Hash) ([]*dagh
 	dag.orphanLock.RLock()
 	defer dag.orphanLock.RUnlock()
 
-	missingParentsHashes := make([]*daghash.Hash, 0)
+	missingAncestorsHashes := make([]*daghash.Hash, 0)
 
 	visited := make(map[daghash.Hash]bool)
 	queue := []*daghash.Hash{hash}
@@ -233,12 +233,12 @@ func (dag *BlockDAG) GetOrphanMissingAncestorHashes(hash *daghash.Hash) ([]*dagh
 					return nil, err
 				}
 				if !existsInDag {
-					missingParentsHashes = append(missingParentsHashes, current)
+					missingAncestorsHashes = append(missingAncestorsHashes, current)
 				}
 			}
 		}
 	}
-	return missingParentsHashes, nil
+	return missingAncestorsHashes, nil
 }
 
 // removeOrphanBlock removes the passed orphan block from the orphan pool and
@@ -1159,6 +1159,7 @@ func (dag *BlockDAG) HeaderByHash(hash *daghash.Hash) (*wire.BlockHeader, error)
 // This function is safe for concurrent access.
 func (dag *BlockDAG) BlockLocatorFromHash(hash *daghash.Hash) BlockLocator {
 	dag.dagLock.RLock()
+	defer dag.dagLock.RUnlock()
 	node := dag.index.LookupNode(hash)
 	if node != nil {
 		for !dag.IsInSelectedPathChain(&node.hash) {
@@ -1166,7 +1167,6 @@ func (dag *BlockDAG) BlockLocatorFromHash(hash *daghash.Hash) BlockLocator {
 		}
 	}
 	locator := dag.blockLocator(node)
-	dag.dagLock.RUnlock()
 	return locator
 }
 
@@ -1176,8 +1176,8 @@ func (dag *BlockDAG) BlockLocatorFromHash(hash *daghash.Hash) BlockLocator {
 // This function is safe for concurrent access.
 func (dag *BlockDAG) LatestBlockLocator() BlockLocator {
 	dag.dagLock.RLock()
+	defer dag.dagLock.RUnlock()
 	locator := dag.blockLocator(nil)
-	dag.dagLock.RUnlock()
 	return locator
 }
 
@@ -1418,7 +1418,7 @@ func (dag *BlockDAG) locateBlockNodes(locator BlockLocator, hashStop *daghash.Ha
 	// Populate and return the found nodes.
 	nodes := make([]*blockNode, 0, estimatedEntries)
 	queue := NewUpHeap()
-	queue.pushMany(node.children.toSlice())
+	queue.pushSet(node.children)
 
 	visited := newSet()
 	for i := uint32(0); queue.Len() > 0 && i < maxEntries; i++ {
@@ -1431,7 +1431,7 @@ func (dag *BlockDAG) locateBlockNodes(locator BlockLocator, hashStop *daghash.Ha
 				nodes = append(nodes, current)
 			}
 			if isBeforeStop {
-				queue.pushMany(current.children.toSlice())
+				queue.pushSet(current.children.)
 			}
 		}
 	}
