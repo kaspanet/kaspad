@@ -192,10 +192,10 @@ func TestHaveBlock(t *testing.T) {
 		{hash: dagconfig.SimNetParams.GenesisHash.String(), want: true},
 
 		// Block 3b should be present (as a second child of Block 2).
-		{hash: "08a3f0182ac8ff0326497f592d2e28b8b3b2b7e3fd77c7cb6f31ca872536cf7b", want: true},
+		{hash: "040c43ca52ded708dacef2a9fa589f41e4f7565345f7f1e61f379dbf32bb6b48", want: true},
 
 		// Block 100000 should be present (as an orphan).
-		{hash: "25d5494f3e1f895774c58034f1bd50f7b279e75db6007514affec8573ace4389", want: true},
+		{hash: "3da8f9ec89820deee1a4d26ff0e69c53686166ea4fbc1895fa1e0b1ccb651374", want: true},
 
 		// Random hashes should not be available.
 		{hash: "123", want: false},

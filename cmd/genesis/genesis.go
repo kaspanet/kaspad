@@ -10,6 +10,7 @@ import (
 	"math/big"
 	"time"
 
+	"github.com/daglabs/btcd/blockdag"
 	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/util"
@@ -57,9 +58,35 @@ func solveGenesisBlock(block *wire.MsgBlock, powBits uint32, netName string) {
 func main() {
 	bigOne := big.NewInt(1)
 
+	// Validate merkle root of main net genesis block
+	block := util.NewBlock(dagconfig.MainNetParams.GenesisBlock)
+	hashMerkleTree := blockdag.BuildHashMerkleTreeStore(block.Transactions())
+	calculatedHashMerkleRoot := hashMerkleTree.Root()
+	header := dagconfig.MainNetParams.GenesisBlock.Header
+	if !header.HashMerkleRoot.IsEqual(calculatedHashMerkleRoot) {
+		fmt.Printf("main net genesis block hash merkle root is invalid - block "+
+			"header indicates %s, but calculated value is %s\n\n",
+			hex.EncodeToString(header.HashMerkleRoot[:]),
+			hex.EncodeToString(calculatedHashMerkleRoot[:]))
+		return
+	}
+
 	// Solve mainnet genesis
 	solveGenesisBlock(dagconfig.MainNetParams.GenesisBlock,
 		util.BigToCompact(new(big.Int).Sub(new(big.Int).Lsh(bigOne, 255), bigOne)), "mainnet")
+
+	// Validate merkle root of dev net genesis block
+	block = util.NewBlock(dagconfig.DevNetParams.GenesisBlock)
+	hashMerkleTree = blockdag.BuildHashMerkleTreeStore(block.Transactions())
+	calculatedHashMerkleRoot = hashMerkleTree.Root()
+	header = dagconfig.DevNetParams.GenesisBlock.Header
+	if !header.HashMerkleRoot.IsEqual(calculatedHashMerkleRoot) {
+		fmt.Printf("dev net genesis block hash merkle root is invalid - block "+
+			"header indicates %s, but calculated value is %s\n\n",
+			hex.EncodeToString(header.HashMerkleRoot[:]),
+			hex.EncodeToString(calculatedHashMerkleRoot[:]))
+		return
+	}
 
 	// Solve devnet genesis
 	solveGenesisBlock(dagconfig.DevNetParams.GenesisBlock,
