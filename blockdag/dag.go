@@ -944,7 +944,11 @@ func (node *blockNode) restoreUTXO(virtual *virtualBlock) (UTXOSet, error) {
 // and updates the diff of any parent whose DiffChild is this block
 func (node *blockNode) updateParents(virtual *virtualBlock, newBlockUTXO UTXOSet) error {
 	node.updateParentsChildren()
+	return node.updateParentsDiffs(virtual, newBlockUTXO)
+}
 
+// updateParentsDiffs updates the diff of any parent whose DiffChild is this block
+func (node *blockNode) updateParentsDiffs(virtual *virtualBlock, newBlockUTXO UTXOSet) error {
 	virtualDiffFromNewBlock, err := virtual.utxoSet.diffFrom(newBlockUTXO)
 	if err != nil {
 		return err
