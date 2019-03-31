@@ -720,8 +720,6 @@ func (dag *BlockDAG) NextBlockFeeTransaction() (*wire.MsgTx, error) {
 func (dag *BlockDAG) applyDAGChanges(node *blockNode, block *util.Block, newBlockUTXO UTXOSet, fastAdd bool) (
 	virtualUTXODiff *UTXODiff, err error) {
 
-	node.updateParentsChildren()
-
 	if err = node.updateParents(dag.virtual, newBlockUTXO); err != nil {
 		return nil, fmt.Errorf("failed updating parents of %s: %s", node, err)
 	}
@@ -945,6 +943,8 @@ func (node *blockNode) restoreUTXO(virtual *virtualBlock) (UTXOSet, error) {
 // updateParents adds this block to the children sets of its parents
 // and updates the diff of any parent whose DiffChild is this block
 func (node *blockNode) updateParents(virtual *virtualBlock, newBlockUTXO UTXOSet) error {
+	node.updateParentsChildren()
+
 	virtualDiffFromNewBlock, err := virtual.utxoSet.diffFrom(newBlockUTXO)
 	if err != nil {
 		return err
