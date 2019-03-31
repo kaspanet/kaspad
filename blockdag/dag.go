@@ -1431,7 +1431,7 @@ func (dag *BlockDAG) locateBlockNodes(locator BlockLocator, hashStop *daghash.Ha
 				nodes = append(nodes, current)
 			}
 			if isBeforeStop {
-				queue.pushSet(current.children.)
+				queue.pushSet(current.children)
 			}
 		}
 	}
