@@ -697,7 +697,19 @@ func (dag *BlockDAG) newFinalityPoint(newNode *blockNode) *blockNode {
 	return currentNode
 }
 
+// NextBlockFeeTransactionWithLock prepares the fee transaction for the next mined block
+//
+// This function CAN'T be called with the DAG lock not held.
+func (dag *BlockDAG) NextBlockFeeTransactionWithLock() (*wire.MsgTx, error) {
+	dag.dagLock.RLock()
+	defer dag.dagLock.RUnlock()
+
+	return dag.NextBlockFeeTransaction()
+}
+
 // NextBlockFeeTransaction prepares the fee transaction for the next mined block
+//
+// This function MUST be called with the DAG read-lock held
 func (dag *BlockDAG) NextBlockFeeTransaction() (*wire.MsgTx, error) {
 	_, txsAcceptanceData, _, err := dag.virtual.blockNode.verifyAndBuildUTXO(dag, nil, true)
 	if err != nil {
@@ -1462,13 +1474,13 @@ func (dag *BlockDAG) locateHeaders(locator BlockLocator, hashStop *daghash.Hash,
 	return headers
 }
 
-// UTXORLock locks the DAG's UTXO set for reading.
-func (dag *BlockDAG) UTXORLock() {
+// RLock locks the DAG's UTXO set for reading.
+func (dag *BlockDAG) RLock() {
 	dag.dagLock.RLock()
 }
 
-// UTXORUnlock unlocks the DAG's UTXO set for reading.
-func (dag *BlockDAG) UTXORUnlock() {
+// RUnlock unlocks the DAG's UTXO set for reading.
+func (dag *BlockDAG) RUnlock() {
 	dag.dagLock.RUnlock()
 }
 
