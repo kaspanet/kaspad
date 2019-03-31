@@ -1185,7 +1185,7 @@ func countSpentOutputs(block *util.Block) int {
 
 // CheckConnectBlockTemplate fully validates that connecting the passed block to
 // the DAG does not violate any consensus rules, aside from the proof of
-// work requirement. The block must connect to the current tip of the main dag.
+// work requirement.
 //
 // This function is safe for concurrent access.
 func (dag *BlockDAG) CheckConnectBlockTemplate(block *util.Block) error {
@@ -1195,16 +1195,7 @@ func (dag *BlockDAG) CheckConnectBlockTemplate(block *util.Block) error {
 	// Skip the proof of work check as this is just a block template.
 	flags := BFNoPoWCheck
 
-	// This only checks whether the block can be connected to the tip of the
-	// current dag.
-	tips := dag.virtual.tips()
 	header := block.MsgBlock().Header
-	parentHashes := header.ParentHashes
-	if !tips.hashesEqual(parentHashes) {
-		str := fmt.Sprintf("parent blocks must be the current tips %s, "+
-			"instead got %v", tips, parentHashes)
-		return ruleError(ErrParentBlockNotCurrentTips, str)
-	}
 
 	err := dag.checkBlockSanity(block, flags)
 	if err != nil {

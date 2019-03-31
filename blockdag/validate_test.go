@@ -126,11 +126,12 @@ func TestCheckConnectBlockTemplate(t *testing.T) {
 		t.Errorf("Block 4 wasn't successfully detached as a child from block3")
 	}
 
-	// Block 3a should fail to connect since does not build on chain tip.
+	// Block 3a should connect even though he does not build on chain tip.
+	blocks[5].SetHeight(3) // set height manually because it was set to 0 in loadBlocks
 	err = dag.CheckConnectBlockTemplate(blocks[5])
-	if err == nil {
-		t.Fatal("CheckConnectBlockTemplate: Did not received expected error " +
-			"on block 3a")
+	if err != nil {
+		t.Fatal("CheckConnectBlockTemplate: Recieved unexpected error on " +
+			"block 3a that connects below the tips")
 	}
 
 	// Block 4 should connect even if proof of work is invalid.
