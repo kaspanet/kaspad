@@ -754,7 +754,7 @@ func (dag *BlockDAG) validateDifficulty(header *wire.BlockHeader, bluestParent *
 // validateParents validates that no parent is an ancestor of another parent
 func validateParents(blockHeader *wire.BlockHeader, parents blockSet) error {
 	minHeight := int32(math.MaxInt32)
-	queue := NewHeap()
+	queue := NewDownHeap()
 	visited := newSet()
 	for _, parent := range parents {
 		if parent.height < minHeight {
@@ -1183,14 +1183,21 @@ func countSpentOutputs(block *util.Block) int {
 	return numSpent
 }
 
-// CheckConnectBlockTemplate fully validates that connecting the passed block to
+// CheckConnectBlockTemplateWithLock fully validates that connecting the passed block to
 // the DAG does not violate any consensus rules, aside from the proof of
 // work requirement.
 //
 // This function is safe for concurrent access.
+func (dag *BlockDAG) CheckConnectBlockTemplateWithLock(block *util.Block) error {
+	dag.dagLock.RLock()
+	defer dag.dagLock.RUnlock()
+	return dag.CheckConnectBlockTemplate(block)
+}
+
+// CheckConnectBlockTemplate fully validates that connecting the passed block to
+// the DAG does not violate any consensus rules, aside from the proof of
+// work requirement. The block must connect to the current tip of the main dag.
 func (dag *BlockDAG) CheckConnectBlockTemplate(block *util.Block) error {
-	dag.dagLock.Lock()
-	defer dag.dagLock.Unlock()
 
 	// Skip the proof of work check as this is just a block template.
 	flags := BFNoPoWCheck
@@ -1213,7 +1220,6 @@ func (dag *BlockDAG) CheckConnectBlockTemplate(block *util.Block) error {
 	}
 
 	templateNode := newBlockNode(&header, dag.virtual.tips(), dag.dagParams.K)
-	defer templateNode.detachFromParents()
 
 	_, err = dag.checkConnectToPastUTXO(templateNode,
 		dag.UTXOSet(), block.Transactions(), false)
