@@ -74,6 +74,8 @@ func invSummary(invList []*wire.InvVect) string {
 			return fmt.Sprintf("error %s", iv.Hash)
 		case wire.InvTypeBlock:
 			return fmt.Sprintf("block %s", iv.Hash)
+		case wire.InvTypeSyncBlock:
+			return fmt.Sprintf("sync block %s", iv.Hash)
 		case wire.InvTypeTx:
 			return fmt.Sprintf("tx %s", iv.Hash)
 		}
@@ -124,8 +126,8 @@ func sanitizeString(str string, maxLength uint) string {
 func messageSummary(msg wire.Message) string {
 	switch msg := msg.(type) {
 	case *wire.MsgVersion:
-		return fmt.Sprintf("agent %s, pver %d, block %d",
-			msg.UserAgent, msg.ProtocolVersion, msg.LastBlock)
+		return fmt.Sprintf("agent %s, pver %d, selected tip %s",
+			msg.UserAgent, msg.ProtocolVersion, msg.SelectedTip)
 
 	case *wire.MsgVerAck:
 		// No summary.

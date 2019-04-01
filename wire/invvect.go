@@ -29,6 +29,7 @@ const (
 	InvTypeTx            InvType = 1
 	InvTypeBlock         InvType = 2
 	InvTypeFilteredBlock InvType = 3
+	InvTypeSyncBlock     InvType = 4
 )
 
 // Map of service flags back to their constant names for pretty printing.
@@ -37,6 +38,7 @@ var ivStrings = map[InvType]string{
 	InvTypeTx:            "MSG_TX",
 	InvTypeBlock:         "MSG_BLOCK",
 	InvTypeFilteredBlock: "MSG_FILTERED_BLOCK",
+	InvTypeSyncBlock:     "MSG_SYNC_BLOCK",
 }
 
 // String returns the InvType in human-readable form.
@@ -78,4 +80,9 @@ func writeInvVect(w io.Writer, pver uint32, iv *InvVect) error {
 
 func (iv *InvVect) String() string {
 	return fmt.Sprintf("{%s:%s}", iv.Type, iv.Hash)
+}
+
+// IsBlockOrSyncBlock returns true if the inv type is InvTypeBlock or InvTypeSyncBlock
+func (iv *InvVect) IsBlockOrSyncBlock() bool {
+	return iv.Type == InvTypeBlock || iv.Type == InvTypeSyncBlock
 }

@@ -131,9 +131,17 @@ type headerNode struct {
 // about a peer.
 type peerSyncState struct {
 	syncCandidate   bool
-	requestQueue    []*wire.InvVect
-	requestedTxns   map[daghash.TxID]struct{}
-	requestedBlocks map[daghash.Hash]struct{}
+	requestQueueMtx sync.Mutex
+	// relayedInvsRequestQueue contains invs of blocks and transactions
+	// which are relayed to our node.
+	relayedInvsRequestQueue []*wire.InvVect
+	// requestQueue contains all of the invs that are not relayed to
+	// us; we get them by requesting them or by manually creating them.
+	requestQueue               []*wire.InvVect
+	relayedInvsRequestQueueSet map[daghash.Hash]struct{}
+	requestQueueSet            map[daghash.Hash]struct{}
+	requestedTxns              map[daghash.TxID]struct{}
+	requestedBlocks            map[daghash.Hash]struct{}
 }
 
 // SyncManager is used to communicate block related messages with peers. The
@@ -230,13 +238,14 @@ func (sm *SyncManager) startSync() {
 			continue
 		}
 
-		// Remove sync candidate peers that are no longer candidates due
-		// to passing their latest known block.  NOTE: The < is
-		// intentional as opposed to <=.  While technically the peer
-		// doesn't have a later block when it's equal, it will likely
-		// have one soon so it is a reasonable choice.  It also allows
-		// the case where both are at 0 such as during regression test.
-		if peer.LastBlock() < sm.dag.Height() { //TODO: (Ori) This is probably wrong. Done only for compilation
+		isCandidate, err := peer.IsSyncCandidate()
+		if err != nil {
+			log.Errorf("Failed to check if peer %s is"+
+				"a sync candidate: %s", peer, err)
+			return
+		}
+
+		if !isCandidate {
 			state.syncCandidate = false
 			continue
 		}
@@ -253,15 +262,10 @@ func (sm *SyncManager) startSync() {
 		// to send.
 		sm.requestedBlocks = make(map[daghash.Hash]struct{})
 
-		locator, err := sm.dag.LatestBlockLocator()
-		if err != nil {
-			log.Errorf("Failed to get block locator for the "+
-				"latest block: %s", err)
-			return
-		}
+		locator := sm.dag.LatestBlockLocator()
 
-		log.Infof("Syncing to block height %d from peer %s",
-			bestPeer.LastBlock(), bestPeer.Addr())
+		log.Infof("Syncing to block %s from peer %s",
+			bestPeer.SelectedTip(), bestPeer.Addr())
 
 		// When the current height is less than a known checkpoint we
 		// can use block headers to learn about which blocks comprise
@@ -342,9 +346,11 @@ func (sm *SyncManager) handleNewPeerMsg(peer *peerpkg.Peer) {
 	// Initialize the peer state
 	isSyncCandidate := sm.isSyncCandidate(peer)
 	sm.peerStates[peer] = &peerSyncState{
-		syncCandidate:   isSyncCandidate,
-		requestedTxns:   make(map[daghash.TxID]struct{}),
-		requestedBlocks: make(map[daghash.Hash]struct{}),
+		syncCandidate:              isSyncCandidate,
+		requestedTxns:              make(map[daghash.TxID]struct{}),
+		requestedBlocks:            make(map[daghash.Hash]struct{}),
+		requestQueueSet:            make(map[daghash.Hash]struct{}),
+		relayedInvsRequestQueueSet: make(map[daghash.Hash]struct{}),
 	}
 
 	// Start syncing by choosing the best candidate if needed.
@@ -466,22 +472,26 @@ func (sm *SyncManager) handleTxMsg(tmsg *txMsg) {
 // current returns true if we believe we are synced with our peers, false if we
 // still have blocks to check
 func (sm *SyncManager) current() bool {
-	if !sm.dag.IsCurrent() {
-		return false
-	}
+	return sm.dag.IsCurrent()
+}
 
-	// if blockChain thinks we are current and we have no syncPeer it
-	// is probably right.
-	if sm.syncPeer == nil {
-		return true
+// restartSyncIfNeeded finds a new sync candidate if we're not expecting any
+// blocks from the current one.
+func (sm *SyncManager) restartSyncIfNeeded() {
+	if sm.syncPeer != nil {
+		syncPeerState, exists := sm.peerStates[sm.syncPeer]
+		if exists {
+			isWaitingForBlocks := func() bool {
+				syncPeerState.requestQueueMtx.Lock()
+				defer syncPeerState.requestQueueMtx.Unlock()
+				return len(syncPeerState.requestedBlocks) != 0 || len(syncPeerState.requestQueue) != 0
+			}()
+			if isWaitingForBlocks {
+				return
+			}
+		}
 	}
-
-	// No matter what chain thinks, if we are below the block we are syncing
-	// to we are not current.
-	if sm.dag.Height() < sm.syncPeer.LastBlock() { //TODO: (Ori) This is probably wrong. Done only for compilation
-		return false
-	}
-	return true
+	sm.startSync()
 }
 
 // handleBlockMsg handles block messages from all peers.
@@ -533,14 +543,17 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 		}
 	}
 
-	// Remove block from request maps. Either chain will know about it and
-	// so we shouldn't have any more instances of trying to fetch it, or we
-	// will fail the insert and thus we'll retry next time we get an inv.
+	// Process the block to include validation, orphan handling, etc.
+	isOrphan, err := sm.dag.ProcessBlock(bmsg.block, behaviorFlags)
+
+	// Remove block from request maps. Either DAG knows about it and
+	// so we shouldn't have any more instances of trying to fetch it, or
+	// the insertion fails and thus we'll retry next time we get an inv.
 	delete(state.requestedBlocks, *blockHash)
 	delete(sm.requestedBlocks, *blockHash)
 
-	// Process the block to include validation, orphan handling, etc.
-	isOrphan, err := sm.dag.ProcessBlock(bmsg.block, behaviorFlags)
+	sm.restartSyncIfNeeded()
+
 	if err != nil {
 		// When the error is a rule error, it means the block was simply
 		// rejected as opposed to something actually going wrong, so log
@@ -565,69 +578,32 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 		return
 	}
 
-	// Meta-data about the new block this peer is reporting. We use this
-	// below to update this peer's lastest block height and the heights of
-	// other peers based on their last announced block hash. This allows us
-	// to dynamically update the block heights of peers, avoiding stale
-	// heights when looking for a new sync peer. Upon acceptance of a block
-	// or recognition of an orphan, we also use this information to update
-	// the block heights over other peers who's invs may have been ignored
-	// if we are actively syncing while the chain is not yet current or
-	// who may have lost the lock announcment race.
-	var heightUpdate int32
-	var blkHashUpdate *daghash.Hash
-
 	// Request the parents for the orphan block from the peer that sent it.
 	if isOrphan {
-		// We've just received an orphan block from a peer. In order
-		// to update the height of the peer, we try to extract the
-		// block height from the scriptSig of the coinbase transaction.
-		// Extraction is only attempted if the block's version is
-		// high enough (ver 2+).
-		coinbaseTx := bmsg.block.Transactions()[0]
-		cbHeight, err := blockdag.ExtractCoinbaseHeight(coinbaseTx)
+		missingAncestors, err := sm.dag.GetOrphanMissingAncestorHashes(blockHash)
 		if err != nil {
-			log.Warnf("Unable to extract height from "+
-				"coinbase tx: %s", err)
-		} else {
-			log.Debugf("Extracted height of %d from "+
-				"orphan block", cbHeight)
-			heightUpdate = cbHeight
-			blkHashUpdate = blockHash
+			log.Errorf("Failed to find missing ancestors for block %s: %s",
+				blockHash, err)
+			return
 		}
-
-		orphanRoot := sm.dag.GetOrphanRoot(blockHash)
-		locator, err := sm.dag.LatestBlockLocator()
-		if err != nil {
-			log.Warnf("Failed to get block locator for the "+
-				"latest block: %s", err)
-		} else {
-			peer.PushGetBlocksMsg(locator, orphanRoot)
-		}
+		sm.addBlocksToRequestQueue(state, missingAncestors, false)
 	} else {
 		// When the block is not an orphan, log information about it and
 		// update the chain state.
 		sm.progressLogger.LogBlockHeight(bmsg.block)
 
-		// Update this peer's latest block height, for future
-		// potential sync node candidacy.
-		highestTipHash := sm.dag.HighestTipHash()
-		heightUpdate = sm.dag.Height() //TODO: (Ori) This is probably wrong. Done only for compilation
-		blkHashUpdate = highestTipHash
-
 		// Clear the rejected transactions.
 		sm.rejectedTxns = make(map[daghash.TxID]struct{})
 	}
 
-	// Update the block height for this peer. But only send a message to
-	// the server for updating peer heights if this is an orphan or our
-	// chain is "current". This avoids sending a spammy amount of messages
-	// if we're syncing the chain from scratch.
-	if blkHashUpdate != nil && heightUpdate != 0 {
-		peer.UpdateLastBlockHeight(heightUpdate)
-		if isOrphan || sm.current() {
-			go sm.peerNotifier.UpdatePeerHeights(blkHashUpdate, heightUpdate,
-				peer)
+	// We don't want to flood our sync peer with getdata messages, so
+	// instead of asking it immediately about missing ancestors, we first
+	// wait until it finishes to send us all of the requested blocks.
+	if (isOrphan && peer != sm.syncPeer) || (peer == sm.syncPeer && len(state.requestedBlocks) == 0) {
+		err := sm.sendInvsFromRequestQueue(peer, state)
+		if err != nil {
+			log.Errorf("Failed to send invs from queue: %s", err)
+			return
 		}
 	}
 
@@ -681,6 +657,37 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 			peer.Addr(), err)
 		return
 	}
+}
+
+func (sm *SyncManager) addBlocksToRequestQueue(state *peerSyncState, hashes []*daghash.Hash, isRelayedInv bool) {
+	state.requestQueueMtx.Lock()
+	defer state.requestQueueMtx.Unlock()
+	for _, hash := range hashes {
+		if _, exists := sm.requestedBlocks[*hash]; !exists {
+			iv := wire.NewInvVect(wire.InvTypeBlock, hash)
+			state.addInvToRequestQueue(iv, isRelayedInv)
+		}
+	}
+}
+
+func (state *peerSyncState) addInvToRequestQueue(iv *wire.InvVect, isRelayedInv bool) {
+	if isRelayedInv {
+		if _, exists := state.relayedInvsRequestQueueSet[*iv.Hash]; !exists {
+			state.relayedInvsRequestQueueSet[*iv.Hash] = struct{}{}
+			state.relayedInvsRequestQueue = append(state.relayedInvsRequestQueue, iv)
+		}
+	} else {
+		if _, exists := state.requestQueueSet[*iv.Hash]; !exists {
+			state.requestQueueSet[*iv.Hash] = struct{}{}
+			state.requestQueue = append(state.requestQueue, iv)
+		}
+	}
+}
+
+func (state *peerSyncState) addInvToRequestQueueWithLock(iv *wire.InvVect, isRelayedInv bool) {
+	state.requestQueueMtx.Lock()
+	defer state.requestQueueMtx.Unlock()
+	state.addInvToRequestQueue(iv, isRelayedInv)
 }
 
 // fetchHeaderBlocks creates and sends a request to the syncPeer for the next
@@ -845,9 +852,10 @@ func (sm *SyncManager) handleHeadersMsg(hmsg *headersMsg) {
 // are in the memory pool (either the main pool or orphan pool).
 func (sm *SyncManager) haveInventory(invVect *wire.InvVect) (bool, error) {
 	switch invVect.Type {
+	case wire.InvTypeSyncBlock:
+		fallthrough
 	case wire.InvTypeBlock:
-		// Ask chain if the block is known to it in any form (main
-		// chain, side chain, or orphan).
+		// Ask DAG if the block is known to it in any form (in DAG or as an orphan).
 		return sm.dag.HaveBlock(invVect.Hash)
 
 	case wire.InvTypeTx:
@@ -900,27 +908,9 @@ func (sm *SyncManager) handleInvMsg(imsg *invMsg) {
 	lastBlock := -1
 	invVects := imsg.inv.InvList
 	for i := len(invVects) - 1; i >= 0; i-- {
-		if invVects[i].Type == wire.InvTypeBlock {
+		if invVects[i].IsBlockOrSyncBlock() {
 			lastBlock = i
 			break
-		}
-	}
-
-	// If this inv contains a block announcement, and this isn't coming from
-	// our current sync peer or we're current, then update the last
-	// announced block for this peer. We'll use this information later to
-	// update the heights of peers based on blocks we've accepted that they
-	// previously announced.
-	if lastBlock != -1 && (peer != sm.syncPeer || sm.current()) {
-		peer.UpdateLastAnnouncedBlock(invVects[lastBlock].Hash)
-	}
-
-	// If our chain is current and a peer announces a block we already
-	// know of, then update their current block height.
-	if lastBlock != -1 && sm.current() {
-		blkHeight, err := sm.dag.BlockHeightByHash(invVects[lastBlock].Hash)
-		if err == nil {
-			peer.UpdateLastBlockHeight(blkHeight)
 		}
 	}
 
@@ -932,6 +922,7 @@ func (sm *SyncManager) handleInvMsg(imsg *invMsg) {
 		// Ignore unsupported inventory types.
 		switch iv.Type {
 		case wire.InvTypeBlock:
+		case wire.InvTypeSyncBlock:
 		case wire.InvTypeTx:
 		default:
 			continue
@@ -964,11 +955,11 @@ func (sm *SyncManager) handleInvMsg(imsg *invMsg) {
 			}
 
 			// Add it to the request queue.
-			state.requestQueue = append(state.requestQueue, iv)
+			state.addInvToRequestQueueWithLock(iv, iv.Type != wire.InvTypeSyncBlock)
 			continue
 		}
 
-		if iv.Type == wire.InvTypeBlock {
+		if iv.IsBlockOrSyncBlock() {
 			// The block is an orphan block that we already have.
 			// When the existing orphan was processed, it requested
 			// the missing parent blocks.  When this scenario
@@ -980,27 +971,23 @@ func (sm *SyncManager) handleInvMsg(imsg *invMsg) {
 			// to signal there are more missing blocks that need to
 			// be requested.
 			if sm.dag.IsKnownOrphan(iv.Hash) {
-				// Request blocks starting at the latest known
-				// up to the root of the orphan that just came
-				// in.
-				orphanRoot := sm.dag.GetOrphanRoot(iv.Hash)
-				locator, err := sm.dag.LatestBlockLocator()
+				missingAncestors, err := sm.dag.GetOrphanMissingAncestorHashes(iv.Hash)
 				if err != nil {
-					log.Errorf("PEER: Failed to get block "+
-						"locator for the latest block: "+
-						"%s", err)
-					continue
+					log.Errorf("Failed to find missing ancestors for block %s: %s",
+						iv.Hash, err)
+					return
 				}
-				peer.PushGetBlocksMsg(locator, orphanRoot)
+				sm.addBlocksToRequestQueue(state, missingAncestors, iv.Type != wire.InvTypeSyncBlock)
 				continue
 			}
 
 			// We already have the final block advertised by this
 			// inventory message, so force a request for more.  This
-			// should only happen if we're on a really long side
-			// chain.
-			if i == lastBlock {
-				// Request blocks after this one up to the
+			// should only happen if our DAG and the peer's DAG have
+			// diverged long time ago.
+			if i == lastBlock && peer == sm.syncPeer {
+				// Request blocks after the first block's ancestor that exists
+				// in the selected path chain, one up to the
 				// final one the remote peer knows about (zero
 				// stop hash).
 				locator := sm.dag.BlockLocatorFromHash(iv.Hash)
@@ -1009,30 +996,58 @@ func (sm *SyncManager) handleInvMsg(imsg *invMsg) {
 		}
 	}
 
-	// Request as much as possible at once.  Anything that won't fit into
-	// the request will be requested on the next inv message.
-	numRequested := 0
-	gdmsg := wire.NewMsgGetData()
-	requestQueue := state.requestQueue
+	err := sm.sendInvsFromRequestQueue(peer, state)
+	if err != nil {
+		log.Errorf("Failed to send invs from queue: %s", err)
+	}
+}
+
+func (sm *SyncManager) addInvsToGetDataMessageFromQueue(gdmsg *wire.MsgGetData, state *peerSyncState, requestQueue []*wire.InvVect) ([]*wire.InvVect, error) {
+	var invsNum int
+	leftSpaceInGdmsg := wire.MaxInvPerMsg - len(gdmsg.InvList)
+	if len(requestQueue) > leftSpaceInGdmsg {
+		invsNum = leftSpaceInGdmsg
+	} else {
+		invsNum = len(requestQueue)
+	}
+	invsToAdd := make([]*wire.InvVect, 0, invsNum)
+
 	for len(requestQueue) != 0 {
 		iv := requestQueue[0]
 		requestQueue[0] = nil
 		requestQueue = requestQueue[1:]
 
-		switch iv.Type {
-		case wire.InvTypeBlock:
-			// Request the block if there is not already a pending
-			// request.
-			if _, exists := sm.requestedBlocks[*iv.Hash]; !exists {
-				sm.requestedBlocks[*iv.Hash] = struct{}{}
-				sm.limitHashMap(sm.requestedBlocks, maxRequestedBlocks)
-				state.requestedBlocks[*iv.Hash] = struct{}{}
+		exists, err := sm.haveInventory(iv)
+		if err != nil {
+			return nil, err
+		}
+		if !exists {
+			invsToAdd = append(invsToAdd, iv)
+		}
+	}
 
-				gdmsg.AddInvVect(iv)
-				numRequested++
-			}
+	addBlockInv := func(iv *wire.InvVect) {
+		// Request the block if there is not already a pending
+		// request.
+		if _, exists := sm.requestedBlocks[*iv.Hash]; !exists {
+			sm.requestedBlocks[*iv.Hash] = struct{}{}
+			sm.limitHashMap(sm.requestedBlocks, maxRequestedBlocks)
+			state.requestedBlocks[*iv.Hash] = struct{}{}
+
+			gdmsg.AddInvVect(iv)
+		}
+	}
+	for _, iv := range invsToAdd {
+		switch iv.Type {
+		case wire.InvTypeSyncBlock:
+			delete(state.requestQueueSet, *iv.Hash)
+			addBlockInv(iv)
+		case wire.InvTypeBlock:
+			delete(state.relayedInvsRequestQueueSet, *iv.Hash)
+			addBlockInv(iv)
 
 		case wire.InvTypeTx:
+			delete(state.relayedInvsRequestQueueSet, *iv.Hash)
 			// Request the transaction if there is not already a
 			// pending request.
 			if _, exists := sm.requestedTxns[daghash.TxID(*iv.Hash)]; !exists {
@@ -1041,18 +1056,36 @@ func (sm *SyncManager) handleInvMsg(imsg *invMsg) {
 				state.requestedTxns[daghash.TxID(*iv.Hash)] = struct{}{}
 
 				gdmsg.AddInvVect(iv)
-				numRequested++
 			}
 		}
 
-		if numRequested >= wire.MaxInvPerMsg {
+		if len(requestQueue) >= wire.MaxInvPerMsg {
 			break
 		}
 	}
-	state.requestQueue = requestQueue
+	return requestQueue, nil
+}
+
+func (sm *SyncManager) sendInvsFromRequestQueue(peer *peerpkg.Peer, state *peerSyncState) error {
+	state.requestQueueMtx.Lock()
+	defer state.requestQueueMtx.Unlock()
+	gdmsg := wire.NewMsgGetData()
+	newRequestQueue, err := sm.addInvsToGetDataMessageFromQueue(gdmsg, state, state.requestQueue)
+	if err != nil {
+		return err
+	}
+	state.requestQueue = newRequestQueue
+	if sm.current() {
+		newRequestQueue, err := sm.addInvsToGetDataMessageFromQueue(gdmsg, state, state.relayedInvsRequestQueue)
+		if err != nil {
+			return err
+		}
+		state.relayedInvsRequestQueue = newRequestQueue
+	}
 	if len(gdmsg.InvList) > 0 {
 		peer.QueueMessage(gdmsg, nil)
 	}
+	return nil
 }
 
 // limitTxIDMap is a helper function for maps that require a maximum limit by

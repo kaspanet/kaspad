@@ -139,13 +139,6 @@ func initBlockNode(node *blockNode, blockHeader *wire.BlockHeader, parents block
 		node.timestamp = blockHeader.Timestamp.Unix()
 		node.hashMerkleRoot = blockHeader.HashMerkleRoot
 		node.idMerkleRoot = blockHeader.IDMerkleRoot
-
-		// update parents to point to new node
-		for _, p := range parents {
-			p.children[*node.hash] = node
-		}
-	} else {
-		node.hash = &daghash.ZeroHash
 	}
 
 	if len(parents) > 0 {
@@ -176,12 +169,10 @@ func newBlockNode(blockHeader *wire.BlockHeader, parents blockSet, phantomK uint
 	return &node
 }
 
-// newBlockNode adds node into children maps of its parents. So it must be
-// removed in case of error.
-func (node *blockNode) detachFromParents() {
-	// remove node from parents
-	for _, p := range node.parents {
-		delete(p.children, *node.hash)
+// updateParentsChildren updates the node's parents to point to new node
+func (node *blockNode) updateParentsChildren() {
+	for _, parent := range node.parents {
+		parent.children.add(node)
 	}
 }
 

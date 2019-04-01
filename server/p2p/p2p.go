@@ -190,24 +190,51 @@ func (ps *peerState) Count() int {
 		len(ps.persistentPeers)
 }
 
-// forAllOutboundPeers is a helper function that runs closure on all outbound
+// forAllOutboundPeers is a helper function that runs a callback on all outbound
 // peers known to peerState.
-func (ps *peerState) forAllOutboundPeers(closure func(sp *Peer)) {
+// The loop stops and returns false if one of the callback calls returns false.
+// Otherwise the function should return true.
+func (ps *peerState) forAllOutboundPeers(callback func(sp *Peer) bool) bool {
 	for _, e := range ps.outboundPeers {
-		closure(e)
+		shouldContinue := callback(e)
+		if !shouldContinue {
+			return false
+		}
 	}
 	for _, e := range ps.persistentPeers {
-		closure(e)
+		shouldContinue := callback(e)
+		if !shouldContinue {
+			return false
+		}
 	}
+	return true
 }
 
-// forAllPeers is a helper function that runs closure on all peers known to
-// peerState.
-func (ps *peerState) forAllPeers(closure func(sp *Peer)) {
+// forAllInboundPeers is a helper function that runs a callback on all inbound
+// peers known to peerState.
+// The loop stops and returns false if one of the callback calls returns false.
+// Otherwise the function should return true.
+func (ps *peerState) forAllInboundPeers(callback func(sp *Peer) bool) bool {
 	for _, e := range ps.inboundPeers {
-		closure(e)
+		shouldContinue := callback(e)
+		if !shouldContinue {
+			return false
+		}
 	}
-	ps.forAllOutboundPeers(closure)
+	return true
+}
+
+// forAllPeers is a helper function that runs a callback on all peers known to
+// peerState.
+// The loop stops and returns false if one of the callback calls returns false.
+// Otherwise the function should return true.
+func (ps *peerState) forAllPeers(callback func(sp *Peer) bool) bool {
+	shouldContinue := ps.forAllInboundPeers(callback)
+	if !shouldContinue {
+		return false
+	}
+	ps.forAllOutboundPeers(callback)
+	return true
 }
 
 // cfHeaderKV is a tuple of a filter header and its associated block hash. The
@@ -243,7 +270,6 @@ type Server struct {
 	Query                chan interface{}
 	relayInv             chan relayMsg
 	broadcast            chan broadcastMsg
-	peerHeightsUpdate    chan updatePeerHeightsMsg
 	wg                   sync.WaitGroup
 	quit                 chan struct{}
 	nat                  serverutils.NAT
@@ -286,11 +312,15 @@ func newServerPeer(s *Server, isPersistent bool) *Peer {
 	}
 }
 
-// newestBlock returns the current best block hash and height using the format
-// required by the configuration for the peer package.
-func (sp *Peer) newestBlock() (*daghash.Hash, int32, error) {
-	highestTipHash := sp.server.DAG.HighestTipHash()
-	return highestTipHash, sp.server.DAG.Height(), nil //TODO: (Ori) This is probably wrong. Done only for compilation
+// selectedTip returns the current selected tip
+func (sp *Peer) selectedTip() *daghash.Hash {
+	return sp.server.DAG.SelectedTipHash()
+}
+
+// blockExists determines whether a block with the given hash exists in
+// the DAG.
+func (sp *Peer) blockExists(hash *daghash.Hash) (bool, error) {
+	return sp.server.DAG.BlockExists(hash)
 }
 
 // addKnownAddresses adds the given addresses to the set of known addresses to
@@ -617,6 +647,8 @@ func (sp *Peer) OnGetData(_ *peer.Peer, msg *wire.MsgGetData) {
 		switch iv.Type {
 		case wire.InvTypeTx:
 			err = sp.server.pushTxMsg(sp, (*daghash.TxID)(iv.Hash), c, waitChan)
+		case wire.InvTypeSyncBlock:
+			fallthrough
 		case wire.InvTypeBlock:
 			err = sp.server.pushBlockMsg(sp, iv.Hash, c, waitChan)
 		case wire.InvTypeFilteredBlock:
@@ -675,7 +707,7 @@ func (sp *Peer) OnGetBlocks(_ *peer.Peer, msg *wire.MsgGetBlocks) {
 	// Generate inventory message.
 	invMsg := wire.NewMsgInv()
 	for i := range hashList {
-		iv := wire.NewInvVect(wire.InvTypeBlock, hashList[i])
+		iv := wire.NewInvVect(wire.InvTypeSyncBlock, hashList[i])
 		invMsg.AddInvVect(iv)
 	}
 
@@ -712,8 +744,8 @@ func (sp *Peer) OnGetHeaders(_ *peer.Peer, msg *wire.MsgGetHeaders) {
 	// over with the genesis block if unknown block locators are provided.
 	//
 	// This mirrors the behavior in the reference implementation.
-	chain := sp.server.DAG
-	headers := chain.LocateHeaders(msg.BlockLocatorHashes, msg.HashStop)
+	dag := sp.server.DAG
+	headers := dag.LocateHeaders(msg.BlockLocatorHashes, msg.HashStop)
 
 	// Send found headers to the requesting peer.
 	blockHeaders := make([]*wire.BlockHeader, len(headers))
@@ -1381,34 +1413,6 @@ func (s *Server) pushMerkleBlockMsg(sp *Peer, hash *daghash.Hash,
 	return nil
 }
 
-// handleUpdatePeerHeight updates the heights of all peers who were known to
-// announce a block we recently accepted.
-func (s *Server) handleUpdatePeerHeights(state *peerState, umsg updatePeerHeightsMsg) {
-	state.forAllPeers(func(sp *Peer) {
-		// The origin peer should already have the updated height.
-		if sp.Peer == umsg.originPeer {
-			return
-		}
-
-		// This is a pointer to the underlying memory which doesn't
-		// change.
-		latestBlkHash := sp.LastAnnouncedBlock()
-
-		// Skip this peer if it hasn't recently announced any new blocks.
-		if latestBlkHash == nil {
-			return
-		}
-
-		// If the peer has recently announced a block, and this block
-		// matches our newly accepted block, then update their block
-		// height.
-		if *latestBlkHash == *umsg.newHash {
-			sp.UpdateLastBlockHeight(umsg.newHeight)
-			sp.UpdateLastAnnouncedBlock(nil)
-		}
-	})
-}
-
 // handleAddPeerMsg deals with adding new peers.  It is invoked from the
 // peerHandler goroutine.
 func (s *Server) handleAddPeerMsg(state *peerState, sp *Peer) bool {
@@ -1524,9 +1528,9 @@ func (s *Server) handleBanPeerMsg(state *peerState, sp *Peer) {
 // handleRelayInvMsg deals with relaying inventory to peers that are not already
 // known to have it.  It is invoked from the peerHandler goroutine.
 func (s *Server) handleRelayInvMsg(state *peerState, msg relayMsg) {
-	state.forAllPeers(func(sp *Peer) {
+	state.forAllPeers(func(sp *Peer) bool {
 		if !sp.Connected() {
-			return
+			return true
 		}
 
 		// If the inventory is a block and the peer prefers headers,
@@ -1537,23 +1541,23 @@ func (s *Server) handleRelayInvMsg(state *peerState, msg relayMsg) {
 			if !ok {
 				peerLog.Warnf("Underlying data for headers" +
 					" is not a block header")
-				return
+				return true
 			}
 			msgHeaders := wire.NewMsgHeaders()
 			if err := msgHeaders.AddBlockHeader(&blockHeader); err != nil {
 				peerLog.Errorf("Failed to add block"+
 					" header: %s", err)
-				return
+				return true
 			}
 			sp.QueueMessage(msgHeaders, nil)
-			return
+			return true
 		}
 
 		if msg.invVect.Type == wire.InvTypeTx {
 			// Don't relay the transaction to the peer when it has
 			// transaction relaying disabled.
 			if sp.relayTxDisabled() {
-				return
+				return true
 			}
 
 			txD, ok := msg.data.(*mempool.TxDesc)
@@ -1561,28 +1565,28 @@ func (s *Server) handleRelayInvMsg(state *peerState, msg relayMsg) {
 				peerLog.Warnf("Underlying data for tx inv "+
 					"relay is not a *mempool.TxDesc: %T",
 					msg.data)
-				return
+				return true
 			}
 
 			// Don't relay the transaction if the transaction fee-per-kb
 			// is less than the peer's feefilter.
 			feeFilter := uint64(atomic.LoadInt64(&sp.FeeFilterInt))
 			if feeFilter > 0 && txD.FeePerKB < feeFilter {
-				return
+				return true
 			}
 
 			// Don't relay the transaction if there is a bloom
 			// filter loaded and the transaction doesn't match it.
 			if sp.filter.IsLoaded() {
 				if !sp.filter.MatchTxAndUpdate(txD.Tx) {
-					return
+					return true
 				}
 			}
 
 			// Don't relay the transaction if the peer's subnetwork is
 			// incompatible with it.
 			if !txD.Tx.MsgTx().IsSubnetworkCompatible(sp.Peer.SubnetworkID()) {
-				return
+				return true
 			}
 		}
 
@@ -1590,29 +1594,35 @@ func (s *Server) handleRelayInvMsg(state *peerState, msg relayMsg) {
 		// It will be ignored if the peer is already known to
 		// have the inventory.
 		sp.QueueInventory(msg.invVect)
+		return true
 	})
 }
 
 // handleBroadcastMsg deals with broadcasting messages to peers.  It is invoked
 // from the peerHandler goroutine.
 func (s *Server) handleBroadcastMsg(state *peerState, bmsg *broadcastMsg) {
-	state.forAllPeers(func(sp *Peer) {
+	state.forAllPeers(func(sp *Peer) bool {
 		if !sp.Connected() {
-			return
+			return true
 		}
 
 		for _, ep := range bmsg.excludePeers {
 			if sp == ep {
-				return
+				return true
 			}
 		}
 
 		sp.QueueMessage(bmsg.message, nil)
+		return true
 	})
 }
 
 type getConnCountMsg struct {
 	reply chan int32
+}
+
+type getShouldMineOnGenesisMsg struct {
+	reply chan bool
 }
 
 //GetPeersMsg is the message type which is used by the rpc server to get the peers list from the p2p server
@@ -1655,20 +1665,36 @@ func (s *Server) handleQuery(state *peerState, querymsg interface{}) {
 	switch msg := querymsg.(type) {
 	case getConnCountMsg:
 		nconnected := int32(0)
-		state.forAllPeers(func(sp *Peer) {
+		state.forAllPeers(func(sp *Peer) bool {
 			if sp.Connected() {
 				nconnected++
 			}
+			return true
 		})
 		msg.reply <- nconnected
 
+	case getShouldMineOnGenesisMsg:
+		shouldMineOnGenesis := true
+		if state.Count() != 0 {
+			shouldMineOnGenesis = state.forAllPeers(func(sp *Peer) bool {
+				if !sp.SelectedTip().IsEqual(s.DAGParams.GenesisHash) {
+					return false
+				}
+				return true
+			})
+		} else {
+			shouldMineOnGenesis = false
+		}
+		msg.reply <- shouldMineOnGenesis
+
 	case GetPeersMsg:
 		peers := make([]*Peer, 0, state.Count())
-		state.forAllPeers(func(sp *Peer) {
+		state.forAllPeers(func(sp *Peer) bool {
 			if !sp.Connected() {
-				return
+				return true
 			}
 			peers = append(peers, sp)
+			return true
 		})
 		msg.Reply <- peers
 
@@ -1816,7 +1842,8 @@ func newPeerConfig(sp *Peer) *peer.Config {
 			// other implementations' alert messages, we will not relay theirs.
 			OnAlert: nil,
 		},
-		NewestBlock:       sp.newestBlock,
+		SelectedTip:       sp.selectedTip,
+		BlockExists:       sp.blockExists,
 		HostToNetAddress:  sp.server.addrManager.HostToNetAddress,
 		Proxy:             config.MainConfig().Proxy,
 		UserAgentName:     userAgentName,
@@ -1937,10 +1964,6 @@ out:
 		case p := <-s.donePeers:
 			s.handleDonePeerMsg(state, p)
 
-		// Block accepted in mainchain or orphan, update peer height.
-		case umsg := <-s.peerHeightsUpdate:
-			s.handleUpdatePeerHeights(state, umsg)
-
 		// Peer to ban.
 		case p := <-s.banPeers:
 			s.handleBanPeerMsg(state, p)
@@ -1959,9 +1982,10 @@ out:
 
 		case <-s.quit:
 			// Disconnect all peers on server shutdown.
-			state.forAllPeers(func(sp *Peer) {
+			state.forAllPeers(func(sp *Peer) bool {
 				srvrLog.Tracef("Shutdown peer %s", sp)
 				sp.Disconnect()
+				return true
 			})
 			break out
 		}
@@ -1978,7 +2002,6 @@ cleanup:
 		select {
 		case <-s.newPeers:
 		case <-s.donePeers:
-		case <-s.peerHeightsUpdate:
 		case <-s.relayInv:
 		case <-s.broadcast:
 		case <-s.Query:
@@ -2024,6 +2047,17 @@ func (s *Server) ConnectedCount() int32 {
 	return <-replyChan
 }
 
+// ShouldMineOnGenesis checks if the node is connected to at least one
+// peer, and at least one of its peers knows of any blocks that were mined
+// on top of the genesis block.
+func (s *Server) ShouldMineOnGenesis() bool {
+	replyChan := make(chan bool)
+
+	s.Query <- getShouldMineOnGenesisMsg{reply: replyChan}
+
+	return <-replyChan
+}
+
 // OutboundGroupCount returns the number of peers connected to the given
 // outbound group key.
 func (s *Server) OutboundGroupCount(key string) int {
@@ -2049,18 +2083,6 @@ func (s *Server) AddBytesReceived(bytesReceived uint64) {
 func (s *Server) NetTotals() (uint64, uint64) {
 	return atomic.LoadUint64(&s.bytesReceived),
 		atomic.LoadUint64(&s.bytesSent)
-}
-
-// UpdatePeerHeights updates the heights of all peers who have have announced
-// the latest connected main chain block, or a recognized orphan. These height
-// updates allow us to dynamically refresh peer heights, ensuring sync peer
-// selection has access to the latest block heights for each peer.
-func (s *Server) UpdatePeerHeights(latestBlkHash *daghash.Hash, latestHeight int32, updateSource *peer.Peer) {
-	s.peerHeightsUpdate <- updatePeerHeightsMsg{
-		newHash:    latestBlkHash,
-		newHeight:  latestHeight,
-		originPeer: updateSource,
-	}
 }
 
 // rebroadcastHandler keeps track of user submitted inventories that we have
@@ -2350,7 +2372,6 @@ func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params
 		broadcast:             make(chan broadcastMsg, config.MainConfig().MaxPeers),
 		quit:                  make(chan struct{}),
 		modifyRebroadcastInv:  make(chan interface{}),
-		peerHeightsUpdate:     make(chan updatePeerHeightsMsg),
 		nat:                   nat,
 		db:                    db,
 		TimeSource:            blockdag.NewMedianTime(),
