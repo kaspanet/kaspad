@@ -139,6 +139,8 @@ func initBlockNode(node *blockNode, blockHeader *wire.BlockHeader, parents block
 		node.timestamp = blockHeader.Timestamp.Unix()
 		node.hashMerkleRoot = blockHeader.HashMerkleRoot
 		node.idMerkleRoot = blockHeader.IDMerkleRoot
+	} else {
+		node.hash = &daghash.ZeroHash
 	}
 
 	if len(parents) > 0 {
