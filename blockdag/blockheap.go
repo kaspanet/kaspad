@@ -24,12 +24,26 @@ func (h *baseHeap) Pop() interface{} {
 	return popped
 }
 
-func (h baseHeap) Less(i, j int) bool {
-	if h[i].height == h[j].height {
-		return daghash.HashToBig(&h[i].hash).Cmp(daghash.HashToBig(&h[j].hash)) > 0
+// upHeap extends baseHeap to include Less operation that traverses from bottom to top
+type upHeap struct{ baseHeap }
+
+func (h upHeap) Less(i, j int) bool {
+	if h.baseHeap[i].height == h.baseHeap[j].height {
+		return daghash.HashToBig(&h.baseHeap[i].hash).Cmp(daghash.HashToBig(&h.baseHeap[j].hash)) < 0
 	}
 
-	return h[i].height > h[j].height
+	return h.baseHeap[i].height < h.baseHeap[j].height
+}
+
+// downHeap extends baseHeap to include Less operation that traverses from top to bottom
+type downHeap struct{ baseHeap }
+
+func (h downHeap) Less(i, j int) bool {
+	if h.baseHeap[i].height == h.baseHeap[j].height {
+		return daghash.HashToBig(&h.baseHeap[i].hash).Cmp(daghash.HashToBig(&h.baseHeap[j].hash)) > 0
+	}
+
+	return h.baseHeap[i].height > h.baseHeap[j].height
 }
 
 // BlockHeap represents a mutable heap of Blocks, sorted by their height
@@ -37,9 +51,16 @@ type BlockHeap struct {
 	impl heap.Interface
 }
 
-// NewHeap initializes and returns a new BlockHeap
-func NewHeap() BlockHeap {
-	h := BlockHeap{impl: &baseHeap{}}
+// NewDownHeap initializes and returns a new BlockHeap
+func NewDownHeap() BlockHeap {
+	h := BlockHeap{impl: &downHeap{}}
+	heap.Init(h.impl)
+	return h
+}
+
+// NewUpHeap initializes and returns a new BlockHeap
+func NewUpHeap() BlockHeap {
+	h := BlockHeap{impl: &upHeap{}}
 	heap.Init(h.impl)
 	return h
 }
@@ -52,6 +73,13 @@ func (bh BlockHeap) pop() *blockNode {
 // Push pushes the block onto the heap
 func (bh BlockHeap) Push(block *blockNode) {
 	heap.Push(bh.impl, block)
+}
+
+// pushSet pushes a blockset to the heap.
+func (bh BlockHeap) pushSet(bs blockSet) {
+	for _, block := range bs {
+		heap.Push(bh.impl, block)
+	}
 }
 
 // Len returns the length of this heap

@@ -216,12 +216,13 @@ type MessageListeners struct {
 
 // Config is the struct to hold configuration options useful to Peer.
 type Config struct {
-	// NewestBlock specifies a callback which provides the newest block
-	// details to the peer as needed.  This can be nil in which case the
-	// peer will report a block height of 0, however it is good practice for
-	// peers to specify this so their currently best known is accurately
-	// reported.
-	NewestBlock HashFunc
+	// SelectedTip specifies a callback which provides the selected tip
+	// to the peer as needed.
+	SelectedTip func() *daghash.Hash
+
+	// SelectedTip specifies a callback which provides the selected tip
+	// to the peer as needed.
+	BlockExists func(*daghash.Hash) (bool, error)
 
 	// HostToNetAddress returns the netaddress for the given host. This can be
 	// nil in  which case the host will be parsed as an IP address.
@@ -369,8 +370,7 @@ type StatsSnap struct {
 	Version        uint32
 	UserAgent      string
 	Inbound        bool
-	StartingHeight int32
-	LastBlock      int32
+	SelectedTip    *daghash.Hash
 	LastPingNonce  uint64
 	LastPingTime   time.Time
 	LastPingMicros int64
@@ -452,15 +452,13 @@ type Peer struct {
 
 	// These fields keep track of statistics for the peer and are protected
 	// by the statsMtx mutex.
-	statsMtx           sync.RWMutex
-	timeOffset         int64
-	timeConnected      time.Time
-	startingHeight     int32
-	lastBlock          int32
-	lastAnnouncedBlock *daghash.Hash
-	lastPingNonce      uint64    // Set to nonce if we have a pending ping.
-	lastPingTime       time.Time // Time we sent last ping.
-	lastPingMicros     int64     // Time for last ping to return.
+	statsMtx       sync.RWMutex
+	timeOffset     int64
+	timeConnected  time.Time
+	selectedTip    *daghash.Hash
+	lastPingNonce  uint64    // Set to nonce if we have a pending ping.
+	lastPingTime   time.Time // Time we sent last ping.
+	lastPingMicros int64     // Time for last ping to return.
 
 	stallControl  chan stallControlMsg
 	outputQueue   chan outMsg
@@ -479,29 +477,6 @@ type Peer struct {
 // This function is safe for concurrent access.
 func (p *Peer) String() string {
 	return fmt.Sprintf("%s (%s)", p.addr, logger.DirectionString(p.inbound))
-}
-
-// UpdateLastBlockHeight updates the last known block for the peer.
-//
-// This function is safe for concurrent access.
-func (p *Peer) UpdateLastBlockHeight(newHeight int32) {
-	p.statsMtx.Lock()
-	log.Tracef("Updating last block height of peer %s from %s to %s",
-		p.addr, p.lastBlock, newHeight)
-	p.lastBlock = newHeight
-	p.statsMtx.Unlock()
-}
-
-// UpdateLastAnnouncedBlock updates meta-data about the last block hash this
-// peer is known to have announced.
-//
-// This function is safe for concurrent access.
-func (p *Peer) UpdateLastAnnouncedBlock(blkHash *daghash.Hash) {
-	log.Tracef("Updating last blk for peer %s, %s", p.addr, blkHash)
-
-	p.statsMtx.Lock()
-	p.lastAnnouncedBlock = blkHash
-	p.statsMtx.Unlock()
 }
 
 // AddKnownInventory adds the passed inventory to the cache of known inventory
@@ -540,8 +515,7 @@ func (p *Peer) StatsSnapshot() *StatsSnap {
 		TimeOffset:     p.timeOffset,
 		Version:        protocolVersion,
 		Inbound:        p.inbound,
-		StartingHeight: p.startingHeight,
-		LastBlock:      p.lastBlock,
+		SelectedTip:    p.selectedTip,
 		LastPingNonce:  p.lastPingNonce,
 		LastPingMicros: p.lastPingMicros,
 		LastPingTime:   p.lastPingTime,
@@ -620,17 +594,6 @@ func (p *Peer) SubnetworkID() *subnetworkid.SubnetworkID {
 	return subnetworkID
 }
 
-// LastAnnouncedBlock returns the last announced block of the remote peer.
-//
-// This function is safe for concurrent access.
-func (p *Peer) LastAnnouncedBlock() *daghash.Hash {
-	p.statsMtx.RLock()
-	lastAnnouncedBlock := p.lastAnnouncedBlock
-	p.statsMtx.RUnlock()
-
-	return lastAnnouncedBlock
-}
-
 // LastPingNonce returns the last ping nonce of the remote peer.
 //
 // This function is safe for concurrent access.
@@ -699,15 +662,26 @@ func (p *Peer) ProtocolVersion() uint32 {
 	return protocolVersion
 }
 
-// LastBlock returns the last block of the peer.
+// SelectedTip returns the selected tip of the peer.
 //
 // This function is safe for concurrent access.
-func (p *Peer) LastBlock() int32 {
+func (p *Peer) SelectedTip() *daghash.Hash {
 	p.statsMtx.RLock()
-	lastBlock := p.lastBlock
+	selectedTip := p.selectedTip
 	p.statsMtx.RUnlock()
 
-	return lastBlock
+	return selectedTip
+}
+
+// IsSyncCandidate returns whether or not this peer is a sync candidate.
+//
+// This function is safe for concurrent access.
+func (p *Peer) IsSyncCandidate() (bool, error) {
+	exists, err := p.cfg.BlockExists(p.selectedTip)
+	if err != nil {
+		return false, err
+	}
+	return !exists, nil
 }
 
 // LastSend returns the last send time of the peer.
@@ -762,18 +736,6 @@ func (p *Peer) TimeOffset() int64 {
 	return timeOffset
 }
 
-// StartingHeight returns the last known height the peer reported during the
-// initial negotiation phase.
-//
-// This function is safe for concurrent access.
-func (p *Peer) StartingHeight() int32 {
-	p.statsMtx.RLock()
-	startingHeight := p.startingHeight
-	p.statsMtx.RUnlock()
-
-	return startingHeight
-}
-
 // WantsHeaders returns if the peer wants header messages instead of
 // inventory vectors for blocks.
 //
@@ -789,15 +751,7 @@ func (p *Peer) WantsHeaders() bool {
 // localVersionMsg creates a version message that can be used to send to the
 // remote peer.
 func (p *Peer) localVersionMsg() (*wire.MsgVersion, error) {
-	var blockNum int32
-	if p.cfg.NewestBlock != nil {
-		var err error
-		_, blockNum, err = p.cfg.NewestBlock()
-		if err != nil {
-			return nil, err
-		}
-	}
-
+	selectedTip := p.cfg.SelectedTip()
 	theirNA := p.na
 
 	// If we are behind a proxy and the connection comes from the proxy then
@@ -833,7 +787,7 @@ func (p *Peer) localVersionMsg() (*wire.MsgVersion, error) {
 	subnetworkID := p.cfg.SubnetworkID
 
 	// Version message.
-	msg := wire.NewMsgVersion(ourNA, theirNA, nonce, blockNum, subnetworkID)
+	msg := wire.NewMsgVersion(ourNA, theirNA, nonce, selectedTip, subnetworkID)
 	msg.AddUserAgent(p.cfg.UserAgentName, p.cfg.UserAgentVersion,
 		p.cfg.UserAgentComments...)
 
@@ -1057,8 +1011,7 @@ func (p *Peer) handleRemoteVersionMsg(msg *wire.MsgVersion) error {
 	// Updating a bunch of stats including block based stats, and the
 	// peer's time offset.
 	p.statsMtx.Lock()
-	p.lastBlock = msg.LastBlock
-	p.startingHeight = msg.LastBlock
+	p.selectedTip = msg.SelectedTip
 	p.timeOffset = msg.Timestamp.Unix() - time.Now().Unix()
 	p.statsMtx.Unlock()
 

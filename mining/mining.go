@@ -384,6 +384,9 @@ func NewBlkTmplGenerator(policy *Policy, params *dagconfig.Params,
 //  |  <= policy.BlockMinSize)          |   |
 //   -----------------------------------  --
 func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTemplate, error) {
+	g.dag.RLock()
+	defer g.dag.RUnlock()
+
 	// Extend the most recently known best block.
 	nextBlockHeight := g.dag.Height() + 1
 
@@ -454,7 +457,6 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 
 	log.Debugf("Considering %d transactions for inclusion to new block",
 		len(sourceTxns))
-
 	for _, txDesc := range sourceTxns {
 		// A block can't have more than one coinbase or contain
 		// non-finalized transactions.
@@ -672,6 +674,7 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 	// chain with no issues.
 	block := util.NewBlock(&msgBlock)
 	block.SetHeight(nextBlockHeight)
+
 	if err := g.dag.CheckConnectBlockTemplate(block); err != nil {
 		return nil, err
 	}

@@ -158,7 +158,7 @@ type BlockDAG struct {
 //
 // This function is safe for concurrent access.
 func (dag *BlockDAG) HaveBlock(hash *daghash.Hash) (bool, error) {
-	exists, err := dag.blockExists(hash)
+	exists, err := dag.BlockExists(hash)
 	if err != nil {
 		return false, err
 	}
@@ -204,30 +204,41 @@ func (dag *BlockDAG) IsKnownOrphan(hash *daghash.Hash) bool {
 	return exists
 }
 
-// GetOrphanRoot returns the head of the chain for the provided hash from the
-// map of orphan blocks.
+// GetOrphanMissingAncestorHashes returns all of the missing parents in the orphan's sub-DAG
 //
 // This function is safe for concurrent access.
-func (dag *BlockDAG) GetOrphanRoot(hash *daghash.Hash) *daghash.Hash {
+func (dag *BlockDAG) GetOrphanMissingAncestorHashes(hash *daghash.Hash) ([]*daghash.Hash, error) {
 	// Protect concurrent access.  Using a read lock only so multiple
 	// readers can query without blocking each other.
 	dag.orphanLock.RLock()
 	defer dag.orphanLock.RUnlock()
 
-	// Keep looping while the parent of each orphaned block is
-	// known and is an orphan itself.
-	orphanRoot := hash
-	parentHash := hash
-	for {
-		orphan, exists := dag.orphans[*parentHash]
-		if !exists {
-			break
-		}
-		orphanRoot = parentHash
-		parentHash = orphan.block.MsgBlock().Header.SelectedParentHash()
-	}
+	missingAncestorsHashes := make([]*daghash.Hash, 0)
 
-	return orphanRoot
+	visited := make(map[daghash.Hash]bool)
+	queue := []*daghash.Hash{hash}
+	for len(queue) > 0 {
+		var current *daghash.Hash
+		current, queue = queue[0], queue[1:]
+		if !visited[*current] {
+			visited[*current] = true
+			orphan, orphanExists := dag.orphans[*current]
+			if orphanExists {
+				for _, parentHash := range orphan.block.MsgBlock().Header.ParentHashes {
+					queue = append(queue, &parentHash)
+				}
+			} else {
+				existsInDag, err := dag.BlockExists(current)
+				if err != nil {
+					return nil, err
+				}
+				if !existsInDag {
+					missingAncestorsHashes = append(missingAncestorsHashes, current)
+				}
+			}
+		}
+	}
+	return missingAncestorsHashes, nil
 }
 
 // removeOrphanBlock removes the passed orphan block from the orphan pool and
@@ -686,7 +697,19 @@ func (dag *BlockDAG) newFinalityPoint(newNode *blockNode) *blockNode {
 	return currentNode
 }
 
+// NextBlockFeeTransactionWithLock prepares the fee transaction for the next mined block
+//
+// This function CAN'T be called with the DAG lock not held.
+func (dag *BlockDAG) NextBlockFeeTransactionWithLock() (*wire.MsgTx, error) {
+	dag.dagLock.RLock()
+	defer dag.dagLock.RUnlock()
+
+	return dag.NextBlockFeeTransaction()
+}
+
 // NextBlockFeeTransaction prepares the fee transaction for the next mined block
+//
+// This function MUST be called with the DAG read-lock held
 func (dag *BlockDAG) NextBlockFeeTransaction() (*wire.MsgTx, error) {
 	_, txsAcceptanceData, _, err := dag.virtual.blockNode.verifyAndBuildUTXO(dag, nil, true)
 	if err != nil {
@@ -708,24 +731,21 @@ func (dag *BlockDAG) NextBlockFeeTransaction() (*wire.MsgTx, error) {
 func (dag *BlockDAG) applyDAGChanges(node *blockNode, block *util.Block, newBlockUTXO UTXOSet, fastAdd bool) (
 	virtualUTXODiff *UTXODiff, err error) {
 
-	// Clone the virtual block so that we don't modify the existing one.
-	virtualClone := dag.virtual.clone()
-
-	if err = node.updateParents(virtualClone, newBlockUTXO); err != nil {
+	if err = node.updateParents(dag.virtual, newBlockUTXO); err != nil {
 		return nil, fmt.Errorf("failed updating parents of %s: %s", node, err)
 	}
 
-	// Update the virtual block's children (the DAG tips) to include the new block.
-	virtualClone.AddTip(node)
+	// Update the virtual block's parents (the DAG tips) to include the new block.
+	dag.virtual.AddTip(node)
 
 	// Build a UTXO set for the new virtual block
-	newVirtualUTXO, _, err := virtualClone.blockNode.pastUTXO(virtualClone, dag.db)
+	newVirtualUTXO, _, err := dag.virtual.blockNode.pastUTXO(dag.virtual, dag.db)
 	if err != nil {
-		return nil, fmt.Errorf("could not restore past UTXO for virtual %s: %s", virtualClone, err)
+		return nil, fmt.Errorf("could not restore past UTXO for virtual %s: %s", dag.virtual, err)
 	}
 
 	// Apply new utxoDiffs to all the tips
-	err = updateTipsUTXO(virtualClone.parents, virtualClone, newVirtualUTXO)
+	err = updateTipsUTXO(dag.virtual.parents, dag.virtual, newVirtualUTXO)
 	if err != nil {
 		return nil, fmt.Errorf("failed updating the tips' UTXO: %s", err)
 	}
@@ -741,9 +761,6 @@ func (dag *BlockDAG) applyDAGChanges(node *blockNode, block *util.Block, newBloc
 		dag.index.SetStatusFlags(p, statusValid)
 	}
 	dag.index.SetStatusFlags(node, statusValid)
-
-	// It is now safe to apply the new virtual block
-	dag.virtual = virtualClone
 
 	// And now we can update the finality point of the DAG (if required)
 	dag.lastFinalityPoint = dag.newFinalityPoint(node)
@@ -937,6 +954,12 @@ func (node *blockNode) restoreUTXO(virtual *virtualBlock) (UTXOSet, error) {
 // updateParents adds this block to the children sets of its parents
 // and updates the diff of any parent whose DiffChild is this block
 func (node *blockNode) updateParents(virtual *virtualBlock, newBlockUTXO UTXOSet) error {
+	node.updateParentsChildren()
+	return node.updateParentsDiffs(virtual, newBlockUTXO)
+}
+
+// updateParentsDiffs updates the diff of any parent whose DiffChild is this block
+func (node *blockNode) updateParentsDiffs(virtual *virtualBlock, newBlockUTXO UTXOSet) error {
 	virtualDiffFromNewBlock, err := virtual.utxoSet.diffFrom(newBlockUTXO)
 	if err != nil {
 		return err
@@ -1025,8 +1048,6 @@ func (dag *BlockDAG) IsCurrent() bool {
 
 // selectedTip returns the current selected tip for the DAG.
 // It will return nil if there is no tip.
-//
-// This function is safe for concurrent access.
 func (dag *BlockDAG) selectedTip() *blockNode {
 	return dag.virtual.selectedParent
 }
@@ -1042,6 +1063,19 @@ func (dag *BlockDAG) SelectedTipHeader() *wire.BlockHeader {
 	}
 
 	return selectedTip.Header()
+}
+
+// SelectedTipHash returns the hash of the current selected tip for the DAG.
+// It will return nil if there is no tip.
+//
+// This function is safe for concurrent access.
+func (dag *BlockDAG) SelectedTipHash() *daghash.Hash {
+	selectedTip := dag.selectedTip()
+	if selectedTip == nil {
+		return nil
+	}
+
+	return &selectedTip.hash
 }
 
 // UTXOSet returns the DAG's UTXO set
@@ -1113,19 +1147,26 @@ func (dag *BlockDAG) HeaderByHash(hash *daghash.Hash) (*wire.BlockHeader, error)
 	return node.Header(), nil
 }
 
-// BlockLocatorFromHash returns a block locator for the passed block hash.
+// BlockLocatorFromHash traverses the selected parent chain of the given block hash
+// until it finds a block that exists in the virtual's selected parent chain, and
+// then it returns its block locator.
 // See BlockLocator for details on the algorithm used to create a block locator.
 //
 // In addition to the general algorithm referenced above, this function will
-// return the block locator for the latest known tip of the main (best) chain if
+// return the block locator for the selected tip if
 // the passed hash is not currently known.
 //
 // This function is safe for concurrent access.
 func (dag *BlockDAG) BlockLocatorFromHash(hash *daghash.Hash) BlockLocator {
 	dag.dagLock.RLock()
+	defer dag.dagLock.RUnlock()
 	node := dag.index.LookupNode(hash)
+	if node != nil {
+		for !dag.IsInSelectedPathChain(&node.hash) {
+			node = node.selectedParent
+		}
+	}
 	locator := dag.blockLocator(node)
-	dag.dagLock.RUnlock()
 	return locator
 }
 
@@ -1133,11 +1174,11 @@ func (dag *BlockDAG) BlockLocatorFromHash(hash *daghash.Hash) BlockLocator {
 // main (best) chain.
 //
 // This function is safe for concurrent access.
-func (dag *BlockDAG) LatestBlockLocator() (BlockLocator, error) {
+func (dag *BlockDAG) LatestBlockLocator() BlockLocator {
 	dag.dagLock.RLock()
+	defer dag.dagLock.RUnlock()
 	locator := dag.blockLocator(nil)
-	dag.dagLock.RUnlock()
-	return locator, nil
+	return locator
 }
 
 // blockLocator returns a block locator for the passed block node.  The passed
@@ -1336,24 +1377,16 @@ func (dag *BlockDAG) locateInventory(locator BlockLocator, hashStop *daghash.Has
 		}
 	}
 
-	// Start at the block after the most recently known block.  When there
-	// is no next block it means the most recently known block is the tip of
-	// the best chain, so there is nothing more to do.
-	startNode = startNode.diffChild
-	if startNode == nil {
-		return nil, 0
-	}
-
-	// Calculate how many entries are needed.
-	total := uint32((dag.selectedTip().height - startNode.height) + 1)
+	// Estimate how many entries are needed.
+	estimatedEntries := uint32((dag.selectedTip().blueScore - startNode.blueScore) + 1)
 	if stopNode != nil && stopNode.height >= startNode.height {
-		total = uint32((stopNode.height - startNode.height) + 1)
+		estimatedEntries = uint32((stopNode.blueScore - startNode.blueScore) + 1)
 	}
-	if total > maxEntries {
-		total = maxEntries
+	if estimatedEntries > maxEntries {
+		estimatedEntries = maxEntries
 	}
 
-	return startNode, total
+	return startNode, estimatedEntries
 }
 
 // locateBlocks returns the hashes of the blocks after the first known block in
@@ -1364,21 +1397,45 @@ func (dag *BlockDAG) locateInventory(locator BlockLocator, hashStop *daghash.Has
 //
 // This function MUST be called with the DAG state lock held (for reads).
 func (dag *BlockDAG) locateBlocks(locator BlockLocator, hashStop *daghash.Hash, maxHashes uint32) []daghash.Hash {
-	// Find the node after the first known block in the locator and the
-	// total number of nodes after it needed while respecting the stop hash
-	// and max entries.
-	node, total := dag.locateInventory(locator, hashStop, maxHashes)
-	if total == 0 {
-		return nil
-	}
-
-	// Populate and return the found hashes.
-	hashes := make([]daghash.Hash, 0, total)
-	for i := uint32(0); i < total; i++ {
-		hashes = append(hashes, node.hash)
-		node = node.diffChild
+	nodes := dag.locateBlockNodes(locator, hashStop, maxHashes)
+	hashes := make([]daghash.Hash, len(nodes))
+	for i, node := range nodes {
+		hashes[i] = node.hash
 	}
 	return hashes
+}
+
+func (dag *BlockDAG) locateBlockNodes(locator BlockLocator, hashStop *daghash.Hash, maxEntries uint32) []*blockNode {
+	// Find the first known block in the locator and the
+	// estimated number of nodes after it needed while respecting the stop hash
+	// and max entries.
+	node, estimatedEntries := dag.locateInventory(locator, hashStop, maxEntries)
+	if estimatedEntries == 0 {
+		return nil
+	}
+	stopNode := dag.index.LookupNode(hashStop)
+
+	// Populate and return the found nodes.
+	nodes := make([]*blockNode, 0, estimatedEntries)
+	queue := NewUpHeap()
+	queue.pushSet(node.children)
+
+	visited := newSet()
+	for i := uint32(0); queue.Len() > 0 && i < maxEntries; i++ {
+		var current *blockNode
+		current = queue.pop()
+		if !visited.contains(current) {
+			visited.add(current)
+			isBeforeStop := (stopNode == nil) || (current.height < stopNode.height)
+			if isBeforeStop || current.hash.IsEqual(hashStop) {
+				nodes = append(nodes, current)
+			}
+			if isBeforeStop {
+				queue.pushSet(current.children)
+			}
+		}
+	}
+	return nodes
 }
 
 // LocateBlocks returns the hashes of the blocks after the first known block in
@@ -1409,30 +1466,21 @@ func (dag *BlockDAG) LocateBlocks(locator BlockLocator, hashStop *daghash.Hash, 
 //
 // This function MUST be called with the DAG state lock held (for reads).
 func (dag *BlockDAG) locateHeaders(locator BlockLocator, hashStop *daghash.Hash, maxHeaders uint32) []*wire.BlockHeader {
-	// Find the node after the first known block in the locator and the
-	// total number of nodes after it needed while respecting the stop hash
-	// and max entries.
-	node, total := dag.locateInventory(locator, hashStop, maxHeaders)
-	if total == 0 {
-		return nil
-	}
-
-	// Populate and return the found headers.
-	headers := make([]*wire.BlockHeader, 0, total)
-	for i := uint32(0); i < total; i++ {
-		headers = append(headers, node.Header())
-		node = node.diffChild
+	nodes := dag.locateBlockNodes(locator, hashStop, maxHeaders)
+	headers := make([]*wire.BlockHeader, len(nodes))
+	for i, node := range nodes {
+		headers[i] = node.Header()
 	}
 	return headers
 }
 
-// UTXORLock locks the DAG's UTXO set for reading.
-func (dag *BlockDAG) UTXORLock() {
+// RLock locks the DAG's UTXO set for reading.
+func (dag *BlockDAG) RLock() {
 	dag.dagLock.RLock()
 }
 
-// UTXORUnlock unlocks the DAG's UTXO set for reading.
-func (dag *BlockDAG) UTXORUnlock() {
+// RUnlock unlocks the DAG's UTXO set for reading.
+func (dag *BlockDAG) RUnlock() {
 	dag.dagLock.RUnlock()
 }
 

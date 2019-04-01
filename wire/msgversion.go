@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/util/subnetworkid"
 )
 
@@ -52,8 +53,8 @@ type MsgVersion struct {
 	// on the wire.  This has a max length of MaxUserAgentLen.
 	UserAgent string
 
-	// Last block seen by the generator of the version message.
-	LastBlock int32
+	// The selected tip of the generator of the version message.
+	SelectedTip *daghash.Hash
 
 	// Don't announce transactions to peer.
 	DisableRelayTx bool
@@ -104,55 +105,36 @@ func (msg *MsgVersion) BtcDecode(r io.Reader, pver uint32) error {
 		return err
 	}
 
-	// Protocol versions >= 106 added a from address, nonce, and user agent
-	// field and they are only considered present if there are bytes
-	// remaining in the message.
-	if buf.Len() > 0 {
-		err = readNetAddress(buf, pver, &msg.AddrMe, false)
-		if err != nil {
-			return err
-		}
+	err = readNetAddress(buf, pver, &msg.AddrMe, false)
+	if err != nil {
+		return err
 	}
-	if buf.Len() > 0 {
-		err = readElement(buf, &msg.Nonce)
-		if err != nil {
-			return err
-		}
+	err = readElement(buf, &msg.Nonce)
+	if err != nil {
+		return err
 	}
-	if buf.Len() > 0 {
-		userAgent, err := ReadVarString(buf, pver)
-		if err != nil {
-			return err
-		}
-		err = validateUserAgent(userAgent)
-		if err != nil {
-			return err
-		}
-		msg.UserAgent = userAgent
+	userAgent, err := ReadVarString(buf, pver)
+	if err != nil {
+		return err
+	}
+	err = validateUserAgent(userAgent)
+	if err != nil {
+		return err
+	}
+	msg.UserAgent = userAgent
+
+	msg.SelectedTip = &daghash.Hash{}
+	err = readElement(buf, msg.SelectedTip)
+	if err != nil {
+		return err
 	}
 
-	// Protocol versions >= 209 added a last known block field.  It is only
-	// considered present if there are bytes remaining in the message.
-	if buf.Len() > 0 {
-		err = readElement(buf, &msg.LastBlock)
-		if err != nil {
-			return err
-		}
+	var relayTx bool
+	err = readElement(r, &relayTx)
+	if err != nil {
+		return err
 	}
-
-	// There was no relay transactions field before BIP0037Version, but
-	// the default behavior prior to the addition of the field was to always
-	// relay transactions.
-	if buf.Len() > 0 {
-		// It's safe to ignore the error here since the buffer has at
-		// least one byte and that byte will result in a boolean value
-		// regardless of its value.  Also, the wire encoding for the
-		// field is true when transactions should be relayed, so reverse
-		// it for the DisableRelayTx field.
-		var relayTx bool
-		readElement(r, &relayTx)
-		msg.DisableRelayTx = !relayTx
-	}
+	msg.DisableRelayTx = !relayTx
 
 	return nil
 }
@@ -196,7 +178,7 @@ func (msg *MsgVersion) BtcEncode(w io.Writer, pver uint32) error {
 		return err
 	}
 
-	err = writeElement(w, msg.LastBlock)
+	err = writeElement(w, msg.SelectedTip)
 	if err != nil {
 		return err
 	}
@@ -233,7 +215,7 @@ func (msg *MsgVersion) MaxPayloadLength(pver uint32) uint32 {
 // Message interface using the passed parameters and defaults for the remaining
 // fields.
 func NewMsgVersion(me *NetAddress, you *NetAddress, nonce uint64,
-	lastBlock int32, subnetworkID *subnetworkid.SubnetworkID) *MsgVersion {
+	selectedTip *daghash.Hash, subnetworkID *subnetworkid.SubnetworkID) *MsgVersion {
 
 	// Limit the timestamp to one second precision since the protocol
 	// doesn't support better.
@@ -245,7 +227,7 @@ func NewMsgVersion(me *NetAddress, you *NetAddress, nonce uint64,
 		AddrMe:          *me,
 		Nonce:           nonce,
 		UserAgent:       DefaultUserAgent,
-		LastBlock:       lastBlock,
+		SelectedTip:     selectedTip,
 		DisableRelayTx:  false,
 		SubnetworkID:    *subnetworkID,
 	}
