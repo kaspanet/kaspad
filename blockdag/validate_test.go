@@ -623,7 +623,7 @@ func TestValidateParents(t *testing.T) {
 	b := generateNode(a)
 	c := generateNode(genesisNode)
 
-	fakeBlockHeader := &wire.BlockHeader{IDMerkleRoot:&daghash.ZeroHash,HashMerkleRoot:&daghash.ZeroHash}
+	fakeBlockHeader := &wire.BlockHeader{IDMerkleRoot: &daghash.ZeroHash, HashMerkleRoot: &daghash.ZeroHash}
 
 	// Check direct parents relation
 	err := validateParents(fakeBlockHeader, setFromSlice(a, b))
