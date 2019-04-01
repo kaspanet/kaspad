@@ -446,7 +446,7 @@ var DevNetParams = Params{
 	Net:         wire.DevNet,
 	RPCPort:     "18334",
 	DefaultPort: "18333",
-	DNSSeeds:    []string{},
+	DNSSeeds:    []string{"devnet-dnsseed.daglabs.com"},
 
 	// Chain parameters
 	GenesisBlock:             &devNetGenesisBlock,
