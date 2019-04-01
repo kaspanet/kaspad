@@ -607,8 +607,8 @@ func (mp *TxPool) RemoveDoubleSpends(tx *util.Tx) {
 //
 // This function MUST be called with the mempool lock held (for writes).
 func (mp *TxPool) addTransaction(tx *util.Tx, height int32, fee uint64, parentsInPool []*wire.OutPoint) *TxDesc {
-	mp.cfg.DAG.UTXORLock()
-	defer mp.cfg.DAG.UTXORUnlock()
+	mp.cfg.DAG.RLock()
+	defer mp.cfg.DAG.RUnlock()
 	// Add the transaction to the pool and mark the referenced outpoints
 	// as spent by the pool.
 	txD := &TxDesc{
@@ -717,8 +717,8 @@ func (mp *TxPool) FetchTransaction(txID *daghash.TxID) (*util.Tx, error) {
 //
 // This function MUST be called with the mempool lock held (for writes).
 func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rateLimit, rejectDupOrphans bool) ([]*daghash.TxID, *TxDesc, error) {
-	mp.cfg.DAG.UTXORLock()
-	defer mp.cfg.DAG.UTXORUnlock()
+	mp.cfg.DAG.RLock()
+	defer mp.cfg.DAG.RUnlock()
 	txID := tx.ID()
 
 	// Don't accept the transaction if it already exists in the pool.  This

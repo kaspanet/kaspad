@@ -100,8 +100,6 @@ type peerStats struct {
 	wantConnected       bool
 	wantVersionKnown    bool
 	wantVerAckReceived  bool
-	wantLastBlock       int32
-	wantStartingHeight  int32
 	wantLastPingTime    time.Time
 	wantLastPingNonce   uint64
 	wantLastPingMicros  int64
@@ -152,11 +150,6 @@ func testPeer(t *testing.T, p *peer.Peer, s peerStats) {
 		return
 	}
 
-	if p.LastBlock() != s.wantLastBlock {
-		t.Errorf("testPeer: wrong LastBlock - got %v, want %v", p.LastBlock(), s.wantLastBlock)
-		return
-	}
-
 	// Allow for a deviation of 1s, as the second may tick when the message is
 	// in transit and the protocol doesn't support any further precision.
 	if p.TimeOffset() != s.wantTimeOffset && p.TimeOffset() != s.wantTimeOffset-1 {
@@ -172,11 +165,6 @@ func testPeer(t *testing.T, p *peer.Peer, s peerStats) {
 
 	if p.BytesReceived() != s.wantBytesReceived {
 		t.Errorf("testPeer: wrong BytesReceived - got %v, want %v", p.BytesReceived(), s.wantBytesReceived)
-		return
-	}
-
-	if p.StartingHeight() != s.wantStartingHeight {
-		t.Errorf("testPeer: wrong StartingHeight - got %v, want %v", p.StartingHeight(), s.wantStartingHeight)
 		return
 	}
 
@@ -229,6 +217,7 @@ func TestPeerConnection(t *testing.T) {
 		DAGParams:         &dagconfig.MainNetParams,
 		ProtocolVersion:   wire.ProtocolVersion, // Configure with older version
 		Services:          0,
+		SelectedTip:       fakeSelectedTipFn,
 	}
 	peer2Cfg := &peer.Config{
 		Listeners:         peer1Cfg.Listeners,
@@ -238,6 +227,7 @@ func TestPeerConnection(t *testing.T) {
 		DAGParams:         &dagconfig.MainNetParams,
 		ProtocolVersion:   wire.ProtocolVersion + 1,
 		Services:          wire.SFNodeNetwork,
+		SelectedTip:       fakeSelectedTipFn,
 	}
 
 	wantStats1 := peerStats{
@@ -251,8 +241,8 @@ func TestPeerConnection(t *testing.T) {
 		wantLastPingNonce:   uint64(0),
 		wantLastPingMicros:  int64(0),
 		wantTimeOffset:      int64(0),
-		wantBytesSent:       168, // 144 version + 24 verack
-		wantBytesReceived:   168,
+		wantBytesSent:       196, // 172 version + 24 verack
+		wantBytesReceived:   196,
 	}
 	wantStats2 := peerStats{
 		wantUserAgent:       wire.DefaultUserAgent + "peer:1.0(comment)/",
@@ -265,8 +255,8 @@ func TestPeerConnection(t *testing.T) {
 		wantLastPingNonce:   uint64(0),
 		wantLastPingMicros:  int64(0),
 		wantTimeOffset:      int64(0),
-		wantBytesSent:       168, // 144 version + 24 verack
-		wantBytesReceived:   168,
+		wantBytesSent:       196, // 172 version + 24 verack
+		wantBytesReceived:   196,
 	}
 
 	tests := []struct {
@@ -439,6 +429,7 @@ func TestPeerListeners(t *testing.T) {
 		UserAgentComments: []string{"comment"},
 		DAGParams:         &dagconfig.MainNetParams,
 		Services:          wire.SFNodeBloom,
+		SelectedTip:       fakeSelectedTipFn,
 	}
 	inConn, outConn := pipe(
 		&conn{raddr: "10.0.0.1:8333"},
@@ -599,10 +590,9 @@ func TestPeerListeners(t *testing.T) {
 
 // TestOutboundPeer tests that the outbound peer works as expected.
 func TestOutboundPeer(t *testing.T) {
-
 	peerCfg := &peer.Config{
-		NewestBlock: func() (*daghash.Hash, int32, error) {
-			return nil, 0, errors.New("newest block not found")
+		SelectedTip: func() *daghash.Hash {
+			return &daghash.ZeroHash
 		},
 		UserAgentName:     "peer",
 		UserAgentVersion:  "1.0",
@@ -623,23 +613,7 @@ func TestOutboundPeer(t *testing.T) {
 	// Test trying to connect twice.
 	p.AssociateConnection(c)
 	p.AssociateConnection(c)
-
-	disconnected := make(chan struct{})
-	go func() {
-		p.WaitForDisconnect()
-		disconnected <- struct{}{}
-	}()
-
-	select {
-	case <-disconnected:
-		close(disconnected)
-	case <-time.After(time.Second):
-		t.Fatal("Peer did not automatically disconnect.")
-	}
-
-	if p.Connected() {
-		t.Fatalf("Should not be connected as NewestBlock produces error.")
-	}
+	p.Disconnect()
 
 	// Test Queue Inv
 	fakeBlockHash := &daghash.Hash{0: 0x00, 1: 0x01}
@@ -657,17 +631,17 @@ func TestOutboundPeer(t *testing.T) {
 	<-done
 	p.Disconnect()
 
-	// Test NewestBlock
-	var newestBlock = func() (*daghash.Hash, int32, error) {
+	// Test SelectedTip
+	var selectedTip = func() *daghash.Hash {
 		hashStr := "14a0810ac680a3eb3f82edc878cea25ec41d6b790744e5daeef"
 		hash, err := daghash.NewHashFromStr(hashStr)
 		if err != nil {
-			return nil, 0, err
+			t.Fatalf("daghash.NewHashFromStr: %s", err)
 		}
-		return hash, 234439, nil
+		return hash
 	}
 
-	peerCfg.NewestBlock = newestBlock
+	peerCfg.SelectedTip = selectedTip
 	r1, w1 := io.Pipe()
 	c1 := &conn{raddr: "10.0.0.1:8333", Writer: w1, Reader: r1}
 	p1, err := peer.NewOutboundPeer(peerCfg, "10.0.0.1:8333")
@@ -676,20 +650,6 @@ func TestOutboundPeer(t *testing.T) {
 		return
 	}
 	p1.AssociateConnection(c1)
-
-	// Test update latest block
-	latestBlockHash, err := daghash.NewHashFromStr("1a63f9cdff1752e6375c8c76e543a71d239e1a2e5c6db1aa679")
-	if err != nil {
-		t.Errorf("NewHashFromStr: unexpected err %v\n", err)
-		return
-	}
-	p1.UpdateLastAnnouncedBlock(latestBlockHash)
-	p1.UpdateLastBlockHeight(234440)
-	if p1.LastAnnouncedBlock() != latestBlockHash {
-		t.Errorf("LastAnnouncedBlock: wrong block - got %v, want %v",
-			p1.LastAnnouncedBlock(), latestBlockHash)
-		return
-	}
 
 	// Test Queue Inv after connection
 	p1.QueueInventory(fakeInv)
@@ -749,6 +709,7 @@ func TestUnsupportedVersionPeer(t *testing.T) {
 		UserAgentComments: []string{"comment"},
 		DAGParams:         &dagconfig.MainNetParams,
 		Services:          0,
+		SelectedTip:       fakeSelectedTipFn,
 	}
 
 	localNA := wire.NewNetAddressIPPort(
@@ -805,7 +766,7 @@ func TestUnsupportedVersionPeer(t *testing.T) {
 	}
 
 	// Remote peer writes version message advertising invalid protocol version 0
-	invalidVersionMsg := wire.NewMsgVersion(remoteNA, localNA, 0, 0, nil)
+	invalidVersionMsg := wire.NewMsgVersion(remoteNA, localNA, 0, &daghash.ZeroHash, nil)
 	invalidVersionMsg.ProtocolVersion = 0
 
 	_, err = wire.WriteMessageN(
@@ -846,4 +807,8 @@ func TestUnsupportedVersionPeer(t *testing.T) {
 func init() {
 	// Allow self connection when running the tests.
 	peer.TstAllowSelfConns()
+}
+
+func fakeSelectedTipFn() *daghash.Hash {
+	return &daghash.Hash{0x12, 0x34}
 }

@@ -7,8 +7,9 @@ package wire
 import (
 	"bytes"
 	"fmt"
-	"github.com/daglabs/btcd/util/subnetworkid"
 	"io"
+
+	"github.com/daglabs/btcd/util/subnetworkid"
 
 	"github.com/daglabs/btcd/dagconfig/daghash"
 )
@@ -46,10 +47,8 @@ type MsgBlock struct {
 }
 
 // AddTransaction adds a transaction to the message.
-func (msg *MsgBlock) AddTransaction(tx *MsgTx) error {
+func (msg *MsgBlock) AddTransaction(tx *MsgTx) {
 	msg.Transactions = append(msg.Transactions, tx)
-	return nil
-
 }
 
 // ClearTransactions removes all transactions from the message.

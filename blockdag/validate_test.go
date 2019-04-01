@@ -120,6 +120,11 @@ func TestCheckConnectBlockTemplate(t *testing.T) {
 			"block 4: %v", err)
 	}
 
+	blockNode3 := dag.index.LookupNode(blocks[3].Hash())
+	if blockNode3.children.containsHash(blocks[4].Hash()) {
+		t.Errorf("Block 4 wasn't successfully detached as a child from block3")
+	}
+
 	// Block 3a should fail to connect since does not build on chain tip.
 	err = dag.CheckConnectBlockTemplate(blocks[5])
 	if err == nil {

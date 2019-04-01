@@ -46,7 +46,7 @@ func TestMessage(t *testing.T) {
 	addrMe := &net.TCPAddr{IP: net.ParseIP("127.0.0.1"), Port: 8333}
 	me := NewNetAddress(addrMe, SFNodeNetwork)
 	me.Timestamp = time.Time{} // Version message has zero value timestamp.
-	msgVersion := NewMsgVersion(me, you, 123123, 0, nil)
+	msgVersion := NewMsgVersion(me, you, 123123, &daghash.ZeroHash, nil)
 
 	msgVerack := NewMsgVerAck()
 	msgGetAddr := NewMsgGetAddr(false, nil)
@@ -86,7 +86,7 @@ func TestMessage(t *testing.T) {
 		btcnet BitcoinNet // Network to use for wire encoding
 		bytes  int        // Expected num bytes read/written
 	}{
-		{msgVersion, msgVersion, pver, MainNet, 126},
+		{msgVersion, msgVersion, pver, MainNet, 154},
 		{msgVerack, msgVerack, pver, MainNet, 24},
 		{msgGetAddr, msgGetAddr, pver, MainNet, 26},
 		{msgAddr, msgAddr, pver, MainNet, 27},

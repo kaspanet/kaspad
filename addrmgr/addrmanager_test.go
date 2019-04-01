@@ -2,7 +2,7 @@
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
-package addrmgr_test
+package addrmgr
 
 import (
 	"errors"
@@ -14,7 +14,6 @@ import (
 
 	"github.com/daglabs/btcd/util/subnetworkid"
 
-	"github.com/daglabs/btcd/addrmgr"
 	"github.com/daglabs/btcd/wire"
 )
 
@@ -105,7 +104,7 @@ func lookupFunc(host string) ([]net.IP, error) {
 }
 
 func TestStartStop(t *testing.T) {
-	n := addrmgr.New("teststartstop", lookupFunc, nil)
+	n := New("teststartstop", lookupFunc, nil)
 	n.Start()
 	err := n.Stop()
 	if err != nil {
@@ -138,7 +137,7 @@ func TestAddAddressByIP(t *testing.T) {
 		},
 	}
 
-	amgr := addrmgr.New("testaddressbyip", nil, nil)
+	amgr := New("testaddressbyip", nil, nil)
 	for i, test := range tests {
 		err := amgr.AddAddressByIP(test.addrIP, nil)
 		if test.err != nil && err == nil {
@@ -160,41 +159,41 @@ func TestAddAddressByIP(t *testing.T) {
 func TestAddLocalAddress(t *testing.T) {
 	var tests = []struct {
 		address  wire.NetAddress
-		priority addrmgr.AddressPriority
+		priority AddressPriority
 		valid    bool
 	}{
 		{
 			wire.NetAddress{IP: net.ParseIP("192.168.0.100")},
-			addrmgr.InterfacePrio,
+			InterfacePrio,
 			false,
 		},
 		{
 			wire.NetAddress{IP: net.ParseIP("204.124.1.1")},
-			addrmgr.InterfacePrio,
+			InterfacePrio,
 			true,
 		},
 		{
 			wire.NetAddress{IP: net.ParseIP("204.124.1.1")},
-			addrmgr.BoundPrio,
+			BoundPrio,
 			true,
 		},
 		{
 			wire.NetAddress{IP: net.ParseIP("::1")},
-			addrmgr.InterfacePrio,
+			InterfacePrio,
 			false,
 		},
 		{
 			wire.NetAddress{IP: net.ParseIP("fe80::1")},
-			addrmgr.InterfacePrio,
+			InterfacePrio,
 			false,
 		},
 		{
 			wire.NetAddress{IP: net.ParseIP("2620:100::1")},
-			addrmgr.InterfacePrio,
+			InterfacePrio,
 			true,
 		},
 	}
-	amgr := addrmgr.New("testaddlocaladdress", nil, nil)
+	amgr := New("testaddlocaladdress", nil, nil)
 	for x, test := range tests {
 		result := amgr.AddLocalAddress(&test.address, test.priority)
 		if result == nil && !test.valid {
@@ -211,7 +210,7 @@ func TestAddLocalAddress(t *testing.T) {
 }
 
 func TestAttempt(t *testing.T) {
-	n := addrmgr.New("testattempt", lookupFunc, nil)
+	n := New("testattempt", lookupFunc, nil)
 
 	// Add a new address and get it
 	err := n.AddAddressByIP(someIP+":8333", nil)
@@ -233,7 +232,7 @@ func TestAttempt(t *testing.T) {
 }
 
 func TestConnected(t *testing.T) {
-	n := addrmgr.New("testconnected", lookupFunc, nil)
+	n := New("testconnected", lookupFunc, nil)
 
 	// Add a new address and get it
 	err := n.AddAddressByIP(someIP+":8333", nil)
@@ -253,7 +252,7 @@ func TestConnected(t *testing.T) {
 }
 
 func TestNeedMoreAddresses(t *testing.T) {
-	n := addrmgr.New("testneedmoreaddresses", lookupFunc, nil)
+	n := New("testneedmoreaddresses", lookupFunc, nil)
 	addrsToAdd := 1500
 	b := n.NeedMoreAddresses()
 	if !b {
@@ -285,7 +284,7 @@ func TestNeedMoreAddresses(t *testing.T) {
 }
 
 func TestGood(t *testing.T) {
-	n := addrmgr.New("testgood", lookupFunc, nil)
+	n := New("testgood", lookupFunc, nil)
 	addrsToAdd := 64 * 64
 	addrs := make([]*wire.NetAddress, addrsToAdd)
 	subnetworkCount := 32
@@ -331,9 +330,78 @@ func TestGood(t *testing.T) {
 	}
 }
 
+func TestGoodChangeSubnetworkID(t *testing.T) {
+	n := New("test_good_change_subnetwork_id", lookupFunc, nil)
+	addr := wire.NewNetAddressIPPort(net.IPv4(173, 144, 173, 111), 8333, 0)
+	addrKey := NetAddressKey(addr)
+	srcAddr := wire.NewNetAddressIPPort(net.IPv4(173, 144, 173, 111), 8333, 0)
+
+	oldSubnetwork := subnetworkid.SubnetworkIDNative
+	n.AddAddress(addr, srcAddr, oldSubnetwork)
+	n.Good(addr, oldSubnetwork)
+
+	// make sure address was saved to addrIndex under oldSubnetwork
+	ka := n.find(addr)
+	if ka == nil {
+		t.Fatalf("Address was not found after first time .Good called")
+	}
+	if !ka.SubnetworkID().IsEqual(oldSubnetwork) {
+		t.Fatalf("Address index did not point to oldSubnetwork")
+	}
+
+	// make sure address was added to correct bucket under oldSubnetwork
+	bucket := n.addrTried[*oldSubnetwork][n.getTriedBucket(addr)]
+	wasFound := false
+	for e := bucket.Front(); e != nil; e = e.Next() {
+		if NetAddressKey(e.Value.(*KnownAddress).NetAddress()) == addrKey {
+			wasFound = true
+		}
+	}
+	if !wasFound {
+		t.Fatalf("Address was not found in the correct bucket in oldSubnetwork")
+	}
+
+	// now call .Good again with a different subnetwork
+	newSubnetwork := subnetworkid.SubnetworkIDRegistry
+	n.Good(addr, newSubnetwork)
+
+	// make sure address was updated in addrIndex under newSubnetwork
+	ka = n.find(addr)
+	if ka == nil {
+		t.Fatalf("Address was not found after second time .Good called")
+	}
+	if !ka.SubnetworkID().IsEqual(newSubnetwork) {
+		t.Fatalf("Address index did not point to newSubnetwork")
+	}
+
+	// make sure address was removed from bucket under oldSubnetwork
+	bucket = n.addrTried[*oldSubnetwork][n.getTriedBucket(addr)]
+	wasFound = false
+	for e := bucket.Front(); e != nil; e = e.Next() {
+		if NetAddressKey(e.Value.(*KnownAddress).NetAddress()) == addrKey {
+			wasFound = true
+		}
+	}
+	if wasFound {
+		t.Fatalf("Address was not removed from bucket in oldSubnetwork")
+	}
+
+	// make sure address was added to correct bucket under newSubnetwork
+	bucket = n.addrTried[*newSubnetwork][n.getTriedBucket(addr)]
+	wasFound = false
+	for e := bucket.Front(); e != nil; e = e.Next() {
+		if NetAddressKey(e.Value.(*KnownAddress).NetAddress()) == addrKey {
+			wasFound = true
+		}
+	}
+	if !wasFound {
+		t.Fatalf("Address was not found in the correct bucket in newSubnetwork")
+	}
+}
+
 func TestGetAddress(t *testing.T) {
 	localSubnetworkID := &subnetworkid.SubnetworkID{0xff}
-	n := addrmgr.New("testgetaddress", lookupFunc, localSubnetworkID)
+	n := New("testgetaddress", lookupFunc, localSubnetworkID)
 
 	// Get an address from an empty set (should error)
 	if rv := n.GetAddress(); rv != nil {
@@ -451,7 +519,7 @@ func TestGetBestLocalAddress(t *testing.T) {
 		*/
 	}
 
-	amgr := addrmgr.New("testgetbestlocaladdress", nil, nil)
+	amgr := New("testgetbestlocaladdress", nil, nil)
 
 	// Test against default when there's no address
 	for x, test := range tests {
@@ -464,7 +532,7 @@ func TestGetBestLocalAddress(t *testing.T) {
 	}
 
 	for _, localAddr := range localAddrs {
-		amgr.AddLocalAddress(&localAddr, addrmgr.InterfacePrio)
+		amgr.AddLocalAddress(&localAddr, InterfacePrio)
 	}
 
 	// Test against want1
@@ -479,7 +547,7 @@ func TestGetBestLocalAddress(t *testing.T) {
 
 	// Add a public IP to the list of local addresses.
 	localAddr := wire.NetAddress{IP: net.ParseIP("204.124.8.100")}
-	amgr.AddLocalAddress(&localAddr, addrmgr.InterfacePrio)
+	amgr.AddLocalAddress(&localAddr, InterfacePrio)
 
 	// Test against want2
 	for x, test := range tests {
@@ -493,7 +561,7 @@ func TestGetBestLocalAddress(t *testing.T) {
 	/*
 		// Add a Tor generated IP address
 		localAddr = wire.NetAddress{IP: net.ParseIP("fd87:d87e:eb43:25::1")}
-		amgr.AddLocalAddress(&localAddr, addrmgr.ManualPrio)
+		amgr.AddLocalAddress(&localAddr, ManualPrio)
 
 		// Test against want3
 		for x, test := range tests {
@@ -512,7 +580,7 @@ func TestNetAddressKey(t *testing.T) {
 
 	t.Logf("Running %d tests", len(naTests))
 	for i, test := range naTests {
-		key := addrmgr.NetAddressKey(&test.in)
+		key := NetAddressKey(&test.in)
 		if key != test.want {
 			t.Errorf("NetAddressKey #%d\n got: %s want: %s", i, key, test.want)
 			continue

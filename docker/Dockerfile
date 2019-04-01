@@ -38,7 +38,6 @@ WORKDIR /app
 RUN apk add --no-cache ca-certificates tini
 
 COPY --from=build /go/src/github.com/daglabs/btcd/btcd /app/
-COPY --from=build /go/src/github.com/daglabs/btcd/version.txt /app/
 
 USER nobody
 ENTRYPOINT [ "/sbin/tini", "--" ]
