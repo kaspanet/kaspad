@@ -2153,7 +2153,7 @@ func handleGetBlockTemplateProposal(s *Server, request *btcjson.TemplateRequest)
 		return "bad-parentblk", nil
 	}
 
-	if err := s.cfg.DAG.CheckConnectBlockTemplate(block); err != nil {
+	if err := s.cfg.DAG.CheckConnectBlockTemplateWithLock(block); err != nil {
 		if _, ok := err.(blockdag.RuleError); !ok {
 			errStr := fmt.Sprintf("Failed to process block proposal: %s", err)
 			log.Error(errStr)
