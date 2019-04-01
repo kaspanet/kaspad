@@ -57,13 +57,3 @@ func TestMustRegisterPanic(t *testing.T) {
 	// Intentionally try to register duplicate params to force a panic.
 	mustRegister(&MainNetParams)
 }
-
-func TestDNSSeedToString(t *testing.T) {
-	host := "test.dns.seed.com"
-	seed := DNSSeed{HasFiltering: false, Host: host}
-
-	result := seed.String()
-	if result != host {
-		t.Errorf("TestDNSSeedToString: Expected: %s, but got: %s", host, result)
-	}
-}

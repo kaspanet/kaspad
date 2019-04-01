@@ -43,10 +43,10 @@ func SeedFromDNS(dagParams *dagconfig.Params, reqServices wire.ServiceFlag, subn
 
 	for _, dnsseed := range dagParams.DNSSeeds {
 		var host string
-		if !dnsseed.HasFiltering || reqServices == wire.SFNodeNetwork {
-			host = dnsseed.Host
+		if reqServices == wire.SFNodeNetwork {
+			host = dnsseed
 		} else {
-			host = fmt.Sprintf("%c%x.%s", ServiceFlagPrefixChar, uint64(reqServices), dnsseed.Host)
+			host = fmt.Sprintf("%c%x.%s", ServiceFlagPrefixChar, uint64(reqServices), dnsseed)
 		}
 
 		if !subnetworkID.IsEqual(subnetworkid.SubnetworkIDSupportsAll) {

@@ -61,16 +61,6 @@ type Checkpoint struct {
 	Hash   *daghash.Hash
 }
 
-// DNSSeed identifies a DNS seed.
-type DNSSeed struct {
-	// Host defines the hostname of the seed.
-	Host string
-
-	// HasFiltering defines whether the seed supports filtering
-	// by service flags (wire.ServiceFlag).
-	HasFiltering bool
-}
-
 // ConsensusDeployment defines details related to a specific consensus rule
 // change that is voted in.  This is part of BIP0009.
 type ConsensusDeployment struct {
@@ -122,7 +112,7 @@ type Params struct {
 
 	// DNSSeeds defines a list of DNS seeds for the network that are used
 	// as one method to discover peers.
-	DNSSeeds []DNSSeed
+	DNSSeeds []string
 
 	// GenesisBlock defines the first block of the chain.
 	GenesisBlock *wire.MsgBlock
@@ -220,14 +210,7 @@ var MainNetParams = Params{
 	Net:         wire.MainNet,
 	RPCPort:     "8334",
 	DefaultPort: "8333",
-	DNSSeeds: []DNSSeed{
-		{"seed.bitcoin.sipa.be", true},
-		{"dnsseed.bluematt.me", true},
-		{"dnsseed.bitcoin.dashjr.org", false},
-		{"seed.bitcoinstats.com", true},
-		{"seed.bitnodes.io", false},
-		{"seed.bitcoin.jonasschnelli.ch", true},
-	},
+	DNSSeeds:    []string{},
 
 	// DAG parameters
 	GenesisBlock:             &genesisBlock,
@@ -286,7 +269,7 @@ var RegressionNetParams = Params{
 	Net:         wire.TestNet,
 	RPCPort:     "18334",
 	DefaultPort: "18444",
-	DNSSeeds:    []DNSSeed{},
+	DNSSeeds:    []string{},
 
 	// Chain parameters
 	GenesisBlock:             &regTestGenesisBlock,
@@ -345,12 +328,7 @@ var TestNet3Params = Params{
 	Net:         wire.TestNet3,
 	RPCPort:     "18334",
 	DefaultPort: "18333",
-	DNSSeeds: []DNSSeed{
-		{"testnet-seed.alexykot.me", false},
-		{"testnet-seed.bitcoin.petertodd.org", false},
-		{"testnet-seed.bluematt.me", false},
-		{"testnet-seed.bitcoin.schildbach.de", false},
-	},
+	DNSSeeds:    []string{},
 
 	// Chain parameters
 	GenesisBlock:             &testNet3GenesisBlock,
@@ -413,7 +391,7 @@ var SimNetParams = Params{
 	Net:         wire.SimNet,
 	RPCPort:     "18556",
 	DefaultPort: "18555",
-	DNSSeeds:    []DNSSeed{}, // NOTE: There must NOT be any seeds.
+	DNSSeeds:    []string{}, // NOTE: There must NOT be any seeds.
 
 	// Chain parameters
 	GenesisBlock:             &simNetGenesisBlock,
@@ -468,9 +446,7 @@ var DevNetParams = Params{
 	Net:         wire.DevNet,
 	RPCPort:     "18334",
 	DefaultPort: "18333",
-	DNSSeeds: []DNSSeed{
-		{"devnet-dnsseed.daglabs.com", true},
-	},
+	DNSSeeds:    []string{},
 
 	// Chain parameters
 	GenesisBlock:             &devNetGenesisBlock,
@@ -530,11 +506,6 @@ var (
 var (
 	registeredNets = make(map[wire.BitcoinNet]struct{})
 )
-
-// String returns the hostname of the DNS seed in human-readable form.
-func (d DNSSeed) String() string {
-	return d.Host
-}
 
 // Register registers the network parameters for a Bitcoin network.  This may
 // error with ErrDuplicateNet if the network is already registered (either
