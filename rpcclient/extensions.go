@@ -275,6 +275,24 @@ func (r FutureGetHeadersResult) Receive() ([]wire.BlockHeader, error) {
 	return headers, nil
 }
 
+// GetTopHeadersAsync returns an instance of a type that can be used to get the result
+// of the RPC at some future time by invoking the Receive function on the returned instance.
+//
+// See GetTopHeaders for the blocking version and more details.
+func (c *Client) GetTopHeadersAsync(startHash *daghash.Hash) FutureGetHeadersResult {
+	var hash *string
+	if startHash != nil {
+		hash = btcjson.String(startHash.String())
+	}
+	cmd := btcjson.NewGetTopHeadersCmd(hash)
+	return c.sendCmd(cmd)
+}
+
+// GetTopHeaders sends a getTopHeaders rpc command to the server.
+func (c *Client) GetTopHeaders(startHash *daghash.Hash) ([]wire.BlockHeader, error) {
+	return c.GetTopHeadersAsync(startHash).Receive()
+}
+
 // GetHeadersAsync returns an instance of a type that can be used to get the result
 // of the RPC at some future time by invoking the Receive function on the returned instance.
 //

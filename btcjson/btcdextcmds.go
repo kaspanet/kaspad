@@ -90,6 +90,19 @@ func NewGetCurrentNetCmd() *GetCurrentNetCmd {
 	return &GetCurrentNetCmd{}
 }
 
+// GetTopHeadersCmd defined the getTopHeaders JSON-RPC command.
+type GetTopHeadersCmd struct {
+	StartHash *string `json:"startHash"`
+}
+
+// NewGetTopHeadersCmd returns a new instance which can be used to issue a
+// getTopHeaders JSON-RPC command.
+func NewGetTopHeadersCmd(startHash *string) *GetTopHeadersCmd {
+	return &GetTopHeadersCmd{
+		StartHash: startHash,
+	}
+}
+
 // GetHeadersCmd defines the getHeaders JSON-RPC command.
 //
 // NOTE: This is a btcsuite extension ported from
@@ -134,5 +147,6 @@ func init() {
 	MustRegisterCmd("getBestBlock", (*GetBestBlockCmd)(nil), flags)
 	MustRegisterCmd("getCurrentNet", (*GetCurrentNetCmd)(nil), flags)
 	MustRegisterCmd("getHeaders", (*GetHeadersCmd)(nil), flags)
+	MustRegisterCmd("getTopHeaders", (*GetTopHeadersCmd)(nil), flags)
 	MustRegisterCmd("version", (*VersionCmd)(nil), flags)
 }

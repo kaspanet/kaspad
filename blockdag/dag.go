@@ -1421,7 +1421,7 @@ func (dag *BlockDAG) locateBlockNodes(locator BlockLocator, hashStop *daghash.Ha
 	queue.pushSet(node.children)
 
 	visited := newSet()
-	for i := uint32(0); queue.Len() > 0 && i < maxEntries; i++ {
+	for i := uint32(0); queue.Len() > 0 && uint32(len(nodes)) < maxEntries; i++ {
 		var current *blockNode
 		current = queue.pop()
 		if !visited.contains(current) {
@@ -1472,6 +1472,32 @@ func (dag *BlockDAG) locateHeaders(locator BlockLocator, hashStop *daghash.Hash,
 		headers[i] = node.Header()
 	}
 	return headers
+}
+
+// GetTopHeaders returns the top wire.MaxBlockHeadersPerMsg block headers ordered by height.
+func (dag *BlockDAG) GetTopHeaders(startHash *daghash.Hash) ([]*wire.BlockHeader, error) {
+	startNode := &dag.virtual.blockNode
+	if startHash != nil {
+		startNode = dag.index.LookupNode(startHash)
+		if startNode == nil {
+			return nil, fmt.Errorf("Couldn't find the start hash %s in the dag", startHash)
+		}
+	}
+	headers := make([]*wire.BlockHeader, 0, startNode.blueScore)
+	queue := NewDownHeap()
+	queue.pushSet(startNode.parents)
+
+	visited := newSet()
+	for i := uint32(0); queue.Len() > 0 && len(headers) < wire.MaxBlockHeadersPerMsg; i++ {
+		var current *blockNode
+		current = queue.pop()
+		if !visited.contains(current) {
+			visited.add(current)
+			headers = append(headers, current.Header())
+			queue.pushSet(current.parents)
+		}
+	}
+	return headers, nil
 }
 
 // RLock locks the DAG's UTXO set for reading.

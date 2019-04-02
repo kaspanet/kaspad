@@ -177,6 +177,34 @@ func TestBtcdExtCmds(t *testing.T) {
 			},
 		},
 		{
+			name: "getTopHeaders",
+			newCmd: func() (interface{}, error) {
+				return btcjson.NewCmd("getTopHeaders")
+			},
+			staticCmd: func() interface{} {
+				return btcjson.NewGetTopHeadersCmd(
+					nil,
+				)
+			},
+			marshalled:   `{"jsonrpc":"1.0","method":"getTopHeaders","params":[],"id":1}`,
+			unmarshalled: &btcjson.GetTopHeadersCmd{},
+		},
+		{
+			name: "getTopHeaders - with start hash",
+			newCmd: func() (interface{}, error) {
+				return btcjson.NewCmd("getTopHeaders", "000000000000000000ba33b33e1fad70b69e234fc24414dd47113bff38f523f7")
+			},
+			staticCmd: func() interface{} {
+				return btcjson.NewGetTopHeadersCmd(
+					btcjson.String("000000000000000000ba33b33e1fad70b69e234fc24414dd47113bff38f523f7"),
+				)
+			},
+			marshalled: `{"jsonrpc":"1.0","method":"getTopHeaders","params":["000000000000000000ba33b33e1fad70b69e234fc24414dd47113bff38f523f7"],"id":1}`,
+			unmarshalled: &btcjson.GetTopHeadersCmd{
+				StartHash: btcjson.String("000000000000000000ba33b33e1fad70b69e234fc24414dd47113bff38f523f7"),
+			},
+		},
+		{
 			name: "version",
 			newCmd: func() (interface{}, error) {
 				return btcjson.NewCmd("version")
