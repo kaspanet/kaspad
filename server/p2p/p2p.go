@@ -769,14 +769,7 @@ func (sp *Peer) OnGetCFilters(_ *peer.Peer, msg *wire.MsgGetCFilters) {
 		return
 	}
 
-	// Create []*daghash.Hash from []*daghash.Hash to pass to
-	// FiltersByBlockHashes.
-	hashPtrs := make([]*daghash.Hash, len(hashes))
-	for i := range hashes {
-		hashPtrs[i] = hashes[i]
-	}
-
-	filters, err := sp.server.CfIndex.FiltersByBlockHashes(hashPtrs,
+	filters, err := sp.server.CfIndex.FiltersByBlockHashes(hashes,
 		msg.FilterType)
 	if err != nil {
 		peerLog.Errorf("Error retrieving cfilters: %s", err)
@@ -825,15 +818,8 @@ func (sp *Peer) OnGetCFHeaders(_ *peer.Peer, msg *wire.MsgGetCFHeaders) {
 		return
 	}
 
-	// Create []*daghash.Hash from []*daghash.Hash to pass to
-	// FilterHeadersByBlockHashes.
-	hashPtrs := make([]*daghash.Hash, len(hashList))
-	for i := range hashList {
-		hashPtrs[i] = hashList[i]
-	}
-
 	// Fetch the raw filter hash bytes from the database for all blocks.
-	filterHashes, err := sp.server.CfIndex.FilterHashesByBlockHashes(hashPtrs,
+	filterHashes, err := sp.server.CfIndex.FilterHashesByBlockHashes(hashList,
 		msg.FilterType)
 	if err != nil {
 		peerLog.Errorf("Error retrieving cfilter hashes: %s", err)

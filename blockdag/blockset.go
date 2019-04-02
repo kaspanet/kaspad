@@ -134,11 +134,8 @@ func (bs blockSet) hashesEqual(hashes []*daghash.Hash) bool {
 // hashes returns the hashes of the blocks in this set.
 func (bs blockSet) hashes() []*daghash.Hash {
 	hashes := make([]*daghash.Hash, 0, len(bs))
-	for hash := range bs {
-		// Go's range re-use the pointer for the key, so
-		// we can't use it directly.
-		hashCopy := hash
-		hashes = append(hashes, &hashCopy)
+	for _, node := range bs {
+		hashes = append(hashes, node.hash)
 	}
 	daghash.Sort(hashes)
 	return hashes

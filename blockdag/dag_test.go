@@ -546,7 +546,11 @@ func chainedNodes(parents blockSet, numNodes int) []*blockNode {
 	for i := 0; i < numNodes; i++ {
 		// This is invalid, but all that is needed is enough to get the
 		// synthetic tests to work.
-		header := wire.BlockHeader{Nonce: testNoncePrng.Uint64(), IDMerkleRoot: &daghash.ZeroHash, HashMerkleRoot: &daghash.ZeroHash}
+		header := wire.BlockHeader{
+			Nonce:          testNoncePrng.Uint64(),
+			IDMerkleRoot:   &daghash.ZeroHash,
+			HashMerkleRoot: &daghash.ZeroHash,
+		}
 		header.ParentHashes = tips.hashes()
 		nodes[i] = newBlockNode(&header, tips, dagconfig.SimNetParams.K)
 		tips = setFromSlice(nodes[i])
@@ -660,20 +664,20 @@ func TestIntervalBlockHashes(t *testing.T) {
 	// 	genesis -> 1 -> 2 -> ... -> 15 -> 16  -> 17  -> 18
 	// 	                              \-> 16a -> 17a -> 18a (unvalidated)
 	tip := testTip
-	chain := newTestDAG(&dagconfig.SimNetParams)
-	branch0Nodes := chainedNodes(setFromSlice(chain.genesis), 18)
+	dag := newTestDAG(&dagconfig.SimNetParams)
+	branch0Nodes := chainedNodes(setFromSlice(dag.genesis), 18)
 	branch1Nodes := chainedNodes(setFromSlice(branch0Nodes[14]), 3)
 	for _, node := range branch0Nodes {
-		chain.index.SetStatusFlags(node, statusValid)
-		chain.index.AddNode(node)
+		dag.index.SetStatusFlags(node, statusValid)
+		dag.index.AddNode(node)
 	}
 	for _, node := range branch1Nodes {
 		if node.height < 18 {
-			chain.index.SetStatusFlags(node, statusValid)
+			dag.index.SetStatusFlags(node, statusValid)
 		}
-		chain.index.AddNode(node)
+		dag.index.AddNode(node)
 	}
-	chain.virtual.SetTips(setFromSlice(tip(branch0Nodes)))
+	dag.virtual.SetTips(setFromSlice(tip(branch0Nodes)))
 
 	tests := []struct {
 		name        string
@@ -709,7 +713,7 @@ func TestIntervalBlockHashes(t *testing.T) {
 		},
 	}
 	for _, test := range tests {
-		hashes, err := chain.IntervalBlockHashes(test.endHash, test.interval)
+		hashes, err := dag.IntervalBlockHashes(test.endHash, test.interval)
 		if err != nil {
 			if !test.expectError {
 				t.Errorf("%s: unexpected error: %v", test.name, err)
