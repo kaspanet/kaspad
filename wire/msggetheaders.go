@@ -30,7 +30,7 @@ import (
 type MsgGetHeaders struct {
 	ProtocolVersion    uint32
 	BlockLocatorHashes []*daghash.Hash
-	HashStop           daghash.Hash
+	HashStop           *daghash.Hash
 }
 
 // AddBlockLocatorHash adds a new block locator hash to the message.
@@ -77,7 +77,8 @@ func (msg *MsgGetHeaders) BtcDecode(r io.Reader, pver uint32) error {
 		msg.AddBlockLocatorHash(hash)
 	}
 
-	return readElement(r, &msg.HashStop)
+	msg.HashStop = &daghash.Hash{}
+	return readElement(r, msg.HashStop)
 }
 
 // BtcEncode encodes the receiver to w using the bitcoin protocol encoding.
@@ -108,7 +109,7 @@ func (msg *MsgGetHeaders) BtcEncode(w io.Writer, pver uint32) error {
 		}
 	}
 
-	return writeElement(w, &msg.HashStop)
+	return writeElement(w, msg.HashStop)
 }
 
 // Command returns the protocol command string for the message.  This is part
@@ -132,5 +133,6 @@ func NewMsgGetHeaders() *MsgGetHeaders {
 	return &MsgGetHeaders{
 		BlockLocatorHashes: make([]*daghash.Hash, 0,
 			MaxBlockLocatorsPerMsg),
+		HashStop: &daghash.ZeroHash,
 	}
 }

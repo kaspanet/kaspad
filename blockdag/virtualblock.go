@@ -74,7 +74,7 @@ func (v *virtualBlock) updateSelectedPathSet(oldSelectedParent *blockNode) {
 	}
 
 	if intersectionNode != nil {
-		for node := oldSelectedParent; !node.hash.IsEqual(&intersectionNode.hash); node = node.selectedParent {
+		for node := oldSelectedParent; !node.hash.IsEqual(intersectionNode.hash); node = node.selectedParent {
 			v.selectedPathChainSet.remove(node)
 		}
 	}

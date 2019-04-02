@@ -107,7 +107,7 @@ func findCandidates(dag *blockdag.BlockDAG, highestTipHash *daghash.Hash) ([]*da
 		}
 
 		parentHashes := block.MsgBlock().Header.ParentHashes
-		selectedBlockHash := &parentHashes[0]
+		selectedBlockHash := parentHashes[0]
 		block, err = dag.BlockByHash(selectedBlockHash)
 		if err != nil {
 			return nil, err
@@ -166,7 +166,7 @@ func main() {
 
 	// Find checkpoint candidates.
 	highestTipHash := dag.HighestTipHash()
-	candidates, err := findCandidates(dag, &highestTipHash)
+	candidates, err := findCandidates(dag, highestTipHash)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Unable to identify candidates:", err)
 		return

@@ -68,7 +68,7 @@ func TestMessage(t *testing.T) {
 	msgFilterAdd := NewMsgFilterAdd([]byte{0x01})
 	msgFilterClear := NewMsgFilterClear()
 	msgFilterLoad := NewMsgFilterLoad([]byte{0x01}, 10, 0, BloomUpdateNone)
-	bh := NewBlockHeader(1, []daghash.Hash{mainNetGenesisHash, simNetGenesisHash}, &daghash.Hash{}, &daghash.Hash{}, 0, 0)
+	bh := NewBlockHeader(1, []*daghash.Hash{mainNetGenesisHash, simNetGenesisHash}, &daghash.Hash{}, &daghash.Hash{}, 0, 0)
 	msgMerkleBlock := NewMsgMerkleBlock(bh)
 	msgReject := NewMsgReject("block", RejectDuplicate, "duplicate block")
 	msgGetCFilters := NewMsgGetCFilters(GCSFilterExtended, 0, &daghash.Hash{})

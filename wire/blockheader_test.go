@@ -22,19 +22,19 @@ func TestBlockHeader(t *testing.T) {
 		t.Errorf("random.Uint64: Error generating nonce: %v", err)
 	}
 
-	hashes := []daghash.Hash{mainNetGenesisHash, simNetGenesisHash}
+	hashes := []*daghash.Hash{mainNetGenesisHash, simNetGenesisHash}
 
 	merkleHash := mainNetGenesisMerkleRoot
-	idMerkleRoot := &exampleIDMerkleRoot
+	idMerkleRoot := exampleIDMerkleRoot
 	bits := uint32(0x1d00ffff)
-	bh := NewBlockHeader(1, hashes, &merkleHash, idMerkleRoot, bits, nonce)
+	bh := NewBlockHeader(1, hashes, merkleHash, idMerkleRoot, bits, nonce)
 
 	// Ensure we get the same data back out.
 	if !reflect.DeepEqual(bh.ParentHashes, hashes) {
 		t.Errorf("NewBlockHeader: wrong prev hashes - got %v, want %v",
 			spew.Sprint(bh.ParentHashes), spew.Sprint(hashes))
 	}
-	if !bh.HashMerkleRoot.IsEqual(&merkleHash) {
+	if !bh.HashMerkleRoot.IsEqual(merkleHash) {
 		t.Errorf("NewBlockHeader: wrong merkle root - got %v, want %v",
 			spew.Sprint(bh.HashMerkleRoot), spew.Sprint(merkleHash))
 	}
@@ -58,7 +58,7 @@ func TestBlockHeaderWire(t *testing.T) {
 	bits := uint32(0x1d00ffff)
 	baseBlockHdr := &BlockHeader{
 		Version:        1,
-		ParentHashes:   []daghash.Hash{mainNetGenesisHash, simNetGenesisHash},
+		ParentHashes:   []*daghash.Hash{mainNetGenesisHash, simNetGenesisHash},
 		HashMerkleRoot: mainNetGenesisMerkleRoot,
 		IDMerkleRoot:   exampleIDMerkleRoot,
 		Timestamp:      time.Unix(0x495fab29, 0), // 2009-01-03 12:15:05 -0600 CST
@@ -169,7 +169,7 @@ func TestBlockHeaderSerialize(t *testing.T) {
 	bits := uint32(0x1d00ffff)
 	baseBlockHdr := &BlockHeader{
 		Version:        1,
-		ParentHashes:   []daghash.Hash{mainNetGenesisHash, simNetGenesisHash},
+		ParentHashes:   []*daghash.Hash{mainNetGenesisHash, simNetGenesisHash},
 		HashMerkleRoot: mainNetGenesisMerkleRoot,
 		IDMerkleRoot:   exampleIDMerkleRoot,
 		Timestamp:      time.Unix(0x495fab29, 0), // 2009-01-03 12:15:05 -0600 CST
@@ -253,7 +253,7 @@ func TestBlockHeaderSerializeSize(t *testing.T) {
 	timestamp := time.Unix(0x495fab29, 0) // 2009-01-03 12:15:05 -0600 CST
 	baseBlockHdr := &BlockHeader{
 		Version:        1,
-		ParentHashes:   []daghash.Hash{mainNetGenesisHash, simNetGenesisHash},
+		ParentHashes:   []*daghash.Hash{mainNetGenesisHash, simNetGenesisHash},
 		HashMerkleRoot: mainNetGenesisMerkleRoot,
 		IDMerkleRoot:   mainNetGenesisMerkleRoot,
 		Timestamp:      timestamp,
@@ -263,7 +263,7 @@ func TestBlockHeaderSerializeSize(t *testing.T) {
 
 	genesisBlockHdr := &BlockHeader{
 		Version:        1,
-		ParentHashes:   []daghash.Hash{},
+		ParentHashes:   []*daghash.Hash{},
 		HashMerkleRoot: mainNetGenesisMerkleRoot,
 		IDMerkleRoot:   mainNetGenesisMerkleRoot,
 		Timestamp:      timestamp,
@@ -300,7 +300,7 @@ func TestIsGenesis(t *testing.T) {
 
 	baseBlockHdr := &BlockHeader{
 		Version:        1,
-		ParentHashes:   []daghash.Hash{mainNetGenesisHash, simNetGenesisHash},
+		ParentHashes:   []*daghash.Hash{mainNetGenesisHash, simNetGenesisHash},
 		HashMerkleRoot: mainNetGenesisMerkleRoot,
 		Timestamp:      timestamp,
 		Bits:           bits,
@@ -308,7 +308,7 @@ func TestIsGenesis(t *testing.T) {
 	}
 	genesisBlockHdr := &BlockHeader{
 		Version:        1,
-		ParentHashes:   []daghash.Hash{},
+		ParentHashes:   []*daghash.Hash{},
 		HashMerkleRoot: mainNetGenesisMerkleRoot,
 		Timestamp:      timestamp,
 		Bits:           bits,

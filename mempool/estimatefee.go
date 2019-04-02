@@ -135,7 +135,7 @@ func deserializeObservedTransaction(r io.Reader) (*observedTransaction, error) {
 // is used if Rollback is called to reverse the effect of registering
 // a block.
 type registeredBlock struct {
-	hash         daghash.Hash
+	hash         *daghash.Hash
 	transactions []*observedTransaction
 }
 
@@ -249,7 +249,7 @@ func (ef *FeeEstimator) RegisterBlock(block *util.Block) error {
 
 	// Keep track of which txs were dropped in case of an orphan block.
 	dropped := &registeredBlock{
-		hash:         *block.Hash(),
+		hash:         block.Hash(),
 		transactions: make([]*observedTransaction, 0, 100),
 	}
 
@@ -583,9 +583,13 @@ const estimateFeeSaveVersion = 1
 func deserializeRegisteredBlock(r io.Reader, txs map[uint32]*observedTransaction) (*registeredBlock, error) {
 	var lenTransactions uint32
 
-	rb := &registeredBlock{}
-	binary.Read(r, binary.BigEndian, &rb.hash)
-	binary.Read(r, binary.BigEndian, &lenTransactions)
+	rb := &registeredBlock{hash: &daghash.Hash{}}
+	if err := binary.Read(r, binary.BigEndian, rb.hash); err != nil {
+		return nil, err
+	}
+	if err := binary.Read(r, binary.BigEndian, &lenTransactions); err != nil {
+		return nil, err
+	}
 
 	rb.transactions = make([]*observedTransaction, lenTransactions)
 

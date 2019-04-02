@@ -99,6 +99,10 @@ func ipNet(ip string, ones, bits int) net.IPNet {
 }
 
 func isRoutable(addr net.IP) bool {
+	if activeNetParams.AcceptUnroutable {
+		return true
+	}
+
 	for _, n := range rfc1918Nets {
 		if n.Contains(addr) {
 			return false

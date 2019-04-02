@@ -42,7 +42,7 @@ func solveGenesisBlock(block *wire.MsgBlock, powBits uint32, netName string) {
 
 			// The block is solved when the new block hash is less
 			// than the target difficulty.  Yay!
-			if daghash.HashToBig(&hash).Cmp(targetDifficulty) <= 0 {
+			if daghash.HashToBig(hash).Cmp(targetDifficulty) <= 0 {
 				fmt.Printf("\n\nGenesis block of %s is solved:\n", netName)
 				fmt.Printf("timestamp: 0x%x\n", header.Timestamp.Unix())
 				fmt.Printf("bits (difficulty): 0x%x\n", header.Bits)

@@ -50,13 +50,13 @@ func TestTxIndexConnectBlock(t *testing.T) {
 		defer teardown()
 	}
 
-	prepareAndProcessBlock := func(parentHashes []daghash.Hash, transactions []*wire.MsgTx, blockName string) *wire.MsgBlock {
+	prepareAndProcessBlock := func(parentHashes []*daghash.Hash, transactions []*wire.MsgTx, blockName string) *wire.MsgBlock {
 		block, err := mining.PrepareBlockForTest(dag, &params, parentHashes, transactions, false, 1)
 		if err != nil {
 			t.Fatalf("TestTxIndexConnectBlock: block %v got unexpected error from PrepareBlockForTest: %v", blockName, err)
 		}
 		utilBlock := util.NewBlock(block)
-		blocks[block.BlockHash()] = utilBlock
+		blocks[*block.BlockHash()] = utilBlock
 		isOrphan, err := dag.ProcessBlock(utilBlock, blockdag.BFNoPoWCheck)
 		if err != nil {
 			t.Fatalf("TestTxIndexConnectBlock: dag.ProcessBlock got unexpected error for block %v: %v", blockName, err)
@@ -67,11 +67,11 @@ func TestTxIndexConnectBlock(t *testing.T) {
 		return block
 	}
 
-	block1 := prepareAndProcessBlock([]daghash.Hash{*params.GenesisHash}, nil, "1")
+	block1 := prepareAndProcessBlock([]*daghash.Hash{params.GenesisHash}, nil, "1")
 	block2Tx := createTransaction(block1.Transactions[0].TxOut[0].Value, block1.Transactions[0], 0)
-	block2 := prepareAndProcessBlock([]daghash.Hash{block1.BlockHash()}, []*wire.MsgTx{block2Tx}, "2")
+	block2 := prepareAndProcessBlock([]*daghash.Hash{block1.BlockHash()}, []*wire.MsgTx{block2Tx}, "2")
 	block3Tx := createTransaction(block2.Transactions[0].TxOut[0].Value, block2.Transactions[0], 0)
-	block3 := prepareAndProcessBlock([]daghash.Hash{block2.BlockHash()}, []*wire.MsgTx{block3Tx}, "3")
+	block3 := prepareAndProcessBlock([]*daghash.Hash{block2.BlockHash()}, []*wire.MsgTx{block3Tx}, "3")
 
 	block3TxID := block3Tx.TxID()
 	block3TxNewAcceptedBlock, err := txIndex.BlockThatAcceptedTx(dag, &block3TxID)
@@ -79,21 +79,21 @@ func TestTxIndexConnectBlock(t *testing.T) {
 		t.Errorf("TestTxIndexConnectBlock: TxAcceptedInBlock: %v", err)
 	}
 	block3Hash := block3.BlockHash()
-	if !block3TxNewAcceptedBlock.IsEqual(&block3Hash) {
+	if !block3TxNewAcceptedBlock.IsEqual(block3Hash) {
 		t.Errorf("TestTxIndexConnectBlock: block3Tx should've "+
 			"been accepted in block %v but instead got accepted in block %v", block3Hash, block3TxNewAcceptedBlock)
 	}
 
-	block3A := prepareAndProcessBlock([]daghash.Hash{block2.BlockHash()}, []*wire.MsgTx{block3Tx}, "3A")
-	block4 := prepareAndProcessBlock([]daghash.Hash{block3.BlockHash()}, nil, "4")
-	prepareAndProcessBlock([]daghash.Hash{block3A.BlockHash(), block4.BlockHash()}, nil, "5")
+	block3A := prepareAndProcessBlock([]*daghash.Hash{block2.BlockHash()}, []*wire.MsgTx{block3Tx}, "3A")
+	block4 := prepareAndProcessBlock([]*daghash.Hash{block3.BlockHash()}, nil, "4")
+	prepareAndProcessBlock([]*daghash.Hash{block3A.BlockHash(), block4.BlockHash()}, nil, "5")
 
 	block3TxAcceptedBlock, err := txIndex.BlockThatAcceptedTx(dag, &block3TxID)
 	if err != nil {
 		t.Errorf("TestTxIndexConnectBlock: TxAcceptedInBlock: %v", err)
 	}
 	block3AHash := block3A.BlockHash()
-	if !block3TxAcceptedBlock.IsEqual(&block3AHash) {
+	if !block3TxAcceptedBlock.IsEqual(block3AHash) {
 		t.Errorf("TestTxIndexConnectBlock: block3Tx should've "+
 			"been accepted in block %v but instead got accepted in block %v", block3AHash, block3TxAcceptedBlock)
 	}

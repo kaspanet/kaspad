@@ -1213,7 +1213,7 @@ func (tx *transaction) HasBlock(hash *daghash.Hash) (bool, error) {
 //   - ErrTxClosed if the transaction has already been closed
 //
 // This function is part of the database.Tx interface implementation.
-func (tx *transaction) HasBlocks(hashes []daghash.Hash) ([]bool, error) {
+func (tx *transaction) HasBlocks(hashes []*daghash.Hash) ([]bool, error) {
 	// Ensure transaction state is valid.
 	if err := tx.checkClosed(); err != nil {
 		return nil, err
@@ -1221,7 +1221,7 @@ func (tx *transaction) HasBlocks(hashes []daghash.Hash) ([]bool, error) {
 
 	results := make([]bool, len(hashes))
 	for i := range hashes {
-		results[i] = tx.hasBlock(&hashes[i])
+		results[i] = tx.hasBlock(hashes[i])
 	}
 
 	return results, nil
@@ -1289,10 +1289,10 @@ func (tx *transaction) FetchBlockHeader(hash *daghash.Hash) ([]byte, error) {
 
 // fetchBlockHeadersSizes fetches the NumParentBlocks fields out of the block headers
 // and uses it to compute the total sizes of the block headers
-func (tx *transaction) fetchBlockHeadersSizes(hashes []daghash.Hash) ([]byte, error) {
+func (tx *transaction) fetchBlockHeadersSizes(hashes []*daghash.Hash) ([]byte, error) {
 	regions := make([]database.BlockRegion, len(hashes))
 	for i := range hashes {
-		regions[i].Hash = &hashes[i]
+		regions[i].Hash = hashes[i]
 		regions[i].Offset = numParentBlocksOffset
 		regions[i].Len = 1
 	}
@@ -1325,7 +1325,7 @@ func (tx *transaction) fetchBlockHeadersSizes(hashes []daghash.Hash) ([]byte, er
 // allows support for memory-mapped database implementations.
 //
 // This function is part of the database.Tx interface implementation.
-func (tx *transaction) FetchBlockHeaders(hashes []daghash.Hash) ([][]byte, error) {
+func (tx *transaction) FetchBlockHeaders(hashes []*daghash.Hash) ([][]byte, error) {
 	headerSizes, err := tx.fetchBlockHeadersSizes(hashes)
 	if err != nil {
 		return nil, err
@@ -1333,7 +1333,7 @@ func (tx *transaction) FetchBlockHeaders(hashes []daghash.Hash) ([][]byte, error
 
 	regions := make([]database.BlockRegion, len(hashes))
 	for i := range hashes {
-		regions[i].Hash = &hashes[i]
+		regions[i].Hash = hashes[i]
 		regions[i].Offset = 0
 		regions[i].Len = uint32(headerSizes[i])
 	}
@@ -1405,7 +1405,7 @@ func (tx *transaction) FetchBlock(hash *daghash.Hash) ([]byte, error) {
 // allows support for memory-mapped database implementations.
 //
 // This function is part of the database.Tx interface implementation.
-func (tx *transaction) FetchBlocks(hashes []daghash.Hash) ([][]byte, error) {
+func (tx *transaction) FetchBlocks(hashes []*daghash.Hash) ([][]byte, error) {
 	// Ensure transaction state is valid.
 	if err := tx.checkClosed(); err != nil {
 		return nil, err
@@ -1420,7 +1420,7 @@ func (tx *transaction) FetchBlocks(hashes []daghash.Hash) ([][]byte, error) {
 	blocks := make([][]byte, len(hashes))
 	for i := range hashes {
 		var err error
-		blocks[i], err = tx.FetchBlock(&hashes[i])
+		blocks[i], err = tx.FetchBlock(hashes[i])
 		if err != nil {
 			return nil, err
 		}

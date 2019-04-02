@@ -38,6 +38,8 @@ WORKDIR /app
 RUN apk add --no-cache ca-certificates tini
 
 COPY --from=build /go/src/github.com/daglabs/btcd/btcd /app/
+COPY --from=build /go/src/github.com/daglabs/btcd/docker/rpc.cert /app/
+COPY --from=build /go/src/github.com/daglabs/btcd/docker/rpc.key /app/
 
 USER nobody
 ENTRYPOINT [ "/sbin/tini", "--" ]

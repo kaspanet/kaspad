@@ -767,7 +767,7 @@ func (r FutureRescanBlocksResult) Receive() ([]btcjson.RescannedBlock, error) {
 //
 // NOTE: This is a btcsuite extension ported from
 // github.com/decred/dcrrpcclient.
-func (c *Client) RescanBlocksAsync(blockHashes []daghash.Hash) FutureRescanBlocksResult {
+func (c *Client) RescanBlocksAsync(blockHashes []*daghash.Hash) FutureRescanBlocksResult {
 	strBlockHashes := make([]string, len(blockHashes))
 	for i := range blockHashes {
 		strBlockHashes[i] = blockHashes[i].String()
@@ -783,7 +783,7 @@ func (c *Client) RescanBlocksAsync(blockHashes []daghash.Hash) FutureRescanBlock
 //
 // NOTE: This is a btcsuite extension ported from
 // github.com/decred/dcrrpcclient.
-func (c *Client) RescanBlocks(blockHashes []daghash.Hash) ([]btcjson.RescannedBlock, error) {
+func (c *Client) RescanBlocks(blockHashes []*daghash.Hash) ([]btcjson.RescannedBlock, error) {
 	return c.RescanBlocksAsync(blockHashes).Receive()
 }
 
@@ -900,7 +900,7 @@ func (r FutureGetCFilterHeaderResult) Receive() (*wire.MsgCFHeaders, error) {
 	}
 
 	// Assign the hash to a headers message and return it.
-	msgCFHeaders := wire.MsgCFHeaders{PrevFilterHeader: *headerHash}
+	msgCFHeaders := wire.MsgCFHeaders{PrevFilterHeader: headerHash}
 	return &msgCFHeaders, nil
 
 }

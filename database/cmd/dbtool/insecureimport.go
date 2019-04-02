@@ -130,7 +130,7 @@ func (bi *blockImporter) processBlock(serializedBlock []byte) (bool, error) {
 	for _, parentHash := range parentHashes {
 		var exists bool
 		err := bi.db.View(func(dbTx database.Tx) error {
-			exists, err = dbTx.HasBlock(&parentHash)
+			exists, err = dbTx.HasBlock(parentHash)
 			return err
 		})
 		if err != nil {

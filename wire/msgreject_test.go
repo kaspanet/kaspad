@@ -112,7 +112,7 @@ func TestRejectLatest(t *testing.T) {
 		t.Errorf("Should get same reject reason - got %v, want %v",
 			readMsg.Reason, msg.Reason)
 	}
-	if msg.Hash != readMsg.Hash {
+	if !msg.Hash.IsEqual(readMsg.Hash) {
 		t.Errorf("Should get same reject hash - got %v, want %v",
 			readMsg.Hash, msg.Hash)
 	}

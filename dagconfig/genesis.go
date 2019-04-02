@@ -61,9 +61,9 @@ var genesisMerkleRoot = daghash.Hash([daghash.HashSize]byte{ // Make go vet happ
 var genesisBlock = wire.MsgBlock{
 	Header: wire.BlockHeader{
 		Version:        1,
-		ParentHashes:   []daghash.Hash{},
-		HashMerkleRoot: genesisMerkleRoot,
-		IDMerkleRoot:   genesisMerkleRoot,
+		ParentHashes:   []*daghash.Hash{},
+		HashMerkleRoot: &genesisMerkleRoot,
+		IDMerkleRoot:   &genesisMerkleRoot,
 		Timestamp:      time.Unix(0x5ca09ba1, 0),
 		Bits:           0x207fffff,
 		Nonce:          0x6,
@@ -132,9 +132,9 @@ var devNetGenesisMerkleRoot = genesisMerkleRoot
 var devNetGenesisBlock = wire.MsgBlock{
 	Header: wire.BlockHeader{
 		Version:        1,
-		ParentHashes:   []daghash.Hash{},
-		HashMerkleRoot: devNetGenesisMerkleRoot,
-		IDMerkleRoot:   devNetGenesisMerkleRoot,
+		ParentHashes:   []*daghash.Hash{},
+		HashMerkleRoot: &devNetGenesisMerkleRoot,
+		IDMerkleRoot:   &devNetGenesisMerkleRoot,
 		Timestamp:      time.Unix(0x5ca09ba1, 0),
 		Bits:           0x1e7fffff,
 		Nonce:          0x155d9,

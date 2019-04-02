@@ -88,8 +88,8 @@ func (b *Block) Hash() *daghash.Hash {
 
 	// Cache the block hash and return it.
 	hash := b.msgBlock.BlockHash()
-	b.blockHash = &hash
-	return &hash
+	b.blockHash = hash
+	return hash
 }
 
 // Tx returns a wrapped transaction (util.Tx) for the transaction at the

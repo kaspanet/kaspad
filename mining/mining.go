@@ -385,15 +385,7 @@ func NewBlkTmplGenerator(policy *Policy, params *dagconfig.Params,
 //   -----------------------------------  --
 func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTemplate, error) {
 	g.dag.RLock()
-	isDagLocked := true
-	// We need to read-unlock the DAG before calling CheckConnectBlockTemplate
-	// Therefore the deferred function is only relevant in cases where an
-	// error is returned before calling CheckConnectBlockTemplate
-	defer func() {
-		if isDagLocked {
-			g.dag.RUnlock()
-		}
-	}()
+	defer g.dag.RUnlock()
 
 	// Extend the most recently known best block.
 	nextBlockHeight := g.dag.Height() + 1
@@ -668,8 +660,8 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 	msgBlock.Header = wire.BlockHeader{
 		Version:        nextBlockVersion,
 		ParentHashes:   g.dag.TipHashes(),
-		HashMerkleRoot: *hashMerkleTree.Root(),
-		IDMerkleRoot:   *idMerkleTree.Root(),
+		HashMerkleRoot: hashMerkleTree.Root(),
+		IDMerkleRoot:   idMerkleTree.Root(),
 		Timestamp:      ts,
 		Bits:           reqDifficulty,
 	}
@@ -682,9 +674,6 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 	// chain with no issues.
 	block := util.NewBlock(&msgBlock)
 	block.SetHeight(nextBlockHeight)
-
-	g.dag.RUnlock()
-	isDagLocked = false
 
 	if err := g.dag.CheckConnectBlockTemplate(block); err != nil {
 		return nil, err
@@ -754,9 +743,9 @@ func (g *BlkTmplGenerator) UpdateExtraNonce(msgBlock *wire.MsgBlock, blockHeight
 	// Recalculate the merkle roots with the updated extra nonce.
 	block := util.NewBlock(msgBlock)
 	hashMerkleTree := blockdag.BuildHashMerkleTreeStore(block.Transactions())
-	msgBlock.Header.HashMerkleRoot = *hashMerkleTree.Root()
+	msgBlock.Header.HashMerkleRoot = hashMerkleTree.Root()
 	idMerkleTree := blockdag.BuildIDMerkleTreeStore(block.Transactions())
-	msgBlock.Header.IDMerkleRoot = *idMerkleTree.Root()
+	msgBlock.Header.IDMerkleRoot = idMerkleTree.Root()
 
 	return nil
 }
@@ -767,7 +756,7 @@ func (g *BlkTmplGenerator) DAGHeight() int32 {
 }
 
 // TipHashes returns the hashes of the DAG's tips
-func (g *BlkTmplGenerator) TipHashes() []daghash.Hash {
+func (g *BlkTmplGenerator) TipHashes() []*daghash.Hash {
 	return g.dag.TipHashes()
 }
 

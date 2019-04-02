@@ -54,27 +54,28 @@ func (invtype InvType) String() string {
 // as specified by the Type field, that a peer wants, has, or does not have to
 // another peer.
 type InvVect struct {
-	Type InvType      // Type of data
-	Hash daghash.Hash // Hash of the data
+	Type InvType       // Type of data
+	Hash *daghash.Hash // Hash of the data
 }
 
 // NewInvVect returns a new InvVect using the provided type and hash.
 func NewInvVect(typ InvType, hash *daghash.Hash) *InvVect {
 	return &InvVect{
 		Type: typ,
-		Hash: *hash,
+		Hash: hash,
 	}
 }
 
 // readInvVect reads an encoded InvVect from r depending on the protocol
 // version.
 func readInvVect(r io.Reader, pver uint32, iv *InvVect) error {
-	return readElements(r, &iv.Type, &iv.Hash)
+	iv.Hash = &daghash.Hash{}
+	return readElements(r, &iv.Type, iv.Hash)
 }
 
 // writeInvVect serializes an InvVect to w depending on the protocol version.
 func writeInvVect(w io.Writer, pver uint32, iv *InvVect) error {
-	return writeElements(w, iv.Type, &iv.Hash)
+	return writeElements(w, iv.Type, iv.Hash)
 }
 
 func (iv *InvVect) String() string {
