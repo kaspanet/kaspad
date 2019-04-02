@@ -2,8 +2,12 @@ version: '3'
 services:
   first:
     image: btcd:latest
+    security_opt: 
+      - apparmor=unconfined
+    cap_add:
+      - SYS_PTRACE
     command: [
-      "/app/btcd",
+      "./btcd",
       "--testnet",
       "--addrindex",
       # "--generate",
@@ -12,15 +16,20 @@ services:
       "--rpcuser=user",
       "--rpcpass=pass",
       "--rpclisten=0.0.0.0:18334",
-      "--rpccert=/app/rpc.cert",
-      "--rpckey=/app/rpc.key"
+      "--rpccert=/go/src/github.com/daglabs/btcd/docker/rpc.cert",
+      "--rpckey=/go/src/github.com/daglabs/btcd/docker/rpc.key"
     ]
     ports: ["18334:18334"]
+
   second:
     image: btcd:latest
     links: ["first"]
+    security_opt: 
+      - apparmor=unconfined
+    cap_add:
+      - SYS_PTRACE
     command: [
-      "/app/btcd",
+      "./btcd",
       "--testnet",
       "--addrindex",
       "--connect=first",
@@ -28,7 +37,35 @@ services:
       "--rpcpass=pass",
       "--miningaddr=dagtest:qrm4zaetvny2yuh4wudf8y43fd20lunkxs8quragg8",
       "--rpclisten=0.0.0.0:18334",
-      "--rpccert=/app/rpc.cert",
-      "--rpckey=/app/rpc.key"
+      "--rpccert=/go/src/github.com/daglabs/btcd/docker/rpc.cert",
+      "--rpckey=/go/src/github.com/daglabs/btcd/docker/rpc.key"
     ]
     ports: ["18335:18334"]
+
+  second-debug:
+    image: btcd:latest
+    links: ["first"]
+    security_opt: 
+      - apparmor=unconfined
+    cap_add:
+      - SYS_PTRACE
+    command: [
+      "dlv", 
+      "--listen=:40000", 
+      "--api-version=2", 
+      "--headless=true",
+      "exec",
+      "./btcd",
+      "--",
+      # here starts btcd parameters
+      "--testnet",
+      "--addrindex",
+      "--connect=first",
+      "--rpcuser=user",
+      "--rpcpass=pass",
+      "--miningaddr=dagtest:qrm4zaetvny2yuh4wudf8y43fd20lunkxs8quragg8",
+      "--rpclisten=0.0.0.0:18334",
+      "--rpccert=/go/src/github.com/daglabs/btcd/docker/rpc.cert",
+      "--rpckey=/go/src/github.com/daglabs/btcd/docker/rpc.key"
+    ]
+    ports: ["18335:18334", "40000:40000"]
