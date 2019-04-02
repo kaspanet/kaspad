@@ -146,7 +146,7 @@ func (dag *BlockDAG) thresholdState(prevNode *blockNode, checker thresholdCondit
 	for prevNode != nil {
 		// Nothing more to do if the state of the block is already
 		// cached.
-		if _, ok := cache.Lookup(&prevNode.hash); ok {
+		if _, ok := cache.Lookup(prevNode.hash); ok {
 			break
 		}
 
@@ -157,7 +157,7 @@ func (dag *BlockDAG) thresholdState(prevNode *blockNode, checker thresholdCondit
 		// The state is simply defined if the start time hasn't been
 		// been reached yet.
 		if uint64(medianTime.Unix()) < checker.BeginTime() {
-			cache.Update(&prevNode.hash, ThresholdDefined)
+			cache.Update(prevNode.hash, ThresholdDefined)
 			break
 		}
 
@@ -175,7 +175,7 @@ func (dag *BlockDAG) thresholdState(prevNode *blockNode, checker thresholdCondit
 	state := ThresholdDefined
 	if prevNode != nil {
 		var ok bool
-		state, ok = cache.Lookup(&prevNode.hash)
+		state, ok = cache.Lookup(prevNode.hash)
 		if !ok {
 			return ThresholdFailed, AssertError(fmt.Sprintf(
 				"thresholdState: cache lookup failed for %s",
@@ -253,7 +253,7 @@ func (dag *BlockDAG) thresholdState(prevNode *blockNode, checker thresholdCondit
 
 		// Update the cache to avoid recalculating the state in the
 		// future.
-		cache.Update(&prevNode.hash, state)
+		cache.Update(prevNode.hash, state)
 	}
 
 	return state, nil

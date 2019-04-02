@@ -46,7 +46,7 @@ func (txID TxID) String() string {
 }
 
 // Strings returns a slice of strings representing the hashes in the given slice of hashes
-func Strings(hashes []Hash) []string {
+func Strings(hashes []*Hash) []string {
 	strings := make([]string, len(hashes))
 	for i, hash := range hashes {
 		strings[i] = hash.String()
@@ -113,13 +113,13 @@ func (txID *TxID) IsEqual(target *TxID) bool {
 
 // AreEqual returns true if both slices contain the same hashes.
 // Either slice must not contain duplicates.
-func AreEqual(first []Hash, second []Hash) bool {
+func AreEqual(first []*Hash, second []*Hash) bool {
 	if len(first) != len(second) {
 		return false
 	}
 
 	for i := range first {
-		if first[i] != second[i] {
+		if !first[i].IsEqual(second[i]) {
 			return false
 		}
 	}
@@ -230,14 +230,14 @@ func Less(a *Hash, b *Hash) bool {
 }
 
 //JoinHashesStrings joins all the stringified hashes separated by a separator
-func JoinHashesStrings(hashes []Hash, separator string) string {
+func JoinHashesStrings(hashes []*Hash, separator string) string {
 	return strings.Join(Strings(hashes), separator)
 }
 
 // Sort sorts a slice of hashes
-func Sort(hashes []Hash) {
+func Sort(hashes []*Hash) {
 	sort.Slice(hashes, func(i, j int) bool {
-		return Less(&hashes[i], &hashes[j])
+		return Less(hashes[i], hashes[j])
 	})
 }
 

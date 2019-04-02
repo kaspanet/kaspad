@@ -44,7 +44,7 @@ func solveBlock(header *wire.BlockHeader, targetDifficulty *big.Int) bool {
 			default:
 				hdr.Nonce = i
 				hash := hdr.BlockHash()
-				if daghash.HashToBig(&hash).Cmp(targetDifficulty) <= 0 {
+				if daghash.HashToBig(hash).Cmp(targetDifficulty) <= 0 {
 					select {
 					case results <- sbResult{true, i}:
 						return
@@ -187,9 +187,9 @@ func CreateBlock(parentBlock *util.Block, inclusionTxs []*util.Tx,
 	var block wire.MsgBlock
 	block.Header = wire.BlockHeader{
 		Version:        blockVersion,
-		ParentHashes:   []daghash.Hash{*parentHash},
-		HashMerkleRoot: *hashMerkleTree.Root(),
-		IDMerkleRoot:   *idMerkleTree.Root(),
+		ParentHashes:   []*daghash.Hash{parentHash},
+		HashMerkleRoot: hashMerkleTree.Root(),
+		IDMerkleRoot:   idMerkleTree.Root(),
 		Timestamp:      ts,
 		Bits:           net.PowLimitBits,
 	}

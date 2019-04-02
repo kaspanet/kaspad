@@ -660,8 +660,8 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 	msgBlock.Header = wire.BlockHeader{
 		Version:        nextBlockVersion,
 		ParentHashes:   g.dag.TipHashes(),
-		HashMerkleRoot: *hashMerkleTree.Root(),
-		IDMerkleRoot:   *idMerkleTree.Root(),
+		HashMerkleRoot: hashMerkleTree.Root(),
+		IDMerkleRoot:   idMerkleTree.Root(),
 		Timestamp:      ts,
 		Bits:           reqDifficulty,
 	}
@@ -743,9 +743,9 @@ func (g *BlkTmplGenerator) UpdateExtraNonce(msgBlock *wire.MsgBlock, blockHeight
 	// Recalculate the merkle roots with the updated extra nonce.
 	block := util.NewBlock(msgBlock)
 	hashMerkleTree := blockdag.BuildHashMerkleTreeStore(block.Transactions())
-	msgBlock.Header.HashMerkleRoot = *hashMerkleTree.Root()
+	msgBlock.Header.HashMerkleRoot = hashMerkleTree.Root()
 	idMerkleTree := blockdag.BuildIDMerkleTreeStore(block.Transactions())
-	msgBlock.Header.IDMerkleRoot = *idMerkleTree.Root()
+	msgBlock.Header.IDMerkleRoot = idMerkleTree.Root()
 
 	return nil
 }
@@ -756,7 +756,7 @@ func (g *BlkTmplGenerator) DAGHeight() int32 {
 }
 
 // TipHashes returns the hashes of the DAG's tips
-func (g *BlkTmplGenerator) TipHashes() []daghash.Hash {
+func (g *BlkTmplGenerator) TipHashes() []*daghash.Hash {
 	return g.dag.TipHashes()
 }
 

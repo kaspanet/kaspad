@@ -1117,11 +1117,11 @@ func testFetchBlockIOMissing(tc *testContext, dbTx database.Tx) bool {
 	// Test the individual block APIs one block at a time to ensure they
 	// return the expected error.  Also, build the data needed to test the
 	// bulk APIs below while looping.
-	allBlockHashes := make([]daghash.Hash, len(tc.blocks))
+	allBlockHashes := make([]*daghash.Hash, len(tc.blocks))
 	allBlockRegions := make([]database.BlockRegion, len(tc.blocks))
 	for i, block := range tc.blocks {
 		blockHash := block.Hash()
-		allBlockHashes[i] = *blockHash
+		allBlockHashes[i] = blockHash
 
 		txLocs, err := block.TxLoc()
 		if err != nil {
@@ -1222,14 +1222,14 @@ func testFetchBlockIO(tc *testContext, dbTx database.Tx) bool {
 
 	// Test the individual block APIs one block at a time.  Also, build the
 	// data needed to test the bulk APIs below while looping.
-	allBlockHashes := make([]daghash.Hash, len(tc.blocks))
+	allBlockHashes := make([]*daghash.Hash, len(tc.blocks))
 	allBlockBytes := make([][]byte, len(tc.blocks))
 	allBlockTxLocs := make([][]wire.TxLoc, len(tc.blocks))
 	allBlockRegions := make([]database.BlockRegion, len(tc.blocks))
 	allBlockHeaderSizes := make([]int, len(tc.blocks))
 	for i, block := range tc.blocks {
 		blockHash := block.Hash()
-		allBlockHashes[i] = *blockHash
+		allBlockHashes[i] = blockHash
 
 		blockBytes, err := block.Bytes()
 		if err != nil {
@@ -1463,9 +1463,9 @@ func testFetchBlockIO(tc *testContext, dbTx database.Tx) bool {
 	// Ensure fetching blocks for which one doesn't exist returns the
 	// expected error.
 	testName := "FetchBlocks invalid hash"
-	badBlockHashes := make([]daghash.Hash, len(allBlockHashes)+1)
+	badBlockHashes := make([]*daghash.Hash, len(allBlockHashes)+1)
 	copy(badBlockHashes, allBlockHashes)
-	badBlockHashes[len(badBlockHashes)-1] = daghash.Hash{}
+	badBlockHashes[len(badBlockHashes)-1] = &daghash.Hash{}
 	wantErrCode := database.ErrBlockNotFound
 	_, err = dbTx.FetchBlocks(badBlockHashes)
 	if !checkDbError(tc.t, testName, err, wantErrCode) {
@@ -1837,11 +1837,11 @@ func testClosedTxInterface(tc *testContext, dbTx database.Tx) bool {
 	// Test the individual block APIs one block at a time to ensure they
 	// return the expected error.  Also, build the data needed to test the
 	// bulk APIs below while looping.
-	allBlockHashes := make([]daghash.Hash, len(tc.blocks))
+	allBlockHashes := make([]*daghash.Hash, len(tc.blocks))
 	allBlockRegions := make([]database.BlockRegion, len(tc.blocks))
 	for i, block := range tc.blocks {
 		blockHash := block.Hash()
-		allBlockHashes[i] = *blockHash
+		allBlockHashes[i] = blockHash
 
 		txLocs, err := block.TxLoc()
 		if err != nil {

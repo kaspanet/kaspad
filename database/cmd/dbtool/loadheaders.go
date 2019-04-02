@@ -71,11 +71,11 @@ func (cmd *headersCmd) Execute(args []string) error {
 	// Bulk load headers.
 	err = db.View(func(dbTx database.Tx) error {
 		blockIdxBucket := dbTx.Metadata().Bucket(blockIdxName)
-		hashes := make([]daghash.Hash, 0, 500000)
+		hashes := make([]*daghash.Hash, 0, 500000)
 		blockIdxBucket.ForEach(func(k, v []byte) error {
 			var hash daghash.Hash
 			copy(hash[:], k)
-			hashes = append(hashes, hash)
+			hashes = append(hashes, &hash)
 			return nil
 		})
 

@@ -38,7 +38,7 @@ func (txs *fakeTxSource) HaveTransaction(txID *daghash.TxID) bool {
 }
 
 // PrepareBlockForTest generates a block with the proper merkle roots, coinbase/fee transactions etc. This function is used for test purposes only
-func PrepareBlockForTest(dag *blockdag.BlockDAG, params *dagconfig.Params, parentHashes []daghash.Hash, transactions []*wire.MsgTx, forceTransactions bool, coinbaseOutputs uint64) (*wire.MsgBlock, error) {
+func PrepareBlockForTest(dag *blockdag.BlockDAG, params *dagconfig.Params, parentHashes []*daghash.Hash, transactions []*wire.MsgTx, forceTransactions bool, coinbaseOutputs uint64) (*wire.MsgBlock, error) {
 	newVirtual, err := blockdag.GetVirtualFromParentsForTest(dag, parentHashes)
 	if err != nil {
 		return nil, err
@@ -114,8 +114,8 @@ func PrepareBlockForTest(dag *blockdag.BlockDAG, params *dagconfig.Params, paren
 		for i, tx := range template.Block.Transactions {
 			utilTxs[i] = util.NewTx(tx)
 		}
-		template.Block.Header.HashMerkleRoot = *blockdag.BuildHashMerkleTreeStore(utilTxs).Root()
-		template.Block.Header.IDMerkleRoot = *blockdag.BuildIDMerkleTreeStore(utilTxs).Root()
+		template.Block.Header.HashMerkleRoot = blockdag.BuildHashMerkleTreeStore(utilTxs).Root()
+		template.Block.Header.IDMerkleRoot = blockdag.BuildIDMerkleTreeStore(utilTxs).Root()
 	}
 	return template.Block, nil
 }

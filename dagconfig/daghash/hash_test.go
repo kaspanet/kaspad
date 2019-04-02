@@ -112,25 +112,25 @@ func TestHashString(t *testing.T) {
 }
 
 func TestHashesStrings(t *testing.T) {
-	first := Hash([HashSize]byte{ // Make go vet happy.
+	first := &Hash{ // Make go vet happy.
 		0x06, 0xe5, 0x33, 0xfd, 0x1a, 0xda, 0x86, 0x39,
 		0x1f, 0x3f, 0x6c, 0x34, 0x32, 0x04, 0xb0, 0xd2,
 		0x78, 0xd4, 0xaa, 0xec, 0x1c, 0x0b, 0x20, 0xaa,
 		0x27, 0xba, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00,
-	})
+	}
 	firstStr := "000000000003ba27aa200b1cecaad478d2b00432346c3f1f3986da1afd33e506"
 
-	second := Hash([HashSize]byte{})
+	second := &Hash{}
 	secondStr := "0000000000000000000000000000000000000000000000000000000000000000"
 
 	tests := []struct {
 		name            string
-		hashes          []Hash
+		hashes          []*Hash
 		expectedStrings []string
 	}{
-		{"empty", []Hash{}, []string{}},
-		{"two hashes", []Hash{first, second}, []string{firstStr, secondStr}},
-		{"two hashes inversed", []Hash{second, first}, []string{secondStr, firstStr}},
+		{"empty", []*Hash{}, []string{}},
+		{"two hashes", []*Hash{first, second}, []string{firstStr, secondStr}},
+		{"two hashes inversed", []*Hash{second, first}, []string{secondStr, firstStr}},
 	}
 
 	for _, test := range tests {
@@ -234,14 +234,14 @@ func TestAreEqual(t *testing.T) {
 	hash1, _ := NewHashFromStr("1111111111111111111111111111111111111111111111111111111111111111")
 	hash2, _ := NewHashFromStr("2222222222222222222222222222222222222222222222222222222222222222")
 	hash3, _ := NewHashFromStr("3333333333333333333333333333333333333333333333333333333333333333")
-	hashes0To2 := []Hash{*hash0, *hash1, *hash2}
-	hashes1To3 := []Hash{*hash1, *hash2, *hash3}
-	hashes0To3 := []Hash{*hash0, *hash1, *hash2, *hash3}
+	hashes0To2 := []*Hash{hash0, hash1, hash2}
+	hashes1To3 := []*Hash{hash1, hash2, hash3}
+	hashes0To3 := []*Hash{hash0, hash1, hash2, hash3}
 
 	tests := []struct {
 		name     string
-		first    []Hash
-		second   []Hash
+		first    []*Hash
+		second   []*Hash
 		expected bool
 	}{
 		{
@@ -372,18 +372,18 @@ func TestJoinHashesStrings(t *testing.T) {
 
 	tests := []struct {
 		name      string
-		hashes    []Hash
+		hashes    []*Hash
 		separator string
 		expected  string
 	}{
-		{"no separator", []Hash{*hash0, *hash1}, "",
+		{"no separator", []*Hash{hash0, hash1}, "",
 			"00000000000000000000000000000000000000000000000000000000000000001111111111111111111111111111111111111111111111111111111111111111"},
-		{", separator", []Hash{*hash0, *hash1}, ",",
+		{", separator", []*Hash{hash0, hash1}, ",",
 			"0000000000000000000000000000000000000000000000000000000000000000,1111111111111111111111111111111111111111111111111111111111111111"},
-		{"blabla separator", []Hash{*hash0, *hash1}, "blabla",
+		{"blabla separator", []*Hash{hash0, hash1}, "blabla",
 			"0000000000000000000000000000000000000000000000000000000000000000blabla1111111111111111111111111111111111111111111111111111111111111111"},
-		{"1 hash", []Hash{*hash0}, ",", "0000000000000000000000000000000000000000000000000000000000000000"},
-		{"0 hashes", []Hash{}, ",", ""},
+		{"1 hash", []*Hash{hash0}, ",", "0000000000000000000000000000000000000000000000000000000000000000"},
+		{"0 hashes", []*Hash{}, ",", ""},
 	}
 
 	for _, test := range tests {
@@ -404,15 +404,15 @@ func TestSort(t *testing.T) {
 
 	tests := []struct {
 		name     string
-		hashes   []Hash
-		expected []Hash
+		hashes   []*Hash
+		expected []*Hash
 	}{
-		{"empty", []Hash{}, []Hash{}},
-		{"single item", []Hash{*hash0}, []Hash{*hash0}},
-		{"already sorted", []Hash{*hash0, *hash1, *hash2, *hash3}, []Hash{*hash0, *hash1, *hash2, *hash3}},
-		{"inverted", []Hash{*hash3, *hash2, *hash1, *hash0}, []Hash{*hash0, *hash1, *hash2, *hash3}},
-		{"shuffled", []Hash{*hash2, *hash3, *hash0, *hash1}, []Hash{*hash0, *hash1, *hash2, *hash3}},
-		{"with duplicates", []Hash{*hash2, *hash3, *hash0, *hash1, *hash1}, []Hash{*hash0, *hash1, *hash1, *hash2, *hash3}},
+		{"empty", []*Hash{}, []*Hash{}},
+		{"single item", []*Hash{hash0}, []*Hash{hash0}},
+		{"already sorted", []*Hash{hash0, hash1, hash2, hash3}, []*Hash{hash0, hash1, hash2, hash3}},
+		{"inverted", []*Hash{hash3, hash2, hash1, hash0}, []*Hash{hash0, hash1, hash2, hash3}},
+		{"shuffled", []*Hash{hash2, hash3, hash0, hash1}, []*Hash{hash0, hash1, hash2, hash3}},
+		{"with duplicates", []*Hash{hash2, hash3, hash0, hash1, hash1}, []*Hash{hash0, hash1, hash1, hash2, hash3}},
 	}
 
 	for _, test := range tests {

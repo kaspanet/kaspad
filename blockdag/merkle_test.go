@@ -16,7 +16,7 @@ func TestMerkle(t *testing.T) {
 
 	hashMerkleTree := BuildHashMerkleTreeStore(block.Transactions())
 	calculatedHashMerkleRoot := hashMerkleTree.Root()
-	wantHashMerkleRoot := &Block100000.Header.HashMerkleRoot
+	wantHashMerkleRoot := Block100000.Header.HashMerkleRoot
 	if !wantHashMerkleRoot.IsEqual(calculatedHashMerkleRoot) {
 		t.Errorf("BuildHashMerkleTreeStore: hash merkle root mismatch - "+
 			"got %v, want %v", calculatedHashMerkleRoot, wantHashMerkleRoot)
@@ -24,7 +24,7 @@ func TestMerkle(t *testing.T) {
 
 	idMerkleTree := BuildIDMerkleTreeStore(block.Transactions())
 	calculatedIDMerkleRoot := idMerkleTree.Root()
-	wantIDMerkleRoot := &Block100000.Header.IDMerkleRoot
+	wantIDMerkleRoot := Block100000.Header.IDMerkleRoot
 	if !wantIDMerkleRoot.IsEqual(calculatedIDMerkleRoot) {
 		t.Errorf("BuildIDMerkleTreeStore: ID merkle root mismatch - "+
 			"got %v, want %v", calculatedIDMerkleRoot, wantIDMerkleRoot)

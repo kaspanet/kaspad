@@ -87,7 +87,7 @@ type blockNode struct {
 	diffChild *blockNode
 
 	// hash is the double sha 256 of the block.
-	hash daghash.Hash
+	hash *daghash.Hash
 
 	// workSum is the total amount of work in the DAG up to and including
 	// this node.
@@ -107,8 +107,8 @@ type blockNode struct {
 	bits           uint32
 	nonce          uint64
 	timestamp      int64
-	hashMerkleRoot daghash.Hash
-	idMerkleRoot   daghash.Hash
+	hashMerkleRoot *daghash.Hash
+	idMerkleRoot   *daghash.Hash
 
 	// status is a bitfield representing the validation state of the block. The
 	// status field, unlike the other fields, may be written to and so should
@@ -139,6 +139,8 @@ func initBlockNode(node *blockNode, blockHeader *wire.BlockHeader, parents block
 		node.timestamp = blockHeader.Timestamp.Unix()
 		node.hashMerkleRoot = blockHeader.HashMerkleRoot
 		node.idMerkleRoot = blockHeader.IDMerkleRoot
+	} else {
+		node.hash = &daghash.ZeroHash
 	}
 
 	if len(parents) > 0 {
@@ -246,7 +248,7 @@ func (node *blockNode) PastMedianTime() time.Time {
 	return time.Unix(medianTimestamp, 0)
 }
 
-func (node *blockNode) ParentHashes() []daghash.Hash {
+func (node *blockNode) ParentHashes() []*daghash.Hash {
 	return node.parents.hashes()
 }
 

@@ -22,8 +22,8 @@ func TestMerkleBlock(t *testing.T) {
 
 	// Block 1 header.
 	parentHashes := blockOne.Header.ParentHashes
-	hashMerkleRoot := &blockOne.Header.HashMerkleRoot
-	idMerkleRoot := &blockOne.Header.IDMerkleRoot
+	hashMerkleRoot := blockOne.Header.HashMerkleRoot
+	idMerkleRoot := blockOne.Header.IDMerkleRoot
 	bits := blockOne.Header.Bits
 	nonce := blockOne.Header.Nonce
 	bh := NewBlockHeader(1, parentHashes, hashMerkleRoot, idMerkleRoot, bits, nonce)
@@ -115,8 +115,8 @@ func TestMerkleBlock(t *testing.T) {
 func TestMerkleBlockCrossProtocol(t *testing.T) {
 	// Block 1 header.
 	parentHashes := blockOne.Header.ParentHashes
-	hashMerkleRoot := &blockOne.Header.HashMerkleRoot
-	idMerkleRoot := &blockOne.Header.IDMerkleRoot
+	hashMerkleRoot := blockOne.Header.HashMerkleRoot
+	idMerkleRoot := blockOne.Header.IDMerkleRoot
 	bits := blockOne.Header.Bits
 	nonce := blockOne.Header.Nonce
 	bh := NewBlockHeader(1, parentHashes, hashMerkleRoot, idMerkleRoot, bits, nonce)
@@ -319,13 +319,13 @@ func TestMerkleBlockOverflowErrors(t *testing.T) {
 var merkleBlockOne = MsgMerkleBlock{
 	Header: BlockHeader{
 		Version:      1,
-		ParentHashes: []daghash.Hash{mainNetGenesisHash, simNetGenesisHash},
-		HashMerkleRoot: daghash.Hash([daghash.HashSize]byte{ // Make go vet happy.
+		ParentHashes: []*daghash.Hash{mainNetGenesisHash, simNetGenesisHash},
+		HashMerkleRoot: &daghash.Hash{ // Make go vet happy.
 			0x98, 0x20, 0x51, 0xfd, 0x1e, 0x4b, 0xa7, 0x44,
 			0xbb, 0xbe, 0x68, 0x0e, 0x1f, 0xee, 0x14, 0x67,
 			0x7b, 0xa1, 0xa3, 0xc3, 0x54, 0x0b, 0xf7, 0xb1,
 			0xcd, 0xb6, 0x06, 0xe8, 0x57, 0x23, 0x3e, 0x0e,
-		}),
+		},
 		IDMerkleRoot: exampleIDMerkleRoot,
 		Timestamp:    time.Unix(0x4966bc61, 0), // 2009-01-08 20:54:25 -0600 CST
 		Bits:         0x1d00ffff,               // 486604799

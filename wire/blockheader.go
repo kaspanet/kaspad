@@ -35,13 +35,13 @@ type BlockHeader struct {
 	Version int32
 
 	// Hashes of the parent block headers in the blockDAG.
-	ParentHashes []daghash.Hash
+	ParentHashes []*daghash.Hash
 
 	// HashMerkleRoot is the merkle tree reference to hash of all transactions for the block.
-	HashMerkleRoot daghash.Hash
+	HashMerkleRoot *daghash.Hash
 
 	// IDMerkleRoot is the merkle tree reference to hash of all transactions' IDs for the block.
-	IDMerkleRoot daghash.Hash
+	IDMerkleRoot *daghash.Hash
 
 	// Time the block was created.
 	Timestamp time.Time
@@ -59,7 +59,7 @@ func (h *BlockHeader) NumParentBlocks() byte {
 }
 
 // BlockHash computes the block identifier hash for the given block header.
-func (h *BlockHeader) BlockHash() daghash.Hash {
+func (h *BlockHeader) BlockHash() *daghash.Hash {
 	// Encode the header and double sha256 everything prior to the number of
 	// transactions.  Ignore the error returns since there is no way the
 	// encode could fail except being out of memory which would cause a
@@ -67,7 +67,7 @@ func (h *BlockHeader) BlockHash() daghash.Hash {
 	buf := bytes.NewBuffer(make([]byte, 0, BaseBlockHeaderPayload+h.NumParentBlocks()))
 	_ = writeBlockHeader(buf, 0, h)
 
-	return daghash.DoubleHashH(buf.Bytes())
+	return daghash.DoubleHashP(buf.Bytes())
 }
 
 // SelectedParentHash returns the hash of the selected block header.
@@ -76,7 +76,7 @@ func (h *BlockHeader) SelectedParentHash() *daghash.Hash {
 		return nil
 	}
 
-	return &h.ParentHashes[0]
+	return h.ParentHashes[0]
 }
 
 // IsGenesis returns true iff this block is a genesis block
@@ -129,7 +129,7 @@ func (h *BlockHeader) SerializeSize() int {
 // NewBlockHeader returns a new BlockHeader using the provided version, previous
 // block hash, hash merkle root, ID merkle root difficulty bits, and nonce used to generate the
 // block with defaults or calclulated values for the remaining fields.
-func NewBlockHeader(version int32, parentHashes []daghash.Hash, hashMerkleRoot *daghash.Hash,
+func NewBlockHeader(version int32, parentHashes []*daghash.Hash, hashMerkleRoot *daghash.Hash,
 	idMerkleRoot *daghash.Hash, bits uint32, nonce uint64) *BlockHeader {
 
 	// Limit the timestamp to one second precision since the protocol
@@ -137,8 +137,8 @@ func NewBlockHeader(version int32, parentHashes []daghash.Hash, hashMerkleRoot *
 	return &BlockHeader{
 		Version:        version,
 		ParentHashes:   parentHashes,
-		HashMerkleRoot: *hashMerkleRoot,
-		IDMerkleRoot:   *idMerkleRoot,
+		HashMerkleRoot: hashMerkleRoot,
+		IDMerkleRoot:   idMerkleRoot,
 		Timestamp:      time.Unix(time.Now().Unix(), 0),
 		Bits:           bits,
 		Nonce:          nonce,
@@ -155,14 +155,18 @@ func readBlockHeader(r io.Reader, pver uint32, bh *BlockHeader) error {
 		return err
 	}
 
-	bh.ParentHashes = make([]daghash.Hash, numParentBlocks)
+	bh.ParentHashes = make([]*daghash.Hash, numParentBlocks)
 	for i := byte(0); i < numParentBlocks; i++ {
-		err := readElement(r, &bh.ParentHashes[i])
+		hash := &daghash.Hash{}
+		err := readElement(r, hash)
 		if err != nil {
 			return err
 		}
+		bh.ParentHashes[i] = hash
 	}
-	return readElements(r, &bh.HashMerkleRoot, &bh.IDMerkleRoot, (*int64Time)(&bh.Timestamp), &bh.Bits, &bh.Nonce)
+	bh.HashMerkleRoot = &daghash.Hash{}
+	bh.IDMerkleRoot = &daghash.Hash{}
+	return readElements(r, bh.HashMerkleRoot, bh.IDMerkleRoot, (*int64Time)(&bh.Timestamp), &bh.Bits, &bh.Nonce)
 }
 
 // writeBlockHeader writes a bitcoin block header to w.  See Serialize for
@@ -170,6 +174,14 @@ func readBlockHeader(r io.Reader, pver uint32, bh *BlockHeader) error {
 // opposed to encoding for the wire.
 func writeBlockHeader(w io.Writer, pver uint32, bh *BlockHeader) error {
 	sec := int64(bh.Timestamp.Unix())
-	return writeElements(w, bh.Version, bh.NumParentBlocks(), &bh.ParentHashes, &bh.HashMerkleRoot, &bh.IDMerkleRoot,
+	if err := writeElements(w, bh.Version, bh.NumParentBlocks()); err != nil {
+		return err
+	}
+	for _, hash := range bh.ParentHashes {
+		if err := writeElement(w, hash); err != nil {
+			return err
+		}
+	}
+	return writeElements(w, bh.HashMerkleRoot, bh.IDMerkleRoot,
 		sec, bh.Bits, bh.Nonce)
 }
