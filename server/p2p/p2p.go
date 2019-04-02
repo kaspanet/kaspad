@@ -240,8 +240,8 @@ func (ps *peerState) forAllPeers(callback func(sp *Peer) bool) bool {
 // cfHeaderKV is a tuple of a filter header and its associated block hash. The
 // struct is used to cache cfcheckpt responses.
 type cfHeaderKV struct {
-	blockHash    daghash.Hash
-	filterHeader daghash.Hash
+	blockHash    *daghash.Hash
+	filterHeader *daghash.Hash
 }
 
 // Server provides a bitcoin server for handling communications to and from
@@ -646,13 +646,13 @@ func (sp *Peer) OnGetData(_ *peer.Peer, msg *wire.MsgGetData) {
 		var err error
 		switch iv.Type {
 		case wire.InvTypeTx:
-			err = sp.server.pushTxMsg(sp, (*daghash.TxID)(&iv.Hash), c, waitChan)
+			err = sp.server.pushTxMsg(sp, (*daghash.TxID)(iv.Hash), c, waitChan)
 		case wire.InvTypeSyncBlock:
 			fallthrough
 		case wire.InvTypeBlock:
-			err = sp.server.pushBlockMsg(sp, &iv.Hash, c, waitChan)
+			err = sp.server.pushBlockMsg(sp, iv.Hash, c, waitChan)
 		case wire.InvTypeFilteredBlock:
-			err = sp.server.pushMerkleBlockMsg(sp, &iv.Hash, c, waitChan)
+			err = sp.server.pushMerkleBlockMsg(sp, iv.Hash, c, waitChan)
 		default:
 			peerLog.Warnf("Unknown type in inventory request %d",
 				iv.Type)
@@ -701,13 +701,13 @@ func (sp *Peer) OnGetBlocks(_ *peer.Peer, msg *wire.MsgGetBlocks) {
 	//
 	// This mirrors the behavior in the reference implementation.
 	dag := sp.server.DAG
-	hashList := dag.LocateBlocks(msg.BlockLocatorHashes, &msg.HashStop,
+	hashList := dag.LocateBlocks(msg.BlockLocatorHashes, msg.HashStop,
 		wire.MaxBlocksPerMsg)
 
 	// Generate inventory message.
 	invMsg := wire.NewMsgInv()
 	for i := range hashList {
-		iv := wire.NewInvVect(wire.InvTypeSyncBlock, &hashList[i])
+		iv := wire.NewInvVect(wire.InvTypeSyncBlock, hashList[i])
 		invMsg.AddInvVect(iv)
 	}
 
@@ -720,7 +720,7 @@ func (sp *Peer) OnGetBlocks(_ *peer.Peer, msg *wire.MsgGetBlocks) {
 			// would prevent the entire slice from being eligible
 			// for GC as soon as it's sent.
 			continueHash := invMsg.InvList[invListLen-1].Hash
-			sp.continueHash = &continueHash
+			sp.continueHash = continueHash
 		}
 		sp.QueueMessage(invMsg, nil)
 	}
@@ -745,7 +745,7 @@ func (sp *Peer) OnGetHeaders(_ *peer.Peer, msg *wire.MsgGetHeaders) {
 	//
 	// This mirrors the behavior in the reference implementation.
 	dag := sp.server.DAG
-	headers := dag.LocateHeaders(msg.BlockLocatorHashes, &msg.HashStop)
+	headers := dag.LocateHeaders(msg.BlockLocatorHashes, msg.HashStop)
 
 	// Send found headers to the requesting peer.
 	blockHeaders := make([]*wire.BlockHeader, len(headers))
@@ -763,20 +763,13 @@ func (sp *Peer) OnGetCFilters(_ *peer.Peer, msg *wire.MsgGetCFilters) {
 	}
 
 	hashes, err := sp.server.DAG.HeightToHashRange(int32(msg.StartHeight),
-		&msg.StopHash, wire.MaxGetCFiltersReqRange)
+		msg.StopHash, wire.MaxGetCFiltersReqRange)
 	if err != nil {
 		peerLog.Debugf("Invalid getcfilters request: %s", err)
 		return
 	}
 
-	// Create []*daghash.Hash from []daghash.Hash to pass to
-	// FiltersByBlockHashes.
-	hashPtrs := make([]*daghash.Hash, len(hashes))
-	for i := range hashes {
-		hashPtrs[i] = &hashes[i]
-	}
-
-	filters, err := sp.server.CfIndex.FiltersByBlockHashes(hashPtrs,
+	filters, err := sp.server.CfIndex.FiltersByBlockHashes(hashes,
 		msg.FilterType)
 	if err != nil {
 		peerLog.Errorf("Error retrieving cfilters: %s", err)
@@ -788,7 +781,7 @@ func (sp *Peer) OnGetCFilters(_ *peer.Peer, msg *wire.MsgGetCFilters) {
 			peerLog.Warnf("Could not obtain cfilter for %s", hashes[i])
 			return
 		}
-		filterMsg := wire.NewMsgCFilter(msg.FilterType, &hashes[i], filterBytes)
+		filterMsg := wire.NewMsgCFilter(msg.FilterType, hashes[i], filterBytes)
 		sp.QueueMessage(filterMsg, nil)
 	}
 }
@@ -812,7 +805,7 @@ func (sp *Peer) OnGetCFHeaders(_ *peer.Peer, msg *wire.MsgGetCFHeaders) {
 
 	// Fetch the hashes from the block index.
 	hashList, err := sp.server.DAG.HeightToHashRange(startHeight,
-		&msg.StopHash, maxResults)
+		msg.StopHash, maxResults)
 	if err != nil {
 		peerLog.Debugf("Invalid getcfheaders request: %s", err)
 	}
@@ -825,15 +818,8 @@ func (sp *Peer) OnGetCFHeaders(_ *peer.Peer, msg *wire.MsgGetCFHeaders) {
 		return
 	}
 
-	// Create []*daghash.Hash from []daghash.Hash to pass to
-	// FilterHeadersByBlockHashes.
-	hashPtrs := make([]*daghash.Hash, len(hashList))
-	for i := range hashList {
-		hashPtrs[i] = &hashList[i]
-	}
-
 	// Fetch the raw filter hash bytes from the database for all blocks.
-	filterHashes, err := sp.server.CfIndex.FilterHashesByBlockHashes(hashPtrs,
+	filterHashes, err := sp.server.CfIndex.FilterHashesByBlockHashes(hashList,
 		msg.FilterType)
 	if err != nil {
 		peerLog.Errorf("Error retrieving cfilter hashes: %s", err)
@@ -845,7 +831,7 @@ func (sp *Peer) OnGetCFHeaders(_ *peer.Peer, msg *wire.MsgGetCFHeaders) {
 
 	// Populate the PrevFilterHeader field.
 	if msg.StartHeight > 0 {
-		parentHash := &hashList[0]
+		parentHash := hashList[0]
 
 		// Fetch the raw committed filter header bytes from the
 		// database.
@@ -902,7 +888,7 @@ func (sp *Peer) OnGetCFCheckpt(_ *peer.Peer, msg *wire.MsgGetCFCheckpt) {
 		return
 	}
 
-	blockHashes, err := sp.server.DAG.IntervalBlockHashes(&msg.StopHash,
+	blockHashes, err := sp.server.DAG.IntervalBlockHashes(msg.StopHash,
 		wire.CFCheckptInterval)
 	if err != nil {
 		peerLog.Debugf("Invalid getcfilters request: %s", err)
@@ -940,22 +926,22 @@ func (sp *Peer) OnGetCFCheckpt(_ *peer.Peer, msg *wire.MsgGetCFCheckpt) {
 	// Iterate backwards until the block hash is found in the cache.
 	var forkIdx int
 	for forkIdx = len(checkptCache); forkIdx > 0; forkIdx-- {
-		if checkptCache[forkIdx-1].blockHash == blockHashes[forkIdx-1] {
+		if checkptCache[forkIdx-1].blockHash.IsEqual(blockHashes[forkIdx-1]) {
 			break
 		}
 	}
 
 	// Populate results with cached checkpoints.
-	checkptMsg := wire.NewMsgCFCheckpt(msg.FilterType, &msg.StopHash,
+	checkptMsg := wire.NewMsgCFCheckpt(msg.FilterType, msg.StopHash,
 		len(blockHashes))
 	for i := 0; i < forkIdx; i++ {
-		checkptMsg.AddCFHeader(&checkptCache[i].filterHeader)
+		checkptMsg.AddCFHeader(checkptCache[i].filterHeader)
 	}
 
 	// Look up any filter headers that aren't cached.
 	blockHashPtrs := make([]*daghash.Hash, 0, len(blockHashes)-forkIdx)
 	for i := forkIdx; i < len(blockHashes); i++ {
-		blockHashPtrs = append(blockHashPtrs, &blockHashes[i])
+		blockHashPtrs = append(blockHashPtrs, blockHashes[i])
 	}
 
 	filterHeaders, err := sp.server.CfIndex.FilterHeadersByBlockHashes(blockHashPtrs,
@@ -982,7 +968,7 @@ func (sp *Peer) OnGetCFCheckpt(_ *peer.Peer, msg *wire.MsgGetCFCheckpt) {
 		if updateCache {
 			checkptCache[forkIdx+i] = cfHeaderKV{
 				blockHash:    blockHashes[forkIdx+i],
-				filterHeader: *filterHeader,
+				filterHeader: filterHeader,
 			}
 		}
 	}
@@ -1345,7 +1331,7 @@ func (s *Server) pushBlockMsg(sp *Peer, hash *daghash.Hash, doneChan chan<- stru
 	if sendInv {
 		highestTipHash := sp.server.DAG.HighestTipHash()
 		invMsg := wire.NewMsgInvSizeHint(1)
-		iv := wire.NewInvVect(wire.InvTypeBlock, &highestTipHash)
+		iv := wire.NewInvVect(wire.InvTypeBlock, highestTipHash)
 		invMsg.AddInvVect(iv)
 		sp.QueueMessage(invMsg, doneChan)
 		sp.continueHash = nil

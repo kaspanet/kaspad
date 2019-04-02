@@ -825,7 +825,7 @@ func TestPhantom(t *testing.T) {
 				parents.add(parent)
 			}
 			node := newTestNode(parents, blockVersion, 0, blockTime, test.k)
-			node.hash = daghash.Hash{} //It helps to predict hash order
+			node.hash = &daghash.Hash{} //It helps to predict hash order
 			for i, char := range blockData.id {
 				node.hash[i] = byte(char)
 			}

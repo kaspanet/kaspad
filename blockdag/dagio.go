@@ -399,8 +399,8 @@ func dbFetchHeightByHash(dbTx database.Tx, hash *daghash.Hash) (int32, error) {
 }
 
 type dagState struct {
-	TipHashes         []daghash.Hash
-	LastFinalityPoint daghash.Hash
+	TipHashes         []*daghash.Hash
+	LastFinalityPoint *daghash.Hash
 }
 
 // serializeDAGState returns the serialization of the DAG state.
@@ -584,7 +584,7 @@ func (dag *BlockDAG) initDAGState() error {
 				}
 			} else {
 				for _, hash := range header.ParentHashes {
-					parent := dag.index.LookupNode(&hash)
+					parent := dag.index.LookupNode(hash)
 					if parent == nil {
 						return AssertError(fmt.Sprintf("initDAGState: Could "+
 							"not find parent %s for block %s", hash, header.BlockHash()))
@@ -669,7 +669,7 @@ func (dag *BlockDAG) initDAGState() error {
 		// Apply the stored tips to the virtual block.
 		tips := newSet()
 		for _, tipHash := range state.TipHashes {
-			tip := dag.index.LookupNode(&tipHash)
+			tip := dag.index.LookupNode(tipHash)
 			if tip == nil {
 				return AssertError(fmt.Sprintf("initDAGState: cannot find "+
 					"DAG tip %s in block index", state.TipHashes))
@@ -679,7 +679,7 @@ func (dag *BlockDAG) initDAGState() error {
 		dag.virtual.SetTips(tips)
 
 		// Set the last finality point
-		dag.lastFinalityPoint = dag.index.LookupNode(&state.LastFinalityPoint)
+		dag.lastFinalityPoint = dag.index.LookupNode(state.LastFinalityPoint)
 
 		return nil
 	})
@@ -709,7 +709,7 @@ func deserializeBlockRow(blockRow []byte) (*wire.BlockHeader, blockStatus, error
 // with the height set.
 func dbFetchBlockByNode(dbTx database.Tx, node *blockNode) (*util.Block, error) {
 	// Load the raw block bytes from the database.
-	blockBytes, err := dbTx.FetchBlock(&node.hash)
+	blockBytes, err := dbTx.FetchBlock(node.hash)
 	if err != nil {
 		return nil, err
 	}
@@ -742,7 +742,7 @@ func dbStoreBlockNode(dbTx database.Tx, node *blockNode) error {
 
 	// Write block header data to block index bucket.
 	blockIndexBucket := dbTx.Metadata().Bucket(blockIndexBucketName)
-	key := blockIndexKey(&node.hash, uint32(node.height))
+	key := blockIndexKey(node.hash, uint32(node.height))
 	return blockIndexBucket.Put(key, value)
 }
 

@@ -15,7 +15,7 @@ import (
 // get headers in the chain of basic (0x00) or extended (0x01) headers.
 type MsgGetCFCheckpt struct {
 	FilterType FilterType
-	StopHash   daghash.Hash
+	StopHash   *daghash.Hash
 }
 
 // BtcDecode decodes r using the bitcoin protocol encoding into the receiver.
@@ -26,7 +26,8 @@ func (msg *MsgGetCFCheckpt) BtcDecode(r io.Reader, pver uint32) error {
 		return err
 	}
 
-	return readElement(r, &msg.StopHash)
+	msg.StopHash = &daghash.Hash{}
+	return readElement(r, msg.StopHash)
 }
 
 // BtcEncode encodes the receiver to w using the bitcoin protocol encoding.
@@ -37,7 +38,7 @@ func (msg *MsgGetCFCheckpt) BtcEncode(w io.Writer, pver uint32) error {
 		return err
 	}
 
-	return writeElement(w, &msg.StopHash)
+	return writeElement(w, msg.StopHash)
 }
 
 // Command returns the protocol command string for the message.  This is part
@@ -59,6 +60,6 @@ func (msg *MsgGetCFCheckpt) MaxPayloadLength(pver uint32) uint32 {
 func NewMsgGetCFCheckpt(filterType FilterType, stopHash *daghash.Hash) *MsgGetCFCheckpt {
 	return &MsgGetCFCheckpt{
 		FilterType: filterType,
-		StopHash:   *stopHash,
+		StopHash:   stopHash,
 	}
 }

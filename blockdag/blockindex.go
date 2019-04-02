@@ -78,7 +78,7 @@ func (bi *blockIndex) AddNode(node *blockNode) {
 //
 // This function is NOT safe for concurrent access.
 func (bi *blockIndex) addNode(node *blockNode) {
-	bi.index[node.hash] = node
+	bi.index[*node.hash] = node
 }
 
 // NodeStatus provides concurrent-safe access to the status field of a node.

@@ -16,7 +16,7 @@ func TestBlockHeap(t *testing.T) {
 	block100000 := newBlockNode(&block100000Header, setFromSlice(block0), dagconfig.MainNetParams.K)
 
 	block0smallHash := newBlockNode(&block0Header, newSet(), dagconfig.MainNetParams.K)
-	block0smallHash.hash = daghash.Hash{}
+	block0smallHash.hash = &daghash.Hash{}
 
 	tests := []struct {
 		name            string

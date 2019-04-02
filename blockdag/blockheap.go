@@ -29,7 +29,7 @@ type upHeap struct{ baseHeap }
 
 func (h upHeap) Less(i, j int) bool {
 	if h.baseHeap[i].height == h.baseHeap[j].height {
-		return daghash.HashToBig(&h.baseHeap[i].hash).Cmp(daghash.HashToBig(&h.baseHeap[j].hash)) < 0
+		return daghash.HashToBig(h.baseHeap[i].hash).Cmp(daghash.HashToBig(h.baseHeap[j].hash)) < 0
 	}
 
 	return h.baseHeap[i].height < h.baseHeap[j].height
@@ -40,7 +40,7 @@ type downHeap struct{ baseHeap }
 
 func (h downHeap) Less(i, j int) bool {
 	if h.baseHeap[i].height == h.baseHeap[j].height {
-		return daghash.HashToBig(&h.baseHeap[i].hash).Cmp(daghash.HashToBig(&h.baseHeap[j].hash)) > 0
+		return daghash.HashToBig(h.baseHeap[i].hash).Cmp(daghash.HashToBig(h.baseHeap[j].hash)) > 0
 	}
 
 	return h.baseHeap[i].height > h.baseHeap[j].height

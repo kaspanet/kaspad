@@ -311,7 +311,7 @@ func WithRandomKey() *GCSBuilder {
 // data pushes within all the outputs created within a block.
 func BuildBasicFilter(block *wire.MsgBlock) (*gcs.Filter, error) {
 	blockHash := block.BlockHash()
-	b := WithKeyHash(&blockHash)
+	b := WithKeyHash(blockHash)
 
 	// If the filter had an issue with the specified key, then we force it
 	// to bubble up here by calling the Key() function.
@@ -355,7 +355,7 @@ func BuildBasicFilter(block *wire.MsgBlock) (*gcs.Filter, error) {
 // the _hashes_ of each transaction are also inserted into the filter.
 func BuildExtFilter(block *wire.MsgBlock) (*gcs.Filter, error) {
 	blockHash := block.BlockHash()
-	b := WithKeyHash(&blockHash)
+	b := WithKeyHash(blockHash)
 
 	// If the filter had an issue with the specified key, then we force it
 	// to bubble up here by calling the Key() function.
@@ -382,22 +382,22 @@ func BuildExtFilter(block *wire.MsgBlock) (*gcs.Filter, error) {
 }
 
 // GetFilterHash returns the double-SHA256 of the filter.
-func GetFilterHash(filter *gcs.Filter) (daghash.Hash, error) {
+func GetFilterHash(filter *gcs.Filter) (*daghash.Hash, error) {
 	filterData, err := filter.NBytes()
 	if err != nil {
-		return daghash.Hash{}, err
+		return &daghash.Hash{}, err
 	}
 
-	return daghash.DoubleHashH(filterData), nil
+	return daghash.DoubleHashP(filterData), nil
 }
 
 // MakeHeaderForFilter makes a filter chain header for a filter, given the
 // filter and the previous filter chain header.
-func MakeHeaderForFilter(filter *gcs.Filter, parentHeader daghash.Hash) (daghash.Hash, error) {
+func MakeHeaderForFilter(filter *gcs.Filter, parentHeader *daghash.Hash) (*daghash.Hash, error) {
 	filterTip := make([]byte, 2*daghash.HashSize)
 	filterHash, err := GetFilterHash(filter)
 	if err != nil {
-		return daghash.Hash{}, err
+		return &daghash.Hash{}, err
 	}
 
 	// In the buffer we created above we'll compute hash || parentHash as an
@@ -407,5 +407,5 @@ func MakeHeaderForFilter(filter *gcs.Filter, parentHeader daghash.Hash) (daghash
 
 	// The final filter hash is the double-sha256 of the hash computed
 	// above.
-	return daghash.DoubleHashH(filterTip), nil
+	return daghash.DoubleHashP(filterTip), nil
 }

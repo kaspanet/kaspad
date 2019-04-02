@@ -28,8 +28,8 @@ const (
 // MsgGetCFHeaders for details on requesting the headers.
 type MsgCFHeaders struct {
 	FilterType       FilterType
-	StopHash         daghash.Hash
-	PrevFilterHeader daghash.Hash
+	StopHash         *daghash.Hash
+	PrevFilterHeader *daghash.Hash
 	FilterHashes     []*daghash.Hash
 }
 
@@ -55,13 +55,15 @@ func (msg *MsgCFHeaders) BtcDecode(r io.Reader, pver uint32) error {
 	}
 
 	// Read stop hash
-	err = readElement(r, &msg.StopHash)
+	msg.StopHash = &daghash.Hash{}
+	err = readElement(r, msg.StopHash)
 	if err != nil {
 		return err
 	}
 
 	// Read prev filter header
-	err = readElement(r, &msg.PrevFilterHeader)
+	msg.PrevFilterHeader = &daghash.Hash{}
+	err = readElement(r, msg.PrevFilterHeader)
 	if err != nil {
 		return err
 	}
@@ -175,6 +177,8 @@ func (msg *MsgCFHeaders) MaxPayloadLength(pver uint32) uint32 {
 // the Message interface. See MsgCFHeaders for details.
 func NewMsgCFHeaders() *MsgCFHeaders {
 	return &MsgCFHeaders{
-		FilterHashes: make([]*daghash.Hash, 0, MaxCFHeadersPerMsg),
+		FilterHashes:     make([]*daghash.Hash, 0, MaxCFHeadersPerMsg),
+		StopHash:         &daghash.ZeroHash,
+		PrevFilterHeader: &daghash.ZeroHash,
 	}
 }

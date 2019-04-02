@@ -199,6 +199,10 @@ type Params struct {
 	// Mempool parameters
 	RelayNonStdTxs bool
 
+	// AcceptUnroutable specifies whether this network accepts unroutable
+	// IP addresses, such as 10.0.0.0/8
+	AcceptUnroutable bool
+
 	// Human-readable prefix for Bech32 encoded addresses
 	Prefix util.Bech32Prefix
 
@@ -263,6 +267,10 @@ var MainNetParams = Params{
 	// Mempool parameters
 	RelayNonStdTxs: false,
 
+	// AcceptUnroutable specifies whether this network accepts unroutable
+	// IP addresses, such as 10.0.0.0/8
+	AcceptUnroutable: false,
+
 	// Human-readable part for Bech32 encoded addresses
 	Prefix: util.Bech32PrefixDAGCoin,
 
@@ -321,6 +329,10 @@ var RegressionNetParams = Params{
 
 	// Mempool parameters
 	RelayNonStdTxs: true,
+
+	// AcceptUnroutable specifies whether this network accepts unroutable
+	// IP addresses, such as 10.0.0.0/8
+	AcceptUnroutable: false,
 
 	// Human-readable part for Bech32 encoded addresses
 	Prefix: util.Bech32PrefixDAGReg,
@@ -386,6 +398,10 @@ var TestNet3Params = Params{
 	// Mempool parameters
 	RelayNonStdTxs: true,
 
+	// AcceptUnroutable specifies whether this network accepts unroutable
+	// IP addresses, such as 10.0.0.0/8
+	AcceptUnroutable: false,
+
 	// Human-readable part for Bech32 encoded addresses
 	Prefix: util.Bech32PrefixDAGTest,
 
@@ -449,6 +465,10 @@ var SimNetParams = Params{
 	// Mempool parameters
 	RelayNonStdTxs: true,
 
+	// AcceptUnroutable specifies whether this network accepts unroutable
+	// IP addresses, such as 10.0.0.0/8
+	AcceptUnroutable: false,
+
 	PrivateKeyID: 0x64, // starts with 4 (uncompressed) or F (compressed)
 	// Human-readable part for Bech32 encoded addresses
 	Prefix: util.Bech32PrefixDAGSim,
@@ -505,6 +525,10 @@ var DevNetParams = Params{
 
 	// Mempool parameters
 	RelayNonStdTxs: true,
+
+	// AcceptUnroutable specifies whether this network accepts unroutable
+	// IP addresses, such as 10.0.0.0/8
+	AcceptUnroutable: true,
 
 	// Human-readable part for Bech32 encoded addresses
 	Prefix: util.Bech32PrefixDAGTest,

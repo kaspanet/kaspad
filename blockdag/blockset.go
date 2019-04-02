@@ -18,7 +18,7 @@ func newSet() blockSet {
 func setFromSlice(blocks ...*blockNode) blockSet {
 	set := newSet()
 	for _, block := range blocks {
-		set[block.hash] = block
+		set.add(block)
 	}
 	return set
 }
@@ -39,7 +39,7 @@ func (bs blockSet) highest() *blockNode {
 	for _, node := range bs {
 		if highest == nil ||
 			highest.height < node.height ||
-			(highest.height == node.height && daghash.Less(&node.hash, &highest.hash)) {
+			(highest.height == node.height && daghash.Less(node.hash, highest.hash)) {
 
 			highest = node
 		}
@@ -49,13 +49,13 @@ func (bs blockSet) highest() *blockNode {
 
 // add adds a block to this BlockSet
 func (bs blockSet) add(block *blockNode) {
-	bs[block.hash] = block
+	bs[*block.hash] = block
 }
 
 // remove removes a block from this BlockSet, if exists
 // Does nothing if this set does not contain the block
 func (bs blockSet) remove(block *blockNode) {
-	delete(bs, block.hash)
+	delete(bs, *block.hash)
 }
 
 // clone clones thie block set
@@ -104,7 +104,7 @@ func (bs blockSet) union(other blockSet) blockSet {
 
 // contains returns true iff this set contains block
 func (bs blockSet) contains(block *blockNode) bool {
-	_, ok := bs[block.hash]
+	_, ok := bs[*block.hash]
 	return ok
 }
 
@@ -117,13 +117,13 @@ func (bs blockSet) containsHash(hash *daghash.Hash) bool {
 // hashesEqual returns true if the given hashes are equal to the hashes
 // of the blocks in this set.
 // NOTE: The given hash slice must not contain duplicates.
-func (bs blockSet) hashesEqual(hashes []daghash.Hash) bool {
+func (bs blockSet) hashesEqual(hashes []*daghash.Hash) bool {
 	if len(hashes) != len(bs) {
 		return false
 	}
 
 	for _, hash := range hashes {
-		if _, wasFound := bs[hash]; !wasFound {
+		if _, wasFound := bs[*hash]; !wasFound {
 			return false
 		}
 	}
@@ -132,10 +132,10 @@ func (bs blockSet) hashesEqual(hashes []daghash.Hash) bool {
 }
 
 // hashes returns the hashes of the blocks in this set.
-func (bs blockSet) hashes() []daghash.Hash {
-	hashes := make([]daghash.Hash, 0, len(bs))
-	for hash := range bs {
-		hashes = append(hashes, hash)
+func (bs blockSet) hashes() []*daghash.Hash {
+	hashes := make([]*daghash.Hash, 0, len(bs))
+	for _, node := range bs {
+		hashes = append(hashes, node.hash)
 	}
 	daghash.Sort(hashes)
 	return hashes
@@ -166,7 +166,7 @@ func (bs blockSet) bluest() *blockNode {
 	for _, node := range bs {
 		if bluestNode == nil ||
 			node.blueScore > maxScore ||
-			(node.blueScore == maxScore && daghash.Less(&node.hash, &bluestNode.hash)) {
+			(node.blueScore == maxScore && daghash.Less(node.hash, bluestNode.hash)) {
 			bluestNode = node
 			maxScore = node.blueScore
 		}

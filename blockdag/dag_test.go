@@ -525,8 +525,8 @@ func TestCalcPastMedianTime(t *testing.T) {
 // nodeHashes is a convenience function that returns the hashes for all of the
 // passed indexes of the provided nodes.  It is used to construct expected hash
 // slices in the tests.
-func nodeHashes(nodes []*blockNode, indexes ...int) []daghash.Hash {
-	hashes := make([]daghash.Hash, 0, len(indexes))
+func nodeHashes(nodes []*blockNode, indexes ...int) []*daghash.Hash {
+	hashes := make([]*daghash.Hash, 0, len(indexes))
 	for _, idx := range indexes {
 		hashes = append(hashes, nodes[idx].hash)
 	}
@@ -546,7 +546,11 @@ func chainedNodes(parents blockSet, numNodes int) []*blockNode {
 	for i := 0; i < numNodes; i++ {
 		// This is invalid, but all that is needed is enough to get the
 		// synthetic tests to work.
-		header := wire.BlockHeader{Nonce: testNoncePrng.Uint64()}
+		header := wire.BlockHeader{
+			Nonce:          testNoncePrng.Uint64(),
+			IDMerkleRoot:   &daghash.ZeroHash,
+			HashMerkleRoot: &daghash.ZeroHash,
+		}
 		header.ParentHashes = tips.hashes()
 		nodes[i] = newBlockNode(&header, tips, dagconfig.SimNetParams.K)
 		tips = setFromSlice(nodes[i])
@@ -585,10 +589,10 @@ func TestHeightToHashRange(t *testing.T) {
 
 	tests := []struct {
 		name        string
-		startHeight int32          // locator for requested inventory
-		endHash     daghash.Hash   // stop hash for locator
-		maxResults  int            // max to locate, 0 = wire const
-		hashes      []daghash.Hash // expected located hashes
+		startHeight int32           // locator for requested inventory
+		endHash     *daghash.Hash   // stop hash for locator
+		maxResults  int             // max to locate, 0 = wire const
+		hashes      []*daghash.Hash // expected located hashes
 		expectError bool
 	}{
 		{
@@ -636,7 +640,7 @@ func TestHeightToHashRange(t *testing.T) {
 		},
 	}
 	for _, test := range tests {
-		hashes, err := blockDAG.HeightToHashRange(test.startHeight, &test.endHash,
+		hashes, err := blockDAG.HeightToHashRange(test.startHeight, test.endHash,
 			test.maxResults)
 		if err != nil {
 			if !test.expectError {
@@ -660,26 +664,26 @@ func TestIntervalBlockHashes(t *testing.T) {
 	// 	genesis -> 1 -> 2 -> ... -> 15 -> 16  -> 17  -> 18
 	// 	                              \-> 16a -> 17a -> 18a (unvalidated)
 	tip := testTip
-	chain := newTestDAG(&dagconfig.SimNetParams)
-	branch0Nodes := chainedNodes(setFromSlice(chain.genesis), 18)
+	dag := newTestDAG(&dagconfig.SimNetParams)
+	branch0Nodes := chainedNodes(setFromSlice(dag.genesis), 18)
 	branch1Nodes := chainedNodes(setFromSlice(branch0Nodes[14]), 3)
 	for _, node := range branch0Nodes {
-		chain.index.SetStatusFlags(node, statusValid)
-		chain.index.AddNode(node)
+		dag.index.SetStatusFlags(node, statusValid)
+		dag.index.AddNode(node)
 	}
 	for _, node := range branch1Nodes {
 		if node.height < 18 {
-			chain.index.SetStatusFlags(node, statusValid)
+			dag.index.SetStatusFlags(node, statusValid)
 		}
-		chain.index.AddNode(node)
+		dag.index.AddNode(node)
 	}
-	chain.virtual.SetTips(setFromSlice(tip(branch0Nodes)))
+	dag.virtual.SetTips(setFromSlice(tip(branch0Nodes)))
 
 	tests := []struct {
 		name        string
-		endHash     daghash.Hash
+		endHash     *daghash.Hash
 		interval    int
-		hashes      []daghash.Hash
+		hashes      []*daghash.Hash
 		expectError bool
 	}{
 		{
@@ -699,7 +703,7 @@ func TestIntervalBlockHashes(t *testing.T) {
 			name:     "no results",
 			endHash:  branch0Nodes[17].hash,
 			interval: 20,
-			hashes:   []daghash.Hash{},
+			hashes:   []*daghash.Hash{},
 		},
 		{
 			name:        "unvalidated block",
@@ -709,7 +713,7 @@ func TestIntervalBlockHashes(t *testing.T) {
 		},
 	}
 	for _, test := range tests {
-		hashes, err := chain.IntervalBlockHashes(&test.endHash, test.interval)
+		hashes, err := dag.IntervalBlockHashes(test.endHash, test.interval)
 		if err != nil {
 			if !test.expectError {
 				t.Errorf("%s: unexpected error: %v", test.name, err)
@@ -886,7 +890,7 @@ func TestValidateFeeTransaction(t *testing.T) {
 	var flags BehaviorFlags
 	flags |= BFFastAdd | BFNoPoWCheck
 
-	buildBlock := func(blockName string, parentHashes []daghash.Hash, transactions []*wire.MsgTx, expectedErrorCode ErrorCode) *wire.MsgBlock {
+	buildBlock := func(blockName string, parentHashes []*daghash.Hash, transactions []*wire.MsgTx, expectedErrorCode ErrorCode) *wire.MsgBlock {
 		utilTxs := make([]*util.Tx, len(transactions))
 		for i, tx := range transactions {
 			utilTxs[i] = util.NewTx(tx)
@@ -896,8 +900,8 @@ func TestValidateFeeTransaction(t *testing.T) {
 			Header: wire.BlockHeader{
 				Bits:           dag.genesis.Header().Bits,
 				ParentHashes:   parentHashes,
-				HashMerkleRoot: *BuildHashMerkleTreeStore(utilTxs).Root(),
-				IDMerkleRoot:   *BuildIDMerkleTreeStore(utilTxs).Root(),
+				HashMerkleRoot: BuildHashMerkleTreeStore(utilTxs).Root(),
+				IDMerkleRoot:   BuildIDMerkleTreeStore(utilTxs).Root(),
 			},
 			Transactions: transactions,
 		}
@@ -929,7 +933,7 @@ func TestValidateFeeTransaction(t *testing.T) {
 			TxIn: []*wire.TxIn{
 				{
 					PreviousOutPoint: wire.OutPoint{
-						TxID:  daghash.TxID(dag.genesis.hash),
+						TxID:  daghash.TxID(*dag.genesis.hash),
 						Index: math.MaxUint32,
 					},
 					Sequence: wire.MaxTxInSequenceNum,
@@ -941,7 +945,7 @@ func TestValidateFeeTransaction(t *testing.T) {
 			TxIn: []*wire.TxIn{
 				{
 					PreviousOutPoint: wire.OutPoint{
-						TxID:  daghash.TxID(dag.genesis.hash),
+						TxID:  daghash.TxID(*dag.genesis.hash),
 						Index: math.MaxUint32,
 					},
 					Sequence: wire.MaxTxInSequenceNum,
@@ -950,7 +954,7 @@ func TestValidateFeeTransaction(t *testing.T) {
 			SubnetworkID: *subnetworkid.SubnetworkIDNative,
 		},
 	}
-	buildBlock("blockWithExtraFeeTx", []daghash.Hash{dag.genesis.hash}, blockWithExtraFeeTxTransactions, ErrMultipleFeeTransactions)
+	buildBlock("blockWithExtraFeeTx", []*daghash.Hash{dag.genesis.hash}, blockWithExtraFeeTxTransactions, ErrMultipleFeeTransactions)
 
 	block1Txs := []*wire.MsgTx{
 		cb1,
@@ -959,7 +963,7 @@ func TestValidateFeeTransaction(t *testing.T) {
 			TxIn: []*wire.TxIn{
 				{
 					PreviousOutPoint: wire.OutPoint{
-						TxID:  daghash.TxID(dag.genesis.hash),
+						TxID:  daghash.TxID(*dag.genesis.hash),
 						Index: math.MaxUint32,
 					},
 					Sequence: wire.MaxTxInSequenceNum,
@@ -968,7 +972,7 @@ func TestValidateFeeTransaction(t *testing.T) {
 			SubnetworkID: *subnetworkid.SubnetworkIDNative,
 		},
 	}
-	block1 := buildBlock("block1", []daghash.Hash{dag.genesis.hash}, block1Txs, 0)
+	block1 := buildBlock("block1", []*daghash.Hash{dag.genesis.hash}, block1Txs, 0)
 
 	cb1A := createCoinbase(nil)
 	block1ATxs := []*wire.MsgTx{
@@ -978,7 +982,7 @@ func TestValidateFeeTransaction(t *testing.T) {
 			TxIn: []*wire.TxIn{
 				{
 					PreviousOutPoint: wire.OutPoint{
-						TxID:  daghash.TxID(dag.genesis.hash),
+						TxID:  daghash.TxID(*dag.genesis.hash),
 						Index: math.MaxUint32,
 					},
 					Sequence: wire.MaxTxInSequenceNum,
@@ -987,7 +991,7 @@ func TestValidateFeeTransaction(t *testing.T) {
 			SubnetworkID: *subnetworkid.SubnetworkIDNative,
 		},
 	}
-	block1A := buildBlock("block1A", []daghash.Hash{dag.genesis.hash}, block1ATxs, 0)
+	block1A := buildBlock("block1A", []*daghash.Hash{dag.genesis.hash}, block1ATxs, 0)
 
 	block1AChildCbPkScript, err := payToPubKeyHashScript((&[20]byte{0x1A, 0xC0})[:])
 	if err != nil {
@@ -1001,7 +1005,7 @@ func TestValidateFeeTransaction(t *testing.T) {
 			TxIn: []*wire.TxIn{
 				{
 					PreviousOutPoint: wire.OutPoint{
-						TxID:  daghash.TxID(block1A.BlockHash()),
+						TxID:  daghash.TxID(*block1A.BlockHash()),
 						Index: math.MaxUint32,
 					},
 					Sequence: wire.MaxTxInSequenceNum,
@@ -1028,7 +1032,7 @@ func TestValidateFeeTransaction(t *testing.T) {
 			SubnetworkID: *subnetworkid.SubnetworkIDNative,
 		},
 	}
-	block1AChild := buildBlock("block1AChild", []daghash.Hash{block1A.BlockHash()}, block1AChildTxs, 0)
+	block1AChild := buildBlock("block1AChild", []*daghash.Hash{block1A.BlockHash()}, block1AChildTxs, 0)
 
 	cb2 := createCoinbase(nil)
 	block2Txs := []*wire.MsgTx{
@@ -1038,7 +1042,7 @@ func TestValidateFeeTransaction(t *testing.T) {
 			TxIn: []*wire.TxIn{
 				{
 					PreviousOutPoint: wire.OutPoint{
-						TxID:  daghash.TxID(block1.BlockHash()),
+						TxID:  daghash.TxID(*block1.BlockHash()),
 						Index: math.MaxUint32,
 					},
 					Sequence: wire.MaxTxInSequenceNum,
@@ -1047,7 +1051,7 @@ func TestValidateFeeTransaction(t *testing.T) {
 			SubnetworkID: *subnetworkid.SubnetworkIDNative,
 		},
 	}
-	block2 := buildBlock("block2", []daghash.Hash{block1.BlockHash()}, block2Txs, 0)
+	block2 := buildBlock("block2", []*daghash.Hash{block1.BlockHash()}, block2Txs, 0)
 
 	cb3 := createCoinbase(nil)
 	block3Txs := []*wire.MsgTx{
@@ -1057,7 +1061,7 @@ func TestValidateFeeTransaction(t *testing.T) {
 			TxIn: []*wire.TxIn{
 				{
 					PreviousOutPoint: wire.OutPoint{
-						TxID:  daghash.TxID(block2.BlockHash()),
+						TxID:  daghash.TxID(*block2.BlockHash()),
 						Index: math.MaxUint32,
 					},
 					Sequence: wire.MaxTxInSequenceNum,
@@ -1066,7 +1070,7 @@ func TestValidateFeeTransaction(t *testing.T) {
 			SubnetworkID: *subnetworkid.SubnetworkIDNative,
 		},
 	}
-	block3 := buildBlock("block3", []daghash.Hash{block2.BlockHash()}, block3Txs, 0)
+	block3 := buildBlock("block3", []*daghash.Hash{block2.BlockHash()}, block3Txs, 0)
 
 	block4CbPkScript, err := payToPubKeyHashScript((&[20]byte{0x40})[:])
 	if err != nil {
@@ -1081,7 +1085,7 @@ func TestValidateFeeTransaction(t *testing.T) {
 			TxIn: []*wire.TxIn{
 				{
 					PreviousOutPoint: wire.OutPoint{
-						TxID:  daghash.TxID(block3.BlockHash()),
+						TxID:  daghash.TxID(*block3.BlockHash()),
 						Index: math.MaxUint32,
 					},
 					Sequence: wire.MaxTxInSequenceNum,
@@ -1108,7 +1112,7 @@ func TestValidateFeeTransaction(t *testing.T) {
 			SubnetworkID: *subnetworkid.SubnetworkIDNative,
 		},
 	}
-	block4 := buildBlock("block4", []daghash.Hash{block3.BlockHash()}, block4Txs, 0)
+	block4 := buildBlock("block4", []*daghash.Hash{block3.BlockHash()}, block4Txs, 0)
 
 	block4ACbPkScript, err := payToPubKeyHashScript((&[20]byte{0x4A})[:])
 	if err != nil {
@@ -1122,7 +1126,7 @@ func TestValidateFeeTransaction(t *testing.T) {
 			TxIn: []*wire.TxIn{
 				{
 					PreviousOutPoint: wire.OutPoint{
-						TxID:  daghash.TxID(block3.BlockHash()),
+						TxID:  daghash.TxID(*block3.BlockHash()),
 						Index: math.MaxUint32,
 					},
 					Sequence: wire.MaxTxInSequenceNum,
@@ -1149,17 +1153,17 @@ func TestValidateFeeTransaction(t *testing.T) {
 			SubnetworkID: *subnetworkid.SubnetworkIDNative,
 		},
 	}
-	block4A := buildBlock("block4A", []daghash.Hash{block3.BlockHash()}, block4ATxs, 0)
+	block4A := buildBlock("block4A", []*daghash.Hash{block3.BlockHash()}, block4ATxs, 0)
 
 	cb5 := createCoinbase(nil)
 	feeInOuts := map[daghash.Hash]*struct {
 		txIn  *wire.TxIn
 		txOut *wire.TxOut
 	}{
-		block4.BlockHash(): {
+		*block4.BlockHash(): {
 			txIn: &wire.TxIn{
 				PreviousOutPoint: wire.OutPoint{
-					TxID:  daghash.TxID(block4.BlockHash()),
+					TxID:  daghash.TxID(*block4.BlockHash()),
 					Index: math.MaxUint32,
 				},
 				Sequence: wire.MaxTxInSequenceNum,
@@ -1169,10 +1173,10 @@ func TestValidateFeeTransaction(t *testing.T) {
 				Value:    cb3.TxOut[0].Value - 1,
 			},
 		},
-		block4A.BlockHash(): {
+		*block4A.BlockHash(): {
 			txIn: &wire.TxIn{
 				PreviousOutPoint: wire.OutPoint{
-					TxID:  daghash.TxID(block4A.BlockHash()),
+					TxID:  daghash.TxID(*block4A.BlockHash()),
 					Index: math.MaxUint32,
 				},
 				Sequence: wire.MaxTxInSequenceNum,
@@ -1195,7 +1199,7 @@ func TestValidateFeeTransaction(t *testing.T) {
 
 	block5Txs := []*wire.MsgTx{cb5, sortedBlock5FeeTx}
 
-	block5ParentHashes := []daghash.Hash{block4.BlockHash(), block4A.BlockHash()}
+	block5ParentHashes := []*daghash.Hash{block4.BlockHash(), block4A.BlockHash()}
 	buildBlock("block5", block5ParentHashes, block5Txs, 0)
 
 	sortedBlock5FeeTx.TxIn[0], sortedBlock5FeeTx.TxIn[1] = sortedBlock5FeeTx.TxIn[1], sortedBlock5FeeTx.TxIn[0]
@@ -1205,7 +1209,7 @@ func TestValidateFeeTransaction(t *testing.T) {
 
 	block5FeeTxWith1Achild.AddTxIn(&wire.TxIn{
 		PreviousOutPoint: wire.OutPoint{
-			TxID:  daghash.TxID(block1AChild.BlockHash()),
+			TxID:  daghash.TxID(*block1AChild.BlockHash()),
 			Index: math.MaxUint32,
 		},
 		Sequence: wire.MaxTxInSequenceNum,

@@ -68,7 +68,7 @@ type MsgReject struct {
 
 	// Hash identifies a specific block or transaction that was rejected
 	// and therefore only applies the MsgBlock and MsgTx messages.
-	Hash daghash.Hash
+	Hash *daghash.Hash
 }
 
 // BtcDecode decodes r using the bitcoin protocol encoding into the receiver.
@@ -98,7 +98,8 @@ func (msg *MsgReject) BtcDecode(r io.Reader, pver uint32) error {
 	// CmdBlock and CmdTx messages have an additional hash field that
 	// identifies the specific block or transaction.
 	if msg.Cmd == CmdBlock || msg.Cmd == CmdTx {
-		err := readElement(r, &msg.Hash)
+		msg.Hash = &daghash.Hash{}
+		err := readElement(r, msg.Hash)
 		if err != nil {
 			return err
 		}
@@ -132,7 +133,7 @@ func (msg *MsgReject) BtcEncode(w io.Writer, pver uint32) error {
 	// CmdBlock and CmdTx messages have an additional hash field that
 	// identifies the specific block or transaction.
 	if msg.Cmd == CmdBlock || msg.Cmd == CmdTx {
-		err := writeElement(w, &msg.Hash)
+		err := writeElement(w, msg.Hash)
 		if err != nil {
 			return err
 		}
@@ -163,5 +164,6 @@ func NewMsgReject(command string, code RejectCode, reason string) *MsgReject {
 		Cmd:    command,
 		Code:   code,
 		Reason: reason,
+		Hash:   &daghash.ZeroHash,
 	}
 }

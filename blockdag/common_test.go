@@ -188,10 +188,12 @@ func newTestDAG(params *dagconfig.Params) *BlockDAG {
 func newTestNode(parents blockSet, blockVersion int32, bits uint32, timestamp time.Time, phantomK uint32) *blockNode {
 	// Make up a header and create a block node from it.
 	header := &wire.BlockHeader{
-		Version:      blockVersion,
-		ParentHashes: parents.hashes(),
-		Bits:         bits,
-		Timestamp:    timestamp,
+		Version:        blockVersion,
+		ParentHashes:   parents.hashes(),
+		Bits:           bits,
+		Timestamp:      timestamp,
+		HashMerkleRoot: &daghash.ZeroHash,
+		IDMerkleRoot:   &daghash.ZeroHash,
 	}
 	return newBlockNode(header, parents, phantomK)
 }
@@ -208,7 +210,7 @@ func buildNodeGenerator(phantomK uint32, withChildren bool) func(parents blockSe
 	hashCounter := byte(1)
 	buildNode := func(parents blockSet) *blockNode {
 		block := newBlockNode(nil, parents, phantomK)
-		block.hash = daghash.Hash{hashCounter}
+		block.hash = &daghash.Hash{hashCounter}
 		hashCounter++
 
 		return block

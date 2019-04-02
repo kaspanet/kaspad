@@ -45,7 +45,7 @@ func TestFinality(t *testing.T) {
 		t.Fatalf("Failed to setup DAG instance: %v", err)
 	}
 	defer teardownFunc()
-	buildNodeToDag := func(parentHashes []daghash.Hash) (*util.Block, error) {
+	buildNodeToDag := func(parentHashes []*daghash.Hash) (*util.Block, error) {
 		msgBlock, err := mining.PrepareBlockForTest(dag, &params, parentHashes, nil, false, 1)
 		if err != nil {
 			return nil, err
@@ -68,7 +68,7 @@ func TestFinality(t *testing.T) {
 
 	// First we build a chain of blockdag.FinalityInterval blocks for future use
 	for i := 0; i < blockdag.FinalityInterval; i++ {
-		currentNode, err = buildNodeToDag([]daghash.Hash{*currentNode.Hash()})
+		currentNode, err = buildNodeToDag([]*daghash.Hash{currentNode.Hash()})
 		if err != nil {
 			t.Fatalf("TestFinality: buildNodeToDag unexpectedly returned an error: %v", err)
 		}
@@ -80,7 +80,7 @@ func TestFinality(t *testing.T) {
 	// we expect the block with height 1 * blockdag.FinalityInterval to be the last finality point
 	currentNode = genesis
 	for i := 0; i < blockdag.FinalityInterval; i++ {
-		currentNode, err = buildNodeToDag([]daghash.Hash{*currentNode.Hash()})
+		currentNode, err = buildNodeToDag([]*daghash.Hash{currentNode.Hash()})
 		if err != nil {
 			t.Fatalf("TestFinality: buildNodeToDag unexpectedly returned an error: %v", err)
 		}
@@ -89,13 +89,13 @@ func TestFinality(t *testing.T) {
 	expectedFinalityPoint := currentNode
 
 	for i := 0; i < blockdag.FinalityInterval; i++ {
-		currentNode, err = buildNodeToDag([]daghash.Hash{*currentNode.Hash()})
+		currentNode, err = buildNodeToDag([]*daghash.Hash{currentNode.Hash()})
 		if err != nil {
 			t.Fatalf("TestFinality: buildNodeToDag unexpectedly returned an error: %v", err)
 		}
 	}
 
-	if *dag.LastFinalityPointHash() != *expectedFinalityPoint.Hash() {
+	if !dag.LastFinalityPointHash().IsEqual(expectedFinalityPoint.Hash()) {
 		t.Errorf("TestFinality: dag.lastFinalityPoint expected to be %v but got %v", expectedFinalityPoint, dag.LastFinalityPointHash())
 	}
 
@@ -106,13 +106,13 @@ func TestFinality(t *testing.T) {
 	if err != nil {
 		t.Fatalf("TestFinality: buildNodeToDag unexpectedly returned an error: %v", err)
 	}
-	if *dag.LastFinalityPointHash() != *expectedFinalityPoint.Hash() {
+	if !dag.LastFinalityPointHash().IsEqual(expectedFinalityPoint.Hash()) {
 		t.Errorf("TestFinality: dag.lastFinalityPoint was unexpectly changed")
 	}
 
 	// Here we check that a block with lower blue score than the last finality
 	// point will get rejected
-	_, err = buildNodeToDag([]daghash.Hash{*genesis.Hash()})
+	_, err = buildNodeToDag([]*daghash.Hash{genesis.Hash()})
 	if err == nil {
 		t.Errorf("TestFinality: buildNodeToDag expected an error but got <nil>")
 	}
@@ -127,7 +127,7 @@ func TestFinality(t *testing.T) {
 
 	// Here we check that a block that doesn't have the last finality point in
 	// its selected parent chain will get rejected
-	_, err = buildNodeToDag([]daghash.Hash{*altChainTip.Hash()})
+	_, err = buildNodeToDag([]*daghash.Hash{altChainTip.Hash()})
 	if err == nil {
 		t.Errorf("TestFinality: buildNodeToDag expected an error but got <nil>")
 	}
@@ -182,7 +182,7 @@ func TestChainedTransactions(t *testing.T) {
 	}
 	defer teardownFunc()
 
-	block1, err := mining.PrepareBlockForTest(dag, &params, []daghash.Hash{*params.GenesisHash}, nil, false, 1)
+	block1, err := mining.PrepareBlockForTest(dag, &params, []*daghash.Hash{params.GenesisHash}, nil, false, 1)
 	if err != nil {
 		t.Fatalf("PrepareBlockForTest: %v", err)
 	}
@@ -217,7 +217,7 @@ func TestChainedTransactions(t *testing.T) {
 	}
 	chainedTx := wire.NewNativeMsgTx(wire.TxVersion, []*wire.TxIn{chainedTxIn}, []*wire.TxOut{chainedTxOut})
 
-	block2, err := mining.PrepareBlockForTest(dag, &params, []daghash.Hash{block1.BlockHash()}, []*wire.MsgTx{tx, chainedTx}, true, 1)
+	block2, err := mining.PrepareBlockForTest(dag, &params, []*daghash.Hash{block1.BlockHash()}, []*wire.MsgTx{tx, chainedTx}, true, 1)
 	if err != nil {
 		t.Fatalf("PrepareBlockForTest: %v", err)
 	}
@@ -248,7 +248,7 @@ func TestChainedTransactions(t *testing.T) {
 	}
 	nonChainedTx := wire.NewNativeMsgTx(wire.TxVersion, []*wire.TxIn{nonChainedTxIn}, []*wire.TxOut{nonChainedTxOut})
 
-	block3, err := mining.PrepareBlockForTest(dag, &params, []daghash.Hash{block1.BlockHash()}, []*wire.MsgTx{nonChainedTx}, false, 1)
+	block3, err := mining.PrepareBlockForTest(dag, &params, []*daghash.Hash{block1.BlockHash()}, []*wire.MsgTx{nonChainedTx}, false, 1)
 	if err != nil {
 		t.Fatalf("PrepareBlockForTest: %v", err)
 	}

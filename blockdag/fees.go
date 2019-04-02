@@ -82,12 +82,12 @@ func (node *blockNode) getBluesFeeData(dag *BlockDAG) (map[daghash.Hash]compactF
 
 	dag.db.View(func(dbTx database.Tx) error {
 		for _, blueBlock := range node.blues {
-			feeData, err := dbFetchFeeData(dbTx, &blueBlock.hash)
+			feeData, err := dbFetchFeeData(dbTx, blueBlock.hash)
 			if err != nil {
 				return fmt.Errorf("Error getting fee data for block %s: %s", blueBlock.hash, err)
 			}
 
-			bluesFeeData[blueBlock.hash] = feeData
+			bluesFeeData[*blueBlock.hash] = feeData
 		}
 
 		return nil
@@ -166,11 +166,11 @@ func (node *blockNode) buildFeeTransaction(dag *BlockDAG, txsAcceptanceData Mult
 func feeInputAndOutputForBlueBlock(blueBlock *blockNode, txsAcceptanceData MultiBlockTxsAcceptanceData, feeData map[daghash.Hash]compactFeeData) (
 	*wire.TxIn, *wire.TxOut, error) {
 
-	blockTxsAcceptanceData, ok := txsAcceptanceData[blueBlock.hash]
+	blockTxsAcceptanceData, ok := txsAcceptanceData[*blueBlock.hash]
 	if !ok {
 		return nil, nil, fmt.Errorf("No txsAcceptanceData for block %s", blueBlock.hash)
 	}
-	blockFeeData, ok := feeData[blueBlock.hash]
+	blockFeeData, ok := feeData[*blueBlock.hash]
 	if !ok {
 		return nil, nil, fmt.Errorf("No feeData for block %s", blueBlock.hash)
 	}
@@ -184,7 +184,7 @@ func feeInputAndOutputForBlueBlock(blueBlock *blockNode, txsAcceptanceData Multi
 	txIn := &wire.TxIn{
 		SignatureScript: []byte{},
 		PreviousOutPoint: wire.OutPoint{
-			TxID:  daghash.TxID(blueBlock.hash),
+			TxID:  daghash.TxID(*blueBlock.hash),
 			Index: math.MaxUint32,
 		},
 		Sequence: wire.MaxTxInSequenceNum,

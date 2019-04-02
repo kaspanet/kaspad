@@ -247,7 +247,7 @@ type Tx interface {
 	//   - ErrTxClosed if the transaction has already been closed
 	//
 	// Other errors are possible depending on the implementation.
-	HasBlocks(hashes []daghash.Hash) ([]bool, error)
+	HasBlocks(hashes []*daghash.Hash) ([]bool, error)
 
 	// FetchBlockHeader returns the raw serialized bytes for the block
 	// header identified by the given hash.  The raw bytes are in the format
@@ -297,7 +297,7 @@ type Tx interface {
 	// has ended results in undefined behavior.  This constraint prevents
 	// additional data copies and allows support for memory-mapped database
 	// implementations.
-	FetchBlockHeaders(hashes []daghash.Hash) ([][]byte, error)
+	FetchBlockHeaders(hashes []*daghash.Hash) ([][]byte, error)
 
 	// FetchBlock returns the raw serialized bytes for the block identified
 	// by the given hash.  The raw bytes are in the format returned by
@@ -332,7 +332,7 @@ type Tx interface {
 	// has ended results in undefined behavior.  This constraint prevents
 	// additional data copies and allows support for memory-mapped database
 	// implementations.
-	FetchBlocks(hashes []daghash.Hash) ([][]byte, error)
+	FetchBlocks(hashes []*daghash.Hash) ([][]byte, error)
 
 	// FetchBlockRegion returns the raw serialized bytes for the given
 	// block region.

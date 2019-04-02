@@ -282,7 +282,7 @@ func (r FutureGetHeadersResult) Receive() ([]wire.BlockHeader, error) {
 //
 // NOTE: This is a btcsuite extension ported from
 // github.com/decred/dcrrpcclient.
-func (c *Client) GetHeadersAsync(blockLocators []daghash.Hash, hashStop *daghash.Hash) FutureGetHeadersResult {
+func (c *Client) GetHeadersAsync(blockLocators []*daghash.Hash, hashStop *daghash.Hash) FutureGetHeadersResult {
 	locators := make([]string, len(blockLocators))
 	for i := range blockLocators {
 		locators[i] = blockLocators[i].String()
@@ -301,7 +301,7 @@ func (c *Client) GetHeadersAsync(blockLocators []daghash.Hash, hashStop *daghash
 //
 // NOTE: This is a btcsuite extension ported from
 // github.com/decred/dcrrpcclient.
-func (c *Client) GetHeaders(blockLocators []daghash.Hash, hashStop *daghash.Hash) ([]wire.BlockHeader, error) {
+func (c *Client) GetHeaders(blockLocators []*daghash.Hash, hashStop *daghash.Hash) ([]wire.BlockHeader, error) {
 	return c.GetHeadersAsync(blockLocators, hashStop).Receive()
 }
 

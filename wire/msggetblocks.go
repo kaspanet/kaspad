@@ -33,7 +33,7 @@ const MaxBlockLocatorsPerMsg = 500
 type MsgGetBlocks struct {
 	ProtocolVersion    uint32
 	BlockLocatorHashes []*daghash.Hash
-	HashStop           daghash.Hash
+	HashStop           *daghash.Hash
 }
 
 // AddBlockLocatorHash adds a new block locator hash to the message.
@@ -80,7 +80,8 @@ func (msg *MsgGetBlocks) BtcDecode(r io.Reader, pver uint32) error {
 		msg.AddBlockLocatorHash(hash)
 	}
 
-	return readElement(r, &msg.HashStop)
+	msg.HashStop = &daghash.Hash{}
+	return readElement(r, msg.HashStop)
 }
 
 // BtcEncode encodes the receiver to w using the bitcoin protocol encoding.
@@ -110,7 +111,7 @@ func (msg *MsgGetBlocks) BtcEncode(w io.Writer, pver uint32) error {
 		}
 	}
 
-	return writeElement(w, &msg.HashStop)
+	return writeElement(w, msg.HashStop)
 }
 
 // Command returns the protocol command string for the message.  This is part
@@ -134,6 +135,6 @@ func NewMsgGetBlocks(hashStop *daghash.Hash) *MsgGetBlocks {
 	return &MsgGetBlocks{
 		ProtocolVersion:    ProtocolVersion,
 		BlockLocatorHashes: make([]*daghash.Hash, 0, MaxBlockLocatorsPerMsg),
-		HashStop:           *hashStop,
+		HashStop:           hashStop,
 	}
 }

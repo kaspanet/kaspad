@@ -24,8 +24,8 @@ func TestBlock(t *testing.T) {
 
 	// Block 1 header.
 	parentHashes := blockOne.Header.ParentHashes
-	hashMerkleRoot := &blockOne.Header.HashMerkleRoot
-	idMerkleRoot := &blockOne.Header.IDMerkleRoot
+	hashMerkleRoot := blockOne.Header.HashMerkleRoot
+	idMerkleRoot := blockOne.Header.IDMerkleRoot
 	bits := blockOne.Header.Bits
 	nonce := blockOne.Header.Nonce
 	bh := NewBlockHeader(1, parentHashes, hashMerkleRoot, idMerkleRoot, bits, nonce)
@@ -495,8 +495,8 @@ func TestBlockSerializeSize(t *testing.T) {
 var blockOne = MsgBlock{
 	Header: BlockHeader{
 		Version:        1,
-		ParentHashes:   []daghash.Hash{mainNetGenesisHash, simNetGenesisHash},
-		HashMerkleRoot: daghash.Hash(mainNetGenesisMerkleRoot),
+		ParentHashes:   []*daghash.Hash{mainNetGenesisHash, simNetGenesisHash},
+		HashMerkleRoot: mainNetGenesisMerkleRoot,
 		IDMerkleRoot:   exampleIDMerkleRoot,
 		Timestamp:      time.Unix(0x4966bc61, 0), // 2009-01-08 20:54:25 -0600 CST
 		Bits:           0x1d00ffff,               // 486604799
