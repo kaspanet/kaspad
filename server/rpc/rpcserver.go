@@ -4205,7 +4205,7 @@ type rpcserverSyncManager interface {
 	LocateHeaders(locators []*daghash.Hash, hashStop *daghash.Hash) []*wire.BlockHeader
 
 	// GetTopHeaders returns the top wire.MaxBlockHeadersPerMsg block headers ordered by height.
-	GetTopHeaders(startHash *daghash.Hash) ([]*wire.BlockHeader,error)
+	GetTopHeaders(startHash *daghash.Hash) ([]*wire.BlockHeader, error)
 }
 
 // rpcserverConfig is a descriptor containing the RPC server configuration.
