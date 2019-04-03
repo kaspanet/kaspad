@@ -17,8 +17,8 @@ import (
 //
 // This message has no payload.
 type MsgGetAddr struct {
-	IsAllSubnetworks bool
-	SubnetworkID     *subnetworkid.SubnetworkID
+	IncludeAllSubnetworks bool
+	SubnetworkID          *subnetworkid.SubnetworkID
 }
 
 // BtcDecode decodes r using the bitcoin protocol encoding into the receiver.
@@ -26,11 +26,11 @@ type MsgGetAddr struct {
 func (msg *MsgGetAddr) BtcDecode(r io.Reader, pver uint32) error {
 	msg.SubnetworkID = nil
 
-	err := readElement(r, &msg.IsAllSubnetworks)
+	err := readElement(r, &msg.IncludeAllSubnetworks)
 	if err != nil {
 		return err
 	}
-	if msg.IsAllSubnetworks {
+	if msg.IncludeAllSubnetworks {
 		return nil
 	}
 
@@ -56,12 +56,12 @@ func (msg *MsgGetAddr) BtcDecode(r io.Reader, pver uint32) error {
 // BtcEncode encodes the receiver to w using the bitcoin protocol encoding.
 // This is part of the Message interface implementation.
 func (msg *MsgGetAddr) BtcEncode(w io.Writer, pver uint32) error {
-	err := writeElement(w, msg.IsAllSubnetworks)
+	err := writeElement(w, msg.IncludeAllSubnetworks)
 	if err != nil {
 		return err
 	}
 
-	if msg.IsAllSubnetworks {
+	if msg.IncludeAllSubnetworks {
 		return nil
 	}
 
@@ -90,15 +90,15 @@ func (msg *MsgGetAddr) Command() string {
 // MaxPayloadLength returns the maximum length the payload can be for the
 // receiver.  This is part of the Message interface implementation.
 func (msg *MsgGetAddr) MaxPayloadLength(pver uint32) uint32 {
-	// SubnetworkID length + IsAllSubnetworks (1) + isFullNode (1)
+	// SubnetworkID length + IncludeAllSubnetworks (1) + isFullNode (1)
 	return subnetworkid.IDLength + 2
 }
 
 // NewMsgGetAddr returns a new bitcoin getaddr message that conforms to the
 // Message interface.  See MsgGetAddr for details.
-func NewMsgGetAddr(isAllSubnetworks bool, subnetworkID *subnetworkid.SubnetworkID) *MsgGetAddr {
+func NewMsgGetAddr(includeAllSubnetworks bool, subnetworkID *subnetworkid.SubnetworkID) *MsgGetAddr {
 	return &MsgGetAddr{
-		IsAllSubnetworks: isAllSubnetworks,
-		SubnetworkID:     subnetworkID,
+		IncludeAllSubnetworks: includeAllSubnetworks,
+		SubnetworkID:          subnetworkID,
 	}
 }

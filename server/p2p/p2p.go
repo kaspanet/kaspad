@@ -1115,7 +1115,7 @@ func (sp *Peer) OnGetAddr(_ *peer.Peer, msg *wire.MsgGetAddr) {
 	sp.sentAddrs = true
 
 	// Get the current known addresses from the address manager.
-	addrCache := sp.server.addrManager.AddressCache(msg.IsAllSubnetworks, msg.SubnetworkID)
+	addrCache := sp.server.addrManager.AddressCache(msg.IncludeAllSubnetworks, msg.SubnetworkID)
 
 	// Push the addresses.
 	sp.pushAddrMsg(addrCache, sp.SubnetworkID())
@@ -1140,8 +1140,8 @@ func (sp *Peer) OnAddr(_ *peer.Peer, msg *wire.MsgAddr) {
 		return
 	}
 
-	if msg.IsAllSubnetworks {
-		peerLog.Errorf("Got unexpected IsAllSubnetworks=true in [%s] command from %s",
+	if msg.IncludeAllSubnetworks {
+		peerLog.Errorf("Got unexpected IncludeAllSubnetworks=true in [%s] command from %s",
 			msg.Command(), sp.Peer)
 		sp.Disconnect()
 		return

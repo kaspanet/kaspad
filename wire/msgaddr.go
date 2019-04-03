@@ -26,9 +26,9 @@ const MaxAddrPerMsg = 1000
 // Use the AddAddress function to build up the list of known addresses when
 // sending an addr message to another peer.
 type MsgAddr struct {
-	IsAllSubnetworks bool
-	SubnetworkID     *subnetworkid.SubnetworkID
-	AddrList         []*NetAddress
+	IncludeAllSubnetworks bool
+	SubnetworkID          *subnetworkid.SubnetworkID
+	AddrList              []*NetAddress
 }
 
 // AddAddress adds a known active peer to the message.
@@ -64,12 +64,12 @@ func (msg *MsgAddr) ClearAddresses() {
 func (msg *MsgAddr) BtcDecode(r io.Reader, pver uint32) error {
 	msg.SubnetworkID = nil
 
-	err := readElement(r, &msg.IsAllSubnetworks)
+	err := readElement(r, &msg.IncludeAllSubnetworks)
 	if err != nil {
 		return err
 	}
 
-	if !msg.IsAllSubnetworks {
+	if !msg.IncludeAllSubnetworks {
 		var isFullNode bool
 		err := readElement(r, &isFullNode)
 		if err != nil {
@@ -121,12 +121,12 @@ func (msg *MsgAddr) BtcEncode(w io.Writer, pver uint32) error {
 		return messageError("MsgAddr.BtcEncode", str)
 	}
 
-	err := writeElement(w, msg.IsAllSubnetworks)
+	err := writeElement(w, msg.IncludeAllSubnetworks)
 	if err != nil {
 		return err
 	}
 
-	if !msg.IsAllSubnetworks {
+	if !msg.IncludeAllSubnetworks {
 		// Write subnetwork ID
 		isFullNode := msg.SubnetworkID == nil
 		err = writeElement(w, isFullNode)
@@ -165,16 +165,16 @@ func (msg *MsgAddr) Command() string {
 // MaxPayloadLength returns the maximum length the payload can be for the
 // receiver.  This is part of the Message interface implementation.
 func (msg *MsgAddr) MaxPayloadLength(pver uint32) uint32 {
-	// IsAllSubnetworks flag 1 byte + isFullNode 1 byte + SubnetworkID length + Num addresses (varInt) + max allowed addresses.
+	// IncludeAllSubnetworks flag 1 byte + isFullNode 1 byte + SubnetworkID length + Num addresses (varInt) + max allowed addresses.
 	return 1 + 1 + subnetworkid.IDLength + MaxVarIntPayload + (MaxAddrPerMsg * maxNetAddressPayload(pver))
 }
 
 // NewMsgAddr returns a new bitcoin addr message that conforms to the
 // Message interface.  See MsgAddr for details.
-func NewMsgAddr(isAllSubnetworks bool, subnetworkID *subnetworkid.SubnetworkID) *MsgAddr {
+func NewMsgAddr(includeAllSubnetworks bool, subnetworkID *subnetworkid.SubnetworkID) *MsgAddr {
 	return &MsgAddr{
-		IsAllSubnetworks: isAllSubnetworks,
-		SubnetworkID:     subnetworkID,
-		AddrList:         make([]*NetAddress, 0, MaxAddrPerMsg),
+		IncludeAllSubnetworks: includeAllSubnetworks,
+		SubnetworkID:          subnetworkID,
+		AddrList:              make([]*NetAddress, 0, MaxAddrPerMsg),
 	}
 }
