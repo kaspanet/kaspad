@@ -1,0 +1,25 @@
+FROM golang:1.12-alpine 
+
+ENV PATH="${GOPATH}/bin:${PATH}"
+
+RUN mkdir -p /go/src/github.com/daglabs/btcd
+
+WORKDIR /go/src/github.com/daglabs/btcd
+
+RUN apk add --no-cache curl git openssh binutils gcc musl-dev tini bash
+# Allow delve to run on Alpine based containers.
+RUN apk add --no-cache libc6-compat
+
+RUN curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
+
+RUN go get github.com/derekparker/delve/cmd/dlv
+
+COPY ./Gopkg.* ./
+
+RUN dep ensure -v -vendor-only
+
+COPY . .
+
+RUN CGO_ENABLED=0 GOOS=linux go build -gcflags "all=-N -l" -a -installsuffix cgo -o btcd .
+
+ENTRYPOINT [ "/sbin/tini", "--" ]
