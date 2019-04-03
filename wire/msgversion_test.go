@@ -15,7 +15,6 @@ import (
 
 	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/util/random"
-	"github.com/daglabs/btcd/util/subnetworkid"
 	"github.com/davecgh/go-spew/spew"
 )
 
@@ -35,7 +34,7 @@ func TestVersion(t *testing.T) {
 	}
 
 	// Ensure we get the correct data back out.
-	msg := NewMsgVersion(me, you, nonce, selectedTip, subnetworkid.SubnetworkIDSupportsAll)
+	msg := NewMsgVersion(me, you, nonce, selectedTip, nil)
 	if msg.ProtocolVersion != int32(pver) {
 		t.Errorf("NewMsgVersion: wrong protocol version - got %v, want %v",
 			msg.ProtocolVersion, pver)
@@ -225,10 +224,10 @@ func TestVersionWireErrors(t *testing.T) {
 	newLen := len(baseVersionEncoded) - len(baseVersion.UserAgent)
 	newLen = newLen + len(newUAVarIntBuf.Bytes()) - 1 + len(newUA)
 	exceedUAVerEncoded := make([]byte, newLen)
-	copy(exceedUAVerEncoded, baseVersionEncoded[0:100])
-	copy(exceedUAVerEncoded[100:], newUAVarIntBuf.Bytes())
-	copy(exceedUAVerEncoded[103:], []byte(newUA))
-	copy(exceedUAVerEncoded[103+len(newUA):], baseVersionEncoded[117:120])
+	copy(exceedUAVerEncoded, baseVersionEncoded[0:81])
+	copy(exceedUAVerEncoded[81:], newUAVarIntBuf.Bytes())
+	copy(exceedUAVerEncoded[84:], []byte(newUA))
+	copy(exceedUAVerEncoded[84+len(newUA):], baseVersionEncoded[98:101])
 
 	tests := []struct {
 		in       *MsgVersion // Value to encode
@@ -247,17 +246,17 @@ func TestVersionWireErrors(t *testing.T) {
 		// Force error in subnetworkID.
 		{baseVersion, baseVersionEncoded, pver, 20, io.ErrShortWrite, io.EOF},
 		// Force error in remote address.
-		{baseVersion, baseVersionEncoded, pver, 40, io.ErrShortWrite, io.EOF},
+		{baseVersion, baseVersionEncoded, pver, 21, io.ErrShortWrite, io.EOF},
 		// Force error in local address.
-		{baseVersion, baseVersionEncoded, pver, 67, io.ErrShortWrite, io.ErrUnexpectedEOF},
+		{baseVersion, baseVersionEncoded, pver, 48, io.ErrShortWrite, io.ErrUnexpectedEOF},
 		// Force error in nonce.
-		{baseVersion, baseVersionEncoded, pver, 93, io.ErrShortWrite, io.ErrUnexpectedEOF},
+		{baseVersion, baseVersionEncoded, pver, 74, io.ErrShortWrite, io.ErrUnexpectedEOF},
 		// Force error in user agent length.
-		{baseVersion, baseVersionEncoded, pver, 101, io.ErrShortWrite, io.EOF},
+		{baseVersion, baseVersionEncoded, pver, 82, io.ErrShortWrite, io.EOF},
 		// Force error in user agent.
-		{baseVersion, baseVersionEncoded, pver, 102, io.ErrShortWrite, io.ErrUnexpectedEOF},
+		{baseVersion, baseVersionEncoded, pver, 83, io.ErrShortWrite, io.ErrUnexpectedEOF},
 		// Force error in last block.
-		{baseVersion, baseVersionEncoded, pver, 118, io.ErrShortWrite, io.ErrUnexpectedEOF},
+		{baseVersion, baseVersionEncoded, pver, 99, io.ErrShortWrite, io.ErrUnexpectedEOF},
 		// Force error due to user agent too big
 		{exceedUAVer, exceedUAVerEncoded, pver, newLen, wireErr, wireErr},
 	}
@@ -333,9 +332,7 @@ var baseVersionEncoded = []byte{
 	0x62, 0xea, 0x00, 0x00, // Protocol version 60002
 	0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // SFNodeNetwork
 	0x29, 0xab, 0x5f, 0x49, 0x00, 0x00, 0x00, 0x00, // 64-bit Timestamp
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-	0x00, 0x00, 0x00, 0x00, // SubnetworkIDSupportsAll
+	0x01, // is full node
 	// AddrYou -- No timestamp for NetAddress in version message
 	0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // SFNodeNetwork
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -384,9 +381,7 @@ var baseVersionWithRelayTxEncoded = []byte{
 	0x71, 0x11, 0x01, 0x00, // Protocol version 70001
 	0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // SFNodeNetwork
 	0x29, 0xab, 0x5f, 0x49, 0x00, 0x00, 0x00, 0x00, // 64-bit Timestamp
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-	0x00, 0x00, 0x00, 0x00, // SubnetworkIDSupportsAll
+	0x01, // is full node
 	// AddrYou -- No timestamp for NetAddress in version message
 	0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // SFNodeNetwork
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,

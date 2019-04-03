@@ -16,7 +16,6 @@ import (
 	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/peer"
-	"github.com/daglabs/btcd/util/subnetworkid"
 	"github.com/daglabs/btcd/wire"
 )
 
@@ -218,7 +217,6 @@ func TestPeerConnection(t *testing.T) {
 		DAGParams:         &dagconfig.MainNetParams,
 		ProtocolVersion:   wire.ProtocolVersion, // Configure with older version
 		Services:          0,
-		SubnetworkID:      subnetworkid.SubnetworkIDSupportsAll,
 		SelectedTip:       fakeSelectedTipFn,
 	}
 	peer2Cfg := &peer.Config{
@@ -229,7 +227,6 @@ func TestPeerConnection(t *testing.T) {
 		DAGParams:         &dagconfig.MainNetParams,
 		ProtocolVersion:   wire.ProtocolVersion + 1,
 		Services:          wire.SFNodeNetwork,
-		SubnetworkID:      subnetworkid.SubnetworkIDSupportsAll,
 		SelectedTip:       fakeSelectedTipFn,
 	}
 
@@ -244,8 +241,8 @@ func TestPeerConnection(t *testing.T) {
 		wantLastPingNonce:   uint64(0),
 		wantLastPingMicros:  int64(0),
 		wantTimeOffset:      int64(0),
-		wantBytesSent:       215, // 191 version + 24 verack
-		wantBytesReceived:   215,
+		wantBytesSent:       196, // 172 version + 24 verack
+		wantBytesReceived:   196,
 	}
 	wantStats2 := peerStats{
 		wantUserAgent:       wire.DefaultUserAgent + "peer:1.0(comment)/",
@@ -258,8 +255,8 @@ func TestPeerConnection(t *testing.T) {
 		wantLastPingNonce:   uint64(0),
 		wantLastPingMicros:  int64(0),
 		wantTimeOffset:      int64(0),
-		wantBytesSent:       215, // 191 version + 24 verack
-		wantBytesReceived:   215,
+		wantBytesSent:       196, // 172 version + 24 verack
+		wantBytesReceived:   196,
 	}
 
 	tests := []struct {
@@ -432,7 +429,6 @@ func TestPeerListeners(t *testing.T) {
 		UserAgentComments: []string{"comment"},
 		DAGParams:         &dagconfig.MainNetParams,
 		Services:          wire.SFNodeBloom,
-		SubnetworkID:      subnetworkid.SubnetworkIDSupportsAll,
 		SelectedTip:       fakeSelectedTipFn,
 	}
 	inConn, outConn := pipe(
@@ -469,11 +465,11 @@ func TestPeerListeners(t *testing.T) {
 	}{
 		{
 			"OnGetAddr",
-			wire.NewMsgGetAddr(nil),
+			wire.NewMsgGetAddr(false, nil),
 		},
 		{
 			"OnAddr",
-			wire.NewMsgAddr(nil),
+			wire.NewMsgAddr(false, nil),
 		},
 		{
 			"OnPing",
@@ -603,7 +599,6 @@ func TestOutboundPeer(t *testing.T) {
 		UserAgentComments: []string{"comment"},
 		DAGParams:         &dagconfig.MainNetParams,
 		Services:          0,
-		SubnetworkID:      subnetworkid.SubnetworkIDSupportsAll,
 	}
 
 	r, w := io.Pipe()
@@ -695,7 +690,7 @@ func TestOutboundPeer(t *testing.T) {
 	p2.PushRejectMsg("block", wire.RejectInvalid, "invalid", nil, false)
 
 	// Test Queue Messages
-	p2.QueueMessage(wire.NewMsgGetAddr(nil), nil)
+	p2.QueueMessage(wire.NewMsgGetAddr(false, nil), nil)
 	p2.QueueMessage(wire.NewMsgPing(1), nil)
 	p2.QueueMessage(wire.NewMsgMemPool(), nil)
 	p2.QueueMessage(wire.NewMsgGetData(), nil)
@@ -714,7 +709,6 @@ func TestUnsupportedVersionPeer(t *testing.T) {
 		UserAgentComments: []string{"comment"},
 		DAGParams:         &dagconfig.MainNetParams,
 		Services:          0,
-		SubnetworkID:      subnetworkid.SubnetworkIDSupportsAll,
 		SelectedTip:       fakeSelectedTipFn,
 	}
 
@@ -772,7 +766,7 @@ func TestUnsupportedVersionPeer(t *testing.T) {
 	}
 
 	// Remote peer writes version message advertising invalid protocol version 0
-	invalidVersionMsg := wire.NewMsgVersion(remoteNA, localNA, 0, &daghash.ZeroHash, subnetworkid.SubnetworkIDSupportsAll)
+	invalidVersionMsg := wire.NewMsgVersion(remoteNA, localNA, 0, &daghash.ZeroHash, nil)
 	invalidVersionMsg.ProtocolVersion = 0
 
 	_, err = wire.WriteMessageN(

@@ -534,11 +534,6 @@ func (msg *MsgTx) BtcDecode(r io.Reader, pver uint32) error {
 		return err
 	}
 
-	if msg.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDSupportsAll) {
-		str := fmt.Sprintf("%s is a reserved sub network and cannot be used as part of a transaction", msg.SubnetworkID)
-		return messageError("MsgTx.BtcDecode", str)
-	}
-
 	if !msg.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) {
 		msg.Gas, err = binaryserializer.Uint64(r, littleEndian)
 		if err != nil {
@@ -843,7 +838,7 @@ func (msg *MsgTx) PkScriptLocs() []int {
 // 2. The native subnetwork
 // 3. The transaction's subnetwork
 func (msg *MsgTx) IsSubnetworkCompatible(subnetworkID *subnetworkid.SubnetworkID) bool {
-	return subnetworkID.IsEqual(subnetworkid.SubnetworkIDSupportsAll) ||
+	return subnetworkID == nil ||
 		subnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) ||
 		subnetworkID.IsEqual(&msg.SubnetworkID)
 }

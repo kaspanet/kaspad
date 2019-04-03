@@ -51,7 +51,7 @@ func generateBlock(parent *wire.MsgBlock) *wire.MsgBlock {
 			Bits:           0x2e00ffff,               // 503382015 [000000ffff000000000000000000000000000000000000000000000000000000]
 			Nonce:          0xc0192550,               // 2148484547
 		},
-		Transactions: []*wire.MsgTx{&genesisCoinbaseTx},
+		Transactions: []*wire.MsgTx{genesisCoinbaseTx},
 	}
 }
 
@@ -140,7 +140,7 @@ var genesisCoinbaseTxOuts = []*wire.TxOut{
 		},
 	},
 }
-var genesisCoinbaseTx = wire.NewMsgTx(1, genesisCoinbaseTxIns, genesisCoinbaseTxOuts, nil, 0, nil)
+var genesisCoinbaseTx = wire.NewNativeMsgTx(1, genesisCoinbaseTxIns, genesisCoinbaseTxOuts)
 
 var genesisMerkleRoot = daghash.Hash([daghash.HashSize]byte{ // Make go vet happy.
 	0x3b, 0xa3, 0xed, 0xfd, 0x7a, 0x7b, 0x12, 0xb2,

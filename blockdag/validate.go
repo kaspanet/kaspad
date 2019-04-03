@@ -272,7 +272,7 @@ func CheckTransactionSanity(tx *util.Tx, subnetworkID *subnetworkid.SubnetworkID
 
 	// If we are a partial node, only transactions on the Registry subnetwork
 	// or our own subnetwork may have a payload
-	isLocalNodeFull := subnetworkID.IsEqual(subnetworkid.SubnetworkIDSupportsAll)
+	isLocalNodeFull := subnetworkID == nil
 	shouldTxBeFull := msgTx.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDRegistry) ||
 		msgTx.SubnetworkID.IsEqual(subnetworkID)
 	if !isLocalNodeFull && !shouldTxBeFull && len(msgTx.Payload) > 0 {

@@ -49,8 +49,7 @@ func TestBlockCount(t *testing.T) {
 
 	// Create a new database and DAG instance to run tests against.
 	dag, teardownFunc, err := DAGSetup("TestBlockCount", Config{
-		DAGParams:    &dagconfig.SimNetParams,
-		SubnetworkID: subnetworkid.SubnetworkIDSupportsAll,
+		DAGParams: &dagconfig.SimNetParams,
 	})
 	if err != nil {
 		t.Fatalf("Failed to setup DAG instance: %v", err)
@@ -99,8 +98,7 @@ func TestHaveBlock(t *testing.T) {
 
 	// Create a new database and DAG instance to run tests against.
 	dag, teardownFunc, err := DAGSetup("haveblock", Config{
-		DAGParams:    &dagconfig.SimNetParams,
-		SubnetworkID: subnetworkid.SubnetworkIDSupportsAll,
+		DAGParams: &dagconfig.SimNetParams,
 	})
 	if err != nil {
 		t.Fatalf("Failed to setup DAG instance: %v", err)
@@ -194,10 +192,10 @@ func TestHaveBlock(t *testing.T) {
 		{hash: dagconfig.SimNetParams.GenesisHash.String(), want: true},
 
 		// Block 3b should be present (as a second child of Block 2).
-		{hash: "08a3f0182ac8ff0326497f592d2e28b8b3b2b7e3fd77c7cb6f31ca872536cf7b", want: true},
+		{hash: "040c43ca52ded708dacef2a9fa589f41e4f7565345f7f1e61f379dbf32bb6b48", want: true},
 
 		// Block 100000 should be present (as an orphan).
-		{hash: "25d5494f3e1f895774c58034f1bd50f7b279e75db6007514affec8573ace4389", want: true},
+		{hash: "3da8f9ec89820deee1a4d26ff0e69c53686166ea4fbc1895fa1e0b1ccb651374", want: true},
 
 		// Random hashes should not be available.
 		{hash: "123", want: false},
@@ -782,8 +780,7 @@ func testErrorThroughPatching(t *testing.T, expectedErrorMessage string, targetF
 
 	// Create a new database and dag instance to run tests against.
 	dag, teardownFunc, err := DAGSetup("testErrorThroughPatching", Config{
-		DAGParams:    &dagconfig.SimNetParams,
-		SubnetworkID: subnetworkid.SubnetworkIDSupportsAll,
+		DAGParams: &dagconfig.SimNetParams,
 	})
 	if err != nil {
 		t.Fatalf("Failed to setup dag instance: %v", err)
@@ -841,11 +838,10 @@ func TestNew(t *testing.T) {
 		os.RemoveAll(testDbRoot)
 	}()
 	config := &Config{
-		DAGParams:    &dagconfig.SimNetParams,
-		SubnetworkID: subnetworkid.SubnetworkIDSupportsAll,
-		DB:           db,
-		TimeSource:   NewMedianTime(),
-		SigCache:     txscript.NewSigCache(1000),
+		DAGParams:  &dagconfig.SimNetParams,
+		DB:         db,
+		TimeSource: NewMedianTime(),
+		SigCache:   txscript.NewSigCache(1000),
 	}
 	_, err = New(config)
 	if err != nil {
@@ -855,9 +851,9 @@ func TestNew(t *testing.T) {
 	config.SubnetworkID = &subnetworkid.SubnetworkID{0xff}
 	_, err = New(config)
 	expectedErrorMessage := fmt.Sprintf("Cannot start btcd with subnetwork ID %s because"+
-		" its database is already built with subnetwork ID %s. If you"+
+		" its database is already built with subnetwork ID <nil>. If you"+
 		" want to switch to a new database, please reset the"+
-		" database by starting btcd with --reset-db flag", config.SubnetworkID, subnetworkid.SubnetworkIDSupportsAll)
+		" database by starting btcd with --reset-db flag", config.SubnetworkID)
 	if err.Error() != expectedErrorMessage {
 		t.Errorf("Unexpected error. Expected error '%s' but got '%s'", expectedErrorMessage, err)
 	}
@@ -867,8 +863,7 @@ func TestValidateFeeTransaction(t *testing.T) {
 	params := dagconfig.SimNetParams
 	params.K = 1
 	dag, teardownFunc, err := DAGSetup("TestValidateFeeTransaction", Config{
-		DAGParams:    &params,
-		SubnetworkID: subnetworkid.SubnetworkIDSupportsAll,
+		DAGParams: &params,
 	})
 	if err != nil {
 		t.Fatalf("Failed to setup DAG instance: %v", err)

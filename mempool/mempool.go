@@ -735,7 +735,8 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rateLimit, rejectDu
 	// Don't accept the transaction if it's from an incompatible subnetwork.
 	subnetworkID := mp.cfg.DAG.SubnetworkID()
 	if !tx.MsgTx().IsSubnetworkCompatible(subnetworkID) {
-		str := fmt.Sprintf("tx %s belongs to an invalid subnetwork", tx.ID())
+		str := fmt.Sprintf("tx %s belongs to an invalid subnetwork %s, DAG subnetwork %s", tx.ID(),
+			tx.MsgTx().SubnetworkID, subnetworkID)
 		return nil, nil, txRuleError(wire.RejectInvalid, str)
 	}
 
@@ -752,9 +753,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rateLimit, rejectDu
 
 	// Check that transaction does not overuse GAS
 	msgTx := tx.MsgTx()
-	if msgTx.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDSupportsAll) {
-		return nil, nil, txRuleError(wire.RejectInvalid, "SubnetworkIDSupportsAll is not permited in transaction")
-	} else if !msgTx.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) {
+	if !msgTx.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) {
 		gasLimit, err := mp.cfg.DAG.SubnetworkStore.GasLimit(&msgTx.SubnetworkID)
 		if err != nil {
 			return nil, nil, err

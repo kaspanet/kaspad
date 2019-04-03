@@ -10,7 +10,6 @@ import (
 	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/mining"
 	"github.com/daglabs/btcd/util"
-	"github.com/daglabs/btcd/util/subnetworkid"
 	"github.com/daglabs/btcd/wire"
 )
 
@@ -41,7 +40,6 @@ func TestTxIndexConnectBlock(t *testing.T) {
 	config := blockdag.Config{
 		IndexManager: indexManager,
 		DAGParams:    &params,
-		SubnetworkID: subnetworkid.SubnetworkIDSupportsAll,
 	}
 
 	dag, teardown, err := blockdag.DAGSetup("TestTxIndexConnectBlock", config)

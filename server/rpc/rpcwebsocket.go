@@ -1854,7 +1854,7 @@ func handleNotifyNewTransactions(wsc *wsClient, icmd interface{}) (interface{}, 
 				Code:    btcjson.ErrRPCInvalidParameter,
 				Message: "Subnetwork switch is disabled when node is in Native subnetwork",
 			}
-		} else if !nodeSubnetworkID.IsEqual(subnetworkid.SubnetworkIDSupportsAll) {
+		} else if nodeSubnetworkID != nil {
 			if subnetworkID == nil {
 				return nil, &btcjson.RPCError{
 					Code:    btcjson.ErrRPCInvalidParameter,

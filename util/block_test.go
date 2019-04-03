@@ -55,10 +55,10 @@ func TestBlock(t *testing.T) {
 
 	// Hashes for the transactions in Block100000.
 	wantTxHashes := []string{
-		"171090dd8ab478a2c4499858abd5d9b10e173b659bab5d5acca68c7dcb4c519e",
-		"fc9100986f2a188ccffe206a4c013aaa0c7442898b2f58d474f0b4f534600e0b",
-		"42ef8bcc302b4a92d479c02c4bf6cb154f26ad9915433da7fb102f6fd135b5c3",
-		"c8eeef60be812de9982d066be027fee93f2c226c840670424a413fbd66ad36dd",
+		"9bdfb2c83f82ab919e2e87cba505392bdfd9fa987864cbf59879c7dedf6da2cf",
+		"7fdc7d604ea88d81b284db97b09817869a8adae7efc8a1e43d7d4b11965c526e",
+		"de28b21c894897598f8377c3a84a5a746266d6a929f7ae2054b820c2f77f01b1",
+		"6ef923e08c5b6cee1e70488f282c11eeb9c67f12a684a4900e5731ac53510d06",
 	}
 
 	// Create a new block to nuke all cached data.

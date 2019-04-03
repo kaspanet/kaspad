@@ -454,15 +454,15 @@ func (sp *Peer) OnVersion(_ *peer.Peer, msg *wire.MsgVersion) {
 			// Request known addresses if the server address manager needs
 			// more.
 			if addrManager.NeedMoreAddresses() {
-				sp.QueueMessage(wire.NewMsgGetAddr(sp.SubnetworkID()), nil)
+				sp.QueueMessage(wire.NewMsgGetAddr(false, sp.SubnetworkID()), nil)
 
-				if !sp.SubnetworkID().IsEqual(subnetworkid.SubnetworkIDSupportsAll) {
-					sp.QueueMessage(wire.NewMsgGetAddr(subnetworkid.SubnetworkIDSupportsAll), nil)
+				if sp.SubnetworkID() != nil {
+					sp.QueueMessage(wire.NewMsgGetAddr(false, nil), nil)
 				}
 			}
 
 			// Mark the address as a known good address.
-			addrManager.Good(sp.NA(), &msg.SubnetworkID)
+			addrManager.Good(sp.NA(), msg.SubnetworkID)
 		}
 	}
 
@@ -1115,7 +1115,7 @@ func (sp *Peer) OnGetAddr(_ *peer.Peer, msg *wire.MsgGetAddr) {
 	sp.sentAddrs = true
 
 	// Get the current known addresses from the address manager.
-	addrCache := sp.server.addrManager.AddressCache(msg.SubnetworkID)
+	addrCache := sp.server.addrManager.AddressCache(msg.IncludeAllSubnetworks, msg.SubnetworkID)
 
 	// Push the addresses.
 	sp.pushAddrMsg(addrCache, sp.SubnetworkID())
@@ -1140,9 +1140,14 @@ func (sp *Peer) OnAddr(_ *peer.Peer, msg *wire.MsgAddr) {
 		return
 	}
 
-	if msg.SubnetworkID == nil || (!msg.SubnetworkID.IsEqual(config.MainConfig().SubnetworkID) && !msg.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDSupportsAll)) {
-		peerLog.Errorf("Only %s and %s subnetwork IDs are allowed in [%s] command, but got subnetwork ID %s from %s",
-			subnetworkid.SubnetworkIDSupportsAll, config.MainConfig().SubnetworkID, msg.Command(), msg.SubnetworkID, sp.Peer)
+	if msg.IncludeAllSubnetworks {
+		peerLog.Errorf("Got unexpected IncludeAllSubnetworks=true in [%s] command from %s",
+			msg.Command(), sp.Peer)
+		sp.Disconnect()
+		return
+	} else if !msg.SubnetworkID.IsEqual(config.MainConfig().SubnetworkID) && msg.SubnetworkID != nil {
+		peerLog.Errorf("Only full nodes and %s subnetwork IDs are allowed in [%s] command, but got subnetwork ID %s from %s",
+			config.MainConfig().SubnetworkID, msg.Command(), msg.SubnetworkID, sp.Peer)
 		sp.Disconnect()
 		return
 	}
@@ -1302,8 +1307,8 @@ func (s *Server) pushBlockMsg(sp *Peer, hash *daghash.Hash, doneChan chan<- stru
 	// the block to a partial block.
 	nodeSubnetworkID := s.DAG.SubnetworkID()
 	peerSubnetworkID := sp.Peer.SubnetworkID()
-	isNodeFull := nodeSubnetworkID.IsEqual(subnetworkid.SubnetworkIDSupportsAll)
-	isPeerFull := peerSubnetworkID.IsEqual(subnetworkid.SubnetworkIDSupportsAll)
+	isNodeFull := nodeSubnetworkID == nil
+	isPeerFull := peerSubnetworkID == nil
 	if isNodeFull && !isPeerFull {
 		msgBlock.ConvertToPartial(peerSubnetworkID)
 	}
@@ -1921,7 +1926,7 @@ func (s *Server) peerHandler() {
 	if !config.MainConfig().DisableDNSSeed {
 		seedFromSubNetwork := func(subnetworkID *subnetworkid.SubnetworkID) {
 			connmgr.SeedFromDNS(config.ActiveNetParams(), defaultRequiredServices,
-				subnetworkid.SubnetworkIDSupportsAll, serverutils.BTCDLookup, func(addrs []*wire.NetAddress) {
+				false, subnetworkID, serverutils.BTCDLookup, func(addrs []*wire.NetAddress) {
 					// Bitcoind uses a lookup of the dns seeder here. Since seeder returns
 					// IPs of nodes and not its own IP, we can not know real IP of
 					// source. So we'll take first returned address as source.
@@ -1930,9 +1935,9 @@ func (s *Server) peerHandler() {
 		}
 
 		// Add full nodes discovered through DNS to the address manager.
-		seedFromSubNetwork(subnetworkid.SubnetworkIDSupportsAll)
+		seedFromSubNetwork(nil)
 
-		if !config.MainConfig().SubnetworkID.IsEqual(subnetworkid.SubnetworkIDSupportsAll) {
+		if config.MainConfig().SubnetworkID != nil {
 			// Node is partial - fetch nodes with same subnetwork
 			seedFromSubNetwork(config.MainConfig().SubnetworkID)
 		}

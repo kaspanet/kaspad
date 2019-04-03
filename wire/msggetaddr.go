@@ -17,27 +17,38 @@ import (
 //
 // This message has no payload.
 type MsgGetAddr struct {
-	SubnetworkID *subnetworkid.SubnetworkID
+	IncludeAllSubnetworks bool
+	SubnetworkID          *subnetworkid.SubnetworkID
 }
 
 // BtcDecode decodes r using the bitcoin protocol encoding into the receiver.
 // This is part of the Message interface implementation.
 func (msg *MsgGetAddr) BtcDecode(r io.Reader, pver uint32) error {
-	var isAllSubnetworks bool
-	err := readElement(r, &isAllSubnetworks)
+	msg.SubnetworkID = nil
+
+	err := readElement(r, &msg.IncludeAllSubnetworks)
 	if err != nil {
 		return err
 	}
-	if isAllSubnetworks {
-		msg.SubnetworkID = nil
-	} else {
-		var subnetworkID subnetworkid.SubnetworkID
-		err = readElement(r, &subnetworkID)
-		if err != nil {
-			return err
-		}
-		msg.SubnetworkID = &subnetworkID
+	if msg.IncludeAllSubnetworks {
+		return nil
 	}
+
+	var isFullNode bool
+	err = readElement(r, &isFullNode)
+	if err != nil {
+		return err
+	}
+	if isFullNode {
+		return nil
+	}
+
+	var subnetworkID subnetworkid.SubnetworkID
+	err = readElement(r, &subnetworkID)
+	if err != nil {
+		return err
+	}
+	msg.SubnetworkID = &subnetworkID
 
 	return nil
 }
@@ -45,17 +56,28 @@ func (msg *MsgGetAddr) BtcDecode(r io.Reader, pver uint32) error {
 // BtcEncode encodes the receiver to w using the bitcoin protocol encoding.
 // This is part of the Message interface implementation.
 func (msg *MsgGetAddr) BtcEncode(w io.Writer, pver uint32) error {
-	isAllSubnetworks := msg.SubnetworkID == nil
-	err := writeElement(w, isAllSubnetworks)
+	err := writeElement(w, msg.IncludeAllSubnetworks)
 	if err != nil {
 		return err
 	}
-	if !isAllSubnetworks {
+
+	if msg.IncludeAllSubnetworks {
+		return nil
+	}
+
+	isFullNode := msg.SubnetworkID == nil
+	err = writeElement(w, isFullNode)
+	if err != nil {
+		return err
+	}
+
+	if !isFullNode {
 		err = writeElement(w, msg.SubnetworkID)
 		if err != nil {
 			return err
 		}
 	}
+
 	return nil
 }
 
@@ -68,13 +90,15 @@ func (msg *MsgGetAddr) Command() string {
 // MaxPayloadLength returns the maximum length the payload can be for the
 // receiver.  This is part of the Message interface implementation.
 func (msg *MsgGetAddr) MaxPayloadLength(pver uint32) uint32 {
-	return subnetworkid.IDLength + 1
+	// SubnetworkID length + IncludeAllSubnetworks (1) + isFullNode (1)
+	return subnetworkid.IDLength + 2
 }
 
 // NewMsgGetAddr returns a new bitcoin getaddr message that conforms to the
 // Message interface.  See MsgGetAddr for details.
-func NewMsgGetAddr(subnetworkID *subnetworkid.SubnetworkID) *MsgGetAddr {
+func NewMsgGetAddr(includeAllSubnetworks bool, subnetworkID *subnetworkid.SubnetworkID) *MsgGetAddr {
 	return &MsgGetAddr{
-		SubnetworkID: subnetworkID,
+		IncludeAllSubnetworks: includeAllSubnetworks,
+		SubnetworkID:          subnetworkID,
 	}
 }

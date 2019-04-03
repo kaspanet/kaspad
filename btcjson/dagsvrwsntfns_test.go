@@ -159,7 +159,7 @@ func TestDAGSvrWsNtfns(t *testing.T) {
 		{
 			name: "txAcceptedVerbose",
 			newNtfn: func() (interface{}, error) {
-				return btcjson.NewCmd("txAcceptedVerbose", `{"hex":"001122","txid":"123","version":1,"locktime":4294967295,"subnetwork":"0000000000000000000000000000000000000001","gas":0,"payloadHash":"","payload":"","vin":null,"vout":null,"confirmations":0}`)
+				return btcjson.NewCmd("txAcceptedVerbose", `{"hex":"001122","txid":"123","version":1,"locktime":4294967295,"subnetwork":"0000000000000000000000000000000000000000","gas":0,"payloadHash":"","payload":"","vin":null,"vout":null,"confirmations":0}`)
 			},
 			staticNtfn: func() interface{} {
 				txResult := btcjson.TxRawResult{
@@ -174,7 +174,7 @@ func TestDAGSvrWsNtfns(t *testing.T) {
 				}
 				return btcjson.NewTxAcceptedVerboseNtfn(txResult)
 			},
-			marshalled: `{"jsonrpc":"1.0","method":"txAcceptedVerbose","params":[{"hex":"001122","txId":"123","version":1,"lockTime":4294967295,"subnetwork":"0000000000000000000000000000000000000001","gas":0,"payloadHash":"","payload":"","vin":null,"vout":null,"acceptedBy":null}],"id":null}`,
+			marshalled: `{"jsonrpc":"1.0","method":"txAcceptedVerbose","params":[{"hex":"001122","txId":"123","version":1,"lockTime":4294967295,"subnetwork":"0000000000000000000000000000000000000000","gas":0,"payloadHash":"","payload":"","vin":null,"vout":null,"acceptedBy":null}],"id":null}`,
 			unmarshalled: &btcjson.TxAcceptedVerboseNtfn{
 				RawTx: btcjson.TxRawResult{
 					Hex:           "001122",

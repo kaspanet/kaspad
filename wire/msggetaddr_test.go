@@ -19,7 +19,7 @@ func TestGetAddr(t *testing.T) {
 
 	// Ensure the command is expected value.
 	wantCmd := "getaddr"
-	msg := NewMsgGetAddr(nil)
+	msg := NewMsgGetAddr(false, nil)
 	if cmd := msg.Command(); cmd != wantCmd {
 		t.Errorf("NewMsgGetAddr: wrong command - got %v want %v",
 			cmd, wantCmd)
@@ -27,7 +27,7 @@ func TestGetAddr(t *testing.T) {
 
 	// Ensure max payload is expected value for latest protocol version.
 	// Num addresses (varInt) + max allowed addresses.
-	wantPayload := uint32(21)
+	wantPayload := uint32(22)
 	maxPayload := msg.MaxPayloadLength(pver)
 	if maxPayload != wantPayload {
 		t.Errorf("MaxPayloadLength: wrong max payload length for "+
@@ -40,16 +40,18 @@ func TestGetAddr(t *testing.T) {
 // protocol versions.
 func TestGetAddrWire(t *testing.T) {
 	// With all subnetworks
-	msgGetAddr := NewMsgGetAddr(nil)
+	msgGetAddr := NewMsgGetAddr(false, nil)
 	msgGetAddrEncoded := []byte{
-		0x01, // All subnetworks
+		0x00, // All subnetworks
+		0x01, // Get full nodes
 	}
 
 	// With specific subnetwork
-	msgGetAddrSubnet := NewMsgGetAddr(subnetworkid.SubnetworkIDNative)
+	msgGetAddrSubnet := NewMsgGetAddr(false, subnetworkid.SubnetworkIDNative)
 	msgGetAddrSubnetEncoded := []byte{
-		0x00,                                           // All subnetworks
-		0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Subnetwork ID
+		0x00,                                           // Is all subnetworks
+		0x00,                                           // Is full node
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Subnetwork ID
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 		0x00, 0x00, 0x00, 0x00,
 	}

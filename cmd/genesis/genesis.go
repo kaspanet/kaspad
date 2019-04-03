@@ -10,6 +10,7 @@ import (
 	"math/big"
 	"time"
 
+	"github.com/daglabs/btcd/blockdag"
 	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/util"
@@ -53,15 +54,38 @@ func solveGenesisBlock(block *wire.MsgBlock, powBits uint32, netName string) {
 	}
 }
 
+func validateGenesisBlock(genesisBlock *wire.MsgBlock, netName string) bool {
+	block := util.NewBlock(genesisBlock)
+	hashMerkleTree := blockdag.BuildHashMerkleTreeStore(block.Transactions())
+	calculatedHashMerkleRoot := hashMerkleTree.Root()
+	header := genesisBlock.Header
+	if !header.HashMerkleRoot.IsEqual(calculatedHashMerkleRoot) {
+		fmt.Printf("%s: genesis block hash merkle root is invalid - block "+
+			"header indicates %s, but calculated value is %s\n\n",
+			netName, hex.EncodeToString(header.HashMerkleRoot[:]),
+			hex.EncodeToString(calculatedHashMerkleRoot[:]))
+		return false
+	}
+	return true
+}
+
+func validateAndSolve(genesisBlock *wire.MsgBlock, powBits uint32, netName string) {
+	// Validate merkle root
+	if validateGenesisBlock(genesisBlock, netName) {
+		// Solve genesis block
+		solveGenesisBlock(genesisBlock, powBits, netName)
+	}
+}
+
 // main
 func main() {
 	bigOne := big.NewInt(1)
 
-	// Solve mainnet genesis
-	solveGenesisBlock(dagconfig.MainNetParams.GenesisBlock,
-		util.BigToCompact(new(big.Int).Sub(new(big.Int).Lsh(bigOne, 255), bigOne)), "mainnet")
+	validateAndSolve(dagconfig.MainNetParams.GenesisBlock,
+		util.BigToCompact(new(big.Int).Sub(new(big.Int).Lsh(bigOne, 255), bigOne)),
+		"MainNet")
 
-	// Solve devnet genesis
-	solveGenesisBlock(dagconfig.DevNetParams.GenesisBlock,
-		util.BigToCompact(new(big.Int).Sub(new(big.Int).Lsh(bigOne, 239), bigOne)), "devnet")
+	validateAndSolve(dagconfig.DevNetParams.GenesisBlock,
+		util.BigToCompact(new(big.Int).Sub(new(big.Int).Lsh(bigOne, 239), bigOne)),
+		"DevNet")
 }

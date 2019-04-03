@@ -14,7 +14,6 @@ import (
 	"time"
 
 	"github.com/daglabs/btcd/dagconfig/daghash"
-	"github.com/daglabs/btcd/util/subnetworkid"
 	"github.com/davecgh/go-spew/spew"
 )
 
@@ -47,11 +46,11 @@ func TestMessage(t *testing.T) {
 	addrMe := &net.TCPAddr{IP: net.ParseIP("127.0.0.1"), Port: 8333}
 	me := NewNetAddress(addrMe, SFNodeNetwork)
 	me.Timestamp = time.Time{} // Version message has zero value timestamp.
-	msgVersion := NewMsgVersion(me, you, 123123, &daghash.ZeroHash, subnetworkid.SubnetworkIDSupportsAll)
+	msgVersion := NewMsgVersion(me, you, 123123, &daghash.ZeroHash, nil)
 
 	msgVerack := NewMsgVerAck()
-	msgGetAddr := NewMsgGetAddr(nil)
-	msgAddr := NewMsgAddr(nil)
+	msgGetAddr := NewMsgGetAddr(false, nil)
+	msgAddr := NewMsgAddr(false, nil)
 	msgGetBlocks := NewMsgGetBlocks(&daghash.Hash{})
 	msgBlock := &blockOne
 	msgInv := NewMsgInv()
@@ -87,10 +86,10 @@ func TestMessage(t *testing.T) {
 		btcnet BitcoinNet // Network to use for wire encoding
 		bytes  int        // Expected num bytes read/written
 	}{
-		{msgVersion, msgVersion, pver, MainNet, 173},
+		{msgVersion, msgVersion, pver, MainNet, 154},
 		{msgVerack, msgVerack, pver, MainNet, 24},
-		{msgGetAddr, msgGetAddr, pver, MainNet, 25},
-		{msgAddr, msgAddr, pver, MainNet, 26},
+		{msgGetAddr, msgGetAddr, pver, MainNet, 26},
+		{msgAddr, msgAddr, pver, MainNet, 27},
 		{msgGetBlocks, msgGetBlocks, pver, MainNet, 61},
 		{msgBlock, msgBlock, pver, MainNet, 340},
 		{msgInv, msgInv, pver, MainNet, 25},
@@ -222,7 +221,7 @@ func TestReadMessageWireErrors(t *testing.T) {
 
 	// Wire encoded bytes for a message which exceeds the max payload for
 	// a specific message type.
-	exceedTypePayloadBytes := makeHeader(btcnet, "getaddr", 22, 0)
+	exceedTypePayloadBytes := makeHeader(btcnet, "getaddr", 23, 0)
 
 	// Wire encoded bytes for a message which does not deliver the full
 	// payload according to the header length.

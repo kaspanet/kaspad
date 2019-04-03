@@ -37,7 +37,7 @@ func TestTx(t *testing.T) {
 	}
 
 	// Hash for block 100,000 transaction 0.
-	wantHashStr := "171090dd8ab478a2c4499858abd5d9b10e173b659bab5d5acca68c7dcb4c519e"
+	wantHashStr := "9bdfb2c83f82ab919e2e87cba505392bdfd9fa987864cbf59879c7dedf6da2cf"
 	wantHash, err := daghash.NewHashFromStr(wantHashStr)
 	if err != nil {
 		t.Errorf("NewHashFromStr: %v", err)
@@ -53,7 +53,7 @@ func TestTx(t *testing.T) {
 	}
 
 	// ID for block 100,000 transaction 1.
-	wantIDStr := "1742649144632997855e06650c1df5fd27cad915419a8f14f2f1b5a652257342"
+	wantIDStr := "011f7009d8e5a99c4cf2f7216a3eb6044a7017a98732a8fb6390fbbb668e84d8"
 	wantID, err := daghash.NewTxIDFromStr(wantIDStr)
 	// Request the ID multiple times to test generation and caching.
 	for i := 0; i < 2; i++ {

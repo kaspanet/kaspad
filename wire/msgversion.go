@@ -59,8 +59,8 @@ type MsgVersion struct {
 	// Don't announce transactions to peer.
 	DisableRelayTx bool
 
-	// The subnetwork of the generator of the version message.
-	SubnetworkID subnetworkid.SubnetworkID
+	// The subnetwork of the generator of the version message. Should be nil in full nodes
+	SubnetworkID *subnetworkid.SubnetworkID
 }
 
 // HasService returns whether the specified service is supported by the peer
@@ -95,9 +95,21 @@ func (msg *MsgVersion) BtcDecode(r io.Reader, pver uint32) error {
 		return err
 	}
 
-	err = readElement(buf, &msg.SubnetworkID)
+	// Read subnetwork ID
+	var isFullNode bool
+	err = readElement(r, &isFullNode)
 	if err != nil {
 		return err
+	}
+	if isFullNode {
+		msg.SubnetworkID = nil
+	} else {
+		var subnetworkID subnetworkid.SubnetworkID
+		err = readElement(r, &subnetworkID)
+		if err != nil {
+			return err
+		}
+		msg.SubnetworkID = &subnetworkID
 	}
 
 	err = readNetAddress(buf, pver, &msg.AddrYou, false)
@@ -153,9 +165,17 @@ func (msg *MsgVersion) BtcEncode(w io.Writer, pver uint32) error {
 		return err
 	}
 
-	err = writeElement(w, msg.SubnetworkID)
+	// Write subnetwork ID
+	isFullNode := msg.SubnetworkID == nil
+	err = writeElement(w, isFullNode)
 	if err != nil {
 		return err
+	}
+	if !isFullNode {
+		err = writeElement(w, msg.SubnetworkID)
+		if err != nil {
+			return err
+		}
 	}
 
 	err = writeNetAddress(w, pver, &msg.AddrYou, false)
@@ -229,7 +249,7 @@ func NewMsgVersion(me *NetAddress, you *NetAddress, nonce uint64,
 		UserAgent:       DefaultUserAgent,
 		SelectedTip:     selectedTip,
 		DisableRelayTx:  false,
-		SubnetworkID:    *subnetworkID,
+		SubnetworkID:    subnetworkID,
 	}
 }
 
