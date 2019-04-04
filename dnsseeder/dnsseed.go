@@ -6,6 +6,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/daglabs/btcd/dagconfig/daghash"
 	"log"
 	"net"
 	"os"
@@ -58,6 +59,7 @@ func creep() {
 		UserAgentVersion: "0.0.1",
 		DAGParams:        activeNetParams,
 		DisableRelayTx:   true,
+		SelectedTip:      func() *daghash.Hash { return activeNetParams.GenesisBlock.BlockHash() },
 
 		Listeners: peer.MessageListeners{
 			OnAddr: func(p *peer.Peer, msg *wire.MsgAddr) {
