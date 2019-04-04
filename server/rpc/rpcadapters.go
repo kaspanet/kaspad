@@ -278,8 +278,3 @@ func (b *rpcSyncMgr) SyncPeerID() int32 {
 func (b *rpcSyncMgr) LocateHeaders(locators []*daghash.Hash, hashStop *daghash.Hash) []*wire.BlockHeader {
 	return b.server.DAG.LocateHeaders(locators, hashStop)
 }
-
-// GetTopHeaders returns the top wire.MaxBlockHeadersPerMsg block headers ordered by height.
-func (b *rpcSyncMgr) GetTopHeaders(startHash *daghash.Hash) ([]*wire.BlockHeader, error) {
-	return b.server.DAG.GetTopHeaders(startHash)
-}
