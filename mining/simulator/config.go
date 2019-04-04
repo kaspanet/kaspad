@@ -22,13 +22,12 @@ func parseConfig() (*config, error) {
 	}
 
 	if cfg.CertificatePath == "" && !cfg.DisableTLS {
-		return nil, errors.New("TLS has to be disabled if no certificate is provided")
+		return nil, errors.New("--notls has to be disabled if --cert is used")
 	}
 
 	if cfg.CertificatePath != "" && cfg.DisableTLS {
-		return nil, errors.New("The certificate path should be omitted if TLS is disabled")
+		return nil, errors.New("--cert should be omitted if --notls is used")
 	}
 
 	return cfg, nil
-
 }
