@@ -5,10 +5,8 @@ import (
 	"os"
 )
 
-var addressListPath string
-
-func getAddressList() ([]string, error) {
-	file, err := os.Open(addressListPath)
+func getAddressList(cfg *config) ([]string, error) {
+	file, err := os.Open(cfg.AddressListPath)
 	if err != nil {
 		return nil, err
 	}
