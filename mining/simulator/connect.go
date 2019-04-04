@@ -8,23 +8,29 @@ import (
 	"github.com/daglabs/btcd/rpcclient"
 )
 
-var certificatePath string
-
-func connectToServers(addressList []string) ([]*rpcclient.Client, error) {
+func connectToServers(cfg *config, addressList []string) ([]*rpcclient.Client, error) {
 	clients := make([]*rpcclient.Client, len(addressList))
 
-	cert, err := ioutil.ReadFile(certificatePath)
-	if err != nil {
-		return nil, fmt.Errorf("Error reading certificates file: %s", err)
+	var cert []byte
+	if !cfg.DisableTLS {
+		var err error
+		cert, err = ioutil.ReadFile(cfg.CertificatePath)
+		if err != nil {
+			return nil, fmt.Errorf("Error reading certificates file: %s", err)
+		}
 	}
 
 	for i, address := range addressList {
 		connCfg := &rpcclient.ConnConfig{
-			Host:         address,
-			Endpoint:     "ws",
-			User:         "user",
-			Pass:         "pass",
-			Certificates: cert,
+			Host:       address,
+			Endpoint:   "ws",
+			User:       "user",
+			Pass:       "pass",
+			DisableTLS: cfg.DisableTLS,
+		}
+
+		if !cfg.DisableTLS {
+			connCfg.Certificates = cert
 		}
 
 		client, err := rpcclient.New(connCfg, nil)

@@ -3,8 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
-	"os/user"
-	"path"
+	"os"
 	"runtime/debug"
 	"sync/atomic"
 
@@ -16,17 +15,18 @@ var isRunning int32
 func main() {
 	defer handlePanic()
 
-	err := initPaths()
+	cfg, err := parseConfig()
 	if err != nil {
-		panic(fmt.Errorf("Error initializing paths: %s", err))
+		fmt.Fprintf(os.Stderr, "Error parsing command-line arguments: %s", err)
+		os.Exit(1)
 	}
 
-	addressList, err := getAddressList()
+	addressList, err := getAddressList(cfg)
 	if err != nil {
 		panic(fmt.Errorf("Couldn't load address list: %s", err))
 	}
 
-	clients, err := connectToServers(addressList)
+	clients, err := connectToServers(cfg, addressList)
 	if err != nil {
 		panic(fmt.Errorf("Error connecting to servers: %s", err))
 	}
@@ -38,20 +38,6 @@ func main() {
 	if err != nil {
 		panic(fmt.Errorf("Error in main loop: %s", err))
 	}
-}
-
-func initPaths() error {
-	usr, err := user.Current()
-	if err != nil {
-		return fmt.Errorf("Error getting current user: %s", err)
-	}
-
-	basePath := ".btcd/mining_simulator"
-
-	certificatePath = path.Join(usr.HomeDir, basePath, "rpc.cert")
-	addressListPath = path.Join(usr.HomeDir, basePath, "addresses")
-
-	return nil
 }
 
 func disconnect(clients []*rpcclient.Client) {
