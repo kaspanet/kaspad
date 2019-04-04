@@ -402,6 +402,11 @@ var helpDescsEnUS = map[string]string{
 	"infoWalletResult-relayFee":        "The minimum relay fee for non-free transactions in BTC/KB",
 	"infoWalletResult-errors":          "Any current errors",
 
+	// GetTopHeadersCmd help.
+	"getTopHeaders--synopsis": "Returns the top block headers starting with the provided start hash (not inclusive)",
+	"getTopHeaders-startHash": "Block hash to stop including block headers for; if not found, all headers to the latest known block are returned.",
+	"getTopHeaders--result0":  "Serialized block headers of all located blocks, limited to some arbitrary maximum number of hashes (currently 2000, which matches the wire protocol headers message, but this is not guaranteed)",
+
 	// GetHeadersCmd help.
 	"getHeaders--synopsis":     "Returns block headers starting with the first known block hash from the request",
 	"getHeaders-blockLocators": "JSON array of hex-encoded hashes of blocks.  Headers are returned starting from the first known hash in this list",
@@ -707,6 +712,7 @@ var rpcResultTypes = map[string][]interface{}{
 	"getDifficulty":         {(*float64)(nil)},
 	"getGenerate":           {(*bool)(nil)},
 	"getHashesPerSec":       {(*float64)(nil)},
+	"getTopHeaders":         {(*[]string)(nil)},
 	"getHeaders":            {(*[]string)(nil)},
 	"getInfo":               {(*btcjson.InfoDAGResult)(nil)},
 	"getManualNodeInfo":     {(*string)(nil), (*btcjson.GetManualNodeInfoResult)(nil)},
