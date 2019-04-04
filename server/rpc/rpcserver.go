@@ -2291,9 +2291,6 @@ func handleGetHashesPerSec(s *Server, cmd interface{}, closeChan <-chan struct{}
 }
 
 // handleGetTopHeaders implements the getTopHeaders command.
-//
-// NOTE: This is a btcsuite extension originally ported from
-// github.com/decred/dcrd.
 func handleGetTopHeaders(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
 	c := cmd.(*btcjson.GetTopHeadersCmd)
 

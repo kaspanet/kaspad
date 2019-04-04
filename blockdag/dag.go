@@ -1421,7 +1421,7 @@ func (dag *BlockDAG) locateBlockNodes(locator BlockLocator, hashStop *daghash.Ha
 	queue.pushSet(node.children)
 
 	visited := newSet()
-	for i := uint32(0); queue.Len() > 0 && uint32(len(nodes)) < maxEntries; i++ {
+	for queue.Len() > 0 && uint32(len(nodes)) < maxEntries {
 		var current *blockNode
 		current = queue.pop()
 		if !visited.contains(current) {
