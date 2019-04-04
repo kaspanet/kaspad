@@ -26,7 +26,7 @@ type MsgGetAddr struct {
 func (msg *MsgGetAddr) BtcDecode(r io.Reader, pver uint32) error {
 	msg.SubnetworkID = nil
 
-	err := readElement(r, &msg.IncludeAllSubnetworks)
+	err := ReadElement(r, &msg.IncludeAllSubnetworks)
 	if err != nil {
 		return err
 	}
@@ -35,7 +35,7 @@ func (msg *MsgGetAddr) BtcDecode(r io.Reader, pver uint32) error {
 	}
 
 	var isFullNode bool
-	err = readElement(r, &isFullNode)
+	err = ReadElement(r, &isFullNode)
 	if err != nil {
 		return err
 	}
@@ -44,7 +44,7 @@ func (msg *MsgGetAddr) BtcDecode(r io.Reader, pver uint32) error {
 	}
 
 	var subnetworkID subnetworkid.SubnetworkID
-	err = readElement(r, &subnetworkID)
+	err = ReadElement(r, &subnetworkID)
 	if err != nil {
 		return err
 	}
@@ -56,7 +56,7 @@ func (msg *MsgGetAddr) BtcDecode(r io.Reader, pver uint32) error {
 // BtcEncode encodes the receiver to w using the bitcoin protocol encoding.
 // This is part of the Message interface implementation.
 func (msg *MsgGetAddr) BtcEncode(w io.Writer, pver uint32) error {
-	err := writeElement(w, msg.IncludeAllSubnetworks)
+	err := WriteElement(w, msg.IncludeAllSubnetworks)
 	if err != nil {
 		return err
 	}
@@ -66,13 +66,13 @@ func (msg *MsgGetAddr) BtcEncode(w io.Writer, pver uint32) error {
 	}
 
 	isFullNode := msg.SubnetworkID == nil
-	err = writeElement(w, isFullNode)
+	err = WriteElement(w, isFullNode)
 	if err != nil {
 		return err
 	}
 
 	if !isFullNode {
-		err = writeElement(w, msg.SubnetworkID)
+		err = WriteElement(w, msg.SubnetworkID)
 		if err != nil {
 			return err
 		}

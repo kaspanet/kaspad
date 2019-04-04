@@ -43,20 +43,20 @@ func (msg *MsgCFCheckpt) AddCFHeader(header *daghash.Hash) error {
 // This is part of the Message interface implementation.
 func (msg *MsgCFCheckpt) BtcDecode(r io.Reader, pver uint32) error {
 	// Read filter type
-	err := readElement(r, &msg.FilterType)
+	err := ReadElement(r, &msg.FilterType)
 	if err != nil {
 		return err
 	}
 
 	// Read stop hash
 	msg.StopHash = &daghash.Hash{}
-	err = readElement(r, msg.StopHash)
+	err = ReadElement(r, msg.StopHash)
 	if err != nil {
 		return err
 	}
 
 	// Read number of filter headers
-	count, err := ReadVarInt(r, pver)
+	count, err := ReadVarInt(r)
 	if err != nil {
 		return err
 	}
@@ -66,7 +66,7 @@ func (msg *MsgCFCheckpt) BtcDecode(r io.Reader, pver uint32) error {
 	msg.FilterHeaders = make([]*daghash.Hash, count)
 	for i := uint64(0); i < count; i++ {
 		var cfh daghash.Hash
-		err := readElement(r, &cfh)
+		err := ReadElement(r, &cfh)
 		if err != nil {
 			return err
 		}
@@ -80,26 +80,26 @@ func (msg *MsgCFCheckpt) BtcDecode(r io.Reader, pver uint32) error {
 // This is part of the Message interface implementation.
 func (msg *MsgCFCheckpt) BtcEncode(w io.Writer, pver uint32) error {
 	// Write filter type
-	err := writeElement(w, msg.FilterType)
+	err := WriteElement(w, msg.FilterType)
 	if err != nil {
 		return err
 	}
 
 	// Write stop hash
-	err = writeElement(w, msg.StopHash)
+	err = WriteElement(w, msg.StopHash)
 	if err != nil {
 		return err
 	}
 
 	// Write length of FilterHeaders slice
 	count := len(msg.FilterHeaders)
-	err = WriteVarInt(w, pver, uint64(count))
+	err = WriteVarInt(w, uint64(count))
 	if err != nil {
 		return err
 	}
 
 	for _, cfh := range msg.FilterHeaders {
-		err := writeElement(w, cfh)
+		err := WriteElement(w, cfh)
 		if err != nil {
 			return err
 		}

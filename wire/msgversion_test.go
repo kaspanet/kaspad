@@ -213,7 +213,7 @@ func TestVersionWireErrors(t *testing.T) {
 
 	// Encode the new UA length as a varint.
 	var newUAVarIntBuf bytes.Buffer
-	err := WriteVarInt(&newUAVarIntBuf, pver, uint64(len(newUA)))
+	err := WriteVarInt(&newUAVarIntBuf, uint64(len(newUA)))
 	if err != nil {
 		t.Errorf("WriteVarInt: error %v", err)
 	}

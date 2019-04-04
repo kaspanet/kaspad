@@ -48,13 +48,13 @@ func (msg *MsgGetHeaders) AddBlockLocatorHash(hash *daghash.Hash) error {
 // BtcDecode decodes r using the bitcoin protocol encoding into the receiver.
 // This is part of the Message interface implementation.
 func (msg *MsgGetHeaders) BtcDecode(r io.Reader, pver uint32) error {
-	err := readElement(r, &msg.ProtocolVersion)
+	err := ReadElement(r, &msg.ProtocolVersion)
 	if err != nil {
 		return err
 	}
 
 	// Read num block locator hashes and limit to max.
-	count, err := ReadVarInt(r, pver)
+	count, err := ReadVarInt(r)
 	if err != nil {
 		return err
 	}
@@ -70,7 +70,7 @@ func (msg *MsgGetHeaders) BtcDecode(r io.Reader, pver uint32) error {
 	msg.BlockLocatorHashes = make([]*daghash.Hash, 0, count)
 	for i := uint64(0); i < count; i++ {
 		hash := &locatorHashes[i]
-		err := readElement(r, hash)
+		err := ReadElement(r, hash)
 		if err != nil {
 			return err
 		}
@@ -78,7 +78,7 @@ func (msg *MsgGetHeaders) BtcDecode(r io.Reader, pver uint32) error {
 	}
 
 	msg.HashStop = &daghash.Hash{}
-	return readElement(r, msg.HashStop)
+	return ReadElement(r, msg.HashStop)
 }
 
 // BtcEncode encodes the receiver to w using the bitcoin protocol encoding.
@@ -92,24 +92,24 @@ func (msg *MsgGetHeaders) BtcEncode(w io.Writer, pver uint32) error {
 		return messageError("MsgGetHeaders.BtcEncode", str)
 	}
 
-	err := writeElement(w, msg.ProtocolVersion)
+	err := WriteElement(w, msg.ProtocolVersion)
 	if err != nil {
 		return err
 	}
 
-	err = WriteVarInt(w, pver, uint64(count))
+	err = WriteVarInt(w, uint64(count))
 	if err != nil {
 		return err
 	}
 
 	for _, hash := range msg.BlockLocatorHashes {
-		err := writeElement(w, hash)
+		err := WriteElement(w, hash)
 		if err != nil {
 			return err
 		}
 	}
 
-	return writeElement(w, msg.HashStop)
+	return WriteElement(w, msg.HashStop)
 }
 
 // Command returns the protocol command string for the message.  This is part

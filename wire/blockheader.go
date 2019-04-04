@@ -158,7 +158,7 @@ func readBlockHeader(r io.Reader, pver uint32, bh *BlockHeader) error {
 	bh.ParentHashes = make([]*daghash.Hash, numParentBlocks)
 	for i := byte(0); i < numParentBlocks; i++ {
 		hash := &daghash.Hash{}
-		err := readElement(r, hash)
+		err := ReadElement(r, hash)
 		if err != nil {
 			return err
 		}
@@ -178,7 +178,7 @@ func writeBlockHeader(w io.Writer, pver uint32, bh *BlockHeader) error {
 		return err
 	}
 	for _, hash := range bh.ParentHashes {
-		if err := writeElement(w, hash); err != nil {
+		if err := WriteElement(w, hash); err != nil {
 			return err
 		}
 	}

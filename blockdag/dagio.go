@@ -54,6 +54,10 @@ var (
 	// unspent transaction output set.
 	utxoSetBucketName = []byte("utxoset")
 
+	// utxoDiffsBucketName is the name of the db bucket used to house the
+	// diffs and diffchilind of blocks.
+	utxoDiffsBucketName = []byte("utxodiffs")
+
 	// subnetworksBucketName is the name of the db bucket used to store the
 	// subnetwork registry.
 	subnetworksBucketName = []byte("subnetworks")
@@ -466,14 +470,18 @@ func (dag *BlockDAG) createDAGState() error {
 			return err
 		}
 
-		// Create the bucket that houses the utxo set and store its
-		// version.  Note that the genesis block coinbase transaction is
-		// intentionally not inserted here since it is not spendable by
-		// consensus rules.
+		// Create the buckets that house the utxo set, the utxo diffs, and their
+		// version.
 		_, err = meta.CreateBucket(utxoSetBucketName)
 		if err != nil {
 			return err
 		}
+
+		_, err = meta.CreateBucket(utxoDiffsBucketName)
+		if err != nil {
+			return err
+		}
+
 		err = dbPutVersion(dbTx, utxoSetVersionKeyName,
 			latestUTXOSetBucketVersion)
 		if err != nil {
@@ -608,6 +616,7 @@ func (dag *BlockDAG) initDAGState() error {
 			node := &blockNodes[i]
 			initBlockNode(node, header, parents, dag.dagParams.K)
 			node.status = status
+			node.updateParentsChildren()
 			dag.index.addNode(node)
 
 			if blockStatus(status).KnownValid() {

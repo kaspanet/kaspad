@@ -97,7 +97,7 @@ func (msg *MsgVersion) BtcDecode(r io.Reader, pver uint32) error {
 
 	// Read subnetwork ID
 	var isFullNode bool
-	err = readElement(r, &isFullNode)
+	err = ReadElement(r, &isFullNode)
 	if err != nil {
 		return err
 	}
@@ -105,7 +105,7 @@ func (msg *MsgVersion) BtcDecode(r io.Reader, pver uint32) error {
 		msg.SubnetworkID = nil
 	} else {
 		var subnetworkID subnetworkid.SubnetworkID
-		err = readElement(r, &subnetworkID)
+		err = ReadElement(r, &subnetworkID)
 		if err != nil {
 			return err
 		}
@@ -121,7 +121,7 @@ func (msg *MsgVersion) BtcDecode(r io.Reader, pver uint32) error {
 	if err != nil {
 		return err
 	}
-	err = readElement(buf, &msg.Nonce)
+	err = ReadElement(buf, &msg.Nonce)
 	if err != nil {
 		return err
 	}
@@ -136,13 +136,13 @@ func (msg *MsgVersion) BtcDecode(r io.Reader, pver uint32) error {
 	msg.UserAgent = userAgent
 
 	msg.SelectedTip = &daghash.Hash{}
-	err = readElement(buf, msg.SelectedTip)
+	err = ReadElement(buf, msg.SelectedTip)
 	if err != nil {
 		return err
 	}
 
 	var relayTx bool
-	err = readElement(r, &relayTx)
+	err = ReadElement(r, &relayTx)
 	if err != nil {
 		return err
 	}
@@ -167,12 +167,12 @@ func (msg *MsgVersion) BtcEncode(w io.Writer, pver uint32) error {
 
 	// Write subnetwork ID
 	isFullNode := msg.SubnetworkID == nil
-	err = writeElement(w, isFullNode)
+	err = WriteElement(w, isFullNode)
 	if err != nil {
 		return err
 	}
 	if !isFullNode {
-		err = writeElement(w, msg.SubnetworkID)
+		err = WriteElement(w, msg.SubnetworkID)
 		if err != nil {
 			return err
 		}
@@ -188,24 +188,24 @@ func (msg *MsgVersion) BtcEncode(w io.Writer, pver uint32) error {
 		return err
 	}
 
-	err = writeElement(w, msg.Nonce)
+	err = WriteElement(w, msg.Nonce)
 	if err != nil {
 		return err
 	}
 
-	err = WriteVarString(w, pver, msg.UserAgent)
+	err = WriteVarString(w, msg.UserAgent)
 	if err != nil {
 		return err
 	}
 
-	err = writeElement(w, msg.SelectedTip)
+	err = WriteElement(w, msg.SelectedTip)
 	if err != nil {
 		return err
 	}
 
 	// The wire encoding for the field is true when transactions should be
 	// relayed, so reverse it from the DisableRelayTx field.
-	err = writeElement(w, !msg.DisableRelayTx)
+	err = WriteElement(w, !msg.DisableRelayTx)
 	if err != nil {
 		return err
 	}

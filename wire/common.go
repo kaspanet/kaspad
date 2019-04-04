@@ -39,9 +39,9 @@ var errNonCanonicalVarInt = "non-canonical varint %x - discriminant %x must " +
 // time.Time since it is otherwise ambiguous.
 type int64Time time.Time
 
-// readElement reads the next sequence of bytes from r using little endian
+// ReadElement reads the next sequence of bytes from r using little endian
 // depending on the concrete type of element pointed to.
-func readElement(r io.Reader, element interface{}) error {
+func ReadElement(r io.Reader, element interface{}) error {
 	// Attempt to read the element based on the concrete type via fast
 	// type assertions first.
 	switch e := element.(type) {
@@ -186,7 +186,7 @@ func readElement(r io.Reader, element interface{}) error {
 // calls to readElement.
 func readElements(r io.Reader, elements ...interface{}) error {
 	for _, element := range elements {
-		err := readElement(r, element)
+		err := ReadElement(r, element)
 		if err != nil {
 			return err
 		}
@@ -194,8 +194,8 @@ func readElements(r io.Reader, elements ...interface{}) error {
 	return nil
 }
 
-// writeElement writes the little endian representation of element to w.
-func writeElement(w io.Writer, element interface{}) error {
+// WriteElement writes the little endian representation of element to w.
+func WriteElement(w io.Writer, element interface{}) error {
 	// Attempt to write the element based on the concrete type via fast
 	// type assertions first.
 	switch e := element.(type) {
@@ -322,7 +322,7 @@ func writeElement(w io.Writer, element interface{}) error {
 // calls to writeElement.
 func writeElements(w io.Writer, elements ...interface{}) error {
 	for _, element := range elements {
-		err := writeElement(w, element)
+		err := WriteElement(w, element)
 		if err != nil {
 			return err
 		}
@@ -331,7 +331,7 @@ func writeElements(w io.Writer, elements ...interface{}) error {
 }
 
 // ReadVarInt reads a variable length integer from r and returns it as a uint64.
-func ReadVarInt(r io.Reader, pver uint32) (uint64, error) {
+func ReadVarInt(r io.Reader) (uint64, error) {
 	discriminant, err := binaryserializer.Uint8(r)
 	if err != nil {
 		return 0, err
@@ -393,7 +393,7 @@ func ReadVarInt(r io.Reader, pver uint32) (uint64, error) {
 
 // WriteVarInt serializes val to w using a variable number of bytes depending
 // on its value.
-func WriteVarInt(w io.Writer, pver uint32, val uint64) error {
+func WriteVarInt(w io.Writer, val uint64) error {
 	if val < 0xfd {
 		return binaryserializer.PutUint8(w, uint8(val))
 	}
@@ -451,7 +451,7 @@ func VarIntSerializeSize(val uint64) int {
 // maximum block payload size since it helps protect against memory exhaustion
 // attacks and forced panics through malformed messages.
 func ReadVarString(r io.Reader, pver uint32) (string, error) {
-	count, err := ReadVarInt(r, pver)
+	count, err := ReadVarInt(r)
 	if err != nil {
 		return "", err
 	}
@@ -476,8 +476,8 @@ func ReadVarString(r io.Reader, pver uint32) (string, error) {
 // WriteVarString serializes str to w as a variable length integer containing
 // the length of the string followed by the bytes that represent the string
 // itself.
-func WriteVarString(w io.Writer, pver uint32, str string) error {
-	err := WriteVarInt(w, pver, uint64(len(str)))
+func WriteVarString(w io.Writer, str string) error {
+	err := WriteVarInt(w, uint64(len(str)))
 	if err != nil {
 		return err
 	}
@@ -495,7 +495,7 @@ func WriteVarString(w io.Writer, pver uint32, str string) error {
 func ReadVarBytes(r io.Reader, pver uint32, maxAllowed uint32,
 	fieldName string) ([]byte, error) {
 
-	count, err := ReadVarInt(r, pver)
+	count, err := ReadVarInt(r)
 	if err != nil {
 		return nil, err
 	}
@@ -521,7 +521,7 @@ func ReadVarBytes(r io.Reader, pver uint32, maxAllowed uint32,
 // containing the number of bytes, followed by the bytes themselves.
 func WriteVarBytes(w io.Writer, pver uint32, bytes []byte) error {
 	slen := uint64(len(bytes))
-	err := WriteVarInt(w, pver, slen)
+	err := WriteVarInt(w, slen)
 	if err != nil {
 		return err
 	}

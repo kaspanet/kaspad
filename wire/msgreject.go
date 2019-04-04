@@ -82,7 +82,7 @@ func (msg *MsgReject) BtcDecode(r io.Reader, pver uint32) error {
 	msg.Cmd = cmd
 
 	// Code indicating why the command was rejected.
-	err = readElement(r, &msg.Code)
+	err = ReadElement(r, &msg.Code)
 	if err != nil {
 		return err
 	}
@@ -99,7 +99,7 @@ func (msg *MsgReject) BtcDecode(r io.Reader, pver uint32) error {
 	// identifies the specific block or transaction.
 	if msg.Cmd == CmdBlock || msg.Cmd == CmdTx {
 		msg.Hash = &daghash.Hash{}
-		err := readElement(r, msg.Hash)
+		err := ReadElement(r, msg.Hash)
 		if err != nil {
 			return err
 		}
@@ -112,20 +112,20 @@ func (msg *MsgReject) BtcDecode(r io.Reader, pver uint32) error {
 // This is part of the Message interface implementation.
 func (msg *MsgReject) BtcEncode(w io.Writer, pver uint32) error {
 	// Command that was rejected.
-	err := WriteVarString(w, pver, msg.Cmd)
+	err := WriteVarString(w, msg.Cmd)
 	if err != nil {
 		return err
 	}
 
 	// Code indicating why the command was rejected.
-	err = writeElement(w, msg.Code)
+	err = WriteElement(w, msg.Code)
 	if err != nil {
 		return err
 	}
 
 	// Human readable string with specific details (over and above the
 	// reject code above) about why the command was rejected.
-	err = WriteVarString(w, pver, msg.Reason)
+	err = WriteVarString(w, msg.Reason)
 	if err != nil {
 		return err
 	}
@@ -133,7 +133,7 @@ func (msg *MsgReject) BtcEncode(w io.Writer, pver uint32) error {
 	// CmdBlock and CmdTx messages have an additional hash field that
 	// identifies the specific block or transaction.
 	if msg.Cmd == CmdBlock || msg.Cmd == CmdTx {
-		err := writeElement(w, msg.Hash)
+		err := WriteElement(w, msg.Hash)
 		if err != nil {
 			return err
 		}

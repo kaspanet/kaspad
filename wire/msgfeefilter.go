@@ -21,13 +21,13 @@ type MsgFeeFilter struct {
 // BtcDecode decodes r using the bitcoin protocol encoding into the receiver.
 // This is part of the Message interface implementation.
 func (msg *MsgFeeFilter) BtcDecode(r io.Reader, pver uint32) error {
-	return readElement(r, &msg.MinFee)
+	return ReadElement(r, &msg.MinFee)
 }
 
 // BtcEncode encodes the receiver to w using the bitcoin protocol encoding.
 // This is part of the Message interface implementation.
 func (msg *MsgFeeFilter) BtcEncode(w io.Writer, pver uint32) error {
-	return writeElement(w, msg.MinFee)
+	return WriteElement(w, msg.MinFee)
 }
 
 // Command returns the protocol command string for the message.  This is part

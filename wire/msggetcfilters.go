@@ -26,34 +26,34 @@ type MsgGetCFilters struct {
 // BtcDecode decodes r using the bitcoin protocol encoding into the receiver.
 // This is part of the Message interface implementation.
 func (msg *MsgGetCFilters) BtcDecode(r io.Reader, pver uint32) error {
-	err := readElement(r, &msg.FilterType)
+	err := ReadElement(r, &msg.FilterType)
 	if err != nil {
 		return err
 	}
 
-	err = readElement(r, &msg.StartHeight)
+	err = ReadElement(r, &msg.StartHeight)
 	if err != nil {
 		return err
 	}
 
 	msg.StopHash = &daghash.Hash{}
-	return readElement(r, msg.StopHash)
+	return ReadElement(r, msg.StopHash)
 }
 
 // BtcEncode encodes the receiver to w using the bitcoin protocol encoding.
 // This is part of the Message interface implementation.
 func (msg *MsgGetCFilters) BtcEncode(w io.Writer, pver uint32) error {
-	err := writeElement(w, msg.FilterType)
+	err := WriteElement(w, msg.FilterType)
 	if err != nil {
 		return err
 	}
 
-	err = writeElement(w, &msg.StartHeight)
+	err = WriteElement(w, &msg.StartHeight)
 	if err != nil {
 		return err
 	}
 
-	return writeElement(w, msg.StopHash)
+	return WriteElement(w, msg.StopHash)
 }
 
 // Command returns the protocol command string for the message.  This is part
