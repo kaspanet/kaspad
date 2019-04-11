@@ -36,9 +36,12 @@ func (diffStore *utxoDiffStore) setBlockDiff(node *blockNode, diff *UTXODiff) er
 	diffStore.mtx.Lock()
 	defer diffStore.mtx.Unlock()
 	// load the diff data from DB to diffStore.loaded
-	_, err := diffStore.diffDataByHashAllowNotFound(node.hash)
+	_, exists, err := diffStore.diffDataByHash(node.hash)
 	if err != nil {
 		return err
+	}
+	if !exists {
+		diffStore.loaded[*node.hash] = &blockUTXODiffData{}
 	}
 
 	diffStore.loaded[*node.hash].diff = diff
@@ -50,9 +53,12 @@ func (diffStore *utxoDiffStore) setBlockDiffChild(node *blockNode, diffChild *bl
 	diffStore.mtx.Lock()
 	defer diffStore.mtx.Unlock()
 	// load the diff data from DB to diffStore.loaded
-	_, err := diffStore.diffDataByHashDisallowNotFound(node.hash)
+	_, exists, err := diffStore.diffDataByHash(node.hash)
 	if err != nil {
 		return err
+	}
+	if !exists {
+		return diffNotFoundError(node)
 	}
 
 	diffStore.loaded[*node.hash].diffChild = diffChild
@@ -79,34 +85,19 @@ func (diffStore *utxoDiffStore) diffDataByHash(hash *daghash.Hash) (*blockUTXODi
 	return diffData, exists, nil
 }
 
-func (diffStore *utxoDiffStore) diffDataByHashAllowNotFound(hash *daghash.Hash) (*blockUTXODiffData, error) {
-	diffData, exists, err := diffStore.diffDataByHash(hash)
-	if err != nil {
-		return nil, err
-	}
-	if !exists {
-		diffStore.loaded[*hash] = &blockUTXODiffData{}
-	}
-	return diffData, nil
-}
-
-func (diffStore *utxoDiffStore) diffDataByHashDisallowNotFound(hash *daghash.Hash) (*blockUTXODiffData, error) {
-	diffData, exists, err := diffStore.diffDataByHash(hash)
-	if err != nil {
-		return nil, err
-	}
-	if !exists {
-		return nil, fmt.Errorf("Couldn't find diff data for block %s", hash)
-	}
-	return diffData, nil
+func diffNotFoundError(node *blockNode) error {
+	return fmt.Errorf("Couldn't find diff data for block %s", node.hash)
 }
 
 func (diffStore *utxoDiffStore) diffByNode(node *blockNode) (*UTXODiff, error) {
 	diffStore.mtx.RLock()
 	defer diffStore.mtx.RUnlock()
-	diffData, err := diffStore.diffDataByHashDisallowNotFound(node.hash)
+	diffData, exists, err := diffStore.diffDataByHash(node.hash)
 	if err != nil {
 		return nil, err
+	}
+	if !exists {
+		return nil, diffNotFoundError(node)
 	}
 	return diffData.diff, nil
 }
@@ -114,9 +105,12 @@ func (diffStore *utxoDiffStore) diffByNode(node *blockNode) (*UTXODiff, error) {
 func (diffStore *utxoDiffStore) diffChildByNode(node *blockNode) (*blockNode, error) {
 	diffStore.mtx.RLock()
 	defer diffStore.mtx.RUnlock()
-	diffData, err := diffStore.diffDataByHashDisallowNotFound(node.hash)
+	diffData, exists, err := diffStore.diffDataByHash(node.hash)
 	if err != nil {
 		return nil, err
+	}
+	if !exists {
+		return nil, diffNotFoundError(node)
 	}
 	return diffData.diffChild, nil
 }
@@ -214,8 +208,11 @@ func deserializeDiffEntries(r io.Reader) (utxoCollection, error) {
 }
 
 // serializeBlockUTXODiffData serializes diff data in the following format:
-// the first byte indicates if the diffData has a diff child, and if it
-// has, its hash will be written after. After that the utxo diff is serialized.
+// 	Name         | Data type | Description
+//	------------ | --------- | -----------
+// 	hasDiffChild | Boolean   | Indicates if a diff child exist
+//  diffChild    | Hash      | The diffChild's hash. Empty if hasDiffChild is true.
+//  diff		 | UTXODiff  | The diff data's diff
 func serializeBlockUTXODiffData(diffData *blockUTXODiffData) ([]byte, error) {
 	w := &bytes.Buffer{}
 	hasDiffChild := diffData.diffChild != nil
