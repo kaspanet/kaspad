@@ -1,6 +1,7 @@
 package blockdag
 
 import (
+	"fmt"
 	"reflect"
 	"testing"
 
@@ -28,14 +29,12 @@ func TestUTXODiffStore(t *testing.T) {
 		return node
 	}
 
-	// Check that a non existing node has no diff in the utxoDiffStore
+	// Check that an error is returned when asking for non existing node
 	nonExistingNode := createNode()
-	nonExistingNodeDiff, err := dag.utxoDiffStore.getBlockDiff(nonExistingNode)
-	if err != nil {
-		t.Fatalf("getDiff: unexpected error: %s", err)
-	}
-	if nonExistingNodeDiff != nil {
-		t.Errorf("getDiff: expected <nil> but got %s", nonExistingNodeDiff)
+	_, err = dag.utxoDiffStore.diffByNode(nonExistingNode)
+	expectedErrString := fmt.Sprintf("Couldn't find diff data for block %s", nonExistingNode.hash)
+	if err == nil || err.Error() != expectedErrString {
+		t.Errorf("diffByNode: expected error %s but got %s", expectedErrString, err)
 	}
 
 	// Add node's diff data to the utxoDiffStore and check if it's checked correctly.
@@ -51,14 +50,14 @@ func TestUTXODiffStore(t *testing.T) {
 		t.Fatalf("setBlockDiffChild: unexpected error: %s", err)
 	}
 
-	if storeDiff, err := dag.utxoDiffStore.getBlockDiff(node); err != nil {
-		t.Fatalf("getBlockDiff: unexpected error: %s", err)
+	if storeDiff, err := dag.utxoDiffStore.diffByNode(node); err != nil {
+		t.Fatalf("diffByNode: unexpected error: %s", err)
 	} else if !reflect.DeepEqual(storeDiff, diff) {
 		t.Errorf("Expected diff and storeDiff to be equal")
 	}
 
-	if storeDiffChild, err := dag.utxoDiffStore.getBlockDiffChild(node); err != nil {
-		t.Fatalf("getBlockDiff: unexpected error: %s", err)
+	if storeDiffChild, err := dag.utxoDiffStore.diffChildByNode(node); err != nil {
+		t.Fatalf("diffByNode: unexpected error: %s", err)
 	} else if !reflect.DeepEqual(storeDiffChild, diffChild) {
 		t.Errorf("Expected diff and storeDiff to be equal")
 	}
@@ -73,8 +72,8 @@ func TestUTXODiffStore(t *testing.T) {
 	}
 	delete(dag.utxoDiffStore.loaded, *node.hash)
 
-	if storeDiff, err := dag.utxoDiffStore.getBlockDiff(node); err != nil {
-		t.Fatalf("getBlockDiff: unexpected error: %s", err)
+	if storeDiff, err := dag.utxoDiffStore.diffByNode(node); err != nil {
+		t.Fatalf("diffByNode: unexpected error: %s", err)
 	} else if !reflect.DeepEqual(storeDiff, diff) {
 		t.Errorf("Expected diff and storeDiff to be equal")
 	}

@@ -941,7 +941,7 @@ func (node *blockNode) restoreUTXO(dag *BlockDAG) (UTXOSet, error) {
 	for current := node; current != nil; {
 		stack = append(stack, current)
 		var err error
-		current, err = dag.utxoDiffStore.getBlockDiffChild(current)
+		current, err = dag.utxoDiffStore.diffChildByNode(current)
 		if err != nil {
 			return nil, err
 		}
@@ -950,7 +950,7 @@ func (node *blockNode) restoreUTXO(dag *BlockDAG) (UTXOSet, error) {
 	utxo := UTXOSet(dag.virtual.utxoSet)
 
 	for i := len(stack) - 1; i >= 0; i-- {
-		diff, err := dag.utxoDiffStore.getBlockDiff(stack[i])
+		diff, err := dag.utxoDiffStore.diffByNode(stack[i])
 		if err != nil {
 			return nil, err
 		}
@@ -983,7 +983,7 @@ func (node *blockNode) updateParentsDiffs(dag *BlockDAG, newBlockUTXO UTXOSet) e
 	}
 
 	for _, parent := range node.parents {
-		diffChild, err := dag.utxoDiffStore.getBlockDiffChild(parent)
+		diffChild, err := dag.utxoDiffStore.diffChildByNode(parent)
 		if err != nil {
 			return err
 		}

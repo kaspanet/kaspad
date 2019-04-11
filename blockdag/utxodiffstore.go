@@ -3,6 +3,7 @@ package blockdag
 import (
 	"bytes"
 	"encoding/binary"
+	"fmt"
 	"io"
 	"sync"
 
@@ -20,7 +21,7 @@ type utxoDiffStore struct {
 	dag    *BlockDAG
 	dirty  map[daghash.Hash]struct{}
 	loaded map[daghash.Hash]*blockUTXODiffData
-	sync.RWMutex
+	mtx    sync.RWMutex
 }
 
 func newUTXODiffStore(dag *BlockDAG) *utxoDiffStore {
@@ -32,10 +33,10 @@ func newUTXODiffStore(dag *BlockDAG) *utxoDiffStore {
 }
 
 func (diffStore *utxoDiffStore) setBlockDiff(node *blockNode, diff *UTXODiff) error {
-	diffStore.Lock()
-	defer diffStore.Unlock()
+	diffStore.mtx.Lock()
+	defer diffStore.mtx.Unlock()
 	// load the diff data from DB to diffStore.loaded
-	_, err := diffStore.get(node.hash)
+	_, err := diffStore.diffDataByHashAllowNotFound(node.hash)
 	if err != nil {
 		return err
 	}
@@ -46,10 +47,10 @@ func (diffStore *utxoDiffStore) setBlockDiff(node *blockNode, diff *UTXODiff) er
 }
 
 func (diffStore *utxoDiffStore) setBlockDiffChild(node *blockNode, diffChild *blockNode) error {
-	diffStore.Lock()
-	defer diffStore.Unlock()
+	diffStore.mtx.Lock()
+	defer diffStore.mtx.Unlock()
 	// load the diff data from DB to diffStore.loaded
-	_, err := diffStore.get(node.hash)
+	_, err := diffStore.diffDataByHashDisallowNotFound(node.hash)
 	if err != nil {
 		return err
 	}
@@ -63,39 +64,64 @@ func (diffStore *utxoDiffStore) setBlockAsDirty(blockHash *daghash.Hash) {
 	diffStore.dirty[*blockHash] = struct{}{}
 }
 
-func (diffStore *utxoDiffStore) get(hash *daghash.Hash) (*blockUTXODiffData, error) {
+func (diffStore *utxoDiffStore) diffDataByHash(hash *daghash.Hash) (*blockUTXODiffData, bool, error) {
 	if diffData, ok := diffStore.loaded[*hash]; ok {
-		return diffData, nil
+		return diffData, true, nil
 	}
-	diffData, err := diffStore.getFromDB(hash)
+	diffData, err := diffStore.diffDataFromDB(hash)
+	if err != nil {
+		return nil, false, err
+	}
+	exists := diffData != nil
+	if exists {
+		diffStore.loaded[*hash] = diffData
+	}
+	return diffData, exists, nil
+}
+
+func (diffStore *utxoDiffStore) diffDataByHashAllowNotFound(hash *daghash.Hash) (*blockUTXODiffData, error) {
+	diffData, exists, err := diffStore.diffDataByHash(hash)
 	if err != nil {
 		return nil, err
 	}
-	diffStore.loaded[*hash] = diffData
+	if !exists {
+		diffStore.loaded[*hash] = &blockUTXODiffData{}
+	}
 	return diffData, nil
 }
 
-func (diffStore *utxoDiffStore) getBlockDiff(node *blockNode) (*UTXODiff, error) {
-	diffStore.RLock()
-	defer diffStore.RUnlock()
-	diffData, err := diffStore.get(node.hash)
+func (diffStore *utxoDiffStore) diffDataByHashDisallowNotFound(hash *daghash.Hash) (*blockUTXODiffData, error) {
+	diffData, exists, err := diffStore.diffDataByHash(hash)
+	if err != nil {
+		return nil, err
+	}
+	if !exists {
+		return nil, fmt.Errorf("Couldn't find diff data for block %s", hash)
+	}
+	return diffData, nil
+}
+
+func (diffStore *utxoDiffStore) diffByNode(node *blockNode) (*UTXODiff, error) {
+	diffStore.mtx.RLock()
+	defer diffStore.mtx.RUnlock()
+	diffData, err := diffStore.diffDataByHashDisallowNotFound(node.hash)
 	if err != nil {
 		return nil, err
 	}
 	return diffData.diff, nil
 }
 
-func (diffStore *utxoDiffStore) getBlockDiffChild(node *blockNode) (*blockNode, error) {
-	diffStore.RLock()
-	defer diffStore.RUnlock()
-	diffData, err := diffStore.get(node.hash)
+func (diffStore *utxoDiffStore) diffChildByNode(node *blockNode) (*blockNode, error) {
+	diffStore.mtx.RLock()
+	defer diffStore.mtx.RUnlock()
+	diffData, err := diffStore.diffDataByHashDisallowNotFound(node.hash)
 	if err != nil {
 		return nil, err
 	}
 	return diffData.diffChild, nil
 }
 
-func (diffStore *utxoDiffStore) getFromDB(hash *daghash.Hash) (*blockUTXODiffData, error) {
+func (diffStore *utxoDiffStore) diffDataFromDB(hash *daghash.Hash) (*blockUTXODiffData, error) {
 	var diffData *blockUTXODiffData
 	err := diffStore.dag.db.View(func(dbTx database.Tx) error {
 		bucket := dbTx.Metadata().Bucket(utxoDiffsBucketName)
@@ -105,7 +131,6 @@ func (diffStore *utxoDiffStore) getFromDB(hash *daghash.Hash) (*blockUTXODiffDat
 			diffData, err = diffStore.deserializeBlockUTXODiffData(serializedBlockDiffData)
 			return err
 		}
-		diffData = &blockUTXODiffData{}
 		return nil
 	})
 	if err != nil {
@@ -133,14 +158,14 @@ func (diffStore *utxoDiffStore) deserializeBlockUTXODiffData(serializedDiffDataB
 		diffData.diffChild = diffStore.dag.index.LookupNode(hash)
 	}
 
-	diffData.diff = NewUTXODiff()
+	diffData.diff = &UTXODiff{}
 
-	err = deserializeDiffEntriesAndAddToUTXOCollection(serializedDiffData, diffData.diff.toAdd)
+	diffData.diff.toAdd, err = deserializeDiffEntries(serializedDiffData)
 	if err != nil {
 		return nil, err
 	}
 
-	err = deserializeDiffEntriesAndAddToUTXOCollection(serializedDiffData, diffData.diff.toRemove)
+	diffData.diff.toRemove, err = deserializeDiffEntries(serializedDiffData)
 	if err != nil {
 		return nil, err
 	}
@@ -148,72 +173,89 @@ func (diffStore *utxoDiffStore) deserializeBlockUTXODiffData(serializedDiffDataB
 	return diffData, nil
 }
 
-func deserializeDiffEntriesAndAddToUTXOCollection(r io.Reader, collection utxoCollection) error {
+func deserializeDiffEntries(r io.Reader) (utxoCollection, error) {
 	count, err := wire.ReadVarInt(r)
 	if err != nil {
-		return err
+		return nil, err
 	}
+	collection := utxoCollection{}
 	for i := uint64(0); i < count; i++ {
 		outPointSize, err := wire.ReadVarInt(r)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		serializedOutPoint := make([]byte, outPointSize)
 		err = binary.Read(r, byteOrder, serializedOutPoint)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		outPoint, err := deserializeOutPoint(serializedOutPoint)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		utxoEntrySize, err := wire.ReadVarInt(r)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		serializedEntry := make([]byte, utxoEntrySize)
 		err = binary.Read(r, byteOrder, serializedEntry)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		utxoEntry, err := deserializeUTXOEntry(serializedEntry)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		collection.add(*outPoint, utxoEntry)
 	}
-	return nil
+	return collection, nil
 }
 
+// serializeBlockUTXODiffData serializes diff data in the following format:
+// the first byte indicates if the diffData has a diff child, and if it
+// has, its hash will be written after. After that the utxo diff is serialized.
 func serializeBlockUTXODiffData(diffData *blockUTXODiffData) ([]byte, error) {
-	serializedDiffData := &bytes.Buffer{}
+	w := &bytes.Buffer{}
 	hasDiffChild := diffData.diffChild != nil
-	err := wire.WriteElement(serializedDiffData, hasDiffChild)
+	err := wire.WriteElement(w, hasDiffChild)
 	if err != nil {
 		return nil, err
 	}
 	if hasDiffChild {
-		err := wire.WriteElement(serializedDiffData, diffData.diffChild.hash)
+		err := wire.WriteElement(w, diffData.diffChild.hash)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	err = serializeUTXOCollection(serializedDiffData, diffData.diff.toAdd)
+	err = serializeUTXODiff(w, diffData.diff)
 	if err != nil {
 		return nil, err
 	}
 
-	err = serializeUTXOCollection(serializedDiffData, diffData.diff.toRemove)
-	if err != nil {
-		return nil, err
-	}
-
-	return serializedDiffData.Bytes(), nil
+	return w.Bytes(), nil
 }
 
+// serializeUTXODiff serializes UTXODiff by serializing
+// UTXODiff.toAdd and UTXODiff.toRemove one after the other.
+func serializeUTXODiff(w io.Writer, diff *UTXODiff) error {
+	err := serializeUTXOCollection(w, diff.toAdd)
+	if err != nil {
+		return err
+	}
+
+	err = serializeUTXOCollection(w, diff.toRemove)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// serializeUTXOCollection serializes utxoCollection by iterating over
+// the utxo entries and serializing them and their corresponding outpoint
+// prefixed by a varint that indicates their size.
 func serializeUTXOCollection(w io.Writer, collection utxoCollection) error {
 	err := wire.WriteVarInt(w, uint64(len(collection)))
 	if err != nil {
@@ -250,8 +292,8 @@ func serializeUTXOCollection(w io.Writer, collection utxoCollection) error {
 // flushToDB writes all dirty diff data to the database. If all writes
 // succeed, this clears the dirty set.
 func (diffStore *utxoDiffStore) flushToDB(dbTx database.Tx) error {
-	diffStore.Lock()
-	defer diffStore.Unlock()
+	diffStore.mtx.Lock()
+	defer diffStore.mtx.Unlock()
 	if len(diffStore.dirty) == 0 {
 		return nil
 	}

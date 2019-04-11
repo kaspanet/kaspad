@@ -55,7 +55,7 @@ var (
 	utxoSetBucketName = []byte("utxoset")
 
 	// utxoDiffsBucketName is the name of the db bucket used to house the
-	// diffs and diffchilind of blocks.
+	// diffs and diff children of blocks.
 	utxoDiffsBucketName = []byte("utxodiffs")
 
 	// subnetworksBucketName is the name of the db bucket used to store the
