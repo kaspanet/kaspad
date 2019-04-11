@@ -64,20 +64,20 @@ func (msg *MsgAddr) ClearAddresses() {
 func (msg *MsgAddr) BtcDecode(r io.Reader, pver uint32) error {
 	msg.SubnetworkID = nil
 
-	err := readElement(r, &msg.IncludeAllSubnetworks)
+	err := ReadElement(r, &msg.IncludeAllSubnetworks)
 	if err != nil {
 		return err
 	}
 
 	if !msg.IncludeAllSubnetworks {
 		var isFullNode bool
-		err := readElement(r, &isFullNode)
+		err := ReadElement(r, &isFullNode)
 		if err != nil {
 			return err
 		}
 		if !isFullNode {
 			var subnetworkID subnetworkid.SubnetworkID
-			err = readElement(r, &subnetworkID)
+			err = ReadElement(r, &subnetworkID)
 			if err != nil {
 				return err
 			}
@@ -86,7 +86,7 @@ func (msg *MsgAddr) BtcDecode(r io.Reader, pver uint32) error {
 	}
 
 	// Read addresses array
-	count, err := ReadVarInt(r, pver)
+	count, err := ReadVarInt(r)
 	if err != nil {
 		return err
 	}
@@ -121,7 +121,7 @@ func (msg *MsgAddr) BtcEncode(w io.Writer, pver uint32) error {
 		return messageError("MsgAddr.BtcEncode", str)
 	}
 
-	err := writeElement(w, msg.IncludeAllSubnetworks)
+	err := WriteElement(w, msg.IncludeAllSubnetworks)
 	if err != nil {
 		return err
 	}
@@ -129,19 +129,19 @@ func (msg *MsgAddr) BtcEncode(w io.Writer, pver uint32) error {
 	if !msg.IncludeAllSubnetworks {
 		// Write subnetwork ID
 		isFullNode := msg.SubnetworkID == nil
-		err = writeElement(w, isFullNode)
+		err = WriteElement(w, isFullNode)
 		if err != nil {
 			return err
 		}
 		if !isFullNode {
-			err = writeElement(w, msg.SubnetworkID)
+			err = WriteElement(w, msg.SubnetworkID)
 			if err != nil {
 				return err
 			}
 		}
 	}
 
-	err = WriteVarInt(w, pver, uint64(count))
+	err = WriteVarInt(w, uint64(count))
 	if err != nil {
 		return err
 	}

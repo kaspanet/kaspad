@@ -48,13 +48,13 @@ func (msg *MsgMerkleBlock) BtcDecode(r io.Reader, pver uint32) error {
 		return err
 	}
 
-	err = readElement(r, &msg.Transactions)
+	err = ReadElement(r, &msg.Transactions)
 	if err != nil {
 		return err
 	}
 
 	// Read num block locator hashes and limit to max.
-	count, err := ReadVarInt(r, pver)
+	count, err := ReadVarInt(r)
 	if err != nil {
 		return err
 	}
@@ -70,7 +70,7 @@ func (msg *MsgMerkleBlock) BtcDecode(r io.Reader, pver uint32) error {
 	msg.Hashes = make([]*daghash.Hash, 0, count)
 	for i := uint64(0); i < count; i++ {
 		hash := &daghash.Hash{}
-		err := readElement(r, hash)
+		err := ReadElement(r, hash)
 		if err != nil {
 			return err
 		}
@@ -105,17 +105,17 @@ func (msg *MsgMerkleBlock) BtcEncode(w io.Writer, pver uint32) error {
 		return err
 	}
 
-	err = writeElement(w, msg.Transactions)
+	err = WriteElement(w, msg.Transactions)
 	if err != nil {
 		return err
 	}
 
-	err = WriteVarInt(w, pver, uint64(numHashes))
+	err = WriteVarInt(w, uint64(numHashes))
 	if err != nil {
 		return err
 	}
 	for _, hash := range msg.Hashes {
-		err = writeElement(w, hash)
+		err = WriteElement(w, hash)
 		if err != nil {
 			return err
 		}

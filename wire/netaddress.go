@@ -83,7 +83,7 @@ func readNetAddress(r io.Reader, pver uint32, na *NetAddress, ts bool) error {
 	var ip [16]byte
 
 	if ts {
-		err := readElement(r, (*int64Time)(&na.Timestamp))
+		err := ReadElement(r, (*int64Time)(&na.Timestamp))
 		if err != nil {
 			return err
 		}
@@ -113,7 +113,7 @@ func readNetAddress(r io.Reader, pver uint32, na *NetAddress, ts bool) error {
 // like version do not include the timestamp.
 func writeNetAddress(w io.Writer, pver uint32, na *NetAddress, ts bool) error {
 	if ts {
-		err := writeElement(w, int64(na.Timestamp.Unix()))
+		err := WriteElement(w, int64(na.Timestamp.Unix()))
 		if err != nil {
 			return err
 		}

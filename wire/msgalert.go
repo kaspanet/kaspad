@@ -161,12 +161,12 @@ func (alert *Alert) Serialize(w io.Writer, pver uint32) error {
 			"[count %d, max %d]", count, maxCountSetCancel)
 		return messageError("Alert.Serialize", str)
 	}
-	err = WriteVarInt(w, pver, uint64(count))
+	err = WriteVarInt(w, uint64(count))
 	if err != nil {
 		return err
 	}
 	for i := 0; i < count; i++ {
-		err = writeElement(w, alert.SetCancel[i])
+		err = WriteElement(w, alert.SetCancel[i])
 		if err != nil {
 			return err
 		}
@@ -183,30 +183,30 @@ func (alert *Alert) Serialize(w io.Writer, pver uint32) error {
 			"[count %d, max %d]", count, maxCountSetSubVer)
 		return messageError("Alert.Serialize", str)
 	}
-	err = WriteVarInt(w, pver, uint64(count))
+	err = WriteVarInt(w, uint64(count))
 	if err != nil {
 		return err
 	}
 	for i := 0; i < count; i++ {
-		err = WriteVarString(w, pver, alert.SetSubVer[i])
+		err = WriteVarString(w, alert.SetSubVer[i])
 		if err != nil {
 			return err
 		}
 	}
 
-	err = writeElement(w, alert.Priority)
+	err = WriteElement(w, alert.Priority)
 	if err != nil {
 		return err
 	}
-	err = WriteVarString(w, pver, alert.Comment)
+	err = WriteVarString(w, alert.Comment)
 	if err != nil {
 		return err
 	}
-	err = WriteVarString(w, pver, alert.StatusBar)
+	err = WriteVarString(w, alert.StatusBar)
 	if err != nil {
 		return err
 	}
-	return WriteVarString(w, pver, alert.Reserved)
+	return WriteVarString(w, alert.Reserved)
 }
 
 // Deserialize decodes from r into the receiver using the alert protocol
@@ -221,7 +221,7 @@ func (alert *Alert) Deserialize(r io.Reader, pver uint32) error {
 	// SetCancel: first read a VarInt that contains
 	// count - the number of Cancel IDs, then
 	// iterate count times and read them
-	count, err := ReadVarInt(r, pver)
+	count, err := ReadVarInt(r)
 	if err != nil {
 		return err
 	}
@@ -232,7 +232,7 @@ func (alert *Alert) Deserialize(r io.Reader, pver uint32) error {
 	}
 	alert.SetCancel = make([]int32, count)
 	for i := 0; i < int(count); i++ {
-		err := readElement(r, &alert.SetCancel[i])
+		err := ReadElement(r, &alert.SetCancel[i])
 		if err != nil {
 			return err
 		}
@@ -245,7 +245,7 @@ func (alert *Alert) Deserialize(r io.Reader, pver uint32) error {
 
 	// SetSubVer: similar to SetCancel
 	// but read count number of sub-version strings
-	count, err = ReadVarInt(r, pver)
+	count, err = ReadVarInt(r)
 	if err != nil {
 		return err
 	}
@@ -262,7 +262,7 @@ func (alert *Alert) Deserialize(r io.Reader, pver uint32) error {
 		}
 	}
 
-	err = readElement(r, &alert.Priority)
+	err = ReadElement(r, &alert.Priority)
 	if err != nil {
 		return err
 	}

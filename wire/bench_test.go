@@ -62,7 +62,7 @@ var genesisCoinbaseTx = NewNativeMsgTx(1, genesisCoinbaseTxIns, genesisCoinbaseT
 // a single byte variable length integer.
 func BenchmarkWriteVarInt1(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		WriteVarInt(ioutil.Discard, 0, 1)
+		WriteVarInt(ioutil.Discard, 1)
 	}
 }
 
@@ -70,7 +70,7 @@ func BenchmarkWriteVarInt1(b *testing.B) {
 // a three byte variable length integer.
 func BenchmarkWriteVarInt3(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		WriteVarInt(ioutil.Discard, 0, 65535)
+		WriteVarInt(ioutil.Discard, 65535)
 	}
 }
 
@@ -78,7 +78,7 @@ func BenchmarkWriteVarInt3(b *testing.B) {
 // a five byte variable length integer.
 func BenchmarkWriteVarInt5(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		WriteVarInt(ioutil.Discard, 0, 4294967295)
+		WriteVarInt(ioutil.Discard, 4294967295)
 	}
 }
 
@@ -86,7 +86,7 @@ func BenchmarkWriteVarInt5(b *testing.B) {
 // a nine byte variable length integer.
 func BenchmarkWriteVarInt9(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		WriteVarInt(ioutil.Discard, 0, 18446744073709551615)
+		WriteVarInt(ioutil.Discard, 18446744073709551615)
 	}
 }
 
@@ -97,7 +97,7 @@ func BenchmarkReadVarInt1(b *testing.B) {
 	r := bytes.NewReader(buf)
 	for i := 0; i < b.N; i++ {
 		r.Seek(0, 0)
-		ReadVarInt(r, 0)
+		ReadVarInt(r)
 	}
 }
 
@@ -108,7 +108,7 @@ func BenchmarkReadVarInt3(b *testing.B) {
 	r := bytes.NewReader(buf)
 	for i := 0; i < b.N; i++ {
 		r.Seek(0, 0)
-		ReadVarInt(r, 0)
+		ReadVarInt(r)
 	}
 }
 
@@ -119,7 +119,7 @@ func BenchmarkReadVarInt5(b *testing.B) {
 	r := bytes.NewReader(buf)
 	for i := 0; i < b.N; i++ {
 		r.Seek(0, 0)
-		ReadVarInt(r, 0)
+		ReadVarInt(r)
 	}
 }
 
@@ -130,7 +130,7 @@ func BenchmarkReadVarInt9(b *testing.B) {
 	r := bytes.NewReader(buf)
 	for i := 0; i < b.N; i++ {
 		r.Seek(0, 0)
-		ReadVarInt(r, 0)
+		ReadVarInt(r)
 	}
 }
 
@@ -160,7 +160,7 @@ func BenchmarkReadVarStr10(b *testing.B) {
 // four byte variable length string.
 func BenchmarkWriteVarStr4(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		WriteVarString(ioutil.Discard, 0, "test")
+		WriteVarString(ioutil.Discard, "test")
 	}
 }
 
@@ -168,7 +168,7 @@ func BenchmarkWriteVarStr4(b *testing.B) {
 // ten byte variable length string.
 func BenchmarkWriteVarStr10(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		WriteVarString(ioutil.Discard, 0, "test012345")
+		WriteVarString(ioutil.Discard, "test012345")
 	}
 }
 
