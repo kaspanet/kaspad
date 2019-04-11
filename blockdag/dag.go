@@ -672,24 +672,24 @@ func (dag *BlockDAG) checkFinalityRules(newNode *blockNode) error {
 	return nil
 }
 
-// newFinalityPoint return the (potentially) new finality point after the the introduction of a new block
-func (dag *BlockDAG) newFinalityPoint(newNode *blockNode) *blockNode {
+// newFinalityPoint return the (potentially) new finality point after the introduction of a new block
+func (dag *BlockDAG) newFinalityPoint() *blockNode {
+	selectedTip := dag.selectedTip()
 	// if the new node is the genesis block - it should be the new finality point
-	if newNode.isGenesis() {
-		return newNode
+	if selectedTip.isGenesis() {
+		return selectedTip
 	}
 
 	// We are looking for a new finality point only if the new block's finality score is higher
-	// than the existing finality point's
-	if newNode.finalityScore() <= dag.lastFinalityPoint.finalityScore() {
+	// by 2 than the existing finality point's
+	if selectedTip.finalityScore() < dag.lastFinalityPoint.finalityScore()+2 {
 		return dag.lastFinalityPoint
 	}
 
 	var currentNode *blockNode
-	for currentNode = newNode.selectedParent; ; currentNode = currentNode.selectedParent {
-		// If current node's finality score is higher than it's selectedParent's -
-		// current node is the new finalityPoint
-		if currentNode.isGenesis() || currentNode.finalityScore() > currentNode.selectedParent.finalityScore() {
+	for currentNode = selectedTip.selectedParent; ; currentNode = currentNode.selectedParent {
+		// We look for the first node in the selected parent chain that has a higher finality score than the last finality point.
+		if currentNode.selectedParent.finalityScore() == dag.lastFinalityPoint.finalityScore() {
 			break
 		}
 	}
@@ -763,7 +763,7 @@ func (dag *BlockDAG) applyDAGChanges(node *blockNode, block *util.Block, newBloc
 	dag.index.SetStatusFlags(node, statusValid)
 
 	// And now we can update the finality point of the DAG (if required)
-	dag.lastFinalityPoint = dag.newFinalityPoint(node)
+	dag.lastFinalityPoint = dag.newFinalityPoint()
 
 	return virtualUTXODiff, nil
 }
