@@ -676,7 +676,7 @@ func (dag *BlockDAG) checkFinalityRules(newNode *blockNode) error {
 func (dag *BlockDAG) updateFinalityPoint() {
 	selectedTip := dag.selectedTip()
 	var newFinalityPoint *blockNode
-	// if the new node is the genesis block - it should be the new finality point
+	// if the selected tip is the genesis block - it should be the new finality point
 	if selectedTip.isGenesis() {
 		newFinalityPoint = selectedTip
 	} else {
