@@ -343,10 +343,11 @@ type FutureGetBlockTemplateResult chan *response
 // the returned instance.
 //
 // See GetBlockTemplate for the blocking version and more details
-func (c *Client) GetBlockTemplateAsync(capabilities []string) FutureGetBlockTemplateResult {
+func (c *Client) GetBlockTemplateAsync(capabilities []string, longPollID string) FutureGetBlockTemplateResult {
 	request := &btcjson.TemplateRequest{
 		Mode:         "template",
 		Capabilities: capabilities,
+		LongPollID:   longPollID,
 	}
 	cmd := btcjson.NewGetBlockTemplateCmd(request)
 	return c.sendCmd(cmd)
@@ -368,6 +369,6 @@ func (r FutureGetBlockTemplateResult) Receive() (*btcjson.GetBlockTemplateResult
 }
 
 // GetBlockTemplate request a block template from the server, to mine upon
-func (c *Client) GetBlockTemplate(capabilities []string) (*btcjson.GetBlockTemplateResult, error) {
-	return c.GetBlockTemplateAsync(capabilities).Receive()
+func (c *Client) GetBlockTemplate(capabilities []string, longPollID string) (*btcjson.GetBlockTemplateResult, error) {
+	return c.GetBlockTemplateAsync(capabilities, longPollID).Receive()
 }

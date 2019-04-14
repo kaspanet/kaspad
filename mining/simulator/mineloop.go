@@ -7,7 +7,6 @@ import (
 	"math/rand"
 	"strconv"
 	"strings"
-	"sync/atomic"
 	"time"
 
 	"github.com/daglabs/btcd/blockdag"
@@ -53,55 +52,118 @@ func parseBlock(template *btcjson.GetBlockTemplateResult) (*util.Block, error) {
 	return util.NewBlock(msgBlock), nil
 }
 
-func solveBlock(msgBlock *wire.MsgBlock) {
+func solveBlock(block *util.Block, stopChan chan struct{}, foundBlock chan *util.Block) {
+	msgBlock := block.MsgBlock()
 	maxNonce := ^uint64(0) // 2^64 - 1
 	targetDifficulty := util.CompactToBig(msgBlock.Header.Bits)
 	for i := uint64(0); i < maxNonce; i++ {
-		msgBlock.Header.Nonce = i
-		hash := msgBlock.BlockHash()
-		if daghash.HashToBig(hash).Cmp(targetDifficulty) <= 0 {
-			break
+		select {
+		case <-stopChan:
+			return
+		default:
+			msgBlock.Header.Nonce = i
+			hash := msgBlock.BlockHash()
+			if daghash.HashToBig(hash).Cmp(targetDifficulty) <= 0 {
+				foundBlock <- block
+				return
+			}
 		}
 	}
 
 }
 
+func getBlockTemplate(client *rpcclient.Client, longPollID string) (*btcjson.GetBlockTemplateResult, error) {
+	return client.GetBlockTemplate([]string{"coinbasetxn"}, longPollID)
+}
+
 func mineLoop(clients []*rpcclient.Client) error {
 	clientsCount := int64(len(clients))
 
-	for atomic.LoadInt32(&isRunning) == 1 {
-		var currentClient *rpcclient.Client
-		if clientsCount == 1 {
-			currentClient = clients[0]
-		} else {
-			currentClient = clients[random.Int63n(clientsCount)]
-		}
-		log.Printf("Next block will be mined by: %s", currentClient.Host())
+	foundBlock := make(chan *util.Block)
+	templateChanged := make(chan struct{}, 1)
+	errChan := make(chan error, 1)
 
-		template, err := currentClient.GetBlockTemplate([]string{"coinbasetxn"})
-		if err != nil {
-			return fmt.Errorf("Error getting block template: %s", err)
-		}
+	var template *btcjson.GetBlockTemplateResult
 
-		block, err := parseBlock(template)
-		if err != nil {
-			return fmt.Errorf("Error parsing block: %s", err)
-		}
-
-		msgBlock := block.MsgBlock()
-
-		msgBlock.Header.HashMerkleRoot = blockdag.BuildHashMerkleTreeStore(block.Transactions()).Root()
-		msgBlock.Header.IDMerkleRoot = blockdag.BuildIDMerkleTreeStore(block.Transactions()).Root()
-
-		solveBlock(msgBlock)
-
-		log.Printf("Found block %s! Submitting", block.Hash())
-
-		err = currentClient.SubmitBlock(block, &btcjson.SubmitBlockOptions{})
-		if err != nil {
-			return fmt.Errorf("Error submitting block: %s", err)
-		}
+	setTemplate := func(newTemplate *btcjson.GetBlockTemplateResult) {
+		template = newTemplate
+		templateChanged <- struct{}{}
 	}
 
-	return nil
+	currentClient := clients[0]
+	log.Printf("Next block will be mined by: %s", currentClient.Host())
+
+	initTemplate, err := getBlockTemplate(currentClient, "")
+	if err != nil {
+		return fmt.Errorf("Error getting block template: %s", err)
+	}
+	setTemplate(initTemplate)
+
+	go func() {
+		for block := range foundBlock {
+			log.Printf("Found block %s! Submitting to %s", block.Hash(), currentClient.Host())
+
+			err := currentClient.SubmitBlock(block, &btcjson.SubmitBlockOptions{})
+			if err != nil {
+				errChan <- fmt.Errorf("Error submitting block: %s", err)
+				return
+			}
+
+			if clientsCount == 1 {
+				currentClient = clients[0]
+			} else {
+				currentClient = clients[random.Int63n(clientsCount)]
+			}
+
+			template, err := getBlockTemplate(currentClient, "")
+			if err != nil {
+				errChan <- fmt.Errorf("Error getting block template: %s", err)
+				return
+			}
+			setTemplate(template)
+		}
+	}()
+
+	go func() {
+		for {
+			longPollID := template.LongPollID
+			client := currentClient
+			longPolledTemplate, err := getBlockTemplate(currentClient, template.LongPollID)
+			if err != nil {
+				errChan <- fmt.Errorf("Error getting block template: %s", err)
+				return
+			}
+			if longPollID == template.LongPollID && client == currentClient && longPolledTemplate.LongPollID != longPollID {
+				log.Printf("Got new long poll template: %s", longPolledTemplate.LongPollID)
+				setTemplate(longPolledTemplate)
+			}
+		}
+	}()
+
+	go func() {
+		var stopOldTemplateSolving chan struct{}
+		for range templateChanged {
+			if stopOldTemplateSolving != nil {
+				stopOldTemplateSolving <- struct{}{}
+				close(stopOldTemplateSolving)
+			}
+			stopOldTemplateSolving = make(chan struct{}, 1)
+			block, err := parseBlock(template)
+			if err != nil {
+				errChan <- fmt.Errorf("Error parsing block: %s", err)
+				return
+			}
+
+			msgBlock := block.MsgBlock()
+
+			msgBlock.Header.HashMerkleRoot = blockdag.BuildHashMerkleTreeStore(block.Transactions()).Root()
+			msgBlock.Header.IDMerkleRoot = blockdag.BuildIDMerkleTreeStore(block.Transactions()).Root()
+
+			go solveBlock(block, stopOldTemplateSolving, foundBlock)
+		}
+	}()
+
+	err = <-errChan
+
+	return err
 }

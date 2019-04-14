@@ -5,12 +5,9 @@ import (
 	"log"
 	"os"
 	"runtime/debug"
-	"sync/atomic"
 
 	"github.com/daglabs/btcd/rpcclient"
 )
-
-var isRunning int32
 
 func main() {
 	defer handlePanic()
@@ -31,8 +28,6 @@ func main() {
 		panic(fmt.Errorf("Error connecting to servers: %s", err))
 	}
 	defer disconnect(clients)
-
-	atomic.StoreInt32(&isRunning, 1)
 
 	err = mineLoop(clients)
 	if err != nil {
