@@ -263,13 +263,7 @@ func txLoop(clients []*rpcclient.Client) error {
 	}
 
 	for atomic.LoadInt32(&isRunning) == 1 {
-		var currentClient *rpcclient.Client
-		if clientsCount == 1 {
-			currentClient = clients[0]
-		} else {
-			currentClient = clients[random.Int63n(clientsCount)]
-		}
-		err := populateUtxos(currentClient)
+		err := populateUtxos(clients[0])
 		if err != nil {
 			return err
 		}
@@ -295,8 +289,9 @@ func txLoop(clients []*rpcclient.Client) error {
 
 			log.Printf("Created transaction: amount %d, fees %d", amount, fees)
 
-			funds -= amount + fees
+			funds = utxosFunds()
 
+			var currentClient *rpcclient.Client
 			if clientsCount == 1 {
 				currentClient = clients[0]
 			} else {

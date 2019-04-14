@@ -14,7 +14,7 @@ RUN dep ensure -v -vendor-only
 
 COPY . .
 
-RUN cd mining/simulator && CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o mining_simulator .
+RUN cd cmd/txgen && CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o txgen .
 
 # --- multistage docker build: stage #2: runtime image
 FROM alpine
@@ -22,8 +22,8 @@ WORKDIR /app
 
 RUN apk add --no-cache tini
 
-COPY --from=build /go/src/github.com/daglabs/btcd/mining/simulator/mining_simulator /app/
+COPY --from=build /go/src/github.com/daglabs/btcd/cmd/txgen/txgen /app/
 
 ENTRYPOINT ["/sbin/tini", "--"]
 
-CMD ["/app/mining_simulator"]
+CMD ["/app/txgen"]
