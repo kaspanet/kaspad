@@ -5,8 +5,6 @@ import (
 	"log"
 	"os"
 	"runtime/debug"
-
-	"github.com/daglabs/btcd/rpcclient"
 )
 
 func main() {
@@ -35,7 +33,7 @@ func main() {
 	}
 }
 
-func disconnect(clients []*rpcclient.Client) {
+func disconnect(clients []*simulatorClient) {
 	for _, client := range clients {
 		client.Disconnect()
 	}
