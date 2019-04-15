@@ -92,8 +92,9 @@ func creep() {
 			peers = amgr.Addresses()
 		}
 		if len(peers) == 0 {
-			log.Printf("No stale addresses -- sleeping for 10 minutes")
-			for i := 0; i < 600; i++ {
+			creepIntervalInSeconds := int(amgr.creepInterval().Seconds())
+			log.Printf("No stale addresses -- sleeping for %d seconds", creepIntervalInSeconds)
+			for i := 0; i < creepIntervalInSeconds; i++ {
 				time.Sleep(time.Second)
 				if atomic.LoadInt32(&systemShutdown) != 0 {
 					log.Printf("Creep thread shutdown")
