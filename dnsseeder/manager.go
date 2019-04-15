@@ -45,6 +45,10 @@ const (
 	// stale.
 	defaultStaleTimeout = time.Hour
 
+	// smallNetworkStaleTimeout is the time in which a host is considered
+	// stale if the network is small.
+	smallNetworkStaleTimeout = time.Second * 30
+
 	// dumpAddressInterval is the interval used to dump the address
 	// cache to disk for future use.
 	dumpAddressInterval = time.Second * 30
@@ -59,6 +63,18 @@ const (
 	// pruneExpireTimeout is the expire time in which a node is
 	// considered dead.
 	pruneExpireTimeout = time.Hour * 8
+
+	// defaultCreepInterval is the interval between creep runs.
+	defaultCreepInterval = time.Minute * 10
+
+	// defaultCreepInterval is the interval between creep runs if the
+	// network is small.
+	smallNetworkCreepInterval = time.Second * 30
+
+	// smallNetworkNodeAmount is amount of nodes under which a network
+	// is considered small. A small network has shorter timeouts and
+	// intervals to encourage faster network growth.
+	smallNetworkNodeAmount = 50
 )
 
 var (
@@ -181,8 +197,8 @@ func (m *Manager) Addresses() []*wire.NetAddress {
 		if i == 0 {
 			break
 		}
-		if now.Sub(node.LastSuccess) < defaultStaleTimeout ||
-			now.Sub(node.LastAttempt) < defaultStaleTimeout {
+		if now.Sub(node.LastSuccess) < m.staleTimeout() ||
+			now.Sub(node.LastAttempt) < m.staleTimeout() {
 			continue
 		}
 		addrs = append(addrs, node.Addr)
@@ -196,6 +212,22 @@ func (m *Manager) Addresses() []*wire.NetAddress {
 // AddressCount returns number of known nodes.
 func (m *Manager) AddressCount() int {
 	return len(m.nodes)
+}
+
+func (m *Manager) staleTimeout() time.Duration {
+	if m.AddressCount() < smallNetworkNodeAmount {
+		return smallNetworkStaleTimeout
+	}
+
+	return defaultStaleTimeout
+}
+
+func (m *Manager) creepInterval() time.Duration {
+	if m.AddressCount() < smallNetworkNodeAmount {
+		return smallNetworkCreepInterval
+	}
+
+	return defaultCreepInterval
 }
 
 // GoodAddresses returns good working IPs that match both the
@@ -230,7 +262,7 @@ func (m *Manager) GoodAddresses(qtype uint16, services wire.ServiceFlag, include
 		}
 
 		if node.LastSuccess.IsZero() ||
-			now.Sub(node.LastSuccess) > defaultStaleTimeout {
+			now.Sub(node.LastSuccess) > m.staleTimeout() {
 			continue
 		}
 
