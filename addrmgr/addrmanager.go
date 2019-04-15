@@ -160,6 +160,10 @@ const (
 	// will consider evicting an address.
 	minBadDays = 7
 
+	// getAddrMin is the least addresses that we will send in response
+	// to a getAddr. If we have less than this amount, we send everything.
+	getAddrMin = 50
+
 	// getAddrMax is the most addresses that we will send in response
 	// to a getAddr (in practise the most addresses we will return from a
 	// call to AddressCache()).
@@ -843,6 +847,9 @@ func (a *AddrManager) AddressCache(includeAllSubnetworks bool, subnetworkID *sub
 	numAddresses := len(allAddr) * getAddrPercent / 100
 	if numAddresses > getAddrMax {
 		numAddresses = getAddrMax
+	}
+	if numAddresses < getAddrMin {
+		numAddresses = len(allAddr)
 	}
 
 	// Fisher-Yates shuffle the array. We only need to do the first
