@@ -848,8 +848,11 @@ func (a *AddrManager) AddressCache(includeAllSubnetworks bool, subnetworkID *sub
 	if numAddresses > getAddrMax {
 		numAddresses = getAddrMax
 	}
-	if numAddresses < getAddrMin {
+	if len(allAddr) < getAddrMin {
 		numAddresses = len(allAddr)
+	}
+	if len(allAddr) > getAddrMin && numAddresses < getAddrMin {
+		numAddresses = getAddrMin
 	}
 
 	// Fisher-Yates shuffle the array. We only need to do the first
