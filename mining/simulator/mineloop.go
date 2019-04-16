@@ -126,6 +126,23 @@ func solveLoop(newTemplateChan chan *btcjson.GetBlockTemplateResult, foundBlock 
 	}
 }
 
+func mineNextBlock(client *simulatorClient, foundBlock chan *util.Block, templateStopChan chan struct{}, errChan chan error) {
+	newTemplateChan := make(chan *btcjson.GetBlockTemplateResult)
+	go templatesLoop(client, newTemplateChan, errChan, templateStopChan)
+	go solveLoop(newTemplateChan, foundBlock, errChan)
+}
+
+func onBlockFound(client *simulatorClient, block *util.Block, templateStopChan chan struct{}) error {
+	templateStopChan <- struct{}{}
+	log.Printf("Found block %s! Submitting to %s", block.Hash(), client.Host())
+
+	err := client.SubmitBlock(block, &btcjson.SubmitBlockOptions{})
+	if err != nil {
+		return fmt.Errorf("Error submitting block: %s", err)
+	}
+	return nil
+}
+
 func mineLoop(clients []*simulatorClient) error {
 	clientsCount := int64(len(clients))
 
@@ -135,32 +152,26 @@ func mineLoop(clients []*simulatorClient) error {
 	templateStopChan := make(chan struct{})
 
 	var currentClient *simulatorClient
-	onMinerSwitch := func(block *util.Block) {
-		if block != nil {
-			templateStopChan <- struct{}{}
-			log.Printf("Found block %s! Submitting to %s", block.Hash(), currentClient.Host())
-
-			err := currentClient.SubmitBlock(block, &btcjson.SubmitBlockOptions{})
-			if err != nil {
-				errChan <- fmt.Errorf("Error submitting block: %s", err)
-				return
-			}
-		}
+	chooseClient := func() {
 		if clientsCount == 1 {
 			currentClient = clients[0]
 		} else {
 			currentClient = clients[random.Int63n(clientsCount)]
 		}
 		log.Printf("Next block will be mined by: %s", currentClient.Host())
-		newTemplateChan := make(chan *btcjson.GetBlockTemplateResult)
-		go templatesLoop(currentClient, newTemplateChan, errChan, templateStopChan)
-		go solveLoop(newTemplateChan, foundBlock, errChan)
 	}
 
 	go func() {
-		onMinerSwitch(nil)
+		chooseClient()
+		mineNextBlock(currentClient, foundBlock, templateStopChan, errChan)
 		for block := range foundBlock {
-			onMinerSwitch(block)
+			err := onBlockFound(currentClient, block, templateStopChan)
+			if err != nil {
+				errChan <- err
+				return
+			}
+			chooseClient()
+			mineNextBlock(currentClient, foundBlock, templateStopChan, errChan)
 		}
 	}()
 
