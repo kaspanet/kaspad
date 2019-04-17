@@ -845,7 +845,6 @@ func (c *Client) sendPost(jReq *jsonRequest) {
 func (c *Client) sendRequest(data *jsonRequestData) chan *response {
 	jReq := &jsonRequest{
 		jsonRequestData: data,
-		responseChan:    make(chan *response, 1),
 	}
 	responseChan := make(chan *response, 1)
 	cancelOnTimeout := c.config.RequestTimeout != 0 && !c.config.HTTPPostMode
