@@ -107,10 +107,9 @@ func solveLoop(newTemplateChan chan *btcjson.GetBlockTemplateResult, foundBlock 
 	var stopOldTemplateSolving chan struct{}
 	for template := range newTemplateChan {
 		if stopOldTemplateSolving != nil {
-			stopOldTemplateSolving <- struct{}{}
 			close(stopOldTemplateSolving)
 		}
-		stopOldTemplateSolving = make(chan struct{}, 1)
+		stopOldTemplateSolving = make(chan struct{})
 		block, err := parseBlock(template)
 		if err != nil {
 			errChan <- fmt.Errorf("Error parsing block: %s", err)
@@ -132,7 +131,7 @@ func mineNextBlock(client *simulatorClient, foundBlock chan *util.Block, templat
 	go solveLoop(newTemplateChan, foundBlock, errChan)
 }
 
-func onBlockFound(client *simulatorClient, block *util.Block, templateStopChan chan struct{}) error {
+func handleFoundBlock(client *simulatorClient, block *util.Block, templateStopChan chan struct{}) error {
 	templateStopChan <- struct{}{}
 	log.Printf("Found block %s! Submitting to %s", block.Hash(), client.Host())
 
@@ -158,18 +157,20 @@ func mineLoop(clients []*simulatorClient) error {
 	templateStopChan := make(chan struct{})
 
 	go func() {
-		currentClient := getRandomClient(clients)
-		log.Printf("Next block will be mined by: %s", currentClient.Host())
-		mineNextBlock(currentClient, foundBlock, templateStopChan, errChan)
-		for block := range foundBlock {
-			err := onBlockFound(currentClient, block, templateStopChan)
+		for {
+			currentClient := getRandomClient(clients)
+			log.Printf("Next block will be mined by: %s", currentClient.Host())
+			mineNextBlock(currentClient, foundBlock, templateStopChan, errChan)
+			block, ok := <-foundBlock
+			if !ok {
+				errChan <- nil
+				return
+			}
+			err := handleFoundBlock(currentClient, block, templateStopChan)
 			if err != nil {
 				errChan <- err
 				return
 			}
-			currentClient := getRandomClient(clients)
-			log.Printf("Next block will be mined by: %s", currentClient.Host())
-			mineNextBlock(currentClient, foundBlock, templateStopChan, errChan)
 		}
 	}()
 
