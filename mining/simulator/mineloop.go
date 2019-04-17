@@ -143,26 +143,23 @@ func onBlockFound(client *simulatorClient, block *util.Block, templateStopChan c
 	return nil
 }
 
-func mineLoop(clients []*simulatorClient) error {
+func getRandomClient(clients []*simulatorClient) *simulatorClient {
 	clientsCount := int64(len(clients))
+	if clientsCount == 1 {
+		return clients[0]
+	}
+	return clients[random.Int63n(clientsCount)]
+}
 
+func mineLoop(clients []*simulatorClient) error {
 	foundBlock := make(chan *util.Block)
 	errChan := make(chan error)
 
 	templateStopChan := make(chan struct{})
 
-	var currentClient *simulatorClient
-	chooseClient := func() {
-		if clientsCount == 1 {
-			currentClient = clients[0]
-		} else {
-			currentClient = clients[random.Int63n(clientsCount)]
-		}
-		log.Printf("Next block will be mined by: %s", currentClient.Host())
-	}
-
 	go func() {
-		chooseClient()
+		currentClient := getRandomClient(clients)
+		log.Printf("Next block will be mined by: %s", currentClient.Host())
 		mineNextBlock(currentClient, foundBlock, templateStopChan, errChan)
 		for block := range foundBlock {
 			err := onBlockFound(currentClient, block, templateStopChan)
@@ -170,7 +167,8 @@ func mineLoop(clients []*simulatorClient) error {
 				errChan <- err
 				return
 			}
-			chooseClient()
+			currentClient := getRandomClient(clients)
+			log.Printf("Next block will be mined by: %s", currentClient.Host())
 			mineNextBlock(currentClient, foundBlock, templateStopChan, errChan)
 		}
 	}()
