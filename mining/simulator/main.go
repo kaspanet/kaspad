@@ -5,12 +5,7 @@ import (
 	"log"
 	"os"
 	"runtime/debug"
-	"sync/atomic"
-
-	"github.com/daglabs/btcd/rpcclient"
 )
-
-var isRunning int32
 
 func main() {
 	defer handlePanic()
@@ -32,15 +27,13 @@ func main() {
 	}
 	defer disconnect(clients)
 
-	atomic.StoreInt32(&isRunning, 1)
-
 	err = mineLoop(clients)
 	if err != nil {
 		panic(fmt.Errorf("Error in main loop: %s", err))
 	}
 }
 
-func disconnect(clients []*rpcclient.Client) {
+func disconnect(clients []*simulatorClient) {
 	for _, client := range clients {
 		client.Disconnect()
 	}

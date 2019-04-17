@@ -4,12 +4,19 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"time"
 
+	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/rpcclient"
 )
 
-func connectToServers(cfg *config, addressList []string) ([]*rpcclient.Client, error) {
-	clients := make([]*rpcclient.Client, len(addressList))
+type simulatorClient struct {
+	*rpcclient.Client
+	onBlockAdded chan struct{}
+}
+
+func connectToServers(cfg *config, addressList []string) ([]*simulatorClient, error) {
+	clients := make([]*simulatorClient, len(addressList))
 
 	var cert []byte
 	if !cfg.DisableTLS {
@@ -21,6 +28,12 @@ func connectToServers(cfg *config, addressList []string) ([]*rpcclient.Client, e
 	}
 
 	for i, address := range addressList {
+		onBlockAdded := make(chan struct{}, 1)
+		ntfnHandlers := &rpcclient.NotificationHandlers{
+			OnBlockAdded: func(hash *daghash.Hash, height int32, t time.Time) {
+				onBlockAdded <- struct{}{}
+			},
+		}
 		connCfg := &rpcclient.ConnConfig{
 			Host:       address,
 			Endpoint:   "ws",
@@ -33,12 +46,19 @@ func connectToServers(cfg *config, addressList []string) ([]*rpcclient.Client, e
 			connCfg.Certificates = cert
 		}
 
-		client, err := rpcclient.New(connCfg, nil)
+		client, err := rpcclient.New(connCfg, ntfnHandlers)
 		if err != nil {
 			return nil, fmt.Errorf("Error connecting to address %s: %s", address, err)
 		}
 
-		clients[i] = client
+		if err := client.NotifyBlocks(); err != nil {
+			return nil, fmt.Errorf("Error while registering client %s for block notifications: %s", client.Host(), err)
+		}
+
+		clients[i] = &simulatorClient{
+			Client:       client,
+			onBlockAdded: onBlockAdded,
+		}
 
 		log.Printf("Connected to server %s", address)
 	}

@@ -6,18 +6,17 @@ RUN mkdir -p /go/src/github.com/daglabs/btcd
 WORKDIR /go/src/github.com/daglabs/btcd
 
 RUN apk add --no-cache curl git openssh binutils gcc musl-dev
-RUN curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
 RUN go get -u golang.org/x/lint/golint \
       github.com/kisielk/errcheck \
       github.com/opennota/check/cmd/aligncheck \
       github.com/opennota/check/cmd/structcheck \
       github.com/opennota/check/cmd/varcheck
 
-COPY ./Gopkg.* ./
-
-RUN dep ensure -v -vendor-only
-
 COPY . .
+
+# GO111MODULE=on forces Go to use the go-module system
+# TODO: remove this once Go 1.13 is released
+ENV GO111MODULE=on
 
 RUN go vet ./...
 # RUN aligncheck ./...
