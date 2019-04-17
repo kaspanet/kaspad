@@ -54,18 +54,16 @@ func (c *Client) RawRequestAsync(method string, params []json.RawMessage) Future
 		return newFutureError(err)
 	}
 
-	// Generate the request and send it along with a channel to respond on.
-	responseChan := make(chan *response, 1)
-	jReq := &jsonRequest{
+	// Generate the request.
+	jReqData := &jsonRequestData{
 		id:             id,
 		method:         method,
 		cmd:            nil,
 		marshalledJSON: marshalledJSON,
-		responseChan:   responseChan,
 	}
-	c.sendRequest(jReq)
 
-	return responseChan
+	// Send the request and return its response channel
+	return c.sendRequest(jReqData)
 }
 
 // RawRequest allows the caller to send a raw or custom request to the server.
