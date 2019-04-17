@@ -10,6 +10,7 @@ import (
 	"github.com/daglabs/btcd/btcec"
 	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/rpcclient"
+	"github.com/daglabs/btcd/signal"
 	"github.com/daglabs/btcd/util"
 	"github.com/daglabs/btcd/util/base58"
 )
@@ -17,12 +18,12 @@ import (
 var (
 	isRunning       int32
 	activeNetParams *dagconfig.Params = &dagconfig.DevNetParams
-	pkHash          util.Address
+	p2pkhAddress    util.Address
 	privateKey      *btcec.PrivateKey
 )
 
-// keyToAddr maps the passed private to corresponding p2pkh address.
-func keyToAddr(key *btcec.PrivateKey, net *dagconfig.Params) (util.Address, error) {
+// privateKeyToP2pkhAddress generates p2pkh address from private key.
+func privateKeyToP2pkhAddress(key *btcec.PrivateKey, net *dagconfig.Params) (util.Address, error) {
 	serializedKey := key.PubKey().SerializeCompressed()
 	pubKeyAddr, err := util.NewAddressPubKey(serializedKey, net.Prefix)
 	if err != nil {
@@ -40,32 +41,16 @@ func main() {
 		os.Exit(1)
 	}
 
-	if cfg.GenerateAddress {
-		privateKey, err = btcec.NewPrivateKey(btcec.S256())
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Failed to generate private key: %s", err)
-			os.Exit(1)
-		}
-		fmt.Printf("\nPrivate key (base-58): %s\n", base58.Encode(privateKey.Serialize()))
-		pkHash, err = keyToAddr(privateKey, activeNetParams)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Failed to get pkhash from private key: %s", err)
-			os.Exit(1)
-		}
-		fmt.Printf("Public key hash: %s\n\n", pkHash)
-		os.Exit(0)
-	}
-
 	privateKeyBytes := base58.Decode(cfg.PrivateKey)
 	privateKey, _ = btcec.PrivKeyFromBytes(btcec.S256(), privateKeyBytes)
 
-	pkHash, err = keyToAddr(privateKey, activeNetParams)
+	p2pkhAddress, err = privateKeyToP2pkhAddress(privateKey, activeNetParams)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to get pkhash from private key: %s", err)
+		fmt.Fprintf(os.Stderr, "Failed to get P2PKH address from private key: %s", err)
 		os.Exit(1)
 	}
 
-	fmt.Printf("pkhash for private key: %s\n", pkHash)
+	fmt.Printf("P2PKH address for private key: %s\n", p2pkhAddress)
 
 	addressList, err := getAddressList(cfg)
 	if err != nil {
@@ -80,13 +65,16 @@ func main() {
 
 	atomic.StoreInt32(&isRunning, 1)
 
-	err = txLoop(clients)
-	if err != nil {
-		panic(fmt.Errorf("Error in main loop: %s", err))
-	}
+	go txLoop(clients)
+
+	interrupt := signal.InterruptListener()
+	<-interrupt
+
+	atomic.StoreInt32(&isRunning, 0)
 }
 
 func disconnect(clients []*rpcclient.Client) {
+	log.Printf("Disconnecting clients")
 	for _, client := range clients {
 		client.Disconnect()
 	}

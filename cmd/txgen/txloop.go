@@ -25,10 +25,10 @@ type utxo struct {
 }
 
 var (
-	skipTxCount int
-	random      = rand.New(rand.NewSource(time.Now().UnixNano()))
-	utxos       map[wire.OutPoint]*utxo
-	pkScript    []byte
+	random   = rand.New(rand.NewSource(time.Now().UnixNano()))
+	utxos    map[wire.OutPoint]*utxo
+	pkScript []byte
+	spentTXs map[daghash.TxID]bool
 )
 
 const (
@@ -74,79 +74,73 @@ func utxosFunds() uint64 {
 	return funds
 }
 
-func populateUtxos(client *rpcclient.Client) error {
+func isTxMatured(tx *wire.MsgTx, confirmations uint64) bool {
+	if !tx.IsBlockReward() {
+		return confirmations >= 1
+	}
+	return confirmations >= uint64(float64(activeNetParams.BlockRewardMaturity)*1.5)
+}
+
+func fetchAndPopulateUtxos(client *rpcclient.Client) (uint64, bool, error) {
+	skipCount := 0
 	for atomic.LoadInt32(&isRunning) == 1 {
-		arr, err := client.SearchRawTransactionsVerbose(pkHash, skipTxCount, 1, true, false, nil)
+		arr, err := client.SearchRawTransactionsVerbose(p2pkhAddress, skipCount, 1000, true, false, nil)
 		if err != nil {
-			log.Printf("SearchRawTransactionsVerbose failed: %s", err)
+			funds := utxosFunds()
+			if !isDust(funds) {
+				// we have something to spend
+				return funds, false, nil
+			}
+			log.Printf("No spandable transactions found and SearchRawTransactionsVerbose failed: %s", err)
 			log.Printf("Sleeping 30 sec...")
 			for i := 0; i < 30; i++ {
 				time.Sleep(time.Second)
 				if atomic.LoadInt32(&isRunning) != 1 {
-					return nil
+					return 0, true, nil
 				}
 			}
+			skipCount = 0
 			continue
 		}
-		searchResult := arr[0]
-		txBytes, err := hex.DecodeString(searchResult.Hex)
-		if err != nil {
-			log.Printf("Failed to decode transactions bytes: %s", err)
-			return err
-		}
-		txID, err := daghash.NewTxIDFromStr(searchResult.TxID)
-		if err != nil {
-			log.Printf("Failed to decode transaction ID: %s", err)
-			return err
-		}
-		var tx wire.MsgTx
-		rbuf := bytes.NewReader(txBytes)
-		err = tx.Deserialize(rbuf)
-		if err != nil {
-			log.Printf("Failed to deserialize transaction: %s", err)
-			return err
-		}
-		if !tx.IsBlockReward() {
-			if searchResult.Confirmations < 1 {
-				log.Printf("Got non-mined transaction, sleeping 1 sec")
-				time.Sleep(time.Second)
+		receivedCount := len(arr)
+		skipCount += receivedCount
+		log.Printf("Received %d transactions", receivedCount)
+		for _, searchResult := range arr {
+			txBytes, err := hex.DecodeString(searchResult.Hex)
+			if err != nil {
+				log.Printf("Failed to decode transactions bytes: %s", err)
 				continue
 			}
-			evalOutputs(tx.TxOut, txID)
-			evalInputs(tx.TxIn)
-			skipTxCount++
-			if utxosFunds() < minSpendableAmount+minRelayTxFee {
+			txID, err := daghash.NewTxIDFromStr(searchResult.TxID)
+			if err != nil {
+				log.Printf("Failed to decode transaction ID: %s", err)
 				continue
 			}
-			return nil
-		}
-		if searchResult.Confirmations < uint64(activeNetParams.BlockRewardMaturity) {
-			loops := int(activeNetParams.BlockRewardMaturity) - int(searchResult.Confirmations)
-			log.Printf("Got block reward transaction, which is not enough mature, sleeping %d sec", loops)
-			for i := 0; i < loops; i++ {
-				time.Sleep(time.Second)
-				if atomic.LoadInt32(&isRunning) != 1 {
-					return nil
-				}
+			var tx wire.MsgTx
+			rbuf := bytes.NewReader(txBytes)
+			err = tx.Deserialize(rbuf)
+			if err != nil {
+				log.Printf("Failed to deserialize transaction: %s", err)
+				continue
 			}
-			continue
+			if spentTXs[*txID] {
+				continue
+			}
+			if isTxMatured(&tx, searchResult.Confirmations) {
+				spentTXs[*txID] = true
+				evalOutputs(tx.TxOut, txID)
+				evalInputs(tx.TxIn)
+			}
 		}
-		evalOutputs(tx.TxOut, txID)
-		evalInputs(tx.TxIn)
-		skipTxCount++
-		if utxosFunds() < minSpendableAmount+minRelayTxFee {
-			continue
-		}
-		return nil
 	}
-	return nil
+	return 0, true, nil
 }
 
-// fundTx attempts to fund a transaction sending amt bitcoin. The coins are
+// fundTx attempts to fund a transaction sending amount bitcoin. The coins are
 // selected such that the final amount spent pays enough fees as dictated by
 // the passed fee rate. The passed fee rate should be expressed in
 // satoshis-per-byte.
-func fundTx(tx *wire.MsgTx, amt uint64, feeRate uint64) (uint64, error) {
+func fundTx(tx *wire.MsgTx, amount uint64, feeRate uint64) (uint64, error) {
 	const (
 		// spendSize is the largest number of bytes of a sigScript
 		// which spends a p2pkh output: OP_DATA_73 <sig> OP_DATA_33 <pubkey>
@@ -154,8 +148,8 @@ func fundTx(tx *wire.MsgTx, amt uint64, feeRate uint64) (uint64, error) {
 	)
 
 	var (
-		amtSelected uint64
-		txSize      int
+		amountSelected uint64
+		txSize         int
 	)
 
 	for outPoint, utxo := range utxos {
@@ -163,7 +157,7 @@ func fundTx(tx *wire.MsgTx, amt uint64, feeRate uint64) (uint64, error) {
 			continue
 		}
 
-		amtSelected += utxo.txOut.Value
+		amountSelected += utxo.txOut.Value
 
 		// Add the selected output to the transaction, updating the
 		// current tx size while accounting for the size of the future
@@ -176,13 +170,13 @@ func fundTx(tx *wire.MsgTx, amt uint64, feeRate uint64) (uint64, error) {
 		// coins from he current amount selected to pay the fee, then
 		// continue to grab more coins.
 		reqFee := uint64(txSize) * feeRate
-		if amtSelected-reqFee < amt {
+		if amountSelected-reqFee < amount {
 			continue
 		}
 
 		// If we have any change left over, then add an additional
 		// output to the transaction reserved for change.
-		changeVal := amtSelected - amt - reqFee
+		changeVal := amountSelected - amount - reqFee
 		if changeVal > 0 {
 			changeOutput := &wire.TxOut{
 				Value:    changeVal,
@@ -199,26 +193,8 @@ func fundTx(tx *wire.MsgTx, amt uint64, feeRate uint64) (uint64, error) {
 	return 0, fmt.Errorf("not enough funds for coin selection")
 }
 
-// createTransaction returns a fully signed transaction paying to the specified
-// outputs while observing the desired fee rate. The passed fee rate should be
-// expressed in satoshis-per-byte.
-func createTransaction(outputs []*wire.TxOut, feeRate uint64) (*wire.MsgTx, uint64, error) {
-	tx := wire.NewNativeMsgTx(wire.TxVersion, nil, nil)
-
-	// Tally up the total amount to be sent in order to perform coin
-	// selection shortly below.
-	var outputAmt uint64
-	for _, output := range outputs {
-		outputAmt += output.Value
-		tx.AddTxOut(output)
-	}
-
-	// Attempt to fund the transaction with spendable utxos.
-	fees, err := fundTx(tx, outputAmt, feeRate)
-	if err != nil {
-		return nil, 0, err
-	}
-
+// signTxAndLockSpentUtxo signs new transaction and locks spentutxo
+func signTxAndLockSpentUtxo(tx *wire.MsgTx) error {
 	// Populate all the selected inputs with valid sigScript for spending.
 	// Along the way record all outputs being spent in order to avoid a
 	// potential double spend.
@@ -232,7 +208,7 @@ func createTransaction(outputs []*wire.TxOut, feeRate uint64) (*wire.MsgTx, uint
 			txscript.SigHashAll, privateKey, true)
 		if err != nil {
 			log.Printf("Failed to sign transaction: %s", err)
-			return nil, 0, err
+			return err
 		}
 
 		txIn.SignatureScript = sigScript
@@ -248,35 +224,69 @@ func createTransaction(outputs []*wire.TxOut, feeRate uint64) (*wire.MsgTx, uint
 		utxo.isLocked = true
 	}
 
+	return nil
+}
+
+// createTransaction returns a fully signed transaction paying to the specified
+// outputs while observing the desired fee rate. The passed fee rate should be
+// expressed in satoshis-per-byte.
+func createTransaction(outputs []*wire.TxOut, feeRate uint64) (*wire.MsgTx, uint64, error) {
+	tx := wire.NewNativeMsgTx(wire.TxVersion, nil, nil)
+
+	// Tally up the total amount to be sent in order to perform coin
+	// selection shortly below.
+	var outputAmount uint64
+	for _, output := range outputs {
+		outputAmount += output.Value
+		tx.AddTxOut(output)
+	}
+
+	// Attempt to fund the transaction with spendable utxos.
+	fees, err := fundTx(tx, outputAmount, feeRate)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	err = signTxAndLockSpentUtxo(tx)
+	if err != nil {
+		return nil, 0, err
+	}
+
 	return tx, fees, nil
 }
 
 // txLoop performs main loop of transaction generation
-func txLoop(clients []*rpcclient.Client) error {
+func txLoop(clients []*rpcclient.Client) {
 	clientsCount := int64(len(clients))
 
 	utxos = make(map[wire.OutPoint]*utxo)
-	pkScript, err := txscript.PayToAddrScript(pkHash)
+	spentTXs = make(map[daghash.TxID]bool)
+
+	pkScript, err := txscript.PayToAddrScript(p2pkhAddress)
 	if err != nil {
 		log.Printf("Failed to generate pkscript to address: %s", err)
-		return err
+		return
 	}
 
 	for atomic.LoadInt32(&isRunning) == 1 {
-		err := populateUtxos(clients[0])
+		funds, exit, err := fetchAndPopulateUtxos(clients[0])
+		if exit {
+			return
+		}
 		if err != nil {
-			return err
+			log.Printf("fetchAndPopulateUtxos failed: %s", err)
+			continue
 		}
 
-		funds := utxosFunds()
-		if funds < minSpendableAmount+minRelayTxFee {
-			return nil
+		if isDust(funds) {
+			log.Printf("fetchAndPopulateUtxos returned not enough funds")
+			continue
 		}
 
 		log.Printf("UTXO funds after population %d", funds)
 
-		for funds > minSpendableAmount+minRelayTxFee {
-			amount := minSpendableAmount + uint64(random.Int63n(int64(funds-minSpendableAmount)))
+		for !isDust(funds) {
+			amount := minSpendableAmount + uint64(random.Int63n(int64(minSpendableAmount*4)))
 			output := wire.NewTxOut(amount, pkScript)
 
 			tx, fees, err := createTransaction([]*wire.TxOut{output}, 10)
@@ -284,12 +294,13 @@ func txLoop(clients []*rpcclient.Client) error {
 			if err != nil {
 				log.Printf("Failed to create transaction (output value %d, funds %d): %s",
 					amount, funds, err)
-				break
+				continue
 			}
 
-			log.Printf("Created transaction: amount %d, fees %d", amount, fees)
+			log.Printf("Created transaction %s: amount %d, fees %d", tx.TxID(), amount, fees)
 
 			funds = utxosFunds()
+			log.Printf("Remaining funds: %d", funds)
 
 			var currentClient *rpcclient.Client
 			if clientsCount == 1 {
@@ -300,10 +311,8 @@ func txLoop(clients []*rpcclient.Client) error {
 			_, err = currentClient.SendRawTransaction(tx, true)
 			if err != nil {
 				log.Printf("Failed to send transaction: %s", err)
-				return err
+				continue
 			}
 		}
 	}
-
-	return nil
 }
