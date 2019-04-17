@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/daglabs/btcd/signal"
 	"log"
 	"os"
 	"runtime/debug"
@@ -27,10 +28,15 @@ func main() {
 	}
 	defer disconnect(clients)
 
-	err = mineLoop(clients)
-	if err != nil {
-		panic(fmt.Errorf("Error in main loop: %s", err))
-	}
+	go func() {
+		err = mineLoop(clients)
+		if err != nil {
+			panic(fmt.Errorf("Error in main loop: %s", err))
+		}
+	}()
+
+	interrupt := signal.InterruptListener()
+	<-interrupt
 }
 
 func disconnect(clients []*simulatorClient) {
