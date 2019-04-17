@@ -848,7 +848,7 @@ func (c *Client) sendRequest(data *jsonRequestData) chan *response {
 		responseChan:    make(chan *response, 1),
 	}
 	responseChan := make(chan *response, 1)
-	cancelOnTimeout := c.config.requestTimeout != 0 && !c.config.HTTPPostMode
+	cancelOnTimeout := c.config.RequestTimeout != 0 && !c.config.HTTPPostMode
 	if cancelOnTimeout {
 		jReq.responseChan = make(chan *response, 1)
 	} else {
@@ -887,7 +887,7 @@ func (c *Client) sendRequest(data *jsonRequestData) chan *response {
 	if cancelOnTimeout {
 		go func() {
 			select {
-			case <-time.Tick(c.config.requestTimeout):
+			case <-time.Tick(c.config.RequestTimeout):
 				responseChan <- &response{err: ErrResponseTimedOut}
 			case resp := <-jReq.responseChan:
 				responseChan <- resp
@@ -1142,7 +1142,9 @@ type ConnConfig struct {
 	// flag can be set to true to use basic HTTP POST requests instead.
 	HTTPPostMode bool
 
-	requestTimeout time.Duration
+	// RequestTimeout is the time it'll take for a request to timeout if
+	// it doesn't get a response.
+	RequestTimeout time.Duration
 
 	// EnableBCInfoHacks is an option provided to enable compatibility hacks
 	// when connecting to blockchain.info RPC server
@@ -1179,7 +1181,7 @@ func newHTTPClient(config *ConnConfig) (*http.Client, error) {
 			Proxy:           proxyFunc,
 			TLSClientConfig: tlsConfig,
 		},
-		Timeout: config.requestTimeout,
+		Timeout: config.RequestTimeout,
 	}
 
 	return &client, nil

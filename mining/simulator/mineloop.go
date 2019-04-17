@@ -12,6 +12,7 @@ import (
 	"github.com/daglabs/btcd/blockdag"
 	"github.com/daglabs/btcd/btcjson"
 	"github.com/daglabs/btcd/dagconfig/daghash"
+	"github.com/daglabs/btcd/rpcclient"
 	"github.com/daglabs/btcd/util"
 	"github.com/daglabs/btcd/wire"
 )
@@ -79,7 +80,10 @@ func templatesLoop(client *simulatorClient, newTemplateChan chan *btcjson.GetBlo
 	longPollID := ""
 	getBlockTemplateLongPoll := func() {
 		template, err := getBlockTemplate(client, longPollID)
-		if err != nil {
+		if err == rpcclient.ErrResponseTimedOut {
+			log.Printf("Got timeout while requesting template '%s' from %s", longPollID, client.Host())
+			return
+		} else if err != nil {
 			errChan <- fmt.Errorf("Error getting block template: %s", err)
 			return
 		}

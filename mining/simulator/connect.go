@@ -35,11 +35,12 @@ func connectToServers(cfg *config, addressList []string) ([]*simulatorClient, er
 			},
 		}
 		connCfg := &rpcclient.ConnConfig{
-			Host:       address,
-			Endpoint:   "ws",
-			User:       "user",
-			Pass:       "pass",
-			DisableTLS: cfg.DisableTLS,
+			Host:           address,
+			Endpoint:       "ws",
+			User:           "user",
+			Pass:           "pass",
+			DisableTLS:     cfg.DisableTLS,
+			RequestTimeout: time.Second / 2,
 		}
 
 		if !cfg.DisableTLS {
