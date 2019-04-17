@@ -5,14 +5,13 @@ RUN mkdir -p /go/src/github.com/daglabs/btcd
 
 WORKDIR /go/src/github.com/daglabs/btcd
 
-RUN apk add --no-cache curl git 
-RUN curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
-
-COPY ./Gopkg.* ./
-
-RUN dep ensure -v -vendor-only
+RUN apk add --no-cache curl git
 
 COPY . .
+
+# GO111MODULE=on forces Go to use the go-module system
+# TODO: remove this once Go 1.13 is released
+ENV GO111MODULE=on
 
 RUN cd mining/simulator && CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o mining_simulator .
 
