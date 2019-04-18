@@ -709,20 +709,20 @@ func (dag *BlockDAG) updateFinalityPoint() {
 	dag.lastFinalityPoint = newFinalityPoint
 }
 
-// NextBlockFeeTransactionWithLock prepares the fee transaction for the next mined block
+// NextBlockFeeTransaction prepares the fee transaction for the next mined block
 //
 // This function CAN'T be called with the DAG lock not held.
-func (dag *BlockDAG) NextBlockFeeTransactionWithLock() (*wire.MsgTx, error) {
+func (dag *BlockDAG) NextBlockFeeTransaction() (*wire.MsgTx, error) {
 	dag.dagLock.RLock()
 	defer dag.dagLock.RUnlock()
 
-	return dag.NextBlockFeeTransaction()
+	return dag.NextBlockFeeTransactionNoLock()
 }
 
-// NextBlockFeeTransaction prepares the fee transaction for the next mined block
+// NextBlockFeeTransactionNoLock prepares the fee transaction for the next mined block
 //
 // This function MUST be called with the DAG read-lock held
-func (dag *BlockDAG) NextBlockFeeTransaction() (*wire.MsgTx, error) {
+func (dag *BlockDAG) NextBlockFeeTransactionNoLock() (*wire.MsgTx, error) {
 	_, txsAcceptanceData, _, err := dag.virtual.blockNode.verifyAndBuildUTXO(dag, nil, true)
 	if err != nil {
 		return nil, err

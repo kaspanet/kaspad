@@ -6,7 +6,6 @@ package main
 
 import (
 	"fmt"
-	"github.com/daglabs/btcd/dagconfig/daghash"
 	"log"
 	"net"
 	"os"
@@ -14,6 +13,8 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/daglabs/btcd/dagconfig/daghash"
 
 	"github.com/daglabs/btcd/connmgr"
 	"github.com/daglabs/btcd/peer"
