@@ -665,12 +665,12 @@ func (sm *SyncManager) addBlocksToRequestQueue(state *peerSyncState, hashes []*d
 	for _, hash := range hashes {
 		if _, exists := sm.requestedBlocks[*hash]; !exists {
 			iv := wire.NewInvVect(wire.InvTypeBlock, hash)
-			state.addInvToRequestQueue(iv, isRelayedInv)
+			state.addInvToRequestQueueNoLock(iv, isRelayedInv)
 		}
 	}
 }
 
-func (state *peerSyncState) addInvToRequestQueue(iv *wire.InvVect, isRelayedInv bool) {
+func (state *peerSyncState) addInvToRequestQueueNoLock(iv *wire.InvVect, isRelayedInv bool) {
 	if isRelayedInv {
 		if _, exists := state.relayedInvsRequestQueueSet[*iv.Hash]; !exists {
 			state.relayedInvsRequestQueueSet[*iv.Hash] = struct{}{}
@@ -684,10 +684,10 @@ func (state *peerSyncState) addInvToRequestQueue(iv *wire.InvVect, isRelayedInv 
 	}
 }
 
-func (state *peerSyncState) addInvToRequestQueueWithLock(iv *wire.InvVect, isRelayedInv bool) {
+func (state *peerSyncState) addInvToRequestQueue(iv *wire.InvVect, isRelayedInv bool) {
 	state.requestQueueMtx.Lock()
 	defer state.requestQueueMtx.Unlock()
-	state.addInvToRequestQueue(iv, isRelayedInv)
+	state.addInvToRequestQueueNoLock(iv, isRelayedInv)
 }
 
 // fetchHeaderBlocks creates and sends a request to the syncPeer for the next
@@ -955,7 +955,7 @@ func (sm *SyncManager) handleInvMsg(imsg *invMsg) {
 			}
 
 			// Add it to the request queue.
-			state.addInvToRequestQueueWithLock(iv, iv.Type != wire.InvTypeSyncBlock)
+			state.addInvToRequestQueue(iv, iv.Type != wire.InvTypeSyncBlock)
 			continue
 		}
 

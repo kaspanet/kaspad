@@ -107,14 +107,14 @@ func TestCheckConnectBlockTemplate(t *testing.T) {
 	}
 
 	// Block 3 should fail to connect since it's already inserted.
-	err = dag.CheckConnectBlockTemplate(blocks[3])
+	err = dag.CheckConnectBlockTemplateNoLock(blocks[3])
 	if err == nil {
 		t.Fatal("CheckConnectBlockTemplate: Did not received expected error " +
 			"on block 3")
 	}
 
 	// Block 4 should connect successfully to tip of chain.
-	err = dag.CheckConnectBlockTemplate(blocks[4])
+	err = dag.CheckConnectBlockTemplateNoLock(blocks[4])
 	if err != nil {
 		t.Fatalf("CheckConnectBlockTemplate: Received unexpected error on "+
 			"block 4: %v", err)
@@ -127,7 +127,7 @@ func TestCheckConnectBlockTemplate(t *testing.T) {
 
 	// Block 3a should connect even though it does not build on dag tips.
 	blocks[5].SetHeight(3) // set height manually because it was set to 0 in loadBlocks
-	err = dag.CheckConnectBlockTemplate(blocks[5])
+	err = dag.CheckConnectBlockTemplateNoLock(blocks[5])
 	if err != nil {
 		t.Fatal("CheckConnectBlockTemplate: Recieved unexpected error on " +
 			"block 3a that connects below the tips")
@@ -138,7 +138,7 @@ func TestCheckConnectBlockTemplate(t *testing.T) {
 	invalidPowMsgBlock.Header.Nonce++
 	invalidPowBlock := util.NewBlock(&invalidPowMsgBlock)
 	invalidPowBlock.SetHeight(blocks[4].Height())
-	err = dag.CheckConnectBlockTemplate(invalidPowBlock)
+	err = dag.CheckConnectBlockTemplateNoLock(invalidPowBlock)
 	if err != nil {
 		t.Fatalf("CheckConnectBlockTemplate: Received unexpected error on "+
 			"block 4 with bad nonce: %v", err)
@@ -147,7 +147,7 @@ func TestCheckConnectBlockTemplate(t *testing.T) {
 	// Invalid block building on chain tip should fail to connect.
 	invalidBlock := *blocks[4].MsgBlock()
 	invalidBlock.Header.Bits--
-	err = dag.CheckConnectBlockTemplate(util.NewBlock(&invalidBlock))
+	err = dag.CheckConnectBlockTemplateNoLock(util.NewBlock(&invalidBlock))
 	if err == nil {
 		t.Fatal("CheckConnectBlockTemplate: Did not received expected error " +
 			"on block 4 with invalid difficulty bits")

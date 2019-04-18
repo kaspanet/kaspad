@@ -1183,21 +1183,21 @@ func countSpentOutputs(block *util.Block) int {
 	return numSpent
 }
 
-// CheckConnectBlockTemplateWithLock fully validates that connecting the passed block to
+// CheckConnectBlockTemplate fully validates that connecting the passed block to
 // the DAG does not violate any consensus rules, aside from the proof of
 // work requirement.
 //
 // This function is safe for concurrent access.
-func (dag *BlockDAG) CheckConnectBlockTemplateWithLock(block *util.Block) error {
+func (dag *BlockDAG) CheckConnectBlockTemplate(block *util.Block) error {
 	dag.dagLock.RLock()
 	defer dag.dagLock.RUnlock()
-	return dag.CheckConnectBlockTemplate(block)
+	return dag.CheckConnectBlockTemplateNoLock(block)
 }
 
-// CheckConnectBlockTemplate fully validates that connecting the passed block to
+// CheckConnectBlockTemplateNoLock fully validates that connecting the passed block to
 // the DAG does not violate any consensus rules, aside from the proof of
 // work requirement. The block must connect to the current tip of the main dag.
-func (dag *BlockDAG) CheckConnectBlockTemplate(block *util.Block) error {
+func (dag *BlockDAG) CheckConnectBlockTemplateNoLock(block *util.Block) error {
 
 	// Skip the proof of work check as this is just a block template.
 	flags := BFNoPoWCheck

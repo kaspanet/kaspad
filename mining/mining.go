@@ -413,7 +413,7 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 	}
 	numCoinbaseSigOps := int64(blockdag.CountSigOps(coinbaseTx))
 
-	msgFeeTransaction, err := g.dag.NextBlockFeeTransaction()
+	msgFeeTransaction, err := g.dag.NextBlockFeeTransactionNoLock()
 	if err != nil {
 		return nil, err
 	}
@@ -675,7 +675,7 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 	block := util.NewBlock(&msgBlock)
 	block.SetHeight(nextBlockHeight)
 
-	if err := g.dag.CheckConnectBlockTemplate(block); err != nil {
+	if err := g.dag.CheckConnectBlockTemplateNoLock(block); err != nil {
 		return nil, err
 	}
 
