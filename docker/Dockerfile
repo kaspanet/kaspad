@@ -12,11 +12,16 @@ RUN go get -u golang.org/x/lint/golint \
       github.com/opennota/check/cmd/structcheck \
       github.com/opennota/check/cmd/varcheck
 
-COPY . .
-
 # GO111MODULE=on forces Go to use the go-module system
 # TODO: remove this once Go 1.13 is released
 ENV GO111MODULE=on
+
+COPY go.mod .
+COPY go.sum .
+
+RUN go mod download
+
+COPY . .
 
 RUN TEST_DIRS=`go list -f {{.Dir}} ./... | grep -v /vendor/` GOFMT_RESULT=`gofmt -l $TEST_DIRS`; echo $GOFMT_RESULT; test -z "$GOFMT_RESULT"
 RUN go vet ./...
