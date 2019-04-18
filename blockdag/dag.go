@@ -1439,7 +1439,7 @@ func (dag *BlockDAG) locateBlockNodes(locator BlockLocator, hashStop *daghash.Ha
 
 	// Populate and return the found nodes.
 	nodes := make([]*blockNode, 0, estimatedEntries)
-	queue := NewUpHeap()
+	queue := newUpHeap()
 	queue.pushSet(node.children)
 
 	visited := newSet()
@@ -1506,7 +1506,7 @@ func (dag *BlockDAG) GetTopHeaders(startHash *daghash.Hash) ([]*wire.BlockHeader
 		}
 	}
 	headers := make([]*wire.BlockHeader, 0, startNode.blueScore)
-	queue := NewDownHeap()
+	queue := newDownHeap()
 	queue.pushSet(startNode.parents)
 
 	visited := newSet()

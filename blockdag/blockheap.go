@@ -46,43 +46,43 @@ func (h downHeap) Less(i, j int) bool {
 	return h.baseHeap[i].height > h.baseHeap[j].height
 }
 
-// BlockHeap represents a mutable heap of Blocks, sorted by their height
-type BlockHeap struct {
+// blockHeap represents a mutable heap of Blocks, sorted by their height
+type blockHeap struct {
 	impl heap.Interface
 }
 
-// NewDownHeap initializes and returns a new BlockHeap
-func NewDownHeap() BlockHeap {
-	h := BlockHeap{impl: &downHeap{}}
+// newDownHeap initializes and returns a new blockHeap
+func newDownHeap() blockHeap {
+	h := blockHeap{impl: &downHeap{}}
 	heap.Init(h.impl)
 	return h
 }
 
-// NewUpHeap initializes and returns a new BlockHeap
-func NewUpHeap() BlockHeap {
-	h := BlockHeap{impl: &upHeap{}}
+// newUpHeap initializes and returns a new blockHeap
+func newUpHeap() blockHeap {
+	h := blockHeap{impl: &upHeap{}}
 	heap.Init(h.impl)
 	return h
 }
 
 // pop removes the block with lowest height from this heap and returns it
-func (bh BlockHeap) pop() *blockNode {
+func (bh blockHeap) pop() *blockNode {
 	return heap.Pop(bh.impl).(*blockNode)
 }
 
 // Push pushes the block onto the heap
-func (bh BlockHeap) Push(block *blockNode) {
+func (bh blockHeap) Push(block *blockNode) {
 	heap.Push(bh.impl, block)
 }
 
 // pushSet pushes a blockset to the heap.
-func (bh BlockHeap) pushSet(bs blockSet) {
+func (bh blockHeap) pushSet(bs blockSet) {
 	for _, block := range bs {
 		heap.Push(bh.impl, block)
 	}
 }
 
 // Len returns the length of this heap
-func (bh BlockHeap) Len() int {
+func (bh blockHeap) Len() int {
 	return bh.impl.Len()
 }
