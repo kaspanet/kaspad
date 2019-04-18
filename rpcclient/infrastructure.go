@@ -431,7 +431,7 @@ out:
 			}
 			break out
 		}
-		c.handleMessage(msg)
+		go c.handleMessage(msg)
 	}
 
 	// Ensure the connection is closed.
