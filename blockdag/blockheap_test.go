@@ -81,7 +81,7 @@ func TestBlockHeap(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		dHeap := NewDownHeap()
+		dHeap := newDownHeap()
 		for _, block := range test.toPush {
 			dHeap.Push(block)
 		}
@@ -99,7 +99,7 @@ func TestBlockHeap(t *testing.T) {
 				"Expected: %v, got: %v", test.name, test.expectedPopDown, poppedBlock)
 		}
 
-		uHeap := NewUpHeap()
+		uHeap := newUpHeap()
 		for _, block := range test.toPush {
 			uHeap.Push(block)
 		}
