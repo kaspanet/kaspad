@@ -79,6 +79,7 @@ func getBlockTemplate(client *simulatorClient, longPollID string) (*btcjson.GetB
 func templatesLoop(client *simulatorClient, newTemplateChan chan *btcjson.GetBlockTemplateResult, errChan chan error, stopChan chan struct{}) {
 	longPollID := ""
 	getBlockTemplateLongPoll := func() {
+		log.Printf("Requesting template '%s' from %s", longPollID, client.Host())
 		template, err := getBlockTemplate(client, longPollID)
 		if err == rpcclient.ErrResponseTimedOut {
 			log.Printf("Got timeout while requesting template '%s' from %s", longPollID, client.Host())
@@ -163,6 +164,7 @@ func mineLoop(clients []*simulatorClient) error {
 	go func() {
 		for {
 			currentClient := getRandomClient(clients)
+			currentClient.notifyForNewBlocks = true
 			log.Printf("Next block will be mined by: %s", currentClient.Host())
 			mineNextBlock(currentClient, foundBlock, templateStopChan, errChan)
 			block, ok := <-foundBlock
@@ -170,6 +172,7 @@ func mineLoop(clients []*simulatorClient) error {
 				errChan <- nil
 				return
 			}
+			currentClient.notifyForNewBlocks = false
 			err := handleFoundBlock(currentClient, block, templateStopChan)
 			if err != nil {
 				errChan <- err

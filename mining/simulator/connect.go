@@ -6,14 +6,8 @@ import (
 	"log"
 	"time"
 
-	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/rpcclient"
 )
-
-type simulatorClient struct {
-	*rpcclient.Client
-	onBlockAdded chan struct{}
-}
 
 func connectToServers(cfg *config, addressList []string) ([]*simulatorClient, error) {
 	clients := make([]*simulatorClient, len(addressList))
@@ -28,12 +22,6 @@ func connectToServers(cfg *config, addressList []string) ([]*simulatorClient, er
 	}
 
 	for i, address := range addressList {
-		onBlockAdded := make(chan struct{}, 1)
-		ntfnHandlers := &rpcclient.NotificationHandlers{
-			OnBlockAdded: func(hash *daghash.Hash, height int32, t time.Time) {
-				onBlockAdded <- struct{}{}
-			},
-		}
 		connCfg := &rpcclient.ConnConfig{
 			Host:           address,
 			Endpoint:       "ws",
@@ -47,18 +35,10 @@ func connectToServers(cfg *config, addressList []string) ([]*simulatorClient, er
 			connCfg.Certificates = cert
 		}
 
-		client, err := rpcclient.New(connCfg, ntfnHandlers)
+		var err error
+		clients[i], err = newSimulatorClient(address, connCfg)
 		if err != nil {
-			return nil, fmt.Errorf("Error connecting to address %s: %s", address, err)
-		}
-
-		if err := client.NotifyBlocks(); err != nil {
-			return nil, fmt.Errorf("Error while registering client %s for block notifications: %s", client.Host(), err)
-		}
-
-		clients[i] = &simulatorClient{
-			Client:       client,
-			onBlockAdded: onBlockAdded,
+			return nil, err
 		}
 
 		log.Printf("Connected to server %s", address)
