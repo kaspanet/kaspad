@@ -28,10 +28,11 @@ var (
 	random   = rand.New(rand.NewSource(time.Now().UnixNano()))
 	utxos    map[wire.OutPoint]*utxo
 	pkScript []byte
-	spentTXs map[daghash.TxID]bool
+	spentTxs map[daghash.TxID]bool
 )
 
 const (
+	// Those constants should be updated, when monetary policy changed
 	minSpendableAmount uint64 = 10000
 	minRelayTxFee      uint64 = uint64(mempool.DefaultMinRelayTxFee)
 )
@@ -52,7 +53,7 @@ func evalOutputs(outputs []*wire.TxOut, txID *daghash.TxID) {
 	}
 }
 
-// evalInputs scans all the passed inputs, destroying any utxos within the
+// evalInputs scans all the passed inputs, deleting any utxos within the
 // wallet which are spent by an input.
 func evalInputs(inputs []*wire.TxIn) {
 	for _, txIn := range inputs {
@@ -81,17 +82,18 @@ func isTxMatured(tx *wire.MsgTx, confirmations uint64) bool {
 	return confirmations >= uint64(float64(activeNetParams.BlockRewardMaturity)*1.5)
 }
 
-func fetchAndPopulateUtxos(client *rpcclient.Client) (uint64, bool, error) {
+func fetchAndPopulateUtxos(client *rpcclient.Client) (funds uint64, exit bool, err error) {
 	skipCount := 0
 	for atomic.LoadInt32(&isRunning) == 1 {
 		arr, err := client.SearchRawTransactionsVerbose(p2pkhAddress, skipCount, 1000, true, false, nil)
 		if err != nil {
+			log.Printf("No spandable transactions found and SearchRawTransactionsVerbose failed: %s", err)
 			funds := utxosFunds()
 			if !isDust(funds) {
 				// we have something to spend
+				log.Printf("We have enough funds to generate transactions: %d", funds)
 				return funds, false, nil
 			}
-			log.Printf("No spandable transactions found and SearchRawTransactionsVerbose failed: %s", err)
 			log.Printf("Sleeping 30 sec...")
 			for i := 0; i < 30; i++ {
 				time.Sleep(time.Second)
@@ -123,11 +125,11 @@ func fetchAndPopulateUtxos(client *rpcclient.Client) (uint64, bool, error) {
 				log.Printf("Failed to deserialize transaction: %s", err)
 				continue
 			}
-			if spentTXs[*txID] {
+			if spentTxs[*txID] {
 				continue
 			}
 			if isTxMatured(&tx, searchResult.Confirmations) {
-				spentTXs[*txID] = true
+				spentTxs[*txID] = true
 				evalOutputs(tx.TxOut, txID)
 				evalInputs(tx.TxIn)
 			}
@@ -260,7 +262,7 @@ func txLoop(clients []*rpcclient.Client) {
 	clientsCount := int64(len(clients))
 
 	utxos = make(map[wire.OutPoint]*utxo)
-	spentTXs = make(map[daghash.TxID]bool)
+	spentTxs = make(map[daghash.TxID]bool)
 
 	pkScript, err := txscript.PayToAddrScript(p2pkhAddress)
 	if err != nil {

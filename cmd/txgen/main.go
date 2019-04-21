@@ -1,9 +1,7 @@
 package main
 
 import (
-	"fmt"
 	"log"
-	"os"
 	"runtime/debug"
 	"sync/atomic"
 
@@ -37,8 +35,7 @@ func main() {
 
 	cfg, err := parseConfig()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error parsing command-line arguments: %s", err)
-		os.Exit(1)
+		log.Panicf("Error parsing command-line arguments: %s", err)
 	}
 
 	privateKeyBytes := base58.Decode(cfg.PrivateKey)
@@ -46,20 +43,19 @@ func main() {
 
 	p2pkhAddress, err = privateKeyToP2pkhAddress(privateKey, activeNetParams)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to get P2PKH address from private key: %s", err)
-		os.Exit(1)
+		log.Panicf("Failed to get P2PKH address from private key: %s", err)
 	}
 
-	fmt.Printf("P2PKH address for private key: %s\n", p2pkhAddress)
+	log.Printf("P2PKH address for private key: %s\n", p2pkhAddress)
 
 	addressList, err := getAddressList(cfg)
 	if err != nil {
-		panic(fmt.Errorf("Couldn't load address list: %s", err))
+		log.Panicf("Couldn't load address list: %s", err)
 	}
 
 	clients, err := connectToServers(cfg, addressList)
 	if err != nil {
-		panic(fmt.Errorf("Error connecting to servers: %s", err))
+		log.Panicf("Error connecting to servers: %s", err)
 	}
 	defer disconnect(clients)
 
