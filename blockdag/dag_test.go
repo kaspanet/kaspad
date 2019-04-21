@@ -218,11 +218,11 @@ func TestHaveBlock(t *testing.T) {
 	}
 }
 
-// TestCalcSequenceLockWithLock tests the LockTimeToSequence function, and the
-// CalcSequenceLockWithLock method of a Chain instance. The tests exercise several
+// TestCalcSequenceLock tests the LockTimeToSequence function, and the
+// CalcSequenceLockWithLock method of a DAG instance. The tests exercise several
 // combinations of inputs to the CalcSequenceLockWithLock function in order to ensure
 // the returned SequenceLocks are correct for each test instance.
-func TestCalcSequenceLockWithLock(t *testing.T) {
+func TestCalcSequenceLock(t *testing.T) {
 	netParams := &dagconfig.SimNetParams
 
 	blockVersion := int32(0x10000000)
