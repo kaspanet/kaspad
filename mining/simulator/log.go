@@ -2,7 +2,6 @@ package main
 
 import (
 	"log"
-	"os"
 
 	"github.com/btcsuite/btclog"
 	"github.com/daglabs/btcd/rpcclient"
@@ -11,13 +10,14 @@ import (
 type logWriter struct{}
 
 func (logWriter) Write(p []byte) (n int, err error) {
-	os.Stdout.Write(p)
+	log.Print(string(p))
 	return len(p), nil
 }
 
-func init() {
+func enableRPCLogging() {
 	backendLog := btclog.NewBackend(logWriter{})
 	rpclog := backendLog.Logger("RPCC")
+	rpclog.SetLevel(btclog.LevelTrace)
 	rpcclient.UseLogger(rpclog)
 
 	log.SetFlags(log.LstdFlags | log.Lmicroseconds)

@@ -18,7 +18,7 @@ func newSimulatorClient(address string, connCfg *rpcclient.ConnConfig) (*simulat
 	client := &simulatorClient{
 		onBlockAdded: make(chan struct{}, 1),
 	}
-	ntfnHandlers := &rpcclient.NotificationHandlers{
+	notificationHandlers := &rpcclient.NotificationHandlers{
 		OnFilteredBlockAdded: func(height int32, header *wire.BlockHeader,
 			txs []*util.Tx) {
 			if client.notifyForNewBlocks {
@@ -27,7 +27,7 @@ func newSimulatorClient(address string, connCfg *rpcclient.ConnConfig) (*simulat
 		},
 	}
 	var err error
-	client.Client, err = rpcclient.New(connCfg, ntfnHandlers)
+	client.Client, err = rpcclient.New(connCfg, notificationHandlers)
 	if err != nil {
 		return nil, fmt.Errorf("Error connecting to address %s: %s", address, err)
 	}

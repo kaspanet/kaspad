@@ -17,6 +17,10 @@ func main() {
 		os.Exit(1)
 	}
 
+	if cfg.Verbose {
+		enableRPCLogging()
+	}
+
 	addressList, err := getAddressList(cfg)
 	if err != nil {
 		panic(fmt.Errorf("Couldn't load address list: %s", err))

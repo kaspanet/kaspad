@@ -79,7 +79,11 @@ func getBlockTemplate(client *simulatorClient, longPollID string) (*btcjson.GetB
 func templatesLoop(client *simulatorClient, newTemplateChan chan *btcjson.GetBlockTemplateResult, errChan chan error, stopChan chan struct{}) {
 	longPollID := ""
 	getBlockTemplateLongPoll := func() {
-		log.Printf("Requesting template '%s' from %s", longPollID, client.Host())
+		if longPollID != "" {
+			log.Printf("Requesting template with longPollID '%s' from %s", longPollID, client.Host())
+		} else {
+			log.Printf("Requesting template without longPollID from %s", client.Host())
+		}
 		template, err := getBlockTemplate(client, longPollID)
 		if err == rpcclient.ErrResponseTimedOut {
 			log.Printf("Got timeout while requesting template '%s' from %s", longPollID, client.Host())
