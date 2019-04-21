@@ -319,12 +319,12 @@ func newPoolHarness(dagParams *dagconfig.Params, numOutputs uint32, dbName strin
 				MinRelayTxFee:        1000, // 1 Satoshi per byte
 				MaxTxVersion:         1,
 			},
-			DAGParams:        dagParams,
-			BestHeight:       chain.BestHeight,
-			MedianTimePast:   chain.MedianTimePast,
-			CalcSequenceLock: calcSequenceLock,
-			SigCache:         nil,
-			AddrIndex:        nil,
+			DAGParams:              dagParams,
+			BestHeight:             chain.BestHeight,
+			MedianTimePast:         chain.MedianTimePast,
+			CalcSequenceLockNoLock: calcSequenceLock,
+			SigCache:               nil,
+			AddrIndex:              nil,
 		}),
 	}
 
@@ -681,7 +681,7 @@ func TestProcessTransaction(t *testing.T) {
 	}
 
 	//Checks that transactions get rejected from mempool if sequence lock is not active
-	harness.txPool.cfg.CalcSequenceLock = func(tx *util.Tx,
+	harness.txPool.cfg.CalcSequenceLockNoLock = func(tx *util.Tx,
 		view blockdag.UTXOSet) (*blockdag.SequenceLock, error) {
 
 		return &blockdag.SequenceLock{
@@ -704,7 +704,7 @@ func TestProcessTransaction(t *testing.T) {
 	if err.Error() != expectedErrStr {
 		t.Errorf("Unexpected error message. Expected \"%s\" but got \"%s\"", expectedErrStr, err.Error())
 	}
-	harness.txPool.cfg.CalcSequenceLock = calcSequenceLock
+	harness.txPool.cfg.CalcSequenceLockNoLock = calcSequenceLock
 
 	// This is done in order to increase the input age, so the tx priority will be higher
 	harness.chain.SetHeight(curHeight + 100)

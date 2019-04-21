@@ -346,9 +346,15 @@ type SequenceLock struct {
 //
 // This function is safe for concurrent access.
 func (dag *BlockDAG) CalcSequenceLock(tx *util.Tx, utxoSet UTXOSet, mempool bool) (*SequenceLock, error) {
-	dag.dagLock.Lock()
-	defer dag.dagLock.Unlock()
+	dag.dagLock.RLock()
+	defer dag.dagLock.RUnlock()
 
+	return dag.calcSequenceLock(dag.selectedTip(), utxoSet, tx, mempool)
+}
+
+// CalcSequenceLockNoLock is lock free version of CalcSequenceLockWithLock
+// This function is unsafe for concurrent access.
+func (dag *BlockDAG) CalcSequenceLockNoLock(tx *util.Tx, utxoSet UTXOSet, mempool bool) (*SequenceLock, error) {
 	return dag.calcSequenceLock(dag.selectedTip(), utxoSet, tx, mempool)
 }
 
