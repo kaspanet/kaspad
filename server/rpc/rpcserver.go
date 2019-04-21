@@ -3236,10 +3236,12 @@ func handleSearchRawTransactions(s *Server, cmd interface{}, closeChan <-chan st
 		result := &srtList[i]
 		result.Hex = hexTxns[i]
 		result.TxID = mtx.TxID().String()
-		result.Vin, err = createVinListPrevOut(s, mtx, params, vinExtra,
-			filterAddrMap)
-		if err != nil {
-			return nil, err
+		if !mtx.IsBlockReward() {
+			result.Vin, err = createVinListPrevOut(s, mtx, params, vinExtra,
+				filterAddrMap)
+			if err != nil {
+				return nil, err
+			}
 		}
 		result.Vout = createVoutList(mtx, params, filterAddrMap)
 		result.Version = mtx.Version
