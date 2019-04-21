@@ -5,12 +5,16 @@ RUN mkdir -p /go/src/github.com/daglabs/btcd
 
 WORKDIR /go/src/github.com/daglabs/btcd
 
-RUN apk add --no-cache curl git 
-RUN curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
+RUN apk add --no-cache curl git
 
-COPY ./Gopkg.* ./
+# GO111MODULE=on forces Go to use the go-module system
+# TODO: remove this once Go 1.13 is released
+ENV GO111MODULE=on
 
-RUN dep ensure -v -vendor-only
+COPY go.mod .
+COPY go.sum .
+
+RUN go mod download
 
 COPY . .
 

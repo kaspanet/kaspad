@@ -2,17 +2,17 @@ version: '3'
 services:
   first:
     image: btcd:latest
-    security_opt:
+    security_opt: 
       - apparmor=unconfined
     cap_add:
       - SYS_PTRACE
     command: [
       "./btcd",
-      "--devnet",
+      "--testnet",
       "--addrindex",
-      "--generate",
+      # "--generate",
       "--nodnsseed",
-      "--miningaddr=dagtest:qzm8w9w0x7lctyxrwh86909wttphm4f84s5wmxn622",
+      "--miningaddr=dagtest:qrm4zaetvny2yuh4wudf8y43fd20lunkxs8quragg8",
       "--rpcuser=user",
       "--rpcpass=pass",
       "--rpclisten=0.0.0.0:18334",
@@ -24,19 +24,18 @@ services:
   second:
     image: btcd:latest
     links: ["first"]
-    security_opt:
+    security_opt: 
       - apparmor=unconfined
     cap_add:
       - SYS_PTRACE
     command: [
       "./btcd",
-      "--devnet",
-      "--generate",
+      "--testnet",
       "--addrindex",
       "--connect=first",
       "--rpcuser=user",
       "--rpcpass=pass",
-      "--miningaddr=dagtest:qzm8w9w0x7lctyxrwh86909wttphm4f84s5wmxn622",
+      "--miningaddr=dagtest:qrm4zaetvny2yuh4wudf8y43fd20lunkxs8quragg8",
       "--rpclisten=0.0.0.0:18334",
       "--rpccert=/go/src/github.com/daglabs/btcd/docker/rpc.cert",
       "--rpckey=/go/src/github.com/daglabs/btcd/docker/rpc.key"
@@ -46,26 +45,25 @@ services:
   second-debug:
     image: btcd:latest
     links: ["first"]
-    security_opt:
+    security_opt: 
       - apparmor=unconfined
     cap_add:
       - SYS_PTRACE
     command: [
-      "dlv",
-      "--listen=:40000",
-      "--api-version=2",
+      "dlv", 
+      "--listen=:40000", 
+      "--api-version=2", 
       "--headless=true",
       "exec",
       "./btcd",
       "--",
       # here starts btcd parameters
-      "--devnet",
-      "--generate",
+      "--testnet",
       "--addrindex",
       "--connect=first",
       "--rpcuser=user",
       "--rpcpass=pass",
-      "--miningaddr=dagtest:qzm8w9w0x7lctyxrwh86909wttphm4f84s5wmxn622",
+      "--miningaddr=dagtest:qrm4zaetvny2yuh4wudf8y43fd20lunkxs8quragg8",
       "--rpclisten=0.0.0.0:18334",
       "--rpccert=/go/src/github.com/daglabs/btcd/docker/rpc.cert",
       "--rpckey=/go/src/github.com/daglabs/btcd/docker/rpc.key"
