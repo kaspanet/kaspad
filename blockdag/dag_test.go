@@ -219,8 +219,8 @@ func TestHaveBlock(t *testing.T) {
 }
 
 // TestCalcSequenceLock tests the LockTimeToSequence function, and the
-// CalcSequenceLockWithLock method of a DAG instance. The tests exercise several
-// combinations of inputs to the CalcSequenceLockWithLock function in order to ensure
+// CalcSequenceLock method of a DAG instance. The tests exercise several
+// combinations of inputs to the CalcSequenceLock function in order to ensure
 // the returned SequenceLocks are correct for each test instance.
 func TestCalcSequenceLock(t *testing.T) {
 	netParams := &dagconfig.SimNetParams
@@ -457,7 +457,7 @@ func TestCalcSequenceLock(t *testing.T) {
 	t.Logf("Running %v SequenceLock tests", len(tests))
 	for i, test := range tests {
 		utilTx := util.NewTx(test.tx)
-		seqLock, err := dag.CalcSequenceLockWithLock(utilTx, utxoSet, test.mempool)
+		seqLock, err := dag.CalcSequenceLock(utilTx, utxoSet, test.mempool)
 		if err != nil {
 			t.Fatalf("test #%d, unable to calc sequence lock: %v", i, err)
 		}

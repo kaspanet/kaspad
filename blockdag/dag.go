@@ -335,7 +335,7 @@ type SequenceLock struct {
 	BlockHeight int32
 }
 
-// CalcSequenceLockWithLock computes a relative lock-time SequenceLock for the passed
+// CalcSequenceLock computes a relative lock-time SequenceLock for the passed
 // transaction using the passed UTXOSet to obtain the past median time
 // for blocks in which the referenced inputs of the transactions were included
 // within. The generated SequenceLock lock can be used in conjunction with a
@@ -344,16 +344,16 @@ type SequenceLock struct {
 // the candidate transaction to be included in a block.
 //
 // This function is safe for concurrent access.
-func (dag *BlockDAG) CalcSequenceLockWithLock(tx *util.Tx, utxoSet UTXOSet, mempool bool) (*SequenceLock, error) {
+func (dag *BlockDAG) CalcSequenceLock(tx *util.Tx, utxoSet UTXOSet, mempool bool) (*SequenceLock, error) {
 	dag.dagLock.RLock()
 	defer dag.dagLock.RUnlock()
 
 	return dag.calcSequenceLock(dag.selectedTip(), utxoSet, tx, mempool)
 }
 
-// CalcSequenceLock is lock free version of CalcSequenceLockWithLock
+// CalcSequenceLockNoLock is lock free version of CalcSequenceLockWithLock
 // This function is unsafe for concurrent access.
-func (dag *BlockDAG) CalcSequenceLock(tx *util.Tx, utxoSet UTXOSet, mempool bool) (*SequenceLock, error) {
+func (dag *BlockDAG) CalcSequenceLockNoLock(tx *util.Tx, utxoSet UTXOSet, mempool bool) (*SequenceLock, error) {
 	return dag.calcSequenceLock(dag.selectedTip(), utxoSet, tx, mempool)
 }
 
