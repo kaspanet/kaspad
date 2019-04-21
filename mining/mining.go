@@ -406,8 +406,7 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 	if err != nil {
 		return nil, err
 	}
-	coinbaseTx, err := CreateCoinbaseTx(g.dagParams, coinbaseScript,
-		nextBlockHeight, payToAddress)
+	coinbaseTx, err := CreateCoinbaseTx(g.dagParams, coinbaseScript, nextBlockHeight, payToAddress)
 	if err != nil {
 		return nil, err
 	}
@@ -630,7 +629,6 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 	// the total fees accordingly.
 	blockSize -= wire.MaxVarIntPayload -
 		uint32(wire.VarIntSerializeSize(uint64(len(blockTxns))))
-	coinbaseTx.MsgTx().TxOut[0].Value += totalFees
 
 	// Calculate the required difficulty for the block.  The timestamp
 	// is potentially adjusted to ensure it comes after the median time of

@@ -73,10 +73,10 @@ type Config struct {
 	// chain tip within the best chain.
 	MedianTimePast func() time.Time
 
-	// CalcSequenceLock defines the function to use in order to generate
+	// CalcSequenceLockNoLock defines the function to use in order to generate
 	// the current sequence lock for the given transaction using the passed
 	// utxo set.
-	CalcSequenceLock func(*util.Tx, blockdag.UTXOSet) (*blockdag.SequenceLock, error)
+	CalcSequenceLockNoLock func(*util.Tx, blockdag.UTXOSet) (*blockdag.SequenceLock, error)
 
 	// IsDeploymentActive returns true if the target deploymentID is
 	// active, and false otherwise. The mempool uses this function to gauge
@@ -852,7 +852,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rateLimit, rejectDu
 	// Don't allow the transaction into the mempool unless its sequence
 	// lock is active, meaning that it'll be allowed into the next block
 	// with respect to its defined relative lock times.
-	sequenceLock, err := mp.cfg.CalcSequenceLock(tx, mp.mpUTXOSet)
+	sequenceLock, err := mp.cfg.CalcSequenceLockNoLock(tx, mp.mpUTXOSet)
 	if err != nil {
 		if cerr, ok := err.(blockdag.RuleError); ok {
 			return nil, nil, dagRuleError(cerr)

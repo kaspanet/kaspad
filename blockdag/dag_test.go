@@ -219,7 +219,7 @@ func TestHaveBlock(t *testing.T) {
 }
 
 // TestCalcSequenceLock tests the LockTimeToSequence function, and the
-// CalcSequenceLock method of a Chain instance. The tests exercise several
+// CalcSequenceLock method of a DAG instance. The tests exercise several
 // combinations of inputs to the CalcSequenceLock function in order to ensure
 // the returned SequenceLocks are correct for each test instance.
 func TestCalcSequenceLock(t *testing.T) {
