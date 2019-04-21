@@ -2909,10 +2909,11 @@ func createVinListPrevOut(s *Server, mtx *wire.MsgTx, chainParams *dagconfig.Par
 	// Use a dynamically sized list to accommodate the address filter.
 	vinList := make([]btcjson.VinPrevOut, 0, len(mtx.TxIn))
 
-	// Lookup all of the referenced transaction outputs needed to populate
-	// the previous output information if requested.
+	// Lookup all of the referenced transaction outputs needed to populate the
+	// previous output information if requested. Fee transactions do not contain
+	// valid inputs: block hash instead of transaction ID.
 	var originOutputs map[wire.OutPoint]wire.TxOut
-	if vinExtra || len(filterAddrMap) > 0 {
+	if !mtx.IsFeeTransaction() && (vinExtra || len(filterAddrMap) > 0) {
 		var err error
 		originOutputs, err = fetchInputTxos(s, mtx)
 		if err != nil {
@@ -3236,12 +3237,10 @@ func handleSearchRawTransactions(s *Server, cmd interface{}, closeChan <-chan st
 		result := &srtList[i]
 		result.Hex = hexTxns[i]
 		result.TxID = mtx.TxID().String()
-		if !mtx.IsBlockReward() {
-			result.Vin, err = createVinListPrevOut(s, mtx, params, vinExtra,
-				filterAddrMap)
-			if err != nil {
-				return nil, err
-			}
+		result.Vin, err = createVinListPrevOut(s, mtx, params, vinExtra,
+			filterAddrMap)
+		if err != nil {
+			return nil, err
 		}
 		result.Vout = createVoutList(mtx, params, filterAddrMap)
 		result.Version = mtx.Version
