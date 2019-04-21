@@ -10,6 +10,7 @@ type config struct {
 	AddressListPath string `long:"addresslist" description:"Path to a list of nodes' JSON-RPC endpoints" required:"true"`
 	CertificatePath string `long:"cert" description:"Path to certificate accepted by JSON-RPC endpoint"`
 	DisableTLS      bool   `long:"notls" description:"Disable TLS"`
+	Verbose         bool   `long:"verbose" short:"v" description:"Enable logging of RPC requests"`
 }
 
 func parseConfig() (*config, error) {

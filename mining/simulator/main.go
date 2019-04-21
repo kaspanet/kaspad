@@ -2,19 +2,23 @@ package main
 
 import (
 	"fmt"
-	"github.com/daglabs/btcd/signal"
 	"log"
 	"os"
 	"runtime/debug"
+
+	"github.com/daglabs/btcd/signal"
 )
 
 func main() {
 	defer handlePanic()
-
 	cfg, err := parseConfig()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error parsing command-line arguments: %s", err)
 		os.Exit(1)
+	}
+
+	if cfg.Verbose {
+		enableRPCLogging()
 	}
 
 	addressList, err := getAddressList(cfg)
