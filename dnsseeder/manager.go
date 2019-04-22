@@ -45,9 +45,13 @@ const (
 	// stale.
 	defaultStaleTimeout = time.Hour
 
-	// smallNetworkStaleTimeout is the time in which a host is considered
-	// stale if the network is small.
-	smallNetworkStaleTimeout = time.Second * 30
+	// defaultRetestTimeout is the time after which addresses need to be
+	// tested again.
+	defaultRetestTimeout = defaultStaleTimeout
+
+	// smallNetworkRetestTimeout is the time after which addresses need to be
+	// tested again if the network is small.
+	smallNetworkRetestTimeout = time.Second * 30
 
 	// dumpAddressInterval is the interval used to dump the address
 	// cache to disk for future use.
@@ -197,8 +201,8 @@ func (m *Manager) Addresses() []*wire.NetAddress {
 		if i == 0 {
 			break
 		}
-		if now.Sub(node.LastSuccess) < m.staleTimeout() ||
-			now.Sub(node.LastAttempt) < m.staleTimeout() {
+		if now.Sub(node.LastSuccess) < m.retestTimeout() ||
+			now.Sub(node.LastAttempt) < m.retestTimeout() {
 			continue
 		}
 		addrs = append(addrs, node.Addr)
@@ -214,12 +218,12 @@ func (m *Manager) AddressCount() int {
 	return len(m.nodes)
 }
 
-func (m *Manager) staleTimeout() time.Duration {
+func (m *Manager) retestTimeout() time.Duration {
 	if m.AddressCount() < smallNetworkNodeAmount {
-		return smallNetworkStaleTimeout
+		return smallNetworkRetestTimeout
 	}
 
-	return defaultStaleTimeout
+	return defaultRetestTimeout
 }
 
 func (m *Manager) creepInterval() time.Duration {
@@ -261,8 +265,7 @@ func (m *Manager) GoodAddresses(qtype uint16, services wire.ServiceFlag, include
 			continue
 		}
 
-		if node.LastSuccess.IsZero() ||
-			now.Sub(node.LastSuccess) > m.staleTimeout() {
+		if node.LastSuccess.IsZero() || now.Sub(node.LastSuccess) > defaultStaleTimeout {
 			continue
 		}
 
