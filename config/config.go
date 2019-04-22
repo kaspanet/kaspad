@@ -20,7 +20,6 @@ import (
 	"time"
 
 	"github.com/btcsuite/go-socks/socks"
-	"github.com/daglabs/btcd/connmgr"
 	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/database"
@@ -126,6 +125,7 @@ type configFlags struct {
 	DisableRPC           bool          `long:"norpc" description:"Disable built-in RPC server -- NOTE: The RPC server is disabled by default if no rpcuser/rpcpass or rpclimituser/rpclimitpass is specified"`
 	DisableTLS           bool          `long:"notls" description:"Disable TLS for the RPC server -- NOTE: This is only allowed if the RPC server is bound to localhost"`
 	DisableDNSSeed       bool          `long:"nodnsseed" description:"Disable DNS seeding for peers"`
+	DNSSeed              string        `long:"dnsseeds" description:"Override DNS seeds with specified hostname"`
 	ExternalIPs          []string      `long:"externalip" description:"Add an ip to the list of local addresses we claim to listen on to peers"`
 	Proxy                string        `long:"proxy" description:"Connect via SOCKS5 proxy (eg. 127.0.0.1:9050)"`
 	ProxyUser            string        `long:"proxyuser" description:"Username for proxy server"`
@@ -907,7 +907,7 @@ func loadConfig() (*Config, []string, error) {
 		// onion-specific proxy configured.
 		if !cfg.NoOnion && cfg.OnionProxy == "" {
 			cfg.Lookup = func(host string) ([]net.IP, error) {
-				return connmgr.TorLookupIP(host, cfg.Proxy)
+				return network.TorLookupIP(host, cfg.Proxy)
 			}
 		}
 	}
@@ -953,7 +953,7 @@ func loadConfig() (*Config, []string, error) {
 		// onion-specific proxy.
 		if cfg.Proxy != "" {
 			cfg.Lookup = func(host string) ([]net.IP, error) {
-				return connmgr.TorLookupIP(host, cfg.OnionProxy)
+				return network.TorLookupIP(host, cfg.OnionProxy)
 			}
 		}
 	} else {
