@@ -44,6 +44,7 @@ type AddrManager struct {
 	addrNewFullNodes   newBucket
 	addrTried          map[subnetworkid.SubnetworkID]*triedBucket
 	addrTriedFullNodes triedBucket
+	addrTrying         map[*KnownAddress]bool
 	started            int32
 	shutdown           int32
 	wg                 sync.WaitGroup
@@ -889,6 +890,8 @@ func (a *AddrManager) reset() {
 	}
 	a.nNewFullNodes = 0
 	a.nTriedFullNodes = 0
+
+	a.addrTrying = make(map[*KnownAddress]bool)
 }
 
 // HostToNetAddress returns a netaddress given a host address.  If the address
@@ -952,15 +955,20 @@ func (a *AddrManager) GetAddress() *KnownAddress {
 	a.mtx.Lock()
 	defer a.mtx.Unlock()
 
+	var knownAddress *KnownAddress
 	if a.localSubnetworkID == nil {
-		return a.getAddress(&a.addrTriedFullNodes, a.nTriedFullNodes,
+		knownAddress = a.getAddress(&a.addrTriedFullNodes, a.nTriedFullNodes,
 			&a.addrNewFullNodes, a.nNewFullNodes)
+	} else {
+		subnetworkID := *a.localSubnetworkID
+		knownAddress = a.getAddress(a.addrTried[subnetworkID], a.nTried[subnetworkID],
+			a.addrNew[subnetworkID], a.nNew[subnetworkID])
 	}
 
-	subnetworkID := *a.localSubnetworkID
+	a.addrTrying[knownAddress] = true
 
-	return a.getAddress(a.addrTried[subnetworkID], a.nTried[subnetworkID],
-		a.addrNew[subnetworkID], a.nNew[subnetworkID])
+	return knownAddress
+
 }
 
 // see GetAddress for details
@@ -983,10 +991,15 @@ func (a *AddrManager) getAddress(addrTried *triedBucket, nTried int, addrNew *ne
 				a.rand.Int63n(int64(addrTried[bucket].Len())); i > 0; i-- {
 				e = e.Next()
 			}
+
 			ka := e.Value.(*KnownAddress)
+			if a.addrTrying[ka] {
+				continue
+			}
+
 			randval := a.rand.Intn(large)
 			if float64(randval) < (factor * ka.chance() * float64(large)) {
-				log.Tracef("Selected %s from tried bucket",
+				log.Infof("Selected %s from tried bucket",
 					NetAddressKey(ka.na))
 				return ka
 			}
@@ -1012,9 +1025,14 @@ func (a *AddrManager) getAddress(addrTried *triedBucket, nTried int, addrNew *ne
 				}
 				nth--
 			}
+
+			if a.addrTrying[ka] {
+				continue
+			}
+
 			randval := a.rand.Intn(large)
 			if float64(randval) < (factor * ka.chance() * float64(large)) {
-				log.Tracef("Selected %s from new bucket",
+				log.Infof("Selected %s from new bucket",
 					NetAddressKey(ka.na))
 				return ka
 			}
@@ -1043,6 +1061,8 @@ func (a *AddrManager) Attempt(addr *wire.NetAddress) {
 	// set last tried time to now
 	ka.attempts++
 	ka.lastattempt = time.Now()
+
+	delete(a.addrTrying, ka)
 }
 
 // Connected Marks the given address as currently connected and working at the
