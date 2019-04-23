@@ -965,7 +965,13 @@ func (a *AddrManager) GetAddress() *KnownAddress {
 			a.addrNew[subnetworkID], a.nNew[subnetworkID])
 	}
 
-	a.addrTrying[knownAddress] = true
+	if knownAddress != nil {
+		if a.addrTrying[knownAddress] {
+			return nil
+		}
+
+		a.addrTrying[knownAddress] = true
+	}
 
 	return knownAddress
 
@@ -991,12 +997,7 @@ func (a *AddrManager) getAddress(addrTried *triedBucket, nTried int, addrNew *ne
 				a.rand.Int63n(int64(addrTried[bucket].Len())); i > 0; i-- {
 				e = e.Next()
 			}
-
 			ka := e.Value.(*KnownAddress)
-			if a.addrTrying[ka] {
-				continue
-			}
-
 			randval := a.rand.Intn(large)
 			if float64(randval) < (factor * ka.chance() * float64(large)) {
 				log.Infof("Selected %s from tried bucket",
@@ -1025,11 +1026,6 @@ func (a *AddrManager) getAddress(addrTried *triedBucket, nTried int, addrNew *ne
 				}
 				nth--
 			}
-
-			if a.addrTrying[ka] {
-				continue
-			}
-
 			randval := a.rand.Intn(large)
 			if float64(randval) < (factor * ka.chance() * float64(large)) {
 				log.Infof("Selected %s from new bucket",
