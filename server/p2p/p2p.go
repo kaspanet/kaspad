@@ -2523,9 +2523,15 @@ func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params
 				// in the same group so that we are not connecting
 				// to the same network segment at the expense of
 				// others.
-				key := addrmgr.GroupKey(addr.NetAddress())
-				if s.OutboundGroupCount(key) != 0 {
-					continue
+				//
+				// Networks that accept unroutable connections are exempt
+				// from this rule, since they're meant to run within a
+				// private subnet, like 10.0.0.0/16.
+				if !config.ActiveNetParams().AcceptUnroutable {
+					key := addrmgr.GroupKey(addr.NetAddress())
+					if s.OutboundGroupCount(key) != 0 {
+						continue
+					}
 				}
 
 				// only allow recent nodes (10mins) after we failed 30

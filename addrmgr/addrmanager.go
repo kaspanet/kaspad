@@ -44,6 +44,7 @@ type AddrManager struct {
 	addrNewFullNodes   newBucket
 	addrTried          map[subnetworkid.SubnetworkID]*triedBucket
 	addrTriedFullNodes triedBucket
+	addrTrying         map[*KnownAddress]bool
 	started            int32
 	shutdown           int32
 	wg                 sync.WaitGroup
@@ -889,6 +890,8 @@ func (a *AddrManager) reset() {
 	}
 	a.nNewFullNodes = 0
 	a.nTriedFullNodes = 0
+
+	a.addrTrying = make(map[*KnownAddress]bool)
 }
 
 // HostToNetAddress returns a netaddress given a host address.  If the address
@@ -952,15 +955,25 @@ func (a *AddrManager) GetAddress() *KnownAddress {
 	a.mtx.Lock()
 	defer a.mtx.Unlock()
 
+	var knownAddress *KnownAddress
 	if a.localSubnetworkID == nil {
-		return a.getAddress(&a.addrTriedFullNodes, a.nTriedFullNodes,
+		knownAddress = a.getAddress(&a.addrTriedFullNodes, a.nTriedFullNodes,
 			&a.addrNewFullNodes, a.nNewFullNodes)
+	} else {
+		subnetworkID := *a.localSubnetworkID
+		knownAddress = a.getAddress(a.addrTried[subnetworkID], a.nTried[subnetworkID],
+			a.addrNew[subnetworkID], a.nNew[subnetworkID])
 	}
 
-	subnetworkID := *a.localSubnetworkID
+	if knownAddress != nil {
+		if a.addrTrying[knownAddress] {
+			return nil
+		}
+		a.addrTrying[knownAddress] = true
+	}
 
-	return a.getAddress(a.addrTried[subnetworkID], a.nTried[subnetworkID],
-		a.addrNew[subnetworkID], a.nNew[subnetworkID])
+	return knownAddress
+
 }
 
 // see GetAddress for details
@@ -1043,6 +1056,8 @@ func (a *AddrManager) Attempt(addr *wire.NetAddress) {
 	// set last tried time to now
 	ka.attempts++
 	ka.lastattempt = time.Now()
+
+	delete(a.addrTrying, ka)
 }
 
 // Connected Marks the given address as currently connected and working at the
