@@ -2517,13 +2517,16 @@ func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params
 					break
 				}
 
+				// Address will not be invalid, local or unroutable
+				// because addrmanager rejects those on addition.
+				// Just check that we don't already have an address
+				// in the same group so that we are not connecting
+				// to the same network segment at the expense of
+				// others.
+				//
+				// DevNet is exempt from this rule because it's meant to run
+				// exclusively within a private subnet, like 10.0.0.0/16.
 				if !config.MainConfig().DevNet {
-					// Address will not be invalid, local or unroutable
-					// because addrmanager rejects those on addition.
-					// Just check that we don't already have an address
-					// in the same group so that we are not connecting
-					// to the same network segment at the expense of
-					// others.
 					key := addrmgr.GroupKey(addr.NetAddress())
 					if s.OutboundGroupCount(key) != 0 {
 						continue

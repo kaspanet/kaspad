@@ -969,7 +969,6 @@ func (a *AddrManager) GetAddress() *KnownAddress {
 		if a.addrTrying[knownAddress] {
 			return nil
 		}
-
 		a.addrTrying[knownAddress] = true
 	}
 
