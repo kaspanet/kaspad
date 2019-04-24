@@ -6,8 +6,9 @@ package addrmgr
 
 import (
 	"fmt"
-	"github.com/daglabs/btcd/config"
 	"net"
+
+	"github.com/daglabs/btcd/config"
 
 	"github.com/daglabs/btcd/wire"
 )
@@ -225,7 +226,7 @@ func IsValid(na *wire.NetAddress) bool {
 // in any reserved ranges.
 func IsRoutable(na *wire.NetAddress) bool {
 	if config.ActiveNetParams().AcceptUnroutable {
-		return true
+		return !IsLocal(na)
 	}
 
 	return IsValid(na) && !(IsRFC1918(na) || IsRFC2544(na) ||
