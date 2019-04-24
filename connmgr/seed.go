@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/daglabs/btcd/config"
 	"github.com/daglabs/btcd/util/subnetworkid"
 
 	"github.com/daglabs/btcd/dagconfig"
@@ -41,7 +42,15 @@ type LookupFunc func(string) ([]net.IP, error)
 func SeedFromDNS(dagParams *dagconfig.Params, reqServices wire.ServiceFlag, includeAllSubnetworks bool,
 	subnetworkID *subnetworkid.SubnetworkID, lookupFn LookupFunc, seedFn OnSeed) {
 
-	for _, dnsseed := range dagParams.DNSSeeds {
+	var dnsSeeds []string
+	configSeed := config.MainConfig().DNSSeed
+	if configSeed != "" {
+		dnsSeeds = []string{configSeed}
+	} else {
+		dnsSeeds = dagParams.DNSSeeds
+	}
+
+	for _, dnsseed := range dnsSeeds {
 		var host string
 		if reqServices == wire.SFNodeNetwork {
 			host = dnsseed
