@@ -2524,9 +2524,10 @@ func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params
 				// to the same network segment at the expense of
 				// others.
 				//
-				// DevNet is exempt from this rule because it's meant to run
-				// exclusively within a private subnet, like 10.0.0.0/16.
-				if !config.MainConfig().DevNet {
+				// Networks that accept unroutable connections are exempt
+				// from this rule, since they're meant to run within a
+				// private subnet, like 10.0.0.0/16.
+				if !config.ActiveNetParams().AcceptUnroutable {
 					key := addrmgr.GroupKey(addr.NetAddress())
 					if s.OutboundGroupCount(key) != 0 {
 						continue
