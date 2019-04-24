@@ -1075,7 +1075,7 @@ func (sm *SyncManager) sendInvsFromRequestQueue(peer *peerpkg.Peer, state *peerS
 		return err
 	}
 	state.requestQueue = newRequestQueue
-	if sm.current() {
+	if sm.syncPeer == nil || sm.current() {
 		newRequestQueue, err := sm.addInvsToGetDataMessageFromQueue(gdmsg, state, state.relayedInvsRequestQueue)
 		if err != nil {
 			return err
