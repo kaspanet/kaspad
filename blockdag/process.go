@@ -114,9 +114,15 @@ func (dag *BlockDAG) processOrphans(hash *daghash.Hash, flags BehaviorFlags) err
 			dag.removeOrphanBlock(orphan)
 			i--
 
-			// Potentially accept the block into the block chain.
+			// Potentially accept the block into the block DAG.
 			err := dag.maybeAcceptBlock(orphan.block, flags)
 			if err != nil {
+				// Skip this orphan if one or more of its parents are
+				// still missing.
+				if ruleErr, ok := err.(RuleError); ok && ruleErr.ErrorCode == ErrParentBlockUnknown {
+					continue
+				}
+
 				return err
 			}
 
