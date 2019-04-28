@@ -42,7 +42,7 @@ type estimateFeeTester struct {
 	ef      *FeeEstimator
 	t       *testing.T
 	version int32
-	height  int32
+	height  uint64
 	last    *lastBlock
 }
 

@@ -67,7 +67,7 @@ type TestInstance interface {
 type AcceptedBlock struct {
 	Name     string
 	Block    *wire.MsgBlock
-	Height   int32
+	Height   uint64
 	IsOrphan bool
 }
 
@@ -85,7 +85,7 @@ func (b AcceptedBlock) FullBlockTestInstance() {}
 type RejectedBlock struct {
 	Name       string
 	Block      *wire.MsgBlock
-	Height     int32
+	Height     uint64
 	RejectCode blockdag.ErrorCode
 }
 
@@ -107,7 +107,7 @@ func (b RejectedBlock) FullBlockTestInstance() {}
 type OrphanOrRejectedBlock struct {
 	Name   string
 	Block  *wire.MsgBlock
-	Height int32
+	Height uint64
 }
 
 // Ensure ExpectedTip implements the TestInstance interface.
@@ -124,7 +124,7 @@ func (b OrphanOrRejectedBlock) FullBlockTestInstance() {}
 type ExpectedTip struct {
 	Name   string
 	Block  *wire.MsgBlock
-	Height int32
+	Height uint64
 }
 
 // Ensure ExpectedTip implements the TestInstance interface.
@@ -141,7 +141,7 @@ func (b ExpectedTip) FullBlockTestInstance() {}
 type RejectedNonCanonicalBlock struct {
 	Name     string
 	RawBlock []byte
-	Height   int32
+	Height   uint64
 }
 
 // FullBlockTestInstance only exists to allow RejectedNonCanonicalBlock to be treated as
@@ -182,10 +182,10 @@ type testGenerator struct {
 	params       *dagconfig.Params
 	tip          *wire.MsgBlock
 	tipName      string
-	tipHeight    int32
+	tipHeight    uint64
 	blocks       map[daghash.Hash]*wire.MsgBlock
 	blocksByName map[string]*wire.MsgBlock
-	blockHeights map[string]int32
+	blockHeights map[string]uint64
 
 	// Used for tracking spendable coinbase outputs.
 	spendableOuts     []spendableOut
@@ -205,7 +205,7 @@ func makeTestGenerator(params *dagconfig.Params) (testGenerator, error) {
 		params:       params,
 		blocks:       map[daghash.Hash]*wire.MsgBlock{*genesisHash: genesis},
 		blocksByName: map[string]*wire.MsgBlock{"genesis": genesis},
-		blockHeights: map[string]int32{"genesis": 0},
+		blockHeights: map[string]uint64{"genesis": 0},
 		tip:          genesis,
 		tipName:      "genesis",
 		tipHeight:    0,
@@ -243,7 +243,7 @@ func pushDataScript(items ...[]byte) []byte {
 // standardCoinbaseScript returns a standard script suitable for use as the
 // signature script of the coinbase transaction of a new block.  In particular,
 // it starts with the block height that is required by version 2 blocks.
-func standardCoinbaseScript(blockHeight int32, extraNonce uint64) ([]byte, error) {
+func standardCoinbaseScript(blockHeight uint64, extraNonce uint64) ([]byte, error) {
 	return txscript.NewScriptBuilder().AddInt64(int64(blockHeight)).
 		AddInt64(int64(extraNonce)).Script()
 }
@@ -275,7 +275,7 @@ func uniqueOpReturnScript() []byte {
 // createCoinbaseTx returns a coinbase transaction paying an appropriate
 // subsidy based on the passed block height.  The coinbase signature script
 // conforms to the requirements of version 2 blocks.
-func (g *testGenerator) createCoinbaseTx(blockHeight int32) *wire.MsgTx {
+func (g *testGenerator) createCoinbaseTx(blockHeight uint64) *wire.MsgTx {
 	extraNonce := uint64(0)
 	coinbaseScript, err := standardCoinbaseScript(blockHeight, extraNonce)
 	if err != nil {
@@ -912,7 +912,7 @@ func Generate(includeLargeReorg bool) (tests [][]TestInstance, err error) {
 
 	coinbaseMaturity := g.params.BlockRewardMaturity
 	var testInstances []TestInstance
-	for i := uint16(0); i < coinbaseMaturity; i++ {
+	for i := uint64(0); i < coinbaseMaturity; i++ {
 		blockName := fmt.Sprintf("bm%d", i)
 		g.nextBlock(blockName, nil)
 		g.saveTipCoinbaseOut()
@@ -923,7 +923,7 @@ func Generate(includeLargeReorg bool) (tests [][]TestInstance, err error) {
 
 	// Collect spendable outputs.  This simplifies the code below.
 	var outs []*spendableOut
-	for i := uint16(0); i < coinbaseMaturity; i++ {
+	for i := uint64(0); i < coinbaseMaturity; i++ {
 		op := g.oldestCoinbaseOut()
 		outs = append(outs, &op)
 	}
@@ -2059,7 +2059,7 @@ func Generate(includeLargeReorg bool) (tests [][]TestInstance, err error) {
 	// Collect all of the spendable coinbase outputs from the previous
 	// collection point up to the current tip.
 	g.saveSpendableCoinbaseOuts()
-	spendableOutOffset := g.tipHeight - int32(coinbaseMaturity)
+	spendableOutOffset := int32(g.tipHeight - coinbaseMaturity)
 
 	// Extend the main chain by a large number of max size blocks.
 	//

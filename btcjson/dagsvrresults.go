@@ -12,7 +12,7 @@ import "encoding/json"
 type GetBlockHeaderVerboseResult struct {
 	Hash          string   `json:"hash"`
 	Confirmations uint64   `json:"confirmations"`
-	Height        int32    `json:"height"`
+	Height        uint64   `json:"height"`
 	Version       int32    `json:"version"`
 	VersionHex    string   `json:"versionHex"`
 	MerkleRoot    string   `json:"merkleRoot"`
@@ -31,7 +31,7 @@ type GetBlockVerboseResult struct {
 	Hash          string        `json:"hash"`
 	Confirmations uint64        `json:"confirmations"`
 	Size          int32         `json:"size"`
-	Height        int64         `json:"height"`
+	Height        uint64        `json:"height"`
 	Version       int32         `json:"version"`
 	VersionHex    string        `json:"versionHex"`
 	MerkleRoot    string        `json:"merkleRoot"`
@@ -99,14 +99,14 @@ type Bip9SoftForkDescription struct {
 // command.
 type GetBlockDAGInfoResult struct {
 	DAG                  string                              `json:"dag"`
-	Blocks               int32                               `json:"blocks"`
-	Headers              int32                               `json:"headers"`
+	Blocks               uint64                              `json:"blocks"`
+	Headers              uint64                              `json:"headers"`
 	TipHashes            []string                            `json:"tipHashes"`
 	Difficulty           float64                             `json:"difficulty"`
 	MedianTime           int64                               `json:"medianTime"`
 	VerificationProgress float64                             `json:"verificationProgress,omitempty"`
 	Pruned               bool                                `json:"pruned"`
-	PruneHeight          int32                               `json:"pruneHeight,omitempty"`
+	PruneHeight          uint64                              `json:"pruneHeight,omitempty"`
 	DAGWork              string                              `json:"dagWork,omitempty"`
 	SoftForks            []*SoftForkDescription              `json:"softForks"`
 	Bip9SoftForks        map[string]*Bip9SoftForkDescription `json:"bip9SoftForks"`
@@ -135,7 +135,7 @@ type GetBlockTemplateResult struct {
 	// CoinbaseTxn or CoinbaseValue must be specified, but not both.
 	Bits          string                     `json:"bits"`
 	CurTime       int64                      `json:"curTime"`
-	Height        int64                      `json:"height"`
+	Height        uint64                     `json:"height"`
 	ParentHashes  []string                   `json:"parentHashes"`
 	SigOpLimit    int64                      `json:"sigOpLimit,omitempty"`
 	SizeLimit     int64                      `json:"sizeLimit,omitempty"`
@@ -173,7 +173,7 @@ type GetMempoolEntryResult struct {
 	Fee              float64  `json:"fee"`
 	ModifiedFee      float64  `json:"modifiedFee"`
 	Time             int64    `json:"time"`
-	Height           int64    `json:"height"`
+	Height           uint64   `json:"height"`
 	StartingPriority float64  `json:"startingPriority"`
 	CurrentPriority  float64  `json:"currentPriority"`
 	DescendantCount  int64    `json:"descendantCount"`
@@ -257,7 +257,7 @@ type GetRawMempoolVerboseResult struct {
 	Size             int32    `json:"size"`
 	Fee              float64  `json:"fee"`
 	Time             int64    `json:"time"`
-	Height           int64    `json:"height"`
+	Height           uint64   `json:"height"`
 	StartingPriority float64  `json:"startingPriority"`
 	CurrentPriority  float64  `json:"currentPriority"`
 	Depends          []string `json:"depends"`
@@ -426,7 +426,7 @@ type GetWorkResult struct {
 type InfoDAGResult struct {
 	Version         int32   `json:"version"`
 	ProtocolVersion int32   `json:"protocolVersion"`
-	Blocks          int32   `json:"blocks"`
+	Blocks          uint64  `json:"blocks"`
 	TimeOffset      int64   `json:"timeOffset"`
 	Connections     int32   `json:"connections"`
 	Proxy           string  `json:"proxy"`

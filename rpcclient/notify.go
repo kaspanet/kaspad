@@ -104,7 +104,7 @@ type NotificationHandlers struct {
 	// NotifyBlocks has been made to register for the notification and the
 	// function is non-nil.  Its parameters differ from OnBlockAdded: it
 	// receives the block's height, header, and relevant transactions.
-	OnFilteredBlockAdded func(height int32, header *wire.BlockHeader,
+	OnFilteredBlockAdded func(height uint64, header *wire.BlockHeader,
 		txs []*util.Tx)
 
 	// OnRecvTx is invoked when a transaction that receives funds to a
@@ -480,7 +480,7 @@ func parseDAGNtfnParams(params []json.RawMessage) (*daghash.Hash,
 //
 // NOTE: This is a btcd extension ported from github.com/decred/dcrrpcclient
 // and requires a websocket connection.
-func parseFilteredBlockAddedParams(params []json.RawMessage) (int32,
+func parseFilteredBlockAddedParams(params []json.RawMessage) (uint64,
 	*wire.BlockHeader, []*util.Tx, error) {
 
 	if len(params) < 3 {
@@ -488,7 +488,7 @@ func parseFilteredBlockAddedParams(params []json.RawMessage) (int32,
 	}
 
 	// Unmarshal first parameter as an integer.
-	var blockHeight int32
+	var blockHeight uint64
 	err := json.Unmarshal(params[0], &blockHeight)
 	if err != nil {
 		return 0, nil, nil, err

@@ -70,7 +70,7 @@ const (
 // NOTE: Deprecated. Use FilteredBlockAddedNtfn instead.
 type BlockAddedNtfn struct {
 	Hash   string
-	Height int32
+	Height uint64
 	Time   int64
 }
 
@@ -78,7 +78,7 @@ type BlockAddedNtfn struct {
 // blockAdded JSON-RPC notification.
 //
 // NOTE: Deprecated. Use NewFilteredBlockAddedNtfn instead.
-func NewBlockAddedNtfn(hash string, height int32, time int64) *BlockAddedNtfn {
+func NewBlockAddedNtfn(hash string, height uint64, time int64) *BlockAddedNtfn {
 	return &BlockAddedNtfn{
 		Hash:   hash,
 		Height: height,
@@ -89,14 +89,14 @@ func NewBlockAddedNtfn(hash string, height int32, time int64) *BlockAddedNtfn {
 // FilteredBlockAddedNtfn defines the filteredBlockAdded JSON-RPC
 // notification.
 type FilteredBlockAddedNtfn struct {
-	Height        int32
+	Height        uint64
 	Header        string
 	SubscribedTxs []string
 }
 
 // NewFilteredBlockAddedNtfn returns a new instance which can be used to
 // issue a filteredBlockAdded JSON-RPC notification.
-func NewFilteredBlockAddedNtfn(height int32, header string, subscribedTxs []string) *FilteredBlockAddedNtfn {
+func NewFilteredBlockAddedNtfn(height uint64, header string, subscribedTxs []string) *FilteredBlockAddedNtfn {
 	return &FilteredBlockAddedNtfn{
 		Height:        height,
 		Header:        header,
@@ -106,7 +106,7 @@ func NewFilteredBlockAddedNtfn(height int32, header string, subscribedTxs []stri
 
 // BlockDetails describes details of a tx in a block.
 type BlockDetails struct {
-	Height int32  `json:"height"`
+	Height uint64 `json:"height"`
 	Hash   string `json:"hash"`
 	Index  int    `json:"index"`
 	Time   int64  `json:"time"`
@@ -159,7 +159,7 @@ func NewRedeemingTxNtfn(hexTx string, block *BlockDetails) *RedeemingTxNtfn {
 // NOTE: Deprecated. Not used with rescanblocks command.
 type RescanFinishedNtfn struct {
 	Hash   string
-	Height int32
+	Height uint64
 	Time   int64
 }
 
@@ -167,7 +167,7 @@ type RescanFinishedNtfn struct {
 // rescanFinished JSON-RPC notification.
 //
 // NOTE: Deprecated. Not used with rescanblocks command.
-func NewRescanFinishedNtfn(hash string, height int32, time int64) *RescanFinishedNtfn {
+func NewRescanFinishedNtfn(hash string, height uint64, time int64) *RescanFinishedNtfn {
 	return &RescanFinishedNtfn{
 		Hash:   hash,
 		Height: height,
@@ -180,7 +180,7 @@ func NewRescanFinishedNtfn(hash string, height int32, time int64) *RescanFinishe
 // NOTE: Deprecated. Not used with rescanblocks command.
 type RescanProgressNtfn struct {
 	Hash   string
-	Height int32
+	Height uint64
 	Time   int64
 }
 
@@ -188,7 +188,7 @@ type RescanProgressNtfn struct {
 // rescanProgress JSON-RPC notification.
 //
 // NOTE: Deprecated. Not used with rescanblocks command.
-func NewRescanProgressNtfn(hash string, height int32, time int64) *RescanProgressNtfn {
+func NewRescanProgressNtfn(hash string, height uint64, time int64) *RescanProgressNtfn {
 	return &RescanProgressNtfn{
 		Hash:   hash,
 		Height: height,

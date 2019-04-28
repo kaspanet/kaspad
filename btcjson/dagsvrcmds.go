@@ -719,8 +719,8 @@ func NewValidateAddressCmd(address string) *ValidateAddressCmd {
 
 // VerifyDAGCmd defines the verifyDag JSON-RPC command.
 type VerifyDAGCmd struct {
-	CheckLevel *int32 `jsonrpcdefault:"3"`
-	CheckDepth *int32 `jsonrpcdefault:"288"` // 0 = all
+	CheckLevel *uint64 `jsonrpcdefault:"3"`
+	CheckDepth *uint64 `jsonrpcdefault:"288"` // 0 = all
 }
 
 // NewVerifyDAGCmd returns a new instance which can be used to issue a
@@ -728,7 +728,7 @@ type VerifyDAGCmd struct {
 //
 // The parameters which are pointers indicate they are optional.  Passing nil
 // for optional parameters will use the default value.
-func NewVerifyDAGCmd(checkLevel, checkDepth *int32) *VerifyDAGCmd {
+func NewVerifyDAGCmd(checkLevel, checkDepth *uint64) *VerifyDAGCmd {
 	return &VerifyDAGCmd{
 		CheckLevel: checkLevel,
 		CheckDepth: checkDepth,

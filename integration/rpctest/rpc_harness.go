@@ -171,7 +171,7 @@ func New(activeNet *dagconfig.Params, handlers *rpcclient.NotificationHandlers,
 	// callback.
 	if handlers.OnFilteredBlockAdded != nil {
 		obc := handlers.OnFilteredBlockAdded
-		handlers.OnFilteredBlockAdded = func(height int32, header *wire.BlockHeader, filteredTxns []*util.Tx) {
+		handlers.OnFilteredBlockAdded = func(height uint64, header *wire.BlockHeader, filteredTxns []*util.Tx) {
 			wallet.IngestBlock(height, header, filteredTxns)
 			obc(height, header, filteredTxns)
 		}

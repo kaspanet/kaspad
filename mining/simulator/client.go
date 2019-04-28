@@ -19,7 +19,7 @@ func newSimulatorClient(address string, connCfg *rpcclient.ConnConfig) (*simulat
 		onBlockAdded: make(chan struct{}, 1),
 	}
 	notificationHandlers := &rpcclient.NotificationHandlers{
-		OnFilteredBlockAdded: func(height int32, header *wire.BlockHeader,
+		OnFilteredBlockAdded: func(height uint64, header *wire.BlockHeader,
 			txs []*util.Tx) {
 			if client.notifyForNewBlocks {
 				client.onBlockAdded <- struct{}{}

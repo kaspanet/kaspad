@@ -640,7 +640,7 @@ func (c *Client) VerifyDAG() (bool, error) {
 // the returned instance.
 //
 // See VerifyDAGLevel for the blocking version and more details.
-func (c *Client) VerifyDAGLevelAsync(checkLevel int32) FutureVerifyDAGResult {
+func (c *Client) VerifyDAGLevelAsync(checkLevel uint64) FutureVerifyDAGResult {
 	cmd := btcjson.NewVerifyDAGCmd(&checkLevel, nil)
 	return c.sendCmd(cmd)
 }
@@ -654,7 +654,7 @@ func (c *Client) VerifyDAGLevelAsync(checkLevel int32) FutureVerifyDAGResult {
 //
 // See VerifyDAG to use the default check level and VerifyDAGBlocks to
 // override the number of blocks to verify.
-func (c *Client) VerifyDAGLevel(checkLevel int32) (bool, error) {
+func (c *Client) VerifyDAGLevel(checkLevel uint64) (bool, error) {
 	return c.VerifyDAGLevelAsync(checkLevel).Receive()
 }
 
@@ -663,7 +663,7 @@ func (c *Client) VerifyDAGLevel(checkLevel int32) (bool, error) {
 // the returned instance.
 //
 // See VerifyDAGBlocks for the blocking version and more details.
-func (c *Client) VerifyDAGBlocksAsync(checkLevel, numBlocks int32) FutureVerifyDAGResult {
+func (c *Client) VerifyDAGBlocksAsync(checkLevel, numBlocks uint64) FutureVerifyDAGResult {
 	cmd := btcjson.NewVerifyDAGCmd(&checkLevel, &numBlocks)
 	return c.sendCmd(cmd)
 }
@@ -679,7 +679,7 @@ func (c *Client) VerifyDAGBlocksAsync(checkLevel, numBlocks int32) FutureVerifyD
 // current longest dag.
 //
 // See VerifyDAG and VerifyDAGLevel to use defaults.
-func (c *Client) VerifyDAGBlocks(checkLevel, numBlocks int32) (bool, error) {
+func (c *Client) VerifyDAGBlocks(checkLevel, numBlocks uint64) (bool, error) {
 	return c.VerifyDAGBlocksAsync(checkLevel, numBlocks).Receive()
 }
 

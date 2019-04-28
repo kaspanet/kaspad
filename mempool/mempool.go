@@ -66,7 +66,7 @@ type Config struct {
 
 	// BestHeight defines the function to use to access the block height of
 	// the current best chain.
-	BestHeight func() int32
+	BestHeight func() uint64
 
 	// MedianTimePast defines the function to use in order to access the
 	// median time past calculated from the point-of-view of the current
@@ -606,7 +606,7 @@ func (mp *TxPool) RemoveDoubleSpends(tx *util.Tx) {
 // helper for maybeAcceptTransaction.
 //
 // This function MUST be called with the mempool lock held (for writes).
-func (mp *TxPool) addTransaction(tx *util.Tx, height int32, fee uint64, parentsInPool []*wire.OutPoint) *TxDesc {
+func (mp *TxPool) addTransaction(tx *util.Tx, height uint64, fee uint64, parentsInPool []*wire.OutPoint) *TxDesc {
 	mp.cfg.DAG.RLock()
 	defer mp.cfg.DAG.RUnlock()
 	// Add the transaction to the pool and mark the referenced outpoints
@@ -1282,7 +1282,7 @@ func (mp *TxPool) RawMempoolVerbose() map[string]*btcjson.GetRawMempoolVerboseRe
 			Size:             int32(tx.MsgTx().SerializeSize()),
 			Fee:              util.Amount(desc.Fee).ToBTC(),
 			Time:             desc.Added.Unix(),
-			Height:           int64(desc.Height),
+			Height:           desc.Height,
 			StartingPriority: desc.StartingPriority,
 			CurrentPriority:  currentPriority,
 			Depends:          make([]string, 0),

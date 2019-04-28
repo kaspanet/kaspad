@@ -29,7 +29,7 @@ func (dag *BlockDAG) maybeAcceptBlock(block *util.Block, flags BehaviorFlags) er
 	}
 
 	bluestParent := parents.bluest()
-	blockHeight := int32(0)
+	blockHeight := uint64(0)
 	if !block.IsGenesis() {
 		blockHeight = parents.maxHeight() + 1
 	}

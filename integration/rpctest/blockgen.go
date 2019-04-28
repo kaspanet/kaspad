@@ -88,14 +88,14 @@ func solveBlock(header *wire.BlockHeader, targetDifficulty *big.Int) bool {
 // standardCoinbaseScript returns a standard script suitable for use as the
 // signature script of the coinbase transaction of a new block. In particular,
 // it starts with the block height that is required by version 2 blocks.
-func standardCoinbaseScript(nextBlockHeight int32, extraNonce uint64) ([]byte, error) {
+func standardCoinbaseScript(nextBlockHeight uint64, extraNonce uint64) ([]byte, error) {
 	return txscript.NewScriptBuilder().AddInt64(int64(nextBlockHeight)).
 		AddInt64(int64(extraNonce)).Script()
 }
 
 // createCoinbaseTx returns a coinbase transaction paying an appropriate
 // subsidy based on the passed block height to the provided address.
-func createCoinbaseTx(coinbaseScript []byte, nextBlockHeight int32,
+func createCoinbaseTx(coinbaseScript []byte, nextBlockHeight uint64,
 	addr util.Address, mineTo []wire.TxOut,
 	net *dagconfig.Params) (*util.Tx, error) {
 
@@ -139,7 +139,7 @@ func CreateBlock(parentBlock *util.Block, inclusionTxs []*util.Tx,
 
 	var (
 		parentHash      *daghash.Hash
-		blockHeight     int32
+		blockHeight     uint64
 		parentBlockTime time.Time
 	)
 

@@ -157,5 +157,5 @@ type ValidateAddressWalletResult struct {
 // GetBestBlockResult models the data from the getbestblock command.
 type GetBestBlockResult struct {
 	Hash   string `json:"hash"`
-	Height int32  `json:"height"`
+	Height uint64 `json:"height"`
 }

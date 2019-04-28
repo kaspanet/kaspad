@@ -52,12 +52,12 @@ func assertVersionBit(r *rpctest.Harness, t *testing.T, hash *daghash.Hash, bit 
 
 // assertChainHeight retrieves the current chain height from the given test
 // harness and ensures it matches the provided expected height.
-func assertChainHeight(r *rpctest.Harness, t *testing.T, expectedHeight uint32) {
+func assertChainHeight(r *rpctest.Harness, t *testing.T, expectedHeight uint64) {
 	height, err := r.Node.GetBlockCount()
 	if err != nil {
 		t.Fatalf("failed to retrieve block height: %v", err)
 	}
-	if uint32(height) != expectedHeight {
+	if height != expectedHeight {
 		_, _, line, _ := runtime.Caller(1)
 		t.Fatalf("assertion failed at line %d: block height of %d "+
 			"is not the expected %d", line, height, expectedHeight)
