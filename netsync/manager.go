@@ -471,8 +471,13 @@ func (sm *SyncManager) handleTxMsg(tmsg *txMsg) {
 
 // current returns true if we believe we are synced with our peers, false if we
 // still have blocks to check
+//
+// We consider ourselves current iff at least one of the following is true:
+// 1. there's no syncPeer, a.k.a. all connected peers are at the same tip
+// 2. the DAG considers itself current - to prevent attacks where a peer sends an
+//    unknown tip but never lets us sync to it.
 func (sm *SyncManager) current() bool {
-	return sm.dag.IsCurrent()
+	return sm.syncPeer == nil || sm.dag.IsCurrent()
 }
 
 // restartSyncIfNeeded finds a new sync candidate if we're not expecting any
@@ -1075,7 +1080,7 @@ func (sm *SyncManager) sendInvsFromRequestQueue(peer *peerpkg.Peer, state *peerS
 		return err
 	}
 	state.requestQueue = newRequestQueue
-	if sm.syncPeer == nil || sm.current() {
+	if sm.current() {
 		newRequestQueue, err := sm.addInvsToGetDataMessageFromQueue(gdmsg, state, state.relayedInvsRequestQueue)
 		if err != nil {
 			return err
