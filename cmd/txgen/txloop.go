@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/daglabs/btcd/dagconfig/daghash"
-	"github.com/daglabs/btcd/mempool"
 	"github.com/daglabs/btcd/rpcclient"
 	"github.com/daglabs/btcd/txscript"
 	"github.com/daglabs/btcd/wire"
@@ -34,11 +33,11 @@ var (
 const (
 	// Those constants should be updated, when monetary policy changed
 	minSpendableAmount uint64 = 10000
-	minRelayTxFee      uint64 = uint64(3 * mempool.DefaultMinRelayTxFee)
+	minTxFee           uint64 = 3000
 )
 
 func isDust(value uint64) bool {
-	return value < minSpendableAmount+minRelayTxFee
+	return value < minSpendableAmount+minTxFee
 }
 
 // evalOutputs evaluates each of the passed outputs, creating a new matching
@@ -84,7 +83,7 @@ func isTxMatured(tx *wire.MsgTx, confirmations uint64) bool {
 
 // DumpTx logs out transaction with given header
 func DumpTx(header string, tx *wire.MsgTx) {
-	log.Printf("%s", header)
+	log.Print(header)
 	log.Printf("\tInputs:")
 	for i, txIn := range tx.TxIn {
 		asm, _ := txscript.DisasmString(txIn.SignatureScript)
@@ -307,8 +306,8 @@ func txLoop(clients []*rpcclient.Client) {
 
 		for !isDust(funds) {
 			amount := minSpendableAmount + uint64(random.Int63n(int64(minSpendableAmount*4)))
-			if amount > funds-minRelayTxFee {
-				amount = funds - minRelayTxFee
+			if amount > funds-minTxFee {
+				amount = funds - minTxFee
 			}
 			output := wire.NewTxOut(amount, pkScript)
 
