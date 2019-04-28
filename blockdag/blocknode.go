@@ -198,6 +198,9 @@ func (node *blockNode) Header() *wire.BlockHeader {
 // the selected chain backwards from this node.  The returned block will be nil when a
 // height is requested that is after the height of the passed node or is less than zero.
 //
+// When there's no chain-block of the requested height, the block with the highest height
+// that is lower than requested height would be returned.
+//
 // This function is safe for concurrent access.
 func (node *blockNode) SelectedAncestor(height int32) *blockNode {
 	if height < 0 || height > node.height {
@@ -205,7 +208,7 @@ func (node *blockNode) SelectedAncestor(height int32) *blockNode {
 	}
 
 	n := node
-	for ; n != nil && n.height != height; n = n.selectedParent {
+	for ; n != nil && n.height > height; n = n.selectedParent {
 		// Intentionally left blank
 	}
 
