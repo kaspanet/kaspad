@@ -145,7 +145,6 @@ func fetchAndPopulateUtxos(client *rpcclient.Client) (funds uint64, exit bool, e
 				continue
 			}
 			if isTxMatured(&tx, searchResult.Confirmations) {
-				// DumpTx(fmt.Sprintf("Fetched transaction: %s", txID), &tx)
 				spentTxs[*txID] = true
 				evalOutputs(tx.TxOut, txID)
 				evalInputs(tx.TxIn)
@@ -321,7 +320,6 @@ func txLoop(clients []*rpcclient.Client) {
 				continue
 			}
 
-			// DumpTx(fmt.Sprintf("Created transaction %s: amount %d, fees %d", tx.TxID(), amount, fees), tx)
 			log.Printf("Created transaction %s: amount %d, fees %d", tx.TxID(), amount, fees)
 
 			funds = utxosFunds()
