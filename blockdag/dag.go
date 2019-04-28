@@ -257,23 +257,24 @@ func (dag *BlockDAG) removeOrphanBlock(orphan *orphanBlock) {
 	// for loop is intentionally used over a range here as range does not
 	// reevaluate the slice on each iteration nor does it adjust the index
 	// for the modified slice.
-	parentHash := orphan.block.MsgBlock().Header.SelectedParentHash()
-	orphans := dag.prevOrphans[*parentHash]
-	for i := 0; i < len(orphans); i++ {
-		hash := orphans[i].block.Hash()
-		if hash.IsEqual(orphanHash) {
-			copy(orphans[i:], orphans[i+1:])
-			orphans[len(orphans)-1] = nil
-			orphans = orphans[:len(orphans)-1]
-			i--
+	for _, parentHash := range orphan.block.MsgBlock().Header.ParentHashes {
+		orphans := dag.prevOrphans[*parentHash]
+		for i := 0; i < len(orphans); i++ {
+			hash := orphans[i].block.Hash()
+			if hash.IsEqual(orphanHash) {
+				copy(orphans[i:], orphans[i+1:])
+				orphans[len(orphans)-1] = nil
+				orphans = orphans[:len(orphans)-1]
+				i--
+			}
 		}
-	}
-	dag.prevOrphans[*parentHash] = orphans
+		dag.prevOrphans[*parentHash] = orphans
 
-	// Remove the map entry altogether if there are no longer any orphans
-	// which depend on the parent hash.
-	if len(dag.prevOrphans[*parentHash]) == 0 {
-		delete(dag.prevOrphans, *parentHash)
+		// Remove the map entry altogether if there are no longer any orphans
+		// which depend on the parent hash.
+		if len(dag.prevOrphans[*parentHash]) == 0 {
+			delete(dag.prevOrphans, *parentHash)
+		}
 	}
 }
 
@@ -321,8 +322,9 @@ func (dag *BlockDAG) addOrphanBlock(block *util.Block) {
 	dag.orphans[*block.Hash()] = oBlock
 
 	// Add to parent hash lookup index for faster dependency lookups.
-	parentHash := block.MsgBlock().Header.SelectedParentHash()
-	dag.prevOrphans[*parentHash] = append(dag.prevOrphans[*parentHash], oBlock)
+	for _, parentHash := range block.MsgBlock().Header.ParentHashes {
+		dag.prevOrphans[*parentHash] = append(dag.prevOrphans[*parentHash], oBlock)
+	}
 }
 
 // SequenceLock represents the converted relative lock-time in seconds, and
