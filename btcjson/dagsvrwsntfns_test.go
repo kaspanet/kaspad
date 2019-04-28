@@ -33,21 +33,6 @@ func TestDAGSvrWsNtfns(t *testing.T) {
 		unmarshalled interface{}
 	}{
 		{
-			name: "blockAdded",
-			newNtfn: func() (interface{}, error) {
-				return btcjson.NewCmd("blockAdded", "123", 100000, 123456789)
-			},
-			staticNtfn: func() interface{} {
-				return btcjson.NewBlockAddedNtfn("123", 100000, 123456789)
-			},
-			marshalled: `{"jsonrpc":"1.0","method":"blockAdded","params":["123",100000,123456789],"id":null}`,
-			unmarshalled: &btcjson.BlockAddedNtfn{
-				Hash:   "123",
-				Height: 100000,
-				Time:   123456789,
-			},
-		},
-		{
 			name: "filteredBlockAdded",
 			newNtfn: func() (interface{}, error) {
 				return btcjson.NewCmd("filteredBlockAdded", 100000, "header", []string{"tx0", "tx1"})
