@@ -107,7 +107,7 @@ type BlockDAG struct {
 	orphanLock   sync.RWMutex
 	orphans      map[daghash.Hash]*orphanBlock
 	prevOrphans  map[daghash.Hash][]*orphanBlock
-	oldestOrphan *orphanBlock
+	newestOrphan *orphanBlock
 
 	// These fields are related to checkpoint handling.  They are protected
 	// by the chain lock.
@@ -292,18 +292,18 @@ func (dag *BlockDAG) addOrphanBlock(block *util.Block) {
 			continue
 		}
 
-		// Update the oldest orphan block pointer so it can be discarded
+		// Update the newest orphan block pointer so it can be discarded
 		// in case the orphan pool fills up.
-		if dag.oldestOrphan == nil || oBlock.expiration.Before(dag.oldestOrphan.expiration) {
-			dag.oldestOrphan = oBlock
+		if dag.newestOrphan == nil || oBlock.block.MsgBlock().Header.Timestamp.After(dag.newestOrphan.block.MsgBlock().Header.Timestamp) {
+			dag.newestOrphan = oBlock
 		}
 	}
 
 	// Limit orphan blocks to prevent memory exhaustion.
 	if len(dag.orphans)+1 > maxOrphanBlocks {
-		// Remove the oldest orphan to make room for the new one.
-		dag.removeOrphanBlock(dag.oldestOrphan)
-		dag.oldestOrphan = nil
+		// Remove the newest orphan to make room for the added one.
+		dag.removeOrphanBlock(dag.newestOrphan)
+		dag.newestOrphan = nil
 	}
 
 	// Protect concurrent access.  This is intentionally done here instead

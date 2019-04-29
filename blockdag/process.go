@@ -109,20 +109,24 @@ func (dag *BlockDAG) processOrphans(hash *daghash.Hash, flags BehaviorFlags) err
 				continue
 			}
 
+			// Skip this orphan if one or more of its parents are
+			// still missing.
+			_, err := lookupParentNodes(orphan.block, dag)
+			if err != nil {
+				if ruleErr, ok := err.(RuleError); ok && ruleErr.ErrorCode == ErrParentBlockUnknown {
+					continue
+				}
+				return err
+			}
+
 			// Remove the orphan from the orphan pool.
 			orphanHash := orphan.block.Hash()
 			dag.removeOrphanBlock(orphan)
 			i--
 
 			// Potentially accept the block into the block DAG.
-			err := dag.maybeAcceptBlock(orphan.block, flags)
+			err = dag.maybeAcceptBlock(orphan.block, flags)
 			if err != nil {
-				// Skip this orphan if one or more of its parents are
-				// still missing.
-				if ruleErr, ok := err.(RuleError); ok && ruleErr.ErrorCode == ErrParentBlockUnknown {
-					continue
-				}
-
 				return err
 			}
 
@@ -224,14 +228,14 @@ func (dag *BlockDAG) ProcessBlock(block *util.Block, flags BehaviorFlags) (bool,
 		}
 
 		if !parentExists {
-			log.Infof("Adding orphan block %s with parent %s", blockHash, parentHash)
-			dag.addOrphanBlock(block)
-
 			allParentsExist = false
 		}
 	}
 
 	if !allParentsExist {
+		log.Infof("Adding orphan block %s", blockHash)
+		dag.addOrphanBlock(block)
+
 		return true, nil
 	}
 
