@@ -241,8 +241,8 @@ func (mp *TxPool) removeOrphan(tx *util.Tx, removeRedeemers bool) {
 // This function is safe for concurrent access.
 func (mp *TxPool) RemoveOrphan(tx *util.Tx) {
 	mp.mtx.Lock()
+	defer mp.mtx.Unlock()
 	mp.removeOrphan(tx, false)
-	mp.mtx.Unlock()
 }
 
 // RemoveOrphansByTag removes all orphan transactions tagged with the provided
@@ -252,13 +252,13 @@ func (mp *TxPool) RemoveOrphan(tx *util.Tx) {
 func (mp *TxPool) RemoveOrphansByTag(tag Tag) uint64 {
 	var numEvicted uint64
 	mp.mtx.Lock()
+	defer mp.mtx.Unlock()
 	for _, otx := range mp.orphans {
 		if otx.tag == tag {
 			mp.removeOrphan(otx.tx, true)
 			numEvicted++
 		}
 	}
-	mp.mtx.Unlock()
 	return numEvicted
 }
 
@@ -591,6 +591,7 @@ func (mp *TxPool) RemoveTransaction(tx *util.Tx, removeRedeemers bool, restoreIn
 func (mp *TxPool) RemoveDoubleSpends(tx *util.Tx) {
 	// Protect concurrent access.
 	mp.mtx.Lock()
+	defer mp.mtx.Unlock()
 	for _, txIn := range tx.MsgTx().TxIn {
 		if txRedeemer, ok := mp.outpoints[txIn.PreviousOutPoint]; ok {
 			if !txRedeemer.ID().IsEqual(tx.ID()) {
@@ -598,7 +599,6 @@ func (mp *TxPool) RemoveDoubleSpends(tx *util.Tx) {
 			}
 		}
 	}
-	mp.mtx.Unlock()
 }
 
 // addTransaction adds the passed transaction to the memory pool.  It should
@@ -609,6 +609,7 @@ func (mp *TxPool) RemoveDoubleSpends(tx *util.Tx) {
 func (mp *TxPool) addTransaction(tx *util.Tx, height uint64, fee uint64, parentsInPool []*wire.OutPoint) *TxDesc {
 	mp.cfg.DAG.RLock()
 	defer mp.cfg.DAG.RUnlock()
+
 	// Add the transaction to the pool and mark the referenced outpoints
 	// as spent by the pool.
 	txD := &TxDesc{
@@ -717,8 +718,6 @@ func (mp *TxPool) FetchTransaction(txID *daghash.TxID) (*util.Tx, error) {
 //
 // This function MUST be called with the mempool lock held (for writes).
 func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rateLimit, rejectDupOrphans bool) ([]*daghash.TxID, *TxDesc, error) {
-	mp.cfg.DAG.RLock()
-	defer mp.cfg.DAG.RUnlock()
 	txID := tx.ID()
 
 	// Don't accept the transaction if it already exists in the pool.  This
@@ -1011,9 +1010,11 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rateLimit, rejectDu
 // This function is safe for concurrent access.
 func (mp *TxPool) MaybeAcceptTransaction(tx *util.Tx, isNew, rateLimit bool) ([]*daghash.TxID, *TxDesc, error) {
 	// Protect concurrent access.
+	mp.cfg.DAG.RLock()
+	defer mp.cfg.DAG.RUnlock()
 	mp.mtx.Lock()
+	defer mp.mtx.Unlock()
 	hashes, txD, err := mp.maybeAcceptTransaction(tx, isNew, rateLimit, true)
-	mp.mtx.Unlock()
 
 	return hashes, txD, err
 }
@@ -1112,9 +1113,11 @@ func (mp *TxPool) processOrphans(acceptedTx *util.Tx) []*TxDesc {
 //
 // This function is safe for concurrent access.
 func (mp *TxPool) ProcessOrphans(acceptedTx *util.Tx) []*TxDesc {
+	mp.cfg.DAG.RLock()
+	defer mp.cfg.DAG.RUnlock()
 	mp.mtx.Lock()
+	defer mp.mtx.Unlock()
 	acceptedTxns := mp.processOrphans(acceptedTx)
-	mp.mtx.Unlock()
 
 	return acceptedTxns
 }
@@ -1134,6 +1137,8 @@ func (mp *TxPool) ProcessTransaction(tx *util.Tx, allowOrphan, rateLimit bool, t
 	log.Tracef("Processing transaction %s", tx.ID())
 
 	// Protect concurrent access.
+	mp.cfg.DAG.RLock()
+	defer mp.cfg.DAG.RUnlock()
 	mp.mtx.Lock()
 	defer mp.mtx.Unlock()
 

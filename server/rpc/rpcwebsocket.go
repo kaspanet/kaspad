@@ -503,8 +503,6 @@ out:
 				}
 
 				if len(blockNotifications) != 0 {
-					m.notifyBlockAdded(blockNotifications,
-						block)
 					m.notifyFilteredBlockAdded(blockNotifications,
 						block)
 				}
@@ -662,25 +660,6 @@ func (m *wsNotificationManager) subscribedClients(tx *util.Tx,
 	}
 
 	return subscribed
-}
-
-// notifyBlockAdded notifies websocket clients that have registered for
-// block updates when a block is added to the blockDAG.
-func (*wsNotificationManager) notifyBlockAdded(clients map[chan struct{}]*wsClient,
-	block *util.Block) {
-
-	// Notify interested websocket clients about the added block.
-	ntfn := btcjson.NewBlockAddedNtfn(block.Hash().String(), block.Height(),
-		block.MsgBlock().Header.Timestamp.Unix())
-	marshalledJSON, err := btcjson.MarshalCmd(nil, ntfn)
-	if err != nil {
-		log.Errorf("Failed to marshal block added notification: "+
-			"%s", err)
-		return
-	}
-	for _, wsc := range clients {
-		wsc.QueueNotification(marshalledJSON)
-	}
 }
 
 // notifyFilteredBlockAdded notifies websocket clients that have registered for

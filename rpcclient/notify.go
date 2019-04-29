@@ -204,22 +204,6 @@ func (c *Client) handleNotification(ntfn *rawNotification) {
 	}
 
 	switch ntfn.Method {
-	// OnBlockAdded
-	case btcjson.BlockAddedNtfnMethod:
-		// Ignore the notification if the client is not interested in
-		// it.
-		if c.ntfnHandlers.OnBlockAdded == nil {
-			return
-		}
-
-		blockHash, blockHeight, blockTime, err := parseDAGNtfnParams(ntfn.Params)
-		if err != nil {
-			log.Warnf("Received invalid block added "+
-				"notification: %s", err)
-			return
-		}
-
-		c.ntfnHandlers.OnBlockAdded(blockHash, blockHeight, blockTime)
 
 	// OnFilteredBlockAdded
 	case btcjson.FilteredBlockAddedNtfnMethod:

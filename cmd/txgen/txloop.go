@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/daglabs/btcd/dagconfig/daghash"
-	"github.com/daglabs/btcd/mempool"
 	"github.com/daglabs/btcd/rpcclient"
 	"github.com/daglabs/btcd/txscript"
 	"github.com/daglabs/btcd/wire"
@@ -34,11 +33,11 @@ var (
 const (
 	// Those constants should be updated, when monetary policy changed
 	minSpendableAmount uint64 = 10000
-	minRelayTxFee      uint64 = uint64(mempool.DefaultMinRelayTxFee)
+	minTxFee           uint64 = 3000
 )
 
 func isDust(value uint64) bool {
-	return value < minSpendableAmount+minRelayTxFee
+	return value < minSpendableAmount+minTxFee
 }
 
 // evalOutputs evaluates each of the passed outputs, creating a new matching
@@ -80,6 +79,22 @@ func isTxMatured(tx *wire.MsgTx, confirmations uint64) bool {
 		return confirmations >= 1
 	}
 	return confirmations >= uint64(float64(activeNetParams.BlockRewardMaturity)*1.5)
+}
+
+// DumpTx logs out transaction with given header
+func DumpTx(header string, tx *wire.MsgTx) {
+	log.Print(header)
+	log.Printf("\tInputs:")
+	for i, txIn := range tx.TxIn {
+		asm, _ := txscript.DisasmString(txIn.SignatureScript)
+		log.Printf("\t\t%d: PreviousOutPoint: %v, SignatureScript: %s",
+			i, txIn.PreviousOutPoint, asm)
+	}
+	log.Printf("\tOutputs:")
+	for i, txOut := range tx.TxOut {
+		asm, _ := txscript.DisasmString(txOut.PkScript)
+		log.Printf("\t\t%d: Value: %d, PkScript: %s", i, txOut.Value, asm)
+	}
 }
 
 func fetchAndPopulateUtxos(client *rpcclient.Client) (funds uint64, exit bool, err error) {
@@ -264,7 +279,9 @@ func txLoop(clients []*rpcclient.Client) {
 	utxos = make(map[wire.OutPoint]*utxo)
 	spentTxs = make(map[daghash.TxID]bool)
 
-	pkScript, err := txscript.PayToAddrScript(p2pkhAddress)
+	var err error
+	pkScript, err = txscript.PayToAddrScript(p2pkhAddress)
+
 	if err != nil {
 		log.Printf("Failed to generate pkscript to address: %s", err)
 		return
@@ -289,6 +306,9 @@ func txLoop(clients []*rpcclient.Client) {
 
 		for !isDust(funds) {
 			amount := minSpendableAmount + uint64(random.Int63n(int64(minSpendableAmount*4)))
+			if amount > funds-minTxFee {
+				amount = funds - minTxFee
+			}
 			output := wire.NewTxOut(amount, pkScript)
 
 			tx, fees, err := createTransaction([]*wire.TxOut{output}, 10)
