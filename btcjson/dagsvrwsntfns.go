@@ -9,12 +9,6 @@
 package btcjson
 
 const (
-	// BlockAddedNtfnMethod is the legacy, deprecated method used for
-	// notifications from the dag server that a block has been connected.
-	//
-	// NOTE: Deprecated. Use FilteredBlockAddedNtfnMethod instead.
-	BlockAddedNtfnMethod = "blockAdded"
-
 	// FilteredBlockAddedNtfnMethod is the new method used for
 	// notifications from the dag server that a block has been connected.
 	FilteredBlockAddedNtfnMethod = "filteredBlockAdded"
@@ -64,27 +58,6 @@ const (
 	// matches the loaded filter was accepted by the mempool.
 	RelevantTxAcceptedNtfnMethod = "relevantTxAccepted"
 )
-
-// BlockAddedNtfn defines the blockAdded JSON-RPC notification.
-//
-// NOTE: Deprecated. Use FilteredBlockAddedNtfn instead.
-type BlockAddedNtfn struct {
-	Hash   string
-	Height int32
-	Time   int64
-}
-
-// NewBlockAddedNtfn returns a new instance which can be used to issue a
-// blockAdded JSON-RPC notification.
-//
-// NOTE: Deprecated. Use NewFilteredBlockAddedNtfn instead.
-func NewBlockAddedNtfn(hash string, height int32, time int64) *BlockAddedNtfn {
-	return &BlockAddedNtfn{
-		Hash:   hash,
-		Height: height,
-		Time:   time,
-	}
-}
 
 // FilteredBlockAddedNtfn defines the filteredBlockAdded JSON-RPC
 // notification.
@@ -241,7 +214,6 @@ func init() {
 	// notifications.
 	flags := UFWebsocketOnly | UFNotification
 
-	MustRegisterCmd(BlockAddedNtfnMethod, (*BlockAddedNtfn)(nil), flags)
 	MustRegisterCmd(FilteredBlockAddedNtfnMethod, (*FilteredBlockAddedNtfn)(nil), flags)
 	MustRegisterCmd(RecvTxNtfnMethod, (*RecvTxNtfn)(nil), flags)
 	MustRegisterCmd(RedeemingTxNtfnMethod, (*RedeemingTxNtfn)(nil), flags)
