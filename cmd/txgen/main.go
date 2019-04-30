@@ -79,7 +79,7 @@ func disconnect(clients []*rpcclient.Client) {
 func handlePanic() {
 	err := recover()
 	if err != nil {
-		logger.Infof("Fatal error: %s", err)
-		logger.Infof("Stack trace: %s", debug.Stack())
+		logger.Errorf("Fatal error: %s", err)
+		logger.Errorf("Stack trace: %s", debug.Stack())
 	}
 }
