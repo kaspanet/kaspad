@@ -46,7 +46,7 @@ func hexToBytes(s string) []byte {
 // provided source transactions as if there were available at the respective
 // block height specified in the heights slice.  The length of the source txns
 // and source tx heights must match or it will panic.
-func newUTXOSet(sourceTxns []*wire.MsgTx, sourceTxHeights []int32) blockdag.UTXOSet {
+func newUTXOSet(sourceTxns []*wire.MsgTx, sourceTxHeights []uint64) blockdag.UTXOSet {
 	if len(sourceTxns) != len(sourceTxHeights) {
 		panic("each transaction must have its block height specified")
 	}
@@ -130,14 +130,14 @@ func TestCalcPriority(t *testing.T) {
 		name       string           // test description
 		tx         *wire.MsgTx      // tx to calc priority for
 		utxoSet    blockdag.UTXOSet // inputs to tx
-		nextHeight int32            // height for priority calc
+		nextHeight uint64           // height for priority calc
 		want       float64          // expected priority
 	}{
 		{
 			name: "one height 7 input, prio tx height 169",
 			tx:   commonRedeemTx1,
 			utxoSet: newUTXOSet([]*wire.MsgTx{commonSourceTx1},
-				[]int32{7}),
+				[]uint64{7}),
 			nextHeight: 169,
 			want:       1.125e+10,
 		},
@@ -145,7 +145,7 @@ func TestCalcPriority(t *testing.T) {
 			name: "one height 100 input, prio tx height 169",
 			tx:   commonRedeemTx1,
 			utxoSet: newUTXOSet([]*wire.MsgTx{commonSourceTx1},
-				[]int32{100}),
+				[]uint64{100}),
 			nextHeight: 169,
 			want:       4.791666666666667e+09,
 		},
@@ -153,7 +153,7 @@ func TestCalcPriority(t *testing.T) {
 			name: "one height 7 input, prio tx height 100000",
 			tx:   commonRedeemTx1,
 			utxoSet: newUTXOSet([]*wire.MsgTx{commonSourceTx1},
-				[]int32{7}),
+				[]uint64{7}),
 			nextHeight: 100000,
 			want:       6.943958333333333e+12,
 		},
@@ -161,7 +161,7 @@ func TestCalcPriority(t *testing.T) {
 			name: "one height 100 input, prio tx height 100000",
 			tx:   commonRedeemTx1,
 			utxoSet: newUTXOSet([]*wire.MsgTx{commonSourceTx1},
-				[]int32{100}),
+				[]uint64{100}),
 			nextHeight: 100000,
 			want:       6.9375e+12,
 		},

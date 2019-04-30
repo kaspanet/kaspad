@@ -307,7 +307,7 @@ func TestCheckTransactionStandard(t *testing.T) {
 	tests := []struct {
 		name       string
 		tx         *wire.MsgTx
-		height     int32
+		height     uint64
 		isStandard bool
 		code       wire.RejectCode
 	}{

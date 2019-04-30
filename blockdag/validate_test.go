@@ -20,7 +20,7 @@ import (
 // TestSequenceLocksActive tests the SequenceLockActive function to ensure it
 // works as expected in all possible combinations/scenarios.
 func TestSequenceLocksActive(t *testing.T) {
-	seqLock := func(h int32, s int64) *SequenceLock {
+	seqLock := func(h int64, s int64) *SequenceLock {
 		return &SequenceLock{
 			Seconds:     s,
 			BlockHeight: h,
@@ -29,7 +29,7 @@ func TestSequenceLocksActive(t *testing.T) {
 
 	tests := []struct {
 		seqLock     *SequenceLock
-		blockHeight int32
+		blockHeight uint64
 		mtp         time.Time
 
 		want bool
@@ -488,7 +488,7 @@ func TestCheckSerializedHeight(t *testing.T) {
 
 	tests := []struct {
 		sigScript  []byte // Serialized data
-		wantHeight int32  // Expected height
+		wantHeight uint64 // Expected height
 		err        error  // Expected error type
 	}{
 		// No serialized height length.

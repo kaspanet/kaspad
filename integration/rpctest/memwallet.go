@@ -39,20 +39,20 @@ type utxo struct {
 	pkScript       []byte
 	value          util.Amount
 	keyIndex       uint32
-	maturityHeight int32
+	maturityHeight uint64
 	isLocked       bool
 }
 
 // isMature returns true if the target utxo is considered "mature" at the
 // passed block height. Otherwise, false is returned.
-func (u *utxo) isMature(height int32) bool {
+func (u *utxo) isMature(height uint64) bool {
 	return height >= u.maturityHeight
 }
 
 // dagUpdate encapsulates an update to the current DAG. This struct is
 // used to sync up the memWallet each time a new block is connected to the DAG.
 type dagUpdate struct {
-	blockHeight  int32
+	blockHeight  uint64
 	filteredTxns []*util.Tx
 	isConnect    bool // True if connect, false if disconnect
 }
@@ -80,7 +80,7 @@ type memWallet struct {
 
 	// currentHeight is the latest height the wallet is known to be synced
 	// to.
-	currentHeight int32
+	currentHeight uint64
 
 	// addrs tracks all addresses belonging to the wallet. The addresses
 	// are indexed by their keypath from the hdRoot.
@@ -93,7 +93,7 @@ type memWallet struct {
 	// received. Once a block is disconnected, the undo entry for the
 	// particular height is evaluated, thereby rewinding the effect of the
 	// disconnected block on the wallet's set of spendable utxos.
-	reorgJournal map[int32]*undoEntry
+	reorgJournal map[uint64]*undoEntry
 
 	dagUpdates      []*dagUpdate
 	dagUpdateSignal chan struct{}
@@ -150,7 +150,7 @@ func newMemWallet(net *dagconfig.Params, harnessID uint32) (*memWallet, error) {
 		addrs:           addrs,
 		utxos:           make(map[wire.OutPoint]*utxo),
 		dagUpdateSignal: make(chan struct{}),
-		reorgJournal:    make(map[int32]*undoEntry),
+		reorgJournal:    make(map[uint64]*undoEntry),
 	}, nil
 }
 
@@ -162,7 +162,7 @@ func (m *memWallet) Start() {
 // SyncedHeight returns the height the wallet is known to be synced to.
 //
 // This function is safe for concurrent access.
-func (m *memWallet) SyncedHeight() int32 {
+func (m *memWallet) SyncedHeight() uint64 {
 	m.RLock()
 	defer m.RUnlock()
 	return m.currentHeight
@@ -177,7 +177,7 @@ func (m *memWallet) SetRPCClient(rpcClient *rpcclient.Client) {
 // IngestBlock is a call-back which is to be triggered each time a new block is
 // connected to the blockDAG. It queues the update for the DAG syncer,
 // calling the private version in sequential order.
-func (m *memWallet) IngestBlock(height int32, header *wire.BlockHeader, filteredTxns []*util.Tx) {
+func (m *memWallet) IngestBlock(height uint64, header *wire.BlockHeader, filteredTxns []*util.Tx) {
 	// Append this new DAG update to the end of the queue of new DAG
 	// updates.
 	m.dagMtx.Lock()
@@ -260,9 +260,9 @@ func (m *memWallet) evalOutputs(outputs []*wire.TxOut, txID *daghash.TxID,
 			// If this is a coinbase output, then we mark the
 			// maturity height at the proper block height in the
 			// future.
-			var maturityHeight int32
+			var maturityHeight uint64
 			if isCoinbase {
-				maturityHeight = m.currentHeight + int32(m.net.BlockRewardMaturity)
+				maturityHeight = m.currentHeight + m.net.BlockRewardMaturity
 			}
 
 			op := wire.OutPoint{TxID: *txID, Index: uint32(i)}

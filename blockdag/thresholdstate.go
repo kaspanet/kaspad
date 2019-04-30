@@ -77,11 +77,11 @@ type thresholdConditionChecker interface {
 
 	// RuleChangeActivationThreshold is the number of blocks for which the
 	// condition must be true in order to lock in a rule change.
-	RuleChangeActivationThreshold() uint32
+	RuleChangeActivationThreshold() uint64
 
 	// MinerConfirmationWindow is the number of blocks in each threshold
 	// state retarget window.
-	MinerConfirmationWindow() uint32
+	MinerConfirmationWindow() uint64
 
 	// Condition returns whether or not the rule change activation condition
 	// has been met.  This typically involves checking whether or not the
@@ -129,7 +129,7 @@ func newThresholdCaches(numCaches uint32) []thresholdStateCache {
 func (dag *BlockDAG) thresholdState(prevNode *blockNode, checker thresholdConditionChecker, cache *thresholdStateCache) (ThresholdState, error) {
 	// The threshold state for the window that contains the genesis block is
 	// defined by definition.
-	confirmationWindow := int32(checker.MinerConfirmationWindow())
+	confirmationWindow := checker.MinerConfirmationWindow()
 	if prevNode == nil || (prevNode.height+1) < confirmationWindow {
 		return ThresholdDefined, nil
 	}
@@ -218,9 +218,9 @@ func (dag *BlockDAG) thresholdState(prevNode *blockNode, checker thresholdCondit
 			// At this point, the rule change is still being voted
 			// on by the miners, so iterate backwards through the
 			// confirmation window to count all of the votes in it.
-			var count uint32
+			var count uint64
 			countNode := prevNode
-			for i := int32(0); i < confirmationWindow; i++ {
+			for i := uint64(0); i < confirmationWindow; i++ {
 				condition, err := checker.Condition(countNode)
 				if err != nil {
 					return ThresholdFailed, err

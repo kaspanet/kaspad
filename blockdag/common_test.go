@@ -47,7 +47,7 @@ func loadBlocks(filename string) (blocks []*util.Block, err error) {
 	var block *util.Block
 
 	err = nil
-	for height := 0; err == nil; height++ {
+	for height := uint64(0); err == nil; height++ {
 		var rintbuf uint32
 		err = binary.Read(dr, binary.LittleEndian, &rintbuf)
 		if err == io.EOF {
@@ -74,7 +74,7 @@ func loadBlocks(filename string) (blocks []*util.Block, err error) {
 		if err != nil {
 			return
 		}
-		block.SetHeight(int32(height))
+		block.SetHeight(height)
 		blocks = append(blocks, block)
 	}
 
@@ -151,7 +151,7 @@ func loadUTXOSet(filename string) (UTXOSet, error) {
 
 // TestSetBlockRewardMaturity makes the ability to set the block reward maturity
 // available when running tests.
-func (dag *BlockDAG) TestSetBlockRewardMaturity(maturity uint16) {
+func (dag *BlockDAG) TestSetBlockRewardMaturity(maturity uint64) {
 	dag.dagParams.BlockRewardMaturity = maturity
 }
 
@@ -174,7 +174,7 @@ func newTestDAG(params *dagconfig.Params) *BlockDAG {
 		timeSource:          NewMedianTime(),
 		minRetargetTimespan: targetTimespan / adjustmentFactor,
 		maxRetargetTimespan: targetTimespan * adjustmentFactor,
-		blocksPerRetarget:   int32(targetTimespan / targetTimePerBlock),
+		blocksPerRetarget:   uint64(targetTimespan / targetTimePerBlock),
 		index:               index,
 		virtual:             newVirtualBlock(setFromSlice(node), params.K),
 		genesis:             index.LookupNode(params.GenesisHash),

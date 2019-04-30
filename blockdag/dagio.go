@@ -292,7 +292,7 @@ func deserializeUTXOEntry(serialized []byte) (*UTXOEntry, error) {
 	// Bit 0 indicates whether the containing transaction is a block reward.
 	// Bits 1-x encode height of containing transaction.
 	isBlockReward := code&0x01 != 0
-	blockHeight := int32(code >> 1)
+	blockHeight := code >> 1
 
 	// Decode the compressed unspent transaction output.
 	amount, pkScript, _, err := decodeCompressedTxOut(serialized[offset:])
@@ -371,10 +371,10 @@ func dbPutUTXODiff(dbTx database.Tx, diff *UTXODiff) error {
 // dbPutBlockIndex uses an existing database transaction to update or add the
 // block index entries for the hash to height and height to hash mappings for
 // the provided values.
-func dbPutBlockIndex(dbTx database.Tx, hash *daghash.Hash, height int32) error {
+func dbPutBlockIndex(dbTx database.Tx, hash *daghash.Hash, height uint64) error {
 	// Serialize the height for use in the index entries.
-	var serializedHeight [4]byte
-	byteOrder.PutUint32(serializedHeight[:], uint32(height))
+	var serializedHeight [8]byte
+	byteOrder.PutUint64(serializedHeight[:], height)
 
 	// Add the block hash to height mapping to the index.
 	meta := dbTx.Metadata()

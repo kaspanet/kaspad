@@ -245,7 +245,7 @@ func isDust(txOut *wire.TxOut, minRelayTxFee util.Amount) bool {
 // finalized, conforming to more stringent size constraints, having scripts
 // of recognized forms, and not containing "dust" outputs (those that are
 // so small it costs more to process them than they are worth).
-func checkTransactionStandard(tx *util.Tx, height int32,
+func checkTransactionStandard(tx *util.Tx, height uint64,
 	medianTimePast time.Time, policy *Policy) error {
 
 	// The transaction must be a currently supported version.

@@ -26,7 +26,7 @@ func TestChainHeight(t *testing.T) {
 
 	tests := []struct {
 		node                *blockNode
-		expectedChainHeight uint32
+		expectedChainHeight uint64
 	}{
 		{
 			node:                node0,

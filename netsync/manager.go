@@ -123,7 +123,7 @@ type pauseMsg struct {
 // headerNode is used as a node in a list of headers that are linked together
 // between checkpoints.
 type headerNode struct {
-	height int32
+	height uint64
 	hash   *daghash.Hash
 }
 
@@ -180,7 +180,7 @@ type SyncManager struct {
 
 // resetHeaderState sets the headers-first mode state to values appropriate for
 // syncing from a new peer.
-func (sm *SyncManager) resetHeaderState(newestHash *daghash.Hash, newestHeight int32) {
+func (sm *SyncManager) resetHeaderState(newestHash *daghash.Hash, newestHeight uint64) {
 	sm.headersFirstMode = false
 	sm.headerList.Init()
 	sm.startHeader = nil
@@ -198,7 +198,7 @@ func (sm *SyncManager) resetHeaderState(newestHash *daghash.Hash, newestHeight i
 // It returns nil when there is not one either because the height is already
 // later than the final checkpoint or some other reason such as disabled
 // checkpoints.
-func (sm *SyncManager) findNextHeaderCheckpoint(height int32) *dagconfig.Checkpoint {
+func (sm *SyncManager) findNextHeaderCheckpoint(height uint64) *dagconfig.Checkpoint {
 	checkpoints := sm.dag.Checkpoints()
 	if len(checkpoints) == 0 {
 		return nil

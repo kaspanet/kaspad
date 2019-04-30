@@ -152,7 +152,7 @@ type FutureGetBestBlockResult chan *response
 
 // Receive waits for the response promised by the future and returns the hash
 // and height of the block in the longest (best) chain.
-func (r FutureGetBestBlockResult) Receive() (*daghash.Hash, int32, error) {
+func (r FutureGetBestBlockResult) Receive() (*daghash.Hash, uint64, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return nil, 0, err
@@ -190,7 +190,7 @@ func (c *Client) GetBestBlockAsync() FutureGetBestBlockResult {
 // chain.
 //
 // NOTE: This is a btcd extension.
-func (c *Client) GetBestBlock() (*daghash.Hash, int32, error) {
+func (c *Client) GetBestBlock() (*daghash.Hash, uint64, error) {
 	return c.GetBestBlockAsync().Receive()
 }
 

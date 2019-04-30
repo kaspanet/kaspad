@@ -19,7 +19,7 @@ const MaxGetCFiltersReqRange = 1000
 // blocks.
 type MsgGetCFilters struct {
 	FilterType  FilterType
-	StartHeight uint32
+	StartHeight uint64
 	StopHash    *daghash.Hash
 }
 
@@ -65,14 +65,14 @@ func (msg *MsgGetCFilters) Command() string {
 // MaxPayloadLength returns the maximum length the payload can be for the
 // receiver.  This is part of the Message interface implementation.
 func (msg *MsgGetCFilters) MaxPayloadLength(pver uint32) uint32 {
-	// Filter type + uint32 + block hash
-	return 1 + 4 + daghash.HashSize
+	// Filter type + uint64 + block hash
+	return 1 + 8 + daghash.HashSize
 }
 
 // NewMsgGetCFilters returns a new bitcoin getcfilters message that conforms to
 // the Message interface using the passed parameters and defaults for the
 // remaining fields.
-func NewMsgGetCFilters(filterType FilterType, startHeight uint32,
+func NewMsgGetCFilters(filterType FilterType, startHeight uint64,
 	stopHash *daghash.Hash) *MsgGetCFilters {
 	return &MsgGetCFilters{
 		FilterType:  filterType,
