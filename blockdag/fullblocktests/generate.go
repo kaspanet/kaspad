@@ -2059,7 +2059,7 @@ func Generate(includeLargeReorg bool) (tests [][]TestInstance, err error) {
 	// Collect all of the spendable coinbase outputs from the previous
 	// collection point up to the current tip.
 	g.saveSpendableCoinbaseOuts()
-	spendableOutOffset := int32(g.tipHeight - coinbaseMaturity)
+	spendableOutOffset := g.tipHeight - coinbaseMaturity
 
 	// Extend the main chain by a large number of max size blocks.
 	//
@@ -2068,7 +2068,7 @@ func Generate(includeLargeReorg bool) (tests [][]TestInstance, err error) {
 	reorgSpend := *outs[spendableOutOffset]
 	reorgStartBlockName := g.tipName
 	chain1TipName := g.tipName
-	for i := int32(0); i < numLargeReorgBlocks; i++ {
+	for i := uint64(0); i < numLargeReorgBlocks; i++ {
 		chain1TipName = fmt.Sprintf("br%d", i)
 		g.nextBlock(chain1TipName, &reorgSpend, func(b *wire.MsgBlock) {
 			bytesToMaxSize := maxBlockSize - b.SerializeSize() - 3
@@ -2083,7 +2083,7 @@ func Generate(includeLargeReorg bool) (tests [][]TestInstance, err error) {
 		// Use the next available spendable output.  First use up any
 		// remaining spendable outputs that were already popped into the
 		// outs slice, then just pop them from the stack.
-		if spendableOutOffset+1+i < int32(len(outs)) {
+		if spendableOutOffset+1+i < uint64(len(outs)) {
 			reorgSpend = *outs[spendableOutOffset+1+i]
 		} else {
 			reorgSpend = g.oldestCoinbaseOut()
