@@ -682,7 +682,6 @@ func (dag *BlockDAG) initDAGState() error {
 
 // deserializeBlockNode parses a value in the block index bucket and returns a block node.
 func (dag *BlockDAG) deserializeBlockNode(blockRow []byte) (*blockNode, error) {
-	node := &blockNode{}
 	buffer := bytes.NewReader(blockRow)
 
 	var header wire.BlockHeader
@@ -691,14 +690,16 @@ func (dag *BlockDAG) deserializeBlockNode(blockRow []byte) (*blockNode, error) {
 		return nil, err
 	}
 
-	node.hash = header.BlockHash()
-	node.workSum = util.CalcWork(header.Bits)
-	node.version = header.Version
-	node.bits = header.Bits
-	node.nonce = header.Nonce
-	node.timestamp = header.Timestamp.Unix()
-	node.hashMerkleRoot = header.HashMerkleRoot
-	node.idMerkleRoot = header.IDMerkleRoot
+	node := &blockNode{
+		hash:           header.BlockHash(),
+		workSum:        util.CalcWork(header.Bits),
+		version:        header.Version,
+		bits:           header.Bits,
+		nonce:          header.Nonce,
+		timestamp:      header.Timestamp.Unix(),
+		hashMerkleRoot: header.HashMerkleRoot,
+		idMerkleRoot:   header.IDMerkleRoot,
+	}
 
 	node.children = newSet()
 	node.parents = newSet()
