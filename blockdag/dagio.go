@@ -9,11 +9,13 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
+	"io"
 	"sync"
 
 	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/database"
 	"github.com/daglabs/btcd/util"
+	"github.com/daglabs/btcd/util/binaryserializer"
 	"github.com/daglabs/btcd/util/subnetworkid"
 	"github.com/daglabs/btcd/wire"
 )
@@ -570,56 +572,34 @@ func (dag *BlockDAG) initDAGState() error {
 
 		blockIndexBucket := dbTx.Metadata().Bucket(blockIndexBucketName)
 
-		// Determine how many blocks will be loaded into the index so we can
-		// allocate the right amount.
-		var blockCount int32
-		cursor := blockIndexBucket.Cursor()
-		for ok := cursor.First(); ok; ok = cursor.Next() {
-			blockCount++
-		}
-		blockNodes := make([]blockNode, blockCount)
-
 		var i int32
 		var lastNode *blockNode
-		cursor = blockIndexBucket.Cursor()
+		cursor := blockIndexBucket.Cursor()
 		for ok := cursor.First(); ok; ok = cursor.Next() {
-			header, status, err := deserializeBlockRow(cursor.Value())
+			node, err := dag.deserializeBlockNode(cursor.Value())
 			if err != nil {
 				return err
 			}
 
-			parents := newSet()
 			if lastNode == nil {
-				blockHash := header.BlockHash()
-				if !blockHash.IsEqual(dag.dagParams.GenesisHash) {
+				if !node.hash.IsEqual(dag.dagParams.GenesisHash) {
 					return AssertError(fmt.Sprintf("initDAGState: Expected "+
 						"first entry in block index to be genesis block, "+
-						"found %s", blockHash))
+						"found %s", node.hash))
 				}
 			} else {
-				for _, hash := range header.ParentHashes {
-					parent := dag.index.LookupNode(hash)
-					if parent == nil {
-						return AssertError(fmt.Sprintf("initDAGState: Could "+
-							"not find parent %s for block %s", hash, header.BlockHash()))
-					}
-					parents.add(parent)
-				}
-				if len(parents) == 0 {
+				if len(node.parents) == 0 {
 					return AssertError(fmt.Sprintf("initDAGState: Could "+
-						"not find any parent for block %s", header.BlockHash()))
+						"not find any parent for block %s", node.hash))
 				}
 			}
 
-			// Initialize the block node for the block, connect it,
+			// Add the node to its parents children, connect it,
 			// and add it to the block index.
-			node := &blockNodes[i]
-			initBlockNode(node, header, parents, dag.dagParams.K)
-			node.status = status
 			node.updateParentsChildren()
 			dag.index.addNode(node)
 
-			if blockStatus(status).KnownValid() {
+			if node.status.KnownValid() {
 				dag.blockCount++
 			}
 
@@ -700,23 +680,78 @@ func (dag *BlockDAG) initDAGState() error {
 	})
 }
 
-// deserializeBlockRow parses a value in the block index bucket into a block
-// header and block status bitfield.
-func deserializeBlockRow(blockRow []byte) (*wire.BlockHeader, blockStatus, error) {
+// deserializeBlockNode parses a value in the block index bucket and returns a block node.
+func (dag *BlockDAG) deserializeBlockNode(blockRow []byte) (*blockNode, error) {
 	buffer := bytes.NewReader(blockRow)
 
 	var header wire.BlockHeader
 	err := header.Deserialize(buffer)
 	if err != nil {
-		return nil, statusNone, err
+		return nil, err
+	}
+
+	node := &blockNode{
+		hash:           header.BlockHash(),
+		workSum:        util.CalcWork(header.Bits),
+		version:        header.Version,
+		bits:           header.Bits,
+		nonce:          header.Nonce,
+		timestamp:      header.Timestamp.Unix(),
+		hashMerkleRoot: header.HashMerkleRoot,
+		idMerkleRoot:   header.IDMerkleRoot,
+	}
+
+	node.children = newSet()
+	node.parents = newSet()
+
+	for _, hash := range header.ParentHashes {
+		parent := dag.index.LookupNode(hash)
+		if parent == nil {
+			return nil, AssertError(fmt.Sprintf("deserializeBlockNode: Could "+
+				"not find parent %s for block %s", hash, header.BlockHash()))
+		}
+		node.parents.add(parent)
 	}
 
 	statusByte, err := buffer.ReadByte()
 	if err != nil {
-		return nil, statusNone, err
+		return nil, err
+	}
+	node.status = blockStatus(statusByte)
+
+	selectedParentHash := &daghash.Hash{}
+	if _, err := io.ReadFull(buffer, selectedParentHash[:]); err != nil {
+		return nil, err
 	}
 
-	return &header, blockStatus(statusByte), nil
+	// Because genesis doesn't have selected parent, it's serialized as zero hash
+	if !selectedParentHash.IsEqual(&daghash.ZeroHash) {
+		node.selectedParent = dag.index.LookupNode(selectedParentHash)
+	}
+
+	node.blueScore, err = binaryserializer.Uint64(buffer, byteOrder)
+	if err != nil {
+		return nil, err
+	}
+
+	bluesCount, err := wire.ReadVarInt(buffer)
+	if err != nil {
+		return nil, err
+	}
+
+	node.blues = make([]*blockNode, bluesCount)
+	for i := uint64(0); i < bluesCount; i++ {
+		hash := &daghash.Hash{}
+		if _, err := io.ReadFull(buffer, hash[:]); err != nil {
+			return nil, err
+		}
+		node.blues[i] = dag.index.LookupNode(hash)
+	}
+
+	node.height = calculateNodeHeight(node)
+	node.chainHeight = calculateChainHeight(node)
+
+	return node, nil
 }
 
 // dbFetchBlockByNode uses an existing database transaction to retrieve the
@@ -739,7 +774,7 @@ func dbFetchBlockByNode(dbTx database.Tx, node *blockNode) (*util.Block, error) 
 	return block, nil
 }
 
-// dbStoreBlockNode stores the block header and validation status to the block
+// dbStoreBlockNode stores the block node data into the block
 // index bucket. This overwrites the current entry if there exists one.
 func dbStoreBlockNode(dbTx database.Tx, node *blockNode) error {
 	// Serialize block data to be stored.
@@ -749,10 +784,39 @@ func dbStoreBlockNode(dbTx database.Tx, node *blockNode) error {
 	if err != nil {
 		return err
 	}
+
 	err = w.WriteByte(byte(node.status))
 	if err != nil {
 		return err
 	}
+
+	// Because genesis doesn't have selected parent, it's serialized as zero hash
+	selectedParentHash := &daghash.ZeroHash
+	if node.selectedParent != nil {
+		selectedParentHash = node.selectedParent.hash
+	}
+	_, err = w.Write(selectedParentHash[:])
+	if err != nil {
+		return err
+	}
+
+	err = binaryserializer.PutUint64(w, byteOrder, node.blueScore)
+	if err != nil {
+		return err
+	}
+
+	err = wire.WriteVarInt(w, uint64(len(node.blues)))
+	if err != nil {
+		return err
+	}
+
+	for _, blue := range node.blues {
+		_, err = w.Write(blue.hash[:])
+		if err != nil {
+			return err
+		}
+	}
+
 	value := w.Bytes()
 
 	// Write block header data to block index bucket.
