@@ -294,7 +294,7 @@ func (dag *BlockDAG) addOrphanBlock(block *util.Block) {
 
 		// Update the newest orphan block pointer so it can be discarded
 		// in case the orphan pool fills up.
-		if dag.newestOrphan == nil || oBlock.block.MsgBlock().Header.Timestamp.After(dag.newestOrphan.block.MsgBlock().Header.Timestamp) {
+		if dag.newestOrphan == nil || oBlock.block.Timestamp().After(dag.newestOrphan.block.Timestamp()) {
 			dag.newestOrphan = oBlock
 		}
 	}
