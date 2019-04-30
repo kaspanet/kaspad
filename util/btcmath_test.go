@@ -17,11 +17,12 @@ func TestFastLog2Floor(t *testing.T) {
 		{16, 4},
 		{31, 4},
 		{1684234, 20},
-		{4294967296, 32}, // math.MaxUint32 (2^32)
-		{4294967297, 32}, // math.MaxUint32 + 1
+		{4294967295, 31}, // math.MaxUint32 (2^32 - 1)
+		{4294967296, 32}, // 2^32
+		{4294967297, 32}, // 2^32 + 1
 		{4611686018427387904, 62},
 		{9223372036854775808, 63},  // 2^63
-		{18446744073709551615, 63}, // math.MaxUint64 (2^64). Should have been 64, but the estimation algo doesn't know that.
+		{18446744073709551615, 63}, // math.MaxUint64 (2^64 - 1).
 	}
 
 	for _, test := range tests {
