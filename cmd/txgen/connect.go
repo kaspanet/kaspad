@@ -2,10 +2,8 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
-	"log"
-
 	"github.com/daglabs/btcd/rpcclient"
+	"io/ioutil"
 )
 
 func connectToServers(cfg *config, addressList []string) ([]*rpcclient.Client, error) {
@@ -40,7 +38,7 @@ func connectToServers(cfg *config, addressList []string) ([]*rpcclient.Client, e
 
 		clients[i] = client
 
-		log.Printf("Connected to server %s", address)
+		logger.Infof("Connected to server %s", address)
 	}
 
 	return clients, nil
