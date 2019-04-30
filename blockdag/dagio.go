@@ -732,6 +732,7 @@ func (dag *BlockDAG) deserializeBlockNode(node *blockNode, blockRow []byte) erro
 		return err
 	}
 
+	// Because genesis doesn't have selected parent, it's serialized as zero hash
 	if !selectedParentHash.IsEqual(&daghash.ZeroHash) {
 		node.selectedParent = dag.index.LookupNode(selectedParentHash)
 	}
@@ -797,6 +798,7 @@ func dbStoreBlockNode(dbTx database.Tx, node *blockNode) error {
 		return err
 	}
 
+	// Because genesis doesn't have selected parent, it's serialized as zero hash
 	selectedParentHash := &daghash.ZeroHash
 	if node.selectedParent != nil {
 		selectedParentHash = node.selectedParent.hash
