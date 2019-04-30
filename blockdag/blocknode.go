@@ -94,10 +94,10 @@ type blockNode struct {
 	workSum *big.Int
 
 	// height is the position in the block DAG.
-	height int32
+	height uint64
 
 	// chainHeight is the number of hops you need to go down the selected parent chain in order to get to the genesis block.
-	chainHeight uint32
+	chainHeight uint64
 
 	// Some fields from block headers to aid in best chain selection and
 	// reconstructing headers from memory.  These must be treated as
@@ -151,11 +151,11 @@ func initBlockNode(node *blockNode, blockHeader *wire.BlockHeader, parents block
 	}
 }
 
-func calculateNodeHeight(node *blockNode) int32 {
+func calculateNodeHeight(node *blockNode) uint64 {
 	return node.parents.maxHeight() + 1
 }
 
-func calculateChainHeight(node *blockNode) uint32 {
+func calculateChainHeight(node *blockNode) uint64 {
 	if node.isGenesis() {
 		return 0
 	}
@@ -202,7 +202,7 @@ func (node *blockNode) Header() *wire.BlockHeader {
 // that is lower than requested height would be returned.
 //
 // This function is safe for concurrent access.
-func (node *blockNode) SelectedAncestor(height int32) *blockNode {
+func (node *blockNode) SelectedAncestor(height uint64) *blockNode {
 	if height < 0 || height > node.height {
 		return nil
 	}
@@ -220,7 +220,7 @@ func (node *blockNode) SelectedAncestor(height int32) *blockNode {
 // height minus provided distance.
 //
 // This function is safe for concurrent access.
-func (node *blockNode) RelativeAncestor(distance int32) *blockNode {
+func (node *blockNode) RelativeAncestor(distance uint64) *blockNode {
 	return node.SelectedAncestor(node.height - distance)
 }
 

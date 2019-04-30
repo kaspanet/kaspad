@@ -46,7 +46,7 @@ type TxDesc struct {
 
 	// Height is the block height when the entry was added to the the source
 	// pool.
-	Height int32
+	Height uint64
 
 	// Fee is the total fee the transaction associated with the entry pays.
 	Fee uint64
@@ -198,9 +198,8 @@ type BlockTemplate struct {
 	// transaction in the generated template performs.
 	SigOpCounts []int64
 
-	// Height is the height at which the block template connects to the main
-	// chain.
-	Height int32
+	// Height is the height at which the block template connects to the DAG
+	Height uint64
 
 	// ValidPayAddress indicates whether or not the template coinbase pays
 	// to an address or is redeemable by anyone.  See the documentation on
@@ -213,7 +212,7 @@ type BlockTemplate struct {
 // signature script of the coinbase transaction of a new block.  In particular,
 // it starts with the block height that is required by version 2 blocks and adds
 // the extra nonce as well as additional coinbase flags.
-func StandardCoinbaseScript(nextBlockHeight int32, extraNonce uint64) ([]byte, error) {
+func StandardCoinbaseScript(nextBlockHeight uint64, extraNonce uint64) ([]byte, error) {
 	return txscript.NewScriptBuilder().AddInt64(int64(nextBlockHeight)).
 		AddInt64(int64(extraNonce)).AddData([]byte(CoinbaseFlags)).
 		Script()
@@ -225,7 +224,7 @@ func StandardCoinbaseScript(nextBlockHeight int32, extraNonce uint64) ([]byte, e
 //
 // See the comment for NewBlockTemplate for more information about why the nil
 // address handling is useful.
-func CreateCoinbaseTx(params *dagconfig.Params, coinbaseScript []byte, nextBlockHeight int32, addr util.Address) (*util.Tx, error) {
+func CreateCoinbaseTx(params *dagconfig.Params, coinbaseScript []byte, nextBlockHeight uint64, addr util.Address) (*util.Tx, error) {
 	// Create the script to pay to the provided payment address if one was
 	// specified.  Otherwise create a script that allows the coinbase to be
 	// redeemable by anyone.
@@ -721,7 +720,7 @@ func (g *BlkTmplGenerator) UpdateBlockTime(msgBlock *wire.MsgBlock) error {
 // block by regenerating the coinbase script with the passed value and block
 // height.  It also recalculates and updates the new merkle root that results
 // from changing the coinbase script.
-func (g *BlkTmplGenerator) UpdateExtraNonce(msgBlock *wire.MsgBlock, blockHeight int32, extraNonce uint64) error {
+func (g *BlkTmplGenerator) UpdateExtraNonce(msgBlock *wire.MsgBlock, blockHeight uint64, extraNonce uint64) error {
 	coinbaseScript, err := StandardCoinbaseScript(blockHeight, extraNonce)
 	if err != nil {
 		return err
@@ -749,7 +748,7 @@ func (g *BlkTmplGenerator) UpdateExtraNonce(msgBlock *wire.MsgBlock, blockHeight
 }
 
 // DAGHeight returns the DAG's height
-func (g *BlkTmplGenerator) DAGHeight() int32 {
+func (g *BlkTmplGenerator) DAGHeight() uint64 {
 	return g.dag.Height()
 }
 

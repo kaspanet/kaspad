@@ -231,8 +231,8 @@ func TestCalcSequenceLock(t *testing.T) {
 	dag := newTestDAG(netParams)
 	node := dag.selectedTip()
 	blockTime := node.Header().Timestamp
-	numBlocksToGenerate := uint32(5)
-	for i := uint32(0); i < numBlocksToGenerate; i++ {
+	numBlocksToGenerate := 5
+	for i := 0; i < numBlocksToGenerate; i++ {
 		blockTime = blockTime.Add(time.Second)
 		node = newTestNode(setFromSlice(node), blockVersion, 0, blockTime, netParams.K)
 		dag.index.AddNode(node)
@@ -245,7 +245,7 @@ func TestCalcSequenceLock(t *testing.T) {
 	msgTx := wire.NewNativeMsgTx(wire.TxVersion, nil, []*wire.TxOut{{PkScript: nil, Value: 10}})
 	targetTx := util.NewTx(msgTx)
 	utxoSet := NewFullUTXOSet()
-	utxoSet.AddTx(targetTx.MsgTx(), int32(numBlocksToGenerate)-4)
+	utxoSet.AddTx(targetTx.MsgTx(), uint64(numBlocksToGenerate)-4)
 
 	// Create a utxo that spends the fake utxo created above for use in the
 	// transactions created in the tests.  It has an age of 4 blocks.  Note
@@ -256,7 +256,7 @@ func TestCalcSequenceLock(t *testing.T) {
 		TxID:  *targetTx.ID(),
 		Index: 0,
 	}
-	prevUtxoHeight := int32(numBlocksToGenerate) - 4
+	prevUtxoHeight := uint64(numBlocksToGenerate) - 4
 
 	// Obtain the median time past from the PoV of the input created above.
 	// The MTP for the input is the MTP from the PoV of the block *prior*
@@ -348,7 +348,7 @@ func TestCalcSequenceLock(t *testing.T) {
 			utxoSet: utxoSet,
 			want: &SequenceLock{
 				Seconds:     medianTime + (5 << wire.SequenceLockTimeGranularity) - 1,
-				BlockHeight: prevUtxoHeight + 3,
+				BlockHeight: int64(prevUtxoHeight) + 3,
 			},
 		},
 		// Transaction with a single input.  The input's sequence number
@@ -360,7 +360,7 @@ func TestCalcSequenceLock(t *testing.T) {
 			utxoSet: utxoSet,
 			want: &SequenceLock{
 				Seconds:     -1,
-				BlockHeight: prevUtxoHeight + 2,
+				BlockHeight: int64(prevUtxoHeight) + 2,
 			},
 		},
 		// A transaction with two inputs with lock times expressed in
@@ -397,7 +397,7 @@ func TestCalcSequenceLock(t *testing.T) {
 			utxoSet: utxoSet,
 			want: &SequenceLock{
 				Seconds:     -1,
-				BlockHeight: prevUtxoHeight + 10,
+				BlockHeight: int64(prevUtxoHeight) + 10,
 			},
 		},
 		// A transaction with multiple inputs.  Two inputs are time
@@ -422,7 +422,7 @@ func TestCalcSequenceLock(t *testing.T) {
 			utxoSet: utxoSet,
 			want: &SequenceLock{
 				Seconds:     medianTime + (13 << wire.SequenceLockTimeGranularity) - 1,
-				BlockHeight: prevUtxoHeight + 8,
+				BlockHeight: int64(prevUtxoHeight) + 8,
 			},
 		},
 		// A transaction with a single unconfirmed input.  As the input
@@ -437,7 +437,7 @@ func TestCalcSequenceLock(t *testing.T) {
 			mempool: true,
 			want: &SequenceLock{
 				Seconds:     -1,
-				BlockHeight: nextBlockHeight + 1,
+				BlockHeight: int64(nextBlockHeight) + 1,
 			},
 		},
 		// A transaction with a single unconfirmed input.  The input has
@@ -587,7 +587,7 @@ func TestHeightToHashRange(t *testing.T) {
 
 	tests := []struct {
 		name        string
-		startHeight int32           // locator for requested inventory
+		startHeight uint64          // locator for requested inventory
 		endHash     *daghash.Hash   // stop hash for locator
 		maxResults  int             // max to locate, 0 = wire const
 		hashes      []*daghash.Hash // expected located hashes
@@ -680,7 +680,7 @@ func TestIntervalBlockHashes(t *testing.T) {
 	tests := []struct {
 		name        string
 		endHash     *daghash.Hash
-		interval    int
+		interval    uint64
 		hashes      []*daghash.Hash
 		expectError bool
 	}{

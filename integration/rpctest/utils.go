@@ -81,7 +81,7 @@ func syncBlocks(nodes []*Harness) error {
 retry:
 	for !blocksMatch {
 		var parentHash *daghash.Hash
-		var prevHeight int32
+		var prevHeight uint64
 		for _, node := range nodes {
 			blockHash, blockHeight, err := node.Node.GetBestBlock()
 			if err != nil {

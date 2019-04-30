@@ -15,7 +15,7 @@ import (
 // chain of basic (0x00) or extended (0x01) headers.
 type MsgGetCFHeaders struct {
 	FilterType  FilterType
-	StartHeight uint32
+	StartHeight uint64
 	StopHash    *daghash.Hash
 }
 
@@ -61,14 +61,14 @@ func (msg *MsgGetCFHeaders) Command() string {
 // MaxPayloadLength returns the maximum length the payload can be for the
 // receiver.  This is part of the Message interface implementation.
 func (msg *MsgGetCFHeaders) MaxPayloadLength(pver uint32) uint32 {
-	// Filter type + uint32 + block hash
-	return 1 + 4 + daghash.HashSize
+	// Filter type + uint64 + block hash
+	return 1 + 8 + daghash.HashSize
 }
 
 // NewMsgGetCFHeaders returns a new bitcoin getcfheader message that conforms to
 // the Message interface using the passed parameters and defaults for the
 // remaining fields.
-func NewMsgGetCFHeaders(filterType FilterType, startHeight uint32,
+func NewMsgGetCFHeaders(filterType FilterType, startHeight uint64,
 	stopHash *daghash.Hash) *MsgGetCFHeaders {
 	return &MsgGetCFHeaders{
 		FilterType:  filterType,

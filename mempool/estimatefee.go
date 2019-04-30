@@ -100,11 +100,11 @@ type observedTransaction struct {
 	feeRate SatoshiPerByte
 
 	// The block height when it was observed.
-	observed int32
+	observed uint64
 
 	// The height of the block in which it was mined.
 	// If the transaction has not yet been mined, it is zero.
-	mined int32
+	mined uint64
 }
 
 func (o *observedTransaction) Serialize(w io.Writer) {
@@ -163,7 +163,7 @@ type FeeEstimator struct {
 	minRegisteredBlocks uint32
 
 	// The last known height.
-	lastKnownHeight int32
+	lastKnownHeight uint64
 
 	// The number of blocks that have been registered.
 	numBlocksRegistered uint32
@@ -327,7 +327,7 @@ func (ef *FeeEstimator) RegisterBlock(block *util.Block) error {
 }
 
 // LastKnownHeight returns the height of the last block which was registered.
-func (ef *FeeEstimator) LastKnownHeight() int32 {
+func (ef *FeeEstimator) LastKnownHeight() uint64 {
 	ef.mtx.Lock()
 	defer ef.mtx.Unlock()
 

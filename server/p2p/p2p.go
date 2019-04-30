@@ -762,7 +762,7 @@ func (sp *Peer) OnGetCFilters(_ *peer.Peer, msg *wire.MsgGetCFilters) {
 		return
 	}
 
-	hashes, err := sp.server.DAG.HeightToHashRange(int32(msg.StartHeight),
+	hashes, err := sp.server.DAG.HeightToHashRange(msg.StartHeight,
 		msg.StopHash, wire.MaxGetCFiltersReqRange)
 	if err != nil {
 		peerLog.Debugf("Invalid getcfilters request: %s", err)
@@ -793,7 +793,7 @@ func (sp *Peer) OnGetCFHeaders(_ *peer.Peer, msg *wire.MsgGetCFHeaders) {
 		return
 	}
 
-	startHeight := int32(msg.StartHeight)
+	startHeight := msg.StartHeight
 	maxResults := wire.MaxCFHeadersPerMsg
 
 	// If StartHeight is positive, fetch the predecessor block hash so we can
@@ -2474,7 +2474,7 @@ func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params
 			MaxTxVersion:         1,
 		},
 		DAGParams:      dagParams,
-		BestHeight:     func() int32 { return s.DAG.Height() }, //TODO: (Ori) This is probably wrong. Done only for compilation
+		BestHeight:     func() uint64 { return s.DAG.Height() }, //TODO: (Ori) This is probably wrong. Done only for compilation
 		MedianTimePast: func() time.Time { return s.DAG.CalcPastMedianTime() },
 		CalcSequenceLockNoLock: func(tx *util.Tx, utxoSet blockdag.UTXOSet) (*blockdag.SequenceLock, error) {
 			return s.DAG.CalcSequenceLockNoLock(tx, utxoSet, true)
@@ -2843,7 +2843,7 @@ func (s checkpointSorter) Less(i, j int) bool {
 func mergeCheckpoints(defaultCheckpoints, additional []dagconfig.Checkpoint) []dagconfig.Checkpoint {
 	// Create a map of the additional checkpoints to remove duplicates while
 	// leaving the most recently-specified checkpoint.
-	extra := make(map[int32]dagconfig.Checkpoint)
+	extra := make(map[uint64]dagconfig.Checkpoint)
 	for _, checkpoint := range additional {
 		extra[checkpoint.Height] = checkpoint
 	}

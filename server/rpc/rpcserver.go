@@ -745,7 +745,7 @@ func createVoutList(mtx *wire.MsgTx, chainParams *dagconfig.Params, filterAddrMa
 // to a raw transaction JSON object.
 func createTxRawResult(dagParams *dagconfig.Params, mtx *wire.MsgTx,
 	txID string, blkHeader *wire.BlockHeader, blkHash string,
-	blkHeight int32, chainHeight int32, acceptedBy *daghash.Hash) (*btcjson.TxRawResult, error) {
+	blkHeight uint64, chainHeight uint64, acceptedBy *daghash.Hash) (*btcjson.TxRawResult, error) {
 
 	mtxHex, err := messageToHex(mtx)
 	if err != nil {
@@ -1201,7 +1201,7 @@ func handleGetBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 		Nonce:         blockHeader.Nonce,
 		Time:          blockHeader.Timestamp.Unix(),
 		Confirmations: uint64(1 + s.cfg.DAG.Height() - blockHeight), //TODO: (Ori) This is probably wrong. Done only for compilation
-		Height:        int64(blockHeight),
+		Height:        blockHeight,
 		Size:          int32(len(blkBytes)),
 		Bits:          strconv.FormatInt(int64(blockHeader.Bits), 16),
 		Difficulty:    getDifficultyRatio(blockHeader.Bits, params),
@@ -1269,8 +1269,8 @@ func handleGetBlockDAGInfo(s *Server, cmd interface{}, closeChan <-chan struct{}
 
 	dagInfo := &btcjson.GetBlockDAGInfoResult{
 		DAG:           params.Name,
-		Blocks:        dag.Height(), //TODO: (Ori) This is wrong. Done only for compilation
-		Headers:       dag.Height(), //TODO: (Ori) This is wrong. Done only for compilation
+		Blocks:        dag.BlockCount(),
+		Headers:       dag.BlockCount(),
 		TipHashes:     daghash.Strings(dag.TipHashes()),
 		Difficulty:    getDifficultyRatio(dag.CurrentBits(), params),
 		MedianTime:    dag.CalcPastMedianTime().Unix(),
@@ -1781,7 +1781,7 @@ func (state *gbtWorkState) blockTemplateResult(useCoinbaseValue bool, submitOld 
 	reply := btcjson.GetBlockTemplateResult{
 		Bits:         strconv.FormatInt(int64(header.Bits), 16),
 		CurTime:      header.Timestamp.Unix(),
-		Height:       int64(template.Height),
+		Height:       template.Height,
 		ParentHashes: daghash.Strings(header.ParentHashes),
 		SigOpLimit:   blockdag.MaxSigOpsPerBlock,
 		SizeLimit:    wire.MaxBlockPayload,
@@ -2369,7 +2369,7 @@ func handleGetInfo(s *Server, cmd interface{}, closeChan <-chan struct{}) (inter
 	ret := &btcjson.InfoDAGResult{
 		Version:         int32(1000000*version.AppMajor + 10000*version.AppMinor + 100*version.AppPatch),
 		ProtocolVersion: int32(maxProtocolVersion),
-		Blocks:          s.cfg.DAG.Height(), //TODO: (Ori) This is wrong. Done only for compilation
+		Blocks:          s.cfg.DAG.BlockCount(),
 		TimeOffset:      int64(s.cfg.TimeSource.Offset().Seconds()),
 		Connections:     s.cfg.ConnMgr.ConnectedCount(),
 		Proxy:           config.MainConfig().Proxy,
@@ -2551,7 +2551,7 @@ func handleGetRawTransaction(s *Server, cmd interface{}, closeChan <-chan struct
 	// try the block database.
 	var mtx *wire.MsgTx
 	var blkHash *daghash.Hash
-	var blkHeight int32
+	var blkHeight uint64
 	tx, err := s.cfg.TxMemPool.FetchTransaction(txID)
 	if err != nil {
 		if s.cfg.TxIndex == nil {
@@ -2629,7 +2629,7 @@ func handleGetRawTransaction(s *Server, cmd interface{}, closeChan <-chan struct
 	// The verbose flag is set, so generate the JSON object and return it.
 	var blkHeader *wire.BlockHeader
 	var blkHashStr string
-	var dagHeight int32
+	var dagHeight uint64
 	if blkHash != nil {
 		// Fetch the header from chain.
 		header, err := s.cfg.DAG.HeaderByHash(blkHash)
@@ -2664,7 +2664,7 @@ func handleGetTxOut(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 	// If requested and the tx is available in the mempool try to fetch it
 	// from there, otherwise attempt to fetch from the block database.
 	var bestBlockHash string
-	var confirmations int32
+	var confirmations uint64
 	var value uint64
 	var pkScript []byte
 	var isCoinbase bool
@@ -3251,7 +3251,7 @@ func handleSearchRawTransactions(s *Server, cmd interface{}, closeChan <-chan st
 		// confirmations or block information).
 		var blkHeader *wire.BlockHeader
 		var blkHashStr string
-		var blkHeight int32
+		var blkHeight uint64
 		if blkHash := rtx.blkHash; blkHash != nil {
 			// Fetch the header from chain.
 			header, err := s.cfg.DAG.HeaderByHash(blkHash)

@@ -57,7 +57,7 @@ const phantomK = 10
 // documentation for blockchain.IsCheckpointCandidate for details on the
 // selection criteria.
 type Checkpoint struct {
-	Height int32
+	Height uint64
 	Hash   *daghash.Hash
 }
 
@@ -130,11 +130,11 @@ type Params struct {
 
 	// BlockRewardMaturity is the number of blocks required before newly mined
 	// coins (coinbase or fee transactions) can be spent.
-	BlockRewardMaturity uint16
+	BlockRewardMaturity uint64
 
 	// SubsidyReductionInterval is the interval of blocks before the subsidy
 	// is reduced.
-	SubsidyReductionInterval int32
+	SubsidyReductionInterval uint64
 
 	// TargetTimespan is the desired amount of time that should elapse
 	// before the block difficulty requirement is examined to determine how
@@ -182,8 +182,8 @@ type Params struct {
 	//
 	// Deployments define the specific consensus rule changes to be voted
 	// on.
-	RuleChangeActivationThreshold uint32
-	MinerConfirmationWindow       uint32
+	RuleChangeActivationThreshold uint64
+	MinerConfirmationWindow       uint64
 	Deployments                   [DefinedDeployments]ConsensusDeployment
 
 	// Mempool parameters
