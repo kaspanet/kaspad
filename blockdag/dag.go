@@ -107,7 +107,7 @@ type BlockDAG struct {
 	orphanLock   sync.RWMutex
 	orphans      map[daghash.Hash]*orphanBlock
 	prevOrphans  map[daghash.Hash][]*orphanBlock
-	oldestOrphan *orphanBlock
+	newestOrphan *orphanBlock
 
 	// These fields are related to checkpoint handling.  They are protected
 	// by the chain lock.
@@ -253,27 +253,28 @@ func (dag *BlockDAG) removeOrphanBlock(orphan *orphanBlock) {
 	orphanHash := orphan.block.Hash()
 	delete(dag.orphans, *orphanHash)
 
-	// Remove the reference from the previous orphan index too.  An indexing
-	// for loop is intentionally used over a range here as range does not
-	// reevaluate the slice on each iteration nor does it adjust the index
-	// for the modified slice.
-	parentHash := orphan.block.MsgBlock().Header.SelectedParentHash()
-	orphans := dag.prevOrphans[*parentHash]
-	for i := 0; i < len(orphans); i++ {
-		hash := orphans[i].block.Hash()
-		if hash.IsEqual(orphanHash) {
-			copy(orphans[i:], orphans[i+1:])
-			orphans[len(orphans)-1] = nil
-			orphans = orphans[:len(orphans)-1]
-			i--
+	// Remove the reference from the previous orphan index too.
+	for _, parentHash := range orphan.block.MsgBlock().Header.ParentHashes {
+		// An indexing for loop is intentionally used over a range here as range
+		// does not reevaluate the slice on each iteration nor does it adjust the
+		// index for the modified slice.
+		orphans := dag.prevOrphans[*parentHash]
+		for i := 0; i < len(orphans); i++ {
+			hash := orphans[i].block.Hash()
+			if hash.IsEqual(orphanHash) {
+				orphans = append(orphans[:i], orphans[i+1:]...)
+				i--
+			}
 		}
-	}
-	dag.prevOrphans[*parentHash] = orphans
 
-	// Remove the map entry altogether if there are no longer any orphans
-	// which depend on the parent hash.
-	if len(dag.prevOrphans[*parentHash]) == 0 {
-		delete(dag.prevOrphans, *parentHash)
+		// Remove the map entry altogether if there are no longer any orphans
+		// which depend on the parent hash.
+		if len(orphans) == 0 {
+			delete(dag.prevOrphans, *parentHash)
+			continue
+		}
+
+		dag.prevOrphans[*parentHash] = orphans
 	}
 }
 
@@ -291,18 +292,18 @@ func (dag *BlockDAG) addOrphanBlock(block *util.Block) {
 			continue
 		}
 
-		// Update the oldest orphan block pointer so it can be discarded
+		// Update the newest orphan block pointer so it can be discarded
 		// in case the orphan pool fills up.
-		if dag.oldestOrphan == nil || oBlock.expiration.Before(dag.oldestOrphan.expiration) {
-			dag.oldestOrphan = oBlock
+		if dag.newestOrphan == nil || oBlock.block.Timestamp().After(dag.newestOrphan.block.Timestamp()) {
+			dag.newestOrphan = oBlock
 		}
 	}
 
 	// Limit orphan blocks to prevent memory exhaustion.
 	if len(dag.orphans)+1 > maxOrphanBlocks {
-		// Remove the oldest orphan to make room for the new one.
-		dag.removeOrphanBlock(dag.oldestOrphan)
-		dag.oldestOrphan = nil
+		// Remove the newest orphan to make room for the added one.
+		dag.removeOrphanBlock(dag.newestOrphan)
+		dag.newestOrphan = nil
 	}
 
 	// Protect concurrent access.  This is intentionally done here instead
@@ -321,8 +322,9 @@ func (dag *BlockDAG) addOrphanBlock(block *util.Block) {
 	dag.orphans[*block.Hash()] = oBlock
 
 	// Add to parent hash lookup index for faster dependency lookups.
-	parentHash := block.MsgBlock().Header.SelectedParentHash()
-	dag.prevOrphans[*parentHash] = append(dag.prevOrphans[*parentHash], oBlock)
+	for _, parentHash := range block.MsgBlock().Header.ParentHashes {
+		dag.prevOrphans[*parentHash] = append(dag.prevOrphans[*parentHash], oBlock)
+	}
 }
 
 // SequenceLock represents the converted relative lock-time in seconds, and
