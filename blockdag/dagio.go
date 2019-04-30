@@ -572,21 +572,11 @@ func (dag *BlockDAG) initDAGState() error {
 
 		blockIndexBucket := dbTx.Metadata().Bucket(blockIndexBucketName)
 
-		// Determine how many blocks will be loaded into the index so we can
-		// allocate the right amount.
-		var blockCount int32
-		cursor := blockIndexBucket.Cursor()
-		for ok := cursor.First(); ok; ok = cursor.Next() {
-			blockCount++
-		}
-		blockNodes := make([]blockNode, blockCount)
-
 		var i int32
 		var lastNode *blockNode
-		cursor = blockIndexBucket.Cursor()
+		cursor := blockIndexBucket.Cursor()
 		for ok := cursor.First(); ok; ok = cursor.Next() {
-			node := &blockNodes[i]
-			err := dag.deserializeBlockNode(node, cursor.Value())
+			node, err := dag.deserializeBlockNode(cursor.Value())
 			if err != nil {
 				return err
 			}
@@ -690,14 +680,15 @@ func (dag *BlockDAG) initDAGState() error {
 	})
 }
 
-// deserializeBlockNode parses a value in the block index bucket into a block node.
-func (dag *BlockDAG) deserializeBlockNode(node *blockNode, blockRow []byte) error {
+// deserializeBlockNode parses a value in the block index bucket and returns a block node.
+func (dag *BlockDAG) deserializeBlockNode(blockRow []byte) (*blockNode, error) {
+	node := &blockNode{}
 	buffer := bytes.NewReader(blockRow)
 
 	var header wire.BlockHeader
 	err := header.Deserialize(buffer)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	node.hash = header.BlockHash()
@@ -715,7 +706,7 @@ func (dag *BlockDAG) deserializeBlockNode(node *blockNode, blockRow []byte) erro
 	for _, hash := range header.ParentHashes {
 		parent := dag.index.LookupNode(hash)
 		if parent == nil {
-			return AssertError(fmt.Sprintf("deserializeBlockNode: Could "+
+			return nil, AssertError(fmt.Sprintf("deserializeBlockNode: Could "+
 				"not find parent %s for block %s", hash, header.BlockHash()))
 		}
 		node.parents.add(parent)
@@ -723,13 +714,13 @@ func (dag *BlockDAG) deserializeBlockNode(node *blockNode, blockRow []byte) erro
 
 	statusByte, err := buffer.ReadByte()
 	if err != nil {
-		return err
+		return nil, err
 	}
 	node.status = blockStatus(statusByte)
 
 	selectedParentHash := &daghash.Hash{}
 	if _, err := io.ReadFull(buffer, selectedParentHash[:]); err != nil {
-		return err
+		return nil, err
 	}
 
 	// Because genesis doesn't have selected parent, it's serialized as zero hash
@@ -739,19 +730,19 @@ func (dag *BlockDAG) deserializeBlockNode(node *blockNode, blockRow []byte) erro
 
 	node.blueScore, err = binaryserializer.Uint64(buffer, byteOrder)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	bluesCount, err := wire.ReadVarInt(buffer)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	node.blues = make([]*blockNode, bluesCount)
 	for i := uint64(0); i < bluesCount; i++ {
 		hash := &daghash.Hash{}
 		if _, err := io.ReadFull(buffer, hash[:]); err != nil {
-			return err
+			return nil, err
 		}
 		node.blues[i] = dag.index.LookupNode(hash)
 	}
@@ -759,7 +750,7 @@ func (dag *BlockDAG) deserializeBlockNode(node *blockNode, blockRow []byte) erro
 	node.height = calculateNodeHeight(node)
 	node.chainHeight = calculateChainHeight(node)
 
-	return nil
+	return node, nil
 }
 
 // dbFetchBlockByNode uses an existing database transaction to retrieve the
