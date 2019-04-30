@@ -183,7 +183,6 @@ var rpcHandlersBeforeInit = map[string]commandHandler{
 	"submitBlock":           handleSubmitBlock,
 	"uptime":                handleUptime,
 	"validateAddress":       handleValidateAddress,
-	"verifyDag":             handleVerifyDAG,
 	"verifyMessage":         handleVerifyMessage,
 	"version":               handleVersion,
 }
@@ -3474,58 +3473,6 @@ func handleValidateAddress(s *Server, cmd interface{}, closeChan <-chan struct{}
 	result.IsValid = true
 
 	return result, nil
-}
-
-func verifyDAG(s *Server, level, depth int32) error {
-	finishHeight := s.cfg.DAG.Height() - depth //TODO: (Ori) This is probably wrong. Done only for compilation
-	if finishHeight < 0 {
-		finishHeight = 0
-	}
-	log.Infof("Verifying DAG for %d blocks at level %d",
-		s.cfg.DAG.Height()-finishHeight, level) //TODO: (Ori) This is probably wrong. Done only for compilation
-
-	currentHash := s.cfg.DAG.HighestTipHash()
-	for height := s.cfg.DAG.Height(); height > finishHeight; { //TODO: (Ori) This is probably wrong. Done only for compilation
-		// Level 0 just looks up the block.
-		block, err := s.cfg.DAG.BlockByHash(currentHash)
-		if err != nil {
-			log.Errorf("Verify is unable to fetch block at "+
-				"height %d: %s", height, err)
-			return err
-		}
-
-		// Level 1 does basic DAG sanity checks.
-		if level > 0 {
-			err := s.cfg.DAG.CheckBlockSanity(block, s.cfg.DAGParams.PowLimit, s.cfg.TimeSource)
-			if err != nil {
-				log.Errorf("Verify is unable to validate "+
-					"block at hash %s height %d: %s",
-					block.Hash(), height, err)
-				return err
-			}
-		}
-
-		currentHash = block.MsgBlock().Header.SelectedParentHash()
-	}
-	log.Infof("DAG verify completed successfully")
-
-	return nil
-}
-
-// handleVerifyDAG implements the verifyDag command.
-func handleVerifyDAG(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	c := cmd.(*btcjson.VerifyDAGCmd)
-
-	var checkLevel, checkDepth int32
-	if c.CheckLevel != nil {
-		checkLevel = *c.CheckLevel
-	}
-	if c.CheckDepth != nil {
-		checkDepth = *c.CheckDepth
-	}
-
-	err := verifyDAG(s, checkLevel, checkDepth)
-	return err == nil, nil
 }
 
 // handleVerifyMessage implements the verifyMessage command.
