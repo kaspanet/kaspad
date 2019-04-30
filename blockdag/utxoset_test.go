@@ -663,7 +663,7 @@ func TestDiffUTXOSet_addTx(t *testing.T) {
 	tests := []struct {
 		name        string
 		startSet    *DiffUTXOSet
-		startHeight int32
+		startHeight uint64
 		toAdd       []*wire.MsgTx
 		expectedSet *DiffUTXOSet
 	}{
@@ -776,7 +776,7 @@ func TestDiffUTXOSet_addTx(t *testing.T) {
 
 		// Apply all transactions to diffSet, in order, with the initial block height startHeight
 		for i, transaction := range test.toAdd {
-			diffSet.AddTx(transaction, test.startHeight+int32(i))
+			diffSet.AddTx(transaction, test.startHeight+uint64(i))
 		}
 
 		// Make sure that the result diffSet equals to the expectedSet

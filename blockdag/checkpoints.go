@@ -67,7 +67,7 @@ func (dag *BlockDAG) LatestCheckpoint() *dagconfig.Checkpoint {
 // verifyCheckpoint returns whether the passed block height and hash combination
 // match the checkpoint data.  It also returns true if there is no checkpoint
 // data for the passed block height.
-func (dag *BlockDAG) verifyCheckpoint(height int32, hash *daghash.Hash) bool {
+func (dag *BlockDAG) verifyCheckpoint(height uint64, hash *daghash.Hash) bool {
 	if !dag.HasCheckpoints() {
 		return true
 	}

@@ -140,7 +140,7 @@ func createTxForTest(numInputs uint32, numOutputs uint32, outputValue uint64, su
 // outputs paying an appropriate subsidy based on the passed block height to the
 // address associated with the harness.  It automatically uses a standard
 // signature script that starts with the block height
-func createCoinbaseTxForTest(blockHeight int32, numOutputs uint32, extraNonce int64, params *dagconfig.Params) (*wire.MsgTx, error) {
+func createCoinbaseTxForTest(blockHeight uint64, numOutputs uint32, extraNonce int64, params *dagconfig.Params) (*wire.MsgTx, error) {
 	// Create standard coinbase script.
 	coinbaseScript, err := txscript.NewScriptBuilder().
 		AddInt64(int64(blockHeight)).AddInt64(extraNonce).Script()

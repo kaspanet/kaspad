@@ -78,7 +78,7 @@ func (c bitConditionChecker) EndTime() uint64 {
 // is associated with.
 //
 // This is part of the thresholdConditionChecker interface implementation.
-func (c bitConditionChecker) RuleChangeActivationThreshold() uint32 {
+func (c bitConditionChecker) RuleChangeActivationThreshold() uint64 {
 	return c.chain.dagParams.RuleChangeActivationThreshold
 }
 
@@ -89,7 +89,7 @@ func (c bitConditionChecker) RuleChangeActivationThreshold() uint32 {
 // is associated with.
 //
 // This is part of the thresholdConditionChecker interface implementation.
-func (c bitConditionChecker) MinerConfirmationWindow() uint32 {
+func (c bitConditionChecker) MinerConfirmationWindow() uint64 {
 	return c.chain.dagParams.MinerConfirmationWindow
 }
 
@@ -159,7 +159,7 @@ func (c deploymentChecker) EndTime() uint64 {
 // is associated with.
 //
 // This is part of the thresholdConditionChecker interface implementation.
-func (c deploymentChecker) RuleChangeActivationThreshold() uint32 {
+func (c deploymentChecker) RuleChangeActivationThreshold() uint64 {
 	return c.chain.dagParams.RuleChangeActivationThreshold
 }
 
@@ -170,7 +170,7 @@ func (c deploymentChecker) RuleChangeActivationThreshold() uint32 {
 // is associated with.
 //
 // This is part of the thresholdConditionChecker interface implementation.
-func (c deploymentChecker) MinerConfirmationWindow() uint32 {
+func (c deploymentChecker) MinerConfirmationWindow() uint64 {
 	return c.chain.dagParams.MinerConfirmationWindow
 }
 
@@ -250,7 +250,7 @@ func (dag *BlockDAG) warnUnknownRuleActivations(node *blockNode) error {
 			}
 
 		case ThresholdLockedIn:
-			window := int32(checker.MinerConfirmationWindow())
+			window := checker.MinerConfirmationWindow()
 			activationHeight := window - (node.height % window)
 			log.Warnf("Unknown new rules are about to activate in "+
 				"%d blocks (bit %d)", activationHeight, bit)

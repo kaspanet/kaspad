@@ -35,13 +35,13 @@ import (
 // transactions to appear as though they are spending completely valid utxos.
 type fakeChain struct {
 	sync.RWMutex
-	currentHeight  int32
+	currentHeight  uint64
 	medianTimePast time.Time
 }
 
 // BestHeight returns the current height associated with the fake chain
 // instance.
-func (s *fakeChain) BestHeight() int32 {
+func (s *fakeChain) BestHeight() uint64 {
 	s.RLock()
 	height := s.currentHeight
 	s.RUnlock()
@@ -49,7 +49,7 @@ func (s *fakeChain) BestHeight() int32 {
 }
 
 // SetHeight sets the current height associated with the fake chain instance.
-func (s *fakeChain) SetHeight(height int32) {
+func (s *fakeChain) SetHeight(height uint64) {
 	s.Lock()
 	s.currentHeight = height
 	s.Unlock()
@@ -121,7 +121,7 @@ type poolHarness struct {
 // address associated with the harness.  It automatically uses a standard
 // signature script that starts with the block height that is required by
 // version 2 blocks.
-func (p *poolHarness) CreateCoinbaseTx(blockHeight int32, numOutputs uint32) (*util.Tx, error) {
+func (p *poolHarness) CreateCoinbaseTx(blockHeight uint64, numOutputs uint32) (*util.Tx, error) {
 	// Create standard coinbase script.
 	extraNonce := int64(0)
 	coinbaseScript, err := txscript.NewScriptBuilder().
@@ -344,7 +344,7 @@ func newPoolHarness(dagParams *dagconfig.Params, numOutputs uint32, dbName strin
 		outpoints = append(outpoints, txOutToSpendableOutpoint(coinbase, i))
 	}
 	if dagParams.BlockRewardMaturity != 0 {
-		harness.chain.SetHeight(int32(dagParams.BlockRewardMaturity) + curHeight)
+		harness.chain.SetHeight(dagParams.BlockRewardMaturity + curHeight)
 	} else {
 		harness.chain.SetHeight(curHeight + 1)
 	}

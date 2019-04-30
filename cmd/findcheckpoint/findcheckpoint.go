@@ -58,7 +58,7 @@ func findCandidates(dag *blockdag.BlockDAG, highestTipHash *daghash.Hash) ([]*da
 
 	// The latest known block must be at least the last known checkpoint
 	// plus required checkpoint confirmations.
-	checkpointConfirmations := int32(blockdag.CheckpointConfirmations)
+	checkpointConfirmations := uint64(blockdag.CheckpointConfirmations)
 	requiredHeight := latestCheckpoint.Height + checkpointConfirmations
 	if block.Height() < requiredHeight {
 		return nil, fmt.Errorf("the block database is only at height "+
@@ -83,7 +83,7 @@ func findCandidates(dag *blockdag.BlockDAG, highestTipHash *daghash.Hash) ([]*da
 
 	// Loop backwards through the DAG to find checkpoint candidates.
 	candidates := make([]*dagconfig.Checkpoint, 0, cfg.NumCandidates)
-	numTested := int32(0)
+	numTested := uint64(0)
 	for len(candidates) < cfg.NumCandidates && block.Height() > requiredHeight {
 		// Display progress.
 		if numTested%progressInterval == 0 {

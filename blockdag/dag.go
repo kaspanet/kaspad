@@ -63,7 +63,7 @@ type BlockDAG struct {
 	// be changed afterwards, so there is no need to protect them with a
 	// separate mutex.
 	checkpoints         []dagconfig.Checkpoint
-	checkpointsByHeight map[int32]*dagconfig.Checkpoint
+	checkpointsByHeight map[uint64]*dagconfig.Checkpoint
 	db                  database.DB
 	dagParams           *dagconfig.Params
 	timeSource          MedianTimeSource
@@ -75,9 +75,9 @@ type BlockDAG struct {
 	// parameters.  They are also set when the instance is created and
 	// can't be changed afterwards, so there is no need to protect them with
 	// a separate mutex.
-	minRetargetTimespan int64 // target timespan / adjustment factor
-	maxRetargetTimespan int64 // target timespan * adjustment factor
-	blocksPerRetarget   int32 // target timespan / target time per block
+	minRetargetTimespan int64  // target timespan / adjustment factor
+	maxRetargetTimespan int64  // target timespan * adjustment factor
+	blocksPerRetarget   uint64 // target timespan / target time per block
 
 	// dagLock protects concurrent access to the vast majority of the
 	// fields in this struct below this point.
@@ -335,7 +335,7 @@ func (dag *BlockDAG) addOrphanBlock(block *util.Block) {
 // 'BlockHeight' has been reached.
 type SequenceLock struct {
 	Seconds     int64
-	BlockHeight int32
+	BlockHeight int64
 }
 
 // CalcSequenceLock computes a relative lock-time SequenceLock for the passed
@@ -442,7 +442,7 @@ func (dag *BlockDAG) calcSequenceLock(node *blockNode, utxoSet UTXOSet, tx *util
 			// the input's height as its converted absolute
 			// lock-time. We subtract one from the relative lock in
 			// order to maintain the original lockTime semantics.
-			blockHeight := inputHeight + int32(relativeLock-1)
+			blockHeight := int64(inputHeight) + relativeLock - 1
 			if blockHeight > sequenceLock.BlockHeight {
 				sequenceLock.BlockHeight = blockHeight
 			}
@@ -1133,7 +1133,7 @@ func (dag *BlockDAG) IsInSelectedPathChain(blockHash *daghash.Hash) bool {
 }
 
 // Height returns the height of the highest tip in the DAG
-func (dag *BlockDAG) Height() int32 {
+func (dag *BlockDAG) Height() uint64 {
 	return dag.virtual.tips().maxHeight()
 }
 
@@ -1233,10 +1233,10 @@ func (dag *BlockDAG) blockLocator(node *blockNode) BlockLocator {
 
 	// Requested hash itself + genesis block.
 	// Then floor(log2(height-10)) entries for the skip portion.
-	maxEntries := 2 + util.FastLog2Floor(uint32(node.height))
+	maxEntries := 2 + util.FastLog2Floor(node.height)
 	locator := make(BlockLocator, 0, maxEntries)
 
-	step := int32(1)
+	step := uint64(1)
 	for node != nil {
 		locator = append(locator, node.hash)
 
@@ -1266,7 +1266,7 @@ func (dag *BlockDAG) blockLocator(node *blockNode) BlockLocator {
 // DAG.
 //
 // This function is safe for concurrent access.
-func (dag *BlockDAG) BlockHeightByHash(hash *daghash.Hash) (int32, error) {
+func (dag *BlockDAG) BlockHeightByHash(hash *daghash.Hash) (uint64, error) {
 	node := dag.index.LookupNode(hash)
 	if node == nil {
 		str := fmt.Sprintf("block %s is not in the DAG", hash)
@@ -1297,7 +1297,7 @@ func (dag *BlockDAG) ChildHashesByHash(hash *daghash.Hash) ([]*daghash.Hash, err
 // end hash must belong to a block that is known to be valid.
 //
 // This function is safe for concurrent access.
-func (dag *BlockDAG) HeightToHashRange(startHeight int32,
+func (dag *BlockDAG) HeightToHashRange(startHeight uint64,
 	endHash *daghash.Hash, maxResults int) ([]*daghash.Hash, error) {
 
 	endNode := dag.index.LookupNode(endHash)
@@ -1337,7 +1337,7 @@ func (dag *BlockDAG) HeightToHashRange(startHeight int32,
 // endHash where the block height is a positive multiple of interval.
 //
 // This function is safe for concurrent access.
-func (dag *BlockDAG) IntervalBlockHashes(endHash *daghash.Hash, interval int,
+func (dag *BlockDAG) IntervalBlockHashes(endHash *daghash.Hash, interval uint64,
 ) ([]*daghash.Hash, error) {
 
 	endNode := dag.index.LookupNode(endHash)
@@ -1349,15 +1349,15 @@ func (dag *BlockDAG) IntervalBlockHashes(endHash *daghash.Hash, interval int,
 	}
 	endHeight := endNode.height
 
-	resultsLength := int(endHeight) / interval
+	resultsLength := endHeight / interval
 	hashes := make([]*daghash.Hash, resultsLength)
 
 	dag.virtual.mtx.Lock()
 	defer dag.virtual.mtx.Unlock()
 
 	blockNode := endNode
-	for index := int(endHeight) / interval; index > 0; index-- {
-		blockHeight := int32(index * interval)
+	for index := endHeight / interval; index > 0; index-- {
+		blockHeight := index * interval
 		blockNode = blockNode.SelectedAncestor(blockHeight)
 
 		hashes[index-1] = blockNode.hash
@@ -1656,10 +1656,10 @@ func New(config *Config) (*BlockDAG, error) {
 
 	// Generate a checkpoint by height map from the provided checkpoints
 	// and assert the provided checkpoints are sorted by height as required.
-	var checkpointsByHeight map[int32]*dagconfig.Checkpoint
-	var prevCheckpointHeight int32
+	var checkpointsByHeight map[uint64]*dagconfig.Checkpoint
+	var prevCheckpointHeight uint64
 	if len(config.Checkpoints) > 0 {
-		checkpointsByHeight = make(map[int32]*dagconfig.Checkpoint)
+		checkpointsByHeight = make(map[uint64]*dagconfig.Checkpoint)
 		for i := range config.Checkpoints {
 			checkpoint := &config.Checkpoints[i]
 			if checkpoint.Height <= prevCheckpointHeight {
@@ -1687,7 +1687,7 @@ func New(config *Config) (*BlockDAG, error) {
 		indexManager:        config.IndexManager,
 		minRetargetTimespan: targetTimespan / adjustmentFactor,
 		maxRetargetTimespan: targetTimespan * adjustmentFactor,
-		blocksPerRetarget:   int32(targetTimespan / targetTimePerBlock),
+		blocksPerRetarget:   uint64(targetTimespan / targetTimePerBlock),
 		index:               index,
 		virtual:             newVirtualBlock(nil, params.K),
 		orphans:             make(map[daghash.Hash]*orphanBlock),

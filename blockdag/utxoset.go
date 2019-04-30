@@ -22,7 +22,7 @@ type UTXOEntry struct {
 
 	amount      uint64
 	pkScript    []byte // The public key script for the output.
-	blockHeight int32  // Height of block containing tx.
+	blockHeight uint64 // Height of block containing tx.
 
 	// packedFlags contains additional info about output such as whether it
 	// is a block reward, and whether it has been modified
@@ -38,7 +38,7 @@ func (entry *UTXOEntry) IsBlockReward() bool {
 }
 
 // BlockHeight returns the height of the block containing the output.
-func (entry *UTXOEntry) BlockHeight() int32 {
+func (entry *UTXOEntry) BlockHeight() uint64 {
 	return entry.blockHeight
 }
 
@@ -305,7 +305,7 @@ func (d UTXODiff) String() string {
 }
 
 // NewUTXOEntry creates a new utxoEntry representing the given txOut
-func NewUTXOEntry(txOut *wire.TxOut, isBlockReward bool, blockHeight int32) *UTXOEntry {
+func NewUTXOEntry(txOut *wire.TxOut, isBlockReward bool, blockHeight uint64) *UTXOEntry {
 	entry := &UTXOEntry{
 		amount:      txOut.Value,
 		pkScript:    txOut.PkScript,
@@ -336,7 +336,7 @@ type UTXOSet interface {
 	diffFrom(other UTXOSet) (*UTXODiff, error)
 	WithDiff(utxoDiff *UTXODiff) (UTXOSet, error)
 	diffFromTx(tx *wire.MsgTx, node *blockNode) (*UTXODiff, error)
-	AddTx(tx *wire.MsgTx, blockHeight int32) (ok bool)
+	AddTx(tx *wire.MsgTx, blockHeight uint64) (ok bool)
 	clone() UTXOSet
 	Get(outPoint wire.OutPoint) (*UTXOEntry, bool)
 }
@@ -401,7 +401,7 @@ func (fus *FullUTXOSet) WithDiff(other *UTXODiff) (UTXOSet, error) {
 }
 
 // AddTx adds a transaction to this utxoSet and returns true iff it's valid in this UTXO's context
-func (fus *FullUTXOSet) AddTx(tx *wire.MsgTx, blockHeight int32) bool {
+func (fus *FullUTXOSet) AddTx(tx *wire.MsgTx, blockHeight uint64) bool {
 	isBlockReward := tx.IsBlockReward()
 	if !isBlockReward {
 		if !fus.containsInputs(tx) {
@@ -493,7 +493,7 @@ func (dus *DiffUTXOSet) WithDiff(other *UTXODiff) (UTXOSet, error) {
 }
 
 // AddTx adds a transaction to this utxoSet and returns true iff it's valid in this UTXO's context
-func (dus *DiffUTXOSet) AddTx(tx *wire.MsgTx, blockHeight int32) bool {
+func (dus *DiffUTXOSet) AddTx(tx *wire.MsgTx, blockHeight uint64) bool {
 	isBlockReward := tx.IsBlockReward()
 	if !isBlockReward && !dus.containsInputs(tx) {
 		return false
@@ -504,7 +504,7 @@ func (dus *DiffUTXOSet) AddTx(tx *wire.MsgTx, blockHeight int32) bool {
 	return true
 }
 
-func (dus *DiffUTXOSet) appendTx(tx *wire.MsgTx, blockHeight int32, isBlockReward bool) {
+func (dus *DiffUTXOSet) appendTx(tx *wire.MsgTx, blockHeight uint64, isBlockReward bool) {
 	if !isBlockReward {
 
 		for _, txIn := range tx.TxIn {

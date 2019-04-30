@@ -226,7 +226,7 @@ func newCheckpointFromStr(checkpoint string) (dagconfig.Checkpoint, error) {
 			checkpoint)
 	}
 
-	height, err := strconv.ParseInt(parts[0], 10, 32)
+	height, err := strconv.ParseInt(parts[0], 10, 64)
 	if err != nil {
 		return dagconfig.Checkpoint{}, fmt.Errorf("unable to parse "+
 			"checkpoint %q due to malformed height", checkpoint)
@@ -243,7 +243,7 @@ func newCheckpointFromStr(checkpoint string) (dagconfig.Checkpoint, error) {
 	}
 
 	return dagconfig.Checkpoint{
-		Height: int32(height),
+		Height: uint64(height),
 		Hash:   hash,
 	}, nil
 }

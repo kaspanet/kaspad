@@ -83,14 +83,14 @@ func IsFeeTransaction(tx *util.Tx) bool {
 // SequenceLockActive determines if a transaction's sequence locks have been
 // met, meaning that all the inputs of a given transaction have reached a
 // height or time sufficient for their relative lock-time maturity.
-func SequenceLockActive(sequenceLock *SequenceLock, blockHeight int32,
+func SequenceLockActive(sequenceLock *SequenceLock, blockHeight uint64,
 	medianTimePast time.Time) bool {
 
 	// If either the seconds, or height relative-lock time has not yet
 	// reached, then the transaction is not yet mature according to its
 	// sequence locks.
 	if sequenceLock.Seconds >= medianTimePast.Unix() ||
-		sequenceLock.BlockHeight >= blockHeight {
+		sequenceLock.BlockHeight >= int64(blockHeight) {
 		return false
 	}
 
@@ -98,7 +98,7 @@ func SequenceLockActive(sequenceLock *SequenceLock, blockHeight int32,
 }
 
 // IsFinalizedTransaction determines whether or not a transaction is finalized.
-func IsFinalizedTransaction(tx *util.Tx, blockHeight int32, blockTime time.Time) bool {
+func IsFinalizedTransaction(tx *util.Tx, blockHeight uint64, blockTime time.Time) bool {
 	msgTx := tx.MsgTx()
 
 	// Lock time of zero means the transaction is finalized.
@@ -142,7 +142,7 @@ func IsFinalizedTransaction(tx *util.Tx, blockHeight int32, blockTime time.Time)
 //
 // At the target block generation rate for the main network, this is
 // approximately every 4 years.
-func CalcBlockSubsidy(height int32, dagParams *dagconfig.Params) uint64 {
+func CalcBlockSubsidy(height uint64, dagParams *dagconfig.Params) uint64 {
 	if dagParams.SubsidyReductionInterval == 0 {
 		return baseSubsidy
 	}
@@ -615,7 +615,7 @@ func (dag *BlockDAG) CheckBlockSanity(block *util.Block, powLimit *big.Int,
 
 // ExtractCoinbaseHeight attempts to extract the height of the block from the
 // scriptSig of a coinbase transaction.
-func ExtractCoinbaseHeight(coinbaseTx *util.Tx) (int32, error) {
+func ExtractCoinbaseHeight(coinbaseTx *util.Tx) (uint64, error) {
 	sigScript := coinbaseTx.MsgTx().TxIn[0].SignatureScript
 	if len(sigScript) < 1 {
 		str := "the coinbase signature script" +
@@ -631,7 +631,7 @@ func ExtractCoinbaseHeight(coinbaseTx *util.Tx) (int32, error) {
 		return 0, nil
 	}
 	if opcode >= txscript.Op1 && opcode <= txscript.Op16 {
-		return int32(opcode - (txscript.Op1 - 1)), nil
+		return uint64(opcode - (txscript.Op1 - 1)), nil
 	}
 
 	// Otherwise, the opcode is the length of the following bytes which
@@ -648,7 +648,7 @@ func ExtractCoinbaseHeight(coinbaseTx *util.Tx) (int32, error) {
 	copy(serializedHeightBytes, sigScript[1:serializedLen+1])
 	serializedHeight := binary.LittleEndian.Uint64(serializedHeightBytes)
 
-	return int32(serializedHeight), nil
+	return serializedHeight, nil
 }
 
 // checkSerializedHeight checks if the signature script in the passed
@@ -678,7 +678,7 @@ func checkSerializedHeight(block *util.Block) error {
 //    the checkpoints are not performed.
 //
 // This function MUST be called with the dag state lock held (for writes).
-func (dag *BlockDAG) checkBlockHeaderContext(header *wire.BlockHeader, bluestParent *blockNode, blockHeight int32, fastAdd bool) error {
+func (dag *BlockDAG) checkBlockHeaderContext(header *wire.BlockHeader, bluestParent *blockNode, blockHeight uint64, fastAdd bool) error {
 	if !fastAdd {
 		if err := dag.validateDifficulty(header, bluestParent); err != nil {
 			return err
@@ -692,7 +692,7 @@ func (dag *BlockDAG) checkBlockHeaderContext(header *wire.BlockHeader, bluestPar
 	return dag.validateCheckpoints(header, blockHeight)
 }
 
-func (dag *BlockDAG) validateCheckpoints(header *wire.BlockHeader, blockHeight int32) error {
+func (dag *BlockDAG) validateCheckpoints(header *wire.BlockHeader, blockHeight uint64) error {
 	// Ensure dag matches up to predetermined checkpoints.
 	blockHash := header.BlockHash()
 	if !dag.verifyCheckpoint(blockHeight, blockHash) {
@@ -753,7 +753,7 @@ func (dag *BlockDAG) validateDifficulty(header *wire.BlockHeader, bluestParent *
 
 // validateParents validates that no parent is an ancestor of another parent
 func validateParents(blockHeader *wire.BlockHeader, parents blockSet) error {
-	minHeight := int32(math.MaxInt32)
+	minHeight := uint64(math.MaxUint64)
 	queue := newDownHeap()
 	visited := newSet()
 	for _, parent := range parents {
@@ -895,7 +895,7 @@ func ensureNoDuplicateTx(block *blockNode, utxoSet UTXOSet,
 //
 // NOTE: The transaction MUST have already been sanity checked with the
 // CheckTransactionSanity function prior to calling this function.
-func CheckTransactionInputsAndCalulateFee(tx *util.Tx, txHeight int32, utxoSet UTXOSet, dagParams *dagconfig.Params, fastAdd bool) (
+func CheckTransactionInputsAndCalulateFee(tx *util.Tx, txHeight uint64, utxoSet UTXOSet, dagParams *dagconfig.Params, fastAdd bool) (
 	txFeeInSatoshi uint64, err error) {
 
 	// Block reward transactions (a.k.a. coinbase or fee transactions)
@@ -976,20 +976,19 @@ func CheckTransactionInputsAndCalulateFee(tx *util.Tx, txHeight int32, utxoSet U
 	return txFeeInSatoshi, nil
 }
 
-func validateBlockRewardMaturity(dagParams *dagconfig.Params, entry *UTXOEntry, txHeight int32, txIn *wire.TxIn) error {
+func validateBlockRewardMaturity(dagParams *dagconfig.Params, entry *UTXOEntry, txHeight uint64, txIn *wire.TxIn) error {
 	// Ensure the transaction is not spending coins which have not
 	// yet reached the required block reward maturity.
 	if entry.IsBlockReward() {
 		originHeight := entry.BlockHeight()
 		blocksSincePrev := txHeight - originHeight
-		blockRewardMaturity := int32(dagParams.BlockRewardMaturity)
-		if blocksSincePrev < blockRewardMaturity {
+		if blocksSincePrev < dagParams.BlockRewardMaturity {
 			str := fmt.Sprintf("tried to spend block reward "+
 				"transaction output %s from height %d "+
 				"at height %d before required maturity "+
 				"of %d blocks", txIn.PreviousOutPoint,
 				originHeight, txHeight,
-				blockRewardMaturity)
+				dagParams.BlockRewardMaturity)
 			return ruleError(ErrImmatureSpend, str)
 		}
 	}

@@ -21,7 +21,7 @@ func main() {
 	// for notifications.  See the documentation of the rpcclient
 	// NotificationHandlers type for more details about each handler.
 	ntfnHandlers := rpcclient.NotificationHandlers{
-		OnFilteredBlockAdded: func(height int32, header *wire.BlockHeader, txns []*util.Tx) {
+		OnFilteredBlockAdded: func(height uint64, header *wire.BlockHeader, txns []*util.Tx) {
 			log.Printf("Block added: %s (%d) %s",
 				header.BlockHash(), height, header.Timestamp)
 		},

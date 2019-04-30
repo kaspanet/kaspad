@@ -148,7 +148,7 @@ func TestNewBlockTemplate(t *testing.T) {
 	}
 
 	var createCoinbaseTxPatch *monkey.PatchGuard
-	createCoinbaseTxPatch = monkey.Patch(CreateCoinbaseTx, func(params *dagconfig.Params, coinbaseScript []byte, nextBlockHeight int32, addr util.Address) (*util.Tx, error) {
+	createCoinbaseTxPatch = monkey.Patch(CreateCoinbaseTx, func(params *dagconfig.Params, coinbaseScript []byte, nextBlockHeight uint64, addr util.Address) (*util.Tx, error) {
 		createCoinbaseTxPatch.Unpatch()
 		defer createCoinbaseTxPatch.Restore()
 		tx, err := CreateCoinbaseTx(params, coinbaseScript, nextBlockHeight, addr)
@@ -298,7 +298,7 @@ func TestNewBlockTemplate(t *testing.T) {
 	standardCoinbaseScriptErrString := "standardCoinbaseScript err"
 
 	var standardCoinbaseScriptPatch *monkey.PatchGuard
-	standardCoinbaseScriptPatch = monkey.Patch(StandardCoinbaseScript, func(nextBlockHeight int32, extraNonce uint64) ([]byte, error) {
+	standardCoinbaseScriptPatch = monkey.Patch(StandardCoinbaseScript, func(nextBlockHeight uint64, extraNonce uint64) ([]byte, error) {
 		return nil, errors.New(standardCoinbaseScriptErrString)
 	})
 	defer standardCoinbaseScriptPatch.Unpatch()
