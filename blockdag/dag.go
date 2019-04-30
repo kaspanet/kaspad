@@ -253,18 +253,16 @@ func (dag *BlockDAG) removeOrphanBlock(orphan *orphanBlock) {
 	orphanHash := orphan.block.Hash()
 	delete(dag.orphans, *orphanHash)
 
-	// Remove the reference from the previous orphan index too.  An indexing
-	// for loop is intentionally used over a range here as range does not
-	// reevaluate the slice on each iteration nor does it adjust the index
-	// for the modified slice.
+	// Remove the reference from the previous orphan index too.
 	for _, parentHash := range orphan.block.MsgBlock().Header.ParentHashes {
+		// An indexing for loop is intentionally used over a range here as range
+		// does not reevaluate the slice on each iteration nor does it adjust the
+		// index for the modified slice.
 		orphans := dag.prevOrphans[*parentHash]
 		for i := 0; i < len(orphans); i++ {
 			hash := orphans[i].block.Hash()
 			if hash.IsEqual(orphanHash) {
-				copy(orphans[i:], orphans[i+1:])
-				orphans[len(orphans)-1] = nil
-				orphans = orphans[:len(orphans)-1]
+				orphans = append(orphans[:i], orphans[i+1:]...)
 				i--
 			}
 		}
