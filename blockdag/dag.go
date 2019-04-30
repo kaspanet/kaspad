@@ -266,13 +266,15 @@ func (dag *BlockDAG) removeOrphanBlock(orphan *orphanBlock) {
 				i--
 			}
 		}
-		dag.prevOrphans[*parentHash] = orphans
 
 		// Remove the map entry altogether if there are no longer any orphans
 		// which depend on the parent hash.
-		if len(dag.prevOrphans[*parentHash]) == 0 {
+		if len(orphans) == 0 {
 			delete(dag.prevOrphans, *parentHash)
+			continue
 		}
+
+		dag.prevOrphans[*parentHash] = orphans
 	}
 }
 
