@@ -1018,48 +1018,6 @@ func TestDAGSvrCmds(t *testing.T) {
 			},
 		},
 		{
-			name: "verifyDag",
-			newCmd: func() (interface{}, error) {
-				return btcjson.NewCmd("verifyDag")
-			},
-			staticCmd: func() interface{} {
-				return btcjson.NewVerifyDAGCmd(nil, nil)
-			},
-			marshalled: `{"jsonrpc":"1.0","method":"verifyDag","params":[],"id":1}`,
-			unmarshalled: &btcjson.VerifyDAGCmd{
-				CheckLevel: btcjson.Uint64(3),
-				CheckDepth: btcjson.Uint64(288),
-			},
-		},
-		{
-			name: "verifyDag optional1",
-			newCmd: func() (interface{}, error) {
-				return btcjson.NewCmd("verifyDag", 2)
-			},
-			staticCmd: func() interface{} {
-				return btcjson.NewVerifyDAGCmd(btcjson.Uint64(2), nil)
-			},
-			marshalled: `{"jsonrpc":"1.0","method":"verifyDag","params":[2],"id":1}`,
-			unmarshalled: &btcjson.VerifyDAGCmd{
-				CheckLevel: btcjson.Uint64(2),
-				CheckDepth: btcjson.Uint64(288),
-			},
-		},
-		{
-			name: "verifyDag optional2",
-			newCmd: func() (interface{}, error) {
-				return btcjson.NewCmd("verifyDag", 2, 500)
-			},
-			staticCmd: func() interface{} {
-				return btcjson.NewVerifyDAGCmd(btcjson.Uint64(2), btcjson.Uint64(500))
-			},
-			marshalled: `{"jsonrpc":"1.0","method":"verifyDag","params":[2,500],"id":1}`,
-			unmarshalled: &btcjson.VerifyDAGCmd{
-				CheckLevel: btcjson.Uint64(2),
-				CheckDepth: btcjson.Uint64(500),
-			},
-		},
-		{
 			name: "verifyMessage",
 			newCmd: func() (interface{}, error) {
 				return btcjson.NewCmd("verifyMessage", "1Address", "301234", "test")
