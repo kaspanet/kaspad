@@ -6,7 +6,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"net"
 	"os"
 	"strconv"
@@ -34,19 +33,19 @@ func (d *DNSServer) Start() {
 	rr := fmt.Sprintf("%s 86400 IN NS %s", d.hostname, d.nameserver)
 	authority, err := dns.NewRR(rr)
 	if err != nil {
-		log.Printf("NewRR: %v", err)
+		seedLog.Infof("NewRR: %v", err)
 		return
 	}
 
 	udpAddr, err := net.ResolveUDPAddr("udp4", d.listen)
 	if err != nil {
-		log.Printf("ResolveUDPAddr: %v", err)
+		seedLog.Infof("ResolveUDPAddr: %v", err)
 		return
 	}
 
 	udpListen, err := net.ListenUDP("udp", udpAddr)
 	if err != nil {
-		log.Printf("ListenUDP: %v", err)
+		seedLog.Infof("ListenUDP: %v", err)
 		return
 	}
 	defer udpListen.Close()
@@ -56,7 +55,7 @@ func (d *DNSServer) Start() {
 	mainLoop:
 		err := udpListen.SetReadDeadline(time.Now().Add(time.Second))
 		if err != nil {
-			log.Printf("SetReadDeadline: %v", err)
+			seedLog.Infof("SetReadDeadline: %v", err)
 			os.Exit(1)
 		}
 		_, addr, err := udpListen.ReadFromUDP(b)
@@ -66,10 +65,10 @@ func (d *DNSServer) Start() {
 					// use goto in order to do not re-allocate 'b' buffer
 					goto mainLoop
 				}
-				log.Printf("DNS server shutdown")
+				seedLog.Infof("DNS server shutdown")
 				return
 			}
-			log.Printf("Read: %T", err.(*net.OpError).Err)
+			seedLog.Infof("Read: %T", err.(*net.OpError).Err)
 			continue
 		}
 
@@ -111,7 +110,7 @@ func (d *DNSServer) extractServicesSubnetworkID(addr *net.UDPAddr, domainName st
 				idx = 1
 				subnetworkID, err := subnetworkid.NewFromStr(labels[0][1:])
 				if err != nil {
-					log.Printf("%s: subnetworkid.NewFromStr: %v", addr, err)
+					seedLog.Infof("%s: subnetworkid.NewFromStr: %v", addr, err)
 					return wantedSF, subnetworkID, includeAllSubnetworks, err
 				}
 			}
@@ -120,7 +119,7 @@ func (d *DNSServer) extractServicesSubnetworkID(addr *net.UDPAddr, domainName st
 			wantedSFStr := labels[idx][1:]
 			u, err := strconv.ParseUint(wantedSFStr, 10, 64)
 			if err != nil {
-				log.Printf("%s: ParseUint: %v", addr, err)
+				seedLog.Infof("%s: ParseUint: %v", addr, err)
 				return wantedSF, subnetworkID, includeAllSubnetworks, err
 			}
 			wantedSF = wire.ServiceFlag(u)
@@ -133,19 +132,19 @@ func (d *DNSServer) validateDNSRequest(addr *net.UDPAddr, b []byte) (dnsMsg *dns
 	dnsMsg = new(dns.Msg)
 	err = dnsMsg.Unpack(b[:])
 	if err != nil {
-		log.Printf("%s: invalid dns message: %v", addr, err)
+		seedLog.Infof("%s: invalid dns message: %v", addr, err)
 		return nil, "", "", err
 	}
 	if len(dnsMsg.Question) != 1 {
 		str := fmt.Sprintf("%s sent more than 1 question: %d", addr, len(dnsMsg.Question))
-		log.Printf("%s", str)
+		seedLog.Infof("%s", str)
 		return nil, "", "", fmt.Errorf("%s", str)
 	}
 	domainName = strings.ToLower(dnsMsg.Question[0].Name)
 	ff := strings.LastIndex(domainName, d.hostname)
 	if ff < 0 {
 		str := fmt.Sprintf("invalid name: %s", dnsMsg.Question[0].Name)
-		log.Printf("%s", str)
+		seedLog.Infof("%s", str)
 		return nil, "", "", fmt.Errorf("%s", str)
 	}
 	atype, err = translateDNSQuestion(addr, dnsMsg)
@@ -164,7 +163,7 @@ func translateDNSQuestion(addr *net.UDPAddr, dnsMsg *dns.Msg) (string, error) {
 		atype = "NS"
 	default:
 		str := fmt.Sprintf("%s: invalid qtype: %d", addr, dnsMsg.Question[0].Qtype)
-		log.Printf("%s", str)
+		seedLog.Infof("%s", str)
 		return "", fmt.Errorf("%s", str)
 	}
 	return atype, nil
@@ -184,7 +183,7 @@ func (d *DNSServer) buildDNSResponse(addr *net.UDPAddr, authority dns.RR, dnsMsg
 			rr := fmt.Sprintf("%s 30 IN %s %s", dnsMsg.Question[0].Name, atype, a.IP.String())
 			newRR, err := dns.NewRR(rr)
 			if err != nil {
-				log.Printf("%s: NewRR: %v", addr, err)
+				seedLog.Infof("%s: NewRR: %v", addr, err)
 				return nil, err
 			}
 
@@ -194,7 +193,7 @@ func (d *DNSServer) buildDNSResponse(addr *net.UDPAddr, authority dns.RR, dnsMsg
 		rr := fmt.Sprintf("%s 86400 IN NS %s", dnsMsg.Question[0].Name, d.nameserver)
 		newRR, err := dns.NewRR(rr)
 		if err != nil {
-			log.Printf("%s: NewRR: %v", addr, err)
+			seedLog.Infof("%s: NewRR: %v", addr, err)
 			return nil, err
 		}
 
@@ -203,7 +202,7 @@ func (d *DNSServer) buildDNSResponse(addr *net.UDPAddr, authority dns.RR, dnsMsg
 
 	sendBytes, err := respMsg.Pack()
 	if err != nil {
-		log.Printf("%s: failed to pack response: %v", addr, err)
+		seedLog.Infof("%s: failed to pack response: %v", addr, err)
 		return nil, err
 	}
 	return sendBytes, nil
@@ -222,7 +221,7 @@ func (d *DNSServer) handleDNSRequest(addr *net.UDPAddr, authority dns.RR, udpLis
 		return
 	}
 
-	log.Printf("%s: query %d for services %v, subnetwork ID %v",
+	seedLog.Infof("%s: query %d for services %v, subnetwork ID %v",
 		addr, dnsMsg.Question[0].Qtype, wantedSF, subnetworkID)
 
 	sendBytes, err := d.buildDNSResponse(addr, authority, dnsMsg, wantedSF, includeAllSubnetworks, subnetworkID, atype)
@@ -232,7 +231,7 @@ func (d *DNSServer) handleDNSRequest(addr *net.UDPAddr, authority dns.RR, udpLis
 
 	_, err = udpListen.WriteToUDP(sendBytes, addr)
 	if err != nil {
-		log.Printf("%s: failed to write response: %v", addr, err)
+		seedLog.Infof("%s: failed to write response: %v", addr, err)
 		return
 	}
 }
