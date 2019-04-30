@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"time"
 
 	"github.com/daglabs/btcd/rpcclient"
@@ -41,7 +40,7 @@ func connectToServers(cfg *config, addressList []string) ([]*simulatorClient, er
 			return nil, err
 		}
 
-		log.Printf("Connected to server %s", address)
+		logger.Infof("Connected to server %s", address)
 	}
 
 	return clients, nil

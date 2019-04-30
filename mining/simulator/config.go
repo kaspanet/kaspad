@@ -2,8 +2,20 @@ package main
 
 import (
 	"errors"
+	"github.com/daglabs/btcd/util"
+	"path/filepath"
 
 	"github.com/jessevdk/go-flags"
+)
+
+const (
+	defaultLogFilename = "miningsimulator.log"
+)
+
+var (
+	// Default configuration options
+	defaultHomeDir = util.AppDataDir("miningsimulator", false)
+	defaultLogFile = filepath.Join(defaultHomeDir, defaultLogFilename)
 )
 
 type config struct {
@@ -29,6 +41,8 @@ func parseConfig() (*config, error) {
 	if cfg.CertificatePath != "" && cfg.DisableTLS {
 		return nil, errors.New("--cert should be omitted if --notls is used")
 	}
+
+	initLogRotator(defaultLogFile)
 
 	return cfg, nil
 }

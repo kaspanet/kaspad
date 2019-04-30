@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/hex"
 	"fmt"
-	"log"
 	"math/rand"
 	"strconv"
 	"strings"
@@ -80,20 +79,20 @@ func templatesLoop(client *simulatorClient, newTemplateChan chan *btcjson.GetBlo
 	longPollID := ""
 	getBlockTemplateLongPoll := func() {
 		if longPollID != "" {
-			log.Printf("Requesting template with longPollID '%s' from %s", longPollID, client.Host())
+			logger.Infof("Requesting template with longPollID '%s' from %s", longPollID, client.Host())
 		} else {
-			log.Printf("Requesting template without longPollID from %s", client.Host())
+			logger.Infof("Requesting template without longPollID from %s", client.Host())
 		}
 		template, err := getBlockTemplate(client, longPollID)
 		if err == rpcclient.ErrResponseTimedOut {
-			log.Printf("Got timeout while requesting template '%s' from %s", longPollID, client.Host())
+			logger.Infof("Got timeout while requesting template '%s' from %s", longPollID, client.Host())
 			return
 		} else if err != nil {
 			errChan <- fmt.Errorf("Error getting block template: %s", err)
 			return
 		}
 		if template.LongPollID != longPollID {
-			log.Printf("Got new long poll template: %s", template.LongPollID)
+			logger.Infof("Got new long poll template: %s", template.LongPollID)
 			longPollID = template.LongPollID
 			newTemplateChan <- template
 		}
@@ -142,7 +141,7 @@ func mineNextBlock(client *simulatorClient, foundBlock chan *util.Block, templat
 
 func handleFoundBlock(client *simulatorClient, block *util.Block, templateStopChan chan struct{}) error {
 	templateStopChan <- struct{}{}
-	log.Printf("Found block %s! Submitting to %s", block.Hash(), client.Host())
+	logger.Infof("Found block %s! Submitting to %s", block.Hash(), client.Host())
 
 	err := client.SubmitBlock(block, &btcjson.SubmitBlockOptions{})
 	if err != nil {
@@ -169,7 +168,7 @@ func mineLoop(clients []*simulatorClient) error {
 		for {
 			currentClient := getRandomClient(clients)
 			currentClient.notifyForNewBlocks = true
-			log.Printf("Next block will be mined by: %s", currentClient.Host())
+			logger.Infof("Next block will be mined by: %s", currentClient.Host())
 			mineNextBlock(currentClient, foundBlock, templateStopChan, errChan)
 			block, ok := <-foundBlock
 			if !ok {

@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"runtime/debug"
 
@@ -52,7 +51,7 @@ func disconnect(clients []*simulatorClient) {
 func handlePanic() {
 	err := recover()
 	if err != nil {
-		log.Printf("Fatal error: %s", err)
-		log.Printf("Stack trace: %s", debug.Stack())
+		logger.Errorf("Fatal error: %s", err)
+		logger.Errorf("Stack trace: %s", debug.Stack())
 	}
 }

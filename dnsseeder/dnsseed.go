@@ -64,12 +64,12 @@ func creep() {
 		Listeners: peer.MessageListeners{
 			OnAddr: func(p *peer.Peer, msg *wire.MsgAddr) {
 				added := amgr.AddAddresses(msg.AddrList)
-				seedLog.Infof("Peer %v sent %v addresses, %d new",
+				logger.Infof("Peer %v sent %v addresses, %d new",
 					p.Addr(), len(msg.AddrList), added)
 				onAddr <- struct{}{}
 			},
 			OnVersion: func(p *peer.Peer, msg *wire.MsgVersion) {
-				seedLog.Infof("Adding peer %v with services %v and subnetword ID %v",
+				logger.Infof("Adding peer %v with services %v and subnetword ID %v",
 					p.NA().IP.String(), msg.Services, msg.SubnetworkID)
 				// Mark this peer as a good node.
 				amgr.Good(p.NA().IP, msg.Services, msg.SubnetworkID)
@@ -92,11 +92,11 @@ func creep() {
 			peers = amgr.Addresses()
 		}
 		if len(peers) == 0 {
-			seedLog.Infof("No stale addresses -- sleeping for 10 minutes")
+			logger.Infof("No stale addresses -- sleeping for 10 minutes")
 			for i := 0; i < 600; i++ {
 				time.Sleep(time.Second)
 				if atomic.LoadInt32(&systemShutdown) != 0 {
-					seedLog.Infof("Creep thread shutdown")
+					logger.Infof("Creep thread shutdown")
 					return
 				}
 			}
@@ -105,9 +105,9 @@ func creep() {
 
 		for _, addr := range peers {
 			if atomic.LoadInt32(&systemShutdown) != 0 {
-				seedLog.Infof("Waiting creep threads to terminate")
+				logger.Infof("Waiting creep threads to terminate")
 				wgCreep.Wait()
-				seedLog.Infof("Creep thread shutdown")
+				logger.Infof("Creep thread shutdown")
 				return
 			}
 			wgCreep.Add(1)
@@ -117,14 +117,14 @@ func creep() {
 				host := net.JoinHostPort(addr.IP.String(), strconv.Itoa(int(addr.Port)))
 				p, err := peer.NewOutboundPeer(&config, host)
 				if err != nil {
-					seedLog.Warnf("NewOutboundPeer on %v: %v",
+					logger.Warnf("NewOutboundPeer on %v: %v",
 						host, err)
 					return
 				}
 				amgr.Attempt(addr.IP)
 				conn, err := net.DialTimeout("tcp", p.Addr(), nodeTimeout)
 				if err != nil {
-					seedLog.Warnf("%v", err)
+					logger.Warnf("%v", err)
 					return
 				}
 				p.AssociateConnection(conn)
@@ -133,7 +133,7 @@ func creep() {
 				select {
 				case <-onVersion:
 				case <-time.After(nodeTimeout):
-					seedLog.Warnf("version timeout on peer %v",
+					logger.Warnf("version timeout on peer %v",
 						p.Addr())
 					p.Disconnect()
 					return
@@ -142,7 +142,7 @@ func creep() {
 				select {
 				case <-onAddr:
 				case <-time.After(nodeTimeout):
-					seedLog.Warnf("getaddr timeout on peer %v",
+					logger.Warnf("getaddr timeout on peer %v",
 						p.Addr())
 					p.Disconnect()
 					return
@@ -177,11 +177,11 @@ func main() {
 		if ip == nil {
 			hostAddrs, err := net.LookupHost(cfg.Seeder)
 			if err != nil {
-				seedLog.Warnf("Failed to resolve seed host: %v, %v, ignoring", cfg.Seeder, err)
+				logger.Warnf("Failed to resolve seed host: %v, %v, ignoring", cfg.Seeder, err)
 			} else {
 				ip = net.ParseIP(hostAddrs[0])
 				if ip == nil {
-					seedLog.Warnf("Failed to resolve seed host: %v, ignoring", cfg.Seeder)
+					logger.Warnf("Failed to resolve seed host: %v, ignoring", cfg.Seeder)
 				}
 			}
 		}
@@ -200,12 +200,12 @@ func main() {
 	go dnsServer.Start()
 
 	defer func() {
-		seedLog.Infof("Gracefully shutting down the seeder...")
+		logger.Infof("Gracefully shutting down the seeder...")
 		atomic.StoreInt32(&systemShutdown, 1)
 		close(amgr.quit)
 		wg.Wait()
 		amgr.wg.Wait()
-		seedLog.Infof("Seeder shutdown complete")
+		logger.Infof("Seeder shutdown complete")
 	}()
 
 	// Wait until the interrupt signal is received from an OS signal or

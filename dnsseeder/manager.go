@@ -127,11 +127,11 @@ func NewManager(dataDir string) (*Manager, error) {
 
 	err := amgr.deserializePeers()
 	if err != nil {
-		seedLog.Warnf("Failed to parse file %s: %v", amgr.peersFile, err)
+		logger.Warnf("Failed to parse file %s: %v", amgr.peersFile, err)
 		// if it is invalid we nuke the old one unconditionally.
 		err = os.Remove(amgr.peersFile)
 		if err != nil {
-			seedLog.Warnf("Failed to remove corrupt peers file %s: %v",
+			logger.Warnf("Failed to remove corrupt peers file %s: %v",
 				amgr.peersFile, err)
 		}
 	}
@@ -284,9 +284,9 @@ out:
 			break out
 		}
 	}
-	seedLog.Infof("Address manager: saving peers")
+	logger.Infof("Address manager: saving peers")
 	m.savePeers()
-	seedLog.Infof("Address manager shoutdown")
+	logger.Infof("Address manager shoutdown")
 }
 
 func (m *Manager) prunePeers() {
@@ -309,7 +309,7 @@ func (m *Manager) prunePeers() {
 	l := len(m.nodes)
 	m.mtx.Unlock()
 
-	seedLog.Infof("Pruned %d addresses: %d remaining", count, l)
+	logger.Infof("Pruned %d addresses: %d remaining", count, l)
 }
 
 func (m *Manager) deserializePeers() error {
@@ -337,7 +337,7 @@ func (m *Manager) deserializePeers() error {
 	m.nodes = nodes
 	m.mtx.Unlock()
 
-	seedLog.Infof("%d nodes loaded", l)
+	logger.Infof("%d nodes loaded", l)
 	return nil
 }
 
@@ -349,20 +349,20 @@ func (m *Manager) savePeers() {
 	tmpfile := m.peersFile + ".new"
 	w, err := os.Create(tmpfile)
 	if err != nil {
-		seedLog.Errorf("Error opening file %s: %v", tmpfile, err)
+		logger.Errorf("Error opening file %s: %v", tmpfile, err)
 		return
 	}
 	enc := json.NewEncoder(w)
 	if err := enc.Encode(&m.nodes); err != nil {
-		seedLog.Errorf("Failed to encode file %s: %v", tmpfile, err)
+		logger.Errorf("Failed to encode file %s: %v", tmpfile, err)
 		return
 	}
 	if err := w.Close(); err != nil {
-		seedLog.Errorf("Error closing file %s: %v", tmpfile, err)
+		logger.Errorf("Error closing file %s: %v", tmpfile, err)
 		return
 	}
 	if err := os.Rename(tmpfile, m.peersFile); err != nil {
-		seedLog.Errorf("Error writing file %s: %v", m.peersFile, err)
+		logger.Errorf("Error writing file %s: %v", m.peersFile, err)
 		return
 	}
 }
