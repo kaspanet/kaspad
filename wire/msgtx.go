@@ -340,7 +340,7 @@ func (msg *MsgTx) TxHash() *daghash.Hash {
 }
 
 // TxID generates the Hash for the transaction without the signature script, gas and payload fields.
-func (msg *MsgTx) TxID() daghash.TxID {
+func (msg *MsgTx) TxID() *daghash.TxID {
 	// Encode the transaction, replace signature script with zeroes, cut off
 	// payload and calculate double sha256 on the result.  Ignore the error
 	// returns since the only way the encode could fail is being out of memory or
@@ -351,7 +351,8 @@ func (msg *MsgTx) TxID() daghash.TxID {
 	}
 	buf := bytes.NewBuffer(make([]byte, 0, msg.serializeSize(encodingFlags)))
 	_ = msg.serialize(buf, encodingFlags)
-	return daghash.TxID(daghash.DoubleHashH(buf.Bytes()))
+	txID := daghash.TxID(daghash.DoubleHashH(buf.Bytes()))
+	return &txID
 }
 
 // Copy creates a deep copy of a transaction so that the original does not get

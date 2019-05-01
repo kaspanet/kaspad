@@ -253,7 +253,7 @@ func (p *poolHarness) CreateTxChain(firstOutput spendableOutpoint, numTxns uint3
 		txChain = append(txChain, util.NewTx(tx))
 
 		// Next transaction uses outputs from this one.
-		prevOutPoint = wire.OutPoint{TxID: tx.TxID(), Index: 0}
+		prevOutPoint = wire.OutPoint{TxID: *tx.TxID(), Index: 0}
 	}
 
 	return txChain, nil
