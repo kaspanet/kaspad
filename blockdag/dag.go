@@ -593,13 +593,6 @@ func (dag *BlockDAG) saveChangesFromBlock(node *blockNode, block *util.Block, vi
 			return err
 		}
 
-		// Add the block hash and height to the block index which tracks
-		// the main chain.
-		err = dbPutBlockIndex(dbTx, block.Hash(), node.height)
-		if err != nil {
-			return err
-		}
-
 		// Update the UTXO set using the diffSet that was melded into the
 		// full UTXO set.
 		err = dbPutUTXODiff(dbTx, virtualUTXODiff)
