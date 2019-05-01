@@ -606,6 +606,7 @@ func (g *testGenerator) saveSpendableCoinbaseOuts() {
 	// reaching the block that has already had the coinbase outputs
 	// collected.
 	var collectBlocks []*wire.MsgBlock
+	// TODO: (Evgeny) This is wrong. Modified only to satisfy compilation.
 	for b := g.tip; b != nil; b = g.blocks[*b.Header.ParentHashes[0]] {
 		if b.BlockHash() == g.prevCollectedHash {
 			break
@@ -1553,8 +1554,10 @@ func Generate(includeLargeReorg bool) (tests [][]TestInstance, err error) {
 	//   ... -> b33(9) -> b35(10) -> b39(11) -> b42(12) -> b43(13) -> b53(14)
 	//                                                                       \-> b54(15)
 	g.nextBlock("b54", outs[15], func(b *wire.MsgBlock) {
+		// TODO: (Evgeny) This is wrong. Modified only to satisfy compilation.
 		medianBlock := g.blocks[*b.Header.ParentHashes[0]]
 		for i := 0; i < medianTimeBlocks/2; i++ {
+			// TODO: (Evgeny) This is wrong. Modified only to satisfy compilation.
 			medianBlock = g.blocks[*medianBlock.Header.ParentHashes[0]]
 		}
 		b.Header.Timestamp = medianBlock.Header.Timestamp
@@ -1567,8 +1570,10 @@ func Generate(includeLargeReorg bool) (tests [][]TestInstance, err error) {
 	//   ... -> b33(9) -> b35(10) -> b39(11) -> b42(12) -> b43(13) -> b53(14) -> b55(15)
 	g.setTip("b53")
 	g.nextBlock("b55", outs[15], func(b *wire.MsgBlock) {
+		// TODO: (Evgeny) This is wrong. Modified only to satisfy compilation.
 		medianBlock := g.blocks[*b.Header.ParentHashes[0]]
 		for i := 0; i < medianTimeBlocks/2; i++ {
+			// TODO: (Evgeny) This is wrong. Modified only to satisfy compilation.
 			medianBlock = g.blocks[*medianBlock.Header.ParentHashes[0]]
 		}
 		medianBlockTime := medianBlock.Header.Timestamp
@@ -1717,6 +1722,7 @@ func Generate(includeLargeReorg bool) (tests [][]TestInstance, err error) {
 	g.nextBlock("b61", outs[18], func(b *wire.MsgBlock) {
 		// Duplicate the coinbase of the parent block to force the
 		// condition.
+		// TODO: (Evgeny) This is wrong. Modified only to satisfy compilation.
 		parent := g.blocks[*b.Header.ParentHashes[0]]
 		b.Transactions[0] = parent.Transactions[0]
 	})
