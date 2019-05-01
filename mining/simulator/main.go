@@ -51,7 +51,7 @@ func disconnect(clients []*simulatorClient) {
 func handlePanic() {
 	err := recover()
 	if err != nil {
-		logger.Errorf("Fatal error: %s", err)
-		logger.Errorf("Stack trace: %s", debug.Stack())
+		log.Errorf("Fatal error: %s", err)
+		log.Errorf("Stack trace: %s", debug.Stack())
 	}
 }

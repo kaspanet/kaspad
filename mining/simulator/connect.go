@@ -40,7 +40,7 @@ func connectToServers(cfg *config, addressList []string) ([]*simulatorClient, er
 			return nil, err
 		}
 
-		logger.Infof("Connected to server %s", address)
+		log.Infof("Connected to server %s", address)
 	}
 
 	return clients, nil

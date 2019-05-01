@@ -46,7 +46,7 @@ func main() {
 		panic(fmt.Errorf("Failed to get P2PKH address from private key: %s", err))
 	}
 
-	logger.Infof("P2PKH address for private key: %s\n", p2pkhAddress)
+	log.Infof("P2PKH address for private key: %s\n", p2pkhAddress)
 
 	addressList, err := getAddressList(cfg)
 	if err != nil {
@@ -70,7 +70,7 @@ func main() {
 }
 
 func disconnect(clients []*rpcclient.Client) {
-	logger.Infof("Disconnecting clients")
+	log.Infof("Disconnecting clients")
 	for _, client := range clients {
 		client.Disconnect()
 	}
@@ -79,7 +79,7 @@ func disconnect(clients []*rpcclient.Client) {
 func handlePanic() {
 	err := recover()
 	if err != nil {
-		logger.Errorf("Fatal error: %s", err)
-		logger.Errorf("Stack trace: %s", debug.Stack())
+		log.Errorf("Fatal error: %s", err)
+		log.Errorf("Stack trace: %s", debug.Stack())
 	}
 }

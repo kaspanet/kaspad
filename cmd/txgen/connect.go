@@ -38,7 +38,7 @@ func connectToServers(cfg *config, addressList []string) ([]*rpcclient.Client, e
 
 		clients[i] = client
 
-		logger.Infof("Connected to server %s", address)
+		log.Infof("Connected to server %s", address)
 	}
 
 	return clients, nil

@@ -79,20 +79,20 @@ func templatesLoop(client *simulatorClient, newTemplateChan chan *btcjson.GetBlo
 	longPollID := ""
 	getBlockTemplateLongPoll := func() {
 		if longPollID != "" {
-			logger.Infof("Requesting template with longPollID '%s' from %s", longPollID, client.Host())
+			log.Infof("Requesting template with longPollID '%s' from %s", longPollID, client.Host())
 		} else {
-			logger.Infof("Requesting template without longPollID from %s", client.Host())
+			log.Infof("Requesting template without longPollID from %s", client.Host())
 		}
 		template, err := getBlockTemplate(client, longPollID)
 		if err == rpcclient.ErrResponseTimedOut {
-			logger.Infof("Got timeout while requesting template '%s' from %s", longPollID, client.Host())
+			log.Infof("Got timeout while requesting template '%s' from %s", longPollID, client.Host())
 			return
 		} else if err != nil {
 			errChan <- fmt.Errorf("Error getting block template: %s", err)
 			return
 		}
 		if template.LongPollID != longPollID {
-			logger.Infof("Got new long poll template: %s", template.LongPollID)
+			log.Infof("Got new long poll template: %s", template.LongPollID)
 			longPollID = template.LongPollID
 			newTemplateChan <- template
 		}
@@ -141,7 +141,7 @@ func mineNextBlock(client *simulatorClient, foundBlock chan *util.Block, templat
 
 func handleFoundBlock(client *simulatorClient, block *util.Block, templateStopChan chan struct{}) error {
 	templateStopChan <- struct{}{}
-	logger.Infof("Found block %s! Submitting to %s", block.Hash(), client.Host())
+	log.Infof("Found block %s! Submitting to %s", block.Hash(), client.Host())
 
 	err := client.SubmitBlock(block, &btcjson.SubmitBlockOptions{})
 	if err != nil {
@@ -168,7 +168,7 @@ func mineLoop(clients []*simulatorClient) error {
 		for {
 			currentClient := getRandomClient(clients)
 			currentClient.notifyForNewBlocks = true
-			logger.Infof("Next block will be mined by: %s", currentClient.Host())
+			log.Infof("Next block will be mined by: %s", currentClient.Host())
 			mineNextBlock(currentClient, foundBlock, templateStopChan, errChan)
 			block, ok := <-foundBlock
 			if !ok {

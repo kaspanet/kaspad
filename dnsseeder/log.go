@@ -21,7 +21,7 @@ func (logWriter) Write(p []byte) (n int, err error) {
 var (
 	backendLog = btclog.NewBackend(logWriter{})
 	LogRotator *rotator.Rotator
-	logger     = backendLog.Logger("SEED")
+	log        = backendLog.Logger("SEED")
 	initiated  = false
 )
 
