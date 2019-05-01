@@ -648,9 +648,9 @@ func (sp *Peer) OnGetData(_ *peer.Peer, msg *wire.MsgGetData) {
 		case wire.InvTypeTx:
 			err = sp.server.pushTxMsg(sp, (*daghash.TxID)(iv.Hash), c, waitChan)
 		case wire.InvTypeSyncBlock:
-			fallthrough
+			err = sp.server.pushBlockMsg(sp, iv.Hash, false, c, waitChan)
 		case wire.InvTypeBlock:
-			err = sp.server.pushBlockMsg(sp, iv.Hash, c, waitChan)
+			err = sp.server.pushBlockMsg(sp, iv.Hash, true, c, waitChan)
 		case wire.InvTypeFilteredBlock:
 			err = sp.server.pushMerkleBlockMsg(sp, iv.Hash, c, waitChan)
 		default:
@@ -1270,7 +1270,7 @@ func (s *Server) pushTxMsg(sp *Peer, txID *daghash.TxID, doneChan chan<- struct{
 
 // pushBlockMsg sends a block message for the provided block hash to the
 // connected peer.  An error is returned if the block hash is not known.
-func (s *Server) pushBlockMsg(sp *Peer, hash *daghash.Hash, doneChan chan<- struct{},
+func (s *Server) pushBlockMsg(sp *Peer, hash *daghash.Hash, shouldSendInv bool, doneChan chan<- struct{},
 	waitChan <-chan struct{}) error {
 
 	// Fetch the raw block bytes from the database.
@@ -1322,7 +1322,7 @@ func (s *Server) pushBlockMsg(sp *Peer, hash *daghash.Hash, doneChan chan<- stru
 	// an inv straight after.
 	var dc chan<- struct{}
 	continueHash := sp.continueHash
-	sendInv := continueHash != nil && continueHash.IsEqual(hash)
+	sendInv := shouldSendInv && continueHash != nil && continueHash.IsEqual(hash)
 	if !sendInv {
 		dc = doneChan
 	}
