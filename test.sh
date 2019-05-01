@@ -17,7 +17,7 @@ echo 'mode: atomic' > ${COVERAGE_PATH}
 # We write coverage for every package to a temporary file so that we may append it to one global coverage file
 go list ./... | \
     grep -v "vendor" | \
-    xargs -n1 -I{} sh -c "go test -gcflags='-l' -timeout 20s -covermode=atomic -coverprofile=${COVERAGE_TEMP_PATH} {} && tail -n +2 ${COVERAGE_TEMP_PATH} >> ${COVERAGE_PATH}" | \
+    xargs -n1 -I{} sh -c "go test -gcflags='-l' -covermode=atomic -coverprofile=${COVERAGE_TEMP_PATH} {} && tail -n +2 ${COVERAGE_TEMP_PATH} >> ${COVERAGE_PATH}" | \
     tee /tmp/test
 
 # Remove the temporary coverage file
