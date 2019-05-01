@@ -36,14 +36,6 @@ var (
 	// block headers and contextual information.
 	blockIndexBucketName = []byte("blockheaderidx")
 
-	// hashIndexBucketName is the name of the db bucket used to house to the
-	// block hash -> block height index.
-	hashIndexBucketName = []byte("hashidx")
-
-	// heightIndexBucketName is the name of the db bucket used to house to
-	// the block height -> block hash index.
-	heightIndexBucketName = []byte("heightidx")
-
 	// dagStateKeyName is the name of the db key used to store the DAG
 	// tip hashes.
 	dagStateKeyName = []byte("dagstate")
@@ -352,58 +344,6 @@ func dbPutUTXODiff(dbTx database.Tx, diff *UTXODiff) error {
 	return nil
 }
 
-// -----------------------------------------------------------------------------
-// The block index consists of two buckets with an entry for every block in the
-// main chain.  One bucket is for the hash to height mapping and the other is
-// for the height to hash mapping.
-//
-// The serialized format for values in the hash to height bucket is:
-//   <height>
-//
-//   Field      Type     Size
-//   height     uint32   4 bytes
-//
-// The serialized format for values in the height to hash bucket is:
-//   <hash>
-//
-//   Field      Type             Size
-//   hash       daghash.Hash   daghash.HashSize
-// -----------------------------------------------------------------------------
-
-// dbPutBlockIndex uses an existing database transaction to update or add the
-// block index entries for the hash to height and height to hash mappings for
-// the provided values.
-func dbPutBlockIndex(dbTx database.Tx, hash *daghash.Hash, height uint64) error {
-	// Serialize the height for use in the index entries.
-	var serializedHeight [8]byte
-	byteOrder.PutUint64(serializedHeight[:], height)
-
-	// Add the block hash to height mapping to the index.
-	meta := dbTx.Metadata()
-	hashIndex := meta.Bucket(hashIndexBucketName)
-	if err := hashIndex.Put(hash[:], serializedHeight[:]); err != nil {
-		return err
-	}
-
-	// Add the block height to hash mapping to the index.
-	heightIndex := meta.Bucket(heightIndexBucketName)
-	return heightIndex.Put(serializedHeight[:], hash[:])
-}
-
-// dbFetchHeightByHash uses an existing database transaction to retrieve the
-// height for the provided hash from the index.
-func dbFetchHeightByHash(dbTx database.Tx, hash *daghash.Hash) (int32, error) {
-	meta := dbTx.Metadata()
-	hashIndex := meta.Bucket(hashIndexBucketName)
-	serializedHeight := hashIndex.Get(hash[:])
-	if serializedHeight == nil {
-		str := fmt.Sprintf("block %s is not in the main chain", hash)
-		return 0, errNotInDAG(str)
-	}
-
-	return int32(byteOrder.Uint32(serializedHeight)), nil
-}
-
 type dagState struct {
 	TipHashes         []*daghash.Hash
 	LastFinalityPoint *daghash.Hash
@@ -454,20 +394,6 @@ func (dag *BlockDAG) createDAGState() error {
 
 		// Create the bucket that houses the block index data.
 		_, err := meta.CreateBucket(blockIndexBucketName)
-		if err != nil {
-			return err
-		}
-
-		// Create the bucket that houses the chain block hash to height
-		// index.
-		_, err = meta.CreateBucket(hashIndexBucketName)
-		if err != nil {
-			return err
-		}
-
-		// Create the bucket that houses the chain block height to hash
-		// index.
-		_, err = meta.CreateBucket(heightIndexBucketName)
 		if err != nil {
 			return err
 		}
