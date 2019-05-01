@@ -496,6 +496,8 @@ func (sm *SyncManager) restartSyncIfNeeded() {
 			}
 		}
 	}
+
+	sm.syncPeer = nil
 	sm.startSync()
 }
 
