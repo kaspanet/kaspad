@@ -160,7 +160,6 @@ type Peer struct {
 	connReq         *connmgr.ConnReq
 	server          *Server
 	persistent      bool
-	continueHash    *daghash.Hash
 	relayMtx        sync.Mutex
 	DisableRelayTx  bool
 	sentAddrs       bool
@@ -648,9 +647,9 @@ func (sp *Peer) OnGetData(_ *peer.Peer, msg *wire.MsgGetData) {
 		case wire.InvTypeTx:
 			err = sp.server.pushTxMsg(sp, (*daghash.TxID)(iv.Hash), c, waitChan)
 		case wire.InvTypeSyncBlock:
-			err = sp.server.pushBlockMsg(sp, iv.Hash, false, c, waitChan)
+			fallthrough
 		case wire.InvTypeBlock:
-			err = sp.server.pushBlockMsg(sp, iv.Hash, true, c, waitChan)
+			err = sp.server.pushBlockMsg(sp, iv.Hash, c, waitChan)
 		case wire.InvTypeFilteredBlock:
 			err = sp.server.pushMerkleBlockMsg(sp, iv.Hash, c, waitChan)
 		default:
@@ -713,15 +712,6 @@ func (sp *Peer) OnGetBlocks(_ *peer.Peer, msg *wire.MsgGetBlocks) {
 
 	// Send the inventory message if there is anything to send.
 	if len(invMsg.InvList) > 0 {
-		invListLen := len(invMsg.InvList)
-		if invListLen == wire.MaxBlocksPerMsg {
-			// Intentionally use a copy of the final hash so there
-			// is not a reference into the inventory slice which
-			// would prevent the entire slice from being eligible
-			// for GC as soon as it's sent.
-			continueHash := invMsg.InvList[invListLen-1].Hash
-			sp.continueHash = continueHash
-		}
 		sp.QueueMessage(invMsg, nil)
 	}
 }
@@ -1270,7 +1260,7 @@ func (s *Server) pushTxMsg(sp *Peer, txID *daghash.TxID, doneChan chan<- struct{
 
 // pushBlockMsg sends a block message for the provided block hash to the
 // connected peer.  An error is returned if the block hash is not known.
-func (s *Server) pushBlockMsg(sp *Peer, hash *daghash.Hash, shouldSendInv bool, doneChan chan<- struct{},
+func (s *Server) pushBlockMsg(sp *Peer, hash *daghash.Hash, doneChan chan<- struct{},
 	waitChan <-chan struct{}) error {
 
 	// Fetch the raw block bytes from the database.
@@ -1318,29 +1308,8 @@ func (s *Server) pushBlockMsg(sp *Peer, hash *daghash.Hash, shouldSendInv bool, 
 		<-waitChan
 	}
 
-	// We only send the channel for this message if we aren't sending
-	// an inv straight after.
-	var dc chan<- struct{}
-	continueHash := sp.continueHash
-	sendInv := shouldSendInv && continueHash != nil && continueHash.IsEqual(hash)
-	if !sendInv {
-		dc = doneChan
-	}
-	sp.QueueMessage(&msgBlock, dc)
+	sp.QueueMessage(&msgBlock, doneChan)
 
-	// When the peer requests the final block that was advertised in
-	// response to a getblocks message which requested more blocks than
-	// would fit into a single message, send it a new inventory message
-	// to trigger it to issue another getblocks message for the next
-	// batch of inventory.
-	if sendInv {
-		highestTipHash := sp.server.DAG.HighestTipHash()
-		invMsg := wire.NewMsgInvSizeHint(1)
-		iv := wire.NewInvVect(wire.InvTypeBlock, highestTipHash)
-		invMsg.AddInvVect(iv)
-		sp.QueueMessage(invMsg, doneChan)
-		sp.continueHash = nil
-	}
 	return nil
 }
 
