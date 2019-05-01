@@ -70,15 +70,6 @@ func (h *BlockHeader) BlockHash() *daghash.Hash {
 	return daghash.DoubleHashP(buf.Bytes())
 }
 
-// SelectedParentHash returns the hash of the selected block header.
-func (h *BlockHeader) SelectedParentHash() *daghash.Hash {
-	if h.NumParentBlocks() == 0 {
-		return nil
-	}
-
-	return h.ParentHashes[0]
-}
-
 // IsGenesis returns true iff this block is a genesis block
 func (h *BlockHeader) IsGenesis() bool {
 	return h.NumParentBlocks() == 0

@@ -176,14 +176,19 @@ func storeFilter(dbTx database.Tx, block *util.Block, f *gcs.Filter,
 	if header.IsGenesis() {
 		prevHeader = &daghash.ZeroHash
 	} else {
-		ph := header.SelectedParentHash()
-		pfh, err := dbFetchFilterIdxEntry(dbTx, hkey, ph)
+		// TODO(Evgeny): Current implementation of GCS filter inherited from chain
+		// (single parent) and must be ported to DAG (multiple parents)
+		var parentHash *daghash.Hash
+		if header.NumParentBlocks() != 0 {
+			parentHash = header.ParentHashes[0]
+		}
+		prevFilterHashBytes, err := dbFetchFilterIdxEntry(dbTx, hkey, parentHash)
 		if err != nil {
 			return err
 		}
 
 		// Construct the new block's filter header, and store it.
-		prevHeader, err = daghash.NewHash(pfh)
+		prevHeader, err = daghash.NewHash(prevFilterHashBytes)
 		if err != nil {
 			return err
 		}
