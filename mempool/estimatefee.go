@@ -94,7 +94,7 @@ func NewSatoshiPerByte(fee util.Amount, size uint32) SatoshiPerByte {
 // additional data required for the fee estimation algorithm.
 type observedTransaction struct {
 	// A transaction ID.
-	id *daghash.TxID
+	txID *daghash.TxID
 
 	// The fee per byte of the transaction in satoshis.
 	feeRate SatoshiPerByte
@@ -108,7 +108,7 @@ type observedTransaction struct {
 }
 
 func (o *observedTransaction) Serialize(w io.Writer) {
-	binary.Write(w, binary.BigEndian, o.id)
+	binary.Write(w, binary.BigEndian, o.txID)
 	binary.Write(w, binary.BigEndian, o.feeRate)
 	binary.Write(w, binary.BigEndian, o.observed)
 	binary.Write(w, binary.BigEndian, o.mined)
@@ -116,11 +116,11 @@ func (o *observedTransaction) Serialize(w io.Writer) {
 
 func deserializeObservedTransaction(r io.Reader) (*observedTransaction, error) {
 	ot := observedTransaction{
-		id: &daghash.TxID{},
+		txID: &daghash.TxID{},
 	}
 
 	// The first 32 bytes should be a hash.
-	binary.Read(r, binary.BigEndian, ot.id)
+	binary.Read(r, binary.BigEndian, ot.txID)
 
 	// The next 8 are SatoshiPerByte
 	binary.Read(r, binary.BigEndian, &ot.feeRate)
@@ -213,7 +213,7 @@ func (ef *FeeEstimator) ObserveTransaction(t *TxDesc) {
 		size := uint32(t.Tx.MsgTx().SerializeSize())
 
 		ef.observed[*txID] = &observedTransaction{
-			id:       txID,
+			txID:     txID,
 			feeRate:  NewSatoshiPerByte(util.Amount(t.Fee), size),
 			observed: t.Height,
 			mined:    mining.UnminedHeight,
@@ -616,7 +616,7 @@ type observedTxSet []*observedTransaction
 func (q observedTxSet) Len() int { return len(q) }
 
 func (q observedTxSet) Less(i, j int) bool {
-	return strings.Compare(q[i].id.String(), q[j].id.String()) < 0
+	return strings.Compare(q[i].txID.String(), q[j].txID.String()) < 0
 }
 
 func (q observedTxSet) Swap(i, j int) {
@@ -718,7 +718,7 @@ func RestoreFeeEstimator(data FeeEstimatorState) (*FeeEstimator, error) {
 			return nil, err
 		}
 		observed[i] = ot
-		ef.observed[*ot.id] = ot
+		ef.observed[*ot.txID] = ot
 	}
 
 	// Read bins.
