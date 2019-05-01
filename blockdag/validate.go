@@ -82,15 +82,15 @@ func IsFeeTransaction(tx *util.Tx) bool {
 
 // SequenceLockActive determines if a transaction's sequence locks have been
 // met, meaning that all the inputs of a given transaction have reached a
-// height or time sufficient for their relative lock-time maturity.
-func SequenceLockActive(sequenceLock *SequenceLock, blockHeight uint64,
+// chain-height or time sufficient for their relative lock-time maturity.
+func SequenceLockActive(sequenceLock *SequenceLock, blockChainHeight uint64,
 	medianTimePast time.Time) bool {
 
-	// If either the seconds, or height relative-lock time has not yet
+	// If either the seconds, or chain-height relative-lock time has not yet
 	// reached, then the transaction is not yet mature according to its
 	// sequence locks.
 	if sequenceLock.Seconds >= medianTimePast.Unix() ||
-		sequenceLock.BlockHeight >= int64(blockHeight) {
+		sequenceLock.BlockChainHeight >= int64(blockChainHeight) {
 		return false
 	}
 
@@ -876,8 +876,8 @@ func ensureNoDuplicateTx(block *blockNode, utxoSet UTXOSet,
 		utxo, ok := utxoSet.Get(outpoint)
 		if ok {
 			str := fmt.Sprintf("tried to overwrite transaction %s "+
-				"at block height %d that is not fully spent",
-				outpoint.TxID, utxo.BlockHeight())
+				"at block chain-height %d that is not fully spent",
+				outpoint.TxID, utxo.BlockChainHeight())
 			return ruleError(ErrOverwriteTx, str)
 		}
 	}
@@ -976,18 +976,18 @@ func CheckTransactionInputsAndCalulateFee(tx *util.Tx, txHeight uint64, utxoSet 
 	return txFeeInSatoshi, nil
 }
 
-func validateBlockRewardMaturity(dagParams *dagconfig.Params, entry *UTXOEntry, txHeight uint64, txIn *wire.TxIn) error {
+func validateBlockRewardMaturity(dagParams *dagconfig.Params, entry *UTXOEntry, txChainHeight uint64, txIn *wire.TxIn) error {
 	// Ensure the transaction is not spending coins which have not
 	// yet reached the required block reward maturity.
 	if entry.IsBlockReward() {
-		originHeight := entry.BlockHeight()
-		blocksSincePrev := txHeight - originHeight
+		originChainHeight := entry.BlockChainHeight()
+		blocksSincePrev := txChainHeight - originChainHeight
 		if blocksSincePrev < dagParams.BlockRewardMaturity {
 			str := fmt.Sprintf("tried to spend block reward "+
-				"transaction output %s from height %d "+
-				"at height %d before required maturity "+
+				"transaction output %s from chain-height %d "+
+				"at chain-height %d before required maturity "+
 				"of %d blocks", txIn.PreviousOutPoint,
-				originHeight, txHeight,
+				originChainHeight, txChainHeight,
 				dagParams.BlockRewardMaturity)
 			return ruleError(ErrImmatureSpend, str)
 		}

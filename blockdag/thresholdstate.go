@@ -130,15 +130,15 @@ func (dag *BlockDAG) thresholdState(prevNode *blockNode, checker thresholdCondit
 	// The threshold state for the window that contains the genesis block is
 	// defined by definition.
 	confirmationWindow := checker.MinerConfirmationWindow()
-	if prevNode == nil || (prevNode.height+1) < confirmationWindow {
+	if prevNode == nil || (prevNode.chainHeight+1) < confirmationWindow {
 		return ThresholdDefined, nil
 	}
 
 	// Get the ancestor that is the last block of the previous confirmation
 	// window in order to get its threshold state.  This can be done because
 	// the state is the same for all blocks within a given window.
-	prevNode = prevNode.SelectedAncestor(prevNode.height -
-		(prevNode.height+1)%confirmationWindow)
+	prevNode = prevNode.SelectedAncestor(prevNode.chainHeight -
+		(prevNode.chainHeight+1)%confirmationWindow)
 
 	// Iterate backwards through each of the previous confirmation windows
 	// to find the most recently cached threshold state.

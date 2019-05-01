@@ -66,11 +66,11 @@ func calcInputValueAge(tx *wire.MsgTx, utxoSet blockdag.UTXOSet, nextBlockHeight
 			// Their input age should computed as zero since their
 			// parent hasn't made it into a block yet.
 			var inputAge uint64
-			originHeight := entry.BlockHeight()
-			if originHeight == UnminedHeight {
+			originChainHeight := entry.BlockChainHeight()
+			if originChainHeight == UnminedHeight {
 				inputAge = 0
 			} else {
-				inputAge = nextBlockHeight - originHeight
+				inputAge = nextBlockHeight - originChainHeight
 			}
 
 			// Sum the input value times age.

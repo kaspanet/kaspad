@@ -51,10 +51,10 @@ func TestUtxoSerialization(t *testing.T) {
 		{
 			name: "height 1, coinbase",
 			entry: &UTXOEntry{
-				amount:      5000000000,
-				pkScript:    hexToBytes("410496b538e853519c726a2c91e61ec11600ae1390813a627c66fb8be7947be63c52da7589379515d4e0a604f8141781e62294721166bf621e73a82cbf2342c858eeac"),
-				blockHeight: 1,
-				packedFlags: tfBlockReward,
+				amount:           5000000000,
+				pkScript:         hexToBytes("410496b538e853519c726a2c91e61ec11600ae1390813a627c66fb8be7947be63c52da7589379515d4e0a604f8141781e62294721166bf621e73a82cbf2342c858eeac"),
+				blockChainHeight: 1,
+				packedFlags:      tfBlockReward,
 			},
 			serialized: hexToBytes("03320496b538e853519c726a2c91e61ec11600ae1390813a627c66fb8be7947be63c52"),
 		},
@@ -63,10 +63,10 @@ func TestUtxoSerialization(t *testing.T) {
 		{
 			name: "height 100001, not coinbase",
 			entry: &UTXOEntry{
-				amount:      1000000,
-				pkScript:    hexToBytes("76a914ee8bd501094a7d5ca318da2506de35e1cb025ddc88ac"),
-				blockHeight: 100001,
-				packedFlags: 0,
+				amount:           1000000,
+				pkScript:         hexToBytes("76a914ee8bd501094a7d5ca318da2506de35e1cb025ddc88ac"),
+				blockChainHeight: 100001,
+				packedFlags:      0,
 			},
 			serialized: hexToBytes("8b99420700ee8bd501094a7d5ca318da2506de35e1cb025ddc"),
 		},
@@ -110,10 +110,10 @@ func TestUtxoSerialization(t *testing.T) {
 				utxoEntry.PkScript(), test.entry.PkScript())
 			continue
 		}
-		if utxoEntry.BlockHeight() != test.entry.BlockHeight() {
+		if utxoEntry.BlockChainHeight() != test.entry.BlockChainHeight() {
 			t.Errorf("deserializeUTXOEntry #%d (%s) mismatched "+
 				"block height: got %d, want %d", i, test.name,
-				utxoEntry.BlockHeight(), test.entry.BlockHeight())
+				utxoEntry.BlockChainHeight(), test.entry.BlockChainHeight())
 			continue
 		}
 		if utxoEntry.IsBlockReward() != test.entry.IsBlockReward() {

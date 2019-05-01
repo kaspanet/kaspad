@@ -326,14 +326,14 @@ func (dag *BlockDAG) addOrphanBlock(block *util.Block) {
 }
 
 // SequenceLock represents the converted relative lock-time in seconds, and
-// absolute block-height for a transaction input's relative lock-times.
+// absolute block-chain-height for a transaction input's relative lock-times.
 // According to SequenceLock, after the referenced input has been confirmed
 // within a block, a transaction spending that input can be included into a
 // block either after 'seconds' (according to past median time), or once the
-// 'BlockHeight' has been reached.
+// 'BlockChainHeight' has been reached.
 type SequenceLock struct {
-	Seconds     int64
-	BlockHeight int64
+	Seconds          int64
+	BlockChainHeight int64
 }
 
 // CalcSequenceLock computes a relative lock-time SequenceLock for the passed
@@ -366,7 +366,7 @@ func (dag *BlockDAG) calcSequenceLock(node *blockNode, utxoSet UTXOSet, tx *util
 	// A value of -1 for each relative lock type represents a relative time
 	// lock value that will allow a transaction to be included in a block
 	// at any given height or time.
-	sequenceLock := &SequenceLock{Seconds: -1, BlockHeight: -1}
+	sequenceLock := &SequenceLock{Seconds: -1, BlockChainHeight: -1}
 
 	// Sequence locks don't apply to block reward transactions Therefore, we
 	// return sequence lock values of -1 indicating that this transaction
@@ -377,7 +377,7 @@ func (dag *BlockDAG) calcSequenceLock(node *blockNode, utxoSet UTXOSet, tx *util
 
 	// Grab the next height from the PoV of the passed blockNode to use for
 	// inputs present in the mempool.
-	nextHeight := node.height + 1
+	nextChainHeight := node.chainHeight + 1
 
 	mTx := tx.MsgTx()
 	for txInIndex, txIn := range mTx.TxIn {
@@ -390,12 +390,12 @@ func (dag *BlockDAG) calcSequenceLock(node *blockNode, utxoSet UTXOSet, tx *util
 			return sequenceLock, ruleError(ErrMissingTxOut, str)
 		}
 
-		// If the input height is set to the mempool height, then we
+		// If the input chain-height is set to the mempool height, then we
 		// assume the transaction makes it into the next block when
 		// evaluating its sequence blocks.
-		inputHeight := entry.BlockHeight()
-		if inputHeight == 0x7fffffff {
-			inputHeight = nextHeight
+		inputChainHeight := entry.BlockChainHeight()
+		if inputChainHeight == 0x7fffffff {
+			inputChainHeight = nextChainHeight
 		}
 
 		// Given a sequence number, we apply the relative time lock
@@ -416,11 +416,11 @@ func (dag *BlockDAG) calcSequenceLock(node *blockNode, utxoSet UTXOSet, tx *util
 			// which this input was included within so we can
 			// compute the past median time for the block prior to
 			// the one which included this referenced output.
-			prevInputHeight := inputHeight - 1
-			if prevInputHeight < 0 {
-				prevInputHeight = 0
+			prevInputChainHeight := inputChainHeight - 1
+			if prevInputChainHeight < 0 {
+				prevInputChainHeight = 0
 			}
-			blockNode := node.SelectedAncestor(prevInputHeight)
+			blockNode := node.SelectedAncestor(prevInputChainHeight)
 			medianTime := blockNode.PastMedianTime()
 
 			// Time based relative time-locks as defined by BIP 68
@@ -440,9 +440,9 @@ func (dag *BlockDAG) calcSequenceLock(node *blockNode, utxoSet UTXOSet, tx *util
 			// the input's height as its converted absolute
 			// lock-time. We subtract one from the relative lock in
 			// order to maintain the original lockTime semantics.
-			blockHeight := int64(inputHeight) + relativeLock - 1
-			if blockHeight > sequenceLock.BlockHeight {
-				sequenceLock.BlockHeight = blockHeight
+			blockChainHeight := int64(inputChainHeight) + relativeLock - 1
+			if blockChainHeight > sequenceLock.BlockChainHeight {
+				sequenceLock.BlockChainHeight = blockChainHeight
 			}
 		}
 	}
@@ -1133,6 +1133,12 @@ func (dag *BlockDAG) IsInSelectedPathChain(blockHash *daghash.Hash) bool {
 // Height returns the height of the highest tip in the DAG
 func (dag *BlockDAG) Height() uint64 {
 	return dag.virtual.tips().maxHeight()
+}
+
+// ChainHeight return the chain-height of the selected tip. In other words - it returns
+// the length of the dag's selected-parent chain
+func (dag *BlockDAG) ChainHeight() uint64 {
+	return dag.selectedTip().chainHeight
 }
 
 // BlockCount returns the number of blocks in the DAG

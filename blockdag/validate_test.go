@@ -22,41 +22,41 @@ import (
 func TestSequenceLocksActive(t *testing.T) {
 	seqLock := func(h int64, s int64) *SequenceLock {
 		return &SequenceLock{
-			Seconds:     s,
-			BlockHeight: h,
+			Seconds:          s,
+			BlockChainHeight: h,
 		}
 	}
 
 	tests := []struct {
-		seqLock     *SequenceLock
-		blockHeight uint64
-		mtp         time.Time
+		seqLock          *SequenceLock
+		blockChainHeight uint64
+		mtp              time.Time
 
 		want bool
 	}{
 		// Block based sequence lock with equal block height.
-		{seqLock: seqLock(1000, -1), blockHeight: 1001, mtp: time.Unix(9, 0), want: true},
+		{seqLock: seqLock(1000, -1), blockChainHeight: 1001, mtp: time.Unix(9, 0), want: true},
 
 		// Time based sequence lock with mtp past the absolute time.
-		{seqLock: seqLock(-1, 30), blockHeight: 2, mtp: time.Unix(31, 0), want: true},
+		{seqLock: seqLock(-1, 30), blockChainHeight: 2, mtp: time.Unix(31, 0), want: true},
 
 		// Block based sequence lock with current height below seq lock block height.
-		{seqLock: seqLock(1000, -1), blockHeight: 90, mtp: time.Unix(9, 0), want: false},
+		{seqLock: seqLock(1000, -1), blockChainHeight: 90, mtp: time.Unix(9, 0), want: false},
 
 		// Time based sequence lock with current time before lock time.
-		{seqLock: seqLock(-1, 30), blockHeight: 2, mtp: time.Unix(29, 0), want: false},
+		{seqLock: seqLock(-1, 30), blockChainHeight: 2, mtp: time.Unix(29, 0), want: false},
 
 		// Block based sequence lock at the same height, so shouldn't yet be active.
-		{seqLock: seqLock(1000, -1), blockHeight: 1000, mtp: time.Unix(9, 0), want: false},
+		{seqLock: seqLock(1000, -1), blockChainHeight: 1000, mtp: time.Unix(9, 0), want: false},
 
 		// Time based sequence lock with current time equal to lock time, so shouldn't yet be active.
-		{seqLock: seqLock(-1, 30), blockHeight: 2, mtp: time.Unix(30, 0), want: false},
+		{seqLock: seqLock(-1, 30), blockChainHeight: 2, mtp: time.Unix(30, 0), want: false},
 	}
 
 	t.Logf("Running %d sequence locks tests", len(tests))
 	for i, test := range tests {
 		got := SequenceLockActive(test.seqLock,
-			test.blockHeight, test.mtp)
+			test.blockChainHeight, test.mtp)
 		if got != test.want {
 			t.Fatalf("SequenceLockActive #%d got %v want %v", i,
 				got, test.want)
