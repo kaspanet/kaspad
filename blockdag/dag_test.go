@@ -278,11 +278,10 @@ func TestCalcSequenceLock(t *testing.T) {
 		Index: 0,
 	}
 
-	// Adding a utxo with a height of 0x7fffffff indicates that the output
-	// is currently unmined.
-	utxoSet.AddTx(unConfTx, 0x7fffffff)
+	utxoSet.AddTx(unConfTx, UnminedChainHeight)
 
 	tests := []struct {
+		name    string
 		tx      *wire.MsgTx
 		utxoSet UTXOSet
 		mempool bool
@@ -292,6 +291,7 @@ func TestCalcSequenceLock(t *testing.T) {
 		// This sequence number has the high bit set, so sequence locks
 		// should be disabled.
 		{
+			name:    "single input, max sequence number",
 			tx:      wire.NewNativeMsgTx(1, []*wire.TxIn{{PreviousOutPoint: utxo, Sequence: wire.MaxTxInSequenceNum}}, nil),
 			utxoSet: utxoSet,
 			want: &SequenceLock{
@@ -306,6 +306,7 @@ func TestCalcSequenceLock(t *testing.T) {
 		// seconds lock-time should be just before the median time of
 		// the targeted block.
 		{
+			name:    "single input, seconds lock time below time granularity",
 			tx:      wire.NewNativeMsgTx(1, []*wire.TxIn{{PreviousOutPoint: utxo, Sequence: LockTimeToSequence(true, 2)}}, nil),
 			utxoSet: utxoSet,
 			want: &SequenceLock{
@@ -318,6 +319,7 @@ func TestCalcSequenceLock(t *testing.T) {
 		// seconds after the median past time of the last block in the
 		// chain.
 		{
+			name:    "single input, 1023 seconds after median time",
 			tx:      wire.NewNativeMsgTx(1, []*wire.TxIn{{PreviousOutPoint: utxo, Sequence: LockTimeToSequence(true, 1024)}}, nil),
 			utxoSet: utxoSet,
 			want: &SequenceLock{
@@ -332,6 +334,7 @@ func TestCalcSequenceLock(t *testing.T) {
 		// bit set.  So the first lock should be selected as it's the
 		// latest lock that isn't disabled.
 		{
+			name: "multiple varied inputs",
 			tx: wire.NewNativeMsgTx(1,
 				[]*wire.TxIn{{
 					PreviousOutPoint: utxo,
@@ -356,6 +359,7 @@ func TestCalcSequenceLock(t *testing.T) {
 		// sequence lock should  have a value of -1 for seconds, but a
 		// height of 2 meaning it can be included at height 3.
 		{
+			name:    "single input, lock-time in blocks",
 			tx:      wire.NewNativeMsgTx(1, []*wire.TxIn{{PreviousOutPoint: utxo, Sequence: LockTimeToSequence(false, 3)}}, nil),
 			utxoSet: utxoSet,
 			want: &SequenceLock{
@@ -367,6 +371,7 @@ func TestCalcSequenceLock(t *testing.T) {
 		// seconds.  The selected sequence lock value for seconds should
 		// be the time further in the future.
 		{
+			name: "two inputs, lock-times in seconds",
 			tx: wire.NewNativeMsgTx(1, []*wire.TxIn{{
 				PreviousOutPoint: utxo,
 				Sequence:         LockTimeToSequence(true, 5120),
@@ -385,6 +390,7 @@ func TestCalcSequenceLock(t *testing.T) {
 		// be the height further in the future, so a height of 10
 		// indicating it can be included at height 11.
 		{
+			name: "two inputs, lock-times in blocks",
 			tx: wire.NewNativeMsgTx(1,
 				[]*wire.TxIn{{
 					PreviousOutPoint: utxo,
@@ -404,6 +410,7 @@ func TestCalcSequenceLock(t *testing.T) {
 		// based, and the other two are block based. The lock lying
 		// further into the future for both inputs should be chosen.
 		{
+			name: "four inputs, two lock-times in time, two lock-times in blocks",
 			tx: wire.NewNativeMsgTx(1,
 				[]*wire.TxIn{{
 					PreviousOutPoint: utxo,
@@ -432,6 +439,7 @@ func TestCalcSequenceLock(t *testing.T) {
 		// *next* block height, indicating it can be included 2 blocks
 		// after that.
 		{
+			name:    "single input, unconfirmed, lock-time in blocks",
 			tx:      wire.NewNativeMsgTx(1, []*wire.TxIn{{PreviousOutPoint: unConfUtxo, Sequence: LockTimeToSequence(false, 2)}}, nil),
 			utxoSet: utxoSet,
 			mempool: true,
@@ -444,6 +452,7 @@ func TestCalcSequenceLock(t *testing.T) {
 		// a time based lock, so the lock time should be based off the
 		// MTP of the *next* block.
 		{
+			name:    "single input, unconfirmed, lock-time in seoncds",
 			tx:      wire.NewNativeMsgTx(1, []*wire.TxIn{{PreviousOutPoint: unConfUtxo, Sequence: LockTimeToSequence(true, 1024)}}, nil),
 			utxoSet: utxoSet,
 			mempool: true,
@@ -455,20 +464,20 @@ func TestCalcSequenceLock(t *testing.T) {
 	}
 
 	t.Logf("Running %v SequenceLock tests", len(tests))
-	for i, test := range tests {
+	for _, test := range tests {
 		utilTx := util.NewTx(test.tx)
 		seqLock, err := dag.CalcSequenceLock(utilTx, utxoSet, test.mempool)
 		if err != nil {
-			t.Fatalf("test #%d, unable to calc sequence lock: %v", i, err)
+			t.Fatalf("test '%s', unable to calc sequence lock: %v", test.name, err)
 		}
 
 		if seqLock.Seconds != test.want.Seconds {
-			t.Fatalf("test #%d got %v seconds want %v seconds",
-				i, seqLock.Seconds, test.want.Seconds)
+			t.Fatalf("test '%s' got %v seconds want %v seconds",
+				test.name, seqLock.Seconds, test.want.Seconds)
 		}
 		if seqLock.BlockChainHeight != test.want.BlockChainHeight {
-			t.Fatalf("test #%d got chain-height of %v want chain-height of %v ",
-				i, seqLock.BlockChainHeight, test.want.BlockChainHeight)
+			t.Fatalf("test '%s' got chain-height of %v want chain-height of %v ",
+				test.name, seqLock.BlockChainHeight, test.want.BlockChainHeight)
 		}
 	}
 }

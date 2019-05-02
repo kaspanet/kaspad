@@ -3,10 +3,18 @@ package blockdag
 import (
 	"errors"
 	"fmt"
+	"math"
 	"sort"
 	"strings"
 
 	"github.com/daglabs/btcd/wire"
+)
+
+const (
+	// UnminedChainHeight is the chain-height used for the "block" height field of the
+	// contextual transaction information provided in a transaction store
+	// when it has not yet been mined into a block.
+	UnminedChainHeight = math.MaxUint64
 )
 
 // UTXOEntry houses details about an individual transaction output in a utxo
@@ -50,6 +58,12 @@ func (entry *UTXOEntry) Amount() uint64 {
 // PkScript returns the public key script for the output.
 func (entry *UTXOEntry) PkScript() []byte {
 	return entry.pkScript
+}
+
+// IsUnmined returns true iff this UTXOEntry has still not been mined,
+// a.k.a. still in the mempool.
+func (entry *UTXOEntry) IsUnmined() bool {
+	return entry.blockChainHeight == UnminedChainHeight
 }
 
 // txoFlags is a bitmask defining additional information and state for a

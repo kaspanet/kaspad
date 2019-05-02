@@ -195,7 +195,7 @@ func (node *blockNode) Header() *wire.BlockHeader {
 }
 
 // SelectedAncestor returns the ancestor block node at the provided chain-height by following
-// the selected-parents chain backwards from this node.  The returned block will be nil when a
+// the selected-parents chain backwards from this node. The returned block will be nil when a
 // height is requested that is after the height of the passed node.
 //
 // This function is safe for concurrent access.
@@ -213,7 +213,7 @@ func (node *blockNode) SelectedAncestor(chainHeight uint64) *blockNode {
 }
 
 // RelativeAncestor returns the ancestor block node a relative 'distance' of
-// chain-blocks before this node.  This is equivalent to calling Ancestor with
+// chain-blocks before this node. This is equivalent to calling Ancestor with
 // the node's chain-height minus provided distance.
 //
 // This function is safe for concurrent access.

@@ -9,6 +9,7 @@ import (
 	"math/rand"
 	"testing"
 
+	"github.com/daglabs/btcd/blockdag"
 	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/mining"
 	"github.com/daglabs/btcd/util"
@@ -291,7 +292,7 @@ func (eft *estimateFeeTester) round(txHistory [][]*TxDesc,
 	mempool := make(map[*observedTransaction]*TxDesc)
 	for _, h := range txHistory {
 		for _, t := range h {
-			if o, exists := eft.ef.observed[*t.Tx.ID()]; exists && o.mined == mining.UnminedHeight {
+			if o, exists := eft.ef.observed[*t.Tx.ID()]; exists && o.mined == blockdag.UnminedChainHeight {
 				mempool[o] = t
 			}
 		}

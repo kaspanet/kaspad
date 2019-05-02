@@ -394,7 +394,7 @@ func (dag *BlockDAG) calcSequenceLock(node *blockNode, utxoSet UTXOSet, tx *util
 		// assume the transaction makes it into the next block when
 		// evaluating its sequence blocks.
 		inputChainHeight := entry.BlockChainHeight()
-		if inputChainHeight == 0x7fffffff {
+		if entry.IsUnmined() {
 			inputChainHeight = nextChainHeight
 		}
 
