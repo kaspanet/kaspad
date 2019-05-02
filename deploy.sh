@@ -15,10 +15,15 @@ CF_PARAM=TaskImage
 IMAGE_NAME=${ECR_SERVER}/${SERVICE_NAME}
 
 notify_telegram() {
+  # Wait for the process to finish so it could flush logs etc.
+  sleep 10s
+
+  # Build the failure message
   MESSAGE="*${ghprbActualCommitAuthor}*:
 Build *FAILED* for pull request '${ghprbPullTitle}'
 [Github](${ghprbPullLink})        [Jenkins](${BUILD_URL}console)"
 
+  # Send the failure message
   curl -s \
     -X POST \
     "https://api.telegram.org/bot${TELEGRAM_API_TOKEN}/sendMessage" \
@@ -27,8 +32,10 @@ Build *FAILED* for pull request '${ghprbPullTitle}'
     -d disable_web_page_preview=true \
     -d text="${MESSAGE}"
 
+  # Retrieve the build log
   LOG=$(curl ${BUILD_URL}consoleText)
 
+  # Send the build log
   printf "$LOG" | curl \
     "https://api.telegram.org/bot${TELEGRAM_API_TOKEN}/sendDocument" \
     -F chat_id="${TELEGRAM_CHAT_ID}" \
@@ -38,7 +45,7 @@ Build *FAILED* for pull request '${ghprbPullTitle}'
 trap "exit 1" INT
 fatal() {
   echo "ERROR: $*" >&2
-  notify_telegram $*
+  notify_telegram &
 
   exit 1
 }
