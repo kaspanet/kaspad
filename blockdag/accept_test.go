@@ -47,7 +47,7 @@ func TestMaybeAcceptBlockErrors(t *testing.T) {
 	}
 
 	// Test rejecting the block if its parents are invalid
-	blocksFile := "blk_0_to_4.dat"
+	blocksFile := "blk_0dsfgdf_to_4.dat"
 	blocks, err := loadBlocks(blocksFile)
 	if err != nil {
 		t.Fatalf("TestMaybeAcceptBlockErrors: "+
