@@ -45,7 +45,7 @@ Build *FAILED* for pull request '${ghprbPullTitle}'
 trap "exit 1" INT
 fatal() {
   echo "ERROR: $*" >&2
-  notify_telegram | at -m now + 1 minute
+  echo "notify_telegram" | at -m now + 1 minute
 
   exit 1
 }
