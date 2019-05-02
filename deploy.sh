@@ -7,18 +7,31 @@ export IMAGE_TAG=${IMAGE_TAG:-"latest"}
 # GIT_COMMIT is set by Jenkins
 export COMMIT=${COMMIT:-$GIT_COMMIT}
 
-AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION:-eu-central-1}
-export AWS_DEFAULT_REGION
-AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query 'Account' --output=text)
-export AWS_ACCOUNT_ID
-ECR_SERVER=${ECR_SERVER:-"$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com"}
-export ECR_SERVER
+export AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION:-eu-central-1}
+export AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query 'Account' --output=text)
+export ECR_SERVER=${ECR_SERVER:-"$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com"}
 
 CF_PARAM=TaskImage
 IMAGE_NAME=${ECR_SERVER}/${SERVICE_NAME}
 
+notify_telegram() {
+  echo "AAAAAAAAA! $*"
+
+  curl -s \
+    -X POST \
+    "https://api.telegram.org/bot${TELEGRAM_API_TOKEN}/sendMessage" \
+    -d chat_id="${TELEGRAM_CHAT_ID}" \
+    -d text="${TELEGRAM_MESSAGE}"
+}
+
 trap "exit 1" INT
-fatal() { echo "ERROR: $*" >&2; exit 1; }
+fatal() {
+  echo "ERROR: $*" >&2
+  notify_telegram $*
+
+  exit 1
+}
+
 measure_runtime() {
   START=$(date +%s)
   echo "--> $*" >&2
