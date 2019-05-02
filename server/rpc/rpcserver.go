@@ -2718,7 +2718,7 @@ func handleGetTxOut(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 		}
 
 		bestBlockHash = s.cfg.DAG.HighestTipHash().String()
-		confirmations = 1 + s.cfg.DAG.Height() - entry.BlockHeight() //TODO: (Ori) This is probably wrong. Done only for compilation
+		confirmations = 1 + s.cfg.DAG.ChainHeight() - entry.BlockChainHeight() //TODO: (Ori) This is probably wrong. Done only for compilation
 		value = entry.Amount()
 		pkScript = entry.PkScript()
 		isCoinbase = entry.IsBlockReward()

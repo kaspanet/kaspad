@@ -16,8 +16,8 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/daglabs/btcd/blockdag"
 	"github.com/daglabs/btcd/dagconfig/daghash"
-	"github.com/daglabs/btcd/mining"
 	"github.com/daglabs/btcd/util"
 )
 
@@ -189,7 +189,7 @@ func NewFeeEstimator(maxRollback, minRegisteredBlocks uint32) *FeeEstimator {
 	return &FeeEstimator{
 		maxRollback:         maxRollback,
 		minRegisteredBlocks: minRegisteredBlocks,
-		lastKnownHeight:     mining.UnminedHeight,
+		lastKnownHeight:     blockdag.UnminedChainHeight,
 		binSize:             estimateFeeBinSize,
 		maxReplacements:     estimateFeeMaxReplacements,
 		observed:            make(map[daghash.TxID]*observedTransaction),
@@ -204,7 +204,7 @@ func (ef *FeeEstimator) ObserveTransaction(t *TxDesc) {
 
 	// If we haven't seen a block yet we don't know when this one arrived,
 	// so we ignore it.
-	if ef.lastKnownHeight == mining.UnminedHeight {
+	if ef.lastKnownHeight == blockdag.UnminedChainHeight {
 		return
 	}
 
@@ -216,7 +216,7 @@ func (ef *FeeEstimator) ObserveTransaction(t *TxDesc) {
 			txID:     txID,
 			feeRate:  NewSatoshiPerByte(util.Amount(t.Fee), size),
 			observed: t.Height,
-			mined:    mining.UnminedHeight,
+			mined:    blockdag.UnminedChainHeight,
 		}
 	}
 }
@@ -230,7 +230,7 @@ func (ef *FeeEstimator) RegisterBlock(block *util.Block) error {
 	ef.cached = nil
 
 	height := block.Height()
-	if height != ef.lastKnownHeight+1 && ef.lastKnownHeight != mining.UnminedHeight {
+	if height != ef.lastKnownHeight+1 && ef.lastKnownHeight != blockdag.UnminedChainHeight {
 		return fmt.Errorf("intermediate block not recorded; current height is %d; new height is %d",
 			ef.lastKnownHeight, height)
 	}
@@ -270,7 +270,7 @@ func (ef *FeeEstimator) RegisterBlock(block *util.Block) error {
 
 		// This shouldn't happen if the fee estimator works correctly,
 		// but return an error if it does.
-		if o.mined != mining.UnminedHeight {
+		if o.mined != blockdag.UnminedChainHeight {
 			log.Error("Estimate fee: transaction ", txID.String(), " has already been mined")
 			return errors.New("Transaction has already been mined")
 		}
@@ -309,7 +309,7 @@ func (ef *FeeEstimator) RegisterBlock(block *util.Block) error {
 
 	// Go through the mempool for txs that have been in too long.
 	for hash, o := range ef.observed {
-		if o.mined == mining.UnminedHeight && height-o.observed >= estimateFeeDepth {
+		if o.mined == blockdag.UnminedChainHeight && height-o.observed >= estimateFeeDepth {
 			delete(ef.observed, hash)
 		}
 	}
@@ -407,7 +407,7 @@ func (ef *FeeEstimator) rollback() {
 			prev := bin[counter]
 
 			if prev.mined == ef.lastKnownHeight {
-				prev.mined = mining.UnminedHeight
+				prev.mined = blockdag.UnminedChainHeight
 
 				bin[counter] = o
 
@@ -433,7 +433,7 @@ func (ef *FeeEstimator) rollback() {
 			prev := ef.bin[i][j]
 
 			if prev.mined == ef.lastKnownHeight {
-				prev.mined = mining.UnminedHeight
+				prev.mined = blockdag.UnminedChainHeight
 
 				newBin := append(ef.bin[i][0:j], ef.bin[i][j+1:l]...)
 				// TODO This line should prevent an unintentional memory

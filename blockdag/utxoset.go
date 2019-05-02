@@ -3,10 +3,18 @@ package blockdag
 import (
 	"errors"
 	"fmt"
+	"math"
 	"sort"
 	"strings"
 
 	"github.com/daglabs/btcd/wire"
+)
+
+const (
+	// UnminedChainHeight is the chain-height used for the "block" height field of the
+	// contextual transaction information provided in a transaction store
+	// when it has not yet been mined into a block.
+	UnminedChainHeight = math.MaxUint64
 )
 
 // UTXOEntry houses details about an individual transaction output in a utxo
@@ -20,9 +28,9 @@ type UTXOEntry struct {
 	// specifically crafted to result in minimal padding.  There will be a
 	// lot of these in memory, so a few extra bytes of padding adds up.
 
-	amount      uint64
-	pkScript    []byte // The public key script for the output.
-	blockHeight uint64 // Height of block containing tx.
+	amount           uint64
+	pkScript         []byte // The public key script for the output.
+	blockChainHeight uint64 // Chain-height of block containing tx.
 
 	// packedFlags contains additional info about output such as whether it
 	// is a block reward, and whether it has been modified
@@ -37,9 +45,9 @@ func (entry *UTXOEntry) IsBlockReward() bool {
 	return entry.packedFlags&tfBlockReward == tfBlockReward
 }
 
-// BlockHeight returns the height of the block containing the output.
-func (entry *UTXOEntry) BlockHeight() uint64 {
-	return entry.blockHeight
+// BlockChainHeight returns the chain-height of the block containing the output.
+func (entry *UTXOEntry) BlockChainHeight() uint64 {
+	return entry.blockChainHeight
 }
 
 // Amount returns the amount of the output.
@@ -50,6 +58,12 @@ func (entry *UTXOEntry) Amount() uint64 {
 // PkScript returns the public key script for the output.
 func (entry *UTXOEntry) PkScript() []byte {
 	return entry.pkScript
+}
+
+// IsUnmined returns true iff this UTXOEntry has still not been mined,
+// a.k.a. still in the mempool.
+func (entry *UTXOEntry) IsUnmined() bool {
+	return entry.blockChainHeight == UnminedChainHeight
 }
 
 // txoFlags is a bitmask defining additional information and state for a
@@ -304,11 +318,11 @@ func (d UTXODiff) String() string {
 }
 
 // NewUTXOEntry creates a new utxoEntry representing the given txOut
-func NewUTXOEntry(txOut *wire.TxOut, isBlockReward bool, blockHeight uint64) *UTXOEntry {
+func NewUTXOEntry(txOut *wire.TxOut, isBlockReward bool, blockChainHeight uint64) *UTXOEntry {
 	entry := &UTXOEntry{
-		amount:      txOut.Value,
-		pkScript:    txOut.PkScript,
-		blockHeight: blockHeight,
+		amount:           txOut.Value,
+		pkScript:         txOut.PkScript,
+		blockChainHeight: blockChainHeight,
 	}
 
 	if isBlockReward {

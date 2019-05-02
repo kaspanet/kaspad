@@ -515,12 +515,12 @@ func (mp *TxPool) removeTransaction(tx *util.Tx, removeRedeemers bool, restoreIn
 			if restoreInputs {
 				if prevTxDesc, exists := mp.pool[txIn.PreviousOutPoint.TxID]; exists {
 					prevOut := prevTxDesc.Tx.MsgTx().TxOut[txIn.PreviousOutPoint.Index]
-					entry := blockdag.NewUTXOEntry(prevOut, false, mining.UnminedHeight)
+					entry := blockdag.NewUTXOEntry(prevOut, false, blockdag.UnminedChainHeight)
 					diff.AddEntry(txIn.PreviousOutPoint, entry)
 				}
 				if prevTxDesc, exists := mp.depends[txIn.PreviousOutPoint.TxID]; exists {
 					prevOut := prevTxDesc.Tx.MsgTx().TxOut[txIn.PreviousOutPoint.Index]
-					entry := blockdag.NewUTXOEntry(prevOut, false, mining.UnminedHeight)
+					entry := blockdag.NewUTXOEntry(prevOut, false, blockdag.UnminedChainHeight)
 					diff.AddEntry(txIn.PreviousOutPoint, entry)
 				}
 			}
@@ -639,7 +639,7 @@ func (mp *TxPool) addTransaction(tx *util.Tx, height uint64, fee uint64, parents
 	for _, txIn := range tx.MsgTx().TxIn {
 		mp.outpoints[txIn.PreviousOutPoint] = tx
 	}
-	mp.mpUTXOSet.AddTx(tx.MsgTx(), mining.UnminedHeight)
+	mp.mpUTXOSet.AddTx(tx.MsgTx(), blockdag.UnminedChainHeight)
 	atomic.StoreInt64(&mp.lastUpdated, time.Now().Unix())
 
 	// Add unconfirmed address index entries associated with the transaction

@@ -256,7 +256,7 @@ func TestCalcSequenceLock(t *testing.T) {
 		TxID:  *targetTx.ID(),
 		Index: 0,
 	}
-	prevUtxoHeight := uint64(numBlocksToGenerate) - 4
+	prevUtxoChainHeight := uint64(numBlocksToGenerate) - 4
 
 	// Obtain the median time past from the PoV of the input created above.
 	// The MTP for the input is the MTP from the PoV of the block *prior*
@@ -268,7 +268,7 @@ func TestCalcSequenceLock(t *testing.T) {
 	// the MTP will be calculated from the PoV of the yet-to-be-mined
 	// block.
 	nextMedianTime := node.PastMedianTime().Unix()
-	nextBlockHeight := int32(numBlocksToGenerate) + 1
+	nextBlockChainHeight := int32(numBlocksToGenerate) + 1
 
 	// Add an additional transaction which will serve as our unconfirmed
 	// output.
@@ -278,11 +278,10 @@ func TestCalcSequenceLock(t *testing.T) {
 		Index: 0,
 	}
 
-	// Adding a utxo with a height of 0x7fffffff indicates that the output
-	// is currently unmined.
-	utxoSet.AddTx(unConfTx, 0x7fffffff)
+	utxoSet.AddTx(unConfTx, UnminedChainHeight)
 
 	tests := []struct {
+		name    string
 		tx      *wire.MsgTx
 		utxoSet UTXOSet
 		mempool bool
@@ -292,11 +291,12 @@ func TestCalcSequenceLock(t *testing.T) {
 		// This sequence number has the high bit set, so sequence locks
 		// should be disabled.
 		{
+			name:    "single input, max sequence number",
 			tx:      wire.NewNativeMsgTx(1, []*wire.TxIn{{PreviousOutPoint: utxo, Sequence: wire.MaxTxInSequenceNum}}, nil),
 			utxoSet: utxoSet,
 			want: &SequenceLock{
-				Seconds:     -1,
-				BlockHeight: -1,
+				Seconds:          -1,
+				BlockChainHeight: -1,
 			},
 		},
 		// A transaction with a single input whose lock time is
@@ -306,11 +306,12 @@ func TestCalcSequenceLock(t *testing.T) {
 		// seconds lock-time should be just before the median time of
 		// the targeted block.
 		{
+			name:    "single input, seconds lock time below time granularity",
 			tx:      wire.NewNativeMsgTx(1, []*wire.TxIn{{PreviousOutPoint: utxo, Sequence: LockTimeToSequence(true, 2)}}, nil),
 			utxoSet: utxoSet,
 			want: &SequenceLock{
-				Seconds:     medianTime - 1,
-				BlockHeight: -1,
+				Seconds:          medianTime - 1,
+				BlockChainHeight: -1,
 			},
 		},
 		// A transaction with a single input whose lock time is
@@ -318,11 +319,12 @@ func TestCalcSequenceLock(t *testing.T) {
 		// seconds after the median past time of the last block in the
 		// chain.
 		{
+			name:    "single input, 1023 seconds after median time",
 			tx:      wire.NewNativeMsgTx(1, []*wire.TxIn{{PreviousOutPoint: utxo, Sequence: LockTimeToSequence(true, 1024)}}, nil),
 			utxoSet: utxoSet,
 			want: &SequenceLock{
-				Seconds:     medianTime + 1023,
-				BlockHeight: -1,
+				Seconds:          medianTime + 1023,
+				BlockChainHeight: -1,
 			},
 		},
 		// A transaction with multiple inputs.  The first input has a
@@ -332,6 +334,7 @@ func TestCalcSequenceLock(t *testing.T) {
 		// bit set.  So the first lock should be selected as it's the
 		// latest lock that isn't disabled.
 		{
+			name: "multiple varied inputs",
 			tx: wire.NewNativeMsgTx(1,
 				[]*wire.TxIn{{
 					PreviousOutPoint: utxo,
@@ -347,8 +350,8 @@ func TestCalcSequenceLock(t *testing.T) {
 				nil),
 			utxoSet: utxoSet,
 			want: &SequenceLock{
-				Seconds:     medianTime + (5 << wire.SequenceLockTimeGranularity) - 1,
-				BlockHeight: int64(prevUtxoHeight) + 3,
+				Seconds:          medianTime + (5 << wire.SequenceLockTimeGranularity) - 1,
+				BlockChainHeight: int64(prevUtxoChainHeight) + 3,
 			},
 		},
 		// Transaction with a single input.  The input's sequence number
@@ -356,17 +359,19 @@ func TestCalcSequenceLock(t *testing.T) {
 		// sequence lock should  have a value of -1 for seconds, but a
 		// height of 2 meaning it can be included at height 3.
 		{
+			name:    "single input, lock-time in blocks",
 			tx:      wire.NewNativeMsgTx(1, []*wire.TxIn{{PreviousOutPoint: utxo, Sequence: LockTimeToSequence(false, 3)}}, nil),
 			utxoSet: utxoSet,
 			want: &SequenceLock{
-				Seconds:     -1,
-				BlockHeight: int64(prevUtxoHeight) + 2,
+				Seconds:          -1,
+				BlockChainHeight: int64(prevUtxoChainHeight) + 2,
 			},
 		},
 		// A transaction with two inputs with lock times expressed in
 		// seconds.  The selected sequence lock value for seconds should
 		// be the time further in the future.
 		{
+			name: "two inputs, lock-times in seconds",
 			tx: wire.NewNativeMsgTx(1, []*wire.TxIn{{
 				PreviousOutPoint: utxo,
 				Sequence:         LockTimeToSequence(true, 5120),
@@ -376,8 +381,8 @@ func TestCalcSequenceLock(t *testing.T) {
 			}}, nil),
 			utxoSet: utxoSet,
 			want: &SequenceLock{
-				Seconds:     medianTime + (10 << wire.SequenceLockTimeGranularity) - 1,
-				BlockHeight: -1,
+				Seconds:          medianTime + (10 << wire.SequenceLockTimeGranularity) - 1,
+				BlockChainHeight: -1,
 			},
 		},
 		// A transaction with two inputs with lock times expressed in
@@ -385,6 +390,7 @@ func TestCalcSequenceLock(t *testing.T) {
 		// be the height further in the future, so a height of 10
 		// indicating it can be included at height 11.
 		{
+			name: "two inputs, lock-times in blocks",
 			tx: wire.NewNativeMsgTx(1,
 				[]*wire.TxIn{{
 					PreviousOutPoint: utxo,
@@ -396,14 +402,15 @@ func TestCalcSequenceLock(t *testing.T) {
 				nil),
 			utxoSet: utxoSet,
 			want: &SequenceLock{
-				Seconds:     -1,
-				BlockHeight: int64(prevUtxoHeight) + 10,
+				Seconds:          -1,
+				BlockChainHeight: int64(prevUtxoChainHeight) + 10,
 			},
 		},
 		// A transaction with multiple inputs.  Two inputs are time
 		// based, and the other two are block based. The lock lying
 		// further into the future for both inputs should be chosen.
 		{
+			name: "four inputs, two lock-times in time, two lock-times in blocks",
 			tx: wire.NewNativeMsgTx(1,
 				[]*wire.TxIn{{
 					PreviousOutPoint: utxo,
@@ -421,8 +428,8 @@ func TestCalcSequenceLock(t *testing.T) {
 				nil),
 			utxoSet: utxoSet,
 			want: &SequenceLock{
-				Seconds:     medianTime + (13 << wire.SequenceLockTimeGranularity) - 1,
-				BlockHeight: int64(prevUtxoHeight) + 8,
+				Seconds:          medianTime + (13 << wire.SequenceLockTimeGranularity) - 1,
+				BlockChainHeight: int64(prevUtxoChainHeight) + 8,
 			},
 		},
 		// A transaction with a single unconfirmed input.  As the input
@@ -432,43 +439,45 @@ func TestCalcSequenceLock(t *testing.T) {
 		// *next* block height, indicating it can be included 2 blocks
 		// after that.
 		{
+			name:    "single input, unconfirmed, lock-time in blocks",
 			tx:      wire.NewNativeMsgTx(1, []*wire.TxIn{{PreviousOutPoint: unConfUtxo, Sequence: LockTimeToSequence(false, 2)}}, nil),
 			utxoSet: utxoSet,
 			mempool: true,
 			want: &SequenceLock{
-				Seconds:     -1,
-				BlockHeight: int64(nextBlockHeight) + 1,
+				Seconds:          -1,
+				BlockChainHeight: int64(nextBlockChainHeight) + 1,
 			},
 		},
 		// A transaction with a single unconfirmed input.  The input has
 		// a time based lock, so the lock time should be based off the
 		// MTP of the *next* block.
 		{
+			name:    "single input, unconfirmed, lock-time in seoncds",
 			tx:      wire.NewNativeMsgTx(1, []*wire.TxIn{{PreviousOutPoint: unConfUtxo, Sequence: LockTimeToSequence(true, 1024)}}, nil),
 			utxoSet: utxoSet,
 			mempool: true,
 			want: &SequenceLock{
-				Seconds:     nextMedianTime + 1023,
-				BlockHeight: -1,
+				Seconds:          nextMedianTime + 1023,
+				BlockChainHeight: -1,
 			},
 		},
 	}
 
 	t.Logf("Running %v SequenceLock tests", len(tests))
-	for i, test := range tests {
+	for _, test := range tests {
 		utilTx := util.NewTx(test.tx)
 		seqLock, err := dag.CalcSequenceLock(utilTx, utxoSet, test.mempool)
 		if err != nil {
-			t.Fatalf("test #%d, unable to calc sequence lock: %v", i, err)
+			t.Fatalf("test '%s', unable to calc sequence lock: %v", test.name, err)
 		}
 
 		if seqLock.Seconds != test.want.Seconds {
-			t.Fatalf("test #%d got %v seconds want %v seconds",
-				i, seqLock.Seconds, test.want.Seconds)
+			t.Fatalf("test '%s' got %v seconds want %v seconds",
+				test.name, seqLock.Seconds, test.want.Seconds)
 		}
-		if seqLock.BlockHeight != test.want.BlockHeight {
-			t.Fatalf("test #%d got height of %v want height of %v ",
-				i, seqLock.BlockHeight, test.want.BlockHeight)
+		if seqLock.BlockChainHeight != test.want.BlockChainHeight {
+			t.Fatalf("test '%s' got chain-height of %v want chain-height of %v ",
+				test.name, seqLock.BlockChainHeight, test.want.BlockChainHeight)
 		}
 	}
 }

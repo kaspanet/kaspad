@@ -10,13 +10,6 @@ import (
 	"github.com/daglabs/btcd/wire"
 )
 
-const (
-	// UnminedHeight is the height used for the "block" height field of the
-	// contextual transaction information provided in a transaction store
-	// when it has not yet been mined into a block.
-	UnminedHeight = 0x7fffffff
-)
-
 // Policy houses the policy (configuration parameters) which is used to control
 // the generation of block templates.  See the documentation for
 // NewBlockTemplate for more details on each of these parameters are used.
@@ -66,11 +59,11 @@ func calcInputValueAge(tx *wire.MsgTx, utxoSet blockdag.UTXOSet, nextBlockHeight
 			// Their input age should computed as zero since their
 			// parent hasn't made it into a block yet.
 			var inputAge uint64
-			originHeight := entry.BlockHeight()
-			if originHeight == UnminedHeight {
+			originChainHeight := entry.BlockChainHeight()
+			if entry.IsUnmined() {
 				inputAge = 0
 			} else {
-				inputAge = nextBlockHeight - originHeight
+				inputAge = nextBlockHeight - originChainHeight
 			}
 
 			// Sum the input value times age.

@@ -228,7 +228,7 @@ func utxoEntryHeaderCode(entry *UTXOEntry) uint64 {
 	// As described in the serialization format comments, the header code
 	// encodes the height shifted over one bit and the block reward flag in the
 	// lowest bit.
-	headerCode := uint64(entry.BlockHeight()) << 1
+	headerCode := uint64(entry.BlockChainHeight()) << 1
 	if entry.IsBlockReward() {
 		headerCode |= 0x01
 	}
@@ -286,7 +286,7 @@ func deserializeUTXOEntry(serialized []byte) (*UTXOEntry, error) {
 	// Bit 0 indicates whether the containing transaction is a block reward.
 	// Bits 1-x encode height of containing transaction.
 	isBlockReward := code&0x01 != 0
-	blockHeight := code >> 1
+	blockChainHeight := code >> 1
 
 	// Decode the compressed unspent transaction output.
 	amount, pkScript, _, err := decodeCompressedTxOut(serialized[offset:])
@@ -296,10 +296,10 @@ func deserializeUTXOEntry(serialized []byte) (*UTXOEntry, error) {
 	}
 
 	entry := &UTXOEntry{
-		amount:      amount,
-		pkScript:    pkScript,
-		blockHeight: blockHeight,
-		packedFlags: 0,
+		amount:           amount,
+		pkScript:         pkScript,
+		blockChainHeight: blockChainHeight,
+		packedFlags:      0,
 	}
 	if isBlockReward {
 		entry.packedFlags |= tfBlockReward
