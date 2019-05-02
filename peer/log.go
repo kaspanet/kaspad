@@ -133,6 +133,12 @@ func messageSummary(msg wire.Message) string {
 		// No summary.
 
 	case *wire.MsgGetAddr:
+		if msg.IncludeAllSubnetworks {
+			return "all subnetworks and full nodes"
+		}
+		if msg.SubnetworkID == nil {
+			return "full nodes"
+		}
 		return fmt.Sprintf("subnetwork ID %v", msg.SubnetworkID)
 
 	case *wire.MsgAddr:
