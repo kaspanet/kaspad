@@ -132,7 +132,7 @@ func TestTxHashAndID(t *testing.T) {
 	txID1Str := "5b92e6ed52bc78745905e0d104069e46407f62ea8d7d2bce78cd13f80ce220dc"
 	wantTxID1, err := daghash.NewTxIDFromStr(txID1Str)
 	if err != nil {
-		t.Errorf("NewHashFromStr: %v", err)
+		t.Errorf("NewTxIDFromStr: %v", err)
 		return
 	}
 
@@ -180,14 +180,14 @@ func TestTxHashAndID(t *testing.T) {
 	hash2Str := "b11924b7eeffea821522222576c53dc5b8ddd97602f81e5e124d2626646d74ca"
 	wantHash2, err := daghash.NewHashFromStr(hash2Str)
 	if err != nil {
-		t.Errorf("NewHashFromStr: %v", err)
+		t.Errorf("NewTxIDFromStr: %v", err)
 		return
 	}
 
 	id2Str := "750499ae9e6d44961ef8bad8af27a44dd4bcbea166b71baf181e8d3997e1ff72"
 	wantID2, err := daghash.NewTxIDFromStr(id2Str)
 	if err != nil {
-		t.Errorf("NewHashFromStr: %v", err)
+		t.Errorf("NewTxIDFromStr: %v", err)
 		return
 	}
 	payload := []byte{1, 2, 3}
