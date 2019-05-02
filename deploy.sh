@@ -15,10 +15,9 @@ CF_PARAM=TaskImage
 IMAGE_NAME=${ECR_SERVER}/${SERVICE_NAME}
 
 notify_telegram() {
-  MESSAGE="Build *FAILED* for pull request '${ghprbPullTitle}'
-[Github](${ghprbPullLink})        [Jenkins](${BUILD_URL}console)
-
-Shame on you, *${ghprbActualCommitAuthor}*"
+  MESSAGE="*${ghprbActualCommitAuthor}*:
+Build *FAILED* for pull request '${ghprbPullTitle}'
+[Github](${ghprbPullLink})        [Jenkins](${BUILD_URL}console)"
 
   curl -s \
     -X POST \
@@ -27,6 +26,15 @@ Shame on you, *${ghprbActualCommitAuthor}*"
     -d parse_mode=markdown \
     -d disable_web_page_preview=true \
     -d text="${MESSAGE}"
+
+  LOG=$(curl ${BUILD_URL}consoleText)
+
+  curl -s \
+    -X POST \
+    "https://api.telegram.org/bot${TELEGRAM_API_TOKEN}/sendDocument" \
+    -d chat_id="${TELEGRAM_CHAT_ID}" \
+    -d document="${LOG}" \
+    -d caption="BUILD LOG: ${ghprbPullTitle}"
 }
 
 trap "exit 1" INT
