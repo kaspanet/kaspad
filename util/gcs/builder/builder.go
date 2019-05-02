@@ -326,8 +326,7 @@ func BuildBasicFilter(block *wire.MsgBlock) (*gcs.Filter, error) {
 	for i, tx := range block.Transactions {
 		// First we'll compute the bash of the transaction and add that
 		// directly to the filter.
-		txID := tx.TxID()
-		b.AddTxID(&txID)
+		b.AddTxID(tx.TxID())
 
 		// Skip the inputs for the coinbase transaction
 		if i != 0 {

@@ -206,8 +206,7 @@ func (m *memWallet) ingestBlock(update *dagUpdate) {
 	for _, tx := range update.filteredTxns {
 		mtx := tx.MsgTx()
 		isCoinbase := mtx.IsCoinBase()
-		txID := mtx.TxID()
-		m.evalOutputs(mtx.TxOut, &txID, isCoinbase, undo)
+		m.evalOutputs(mtx.TxOut, mtx.TxID(), isCoinbase, undo)
 		m.evalInputs(mtx.TxIn, undo)
 	}
 

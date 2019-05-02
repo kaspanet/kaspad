@@ -61,8 +61,7 @@ func newUTXOSet(sourceTxns []*wire.MsgTx, sourceTxHeights []uint64) blockdag.UTX
 func createTxIn(originTx *wire.MsgTx, outputIndex uint32) *wire.TxIn {
 	var prevOut *wire.OutPoint
 	if originTx != nil {
-		originTxID := originTx.TxID()
-		prevOut = wire.NewOutPoint(&originTxID, 0)
+		prevOut = wire.NewOutPoint(originTx.TxID(), 0)
 	} else {
 		prevOut = &wire.OutPoint{
 			TxID:  daghash.TxID{},

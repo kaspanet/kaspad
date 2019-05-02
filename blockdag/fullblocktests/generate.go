@@ -162,7 +162,7 @@ type spendableOut struct {
 func makeSpendableOutForTx(tx *wire.MsgTx, txOutIndex uint32) spendableOut {
 	return spendableOut{
 		prevOut: wire.OutPoint{
-			TxID:  tx.TxID(),
+			TxID:  *tx.TxID(),
 			Index: txOutIndex,
 		},
 		amount: util.Amount(tx.TxOut[txOutIndex].Value),

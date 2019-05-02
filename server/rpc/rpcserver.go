@@ -1731,7 +1731,7 @@ func (state *gbtWorkState) blockTemplateResult(useCoinbaseValue bool, submitOld 
 	txIndex := make(map[daghash.TxID]int64, numTx)
 	for i, tx := range msgBlock.Transactions {
 		txID := tx.TxID()
-		txIndex[txID] = int64(i)
+		txIndex[*txID] = int64(i)
 
 		// Skip the coinbase transaction.
 		if i == 0 {

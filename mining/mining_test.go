@@ -200,7 +200,7 @@ func TestNewBlockTemplate(t *testing.T) {
 	// tx is a regular transaction, and should not be filtered by the miner
 	txIn := &wire.TxIn{
 		PreviousOutPoint: wire.OutPoint{
-			TxID:  template1CbTx.TxID(),
+			TxID:  *template1CbTx.TxID(),
 			Index: 0,
 		},
 		Sequence: wire.MaxTxInSequenceNum,
@@ -214,7 +214,7 @@ func TestNewBlockTemplate(t *testing.T) {
 	// We want to check that the miner filters non finalized transactions
 	txIn = &wire.TxIn{
 		PreviousOutPoint: wire.OutPoint{
-			TxID:  template1CbTx.TxID(),
+			TxID:  *template1CbTx.TxID(),
 			Index: 1,
 		},
 		Sequence: 0,
@@ -232,7 +232,7 @@ func TestNewBlockTemplate(t *testing.T) {
 	// We want to check that the miner filters transactions with non-existing subnetwork id. (It should first push it to the priority queue, and then ignore it)
 	txIn = &wire.TxIn{
 		PreviousOutPoint: wire.OutPoint{
-			TxID:  template1CbTx.TxID(),
+			TxID:  *template1CbTx.TxID(),
 			Index: 2,
 		},
 		Sequence: 0,
@@ -247,7 +247,7 @@ func TestNewBlockTemplate(t *testing.T) {
 	// We want to check that the miner doesn't filters transactions that do not exceed the subnetwork gas limit
 	txIn = &wire.TxIn{
 		PreviousOutPoint: wire.OutPoint{
-			TxID:  template1CbTx.TxID(),
+			TxID:  *template1CbTx.TxID(),
 			Index: 3,
 		},
 		Sequence: 0,
@@ -261,7 +261,7 @@ func TestNewBlockTemplate(t *testing.T) {
 	// We want to check that the miner filters transactions that exceed the subnetwork gas limit. (It should first push it to the priority queue, and then ignore it)
 	txIn = &wire.TxIn{
 		PreviousOutPoint: wire.OutPoint{
-			TxID:  template1CbTx.TxID(),
+			TxID:  *template1CbTx.TxID(),
 			Index: 4,
 		},
 		Sequence: 0,
@@ -317,10 +317,10 @@ func TestNewBlockTemplate(t *testing.T) {
 	// Here we check that the miner's priorty queue has the expected transactions after filtering.
 	popReturnedUnexpectedValue := false
 	expectedPops := map[daghash.TxID]bool{
-		tx.TxID():                      false,
-		subnetworkTx1.TxID():           false,
-		subnetworkTx2.TxID():           false,
-		nonExistingSubnetworkTx.TxID(): false,
+		*tx.TxID():                      false,
+		*subnetworkTx1.TxID():           false,
+		*subnetworkTx2.TxID():           false,
+		*nonExistingSubnetworkTx.TxID(): false,
 	}
 	var popPatch *monkey.PatchGuard
 	popPatch = monkey.Patch((*txPriorityQueue).Pop, func(pq *txPriorityQueue) interface{} {
@@ -365,12 +365,12 @@ func TestNewBlockTemplate(t *testing.T) {
 	}
 
 	expectedTxs := map[daghash.TxID]bool{
-		tx.TxID():            false,
-		subnetworkTx1.TxID(): false,
+		*tx.TxID():            false,
+		*subnetworkTx1.TxID(): false,
 	}
 
 	for _, tx := range template2.Block.Transactions[2:] {
-		id := tx.TxID()
+		id := *tx.TxID()
 		if _, ok := expectedTxs[id]; !ok {
 			t.Errorf("Unexpected tx %v in template2's candidate block", id)
 		}

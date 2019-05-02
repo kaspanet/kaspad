@@ -51,11 +51,10 @@ func RegisterSubnetworkForTest(dag *blockdag.BlockDAG, params *dagconfig.Params,
 	}
 
 	fundsBlockCbTx := fundsBlock.Transactions()[0].MsgTx()
-	fundsBlockCbTxID := fundsBlockCbTx.TxID()
 
 	// Create a block with a valid subnetwork registry transaction
 	txIn := &wire.TxIn{
-		PreviousOutPoint: *wire.NewOutPoint(&fundsBlockCbTxID, 0),
+		PreviousOutPoint: *wire.NewOutPoint(fundsBlockCbTx.TxID(), 0),
 		Sequence:         wire.MaxTxInSequenceNum,
 	}
 	txOut := &wire.TxOut{
