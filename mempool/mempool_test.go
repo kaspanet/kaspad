@@ -605,11 +605,11 @@ func TestProcessTransaction(t *testing.T) {
 		t.Fatalf("Script: error creating wrappedP2shNonSigScript: %v", err)
 	}
 
-	dummyPrevOutHash, err := daghash.NewTxIDFromStr("01")
+	dummyPrevOutTxID, err := daghash.NewTxIDFromStr("01")
 	if err != nil {
 		t.Fatalf("NewShaHashFromStr: unexpected error: %v", err)
 	}
-	dummyPrevOut := wire.OutPoint{TxID: *dummyPrevOutHash, Index: 1}
+	dummyPrevOut := wire.OutPoint{TxID: *dummyPrevOutTxID, Index: 1}
 	dummySigScript := bytes.Repeat([]byte{0x00}, 65)
 
 	addrHash := [20]byte{0x01}
@@ -766,7 +766,7 @@ func TestAddrIndex(t *testing.T) {
 	})
 	defer guard.Unpatch()
 	enteredRemoveUnconfirmedTx := false
-	guard = monkey.Patch((*indexers.AddrIndex).RemoveUnconfirmedTx, func(idx *indexers.AddrIndex, hash *daghash.TxID) {
+	guard = monkey.Patch((*indexers.AddrIndex).RemoveUnconfirmedTx, func(_ *indexers.AddrIndex, _ *daghash.TxID) {
 		enteredRemoveUnconfirmedTx = true
 	})
 	defer guard.Unpatch()
@@ -1767,19 +1767,19 @@ var dummyBlock = wire.MsgBlock{
 	Header: wire.BlockHeader{
 		Version: 1,
 		ParentHashes: []*daghash.Hash{
-			{ // Make go vet happy.
+			{
 				0x82, 0xdc, 0xbd, 0xe6, 0x88, 0x37, 0x74, 0x5b,
 				0x78, 0x6b, 0x03, 0x1d, 0xa3, 0x48, 0x3c, 0x45,
 				0x3f, 0xc3, 0x2e, 0xd4, 0x53, 0x5b, 0x6f, 0x26,
 				0x26, 0xb0, 0x48, 0x4f, 0x09, 0x00, 0x00, 0x00,
 			}, // MainNet genesis
-			{ // Make go vet happy.
+			{
 				0xc1, 0x5b, 0x71, 0xfe, 0x20, 0x70, 0x0f, 0xd0,
 				0x08, 0x49, 0x88, 0x1b, 0x32, 0xb5, 0xbd, 0x13,
 				0x17, 0xbe, 0x75, 0xe7, 0x29, 0x46, 0xdd, 0x03,
 				0x01, 0x92, 0x90, 0xf1, 0xca, 0x8a, 0x88, 0x11,
 			}}, // SimNet genesis
-		HashMerkleRoot: &daghash.Hash{ // Make go vet happy.
+		HashMerkleRoot: &daghash.Hash{
 			0x66, 0x57, 0xa9, 0x25, 0x2a, 0xac, 0xd5, 0xc0,
 			0xb2, 0x94, 0x09, 0x96, 0xec, 0xff, 0x95, 0x22,
 			0x28, 0xc3, 0x06, 0x7c, 0xc3, 0x8d, 0x48, 0x85,

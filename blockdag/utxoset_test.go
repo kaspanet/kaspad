@@ -866,10 +866,10 @@ func (dus *DiffUTXOSet) collection() utxoCollection {
 }
 
 func TestUTXOSetAddEntry(t *testing.T) {
-	hash0, _ := daghash.NewTxIDFromStr("0000000000000000000000000000000000000000000000000000000000000000")
-	hash1, _ := daghash.NewTxIDFromStr("1111111111111111111111111111111111111111111111111111111111111111")
-	outPoint0 := wire.NewOutPoint(hash0, 0)
-	outPoint1 := wire.NewOutPoint(hash1, 0)
+	txID0, _ := daghash.NewTxIDFromStr("0000000000000000000000000000000000000000000000000000000000000000")
+	txID1, _ := daghash.NewTxIDFromStr("1111111111111111111111111111111111111111111111111111111111111111")
+	outPoint0 := wire.NewOutPoint(txID0, 0)
+	outPoint1 := wire.NewOutPoint(txID1, 0)
 	utxoEntry0 := NewUTXOEntry(&wire.TxOut{PkScript: []byte{}, Value: 10}, true, 0)
 	utxoEntry1 := NewUTXOEntry(&wire.TxOut{PkScript: []byte{}, Value: 20}, false, 1)
 
