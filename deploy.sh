@@ -16,9 +16,9 @@ IMAGE_NAME=${ECR_SERVER}/${SERVICE_NAME}
 
 notify_telegram() {
   MESSAGE="Build *FAILED* for pull request '${ghprbPullTitle}'
-  [Github](${ghprbPullLink}) [Jenkins](${BUILD_URL}console)
+[Github](${ghprbPullLink})        [Jenkins](${BUILD_URL}console)
 
-  Shame on you, *${ghprbActualCommitAuthor}*"
+Shame on you, *${ghprbActualCommitAuthor}*"
 
   curl -s \
     -X POST \
