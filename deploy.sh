@@ -29,12 +29,10 @@ Build *FAILED* for pull request '${ghprbPullTitle}'
 
   LOG=$(curl ${BUILD_URL}consoleText)
 
-  curl -s \
-    -X POST \
+  printf "$LOG" | curl \
     "https://api.telegram.org/bot${TELEGRAM_API_TOKEN}/sendDocument" \
-    -d chat_id="${TELEGRAM_CHAT_ID}" \
-    -d document="${LOG}" \
-    -d caption="BUILD LOG: ${ghprbPullTitle}"
+    -F chat_id="${TELEGRAM_CHAT_ID}" \
+    -F document="@-;filename=build.log"
 }
 
 trap "exit 1" INT
