@@ -15,13 +15,15 @@ CF_PARAM=TaskImage
 IMAGE_NAME=${ECR_SERVER}/${SERVICE_NAME}
 
 notify_telegram() {
-  echo "AAAAAAAAA! $*"
+  echo "AAAAAAAAA! ${TELEGRAM_API_TOKEN}"
+  echo "BBBBBBB! ${TELEGRAM_CHAT_ID}"
+  env
 
   curl -s \
     -X POST \
     "https://api.telegram.org/bot${TELEGRAM_API_TOKEN}/sendMessage" \
     -d chat_id="${TELEGRAM_CHAT_ID}" \
-    -d text="${TELEGRAM_MESSAGE}"
+    -d text="Howdy"
 }
 
 trap "exit 1" INT
