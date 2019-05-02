@@ -1,7 +1,7 @@
 package main
 
 import (
-	"log"
+	"fmt"
 	"runtime/debug"
 	"sync/atomic"
 
@@ -35,7 +35,7 @@ func main() {
 
 	cfg, err := parseConfig()
 	if err != nil {
-		log.Panicf("Error parsing command-line arguments: %s", err)
+		panic(fmt.Errorf("Error parsing command-line arguments: %s", err))
 	}
 
 	privateKeyBytes := base58.Decode(cfg.PrivateKey)
@@ -43,19 +43,19 @@ func main() {
 
 	p2pkhAddress, err = privateKeyToP2pkhAddress(privateKey, activeNetParams)
 	if err != nil {
-		log.Panicf("Failed to get P2PKH address from private key: %s", err)
+		panic(fmt.Errorf("Failed to get P2PKH address from private key: %s", err))
 	}
 
-	log.Printf("P2PKH address for private key: %s\n", p2pkhAddress)
+	log.Infof("P2PKH address for private key: %s\n", p2pkhAddress)
 
 	addressList, err := getAddressList(cfg)
 	if err != nil {
-		log.Panicf("Couldn't load address list: %s", err)
+		panic(fmt.Errorf("Couldn't load address list: %s", err))
 	}
 
 	clients, err := connectToServers(cfg, addressList)
 	if err != nil {
-		log.Panicf("Error connecting to servers: %s", err)
+		panic(fmt.Errorf("Error connecting to servers: %s", err))
 	}
 	defer disconnect(clients)
 
@@ -70,7 +70,7 @@ func main() {
 }
 
 func disconnect(clients []*rpcclient.Client) {
-	log.Printf("Disconnecting clients")
+	log.Infof("Disconnecting clients")
 	for _, client := range clients {
 		client.Disconnect()
 	}
@@ -79,7 +79,7 @@ func disconnect(clients []*rpcclient.Client) {
 func handlePanic() {
 	err := recover()
 	if err != nil {
-		log.Printf("Fatal error: %s", err)
-		log.Printf("Stack trace: %s", debug.Stack())
+		log.Errorf("Fatal error: %s", err)
+		log.Errorf("Stack trace: %s", debug.Stack())
 	}
 }

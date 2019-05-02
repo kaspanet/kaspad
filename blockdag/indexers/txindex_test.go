@@ -16,7 +16,7 @@ import (
 func createTransaction(value uint64, originTx *wire.MsgTx, outputIndex uint32) *wire.MsgTx {
 	txIn := &wire.TxIn{
 		PreviousOutPoint: wire.OutPoint{
-			TxID:  originTx.TxID(),
+			TxID:  *originTx.TxID(),
 			Index: outputIndex,
 		},
 		Sequence: wire.MaxTxInSequenceNum,
@@ -74,7 +74,7 @@ func TestTxIndexConnectBlock(t *testing.T) {
 	block3 := prepareAndProcessBlock([]*daghash.Hash{block2.BlockHash()}, []*wire.MsgTx{block3Tx}, "3")
 
 	block3TxID := block3Tx.TxID()
-	block3TxNewAcceptedBlock, err := txIndex.BlockThatAcceptedTx(dag, &block3TxID)
+	block3TxNewAcceptedBlock, err := txIndex.BlockThatAcceptedTx(dag, block3TxID)
 	if err != nil {
 		t.Errorf("TestTxIndexConnectBlock: TxAcceptedInBlock: %v", err)
 	}
@@ -88,7 +88,7 @@ func TestTxIndexConnectBlock(t *testing.T) {
 	block4 := prepareAndProcessBlock([]*daghash.Hash{block3.BlockHash()}, nil, "4")
 	prepareAndProcessBlock([]*daghash.Hash{block3A.BlockHash(), block4.BlockHash()}, nil, "5")
 
-	block3TxAcceptedBlock, err := txIndex.BlockThatAcceptedTx(dag, &block3TxID)
+	block3TxAcceptedBlock, err := txIndex.BlockThatAcceptedTx(dag, block3TxID)
 	if err != nil {
 		t.Errorf("TestTxIndexConnectBlock: TxAcceptedInBlock: %v", err)
 	}
@@ -98,7 +98,7 @@ func TestTxIndexConnectBlock(t *testing.T) {
 			"been accepted in block %v but instead got accepted in block %v", block3AHash, block3TxAcceptedBlock)
 	}
 
-	region, err := txIndex.TxFirstBlockRegion(&block3TxID)
+	region, err := txIndex.TxFirstBlockRegion(block3TxID)
 	if err != nil {
 		t.Fatalf("TestTxIndexConnectBlock: no block region was found for block3Tx")
 	}

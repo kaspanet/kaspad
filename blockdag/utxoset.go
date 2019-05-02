@@ -304,8 +304,7 @@ func (d *UTXODiff) clone() *UTXODiff {
 //RemoveTxOuts marks the transaction's outputs to removal
 func (d *UTXODiff) RemoveTxOuts(tx *wire.MsgTx) {
 	for idx := range tx.TxOut {
-		hash := tx.TxID()
-		d.toRemove.add(*wire.NewOutPoint(&hash, uint32(idx)), nil)
+		d.toRemove.add(*wire.NewOutPoint(tx.TxID(), uint32(idx)), nil)
 	}
 }
 
@@ -374,9 +373,8 @@ func diffFromTx(u UTXOSet, tx *wire.MsgTx, containingNode *blockNode) (*UTXODiff
 		}
 	}
 	for i, txOut := range tx.TxOut {
-		hash := tx.TxID()
 		entry := NewUTXOEntry(txOut, isBlockReward, containingNode.height)
-		outPoint := *wire.NewOutPoint(&hash, uint32(i))
+		outPoint := *wire.NewOutPoint(tx.TxID(), uint32(i))
 		diff.toAdd.add(outPoint, entry)
 	}
 	return diff, nil
@@ -429,8 +427,7 @@ func (fus *FullUTXOSet) AddTx(tx *wire.MsgTx, blockHeight uint64) bool {
 	}
 
 	for i, txOut := range tx.TxOut {
-		hash := tx.TxID()
-		outPoint := *wire.NewOutPoint(&hash, uint32(i))
+		outPoint := *wire.NewOutPoint(tx.TxID(), uint32(i))
 		entry := NewUTXOEntry(txOut, isBlockReward, blockHeight)
 
 		fus.add(outPoint, entry)
@@ -533,8 +530,7 @@ func (dus *DiffUTXOSet) appendTx(tx *wire.MsgTx, blockHeight uint64, isBlockRewa
 	}
 
 	for i, txOut := range tx.TxOut {
-		hash := tx.TxID()
-		outPoint := *wire.NewOutPoint(&hash, uint32(i))
+		outPoint := *wire.NewOutPoint(tx.TxID(), uint32(i))
 		entry := NewUTXOEntry(txOut, isBlockReward, blockHeight)
 
 		if dus.UTXODiff.toRemove.contains(outPoint) {

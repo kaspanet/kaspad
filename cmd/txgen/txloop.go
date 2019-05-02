@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
-	"log"
 	"math/rand"
 	"sync/atomic"
 	"time"
@@ -83,17 +82,17 @@ func isTxMatured(tx *wire.MsgTx, confirmations uint64) bool {
 
 // DumpTx logs out transaction with given header
 func DumpTx(header string, tx *wire.MsgTx) {
-	log.Print(header)
-	log.Printf("\tInputs:")
+	log.Info(header)
+	log.Infof("\tInputs:")
 	for i, txIn := range tx.TxIn {
 		asm, _ := txscript.DisasmString(txIn.SignatureScript)
-		log.Printf("\t\t%d: PreviousOutPoint: %v, SignatureScript: %s",
+		log.Infof("\t\t%d: PreviousOutPoint: %v, SignatureScript: %s",
 			i, txIn.PreviousOutPoint, asm)
 	}
-	log.Printf("\tOutputs:")
+	log.Infof("\tOutputs:")
 	for i, txOut := range tx.TxOut {
 		asm, _ := txscript.DisasmString(txOut.PkScript)
-		log.Printf("\t\t%d: Value: %d, PkScript: %s", i, txOut.Value, asm)
+		log.Infof("\t\t%d: Value: %d, PkScript: %s", i, txOut.Value, asm)
 	}
 }
 
@@ -102,14 +101,14 @@ func fetchAndPopulateUtxos(client *rpcclient.Client) (funds uint64, exit bool, e
 	for atomic.LoadInt32(&isRunning) == 1 {
 		arr, err := client.SearchRawTransactionsVerbose(p2pkhAddress, skipCount, 1000, true, false, nil)
 		if err != nil {
-			log.Printf("No spandable transactions found and SearchRawTransactionsVerbose failed: %s", err)
+			log.Infof("No spandable transactions found and SearchRawTransactionsVerbose failed: %s", err)
 			funds := utxosFunds()
 			if !isDust(funds) {
 				// we have something to spend
-				log.Printf("We have enough funds to generate transactions: %d", funds)
+				log.Infof("We have enough funds to generate transactions: %d", funds)
 				return funds, false, nil
 			}
-			log.Printf("Sleeping 30 sec...")
+			log.Infof("Sleeping 30 sec...")
 			for i := 0; i < 30; i++ {
 				time.Sleep(time.Second)
 				if atomic.LoadInt32(&isRunning) != 1 {
@@ -121,23 +120,23 @@ func fetchAndPopulateUtxos(client *rpcclient.Client) (funds uint64, exit bool, e
 		}
 		receivedCount := len(arr)
 		skipCount += receivedCount
-		log.Printf("Received %d transactions", receivedCount)
+		log.Infof("Received %d transactions", receivedCount)
 		for _, searchResult := range arr {
 			txBytes, err := hex.DecodeString(searchResult.Hex)
 			if err != nil {
-				log.Printf("Failed to decode transactions bytes: %s", err)
+				log.Warnf("Failed to decode transactions bytes: %s", err)
 				continue
 			}
 			txID, err := daghash.NewTxIDFromStr(searchResult.TxID)
 			if err != nil {
-				log.Printf("Failed to decode transaction ID: %s", err)
+				log.Warnf("Failed to decode transaction ID: %s", err)
 				continue
 			}
 			var tx wire.MsgTx
 			rbuf := bytes.NewReader(txBytes)
 			err = tx.Deserialize(rbuf)
 			if err != nil {
-				log.Printf("Failed to deserialize transaction: %s", err)
+				log.Warnf("Failed to deserialize transaction: %s", err)
 				continue
 			}
 			if spentTxs[*txID] {
@@ -224,7 +223,7 @@ func signTxAndLockSpentUtxo(tx *wire.MsgTx) error {
 		sigScript, err := txscript.SignatureScript(tx, i, txOut.PkScript,
 			txscript.SigHashAll, privateKey, true)
 		if err != nil {
-			log.Printf("Failed to sign transaction: %s", err)
+			log.Warnf("Failed to sign transaction: %s", err)
 			return err
 		}
 
@@ -283,7 +282,7 @@ func txLoop(clients []*rpcclient.Client) {
 	pkScript, err = txscript.PayToAddrScript(p2pkhAddress)
 
 	if err != nil {
-		log.Printf("Failed to generate pkscript to address: %s", err)
+		log.Warnf("Failed to generate pkscript to address: %s", err)
 		return
 	}
 
@@ -293,16 +292,16 @@ func txLoop(clients []*rpcclient.Client) {
 			return
 		}
 		if err != nil {
-			log.Printf("fetchAndPopulateUtxos failed: %s", err)
+			log.Warnf("fetchAndPopulateUtxos failed: %s", err)
 			continue
 		}
 
 		if isDust(funds) {
-			log.Printf("fetchAndPopulateUtxos returned not enough funds")
+			log.Warnf("fetchAndPopulateUtxos returned not enough funds")
 			continue
 		}
 
-		log.Printf("UTXO funds after population %d", funds)
+		log.Infof("UTXO funds after population %d", funds)
 
 		for !isDust(funds) {
 			amount := minSpendableAmount + uint64(random.Int63n(int64(minSpendableAmount*4)))
@@ -314,15 +313,15 @@ func txLoop(clients []*rpcclient.Client) {
 			tx, fees, err := createTransaction([]*wire.TxOut{output}, 10)
 
 			if err != nil {
-				log.Printf("Failed to create transaction (output value %d, funds %d): %s",
+				log.Warnf("Failed to create transaction (output value %d, funds %d): %s",
 					amount, funds, err)
 				continue
 			}
 
-			log.Printf("Created transaction %s: amount %d, fees %d", tx.TxID(), amount, fees)
+			log.Infof("Created transaction %s: amount %d, fees %d", tx.TxID(), amount, fees)
 
 			funds = utxosFunds()
-			log.Printf("Remaining funds: %d", funds)
+			log.Infof("Remaining funds: %d", funds)
 
 			var currentClient *rpcclient.Client
 			if clientsCount == 1 {
@@ -332,7 +331,7 @@ func txLoop(clients []*rpcclient.Client) {
 			}
 			_, err = currentClient.SendRawTransaction(tx, true)
 			if err != nil {
-				log.Printf("Failed to send transaction: %s", err)
+				log.Warnf("Failed to send transaction: %s", err)
 				continue
 			}
 		}

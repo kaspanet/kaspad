@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"math"
+	"time"
 
 	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/wire"
@@ -221,6 +222,11 @@ func (b *Block) FeeTransaction() *Tx {
 		return nil
 	}
 	return b.Transactions()[FeeTransactionIndex]
+}
+
+// Timestamp returns this block's timestamp
+func (b *Block) Timestamp() time.Time {
+	return b.msgBlock.Header.Timestamp
 }
 
 // NewBlock returns a new instance of a bitcoin block given an underlying

@@ -69,20 +69,20 @@ func (s sortableInputSlice) Swap(i, j int)  { s[i], s[j] = s[j], s[i] }
 // First sort based on input hash (reversed / rpc-style), then index.
 func (s sortableInputSlice) Less(i, j int) bool {
 	// Input hashes are the same, so compare the index.
-	ihash := s[i].PreviousOutPoint.TxID
-	jhash := s[j].PreviousOutPoint.TxID
-	if ihash == jhash {
+	iTxID := s[i].PreviousOutPoint.TxID
+	jTxID := s[j].PreviousOutPoint.TxID
+	if iTxID == jTxID {
 		return s[i].PreviousOutPoint.Index < s[j].PreviousOutPoint.Index
 	}
 
 	// At this point, the hashes are not equal, so reverse them to
 	// big-endian and return the result of the comparison.
-	const hashSize = daghash.HashSize
-	for b := 0; b < hashSize/2; b++ {
-		ihash[b], ihash[hashSize-1-b] = ihash[hashSize-1-b], ihash[b]
-		jhash[b], jhash[hashSize-1-b] = jhash[hashSize-1-b], jhash[b]
+	const txIDSize = daghash.TxIDSize
+	for b := 0; b < txIDSize/2; b++ {
+		iTxID[b], iTxID[txIDSize-1-b] = iTxID[txIDSize-1-b], iTxID[b]
+		jTxID[b], jTxID[txIDSize-1-b] = jTxID[txIDSize-1-b], jTxID[b]
 	}
-	return bytes.Compare(ihash[:], jhash[:]) == -1
+	return bytes.Compare(iTxID[:], jTxID[:]) == -1
 }
 
 // Output comparison function.

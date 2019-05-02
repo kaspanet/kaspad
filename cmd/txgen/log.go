@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"github.com/btcsuite/btclog"
-	"github.com/daglabs/btcd/rpcclient"
 	"github.com/jrick/logrotate/rotator"
 	"os"
 	"path/filepath"
@@ -22,7 +21,7 @@ func (logWriter) Write(p []byte) (n int, err error) {
 var (
 	backendLog = btclog.NewBackend(logWriter{})
 	LogRotator *rotator.Rotator
-	log        = backendLog.Logger("MNSM")
+	log        = backendLog.Logger("TXGN")
 	initiated  = false
 )
 
@@ -41,10 +40,4 @@ func initLogRotator(logFile string) {
 	}
 
 	LogRotator = r
-}
-
-func enableRPCLogging() {
-	rpclog := backendLog.Logger("RPCC")
-	rpclog.SetLevel(btclog.LevelTrace)
-	rpcclient.UseLogger(rpclog)
 }

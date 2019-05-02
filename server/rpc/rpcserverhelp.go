@@ -583,16 +583,6 @@ var helpDescsEnUS = map[string]string{
 	"validateAddress--synopsis": "Verify an address is valid.",
 	"validateAddress-address":   "Bitcoin address to validate",
 
-	// VerifyChainCmd help.
-	"verifyDag--synopsis": "Verifies the block DAG database.\n" +
-		"The actual checks performed by the checkLevel parameter are implementation specific.\n" +
-		"For btcd this is:\n" +
-		"checkLevel=0 - Look up each block and ensure it can be loaded from the database.\n" +
-		"checkLevel=1 - Perform basic context-free sanity checks on each block.",
-	"verifyDag-checkLevel": "How thorough the block verification is",
-	"verifyDag-checkDepth": "The number of blocks to check",
-	"verifyDag--result0":   "Whether or not the DAG verified",
-
 	// VerifyMessageCmd help.
 	"verifyMessage--synopsis": "Verify a signed message.",
 	"verifyMessage-address":   "The bitcoin address to use for the signature",
@@ -735,7 +725,6 @@ var rpcResultTypes = map[string][]interface{}{
 	"submitBlock":           {nil, (*string)(nil)},
 	"uptime":                {(*int64)(nil)},
 	"validateAddress":       {(*btcjson.ValidateAddressResult)(nil)},
-	"verifyDag":             {(*bool)(nil)},
 	"verifyMessage":         {(*bool)(nil)},
 	"version":               {(*map[string]btcjson.VersionResult)(nil)},
 

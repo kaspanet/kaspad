@@ -837,8 +837,8 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rateLimit, rejectDu
 			// is replaced and taking its address directly would
 			// result in all of the entries pointing to the same
 			// memory location and thus all be the final hash.
-			hashCopy := txIn.PreviousOutPoint.TxID
-			missingParents = append(missingParents, &hashCopy)
+			txIDCopy := txIn.PreviousOutPoint.TxID
+			missingParents = append(missingParents, &txIDCopy)
 		}
 		if mp.isTransactionInPool(&txIn.PreviousOutPoint.TxID) {
 			parentsInPool = append(parentsInPool, &txIn.PreviousOutPoint)
@@ -1293,10 +1293,10 @@ func (mp *TxPool) RawMempoolVerbose() map[string]*btcjson.GetRawMempoolVerboseRe
 			Depends:          make([]string, 0),
 		}
 		for _, txIn := range tx.MsgTx().TxIn {
-			hash := &txIn.PreviousOutPoint.TxID
-			if mp.haveTransaction(hash) {
+			txID := &txIn.PreviousOutPoint.TxID
+			if mp.haveTransaction(txID) {
 				mpd.Depends = append(mpd.Depends,
-					hash.String())
+					txID.String())
 			}
 		}
 

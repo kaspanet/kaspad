@@ -193,7 +193,7 @@ func TestChainedTransactions(t *testing.T) {
 	cbTx := block1.Transactions[0]
 
 	txIn := &wire.TxIn{
-		PreviousOutPoint: wire.OutPoint{TxID: cbTx.TxID(), Index: 0},
+		PreviousOutPoint: wire.OutPoint{TxID: *cbTx.TxID(), Index: 0},
 		SignatureScript:  nil,
 		Sequence:         wire.MaxTxInSequenceNum,
 	}
@@ -204,7 +204,7 @@ func TestChainedTransactions(t *testing.T) {
 	tx := wire.NewNativeMsgTx(wire.TxVersion, []*wire.TxIn{txIn}, []*wire.TxOut{txOut})
 
 	chainedTxIn := &wire.TxIn{
-		PreviousOutPoint: wire.OutPoint{TxID: tx.TxID(), Index: 0},
+		PreviousOutPoint: wire.OutPoint{TxID: *tx.TxID(), Index: 0},
 		SignatureScript:  nil,
 		Sequence:         wire.MaxTxInSequenceNum,
 	}
@@ -235,7 +235,7 @@ func TestChainedTransactions(t *testing.T) {
 	}
 
 	nonChainedTxIn := &wire.TxIn{
-		PreviousOutPoint: wire.OutPoint{TxID: cbTx.TxID(), Index: 0},
+		PreviousOutPoint: wire.OutPoint{TxID: *cbTx.TxID(), Index: 0},
 		SignatureScript:  nil,
 		Sequence:         wire.MaxTxInSequenceNum,
 	}
@@ -296,7 +296,7 @@ func TestGasLimit(t *testing.T) {
 	cbTxID := fundsBlock.Transactions[0].TxID()
 
 	tx1In := &wire.TxIn{
-		PreviousOutPoint: *wire.NewOutPoint(&cbTxID, 0),
+		PreviousOutPoint: *wire.NewOutPoint(cbTxID, 0),
 		Sequence:         wire.MaxTxInSequenceNum,
 	}
 	tx1Out := &wire.TxOut{
@@ -306,7 +306,7 @@ func TestGasLimit(t *testing.T) {
 	tx1 := wire.NewSubnetworkMsgTx(wire.TxVersion, []*wire.TxIn{tx1In}, []*wire.TxOut{tx1Out}, subnetworkID, 10000, []byte{})
 
 	tx2In := &wire.TxIn{
-		PreviousOutPoint: *wire.NewOutPoint(&cbTxID, 1),
+		PreviousOutPoint: *wire.NewOutPoint(cbTxID, 1),
 		Sequence:         wire.MaxTxInSequenceNum,
 	}
 	tx2Out := &wire.TxOut{
@@ -335,7 +335,7 @@ func TestGasLimit(t *testing.T) {
 	}
 
 	overflowGasTxIn := &wire.TxIn{
-		PreviousOutPoint: *wire.NewOutPoint(&cbTxID, 1),
+		PreviousOutPoint: *wire.NewOutPoint(cbTxID, 1),
 		Sequence:         wire.MaxTxInSequenceNum,
 	}
 	overflowGasTxOut := &wire.TxOut{
@@ -366,7 +366,7 @@ func TestGasLimit(t *testing.T) {
 
 	nonExistentSubnetwork := &subnetworkid.SubnetworkID{123}
 	nonExistentSubnetworkTxIn := &wire.TxIn{
-		PreviousOutPoint: *wire.NewOutPoint(&cbTxID, 0),
+		PreviousOutPoint: *wire.NewOutPoint(cbTxID, 0),
 		Sequence:         wire.MaxTxInSequenceNum,
 	}
 	nonExistentSubnetworkTxOut := &wire.TxOut{

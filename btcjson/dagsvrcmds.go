@@ -717,24 +717,6 @@ func NewValidateAddressCmd(address string) *ValidateAddressCmd {
 	}
 }
 
-// VerifyDAGCmd defines the verifyDag JSON-RPC command.
-type VerifyDAGCmd struct {
-	CheckLevel *uint64 `jsonrpcdefault:"3"`
-	CheckDepth *uint64 `jsonrpcdefault:"288"` // 0 = all
-}
-
-// NewVerifyDAGCmd returns a new instance which can be used to issue a
-// verifyDag JSON-RPC command.
-//
-// The parameters which are pointers indicate they are optional.  Passing nil
-// for optional parameters will use the default value.
-func NewVerifyDAGCmd(checkLevel, checkDepth *uint64) *VerifyDAGCmd {
-	return &VerifyDAGCmd{
-		CheckLevel: checkLevel,
-		CheckDepth: checkDepth,
-	}
-}
-
 // VerifyMessageCmd defines the verifyMessage JSON-RPC command.
 type VerifyMessageCmd struct {
 	Address   string
@@ -815,7 +797,6 @@ func init() {
 	MustRegisterCmd("submitBlock", (*SubmitBlockCmd)(nil), flags)
 	MustRegisterCmd("uptime", (*UptimeCmd)(nil), flags)
 	MustRegisterCmd("validateAddress", (*ValidateAddressCmd)(nil), flags)
-	MustRegisterCmd("verifyDag", (*VerifyDAGCmd)(nil), flags)
 	MustRegisterCmd("verifyMessage", (*VerifyMessageCmd)(nil), flags)
 	MustRegisterCmd("verifyTxOutProof", (*VerifyTxOutProofCmd)(nil), flags)
 }

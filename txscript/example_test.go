@@ -109,14 +109,13 @@ func ExampleSignTxOutput() {
 	}
 	txOut := wire.NewTxOut(100000000, pkScript)
 	originTx := wire.NewNativeMsgTx(wire.TxVersion, []*wire.TxIn{txIn}, []*wire.TxOut{txOut})
-	originTxID := originTx.TxID()
 
 	// Create the transaction to redeem the fake transaction.
 
 	// Add the input(s) the redeeming transaction will spend.  There is no
 	// signature script at this point since it hasn't been created or signed
 	// yet, hence nil is provided for it.
-	prevOut = wire.NewOutPoint(&originTxID, 0)
+	prevOut = wire.NewOutPoint(originTx.TxID(), 0)
 	txIn = wire.NewTxIn(prevOut, nil)
 
 	// Ordinarily this would contain that actual destination of the funds,

@@ -274,7 +274,7 @@ func TestCalcSequenceLock(t *testing.T) {
 	// output.
 	unConfTx := wire.NewNativeMsgTx(wire.TxVersion, nil, []*wire.TxOut{{PkScript: nil, Value: 5}})
 	unConfUtxo := wire.OutPoint{
-		TxID:  unConfTx.TxID(),
+		TxID:  *unConfTx.TxID(),
 		Index: 0,
 	}
 
@@ -1021,7 +1021,7 @@ func TestValidateFeeTransaction(t *testing.T) {
 			TxIn: []*wire.TxIn{
 				{
 					PreviousOutPoint: wire.OutPoint{
-						TxID:  cb1A.TxID(),
+						TxID:  *cb1A.TxID(),
 						Index: 0,
 					},
 					Sequence: wire.MaxTxInSequenceNum,
@@ -1101,7 +1101,7 @@ func TestValidateFeeTransaction(t *testing.T) {
 			TxIn: []*wire.TxIn{
 				{
 					PreviousOutPoint: wire.OutPoint{
-						TxID:  cb3.TxID(),
+						TxID:  *cb3.TxID(),
 						Index: 0,
 					},
 					Sequence: wire.MaxTxInSequenceNum,
@@ -1142,7 +1142,7 @@ func TestValidateFeeTransaction(t *testing.T) {
 			TxIn: []*wire.TxIn{
 				{
 					PreviousOutPoint: wire.OutPoint{
-						TxID:  cb3.TxID(),
+						TxID:  *cb3.TxID(),
 						Index: 1,
 					},
 					Sequence: wire.MaxTxInSequenceNum,

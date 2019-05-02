@@ -13,11 +13,12 @@ import (
 
 	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/util"
-	flags "github.com/jessevdk/go-flags"
+	"github.com/jessevdk/go-flags"
 )
 
 const (
-	defaultConfigFilename = "daglabs-seeder.conf"
+	defaultConfigFilename = "dnsseeder.conf"
+	defaultLogFilename    = "dnsseeder.log"
 	defaultListenPort     = "5354"
 )
 
@@ -26,8 +27,9 @@ var (
 	activeNetParams = &dagconfig.MainNetParams
 
 	// Default configuration options
+	defaultHomeDir    = util.AppDataDir("dnsseeder", false)
 	defaultConfigFile = filepath.Join(defaultHomeDir, defaultConfigFilename)
-	defaultHomeDir    = util.AppDataDir("daglabs-seeder", false)
+	defaultLogFile    = filepath.Join(defaultHomeDir, defaultLogFilename)
 )
 
 // config defines the configuration options for hardforkdemo.
@@ -129,6 +131,8 @@ func loadConfig() (*config, error) {
 	} else if cfg.DevNet {
 		activeNetParams = &dagconfig.DevNetParams
 	}
+
+	initLogRotator(defaultLogFile)
 
 	return &cfg, nil
 }

@@ -48,24 +48,6 @@ func (dag *BlockDAG) BlockExists(hash *daghash.Hash) (bool, error) {
 	err := dag.db.View(func(dbTx database.Tx) error {
 		var err error
 		exists, err = dbTx.HasBlock(hash)
-		if err != nil || !exists {
-			return err
-		}
-
-		// Ignore side chain blocks in the database.  This is necessary
-		// because there is not currently any record of the associated
-		// block index data such as its block height, so it's not yet
-		// possible to efficiently load the block and do anything useful
-		// with it.
-		//
-		// Ultimately the entire block index should be serialized
-		// instead of only the current main chain so it can be consulted
-		// directly.
-		_, err = dbFetchHeightByHash(dbTx, hash)
-		if isNotInDAGErr(err) {
-			exists = false
-			return nil
-		}
 		return err
 	})
 	return exists, err
@@ -109,13 +91,23 @@ func (dag *BlockDAG) processOrphans(hash *daghash.Hash, flags BehaviorFlags) err
 				continue
 			}
 
+			// Skip this orphan if one or more of its parents are
+			// still missing.
+			_, err := lookupParentNodes(orphan.block, dag)
+			if err != nil {
+				if ruleErr, ok := err.(RuleError); ok && ruleErr.ErrorCode == ErrParentBlockUnknown {
+					continue
+				}
+				return err
+			}
+
 			// Remove the orphan from the orphan pool.
 			orphanHash := orphan.block.Hash()
 			dag.removeOrphanBlock(orphan)
 			i--
 
-			// Potentially accept the block into the block chain.
-			err := dag.maybeAcceptBlock(orphan.block, flags)
+			// Potentially accept the block into the block DAG.
+			err = dag.maybeAcceptBlock(orphan.block, flags)
 			if err != nil {
 				return err
 			}
@@ -218,14 +210,14 @@ func (dag *BlockDAG) ProcessBlock(block *util.Block, flags BehaviorFlags) (bool,
 		}
 
 		if !parentExists {
-			log.Infof("Adding orphan block %s with parent %s", blockHash, parentHash)
-			dag.addOrphanBlock(block)
-
 			allParentsExist = false
 		}
 	}
 
 	if !allParentsExist {
+		log.Infof("Adding orphan block %s", blockHash)
+		dag.addOrphanBlock(block)
+
 		return true, nil
 	}
 

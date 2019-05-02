@@ -60,8 +60,8 @@ func (t *Tx) ID() *daghash.TxID {
 
 	// Cache the hash and return it.
 	id := t.msgTx.TxID()
-	t.txID = &id
-	return &id
+	t.txID = id
+	return id
 }
 
 // Index returns the saved index of the transaction within a block.  This value
