@@ -673,6 +673,12 @@ var helpDescsEnUS = map[string]string{
 	"versionResult-patch":         "The patch component of the JSON-RPC API version",
 	"versionResult-prerelease":    "Prerelease info about the current build",
 	"versionResult-buildMetadata": "Metadata about the current build",
+
+	// TODO: (Ori) This is a temporary rpc command for dev use. It needs to be removed.
+	"flushDbCache--synopsis":       "No Synopsis",
+	"flushDbCache--result0--desc":  "No Result",
+	"flushDbCache--result0--value": "No Value",
+	"flushDbCache--result0--key":   "No Key",
 }
 
 // rpcResultTypes specifies the result types that each RPC command can return.
@@ -727,6 +733,7 @@ var rpcResultTypes = map[string][]interface{}{
 	"validateAddress":       {(*btcjson.ValidateAddressResult)(nil)},
 	"verifyMessage":         {(*bool)(nil)},
 	"version":               {(*map[string]btcjson.VersionResult)(nil)},
+	"flushDbCache":          {(*map[string]struct{})(nil)},
 
 	// Websocket commands.
 	"loadTxFilter":              nil,
