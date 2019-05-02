@@ -15,15 +15,15 @@ CF_PARAM=TaskImage
 IMAGE_NAME=${ECR_SERVER}/${SERVICE_NAME}
 
 notify_telegram() {
-  echo "AAAAAAAAA! ${TELEGRAM_API_TOKEN}"
-  echo "BBBBBBB! ${TELEGRAM_CHAT_ID}"
-  env
+  MESSAGE="Build FAILED for pull request '${ghprbPullTitle}'
+  ${ghprbPullLink}
+  ${BUILD_URL}console"
 
   curl -s \
     -X POST \
     "https://api.telegram.org/bot${TELEGRAM_API_TOKEN}/sendMessage" \
     -d chat_id="${TELEGRAM_CHAT_ID}" \
-    -d text="Howdy"
+    -d text="${MESSAGE}"
 }
 
 trap "exit 1" INT
