@@ -15,14 +15,17 @@ CF_PARAM=TaskImage
 IMAGE_NAME=${ECR_SERVER}/${SERVICE_NAME}
 
 notify_telegram() {
-  MESSAGE="Build FAILED for pull request '${ghprbPullTitle}'
-  ${ghprbPullLink}
-  ${BUILD_URL}console"
+  MESSAGE="Build *FAILED* for pull request '${ghprbPullTitle}'
+  [Github](${ghprbPullLink}) [Jenkins](${BUILD_URL}console)
+
+  Shame on you, *${ghprbActualCommitAuthor}*"
 
   curl -s \
     -X POST \
     "https://api.telegram.org/bot${TELEGRAM_API_TOKEN}/sendMessage" \
     -d chat_id="${TELEGRAM_CHAT_ID}" \
+    -d parse_mode=markdown \
+    -d disable_web_page_preview=true \
     -d text="${MESSAGE}"
 }
 
