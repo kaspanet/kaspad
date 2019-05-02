@@ -605,11 +605,11 @@ func TestProcessTransaction(t *testing.T) {
 		t.Fatalf("Script: error creating wrappedP2shNonSigScript: %v", err)
 	}
 
-	dummyPrevOutHash, err := daghash.NewTxIDFromStr("01")
+	dummyPrevOutTxID, err := daghash.NewTxIDFromStr("01")
 	if err != nil {
 		t.Fatalf("NewShaHashFromStr: unexpected error: %v", err)
 	}
-	dummyPrevOut := wire.OutPoint{TxID: *dummyPrevOutHash, Index: 1}
+	dummyPrevOut := wire.OutPoint{TxID: *dummyPrevOutTxID, Index: 1}
 	dummySigScript := bytes.Repeat([]byte{0x00}, 65)
 
 	addrHash := [20]byte{0x01}
@@ -766,7 +766,7 @@ func TestAddrIndex(t *testing.T) {
 	})
 	defer guard.Unpatch()
 	enteredRemoveUnconfirmedTx := false
-	guard = monkey.Patch((*indexers.AddrIndex).RemoveUnconfirmedTx, func(idx *indexers.AddrIndex, hash *daghash.TxID) {
+	guard = monkey.Patch((*indexers.AddrIndex).RemoveUnconfirmedTx, func(_ *indexers.AddrIndex, _ *daghash.TxID) {
 		enteredRemoveUnconfirmedTx = true
 	})
 	defer guard.Unpatch()

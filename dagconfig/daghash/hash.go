@@ -16,6 +16,9 @@ import (
 // HashSize of array used to store hashes.  See Hash.
 const HashSize = 32
 
+// TxIDSize of array used to store TxID.  See TxID.
+const TxIDSize = HashSize
+
 // MaxHashStringSize is the maximum length of a Hash hash string.
 const MaxHashStringSize = HashSize * 2
 

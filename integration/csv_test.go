@@ -77,7 +77,7 @@ func makeTestOutput(r *rpctest.Harness, t *testing.T,
 	}
 
 	utxo := &wire.OutPoint{
-		Hash:  fundTx.TxID(),
+		TxID:  fundTx.TxID(),
 		Index: outputIndex,
 	}
 
@@ -282,7 +282,7 @@ func createCSVOutput(r *rpctest.Harness, t *testing.T,
 	}
 
 	utxo := &wire.OutPoint{
-		Hash:  tx.TxID(),
+		TxID:  tx.TxID(),
 		Index: outputIndex,
 	}
 
