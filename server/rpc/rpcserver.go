@@ -185,6 +185,7 @@ var rpcHandlersBeforeInit = map[string]commandHandler{
 	"validateAddress":       handleValidateAddress,
 	"verifyMessage":         handleVerifyMessage,
 	"version":               handleVersion,
+	"flushDbCache":          handleFlushDBCache,
 }
 
 // list of commands that we recognize, but for which btcd has no support because
@@ -3551,6 +3552,13 @@ func handleVersion(s *Server, cmd interface{}, closeChan <-chan struct{}) (inter
 		},
 	}
 	return result, nil
+}
+
+// handleFlushDBCache flushes the db cache to the disk.
+// TODO: (Ori) This is a temporary function for dev use. It needs to be removed.
+func handleFlushDBCache(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
+	err := s.cfg.DB.FlushCache()
+	return nil, err
 }
 
 // Server provides a concurrent safe RPC server to a chain server.

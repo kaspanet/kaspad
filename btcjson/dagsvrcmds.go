@@ -201,6 +201,17 @@ func NewGetBlockHeaderCmd(hash string, verbose *bool) *GetBlockHeaderCmd {
 	}
 }
 
+// FlushDBCacheCmd defines the flushDbCache JSON-RPC command.
+// TODO: (Ori) This is a temporary function for dev use. It needs to be removed.
+type FlushDBCacheCmd struct{}
+
+// NewFlushDBCacheCmd returns a new instance which can be used to issue a
+// flushDbCache JSON-RPC command.
+// TODO: (Ori) This is a temporary function for dev use. It needs to be removed.
+func NewFlushDBCacheCmd(hash string, verbose *bool) *FlushDBCacheCmd {
+	return &FlushDBCacheCmd{}
+}
+
 // TemplateRequest is a request object as defined in BIP22
 // (https://en.bitcoin.it/wiki/BIP_0022), it is optionally provided as an
 // pointer argument to GetBlockTemplateCmd.
@@ -799,4 +810,5 @@ func init() {
 	MustRegisterCmd("validateAddress", (*ValidateAddressCmd)(nil), flags)
 	MustRegisterCmd("verifyMessage", (*VerifyMessageCmd)(nil), flags)
 	MustRegisterCmd("verifyTxOutProof", (*VerifyTxOutProofCmd)(nil), flags)
+	MustRegisterCmd("flushDbCache", (*FlushDBCacheCmd)(nil), flags)
 }
