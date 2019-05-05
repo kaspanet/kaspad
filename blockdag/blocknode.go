@@ -111,8 +111,7 @@ type blockNode struct {
 	status blockStatus
 }
 
-// initBlockNode initializes a block node from the given header and parent nodes,
-// calculating the height from the respective fields on the first parent.
+// initBlockNode initializes a block node from the given header and parent nodes.
 // This function is NOT safe for concurrent access.  It must only be called when
 // initially creating a node.
 func initBlockNode(node *blockNode, blockHeader *wire.BlockHeader, parents blockSet, phantomK uint32) {
@@ -154,8 +153,7 @@ func calculateChainHeight(node *blockNode) uint64 {
 }
 
 // newBlockNode returns a new block node for the given block header and parent
-// nodes, calculating the height from the respective fields on the
-// parent. This function is NOT safe for concurrent access.
+//nodes. This function is NOT safe for concurrent access.
 func newBlockNode(blockHeader *wire.BlockHeader, parents blockSet, phantomK uint32) *blockNode {
 	var node blockNode
 	initBlockNode(&node, blockHeader, parents, phantomK)
