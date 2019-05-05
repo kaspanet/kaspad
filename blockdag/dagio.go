@@ -618,7 +618,6 @@ func (dag *BlockDAG) deserializeBlockNode(blockRow []byte) (*blockNode, error) {
 
 	node := &blockNode{
 		hash:           header.BlockHash(),
-		workSum:        util.CalcWork(header.Bits),
 		version:        header.Version,
 		bits:           header.Bits,
 		nonce:          header.Nonce,

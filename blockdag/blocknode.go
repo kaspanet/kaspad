@@ -6,12 +6,10 @@ package blockdag
 
 import (
 	"fmt"
-	"math/big"
 	"sort"
 	"time"
 
 	"github.com/daglabs/btcd/dagconfig/daghash"
-	"github.com/daglabs/btcd/util"
 	"github.com/daglabs/btcd/wire"
 )
 
@@ -89,10 +87,6 @@ type blockNode struct {
 	// hash is the double sha 256 of the block.
 	hash *daghash.Hash
 
-	// workSum is the total amount of work in the DAG up to and including
-	// this node.
-	workSum *big.Int
-
 	// height is the position in the block DAG.
 	height uint64
 
@@ -117,22 +111,19 @@ type blockNode struct {
 	status blockStatus
 }
 
-// initBlockNode initializes a block node from the given header and parent nodes,
-// calculating the height and workSum from the respective fields on the first parent.
+// initBlockNode initializes a block node from the given header and parent nodes.
 // This function is NOT safe for concurrent access.  It must only be called when
 // initially creating a node.
 func initBlockNode(node *blockNode, blockHeader *wire.BlockHeader, parents blockSet, phantomK uint32) {
 	*node = blockNode{
 		parents:   parents,
 		children:  make(blockSet),
-		workSum:   big.NewInt(0),
 		timestamp: time.Now().Unix(),
 	}
 
 	// blockHeader is nil only for the virtual block
 	if blockHeader != nil {
 		node.hash = blockHeader.BlockHash()
-		node.workSum = util.CalcWork(blockHeader.Bits)
 		node.version = blockHeader.Version
 		node.bits = blockHeader.Bits
 		node.nonce = blockHeader.Nonce
@@ -147,7 +138,6 @@ func initBlockNode(node *blockNode, blockHeader *wire.BlockHeader, parents block
 		node.blues, node.selectedParent, node.blueScore = phantom(node, phantomK)
 		node.height = calculateNodeHeight(node)
 		node.chainHeight = calculateChainHeight(node)
-		node.workSum = node.workSum.Add(node.selectedParent.workSum, node.workSum)
 	}
 }
 
@@ -163,8 +153,7 @@ func calculateChainHeight(node *blockNode) uint64 {
 }
 
 // newBlockNode returns a new block node for the given block header and parent
-// nodes, calculating the height and workSum from the respective fields on the
-// parent. This function is NOT safe for concurrent access.
+//nodes. This function is NOT safe for concurrent access.
 func newBlockNode(blockHeader *wire.BlockHeader, parents blockSet, phantomK uint32) *blockNode {
 	var node blockNode
 	initBlockNode(&node, blockHeader, parents, phantomK)
