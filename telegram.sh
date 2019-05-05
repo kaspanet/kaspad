@@ -1,5 +1,9 @@
 #!/bin/sh
 
+# This file is part of Continuous Integration.  When ran by
+# the CI agent, it sends a some details about the build failure
+# to a Telegram group.
+
 API_TOKEN="$1"
 CHAT_ID="$2"
 BUILD_URL="$3"

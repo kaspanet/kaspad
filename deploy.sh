@@ -14,9 +14,9 @@ export ECR_SERVER=${ECR_SERVER:-"$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.ama
 CF_PARAM=TaskImage
 IMAGE_NAME=${ECR_SERVER}/${SERVICE_NAME}
 
-trap "exit 1" INT
-fatal() {
-  echo "ERROR: $*" >&2
+# Sends a Telegram notification with some details about the failure
+# All variables in this function are set by Jenkins
+notify_telegram() {
   echo "./telegram.sh \
     '${TELEGRAM_API_TOKEN}' \
     '${TELEGRAM_CHAT_ID}' \
@@ -24,6 +24,12 @@ fatal() {
     '${ghprbActualCommitAuthor}' \
     '${ghprbPullTitle}' \
     '${ghprbPullLink}'" | at -m now + 1 minute
+}
+
+trap "exit 1" INT
+fatal() {
+  echo "ERROR: $*" >&2
+  notify_telegram
 
   exit 1
 }
