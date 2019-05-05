@@ -18,12 +18,12 @@ trap "exit 1" INT
 fatal() {
   echo "ERROR: $*" >&2
   echo "./telegram.sh \
-    ${TELEGRAM_API_TOKEN} \
-    ${TELEGRAM_CHAT_ID} \
-    ${BUILD_URL} \
-    ${ghprbActualCommitAuthor} \
-    ${ghprbPullTitle} \
-    ${ghprbPullLink}" | at -m now + 1 minute
+    '${TELEGRAM_API_TOKEN}' \
+    '${TELEGRAM_CHAT_ID}' \
+    '${BUILD_URL}' \
+    '${ghprbActualCommitAuthor}' \
+    '${ghprbPullTitle}' \
+    '${ghprbPullLink}'" | at -m now + 1 minute
 
   exit 1
 }
