@@ -14,38 +14,16 @@ export ECR_SERVER=${ECR_SERVER:-"$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.ama
 CF_PARAM=TaskImage
 IMAGE_NAME=${ECR_SERVER}/${SERVICE_NAME}
 
-notify_telegram() {
-  # Wait for the process to finish so it could flush logs etc.
-  sleep 10s
-
-  # Build the failure message
-  MESSAGE="*${ghprbActualCommitAuthor}*:
-Build *FAILED* for pull request '${ghprbPullTitle}'
-[Github](${ghprbPullLink})        [Jenkins](${BUILD_URL}console)"
-
-  # Send the failure message
-  curl -s \
-    -X POST \
-    "https://api.telegram.org/bot${TELEGRAM_API_TOKEN}/sendMessage" \
-    -d chat_id="${TELEGRAM_CHAT_ID}" \
-    -d parse_mode=markdown \
-    -d disable_web_page_preview=true \
-    -d text="${MESSAGE}"
-
-  # Retrieve the build log
-  LOG=$(curl ${BUILD_URL}consoleText)
-
-  # Send the build log
-  printf "$LOG" | curl \
-    "https://api.telegram.org/bot${TELEGRAM_API_TOKEN}/sendDocument" \
-    -F chat_id="${TELEGRAM_CHAT_ID}" \
-    -F document="@-;filename=build.log"
-}
-
 trap "exit 1" INT
 fatal() {
   echo "ERROR: $*" >&2
-  echo "notify_telegram" | at -m now + 1 minute
+  echo "./telegram.sh
+    ${TELEGRAM_API_TOKEN}
+    ${TELEGRAM_CHAT_ID}
+    ${BUILD_URL}
+    ${ghprbActualCommitAuthor}
+    ${ghprbPullTitle}
+    ${ghprbPullLink}" | at -m now + 1 minute
 
   exit 1
 }
