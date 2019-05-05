@@ -13,36 +13,6 @@ const (
 	// notifications from the dag server that a block has been connected.
 	FilteredBlockAddedNtfnMethod = "filteredBlockAdded"
 
-	// RecvTxNtfnMethod is the legacy, deprecated method used for
-	// notifications from the dag server that a transaction which pays to
-	// a registered address has been processed.
-	//
-	// NOTE: Deprecated. Use RelevantTxAcceptedNtfnMethod and
-	// FilteredBlockAddedNtfnMethod instead.
-	RecvTxNtfnMethod = "recvTx"
-
-	// RedeemingTxNtfnMethod is the legacy, deprecated method used for
-	// notifications from the dag server that a transaction which spends a
-	// registered outpoint has been processed.
-	//
-	// NOTE: Deprecated. Use RelevantTxAcceptedNtfnMethod and
-	// FilteredBlockAddedNtfnMethod instead.
-	RedeemingTxNtfnMethod = "redeemingTx"
-
-	// RescanFinishedNtfnMethod is the legacy, deprecated method used for
-	// notifications from the dag server that a legacy, deprecated rescan
-	// operation has finished.
-	//
-	// NOTE: Deprecated. Not used with rescanblocks command.
-	RescanFinishedNtfnMethod = "rescanFinished"
-
-	// RescanProgressNtfnMethod is the legacy, deprecated method used for
-	// notifications from the dag server that a legacy, deprecated rescan
-	// operation this is underway has made progress.
-	//
-	// NOTE: Deprecated. Not used with rescanblocks command.
-	RescanProgressNtfnMethod = "rescanProgress"
-
 	// TxAcceptedNtfnMethod is the method used for notifications from the
 	// dag server that a transaction has been accepted into the mempool.
 	TxAcceptedNtfnMethod = "txAccepted"
@@ -83,90 +53,6 @@ type BlockDetails struct {
 	Hash   string `json:"hash"`
 	Index  int    `json:"index"`
 	Time   int64  `json:"time"`
-}
-
-// RecvTxNtfn defines the recvTx JSON-RPC notification.
-//
-// NOTE: Deprecated. Use RelevantTxAcceptedNtfn and FilteredBlockAddedNtfn
-// instead.
-type RecvTxNtfn struct {
-	HexTx string
-	Block *BlockDetails
-}
-
-// NewRecvTxNtfn returns a new instance which can be used to issue a recvTx
-// JSON-RPC notification.
-//
-// NOTE: Deprecated. Use NewRelevantTxAcceptedNtfn and
-// NewFilteredBlockAddedNtfn instead.
-func NewRecvTxNtfn(hexTx string, block *BlockDetails) *RecvTxNtfn {
-	return &RecvTxNtfn{
-		HexTx: hexTx,
-		Block: block,
-	}
-}
-
-// RedeemingTxNtfn defines the redeemingTx JSON-RPC notification.
-//
-// NOTE: Deprecated. Use RelevantTxAcceptedNtfn and FilteredBlockAddedNtfn
-// instead.
-type RedeemingTxNtfn struct {
-	HexTx string
-	Block *BlockDetails
-}
-
-// NewRedeemingTxNtfn returns a new instance which can be used to issue a
-// redeemingTx JSON-RPC notification.
-//
-// NOTE: Deprecated. Use NewRelevantTxAcceptedNtfn and
-// NewFilteredBlockAddedNtfn instead.
-func NewRedeemingTxNtfn(hexTx string, block *BlockDetails) *RedeemingTxNtfn {
-	return &RedeemingTxNtfn{
-		HexTx: hexTx,
-		Block: block,
-	}
-}
-
-// RescanFinishedNtfn defines the rescanFinished JSON-RPC notification.
-//
-// NOTE: Deprecated. Not used with rescanblocks command.
-type RescanFinishedNtfn struct {
-	Hash   string
-	Height uint64
-	Time   int64
-}
-
-// NewRescanFinishedNtfn returns a new instance which can be used to issue a
-// rescanFinished JSON-RPC notification.
-//
-// NOTE: Deprecated. Not used with rescanblocks command.
-func NewRescanFinishedNtfn(hash string, height uint64, time int64) *RescanFinishedNtfn {
-	return &RescanFinishedNtfn{
-		Hash:   hash,
-		Height: height,
-		Time:   time,
-	}
-}
-
-// RescanProgressNtfn defines the rescanProgress JSON-RPC notification.
-//
-// NOTE: Deprecated. Not used with rescanblocks command.
-type RescanProgressNtfn struct {
-	Hash   string
-	Height uint64
-	Time   int64
-}
-
-// NewRescanProgressNtfn returns a new instance which can be used to issue a
-// rescanProgress JSON-RPC notification.
-//
-// NOTE: Deprecated. Not used with rescanblocks command.
-func NewRescanProgressNtfn(hash string, height uint64, time int64) *RescanProgressNtfn {
-	return &RescanProgressNtfn{
-		Hash:   hash,
-		Height: height,
-		Time:   time,
-	}
 }
 
 // TxAcceptedNtfn defines the txAccepted JSON-RPC notification.
@@ -215,10 +101,6 @@ func init() {
 	flags := UFWebsocketOnly | UFNotification
 
 	MustRegisterCmd(FilteredBlockAddedNtfnMethod, (*FilteredBlockAddedNtfn)(nil), flags)
-	MustRegisterCmd(RecvTxNtfnMethod, (*RecvTxNtfn)(nil), flags)
-	MustRegisterCmd(RedeemingTxNtfnMethod, (*RedeemingTxNtfn)(nil), flags)
-	MustRegisterCmd(RescanFinishedNtfnMethod, (*RescanFinishedNtfn)(nil), flags)
-	MustRegisterCmd(RescanProgressNtfnMethod, (*RescanProgressNtfn)(nil), flags)
 	MustRegisterCmd(TxAcceptedNtfnMethod, (*TxAcceptedNtfn)(nil), flags)
 	MustRegisterCmd(TxAcceptedVerboseNtfnMethod, (*TxAcceptedVerboseNtfn)(nil), flags)
 	MustRegisterCmd(RelevantTxAcceptedNtfnMethod, (*RelevantTxAcceptedNtfn)(nil), flags)

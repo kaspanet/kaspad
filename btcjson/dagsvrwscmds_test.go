@@ -115,60 +115,6 @@ func TestDAGSvrWsCmds(t *testing.T) {
 			unmarshalled: &btcjson.StopNotifyNewTransactionsCmd{},
 		},
 		{
-			name: "notifyReceived",
-			newCmd: func() (interface{}, error) {
-				return btcjson.NewCmd("notifyReceived", []string{"1Address"})
-			},
-			staticCmd: func() interface{} {
-				return btcjson.NewNotifyReceivedCmd([]string{"1Address"})
-			},
-			marshalled: `{"jsonrpc":"1.0","method":"notifyReceived","params":[["1Address"]],"id":1}`,
-			unmarshalled: &btcjson.NotifyReceivedCmd{
-				Addresses: []string{"1Address"},
-			},
-		},
-		{
-			name: "stopNotifyReceived",
-			newCmd: func() (interface{}, error) {
-				return btcjson.NewCmd("stopNotifyReceived", []string{"1Address"})
-			},
-			staticCmd: func() interface{} {
-				return btcjson.NewStopNotifyReceivedCmd([]string{"1Address"})
-			},
-			marshalled: `{"jsonrpc":"1.0","method":"stopNotifyReceived","params":[["1Address"]],"id":1}`,
-			unmarshalled: &btcjson.StopNotifyReceivedCmd{
-				Addresses: []string{"1Address"},
-			},
-		},
-		{
-			name: "notifySpent",
-			newCmd: func() (interface{}, error) {
-				return btcjson.NewCmd("notifySpent", `[{"txid":"123","index":0}]`)
-			},
-			staticCmd: func() interface{} {
-				ops := []btcjson.OutPoint{{TxID: "123", Index: 0}}
-				return btcjson.NewNotifySpentCmd(ops)
-			},
-			marshalled: `{"jsonrpc":"1.0","method":"notifySpent","params":[[{"txid":"123","index":0}]],"id":1}`,
-			unmarshalled: &btcjson.NotifySpentCmd{
-				OutPoints: []btcjson.OutPoint{{TxID: "123", Index: 0}},
-			},
-		},
-		{
-			name: "stopNotifySpent",
-			newCmd: func() (interface{}, error) {
-				return btcjson.NewCmd("stopNotifySpent", `[{"txid":"123","index":0}]`)
-			},
-			staticCmd: func() interface{} {
-				ops := []btcjson.OutPoint{{TxID: "123", Index: 0}}
-				return btcjson.NewStopNotifySpentCmd(ops)
-			},
-			marshalled: `{"jsonrpc":"1.0","method":"stopNotifySpent","params":[[{"txid":"123","index":0}]],"id":1}`,
-			unmarshalled: &btcjson.StopNotifySpentCmd{
-				OutPoints: []btcjson.OutPoint{{TxID: "123", Index: 0}},
-			},
-		},
-		{
 			name: "loadTxFilter",
 			newCmd: func() (interface{}, error) {
 				return btcjson.NewCmd("loadTxFilter", false, `["1Address"]`, `[{"txid":"0000000000000000000000000000000000000000000000000000000000000123","index":0}]`)

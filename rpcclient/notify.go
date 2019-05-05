@@ -36,8 +36,6 @@ type notificationState struct {
 	notifyNewTx             bool
 	notifyNewTxVerbose      bool
 	notifyNewTxSubnetworkID *string
-	notifyReceived          map[string]struct{}
-	notifySpent             map[btcjson.OutPoint]struct{}
 }
 
 // Copy returns a deep copy of the receiver.
@@ -47,24 +45,13 @@ func (s *notificationState) Copy() *notificationState {
 	stateCopy.notifyNewTx = s.notifyNewTx
 	stateCopy.notifyNewTxVerbose = s.notifyNewTxVerbose
 	stateCopy.notifyNewTxSubnetworkID = s.notifyNewTxSubnetworkID
-	stateCopy.notifyReceived = make(map[string]struct{})
-	for addr := range s.notifyReceived {
-		stateCopy.notifyReceived[addr] = struct{}{}
-	}
-	stateCopy.notifySpent = make(map[btcjson.OutPoint]struct{})
-	for op := range s.notifySpent {
-		stateCopy.notifySpent[op] = struct{}{}
-	}
 
 	return &stateCopy
 }
 
 // newNotificationState returns a new notification state ready to be populated.
 func newNotificationState() *notificationState {
-	return &notificationState{
-		notifyReceived: make(map[string]struct{}),
-		notifySpent:    make(map[btcjson.OutPoint]struct{}),
-	}
+	return &notificationState{}
 }
 
 // newNilFutureResult returns a new future result channel that already has the
@@ -81,11 +68,6 @@ func newNilFutureResult() chan *response {
 // notifications.  Since all of the functions are nil by default, all
 // notifications are effectively ignored until their handlers are set to a
 // concrete callback.
-//
-// NOTE: Unless otherwise documented, these handlers must NOT directly call any
-// blocking calls on the client instance since the input reader goroutine blocks
-// until the callback has completed.  Doing so will result in a deadlock
-// situation.
 type NotificationHandlers struct {
 	// OnClientConnected is invoked when the client connects or reconnects
 	// to the RPC server.  This callback is run async with the rest of the
@@ -107,51 +89,12 @@ type NotificationHandlers struct {
 	OnFilteredBlockAdded func(height uint64, header *wire.BlockHeader,
 		txs []*util.Tx)
 
-	// OnRecvTx is invoked when a transaction that receives funds to a
-	// registered address is received into the memory pool and also
-	// connected to the BlockDAG.  It will only be invoked if a
-	// preceding call to NotifyReceived, Rescan, or RescanEndHeight has been
-	// made to register for the notification and the function is non-nil.
-	//
-	// NOTE: Deprecated. Use OnRelevantTxAccepted instead.
-	OnRecvTx func(transaction *util.Tx, details *btcjson.BlockDetails)
-
-	// OnRedeemingTx is invoked when a transaction that spends a registered
-	// outpoint is received into the memory pool and also connected to the
-	// blockDAG.  It will only be invoked if a preceding call to
-	// NotifySpent, Rescan, or RescanEndHeight has been made to register for
-	// the notification and the function is non-nil.
-	//
-	// NOTE: The NotifyReceived will automatically register notifications
-	// for the outpoints that are now "owned" as a result of receiving
-	// funds to the registered addresses.  This means it is possible for
-	// this to invoked indirectly as the result of a NotifyReceived call.
-	//
-	// NOTE: Deprecated. Use OnRelevantTxAccepted instead.
-	OnRedeemingTx func(transaction *util.Tx, details *btcjson.BlockDetails)
-
 	// OnRelevantTxAccepted is invoked when an unmined transaction passes
 	// the client's transaction filter.
 	//
 	// NOTE: This is a btcsuite extension ported from
 	// github.com/decred/dcrrpcclient.
 	OnRelevantTxAccepted func(transaction []byte)
-
-	// OnRescanFinished is invoked after a rescan finishes due to a previous
-	// call to Rescan or RescanEndHeight.  Finished rescans should be
-	// signaled on this notification, rather than relying on the return
-	// result of a rescan request, due to how btcd may send various rescan
-	// notifications after the rescan request has already returned.
-	//
-	// NOTE: Deprecated. Not used with RescanBlocks.
-	OnRescanFinished func(hash *daghash.Hash, height int32, blkTime time.Time)
-
-	// OnRescanProgress is invoked periodically when a rescan is underway.
-	// It will only be invoked if a preceding call to Rescan or
-	// RescanEndHeight has been made and the function is non-nil.
-	//
-	// NOTE: Deprecated. Not used with RescanBlocks.
-	OnRescanProgress func(hash *daghash.Hash, height int32, blkTime time.Time)
 
 	// OnTxAccepted is invoked when a transaction is accepted into the
 	// memory pool.  It will only be invoked if a preceding call to
@@ -224,40 +167,6 @@ func (c *Client) handleNotification(ntfn *rawNotification) {
 		c.ntfnHandlers.OnFilteredBlockAdded(blockHeight,
 			blockHeader, transactions)
 
-	// OnRecvTx
-	case btcjson.RecvTxNtfnMethod:
-		// Ignore the notification if the client is not interested in
-		// it.
-		if c.ntfnHandlers.OnRecvTx == nil {
-			return
-		}
-
-		tx, block, err := parseChainTxNtfnParams(ntfn.Params)
-		if err != nil {
-			log.Warnf("Received invalid recvtx notification: %s",
-				err)
-			return
-		}
-
-		c.ntfnHandlers.OnRecvTx(tx, block)
-
-	// OnRedeemingTx
-	case btcjson.RedeemingTxNtfnMethod:
-		// Ignore the notification if the client is not interested in
-		// it.
-		if c.ntfnHandlers.OnRedeemingTx == nil {
-			return
-		}
-
-		tx, block, err := parseChainTxNtfnParams(ntfn.Params)
-		if err != nil {
-			log.Warnf("Received invalid redeemingtx "+
-				"notification: %s", err)
-			return
-		}
-
-		c.ntfnHandlers.OnRedeemingTx(tx, block)
-
 	// OnRelevantTxAccepted
 	case btcjson.RelevantTxAcceptedNtfnMethod:
 		// Ignore the notification if the client is not interested in
@@ -274,40 +183,6 @@ func (c *Client) handleNotification(ntfn *rawNotification) {
 		}
 
 		c.ntfnHandlers.OnRelevantTxAccepted(transaction)
-
-	// OnRescanFinished
-	case btcjson.RescanFinishedNtfnMethod:
-		// Ignore the notification if the client is not interested in
-		// it.
-		if c.ntfnHandlers.OnRescanFinished == nil {
-			return
-		}
-
-		hash, height, blkTime, err := parseRescanProgressParams(ntfn.Params)
-		if err != nil {
-			log.Warnf("Received invalid rescanfinished "+
-				"notification: %s", err)
-			return
-		}
-
-		c.ntfnHandlers.OnRescanFinished(hash, height, blkTime)
-
-	// OnRescanProgress
-	case btcjson.RescanProgressNtfnMethod:
-		// Ignore the notification if the client is not interested in
-		// it.
-		if c.ntfnHandlers.OnRescanProgress == nil {
-			return
-		}
-
-		hash, height, blkTime, err := parseRescanProgressParams(ntfn.Params)
-		if err != nil {
-			log.Warnf("Received invalid rescanprogress "+
-				"notification: %s", err)
-			return
-		}
-
-		c.ntfnHandlers.OnRescanProgress(hash, height, blkTime)
 
 	// OnTxAccepted
 	case btcjson.TxAcceptedNtfnMethod:
@@ -578,43 +453,6 @@ func parseChainTxNtfnParams(params []json.RawMessage) (*util.Tx,
 	return util.NewTx(&msgTx), block, nil
 }
 
-// parseRescanProgressParams parses out the height of the last rescanned block
-// from the parameters of rescanfinished and rescanprogress notifications.
-func parseRescanProgressParams(params []json.RawMessage) (*daghash.Hash, int32, time.Time, error) {
-	if len(params) != 3 {
-		return nil, 0, time.Time{}, wrongNumParams(len(params))
-	}
-
-	// Unmarshal first parameter as an string.
-	var hashStr string
-	err := json.Unmarshal(params[0], &hashStr)
-	if err != nil {
-		return nil, 0, time.Time{}, err
-	}
-
-	// Unmarshal second parameter as an integer.
-	var height int32
-	err = json.Unmarshal(params[1], &height)
-	if err != nil {
-		return nil, 0, time.Time{}, err
-	}
-
-	// Unmarshal third parameter as an integer.
-	var blkTime int64
-	err = json.Unmarshal(params[2], &blkTime)
-	if err != nil {
-		return nil, 0, time.Time{}, err
-	}
-
-	// Decode string encoding of block hash.
-	hash, err := daghash.NewHashFromStr(hashStr)
-	if err != nil {
-		return nil, 0, time.Time{}, err
-	}
-
-	return hash, height, time.Unix(blkTime, 0), nil
-}
-
 // parseTxAcceptedNtfnParams parses out the transaction hash and total amount
 // from the parameters of a txaccepted notification.
 func parseTxAcceptedNtfnParams(params []json.RawMessage) (*daghash.Hash,
@@ -801,38 +639,6 @@ func (c *Client) NotifyBlocks() error {
 	return c.NotifyBlocksAsync().Receive()
 }
 
-// FutureNotifySpentResult is a future promise to deliver the result of a
-// NotifySpentAsync RPC invocation (or an applicable error).
-//
-// NOTE: Deprecated. Use FutureLoadTxFilterResult instead.
-type FutureNotifySpentResult chan *response
-
-// Receive waits for the response promised by the future and returns an error
-// if the registration was not successful.
-func (r FutureNotifySpentResult) Receive() error {
-	_, err := receiveFuture(r)
-	return err
-}
-
-// notifySpentInternal is the same as notifySpentAsync except it accepts
-// the converted outpoints as a parameter so the client can more efficiently
-// recreate the previous notification state on reconnect.
-func (c *Client) notifySpentInternal(outpoints []btcjson.OutPoint) FutureNotifySpentResult {
-	// Not supported in HTTP POST mode.
-	if c.config.HTTPPostMode {
-		return newFutureError(ErrWebsocketsRequired)
-	}
-
-	// Ignore the notification if the client is not interested in
-	// notifications.
-	if c.ntfnHandlers == nil {
-		return newNilFutureResult()
-	}
-
-	cmd := btcjson.NewNotifySpentCmd(outpoints)
-	return c.sendCmd(cmd)
-}
-
 // newOutPointFromWire constructs the btcjson representation of a transaction
 // outpoint from the wire type.
 func newOutPointFromWire(op *wire.OutPoint) btcjson.OutPoint {
@@ -840,51 +646,6 @@ func newOutPointFromWire(op *wire.OutPoint) btcjson.OutPoint {
 		TxID:  op.TxID.String(),
 		Index: op.Index,
 	}
-}
-
-// NotifySpentAsync returns an instance of a type that can be used to get the
-// result of the RPC at some future time by invoking the Receive function on
-// the returned instance.
-//
-// See NotifySpent for the blocking version and more details.
-//
-// NOTE: This is a btcd extension and requires a websocket connection.
-//
-// NOTE: Deprecated. Use LoadTxFilterAsync instead.
-func (c *Client) NotifySpentAsync(outpoints []*wire.OutPoint) FutureNotifySpentResult {
-	// Not supported in HTTP POST mode.
-	if c.config.HTTPPostMode {
-		return newFutureError(ErrWebsocketsRequired)
-	}
-
-	// Ignore the notification if the client is not interested in
-	// notifications.
-	if c.ntfnHandlers == nil {
-		return newNilFutureResult()
-	}
-
-	ops := make([]btcjson.OutPoint, 0, len(outpoints))
-	for _, outpoint := range outpoints {
-		ops = append(ops, newOutPointFromWire(outpoint))
-	}
-	cmd := btcjson.NewNotifySpentCmd(ops)
-	return c.sendCmd(cmd)
-}
-
-// NotifySpent registers the client to receive notifications when the passed
-// transaction outputs are spent.  The notifications are delivered to the
-// notification handlers associated with the client.  Calling this function has
-// no effect if there are no notification handlers and will result in an error
-// if the client is configured to run in HTTP POST mode.
-//
-// The notifications delivered as a result of this call will be via
-// OnRedeemingTx.
-//
-// NOTE: This is a btcd extension and requires a websocket connection.
-//
-// NOTE: Deprecated. Use LoadTxFilter instead.
-func (c *Client) NotifySpent(outpoints []*wire.OutPoint) error {
-	return c.NotifySpentAsync(outpoints).Receive()
 }
 
 // FutureNotifyNewTransactionsResult is a future promise to deliver the result
@@ -934,105 +695,6 @@ func (c *Client) NotifyNewTransactionsAsync(verbose bool, subnetworkID *string) 
 // NOTE: This is a btcd extension and requires a websocket connection.
 func (c *Client) NotifyNewTransactions(verbose bool, subnetworkID *string) error {
 	return c.NotifyNewTransactionsAsync(verbose, subnetworkID).Receive()
-}
-
-// FutureNotifyReceivedResult is a future promise to deliver the result of a
-// NotifyReceivedAsync RPC invocation (or an applicable error).
-//
-// NOTE: Deprecated. Use FutureLoadTxFilterResult instead.
-type FutureNotifyReceivedResult chan *response
-
-// Receive waits for the response promised by the future and returns an error
-// if the registration was not successful.
-func (r FutureNotifyReceivedResult) Receive() error {
-	_, err := receiveFuture(r)
-	return err
-}
-
-// notifyReceivedInternal is the same as notifyReceivedAsync except it accepts
-// the converted addresses as a parameter so the client can more efficiently
-// recreate the previous notification state on reconnect.
-func (c *Client) notifyReceivedInternal(addresses []string) FutureNotifyReceivedResult {
-	// Not supported in HTTP POST mode.
-	if c.config.HTTPPostMode {
-		return newFutureError(ErrWebsocketsRequired)
-	}
-
-	// Ignore the notification if the client is not interested in
-	// notifications.
-	if c.ntfnHandlers == nil {
-		return newNilFutureResult()
-	}
-
-	// Convert addresses to strings.
-	cmd := btcjson.NewNotifyReceivedCmd(addresses)
-	return c.sendCmd(cmd)
-}
-
-// NotifyReceivedAsync returns an instance of a type that can be used to get the
-// result of the RPC at some future time by invoking the Receive function on
-// the returned instance.
-//
-// See NotifyReceived for the blocking version and more details.
-//
-// NOTE: This is a btcd extension and requires a websocket connection.
-//
-// NOTE: Deprecated. Use LoadTxFilterAsync instead.
-func (c *Client) NotifyReceivedAsync(addresses []util.Address) FutureNotifyReceivedResult {
-	// Not supported in HTTP POST mode.
-	if c.config.HTTPPostMode {
-		return newFutureError(ErrWebsocketsRequired)
-	}
-
-	// Ignore the notification if the client is not interested in
-	// notifications.
-	if c.ntfnHandlers == nil {
-		return newNilFutureResult()
-	}
-
-	// Convert addresses to strings.
-	addrs := make([]string, 0, len(addresses))
-	for _, addr := range addresses {
-		addrs = append(addrs, addr.String())
-	}
-	cmd := btcjson.NewNotifyReceivedCmd(addrs)
-	return c.sendCmd(cmd)
-}
-
-// NotifyReceived registers the client to receive notifications every time a
-// new transaction which pays to one of the passed addresses is accepted to
-// memory pool or in a block added to the block DAG.  In addition, when
-// one of these transactions is detected, the client is also automatically
-// registered for notifications when the new transaction outpoints the address
-// now has available are spent (See NotifySpent).  The notifications are
-// delivered to the notification handlers associated with the client.  Calling
-// this function has no effect if there are no notification handlers and will
-// result in an error if the client is configured to run in HTTP POST mode.
-//
-// The notifications delivered as a result of this call will be via one of
-// *OnRecvTx (for transactions that receive funds to one of the passed
-// addresses) or OnRedeemingTx (for transactions which spend from one
-// of the outpoints which are automatically registered upon receipt of funds to
-// the address).
-//
-// NOTE: This is a btcd extension and requires a websocket connection.
-//
-// NOTE: Deprecated. Use LoadTxFilter instead.
-func (c *Client) NotifyReceived(addresses []util.Address) error {
-	return c.NotifyReceivedAsync(addresses).Receive()
-}
-
-// FutureRescanResult is a future promise to deliver the result of a RescanAsync
-// or RescanEndHeightAsync RPC invocation (or an applicable error).
-//
-// NOTE: Deprecated. Use FutureRescanBlocksResult instead.
-type FutureRescanResult chan *response
-
-// Receive waits for the response promised by the future and returns an error
-// if the rescan was not successful.
-func (r FutureRescanResult) Receive() error {
-	_, err := receiveFuture(r)
-	return err
 }
 
 // FutureLoadTxFilterResult is a future promise to deliver the result
