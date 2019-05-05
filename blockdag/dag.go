@@ -1739,8 +1739,8 @@ func New(config *Config) (*BlockDAG, error) {
 	}
 
 	selectedTip := dag.selectedTip()
-	log.Infof("DAG state (height %d, hash %s, work %d)",
-		selectedTip.height, selectedTip.hash, selectedTip.workSum)
+	log.Infof("DAG state (height %d, hash %s)",
+		selectedTip.height, selectedTip.hash)
 
 	return &dag, nil
 }
