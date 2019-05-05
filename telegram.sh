@@ -9,6 +9,9 @@ PR_AUTHOR=$4
 PR_TITLE=$5
 PR_LINK=$6
 
+# Start atd
+service atd start
+
 echo "hello!!! ${API_TOKEN} ${CHAT_ID} ${BUILD_URL} ${PR_AUTHOR} ${PR_TITLE} ${PR_LINK}" > aaab.txt
 
 # Build the failure message
