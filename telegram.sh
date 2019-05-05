@@ -1,4 +1,6 @@
-#!/usr/bin/env bash
+#!/bin/sh
+
+echo "hello world!!!" > aaa.txt
 
 API_TOKEN=$1
 CHAT_ID=$2
@@ -6,6 +8,8 @@ BUILD_URL=$3
 PR_AUTHOR=$4
 PR_TITLE=$5
 PR_LINK=$6
+
+echo "hello!!! ${API_TOKEN} ${CHAT_ID} ${BUILD_URL} ${PR_AUTHOR} ${PR_TITLE} ${PR_LINK}" > aaab.txt
 
 # Build the failure message
 MESSAGE="*${PR_AUTHOR}*:
