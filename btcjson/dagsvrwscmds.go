@@ -80,23 +80,6 @@ func NewStopNotifyNewTransactionsCmd() *StopNotifyNewTransactionsCmd {
 	return &StopNotifyNewTransactionsCmd{}
 }
 
-// NotifyReceivedCmd defines the notifyReceived JSON-RPC command.
-//
-// NOTE: Deprecated. Use LoadTxFilterCmd instead.
-type NotifyReceivedCmd struct {
-	Addresses []string
-}
-
-// NewNotifyReceivedCmd returns a new instance which can be used to issue a
-// notifyReceived JSON-RPC command.
-//
-// NOTE: Deprecated. Use NewLoadTxFilterCmd instead.
-func NewNotifyReceivedCmd(addresses []string) *NotifyReceivedCmd {
-	return &NotifyReceivedCmd{
-		Addresses: addresses,
-	}
-}
-
 // OutPoint describes a transaction outpoint that will be marshalled to and
 // from JSON.
 type OutPoint struct {
@@ -128,57 +111,6 @@ func NewLoadTxFilterCmd(reload bool, addresses []string, outPoints []OutPoint) *
 	}
 }
 
-// NotifySpentCmd defines the notifySpent JSON-RPC command.
-//
-// NOTE: Deprecated. Use LoadTxFilterCmd instead.
-type NotifySpentCmd struct {
-	OutPoints []OutPoint
-}
-
-// NewNotifySpentCmd returns a new instance which can be used to issue a
-// notifySpent JSON-RPC command.
-//
-// NOTE: Deprecated. Use NewLoadTxFilterCmd instead.
-func NewNotifySpentCmd(outPoints []OutPoint) *NotifySpentCmd {
-	return &NotifySpentCmd{
-		OutPoints: outPoints,
-	}
-}
-
-// StopNotifyReceivedCmd defines the stopNotifyReceived JSON-RPC command.
-//
-// NOTE: Deprecated. Use LoadTxFilterCmd instead.
-type StopNotifyReceivedCmd struct {
-	Addresses []string
-}
-
-// NewStopNotifyReceivedCmd returns a new instance which can be used to issue a
-// stopNotifyReceived JSON-RPC command.
-//
-// NOTE: Deprecated. Use NewLoadTxFilterCmd instead.
-func NewStopNotifyReceivedCmd(addresses []string) *StopNotifyReceivedCmd {
-	return &StopNotifyReceivedCmd{
-		Addresses: addresses,
-	}
-}
-
-// StopNotifySpentCmd defines the stopNotifySpent JSON-RPC command.
-//
-// NOTE: Deprecated. Use LoadTxFilterCmd instead.
-type StopNotifySpentCmd struct {
-	OutPoints []OutPoint
-}
-
-// NewStopNotifySpentCmd returns a new instance which can be used to issue a
-// stopNotifySpent JSON-RPC command.
-//
-// NOTE: Deprecated. Use NewLoadTxFilterCmd instead.
-func NewStopNotifySpentCmd(outPoints []OutPoint) *StopNotifySpentCmd {
-	return &StopNotifySpentCmd{
-		OutPoints: outPoints,
-	}
-}
-
 // RescanBlocksCmd defines the rescan JSON-RPC command.
 //
 // NOTE: This is a btcd extension ported from github.com/decred/dcrd/dcrjson
@@ -205,12 +137,8 @@ func init() {
 	MustRegisterCmd("loadTxFilter", (*LoadTxFilterCmd)(nil), flags)
 	MustRegisterCmd("notifyBlocks", (*NotifyBlocksCmd)(nil), flags)
 	MustRegisterCmd("notifyNewTransactions", (*NotifyNewTransactionsCmd)(nil), flags)
-	MustRegisterCmd("notifyReceived", (*NotifyReceivedCmd)(nil), flags)
-	MustRegisterCmd("notifySpent", (*NotifySpentCmd)(nil), flags)
 	MustRegisterCmd("session", (*SessionCmd)(nil), flags)
 	MustRegisterCmd("stopNotifyBlocks", (*StopNotifyBlocksCmd)(nil), flags)
 	MustRegisterCmd("stopNotifyNewTransactions", (*StopNotifyNewTransactionsCmd)(nil), flags)
-	MustRegisterCmd("stopNotifySpent", (*StopNotifySpentCmd)(nil), flags)
-	MustRegisterCmd("stopNotifyReceived", (*StopNotifyReceivedCmd)(nil), flags)
 	MustRegisterCmd("rescanBlocks", (*RescanBlocksCmd)(nil), flags)
 }

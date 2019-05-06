@@ -610,42 +610,15 @@ var helpDescsEnUS = map[string]string{
 	// StopNotifyNewTransactionsCmd help.
 	"stopNotifyNewTransactions--synopsis": "Stop sending either a txaccepted or a txacceptedverbose notification when a new transaction is accepted into the mempool.",
 
-	// NotifyReceivedCmd help.
-	"notifyReceived--synopsis": "Send a recvtx notification when a transaction added to mempool or appears in a newly-attached block contains a txout pkScript sending to any of the passed addresses.\n" +
-		"Matching outpoints are automatically registered for redeemingtx notifications.",
-	"notifyReceived-addresses": "List of address to receive notifications about",
-
-	// StopNotifyReceivedCmd help.
-	"stopNotifyReceived--synopsis": "Cancel registered receive notifications for each passed address.",
-	"stopNotifyReceived-addresses": "List of address to cancel receive notifications for",
-
 	// OutPoint help.
 	"outPoint-txid":  "The hex-encoded bytes of the outPoint transaction ID",
 	"outPoint-index": "The index of the outPoint",
-
-	// NotifySpentCmd help.
-	"notifySpent--synopsis": "Send a redeemingtx notification when a transaction spending an outPoint appears in mempool (if relayed to this btcd instance) and when such a transaction first appears in a newly-attached block.",
-	"notifySpent-outPoints": "List of transaction outpoints to monitor.",
-
-	// StopNotifySpentCmd help.
-	"stopNotifySpent--synopsis": "Cancel registered spending notifications for each passed outPoint.",
-	"stopNotifySpent-outPoints": "List of transaction outpoints to stop monitoring.",
 
 	// LoadTxFilterCmd help.
 	"loadTxFilter--synopsis": "Load, add to, or reload a websocket client's transaction filter for mempool transactions, new blocks and rescanBlocks.",
 	"loadTxFilter-reload":    "Load a new filter instead of adding data to an existing one",
 	"loadTxFilter-addresses": "Array of addresses to add to the transaction filter",
 	"loadTxFilter-outPoints": "Array of outpoints to add to the transaction filter",
-
-	// Rescan help.
-	"rescan--synopsis": "Rescan block chain for transactions to addresses.\n" +
-		"When the endblock parameter is omitted, the rescan continues through the best block in the main chain.\n" +
-		"Rescan results are sent as recvtx and redeemingtx notifications.\n" +
-		"This call returns once the rescan completes.",
-	"rescan-beginBlock": "Hash of the first block to begin rescanning",
-	"rescan-addresses":  "List of addresses to include in the rescan",
-	"rescan-outPoints":  "List of transaction outpoints to include in the rescan",
-	"rescan-endBlock":   "Hash of final block to rescan",
 
 	// RescanBlocks help.
 	"rescanBlocks--synopsis":   "Rescan blocks for transactions matching the loaded transaction filter.",
@@ -742,11 +715,6 @@ var rpcResultTypes = map[string][]interface{}{
 	"stopNotifyBlocks":          nil,
 	"notifyNewTransactions":     nil,
 	"stopNotifyNewTransactions": nil,
-	"notifyReceived":            nil,
-	"stopNotifyReceived":        nil,
-	"notifySpent":               nil,
-	"stopNotifySpent":           nil,
-	"rescan":                    nil,
 	"rescanBlocks":              {(*[]btcjson.RescannedBlock)(nil)},
 }
 
