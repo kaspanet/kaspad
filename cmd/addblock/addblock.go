@@ -12,6 +12,7 @@ import (
 	"github.com/btcsuite/btclog"
 	"github.com/daglabs/btcd/database"
 	"github.com/daglabs/btcd/limits"
+	"github.com/daglabs/btcd/util/panics"
 )
 
 const (
@@ -20,8 +21,9 @@ const (
 )
 
 var (
-	cfg *config
-	log btclog.Logger
+	cfg   *config
+	log   btclog.Logger
+	spawn func(func())
 )
 
 // loadBlockDB opens the block database and returns a handle to it.
@@ -70,6 +72,7 @@ func realMain() error {
 	backendLogger := btclog.NewBackend(os.Stdout)
 	defer os.Stdout.Sync()
 	log = backendLogger.Logger("MAIN")
+	spawn = panics.GoroutineWrapperFunc(log)
 
 	// Load the block database.
 	db, err := loadBlockDB()

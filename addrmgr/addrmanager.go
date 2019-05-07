@@ -724,7 +724,7 @@ func (a *AddrManager) Start() {
 
 	// Start the address ticker to save addresses periodically.
 	a.wg.Add(1)
-	go a.addressHandler()
+	spawn(a.addressHandler)
 }
 
 // Stop gracefully shuts down the address manager by stopping the main handler.

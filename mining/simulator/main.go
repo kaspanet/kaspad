@@ -3,13 +3,13 @@ package main
 import (
 	"fmt"
 	"os"
-	"runtime/debug"
 
 	"github.com/daglabs/btcd/signal"
+	"github.com/daglabs/btcd/util/panics"
 )
 
 func main() {
-	defer handlePanic()
+	defer panics.HandlePanic(log)
 	cfg, err := parseConfig()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error parsing command-line arguments: %s", err)
@@ -31,12 +31,12 @@ func main() {
 	}
 	defer disconnect(clients)
 
-	go func() {
+	spawn(func() {
 		err = mineLoop(clients)
 		if err != nil {
 			panic(fmt.Errorf("Error in main loop: %s", err))
 		}
-	}()
+	})
 
 	interrupt := signal.InterruptListener()
 	<-interrupt
@@ -45,13 +45,5 @@ func main() {
 func disconnect(clients []*simulatorClient) {
 	for _, client := range clients {
 		client.Disconnect()
-	}
-}
-
-func handlePanic() {
-	err := recover()
-	if err != nil {
-		log.Errorf("Fatal error: %s", err)
-		log.Errorf("Stack trace: %s", debug.Stack())
 	}
 }

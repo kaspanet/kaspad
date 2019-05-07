@@ -214,7 +214,7 @@ func (cm *ConnManager) handleFailedConn(c *ConnReq) {
 				cm.NewConnReq()
 			})
 		} else {
-			go cm.NewConnReq()
+			spawn(cm.NewConnReq)
 		}
 	}
 }
@@ -507,7 +507,7 @@ func (cm *ConnManager) Start() {
 
 	log.Trace("Connection manager started")
 	cm.wg.Add(1)
-	go cm.connHandler()
+	spawn(cm.connHandler)
 
 	// Start all the listeners so long as the caller requested them and
 	// provided a callback to be invoked when connections are accepted.
@@ -519,7 +519,7 @@ func (cm *ConnManager) Start() {
 	}
 
 	for i := atomic.LoadUint64(&cm.connReqCount); i < uint64(cm.cfg.TargetOutbound); i++ {
-		go cm.NewConnReq()
+		spawn(cm.NewConnReq)
 	}
 }
 

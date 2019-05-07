@@ -2,11 +2,13 @@ package main
 
 import (
 	"fmt"
-	"github.com/btcsuite/btclog"
-	"github.com/daglabs/btcd/rpcclient"
-	"github.com/jrick/logrotate/rotator"
 	"os"
 	"path/filepath"
+
+	"github.com/btcsuite/btclog"
+	"github.com/daglabs/btcd/rpcclient"
+	"github.com/daglabs/btcd/util/panics"
+	"github.com/jrick/logrotate/rotator"
 )
 
 type logWriter struct{}
@@ -23,6 +25,7 @@ var (
 	backendLog = btclog.NewBackend(logWriter{})
 	LogRotator *rotator.Rotator
 	log        = backendLog.Logger("MNSM")
+	spawn      = panics.GoroutineWrapperFunc(log)
 	initiated  = false
 )
 

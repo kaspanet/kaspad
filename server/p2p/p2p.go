@@ -1826,7 +1826,9 @@ func (s *Server) inboundPeerConnected(conn net.Conn) {
 	sp.isWhitelisted = isWhitelisted(conn.RemoteAddr())
 	sp.Peer = peer.NewInboundPeer(newPeerConfig(sp))
 	sp.AssociateConnection(conn)
-	go s.peerDoneHandler(sp)
+	spawn(func() {
+		s.peerDoneHandler(sp)
+	})
 }
 
 // outboundPeerConnected is invoked by the connection manager when a new
@@ -1845,7 +1847,9 @@ func (s *Server) outboundPeerConnected(c *connmgr.ConnReq, conn net.Conn) {
 	sp.connReq = c
 	sp.isWhitelisted = isWhitelisted(conn.RemoteAddr())
 	sp.AssociateConnection(conn)
-	go s.peerDoneHandler(sp)
+	spawn(func() {
+		s.peerDoneHandler(sp)
+	})
 	s.addrManager.Attempt(sp.NA())
 }
 
@@ -1911,7 +1915,7 @@ func (s *Server) peerHandler() {
 			seedFromSubNetwork(config.MainConfig().SubnetworkID)
 		}
 	}
-	go s.connManager.Start()
+	spawn(s.connManager.Start)
 
 out:
 	for {
@@ -2109,11 +2113,11 @@ func (s *Server) Start() {
 	// Start the peer handler which in turn starts the address and block
 	// managers.
 	s.wg.Add(1)
-	go s.peerHandler()
+	spawn(s.peerHandler)
 
 	if s.nat != nil {
 		s.wg.Add(1)
-		go s.upnpUpdateThread()
+		spawn(s.upnpUpdateThread)
 	}
 
 	cfg := config.MainConfig()
@@ -2123,7 +2127,7 @@ func (s *Server) Start() {
 
 		// Start the rebroadcastHandler, which ensures user tx received by
 		// the RPC server are rebroadcast until being included in a block.
-		go s.rebroadcastHandler()
+		spawn(s.rebroadcastHandler)
 	}
 }
 
@@ -2158,7 +2162,7 @@ func (s *Server) ScheduleShutdown(duration time.Duration) {
 		return
 	}
 	srvrLog.Warnf("Server shutdown in %s", duration)
-	go func() {
+	spawn(func() {
 		remaining := duration
 		tickDuration := dynamicTickDuration(remaining)
 		done := time.After(remaining)
@@ -2186,7 +2190,7 @@ func (s *Server) ScheduleShutdown(duration time.Duration) {
 				srvrLog.Warnf("Server shutdown in %s", remaining)
 			}
 		}
-	}()
+	})
 }
 
 // ParseListeners determines whether each listen address is IPv4 and IPv6 and

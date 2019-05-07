@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"runtime/debug"
 	"sync/atomic"
 
 	"github.com/daglabs/btcd/btcec"
@@ -11,6 +10,7 @@ import (
 	"github.com/daglabs/btcd/signal"
 	"github.com/daglabs/btcd/util"
 	"github.com/daglabs/btcd/util/base58"
+	"github.com/daglabs/btcd/util/panics"
 )
 
 var (
@@ -31,7 +31,7 @@ func privateKeyToP2pkhAddress(key *btcec.PrivateKey, net *dagconfig.Params) (uti
 }
 
 func main() {
-	defer handlePanic()
+	defer panics.HandlePanic(log)
 
 	cfg, err := parseConfig()
 	if err != nil {
@@ -73,13 +73,5 @@ func disconnect(clients []*rpcclient.Client) {
 	log.Infof("Disconnecting clients")
 	for _, client := range clients {
 		client.Disconnect()
-	}
-}
-
-func handlePanic() {
-	err := recover()
-	if err != nil {
-		log.Errorf("Fatal error: %s", err)
-		log.Errorf("Stack trace: %s", debug.Stack())
 	}
 }

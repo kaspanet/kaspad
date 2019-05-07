@@ -1231,13 +1231,13 @@ func (sm *SyncManager) handleBlockDAGNotification(notification *blockdag.Notific
 
 		// Update mempool
 		ch := make(chan mempool.NewBlockMsg)
-		go func() {
+		spawn(func() {
 			err := sm.txMemPool.HandleNewBlock(block, ch)
 			close(ch)
 			if err != nil {
 				panic(fmt.Sprintf("HandleNewBlock failed to handle block %s", block.Hash()))
 			}
-		}()
+		})
 		for msg := range ch {
 			sm.peerNotifier.TransactionConfirmed(msg.Tx)
 			sm.peerNotifier.AnnounceNewTransactions(msg.AcceptedTxs)
@@ -1336,7 +1336,7 @@ func (sm *SyncManager) Start() {
 
 	log.Trace("Starting sync manager")
 	sm.wg.Add(1)
-	go sm.blockHandler()
+	spawn(sm.blockHandler)
 }
 
 // Stop gracefully shuts down the sync manager by stopping all asynchronous

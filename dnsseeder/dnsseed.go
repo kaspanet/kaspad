@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/daglabs/btcd/dagconfig/daghash"
+	"github.com/daglabs/btcd/util/panics"
 
 	"github.com/daglabs/btcd/connmgr"
 	"github.com/daglabs/btcd/peer"
@@ -155,6 +156,7 @@ func creep() {
 }
 
 func main() {
+	defer panics.HandlePanic(log)
 	cfg, err := loadConfig()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "loadConfig: %v\n", err)
@@ -193,11 +195,11 @@ func main() {
 	}
 
 	wg.Add(1)
-	go creep()
+	spawn(creep)
 
 	dnsServer := NewDNSServer(cfg.Host, cfg.Nameserver, cfg.Listen)
 	wg.Add(1)
-	go dnsServer.Start()
+	spawn(dnsServer.Start)
 
 	defer func() {
 		log.Infof("Gracefully shutting down the seeder...")

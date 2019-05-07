@@ -21,10 +21,10 @@ import (
 	"github.com/daglabs/btcd/database"
 	_ "github.com/daglabs/btcd/database/ffldb"
 	"github.com/daglabs/btcd/limits"
-	"github.com/daglabs/btcd/logger"
 	"github.com/daglabs/btcd/server"
 	"github.com/daglabs/btcd/signal"
 	"github.com/daglabs/btcd/util/fs"
+	"github.com/daglabs/btcd/util/panics"
 	"github.com/daglabs/btcd/version"
 )
 
@@ -56,11 +56,7 @@ func btcdMain(serverChan chan<- *server.Server) error {
 		return err
 	}
 	cfg = config.MainConfig()
-	defer func() {
-		if logger.LogRotator != nil {
-			logger.LogRotator.Close()
-		}
-	}()
+	defer panics.HandlePanic(btcdLog)
 
 	// Get a channel that will be closed when a shutdown signal has been
 	// triggered either from an OS signal such as SIGINT (Ctrl+C) or from
@@ -73,14 +69,14 @@ func btcdMain(serverChan chan<- *server.Server) error {
 
 	// Enable http profiling server if requested.
 	if cfg.Profile != "" {
-		go func() {
+		spawn(func() {
 			listenAddr := net.JoinHostPort("", cfg.Profile)
 			btcdLog.Infof("Profile server listening on %s", listenAddr)
 			profileRedirect := http.RedirectHandler("/debug/pprof",
 				http.StatusSeeOther)
 			http.Handle("/", profileRedirect)
 			btcdLog.Errorf("%s", http.ListenAndServe(listenAddr, nil))
-		}()
+		})
 	}
 
 	// Write cpu profile if requested.

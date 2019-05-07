@@ -51,9 +51,9 @@ func mainInterruptHandler() {
 			}
 
 			// Signal the main goroutine to shutdown.
-			go func() {
+			spawn(func() {
 				shutdownChannel <- nil
-			}()
+			})
 
 		case handler := <-addHandlerChannel:
 			// The shutdown signal has already been received, so
@@ -75,7 +75,7 @@ func addInterruptHandler(handler func()) {
 	if interruptChannel == nil {
 		interruptChannel = make(chan os.Signal, 1)
 		signal.Notify(interruptChannel, os.Interrupt)
-		go mainInterruptHandler()
+		spawn(mainInterruptHandler)
 	}
 
 	addHandlerChannel <- handler

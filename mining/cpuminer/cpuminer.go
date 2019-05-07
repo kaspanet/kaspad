@@ -372,7 +372,9 @@ func (m *CPUMiner) miningWorkerController() {
 			runningWorkers = append(runningWorkers, quit)
 
 			m.workerWg.Add(1)
-			go m.generateBlocks(quit)
+			spawn(func() {
+				m.generateBlocks(quit)
+			})
 		}
 	}
 
@@ -437,8 +439,8 @@ func (m *CPUMiner) Start() {
 	m.quit = make(chan struct{})
 	m.speedMonitorQuit = make(chan struct{})
 	m.wg.Add(2)
-	go m.speedMonitor()
-	go m.miningWorkerController()
+	spawn(m.speedMonitor)
+	spawn(m.miningWorkerController)
 
 	m.started = true
 	log.Infof("CPU miner started, number of workers %d", m.numWorkers)
@@ -552,7 +554,7 @@ func (m *CPUMiner) GenerateNBlocks(n uint32) ([]*daghash.Hash, error) {
 
 	m.speedMonitorQuit = make(chan struct{})
 	m.wg.Add(1)
-	go m.speedMonitor()
+	spawn(m.speedMonitor)
 
 	m.Unlock()
 
