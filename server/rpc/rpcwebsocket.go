@@ -812,8 +812,8 @@ func (m *wsNotificationManager) RemoveClient(wsc *wsClient) {
 // websocket client notifications.
 func (m *wsNotificationManager) Start() {
 	m.wg.Add(2)
-	go m.queueHandler()
-	go m.notificationHandler()
+	spawn(m.queueHandler)
+	spawn(m.notificationHandler)
 }
 
 // WaitForShutdown blocks until all notification manager goroutines have
@@ -1078,10 +1078,10 @@ out:
 		// read of the next request from the websocket client and allow
 		// many requests to be waited on concurrently.
 		c.serviceRequestSem.acquire()
-		go func() {
+		spawn(func() {
 			c.serviceRequest(cmd)
 			c.serviceRequestSem.release()
-		}()
+		})
 	}
 
 	// Ensure the connection is closed.
@@ -1303,9 +1303,9 @@ func (c *wsClient) Start() {
 
 	// Start processing input and output.
 	c.wg.Add(3)
-	go c.inHandler()
-	go c.notificationQueueHandler()
-	go c.outHandler()
+	spawn(c.inHandler)
+	spawn(c.notificationQueueHandler)
+	spawn(c.outHandler)
 }
 
 // WaitForShutdown blocks until the websocket client goroutines are stopped

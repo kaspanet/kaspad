@@ -6,12 +6,14 @@ package rpcclient
 
 import (
 	"github.com/btcsuite/btclog"
+	"github.com/daglabs/btcd/util/gowrapper"
 )
 
 // log is a logger that is initialized with no output filters.  This
 // means the package will not perform any logging by default until the caller
 // requests it.
 var log btclog.Logger
+var spawn func(func())
 
 // The default amount of logging is none.
 func init() {
@@ -22,11 +24,13 @@ func init() {
 // by default until UseLogger is called.
 func DisableLog() {
 	log = btclog.Disabled
+	spawn = gowrapper.Generate(log)
 }
 
 // UseLogger uses a specified Logger to output package logging info.
 func UseLogger(logger btclog.Logger) {
 	log = logger
+	spawn = gowrapper.Generate(log)
 }
 
 // LogClosure is a closure that can be printed with %s to be used to

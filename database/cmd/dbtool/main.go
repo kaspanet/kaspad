@@ -13,6 +13,7 @@ import (
 	"github.com/btcsuite/btclog"
 	"github.com/daglabs/btcd/database"
 	"github.com/daglabs/btcd/logger"
+	"github.com/daglabs/btcd/util/gowrapper"
 	flags "github.com/jessevdk/go-flags"
 )
 
@@ -23,6 +24,7 @@ const (
 
 var (
 	log             btclog.Logger
+	spawn           = gowrapper.Generate(log)
 	shutdownChannel = make(chan error)
 )
 

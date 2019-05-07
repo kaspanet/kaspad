@@ -1503,12 +1503,12 @@ func (state *gbtWorkState) notifyLongPollers(tipHashes []*daghash.Hash, lastGene
 // clients with a new block template when their existing block template is
 // stale due to the newly added block.
 func (state *gbtWorkState) NotifyBlockAdded(tipHashes []*daghash.Hash) {
-	go func() {
+	spawn(func() {
 		state.Lock()
 		defer state.Unlock()
 
 		state.notifyLongPollers(tipHashes, state.lastTxUpdate)
-	}()
+	})
 }
 
 // NotifyMempoolTx uses the new last updated time for the transaction memory
@@ -1516,7 +1516,7 @@ func (state *gbtWorkState) NotifyBlockAdded(tipHashes []*daghash.Hash) {
 // existing block template is stale due to enough time passing and the contents
 // of the memory pool changing.
 func (state *gbtWorkState) NotifyMempoolTx(lastUpdated time.Time) {
-	go func() {
+	spawn(func() {
 		state.Lock()
 		defer state.Unlock()
 
@@ -1531,7 +1531,7 @@ func (state *gbtWorkState) NotifyMempoolTx(lastUpdated time.Time) {
 
 			state.notifyLongPollers(state.tipHashes, lastUpdated)
 		}
-	}()
+	})
 }
 
 // templateUpdateChan returns a channel that will be closed once the block
@@ -3918,12 +3918,12 @@ func (s *Server) jsonRPCRead(w http.ResponseWriter, r *http.Request, isAdmin boo
 		// Setup a close notifier.  Since the connection is hijacked,
 		// the CloseNotifer on the ResponseWriter is not available.
 		closeChan := make(chan struct{}, 1)
-		go func() {
+		spawn(func() {
 			_, err := conn.Read(make([]byte, 1))
 			if err != nil {
 				close(closeChan)
 			}
-		}()
+		})
 
 		// Check if the user is limited and set error if method unauthorized
 		if !isAdmin {

@@ -137,7 +137,7 @@ func NewManager(dataDir string) (*Manager, error) {
 	}
 
 	amgr.wg.Add(1)
-	go amgr.addressHandler()
+	spawn(amgr.addressHandler)
 
 	return &amgr, nil
 }

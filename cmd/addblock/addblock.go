@@ -20,8 +20,9 @@ const (
 )
 
 var (
-	cfg *config
-	log btclog.Logger
+	cfg   *config
+	log   btclog.Logger
+	spawn func(func())
 )
 
 // loadBlockDB opens the block database and returns a handle to it.

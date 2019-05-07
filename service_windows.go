@@ -67,10 +67,10 @@ func (s *btcdService) Execute(args []string, r <-chan svc.ChangeRequest, changes
 	// it is started so it can be gracefully stopped.
 	doneChan := make(chan error)
 	serverChan := make(chan *server.Server)
-	go func() {
+	spawn(func() {
 		err := btcdMain(serverChan)
 		doneChan <- err
-	}()
+	})
 
 	// Service is now started.
 	changes <- svc.Status{State: svc.Running, Accepts: cmdsAccepted}

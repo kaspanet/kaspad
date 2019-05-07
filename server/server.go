@@ -132,10 +132,10 @@ func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params
 		}
 
 		// Signal process shutdown when the RPC server requests it.
-		go func() {
+		spawn(func() {
 			<-s.rpcServer.RequestedProcessShutdown()
 			signal.ShutdownRequestChannel <- struct{}{}
-		}()
+		})
 	}
 
 	return s, nil

@@ -13,6 +13,7 @@ import (
 	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/logger"
 	"github.com/daglabs/btcd/txscript"
+	"github.com/daglabs/btcd/util/gowrapper"
 	"github.com/daglabs/btcd/wire"
 )
 
@@ -26,10 +27,12 @@ const (
 // means the package will not perform any logging by default until the caller
 // requests it.
 var log btclog.Logger
+var spawn func(func())
 
 // The default amount of logging is none.
 func init() {
 	log, _ = logger.Get(logger.SubsystemTags.PEER)
+	spawn = gowrapper.Generate(log)
 }
 
 // LogClosure is a closure that can be printed with %s to be used to

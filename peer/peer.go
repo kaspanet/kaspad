@@ -1868,9 +1868,9 @@ func (p *Peer) QueueMessage(msg wire.Message, doneChan chan<- struct{}) {
 	// it is marked as disconnected and *then* it drains the channels.
 	if !p.Connected() {
 		if doneChan != nil {
-			go func() {
+			spawn(func() {
 				doneChan <- struct{}{}
-			}()
+			})
 		}
 		return
 	}
@@ -1925,12 +1925,12 @@ func (p *Peer) AssociateConnection(conn net.Conn) {
 		p.na = na
 	}
 
-	go func() {
+	spawn(func() {
 		if err := p.start(); err != nil {
 			log.Debugf("Cannot start peer %s: %s", p, err)
 			p.Disconnect()
 		}
-	}()
+	})
 }
 
 // Connected returns whether or not the peer is currently connected.
@@ -1961,13 +1961,13 @@ func (p *Peer) start() error {
 	log.Tracef("Starting peer %s", p)
 
 	negotiateErr := make(chan error, 1)
-	go func() {
+	spawn(func() {
 		if p.inbound {
 			negotiateErr <- p.negotiateInboundProtocol()
 		} else {
 			negotiateErr <- p.negotiateOutboundProtocol()
 		}
-	}()
+	})
 
 	// Negotiate the protocol within the specified negotiateTimeout.
 	select {
@@ -1982,11 +1982,11 @@ func (p *Peer) start() error {
 
 	// The protocol has been negotiated successfully so start processing input
 	// and output messages.
-	go p.stallHandler()
-	go p.inHandler()
-	go p.queueHandler()
-	go p.outHandler()
-	go p.pingHandler()
+	spawn(p.stallHandler)
+	spawn(p.inHandler)
+	spawn(p.queueHandler)
+	spawn(p.outHandler)
+	spawn(p.pingHandler)
 
 	// Send our verack message now that the IO processing machinery has started.
 	p.QueueMessage(wire.NewMsgVerAck(), nil)

@@ -127,7 +127,7 @@ func (v *txValidator) Validate(items []*txValidateItem) error {
 	// Start up validation handlers that are used to asynchronously
 	// validate each transaction input.
 	for i := 0; i < maxGoRoutines; i++ {
-		go v.validateHandler()
+		spawn(v.validateHandler)
 	}
 
 	// Validate each of the inputs.  The quit channel is closed when any

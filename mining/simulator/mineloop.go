@@ -164,7 +164,7 @@ func mineLoop(clients []*simulatorClient) error {
 
 	templateStopChan := make(chan struct{})
 
-	go func() {
+	spawn(func() {
 		for {
 			currentClient := getRandomClient(clients)
 			currentClient.notifyForNewBlocks = true
@@ -182,7 +182,7 @@ func mineLoop(clients []*simulatorClient) error {
 				return
 			}
 		}
-	}()
+	})
 
 	err := <-errChan
 
