@@ -7,7 +7,7 @@ package server
 import (
 	"github.com/btcsuite/btclog"
 	"github.com/daglabs/btcd/logger"
-	"github.com/daglabs/btcd/util/gowrapper"
+	"github.com/daglabs/btcd/util/panics"
 )
 
 // log is a logger that is initialized with no output filters.  This
@@ -24,5 +24,5 @@ func init() {
 	rpcsLog, _ = logger.Get(logger.SubsystemTags.RPCS)
 	amgrLog, _ = logger.Get(logger.SubsystemTags.AMGR)
 
-	spawn = gowrapper.Generate(srvrLog)
+	spawn = panics.GoroutineWrapperFunc(srvrLog)
 }

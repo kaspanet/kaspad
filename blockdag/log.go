@@ -7,7 +7,7 @@ package blockdag
 import (
 	"github.com/btcsuite/btclog"
 	"github.com/daglabs/btcd/logger"
-	"github.com/daglabs/btcd/util/gowrapper"
+	"github.com/daglabs/btcd/util/panics"
 )
 
 // log is a logger that is initialized with no output filters.  This
@@ -19,5 +19,5 @@ var spawn func(func())
 // The default amount of logging is none.
 func init() {
 	log, _ = logger.Get(logger.SubsystemTags.CHAN)
-	spawn = gowrapper.Generate(log)
+	spawn = panics.GoroutineWrapperFunc(log)
 }

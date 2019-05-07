@@ -7,7 +7,7 @@ package p2p
 import (
 	"github.com/btcsuite/btclog"
 	"github.com/daglabs/btcd/logger"
-	"github.com/daglabs/btcd/util/gowrapper"
+	"github.com/daglabs/btcd/util/panics"
 )
 
 // log is a logger that is initialized with no output filters.  This
@@ -19,7 +19,7 @@ var spawn func(func())
 func init() {
 	srvrLog, _ = logger.Get(logger.SubsystemTags.SRVR)
 	peerLog, _ = logger.Get(logger.SubsystemTags.PEER)
-	spawn = gowrapper.Generate(peerLog)
+	spawn = panics.GoroutineWrapperFunc(peerLog)
 
 	txmpLog, _ = logger.Get(logger.SubsystemTags.TXMP)
 	indxLog, _ = logger.Get(logger.SubsystemTags.INDX)

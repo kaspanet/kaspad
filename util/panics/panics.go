@@ -19,3 +19,13 @@ func HandlePanic(log btclog.Logger) {
 		os.Exit(1)
 	}
 }
+
+// GoroutineWrapperFunc returns a goroutine wrapper function that handles panics and write them to the log.
+func GoroutineWrapperFunc(log btclog.Logger) func(func()) {
+	return func(f func()) {
+		go func() {
+			defer HandlePanic(log)
+			f()
+		}()
+	}
+}

@@ -7,7 +7,7 @@ package addrmgr
 import (
 	"github.com/btcsuite/btclog"
 	"github.com/daglabs/btcd/logger"
-	"github.com/daglabs/btcd/util/gowrapper"
+	"github.com/daglabs/btcd/util/panics"
 )
 
 // log is a logger that is initialized with no output filters.  This
@@ -18,5 +18,5 @@ var spawn func(func())
 
 func init() {
 	log, _ = logger.Get(logger.SubsystemTags.ADXR)
-	spawn = gowrapper.Generate(log)
+	spawn = panics.GoroutineWrapperFunc(log)
 }

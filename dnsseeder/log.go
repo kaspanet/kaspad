@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/btcsuite/btclog"
-	"github.com/daglabs/btcd/util/gowrapper"
+	"github.com/daglabs/btcd/util/panics"
 	"github.com/jrick/logrotate/rotator"
 )
 
@@ -24,7 +24,7 @@ var (
 	backendLog = btclog.NewBackend(logWriter{})
 	LogRotator *rotator.Rotator
 	log        = backendLog.Logger("SEED")
-	spawn      = gowrapper.Generate(log)
+	spawn      = panics.GoroutineWrapperFunc(log)
 	initiated  = false
 )
 

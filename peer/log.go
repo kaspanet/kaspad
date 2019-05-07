@@ -13,7 +13,7 @@ import (
 	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/logger"
 	"github.com/daglabs/btcd/txscript"
-	"github.com/daglabs/btcd/util/gowrapper"
+	"github.com/daglabs/btcd/util/panics"
 	"github.com/daglabs/btcd/wire"
 )
 
@@ -32,7 +32,7 @@ var spawn func(func())
 // The default amount of logging is none.
 func init() {
 	log, _ = logger.Get(logger.SubsystemTags.PEER)
-	spawn = gowrapper.Generate(log)
+	spawn = panics.GoroutineWrapperFunc(log)
 }
 
 // LogClosure is a closure that can be printed with %s to be used to
