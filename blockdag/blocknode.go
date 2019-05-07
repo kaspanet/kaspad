@@ -142,6 +142,9 @@ func initBlockNode(node *blockNode, blockHeader *wire.BlockHeader, parents block
 }
 
 func calculateNodeHeight(node *blockNode) uint64 {
+	if node.isGenesis() {
+		return 0
+	}
 	return node.parents.maxHeight() + 1
 }
 
