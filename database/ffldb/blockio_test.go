@@ -16,7 +16,7 @@ import (
 
 func TestDeleteFile(t *testing.T) {
 	testBlock := util.NewBlock(wire.NewMsgBlock(
-		wire.NewBlockHeader(1, []*daghash.Hash{}, &daghash.Hash{}, &daghash.Hash{}, 0, 0)))
+		wire.NewBlockHeader(1, []*daghash.Hash{}, &daghash.Hash{}, &daghash.Hash{}, &daghash.Hash{}, 0, 0)))
 
 	tests := []struct {
 		fileNum     uint32
@@ -69,7 +69,7 @@ func TestDeleteFile(t *testing.T) {
 // and makes sure no panic occurs, as well as ensures the writeCursor was updated correctly.
 func TestHandleRollbackErrors(t *testing.T) {
 	testBlock := util.NewBlock(wire.NewMsgBlock(
-		wire.NewBlockHeader(1, []*daghash.Hash{}, &daghash.Hash{}, &daghash.Hash{}, 0, 0)))
+		wire.NewBlockHeader(1, []*daghash.Hash{}, &daghash.Hash{}, &daghash.Hash{}, &daghash.Hash{}, 0, 0)))
 
 	testBlockSize := uint32(testBlock.MsgBlock().SerializeSize())
 	tests := []struct {

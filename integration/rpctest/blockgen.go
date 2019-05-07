@@ -186,12 +186,13 @@ func CreateBlock(parentBlock *util.Block, inclusionTxs []*util.Tx,
 	idMerkleTree := blockdag.BuildIDMerkleTreeStore(blockTxns)
 	var block wire.MsgBlock
 	block.Header = wire.BlockHeader{
-		Version:        blockVersion,
-		ParentHashes:   []*daghash.Hash{parentHash},
-		HashMerkleRoot: hashMerkleTree.Root(),
-		IDMerkleRoot:   idMerkleTree.Root(),
-		Timestamp:      ts,
-		Bits:           net.PowLimitBits,
+		Version:              blockVersion,
+		ParentHashes:         []*daghash.Hash{parentHash},
+		HashMerkleRoot:       hashMerkleTree.Root(),
+		IDMerkleRoot:         idMerkleTree.Root(),
+		AcceptedIDMerkleRoot: &daghash.ZeroHash,
+		Timestamp:            ts,
+		Bits:                 net.PowLimitBits,
 	}
 	for _, tx := range blockTxns {
 		block.AddTransaction(tx.MsgTx())

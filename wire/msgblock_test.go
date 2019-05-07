@@ -26,9 +26,11 @@ func TestBlock(t *testing.T) {
 	parentHashes := blockOne.Header.ParentHashes
 	hashMerkleRoot := blockOne.Header.HashMerkleRoot
 	idMerkleRoot := blockOne.Header.IDMerkleRoot
+	acceptedIDMerkleRoot := blockOne.Header.AcceptedIDMerkleRoot
 	bits := blockOne.Header.Bits
 	nonce := blockOne.Header.Nonce
-	bh := NewBlockHeader(1, parentHashes, hashMerkleRoot, idMerkleRoot, bits, nonce)
+	bh := NewBlockHeader(1, parentHashes, hashMerkleRoot, idMerkleRoot,
+		acceptedIDMerkleRoot, bits, nonce)
 
 	// Ensure the command is expected value.
 	wantCmd := "block"
@@ -74,7 +76,7 @@ func TestBlock(t *testing.T) {
 // TestBlockHash tests the ability to generate the hash of a block accurately.
 func TestBlockHash(t *testing.T) {
 	// Block 1 hash.
-	hashStr := "67ec32b619b4cda3255de5318c730e2e9f696d335427adfecae884aa41156b0f"
+	hashStr := "d632f80af4f507bed094a424902e37cc4b1e447e4ede731f0f4b446edebaf381"
 	wantHash, err := daghash.NewHashFromStr(hashStr)
 	if err != nil {
 		t.Errorf("NewHashFromStr: %v", err)
@@ -220,16 +222,18 @@ func TestBlockWireErrors(t *testing.T) {
 		{&blockOne, blockOneBytes, pver, 69, io.ErrShortWrite, io.EOF},
 		// Force error in ID merkle root.
 		{&blockOne, blockOneBytes, pver, 101, io.ErrShortWrite, io.EOF},
-		// Force error in timestamp.
+		// Force error in accepted ID merkle root.
 		{&blockOne, blockOneBytes, pver, 133, io.ErrShortWrite, io.EOF},
+		// Force error in timestamp.
+		{&blockOne, blockOneBytes, pver, 165, io.ErrShortWrite, io.EOF},
 		// Force error in difficulty bits.
-		{&blockOne, blockOneBytes, pver, 141, io.ErrShortWrite, io.EOF},
+		{&blockOne, blockOneBytes, pver, 173, io.ErrShortWrite, io.EOF},
 		// Force error in header nonce.
-		{&blockOne, blockOneBytes, pver, 145, io.ErrShortWrite, io.EOF},
+		{&blockOne, blockOneBytes, pver, 177, io.ErrShortWrite, io.EOF},
 		// Force error in transaction count.
-		{&blockOne, blockOneBytes, pver, 153, io.ErrShortWrite, io.EOF},
+		{&blockOne, blockOneBytes, pver, 185, io.ErrShortWrite, io.EOF},
 		// Force error in transactions.
-		{&blockOne, blockOneBytes, pver, 154, io.ErrShortWrite, io.EOF},
+		{&blockOne, blockOneBytes, pver, 186, io.ErrShortWrite, io.EOF},
 	}
 
 	t.Logf("Running %d tests", len(tests))
@@ -344,16 +348,18 @@ func TestBlockSerializeErrors(t *testing.T) {
 		{&blockOne, blockOneBytes, 69, io.ErrShortWrite, io.EOF},
 		// Force error in ID merkle root.
 		{&blockOne, blockOneBytes, 101, io.ErrShortWrite, io.EOF},
-		// Force error in timestamp.
+		// Force error in accepted ID merkle root.
 		{&blockOne, blockOneBytes, 133, io.ErrShortWrite, io.EOF},
+		// Force error in timestamp.
+		{&blockOne, blockOneBytes, 165, io.ErrShortWrite, io.EOF},
 		// Force error in difficulty bits.
-		{&blockOne, blockOneBytes, 141, io.ErrShortWrite, io.EOF},
+		{&blockOne, blockOneBytes, 173, io.ErrShortWrite, io.EOF},
 		// Force error in header nonce.
-		{&blockOne, blockOneBytes, 145, io.ErrShortWrite, io.EOF},
+		{&blockOne, blockOneBytes, 177, io.ErrShortWrite, io.EOF},
 		// Force error in transaction count.
-		{&blockOne, blockOneBytes, 153, io.ErrShortWrite, io.EOF},
+		{&blockOne, blockOneBytes, 185, io.ErrShortWrite, io.EOF},
 		// Force error in transactions.
-		{&blockOne, blockOneBytes, 154, io.ErrShortWrite, io.EOF},
+		{&blockOne, blockOneBytes, 186, io.ErrShortWrite, io.EOF},
 	}
 
 	t.Logf("Running %d tests", len(tests))
@@ -421,6 +427,10 @@ func TestBlockOverflowErrors(t *testing.T) {
 				0x65, 0x9C, 0x79, 0x3C, 0xE3, 0x70, 0xD9, 0x5F,
 				0x09, 0x3B, 0xC7, 0xE3, 0x67, 0x11, 0x7B, 0x3C,
 				0x30, 0xC1, 0xF8, 0xFD, 0xD0, 0xD9, 0x72, 0x87,
+				0x09, 0x3B, 0xC7, 0xE3, 0x67, 0x11, 0x7B, 0x3C, // AcceptedIDMerkleRoot
+				0x30, 0xC1, 0xF8, 0xFD, 0xD0, 0xD9, 0x72, 0x87,
+				0x7F, 0x16, 0xC5, 0x96, 0x2E, 0x8B, 0xD9, 0x63,
+				0x65, 0x9C, 0x79, 0x3C, 0xE3, 0x70, 0xD9, 0x5F,
 				0x61, 0xbc, 0x66, 0x49, 0x00, 0x00, 0x00, 0x00, // Timestamp
 				0xff, 0xff, 0x00, 0x1d, // Bits
 				0x01, 0xe3, 0x62, 0x99, 0x00, 0x00, 0x00, 0x00, // Fake Nonce. TODO: (Ori) Replace to a real nonce
@@ -473,7 +483,7 @@ func TestBlockSerializeSize(t *testing.T) {
 		size int       // Expected serialized size
 	}{
 		// Block with no transactions.
-		{noTxBlock, 154},
+		{noTxBlock, 186},
 
 		// First block in the mainnet block chain.
 		{&blockOne, len(blockOneBytes)},
@@ -494,13 +504,14 @@ func TestBlockSerializeSize(t *testing.T) {
 // blockOne is the first block in the mainnet block chain.
 var blockOne = MsgBlock{
 	Header: BlockHeader{
-		Version:        1,
-		ParentHashes:   []*daghash.Hash{mainNetGenesisHash, simNetGenesisHash},
-		HashMerkleRoot: mainNetGenesisMerkleRoot,
-		IDMerkleRoot:   exampleIDMerkleRoot,
-		Timestamp:      time.Unix(0x4966bc61, 0), // 2009-01-08 20:54:25 -0600 CST
-		Bits:           0x1d00ffff,               // 486604799
-		Nonce:          0x9962e301,               // 2573394689
+		Version:              1,
+		ParentHashes:         []*daghash.Hash{mainNetGenesisHash, simNetGenesisHash},
+		HashMerkleRoot:       mainNetGenesisMerkleRoot,
+		IDMerkleRoot:         exampleIDMerkleRoot,
+		AcceptedIDMerkleRoot: exampleAcceptedIDMerkleRoot,
+		Timestamp:            time.Unix(0x4966bc61, 0), // 2009-01-08 20:54:25 -0600 CST
+		Bits:                 0x1d00ffff,               // 486604799
+		Nonce:                0x9962e301,               // 2573394689
 	},
 	Transactions: []*MsgTx{
 		NewNativeMsgTx(1,
@@ -557,6 +568,10 @@ var blockOneBytes = []byte{
 	0x65, 0x9C, 0x79, 0x3C, 0xE3, 0x70, 0xD9, 0x5F,
 	0x09, 0x3B, 0xC7, 0xE3, 0x67, 0x11, 0x7B, 0x3C,
 	0x30, 0xC1, 0xF8, 0xFD, 0xD0, 0xD9, 0x72, 0x87,
+	0x09, 0x3B, 0xC7, 0xE3, 0x67, 0x11, 0x7B, 0x3C, // AcceptedIDMerkleRoot
+	0x30, 0xC1, 0xF8, 0xFD, 0xD0, 0xD9, 0x72, 0x87,
+	0x7F, 0x16, 0xC5, 0x96, 0x2E, 0x8B, 0xD9, 0x63,
+	0x65, 0x9C, 0x79, 0x3C, 0xE3, 0x70, 0xD9, 0x5F,
 	0x61, 0xbc, 0x66, 0x49, 0x00, 0x00, 0x00, 0x00, // Timestamp
 	0xff, 0xff, 0x00, 0x1d, // Bits
 	0x01, 0xe3, 0x62, 0x99, 0x00, 0x00, 0x00, 0x00, // Fake Nonce. TODO: (Ori) Replace to a real nonce
@@ -593,5 +608,5 @@ var blockOneBytes = []byte{
 
 // Transaction location information for block one transactions.
 var blockOneTxLocs = []TxLoc{
-	{TxStart: 154, TxLen: 162},
+	{TxStart: 186, TxLen: 162},
 }

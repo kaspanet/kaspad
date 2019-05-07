@@ -655,12 +655,13 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 	idMerkleTree := blockdag.BuildIDMerkleTreeStore(blockTxns)
 	var msgBlock wire.MsgBlock
 	msgBlock.Header = wire.BlockHeader{
-		Version:        nextBlockVersion,
-		ParentHashes:   g.dag.TipHashes(),
-		HashMerkleRoot: hashMerkleTree.Root(),
-		IDMerkleRoot:   idMerkleTree.Root(),
-		Timestamp:      ts,
-		Bits:           reqDifficulty,
+		Version:              nextBlockVersion,
+		ParentHashes:         g.dag.TipHashes(),
+		HashMerkleRoot:       hashMerkleTree.Root(),
+		IDMerkleRoot:         idMerkleTree.Root(),
+		AcceptedIDMerkleRoot: &daghash.ZeroHash,
+		Timestamp:            ts,
+		Bits:                 reqDifficulty,
 	}
 	for _, tx := range blockTxns {
 		msgBlock.AddTransaction(tx.MsgTx())
