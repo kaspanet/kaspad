@@ -8,6 +8,7 @@ import (
 	"github.com/daglabs/btcd/logger"
 )
 
+// HandlePanic recovers panics, log them, and then exits the process.
 func HandlePanic(log btclog.Logger) {
 	if err := recover(); err != nil {
 		log.Criticalf("Fatal error: %s", err)
