@@ -1826,7 +1826,9 @@ func (s *Server) inboundPeerConnected(conn net.Conn) {
 	sp.isWhitelisted = isWhitelisted(conn.RemoteAddr())
 	sp.Peer = peer.NewInboundPeer(newPeerConfig(sp))
 	sp.AssociateConnection(conn)
-	spawn(func(){s.peerDoneHandler(sp)})
+	spawn(func() {
+		s.peerDoneHandler(sp)
+	})
 }
 
 // outboundPeerConnected is invoked by the connection manager when a new
@@ -1845,7 +1847,9 @@ func (s *Server) outboundPeerConnected(c *connmgr.ConnReq, conn net.Conn) {
 	sp.connReq = c
 	sp.isWhitelisted = isWhitelisted(conn.RemoteAddr())
 	sp.AssociateConnection(conn)
-	spawn(func(){s.peerDoneHandler(sp)})
+	spawn(func() {
+		s.peerDoneHandler(sp)
+	})
 	s.addrManager.Attempt(sp.NA())
 }
 

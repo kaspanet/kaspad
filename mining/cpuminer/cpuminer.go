@@ -372,7 +372,9 @@ func (m *CPUMiner) miningWorkerController() {
 			runningWorkers = append(runningWorkers, quit)
 
 			m.workerWg.Add(1)
-			spawn(func(){m.generateBlocks(quit)})
+			spawn(func() {
+				m.generateBlocks(quit)
+			})
 		}
 	}
 
