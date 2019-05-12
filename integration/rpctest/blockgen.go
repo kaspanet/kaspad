@@ -191,6 +191,7 @@ func CreateBlock(parentBlock *util.Block, inclusionTxs []*util.Tx,
 		HashMerkleRoot:       hashMerkleTree.Root(),
 		IDMerkleRoot:         idMerkleTree.Root(),
 		AcceptedIDMerkleRoot: &daghash.ZeroHash,
+		UTXOCommitment:       &daghash.ZeroHash,
 		Timestamp:            ts,
 		Bits:                 net.PowLimitBits,
 	}

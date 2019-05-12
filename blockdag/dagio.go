@@ -625,6 +625,7 @@ func (dag *BlockDAG) deserializeBlockNode(blockRow []byte) (*blockNode, error) {
 		hashMerkleRoot:       header.HashMerkleRoot,
 		idMerkleRoot:         header.IDMerkleRoot,
 		acceptedIDMerkleRoot: header.AcceptedIDMerkleRoot,
+		utxoCommitment:       header.UTXOCommitment,
 	}
 
 	node.children = newSet()

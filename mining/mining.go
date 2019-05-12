@@ -660,6 +660,7 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 		HashMerkleRoot:       hashMerkleTree.Root(),
 		IDMerkleRoot:         idMerkleTree.Root(),
 		AcceptedIDMerkleRoot: &daghash.ZeroHash,
+		UTXOCommitment:       &daghash.ZeroHash,
 		Timestamp:            ts,
 		Bits:                 reqDifficulty,
 	}
