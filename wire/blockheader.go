@@ -15,10 +15,11 @@ import (
 // BaseBlockHeaderPayload is the base number of bytes a block header can be,
 // not including the list of parent block headers.
 // Version 4 bytes + Timestamp 8 bytes + Bits 4 bytes + Nonce 8 bytes +
-// + NumParentBlocks 1 byte + HashMerkleRoot hash + IDMerkleRoot hash.
+// + NumParentBlocks 1 byte + HashMerkleRoot hash + IDMerkleRoot hash +
+// + AcceptedIDMerkleRoot hash.
 // To get total size of block header len(ParentHashes) * daghash.HashSize should be
 // added to this value
-const BaseBlockHeaderPayload = 25 + 2*(daghash.HashSize)
+const BaseBlockHeaderPayload = 25 + 3*(daghash.HashSize)
 
 // MaxNumParentBlocks is the maximum number of parent blocks a block can reference.
 // Currently set to 255 as the maximum number NumParentBlocks can be due to it being a byte
@@ -42,6 +43,10 @@ type BlockHeader struct {
 
 	// IDMerkleRoot is the merkle tree reference to hash of all transactions' IDs for the block.
 	IDMerkleRoot *daghash.Hash
+
+	// AcceptedIDMerkleRoot is merkle tree reference to hash all transactions
+	// accepted form the block.Blues
+	AcceptedIDMerkleRoot *daghash.Hash
 
 	// Time the block was created.
 	Timestamp time.Time
@@ -121,18 +126,20 @@ func (h *BlockHeader) SerializeSize() int {
 // block hash, hash merkle root, ID merkle root difficulty bits, and nonce used to generate the
 // block with defaults or calclulated values for the remaining fields.
 func NewBlockHeader(version int32, parentHashes []*daghash.Hash, hashMerkleRoot *daghash.Hash,
-	idMerkleRoot *daghash.Hash, bits uint32, nonce uint64) *BlockHeader {
+	idMerkleRoot *daghash.Hash, acceptedIDMerkleRoot *daghash.Hash,
+	bits uint32, nonce uint64) *BlockHeader {
 
 	// Limit the timestamp to one second precision since the protocol
 	// doesn't support better.
 	return &BlockHeader{
-		Version:        version,
-		ParentHashes:   parentHashes,
-		HashMerkleRoot: hashMerkleRoot,
-		IDMerkleRoot:   idMerkleRoot,
-		Timestamp:      time.Unix(time.Now().Unix(), 0),
-		Bits:           bits,
-		Nonce:          nonce,
+		Version:              version,
+		ParentHashes:         parentHashes,
+		HashMerkleRoot:       hashMerkleRoot,
+		IDMerkleRoot:         idMerkleRoot,
+		AcceptedIDMerkleRoot: acceptedIDMerkleRoot,
+		Timestamp:            time.Unix(time.Now().Unix(), 0),
+		Bits:                 bits,
+		Nonce:                nonce,
 	}
 }
 
@@ -157,7 +164,10 @@ func readBlockHeader(r io.Reader, pver uint32, bh *BlockHeader) error {
 	}
 	bh.HashMerkleRoot = &daghash.Hash{}
 	bh.IDMerkleRoot = &daghash.Hash{}
-	return readElements(r, bh.HashMerkleRoot, bh.IDMerkleRoot, (*int64Time)(&bh.Timestamp), &bh.Bits, &bh.Nonce)
+	bh.AcceptedIDMerkleRoot = &daghash.Hash{}
+	return readElements(r, bh.HashMerkleRoot, bh.IDMerkleRoot,
+		bh.AcceptedIDMerkleRoot, (*int64Time)(&bh.Timestamp),
+		&bh.Bits, &bh.Nonce)
 }
 
 // writeBlockHeader writes a bitcoin block header to w.  See Serialize for
@@ -174,5 +184,5 @@ func writeBlockHeader(w io.Writer, pver uint32, bh *BlockHeader) error {
 		}
 	}
 	return writeElements(w, bh.HashMerkleRoot, bh.IDMerkleRoot,
-		sec, bh.Bits, bh.Nonce)
+		bh.AcceptedIDMerkleRoot, sec, bh.Bits, bh.Nonce)
 }

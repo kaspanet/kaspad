@@ -29,7 +29,7 @@ func TestHeaders(t *testing.T) {
 	// Ensure max payload is expected value for latest protocol version.
 	// Num headers (varInt) + max allowed headers (header length + 1 byte
 	// for the number of transactions which is always 0).
-	wantPayload := uint32(16500009)
+	wantPayload := uint32(16564009)
 	maxPayload := msg.MaxPayloadLength(pver)
 	if maxPayload != wantPayload {
 		t.Errorf("MaxPayloadLength: wrong max payload length for "+
@@ -64,9 +64,11 @@ func TestHeadersWire(t *testing.T) {
 	hashes := []*daghash.Hash{mainNetGenesisHash, simNetGenesisHash}
 	hashMerkleRoot := blockOne.Header.HashMerkleRoot
 	idMerkleRoot := blockOne.Header.IDMerkleRoot
+	acceptedIDMerkleRoot := blockOne.Header.AcceptedIDMerkleRoot
 	bits := uint32(0x1d00ffff)
 	nonce := uint64(0x9962e301)
-	bh := NewBlockHeader(1, hashes, hashMerkleRoot, idMerkleRoot, bits, nonce)
+	bh := NewBlockHeader(1, hashes, hashMerkleRoot, idMerkleRoot,
+		acceptedIDMerkleRoot, bits, nonce)
 	bh.Version = blockOne.Header.Version
 	bh.Timestamp = blockOne.Header.Timestamp
 
@@ -99,6 +101,10 @@ func TestHeadersWire(t *testing.T) {
 		0x65, 0x9C, 0x79, 0x3C, 0xE3, 0x70, 0xD9, 0x5F,
 		0x09, 0x3B, 0xC7, 0xE3, 0x67, 0x11, 0x7B, 0x3C,
 		0x30, 0xC1, 0xF8, 0xFD, 0xD0, 0xD9, 0x72, 0x87,
+		0x09, 0x3B, 0xC7, 0xE3, 0x67, 0x11, 0x7B, 0x3C, // AcceptedIDMerkleRoot
+		0x30, 0xC1, 0xF8, 0xFD, 0xD0, 0xD9, 0x72, 0x87,
+		0x7F, 0x16, 0xC5, 0x96, 0x2E, 0x8B, 0xD9, 0x63,
+		0x65, 0x9C, 0x79, 0x3C, 0xE3, 0x70, 0xD9, 0x5F,
 		0x61, 0xbc, 0x66, 0x49, 0x00, 0x00, 0x00, 0x00, // Timestamp
 		0xff, 0xff, 0x00, 0x1d, // Bits
 		0x01, 0xe3, 0x62, 0x99, 0x00, 0x00, 0x00, 0x00, // Fake Nonce. TODO: (Ori) Replace to a real nonce
@@ -168,9 +174,11 @@ func TestHeadersWireErrors(t *testing.T) {
 	hashes := []*daghash.Hash{mainNetGenesisHash, simNetGenesisHash}
 	hashMerkleRoot := blockOne.Header.HashMerkleRoot
 	idMerkleRoot := blockOne.Header.IDMerkleRoot
+	acceptedIDMerkleRoot := blockOne.Header.AcceptedIDMerkleRoot
 	bits := uint32(0x1d00ffff)
 	nonce := uint64(0x9962e301)
-	bh := NewBlockHeader(1, hashes, hashMerkleRoot, idMerkleRoot, bits, nonce)
+	bh := NewBlockHeader(1, hashes, hashMerkleRoot, idMerkleRoot,
+		acceptedIDMerkleRoot, bits, nonce)
 	bh.Version = blockOne.Header.Version
 	bh.Timestamp = blockOne.Header.Timestamp
 
@@ -216,7 +224,8 @@ func TestHeadersWireErrors(t *testing.T) {
 
 	// Intentionally invalid block header that has a transaction count used
 	// to force errors.
-	bhTrans := NewBlockHeader(1, hashes, hashMerkleRoot, idMerkleRoot, bits, nonce)
+	bhTrans := NewBlockHeader(1, hashes, hashMerkleRoot, idMerkleRoot,
+		acceptedIDMerkleRoot, bits, nonce)
 	bhTrans.Version = blockOne.Header.Version
 	bhTrans.Timestamp = blockOne.Header.Timestamp
 
@@ -242,6 +251,10 @@ func TestHeadersWireErrors(t *testing.T) {
 		0x65, 0x9C, 0x79, 0x3C, 0xE3, 0x70, 0xD9, 0x5F,
 		0x09, 0x3B, 0xC7, 0xE3, 0x67, 0x11, 0x7B, 0x3C,
 		0x30, 0xC1, 0xF8, 0xFD, 0xD0, 0xD9, 0x72, 0x87,
+		0x09, 0x3B, 0xC7, 0xE3, 0x67, 0x11, 0x7B, 0x3C, // AcceptedIDMerkleRoot
+		0x30, 0xC1, 0xF8, 0xFD, 0xD0, 0xD9, 0x72, 0x87,
+		0x7F, 0x16, 0xC5, 0x96, 0x2E, 0x8B, 0xD9, 0x63,
+		0x65, 0x9C, 0x79, 0x3C, 0xE3, 0x70, 0xD9, 0x5F,
 		0x61, 0xbc, 0x66, 0x49, 0x00, 0x00, 0x00, 0x00, // Timestamp
 		0xff, 0xff, 0x00, 0x1d, // Bits
 		0x01, 0xe3, 0x62, 0x99, 0x00, 0x00, 0x00, 0x00, // Fake Nonce. TODO: (Ori) Replace to a real nonce
@@ -264,7 +277,7 @@ func TestHeadersWireErrors(t *testing.T) {
 		// Force error with greater than max headers.
 		{maxHeaders, maxHeadersEncoded, pver, 3, wireErr, wireErr},
 		// Force error with number of transactions.
-		{transHeader, transHeaderEncoded, pver, 146, io.ErrShortWrite, io.EOF},
+		{transHeader, transHeaderEncoded, pver, 178, io.ErrShortWrite, io.EOF},
 		// Force error with included transactions.
 		{transHeader, transHeaderEncoded, pver, len(transHeaderEncoded), nil, wireErr},
 	}

@@ -617,13 +617,14 @@ func (dag *BlockDAG) deserializeBlockNode(blockRow []byte) (*blockNode, error) {
 	}
 
 	node := &blockNode{
-		hash:           header.BlockHash(),
-		version:        header.Version,
-		bits:           header.Bits,
-		nonce:          header.Nonce,
-		timestamp:      header.Timestamp.Unix(),
-		hashMerkleRoot: header.HashMerkleRoot,
-		idMerkleRoot:   header.IDMerkleRoot,
+		hash:                 header.BlockHash(),
+		version:              header.Version,
+		bits:                 header.Bits,
+		nonce:                header.Nonce,
+		timestamp:            header.Timestamp.Unix(),
+		hashMerkleRoot:       header.HashMerkleRoot,
+		idMerkleRoot:         header.IDMerkleRoot,
+		acceptedIDMerkleRoot: header.AcceptedIDMerkleRoot,
 	}
 
 	node.children = newSet()

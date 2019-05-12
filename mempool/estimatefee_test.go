@@ -70,7 +70,7 @@ func (eft *estimateFeeTester) newBlock(txs []*wire.MsgTx) {
 	eft.height++
 
 	block := util.NewBlock(&wire.MsgBlock{
-		Header:       wire.BlockHeader{IDMerkleRoot: &daghash.ZeroHash, HashMerkleRoot: &daghash.ZeroHash},
+		Header:       wire.BlockHeader{IDMerkleRoot: &daghash.ZeroHash, HashMerkleRoot: &daghash.ZeroHash, AcceptedIDMerkleRoot: &daghash.ZeroHash},
 		Transactions: txs,
 	})
 	block.SetHeight(eft.height)
