@@ -528,13 +528,17 @@ func (node *blockNode) buildAndSortAcceptedTxs(txsAcceptanceData MultiBlockTxsAc
 	return accepetedTxs
 }
 
+func (node *blockNode) calculateAcceptedIDMerkleRoot(txsAcceptanceData MultiBlockTxsAcceptanceData) *daghash.Hash {
+	accepetedTxs := node.buildAndSortAcceptedTxs(txsAcceptanceData)
+	acceptedIDMerkleTree := BuildIDMerkleTreeStore(accepetedTxs)
+	return acceptedIDMerkleTree.Root()
+}
+
 func (node *blockNode) validateAcceptedIDMerkleRoot(dag *BlockDAG, block *util.Block, txsAcceptanceData MultiBlockTxsAcceptanceData) error {
 	if block.IsGenesis() {
 		return nil
 	}
-	accepetedTxs := node.buildAndSortAcceptedTxs(txsAcceptanceData)
-	acceptedIDMerkleTree := BuildIDMerkleTreeStore(accepetedTxs)
-	calculatedAccepetedIDMerkleRoot := acceptedIDMerkleTree.Root()
+	calculatedAccepetedIDMerkleRoot := node.calculateAcceptedIDMerkleRoot(txsAcceptanceData)
 	header := block.MsgBlock().Header
 	if !header.AcceptedIDMerkleRoot.IsEqual(calculatedAccepetedIDMerkleRoot) {
 		str := fmt.Sprintf("block accepted ID merkle root is invalid - block "+
@@ -772,6 +776,28 @@ func (dag *BlockDAG) NextBlockFeeTransactionNoLock() (*wire.MsgTx, error) {
 		return nil, err
 	}
 	return dag.virtual.blockNode.buildFeeTransaction(dag, txsAcceptanceData)
+}
+
+// NextAcceptedIDMerkleRoot prepares the acceptedIDMerkleRoot for the next mined block
+//
+// This function CAN'T be called with the DAG lock not held.
+func (dag *BlockDAG) NextAcceptedIDMerkleRoot() (*daghash.Hash, error) {
+	dag.dagLock.RLock()
+	defer dag.dagLock.RUnlock()
+
+	return dag.NextAcceptedIDMerkleRootNoLock()
+}
+
+// NextAcceptedIDMerkleRootNoLock prepares the acceptedIDMerkleRoot for the next mined block
+//
+// This function MUST be called with the DAG read-lock held
+func (dag *BlockDAG) NextAcceptedIDMerkleRootNoLock() (*daghash.Hash, error) {
+	_, txsAcceptanceData, _, err := dag.virtual.blockNode.verifyAndBuildUTXO(dag, nil, true)
+	if err != nil {
+		return nil, err
+	}
+
+	return dag.virtual.blockNode.calculateAcceptedIDMerkleRoot(txsAcceptanceData), nil
 }
 
 // applyDAGChanges does the following:
