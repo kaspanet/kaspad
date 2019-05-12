@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"sort"
 	"sync"
 	"time"
 
@@ -507,6 +508,43 @@ func (dag *BlockDAG) addBlock(node *blockNode, parentNodes blockSet, block *util
 	return err
 }
 
+func (node *blockNode) buildAndSortAcceptedTxs(txsAcceptanceData MultiBlockTxsAcceptanceData) []*util.Tx {
+	accepetedTxs := []*util.Tx{}
+	for _, blue := range node.blues {
+		blockTxsAcceptanceData, ok := txsAcceptanceData[*blue.hash]
+		if !ok {
+			continue
+		}
+		for _, txAcceptance := range blockTxsAcceptanceData {
+			if !txAcceptance.IsAccepted {
+				continue
+			}
+			accepetedTxs = append(accepetedTxs, txAcceptance.Tx)
+		}
+	}
+	sort.Slice(accepetedTxs, func(i, j int) bool {
+		return daghash.LessTxID(accepetedTxs[i].ID(), accepetedTxs[j].ID())
+	})
+	return accepetedTxs
+}
+
+func (node *blockNode) validateAcceptedIDMerkleRoot(dag *BlockDAG, block *util.Block, txsAcceptanceData MultiBlockTxsAcceptanceData) error {
+	if block.IsGenesis() {
+		return nil
+	}
+	accepetedTxs := node.buildAndSortAcceptedTxs(txsAcceptanceData)
+	acceptedIDMerkleTree := BuildIDMerkleTreeStore(accepetedTxs)
+	calculatedAccepetedIDMerkleRoot := acceptedIDMerkleTree.Root()
+	header := block.MsgBlock().Header
+	if !header.AcceptedIDMerkleRoot.IsEqual(calculatedAccepetedIDMerkleRoot) {
+		str := fmt.Sprintf("block accepted ID merkle root is invalid - block "+
+			"header indicates %s, but calculated value is %s",
+			header.AcceptedIDMerkleRoot, calculatedAccepetedIDMerkleRoot)
+		return ruleError(ErrBadMerkleRoot, str)
+	}
+	return nil
+}
+
 // connectBlock handles connecting the passed node/block to the DAG.
 //
 // This function MUST be called with the DAG state lock held (for writes).
@@ -545,6 +583,11 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block, fastAdd bo
 	}
 
 	err = node.validateFeeTransaction(dag, block, txsAcceptanceData)
+	if err != nil {
+		return err
+	}
+
+	err = node.validateAcceptedIDMerkleRoot(dag, block, txsAcceptanceData)
 	if err != nil {
 		return err
 	}
