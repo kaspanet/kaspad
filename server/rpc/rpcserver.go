@@ -1194,19 +1194,21 @@ func handleGetBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 	params := s.cfg.DAGParams
 	blockHeader := &blk.MsgBlock().Header
 	blockReply := btcjson.GetBlockVerboseResult{
-		Hash:          c.Hash,
-		Version:       blockHeader.Version,
-		VersionHex:    fmt.Sprintf("%08x", blockHeader.Version),
-		MerkleRoot:    blockHeader.HashMerkleRoot.String(),
-		ParentHashes:  daghash.Strings(blockHeader.ParentHashes),
-		Nonce:         blockHeader.Nonce,
-		Time:          blockHeader.Timestamp.Unix(),
-		Confirmations: uint64(1 + s.cfg.DAG.Height() - blockHeight), //TODO: (Ori) This is probably wrong. Done only for compilation
-		Height:        blockHeight,
-		Size:          int32(len(blkBytes)),
-		Bits:          strconv.FormatInt(int64(blockHeader.Bits), 16),
-		Difficulty:    getDifficultyRatio(blockHeader.Bits, params),
-		NextHashes:    nextHashStrings,
+		Hash:                 c.Hash,
+		Version:              blockHeader.Version,
+		VersionHex:           fmt.Sprintf("%08x", blockHeader.Version),
+		HashMerkleRoot:       blockHeader.HashMerkleRoot.String(),
+		IDMerkleRoot:         blockHeader.IDMerkleRoot.String(),
+		AcceptedIDMerkleRoot: blockHeader.AcceptedIDMerkleRoot.String(),
+		ParentHashes:         daghash.Strings(blockHeader.ParentHashes),
+		Nonce:                blockHeader.Nonce,
+		Time:                 blockHeader.Timestamp.Unix(),
+		Confirmations:        uint64(1 + s.cfg.DAG.Height() - blockHeight), //TODO: (Ori) This is probably wrong. Done only for compilation
+		Height:               blockHeight,
+		Size:                 int32(len(blkBytes)),
+		Bits:                 strconv.FormatInt(int64(blockHeader.Bits), 16),
+		Difficulty:           getDifficultyRatio(blockHeader.Bits, params),
+		NextHashes:           nextHashStrings,
 	}
 
 	if c.VerboseTx == nil || !*c.VerboseTx {
@@ -1393,18 +1395,20 @@ func handleGetBlockHeader(s *Server, cmd interface{}, closeChan <-chan struct{})
 
 	params := s.cfg.DAGParams
 	blockHeaderReply := btcjson.GetBlockHeaderVerboseResult{
-		Hash:          c.Hash,
-		Confirmations: uint64(1 + s.cfg.DAG.Height() - blockHeight), //TODO: (Ori) This is probably wrong. Done only for compilation
-		Height:        blockHeight,
-		Version:       blockHeader.Version,
-		VersionHex:    fmt.Sprintf("%08x", blockHeader.Version),
-		MerkleRoot:    blockHeader.HashMerkleRoot.String(),
-		NextHashes:    nextHashStrings,
-		ParentHashes:  daghash.Strings(blockHeader.ParentHashes),
-		Nonce:         uint64(blockHeader.Nonce),
-		Time:          blockHeader.Timestamp.Unix(),
-		Bits:          strconv.FormatInt(int64(blockHeader.Bits), 16),
-		Difficulty:    getDifficultyRatio(blockHeader.Bits, params),
+		Hash:                 c.Hash,
+		Confirmations:        uint64(1 + s.cfg.DAG.Height() - blockHeight), //TODO: (Ori) This is probably wrong. Done only for compilation
+		Height:               blockHeight,
+		Version:              blockHeader.Version,
+		VersionHex:           fmt.Sprintf("%08x", blockHeader.Version),
+		HashMerkleRoot:       blockHeader.HashMerkleRoot.String(),
+		IDMerkleRoot:         blockHeader.IDMerkleRoot.String(),
+		AcceptedIDMerkleRoot: blockHeader.AcceptedIDMerkleRoot.String(),
+		NextHashes:           nextHashStrings,
+		ParentHashes:         daghash.Strings(blockHeader.ParentHashes),
+		Nonce:                uint64(blockHeader.Nonce),
+		Time:                 blockHeader.Timestamp.Unix(),
+		Bits:                 strconv.FormatInt(int64(blockHeader.Bits), 16),
+		Difficulty:           getDifficultyRatio(blockHeader.Bits, params),
 	}
 	return blockHeaderReply, nil
 }

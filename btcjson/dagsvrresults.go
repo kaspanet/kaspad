@@ -10,39 +10,43 @@ import "encoding/json"
 // the verbose flag is set.  When the verbose flag is not set, getblockheader
 // returns a hex-encoded string.
 type GetBlockHeaderVerboseResult struct {
-	Hash          string   `json:"hash"`
-	Confirmations uint64   `json:"confirmations"`
-	Height        uint64   `json:"height"`
-	Version       int32    `json:"version"`
-	VersionHex    string   `json:"versionHex"`
-	MerkleRoot    string   `json:"merkleRoot"`
-	Time          int64    `json:"time"`
-	Nonce         uint64   `json:"nonce"`
-	Bits          string   `json:"bits"`
-	Difficulty    float64  `json:"difficulty"`
-	ParentHashes  []string `json:"parentHashes,omitempty"`
-	NextHashes    []string `json:"nextHashes,omitempty"`
+	Hash                 string   `json:"hash"`
+	Confirmations        uint64   `json:"confirmations"`
+	Height               uint64   `json:"height"`
+	Version              int32    `json:"version"`
+	VersionHex           string   `json:"versionHex"`
+	HashMerkleRoot       string   `json:"hashMerkleRoot"`
+	IDMerkleRoot         string   `json:"idMerkleRoot"`
+	AcceptedIDMerkleRoot string   `json:"acceptedIdMerkleRoot"`
+	Time                 int64    `json:"time"`
+	Nonce                uint64   `json:"nonce"`
+	Bits                 string   `json:"bits"`
+	Difficulty           float64  `json:"difficulty"`
+	ParentHashes         []string `json:"parentHashes,omitempty"`
+	NextHashes           []string `json:"nextHashes,omitempty"`
 }
 
 // GetBlockVerboseResult models the data from the getblock command when the
 // verbose flag is set.  When the verbose flag is not set, getblock returns a
 // hex-encoded string.
 type GetBlockVerboseResult struct {
-	Hash          string        `json:"hash"`
-	Confirmations uint64        `json:"confirmations"`
-	Size          int32         `json:"size"`
-	Height        uint64        `json:"height"`
-	Version       int32         `json:"version"`
-	VersionHex    string        `json:"versionHex"`
-	MerkleRoot    string        `json:"merkleRoot"`
-	Tx            []string      `json:"tx,omitempty"`
-	RawTx         []TxRawResult `json:"rawRx,omitempty"`
-	Time          int64         `json:"time"`
-	Nonce         uint64        `json:"nonce"`
-	Bits          string        `json:"bits"`
-	Difficulty    float64       `json:"difficulty"`
-	ParentHashes  []string      `json:"parentHashes"`
-	NextHashes    []string      `json:"nextHashes,omitempty"`
+	Hash                 string        `json:"hash"`
+	Confirmations        uint64        `json:"confirmations"`
+	Size                 int32         `json:"size"`
+	Height               uint64        `json:"height"`
+	Version              int32         `json:"version"`
+	VersionHex           string        `json:"versionHex"`
+	HashMerkleRoot       string        `json:"hashMerkleRoot"`
+	IDMerkleRoot         string        `json:"idMerkleRoot"`
+	AcceptedIDMerkleRoot string        `json:"acceptedIdMerkleRoot"`
+	Tx                   []string      `json:"tx,omitempty"`
+	RawTx                []TxRawResult `json:"rawRx,omitempty"`
+	Time                 int64         `json:"time"`
+	Nonce                uint64        `json:"nonce"`
+	Bits                 string        `json:"bits"`
+	Difficulty           float64       `json:"difficulty"`
+	ParentHashes         []string      `json:"parentHashes"`
+	NextHashes           []string      `json:"nextHashes,omitempty"`
 }
 
 // CreateMultiSigResult models the data returned from the createmultisig
