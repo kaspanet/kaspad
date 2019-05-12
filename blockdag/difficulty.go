@@ -57,7 +57,7 @@ func (dag *BlockDAG) findPrevTestNetDifficulty(startNode *blockNode) uint32 {
 	// Search backwards through the chain for the last block without
 	// the special rule applied.
 	iterNode := startNode
-	for iterNode != nil && iterNode.height%dag.blocksPerRetarget != 0 &&
+	for iterNode != nil && iterNode.chainHeight%dag.blocksPerRetarget != 0 &&
 		iterNode.bits == dag.dagParams.PowLimitBits {
 
 		iterNode = iterNode.selectedParent
@@ -85,7 +85,7 @@ func (dag *BlockDAG) calcNextRequiredDifficulty(bluestParent *blockNode, newBloc
 
 	// Return the previous block's difficulty requirements if this block
 	// is not at a difficulty retarget interval.
-	if (bluestParent.height+1)%dag.blocksPerRetarget != 0 {
+	if (bluestParent.chainHeight+1)%dag.blocksPerRetarget != 0 {
 		// For networks that support it, allow special reduction of the
 		// required difficulty once too much time has elapsed without
 		// mining a block.
