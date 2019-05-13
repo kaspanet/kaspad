@@ -227,7 +227,7 @@ func (hash *Hash) Cmp(target *Hash) int {
 	return HashToBig(hash).Cmp(HashToBig(target))
 }
 
-//Less returns true if hash a is less than hash b
+//Less returns true iff hash a is less than hash b
 func Less(a *Hash, b *Hash) bool {
 	return a.Cmp(b) < 0
 }
