@@ -509,7 +509,7 @@ func (dag *BlockDAG) addBlock(node *blockNode, parentNodes blockSet, block *util
 }
 
 func (node *blockNode) buildAndSortAcceptedTxs(txsAcceptanceData MultiBlockTxsAcceptanceData) []*util.Tx {
-	accepetedTxs := []*util.Tx{}
+	var acceptedTxs []*util.Tx
 	for _, blue := range node.blues {
 		blockTxsAcceptanceData, ok := txsAcceptanceData[*blue.hash]
 		if !ok {
@@ -519,22 +519,27 @@ func (node *blockNode) buildAndSortAcceptedTxs(txsAcceptanceData MultiBlockTxsAc
 			if !txAcceptance.IsAccepted {
 				continue
 			}
-			accepetedTxs = append(accepetedTxs, txAcceptance.Tx)
+			acceptedTxs = append(acceptedTxs, txAcceptance.Tx)
 		}
 	}
-	sort.Slice(accepetedTxs, func(i, j int) bool {
-		return daghash.LessTxID(accepetedTxs[i].ID(), accepetedTxs[j].ID())
+	sort.Slice(acceptedTxs, func(i, j int) bool {
+		return daghash.LessTxID(acceptedTxs[i].ID(), acceptedTxs[j].ID())
 	})
-	return accepetedTxs
+	return acceptedTxs
+}
+
+func (node *blockNode) calculateAcceptedIDMerkleRoot(txsAcceptanceData MultiBlockTxsAcceptanceData) *daghash.Hash {
+	accepetedTxs := node.buildAndSortAcceptedTxs(txsAcceptanceData)
+	acceptedIDMerkleTree := BuildIDMerkleTreeStore(accepetedTxs)
+	return acceptedIDMerkleTree.Root()
 }
 
 func (node *blockNode) validateAcceptedIDMerkleRoot(dag *BlockDAG, block *util.Block, txsAcceptanceData MultiBlockTxsAcceptanceData) error {
 	if block.IsGenesis() {
 		return nil
 	}
-	accepetedTxs := node.buildAndSortAcceptedTxs(txsAcceptanceData)
-	acceptedIDMerkleTree := BuildIDMerkleTreeStore(accepetedTxs)
-	calculatedAccepetedIDMerkleRoot := acceptedIDMerkleTree.Root()
+
+	calculatedAccepetedIDMerkleRoot := node.calculateAcceptedIDMerkleRoot(txsAcceptanceData)
 	header := block.MsgBlock().Header
 	if !header.AcceptedIDMerkleRoot.IsEqual(calculatedAccepetedIDMerkleRoot) {
 		str := fmt.Sprintf("block accepted ID merkle root is invalid - block "+
@@ -772,6 +777,28 @@ func (dag *BlockDAG) NextBlockFeeTransactionNoLock() (*wire.MsgTx, error) {
 		return nil, err
 	}
 	return dag.virtual.blockNode.buildFeeTransaction(dag, txsAcceptanceData)
+}
+
+// NextAcceptedIDMerkleRoot prepares the acceptedIDMerkleRoot for the next mined block
+//
+// This function CAN'T be called with the DAG lock not held.
+func (dag *BlockDAG) NextAcceptedIDMerkleRoot() (*daghash.Hash, error) {
+	dag.dagLock.RLock()
+	defer dag.dagLock.RUnlock()
+
+	return dag.NextAcceptedIDMerkleRootNoLock()
+}
+
+// NextAcceptedIDMerkleRootNoLock prepares the acceptedIDMerkleRoot for the next mined block
+//
+// This function MUST be called with the DAG read-lock held
+func (dag *BlockDAG) NextAcceptedIDMerkleRootNoLock() (*daghash.Hash, error) {
+	_, txsAcceptanceData, _, err := dag.virtual.blockNode.verifyAndBuildUTXO(dag, nil, true)
+	if err != nil {
+		return nil, err
+	}
+
+	return dag.virtual.blockNode.calculateAcceptedIDMerkleRoot(txsAcceptanceData), nil
 }
 
 // applyDAGChanges does the following:

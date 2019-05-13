@@ -900,6 +900,18 @@ func TestValidateFeeTransaction(t *testing.T) {
 		for i, tx := range transactions {
 			utilTxs[i] = util.NewTx(tx)
 		}
+
+		newVirtual, err := GetVirtualFromParentsForTest(dag, parentHashes)
+		if err != nil {
+			t.Fatalf("block %v: unexpected error when setting virtual for test: %v", blockName, err)
+		}
+		oldVirtual := SetVirtualForTest(dag, newVirtual)
+		acceptedIDMerkleRoot, err := dag.NextAcceptedIDMerkleRoot()
+		if err != nil {
+			t.Fatalf("block %v: unexpected error when getting next acceptIDMerkleRoot: %v", blockName, err)
+		}
+		SetVirtualForTest(dag, oldVirtual)
+
 		daghash.Sort(parentHashes)
 		msgBlock := &wire.MsgBlock{
 			Header: wire.BlockHeader{
@@ -907,7 +919,7 @@ func TestValidateFeeTransaction(t *testing.T) {
 				ParentHashes:         parentHashes,
 				HashMerkleRoot:       BuildHashMerkleTreeStore(utilTxs).Root(),
 				IDMerkleRoot:         BuildIDMerkleTreeStore(utilTxs).Root(),
-				AcceptedIDMerkleRoot: &daghash.ZeroHash,
+				AcceptedIDMerkleRoot: acceptedIDMerkleRoot,
 			},
 			Transactions: transactions,
 		}
