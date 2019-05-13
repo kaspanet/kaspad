@@ -116,6 +116,12 @@ func PrepareBlockForTest(dag *blockdag.BlockDAG, params *dagconfig.Params, paren
 		}
 		template.Block.Header.HashMerkleRoot = blockdag.BuildHashMerkleTreeStore(utilTxs).Root()
 		template.Block.Header.IDMerkleRoot = blockdag.BuildIDMerkleTreeStore(utilTxs).Root()
+
+		acceptedIDMerkleRoot, err := dag.NextAcceptedIDMerkleRoot()
+		if err != nil {
+			return nil, err
+		}
+		template.Block.Header.AcceptedIDMerkleRoot = acceptedIDMerkleRoot
 	}
 	return template.Block, nil
 }
