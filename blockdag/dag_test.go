@@ -192,10 +192,10 @@ func TestHaveBlock(t *testing.T) {
 		{hash: dagconfig.SimNetParams.GenesisHash.String(), want: true},
 
 		// Block 3b should be present (as a second child of Block 2).
-		{hash: "040c43ca52ded708dacef2a9fa589f41e4f7565345f7f1e61f379dbf32bb6b48", want: true},
+		{hash: "0a20af2fa5ce154a60faca96e9fa125fc52e0ca8f98484708d0413203626edaf", want: true},
 
 		// Block 100000 should be present (as an orphan).
-		{hash: "3da8f9ec89820deee1a4d26ff0e69c53686166ea4fbc1895fa1e0b1ccb651374", want: true},
+		{hash: "18bcf45b8c0dbccd7690a728f3486c6d5fc84971688f89f4554297b6a278e554", want: true},
 
 		// Random hashes should not be available.
 		{hash: "123", want: false},
@@ -554,9 +554,11 @@ func chainedNodes(parents blockSet, numNodes int) []*blockNode {
 		// This is invalid, but all that is needed is enough to get the
 		// synthetic tests to work.
 		header := wire.BlockHeader{
-			Nonce:          testNoncePrng.Uint64(),
-			IDMerkleRoot:   &daghash.ZeroHash,
-			HashMerkleRoot: &daghash.ZeroHash,
+			Nonce:                testNoncePrng.Uint64(),
+			IDMerkleRoot:         &daghash.ZeroHash,
+			HashMerkleRoot:       &daghash.ZeroHash,
+			AcceptedIDMerkleRoot: &daghash.ZeroHash,
+			UTXOCommitment:       &daghash.ZeroHash,
 		}
 		header.ParentHashes = tips.hashes()
 		nodes[i] = newBlockNode(&header, tips, dagconfig.SimNetParams.K)
@@ -902,10 +904,12 @@ func TestValidateFeeTransaction(t *testing.T) {
 		daghash.Sort(parentHashes)
 		msgBlock := &wire.MsgBlock{
 			Header: wire.BlockHeader{
-				Bits:           dag.genesis.Header().Bits,
-				ParentHashes:   parentHashes,
-				HashMerkleRoot: BuildHashMerkleTreeStore(utilTxs).Root(),
-				IDMerkleRoot:   BuildIDMerkleTreeStore(utilTxs).Root(),
+				Bits:                 dag.genesis.Header().Bits,
+				ParentHashes:         parentHashes,
+				HashMerkleRoot:       BuildHashMerkleTreeStore(utilTxs).Root(),
+				IDMerkleRoot:         BuildIDMerkleTreeStore(utilTxs).Root(),
+				AcceptedIDMerkleRoot: &daghash.ZeroHash,
+				UTXOCommitment:       &daghash.ZeroHash,
 			},
 			Transactions: transactions,
 		}

@@ -41,10 +41,10 @@ var genesisCoinbaseTx = wire.NewNativeMsgTx(1, genesisTxIns, genesisTxOuts)
 // genesisHash is the hash of the first block in the block chain for the main
 // network (genesis block).
 var genesisHash = daghash.Hash([daghash.HashSize]byte{
-	0x08, 0xcc, 0x73, 0xd0, 0xe0, 0x70, 0x52, 0xfa,
-	0x00, 0x1f, 0x2b, 0x02, 0x67, 0xe3, 0x4f, 0xda,
-	0x37, 0x75, 0x1c, 0x67, 0xa4, 0x6d, 0x55, 0x2e,
-	0x90, 0xac, 0x0f, 0x19, 0x3f, 0x86, 0x77, 0x64,
+	0x95, 0x77, 0xb3, 0xed, 0xa7, 0x10, 0x0a, 0x5a,
+	0x9d, 0x70, 0xb0, 0x17, 0x70, 0xb5, 0x5e, 0x58,
+	0x44, 0x59, 0xb9, 0xfa, 0x71, 0x52, 0x03, 0xdd,
+	0x88, 0xfd, 0xdb, 0x7b, 0x20, 0xd0, 0x04, 0x58,
 })
 
 // genesisMerkleRoot is the hash of the first transaction in the genesis block
@@ -60,13 +60,15 @@ var genesisMerkleRoot = daghash.Hash([daghash.HashSize]byte{
 // public transaction ledger for the main network.
 var genesisBlock = wire.MsgBlock{
 	Header: wire.BlockHeader{
-		Version:        1,
-		ParentHashes:   []*daghash.Hash{},
-		HashMerkleRoot: &genesisMerkleRoot,
-		IDMerkleRoot:   &genesisMerkleRoot,
-		Timestamp:      time.Unix(0x5ca09ba1, 0),
-		Bits:           0x207fffff,
-		Nonce:          0x6,
+		Version:              1,
+		ParentHashes:         []*daghash.Hash{},
+		HashMerkleRoot:       &genesisMerkleRoot,
+		IDMerkleRoot:         &genesisMerkleRoot,
+		AcceptedIDMerkleRoot: &daghash.Hash{},
+		UTXOCommitment:       &daghash.Hash{},
+		Timestamp:            time.Unix(0x5cd83da0, 0),
+		Bits:                 0x207fffff,
+		Nonce:                0x1,
 	},
 	Transactions: []*wire.MsgTx{genesisCoinbaseTx},
 }
@@ -117,10 +119,10 @@ var devNetGenesisCoinbaseTx = genesisCoinbaseTx
 // devGenesisHash is the hash of the first block in the block chain for the development
 // network (genesis block).
 var devNetGenesisHash = daghash.Hash([daghash.HashSize]byte{
-	0xe8, 0xf0, 0x59, 0x4b, 0x54, 0xe7, 0xa1, 0xba,
-	0x1b, 0xe0, 0x6c, 0x72, 0xf8, 0x3d, 0x75, 0x5d,
-	0xa3, 0x3c, 0xc5, 0x71, 0x43, 0x94, 0x81, 0xbf,
-	0x32, 0x82, 0x5e, 0xfa, 0x6a, 0x0d, 0x00, 0x00,
+	0x53, 0x68, 0x95, 0xd4, 0xf7, 0xc7, 0x3b, 0x94,
+	0x64, 0xfa, 0x98, 0xc7, 0xcb, 0x92, 0x53, 0x71,
+	0x5e, 0x14, 0xd1, 0x83, 0x01, 0xd4, 0x1e, 0x17,
+	0xd4, 0xc4, 0xd3, 0x50, 0xa7, 0x64, 0x00, 0x00,
 })
 
 // devNetGenesisMerkleRoot is the hash of the first transaction in the genesis block
@@ -131,13 +133,15 @@ var devNetGenesisMerkleRoot = genesisMerkleRoot
 // public transaction ledger for the development network.
 var devNetGenesisBlock = wire.MsgBlock{
 	Header: wire.BlockHeader{
-		Version:        1,
-		ParentHashes:   []*daghash.Hash{},
-		HashMerkleRoot: &devNetGenesisMerkleRoot,
-		IDMerkleRoot:   &devNetGenesisMerkleRoot,
-		Timestamp:      time.Unix(0x5ca09ba1, 0),
-		Bits:           0x1e7fffff,
-		Nonce:          0x155d9,
+		Version:              1,
+		ParentHashes:         []*daghash.Hash{},
+		HashMerkleRoot:       &devNetGenesisMerkleRoot,
+		IDMerkleRoot:         &devNetGenesisMerkleRoot,
+		AcceptedIDMerkleRoot: &daghash.Hash{},
+		UTXOCommitment:       &daghash.Hash{},
+		Timestamp:            time.Unix(0x5cd83da0, 0),
+		Bits:                 0x1e7fffff,
+		Nonce:                0xfe2a,
 	},
 	Transactions: []*wire.MsgTx{devNetGenesisCoinbaseTx},
 }

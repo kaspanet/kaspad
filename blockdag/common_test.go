@@ -13,6 +13,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"strings"
+	"testing"
 	"time"
 
 	"github.com/daglabs/btcd/dagconfig"
@@ -79,6 +80,17 @@ func loadBlocks(filename string) (blocks []*util.Block, err error) {
 	}
 
 	return
+}
+
+func loadBlocksWithLog(t *testing.T, filename string) ([]*util.Block, error) {
+	blocks, err := loadBlocks(filename)
+	if err == nil {
+		t.Logf("Loaded %d blocks from file %s", len(blocks), filename)
+		for i, b := range blocks {
+			t.Logf("Block #%d: %s", i, b.Hash())
+		}
+	}
+	return blocks, err
 }
 
 // loadUTXOSet returns a utxo view loaded from a file.
@@ -188,12 +200,14 @@ func newTestDAG(params *dagconfig.Params) *BlockDAG {
 func newTestNode(parents blockSet, blockVersion int32, bits uint32, timestamp time.Time, phantomK uint32) *blockNode {
 	// Make up a header and create a block node from it.
 	header := &wire.BlockHeader{
-		Version:        blockVersion,
-		ParentHashes:   parents.hashes(),
-		Bits:           bits,
-		Timestamp:      timestamp,
-		HashMerkleRoot: &daghash.ZeroHash,
-		IDMerkleRoot:   &daghash.ZeroHash,
+		Version:              blockVersion,
+		ParentHashes:         parents.hashes(),
+		Bits:                 bits,
+		Timestamp:            timestamp,
+		HashMerkleRoot:       &daghash.ZeroHash,
+		IDMerkleRoot:         &daghash.ZeroHash,
+		AcceptedIDMerkleRoot: &daghash.ZeroHash,
+		UTXOCommitment:       &daghash.ZeroHash,
 	}
 	return newBlockNode(header, parents, phantomK)
 }

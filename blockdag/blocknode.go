@@ -97,12 +97,14 @@ type blockNode struct {
 	// reconstructing headers from memory.  These must be treated as
 	// immutable and are intentionally ordered to avoid padding on 64-bit
 	// platforms.
-	version        int32
-	bits           uint32
-	nonce          uint64
-	timestamp      int64
-	hashMerkleRoot *daghash.Hash
-	idMerkleRoot   *daghash.Hash
+	version              int32
+	bits                 uint32
+	nonce                uint64
+	timestamp            int64
+	hashMerkleRoot       *daghash.Hash
+	idMerkleRoot         *daghash.Hash
+	acceptedIDMerkleRoot *daghash.Hash
+	utxoCommitment       *daghash.Hash
 
 	// status is a bitfield representing the validation state of the block. The
 	// status field, unlike the other fields, may be written to and so should
@@ -130,6 +132,8 @@ func initBlockNode(node *blockNode, blockHeader *wire.BlockHeader, parents block
 		node.timestamp = blockHeader.Timestamp.Unix()
 		node.hashMerkleRoot = blockHeader.HashMerkleRoot
 		node.idMerkleRoot = blockHeader.IDMerkleRoot
+		node.acceptedIDMerkleRoot = blockHeader.AcceptedIDMerkleRoot
+		node.utxoCommitment = blockHeader.UTXOCommitment
 	} else {
 		node.hash = &daghash.ZeroHash
 	}
@@ -176,13 +180,15 @@ func (node *blockNode) updateParentsChildren() {
 func (node *blockNode) Header() *wire.BlockHeader {
 	// No lock is needed because all accessed fields are immutable.
 	return &wire.BlockHeader{
-		Version:        node.version,
-		ParentHashes:   node.ParentHashes(),
-		HashMerkleRoot: node.hashMerkleRoot,
-		IDMerkleRoot:   node.idMerkleRoot,
-		Timestamp:      time.Unix(node.timestamp, 0),
-		Bits:           node.bits,
-		Nonce:          node.nonce,
+		Version:              node.version,
+		ParentHashes:         node.ParentHashes(),
+		HashMerkleRoot:       node.hashMerkleRoot,
+		IDMerkleRoot:         node.idMerkleRoot,
+		AcceptedIDMerkleRoot: node.acceptedIDMerkleRoot,
+		UTXOCommitment:       node.utxoCommitment,
+		Timestamp:            time.Unix(node.timestamp, 0),
+		Bits:                 node.bits,
+		Nonce:                node.nonce,
 	}
 }
 

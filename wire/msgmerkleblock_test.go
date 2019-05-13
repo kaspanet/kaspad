@@ -24,9 +24,12 @@ func TestMerkleBlock(t *testing.T) {
 	parentHashes := blockOne.Header.ParentHashes
 	hashMerkleRoot := blockOne.Header.HashMerkleRoot
 	idMerkleRoot := blockOne.Header.IDMerkleRoot
+	acceptedIDMerkleRoot := blockOne.Header.AcceptedIDMerkleRoot
+	utxoCommitment := blockOne.Header.UTXOCommitment
 	bits := blockOne.Header.Bits
 	nonce := blockOne.Header.Nonce
-	bh := NewBlockHeader(1, parentHashes, hashMerkleRoot, idMerkleRoot, bits, nonce)
+	bh := NewBlockHeader(1, parentHashes, hashMerkleRoot, idMerkleRoot,
+		acceptedIDMerkleRoot, utxoCommitment, bits, nonce)
 
 	// Ensure the command is expected value.
 	wantCmd := "merkleblock"
@@ -117,9 +120,12 @@ func TestMerkleBlockCrossProtocol(t *testing.T) {
 	parentHashes := blockOne.Header.ParentHashes
 	hashMerkleRoot := blockOne.Header.HashMerkleRoot
 	idMerkleRoot := blockOne.Header.IDMerkleRoot
+	acceptedIDMerkleRoot := blockOne.Header.AcceptedIDMerkleRoot
+	utxoCommitment := blockOne.Header.UTXOCommitment
 	bits := blockOne.Header.Bits
 	nonce := blockOne.Header.Nonce
-	bh := NewBlockHeader(1, parentHashes, hashMerkleRoot, idMerkleRoot, bits, nonce)
+	bh := NewBlockHeader(1, parentHashes, hashMerkleRoot, idMerkleRoot,
+		acceptedIDMerkleRoot, utxoCommitment, bits, nonce)
 
 	msg := NewMsgMerkleBlock(bh)
 
@@ -203,22 +209,26 @@ func TestMerkleBlockWireErrors(t *testing.T) {
 		{&merkleBlockOne, merkleBlockOneBytes, pver, 69, io.ErrShortWrite, io.EOF},
 		// Force error in hash merkle root.
 		{&merkleBlockOne, merkleBlockOneBytes, pver, 101, io.ErrShortWrite, io.EOF},
-		// Force error in timestamp.
+		// Force error in accepted ID merkle root.
 		{&merkleBlockOne, merkleBlockOneBytes, pver, 133, io.ErrShortWrite, io.EOF},
+		// Force error in utxo commitment.
+		{&merkleBlockOne, merkleBlockOneBytes, pver, 165, io.ErrShortWrite, io.EOF},
+		// Force error in timestamp.
+		{&merkleBlockOne, merkleBlockOneBytes, pver, 197, io.ErrShortWrite, io.EOF},
 		// Force error in difficulty bits.
-		{&merkleBlockOne, merkleBlockOneBytes, pver, 141, io.ErrShortWrite, io.EOF},
+		{&merkleBlockOne, merkleBlockOneBytes, pver, 205, io.ErrShortWrite, io.EOF},
 		// Force error in header nonce.
-		{&merkleBlockOne, merkleBlockOneBytes, pver, 145, io.ErrShortWrite, io.EOF},
+		{&merkleBlockOne, merkleBlockOneBytes, pver, 209, io.ErrShortWrite, io.EOF},
 		// Force error in transaction count.
-		{&merkleBlockOne, merkleBlockOneBytes, pver, 153, io.ErrShortWrite, io.EOF},
+		{&merkleBlockOne, merkleBlockOneBytes, pver, 217, io.ErrShortWrite, io.EOF},
 		// Force error in num hashes.
-		{&merkleBlockOne, merkleBlockOneBytes, pver, 157, io.ErrShortWrite, io.EOF},
+		{&merkleBlockOne, merkleBlockOneBytes, pver, 221, io.ErrShortWrite, io.EOF},
 		// Force error in hashes.
-		{&merkleBlockOne, merkleBlockOneBytes, pver, 158, io.ErrShortWrite, io.EOF},
+		{&merkleBlockOne, merkleBlockOneBytes, pver, 222, io.ErrShortWrite, io.EOF},
 		// Force error in num flag bytes.
-		{&merkleBlockOne, merkleBlockOneBytes, pver, 190, io.ErrShortWrite, io.EOF},
+		{&merkleBlockOne, merkleBlockOneBytes, pver, 254, io.ErrShortWrite, io.EOF},
 		// Force error in flag bytes.
-		{&merkleBlockOne, merkleBlockOneBytes, pver, 191, io.ErrShortWrite, io.EOF},
+		{&merkleBlockOne, merkleBlockOneBytes, pver, 255, io.ErrShortWrite, io.EOF},
 	}
 
 	t.Logf("Running %d tests", len(tests))
@@ -275,16 +285,17 @@ func TestMerkleBlockOverflowErrors(t *testing.T) {
 	// allowed tx hashes.
 	var buf bytes.Buffer
 	WriteVarInt(&buf, maxTxPerBlock+1)
-	numHashesOffset := 157
+	numHashesOffset := 221
 	exceedMaxHashes := make([]byte, numHashesOffset)
 	copy(exceedMaxHashes, merkleBlockOneBytes[:numHashesOffset])
+	spew.Dump(exceedMaxHashes)
 	exceedMaxHashes = append(exceedMaxHashes, buf.Bytes()...)
 
 	// Create bytes for a merkle block that claims to have more than the max
 	// allowed flag bytes.
 	buf.Reset()
 	WriteVarInt(&buf, maxFlagsPerMerkleBlock+1)
-	numFlagBytesOffset := 190
+	numFlagBytesOffset := 254
 	exceedMaxFlagBytes := make([]byte, numFlagBytesOffset)
 	copy(exceedMaxFlagBytes, merkleBlockOneBytes[:numFlagBytesOffset])
 	exceedMaxFlagBytes = append(exceedMaxFlagBytes, buf.Bytes()...)
@@ -326,10 +337,12 @@ var merkleBlockOne = MsgMerkleBlock{
 			0x7b, 0xa1, 0xa3, 0xc3, 0x54, 0x0b, 0xf7, 0xb1,
 			0xcd, 0xb6, 0x06, 0xe8, 0x57, 0x23, 0x3e, 0x0e,
 		},
-		IDMerkleRoot: exampleIDMerkleRoot,
-		Timestamp:    time.Unix(0x4966bc61, 0), // 2009-01-08 20:54:25 -0600 CST
-		Bits:         0x1d00ffff,               // 486604799
-		Nonce:        0x9962e301,               // 2573394689
+		IDMerkleRoot:         exampleIDMerkleRoot,
+		AcceptedIDMerkleRoot: exampleAcceptedIDMerkleRoot,
+		UTXOCommitment:       exampleUTXOCommitment,
+		Timestamp:            time.Unix(0x4966bc61, 0), // 2009-01-08 20:54:25 -0600 CST
+		Bits:                 0x1d00ffff,               // 486604799
+		Nonce:                0x9962e301,               // 2573394689
 	},
 	Transactions: 1,
 	Hashes: []*daghash.Hash{
@@ -356,7 +369,7 @@ var merkleBlockOneBytes = []byte{
 	0x72, 0xff, 0x3d, 0x8e, 0xdb, 0xbb, 0x2d, 0xe0,
 	0xbf, 0xa6, 0x7b, 0x13, 0x97, 0x4b, 0xb9, 0x91,
 	0x0d, 0x11, 0x6d, 0x5c, 0xbd, 0x86, 0x3e, 0x68,
-	0x98, 0x20, 0x51, 0xfd, 0x1e, 0x4b, 0xa7, 0x44, // MerkleRoot
+	0x98, 0x20, 0x51, 0xfd, 0x1e, 0x4b, 0xa7, 0x44, // HashMerkleRoot
 	0xbb, 0xbe, 0x68, 0x0e, 0x1f, 0xee, 0x14, 0x67,
 	0x7b, 0xa1, 0xa3, 0xc3, 0x54, 0x0b, 0xf7, 0xb1,
 	0xcd, 0xb6, 0x06, 0xe8, 0x57, 0x23, 0x3e, 0x0e,
@@ -364,6 +377,14 @@ var merkleBlockOneBytes = []byte{
 	0x65, 0x9C, 0x79, 0x3C, 0xE3, 0x70, 0xD9, 0x5F,
 	0x09, 0x3B, 0xC7, 0xE3, 0x67, 0x11, 0x7B, 0x3C,
 	0x30, 0xC1, 0xF8, 0xFD, 0xD0, 0xD9, 0x72, 0x87,
+	0x09, 0x3B, 0xC7, 0xE3, 0x67, 0x11, 0x7B, 0x3C, // AcceptedIDMerkleRoot
+	0x30, 0xC1, 0xF8, 0xFD, 0xD0, 0xD9, 0x72, 0x87,
+	0x7F, 0x16, 0xC5, 0x96, 0x2E, 0x8B, 0xD9, 0x63,
+	0x65, 0x9C, 0x79, 0x3C, 0xE3, 0x70, 0xD9, 0x5F,
+	0x10, 0x3B, 0xC7, 0xE3, 0x67, 0x11, 0x7B, 0x3C, // UTXOCommitment
+	0x30, 0xC1, 0xF8, 0xFD, 0xD0, 0xD9, 0x72, 0x87,
+	0x7F, 0x16, 0xC5, 0x96, 0x2E, 0x8B, 0xD9, 0x63,
+	0x65, 0x9C, 0x79, 0x3C, 0xE3, 0x70, 0xD9, 0x5F,
 	0x61, 0xbc, 0x66, 0x49, 0x00, 0x00, 0x00, 0x00, // Timestamp
 	0xff, 0xff, 0x00, 0x1d, // Bits
 	0x01, 0xe3, 0x62, 0x99, 0x00, 0x00, 0x00, 0x00, // Fake Nonce. TODO: (Ori) Replace to a real nonce
