@@ -192,10 +192,10 @@ func TestHaveBlock(t *testing.T) {
 		{hash: dagconfig.SimNetParams.GenesisHash.String(), want: true},
 
 		// Block 3b should be present (as a second child of Block 2).
-		{hash: "3a81c2f7064370dddaeaf7bc7e4d282702cefb2b6e11c84942c3791c76cdd3e8", want: true},
+		{hash: "0a20af2fa5ce154a60faca96e9fa125fc52e0ca8f98484708d0413203626edaf", want: true},
 
 		// Block 100000 should be present (as an orphan).
-		{hash: "746deb238f38dfc82ea2e1dbd85c079ceb581fc2912aae37d6c3675a12545df4", want: true},
+		{hash: "18bcf45b8c0dbccd7690a728f3486c6d5fc84971688f89f4554297b6a278e554", want: true},
 
 		// Random hashes should not be available.
 		{hash: "123", want: false},
@@ -558,6 +558,7 @@ func chainedNodes(parents blockSet, numNodes int) []*blockNode {
 			IDMerkleRoot:         &daghash.ZeroHash,
 			HashMerkleRoot:       &daghash.ZeroHash,
 			AcceptedIDMerkleRoot: &daghash.ZeroHash,
+			UTXOCommitment:       &daghash.ZeroHash,
 		}
 		header.ParentHashes = tips.hashes()
 		nodes[i] = newBlockNode(&header, tips, dagconfig.SimNetParams.K)
@@ -908,6 +909,7 @@ func TestValidateFeeTransaction(t *testing.T) {
 				HashMerkleRoot:       BuildHashMerkleTreeStore(utilTxs).Root(),
 				IDMerkleRoot:         BuildIDMerkleTreeStore(utilTxs).Root(),
 				AcceptedIDMerkleRoot: &daghash.ZeroHash,
+				UTXOCommitment:       &daghash.ZeroHash,
 			},
 			Transactions: transactions,
 		}

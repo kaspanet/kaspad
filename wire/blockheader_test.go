@@ -29,7 +29,7 @@ func TestBlockHeader(t *testing.T) {
 	acceptedIDMerkleRoot := exampleAcceptedIDMerkleRoot
 	bits := uint32(0x1d00ffff)
 	bh := NewBlockHeader(1, hashes, merkleHash, idMerkleRoot,
-		acceptedIDMerkleRoot, bits, nonce)
+		acceptedIDMerkleRoot, exampleUTXOCommitment, bits, nonce)
 
 	// Ensure we get the same data back out.
 	if !reflect.DeepEqual(bh.ParentHashes, hashes) {
@@ -64,6 +64,7 @@ func TestBlockHeaderWire(t *testing.T) {
 		HashMerkleRoot:       mainNetGenesisMerkleRoot,
 		IDMerkleRoot:         exampleIDMerkleRoot,
 		AcceptedIDMerkleRoot: exampleAcceptedIDMerkleRoot,
+		UTXOCommitment:       exampleUTXOCommitment,
 		Timestamp:            time.Unix(0x495fab29, 0), // 2009-01-03 12:15:05 -0600 CST
 		Bits:                 bits,
 		Nonce:                nonce,
@@ -90,6 +91,10 @@ func TestBlockHeaderWire(t *testing.T) {
 		0x09, 0x3B, 0xC7, 0xE3, 0x67, 0x11, 0x7B, 0x3C,
 		0x30, 0xC1, 0xF8, 0xFD, 0xD0, 0xD9, 0x72, 0x87,
 		0x09, 0x3B, 0xC7, 0xE3, 0x67, 0x11, 0x7B, 0x3C, // AcceptedIDMerkleRoot
+		0x30, 0xC1, 0xF8, 0xFD, 0xD0, 0xD9, 0x72, 0x87,
+		0x7F, 0x16, 0xC5, 0x96, 0x2E, 0x8B, 0xD9, 0x63,
+		0x65, 0x9C, 0x79, 0x3C, 0xE3, 0x70, 0xD9, 0x5F,
+		0x10, 0x3B, 0xC7, 0xE3, 0x67, 0x11, 0x7B, 0x3C, // UTXOCommitment
 		0x30, 0xC1, 0xF8, 0xFD, 0xD0, 0xD9, 0x72, 0x87,
 		0x7F, 0x16, 0xC5, 0x96, 0x2E, 0x8B, 0xD9, 0x63,
 		0x65, 0x9C, 0x79, 0x3C, 0xE3, 0x70, 0xD9, 0x5F,
@@ -180,6 +185,7 @@ func TestBlockHeaderSerialize(t *testing.T) {
 		HashMerkleRoot:       mainNetGenesisMerkleRoot,
 		IDMerkleRoot:         exampleIDMerkleRoot,
 		AcceptedIDMerkleRoot: exampleAcceptedIDMerkleRoot,
+		UTXOCommitment:       exampleUTXOCommitment,
 		Timestamp:            time.Unix(0x495fab29, 0), // 2009-01-03 12:15:05 -0600 CST
 		Bits:                 bits,
 		Nonce:                nonce,
@@ -206,6 +212,10 @@ func TestBlockHeaderSerialize(t *testing.T) {
 		0x09, 0x3B, 0xC7, 0xE3, 0x67, 0x11, 0x7B, 0x3C,
 		0x30, 0xC1, 0xF8, 0xFD, 0xD0, 0xD9, 0x72, 0x87,
 		0x09, 0x3B, 0xC7, 0xE3, 0x67, 0x11, 0x7B, 0x3C, // AcceptedIDMerkleRoot
+		0x30, 0xC1, 0xF8, 0xFD, 0xD0, 0xD9, 0x72, 0x87,
+		0x7F, 0x16, 0xC5, 0x96, 0x2E, 0x8B, 0xD9, 0x63,
+		0x65, 0x9C, 0x79, 0x3C, 0xE3, 0x70, 0xD9, 0x5F,
+		0x10, 0x3B, 0xC7, 0xE3, 0x67, 0x11, 0x7B, 0x3C, // UTXOCommitment
 		0x30, 0xC1, 0xF8, 0xFD, 0xD0, 0xD9, 0x72, 0x87,
 		0x7F, 0x16, 0xC5, 0x96, 0x2E, 0x8B, 0xD9, 0x63,
 		0x65, 0x9C, 0x79, 0x3C, 0xE3, 0x70, 0xD9, 0x5F,
@@ -269,6 +279,7 @@ func TestBlockHeaderSerializeSize(t *testing.T) {
 		HashMerkleRoot:       mainNetGenesisMerkleRoot,
 		IDMerkleRoot:         mainNetGenesisMerkleRoot,
 		AcceptedIDMerkleRoot: &daghash.ZeroHash,
+		UTXOCommitment:       &daghash.ZeroHash,
 		Timestamp:            timestamp,
 		Bits:                 bits,
 		Nonce:                nonce,
@@ -280,6 +291,7 @@ func TestBlockHeaderSerializeSize(t *testing.T) {
 		HashMerkleRoot:       mainNetGenesisMerkleRoot,
 		IDMerkleRoot:         mainNetGenesisMerkleRoot,
 		AcceptedIDMerkleRoot: &daghash.ZeroHash,
+		UTXOCommitment:       &daghash.ZeroHash,
 		Timestamp:            timestamp,
 		Bits:                 bits,
 		Nonce:                nonce,
@@ -289,10 +301,10 @@ func TestBlockHeaderSerializeSize(t *testing.T) {
 		size int          // Expected serialized size
 	}{
 		// Block with no transactions.
-		{genesisBlockHdr, 121},
+		{genesisBlockHdr, 153},
 
 		// First block in the mainnet block DAG.
-		{baseBlockHdr, 185},
+		{baseBlockHdr, 217},
 	}
 
 	t.Logf("Running %d tests", len(tests))

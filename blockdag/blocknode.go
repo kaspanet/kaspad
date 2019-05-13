@@ -104,6 +104,7 @@ type blockNode struct {
 	hashMerkleRoot       *daghash.Hash
 	idMerkleRoot         *daghash.Hash
 	acceptedIDMerkleRoot *daghash.Hash
+	utxoCommitment       *daghash.Hash
 
 	// status is a bitfield representing the validation state of the block. The
 	// status field, unlike the other fields, may be written to and so should
@@ -132,6 +133,7 @@ func initBlockNode(node *blockNode, blockHeader *wire.BlockHeader, parents block
 		node.hashMerkleRoot = blockHeader.HashMerkleRoot
 		node.idMerkleRoot = blockHeader.IDMerkleRoot
 		node.acceptedIDMerkleRoot = blockHeader.AcceptedIDMerkleRoot
+		node.utxoCommitment = blockHeader.UTXOCommitment
 	} else {
 		node.hash = &daghash.ZeroHash
 	}
@@ -183,6 +185,7 @@ func (node *blockNode) Header() *wire.BlockHeader {
 		HashMerkleRoot:       node.hashMerkleRoot,
 		IDMerkleRoot:         node.idMerkleRoot,
 		AcceptedIDMerkleRoot: node.acceptedIDMerkleRoot,
+		UTXOCommitment:       node.utxoCommitment,
 		Timestamp:            time.Unix(node.timestamp, 0),
 		Bits:                 node.bits,
 		Nonce:                node.nonce,

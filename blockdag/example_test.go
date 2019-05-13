@@ -67,5 +67,5 @@ func ExampleBlockDAG_ProcessBlock() {
 	fmt.Printf("Block accepted. Is it an orphan?: %v", isOrphan)
 
 	// Output:
-	// Failed to process block: already have block 4aa46622896ef2f0c59aaff0c05f87984a3e640a8e79f9167f4c1b959fd14706
+	// Failed to process block: already have block 5804d0207bdbfd88dd035271fab95944585eb57017b0709d5a0a10a7edb37795
 }

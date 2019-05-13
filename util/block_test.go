@@ -38,7 +38,7 @@ func TestBlock(t *testing.T) {
 	}
 
 	// Hash for block 100,000.
-	wantHashStr := "c4bb55d2eaae7c7505b199097ef163ab940aa41228bbdb6f8b6d8a5b71bc432c"
+	wantHashStr := "df1b3cc747f665f36df84bdaa54a9ea695fbe12e102156fc1fc61d89366bc2d7"
 	wantHash, err := daghash.NewHashFromStr(wantHashStr)
 	if err != nil {
 		t.Errorf("NewHashFromStr: %v", err)
@@ -147,10 +147,10 @@ func TestBlock(t *testing.T) {
 
 	// Transaction offsets and length for the transaction in Block100000.
 	wantTxLocs := []wire.TxLoc{
-		{TxStart: 186, TxLen: 163},
-		{TxStart: 349, TxLen: 287},
-		{TxStart: 636, TxLen: 285},
-		{TxStart: 921, TxLen: 253},
+		{TxStart: 218, TxLen: 163},
+		{TxStart: 381, TxLen: 287},
+		{TxStart: 668, TxLen: 285},
+		{TxStart: 953, TxLen: 253},
 	}
 
 	// Ensure the transaction location information is accurate.
@@ -259,7 +259,7 @@ func TestBlockErrors(t *testing.T) {
 	}
 
 	// Truncate the block byte buffer to force errors.
-	shortBytes := block100000Bytes[:186]
+	shortBytes := block100000Bytes[:218]
 	_, err = util.NewBlockFromBytes(shortBytes)
 	if err != io.EOF {
 		t.Errorf("NewBlockFromBytes: did not get expected error - "+
@@ -336,6 +336,12 @@ var Block100000 = wire.MsgBlock{
 			0xef, 0xb5, 0xa4, 0xac, 0x42, 0x47, 0xe9, 0xf3,
 			0x66, 0x57, 0xa9, 0x25, 0x2a, 0xac, 0xd5, 0xc0,
 			0xb2, 0x94, 0x09, 0x96, 0xec, 0xff, 0x95, 0x22,
+		},
+		UTXOCommitment: &daghash.Hash{
+			0x10, 0x3B, 0xC7, 0xE3, 0x67, 0x11, 0x7B, 0x3C,
+			0x30, 0xC1, 0xF8, 0xFD, 0xD0, 0xD9, 0x72, 0x87,
+			0x7F, 0x16, 0xC5, 0x96, 0x2E, 0x8B, 0xD9, 0x63,
+			0x65, 0x9C, 0x79, 0x3C, 0xE3, 0x70, 0xD9, 0x5F,
 		},
 		Timestamp: time.Unix(1529483563, 0), // 2018-06-20 08:32:43 +0000 UTC
 		Bits:      0x1e00ffff,               // 503382015

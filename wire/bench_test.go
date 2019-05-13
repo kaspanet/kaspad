@@ -426,7 +426,7 @@ func BenchmarkDecodeHeaders(b *testing.B) {
 			}
 			parentHashes[i] = hash
 		}
-		m.AddBlockHeader(NewBlockHeader(1, parentHashes, hash, hash, hash, 0, uint64(i)))
+		m.AddBlockHeader(NewBlockHeader(1, parentHashes, hash, hash, hash, hash, 0, uint64(i)))
 	}
 
 	// Serialize it so the bytes are available to test the decode below.
@@ -572,7 +572,7 @@ func BenchmarkDecodeMerkleBlock(b *testing.B) {
 	if err != nil {
 		b.Fatalf("NewHashFromStr: unexpected error: %v", err)
 	}
-	m.Header = *NewBlockHeader(1, []*daghash.Hash{hash}, hash, hash, hash, 0, uint64(10000))
+	m.Header = *NewBlockHeader(1, []*daghash.Hash{hash}, hash, hash, hash, hash, 0, uint64(10000))
 	for i := 0; i < 105; i++ {
 		hash, err := daghash.NewHashFromStr(fmt.Sprintf("%x", i))
 		if err != nil {

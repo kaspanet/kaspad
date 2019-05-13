@@ -207,6 +207,7 @@ func newTestNode(parents blockSet, blockVersion int32, bits uint32, timestamp ti
 		HashMerkleRoot:       &daghash.ZeroHash,
 		IDMerkleRoot:         &daghash.ZeroHash,
 		AcceptedIDMerkleRoot: &daghash.ZeroHash,
+		UTXOCommitment:       &daghash.ZeroHash,
 	}
 	return newBlockNode(header, parents, phantomK)
 }
