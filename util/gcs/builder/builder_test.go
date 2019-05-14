@@ -9,9 +9,9 @@ import (
 	"encoding/hex"
 	"testing"
 
-	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/txscript"
 	"github.com/daglabs/btcd/util"
+	"github.com/daglabs/btcd/util/daghash"
 	"github.com/daglabs/btcd/util/gcs"
 	"github.com/daglabs/btcd/util/gcs/builder"
 	"github.com/daglabs/btcd/wire"

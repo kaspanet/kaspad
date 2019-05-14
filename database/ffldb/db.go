@@ -22,10 +22,10 @@ import (
 	"github.com/btcsuite/goleveldb/leveldb/iterator"
 	"github.com/btcsuite/goleveldb/leveldb/opt"
 	dbutil "github.com/btcsuite/goleveldb/leveldb/util"
-	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/database"
 	"github.com/daglabs/btcd/database/internal/treap"
 	"github.com/daglabs/btcd/util"
+	"github.com/daglabs/btcd/util/daghash"
 	"github.com/daglabs/btcd/wire"
 )
 
