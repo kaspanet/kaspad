@@ -534,13 +534,13 @@ func (node *blockNode) calculateAcceptedIDMerkleRoot(txsAcceptanceData MultiBloc
 	return acceptedIDMerkleTree.Root()
 }
 
-func (node *blockNode) validateAcceptedIDMerkleRoot(dag *BlockDAG, block *util.Block, txsAcceptanceData MultiBlockTxsAcceptanceData) error {
-	if block.IsGenesis() {
+func (node *blockNode) validateAcceptedIDMerkleRoot(dag *BlockDAG, txsAcceptanceData MultiBlockTxsAcceptanceData) error {
+	if node.isGenesis() {
 		return nil
 	}
 
 	calculatedAccepetedIDMerkleRoot := node.calculateAcceptedIDMerkleRoot(txsAcceptanceData)
-	header := block.MsgBlock().Header
+	header := node.Header()
 	if !header.AcceptedIDMerkleRoot.IsEqual(calculatedAccepetedIDMerkleRoot) {
 		str := fmt.Sprintf("block accepted ID merkle root is invalid - block "+
 			"header indicates %s, but calculated value is %s",
@@ -588,11 +588,6 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block, fastAdd bo
 	}
 
 	err = node.validateFeeTransaction(dag, block, txsAcceptanceData)
-	if err != nil {
-		return err
-	}
-
-	err = node.validateAcceptedIDMerkleRoot(dag, block, txsAcceptanceData)
 	if err != nil {
 		return err
 	}
@@ -772,7 +767,7 @@ func (dag *BlockDAG) NextBlockFeeTransaction() (*wire.MsgTx, error) {
 //
 // This function MUST be called with the DAG read-lock held
 func (dag *BlockDAG) NextBlockFeeTransactionNoLock() (*wire.MsgTx, error) {
-	_, txsAcceptanceData, _, err := dag.virtual.blockNode.verifyAndBuildUTXO(dag, nil, true)
+	_, txsAcceptanceData, err := dag.pastUTXO(&dag.virtual.blockNode)
 	if err != nil {
 		return nil, err
 	}
@@ -793,7 +788,7 @@ func (dag *BlockDAG) NextAcceptedIDMerkleRoot() (*daghash.Hash, error) {
 //
 // This function MUST be called with the DAG read-lock held
 func (dag *BlockDAG) NextAcceptedIDMerkleRootNoLock() (*daghash.Hash, error) {
-	_, txsAcceptanceData, _, err := dag.virtual.blockNode.verifyAndBuildUTXO(dag, nil, true)
+	_, txsAcceptanceData, err := dag.pastUTXO(&dag.virtual.blockNode)
 	if err != nil {
 		return nil, err
 	}
@@ -886,6 +881,11 @@ func (node *blockNode) verifyAndBuildUTXO(dag *BlockDAG, transactions []*util.Tx
 	newBlockUTXO UTXOSet, txsAcceptanceData MultiBlockTxsAcceptanceData, newBlockFeeData compactFeeData, err error) {
 
 	pastUTXO, txsAcceptanceData, err := dag.pastUTXO(node)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	err = node.validateAcceptedIDMerkleRoot(dag, txsAcceptanceData)
 	if err != nil {
 		return nil, nil, nil, err
 	}
