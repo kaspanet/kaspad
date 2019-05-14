@@ -653,13 +653,17 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 	// Create a new block ready to be solved.
 	hashMerkleTree := blockdag.BuildHashMerkleTreeStore(blockTxns)
 	idMerkleTree := blockdag.BuildIDMerkleTreeStore(blockTxns)
+	acceptedIDMerkleRoot, err := g.dag.NextAcceptedIDMerkleRoot()
+	if err != nil {
+		return nil, err
+	}
 	var msgBlock wire.MsgBlock
 	msgBlock.Header = wire.BlockHeader{
 		Version:              nextBlockVersion,
 		ParentHashes:         g.dag.TipHashes(),
 		HashMerkleRoot:       hashMerkleTree.Root(),
 		IDMerkleRoot:         idMerkleTree.Root(),
-		AcceptedIDMerkleRoot: &daghash.ZeroHash,
+		AcceptedIDMerkleRoot: acceptedIDMerkleRoot,
 		UTXOCommitment:       &daghash.ZeroHash,
 		Timestamp:            ts,
 		Bits:                 reqDifficulty,
