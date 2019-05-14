@@ -755,7 +755,7 @@ func (dag *BlockDAG) updateFinalityPoint() {
 
 // NextBlockFeeTransaction prepares the fee transaction for the next mined block
 //
-// This function CAN'T be called with the DAG lock not held.
+// This function CAN'T be called with the DAG lock held.
 func (dag *BlockDAG) NextBlockFeeTransaction() (*wire.MsgTx, error) {
 	dag.dagLock.RLock()
 	defer dag.dagLock.RUnlock()
@@ -776,7 +776,7 @@ func (dag *BlockDAG) NextBlockFeeTransactionNoLock() (*wire.MsgTx, error) {
 
 // NextAcceptedIDMerkleRoot prepares the acceptedIDMerkleRoot for the next mined block
 //
-// This function CAN'T be called with the DAG lock not held.
+// This function CAN'T be called with the DAG lock held.
 func (dag *BlockDAG) NextAcceptedIDMerkleRoot() (*daghash.Hash, error) {
 	dag.dagLock.RLock()
 	defer dag.dagLock.RUnlock()
