@@ -23,13 +23,11 @@ func TestMerkleBlock(t *testing.T) {
 	// Block 1 header.
 	parentHashes := blockOne.Header.ParentHashes
 	hashMerkleRoot := blockOne.Header.HashMerkleRoot
-	idMerkleRoot := blockOne.Header.IDMerkleRoot
 	acceptedIDMerkleRoot := blockOne.Header.AcceptedIDMerkleRoot
 	utxoCommitment := blockOne.Header.UTXOCommitment
 	bits := blockOne.Header.Bits
 	nonce := blockOne.Header.Nonce
-	bh := NewBlockHeader(1, parentHashes, hashMerkleRoot, idMerkleRoot,
-		acceptedIDMerkleRoot, utxoCommitment, bits, nonce)
+	bh := NewBlockHeader(1, parentHashes, hashMerkleRoot, acceptedIDMerkleRoot, utxoCommitment, bits, nonce)
 
 	// Ensure the command is expected value.
 	wantCmd := "merkleblock"
@@ -119,13 +117,11 @@ func TestMerkleBlockCrossProtocol(t *testing.T) {
 	// Block 1 header.
 	parentHashes := blockOne.Header.ParentHashes
 	hashMerkleRoot := blockOne.Header.HashMerkleRoot
-	idMerkleRoot := blockOne.Header.IDMerkleRoot
 	acceptedIDMerkleRoot := blockOne.Header.AcceptedIDMerkleRoot
 	utxoCommitment := blockOne.Header.UTXOCommitment
 	bits := blockOne.Header.Bits
 	nonce := blockOne.Header.Nonce
-	bh := NewBlockHeader(1, parentHashes, hashMerkleRoot, idMerkleRoot,
-		acceptedIDMerkleRoot, utxoCommitment, bits, nonce)
+	bh := NewBlockHeader(1, parentHashes, hashMerkleRoot, acceptedIDMerkleRoot, utxoCommitment, bits, nonce)
 
 	msg := NewMsgMerkleBlock(bh)
 
@@ -337,7 +333,6 @@ var merkleBlockOne = MsgMerkleBlock{
 			0x7b, 0xa1, 0xa3, 0xc3, 0x54, 0x0b, 0xf7, 0xb1,
 			0xcd, 0xb6, 0x06, 0xe8, 0x57, 0x23, 0x3e, 0x0e,
 		},
-		IDMerkleRoot:         exampleIDMerkleRoot,
 		AcceptedIDMerkleRoot: exampleAcceptedIDMerkleRoot,
 		UTXOCommitment:       exampleUTXOCommitment,
 		Timestamp:            time.Unix(0x4966bc61, 0), // 2009-01-08 20:54:25 -0600 CST
@@ -373,10 +368,6 @@ var merkleBlockOneBytes = []byte{
 	0xbb, 0xbe, 0x68, 0x0e, 0x1f, 0xee, 0x14, 0x67,
 	0x7b, 0xa1, 0xa3, 0xc3, 0x54, 0x0b, 0xf7, 0xb1,
 	0xcd, 0xb6, 0x06, 0xe8, 0x57, 0x23, 0x3e, 0x0e,
-	0x7F, 0x16, 0xC5, 0x96, 0x2E, 0x8B, 0xD9, 0x63, // IDMerkleRoot
-	0x65, 0x9C, 0x79, 0x3C, 0xE3, 0x70, 0xD9, 0x5F,
-	0x09, 0x3B, 0xC7, 0xE3, 0x67, 0x11, 0x7B, 0x3C,
-	0x30, 0xC1, 0xF8, 0xFD, 0xD0, 0xD9, 0x72, 0x87,
 	0x09, 0x3B, 0xC7, 0xE3, 0x67, 0x11, 0x7B, 0x3C, // AcceptedIDMerkleRoot
 	0x30, 0xC1, 0xF8, 0xFD, 0xD0, 0xD9, 0x72, 0x87,
 	0x7F, 0x16, 0xC5, 0x96, 0x2E, 0x8B, 0xD9, 0x63,

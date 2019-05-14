@@ -563,15 +563,6 @@ func (dag *BlockDAG) checkBlockSanity(block *util.Block, flags BehaviorFlags) er
 		return ruleError(ErrBadMerkleRoot, str)
 	}
 
-	idMerkleTree := BuildIDMerkleTreeStore(block.Transactions())
-	calculatedIDMerkleRoot := idMerkleTree.Root()
-	if !header.IDMerkleRoot.IsEqual(calculatedIDMerkleRoot) {
-		str := fmt.Sprintf("block ID merkle root is invalid - block "+
-			"header indicates %s, but calculated value is %s",
-			header.IDMerkleRoot, calculatedIDMerkleRoot)
-		return ruleError(ErrBadMerkleRoot, str)
-	}
-
 	// Check for duplicate transactions.  This check will be fairly quick
 	// since the transaction IDs are already cached due to building the
 	// merkle tree above.

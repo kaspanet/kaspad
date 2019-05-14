@@ -16,7 +16,6 @@ type GetBlockHeaderVerboseResult struct {
 	Version              int32    `json:"version"`
 	VersionHex           string   `json:"versionHex"`
 	HashMerkleRoot       string   `json:"hashMerkleRoot"`
-	IDMerkleRoot         string   `json:"idMerkleRoot"`
 	AcceptedIDMerkleRoot string   `json:"acceptedIdMerkleRoot"`
 	Time                 int64    `json:"time"`
 	Nonce                uint64   `json:"nonce"`
@@ -37,7 +36,6 @@ type GetBlockVerboseResult struct {
 	Version              int32         `json:"version"`
 	VersionHex           string        `json:"versionHex"`
 	HashMerkleRoot       string        `json:"hashMerkleRoot"`
-	IDMerkleRoot         string        `json:"idMerkleRoot"`
 	AcceptedIDMerkleRoot string        `json:"acceptedIdMerkleRoot"`
 	Tx                   []string      `json:"tx,omitempty"`
 	RawTx                []TxRawResult `json:"rawRx,omitempty"`

@@ -555,7 +555,6 @@ func chainedNodes(parents blockSet, numNodes int) []*blockNode {
 		// synthetic tests to work.
 		header := wire.BlockHeader{
 			Nonce:                testNoncePrng.Uint64(),
-			IDMerkleRoot:         &daghash.ZeroHash,
 			HashMerkleRoot:       &daghash.ZeroHash,
 			AcceptedIDMerkleRoot: &daghash.ZeroHash,
 			UTXOCommitment:       &daghash.ZeroHash,
@@ -919,7 +918,6 @@ func TestValidateFeeTransaction(t *testing.T) {
 				Bits:                 dag.genesis.Header().Bits,
 				ParentHashes:         parentHashes,
 				HashMerkleRoot:       BuildHashMerkleTreeStore(utilTxs).Root(),
-				IDMerkleRoot:         BuildIDMerkleTreeStore(utilTxs).Root(),
 				AcceptedIDMerkleRoot: acceptedIDMerkleRoot,
 				UTXOCommitment:       &daghash.ZeroHash,
 			},
