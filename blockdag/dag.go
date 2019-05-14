@@ -508,7 +508,7 @@ func (dag *BlockDAG) addBlock(node *blockNode, parentNodes blockSet, block *util
 	return err
 }
 
-func (node *blockNode) buildAndSortAcceptedTxs(txsAcceptanceData MultiBlockTxsAcceptanceData) []*util.Tx {
+func (node *blockNode) calculateAcceptedIDMerkleRoot(txsAcceptanceData MultiBlockTxsAcceptanceData) *daghash.Hash {
 	var acceptedTxs []*util.Tx
 	for _, blue := range node.blues {
 		blockTxsAcceptanceData, ok := txsAcceptanceData[*blue.hash]
@@ -525,12 +525,8 @@ func (node *blockNode) buildAndSortAcceptedTxs(txsAcceptanceData MultiBlockTxsAc
 	sort.Slice(acceptedTxs, func(i, j int) bool {
 		return daghash.LessTxID(acceptedTxs[i].ID(), acceptedTxs[j].ID())
 	})
-	return acceptedTxs
-}
 
-func (node *blockNode) calculateAcceptedIDMerkleRoot(txsAcceptanceData MultiBlockTxsAcceptanceData) *daghash.Hash {
-	accepetedTxs := node.buildAndSortAcceptedTxs(txsAcceptanceData)
-	acceptedIDMerkleTree := BuildIDMerkleTreeStore(accepetedTxs)
+	acceptedIDMerkleTree := BuildIDMerkleTreeStore(acceptedTxs)
 	return acceptedIDMerkleTree.Root()
 }
 
