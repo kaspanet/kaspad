@@ -508,13 +508,9 @@ func (dag *BlockDAG) addBlock(node *blockNode, parentNodes blockSet, block *util
 	return err
 }
 
-func (node *blockNode) calculateAcceptedIDMerkleRoot(txsAcceptanceData MultiBlockTxsAcceptanceData) *daghash.Hash {
+func calculateAcceptedIDMerkleRoot(txsAcceptanceData MultiBlockTxsAcceptanceData) *daghash.Hash {
 	var acceptedTxs []*util.Tx
-	for _, blue := range node.blues {
-		blockTxsAcceptanceData, ok := txsAcceptanceData[*blue.hash]
-		if !ok {
-			continue
-		}
+	for _, blockTxsAcceptanceData := range txsAcceptanceData {
 		for _, txAcceptance := range blockTxsAcceptanceData {
 			if !txAcceptance.IsAccepted {
 				continue
@@ -535,7 +531,7 @@ func (node *blockNode) validateAcceptedIDMerkleRoot(dag *BlockDAG, txsAcceptance
 		return nil
 	}
 
-	calculatedAccepetedIDMerkleRoot := node.calculateAcceptedIDMerkleRoot(txsAcceptanceData)
+	calculatedAccepetedIDMerkleRoot := calculateAcceptedIDMerkleRoot(txsAcceptanceData)
 	header := node.Header()
 	if !header.AcceptedIDMerkleRoot.IsEqual(calculatedAccepetedIDMerkleRoot) {
 		str := fmt.Sprintf("block accepted ID merkle root is invalid - block "+
@@ -789,7 +785,7 @@ func (dag *BlockDAG) NextAcceptedIDMerkleRootNoLock() (*daghash.Hash, error) {
 		return nil, err
 	}
 
-	return dag.virtual.blockNode.calculateAcceptedIDMerkleRoot(txsAcceptanceData), nil
+	return calculateAcceptedIDMerkleRoot(txsAcceptanceData), nil
 }
 
 // applyDAGChanges does the following:
