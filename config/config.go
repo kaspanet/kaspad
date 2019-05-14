@@ -21,11 +21,11 @@ import (
 
 	"github.com/btcsuite/go-socks/socks"
 	"github.com/daglabs/btcd/dagconfig"
-	"github.com/daglabs/btcd/util/daghash"
 	"github.com/daglabs/btcd/database"
 	"github.com/daglabs/btcd/logger"
 	"github.com/daglabs/btcd/mempool"
 	"github.com/daglabs/btcd/util"
+	"github.com/daglabs/btcd/util/daghash"
 	"github.com/daglabs/btcd/util/network"
 	"github.com/daglabs/btcd/util/subnetworkid"
 	"github.com/daglabs/btcd/version"

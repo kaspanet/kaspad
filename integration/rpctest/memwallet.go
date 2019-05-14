@@ -12,10 +12,10 @@ import (
 
 	"github.com/daglabs/btcd/btcec"
 	"github.com/daglabs/btcd/dagconfig"
-	"github.com/daglabs/btcd/util/daghash"
 	"github.com/daglabs/btcd/rpcclient"
 	"github.com/daglabs/btcd/txscript"
 	"github.com/daglabs/btcd/util"
+	"github.com/daglabs/btcd/util/daghash"
 	"github.com/daglabs/btcd/util/hdkeychain"
 	"github.com/daglabs/btcd/wire"
 )

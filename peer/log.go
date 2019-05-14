@@ -10,9 +10,9 @@ import (
 	"time"
 
 	"github.com/btcsuite/btclog"
-	"github.com/daglabs/btcd/util/daghash"
 	"github.com/daglabs/btcd/logger"
 	"github.com/daglabs/btcd/txscript"
+	"github.com/daglabs/btcd/util/daghash"
 	"github.com/daglabs/btcd/util/panics"
 	"github.com/daglabs/btcd/wire"
 )

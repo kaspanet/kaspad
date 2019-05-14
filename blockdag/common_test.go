@@ -17,9 +17,9 @@ import (
 	"time"
 
 	"github.com/daglabs/btcd/dagconfig"
-	"github.com/daglabs/btcd/util/daghash"
 	_ "github.com/daglabs/btcd/database/ffldb"
 	"github.com/daglabs/btcd/util"
+	"github.com/daglabs/btcd/util/daghash"
 	"github.com/daglabs/btcd/wire"
 )
 

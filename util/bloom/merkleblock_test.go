@@ -8,9 +8,9 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/daglabs/btcd/util/daghash"
 	"github.com/daglabs/btcd/util"
 	"github.com/daglabs/btcd/util/bloom"
+	"github.com/daglabs/btcd/util/daghash"
 	"github.com/daglabs/btcd/wire"
 	"github.com/davecgh/go-spew/spew"
 )

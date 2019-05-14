@@ -8,9 +8,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/daglabs/btcd/util/daghash"
 	"github.com/daglabs/btcd/database"
 	"github.com/daglabs/btcd/util"
+	"github.com/daglabs/btcd/util/daghash"
 )
 
 // BehaviorFlags is a bitmask defining tweaks to the normal behavior when

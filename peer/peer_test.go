@@ -14,8 +14,8 @@ import (
 
 	"github.com/btcsuite/go-socks/socks"
 	"github.com/daglabs/btcd/dagconfig"
-	"github.com/daglabs/btcd/util/daghash"
 	"github.com/daglabs/btcd/peer"
+	"github.com/daglabs/btcd/util/daghash"
 	"github.com/daglabs/btcd/wire"
 )
 

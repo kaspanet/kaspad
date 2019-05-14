@@ -29,7 +29,6 @@ import (
 	"github.com/daglabs/btcd/config"
 	"github.com/daglabs/btcd/connmgr"
 	"github.com/daglabs/btcd/dagconfig"
-	"github.com/daglabs/btcd/util/daghash"
 	"github.com/daglabs/btcd/database"
 	"github.com/daglabs/btcd/logger"
 	"github.com/daglabs/btcd/mempool"
@@ -39,6 +38,7 @@ import (
 	"github.com/daglabs/btcd/txscript"
 	"github.com/daglabs/btcd/util"
 	"github.com/daglabs/btcd/util/bloom"
+	"github.com/daglabs/btcd/util/daghash"
 	"github.com/daglabs/btcd/version"
 	"github.com/daglabs/btcd/wire"
 )

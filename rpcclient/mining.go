@@ -10,8 +10,8 @@ import (
 	"errors"
 
 	"github.com/daglabs/btcd/btcjson"
-	"github.com/daglabs/btcd/util/daghash"
 	"github.com/daglabs/btcd/util"
+	"github.com/daglabs/btcd/util/daghash"
 )
 
 // FutureGenerateResult is a future promise to deliver the result of a
