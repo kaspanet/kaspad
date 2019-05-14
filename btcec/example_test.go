@@ -9,7 +9,7 @@ import (
 	"fmt"
 
 	"github.com/daglabs/btcd/btcec"
-	"github.com/daglabs/btcd/dagconfig/daghash"
+	"github.com/daglabs/btcd/util/daghash"
 )
 
 // This example demonstrates signing a message with a secp256k1 private key that

@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/daglabs/btcd/dagconfig/daghash"
+	"github.com/daglabs/btcd/util/daghash"
 )
 
 // FilterType is used to represent a filter type.

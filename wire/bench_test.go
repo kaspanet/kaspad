@@ -14,7 +14,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/daglabs/btcd/dagconfig/daghash"
+	"github.com/daglabs/btcd/util/daghash"
 )
 
 // genesisCoinbaseTx is the coinbase transaction for the genesis blocks for

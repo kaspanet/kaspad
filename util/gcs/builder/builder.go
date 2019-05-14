@@ -9,7 +9,7 @@ import (
 	"crypto/rand"
 	"encoding/binary"
 
-	"github.com/daglabs/btcd/dagconfig/daghash"
+	"github.com/daglabs/btcd/util/daghash"
 	"github.com/daglabs/btcd/txscript"
 	"github.com/daglabs/btcd/util/gcs"
 	"github.com/daglabs/btcd/wire"

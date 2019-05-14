@@ -8,7 +8,7 @@ import (
 	"bytes"
 	"errors"
 	"github.com/daglabs/btcd/btcec"
-	"github.com/daglabs/btcd/dagconfig/daghash"
+	"github.com/daglabs/btcd/util/daghash"
 	"github.com/daglabs/btcd/util/base58"
 )
 

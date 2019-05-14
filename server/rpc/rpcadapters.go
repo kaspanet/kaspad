@@ -8,7 +8,7 @@ import (
 	"sync/atomic"
 
 	"github.com/daglabs/btcd/blockdag"
-	"github.com/daglabs/btcd/dagconfig/daghash"
+	"github.com/daglabs/btcd/util/daghash"
 	"github.com/daglabs/btcd/mempool"
 	"github.com/daglabs/btcd/netsync"
 	"github.com/daglabs/btcd/peer"

@@ -17,7 +17,7 @@ import (
 	"github.com/daglabs/btcd/blockdag"
 	"github.com/daglabs/btcd/btcec"
 	"github.com/daglabs/btcd/dagconfig"
-	"github.com/daglabs/btcd/dagconfig/daghash"
+	"github.com/daglabs/btcd/util/daghash"
 	"github.com/daglabs/btcd/integration/rpctest"
 	"github.com/daglabs/btcd/txscript"
 	"github.com/daglabs/btcd/util"

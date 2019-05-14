@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/daglabs/btcd/dagconfig"
-	"github.com/daglabs/btcd/dagconfig/daghash"
+	"github.com/daglabs/btcd/util/daghash"
 )
 
 // TestBlockHeap tests pushing, popping, and determining the length of the heap.

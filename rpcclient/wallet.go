@@ -9,7 +9,7 @@ import (
 	"strconv"
 
 	"github.com/daglabs/btcd/btcjson"
-	"github.com/daglabs/btcd/dagconfig/daghash"
+	"github.com/daglabs/btcd/util/daghash"
 	"github.com/daglabs/btcd/util"
 	"github.com/daglabs/btcd/wire"
 )

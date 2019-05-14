@@ -3,7 +3,7 @@ package blockdag
 import (
 	"container/heap"
 
-	"github.com/daglabs/btcd/dagconfig/daghash"
+	"github.com/daglabs/btcd/util/daghash"
 )
 
 // baseHeap is an implementation for heap.Interface that sorts blocks by their height
