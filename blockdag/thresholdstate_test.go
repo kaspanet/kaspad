@@ -7,7 +7,7 @@ package blockdag
 import (
 	"testing"
 
-	"github.com/daglabs/btcd/dagconfig/daghash"
+	"github.com/daglabs/btcd/util/daghash"
 )
 
 // TestThresholdStateStringer tests the stringized output for the

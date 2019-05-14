@@ -20,10 +20,10 @@ import (
 	"math/rand"
 
 	"github.com/daglabs/btcd/dagconfig"
-	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/database"
 	"github.com/daglabs/btcd/txscript"
 	"github.com/daglabs/btcd/util"
+	"github.com/daglabs/btcd/util/daghash"
 	"github.com/daglabs/btcd/util/subnetworkid"
 	"github.com/daglabs/btcd/util/txsort"
 	"github.com/daglabs/btcd/wire"
