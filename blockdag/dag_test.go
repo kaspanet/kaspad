@@ -174,8 +174,7 @@ func TestHaveBlock(t *testing.T) {
 	}
 
 	// Insert an orphan block.
-	isOrphan, err = dag.ProcessBlock(util.NewBlock(&Block100000),
-		BFNoPoWCheck)
+	isOrphan, err = dag.ProcessBlock(util.NewBlock(&Block100000), BFNoPoWCheck)
 	if err != nil {
 		t.Fatalf("Unable to process block: %v", err)
 	}
@@ -192,10 +191,10 @@ func TestHaveBlock(t *testing.T) {
 		{hash: dagconfig.SimNetParams.GenesisHash.String(), want: true},
 
 		// Block 3b should be present (as a second child of Block 2).
-		{hash: "6733a86f4e3a46c0d4df76d6fbfab88eacadf8e44f54eb544a18d6b95570510c", want: true},
+		{hash: "3f2ded16b7115e69a48cee5f4be743ff23ad8d41da16d059c38cc83d14459863", want: true},
 
 		// Block 100000 should be present (as an orphan).
-		{hash: "18bcf45b8c0dbccd7690a728f3486c6d5fc84971688f89f4554297b6a278e554", want: true},
+		{hash: "4e530ee9f967de3b2cd47ac5cd00109bb9ed7b0e30a60485c94badad29ecb4ce", want: true},
 
 		// Random hashes should not be available.
 		{hash: "123", want: false},
