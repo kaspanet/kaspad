@@ -5,7 +5,7 @@ import (
 	"encoding/hex"
 	"testing"
 
-	"github.com/daglabs/btcd/dagconfig/daghash"
+	"github.com/daglabs/btcd/util/daghash"
 )
 
 var testVectors = []struct {
@@ -147,7 +147,7 @@ func TestMultiset_Commutativity(t *testing.T) {
 		t.Fatalf("m was expected to be zero hash, but was %s instead", m.Hash())
 	}
 
-	// Here we first remove an element from an empty multiset, and then add some other 
+	// Here we first remove an element from an empty multiset, and then add some other
 	// elements, and then we create a new empty multiset, then we add the same elements
 	// we added to the previous multiset, and then we remove the same element we remove
 	// the same element we removed from the previous multiset. According to commutativity
