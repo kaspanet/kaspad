@@ -8,7 +8,7 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/daglabs/btcd/dagconfig/daghash"
+	"github.com/daglabs/btcd/util/daghash"
 )
 
 // JoinType is an enum representing a particular type of "node join". A node

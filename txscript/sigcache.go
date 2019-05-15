@@ -8,7 +8,7 @@ import (
 	"sync"
 
 	"github.com/daglabs/btcd/btcec"
-	"github.com/daglabs/btcd/dagconfig/daghash"
+	"github.com/daglabs/btcd/util/daghash"
 )
 
 // sigCacheEntry represents an entry in the SigCache. Entries within the

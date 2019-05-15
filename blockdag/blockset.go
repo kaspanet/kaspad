@@ -3,7 +3,7 @@ package blockdag
 import (
 	"strings"
 
-	"github.com/daglabs/btcd/dagconfig/daghash"
+	"github.com/daglabs/btcd/util/daghash"
 )
 
 // blockSet implements a basic unsorted set of blocks

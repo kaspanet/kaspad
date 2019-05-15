@@ -11,7 +11,7 @@ import (
 
 	"github.com/daglabs/btcd/util/subnetworkid"
 
-	"github.com/daglabs/btcd/dagconfig/daghash"
+	"github.com/daglabs/btcd/util/daghash"
 )
 
 // defaultTransactionAlloc is the default size used for the backing array

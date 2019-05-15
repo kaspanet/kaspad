@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	"github.com/daglabs/btcd/btcec"
-	"github.com/daglabs/btcd/dagconfig/daghash"
+	"github.com/daglabs/btcd/util/daghash"
 )
 
 // genRandomSig returns a random message, a signature of the message under the

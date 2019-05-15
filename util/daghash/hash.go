@@ -227,12 +227,17 @@ func (hash *Hash) Cmp(target *Hash) int {
 	return HashToBig(hash).Cmp(HashToBig(target))
 }
 
-//Less returns true iff hash a is less than hash b
+// Less returns true iff hash a is less than hash b
 func Less(a *Hash, b *Hash) bool {
 	return a.Cmp(b) < 0
 }
 
-//JoinHashesStrings joins all the stringified hashes separated by a separator
+// LessTxID returns true if tx ID a is less than tx ID b
+func LessTxID(a *TxID, b *TxID) bool {
+	return Less((*Hash)(a), (*Hash)(b))
+}
+
+// JoinHashesStrings joins all the stringified hashes separated by a separator
 func JoinHashesStrings(hashes []*Hash, separator string) string {
 	return strings.Join(Strings(hashes), separator)
 }

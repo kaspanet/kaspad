@@ -8,8 +8,8 @@ import (
 	"bytes"
 	"errors"
 	"github.com/daglabs/btcd/btcec"
-	"github.com/daglabs/btcd/dagconfig/daghash"
 	"github.com/daglabs/btcd/util/base58"
+	"github.com/daglabs/btcd/util/daghash"
 )
 
 // ErrMalformedPrivateKey describes an error where a WIF-encoded private

@@ -1,7 +1,7 @@
 package blockdag
 
 import (
-	"github.com/daglabs/btcd/dagconfig/daghash"
+	"github.com/daglabs/btcd/util/daghash"
 )
 
 // phantom calculates and returns the block's blue set, selected parent and blue score.
