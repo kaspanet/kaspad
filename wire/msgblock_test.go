@@ -75,7 +75,7 @@ func TestBlock(t *testing.T) {
 // TestBlockHash tests the ability to generate the hash of a block accurately.
 func TestBlockHash(t *testing.T) {
 	// Block 1 hash.
-	hashStr := "8a3a27a37c9e3342b4b38ae9ef29e59fe37b59618adafbf36a106b6d62f80654"
+	hashStr := "22e72b61a572bfb32b8739f4e5db3eebe9870e394288467958e93e4a3d3b749f"
 	wantHash, err := daghash.NewHashFromStr(hashStr)
 	if err != nil {
 		t.Errorf("NewHashFromStr: %v", err)
@@ -222,19 +222,19 @@ func TestBlockWireErrors(t *testing.T) {
 		// Force error in ID merkle root.
 		{&blockOne, blockOneBytes, pver, 101, io.ErrShortWrite, io.EOF},
 		// Force error in accepted ID merkle root.
-		{&blockOne, blockOneBytes, pver, 133, io.ErrShortWrite, io.EOF},
+		{&blockOne, blockOneBytes, pver, 101, io.ErrShortWrite, io.EOF},
 		// Force error in utxo commitment.
-		{&blockOne, blockOneBytes, pver, 165, io.ErrShortWrite, io.EOF},
+		{&blockOne, blockOneBytes, pver, 133, io.ErrShortWrite, io.EOF},
 		// Force error in timestamp.
-		{&blockOne, blockOneBytes, pver, 197, io.ErrShortWrite, io.EOF},
+		{&blockOne, blockOneBytes, pver, 165, io.ErrShortWrite, io.EOF},
 		// Force error in difficulty bits.
-		{&blockOne, blockOneBytes, pver, 205, io.ErrShortWrite, io.EOF},
+		{&blockOne, blockOneBytes, pver, 173, io.ErrShortWrite, io.EOF},
 		// Force error in header nonce.
-		{&blockOne, blockOneBytes, pver, 209, io.ErrShortWrite, io.EOF},
+		{&blockOne, blockOneBytes, pver, 177, io.ErrShortWrite, io.EOF},
 		// Force error in transaction count.
-		{&blockOne, blockOneBytes, pver, 217, io.ErrShortWrite, io.EOF},
+		{&blockOne, blockOneBytes, pver, 185, io.ErrShortWrite, io.EOF},
 		// Force error in transactions.
-		{&blockOne, blockOneBytes, pver, 218, io.ErrShortWrite, io.EOF},
+		{&blockOne, blockOneBytes, pver, 186, io.ErrShortWrite, io.EOF},
 	}
 
 	t.Logf("Running %d tests", len(tests))
@@ -349,20 +349,18 @@ func TestBlockSerializeErrors(t *testing.T) {
 		{&blockOne, blockOneBytes, 69, io.ErrShortWrite, io.EOF},
 		// Force error in ID merkle root.
 		{&blockOne, blockOneBytes, 101, io.ErrShortWrite, io.EOF},
-		// Force error in accepted ID merkle root.
-		{&blockOne, blockOneBytes, 133, io.ErrShortWrite, io.EOF},
 		// Force error in utxo commitment.
-		{&blockOne, blockOneBytes, 165, io.ErrShortWrite, io.EOF},
+		{&blockOne, blockOneBytes, 133, io.ErrShortWrite, io.EOF},
 		// Force error in timestamp.
-		{&blockOne, blockOneBytes, 197, io.ErrShortWrite, io.EOF},
+		{&blockOne, blockOneBytes, 165, io.ErrShortWrite, io.EOF},
 		// Force error in difficulty bits.
-		{&blockOne, blockOneBytes, 205, io.ErrShortWrite, io.EOF},
+		{&blockOne, blockOneBytes, 173, io.ErrShortWrite, io.EOF},
 		// Force error in header nonce.
-		{&blockOne, blockOneBytes, 209, io.ErrShortWrite, io.EOF},
+		{&blockOne, blockOneBytes, 177, io.ErrShortWrite, io.EOF},
 		// Force error in transaction count.
-		{&blockOne, blockOneBytes, 217, io.ErrShortWrite, io.EOF},
+		{&blockOne, blockOneBytes, 185, io.ErrShortWrite, io.EOF},
 		// Force error in transactions.
-		{&blockOne, blockOneBytes, 218, io.ErrShortWrite, io.EOF},
+		{&blockOne, blockOneBytes, 186, io.ErrShortWrite, io.EOF},
 	}
 
 	t.Logf("Running %d tests", len(tests))
@@ -486,7 +484,7 @@ func TestBlockSerializeSize(t *testing.T) {
 		size int       // Expected serialized size
 	}{
 		// Block with no transactions.
-		{noTxBlock, 218},
+		{noTxBlock, 186},
 
 		// First block in the mainnet block chain.
 		{&blockOne, len(blockOneBytes)},
@@ -555,10 +553,10 @@ var blockOne = MsgBlock{
 var blockOneBytes = []byte{
 	0x01, 0x00, 0x00, 0x00, // Version 1
 	0x02,                                           // NumParentBlocks
-	0x6f, 0xe2, 0x8c, 0x0a, 0xb6, 0xf1, 0xb3, 0x72, // mainNetGenesisHash
-	0xc1, 0xa6, 0xa2, 0x46, 0xae, 0x63, 0xf7, 0x4f,
-	0x93, 0x1e, 0x83, 0x65, 0xe1, 0x5a, 0x08, 0x9c,
-	0x68, 0xd6, 0x19, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0xdc, 0x5f, 0x5b, 0x5b, 0x1d, 0xc2, 0xa7, 0x25, // mainNetGenesisHash
+	0x49, 0xd5, 0x1d, 0x4d, 0xee, 0xd7, 0xa4, 0x8b,
+	0xaf, 0xd3, 0x14, 0x4b, 0x56, 0x78, 0x98, 0xb1,
+	0x8c, 0xfd, 0x9f, 0x69, 0xdd, 0xcf, 0xbb, 0x63,
 	0xf6, 0x7a, 0xd7, 0x69, 0x5d, 0x9b, 0x66, 0x2a, // simNetGenesisHash
 	0x72, 0xff, 0x3d, 0x8e, 0xdb, 0xbb, 0x2d, 0xe0,
 	0xbf, 0xa6, 0x7b, 0x13, 0x97, 0x4b, 0xb9, 0x91,
@@ -611,5 +609,5 @@ var blockOneBytes = []byte{
 
 // Transaction location information for block one transactions.
 var blockOneTxLocs = []TxLoc{
-	{TxStart: 218, TxLen: 162},
+	{TxStart: 186, TxLen: 162},
 }

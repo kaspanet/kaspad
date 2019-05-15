@@ -236,7 +236,7 @@ func TestCheckBlockSanity(t *testing.T) {
 			},
 			Timestamp: time.Unix(0x5cd18053, 0),
 			Bits:      0x207fffff,
-			Nonce:     0x0,
+			Nonce:     0x1,
 		},
 		Transactions: []*wire.MsgTx{
 			{
@@ -1069,7 +1069,7 @@ var BlockWithWrongTxOrder = wire.MsgBlock{
 		},
 		Timestamp: time.Unix(0x5cd16eaa, 0),
 		Bits:      0x207fffff,
-		Nonce:     0x2,
+		Nonce:     0x0,
 	},
 	Transactions: []*wire.MsgTx{
 		{

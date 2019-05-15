@@ -151,14 +151,14 @@ func TestNewHashFromStr(t *testing.T) {
 	}{
 		// Genesis hash.
 		{
-			"000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f",
+			"63bbcfdd699ffd8cb19878564b14d3af8ba4d7ee4d1dd54925a7c21d5b5b5fdc",
 			mainNetGenesisHash,
 			nil,
 		},
 
 		// Genesis hash with stripped leading zeros.
 		{
-			"19d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f",
+			"63bbcfdd699ffd8cb19878564b14d3af8ba4d7ee4d1dd54925a7c21d5b5b5fdc",
 			mainNetGenesisHash,
 			nil,
 		},
