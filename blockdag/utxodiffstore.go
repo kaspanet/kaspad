@@ -259,26 +259,7 @@ func serializeUTXOCollection(w io.Writer, collection utxoCollection) error {
 		return err
 	}
 	for outPoint, utxoEntry := range collection {
-		serializedOutPoint := *outpointKey(outPoint)
-		err = wire.WriteVarInt(w, uint64(len(serializedOutPoint)))
-		if err != nil {
-			return err
-		}
-
-		err := binary.Write(w, byteOrder, serializedOutPoint)
-		if err != nil {
-			return err
-		}
-
-		serializedUTXOEntry, err := serializeUTXOEntry(utxoEntry)
-		if err != nil {
-			return err
-		}
-		err = wire.WriteVarInt(w, uint64(len(serializedUTXOEntry)))
-		if err != nil {
-			return err
-		}
-		err = binary.Write(w, byteOrder, serializedUTXOEntry)
+		err := serializeUTXO(w, utxoEntry, &outPoint)
 		if err != nil {
 			return err
 		}

@@ -238,7 +238,7 @@ func utxoEntryHeaderCode(entry *UTXOEntry) uint64 {
 
 // serializeUTXOEntry returns the entry serialized to a format that is suitable
 // for long-term storage.  The format is described in detail above.
-func serializeUTXOEntry(entry *UTXOEntry) ([]byte, error) {
+func serializeUTXOEntry(entry *UTXOEntry) []byte {
 
 	// Encode the header code.
 	headerCode := utxoEntryHeaderCode(entry)
@@ -254,7 +254,7 @@ func serializeUTXOEntry(entry *UTXOEntry) ([]byte, error) {
 	offset += putCompressedTxOut(serialized[offset:], uint64(entry.Amount()),
 		entry.PkScript())
 
-	return serialized, nil
+	return serialized
 }
 
 // deserializeOutPoint decodes an outPoint from the passed serialized byte
@@ -325,13 +325,10 @@ func dbPutUTXODiff(dbTx database.Tx, diff *UTXODiff) error {
 
 	for outPoint, entry := range diff.toAdd {
 		// Serialize and store the UTXO entry.
-		serialized, err := serializeUTXOEntry(entry)
-		if err != nil {
-			return err
-		}
+		serialized := serializeUTXOEntry(entry)
 
 		key := outpointKey(outPoint)
-		err = utxoBucket.Put(*key, serialized)
+		err := utxoBucket.Put(*key, serialized)
 		// NOTE: The key is intentionally not recycled here since the
 		// database interface contract prohibits modifications.  It will
 		// be garbage collected normally when the database is done with

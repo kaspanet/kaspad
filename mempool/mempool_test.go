@@ -339,7 +339,9 @@ func newPoolHarness(dagParams *dagconfig.Params, numOutputs uint32, dbName strin
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	harness.txPool.mpUTXOSet.AddTx(coinbase.MsgTx(), curHeight+1)
+	if ok, err := harness.txPool.mpUTXOSet.AddTx(coinbase.MsgTx(), curHeight+1); err != nil || !ok {
+		return nil, nil, nil, fmt.Errorf("AddTx unexpectedly failed. Error: %s", err)
+	}
 	for i := uint32(0); i < numOutputs; i++ {
 		outpoints = append(outpoints, txOutToSpendableOutpoint(coinbase, i))
 	}
@@ -623,7 +625,9 @@ func TestProcessTransaction(t *testing.T) {
 		t.Fatalf("PayToAddrScript: unexpected error: %v", err)
 	}
 	p2shTx := util.NewTx(wire.NewNativeMsgTx(1, nil, []*wire.TxOut{{Value: 5000000000, PkScript: p2shPKScript}}))
-	harness.txPool.mpUTXOSet.AddTx(p2shTx.MsgTx(), curHeight+1)
+	if ok, err := harness.txPool.mpUTXOSet.AddTx(p2shTx.MsgTx(), curHeight+1); err != nil || !ok {
+		t.Fatalf("AddTx unexpectedly failed. Error: %s", err)
+	}
 
 	txIns := []*wire.TxIn{{
 		PreviousOutPoint: wire.OutPoint{TxID: *p2shTx.ID(), Index: 0},
@@ -1711,8 +1715,10 @@ func TestHandleNewBlock(t *testing.T) {
 	// Create block and add its transactions to UTXO set
 	block := util.NewBlock(&dummyBlock)
 	for i, tx := range block.Transactions() {
-		if !harness.txPool.mpUTXOSet.AddTx(tx.MsgTx(), 1) {
-			t.Fatalf("Failed to add transaction %v to UTXO set: %v", i, tx.ID())
+		if ok, err := harness.txPool.mpUTXOSet.AddTx(tx.MsgTx(), 1); err != nil {
+			t.Fatalf("Failed to add transaction (%v,%v) to UTXO set: %v", i, tx.ID(), err)
+		} else if !ok {
+			t.Fatalf("Failed to add transaction (%v,%v) to UTXO set", i, tx.ID())
 		}
 	}
 

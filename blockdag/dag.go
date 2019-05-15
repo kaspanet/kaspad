@@ -966,7 +966,10 @@ func (node *blockNode) applyBlueBlocks(selectedParentUTXO UTXOSet, blueBlocks []
 			if isSelectedParent {
 				isAccepted = true
 			} else {
-				isAccepted = pastUTXO.AddTx(tx.MsgTx(), node.height)
+				isAccepted, err = pastUTXO.AddTx(tx.MsgTx(), node.height)
+				if err != nil {
+					return nil, nil, err
+				}
 			}
 			blockTxsAcceptanceData[i] = TxAcceptanceData{Tx: tx, IsAccepted: isAccepted}
 		}

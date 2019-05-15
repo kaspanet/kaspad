@@ -361,12 +361,16 @@ func TestFullUTXOSet(t *testing.T) {
 	// Test fullUTXOSet addTx
 	txIn0 := &wire.TxIn{SignatureScript: []byte{}, PreviousOutPoint: wire.OutPoint{TxID: *txID0, Index: 0}, Sequence: 0}
 	transaction0 := wire.NewNativeMsgTx(1, []*wire.TxIn{txIn0}, []*wire.TxOut{txOut0})
-	if ok = emptySet.AddTx(transaction0, 0); ok {
+	if ok, err := emptySet.AddTx(transaction0, 0); err != nil {
+		t.Errorf("AddTx unexpectedly failed: %s", err)
+	} else if ok {
 		t.Errorf("addTx unexpectedly succeeded")
 	}
 	emptySet = &FullUTXOSet{utxoCollection: utxoCollection{outPoint0: utxoEntry0}}
-	if ok = emptySet.AddTx(transaction0, 0); !ok {
+	if ok, err := emptySet.AddTx(transaction0, 0); err != nil {
 		t.Errorf("addTx unexpectedly failed")
+	} else if ok {
+		t.Errorf("addTx unexpectedly succeeded")
 	}
 
 	// Test fullUTXOSet collection
@@ -795,7 +799,9 @@ func TestDiffFromTx(t *testing.T) {
 	if err != nil {
 		t.Errorf("createCoinbaseTxForTest: %v", err)
 	}
-	fus.AddTx(cbTx, 1)
+	if ok, err := fus.AddTx(cbTx, 1); err != nil || !ok {
+		t.Fatalf("AddTx unexpectedly failed. Error: %s", err)
+	}
 	node := &blockNode{height: 2} //Fake node
 	cbOutpoint := wire.OutPoint{TxID: *cbTx.TxID(), Index: 0}
 	txIns := []*wire.TxIn{&wire.TxIn{
@@ -845,7 +851,9 @@ func TestDiffFromTx(t *testing.T) {
 		toAdd:    utxoCollection{},
 		toRemove: utxoCollection{},
 	})
-	dus.AddTx(tx, 2)
+	if ok, err := dus.AddTx(tx, 2); err != nil || !ok {
+		t.Fatalf("AddTx unexpectedly failed. Error: %s", err)
+	}
 	_, err = dus.diffFromTx(tx, node)
 	if err == nil {
 		t.Errorf("diffFromTx: expected an error but got <nil>")
@@ -911,7 +919,10 @@ func TestUTXOSetAddEntry(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		utxoDiff.AddEntry(*test.outPointToAdd, test.utxoEntryToAdd)
+		err := utxoDiff.AddEntry(*test.outPointToAdd, test.utxoEntryToAdd)
+		if err != nil {
+			t.Fatalf("utxoDiff.AddEntry: unexpected err in test '%s': %s", test.name, err)
+		}
 		if !reflect.DeepEqual(utxoDiff, test.expectedUTXODiff) {
 			t.Fatalf("utxoDiff.AddEntry: unexpected utxoDiff in test '%s'. "+
 				"Expected: %v, got: %v", test.name, test.expectedUTXODiff, utxoDiff)

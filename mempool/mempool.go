@@ -516,12 +516,18 @@ func (mp *TxPool) removeTransaction(tx *util.Tx, removeRedeemers bool, restoreIn
 				if prevTxDesc, exists := mp.pool[txIn.PreviousOutPoint.TxID]; exists {
 					prevOut := prevTxDesc.Tx.MsgTx().TxOut[txIn.PreviousOutPoint.Index]
 					entry := blockdag.NewUTXOEntry(prevOut, false, blockdag.UnminedChainHeight)
-					diff.AddEntry(txIn.PreviousOutPoint, entry)
+					err := diff.AddEntry(txIn.PreviousOutPoint, entry)
+					if err != nil {
+						return err
+					}
 				}
 				if prevTxDesc, exists := mp.depends[txIn.PreviousOutPoint.TxID]; exists {
 					prevOut := prevTxDesc.Tx.MsgTx().TxOut[txIn.PreviousOutPoint.Index]
 					entry := blockdag.NewUTXOEntry(prevOut, false, blockdag.UnminedChainHeight)
-					diff.AddEntry(txIn.PreviousOutPoint, entry)
+					err := diff.AddEntry(txIn.PreviousOutPoint, entry)
+					if err != nil {
+						return err
+					}
 				}
 			}
 			delete(mp.outpoints, txIn.PreviousOutPoint)
@@ -606,7 +612,7 @@ func (mp *TxPool) RemoveDoubleSpends(tx *util.Tx) {
 // helper for maybeAcceptTransaction.
 //
 // This function MUST be called with the mempool lock held (for writes).
-func (mp *TxPool) addTransaction(tx *util.Tx, height uint64, fee uint64, parentsInPool []*wire.OutPoint) *TxDesc {
+func (mp *TxPool) addTransaction(tx *util.Tx, height uint64, fee uint64, parentsInPool []*wire.OutPoint) (*TxDesc, error) {
 	// Add the transaction to the pool and mark the referenced outpoints
 	// as spent by the pool.
 	txD := &TxDesc{
@@ -636,7 +642,11 @@ func (mp *TxPool) addTransaction(tx *util.Tx, height uint64, fee uint64, parents
 	for _, txIn := range tx.MsgTx().TxIn {
 		mp.outpoints[txIn.PreviousOutPoint] = tx
 	}
-	mp.mpUTXOSet.AddTx(tx.MsgTx(), blockdag.UnminedChainHeight)
+	if ok, err := mp.mpUTXOSet.AddTx(tx.MsgTx(), blockdag.UnminedChainHeight); err != nil {
+		return nil, err
+	} else if !ok {
+		return nil, fmt.Errorf("unexpectedly failed to add tx %s to the mempool utxo set", tx.ID())
+	}
 	atomic.StoreInt64(&mp.lastUpdated, time.Now().Unix())
 
 	// Add unconfirmed address index entries associated with the transaction
@@ -650,7 +660,7 @@ func (mp *TxPool) addTransaction(tx *util.Tx, height uint64, fee uint64, parents
 		mp.cfg.FeeEstimator.ObserveTransaction(txD)
 	}
 
-	return txD
+	return txD, nil
 }
 
 // checkPoolDoubleSpend checks whether or not the passed transaction is
@@ -986,7 +996,10 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rateLimit, rejectDu
 	}
 
 	// Add to transaction pool.
-	txD := mp.addTransaction(tx, bestHeight, txFee, parentsInPool)
+	txD, err := mp.addTransaction(tx, bestHeight, txFee, parentsInPool)
+	if err != nil {
+		return nil, nil, err
+	}
 
 	log.Debugf("Accepted transaction %s (pool size: %d)", txID,
 		len(mp.pool))
