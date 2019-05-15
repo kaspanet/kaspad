@@ -278,7 +278,7 @@ func TestHeadersWireErrors(t *testing.T) {
 		// Force error with greater than max headers.
 		{maxHeaders, maxHeadersEncoded, pver, 3, wireErr, wireErr},
 		// Force error with number of transactions.
-		{transHeader, transHeaderEncoded, pver, 210, io.ErrShortWrite, io.EOF},
+		{transHeader, transHeaderEncoded, pver, 178, io.ErrShortWrite, io.EOF},
 		// Force error with included transactions.
 		{transHeader, transHeaderEncoded, pver, len(transHeaderEncoded), nil, wireErr},
 	}
