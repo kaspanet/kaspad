@@ -112,14 +112,20 @@ func TestMultiset_UnionSubtract(t *testing.T) {
 		}
 		m2 = m2.Remove(data)
 	}
-	m3 := m1.Union(m2)
-	if m3.Hash().String() != zeroHash {
-		t.Fatalf("m3 was expected to return to have zero hash, but was %s instead", m3.Hash())
+	m1m2Union := m1.Union(m2)
+	if m1m2Union.Hash().String() != zeroHash {
+		t.Fatalf("m1m2Union was expected to return to have zero hash, but was %s instead", m1m2Union.Hash())
 	}
 
-	m4 := m1.Subtract(m1)
-	if m4.Hash().String() != zeroHash {
-		t.Fatalf("m4 was expected to have zero hash, but got %s instead", m4.Hash())
+	m1Inverse := NewMultiset(S256()).Subtract(m1)
+	m1InverseM1Union := m1.Union(m1Inverse)
+	if m1InverseM1Union.Hash().String() != zeroHash {
+		t.Fatalf("m1InverseM1Union was expected to have zero hash, but got %s instead", m1InverseM1Union.Hash())
+	}
+
+	m1SubtractM1 := m1.Subtract(m1)
+	if m1SubtractM1.Hash().String() != zeroHash {
+		t.Fatalf("m1SubtractM1 was expected to have zero hash, but got %s instead", m1SubtractM1.Hash())
 	}
 }
 
