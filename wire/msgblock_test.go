@@ -219,8 +219,6 @@ func TestBlockWireErrors(t *testing.T) {
 		{&blockOne, blockOneBytes, pver, 37, io.ErrShortWrite, io.EOF},
 		// Force error in hash merkle root.
 		{&blockOne, blockOneBytes, pver, 69, io.ErrShortWrite, io.EOF},
-		// Force error in ID merkle root.
-		{&blockOne, blockOneBytes, pver, 101, io.ErrShortWrite, io.EOF},
 		// Force error in accepted ID merkle root.
 		{&blockOne, blockOneBytes, pver, 101, io.ErrShortWrite, io.EOF},
 		// Force error in utxo commitment.
@@ -347,7 +345,7 @@ func TestBlockSerializeErrors(t *testing.T) {
 		{&blockOne, blockOneBytes, 37, io.ErrShortWrite, io.EOF},
 		// Force error in hash merkle root.
 		{&blockOne, blockOneBytes, 69, io.ErrShortWrite, io.EOF},
-		// Force error in ID merkle root.
+		// Force error in accepted ID merkle root.
 		{&blockOne, blockOneBytes, 101, io.ErrShortWrite, io.EOF},
 		// Force error in utxo commitment.
 		{&blockOne, blockOneBytes, 133, io.ErrShortWrite, io.EOF},

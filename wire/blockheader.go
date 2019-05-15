@@ -123,7 +123,7 @@ func (h *BlockHeader) SerializeSize() int {
 }
 
 // NewBlockHeader returns a new BlockHeader using the provided version, previous
-// block hash, hash merkle root, ID merkle root difficulty bits, and nonce used to generate the
+// block hash, hash merkle root, accepted ID merkle root, difficulty bits, and nonce used to generate the
 // block with defaults or calclulated values for the remaining fields.
 func NewBlockHeader(version int32, parentHashes []*daghash.Hash, hashMerkleRoot *daghash.Hash,
 	acceptedIDMerkleRoot *daghash.Hash, utxoCommitment *daghash.Hash, bits uint32, nonce uint64) *BlockHeader {
