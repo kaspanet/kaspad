@@ -4,7 +4,6 @@ import (
 	"crypto/sha256"
 	"encoding/binary"
 	"math/big"
-	"sync"
 
 	"github.com/daglabs/btcd/dagconfig/daghash"
 )
@@ -18,13 +17,12 @@ type Multiset struct {
 	curve *KoblitzCurve
 	x     *big.Int
 	y     *big.Int
-	mtx   sync.RWMutex
 }
 
 // NewMultiset returns an empty multiset. The hash of an empty set
 // is the 32 byte value of zero.
 func NewMultiset(curve *KoblitzCurve) *Multiset {
-	return &Multiset{curve: curve, x: big.NewInt(0), y: big.NewInt(0), mtx: sync.RWMutex{}}
+	return &Multiset{curve: curve, x: big.NewInt(0), y: big.NewInt(0)}
 }
 
 // NewMultisetFromPoint initializes a new multiset with the given x, y
@@ -32,69 +30,98 @@ func NewMultiset(curve *KoblitzCurve) *Multiset {
 func NewMultisetFromPoint(curve *KoblitzCurve, x, y *big.Int) *Multiset {
 	var copyX, copyY big.Int
 	if x != nil {
-		copyX = *x
+		copyX.Set(x)
 	}
 	if y != nil {
-		copyY = *y
+		copyY.Set(y)
 	}
-	return &Multiset{curve: curve, x: &copyX, y: &copyY, mtx: sync.RWMutex{}}
+	return &Multiset{curve: curve, x: &copyX, y: &copyY}
 }
 
-// Add hashes the data onto the curve and updates the state
-// of the multiset.
-func (ms *Multiset) Add(data []byte) {
-	ms.mtx.Lock()
-	defer ms.mtx.Unlock()
+// NewMultisetFromDatas initializes a new multiset with the given x, y
+// coordinate.
+func NewMultisetFromDatas(curve *KoblitzCurve, datas [][]byte) *Multiset {
+	ms := NewMultiset(curve)
+	for _, data := range datas {
+		x, y := hashToPoint(curve, data)
+		ms.addPoint(x, y)
+	}
+	return ms
+}
 
+func (ms *Multiset) returnWithNewPoint(x, y *big.Int) *Multiset {
+	return NewMultisetFromPoint(ms.curve, x, y)
+}
+
+func (ms *Multiset) clone() *Multiset {
+	return NewMultisetFromPoint(ms.curve, ms.x, ms.y)
+}
+
+// Add hashes the data onto the curve and returns
+// a multiset with the new resulted point.
+func (ms *Multiset) Add(data []byte) *Multiset {
+	newMs := ms.clone()
 	x, y := hashToPoint(ms.curve, data)
+	newMs.addPoint(x, y)
+	return newMs
+}
+
+func (ms *Multiset) addPoint(x, y *big.Int) {
 	ms.x, ms.y = ms.curve.Add(ms.x, ms.y, x, y)
 }
 
-// Remove hashes the data onto the curve and subtracts the value
-// from the state. This function will execute regardless of whether
-// or not the passed data was previously added to the set. Hence if
-// you remove an element that was never added and also remove all the
-// elements that were added, you will not get back to the point at
-// infinity (empty set).
-func (ms *Multiset) Remove(data []byte) {
-	ms.mtx.Lock()
-	defer ms.mtx.Unlock()
-
+// Remove hashes the data onto the curve, subtracts
+// the point from the existing multiset, and returns
+// a multiset with the new point. This function
+// will execute regardless of whether or not the passed
+// data was previously added to the set. Hence if you
+// remove an element that was never added and also remove
+// all the elements that were added, you will not get
+// back to the point at infinity (empty set).
+func (ms *Multiset) Remove(data []byte) *Multiset {
+	newMs := ms.clone()
 	x, y := hashToPoint(ms.curve, data)
-	y = y.Neg(y).Mod(y, ms.curve.P)
+	newMs.removePoint(x, y)
+	return newMs
+}
+
+func (ms *Multiset) removePoint(x, y *big.Int) {
+	y.Neg(y).Mod(y, ms.curve.P)
 	ms.x, ms.y = ms.curve.Add(ms.x, ms.y, x, y)
 }
 
-// Merge will add the point of the passed in multiset instance to the point
-// of this multiset and save the new point in this instance.
-func (ms *Multiset) Merge(otherMultiset *Multiset) {
-	ms.x, ms.y = ms.curve.Add(ms.x, ms.y, otherMultiset.x, otherMultiset.y)
+// Union will add the point of the passed multiset instance to the point
+// of this multiset and will return a multiset with the resulted point.
+func (ms *Multiset) Union(otherMultiset *Multiset) *Multiset {
+	newMs := ms.clone()
+	otherMsCopy := otherMultiset.clone()
+	newMs.addPoint(otherMsCopy.x, otherMsCopy.y)
+	return newMs
+}
+
+// Subtract will remove the point of the passed multiset instance from the point
+// of this multiset and will return a multiset with the resulted point.
+func (ms *Multiset) Subtract(otherMultiset *Multiset) *Multiset {
+	newMs := ms.clone()
+	otherMsCopy := otherMultiset.clone()
+	newMs.removePoint(otherMsCopy.x, otherMsCopy.y)
+	return newMs
 }
 
 // Hash serializes and returns the hash of the multiset. The hash of an empty
 // set is the 32 byte value of zero. The hash of a non-empty multiset is the
 // sha256 hash of the 32 byte x value concatenated with the 32 byte y value.
 func (ms *Multiset) Hash() daghash.Hash {
-	ms.mtx.RLock()
-	defer ms.mtx.RUnlock()
-
 	if ms.x.Sign() == 0 && ms.y.Sign() == 0 {
 		return daghash.Hash{}
 	}
 
-	h := sha256.Sum256(append(ms.x.Bytes(), ms.y.Bytes()...))
-	var reversed [32]byte
-	for i, b := range h {
-		reversed[len(h)-i-1] = b
-	}
-	return daghash.Hash(reversed)
+	hash := sha256.Sum256(append(ms.x.Bytes(), ms.y.Bytes()...))
+	return daghash.Hash(hash)
 }
 
 // Point returns a copy of the x and y coordinates of the current multiset state.
 func (ms *Multiset) Point() (x *big.Int, y *big.Int) {
-	ms.mtx.RLock()
-	defer ms.mtx.RUnlock()
-
 	copyX, copyY := *ms.x, *ms.y
 	return &copyX, &copyY
 }
