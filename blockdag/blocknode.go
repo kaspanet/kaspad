@@ -102,7 +102,6 @@ type blockNode struct {
 	nonce                uint64
 	timestamp            int64
 	hashMerkleRoot       *daghash.Hash
-	idMerkleRoot         *daghash.Hash
 	acceptedIDMerkleRoot *daghash.Hash
 	utxoCommitment       *daghash.Hash
 
@@ -131,7 +130,6 @@ func initBlockNode(node *blockNode, blockHeader *wire.BlockHeader, parents block
 		node.nonce = blockHeader.Nonce
 		node.timestamp = blockHeader.Timestamp.Unix()
 		node.hashMerkleRoot = blockHeader.HashMerkleRoot
-		node.idMerkleRoot = blockHeader.IDMerkleRoot
 		node.acceptedIDMerkleRoot = blockHeader.AcceptedIDMerkleRoot
 		node.utxoCommitment = blockHeader.UTXOCommitment
 	} else {
@@ -183,7 +181,6 @@ func (node *blockNode) Header() *wire.BlockHeader {
 		Version:              node.version,
 		ParentHashes:         node.ParentHashes(),
 		HashMerkleRoot:       node.hashMerkleRoot,
-		IDMerkleRoot:         node.idMerkleRoot,
 		AcceptedIDMerkleRoot: node.acceptedIDMerkleRoot,
 		UTXOCommitment:       node.utxoCommitment,
 		Timestamp:            time.Unix(node.timestamp, 0),

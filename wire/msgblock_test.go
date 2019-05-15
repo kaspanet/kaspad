@@ -25,13 +25,11 @@ func TestBlock(t *testing.T) {
 	// Block 1 header.
 	parentHashes := blockOne.Header.ParentHashes
 	hashMerkleRoot := blockOne.Header.HashMerkleRoot
-	idMerkleRoot := blockOne.Header.IDMerkleRoot
 	acceptedIDMerkleRoot := blockOne.Header.AcceptedIDMerkleRoot
 	utxoCommitment := blockOne.Header.UTXOCommitment
 	bits := blockOne.Header.Bits
 	nonce := blockOne.Header.Nonce
-	bh := NewBlockHeader(1, parentHashes, hashMerkleRoot, idMerkleRoot,
-		acceptedIDMerkleRoot, utxoCommitment, bits, nonce)
+	bh := NewBlockHeader(1, parentHashes, hashMerkleRoot, acceptedIDMerkleRoot, utxoCommitment, bits, nonce)
 
 	// Ensure the command is expected value.
 	wantCmd := "block"
@@ -77,7 +75,7 @@ func TestBlock(t *testing.T) {
 // TestBlockHash tests the ability to generate the hash of a block accurately.
 func TestBlockHash(t *testing.T) {
 	// Block 1 hash.
-	hashStr := "8a3a27a37c9e3342b4b38ae9ef29e59fe37b59618adafbf36a106b6d62f80654"
+	hashStr := "22e72b61a572bfb32b8739f4e5db3eebe9870e394288467958e93e4a3d3b749f"
 	wantHash, err := daghash.NewHashFromStr(hashStr)
 	if err != nil {
 		t.Errorf("NewHashFromStr: %v", err)
@@ -221,22 +219,20 @@ func TestBlockWireErrors(t *testing.T) {
 		{&blockOne, blockOneBytes, pver, 37, io.ErrShortWrite, io.EOF},
 		// Force error in hash merkle root.
 		{&blockOne, blockOneBytes, pver, 69, io.ErrShortWrite, io.EOF},
-		// Force error in ID merkle root.
-		{&blockOne, blockOneBytes, pver, 101, io.ErrShortWrite, io.EOF},
 		// Force error in accepted ID merkle root.
-		{&blockOne, blockOneBytes, pver, 133, io.ErrShortWrite, io.EOF},
+		{&blockOne, blockOneBytes, pver, 101, io.ErrShortWrite, io.EOF},
 		// Force error in utxo commitment.
-		{&blockOne, blockOneBytes, pver, 165, io.ErrShortWrite, io.EOF},
+		{&blockOne, blockOneBytes, pver, 133, io.ErrShortWrite, io.EOF},
 		// Force error in timestamp.
-		{&blockOne, blockOneBytes, pver, 197, io.ErrShortWrite, io.EOF},
+		{&blockOne, blockOneBytes, pver, 165, io.ErrShortWrite, io.EOF},
 		// Force error in difficulty bits.
-		{&blockOne, blockOneBytes, pver, 205, io.ErrShortWrite, io.EOF},
+		{&blockOne, blockOneBytes, pver, 173, io.ErrShortWrite, io.EOF},
 		// Force error in header nonce.
-		{&blockOne, blockOneBytes, pver, 209, io.ErrShortWrite, io.EOF},
+		{&blockOne, blockOneBytes, pver, 177, io.ErrShortWrite, io.EOF},
 		// Force error in transaction count.
-		{&blockOne, blockOneBytes, pver, 217, io.ErrShortWrite, io.EOF},
+		{&blockOne, blockOneBytes, pver, 185, io.ErrShortWrite, io.EOF},
 		// Force error in transactions.
-		{&blockOne, blockOneBytes, pver, 218, io.ErrShortWrite, io.EOF},
+		{&blockOne, blockOneBytes, pver, 186, io.ErrShortWrite, io.EOF},
 	}
 
 	t.Logf("Running %d tests", len(tests))
@@ -349,22 +345,20 @@ func TestBlockSerializeErrors(t *testing.T) {
 		{&blockOne, blockOneBytes, 37, io.ErrShortWrite, io.EOF},
 		// Force error in hash merkle root.
 		{&blockOne, blockOneBytes, 69, io.ErrShortWrite, io.EOF},
-		// Force error in ID merkle root.
-		{&blockOne, blockOneBytes, 101, io.ErrShortWrite, io.EOF},
 		// Force error in accepted ID merkle root.
-		{&blockOne, blockOneBytes, 133, io.ErrShortWrite, io.EOF},
+		{&blockOne, blockOneBytes, 101, io.ErrShortWrite, io.EOF},
 		// Force error in utxo commitment.
-		{&blockOne, blockOneBytes, 165, io.ErrShortWrite, io.EOF},
+		{&blockOne, blockOneBytes, 133, io.ErrShortWrite, io.EOF},
 		// Force error in timestamp.
-		{&blockOne, blockOneBytes, 197, io.ErrShortWrite, io.EOF},
+		{&blockOne, blockOneBytes, 165, io.ErrShortWrite, io.EOF},
 		// Force error in difficulty bits.
-		{&blockOne, blockOneBytes, 205, io.ErrShortWrite, io.EOF},
+		{&blockOne, blockOneBytes, 173, io.ErrShortWrite, io.EOF},
 		// Force error in header nonce.
-		{&blockOne, blockOneBytes, 209, io.ErrShortWrite, io.EOF},
+		{&blockOne, blockOneBytes, 177, io.ErrShortWrite, io.EOF},
 		// Force error in transaction count.
-		{&blockOne, blockOneBytes, 217, io.ErrShortWrite, io.EOF},
+		{&blockOne, blockOneBytes, 185, io.ErrShortWrite, io.EOF},
 		// Force error in transactions.
-		{&blockOne, blockOneBytes, 218, io.ErrShortWrite, io.EOF},
+		{&blockOne, blockOneBytes, 186, io.ErrShortWrite, io.EOF},
 	}
 
 	t.Logf("Running %d tests", len(tests))
@@ -428,10 +422,6 @@ func TestBlockOverflowErrors(t *testing.T) {
 				0x7a, 0xc7, 0x2c, 0x3e, 0x67, 0x76, 0x8f, 0x61,
 				0x7f, 0xc8, 0x1b, 0xc3, 0x88, 0x8a, 0x51, 0x32,
 				0x3a, 0x9f, 0xb8, 0xaa, 0x4b, 0x1e, 0x5e, 0x4a,
-				0x7F, 0x16, 0xC5, 0x96, 0x2E, 0x8B, 0xD9, 0x63, // IDMerkleRoot
-				0x65, 0x9C, 0x79, 0x3C, 0xE3, 0x70, 0xD9, 0x5F,
-				0x09, 0x3B, 0xC7, 0xE3, 0x67, 0x11, 0x7B, 0x3C,
-				0x30, 0xC1, 0xF8, 0xFD, 0xD0, 0xD9, 0x72, 0x87,
 				0x09, 0x3B, 0xC7, 0xE3, 0x67, 0x11, 0x7B, 0x3C, // AcceptedIDMerkleRoot
 				0x30, 0xC1, 0xF8, 0xFD, 0xD0, 0xD9, 0x72, 0x87,
 				0x7F, 0x16, 0xC5, 0x96, 0x2E, 0x8B, 0xD9, 0x63,
@@ -492,7 +482,7 @@ func TestBlockSerializeSize(t *testing.T) {
 		size int       // Expected serialized size
 	}{
 		// Block with no transactions.
-		{noTxBlock, 218},
+		{noTxBlock, 186},
 
 		// First block in the mainnet block chain.
 		{&blockOne, len(blockOneBytes)},
@@ -516,7 +506,6 @@ var blockOne = MsgBlock{
 		Version:              1,
 		ParentHashes:         []*daghash.Hash{mainNetGenesisHash, simNetGenesisHash},
 		HashMerkleRoot:       mainNetGenesisMerkleRoot,
-		IDMerkleRoot:         exampleIDMerkleRoot,
 		AcceptedIDMerkleRoot: exampleAcceptedIDMerkleRoot,
 		UTXOCommitment:       exampleUTXOCommitment,
 		Timestamp:            time.Unix(0x4966bc61, 0), // 2009-01-08 20:54:25 -0600 CST
@@ -562,10 +551,10 @@ var blockOne = MsgBlock{
 var blockOneBytes = []byte{
 	0x01, 0x00, 0x00, 0x00, // Version 1
 	0x02,                                           // NumParentBlocks
-	0x6f, 0xe2, 0x8c, 0x0a, 0xb6, 0xf1, 0xb3, 0x72, // mainNetGenesisHash
-	0xc1, 0xa6, 0xa2, 0x46, 0xae, 0x63, 0xf7, 0x4f,
-	0x93, 0x1e, 0x83, 0x65, 0xe1, 0x5a, 0x08, 0x9c,
-	0x68, 0xd6, 0x19, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0xdc, 0x5f, 0x5b, 0x5b, 0x1d, 0xc2, 0xa7, 0x25, // mainNetGenesisHash
+	0x49, 0xd5, 0x1d, 0x4d, 0xee, 0xd7, 0xa4, 0x8b,
+	0xaf, 0xd3, 0x14, 0x4b, 0x56, 0x78, 0x98, 0xb1,
+	0x8c, 0xfd, 0x9f, 0x69, 0xdd, 0xcf, 0xbb, 0x63,
 	0xf6, 0x7a, 0xd7, 0x69, 0x5d, 0x9b, 0x66, 0x2a, // simNetGenesisHash
 	0x72, 0xff, 0x3d, 0x8e, 0xdb, 0xbb, 0x2d, 0xe0,
 	0xbf, 0xa6, 0x7b, 0x13, 0x97, 0x4b, 0xb9, 0x91,
@@ -574,10 +563,6 @@ var blockOneBytes = []byte{
 	0x32, 0x51, 0x8a, 0x88, 0xc3, 0x1b, 0xc8, 0x7f,
 	0x61, 0x8f, 0x76, 0x67, 0x3e, 0x2c, 0xc7, 0x7a,
 	0xb2, 0x12, 0x7b, 0x7a, 0xfd, 0xed, 0xa3, 0x3b,
-	0x7F, 0x16, 0xC5, 0x96, 0x2E, 0x8B, 0xD9, 0x63, // Fake IDMerkleRoot. TODO: (Ori) Replace to a real IDMerkleRoot
-	0x65, 0x9C, 0x79, 0x3C, 0xE3, 0x70, 0xD9, 0x5F,
-	0x09, 0x3B, 0xC7, 0xE3, 0x67, 0x11, 0x7B, 0x3C,
-	0x30, 0xC1, 0xF8, 0xFD, 0xD0, 0xD9, 0x72, 0x87,
 	0x09, 0x3B, 0xC7, 0xE3, 0x67, 0x11, 0x7B, 0x3C, // AcceptedIDMerkleRoot
 	0x30, 0xC1, 0xF8, 0xFD, 0xD0, 0xD9, 0x72, 0x87,
 	0x7F, 0x16, 0xC5, 0x96, 0x2E, 0x8B, 0xD9, 0x63,
@@ -622,5 +607,5 @@ var blockOneBytes = []byte{
 
 // Transaction location information for block one transactions.
 var blockOneTxLocs = []TxLoc{
-	{TxStart: 218, TxLen: 162},
+	{TxStart: 186, TxLen: 162},
 }

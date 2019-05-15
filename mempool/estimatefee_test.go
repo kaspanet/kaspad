@@ -71,7 +71,6 @@ func (eft *estimateFeeTester) newBlock(txs []*wire.MsgTx) {
 
 	block := util.NewBlock(&wire.MsgBlock{
 		Header: wire.BlockHeader{
-			IDMerkleRoot:         &daghash.ZeroHash,
 			HashMerkleRoot:       &daghash.ZeroHash,
 			AcceptedIDMerkleRoot: &daghash.ZeroHash,
 			UTXOCommitment:       &daghash.ZeroHash,

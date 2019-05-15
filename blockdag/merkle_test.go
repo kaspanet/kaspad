@@ -5,6 +5,7 @@
 package blockdag
 
 import (
+	"github.com/daglabs/btcd/util/daghash"
 	"testing"
 
 	"github.com/daglabs/btcd/util"
@@ -24,8 +25,11 @@ func TestMerkle(t *testing.T) {
 
 	idMerkleTree := BuildIDMerkleTreeStore(block.Transactions())
 	calculatedIDMerkleRoot := idMerkleTree.Root()
-	wantIDMerkleRoot := Block100000.Header.IDMerkleRoot
-	if !wantIDMerkleRoot.IsEqual(calculatedIDMerkleRoot) {
+	wantIDMerkleRoot, err := daghash.NewHashFromStr("65308857c92c4e5dd3c5e61b73d6b78a87456b5f8f16b13c1e02c47768a0b881")
+	if err != nil {
+		t.Errorf("BuildIDMerkleTreeStore: unexpected error: %s", err)
+	}
+	if !calculatedIDMerkleRoot.IsEqual(wantIDMerkleRoot) {
 		t.Errorf("BuildIDMerkleTreeStore: ID merkle root mismatch - "+
 			"got %v, want %v", calculatedIDMerkleRoot, wantIDMerkleRoot)
 	}
