@@ -184,6 +184,24 @@ func TestMultiset_Commutativity(t *testing.T) {
 	m2 = m2.Remove(removeData)
 
 	if m1.Hash().String() != m2.Hash().String() {
-		t.Fatalf("m1 and m2 was exepcted, but got instead m1 %s and m2 %s", m1.Hash(), m2.Hash())
+		t.Fatalf("m1 and m2 was exepcted to have the same hash, but got instead m1 %s and m2 %s", m1.Hash(), m2.Hash())
+	}
+}
+
+func TestMultiset_NewMultisetFromDataSlice(t *testing.T){
+	m1 := NewMultiset(S256())
+	datas := make([][]byte,0,len(testVectors))
+	for _, test := range testVectors {
+		data, err := hex.DecodeString(test.dataElementHex)
+		if err != nil {
+			t.Fatal(err)
+		}
+		datas = append(datas,data)
+		m1 = m1.Add(data)
+	}
+
+	m2 := NewMultisetFromDataSlice(S256(),datas)
+	if m1.Hash().String() != m2.Hash().String(){
+		t.Fatalf("m1 and m2 was exepcted to have the same hash, but got instead m1 %s and m2 %s", m1.Hash(), m2.Hash())
 	}
 }

@@ -38,9 +38,10 @@ func NewMultisetFromPoint(curve *KoblitzCurve, x, y *big.Int) *Multiset {
 	return &Multiset{curve: curve, x: &copyX, y: &copyY}
 }
 
-// NewMultisetFromDatas initializes a new multiset with the given x, y
-// coordinate.
-func NewMultisetFromDatas(curve *KoblitzCurve, datas [][]byte) *Multiset {
+// NewMultisetFromDataSlice gets a curve and a slice of byte
+// slices, creates an empty multiset, hashes each data and
+// add it to the multiset, and return the resulting multiset.
+func NewMultisetFromDataSlice(curve *KoblitzCurve, datas [][]byte) *Multiset {
 	ms := NewMultiset(curve)
 	for _, data := range datas {
 		x, y := hashToPoint(curve, data)
@@ -49,16 +50,12 @@ func NewMultisetFromDatas(curve *KoblitzCurve, datas [][]byte) *Multiset {
 	return ms
 }
 
-func (ms *Multiset) returnWithNewPoint(x, y *big.Int) *Multiset {
-	return NewMultisetFromPoint(ms.curve, x, y)
-}
-
 func (ms *Multiset) clone() *Multiset {
 	return NewMultisetFromPoint(ms.curve, ms.x, ms.y)
 }
 
 // Add hashes the data onto the curve and returns
-// a multiset with the new resulted point.
+// a multiset with the new resulting point.
 func (ms *Multiset) Add(data []byte) *Multiset {
 	newMs := ms.clone()
 	x, y := hashToPoint(ms.curve, data)
@@ -91,7 +88,7 @@ func (ms *Multiset) removePoint(x, y *big.Int) {
 }
 
 // Union will add the point of the passed multiset instance to the point
-// of this multiset and will return a multiset with the resulted point.
+// of this multiset and will return a multiset with the resulting point.
 func (ms *Multiset) Union(otherMultiset *Multiset) *Multiset {
 	newMs := ms.clone()
 	otherMsCopy := otherMultiset.clone()
@@ -100,7 +97,7 @@ func (ms *Multiset) Union(otherMultiset *Multiset) *Multiset {
 }
 
 // Subtract will remove the point of the passed multiset instance from the point
-// of this multiset and will return a multiset with the resulted point.
+// of this multiset and will return a multiset with the resulting point.
 func (ms *Multiset) Subtract(otherMultiset *Multiset) *Multiset {
 	newMs := ms.clone()
 	otherMsCopy := otherMultiset.clone()
@@ -122,7 +119,9 @@ func (ms *Multiset) Hash() daghash.Hash {
 
 // Point returns a copy of the x and y coordinates of the current multiset state.
 func (ms *Multiset) Point() (x *big.Int, y *big.Int) {
-	copyX, copyY := *ms.x, *ms.y
+	var copyX, copyY big.Int
+	copyX.Set(ms.x)
+	copyY.Set(ms.y)
 	return &copyX, &copyY
 }
 
@@ -130,9 +129,8 @@ func (ms *Multiset) Point() (x *big.Int, y *big.Int) {
 // is sha256(n, sha256(data)) where n starts at zero. If the resulting x value
 // is not in the field or x^3+7 is not quadratic residue then n is incremented
 // and we try again. There is a 50% chance of success for any given iteration.
-func hashToPoint(curve *KoblitzCurve, data []byte) (*big.Int, *big.Int) {
+func hashToPoint(curve *KoblitzCurve, data []byte) (x *big.Int, y *big.Int) {
 	i := uint64(0)
-	var x, y *big.Int
 	var err error
 	h := sha256.Sum256(data)
 	n := make([]byte, 8)
