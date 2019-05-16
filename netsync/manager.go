@@ -1213,21 +1213,12 @@ func (sm *SyncManager) handleBlockDAGNotification(notification *blockdag.Notific
 	switch notification.Type {
 	// A block has been accepted into the blockDAG.  Relay it to other peers.
 	case blockdag.NTBlockAdded:
-		// Don't relay if we are not current. Other peers that are
-		// current should already know about it.
-		if !sm.current() {
-			return
-		}
-
-		block, ok := notification.Data.(*util.Block)
+		data, ok := notification.Data.(*blockdag.BlockAddedNotificationData)
 		if !ok {
-			log.Warnf("Block Added notification data is not a block.")
+			log.Warnf("Block Added notification data is of wrong type.")
 			break
 		}
-
-		// Generate the inventory vector and relay it.
-		iv := wire.NewInvVect(wire.InvTypeBlock, block.Hash())
-		sm.peerNotifier.RelayInventory(iv, block.MsgBlock().Header)
+		block := data.Block
 
 		// Update mempool
 		ch := make(chan mempool.NewBlockMsg)
@@ -1238,6 +1229,17 @@ func (sm *SyncManager) handleBlockDAGNotification(notification *blockdag.Notific
 				panic(fmt.Sprintf("HandleNewBlock failed to handle block %s", block.Hash()))
 			}
 		})
+
+		// Don't relay if we are not current or the block was just now unorphaned.
+		// Other peers that are current should already know about it
+		if !sm.current() || data.WasUnorphaned {
+			return
+		}
+
+		// Generate the inventory vector and relay it.
+		iv := wire.NewInvVect(wire.InvTypeBlock, block.Hash())
+		sm.peerNotifier.RelayInventory(iv, block.MsgBlock().Header)
+
 		for msg := range ch {
 			sm.peerNotifier.TransactionConfirmed(msg.Tx)
 			sm.peerNotifier.AnnounceNewTransactions(msg.AcceptedTxs)

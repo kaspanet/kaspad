@@ -14,7 +14,7 @@ import (
 )
 
 // BehaviorFlags is a bitmask defining tweaks to the normal behavior when
-// performing chain processing and consensus rules checks.
+// performing DAG processing and consensus rules checks.
 type BehaviorFlags uint32
 
 const (
@@ -28,6 +28,10 @@ const (
 	// ensures a block hashes to a value less than the required target will
 	// not be performed.
 	BFNoPoWCheck
+
+	// BFWasUnorphaned may be set to indicate that a block was just now
+	// unorphaned
+	BFWasUnorphaned
 
 	// BFNone is a convenience value to specifically indicate no flags.
 	BFNone BehaviorFlags = 0
@@ -107,7 +111,7 @@ func (dag *BlockDAG) processOrphans(hash *daghash.Hash, flags BehaviorFlags) err
 			i--
 
 			// Potentially accept the block into the block DAG.
-			err = dag.maybeAcceptBlock(orphan.block, flags)
+			err = dag.maybeAcceptBlock(orphan.block, flags|BFWasUnorphaned)
 			if err != nil {
 				return err
 			}
