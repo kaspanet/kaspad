@@ -80,7 +80,10 @@ func (dag *BlockDAG) maybeAcceptBlock(block *util.Block, flags BehaviorFlags) er
 	// DAG.  The caller would typically want to react by relaying the
 	// inventory to other peers.
 	dag.dagLock.Unlock()
-	dag.sendNotification(NTBlockAdded, &BlockAddedNotificationData{Block: block, WasUnorphaned: false})
+	dag.sendNotification(NTBlockAdded, &BlockAddedNotificationData{
+		Block:         block,
+		WasUnorphaned: flags&BFWasUnrphaned != 0,
+	})
 	dag.dagLock.Lock()
 
 	return nil
