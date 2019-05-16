@@ -4311,21 +4311,22 @@ func NewRPCServer(
 		rpc.limitauthsha = sha256.Sum256([]byte(auth))
 	}
 	rpc.ntfnMgr = newWsNotificationManager(&rpc)
-	rpc.cfg.DAG.Subscribe(rpc.handleBlockchainNotification)
+	rpc.cfg.DAG.Subscribe(rpc.handleBlockDAGNotification)
 
 	return &rpc, nil
 }
 
 // Callback for notifications from blockdag.  It notifies clients that are
 // long polling for changes or subscribed to websockets notifications.
-func (s *Server) handleBlockchainNotification(notification *blockdag.Notification) {
+func (s *Server) handleBlockDAGNotification(notification *blockdag.Notification) {
 	switch notification.Type {
 	case blockdag.NTBlockAdded:
-		block, ok := notification.Data.(*util.Block)
+		data, ok := notification.Data.(*blockdag.BlockAddedNotificationData)
 		if !ok {
-			log.Warnf("Block added notification data is not a block.")
+			log.Warnf("Block added notification data is of wrong type.")
 			break
 		}
+		block := data.Block
 
 		tipHashes := s.cfg.DAG.TipHashes()
 
