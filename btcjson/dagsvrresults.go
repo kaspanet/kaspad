@@ -135,18 +135,19 @@ type GetBlockTemplateResultAux struct {
 type GetBlockTemplateResult struct {
 	// Base fields from BIP 0022.  CoinbaseAux is optional.  One of
 	// CoinbaseTxn or CoinbaseValue must be specified, but not both.
-	Bits          string                     `json:"bits"`
-	CurTime       int64                      `json:"curTime"`
-	Height        uint64                     `json:"height"`
-	ParentHashes  []string                   `json:"parentHashes"`
-	SigOpLimit    int64                      `json:"sigOpLimit,omitempty"`
-	SizeLimit     int64                      `json:"sizeLimit,omitempty"`
-	Transactions  []GetBlockTemplateResultTx `json:"transactions"`
-	Version       int32                      `json:"version"`
-	CoinbaseAux   *GetBlockTemplateResultAux `json:"coinbaseAux,omitempty"`
-	CoinbaseTxn   *GetBlockTemplateResultTx  `json:"coinbaseTxn,omitempty"`
-	CoinbaseValue *uint64                    `json:"coinbaseValue,omitempty"`
-	WorkID        string                     `json:"workId,omitempty"`
+	Bits                 string                     `json:"bits"`
+	CurTime              int64                      `json:"curTime"`
+	Height               uint64                     `json:"height"`
+	ParentHashes         []string                   `json:"parentHashes"`
+	SigOpLimit           int64                      `json:"sigOpLimit,omitempty"`
+	SizeLimit            int64                      `json:"sizeLimit,omitempty"`
+	Transactions         []GetBlockTemplateResultTx `json:"transactions"`
+	AcceptedIDMerkleRoot string                     `json:"acceptedIdMerkleRoot"`
+	Version              int32                      `json:"version"`
+	CoinbaseAux          *GetBlockTemplateResultAux `json:"coinbaseAux,omitempty"`
+	CoinbaseTxn          *GetBlockTemplateResultTx  `json:"coinbaseTxn,omitempty"`
+	CoinbaseValue        *uint64                    `json:"coinbaseValue,omitempty"`
+	WorkID               string                     `json:"workId,omitempty"`
 
 	// Optional long polling from BIP 0022.
 	LongPollID  string `json:"longPollId,omitempty"`
