@@ -82,7 +82,7 @@ func (dag *BlockDAG) maybeAcceptBlock(block *util.Block, flags BehaviorFlags) er
 	dag.dagLock.Unlock()
 	dag.sendNotification(NTBlockAdded, &BlockAddedNotificationData{
 		Block:         block,
-		WasUnorphaned: flags&BFWasUnrphaned != 0,
+		WasUnorphaned: flags&BFWasUnorphaned != 0,
 	})
 	dag.dagLock.Lock()
 

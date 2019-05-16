@@ -31,7 +31,7 @@ const (
 
 	// BFWasUnorphaned may be set to indicate that a block was just now
 	// unorphaned
-	BFWasUnrphaned
+	BFWasUnorphaned
 
 	// BFNone is a convenience value to specifically indicate no flags.
 	BFNone BehaviorFlags = 0
@@ -111,7 +111,7 @@ func (dag *BlockDAG) processOrphans(hash *daghash.Hash, flags BehaviorFlags) err
 			i--
 
 			// Potentially accept the block into the block DAG.
-			err = dag.maybeAcceptBlock(orphan.block, flags|BFWasUnrphaned)
+			err = dag.maybeAcceptBlock(orphan.block, flags|BFWasUnorphaned)
 			if err != nil {
 				return err
 			}
