@@ -38,7 +38,7 @@ func TestBlock(t *testing.T) {
 	}
 
 	// Hash for block 100,000.
-	wantHashStr := "df1b3cc747f665f36df84bdaa54a9ea695fbe12e102156fc1fc61d89366bc2d7"
+	wantHashStr := "839a8e072e6d402128f6f9a32ffc012e471e071e8ef8405552b1e58ef7b681f0"
 	wantHash, err := daghash.NewHashFromStr(wantHashStr)
 	if err != nil {
 		t.Errorf("NewHashFromStr: %v", err)
@@ -147,10 +147,10 @@ func TestBlock(t *testing.T) {
 
 	// Transaction offsets and length for the transaction in Block100000.
 	wantTxLocs := []wire.TxLoc{
-		{TxStart: 218, TxLen: 163},
-		{TxStart: 381, TxLen: 287},
-		{TxStart: 668, TxLen: 285},
-		{TxStart: 953, TxLen: 253},
+		{TxStart: 186, TxLen: 163},
+		{TxStart: 349, TxLen: 287},
+		{TxStart: 636, TxLen: 285},
+		{TxStart: 921, TxLen: 253},
 	}
 
 	// Ensure the transaction location information is accurate.
@@ -259,7 +259,7 @@ func TestBlockErrors(t *testing.T) {
 	}
 
 	// Truncate the block byte buffer to force errors.
-	shortBytes := block100000Bytes[:218]
+	shortBytes := block100000Bytes[:186]
 	_, err = util.NewBlockFromBytes(shortBytes)
 	if err != io.EOF {
 		t.Errorf("NewBlockFromBytes: did not get expected error - "+
@@ -320,12 +320,6 @@ var Block100000 = wire.MsgBlock{
 				0x01, 0x92, 0x90, 0xf1, 0xca, 0x8a, 0x88, 0x11,
 			}}, // SimNet genesis
 		HashMerkleRoot: &daghash.Hash{
-			0x66, 0x57, 0xa9, 0x25, 0x2a, 0xac, 0xd5, 0xc0,
-			0xb2, 0x94, 0x09, 0x96, 0xec, 0xff, 0x95, 0x22,
-			0x28, 0xc3, 0x06, 0x7c, 0xc3, 0x8d, 0x48, 0x85,
-			0xef, 0xb5, 0xa4, 0xac, 0x42, 0x47, 0xe9, 0xf3,
-		}, // f3e94742aca4b5ef85488dc37c06c3282295ffec960994b2c0d5ac2a25a95766
-		IDMerkleRoot: &daghash.Hash{
 			0x66, 0x57, 0xa9, 0x25, 0x2a, 0xac, 0xd5, 0xc0,
 			0xb2, 0x94, 0x09, 0x96, 0xec, 0xff, 0x95, 0x22,
 			0x28, 0xc3, 0x06, 0x7c, 0xc3, 0x8d, 0x48, 0x85,

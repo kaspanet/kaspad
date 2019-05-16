@@ -37,7 +37,7 @@ func parseBlock(template *btcjson.GetBlockTemplateResult) (*util.Block, error) {
 	bits := uint32(bitsInt64)
 
 	// parse rest of block
-	msgBlock := wire.NewMsgBlock(wire.NewBlockHeader(template.Version, parentHashes, &daghash.Hash{}, &daghash.Hash{}, &daghash.Hash{}, &daghash.Hash{}, uint32(bits), 0))
+	msgBlock := wire.NewMsgBlock(wire.NewBlockHeader(template.Version, parentHashes, &daghash.Hash{}, &daghash.Hash{}, &daghash.Hash{}, uint32(bits), 0))
 
 	for i, txResult := range append([]btcjson.GetBlockTemplateResultTx{*template.CoinbaseTxn}, template.Transactions...) {
 		reader := hex.NewDecoder(strings.NewReader(txResult.Data))
@@ -127,7 +127,6 @@ func solveLoop(newTemplateChan chan *btcjson.GetBlockTemplateResult, foundBlock 
 		msgBlock := block.MsgBlock()
 
 		msgBlock.Header.HashMerkleRoot = blockdag.BuildHashMerkleTreeStore(block.Transactions()).Root()
-		msgBlock.Header.IDMerkleRoot = blockdag.BuildIDMerkleTreeStore(block.Transactions()).Root()
 
 		go solveBlock(block, stopOldTemplateSolving, foundBlock)
 	}

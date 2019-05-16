@@ -1198,7 +1198,6 @@ func handleGetBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 		Version:              blockHeader.Version,
 		VersionHex:           fmt.Sprintf("%08x", blockHeader.Version),
 		HashMerkleRoot:       blockHeader.HashMerkleRoot.String(),
-		IDMerkleRoot:         blockHeader.IDMerkleRoot.String(),
 		AcceptedIDMerkleRoot: blockHeader.AcceptedIDMerkleRoot.String(),
 		ParentHashes:         daghash.Strings(blockHeader.ParentHashes),
 		Nonce:                blockHeader.Nonce,
@@ -1401,7 +1400,6 @@ func handleGetBlockHeader(s *Server, cmd interface{}, closeChan <-chan struct{})
 		Version:              blockHeader.Version,
 		VersionHex:           fmt.Sprintf("%08x", blockHeader.Version),
 		HashMerkleRoot:       blockHeader.HashMerkleRoot.String(),
-		IDMerkleRoot:         blockHeader.IDMerkleRoot.String(),
 		AcceptedIDMerkleRoot: blockHeader.AcceptedIDMerkleRoot.String(),
 		NextHashes:           nextHashStrings,
 		ParentHashes:         daghash.Strings(blockHeader.ParentHashes),
@@ -1680,8 +1678,6 @@ func (state *gbtWorkState) updateBlockTemplate(s *Server, useCoinbaseValue bool)
 			block := util.NewBlock(template.Block)
 			hashMerkleTree := blockdag.BuildHashMerkleTreeStore(block.Transactions())
 			template.Block.Header.HashMerkleRoot = hashMerkleTree.Root()
-			idMerkleTree := blockdag.BuildIDMerkleTreeStore(block.Transactions())
-			template.Block.Header.IDMerkleRoot = idMerkleTree.Root()
 		}
 
 		// Set locals for convenience.

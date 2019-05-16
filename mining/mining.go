@@ -652,7 +652,6 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 
 	// Create a new block ready to be solved.
 	hashMerkleTree := blockdag.BuildHashMerkleTreeStore(blockTxns)
-	idMerkleTree := blockdag.BuildIDMerkleTreeStore(blockTxns)
 	acceptedIDMerkleRoot, err := g.dag.NextAcceptedIDMerkleRoot()
 	if err != nil {
 		return nil, err
@@ -662,7 +661,6 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 		Version:              nextBlockVersion,
 		ParentHashes:         g.dag.TipHashes(),
 		HashMerkleRoot:       hashMerkleTree.Root(),
-		IDMerkleRoot:         idMerkleTree.Root(),
 		AcceptedIDMerkleRoot: acceptedIDMerkleRoot,
 		UTXOCommitment:       &daghash.ZeroHash,
 		Timestamp:            ts,
@@ -747,8 +745,6 @@ func (g *BlkTmplGenerator) UpdateExtraNonce(msgBlock *wire.MsgBlock, blockHeight
 	block := util.NewBlock(msgBlock)
 	hashMerkleTree := blockdag.BuildHashMerkleTreeStore(block.Transactions())
 	msgBlock.Header.HashMerkleRoot = hashMerkleTree.Root()
-	idMerkleTree := blockdag.BuildIDMerkleTreeStore(block.Transactions())
-	msgBlock.Header.IDMerkleRoot = idMerkleTree.Root()
 
 	return nil
 }
