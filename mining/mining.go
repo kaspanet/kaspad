@@ -652,7 +652,7 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 
 	// Create a new block ready to be solved.
 	hashMerkleTree := blockdag.BuildHashMerkleTreeStore(blockTxns)
-	acceptedIDMerkleRoot, err := g.dag.NextAcceptedIDMerkleRoot()
+	acceptedIDMerkleRoot, err := g.dag.NextAcceptedIDMerkleRootNoLock()
 	if err != nil {
 		return nil, err
 	}
