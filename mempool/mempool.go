@@ -508,7 +508,10 @@ func (mp *TxPool) removeTransaction(tx *util.Tx, removeRedeemers bool, restoreIn
 		}
 
 		diff := blockdag.NewUTXODiff()
-		diff.RemoveTxOuts(txDesc.Tx.MsgTx())
+		err := diff.RemoveTxOuts(mp.mpUTXOSet, txDesc.Tx.MsgTx())
+		if err != nil {
+			return err
+		}
 
 		// Mark the referenced outpoints as unspent by the pool.
 		for _, txIn := range txDesc.Tx.MsgTx().TxIn {
@@ -564,7 +567,6 @@ func (mp *TxPool) removeTransaction(tx *util.Tx, removeRedeemers bool, restoreIn
 			delete(mp.dependsByPrev, prevOut)
 		}
 
-		var err error
 		mp.mpUTXOSet, err = mp.mpUTXOSet.WithDiff(diff)
 		if err != nil {
 			return err

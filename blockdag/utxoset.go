@@ -165,8 +165,9 @@ type UTXODiff struct {
 // NewUTXODiff creates a new, empty utxoDiff
 func NewUTXODiff() *UTXODiff {
 	return &UTXODiff{
-		toAdd:    utxoCollection{},
-		toRemove: utxoCollection{},
+		toAdd:        utxoCollection{},
+		toRemove:     utxoCollection{},
+		diffMultiset: btcec.NewMultiset(btcec.S256()),
 	}
 }
 
@@ -211,10 +212,7 @@ func (d *UTXODiff) diffFrom(other *UTXODiff) (*UTXODiff, error) {
 	// If they are in other.toRemove - base utxoSet is not the same
 	for outPoint, utxoEntry := range d.toAdd {
 		if !other.toAdd.contains(outPoint) {
-			err := result.removeEntry(outPoint, utxoEntry)
-			if err != nil{
-				return nil, err
-			}
+			result.toRemove.add(outPoint, utxoEntry)
 		}
 		if other.toRemove.contains(outPoint) {
 			return nil, fmt.Errorf("diffFrom: outpoint %s both in d.toAdd and in other.toRemove", outPoint)
@@ -226,10 +224,7 @@ func (d *UTXODiff) diffFrom(other *UTXODiff) (*UTXODiff, error) {
 	// If they are in other.toAdd - base utxoSet is not the same
 	for outPoint, utxoEntry := range d.toRemove {
 		if !other.toRemove.contains(outPoint) {
-			err := result.AddEntry(outPoint, utxoEntry)
-			if err != nil{
-				return nil, err
-			}
+			result.toAdd.add(outPoint, utxoEntry)
 		}
 		if other.toAdd.contains(outPoint) {
 			return nil, errors.New("diffFrom: transaction both in d.toRemove and in other.toAdd")
@@ -240,10 +235,7 @@ func (d *UTXODiff) diffFrom(other *UTXODiff) (*UTXODiff, error) {
 	// If they are not in d.toAdd - should be added in result.toAdd
 	for outPoint, utxoEntry := range other.toAdd {
 		if !d.toAdd.contains(outPoint) {
-			err := result.AddEntry(outPoint, utxoEntry)
-			if err != nil{
-				return nil, err
-			} 
+			result.toAdd.add(outPoint, utxoEntry)
 		}
 	}
 
@@ -251,12 +243,12 @@ func (d *UTXODiff) diffFrom(other *UTXODiff) (*UTXODiff, error) {
 	// If they are not in d.toRemove - should be added in result.toRemove
 	for outPoint, utxoEntry := range other.toRemove {
 		if !d.toRemove.contains(outPoint) {
-			err := result.removeEntry(outPoint, utxoEntry)
-			if err != nil{
-				return nil, err
-			}
+			result.toRemove.add(outPoint, utxoEntry)
 		}
 	}
+
+	// Create a new diffMultiset as the subtraction of the two diffs.
+	result.diffMultiset = other.diffMultiset.Subtract(d.diffMultiset)
 
 	return result, nil
 }
@@ -332,27 +324,47 @@ func (d *UTXODiff) WithDiff(diff *UTXODiff) (*UTXODiff, error) {
 		}
 	}
 
+	// Apply diff.diffMultiset to d.diffMultiset
+	result.diffMultiset = d.diffMultiset.Union(diff.diffMultiset)
+
 	return result, nil
 }
 
 // clone returns a clone of this utxoDiff
 func (d *UTXODiff) clone() *UTXODiff {
 	return &UTXODiff{
-		toAdd:    d.toAdd.clone(),
-		toRemove: d.toRemove.clone(),
+		toAdd:        d.toAdd.clone(),
+		toRemove:     d.toRemove.clone(),
+		diffMultiset: d.diffMultiset.Clone(),
 	}
 }
 
 //RemoveTxOuts marks the transaction's outputs to removal
-func (d *UTXODiff) RemoveTxOuts(tx *wire.MsgTx) {
+func (d *UTXODiff) RemoveTxOuts(u UTXOSet, tx *wire.MsgTx) error {
 	for idx := range tx.TxOut {
-		d.toRemove.add(*wire.NewOutPoint(tx.TxID(), uint32(idx)), nil)
+		outPoint := *wire.NewOutPoint(tx.TxID(), uint32(idx))
+		entry, ok := u.Get(outPoint)
+		if !ok {
+			return fmt.Errorf("Couldn't find outpoint %s", outPoint)
+		}
+		err := d.removeEntry(outPoint, entry)
+		if err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
 // AddEntry adds a UTXOEntry to the diff
 func (d *UTXODiff) AddEntry(outPoint wire.OutPoint, entry *UTXOEntry) error {
-	d.toAdd.add(outPoint, entry)
+	if d.toRemove.contains(outPoint) {
+		d.toRemove.remove(outPoint)
+	} else if _, exists := d.toAdd[outPoint]; exists {
+		return fmt.Errorf("AddEntry: Cannot add outpoint %s twice", outPoint)
+	} else {
+		d.toAdd.add(outPoint, entry)
+	}
+
 	var err error
 	newMs, err := addUTXOToMultiset(d.diffMultiset, entry, &outPoint)
 	if err != nil {
@@ -364,7 +376,14 @@ func (d *UTXODiff) AddEntry(outPoint wire.OutPoint, entry *UTXOEntry) error {
 
 // removeEntry removes a UTXOEntry from the diff
 func (d *UTXODiff) removeEntry(outPoint wire.OutPoint, entry *UTXOEntry) error {
-	d.toRemove.add(outPoint, entry)
+	if d.toAdd.contains(outPoint) {
+		d.toAdd.remove(outPoint)
+	} else if _, exists := d.toRemove[outPoint]; exists {
+		return fmt.Errorf("removeEntry: Cannot remove outpoint %s twice", outPoint)
+	} else {
+		d.toRemove.add(outPoint, entry)
+	}
+
 	var err error
 	newMs, err := removeUTXOFromMultiset(d.diffMultiset, entry, &outPoint)
 	if err != nil {
@@ -375,7 +394,7 @@ func (d *UTXODiff) removeEntry(outPoint wire.OutPoint, entry *UTXOEntry) error {
 }
 
 func (d UTXODiff) String() string {
-	return fmt.Sprintf("toAdd: %s; toRemove: %s", d.toAdd, d.toRemove)
+	return fmt.Sprintf("toAdd: %s; toRemove: %s, Multiset-Hash: %s", d.toAdd, d.toRemove, d.diffMultiset.Hash())
 }
 
 // NewUTXOEntry creates a new utxoEntry representing the given txOut
@@ -413,6 +432,7 @@ type UTXOSet interface {
 	AddTx(tx *wire.MsgTx, blockHeight uint64) (ok bool, err error)
 	clone() UTXOSet
 	Get(outPoint wire.OutPoint) (*UTXOEntry, bool)
+	Multiset() *btcec.Multiset
 }
 
 // diffFromTx is a common implementation for diffFromTx, that works
@@ -425,7 +445,10 @@ func diffFromTx(u UTXOSet, tx *wire.MsgTx, containingNode *blockNode) (*UTXODiff
 	if !isBlockReward {
 		for _, txIn := range tx.TxIn {
 			if entry, ok := u.Get(txIn.PreviousOutPoint); ok {
-				diff.removeEntry(txIn.PreviousOutPoint, entry)
+				err := diff.removeEntry(txIn.PreviousOutPoint, entry)
+				if err != nil {
+					return nil, err
+				}
 			} else {
 				return nil, ruleError(ErrMissingTxOut, fmt.Sprintf(
 					"Transaction %s is invalid because spends outpoint %s that is not in utxo set",
@@ -454,6 +477,7 @@ type FullUTXOSet struct {
 func NewFullUTXOSet() *FullUTXOSet {
 	return &FullUTXOSet{
 		utxoCollection: utxoCollection{},
+		UTXOMultiset:   btcec.NewMultiset(btcec.S256()),
 	}
 }
 
@@ -487,7 +511,10 @@ func (fus *FullUTXOSet) AddTx(tx *wire.MsgTx, blockHeight uint64) (bool, error) 
 
 		for _, txIn := range tx.TxIn {
 			outPoint := *wire.NewOutPoint(&txIn.PreviousOutPoint.TxID, txIn.PreviousOutPoint.Index)
-			fus.remove(outPoint)
+			err := fus.removeAndUpdateMultiset(outPoint)
+			if err != nil {
+				return false, err
+			}
 		}
 	}
 
@@ -495,7 +522,10 @@ func (fus *FullUTXOSet) AddTx(tx *wire.MsgTx, blockHeight uint64) (bool, error) 
 		outPoint := *wire.NewOutPoint(tx.TxID(), uint32(i))
 		entry := NewUTXOEntry(txOut, isBlockReward, blockHeight)
 
-		fus.add(outPoint, entry)
+		err := fus.addAndUpdateMultiset(outPoint, entry)
+		if err != nil {
+			return false, err
+		}
 	}
 
 	return true, nil
@@ -520,13 +550,46 @@ func (fus *FullUTXOSet) containsInputs(tx *wire.MsgTx) bool {
 
 // clone returns a clone of this utxoSet
 func (fus *FullUTXOSet) clone() UTXOSet {
-	return &FullUTXOSet{utxoCollection: fus.utxoCollection.clone()}
+	return &FullUTXOSet{utxoCollection: fus.utxoCollection.clone(), UTXOMultiset: fus.UTXOMultiset.Clone()}
 }
 
 // Get returns the UTXOEntry associated with the given OutPoint, and a boolean indicating if such entry was found
 func (fus *FullUTXOSet) Get(outPoint wire.OutPoint) (*UTXOEntry, bool) {
 	utxoEntry, ok := fus.utxoCollection[outPoint]
 	return utxoEntry, ok
+}
+
+// Multiset returns the ecmh-Multiset of this utxoSet
+func (fus *FullUTXOSet) Multiset() *btcec.Multiset {
+	return fus.UTXOMultiset
+}
+
+// addAndUpdateMultiset adds a UTXOEntry to this utxoSet and updates its multiset accordingly
+func (fus *FullUTXOSet) addAndUpdateMultiset(outPoint wire.OutPoint, entry *UTXOEntry) error {
+	fus.add(outPoint, entry)
+	var err error
+	newMs, err := addUTXOToMultiset(fus.UTXOMultiset, entry, &outPoint)
+	if err != nil {
+		return err
+	}
+	fus.UTXOMultiset = newMs
+	return nil
+}
+
+// removeAndUpdateMultiset removes a UTXOEntry from this utxoSet and updates its multiset accordingly
+func (fus *FullUTXOSet) removeAndUpdateMultiset(outPoint wire.OutPoint) error {
+	entry, ok := fus.Get(outPoint)
+	if !ok {
+		return fmt.Errorf("Couldn't find outpoint %s", outPoint)
+	}
+	fus.remove(outPoint)
+	var err error
+	newMs, err := removeUTXOFromMultiset(fus.UTXOMultiset, entry, &outPoint)
+	if err != nil {
+		return err
+	}
+	fus.UTXOMultiset = newMs
+	return nil
 }
 
 // DiffUTXOSet represents a utxoSet with a base fullUTXOSet and a UTXODiff
@@ -587,11 +650,13 @@ func (dus *DiffUTXOSet) appendTx(tx *wire.MsgTx, blockHeight uint64, isBlockRewa
 	if !isBlockReward {
 		for _, txIn := range tx.TxIn {
 			outPoint := *wire.NewOutPoint(&txIn.PreviousOutPoint.TxID, txIn.PreviousOutPoint.Index)
-			if dus.UTXODiff.toAdd.contains(outPoint) {
-				dus.UTXODiff.toAdd.remove(outPoint)
-			} else {
-				prevUTXOEntry := dus.base.utxoCollection[outPoint]
-				dus.UTXODiff.toRemove.add(outPoint, prevUTXOEntry)
+			entry, ok := dus.Get(outPoint)
+			if !ok {
+				return fmt.Errorf("Couldn't find entry for outpoint %s", outPoint)
+			}
+			err := dus.UTXODiff.removeEntry(outPoint, entry)
+			if err != nil {
+				return err
 			}
 		}
 	}
@@ -600,13 +665,9 @@ func (dus *DiffUTXOSet) appendTx(tx *wire.MsgTx, blockHeight uint64, isBlockRewa
 		outPoint := *wire.NewOutPoint(tx.TxID(), uint32(i))
 		entry := NewUTXOEntry(txOut, isBlockReward, blockHeight)
 
-		if dus.UTXODiff.toRemove.contains(outPoint) {
-			dus.UTXODiff.removeEntry(outPoint, entry)
-		} else {
-			err := dus.UTXODiff.AddEntry(outPoint, entry)
-			if err != nil {
-				return err
-			}
+		err := dus.UTXODiff.AddEntry(outPoint, entry)
+		if err != nil {
+			return err
 		}
 	}
 	return nil
@@ -627,16 +688,23 @@ func (dus *DiffUTXOSet) containsInputs(tx *wire.MsgTx) bool {
 }
 
 // meldToBase updates the base fullUTXOSet with all changes in diff
-func (dus *DiffUTXOSet) meldToBase() {
+func (dus *DiffUTXOSet) meldToBase() error {
 	for outPoint := range dus.UTXODiff.toRemove {
-		dus.base.remove(outPoint)
+		if _, ok := dus.base.Get(outPoint); ok {
+			dus.base.remove(outPoint)
+		} else {
+			return fmt.Errorf("Couldn't remove outpoint %s because it doesn't exist in the DiffUTXOSet base", outPoint)
+		}
 	}
 
 	for outPoint, utxoEntry := range dus.UTXODiff.toAdd {
 		dus.base.add(outPoint, utxoEntry)
 	}
 
+	dus.base.UTXOMultiset = dus.base.UTXOMultiset.Union(dus.UTXODiff.diffMultiset)
+
 	dus.UTXODiff = NewUTXODiff()
+	return nil
 }
 
 // diffFromTx returns a diff that is equivalent to provided transaction,
@@ -646,7 +714,7 @@ func (dus *DiffUTXOSet) diffFromTx(tx *wire.MsgTx, node *blockNode) (*UTXODiff, 
 }
 
 func (dus *DiffUTXOSet) String() string {
-	return fmt.Sprintf("{Base: %s, To Add: %s, To Remove: %s}", dus.base, dus.UTXODiff.toAdd, dus.UTXODiff.toRemove)
+	return fmt.Sprintf("{Base: %s, To Add: %s, To Remove: %s, Multiset-Hash:%s}", dus.base, dus.UTXODiff.toAdd, dus.UTXODiff.toRemove, dus.Multiset().Hash())
 }
 
 // clone returns a clone of this UTXO Set
@@ -665,6 +733,11 @@ func (dus *DiffUTXOSet) Get(outPoint wire.OutPoint) (*UTXOEntry, bool) {
 	}
 	txOut, ok := dus.UTXODiff.toAdd.get(outPoint)
 	return txOut, ok
+}
+
+// Multiset returns the ecmh-Multiset of this utxoSet
+func (dus *DiffUTXOSet) Multiset() *btcec.Multiset {
+	return dus.base.UTXOMultiset.Union(dus.UTXODiff.diffMultiset)
 }
 
 func addUTXOToMultiset(ms *btcec.Multiset, entry *UTXOEntry, outPoint *wire.OutPoint) (*btcec.Multiset, error) {

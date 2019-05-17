@@ -5,12 +5,16 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
+	"math/big"
 	"sync"
 
+	"github.com/daglabs/btcd/btcec"
 	"github.com/daglabs/btcd/database"
 	"github.com/daglabs/btcd/util/daghash"
 	"github.com/daglabs/btcd/wire"
 )
+
+var multsetPointSize = 32
 
 type blockUTXODiffData struct {
 	diff      *UTXODiff
@@ -164,6 +168,11 @@ func (diffStore *utxoDiffStore) deserializeBlockUTXODiffData(serializedDiffDataB
 		return nil, err
 	}
 
+	diffData.diff.diffMultiset, err = deserializeMultiset(serializedDiffData)
+	if err != nil {
+		return nil, err
+	}
+
 	return diffData, nil
 }
 
@@ -207,6 +216,23 @@ func deserializeDiffEntries(r io.Reader) (utxoCollection, error) {
 	return collection, nil
 }
 
+func deserializeMultiset(r io.Reader) (*btcec.Multiset, error) {
+	xBytes := make([]byte, multsetPointSize)
+	yBytes := make([]byte, multsetPointSize)
+	err := binary.Read(r, byteOrder, xBytes)
+	if err != nil {
+		return nil, err
+	}
+	err = binary.Read(r, byteOrder, yBytes)
+	if err != nil {
+		return nil, err
+	}
+	var x, y big.Int
+	x.SetBytes(xBytes)
+	y.SetBytes(yBytes)
+	return btcec.NewMultisetFromPoint(btcec.S256(), &x, &y), nil
+}
+
 // serializeBlockUTXODiffData serializes diff data in the following format:
 // 	Name         | Data type | Description
 //	------------ | --------- | -----------
@@ -247,6 +273,10 @@ func serializeUTXODiff(w io.Writer, diff *UTXODiff) error {
 	if err != nil {
 		return err
 	}
+	err = serializeMultiset(w, diff.diffMultiset)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -263,6 +293,24 @@ func serializeUTXOCollection(w io.Writer, collection utxoCollection) error {
 		if err != nil {
 			return err
 		}
+	}
+	return nil
+}
+
+func serializeMultiset(w io.Writer, ms *btcec.Multiset) error {
+	x, y := ms.Point()
+	xBytes := make([]byte, multsetPointSize)
+	copy(xBytes, x.Bytes())
+	yBytes := make([]byte, multsetPointSize)
+	copy(yBytes, y.Bytes())
+
+	err := binary.Write(w, byteOrder, xBytes)
+	if err != nil {
+		return err
+	}
+	err = binary.Write(w, byteOrder, yBytes)
+	if err != nil {
+		return err
 	}
 	return nil
 }

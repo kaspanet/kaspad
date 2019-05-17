@@ -202,7 +202,10 @@ func GetVirtualFromParentsForTest(dag *BlockDAG, parentHashes []*daghash.Hash) (
 		return nil, err
 	}
 	diffPastUTXO := pastUTXO.clone().(*DiffUTXOSet)
-	diffPastUTXO.meldToBase()
+	err = diffPastUTXO.meldToBase()
+	if err != nil {
+		return nil, err
+	}
 	virtual.utxoSet = diffPastUTXO.base
 
 	return virtual, nil
