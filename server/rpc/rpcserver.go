@@ -2243,6 +2243,7 @@ func handleGetBlockTemplate(s *Server, cmd interface{}, closeChan <-chan struct{
 	}
 
 	log.Warnf("handleGetBlockTemplate A")
+	aaa
 
 	switch mode {
 	case "template":
