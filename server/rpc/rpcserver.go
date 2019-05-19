@@ -1848,16 +1848,23 @@ func (state *gbtWorkState) blockTemplateResult(useCoinbaseValue bool, submitOld 
 //
 // See https://en.bitcoin.it/wiki/BIP_0022 for more details.
 func handleGetBlockTemplateLongPoll(s *Server, longPollID string, useCoinbaseValue bool, closeChan <-chan struct{}) (interface{}, error) {
+
+	log.Warnf("handleGetBlockTemplateLongPoll START")
+
 	state := s.gbtWorkState
 	state.Lock()
 	// The state unlock is intentionally not deferred here since it needs to
 	// be manually unlocked before waiting for a notification about block
 	// template changes.
 
+	log.Warnf("handleGetBlockTemplateLongPoll A")
+
 	if err := state.updateBlockTemplate(s, useCoinbaseValue); err != nil {
 		state.Unlock()
 		return nil, err
 	}
+
+	log.Warnf("handleGetBlockTemplateLongPoll B")
 
 	// Just return the current block template if the long poll ID provided by
 	// the caller is invalid.
@@ -1872,6 +1879,8 @@ func handleGetBlockTemplateLongPoll(s *Server, longPollID string, useCoinbaseVal
 		state.Unlock()
 		return result, nil
 	}
+
+	log.Warnf("handleGetBlockTemplateLongPoll C")
 
 	// Return the block template now if the specific block template
 	// identified by the long poll ID no longer matches the current block
@@ -1895,12 +1904,16 @@ func handleGetBlockTemplateLongPoll(s *Server, longPollID string, useCoinbaseVal
 		return result, nil
 	}
 
+	log.Warnf("handleGetBlockTemplateLongPoll D")
+
 	// Register the parent hashes and last generated time for notifications
 	// Get a channel that will be notified when the template associated with
 	// the provided ID is stale and a new block template should be returned to
 	// the caller.
 	longPollChan := state.templateUpdateChan(parentHashes, lastGenerated)
 	state.Unlock()
+
+	log.Warnf("handleGetBlockTemplateLongPoll E")
 
 	select {
 	// When the client closes before it's time to send a reply, just return
@@ -1913,13 +1926,19 @@ func handleGetBlockTemplateLongPoll(s *Server, longPollID string, useCoinbaseVal
 		// Fallthrough
 	}
 
+	log.Warnf("handleGetBlockTemplateLongPoll G")
+
 	// Get the lastest block template
 	state.Lock()
 	defer state.Unlock()
 
+	log.Warnf("handleGetBlockTemplateLongPoll H")
+
 	if err := state.updateBlockTemplate(s, useCoinbaseValue); err != nil {
 		return nil, err
 	}
+
+	log.Warnf("handleGetBlockTemplateLongPoll I")
 
 	// Include whether or not it is valid to submit work against the old
 	// block template depending on whether or not a solution has already
@@ -1929,6 +1948,8 @@ func handleGetBlockTemplateLongPoll(s *Server, longPollID string, useCoinbaseVal
 	if err != nil {
 		return nil, err
 	}
+
+	log.Warnf("handleGetBlockTemplateLongPoll J")
 
 	return result, nil
 }
@@ -1941,6 +1962,9 @@ func handleGetBlockTemplateLongPoll(s *Server, longPollID string, useCoinbaseVal
 // coinbasetxn and coinbasevalue capabilities) and modifies the returned block
 // template accordingly.
 func handleGetBlockTemplateRequest(s *Server, request *btcjson.TemplateRequest, closeChan <-chan struct{}) (interface{}, error) {
+
+	log.Warnf("handleGetBlockTemplateRequest START")
+
 	// Extract the relevant passed capabilities and restrict the result to
 	// either a coinbase value or a coinbase transaction object depending on
 	// the request.  Default to only providing a coinbase value.
@@ -1961,6 +1985,8 @@ func handleGetBlockTemplateRequest(s *Server, request *btcjson.TemplateRequest, 
 		}
 	}
 
+	log.Warnf("handleGetBlockTemplateRequest A")
+
 	// When a coinbase transaction has been requested, respond with an error
 	// if there are no addresses to pay the created block template to.
 	if !useCoinbaseValue && len(config.MainConfig().MiningAddrs) == 0 {
@@ -1971,6 +1997,8 @@ func handleGetBlockTemplateRequest(s *Server, request *btcjson.TemplateRequest, 
 				"any payment addresses via --miningaddr",
 		}
 	}
+
+	log.Warnf("handleGetBlockTemplateRequest B")
 
 	// Return an error if there are no peers connected since there is no
 	// way to relay a found block or receive transactions to work on.
@@ -1985,6 +2013,8 @@ func handleGetBlockTemplateRequest(s *Server, request *btcjson.TemplateRequest, 
 		}
 	}
 
+	log.Warnf("handleGetBlockTemplateRequest C")
+
 	// No point in generating or accepting work before the chain is synced.
 	currentHeight := s.cfg.DAG.Height()
 	if currentHeight != 0 && !s.cfg.SyncMgr.IsCurrent() {
@@ -1994,6 +2024,8 @@ func handleGetBlockTemplateRequest(s *Server, request *btcjson.TemplateRequest, 
 		}
 	}
 
+	log.Warnf("handleGetBlockTemplateRequest D")
+
 	// When a long poll ID was provided, this is a long poll request by the
 	// client to be notified when block template referenced by the ID should
 	// be replaced with a new one.
@@ -2002,10 +2034,14 @@ func handleGetBlockTemplateRequest(s *Server, request *btcjson.TemplateRequest, 
 			useCoinbaseValue, closeChan)
 	}
 
+	log.Warnf("handleGetBlockTemplateRequest E")
+
 	// Protect concurrent access when updating block templates.
 	state := s.gbtWorkState
 	state.Lock()
 	defer state.Unlock()
+
+	log.Warnf("handleGetBlockTemplateRequest F")
 
 	// Get and return a block template.  A new block template will be
 	// generated when the current best block has changed or the transactions
@@ -2016,6 +2052,8 @@ func handleGetBlockTemplateRequest(s *Server, request *btcjson.TemplateRequest, 
 	if err := state.updateBlockTemplate(s, useCoinbaseValue); err != nil {
 		return nil, err
 	}
+	log.Warnf("handleGetBlockTemplateRequest G")
+
 	return state.blockTemplateResult(useCoinbaseValue, nil)
 }
 
@@ -2117,6 +2155,9 @@ func chainErrToGBTErrString(err error) string {
 //
 // See https://en.bitcoin.it/wiki/BIP_0023 for more details.
 func handleGetBlockTemplateProposal(s *Server, request *btcjson.TemplateRequest) (interface{}, error) {
+
+	log.Warnf("handleGetBlockTemplateProposal START")
+
 	hexData := request.Data
 	if hexData == "" {
 		return false, &btcjson.RPCError{
@@ -2127,10 +2168,14 @@ func handleGetBlockTemplateProposal(s *Server, request *btcjson.TemplateRequest)
 		}
 	}
 
+	log.Warnf("handleGetBlockTemplateProposal A")
+
 	// Ensure the provided data is sane and deserialize the proposed block.
 	if len(hexData)%2 != 0 {
 		hexData = "0" + hexData
 	}
+	log.Warnf("handleGetBlockTemplateProposal B")
+
 	dataBytes, err := hex.DecodeString(hexData)
 	if err != nil {
 		return false, &btcjson.RPCError{
@@ -2139,6 +2184,8 @@ func handleGetBlockTemplateProposal(s *Server, request *btcjson.TemplateRequest)
 				"hexadecimal string (not %q)", hexData),
 		}
 	}
+	log.Warnf("handleGetBlockTemplateProposal C")
+
 	var msgBlock wire.MsgBlock
 	if err := msgBlock.Deserialize(bytes.NewReader(dataBytes)); err != nil {
 		return nil, &btcjson.RPCError{
@@ -2148,12 +2195,16 @@ func handleGetBlockTemplateProposal(s *Server, request *btcjson.TemplateRequest)
 	}
 	block := util.NewBlock(&msgBlock)
 
+	log.Warnf("handleGetBlockTemplateProposal D")
+
 	// Ensure the block is building from the expected parent blocks.
 	expectedParentHashes := s.cfg.DAG.TipHashes()
 	parentHashes := block.MsgBlock().Header.ParentHashes
 	if !daghash.AreEqual(expectedParentHashes, parentHashes) {
 		return "bad-parentblk", nil
 	}
+
+	log.Warnf("handleGetBlockTemplateProposal E")
 
 	if err := s.cfg.DAG.CheckConnectBlockTemplate(block); err != nil {
 		if _, ok := err.(blockdag.RuleError); !ok {
@@ -2169,6 +2220,8 @@ func handleGetBlockTemplateProposal(s *Server, request *btcjson.TemplateRequest)
 		return chainErrToGBTErrString(err), nil
 	}
 
+	log.Warnf("handleGetBlockTemplateProposal F")
+
 	return nil, nil
 }
 
@@ -2177,6 +2230,9 @@ func handleGetBlockTemplateProposal(s *Server, request *btcjson.TemplateRequest)
 // See https://en.bitcoin.it/wiki/BIP_0022 and
 // https://en.bitcoin.it/wiki/BIP_0023 for more details.
 func handleGetBlockTemplate(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
+
+	log.Warnf("handleGetBlockTemplate START")
+
 	c := cmd.(*btcjson.GetBlockTemplateCmd)
 	request := c.Request
 
@@ -2186,12 +2242,20 @@ func handleGetBlockTemplate(s *Server, cmd interface{}, closeChan <-chan struct{
 		mode = request.Mode
 	}
 
+	log.Warnf("handleGetBlockTemplate A")
+
 	switch mode {
 	case "template":
+		log.Warnf("handleGetBlockTemplate A template")
+
 		return handleGetBlockTemplateRequest(s, request, closeChan)
 	case "proposal":
+		log.Warnf("handleGetBlockTemplate A proposal")
+
 		return handleGetBlockTemplateProposal(s, request)
 	}
+
+	log.Warnf("handleGetBlockTemplate B")
 
 	return nil, &btcjson.RPCError{
 		Code:    btcjson.ErrRPCInvalidParameter,
@@ -3029,6 +3093,7 @@ func fetchMempoolTxnsForAddress(s *Server, addr util.Address, numToSkip, numRequ
 
 // handleSearchRawTransactions implements the searchRawTransactions command.
 func handleSearchRawTransactions(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
+	log.Warnf("handleSearchRawTransactions START")
 	// Respond with an error if the address index is not enabled.
 	addrIndex := s.cfg.AddrIndex
 	if addrIndex == nil {
@@ -3038,6 +3103,8 @@ func handleSearchRawTransactions(s *Server, cmd interface{}, closeChan <-chan st
 		}
 	}
 
+	log.Warnf("handleSearchRawTransactions A")
+
 	// Override the flag for including extra previous output information in
 	// each input if needed.
 	c := cmd.(*btcjson.SearchRawTransactionsCmd)
@@ -3045,6 +3112,8 @@ func handleSearchRawTransactions(s *Server, cmd interface{}, closeChan <-chan st
 	if c.VinExtra != nil {
 		vinExtra = *c.VinExtra
 	}
+
+	log.Warnf("handleSearchRawTransactions B")
 
 	// Including the extra previous output information requires the
 	// transaction index.  Currently the address index relies on the
@@ -3057,6 +3126,8 @@ func handleSearchRawTransactions(s *Server, cmd interface{}, closeChan <-chan st
 		}
 	}
 
+	log.Warnf("handleSearchRawTransactions C")
+
 	// Attempt to decode the supplied address.
 	params := s.cfg.DAGParams
 	addr, err := util.DecodeAddress(c.Address, params.Prefix)
@@ -3066,6 +3137,8 @@ func handleSearchRawTransactions(s *Server, cmd interface{}, closeChan <-chan st
 			Message: "Invalid address or key: " + err.Error(),
 		}
 	}
+
+	log.Warnf("handleSearchRawTransactions D")
 
 	// Override the default number of requested entries if needed.  Also,
 	// just return now if the number of requested entries is zero to avoid
@@ -3081,6 +3154,8 @@ func handleSearchRawTransactions(s *Server, cmd interface{}, closeChan <-chan st
 		return nil, nil
 	}
 
+	log.Warnf("handleSearchRawTransactions e")
+
 	// Override the default number of entries to skip if needed.
 	var numToSkip int
 	if c.Skip != nil {
@@ -3090,11 +3165,15 @@ func handleSearchRawTransactions(s *Server, cmd interface{}, closeChan <-chan st
 		}
 	}
 
+	log.Warnf("handleSearchRawTransactions F")
+
 	// Override the reverse flag if needed.
 	var reverse bool
 	if c.Reverse != nil {
 		reverse = *c.Reverse
 	}
+
+	log.Warnf("handleSearchRawTransactions G")
 
 	// Add transactions from mempool first if client asked for reverse
 	// order.  Otherwise, they will be added last (as needed depending on
@@ -3116,6 +3195,8 @@ func handleSearchRawTransactions(s *Server, cmd interface{}, closeChan <-chan st
 			addressTxns = append(addressTxns, retrievedTx{tx: tx})
 		}
 	}
+
+	log.Warnf("handleSearchRawTransactions H")
 
 	// Fetch transactions from the database in the desired order if more are
 	// needed.
@@ -3157,6 +3238,8 @@ func handleSearchRawTransactions(s *Server, cmd interface{}, closeChan <-chan st
 
 	}
 
+	log.Warnf("handleSearchRawTransactions I")
+
 	// Add transactions from mempool last if client did not request reverse
 	// order and the number of results is still under the number requested.
 	if !reverse && len(addressTxns) < numRequested {
@@ -3172,6 +3255,8 @@ func handleSearchRawTransactions(s *Server, cmd interface{}, closeChan <-chan st
 		}
 	}
 
+	log.Warnf("handleSearchRawTransactions J")
+
 	// Address has never been used if neither source yielded any results.
 	if len(addressTxns) == 0 {
 		return nil, &btcjson.RPCError{
@@ -3179,6 +3264,8 @@ func handleSearchRawTransactions(s *Server, cmd interface{}, closeChan <-chan st
 			Message: "No information available about address",
 		}
 	}
+
+	log.Warnf("handleSearchRawTransactions K")
 
 	// Serialize all of the transactions to hex.
 	hexTxns := make([]string, len(addressTxns))
@@ -3199,10 +3286,14 @@ func handleSearchRawTransactions(s *Server, cmd interface{}, closeChan <-chan st
 		}
 	}
 
+	log.Warnf("handleSearchRawTransactions L")
+
 	// When not in verbose mode, simply return a list of serialized txns.
 	if c.Verbose != nil && !*c.Verbose {
 		return hexTxns, nil
 	}
+
+	log.Warnf("handleSearchRawTransactions M")
 
 	// Normalize the provided filter addresses (if any) to ensure there are
 	// no duplicates.
@@ -3213,9 +3304,14 @@ func handleSearchRawTransactions(s *Server, cmd interface{}, closeChan <-chan st
 		}
 	}
 
+	log.Warnf("handleSearchRawTransactions N")
+
 	// The verbose flag is set, so generate the JSON object and return it.
 	srtList := make([]btcjson.SearchRawTransactionsResult, len(addressTxns))
 	for i := range addressTxns {
+
+		log.Warnf("handleSearchRawTransactions N1 %d", i)
+
 		// The deserialized transaction is needed, so deserialize the
 		// retrieved transaction if it's in serialized form (which will
 		// be the case when it was lookup up from the database).
@@ -3235,6 +3331,8 @@ func handleSearchRawTransactions(s *Server, cmd interface{}, closeChan <-chan st
 			mtx = rtx.tx.MsgTx()
 		}
 
+		log.Warnf("handleSearchRawTransactions N2 %d", i)
+
 		result := &srtList[i]
 		result.Hex = hexTxns[i]
 		result.TxID = mtx.TxID().String()
@@ -3246,6 +3344,8 @@ func handleSearchRawTransactions(s *Server, cmd interface{}, closeChan <-chan st
 		result.Vout = createVoutList(mtx, params, filterAddrMap)
 		result.Version = mtx.Version
 		result.LockTime = mtx.LockTime
+
+		log.Warnf("handleSearchRawTransactions N3 %d", i)
 
 		// Transactions grabbed from the mempool aren't yet in a block,
 		// so conditionally fetch block details here.  This will be
@@ -3276,6 +3376,8 @@ func handleSearchRawTransactions(s *Server, cmd interface{}, closeChan <-chan st
 			blkHeight = height
 		}
 
+		log.Warnf("handleSearchRawTransactions N4 %d", i)
+
 		// Add the block information to the result if there is any.
 		if blkHeader != nil {
 			// This is not a typo, they are identical in Bitcoin
@@ -3285,7 +3387,12 @@ func handleSearchRawTransactions(s *Server, cmd interface{}, closeChan <-chan st
 			result.BlockHash = blkHashStr
 			result.Confirmations = uint64(1 + s.cfg.DAG.Height() - blkHeight) //TODO: (Ori) This is probably wrong. Done only for compilation
 		}
+
+		log.Warnf("handleSearchRawTransactions N5 %d", i)
+
 	}
+
+	log.Warnf("handleSearchRawTransactions O")
 
 	return srtList, nil
 }
