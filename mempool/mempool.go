@@ -483,6 +483,74 @@ func (mp *TxPool) HaveTransaction(hash *daghash.TxID) bool {
 	return haveTx
 }
 
+// removeTransactions is the internal function which implements the public
+// RemoveTransactions.  See the comment for RemoveTransactions for more details.
+//
+// This function MUST be called with the mempool lock held (for writes).
+func (mp *TxPool) removeTransactions(txs []*util.Tx) error {
+	diff := blockdag.NewUTXODiff()
+
+	for _, tx := range txs {
+		txID := tx.ID()
+
+		// Remove the transaction if needed.
+		if txDesc, exists := mp.fetchTransaction(txID); exists {
+			// Remove unconfirmed address index entries associated with the
+			// transaction if enabled.
+			if mp.cfg.AddrIndex != nil {
+				mp.cfg.AddrIndex.RemoveUnconfirmedTx(txID)
+			}
+
+			diff.RemoveTxOuts(txDesc.Tx.MsgTx())
+
+			// Mark the referenced outpoints as unspent by the pool.
+			for _, txIn := range txDesc.Tx.MsgTx().TxIn {
+				delete(mp.outpoints, txIn.PreviousOutPoint)
+			}
+
+			if txDesc.depCount == 0 {
+				delete(mp.pool, *txID)
+			} else {
+				delete(mp.depends, *txID)
+			}
+
+			// Process dependent transactions
+			prevOut := wire.OutPoint{TxID: *txID}
+			for txOutIdx := range tx.MsgTx().TxOut {
+				// Skip to the next available output if there are none.
+				prevOut.Index = uint32(txOutIdx)
+				depends, exists := mp.dependsByPrev[prevOut]
+				if !exists {
+					continue
+				}
+
+				// Move independent transactions into main pool
+				for _, txD := range depends {
+					txD.depCount--
+					if txD.depCount == 0 {
+						// Transaction may be already removed by recursive calls, if removeRedeemers is true.
+						// So avoid moving it into main pool
+						if _, ok := mp.depends[*txD.Tx.ID()]; ok {
+							delete(mp.depends, *txD.Tx.ID())
+							mp.pool[*txD.Tx.ID()] = txD
+						}
+					}
+				}
+				delete(mp.dependsByPrev, prevOut)
+			}
+		}
+	}
+
+	var err error
+	mp.mpUTXOSet, err = mp.mpUTXOSet.WithDiff(diff)
+	if err != nil {
+		return err
+	}
+	atomic.StoreInt64(&mp.lastUpdated, time.Now().Unix())
+
+	return nil
+}
+
 // removeTransaction is the internal function which implements the public
 // RemoveTransaction.  See the comment for RemoveTransaction for more details.
 //
@@ -579,6 +647,16 @@ func (mp *TxPool) RemoveTransaction(tx *util.Tx, removeRedeemers bool, restoreIn
 	mp.mtx.Lock()
 	defer mp.mtx.Unlock()
 	return mp.removeTransaction(tx, removeRedeemers, restoreInputs)
+}
+
+// RemoveTransactions removes the passed transactions from the mempool.
+//
+// This function is safe for concurrent access.
+func (mp *TxPool) RemoveTransactions(txs []*util.Tx) error {
+	// Protect concurrent access.
+	mp.mtx.Lock()
+	defer mp.mtx.Unlock()
+	return mp.removeTransactions(txs)
 }
 
 // RemoveDoubleSpends removes all transactions which spend outputs spent by the
@@ -1326,12 +1404,12 @@ func (mp *TxPool) HandleNewBlock(block *util.Block, txChan chan NewBlockMsg) err
 	// no longer an orphan. Transactions which depend on a confirmed
 	// transaction are NOT removed recursively because they are still
 	// valid.
+	err := mp.RemoveTransactions(block.Transactions()[1:])
+	if err != nil {
+		mp.mpUTXOSet = oldUTXOSet
+		return err
+	}
 	for _, tx := range block.Transactions()[1:] {
-		err := mp.RemoveTransaction(tx, false, false)
-		if err != nil {
-			mp.mpUTXOSet = oldUTXOSet
-			return err
-		}
 		mp.RemoveDoubleSpends(tx)
 		mp.RemoveOrphan(tx)
 		acceptedTxs := mp.ProcessOrphans(tx)
