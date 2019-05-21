@@ -1047,15 +1047,15 @@ func TestUTXOSetRemoveTxOuts(t *testing.T) {
 
 	utxoDiff := NewUTXODiff()
 	fus := NewFullUTXOSet()
-	fus.add(*outPoint0,utxoEntry0)
-	fus.add(*outPoint1,utxoEntry1)
+	fus.add(*outPoint0, utxoEntry0)
+	fus.add(*outPoint1, utxoEntry1)
 	utxoSet := UTXOSet(fus)
 
 	tests := []struct {
 		name             string
 		txToRemove       *wire.MsgTx
 		expectedUTXODiff *UTXODiff
-		expectedError string
+		expectedError    string
 	}{
 		{
 			name:       "remove a transaction",
@@ -1086,7 +1086,7 @@ func TestUTXOSetRemoveTxOuts(t *testing.T) {
 
 	for _, test := range tests {
 		expectedUTXODiff := addMultisetToDiff(t, test.expectedUTXODiff)
-		err := utxoDiff.RemoveTxOuts(utxoSet,test.txToRemove)
+		err := utxoDiff.RemoveTxOuts(utxoSet, test.txToRemove)
 		errString := ""
 		if err != nil {
 			errString = err.Error()

@@ -2,10 +2,8 @@ package blockdag
 
 import (
 	"bytes"
-	"encoding/binary"
 	"errors"
 	"fmt"
-	"io"
 	"math"
 	"sort"
 	"strings"
@@ -68,31 +66,6 @@ func (entry *UTXOEntry) PkScript() []byte {
 // a.k.a. still in the mempool.
 func (entry *UTXOEntry) IsUnmined() bool {
 	return entry.blockChainHeight == UnminedChainHeight
-}
-
-// serializeUtxo serializes a utxo entry-outpoint pair
-func serializeUTXO(w io.Writer, entry *UTXOEntry, outPoint *wire.OutPoint) error {
-	serializedOutPoint := *outpointKey(*outPoint)
-	err := wire.WriteVarInt(w, uint64(len(serializedOutPoint)))
-	if err != nil {
-		return err
-	}
-
-	err = binary.Write(w, byteOrder, serializedOutPoint)
-	if err != nil {
-		return err
-	}
-
-	serializedUTXOEntry := serializeUTXOEntry(entry)
-	err = wire.WriteVarInt(w, uint64(len(serializedUTXOEntry)))
-	if err != nil {
-		return err
-	}
-	err = binary.Write(w, byteOrder, serializedUTXOEntry)
-	if err != nil {
-		return err
-	}
-	return nil
 }
 
 // txoFlags is a bitmask defining additional information and state for a
@@ -383,6 +356,23 @@ func (d *UTXODiff) removeEntry(outPoint wire.OutPoint, entry *UTXOEntry) error {
 	} else {
 		d.toRemove.add(outPoint, entry)
 	}
+
+	var err error
+	newMs, err := removeUTXOFromMultiset(d.diffMultiset, entry, &outPoint)
+	if err != nil {
+		return err
+	}
+	d.diffMultiset = newMs
+	return nil
+}
+
+// removeEntryFromToAdd removes a UTXOEntry from d.toAdd, if exists
+func (d *UTXODiff) removeEntryFromToAdd(outPoint wire.OutPoint) error {
+	entry, ok := d.toAdd[outPoint]
+	if !ok {
+		return nil
+	}
+	d.toAdd.remove(outPoint)
 
 	var err error
 	newMs, err := removeUTXOFromMultiset(d.diffMultiset, entry, &outPoint)
@@ -738,6 +728,19 @@ func (dus *DiffUTXOSet) Get(outPoint wire.OutPoint) (*UTXOEntry, bool) {
 // Multiset returns the ecmh-Multiset of this utxoSet
 func (dus *DiffUTXOSet) Multiset() *btcec.Multiset {
 	return dus.base.UTXOMultiset.Union(dus.UTXODiff.diffMultiset)
+}
+
+// RemoveTxOutsFromDiff removes existing transaction outputs from the UTXOSet's diff
+func (dus *DiffUTXOSet) RemoveTxOutsFromDiff(tx *wire.MsgTx) (*DiffUTXOSet, error) {
+	newDus := NewDiffUTXOSet(dus.base, dus.UTXODiff.clone())
+	for idx := range tx.TxOut {
+		outPoint := *wire.NewOutPoint(tx.TxID(), uint32(idx))
+		err := newDus.UTXODiff.removeEntryFromToAdd(outPoint)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return newDus, nil
 }
 
 func addUTXOToMultiset(ms *btcec.Multiset, entry *UTXOEntry, outPoint *wire.OutPoint) (*btcec.Multiset, error) {

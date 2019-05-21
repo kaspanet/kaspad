@@ -236,9 +236,12 @@ func CreateCoinbaseTx(params *dagconfig.Params, coinbaseScript []byte, nextBlock
 			return nil, err
 		}
 	} else {
-		var err error
 		scriptBuilder := txscript.NewScriptBuilder()
-		pkScript, err = scriptBuilder.AddOp(txscript.OpTrue).Script()
+		opTrueScript, err := scriptBuilder.AddOp(txscript.OpTrue).Script()
+		if err != nil {
+			return nil, err
+		}
+		pkScript, err = txscript.PayToScriptHashScript(opTrueScript)
 		if err != nil {
 			return nil, err
 		}

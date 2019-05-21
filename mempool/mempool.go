@@ -494,7 +494,10 @@ func (mp *TxPool) removeTransaction(tx *util.Tx, removeRedeemers bool, restoreIn
 		for i := uint32(0); i < uint32(len(tx.MsgTx().TxOut)); i++ {
 			prevOut := wire.OutPoint{TxID: *txID, Index: i}
 			if txRedeemer, exists := mp.outpoints[prevOut]; exists {
-				mp.removeTransaction(txRedeemer, true, false)
+				err := mp.removeTransaction(txRedeemer, true, false)
+				if err != nil {
+					return err
+				}
 			}
 		}
 	}
@@ -508,10 +511,7 @@ func (mp *TxPool) removeTransaction(tx *util.Tx, removeRedeemers bool, restoreIn
 		}
 
 		diff := blockdag.NewUTXODiff()
-		err := diff.RemoveTxOuts(mp.mpUTXOSet, txDesc.Tx.MsgTx())
-		if err != nil {
-			return err
-		}
+		diff.RemoveTxOuts(mp.mpUTXOSet, txDesc.Tx.MsgTx())
 
 		// Mark the referenced outpoints as unspent by the pool.
 		for _, txIn := range txDesc.Tx.MsgTx().TxIn {
@@ -567,6 +567,7 @@ func (mp *TxPool) removeTransaction(tx *util.Tx, removeRedeemers bool, restoreIn
 			delete(mp.dependsByPrev, prevOut)
 		}
 
+		var err error
 		mp.mpUTXOSet, err = mp.mpUTXOSet.WithDiff(diff)
 		if err != nil {
 			return err
@@ -1341,7 +1342,7 @@ func (mp *TxPool) HandleNewBlock(block *util.Block, txChan chan NewBlockMsg) err
 	// no longer an orphan. Transactions which depend on a confirmed
 	// transaction are NOT removed recursively because they are still
 	// valid.
-	for _, tx := range block.Transactions()[1:] {
+	for _, tx := range block.Transactions()[util.FeeTransactionIndex:] {
 		err := mp.RemoveTransaction(tx, false, false)
 		if err != nil {
 			mp.mpUTXOSet = oldUTXOSet
