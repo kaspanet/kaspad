@@ -1182,6 +1182,49 @@ func (dag *BlockDAG) GetUTXOEntry(outPoint wire.OutPoint) (*UTXOEntry, bool) {
 	return dag.virtual.utxoSet.get(outPoint)
 }
 
+// acceptingBlock finds the node in the selected-parent chain that had accepted
+// the given node
+func (dag *BlockDAG) acceptingBlock(node *blockNode) (*blockNode, error) {
+	// Return an error if the node is the virtual block
+	if len(node.children) == 0 {
+		return nil, fmt.Errorf("cannot get acceptingBlock for childless block %s", node.hash)
+	}
+
+	// If node is a chain-block itself, the accepting block is its chain-child
+	if dag.IsInSelectedPathChain(node.hash) {
+		for _, child := range node.children {
+			if dag.IsInSelectedPathChain(child.hash) {
+				return child, nil
+			}
+		}
+		return nil, fmt.Errorf("chain block %s does not have a chain child", node.hash)
+	}
+
+	// Find the only chain block that may contain node in its blues
+	candidateAcceptingBlock := dag.oldestChainBlockWithBlueScoreGreaterThan(node.blueScore)
+
+	// candidateAcceptingBlock is the accepting block only if it actually contains
+	// node in its blues
+	for _, blue := range candidateAcceptingBlock.blues {
+		if blue == node {
+			return candidateAcceptingBlock, nil
+		}
+	}
+
+	// Otherwise, node is red and doesn't have an accepting block
+	return nil, nil
+}
+
+// oldestChainBlockWithBlueScoreGreaterThan finds the oldest chain block with a blue score
+// greater than blueScore
+func (dag *BlockDAG) oldestChainBlockWithBlueScoreGreaterThan(blueScore uint64) *blockNode {
+	chainBlockIndex := sort.Search(len(dag.virtual.selectedPathChainSlice), func(i int) bool {
+		selectedPathNode := dag.virtual.selectedPathChainSlice[i]
+		return selectedPathNode.blueScore > blueScore
+	})
+	return dag.virtual.selectedPathChainSlice[chainBlockIndex]
+}
+
 // IsInSelectedPathChain returns whether or not a block hash is found in the selected path
 func (dag *BlockDAG) IsInSelectedPathChain(blockHash *daghash.Hash) bool {
 	return dag.virtual.selectedPathChainSet.containsHash(blockHash)
