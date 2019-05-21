@@ -1182,10 +1182,29 @@ func (dag *BlockDAG) GetUTXOEntry(outPoint wire.OutPoint) (*UTXOEntry, bool) {
 	return dag.virtual.utxoSet.get(outPoint)
 }
 
+// confirmations returns the current confirmations number of the given node
+// The confirmations number is defined as follows:
+// * If the node is red -> 0
+// * Otherwise          -> virtual.blueScore - acceptingBlock.blueScore + 1
+func (dag *BlockDAG) confirmations(node *blockNode) (uint64, error) {
+	acceptingBlock, err := dag.acceptingBlock(node)
+	if err != nil {
+		return 0, err
+	}
+
+	// if acceptingBlock is nil, node is red
+	if acceptingBlock == nil {
+		return 0, nil
+	}
+
+	return dag.virtual.blueScore - acceptingBlock.blueScore + 1, nil
+}
+
 // acceptingBlock finds the node in the selected-parent chain that had accepted
 // the given node
 func (dag *BlockDAG) acceptingBlock(node *blockNode) (*blockNode, error) {
-	// Return an error if the node is the virtual block
+	// Return an error if the node is the virtual block or otherwise
+	// doesn't have children
 	if len(node.children) == 0 {
 		return nil, fmt.Errorf("cannot get acceptingBlock for childless block %s", node.hash)
 	}
