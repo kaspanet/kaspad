@@ -12,6 +12,34 @@ import (
 	"github.com/daglabs/btcd/wire"
 )
 
+// serializeBlockUTXODiffData serializes diff data in the following format:
+// 	Name         | Data type | Description
+//	------------ | --------- | -----------
+// 	hasDiffChild | Boolean   | Indicates if a diff child exist
+//  diffChild    | Hash      | The diffChild's hash. Empty if hasDiffChild is true.
+//  diff		 | UTXODiff  | The diff data's diff
+func serializeBlockUTXODiffData(diffData *blockUTXODiffData) ([]byte, error) {
+	w := &bytes.Buffer{}
+	hasDiffChild := diffData.diffChild != nil
+	err := wire.WriteElement(w, hasDiffChild)
+	if err != nil {
+		return nil, err
+	}
+	if hasDiffChild {
+		err := wire.WriteElement(w, diffData.diffChild.hash)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	err = serializeUTXODiff(w, diffData.diff)
+	if err != nil {
+		return nil, err
+	}
+
+	return w.Bytes(), nil
+}
+
 // utxoEntryHeaderCode returns the calculated header code to be used when
 // serializing the provided utxo entry.
 func utxoEntryHeaderCode(entry *UTXOEntry) uint64 {
@@ -122,34 +150,6 @@ func deserializeMultiset(r io.Reader) (*btcec.Multiset, error) {
 	x.SetBytes(xBytes)
 	y.SetBytes(yBytes)
 	return btcec.NewMultisetFromPoint(btcec.S256(), &x, &y), nil
-}
-
-// serializeBlockUTXODiffData serializes diff data in the following format:
-// 	Name         | Data type | Description
-//	------------ | --------- | -----------
-// 	hasDiffChild | Boolean   | Indicates if a diff child exist
-//  diffChild    | Hash      | The diffChild's hash. Empty if hasDiffChild is true.
-//  diff		 | UTXODiff  | The diff data's diff
-func serializeBlockUTXODiffData(diffData *blockUTXODiffData) ([]byte, error) {
-	w := &bytes.Buffer{}
-	hasDiffChild := diffData.diffChild != nil
-	err := wire.WriteElement(w, hasDiffChild)
-	if err != nil {
-		return nil, err
-	}
-	if hasDiffChild {
-		err := wire.WriteElement(w, diffData.diffChild.hash)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	err = serializeUTXODiff(w, diffData.diff)
-	if err != nil {
-		return nil, err
-	}
-
-	return w.Bytes(), nil
 }
 
 // serializeUTXODiff serializes UTXODiff by serializing
