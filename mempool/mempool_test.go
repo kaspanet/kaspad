@@ -624,8 +624,10 @@ func TestProcessTransaction(t *testing.T) {
 		t.Fatalf("PayToAddrScript: unexpected error: %v", err)
 	}
 	p2shTx := util.NewTx(wire.NewNativeMsgTx(1, nil, []*wire.TxOut{{Value: 5000000000, PkScript: p2shPKScript}}))
-	if ok, err := harness.txPool.mpUTXOSet.AddTx(p2shTx.MsgTx(), curHeight+1); err != nil || !ok {
+	if added, err := harness.txPool.mpUTXOSet.AddTx(p2shTx.MsgTx(), curHeight+1); err != nil {
 		t.Fatalf("AddTx unexpectedly failed. Error: %s", err)
+	} else if !added {
+		t.Fatalf("AddTx unexpectedly didn't add tx %s", p2shTx.ID())
 	}
 
 	txIns := []*wire.TxIn{{
@@ -1137,22 +1139,36 @@ func TestRemoveTransaction(t *testing.T) {
 	}
 
 	//Checks that when removeRedeemers is false, the specified transaction is the only transaction that gets removed
-	harness.txPool.RemoveTransaction(chainedTxns[3], false, true)
-	testPoolMembership(tc, chainedTxns[3], false, false, false)
-	testPoolMembership(tc, chainedTxns[4], false, true, false)
+	tc.mineTransactions(chainedTxns[:1], 1)
+	testPoolMembership(tc, chainedTxns[0], false, false, false)
+	testPoolMembership(tc, chainedTxns[1], false, true, false)
+	testPoolMembership(tc, chainedTxns[2], false, true, true)
+	testPoolMembership(tc, chainedTxns[3], false, true, true)
+	testPoolMembership(tc, chainedTxns[4], false, true, true)
 
 	//Checks that when removeRedeemers is true, all of the transaction that are dependent on it get removed
-	harness.txPool.RemoveTransaction(chainedTxns[1], true, true)
-	testPoolMembership(tc, chainedTxns[0], false, true, false)
+	err = harness.txPool.RemoveTransaction(chainedTxns[1], true, true)
+	if err != nil {
+		t.Fatalf("RemoveTransaction: %v", err)
+	}
 	testPoolMembership(tc, chainedTxns[1], false, false, false)
 	testPoolMembership(tc, chainedTxns[2], false, false, false)
+	testPoolMembership(tc, chainedTxns[3], false, false, false)
+	testPoolMembership(tc, chainedTxns[4], false, false, false)
 
 	fakeWithDiffErr := "error from WithDiff"
 	guard := monkey.Patch((*blockdag.DiffUTXOSet).WithDiff, func(_ *blockdag.DiffUTXOSet, _ *blockdag.UTXODiff) (blockdag.UTXOSet, error) {
 		return nil, errors.New(fakeWithDiffErr)
 	})
 	defer guard.Unpatch()
-	err = harness.txPool.RemoveTransaction(chainedTxns[0], false, false)
+
+	tx, err := harness.CreateSignedTx(outputs[1:], 1)
+	_, err = harness.txPool.ProcessTransaction(tx, true,
+		false, 0)
+	if err != nil {
+		t.Fatalf("ProcessTransaction: %v", err)
+	}
+	err = harness.txPool.RemoveTransaction(tx, false, false)
 	if err == nil || err.Error() != fakeWithDiffErr {
 		t.Errorf("RemoveTransaction: expected error %v but got %v", fakeWithDiffErr, err)
 	}
@@ -1721,10 +1737,10 @@ func TestHandleNewBlock(t *testing.T) {
 	// Create block and add its transactions to UTXO set
 	block := util.NewBlock(&dummyBlock)
 	for i, tx := range block.Transactions() {
-		if ok, err := harness.txPool.mpUTXOSet.AddTx(tx.MsgTx(), 1); err != nil {
+		if added, err := harness.txPool.mpUTXOSet.AddTx(tx.MsgTx(), 1); err != nil {
 			t.Fatalf("Failed to add transaction (%v,%v) to UTXO set: %v", i, tx.ID(), err)
-		} else if !ok {
-			t.Fatalf("Failed to add transaction (%v,%v) to UTXO set", i, tx.ID())
+		} else if !added {
+			t.Fatalf("AddTx unexpectedly didn't add tx %s", tx.ID())
 		}
 	}
 

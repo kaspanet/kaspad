@@ -244,8 +244,10 @@ func TestCalcSequenceLock(t *testing.T) {
 	msgTx := wire.NewNativeMsgTx(wire.TxVersion, nil, []*wire.TxOut{{PkScript: nil, Value: 10}})
 	targetTx := util.NewTx(msgTx)
 	utxoSet := NewFullUTXOSet()
-	if ok, err := utxoSet.AddTx(targetTx.MsgTx(), uint64(numBlocksToGenerate)-4); err != nil || !ok {
+	if added, err := utxoSet.AddTx(targetTx.MsgTx(), uint64(numBlocksToGenerate)-4); err != nil {
 		t.Fatalf("AddTx unexpectedly failed. Error: %s", err)
+	} else if !added {
+		t.Fatalf("AddTx unexpectedly didn't add tx %s", targetTx.ID())
 	}
 
 	// Create a utxo that spends the fake utxo created above for use in the
@@ -278,8 +280,10 @@ func TestCalcSequenceLock(t *testing.T) {
 		TxID:  *unConfTx.TxID(),
 		Index: 0,
 	}
-	if ok, err := utxoSet.AddTx(unConfTx, UnminedChainHeight); err != nil || !ok {
+	if added, err := utxoSet.AddTx(unConfTx, UnminedChainHeight); err != nil {
 		t.Fatalf("AddTx unexpectedly failed. Error: %s", err)
+	} else if !added {
+		t.Fatalf("AddTx unexpectedly didn't add tx %s", unConfTx.TxID())
 	}
 
 	tests := []struct {

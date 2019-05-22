@@ -502,6 +502,8 @@ func (mp *TxPool) removeTransaction(tx *util.Tx, removeRedeemers bool, restoreIn
 		}
 	}
 
+	msgTx := tx.MsgTx()
+
 	// Remove the transaction if needed.
 	if txDesc, exists := mp.fetchTransaction(txID); exists {
 		// Remove unconfirmed address index entries associated with the
@@ -511,10 +513,20 @@ func (mp *TxPool) removeTransaction(tx *util.Tx, removeRedeemers bool, restoreIn
 		}
 
 		diff := blockdag.NewUTXODiff()
-		diff.RemoveTxOuts(mp.mpUTXOSet, txDesc.Tx.MsgTx())
+
+		for idx := range msgTx.TxOut {
+			outPoint := *wire.NewOutPoint(txID, uint32(idx))
+			entry, exists := mp.mpUTXOSet.Get(outPoint)
+			if exists {
+				err := diff.RemoveEntry(outPoint, entry)
+				if err != nil {
+					return err
+				}
+			}
+		}
 
 		// Mark the referenced outpoints as unspent by the pool.
-		for _, txIn := range txDesc.Tx.MsgTx().TxIn {
+		for _, txIn := range msgTx.TxIn {
 			if restoreInputs {
 				if prevTxDesc, exists := mp.pool[txIn.PreviousOutPoint.TxID]; exists {
 					prevOut := prevTxDesc.Tx.MsgTx().TxOut[txIn.PreviousOutPoint.Index]
@@ -544,7 +556,7 @@ func (mp *TxPool) removeTransaction(tx *util.Tx, removeRedeemers bool, restoreIn
 
 		// Process dependent transactions
 		prevOut := wire.OutPoint{TxID: *txID}
-		for txOutIdx := range tx.MsgTx().TxOut {
+		for txOutIdx := range msgTx.TxOut {
 			// Skip to the next available output if there are none.
 			prevOut.Index = uint32(txOutIdx)
 			depends, exists := mp.dependsByPrev[prevOut]
@@ -645,9 +657,9 @@ func (mp *TxPool) addTransaction(tx *util.Tx, height uint64, fee uint64, parents
 	for _, txIn := range tx.MsgTx().TxIn {
 		mp.outpoints[txIn.PreviousOutPoint] = tx
 	}
-	if ok, err := mp.mpUTXOSet.AddTx(tx.MsgTx(), blockdag.UnminedChainHeight); err != nil {
+	if added, err := mp.mpUTXOSet.AddTx(tx.MsgTx(), blockdag.UnminedChainHeight); err != nil {
 		return nil, err
-	} else if !ok {
+	} else if !added {
 		return nil, fmt.Errorf("unexpectedly failed to add tx %s to the mempool utxo set", tx.ID())
 	}
 	atomic.StoreInt64(&mp.lastUpdated, time.Now().Unix())

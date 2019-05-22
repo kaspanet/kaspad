@@ -15,7 +15,6 @@ import (
 // utxoEntryHeaderCode returns the calculated header code to be used when
 // serializing the provided utxo entry.
 func utxoEntryHeaderCode(entry *UTXOEntry) uint64 {
-
 	// As described in the serialization format comments, the header code
 	// encodes the height shifted over one bit and the block reward flag in the
 	// lowest bit.
@@ -240,7 +239,6 @@ func serializeUTXO(w io.Writer, entry *UTXOEntry, outPoint *wire.OutPoint) error
 // serializeUTXOEntry returns the entry serialized to a format that is suitable
 // for long-term storage.  The format is described in detail above.
 func serializeUTXOEntry(entry *UTXOEntry) []byte {
-
 	// Encode the header code.
 	headerCode := utxoEntryHeaderCode(entry)
 
