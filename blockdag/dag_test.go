@@ -1333,6 +1333,37 @@ func TestConfirmations(t *testing.T) {
 				"Want: 1, got: %d", tipConfirmations)
 		}
 	}
+
+	// Generate K blocks to force the "main" chain to become red
+	nodeGenerator := buildNodeGenerator(dag.dagParams.K, false)
+	branchingChainTip := dag.index.LookupNode(loadedBlocks[0].Hash())
+	for i := uint32(0); i < dag.dagParams.K; i++ {
+		nextBranchingChainTip := nodeGenerator(setFromSlice(branchingChainTip))
+		dag.virtual.AddTip(nextBranchingChainTip)
+		branchingChainTip = nextBranchingChainTip
+	}
+
+	// Make sure that a red chain block has confirmation number = 0
+	redChainBlock := dag.index.LookupNode(chainBlocks[3].Hash())
+	redChainBlockConfirmations, err := dag.confirmations(redChainBlock)
+	if err != nil {
+		t.Fatalf("TestConfirmations: confirmations for red chain block unexpectedly failed: %s", err)
+	}
+	if redChainBlockConfirmations != 0 {
+		t.Fatalf("TestConfirmations: unexpected confirmations for red chain block. "+
+			"Want: 0, got: %d", redChainBlockConfirmations)
+	}
+
+	// Make sure that the red tip has confirmation number = 0
+	redChainTip := dag.index.LookupNode(chainBlocks[len(chainBlocks)-1].Hash())
+	redChainTipConfirmations, err := dag.confirmations(redChainTip)
+	if err != nil {
+		t.Fatalf("TestConfirmations: confirmations for red chain tip unexpectedly failed: %s", err)
+	}
+	if redChainTipConfirmations != 0 {
+		t.Fatalf("TestConfirmations: unexpected confirmations for red tip block. "+
+			"Want: 0, got: %d", redChainTipConfirmations)
+	}
 }
 
 func TestAcceptingBlock(t *testing.T) {
@@ -1433,24 +1464,24 @@ func TestAcceptingBlock(t *testing.T) {
 
 	// Make sure that a red chain block returns nil
 	redChainBlock := dag.index.LookupNode(chainBlocks[3].Hash())
-	acceptingredChainBlock, err := dag.acceptingBlock(redChainBlock)
+	redChainBlockAcceptionBlock, err := dag.acceptingBlock(redChainBlock)
 	if err != nil {
 		t.Fatalf("TestAcceptingBlock: acceptingBlock for red chain block unexpectedly failed: %s", err)
 	}
-	if acceptingredChainBlock != nil {
+	if redChainBlockAcceptionBlock != nil {
 		t.Fatalf("TestAcceptingBlock: unexpected acceptingBlock for red chain block. "+
-			"Want: nil, got: %s", acceptingredChainBlock.hash)
+			"Want: nil, got: %s", redChainBlockAcceptionBlock.hash)
 	}
 
 	// Make sure that the red tip returns nil
 	redChainTip := dag.index.LookupNode(chainBlocks[len(chainBlocks)-1].Hash())
-	acceptingredChainTip, err := dag.acceptingBlock(redChainTip)
+	redChainTipAcceptingBlock, err := dag.acceptingBlock(redChainTip)
 	if err != nil {
 		t.Fatalf("TestAcceptingBlock: acceptingBlock for red chain tip unexpectedly failed: %s", err)
 	}
-	if acceptingredChainTip != nil {
+	if redChainTipAcceptingBlock != nil {
 		t.Fatalf("TestAcceptingBlock: unexpected acceptingBlock for red tip block. "+
-			"Want: nil, got: %s", acceptingredChainTip.hash)
+			"Want: nil, got: %s", redChainTipAcceptingBlock.hash)
 	}
 }
 
