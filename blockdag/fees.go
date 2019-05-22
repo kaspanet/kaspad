@@ -121,24 +121,8 @@ func dbFetchFeeData(dbTx database.Tx, blockHash *daghash.Hash) (compactFeeData, 
 
 // The following functions deal with building and validating the fee transaction
 
-func (node *blockNode) validateFeeTransaction(dag *BlockDAG, block *util.Block, txsAcceptanceData MultiBlockTxsAcceptanceData) error {
-	if node.isGenesis() {
-		return nil
-	}
-	expectedFeeTransaction, err := node.buildFeeTransaction(dag, txsAcceptanceData)
-	if err != nil {
-		return err
-	}
-
-	if !expectedFeeTransaction.TxHash().IsEqual(block.FeeTransaction().Hash()) {
-		return ruleError(ErrBadFeeTransaction, "Fee transaction is not built as expected")
-	}
-
-	return nil
-}
-
 // buildFeeTransaction returns the expected fee transaction for the current block
-func (node *blockNode) buildFeeTransaction(dag *BlockDAG, txsAcceptanceData MultiBlockTxsAcceptanceData) (*wire.MsgTx, error) {
+func (node *blockNode) buildFeeTransaction(dag *BlockDAG, txsAcceptanceData MultiBlockTxsAcceptanceData) (*util.Tx, error) {
 	bluesFeeData, err := node.getBluesFeeData(dag)
 	if err != nil {
 		return nil, err
@@ -158,7 +142,7 @@ func (node *blockNode) buildFeeTransaction(dag *BlockDAG, txsAcceptanceData Mult
 		}
 	}
 	feeTx := wire.NewNativeMsgTx(wire.TxVersion, txIns, txOuts)
-	return txsort.Sort(feeTx), nil
+	return util.NewTx(txsort.Sort(feeTx)), nil
 }
 
 // feeInputAndOutputForBlueBlock calculates the input and output that should go into the fee transaction of blueBlock

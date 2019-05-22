@@ -579,7 +579,7 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block, fastAdd bo
 		return errors.New(newErrString)
 	}
 
-	err = node.validateFeeTransaction(dag, block, txsAcceptanceData)
+	node.feeTransaction, err = node.buildFeeTransaction(dag, txsAcceptanceData)
 	if err != nil {
 		return err
 	}
@@ -748,7 +748,7 @@ func (dag *BlockDAG) updateFinalityPoint() {
 // NextBlockFeeTransaction prepares the fee transaction for the next mined block
 //
 // This function CAN'T be called with the DAG lock held.
-func (dag *BlockDAG) NextBlockFeeTransaction() (*wire.MsgTx, error) {
+func (dag *BlockDAG) NextBlockFeeTransaction() (*util.Tx, error) {
 	dag.dagLock.RLock()
 	defer dag.dagLock.RUnlock()
 
@@ -758,7 +758,7 @@ func (dag *BlockDAG) NextBlockFeeTransaction() (*wire.MsgTx, error) {
 // NextBlockFeeTransactionNoLock prepares the fee transaction for the next mined block
 //
 // This function MUST be called with the DAG read-lock held
-func (dag *BlockDAG) NextBlockFeeTransactionNoLock() (*wire.MsgTx, error) {
+func (dag *BlockDAG) NextBlockFeeTransactionNoLock() (*util.Tx, error) {
 	_, txsAcceptanceData, err := dag.pastUTXO(&dag.virtual.blockNode)
 	if err != nil {
 		return nil, err
@@ -955,12 +955,17 @@ func (node *blockNode) applyBlueBlocks(selectedParentUTXO UTXOSet, blueBlocks []
 	pastUTXO UTXOSet, txsAcceptanceData MultiBlockTxsAcceptanceData, err error) {
 
 	pastUTXO = selectedParentUTXO
-	txsAcceptanceData = MultiBlockTxsAcceptanceData{}
+	txsAcceptanceData = make(MultiBlockTxsAcceptanceData, len(blueBlocks))
 
 	for _, blueBlock := range blueBlocks {
 		transactions := blueBlock.Transactions()
-		blockTxsAcceptanceData := make(BlockTxsAcceptanceData, len(transactions))
+		numTransactions := len(transactions)
 		isSelectedParent := blueBlock.Hash().IsEqual(node.selectedParent.hash)
+		if isSelectedParent { // if this is selected parent - we will also add the fee tx to acceptance data
+			numTransactions++
+		}
+
+		blockTxsAcceptanceData := make(BlockTxsAcceptanceData, numTransactions)
 		for i, tx := range blueBlock.Transactions() {
 			var isAccepted bool
 			if isSelectedParent {
@@ -970,6 +975,12 @@ func (node *blockNode) applyBlueBlocks(selectedParentUTXO UTXOSet, blueBlocks []
 			}
 			blockTxsAcceptanceData[i] = TxAcceptanceData{Tx: tx, IsAccepted: isAccepted}
 		}
+
+		if isSelectedParent {
+			blockTxsAcceptanceData = append(blockTxsAcceptanceData,
+				TxAcceptanceData{Tx: node.selectedParent.feeTransaction, IsAccepted: true})
+		}
+
 		txsAcceptanceData[*blueBlock.Hash()] = blockTxsAcceptanceData
 	}
 
