@@ -1409,6 +1409,18 @@ func TestAcceptingBlock(t *testing.T) {
 		t.Fatalf("TestAcceptingBlock: unexpected acceptingBlock for intersection block. "+
 			"Want: %s, got: %s", expectedAcceptingBlock.hash, intersectionAcceptingBlock.hash)
 	}
+
+	// Make sure that the accepting block of all the tips in the virtual block
+	for _, tip := range dag.virtual.tips() {
+		tipAcceptingBlock, err := dag.acceptingBlock(tip)
+		if err != nil {
+			t.Fatalf("TestAcceptingBlock: acceptingBlock for tip unexpectedly failed: %s", err)
+		}
+		if tipAcceptingBlock != &dag.virtual.blockNode {
+			t.Fatalf("TestAcceptingBlock: unexpected acceptingBlock for tip. "+
+				"Want: Virtual, got: %s", tipAcceptingBlock.hash)
+		}
+	}
 }
 
 // payToPubKeyHashScript creates a new script to pay a transaction
