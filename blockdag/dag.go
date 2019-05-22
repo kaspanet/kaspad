@@ -1192,7 +1192,7 @@ func (dag *BlockDAG) confirmations(node *blockNode) (uint64, error) {
 		return 0, err
 	}
 
-	// if acceptingBlock is nil, node is red
+	// if acceptingBlock is nil, the node is red
 	if acceptingBlock == nil {
 		return 0, nil
 	}
@@ -1217,7 +1217,7 @@ func (dag *BlockDAG) acceptingBlock(node *blockNode) (*blockNode, error) {
 		panic(fmt.Errorf("cannot get acceptingBlock for childless block %s", node.hash))
 	}
 
-	// If node is a chain-block itself, the accepting block is its chain-child
+	// If the node is a chain-block itself, the accepting block is its chain-child
 	if dag.IsInSelectedPathChain(node.hash) {
 		for _, child := range node.children {
 			if dag.IsInSelectedPathChain(child.hash) {
@@ -1227,18 +1227,18 @@ func (dag *BlockDAG) acceptingBlock(node *blockNode) (*blockNode, error) {
 		return nil, fmt.Errorf("chain block %s does not have a chain child", node.hash)
 	}
 
-	// Find the only chain block that may contain node in its blues
+	// Find the only chain block that may contain the node in its blues
 	candidateAcceptingBlock := dag.oldestChainBlockWithBlueScoreGreaterThan(node.blueScore)
 
 	// candidateAcceptingBlock is the accepting block only if it actually contains
-	// node in its blues
+	// the node in its blues
 	for _, blue := range candidateAcceptingBlock.blues {
 		if blue == node {
 			return candidateAcceptingBlock, nil
 		}
 	}
 
-	// Otherwise, node is red and doesn't have an accepting block
+	// Otherwise, the node is red and doesn't have an accepting block
 	return nil, nil
 }
 
