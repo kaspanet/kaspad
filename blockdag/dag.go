@@ -1208,10 +1208,13 @@ func (dag *BlockDAG) acceptingBlock(node *blockNode) (*blockNode, error) {
 		return &dag.virtual.blockNode, nil
 	}
 
-	// Return an error if the node is the virtual block or otherwise
-	// doesn't have children
+	// Return an error if the node is the virtual block. If it's a childless node
+	// that isn't the virtual we have a bug, in which case we panic
 	if len(node.children) == 0 {
-		return nil, fmt.Errorf("cannot get acceptingBlock for childless block %s", node.hash)
+		if node == &dag.virtual.blockNode {
+			return nil, errors.New("cannot get acceptingBlock for virtual")
+		}
+		panic(fmt.Errorf("cannot get acceptingBlock for childless block %s", node.hash))
 	}
 
 	// If node is a chain-block itself, the accepting block is its chain-child
