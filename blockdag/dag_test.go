@@ -1392,11 +1392,11 @@ func TestAcceptingBlock(t *testing.T) {
 	}
 
 	// Add a branching block
-	loadedBlocks, err := loadBlocks("blk_3B.dat")
+	branchingBlock, err := loadBlocks("blk_3B.dat")
 	if err != nil {
 		t.Fatalf("Error loading file: %v\n", err)
 	}
-	processBlocks(loadedBlocks)
+	processBlocks(branchingBlock)
 
 	// Make sure that the accepting block of the parent of the branching block didn't change
 	expectedAcceptingBlock := dag.index.LookupNode(chainBlocks[3].Hash())
@@ -1420,6 +1420,37 @@ func TestAcceptingBlock(t *testing.T) {
 			t.Fatalf("TestAcceptingBlock: unexpected acceptingBlock for tip. "+
 				"Want: Virtual, got: %s", tipAcceptingBlock.hash)
 		}
+	}
+
+	// Generate K blocks to force the "main" chain to become red
+	nodeGenerator := buildNodeGenerator(dag.dagParams.K, false)
+	branchingChainTip := dag.index.LookupNode(branchingBlock[0].Hash())
+	for i := uint32(0); i < dag.dagParams.K; i++ {
+		nextBranchingChainTip := nodeGenerator(setFromSlice(branchingChainTip))
+		dag.virtual.AddTip(nextBranchingChainTip)
+		branchingChainTip = nextBranchingChainTip
+	}
+
+	// Make sure that a red chain block returns nil
+	redChainBlock := dag.index.LookupNode(chainBlocks[3].Hash())
+	acceptingredChainBlock, err := dag.acceptingBlock(redChainBlock)
+	if err != nil {
+		t.Fatalf("TestAcceptingBlock: acceptingBlock for red chain block unexpectedly failed: %s", err)
+	}
+	if acceptingredChainBlock != nil {
+		t.Fatalf("TestAcceptingBlock: unexpected acceptingBlock for red chain block. "+
+			"Want: nil, got: %s", acceptingredChainBlock.hash)
+	}
+
+	// Make sure that the red tip returns nil
+	redChainTip := dag.index.LookupNode(chainBlocks[len(chainBlocks)-1].Hash())
+	acceptingredChainTip, err := dag.acceptingBlock(redChainTip)
+	if err != nil {
+		t.Fatalf("TestAcceptingBlock: acceptingBlock for red chain tip unexpectedly failed: %s", err)
+	}
+	if acceptingredChainTip != nil {
+		t.Fatalf("TestAcceptingBlock: unexpected acceptingBlock for red tip block. "+
+			"Want: nil, got: %s", acceptingredChainTip.hash)
 	}
 }
 

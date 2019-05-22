@@ -1203,9 +1203,17 @@ func (dag *BlockDAG) confirmations(node *blockNode) (uint64, error) {
 // acceptingBlock finds the node in the selected-parent chain that had accepted
 // the given node
 func (dag *BlockDAG) acceptingBlock(node *blockNode) (*blockNode, error) {
-	// Return the virtual block if the node is one of the DAG tips
+	// Explicitly handle the DAG tips
 	if dag.virtual.tips().contains(node) {
-		return &dag.virtual.blockNode, nil
+		// Return the virtual block if the node is one of the DAG blues
+		for _, tip := range dag.virtual.blues {
+			if tip == node {
+				return &dag.virtual.blockNode, nil
+			}
+		}
+
+		// Otherwise, this tip is red and doesn't have an accepting block
+		return nil, nil
 	}
 
 	// Return an error if the node is the virtual block. If it's a childless node
