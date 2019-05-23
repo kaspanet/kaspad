@@ -73,31 +73,32 @@ func TestTxIndexConnectBlock(t *testing.T) {
 	block3Tx := createTransaction(block2.Transactions[0].TxOut[0].Value, block2.Transactions[0], 0)
 	block3 := prepareAndProcessBlock([]*daghash.Hash{block2.BlockHash()}, []*wire.MsgTx{block3Tx}, "3")
 
-	block3TxID := block3Tx.TxID()
-	block3TxNewAcceptedBlock, err := txIndex.BlockThatAcceptedTx(dag, block3TxID)
+	block2TxID := block2Tx.TxID()
+	block2TxNewAcceptedBlock, err := txIndex.BlockThatAcceptedTx(dag, block2TxID)
 	if err != nil {
 		t.Errorf("TestTxIndexConnectBlock: TxAcceptedInBlock: %v", err)
 	}
 	block3Hash := block3.BlockHash()
-	if !block3TxNewAcceptedBlock.IsEqual(block3Hash) {
-		t.Errorf("TestTxIndexConnectBlock: block3Tx should've "+
-			"been accepted in block %v but instead got accepted in block %v", block3Hash, block3TxNewAcceptedBlock)
+	if !block2TxNewAcceptedBlock.IsEqual(block3Hash) {
+		t.Errorf("TestTxIndexConnectBlock: block2Tx should've "+
+			"been accepted in block %v but instead got accepted in block %v", block3Hash, block2TxNewAcceptedBlock)
 	}
 
 	block3A := prepareAndProcessBlock([]*daghash.Hash{block2.BlockHash()}, []*wire.MsgTx{block3Tx}, "3A")
 	block4 := prepareAndProcessBlock([]*daghash.Hash{block3.BlockHash()}, nil, "4")
 	prepareAndProcessBlock([]*daghash.Hash{block3A.BlockHash(), block4.BlockHash()}, nil, "5")
 
-	block3TxAcceptedBlock, err := txIndex.BlockThatAcceptedTx(dag, block3TxID)
+	block2TxAcceptedBlock, err := txIndex.BlockThatAcceptedTx(dag, block2TxID)
 	if err != nil {
 		t.Errorf("TestTxIndexConnectBlock: TxAcceptedInBlock: %v", err)
 	}
 	block3AHash := block3A.BlockHash()
-	if !block3TxAcceptedBlock.IsEqual(block3AHash) {
-		t.Errorf("TestTxIndexConnectBlock: block3Tx should've "+
-			"been accepted in block %v but instead got accepted in block %v", block3AHash, block3TxAcceptedBlock)
+	if !block2TxAcceptedBlock.IsEqual(block3AHash) {
+		t.Errorf("TestTxIndexConnectBlock: block2Tx should've "+
+			"been accepted in block %v but instead got accepted in block %v", block3AHash, block2TxAcceptedBlock)
 	}
 
+	block3TxID := block3Tx.TxID()
 	region, err := txIndex.TxFirstBlockRegion(block3TxID)
 	if err != nil {
 		t.Fatalf("TestTxIndexConnectBlock: no block region was found for block3Tx")

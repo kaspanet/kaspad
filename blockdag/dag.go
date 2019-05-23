@@ -856,17 +856,6 @@ func (node *blockNode) diffFromTxs(pastUTXO UTXOSet, transactions []*util.Tx) (*
 	return diff, nil
 }
 
-func (node *blockNode) addTxsToAcceptanceData(txsAcceptanceData MultiBlockTxsAcceptanceData, transactions []*util.Tx) {
-	blockTxsAcceptanceData := BlockTxsAcceptanceData{}
-	for _, tx := range transactions {
-		blockTxsAcceptanceData = append(blockTxsAcceptanceData, TxAcceptanceData{
-			Tx:         tx,
-			IsAccepted: true,
-		})
-	}
-	txsAcceptanceData[*node.hash] = blockTxsAcceptanceData
-}
-
 // verifyAndBuildUTXO verifies all transactions in the given block and builds its UTXO
 // to save extra traversals it returns the transactions acceptance data and the compactFeeData for the new block
 func (node *blockNode) verifyAndBuildUTXO(dag *BlockDAG, transactions []*util.Tx, fastAdd bool) (
@@ -888,8 +877,6 @@ func (node *blockNode) verifyAndBuildUTXO(dag *BlockDAG, transactions []*util.Tx
 	}
 
 	diff, err := node.diffFromTxs(pastUTXO, transactions)
-
-	node.addTxsToAcceptanceData(txsAcceptanceData, transactions)
 
 	utxo, err := pastUTXO.WithDiff(diff)
 	if err != nil {
