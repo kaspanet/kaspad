@@ -14,7 +14,7 @@ import (
 
 // serializeBlockUTXODiffData serializes diff data in the following format:
 // 	Name         | Data type | Description
-//	------------ | --------- | -----------
+//  ------------ | --------- | -----------
 // 	hasDiffChild | Boolean   | Indicates if a diff child exist
 //  diffChild    | Hash      | The diffChild's hash. Empty if hasDiffChild is true.
 //  diff		 | UTXODiff  | The diff data's diff
