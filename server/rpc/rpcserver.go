@@ -2897,15 +2897,15 @@ func txConfirmations(s *Server, tx *wire.MsgTx) (uint64, error) {
 		return 0, errors.New("transaction index must be enabled (--txindex)")
 	}
 
-	acceptedBy, err := s.cfg.TxIndex.BlockThatAcceptedTx(s.cfg.DAG, tx.TxID())
+	acceptingBlock, err := s.cfg.TxIndex.BlockThatAcceptedTx(s.cfg.DAG, tx.TxID())
 	if err != nil {
 		return 0, fmt.Errorf("could not get block that accepted tx %s: %s", tx.TxID(), err)
 	}
-	if acceptedBy == nil {
+	if acceptingBlock == nil {
 		return 0, nil
 	}
 
-	confirmations, err := s.cfg.DAG.ConfirmationsByHash(acceptedBy)
+	confirmations, err := s.cfg.DAG.BlockConfirmationsByHash(acceptingBlock)
 	if err != nil {
 		return 0, fmt.Errorf("could not get confirmations for block that accepted tx %s: %s", tx.TxID(), err)
 	}

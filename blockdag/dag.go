@@ -1182,22 +1182,22 @@ func (dag *BlockDAG) GetUTXOEntry(outPoint wire.OutPoint) (*UTXOEntry, bool) {
 	return dag.virtual.utxoSet.get(outPoint)
 }
 
-// ConfirmationsByHash returns the confirmations number for a block with the
-// given hash. See confirmations for further details.
-func (dag *BlockDAG) ConfirmationsByHash(hash *daghash.Hash) (uint64, error) {
+// BlockConfirmationsByHash returns the confirmations number for a block with the
+// given hash. See blockConfirmations for further details.
+func (dag *BlockDAG) BlockConfirmationsByHash(hash *daghash.Hash) (uint64, error) {
 	node := dag.index.LookupNode(hash)
 	if node == nil {
 		return 0, fmt.Errorf("block %s is unknown", hash)
 	}
 
-	return dag.confirmations(node)
+	return dag.blockConfirmations(node)
 }
 
-// confirmations returns the current confirmations number of the given node
+// blockConfirmations returns the current confirmations number of the given node
 // The confirmations number is defined as follows:
 // * If the node is red -> 0
 // * Otherwise          -> virtual.blueScore - acceptingBlock.blueScore + 1
-func (dag *BlockDAG) confirmations(node *blockNode) (uint64, error) {
+func (dag *BlockDAG) blockConfirmations(node *blockNode) (uint64, error) {
 	acceptingBlock, err := dag.acceptingBlock(node)
 	if err != nil {
 		return 0, err
