@@ -1343,7 +1343,7 @@ func TestConfirmations(t *testing.T) {
 		branchingChainTip = nextBranchingChainTip
 	}
 
-	// Make sure that a red chain block has confirmation number = 0
+	// Make sure that a red block has confirmation number = 0
 	redChainBlock := dag.index.LookupNode(chainBlocks[3].Hash())
 	redChainBlockConfirmations, err := dag.confirmations(redChainBlock)
 	if err != nil {
@@ -1462,7 +1462,7 @@ func TestAcceptingBlock(t *testing.T) {
 		branchingChainTip = nextBranchingChainTip
 	}
 
-	// Make sure that a red chain block returns nil
+	// Make sure that a red block returns nil
 	redChainBlock := dag.index.LookupNode(chainBlocks[3].Hash())
 	redChainBlockAcceptionBlock, err := dag.acceptingBlock(redChainBlock)
 	if err != nil {
@@ -1473,7 +1473,7 @@ func TestAcceptingBlock(t *testing.T) {
 			"Want: nil, got: %s", redChainBlockAcceptionBlock.hash)
 	}
 
-	// Make sure that the red tip returns nil
+	// Make sure that a red tip returns nil
 	redChainTip := dag.index.LookupNode(chainBlocks[len(chainBlocks)-1].Hash())
 	redChainTipAcceptingBlock, err := dag.acceptingBlock(redChainTip)
 	if err != nil {
