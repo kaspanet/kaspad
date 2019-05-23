@@ -655,22 +655,26 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 
 	// Create a new block ready to be solved.
 	hashMerkleTree := blockdag.BuildHashMerkleTreeStore(blockTxns)
-	acceptedIDMerkleRoot, err := g.dag.NextAcceptedIDMerkleRoot()
+	acceptedIDMerkleRoot, err := g.dag.NextAcceptedIDMerkleRootNoLock()
 	if err != nil {
 		return nil, err
 	}
 	var msgBlock wire.MsgBlock
+	for _, tx := range blockTxns {
+		msgBlock.AddTransaction(tx.MsgTx())
+	}
+	utxoCommitment, err := calcUTXOCommitment(g.dag.UTXOSet(), msgBlock.Transactions, nextBlockHeight)
+	if err != nil {
+		return nil, err
+	}
 	msgBlock.Header = wire.BlockHeader{
 		Version:              nextBlockVersion,
 		ParentHashes:         g.dag.TipHashes(),
 		HashMerkleRoot:       hashMerkleTree.Root(),
 		AcceptedIDMerkleRoot: acceptedIDMerkleRoot,
-		UTXOCommitment:       &daghash.ZeroHash,
+		UTXOCommitment:       utxoCommitment,
 		Timestamp:            ts,
 		Bits:                 reqDifficulty,
-	}
-	for _, tx := range blockTxns {
-		msgBlock.AddTransaction(tx.MsgTx())
 	}
 
 	// Finally, perform a full check on the created block against the chain
@@ -695,6 +699,20 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 		Height:          nextBlockHeight,
 		ValidPayAddress: payToAddress != nil,
 	}, nil
+}
+
+func calcUTXOCommitment(utxoSet blockdag.UTXOSet, transactions []*wire.MsgTx, nextBlockHeight uint64) (*daghash.Hash, error) {
+	diffSet := blockdag.NewDiffUTXOSet(utxoSet.(*blockdag.FullUTXOSet), blockdag.NewUTXODiff())
+	for _, tx := range transactions {
+		isAccepted, err := diffSet.AddTx(tx, nextBlockHeight)
+		if err != nil {
+			return nil, err
+		}
+		if !isAccepted {
+			return nil, fmt.Errorf("Transaction %s is not valid with the current UTXO set", tx.TxID())
+		}
+	}
+	return diffSet.Multiset().Hash(), nil
 }
 
 // UpdateBlockTime updates the timestamp in the header of the passed block to
@@ -748,6 +766,13 @@ func (g *BlkTmplGenerator) UpdateExtraNonce(msgBlock *wire.MsgBlock, blockHeight
 	block := util.NewBlock(msgBlock)
 	hashMerkleTree := blockdag.BuildHashMerkleTreeStore(block.Transactions())
 	msgBlock.Header.HashMerkleRoot = hashMerkleTree.Root()
+
+	utxoCommitment, err := calcUTXOCommitment(g.dag.UTXOSet(), msgBlock.Transactions, blockHeight)
+	if err != nil {
+		return err
+	}
+
+	msgBlock.Header.UTXOCommitment = utxoCommitment
 
 	return nil
 }

@@ -7,7 +7,6 @@ package blockdag
 import (
 	"errors"
 	"fmt"
-	"math"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -25,7 +24,6 @@ import (
 	"github.com/daglabs/btcd/util"
 	"github.com/daglabs/btcd/util/daghash"
 	"github.com/daglabs/btcd/util/subnetworkid"
-	"github.com/daglabs/btcd/util/txsort"
 	"github.com/daglabs/btcd/wire"
 )
 
@@ -191,7 +189,7 @@ func TestHaveBlock(t *testing.T) {
 		{hash: dagconfig.SimNetParams.GenesisHash.String(), want: true},
 
 		// Block 3b should be present (as a second child of Block 2).
-		{hash: "3f2ded16b7115e69a48cee5f4be743ff23ad8d41da16d059c38cc83d14459863", want: true},
+		{hash: "4bb2e2f55fabd67e217126dbc41e7101d0d6058800368c428cd6e397c111ee47", want: true},
 
 		// Block 100000 should be present (as an orphan).
 		{hash: "4e530ee9f967de3b2cd47ac5cd00109bb9ed7b0e30a60485c94badad29ecb4ce", want: true},
@@ -803,7 +801,7 @@ func testErrorThroughPatching(t *testing.T, expectedErrorMessage string, targetF
 	}
 	defer teardownFunc()
 
-	// Since we're not dealing with the real block chain, set the block reward
+	// Since we're not dealing with the real block DAG, set the block reward
 	// maturity to 1.
 	dag.TestSetBlockRewardMaturity(1)
 
@@ -819,7 +817,6 @@ func testErrorThroughPatching(t *testing.T, expectedErrorMessage string, targetF
 				"is an orphan\n", i)
 		}
 		if err != nil {
-			fmt.Printf("ERROR %v\n", err)
 			break
 		}
 	}
@@ -873,386 +870,6 @@ func TestNew(t *testing.T) {
 	if err.Error() != expectedErrorMessage {
 		t.Errorf("Unexpected error. Expected error '%s' but got '%s'", expectedErrorMessage, err)
 	}
-}
-
-func TestValidateFeeTransaction(t *testing.T) {
-	params := dagconfig.SimNetParams
-	params.K = 1
-	dag, teardownFunc, err := DAGSetup("TestValidateFeeTransaction", Config{
-		DAGParams: &params,
-	})
-	if err != nil {
-		t.Fatalf("Failed to setup DAG instance: %v", err)
-	}
-	defer teardownFunc()
-	extraNonce := int64(0)
-	createCoinbase := func(pkScript []byte) *wire.MsgTx {
-		extraNonce++
-		cbTx, err := createCoinbaseTxForTest(dag.Height()+1, 2, extraNonce, &params)
-		if err != nil {
-			t.Fatalf("createCoinbaseTxForTest: %v", err)
-		}
-		if pkScript != nil {
-			cbTx.TxOut[0].PkScript = pkScript
-		}
-		return cbTx
-	}
-
-	var flags BehaviorFlags
-	flags |= BFFastAdd | BFNoPoWCheck
-
-	buildBlock := func(blockName string, parentHashes []*daghash.Hash, transactions []*wire.MsgTx, expectedErrorCode ErrorCode) *wire.MsgBlock {
-		utilTxs := make([]*util.Tx, len(transactions))
-		for i, tx := range transactions {
-			utilTxs[i] = util.NewTx(tx)
-		}
-
-		newVirtual, err := GetVirtualFromParentsForTest(dag, parentHashes)
-		if err != nil {
-			t.Fatalf("block %v: unexpected error when setting virtual for test: %v", blockName, err)
-		}
-		oldVirtual := SetVirtualForTest(dag, newVirtual)
-		acceptedIDMerkleRoot, err := dag.NextAcceptedIDMerkleRoot()
-		if err != nil {
-			t.Fatalf("block %v: unexpected error when getting next acceptIDMerkleRoot: %v", blockName, err)
-		}
-		SetVirtualForTest(dag, oldVirtual)
-
-		daghash.Sort(parentHashes)
-		msgBlock := &wire.MsgBlock{
-			Header: wire.BlockHeader{
-				Bits:                 dag.genesis.Header().Bits,
-				ParentHashes:         parentHashes,
-				HashMerkleRoot:       BuildHashMerkleTreeStore(utilTxs).Root(),
-				AcceptedIDMerkleRoot: acceptedIDMerkleRoot,
-				UTXOCommitment:       &daghash.ZeroHash,
-			},
-			Transactions: transactions,
-		}
-		block := util.NewBlock(msgBlock)
-		isOrphan, err := dag.ProcessBlock(block, flags)
-		if expectedErrorCode != 0 {
-			checkResult := checkRuleError(err, RuleError{
-				ErrorCode: expectedErrorCode,
-			})
-			if checkResult != nil {
-				t.Errorf("block %v: unexpected error code: %v", blockName, checkResult)
-			}
-		} else {
-			if err != nil {
-				t.Fatalf("block %v: unexpected error: %v", blockName, err)
-			}
-			if isOrphan {
-				t.Errorf("block %v unexpectely got orphaned", blockName)
-			}
-		}
-		return msgBlock
-	}
-
-	cb1 := createCoinbase(nil)
-	blockWithExtraFeeTxTransactions := []*wire.MsgTx{
-		cb1,
-		{ // Fee Transaction
-			Version: 1,
-			TxIn: []*wire.TxIn{
-				{
-					PreviousOutPoint: wire.OutPoint{
-						TxID:  daghash.TxID(*dag.genesis.hash),
-						Index: math.MaxUint32,
-					},
-					Sequence: wire.MaxTxInSequenceNum,
-				},
-			},
-			SubnetworkID: *subnetworkid.SubnetworkIDNative,
-		},
-		{ // Extra Fee Transaction
-			TxIn: []*wire.TxIn{
-				{
-					PreviousOutPoint: wire.OutPoint{
-						TxID:  daghash.TxID(*dag.genesis.hash),
-						Index: math.MaxUint32,
-					},
-					Sequence: wire.MaxTxInSequenceNum,
-				},
-			},
-			SubnetworkID: *subnetworkid.SubnetworkIDNative,
-		},
-	}
-	buildBlock("blockWithExtraFeeTx", []*daghash.Hash{dag.genesis.hash}, blockWithExtraFeeTxTransactions, ErrMultipleFeeTransactions)
-
-	block1Txs := []*wire.MsgTx{
-		cb1,
-		{ // Fee Transaction
-			Version: 1,
-			TxIn: []*wire.TxIn{
-				{
-					PreviousOutPoint: wire.OutPoint{
-						TxID:  daghash.TxID(*dag.genesis.hash),
-						Index: math.MaxUint32,
-					},
-					Sequence: wire.MaxTxInSequenceNum,
-				},
-			},
-			SubnetworkID: *subnetworkid.SubnetworkIDNative,
-		},
-	}
-	block1 := buildBlock("block1", []*daghash.Hash{dag.genesis.hash}, block1Txs, 0)
-
-	cb1A := createCoinbase(nil)
-	block1ATxs := []*wire.MsgTx{
-		cb1A,
-		{ // Fee Transaction
-			Version: 1,
-			TxIn: []*wire.TxIn{
-				{
-					PreviousOutPoint: wire.OutPoint{
-						TxID:  daghash.TxID(*dag.genesis.hash),
-						Index: math.MaxUint32,
-					},
-					Sequence: wire.MaxTxInSequenceNum,
-				},
-			},
-			SubnetworkID: *subnetworkid.SubnetworkIDNative,
-		},
-	}
-	block1A := buildBlock("block1A", []*daghash.Hash{dag.genesis.hash}, block1ATxs, 0)
-
-	block1AChildCbPkScript, err := payToPubKeyHashScript((&[20]byte{0x1A, 0xC0})[:])
-	if err != nil {
-		t.Fatalf("payToPubKeyHashScript: %v", err)
-	}
-	cb1AChild := createCoinbase(block1AChildCbPkScript)
-	block1AChildTxs := []*wire.MsgTx{
-		cb1AChild,
-		{ // Fee Transaction
-			Version: 1,
-			TxIn: []*wire.TxIn{
-				{
-					PreviousOutPoint: wire.OutPoint{
-						TxID:  daghash.TxID(*block1A.BlockHash()),
-						Index: math.MaxUint32,
-					},
-					Sequence: wire.MaxTxInSequenceNum,
-				},
-			},
-			SubnetworkID: *subnetworkid.SubnetworkIDNative,
-		},
-		{
-			TxIn: []*wire.TxIn{
-				{
-					PreviousOutPoint: wire.OutPoint{
-						TxID:  *cb1A.TxID(),
-						Index: 0,
-					},
-					Sequence: wire.MaxTxInSequenceNum,
-				},
-			},
-			TxOut: []*wire.TxOut{
-				{
-					PkScript: OpTrueScript,
-					Value:    1,
-				},
-			},
-			SubnetworkID: *subnetworkid.SubnetworkIDNative,
-		},
-	}
-	block1AChild := buildBlock("block1AChild", []*daghash.Hash{block1A.BlockHash()}, block1AChildTxs, 0)
-
-	cb2 := createCoinbase(nil)
-	block2Txs := []*wire.MsgTx{
-		cb2,
-		{ // Fee Transaction
-			Version: 1,
-			TxIn: []*wire.TxIn{
-				{
-					PreviousOutPoint: wire.OutPoint{
-						TxID:  daghash.TxID(*block1.BlockHash()),
-						Index: math.MaxUint32,
-					},
-					Sequence: wire.MaxTxInSequenceNum,
-				},
-			},
-			SubnetworkID: *subnetworkid.SubnetworkIDNative,
-		},
-	}
-	block2 := buildBlock("block2", []*daghash.Hash{block1.BlockHash()}, block2Txs, 0)
-
-	cb3 := createCoinbase(nil)
-	block3Txs := []*wire.MsgTx{
-		cb3,
-		{ // Fee Transaction
-			Version: 1,
-			TxIn: []*wire.TxIn{
-				{
-					PreviousOutPoint: wire.OutPoint{
-						TxID:  daghash.TxID(*block2.BlockHash()),
-						Index: math.MaxUint32,
-					},
-					Sequence: wire.MaxTxInSequenceNum,
-				},
-			},
-			SubnetworkID: *subnetworkid.SubnetworkIDNative,
-		},
-	}
-	block3 := buildBlock("block3", []*daghash.Hash{block2.BlockHash()}, block3Txs, 0)
-
-	block4CbPkScript, err := payToPubKeyHashScript((&[20]byte{0x40})[:])
-	if err != nil {
-		t.Fatalf("payToPubKeyHashScript: %v", err)
-	}
-
-	cb4 := createCoinbase(block4CbPkScript)
-	block4Txs := []*wire.MsgTx{
-		cb4,
-		{ // Fee Transaction
-			Version: 1,
-			TxIn: []*wire.TxIn{
-				{
-					PreviousOutPoint: wire.OutPoint{
-						TxID:  daghash.TxID(*block3.BlockHash()),
-						Index: math.MaxUint32,
-					},
-					Sequence: wire.MaxTxInSequenceNum,
-				},
-			},
-			SubnetworkID: *subnetworkid.SubnetworkIDNative,
-		},
-		{
-			TxIn: []*wire.TxIn{
-				{
-					PreviousOutPoint: wire.OutPoint{
-						TxID:  *cb3.TxID(),
-						Index: 0,
-					},
-					Sequence: wire.MaxTxInSequenceNum,
-				},
-			},
-			TxOut: []*wire.TxOut{
-				{
-					PkScript: OpTrueScript,
-					Value:    1,
-				},
-			},
-			SubnetworkID: *subnetworkid.SubnetworkIDNative,
-		},
-	}
-	block4 := buildBlock("block4", []*daghash.Hash{block3.BlockHash()}, block4Txs, 0)
-
-	block4ACbPkScript, err := payToPubKeyHashScript((&[20]byte{0x4A})[:])
-	if err != nil {
-		t.Fatalf("payToPubKeyHashScript: %v", err)
-	}
-	cb4A := createCoinbase(block4ACbPkScript)
-	block4ATxs := []*wire.MsgTx{
-		cb4A,
-		{ // Fee Transaction
-			Version: 1,
-			TxIn: []*wire.TxIn{
-				{
-					PreviousOutPoint: wire.OutPoint{
-						TxID:  daghash.TxID(*block3.BlockHash()),
-						Index: math.MaxUint32,
-					},
-					Sequence: wire.MaxTxInSequenceNum,
-				},
-			},
-			SubnetworkID: *subnetworkid.SubnetworkIDNative,
-		},
-		{
-			TxIn: []*wire.TxIn{
-				{
-					PreviousOutPoint: wire.OutPoint{
-						TxID:  *cb3.TxID(),
-						Index: 1,
-					},
-					Sequence: wire.MaxTxInSequenceNum,
-				},
-			},
-			TxOut: []*wire.TxOut{
-				{
-					PkScript: OpTrueScript,
-					Value:    1,
-				},
-			},
-			SubnetworkID: *subnetworkid.SubnetworkIDNative,
-		},
-	}
-	block4A := buildBlock("block4A", []*daghash.Hash{block3.BlockHash()}, block4ATxs, 0)
-
-	cb5 := createCoinbase(nil)
-	feeInOuts := map[daghash.Hash]*struct {
-		txIn  *wire.TxIn
-		txOut *wire.TxOut
-	}{
-		*block4.BlockHash(): {
-			txIn: &wire.TxIn{
-				PreviousOutPoint: wire.OutPoint{
-					TxID:  daghash.TxID(*block4.BlockHash()),
-					Index: math.MaxUint32,
-				},
-				Sequence: wire.MaxTxInSequenceNum,
-			},
-			txOut: &wire.TxOut{
-				PkScript: block4CbPkScript,
-				Value:    cb3.TxOut[0].Value - 1,
-			},
-		},
-		*block4A.BlockHash(): {
-			txIn: &wire.TxIn{
-				PreviousOutPoint: wire.OutPoint{
-					TxID:  daghash.TxID(*block4A.BlockHash()),
-					Index: math.MaxUint32,
-				},
-				Sequence: wire.MaxTxInSequenceNum,
-			},
-			txOut: &wire.TxOut{
-				PkScript: block4ACbPkScript,
-				Value:    cb3.TxOut[1].Value - 1,
-			},
-		},
-	}
-
-	txIns := []*wire.TxIn{}
-	txOuts := []*wire.TxOut{}
-	for hash := range feeInOuts {
-		txIns = append(txIns, feeInOuts[hash].txIn)
-		txOuts = append(txOuts, feeInOuts[hash].txOut)
-	}
-	block5FeeTx := wire.NewNativeMsgTx(1, txIns, txOuts)
-	sortedBlock5FeeTx := txsort.Sort(block5FeeTx)
-
-	block5Txs := []*wire.MsgTx{cb5, sortedBlock5FeeTx}
-
-	block5ParentHashes := []*daghash.Hash{block4.BlockHash(), block4A.BlockHash()}
-	buildBlock("block5", block5ParentHashes, block5Txs, 0)
-
-	sortedBlock5FeeTx.TxIn[0], sortedBlock5FeeTx.TxIn[1] = sortedBlock5FeeTx.TxIn[1], sortedBlock5FeeTx.TxIn[0]
-	buildBlock("block5WrongOrder", block5ParentHashes, block5Txs, ErrBadFeeTransaction)
-
-	block5FeeTxWith1Achild := block5FeeTx.Copy()
-
-	block5FeeTxWith1Achild.AddTxIn(&wire.TxIn{
-		PreviousOutPoint: wire.OutPoint{
-			TxID:  daghash.TxID(*block1AChild.BlockHash()),
-			Index: math.MaxUint32,
-		},
-		Sequence: wire.MaxTxInSequenceNum,
-	})
-	block5FeeTxWith1Achild.AddTxOut(&wire.TxOut{
-		PkScript: block1AChildCbPkScript,
-		Value:    cb1AChild.TxOut[0].Value - 1,
-	})
-
-	sortedBlock5FeeTxWith1Achild := txsort.Sort(block5FeeTxWith1Achild)
-
-	block5Txs[1] = sortedBlock5FeeTxWith1Achild
-	buildBlock("block5WithRedBlockFees", block5ParentHashes, block5Txs, ErrBadFeeTransaction)
-
-	block5FeeTxWithWrongFees := block5FeeTx.Copy()
-	block5FeeTxWithWrongFees.TxOut[0].Value--
-	sortedBlock5FeeTxWithWrongFees := txsort.Sort(block5FeeTxWithWrongFees)
-	block5Txs[1] = sortedBlock5FeeTxWithWrongFees
-	buildBlock("block5WithRedBlockFees", block5ParentHashes, block5Txs, ErrBadFeeTransaction)
 }
 
 // payToPubKeyHashScript creates a new script to pay a transaction

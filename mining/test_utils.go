@@ -108,19 +108,18 @@ func PrepareBlockForTest(dag *blockdag.BlockDAG, params *dagconfig.Params, paren
 			template.Block.Transactions = append(template.Block.Transactions, tx)
 		}
 	}
-	updateMerkleRoots := coinbaseOutputs != 1 || (forceTransactions && len(txsToAdd) > 0)
-	if updateMerkleRoots {
+	updateHeaderFields := coinbaseOutputs != 1 || (forceTransactions && len(txsToAdd) > 0)
+	if updateHeaderFields {
 		utilTxs := make([]*util.Tx, len(template.Block.Transactions))
 		for i, tx := range template.Block.Transactions {
 			utilTxs[i] = util.NewTx(tx)
 		}
 		template.Block.Header.HashMerkleRoot = blockdag.BuildHashMerkleTreeStore(utilTxs).Root()
 
-		acceptedIDMerkleRoot, err := dag.NextAcceptedIDMerkleRoot()
+		template.Block.Header.UTXOCommitment, err = calcUTXOCommitment(dag.UTXOSet(), template.Block.Transactions, dag.Height()+1)
 		if err != nil {
 			return nil, err
 		}
-		template.Block.Header.AcceptedIDMerkleRoot = acceptedIDMerkleRoot
 	}
 	return template.Block, nil
 }
