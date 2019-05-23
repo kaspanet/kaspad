@@ -437,15 +437,15 @@ func TestFullUTXOSet(t *testing.T) {
 	// Test fullUTXOSet addTx
 	txIn0 := &wire.TxIn{SignatureScript: []byte{}, PreviousOutPoint: wire.OutPoint{TxID: *txID0, Index: 0}, Sequence: 0}
 	transaction0 := wire.NewNativeMsgTx(1, []*wire.TxIn{txIn0}, []*wire.TxOut{txOut0})
-	if added, err := emptySet.AddTx(transaction0, 0); err != nil {
+	if isAccepted, err := emptySet.AddTx(transaction0, 0); err != nil {
 		t.Errorf("AddTx unexpectedly failed: %s", err)
-	} else if added {
+	} else if isAccepted {
 		t.Errorf("addTx unexpectedly succeeded")
 	}
 	emptySet = addMultisetToFullUTXOSet(t, &FullUTXOSet{utxoCollection: utxoCollection{outPoint0: utxoEntry0}})
-	if added, err := emptySet.AddTx(transaction0, 0); err != nil {
+	if isAccepted, err := emptySet.AddTx(transaction0, 0); err != nil {
 		t.Errorf("addTx unexpectedly failed. Error: %s", err)
-	} else if !added {
+	} else if !isAccepted {
 		t.Fatalf("AddTx unexpectedly didn't add tx %s", transaction0.TxID())
 	}
 
@@ -896,9 +896,9 @@ func TestDiffFromTx(t *testing.T) {
 	if err != nil {
 		t.Errorf("createCoinbaseTxForTest: %v", err)
 	}
-	if added, err := fus.AddTx(cbTx, 1); err != nil {
+	if isAccepted, err := fus.AddTx(cbTx, 1); err != nil {
 		t.Fatalf("AddTx unexpectedly failed. Error: %s", err)
-	} else if !added {
+	} else if !isAccepted {
 		t.Fatalf("AddTx unexpectedly didn't add tx %s", cbTx.TxID())
 	}
 	node := &blockNode{height: 2} //Fake node
@@ -951,9 +951,9 @@ func TestDiffFromTx(t *testing.T) {
 		toRemove: utxoCollection{},
 	})
 	dus := NewDiffUTXOSet(fus, diff2)
-	if added, err := dus.AddTx(tx, 2); err != nil {
+	if isAccepted, err := dus.AddTx(tx, 2); err != nil {
 		t.Fatalf("AddTx unexpectedly failed. Error: %s", err)
-	} else if !added {
+	} else if !isAccepted {
 		t.Fatalf("AddTx unexpectedly didn't add tx %s", tx.TxID())
 	}
 	_, err = dus.diffFromTx(tx, node)

@@ -657,9 +657,9 @@ func (mp *TxPool) addTransaction(tx *util.Tx, height uint64, fee uint64, parents
 	for _, txIn := range tx.MsgTx().TxIn {
 		mp.outpoints[txIn.PreviousOutPoint] = tx
 	}
-	if added, err := mp.mpUTXOSet.AddTx(tx.MsgTx(), blockdag.UnminedChainHeight); err != nil {
+	if isAccepted, err := mp.mpUTXOSet.AddTx(tx.MsgTx(), blockdag.UnminedChainHeight); err != nil {
 		return nil, err
-	} else if !added {
+	} else if !isAccepted {
 		return nil, fmt.Errorf("unexpectedly failed to add tx %s to the mempool utxo set", tx.ID())
 	}
 	atomic.StoreInt64(&mp.lastUpdated, time.Now().Unix())

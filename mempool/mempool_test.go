@@ -624,9 +624,9 @@ func TestProcessTransaction(t *testing.T) {
 		t.Fatalf("PayToAddrScript: unexpected error: %v", err)
 	}
 	p2shTx := util.NewTx(wire.NewNativeMsgTx(1, nil, []*wire.TxOut{{Value: 5000000000, PkScript: p2shPKScript}}))
-	if added, err := harness.txPool.mpUTXOSet.AddTx(p2shTx.MsgTx(), curHeight+1); err != nil {
+	if isAccepted, err := harness.txPool.mpUTXOSet.AddTx(p2shTx.MsgTx(), curHeight+1); err != nil {
 		t.Fatalf("AddTx unexpectedly failed. Error: %s", err)
-	} else if !added {
+	} else if !isAccepted {
 		t.Fatalf("AddTx unexpectedly didn't add tx %s", p2shTx.ID())
 	}
 
@@ -1737,9 +1737,9 @@ func TestHandleNewBlock(t *testing.T) {
 	// Create block and add its transactions to UTXO set
 	block := util.NewBlock(&dummyBlock)
 	for i, tx := range block.Transactions() {
-		if added, err := harness.txPool.mpUTXOSet.AddTx(tx.MsgTx(), 1); err != nil {
+		if isAccepted, err := harness.txPool.mpUTXOSet.AddTx(tx.MsgTx(), 1); err != nil {
 			t.Fatalf("Failed to add transaction (%v,%v) to UTXO set: %v", i, tx.ID(), err)
-		} else if !added {
+		} else if !isAccepted {
 			t.Fatalf("AddTx unexpectedly didn't add tx %s", tx.ID())
 		}
 	}

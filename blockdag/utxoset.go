@@ -458,8 +458,10 @@ func (fus *FullUTXOSet) WithDiff(other *UTXODiff) (UTXOSet, error) {
 	return NewDiffUTXOSet(fus, other.clone()), nil
 }
 
-// AddTx adds a transaction to this utxoSet and returns true iff it's valid in this UTXO's context
-func (fus *FullUTXOSet) AddTx(tx *wire.MsgTx, blockHeight uint64) (bool, error) {
+// AddTx adds a transaction to this utxoSet and returns isAccepted=true iff it's valid in this UTXO's context.
+// It returns error if something unexpected happens, such as serialization error (isAccepted=false doesn't
+// necessarily means there's an error).
+func (fus *FullUTXOSet) AddTx(tx *wire.MsgTx, blockHeight uint64) (isAccepted bool, err error) {
 	isBlockReward := tx.IsBlockReward()
 	if !isBlockReward {
 		if !fus.containsInputs(tx) {
