@@ -1182,6 +1182,17 @@ func (dag *BlockDAG) GetUTXOEntry(outPoint wire.OutPoint) (*UTXOEntry, bool) {
 	return dag.virtual.utxoSet.get(outPoint)
 }
 
+// ConfirmationsByHash returns the confirmations number for a block with the
+// given hash. See confirmations for further details.
+func (dag *BlockDAG) ConfirmationsByHash(hash *daghash.Hash) (uint64, error) {
+	node := dag.index.LookupNode(hash)
+	if node == nil {
+		return 0, fmt.Errorf("block %s is unknown", hash)
+	}
+
+	return dag.confirmations(node)
+}
+
 // confirmations returns the current confirmations number of the given node
 // The confirmations number is defined as follows:
 // * If the node is red -> 0

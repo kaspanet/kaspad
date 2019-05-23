@@ -2888,6 +2888,31 @@ func fetchInputTxos(s *Server, tx *wire.MsgTx) (map[wire.OutPoint]wire.TxOut, er
 	return originOutputs, nil
 }
 
+// txConfirmations returns the confirmations number for the given transaction
+// The confirmations number is defined as follows:
+// If the transaction is in the mempool/in a red block/is a double spend -> 0
+// Otherwise -> The confirmations number of the accepting block
+func txConfirmations(s *Server, tx *wire.MsgTx) (uint64, error) {
+	if s.cfg.TxIndex == nil {
+		return 0, errors.New("transaction index must be enabled (--txindex)")
+	}
+
+	acceptedBy, err := s.cfg.TxIndex.BlockThatAcceptedTx(s.cfg.DAG, tx.TxID())
+	if err != nil {
+		return 0, fmt.Errorf("could not get block that accepted tx %s: %s", tx.TxID(), err)
+	}
+	if acceptedBy == nil {
+		return 0, nil
+	}
+
+	confirmations, err := s.cfg.DAG.ConfirmationsByHash(acceptedBy)
+	if err != nil {
+		return 0, fmt.Errorf("could not get confirmations for block that accepted tx %s: %s", tx.TxID(), err)
+	}
+
+	return confirmations, nil
+}
+
 // createVinListPrevOut returns a slice of JSON objects for the inputs of the
 // passed transaction.
 func createVinListPrevOut(s *Server, mtx *wire.MsgTx, chainParams *dagconfig.Params, vinExtra bool, filterAddrMap map[string]struct{}) ([]btcjson.VinPrevOut, error) {
