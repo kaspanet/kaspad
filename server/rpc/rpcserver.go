@@ -2914,7 +2914,7 @@ func createVinListPrevOut(s *Server, mtx *wire.MsgTx, chainParams *dagconfig.Par
 	// previous output information if requested. Fee transactions do not contain
 	// valid inputs: block hash instead of transaction ID.
 	var originOutputs map[wire.OutPoint]wire.TxOut
-	if !mtx.IsFeeTransaction() && (vinExtra || len(filterAddrMap) > 0) {
+	if vinExtra || len(filterAddrMap) > 0 {
 		var err error
 		originOutputs, err = fetchInputTxos(s, mtx)
 		if err != nil {

@@ -509,16 +509,7 @@ func (dag *BlockDAG) checkBlockSanity(block *util.Block, flags BehaviorFlags) er
 			"block is not a coinbase")
 	}
 
-	isGenesis := block.MsgBlock().Header.IsGenesis()
-	if !isGenesis && !IsFeeTransaction(transactions[1]) {
-		return ruleError(ErrSecondTxNotFeeTransaction, "second transaction in "+
-			"block is not a fee transaction")
-	}
-
-	txOffset := 2
-	if isGenesis {
-		txOffset = 1
-	}
+	txOffset := 1
 
 	// A block must not have more than one coinbase. And transactions must be
 	// ordered by subnetwork
