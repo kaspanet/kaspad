@@ -10,6 +10,7 @@ import (
 
 	"github.com/daglabs/btcd/blockdag"
 
+	"github.com/daglabs/btcd/txscript"
 	"github.com/daglabs/btcd/util"
 	"github.com/daglabs/btcd/util/subnetworkid"
 	"github.com/daglabs/btcd/wire"
@@ -53,12 +54,22 @@ func RegisterSubnetworkForTest(dag *blockdag.BlockDAG, params *dagconfig.Params,
 	fundsBlockCbTx := fundsBlock.Transactions()[0].MsgTx()
 
 	// Create a block with a valid subnetwork registry transaction
+	signatureScript, err := txscript.PayToScriptHashSignatureScript(blockdag.OpTrueScript, nil)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to build signature script: %s", err)
+	}
 	txIn := &wire.TxIn{
 		PreviousOutPoint: *wire.NewOutPoint(fundsBlockCbTx.TxID(), 0),
 		Sequence:         wire.MaxTxInSequenceNum,
+		SignatureScript:  signatureScript,
+	}
+
+	pkScript, err := txscript.PayToScriptHashScript(blockdag.OpTrueScript)
+	if err != nil {
+		return nil, err
 	}
 	txOut := &wire.TxOut{
-		PkScript: blockdag.OpTrueScript,
+		PkScript: pkScript,
 		Value:    fundsBlockCbTx.TxOut[0].Value,
 	}
 	registryTx := wire.NewRegistryMsgTx(1, []*wire.TxIn{txIn}, []*wire.TxOut{txOut}, gasLimit)

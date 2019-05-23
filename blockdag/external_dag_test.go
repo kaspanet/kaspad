@@ -13,6 +13,7 @@ import (
 	"github.com/daglabs/btcd/blockdag"
 	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/mining"
+	"github.com/daglabs/btcd/txscript"
 	"github.com/daglabs/btcd/util"
 	"github.com/daglabs/btcd/wire"
 )
@@ -192,9 +193,13 @@ func TestChainedTransactions(t *testing.T) {
 	}
 	cbTx := block1.Transactions[0]
 
+	signatureScript, err := txscript.PayToScriptHashSignatureScript(blockdag.OpTrueScript, nil)
+	if err != nil {
+		t.Fatalf("Failed to build signature script: %s", err)
+	}
 	txIn := &wire.TxIn{
 		PreviousOutPoint: wire.OutPoint{TxID: *cbTx.TxID(), Index: 0},
-		SignatureScript:  nil,
+		SignatureScript:  signatureScript,
 		Sequence:         wire.MaxTxInSequenceNum,
 	}
 	txOut := &wire.TxOut{
@@ -205,11 +210,16 @@ func TestChainedTransactions(t *testing.T) {
 
 	chainedTxIn := &wire.TxIn{
 		PreviousOutPoint: wire.OutPoint{TxID: *tx.TxID(), Index: 0},
-		SignatureScript:  nil,
+		SignatureScript:  signatureScript,
 		Sequence:         wire.MaxTxInSequenceNum,
 	}
+
+	pkScript, err := txscript.PayToScriptHashScript(blockdag.OpTrueScript)
+	if err != nil {
+		t.Fatalf("Failed to build public key script: %s", err)
+	}
 	chainedTxOut := &wire.TxOut{
-		PkScript: blockdag.OpTrueScript,
+		PkScript: pkScript,
 		Value:    uint64(1),
 	}
 	chainedTx := wire.NewNativeMsgTx(wire.TxVersion, []*wire.TxIn{chainedTxIn}, []*wire.TxOut{chainedTxOut})
@@ -236,11 +246,11 @@ func TestChainedTransactions(t *testing.T) {
 
 	nonChainedTxIn := &wire.TxIn{
 		PreviousOutPoint: wire.OutPoint{TxID: *cbTx.TxID(), Index: 0},
-		SignatureScript:  nil,
+		SignatureScript:  signatureScript,
 		Sequence:         wire.MaxTxInSequenceNum,
 	}
 	nonChainedTxOut := &wire.TxOut{
-		PkScript: blockdag.OpTrueScript,
+		PkScript: pkScript,
 		Value:    uint64(1),
 	}
 	nonChainedTx := wire.NewNativeMsgTx(wire.TxVersion, []*wire.TxIn{nonChainedTxIn}, []*wire.TxOut{nonChainedTxOut})
@@ -292,26 +302,38 @@ func TestGasLimit(t *testing.T) {
 		t.Fatalf("ProcessBlock: funds block got unexpectedly orphan")
 	}
 
+	signatureScript, err := txscript.PayToScriptHashSignatureScript(blockdag.OpTrueScript, nil)
+	if err != nil {
+		t.Fatalf("Failed to build signature script: %s", err)
+	}
+
+	pkScript, err := txscript.PayToScriptHashScript(blockdag.OpTrueScript)
+	if err != nil {
+		t.Fatalf("Failed to build public key script: %s", err)
+	}
+
 	cbTxValue := fundsBlock.Transactions[0].TxOut[0].Value
 	cbTxID := fundsBlock.Transactions[0].TxID()
 
 	tx1In := &wire.TxIn{
 		PreviousOutPoint: *wire.NewOutPoint(cbTxID, 0),
 		Sequence:         wire.MaxTxInSequenceNum,
+		SignatureScript:  signatureScript,
 	}
 	tx1Out := &wire.TxOut{
 		Value:    cbTxValue,
-		PkScript: blockdag.OpTrueScript,
+		PkScript: pkScript,
 	}
 	tx1 := wire.NewSubnetworkMsgTx(wire.TxVersion, []*wire.TxIn{tx1In}, []*wire.TxOut{tx1Out}, subnetworkID, 10000, []byte{})
 
 	tx2In := &wire.TxIn{
 		PreviousOutPoint: *wire.NewOutPoint(cbTxID, 1),
 		Sequence:         wire.MaxTxInSequenceNum,
+		SignatureScript:  signatureScript,
 	}
 	tx2Out := &wire.TxOut{
 		Value:    cbTxValue,
-		PkScript: blockdag.OpTrueScript,
+		PkScript: pkScript,
 	}
 	tx2 := wire.NewSubnetworkMsgTx(wire.TxVersion, []*wire.TxIn{tx2In}, []*wire.TxOut{tx2Out}, subnetworkID, 10000, []byte{})
 
@@ -337,10 +359,11 @@ func TestGasLimit(t *testing.T) {
 	overflowGasTxIn := &wire.TxIn{
 		PreviousOutPoint: *wire.NewOutPoint(cbTxID, 1),
 		Sequence:         wire.MaxTxInSequenceNum,
+		SignatureScript:  signatureScript,
 	}
 	overflowGasTxOut := &wire.TxOut{
 		Value:    cbTxValue,
-		PkScript: blockdag.OpTrueScript,
+		PkScript: pkScript,
 	}
 	overflowGasTx := wire.NewSubnetworkMsgTx(wire.TxVersion, []*wire.TxIn{overflowGasTxIn}, []*wire.TxOut{overflowGasTxOut},
 		subnetworkID, math.MaxUint64, []byte{})
@@ -368,10 +391,11 @@ func TestGasLimit(t *testing.T) {
 	nonExistentSubnetworkTxIn := &wire.TxIn{
 		PreviousOutPoint: *wire.NewOutPoint(cbTxID, 0),
 		Sequence:         wire.MaxTxInSequenceNum,
+		SignatureScript:  signatureScript,
 	}
 	nonExistentSubnetworkTxOut := &wire.TxOut{
 		Value:    cbTxValue,
-		PkScript: blockdag.OpTrueScript,
+		PkScript: pkScript,
 	}
 	nonExistentSubnetworkTx := wire.NewSubnetworkMsgTx(wire.TxVersion, []*wire.TxIn{nonExistentSubnetworkTxIn},
 		[]*wire.TxOut{nonExistentSubnetworkTxOut}, nonExistentSubnetwork, 1, []byte{})
