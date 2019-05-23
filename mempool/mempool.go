@@ -493,51 +493,13 @@ func (mp *TxPool) removeTransactions(txs []*util.Tx) error {
 	for _, tx := range txs {
 		txID := tx.ID()
 
-		// Remove the transaction if needed.
-		if txDesc, exists := mp.fetchTransaction(txID); exists {
-			// Remove unconfirmed address index entries associated with the
-			// transaction if enabled.
-			if mp.cfg.AddrIndex != nil {
-				mp.cfg.AddrIndex.RemoveUnconfirmedTx(txID)
-			}
+		if _, exists := mp.fetchTransaction(txID); !exists {
+			continue
+		}
 
-			diff.RemoveTxOuts(txDesc.Tx.MsgTx())
-
-			// Mark the referenced outpoints as unspent by the pool.
-			for _, txIn := range txDesc.Tx.MsgTx().TxIn {
-				delete(mp.outpoints, txIn.PreviousOutPoint)
-			}
-
-			if txDesc.depCount == 0 {
-				delete(mp.pool, *txID)
-			} else {
-				delete(mp.depends, *txID)
-			}
-
-			// Process dependent transactions
-			prevOut := wire.OutPoint{TxID: *txID}
-			for txOutIdx := range tx.MsgTx().TxOut {
-				// Skip to the next available output if there are none.
-				prevOut.Index = uint32(txOutIdx)
-				depends, exists := mp.dependsByPrev[prevOut]
-				if !exists {
-					continue
-				}
-
-				// Move independent transactions into main pool
-				for _, txD := range depends {
-					txD.depCount--
-					if txD.depCount == 0 {
-						// Transaction may be already removed by recursive calls, if removeRedeemers is true.
-						// So avoid moving it into main pool
-						if _, ok := mp.depends[*txD.Tx.ID()]; ok {
-							delete(mp.depends, *txD.Tx.ID())
-							mp.pool[*txD.Tx.ID()] = txD
-						}
-					}
-				}
-				delete(mp.dependsByPrev, prevOut)
-			}
+		err := mp.removeTransactionWithDiff(tx, diff, false)
+		if err != nil {
+			return err
 		}
 	}
 
@@ -567,72 +529,89 @@ func (mp *TxPool) removeTransaction(tx *util.Tx, removeRedeemers bool, restoreIn
 		}
 	}
 
-	// Remove the transaction if needed.
-	if txDesc, exists := mp.fetchTransaction(txID); exists {
-		// Remove unconfirmed address index entries associated with the
-		// transaction if enabled.
-		if mp.cfg.AddrIndex != nil {
-			mp.cfg.AddrIndex.RemoveUnconfirmedTx(txID)
-		}
-
-		diff := blockdag.NewUTXODiff()
-		diff.RemoveTxOuts(txDesc.Tx.MsgTx())
-
-		// Mark the referenced outpoints as unspent by the pool.
-		for _, txIn := range txDesc.Tx.MsgTx().TxIn {
-			if restoreInputs {
-				if prevTxDesc, exists := mp.pool[txIn.PreviousOutPoint.TxID]; exists {
-					prevOut := prevTxDesc.Tx.MsgTx().TxOut[txIn.PreviousOutPoint.Index]
-					entry := blockdag.NewUTXOEntry(prevOut, false, blockdag.UnminedChainHeight)
-					diff.AddEntry(txIn.PreviousOutPoint, entry)
-				}
-				if prevTxDesc, exists := mp.depends[txIn.PreviousOutPoint.TxID]; exists {
-					prevOut := prevTxDesc.Tx.MsgTx().TxOut[txIn.PreviousOutPoint.Index]
-					entry := blockdag.NewUTXOEntry(prevOut, false, blockdag.UnminedChainHeight)
-					diff.AddEntry(txIn.PreviousOutPoint, entry)
-				}
-			}
-			delete(mp.outpoints, txIn.PreviousOutPoint)
-		}
-
-		if txDesc.depCount == 0 {
-			delete(mp.pool, *txID)
-		} else {
-			delete(mp.depends, *txID)
-		}
-
-		// Process dependent transactions
-		prevOut := wire.OutPoint{TxID: *txID}
-		for txOutIdx := range tx.MsgTx().TxOut {
-			// Skip to the next available output if there are none.
-			prevOut.Index = uint32(txOutIdx)
-			depends, exists := mp.dependsByPrev[prevOut]
-			if !exists {
-				continue
-			}
-
-			// Move independent transactions into main pool
-			for _, txD := range depends {
-				txD.depCount--
-				if txD.depCount == 0 {
-					// Transaction may be already removed by recursive calls, if removeRedeemers is true.
-					// So avoid moving it into main pool
-					if _, ok := mp.depends[*txD.Tx.ID()]; ok {
-						delete(mp.depends, *txD.Tx.ID())
-						mp.pool[*txD.Tx.ID()] = txD
-					}
-				}
-			}
-			delete(mp.dependsByPrev, prevOut)
-		}
-
-		var err error
-		mp.mpUTXOSet, err = mp.mpUTXOSet.WithDiff(diff)
-		if err != nil {
-			return err
-		}
-		atomic.StoreInt64(&mp.lastUpdated, time.Now().Unix())
+	if _, exists := mp.fetchTransaction(txID); !exists {
+		return nil
 	}
+
+	diff := blockdag.NewUTXODiff()
+	err := mp.removeTransactionWithDiff(tx, diff, restoreInputs)
+	if err != nil {
+		return err
+	}
+
+	mp.mpUTXOSet, err = mp.mpUTXOSet.WithDiff(diff)
+	if err != nil {
+		return err
+	}
+	atomic.StoreInt64(&mp.lastUpdated, time.Now().Unix())
+
+	return nil
+}
+
+func (mp *TxPool) removeTransactionWithDiff(tx *util.Tx, diff *blockdag.UTXODiff, restoreInputs bool) error {
+	txID := tx.ID()
+
+	txDesc, exists := mp.fetchTransaction(txID)
+	if !exists {
+		return nil
+	}
+
+	// Remove unconfirmed address index entries associated with the
+	// transaction if enabled.
+	if mp.cfg.AddrIndex != nil {
+		mp.cfg.AddrIndex.RemoveUnconfirmedTx(txID)
+	}
+
+	diff.RemoveTxOuts(txDesc.Tx.MsgTx())
+
+	// Mark the referenced outpoints as unspent by the pool.
+	for _, txIn := range txDesc.Tx.MsgTx().TxIn {
+		if restoreInputs {
+			if prevTxDesc, exists := mp.pool[txIn.PreviousOutPoint.TxID]; exists {
+				prevOut := prevTxDesc.Tx.MsgTx().TxOut[txIn.PreviousOutPoint.Index]
+				entry := blockdag.NewUTXOEntry(prevOut, false, blockdag.UnminedChainHeight)
+				diff.AddEntry(txIn.PreviousOutPoint, entry)
+			}
+			if prevTxDesc, exists := mp.depends[txIn.PreviousOutPoint.TxID]; exists {
+				prevOut := prevTxDesc.Tx.MsgTx().TxOut[txIn.PreviousOutPoint.Index]
+				entry := blockdag.NewUTXOEntry(prevOut, false, blockdag.UnminedChainHeight)
+				diff.AddEntry(txIn.PreviousOutPoint, entry)
+			}
+		}
+		delete(mp.outpoints, txIn.PreviousOutPoint)
+	}
+
+	if txDesc.depCount == 0 {
+		delete(mp.pool, *txID)
+	} else {
+		delete(mp.depends, *txID)
+	}
+
+	// Process dependent transactions
+	prevOut := wire.OutPoint{TxID: *txID}
+	for txOutIdx := range tx.MsgTx().TxOut {
+		// Skip to the next available output if there are none.
+		prevOut.Index = uint32(txOutIdx)
+		depends, exists := mp.dependsByPrev[prevOut]
+		if !exists {
+			continue
+		}
+
+		// Move independent transactions into main pool
+		for _, txD := range depends {
+			txD.depCount--
+			if txD.depCount == 0 {
+				// Transaction may be already removed by recursive calls, if removeRedeemers is true.
+				// So avoid moving it into main pool
+				if _, ok := mp.depends[*txD.Tx.ID()]; ok {
+					delete(mp.depends, *txD.Tx.ID())
+					mp.pool[*txD.Tx.ID()] = txD
+				}
+			}
+		}
+		delete(mp.dependsByPrev, prevOut)
+	}
+
 	return nil
 }
 
