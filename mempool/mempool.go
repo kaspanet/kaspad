@@ -524,7 +524,10 @@ func (mp *TxPool) removeTransaction(tx *util.Tx, removeRedeemers bool, restoreIn
 		for i := uint32(0); i < uint32(len(tx.MsgTx().TxOut)); i++ {
 			prevOut := wire.OutPoint{TxID: *txID, Index: i}
 			if txRedeemer, exists := mp.outpoints[prevOut]; exists {
-				mp.removeTransaction(txRedeemer, true, false)
+				err := mp.removeTransaction(txRedeemer, true, false)
+				if err != nil {
+					return err
+				}
 			}
 		}
 	}
@@ -562,20 +565,36 @@ func (mp *TxPool) removeTransactionWithDiff(tx *util.Tx, diff *blockdag.UTXODiff
 		mp.cfg.AddrIndex.RemoveUnconfirmedTx(txID)
 	}
 
-	diff.RemoveTxOuts(txDesc.Tx.MsgTx())
+	msgTx := tx.MsgTx()
+	for idx := range msgTx.TxOut {
+		outPoint := *wire.NewOutPoint(txID, uint32(idx))
+		entry, exists := mp.mpUTXOSet.Get(outPoint)
+		if exists {
+			err := diff.RemoveEntry(outPoint, entry)
+			if err != nil {
+				return err
+			}
+		}
+	}
 
 	// Mark the referenced outpoints as unspent by the pool.
-	for _, txIn := range txDesc.Tx.MsgTx().TxIn {
+	for _, txIn := range msgTx.TxIn {
 		if restoreInputs {
 			if prevTxDesc, exists := mp.pool[txIn.PreviousOutPoint.TxID]; exists {
 				prevOut := prevTxDesc.Tx.MsgTx().TxOut[txIn.PreviousOutPoint.Index]
 				entry := blockdag.NewUTXOEntry(prevOut, false, blockdag.UnminedChainHeight)
-				diff.AddEntry(txIn.PreviousOutPoint, entry)
+				err := diff.AddEntry(txIn.PreviousOutPoint, entry)
+				if err != nil {
+					return err
+				}
 			}
 			if prevTxDesc, exists := mp.depends[txIn.PreviousOutPoint.TxID]; exists {
 				prevOut := prevTxDesc.Tx.MsgTx().TxOut[txIn.PreviousOutPoint.Index]
 				entry := blockdag.NewUTXOEntry(prevOut, false, blockdag.UnminedChainHeight)
-				diff.AddEntry(txIn.PreviousOutPoint, entry)
+				err := diff.AddEntry(txIn.PreviousOutPoint, entry)
+				if err != nil {
+					return err
+				}
 			}
 		}
 		delete(mp.outpoints, txIn.PreviousOutPoint)
@@ -589,7 +608,7 @@ func (mp *TxPool) removeTransactionWithDiff(tx *util.Tx, diff *blockdag.UTXODiff
 
 	// Process dependent transactions
 	prevOut := wire.OutPoint{TxID: *txID}
-	for txOutIdx := range tx.MsgTx().TxOut {
+	for txOutIdx := range msgTx.TxOut {
 		// Skip to the next available output if there are none.
 		prevOut.Index = uint32(txOutIdx)
 		depends, exists := mp.dependsByPrev[prevOut]
@@ -663,7 +682,7 @@ func (mp *TxPool) RemoveDoubleSpends(tx *util.Tx) {
 // helper for maybeAcceptTransaction.
 //
 // This function MUST be called with the mempool lock held (for writes).
-func (mp *TxPool) addTransaction(tx *util.Tx, height uint64, fee uint64, parentsInPool []*wire.OutPoint) *TxDesc {
+func (mp *TxPool) addTransaction(tx *util.Tx, height uint64, fee uint64, parentsInPool []*wire.OutPoint) (*TxDesc, error) {
 	// Add the transaction to the pool and mark the referenced outpoints
 	// as spent by the pool.
 	txD := &TxDesc{
@@ -693,7 +712,11 @@ func (mp *TxPool) addTransaction(tx *util.Tx, height uint64, fee uint64, parents
 	for _, txIn := range tx.MsgTx().TxIn {
 		mp.outpoints[txIn.PreviousOutPoint] = tx
 	}
-	mp.mpUTXOSet.AddTx(tx.MsgTx(), blockdag.UnminedChainHeight)
+	if isAccepted, err := mp.mpUTXOSet.AddTx(tx.MsgTx(), blockdag.UnminedChainHeight); err != nil {
+		return nil, err
+	} else if !isAccepted {
+		return nil, fmt.Errorf("unexpectedly failed to add tx %s to the mempool utxo set", tx.ID())
+	}
 	atomic.StoreInt64(&mp.lastUpdated, time.Now().Unix())
 
 	// Add unconfirmed address index entries associated with the transaction
@@ -707,7 +730,7 @@ func (mp *TxPool) addTransaction(tx *util.Tx, height uint64, fee uint64, parents
 		mp.cfg.FeeEstimator.ObserveTransaction(txD)
 	}
 
-	return txD
+	return txD, nil
 }
 
 // checkPoolDoubleSpend checks whether or not the passed transaction is
@@ -1043,7 +1066,10 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rateLimit, rejectDu
 	}
 
 	// Add to transaction pool.
-	txD := mp.addTransaction(tx, bestHeight, txFee, parentsInPool)
+	txD, err := mp.addTransaction(tx, bestHeight, txFee, parentsInPool)
+	if err != nil {
+		return nil, nil, err
+	}
 
 	log.Debugf("Accepted transaction %s (pool size: %d)", txID,
 		len(mp.pool))
@@ -1383,12 +1409,12 @@ func (mp *TxPool) HandleNewBlock(block *util.Block, txChan chan NewBlockMsg) err
 	// no longer an orphan. Transactions which depend on a confirmed
 	// transaction are NOT removed recursively because they are still
 	// valid.
-	err := mp.RemoveTransactions(block.Transactions()[1:])
-	if err != nil {
-		mp.mpUTXOSet = oldUTXOSet
-		return err
-	}
-	for _, tx := range block.Transactions()[1:] {
+	for _, tx := range block.Transactions()[util.FeeTransactionIndex:] {
+		err := mp.RemoveTransaction(tx, false, false)
+		if err != nil {
+			mp.mpUTXOSet = oldUTXOSet
+			return err
+		}
 		mp.RemoveDoubleSpends(tx)
 		mp.RemoveOrphan(tx)
 		acceptedTxs := mp.ProcessOrphans(tx)

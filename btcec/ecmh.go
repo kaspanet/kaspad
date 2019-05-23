@@ -50,14 +50,15 @@ func NewMultisetFromDataSlice(curve *KoblitzCurve, datas [][]byte) *Multiset {
 	return ms
 }
 
-func (ms *Multiset) clone() *Multiset {
+// Clone returns a clone of this multiset.
+func (ms *Multiset) Clone() *Multiset {
 	return NewMultisetFromPoint(ms.curve, ms.x, ms.y)
 }
 
 // Add hashes the data onto the curve and returns
 // a multiset with the new resulting point.
 func (ms *Multiset) Add(data []byte) *Multiset {
-	newMs := ms.clone()
+	newMs := ms.Clone()
 	x, y := hashToPoint(ms.curve, data)
 	newMs.addPoint(x, y)
 	return newMs
@@ -76,7 +77,7 @@ func (ms *Multiset) addPoint(x, y *big.Int) {
 // all the elements that were added, you will not get
 // back to the point at infinity (empty set).
 func (ms *Multiset) Remove(data []byte) *Multiset {
-	newMs := ms.clone()
+	newMs := ms.Clone()
 	x, y := hashToPoint(ms.curve, data)
 	newMs.removePoint(x, y)
 	return newMs
@@ -90,8 +91,8 @@ func (ms *Multiset) removePoint(x, y *big.Int) {
 // Union will add the point of the passed multiset instance to the point
 // of this multiset and will return a multiset with the resulting point.
 func (ms *Multiset) Union(otherMultiset *Multiset) *Multiset {
-	newMs := ms.clone()
-	otherMsCopy := otherMultiset.clone()
+	newMs := ms.Clone()
+	otherMsCopy := otherMultiset.Clone()
 	newMs.addPoint(otherMsCopy.x, otherMsCopy.y)
 	return newMs
 }
@@ -99,8 +100,8 @@ func (ms *Multiset) Union(otherMultiset *Multiset) *Multiset {
 // Subtract will remove the point of the passed multiset instance from the point
 // of this multiset and will return a multiset with the resulting point.
 func (ms *Multiset) Subtract(otherMultiset *Multiset) *Multiset {
-	newMs := ms.clone()
-	otherMsCopy := otherMultiset.clone()
+	newMs := ms.Clone()
+	otherMsCopy := otherMultiset.Clone()
 	newMs.removePoint(otherMsCopy.x, otherMsCopy.y)
 	return newMs
 }

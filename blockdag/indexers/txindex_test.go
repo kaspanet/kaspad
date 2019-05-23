@@ -8,18 +8,24 @@ import (
 	"github.com/daglabs/btcd/blockdag"
 	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/mining"
+	"github.com/daglabs/btcd/txscript"
 	"github.com/daglabs/btcd/util"
 	"github.com/daglabs/btcd/util/daghash"
 	"github.com/daglabs/btcd/wire"
 )
 
-func createTransaction(value uint64, originTx *wire.MsgTx, outputIndex uint32) *wire.MsgTx {
+func createTransaction(t *testing.T, value uint64, originTx *wire.MsgTx, outputIndex uint32) *wire.MsgTx {
+	signatureScript, err := txscript.PayToScriptHashSignatureScript(blockdag.OpTrueScript, nil)
+	if err != nil {
+		t.Fatalf("Error creating signature script: %s", err)
+	}
 	txIn := &wire.TxIn{
 		PreviousOutPoint: wire.OutPoint{
 			TxID:  *originTx.TxID(),
 			Index: outputIndex,
 		},
-		Sequence: wire.MaxTxInSequenceNum,
+		Sequence:        wire.MaxTxInSequenceNum,
+		SignatureScript: signatureScript,
 	}
 	txOut := wire.NewTxOut(value, blockdag.OpTrueScript)
 	tx := wire.NewNativeMsgTx(wire.TxVersion, []*wire.TxIn{txIn}, []*wire.TxOut{txOut})
@@ -68,9 +74,9 @@ func TestTxIndexConnectBlock(t *testing.T) {
 	}
 
 	block1 := prepareAndProcessBlock([]*daghash.Hash{params.GenesisHash}, nil, "1")
-	block2Tx := createTransaction(block1.Transactions[0].TxOut[0].Value, block1.Transactions[0], 0)
+	block2Tx := createTransaction(t, block1.Transactions[0].TxOut[0].Value, block1.Transactions[0], 0)
 	block2 := prepareAndProcessBlock([]*daghash.Hash{block1.BlockHash()}, []*wire.MsgTx{block2Tx}, "2")
-	block3Tx := createTransaction(block2.Transactions[0].TxOut[0].Value, block2.Transactions[0], 0)
+	block3Tx := createTransaction(t, block2.Transactions[0].TxOut[0].Value, block2.Transactions[0], 0)
 	block3 := prepareAndProcessBlock([]*daghash.Hash{block2.BlockHash()}, []*wire.MsgTx{block3Tx}, "3")
 
 	block3TxID := block3Tx.TxID()

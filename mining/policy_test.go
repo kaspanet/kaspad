@@ -53,7 +53,11 @@ func newUTXOSet(sourceTxns []*wire.MsgTx, sourceTxHeights []uint64) blockdag.UTX
 
 	utxoSet := blockdag.NewFullUTXOSet()
 	for i, tx := range sourceTxns {
-		utxoSet.AddTx(tx, sourceTxHeights[i])
+		if isAccepted, err := utxoSet.AddTx(tx, sourceTxHeights[i]); err != nil {
+			panic(fmt.Sprintf("AddTx unexpectedly failed. Error: %s", err))
+		} else if !isAccepted {
+			panic(fmt.Sprintf("AddTx unexpectedly didn't add tx %s", tx.TxID()))
+		}
 	}
 	return utxoSet
 }

@@ -6,7 +6,6 @@ package mempool
 
 import (
 	"bytes"
-	"encoding/hex"
 	"errors"
 	"fmt"
 	"math"
@@ -22,8 +21,8 @@ import (
 	"bou.ke/monkey"
 	"github.com/daglabs/btcd/blockdag"
 	"github.com/daglabs/btcd/blockdag/indexers"
-	"github.com/daglabs/btcd/btcec"
 	"github.com/daglabs/btcd/dagconfig"
+	"github.com/daglabs/btcd/mining"
 	"github.com/daglabs/btcd/txscript"
 	"github.com/daglabs/btcd/util"
 	"github.com/daglabs/btcd/util/daghash"
@@ -102,15 +101,9 @@ func txOutToSpendableOutpoint(tx *util.Tx, outputNum uint32) spendableOutpoint {
 // signing transactions as well as a fake chain that provides utxos for use in
 // generating valid transactions.
 type poolHarness struct {
-	// signKey is the signing key used for creating transactions throughout
-	// the tests.
-	//
-	// payAddr is the p2sh address for the signing key and is used for the
-	// payment address throughout the tests.
-	signKey     *btcec.PrivateKey
-	payAddr     util.Address
-	payScript   []byte
-	chainParams *dagconfig.Params
+	signatureScript []byte
+	payScript       []byte
+	chainParams     *dagconfig.Params
 
 	chain  *fakeChain
 	txPool *TxPool
@@ -177,7 +170,7 @@ func (p *poolHarness) CreateSignedTxForSubnetwork(inputs []spendableOutpoint, nu
 	for _, input := range inputs {
 		txIns = append(txIns, &wire.TxIn{
 			PreviousOutPoint: input.outPoint,
-			SignatureScript:  nil,
+			SignatureScript:  p.signatureScript,
 			Sequence:         wire.MaxTxInSequenceNum,
 		})
 	}
@@ -200,12 +193,7 @@ func (p *poolHarness) CreateSignedTxForSubnetwork(inputs []spendableOutpoint, nu
 
 	// Sign the new transaction.
 	for i := range tx.TxIn {
-		sigScript, err := txscript.SignatureScript(tx, i, p.payScript,
-			txscript.SigHashAll, p.signKey, true)
-		if err != nil {
-			return nil, err
-		}
-		tx.TxIn[i].SignatureScript = sigScript
+		tx.TxIn[i].SignatureScript = p.signatureScript
 	}
 
 	return util.NewTx(tx), nil
@@ -233,7 +221,7 @@ func (p *poolHarness) CreateTxChain(firstOutput spendableOutpoint, numTxns uint3
 		// with the harness.
 		txIn := &wire.TxIn{
 			PreviousOutPoint: prevOutPoint,
-			SignatureScript:  nil,
+			SignatureScript:  p.signatureScript,
 			Sequence:         wire.MaxTxInSequenceNum,
 		}
 		txOut := &wire.TxOut{
@@ -241,14 +229,6 @@ func (p *poolHarness) CreateTxChain(firstOutput spendableOutpoint, numTxns uint3
 			Value:    uint64(spendableAmount),
 		}
 		tx := wire.NewNativeMsgTx(wire.TxVersion, []*wire.TxIn{txIn}, []*wire.TxOut{txOut})
-
-		// Sign the new transaction.
-		sigScript, err := txscript.SignatureScript(tx, 0, p.payScript,
-			txscript.SigHashAll, p.signKey, true)
-		if err != nil {
-			return nil, err
-		}
-		tx.TxIn[0].SignatureScript = sigScript
 
 		txChain = append(txChain, util.NewTx(tx))
 
@@ -259,36 +239,58 @@ func (p *poolHarness) CreateTxChain(firstOutput spendableOutpoint, numTxns uint3
 	return txChain, nil
 }
 
+func (tc *testContext) mineTransactions(transactions []*util.Tx, coinbaseOutputs uint64) *util.Block {
+	msgTxs := make([]*wire.MsgTx, len(transactions))
+	for i, tx := range transactions {
+		msgTxs[i] = tx.MsgTx()
+	}
+	block, err := mining.PrepareBlockForTest(tc.harness.txPool.cfg.DAG, tc.harness.txPool.cfg.DAGParams, tc.harness.txPool.cfg.DAG.TipHashes(), msgTxs, true, coinbaseOutputs)
+	if err != nil {
+		tc.t.Fatalf("PrepareBlockForTest: %s", err)
+	}
+	utilBlock := util.NewBlock(block)
+	isOrphan, err := tc.harness.txPool.cfg.DAG.ProcessBlock(utilBlock, blockdag.BFNoPoWCheck)
+	if err != nil {
+		tc.t.Fatalf("ProcessBlock: %s", err)
+	}
+	if isOrphan {
+		tc.t.Fatalf("block %s was unexpectedly orphan", block.BlockHash())
+	}
+
+	// Handle new block by pool
+	ch := make(chan NewBlockMsg)
+	go func() {
+		err = tc.harness.txPool.HandleNewBlock(utilBlock, ch)
+		close(ch)
+	}()
+
+	// process messages pushed by HandleNewBlock
+	for range ch {
+	}
+	// ensure that HandleNewBlock has not failed
+	if err != nil {
+		tc.t.Fatalf("HandleNewBlock failed to handle block %s", err)
+	}
+	return utilBlock
+}
+
 // newPoolHarness returns a new instance of a pool harness initialized with a
 // fake chain and a TxPool bound to it that is configured with a policy suitable
 // for testing.  Also, the fake chain is populated with the returned spendable
 // outputs so the caller can easily create new valid transactions which build
 // off of it.
-func newPoolHarness(dagParams *dagconfig.Params, numOutputs uint32, dbName string) (*poolHarness, []spendableOutpoint, func(), error) {
-	// Use a hard coded key pair for deterministic results.
-	keyBytes, err := hex.DecodeString("700868df1838811ffbdf918fb482c1f7e" +
-		"ad62db4b97bd7012c23e726485e577d")
+func newPoolHarness(t *testing.T, dagParams *dagconfig.Params, numOutputs uint32, dbName string) (*testContext, []spendableOutpoint, func(), error) {
+	pkScript, err := txscript.PayToScriptHashScript(blockdag.OpTrueScript)
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	signKey, signPub := btcec.PrivKeyFromBytes(btcec.S256(), keyBytes)
 
-	// Generate associated pay-to-script-hash address and resulting payment
-	// script.
-	pubKeyBytes := signPub.SerializeCompressed()
-	payPubKeyAddr, err := util.NewAddressPubKey(pubKeyBytes, dagParams.Prefix)
-	if err != nil {
-		return nil, nil, nil, err
-	}
-	payAddr := payPubKeyAddr.AddressPubKeyHash()
-	pkScript, err := txscript.PayToAddrScript(payAddr)
-	if err != nil {
-		return nil, nil, nil, err
-	}
+	params := *dagParams
+	params.BlockRewardMaturity = 0
 
 	// Create a new database and chain instance to run tests against.
 	dag, teardownFunc, err := blockdag.DAGSetup(dbName, blockdag.Config{
-		DAGParams: dagParams,
+		DAGParams: &params,
 	})
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("Failed to setup DAG instance: %v", err)
@@ -299,13 +301,17 @@ func newPoolHarness(dagParams *dagconfig.Params, numOutputs uint32, dbName strin
 		}
 	}()
 
+	signatureScript, err := txscript.PayToScriptHashSignatureScript(blockdag.OpTrueScript, nil)
+	if err != nil {
+		return nil, nil, nil, fmt.Errorf("Failed to build harness signature script: %s", err)
+	}
+
 	// Create a new fake chain and harness bound to it.
 	chain := &fakeChain{}
-	harness := poolHarness{
-		signKey:     signKey,
-		payAddr:     payAddr,
-		payScript:   pkScript,
-		chainParams: dagParams,
+	harness := &poolHarness{
+		signatureScript: signatureScript,
+		payScript:       pkScript,
+		chainParams:     dagParams,
 
 		chain: chain,
 		txPool: New(&Config{
@@ -328,6 +334,10 @@ func newPoolHarness(dagParams *dagconfig.Params, numOutputs uint32, dbName strin
 		}),
 	}
 
+	tc := &testContext{harness: harness, t: t}
+	block := tc.mineTransactions(nil, uint64(numOutputs))
+	coinbase := block.Transactions()[0]
+
 	// Create a single coinbase transaction and add it to the harness
 	// chain's utxo set and set the harness chain height such that the
 	// coinbase will mature in the next block.  This ensures the txpool
@@ -335,11 +345,6 @@ func newPoolHarness(dagParams *dagconfig.Params, numOutputs uint32, dbName strin
 	// mature in the next block.
 	outpoints := make([]spendableOutpoint, 0, numOutputs)
 	curHeight := harness.chain.BestHeight()
-	coinbase, err := harness.CreateCoinbaseTx(curHeight+1, numOutputs)
-	if err != nil {
-		return nil, nil, nil, err
-	}
-	harness.txPool.mpUTXOSet.AddTx(coinbase.MsgTx(), curHeight+1)
 	for i := uint32(0); i < numOutputs; i++ {
 		outpoints = append(outpoints, txOutToSpendableOutpoint(coinbase, i))
 	}
@@ -350,7 +355,7 @@ func newPoolHarness(dagParams *dagconfig.Params, numOutputs uint32, dbName strin
 	}
 	harness.chain.SetMedianTimePast(time.Now())
 
-	return &harness, outpoints, teardownFunc, nil
+	return tc, outpoints, teardownFunc, nil
 }
 
 // testContext houses a test-related state that is useful to pass to helper
@@ -457,24 +462,20 @@ func (p *poolHarness) createTx(outpoint spendableOutpoint, fee uint64, numOutput
 	tx := wire.NewNativeMsgTx(wire.TxVersion, txIns, txOuts)
 
 	// Sign the new transaction.
-	sigScript, err := txscript.SignatureScript(tx, 0, p.payScript,
-		txscript.SigHashAll, p.signKey, true)
-	if err != nil {
-		return nil, err
-	}
-	tx.TxIn[0].SignatureScript = sigScript
+	tx.TxIn[0].SignatureScript = p.signatureScript
 	return util.NewTx(tx), nil
 }
 
 func TestProcessTransaction(t *testing.T) {
 	params := dagconfig.SimNetParams
 	params.BlockRewardMaturity = 0
-	harness, spendableOuts, teardownFunc, err := newPoolHarness(&params, 6, "TestProcessTransaction")
+	tc, spendableOuts, teardownFunc, err := newPoolHarness(t, &params, 6, "TestProcessTransaction")
 	if err != nil {
 		t.Fatalf("unable to create test pool: %v", err)
 	}
 	defer teardownFunc()
-	tc := &testContext{t, harness}
+
+	harness := tc.harness
 
 	//Checks that a transaction cannot be added to the transaction pool if it's already there
 	tx, err := harness.createTx(spendableOuts[0], 0, 1)
@@ -623,7 +624,11 @@ func TestProcessTransaction(t *testing.T) {
 		t.Fatalf("PayToAddrScript: unexpected error: %v", err)
 	}
 	p2shTx := util.NewTx(wire.NewNativeMsgTx(1, nil, []*wire.TxOut{{Value: 5000000000, PkScript: p2shPKScript}}))
-	harness.txPool.mpUTXOSet.AddTx(p2shTx.MsgTx(), curHeight+1)
+	if isAccepted, err := harness.txPool.mpUTXOSet.AddTx(p2shTx.MsgTx(), curHeight+1); err != nil {
+		t.Fatalf("AddTx unexpectedly failed. Error: %s", err)
+	} else if !isAccepted {
+		t.Fatalf("AddTx unexpectedly didn't add tx %s", p2shTx.ID())
+	}
 
 	txIns := []*wire.TxIn{{
 		PreviousOutPoint: wire.OutPoint{TxID: *p2shTx.ID(), Index: 0},
@@ -754,11 +759,12 @@ func TestProcessTransaction(t *testing.T) {
 }
 
 func TestAddrIndex(t *testing.T) {
-	harness, spendableOuts, teardownFunc, err := newPoolHarness(&dagconfig.MainNetParams, 2, "TestAddrIndex")
+	tc, spendableOuts, teardownFunc, err := newPoolHarness(t, &dagconfig.MainNetParams, 2, "TestAddrIndex")
 	if err != nil {
 		t.Fatalf("unable to create test pool: %v", err)
 	}
 	defer teardownFunc()
+	harness := tc.harness
 	harness.txPool.cfg.AddrIndex = &indexers.AddrIndex{}
 	enteredAddUnconfirmedTx := false
 	guard := monkey.Patch((*indexers.AddrIndex).AddUnconfirmedTx, func(idx *indexers.AddrIndex, tx *util.Tx, utxoSet blockdag.UTXOSet) {
@@ -795,11 +801,12 @@ func TestAddrIndex(t *testing.T) {
 }
 
 func TestFeeEstimatorCfg(t *testing.T) {
-	harness, spendableOuts, teardownFunc, err := newPoolHarness(&dagconfig.MainNetParams, 2, "TestFeeEstimatorCfg")
+	tc, spendableOuts, teardownFunc, err := newPoolHarness(t, &dagconfig.MainNetParams, 2, "TestFeeEstimatorCfg")
 	if err != nil {
 		t.Fatalf("unable to create test pool: %v", err)
 	}
 	defer teardownFunc()
+	harness := tc.harness
 	harness.txPool.cfg.FeeEstimator = &FeeEstimator{}
 	enteredObserveTransaction := false
 	guard := monkey.Patch((*FeeEstimator).ObserveTransaction, func(ef *FeeEstimator, t *TxDesc) {
@@ -822,12 +829,12 @@ func TestFeeEstimatorCfg(t *testing.T) {
 }
 
 func TestDoubleSpends(t *testing.T) {
-	harness, spendableOuts, teardownFunc, err := newPoolHarness(&dagconfig.MainNetParams, 2, "TestDoubleSpends")
+	tc, spendableOuts, teardownFunc, err := newPoolHarness(t, &dagconfig.MainNetParams, 2, "TestDoubleSpends")
 	if err != nil {
 		t.Fatalf("unable to create test pool: %v", err)
 	}
 	defer teardownFunc()
-	tc := &testContext{t, harness}
+	harness := tc.harness
 
 	//Add two transactions to the mempool
 	tx1, err := harness.createTx(spendableOuts[0], 0, 1)
@@ -872,12 +879,12 @@ func TestDoubleSpends(t *testing.T) {
 //TestFetchTransaction checks that FetchTransaction
 //returns only transaction from the main pool and not from the orphan pool
 func TestFetchTransaction(t *testing.T) {
-	harness, spendableOuts, teardownFunc, err := newPoolHarness(&dagconfig.MainNetParams, 1, "TestFetchTransaction")
+	tc, spendableOuts, teardownFunc, err := newPoolHarness(t, &dagconfig.MainNetParams, 1, "TestFetchTransaction")
 	if err != nil {
 		t.Fatalf("unable to create test pool: %v", err)
 	}
 	defer teardownFunc()
-	tc := &testContext{t, harness}
+	harness := tc.harness
 
 	orphanedTx, err := harness.CreateSignedTx([]spendableOutpoint{{
 		amount:   util.Amount(5000000000),
@@ -918,12 +925,12 @@ func TestFetchTransaction(t *testing.T) {
 // they are all orphans.  Finally, it adds the linking transaction and ensures
 // the entire orphan chain is moved to the transaction pool.
 func TestSimpleOrphanChain(t *testing.T) {
-	harness, spendableOuts, teardownFunc, err := newPoolHarness(&dagconfig.MainNetParams, 1, "TestSimpleOrphanChain")
+	tc, spendableOuts, teardownFunc, err := newPoolHarness(t, &dagconfig.MainNetParams, 1, "TestSimpleOrphanChain")
 	if err != nil {
 		t.Fatalf("unable to create test pool: %v", err)
 	}
 	defer teardownFunc()
-	tc := &testContext{t, harness}
+	harness := tc.harness
 
 	// Create a chain of transactions rooted with the first spendable output
 	// provided by the harness.
@@ -980,12 +987,12 @@ func TestSimpleOrphanChain(t *testing.T) {
 // TestOrphanReject ensures that orphans are properly rejected when the allow
 // orphans flag is not set on ProcessTransaction.
 func TestOrphanReject(t *testing.T) {
-	harness, outputs, teardownFunc, err := newPoolHarness(&dagconfig.MainNetParams, 1, "TestOrphanReject")
+	tc, outputs, teardownFunc, err := newPoolHarness(t, &dagconfig.MainNetParams, 1, "TestOrphanReject")
 	if err != nil {
 		t.Fatalf("unable to create test pool: %v", err)
 	}
 	defer teardownFunc()
-	tc := &testContext{t, harness}
+	harness := tc.harness
 
 	// Create a chain of transactions rooted with the first spendable output
 	// provided by the harness.
@@ -1035,12 +1042,12 @@ func TestOrphanReject(t *testing.T) {
 // it will check if we are beyond nextExpireScan, and if so, it will remove
 // all expired orphan transactions
 func TestOrphanExpiration(t *testing.T) {
-	harness, _, teardownFunc, err := newPoolHarness(&dagconfig.MainNetParams, 1, "TestOrphanExpiration")
+	tc, _, teardownFunc, err := newPoolHarness(t, &dagconfig.MainNetParams, 1, "TestOrphanExpiration")
 	if err != nil {
 		t.Fatalf("unable to create test pool: %v", err)
 	}
 	defer teardownFunc()
-	tc := &testContext{t, harness}
+	harness := tc.harness
 
 	expiredTx, err := harness.CreateSignedTx([]spendableOutpoint{{
 		amount:   util.Amount(5000000000),
@@ -1080,12 +1087,13 @@ func TestOrphanExpiration(t *testing.T) {
 //TestMaxOrphanTxSize ensures that a transaction that is
 //bigger than MaxOrphanTxSize will get rejected
 func TestMaxOrphanTxSize(t *testing.T) {
-	harness, _, teardownFunc, err := newPoolHarness(&dagconfig.MainNetParams, 1, "TestMaxOrphanTxSize")
+	tc, _, teardownFunc, err := newPoolHarness(t, &dagconfig.MainNetParams, 1, "TestMaxOrphanTxSize")
 	if err != nil {
 		t.Fatalf("unable to create test pool: %v", err)
 	}
 	defer teardownFunc()
-	tc := &testContext{t, harness}
+	harness := tc.harness
+
 	harness.txPool.cfg.Policy.MaxOrphanTxSize = 1
 
 	tx, err := harness.CreateSignedTx([]spendableOutpoint{{
@@ -1108,12 +1116,13 @@ func TestMaxOrphanTxSize(t *testing.T) {
 }
 
 func TestRemoveTransaction(t *testing.T) {
-	harness, outputs, teardownFunc, err := newPoolHarness(&dagconfig.MainNetParams, 1, "TestRemoveTransaction")
+	tc, outputs, teardownFunc, err := newPoolHarness(t, &dagconfig.MainNetParams, 2, "TestRemoveTransaction")
 	if err != nil {
 		t.Fatalf("unable to create test pool: %v", err)
 	}
 	defer teardownFunc()
-	tc := &testContext{t, harness}
+	harness := tc.harness
+
 	chainedTxns, err := harness.CreateTxChain(outputs[0], 5)
 	if err != nil {
 		t.Fatalf("unable to create transaction chain: %v", err)
@@ -1130,22 +1139,36 @@ func TestRemoveTransaction(t *testing.T) {
 	}
 
 	//Checks that when removeRedeemers is false, the specified transaction is the only transaction that gets removed
-	harness.txPool.RemoveTransaction(chainedTxns[3], false, true)
-	testPoolMembership(tc, chainedTxns[3], false, false, false)
-	testPoolMembership(tc, chainedTxns[4], false, true, false)
+	tc.mineTransactions(chainedTxns[:1], 1)
+	testPoolMembership(tc, chainedTxns[0], false, false, false)
+	testPoolMembership(tc, chainedTxns[1], false, true, false)
+	testPoolMembership(tc, chainedTxns[2], false, true, true)
+	testPoolMembership(tc, chainedTxns[3], false, true, true)
+	testPoolMembership(tc, chainedTxns[4], false, true, true)
 
 	//Checks that when removeRedeemers is true, all of the transaction that are dependent on it get removed
-	harness.txPool.RemoveTransaction(chainedTxns[1], true, true)
-	testPoolMembership(tc, chainedTxns[0], false, true, false)
+	err = harness.txPool.RemoveTransaction(chainedTxns[1], true, true)
+	if err != nil {
+		t.Fatalf("RemoveTransaction: %v", err)
+	}
 	testPoolMembership(tc, chainedTxns[1], false, false, false)
 	testPoolMembership(tc, chainedTxns[2], false, false, false)
+	testPoolMembership(tc, chainedTxns[3], false, false, false)
+	testPoolMembership(tc, chainedTxns[4], false, false, false)
 
 	fakeWithDiffErr := "error from WithDiff"
 	guard := monkey.Patch((*blockdag.DiffUTXOSet).WithDiff, func(_ *blockdag.DiffUTXOSet, _ *blockdag.UTXODiff) (blockdag.UTXOSet, error) {
 		return nil, errors.New(fakeWithDiffErr)
 	})
 	defer guard.Unpatch()
-	err = harness.txPool.RemoveTransaction(chainedTxns[0], false, false)
+
+	tx, err := harness.CreateSignedTx(outputs[1:], 1)
+	_, err = harness.txPool.ProcessTransaction(tx, true,
+		false, 0)
+	if err != nil {
+		t.Fatalf("ProcessTransaction: %v", err)
+	}
+	err = harness.txPool.RemoveTransaction(tx, false, false)
 	if err == nil || err.Error() != fakeWithDiffErr {
 		t.Errorf("RemoveTransaction: expected error %v but got %v", fakeWithDiffErr, err)
 	}
@@ -1154,12 +1177,12 @@ func TestRemoveTransaction(t *testing.T) {
 // TestOrphanEviction ensures that exceeding the maximum number of orphans
 // evicts entries to make room for the new ones.
 func TestOrphanEviction(t *testing.T) {
-	harness, outputs, teardownFunc, err := newPoolHarness(&dagconfig.MainNetParams, 1, "TestOrphanEviction")
+	tc, outputs, teardownFunc, err := newPoolHarness(t, &dagconfig.MainNetParams, 1, "TestOrphanEviction")
 	if err != nil {
 		t.Fatalf("unable to create test pool: %v", err)
 	}
 	defer teardownFunc()
-	tc := &testContext{t, harness}
+	harness := tc.harness
 
 	// Create a chain of transactions rooted with the first spendable output
 	// provided by the harness that is long enough to be able to force
@@ -1216,12 +1239,12 @@ func TestOrphanEviction(t *testing.T) {
 // Attempt to remove orphans by tag,
 // and ensure the state of all other orphans are unaffected.
 func TestRemoveOrphansByTag(t *testing.T) {
-	harness, _, teardownFunc, err := newPoolHarness(&dagconfig.MainNetParams, 1, "TestRemoveOrphansByTag")
+	tc, _, teardownFunc, err := newPoolHarness(t, &dagconfig.MainNetParams, 1, "TestRemoveOrphansByTag")
 	if err != nil {
 		t.Fatalf("unable to create test pool: %v", err)
 	}
 	defer teardownFunc()
-	tc := &testContext{t, harness}
+	harness := tc.harness
 
 	orphanedTx1, err := harness.CreateSignedTx([]spendableOutpoint{{
 		amount:   util.Amount(5000000000),
@@ -1273,13 +1296,14 @@ func TestRemoveOrphansByTag(t *testing.T) {
 // redeems it and when there is not.
 func TestBasicOrphanRemoval(t *testing.T) {
 	const maxOrphans = 4
-	harness, spendableOuts, teardownFunc, err := newPoolHarness(&dagconfig.MainNetParams, 1, "TestBasicOrphanRemoval")
+	tc, spendableOuts, teardownFunc, err := newPoolHarness(t, &dagconfig.MainNetParams, 1, "TestBasicOrphanRemoval")
 	if err != nil {
 		t.Fatalf("unable to create test pool: %v", err)
 	}
 	defer teardownFunc()
+	harness := tc.harness
+
 	harness.txPool.cfg.Policy.MaxOrphanTxs = maxOrphans
-	tc := &testContext{t, harness}
 
 	// Create a chain of transactions rooted with the first spendable output
 	// provided by the harness.
@@ -1347,13 +1371,13 @@ func TestBasicOrphanRemoval(t *testing.T) {
 // from other orphans) are removed as expected.
 func TestOrphanChainRemoval(t *testing.T) {
 	const maxOrphans = 10
-	harness, spendableOuts, teardownFunc, err := newPoolHarness(&dagconfig.MainNetParams, 1, "TestOrphanChainRemoval")
+	tc, spendableOuts, teardownFunc, err := newPoolHarness(t, &dagconfig.MainNetParams, 1, "TestOrphanChainRemoval")
 	if err != nil {
 		t.Fatalf("unable to create test pool: %v", err)
 	}
 	defer teardownFunc()
+	harness := tc.harness
 	harness.txPool.cfg.Policy.MaxOrphanTxs = maxOrphans
-	tc := &testContext{t, harness}
 
 	// Create a chain of transactions rooted with the first spendable output
 	// provided by the harness.
@@ -1409,13 +1433,13 @@ func TestOrphanChainRemoval(t *testing.T) {
 // output that is spend by another transaction entering the pool are removed.
 func TestMultiInputOrphanDoubleSpend(t *testing.T) {
 	const maxOrphans = 4
-	harness, outputs, teardownFunc, err := newPoolHarness(&dagconfig.MainNetParams, 1, "TestMultiInputOrphanDoubleSpend")
+	tc, outputs, teardownFunc, err := newPoolHarness(t, &dagconfig.MainNetParams, 1, "TestMultiInputOrphanDoubleSpend")
 	if err != nil {
 		t.Fatalf("unable to create test pool: %v", err)
 	}
 	defer teardownFunc()
+	harness := tc.harness
 	harness.txPool.cfg.Policy.MaxOrphanTxs = maxOrphans
-	tc := &testContext{t, harness}
 
 	// Create a chain of transactions rooted with the first spendable output
 	// provided by the harness.
@@ -1496,11 +1520,12 @@ func TestMultiInputOrphanDoubleSpend(t *testing.T) {
 // TestCheckSpend tests that CheckSpend returns the expected spends found in
 // the mempool.
 func TestCheckSpend(t *testing.T) {
-	harness, outputs, teardownFunc, err := newPoolHarness(&dagconfig.MainNetParams, 1, "TestCheckSpend")
+	tc, outputs, teardownFunc, err := newPoolHarness(t, &dagconfig.MainNetParams, 1, "TestCheckSpend")
 	if err != nil {
 		t.Fatalf("unable to create test pool: %v", err)
 	}
 	defer teardownFunc()
+	harness := tc.harness
 
 	// The mempool is empty, so none of the spendable outputs should have a
 	// spend there.
@@ -1562,11 +1587,12 @@ func TestCheckSpend(t *testing.T) {
 }
 
 func TestCount(t *testing.T) {
-	harness, outputs, teardownFunc, err := newPoolHarness(&dagconfig.MainNetParams, 1, "TestCount")
+	tc, outputs, teardownFunc, err := newPoolHarness(t, &dagconfig.MainNetParams, 1, "TestCount")
 	if err != nil {
 		t.Fatalf("unable to create test pool: %v", err)
 	}
 	defer teardownFunc()
+	harness := tc.harness
 	if harness.txPool.Count() != 0 {
 		t.Errorf("TestCount: txPool should be initialized with 0 transactions")
 	}
@@ -1672,12 +1698,12 @@ func TestExtractRejectCode(t *testing.T) {
 
 // TestHandleNewBlock
 func TestHandleNewBlock(t *testing.T) {
-	harness, spendableOuts, teardownFunc, err := newPoolHarness(&dagconfig.MainNetParams, 2, "TestHandleNewBlock")
+	tc, spendableOuts, teardownFunc, err := newPoolHarness(t, &dagconfig.MainNetParams, 2, "TestHandleNewBlock")
 	if err != nil {
 		t.Fatalf("unable to create test pool: %v", err)
 	}
 	defer teardownFunc()
-	tc := &testContext{t, harness}
+	harness := tc.harness
 
 	// Create parent transaction for orphan transaction below
 	blockTx1, err := harness.CreateSignedTx(spendableOuts[:1], 1)
@@ -1711,8 +1737,10 @@ func TestHandleNewBlock(t *testing.T) {
 	// Create block and add its transactions to UTXO set
 	block := util.NewBlock(&dummyBlock)
 	for i, tx := range block.Transactions() {
-		if !harness.txPool.mpUTXOSet.AddTx(tx.MsgTx(), 1) {
-			t.Fatalf("Failed to add transaction %v to UTXO set: %v", i, tx.ID())
+		if isAccepted, err := harness.txPool.mpUTXOSet.AddTx(tx.MsgTx(), 1); err != nil {
+			t.Fatalf("Failed to add transaction (%v,%v) to UTXO set: %v", i, tx.ID(), err)
+		} else if !isAccepted {
+			t.Fatalf("AddTx unexpectedly didn't add tx %s", tx.ID())
 		}
 	}
 
@@ -1831,12 +1859,12 @@ var dummyBlock = wire.MsgBlock{
 func TestTransactionGas(t *testing.T) {
 	params := dagconfig.SimNetParams
 	params.BlockRewardMaturity = 1
-	harness, spendableOuts, teardownFunc, err := newPoolHarness(&params, 6, "TestTransactionGas")
+	tc, spendableOuts, teardownFunc, err := newPoolHarness(t, &params, 6, "TestTransactionGas")
 	if err != nil {
 		t.Fatalf("unable to create test pool: %v", err)
 	}
 	defer teardownFunc()
-	//	tc := &testContext{t, harness}
+	harness := tc.harness
 
 	const gasLimit = 10000
 	subnetworkID, err := testtools.RegisterSubnetworkForTest(harness.txPool.cfg.DAG, &params, gasLimit)
