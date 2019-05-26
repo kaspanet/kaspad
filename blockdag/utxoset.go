@@ -174,8 +174,9 @@ func NewUTXODiff() *UTXODiff {
 //    diffFrom results in the UTXO being added to toAdd
 func (d *UTXODiff) diffFrom(other *UTXODiff) (*UTXODiff, error) {
 	result := UTXODiff{
-		toAdd:    make(utxoCollection, len(d.toRemove)+len(other.toAdd)),
-		toRemove: make(utxoCollection, len(d.toAdd)+len(other.toRemove)),
+		toAdd:        make(utxoCollection, len(d.toRemove)+len(other.toAdd)),
+		toRemove:     make(utxoCollection, len(d.toAdd)+len(other.toRemove)),
+		diffMultiset: btcec.NewMultiset(btcec.S256()),
 	}
 
 	// Note that the following cases are not accounted for, as they are impossible
@@ -257,8 +258,9 @@ func (d *UTXODiff) diffFrom(other *UTXODiff) (*UTXODiff, error) {
 //    WithDiff results in the UTXO being added to toRemove
 func (d *UTXODiff) WithDiff(diff *UTXODiff) (*UTXODiff, error) {
 	result := UTXODiff{
-		toAdd:    make(utxoCollection, len(d.toAdd)+len(diff.toAdd)),
-		toRemove: make(utxoCollection, len(d.toRemove)+len(diff.toRemove)),
+		toAdd:        make(utxoCollection, len(d.toAdd)+len(diff.toAdd)),
+		toRemove:     make(utxoCollection, len(d.toRemove)+len(diff.toRemove)),
+		diffMultiset: btcec.NewMultiset(btcec.S256()),
 	}
 
 	// All transactions in d.toAdd:
