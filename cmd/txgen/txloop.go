@@ -73,11 +73,14 @@ func utxosFunds() uint64 {
 	return funds
 }
 
-func isTxMatured(tx *wire.MsgTx, confirmations uint64) bool {
-	if !tx.IsBlockReward() {
-		return confirmations >= 1
+func isTxMatured(tx *wire.MsgTx, confirmations *uint64) bool {
+	if confirmations == nil {
+		return false
 	}
-	return confirmations >= uint64(float64(activeNetParams.BlockRewardMaturity)*1.5)
+	if !tx.IsBlockReward() {
+		return *confirmations >= 1
+	}
+	return *confirmations >= uint64(float64(activeNetParams.BlockRewardMaturity)*1.5)
 }
 
 // DumpTx logs out transaction with given header

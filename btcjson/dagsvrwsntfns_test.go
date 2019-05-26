@@ -64,7 +64,7 @@ func TestDAGSvrWsNtfns(t *testing.T) {
 		{
 			name: "txAcceptedVerbose",
 			newNtfn: func() (interface{}, error) {
-				return btcjson.NewCmd("txAcceptedVerbose", `{"hex":"001122","txid":"123","version":1,"locktime":4294967295,"subnetwork":"0000000000000000000000000000000000000000","gas":0,"payloadHash":"","payload":"","vin":null,"vout":null,"confirmations":0}`)
+				return btcjson.NewCmd("txAcceptedVerbose", `{"hex":"001122","txid":"123","version":1,"locktime":4294967295,"subnetwork":"0000000000000000000000000000000000000000","gas":0,"payloadHash":"","payload":"","vin":null,"vout":null}`)
 			},
 			staticNtfn: func() interface{} {
 				txResult := btcjson.TxRawResult{
@@ -75,11 +75,11 @@ func TestDAGSvrWsNtfns(t *testing.T) {
 					Subnetwork:    subnetworkid.SubnetworkIDNative.String(),
 					Vin:           nil,
 					Vout:          nil,
-					Confirmations: 0,
+					Confirmations: nil,
 				}
 				return btcjson.NewTxAcceptedVerboseNtfn(txResult)
 			},
-			marshalled: `{"jsonrpc":"1.0","method":"txAcceptedVerbose","params":[{"hex":"001122","txId":"123","version":1,"lockTime":4294967295,"subnetwork":"0000000000000000000000000000000000000000","gas":0,"payloadHash":"","payload":"","vin":null,"vout":null,"acceptedBy":null}],"id":null}`,
+			marshalled: `{"jsonrpc":"1.0","method":"txAcceptedVerbose","params":[{"hex":"001122","txId":"123","version":1,"lockTime":4294967295,"subnetwork":"0000000000000000000000000000000000000000","gas":0,"payloadHash":"","payload":"","vin":null,"vout":null}],"id":null}`,
 			unmarshalled: &btcjson.TxAcceptedVerboseNtfn{
 				RawTx: btcjson.TxRawResult{
 					Hex:           "001122",
@@ -89,14 +89,14 @@ func TestDAGSvrWsNtfns(t *testing.T) {
 					Subnetwork:    subnetworkid.SubnetworkIDNative.String(),
 					Vin:           nil,
 					Vout:          nil,
-					Confirmations: 0,
+					Confirmations: nil,
 				},
 			},
 		},
 		{
 			name: "txAcceptedVerbose with subnetwork, gas and paylaod",
 			newNtfn: func() (interface{}, error) {
-				return btcjson.NewCmd("txAcceptedVerbose", `{"hex":"001122","txId":"123","version":1,"lockTime":4294967295,"subnetwork":"000000000000000000000000000000000000432d","gas":10,"payloadHash":"bf8ccdb364499a3e628200c3d3512c2c2a43b7a7d4f1a40d7f716715e449f442","payload":"102030","vin":null,"vout":null,"acceptedBy":null}`)
+				return btcjson.NewCmd("txAcceptedVerbose", `{"hex":"001122","txId":"123","version":1,"lockTime":4294967295,"subnetwork":"000000000000000000000000000000000000432d","gas":10,"payloadHash":"bf8ccdb364499a3e628200c3d3512c2c2a43b7a7d4f1a40d7f716715e449f442","payload":"102030","vin":null,"vout":null}`)
 			},
 			staticNtfn: func() interface{} {
 				txResult := btcjson.TxRawResult{
@@ -110,11 +110,11 @@ func TestDAGSvrWsNtfns(t *testing.T) {
 					Gas:           10,
 					Vin:           nil,
 					Vout:          nil,
-					Confirmations: 0,
+					Confirmations: nil,
 				}
 				return btcjson.NewTxAcceptedVerboseNtfn(txResult)
 			},
-			marshalled: `{"jsonrpc":"1.0","method":"txAcceptedVerbose","params":[{"hex":"001122","txId":"123","version":1,"lockTime":4294967295,"subnetwork":"000000000000000000000000000000000000432d","gas":10,"payloadHash":"bf8ccdb364499a3e628200c3d3512c2c2a43b7a7d4f1a40d7f716715e449f442","payload":"102030","vin":null,"vout":null,"acceptedBy":null}],"id":null}`,
+			marshalled: `{"jsonrpc":"1.0","method":"txAcceptedVerbose","params":[{"hex":"001122","txId":"123","version":1,"lockTime":4294967295,"subnetwork":"000000000000000000000000000000000000432d","gas":10,"payloadHash":"bf8ccdb364499a3e628200c3d3512c2c2a43b7a7d4f1a40d7f716715e449f442","payload":"102030","vin":null,"vout":null}],"id":null}`,
 			unmarshalled: &btcjson.TxAcceptedVerboseNtfn{
 				RawTx: btcjson.TxRawResult{
 					Hex:           "001122",
@@ -127,7 +127,7 @@ func TestDAGSvrWsNtfns(t *testing.T) {
 					Gas:           10,
 					Vin:           nil,
 					Vout:          nil,
-					Confirmations: 0,
+					Confirmations: nil,
 				},
 			},
 		},
