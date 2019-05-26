@@ -965,21 +965,20 @@ func (node *blockNode) applyBlueBlocks(selectedParentUTXO UTXOSet, blueBlocks []
 			numTransactions++
 		}
 
-		blockTxsAcceptanceData := make(BlockTxsAcceptanceData, numTransactions)
-		for i, tx := range blueBlock.Transactions() {
+		blockTxsAcceptanceData := make(BlockTxsAcceptanceData, 0, numTransactions)
+		for _, tx := range blueBlock.Transactions() {
 			var isAccepted bool
 			if isSelectedParent {
 				isAccepted = true
 			} else {
 				isAccepted = pastUTXO.AddTx(tx.MsgTx(), node.height)
 			}
-			blockTxsAcceptanceData[i] = TxAcceptanceData{Tx: tx, IsAccepted: isAccepted}
+			blockTxsAcceptanceData = append(blockTxsAcceptanceData, TxAcceptanceData{Tx: tx, IsAccepted: isAccepted})
 		}
 
-		if isSelectedParent {
-			blockTxsAcceptanceData = append(blockTxsAcceptanceData,
-				TxAcceptanceData{Tx: node.selectedParent.feeTransaction, IsAccepted: true})
-		}
+		// Add fee tx acceptance data for fee transaction
+		blockTxsAcceptanceData = append(blockTxsAcceptanceData,
+			TxAcceptanceData{Tx: node.selectedParent.feeTransaction, IsAccepted: isSelectedParent})
 
 		txsAcceptanceData[*blueBlock.Hash()] = blockTxsAcceptanceData
 	}

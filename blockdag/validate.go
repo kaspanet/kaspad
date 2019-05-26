@@ -1036,6 +1036,10 @@ func (dag *BlockDAG) checkConnectToPastUTXO(block *blockNode, pastUTXO UTXOSet,
 			return nil, fmt.Errorf("Error adding tx %s fee to compactFeeFactory: %s", tx.ID(), err)
 		}
 	}
+
+	// Add a 0 fee for implicit fee transaction
+	compactFeeFactory.add(0)
+
 	feeData, err := compactFeeFactory.data()
 	if err != nil {
 		return nil, fmt.Errorf("Error getting bytes of fee data: %s", err)
