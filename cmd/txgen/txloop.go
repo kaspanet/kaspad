@@ -80,7 +80,7 @@ func isTxMatured(tx *wire.MsgTx, confirmations *uint64) bool {
 	if !tx.IsBlockReward() {
 		return *confirmations >= 1
 	}
-	return *confirmations >= uint64(float64(activeNetParams.BlockRewardMaturity)*1.5)
+	return *confirmations >= activeNetParams.BlockRewardMaturity
 }
 
 // DumpTx logs out transaction with given header
