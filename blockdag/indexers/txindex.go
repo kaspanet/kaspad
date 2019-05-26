@@ -165,10 +165,6 @@ func putIncludingBlocksEntry(target []byte, txLoc wire.TxLoc) {
 	byteOrder.PutUint32(target[4:], uint32(txLoc.TxLen))
 }
 
-func putAcceptingBlocksEntry(target []byte, includingBlockID uint64) {
-	byteOrder.PutUint64(target, includingBlockID)
-}
-
 func dbPutIncludingBlocksEntry(dbTx database.Tx, txID *daghash.TxID, blockID uint64, serializedData []byte) error {
 	bucket, err := dbTx.Metadata().Bucket(includingBlocksIndexKey).CreateBucketIfNotExists(txID[:])
 	if err != nil {
@@ -545,6 +541,9 @@ func dbFetchTxAcceptingBlock(dbTx database.Tx, txID *daghash.TxID, dag *blockdag
 	}
 	for ; cursor.Key() != nil; cursor.Next() {
 		blockID := byteOrder.Uint64(cursor.Key())
+		if blockID == virtualBlockID {
+			return &daghash.ZeroHash, nil
+		}
 		blockHash, err := dbFetchBlockHashByID(dbTx, blockID)
 		if err != nil {
 			return nil, err

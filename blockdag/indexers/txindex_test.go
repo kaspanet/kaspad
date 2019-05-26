@@ -84,6 +84,16 @@ func TestTxIndexConnectBlock(t *testing.T) {
 			"been accepted in block %v but instead got accepted in block %v", block3Hash, block2TxNewAcceptedBlock)
 	}
 
+	block3TxID := block3Tx.TxID()
+	block3TxNewAcceptedBlock, err := txIndex.BlockThatAcceptedTx(dag, block3TxID)
+	if err != nil {
+		t.Errorf("TestTxIndexConnectBlock: TxAcceptedInBlock: %v", err)
+	}
+	if !block3TxNewAcceptedBlock.IsEqual(&daghash.ZeroHash) {
+		t.Errorf("TestTxIndexConnectBlock: block3Tx should've "+
+			"been accepted by the virtual block but instead got accepted in block %v", block3TxNewAcceptedBlock)
+	}
+
 	block3A := prepareAndProcessBlock([]*daghash.Hash{block2.BlockHash()}, []*wire.MsgTx{block3Tx}, "3A")
 	block4 := prepareAndProcessBlock([]*daghash.Hash{block3.BlockHash()}, nil, "4")
 	prepareAndProcessBlock([]*daghash.Hash{block3A.BlockHash(), block4.BlockHash()}, nil, "5")
@@ -98,7 +108,6 @@ func TestTxIndexConnectBlock(t *testing.T) {
 			"been accepted in block %v but instead got accepted in block %v", block3AHash, block2TxAcceptedBlock)
 	}
 
-	block3TxID := block3Tx.TxID()
 	region, err := txIndex.TxFirstBlockRegion(block3TxID)
 	if err != nil {
 		t.Fatalf("TestTxIndexConnectBlock: no block region was found for block3Tx")
