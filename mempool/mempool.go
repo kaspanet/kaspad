@@ -1399,7 +1399,6 @@ func (mp *TxPool) LastUpdated() time.Time {
 // from the mempool transactions that double spend a
 // transaction that is already in the DAG
 func (mp *TxPool) HandleNewBlock(block *util.Block, txChan chan NewBlockMsg) error {
-
 	oldUTXOSet := mp.mpUTXOSet
 
 	// Remove all of the transactions (except the coinbase) in the
@@ -1409,12 +1408,12 @@ func (mp *TxPool) HandleNewBlock(block *util.Block, txChan chan NewBlockMsg) err
 	// no longer an orphan. Transactions which depend on a confirmed
 	// transaction are NOT removed recursively because they are still
 	// valid.
+	err := mp.RemoveTransactions(block.Transactions()[util.FeeTransactionIndex:])
+	if err != nil {
+		mp.mpUTXOSet = oldUTXOSet
+		return err
+	}
 	for _, tx := range block.Transactions()[util.FeeTransactionIndex:] {
-		err := mp.RemoveTransaction(tx, false, false)
-		if err != nil {
-			mp.mpUTXOSet = oldUTXOSet
-			return err
-		}
 		mp.RemoveDoubleSpends(tx)
 		mp.RemoveOrphan(tx)
 		acceptedTxs := mp.ProcessOrphans(tx)
