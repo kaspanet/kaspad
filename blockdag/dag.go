@@ -1196,6 +1196,84 @@ func (dag *BlockDAG) GetUTXOEntry(outPoint wire.OutPoint) (*UTXOEntry, bool) {
 	return dag.virtual.utxoSet.get(outPoint)
 }
 
+// confirmations returns the current confirmations number of the given node
+// The confirmations number is defined as follows:
+// * If the node is red -> 0
+// * Otherwise          -> virtual.blueScore - acceptingBlock.blueScore + 1
+func (dag *BlockDAG) confirmations(node *blockNode) (uint64, error) {
+	acceptingBlock, err := dag.acceptingBlock(node)
+	if err != nil {
+		return 0, err
+	}
+
+	// if acceptingBlock is nil, the node is red
+	if acceptingBlock == nil {
+		return 0, nil
+	}
+
+	return dag.virtual.blueScore - acceptingBlock.blueScore + 1, nil
+}
+
+// acceptingBlock finds the node in the selected-parent chain that had accepted
+// the given node
+func (dag *BlockDAG) acceptingBlock(node *blockNode) (*blockNode, error) {
+	// Explicitly handle the DAG tips
+	if dag.virtual.tips().contains(node) {
+		// Return the virtual block if the node is one of the DAG blues
+		for _, tip := range dag.virtual.blues {
+			if tip == node {
+				return &dag.virtual.blockNode, nil
+			}
+		}
+
+		// Otherwise, this tip is red and doesn't have an accepting block
+		return nil, nil
+	}
+
+	// Return an error if the node is the virtual block
+	if len(node.children) == 0 {
+		if node == &dag.virtual.blockNode {
+			return nil, errors.New("cannot get acceptingBlock for virtual")
+		}
+		// A childless block that isn't a tip or the virtual can never happen. Panicking
+		panic(fmt.Errorf("got childless block %s that is neither a tip nor the virtual", node.hash))
+	}
+
+	// If the node is a chain-block itself, the accepting block is its chain-child
+	if dag.IsInSelectedPathChain(node.hash) {
+		for _, child := range node.children {
+			if dag.IsInSelectedPathChain(child.hash) {
+				return child, nil
+			}
+		}
+		return nil, fmt.Errorf("chain block %s does not have a chain child", node.hash)
+	}
+
+	// Find the only chain block that may contain the node in its blues
+	candidateAcceptingBlock := dag.oldestChainBlockWithBlueScoreGreaterThan(node.blueScore)
+
+	// candidateAcceptingBlock is the accepting block only if it actually contains
+	// the node in its blues
+	for _, blue := range candidateAcceptingBlock.blues {
+		if blue == node {
+			return candidateAcceptingBlock, nil
+		}
+	}
+
+	// Otherwise, the node is red and doesn't have an accepting block
+	return nil, nil
+}
+
+// oldestChainBlockWithBlueScoreGreaterThan finds the oldest chain block with a blue score
+// greater than blueScore
+func (dag *BlockDAG) oldestChainBlockWithBlueScoreGreaterThan(blueScore uint64) *blockNode {
+	chainBlockIndex := sort.Search(len(dag.virtual.selectedPathChainSlice), func(i int) bool {
+		selectedPathNode := dag.virtual.selectedPathChainSlice[i]
+		return selectedPathNode.blueScore > blueScore
+	})
+	return dag.virtual.selectedPathChainSlice[chainBlockIndex]
+}
+
 // IsInSelectedPathChain returns whether or not a block hash is found in the selected path
 func (dag *BlockDAG) IsInSelectedPathChain(blockHash *daghash.Hash) bool {
 	return dag.virtual.selectedPathChainSet.containsHash(blockHash)

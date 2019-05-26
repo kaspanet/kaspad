@@ -6,6 +6,7 @@ package blockdag
 
 import (
 	"fmt"
+	"github.com/daglabs/btcd/util"
 )
 
 // NotificationType represents the type of a notification message.
@@ -65,4 +66,11 @@ func (dag *BlockDAG) sendNotification(typ NotificationType, data interface{}) {
 		callback(&n)
 	}
 	dag.notificationsLock.RUnlock()
+}
+
+// BlockAddedNotificationData defines data to be sent along with a BlockAdded
+// notification
+type BlockAddedNotificationData struct {
+	Block         *util.Block
+	WasUnorphaned bool
 }

@@ -872,15 +872,239 @@ func TestNew(t *testing.T) {
 	}
 }
 
-// payToPubKeyHashScript creates a new script to pay a transaction
-// output to a 20-byte pubkey hash. It is expected that the input is a valid
-// hash.
-func payToPubKeyHashScript(pubKeyHash []byte) ([]byte, error) {
-	return txscript.NewScriptBuilder().
-		AddOp(txscript.OpDup).
-		AddOp(txscript.OpHash160).
-		AddData(pubKeyHash).
-		AddOp(txscript.OpEqualVerify).
-		AddOp(txscript.OpCheckSig).
-		Script()
+func TestConfirmations(t *testing.T) {
+	// Create a new database and DAG instance to run tests against.
+	dag, teardownFunc, err := DAGSetup("TestBlockCount", Config{
+		DAGParams: &dagconfig.SimNetParams,
+	})
+	if err != nil {
+		t.Fatalf("Failed to setup DAG instance: %v", err)
+	}
+	defer teardownFunc()
+	dag.TestSetBlockRewardMaturity(1)
+
+	// Check that the genesis block of a DAG with only the genesis block in it has confirmations = 1.
+	genesisConfirmations, err := dag.confirmations(dag.genesis)
+	if err != nil {
+		t.Fatalf("TestConfirmations: confirmations for genesis block unexpectedly failed: %s", err)
+	}
+	if genesisConfirmations != 1 {
+		t.Fatalf("TestConfirmations: unexpected confirmations for genesis block. Want: 1, got: %d", genesisConfirmations)
+	}
+
+	processBlocks := func(blocks []*util.Block) {
+		for _, block := range blocks {
+			isOrphan, err := dag.ProcessBlock(block, BFNone)
+			if err != nil {
+				t.Fatalf("ProcessBlock fail on block %s: %v\n", block.Hash(), err)
+			}
+			if isOrphan {
+				t.Fatalf("ProcessBlock incorrectly returned block %s is an orphan\n", block.Hash())
+			}
+		}
+	}
+
+	// Add a chain of blocks
+	loadedBlocks, err := loadBlocks("blk_0_to_4.dat")
+	if err != nil {
+		t.Fatalf("Error loading file: %v\n", err)
+	}
+	chainBlocks := loadedBlocks[1:]
+	processBlocks(chainBlocks)
+
+	// Make sure that each one of the chain blocks has the expected confirmations number
+	for i, block := range chainBlocks {
+		node := dag.index.LookupNode(block.Hash())
+		confirmations, err := dag.confirmations(node)
+		if err != nil {
+			t.Fatalf("TestConfirmations: confirmations for node 1 unexpectedly failed: %s", err)
+		}
+
+		expectedConfirmations := uint64(len(chainBlocks) - i)
+		if confirmations != expectedConfirmations {
+			t.Fatalf("TestConfirmations: unexpected confirmations for node 1. "+
+				"Want: %d, got: %d", expectedConfirmations, confirmations)
+		}
+	}
+
+	// Add a branching block
+	loadedBlocks, err = loadBlocks("blk_3B.dat")
+	if err != nil {
+		t.Fatalf("Error loading file: %v\n", err)
+	}
+	processBlocks(loadedBlocks)
+
+	// Check that the genesis has a confirmations number == blockCount
+	genesisConfirmations, err = dag.confirmations(dag.genesis)
+	if err != nil {
+		t.Fatalf("TestConfirmations: confirmations for genesis block unexpectedly failed: %s", err)
+	}
+	expectedGenesisConfirmations := dag.blockCount
+	if genesisConfirmations != expectedGenesisConfirmations {
+		t.Fatalf("TestConfirmations: unexpected confirmations for genesis block. "+
+			"Want: %d, got: %d", expectedGenesisConfirmations, genesisConfirmations)
+	}
+
+	// Check that each of the tips had a confirmation number of 1.
+	tips := dag.virtual.tips()
+	for _, tip := range tips {
+		tipConfirmations, err := dag.confirmations(tip)
+		if err != nil {
+			t.Fatalf("TestConfirmations: confirmations for tip unexpectedly failed: %s", err)
+		}
+		if tipConfirmations != 1 {
+			t.Fatalf("TestConfirmations: unexpected confirmations for tip. "+
+				"Want: 1, got: %d", tipConfirmations)
+		}
+	}
+
+	// Generate K blocks to force the "main" chain to become red
+	nodeGenerator := buildNodeGenerator(dag.dagParams.K, false)
+	branchingChainTip := dag.index.LookupNode(loadedBlocks[0].Hash())
+	for i := uint32(0); i < dag.dagParams.K; i++ {
+		nextBranchingChainTip := nodeGenerator(setFromSlice(branchingChainTip))
+		dag.virtual.AddTip(nextBranchingChainTip)
+		branchingChainTip = nextBranchingChainTip
+	}
+
+	// Make sure that a red block has confirmation number = 0
+	redChainBlock := dag.index.LookupNode(chainBlocks[3].Hash())
+	redChainBlockConfirmations, err := dag.confirmations(redChainBlock)
+	if err != nil {
+		t.Fatalf("TestConfirmations: confirmations for red chain block unexpectedly failed: %s", err)
+	}
+	if redChainBlockConfirmations != 0 {
+		t.Fatalf("TestConfirmations: unexpected confirmations for red chain block. "+
+			"Want: 0, got: %d", redChainBlockConfirmations)
+	}
+
+	// Make sure that the red tip has confirmation number = 0
+	redChainTip := dag.index.LookupNode(chainBlocks[len(chainBlocks)-1].Hash())
+	redChainTipConfirmations, err := dag.confirmations(redChainTip)
+	if err != nil {
+		t.Fatalf("TestConfirmations: confirmations for red chain tip unexpectedly failed: %s", err)
+	}
+	if redChainTipConfirmations != 0 {
+		t.Fatalf("TestConfirmations: unexpected confirmations for red tip block. "+
+			"Want: 0, got: %d", redChainTipConfirmations)
+	}
+}
+
+func TestAcceptingBlock(t *testing.T) {
+	// Create a new database and DAG instance to run tests against.
+	dag, teardownFunc, err := DAGSetup("TestAcceptingBlock", Config{
+		DAGParams: &dagconfig.SimNetParams,
+	})
+	if err != nil {
+		t.Fatalf("Failed to setup DAG instance: %v", err)
+	}
+	defer teardownFunc()
+	dag.TestSetBlockRewardMaturity(1)
+
+	// Check that the genesis block of a DAG with only the genesis block in it is accepted by the virtual.
+	genesisAcceptingBlock, err := dag.acceptingBlock(dag.genesis)
+	if err != nil {
+		t.Fatalf("TestAcceptingBlock: acceptingBlock for genesis block unexpectedly failed: %s", err)
+	}
+	if genesisAcceptingBlock != &dag.virtual.blockNode {
+		t.Fatalf("TestAcceptingBlock: unexpected acceptingBlock for genesis block. "+
+			"Want: virtual, got: %s", genesisAcceptingBlock.hash)
+	}
+
+	processBlocks := func(blocks []*util.Block) {
+		for _, block := range blocks {
+			isOrphan, err := dag.ProcessBlock(block, BFNone)
+			if err != nil {
+				t.Fatalf("ProcessBlock fail on block %s: %v\n", block.Hash(), err)
+			}
+			if isOrphan {
+				t.Fatalf("ProcessBlock incorrectly returned block %s is an orphan\n", block.Hash())
+			}
+		}
+	}
+
+	// Add a chain of blocks
+	chainBlocks, err := loadBlocks("blk_0_to_4.dat")
+	if err != nil {
+		t.Fatalf("Error loading file: %v\n", err)
+	}
+	processBlocks(chainBlocks[1:])
+
+	// Make sure that each chain block (including the genesis) is accepted by its child
+	for i, chainBlock := range chainBlocks[:1] {
+		expectedAcceptingBlock := chainBlocks[i+1]
+		expectedAcceptingBlockNode := dag.index.LookupNode(expectedAcceptingBlock.Hash())
+
+		chainBlockNode := dag.index.LookupNode(chainBlock.Hash())
+		chainAcceptingBlockNode, err := dag.acceptingBlock(chainBlockNode)
+		if err != nil {
+			t.Fatalf("TestAcceptingBlock: acceptingBlock for chain block unexpectedly failed: %s", err)
+		}
+		if expectedAcceptingBlockNode != chainAcceptingBlockNode {
+			t.Fatalf("TestAcceptingBlock: unexpected acceptingBlock for chain block. "+
+				"Want: %s, got: %s", expectedAcceptingBlockNode.hash, chainAcceptingBlockNode.hash)
+		}
+	}
+
+	// Add a branching block
+	branchingBlock, err := loadBlocks("blk_3B.dat")
+	if err != nil {
+		t.Fatalf("Error loading file: %v\n", err)
+	}
+	processBlocks(branchingBlock)
+
+	// Make sure that the accepting block of the parent of the branching block didn't change
+	expectedAcceptingBlock := dag.index.LookupNode(chainBlocks[3].Hash())
+	intersectionBlock := dag.index.LookupNode(chainBlocks[2].Hash())
+	intersectionAcceptingBlock, err := dag.acceptingBlock(intersectionBlock)
+	if err != nil {
+		t.Fatalf("TestAcceptingBlock: acceptingBlock for intersection block unexpectedly failed: %s", err)
+	}
+	if expectedAcceptingBlock != intersectionAcceptingBlock {
+		t.Fatalf("TestAcceptingBlock: unexpected acceptingBlock for intersection block. "+
+			"Want: %s, got: %s", expectedAcceptingBlock.hash, intersectionAcceptingBlock.hash)
+	}
+
+	// Make sure that the accepting block of all the tips in the virtual block
+	for _, tip := range dag.virtual.tips() {
+		tipAcceptingBlock, err := dag.acceptingBlock(tip)
+		if err != nil {
+			t.Fatalf("TestAcceptingBlock: acceptingBlock for tip unexpectedly failed: %s", err)
+		}
+		if tipAcceptingBlock != &dag.virtual.blockNode {
+			t.Fatalf("TestAcceptingBlock: unexpected acceptingBlock for tip. "+
+				"Want: Virtual, got: %s", tipAcceptingBlock.hash)
+		}
+	}
+
+	// Generate K blocks to force the "main" chain to become red
+	nodeGenerator := buildNodeGenerator(dag.dagParams.K, false)
+	branchingChainTip := dag.index.LookupNode(branchingBlock[0].Hash())
+	for i := uint32(0); i < dag.dagParams.K; i++ {
+		nextBranchingChainTip := nodeGenerator(setFromSlice(branchingChainTip))
+		dag.virtual.AddTip(nextBranchingChainTip)
+		branchingChainTip = nextBranchingChainTip
+	}
+
+	// Make sure that a red block returns nil
+	redChainBlock := dag.index.LookupNode(chainBlocks[3].Hash())
+	redChainBlockAcceptionBlock, err := dag.acceptingBlock(redChainBlock)
+	if err != nil {
+		t.Fatalf("TestAcceptingBlock: acceptingBlock for red chain block unexpectedly failed: %s", err)
+	}
+	if redChainBlockAcceptionBlock != nil {
+		t.Fatalf("TestAcceptingBlock: unexpected acceptingBlock for red chain block. "+
+			"Want: nil, got: %s", redChainBlockAcceptionBlock.hash)
+	}
+
+	// Make sure that a red tip returns nil
+	redChainTip := dag.index.LookupNode(chainBlocks[len(chainBlocks)-1].Hash())
+	redChainTipAcceptingBlock, err := dag.acceptingBlock(redChainTip)
+	if err != nil {
+		t.Fatalf("TestAcceptingBlock: acceptingBlock for red chain tip unexpectedly failed: %s", err)
+	}
+	if redChainTipAcceptingBlock != nil {
+		t.Fatalf("TestAcceptingBlock: unexpected acceptingBlock for red tip block. "+
+			"Want: nil, got: %s", redChainTipAcceptingBlock.hash)
+	}
 }
