@@ -6,6 +6,7 @@ package indexers
 
 import (
 	"fmt"
+	"math"
 
 	"github.com/daglabs/btcd/blockdag"
 	"github.com/daglabs/btcd/database"
@@ -20,7 +21,9 @@ const (
 
 	includingBlocksIndexKeyEntrySize = 8 // 4 bytes for offset + 4 bytes for transaction length
 
-	acceptingBlocksIndexKeyEntrySize = 8 // 8 bytes for accepting block ID
+	blockIDSize = 8 // 8 bytes for block ID
+
+	virtualBlockID = math.MaxUint64
 )
 
 var (
@@ -107,8 +110,8 @@ var (
 // the index entries for the hash to id and id to hash mappings for the provided
 // values.
 func dbPutBlockIDIndexEntry(dbTx database.Tx, hash *daghash.Hash, id uint64) error {
-	// Serialize the height for use in the index entries.
-	var serializedID [8]byte
+	// Serialize the block ID for use in the index entries.
+	var serializedID [blockIDSize]byte
 	byteOrder.PutUint64(serializedID[:], id)
 
 	// Add the block hash to ID mapping to the index.
@@ -152,7 +155,7 @@ func dbFetchBlockHashBySerializedID(dbTx database.Tx, serializedID []byte) (*dag
 // dbFetchBlockHashByID uses an existing database transaction to retrieve the
 // hash for the provided block id from the index.
 func dbFetchBlockHashByID(dbTx database.Tx, id uint64) (*daghash.Hash, error) {
-	var serializedID [8]byte
+	var serializedID [blockIDSize]byte
 	byteOrder.PutUint64(serializedID[:], id)
 	return dbFetchBlockHashBySerializedID(dbTx, serializedID[:])
 }
@@ -171,7 +174,7 @@ func dbPutIncludingBlocksEntry(dbTx database.Tx, txID *daghash.TxID, blockID uin
 	if err != nil {
 		return err
 	}
-	blockIDBytes := make([]byte, 8)
+	blockIDBytes := make([]byte, blockIDSize)
 	byteOrder.PutUint64(blockIDBytes, blockID)
 	return bucket.Put(blockIDBytes, serializedData)
 }
@@ -181,7 +184,7 @@ func dbPutAcceptingBlocksEntry(dbTx database.Tx, txID *daghash.TxID, blockID uin
 	if err != nil {
 		return err
 	}
-	blockIDBytes := make([]byte, 8)
+	blockIDBytes := make([]byte, blockIDSize)
 	byteOrder.PutUint64(blockIDBytes, blockID)
 	return bucket.Put(blockIDBytes, serializedData)
 }
@@ -284,11 +287,28 @@ func dbAddTxIndexEntries(dbTx database.Tx, block *util.Block, blockID uint64, tx
 			}
 		}
 
-		includingBlockIDBytes := make([]byte, 8)
+		includingBlockIDBytes := make([]byte, blockIDSize)
 		byteOrder.PutUint64(includingBlockIDBytes, includingBlockID)
 
 		for _, txAcceptanceData := range blockTxsAcceptanceData {
 			err = dbPutAcceptingBlocksEntry(dbTx, txAcceptanceData.Tx.ID(), blockID, includingBlockIDBytes)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+func dbPutTxsAcceptedByVirtual(dbTx database.Tx, blockID uint64,
+	virtualTxsAcceptanceData blockdag.MultiBlockTxsAcceptanceData) error {
+
+	includingBlockIDBytes := make([]byte, blockIDSize)
+	byteOrder.PutUint64(includingBlockIDBytes, blockID)
+	for _, blockTxsAcceptanceData := range virtualTxsAcceptanceData {
+		for _, txAcceptanceData := range blockTxsAcceptanceData {
+			err := dbPutAcceptingBlocksEntry(dbTx, txAcceptanceData.Tx.ID(), virtualBlockID, includingBlockIDBytes)
 			if err != nil {
 				return err
 			}
@@ -413,7 +433,8 @@ func (idx *TxIndex) Create(dbTx database.Tx) error {
 // for every transaction in the passed block.
 //
 // This is part of the Indexer interface.
-func (idx *TxIndex) ConnectBlock(dbTx database.Tx, block *util.Block, _ *blockdag.BlockDAG, acceptedTxsData blockdag.MultiBlockTxsAcceptanceData) error {
+func (idx *TxIndex) ConnectBlock(dbTx database.Tx, block *util.Block, dag *blockdag.BlockDAG,
+	acceptedTxsData blockdag.MultiBlockTxsAcceptanceData, virtualTxsAcceptanceData blockdag.MultiBlockTxsAcceptanceData) error {
 	// Increment the internal block ID to use for the block being connected
 	// and add all of the transactions in the block to the index.
 	newBlockID := idx.curBlockID + 1
@@ -424,9 +445,14 @@ func (idx *TxIndex) ConnectBlock(dbTx database.Tx, block *util.Block, _ *blockda
 		return err
 	}
 
+	err := dbPutTxsAcceptedByVirtual(dbTx, newBlockID, virtualTxsAcceptanceData)
+	if err != nil {
+		return err
+	}
+
 	// Add the new block ID index entry for the block being connected and
 	// update the current internal block ID accordingly.
-	err := dbPutBlockIDIndexEntry(dbTx, block.Hash(), newBlockID)
+	err = dbPutBlockIDIndexEntry(dbTx, block.Hash(), newBlockID)
 	if err != nil {
 		return err
 	}
