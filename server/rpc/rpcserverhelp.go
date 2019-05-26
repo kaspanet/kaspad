@@ -213,7 +213,7 @@ var helpDescsEnUS = map[string]string{
 	"txRawResult-vin":           "The transaction inputs as JSON objects",
 	"txRawResult-vout":          "The transaction outputs as JSON objects",
 	"txRawResult-blockHash":     "Hash of the block the transaction is part of",
-	"txRawResult-confirmations": "Number of confirmations of the block",
+	"txRawResult-confirmations": "Number of confirmations of the block (Will be 'null' if txindex is not disabled)",
 	"txRawResult-time":          "Transaction time in seconds since 1 Jan 1970 GMT",
 	"txRawResult-blockTime":     "Block time in seconds since the 1 Jan 1970 GMT",
 	"txRawResult-size":          "The size of the transaction in bytes",
@@ -229,7 +229,7 @@ var helpDescsEnUS = map[string]string{
 	"searchRawTransactionsResult-vin":           "The transaction inputs as JSON objects",
 	"searchRawTransactionsResult-vout":          "The transaction outputs as JSON objects",
 	"searchRawTransactionsResult-blockHash":     "Hash of the block the transaction is part of",
-	"searchRawTransactionsResult-confirmations": "Number of confirmations of the block",
+	"searchRawTransactionsResult-confirmations": "Number of confirmations of the block (Will be 'null' if txindex is not disabled)",
 	"searchRawTransactionsResult-time":          "Transaction time in seconds since 1 Jan 1970 GMT",
 	"searchRawTransactionsResult-blockTime":     "Block time in seconds since the 1 Jan 1970 GMT",
 	"searchRawTransactionsResult-size":          "The size of the transaction in bytes",
@@ -507,7 +507,7 @@ var helpDescsEnUS = map[string]string{
 
 	// GetTxOutResult help.
 	"getTxOutResult-bestBlock":     "The block hash that contains the transaction output",
-	"getTxOutResult-confirmations": "The number of confirmations",
+	"getTxOutResult-confirmations": "The number of confirmations (Will be 'null' if txindex is not disabled)",
 	"getTxOutResult-value":         "The transaction amount in BTC",
 	"getTxOutResult-scriptPubKey":  "The public key script used to pay coins as a JSON object",
 	"getTxOutResult-version":       "The transaction version",

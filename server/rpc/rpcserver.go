@@ -746,7 +746,7 @@ func createVoutList(mtx *wire.MsgTx, chainParams *dagconfig.Params, filterAddrMa
 // to a raw transaction JSON object.
 func createTxRawResult(dagParams *dagconfig.Params, mtx *wire.MsgTx,
 	txID string, blkHeader *wire.BlockHeader, blkHash string,
-	blkHeight uint64, chainHeight uint64, acceptedBy *daghash.Hash) (*btcjson.TxRawResult, error) {
+	acceptingBlock *daghash.Hash, confirmations *uint64) (*btcjson.TxRawResult, error) {
 
 	mtxHex, err := messageToHex(mtx)
 	if err != nil {
@@ -778,11 +778,11 @@ func createTxRawResult(dagParams *dagconfig.Params, mtx *wire.MsgTx,
 		txReply.Time = uint64(blkHeader.Timestamp.Unix())
 		txReply.BlockTime = uint64(blkHeader.Timestamp.Unix())
 		txReply.BlockHash = blkHash
-		txReply.Confirmations = uint64(1 + chainHeight - blkHeight)
 	}
 
-	if acceptedBy != nil {
-		txReply.AcceptedBy = btcjson.String(acceptedBy.String())
+	txReply.Confirmations = confirmations
+	if acceptingBlock != nil {
+		txReply.AcceptedBy = btcjson.String(acceptingBlock.String())
 	}
 
 	return txReply, nil
@@ -1191,6 +1191,12 @@ func handleGetBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 		nextHashStrings = daghash.Strings(childHashes)
 	}
 
+	blockConfirmations, err := s.cfg.DAG.BlockConfirmationsByHash(hash)
+	if err != nil {
+		context := "Could not get block confirmations"
+		return nil, internalRPCError(err.Error(), context)
+	}
+
 	params := s.cfg.DAGParams
 	blockHeader := &blk.MsgBlock().Header
 	blockReply := btcjson.GetBlockVerboseResult{
@@ -1202,7 +1208,7 @@ func handleGetBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 		ParentHashes:         daghash.Strings(blockHeader.ParentHashes),
 		Nonce:                blockHeader.Nonce,
 		Time:                 blockHeader.Timestamp.Unix(),
-		Confirmations:        uint64(1 + s.cfg.DAG.Height() - blockHeight), //TODO: (Ori) This is probably wrong. Done only for compilation
+		Confirmations:        blockConfirmations,
 		Height:               blockHeight,
 		Size:                 int32(len(blkBytes)),
 		Bits:                 strconv.FormatInt(int64(blockHeader.Bits), 16),
@@ -1222,16 +1228,21 @@ func handleGetBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 		txns := blk.Transactions()
 		rawTxns := make([]btcjson.TxRawResult, len(txns))
 		for i, tx := range txns {
-			var acceptedBy *daghash.Hash
+			var acceptingBlock *daghash.Hash
+			var confirmations *uint64
 			if s.cfg.TxIndex != nil {
-				acceptedBy, err = s.cfg.TxIndex.BlockThatAcceptedTx(s.cfg.DAG, tx.ID())
+				acceptingBlock, err = s.cfg.TxIndex.BlockThatAcceptedTx(s.cfg.DAG, tx.ID())
 				if err != nil {
 					return nil, err
 				}
+				txConfirmations, err := txConfirmations(s, tx.ID())
+				if err != nil {
+					return nil, err
+				}
+				confirmations = &txConfirmations
 			}
-			rawTxn, err := createTxRawResult(params, tx.MsgTx(),
-				tx.ID().String(), blockHeader, hash.String(),
-				blockHeight, s.cfg.DAG.Height(), acceptedBy) //TODO: (Ori) This is probably wrong. Done only for compilation
+			rawTxn, err := createTxRawResult(params, tx.MsgTx(), tx.ID().String(),
+				blockHeader, hash.String(), acceptingBlock, confirmations)
 			if err != nil {
 				return nil, err
 			}
@@ -1392,10 +1403,16 @@ func handleGetBlockHeader(s *Server, cmd interface{}, closeChan <-chan struct{})
 		nextHashStrings = daghash.Strings(childHashes)
 	}
 
+	blockConfirmations, err := s.cfg.DAG.BlockConfirmationsByHash(hash)
+	if err != nil {
+		context := "Could not get block confirmations"
+		return nil, internalRPCError(err.Error(), context)
+	}
+
 	params := s.cfg.DAGParams
 	blockHeaderReply := btcjson.GetBlockHeaderVerboseResult{
 		Hash:                 c.Hash,
-		Confirmations:        uint64(1 + s.cfg.DAG.Height() - blockHeight), //TODO: (Ori) This is probably wrong. Done only for compilation
+		Confirmations:        blockConfirmations,
 		Height:               blockHeight,
 		Version:              blockHeader.Version,
 		VersionHex:           fmt.Sprintf("%08x", blockHeader.Version),
@@ -2553,7 +2570,6 @@ func handleGetRawTransaction(s *Server, cmd interface{}, closeChan <-chan struct
 	// try the block database.
 	var mtx *wire.MsgTx
 	var blkHash *daghash.Hash
-	var blkHeight uint64
 	tx, err := s.cfg.TxMemPool.FetchTransaction(txID)
 	if err != nil {
 		if s.cfg.TxIndex == nil {
@@ -2593,13 +2609,8 @@ func handleGetRawTransaction(s *Server, cmd interface{}, closeChan <-chan struct
 			return hex.EncodeToString(txBytes), nil
 		}
 
-		// Grab the block height.
+		// Grab the block hash.
 		blkHash = blockRegion.Hash
-		blkHeight, err = s.cfg.DAG.BlockHeightByHash(blkHash)
-		if err != nil {
-			context := "Failed to retrieve block height"
-			return nil, internalRPCError(err.Error(), context)
-		}
 
 		// Deserialize the transaction
 		var msgTx wire.MsgTx
@@ -2631,7 +2642,6 @@ func handleGetRawTransaction(s *Server, cmd interface{}, closeChan <-chan struct
 	// The verbose flag is set, so generate the JSON object and return it.
 	var blkHeader *wire.BlockHeader
 	var blkHashStr string
-	var dagHeight uint64
 	if blkHash != nil {
 		// Fetch the header from chain.
 		header, err := s.cfg.DAG.HeaderByHash(blkHash)
@@ -2642,11 +2652,10 @@ func handleGetRawTransaction(s *Server, cmd interface{}, closeChan <-chan struct
 
 		blkHeader = header
 		blkHashStr = blkHash.String()
-		dagHeight = s.cfg.DAG.Height()
 	}
 
 	rawTxn, err := createTxRawResult(s.cfg.DAGParams, mtx, txID.String(),
-		blkHeader, blkHashStr, blkHeight, dagHeight, nil)
+		blkHeader, blkHashStr, nil, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -2666,7 +2675,7 @@ func handleGetTxOut(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 	// If requested and the tx is available in the mempool try to fetch it
 	// from there, otherwise attempt to fetch from the block database.
 	var bestBlockHash string
-	var confirmations uint64
+	var confirmations *uint64
 	var value uint64
 	var pkScript []byte
 	var isCoinbase bool
@@ -2699,7 +2708,6 @@ func handleGetTxOut(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 		}
 
 		bestBlockHash = s.cfg.DAG.HighestTipHash().String()
-		confirmations = 0
 		value = txOut.Value
 		pkScript = txOut.PkScript
 		isCoinbase = mtx.IsCoinBase()
@@ -2719,8 +2727,16 @@ func handleGetTxOut(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 			return nil, nil
 		}
 
+		if s.cfg.TxIndex != nil {
+			txConfirmations, err := txConfirmations(s, txID)
+			if err != nil {
+				return nil, internalRPCError("Output index number (vout) does not "+
+					"exist for transaction.", "")
+			}
+			confirmations = &txConfirmations
+		}
+
 		bestBlockHash = s.cfg.DAG.HighestTipHash().String()
-		confirmations = 1 + s.cfg.DAG.ChainHeight() - entry.BlockChainHeight() //TODO: (Ori) This is probably wrong. Done only for compilation
 		value = entry.Amount()
 		pkScript = entry.PkScript()
 		isCoinbase = entry.IsBlockReward()
@@ -2743,7 +2759,7 @@ func handleGetTxOut(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 
 	txOutReply := &btcjson.GetTxOutResult{
 		BestBlock:     bestBlockHash,
-		Confirmations: int64(confirmations),
+		Confirmations: confirmations,
 		Value:         util.Amount(value).ToBTC(),
 		ScriptPubKey: btcjson.ScriptPubKeyResult{
 			Asm:       disbuf,
@@ -2892,14 +2908,14 @@ func fetchInputTxos(s *Server, tx *wire.MsgTx) (map[wire.OutPoint]wire.TxOut, er
 // The confirmations number is defined as follows:
 // If the transaction is in the mempool/in a red block/is a double spend -> 0
 // Otherwise -> The confirmations number of the accepting block
-func txConfirmations(s *Server, tx *wire.MsgTx) (uint64, error) {
+func txConfirmations(s *Server, txID *daghash.TxID) (uint64, error) {
 	if s.cfg.TxIndex == nil {
 		return 0, errors.New("transaction index must be enabled (--txindex)")
 	}
 
-	acceptingBlock, err := s.cfg.TxIndex.BlockThatAcceptedTx(s.cfg.DAG, tx.TxID())
+	acceptingBlock, err := s.cfg.TxIndex.BlockThatAcceptedTx(s.cfg.DAG, txID)
 	if err != nil {
-		return 0, fmt.Errorf("could not get block that accepted tx %s: %s", tx.TxID(), err)
+		return 0, fmt.Errorf("could not get block that accepted tx %s: %s", txID, err)
 	}
 	if acceptingBlock == nil {
 		return 0, nil
@@ -2907,7 +2923,7 @@ func txConfirmations(s *Server, tx *wire.MsgTx) (uint64, error) {
 
 	confirmations, err := s.cfg.DAG.BlockConfirmationsByHash(acceptingBlock)
 	if err != nil {
-		return 0, fmt.Errorf("could not get confirmations for block that accepted tx %s: %s", tx.TxID(), err)
+		return 0, fmt.Errorf("could not get confirmations for block that accepted tx %s: %s", txID, err)
 	}
 
 	return confirmations, nil
@@ -3278,7 +3294,6 @@ func handleSearchRawTransactions(s *Server, cmd interface{}, closeChan <-chan st
 		// confirmations or block information).
 		var blkHeader *wire.BlockHeader
 		var blkHashStr string
-		var blkHeight uint64
 		if blkHash := rtx.blkHash; blkHash != nil {
 			// Fetch the header from chain.
 			header, err := s.cfg.DAG.HeaderByHash(blkHash)
@@ -3289,16 +3304,8 @@ func handleSearchRawTransactions(s *Server, cmd interface{}, closeChan <-chan st
 				}
 			}
 
-			// Get the block height from chain.
-			height, err := s.cfg.DAG.BlockHeightByHash(blkHash)
-			if err != nil {
-				context := "Failed to obtain block height"
-				return nil, internalRPCError(err.Error(), context)
-			}
-
 			blkHeader = header
 			blkHashStr = blkHash.String()
-			blkHeight = height
 		}
 
 		// Add the block information to the result if there is any.
@@ -3308,7 +3315,15 @@ func handleSearchRawTransactions(s *Server, cmd interface{}, closeChan <-chan st
 			result.Time = uint64(blkHeader.Timestamp.Unix())
 			result.Blocktime = uint64(blkHeader.Timestamp.Unix())
 			result.BlockHash = blkHashStr
-			result.Confirmations = uint64(1 + s.cfg.DAG.Height() - blkHeight) //TODO: (Ori) This is probably wrong. Done only for compilation
+		}
+
+		if s.cfg.TxIndex != nil {
+			confirmations, err := txConfirmations(s, mtx.TxID())
+			if err != nil {
+				context := "Failed to obtain block confirmations"
+				return nil, internalRPCError(err.Error(), context)
+			}
+			result.Confirmations = &confirmations
 		}
 	}
 
