@@ -75,7 +75,8 @@ func utxosFunds() uint64 {
 
 func isTxMatured(tx *wire.MsgTx, confirmations *uint64) bool {
 	if confirmations == nil {
-		return false
+		panic(fmt.Errorf("received <nil> confirmations in tx %s. "+
+			"This could be because TxGen is off", tx.TxHash()))
 	}
 	if !tx.IsBlockReward() {
 		return *confirmations >= 1
