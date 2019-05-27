@@ -702,7 +702,7 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 }
 
 func (g *BlkTmplGenerator) buildUTXOCommitment(transactions []*wire.MsgTx, nextBlockHeight uint64) (*daghash.Hash, error) {
-	utxoWithTransactions, err := g.dag.UTXOSet().WithTransactions(transactions, nextBlockHeight)
+	utxoWithTransactions, err := g.dag.UTXOSet().WithTransactions(transactions, nextBlockHeight, false)
 	if err != nil {
 		return nil, err
 	}
