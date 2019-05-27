@@ -2571,7 +2571,7 @@ func handleGetRawTransaction(s *Server, cmd interface{}, closeChan <-chan struct
 	// try the block database.
 	var mtx *wire.MsgTx
 	var blkHash *daghash.Hash
-	var isInMempool bool
+	isInMempool := false
 	tx, err := s.cfg.TxMemPool.FetchTransaction(txID)
 	if err != nil {
 		if s.cfg.TxIndex == nil {
@@ -2682,7 +2682,7 @@ func handleGetTxOut(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 	var value uint64
 	var pkScript []byte
 	var isCoinbase bool
-	var isInMempool bool
+	isInMempool := false
 	includeMempool := true
 	if c.IncludeMempool != nil {
 		includeMempool = *c.IncludeMempool
