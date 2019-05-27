@@ -168,10 +168,6 @@ const (
 	// for a coinbase transaction is not within the valid range.
 	ErrBadCoinbaseScriptLen
 
-	// ErrBadCoinbaseValue indicates the amount of a coinbase value does
-	// not match the expected value of the subsidy plus the sum of all fees.
-	ErrBadCoinbaseValue
-
 	// ErrMissingCoinbaseHeight indicates the coinbase transaction for a
 	// block does not start with the serialized block block height as
 	// required for version 2 and higher blocks.

@@ -163,7 +163,7 @@ func (node *blockNode) buildFeeTransaction(dag *BlockDAG, txsAcceptanceData Mult
 
 // feeInputAndOutputForBlueBlock calculates the input and output that should go into the fee transaction of blueBlock
 // If blueBlock gets no fee - returns only txIn and nil for txOut
-func feeInputAndOutputForBlueBlock(blueBlock *blockNode, txsAcceptanceData MultiBlockTxsAcceptanceData, feeData map[daghash.Hash]compactFeeData) (
+func feeInputAndOutputForBlueBlock(dag *BlockDAG, blueBlock *blockNode, txsAcceptanceData MultiBlockTxsAcceptanceData, feeData map[daghash.Hash]compactFeeData) (
 	*wire.TxIn, *wire.TxOut, error) {
 
 	blockTxsAcceptanceData, ok := txsAcceptanceData[*blueBlock.hash]
@@ -190,7 +190,7 @@ func feeInputAndOutputForBlueBlock(blueBlock *blockNode, txsAcceptanceData Multi
 		Sequence: wire.MaxTxInSequenceNum,
 	}
 
-	totalFees := uint64(0)
+	totalFees := CalcBlockSubsidy(blueBlock.height, dag.dagParams)
 	feeIterator := blockFeeData.iterator()
 
 	for _, txAcceptanceData := range blockTxsAcceptanceData {

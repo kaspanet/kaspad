@@ -986,22 +986,6 @@ func (dag *BlockDAG) checkConnectToPastUTXO(block *blockNode, pastUTXO UTXOSet,
 	}
 
 	if !fastAdd {
-		// The total output values of the coinbase transaction must not exceed
-		// the expected subsidy value plus total transaction fees gained from
-		// mining the block.  It is safe to ignore overflow and out of range
-		// errors here because those error conditions would have already been
-		// caught by checkTransactionSanity.
-		var totalSatoshiOut uint64
-		for _, txOut := range transactions[0].MsgTx().TxOut {
-			totalSatoshiOut += txOut.Value
-		}
-		expectedSatoshiOut := CalcBlockSubsidy(block.height, dag.dagParams)
-		if totalSatoshiOut > expectedSatoshiOut {
-			str := fmt.Sprintf("coinbase transaction for block pays %d "+
-				"which is more than expected value of %d",
-				totalSatoshiOut, expectedSatoshiOut)
-			return nil, ruleError(ErrBadCoinbaseValue, str)
-		}
 
 		// Don't run scripts if this node is before the latest known good
 		// checkpoint since the validity is verified via the checkpoints (all
