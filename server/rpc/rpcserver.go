@@ -746,7 +746,7 @@ func createVoutList(mtx *wire.MsgTx, chainParams *dagconfig.Params, filterAddrMa
 // to a raw transaction JSON object.
 func createTxRawResult(dagParams *dagconfig.Params, mtx *wire.MsgTx,
 	txID string, blkHeader *wire.BlockHeader, blkHash string,
-	acceptingBlock *daghash.Hash, confirmations *uint64) (*btcjson.TxRawResult, error) {
+	acceptingBlock *daghash.Hash, confirmations *uint64, isInMempool bool) (*btcjson.TxRawResult, error) {
 
 	mtxHex, err := messageToHex(mtx)
 	if err != nil {
@@ -781,6 +781,7 @@ func createTxRawResult(dagParams *dagconfig.Params, mtx *wire.MsgTx,
 	}
 
 	txReply.Confirmations = confirmations
+	txReply.IsInMempool = isInMempool
 	if acceptingBlock != nil {
 		txReply.AcceptedBy = btcjson.String(acceptingBlock.String())
 	}
@@ -1242,7 +1243,7 @@ func handleGetBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 				confirmations = &txConfirmations
 			}
 			rawTxn, err := createTxRawResult(params, tx.MsgTx(), tx.ID().String(),
-				blockHeader, hash.String(), acceptingBlock, confirmations)
+				blockHeader, hash.String(), acceptingBlock, confirmations, false)
 			if err != nil {
 				return nil, err
 			}
@@ -2570,6 +2571,7 @@ func handleGetRawTransaction(s *Server, cmd interface{}, closeChan <-chan struct
 	// try the block database.
 	var mtx *wire.MsgTx
 	var blkHash *daghash.Hash
+	var isInMempool bool
 	tx, err := s.cfg.TxMemPool.FetchTransaction(txID)
 	if err != nil {
 		if s.cfg.TxIndex == nil {
@@ -2637,6 +2639,7 @@ func handleGetRawTransaction(s *Server, cmd interface{}, closeChan <-chan struct
 		}
 
 		mtx = tx.MsgTx()
+		isInMempool = true
 	}
 
 	// The verbose flag is set, so generate the JSON object and return it.
@@ -2655,7 +2658,7 @@ func handleGetRawTransaction(s *Server, cmd interface{}, closeChan <-chan struct
 	}
 
 	rawTxn, err := createTxRawResult(s.cfg.DAGParams, mtx, txID.String(),
-		blkHeader, blkHashStr, nil, nil)
+		blkHeader, blkHashStr, nil, nil, isInMempool)
 	if err != nil {
 		return nil, err
 	}
@@ -2679,6 +2682,7 @@ func handleGetTxOut(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 	var value uint64
 	var pkScript []byte
 	var isCoinbase bool
+	var isInMempool bool
 	includeMempool := true
 	if c.IncludeMempool != nil {
 		includeMempool = *c.IncludeMempool
@@ -2711,6 +2715,7 @@ func handleGetTxOut(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 		value = txOut.Value
 		pkScript = txOut.PkScript
 		isCoinbase = mtx.IsCoinBase()
+		isInMempool = true
 	} else {
 		out := wire.OutPoint{TxID: *txID, Index: c.Vout}
 		entry, ok := s.cfg.DAG.GetUTXOEntry(out)
@@ -2760,6 +2765,7 @@ func handleGetTxOut(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 	txOutReply := &btcjson.GetTxOutResult{
 		BestBlock:     bestBlockHash,
 		Confirmations: confirmations,
+		IsInMempool:   isInMempool,
 		Value:         util.Amount(value).ToBTC(),
 		ScriptPubKey: btcjson.ScriptPubKeyResult{
 			Asm:       disbuf,
@@ -3325,6 +3331,9 @@ func handleSearchRawTransactions(s *Server, cmd interface{}, closeChan <-chan st
 			}
 			result.Confirmations = &confirmations
 		}
+
+		// rtx.tx is only set when the transaction was retrieved from the mempool
+		result.IsInMempool = rtx.tx != nil
 	}
 
 	return srtList, nil

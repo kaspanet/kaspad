@@ -280,6 +280,7 @@ type ScriptPubKeyResult struct {
 type GetTxOutResult struct {
 	BestBlock     string             `json:"bestBlock"`
 	Confirmations *uint64            `json:"confirmations,omitempty"`
+	IsInMempool   bool               `json:"isInMempool"`
 	Value         float64            `json:"value"`
 	ScriptPubKey  ScriptPubKeyResult `json:"scriptPubKey"`
 	Coinbase      bool               `json:"coinbase"`
@@ -457,6 +458,7 @@ type TxRawResult struct {
 	BlockHash     string  `json:"blockHash,omitempty"`
 	Confirmations *uint64 `json:"confirmations,omitempty"`
 	AcceptedBy    *string `json:"acceptedBy,omitempty"`
+	IsInMempool   bool    `json:"isInMempool"`
 	Time          uint64  `json:"time,omitempty"`
 	BlockTime     uint64  `json:"blockTime,omitempty"`
 }
@@ -474,6 +476,7 @@ type SearchRawTransactionsResult struct {
 	Vout          []Vout       `json:"vout"`
 	BlockHash     string       `json:"blockHash,omitempty"`
 	Confirmations *uint64      `json:"confirmations,omitempty"`
+	IsInMempool   bool         `json:"isInMempool"`
 	Time          uint64       `json:"time,omitempty"`
 	Blocktime     uint64       `json:"blockTime,omitempty"`
 }

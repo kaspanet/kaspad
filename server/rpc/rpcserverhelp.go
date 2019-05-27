@@ -214,6 +214,7 @@ var helpDescsEnUS = map[string]string{
 	"txRawResult-vout":          "The transaction outputs as JSON objects",
 	"txRawResult-blockHash":     "Hash of the block the transaction is part of",
 	"txRawResult-confirmations": "Number of confirmations of the block (Will be 'null' if txindex is not disabled)",
+	"txRawResult-isInMempool":   "Whether the transaction is in the mempool",
 	"txRawResult-time":          "Transaction time in seconds since 1 Jan 1970 GMT",
 	"txRawResult-blockTime":     "Block time in seconds since the 1 Jan 1970 GMT",
 	"txRawResult-size":          "The size of the transaction in bytes",
@@ -230,6 +231,7 @@ var helpDescsEnUS = map[string]string{
 	"searchRawTransactionsResult-vout":          "The transaction outputs as JSON objects",
 	"searchRawTransactionsResult-blockHash":     "Hash of the block the transaction is part of",
 	"searchRawTransactionsResult-confirmations": "Number of confirmations of the block (Will be 'null' if txindex is not disabled)",
+	"searchRawTransactionsResult-isInMempool":   "Whether the transaction is in the mempool",
 	"searchRawTransactionsResult-time":          "Transaction time in seconds since 1 Jan 1970 GMT",
 	"searchRawTransactionsResult-blockTime":     "Block time in seconds since the 1 Jan 1970 GMT",
 	"searchRawTransactionsResult-size":          "The size of the transaction in bytes",
@@ -508,6 +510,7 @@ var helpDescsEnUS = map[string]string{
 	// GetTxOutResult help.
 	"getTxOutResult-bestBlock":     "The block hash that contains the transaction output",
 	"getTxOutResult-confirmations": "The number of confirmations (Will be 'null' if txindex is not disabled)",
+	"getTxOutResult-isInMempool":   "Whether the transaction is in the mempool",
 	"getTxOutResult-value":         "The transaction amount in BTC",
 	"getTxOutResult-scriptPubKey":  "The public key script used to pay coins as a JSON object",
 	"getTxOutResult-version":       "The transaction version",
