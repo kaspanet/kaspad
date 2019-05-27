@@ -273,8 +273,7 @@ func uniqueOpReturnScript() []byte {
 }
 
 // createCoinbaseTx returns a coinbase transaction paying an appropriate
-// subsidy based on the passed block height.  The coinbase signature script
-// conforms to the requirements of version 2 blocks.
+// subsidy based on the passed block height.
 func (g *testGenerator) createCoinbaseTx(blockHeight uint64) *wire.MsgTx {
 	extraNonce := uint64(0)
 	coinbaseScript, err := standardCoinbaseScript(extraNonce)

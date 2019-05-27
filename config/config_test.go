@@ -81,10 +81,10 @@ func TestConstants(t *testing.T) {
 	}
 	one := subnetworkid.SubnetworkID{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 	if *subnetworkid.SubnetworkIDCoinbase != one {
-		t.Errorf("subnetworkid.SubnetworkIDRegistry value was changed from 1, therefore you probably need to update the help text for SubnetworkID")
+		t.Errorf("subnetworkid.SubnetworkIDCoinbase value was changed from 1, therefore you probably need to update the help text for SubnetworkID")
 	}
 	two := subnetworkid.SubnetworkID{2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 	if *subnetworkid.SubnetworkIDRegistry != two {
-		t.Errorf("subnetworkid.SubnetworkIDRegistry value was changed from 1, therefore you probably need to update the help text for SubnetworkID")
+		t.Errorf("subnetworkid.SubnetworkIDRegistry value was changed from 2, therefore you probably need to update the help text for SubnetworkID")
 	}
 }
