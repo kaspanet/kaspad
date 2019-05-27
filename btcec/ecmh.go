@@ -115,8 +115,8 @@ func (ms *Multiset) Hash() *daghash.Hash {
 	}
 
 	hash := sha256.Sum256(append(ms.x.Bytes(), ms.y.Bytes()...))
-	catedHash := daghash.Hash(hash)
-	return &catedHash
+	castHash := daghash.Hash(hash)
+	return &castHash
 }
 
 // Point returns a copy of the x and y coordinates of the current multiset state.
