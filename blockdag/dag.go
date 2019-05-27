@@ -639,7 +639,7 @@ func (dag *BlockDAG) saveChangesFromBlock(node *blockNode, block *util.Block, vi
 		// Scan all accepted transactions and register any subnetwork registry
 		// transaction. If any subnetwork registry transaction is not well-formed,
 		// fail the entire block.
-		err = registerSubnetworks(dbTx, txsAcceptanceData)
+		err = registerSubnetworks(dbTx, block.Transactions())
 		if err != nil {
 			return err
 		}

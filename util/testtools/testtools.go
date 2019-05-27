@@ -73,16 +73,6 @@ func RegisterSubnetworkForTest(dag *blockdag.BlockDAG, params *dagconfig.Params,
 		return nil, fmt.Errorf("could not add registry block to DAG: %s", err)
 	}
 
-	// Create a block to accept the registryBlock
-	acceptingBlock, err := buildNextBlock([]*daghash.Hash{registryBlock.Hash()}, []*wire.MsgTx{})
-	if err != nil {
-		return nil, fmt.Errorf("could not build accepting block: %s", err)
-	}
-	err = addBlockToDAG(acceptingBlock)
-	if err != nil {
-		return nil, fmt.Errorf("could not add accepting block to DAG: %s", err)
-	}
-
 	// Build a subnetwork ID from the registry transaction
 	subnetworkID, err := blockdag.TxToSubnetworkID(registryTx)
 	if err != nil {
