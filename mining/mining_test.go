@@ -151,7 +151,7 @@ func TestNewBlockTemplate(t *testing.T) {
 	createCoinbaseTxPatch = monkey.Patch(CreateCoinbaseTx, func(params *dagconfig.Params, coinbaseScript []byte, nextBlockHeight uint64, addr util.Address) (*util.Tx, error) {
 		createCoinbaseTxPatch.Unpatch()
 		defer createCoinbaseTxPatch.Restore()
-		tx, err := CreateCoinbaseTx(params, coinbaseScript, nextBlockHeight, addr)
+		tx, err := CreateCoinbaseTx(coinbaseScript, addr)
 		if err != nil {
 			return nil, err
 		}
@@ -184,13 +184,13 @@ func TestNewBlockTemplate(t *testing.T) {
 		t.Fatalf("ProcessBlock: template1 got unexpectedly orphan")
 	}
 
-	cbScript, err := StandardCoinbaseScript(dag.Height()+1, 0)
+	cbScript, err := StandardCoinbaseScript(0)
 	if err != nil {
 		t.Fatalf("standardCoinbaseScript: %v", err)
 	}
 
 	// We want to check that the miner filters coinbase transaction
-	cbTx, err := CreateCoinbaseTx(&params, cbScript, dag.Height()+1, nil)
+	cbTx, err := CreateCoinbaseTx(cbScript, nil)
 	if err != nil {
 		t.Fatalf("createCoinbaseTx: %v", err)
 	}
@@ -308,7 +308,7 @@ func TestNewBlockTemplate(t *testing.T) {
 	standardCoinbaseScriptErrString := "standardCoinbaseScript err"
 
 	var standardCoinbaseScriptPatch *monkey.PatchGuard
-	standardCoinbaseScriptPatch = monkey.Patch(StandardCoinbaseScript, func(nextBlockHeight uint64, extraNonce uint64) ([]byte, error) {
+	standardCoinbaseScriptPatch = monkey.Patch(StandardCoinbaseScript, func(extraNonce uint64) ([]byte, error) {
 		return nil, errors.New(standardCoinbaseScriptErrString)
 	})
 	defer standardCoinbaseScriptPatch.Unpatch()

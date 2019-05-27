@@ -118,7 +118,7 @@ func (p *poolHarness) CreateCoinbaseTx(blockHeight uint64, numOutputs uint32) (*
 	// Create standard coinbase script.
 	extraNonce := int64(0)
 	coinbaseScript, err := txscript.NewScriptBuilder().
-		AddInt64(int64(blockHeight)).AddInt64(extraNonce).Script()
+		AddInt64(extraNonce).Script()
 	if err != nil {
 		return nil, err
 	}

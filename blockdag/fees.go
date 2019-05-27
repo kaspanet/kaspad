@@ -208,7 +208,7 @@ func feeInputAndOutputForBlueBlock(blueBlock *blockNode, txsAcceptanceData Multi
 	}
 
 	// the scriptPubKey for the fee is the same as the coinbase's first scriptPubKey
-	pkScript := blockTxsAcceptanceData[0].Tx.MsgTx().TxOut[0].PkScript
+	pkScript := blockTxsAcceptanceData[0].Tx.MsgTx().Payload
 
 	txOut := &wire.TxOut{
 		Value:    totalFees,

@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"math/big"
 	"sort"
-	"strings"
 )
 
 // IDLength of array used to store the subnetwork ID.  See SubnetworkID.
@@ -31,8 +30,11 @@ var (
 	// SubnetworkIDNative is the default subnetwork ID which is used for transactions without related payload data
 	SubnetworkIDNative = &SubnetworkID{}
 
+	// SubnetworkIDCoinbase is the subnetwork ID which is used for the coinbase transaction
+	SubnetworkIDCoinbase = &SubnetworkID{1}
+
 	// SubnetworkIDRegistry is the subnetwork ID which is used for adding new sub networks to the registry
-	SubnetworkIDRegistry = &SubnetworkID{1}
+	SubnetworkIDRegistry = &SubnetworkID{2}
 )
 
 // String returns the SubnetworkID as the hexadecimal string of the byte-reversed
@@ -188,14 +190,16 @@ func (id *SubnetworkID) Cmp(target *SubnetworkID) int {
 	return ToBig(id).Cmp(ToBig(target))
 }
 
+// IsFull returns true if the subnetwork is a full subnetwork, which
+// means all nodes, including partial nodes, must validate it, and its transactions
+// always have no gas.
+func (id *SubnetworkID) IsFull() bool{
+	return id.IsEqual(SubnetworkIDCoinbase) || id.IsEqual(SubnetworkIDRegistry)
+}
+
 // Less returns true iff id a is less than id b
 func Less(a *SubnetworkID, b *SubnetworkID) bool {
 	return a.Cmp(b) < 0
-}
-
-// JoinIDsStrings joins all the stringified IDs separated by a separator
-func JoinIDsStrings(ids []SubnetworkID, separator string) string {
-	return strings.Join(Strings(ids), separator)
 }
 
 // Sort sorts a slice of ids
