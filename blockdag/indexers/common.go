@@ -48,7 +48,7 @@ type Indexer interface {
 	// Init is invoked when the index manager is first initializing the
 	// index.  This differs from the Create method in that it is called on
 	// every load, including the case the index was just created.
-	Init(db database.DB) error
+	Init(db database.DB, dag *blockdag.BlockDAG) error
 
 	// ConnectBlock is invoked when the index manager is notified that a new
 	// block has been connected to the DAG.

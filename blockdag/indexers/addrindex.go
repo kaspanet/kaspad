@@ -591,7 +591,7 @@ func (idx *AddrIndex) NeedsInputs() bool {
 // initialize for this index.
 //
 // This is part of the Indexer interface.
-func (idx *AddrIndex) Init(db database.DB) error {
+func (idx *AddrIndex) Init(db database.DB, _ *blockdag.BlockDAG) error {
 	idx.db = db
 	return nil
 }

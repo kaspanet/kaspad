@@ -84,7 +84,7 @@ var _ Indexer = (*CfIndex)(nil)
 
 // Init initializes the hash-based cf index. This is part of the Indexer
 // interface.
-func (idx *CfIndex) Init(db database.DB) error {
+func (idx *CfIndex) Init(db database.DB, _ *blockdag.BlockDAG) error {
 	idx.db = db
 	return nil
 }

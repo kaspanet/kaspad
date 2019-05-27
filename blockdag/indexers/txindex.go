@@ -6,8 +6,6 @@ package indexers
 
 import (
 	"fmt"
-	"math"
-
 	"github.com/daglabs/btcd/blockdag"
 	"github.com/daglabs/btcd/database"
 	"github.com/daglabs/btcd/util"
@@ -22,8 +20,6 @@ const (
 	includingBlocksIndexKeyEntrySize = 8 // 4 bytes for offset + 4 bytes for transaction length
 
 	blockIDSize = 8 // 8 bytes for block ID
-
-	virtualBlockID = math.MaxUint64
 )
 
 var (
@@ -39,6 +35,10 @@ var (
 	// the block hash -> block id index.
 	hashByIDIndexBucketName = []byte("hashbyididx")
 )
+
+// txsAcceptedByVirtual is the in-memory index of txIDs that were accepted
+// by the current virtual
+var txsAcceptedByVirtual map[daghash.TxID]bool
 
 // -----------------------------------------------------------------------------
 // The transaction index consists of an entry for every transaction in the DAG.
@@ -297,17 +297,14 @@ func dbAddTxIndexEntries(dbTx database.Tx, block *util.Block, blockID uint64, tx
 	return nil
 }
 
-func dbPutTxsAcceptedByVirtual(dbTx database.Tx, blockID uint64,
-	virtualTxsAcceptanceData blockdag.MultiBlockTxsAcceptanceData) error {
+func updateTxsAcceptedByVirtual(virtualTxsAcceptanceData blockdag.MultiBlockTxsAcceptanceData) error {
+	// Clear txsAcceptedByVirtual
+	txsAcceptedByVirtual = make(map[daghash.TxID]bool)
 
-	includingBlockIDBytes := make([]byte, blockIDSize)
-	byteOrder.PutUint64(includingBlockIDBytes, blockID)
+	// Copy virtualTxsAcceptanceData to txsAcceptedByVirtual
 	for _, blockTxsAcceptanceData := range virtualTxsAcceptanceData {
 		for _, txAcceptanceData := range blockTxsAcceptanceData {
-			err := dbPutAcceptingBlocksEntry(dbTx, txAcceptanceData.Tx.ID(), virtualBlockID, includingBlockIDBytes)
-			if err != nil {
-				return err
-			}
+			txsAcceptedByVirtual[*txAcceptanceData.Tx.ID()] = true
 		}
 	}
 
@@ -329,7 +326,7 @@ var _ Indexer = (*TxIndex)(nil)
 // disconnecting blocks.
 //
 // This is part of the Indexer interface.
-func (idx *TxIndex) Init(db database.DB) error {
+func (idx *TxIndex) Init(db database.DB, dag *blockdag.BlockDAG) error {
 	idx.db = db
 
 	// Find the latest known block id field for the internal block id
@@ -381,6 +378,16 @@ func (idx *TxIndex) Init(db database.DB) error {
 		idx.curBlockID = highestKnown
 		return nil
 	})
+	if err != nil {
+		return err
+	}
+
+	// Initialize the txsAcceptedByVirtual index
+	virtualTxsAcceptanceData, err := dag.TxsAcceptedByVirtual()
+	if err != nil {
+		return err
+	}
+	err = updateTxsAcceptedByVirtual(virtualTxsAcceptanceData)
 	if err != nil {
 		return err
 	}
@@ -441,7 +448,7 @@ func (idx *TxIndex) ConnectBlock(dbTx database.Tx, block *util.Block, dag *block
 		return err
 	}
 
-	err := dbPutTxsAcceptedByVirtual(dbTx, newBlockID, virtualTxsAcceptanceData)
+	err := updateTxsAcceptedByVirtual(virtualTxsAcceptanceData)
 	if err != nil {
 		return err
 	}
@@ -523,6 +530,12 @@ func (idx *TxIndex) BlockThatAcceptedTx(dag *blockdag.BlockDAG, txID *daghash.Tx
 }
 
 func dbFetchTxAcceptingBlock(dbTx database.Tx, txID *daghash.TxID, dag *blockdag.BlockDAG) (*daghash.Hash, error) {
+	// If the transaction was accepted by the current virtual,
+	// return the zeroHash immediately
+	if _, ok := txsAcceptedByVirtual[*txID]; ok {
+		return &daghash.ZeroHash, nil
+	}
+
 	bucket := dbTx.Metadata().Bucket(acceptingBlocksIndexKey).Bucket(txID[:])
 	if bucket == nil {
 		return nil, database.Error{
@@ -541,9 +554,6 @@ func dbFetchTxAcceptingBlock(dbTx database.Tx, txID *daghash.TxID, dag *blockdag
 	}
 	for ; cursor.Key() != nil; cursor.Next() {
 		blockID := byteOrder.Uint64(cursor.Key())
-		if blockID == virtualBlockID {
-			return &daghash.ZeroHash, nil
-		}
 		blockHash, err := dbFetchBlockHashByID(dbTx, blockID)
 		if err != nil {
 			return nil, err

@@ -155,7 +155,7 @@ func (m *Manager) Init(db database.DB, blockDAG *blockdag.BlockDAG, interrupt <-
 
 	// Initialize each of the enabled indexes.
 	for _, indexer := range m.enabledIndexes {
-		if err := indexer.Init(db); err != nil {
+		if err := indexer.Init(db, blockDAG); err != nil {
 			return err
 		}
 	}

@@ -760,7 +760,7 @@ func (dag *BlockDAG) NextBlockFeeTransaction() (*wire.MsgTx, error) {
 //
 // This function MUST be called with the DAG read-lock held
 func (dag *BlockDAG) NextBlockFeeTransactionNoLock() (*wire.MsgTx, error) {
-	_, txsAcceptanceData, err := dag.pastUTXO(&dag.virtual.blockNode)
+	txsAcceptanceData, err := dag.TxsAcceptedByVirtual()
 	if err != nil {
 		return nil, err
 	}
@@ -781,12 +781,20 @@ func (dag *BlockDAG) NextAcceptedIDMerkleRoot() (*daghash.Hash, error) {
 //
 // This function MUST be called with the DAG read-lock held
 func (dag *BlockDAG) NextAcceptedIDMerkleRootNoLock() (*daghash.Hash, error) {
-	_, txsAcceptanceData, err := dag.pastUTXO(&dag.virtual.blockNode)
+	txsAcceptanceData, err := dag.TxsAcceptedByVirtual()
 	if err != nil {
 		return nil, err
 	}
 
 	return calculateAcceptedIDMerkleRoot(txsAcceptanceData), nil
+}
+
+// TxsAcceptedByVirtual retrieves transactions accepted by the current virtual block
+//
+// This function MUST be called with the DAG read-lock held
+func (dag *BlockDAG) TxsAcceptedByVirtual() (MultiBlockTxsAcceptanceData, error) {
+	_, txsAcceptanceData, err := dag.pastUTXO(&dag.virtual.blockNode)
+	return txsAcceptanceData, err
 }
 
 // applyDAGChanges does the following:
