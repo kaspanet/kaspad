@@ -663,7 +663,7 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 	for _, tx := range blockTxns {
 		msgBlock.AddTransaction(tx.MsgTx())
 	}
-	utxoCommitment, err := calcUTXOCommitment(g.dag.UTXOSet(), msgBlock.Transactions, nextBlockHeight)
+	utxoCommitment, err := g.buildUTXOCommitment(msgBlock.Transactions, nextBlockHeight)
 	if err != nil {
 		return nil, err
 	}
@@ -701,18 +701,12 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 	}, nil
 }
 
-func calcUTXOCommitment(utxoSet blockdag.UTXOSet, transactions []*wire.MsgTx, nextBlockHeight uint64) (*daghash.Hash, error) {
-	diffSet := blockdag.NewDiffUTXOSet(utxoSet.(*blockdag.FullUTXOSet), blockdag.NewUTXODiff())
-	for _, tx := range transactions {
-		isAccepted, err := diffSet.AddTx(tx, nextBlockHeight)
-		if err != nil {
-			return nil, err
-		}
-		if !isAccepted {
-			return nil, fmt.Errorf("Transaction %s is not valid with the current UTXO set", tx.TxID())
-		}
+func (g *BlkTmplGenerator) buildUTXOCommitment(transactions []*wire.MsgTx, nextBlockHeight uint64) (*daghash.Hash, error) {
+	utxoWithTransactions, err := g.dag.UTXOSet().WithTransactions(transactions, nextBlockHeight)
+	if err != nil {
+		return nil, err
 	}
-	return diffSet.Multiset().Hash(), nil
+	return utxoWithTransactions.Multiset().Hash(), nil
 }
 
 // UpdateBlockTime updates the timestamp in the header of the passed block to
@@ -767,7 +761,7 @@ func (g *BlkTmplGenerator) UpdateExtraNonce(msgBlock *wire.MsgBlock, blockHeight
 	hashMerkleTree := blockdag.BuildHashMerkleTreeStore(block.Transactions())
 	msgBlock.Header.HashMerkleRoot = hashMerkleTree.Root()
 
-	utxoCommitment, err := calcUTXOCommitment(g.dag.UTXOSet(), msgBlock.Transactions, blockHeight)
+	utxoCommitment, err := g.buildUTXOCommitment(msgBlock.Transactions, blockHeight)
 	if err != nil {
 		return err
 	}
