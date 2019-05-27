@@ -690,7 +690,7 @@ func (msg *MsgTx) encode(w io.Writer, pver uint32, encodingFlags txEncoding) err
 	}
 
 	if !msg.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) {
-		if msg.SubnetworkID.IsFull() && msg.Gas != 0 {
+		if msg.SubnetworkID.IsBuiltIn() && msg.Gas != 0 {
 			str := "Transactions from full subnetworks should have 0 gas"
 			return messageError("MsgTx.BtcEncode", str)
 		}
