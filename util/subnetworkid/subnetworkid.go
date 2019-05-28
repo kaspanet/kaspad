@@ -192,7 +192,7 @@ func (id *SubnetworkID) Cmp(target *SubnetworkID) int {
 
 // IsBuiltIn returns true if the subnetwork is a built in subnetwork, which
 // means all nodes, including partial nodes, must validate it, and its transactions
-// always have no gas.
+// always use 0 gas.
 func (id *SubnetworkID) IsBuiltIn() bool {
 	return id.IsEqual(SubnetworkIDCoinbase) || id.IsEqual(SubnetworkIDRegistry)
 }
