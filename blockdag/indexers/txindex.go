@@ -301,9 +301,7 @@ func updateTxsAcceptedByVirtual(virtualTxsAcceptanceData blockdag.MultiBlockTxsA
 	// Initialize a new txsAcceptedByVirtual
 	entries := 0
 	for _, blockTxsAcceptanceData := range virtualTxsAcceptanceData {
-		for range blockTxsAcceptanceData {
-			entries++
-		}
+		entries += len(blockTxsAcceptanceData)
 	}
 	txsAcceptedByVirtual = make(map[daghash.TxID]bool, entries)
 
