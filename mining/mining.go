@@ -236,9 +236,12 @@ func CreateCoinbaseTx(params *dagconfig.Params, coinbaseScript []byte, nextBlock
 			return nil, err
 		}
 	} else {
-		var err error
 		scriptBuilder := txscript.NewScriptBuilder()
-		pkScript, err = scriptBuilder.AddOp(txscript.OpTrue).Script()
+		opTrueScript, err := scriptBuilder.AddOp(txscript.OpTrue).Script()
+		if err != nil {
+			return nil, err
+		}
+		pkScript, err = txscript.PayToScriptHashScript(opTrueScript)
 		if err != nil {
 			return nil, err
 		}
@@ -657,17 +660,21 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 		return nil, err
 	}
 	var msgBlock wire.MsgBlock
+	for _, tx := range blockTxns {
+		msgBlock.AddTransaction(tx.MsgTx())
+	}
+	utxoCommitment, err := g.buildUTXOCommitment(msgBlock.Transactions, nextBlockHeight)
+	if err != nil {
+		return nil, err
+	}
 	msgBlock.Header = wire.BlockHeader{
 		Version:              nextBlockVersion,
 		ParentHashes:         g.dag.TipHashes(),
 		HashMerkleRoot:       hashMerkleTree.Root(),
 		AcceptedIDMerkleRoot: acceptedIDMerkleRoot,
-		UTXOCommitment:       &daghash.ZeroHash,
+		UTXOCommitment:       utxoCommitment,
 		Timestamp:            ts,
 		Bits:                 reqDifficulty,
-	}
-	for _, tx := range blockTxns {
-		msgBlock.AddTransaction(tx.MsgTx())
 	}
 
 	// Finally, perform a full check on the created block against the chain
@@ -692,6 +699,14 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 		Height:          nextBlockHeight,
 		ValidPayAddress: payToAddress != nil,
 	}, nil
+}
+
+func (g *BlkTmplGenerator) buildUTXOCommitment(transactions []*wire.MsgTx, nextBlockHeight uint64) (*daghash.Hash, error) {
+	utxoWithTransactions, err := g.dag.UTXOSet().WithTransactions(transactions, nextBlockHeight, false)
+	if err != nil {
+		return nil, err
+	}
+	return utxoWithTransactions.Multiset().Hash(), nil
 }
 
 // UpdateBlockTime updates the timestamp in the header of the passed block to
@@ -745,6 +760,13 @@ func (g *BlkTmplGenerator) UpdateExtraNonce(msgBlock *wire.MsgBlock, blockHeight
 	block := util.NewBlock(msgBlock)
 	hashMerkleTree := blockdag.BuildHashMerkleTreeStore(block.Transactions())
 	msgBlock.Header.HashMerkleRoot = hashMerkleTree.Root()
+
+	utxoCommitment, err := g.buildUTXOCommitment(msgBlock.Transactions, blockHeight)
+	if err != nil {
+		return err
+	}
+
+	msgBlock.Header.UTXOCommitment = utxoCommitment
 
 	return nil
 }

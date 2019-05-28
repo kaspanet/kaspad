@@ -352,6 +352,30 @@ func PayToAddrScript(addr util.Address) ([]byte, error) {
 	return nil, scriptError(ErrUnsupportedAddress, str)
 }
 
+// PayToScriptHashScript takes a script and returns an equivalent pay-to-script-hash script
+func PayToScriptHashScript(redeemScript []byte) ([]byte, error) {
+	redeemScriptHash := util.Hash160(redeemScript)
+	script, err := NewScriptBuilder().
+		AddOp(OpHash160).AddData(redeemScriptHash).
+		AddOp(OpEqual).Script()
+	if err != nil {
+		return nil, err
+	}
+	return script, nil
+}
+
+// PayToScriptHashSignatureScript generates a signature script that fits a pay-to-script-hash script
+func PayToScriptHashSignatureScript(redeemScript []byte, signature []byte) ([]byte, error) {
+	redeemScriptAsData, err := NewScriptBuilder().AddData(redeemScript).Script()
+	if err != nil {
+		return nil, err
+	}
+	signatureScript := make([]byte, len(signature)+len(redeemScriptAsData))
+	copy(signatureScript, signature)
+	copy(signatureScript[len(signature):], redeemScriptAsData)
+	return signatureScript, nil
+}
+
 // NullDataScript creates a provably-prunable script containing OP_RETURN
 // followed by the passed data.  An Error with the error code ErrTooMuchNullData
 // will be returned if the length of the passed data exceeds MaxDataCarrierSize.

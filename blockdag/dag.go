@@ -832,7 +832,10 @@ func (dag *BlockDAG) applyDAGChanges(node *blockNode, block *util.Block, newBloc
 	// It is now safe to meld the UTXO set to base.
 	diffSet := newVirtualUTXO.(*DiffUTXOSet)
 	virtualUTXODiff = diffSet.UTXODiff
-	dag.meldVirtualUTXO(diffSet)
+	err = dag.meldVirtualUTXO(diffSet)
+	if err != nil {
+		return nil, fmt.Errorf("failed melding the virtual UTXO: %s", err)
+	}
 
 	dag.index.SetStatusFlags(node, statusValid)
 
@@ -842,10 +845,10 @@ func (dag *BlockDAG) applyDAGChanges(node *blockNode, block *util.Block, newBloc
 	return virtualUTXODiff, virtualTxsAcceptanceData, nil
 }
 
-func (dag *BlockDAG) meldVirtualUTXO(newVirtualUTXODiffSet *DiffUTXOSet) {
+func (dag *BlockDAG) meldVirtualUTXO(newVirtualUTXODiffSet *DiffUTXOSet) error {
 	dag.utxoLock.Lock()
 	defer dag.utxoLock.Unlock()
-	newVirtualUTXODiffSet.meldToBase()
+	return newVirtualUTXODiffSet.meldToBase()
 }
 
 func (node *blockNode) diffFromTxs(pastUTXO UTXOSet, transactions []*util.Tx) (*UTXODiff, error) {
@@ -890,6 +893,14 @@ func (node *blockNode) verifyAndBuildUTXO(dag *BlockDAG, transactions []*util.Tx
 	utxo, err := pastUTXO.WithDiff(diff)
 	if err != nil {
 		return nil, nil, nil, err
+	}
+
+	calculatedMultisetHash := utxo.Multiset().Hash()
+	if !calculatedMultisetHash.IsEqual(node.utxoCommitment) {
+		str := fmt.Sprintf("block UTXO commitment is invalid - block "+
+			"header indicates %s, but calculated value is %s",
+			node.utxoCommitment, calculatedMultisetHash)
+		return nil, nil, nil, ruleError(ErrBadUTXOCommitment, str)
 	}
 	return utxo, txsAcceptanceData, feeData, nil
 }
@@ -962,7 +973,10 @@ func (node *blockNode) applyBlueBlocks(selectedParentUTXO UTXOSet, blueBlocks []
 			if isSelectedParent {
 				isAccepted = true
 			} else {
-				isAccepted = pastUTXO.AddTx(tx.MsgTx(), node.height)
+				isAccepted, err = pastUTXO.AddTx(tx.MsgTx(), node.height)
+				if err != nil {
+					return nil, nil, err
+				}
 			}
 			blockTxsAcceptanceData[i] = TxAcceptanceData{Tx: tx, IsAccepted: isAccepted}
 		}

@@ -197,13 +197,19 @@ func TestNewBlockTemplate(t *testing.T) {
 
 	template1CbTx := template1.Block.Transactions[0]
 
+	signatureScript, err := txscript.PayToScriptHashSignatureScript(blockdag.OpTrueScript, nil)
+	if err != nil {
+		t.Fatalf("Error creating signature script: %s", err)
+	}
+
 	// tx is a regular transaction, and should not be filtered by the miner
 	txIn := &wire.TxIn{
 		PreviousOutPoint: wire.OutPoint{
 			TxID:  *template1CbTx.TxID(),
 			Index: 0,
 		},
-		Sequence: wire.MaxTxInSequenceNum,
+		Sequence:        wire.MaxTxInSequenceNum,
+		SignatureScript: signatureScript,
 	}
 	txOut := &wire.TxOut{
 		PkScript: pkScript,
@@ -217,7 +223,8 @@ func TestNewBlockTemplate(t *testing.T) {
 			TxID:  *template1CbTx.TxID(),
 			Index: 1,
 		},
-		Sequence: 0,
+		Sequence:        0,
+		SignatureScript: signatureScript,
 	}
 	txOut = &wire.TxOut{
 		PkScript: pkScript,
@@ -235,7 +242,8 @@ func TestNewBlockTemplate(t *testing.T) {
 			TxID:  *template1CbTx.TxID(),
 			Index: 2,
 		},
-		Sequence: 0,
+		Sequence:        0,
+		SignatureScript: signatureScript,
 	}
 	txOut = &wire.TxOut{
 		PkScript: pkScript,
@@ -250,7 +258,8 @@ func TestNewBlockTemplate(t *testing.T) {
 			TxID:  *template1CbTx.TxID(),
 			Index: 3,
 		},
-		Sequence: 0,
+		Sequence:        0,
+		SignatureScript: signatureScript,
 	}
 	txOut = &wire.TxOut{
 		PkScript: pkScript,
@@ -264,7 +273,8 @@ func TestNewBlockTemplate(t *testing.T) {
 			TxID:  *template1CbTx.TxID(),
 			Index: 4,
 		},
-		Sequence: 0,
+		Sequence:        0,
+		SignatureScript: signatureScript,
 	}
 	txOut = &wire.TxOut{
 		PkScript: pkScript,

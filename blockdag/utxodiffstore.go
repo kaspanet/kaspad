@@ -1,16 +1,14 @@
 package blockdag
 
 import (
-	"bytes"
-	"encoding/binary"
 	"fmt"
-	"io"
 	"sync"
 
 	"github.com/daglabs/btcd/database"
 	"github.com/daglabs/btcd/util/daghash"
-	"github.com/daglabs/btcd/wire"
 )
+
+var multisetPointSize = 32
 
 type blockUTXODiffData struct {
 	diff      *UTXODiff
@@ -131,159 +129,6 @@ func (diffStore *utxoDiffStore) diffDataFromDB(hash *daghash.Hash) (*blockUTXODi
 		return nil, err
 	}
 	return diffData, nil
-}
-
-func (diffStore *utxoDiffStore) deserializeBlockUTXODiffData(serializedDiffDataBytes []byte) (*blockUTXODiffData, error) {
-	diffData := &blockUTXODiffData{}
-	serializedDiffData := bytes.NewBuffer(serializedDiffDataBytes)
-
-	var hasDiffChild bool
-	err := wire.ReadElement(serializedDiffData, &hasDiffChild)
-	if err != nil {
-		return nil, err
-	}
-
-	if hasDiffChild {
-		hash := &daghash.Hash{}
-		err := wire.ReadElement(serializedDiffData, hash)
-		if err != nil {
-			return nil, err
-		}
-		diffData.diffChild = diffStore.dag.index.LookupNode(hash)
-	}
-
-	diffData.diff = &UTXODiff{}
-
-	diffData.diff.toAdd, err = deserializeDiffEntries(serializedDiffData)
-	if err != nil {
-		return nil, err
-	}
-
-	diffData.diff.toRemove, err = deserializeDiffEntries(serializedDiffData)
-	if err != nil {
-		return nil, err
-	}
-
-	return diffData, nil
-}
-
-func deserializeDiffEntries(r io.Reader) (utxoCollection, error) {
-	count, err := wire.ReadVarInt(r)
-	if err != nil {
-		return nil, err
-	}
-	collection := utxoCollection{}
-	for i := uint64(0); i < count; i++ {
-		outPointSize, err := wire.ReadVarInt(r)
-		if err != nil {
-			return nil, err
-		}
-
-		serializedOutPoint := make([]byte, outPointSize)
-		err = binary.Read(r, byteOrder, serializedOutPoint)
-		if err != nil {
-			return nil, err
-		}
-		outPoint, err := deserializeOutPoint(serializedOutPoint)
-		if err != nil {
-			return nil, err
-		}
-
-		utxoEntrySize, err := wire.ReadVarInt(r)
-		if err != nil {
-			return nil, err
-		}
-		serializedEntry := make([]byte, utxoEntrySize)
-		err = binary.Read(r, byteOrder, serializedEntry)
-		if err != nil {
-			return nil, err
-		}
-		utxoEntry, err := deserializeUTXOEntry(serializedEntry)
-		if err != nil {
-			return nil, err
-		}
-		collection.add(*outPoint, utxoEntry)
-	}
-	return collection, nil
-}
-
-// serializeBlockUTXODiffData serializes diff data in the following format:
-// 	Name         | Data type | Description
-//	------------ | --------- | -----------
-// 	hasDiffChild | Boolean   | Indicates if a diff child exist
-//  diffChild    | Hash      | The diffChild's hash. Empty if hasDiffChild is true.
-//  diff		 | UTXODiff  | The diff data's diff
-func serializeBlockUTXODiffData(diffData *blockUTXODiffData) ([]byte, error) {
-	w := &bytes.Buffer{}
-	hasDiffChild := diffData.diffChild != nil
-	err := wire.WriteElement(w, hasDiffChild)
-	if err != nil {
-		return nil, err
-	}
-	if hasDiffChild {
-		err := wire.WriteElement(w, diffData.diffChild.hash)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	err = serializeUTXODiff(w, diffData.diff)
-	if err != nil {
-		return nil, err
-	}
-
-	return w.Bytes(), nil
-}
-
-// serializeUTXODiff serializes UTXODiff by serializing
-// UTXODiff.toAdd and UTXODiff.toRemove one after the other.
-func serializeUTXODiff(w io.Writer, diff *UTXODiff) error {
-	err := serializeUTXOCollection(w, diff.toAdd)
-	if err != nil {
-		return err
-	}
-
-	err = serializeUTXOCollection(w, diff.toRemove)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-// serializeUTXOCollection serializes utxoCollection by iterating over
-// the utxo entries and serializing them and their corresponding outpoint
-// prefixed by a varint that indicates their size.
-func serializeUTXOCollection(w io.Writer, collection utxoCollection) error {
-	err := wire.WriteVarInt(w, uint64(len(collection)))
-	if err != nil {
-		return err
-	}
-	for outPoint, utxoEntry := range collection {
-		serializedOutPoint := *outpointKey(outPoint)
-		err = wire.WriteVarInt(w, uint64(len(serializedOutPoint)))
-		if err != nil {
-			return err
-		}
-
-		err := binary.Write(w, byteOrder, serializedOutPoint)
-		if err != nil {
-			return err
-		}
-
-		serializedUTXOEntry, err := serializeUTXOEntry(utxoEntry)
-		if err != nil {
-			return err
-		}
-		err = wire.WriteVarInt(w, uint64(len(serializedUTXOEntry)))
-		if err != nil {
-			return err
-		}
-		err = binary.Write(w, byteOrder, serializedUTXOEntry)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
 }
 
 // flushToDB writes all dirty diff data to the database. If all writes
