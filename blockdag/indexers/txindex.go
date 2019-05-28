@@ -298,8 +298,14 @@ func dbAddTxIndexEntries(dbTx database.Tx, block *util.Block, blockID uint64, tx
 }
 
 func updateTxsAcceptedByVirtual(virtualTxsAcceptanceData blockdag.MultiBlockTxsAcceptanceData) error {
-	// Clear txsAcceptedByVirtual
-	txsAcceptedByVirtual = make(map[daghash.TxID]bool)
+	// Initialize a new txsAcceptedByVirtual
+	entries := 0
+	for _, blockTxsAcceptanceData := range virtualTxsAcceptanceData {
+		for range blockTxsAcceptanceData {
+			entries++
+		}
+	}
+	txsAcceptedByVirtual = make(map[daghash.TxID]bool, entries)
 
 	// Copy virtualTxsAcceptanceData to txsAcceptedByVirtual
 	for _, blockTxsAcceptanceData := range virtualTxsAcceptanceData {
