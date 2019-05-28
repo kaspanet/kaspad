@@ -486,7 +486,7 @@ func (mp *TxPool) HaveTransaction(hash *daghash.TxID) bool {
 // removeTransactions is the internal function which implements the public
 // RemoveTransactions.  See the comment for RemoveTransactions for more details.
 //
-// This method, in contrast to removeTransaction (singular) creates one utxoDiff
+// This method, in contrast to removeTransaction (singular), creates one utxoDiff
 // and calls removeTransactionWithDiff on it for every transaction. This is an
 // optimization to save us a good amount of allocations (specifically in
 // UTXODiff.WithDiff) every time we accept a block.
@@ -556,7 +556,11 @@ func (mp *TxPool) removeTransaction(tx *util.Tx, removeDependants bool, restoreI
 	return nil
 }
 
-// This method assumes that the transaction exists in the mempool
+// removeTransactionWithDiff removes the transaction tx from the mempool while
+// updating the UTXODiff diff with appropriate changes. diff is later meant to
+// be withDiff'd against the mempool UTXOSet to update it.
+//
+// This method assumes that tx exists in the mempool.
 func (mp *TxPool) removeTransactionWithDiff(tx *util.Tx, diff *blockdag.UTXODiff, restoreInputs bool) error {
 	txID := tx.ID()
 
@@ -566,9 +570,32 @@ func (mp *TxPool) removeTransactionWithDiff(tx *util.Tx, diff *blockdag.UTXODiff
 		mp.cfg.AddrIndex.RemoveUnconfirmedTx(txID)
 	}
 
-	msgTx := tx.MsgTx()
-	for idx := range msgTx.TxOut {
-		outPoint := *wire.NewOutPoint(txID, uint32(idx))
+	err := mp.removeTransactionUTXOEntriesFromDiff(tx, diff)
+	if err != nil {
+		return fmt.Errorf("could not remove UTXOEntry from diff: %s", err)
+	}
+
+	err = mp.markTransactionOutputsUnspent(tx, diff, restoreInputs)
+	if err != nil {
+		return fmt.Errorf("could not mark transaction output as unspent: %s", err)
+	}
+
+	txDesc, _ := mp.fetchTransaction(txID)
+	if txDesc.depCount == 0 {
+		delete(mp.pool, *txID)
+	} else {
+		delete(mp.depends, *txID)
+	}
+
+	mp.processRemovedTransactionDependencies(tx)
+
+	return nil
+}
+
+// removeTransactionUTXOEntriesFromDiff removes tx's UTXOEntries from the diff
+func (mp *TxPool) removeTransactionUTXOEntriesFromDiff(tx *util.Tx, diff *blockdag.UTXODiff) error {
+	for idx := range tx.MsgTx().TxOut {
+		outPoint := *wire.NewOutPoint(tx.ID(), uint32(idx))
 		entry, exists := mp.mpUTXOSet.Get(outPoint)
 		if exists {
 			err := diff.RemoveEntry(outPoint, entry)
@@ -577,9 +604,13 @@ func (mp *TxPool) removeTransactionWithDiff(tx *util.Tx, diff *blockdag.UTXODiff
 			}
 		}
 	}
+	return nil
+}
 
-	// Mark the referenced outpoints as unspent by the pool.
-	for _, txIn := range msgTx.TxIn {
+// markTransactionOutputsUnspent updates the mempool so that tx's TXOs are unspent
+// Iff restoreInputs is true then the inputs are restored back into the supplied diff
+func (mp *TxPool) markTransactionOutputsUnspent(tx *util.Tx, diff *blockdag.UTXODiff, restoreInputs bool) error {
+	for _, txIn := range tx.MsgTx().TxIn {
 		if restoreInputs {
 			if prevTxDesc, exists := mp.pool[txIn.PreviousOutPoint.TxID]; exists {
 				prevOut := prevTxDesc.Tx.MsgTx().TxOut[txIn.PreviousOutPoint.Index]
@@ -600,17 +631,14 @@ func (mp *TxPool) removeTransactionWithDiff(tx *util.Tx, diff *blockdag.UTXODiff
 		}
 		delete(mp.outpoints, txIn.PreviousOutPoint)
 	}
+	return nil
+}
 
-	txDesc, _ := mp.fetchTransaction(txID)
-	if txDesc.depCount == 0 {
-		delete(mp.pool, *txID)
-	} else {
-		delete(mp.depends, *txID)
-	}
-
-	// Process dependent transactions
-	prevOut := wire.OutPoint{TxID: *txID}
-	for txOutIdx := range msgTx.TxOut {
+// processRemovedTransactionDependencies processes the dependencies of a
+// transaction tx that was just now removed from the mempool
+func (mp *TxPool) processRemovedTransactionDependencies(tx *util.Tx) {
+	prevOut := wire.OutPoint{TxID: *tx.ID()}
+	for txOutIdx := range tx.MsgTx().TxOut {
 		// Skip to the next available output if there are none.
 		prevOut.Index = uint32(txOutIdx)
 		depends, exists := mp.dependsByPrev[prevOut]
@@ -632,8 +660,6 @@ func (mp *TxPool) removeTransactionWithDiff(tx *util.Tx, diff *blockdag.UTXODiff
 		}
 		delete(mp.dependsByPrev, prevOut)
 	}
-
-	return nil
 }
 
 // RemoveTransaction removes the passed transaction from the mempool. When the
