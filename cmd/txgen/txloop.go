@@ -73,15 +73,11 @@ func utxosFunds() uint64 {
 	return funds
 }
 
-func isTxMatured(tx *wire.MsgTx, confirmations *uint64) bool {
-	if confirmations == nil {
-		panic(fmt.Errorf("received <nil> confirmations in tx %s. "+
-			"This could be because TxIndex is off", tx.TxHash()))
-	}
+func isTxMatured(tx *wire.MsgTx, confirmations uint64) bool {
 	if !tx.IsBlockReward() {
-		return *confirmations >= 1
+		return confirmations >= 1
 	}
-	return *confirmations >= activeNetParams.BlockRewardMaturity
+	return confirmations >= activeNetParams.BlockRewardMaturity
 }
 
 // DumpTx logs out transaction with given header
@@ -146,7 +142,7 @@ func fetchAndPopulateUtxos(client *rpcclient.Client) (funds uint64, exit bool, e
 			if spentTxs[*txID] {
 				continue
 			}
-			if isTxMatured(&tx, searchResult.Confirmations) {
+			if isTxMatured(&tx, *searchResult.Confirmations) {
 				spentTxs[*txID] = true
 				evalOutputs(tx.TxOut, txID)
 				evalInputs(tx.TxIn)
