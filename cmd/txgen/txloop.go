@@ -77,7 +77,7 @@ func isTxMatured(tx *wire.MsgTx, confirmations uint64) bool {
 	if !tx.IsBlockReward() {
 		return confirmations >= 1
 	}
-	return confirmations >= uint64(float64(activeNetParams.BlockRewardMaturity)*1.5)
+	return confirmations >= activeNetParams.BlockRewardMaturity
 }
 
 // DumpTx logs out transaction with given header
@@ -142,7 +142,7 @@ func fetchAndPopulateUtxos(client *rpcclient.Client) (funds uint64, exit bool, e
 			if spentTxs[*txID] {
 				continue
 			}
-			if isTxMatured(&tx, searchResult.Confirmations) {
+			if isTxMatured(&tx, *searchResult.Confirmations) {
 				spentTxs[*txID] = true
 				evalOutputs(tx.TxOut, txID)
 				evalInputs(tx.TxIn)
