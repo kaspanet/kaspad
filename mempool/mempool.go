@@ -517,9 +517,9 @@ func (mp *TxPool) removeTransactions(txs []*util.Tx) error {
 // RemoveTransaction.  See the comment for RemoveTransaction for more details.
 //
 // This function MUST be called with the mempool lock held (for writes).
-func (mp *TxPool) removeTransaction(tx *util.Tx, removeRedeemers bool, restoreInputs bool) error {
+func (mp *TxPool) removeTransaction(tx *util.Tx, removeDependants bool, restoreInputs bool) error {
 	txID := tx.ID()
-	if removeRedeemers {
+	if removeDependants {
 		// Remove any transactions which rely on this one.
 		for i := uint32(0); i < uint32(len(tx.MsgTx().TxOut)); i++ {
 			prevOut := wire.OutPoint{TxID: *txID, Index: i}
@@ -635,16 +635,16 @@ func (mp *TxPool) removeTransactionWithDiff(tx *util.Tx, diff *blockdag.UTXODiff
 }
 
 // RemoveTransaction removes the passed transaction from the mempool. When the
-// removeRedeemers flag is set, any transactions that redeem outputs from the
-// removed transaction will also be removed recursively from the mempool, as
-// they would otherwise become orphans.
+// removeDependants flag is set, any transactions that depend on the removed
+// transaction (that is to say, redeem outputs from it) will also be removed
+// recursively from the mempool, as they would otherwise become orphans.
 //
 // This function is safe for concurrent access.
-func (mp *TxPool) RemoveTransaction(tx *util.Tx, removeRedeemers bool, restoreInputs bool) error {
+func (mp *TxPool) RemoveTransaction(tx *util.Tx, removeDependants bool, restoreInputs bool) error {
 	// Protect concurrent access.
 	mp.mtx.Lock()
 	defer mp.mtx.Unlock()
-	return mp.removeTransaction(tx, removeRedeemers, restoreInputs)
+	return mp.removeTransaction(tx, removeDependants, restoreInputs)
 }
 
 // RemoveTransactions removes the passed transactions from the mempool.
