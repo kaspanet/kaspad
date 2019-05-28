@@ -898,6 +898,14 @@ func (node *blockNode) verifyAndBuildUTXO(dag *BlockDAG, transactions []*util.Tx
 	if err != nil {
 		return nil, nil, nil, err
 	}
+
+	calculatedMultisetHash := utxo.Multiset().Hash()
+	if !calculatedMultisetHash.IsEqual(node.utxoCommitment) {
+		str := fmt.Sprintf("block UTXO commitment is invalid - block "+
+			"header indicates %s, but calculated value is %s",
+			node.utxoCommitment, calculatedMultisetHash)
+		return nil, nil, nil, ruleError(ErrBadUTXOCommitment, str)
+	}
 	return utxo, txsAcceptanceData, feeData, nil
 }
 
