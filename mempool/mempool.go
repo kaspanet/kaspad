@@ -486,6 +486,11 @@ func (mp *TxPool) HaveTransaction(hash *daghash.TxID) bool {
 // removeTransactions is the internal function which implements the public
 // RemoveTransactions.  See the comment for RemoveTransactions for more details.
 //
+// This method, in contrast to removeTransaction (singular) creates one utxoDiff
+// and calls removeTransactionWithDiff on it for every transaction. This is an
+// optimization to save us a good amount of allocations (specifically in
+// UTXODiff.WithDiff) every time we accept a block.
+//
 // This function MUST be called with the mempool lock held (for writes).
 func (mp *TxPool) removeTransactions(txs []*util.Tx) error {
 	diff := blockdag.NewUTXODiff()
