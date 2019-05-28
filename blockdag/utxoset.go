@@ -390,7 +390,7 @@ type UTXOSet interface {
 	clone() UTXOSet
 	Get(outPoint wire.OutPoint) (*UTXOEntry, bool)
 	Multiset() *btcec.Multiset
-	WithTransactions(transactions []*wire.MsgTx, blockHeight uint64, allowDoubleSpends bool) (UTXOSet, error)
+	WithTransactions(transactions []*wire.MsgTx, blockHeight uint64, ignoreDoubleSpends bool) (UTXOSet, error)
 }
 
 // diffFromTx is a common implementation for diffFromTx, that works
@@ -552,14 +552,14 @@ func (fus *FullUTXOSet) removeAndUpdateMultiset(outPoint wire.OutPoint) error {
 }
 
 // WithTransactions returns a new UTXO Set with the added transactions
-func (fus *FullUTXOSet) WithTransactions(transactions []*wire.MsgTx, blockHeight uint64, allowDoubleSpends bool) (UTXOSet, error) {
+func (fus *FullUTXOSet) WithTransactions(transactions []*wire.MsgTx, blockHeight uint64, ignoreDoubleSpends bool) (UTXOSet, error) {
 	diffSet := NewDiffUTXOSet(fus, NewUTXODiff())
 	for _, tx := range transactions {
 		isAccepted, err := diffSet.AddTx(tx, blockHeight)
 		if err != nil {
 			return nil, err
 		}
-		if !allowDoubleSpends && !isAccepted {
+		if !ignoreDoubleSpends && !isAccepted {
 			return nil, fmt.Errorf("Transaction %s is not valid with the current UTXO set", tx.TxID())
 		}
 	}
@@ -715,14 +715,14 @@ func (dus *DiffUTXOSet) Multiset() *btcec.Multiset {
 }
 
 // WithTransactions returns a new UTXO Set with the added transactions
-func (dus *DiffUTXOSet) WithTransactions(transactions []*wire.MsgTx, blockHeight uint64, allowDoubleSpends bool) (UTXOSet, error) {
+func (dus *DiffUTXOSet) WithTransactions(transactions []*wire.MsgTx, blockHeight uint64, ignoreDoubleSpends bool) (UTXOSet, error) {
 	diffSet := NewDiffUTXOSet(dus.base, dus.UTXODiff.clone())
 	for _, tx := range transactions {
 		isAccepted, err := diffSet.AddTx(tx, blockHeight)
 		if err != nil {
 			return nil, err
 		}
-		if !allowDoubleSpends && !isAccepted {
+		if !ignoreDoubleSpends && !isAccepted {
 			return nil, fmt.Errorf("Transaction %s is not valid with the current UTXO set", tx.TxID())
 		}
 	}
