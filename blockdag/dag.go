@@ -834,7 +834,7 @@ func (dag *BlockDAG) applyDAGChanges(node *blockNode, block *util.Block, newBloc
 	virtualUTXODiff = diffSet.UTXODiff
 	err = dag.meldVirtualUTXO(diffSet)
 	if err != nil {
-		return nil, fmt.Errorf("failed melding the virtual UTXO: %s", err)
+		return nil, nil, fmt.Errorf("failed melding the virtual UTXO: %s", err)
 	}
 
 	dag.index.SetStatusFlags(node, statusValid)
