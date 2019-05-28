@@ -551,13 +551,9 @@ func (mp *TxPool) removeTransaction(tx *util.Tx, removeDependants bool, restoreI
 	return nil
 }
 
+// This method assumes that the transaction exists in the mempool
 func (mp *TxPool) removeTransactionWithDiff(tx *util.Tx, diff *blockdag.UTXODiff, restoreInputs bool) error {
 	txID := tx.ID()
-
-	txDesc, exists := mp.fetchTransaction(txID)
-	if !exists {
-		return nil
-	}
 
 	// Remove unconfirmed address index entries associated with the
 	// transaction if enabled.
@@ -600,6 +596,7 @@ func (mp *TxPool) removeTransactionWithDiff(tx *util.Tx, diff *blockdag.UTXODiff
 		delete(mp.outpoints, txIn.PreviousOutPoint)
 	}
 
+	txDesc, _ := mp.fetchTransaction(txID)
 	if txDesc.depCount == 0 {
 		delete(mp.pool, *txID)
 	} else {
