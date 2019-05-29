@@ -143,7 +143,7 @@ func createTxForTest(numInputs uint32, numOutputs uint32, outputValue uint64, su
 func createCoinbaseTxForTest(blockHeight uint64, numOutputs uint32, extraNonce int64, params *dagconfig.Params) (*wire.MsgTx, error) {
 	// Create standard coinbase script.
 	coinbaseScript, err := txscript.NewScriptBuilder().
-		AddInt64(int64(blockHeight)).AddInt64(extraNonce).Script()
+		AddInt64(extraNonce).Script()
 	if err != nil {
 		return nil, err
 	}

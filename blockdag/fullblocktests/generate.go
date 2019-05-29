@@ -243,8 +243,8 @@ func pushDataScript(items ...[]byte) []byte {
 // standardCoinbaseScript returns a standard script suitable for use as the
 // signature script of the coinbase transaction of a new block.  In particular,
 // it starts with the block height that is required by version 2 blocks.
-func standardCoinbaseScript(blockHeight uint64, extraNonce uint64) ([]byte, error) {
-	return txscript.NewScriptBuilder().AddInt64(int64(blockHeight)).
+func standardCoinbaseScript(extraNonce uint64) ([]byte, error) {
+	return txscript.NewScriptBuilder().
 		AddInt64(int64(extraNonce)).Script()
 }
 
@@ -273,11 +273,10 @@ func uniqueOpReturnScript() []byte {
 }
 
 // createCoinbaseTx returns a coinbase transaction paying an appropriate
-// subsidy based on the passed block height.  The coinbase signature script
-// conforms to the requirements of version 2 blocks.
+// subsidy based on the passed block height.
 func (g *testGenerator) createCoinbaseTx(blockHeight uint64) *wire.MsgTx {
 	extraNonce := uint64(0)
-	coinbaseScript, err := standardCoinbaseScript(blockHeight, extraNonce)
+	coinbaseScript, err := standardCoinbaseScript(extraNonce)
 	if err != nil {
 		panic(err)
 	}

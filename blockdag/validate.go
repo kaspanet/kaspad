@@ -5,7 +5,6 @@
 package blockdag
 
 import (
-	"encoding/binary"
 	"fmt"
 	"math"
 	"math/big"
@@ -246,9 +245,9 @@ func CheckTransactionSanity(tx *util.Tx, subnetworkID *subnetworkid.SubnetworkID
 		return ruleError(ErrInvalidPayloadHash, "unexpected non-empty payload hash in native subnetwork")
 	}
 
-	// Transactions in native and subnetwork registry subnetworks must have Gas = 0
+	// Transactions in native, registry and coinbase subnetworks must have Gas = 0
 	if (msgTx.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) ||
-		msgTx.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDRegistry)) &&
+		msgTx.SubnetworkID.IsBuiltIn()) &&
 		msgTx.Gas > 0 {
 
 		return ruleError(ErrInvalidGas, "transaction in the native or "+
@@ -270,10 +269,10 @@ func CheckTransactionSanity(tx *util.Tx, subnetworkID *subnetworkid.SubnetworkID
 				"with length != 8 bytes")
 	}
 
-	// If we are a partial node, only transactions on the Registry subnetwork
+	// If we are a partial node, only transactions on built in subnetworks
 	// or our own subnetwork may have a payload
 	isLocalNodeFull := subnetworkID == nil
-	shouldTxBeFull := msgTx.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDRegistry) ||
+	shouldTxBeFull := msgTx.SubnetworkID.IsBuiltIn() ||
 		msgTx.SubnetworkID.IsEqual(subnetworkID)
 	if !isLocalNodeFull && !shouldTxBeFull && len(msgTx.Payload) > 0 {
 		return ruleError(ErrInvalidPayload,
@@ -604,63 +603,6 @@ func (dag *BlockDAG) CheckBlockSanity(block *util.Block, powLimit *big.Int,
 	return dag.checkBlockSanity(block, BFNone)
 }
 
-// ExtractCoinbaseHeight attempts to extract the height of the block from the
-// scriptSig of a coinbase transaction.
-func ExtractCoinbaseHeight(coinbaseTx *util.Tx) (uint64, error) {
-	sigScript := coinbaseTx.MsgTx().TxIn[0].SignatureScript
-	if len(sigScript) < 1 {
-		str := "the coinbase signature script" +
-			"must start with the " +
-			"length of the serialized block height"
-		return 0, ruleError(ErrMissingCoinbaseHeight, str)
-	}
-
-	// Detect the case when the block height is a small integer encoded with
-	// a single byte.
-	opcode := int(sigScript[0])
-	if opcode == txscript.Op0 {
-		return 0, nil
-	}
-	if opcode >= txscript.Op1 && opcode <= txscript.Op16 {
-		return uint64(opcode - (txscript.Op1 - 1)), nil
-	}
-
-	// Otherwise, the opcode is the length of the following bytes which
-	// encode in the block height.
-	serializedLen := int(sigScript[0])
-	if len(sigScript[1:]) < serializedLen {
-		str := "the coinbase signature script " +
-			"must start with the " +
-			"serialized block height"
-		return 0, ruleError(ErrMissingCoinbaseHeight, str)
-	}
-
-	serializedHeightBytes := make([]byte, 8)
-	copy(serializedHeightBytes, sigScript[1:serializedLen+1])
-	serializedHeight := binary.LittleEndian.Uint64(serializedHeightBytes)
-
-	return serializedHeight, nil
-}
-
-// checkSerializedHeight checks if the signature script in the passed
-// transaction starts with the serialized block height of wantHeight.
-func checkSerializedHeight(block *util.Block) error {
-	coinbaseTx := block.CoinbaseTransaction()
-	serializedHeight, err := ExtractCoinbaseHeight(coinbaseTx)
-	if err != nil {
-		return err
-	}
-
-	wantHeight := block.Height()
-	if serializedHeight != wantHeight {
-		str := fmt.Sprintf("the coinbase signature script serialized "+
-			"block height is %d when %d was expected",
-			serializedHeight, wantHeight)
-		return ruleError(ErrBadCoinbaseHeight, str)
-	}
-	return nil
-}
-
 // checkBlockHeaderContext performs several validation checks on the block header
 // which depend on its position within the block dag.
 //
@@ -807,13 +749,6 @@ func (dag *BlockDAG) checkBlockContext(block *util.Block, parents blockSet, blue
 		if err := dag.validateAllTxsFinalized(block, header, bluestParent); err != nil {
 			return err
 		}
-
-		// Ensure coinbase starts with serialized block heights
-		err := checkSerializedHeight(block)
-		if err != nil {
-			return err
-		}
-
 	}
 
 	return nil
@@ -1051,22 +986,6 @@ func (dag *BlockDAG) checkConnectToPastUTXO(block *blockNode, pastUTXO UTXOSet,
 	}
 
 	if !fastAdd {
-		// The total output values of the coinbase transaction must not exceed
-		// the expected subsidy value plus total transaction fees gained from
-		// mining the block.  It is safe to ignore overflow and out of range
-		// errors here because those error conditions would have already been
-		// caught by checkTransactionSanity.
-		var totalSatoshiOut uint64
-		for _, txOut := range transactions[0].MsgTx().TxOut {
-			totalSatoshiOut += txOut.Value
-		}
-		expectedSatoshiOut := CalcBlockSubsidy(block.height, dag.dagParams)
-		if totalSatoshiOut > expectedSatoshiOut {
-			str := fmt.Sprintf("coinbase transaction for block pays %d "+
-				"which is more than expected value of %d",
-				totalSatoshiOut, expectedSatoshiOut)
-			return nil, ruleError(ErrBadCoinbaseValue, str)
-		}
 
 		// Don't run scripts if this node is before the latest known good
 		// checkpoint since the validity is verified via the checkpoints (all

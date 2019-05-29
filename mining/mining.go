@@ -212,8 +212,8 @@ type BlockTemplate struct {
 // signature script of the coinbase transaction of a new block.  In particular,
 // it starts with the block height that is required by version 2 blocks and adds
 // the extra nonce as well as additional coinbase flags.
-func StandardCoinbaseScript(nextBlockHeight uint64, extraNonce uint64) ([]byte, error) {
-	return txscript.NewScriptBuilder().AddInt64(int64(nextBlockHeight)).
+func StandardCoinbaseScript(extraNonce uint64) ([]byte, error) {
+	return txscript.NewScriptBuilder().
 		AddInt64(int64(extraNonce)).AddData([]byte(CoinbaseFlags)).
 		Script()
 }
@@ -224,7 +224,7 @@ func StandardCoinbaseScript(nextBlockHeight uint64, extraNonce uint64) ([]byte, 
 //
 // See the comment for NewBlockTemplate for more information about why the nil
 // address handling is useful.
-func CreateCoinbaseTx(params *dagconfig.Params, coinbaseScript []byte, nextBlockHeight uint64, addr util.Address) (*util.Tx, error) {
+func CreateCoinbaseTx(coinbaseScript []byte, addr util.Address) (*util.Tx, error) {
 	// Create the script to pay to the provided payment address if one was
 	// specified.  Otherwise create a script that allows the coinbase to be
 	// redeemable by anyone.
@@ -255,11 +255,7 @@ func CreateCoinbaseTx(params *dagconfig.Params, coinbaseScript []byte, nextBlock
 		SignatureScript: coinbaseScript,
 		Sequence:        wire.MaxTxInSequenceNum,
 	}
-	txOut := &wire.TxOut{
-		Value:    blockdag.CalcBlockSubsidy(nextBlockHeight, params),
-		PkScript: pkScript,
-	}
-	return util.NewTx(wire.NewNativeMsgTx(wire.TxVersion, []*wire.TxIn{txIn}, []*wire.TxOut{txOut})), nil
+	return util.NewTx(wire.NewSubnetworkMsgTx(wire.TxVersion, []*wire.TxIn{txIn}, nil, subnetworkid.SubnetworkIDCoinbase, 0, pkScript)), nil
 }
 
 // MinimumMedianTime returns the minimum allowed timestamp for a block building
@@ -404,11 +400,11 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 	if err != nil {
 		return nil, err
 	}
-	coinbaseScript, err := StandardCoinbaseScript(nextBlockHeight, extraNonce)
+	coinbaseScript, err := StandardCoinbaseScript(extraNonce)
 	if err != nil {
 		return nil, err
 	}
-	coinbaseTx, err := CreateCoinbaseTx(g.dagParams, coinbaseScript, nextBlockHeight, payToAddress)
+	coinbaseTx, err := CreateCoinbaseTx(coinbaseScript, payToAddress)
 	if err != nil {
 		return nil, err
 	}
@@ -497,7 +493,7 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 		prioItem := heap.Pop(priorityQueue).(*txPrioItem)
 		tx := prioItem.tx
 
-		if !tx.MsgTx().SubnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) && !tx.MsgTx().SubnetworkID.IsEqual(subnetworkid.SubnetworkIDRegistry) {
+		if !tx.MsgTx().SubnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) && !tx.MsgTx().SubnetworkID.IsBuiltIn() {
 			subnetworkID := tx.MsgTx().SubnetworkID
 			gasUsage, ok := gasUsageMap[subnetworkID]
 			if !ok {
@@ -728,7 +724,7 @@ func (g *BlkTmplGenerator) UpdateBlockTime(msgBlock *wire.MsgBlock) error {
 // height.  It also recalculates and updates the new merkle root that results
 // from changing the coinbase script.
 func (g *BlkTmplGenerator) UpdateExtraNonce(msgBlock *wire.MsgBlock, blockHeight uint64, extraNonce uint64) error {
-	coinbaseScript, err := StandardCoinbaseScript(blockHeight, extraNonce)
+	coinbaseScript, err := StandardCoinbaseScript(extraNonce)
 	if err != nil {
 		return err
 	}

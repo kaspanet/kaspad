@@ -294,12 +294,22 @@ func (msg *MsgTx) AddTxOut(to *TxOut) {
 // a previous output transaction index set to the maximum value along with a
 // zero TxID.
 func (msg *MsgTx) IsCoinBase() bool {
-	// A coin base must only have one transaction input.
+	// A coinbase transaction must only have one transaction input.
 	if len(msg.TxIn) != 1 {
 		return false
 	}
 
-	// The previous output of a coinbase must have a max value index and
+	// A coinbase transaction must have no outputs
+	if len(msg.TxOut) != 0 {
+		return false
+	}
+
+	// A coinbase transaction must have subnetwork id SubnetworkIDCoinbase
+	if !msg.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDCoinbase) {
+		return false
+	}
+
+	// The previous output of a coinbase transaction must have a max value index and
 	// a zero TxID.
 	prevOut := &msg.TxIn[0].PreviousOutPoint
 	return prevOut.Index == math.MaxUint32 && prevOut.TxID == daghash.ZeroTxID
@@ -680,8 +690,8 @@ func (msg *MsgTx) encode(w io.Writer, pver uint32, encodingFlags txEncoding) err
 	}
 
 	if !msg.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) {
-		if msg.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDRegistry) && msg.Gas != 0 {
-			str := "Transactions from registry subnetwork should have 0 gas"
+		if msg.SubnetworkID.IsBuiltIn() && msg.Gas != 0 {
+			str := "Transactions from built-in should have 0 gas"
 			return messageError("MsgTx.BtcEncode", str)
 		}
 
