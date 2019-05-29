@@ -79,29 +79,39 @@ func TestTxIndexConnectBlock(t *testing.T) {
 	block3Tx := createTransaction(t, block2.Transactions[0].TxOut[0].Value, block2.Transactions[0], 0)
 	block3 := prepareAndProcessBlock([]*daghash.Hash{block2.BlockHash()}, []*wire.MsgTx{block3Tx}, "3")
 
+	block2TxID := block2Tx.TxID()
+	block2TxNewAcceptedBlock, err := txIndex.BlockThatAcceptedTx(dag, block2TxID)
+	if err != nil {
+		t.Errorf("TestTxIndexConnectBlock: TxAcceptedInBlock: %v", err)
+	}
+	block3Hash := block3.BlockHash()
+	if !block2TxNewAcceptedBlock.IsEqual(block3Hash) {
+		t.Errorf("TestTxIndexConnectBlock: block2Tx should've "+
+			"been accepted in block %v but instead got accepted in block %v", block3Hash, block2TxNewAcceptedBlock)
+	}
+
 	block3TxID := block3Tx.TxID()
 	block3TxNewAcceptedBlock, err := txIndex.BlockThatAcceptedTx(dag, block3TxID)
 	if err != nil {
 		t.Errorf("TestTxIndexConnectBlock: TxAcceptedInBlock: %v", err)
 	}
-	block3Hash := block3.BlockHash()
-	if !block3TxNewAcceptedBlock.IsEqual(block3Hash) {
+	if !block3TxNewAcceptedBlock.IsEqual(&daghash.ZeroHash) {
 		t.Errorf("TestTxIndexConnectBlock: block3Tx should've "+
-			"been accepted in block %v but instead got accepted in block %v", block3Hash, block3TxNewAcceptedBlock)
+			"been accepted by the virtual block but instead got accepted in block %v", block3TxNewAcceptedBlock)
 	}
 
 	block3A := prepareAndProcessBlock([]*daghash.Hash{block2.BlockHash()}, []*wire.MsgTx{block3Tx}, "3A")
 	block4 := prepareAndProcessBlock([]*daghash.Hash{block3.BlockHash()}, nil, "4")
 	prepareAndProcessBlock([]*daghash.Hash{block3A.BlockHash(), block4.BlockHash()}, nil, "5")
 
-	block3TxAcceptedBlock, err := txIndex.BlockThatAcceptedTx(dag, block3TxID)
+	block2TxAcceptedBlock, err := txIndex.BlockThatAcceptedTx(dag, block2TxID)
 	if err != nil {
 		t.Errorf("TestTxIndexConnectBlock: TxAcceptedInBlock: %v", err)
 	}
 	block3AHash := block3A.BlockHash()
-	if !block3TxAcceptedBlock.IsEqual(block3AHash) {
-		t.Errorf("TestTxIndexConnectBlock: block3Tx should've "+
-			"been accepted in block %v but instead got accepted in block %v", block3AHash, block3TxAcceptedBlock)
+	if !block2TxAcceptedBlock.IsEqual(block3AHash) {
+		t.Errorf("TestTxIndexConnectBlock: block2Tx should've "+
+			"been accepted in block %v but instead got accepted in block %v", block3AHash, block2TxAcceptedBlock)
 	}
 
 	region, err := txIndex.TxFirstBlockRegion(block3TxID)

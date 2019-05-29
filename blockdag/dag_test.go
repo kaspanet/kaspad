@@ -886,7 +886,7 @@ func TestConfirmations(t *testing.T) {
 	dag.TestSetBlockRewardMaturity(1)
 
 	// Check that the genesis block of a DAG with only the genesis block in it has confirmations = 1.
-	genesisConfirmations, err := dag.confirmations(dag.genesis)
+	genesisConfirmations, err := dag.blockConfirmations(dag.genesis)
 	if err != nil {
 		t.Fatalf("TestConfirmations: confirmations for genesis block unexpectedly failed: %s", err)
 	}
@@ -905,7 +905,7 @@ func TestConfirmations(t *testing.T) {
 
 	// Make sure that each one of the chain blocks has the expected confirmations number
 	for i, node := range chainBlocks {
-		confirmations, err := dag.confirmations(node)
+		confirmations, err := dag.blockConfirmations(node)
 		if err != nil {
 			t.Fatalf("TestConfirmations: confirmations for node 1 unexpectedly failed: %s", err)
 		}
@@ -925,7 +925,7 @@ func TestConfirmations(t *testing.T) {
 	dag.virtual.AddTip(branchingBlocks[1])
 
 	// Check that the genesis has a confirmations number == len(chainBlocks)
-	genesisConfirmations, err = dag.confirmations(dag.genesis)
+	genesisConfirmations, err = dag.blockConfirmations(dag.genesis)
 	if err != nil {
 		t.Fatalf("TestConfirmations: confirmations for genesis block unexpectedly failed: %s", err)
 	}
@@ -938,7 +938,7 @@ func TestConfirmations(t *testing.T) {
 	// Check that each of the blue tips has a confirmation number of 1, and each of the red tips has 0 confirmations.
 	tips := dag.virtual.tips()
 	for _, tip := range tips {
-		tipConfirmations, err := dag.confirmations(tip)
+		tipConfirmations, err := dag.blockConfirmations(tip)
 		if err != nil {
 			t.Fatalf("TestConfirmations: confirmations for tip unexpectedly failed: %s", err)
 		}
@@ -966,7 +966,7 @@ func TestConfirmations(t *testing.T) {
 
 	// Make sure that a red block has confirmation number = 0
 	redChainBlock := chainBlocks[3]
-	redChainBlockConfirmations, err := dag.confirmations(redChainBlock)
+	redChainBlockConfirmations, err := dag.blockConfirmations(redChainBlock)
 	if err != nil {
 		t.Fatalf("TestConfirmations: confirmations for red chain block unexpectedly failed: %s", err)
 	}
@@ -977,7 +977,7 @@ func TestConfirmations(t *testing.T) {
 
 	// Make sure that the red tip has confirmation number = 0
 	redChainTip := chainBlocks[len(chainBlocks)-1]
-	redChainTipConfirmations, err := dag.confirmations(redChainTip)
+	redChainTipConfirmations, err := dag.blockConfirmations(redChainTip)
 	if err != nil {
 		t.Fatalf("TestConfirmations: confirmations for red chain tip unexpectedly failed: %s", err)
 	}
