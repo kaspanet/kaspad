@@ -173,7 +173,11 @@ func NewUTXODiff() *UTXODiff {
 // 2. This diff contains a UTXO in toRemove, and the other diff does not contain it
 //    diffFrom results in the UTXO being added to toAdd
 func (d *UTXODiff) diffFrom(other *UTXODiff) (*UTXODiff, error) {
-	result := NewUTXODiff()
+	result := UTXODiff{
+		toAdd:        make(utxoCollection, len(d.toRemove)+len(other.toAdd)),
+		toRemove:     make(utxoCollection, len(d.toAdd)+len(other.toRemove)),
+		diffMultiset: btcec.NewMultiset(btcec.S256()),
+	}
 
 	// Note that the following cases are not accounted for, as they are impossible
 	// as long as the base utxoSet is the same:
@@ -223,7 +227,7 @@ func (d *UTXODiff) diffFrom(other *UTXODiff) (*UTXODiff, error) {
 	// Create a new diffMultiset as the subtraction of the two diffs.
 	result.diffMultiset = other.diffMultiset.Subtract(d.diffMultiset)
 
-	return result, nil
+	return &result, nil
 }
 
 // WithDiff applies provided diff to this diff, creating a new utxoDiff, that would be the result if
@@ -253,7 +257,11 @@ func (d *UTXODiff) diffFrom(other *UTXODiff) (*UTXODiff, error) {
 // 2. This diff contains a UTXO in toRemove, and the other diff does not contain it
 //    WithDiff results in the UTXO being added to toRemove
 func (d *UTXODiff) WithDiff(diff *UTXODiff) (*UTXODiff, error) {
-	result := NewUTXODiff()
+	result := UTXODiff{
+		toAdd:        make(utxoCollection, len(d.toAdd)+len(diff.toAdd)),
+		toRemove:     make(utxoCollection, len(d.toRemove)+len(diff.toRemove)),
+		diffMultiset: btcec.NewMultiset(btcec.S256()),
+	}
 
 	// All transactions in d.toAdd:
 	// If they are not in diff.toRemove - should be added in result.toAdd
@@ -300,7 +308,7 @@ func (d *UTXODiff) WithDiff(diff *UTXODiff) (*UTXODiff, error) {
 	// Apply diff.diffMultiset to d.diffMultiset
 	result.diffMultiset = d.diffMultiset.Union(diff.diffMultiset)
 
-	return result, nil
+	return &result, nil
 }
 
 // clone returns a clone of this utxoDiff
