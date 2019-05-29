@@ -604,7 +604,7 @@ func (r FutureGetSubnetworkResult) Receive() (*btcjson.GetSubnetworkResult, erro
 		return nil, err
 	}
 
-	// Unmarshal result as an getSubnetwork result object.
+	// Unmarshal result as a getSubnetwork result object.
 	var getSubnetworkResult *btcjson.GetSubnetworkResult
 	err = json.Unmarshal(res, &getSubnetworkResult)
 	if err != nil {
