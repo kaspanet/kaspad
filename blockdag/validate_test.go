@@ -772,7 +772,7 @@ var Block100000 = wire.MsgBlock{
 		UTXOCommitment: &daghash.ZeroHash,
 		Timestamp:      time.Unix(0x5cee92cc, 0),
 		Bits:           0x207fffff,
-		Nonce:          0x00000002,
+		Nonce:          0x00000000,
 	},
 	Transactions: []*wire.MsgTx{
 		{
