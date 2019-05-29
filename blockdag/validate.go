@@ -516,13 +516,13 @@ func (dag *BlockDAG) checkBlockSanity(block *util.Block, flags BehaviorFlags) er
 	for i, tx := range transactions[txOffset:] {
 		if IsCoinBase(tx) {
 			str := fmt.Sprintf("block contains second coinbase at "+
-				"index %d", i+2)
+				"index %d", i+txOffset)
 			return ruleError(ErrMultipleCoinbases, str)
 		}
 		if IsFeeTransaction(tx) {
-			str := fmt.Sprintf("block contains second fee transaction at "+
-				"index %d", i+2)
-			return ruleError(ErrMultipleFeeTransactions, str)
+			str := fmt.Sprintf("block contains an explicit fee transaction at "+
+				"index %d", i+txOffset)
+			return ruleError(ErrExplicitFeeTransaction, str)
 		}
 		if subnetworkid.Less(&tx.MsgTx().SubnetworkID, &transactions[i].MsgTx().SubnetworkID) {
 			return ruleError(ErrTransactionsNotSorted, "transactions must be sorted by subnetwork")

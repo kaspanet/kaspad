@@ -193,9 +193,9 @@ const (
 	// ErrBadFeeTransaction indicates that the block's fee transaction is not build as expected
 	ErrBadFeeTransaction
 
-	// ErrMultipleFeeTransactions indicates a block contains more than one
-	// fee transaction.
-	ErrMultipleFeeTransactions
+	// ErrExplicitFeeTransaction indicates a block contains an explicit
+	// fee transaction, while it should be omitted.
+	ErrExplicitFeeTransaction
 
 	// ErrScriptMalformed indicates a transaction script is malformed in
 	// some way.  For example, it might be longer than the maximum allowed
@@ -285,7 +285,7 @@ var errorCodeStrings = map[ErrorCode]string{
 	ErrBadCoinbaseHeight:         "ErrBadCoinbaseHeight",
 	ErrSecondTxNotFeeTransaction: "ErrSecondTxNotFeeTransaction",
 	ErrBadFeeTransaction:         "ErrBadFeeTransaction",
-	ErrMultipleFeeTransactions:   "ErrMultipleFeeTransactions",
+	ErrExplicitFeeTransaction:    "ErrExplicitFeeTransaction",
 	ErrScriptMalformed:           "ErrScriptMalformed",
 	ErrScriptValidation:          "ErrScriptValidation",
 	ErrParentBlockUnknown:        "ErrParentBlockUnknown",
