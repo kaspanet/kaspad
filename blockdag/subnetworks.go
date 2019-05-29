@@ -23,34 +23,27 @@ func newSubnetworkStore(db database.DB) *SubnetworkStore {
 	}
 }
 
-// registerSubnetworks scans a list of accepted transactions, singles out
+// registerSubnetworks scans a list of transactions, singles out
 // subnetwork registry transactions, validates them, and registers a new
 // subnetwork based on it.
 // This function returns an error if one or more transactions are invalid
-func registerSubnetworks(dbTx database.Tx, txsAcceptanceData MultiBlockTxsAcceptanceData) error {
+func registerSubnetworks(dbTx database.Tx, txs []*util.Tx) error {
 	validSubnetworkRegistryTxs := make([]*wire.MsgTx, 0)
-
-	for _, txs := range txsAcceptanceData {
-		for _, txData := range txs {
-			if !txData.IsAccepted {
-				continue
+	for _, tx := range txs {
+		msgTx := tx.MsgTx()
+		if msgTx.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDRegistry) {
+			err := validateSubnetworkRegistryTransaction(msgTx)
+			if err != nil {
+				return err
 			}
+			validSubnetworkRegistryTxs = append(validSubnetworkRegistryTxs, msgTx)
+		}
 
-			tx := txData.Tx.MsgTx()
-			if tx.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDRegistry) {
-				err := validateSubnetworkRegistryTransaction(tx)
-				if err != nil {
-					return err
-				}
-				validSubnetworkRegistryTxs = append(validSubnetworkRegistryTxs, tx)
-			}
-
-			if subnetworkid.Less(subnetworkid.SubnetworkIDRegistry, &tx.SubnetworkID) {
-				// Transactions are ordered by subnetwork, so we can safely assume
-				// that the rest of the transactions will not be subnetwork registry
-				// transactions.
-				break
-			}
+		if subnetworkid.Less(subnetworkid.SubnetworkIDRegistry, &msgTx.SubnetworkID) {
+			// Transactions are ordered by subnetwork, so we can safely assume
+			// that the rest of the transactions will not be subnetwork registry
+			// transactions.
+			break
 		}
 	}
 

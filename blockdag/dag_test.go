@@ -7,7 +7,6 @@ package blockdag
 import (
 	"errors"
 	"fmt"
-	"math"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -25,7 +24,6 @@ import (
 	"github.com/daglabs/btcd/util"
 	"github.com/daglabs/btcd/util/daghash"
 	"github.com/daglabs/btcd/util/subnetworkid"
-	"github.com/daglabs/btcd/util/txsort"
 	"github.com/daglabs/btcd/wire"
 )
 
@@ -191,7 +189,7 @@ func TestHaveBlock(t *testing.T) {
 		{hash: dagconfig.SimNetParams.GenesisHash.String(), want: true},
 
 		// Block 3b should be present (as a second child of Block 2).
-		{hash: "3f2ded16b7115e69a48cee5f4be743ff23ad8d41da16d059c38cc83d14459863", want: true},
+		{hash: "4bb2e2f55fabd67e217126dbc41e7101d0d6058800368c428cd6e397c111ee47", want: true},
 
 		// Block 100000 should be present (as an orphan).
 		{hash: "4e530ee9f967de3b2cd47ac5cd00109bb9ed7b0e30a60485c94badad29ecb4ce", want: true},
@@ -244,7 +242,11 @@ func TestCalcSequenceLock(t *testing.T) {
 	msgTx := wire.NewNativeMsgTx(wire.TxVersion, nil, []*wire.TxOut{{PkScript: nil, Value: 10}})
 	targetTx := util.NewTx(msgTx)
 	utxoSet := NewFullUTXOSet()
-	utxoSet.AddTx(targetTx.MsgTx(), uint64(numBlocksToGenerate)-4)
+	if isAccepted, err := utxoSet.AddTx(targetTx.MsgTx(), uint64(numBlocksToGenerate)-4); err != nil {
+		t.Fatalf("AddTx unexpectedly failed. Error: %s", err)
+	} else if !isAccepted {
+		t.Fatalf("AddTx unexpectedly didn't add tx %s", targetTx.ID())
+	}
 
 	// Create a utxo that spends the fake utxo created above for use in the
 	// transactions created in the tests.  It has an age of 4 blocks.  Note
@@ -276,8 +278,11 @@ func TestCalcSequenceLock(t *testing.T) {
 		TxID:  *unConfTx.TxID(),
 		Index: 0,
 	}
-
-	utxoSet.AddTx(unConfTx, UnminedChainHeight)
+	if isAccepted, err := utxoSet.AddTx(unConfTx, UnminedChainHeight); err != nil {
+		t.Fatalf("AddTx unexpectedly failed. Error: %s", err)
+	} else if !isAccepted {
+		t.Fatalf("AddTx unexpectedly didn't add tx %s", unConfTx.TxID())
+	}
 
 	tests := []struct {
 		name    string
@@ -796,7 +801,7 @@ func testErrorThroughPatching(t *testing.T, expectedErrorMessage string, targetF
 	}
 	defer teardownFunc()
 
-	// Since we're not dealing with the real block chain, set the block reward
+	// Since we're not dealing with the real block DAG, set the block reward
 	// maturity to 1.
 	dag.TestSetBlockRewardMaturity(1)
 
@@ -812,7 +817,6 @@ func testErrorThroughPatching(t *testing.T, expectedErrorMessage string, targetF
 				"is an orphan\n", i)
 		}
 		if err != nil {
-			fmt.Printf("ERROR %v\n", err)
 			break
 		}
 	}
@@ -868,395 +872,221 @@ func TestNew(t *testing.T) {
 	}
 }
 
-func TestValidateFeeTransaction(t *testing.T) {
+func TestConfirmations(t *testing.T) {
+	// Create a new database and DAG instance to run tests against.
 	params := dagconfig.SimNetParams
 	params.K = 1
-	dag, teardownFunc, err := DAGSetup("TestValidateFeeTransaction", Config{
+	dag, teardownFunc, err := DAGSetup("TestBlockCount", Config{
 		DAGParams: &params,
 	})
 	if err != nil {
 		t.Fatalf("Failed to setup DAG instance: %v", err)
 	}
 	defer teardownFunc()
-	extraNonce := int64(0)
-	createCoinbase := func(pkScript []byte) *wire.MsgTx {
-		extraNonce++
-		cbTx, err := createCoinbaseTxForTest(dag.Height()+1, 2, extraNonce, &params)
-		if err != nil {
-			t.Fatalf("createCoinbaseTxForTest: %v", err)
-		}
-		if pkScript != nil {
-			cbTx.TxOut[0].PkScript = pkScript
-		}
-		return cbTx
-	}
+	dag.TestSetBlockRewardMaturity(1)
 
-	var flags BehaviorFlags
-	flags |= BFFastAdd | BFNoPoWCheck
-
-	buildBlock := func(blockName string, parentHashes []*daghash.Hash, transactions []*wire.MsgTx, expectedErrorCode ErrorCode) *wire.MsgBlock {
-		utilTxs := make([]*util.Tx, len(transactions))
-		for i, tx := range transactions {
-			utilTxs[i] = util.NewTx(tx)
-		}
-
-		newVirtual, err := GetVirtualFromParentsForTest(dag, parentHashes)
-		if err != nil {
-			t.Fatalf("block %v: unexpected error when setting virtual for test: %v", blockName, err)
-		}
-		oldVirtual := SetVirtualForTest(dag, newVirtual)
-		acceptedIDMerkleRoot, err := dag.NextAcceptedIDMerkleRoot()
-		if err != nil {
-			t.Fatalf("block %v: unexpected error when getting next acceptIDMerkleRoot: %v", blockName, err)
-		}
-		SetVirtualForTest(dag, oldVirtual)
-
-		daghash.Sort(parentHashes)
-		msgBlock := &wire.MsgBlock{
-			Header: wire.BlockHeader{
-				Bits:                 dag.genesis.Header().Bits,
-				ParentHashes:         parentHashes,
-				HashMerkleRoot:       BuildHashMerkleTreeStore(utilTxs).Root(),
-				AcceptedIDMerkleRoot: acceptedIDMerkleRoot,
-				UTXOCommitment:       &daghash.ZeroHash,
-			},
-			Transactions: transactions,
-		}
-		block := util.NewBlock(msgBlock)
-		isOrphan, err := dag.ProcessBlock(block, flags)
-		if expectedErrorCode != 0 {
-			checkResult := checkRuleError(err, RuleError{
-				ErrorCode: expectedErrorCode,
-			})
-			if checkResult != nil {
-				t.Errorf("block %v: unexpected error code: %v", blockName, checkResult)
-			}
-		} else {
-			if err != nil {
-				t.Fatalf("block %v: unexpected error: %v", blockName, err)
-			}
-			if isOrphan {
-				t.Errorf("block %v unexpectely got orphaned", blockName)
-			}
-		}
-		return msgBlock
-	}
-
-	cb1 := createCoinbase(nil)
-	blockWithExtraFeeTxTransactions := []*wire.MsgTx{
-		cb1,
-		{ // Fee Transaction
-			Version: 1,
-			TxIn: []*wire.TxIn{
-				{
-					PreviousOutPoint: wire.OutPoint{
-						TxID:  daghash.TxID(*dag.genesis.hash),
-						Index: math.MaxUint32,
-					},
-					Sequence: wire.MaxTxInSequenceNum,
-				},
-			},
-			SubnetworkID: *subnetworkid.SubnetworkIDNative,
-		},
-		{ // Extra Fee Transaction
-			TxIn: []*wire.TxIn{
-				{
-					PreviousOutPoint: wire.OutPoint{
-						TxID:  daghash.TxID(*dag.genesis.hash),
-						Index: math.MaxUint32,
-					},
-					Sequence: wire.MaxTxInSequenceNum,
-				},
-			},
-			SubnetworkID: *subnetworkid.SubnetworkIDNative,
-		},
-	}
-	buildBlock("blockWithExtraFeeTx", []*daghash.Hash{dag.genesis.hash}, blockWithExtraFeeTxTransactions, ErrMultipleFeeTransactions)
-
-	block1Txs := []*wire.MsgTx{
-		cb1,
-		{ // Fee Transaction
-			Version: 1,
-			TxIn: []*wire.TxIn{
-				{
-					PreviousOutPoint: wire.OutPoint{
-						TxID:  daghash.TxID(*dag.genesis.hash),
-						Index: math.MaxUint32,
-					},
-					Sequence: wire.MaxTxInSequenceNum,
-				},
-			},
-			SubnetworkID: *subnetworkid.SubnetworkIDNative,
-		},
-	}
-	block1 := buildBlock("block1", []*daghash.Hash{dag.genesis.hash}, block1Txs, 0)
-
-	cb1A := createCoinbase(nil)
-	block1ATxs := []*wire.MsgTx{
-		cb1A,
-		{ // Fee Transaction
-			Version: 1,
-			TxIn: []*wire.TxIn{
-				{
-					PreviousOutPoint: wire.OutPoint{
-						TxID:  daghash.TxID(*dag.genesis.hash),
-						Index: math.MaxUint32,
-					},
-					Sequence: wire.MaxTxInSequenceNum,
-				},
-			},
-			SubnetworkID: *subnetworkid.SubnetworkIDNative,
-		},
-	}
-	block1A := buildBlock("block1A", []*daghash.Hash{dag.genesis.hash}, block1ATxs, 0)
-
-	block1AChildCbPkScript, err := payToPubKeyHashScript((&[20]byte{0x1A, 0xC0})[:])
+	// Check that the genesis block of a DAG with only the genesis block in it has confirmations = 1.
+	genesisConfirmations, err := dag.blockConfirmations(dag.genesis)
 	if err != nil {
-		t.Fatalf("payToPubKeyHashScript: %v", err)
+		t.Fatalf("TestConfirmations: confirmations for genesis block unexpectedly failed: %s", err)
 	}
-	cb1AChild := createCoinbase(block1AChildCbPkScript)
-	block1AChildTxs := []*wire.MsgTx{
-		cb1AChild,
-		{ // Fee Transaction
-			Version: 1,
-			TxIn: []*wire.TxIn{
-				{
-					PreviousOutPoint: wire.OutPoint{
-						TxID:  daghash.TxID(*block1A.BlockHash()),
-						Index: math.MaxUint32,
-					},
-					Sequence: wire.MaxTxInSequenceNum,
-				},
-			},
-			SubnetworkID: *subnetworkid.SubnetworkIDNative,
-		},
-		{
-			TxIn: []*wire.TxIn{
-				{
-					PreviousOutPoint: wire.OutPoint{
-						TxID:  *cb1A.TxID(),
-						Index: 0,
-					},
-					Sequence: wire.MaxTxInSequenceNum,
-				},
-			},
-			TxOut: []*wire.TxOut{
-				{
-					PkScript: OpTrueScript,
-					Value:    1,
-				},
-			},
-			SubnetworkID: *subnetworkid.SubnetworkIDNative,
-		},
+	if genesisConfirmations != 1 {
+		t.Fatalf("TestConfirmations: unexpected confirmations for genesis block. Want: 1, got: %d", genesisConfirmations)
 	}
-	block1AChild := buildBlock("block1AChild", []*daghash.Hash{block1A.BlockHash()}, block1AChildTxs, 0)
 
-	cb2 := createCoinbase(nil)
-	block2Txs := []*wire.MsgTx{
-		cb2,
-		{ // Fee Transaction
-			Version: 1,
-			TxIn: []*wire.TxIn{
-				{
-					PreviousOutPoint: wire.OutPoint{
-						TxID:  daghash.TxID(*block1.BlockHash()),
-						Index: math.MaxUint32,
-					},
-					Sequence: wire.MaxTxInSequenceNum,
-				},
-			},
-			SubnetworkID: *subnetworkid.SubnetworkIDNative,
-		},
+	// Add a chain of blocks
+	chainBlocks := make([]*blockNode, 5)
+	chainBlocks[0] = dag.genesis
+	buildNode := buildNodeGenerator(dag.dagParams.K, true)
+	for i := uint32(1); i < 5; i++ {
+		chainBlocks[i] = buildNode(setFromSlice(chainBlocks[i-1]))
+		dag.virtual.AddTip(chainBlocks[i])
 	}
-	block2 := buildBlock("block2", []*daghash.Hash{block1.BlockHash()}, block2Txs, 0)
 
-	cb3 := createCoinbase(nil)
-	block3Txs := []*wire.MsgTx{
-		cb3,
-		{ // Fee Transaction
-			Version: 1,
-			TxIn: []*wire.TxIn{
-				{
-					PreviousOutPoint: wire.OutPoint{
-						TxID:  daghash.TxID(*block2.BlockHash()),
-						Index: math.MaxUint32,
-					},
-					Sequence: wire.MaxTxInSequenceNum,
-				},
-			},
-			SubnetworkID: *subnetworkid.SubnetworkIDNative,
-		},
+	// Make sure that each one of the chain blocks has the expected confirmations number
+	for i, node := range chainBlocks {
+		confirmations, err := dag.blockConfirmations(node)
+		if err != nil {
+			t.Fatalf("TestConfirmations: confirmations for node 1 unexpectedly failed: %s", err)
+		}
+
+		expectedConfirmations := uint64(len(chainBlocks) - i)
+		if confirmations != expectedConfirmations {
+			t.Fatalf("TestConfirmations: unexpected confirmations for node 1. "+
+				"Want: %d, got: %d", expectedConfirmations, confirmations)
+		}
 	}
-	block3 := buildBlock("block3", []*daghash.Hash{block2.BlockHash()}, block3Txs, 0)
 
-	block4CbPkScript, err := payToPubKeyHashScript((&[20]byte{0x40})[:])
+	branchingBlocks := make([]*blockNode, 2)
+	// Add two branching blocks
+	branchingBlocks[0] = buildNode(setFromSlice(chainBlocks[1]))
+	dag.virtual.AddTip(branchingBlocks[0])
+	branchingBlocks[1] = buildNode(setFromSlice(branchingBlocks[0]))
+	dag.virtual.AddTip(branchingBlocks[1])
+
+	// Check that the genesis has a confirmations number == len(chainBlocks)
+	genesisConfirmations, err = dag.blockConfirmations(dag.genesis)
 	if err != nil {
-		t.Fatalf("payToPubKeyHashScript: %v", err)
+		t.Fatalf("TestConfirmations: confirmations for genesis block unexpectedly failed: %s", err)
+	}
+	expectedGenesisConfirmations := uint64(len(chainBlocks))
+	if genesisConfirmations != expectedGenesisConfirmations {
+		t.Fatalf("TestConfirmations: unexpected confirmations for genesis block. "+
+			"Want: %d, got: %d", expectedGenesisConfirmations, genesisConfirmations)
 	}
 
-	cb4 := createCoinbase(block4CbPkScript)
-	block4Txs := []*wire.MsgTx{
-		cb4,
-		{ // Fee Transaction
-			Version: 1,
-			TxIn: []*wire.TxIn{
-				{
-					PreviousOutPoint: wire.OutPoint{
-						TxID:  daghash.TxID(*block3.BlockHash()),
-						Index: math.MaxUint32,
-					},
-					Sequence: wire.MaxTxInSequenceNum,
-				},
-			},
-			SubnetworkID: *subnetworkid.SubnetworkIDNative,
-		},
-		{
-			TxIn: []*wire.TxIn{
-				{
-					PreviousOutPoint: wire.OutPoint{
-						TxID:  *cb3.TxID(),
-						Index: 0,
-					},
-					Sequence: wire.MaxTxInSequenceNum,
-				},
-			},
-			TxOut: []*wire.TxOut{
-				{
-					PkScript: OpTrueScript,
-					Value:    1,
-				},
-			},
-			SubnetworkID: *subnetworkid.SubnetworkIDNative,
-		},
+	// Check that each of the blue tips has a confirmation number of 1, and each of the red tips has 0 confirmations.
+	tips := dag.virtual.tips()
+	for _, tip := range tips {
+		tipConfirmations, err := dag.blockConfirmations(tip)
+		if err != nil {
+			t.Fatalf("TestConfirmations: confirmations for tip unexpectedly failed: %s", err)
+		}
+		acceptingBlock, err := dag.acceptingBlock(tip)
+		if err != nil {
+			t.Fatalf("TestConfirmations: dag.acceptingBlock unexpectedly failed: %s", err)
+		}
+		expectedConfirmations := uint64(1)
+		if acceptingBlock == nil {
+			expectedConfirmations = 0
+		}
+		if tipConfirmations != expectedConfirmations {
+			t.Fatalf("TestConfirmations: unexpected confirmations for tip. "+
+				"Want: %d, got: %d", expectedConfirmations, tipConfirmations)
+		}
 	}
-	block4 := buildBlock("block4", []*daghash.Hash{block3.BlockHash()}, block4Txs, 0)
 
-	block4ACbPkScript, err := payToPubKeyHashScript((&[20]byte{0x4A})[:])
+	// Generate 100 blocks to force the "main" chain to become red
+	branchingChainTip := branchingBlocks[1]
+	for i := uint32(0); i < 100; i++ {
+		nextBranchingChainTip := buildNode(setFromSlice(branchingChainTip))
+		dag.virtual.AddTip(nextBranchingChainTip)
+		branchingChainTip = nextBranchingChainTip
+	}
+
+	// Make sure that a red block has confirmation number = 0
+	redChainBlock := chainBlocks[3]
+	redChainBlockConfirmations, err := dag.blockConfirmations(redChainBlock)
 	if err != nil {
-		t.Fatalf("payToPubKeyHashScript: %v", err)
+		t.Fatalf("TestConfirmations: confirmations for red chain block unexpectedly failed: %s", err)
 	}
-	cb4A := createCoinbase(block4ACbPkScript)
-	block4ATxs := []*wire.MsgTx{
-		cb4A,
-		{ // Fee Transaction
-			Version: 1,
-			TxIn: []*wire.TxIn{
-				{
-					PreviousOutPoint: wire.OutPoint{
-						TxID:  daghash.TxID(*block3.BlockHash()),
-						Index: math.MaxUint32,
-					},
-					Sequence: wire.MaxTxInSequenceNum,
-				},
-			},
-			SubnetworkID: *subnetworkid.SubnetworkIDNative,
-		},
-		{
-			TxIn: []*wire.TxIn{
-				{
-					PreviousOutPoint: wire.OutPoint{
-						TxID:  *cb3.TxID(),
-						Index: 1,
-					},
-					Sequence: wire.MaxTxInSequenceNum,
-				},
-			},
-			TxOut: []*wire.TxOut{
-				{
-					PkScript: OpTrueScript,
-					Value:    1,
-				},
-			},
-			SubnetworkID: *subnetworkid.SubnetworkIDNative,
-		},
-	}
-	block4A := buildBlock("block4A", []*daghash.Hash{block3.BlockHash()}, block4ATxs, 0)
-
-	cb5 := createCoinbase(nil)
-	feeInOuts := map[daghash.Hash]*struct {
-		txIn  *wire.TxIn
-		txOut *wire.TxOut
-	}{
-		*block4.BlockHash(): {
-			txIn: &wire.TxIn{
-				PreviousOutPoint: wire.OutPoint{
-					TxID:  daghash.TxID(*block4.BlockHash()),
-					Index: math.MaxUint32,
-				},
-				Sequence: wire.MaxTxInSequenceNum,
-			},
-			txOut: &wire.TxOut{
-				PkScript: block4CbPkScript,
-				Value:    cb3.TxOut[0].Value - 1,
-			},
-		},
-		*block4A.BlockHash(): {
-			txIn: &wire.TxIn{
-				PreviousOutPoint: wire.OutPoint{
-					TxID:  daghash.TxID(*block4A.BlockHash()),
-					Index: math.MaxUint32,
-				},
-				Sequence: wire.MaxTxInSequenceNum,
-			},
-			txOut: &wire.TxOut{
-				PkScript: block4ACbPkScript,
-				Value:    cb3.TxOut[1].Value - 1,
-			},
-		},
+	if redChainBlockConfirmations != 0 {
+		t.Fatalf("TestConfirmations: unexpected confirmations for red chain block. "+
+			"Want: 0, got: %d", redChainBlockConfirmations)
 	}
 
-	txIns := []*wire.TxIn{}
-	txOuts := []*wire.TxOut{}
-	for hash := range feeInOuts {
-		txIns = append(txIns, feeInOuts[hash].txIn)
-		txOuts = append(txOuts, feeInOuts[hash].txOut)
+	// Make sure that the red tip has confirmation number = 0
+	redChainTip := chainBlocks[len(chainBlocks)-1]
+	redChainTipConfirmations, err := dag.blockConfirmations(redChainTip)
+	if err != nil {
+		t.Fatalf("TestConfirmations: confirmations for red chain tip unexpectedly failed: %s", err)
 	}
-	block5FeeTx := wire.NewNativeMsgTx(1, txIns, txOuts)
-	sortedBlock5FeeTx := txsort.Sort(block5FeeTx)
-
-	block5Txs := []*wire.MsgTx{cb5, sortedBlock5FeeTx}
-
-	block5ParentHashes := []*daghash.Hash{block4.BlockHash(), block4A.BlockHash()}
-	buildBlock("block5", block5ParentHashes, block5Txs, 0)
-
-	sortedBlock5FeeTx.TxIn[0], sortedBlock5FeeTx.TxIn[1] = sortedBlock5FeeTx.TxIn[1], sortedBlock5FeeTx.TxIn[0]
-	buildBlock("block5WrongOrder", block5ParentHashes, block5Txs, ErrBadFeeTransaction)
-
-	block5FeeTxWith1Achild := block5FeeTx.Copy()
-
-	block5FeeTxWith1Achild.AddTxIn(&wire.TxIn{
-		PreviousOutPoint: wire.OutPoint{
-			TxID:  daghash.TxID(*block1AChild.BlockHash()),
-			Index: math.MaxUint32,
-		},
-		Sequence: wire.MaxTxInSequenceNum,
-	})
-	block5FeeTxWith1Achild.AddTxOut(&wire.TxOut{
-		PkScript: block1AChildCbPkScript,
-		Value:    cb1AChild.TxOut[0].Value - 1,
-	})
-
-	sortedBlock5FeeTxWith1Achild := txsort.Sort(block5FeeTxWith1Achild)
-
-	block5Txs[1] = sortedBlock5FeeTxWith1Achild
-	buildBlock("block5WithRedBlockFees", block5ParentHashes, block5Txs, ErrBadFeeTransaction)
-
-	block5FeeTxWithWrongFees := block5FeeTx.Copy()
-	block5FeeTxWithWrongFees.TxOut[0].Value--
-	sortedBlock5FeeTxWithWrongFees := txsort.Sort(block5FeeTxWithWrongFees)
-	block5Txs[1] = sortedBlock5FeeTxWithWrongFees
-	buildBlock("block5WithRedBlockFees", block5ParentHashes, block5Txs, ErrBadFeeTransaction)
+	if redChainTipConfirmations != 0 {
+		t.Fatalf("TestConfirmations: unexpected confirmations for red tip block. "+
+			"Want: 0, got: %d", redChainTipConfirmations)
+	}
 }
 
-// payToPubKeyHashScript creates a new script to pay a transaction
-// output to a 20-byte pubkey hash. It is expected that the input is a valid
-// hash.
-func payToPubKeyHashScript(pubKeyHash []byte) ([]byte, error) {
-	return txscript.NewScriptBuilder().
-		AddOp(txscript.OpDup).
-		AddOp(txscript.OpHash160).
-		AddData(pubKeyHash).
-		AddOp(txscript.OpEqualVerify).
-		AddOp(txscript.OpCheckSig).
-		Script()
+func TestAcceptingBlock(t *testing.T) {
+	// Create a new database and DAG instance to run tests against.
+	params := dagconfig.SimNetParams
+	params.K = 1
+	dag, teardownFunc, err := DAGSetup("TestAcceptingBlock", Config{
+		DAGParams: &params,
+	})
+	if err != nil {
+		t.Fatalf("Failed to setup DAG instance: %v", err)
+	}
+	defer teardownFunc()
+	dag.TestSetBlockRewardMaturity(1)
+
+	// Check that the genesis block of a DAG with only the genesis block in it is accepted by the virtual.
+	genesisAcceptingBlock, err := dag.acceptingBlock(dag.genesis)
+	if err != nil {
+		t.Fatalf("TestAcceptingBlock: acceptingBlock for genesis block unexpectedly failed: %s", err)
+	}
+	if genesisAcceptingBlock != &dag.virtual.blockNode {
+		t.Fatalf("TestAcceptingBlock: unexpected acceptingBlock for genesis block. "+
+			"Want: virtual, got: %s", genesisAcceptingBlock.hash)
+	}
+
+	chainBlocks := make([]*blockNode, 5)
+	chainBlocks[0] = dag.genesis
+	buildNode := buildNodeGenerator(dag.dagParams.K, true)
+	for i := uint32(1); i <= 4; i++ {
+		chainBlocks[i] = buildNode(setFromSlice(chainBlocks[i-1]))
+		dag.virtual.AddTip(chainBlocks[i])
+	}
+
+	// Make sure that each chain block (including the genesis) is accepted by its child
+	for i, chainBlockNode := range chainBlocks[:len(chainBlocks)-1] {
+		expectedAcceptingBlockNode := chainBlocks[i+1]
+		chainAcceptingBlockNode, err := dag.acceptingBlock(chainBlockNode)
+		if err != nil {
+			t.Fatalf("TestAcceptingBlock: acceptingBlock for chain block %d unexpectedly failed: %s", i, err)
+		}
+		if expectedAcceptingBlockNode != chainAcceptingBlockNode {
+			t.Fatalf("TestAcceptingBlock: unexpected acceptingBlock for chain block. "+
+				"Want: %s, got: %s", expectedAcceptingBlockNode.hash, chainAcceptingBlockNode.hash)
+		}
+	}
+
+	branchingBlocks := make([]*blockNode, 2)
+	// Add two branching blocks
+	branchingBlocks[0] = buildNode(setFromSlice(chainBlocks[1]))
+	dag.virtual.AddTip(branchingBlocks[0])
+	branchingBlocks[1] = buildNode(setFromSlice(branchingBlocks[0]))
+	dag.virtual.AddTip(branchingBlocks[1])
+
+	// Make sure that the accepting block of the parent of the branching block didn't change
+	expectedAcceptingBlock := chainBlocks[2]
+	intersectionBlock := chainBlocks[1]
+	intersectionAcceptingBlock, err := dag.acceptingBlock(intersectionBlock)
+	if err != nil {
+		t.Fatalf("TestAcceptingBlock: acceptingBlock for intersection block unexpectedly failed: %s", err)
+	}
+	if expectedAcceptingBlock != intersectionAcceptingBlock {
+		t.Fatalf("TestAcceptingBlock: unexpected acceptingBlock for intersection block. "+
+			"Want: %s, got: %s", expectedAcceptingBlock.hash, intersectionAcceptingBlock.hash)
+	}
+
+	// Make sure that the accepting block of the chain tips is the virtual block
+	tipAcceptingBlock, err := dag.acceptingBlock(chainBlocks[len(chainBlocks)-1])
+	if err != nil {
+		t.Fatalf("TestAcceptingBlock: acceptingBlock for tip unexpectedly failed: %s", err)
+	}
+	if tipAcceptingBlock != &dag.virtual.blockNode {
+		t.Fatalf("TestAcceptingBlock: unexpected acceptingBlock for tip. "+
+			"Want: Virtual, got: %s", tipAcceptingBlock.hash)
+	}
+
+	// Generate 100 blocks to force the "main" chain to become red
+	branchingChainTip := branchingBlocks[1]
+	for i := uint32(0); i < 100; i++ {
+		nextBranchingChainTip := buildNode(setFromSlice(branchingChainTip))
+		dag.virtual.AddTip(nextBranchingChainTip)
+		branchingChainTip = nextBranchingChainTip
+	}
+
+	// Make sure that a red block returns nil
+	redChainBlock := chainBlocks[2]
+	redChainBlockAcceptionBlock, err := dag.acceptingBlock(redChainBlock)
+	if err != nil {
+		t.Fatalf("TestAcceptingBlock: acceptingBlock for red chain block unexpectedly failed: %s", err)
+	}
+	if redChainBlockAcceptionBlock != nil {
+		t.Fatalf("TestAcceptingBlock: unexpected acceptingBlock for red chain block. "+
+			"Want: nil, got: %s", redChainBlockAcceptionBlock.hash)
+	}
+
+	// Make sure that a red tip returns nil
+	redChainTip := chainBlocks[len(chainBlocks)-1]
+	redChainTipAcceptingBlock, err := dag.acceptingBlock(redChainTip)
+	if err != nil {
+		t.Fatalf("TestAcceptingBlock: acceptingBlock for red chain tip unexpectedly failed: %s", err)
+	}
+	if redChainTipAcceptingBlock != nil {
+		t.Fatalf("TestAcceptingBlock: unexpected acceptingBlock for red tip block. "+
+			"Want: nil, got: %s", redChainTipAcceptingBlock.hash)
+	}
 }

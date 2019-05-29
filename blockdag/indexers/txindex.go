@@ -6,7 +6,6 @@ package indexers
 
 import (
 	"fmt"
-
 	"github.com/daglabs/btcd/blockdag"
 	"github.com/daglabs/btcd/database"
 	"github.com/daglabs/btcd/util"
@@ -20,7 +19,7 @@ const (
 
 	includingBlocksIndexKeyEntrySize = 8 // 4 bytes for offset + 4 bytes for transaction length
 
-	acceptingBlocksIndexKeyEntrySize = 4 // 4 bytes for accepting block ID
+	blockIDSize = 8 // 8 bytes for block ID
 )
 
 var (
@@ -37,13 +36,17 @@ var (
 	hashByIDIndexBucketName = []byte("hashbyididx")
 )
 
+// txsAcceptedByVirtual is the in-memory index of txIDs that were accepted
+// by the current virtual
+var txsAcceptedByVirtual map[daghash.TxID]bool
+
 // -----------------------------------------------------------------------------
 // The transaction index consists of an entry for every transaction in the DAG.
 // In order to significantly optimize the space requirements a separate
 // index which provides an internal mapping between each block that has been
 // indexed and a unique ID for use within the hash to location mappings.  The ID
-// is simply a sequentially incremented uint32.  This is useful because it is
-// only 4 bytes versus 32 bytes hashes and thus saves a ton of space in the
+// is simply a sequentially incremented uint64.  This is useful because it is
+// only 8 bytes versus 32 bytes hashes and thus saves a ton of space in the
 // index.
 //
 // There are four buckets used in total. The first bucket maps the hash of
@@ -67,49 +70,49 @@ var (
 //   <block id> = <start offset><tx length>
 //
 //   Field           Type              Size
-//   block id        uint32          4 bytes
+//   block id        uint64          8 bytes
 //   start offset    uint32          4 bytes
 //   tx length       uint32          4 bytes
 //   -----
-//   Total: 12 bytes
+//   Total: 16 bytes
 //
 // The accepting blocks index contains a sub bucket for each transaction hash (32 byte each), that its serialized format is:
 //
 //   <accepting block id> = <including block id>
 //
 //   Field           Type              Size
-//   accepting block id        uint32          4 bytes
-//   including block id        uint32          4 bytes
+//   accepting block id        uint64          8 bytes
+//   including block id        uint64          8 bytes
 //   -----
-//   Total: 8 bytes
+//   Total: 16 bytes
 //
 // The serialized format for keys and values in the block hash to ID bucket is:
 //   <hash> = <ID>
 //
 //   Field           Type              Size
-//   hash            daghash.Hash    32 bytes
-//   ID              uint32            4 bytes
+//   hash            daghash.Hash     32 bytes
+//   ID              uint64            8 bytes
 //   -----
-//   Total: 36 bytes
+//   Total: 40 bytes
 //
 // The serialized format for keys and values in the ID to block hash bucket is:
 //   <ID> = <hash>
 //
 //   Field           Type              Size
-//   ID              uint32            4 bytes
-//   hash            daghash.Hash    32 bytes
+//   ID              uint64            8 bytes
+//   hash            daghash.Hash     32 bytes
 //   -----
-//   Total: 36 bytes
+//   Total: 40 bytes
 //
 // -----------------------------------------------------------------------------
 
 // dbPutBlockIDIndexEntry uses an existing database transaction to update or add
 // the index entries for the hash to id and id to hash mappings for the provided
 // values.
-func dbPutBlockIDIndexEntry(dbTx database.Tx, hash *daghash.Hash, id uint32) error {
-	// Serialize the height for use in the index entries.
-	var serializedID [4]byte
-	byteOrder.PutUint32(serializedID[:], id)
+func dbPutBlockIDIndexEntry(dbTx database.Tx, hash *daghash.Hash, id uint64) error {
+	// Serialize the block ID for use in the index entries.
+	var serializedID [blockIDSize]byte
+	byteOrder.PutUint64(serializedID[:], id)
 
 	// Add the block hash to ID mapping to the index.
 	meta := dbTx.Metadata()
@@ -125,14 +128,14 @@ func dbPutBlockIDIndexEntry(dbTx database.Tx, hash *daghash.Hash, id uint32) err
 
 // dbFetchBlockIDByHash uses an existing database transaction to retrieve the
 // block id for the provided hash from the index.
-func dbFetchBlockIDByHash(dbTx database.Tx, hash *daghash.Hash) (uint32, error) {
+func dbFetchBlockIDByHash(dbTx database.Tx, hash *daghash.Hash) (uint64, error) {
 	hashIndex := dbTx.Metadata().Bucket(idByHashIndexBucketName)
 	serializedID := hashIndex.Get(hash[:])
 	if serializedID == nil {
-		return 0, fmt.Errorf("No entry in the block ID index for block with hash %s", hash)
+		return 0, fmt.Errorf("no entry in the block ID index for block with hash %s", hash)
 	}
 
-	return byteOrder.Uint32(serializedID), nil
+	return byteOrder.Uint64(serializedID), nil
 }
 
 // dbFetchBlockHashBySerializedID uses an existing database transaction to
@@ -141,7 +144,7 @@ func dbFetchBlockHashBySerializedID(dbTx database.Tx, serializedID []byte) (*dag
 	idIndex := dbTx.Metadata().Bucket(hashByIDIndexBucketName)
 	hashBytes := idIndex.Get(serializedID)
 	if hashBytes == nil {
-		return nil, fmt.Errorf("No entry in the block ID index for block with id %d", byteOrder.Uint32(serializedID))
+		return nil, fmt.Errorf("no entry in the block ID index for block with id %d", byteOrder.Uint64(serializedID))
 	}
 
 	var hash daghash.Hash
@@ -151,9 +154,9 @@ func dbFetchBlockHashBySerializedID(dbTx database.Tx, serializedID []byte) (*dag
 
 // dbFetchBlockHashByID uses an existing database transaction to retrieve the
 // hash for the provided block id from the index.
-func dbFetchBlockHashByID(dbTx database.Tx, id uint32) (*daghash.Hash, error) {
-	var serializedID [4]byte
-	byteOrder.PutUint32(serializedID[:], id)
+func dbFetchBlockHashByID(dbTx database.Tx, id uint64) (*daghash.Hash, error) {
+	var serializedID [blockIDSize]byte
+	byteOrder.PutUint64(serializedID[:], id)
 	return dbFetchBlockHashBySerializedID(dbTx, serializedID[:])
 }
 
@@ -162,27 +165,23 @@ func putIncludingBlocksEntry(target []byte, txLoc wire.TxLoc) {
 	byteOrder.PutUint32(target[4:], uint32(txLoc.TxLen))
 }
 
-func putAcceptingBlocksEntry(target []byte, includingBlockID uint32) {
-	byteOrder.PutUint32(target, includingBlockID)
-}
-
-func dbPutIncludingBlocksEntry(dbTx database.Tx, txID *daghash.TxID, blockID uint32, serializedData []byte) error {
+func dbPutIncludingBlocksEntry(dbTx database.Tx, txID *daghash.TxID, blockID uint64, serializedData []byte) error {
 	bucket, err := dbTx.Metadata().Bucket(includingBlocksIndexKey).CreateBucketIfNotExists(txID[:])
 	if err != nil {
 		return err
 	}
-	blockIDBytes := make([]byte, 4)
-	byteOrder.PutUint32(blockIDBytes, uint32(blockID))
+	blockIDBytes := make([]byte, blockIDSize)
+	byteOrder.PutUint64(blockIDBytes, blockID)
 	return bucket.Put(blockIDBytes, serializedData)
 }
 
-func dbPutAcceptingBlocksEntry(dbTx database.Tx, txID *daghash.TxID, blockID uint32, serializedData []byte) error {
+func dbPutAcceptingBlocksEntry(dbTx database.Tx, txID *daghash.TxID, blockID uint64, serializedData []byte) error {
 	bucket, err := dbTx.Metadata().Bucket(acceptingBlocksIndexKey).CreateBucketIfNotExists(txID[:])
 	if err != nil {
 		return err
 	}
-	blockIDBytes := make([]byte, 4)
-	byteOrder.PutUint32(blockIDBytes, uint32(blockID))
+	blockIDBytes := make([]byte, blockIDSize)
+	byteOrder.PutUint64(blockIDBytes, blockID)
 	return bucket.Put(blockIDBytes, serializedData)
 }
 
@@ -247,7 +246,7 @@ func dbFetchFirstTxRegion(dbTx database.Tx, txID *daghash.TxID) (*database.Block
 
 // dbAddTxIndexEntries uses an existing database transaction to add a
 // transaction index entry for every transaction in the passed block.
-func dbAddTxIndexEntries(dbTx database.Tx, block *util.Block, blockID uint32, txsAcceptanceData blockdag.MultiBlockTxsAcceptanceData) error {
+func dbAddTxIndexEntries(dbTx database.Tx, block *util.Block, blockID uint64, txsAcceptanceData blockdag.MultiBlockTxsAcceptanceData) error {
 	// The offset and length of the transactions within the serialized
 	// block.
 	txLocs, err := block.TxLoc()
@@ -274,7 +273,7 @@ func dbAddTxIndexEntries(dbTx database.Tx, block *util.Block, blockID uint32, tx
 	}
 
 	for includingBlockHash, blockTxsAcceptanceData := range txsAcceptanceData {
-		var includingBlockID uint32
+		var includingBlockID uint64
 		if includingBlockHash.IsEqual(block.Hash()) {
 			includingBlockID = blockID
 		} else {
@@ -284,8 +283,8 @@ func dbAddTxIndexEntries(dbTx database.Tx, block *util.Block, blockID uint32, tx
 			}
 		}
 
-		includingBlockIDBytes := make([]byte, 4)
-		byteOrder.PutUint32(includingBlockIDBytes, uint32(includingBlockID))
+		includingBlockIDBytes := make([]byte, blockIDSize)
+		byteOrder.PutUint64(includingBlockIDBytes, includingBlockID)
 
 		for _, txAcceptanceData := range blockTxsAcceptanceData {
 			err = dbPutAcceptingBlocksEntry(dbTx, txAcceptanceData.Tx.ID(), blockID, includingBlockIDBytes)
@@ -298,11 +297,29 @@ func dbAddTxIndexEntries(dbTx database.Tx, block *util.Block, blockID uint32, tx
 	return nil
 }
 
+func updateTxsAcceptedByVirtual(virtualTxsAcceptanceData blockdag.MultiBlockTxsAcceptanceData) error {
+	// Initialize a new txsAcceptedByVirtual
+	entries := 0
+	for _, blockTxsAcceptanceData := range virtualTxsAcceptanceData {
+		entries += len(blockTxsAcceptanceData)
+	}
+	txsAcceptedByVirtual = make(map[daghash.TxID]bool, entries)
+
+	// Copy virtualTxsAcceptanceData to txsAcceptedByVirtual
+	for _, blockTxsAcceptanceData := range virtualTxsAcceptanceData {
+		for _, txAcceptanceData := range blockTxsAcceptanceData {
+			txsAcceptedByVirtual[*txAcceptanceData.Tx.ID()] = true
+		}
+	}
+
+	return nil
+}
+
 // TxIndex implements a transaction by hash index.  That is to say, it supports
 // querying all transactions by their hash.
 type TxIndex struct {
 	db         database.DB
-	curBlockID uint32
+	curBlockID uint64
 }
 
 // Ensure the TxIndex type implements the Indexer interface.
@@ -313,7 +330,7 @@ var _ Indexer = (*TxIndex)(nil)
 // disconnecting blocks.
 //
 // This is part of the Indexer interface.
-func (idx *TxIndex) Init(db database.DB) error {
+func (idx *TxIndex) Init(db database.DB, dag *blockdag.BlockDAG) error {
 	idx.db = db
 
 	// Find the latest known block id field for the internal block id
@@ -324,9 +341,9 @@ func (idx *TxIndex) Init(db database.DB) error {
 		// Scan forward in large gaps to find a block id that doesn't
 		// exist yet to serve as an upper bound for the binary search
 		// below.
-		var highestKnown, nextUnknown uint32
-		testBlockID := uint32(1)
-		increment := uint32(100000)
+		var highestKnown, nextUnknown uint64
+		testBlockID := uint64(1)
+		increment := uint64(100000)
 		for {
 			_, err := dbFetchBlockHashByID(dbTx, testBlockID)
 			if err != nil {
@@ -365,6 +382,16 @@ func (idx *TxIndex) Init(db database.DB) error {
 		idx.curBlockID = highestKnown
 		return nil
 	})
+	if err != nil {
+		return err
+	}
+
+	// Initialize the txsAcceptedByVirtual index
+	virtualTxsAcceptanceData, err := dag.TxsAcceptedByVirtual()
+	if err != nil {
+		return err
+	}
+	err = updateTxsAcceptedByVirtual(virtualTxsAcceptanceData)
 	if err != nil {
 		return err
 	}
@@ -413,7 +440,8 @@ func (idx *TxIndex) Create(dbTx database.Tx) error {
 // for every transaction in the passed block.
 //
 // This is part of the Indexer interface.
-func (idx *TxIndex) ConnectBlock(dbTx database.Tx, block *util.Block, _ *blockdag.BlockDAG, acceptedTxsData blockdag.MultiBlockTxsAcceptanceData) error {
+func (idx *TxIndex) ConnectBlock(dbTx database.Tx, block *util.Block, dag *blockdag.BlockDAG,
+	acceptedTxsData blockdag.MultiBlockTxsAcceptanceData, virtualTxsAcceptanceData blockdag.MultiBlockTxsAcceptanceData) error {
 	// Increment the internal block ID to use for the block being connected
 	// and add all of the transactions in the block to the index.
 	newBlockID := idx.curBlockID + 1
@@ -424,9 +452,14 @@ func (idx *TxIndex) ConnectBlock(dbTx database.Tx, block *util.Block, _ *blockda
 		return err
 	}
 
+	err := updateTxsAcceptedByVirtual(virtualTxsAcceptanceData)
+	if err != nil {
+		return err
+	}
+
 	// Add the new block ID index entry for the block being connected and
 	// update the current internal block ID accordingly.
-	err := dbPutBlockIDIndexEntry(dbTx, block.Hash(), newBlockID)
+	err = dbPutBlockIDIndexEntry(dbTx, block.Hash(), newBlockID)
 	if err != nil {
 		return err
 	}
@@ -475,7 +508,7 @@ func dbFetchTxBlocks(dbTx database.Tx, txHash *daghash.Hash) ([]*daghash.Hash, e
 		}
 	}
 	err := bucket.ForEach(func(blockIDBytes, _ []byte) error {
-		blockID := byteOrder.Uint32(blockIDBytes)
+		blockID := byteOrder.Uint64(blockIDBytes)
 		blockHash, err := dbFetchBlockHashByID(dbTx, blockID)
 		if err != nil {
 			return err
@@ -501,6 +534,12 @@ func (idx *TxIndex) BlockThatAcceptedTx(dag *blockdag.BlockDAG, txID *daghash.Tx
 }
 
 func dbFetchTxAcceptingBlock(dbTx database.Tx, txID *daghash.TxID, dag *blockdag.BlockDAG) (*daghash.Hash, error) {
+	// If the transaction was accepted by the current virtual,
+	// return the zeroHash immediately
+	if _, ok := txsAcceptedByVirtual[*txID]; ok {
+		return &daghash.ZeroHash, nil
+	}
+
 	bucket := dbTx.Metadata().Bucket(acceptingBlocksIndexKey).Bucket(txID[:])
 	if bucket == nil {
 		return nil, database.Error{
@@ -518,7 +557,7 @@ func dbFetchTxAcceptingBlock(dbTx database.Tx, txID *daghash.TxID, dag *blockdag
 		}
 	}
 	for ; cursor.Key() != nil; cursor.Next() {
-		blockID := byteOrder.Uint32(cursor.Key())
+		blockID := byteOrder.Uint64(cursor.Key())
 		blockHash, err := dbFetchBlockHashByID(dbTx, blockID)
 		if err != nil {
 			return nil, err

@@ -126,6 +126,12 @@ func TestSelectedPath(t *testing.T) {
 	if !reflect.DeepEqual(virtual.selectedPathChainSet, firstPath) {
 		t.Fatalf("TestSelectedPath: selectedPathSet doesn't include the expected values. got %v, want %v", virtual.selectedParent, firstPath)
 	}
+	// We expect that selectedPathChainSlice should have all the blocks we've added so far
+	wantLen := 11
+	gotLen := len(virtual.selectedPathChainSlice)
+	if wantLen != gotLen {
+		t.Fatalf("TestSelectedPath: selectedPathChainSlice doesn't have the expected length. got %d, want %d", gotLen, wantLen)
+	}
 
 	secondPath := initialPath.clone()
 	tip = initialTip
@@ -138,6 +144,13 @@ func TestSelectedPath(t *testing.T) {
 	if !reflect.DeepEqual(virtual.selectedPathChainSet, secondPath) {
 		t.Fatalf("TestSelectedPath: selectedPathSet didn't handle the re-org as expected. got %v, want %v", virtual.selectedParent, firstPath)
 	}
+	// We expect that selectedPathChainSlice should have all the blocks we've added so far except the old chain
+	wantLen = 106
+	gotLen = len(virtual.selectedPathChainSlice)
+	if wantLen != gotLen {
+		t.Fatalf("TestSelectedPath: selectedPathChainSlice doesn't have"+
+			"the expected length, possibly because it didn't handle the re-org as expected. got %d, want %d", gotLen, wantLen)
+	}
 
 	tip = initialTip
 	for i := 0; i < 3; i++ {
@@ -147,6 +160,13 @@ func TestSelectedPath(t *testing.T) {
 	// Because we added a very short chain, the selected path should not be affected.
 	if !reflect.DeepEqual(virtual.selectedPathChainSet, secondPath) {
 		t.Fatalf("TestSelectedPath: selectedPathSet did an unexpected re-org. got %v, want %v", virtual.selectedParent, firstPath)
+	}
+	// We expect that selectedPathChainSlice not to change
+	wantLen = 106
+	gotLen = len(virtual.selectedPathChainSlice)
+	if wantLen != gotLen {
+		t.Fatalf("TestSelectedPath: selectedPathChainSlice doesn't"+
+			"have the expected length, possibly due to unexpected did an unexpected re-org. got %d, want %d", gotLen, wantLen)
 	}
 
 	// We call updateSelectedPathSet manually without updating the tips, to check if it panics
