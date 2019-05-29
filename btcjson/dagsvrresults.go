@@ -143,6 +143,7 @@ type GetBlockTemplateResult struct {
 	SizeLimit            int64                      `json:"sizeLimit,omitempty"`
 	Transactions         []GetBlockTemplateResultTx `json:"transactions"`
 	AcceptedIDMerkleRoot string                     `json:"acceptedIdMerkleRoot"`
+	UTXOCommitment       string                     `json:"utxoCommitment"`
 	Version              int32                      `json:"version"`
 	CoinbaseAux          *GetBlockTemplateResultAux `json:"coinbaseAux,omitempty"`
 	CoinbaseTxn          *GetBlockTemplateResultTx  `json:"coinbaseTxn,omitempty"`
