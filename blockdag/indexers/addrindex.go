@@ -51,9 +51,9 @@ const (
 	// hash.
 	addrKeyTypeScriptHash = 1
 
-	// Size of a transaction entry.  It consists of 4 bytes block id + 4
+	// Size of a transaction entry.  It consists of 8 bytes block id + 4
 	// bytes offset + 4 bytes length.
-	txEntrySize = 4 + 4 + 4
+	txEntrySize = 8 + 4 + 4
 )
 
 var (
@@ -117,11 +117,11 @@ var (
 //   [<block id><start offset><tx length>,...]
 //
 //   Field           Type      Size
-//   block id        uint32    4 bytes
+//   block id        uint64    8 bytes
 //   start offset    uint32    4 bytes
 //   tx length       uint32    4 bytes
 //   -----
-//   Total: 12 bytes per indexed tx
+//   Total: 16 bytes per indexed tx
 // -----------------------------------------------------------------------------
 
 // fetchBlockHashFunc defines a callback function to use in order to convert a
@@ -130,10 +130,10 @@ type fetchBlockHashFunc func(serializedID []byte) (*daghash.Hash, error)
 
 // serializeAddrIndexEntry serializes the provided block id and transaction
 // location according to the format described in detail above.
-func serializeAddrIndexEntry(blockID uint32, txLoc wire.TxLoc) []byte {
+func serializeAddrIndexEntry(blockID uint64, txLoc wire.TxLoc) []byte {
 	// Serialize the entry.
-	serialized := make([]byte, 12)
-	byteOrder.PutUint32(serialized, blockID)
+	serialized := make([]byte, 16)
+	byteOrder.PutUint64(serialized, blockID)
 	byteOrder.PutUint32(serialized[4:], uint32(txLoc.TxStart))
 	byteOrder.PutUint32(serialized[8:], uint32(txLoc.TxLen))
 	return serialized
@@ -149,13 +149,13 @@ func deserializeAddrIndexEntry(serialized []byte, region *database.BlockRegion, 
 		return errDeserialize("unexpected end of data")
 	}
 
-	hash, err := fetchBlockHash(serialized[0:4])
+	hash, err := fetchBlockHash(serialized[0:8])
 	if err != nil {
 		return err
 	}
 	region.Hash = hash
-	region.Offset = byteOrder.Uint32(serialized[4:8])
-	region.Len = byteOrder.Uint32(serialized[8:12])
+	region.Offset = byteOrder.Uint32(serialized[8:12])
+	region.Len = byteOrder.Uint32(serialized[12:14])
 	return nil
 }
 
@@ -170,7 +170,7 @@ func keyForLevel(addrKey [addrKeySize]byte, level uint8) [levelKeySize]byte {
 
 // dbPutAddrIndexEntry updates the address index to include the provided entry
 // according to the level-based scheme described in detail above.
-func dbPutAddrIndexEntry(bucket internalBucket, addrKey [addrKeySize]byte, blockID uint32, txLoc wire.TxLoc) error {
+func dbPutAddrIndexEntry(bucket internalBucket, addrKey [addrKeySize]byte, blockID uint64, txLoc wire.TxLoc) error {
 	// Start with level 0 and its initial max number of entries.
 	curLevel := uint8(0)
 	maxLevelBytes := level0MaxEntries * txEntrySize
@@ -591,7 +591,7 @@ func (idx *AddrIndex) NeedsInputs() bool {
 // initialize for this index.
 //
 // This is part of the Indexer interface.
-func (idx *AddrIndex) Init(db database.DB) error {
+func (idx *AddrIndex) Init(db database.DB, _ *blockdag.BlockDAG) error {
 	idx.db = db
 	return nil
 }
@@ -693,7 +693,9 @@ func (idx *AddrIndex) indexBlock(data writeIndexData, block *util.Block, dag *bl
 // the transactions in the block involve.
 //
 // This is part of the Indexer interface.
-func (idx *AddrIndex) ConnectBlock(dbTx database.Tx, block *util.Block, dag *blockdag.BlockDAG, _ blockdag.MultiBlockTxsAcceptanceData) error {
+func (idx *AddrIndex) ConnectBlock(dbTx database.Tx, block *util.Block, dag *blockdag.BlockDAG,
+	_ blockdag.MultiBlockTxsAcceptanceData, _ blockdag.MultiBlockTxsAcceptanceData) error {
+
 	// The offset and length of the transactions within the serialized
 	// block.
 	txLocs, err := block.TxLoc()
