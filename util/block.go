@@ -214,16 +214,6 @@ func (b *Block) CoinbaseTransaction() *Tx {
 	return b.Transactions()[CoinbaseTransactionIndex]
 }
 
-// FeeTransaction returns this block's fee transaction
-// If this block is a genesis block, it has no fee transaction, and therefore
-// nil is returned.
-func (b *Block) FeeTransaction() *Tx {
-	if b.IsGenesis() {
-		return nil
-	}
-	return b.Transactions()[FeeTransactionIndex]
-}
-
 // Timestamp returns this block's timestamp
 func (b *Block) Timestamp() time.Time {
 	return b.msgBlock.Header.Timestamp

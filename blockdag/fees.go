@@ -201,3 +201,34 @@ func feeInputAndOutputForBlueBlock(blueBlock *blockNode, txsAcceptanceData Multi
 
 	return txIn, txOut, nil
 }
+
+func dbPutFeeTx(dbTx database.Tx, blockHash *daghash.Hash, feeTx *util.Tx) error {
+	w := &bytes.Buffer{}
+
+	if err := feeTx.MsgTx().Serialize(w); err != nil {
+		return err
+	}
+
+	serialized := w.Bytes()
+
+	feeTxBucket := dbTx.Metadata().Bucket(feeTxBucketName)
+
+	return feeTxBucket.Put(blockHash[:], serialized)
+}
+
+func dbFetchFeeTx(dbTx database.Tx, blockHash *daghash.Hash) (*util.Tx, error) {
+	feeTxBucket := dbTx.Metadata().Bucket(feeTxBucketName)
+	serialized := feeTxBucket.Get(blockHash[:])
+	if serialized == nil {
+		return nil, fmt.Errorf("No feeTx found in database for block %s", blockHash)
+	}
+
+	r := bytes.NewReader(serialized)
+	msgTx := &wire.MsgTx{}
+	err := msgTx.Deserialize(r)
+	if err != nil {
+		return nil, err
+	}
+
+	return util.NewTx(msgTx), nil
+}

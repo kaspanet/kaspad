@@ -655,7 +655,16 @@ func (dag *BlockDAG) saveChangesFromBlock(node *blockNode, block *util.Block, vi
 		}
 
 		// Apply the fee data into the database
-		return dbStoreFeeData(dbTx, block.Hash(), feeData)
+		err = dbStoreFeeData(dbTx, block.Hash(), feeData)
+		if err != nil {
+			return err
+		}
+
+		if err := dbPutFeeTx(dbTx, node.hash, node.feeTransaction); err != nil {
+			return err
+		}
+
+		return nil
 	})
 	if err != nil {
 		return err
@@ -1868,7 +1877,6 @@ func New(config *Config) (*BlockDAG, error) {
 		SubnetworkStore:     newSubnetworkStore(config.DB),
 		subnetworkID:        config.SubnetworkID,
 	}
-
 	dag.utxoDiffStore = newUTXODiffStore(&dag)
 
 	// Initialize the chain state from the passed database.  When the db
