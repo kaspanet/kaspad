@@ -41,10 +41,14 @@ func parseBlock(template *btcjson.GetBlockTemplateResult) (*util.Block, error) {
 	if err != nil {
 		return nil, fmt.Errorf("Error parsing acceptedIDMerkleRoot: %s", err)
 	}
+	utxoCommitment, err := daghash.NewHashFromStr(template.UTXOCommitment)
+	if err != nil {
+		return nil, fmt.Errorf("Error parsing utxoCommitment: %s", err)
+	}
 	// parse rest of block
 	msgBlock := wire.NewMsgBlock(
 		wire.NewBlockHeader(template.Version, parentHashes, &daghash.Hash{},
-			acceptedIDMerkleRoot, &daghash.Hash{}, uint32(bits), 0))
+			acceptedIDMerkleRoot, utxoCommitment, uint32(bits), 0))
 
 	for i, txResult := range append([]btcjson.GetBlockTemplateResultTx{*template.CoinbaseTxn}, template.Transactions...) {
 		reader := hex.NewDecoder(strings.NewReader(txResult.Data))

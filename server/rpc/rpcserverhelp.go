@@ -317,6 +317,7 @@ var helpDescsEnUS = map[string]string{
 	"getBlockTemplateResult-sizeLimit":            "Number of bytes allowed in blocks",
 	"getBlockTemplateResult-transactions":         "Array of transactions as JSON objects",
 	"getBlockTemplateResult-acceptedIdMerkleRoot": "The root of the merkle tree of transaction IDs accepted by this block",
+	"getBlockTemplateResult-utxoCommitment":       "An ECMH UTXO commitment of this block",
 	"getBlockTemplateResult-version":              "The block version",
 	"getBlockTemplateResult-coinbaseAux":          "Data that should be included in the coinbase signature script",
 	"getBlockTemplateResult-coinbaseTxn":          "Information about the coinbase transaction",

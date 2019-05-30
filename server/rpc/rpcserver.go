@@ -1807,6 +1807,7 @@ func (state *gbtWorkState) blockTemplateResult(useCoinbaseValue bool, submitOld 
 		SizeLimit:            wire.MaxBlockPayload,
 		Transactions:         transactions,
 		AcceptedIDMerkleRoot: header.AcceptedIDMerkleRoot.String(),
+		UTXOCommitment:       header.UTXOCommitment.String(),
 		Version:              header.Version,
 		LongPollID:           longPollID,
 		SubmitOld:            submitOld,
