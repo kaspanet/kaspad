@@ -1864,14 +1864,23 @@ func New(config *Config) (*BlockDAG, error) {
 	// Initialize the chain state from the passed database.  When the db
 	// does not yet contain any DAG state, both it and the DAG state
 	// will be initialized to contain only the genesis block.
-	if err := dag.initDAGState(); err != nil {
+	err := dag.initDAGState()
+	if err != nil {
 		return nil, err
 	}
+	defer func() {
+		if err != nil {
+			err := dag.removeDAGState()
+			if err != nil {
+				panic(fmt.Sprintf("Couldn't remove the DAG State: %s", err))
+			}
+		}
+	}()
 
 	// Initialize and catch up all of the currently active optional indexes
 	// as needed.
 	if config.IndexManager != nil {
-		err := config.IndexManager.Init(dag.db, &dag, config.Interrupt)
+		err = config.IndexManager.Init(dag.db, &dag, config.Interrupt)
 		if err != nil {
 			return nil, err
 		}
@@ -1881,7 +1890,8 @@ func New(config *Config) (*BlockDAG, error) {
 
 	if genesis == nil {
 		genesisBlock := util.NewBlock(dag.dagParams.GenesisBlock)
-		isOrphan, err := dag.ProcessBlock(genesisBlock, BFNone)
+		var isOrphan bool
+		isOrphan, err = dag.ProcessBlock(genesisBlock, BFNone)
 		if err != nil {
 			return nil, err
 		}
@@ -1895,7 +1905,8 @@ func New(config *Config) (*BlockDAG, error) {
 	dag.genesis = genesis
 
 	// Initialize rule change threshold state caches.
-	if err := dag.initThresholdCaches(); err != nil {
+	err = dag.initThresholdCaches()
+	if err != nil {
 		return nil, err
 	}
 
