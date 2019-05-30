@@ -508,6 +508,13 @@ var helpDescsEnUS = map[string]string{
 	"getRawTransaction--condition1": "verbose=true",
 	"getRawTransaction--result0":    "Hex-encoded bytes of the serialized transaction",
 
+	// GetSubnetworkCmd help.
+	"getSubnetwork--synopsis":    "Returns information about a subnetwork given its ID.",
+	"getSubnetwork-subnetworkId": "The ID of the subnetwork",
+
+	// GetSubnetworkResult help.
+	"getSubnetworkResult-gasLimit": "The gas limit of the subnetwork",
+
 	// GetTxOutResult help.
 	"getTxOutResult-bestBlock":     "The block hash that contains the transaction output",
 	"getTxOutResult-confirmations": "The number of confirmations (Will be 'null' if txindex is not disabled)",
@@ -699,6 +706,7 @@ var rpcResultTypes = map[string][]interface{}{
 	"getPeerInfo":           {(*[]btcjson.GetPeerInfoResult)(nil)},
 	"getRawMempool":         {(*[]string)(nil), (*btcjson.GetRawMempoolVerboseResult)(nil)},
 	"getRawTransaction":     {(*string)(nil), (*btcjson.TxRawResult)(nil)},
+	"getSubnetwork":         {(*btcjson.GetSubnetworkResult)(nil)},
 	"getTxOut":              {(*btcjson.GetTxOutResult)(nil)},
 	"node":                  nil,
 	"help":                  {(*string)(nil), (*string)(nil)},
