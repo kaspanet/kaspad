@@ -13,7 +13,6 @@ import (
 )
 
 const (
-	newSubnetworkGasLimit   = 1000
 	getSubnetworkRetryDelay = 5 * time.Second
 	maxGetSubnetworkRetries = 12
 )
@@ -44,7 +43,7 @@ func main() {
 	}
 	log.Infof("Found transaction to spend: %s:%d", fundingOutPoint.TxID, fundingOutPoint.Index)
 
-	registryTx, err := buildSubnetworkRegistryTx(fundingOutPoint, fundingTx, privateKey)
+	registryTx, err := buildSubnetworkRegistryTx(cfg, fundingOutPoint, fundingTx, privateKey)
 	if err != nil {
 		panic(fmt.Errorf("error building subnetwork registry tx: %s", err))
 	}
@@ -60,19 +59,14 @@ func main() {
 		panic(fmt.Errorf("could not build subnetwork ID: %s", err))
 	}
 
-	wasAccepted, err := waitForSubnetworkToBecomeAccepted(client, subnetworkID)
+	err = waitForSubnetworkToBecomeAccepted(client, subnetworkID)
 	if err != nil {
 		panic(fmt.Errorf("error waiting for subnetwork to become accepted: %s", err))
 	}
-
-	if wasAccepted {
-		log.Infof("Subnetwork '%s' was successfully registered.", subnetworkID)
-	} else {
-		log.Infof("Subnetwork '%s' did not register.", subnetworkID)
-	}
+	log.Infof("Subnetwork '%s' was successfully registered.", subnetworkID)
 }
 
-func buildSubnetworkRegistryTx(fundingOutPoint *wire.OutPoint, fundingTx *wire.MsgTx, privateKey *btcec.PrivateKey) (*wire.MsgTx, error) {
+func buildSubnetworkRegistryTx(cfg *config, fundingOutPoint *wire.OutPoint, fundingTx *wire.MsgTx, privateKey *btcec.PrivateKey) (*wire.MsgTx, error) {
 	txIn := &wire.TxIn{
 		PreviousOutPoint: *fundingOutPoint,
 		Sequence:         wire.MaxTxInSequenceNum,
@@ -85,7 +79,7 @@ func buildSubnetworkRegistryTx(fundingOutPoint *wire.OutPoint, fundingTx *wire.M
 		PkScript: pkScript,
 		Value:    fundingTx.TxOut[fundingOutPoint.Index].Value,
 	}
-	registryTx := wire.NewRegistryMsgTx(1, []*wire.TxIn{txIn}, []*wire.TxOut{txOut}, newSubnetworkGasLimit)
+	registryTx := wire.NewRegistryMsgTx(1, []*wire.TxIn{txIn}, []*wire.TxOut{txOut}, cfg.GasLimit)
 
 	SignatureScript, err := txscript.SignatureScript(registryTx, 0, fundingTx.TxOut[fundingOutPoint.Index].PkScript,
 		txscript.SigHashAll, privateKey, true)
@@ -97,7 +91,7 @@ func buildSubnetworkRegistryTx(fundingOutPoint *wire.OutPoint, fundingTx *wire.M
 	return registryTx, nil
 }
 
-func waitForSubnetworkToBecomeAccepted(client *rpcclient.Client, subnetworkID *subnetworkid.SubnetworkID) (bool, error) {
+func waitForSubnetworkToBecomeAccepted(client *rpcclient.Client, subnetworkID *subnetworkid.SubnetworkID) error {
 	retries := 0
 	for {
 		_, err := client.GetSubnetwork(subnetworkID.String())
@@ -107,15 +101,15 @@ func waitForSubnetworkToBecomeAccepted(client *rpcclient.Client, subnetworkID *s
 
 				retries++
 				if retries == maxGetSubnetworkRetries {
-					return false, nil
+					return fmt.Errorf("failed to get subnetwork %d times: %s", maxGetSubnetworkRetries, err)
 				}
 
 				log.Infof("Waiting %d seconds...", int(getSubnetworkRetryDelay.Seconds()))
 				<-time.After(getSubnetworkRetryDelay)
 				continue
 			}
-			return false, fmt.Errorf("failed getting subnetwork: %s", err)
+			return fmt.Errorf("failed getting subnetwork: %s", err)
 		}
-		return true, nil
+		return nil
 	}
 }

@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"github.com/daglabs/btcd/dagconfig"
 	"github.com/jessevdk/go-flags"
 )
@@ -16,7 +17,12 @@ type config struct {
 	TestNet     bool   `long:"testnet" description:"Connect to testnet"`
 	SimNet      bool   `long:"simnet" description:"Connect to the simulation test network"`
 	DevNet      bool   `long:"devnet" description:"Connect to the development test network"`
+	GasLimit    uint64 `long:"gaslimit" description:"The gas limit of the new subnetwork"`
 }
+
+const (
+	defaultSubnetworkGasLimit = 1000
+)
 
 var (
 	activeNetParams dagconfig.Params
@@ -63,6 +69,13 @@ func parseConfig() (*config, error) {
 		activeNetParams = dagconfig.SimNetParams
 	case cfg.DevNet:
 		activeNetParams = dagconfig.DevNetParams
+	}
+
+	if cfg.GasLimit < 0 {
+		return nil, fmt.Errorf("gaslimit may not smaller that 0")
+	}
+	if cfg.GasLimit == 0 {
+		cfg.GasLimit = defaultSubnetworkGasLimit
 	}
 
 	return cfg, nil
