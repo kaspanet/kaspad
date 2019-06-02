@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/daglabs/btcd/blockdag"
+	"github.com/daglabs/btcd/btcec"
 	"github.com/daglabs/btcd/btcjson"
 	"github.com/daglabs/btcd/rpcclient"
 	"github.com/daglabs/btcd/txscript"
@@ -24,7 +25,7 @@ func main() {
 		panic(fmt.Errorf("error parsing command-line arguments: %s", err))
 	}
 
-	addrPubKeyHash, err := decodePublicKey(cfg)
+	privateKey, addrPubKeyHash, err := decodeKeys(cfg)
 	if err != nil {
 		panic(fmt.Errorf("error decoding public key: %s", err))
 	}
@@ -34,15 +35,16 @@ func main() {
 		panic(fmt.Errorf("could not connect to RPC server: %s", err))
 	}
 
-	unspentTxs, err := buildUnspentTxs(client, addrPubKeyHash)
+	fundingOutPoint, fundingTx, err := findUnspentTXO(client, addrPubKeyHash)
 	if err != nil {
 		panic(fmt.Errorf("error finding unspent transactions: %s", err))
 	}
-	if len(unspentTxs) == 0 {
+	if fundingOutPoint == nil || fundingTx == nil {
 		panic(fmt.Errorf("could not find any unspent transactions this for key"))
 	}
+	log.Printf("found transaction to spend: %s:%d", fundingOutPoint.TxID, fundingOutPoint.Index)
 
-	registryTx, err := buildSubnetworkRegistryTx(unspentTxs[0])
+	registryTx, err := buildSubnetworkRegistryTx(fundingOutPoint, fundingTx, privateKey)
 	if err != nil {
 		panic(fmt.Errorf("error building subnetwork registry tx: %s", err))
 	}
@@ -51,6 +53,7 @@ func main() {
 	if err != nil {
 		panic(fmt.Errorf("failed sending subnetwork registry tx: %s", err))
 	}
+	log.Printf("successfully sent subnetwork registry transaction")
 
 	subnetworkID, err := blockdag.TxToSubnetworkID(registryTx)
 	if err != nil {
@@ -69,26 +72,27 @@ func main() {
 	}
 }
 
-func buildSubnetworkRegistryTx(fundingTx *wire.MsgTx) (*wire.MsgTx, error) {
-	signatureScript, err := txscript.PayToScriptHashSignatureScript(blockdag.OpTrueScript, nil)
-	if err != nil {
-		return nil, fmt.Errorf("failed to build signature script: %s", err)
-	}
+func buildSubnetworkRegistryTx(fundingOutPoint *wire.OutPoint, fundingTx *wire.MsgTx, privateKey *btcec.PrivateKey) (*wire.MsgTx, error) {
 	txIn := &wire.TxIn{
-		PreviousOutPoint: *wire.NewOutPoint(fundingTx.TxID(), 0),
+		PreviousOutPoint: *fundingOutPoint,
 		Sequence:         wire.MaxTxInSequenceNum,
-		SignatureScript:  signatureScript,
 	}
-
 	pkScript, err := txscript.PayToScriptHashScript(blockdag.OpTrueScript)
 	if err != nil {
 		return nil, err
 	}
 	txOut := &wire.TxOut{
 		PkScript: pkScript,
-		Value:    fundingTx.TxOut[0].Value,
+		Value:    fundingTx.TxOut[fundingOutPoint.Index].Value,
 	}
 	registryTx := wire.NewRegistryMsgTx(1, []*wire.TxIn{txIn}, []*wire.TxOut{txOut}, newSubnetworkGasLimit)
+
+	SignatureScript, err := txscript.SignatureScript(registryTx, 0, fundingTx.TxOut[fundingOutPoint.Index].PkScript,
+		txscript.SigHashAll, privateKey, true)
+	if err != nil {
+		return nil, fmt.Errorf("failed to build signature script: %s", err)
+	}
+	txIn.SignatureScript = SignatureScript
 
 	return registryTx, nil
 }
@@ -98,7 +102,7 @@ func waitForSubnetworkToBecomeAccepted(client *rpcclient.Client, subnetworkID *s
 	for {
 		_, err := client.GetSubnetwork(subnetworkID.String())
 		if err != nil {
-			if rpcError, ok := err.(btcjson.RPCError); ok && rpcError.Code == btcjson.ErrRPCSubnetworkNotFound {
+			if rpcError, ok := err.(*btcjson.RPCError); ok && rpcError.Code == btcjson.ErrRPCSubnetworkNotFound {
 				log.Printf("Subnetwork not found")
 
 				retries++

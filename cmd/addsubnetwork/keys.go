@@ -6,14 +6,14 @@ import (
 	"github.com/daglabs/btcd/util/base58"
 )
 
-func decodePublicKey(cfg *config) (*util.AddressPubKeyHash, error) {
+func decodeKeys(cfg *config) (*btcec.PrivateKey, *util.AddressPubKeyHash, error) {
 	privateKeyBytes := base58.Decode(cfg.PrivateKey)
 	privateKey, _ := btcec.PrivKeyFromBytes(btcec.S256(), privateKeyBytes)
 	serializedPrivateKey := privateKey.PubKey().SerializeCompressed()
 
 	pubKeyAddr, err := util.NewAddressPubKey(serializedPrivateKey, activeNetParams.Prefix)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	return pubKeyAddr.AddressPubKeyHash(), nil
+	return privateKey, pubKeyAddr.AddressPubKeyHash(), nil
 }

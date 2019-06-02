@@ -15,19 +15,18 @@ const (
 	minConfirmations = 10
 )
 
-func buildUnspentTxs(client *rpcclient.Client, addrPubKeyHash *util.AddressPubKeyHash) ([]*wire.MsgTx, error) {
+func findUnspentTXO(client *rpcclient.Client, addrPubKeyHash *util.AddressPubKeyHash) (*wire.OutPoint, *wire.MsgTx, error) {
 	txs, err := collectTransactions(client, addrPubKeyHash)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	utxo := buildUTXO(txs)
-
-	unspentTxs := make([]*wire.MsgTx, len(utxo))
-	for _, tx := range utxo {
-		unspentTxs = append(unspentTxs, tx)
+	utxos := buildUTXOs(txs)
+	for outPoint, tx := range utxos {
+		return &outPoint, tx, nil
 	}
-	return unspentTxs, nil
+
+	return nil, nil, nil
 }
 
 func collectTransactions(client *rpcclient.Client, addrPubKeyHash *util.AddressPubKeyHash) ([]*wire.MsgTx, error) {
@@ -37,7 +36,7 @@ func collectTransactions(client *rpcclient.Client, addrPubKeyHash *util.AddressP
 		results, err := client.SearchRawTransactionsVerbose(addrPubKeyHash, skip, resultsCount, true, false, nil)
 		if err != nil {
 			// Break when there are no further txs
-			if rpcError, ok := err.(btcjson.RPCError); ok && rpcError.Code == btcjson.ErrRPCNoTxInfo {
+			if rpcError, ok := err.(*btcjson.RPCError); ok && rpcError.Code == btcjson.ErrRPCNoTxInfo {
 				break
 			}
 
@@ -85,18 +84,18 @@ func isTxMatured(tx *wire.MsgTx, confirmations uint64) bool {
 	return confirmations >= activeNetParams.BlockRewardMaturity
 }
 
-func buildUTXO(txs []*wire.MsgTx) map[wire.OutPoint]*wire.MsgTx {
-	utxo := make(map[wire.OutPoint]*wire.MsgTx)
-	for _, tx := range txs {
-		for _, input := range tx.TxIn {
-			utxo[input.PreviousOutPoint] = tx
-		}
-	}
+func buildUTXOs(txs []*wire.MsgTx) map[wire.OutPoint]*wire.MsgTx {
+	utxos := make(map[wire.OutPoint]*wire.MsgTx)
 	for _, tx := range txs {
 		for i := range tx.TxOut {
 			outPoint := wire.NewOutPoint(tx.TxID(), uint32(i))
-			delete(utxo, *outPoint)
+			utxos[*outPoint] = tx
 		}
 	}
-	return utxo
+	for _, tx := range txs {
+		for _, input := range tx.TxIn {
+			delete(utxos, input.PreviousOutPoint)
+		}
+	}
+	return utxos
 }
