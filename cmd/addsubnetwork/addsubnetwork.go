@@ -9,7 +9,6 @@ import (
 	"github.com/daglabs/btcd/txscript"
 	"github.com/daglabs/btcd/util/subnetworkid"
 	"github.com/daglabs/btcd/wire"
-	"log"
 	"time"
 )
 
@@ -34,6 +33,7 @@ func main() {
 	if err != nil {
 		panic(fmt.Errorf("could not connect to RPC server: %s", err))
 	}
+	log.Infof("Connected to server %s", cfg.RPCServer)
 
 	fundingOutPoint, fundingTx, err := findUnspentTXO(client, addrPubKeyHash)
 	if err != nil {
@@ -42,7 +42,7 @@ func main() {
 	if fundingOutPoint == nil || fundingTx == nil {
 		panic(fmt.Errorf("could not find any unspent transactions this for key"))
 	}
-	log.Printf("found transaction to spend: %s:%d", fundingOutPoint.TxID, fundingOutPoint.Index)
+	log.Infof("Found transaction to spend: %s:%d", fundingOutPoint.TxID, fundingOutPoint.Index)
 
 	registryTx, err := buildSubnetworkRegistryTx(fundingOutPoint, fundingTx, privateKey)
 	if err != nil {
@@ -53,7 +53,7 @@ func main() {
 	if err != nil {
 		panic(fmt.Errorf("failed sending subnetwork registry tx: %s", err))
 	}
-	log.Printf("successfully sent subnetwork registry transaction")
+	log.Infof("Successfully sent subnetwork registry transaction")
 
 	subnetworkID, err := blockdag.TxToSubnetworkID(registryTx)
 	if err != nil {
@@ -66,9 +66,9 @@ func main() {
 	}
 
 	if wasAccepted {
-		log.Printf("Subnetwork '%s' was successfully registered.", subnetworkID)
+		log.Infof("Subnetwork '%s' was successfully registered.", subnetworkID)
 	} else {
-		log.Printf("Subnetwork '%s' did not register.", subnetworkID)
+		log.Infof("Subnetwork '%s' did not register.", subnetworkID)
 	}
 }
 
@@ -103,14 +103,14 @@ func waitForSubnetworkToBecomeAccepted(client *rpcclient.Client, subnetworkID *s
 		_, err := client.GetSubnetwork(subnetworkID.String())
 		if err != nil {
 			if rpcError, ok := err.(*btcjson.RPCError); ok && rpcError.Code == btcjson.ErrRPCSubnetworkNotFound {
-				log.Printf("Subnetwork not found")
+				log.Infof("Subnetwork not found")
 
 				retries++
 				if retries == maxGetSubnetworkRetries {
 					return false, nil
 				}
 
-				log.Printf("Waiting %d seconds...", int(getSubnetworkRetryDelay.Seconds()))
+				log.Infof("Waiting %d seconds...", int(getSubnetworkRetryDelay.Seconds()))
 				<-time.After(getSubnetworkRetryDelay)
 				continue
 			}

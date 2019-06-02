@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/daglabs/btcd/rpcclient"
 	"io/ioutil"
-	"log"
 )
 
 func connect(cfg *config) (*rpcclient.Client, error) {
@@ -33,8 +32,6 @@ func connect(cfg *config) (*rpcclient.Client, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error connecting to address %s: %s", cfg.RPCServer, err)
 	}
-
-	log.Printf("Connected to server %s", cfg.RPCServer)
 
 	return client, nil
 }
