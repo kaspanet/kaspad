@@ -72,7 +72,7 @@ func parseConfig() (*config, error) {
 	}
 
 	if cfg.GasLimit < 0 {
-		return nil, fmt.Errorf("gaslimit may not smaller that 0")
+		return nil, fmt.Errorf("gaslimit may not be smaller than 0")
 	}
 	if cfg.GasLimit == 0 {
 		cfg.GasLimit = defaultSubnetworkGasLimit
