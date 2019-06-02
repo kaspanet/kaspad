@@ -139,6 +139,9 @@ func solveLoop(newTemplateChan chan *btcjson.GetBlockTemplateResult, foundBlock 
 
 		go solveBlock(block, stopOldTemplateSolving, foundBlock)
 	}
+	if stopOldTemplateSolving != nil {
+		close(stopOldTemplateSolving)
+	}
 }
 
 func mineNextBlock(client *simulatorClient, foundBlock chan *util.Block, templateStopChan chan struct{}, errChan chan error) {
@@ -149,7 +152,7 @@ func mineNextBlock(client *simulatorClient, foundBlock chan *util.Block, templat
 
 func handleFoundBlock(client *simulatorClient, block *util.Block, templateStopChan chan struct{}) error {
 	templateStopChan <- struct{}{}
-	log.Infof("Found block %s! Submitting to %s", block.Hash(), client.Host())
+	log.Infof("Found block %s with parents %s! Submitting to %s", block.Hash(), block.MsgBlock().Header.ParentHashes, client.Host())
 
 	err := client.SubmitBlock(block, &btcjson.SubmitBlockOptions{})
 	if err != nil {
@@ -167,13 +170,13 @@ func getRandomClient(clients []*simulatorClient) *simulatorClient {
 }
 
 func mineLoop(clients []*simulatorClient) error {
-	foundBlock := make(chan *util.Block)
 	errChan := make(chan error)
 
 	templateStopChan := make(chan struct{})
 
 	spawn(func() {
 		for {
+			foundBlock := make(chan *util.Block)
 			currentClient := getRandomClient(clients)
 			currentClient.notifyForNewBlocks = true
 			log.Infof("Next block will be mined by: %s", currentClient.Host())
