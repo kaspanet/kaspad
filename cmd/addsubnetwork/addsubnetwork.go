@@ -31,7 +31,7 @@ func main() {
 	}
 	log.Infof("Connected to server %s", cfg.RPCServer)
 
-	fundingOutPoint, fundingTx, err := findUnspentTXO(client, addrPubKeyHash)
+	fundingOutPoint, fundingTx, err := findUnspentTXO(cfg, client, addrPubKeyHash)
 	if err != nil {
 		panic(fmt.Errorf("error finding unspent transactions: %s", err))
 	}

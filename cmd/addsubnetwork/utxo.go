@@ -15,7 +15,7 @@ const (
 	minConfirmations = 10
 )
 
-func findUnspentTXO(client *rpcclient.Client, addrPubKeyHash *util.AddressPubKeyHash) (*wire.OutPoint, *wire.MsgTx, error) {
+func findUnspentTXO(cfg *config, client *rpcclient.Client, addrPubKeyHash *util.AddressPubKeyHash) (*wire.OutPoint, *wire.MsgTx, error) {
 	txs, err := collectTransactions(client, addrPubKeyHash)
 	if err != nil {
 		return nil, nil, err
@@ -23,6 +23,11 @@ func findUnspentTXO(client *rpcclient.Client, addrPubKeyHash *util.AddressPubKey
 
 	utxos := buildUTXOs(txs)
 	for outPoint, tx := range utxos {
+		// Skip TXOs that can't pay for registration
+		if tx.TxOut[outPoint.Index].Value < cfg.RegistryTxFee {
+			continue
+		}
+
 		return &outPoint, tx, nil
 	}
 
