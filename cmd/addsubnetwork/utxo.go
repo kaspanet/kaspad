@@ -44,6 +44,12 @@ func collectTransactions(client *rpcclient.Client, addrPubKeyHash *util.AddressP
 		}
 
 		for _, result := range results {
+			// Mempool transactions bring about unnecessary complexity, so
+			// simply don't bother processing them
+			if result.IsInMempool {
+				continue
+			}
+
 			tx, err := parseRawTransactionResult(result)
 			if err != nil {
 				return nil, fmt.Errorf("failed to process SearchRawTransactionResult: %s", err)
