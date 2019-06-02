@@ -225,36 +225,6 @@ func (idx *CfIndex) ConnectBlock(dbTx database.Tx, block *util.Block,
 	return storeFilter(dbTx, block, f, wire.GCSFilterExtended)
 }
 
-// DisconnectBlock is invoked by the index manager when a block has been
-// disconnected from the main chain.  This indexer removes the hash-to-cf
-// mapping for every passed block. This is part of the Indexer interface.
-func (idx *CfIndex) DisconnectBlock(dbTx database.Tx, block *util.Block,
-	_ *blockdag.BlockDAG) error {
-
-	for _, key := range cfIndexKeys {
-		err := dbDeleteFilterIdxEntry(dbTx, key, block.Hash())
-		if err != nil {
-			return err
-		}
-	}
-
-	for _, key := range cfHeaderKeys {
-		err := dbDeleteFilterIdxEntry(dbTx, key, block.Hash())
-		if err != nil {
-			return err
-		}
-	}
-
-	for _, key := range cfHashKeys {
-		err := dbDeleteFilterIdxEntry(dbTx, key, block.Hash())
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
 // entryByBlockHash fetches a filter index entry of a particular type
 // (eg. filter, filter header, etc) for a filter type and block hash.
 func (idx *CfIndex) entryByBlockHash(filterTypeKeys [][]byte,

@@ -728,28 +728,6 @@ func (idx *AddrIndex) ConnectBlock(dbTx database.Tx, block *util.Block, dag *blo
 	return nil
 }
 
-// DisconnectBlock is invoked by the index manager when a block has been
-// disconnected from the main chain.  This indexer removes the address mappings
-// each transaction in the block involve.
-//
-// This is part of the Indexer interface.
-func (idx *AddrIndex) DisconnectBlock(dbTx database.Tx, block *util.Block, dag *blockdag.BlockDAG) error {
-	// Build all of the address to transaction mappings in a local map.
-	addrsToTxns := make(writeIndexData)
-	idx.indexBlock(addrsToTxns, block, dag)
-
-	// Remove all of the index entries for each address.
-	bucket := dbTx.Metadata().Bucket(addrIndexKey)
-	for addrKey, txIdxs := range addrsToTxns {
-		err := dbRemoveAddrIndexEntries(bucket, addrKey, len(txIdxs))
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
 // TxRegionsForAddress returns a slice of block regions which identify each
 // transaction that involves the passed address according to the specified
 // number to skip, number requested, and whether or not the results should be

@@ -6,6 +6,7 @@ package indexers
 
 import (
 	"fmt"
+
 	"github.com/daglabs/btcd/blockdag"
 	"github.com/daglabs/btcd/database"
 	"github.com/daglabs/btcd/util"
