@@ -8,20 +8,22 @@ import (
 )
 
 type config struct {
-	PrivateKey  string `short:"k" long:"private-key" description:"Private key" required:"true"`
-	RPCUser     string `short:"u" long:"rpcuser" description:"RPC username" required:"true"`
-	RPCPassword string `short:"P" long:"rpcpass" default-mask:"-" description:"RPC password" required:"true"`
-	RPCServer   string `short:"s" long:"rpcserver" description:"RPC server to connect to" required:"true"`
-	RPCCert     string `short:"c" long:"rpccert" description:"RPC server certificate chain for validation"`
-	DisableTLS  bool   `long:"notls" description:"Disable TLS"`
-	TestNet     bool   `long:"testnet" description:"Connect to testnet"`
-	SimNet      bool   `long:"simnet" description:"Connect to the simulation test network"`
-	DevNet      bool   `long:"devnet" description:"Connect to the development test network"`
-	GasLimit    uint64 `long:"gaslimit" description:"The gas limit of the new subnetwork"`
+	PrivateKey    string `short:"k" long:"private-key" description:"Private key" required:"true"`
+	RPCUser       string `short:"u" long:"rpcuser" description:"RPC username" required:"true"`
+	RPCPassword   string `short:"P" long:"rpcpass" default-mask:"-" description:"RPC password" required:"true"`
+	RPCServer     string `short:"s" long:"rpcserver" description:"RPC server to connect to" required:"true"`
+	RPCCert       string `short:"c" long:"rpccert" description:"RPC server certificate chain for validation"`
+	DisableTLS    bool   `long:"notls" description:"Disable TLS"`
+	TestNet       bool   `long:"testnet" description:"Connect to testnet"`
+	SimNet        bool   `long:"simnet" description:"Connect to the simulation test network"`
+	DevNet        bool   `long:"devnet" description:"Connect to the development test network"`
+	GasLimit      uint64 `long:"gaslimit" description:"The gas limit of the new subnetwork"`
+	RegistryTxFee uint64 `long:"regtxfee" description:"The fee for the subnetwork registry transaction"`
 }
 
 const (
 	defaultSubnetworkGasLimit = 1000
+	defaultRegistryTxFee      = 3000
 )
 
 var (
@@ -76,6 +78,13 @@ func parseConfig() (*config, error) {
 	}
 	if cfg.GasLimit == 0 {
 		cfg.GasLimit = defaultSubnetworkGasLimit
+	}
+
+	if cfg.RegistryTxFee < 0 {
+		return nil, fmt.Errorf("regtxfee may not be smaller than 0")
+	}
+	if cfg.RegistryTxFee == 0 {
+		cfg.RegistryTxFee = defaultRegistryTxFee
 	}
 
 	return cfg, nil

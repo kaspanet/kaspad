@@ -3,12 +3,9 @@ package main
 import (
 	"fmt"
 	"github.com/daglabs/btcd/blockdag"
-	"github.com/daglabs/btcd/btcec"
 	"github.com/daglabs/btcd/btcjson"
 	"github.com/daglabs/btcd/rpcclient"
-	"github.com/daglabs/btcd/txscript"
 	"github.com/daglabs/btcd/util/subnetworkid"
-	"github.com/daglabs/btcd/wire"
 	"time"
 )
 
@@ -64,31 +61,6 @@ func main() {
 		panic(fmt.Errorf("error waiting for subnetwork to become accepted: %s", err))
 	}
 	log.Infof("Subnetwork '%s' was successfully registered.", subnetworkID)
-}
-
-func buildSubnetworkRegistryTx(cfg *config, fundingOutPoint *wire.OutPoint, fundingTx *wire.MsgTx, privateKey *btcec.PrivateKey) (*wire.MsgTx, error) {
-	txIn := &wire.TxIn{
-		PreviousOutPoint: *fundingOutPoint,
-		Sequence:         wire.MaxTxInSequenceNum,
-	}
-	pkScript, err := txscript.PayToScriptHashScript(blockdag.OpTrueScript)
-	if err != nil {
-		return nil, err
-	}
-	txOut := &wire.TxOut{
-		PkScript: pkScript,
-		Value:    fundingTx.TxOut[fundingOutPoint.Index].Value,
-	}
-	registryTx := wire.NewRegistryMsgTx(1, []*wire.TxIn{txIn}, []*wire.TxOut{txOut}, cfg.GasLimit)
-
-	SignatureScript, err := txscript.SignatureScript(registryTx, 0, fundingTx.TxOut[fundingOutPoint.Index].PkScript,
-		txscript.SigHashAll, privateKey, true)
-	if err != nil {
-		return nil, fmt.Errorf("failed to build signature script: %s", err)
-	}
-	txIn.SignatureScript = SignatureScript
-
-	return registryTx, nil
 }
 
 func waitForSubnetworkToBecomeAccepted(client *rpcclient.Client, subnetworkID *subnetworkid.SubnetworkID) error {
