@@ -648,7 +648,7 @@ func (dag *BlockDAG) saveChangesFromBlock(node *blockNode, block *util.Block, vi
 		// optional indexes with the block being connected so they can
 		// update themselves accordingly.
 		if dag.indexManager != nil {
-			err := dag.indexManager.ConnectBlock(dbTx, block, dag, txsAcceptanceData, virtualTxsAcceptanceData)
+			err := dag.indexManager.ConnectBlock(dbTx, block, dag, node.feeTransaction, txsAcceptanceData, virtualTxsAcceptanceData)
 			if err != nil {
 				return err
 			}
@@ -1757,7 +1757,7 @@ type IndexManager interface {
 
 	// ConnectBlock is invoked when a new block has been connected to the
 	// DAG.
-	ConnectBlock(database.Tx, *util.Block, *BlockDAG, MultiBlockTxsAcceptanceData, MultiBlockTxsAcceptanceData) error
+	ConnectBlock(database.Tx, *util.Block, *BlockDAG, *util.Tx, MultiBlockTxsAcceptanceData, MultiBlockTxsAcceptanceData) error
 }
 
 // Config is a descriptor which specifies the blockchain instance configuration.

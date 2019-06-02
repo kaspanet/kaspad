@@ -204,8 +204,8 @@ func storeFilter(dbTx database.Tx, block *util.Block, f *gcs.Filter,
 // ConnectBlock is invoked by the index manager when a new block has been
 // connected to the main chain. This indexer adds a hash-to-cf mapping for
 // every passed block. This is part of the Indexer interface.
-func (idx *CfIndex) ConnectBlock(dbTx database.Tx, block *util.Block,
-	_ *blockdag.BlockDAG, _ blockdag.MultiBlockTxsAcceptanceData, _ blockdag.MultiBlockTxsAcceptanceData) error {
+func (idx *CfIndex) ConnectBlock(dbTx database.Tx, block *util.Block, _ *blockdag.BlockDAG, _ *util.Tx,
+	_ blockdag.MultiBlockTxsAcceptanceData, _ blockdag.MultiBlockTxsAcceptanceData) error {
 
 	f, err := builder.BuildBasicFilter(block.MsgBlock())
 	if err != nil {
