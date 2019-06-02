@@ -134,8 +134,8 @@ func serializeAddrIndexEntry(blockID uint64, txLoc wire.TxLoc) []byte {
 	// Serialize the entry.
 	serialized := make([]byte, 16)
 	byteOrder.PutUint64(serialized, blockID)
-	byteOrder.PutUint32(serialized[4:], uint32(txLoc.TxStart))
-	byteOrder.PutUint32(serialized[8:], uint32(txLoc.TxLen))
+	byteOrder.PutUint32(serialized[8:], uint32(txLoc.TxStart))
+	byteOrder.PutUint32(serialized[12:], uint32(txLoc.TxLen))
 	return serialized
 }
 
@@ -155,7 +155,7 @@ func deserializeAddrIndexEntry(serialized []byte, region *database.BlockRegion, 
 	}
 	region.Hash = hash
 	region.Offset = byteOrder.Uint32(serialized[8:12])
-	region.Len = byteOrder.Uint32(serialized[12:14])
+	region.Len = byteOrder.Uint32(serialized[12:16])
 	return nil
 }
 
