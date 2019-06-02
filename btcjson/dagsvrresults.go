@@ -143,6 +143,7 @@ type GetBlockTemplateResult struct {
 	SizeLimit            int64                      `json:"sizeLimit,omitempty"`
 	Transactions         []GetBlockTemplateResultTx `json:"transactions"`
 	AcceptedIDMerkleRoot string                     `json:"acceptedIdMerkleRoot"`
+	UTXOCommitment       string                     `json:"utxoCommitment"`
 	Version              int32                      `json:"version"`
 	CoinbaseAux          *GetBlockTemplateResultAux `json:"coinbaseAux,omitempty"`
 	CoinbaseTxn          *GetBlockTemplateResultTx  `json:"coinbaseTxn,omitempty"`
@@ -274,6 +275,11 @@ type ScriptPubKeyResult struct {
 	Type      string   `json:"type"`
 	ReqSigs   int32    `json:"reqSigs,omitempty"`
 	Addresses []string `json:"addresses,omitempty"`
+}
+
+// GetSubnetworkResult models the data from the getSubnetwork command.
+type GetSubnetworkResult struct {
+	GasLimit uint64 `json:"gasLimit"`
 }
 
 // GetTxOutResult models the data from the gettxout command.

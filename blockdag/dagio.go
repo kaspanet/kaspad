@@ -355,6 +355,49 @@ func (dag *BlockDAG) createDAGState() error {
 	return nil
 }
 
+func (dag *BlockDAG) removeDAGState() error {
+	err := dag.db.Update(func(dbTx database.Tx) error {
+		meta := dbTx.Metadata()
+
+		err := meta.DeleteBucket(blockIndexBucketName)
+		if err != nil {
+			return err
+		}
+
+		err = meta.DeleteBucket(utxoSetBucketName)
+		if err != nil {
+			return err
+		}
+
+		err = meta.DeleteBucket(utxoDiffsBucketName)
+		if err != nil {
+			return err
+		}
+
+		err = dbTx.Metadata().Delete(utxoSetVersionKeyName)
+		if err != nil {
+			return err
+		}
+
+		err = meta.DeleteBucket(subnetworksBucketName)
+		if err != nil {
+			return err
+		}
+
+		err = dbTx.Metadata().Delete(localSubnetworkKeyName)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func dbPutLocalSubnetworkID(dbTx database.Tx, subnetworkID *subnetworkid.SubnetworkID) error {
 	if subnetworkID == nil {
 		return dbTx.Metadata().Put(localSubnetworkKeyName, []byte{})

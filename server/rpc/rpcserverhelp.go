@@ -317,6 +317,7 @@ var helpDescsEnUS = map[string]string{
 	"getBlockTemplateResult-sizeLimit":            "Number of bytes allowed in blocks",
 	"getBlockTemplateResult-transactions":         "Array of transactions as JSON objects",
 	"getBlockTemplateResult-acceptedIdMerkleRoot": "The root of the merkle tree of transaction IDs accepted by this block",
+	"getBlockTemplateResult-utxoCommitment":       "An ECMH UTXO commitment of this block",
 	"getBlockTemplateResult-version":              "The block version",
 	"getBlockTemplateResult-coinbaseAux":          "Data that should be included in the coinbase signature script",
 	"getBlockTemplateResult-coinbaseTxn":          "Information about the coinbase transaction",
@@ -506,6 +507,13 @@ var helpDescsEnUS = map[string]string{
 	"getRawTransaction--condition0": "verbose=false",
 	"getRawTransaction--condition1": "verbose=true",
 	"getRawTransaction--result0":    "Hex-encoded bytes of the serialized transaction",
+
+	// GetSubnetworkCmd help.
+	"getSubnetwork--synopsis":    "Returns information about a subnetwork given its ID.",
+	"getSubnetwork-subnetworkId": "The ID of the subnetwork",
+
+	// GetSubnetworkResult help.
+	"getSubnetworkResult-gasLimit": "The gas limit of the subnetwork",
 
 	// GetTxOutResult help.
 	"getTxOutResult-bestBlock":     "The block hash that contains the transaction output",
@@ -698,6 +706,7 @@ var rpcResultTypes = map[string][]interface{}{
 	"getPeerInfo":           {(*[]btcjson.GetPeerInfoResult)(nil)},
 	"getRawMempool":         {(*[]string)(nil), (*btcjson.GetRawMempoolVerboseResult)(nil)},
 	"getRawTransaction":     {(*string)(nil), (*btcjson.TxRawResult)(nil)},
+	"getSubnetwork":         {(*btcjson.GetSubnetworkResult)(nil)},
 	"getTxOut":              {(*btcjson.GetTxOutResult)(nil)},
 	"node":                  nil,
 	"help":                  {(*string)(nil), (*string)(nil)},

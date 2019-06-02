@@ -171,6 +171,7 @@ var rpcHandlersBeforeInit = map[string]commandHandler{
 	"getPeerInfo":           handleGetPeerInfo,
 	"getRawMempool":         handleGetRawMempool,
 	"getRawTransaction":     handleGetRawTransaction,
+	"getSubnetwork":         handleGetSubnetwork,
 	"getTxOut":              handleGetTxOut,
 	"help":                  handleHelp,
 	"node":                  handleNode,
@@ -1806,6 +1807,7 @@ func (state *gbtWorkState) blockTemplateResult(useCoinbaseValue bool, submitOld 
 		SizeLimit:            wire.MaxBlockPayload,
 		Transactions:         transactions,
 		AcceptedIDMerkleRoot: header.AcceptedIDMerkleRoot.String(),
+		UTXOCommitment:       header.UTXOCommitment.String(),
 		Version:              header.Version,
 		LongPollID:           longPollID,
 		SubmitOld:            submitOld,
@@ -2663,6 +2665,29 @@ func handleGetRawTransaction(s *Server, cmd interface{}, closeChan <-chan struct
 		return nil, err
 	}
 	return *rawTxn, nil
+}
+
+// handleGetSubnetwork handles the getSubnetwork command.
+func handleGetSubnetwork(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
+	c := cmd.(*btcjson.GetSubnetworkCmd)
+
+	subnetworkID, err := subnetworkid.NewFromStr(c.SubnetworkID)
+	if err != nil {
+		return nil, rpcDecodeHexError(c.SubnetworkID)
+	}
+
+	gasLimit, err := s.cfg.DAG.SubnetworkStore.GasLimit(subnetworkID)
+	if err != nil {
+		return nil, &btcjson.RPCError{
+			Code:    btcjson.ErrRPCSubnetworkNotFound,
+			Message: "Subnetwork not found.",
+		}
+	}
+
+	subnetworkReply := &btcjson.GetSubnetworkResult{
+		GasLimit: gasLimit,
+	}
+	return subnetworkReply, nil
 }
 
 // handleGetTxOut handles getTxOut commands.
