@@ -374,7 +374,7 @@ func (dag *BlockDAG) removeDAGState() error {
 			return err
 		}
 
-		err = dbTx.Metadata().Delete(utxoSetVersionKeyName)
+		err = meta.Delete(utxoSetVersionKeyName)
 		if err != nil {
 			return err
 		}
@@ -384,7 +384,12 @@ func (dag *BlockDAG) removeDAGState() error {
 			return err
 		}
 
-		err = dbTx.Metadata().Delete(localSubnetworkKeyName)
+		err = meta.Delete(localSubnetworkKeyName)
+		if err != nil {
+			return err
+		}
+
+		err = meta.DeleteBucket(feeTxBucketName)
 		if err != nil {
 			return err
 		}
@@ -494,6 +499,9 @@ func (dag *BlockDAG) initDAGState() error {
 			}
 
 			node.feeTransaction, err = dbFetchFeeTx(dbTx, node.hash)
+			if err != nil {
+				return err
+			}
 
 			lastNode = node
 			i++
