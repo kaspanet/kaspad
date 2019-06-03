@@ -406,7 +406,7 @@ func (m *memWallet) fundTx(tx *wire.MsgTx, amt util.Amount, feeRate util.Amount)
 // while observing the passed fee rate. The passed fee rate should be expressed
 // in satoshis-per-byte.
 func (m *memWallet) SendOutputs(outputs []*wire.TxOut,
-	feeRate util.Amount) (*daghash.Hash, error) {
+	feeRate util.Amount) (*daghash.TxID, error) {
 
 	tx, err := m.CreateTransaction(outputs, feeRate)
 	if err != nil {

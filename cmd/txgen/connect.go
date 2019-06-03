@@ -6,8 +6,7 @@ import (
 	"io/ioutil"
 )
 
-func connectToServers(cfg *config, addressList []string) ([]*rpcclient.Client, error) {
-	clients := make([]*rpcclient.Client, len(addressList))
+func connectToServer(cfg *config) (*txgenClient, error) {
 
 	var cert []byte
 	if !cfg.DisableTLS {
@@ -18,28 +17,24 @@ func connectToServers(cfg *config, addressList []string) ([]*rpcclient.Client, e
 		}
 	}
 
-	for i, address := range addressList {
-		connCfg := &rpcclient.ConnConfig{
-			Host:       address,
-			Endpoint:   "ws",
-			User:       "user",
-			Pass:       "pass",
-			DisableTLS: cfg.DisableTLS,
-		}
-
-		if !cfg.DisableTLS {
-			connCfg.Certificates = cert
-		}
-
-		client, err := rpcclient.New(connCfg, nil)
-		if err != nil {
-			return nil, fmt.Errorf("Error connecting to address %s: %s", address, err)
-		}
-
-		clients[i] = client
-
-		log.Infof("Connected to server %s", address)
+	connCfg := &rpcclient.ConnConfig{
+		Host:       cfg.Address,
+		Endpoint:   "ws",
+		User:       "user",
+		Pass:       "pass",
+		DisableTLS: cfg.DisableTLS,
 	}
 
-	return clients, nil
+	if !cfg.DisableTLS {
+		connCfg.Certificates = cert
+	}
+
+	client, err := newTxgenClient(connCfg)
+	if err != nil {
+		return nil, fmt.Errorf("Error connecting to address %s: %s", cfg.Address, err)
+	}
+
+	log.Infof("Connected to server %s", cfg.Address)
+
+	return client, nil
 }

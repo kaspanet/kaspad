@@ -42,7 +42,7 @@ func TestDAGSvrWsNtfns(t *testing.T) {
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"filteredBlockAdded","params":[100000,"header",["tx0","tx1"]],"id":null}`,
 			unmarshalled: &btcjson.FilteredBlockAddedNtfn{
-				Height:        100000,
+				ChainHeight:   100000,
 				Header:        "header",
 				SubscribedTxs: []string{"tx0", "tx1"},
 			},

@@ -69,6 +69,8 @@ func (dag *BlockDAG) maybeAcceptBlock(block *util.Block, flags BehaviorFlags) er
 		return err
 	}
 
+	block.SetChainHeight(newNode.chainHeight)
+
 	// Connect the passed block to the DAG. This also handles validation of the
 	// transaction scripts.
 	err = dag.addBlock(newNode, parents, block, flags)
