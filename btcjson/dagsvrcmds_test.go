@@ -597,6 +597,19 @@ func TestDAGSvrCmds(t *testing.T) {
 			},
 		},
 		{
+			name: "getSubnetwork",
+			newCmd: func() (interface{}, error) {
+				return btcjson.NewCmd("getSubnetwork", "123")
+			},
+			staticCmd: func() interface{} {
+				return btcjson.NewGetSubnetworkCmd("123")
+			},
+			marshalled: `{"jsonrpc":"1.0","method":"getSubnetwork","params":["123"],"id":1}`,
+			unmarshalled: &btcjson.GetSubnetworkCmd{
+				SubnetworkID: "123",
+			},
+		},
+		{
 			name: "getTxOut",
 			newCmd: func() (interface{}, error) {
 				return btcjson.NewCmd("getTxOut", "123", 1)

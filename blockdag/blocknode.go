@@ -9,6 +9,7 @@ import (
 	"sort"
 	"time"
 
+	"github.com/daglabs/btcd/util"
 	"github.com/daglabs/btcd/util/daghash"
 	"github.com/daglabs/btcd/wire"
 )
@@ -104,6 +105,8 @@ type blockNode struct {
 	hashMerkleRoot       *daghash.Hash
 	acceptedIDMerkleRoot *daghash.Hash
 	utxoCommitment       *daghash.Hash
+
+	feeTransaction *util.Tx
 
 	// status is a bitfield representing the validation state of the block. The
 	// status field, unlike the other fields, may be written to and so should

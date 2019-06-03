@@ -498,6 +498,19 @@ func NewGetRawTransactionCmd(txHash string, verbose *int) *GetRawTransactionCmd 
 	}
 }
 
+// GetSubnetworkCmd defines the getSubnetwork JSON-RPC command.
+type GetSubnetworkCmd struct {
+	SubnetworkID string
+}
+
+// NewGetSubnetworkCmd returns a new instance which can be used to issue a
+// getSubnetworkCmd command.
+func NewGetSubnetworkCmd(subnetworkID string) *GetSubnetworkCmd {
+	return &GetSubnetworkCmd{
+		SubnetworkID: subnetworkID,
+	}
+}
+
 // GetTxOutCmd defines the getTxOut JSON-RPC command.
 type GetTxOutCmd struct {
 	TxID           string
@@ -792,6 +805,7 @@ func init() {
 	MustRegisterCmd("getPeerInfo", (*GetPeerInfoCmd)(nil), flags)
 	MustRegisterCmd("getRawMempool", (*GetRawMempoolCmd)(nil), flags)
 	MustRegisterCmd("getRawTransaction", (*GetRawTransactionCmd)(nil), flags)
+	MustRegisterCmd("getSubnetwork", (*GetSubnetworkCmd)(nil), flags)
 	MustRegisterCmd("getTxOut", (*GetTxOutCmd)(nil), flags)
 	MustRegisterCmd("getTxOutProof", (*GetTxOutProofCmd)(nil), flags)
 	MustRegisterCmd("getTxOutSetInfo", (*GetTxOutSetInfoCmd)(nil), flags)

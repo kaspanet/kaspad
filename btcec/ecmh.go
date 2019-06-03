@@ -109,13 +109,14 @@ func (ms *Multiset) Subtract(otherMultiset *Multiset) *Multiset {
 // Hash serializes and returns the hash of the multiset. The hash of an empty
 // set is the 32 byte value of zero. The hash of a non-empty multiset is the
 // sha256 hash of the 32 byte x value concatenated with the 32 byte y value.
-func (ms *Multiset) Hash() daghash.Hash {
+func (ms *Multiset) Hash() *daghash.Hash {
 	if ms.x.Sign() == 0 && ms.y.Sign() == 0 {
-		return daghash.Hash{}
+		return &daghash.Hash{}
 	}
 
 	hash := sha256.Sum256(append(ms.x.Bytes(), ms.y.Bytes()...))
-	return daghash.Hash(hash)
+	castHash := daghash.Hash(hash)
+	return &castHash
 }
 
 // Point returns a copy of the x and y coordinates of the current multiset state.

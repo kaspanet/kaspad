@@ -410,13 +410,6 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 	}
 	numCoinbaseSigOps := int64(blockdag.CountSigOps(coinbaseTx))
 
-	msgFeeTransaction, err := g.dag.NextBlockFeeTransactionNoLock()
-	if err != nil {
-		return nil, err
-	}
-	feeTransaction := util.NewTx(msgFeeTransaction)
-	feeTxSigOps := int64(blockdag.CountSigOps(feeTransaction))
-
 	// Get the current source transactions and create a priority queue to
 	// hold the transactions which are ready for inclusion into a block
 	// along with some priority related and fee metadata.  Reserve the same
@@ -431,14 +424,14 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 	// generated block with reserved space.  Also create a utxo view to
 	// house all of the input transactions so multiple lookups can be
 	// avoided.
-	blockTxns := make([]*util.Tx, 0, len(sourceTxns)+2)
-	blockTxns = append(blockTxns, coinbaseTx, feeTransaction)
+	blockTxns := make([]*util.Tx, 0, len(sourceTxns)+1)
+	blockTxns = append(blockTxns, coinbaseTx)
 
 	// The starting block size is the size of the block header plus the max
 	// possible transaction count size, plus the size of the coinbase
 	// transaction.
 	blockSize := blockHeaderOverhead + uint32(coinbaseTx.MsgTx().SerializeSize())
-	blockSigOps := numCoinbaseSigOps + feeTxSigOps
+	blockSigOps := numCoinbaseSigOps
 	totalFees := uint64(0)
 
 	// Create slices to hold the fees and number of signature operations
@@ -447,10 +440,10 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 	// a transaction as it is selected for inclusion in the final block.
 	// However, since the total fees aren't known yet, use a dummy value for
 	// the coinbase fee which will be updated later.
-	txFees := make([]uint64, 0, len(sourceTxns)+2)
-	txSigOpCounts := make([]int64, 0, len(sourceTxns)+2)
+	txFees := make([]uint64, 0, len(sourceTxns)+1)
+	txSigOpCounts := make([]int64, 0, len(sourceTxns)+1)
 	txFees = append(txFees, 0, 0) // For coinbase and fee txs
-	txSigOpCounts = append(txSigOpCounts, numCoinbaseSigOps, feeTxSigOps)
+	txSigOpCounts = append(txSigOpCounts, numCoinbaseSigOps)
 
 	log.Debugf("Considering %d transactions for inclusion to new block",
 		len(sourceTxns))
@@ -656,17 +649,21 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 		return nil, err
 	}
 	var msgBlock wire.MsgBlock
+	for _, tx := range blockTxns {
+		msgBlock.AddTransaction(tx.MsgTx())
+	}
+	utxoCommitment, err := g.buildUTXOCommitment(msgBlock.Transactions, nextBlockHeight)
+	if err != nil {
+		return nil, err
+	}
 	msgBlock.Header = wire.BlockHeader{
 		Version:              nextBlockVersion,
 		ParentHashes:         g.dag.TipHashes(),
 		HashMerkleRoot:       hashMerkleTree.Root(),
 		AcceptedIDMerkleRoot: acceptedIDMerkleRoot,
-		UTXOCommitment:       &daghash.ZeroHash,
+		UTXOCommitment:       utxoCommitment,
 		Timestamp:            ts,
 		Bits:                 reqDifficulty,
-	}
-	for _, tx := range blockTxns {
-		msgBlock.AddTransaction(tx.MsgTx())
 	}
 
 	// Finally, perform a full check on the created block against the chain
@@ -691,6 +688,14 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 		Height:          nextBlockHeight,
 		ValidPayAddress: payToAddress != nil,
 	}, nil
+}
+
+func (g *BlkTmplGenerator) buildUTXOCommitment(transactions []*wire.MsgTx, nextBlockHeight uint64) (*daghash.Hash, error) {
+	utxoWithTransactions, err := g.dag.UTXOSet().WithTransactions(transactions, nextBlockHeight, false)
+	if err != nil {
+		return nil, err
+	}
+	return utxoWithTransactions.Multiset().Hash(), nil
 }
 
 // UpdateBlockTime updates the timestamp in the header of the passed block to
@@ -744,6 +749,13 @@ func (g *BlkTmplGenerator) UpdateExtraNonce(msgBlock *wire.MsgBlock, blockHeight
 	block := util.NewBlock(msgBlock)
 	hashMerkleTree := blockdag.BuildHashMerkleTreeStore(block.Transactions())
 	msgBlock.Header.HashMerkleRoot = hashMerkleTree.Root()
+
+	utxoCommitment, err := g.buildUTXOCommitment(msgBlock.Transactions, blockHeight)
+	if err != nil {
+		return err
+	}
+
+	msgBlock.Header.UTXOCommitment = utxoCommitment
 
 	return nil
 }
