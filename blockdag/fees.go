@@ -148,7 +148,7 @@ func (node *blockNode) buildFeeTransaction(dag *BlockDAG, txsAcceptanceData Mult
 	txOuts := []*wire.TxOut{}
 
 	for _, blue := range node.blues {
-		txIn, txOut, err := feeInputAndOutputForBlueBlock(blue, txsAcceptanceData, bluesFeeData)
+		txIn, txOut, err := feeInputAndOutputForBlueBlock(dag, blue, txsAcceptanceData, bluesFeeData)
 		if err != nil {
 			return nil, err
 		}

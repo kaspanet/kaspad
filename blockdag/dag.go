@@ -1011,12 +1011,18 @@ func (node *blockNode) updateParentsDiffs(dag *BlockDAG, newBlockUTXO UTXOSet) e
 			if err != nil {
 				return err
 			}
-			dag.utxoDiffStore.setBlockDiffChild(parent, node)
+			err = dag.utxoDiffStore.setBlockDiffChild(parent, node)
+			if err != nil {
+				return err
+			}
 			diff, err := newBlockUTXO.diffFrom(parentUTXO)
 			if err != nil {
 				return err
 			}
-			dag.utxoDiffStore.setBlockDiff(parent, diff)
+			err = dag.utxoDiffStore.setBlockDiff(parent, diff)
+			if err != nil {
+				return err
+			}
 		}
 	}
 

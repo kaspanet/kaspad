@@ -2091,8 +2091,6 @@ func chainErrToGBTErrString(err error) string {
 		return "bad-txns-multicoinbase"
 	case blockdag.ErrBadCoinbaseScriptLen:
 		return "bad-cb-length"
-	case blockdag.ErrBadCoinbaseValue:
-		return "bad-cb-value"
 	case blockdag.ErrMissingCoinbaseHeight:
 		return "bad-cb-height"
 	case blockdag.ErrBadCoinbaseHeight:

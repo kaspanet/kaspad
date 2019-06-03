@@ -48,7 +48,6 @@ func TestErrorCodeStringer(t *testing.T) {
 		{ErrFirstTxNotCoinbase, "ErrFirstTxNotCoinbase"},
 		{ErrMultipleCoinbases, "ErrMultipleCoinbases"},
 		{ErrBadCoinbaseScriptLen, "ErrBadCoinbaseScriptLen"},
-		{ErrBadCoinbaseValue, "ErrBadCoinbaseValue"},
 		{ErrMissingCoinbaseHeight, "ErrMissingCoinbaseHeight"},
 		{ErrBadCoinbaseHeight, "ErrBadCoinbaseHeight"},
 		{ErrSecondTxNotFeeTransaction, "ErrSecondTxNotFeeTransaction"},
