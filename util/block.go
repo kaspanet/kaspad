@@ -26,10 +26,6 @@ const (
 
 	// CoinbaseTransactionIndex is the index of the coinbase transaction in every block
 	CoinbaseTransactionIndex = 0
-
-	// FeeTransactionIndex is the index of the fee transaction in every block (except genesis,
-	// which doesn't have a fee transaction)
-	FeeTransactionIndex = 1
 )
 
 // Error satisfies the error interface and prints human-readable errors.

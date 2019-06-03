@@ -153,7 +153,7 @@ func CalcBlockSubsidy(height uint64, dagParams *dagconfig.Params) uint64 {
 
 // CheckTransactionSanity performs some preliminary checks on a transaction to
 // ensure it is sane.  These checks are context free.
-func CheckTransactionSanity(tx *util.Tx, subnetworkID *subnetworkid.SubnetworkID, isFeeTransaction bool) error {
+func CheckTransactionSanity(tx *util.Tx, subnetworkID *subnetworkid.SubnetworkID) error {
 	// A transaction must have at least one input.
 	msgTx := tx.MsgTx()
 	if len(msgTx.TxIn) == 0 {
@@ -531,9 +531,8 @@ func (dag *BlockDAG) checkBlockSanity(block *util.Block, flags BehaviorFlags) er
 
 	// Do some preliminary checks on each transaction to ensure they are
 	// sane before continuing.
-	for i, tx := range transactions {
-		isFeeTransaction := i == util.FeeTransactionIndex
-		err := CheckTransactionSanity(tx, dag.subnetworkID, isFeeTransaction)
+	for _, tx := range transactions {
+		err := CheckTransactionSanity(tx, dag.subnetworkID)
 		if err != nil {
 			return err
 		}
