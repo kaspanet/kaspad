@@ -153,7 +153,7 @@ func CalcBlockSubsidy(height uint64, dagParams *dagconfig.Params) uint64 {
 
 // CheckTransactionSanity performs some preliminary checks on a transaction to
 // ensure it is sane.  These checks are context free.
-func CheckTransactionSanity(tx *util.Tx, subnetworkID *subnetworkid.SubnetworkID, isFeeTransaction bool) error {
+func CheckTransactionSanity(tx *util.Tx, subnetworkID *subnetworkid.SubnetworkID) error {
 	// A transaction must have at least one input.
 	msgTx := tx.MsgTx()
 	if len(msgTx.TxIn) == 0 {
@@ -509,29 +509,20 @@ func (dag *BlockDAG) checkBlockSanity(block *util.Block, flags BehaviorFlags) er
 			"block is not a coinbase")
 	}
 
-	isGenesis := block.MsgBlock().Header.IsGenesis()
-	if !isGenesis && !IsFeeTransaction(transactions[1]) {
-		return ruleError(ErrSecondTxNotFeeTransaction, "second transaction in "+
-			"block is not a fee transaction")
-	}
-
-	txOffset := 2
-	if isGenesis {
-		txOffset = 1
-	}
+	txOffset := 1
 
 	// A block must not have more than one coinbase. And transactions must be
 	// ordered by subnetwork
 	for i, tx := range transactions[txOffset:] {
 		if IsCoinBase(tx) {
 			str := fmt.Sprintf("block contains second coinbase at "+
-				"index %d", i+2)
+				"index %d", i+txOffset)
 			return ruleError(ErrMultipleCoinbases, str)
 		}
 		if IsFeeTransaction(tx) {
-			str := fmt.Sprintf("block contains second fee transaction at "+
-				"index %d", i+2)
-			return ruleError(ErrMultipleFeeTransactions, str)
+			str := fmt.Sprintf("block contains an explicit fee transaction at "+
+				"index %d", i+txOffset)
+			return ruleError(ErrExplicitFeeTransaction, str)
 		}
 		if subnetworkid.Less(&tx.MsgTx().SubnetworkID, &transactions[i].MsgTx().SubnetworkID) {
 			return ruleError(ErrTransactionsNotSorted, "transactions must be sorted by subnetwork")
@@ -540,9 +531,8 @@ func (dag *BlockDAG) checkBlockSanity(block *util.Block, flags BehaviorFlags) er
 
 	// Do some preliminary checks on each transaction to ensure they are
 	// sane before continuing.
-	for i, tx := range transactions {
-		isFeeTransaction := i == util.FeeTransactionIndex
-		err := CheckTransactionSanity(tx, dag.subnetworkID, isFeeTransaction)
+	for _, tx := range transactions {
+		err := CheckTransactionSanity(tx, dag.subnetworkID)
 		if err != nil {
 			return err
 		}
@@ -1045,6 +1035,10 @@ func (dag *BlockDAG) checkConnectToPastUTXO(block *blockNode, pastUTXO UTXOSet,
 			return nil, fmt.Errorf("Error adding tx %s fee to compactFeeFactory: %s", tx.ID(), err)
 		}
 	}
+
+	// Add a 0 fee for implicit fee transaction
+	compactFeeFactory.add(0)
+
 	feeData, err := compactFeeFactory.data()
 	if err != nil {
 		return nil, fmt.Errorf("Error getting bytes of fee data: %s", err)

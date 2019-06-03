@@ -204,8 +204,8 @@ func storeFilter(dbTx database.Tx, block *util.Block, f *gcs.Filter,
 // ConnectBlock is invoked by the index manager when a new block has been
 // connected to the main chain. This indexer adds a hash-to-cf mapping for
 // every passed block. This is part of the Indexer interface.
-func (idx *CfIndex) ConnectBlock(dbTx database.Tx, block *util.Block,
-	_ *blockdag.BlockDAG, _ blockdag.MultiBlockTxsAcceptanceData, _ blockdag.MultiBlockTxsAcceptanceData) error {
+func (idx *CfIndex) ConnectBlock(dbTx database.Tx, block *util.Block, _ *blockdag.BlockDAG, _ *util.Tx,
+	_ blockdag.MultiBlockTxsAcceptanceData, _ blockdag.MultiBlockTxsAcceptanceData) error {
 
 	f, err := builder.BuildBasicFilter(block.MsgBlock())
 	if err != nil {
@@ -223,36 +223,6 @@ func (idx *CfIndex) ConnectBlock(dbTx database.Tx, block *util.Block,
 	}
 
 	return storeFilter(dbTx, block, f, wire.GCSFilterExtended)
-}
-
-// DisconnectBlock is invoked by the index manager when a block has been
-// disconnected from the main chain.  This indexer removes the hash-to-cf
-// mapping for every passed block. This is part of the Indexer interface.
-func (idx *CfIndex) DisconnectBlock(dbTx database.Tx, block *util.Block,
-	_ *blockdag.BlockDAG) error {
-
-	for _, key := range cfIndexKeys {
-		err := dbDeleteFilterIdxEntry(dbTx, key, block.Hash())
-		if err != nil {
-			return err
-		}
-	}
-
-	for _, key := range cfHeaderKeys {
-		err := dbDeleteFilterIdxEntry(dbTx, key, block.Hash())
-		if err != nil {
-			return err
-		}
-	}
-
-	for _, key := range cfHashKeys {
-		err := dbDeleteFilterIdxEntry(dbTx, key, block.Hash())
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
 }
 
 // entryByBlockHash fetches a filter index entry of a particular type
