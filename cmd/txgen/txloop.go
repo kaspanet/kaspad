@@ -16,11 +16,16 @@ import (
 const (
 	// Those constants should be updated, when monetary policy changed
 	minSpendableAmount uint64 = 10000
+	maxSpendableAmount uint64 = 5 * minSpendableAmount
 	minTxFee           uint64 = 3000
 
 	// spendSize is the largest number of bytes of a sigScript
 	// which spends a p2pkh output: OP_DATA_73 <sig> OP_DATA_33 <pubkey>
 	spendSize = 1 + 73 + 1 + 33
+
+	txLifeSpan = 1000
+	requiredConfirmations = 10
+	approximateConfirmationsForBlockRewardMaturity = 150
 )
 
 type walletTx struct {
@@ -63,21 +68,25 @@ func txLoop(client *txgenClient) error {
 		return err
 	}
 
-	for _, wTx := range initialTxs {
-		if !wTx.confirmed {
-			walletTxs[*wTx.tx.ID()] = wTx
-		}
-	}
-
+	// Add all of the confirmed transaction outputs to the UTXO.
 	for _, wTx := range initialTxs {
 		if wTx.confirmed {
 			addTxOutsToUTXOSet(walletUTXOSet, wTx.tx.MsgTx())
 		}
 	}
 
+	// Iterate over all of the transactions (confirmed and
+	// unconfirmed) and remove all of their previous outpoints
+	// from the UTXO.
 	for _, wTx := range initialTxs {
-		if wTx.confirmed {
-			removeTxInsFromUTXOSet(walletUTXOSet, wTx.tx.MsgTx())
+		removeTxInsFromUTXOSet(walletUTXOSet, wTx.tx.MsgTx())
+	}
+
+	// Add the unconfirmed transactions to walletTxs, so we
+	// can add their outputs to the UTXO when they are confirmed.
+	for _, wTx := range initialTxs {
+		if !wTx.confirmed {
+			walletTxs[*wTx.tx.ID()] = wTx
 		}
 	}
 
@@ -89,7 +98,7 @@ func txLoop(client *txgenClient) error {
 			}
 
 			// Delete old confirmed transactions to save memory
-			if wTx.confirmed && wTx.chainHeight+1000 < blockAdded.chainHeight {
+			if wTx.confirmed && wTx.chainHeight+txLifeSpan < blockAdded.chainHeight {
 				delete(walletTxs, txID)
 			}
 		}
@@ -99,7 +108,7 @@ func txLoop(client *txgenClient) error {
 				walletTxs[*tx.ID()] = &walletTx{
 					tx:                         tx,
 					chainHeight:                blockAdded.chainHeight,
-					checkConfirmationCountdown: 10,
+					checkConfirmationCountdown: requiredConfirmations,
 				}
 			}
 		}
@@ -109,7 +118,7 @@ func txLoop(client *txgenClient) error {
 		}
 
 		for funds := calcUTXOSetFunds(walletUTXOSet); !isDust(funds); funds = calcUTXOSetFunds(walletUTXOSet) {
-			amount := minSpendableAmount + uint64(random.Int63n(int64(minSpendableAmount*4)))
+			amount := minSpendableAmount + uint64(random.Int63n(int64(maxSpendableAmount - minSpendableAmount)))
 			if amount > funds-minTxFee {
 				amount = funds - minTxFee
 			}
@@ -263,9 +272,9 @@ func addTxOutsToUTXOSet(walletUTXOSet utxoSet, tx *wire.MsgTx) {
 
 func isTxMatured(tx *wire.MsgTx, confirmations uint64) bool {
 	if !tx.IsBlockReward() {
-		return confirmations >= 10
+		return confirmations >= requiredConfirmations
 	}
-	return confirmations >= 150
+	return confirmations >= approximateConfirmationsForBlockRewardMaturity
 }
 
 func calcUTXOSetFunds(walletUTXOSet utxoSet) uint64 {
