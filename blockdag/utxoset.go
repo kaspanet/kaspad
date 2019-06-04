@@ -88,6 +88,22 @@ const (
 	tfBlockReward txoFlags = 1 << iota
 )
 
+// NewUTXOEntry creates a new utxoEntry representing the given txOut
+func NewUTXOEntry(txOut *wire.TxOut, isBlockReward bool, blockChainHeight uint64, blockBlueScore uint64) *UTXOEntry {
+	entry := &UTXOEntry{
+		amount:           txOut.Value,
+		pkScript:         txOut.PkScript,
+		blockChainHeight: blockChainHeight,
+		blockBlueScore:   blockBlueScore,
+	}
+
+	if isBlockReward {
+		entry.packedFlags |= tfBlockReward
+	}
+
+	return entry
+}
+
 // utxoCollection represents a set of UTXOs indexed by their outPoints
 type utxoCollection map[wire.OutPoint]*UTXOEntry
 
@@ -373,21 +389,6 @@ func (d UTXODiff) String() string {
 	return fmt.Sprintf("toAdd: %s; toRemove: %s, Multiset-Hash: %s", d.toAdd, d.toRemove, d.diffMultiset.Hash())
 }
 
-// NewUTXOEntry creates a new utxoEntry representing the given txOut
-func NewUTXOEntry(txOut *wire.TxOut, isBlockReward bool, blockChainHeight uint64) *UTXOEntry {
-	entry := &UTXOEntry{
-		amount:           txOut.Value,
-		pkScript:         txOut.PkScript,
-		blockChainHeight: blockChainHeight,
-	}
-
-	if isBlockReward {
-		entry.packedFlags |= tfBlockReward
-	}
-
-	return entry
-}
-
 // UTXOSet represents a set of unspent transaction outputs
 // Every DAG has exactly one fullUTXOSet.
 // When a new block arrives, it is validated and applied to the fullUTXOSet in the following manner:
@@ -405,11 +406,11 @@ type UTXOSet interface {
 	diffFrom(other UTXOSet) (*UTXODiff, error)
 	WithDiff(utxoDiff *UTXODiff) (UTXOSet, error)
 	diffFromTx(tx *wire.MsgTx, node *blockNode) (*UTXODiff, error)
-	AddTx(tx *wire.MsgTx, blockHeight uint64) (ok bool, err error)
+	AddTx(tx *wire.MsgTx, blockHeight uint64, blockBlueScore uint64) (ok bool, err error)
 	clone() UTXOSet
 	Get(outPoint wire.OutPoint) (*UTXOEntry, bool)
 	Multiset() *btcec.Multiset
-	WithTransactions(transactions []*wire.MsgTx, blockHeight uint64, ignoreDoubleSpends bool) (UTXOSet, error)
+	WithTransactions(transactions []*wire.MsgTx, blockHeight uint64, blockBlueScore uint64, ignoreDoubleSpends bool) (UTXOSet, error)
 }
 
 // diffFromTx is a common implementation for diffFromTx, that works
@@ -434,7 +435,7 @@ func diffFromTx(u UTXOSet, tx *wire.MsgTx, containingNode *blockNode) (*UTXODiff
 		}
 	}
 	for i, txOut := range tx.TxOut {
-		entry := NewUTXOEntry(txOut, isBlockReward, containingNode.height)
+		entry := NewUTXOEntry(txOut, isBlockReward, containingNode.height, containingNode.blueScore)
 		outPoint := *wire.NewOutPoint(tx.TxID(), uint32(i))
 		err := diff.AddEntry(outPoint, entry)
 		if err != nil {
@@ -481,7 +482,7 @@ func (fus *FullUTXOSet) WithDiff(other *UTXODiff) (UTXOSet, error) {
 // AddTx adds a transaction to this utxoSet and returns isAccepted=true iff it's valid in this UTXO's context.
 // It returns error if something unexpected happens, such as serialization error (isAccepted=false doesn't
 // necessarily means there's an error).
-func (fus *FullUTXOSet) AddTx(tx *wire.MsgTx, blockHeight uint64) (isAccepted bool, err error) {
+func (fus *FullUTXOSet) AddTx(tx *wire.MsgTx, blockHeight uint64, blueScore uint64) (isAccepted bool, err error) {
 	isBlockReward := tx.IsBlockReward()
 	if !isBlockReward {
 		if !fus.containsInputs(tx) {
@@ -499,7 +500,7 @@ func (fus *FullUTXOSet) AddTx(tx *wire.MsgTx, blockHeight uint64) (isAccepted bo
 
 	for i, txOut := range tx.TxOut {
 		outPoint := *wire.NewOutPoint(tx.TxID(), uint32(i))
-		entry := NewUTXOEntry(txOut, isBlockReward, blockHeight)
+		entry := NewUTXOEntry(txOut, isBlockReward, blockHeight, blueScore)
 
 		err := fus.addAndUpdateMultiset(outPoint, entry)
 		if err != nil {
@@ -571,10 +572,10 @@ func (fus *FullUTXOSet) removeAndUpdateMultiset(outPoint wire.OutPoint) error {
 }
 
 // WithTransactions returns a new UTXO Set with the added transactions
-func (fus *FullUTXOSet) WithTransactions(transactions []*wire.MsgTx, blockHeight uint64, ignoreDoubleSpends bool) (UTXOSet, error) {
+func (fus *FullUTXOSet) WithTransactions(transactions []*wire.MsgTx, blockHeight uint64, blockBlueScore uint64, ignoreDoubleSpends bool) (UTXOSet, error) {
 	diffSet := NewDiffUTXOSet(fus, NewUTXODiff())
 	for _, tx := range transactions {
-		isAccepted, err := diffSet.AddTx(tx, blockHeight)
+		isAccepted, err := diffSet.AddTx(tx, blockHeight, blockBlueScore)
 		if err != nil {
 			return nil, err
 		}
@@ -625,13 +626,13 @@ func (dus *DiffUTXOSet) WithDiff(other *UTXODiff) (UTXOSet, error) {
 }
 
 // AddTx adds a transaction to this utxoSet and returns true iff it's valid in this UTXO's context
-func (dus *DiffUTXOSet) AddTx(tx *wire.MsgTx, blockHeight uint64) (bool, error) {
+func (dus *DiffUTXOSet) AddTx(tx *wire.MsgTx, blockHeight uint64, blockBlueScore uint64) (bool, error) {
 	isBlockReward := tx.IsBlockReward()
 	if !isBlockReward && !dus.containsInputs(tx) {
 		return false, nil
 	}
 
-	err := dus.appendTx(tx, blockHeight, isBlockReward)
+	err := dus.appendTx(tx, blockHeight, blockBlueScore, isBlockReward)
 	if err != nil {
 		return false, err
 	}
@@ -639,7 +640,7 @@ func (dus *DiffUTXOSet) AddTx(tx *wire.MsgTx, blockHeight uint64) (bool, error) 
 	return true, nil
 }
 
-func (dus *DiffUTXOSet) appendTx(tx *wire.MsgTx, blockHeight uint64, isBlockReward bool) error {
+func (dus *DiffUTXOSet) appendTx(tx *wire.MsgTx, blockHeight uint64, blockBlueScore uint64, isBlockReward bool) error {
 	if !isBlockReward {
 		for _, txIn := range tx.TxIn {
 			outPoint := *wire.NewOutPoint(&txIn.PreviousOutPoint.TxID, txIn.PreviousOutPoint.Index)
@@ -656,7 +657,7 @@ func (dus *DiffUTXOSet) appendTx(tx *wire.MsgTx, blockHeight uint64, isBlockRewa
 
 	for i, txOut := range tx.TxOut {
 		outPoint := *wire.NewOutPoint(tx.TxID(), uint32(i))
-		entry := NewUTXOEntry(txOut, isBlockReward, blockHeight)
+		entry := NewUTXOEntry(txOut, isBlockReward, blockHeight, blockBlueScore)
 
 		err := dus.UTXODiff.AddEntry(outPoint, entry)
 		if err != nil {
@@ -734,10 +735,10 @@ func (dus *DiffUTXOSet) Multiset() *btcec.Multiset {
 }
 
 // WithTransactions returns a new UTXO Set with the added transactions
-func (dus *DiffUTXOSet) WithTransactions(transactions []*wire.MsgTx, blockHeight uint64, ignoreDoubleSpends bool) (UTXOSet, error) {
+func (dus *DiffUTXOSet) WithTransactions(transactions []*wire.MsgTx, blockHeight uint64, blockBlueScore uint64, ignoreDoubleSpends bool) (UTXOSet, error) {
 	diffSet := NewDiffUTXOSet(dus.base, dus.UTXODiff.clone())
 	for _, tx := range transactions {
-		isAccepted, err := diffSet.AddTx(tx, blockHeight)
+		isAccepted, err := diffSet.AddTx(tx, blockHeight, blockBlueScore)
 		if err != nil {
 			return nil, err
 		}
