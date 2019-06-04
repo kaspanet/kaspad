@@ -199,7 +199,7 @@ func dbFetchFirstTxRegion(dbTx database.Tx, txID *daghash.TxID) (*database.Block
 	if txBucket == nil {
 		return nil, database.Error{
 			ErrorCode: database.ErrCorruption,
-			Description: fmt.Sprintf("No block region"+
+			Description: fmt.Sprintf("No block region "+
 				"was found for %s", txID),
 		}
 	}
@@ -207,7 +207,7 @@ func dbFetchFirstTxRegion(dbTx database.Tx, txID *daghash.TxID) (*database.Block
 	if ok := cursor.First(); !ok {
 		return nil, database.Error{
 			ErrorCode: database.ErrCorruption,
-			Description: fmt.Sprintf("No block region"+
+			Description: fmt.Sprintf("No block region "+
 				"was found for %s", txID),
 		}
 	}

@@ -19,7 +19,7 @@ var (
 )
 
 type config struct {
-	AddressListPath string `long:"addresslist" description:"Path to a list of nodes' JSON-RPC endpoints" required:"true"`
+	Address         string `long:"address" description:"An address to a JSON-RPC endpoints" required:"true"`
 	PrivateKey      string `long:"private-key" description:"Private key" required:"true"`
 	CertificatePath string `long:"cert" description:"Path to certificate accepted by JSON-RPC endpoint"`
 	DisableTLS      bool   `long:"notls" description:"Disable TLS"`
