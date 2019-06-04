@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/daglabs/btcd/util/daghash"
+	"github.com/daglabs/btcd/util/subnetworkid"
 	"github.com/daglabs/btcd/wire"
 )
 
@@ -26,17 +27,15 @@ var genesisTxIns = []*wire.TxIn{
 	},
 }
 var genesisTxOuts = []*wire.TxOut{
-	{
-		Value: 0x12a05f200,
-		PkScript: []byte{
-			0x51,
-		},
-	},
+}
+
+var genesisTxPayload = []byte{
+	0x51, //OP_TRUE
 }
 
 // genesisCoinbaseTx is the coinbase transaction for the genesis blocks for
 // the main network, regression test network, and test network (version 3).
-var genesisCoinbaseTx = wire.NewNativeMsgTx(1, genesisTxIns, genesisTxOuts)
+var genesisCoinbaseTx = wire.NewSubnetworkMsgTx(1, genesisTxIns, genesisTxOuts, subnetworkid.SubnetworkIDCoinbase, 0, genesisTxPayload)
 
 // genesisHash is the hash of the first block in the block chain for the main
 // network (genesis block).
@@ -50,10 +49,10 @@ var genesisHash = daghash.Hash([daghash.HashSize]byte{
 // genesisMerkleRoot is the hash of the first transaction in the genesis block
 // for the main network.
 var genesisMerkleRoot = daghash.Hash([daghash.HashSize]byte{
-	0xd4, 0xdc, 0x8b, 0xb8, 0x76, 0x57, 0x9d, 0x7d,
-	0xe9, 0x9d, 0xae, 0xdb, 0xf8, 0x22, 0xd2, 0x0d,
-	0xa2, 0xe0, 0xbb, 0xbe, 0xed, 0xb0, 0xdb, 0xba,
-	0xeb, 0x18, 0x4d, 0x42, 0x01, 0xff, 0xed, 0x9d,
+	0x96, 0x11, 0xce, 0x08, 0x51, 0x7a, 0x34, 0x54,
+	0x4a, 0xd0, 0xbe, 0xe4, 0xf3, 0x34, 0xac, 0xf5,
+	0x6a, 0x86, 0x68, 0x49, 0x2e, 0x0e, 0x82, 0xdf,
+	0xf7, 0xf0, 0x48, 0xd8, 0x45, 0xf7, 0xf7, 0x1c,
 })
 
 // genesisBlock defines the genesis block of the block DAG which serves as the
