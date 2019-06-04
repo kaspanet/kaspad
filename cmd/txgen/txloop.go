@@ -68,7 +68,9 @@ func txLoop(client *txgenClient) error {
 	}
 
 	for blockAdded := range client.onBlockAdded {
-		err := handleNewBlock(client, blockAdded, walletUTXOSet, walletTxs)
+		log.Infof("Block %s Added with %d relevant transactions", blockAdded.header.BlockHash(), len(blockAdded.txs))
+		updateWalletTxs(blockAdded, walletTxs)
+		err := sendTransactions(client, blockAdded, walletUTXOSet, walletTxs)
 		if err != nil {
 			return err
 		}
@@ -107,12 +109,6 @@ func getInitialUTXOSetAndWalletTxs(client *txgenClient) (utxoSet, map[daghash.Tx
 	}
 
 	return walletUTXOSet, walletTxs, nil
-}
-
-func handleNewBlock(client *txgenClient, blockAdded *blockAddedMsg, walletUTXOSet utxoSet, walletTxs map[daghash.TxID]*walletTransaction) error {
-	log.Infof("Block %s Added with %d relevant transactions", blockAdded.header.BlockHash(), len(blockAdded.txs))
-	updateWalletTxs(blockAdded, walletTxs)
-	return sendTransactions(client, blockAdded, walletUTXOSet, walletTxs)
 }
 
 func updateWalletTxs(blockAdded *blockAddedMsg, walletTxs map[daghash.TxID]*walletTransaction) {
