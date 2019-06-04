@@ -344,7 +344,7 @@ func collectTransactions(client *txgenClient) (map[daghash.TxID]*walletTx, error
 			if existingTx, ok := walletTxs[*txID]; !ok || !existingTx.confirmed {
 				walletTxs[*txID] = &walletTx{
 					tx:                         util.NewTx(tx),
-					checkConfirmationCountdown: 10,
+					checkConfirmationCountdown: requiredConfirmations,
 					confirmed:                  isTxMatured(tx, *result.Confirmations),
 				}
 			}
