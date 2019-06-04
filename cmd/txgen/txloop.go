@@ -144,7 +144,7 @@ func sendTransactions(client *txgenClient, blockAdded *blockAddedMsg, walletUTXO
 		if amount > funds-minTxFee {
 			amount = funds - minTxFee
 		}
-		output := wire.NewalletTxOut(amount, pkScript)
+		output := wire.NewTxOut(amount, pkScript)
 		tx, _, err := createTx(walletUTXOSet, []*wire.TxOut{output}, 0)
 		if err != nil {
 			return err
@@ -220,7 +220,7 @@ func fundTx(walletUTXOSet utxoSet, tx *wire.MsgTx, amount uint64, feeRate uint64
 		// Add the selected output to the transaction, updating the
 		// current tx size while accounting for the size of the future
 		// sigScript.
-		tx.AddTxIn(wire.NewalletTxIn(&outPoint, nil))
+		tx.AddTxIn(wire.NewTxIn(&outPoint, nil))
 		txSize = tx.SerializeSize() + spendSize*len(tx.TxIn)
 
 		// Calculate the fee required for the txn at this point
@@ -339,7 +339,7 @@ func collectTransactions(client *txgenClient) (map[daghash.TxID]*walletTransacti
 
 			if existingTx, ok := walletTxs[*txID]; !ok || !existingTx.confirmed {
 				walletTxs[*txID] = &walletTransaction{
-					tx:                         util.NewalletTx(tx),
+					tx:                         util.NewTx(tx),
 					checkConfirmationCountdown: requiredConfirmations,
 					confirmed:                  isTxMatured(tx, *result.Confirmations),
 				}
