@@ -10,7 +10,7 @@ import (
 
 type txgenClient struct {
 	*rpcclient.Client
-	onBlockAdded chan blockAddedMsg
+	onBlockAdded chan *blockAddedMsg
 }
 
 type blockAddedMsg struct {
@@ -21,12 +21,12 @@ type blockAddedMsg struct {
 
 func newTxgenClient(connCfg *rpcclient.ConnConfig) (*txgenClient, error) {
 	client := &txgenClient{
-		onBlockAdded: make(chan blockAddedMsg),
+		onBlockAdded: make(chan *blockAddedMsg),
 	}
 	notificationHandlers := &rpcclient.NotificationHandlers{
 		OnFilteredBlockAdded: func(height uint64, header *wire.BlockHeader,
 			txs []*util.Tx) {
-			client.onBlockAdded <- blockAddedMsg{
+			client.onBlockAdded <- &blockAddedMsg{
 				chainHeight: height,
 				header:      header,
 				txs:         txs,

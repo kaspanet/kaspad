@@ -26,6 +26,8 @@ const (
 	txLifeSpan                                     = 1000
 	requiredConfirmations                          = 10
 	approximateConfirmationsForBlockRewardMaturity = 150
+	searchRawTransactionResultCount                = 1000
+	searchRawTransactionMaxResults                 = 5000
 )
 
 type walletTx struct {
@@ -61,20 +63,20 @@ func txLoop(client *txgenClient) error {
 	}
 
 	walletUTXOSet, walletTxs, err := getInitialUTXOSetAndWalletTxs(client)
-	if err != nil{
+	if err != nil {
 		return err
 	}
 
 	for blockAdded := range client.onBlockAdded {
 		err := handleNewBlock(client, blockAdded, walletUTXOSet, walletTxs)
-		if err != nil{
+		if err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func getInitialUTXOSetAndWalletTxs(client *txgenClient)(utxoSet, map[daghash.TxID]*walletTx, error){
+func getInitialUTXOSetAndWalletTxs(client *txgenClient) (utxoSet, map[daghash.TxID]*walletTx, error) {
 	walletUTXOSet := make(utxoSet)
 	walletTxs := make(map[daghash.TxID]*walletTx)
 
@@ -90,16 +92,15 @@ func getInitialUTXOSetAndWalletTxs(client *txgenClient)(utxoSet, map[daghash.TxI
 		}
 	}
 
-	// Iterate over all of the transactions (confirmed and
-	// unconfirmed) and remove all of their previous outpoints
-	// from the UTXO.
 	for _, wTx := range initialTxs {
+		// Remove all of the previous outpoints from the UTXO.
+		// The previous outpoints are removed for unconfirmed
+		// transactions as well, to avoid potential
+		// double spends.
 		removeTxInsFromUTXOSet(walletUTXOSet, wTx.tx.MsgTx())
-	}
 
-	// Add the unconfirmed transactions to walletTxs, so we
-	// can add their outputs to the UTXO when they are confirmed.
-	for _, wTx := range initialTxs {
+		// Add unconfirmed transactions to walletTxs, so we can
+		// add their outputs to the UTXO when they are confirmed.
 		if !wTx.confirmed {
 			walletTxs[*wTx.tx.ID()] = wTx
 		}
@@ -108,13 +109,13 @@ func getInitialUTXOSetAndWalletTxs(client *txgenClient)(utxoSet, map[daghash.TxI
 	return walletUTXOSet, walletTxs, nil
 }
 
-func handleNewBlock(client *txgenClient, blockAdded blockAddedMsg, walletUTXOSet utxoSet, walletTxs map[daghash.TxID]*walletTx) error{
+func handleNewBlock(client *txgenClient, blockAdded *blockAddedMsg, walletUTXOSet utxoSet, walletTxs map[daghash.TxID]*walletTx) error {
 	log.Infof("Block %s Added with %d relevant transactions", blockAdded.header.BlockHash(), len(blockAdded.txs))
 	updateWalletTxs(blockAdded, walletTxs)
 	return sendTransactions(client, blockAdded, walletUTXOSet, walletTxs)
 }
 
-func updateWalletTxs(blockAdded blockAddedMsg, walletTxs map[daghash.TxID]*walletTx){
+func updateWalletTxs(blockAdded *blockAddedMsg, walletTxs map[daghash.TxID]*walletTx) {
 	for txID, wTx := range walletTxs {
 		if wTx.checkConfirmationCountdown > 0 && wTx.chainHeight < blockAdded.chainHeight {
 			wTx.checkConfirmationCountdown--
@@ -137,7 +138,7 @@ func updateWalletTxs(blockAdded blockAddedMsg, walletTxs map[daghash.TxID]*walle
 	}
 }
 
-func sendTransactions(client *txgenClient, blockAdded blockAddedMsg, walletUTXOSet utxoSet, walletTxs map[daghash.TxID]*walletTx) error{
+func sendTransactions(client *txgenClient, blockAdded *blockAddedMsg, walletUTXOSet utxoSet, walletTxs map[daghash.TxID]*walletTx) error {
 	if err := checkConfirmations(client, walletTxs, walletUTXOSet, blockAdded.chainHeight); err != nil {
 		return err
 	}
@@ -159,6 +160,7 @@ func sendTransactions(client *txgenClient, blockAdded blockAddedMsg, walletUTXOS
 			return err
 		}
 	}
+	return nil
 }
 
 func createTx(walletUTXOSet utxoSet, outputs []*wire.TxOut, feeRate uint64) (*wire.MsgTx, uint64, error) {
@@ -311,9 +313,8 @@ func calcUTXOSetFunds(walletUTXOSet utxoSet) uint64 {
 func collectTransactions(client *txgenClient) (map[daghash.TxID]*walletTx, error) {
 	walletTxs := make(map[daghash.TxID]*walletTx)
 	skip := 0
-	resultsCount := 1000
-	for {
-		results, err := client.SearchRawTransactionsVerbose(p2pkhAddress, skip, resultsCount, true, false, nil)
+	for skip < searchRawTransactionMaxResults {
+		results, err := client.SearchRawTransactionsVerbose(p2pkhAddress, skip, searchRawTransactionResultCount, true, true, nil)
 		if err != nil {
 			// Break when there are no further txs
 			if rpcError, ok := err.(*btcjson.RPCError); ok && rpcError.Code == btcjson.ErrRPCNoTxInfo {
@@ -349,7 +350,7 @@ func collectTransactions(client *txgenClient) (map[daghash.TxID]*walletTx, error
 			}
 		}
 
-		skip += resultsCount
+		skip += searchRawTransactionResultCount
 	}
 	return walletTxs, nil
 }
