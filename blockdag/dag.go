@@ -987,7 +987,7 @@ func (node *blockNode) applyBlueBlocks(selectedParentUTXO UTXOSet, blueBlocks []
 			if isSelectedParent {
 				isAccepted = true
 			} else {
-				isAccepted, err = pastUTXO.AddTx(tx.MsgTx(), node.height)
+				isAccepted, err = pastUTXO.AddTx(tx.MsgTx(), node.height, node.blueScore)
 				if err != nil {
 					return nil, nil, err
 				}
