@@ -17,6 +17,11 @@ const (
 	// contextual transaction information provided in a transaction store
 	// when it has not yet been mined into a block.
 	UnminedChainHeight = math.MaxUint64
+
+	// UnminedBlueScore is the blue score used for the "block" blueScore field of the
+	// contextual transaction information provided in a transaction store
+	// when it has not yet been mined into a block.
+	UnminedBlueScore = math.MaxUint64
 )
 
 // UTXOEntry houses details about an individual transaction output in a utxo
@@ -32,7 +37,8 @@ type UTXOEntry struct {
 
 	amount           uint64
 	pkScript         []byte // The public key script for the output.
-	blockChainHeight uint64 // Chain-height of block containing tx.
+	blockChainHeight uint64 // Chain-height of the block containing the tx.
+	blockBlueScore   uint64 // Blue score of the block containing the tx.
 
 	// packedFlags contains additional info about output such as whether it
 	// is a block reward, and whether it has been modified
@@ -50,6 +56,11 @@ func (entry *UTXOEntry) IsBlockReward() bool {
 // BlockChainHeight returns the chain-height of the block containing the output.
 func (entry *UTXOEntry) BlockChainHeight() uint64 {
 	return entry.blockChainHeight
+}
+
+// BlockBlueScore returns the blue score of the block containing the output.
+func (entry *UTXOEntry) BlockBlueScore() uint64 {
+	return entry.blockBlueScore
 }
 
 // Amount returns the amount of the output.
