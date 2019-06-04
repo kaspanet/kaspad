@@ -662,17 +662,15 @@ func (idx *AddrIndex) indexPkScript(data writeIndexData, pkScript []byte, txIdx 
 // indexBlock extract all of the standard addresses from all of the transactions
 // in the passed block and maps each of them to the associated transaction using
 // the passed map.
-func (idx *AddrIndex) indexBlock(data writeIndexData, block *util.Block, dag *blockdag.BlockDAG, feeTx *util.Tx) {
-	transactions := append(block.Transactions(), feeTx)
-
-	for txIdx, tx := range transactions {
-		// Coinbase and fee txs do not reference any previous txs,
-		// so skip scanning their inputs.
+func (idx *AddrIndex) indexBlock(data writeIndexData, block *util.Block, dag *blockdag.BlockDAG) {
+	for txIdx, tx := range block.Transactions() {
+		// Coinbase does not reference any previous txs,
+		// so skip scanning its inputs.
 		//
 		// Since the block is required to have already gone through full
 		// validation, it has already been proven that the first tx in
 		// the block is a coinbase
-		if txIdx > 1 && tx != feeTx {
+		if txIdx > 1 {
 			for _, txIn := range tx.MsgTx().TxIn {
 				// The UTXO should always have the input since
 				// the index contract requires it, however, be
@@ -698,7 +696,7 @@ func (idx *AddrIndex) indexBlock(data writeIndexData, block *util.Block, dag *bl
 //
 // This is part of the Indexer interface.
 func (idx *AddrIndex) ConnectBlock(dbTx database.Tx, block *util.Block, dag *blockdag.BlockDAG,
-	feeTx *util.Tx, _ blockdag.MultiBlockTxsAcceptanceData, _ blockdag.MultiBlockTxsAcceptanceData) error {
+	_ blockdag.MultiBlockTxsAcceptanceData, _ blockdag.MultiBlockTxsAcceptanceData) error {
 
 	// The offset and length of the transactions within the serialized
 	// block.
@@ -715,7 +713,7 @@ func (idx *AddrIndex) ConnectBlock(dbTx database.Tx, block *util.Block, dag *blo
 
 	// Build all of the address to transaction mappings in a local map.
 	addrsToTxns := make(writeIndexData)
-	idx.indexBlock(addrsToTxns, block, dag, feeTx)
+	idx.indexBlock(addrsToTxns, block, dag)
 
 	// Add all of the index entries for each address.
 	addrIdxBucket := dbTx.Metadata().Bucket(addrIndexKey)
