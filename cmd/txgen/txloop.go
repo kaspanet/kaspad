@@ -23,8 +23,8 @@ const (
 	// which spends a p2pkh output: OP_DATA_73 <sig> OP_DATA_33 <pubkey>
 	spendSize = 1 + 73 + 1 + 33
 
-	txLifeSpan = 1000
-	requiredConfirmations = 10
+	txLifeSpan                                     = 1000
+	requiredConfirmations                          = 10
 	approximateConfirmationsForBlockRewardMaturity = 150
 )
 
@@ -60,18 +60,33 @@ func txLoop(client *txgenClient) error {
 		return err
 	}
 
+	walletUTXOSet, walletTxs, err := getInitialUTXOSetAndWalletTxs(client)
+	if err != nil{
+		return err
+	}
+
+	for blockAdded := range client.onBlockAdded {
+		err := handleNewBlock(client, blockAdded, walletUTXOSet, walletTxs)
+		if err != nil{
+			return err
+		}
+	}
+	return nil
+}
+
+func getInitialUTXOSetAndWalletTxs(client *txgenClient)(utxoSet, map[daghash.TxID]*walletTx, error){
 	walletUTXOSet := make(utxoSet)
 	walletTxs := make(map[daghash.TxID]*walletTx)
 
 	initialTxs, err := collectTransactions(client)
 	if err != nil {
-		return err
+		return nil, nil, err
 	}
 
 	// Add all of the confirmed transaction outputs to the UTXO.
-	for _, wTx := range initialTxs {
-		if wTx.confirmed {
-			addTxOutsToUTXOSet(walletUTXOSet, wTx.tx.MsgTx())
+	for _, initialTx := range initialTxs {
+		if initialTx.confirmed {
+			addTxOutsToUTXOSet(walletUTXOSet, initialTx.tx.MsgTx())
 		}
 	}
 
@@ -90,52 +105,60 @@ func txLoop(client *txgenClient) error {
 		}
 	}
 
-	for blockAdded := range client.onBlockAdded {
-		log.Infof("Block %s Added with %d relevant transactions", blockAdded.header.BlockHash(), len(blockAdded.txs))
-		for txID, wTx := range walletTxs {
-			if wTx.checkConfirmationCountdown > 0 && wTx.chainHeight < blockAdded.chainHeight {
-				wTx.checkConfirmationCountdown--
-			}
+	return walletUTXOSet, walletTxs, nil
+}
 
-			// Delete old confirmed transactions to save memory
-			if wTx.confirmed && wTx.chainHeight+txLifeSpan < blockAdded.chainHeight {
-				delete(walletTxs, txID)
-			}
+func handleNewBlock(client *txgenClient, blockAdded blockAddedMsg, walletUTXOSet utxoSet, walletTxs map[daghash.TxID]*walletTx) error{
+	log.Infof("Block %s Added with %d relevant transactions", blockAdded.header.BlockHash(), len(blockAdded.txs))
+	updateWalletTxs(blockAdded, walletTxs)
+	return sendTransactions(client, blockAdded, walletUTXOSet, walletTxs)
+}
+
+func updateWalletTxs(blockAdded blockAddedMsg, walletTxs map[daghash.TxID]*walletTx){
+	for txID, wTx := range walletTxs {
+		if wTx.checkConfirmationCountdown > 0 && wTx.chainHeight < blockAdded.chainHeight {
+			wTx.checkConfirmationCountdown--
 		}
 
-		for _, tx := range blockAdded.txs {
-			if _, ok := walletTxs[*tx.ID()]; !ok {
-				walletTxs[*tx.ID()] = &walletTx{
-					tx:                         tx,
-					chainHeight:                blockAdded.chainHeight,
-					checkConfirmationCountdown: requiredConfirmations,
-				}
-			}
+		// Delete old confirmed transactions to save memory
+		if wTx.confirmed && wTx.chainHeight+txLifeSpan < blockAdded.chainHeight {
+			delete(walletTxs, txID)
 		}
+	}
 
-		if err := checkConfirmations(client, walletTxs, walletUTXOSet, blockAdded.chainHeight); err != nil {
-			return err
-		}
-
-		for funds := calcUTXOSetFunds(walletUTXOSet); !isDust(funds); funds = calcUTXOSetFunds(walletUTXOSet) {
-			amount := minSpendableAmount + uint64(random.Int63n(int64(maxSpendableAmount - minSpendableAmount)))
-			if amount > funds-minTxFee {
-				amount = funds - minTxFee
-			}
-			output := wire.NewTxOut(amount, pkScript)
-			tx, _, err := createTx(walletUTXOSet, []*wire.TxOut{output}, 0)
-			if err != nil {
-				return err
-			}
-
-			_, err = client.SendRawTransaction(tx, true)
-			log.Infof("Sending tx %s", tx.TxID())
-			if err != nil {
-				return err
+	for _, tx := range blockAdded.txs {
+		if _, ok := walletTxs[*tx.ID()]; !ok {
+			walletTxs[*tx.ID()] = &walletTx{
+				tx:                         tx,
+				chainHeight:                blockAdded.chainHeight,
+				checkConfirmationCountdown: requiredConfirmations,
 			}
 		}
 	}
-	return nil
+}
+
+func sendTransactions(client *txgenClient, blockAdded blockAddedMsg, walletUTXOSet utxoSet, walletTxs map[daghash.TxID]*walletTx) error{
+	if err := checkConfirmations(client, walletTxs, walletUTXOSet, blockAdded.chainHeight); err != nil {
+		return err
+	}
+
+	for funds := calcUTXOSetFunds(walletUTXOSet); !isDust(funds); funds = calcUTXOSetFunds(walletUTXOSet) {
+		amount := minSpendableAmount + uint64(random.Int63n(int64(maxSpendableAmount-minSpendableAmount)))
+		if amount > funds-minTxFee {
+			amount = funds - minTxFee
+		}
+		output := wire.NewTxOut(amount, pkScript)
+		tx, _, err := createTx(walletUTXOSet, []*wire.TxOut{output}, 0)
+		if err != nil {
+			return err
+		}
+
+		_, err = client.SendRawTransaction(tx, true)
+		log.Infof("Sending tx %s", tx.TxID())
+		if err != nil {
+			return err
+		}
+	}
 }
 
 func createTx(walletUTXOSet utxoSet, outputs []*wire.TxOut, feeRate uint64) (*wire.MsgTx, uint64, error) {
@@ -155,7 +178,7 @@ func createTx(walletUTXOSet utxoSet, outputs []*wire.TxOut, feeRate uint64) (*wi
 		return nil, 0, err
 	}
 
-	err = signTX(walletUTXOSet, tx)
+	err = signTx(walletUTXOSet, tx)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -165,14 +188,8 @@ func createTx(walletUTXOSet utxoSet, outputs []*wire.TxOut, feeRate uint64) (*wi
 	return tx, fees, nil
 }
 
-func removeTxInsFromUTXOSet(walletUTXOSet utxoSet, tx *wire.MsgTx) {
-	for _, txIn := range tx.TxIn {
-		delete(walletUTXOSet, txIn.PreviousOutPoint)
-	}
-}
-
-// signTX signs a transaction
-func signTX(walletUTXOSet utxoSet, tx *wire.MsgTx) error {
+// signTx signs a transaction
+func signTx(walletUTXOSet utxoSet, tx *wire.MsgTx) error {
 	for i, txIn := range tx.TxIn {
 		outPoint := txIn.PreviousOutPoint
 		prevOut := walletUTXOSet[outPoint]
@@ -261,6 +278,12 @@ func checkConfirmations(client *txgenClient, walletTxs map[daghash.TxID]*walletT
 		}
 	}
 	return nil
+}
+
+func removeTxInsFromUTXOSet(walletUTXOSet utxoSet, tx *wire.MsgTx) {
+	for _, txIn := range tx.TxIn {
+		delete(walletUTXOSet, txIn.PreviousOutPoint)
+	}
 }
 
 func addTxOutsToUTXOSet(walletUTXOSet utxoSet, tx *wire.MsgTx) {
