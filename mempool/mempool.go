@@ -847,7 +847,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rateLimit, rejectDu
 	// Perform preliminary sanity checks on the transaction.  This makes
 	// use of blockDAG which contains the invariant rules for what
 	// transactions are allowed into blocks.
-	err := blockdag.CheckTransactionSanity(tx, subnetworkID, false)
+	err := blockdag.CheckTransactionSanity(tx, subnetworkID)
 	if err != nil {
 		if cerr, ok := err.(blockdag.RuleError); ok {
 			return nil, nil, dagRuleError(cerr)
@@ -1436,12 +1436,12 @@ func (mp *TxPool) HandleNewBlock(block *util.Block, txChan chan NewBlockMsg) err
 	// no longer an orphan. Transactions which depend on a confirmed
 	// transaction are NOT removed recursively because they are still
 	// valid.
-	err := mp.RemoveTransactions(block.Transactions()[util.FeeTransactionIndex:])
+	err := mp.RemoveTransactions(block.Transactions()[util.CoinbaseTransactionIndex+1:])
 	if err != nil {
 		mp.mpUTXOSet = oldUTXOSet
 		return err
 	}
-	for _, tx := range block.Transactions()[util.FeeTransactionIndex:] {
+	for _, tx := range block.Transactions()[util.CoinbaseTransactionIndex+1:] {
 		mp.RemoveDoubleSpends(tx)
 		mp.RemoveOrphan(tx)
 		acceptedTxs := mp.ProcessOrphans(tx)

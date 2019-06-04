@@ -306,8 +306,8 @@ func (msg *MsgTx) IsCoinBase() bool {
 }
 
 // IsFeeTransaction determines whether or not a transaction is a fee transaction.  A fee
-// transaction is a special transaction created by miners that distributes fees to the
-// previous blocks' miners.  Each input of the fee transaction should set index to maximum
+// transaction is a special transaction implicitly included in blocks that distributes fees to
+// the previous blocks' miners.  Each input of the fee transaction should set index to maximum
 // value and reference the relevant block id, instead of previous transaction id.
 func (msg *MsgTx) IsFeeTransaction() bool {
 	for _, txIn := range msg.TxIn {

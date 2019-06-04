@@ -60,6 +60,10 @@ var (
 	// node's local subnetwork ID.
 	localSubnetworkKeyName = []byte("localsubnetworkidkey")
 
+	// feeTxBucketName is the name of the db bucket used to house the
+	// fee transactions of blocks
+	feeTxBucketName = []byte("feetxs")
+
 	// byteOrder is the preferred byte order used for serializing numeric
 	// fields for storage in the database.
 	byteOrder = binary.LittleEndian
@@ -335,6 +339,13 @@ func (dag *BlockDAG) createDAGState() error {
 		if err := dbPutLocalSubnetworkID(dbTx, dag.subnetworkID); err != nil {
 			return err
 		}
+
+		// Create the bucket that houses the fee transactions.
+		_, err = meta.CreateBucket(feeTxBucketName)
+		if err != nil {
+			return err
+		}
+
 		return nil
 	})
 
@@ -363,7 +374,7 @@ func (dag *BlockDAG) removeDAGState() error {
 			return err
 		}
 
-		err = dbTx.Metadata().Delete(utxoSetVersionKeyName)
+		err = meta.Delete(utxoSetVersionKeyName)
 		if err != nil {
 			return err
 		}
@@ -373,7 +384,12 @@ func (dag *BlockDAG) removeDAGState() error {
 			return err
 		}
 
-		err = dbTx.Metadata().Delete(localSubnetworkKeyName)
+		err = meta.Delete(localSubnetworkKeyName)
+		if err != nil {
+			return err
+		}
+
+		err = meta.DeleteBucket(feeTxBucketName)
 		if err != nil {
 			return err
 		}
@@ -480,6 +496,11 @@ func (dag *BlockDAG) initDAGState() error {
 
 			if node.status.KnownValid() {
 				dag.blockCount++
+			}
+
+			node.feeTransaction, err = dbFetchFeeTx(dbTx, node.hash)
+			if err != nil {
+				return err
 			}
 
 			lastNode = node
