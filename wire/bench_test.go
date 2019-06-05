@@ -21,7 +21,7 @@ import (
 // the main network, regression test network, and test network (version 3).
 var genesisCoinbaseTxIns = []*TxIn{
 	{
-		PreviousOutPoint: OutPoint{
+		PreviousOutpoint: Outpoint{
 			TxID:  daghash.TxID{},
 			Index: 0xffffffff,
 		},
@@ -172,9 +172,9 @@ func BenchmarkWriteVarStr10(b *testing.B) {
 	}
 }
 
-// BenchmarkReadOutPoint performs a benchmark on how long it takes to read a
+// BenchmarkReadOutpoint performs a benchmark on how long it takes to read a
 // transaction output point.
-func BenchmarkReadOutPoint(b *testing.B) {
+func BenchmarkReadOutpoint(b *testing.B) {
 	buf := []byte{
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -183,22 +183,22 @@ func BenchmarkReadOutPoint(b *testing.B) {
 		0xff, 0xff, 0xff, 0xff, // Previous output index
 	}
 	r := bytes.NewReader(buf)
-	var op OutPoint
+	var op Outpoint
 	for i := 0; i < b.N; i++ {
 		r.Seek(0, 0)
-		readOutPoint(r, 0, 0, &op)
+		readOutpoint(r, 0, 0, &op)
 	}
 }
 
-// BenchmarkWriteOutPoint performs a benchmark on how long it takes to write a
+// BenchmarkWriteOutpoint performs a benchmark on how long it takes to write a
 // transaction output point.
-func BenchmarkWriteOutPoint(b *testing.B) {
-	op := &OutPoint{
+func BenchmarkWriteOutpoint(b *testing.B) {
+	op := &Outpoint{
 		TxID:  daghash.TxID{},
 		Index: 0,
 	}
 	for i := 0; i < b.N; i++ {
-		writeOutPoint(ioutil.Discard, 0, 0, op)
+		writeOutpoint(ioutil.Discard, 0, 0, op)
 	}
 }
 

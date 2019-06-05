@@ -249,28 +249,28 @@ type wsClientFilter struct {
 	otherAddresses map[string]struct{}
 
 	// Outpoints of unspent outputs.
-	unspent map[wire.OutPoint]struct{}
+	unspent map[wire.Outpoint]struct{}
 }
 
 // newWSClientFilter creates a new, empty wsClientFilter struct to be used
 // for a websocket client.
 //
 // NOTE: This extension was ported from github.com/decred/dcrd
-func newWSClientFilter(addresses []string, unspentOutPoints []wire.OutPoint, params *dagconfig.Params) *wsClientFilter {
+func newWSClientFilter(addresses []string, unspentOutpoints []wire.Outpoint, params *dagconfig.Params) *wsClientFilter {
 	filter := &wsClientFilter{
 		pubKeyHashes:        map[[ripemd160.Size]byte]struct{}{},
 		scriptHashes:        map[[ripemd160.Size]byte]struct{}{},
 		compressedPubKeys:   map[[33]byte]struct{}{},
 		uncompressedPubKeys: map[[65]byte]struct{}{},
 		otherAddresses:      map[string]struct{}{},
-		unspent:             make(map[wire.OutPoint]struct{}, len(unspentOutPoints)),
+		unspent:             make(map[wire.Outpoint]struct{}, len(unspentOutpoints)),
 	}
 
 	for _, s := range addresses {
 		filter.addAddressStr(s, params)
 	}
-	for i := range unspentOutPoints {
-		filter.addUnspentOutPoint(&unspentOutPoints[i])
+	for i := range unspentOutpoints {
+		filter.addUnspentOutpoint(&unspentOutpoints[i])
 	}
 
 	return filter
@@ -404,27 +404,27 @@ func (f *wsClientFilter) removeAddressStr(s string, params *dagconfig.Params) {
 	}
 }
 
-// addUnspentOutPoint adds an outpoint to the wsClientFilter.
+// addUnspentOutpoint adds an outpoint to the wsClientFilter.
 //
 // NOTE: This extension was ported from github.com/decred/dcrd
-func (f *wsClientFilter) addUnspentOutPoint(op *wire.OutPoint) {
+func (f *wsClientFilter) addUnspentOutpoint(op *wire.Outpoint) {
 	f.unspent[*op] = struct{}{}
 }
 
-// existsUnspentOutPoint returns true if the passed outpoint has been added to
+// existsUnspentOutpoint returns true if the passed outpoint has been added to
 // the wsClientFilter.
 //
 // NOTE: This extension was ported from github.com/decred/dcrd
-func (f *wsClientFilter) existsUnspentOutPoint(op *wire.OutPoint) bool {
+func (f *wsClientFilter) existsUnspentOutpoint(op *wire.Outpoint) bool {
 	_, ok := f.unspent[*op]
 	return ok
 }
 
-// removeUnspentOutPoint removes the passed outpoint, if it exists, from the
+// removeUnspentOutpoint removes the passed outpoint, if it exists, from the
 // wsClientFilter.
 //
 // NOTE: This extension was ported from github.com/decred/dcrd
-func (f *wsClientFilter) removeUnspentOutPoint(op *wire.OutPoint) {
+func (f *wsClientFilter) removeUnspentOutpoint(op *wire.Outpoint) {
 	delete(f.unspent, *op)
 }
 
@@ -571,7 +571,7 @@ func (m *wsNotificationManager) subscribedClients(tx *util.Tx,
 				continue
 			}
 			filter.mu.Lock()
-			if filter.existsUnspentOutPoint(&input.PreviousOutPoint) {
+			if filter.existsUnspentOutpoint(&input.PreviousOutpoint) {
 				subscribed[quitChan] = struct{}{}
 			}
 			filter.mu.Unlock()
@@ -597,11 +597,11 @@ func (m *wsNotificationManager) subscribedClients(tx *util.Tx,
 			for _, a := range addrs {
 				if filter.existsAddress(a) {
 					subscribed[quitChan] = struct{}{}
-					op := wire.OutPoint{
+					op := wire.Outpoint{
 						TxID:  *tx.ID(),
 						Index: uint32(i),
 					}
-					filter.addUnspentOutPoint(&op)
+					filter.addUnspentOutpoint(&op)
 				}
 			}
 			filter.mu.Unlock()
@@ -1397,18 +1397,18 @@ func handleWebsocketHelp(wsc *wsClient, icmd interface{}) (interface{}, error) {
 func handleLoadTxFilter(wsc *wsClient, icmd interface{}) (interface{}, error) {
 	cmd := icmd.(*btcjson.LoadTxFilterCmd)
 
-	outPoints := make([]wire.OutPoint, len(cmd.OutPoints))
-	for i := range cmd.OutPoints {
-		txID, err := daghash.NewTxIDFromStr(cmd.OutPoints[i].TxID)
+	outpoints := make([]wire.Outpoint, len(cmd.Outpoints))
+	for i := range cmd.Outpoints {
+		txID, err := daghash.NewTxIDFromStr(cmd.Outpoints[i].TxID)
 		if err != nil {
 			return nil, &btcjson.RPCError{
 				Code:    btcjson.ErrRPCInvalidParameter,
 				Message: err.Error(),
 			}
 		}
-		outPoints[i] = wire.OutPoint{
+		outpoints[i] = wire.Outpoint{
 			TxID:  *txID,
-			Index: cmd.OutPoints[i].Index,
+			Index: cmd.Outpoints[i].Index,
 		}
 	}
 
@@ -1416,7 +1416,7 @@ func handleLoadTxFilter(wsc *wsClient, icmd interface{}) (interface{}, error) {
 
 	wsc.Lock()
 	if cmd.Reload || wsc.filterData == nil {
-		wsc.filterData = newWSClientFilter(cmd.Addresses, outPoints,
+		wsc.filterData = newWSClientFilter(cmd.Addresses, outpoints,
 			params)
 		wsc.Unlock()
 	} else {
@@ -1426,8 +1426,8 @@ func handleLoadTxFilter(wsc *wsClient, icmd interface{}) (interface{}, error) {
 		for _, a := range cmd.Addresses {
 			wsc.filterData.addAddressStr(a, params)
 		}
-		for i := range outPoints {
-			wsc.filterData.addUnspentOutPoint(&outPoints[i])
+		for i := range outpoints {
+			wsc.filterData.addUnspentOutpoint(&outpoints[i])
 		}
 		wsc.filterData.mu.Unlock()
 	}
@@ -1520,15 +1520,15 @@ func handleStopNotifyNewTransactions(wsc *wsClient, icmd interface{}) (interface
 }
 
 // deserializeOutpoints deserializes each serialized outpoint.
-func deserializeOutpoints(serializedOuts []btcjson.OutPoint) ([]*wire.OutPoint, error) {
-	outpoints := make([]*wire.OutPoint, 0, len(serializedOuts))
+func deserializeOutpoints(serializedOuts []btcjson.Outpoint) ([]*wire.Outpoint, error) {
+	outpoints := make([]*wire.Outpoint, 0, len(serializedOuts))
 	for i := range serializedOuts {
 		txID, err := daghash.NewTxIDFromStr(serializedOuts[i].TxID)
 		if err != nil {
 			return nil, rpcDecodeHexError(serializedOuts[i].TxID)
 		}
 		index := serializedOuts[i].Index
-		outpoints = append(outpoints, wire.NewOutPoint(txID, index))
+		outpoints = append(outpoints, wire.NewOutpoint(txID, index))
 	}
 
 	return outpoints, nil
@@ -1553,7 +1553,7 @@ func rescanBlockFilter(filter *wsClientFilter, block *util.Block, params *dagcon
 		// Scan inputs if not a coinbase transaction.
 		if !msgTx.IsCoinBase() {
 			for _, input := range msgTx.TxIn {
-				if !filter.existsUnspentOutPoint(&input.PreviousOutPoint) {
+				if !filter.existsUnspentOutpoint(&input.PreviousOutpoint) {
 					continue
 				}
 				if !added {
@@ -1577,11 +1577,11 @@ func rescanBlockFilter(filter *wsClientFilter, block *util.Block, params *dagcon
 					continue
 				}
 
-				op := wire.OutPoint{
+				op := wire.Outpoint{
 					TxID:  *tx.ID(),
 					Index: uint32(i),
 				}
-				filter.addUnspentOutPoint(&op)
+				filter.addUnspentOutpoint(&op)
 
 				if !added {
 					transactions = append(

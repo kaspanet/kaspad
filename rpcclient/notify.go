@@ -639,10 +639,10 @@ func (c *Client) NotifyBlocks() error {
 	return c.NotifyBlocksAsync().Receive()
 }
 
-// newOutPointFromWire constructs the btcjson representation of a transaction
+// newOutpointFromWire constructs the btcjson representation of a transaction
 // outpoint from the wire type.
-func newOutPointFromWire(op *wire.OutPoint) btcjson.OutPoint {
-	return btcjson.OutPoint{
+func newOutpointFromWire(op *wire.Outpoint) btcjson.Outpoint {
+	return btcjson.Outpoint{
 		TxID:  op.TxID.String(),
 		Index: op.Index,
 	}
@@ -723,21 +723,21 @@ func (r FutureLoadTxFilterResult) Receive() error {
 // NOTE: This is a btcd extension ported from github.com/decred/dcrrpcclient
 // and requires a websocket connection.
 func (c *Client) LoadTxFilterAsync(reload bool, addresses []util.Address,
-	outPoints []wire.OutPoint) FutureLoadTxFilterResult {
+	outpoints []wire.Outpoint) FutureLoadTxFilterResult {
 
 	addrStrs := make([]string, len(addresses))
 	for i, a := range addresses {
 		addrStrs[i] = a.EncodeAddress()
 	}
-	outPointObjects := make([]btcjson.OutPoint, len(outPoints))
-	for i := range outPoints {
-		outPointObjects[i] = btcjson.OutPoint{
-			TxID:  outPoints[i].TxID.String(),
-			Index: outPoints[i].Index,
+	outpointObjects := make([]btcjson.Outpoint, len(outpoints))
+	for i := range outpoints {
+		outpointObjects[i] = btcjson.Outpoint{
+			TxID:  outpoints[i].TxID.String(),
+			Index: outpoints[i].Index,
 		}
 	}
 
-	cmd := btcjson.NewLoadTxFilterCmd(reload, addrStrs, outPointObjects)
+	cmd := btcjson.NewLoadTxFilterCmd(reload, addrStrs, outpointObjects)
 	return c.sendCmd(cmd)
 }
 
@@ -747,6 +747,6 @@ func (c *Client) LoadTxFilterAsync(reload bool, addresses []util.Address,
 //
 // NOTE: This is a btcd extension ported from github.com/decred/dcrrpcclient
 // and requires a websocket connection.
-func (c *Client) LoadTxFilter(reload bool, addresses []util.Address, outPoints []wire.OutPoint) error {
-	return c.LoadTxFilterAsync(reload, addresses, outPoints).Receive()
+func (c *Client) LoadTxFilter(reload bool, addresses []util.Address, outpoints []wire.Outpoint) error {
+	return c.LoadTxFilterAsync(reload, addresses, outpoints).Receive()
 }
