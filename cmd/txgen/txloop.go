@@ -2,13 +2,17 @@ package main
 
 import (
 	"bytes"
+	"encoding/binary"
 	"encoding/hex"
 	"fmt"
+	"github.com/daglabs/btcd/blockdag"
 	"github.com/daglabs/btcd/btcjson"
 	"github.com/daglabs/btcd/txscript"
 	"github.com/daglabs/btcd/util"
 	"github.com/daglabs/btcd/util/daghash"
+	"github.com/daglabs/btcd/util/subnetworkid"
 	"github.com/daglabs/btcd/wire"
+	"math"
 	"math/rand"
 	"time"
 )
@@ -21,7 +25,10 @@ const (
 
 	// spendSize is the largest number of bytes of a sigScript
 	// which spends a p2pkh output: OP_DATA_73 <sig> OP_DATA_33 <pubkey>
-	spendSize = 1 + 73 + 1 + 33
+	spendSize uint64 = 1 + 73 + 1 + 33
+	// Value 8 bytes + serialized varint size for the length of PkScript +
+	// PkScript bytes.
+	outputSize uint64 = 8 + 1 + 25
 
 	txLifeSpan                                     = 1000
 	requiredConfirmations                          = 10
@@ -49,7 +56,7 @@ var (
 )
 
 // txLoop performs main loop of transaction generation
-func txLoop(client *txgenClient) error {
+func txLoop(client *txgenClient, cfg *config) error {
 	var err error
 	pkScript, err = txscript.PayToAddrScript(p2pkhAddress)
 
@@ -62,15 +69,30 @@ func txLoop(client *txgenClient) error {
 		return err
 	}
 
-	walletUTXOSet, walletTxs, err := getInitialUTXOSetAndWalletTxs(client)
+	gasLimitMap := make(map[subnetworkid.SubnetworkID]uint64)
+	gasLimitMap[*subnetworkid.SubnetworkIDNative] = 0
+
+	walletUTXOSet, walletTxs, err := getInitialUTXOSetAndWalletTxs(client, gasLimitMap)
 	if err != nil {
 		return err
 	}
 
+	txChan := make(chan *wire.MsgTx, 1e4)
+	spawn(func() {
+		err := sendTransactionLoop(client, cfg.TxInterval, txChan)
+		if err != nil {
+			panic(err)
+		}
+	})
+
 	for blockAdded := range client.onBlockAdded {
 		log.Infof("Block %s Added with %d relevant transactions", blockAdded.header.BlockHash(), len(blockAdded.txs))
+		err := updateSubnetworks(blockAdded.txs, gasLimitMap)
+		if err != nil {
+			return err
+		}
 		updateWalletTxs(blockAdded, walletTxs)
-		err := sendTransactions(client, blockAdded, walletUTXOSet, walletTxs)
+		err = prepareTransactions(client, blockAdded, walletUTXOSet, walletTxs, txChan, cfg, gasLimitMap)
 		if err != nil {
 			return err
 		}
@@ -78,11 +100,44 @@ func txLoop(client *txgenClient) error {
 	return nil
 }
 
-func getInitialUTXOSetAndWalletTxs(client *txgenClient) (utxoSet, map[daghash.TxID]*walletTransaction, error) {
+func updateSubnetworks(txs []*util.Tx, gasLimitMap map[subnetworkid.SubnetworkID]uint64) error {
+	for _, tx := range txs {
+		msgTx := tx.MsgTx()
+		if msgTx.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDRegistry) {
+			subnetworkID, err := blockdag.TxToSubnetworkID(msgTx)
+			if err != nil {
+				return fmt.Errorf("could not build subnetwork ID: %s", err)
+			}
+			gasLimit := binary.LittleEndian.Uint64(msgTx.Payload)
+			log.Infof("Found subnetwork %s with gas limit %d", subnetworkID, gasLimit)
+			gasLimitMap[*subnetworkID] = gasLimit
+		}
+	}
+	return nil
+}
+
+func sendTransactionLoop(client *txgenClient, interval uint64, txChan chan *wire.MsgTx) error {
+	var lastTxTime time.Time
+	for tx := range txChan {
+		if interval != 0 {
+			timeSinceLastTx := time.Now().Sub(lastTxTime)
+			time.Sleep(time.Duration(interval)*time.Millisecond - timeSinceLastTx)
+		}
+		_, err := client.SendRawTransaction(tx, true)
+		log.Infof("Sending tx %s with %d inputs, %d outputs and %d payload size", tx.TxID(), len(tx.TxIn), len(tx.TxOut), len(tx.Payload))
+		if err != nil {
+			return err
+		}
+		lastTxTime = time.Now()
+	}
+	return nil
+}
+
+func getInitialUTXOSetAndWalletTxs(client *txgenClient, gasLimitMap map[subnetworkid.SubnetworkID]uint64) (utxoSet, map[daghash.TxID]*walletTransaction, error) {
 	walletUTXOSet := make(utxoSet)
 	walletTxs := make(map[daghash.TxID]*walletTransaction)
 
-	initialTxs, err := collectTransactions(client)
+	initialTxs, err := collectTransactions(client, gasLimitMap)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -134,56 +189,99 @@ func updateWalletTxs(blockAdded *blockAddedMsg, walletTxs map[daghash.TxID]*wall
 	}
 }
 
-func sendTransactions(client *txgenClient, blockAdded *blockAddedMsg, walletUTXOSet utxoSet, walletTxs map[daghash.TxID]*walletTransaction) error {
-	if err := checkConfirmations(client, walletTxs, walletUTXOSet, blockAdded.chainHeight); err != nil {
+func randomWithAverageTarget(target uint64, allowZero bool) uint64 {
+	randomFraction := random.Float64()
+	randomNum := randomFraction * float64(target*2)
+	if !allowZero && randomNum < 1 {
+		randomNum = 1
+	}
+	return uint64(math.Round(randomNum))
+}
+
+func prepareTransactions(client *txgenClient, blockAdded *blockAddedMsg, walletUTXOSet utxoSet, walletTxs map[daghash.TxID]*walletTransaction,
+	txChan chan *wire.MsgTx, cfg *config, gasLimitMap map[subnetworkid.SubnetworkID]uint64) error {
+	if err := checkConfirmations(client, walletTxs, walletUTXOSet, blockAdded.chainHeight, txChan); err != nil {
 		return err
 	}
 
 	for funds := calcUTXOSetFunds(walletUTXOSet); !isDust(funds); funds = calcUTXOSetFunds(walletUTXOSet) {
+		payloadSize := uint64(0)
+		gas := uint64(0)
+
+		// In Go map iteration is randomized, so if we want
+		// to choose a random element from a map we can
+		// just take the first iterated element.
+		chosenSubnetwork := subnetworkid.SubnetworkIDNative
+		chosenGasLimit := uint64(0)
+		for subnetworkID, gasLimit := range gasLimitMap {
+			chosenSubnetwork = &subnetworkID
+			chosenGasLimit = gasLimit
+			break
+		}
+		if !chosenSubnetwork.IsEqual(subnetworkid.SubnetworkIDNative) {
+			payloadSize = randomWithAverageTarget(cfg.AveragePayloadSize, true)
+			gas = randomWithAverageTarget(uint64(float64(chosenGasLimit)*cfg.AverageGasFraction), true)
+			if gas > chosenGasLimit {
+				gas = chosenGasLimit
+			}
+		}
+		targetNumberOfOutputs := randomWithAverageTarget(cfg.TargetNumberOfOutputs, false)
+		targetNumberOfInputs := randomWithAverageTarget(cfg.TargetNumberOfInputs, false)
 		amount := minSpendableAmount + uint64(random.Int63n(int64(maxSpendableAmount-minSpendableAmount)))
+		amount *= targetNumberOfOutputs
 		if amount > funds-minTxFee {
 			amount = funds - minTxFee
 		}
-		output := wire.NewTxOut(amount, pkScript)
-		tx, _, err := createTx(walletUTXOSet, []*wire.TxOut{output}, 0)
+		tx, err := createTx(walletUTXOSet, amount, 0, targetNumberOfOutputs, targetNumberOfInputs, chosenSubnetwork, payloadSize, 0)
 		if err != nil {
 			return err
 		}
 
-		_, err = client.SendRawTransaction(tx, true)
-		log.Infof("Sending tx %s", tx.TxID())
-		if err != nil {
-			return err
-		}
+		txChan <- tx
 	}
 	return nil
 }
 
-func createTx(walletUTXOSet utxoSet, outputs []*wire.TxOut, feeRate uint64) (*wire.MsgTx, uint64, error) {
-	tx := wire.NewNativeMsgTx(wire.TxVersion, nil, nil)
-
-	// Tally up the total amount to be sent in order to perform coin
-	// selection shortly below.
-	var outputAmount uint64
-	for _, output := range outputs {
-		outputAmount += output.Value
-		tx.AddTxOut(output)
+func createTx(walletUTXOSet utxoSet, minAmount uint64, feeRate uint64, targetNumberOfOutputs uint64, targetNumberOfInputs uint64,
+	subnetworkdID *subnetworkid.SubnetworkID, payloadSize uint64, gas uint64) (*wire.MsgTx, error) {
+	var tx *wire.MsgTx
+	if subnetworkdID.IsEqual(subnetworkid.SubnetworkIDNative) {
+		tx = wire.NewNativeMsgTx(wire.TxVersion, nil, nil)
+	} else {
+		payload := make([]byte, payloadSize)
+		tx = wire.NewSubnetworkMsgTx(wire.TxVersion, nil, nil, subnetworkdID, gas, payload)
 	}
 
 	// Attempt to fund the transaction with spendable utxos.
-	fees, err := fundTx(walletUTXOSet, tx, outputAmount, feeRate)
+	funds, err := fundTx(walletUTXOSet, tx, minAmount, feeRate, targetNumberOfOutputs, targetNumberOfInputs)
 	if err != nil {
-		return nil, 0, err
+		return nil, err
+	}
+
+	maxNumOuts := funds / minSpendableAmount
+	numOuts := targetNumberOfOutputs
+	if numOuts > maxNumOuts {
+		numOuts = maxNumOuts
+	}
+
+	fee := calcFee(tx, feeRate, numOuts)
+	funds -= fee
+
+	for i := uint64(0); i < numOuts; i++ {
+		tx.AddTxOut(&wire.TxOut{
+			Value:    funds / numOuts,
+			PkScript: pkScript,
+		})
 	}
 
 	err = signTx(walletUTXOSet, tx)
 	if err != nil {
-		return nil, 0, err
+		return nil, err
 	}
 
 	removeTxInsFromUTXOSet(walletUTXOSet, tx)
 
-	return tx, fees, nil
+	return tx, nil
 }
 
 // signTx signs a transaction
@@ -204,58 +302,49 @@ func signTx(walletUTXOSet utxoSet, tx *wire.MsgTx) error {
 	return nil
 }
 
-func fundTx(walletUTXOSet utxoSet, tx *wire.MsgTx, amount uint64, feeRate uint64) (uint64, error) {
+func fundTx(walletUTXOSet utxoSet, tx *wire.MsgTx, amount uint64, feeRate uint64, targetNumberOfOutputs uint64, targetNumberOfInputs uint64) (uint64, error) {
 
-	var (
-		amountSelected uint64
-		txSize         int
-		reqFee         uint64
-	)
-
-	isFunded := false
+	amountSelected := uint64(0)
 
 	for outPoint, output := range walletUTXOSet {
 		amountSelected += output.Value
 
-		// Add the selected output to the transaction, updating the
-		// current tx size while accounting for the size of the future
-		// sigScript.
+		// Add the selected output to the transaction
 		tx.AddTxIn(wire.NewTxIn(&outPoint, nil))
-		txSize = tx.SerializeSize() + spendSize*len(tx.TxIn)
 
-		// Calculate the fee required for the txn at this point
-		// observing the specified fee rate. If we don't have enough
-		// coins from he current amount selected to pay the fee, then
-		// continue to grab more coins.
-		reqFee = uint64(txSize) * feeRate
-		if reqFee < minTxFee {
-			reqFee = minTxFee
-		}
-		if amountSelected > reqFee && amountSelected-reqFee >= amount {
-			isFunded = true
+		// Check if transaction has enought funds. If we don't have enough
+		// coins from he current amount selected to pay the fee, or we have
+		// less inputs then the targeted amount, continue to grab more coins.
+		if uint64(len(tx.TxIn)) >= targetNumberOfInputs && isFunded(tx, feeRate, targetNumberOfOutputs, amountSelected, amount) {
 			break
 		}
 	}
 
-	if !isFunded {
+	if !isFunded(tx, feeRate, targetNumberOfOutputs, amountSelected, amount) {
 		return 0, fmt.Errorf("not enough funds for coin selection")
 	}
 
-	// If we have any change left over, then add an additional
-	// output to the transaction reserved for change.
-	changeVal := amountSelected - amount - reqFee
-	if changeVal > 0 {
-		changeOutput := &wire.TxOut{
-			Value:    changeVal,
-			PkScript: pkScript,
-		}
-		tx.AddTxOut(changeOutput)
-	}
-
-	return reqFee, nil
+	return amountSelected, nil
 }
 
-func checkConfirmations(client *txgenClient, walletTxs map[daghash.TxID]*walletTransaction, walletUTXOSet utxoSet, blockChainHeight uint64) error {
+// Check if the transaction has enough funds to cover the fee
+// required for the txn.
+func isFunded(tx *wire.MsgTx, feeRate uint64, targetNumberOfOutputs uint64, amountSelected uint64, targetAmount uint64) bool {
+	reqFee := calcFee(tx, feeRate, targetNumberOfOutputs)
+	return amountSelected > reqFee && amountSelected-reqFee >= targetAmount
+}
+
+func calcFee(tx *wire.MsgTx, feeRate uint64, numberOfOutputs uint64) uint64 {
+	txSize := uint64(tx.SerializeSize()) + spendSize*uint64(len(tx.TxIn)) + numberOfOutputs*outputSize + 1
+	reqFee := uint64(txSize) * feeRate
+	if reqFee < minTxFee {
+		return minTxFee
+	}
+	return reqFee
+}
+
+func checkConfirmations(client *txgenClient, walletTxs map[daghash.TxID]*walletTransaction, walletUTXOSet utxoSet,
+	blockChainHeight uint64, txChan chan *wire.MsgTx) error {
 	for txID, walletTx := range walletTxs {
 		if !walletTx.confirmed && walletTx.checkConfirmationCountdown == 0 {
 			txResult, err := client.GetRawTransactionVerbose(&txID)
@@ -268,10 +357,7 @@ func checkConfirmations(client *txgenClient, walletTxs map[daghash.TxID]*walletT
 				addTxOutsToUTXOSet(walletUTXOSet, msgTx)
 			} else if *txResult.Confirmations == 0 && !txResult.IsInMempool && blockChainHeight-500 > walletTx.chainHeight {
 				log.Infof("Transaction %s was not accepted in the DAG. Resending", txID)
-				_, err := client.SendRawTransaction(msgTx, true)
-				if err != nil {
-					return err
-				}
+				txChan <- msgTx
 			}
 		}
 	}
@@ -306,7 +392,8 @@ func calcUTXOSetFunds(walletUTXOSet utxoSet) uint64 {
 	return funds
 }
 
-func collectTransactions(client *txgenClient) (map[daghash.TxID]*walletTransaction, error) {
+func collectTransactions(client *txgenClient, gasLimitMap map[subnetworkid.SubnetworkID]uint64) (map[daghash.TxID]*walletTransaction, error) {
+	registryTxs := make([]*util.Tx, 0)
 	walletTxs := make(map[daghash.TxID]*walletTransaction)
 	skip := 0
 	for skip < searchRawTransactionMaxResults {
@@ -336,17 +423,26 @@ func collectTransactions(client *txgenClient) (map[daghash.TxID]*walletTransacti
 			}
 
 			txID := tx.TxID()
+			utilTx := util.NewTx(tx)
 
 			if existingTx, ok := walletTxs[*txID]; !ok || !existingTx.confirmed {
 				walletTxs[*txID] = &walletTransaction{
-					tx:                         util.NewTx(tx),
+					tx:                         utilTx,
 					checkConfirmationCountdown: requiredConfirmations,
 					confirmed:                  isTxMatured(tx, *result.Confirmations),
 				}
 			}
+
+			if tx.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDRegistry) {
+				registryTxs = append(registryTxs, utilTx)
+			}
 		}
 
 		skip += searchRawTransactionResultCount
+	}
+	err := updateSubnetworks(registryTxs, gasLimitMap)
+	if err != nil {
+		return nil, err
 	}
 	return walletTxs, nil
 }
