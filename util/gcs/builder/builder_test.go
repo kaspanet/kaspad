@@ -55,8 +55,8 @@ func TestUseBlockHash(t *testing.T) {
 		t.Fatalf("Hash from string failed: %s", err.Error())
 	}
 
-	// wire.OutPoint
-	outPoint := wire.OutPoint{
+	// wire.Outpoint
+	outpoint := wire.Outpoint{
 		TxID:  *txID,
 		Index: 4321,
 	}
@@ -84,11 +84,11 @@ func TestUseBlockHash(t *testing.T) {
 			hex.EncodeToString(key[:]),
 			hex.EncodeToString(testKey[:]))
 	}
-	BuilderTest(b, txID, builder.DefaultP, outPoint, addrBytes, t)
+	BuilderTest(b, txID, builder.DefaultP, outpoint, addrBytes, t)
 
 	// Create a GCSBuilder with a key hash and non-default P and test it.
 	b = builder.WithKeyTxIDP(txID, 30)
-	BuilderTest(b, txID, 30, outPoint, addrBytes, t)
+	BuilderTest(b, txID, 30, outpoint, addrBytes, t)
 
 	// Create a GCSBuilder with a random key, set the key from a hash
 	// manually, check that the key is correct, and test it.
@@ -104,7 +104,7 @@ func TestUseBlockHash(t *testing.T) {
 			hex.EncodeToString(key[:]),
 			hex.EncodeToString(testKey[:]))
 	}
-	BuilderTest(b, txID, builder.DefaultP, outPoint, addrBytes, t)
+	BuilderTest(b, txID, builder.DefaultP, outpoint, addrBytes, t)
 
 	// Create a GCSBuilder with a random key and test it.
 	b = builder.WithRandomKey()
@@ -114,7 +114,7 @@ func TestUseBlockHash(t *testing.T) {
 			err.Error())
 	}
 	t.Logf("Random Key 1: %s", hex.EncodeToString(key1[:]))
-	BuilderTest(b, txID, builder.DefaultP, outPoint, addrBytes, t)
+	BuilderTest(b, txID, builder.DefaultP, outpoint, addrBytes, t)
 
 	// Create a GCSBuilder with a random key and non-default P and test it.
 	b = builder.WithRandomKeyP(30)
@@ -127,7 +127,7 @@ func TestUseBlockHash(t *testing.T) {
 	if key2 == key1 {
 		t.Fatalf("Random keys are the same!")
 	}
-	BuilderTest(b, txID, 30, outPoint, addrBytes, t)
+	BuilderTest(b, txID, 30, outpoint, addrBytes, t)
 
 	// Create a GCSBuilder with a known key and test it.
 	b = builder.WithKey(testKey)
@@ -141,7 +141,7 @@ func TestUseBlockHash(t *testing.T) {
 			hex.EncodeToString(key[:]),
 			hex.EncodeToString(testKey[:]))
 	}
-	BuilderTest(b, txID, builder.DefaultP, outPoint, addrBytes, t)
+	BuilderTest(b, txID, builder.DefaultP, outpoint, addrBytes, t)
 
 	// Create a GCSBuilder with a known key and non-default P and test it.
 	b = builder.WithKeyP(testKey, 30)
@@ -155,13 +155,13 @@ func TestUseBlockHash(t *testing.T) {
 			hex.EncodeToString(key[:]),
 			hex.EncodeToString(testKey[:]))
 	}
-	BuilderTest(b, txID, 30, outPoint, addrBytes, t)
+	BuilderTest(b, txID, 30, outpoint, addrBytes, t)
 
 	// Create a GCSBuilder with a known key and too-high P and ensure error
 	// works throughout all functions that use it.
 	b = builder.WithRandomKeyP(33).SetKeyFromTxID(txID).SetKey(testKey)
 	b.SetP(30).AddEntry(txID.CloneBytes()).AddEntries(contents)
-	b.AddOutPoint(outPoint).AddTxID(txID).AddScript(addrBytes)
+	b.AddOutpoint(outpoint).AddTxID(txID).AddScript(addrBytes)
 	_, err = b.Key()
 	if err != gcs.ErrPTooBig {
 		t.Fatalf("No error on P too big!")
@@ -173,7 +173,7 @@ func TestUseBlockHash(t *testing.T) {
 }
 
 func BuilderTest(b *builder.GCSBuilder, txID *daghash.TxID, p uint8,
-	outPoint wire.OutPoint, addrBytes []byte, t *testing.T) {
+	outpoint wire.Outpoint, addrBytes []byte, t *testing.T) {
 
 	key, err := b.Key()
 	if err != nil {
@@ -220,8 +220,8 @@ func BuilderTest(b *builder.GCSBuilder, txID *daghash.TxID, p uint8,
 		t.Fatal("Filter didn't match when it should have!")
 	}
 
-	// Add a wire.OutPoint, build a filter, and test matches
-	b.AddOutPoint(outPoint)
+	// Add a wire.Outpoint, build a filter, and test matches
+	b.AddOutpoint(outpoint)
 	f, err = b.Build()
 	if err != nil {
 		t.Fatalf("Filter build failed: %s", err.Error())

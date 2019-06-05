@@ -31,16 +31,16 @@ func main() {
 	}
 	log.Infof("Connected to server %s", cfg.RPCServer)
 
-	fundingOutPoint, fundingTx, err := findUnspentTXO(cfg, client, addrPubKeyHash)
+	fundingOutpoint, fundingTx, err := findUnspentTXO(cfg, client, addrPubKeyHash)
 	if err != nil {
 		panic(fmt.Errorf("error finding unspent transactions: %s", err))
 	}
-	if fundingOutPoint == nil || fundingTx == nil {
+	if fundingOutpoint == nil || fundingTx == nil {
 		panic(fmt.Errorf("could not find any unspent transactions this for key"))
 	}
-	log.Infof("Found transaction to spend: %s:%d", fundingOutPoint.TxID, fundingOutPoint.Index)
+	log.Infof("Found transaction to spend: %s:%d", fundingOutpoint.TxID, fundingOutpoint.Index)
 
-	registryTx, err := buildSubnetworkRegistryTx(cfg, fundingOutPoint, fundingTx, privateKey)
+	registryTx, err := buildSubnetworkRegistryTx(cfg, fundingOutpoint, fundingTx, privateKey)
 	if err != nil {
 		panic(fmt.Errorf("error building subnetwork registry tx: %s", err))
 	}

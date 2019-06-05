@@ -243,7 +243,7 @@ func TestCheckBlockSanity(t *testing.T) {
 				Version: 1,
 				TxIn: []*wire.TxIn{
 					{
-						PreviousOutPoint: wire.OutPoint{
+						PreviousOutpoint: wire.Outpoint{
 							TxID:  daghash.TxID{},
 							Index: 0xffffffff,
 						},
@@ -270,7 +270,7 @@ func TestCheckBlockSanity(t *testing.T) {
 				Version: 1,
 				TxIn: []*wire.TxIn{
 					{
-						PreviousOutPoint: wire.OutPoint{
+						PreviousOutpoint: wire.Outpoint{
 							TxID: daghash.TxID([32]byte{
 								0x03, 0x2e, 0x38, 0xe9, 0xc0, 0xa8, 0x4c, 0x60,
 								0x46, 0xd6, 0x87, 0xd1, 0x05, 0x56, 0xdc, 0xac,
@@ -340,7 +340,7 @@ func TestCheckBlockSanity(t *testing.T) {
 				Version: 1,
 				TxIn: []*wire.TxIn{
 					{
-						PreviousOutPoint: wire.OutPoint{
+						PreviousOutpoint: wire.Outpoint{
 							TxID: daghash.TxID([32]byte{
 								0xc3, 0x3e, 0xbf, 0xf2, 0xa7, 0x09, 0xf1, 0x3d,
 								0x9f, 0x9a, 0x75, 0x69, 0xab, 0x16, 0xa3, 0x27,
@@ -409,7 +409,7 @@ func TestCheckBlockSanity(t *testing.T) {
 				Version: 1,
 				TxIn: []*wire.TxIn{
 					{
-						PreviousOutPoint: wire.OutPoint{
+						PreviousOutpoint: wire.Outpoint{
 							TxID: daghash.TxID([32]byte{
 								0x0b, 0x60, 0x72, 0xb3, 0x86, 0xd4, 0xa7, 0x73,
 								0x23, 0x52, 0x37, 0xf6, 0x4c, 0x11, 0x26, 0xac,
@@ -481,7 +481,7 @@ func TestCheckBlockSanity(t *testing.T) {
 // and handled properly.
 func TestCheckSerializedHeight(t *testing.T) {
 	// Create an empty coinbase template to be used in the tests below.
-	coinbaseOutpoint := wire.NewOutPoint(&daghash.TxID{}, math.MaxUint32)
+	coinbaseOutpoint := wire.NewOutpoint(&daghash.TxID{}, math.MaxUint32)
 	coinbaseTx := wire.NewNativeMsgTx(1, []*wire.TxIn{wire.NewTxIn(coinbaseOutpoint, nil)}, nil)
 
 	// Expected rule errors.
@@ -680,7 +680,7 @@ func TestCheckTransactionSanity(t *testing.T) {
 		{"duplicate inputs", 2, 1, 1,
 			*subnetworkid.SubnetworkIDNative,
 			nil,
-			func(tx *wire.MsgTx) { tx.TxIn[1].PreviousOutPoint.Index = 0 },
+			func(tx *wire.MsgTx) { tx.TxIn[1].PreviousOutpoint.Index = 0 },
 			ruleError(ErrDuplicateTxInputs, "")},
 		{"non-zero gas in DAGCoin", 1, 1, 0,
 			*subnetworkid.SubnetworkIDNative,
@@ -779,7 +779,7 @@ var Block100000 = wire.MsgBlock{
 			Version: 1,
 			TxIn: []*wire.TxIn{
 				{
-					PreviousOutPoint: wire.OutPoint{
+					PreviousOutpoint: wire.Outpoint{
 						TxID:  daghash.TxID{},
 						Index: 0xffffffff,
 					},
@@ -806,7 +806,7 @@ var Block100000 = wire.MsgBlock{
 			Version: 1,
 			TxIn: []*wire.TxIn{
 				{
-					PreviousOutPoint: wire.OutPoint{
+					PreviousOutpoint: wire.Outpoint{
 						TxID: daghash.TxID{
 							0x16, 0x5e, 0x38, 0xe8, 0xb3, 0x91, 0x45, 0x95,
 							0xd9, 0xc6, 0x41, 0xf3, 0xb8, 0xee, 0xc2, 0xf3,
@@ -818,7 +818,7 @@ var Block100000 = wire.MsgBlock{
 					Sequence: math.MaxUint64,
 				},
 				{
-					PreviousOutPoint: wire.OutPoint{
+					PreviousOutpoint: wire.Outpoint{
 						TxID: daghash.TxID{
 							0x4b, 0xb0, 0x75, 0x35, 0xdf, 0xd5, 0x8e, 0x0b,
 							0x3c, 0xd6, 0x4f, 0xd7, 0x15, 0x52, 0x80, 0x87,
@@ -836,7 +836,7 @@ var Block100000 = wire.MsgBlock{
 			Version: 1,
 			TxIn: []*wire.TxIn{
 				{
-					PreviousOutPoint: wire.OutPoint{
+					PreviousOutpoint: wire.Outpoint{
 						TxID: daghash.TxID([32]byte{
 							0x03, 0x2e, 0x38, 0xe9, 0xc0, 0xa8, 0x4c, 0x60,
 							0x46, 0xd6, 0x87, 0xd1, 0x05, 0x56, 0xdc, 0xac,
@@ -906,7 +906,7 @@ var Block100000 = wire.MsgBlock{
 			Version: 1,
 			TxIn: []*wire.TxIn{
 				{
-					PreviousOutPoint: wire.OutPoint{
+					PreviousOutpoint: wire.Outpoint{
 						TxID: daghash.TxID([32]byte{
 							0xc3, 0x3e, 0xbf, 0xf2, 0xa7, 0x09, 0xf1, 0x3d,
 							0x9f, 0x9a, 0x75, 0x69, 0xab, 0x16, 0xa3, 0x27,
@@ -975,7 +975,7 @@ var Block100000 = wire.MsgBlock{
 			Version: 1,
 			TxIn: []*wire.TxIn{
 				{
-					PreviousOutPoint: wire.OutPoint{
+					PreviousOutpoint: wire.Outpoint{
 						TxID: daghash.TxID([32]byte{
 							0x0b, 0x60, 0x72, 0xb3, 0x86, 0xd4, 0xa7, 0x73,
 							0x23, 0x52, 0x37, 0xf6, 0x4c, 0x11, 0x26, 0xac,
@@ -1076,7 +1076,7 @@ var BlockWithWrongTxOrder = wire.MsgBlock{
 			Version: 1,
 			TxIn: []*wire.TxIn{
 				{
-					PreviousOutPoint: wire.OutPoint{
+					PreviousOutpoint: wire.Outpoint{
 						TxID:  daghash.TxID{},
 						Index: 0xffffffff,
 					},
@@ -1110,7 +1110,7 @@ var BlockWithWrongTxOrder = wire.MsgBlock{
 			Version: 1,
 			TxIn: []*wire.TxIn{
 				{
-					PreviousOutPoint: wire.OutPoint{
+					PreviousOutpoint: wire.Outpoint{
 						TxID: daghash.TxID{
 							0x16, 0x5e, 0x38, 0xe8, 0xb3, 0x91, 0x45, 0x95,
 							0xd9, 0xc6, 0x41, 0xf3, 0xb8, 0xee, 0xc2, 0xf3,
@@ -1122,7 +1122,7 @@ var BlockWithWrongTxOrder = wire.MsgBlock{
 					Sequence: math.MaxUint64,
 				},
 				{
-					PreviousOutPoint: wire.OutPoint{
+					PreviousOutpoint: wire.Outpoint{
 						TxID: daghash.TxID{
 							0x4b, 0xb0, 0x75, 0x35, 0xdf, 0xd5, 0x8e, 0x0b,
 							0x3c, 0xd6, 0x4f, 0xd7, 0x15, 0x52, 0x80, 0x87,
@@ -1140,7 +1140,7 @@ var BlockWithWrongTxOrder = wire.MsgBlock{
 			Version: 1,
 			TxIn: []*wire.TxIn{
 				{
-					PreviousOutPoint: wire.OutPoint{
+					PreviousOutpoint: wire.Outpoint{
 						TxID: daghash.TxID([32]byte{
 							0x03, 0x2e, 0x38, 0xe9, 0xc0, 0xa8, 0x4c, 0x60,
 							0x46, 0xd6, 0x87, 0xd1, 0x05, 0x56, 0xdc, 0xac,
@@ -1212,7 +1212,7 @@ var BlockWithWrongTxOrder = wire.MsgBlock{
 			Version: 1,
 			TxIn: []*wire.TxIn{
 				{
-					PreviousOutPoint: wire.OutPoint{
+					PreviousOutpoint: wire.Outpoint{
 						TxID: daghash.TxID([32]byte{
 							0xc3, 0x3e, 0xbf, 0xf2, 0xa7, 0x09, 0xf1, 0x3d,
 							0x9f, 0x9a, 0x75, 0x69, 0xab, 0x16, 0xa3, 0x27,
@@ -1281,7 +1281,7 @@ var BlockWithWrongTxOrder = wire.MsgBlock{
 			Version: 1,
 			TxIn: []*wire.TxIn{
 				{
-					PreviousOutPoint: wire.OutPoint{
+					PreviousOutpoint: wire.Outpoint{
 						TxID: daghash.TxID([32]byte{
 							0x0b, 0x60, 0x72, 0xb3, 0x86, 0xd4, 0xa7, 0x73,
 							0x23, 0x52, 0x37, 0xf6, 0x4c, 0x11, 0x26, 0xac,

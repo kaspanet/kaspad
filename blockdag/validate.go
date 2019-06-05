@@ -49,9 +49,9 @@ const (
 	MaxOutputsPerBlock = wire.MaxBlockPayload / wire.MinTxOutPayload
 )
 
-// isNullOutpoint determines whether or not a previous transaction output point
+// isNullOutpoint determines whether or not a previous transaction outpoint
 // is set.
-func isNullOutpoint(outpoint *wire.OutPoint) bool {
+func isNullOutpoint(outpoint *wire.Outpoint) bool {
 	if outpoint.Index == math.MaxUint32 && outpoint.TxID == daghash.ZeroTxID {
 		return true
 	}
@@ -206,13 +206,13 @@ func CheckTransactionSanity(tx *util.Tx, subnetworkID *subnetworkid.SubnetworkID
 	}
 
 	// Check for duplicate transaction inputs.
-	existingTxOut := make(map[wire.OutPoint]struct{})
+	existingTxOut := make(map[wire.Outpoint]struct{})
 	for _, txIn := range msgTx.TxIn {
-		if _, exists := existingTxOut[txIn.PreviousOutPoint]; exists {
+		if _, exists := existingTxOut[txIn.PreviousOutpoint]; exists {
 			return ruleError(ErrDuplicateTxInputs, "transaction "+
 				"contains duplicate inputs")
 		}
-		existingTxOut[txIn.PreviousOutPoint] = struct{}{}
+		existingTxOut[txIn.PreviousOutpoint] = struct{}{}
 	}
 
 	// Coinbase script length must be between min and max length.
@@ -228,7 +228,7 @@ func CheckTransactionSanity(tx *util.Tx, subnetworkID *subnetworkid.SubnetworkID
 		// Previous transaction outputs referenced by the inputs to this
 		// transaction must not be null.
 		for _, txIn := range msgTx.TxIn {
-			if isNullOutpoint(&txIn.PreviousOutPoint) {
+			if isNullOutpoint(&txIn.PreviousOutpoint) {
 				return ruleError(ErrBadTxInput, "transaction "+
 					"input refers to previous output that "+
 					"is null")
@@ -364,11 +364,11 @@ func CountP2SHSigOps(tx *util.Tx, isBlockReward bool, utxoSet UTXOSet) (int, err
 	totalSigOps := 0
 	for txInIndex, txIn := range msgTx.TxIn {
 		// Ensure the referenced input transaction is available.
-		entry, ok := utxoSet.Get(txIn.PreviousOutPoint)
+		entry, ok := utxoSet.Get(txIn.PreviousOutpoint)
 		if !ok {
 			str := fmt.Sprintf("output %s referenced from "+
 				"transaction %s:%d either does not exist or "+
-				"has already been spent", txIn.PreviousOutPoint,
+				"has already been spent", txIn.PreviousOutpoint,
 				tx.ID(), txInIndex)
 			return 0, ruleError(ErrMissingTxOut, str)
 		}
@@ -393,7 +393,7 @@ func CountP2SHSigOps(tx *util.Tx, isBlockReward bool, utxoSet UTXOSet) (int, err
 		if totalSigOps < lastSigOps {
 			str := fmt.Sprintf("the public key script from output "+
 				"%s contains too many signature operations - "+
-				"overflow", txIn.PreviousOutPoint)
+				"overflow", txIn.PreviousOutpoint)
 			return 0, ruleError(ErrTooManySigOps, str)
 		}
 	}
@@ -852,9 +852,9 @@ func ensureNoDuplicateTx(block *blockNode, utxoSet UTXOSet,
 	transactions []*util.Tx) error {
 	// Fetch utxos for all of the transaction ouputs in this block.
 	// Typically, there will not be any utxos for any of the outputs.
-	fetchSet := make(map[wire.OutPoint]struct{})
+	fetchSet := make(map[wire.Outpoint]struct{})
 	for _, tx := range transactions {
-		prevOut := wire.OutPoint{TxID: *tx.ID()}
+		prevOut := wire.Outpoint{TxID: *tx.ID()}
 		for txOutIdx := range tx.MsgTx().TxOut {
 			prevOut.Index = uint32(txOutIdx)
 			fetchSet[prevOut] = struct{}{}
@@ -899,11 +899,11 @@ func CheckTransactionInputsAndCalulateFee(tx *util.Tx, txHeight uint64, utxoSet 
 	var totalSatoshiIn uint64
 	for txInIndex, txIn := range tx.MsgTx().TxIn {
 		// Ensure the referenced input transaction is available.
-		entry, ok := utxoSet.Get(txIn.PreviousOutPoint)
+		entry, ok := utxoSet.Get(txIn.PreviousOutpoint)
 		if !ok {
 			str := fmt.Sprintf("output %s referenced from "+
 				"transaction %s:%d either does not exist or "+
-				"has already been spent", txIn.PreviousOutPoint,
+				"has already been spent", txIn.PreviousOutpoint,
 				tx.ID(), txInIndex)
 			return 0, ruleError(ErrMissingTxOut, str)
 		}
@@ -977,7 +977,7 @@ func validateBlockRewardMaturity(dagParams *dagconfig.Params, entry *UTXOEntry, 
 			str := fmt.Sprintf("tried to spend block reward "+
 				"transaction output %s from chain-height %d "+
 				"at chain-height %d before required maturity "+
-				"of %d blocks", txIn.PreviousOutPoint,
+				"of %d blocks", txIn.PreviousOutpoint,
 				originChainHeight, txChainHeight,
 				dagParams.BlockRewardMaturity)
 			return ruleError(ErrImmatureSpend, str)

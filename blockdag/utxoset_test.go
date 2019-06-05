@@ -15,8 +15,8 @@ import (
 func TestUTXOCollection(t *testing.T) {
 	txID0, _ := daghash.NewTxIDFromStr("0000000000000000000000000000000000000000000000000000000000000000")
 	txID1, _ := daghash.NewTxIDFromStr("1111111111111111111111111111111111111111111111111111111111111111")
-	outPoint0 := *wire.NewOutPoint(txID0, 0)
-	outPoint1 := *wire.NewOutPoint(txID1, 0)
+	outpoint0 := *wire.NewOutpoint(txID0, 0)
+	outpoint1 := *wire.NewOutpoint(txID1, 0)
 	utxoEntry0 := NewUTXOEntry(&wire.TxOut{PkScript: []byte{}, Value: 10}, true, 0)
 	utxoEntry1 := NewUTXOEntry(&wire.TxOut{PkScript: []byte{}, Value: 20}, false, 1)
 
@@ -36,15 +36,15 @@ func TestUTXOCollection(t *testing.T) {
 		{
 			name: "one member",
 			collection: utxoCollection{
-				outPoint0: utxoEntry1,
+				outpoint0: utxoEntry1,
 			},
 			expectedString: "[ (0000000000000000000000000000000000000000000000000000000000000000, 0) => 20 ]",
 		},
 		{
 			name: "two members",
 			collection: utxoCollection{
-				outPoint0: utxoEntry0,
-				outPoint1: utxoEntry1,
+				outpoint0: utxoEntry0,
+				outpoint1: utxoEntry1,
 			},
 			expectedString: "[ (0000000000000000000000000000000000000000000000000000000000000000, 0) => 10, (1111111111111111111111111111111111111111111111111111111111111111, 0) => 20 ]",
 		},
@@ -74,8 +74,8 @@ func TestUTXOCollection(t *testing.T) {
 func TestUTXODiff(t *testing.T) {
 	txID0, _ := daghash.NewTxIDFromStr("0000000000000000000000000000000000000000000000000000000000000000")
 	txID1, _ := daghash.NewTxIDFromStr("1111111111111111111111111111111111111111111111111111111111111111")
-	outPoint0 := *wire.NewOutPoint(txID0, 0)
-	outPoint1 := *wire.NewOutPoint(txID1, 0)
+	outpoint0 := *wire.NewOutpoint(txID0, 0)
+	outpoint1 := *wire.NewOutpoint(txID1, 0)
 	utxoEntry0 := NewUTXOEntry(&wire.TxOut{PkScript: []byte{}, Value: 10}, true, 0)
 	utxoEntry1 := NewUTXOEntry(&wire.TxOut{PkScript: []byte{}, Value: 20}, false, 1)
 
@@ -85,12 +85,12 @@ func TestUTXODiff(t *testing.T) {
 		t.Errorf("new diff is not empty")
 	}
 
-	err := diff.AddEntry(outPoint0, utxoEntry0)
+	err := diff.AddEntry(outpoint0, utxoEntry0)
 	if err != nil {
 		t.Fatalf("Error adding entry to utxo diff: %s", err)
 	}
 
-	err = diff.RemoveEntry(outPoint1, utxoEntry1)
+	err = diff.RemoveEntry(outpoint1, utxoEntry1)
 	if err != nil {
 		t.Fatalf("Error adding entry to utxo diff: %s", err)
 	}
@@ -118,7 +118,7 @@ func TestUTXODiff(t *testing.T) {
 // Each test case represents a cell in the two tables outlined in the documentation for utxoDiff.
 func TestUTXODiffRules(t *testing.T) {
 	txID0, _ := daghash.NewTxIDFromStr("0000000000000000000000000000000000000000000000000000000000000000")
-	outPoint0 := *wire.NewOutPoint(txID0, 0)
+	outpoint0 := *wire.NewOutpoint(txID0, 0)
 	utxoEntry0 := NewUTXOEntry(&wire.TxOut{PkScript: []byte{}, Value: 10}, true, 0)
 
 	// For each of the following test cases, we will:
@@ -136,11 +136,11 @@ func TestUTXODiffRules(t *testing.T) {
 		{
 			name: "one toAdd in this, one toAdd in other",
 			this: &UTXODiff{
-				toAdd:    utxoCollection{outPoint0: utxoEntry0},
+				toAdd:    utxoCollection{outpoint0: utxoEntry0},
 				toRemove: utxoCollection{},
 			},
 			other: &UTXODiff{
-				toAdd:    utxoCollection{outPoint0: utxoEntry0},
+				toAdd:    utxoCollection{outpoint0: utxoEntry0},
 				toRemove: utxoCollection{},
 			},
 			expectedDiffFromResult: &UTXODiff{
@@ -152,12 +152,12 @@ func TestUTXODiffRules(t *testing.T) {
 		{
 			name: "one toAdd in this, one toRemove in other",
 			this: &UTXODiff{
-				toAdd:    utxoCollection{outPoint0: utxoEntry0},
+				toAdd:    utxoCollection{outpoint0: utxoEntry0},
 				toRemove: utxoCollection{},
 			},
 			other: &UTXODiff{
 				toAdd:    utxoCollection{},
-				toRemove: utxoCollection{outPoint0: utxoEntry0},
+				toRemove: utxoCollection{outpoint0: utxoEntry0},
 			},
 			expectedDiffFromResult: nil,
 			expectedWithDiffResult: &UTXODiff{
@@ -168,7 +168,7 @@ func TestUTXODiffRules(t *testing.T) {
 		{
 			name: "one toAdd in this, empty other",
 			this: &UTXODiff{
-				toAdd:    utxoCollection{outPoint0: utxoEntry0},
+				toAdd:    utxoCollection{outpoint0: utxoEntry0},
 				toRemove: utxoCollection{},
 			},
 			other: &UTXODiff{
@@ -177,10 +177,10 @@ func TestUTXODiffRules(t *testing.T) {
 			},
 			expectedDiffFromResult: &UTXODiff{
 				toAdd:    utxoCollection{},
-				toRemove: utxoCollection{outPoint0: utxoEntry0},
+				toRemove: utxoCollection{outpoint0: utxoEntry0},
 			},
 			expectedWithDiffResult: &UTXODiff{
-				toAdd:    utxoCollection{outPoint0: utxoEntry0},
+				toAdd:    utxoCollection{outpoint0: utxoEntry0},
 				toRemove: utxoCollection{},
 			},
 		},
@@ -188,10 +188,10 @@ func TestUTXODiffRules(t *testing.T) {
 			name: "one toRemove in this, one toAdd in other",
 			this: &UTXODiff{
 				toAdd:    utxoCollection{},
-				toRemove: utxoCollection{outPoint0: utxoEntry0},
+				toRemove: utxoCollection{outpoint0: utxoEntry0},
 			},
 			other: &UTXODiff{
-				toAdd:    utxoCollection{outPoint0: utxoEntry0},
+				toAdd:    utxoCollection{outpoint0: utxoEntry0},
 				toRemove: utxoCollection{},
 			},
 			expectedDiffFromResult: nil,
@@ -204,11 +204,11 @@ func TestUTXODiffRules(t *testing.T) {
 			name: "one toRemove in this, one toRemove in other",
 			this: &UTXODiff{
 				toAdd:    utxoCollection{},
-				toRemove: utxoCollection{outPoint0: utxoEntry0},
+				toRemove: utxoCollection{outpoint0: utxoEntry0},
 			},
 			other: &UTXODiff{
 				toAdd:    utxoCollection{},
-				toRemove: utxoCollection{outPoint0: utxoEntry0},
+				toRemove: utxoCollection{outpoint0: utxoEntry0},
 			},
 			expectedDiffFromResult: &UTXODiff{
 				toAdd:    utxoCollection{},
@@ -220,19 +220,19 @@ func TestUTXODiffRules(t *testing.T) {
 			name: "one toRemove in this, empty other",
 			this: &UTXODiff{
 				toAdd:    utxoCollection{},
-				toRemove: utxoCollection{outPoint0: utxoEntry0},
+				toRemove: utxoCollection{outpoint0: utxoEntry0},
 			},
 			other: &UTXODiff{
 				toAdd:    utxoCollection{},
 				toRemove: utxoCollection{},
 			},
 			expectedDiffFromResult: &UTXODiff{
-				toAdd:    utxoCollection{outPoint0: utxoEntry0},
+				toAdd:    utxoCollection{outpoint0: utxoEntry0},
 				toRemove: utxoCollection{},
 			},
 			expectedWithDiffResult: &UTXODiff{
 				toAdd:    utxoCollection{},
-				toRemove: utxoCollection{outPoint0: utxoEntry0},
+				toRemove: utxoCollection{outpoint0: utxoEntry0},
 			},
 		},
 		{
@@ -242,15 +242,15 @@ func TestUTXODiffRules(t *testing.T) {
 				toRemove: utxoCollection{},
 			},
 			other: &UTXODiff{
-				toAdd:    utxoCollection{outPoint0: utxoEntry0},
+				toAdd:    utxoCollection{outpoint0: utxoEntry0},
 				toRemove: utxoCollection{},
 			},
 			expectedDiffFromResult: &UTXODiff{
-				toAdd:    utxoCollection{outPoint0: utxoEntry0},
+				toAdd:    utxoCollection{outpoint0: utxoEntry0},
 				toRemove: utxoCollection{},
 			},
 			expectedWithDiffResult: &UTXODiff{
-				toAdd:    utxoCollection{outPoint0: utxoEntry0},
+				toAdd:    utxoCollection{outpoint0: utxoEntry0},
 				toRemove: utxoCollection{},
 			},
 		},
@@ -262,15 +262,15 @@ func TestUTXODiffRules(t *testing.T) {
 			},
 			other: &UTXODiff{
 				toAdd:    utxoCollection{},
-				toRemove: utxoCollection{outPoint0: utxoEntry0},
+				toRemove: utxoCollection{outpoint0: utxoEntry0},
 			},
 			expectedDiffFromResult: &UTXODiff{
 				toAdd:    utxoCollection{},
-				toRemove: utxoCollection{outPoint0: utxoEntry0},
+				toRemove: utxoCollection{outpoint0: utxoEntry0},
 			},
 			expectedWithDiffResult: &UTXODiff{
 				toAdd:    utxoCollection{},
-				toRemove: utxoCollection{outPoint0: utxoEntry0},
+				toRemove: utxoCollection{outpoint0: utxoEntry0},
 			},
 		},
 		{
@@ -362,14 +362,14 @@ func addMultisetToDiff(t *testing.T, diff *UTXODiff) *UTXODiff {
 		return nil
 	}
 	diffWithMs := NewUTXODiff()
-	for outPoint, entry := range diff.toAdd {
-		err := diffWithMs.AddEntry(outPoint, entry)
+	for outpoint, entry := range diff.toAdd {
+		err := diffWithMs.AddEntry(outpoint, entry)
 		if err != nil {
 			t.Fatalf("Error with diffWithMs.AddEntry: %s", err)
 		}
 	}
-	for outPoint, entry := range diff.toRemove {
-		err := diffWithMs.RemoveEntry(outPoint, entry)
+	for outpoint, entry := range diff.toRemove {
+		err := diffWithMs.RemoveEntry(outpoint, entry)
 		if err != nil {
 			t.Fatalf("Error with diffWithMs.removeEntry: %s", err)
 		}
@@ -382,8 +382,8 @@ func addMultisetToFullUTXOSet(t *testing.T, fus *FullUTXOSet) *FullUTXOSet {
 		return nil
 	}
 	fusWithMs := NewFullUTXOSet()
-	for outPoint, entry := range fus.utxoCollection {
-		err := fusWithMs.addAndUpdateMultiset(outPoint, entry)
+	for outpoint, entry := range fus.utxoCollection {
+		err := fusWithMs.addAndUpdateMultiset(outpoint, entry)
 		if err != nil {
 			t.Fatalf("Error with diffWithMs.AddEntry: %s", err)
 		}
@@ -404,15 +404,15 @@ func addMultisetToDiffUTXOSet(t *testing.T, diffSet *DiffUTXOSet) *DiffUTXOSet {
 func TestFullUTXOSet(t *testing.T) {
 	txID0, _ := daghash.NewTxIDFromStr("0000000000000000000000000000000000000000000000000000000000000000")
 	txID1, _ := daghash.NewTxIDFromStr("1111111111111111111111111111111111111111111111111111111111111111")
-	outPoint0 := *wire.NewOutPoint(txID0, 0)
-	outPoint1 := *wire.NewOutPoint(txID1, 0)
+	outpoint0 := *wire.NewOutpoint(txID0, 0)
+	outpoint1 := *wire.NewOutpoint(txID1, 0)
 	txOut0 := &wire.TxOut{PkScript: []byte{}, Value: 10}
 	txOut1 := &wire.TxOut{PkScript: []byte{}, Value: 20}
 	utxoEntry0 := NewUTXOEntry(txOut0, true, 0)
 	utxoEntry1 := NewUTXOEntry(txOut1, false, 1)
 	diff := addMultisetToDiff(t, &UTXODiff{
-		toAdd:    utxoCollection{outPoint0: utxoEntry0},
-		toRemove: utxoCollection{outPoint1: utxoEntry1},
+		toAdd:    utxoCollection{outpoint0: utxoEntry0},
+		toRemove: utxoCollection{outpoint1: utxoEntry1},
 	})
 
 	// Test fullUTXOSet creation
@@ -435,14 +435,14 @@ func TestFullUTXOSet(t *testing.T) {
 	}
 
 	// Test fullUTXOSet addTx
-	txIn0 := &wire.TxIn{SignatureScript: []byte{}, PreviousOutPoint: wire.OutPoint{TxID: *txID0, Index: 0}, Sequence: 0}
+	txIn0 := &wire.TxIn{SignatureScript: []byte{}, PreviousOutpoint: wire.Outpoint{TxID: *txID0, Index: 0}, Sequence: 0}
 	transaction0 := wire.NewNativeMsgTx(1, []*wire.TxIn{txIn0}, []*wire.TxOut{txOut0})
 	if isAccepted, err := emptySet.AddTx(transaction0, 0); err != nil {
 		t.Errorf("AddTx unexpectedly failed: %s", err)
 	} else if isAccepted {
 		t.Errorf("addTx unexpectedly succeeded")
 	}
-	emptySet = addMultisetToFullUTXOSet(t, &FullUTXOSet{utxoCollection: utxoCollection{outPoint0: utxoEntry0}})
+	emptySet = addMultisetToFullUTXOSet(t, &FullUTXOSet{utxoCollection: utxoCollection{outpoint0: utxoEntry0}})
 	if isAccepted, err := emptySet.AddTx(transaction0, 0); err != nil {
 		t.Errorf("addTx unexpectedly failed. Error: %s", err)
 	} else if !isAccepted {
@@ -468,15 +468,15 @@ func TestFullUTXOSet(t *testing.T) {
 func TestDiffUTXOSet(t *testing.T) {
 	txID0, _ := daghash.NewTxIDFromStr("0000000000000000000000000000000000000000000000000000000000000000")
 	txID1, _ := daghash.NewTxIDFromStr("1111111111111111111111111111111111111111111111111111111111111111")
-	outPoint0 := *wire.NewOutPoint(txID0, 0)
-	outPoint1 := *wire.NewOutPoint(txID1, 0)
+	outpoint0 := *wire.NewOutpoint(txID0, 0)
+	outpoint1 := *wire.NewOutpoint(txID1, 0)
 	txOut0 := &wire.TxOut{PkScript: []byte{}, Value: 10}
 	txOut1 := &wire.TxOut{PkScript: []byte{}, Value: 20}
 	utxoEntry0 := NewUTXOEntry(txOut0, true, 0)
 	utxoEntry1 := NewUTXOEntry(txOut1, false, 1)
 	diff := addMultisetToDiff(t, &UTXODiff{
-		toAdd:    utxoCollection{outPoint0: utxoEntry0},
-		toRemove: utxoCollection{outPoint1: utxoEntry1},
+		toAdd:    utxoCollection{outpoint0: utxoEntry0},
+		toRemove: utxoCollection{outpoint1: utxoEntry1},
 	})
 
 	// Test diffUTXOSet creation
@@ -543,19 +543,19 @@ func TestDiffUTXOSet(t *testing.T) {
 			diffSet: &DiffUTXOSet{
 				base: NewFullUTXOSet(),
 				UTXODiff: &UTXODiff{
-					toAdd:    utxoCollection{outPoint0: utxoEntry0},
+					toAdd:    utxoCollection{outpoint0: utxoEntry0},
 					toRemove: utxoCollection{},
 				},
 			},
 			expectedMeldSet: &DiffUTXOSet{
-				base: &FullUTXOSet{utxoCollection: utxoCollection{outPoint0: utxoEntry0}},
+				base: &FullUTXOSet{utxoCollection: utxoCollection{outpoint0: utxoEntry0}},
 				UTXODiff: &UTXODiff{
 					toAdd:    utxoCollection{},
 					toRemove: utxoCollection{},
 				},
 			},
 			expectedString:     "{Base: [  ], To Add: [ (0000000000000000000000000000000000000000000000000000000000000000, 0) => 10 ], To Remove: [  ], Multiset-Hash:da4768bd0359c3426268d6707c1fc17a68c45ef1ea734331b07568418234487f}",
-			expectedCollection: utxoCollection{outPoint0: utxoEntry0},
+			expectedCollection: utxoCollection{outpoint0: utxoEntry0},
 		},
 		{
 			name: "empty base, one member in diff toRemove",
@@ -563,7 +563,7 @@ func TestDiffUTXOSet(t *testing.T) {
 				base: NewFullUTXOSet(),
 				UTXODiff: &UTXODiff{
 					toAdd:    utxoCollection{},
-					toRemove: utxoCollection{outPoint0: utxoEntry0},
+					toRemove: utxoCollection{outpoint0: utxoEntry0},
 				},
 			},
 			expectedMeldSet:         nil,
@@ -574,17 +574,17 @@ func TestDiffUTXOSet(t *testing.T) {
 		{
 			name: "one member in base toAdd, one member in diff toAdd",
 			diffSet: &DiffUTXOSet{
-				base: &FullUTXOSet{utxoCollection: utxoCollection{outPoint0: utxoEntry0}},
+				base: &FullUTXOSet{utxoCollection: utxoCollection{outpoint0: utxoEntry0}},
 				UTXODiff: &UTXODiff{
-					toAdd:    utxoCollection{outPoint1: utxoEntry1},
+					toAdd:    utxoCollection{outpoint1: utxoEntry1},
 					toRemove: utxoCollection{},
 				},
 			},
 			expectedMeldSet: &DiffUTXOSet{
 				base: &FullUTXOSet{
 					utxoCollection: utxoCollection{
-						outPoint0: utxoEntry0,
-						outPoint1: utxoEntry1,
+						outpoint0: utxoEntry0,
+						outpoint1: utxoEntry1,
 					},
 				},
 				UTXODiff: &UTXODiff{
@@ -594,17 +594,17 @@ func TestDiffUTXOSet(t *testing.T) {
 			},
 			expectedString: "{Base: [ (0000000000000000000000000000000000000000000000000000000000000000, 0) => 10 ], To Add: [ (1111111111111111111111111111111111111111111111111111111111111111, 0) => 20 ], To Remove: [  ], Multiset-Hash:556cc61fd4d7e74d7807ca2298c5320375a6a20310a18920e54667220924baff}",
 			expectedCollection: utxoCollection{
-				outPoint0: utxoEntry0,
-				outPoint1: utxoEntry1,
+				outpoint0: utxoEntry0,
+				outpoint1: utxoEntry1,
 			},
 		},
 		{
 			name: "one member in base toAdd, same one member in diff toRemove",
 			diffSet: &DiffUTXOSet{
-				base: &FullUTXOSet{utxoCollection: utxoCollection{outPoint0: utxoEntry0}},
+				base: &FullUTXOSet{utxoCollection: utxoCollection{outpoint0: utxoEntry0}},
 				UTXODiff: &UTXODiff{
 					toAdd:    utxoCollection{},
-					toRemove: utxoCollection{outPoint0: utxoEntry0},
+					toRemove: utxoCollection{outpoint0: utxoEntry0},
 				},
 			},
 			expectedMeldSet: &DiffUTXOSet{
@@ -725,30 +725,30 @@ func TestUTXOSetDiffRules(t *testing.T) {
 func TestDiffUTXOSet_addTx(t *testing.T) {
 	// transaction0 is coinbase. As such, it has exactly one input with hash zero and MaxUInt32 index
 	txID0, _ := daghash.NewTxIDFromStr("0000000000000000000000000000000000000000000000000000000000000000")
-	txIn0 := &wire.TxIn{SignatureScript: []byte{}, PreviousOutPoint: wire.OutPoint{TxID: *txID0, Index: math.MaxUint32}, Sequence: 0}
+	txIn0 := &wire.TxIn{SignatureScript: []byte{}, PreviousOutpoint: wire.Outpoint{TxID: *txID0, Index: math.MaxUint32}, Sequence: 0}
 	txOut0 := &wire.TxOut{PkScript: []byte{0}, Value: 10}
 	utxoEntry0 := NewUTXOEntry(txOut0, true, 0)
 	transaction0 := wire.NewNativeMsgTx(1, []*wire.TxIn{txIn0}, []*wire.TxOut{txOut0})
 
 	// transaction1 spends transaction0
 	id1 := transaction0.TxID()
-	outPoint1 := *wire.NewOutPoint(id1, 0)
-	txIn1 := &wire.TxIn{SignatureScript: []byte{}, PreviousOutPoint: outPoint1, Sequence: 0}
+	outpoint1 := *wire.NewOutpoint(id1, 0)
+	txIn1 := &wire.TxIn{SignatureScript: []byte{}, PreviousOutpoint: outpoint1, Sequence: 0}
 	txOut1 := &wire.TxOut{PkScript: []byte{1}, Value: 20}
 	utxoEntry1 := NewUTXOEntry(txOut1, false, 1)
 	transaction1 := wire.NewNativeMsgTx(1, []*wire.TxIn{txIn1}, []*wire.TxOut{txOut1})
 
 	// transaction2 spends transaction1
 	id2 := transaction1.TxID()
-	outPoint2 := *wire.NewOutPoint(id2, 0)
-	txIn2 := &wire.TxIn{SignatureScript: []byte{}, PreviousOutPoint: outPoint2, Sequence: 0}
+	outpoint2 := *wire.NewOutpoint(id2, 0)
+	txIn2 := &wire.TxIn{SignatureScript: []byte{}, PreviousOutpoint: outpoint2, Sequence: 0}
 	txOut2 := &wire.TxOut{PkScript: []byte{2}, Value: 30}
 	utxoEntry2 := NewUTXOEntry(txOut2, false, 2)
 	transaction2 := wire.NewNativeMsgTx(1, []*wire.TxIn{txIn2}, []*wire.TxOut{txOut2})
 
 	// outpoint3 is the outpoint for transaction2
 	id3 := transaction2.TxID()
-	outPoint3 := *wire.NewOutPoint(id3, 0)
+	outpoint3 := *wire.NewOutpoint(id3, 0)
 
 	// For each of the following test cases, we will:
 	// 1. startSet.addTx() all the transactions in toAdd, in order, with the initial block height startHeight
@@ -768,7 +768,7 @@ func TestDiffUTXOSet_addTx(t *testing.T) {
 			expectedSet: &DiffUTXOSet{
 				base: &FullUTXOSet{utxoCollection: utxoCollection{}},
 				UTXODiff: &UTXODiff{
-					toAdd:    utxoCollection{outPoint1: utxoEntry0},
+					toAdd:    utxoCollection{outpoint1: utxoEntry0},
 					toRemove: utxoCollection{},
 				},
 			},
@@ -789,7 +789,7 @@ func TestDiffUTXOSet_addTx(t *testing.T) {
 		{
 			name: "add transaction to set with its input in base",
 			startSet: &DiffUTXOSet{
-				base: &FullUTXOSet{utxoCollection: utxoCollection{outPoint1: utxoEntry0}},
+				base: &FullUTXOSet{utxoCollection: utxoCollection{outpoint1: utxoEntry0}},
 				UTXODiff: &UTXODiff{
 					toAdd:    utxoCollection{},
 					toRemove: utxoCollection{},
@@ -798,10 +798,10 @@ func TestDiffUTXOSet_addTx(t *testing.T) {
 			startHeight: 1,
 			toAdd:       []*wire.MsgTx{transaction1},
 			expectedSet: &DiffUTXOSet{
-				base: &FullUTXOSet{utxoCollection: utxoCollection{outPoint1: utxoEntry0}},
+				base: &FullUTXOSet{utxoCollection: utxoCollection{outpoint1: utxoEntry0}},
 				UTXODiff: &UTXODiff{
-					toAdd:    utxoCollection{outPoint2: utxoEntry1},
-					toRemove: utxoCollection{outPoint1: utxoEntry0},
+					toAdd:    utxoCollection{outpoint2: utxoEntry1},
+					toRemove: utxoCollection{outpoint1: utxoEntry0},
 				},
 			},
 		},
@@ -810,7 +810,7 @@ func TestDiffUTXOSet_addTx(t *testing.T) {
 			startSet: &DiffUTXOSet{
 				base: NewFullUTXOSet(),
 				UTXODiff: &UTXODiff{
-					toAdd:    utxoCollection{outPoint1: utxoEntry0},
+					toAdd:    utxoCollection{outpoint1: utxoEntry0},
 					toRemove: utxoCollection{},
 				},
 			},
@@ -819,7 +819,7 @@ func TestDiffUTXOSet_addTx(t *testing.T) {
 			expectedSet: &DiffUTXOSet{
 				base: NewFullUTXOSet(),
 				UTXODiff: &UTXODiff{
-					toAdd:    utxoCollection{outPoint2: utxoEntry1},
+					toAdd:    utxoCollection{outpoint2: utxoEntry1},
 					toRemove: utxoCollection{},
 				},
 			},
@@ -829,8 +829,8 @@ func TestDiffUTXOSet_addTx(t *testing.T) {
 			startSet: &DiffUTXOSet{
 				base: NewFullUTXOSet(),
 				UTXODiff: &UTXODiff{
-					toAdd:    utxoCollection{outPoint1: utxoEntry0},
-					toRemove: utxoCollection{outPoint2: utxoEntry1},
+					toAdd:    utxoCollection{outpoint1: utxoEntry0},
+					toRemove: utxoCollection{outpoint2: utxoEntry1},
 				},
 			},
 			startHeight: 1,
@@ -846,7 +846,7 @@ func TestDiffUTXOSet_addTx(t *testing.T) {
 		{
 			name: "add two transactions, one spending the other, to set with the first input in base",
 			startSet: &DiffUTXOSet{
-				base: &FullUTXOSet{utxoCollection: utxoCollection{outPoint1: utxoEntry0}},
+				base: &FullUTXOSet{utxoCollection: utxoCollection{outpoint1: utxoEntry0}},
 				UTXODiff: &UTXODiff{
 					toAdd:    utxoCollection{},
 					toRemove: utxoCollection{},
@@ -855,10 +855,10 @@ func TestDiffUTXOSet_addTx(t *testing.T) {
 			startHeight: 1,
 			toAdd:       []*wire.MsgTx{transaction1, transaction2},
 			expectedSet: &DiffUTXOSet{
-				base: &FullUTXOSet{utxoCollection: utxoCollection{outPoint1: utxoEntry0}},
+				base: &FullUTXOSet{utxoCollection: utxoCollection{outpoint1: utxoEntry0}},
 				UTXODiff: &UTXODiff{
-					toAdd:    utxoCollection{outPoint3: utxoEntry2},
-					toRemove: utxoCollection{outPoint1: utxoEntry0},
+					toAdd:    utxoCollection{outpoint3: utxoEntry2},
+					toRemove: utxoCollection{outpoint1: utxoEntry0},
 				},
 			},
 		},
@@ -902,9 +902,9 @@ func TestDiffFromTx(t *testing.T) {
 		t.Fatalf("AddTx unexpectedly didn't add tx %s", cbTx.TxID())
 	}
 	node := &blockNode{height: 2} //Fake node
-	cbOutpoint := wire.OutPoint{TxID: *cbTx.TxID(), Index: 0}
+	cbOutpoint := wire.Outpoint{TxID: *cbTx.TxID(), Index: 0}
 	txIns := []*wire.TxIn{&wire.TxIn{
-		PreviousOutPoint: cbOutpoint,
+		PreviousOutpoint: cbOutpoint,
 		SignatureScript:  nil,
 		Sequence:         wire.MaxTxInSequenceNum,
 	}}
@@ -918,20 +918,20 @@ func TestDiffFromTx(t *testing.T) {
 		t.Errorf("diffFromTx: %v", err)
 	}
 	if !reflect.DeepEqual(diff.toAdd, utxoCollection{
-		wire.OutPoint{TxID: *tx.TxID(), Index: 0}: NewUTXOEntry(tx.TxOut[0], false, 2),
+		wire.Outpoint{TxID: *tx.TxID(), Index: 0}: NewUTXOEntry(tx.TxOut[0], false, 2),
 	}) {
 		t.Errorf("diff.toAdd doesn't have the expected values")
 	}
 
 	if !reflect.DeepEqual(diff.toRemove, utxoCollection{
-		wire.OutPoint{TxID: *cbTx.TxID(), Index: 0}: NewUTXOEntry(cbTx.TxOut[0], true, 1),
+		wire.Outpoint{TxID: *cbTx.TxID(), Index: 0}: NewUTXOEntry(cbTx.TxOut[0], true, 1),
 	}) {
 		t.Errorf("diff.toRemove doesn't have the expected values")
 	}
 
 	//Test that we get an error if we don't have the outpoint inside the utxo set
 	invalidTxIns := []*wire.TxIn{&wire.TxIn{
-		PreviousOutPoint: wire.OutPoint{TxID: daghash.TxID{}, Index: 0},
+		PreviousOutpoint: wire.Outpoint{TxID: daghash.TxID{}, Index: 0},
 		SignatureScript:  nil,
 		Sequence:         wire.MaxTxInSequenceNum,
 	}}
@@ -981,8 +981,8 @@ func (dus *DiffUTXOSet) collection() (utxoCollection, error) {
 func TestUTXOSetAddEntry(t *testing.T) {
 	txID0, _ := daghash.NewTxIDFromStr("0000000000000000000000000000000000000000000000000000000000000000")
 	txID1, _ := daghash.NewTxIDFromStr("1111111111111111111111111111111111111111111111111111111111111111")
-	outPoint0 := wire.NewOutPoint(txID0, 0)
-	outPoint1 := wire.NewOutPoint(txID1, 0)
+	outpoint0 := wire.NewOutpoint(txID0, 0)
+	outpoint1 := wire.NewOutpoint(txID1, 0)
 	utxoEntry0 := NewUTXOEntry(&wire.TxOut{PkScript: []byte{}, Value: 10}, true, 0)
 	utxoEntry1 := NewUTXOEntry(&wire.TxOut{PkScript: []byte{}, Value: 20}, false, 1)
 
@@ -990,35 +990,35 @@ func TestUTXOSetAddEntry(t *testing.T) {
 
 	tests := []struct {
 		name             string
-		outPointToAdd    *wire.OutPoint
+		outpointToAdd    *wire.Outpoint
 		utxoEntryToAdd   *UTXOEntry
 		expectedUTXODiff *UTXODiff
 		expectedError    string
 	}{
 		{
 			name:           "add an entry",
-			outPointToAdd:  outPoint0,
+			outpointToAdd:  outpoint0,
 			utxoEntryToAdd: utxoEntry0,
 			expectedUTXODiff: &UTXODiff{
-				toAdd:    utxoCollection{*outPoint0: utxoEntry0},
+				toAdd:    utxoCollection{*outpoint0: utxoEntry0},
 				toRemove: utxoCollection{},
 			},
 		},
 		{
 			name:           "add another entry",
-			outPointToAdd:  outPoint1,
+			outpointToAdd:  outpoint1,
 			utxoEntryToAdd: utxoEntry1,
 			expectedUTXODiff: &UTXODiff{
-				toAdd:    utxoCollection{*outPoint0: utxoEntry0, *outPoint1: utxoEntry1},
+				toAdd:    utxoCollection{*outpoint0: utxoEntry0, *outpoint1: utxoEntry1},
 				toRemove: utxoCollection{},
 			},
 		},
 		{
 			name:           "add first entry again",
-			outPointToAdd:  outPoint0,
+			outpointToAdd:  outpoint0,
 			utxoEntryToAdd: utxoEntry0,
 			expectedUTXODiff: &UTXODiff{
-				toAdd:    utxoCollection{*outPoint0: utxoEntry0, *outPoint1: utxoEntry1},
+				toAdd:    utxoCollection{*outpoint0: utxoEntry0, *outpoint1: utxoEntry1},
 				toRemove: utxoCollection{},
 			},
 			expectedError: "AddEntry: Cannot add outpoint 0000000000000000000000000000000000000000000000000000000000000000:0 twice",
@@ -1027,7 +1027,7 @@ func TestUTXOSetAddEntry(t *testing.T) {
 
 	for _, test := range tests {
 		expectedUTXODiff := addMultisetToDiff(t, test.expectedUTXODiff)
-		err := utxoDiff.AddEntry(*test.outPointToAdd, test.utxoEntryToAdd)
+		err := utxoDiff.AddEntry(*test.outpointToAdd, test.utxoEntryToAdd)
 		errString := ""
 		if err != nil {
 			errString = err.Error()

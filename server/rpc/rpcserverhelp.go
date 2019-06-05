@@ -624,15 +624,15 @@ var helpDescsEnUS = map[string]string{
 	// StopNotifyNewTransactionsCmd help.
 	"stopNotifyNewTransactions--synopsis": "Stop sending either a txaccepted or a txacceptedverbose notification when a new transaction is accepted into the mempool.",
 
-	// OutPoint help.
-	"outPoint-txid":  "The hex-encoded bytes of the outPoint transaction ID",
-	"outPoint-index": "The index of the outPoint",
+	// Outpoint help.
+	"outpoint-txid":  "The hex-encoded bytes of the outpoint transaction ID",
+	"outpoint-index": "The index of the outpoint",
 
 	// LoadTxFilterCmd help.
 	"loadTxFilter--synopsis": "Load, add to, or reload a websocket client's transaction filter for mempool transactions, new blocks and rescanBlocks.",
 	"loadTxFilter-reload":    "Load a new filter instead of adding data to an existing one",
 	"loadTxFilter-addresses": "Array of addresses to add to the transaction filter",
-	"loadTxFilter-outPoints": "Array of outpoints to add to the transaction filter",
+	"loadTxFilter-outpoints": "Array of outpoints to add to the transaction filter",
 
 	// RescanBlocks help.
 	"rescanBlocks--synopsis":   "Rescan blocks for transactions matching the loaded transaction filter.",

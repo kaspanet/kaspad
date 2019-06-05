@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
+
 	"github.com/daglabs/btcd/btcjson"
 	"github.com/daglabs/btcd/rpcclient"
 	"github.com/daglabs/btcd/util"
@@ -15,20 +16,20 @@ const (
 	minConfirmations = 10
 )
 
-func findUnspentTXO(cfg *config, client *rpcclient.Client, addrPubKeyHash *util.AddressPubKeyHash) (*wire.OutPoint, *wire.MsgTx, error) {
+func findUnspentTXO(cfg *config, client *rpcclient.Client, addrPubKeyHash *util.AddressPubKeyHash) (*wire.Outpoint, *wire.MsgTx, error) {
 	txs, err := collectTransactions(client, addrPubKeyHash)
 	if err != nil {
 		return nil, nil, err
 	}
 
 	utxos := buildUTXOs(txs)
-	for outPoint, tx := range utxos {
+	for outpoint, tx := range utxos {
 		// Skip TXOs that can't pay for registration
-		if tx.TxOut[outPoint.Index].Value < cfg.RegistryTxFee {
+		if tx.TxOut[outpoint.Index].Value < cfg.RegistryTxFee {
 			continue
 		}
 
-		return &outPoint, tx, nil
+		return &outpoint, tx, nil
 	}
 
 	return nil, nil, nil
@@ -95,17 +96,17 @@ func isTxMatured(tx *wire.MsgTx, confirmations uint64) bool {
 	return confirmations >= activeNetParams.BlockRewardMaturity
 }
 
-func buildUTXOs(txs []*wire.MsgTx) map[wire.OutPoint]*wire.MsgTx {
-	utxos := make(map[wire.OutPoint]*wire.MsgTx)
+func buildUTXOs(txs []*wire.MsgTx) map[wire.Outpoint]*wire.MsgTx {
+	utxos := make(map[wire.Outpoint]*wire.MsgTx)
 	for _, tx := range txs {
 		for i := range tx.TxOut {
-			outPoint := wire.NewOutPoint(tx.TxID(), uint32(i))
-			utxos[*outPoint] = tx
+			outpoint := wire.NewOutpoint(tx.TxID(), uint32(i))
+			utxos[*outpoint] = tx
 		}
 	}
 	for _, tx := range txs {
 		for _, input := range tx.TxIn {
-			delete(utxos, input.PreviousOutPoint)
+			delete(utxos, input.PreviousOutpoint)
 		}
 	}
 	return utxos

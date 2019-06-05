@@ -58,7 +58,7 @@ const (
 	defaultTxInOutAlloc = 15
 
 	// minTxInPayload is the minimum payload size for a transaction input.
-	// PreviousOutPoint.TxID + PreviousOutPoint.Index 4 bytes + Varint for
+	// PreviousOutpoint.TxID + PreviousOutpoint.Index 4 bytes + Varint for
 	// SignatureScript length 1 byte + Sequence 4 bytes.
 	minTxInPayload = 9 + daghash.HashSize
 
@@ -168,24 +168,24 @@ func (c scriptFreeList) Return(buf []byte) {
 // the number of allocations.
 var scriptPool scriptFreeList = make(chan []byte, freeListMaxItems)
 
-// OutPoint defines a bitcoin data type that is used to track previous
+// Outpoint defines a bitcoin data type that is used to track previous
 // transaction outputs.
-type OutPoint struct {
+type Outpoint struct {
 	TxID  daghash.TxID
 	Index uint32
 }
 
-// NewOutPoint returns a new bitcoin transaction outpoint point with the
+// NewOutpoint returns a new bitcoin transaction outpoint point with the
 // provided hash and index.
-func NewOutPoint(txID *daghash.TxID, index uint32) *OutPoint {
-	return &OutPoint{
+func NewOutpoint(txID *daghash.TxID, index uint32) *Outpoint {
+	return &Outpoint{
 		TxID:  *txID,
 		Index: index,
 	}
 }
 
-// String returns the OutPoint in the human-readable form "txID:index".
-func (o OutPoint) String() string {
+// String returns the Outpoint in the human-readable form "txID:index".
+func (o Outpoint) String() string {
 	// Allocate enough for ID string, colon, and 10 digits.  Although
 	// at the time of writing, the number of digits can be no greater than
 	// the length of the decimal representation of maxTxOutPerMessage, the
@@ -201,7 +201,7 @@ func (o OutPoint) String() string {
 
 // TxIn defines a bitcoin transaction input.
 type TxIn struct {
-	PreviousOutPoint OutPoint
+	PreviousOutpoint Outpoint
 	SignatureScript  []byte
 	Sequence         uint64
 }
@@ -230,9 +230,9 @@ func serializeSignatureScriptSize(signatureScript []byte, encodingFlags txEncodi
 // NewTxIn returns a new bitcoin transaction input with the provided
 // previous outpoint point and signature script with a default sequence of
 // MaxTxInSequenceNum.
-func NewTxIn(prevOut *OutPoint, signatureScript []byte) *TxIn {
+func NewTxIn(prevOut *Outpoint, signatureScript []byte) *TxIn {
 	return &TxIn{
-		PreviousOutPoint: *prevOut,
+		PreviousOutpoint: *prevOut,
 		SignatureScript:  signatureScript,
 		Sequence:         MaxTxInSequenceNum,
 	}
@@ -301,7 +301,7 @@ func (msg *MsgTx) IsCoinBase() bool {
 
 	// The previous output of a coinbase must have a max value index and
 	// a zero TxID.
-	prevOut := &msg.TxIn[0].PreviousOutPoint
+	prevOut := &msg.TxIn[0].PreviousOutpoint
 	return prevOut.Index == math.MaxUint32 && prevOut.TxID == daghash.ZeroTxID
 }
 
@@ -313,7 +313,7 @@ func (msg *MsgTx) IsFeeTransaction() bool {
 	for _, txIn := range msg.TxIn {
 		// The previous output of a fee transaction have a max value index and
 		// a non-zero TxID (to differentiate from coinbase).
-		prevOut := txIn.PreviousOutPoint
+		prevOut := txIn.PreviousOutpoint
 		if prevOut.Index != math.MaxUint32 || prevOut.TxID == daghash.ZeroTxID {
 			return false
 		}
@@ -378,10 +378,10 @@ func (msg *MsgTx) Copy() *MsgTx {
 	// Deep copy the old TxIn data.
 	for _, oldTxIn := range msg.TxIn {
 		// Deep copy the old previous outpoint.
-		oldOutPoint := oldTxIn.PreviousOutPoint
-		newOutPoint := OutPoint{}
-		newOutPoint.TxID.SetBytes(oldOutPoint.TxID[:])
-		newOutPoint.Index = oldOutPoint.Index
+		oldOutpoint := oldTxIn.PreviousOutpoint
+		newOutpoint := Outpoint{}
+		newOutpoint.TxID.SetBytes(oldOutpoint.TxID[:])
+		newOutpoint.Index = oldOutpoint.Index
 
 		// Deep copy the old signature script.
 		var newScript []byte
@@ -394,7 +394,7 @@ func (msg *MsgTx) Copy() *MsgTx {
 
 		// Create new txIn with the deep copied data.
 		newTxIn := TxIn{
-			PreviousOutPoint: newOutPoint,
+			PreviousOutpoint: newOutpoint,
 			SignatureScript:  newScript,
 			Sequence:         oldTxIn.Sequence,
 		}
@@ -908,8 +908,8 @@ func NewRegistryMsgTx(version int32, txIn []*TxIn, txOut []*TxOut, gasLimit uint
 	return NewSubnetworkMsgTx(version, txIn, txOut, subnetworkid.SubnetworkIDRegistry, 0, payload)
 }
 
-// readOutPoint reads the next sequence of bytes from r as an OutPoint.
-func readOutPoint(r io.Reader, pver uint32, version int32, op *OutPoint) error {
+// readOutpoint reads the next sequence of bytes from r as an Outpoint.
+func readOutpoint(r io.Reader, pver uint32, version int32, op *Outpoint) error {
 	_, err := io.ReadFull(r, op.TxID[:])
 	if err != nil {
 		return err
@@ -919,9 +919,9 @@ func readOutPoint(r io.Reader, pver uint32, version int32, op *OutPoint) error {
 	return err
 }
 
-// writeOutPoint encodes op to the bitcoin protocol encoding for an OutPoint
+// writeOutpoint encodes op to the bitcoin protocol encoding for an Outpoint
 // to w.
-func writeOutPoint(w io.Writer, pver uint32, version int32, op *OutPoint) error {
+func writeOutpoint(w io.Writer, pver uint32, version int32, op *Outpoint) error {
 	_, err := w.Write(op.TxID[:])
 	if err != nil {
 		return err
@@ -964,7 +964,7 @@ func readScript(r io.Reader, pver uint32, maxAllowed uint32, fieldName string) (
 // readTxIn reads the next sequence of bytes from r as a transaction input
 // (TxIn).
 func readTxIn(r io.Reader, pver uint32, version int32, ti *TxIn) error {
-	err := readOutPoint(r, pver, version, &ti.PreviousOutPoint)
+	err := readOutpoint(r, pver, version, &ti.PreviousOutpoint)
 	if err != nil {
 		return err
 	}
@@ -981,7 +981,7 @@ func readTxIn(r io.Reader, pver uint32, version int32, ti *TxIn) error {
 // writeTxIn encodes ti to the bitcoin protocol encoding for a transaction
 // input (TxIn) to w.
 func writeTxIn(w io.Writer, pver uint32, version int32, ti *TxIn, encodingFlags txEncoding) error {
-	err := writeOutPoint(w, pver, version, &ti.PreviousOutPoint)
+	err := writeOutpoint(w, pver, version, &ti.PreviousOutpoint)
 	if err != nil {
 		return err
 	}

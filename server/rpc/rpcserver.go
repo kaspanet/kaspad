@@ -555,7 +555,7 @@ func handleCreateRawTransaction(s *Server, cmd interface{}, closeChan <-chan str
 			return nil, rpcDecodeHexError(input.TxID)
 		}
 
-		prevOut := wire.NewOutPoint(txID, input.Vout)
+		prevOut := wire.NewOutpoint(txID, input.Vout)
 		txIn := wire.NewTxIn(prevOut, []byte{})
 		if c.LockTime != nil && *c.LockTime != 0 {
 			txIn.Sequence = wire.MaxTxInSequenceNum - 1
@@ -679,8 +679,8 @@ func createVinList(mtx *wire.MsgTx) []btcjson.Vin {
 		disbuf, _ := txscript.DisasmString(txIn.SignatureScript)
 
 		vinEntry := &vinList[i]
-		vinEntry.TxID = txIn.PreviousOutPoint.TxID.String()
-		vinEntry.Vout = txIn.PreviousOutPoint.Index
+		vinEntry.TxID = txIn.PreviousOutpoint.TxID.String()
+		vinEntry.Vout = txIn.PreviousOutpoint.Index
 		vinEntry.Sequence = txIn.Sequence
 		vinEntry.ScriptSig = &btcjson.ScriptSig{
 			Asm: disbuf,
@@ -1766,7 +1766,7 @@ func (state *gbtWorkState) blockTemplateResult(useCoinbaseValue bool, submitOld 
 		// when multiple inputs reference the same transaction.
 		dependsMap := make(map[int64]struct{})
 		for _, txIn := range tx.TxIn {
-			if idx, ok := txIndex[txIn.PreviousOutPoint.TxID]; ok {
+			if idx, ok := txIndex[txIn.PreviousOutpoint.TxID]; ok {
 				dependsMap[idx] = struct{}{}
 			}
 		}
@@ -2746,7 +2746,7 @@ func handleGetTxOut(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 		isCoinbase = mtx.IsCoinBase()
 		isInMempool = true
 	} else {
-		out := wire.OutPoint{TxID: *txID, Index: c.Vout}
+		out := wire.Outpoint{TxID: *txID, Index: c.Vout}
 		entry, ok := s.cfg.DAG.GetUTXOEntry(out)
 		if !ok {
 			return nil, rpcNoTxInfoError(txID)
@@ -2876,13 +2876,13 @@ type retrievedTx struct {
 // fetchInputTxos fetches the outpoints from all transactions referenced by the
 // inputs to the passed transaction by checking the transaction mempool first
 // then the transaction index for those already mined into blocks.
-func fetchInputTxos(s *Server, tx *wire.MsgTx) (map[wire.OutPoint]wire.TxOut, error) {
+func fetchInputTxos(s *Server, tx *wire.MsgTx) (map[wire.Outpoint]wire.TxOut, error) {
 	mp := s.cfg.TxMemPool
-	originOutputs := make(map[wire.OutPoint]wire.TxOut)
+	originOutputs := make(map[wire.Outpoint]wire.TxOut)
 	for txInIndex, txIn := range tx.TxIn {
 		// Attempt to fetch and use the referenced transaction from the
 		// memory pool.
-		origin := &txIn.PreviousOutPoint
+		origin := &txIn.PreviousOutpoint
 		originTx, err := mp.FetchTransaction(&origin.TxID)
 		if err == nil {
 			txOuts := originTx.MsgTx().TxOut
@@ -2989,7 +2989,7 @@ func createVinListPrevOut(s *Server, mtx *wire.MsgTx, chainParams *dagconfig.Par
 	// Lookup all of the referenced transaction outputs needed to populate the
 	// previous output information if requested. Fee transactions do not contain
 	// valid inputs: block hash instead of transaction ID.
-	var originOutputs map[wire.OutPoint]wire.TxOut
+	var originOutputs map[wire.Outpoint]wire.TxOut
 	if !mtx.IsFeeTransaction() && (vinExtra || len(filterAddrMap) > 0) {
 		var err error
 		originOutputs, err = fetchInputTxos(s, mtx)
@@ -3007,7 +3007,7 @@ func createVinListPrevOut(s *Server, mtx *wire.MsgTx, chainParams *dagconfig.Par
 		// Create the basic input entry without the additional optional
 		// previous output details which will be added later if
 		// requested and available.
-		prevOut := &txIn.PreviousOutPoint
+		prevOut := &txIn.PreviousOutpoint
 		vinEntry := btcjson.VinPrevOut{
 			TxID:     prevOut.TxID.String(),
 			Vout:     prevOut.Index,

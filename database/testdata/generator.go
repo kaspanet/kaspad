@@ -107,7 +107,7 @@ func printUsage() {
 
 var genesisCoinbaseTxIns = []*wire.TxIn{
 	{
-		PreviousOutPoint: wire.OutPoint{
+		PreviousOutpoint: wire.Outpoint{
 			TxID:  daghash.TxID{},
 			Index: 0xffffffff,
 		},
