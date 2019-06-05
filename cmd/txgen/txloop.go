@@ -44,7 +44,7 @@ type walletTransaction struct {
 	confirmed                  bool
 }
 
-type utxoSet map[wire.OutPoint]*wire.TxOut
+type utxoSet map[wire.Outpoint]*wire.TxOut
 
 func isDust(value uint64) bool {
 	return value < minSpendableAmount+minTxFee
@@ -287,8 +287,8 @@ func createTx(walletUTXOSet utxoSet, minAmount uint64, feeRate uint64, targetNum
 // signTx signs a transaction
 func signTx(walletUTXOSet utxoSet, tx *wire.MsgTx) error {
 	for i, txIn := range tx.TxIn {
-		outPoint := txIn.PreviousOutPoint
-		prevOut := walletUTXOSet[outPoint]
+		outpoint := txIn.PreviousOutpoint
+		prevOut := walletUTXOSet[outpoint]
 
 		sigScript, err := txscript.SignatureScript(tx, i, prevOut.PkScript,
 			txscript.SigHashAll, privateKey, true)
@@ -306,11 +306,11 @@ func fundTx(walletUTXOSet utxoSet, tx *wire.MsgTx, amount uint64, feeRate uint64
 
 	amountSelected := uint64(0)
 
-	for outPoint, output := range walletUTXOSet {
+	for outpoint, output := range walletUTXOSet {
 		amountSelected += output.Value
 
 		// Add the selected output to the transaction
-		tx.AddTxIn(wire.NewTxIn(&outPoint, nil))
+		tx.AddTxIn(wire.NewTxIn(&outpoint, nil))
 
 		// Check if transaction has enought funds. If we don't have enough
 		// coins from he current amount selected to pay the fee, or we have
@@ -366,14 +366,14 @@ func checkConfirmations(client *txgenClient, walletTxs map[daghash.TxID]*walletT
 
 func removeTxInsFromUTXOSet(walletUTXOSet utxoSet, tx *wire.MsgTx) {
 	for _, txIn := range tx.TxIn {
-		delete(walletUTXOSet, txIn.PreviousOutPoint)
+		delete(walletUTXOSet, txIn.PreviousOutpoint)
 	}
 }
 
 func addTxOutsToUTXOSet(walletUTXOSet utxoSet, tx *wire.MsgTx) {
 	for i, txOut := range tx.TxOut {
-		outPoint := wire.OutPoint{TxID: *tx.TxID(), Index: uint32(i)}
-		walletUTXOSet[outPoint] = txOut
+		outpoint := wire.Outpoint{TxID: *tx.TxID(), Index: uint32(i)}
+		walletUTXOSet[outpoint] = txOut
 	}
 }
 

@@ -250,7 +250,7 @@ func CreateCoinbaseTx(params *dagconfig.Params, coinbaseScript []byte, nextBlock
 	txIn := &wire.TxIn{
 		// Coinbase transactions have no inputs, so previous outpoint is
 		// zero hash and max index.
-		PreviousOutPoint: *wire.NewOutPoint(&daghash.TxID{},
+		PreviousOutpoint: *wire.NewOutpoint(&daghash.TxID{},
 			wire.MaxPrevOutIndex),
 		SignatureScript: coinbaseScript,
 		Sequence:        wire.MaxTxInSequenceNum,
@@ -414,6 +414,13 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 	}
 	numCoinbaseSigOps := int64(blockdag.CountSigOps(coinbaseTx))
 
+	msgFeeTransaction, err := g.dag.NextBlockFeeTransactionNoLock()
+	if err != nil {
+		return nil, err
+	}
+	feeTransaction := util.NewTx(msgFeeTransaction)
+	feeTxSigOps := int64(blockdag.CountSigOps(feeTransaction))
+
 	// Get the current source transactions and create a priority queue to
 	// hold the transactions which are ready for inclusion into a block
 	// along with some priority related and fee metadata.  Reserve the same
@@ -428,14 +435,14 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 	// generated block with reserved space.  Also create a utxo view to
 	// house all of the input transactions so multiple lookups can be
 	// avoided.
-	blockTxns := make([]*util.Tx, 0, len(sourceTxns)+1)
-	blockTxns = append(blockTxns, coinbaseTx)
+	blockTxns := make([]*util.Tx, 0, len(sourceTxns)+2)
+	blockTxns = append(blockTxns, coinbaseTx, feeTransaction)
 
 	// The starting block size is the size of the block header plus the max
 	// possible transaction count size, plus the size of the coinbase
 	// transaction.
 	blockSize := blockHeaderOverhead + uint32(coinbaseTx.MsgTx().SerializeSize())
-	blockSigOps := numCoinbaseSigOps
+	blockSigOps := numCoinbaseSigOps + feeTxSigOps
 	totalFees := uint64(0)
 
 	// Create slices to hold the fees and number of signature operations
@@ -444,10 +451,10 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 	// a transaction as it is selected for inclusion in the final block.
 	// However, since the total fees aren't known yet, use a dummy value for
 	// the coinbase fee which will be updated later.
-	txFees := make([]uint64, 0, len(sourceTxns)+1)
-	txSigOpCounts := make([]int64, 0, len(sourceTxns)+1)
+	txFees := make([]uint64, 0, len(sourceTxns)+2)
+	txSigOpCounts := make([]int64, 0, len(sourceTxns)+2)
 	txFees = append(txFees, 0, 0) // For coinbase and fee txs
-	txSigOpCounts = append(txSigOpCounts, numCoinbaseSigOps)
+	txSigOpCounts = append(txSigOpCounts, numCoinbaseSigOps, feeTxSigOps)
 
 	log.Debugf("Considering %d transactions for inclusion to new block",
 		len(sourceTxns))

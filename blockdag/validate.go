@@ -49,9 +49,9 @@ const (
 	MaxOutputsPerBlock = wire.MaxBlockPayload / wire.MinTxOutPayload
 )
 
-// isNullOutpoint determines whether or not a previous transaction output point
+// isNullOutpoint determines whether or not a previous transaction outpoint
 // is set.
-func isNullOutpoint(outpoint *wire.OutPoint) bool {
+func isNullOutpoint(outpoint *wire.Outpoint) bool {
 	if outpoint.Index == math.MaxUint32 && outpoint.TxID == daghash.ZeroTxID {
 		return true
 	}
@@ -153,7 +153,7 @@ func CalcBlockSubsidy(height uint64, dagParams *dagconfig.Params) uint64 {
 
 // CheckTransactionSanity performs some preliminary checks on a transaction to
 // ensure it is sane.  These checks are context free.
-func CheckTransactionSanity(tx *util.Tx, subnetworkID *subnetworkid.SubnetworkID) error {
+func CheckTransactionSanity(tx *util.Tx, subnetworkID *subnetworkid.SubnetworkID, isFeeTransaction bool) error {
 	// A transaction must have at least one input.
 	msgTx := tx.MsgTx()
 	if len(msgTx.TxIn) == 0 {
@@ -206,13 +206,13 @@ func CheckTransactionSanity(tx *util.Tx, subnetworkID *subnetworkid.SubnetworkID
 	}
 
 	// Check for duplicate transaction inputs.
-	existingTxOut := make(map[wire.OutPoint]struct{})
+	existingTxOut := make(map[wire.Outpoint]struct{})
 	for _, txIn := range msgTx.TxIn {
-		if _, exists := existingTxOut[txIn.PreviousOutPoint]; exists {
+		if _, exists := existingTxOut[txIn.PreviousOutpoint]; exists {
 			return ruleError(ErrDuplicateTxInputs, "transaction "+
 				"contains duplicate inputs")
 		}
-		existingTxOut[txIn.PreviousOutPoint] = struct{}{}
+		existingTxOut[txIn.PreviousOutpoint] = struct{}{}
 	}
 
 	// Coinbase script length must be between min and max length.
@@ -228,7 +228,7 @@ func CheckTransactionSanity(tx *util.Tx, subnetworkID *subnetworkid.SubnetworkID
 		// Previous transaction outputs referenced by the inputs to this
 		// transaction must not be null.
 		for _, txIn := range msgTx.TxIn {
-			if isNullOutpoint(&txIn.PreviousOutPoint) {
+			if isNullOutpoint(&txIn.PreviousOutpoint) {
 				return ruleError(ErrBadTxInput, "transaction "+
 					"input refers to previous output that "+
 					"is null")
@@ -364,11 +364,11 @@ func CountP2SHSigOps(tx *util.Tx, isBlockReward bool, utxoSet UTXOSet) (int, err
 	totalSigOps := 0
 	for txInIndex, txIn := range msgTx.TxIn {
 		// Ensure the referenced input transaction is available.
-		entry, ok := utxoSet.Get(txIn.PreviousOutPoint)
+		entry, ok := utxoSet.Get(txIn.PreviousOutpoint)
 		if !ok {
 			str := fmt.Sprintf("output %s referenced from "+
 				"transaction %s:%d either does not exist or "+
-				"has already been spent", txIn.PreviousOutPoint,
+				"has already been spent", txIn.PreviousOutpoint,
 				tx.ID(), txInIndex)
 			return 0, ruleError(ErrMissingTxOut, str)
 		}
@@ -393,7 +393,7 @@ func CountP2SHSigOps(tx *util.Tx, isBlockReward bool, utxoSet UTXOSet) (int, err
 		if totalSigOps < lastSigOps {
 			str := fmt.Sprintf("the public key script from output "+
 				"%s contains too many signature operations - "+
-				"overflow", txIn.PreviousOutPoint)
+				"overflow", txIn.PreviousOutpoint)
 			return 0, ruleError(ErrTooManySigOps, str)
 		}
 	}
@@ -509,20 +509,29 @@ func (dag *BlockDAG) checkBlockSanity(block *util.Block, flags BehaviorFlags) er
 			"block is not a coinbase")
 	}
 
-	txOffset := 1
+	isGenesis := block.MsgBlock().Header.IsGenesis()
+	if !isGenesis && !IsFeeTransaction(transactions[1]) {
+		return ruleError(ErrSecondTxNotFeeTransaction, "second transaction in "+
+			"block is not a fee transaction")
+	}
+
+	txOffset := 2
+	if isGenesis {
+		txOffset = 1
+	}
 
 	// A block must not have more than one coinbase. And transactions must be
 	// ordered by subnetwork
 	for i, tx := range transactions[txOffset:] {
 		if IsCoinBase(tx) {
 			str := fmt.Sprintf("block contains second coinbase at "+
-				"index %d", i+txOffset)
+				"index %d", i+2)
 			return ruleError(ErrMultipleCoinbases, str)
 		}
 		if IsFeeTransaction(tx) {
-			str := fmt.Sprintf("block contains an explicit fee transaction at "+
-				"index %d", i+txOffset)
-			return ruleError(ErrExplicitFeeTransaction, str)
+			str := fmt.Sprintf("block contains second fee transaction at "+
+				"index %d", i+2)
+			return ruleError(ErrMultipleFeeTransactions, str)
 		}
 		if subnetworkid.Less(&tx.MsgTx().SubnetworkID, &transactions[i].MsgTx().SubnetworkID) {
 			return ruleError(ErrTransactionsNotSorted, "transactions must be sorted by subnetwork")
@@ -531,8 +540,9 @@ func (dag *BlockDAG) checkBlockSanity(block *util.Block, flags BehaviorFlags) er
 
 	// Do some preliminary checks on each transaction to ensure they are
 	// sane before continuing.
-	for _, tx := range transactions {
-		err := CheckTransactionSanity(tx, dag.subnetworkID)
+	for i, tx := range transactions {
+		isFeeTransaction := i == util.FeeTransactionIndex
+		err := CheckTransactionSanity(tx, dag.subnetworkID, isFeeTransaction)
 		if err != nil {
 			return err
 		}
@@ -842,9 +852,9 @@ func ensureNoDuplicateTx(block *blockNode, utxoSet UTXOSet,
 	transactions []*util.Tx) error {
 	// Fetch utxos for all of the transaction ouputs in this block.
 	// Typically, there will not be any utxos for any of the outputs.
-	fetchSet := make(map[wire.OutPoint]struct{})
+	fetchSet := make(map[wire.Outpoint]struct{})
 	for _, tx := range transactions {
-		prevOut := wire.OutPoint{TxID: *tx.ID()}
+		prevOut := wire.Outpoint{TxID: *tx.ID()}
 		for txOutIdx := range tx.MsgTx().TxOut {
 			prevOut.Index = uint32(txOutIdx)
 			fetchSet[prevOut] = struct{}{}
@@ -889,11 +899,11 @@ func CheckTransactionInputsAndCalulateFee(tx *util.Tx, txHeight uint64, utxoSet 
 	var totalSatoshiIn uint64
 	for txInIndex, txIn := range tx.MsgTx().TxIn {
 		// Ensure the referenced input transaction is available.
-		entry, ok := utxoSet.Get(txIn.PreviousOutPoint)
+		entry, ok := utxoSet.Get(txIn.PreviousOutpoint)
 		if !ok {
 			str := fmt.Sprintf("output %s referenced from "+
 				"transaction %s:%d either does not exist or "+
-				"has already been spent", txIn.PreviousOutPoint,
+				"has already been spent", txIn.PreviousOutpoint,
 				tx.ID(), txInIndex)
 			return 0, ruleError(ErrMissingTxOut, str)
 		}
@@ -967,7 +977,7 @@ func validateBlockRewardMaturity(dagParams *dagconfig.Params, entry *UTXOEntry, 
 			str := fmt.Sprintf("tried to spend block reward "+
 				"transaction output %s from chain-height %d "+
 				"at chain-height %d before required maturity "+
-				"of %d blocks", txIn.PreviousOutPoint,
+				"of %d blocks", txIn.PreviousOutpoint,
 				originChainHeight, txChainHeight,
 				dagParams.BlockRewardMaturity)
 			return ruleError(ErrImmatureSpend, str)
@@ -1035,10 +1045,6 @@ func (dag *BlockDAG) checkConnectToPastUTXO(block *blockNode, pastUTXO UTXOSet,
 			return nil, fmt.Errorf("Error adding tx %s fee to compactFeeFactory: %s", tx.ID(), err)
 		}
 	}
-
-	// Add a 0 fee for implicit fee transaction
-	compactFeeFactory.add(0)
-
 	feeData, err := compactFeeFactory.data()
 	if err != nil {
 		return nil, fmt.Errorf("Error getting bytes of fee data: %s", err)

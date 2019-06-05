@@ -204,7 +204,7 @@ func TestNewBlockTemplate(t *testing.T) {
 
 	// tx is a regular transaction, and should not be filtered by the miner
 	txIn := &wire.TxIn{
-		PreviousOutPoint: wire.OutPoint{
+		PreviousOutpoint: wire.Outpoint{
 			TxID:  *template1CbTx.TxID(),
 			Index: 0,
 		},
@@ -219,7 +219,7 @@ func TestNewBlockTemplate(t *testing.T) {
 
 	// We want to check that the miner filters non finalized transactions
 	txIn = &wire.TxIn{
-		PreviousOutPoint: wire.OutPoint{
+		PreviousOutpoint: wire.Outpoint{
 			TxID:  *template1CbTx.TxID(),
 			Index: 1,
 		},
@@ -238,7 +238,7 @@ func TestNewBlockTemplate(t *testing.T) {
 
 	// We want to check that the miner filters transactions with non-existing subnetwork id. (It should first push it to the priority queue, and then ignore it)
 	txIn = &wire.TxIn{
-		PreviousOutPoint: wire.OutPoint{
+		PreviousOutpoint: wire.Outpoint{
 			TxID:  *template1CbTx.TxID(),
 			Index: 2,
 		},
@@ -254,7 +254,7 @@ func TestNewBlockTemplate(t *testing.T) {
 
 	// We want to check that the miner doesn't filters transactions that do not exceed the subnetwork gas limit
 	txIn = &wire.TxIn{
-		PreviousOutPoint: wire.OutPoint{
+		PreviousOutpoint: wire.Outpoint{
 			TxID:  *template1CbTx.TxID(),
 			Index: 3,
 		},
@@ -269,7 +269,7 @@ func TestNewBlockTemplate(t *testing.T) {
 
 	// We want to check that the miner filters transactions that exceed the subnetwork gas limit. (It should first push it to the priority queue, and then ignore it)
 	txIn = &wire.TxIn{
-		PreviousOutPoint: wire.OutPoint{
+		PreviousOutpoint: wire.Outpoint{
 			TxID:  *template1CbTx.TxID(),
 			Index: 4,
 		},
@@ -379,7 +379,7 @@ func TestNewBlockTemplate(t *testing.T) {
 		*subnetworkTx1.TxID(): false,
 	}
 
-	for _, tx := range template2.Block.Transactions[1:] {
+	for _, tx := range template2.Block.Transactions[2:] {
 		id := *tx.TxID()
 		if _, ok := expectedTxs[id]; !ok {
 			t.Errorf("Unexpected tx %v in template2's candidate block", id)

@@ -121,8 +121,24 @@ func dbFetchFeeData(dbTx database.Tx, blockHash *daghash.Hash) (compactFeeData, 
 
 // The following functions deal with building and validating the fee transaction
 
+func (node *blockNode) validateFeeTransaction(dag *BlockDAG, block *util.Block, txsAcceptanceData MultiBlockTxsAcceptanceData) error {
+	if node.isGenesis() {
+		return nil
+	}
+	expectedFeeTransaction, err := node.buildFeeTransaction(dag, txsAcceptanceData)
+	if err != nil {
+		return err
+	}
+
+	if !expectedFeeTransaction.TxHash().IsEqual(block.FeeTransaction().Hash()) {
+		return ruleError(ErrBadFeeTransaction, "Fee transaction is not built as expected")
+	}
+
+	return nil
+}
+
 // buildFeeTransaction returns the expected fee transaction for the current block
-func (node *blockNode) buildFeeTransaction(dag *BlockDAG, txsAcceptanceData MultiBlockTxsAcceptanceData) (*util.Tx, error) {
+func (node *blockNode) buildFeeTransaction(dag *BlockDAG, txsAcceptanceData MultiBlockTxsAcceptanceData) (*wire.MsgTx, error) {
 	bluesFeeData, err := node.getBluesFeeData(dag)
 	if err != nil {
 		return nil, err
@@ -142,7 +158,7 @@ func (node *blockNode) buildFeeTransaction(dag *BlockDAG, txsAcceptanceData Mult
 		}
 	}
 	feeTx := wire.NewNativeMsgTx(wire.TxVersion, txIns, txOuts)
-	return util.NewTx(txsort.Sort(feeTx)), nil
+	return txsort.Sort(feeTx), nil
 }
 
 // feeInputAndOutputForBlueBlock calculates the input and output that should go into the fee transaction of blueBlock
@@ -167,7 +183,7 @@ func feeInputAndOutputForBlueBlock(blueBlock *blockNode, txsAcceptanceData Multi
 
 	txIn := &wire.TxIn{
 		SignatureScript: []byte{},
-		PreviousOutPoint: wire.OutPoint{
+		PreviousOutpoint: wire.Outpoint{
 			TxID:  daghash.TxID(*blueBlock.hash),
 			Index: math.MaxUint32,
 		},
@@ -200,35 +216,4 @@ func feeInputAndOutputForBlueBlock(blueBlock *blockNode, txsAcceptanceData Multi
 	}
 
 	return txIn, txOut, nil
-}
-
-func dbPutFeeTx(dbTx database.Tx, blockHash *daghash.Hash, feeTx *util.Tx) error {
-	w := &bytes.Buffer{}
-
-	if err := feeTx.MsgTx().Serialize(w); err != nil {
-		return err
-	}
-
-	serialized := w.Bytes()
-
-	feeTxBucket := dbTx.Metadata().Bucket(feeTxBucketName)
-
-	return feeTxBucket.Put(blockHash[:], serialized)
-}
-
-func dbFetchFeeTx(dbTx database.Tx, blockHash *daghash.Hash) (*util.Tx, error) {
-	feeTxBucket := dbTx.Metadata().Bucket(feeTxBucketName)
-	serialized := feeTxBucket.Get(blockHash[:])
-	if serialized == nil {
-		return nil, fmt.Errorf("No feeTx found in database for block %s", blockHash)
-	}
-
-	r := bytes.NewReader(serialized)
-	msgTx := &wire.MsgTx{}
-	err := msgTx.Deserialize(r)
-	if err != nil {
-		return nil, err
-	}
-
-	return util.NewTx(msgTx), nil
 }

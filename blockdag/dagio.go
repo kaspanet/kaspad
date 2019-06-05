@@ -60,10 +60,6 @@ var (
 	// node's local subnetwork ID.
 	localSubnetworkKeyName = []byte("localsubnetworkidkey")
 
-	// feeTxBucketName is the name of the db bucket used to house the
-	// fee transactions of blocks
-	feeTxBucketName = []byte("feetxs")
-
 	// byteOrder is the preferred byte order used for serializing numeric
 	// fields for storage in the database.
 	byteOrder = binary.LittleEndian
@@ -207,7 +203,7 @@ var outpointKeyPool = sync.Pool{
 // returned to the free list by using the recycleOutpointKey function when the
 // caller is done with it _unless_ the slice will need to live for longer than
 // the caller can calculate such as when used to write to the database.
-func outpointKey(outpoint wire.OutPoint) *[]byte {
+func outpointKey(outpoint wire.Outpoint) *[]byte {
 	// A VLQ employs an MSB encoding, so they are useful not only to reduce
 	// the amount of storage space, but also so iteration of UTXOs when
 	// doing byte-wise comparisons will produce them in order.
@@ -231,8 +227,8 @@ func recycleOutpointKey(key *[]byte) {
 // to the database.
 func dbPutUTXODiff(dbTx database.Tx, diff *UTXODiff) error {
 	utxoBucket := dbTx.Metadata().Bucket(utxoSetBucketName)
-	for outPoint := range diff.toRemove {
-		key := outpointKey(outPoint)
+	for outpoint := range diff.toRemove {
+		key := outpointKey(outpoint)
 		err := utxoBucket.Delete(*key)
 		recycleOutpointKey(key)
 		if err != nil {
@@ -240,11 +236,11 @@ func dbPutUTXODiff(dbTx database.Tx, diff *UTXODiff) error {
 		}
 	}
 
-	for outPoint, entry := range diff.toAdd {
+	for outpoint, entry := range diff.toAdd {
 		// Serialize and store the UTXO entry.
 		serialized := serializeUTXOEntry(entry)
 
-		key := outpointKey(outPoint)
+		key := outpointKey(outpoint)
 		err := utxoBucket.Put(*key, serialized)
 		// NOTE: The key is intentionally not recycled here since the
 		// database interface contract prohibits modifications.  It will
@@ -339,13 +335,6 @@ func (dag *BlockDAG) createDAGState() error {
 		if err := dbPutLocalSubnetworkID(dbTx, dag.subnetworkID); err != nil {
 			return err
 		}
-
-		// Create the bucket that houses the fee transactions.
-		_, err = meta.CreateBucket(feeTxBucketName)
-		if err != nil {
-			return err
-		}
-
 		return nil
 	})
 
@@ -374,7 +363,7 @@ func (dag *BlockDAG) removeDAGState() error {
 			return err
 		}
 
-		err = meta.Delete(utxoSetVersionKeyName)
+		err = dbTx.Metadata().Delete(utxoSetVersionKeyName)
 		if err != nil {
 			return err
 		}
@@ -384,12 +373,7 @@ func (dag *BlockDAG) removeDAGState() error {
 			return err
 		}
 
-		err = meta.Delete(localSubnetworkKeyName)
-		if err != nil {
-			return err
-		}
-
-		err = meta.DeleteBucket(feeTxBucketName)
+		err = dbTx.Metadata().Delete(localSubnetworkKeyName)
 		if err != nil {
 			return err
 		}
@@ -498,11 +482,6 @@ func (dag *BlockDAG) initDAGState() error {
 				dag.blockCount++
 			}
 
-			node.feeTransaction, err = dbFetchFeeTx(dbTx, node.hash)
-			if err != nil {
-				return err
-			}
-
 			lastNode = node
 			i++
 		}
@@ -525,15 +504,15 @@ func (dag *BlockDAG) initDAGState() error {
 
 		fullUTXOCollection := make(utxoCollection, utxoEntryCount)
 		for ok := cursor.First(); ok; ok = cursor.Next() {
-			// Deserialize the outPoint
-			outPoint, err := deserializeOutPoint(cursor.Key())
+			// Deserialize the outpoint
+			outpoint, err := deserializeOutpoint(cursor.Key())
 			if err != nil {
 				// Ensure any deserialization errors are returned as database
 				// corruption errors.
 				if isDeserializeErr(err) {
 					return database.Error{
 						ErrorCode:   database.ErrCorruption,
-						Description: fmt.Sprintf("corrupt outPoint: %s", err),
+						Description: fmt.Sprintf("corrupt outpoint: %s", err),
 					}
 				}
 
@@ -555,7 +534,7 @@ func (dag *BlockDAG) initDAGState() error {
 				return err
 			}
 
-			fullUTXOCollection[*outPoint] = entry
+			fullUTXOCollection[*outpoint] = entry
 		}
 
 		// Apply the loaded utxoCollection to the virtual block.

@@ -384,11 +384,11 @@ func (dag *BlockDAG) calcSequenceLock(node *blockNode, utxoSet UTXOSet, tx *util
 
 	mTx := tx.MsgTx()
 	for txInIndex, txIn := range mTx.TxIn {
-		entry, ok := utxoSet.Get(txIn.PreviousOutPoint)
+		entry, ok := utxoSet.Get(txIn.PreviousOutpoint)
 		if !ok {
 			str := fmt.Sprintf("output %s referenced from "+
 				"transaction %s:%d either does not exist or "+
-				"has already been spent", txIn.PreviousOutPoint,
+				"has already been spent", txIn.PreviousOutpoint,
 				tx.ID(), txInIndex)
 			return sequenceLock, ruleError(ErrMissingTxOut, str)
 		}
@@ -579,7 +579,7 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block, fastAdd bo
 		return errors.New(newErrString)
 	}
 
-	node.feeTransaction, err = node.buildFeeTransaction(dag, txsAcceptanceData)
+	err = node.validateFeeTransaction(dag, block, txsAcceptanceData)
 	if err != nil {
 		return err
 	}
@@ -655,16 +655,7 @@ func (dag *BlockDAG) saveChangesFromBlock(node *blockNode, block *util.Block, vi
 		}
 
 		// Apply the fee data into the database
-		err = dbStoreFeeData(dbTx, block.Hash(), feeData)
-		if err != nil {
-			return err
-		}
-
-		if err := dbPutFeeTx(dbTx, node.hash, node.feeTransaction); err != nil {
-			return err
-		}
-
-		return nil
+		return dbStoreFeeData(dbTx, block.Hash(), feeData)
 	})
 	if err != nil {
 		return err
@@ -758,7 +749,7 @@ func (dag *BlockDAG) updateFinalityPoint() {
 // NextBlockFeeTransaction prepares the fee transaction for the next mined block
 //
 // This function CAN'T be called with the DAG lock held.
-func (dag *BlockDAG) NextBlockFeeTransaction() (*util.Tx, error) {
+func (dag *BlockDAG) NextBlockFeeTransaction() (*wire.MsgTx, error) {
 	dag.dagLock.RLock()
 	defer dag.dagLock.RUnlock()
 
@@ -768,7 +759,7 @@ func (dag *BlockDAG) NextBlockFeeTransaction() (*util.Tx, error) {
 // NextBlockFeeTransactionNoLock prepares the fee transaction for the next mined block
 //
 // This function MUST be called with the DAG read-lock held
-func (dag *BlockDAG) NextBlockFeeTransactionNoLock() (*util.Tx, error) {
+func (dag *BlockDAG) NextBlockFeeTransactionNoLock() (*wire.MsgTx, error) {
 	txsAcceptanceData, err := dag.TxsAcceptedByVirtual()
 	if err != nil {
 		return nil, err
@@ -934,8 +925,8 @@ func genesisPastUTXO(virtual *virtualBlock) UTXOSet {
 	// set by creating a diff UTXO set with the virtual UTXO
 	// set, and adding all of its entries in toRemove
 	diff := NewUTXODiff()
-	for outPoint, entry := range virtual.utxoSet.utxoCollection {
-		diff.toRemove[outPoint] = entry
+	for outpoint, entry := range virtual.utxoSet.utxoCollection {
+		diff.toRemove[outpoint] = entry
 	}
 	genesisPastUTXO := UTXOSet(NewDiffUTXOSet(virtual.utxoSet, diff))
 	return genesisPastUTXO
@@ -971,18 +962,13 @@ func (node *blockNode) applyBlueBlocks(selectedParentUTXO UTXOSet, blueBlocks []
 	pastUTXO UTXOSet, txsAcceptanceData MultiBlockTxsAcceptanceData, err error) {
 
 	pastUTXO = selectedParentUTXO
-	txsAcceptanceData = make(MultiBlockTxsAcceptanceData, len(blueBlocks))
+	txsAcceptanceData = MultiBlockTxsAcceptanceData{}
 
 	for _, blueBlock := range blueBlocks {
 		transactions := blueBlock.Transactions()
-		numTransactions := len(transactions)
+		blockTxsAcceptanceData := make(BlockTxsAcceptanceData, len(transactions))
 		isSelectedParent := blueBlock.Hash().IsEqual(node.selectedParent.hash)
-		if isSelectedParent { // if this is selected parent - we will also add the fee tx to acceptance data
-			numTransactions++
-		}
-
-		blockTxsAcceptanceData := make(BlockTxsAcceptanceData, 0, numTransactions)
-		for _, tx := range blueBlock.Transactions() {
+		for i, tx := range blueBlock.Transactions() {
 			var isAccepted bool
 			if isSelectedParent {
 				isAccepted = true
@@ -992,13 +978,8 @@ func (node *blockNode) applyBlueBlocks(selectedParentUTXO UTXOSet, blueBlocks []
 					return nil, nil, err
 				}
 			}
-			blockTxsAcceptanceData = append(blockTxsAcceptanceData, TxAcceptanceData{Tx: tx, IsAccepted: isAccepted})
+			blockTxsAcceptanceData[i] = TxAcceptanceData{Tx: tx, IsAccepted: isAccepted}
 		}
-
-		// Add fee tx acceptance data for fee transaction
-		blockTxsAcceptanceData = append(blockTxsAcceptanceData,
-			TxAcceptanceData{Tx: node.selectedParent.feeTransaction, IsAccepted: isSelectedParent})
-
 		txsAcceptanceData[*blueBlock.Hash()] = blockTxsAcceptanceData
 	}
 
@@ -1207,8 +1188,8 @@ func (dag *BlockDAG) CalcPastMedianTime() time.Time {
 //
 // This function is safe for concurrent access. However, the returned entry (if
 // any) is NOT.
-func (dag *BlockDAG) GetUTXOEntry(outPoint wire.OutPoint) (*UTXOEntry, bool) {
-	return dag.virtual.utxoSet.get(outPoint)
+func (dag *BlockDAG) GetUTXOEntry(outpoint wire.Outpoint) (*UTXOEntry, bool) {
+	return dag.virtual.utxoSet.get(outpoint)
 }
 
 // BlockConfirmationsByHash returns the confirmations number for a block with the
@@ -1881,6 +1862,7 @@ func New(config *Config) (*BlockDAG, error) {
 		SubnetworkStore:     newSubnetworkStore(config.DB),
 		subnetworkID:        config.SubnetworkID,
 	}
+
 	dag.utxoDiffStore = newUTXODiffStore(&dag)
 
 	// Initialize the chain state from the passed database.  When the db
