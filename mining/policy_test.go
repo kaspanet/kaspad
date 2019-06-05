@@ -130,44 +130,44 @@ func TestCalcPriority(t *testing.T) {
 	}
 
 	tests := []struct {
-		name       string           // test description
-		tx         *wire.MsgTx      // tx to calc priority for
-		utxoSet    blockdag.UTXOSet // inputs to tx
-		nextHeight uint64           // height for priority calc
-		want       float64          // expected priority
+		name          string           // test description
+		tx            *wire.MsgTx      // tx to calc priority for
+		utxoSet       blockdag.UTXOSet // inputs to tx
+		nextBlueScore uint64           // blue score for priority calc
+		want          float64          // expected priority
 	}{
 		{
-			name:       "one height 7 input, prio tx height 169",
-			tx:         commonRedeemTx1,
-			utxoSet:    newUTXOSet([]*wire.MsgTx{commonSourceTx1}, []uint64{7}, []uint64{7}),
-			nextHeight: 169,
-			want:       1.125e+10,
+			name:          "one blue score 7 input, prio tx blue score 169",
+			tx:            commonRedeemTx1,
+			utxoSet:       newUTXOSet([]*wire.MsgTx{commonSourceTx1}, []uint64{7}, []uint64{7}),
+			nextBlueScore: 169,
+			want:          1.125e+10,
 		},
 		{
-			name:       "one height 100 input, prio tx height 169",
-			tx:         commonRedeemTx1,
-			utxoSet:    newUTXOSet([]*wire.MsgTx{commonSourceTx1}, []uint64{100}, []uint64{100}),
-			nextHeight: 169,
-			want:       4.791666666666667e+09,
+			name:          "one blue score 100 input, prio tx blue score 169",
+			tx:            commonRedeemTx1,
+			utxoSet:       newUTXOSet([]*wire.MsgTx{commonSourceTx1}, []uint64{100}, []uint64{100}),
+			nextBlueScore: 169,
+			want:          4.791666666666667e+09,
 		},
 		{
-			name:       "one height 7 input, prio tx height 100000",
-			tx:         commonRedeemTx1,
-			utxoSet:    newUTXOSet([]*wire.MsgTx{commonSourceTx1}, []uint64{7}, []uint64{7}),
-			nextHeight: 100000,
-			want:       6.943958333333333e+12,
+			name:          "one blue score 7 input, prio tx blue score 100000",
+			tx:            commonRedeemTx1,
+			utxoSet:       newUTXOSet([]*wire.MsgTx{commonSourceTx1}, []uint64{7}, []uint64{7}),
+			nextBlueScore: 100000,
+			want:          6.943958333333333e+12,
 		},
 		{
-			name:       "one height 100 input, prio tx height 100000",
-			tx:         commonRedeemTx1,
-			utxoSet:    newUTXOSet([]*wire.MsgTx{commonSourceTx1}, []uint64{100}, []uint64{100}),
-			nextHeight: 100000,
-			want:       6.9375e+12,
+			name:          "one blue score 100 input, prio tx blue score 100000",
+			tx:            commonRedeemTx1,
+			utxoSet:       newUTXOSet([]*wire.MsgTx{commonSourceTx1}, []uint64{100}, []uint64{100}),
+			nextBlueScore: 100000,
+			want:          6.9375e+12,
 		},
 	}
 
 	for i, test := range tests {
-		got := CalcPriority(test.tx, test.utxoSet, test.nextHeight)
+		got := CalcPriority(test.tx, test.utxoSet, test.nextBlueScore)
 		if got != test.want {
 			t.Errorf("CalcPriority #%d (%q): unexpected priority "+
 				"got %v want %v", i, test.name, got, test.want)

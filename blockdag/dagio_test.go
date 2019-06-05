@@ -105,10 +105,10 @@ func TestUtxoSerialization(t *testing.T) {
 				utxoEntry.PkScript(), test.entry.PkScript())
 			continue
 		}
-		if utxoEntry.BlockChainHeight() != test.entry.BlockChainHeight() {
+		if utxoEntry.BlockBlueScore() != test.entry.BlockBlueScore() {
 			t.Errorf("deserializeUTXOEntry #%d (%s) mismatched "+
-				"block height: got %d, want %d", i, test.name,
-				utxoEntry.BlockChainHeight(), test.entry.BlockChainHeight())
+				"block blue score: got %d, want %d", i, test.name,
+				utxoEntry.BlockBlueScore(), test.entry.BlockBlueScore())
 			continue
 		}
 		if utxoEntry.IsBlockReward() != test.entry.IsBlockReward() {

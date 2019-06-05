@@ -478,8 +478,7 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 		// value age sum as well as the adjusted transaction size.  The
 		// formula is: sum(inputValue * inputAge) / adjustedTxSize
 		prioItem := &txPrioItem{tx: tx}
-		prioItem.priority = CalcPriority(tx.MsgTx(), g.dag.UTXOSet(),
-			nextBlockHeight)
+		prioItem.priority = CalcPriority(tx.MsgTx(), g.dag.UTXOSet(), nextBlockBlueScore)
 
 		// Calculate the fee in Satoshi/kB.
 		prioItem.feePerKB = txDesc.FeePerKB

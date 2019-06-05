@@ -614,7 +614,7 @@ func (mp *TxPool) markTransactionOutputsUnspent(tx *util.Tx, diff *blockdag.UTXO
 		if restoreInputs {
 			if prevTxDesc, exists := mp.pool[txIn.PreviousOutpoint.TxID]; exists {
 				prevOut := prevTxDesc.Tx.MsgTx().TxOut[txIn.PreviousOutpoint.Index]
-				entry := blockdag.NewUTXOEntry(prevOut, false, blockdag.UnminedChainHeight)
+				entry := blockdag.NewUTXOEntry(prevOut, false, blockdag.UnminedChainHeight, blockdag.UnminedBlueScore)
 				err := diff.AddEntry(txIn.PreviousOutpoint, entry)
 				if err != nil {
 					return err
@@ -622,7 +622,7 @@ func (mp *TxPool) markTransactionOutputsUnspent(tx *util.Tx, diff *blockdag.UTXO
 			}
 			if prevTxDesc, exists := mp.depends[txIn.PreviousOutpoint.TxID]; exists {
 				prevOut := prevTxDesc.Tx.MsgTx().TxOut[txIn.PreviousOutpoint.Index]
-				entry := blockdag.NewUTXOEntry(prevOut, false, blockdag.UnminedChainHeight)
+				entry := blockdag.NewUTXOEntry(prevOut, false, blockdag.UnminedChainHeight, blockdag.UnminedBlueScore)
 				err := diff.AddEntry(txIn.PreviousOutpoint, entry)
 				if err != nil {
 					return err
@@ -710,7 +710,7 @@ func (mp *TxPool) RemoveDoubleSpends(tx *util.Tx) {
 // helper for maybeAcceptTransaction.
 //
 // This function MUST be called with the mempool lock held (for writes).
-func (mp *TxPool) addTransaction(tx *util.Tx, height uint64, fee uint64, parentsInPool []*wire.Outpoint) (*TxDesc, error) {
+func (mp *TxPool) addTransaction(tx *util.Tx, height uint64, blueScore uint64, fee uint64, parentsInPool []*wire.Outpoint) (*TxDesc, error) {
 	// Add the transaction to the pool and mark the referenced outpoints
 	// as spent by the pool.
 	txD := &TxDesc{
@@ -721,7 +721,7 @@ func (mp *TxPool) addTransaction(tx *util.Tx, height uint64, fee uint64, parents
 			Fee:      fee,
 			FeePerKB: fee * 1000 / uint64(tx.MsgTx().SerializeSize()),
 		},
-		StartingPriority: mining.CalcPriority(tx.MsgTx(), mp.mpUTXOSet, height),
+		StartingPriority: mining.CalcPriority(tx.MsgTx(), mp.mpUTXOSet, blueScore),
 		depCount:         len(parentsInPool),
 	}
 
@@ -740,7 +740,7 @@ func (mp *TxPool) addTransaction(tx *util.Tx, height uint64, fee uint64, parents
 	for _, txIn := range tx.MsgTx().TxIn {
 		mp.outpoints[txIn.PreviousOutpoint] = tx
 	}
-	if isAccepted, err := mp.mpUTXOSet.AddTx(tx.MsgTx(), blockdag.UnminedChainHeight); err != nil {
+	if isAccepted, err := mp.mpUTXOSet.AddTx(tx.MsgTx(), blockdag.UnminedChainHeight, blockdag.UnminedBlueScore); err != nil {
 		return nil, err
 	} else if !isAccepted {
 		return nil, fmt.Errorf("unexpectedly failed to add tx %s to the mempool utxo set", tx.ID())
@@ -847,7 +847,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rateLimit, rejectDu
 	// Perform preliminary sanity checks on the transaction.  This makes
 	// use of blockDAG which contains the invariant rules for what
 	// transactions are allowed into blocks.
-	err := blockdag.CheckTransactionSanity(tx, subnetworkID, false)
+	err := blockdag.CheckTransactionSanity(tx, subnetworkID)
 	if err != nil {
 		if cerr, ok := err.(blockdag.RuleError); ok {
 			return nil, nil, dagRuleError(cerr)
@@ -1050,7 +1050,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rateLimit, rejectDu
 	// are exempted.
 	if isNew && !mp.cfg.Policy.DisableRelayPriority && txFee < minFee {
 		currentPriority := mining.CalcPriority(tx.MsgTx(), mp.mpUTXOSet,
-			nextBlockHeight)
+			nextBlockBlueScore)
 		if currentPriority <= mining.MinHighPriority {
 			str := fmt.Sprintf("transaction %s has insufficient "+
 				"priority (%g <= %g)", txID,
@@ -1095,7 +1095,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rateLimit, rejectDu
 	}
 
 	// Add to transaction pool.
-	txD, err := mp.addTransaction(tx, bestHeight, txFee, parentsInPool)
+	txD, err := mp.addTransaction(tx, bestHeight, nextBlockBlueScore, txFee, parentsInPool)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -1382,15 +1382,14 @@ func (mp *TxPool) RawMempoolVerbose() map[string]*btcjson.GetRawMempoolVerboseRe
 
 	result := make(map[string]*btcjson.GetRawMempoolVerboseResult,
 		len(mp.pool))
-	bestHeight := mp.cfg.BestHeight()
+	virtualBlueScore := mp.cfg.DAG.VirtualBlueScore()
 
 	for _, desc := range mp.pool {
 		// Calculate the current priority based on the inputs to
 		// the transaction.  Use zero if one or more of the
 		// input transactions can't be found for some reason.
 		tx := desc.Tx
-		currentPriority := mining.CalcPriority(tx.MsgTx(), mp.mpUTXOSet,
-			bestHeight+1)
+		currentPriority := mining.CalcPriority(tx.MsgTx(), mp.mpUTXOSet, virtualBlueScore)
 
 		mpd := &btcjson.GetRawMempoolVerboseResult{
 			Size:             int32(tx.MsgTx().SerializeSize()),
