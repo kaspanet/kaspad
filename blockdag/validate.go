@@ -793,11 +793,9 @@ func ensureNoDuplicateTx(utxoSet UTXOSet, transactions []*util.Tx) error {
 	// Duplicate transactions are only allowed if the previous transaction
 	// is fully spent.
 	for outpoint := range fetchSet {
-		utxo, ok := utxoSet.Get(outpoint)
-		if ok {
+		if _, ok := utxoSet.Get(outpoint); ok {
 			str := fmt.Sprintf("tried to overwrite transaction %s "+
-				"at block chain-height %d that is not fully spent",
-				outpoint.TxID, utxo.BlockChainHeight())
+				"that is not fully spent", outpoint.TxID)
 			return ruleError(ErrOverwriteTx, str)
 		}
 	}
