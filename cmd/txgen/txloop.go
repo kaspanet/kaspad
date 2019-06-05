@@ -124,7 +124,7 @@ func sendTransactionLoop(client *txgenClient, interval uint64, txChan chan *wire
 			time.Sleep(time.Duration(interval)*time.Millisecond - timeSinceLastTx)
 		}
 		_, err := client.SendRawTransaction(tx, true)
-		log.Infof("Sending tx %s with %d inputs, %d outputs and %d payload size", tx.TxID(), len(tx.TxIn), len(tx.TxOut), len(tx.Payload))
+		log.Infof("Sending tx %s to subnetwork %s with %d inputs, %d outputs, %d payload size and %d gas", tx.SubnetworkID, tx.TxID(), len(tx.TxIn), len(tx.TxOut), len(tx.Payload), tx.Gas)
 		if err != nil {
 			return err
 		}
@@ -218,6 +218,7 @@ func prepareTransactions(client *txgenClient, blockAdded *blockAddedMsg, walletU
 			chosenGasLimit = gasLimit
 			break
 		}
+
 		if !chosenSubnetwork.IsEqual(subnetworkid.SubnetworkIDNative) {
 			payloadSize = randomWithAverageTarget(cfg.AveragePayloadSize, true)
 			gas = randomWithAverageTarget(uint64(float64(chosenGasLimit)*cfg.AverageGasFraction), true)
@@ -225,14 +226,18 @@ func prepareTransactions(client *txgenClient, blockAdded *blockAddedMsg, walletU
 				gas = chosenGasLimit
 			}
 		}
+
 		targetNumberOfOutputs := randomWithAverageTarget(cfg.TargetNumberOfOutputs, false)
 		targetNumberOfInputs := randomWithAverageTarget(cfg.TargetNumberOfInputs, false)
+
+		feeRate := randomWithAverageTarget(cfg.AverageFeeRate, true)
+
 		amount := minSpendableAmount + uint64(random.Int63n(int64(maxSpendableAmount-minSpendableAmount)))
 		amount *= targetNumberOfOutputs
 		if amount > funds-minTxFee {
 			amount = funds - minTxFee
 		}
-		tx, err := createTx(walletUTXOSet, amount, 0, targetNumberOfOutputs, targetNumberOfInputs, chosenSubnetwork, payloadSize, 0)
+		tx, err := createTx(walletUTXOSet, amount, feeRate, targetNumberOfOutputs, targetNumberOfInputs, chosenSubnetwork, payloadSize, gas)
 		if err != nil {
 			return err
 		}

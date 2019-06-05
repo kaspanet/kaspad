@@ -30,6 +30,7 @@ type config struct {
 	TargetNumberOfInputs  uint64  `long:"num-inputs" description:"Target number of transaction inputs (with some randomization)"`
 	AveragePayloadSize    uint64  `long:"payload-size" description:"Average size of transaction payload"`
 	AverageGasFraction    float64 `long:"gas-fraction" description:"The average portion of gas from the gas limit"`
+	AverageFeeRate        uint64  `long:"fee-rate" description:"Average coins per byte fee rate"`
 }
 
 func parseConfig() (*config, error) {
