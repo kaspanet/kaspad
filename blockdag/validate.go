@@ -886,7 +886,7 @@ func ensureNoDuplicateTx(block *blockNode, utxoSet UTXOSet,
 //
 // NOTE: The transaction MUST have already been sanity checked with the
 // CheckTransactionSanity function prior to calling this function.
-func CheckTransactionInputsAndCalulateFee(tx *util.Tx, txHeight uint64, utxoSet UTXOSet, dagParams *dagconfig.Params, fastAdd bool) (
+func CheckTransactionInputsAndCalulateFee(tx *util.Tx, txBlueScore uint64, utxoSet UTXOSet, dagParams *dagconfig.Params, fastAdd bool) (
 	txFeeInSatoshi uint64, err error) {
 
 	// Block reward transactions (a.k.a. coinbase or fee transactions)
@@ -909,7 +909,7 @@ func CheckTransactionInputsAndCalulateFee(tx *util.Tx, txHeight uint64, utxoSet 
 		}
 
 		if !fastAdd {
-			if err = validateBlockRewardMaturity(dagParams, entry, txHeight, txIn); err != nil {
+			if err = validateBlockRewardMaturity(dagParams, entry, txBlueScore, txIn); err != nil {
 				return 0, err
 			}
 		}
@@ -967,18 +967,18 @@ func CheckTransactionInputsAndCalulateFee(tx *util.Tx, txHeight uint64, utxoSet 
 	return txFeeInSatoshi, nil
 }
 
-func validateBlockRewardMaturity(dagParams *dagconfig.Params, entry *UTXOEntry, txChainHeight uint64, txIn *wire.TxIn) error {
+func validateBlockRewardMaturity(dagParams *dagconfig.Params, entry *UTXOEntry, txBlueScore uint64, txIn *wire.TxIn) error {
 	// Ensure the transaction is not spending coins which have not
 	// yet reached the required block reward maturity.
 	if entry.IsBlockReward() {
-		originChainHeight := entry.BlockChainHeight()
-		blocksSincePrev := txChainHeight - originChainHeight
-		if blocksSincePrev < dagParams.BlockRewardMaturity {
+		originBlueScore := entry.BlockBlueScore()
+		BlueScoreSincePrev := txBlueScore - originBlueScore
+		if BlueScoreSincePrev < dagParams.BlockRewardMaturity {
 			str := fmt.Sprintf("tried to spend block reward "+
-				"transaction output %s from chain-height %d "+
-				"at chain-height %d before required maturity "+
-				"of %d blocks", txIn.PreviousOutPoint,
-				originChainHeight, txChainHeight,
+				"transaction output %s from blue score %d "+
+				"to blue score %d before required maturity "+
+				"of %d", txIn.PreviousOutPoint,
+				originBlueScore, txBlueScore,
 				dagParams.BlockRewardMaturity)
 			return ruleError(ErrImmatureSpend, str)
 		}
@@ -1025,7 +1025,7 @@ func (dag *BlockDAG) checkConnectToPastUTXO(block *blockNode, pastUTXO UTXOSet,
 	compactFeeFactory := newCompactFeeFactory()
 
 	for _, tx := range transactions {
-		txFee, err := CheckTransactionInputsAndCalulateFee(tx, block.height, pastUTXO,
+		txFee, err := CheckTransactionInputsAndCalulateFee(tx, block.blueScore, pastUTXO,
 			dag.dagParams, fastAdd)
 		if err != nil {
 			return nil, err

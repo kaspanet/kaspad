@@ -391,6 +391,7 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 
 	// Extend the most recently known best block.
 	nextBlockHeight := g.dag.Height() + 1
+	nextBlockBlueScore := g.dag.VirtualBlueScore()
 
 	// Create a standard coinbase transaction paying to the provided
 	// address.  NOTE: The coinbase value will be updated to include the
@@ -597,7 +598,7 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 
 		// Ensure the transaction inputs pass all of the necessary
 		// preconditions before allowing it to be added to the block.
-		_, err = blockdag.CheckTransactionInputsAndCalulateFee(tx, nextBlockHeight,
+		_, err = blockdag.CheckTransactionInputsAndCalulateFee(tx, nextBlockBlueScore,
 			g.dag.UTXOSet(), g.dagParams, false)
 		if err != nil {
 			log.Tracef("Skipping tx %s due to error in "+

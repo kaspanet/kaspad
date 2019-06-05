@@ -1301,6 +1301,11 @@ func (dag *BlockDAG) ChainHeight() uint64 {
 	return dag.selectedTip().chainHeight
 }
 
+// VirtualBlueScore returns the blue score of the current virtual block
+func (dag *BlockDAG) VirtualBlueScore() uint64 {
+	return dag.virtual.blueScore
+}
+
 // BlockCount returns the number of blocks in the DAG
 func (dag *BlockDAG) BlockCount() uint64 {
 	return dag.blockCount
