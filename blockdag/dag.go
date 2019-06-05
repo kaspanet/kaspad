@@ -579,7 +579,7 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block, fastAdd bo
 		return errors.New(newErrString)
 	}
 
-	node.feeTransaction, err = node.buildFeeTransaction(dag, txsAcceptanceData)
+	err = node.validateFeeTransaction(dag, block, txsAcceptanceData)
 	if err != nil {
 		return err
 	}
@@ -648,23 +648,14 @@ func (dag *BlockDAG) saveChangesFromBlock(node *blockNode, block *util.Block, vi
 		// optional indexes with the block being connected so they can
 		// update themselves accordingly.
 		if dag.indexManager != nil {
-			err := dag.indexManager.ConnectBlock(dbTx, block, dag, node.feeTransaction, txsAcceptanceData, virtualTxsAcceptanceData)
+			err := dag.indexManager.ConnectBlock(dbTx, block, dag, txsAcceptanceData, virtualTxsAcceptanceData)
 			if err != nil {
 				return err
 			}
 		}
 
 		// Apply the fee data into the database
-		err = dbStoreFeeData(dbTx, block.Hash(), feeData)
-		if err != nil {
-			return err
-		}
-
-		if err := dbPutFeeTx(dbTx, node.hash, node.feeTransaction); err != nil {
-			return err
-		}
-
-		return nil
+		return dbStoreFeeData(dbTx, block.Hash(), feeData)
 	})
 	if err != nil {
 		return err
@@ -758,7 +749,7 @@ func (dag *BlockDAG) updateFinalityPoint() {
 // NextBlockFeeTransaction prepares the fee transaction for the next mined block
 //
 // This function CAN'T be called with the DAG lock held.
-func (dag *BlockDAG) NextBlockFeeTransaction() (*util.Tx, error) {
+func (dag *BlockDAG) NextBlockFeeTransaction() (*wire.MsgTx, error) {
 	dag.dagLock.RLock()
 	defer dag.dagLock.RUnlock()
 
@@ -768,7 +759,7 @@ func (dag *BlockDAG) NextBlockFeeTransaction() (*util.Tx, error) {
 // NextBlockFeeTransactionNoLock prepares the fee transaction for the next mined block
 //
 // This function MUST be called with the DAG read-lock held
-func (dag *BlockDAG) NextBlockFeeTransactionNoLock() (*util.Tx, error) {
+func (dag *BlockDAG) NextBlockFeeTransactionNoLock() (*wire.MsgTx, error) {
 	txsAcceptanceData, err := dag.TxsAcceptedByVirtual()
 	if err != nil {
 		return nil, err
@@ -971,18 +962,13 @@ func (node *blockNode) applyBlueBlocks(selectedParentUTXO UTXOSet, blueBlocks []
 	pastUTXO UTXOSet, txsAcceptanceData MultiBlockTxsAcceptanceData, err error) {
 
 	pastUTXO = selectedParentUTXO
-	txsAcceptanceData = make(MultiBlockTxsAcceptanceData, len(blueBlocks))
+	txsAcceptanceData = MultiBlockTxsAcceptanceData{}
 
 	for _, blueBlock := range blueBlocks {
 		transactions := blueBlock.Transactions()
-		numTransactions := len(transactions)
+		blockTxsAcceptanceData := make(BlockTxsAcceptanceData, len(transactions))
 		isSelectedParent := blueBlock.Hash().IsEqual(node.selectedParent.hash)
-		if isSelectedParent { // if this is selected parent - we will also add the fee tx to acceptance data
-			numTransactions++
-		}
-
-		blockTxsAcceptanceData := make(BlockTxsAcceptanceData, 0, numTransactions)
-		for _, tx := range blueBlock.Transactions() {
+		for i, tx := range blueBlock.Transactions() {
 			var isAccepted bool
 			if isSelectedParent {
 				isAccepted = true
@@ -992,13 +978,8 @@ func (node *blockNode) applyBlueBlocks(selectedParentUTXO UTXOSet, blueBlocks []
 					return nil, nil, err
 				}
 			}
-			blockTxsAcceptanceData = append(blockTxsAcceptanceData, TxAcceptanceData{Tx: tx, IsAccepted: isAccepted})
+			blockTxsAcceptanceData[i] = TxAcceptanceData{Tx: tx, IsAccepted: isAccepted}
 		}
-
-		// Add fee tx acceptance data for fee transaction
-		blockTxsAcceptanceData = append(blockTxsAcceptanceData,
-			TxAcceptanceData{Tx: node.selectedParent.feeTransaction, IsAccepted: isSelectedParent})
-
 		txsAcceptanceData[*blueBlock.Hash()] = blockTxsAcceptanceData
 	}
 
@@ -1761,7 +1742,7 @@ type IndexManager interface {
 
 	// ConnectBlock is invoked when a new block has been connected to the
 	// DAG.
-	ConnectBlock(database.Tx, *util.Block, *BlockDAG, *util.Tx, MultiBlockTxsAcceptanceData, MultiBlockTxsAcceptanceData) error
+	ConnectBlock(database.Tx, *util.Block, *BlockDAG, MultiBlockTxsAcceptanceData, MultiBlockTxsAcceptanceData) error
 }
 
 // Config is a descriptor which specifies the blockchain instance configuration.
@@ -1881,6 +1862,7 @@ func New(config *Config) (*BlockDAG, error) {
 		SubnetworkStore:     newSubnetworkStore(config.DB),
 		subnetworkID:        config.SubnetworkID,
 	}
+
 	dag.utxoDiffStore = newUTXODiffStore(&dag)
 
 	// Initialize the chain state from the passed database.  When the db

@@ -2659,8 +2659,12 @@ func handleGetRawTransaction(s *Server, cmd interface{}, closeChan <-chan struct
 		blkHashStr = blkHash.String()
 	}
 
+	confirmations, err := txConfirmations(s, mtx.TxID())
+	if err != nil {
+		return nil, err
+	}
 	rawTxn, err := createTxRawResult(s.cfg.DAGParams, mtx, txID.String(),
-		blkHeader, blkHashStr, nil, nil, isInMempool)
+		blkHeader, blkHashStr, nil, &confirmations, isInMempool)
 	if err != nil {
 		return nil, err
 	}

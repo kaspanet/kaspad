@@ -625,7 +625,7 @@ func (m *wsNotificationManager) notifyFilteredBlockAdded(clients map[chan struct
 			"added notification: %s", err)
 		return
 	}
-	ntfn := btcjson.NewFilteredBlockAddedNtfn(block.Height(),
+	ntfn := btcjson.NewFilteredBlockAddedNtfn(block.ChainHeight(),
 		hex.EncodeToString(w.Bytes()), nil)
 
 	// Search for relevant transactions for each client and save them
