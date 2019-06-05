@@ -379,7 +379,7 @@ func TestNewBlockTemplate(t *testing.T) {
 		*subnetworkTx1.TxID(): false,
 	}
 
-	for _, tx := range template2.Block.Transactions[1:] {
+	for _, tx := range template2.Block.Transactions[2:] {
 		id := *tx.TxID()
 		if _, ok := expectedTxs[id]; !ok {
 			t.Errorf("Unexpected tx %v in template2's candidate block", id)
