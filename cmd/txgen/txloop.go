@@ -4,13 +4,14 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
+	"math/rand"
+	"time"
+
 	"github.com/daglabs/btcd/btcjson"
 	"github.com/daglabs/btcd/txscript"
 	"github.com/daglabs/btcd/util"
 	"github.com/daglabs/btcd/util/daghash"
 	"github.com/daglabs/btcd/wire"
-	"math/rand"
-	"time"
 )
 
 const (
@@ -37,7 +38,7 @@ type walletTransaction struct {
 	confirmed                  bool
 }
 
-type utxoSet map[wire.OutPoint]*wire.TxOut
+type utxoSet map[wire.Outpoint]*wire.TxOut
 
 func isDust(value uint64) bool {
 	return value < minSpendableAmount+minTxFee
@@ -189,8 +190,8 @@ func createTx(walletUTXOSet utxoSet, outputs []*wire.TxOut, feeRate uint64) (*wi
 // signTx signs a transaction
 func signTx(walletUTXOSet utxoSet, tx *wire.MsgTx) error {
 	for i, txIn := range tx.TxIn {
-		outPoint := txIn.PreviousOutPoint
-		prevOut := walletUTXOSet[outPoint]
+		outpoint := txIn.PreviousOutpoint
+		prevOut := walletUTXOSet[outpoint]
 
 		sigScript, err := txscript.SignatureScript(tx, i, prevOut.PkScript,
 			txscript.SigHashAll, privateKey, true)
@@ -214,13 +215,13 @@ func fundTx(walletUTXOSet utxoSet, tx *wire.MsgTx, amount uint64, feeRate uint64
 
 	isFunded := false
 
-	for outPoint, output := range walletUTXOSet {
+	for outpoint, output := range walletUTXOSet {
 		amountSelected += output.Value
 
 		// Add the selected output to the transaction, updating the
 		// current tx size while accounting for the size of the future
 		// sigScript.
-		tx.AddTxIn(wire.NewTxIn(&outPoint, nil))
+		tx.AddTxIn(wire.NewTxIn(&outpoint, nil))
 		txSize = tx.SerializeSize() + spendSize*len(tx.TxIn)
 
 		// Calculate the fee required for the txn at this point
@@ -280,14 +281,14 @@ func checkConfirmations(client *txgenClient, walletTxs map[daghash.TxID]*walletT
 
 func removeTxInsFromUTXOSet(walletUTXOSet utxoSet, tx *wire.MsgTx) {
 	for _, txIn := range tx.TxIn {
-		delete(walletUTXOSet, txIn.PreviousOutPoint)
+		delete(walletUTXOSet, txIn.PreviousOutpoint)
 	}
 }
 
 func addTxOutsToUTXOSet(walletUTXOSet utxoSet, tx *wire.MsgTx) {
 	for i, txOut := range tx.TxOut {
-		outPoint := wire.OutPoint{TxID: *tx.TxID(), Index: uint32(i)}
-		walletUTXOSet[outPoint] = txOut
+		outpoint := wire.Outpoint{TxID: *tx.TxID(), Index: uint32(i)}
+		walletUTXOSet[outpoint] = txOut
 	}
 }
 

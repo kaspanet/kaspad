@@ -153,7 +153,7 @@ func (b RejectedNonCanonicalBlock) FullBlockTestInstance() {}
 // spendableOut represents a transaction output that is spendable along with
 // additional metadata such as the block its in and how much it pays.
 type spendableOut struct {
-	prevOut wire.OutPoint
+	prevOut wire.Outpoint
 	amount  util.Amount
 }
 
@@ -161,7 +161,7 @@ type spendableOut struct {
 // and transaction output index within the transaction.
 func makeSpendableOutForTx(tx *wire.MsgTx, txOutIndex uint32) spendableOut {
 	return spendableOut{
-		prevOut: wire.OutPoint{
+		prevOut: wire.Outpoint{
 			TxID:  *tx.TxID(),
 			Index: txOutIndex,
 		},
@@ -285,7 +285,7 @@ func (g *testGenerator) createCoinbaseTx(blueScore uint64) *wire.MsgTx {
 	txIn := &wire.TxIn{
 		// Coinbase transactions have no inputs, so previous outpoint is
 		// zero hash and max index.
-		PreviousOutPoint: *wire.NewOutPoint(&daghash.TxID{},
+		PreviousOutpoint: *wire.NewOutpoint(&daghash.TxID{},
 			wire.MaxPrevOutIndex),
 		Sequence:        wire.MaxTxInSequenceNum,
 		SignatureScript: coinbaseScript,
@@ -436,7 +436,7 @@ func additionalTx(tx *wire.MsgTx) func(*wire.MsgBlock) {
 // tests.
 func createSpendTx(spend *spendableOut, fee util.Amount) *wire.MsgTx {
 	txIn := &wire.TxIn{
-		PreviousOutPoint: spend.prevOut,
+		PreviousOutpoint: spend.prevOut,
 		Sequence:         wire.MaxTxInSequenceNum,
 		SignatureScript:  nil,
 	}
@@ -1532,8 +1532,8 @@ func Generate(includeLargeReorg bool) (tests [][]TestInstance, err error) {
 	g.nextBlock("b52", outs[14], func(b *wire.MsgBlock) {
 		txID := newTxIDFromStr("00000000000000000000000000000000" +
 			"00000000000000000123456789abcdef")
-		b.Transactions[1].TxIn[0].PreviousOutPoint.TxID = *txID
-		b.Transactions[1].TxIn[0].PreviousOutPoint.Index = 0
+		b.Transactions[1].TxIn[0].PreviousOutpoint.TxID = *txID
+		b.Transactions[1].TxIn[0].PreviousOutpoint.Index = 0
 	})
 	rejected(blockdag.ErrMissingTxOut)
 
@@ -1689,7 +1689,7 @@ func Generate(includeLargeReorg bool) (tests [][]TestInstance, err error) {
 	//                 \-> b58(17)
 	g.setTip("b57")
 	g.nextBlock("b58", outs[17], func(b *wire.MsgBlock) {
-		b.Transactions[1].TxIn[0].PreviousOutPoint.Index = 42
+		b.Transactions[1].TxIn[0].PreviousOutpoint.Index = 42
 	})
 	rejected(blockdag.ErrMissingTxOut)
 

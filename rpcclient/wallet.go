@@ -331,7 +331,7 @@ func (r FutureLockUnspentResult) Receive() error {
 // returned instance.
 //
 // See LockUnspent for the blocking version and more details.
-func (c *Client) LockUnspentAsync(unlock bool, ops []*wire.OutPoint) FutureLockUnspentResult {
+func (c *Client) LockUnspentAsync(unlock bool, ops []*wire.Outpoint) FutureLockUnspentResult {
 	outputs := make([]btcjson.TransactionInput, len(ops))
 	for i, op := range ops {
 		outputs[i] = btcjson.TransactionInput{
@@ -360,7 +360,7 @@ func (c *Client) LockUnspentAsync(unlock bool, ops []*wire.OutPoint) FutureLockU
 // reversed (that is, LockUnspent(true, ...) locked the outputs), it has been
 // left as unlock to keep compatibility with the reference client API and to
 // avoid confusion for those who are already familiar with the lockunspent RPC.
-func (c *Client) LockUnspent(unlock bool, ops []*wire.OutPoint) error {
+func (c *Client) LockUnspent(unlock bool, ops []*wire.Outpoint) error {
 	return c.LockUnspentAsync(unlock, ops).Receive()
 }
 
@@ -370,7 +370,7 @@ type FutureListLockUnspentResult chan *response
 
 // Receive waits for the response promised by the future and returns the result
 // of all currently locked unspent outputs.
-func (r FutureListLockUnspentResult) Receive() ([]*wire.OutPoint, error) {
+func (r FutureListLockUnspentResult) Receive() ([]*wire.Outpoint, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return nil, err
@@ -384,13 +384,13 @@ func (r FutureListLockUnspentResult) Receive() ([]*wire.OutPoint, error) {
 	}
 
 	// Create a slice of outpoints from the transaction input structs.
-	ops := make([]*wire.OutPoint, len(inputs))
+	ops := make([]*wire.Outpoint, len(inputs))
 	for i, input := range inputs {
 		txID, err := daghash.NewTxIDFromStr(input.TxID)
 		if err != nil {
 			return nil, err
 		}
-		ops[i] = wire.NewOutPoint(txID, input.Vout)
+		ops[i] = wire.NewOutpoint(txID, input.Vout)
 	}
 
 	return ops, nil
@@ -409,7 +409,7 @@ func (c *Client) ListLockUnspentAsync() FutureListLockUnspentResult {
 // ListLockUnspent returns a slice of outpoints for all unspent outputs marked
 // as locked by a wallet.  Unspent outputs may be marked locked using
 // LockOutput.
-func (c *Client) ListLockUnspent() ([]*wire.OutPoint, error) {
+func (c *Client) ListLockUnspent() ([]*wire.Outpoint, error) {
 	return c.ListLockUnspentAsync().Receive()
 }
 

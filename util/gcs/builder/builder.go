@@ -57,10 +57,10 @@ func DeriveKey(keyHash *daghash.Hash) [gcs.KeySize]byte {
 	return key
 }
 
-// OutPointToFilterEntry is a utility function that derives a filter entry from
-// a wire.OutPoint in a standardized way for use with both building and
+// OutpointToFilterEntry is a utility function that derives a filter entry from
+// a wire.Outpoint in a standardized way for use with both building and
 // querying filters.
-func OutPointToFilterEntry(outpoint wire.OutPoint) []byte {
+func OutpointToFilterEntry(outpoint wire.Outpoint) []byte {
 	// Size of the hash plus size of int32 index
 	data := make([]byte, daghash.HashSize+4)
 	copy(data[:], outpoint.TxID.CloneBytes()[:])
@@ -166,15 +166,15 @@ func (b *GCSBuilder) AddEntries(data [][]byte) *GCSBuilder {
 	return b
 }
 
-// AddOutPoint adds a wire.OutPoint to the list of entries to be included in
+// AddOutpoint adds a wire.Outpoint to the list of entries to be included in
 // the GCS filter when it's built.
-func (b *GCSBuilder) AddOutPoint(outpoint wire.OutPoint) *GCSBuilder {
+func (b *GCSBuilder) AddOutpoint(outpoint wire.Outpoint) *GCSBuilder {
 	// Do nothing if the builder's already errored out.
 	if b.err != nil {
 		return b
 	}
 
-	return b.AddEntry(OutPointToFilterEntry(outpoint))
+	return b.AddEntry(OutpointToFilterEntry(outpoint))
 }
 
 // AddHash adds a daghash.Hash to the list of entries to be included in the
@@ -333,7 +333,7 @@ func BuildBasicFilter(block *wire.MsgBlock) (*gcs.Filter, error) {
 			// Each each txin, we'll add a serialized version of
 			// the txid:index to the filters data slices.
 			for _, txIn := range tx.TxIn {
-				b.AddOutPoint(txIn.PreviousOutPoint)
+				b.AddOutpoint(txIn.PreviousOutpoint)
 			}
 		}
 

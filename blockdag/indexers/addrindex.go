@@ -673,7 +673,7 @@ func (idx *AddrIndex) indexBlock(data writeIndexData, block *util.Block, dag *bl
 				// The UTXO should always have the input since
 				// the index contract requires it, however, be
 				// safe and simply ignore any missing entries.
-				entry, ok := dag.GetUTXOEntry(txIn.PreviousOutPoint)
+				entry, ok := dag.GetUTXOEntry(txIn.PreviousOutpoint)
 				if !ok {
 					continue
 				}
@@ -842,7 +842,7 @@ func (idx *AddrIndex) AddUnconfirmedTx(tx *util.Tx, utxoSet blockdag.UTXOSet) {
 	// transaction has already been validated and thus all inputs are
 	// already known to exist.
 	for _, txIn := range tx.MsgTx().TxIn {
-		entry, ok := utxoSet.Get(txIn.PreviousOutPoint)
+		entry, ok := utxoSet.Get(txIn.PreviousOutpoint)
 		if !ok {
 			// Ignore missing entries.  This should never happen
 			// in practice since the function comments specifically

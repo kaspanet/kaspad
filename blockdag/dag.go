@@ -384,11 +384,11 @@ func (dag *BlockDAG) calcSequenceLock(node *blockNode, utxoSet UTXOSet, tx *util
 
 	mTx := tx.MsgTx()
 	for txInIndex, txIn := range mTx.TxIn {
-		entry, ok := utxoSet.Get(txIn.PreviousOutPoint)
+		entry, ok := utxoSet.Get(txIn.PreviousOutpoint)
 		if !ok {
 			str := fmt.Sprintf("output %s referenced from "+
 				"transaction %s:%d either does not exist or "+
-				"has already been spent", txIn.PreviousOutPoint,
+				"has already been spent", txIn.PreviousOutpoint,
 				tx.ID(), txInIndex)
 			return sequenceLock, ruleError(ErrMissingTxOut, str)
 		}
@@ -925,8 +925,8 @@ func genesisPastUTXO(virtual *virtualBlock) UTXOSet {
 	// set by creating a diff UTXO set with the virtual UTXO
 	// set, and adding all of its entries in toRemove
 	diff := NewUTXODiff()
-	for outPoint, entry := range virtual.utxoSet.utxoCollection {
-		diff.toRemove[outPoint] = entry
+	for outpoint, entry := range virtual.utxoSet.utxoCollection {
+		diff.toRemove[outpoint] = entry
 	}
 	genesisPastUTXO := UTXOSet(NewDiffUTXOSet(virtual.utxoSet, diff))
 	return genesisPastUTXO
@@ -1188,8 +1188,8 @@ func (dag *BlockDAG) CalcPastMedianTime() time.Time {
 //
 // This function is safe for concurrent access. However, the returned entry (if
 // any) is NOT.
-func (dag *BlockDAG) GetUTXOEntry(outPoint wire.OutPoint) (*UTXOEntry, bool) {
-	return dag.virtual.utxoSet.get(outPoint)
+func (dag *BlockDAG) GetUTXOEntry(outpoint wire.Outpoint) (*UTXOEntry, bool) {
+	return dag.virtual.utxoSet.get(outpoint)
 }
 
 // BlockConfirmationsByHash returns the confirmations number for a block with the

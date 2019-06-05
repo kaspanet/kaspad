@@ -83,7 +83,7 @@ func calcSequenceLock(tx *util.Tx,
 // spendableOutpoint is a convenience type that houses a particular utxo and the
 // amount associated with it.
 type spendableOutpoint struct {
-	outPoint wire.OutPoint
+	outpoint wire.Outpoint
 	amount   util.Amount
 }
 
@@ -92,7 +92,7 @@ type spendableOutpoint struct {
 // transactions.
 func txOutToSpendableOutpoint(tx *util.Tx, outputNum uint32) spendableOutpoint {
 	return spendableOutpoint{
-		outPoint: wire.OutPoint{TxID: *tx.ID(), Index: outputNum},
+		outpoint: wire.Outpoint{TxID: *tx.ID(), Index: outputNum},
 		amount:   util.Amount(tx.MsgTx().TxOut[outputNum].Value),
 	}
 }
@@ -126,7 +126,7 @@ func (p *poolHarness) CreateCoinbaseTx(blueScore uint64, numOutputs uint32) (*ut
 	txIns := []*wire.TxIn{&wire.TxIn{
 		// Coinbase transactions have no inputs, so previous outpoint is
 		// zero hash and max index.
-		PreviousOutPoint: *wire.NewOutPoint(&daghash.TxID{},
+		PreviousOutpoint: *wire.NewOutpoint(&daghash.TxID{},
 			wire.MaxPrevOutIndex),
 		SignatureScript: coinbaseScript,
 		Sequence:        wire.MaxTxInSequenceNum,
@@ -169,7 +169,7 @@ func (p *poolHarness) CreateSignedTxForSubnetwork(inputs []spendableOutpoint, nu
 	txIns := []*wire.TxIn{}
 	for _, input := range inputs {
 		txIns = append(txIns, &wire.TxIn{
-			PreviousOutPoint: input.outPoint,
+			PreviousOutpoint: input.outpoint,
 			SignatureScript:  p.signatureScript,
 			Sequence:         wire.MaxTxInSequenceNum,
 		})
@@ -213,14 +213,14 @@ func (p *poolHarness) CreateSignedTx(inputs []spendableOutpoint, numOutputs uint
 // amount of the previous one and as such does not include any fees.
 func (p *poolHarness) CreateTxChain(firstOutput spendableOutpoint, numTxns uint32) ([]*util.Tx, error) {
 	txChain := make([]*util.Tx, 0, numTxns)
-	prevOutPoint := firstOutput.outPoint
+	prevOutpoint := firstOutput.outpoint
 	spendableAmount := firstOutput.amount
 	for i := uint32(0); i < numTxns; i++ {
 		// Create the transaction using the previous transaction output
 		// and paying the full amount to the payment address associated
 		// with the harness.
 		txIn := &wire.TxIn{
-			PreviousOutPoint: prevOutPoint,
+			PreviousOutpoint: prevOutpoint,
 			SignatureScript:  p.signatureScript,
 			Sequence:         wire.MaxTxInSequenceNum,
 		}
@@ -233,7 +233,7 @@ func (p *poolHarness) CreateTxChain(firstOutput spendableOutpoint, numTxns uint3
 		txChain = append(txChain, util.NewTx(tx))
 
 		// Next transaction uses outputs from this one.
-		prevOutPoint = wire.OutPoint{TxID: *tx.TxID(), Index: 0}
+		prevOutpoint = wire.Outpoint{TxID: *tx.TxID(), Index: 0}
 	}
 
 	return txChain, nil
@@ -446,7 +446,7 @@ func testPoolMembership(tc *testContext, tx *util.Tx, inOrphanPool, inTxPool boo
 
 func (p *poolHarness) createTx(outpoint spendableOutpoint, fee uint64, numOutputs int64) (*util.Tx, error) {
 	txIns := []*wire.TxIn{&wire.TxIn{
-		PreviousOutPoint: outpoint.outPoint,
+		PreviousOutpoint: outpoint.outpoint,
 		SignatureScript:  nil,
 		Sequence:         wire.MaxTxInSequenceNum,
 	}}
@@ -496,7 +496,7 @@ func TestProcessTransaction(t *testing.T) {
 
 	orphanedTx, err := harness.CreateSignedTx([]spendableOutpoint{{
 		amount:   util.Amount(5000000000),
-		outPoint: wire.OutPoint{TxID: daghash.TxID{}, Index: 1},
+		outpoint: wire.Outpoint{TxID: daghash.TxID{}, Index: 1},
 	}}, 1)
 	if err != nil {
 		t.Fatalf("unable to create signed tx: %v", err)
@@ -610,7 +610,7 @@ func TestProcessTransaction(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewShaHashFromStr: unexpected error: %v", err)
 	}
-	dummyPrevOut := wire.OutPoint{TxID: *dummyPrevOutTxID, Index: 1}
+	dummyPrevOut := wire.Outpoint{TxID: *dummyPrevOutTxID, Index: 1}
 	dummySigScript := bytes.Repeat([]byte{0x00}, 65)
 
 	addrHash := [20]byte{0x01}
@@ -631,7 +631,7 @@ func TestProcessTransaction(t *testing.T) {
 	}
 
 	txIns := []*wire.TxIn{{
-		PreviousOutPoint: wire.OutPoint{TxID: *p2shTx.ID(), Index: 0},
+		PreviousOutpoint: wire.Outpoint{TxID: *p2shTx.ID(), Index: 0},
 		SignatureScript:  wrappedP2SHNonStdSigScript,
 		Sequence:         wire.MaxTxInSequenceNum,
 	}}
@@ -675,7 +675,7 @@ func TestProcessTransaction(t *testing.T) {
 
 	//Checks that a transaction with no outputs will not get rejected
 	noOutsTx := util.NewTx(wire.NewNativeMsgTx(1, []*wire.TxIn{{
-		PreviousOutPoint: dummyPrevOut,
+		PreviousOutpoint: dummyPrevOut,
 		SignatureScript:  dummySigScript,
 		Sequence:         wire.MaxTxInSequenceNum,
 	}},
@@ -739,7 +739,7 @@ func TestProcessTransaction(t *testing.T) {
 	harness.txPool.cfg.Policy.DisableRelayPriority = true
 
 	txIns = []*wire.TxIn{{
-		PreviousOutPoint: spendableOuts[5].outPoint,
+		PreviousOutpoint: spendableOuts[5].outpoint,
 		SignatureScript:  []byte{02, 01}, //Unparsable script
 		Sequence:         wire.MaxTxInSequenceNum,
 	}}
@@ -888,7 +888,7 @@ func TestFetchTransaction(t *testing.T) {
 
 	orphanedTx, err := harness.CreateSignedTx([]spendableOutpoint{{
 		amount:   util.Amount(5000000000),
-		outPoint: wire.OutPoint{TxID: daghash.TxID{1}, Index: 1},
+		outpoint: wire.Outpoint{TxID: daghash.TxID{1}, Index: 1},
 	}}, 1)
 	if err != nil {
 		t.Fatalf("unable to create signed tx: %v", err)
@@ -1051,7 +1051,7 @@ func TestOrphanExpiration(t *testing.T) {
 
 	expiredTx, err := harness.CreateSignedTx([]spendableOutpoint{{
 		amount:   util.Amount(5000000000),
-		outPoint: wire.OutPoint{TxID: daghash.TxID{}, Index: 0},
+		outpoint: wire.Outpoint{TxID: daghash.TxID{}, Index: 0},
 	}}, 1)
 	harness.txPool.ProcessTransaction(expiredTx, true,
 		false, 0)
@@ -1059,7 +1059,7 @@ func TestOrphanExpiration(t *testing.T) {
 
 	tx1, err := harness.CreateSignedTx([]spendableOutpoint{{
 		amount:   util.Amount(5000000000),
-		outPoint: wire.OutPoint{TxID: daghash.TxID{1}, Index: 0},
+		outpoint: wire.Outpoint{TxID: daghash.TxID{1}, Index: 0},
 	}}, 1)
 	harness.txPool.ProcessTransaction(tx1, true,
 		false, 0)
@@ -1074,7 +1074,7 @@ func TestOrphanExpiration(t *testing.T) {
 
 	tx2, err := harness.CreateSignedTx([]spendableOutpoint{{
 		amount:   util.Amount(5000000000),
-		outPoint: wire.OutPoint{TxID: daghash.TxID{2}, Index: 0},
+		outpoint: wire.Outpoint{TxID: daghash.TxID{2}, Index: 0},
 	}}, 1)
 	harness.txPool.ProcessTransaction(tx2, true,
 		false, 0)
@@ -1098,7 +1098,7 @@ func TestMaxOrphanTxSize(t *testing.T) {
 
 	tx, err := harness.CreateSignedTx([]spendableOutpoint{{
 		amount:   util.Amount(5000000000),
-		outPoint: wire.OutPoint{TxID: daghash.TxID{}, Index: 0},
+		outpoint: wire.Outpoint{TxID: daghash.TxID{}, Index: 0},
 	}}, 1)
 	if err != nil {
 		t.Fatalf("unable to create signed tx: %v", err)
@@ -1248,7 +1248,7 @@ func TestRemoveOrphansByTag(t *testing.T) {
 
 	orphanedTx1, err := harness.CreateSignedTx([]spendableOutpoint{{
 		amount:   util.Amount(5000000000),
-		outPoint: wire.OutPoint{TxID: daghash.TxID{1}, Index: 1},
+		outpoint: wire.Outpoint{TxID: daghash.TxID{1}, Index: 1},
 	}}, 1)
 	if err != nil {
 		t.Fatalf("unable to create signed tx: %v", err)
@@ -1257,7 +1257,7 @@ func TestRemoveOrphansByTag(t *testing.T) {
 		false, 1)
 	orphanedTx2, err := harness.CreateSignedTx([]spendableOutpoint{{
 		amount:   util.Amount(5000000000),
-		outPoint: wire.OutPoint{TxID: daghash.TxID{2}, Index: 2},
+		outpoint: wire.Outpoint{TxID: daghash.TxID{2}, Index: 2},
 	}}, 1)
 	if err != nil {
 		t.Fatalf("unable to create signed tx: %v", err)
@@ -1266,7 +1266,7 @@ func TestRemoveOrphansByTag(t *testing.T) {
 		false, 1)
 	orphanedTx3, err := harness.CreateSignedTx([]spendableOutpoint{{
 		amount:   util.Amount(5000000000),
-		outPoint: wire.OutPoint{TxID: daghash.TxID{3}, Index: 3},
+		outpoint: wire.Outpoint{TxID: daghash.TxID{3}, Index: 3},
 	}}, 1)
 	if err != nil {
 		t.Fatalf("unable to create signed tx: %v", err)
@@ -1276,7 +1276,7 @@ func TestRemoveOrphansByTag(t *testing.T) {
 
 	orphanedTx4, err := harness.CreateSignedTx([]spendableOutpoint{{
 		amount:   util.Amount(5000000000),
-		outPoint: wire.OutPoint{TxID: daghash.TxID{4}, Index: 4},
+		outpoint: wire.Outpoint{TxID: daghash.TxID{4}, Index: 4},
 	}}, 1)
 	if err != nil {
 		t.Fatalf("unable to create signed tx: %v", err)
@@ -1338,7 +1338,7 @@ func TestBasicOrphanRemoval(t *testing.T) {
 	// and ensure the state of all other orphans are unaffected.
 	nonChainedOrphanTx, err := harness.CreateSignedTx([]spendableOutpoint{{
 		amount:   util.Amount(5000000000),
-		outPoint: wire.OutPoint{TxID: daghash.TxID{}, Index: 0},
+		outpoint: wire.Outpoint{TxID: daghash.TxID{}, Index: 0},
 	}}, 1)
 	if err != nil {
 		t.Fatalf("unable to create signed tx: %v", err)
@@ -1530,7 +1530,7 @@ func TestCheckSpend(t *testing.T) {
 	// The mempool is empty, so none of the spendable outputs should have a
 	// spend there.
 	for _, op := range outputs {
-		spend := harness.txPool.CheckSpend(op.outPoint)
+		spend := harness.txPool.CheckSpend(op.outpoint)
 		if spend != nil {
 			t.Fatalf("Unexpeced spend found in pool: %v", spend)
 		}
@@ -1554,7 +1554,7 @@ func TestCheckSpend(t *testing.T) {
 
 	// The first tx in the chain should be the spend of the spendable
 	// output.
-	op := outputs[0].outPoint
+	op := outputs[0].outpoint
 	spend := harness.txPool.CheckSpend(op)
 	if spend != chainedTxns[0] {
 		t.Fatalf("expected %v to be spent by %v, instead "+
@@ -1563,7 +1563,7 @@ func TestCheckSpend(t *testing.T) {
 
 	// Now all but the last tx should be spent by the next.
 	for i := 0; i < len(chainedTxns)-1; i++ {
-		op = wire.OutPoint{
+		op = wire.Outpoint{
 			TxID:  *chainedTxns[i].ID(),
 			Index: 0,
 		}
@@ -1576,7 +1576,7 @@ func TestCheckSpend(t *testing.T) {
 	}
 
 	// The last tx should have no spend.
-	op = wire.OutPoint{
+	op = wire.Outpoint{
 		TxID:  *chainedTxns[txChainLength-1].ID(),
 		Index: 0,
 	}
@@ -1715,7 +1715,7 @@ func TestHandleNewBlock(t *testing.T) {
 	txID := blockTx1.ID()
 	orphanTx, err := harness.CreateSignedTx([]spendableOutpoint{{
 		amount:   util.Amount(2500000000),
-		outPoint: wire.OutPoint{TxID: *txID, Index: 0},
+		outpoint: wire.Outpoint{TxID: *txID, Index: 0},
 	}}, 1)
 	if err != nil {
 		t.Fatalf("unable to create signed tx: %v", err)
@@ -1822,7 +1822,7 @@ var dummyBlock = wire.MsgBlock{
 			Version: 1,
 			TxIn: []*wire.TxIn{
 				{
-					PreviousOutPoint: wire.OutPoint{
+					PreviousOutpoint: wire.Outpoint{
 						TxID:  daghash.TxID{},
 						Index: 0xffffffff,
 					},

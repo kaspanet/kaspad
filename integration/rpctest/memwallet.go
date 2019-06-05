@@ -61,8 +61,8 @@ type dagUpdate struct {
 // created for each new block received, then stored in a log in order to
 // properly handle block re-orgs.
 type undoEntry struct {
-	utxosDestroyed map[wire.OutPoint]*utxo
-	utxosCreated   []wire.OutPoint
+	utxosDestroyed map[wire.Outpoint]*utxo
+	utxosCreated   []wire.Outpoint
 }
 
 // memWallet is a simple in-memory wallet whose purpose is to provide basic
@@ -87,7 +87,7 @@ type memWallet struct {
 	addrs map[uint32]util.Address
 
 	// utxos is the set of utxos spendable by the wallet.
-	utxos map[wire.OutPoint]*utxo
+	utxos map[wire.Outpoint]*utxo
 
 	// reorgJournal is a map storing an undo entry for each new block
 	// received. Once a block is disconnected, the undo entry for the
@@ -148,7 +148,7 @@ func newMemWallet(net *dagconfig.Params, harnessID uint32) (*memWallet, error) {
 		hdIndex:         1,
 		hdRoot:          hdRoot,
 		addrs:           addrs,
-		utxos:           make(map[wire.OutPoint]*utxo),
+		utxos:           make(map[wire.Outpoint]*utxo),
 		dagUpdateSignal: make(chan struct{}),
 		reorgJournal:    make(map[uint64]*undoEntry),
 	}, nil
@@ -201,7 +201,7 @@ func (m *memWallet) ingestBlock(update *dagUpdate) {
 	// the wallet as a result.
 	m.currentHeight = update.blockHeight
 	undo := &undoEntry{
-		utxosDestroyed: make(map[wire.OutPoint]*utxo),
+		utxosDestroyed: make(map[wire.Outpoint]*utxo),
 	}
 	for _, tx := range update.filteredTxns {
 		mtx := tx.MsgTx()
@@ -264,7 +264,7 @@ func (m *memWallet) evalOutputs(outputs []*wire.TxOut, txID *daghash.TxID,
 				maturityHeight = m.currentHeight + m.net.BlockRewardMaturity
 			}
 
-			op := wire.OutPoint{TxID: *txID, Index: uint32(i)}
+			op := wire.Outpoint{TxID: *txID, Index: uint32(i)}
 			m.utxos[op] = &utxo{
 				value:          util.Amount(output.Value),
 				keyIndex:       keyIndex,
@@ -280,7 +280,7 @@ func (m *memWallet) evalOutputs(outputs []*wire.TxOut, txID *daghash.TxID,
 // wallet which are spent by an input.
 func (m *memWallet) evalInputs(inputs []*wire.TxIn, undo *undoEntry) {
 	for _, txIn := range inputs {
-		op := txIn.PreviousOutPoint
+		op := txIn.PreviousOutpoint
 		oldUtxo, ok := m.utxos[op]
 		if !ok {
 			continue
@@ -351,7 +351,7 @@ func (m *memWallet) fundTx(tx *wire.MsgTx, amt util.Amount, feeRate util.Amount)
 		txSize      int
 	)
 
-	for outPoint, utxo := range m.utxos {
+	for outpoint, utxo := range m.utxos {
 		// Skip any outputs that are still currently immature or are
 		// currently locked.
 		if !utxo.isMature(m.currentHeight) || utxo.isLocked {
@@ -363,7 +363,7 @@ func (m *memWallet) fundTx(tx *wire.MsgTx, amt util.Amount, feeRate util.Amount)
 		// Add the selected output to the transaction, updating the
 		// current tx size while accounting for the size of the future
 		// sigScript.
-		tx.AddTxIn(wire.NewTxIn(&outPoint, nil))
+		tx.AddTxIn(wire.NewTxIn(&outpoint, nil))
 		txSize = tx.SerializeSize() + spendSize*len(tx.TxIn)
 
 		// Calculate the fee required for the txn at this point
@@ -445,8 +445,8 @@ func (m *memWallet) CreateTransaction(outputs []*wire.TxOut, feeRate util.Amount
 	// potential double spend.
 	spentOutputs := make([]*utxo, 0, len(tx.TxIn))
 	for i, txIn := range tx.TxIn {
-		outPoint := txIn.PreviousOutPoint
-		utxo := m.utxos[outPoint]
+		outpoint := txIn.PreviousOutpoint
+		utxo := m.utxos[outpoint]
 
 		extendedKey, err := m.hdRoot.Child(utxo.keyIndex)
 		if err != nil {
@@ -489,7 +489,7 @@ func (m *memWallet) UnlockOutputs(inputs []*wire.TxIn) {
 	defer m.Unlock()
 
 	for _, input := range inputs {
-		utxo, ok := m.utxos[input.PreviousOutPoint]
+		utxo, ok := m.utxos[input.PreviousOutpoint]
 		if !ok {
 			continue
 		}
