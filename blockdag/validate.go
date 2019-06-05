@@ -82,15 +82,15 @@ func IsFeeTransaction(tx *util.Tx) bool {
 
 // SequenceLockActive determines if a transaction's sequence locks have been
 // met, meaning that all the inputs of a given transaction have reached a
-// chain-height or time sufficient for their relative lock-time maturity.
-func SequenceLockActive(sequenceLock *SequenceLock, blockChainHeight uint64,
+// blue score or time sufficient for their relative lock-time maturity.
+func SequenceLockActive(sequenceLock *SequenceLock, blockBlueScore uint64,
 	medianTimePast time.Time) bool {
 
-	// If either the seconds, or chain-height relative-lock time has not yet
+	// If either the seconds, or blue score relative-lock time has not yet
 	// reached, then the transaction is not yet mature according to its
 	// sequence locks.
 	if sequenceLock.Seconds >= medianTimePast.Unix() ||
-		sequenceLock.BlockChainHeight >= int64(blockChainHeight) {
+		sequenceLock.BlockBlueScore >= int64(blockBlueScore) {
 		return false
 	}
 
@@ -1100,7 +1100,7 @@ func (dag *BlockDAG) checkConnectToPastUTXO(block *blockNode, pastUTXO UTXOSet,
 			if err != nil {
 				return nil, err
 			}
-			if !SequenceLockActive(sequenceLock, block.height,
+			if !SequenceLockActive(sequenceLock, block.blueScore,
 				medianTime) {
 				str := fmt.Sprintf("block contains " +
 					"transaction whose input sequence " +

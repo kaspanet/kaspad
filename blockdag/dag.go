@@ -329,14 +329,14 @@ func (dag *BlockDAG) addOrphanBlock(block *util.Block) {
 }
 
 // SequenceLock represents the converted relative lock-time in seconds, and
-// absolute block-chain-height for a transaction input's relative lock-times.
+// absolute block-blue-score for a transaction input's relative lock-times.
 // According to SequenceLock, after the referenced input has been confirmed
 // within a block, a transaction spending that input can be included into a
 // block either after 'seconds' (according to past median time), or once the
-// 'BlockChainHeight' has been reached.
+// 'BlockBlueScore' has been reached.
 type SequenceLock struct {
-	Seconds          int64
-	BlockChainHeight int64
+	Seconds        int64
+	BlockBlueScore int64
 }
 
 // CalcSequenceLock computes a relative lock-time SequenceLock for the passed
@@ -369,7 +369,7 @@ func (dag *BlockDAG) calcSequenceLock(node *blockNode, utxoSet UTXOSet, tx *util
 	// A value of -1 for each relative lock type represents a relative time
 	// lock value that will allow a transaction to be included in a block
 	// at any given height or time.
-	sequenceLock := &SequenceLock{Seconds: -1, BlockChainHeight: -1}
+	sequenceLock := &SequenceLock{Seconds: -1, BlockBlueScore: -1}
 
 	// Sequence locks don't apply to block reward transactions Therefore, we
 	// return sequence lock values of -1 indicating that this transaction
@@ -444,8 +444,8 @@ func (dag *BlockDAG) calcSequenceLock(node *blockNode, utxoSet UTXOSet, tx *util
 			// lock-time. We subtract one from the relative lock in
 			// order to maintain the original lockTime semantics.
 			blockChainHeight := int64(inputChainHeight) + relativeLock - 1
-			if blockChainHeight > sequenceLock.BlockChainHeight {
-				sequenceLock.BlockChainHeight = blockChainHeight
+			if blockChainHeight > sequenceLock.BlockBlueScore {
+				sequenceLock.BlockBlueScore = blockChainHeight
 			}
 		}
 	}

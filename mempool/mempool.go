@@ -964,7 +964,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rateLimit, rejectDu
 		}
 		return nil, nil, err
 	}
-	if !blockdag.SequenceLockActive(sequenceLock, nextBlockHeight,
+	if !blockdag.SequenceLockActive(sequenceLock, nextBlockBlueScore,
 		medianTimePast) {
 		return nil, nil, txRuleError(wire.RejectNonstandard,
 			"transaction's sequence locks on inputs not met")

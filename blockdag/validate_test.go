@@ -22,8 +22,8 @@ import (
 func TestSequenceLocksActive(t *testing.T) {
 	seqLock := func(h int64, s int64) *SequenceLock {
 		return &SequenceLock{
-			Seconds:          s,
-			BlockChainHeight: h,
+			Seconds:        s,
+			BlockBlueScore: h,
 		}
 	}
 

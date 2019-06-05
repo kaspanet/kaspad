@@ -75,8 +75,8 @@ func calcSequenceLock(tx *util.Tx,
 	utxoSet blockdag.UTXOSet) (*blockdag.SequenceLock, error) {
 
 	return &blockdag.SequenceLock{
-		Seconds:          -1,
-		BlockChainHeight: -1,
+		Seconds:        -1,
+		BlockBlueScore: -1,
 	}, nil
 }
 
@@ -690,8 +690,8 @@ func TestProcessTransaction(t *testing.T) {
 		view blockdag.UTXOSet) (*blockdag.SequenceLock, error) {
 
 		return &blockdag.SequenceLock{
-			Seconds:          math.MaxInt64,
-			BlockChainHeight: math.MaxInt64,
+			Seconds:        math.MaxInt64,
+			BlockBlueScore: math.MaxInt64,
 		}, nil
 	}
 	tx, err = harness.createTx(spendableOuts[2], 0, 1)
