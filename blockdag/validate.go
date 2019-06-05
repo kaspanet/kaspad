@@ -93,7 +93,7 @@ func SequenceLockActive(sequenceLock *SequenceLock, blockBlueScore uint64,
 }
 
 // IsFinalizedTransaction determines whether or not a transaction is finalized.
-func IsFinalizedTransaction(tx *util.Tx, blockHeight uint64, blockTime time.Time) bool {
+func IsFinalizedTransaction(tx *util.Tx, blockBlueScore uint64, blockTime time.Time) bool {
 	msgTx := tx.MsgTx()
 
 	// Lock time of zero means the transaction is finalized.
@@ -102,17 +102,17 @@ func IsFinalizedTransaction(tx *util.Tx, blockHeight uint64, blockTime time.Time
 		return true
 	}
 
-	// The lock time field of a transaction is either a block height at
+	// The lock time field of a transaction is either a block blue score at
 	// which the transaction is finalized or a timestamp depending on if the
 	// value is before the txscript.LockTimeThreshold.  When it is under the
-	// threshold it is a block height.
-	blockTimeOrHeight := int64(0)
+	// threshold it is a block blue score.
+	blockTimeOrBlueScore := int64(0)
 	if lockTime < txscript.LockTimeThreshold {
-		blockTimeOrHeight = int64(blockHeight)
+		blockTimeOrBlueScore = int64(blockBlueScore)
 	} else {
-		blockTimeOrHeight = blockTime.Unix()
+		blockTimeOrBlueScore = blockTime.Unix()
 	}
-	if int64(lockTime) < blockTimeOrHeight {
+	if int64(lockTime) < blockTimeOrBlueScore {
 		return true
 	}
 
@@ -740,24 +740,18 @@ func (dag *BlockDAG) checkBlockContext(block *util.Block, parents blockSet, blue
 		return err
 	}
 
-	if !fastAdd {
-		if err := dag.validateAllTxsFinalized(block, header, bluestParent); err != nil {
-			return err
-		}
-	}
-
 	return nil
 }
 
-func (dag *BlockDAG) validateAllTxsFinalized(block *util.Block, header *wire.BlockHeader, bluestParent *blockNode) error {
-	blockTime := header.Timestamp
+func (dag *BlockDAG) validateAllTxsFinalized(block *util.Block, node *blockNode, bluestParent *blockNode) error {
+	blockTime := block.MsgBlock().Header.Timestamp
 	if !block.IsGenesis() {
 		blockTime = bluestParent.PastMedianTime()
 	}
 
 	// Ensure all transactions in the block are finalized.
 	for _, tx := range block.Transactions() {
-		if !IsFinalizedTransaction(tx, block.Height(), blockTime) {
+		if !IsFinalizedTransaction(tx, node.blueScore, blockTime) {
 			str := fmt.Sprintf("block contains unfinalized "+
 				"transaction %s", tx.ID())
 			return ruleError(ErrUnfinalizedTx, str)

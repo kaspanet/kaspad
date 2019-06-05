@@ -63,6 +63,14 @@ func (dag *BlockDAG) maybeAcceptBlock(block *util.Block, flags BehaviorFlags) er
 	newNode := newBlockNode(blockHeader, parents, dag.dagParams.K)
 	newNode.status = statusDataStored
 
+	// Make sure that all the block's transactions are finalized
+	fastAdd := flags&BFFastAdd == BFFastAdd
+	if !fastAdd {
+		if err := dag.validateAllTxsFinalized(block, newNode, bluestParent); err != nil {
+			return err
+		}
+	}
+
 	dag.index.AddNode(newNode)
 	err = dag.index.flushToDB()
 	if err != nil {

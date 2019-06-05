@@ -467,7 +467,7 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 			log.Tracef("Skipping block reward tx %s", tx.ID())
 			continue
 		}
-		if !blockdag.IsFinalizedTransaction(tx, nextBlockHeight,
+		if !blockdag.IsFinalizedTransaction(tx, nextBlockBlueScore,
 			g.timeSource.AdjustedTime()) {
 
 			log.Tracef("Skipping non-finalized tx %s", tx.ID())

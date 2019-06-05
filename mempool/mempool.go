@@ -890,7 +890,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rateLimit, rejectDu
 	// Don't allow non-standard transactions if the network parameters
 	// forbid their acceptance.
 	if !mp.cfg.Policy.AcceptNonStd {
-		err = checkTransactionStandard(tx, nextBlockHeight,
+		err = checkTransactionStandard(tx, nextBlockBlueScore,
 			medianTimePast, &mp.cfg.Policy)
 		if err != nil {
 			// Attempt to extract a reject code from the error so
