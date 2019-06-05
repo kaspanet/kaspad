@@ -436,7 +436,7 @@ func diffFromTx(u UTXOSet, tx *wire.MsgTx, containingNode *blockNode) (*UTXODiff
 	}
 	for i, txOut := range tx.TxOut {
 		entry := NewUTXOEntry(txOut, isBlockReward, containingNode.height, containingNode.blueScore)
-		outpoint := *wire.NewOutPoint(tx.TxID(), uint32(i))
+		outpoint := *wire.NewOutpoint(tx.TxID(), uint32(i))
 		err := diff.AddEntry(outpoint, entry)
 		if err != nil {
 			return nil, err
