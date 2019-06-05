@@ -45,7 +45,7 @@ func TestTx(t *testing.T) {
 			maxPayload, wantPayload)
 	}
 
-	// Ensure we get the same transaction output point data back out.
+	// Ensure we get the same transaction outpoint data back out.
 	// NOTE: This is a block hash and made up index, but we're only
 	// testing package functionality.
 	prevOutIndex := uint32(1)

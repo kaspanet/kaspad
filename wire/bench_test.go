@@ -173,7 +173,7 @@ func BenchmarkWriteVarStr10(b *testing.B) {
 }
 
 // BenchmarkReadOutpoint performs a benchmark on how long it takes to read a
-// transaction output point.
+// transaction outpoint.
 func BenchmarkReadOutpoint(b *testing.B) {
 	buf := []byte{
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -191,7 +191,7 @@ func BenchmarkReadOutpoint(b *testing.B) {
 }
 
 // BenchmarkWriteOutpoint performs a benchmark on how long it takes to write a
-// transaction output point.
+// transaction outpoint.
 func BenchmarkWriteOutpoint(b *testing.B) {
 	op := &Outpoint{
 		TxID:  daghash.TxID{},
