@@ -132,23 +132,23 @@ func IsFinalizedTransaction(tx *util.Tx, blockHeight uint64, blockTime time.Time
 	return true
 }
 
-// CalcBlockSubsidy returns the subsidy amount a block at the provided height
+// CalcBlockSubsidy returns the subsidy amount a block at the provided blue score
 // should have. This is mainly used for determining how much the coinbase for
 // newly generated blocks awards as well as validating the coinbase for blocks
 // has the expected value.
 //
 // The subsidy is halved every SubsidyReductionInterval blocks.  Mathematically
-// this is: baseSubsidy / 2^(height/SubsidyReductionInterval)
+// this is: baseSubsidy / 2^(blueScore/SubsidyReductionInterval)
 //
 // At the target block generation rate for the main network, this is
 // approximately every 4 years.
-func CalcBlockSubsidy(height uint64, dagParams *dagconfig.Params) uint64 {
+func CalcBlockSubsidy(blueScore uint64, dagParams *dagconfig.Params) uint64 {
 	if dagParams.SubsidyReductionInterval == 0 {
 		return baseSubsidy
 	}
 
-	// Equivalent to: baseSubsidy / 2^(height/subsidyHalvingInterval)
-	return baseSubsidy >> uint(height/dagParams.SubsidyReductionInterval)
+	// Equivalent to: baseSubsidy / 2^(blueScore/subsidyHalvingInterval)
+	return baseSubsidy >> uint(blueScore/dagParams.SubsidyReductionInterval)
 }
 
 // CheckTransactionSanity performs some preliminary checks on a transaction to
@@ -1060,7 +1060,7 @@ func (dag *BlockDAG) checkConnectToPastUTXO(block *blockNode, pastUTXO UTXOSet,
 		for _, txOut := range transactions[0].MsgTx().TxOut {
 			totalSatoshiOut += txOut.Value
 		}
-		expectedSatoshiOut := CalcBlockSubsidy(block.height, dag.dagParams)
+		expectedSatoshiOut := CalcBlockSubsidy(block.blueScore, dag.dagParams)
 		if totalSatoshiOut > expectedSatoshiOut {
 			str := fmt.Sprintf("coinbase transaction for block pays %d "+
 				"which is more than expected value of %d",

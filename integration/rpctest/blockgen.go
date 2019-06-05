@@ -95,7 +95,7 @@ func standardCoinbaseScript(nextBlockHeight uint64, extraNonce uint64) ([]byte, 
 
 // createCoinbaseTx returns a coinbase transaction paying an appropriate
 // subsidy based on the passed block height to the provided address.
-func createCoinbaseTx(coinbaseScript []byte, nextBlockHeight uint64,
+func createCoinbaseTx(coinbaseScript []byte, nextBlueScore uint64,
 	addr util.Address, mineTo []wire.TxOut,
 	net *dagconfig.Params) (*util.Tx, error) {
 
@@ -116,7 +116,7 @@ func createCoinbaseTx(coinbaseScript []byte, nextBlockHeight uint64,
 	txOuts := []*wire.TxOut{}
 	if len(mineTo) == 0 {
 		txOuts = append(txOuts, &wire.TxOut{
-			Value:    blockdag.CalcBlockSubsidy(nextBlockHeight, net),
+			Value:    blockdag.CalcBlockSubsidy(nextBlueScore, net),
 			PkScript: pkScript,
 		})
 	} else {

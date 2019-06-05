@@ -137,13 +137,13 @@ func createTxForTest(numInputs uint32, numOutputs uint32, outputValue uint64, su
 }
 
 // createCoinbaseTxForTest returns a coinbase transaction with the requested number of
-// outputs paying an appropriate subsidy based on the passed block height to the
+// outputs paying an appropriate subsidy based on the passed block blueScore to the
 // address associated with the harness.  It automatically uses a standard
 // signature script that starts with the block height
-func createCoinbaseTxForTest(blockHeight uint64, numOutputs uint32, extraNonce int64, params *dagconfig.Params) (*wire.MsgTx, error) {
+func createCoinbaseTxForTest(blueScore uint64, numOutputs uint32, extraNonce int64, params *dagconfig.Params) (*wire.MsgTx, error) {
 	// Create standard coinbase script.
 	coinbaseScript, err := txscript.NewScriptBuilder().
-		AddInt64(int64(blockHeight)).AddInt64(extraNonce).Script()
+		AddInt64(int64(blueScore)).AddInt64(extraNonce).Script()
 	if err != nil {
 		return nil, err
 	}
@@ -159,7 +159,7 @@ func createCoinbaseTxForTest(blockHeight uint64, numOutputs uint32, extraNonce i
 
 	txOuts := []*wire.TxOut{}
 
-	totalInput := CalcBlockSubsidy(blockHeight, params)
+	totalInput := CalcBlockSubsidy(blueScore, params)
 	amountPerOutput := totalInput / uint64(numOutputs)
 	remainder := totalInput - amountPerOutput*uint64(numOutputs)
 	for i := uint32(0); i < numOutputs; i++ {

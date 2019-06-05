@@ -110,15 +110,15 @@ type poolHarness struct {
 }
 
 // CreateCoinbaseTx returns a coinbase transaction with the requested number of
-// outputs paying an appropriate subsidy based on the passed block height to the
+// outputs paying an appropriate subsidy based on the passed block blue score to the
 // address associated with the harness.  It automatically uses a standard
 // signature script that starts with the block height that is required by
 // version 2 blocks.
-func (p *poolHarness) CreateCoinbaseTx(blockHeight uint64, numOutputs uint32) (*util.Tx, error) {
+func (p *poolHarness) CreateCoinbaseTx(blueScore uint64, numOutputs uint32) (*util.Tx, error) {
 	// Create standard coinbase script.
 	extraNonce := int64(0)
 	coinbaseScript, err := txscript.NewScriptBuilder().
-		AddInt64(int64(blockHeight)).AddInt64(extraNonce).Script()
+		AddInt64(int64(blueScore)).AddInt64(extraNonce).Script()
 	if err != nil {
 		return nil, err
 	}
@@ -133,7 +133,7 @@ func (p *poolHarness) CreateCoinbaseTx(blockHeight uint64, numOutputs uint32) (*
 	}}
 
 	txOuts := []*wire.TxOut{}
-	totalInput := blockdag.CalcBlockSubsidy(blockHeight, p.chainParams)
+	totalInput := blockdag.CalcBlockSubsidy(blueScore, p.chainParams)
 	amountPerOutput := totalInput / uint64(numOutputs)
 	remainder := totalInput - amountPerOutput*uint64(numOutputs)
 	for i := uint32(0); i < numOutputs; i++ {

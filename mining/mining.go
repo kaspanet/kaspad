@@ -210,21 +210,21 @@ type BlockTemplate struct {
 
 // StandardCoinbaseScript returns a standard script suitable for use as the
 // signature script of the coinbase transaction of a new block.  In particular,
-// it starts with the block height that is required by version 2 blocks and adds
+// it starts with the block blue score that is required by version 2 blocks and adds
 // the extra nonce as well as additional coinbase flags.
-func StandardCoinbaseScript(nextBlockHeight uint64, extraNonce uint64) ([]byte, error) {
-	return txscript.NewScriptBuilder().AddInt64(int64(nextBlockHeight)).
+func StandardCoinbaseScript(nextBlueScore uint64, extraNonce uint64) ([]byte, error) {
+	return txscript.NewScriptBuilder().AddInt64(int64(nextBlueScore)).
 		AddInt64(int64(extraNonce)).AddData([]byte(CoinbaseFlags)).
 		Script()
 }
 
 // CreateCoinbaseTx returns a coinbase transaction paying an appropriate subsidy
-// based on the passed block height to the provided address.  When the address
+// based on the passed block blue score to the provided address.  When the address
 // is nil, the coinbase transaction will instead be redeemable by anyone.
 //
 // See the comment for NewBlockTemplate for more information about why the nil
 // address handling is useful.
-func CreateCoinbaseTx(params *dagconfig.Params, coinbaseScript []byte, nextBlockHeight uint64, addr util.Address) (*util.Tx, error) {
+func CreateCoinbaseTx(params *dagconfig.Params, coinbaseScript []byte, nextBlueScore uint64, addr util.Address) (*util.Tx, error) {
 	// Create the script to pay to the provided payment address if one was
 	// specified.  Otherwise create a script that allows the coinbase to be
 	// redeemable by anyone.
@@ -256,7 +256,7 @@ func CreateCoinbaseTx(params *dagconfig.Params, coinbaseScript []byte, nextBlock
 		Sequence:        wire.MaxTxInSequenceNum,
 	}
 	txOut := &wire.TxOut{
-		Value:    blockdag.CalcBlockSubsidy(nextBlockHeight, params),
+		Value:    blockdag.CalcBlockSubsidy(nextBlueScore, params),
 		PkScript: pkScript,
 	}
 	return util.NewTx(wire.NewNativeMsgTx(wire.TxVersion, []*wire.TxIn{txIn}, []*wire.TxOut{txOut})), nil
