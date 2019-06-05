@@ -6,7 +6,6 @@ package blockdag
 
 import (
 	"math"
-	"reflect"
 	"testing"
 	"time"
 
@@ -473,74 +472,6 @@ func TestCheckBlockSanity(t *testing.T) {
 	rError := err.(RuleError)
 	if rError.ErrorCode != ErrWrongParentsOrder {
 		t.Errorf("CheckBlockSanity: Expected error was ErrWrongParentsOrder but got %v", err)
-	}
-}
-
-// TestCheckSerializedHeight tests the checkSerializedHeight function with
-// various serialized heights and also does negative tests to ensure errors
-// and handled properly.
-func TestCheckSerializedHeight(t *testing.T) {
-	// Create an empty coinbase template to be used in the tests below.
-	coinbaseOutpoint := wire.NewOutPoint(&daghash.TxID{}, math.MaxUint32)
-	coinbaseTx := wire.NewNativeMsgTx(1, []*wire.TxIn{wire.NewTxIn(coinbaseOutpoint, nil)}, nil)
-
-	// Expected rule errors.
-	missingHeightError := RuleError{
-		ErrorCode: ErrMissingCoinbaseHeight,
-	}
-	badHeightError := RuleError{
-		ErrorCode: ErrBadCoinbaseHeight,
-	}
-
-	tests := []struct {
-		sigScript  []byte // Serialized data
-		wantHeight uint64 // Expected height
-		err        error  // Expected error type
-	}{
-		// No serialized height length.
-		{[]byte{}, 0, missingHeightError},
-		// Serialized height length with no height bytes.
-		{[]byte{0x02}, 0, missingHeightError},
-		// Serialized height length with too few height bytes.
-		{[]byte{0x02, 0x4a}, 0, missingHeightError},
-		// Serialized height that needs 2 bytes to encode.
-		{[]byte{0x02, 0x4a, 0x52}, 21066, nil},
-		// Serialized height that needs 2 bytes to encode, but backwards
-		// endianness.
-		{[]byte{0x02, 0x4a, 0x52}, 19026, badHeightError},
-		// Serialized height that needs 3 bytes to encode.
-		{[]byte{0x03, 0x40, 0x0d, 0x03}, 200000, nil},
-		// Serialized height that needs 3 bytes to encode, but backwards
-		// endianness.
-		{[]byte{0x03, 0x40, 0x0d, 0x03}, 1074594560, badHeightError},
-	}
-
-	t.Logf("Running %d tests", len(tests))
-	for i, test := range tests {
-		msgTx := coinbaseTx.Copy()
-		msgTx.TxIn[0].SignatureScript = test.sigScript
-
-		msgBlock := wire.NewMsgBlock(wire.NewBlockHeader(1, []*daghash.Hash{}, &daghash.Hash{}, &daghash.Hash{}, &daghash.Hash{}, 0, 0))
-		msgBlock.AddTransaction(msgTx)
-		block := util.NewBlock(msgBlock)
-		block.SetHeight(test.wantHeight)
-
-		err := checkSerializedHeight(block)
-		if reflect.TypeOf(err) != reflect.TypeOf(test.err) {
-			t.Errorf("checkSerializedHeight #%d wrong error type "+
-				"got: %v <%T>, want: %T", i, err, err, test.err)
-			continue
-		}
-
-		if rerr, ok := err.(RuleError); ok {
-			trerr := test.err.(RuleError)
-			if rerr.ErrorCode != trerr.ErrorCode {
-				t.Errorf("checkSerializedHeight #%d wrong "+
-					"error code got: %v, want: %v", i,
-					rerr.ErrorCode, trerr.ErrorCode)
-				continue
-			}
-		}
 	}
 }
 

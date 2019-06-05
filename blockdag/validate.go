@@ -5,7 +5,6 @@
 package blockdag
 
 import (
-	"encoding/binary"
 	"fmt"
 	"math"
 	"math/big"
@@ -43,10 +42,6 @@ const (
 	// baseSubsidy is the starting subsidy amount for mined blocks.  This
 	// value is halved every SubsidyHalvingInterval blocks.
 	baseSubsidy = 50 * util.SatoshiPerBitcoin
-
-	// MaxOutputsPerBlock is the maximum number of transaction outputs there
-	// can be in a block of max size.
-	MaxOutputsPerBlock = wire.MaxBlockPayload / wire.MinTxOutPayload
 )
 
 // isNullOutpoint determines whether or not a previous transaction output point
@@ -153,7 +148,7 @@ func CalcBlockSubsidy(blueScore uint64, dagParams *dagconfig.Params) uint64 {
 
 // CheckTransactionSanity performs some preliminary checks on a transaction to
 // ensure it is sane.  These checks are context free.
-func CheckTransactionSanity(tx *util.Tx, subnetworkID *subnetworkid.SubnetworkID, isFeeTransaction bool) error {
+func CheckTransactionSanity(tx *util.Tx, subnetworkID *subnetworkid.SubnetworkID) error {
 	// A transaction must have at least one input.
 	msgTx := tx.MsgTx()
 	if len(msgTx.TxIn) == 0 {
@@ -540,9 +535,8 @@ func (dag *BlockDAG) checkBlockSanity(block *util.Block, flags BehaviorFlags) er
 
 	// Do some preliminary checks on each transaction to ensure they are
 	// sane before continuing.
-	for i, tx := range transactions {
-		isFeeTransaction := i == util.FeeTransactionIndex
-		err := CheckTransactionSanity(tx, dag.subnetworkID, isFeeTransaction)
+	for _, tx := range transactions {
+		err := CheckTransactionSanity(tx, dag.subnetworkID)
 		if err != nil {
 			return err
 		}
@@ -602,63 +596,6 @@ func (dag *BlockDAG) CheckBlockSanity(block *util.Block, powLimit *big.Int,
 	timeSource MedianTimeSource) error {
 
 	return dag.checkBlockSanity(block, BFNone)
-}
-
-// ExtractCoinbaseHeight attempts to extract the height of the block from the
-// scriptSig of a coinbase transaction.
-func ExtractCoinbaseHeight(coinbaseTx *util.Tx) (uint64, error) {
-	sigScript := coinbaseTx.MsgTx().TxIn[0].SignatureScript
-	if len(sigScript) < 1 {
-		str := "the coinbase signature script" +
-			"must start with the " +
-			"length of the serialized block height"
-		return 0, ruleError(ErrMissingCoinbaseHeight, str)
-	}
-
-	// Detect the case when the block height is a small integer encoded with
-	// a single byte.
-	opcode := int(sigScript[0])
-	if opcode == txscript.Op0 {
-		return 0, nil
-	}
-	if opcode >= txscript.Op1 && opcode <= txscript.Op16 {
-		return uint64(opcode - (txscript.Op1 - 1)), nil
-	}
-
-	// Otherwise, the opcode is the length of the following bytes which
-	// encode in the block height.
-	serializedLen := int(sigScript[0])
-	if len(sigScript[1:]) < serializedLen {
-		str := "the coinbase signature script " +
-			"must start with the " +
-			"serialized block height"
-		return 0, ruleError(ErrMissingCoinbaseHeight, str)
-	}
-
-	serializedHeightBytes := make([]byte, 8)
-	copy(serializedHeightBytes, sigScript[1:serializedLen+1])
-	serializedHeight := binary.LittleEndian.Uint64(serializedHeightBytes)
-
-	return serializedHeight, nil
-}
-
-// checkSerializedHeight checks if the signature script in the passed
-// transaction starts with the serialized block height of wantHeight.
-func checkSerializedHeight(block *util.Block) error {
-	coinbaseTx := block.CoinbaseTransaction()
-	serializedHeight, err := ExtractCoinbaseHeight(coinbaseTx)
-	if err != nil {
-		return err
-	}
-
-	wantHeight := block.Height()
-	if serializedHeight != wantHeight {
-		str := fmt.Sprintf("the coinbase signature script serialized "+
-			"block height is %d when %d was expected",
-			serializedHeight, wantHeight)
-		return ruleError(ErrBadCoinbaseHeight, str)
-	}
-	return nil
 }
 
 // checkBlockHeaderContext performs several validation checks on the block header
@@ -761,7 +698,7 @@ func validateParents(blockHeader *wire.BlockHeader, parents blockSet) error {
 	for queue.Len() > 0 {
 		current := queue.pop()
 		if parents.contains(current) {
-			return fmt.Errorf("Block %s is both a parent of %s and an"+
+			return fmt.Errorf("block %s is both a parent of %s and an"+
 				" ancestor of another parent",
 				current.hash,
 				blockHeader.BlockHash())
@@ -807,13 +744,6 @@ func (dag *BlockDAG) checkBlockContext(block *util.Block, parents blockSet, blue
 		if err := dag.validateAllTxsFinalized(block, header, bluestParent); err != nil {
 			return err
 		}
-
-		// Ensure coinbase starts with serialized block heights
-		err := checkSerializedHeight(block)
-		if err != nil {
-			return err
-		}
-
 	}
 
 	return nil
@@ -848,8 +778,7 @@ func (dag *BlockDAG) validateAllTxsFinalized(block *util.Block, header *wire.Blo
 // http://r6.ca/blog/20120206T005236Z.html.
 //
 // This function MUST be called with the dag state lock held (for reads).
-func ensureNoDuplicateTx(block *blockNode, utxoSet UTXOSet,
-	transactions []*util.Tx) error {
+func ensureNoDuplicateTx(utxoSet UTXOSet, transactions []*util.Tx) error {
 	// Fetch utxos for all of the transaction ouputs in this block.
 	// Typically, there will not be any utxos for any of the outputs.
 	fetchSet := make(map[wire.OutPoint]struct{})
@@ -1002,7 +931,7 @@ func (dag *BlockDAG) checkConnectToPastUTXO(block *blockNode, pastUTXO UTXOSet,
 	transactions []*util.Tx, fastAdd bool) (compactFeeData, error) {
 
 	if !fastAdd {
-		err := ensureNoDuplicateTx(block, pastUTXO, transactions)
+		err := ensureNoDuplicateTx(pastUTXO, transactions)
 		if err != nil {
 			return nil, err
 		}
@@ -1042,12 +971,12 @@ func (dag *BlockDAG) checkConnectToPastUTXO(block *blockNode, pastUTXO UTXOSet,
 
 		err = compactFeeFactory.add(txFee)
 		if err != nil {
-			return nil, fmt.Errorf("Error adding tx %s fee to compactFeeFactory: %s", tx.ID(), err)
+			return nil, fmt.Errorf("error adding tx %s fee to compactFeeFactory: %s", tx.ID(), err)
 		}
 	}
 	feeData, err := compactFeeFactory.data()
 	if err != nil {
-		return nil, fmt.Errorf("Error getting bytes of fee data: %s", err)
+		return nil, fmt.Errorf("error getting bytes of fee data: %s", err)
 	}
 
 	if !fastAdd {
@@ -1159,18 +1088,6 @@ func validateSigopsCount(pastUTXO UTXOSet, transactions []*util.Tx) error {
 	}
 
 	return nil
-}
-
-// countSpentOutputs returns the number of utxos the passed block spends.
-func countSpentOutputs(block *util.Block) int {
-	// Exclude the block reward transactions since they can't spend anything.
-	var numSpent int
-	for _, tx := range block.Transactions()[1:] {
-		if !IsFeeTransaction(tx) {
-			numSpent += len(tx.MsgTx().TxIn)
-		}
-	}
-	return numSpent
 }
 
 // CheckConnectBlockTemplate fully validates that connecting the passed block to

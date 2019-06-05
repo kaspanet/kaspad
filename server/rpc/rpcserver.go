@@ -2113,9 +2113,9 @@ func chainErrToGBTErrString(err error) string {
 		return "bad-cb-length"
 	case blockdag.ErrBadCoinbaseValue:
 		return "bad-cb-value"
-	case blockdag.ErrMissingCoinbaseHeight:
+	case blockdag.ErrMissingCoinbaseBlueScore:
 		return "bad-cb-height"
-	case blockdag.ErrBadCoinbaseHeight:
+	case blockdag.ErrBadCoinbaseBlueScore:
 		return "bad-cb-height"
 	case blockdag.ErrScriptMalformed:
 		return "bad-script-malformed"
