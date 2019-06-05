@@ -664,12 +664,10 @@ func (idx *AddrIndex) indexPkScript(data writeIndexData, pkScript []byte, txIdx 
 // the passed map.
 func (idx *AddrIndex) indexBlock(data writeIndexData, block *util.Block, dag *blockdag.BlockDAG) {
 	for txIdx, tx := range block.Transactions() {
-		// Coinbase does not reference any previous txs,
-		// so skip scanning its inputs.
-		//
-		// Since the block is required to have already gone through full
-		// validation, it has already been proven that the first tx in
-		// the block is a coinbase
+		// Coinbases do not reference any inputs.  Since the block is
+		// required to have already gone through full validation, it has
+		// already been proven on the first transaction in the block is
+		// a coinbase, and the second one is a fee transaction.
 		if txIdx > 1 {
 			for _, txIn := range tx.MsgTx().TxIn {
 				// The UTXO should always have the input since
@@ -724,6 +722,28 @@ func (idx *AddrIndex) ConnectBlock(dbTx database.Tx, block *util.Block, dag *blo
 			if err != nil {
 				return err
 			}
+		}
+	}
+
+	return nil
+}
+
+// DisconnectBlock is invoked by the index manager when a block has been
+// disconnected from the main chain.  This indexer removes the address mappings
+// each transaction in the block involve.
+//
+// This is part of the Indexer interface.
+func (idx *AddrIndex) DisconnectBlock(dbTx database.Tx, block *util.Block, dag *blockdag.BlockDAG) error {
+	// Build all of the address to transaction mappings in a local map.
+	addrsToTxns := make(writeIndexData)
+	idx.indexBlock(addrsToTxns, block, dag)
+
+	// Remove all of the index entries for each address.
+	bucket := dbTx.Metadata().Bucket(addrIndexKey)
+	for addrKey, txIdxs := range addrsToTxns {
+		err := dbRemoveAddrIndexEntries(bucket, addrKey, len(txIdxs))
+		if err != nil {
+			return err
 		}
 	}
 
