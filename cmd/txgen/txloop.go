@@ -118,21 +118,19 @@ func updateSubnetworks(txs []*util.Tx, gasLimitMap map[subnetworkid.SubnetworkID
 }
 
 func sendTransactionLoop(client *txgenClient, interval uint64, txChan chan *wire.MsgTx) error {
-	var lastTxTime time.Time
+	var ticker *time.Ticker
+	if interval != 0 {
+		ticker = time.NewTicker(time.Duration(interval) * time.Millisecond)
+	}
 	for tx := range txChan {
-		if interval != 0 {
-			timeSinceLastTx := time.Now().Sub(lastTxTime)
-			delay := time.Duration(interval)*time.Millisecond - timeSinceLastTx
-			if delay > 0 {
-				<-time.Tick(delay)
-			}
-		}
 		_, err := client.SendRawTransaction(tx, true)
 		log.Infof("Sending tx %s to subnetwork %s with %d inputs, %d outputs, %d payload size and %d gas", tx.SubnetworkID, tx.TxID(), len(tx.TxIn), len(tx.TxOut), len(tx.Payload), tx.Gas)
 		if err != nil {
 			return err
 		}
-		lastTxTime = time.Now()
+		if ticker != nil {
+			<-ticker.C
+		}
 	}
 	return nil
 }
