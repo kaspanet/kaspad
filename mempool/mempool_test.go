@@ -103,7 +103,7 @@ func txOutToSpendableOutpoint(tx *util.Tx, outputNum uint32) spendableOutpoint {
 type poolHarness struct {
 	signatureScript []byte
 	payScript       []byte
-	chainParams     *dagconfig.Params
+	dagParams       *dagconfig.Params
 
 	chain  *fakeChain
 	txPool *TxPool
@@ -133,7 +133,7 @@ func (p *poolHarness) CreateCoinbaseTx(blueScore uint64, numOutputs uint32) (*ut
 	}}
 
 	txOuts := []*wire.TxOut{}
-	totalInput := blockdag.CalcBlockSubsidy(blueScore, p.chainParams)
+	totalInput := blockdag.CalcBlockSubsidy(blueScore, p.dagParams)
 	amountPerOutput := totalInput / uint64(numOutputs)
 	remainder := totalInput - amountPerOutput*uint64(numOutputs)
 	for i := uint32(0); i < numOutputs; i++ {
@@ -311,7 +311,7 @@ func newPoolHarness(t *testing.T, dagParams *dagconfig.Params, numOutputs uint32
 	harness := &poolHarness{
 		signatureScript: signatureScript,
 		payScript:       pkScript,
-		chainParams:     dagParams,
+		dagParams:       &params,
 
 		chain: chain,
 		txPool: New(&Config{
@@ -325,7 +325,7 @@ func newPoolHarness(t *testing.T, dagParams *dagconfig.Params, numOutputs uint32
 				MinRelayTxFee:        1000, // 1 Satoshi per byte
 				MaxTxVersion:         1,
 			},
-			DAGParams:              dagParams,
+			DAGParams:              &params,
 			BestHeight:             chain.BestHeight,
 			MedianTimePast:         chain.MedianTimePast,
 			CalcSequenceLockNoLock: calcSequenceLock,

@@ -165,7 +165,7 @@ type FeeEstimator struct {
 	minRegisteredBlocks uint32
 
 	// The last known height.
-	lastKnownHeight uint64
+	lastKnownBlueScore uint64
 
 	// The number of blocks that have been registered.
 	numBlocksRegistered uint32
@@ -189,7 +189,7 @@ func NewFeeEstimator(maxRollback, minRegisteredBlocks uint32) *FeeEstimator {
 	return &FeeEstimator{
 		maxRollback:         maxRollback,
 		minRegisteredBlocks: minRegisteredBlocks,
-		lastKnownHeight:     blockdag.UnminedChainHeight,
+		lastKnownBlueScore:  blockdag.UnminedBlueScore,
 		binSize:             estimateFeeBinSize,
 		maxReplacements:     estimateFeeMaxReplacements,
 		observed:            make(map[daghash.TxID]*observedTransaction),
@@ -204,7 +204,7 @@ func (ef *FeeEstimator) ObserveTransaction(t *TxDesc) {
 
 	// If we haven't seen a block yet we don't know when this one arrived,
 	// so we ignore it.
-	if ef.lastKnownHeight == blockdag.UnminedChainHeight {
+	if ef.lastKnownBlueScore == blockdag.UnminedBlueScore {
 		return
 	}
 
@@ -216,7 +216,7 @@ func (ef *FeeEstimator) ObserveTransaction(t *TxDesc) {
 			txID:     txID,
 			feeRate:  NewSatoshiPerByte(util.Amount(t.Fee), size),
 			observed: t.Height,
-			mined:    blockdag.UnminedChainHeight,
+			mined:    blockdag.UnminedBlueScore,
 		}
 	}
 }
@@ -230,13 +230,13 @@ func (ef *FeeEstimator) RegisterBlock(block *util.Block) error {
 	ef.cached = nil
 
 	height := block.Height()
-	if height != ef.lastKnownHeight+1 && ef.lastKnownHeight != blockdag.UnminedChainHeight {
+	if height != ef.lastKnownBlueScore+1 && ef.lastKnownBlueScore != blockdag.UnminedBlueScore {
 		return fmt.Errorf("intermediate block not recorded; current height is %d; new height is %d",
-			ef.lastKnownHeight, height)
+			ef.lastKnownBlueScore, height)
 	}
 
 	// Update the last known height.
-	ef.lastKnownHeight = height
+	ef.lastKnownBlueScore = height
 	ef.numBlocksRegistered++
 
 	// Randomly order txs in block.
@@ -270,7 +270,7 @@ func (ef *FeeEstimator) RegisterBlock(block *util.Block) error {
 
 		// This shouldn't happen if the fee estimator works correctly,
 		// but return an error if it does.
-		if o.mined != blockdag.UnminedChainHeight {
+		if o.mined != blockdag.UnminedBlueScore {
 			log.Error("Estimate fee: transaction ", txID.String(), " has already been mined")
 			return errors.New("Transaction has already been mined")
 		}
@@ -309,7 +309,7 @@ func (ef *FeeEstimator) RegisterBlock(block *util.Block) error {
 
 	// Go through the mempool for txs that have been in too long.
 	for hash, o := range ef.observed {
-		if o.mined == blockdag.UnminedChainHeight && height-o.observed >= estimateFeeDepth {
+		if o.mined == blockdag.UnminedBlueScore && height-o.observed >= estimateFeeDepth {
 			delete(ef.observed, hash)
 		}
 	}
@@ -333,7 +333,7 @@ func (ef *FeeEstimator) LastKnownHeight() uint64 {
 	ef.mtx.Lock()
 	defer ef.mtx.Unlock()
 
-	return ef.lastKnownHeight
+	return ef.lastKnownBlueScore
 }
 
 // Rollback unregisters a recently registered block from the FeeEstimator.
@@ -406,8 +406,8 @@ func (ef *FeeEstimator) rollback() {
 
 			prev := bin[counter]
 
-			if prev.mined == ef.lastKnownHeight {
-				prev.mined = blockdag.UnminedChainHeight
+			if prev.mined == ef.lastKnownBlueScore {
+				prev.mined = blockdag.UnminedBlueScore
 
 				bin[counter] = o
 
@@ -432,8 +432,8 @@ func (ef *FeeEstimator) rollback() {
 
 			prev := ef.bin[i][j]
 
-			if prev.mined == ef.lastKnownHeight {
-				prev.mined = blockdag.UnminedChainHeight
+			if prev.mined == ef.lastKnownBlueScore {
+				prev.mined = blockdag.UnminedBlueScore
 
 				newBin := append(ef.bin[i][0:j], ef.bin[i][j+1:l]...)
 				// TODO This line should prevent an unintentional memory
@@ -452,7 +452,7 @@ func (ef *FeeEstimator) rollback() {
 
 	// The number of blocks the fee estimator has seen is decrimented.
 	ef.numBlocksRegistered--
-	ef.lastKnownHeight--
+	ef.lastKnownBlueScore--
 }
 
 // estimateFeeSet is a set of txs that can that is sorted
@@ -639,7 +639,7 @@ func (ef *FeeEstimator) Save() FeeEstimatorState {
 	binary.Write(w, binary.BigEndian, &ef.binSize)
 	binary.Write(w, binary.BigEndian, &ef.maxReplacements)
 	binary.Write(w, binary.BigEndian, &ef.minRegisteredBlocks)
-	binary.Write(w, binary.BigEndian, &ef.lastKnownHeight)
+	binary.Write(w, binary.BigEndian, &ef.lastKnownBlueScore)
 	binary.Write(w, binary.BigEndian, &ef.numBlocksRegistered)
 
 	// Put all the observed transactions in a sorted list.
@@ -705,7 +705,7 @@ func RestoreFeeEstimator(data FeeEstimatorState) (*FeeEstimator, error) {
 	binary.Read(r, binary.BigEndian, &ef.binSize)
 	binary.Read(r, binary.BigEndian, &ef.maxReplacements)
 	binary.Read(r, binary.BigEndian, &ef.minRegisteredBlocks)
-	binary.Read(r, binary.BigEndian, &ef.lastKnownHeight)
+	binary.Read(r, binary.BigEndian, &ef.lastKnownBlueScore)
 	binary.Read(r, binary.BigEndian, &ef.numBlocksRegistered)
 
 	// Read transactions.
