@@ -317,13 +317,11 @@ func newPoolHarness(t *testing.T, dagParams *dagconfig.Params, numOutputs uint32
 		txPool: New(&Config{
 			DAG: dag,
 			Policy: Policy{
-				DisableRelayPriority: true,
-				FreeTxRelayLimit:     15.0,
-				MaxOrphanTxs:         5,
-				MaxOrphanTxSize:      1000,
-				MaxSigOpsPerTx:       blockdag.MaxSigOpsPerBlock / 5,
-				MinRelayTxFee:        1000, // 1 Satoshi per byte
-				MaxTxVersion:         1,
+				MaxOrphanTxs:    5,
+				MaxOrphanTxSize: 1000,
+				MaxSigOpsPerTx:  blockdag.MaxSigOpsPerBlock / 5,
+				MinRelayTxFee:   1000, // 1 Satoshi per byte
+				MaxTxVersion:    1,
 			},
 			DAGParams:              &params,
 			BestHeight:             chain.BestHeight,
@@ -445,13 +443,13 @@ func testPoolMembership(tc *testContext, tx *util.Tx, inOrphanPool, inTxPool boo
 }
 
 func (p *poolHarness) createTx(outpoint spendableOutpoint, fee uint64, numOutputs int64) (*util.Tx, error) {
-	txIns := []*wire.TxIn{&wire.TxIn{
+	txIns := []*wire.TxIn{{
 		PreviousOutpoint: outpoint.outpoint,
 		SignatureScript:  nil,
 		Sequence:         wire.MaxTxInSequenceNum,
 	}}
 
-	txOuts := []*wire.TxOut{}
+	var txOuts []*wire.TxOut
 	amountPerOutput := (uint64(outpoint.amount) - fee) / uint64(numOutputs)
 	for i := int64(0); i < numOutputs; i++ {
 		txOuts = append(txOuts, &wire.TxOut{
@@ -711,19 +709,6 @@ func TestProcessTransaction(t *testing.T) {
 	}
 	harness.txPool.cfg.CalcSequenceLockNoLock = calcSequenceLock
 
-	// This is done in order to increase the input age, so the tx priority will be higher
-	harness.chain.SetHeight(curHeight + 100)
-	harness.txPool.cfg.Policy.DisableRelayPriority = false
-	//Transaction should be accepted to mempool although it has low fee, because its priority is above mining.MinHighPriority
-	tx, err = harness.createTx(spendableOuts[3], 0, 1)
-	if err != nil {
-		t.Fatalf("unable to create transaction: %v", err)
-	}
-	_, err = harness.txPool.ProcessTransaction(tx, true, false, 0)
-	if err != nil {
-		t.Errorf("ProcessTransaction: unexpected error: %v", err)
-	}
-
 	//Transaction should be rejected from mempool because it has low fee, and its priority is above mining.MinHighPriority
 	tx, err = harness.createTx(spendableOuts[4], 0, 100)
 	if err != nil {
@@ -736,7 +721,6 @@ func TestProcessTransaction(t *testing.T) {
 	if code, _ := extractRejectCode(err); code != wire.RejectInsufficientFee {
 		t.Errorf("Unexpected error code. Expected %v but got %v", wire.RejectInsufficientFee, code)
 	}
-	harness.txPool.cfg.Policy.DisableRelayPriority = true
 
 	txIns = []*wire.TxIn{{
 		PreviousOutpoint: spendableOuts[5].outpoint,

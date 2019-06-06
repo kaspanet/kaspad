@@ -101,10 +101,8 @@ func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params
 	// NOTE: The CPU miner relies on the mempool, so the mempool has to be
 	// created before calling the function to create the CPU miner.
 	policy := mining.Policy{
-		BlockMinSize:      cfg.BlockMinSize,
-		BlockMaxSize:      cfg.BlockMaxSize,
-		BlockPrioritySize: cfg.BlockPrioritySize,
-		TxMinFreeFee:      cfg.MinRelayTxFee,
+		BlockMinSize: cfg.BlockMinSize,
+		BlockMaxSize: cfg.BlockMaxSize,
 	}
 	blockTemplateGenerator := mining.NewBlkTmplGenerator(&policy,
 		s.p2pServer.DAGParams, s.p2pServer.TxMemPool, s.p2pServer.DAG, s.p2pServer.TimeSource, s.p2pServer.SigCache)

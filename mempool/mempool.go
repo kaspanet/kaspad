@@ -7,7 +7,6 @@ package mempool
 import (
 	"container/list"
 	"fmt"
-	"math"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -26,12 +25,6 @@ import (
 )
 
 const (
-	// DefaultBlockPrioritySize is the default size in bytes for high-
-	// priority / low-fee transactions.  It is used to help determine which
-	// are allowed into the mempool and consequently affects their relay and
-	// inclusion when generating block templates.
-	DefaultBlockPrioritySize = 50000
-
 	// orphanTTL is the maximum amount of time an orphan is allowed to
 	// stay in the orphan pool before it expires and is evicted during the
 	// next scan.
@@ -108,18 +101,10 @@ type Policy struct {
 	// non-standard.
 	MaxTxVersion int32
 
-	// DisableRelayPriority defines whether to relay free or low-fee
-	// transactions that do not have enough priority to be relayed.
-	DisableRelayPriority bool
-
 	// AcceptNonStd defines whether to accept non-standard transactions. If
 	// true, non-standard transactions will be accepted into the mempool.
 	// Otherwise, all non-standard transactions will be rejected.
 	AcceptNonStd bool
-
-	// FreeTxRelayLimit defines the given amount in thousands of bytes
-	// per minute that transactions with no fee are rate limited to.
-	FreeTxRelayLimit float64
 
 	// MaxOrphanTxs is the maximum number of orphan transactions
 	// that can be queued.
@@ -144,10 +129,6 @@ type Policy struct {
 // additional metadata.
 type TxDesc struct {
 	mining.TxDesc
-
-	// StartingPriority is the priority of the transaction when it was added
-	// to the pool.
-	StartingPriority float64
 
 	// depCount is not 0 for dependent transaction. Dependent transaction is
 	// one that is accepted to pool, but cannot be mined in next block because it
@@ -721,8 +702,7 @@ func (mp *TxPool) addTransaction(tx *util.Tx, height uint64, blueScore uint64, f
 			Fee:      fee,
 			FeePerKB: fee * 1000 / uint64(tx.MsgTx().SerializeSize()),
 		},
-		StartingPriority: mining.CalcPriority(tx.MsgTx(), mp.mpUTXOSet, blueScore),
-		depCount:         len(parentsInPool),
+		depCount: len(parentsInPool),
 	}
 
 	if len(parentsInPool) == 0 {
@@ -822,7 +802,7 @@ func (mp *TxPool) FetchTransaction(txID *daghash.TxID) (*util.Tx, error) {
 // more details.
 //
 // This function MUST be called with the mempool lock held (for writes).
-func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rateLimit, rejectDupOrphans bool) ([]*daghash.TxID, *TxDesc, error) {
+func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rejectDupOrphans bool) ([]*daghash.TxID, *TxDesc, error) {
 	txID := tx.ID()
 
 	// Don't accept the transaction if it already exists in the pool.  This
@@ -1034,50 +1014,11 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rateLimit, rejectDu
 	serializedSize := int64(tx.MsgTx().SerializeSize())
 	minFee := uint64(calcMinRequiredTxRelayFee(serializedSize,
 		mp.cfg.Policy.MinRelayTxFee))
-	if serializedSize >= (DefaultBlockPrioritySize-1000) && txFee < minFee {
+	if txFee < minFee {
 		str := fmt.Sprintf("transaction %s has %d fees which is under "+
 			"the required amount of %d", txID, txFee,
 			minFee)
 		return nil, nil, txRuleError(wire.RejectInsufficientFee, str)
-	}
-
-	// Require that free transactions have sufficient priority to be mined
-	// in the next block.  Transactions which are being added back to the
-	// memory pool from blocks that have been disconnected during a reorg
-	// are exempted.
-	if isNew && !mp.cfg.Policy.DisableRelayPriority && txFee < minFee {
-		currentPriority := mining.CalcPriority(tx.MsgTx(), mp.mpUTXOSet,
-			nextBlockBlueScore)
-		if currentPriority <= mining.MinHighPriority {
-			str := fmt.Sprintf("transaction %s has insufficient "+
-				"priority (%g <= %g)", txID,
-				currentPriority, mining.MinHighPriority)
-			return nil, nil, txRuleError(wire.RejectInsufficientFee, str)
-		}
-	}
-
-	// Free-to-relay transactions are rate limited here to prevent
-	// penny-flooding with tiny transactions as a form of attack.
-	if rateLimit && txFee < minFee {
-		nowUnix := time.Now().Unix()
-		// Decay passed data with an exponentially decaying ~10 minute
-		// window - matches bitcoind handling.
-		mp.pennyTotal *= math.Pow(1.0-1.0/600.0,
-			float64(nowUnix-mp.lastPennyUnix))
-		mp.lastPennyUnix = nowUnix
-
-		// Are we still over the limit?
-		if mp.pennyTotal >= mp.cfg.Policy.FreeTxRelayLimit*10*1000 {
-			str := fmt.Sprintf("transaction %s has been rejected "+
-				"by the rate limiter due to low fees", txID)
-			return nil, nil, txRuleError(wire.RejectInsufficientFee, str)
-		}
-		oldTotal := mp.pennyTotal
-
-		mp.pennyTotal += float64(serializedSize)
-		log.Tracef("rate limit: curTotal %d, nextTotal: %d, "+
-			"limit %d", oldTotal, mp.pennyTotal,
-			mp.cfg.Policy.FreeTxRelayLimit*10*1000)
 	}
 
 	// Verify crypto signatures for each input and reject the transaction if
@@ -1115,13 +1056,13 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rateLimit, rejectDu
 // be added to the orphan pool.
 //
 // This function is safe for concurrent access.
-func (mp *TxPool) MaybeAcceptTransaction(tx *util.Tx, isNew, rateLimit bool) ([]*daghash.TxID, *TxDesc, error) {
+func (mp *TxPool) MaybeAcceptTransaction(tx *util.Tx, isNew bool) ([]*daghash.TxID, *TxDesc, error) {
 	// Protect concurrent access.
 	mp.cfg.DAG.RLock()
 	defer mp.cfg.DAG.RUnlock()
 	mp.mtx.Lock()
 	defer mp.mtx.Unlock()
-	hashes, txD, err := mp.maybeAcceptTransaction(tx, isNew, rateLimit, true)
+	hashes, txD, err := mp.maybeAcceptTransaction(tx, isNew, true)
 
 	return hashes, txD, err
 }
@@ -1163,7 +1104,7 @@ func (mp *TxPool) processOrphans(acceptedTx *util.Tx) []*TxDesc {
 			// Potentially accept an orphan into the tx pool.
 			for _, tx := range orphans {
 				missing, txD, err := mp.maybeAcceptTransaction(
-					tx, true, true, false)
+					tx, true, false)
 				if err != nil {
 					// The orphan is now invalid, so there
 					// is no way any other orphans which
@@ -1250,8 +1191,7 @@ func (mp *TxPool) ProcessTransaction(tx *util.Tx, allowOrphan, rateLimit bool, t
 	defer mp.mtx.Unlock()
 
 	// Potentially accept the transaction to the memory pool.
-	missingParents, txD, err := mp.maybeAcceptTransaction(tx, true, rateLimit,
-		true)
+	missingParents, txD, err := mp.maybeAcceptTransaction(tx, true, true)
 	if err != nil {
 		return nil, err
 	}
@@ -1378,25 +1318,20 @@ func (mp *TxPool) RawMempoolVerbose() map[string]*btcjson.GetRawMempoolVerboseRe
 	mp.mtx.RLock()
 	defer mp.mtx.RUnlock()
 
-	result := make(map[string]*btcjson.GetRawMempoolVerboseResult,
-		len(mp.pool))
-	virtualBlueScore := mp.cfg.DAG.VirtualBlueScore()
+	result := make(map[string]*btcjson.GetRawMempoolVerboseResult, len(mp.pool))
 
 	for _, desc := range mp.pool {
 		// Calculate the current priority based on the inputs to
 		// the transaction.  Use zero if one or more of the
 		// input transactions can't be found for some reason.
 		tx := desc.Tx
-		currentPriority := mining.CalcPriority(tx.MsgTx(), mp.mpUTXOSet, virtualBlueScore)
 
 		mpd := &btcjson.GetRawMempoolVerboseResult{
-			Size:             int32(tx.MsgTx().SerializeSize()),
-			Fee:              util.Amount(desc.Fee).ToBTC(),
-			Time:             desc.Added.Unix(),
-			Height:           desc.Height,
-			StartingPriority: desc.StartingPriority,
-			CurrentPriority:  currentPriority,
-			Depends:          make([]string, 0),
+			Size:    int32(tx.MsgTx().SerializeSize()),
+			Fee:     util.Amount(desc.Fee).ToBTC(),
+			Time:    desc.Added.Unix(),
+			Height:  desc.Height,
+			Depends: make([]string, 0),
 		}
 		for _, txIn := range tx.MsgTx().TxIn {
 			txID := &txIn.PreviousOutpoint.TxID

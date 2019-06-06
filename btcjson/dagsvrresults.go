@@ -258,13 +258,11 @@ type GetPeerInfoResult struct {
 // command when the verbose flag is set.  When the verbose flag is not set,
 // getrawmempool returns an array of transaction hashes.
 type GetRawMempoolVerboseResult struct {
-	Size             int32    `json:"size"`
-	Fee              float64  `json:"fee"`
-	Time             int64    `json:"time"`
-	Height           uint64   `json:"height"`
-	StartingPriority float64  `json:"startingPriority"`
-	CurrentPriority  float64  `json:"currentPriority"`
-	Depends          []string `json:"depends"`
+	Size    int32    `json:"size"`
+	Fee     float64  `json:"fee"`
+	Time    int64    `json:"time"`
+	Height  uint64   `json:"height"`
+	Depends []string `json:"depends"`
 }
 
 // ScriptPubKeyResult models the scriptPubKey data of a tx script.  It is

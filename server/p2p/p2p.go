@@ -2437,14 +2437,12 @@ func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params
 
 	txC := mempool.Config{
 		Policy: mempool.Policy{
-			DisableRelayPriority: config.MainConfig().NoRelayPriority,
-			AcceptNonStd:         config.MainConfig().RelayNonStd,
-			FreeTxRelayLimit:     config.MainConfig().FreeTxRelayLimit,
-			MaxOrphanTxs:         config.MainConfig().MaxOrphanTxs,
-			MaxOrphanTxSize:      config.DefaultMaxOrphanTxSize,
-			MaxSigOpsPerTx:       blockdag.MaxSigOpsPerBlock / 5,
-			MinRelayTxFee:        config.MainConfig().MinRelayTxFee,
-			MaxTxVersion:         1,
+			AcceptNonStd:    config.MainConfig().RelayNonStd,
+			MaxOrphanTxs:    config.MainConfig().MaxOrphanTxs,
+			MaxOrphanTxSize: config.DefaultMaxOrphanTxSize,
+			MaxSigOpsPerTx:  blockdag.MaxSigOpsPerBlock / 5,
+			MinRelayTxFee:   config.MainConfig().MinRelayTxFee,
+			MaxTxVersion:    1,
 		},
 		DAGParams:      dagParams,
 		BestHeight:     func() uint64 { return s.DAG.Height() }, //TODO: (Ori) This is probably wrong. Done only for compilation

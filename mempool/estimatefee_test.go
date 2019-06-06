@@ -55,7 +55,6 @@ func (eft *estimateFeeTester) testTx(fee util.Amount) *TxDesc {
 			Height: eft.height,
 			Fee:    uint64(fee),
 		},
-		StartingPriority: 0,
 	}
 }
 
