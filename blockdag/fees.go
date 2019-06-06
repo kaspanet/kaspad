@@ -80,7 +80,7 @@ var feeBucket = []byte("fees")
 func (node *blockNode) getBluesFeeData(dag *BlockDAG) (map[daghash.Hash]compactFeeData, error) {
 	bluesFeeData := make(map[daghash.Hash]compactFeeData)
 
-	dag.db.View(func(dbTx database.Tx) error {
+	err := dag.db.View(func(dbTx database.Tx) error {
 		for _, blueBlock := range node.blues {
 			feeData, err := dbFetchFeeData(dbTx, blueBlock.hash)
 			if err != nil {
@@ -92,6 +92,9 @@ func (node *blockNode) getBluesFeeData(dag *BlockDAG) (map[daghash.Hash]compactF
 
 		return nil
 	})
+	if err != nil{
+		return err
+	}
 
 	return bluesFeeData, nil
 }
