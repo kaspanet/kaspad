@@ -20,7 +20,7 @@ func createTransaction(t *testing.T, value uint64, originTx *wire.MsgTx, outputI
 		t.Fatalf("Error creating signature script: %s", err)
 	}
 	txIn := &wire.TxIn{
-		PreviousOutPoint: wire.OutPoint{
+		PreviousOutpoint: wire.Outpoint{
 			TxID:  *originTx.TxID(),
 			Index: outputIndex,
 		},

@@ -26,6 +26,10 @@ const (
 
 	// CoinbaseTransactionIndex is the index of the coinbase transaction in every block
 	CoinbaseTransactionIndex = 0
+
+	// FeeTransactionIndex is the index of the fee transaction in every block (except genesis,
+	// which doesn't have a fee transaction)
+	FeeTransactionIndex = 1
 )
 
 // Error satisfies the error interface and prints human-readable errors.
@@ -42,6 +46,7 @@ type Block struct {
 	serializedBlock []byte         // Serialized bytes for the block
 	blockHash       *daghash.Hash  // Cached block hash
 	blockHeight     uint64         // Height in the DAG
+	chainHeight     uint64         // Selected-chain height
 	transactions    []*Tx          // Transactions
 	txnsGenerated   bool           // ALL wrapped transactions generated
 }
@@ -200,6 +205,17 @@ func (b *Block) SetHeight(height uint64) {
 	b.blockHeight = height
 }
 
+// ChainHeight returns the saved chan height of the block .  This value
+// will be BlockHeightUnknown if it hasn't already explicitly been set.
+func (b *Block) ChainHeight() uint64 {
+	return b.blockHeight
+}
+
+// SetChainHeight sets the chain height of the block.
+func (b *Block) SetChainHeight(chainHeight uint64) {
+	b.chainHeight = chainHeight
+}
+
 // IsGenesis returns whether or not this block is the genesis block.
 func (b *Block) IsGenesis() bool {
 	return b.MsgBlock().Header.IsGenesis()
@@ -208,6 +224,16 @@ func (b *Block) IsGenesis() bool {
 // CoinbaseTransaction returns this block's coinbase transaction
 func (b *Block) CoinbaseTransaction() *Tx {
 	return b.Transactions()[CoinbaseTransactionIndex]
+}
+
+// FeeTransaction returns this block's fee transaction
+// If this block is a genesis block, it has no fee transaction, and therefore
+// nil is returned.
+func (b *Block) FeeTransaction() *Tx {
+	if b.IsGenesis() {
+		return nil
+	}
+	return b.Transactions()[FeeTransactionIndex]
 }
 
 // Timestamp returns this block's timestamp
@@ -221,6 +247,7 @@ func NewBlock(msgBlock *wire.MsgBlock) *Block {
 	return &Block{
 		msgBlock:    msgBlock,
 		blockHeight: BlockHeightUnknown,
+		chainHeight: BlockHeightUnknown,
 	}
 }
 

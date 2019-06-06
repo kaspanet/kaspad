@@ -15,7 +15,7 @@ import (
 
 var genesisTxIns = []*wire.TxIn{
 	{
-		PreviousOutPoint: wire.OutPoint{
+		PreviousOutpoint: wire.Outpoint{
 			TxID:  daghash.TxID{},
 			Index: 0xffffffff,
 		},

@@ -2,11 +2,8 @@ package main
 
 import (
 	"fmt"
-	"sync/atomic"
-
 	"github.com/daglabs/btcd/btcec"
 	"github.com/daglabs/btcd/dagconfig"
-	"github.com/daglabs/btcd/rpcclient"
 	"github.com/daglabs/btcd/signal"
 	"github.com/daglabs/btcd/util"
 	"github.com/daglabs/btcd/util/base58"
@@ -48,30 +45,24 @@ func main() {
 
 	log.Infof("P2PKH address for private key: %s\n", p2pkhAddress)
 
-	addressList, err := getAddressList(cfg)
-	if err != nil {
-		panic(fmt.Errorf("Couldn't load address list: %s", err))
-	}
-
-	clients, err := connectToServers(cfg, addressList)
+	client, err := connectToServer(cfg)
 	if err != nil {
 		panic(fmt.Errorf("Error connecting to servers: %s", err))
 	}
-	defer disconnect(clients)
+	defer disconnect(client)
 
-	atomic.StoreInt32(&isRunning, 1)
-
-	go txLoop(clients)
+	spawn(func() {
+		err := txLoop(client)
+		if err != nil {
+			panic(err)
+		}
+	})
 
 	interrupt := signal.InterruptListener()
 	<-interrupt
-
-	atomic.StoreInt32(&isRunning, 0)
 }
 
-func disconnect(clients []*rpcclient.Client) {
-	log.Infof("Disconnecting clients")
-	for _, client := range clients {
-		client.Disconnect()
-	}
+func disconnect(client *txgenClient) {
+	log.Infof("Disconnecting client")
+	client.Disconnect()
 }

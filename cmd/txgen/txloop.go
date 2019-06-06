@@ -5,248 +5,162 @@ import (
 	"encoding/hex"
 	"fmt"
 	"math/rand"
-	"sync/atomic"
 	"time"
 
-	"github.com/daglabs/btcd/rpcclient"
+	"github.com/daglabs/btcd/btcjson"
 	"github.com/daglabs/btcd/txscript"
+	"github.com/daglabs/btcd/util"
 	"github.com/daglabs/btcd/util/daghash"
 	"github.com/daglabs/btcd/wire"
-)
-
-// utxo represents an unspent output spendable by the memWallet. The maturity
-// height of the transaction is recorded in order to properly observe the
-// maturity period of direct coinbase outputs.
-type utxo struct {
-	txOut    *wire.TxOut
-	isLocked bool
-}
-
-var (
-	random   = rand.New(rand.NewSource(time.Now().UnixNano()))
-	utxos    map[wire.OutPoint]*utxo
-	pkScript []byte
-	spentTxs map[daghash.TxID]bool
 )
 
 const (
 	// Those constants should be updated, when monetary policy changed
 	minSpendableAmount uint64 = 10000
+	maxSpendableAmount uint64 = 5 * minSpendableAmount
 	minTxFee           uint64 = 3000
+
+	// spendSize is the largest number of bytes of a sigScript
+	// which spends a p2pkh output: OP_DATA_73 <sig> OP_DATA_33 <pubkey>
+	spendSize = 1 + 73 + 1 + 33
+
+	txLifeSpan                                     = 1000
+	requiredConfirmations                          = 10
+	approximateConfirmationsForBlockRewardMaturity = 150
+	searchRawTransactionResultCount                = 1000
+	searchRawTransactionMaxResults                 = 5000
 )
+
+type walletTransaction struct {
+	tx                         *util.Tx
+	chainHeight                uint64
+	checkConfirmationCountdown uint64
+	confirmed                  bool
+}
+
+type utxoSet map[wire.Outpoint]*wire.TxOut
 
 func isDust(value uint64) bool {
 	return value < minSpendableAmount+minTxFee
 }
 
-// evalOutputs evaluates each of the passed outputs, creating a new matching
-// utxo within the wallet if we're able to spend the output.
-func evalOutputs(outputs []*wire.TxOut, txID *daghash.TxID) {
-	for i, output := range outputs {
-		if isDust(output.Value) {
-			continue
-		}
-		op := wire.OutPoint{TxID: *txID, Index: uint32(i)}
-		utxos[op] = &utxo{txOut: output}
-	}
-}
+var (
+	random   = rand.New(rand.NewSource(time.Now().UnixNano()))
+	pkScript []byte
+)
 
-// evalInputs scans all the passed inputs, deleting any utxos within the
-// wallet which are spent by an input.
-func evalInputs(inputs []*wire.TxIn) {
-	for _, txIn := range inputs {
-		op := txIn.PreviousOutPoint
-		if _, ok := utxos[op]; ok {
-			delete(utxos, op)
-		}
-	}
-}
+// txLoop performs main loop of transaction generation
+func txLoop(client *txgenClient) error {
+	var err error
+	pkScript, err = txscript.PayToAddrScript(p2pkhAddress)
 
-func utxosFunds() uint64 {
-	var funds uint64
-	for _, utxo := range utxos {
-		if utxo.isLocked {
-			continue
-		}
-		funds += utxo.txOut.Value
+	if err != nil {
+		return fmt.Errorf("failed to generate pkScript to address: %s", err)
 	}
-	return funds
-}
 
-func isTxMatured(tx *wire.MsgTx, confirmations uint64) bool {
-	if !tx.IsBlockReward() {
-		return confirmations >= 1
+	err = client.LoadTxFilter(true, []util.Address{p2pkhAddress}, nil)
+	if err != nil {
+		return err
 	}
-	return confirmations >= activeNetParams.BlockRewardMaturity
-}
 
-// DumpTx logs out transaction with given header
-func DumpTx(header string, tx *wire.MsgTx) {
-	log.Info(header)
-	log.Infof("\tInputs:")
-	for i, txIn := range tx.TxIn {
-		asm, _ := txscript.DisasmString(txIn.SignatureScript)
-		log.Infof("\t\t%d: PreviousOutPoint: %v, SignatureScript: %s",
-			i, txIn.PreviousOutPoint, asm)
+	walletUTXOSet, walletTxs, err := getInitialUTXOSetAndWalletTxs(client)
+	if err != nil {
+		return err
 	}
-	log.Infof("\tOutputs:")
-	for i, txOut := range tx.TxOut {
-		asm, _ := txscript.DisasmString(txOut.PkScript)
-		log.Infof("\t\t%d: Value: %d, PkScript: %s", i, txOut.Value, asm)
-	}
-}
 
-func fetchAndPopulateUtxos(client *rpcclient.Client) (funds uint64, exit bool, err error) {
-	skipCount := 0
-	for atomic.LoadInt32(&isRunning) == 1 {
-		arr, err := client.SearchRawTransactionsVerbose(p2pkhAddress, skipCount, 1000, true, false, nil)
+	for blockAdded := range client.onBlockAdded {
+		log.Infof("Block %s Added with %d relevant transactions", blockAdded.header.BlockHash(), len(blockAdded.txs))
+		updateWalletTxs(blockAdded, walletTxs)
+		err := sendTransactions(client, blockAdded, walletUTXOSet, walletTxs)
 		if err != nil {
-			log.Infof("No spandable transactions found and SearchRawTransactionsVerbose failed: %s", err)
-			funds := utxosFunds()
-			if !isDust(funds) {
-				// we have something to spend
-				log.Infof("We have enough funds to generate transactions: %d", funds)
-				return funds, false, nil
-			}
-			log.Infof("Sleeping 30 sec...")
-			for i := 0; i < 30; i++ {
-				time.Sleep(time.Second)
-				if atomic.LoadInt32(&isRunning) != 1 {
-					return 0, true, nil
-				}
-			}
-			skipCount = 0
-			continue
-		}
-		receivedCount := len(arr)
-		skipCount += receivedCount
-		log.Infof("Received %d transactions", receivedCount)
-		for _, searchResult := range arr {
-			txBytes, err := hex.DecodeString(searchResult.Hex)
-			if err != nil {
-				log.Warnf("Failed to decode transactions bytes: %s", err)
-				continue
-			}
-			txID, err := daghash.NewTxIDFromStr(searchResult.TxID)
-			if err != nil {
-				log.Warnf("Failed to decode transaction ID: %s", err)
-				continue
-			}
-			var tx wire.MsgTx
-			rbuf := bytes.NewReader(txBytes)
-			err = tx.Deserialize(rbuf)
-			if err != nil {
-				log.Warnf("Failed to deserialize transaction: %s", err)
-				continue
-			}
-			if spentTxs[*txID] {
-				continue
-			}
-			if isTxMatured(&tx, *searchResult.Confirmations) {
-				spentTxs[*txID] = true
-				evalOutputs(tx.TxOut, txID)
-				evalInputs(tx.TxIn)
-			}
-		}
-	}
-	return 0, true, nil
-}
-
-// fundTx attempts to fund a transaction sending amount bitcoin. The coins are
-// selected such that the final amount spent pays enough fees as dictated by
-// the passed fee rate. The passed fee rate should be expressed in
-// satoshis-per-byte.
-func fundTx(tx *wire.MsgTx, amount uint64, feeRate uint64) (uint64, error) {
-	const (
-		// spendSize is the largest number of bytes of a sigScript
-		// which spends a p2pkh output: OP_DATA_73 <sig> OP_DATA_33 <pubkey>
-		spendSize = 1 + 73 + 1 + 33
-	)
-
-	var (
-		amountSelected uint64
-		txSize         int
-	)
-
-	for outPoint, utxo := range utxos {
-		if utxo.isLocked {
-			continue
-		}
-
-		amountSelected += utxo.txOut.Value
-
-		// Add the selected output to the transaction, updating the
-		// current tx size while accounting for the size of the future
-		// sigScript.
-		tx.AddTxIn(wire.NewTxIn(&outPoint, nil))
-		txSize = tx.SerializeSize() + spendSize*len(tx.TxIn)
-
-		// Calculate the fee required for the txn at this point
-		// observing the specified fee rate. If we don't have enough
-		// coins from he current amount selected to pay the fee, then
-		// continue to grab more coins.
-		reqFee := uint64(txSize) * feeRate
-		if amountSelected-reqFee < amount {
-			continue
-		}
-
-		// If we have any change left over, then add an additional
-		// output to the transaction reserved for change.
-		changeVal := amountSelected - amount - reqFee
-		if changeVal > 0 {
-			changeOutput := &wire.TxOut{
-				Value:    changeVal,
-				PkScript: pkScript,
-			}
-			tx.AddTxOut(changeOutput)
-		}
-
-		return reqFee, nil
-	}
-
-	// If we've reached this point, then coin selection failed due to an
-	// insufficient amount of coins.
-	return 0, fmt.Errorf("not enough funds for coin selection")
-}
-
-// signTxAndLockSpentUtxo signs new transaction and locks spentutxo
-func signTxAndLockSpentUtxo(tx *wire.MsgTx) error {
-	// Populate all the selected inputs with valid sigScript for spending.
-	// Along the way record all outputs being spent in order to avoid a
-	// potential double spend.
-	spentOutputs := make([]*utxo, 0, len(tx.TxIn))
-	for i, txIn := range tx.TxIn {
-		outPoint := txIn.PreviousOutPoint
-		utxo := utxos[outPoint]
-		txOut := utxo.txOut
-
-		sigScript, err := txscript.SignatureScript(tx, i, txOut.PkScript,
-			txscript.SigHashAll, privateKey, true)
-		if err != nil {
-			log.Warnf("Failed to sign transaction: %s", err)
 			return err
 		}
-
-		txIn.SignatureScript = sigScript
-
-		spentOutputs = append(spentOutputs, utxo)
 	}
-
-	// As these outputs are now being spent by this newly created
-	// transaction, mark the outputs are "locked". This action ensures
-	// these outputs won't be double spent by any subsequent transactions.
-	// These locked outputs can be freed via a call to UnlockOutputs.
-	for _, utxo := range spentOutputs {
-		utxo.isLocked = true
-	}
-
 	return nil
 }
 
-// createTransaction returns a fully signed transaction paying to the specified
-// outputs while observing the desired fee rate. The passed fee rate should be
-// expressed in satoshis-per-byte.
-func createTransaction(outputs []*wire.TxOut, feeRate uint64) (*wire.MsgTx, uint64, error) {
+func getInitialUTXOSetAndWalletTxs(client *txgenClient) (utxoSet, map[daghash.TxID]*walletTransaction, error) {
+	walletUTXOSet := make(utxoSet)
+	walletTxs := make(map[daghash.TxID]*walletTransaction)
+
+	initialTxs, err := collectTransactions(client)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// Add all of the confirmed transaction outputs to the UTXO.
+	for _, initialTx := range initialTxs {
+		if initialTx.confirmed {
+			addTxOutsToUTXOSet(walletUTXOSet, initialTx.tx.MsgTx())
+		}
+	}
+
+	for _, initialTx := range initialTxs {
+		// Remove all of the previous outpoints from the UTXO.
+		// The previous outpoints are removed for unconfirmed
+		// transactions as well, to avoid potential
+		// double spends.
+		removeTxInsFromUTXOSet(walletUTXOSet, initialTx.tx.MsgTx())
+
+		// Add unconfirmed transactions to walletTxs, so we can
+		// add their outputs to the UTXO when they are confirmed.
+		if !initialTx.confirmed {
+			walletTxs[*initialTx.tx.ID()] = initialTx
+		}
+	}
+
+	return walletUTXOSet, walletTxs, nil
+}
+
+func updateWalletTxs(blockAdded *blockAddedMsg, walletTxs map[daghash.TxID]*walletTransaction) {
+	for txID, walletTx := range walletTxs {
+		if walletTx.checkConfirmationCountdown > 0 && walletTx.chainHeight < blockAdded.chainHeight {
+			walletTx.checkConfirmationCountdown--
+		}
+
+		// Delete old confirmed transactions to save memory
+		if walletTx.confirmed && walletTx.chainHeight+txLifeSpan < blockAdded.chainHeight {
+			delete(walletTxs, txID)
+		}
+	}
+
+	for _, tx := range blockAdded.txs {
+		if _, ok := walletTxs[*tx.ID()]; !ok {
+			walletTxs[*tx.ID()] = &walletTransaction{
+				tx:                         tx,
+				chainHeight:                blockAdded.chainHeight,
+				checkConfirmationCountdown: requiredConfirmations,
+			}
+		}
+	}
+}
+
+func sendTransactions(client *txgenClient, blockAdded *blockAddedMsg, walletUTXOSet utxoSet, walletTxs map[daghash.TxID]*walletTransaction) error {
+	if err := checkConfirmations(client, walletTxs, walletUTXOSet, blockAdded.chainHeight); err != nil {
+		return err
+	}
+
+	for funds := calcUTXOSetFunds(walletUTXOSet); !isDust(funds); funds = calcUTXOSetFunds(walletUTXOSet) {
+		amount := minSpendableAmount + uint64(random.Int63n(int64(maxSpendableAmount-minSpendableAmount)))
+		if amount > funds-minTxFee {
+			amount = funds - minTxFee
+		}
+		output := wire.NewTxOut(amount, pkScript)
+		tx, _, err := createTx(walletUTXOSet, []*wire.TxOut{output}, 0)
+		if err != nil {
+			return err
+		}
+
+		_, err = client.SendRawTransaction(tx, true)
+		log.Infof("Sending tx %s", tx.TxID())
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func createTx(walletUTXOSet utxoSet, outputs []*wire.TxOut, feeRate uint64) (*wire.MsgTx, uint64, error) {
 	tx := wire.NewNativeMsgTx(wire.TxVersion, nil, nil)
 
 	// Tally up the total amount to be sent in order to perform coin
@@ -258,82 +172,196 @@ func createTransaction(outputs []*wire.TxOut, feeRate uint64) (*wire.MsgTx, uint
 	}
 
 	// Attempt to fund the transaction with spendable utxos.
-	fees, err := fundTx(tx, outputAmount, feeRate)
+	fees, err := fundTx(walletUTXOSet, tx, outputAmount, feeRate)
 	if err != nil {
 		return nil, 0, err
 	}
 
-	err = signTxAndLockSpentUtxo(tx)
+	err = signTx(walletUTXOSet, tx)
 	if err != nil {
 		return nil, 0, err
 	}
+
+	removeTxInsFromUTXOSet(walletUTXOSet, tx)
 
 	return tx, fees, nil
 }
 
-// txLoop performs main loop of transaction generation
-func txLoop(clients []*rpcclient.Client) {
-	clientsCount := int64(len(clients))
+// signTx signs a transaction
+func signTx(walletUTXOSet utxoSet, tx *wire.MsgTx) error {
+	for i, txIn := range tx.TxIn {
+		outpoint := txIn.PreviousOutpoint
+		prevOut := walletUTXOSet[outpoint]
 
-	utxos = make(map[wire.OutPoint]*utxo)
-	spentTxs = make(map[daghash.TxID]bool)
-
-	var err error
-	pkScript, err = txscript.PayToAddrScript(p2pkhAddress)
-
-	if err != nil {
-		log.Warnf("Failed to generate pkscript to address: %s", err)
-		return
-	}
-
-	for atomic.LoadInt32(&isRunning) == 1 {
-		funds, exit, err := fetchAndPopulateUtxos(clients[0])
-		if exit {
-			return
-		}
+		sigScript, err := txscript.SignatureScript(tx, i, prevOut.PkScript,
+			txscript.SigHashAll, privateKey, true)
 		if err != nil {
-			log.Warnf("fetchAndPopulateUtxos failed: %s", err)
-			continue
+			return fmt.Errorf("Failed to sign transaction: %s", err)
 		}
 
-		if isDust(funds) {
-			log.Warnf("fetchAndPopulateUtxos returned not enough funds")
-			continue
+		txIn.SignatureScript = sigScript
+	}
+
+	return nil
+}
+
+func fundTx(walletUTXOSet utxoSet, tx *wire.MsgTx, amount uint64, feeRate uint64) (uint64, error) {
+
+	var (
+		amountSelected uint64
+		txSize         int
+		reqFee         uint64
+	)
+
+	isFunded := false
+
+	for outpoint, output := range walletUTXOSet {
+		amountSelected += output.Value
+
+		// Add the selected output to the transaction, updating the
+		// current tx size while accounting for the size of the future
+		// sigScript.
+		tx.AddTxIn(wire.NewTxIn(&outpoint, nil))
+		txSize = tx.SerializeSize() + spendSize*len(tx.TxIn)
+
+		// Calculate the fee required for the txn at this point
+		// observing the specified fee rate. If we don't have enough
+		// coins from he current amount selected to pay the fee, then
+		// continue to grab more coins.
+		reqFee = uint64(txSize) * feeRate
+		if reqFee < minTxFee {
+			reqFee = minTxFee
 		}
+		if amountSelected > reqFee && amountSelected-reqFee >= amount {
+			isFunded = true
+			break
+		}
+	}
 
-		log.Infof("UTXO funds after population %d", funds)
+	if !isFunded {
+		return 0, fmt.Errorf("not enough funds for coin selection")
+	}
 
-		for !isDust(funds) {
-			amount := minSpendableAmount + uint64(random.Int63n(int64(minSpendableAmount*4)))
-			if amount > funds-minTxFee {
-				amount = funds - minTxFee
-			}
-			output := wire.NewTxOut(amount, pkScript)
+	// If we have any change left over, then add an additional
+	// output to the transaction reserved for change.
+	changeVal := amountSelected - amount - reqFee
+	if changeVal > 0 {
+		changeOutput := &wire.TxOut{
+			Value:    changeVal,
+			PkScript: pkScript,
+		}
+		tx.AddTxOut(changeOutput)
+	}
 
-			tx, fees, err := createTransaction([]*wire.TxOut{output}, 10)
+	return reqFee, nil
+}
 
+func checkConfirmations(client *txgenClient, walletTxs map[daghash.TxID]*walletTransaction, walletUTXOSet utxoSet, blockChainHeight uint64) error {
+	for txID, walletTx := range walletTxs {
+		if !walletTx.confirmed && walletTx.checkConfirmationCountdown == 0 {
+			txResult, err := client.GetRawTransactionVerbose(&txID)
 			if err != nil {
-				log.Warnf("Failed to create transaction (output value %d, funds %d): %s",
-					amount, funds, err)
-				continue
+				return err
 			}
-
-			log.Infof("Created transaction %s: amount %d, fees %d", tx.TxID(), amount, fees)
-
-			funds = utxosFunds()
-			log.Infof("Remaining funds: %d", funds)
-
-			var currentClient *rpcclient.Client
-			if clientsCount == 1 {
-				currentClient = clients[0]
-			} else {
-				currentClient = clients[random.Int63n(clientsCount)]
-			}
-			_, err = currentClient.SendRawTransaction(tx, true)
-			if err != nil {
-				log.Warnf("Failed to send transaction: %s", err)
-				continue
+			msgTx := walletTx.tx.MsgTx()
+			if isTxMatured(msgTx, *txResult.Confirmations) {
+				walletTx.confirmed = true
+				addTxOutsToUTXOSet(walletUTXOSet, msgTx)
+			} else if *txResult.Confirmations == 0 && !txResult.IsInMempool && blockChainHeight-500 > walletTx.chainHeight {
+				log.Infof("Transaction %s was not accepted in the DAG. Resending", txID)
+				_, err := client.SendRawTransaction(msgTx, true)
+				if err != nil {
+					return err
+				}
 			}
 		}
 	}
+	return nil
+}
+
+func removeTxInsFromUTXOSet(walletUTXOSet utxoSet, tx *wire.MsgTx) {
+	for _, txIn := range tx.TxIn {
+		delete(walletUTXOSet, txIn.PreviousOutpoint)
+	}
+}
+
+func addTxOutsToUTXOSet(walletUTXOSet utxoSet, tx *wire.MsgTx) {
+	for i, txOut := range tx.TxOut {
+		outpoint := wire.Outpoint{TxID: *tx.TxID(), Index: uint32(i)}
+		walletUTXOSet[outpoint] = txOut
+	}
+}
+
+func isTxMatured(tx *wire.MsgTx, confirmations uint64) bool {
+	if !tx.IsBlockReward() {
+		return confirmations >= requiredConfirmations
+	}
+	return confirmations >= approximateConfirmationsForBlockRewardMaturity
+}
+
+func calcUTXOSetFunds(walletUTXOSet utxoSet) uint64 {
+	var funds uint64
+	for _, output := range walletUTXOSet {
+		funds += output.Value
+	}
+	return funds
+}
+
+func collectTransactions(client *txgenClient) (map[daghash.TxID]*walletTransaction, error) {
+	walletTxs := make(map[daghash.TxID]*walletTransaction)
+	skip := 0
+	for skip < searchRawTransactionMaxResults {
+		results, err := client.SearchRawTransactionsVerbose(p2pkhAddress, skip, searchRawTransactionResultCount, true, true, nil)
+		if err != nil {
+			// Break when there are no further txs
+			if rpcError, ok := err.(*btcjson.RPCError); ok && rpcError.Code == btcjson.ErrRPCNoTxInfo {
+				break
+			}
+
+			return nil, err
+		}
+
+		for _, result := range results {
+			// Mempool transactions and red block transactions bring about unnecessary complexity, so
+			// simply don't bother processing them
+			if *result.Confirmations == 0 {
+				continue
+			}
+
+			tx, err := parseRawTransactionResult(result)
+			if err != nil {
+				return nil, fmt.Errorf("failed to process SearchRawTransactionResult: %s", err)
+			}
+			if tx == nil {
+				continue
+			}
+
+			txID := tx.TxID()
+
+			if existingTx, ok := walletTxs[*txID]; !ok || !existingTx.confirmed {
+				walletTxs[*txID] = &walletTransaction{
+					tx:                         util.NewTx(tx),
+					checkConfirmationCountdown: requiredConfirmations,
+					confirmed:                  isTxMatured(tx, *result.Confirmations),
+				}
+			}
+		}
+
+		skip += searchRawTransactionResultCount
+	}
+	return walletTxs, nil
+}
+
+func parseRawTransactionResult(result *btcjson.SearchRawTransactionsResult) (*wire.MsgTx, error) {
+	txBytes, err := hex.DecodeString(result.Hex)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode transaction bytes: %s", err)
+	}
+	var tx wire.MsgTx
+	reader := bytes.NewReader(txBytes)
+	err = tx.Deserialize(reader)
+	if err != nil {
+		return nil, fmt.Errorf("failed to deserialize transaction: %s", err)
+	}
+	return &tx, nil
 }

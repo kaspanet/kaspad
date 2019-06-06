@@ -6,7 +6,6 @@ package indexers
 
 import (
 	"fmt"
-
 	"github.com/daglabs/btcd/blockdag"
 	"github.com/daglabs/btcd/database"
 	"github.com/daglabs/btcd/util"
@@ -199,7 +198,7 @@ func dbFetchFirstTxRegion(dbTx database.Tx, txID *daghash.TxID) (*database.Block
 	if txBucket == nil {
 		return nil, database.Error{
 			ErrorCode: database.ErrCorruption,
-			Description: fmt.Sprintf("No block region"+
+			Description: fmt.Sprintf("No block region "+
 				"was found for %s", txID),
 		}
 	}
@@ -207,7 +206,7 @@ func dbFetchFirstTxRegion(dbTx database.Tx, txID *daghash.TxID) (*database.Block
 	if ok := cursor.First(); !ok {
 		return nil, database.Error{
 			ErrorCode: database.ErrCorruption,
-			Description: fmt.Sprintf("No block region"+
+			Description: fmt.Sprintf("No block region "+
 				"was found for %s", txID),
 		}
 	}
@@ -441,7 +440,7 @@ func (idx *TxIndex) Create(dbTx database.Tx) error {
 // for every transaction in the passed block.
 //
 // This is part of the Indexer interface.
-func (idx *TxIndex) ConnectBlock(dbTx database.Tx, block *util.Block, dag *blockdag.BlockDAG, _ *util.Tx,
+func (idx *TxIndex) ConnectBlock(dbTx database.Tx, block *util.Block, dag *blockdag.BlockDAG,
 	acceptedTxsData blockdag.MultiBlockTxsAcceptanceData, virtualTxsAcceptanceData blockdag.MultiBlockTxsAcceptanceData) error {
 	// Increment the internal block ID to use for the block being connected
 	// and add all of the transactions in the block to the index.

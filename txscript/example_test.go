@@ -100,7 +100,7 @@ func ExampleSignTxOutput() {
 	// For this example, create a fake transaction that represents what
 	// would ordinarily be the real transaction that is being spent.  It
 	// contains a single output that pays to address in the amount of 1 BTC.
-	prevOut := wire.NewOutPoint(&daghash.TxID{}, ^uint32(0))
+	prevOut := wire.NewOutpoint(&daghash.TxID{}, ^uint32(0))
 	txIn := wire.NewTxIn(prevOut, []byte{txscript.Op0, txscript.Op0})
 	pkScript, err := txscript.PayToAddrScript(addr)
 	if err != nil {
@@ -115,7 +115,7 @@ func ExampleSignTxOutput() {
 	// Add the input(s) the redeeming transaction will spend.  There is no
 	// signature script at this point since it hasn't been created or signed
 	// yet, hence nil is provided for it.
-	prevOut = wire.NewOutPoint(originTx.TxID(), 0)
+	prevOut = wire.NewOutpoint(originTx.TxID(), 0)
 	txIn = wire.NewTxIn(prevOut, nil)
 
 	// Ordinarily this would contain that actual destination of the funds,
