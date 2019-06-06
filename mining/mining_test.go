@@ -121,7 +121,7 @@ func TestTxFeePrioHeap(t *testing.T) {
 
 func TestNewBlockTemplate(t *testing.T) {
 	params := dagconfig.SimNetParams
-	params.BlockRewardMaturity = 0
+	params.BlockCoinbaseMaturity = 0
 
 	dag, teardownFunc, err := blockdag.DAGSetup("TestNewBlockTemplate", blockdag.Config{
 		DAGParams: &params,
@@ -147,30 +147,10 @@ func TestNewBlockTemplate(t *testing.T) {
 		txDescs: []*TxDesc{},
 	}
 
-	var createCoinbaseTxPatch *monkey.PatchGuard
-	createCoinbaseTxPatch = monkey.Patch(CreateCoinbaseTx, func(params *dagconfig.Params, coinbaseScript []byte, nextBlockHeight uint64, addr util.Address) (*util.Tx, error) {
-		createCoinbaseTxPatch.Unpatch()
-		defer createCoinbaseTxPatch.Restore()
-		tx, err := CreateCoinbaseTx(coinbaseScript, addr)
-		if err != nil {
-			return nil, err
-		}
-		msgTx := tx.MsgTx()
-		//Here we split the coinbase to 10 outputs, so we'll be able to use it in many transactions
-		out := msgTx.TxOut[0]
-		out.Value /= 10
-		for i := 0; i < 9; i++ {
-			msgTx.AddTxOut(&*out)
-		}
-		return tx, nil
-	})
-	defer createCoinbaseTxPatch.Unpatch()
-
 	blockTemplateGenerator := NewBlkTmplGenerator(&policy,
 		&params, txSource, dag, blockdag.NewMedianTime(), txscript.NewSigCache(100000))
 
 	template1, err := blockTemplateGenerator.NewBlockTemplate(nil)
-	createCoinbaseTxPatch.Unpatch()
 	if err != nil {
 		t.Fatalf("NewBlockTemplate: %v", err)
 	}
@@ -179,23 +159,32 @@ func TestNewBlockTemplate(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ProcessBlock: %v", err)
 	}
-
 	if isOrphan {
 		t.Fatalf("ProcessBlock: template1 got unexpectedly orphan")
 	}
 
-	cbScript, err := StandardCoinbaseScript(0)
-	if err != nil {
-		t.Fatalf("standardCoinbaseScript: %v", err)
+	// We create another 4 blocks to in order to create more funds for tests.
+	cbTxs := []*wire.MsgTx{template1.Block.Transactions[0]}
+	for i := 0; i < 4; i++ {
+		template, err := blockTemplateGenerator.NewBlockTemplate(nil)
+		if err != nil {
+			t.Fatalf("NewBlockTemplate: %v", err)
+		}
+		isOrphan, err = dag.ProcessBlock(util.NewBlock(template.Block), blockdag.BFNoPoWCheck)
+		if err != nil {
+			t.Fatalf("ProcessBlock: %v", err)
+		}
+		if isOrphan {
+			t.Fatalf("ProcessBlock: template got unexpectedly orphan")
+		}
+		cbTxs = append(cbTxs, template.Block.Transactions[0])
 	}
 
 	// We want to check that the miner filters coinbase transaction
-	cbTx, err := CreateCoinbaseTx(cbScript, nil)
+	cbTx, err := dag.NextBlockCoinbaseTransaction(nil, nil)
 	if err != nil {
 		t.Fatalf("createCoinbaseTx: %v", err)
 	}
-
-	template1CbTx := template1.Block.Transactions[0]
 
 	signatureScript, err := txscript.PayToScriptHashSignatureScript(blockdag.OpTrueScript, nil)
 	if err != nil {
@@ -205,7 +194,7 @@ func TestNewBlockTemplate(t *testing.T) {
 	// tx is a regular transaction, and should not be filtered by the miner
 	txIn := &wire.TxIn{
 		PreviousOutpoint: wire.Outpoint{
-			TxID:  *template1CbTx.TxID(),
+			TxID:  *cbTxs[0].TxID(),
 			Index: 0,
 		},
 		Sequence:        wire.MaxTxInSequenceNum,
@@ -220,8 +209,8 @@ func TestNewBlockTemplate(t *testing.T) {
 	// We want to check that the miner filters non finalized transactions
 	txIn = &wire.TxIn{
 		PreviousOutpoint: wire.Outpoint{
-			TxID:  *template1CbTx.TxID(),
-			Index: 1,
+			TxID:  *cbTxs[1].TxID(),
+			Index: 0,
 		},
 		Sequence:        0,
 		SignatureScript: signatureScript,
@@ -239,8 +228,8 @@ func TestNewBlockTemplate(t *testing.T) {
 	// We want to check that the miner filters transactions with non-existing subnetwork id. (It should first push it to the priority queue, and then ignore it)
 	txIn = &wire.TxIn{
 		PreviousOutpoint: wire.Outpoint{
-			TxID:  *template1CbTx.TxID(),
-			Index: 2,
+			TxID:  *cbTxs[2].TxID(),
+			Index: 0,
 		},
 		Sequence:        0,
 		SignatureScript: signatureScript,
@@ -255,8 +244,8 @@ func TestNewBlockTemplate(t *testing.T) {
 	// We want to check that the miner doesn't filters transactions that do not exceed the subnetwork gas limit
 	txIn = &wire.TxIn{
 		PreviousOutpoint: wire.Outpoint{
-			TxID:  *template1CbTx.TxID(),
-			Index: 3,
+			TxID:  *cbTxs[3].TxID(),
+			Index: 0,
 		},
 		Sequence:        0,
 		SignatureScript: signatureScript,
@@ -270,8 +259,7 @@ func TestNewBlockTemplate(t *testing.T) {
 	// We want to check that the miner filters transactions that exceed the subnetwork gas limit. (It should first push it to the priority queue, and then ignore it)
 	txIn = &wire.TxIn{
 		PreviousOutpoint: wire.Outpoint{
-			TxID:  *template1CbTx.TxID(),
-			Index: 4,
+			TxID: *cbTxs[4].TxID(),
 		},
 		Sequence:        0,
 		SignatureScript: signatureScript,
@@ -286,7 +274,7 @@ func TestNewBlockTemplate(t *testing.T) {
 
 	txSource.txDescs = []*TxDesc{
 		{
-			Tx: cbTx,
+			Tx: util.NewTx(cbTx),
 		},
 		{
 			Tx: util.NewTx(tx),
@@ -303,25 +291,6 @@ func TestNewBlockTemplate(t *testing.T) {
 		{
 			Tx: util.NewTx(nonExistingSubnetworkTx),
 		},
-	}
-
-	standardCoinbaseScriptErrString := "standardCoinbaseScript err"
-
-	var standardCoinbaseScriptPatch *monkey.PatchGuard
-	standardCoinbaseScriptPatch = monkey.Patch(StandardCoinbaseScript, func(extraNonce uint64) ([]byte, error) {
-		return nil, errors.New(standardCoinbaseScriptErrString)
-	})
-	defer standardCoinbaseScriptPatch.Unpatch()
-
-	// We want to check that NewBlockTemplate will fail if standardCoinbaseScript returns an error
-	_, err = blockTemplateGenerator.NewBlockTemplate(nil)
-	standardCoinbaseScriptPatch.Unpatch()
-
-	if err == nil || err.Error() != standardCoinbaseScriptErrString {
-		t.Errorf("expected an error \"%v\" but got \"%v\"", standardCoinbaseScriptErrString, err)
-	}
-	if err == nil {
-		t.Errorf("expected an error but got <nil>")
 	}
 
 	// Here we check that the miner's priorty queue has the expected transactions after filtering.
@@ -356,7 +325,7 @@ func TestNewBlockTemplate(t *testing.T) {
 	})
 	defer gasLimitPatch.Unpatch()
 
-	template2, err := blockTemplateGenerator.NewBlockTemplate(nil)
+	template3, err := blockTemplateGenerator.NewBlockTemplate(nil)
 	popPatch.Unpatch()
 	gasLimitPatch.Unpatch()
 
@@ -379,17 +348,17 @@ func TestNewBlockTemplate(t *testing.T) {
 		*subnetworkTx1.TxID(): false,
 	}
 
-	for _, tx := range template2.Block.Transactions[2:] {
+	for _, tx := range template3.Block.Transactions[util.CoinbaseTransactionIndex+1:] {
 		id := *tx.TxID()
 		if _, ok := expectedTxs[id]; !ok {
-			t.Errorf("Unexpected tx %v in template2's candidate block", id)
+			t.Errorf("Unexpected tx %v in template3's candidate block", id)
 		}
 		expectedTxs[id] = true
 	}
 
 	for id, exists := range expectedTxs {
 		if !exists {
-			t.Errorf("tx %v was expected to be in template2's candidate block, but wasn't", id)
+			t.Errorf("tx %v was expected to be in template3's candidate block, but wasn't", id)
 		}
 	}
 }

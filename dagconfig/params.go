@@ -128,9 +128,9 @@ type Params struct {
 	// block in compact form.
 	PowLimitBits uint32
 
-	// BlockRewardMaturity is the number of blocks required before newly mined
-	// coins (coinbase or fee transactions) can be spent.
-	BlockRewardMaturity uint64
+	// BlockCoinbaseMaturity is the number of blocks required before newly mined
+	// coins can be spent.
+	BlockCoinbaseMaturity uint64
 
 	// SubsidyReductionInterval is the interval of blocks before the subsidy
 	// is reduced.
@@ -221,7 +221,7 @@ var MainNetParams = Params{
 	GenesisHash:              &genesisHash,
 	PowLimit:                 mainPowLimit,
 	PowLimitBits:             0x207fffff,
-	BlockRewardMaturity:      100,
+	BlockCoinbaseMaturity:    100,
 	SubsidyReductionInterval: 210000,
 	TargetTimespan:           time.Hour * 1,   // 1 hour
 	TargetTimePerBlock:       time.Second * 1, // 1 second
@@ -284,7 +284,7 @@ var RegressionNetParams = Params{
 	GenesisHash:              &regTestGenesisHash,
 	PowLimit:                 regressionPowLimit,
 	PowLimitBits:             0x207fffff,
-	BlockRewardMaturity:      100,
+	BlockCoinbaseMaturity:    100,
 	SubsidyReductionInterval: 150,
 	TargetTimespan:           time.Hour * 1,   // 1 hour
 	TargetTimePerBlock:       time.Second * 1, // 1 second
@@ -347,7 +347,7 @@ var TestNet3Params = Params{
 	GenesisHash:              &testNet3GenesisHash,
 	PowLimit:                 testNet3PowLimit,
 	PowLimitBits:             0x207fffff,
-	BlockRewardMaturity:      100,
+	BlockCoinbaseMaturity:    100,
 	SubsidyReductionInterval: 210000,
 	TargetTimespan:           time.Hour * 1,   // 1 hour
 	TargetTimePerBlock:       time.Second * 1, // 1 second
@@ -414,7 +414,7 @@ var SimNetParams = Params{
 	GenesisHash:              &simNetGenesisHash,
 	PowLimit:                 simNetPowLimit,
 	PowLimitBits:             0x207fffff,
-	BlockRewardMaturity:      100,
+	BlockCoinbaseMaturity:    100,
 	SubsidyReductionInterval: 210000,
 	TargetTimespan:           time.Hour * 1,   // 1 hour
 	TargetTimePerBlock:       time.Second * 1, // 1 second
@@ -473,7 +473,7 @@ var DevNetParams = Params{
 	GenesisHash:              &devNetGenesisHash,
 	PowLimit:                 devNetPowLimit,
 	PowLimitBits:             util.BigToCompact(devNetPowLimit), // 0x1e7fffff
-	BlockRewardMaturity:      100,
+	BlockCoinbaseMaturity:    100,
 	SubsidyReductionInterval: 210000,
 	TargetTimespan:           time.Hour * 1,   // 1 hour
 	TargetTimePerBlock:       time.Second * 1, // 1 second

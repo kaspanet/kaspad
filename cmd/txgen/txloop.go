@@ -24,11 +24,11 @@ const (
 	// which spends a p2pkh output: OP_DATA_73 <sig> OP_DATA_33 <pubkey>
 	spendSize = 1 + 73 + 1 + 33
 
-	txLifeSpan                                     = 1000
-	requiredConfirmations                          = 10
-	approximateConfirmationsForBlockRewardMaturity = 150
-	searchRawTransactionResultCount                = 1000
-	searchRawTransactionMaxResults                 = 5000
+	txLifeSpan                                  = 1000
+	requiredConfirmations                       = 10
+	approximateConfirmationsForCoinbaseMaturity = 150
+	searchRawTransactionResultCount             = 1000
+	searchRawTransactionMaxResults              = 5000
 )
 
 type walletTransaction struct {
@@ -293,10 +293,10 @@ func addTxOutsToUTXOSet(walletUTXOSet utxoSet, tx *wire.MsgTx) {
 }
 
 func isTxMatured(tx *wire.MsgTx, confirmations uint64) bool {
-	if !tx.IsBlockReward() {
+	if !tx.IsCoinBase() {
 		return confirmations >= requiredConfirmations
 	}
-	return confirmations >= approximateConfirmationsForBlockRewardMaturity
+	return confirmations >= approximateConfirmationsForCoinbaseMaturity
 }
 
 func calcUTXOSetFunds(walletUTXOSet utxoSet) uint64 {

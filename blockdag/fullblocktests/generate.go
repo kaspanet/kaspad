@@ -910,7 +910,7 @@ func Generate(includeLargeReorg bool) (tests [][]TestInstance, err error) {
 	//   genesis -> bm0 -> bm1 -> ... -> bm99
 	// ---------------------------------------------------------------------
 
-	coinbaseMaturity := g.params.BlockRewardMaturity
+	coinbaseMaturity := g.params.BlockCoinbaseMaturity
 	var testInstances []TestInstance
 	for i := uint64(0); i < coinbaseMaturity; i++ {
 		blockName := fmt.Sprintf("bm%d", i)
@@ -1122,7 +1122,7 @@ func Generate(includeLargeReorg bool) (tests [][]TestInstance, err error) {
 	g.setTip("b15")
 	tooSmallCbScript := repeatOpcode(0x00, minCoinbaseScriptLen-1)
 	g.nextBlock("b26", outs[6], replaceCoinbaseSigScript(tooSmallCbScript))
-	rejected(blockdag.ErrBadCoinbaseScriptLen)
+	rejected(blockdag.ErrBadCoinbasePayloadLen)
 
 	// Parent was rejected, so this block must either be an orphan or
 	// outright rejected due to an invalid parent.
@@ -1138,7 +1138,7 @@ func Generate(includeLargeReorg bool) (tests [][]TestInstance, err error) {
 	g.setTip("b15")
 	tooLargeCbScript := repeatOpcode(0x00, maxCoinbaseScriptLen+1)
 	g.nextBlock("b28", outs[6], replaceCoinbaseSigScript(tooLargeCbScript))
-	rejected(blockdag.ErrBadCoinbaseScriptLen)
+	rejected(blockdag.ErrBadCoinbasePayloadLen)
 
 	// Parent was rejected, so this block must either be an orphan or
 	// outright rejected due to an invalid parent.
@@ -1808,7 +1808,7 @@ func Generate(includeLargeReorg bool) (tests [][]TestInstance, err error) {
 	//                 \-> b68(20)
 	g.setTip("b65")
 	g.nextBlock("b68", outs[20], additionalCoinbase(10), additionalSpendFee(9))
-	rejected(blockdag.ErrBadFeeTransaction)
+	rejected(blockdag.ErrBadCoinbaseTransaction)
 
 	// Create block that pays 10 extra to the coinbase and a tx that pays
 	// the extra 10 fee.

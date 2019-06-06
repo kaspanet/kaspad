@@ -26,10 +26,6 @@ const (
 
 	// CoinbaseTransactionIndex is the index of the coinbase transaction in every block
 	CoinbaseTransactionIndex = 0
-
-	// FeeTransactionIndex is the index of the fee transaction in every block (except genesis,
-	// which doesn't have a fee transaction)
-	FeeTransactionIndex = 1
 )
 
 // Error satisfies the error interface and prints human-readable errors.
@@ -224,16 +220,6 @@ func (b *Block) IsGenesis() bool {
 // CoinbaseTransaction returns this block's coinbase transaction
 func (b *Block) CoinbaseTransaction() *Tx {
 	return b.Transactions()[CoinbaseTransactionIndex]
-}
-
-// FeeTransaction returns this block's fee transaction
-// If this block is a genesis block, it has no fee transaction, and therefore
-// nil is returned.
-func (b *Block) FeeTransaction() *Tx {
-	if b.IsGenesis() {
-		return nil
-	}
-	return b.Transactions()[FeeTransactionIndex]
 }
 
 // Timestamp returns this block's timestamp

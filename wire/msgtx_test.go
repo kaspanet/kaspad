@@ -129,18 +129,18 @@ func TestTx(t *testing.T) {
 
 // TestTxHash tests the ability to generate the hash of a transaction accurately.
 func TestTxHashAndID(t *testing.T) {
-	txID1Str := "5b92e6ed52bc78745905e0d104069e46407f62ea8d7d2bce78cd13f80ce220dc"
+	txID1Str := "edca872f27279674c7a52192b32fd68b8b8be714bfea52d98b2c3c86c30e85c6"
 	wantTxID1, err := daghash.NewTxIDFromStr(txID1Str)
 	if err != nil {
 		t.Errorf("NewTxIDFromStr: %v", err)
 		return
 	}
 
-	// First transaction from block 113875.
+	// A coinbase transaction
 	txIn := &TxIn{
 		PreviousOutpoint: Outpoint{
 			TxID:  daghash.TxID{},
-			Index: 0xffffffff,
+			Index: math.MaxUint32,
 		},
 		SignatureScript: []byte{0x04, 0x31, 0xdc, 0x00, 0x1b, 0x01, 0x62},
 		Sequence:        math.MaxUint64,
@@ -161,7 +161,7 @@ func TestTxHashAndID(t *testing.T) {
 			0xac, // OP_CHECKSIG
 		},
 	}
-	tx1 := NewNativeMsgTx(1, []*TxIn{txIn}, []*TxOut{txOut})
+	tx1 := NewSubnetworkMsgTx(1, []*TxIn{txIn}, []*TxOut{txOut}, subnetworkid.SubnetworkIDCoinbase, 0, nil)
 
 	// Ensure the hash produced is expected.
 	tx1Hash := tx1.TxHash()
@@ -245,11 +245,10 @@ func TestTxHashAndID(t *testing.T) {
 		t.Errorf("tx2ID and tx2Hash shouldn't be the same for non-coinbase transaction with signature and/or payload")
 	}
 
-	tx2.Payload = []byte{}
 	tx2.TxIn[0].SignatureScript = []byte{}
 	newTx2Hash := tx2.TxHash()
 	if !tx2ID.IsEqual((*daghash.TxID)(newTx2Hash)) {
-		t.Errorf("tx2ID and newTx2Hash should be the same for transaction without empty signature and payload")
+		t.Errorf("tx2ID and newTx2Hash should be the same for transaction with an empty signature")
 	}
 }
 
@@ -403,7 +402,7 @@ func TestTxSerialize(t *testing.T) {
 		0x00,                                           // Varint for number of input transactions
 		0x00,                                           // Varint for number of output transactions
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Lock time
-		0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+		0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 		0x00, 0x00, 0x00, 0x00, // Sub Network ID
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Gas
@@ -590,7 +589,7 @@ func TestTxSerializeErrors(t *testing.T) {
 
 	w := bytes.NewBuffer(make([]byte, 0, registryTx.SerializeSize()))
 	err := registryTx.Serialize(w)
-	str := "Transactions from registry subnetwork should have 0 gas"
+	str := "Transactions from built-in should have 0 gas"
 	expectedErr := messageError("MsgTx.BtcEncode", str)
 	if err == nil || err.Error() != expectedErr.Error() {
 		t.Errorf("TestTxSerializeErrors: expected error %v but got %v", expectedErr, err)

@@ -371,10 +371,10 @@ func (dag *BlockDAG) calcSequenceLock(node *blockNode, utxoSet UTXOSet, tx *util
 	// at any given height or time.
 	sequenceLock := &SequenceLock{Seconds: -1, BlockChainHeight: -1}
 
-	// Sequence locks don't apply to block reward transactions Therefore, we
+	// Sequence locks don't apply to coinbase transactions Therefore, we
 	// return sequence lock values of -1 indicating that this transaction
 	// can be included within a block at any given height or time.
-	if IsBlockReward(tx) {
+	if IsCoinBase(tx) {
 		return sequenceLock, nil
 	}
 
@@ -579,7 +579,7 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block, fastAdd bo
 		return errors.New(newErrString)
 	}
 
-	err = node.validateFeeTransaction(dag, block, txsAcceptanceData)
+	err = node.validateCoinbaseTransaction(dag, block, txsAcceptanceData)
 	if err != nil {
 		return err
 	}
@@ -672,7 +672,7 @@ func (dag *BlockDAG) validateGasLimit(block *util.Block) error {
 		msgTx := tx.MsgTx()
 		// In DAGCoin and Registry sub-networks all txs must have Gas = 0, and that is validated in checkTransactionSanity
 		// Therefore - no need to check them here.
-		if !msgTx.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) && !msgTx.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDRegistry) {
+		if !msgTx.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) && !msgTx.SubnetworkID.IsBuiltIn() {
 			gasUsageInSubnetwork := gasUsageInAllSubnetworks[msgTx.SubnetworkID]
 			gasUsageInSubnetwork += msgTx.Gas
 			if gasUsageInSubnetwork < gasUsageInAllSubnetworks[msgTx.SubnetworkID] { // protect from overflows
@@ -746,25 +746,25 @@ func (dag *BlockDAG) updateFinalityPoint() {
 	dag.lastFinalityPoint = newFinalityPoint
 }
 
-// NextBlockFeeTransaction prepares the fee transaction for the next mined block
+// NextBlockCoinbaseTransaction prepares the coinbase transaction for the next mined block
 //
 // This function CAN'T be called with the DAG lock held.
-func (dag *BlockDAG) NextBlockFeeTransaction() (*wire.MsgTx, error) {
+func (dag *BlockDAG) NextBlockCoinbaseTransaction(pkScript []byte, extraData []byte) (*wire.MsgTx, error) {
 	dag.dagLock.RLock()
 	defer dag.dagLock.RUnlock()
 
-	return dag.NextBlockFeeTransactionNoLock()
+	return dag.NextBlockCoinbaseTransactionNoLock(pkScript, extraData)
 }
 
-// NextBlockFeeTransactionNoLock prepares the fee transaction for the next mined block
+// NextBlockCoinbaseTransactionNoLock prepares the coinbase transaction for the next mined block
 //
 // This function MUST be called with the DAG read-lock held
-func (dag *BlockDAG) NextBlockFeeTransactionNoLock() (*wire.MsgTx, error) {
+func (dag *BlockDAG) NextBlockCoinbaseTransactionNoLock(pkScript []byte, extraData []byte) (*wire.MsgTx, error) {
 	txsAcceptanceData, err := dag.TxsAcceptedByVirtual()
 	if err != nil {
 		return nil, err
 	}
-	return dag.virtual.blockNode.buildFeeTransaction(dag, txsAcceptanceData)
+	return dag.virtual.blockNode.buildCoinbaseTransaction(dag, txsAcceptanceData, pkScript, extraData)
 }
 
 // NextAcceptedIDMerkleRoot prepares the acceptedIDMerkleRoot for the next mined block

@@ -2109,12 +2109,8 @@ func chainErrToGBTErrString(err error) string {
 		return "bad-txns-nocoinbase"
 	case blockdag.ErrMultipleCoinbases:
 		return "bad-txns-multicoinbase"
-	case blockdag.ErrBadCoinbaseScriptLen:
+	case blockdag.ErrBadCoinbasePayloadLen:
 		return "bad-cb-length"
-	case blockdag.ErrMissingCoinbaseHeight:
-		return "bad-cb-height"
-	case blockdag.ErrBadCoinbaseHeight:
-		return "bad-cb-height"
 	case blockdag.ErrScriptMalformed:
 		return "bad-script-malformed"
 	case blockdag.ErrScriptValidation:
@@ -2771,7 +2767,7 @@ func handleGetTxOut(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 		bestBlockHash = s.cfg.DAG.HighestTipHash().String()
 		value = entry.Amount()
 		pkScript = entry.PkScript()
-		isCoinbase = entry.IsBlockReward()
+		isCoinbase = entry.IsCoinbase()
 	}
 
 	// Disassemble script into single line printable format.
@@ -2965,30 +2961,14 @@ func txConfirmations(s *Server, txID *daghash.TxID) (uint64, error) {
 // createVinListPrevOut returns a slice of JSON objects for the inputs of the
 // passed transaction.
 func createVinListPrevOut(s *Server, mtx *wire.MsgTx, chainParams *dagconfig.Params, vinExtra bool, filterAddrMap map[string]struct{}) ([]btcjson.VinPrevOut, error) {
-	// Coinbase transactions only have a single txin by definition.
-	if mtx.IsCoinBase() {
-		// Only include the transaction if the filter map is empty
-		// because a coinbase input has no addresses and so would never
-		// match a non-empty filter.
-		if len(filterAddrMap) != 0 {
-			return nil, nil
-		}
-
-		txIn := mtx.TxIn[0]
-		vinList := make([]btcjson.VinPrevOut, 1)
-		vinList[0].Coinbase = hex.EncodeToString(txIn.SignatureScript)
-		vinList[0].Sequence = txIn.Sequence
-		return vinList, nil
-	}
-
 	// Use a dynamically sized list to accommodate the address filter.
 	vinList := make([]btcjson.VinPrevOut, 0, len(mtx.TxIn))
 
 	// Lookup all of the referenced transaction outputs needed to populate the
-	// previous output information if requested. Fee transactions do not contain
+	// previous output information if requested. Coinbase transactions do not contain
 	// valid inputs: block hash instead of transaction ID.
 	var originOutputs map[wire.Outpoint]wire.TxOut
-	if !mtx.IsFeeTransaction() && (vinExtra || len(filterAddrMap) > 0) {
+	if !mtx.IsCoinBase() && (vinExtra || len(filterAddrMap) > 0) {
 		var err error
 		originOutputs, err = fetchInputTxos(s, mtx)
 		if err != nil {

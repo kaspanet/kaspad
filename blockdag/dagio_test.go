@@ -54,7 +54,7 @@ func TestUtxoSerialization(t *testing.T) {
 				amount:           5000000000,
 				pkScript:         hexToBytes("410496b538e853519c726a2c91e61ec11600ae1390813a627c66fb8be7947be63c52da7589379515d4e0a604f8141781e62294721166bf621e73a82cbf2342c858eeac"),
 				blockChainHeight: 1,
-				packedFlags:      tfBlockReward,
+				packedFlags:      tfCoinbase,
 			},
 			serialized: hexToBytes("03320496b538e853519c726a2c91e61ec11600ae1390813a627c66fb8be7947be63c52"),
 		},
@@ -111,10 +111,10 @@ func TestUtxoSerialization(t *testing.T) {
 				utxoEntry.BlockChainHeight(), test.entry.BlockChainHeight())
 			continue
 		}
-		if utxoEntry.IsBlockReward() != test.entry.IsBlockReward() {
+		if utxoEntry.IsCoinbase() != test.entry.IsCoinbase() {
 			t.Errorf("deserializeUTXOEntry #%d (%s) mismatched "+
 				"coinbase flag: got %v, want %v", i, test.name,
-				utxoEntry.IsBlockReward(), test.entry.IsBlockReward())
+				utxoEntry.IsCoinbase(), test.entry.IsCoinbase())
 			continue
 		}
 	}

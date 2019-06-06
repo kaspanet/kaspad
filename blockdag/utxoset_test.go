@@ -1,12 +1,12 @@
 package blockdag
 
 import (
+	"github.com/daglabs/btcd/util/subnetworkid"
 	"math"
 	"reflect"
 	"testing"
 
 	"github.com/daglabs/btcd/btcec"
-	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/util/daghash"
 	"github.com/daglabs/btcd/wire"
 )
@@ -723,15 +723,15 @@ func TestUTXOSetDiffRules(t *testing.T) {
 
 // TestDiffUTXOSet_addTx makes sure that diffUTXOSet addTx works as expected
 func TestDiffUTXOSet_addTx(t *testing.T) {
-	// transaction0 is coinbase. As such, it has exactly one input with hash zero and MaxUInt32 index
+	// coinbaseTX is coinbase. As such, it has exactly one input with hash zero and MaxUInt32 index
 	txID0, _ := daghash.NewTxIDFromStr("0000000000000000000000000000000000000000000000000000000000000000")
 	txIn0 := &wire.TxIn{SignatureScript: []byte{}, PreviousOutpoint: wire.Outpoint{TxID: *txID0, Index: math.MaxUint32}, Sequence: 0}
 	txOut0 := &wire.TxOut{PkScript: []byte{0}, Value: 10}
 	utxoEntry0 := NewUTXOEntry(txOut0, true, 0)
-	transaction0 := wire.NewNativeMsgTx(1, []*wire.TxIn{txIn0}, []*wire.TxOut{txOut0})
+	coinbaseTX := wire.NewSubnetworkMsgTx(1, []*wire.TxIn{txIn0}, []*wire.TxOut{txOut0}, subnetworkid.SubnetworkIDCoinbase, 0, nil)
 
-	// transaction1 spends transaction0
-	id1 := transaction0.TxID()
+	// transaction1 spends coinbaseTX
+	id1 := coinbaseTX.TxID()
 	outpoint1 := *wire.NewOutpoint(id1, 0)
 	txIn1 := &wire.TxIn{SignatureScript: []byte{}, PreviousOutpoint: outpoint1, Sequence: 0}
 	txOut1 := &wire.TxOut{PkScript: []byte{1}, Value: 20}
@@ -764,7 +764,7 @@ func TestDiffUTXOSet_addTx(t *testing.T) {
 			name:        "add coinbase transaction to empty set",
 			startSet:    NewDiffUTXOSet(NewFullUTXOSet(), NewUTXODiff()),
 			startHeight: 0,
-			toAdd:       []*wire.MsgTx{transaction0},
+			toAdd:       []*wire.MsgTx{coinbaseTX},
 			expectedSet: &DiffUTXOSet{
 				base: &FullUTXOSet{utxoCollection: utxoCollection{}},
 				UTXODiff: &UTXODiff{
@@ -892,10 +892,11 @@ func TestDiffFromTx(t *testing.T) {
 	fus := addMultisetToFullUTXOSet(t, &FullUTXOSet{
 		utxoCollection: utxoCollection{},
 	})
-	cbTx, err := createCoinbaseTxForTest(1, 1, 0, &dagconfig.SimNetParams)
-	if err != nil {
-		t.Errorf("createCoinbaseTxForTest: %v", err)
-	}
+
+	txID0, _ := daghash.NewTxIDFromStr("0000000000000000000000000000000000000000000000000000000000000000")
+	txIn0 := &wire.TxIn{SignatureScript: []byte{}, PreviousOutpoint: wire.Outpoint{TxID: *txID0, Index: math.MaxUint32}, Sequence: 0}
+	txOut0 := &wire.TxOut{PkScript: []byte{0}, Value: 10}
+	cbTx := wire.NewSubnetworkMsgTx(1, []*wire.TxIn{txIn0}, []*wire.TxOut{txOut0}, subnetworkid.SubnetworkIDCoinbase, 0, nil)
 	if isAccepted, err := fus.AddTx(cbTx, 1); err != nil {
 		t.Fatalf("AddTx unexpectedly failed. Error: %s", err)
 	} else if !isAccepted {
