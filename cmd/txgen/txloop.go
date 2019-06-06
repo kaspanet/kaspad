@@ -94,7 +94,7 @@ func txLoop(client *txgenClient, cfg *config) error {
 			return err
 		}
 		updateWalletTxs(blockAdded, walletTxs)
-		err = queueTransactions(client, blockAdded, walletUTXOSet, walletTxs, txChan, cfg, gasLimitMap)
+		err = enqueueTransactions(client, blockAdded, walletUTXOSet, walletTxs, txChan, cfg, gasLimitMap)
 		if err != nil {
 			return err
 		}
@@ -203,7 +203,7 @@ func randomWithAverageTarget(target uint64, allowZero bool) uint64 {
 	return uint64(math.Round(randomNum))
 }
 
-func queueTransactions(client *txgenClient, blockAdded *blockAddedMsg, walletUTXOSet utxoSet, walletTxs map[daghash.TxID]*walletTransaction,
+func enqueueTransactions(client *txgenClient, blockAdded *blockAddedMsg, walletUTXOSet utxoSet, walletTxs map[daghash.TxID]*walletTransaction,
 	txChan chan *wire.MsgTx, cfg *config, gasLimitMap map[subnetworkid.SubnetworkID]uint64) error {
 	if err := applyConfirmedTransactionsAndResendNonAccepted(client, walletTxs, walletUTXOSet, blockAdded.chainHeight, txChan); err != nil {
 		return err
