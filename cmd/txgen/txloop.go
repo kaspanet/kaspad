@@ -4,6 +4,10 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
+	"math"
+	"math/rand"
+	"time"
+
 	"github.com/daglabs/btcd/blockdag"
 	"github.com/daglabs/btcd/btcjson"
 	"github.com/daglabs/btcd/txscript"
@@ -11,9 +15,6 @@ import (
 	"github.com/daglabs/btcd/util/daghash"
 	"github.com/daglabs/btcd/util/subnetworkid"
 	"github.com/daglabs/btcd/wire"
-	"math"
-	"math/rand"
-	"time"
 )
 
 const (
@@ -124,7 +125,7 @@ func sendTransactionLoop(client *txgenClient, interval uint64, txChan chan *wire
 	}
 	for tx := range txChan {
 		_, err := client.SendRawTransaction(tx, true)
-		log.Infof("Sending tx %s to subnetwork %s with %d inputs, %d outputs, %d payload size and %d gas", tx.SubnetworkID, tx.TxID(), len(tx.TxIn), len(tx.TxOut), len(tx.Payload), tx.Gas)
+		log.Infof("Sending tx %s to subnetwork %s with %d inputs, %d outputs, %d payload size and %d gas", tx.TxID(), tx.SubnetworkID, len(tx.TxIn), len(tx.TxOut), len(tx.Payload), tx.Gas)
 		if err != nil {
 			return err
 		}
