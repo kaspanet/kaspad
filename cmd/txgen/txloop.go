@@ -35,6 +35,8 @@ const (
 	approximateConfirmationsForBlockRewardMaturity = 150
 	searchRawTransactionResultCount                = 1000
 	searchRawTransactionMaxResults                 = 5000
+	txMaxQueueLength                               = 10000
+	maxResendDepth                                 = 500
 )
 
 type walletTransaction struct {
@@ -77,7 +79,7 @@ func txLoop(client *txgenClient, cfg *config) error {
 		return err
 	}
 
-	txChan := make(chan *wire.MsgTx, 1e4)
+	txChan := make(chan *wire.MsgTx, txMaxQueueLength)
 	spawn(func() {
 		err := sendTransactionLoop(client, cfg.TxInterval, txChan)
 		if err != nil {
@@ -92,7 +94,7 @@ func txLoop(client *txgenClient, cfg *config) error {
 			return err
 		}
 		updateWalletTxs(blockAdded, walletTxs)
-		err = prepareTransactions(client, blockAdded, walletUTXOSet, walletTxs, txChan, cfg, gasLimitMap)
+		err = queueTransactions(client, blockAdded, walletUTXOSet, walletTxs, txChan, cfg, gasLimitMap)
 		if err != nil {
 			return err
 		}
@@ -121,7 +123,10 @@ func sendTransactionLoop(client *txgenClient, interval uint64, txChan chan *wire
 	for tx := range txChan {
 		if interval != 0 {
 			timeSinceLastTx := time.Now().Sub(lastTxTime)
-			time.Sleep(time.Duration(interval)*time.Millisecond - timeSinceLastTx)
+			delay := time.Duration(interval)*time.Millisecond - timeSinceLastTx
+			if delay > 0 {
+				time.Sleep(time.Duration(interval)*time.Millisecond - timeSinceLastTx)
+			}
 		}
 		_, err := client.SendRawTransaction(tx, true)
 		log.Infof("Sending tx %s to subnetwork %s with %d inputs, %d outputs, %d payload size and %d gas", tx.SubnetworkID, tx.TxID(), len(tx.TxIn), len(tx.TxOut), len(tx.Payload), tx.Gas)
@@ -198,9 +203,9 @@ func randomWithAverageTarget(target uint64, allowZero bool) uint64 {
 	return uint64(math.Round(randomNum))
 }
 
-func prepareTransactions(client *txgenClient, blockAdded *blockAddedMsg, walletUTXOSet utxoSet, walletTxs map[daghash.TxID]*walletTransaction,
+func queueTransactions(client *txgenClient, blockAdded *blockAddedMsg, walletUTXOSet utxoSet, walletTxs map[daghash.TxID]*walletTransaction,
 	txChan chan *wire.MsgTx, cfg *config, gasLimitMap map[subnetworkid.SubnetworkID]uint64) error {
-	if err := checkConfirmations(client, walletTxs, walletUTXOSet, blockAdded.chainHeight, txChan); err != nil {
+	if err := applyConfirmedTransactionsAndResendNonAccepted(client, walletTxs, walletUTXOSet, blockAdded.chainHeight, txChan); err != nil {
 		return err
 	}
 
@@ -348,7 +353,7 @@ func calcFee(tx *wire.MsgTx, feeRate uint64, numberOfOutputs uint64) uint64 {
 	return reqFee
 }
 
-func checkConfirmations(client *txgenClient, walletTxs map[daghash.TxID]*walletTransaction, walletUTXOSet utxoSet,
+func applyConfirmedTransactionsAndResendNonAccepted(client *txgenClient, walletTxs map[daghash.TxID]*walletTransaction, walletUTXOSet utxoSet,
 	blockChainHeight uint64, txChan chan *wire.MsgTx) error {
 	for txID, walletTx := range walletTxs {
 		if !walletTx.confirmed && walletTx.checkConfirmationCountdown == 0 {
@@ -360,7 +365,7 @@ func checkConfirmations(client *txgenClient, walletTxs map[daghash.TxID]*walletT
 			if isTxMatured(msgTx, *txResult.Confirmations) {
 				walletTx.confirmed = true
 				addTxOutsToUTXOSet(walletUTXOSet, msgTx)
-			} else if *txResult.Confirmations == 0 && !txResult.IsInMempool && blockChainHeight-500 > walletTx.chainHeight {
+			} else if *txResult.Confirmations == 0 && !txResult.IsInMempool && blockChainHeight-maxResendDepth > walletTx.chainHeight {
 				log.Infof("Transaction %s was not accepted in the DAG. Resending", txID)
 				txChan <- msgTx
 			}

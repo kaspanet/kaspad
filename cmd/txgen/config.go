@@ -50,8 +50,16 @@ func parseConfig() (*config, error) {
 		return nil, errors.New("--cert should be omitted if --notls is used")
 	}
 
-	if cfg.AverageGasFraction >= 1 {
+	if cfg.AverageGasFraction >= 1 || cfg.AverageGasFraction < 0 {
 		return nil, errors.New("--gas-fraction should be between 0 and 1")
+	}
+
+	if cfg.TargetNumberOfOutputs < 0 {
+		return nil, errors.New("--num-outputs should be positive")
+	}
+
+	if cfg.TargetNumberOfInputs < 0 {
+		return nil, errors.New("--num-inputs should be positive")
 	}
 
 	if cfg.TargetNumberOfOutputs == 0 {
