@@ -243,7 +243,7 @@ func TestCalcSequenceLock(t *testing.T) {
 	targetTx := util.NewTx(msgTx)
 	utxoSet := NewFullUTXOSet()
 	height := uint64(numBlocksToGenerate) - 4
-	if isAccepted, err := utxoSet.AddTx(targetTx.MsgTx(), height, height); err != nil {
+	if isAccepted, err := utxoSet.AddTx(targetTx.MsgTx(), height); err != nil {
 		t.Fatalf("AddTx unexpectedly failed. Error: %s", err)
 	} else if !isAccepted {
 		t.Fatalf("AddTx unexpectedly didn't add tx %s", targetTx.ID())
@@ -279,7 +279,7 @@ func TestCalcSequenceLock(t *testing.T) {
 		TxID:  *unConfTx.TxID(),
 		Index: 0,
 	}
-	if isAccepted, err := utxoSet.AddTx(unConfTx, UnminedChainHeight, UnminedBlueScore); err != nil {
+	if isAccepted, err := utxoSet.AddTx(unConfTx, UnminedBlueScore); err != nil {
 		t.Fatalf("AddTx unexpectedly failed. Error: %s", err)
 	} else if !isAccepted {
 		t.Fatalf("AddTx unexpectedly didn't add tx %s", unConfTx.TxID())

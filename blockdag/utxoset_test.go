@@ -17,8 +17,8 @@ func TestUTXOCollection(t *testing.T) {
 	txID1, _ := daghash.NewTxIDFromStr("1111111111111111111111111111111111111111111111111111111111111111")
 	outPoint0 := *wire.NewOutpoint(txID0, 0)
 	outPoint1 := *wire.NewOutpoint(txID1, 0)
-	utxoEntry0 := NewUTXOEntry(&wire.TxOut{PkScript: []byte{}, Value: 10}, true, 0, 0)
-	utxoEntry1 := NewUTXOEntry(&wire.TxOut{PkScript: []byte{}, Value: 20}, false, 1, 1)
+	utxoEntry0 := NewUTXOEntry(&wire.TxOut{PkScript: []byte{}, Value: 10}, true, 0)
+	utxoEntry1 := NewUTXOEntry(&wire.TxOut{PkScript: []byte{}, Value: 20}, false, 1)
 
 	// For each of the following test cases, we will:
 	// .String() the given collection and compare it to expectedString
@@ -76,8 +76,8 @@ func TestUTXODiff(t *testing.T) {
 	txID1, _ := daghash.NewTxIDFromStr("1111111111111111111111111111111111111111111111111111111111111111")
 	outPoint0 := *wire.NewOutpoint(txID0, 0)
 	outPoint1 := *wire.NewOutpoint(txID1, 0)
-	utxoEntry0 := NewUTXOEntry(&wire.TxOut{PkScript: []byte{}, Value: 10}, true, 0, 0)
-	utxoEntry1 := NewUTXOEntry(&wire.TxOut{PkScript: []byte{}, Value: 20}, false, 1, 1)
+	utxoEntry0 := NewUTXOEntry(&wire.TxOut{PkScript: []byte{}, Value: 10}, true, 0)
+	utxoEntry1 := NewUTXOEntry(&wire.TxOut{PkScript: []byte{}, Value: 20}, false, 1)
 
 	// Test utxoDiff creation
 	diff := NewUTXODiff()
@@ -119,7 +119,7 @@ func TestUTXODiff(t *testing.T) {
 func TestUTXODiffRules(t *testing.T) {
 	txID0, _ := daghash.NewTxIDFromStr("0000000000000000000000000000000000000000000000000000000000000000")
 	outPoint0 := *wire.NewOutpoint(txID0, 0)
-	utxoEntry0 := NewUTXOEntry(&wire.TxOut{PkScript: []byte{}, Value: 10}, true, 0, 0)
+	utxoEntry0 := NewUTXOEntry(&wire.TxOut{PkScript: []byte{}, Value: 10}, true, 0)
 
 	// For each of the following test cases, we will:
 	// this.diffFrom(other) and compare it to expectedDiffFromResult
@@ -408,8 +408,8 @@ func TestFullUTXOSet(t *testing.T) {
 	outPoint1 := *wire.NewOutpoint(txID1, 0)
 	txOut0 := &wire.TxOut{PkScript: []byte{}, Value: 10}
 	txOut1 := &wire.TxOut{PkScript: []byte{}, Value: 20}
-	utxoEntry0 := NewUTXOEntry(txOut0, true, 0, 0)
-	utxoEntry1 := NewUTXOEntry(txOut1, false, 1, 1)
+	utxoEntry0 := NewUTXOEntry(txOut0, true, 0)
+	utxoEntry1 := NewUTXOEntry(txOut1, false, 1)
 	diff := addMultisetToDiff(t, &UTXODiff{
 		toAdd:    utxoCollection{outPoint0: utxoEntry0},
 		toRemove: utxoCollection{outPoint1: utxoEntry1},
@@ -437,13 +437,13 @@ func TestFullUTXOSet(t *testing.T) {
 	// Test fullUTXOSet addTx
 	txIn0 := &wire.TxIn{SignatureScript: []byte{}, PreviousOutpoint: wire.Outpoint{TxID: *txID0, Index: 0}, Sequence: 0}
 	transaction0 := wire.NewNativeMsgTx(1, []*wire.TxIn{txIn0}, []*wire.TxOut{txOut0})
-	if isAccepted, err := emptySet.AddTx(transaction0, 0, 0); err != nil {
+	if isAccepted, err := emptySet.AddTx(transaction0, 0); err != nil {
 		t.Errorf("AddTx unexpectedly failed: %s", err)
 	} else if isAccepted {
 		t.Errorf("addTx unexpectedly succeeded")
 	}
 	emptySet = addMultisetToFullUTXOSet(t, &FullUTXOSet{utxoCollection: utxoCollection{outPoint0: utxoEntry0}})
-	if isAccepted, err := emptySet.AddTx(transaction0, 0, 0); err != nil {
+	if isAccepted, err := emptySet.AddTx(transaction0, 0); err != nil {
 		t.Errorf("addTx unexpectedly failed. Error: %s", err)
 	} else if !isAccepted {
 		t.Fatalf("AddTx unexpectedly didn't add tx %s", transaction0.TxID())
@@ -472,8 +472,8 @@ func TestDiffUTXOSet(t *testing.T) {
 	outPoint1 := *wire.NewOutpoint(txID1, 0)
 	txOut0 := &wire.TxOut{PkScript: []byte{}, Value: 10}
 	txOut1 := &wire.TxOut{PkScript: []byte{}, Value: 20}
-	utxoEntry0 := NewUTXOEntry(txOut0, true, 0, 0)
-	utxoEntry1 := NewUTXOEntry(txOut1, false, 1, 1)
+	utxoEntry0 := NewUTXOEntry(txOut0, true, 0)
+	utxoEntry1 := NewUTXOEntry(txOut1, false, 1)
 	diff := addMultisetToDiff(t, &UTXODiff{
 		toAdd:    utxoCollection{outPoint0: utxoEntry0},
 		toRemove: utxoCollection{outPoint1: utxoEntry1},
@@ -727,7 +727,7 @@ func TestDiffUTXOSet_addTx(t *testing.T) {
 	txID0, _ := daghash.NewTxIDFromStr("0000000000000000000000000000000000000000000000000000000000000000")
 	txIn0 := &wire.TxIn{SignatureScript: []byte{}, PreviousOutpoint: wire.Outpoint{TxID: *txID0, Index: math.MaxUint32}, Sequence: 0}
 	txOut0 := &wire.TxOut{PkScript: []byte{0}, Value: 10}
-	utxoEntry0 := NewUTXOEntry(txOut0, true, 0, 0)
+	utxoEntry0 := NewUTXOEntry(txOut0, true, 0)
 	transaction0 := wire.NewNativeMsgTx(1, []*wire.TxIn{txIn0}, []*wire.TxOut{txOut0})
 
 	// transaction1 spends transaction0
@@ -735,7 +735,7 @@ func TestDiffUTXOSet_addTx(t *testing.T) {
 	outPoint1 := *wire.NewOutpoint(id1, 0)
 	txIn1 := &wire.TxIn{SignatureScript: []byte{}, PreviousOutpoint: outPoint1, Sequence: 0}
 	txOut1 := &wire.TxOut{PkScript: []byte{1}, Value: 20}
-	utxoEntry1 := NewUTXOEntry(txOut1, false, 1, 1)
+	utxoEntry1 := NewUTXOEntry(txOut1, false, 1)
 	transaction1 := wire.NewNativeMsgTx(1, []*wire.TxIn{txIn1}, []*wire.TxOut{txOut1})
 
 	// transaction2 spends transaction1
@@ -743,7 +743,7 @@ func TestDiffUTXOSet_addTx(t *testing.T) {
 	outPoint2 := *wire.NewOutpoint(id2, 0)
 	txIn2 := &wire.TxIn{SignatureScript: []byte{}, PreviousOutpoint: outPoint2, Sequence: 0}
 	txOut2 := &wire.TxOut{PkScript: []byte{2}, Value: 30}
-	utxoEntry2 := NewUTXOEntry(txOut2, false, 2, 2)
+	utxoEntry2 := NewUTXOEntry(txOut2, false, 2)
 	transaction2 := wire.NewNativeMsgTx(1, []*wire.TxIn{txIn2}, []*wire.TxOut{txOut2})
 
 	// outpoint3 is the outpoint for transaction2
@@ -874,7 +874,7 @@ testLoop:
 		// Apply all transactions to diffSet, in order, with the initial block height startHeight
 		for i, transaction := range test.toAdd {
 			height := test.startHeight + uint64(i)
-			_, err := diffSet.AddTx(transaction, height, height)
+			_, err := diffSet.AddTx(transaction, height)
 			if err != nil {
 				t.Errorf("Error adding tx %s in test \"%s\": %s", transaction.TxID(), test.name, err)
 				continue testLoop
@@ -897,7 +897,7 @@ func TestDiffFromTx(t *testing.T) {
 	if err != nil {
 		t.Errorf("createCoinbaseTxForTest: %v", err)
 	}
-	if isAccepted, err := fus.AddTx(cbTx, 1, 1); err != nil {
+	if isAccepted, err := fus.AddTx(cbTx, 1); err != nil {
 		t.Fatalf("AddTx unexpectedly failed. Error: %s", err)
 	} else if !isAccepted {
 		t.Fatalf("AddTx unexpectedly didn't add tx %s", cbTx.TxID())
@@ -919,13 +919,13 @@ func TestDiffFromTx(t *testing.T) {
 		t.Errorf("diffFromTx: %v", err)
 	}
 	if !reflect.DeepEqual(diff.toAdd, utxoCollection{
-		wire.Outpoint{TxID: *tx.TxID(), Index: 0}: NewUTXOEntry(tx.TxOut[0], false, 2, 2),
+		wire.Outpoint{TxID: *tx.TxID(), Index: 0}: NewUTXOEntry(tx.TxOut[0], false, 2),
 	}) {
 		t.Errorf("diff.toAdd doesn't have the expected values")
 	}
 
 	if !reflect.DeepEqual(diff.toRemove, utxoCollection{
-		wire.Outpoint{TxID: *cbTx.TxID(), Index: 0}: NewUTXOEntry(cbTx.TxOut[0], true, 1, 1),
+		wire.Outpoint{TxID: *cbTx.TxID(), Index: 0}: NewUTXOEntry(cbTx.TxOut[0], true, 1),
 	}) {
 		t.Errorf("diff.toRemove doesn't have the expected values")
 	}
@@ -952,7 +952,7 @@ func TestDiffFromTx(t *testing.T) {
 		toRemove: utxoCollection{},
 	})
 	dus := NewDiffUTXOSet(fus, diff2)
-	if isAccepted, err := dus.AddTx(tx, 2, 2); err != nil {
+	if isAccepted, err := dus.AddTx(tx, 2); err != nil {
 		t.Fatalf("AddTx unexpectedly failed. Error: %s", err)
 	} else if !isAccepted {
 		t.Fatalf("AddTx unexpectedly didn't add tx %s", tx.TxID())
@@ -984,8 +984,8 @@ func TestUTXOSetAddEntry(t *testing.T) {
 	txID1, _ := daghash.NewTxIDFromStr("1111111111111111111111111111111111111111111111111111111111111111")
 	outPoint0 := wire.NewOutpoint(txID0, 0)
 	outPoint1 := wire.NewOutpoint(txID1, 0)
-	utxoEntry0 := NewUTXOEntry(&wire.TxOut{PkScript: []byte{}, Value: 10}, true, 0, 0)
-	utxoEntry1 := NewUTXOEntry(&wire.TxOut{PkScript: []byte{}, Value: 20}, false, 1, 1)
+	utxoEntry0 := NewUTXOEntry(&wire.TxOut{PkScript: []byte{}, Value: 10}, true, 0)
+	utxoEntry1 := NewUTXOEntry(&wire.TxOut{PkScript: []byte{}, Value: 20}, false, 1)
 
 	utxoDiff := NewUTXODiff()
 

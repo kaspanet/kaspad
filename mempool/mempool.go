@@ -614,7 +614,7 @@ func (mp *TxPool) markTransactionOutputsUnspent(tx *util.Tx, diff *blockdag.UTXO
 		if restoreInputs {
 			if prevTxDesc, exists := mp.pool[txIn.PreviousOutpoint.TxID]; exists {
 				prevOut := prevTxDesc.Tx.MsgTx().TxOut[txIn.PreviousOutpoint.Index]
-				entry := blockdag.NewUTXOEntry(prevOut, false, blockdag.UnminedChainHeight, blockdag.UnminedBlueScore)
+				entry := blockdag.NewUTXOEntry(prevOut, false, blockdag.UnminedBlueScore)
 				err := diff.AddEntry(txIn.PreviousOutpoint, entry)
 				if err != nil {
 					return err
@@ -622,7 +622,7 @@ func (mp *TxPool) markTransactionOutputsUnspent(tx *util.Tx, diff *blockdag.UTXO
 			}
 			if prevTxDesc, exists := mp.depends[txIn.PreviousOutpoint.TxID]; exists {
 				prevOut := prevTxDesc.Tx.MsgTx().TxOut[txIn.PreviousOutpoint.Index]
-				entry := blockdag.NewUTXOEntry(prevOut, false, blockdag.UnminedChainHeight, blockdag.UnminedBlueScore)
+				entry := blockdag.NewUTXOEntry(prevOut, false, blockdag.UnminedBlueScore)
 				err := diff.AddEntry(txIn.PreviousOutpoint, entry)
 				if err != nil {
 					return err
@@ -740,7 +740,7 @@ func (mp *TxPool) addTransaction(tx *util.Tx, height uint64, blueScore uint64, f
 	for _, txIn := range tx.MsgTx().TxIn {
 		mp.outpoints[txIn.PreviousOutpoint] = tx
 	}
-	if isAccepted, err := mp.mpUTXOSet.AddTx(tx.MsgTx(), blockdag.UnminedChainHeight, blockdag.UnminedBlueScore); err != nil {
+	if isAccepted, err := mp.mpUTXOSet.AddTx(tx.MsgTx(), blockdag.UnminedBlueScore); err != nil {
 		return nil, err
 	} else if !isAccepted {
 		return nil, fmt.Errorf("unexpectedly failed to add tx %s to the mempool utxo set", tx.ID())
@@ -878,11 +878,8 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rateLimit, rejectDu
 		return nil, nil, txRuleError(wire.RejectInvalid, str)
 	}
 
-	// Get the current height of the main chain.  A standalone transaction
-	// will be mined into the next block at best, so its height is at least
-	// one more than the current height.
-	bestHeight := mp.cfg.BestHeight()
-	nextBlockHeight := bestHeight + 1
+	// A standalone transaction will be mined into the next block at best,
+	// so its blue score is at least the current blue score of the virtual.
 	nextBlockBlueScore := mp.cfg.DAG.VirtualBlueScore()
 
 	medianTimePast := mp.cfg.MedianTimePast()
@@ -1095,6 +1092,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rateLimit, rejectDu
 	}
 
 	// Add to transaction pool.
+	bestHeight := mp.cfg.BestHeight()
 	txD, err := mp.addTransaction(tx, bestHeight, nextBlockBlueScore, txFee, parentsInPool)
 	if err != nil {
 		return nil, nil, err

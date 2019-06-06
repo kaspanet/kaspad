@@ -49,24 +49,24 @@ func TestUtxoSerialization(t *testing.T) {
 		// From tx in main blockchain:
 		// b7c3332bc138e2c9429818f5fed500bcc1746544218772389054dc8047d7cd3f:0
 		{
-			name: "height 1, coinbase",
+			name: "blue score 1, coinbase",
 			entry: &UTXOEntry{
-				amount:           5000000000,
-				pkScript:         hexToBytes("410496b538e853519c726a2c91e61ec11600ae1390813a627c66fb8be7947be63c52da7589379515d4e0a604f8141781e62294721166bf621e73a82cbf2342c858eeac"),
-				blockChainHeight: 1,
-				packedFlags:      tfBlockReward,
+				amount:         5000000000,
+				pkScript:       hexToBytes("410496b538e853519c726a2c91e61ec11600ae1390813a627c66fb8be7947be63c52da7589379515d4e0a604f8141781e62294721166bf621e73a82cbf2342c858eeac"),
+				blockBlueScore: 1,
+				packedFlags:    tfBlockReward,
 			},
 			serialized: hexToBytes("03320496b538e853519c726a2c91e61ec11600ae1390813a627c66fb8be7947be63c52"),
 		},
 		// From tx in main blockchain:
 		// 8131ffb0a2c945ecaf9b9063e59558784f9c3a74741ce6ae2a18d0571dac15bb:1
 		{
-			name: "height 100001, not coinbase",
+			name: "blue score 100001, not coinbase",
 			entry: &UTXOEntry{
-				amount:           1000000,
-				pkScript:         hexToBytes("76a914ee8bd501094a7d5ca318da2506de35e1cb025ddc88ac"),
-				blockChainHeight: 100001,
-				packedFlags:      0,
+				amount:         1000000,
+				pkScript:       hexToBytes("76a914ee8bd501094a7d5ca318da2506de35e1cb025ddc88ac"),
+				blockBlueScore: 100001,
+				packedFlags:    0,
 			},
 			serialized: hexToBytes("8b99420700ee8bd501094a7d5ca318da2506de35e1cb025ddc"),
 		},
