@@ -1274,6 +1274,9 @@ func (dag *BlockDAG) oldestChainBlockWithBlueScoreGreaterThan(blueScore uint64) 
 		selectedPathNode := dag.virtual.selectedPathChainSlice[i]
 		return selectedPathNode.blueScore > blueScore
 	})
+	if chainBlockIndex == len(dag.virtual.selectedPathChainSlice) {
+		chainBlockIndex = len(dag.virtual.selectedPathChainSlice) - 1
+	}
 	return dag.virtual.selectedPathChainSlice[chainBlockIndex]
 }
 
