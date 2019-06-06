@@ -125,7 +125,7 @@ func sendTransactionLoop(client *txgenClient, interval uint64, txChan chan *wire
 			timeSinceLastTx := time.Now().Sub(lastTxTime)
 			delay := time.Duration(interval)*time.Millisecond - timeSinceLastTx
 			if delay > 0 {
-				time.Sleep(time.Duration(interval)*time.Millisecond - timeSinceLastTx)
+				time.Sleep(delay)
 			}
 		}
 		_, err := client.SendRawTransaction(tx, true)
