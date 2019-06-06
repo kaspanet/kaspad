@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"encoding/binary"
 	"encoding/hex"
 	"fmt"
 	"github.com/daglabs/btcd/blockdag"
@@ -110,7 +109,7 @@ func updateSubnetworks(txs []*util.Tx, gasLimitMap map[subnetworkid.SubnetworkID
 			if err != nil {
 				return fmt.Errorf("could not build subnetwork ID: %s", err)
 			}
-			gasLimit := binary.LittleEndian.Uint64(msgTx.Payload)
+			gasLimit := blockdag.ExtractGasLimit(msgTx)
 			log.Infof("Found subnetwork %s with gas limit %d", subnetworkID, gasLimit)
 			gasLimitMap[*subnetworkID] = gasLimit
 		}
@@ -125,7 +124,7 @@ func sendTransactionLoop(client *txgenClient, interval uint64, txChan chan *wire
 			timeSinceLastTx := time.Now().Sub(lastTxTime)
 			delay := time.Duration(interval)*time.Millisecond - timeSinceLastTx
 			if delay > 0 {
-				time.Sleep(delay)
+				<-time.Tick(delay)
 			}
 		}
 		_, err := client.SendRawTransaction(tx, true)
