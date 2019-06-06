@@ -378,10 +378,6 @@ func (dag *BlockDAG) calcSequenceLock(node *blockNode, utxoSet UTXOSet, tx *util
 		return sequenceLock, nil
 	}
 
-	// Grab the next height from the PoV of the passed blockNode to use for
-	// inputs present in the mempool.
-	nextChainHeight := node.chainHeight + 1
-
 	mTx := tx.MsgTx()
 	for txInIndex, txIn := range mTx.TxIn {
 		entry, ok := utxoSet.Get(txIn.PreviousOutpoint)
@@ -393,12 +389,12 @@ func (dag *BlockDAG) calcSequenceLock(node *blockNode, utxoSet UTXOSet, tx *util
 			return sequenceLock, ruleError(ErrMissingTxOut, str)
 		}
 
-		// If the input chain-height is set to the mempool height, then we
+		// If the input blue score is set to the mempool height, then we
 		// assume the transaction makes it into the next block when
 		// evaluating its sequence blocks.
-		inputChainHeight := entry.BlockChainHeight()
+		inputBlueScore := entry.BlockBlueScore()
 		if entry.IsUnmined() {
-			inputChainHeight = nextChainHeight
+			inputBlueScore = dag.virtual.blueScore
 		}
 
 		// Given a sequence number, we apply the relative time lock
@@ -419,11 +415,7 @@ func (dag *BlockDAG) calcSequenceLock(node *blockNode, utxoSet UTXOSet, tx *util
 			// which this input was included within so we can
 			// compute the past median time for the block prior to
 			// the one which included this referenced output.
-			prevInputChainHeight := inputChainHeight - 1
-			if prevInputChainHeight < 0 {
-				prevInputChainHeight = 0
-			}
-			blockNode := node.SelectedAncestor(prevInputChainHeight)
+			blockNode := dag.oldestChainBlockWithBlueScoreGreaterThan(inputBlueScore).selectedParent
 			medianTime := blockNode.PastMedianTime()
 
 			// Time based relative time-locks as defined by BIP 68
@@ -440,12 +432,12 @@ func (dag *BlockDAG) calcSequenceLock(node *blockNode, utxoSet UTXOSet, tx *util
 		default:
 			// The relative lock-time for this input is expressed
 			// in blocks so we calculate the relative offset from
-			// the input's height as its converted absolute
+			// the input's blue score as its converted absolute
 			// lock-time. We subtract one from the relative lock in
 			// order to maintain the original lockTime semantics.
-			blockChainHeight := int64(inputChainHeight) + relativeLock - 1
-			if blockChainHeight > sequenceLock.BlockBlueScore {
-				sequenceLock.BlockBlueScore = blockChainHeight
+			blockBlueScore := int64(inputBlueScore) + relativeLock - 1
+			if blockBlueScore > sequenceLock.BlockBlueScore {
+				sequenceLock.BlockBlueScore = blockBlueScore
 			}
 		}
 	}
