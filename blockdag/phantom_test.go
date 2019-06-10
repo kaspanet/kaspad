@@ -20,11 +20,6 @@ type testBlockData struct {
 	expectedBlues          []string
 }
 
-type hashIDPair struct {
-	hash *daghash.Hash
-	id   string
-}
-
 //TestPhantom iterate over several dag simulations, and checks
 //that the blue score, blue set and selected parent of each
 //block calculated as expected
@@ -113,7 +108,7 @@ func TestPhantom(t *testing.T) {
 					id:                     "K",
 					expectedScore:          9,
 					expectedSelectedParent: "H",
-					expectedBlues:          []string{"I", "J", "G", "F", "H"},
+					expectedBlues:          []string{"I", "G", "J", "F", "H"},
 				},
 			},
 		},

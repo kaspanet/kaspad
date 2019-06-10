@@ -698,7 +698,7 @@ func dbStoreBlockNode(dbTx database.Tx, node *blockNode) error {
 
 	// Write block header data to block index bucket.
 	blockIndexBucket := dbTx.Metadata().Bucket(blockIndexBucketName)
-	key := blockIndexKey(node.hash, uint32(node.height))
+	key := blockIndexKey(node.hash, uint32(node.chainHeight))
 	return blockIndexBucket.Put(key, value)
 }
 
@@ -716,11 +716,11 @@ func dbStoreBlock(dbTx database.Tx, block *util.Block) error {
 }
 
 // blockIndexKey generates the binary key for an entry in the block index
-// bucket. The key is composed of the block height encoded as a big-endian
-// 32-bit unsigned int followed by the 32 byte block hash.
-func blockIndexKey(blockHash *daghash.Hash, blockHeight uint32) []byte {
+// bucket. The key is composed of the block chain height encoded as a
+// big-endian 32-bit unsigned int followed by the 32 byte block hash.
+func blockIndexKey(blockHash *daghash.Hash, blockChainHeight uint32) []byte {
 	indexKey := make([]byte, daghash.HashSize+4)
-	binary.BigEndian.PutUint32(indexKey[0:4], blockHeight)
+	binary.BigEndian.PutUint32(indexKey[0:4], blockChainHeight)
 	copy(indexKey[4:daghash.HashSize+4], blockHash[:])
 	return indexKey
 }
