@@ -1680,7 +1680,7 @@ func TestHandleNewBlock(t *testing.T) {
 	// Create orphan transaction and add it to UTXO set
 	txID := blockTx1.ID()
 	orphanTx, err := harness.CreateSignedTx([]spendableOutpoint{{
-		amount:   util.Amount(2500000000),
+		amount:   util.Amount(2500000000) - DefaultMinRelayTxFee,
 		outpoint: wire.Outpoint{TxID: *txID, Index: 0},
 	}}, 1)
 	if err != nil {
@@ -1718,9 +1718,9 @@ func TestHandleNewBlock(t *testing.T) {
 	}()
 
 	// process messages pushed by HandleNewBlock
-	blockTransnactions := make(map[daghash.TxID]int)
+	blockTransactions := make(map[daghash.TxID]int)
 	for msg := range ch {
-		blockTransnactions[*msg.Tx.ID()] = 1
+		blockTransactions[*msg.Tx.ID()] = 1
 		if *msg.Tx.ID() != *blockTx1.ID() {
 			if len(msg.AcceptedTxs) != 0 {
 				t.Fatalf("Expected amount of accepted transactions 0. Got: %v", len(msg.AcceptedTxs))
@@ -1740,15 +1740,15 @@ func TestHandleNewBlock(t *testing.T) {
 	}
 
 	// Validate messages pushed by HandleNewBlock into the channel
-	if len(blockTransnactions) != 2 {
-		t.Fatalf("Wrong size of blockTransnactions after new block handling")
+	if len(blockTransactions) != 2 {
+		t.Fatalf("Wrong size of blockTransactions after new block handling")
 	}
 
-	if _, ok := blockTransnactions[*blockTx1.ID()]; !ok {
+	if _, ok := blockTransactions[*blockTx1.ID()]; !ok {
 		t.Fatalf("Transaction 1 of new block is not handled")
 	}
 
-	if _, ok := blockTransnactions[*blockTx2.ID()]; !ok {
+	if _, ok := blockTransactions[*blockTx2.ID()]; !ok {
 		t.Fatalf("Transaction 2 of new block is not handled")
 	}
 
@@ -1817,6 +1817,24 @@ var dummyBlock = wire.MsgBlock{
 				},
 			},
 			LockTime:     0,
+			SubnetworkID: *subnetworkid.SubnetworkIDNative,
+		},
+		{
+			Version: 1,
+			TxIn: []*wire.TxIn{
+				{
+					PreviousOutpoint: wire.Outpoint{
+						TxID: daghash.TxID{
+							0x16, 0x5e, 0x38, 0xe8, 0xb3, 0x91, 0x45, 0x95,
+							0xd9, 0xc6, 0x41, 0xf3, 0xb8, 0xee, 0xc2, 0xf3,
+							0x46, 0x11, 0x89, 0x6b, 0x82, 0x1a, 0x68, 0x3b,
+							0x7a, 0x4e, 0xde, 0xfe, 0x2c, 0x00, 0x00, 0x00,
+						},
+						Index: 0xffffffff,
+					},
+					Sequence: math.MaxUint64,
+				},
+			},
 			SubnetworkID: *subnetworkid.SubnetworkIDNative,
 		},
 	},
