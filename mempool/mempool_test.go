@@ -163,10 +163,11 @@ func (p *poolHarness) CreateSignedTxForSubnetwork(inputs []spendableOutpoint, nu
 	for _, input := range inputs {
 		totalInput += input.amount
 	}
+	totalInput -= DefaultMinRelayTxFee
 	amountPerOutput := uint64(totalInput) / uint64(numOutputs)
 	remainder := uint64(totalInput) - amountPerOutput*uint64(numOutputs)
 
-	txIns := []*wire.TxIn{}
+	var txIns []*wire.TxIn
 	for _, input := range inputs {
 		txIns = append(txIns, &wire.TxIn{
 			PreviousOutpoint: input.outpoint,
@@ -175,7 +176,7 @@ func (p *poolHarness) CreateSignedTxForSubnetwork(inputs []spendableOutpoint, nu
 		})
 	}
 
-	txOuts := []*wire.TxOut{}
+	var txOuts []*wire.TxOut
 	for i := uint32(0); i < numOutputs; i++ {
 		// Ensure the final output accounts for any remainder that might
 		// be left from splitting the input amount.
