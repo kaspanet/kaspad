@@ -476,7 +476,7 @@ func TestProcessTransaction(t *testing.T) {
 	harness := tc.harness
 
 	//Checks that a transaction cannot be added to the transaction pool if it's already there
-	tx, err := harness.createTx(spendableOuts[0], 0, 1)
+	tx, err := harness.createTx(spendableOuts[0], uint64(DefaultMinRelayTxFee), 1)
 	if err != nil {
 		t.Fatalf("unable to create transaction: %v", err)
 	}
