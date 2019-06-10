@@ -217,8 +217,10 @@ func (p *poolHarness) CreateTxChain(firstOutput spendableOutpoint, numTxns uint3
 	spendableAmount := firstOutput.amount
 	for i := uint32(0); i < numTxns; i++ {
 		// Create the transaction using the previous transaction output
-		// and paying the full amount to the payment address associated
-		// with the harness.
+		// and paying the full amount (minus fees) to the payment address
+		// associated with the harness.
+		spendableAmount = spendableAmount - DefaultMinRelayTxFee
+
 		txIn := &wire.TxIn{
 			PreviousOutpoint: prevOutpoint,
 			SignatureScript:  p.signatureScript,
