@@ -761,7 +761,7 @@ func TestAddrIndex(t *testing.T) {
 	})
 	defer guard.Unpatch()
 
-	tx, err := harness.createTx(spendableOuts[0], 0, 1)
+	tx, err := harness.createTx(spendableOuts[0], uint64(DefaultMinRelayTxFee), 1)
 	if err != nil {
 		t.Fatalf("unable to create transaction: %v", err)
 	}
@@ -798,7 +798,7 @@ func TestFeeEstimatorCfg(t *testing.T) {
 	})
 	defer guard.Unpatch()
 
-	tx, err := harness.createTx(spendableOuts[0], 0, 1)
+	tx, err := harness.createTx(spendableOuts[0], uint64(DefaultMinRelayTxFee), 1)
 	if err != nil {
 		t.Fatalf("unable to create transaction: %v", err)
 	}
