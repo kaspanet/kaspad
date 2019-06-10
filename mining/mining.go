@@ -628,8 +628,8 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 	}, nil
 }
 
-func (g *BlkTmplGenerator) buildUTXOCommitment(transactions []*wire.MsgTx, nextBlockHeight uint64) (*daghash.Hash, error) {
-	utxoWithTransactions, err := g.dag.UTXOSet().WithTransactions(transactions, nextBlockHeight, false)
+func (g *BlkTmplGenerator) buildUTXOCommitment(transactions []*wire.MsgTx, nextBlueScore uint64) (*daghash.Hash, error) {
+	utxoWithTransactions, err := g.dag.UTXOSet().WithTransactions(transactions, nextBlueScore, false)
 	if err != nil {
 		return nil, err
 	}
@@ -666,8 +666,8 @@ func (g *BlkTmplGenerator) UpdateBlockTime(msgBlock *wire.MsgBlock) error {
 // block by regenerating the coinbase script with the passed value and block
 // height.  It also recalculates and updates the new merkle root that results
 // from changing the coinbase script.
-func (g *BlkTmplGenerator) UpdateExtraNonce(msgBlock *wire.MsgBlock, blockHeight uint64, extraNonce uint64) error {
-	coinbaseScript, err := StandardCoinbaseScript(blockHeight, extraNonce)
+func (g *BlkTmplGenerator) UpdateExtraNonce(msgBlock *wire.MsgBlock, blockBlueScore uint64, extraNonce uint64) error {
+	coinbaseScript, err := StandardCoinbaseScript(blockBlueScore, extraNonce)
 	if err != nil {
 		return err
 	}
@@ -688,7 +688,7 @@ func (g *BlkTmplGenerator) UpdateExtraNonce(msgBlock *wire.MsgBlock, blockHeight
 	hashMerkleTree := blockdag.BuildHashMerkleTreeStore(block.Transactions())
 	msgBlock.Header.HashMerkleRoot = hashMerkleTree.Root()
 
-	utxoCommitment, err := g.buildUTXOCommitment(msgBlock.Transactions, blockHeight)
+	utxoCommitment, err := g.buildUTXOCommitment(msgBlock.Transactions, blockBlueScore)
 	if err != nil {
 		return err
 	}
