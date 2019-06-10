@@ -29,7 +29,6 @@ func TestTxFeePrioHeap(t *testing.T) {
 	// edge conditions.
 	testItems := []*txPrioItem{
 		{feePerKB: 5678},
-		{feePerKB: 5678},
 		{feePerKB: 5678}, // Duplicate fee
 		{feePerKB: 1234},
 		{feePerKB: 10000}, // High fee
@@ -54,12 +53,8 @@ func TestTxFeePrioHeap(t *testing.T) {
 	// Test sorting by fee per KB
 	var highest *txPrioItem
 	priorityQueue := newTxPriorityQueue(len(testItems))
-	for i := 0; i < len(testItems); i++ {
-		prioItem := testItems[i]
-		if highest == nil {
-			highest = prioItem
-		}
-		if prioItem.feePerKB >= highest.feePerKB {
+	for _, prioItem := range testItems {
+		if highest == nil || prioItem.feePerKB >= highest.feePerKB {
 			highest = prioItem
 		}
 		heap.Push(priorityQueue, prioItem)
@@ -67,8 +62,8 @@ func TestTxFeePrioHeap(t *testing.T) {
 
 	for i := 0; i < len(testItems); i++ {
 		prioItem := heap.Pop(priorityQueue).(*txPrioItem)
-		if prioItem.feePerKB >= highest.feePerKB {
-			t.Fatalf("fee sort: item (fee per KB: %v)"+
+		if prioItem.feePerKB > highest.feePerKB {
+			t.Fatalf("fee sort: item (fee per KB: %v) "+
 				"higher than than prev (fee per KB: %v)",
 				prioItem.feePerKB, highest.feePerKB)
 		}
