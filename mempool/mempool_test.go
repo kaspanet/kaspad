@@ -824,13 +824,13 @@ func TestDoubleSpends(t *testing.T) {
 	harness := tc.harness
 
 	//Add two transactions to the mempool
-	tx1, err := harness.createTx(spendableOuts[0], 0, 1)
+	tx1, err := harness.createTx(spendableOuts[0], uint64(DefaultMinRelayTxFee), 1)
 	if err != nil {
 		t.Fatalf("unable to create transaction: %v", err)
 	}
 	harness.txPool.ProcessTransaction(tx1, true, 0)
 
-	tx2, err := harness.createTx(spendableOuts[1], 1, 1)
+	tx2, err := harness.createTx(spendableOuts[1], uint64(DefaultMinRelayTxFee)+1, 1)
 	if err != nil {
 		t.Fatalf("unable to create transaction: %v", err)
 	}
@@ -839,7 +839,7 @@ func TestDoubleSpends(t *testing.T) {
 	testPoolMembership(tc, tx2, false, true, false)
 
 	//Spends the same outpoint as tx2
-	tx3, err := harness.createTx(spendableOuts[0], 2, 1) //We put here different fee to create different transaction hash
+	tx3, err := harness.createTx(spendableOuts[0], uint64(DefaultMinRelayTxFee)+2, 1) //We put here different fee to create different transaction hash
 	if err != nil {
 		t.Fatalf("unable to create transaction: %v", err)
 	}
@@ -890,7 +890,7 @@ func TestFetchTransaction(t *testing.T) {
 		t.Errorf("FetchTransaction: expected an error, not nil")
 	}
 
-	tx, err := harness.createTx(spendableOuts[0], 0, 1)
+	tx, err := harness.createTx(spendableOuts[0], uint64(DefaultMinRelayTxFee), 1)
 	if err != nil {
 		t.Fatalf("unable to create transaction: %v", err)
 	}
