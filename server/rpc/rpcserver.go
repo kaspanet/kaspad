@@ -1180,7 +1180,6 @@ func handleGetBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 		context := "Failed to obtain block height"
 		return nil, internalRPCError(err.Error(), context)
 	}
-	blk.SetHeight(blockHeight)
 
 	// Get the hashes for the next blocks unless there are none.
 	var nextHashStrings []string

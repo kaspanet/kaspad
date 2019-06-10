@@ -2803,7 +2803,7 @@ func (s checkpointSorter) Swap(i, j int) {
 // Less returns whether the checkpoint with index i should sort before the
 // checkpoint with index j.  It is part of the sort.Interface implementation.
 func (s checkpointSorter) Less(i, j int) bool {
-	return s[i].Height < s[j].Height
+	return s[i].ChainHeight < s[j].ChainHeight
 }
 
 // mergeCheckpoints returns two slices of checkpoints merged into one slice
@@ -2816,7 +2816,7 @@ func mergeCheckpoints(defaultCheckpoints, additional []dagconfig.Checkpoint) []d
 	// leaving the most recently-specified checkpoint.
 	extra := make(map[uint64]dagconfig.Checkpoint)
 	for _, checkpoint := range additional {
-		extra[checkpoint.Height] = checkpoint
+		extra[checkpoint.ChainHeight] = checkpoint
 	}
 
 	// Add all default checkpoints that do not have an override in the
@@ -2824,7 +2824,7 @@ func mergeCheckpoints(defaultCheckpoints, additional []dagconfig.Checkpoint) []d
 	numDefault := len(defaultCheckpoints)
 	checkpoints := make([]dagconfig.Checkpoint, 0, numDefault+len(extra))
 	for _, checkpoint := range defaultCheckpoints {
-		if _, exists := extra[checkpoint.Height]; !exists {
+		if _, exists := extra[checkpoint.ChainHeight]; !exists {
 			checkpoints = append(checkpoints, checkpoint)
 		}
 	}

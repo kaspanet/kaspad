@@ -37,10 +37,10 @@ func newBlockProgressLogger(progressMessage string, logger btclog.Logger) *block
 	}
 }
 
-// LogBlockHeight logs a new block height as an information message to show
-// progress to the user. In order to prevent spam, it limits logging to one
-// message every 10 seconds with duration and totals included.
-func (b *blockProgressLogger) LogBlockHeight(block *util.Block) {
+// LogBlockChainHeight logs a new block chain height as an information message
+// to show progress to the user. In order to prevent spam, it limits logging to
+// one message every 10 seconds with duration and totals included.
+func (b *blockProgressLogger) LogBlockChainHeight(block *util.Block) {
 	b.Lock()
 	defer b.Unlock()
 
@@ -68,7 +68,7 @@ func (b *blockProgressLogger) LogBlockHeight(block *util.Block) {
 	}
 	b.subsystemLogger.Infof("%s %d %s in the last %s (%d %s, height %d, %s)",
 		b.progressAction, b.receivedLogBlocks, blockStr, tDuration, b.receivedLogTx,
-		txStr, block.Height(), block.MsgBlock().Header.Timestamp)
+		txStr, block.ChainHeight(), block.MsgBlock().Header.Timestamp)
 
 	b.receivedLogBlocks = 0
 	b.receivedLogTx = 0

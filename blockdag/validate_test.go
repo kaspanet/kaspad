@@ -125,7 +125,6 @@ func TestCheckConnectBlockTemplate(t *testing.T) {
 	}
 
 	// Block 3a should connect even though it does not build on dag tips.
-	blocks[5].SetHeight(3) // set height manually because it was set to 0 in loadBlocks
 	err = dag.CheckConnectBlockTemplateNoLock(blocks[5])
 	if err != nil {
 		t.Fatal("CheckConnectBlockTemplate: Recieved unexpected error on " +
@@ -136,7 +135,6 @@ func TestCheckConnectBlockTemplate(t *testing.T) {
 	invalidPowMsgBlock := *blocks[4].MsgBlock()
 	invalidPowMsgBlock.Header.Nonce++
 	invalidPowBlock := util.NewBlock(&invalidPowMsgBlock)
-	invalidPowBlock.SetHeight(blocks[4].Height())
 	err = dag.CheckConnectBlockTemplateNoLock(invalidPowBlock)
 	if err != nil {
 		t.Fatalf("CheckConnectBlockTemplate: Received unexpected error on "+

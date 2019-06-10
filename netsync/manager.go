@@ -207,14 +207,14 @@ func (sm *SyncManager) findNextHeaderCheckpoint(height uint64) *dagconfig.Checkp
 	// There is no next checkpoint if the height is already after the final
 	// checkpoint.
 	finalCheckpoint := &checkpoints[len(checkpoints)-1]
-	if height >= finalCheckpoint.Height {
+	if height >= finalCheckpoint.ChainHeight {
 		return nil
 	}
 
 	// Find the next checkpoint.
 	nextCheckpoint := finalCheckpoint
 	for i := len(checkpoints) - 2; i >= 0; i-- {
-		if height >= checkpoints[i].Height {
+		if height >= checkpoints[i].ChainHeight {
 			break
 		}
 		nextCheckpoint = &checkpoints[i]
@@ -285,14 +285,14 @@ func (sm *SyncManager) startSync() {
 		// not support the headers-first approach so do normal block
 		// downloads when in regression test mode.
 		if sm.nextCheckpoint != nil &&
-			sm.dag.Height() < sm.nextCheckpoint.Height &&
+			sm.dag.Height() < sm.nextCheckpoint.ChainHeight &&
 			sm.chainParams != &dagconfig.RegressionNetParams { //TODO: (Ori) This is probably wrong. Done only for compilation
 
 			bestPeer.PushGetHeadersMsg(locator, sm.nextCheckpoint.Hash)
 			sm.headersFirstMode = true
 			log.Infof("Downloading headers for blocks %d to "+
 				"%d from peer %s", sm.dag.Height()+1,
-				sm.nextCheckpoint.Height, bestPeer.Addr()) //TODO: (Ori) This is probably wrong. Done only for compilation
+				sm.nextCheckpoint.ChainHeight, bestPeer.Addr()) //TODO: (Ori) This is probably wrong. Done only for compilation
 		} else {
 			bestPeer.PushGetBlocksMsg(locator, &daghash.ZeroHash)
 		}
@@ -597,7 +597,7 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 	} else {
 		// When the block is not an orphan, log information about it and
 		// update the chain state.
-		sm.progressLogger.LogBlockHeight(bmsg.block)
+		sm.progressLogger.LogBlockChainHeight(bmsg.block)
 
 		// Clear the rejected transactions.
 		sm.rejectedTxns = make(map[daghash.TxID]struct{})
@@ -634,7 +634,7 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 	// there is a next checkpoint, get the next round of headers by asking
 	// for headers starting from the block after this one up to the next
 	// checkpoint.
-	prevHeight := sm.nextCheckpoint.Height
+	prevHeight := sm.nextCheckpoint.ChainHeight
 	parentHash := sm.nextCheckpoint.Hash
 	sm.nextCheckpoint = sm.findNextHeaderCheckpoint(prevHeight)
 	if sm.nextCheckpoint != nil {
@@ -646,7 +646,7 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 			return
 		}
 		log.Infof("Downloading headers for blocks %d to %d from "+
-			"peer %s", prevHeight+1, sm.nextCheckpoint.Height,
+			"peer %s", prevHeight+1, sm.nextCheckpoint.ChainHeight,
 			sm.syncPeer.Addr())
 		return
 	}
@@ -805,7 +805,7 @@ func (sm *SyncManager) handleHeadersMsg(hmsg *headersMsg) {
 		}
 
 		// Verify the header at the next checkpoint height matches.
-		if node.height == sm.nextCheckpoint.Height {
+		if node.height == sm.nextCheckpoint.ChainHeight {
 			if node.hash.IsEqual(sm.nextCheckpoint.Hash) {
 				receivedCheckpoint = true
 				log.Infof("Verified downloaded block "+

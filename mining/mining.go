@@ -604,11 +604,10 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 		Bits:                 reqDifficulty,
 	}
 
-	// Finally, perform a full check on the created block against the chain
-	// consensus rules to ensure it properly connects to the current best
-	// chain with no issues.
+	// Finally, perform a full check on the created block against the DAG
+	// consensus rules to ensure it properly connects to the DAG with no
+	// issues.
 	block := util.NewBlock(&msgBlock)
-	block.SetHeight(nextBlockHeight)
 
 	if err := g.dag.CheckConnectBlockTemplateNoLock(block); err != nil {
 		return nil, err

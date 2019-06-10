@@ -63,14 +63,14 @@ type BlockDAG struct {
 	// The following fields are set when the instance is created and can't
 	// be changed afterwards, so there is no need to protect them with a
 	// separate mutex.
-	checkpoints         []dagconfig.Checkpoint
-	checkpointsByHeight map[uint64]*dagconfig.Checkpoint
-	db                  database.DB
-	dagParams           *dagconfig.Params
-	timeSource          MedianTimeSource
-	sigCache            *txscript.SigCache
-	indexManager        IndexManager
-	genesis             *blockNode
+	checkpoints              []dagconfig.Checkpoint
+	checkpointsByChainHeight map[uint64]*dagconfig.Checkpoint
+	db                       database.DB
+	dagParams                *dagconfig.Params
+	timeSource               MedianTimeSource
+	sigCache                 *txscript.SigCache
+	indexManager             IndexManager
+	genesis                  *blockNode
 
 	// The following fields are calculated based upon the provided chain
 	// parameters.  They are also set when the instance is created and
@@ -1098,7 +1098,7 @@ func (dag *BlockDAG) isCurrent() bool {
 	// Not current if the virtual's selected tip height is less than
 	// the latest known good checkpoint (when checkpoints are enabled).
 	checkpoint := dag.LatestCheckpoint()
-	if checkpoint != nil && dag.selectedTip().height < checkpoint.Height {
+	if checkpoint != nil && dag.selectedTip().height < checkpoint.ChainHeight {
 		return false
 	}
 
@@ -1826,13 +1826,13 @@ func New(config *Config) (*BlockDAG, error) {
 		checkpointsByHeight = make(map[uint64]*dagconfig.Checkpoint)
 		for i := range config.Checkpoints {
 			checkpoint := &config.Checkpoints[i]
-			if checkpoint.Height <= prevCheckpointHeight {
+			if checkpoint.ChainHeight <= prevCheckpointHeight {
 				return nil, AssertError("blockdag.New " +
 					"checkpoints are not sorted by height")
 			}
 
-			checkpointsByHeight[checkpoint.Height] = checkpoint
-			prevCheckpointHeight = checkpoint.Height
+			checkpointsByHeight[checkpoint.ChainHeight] = checkpoint
+			prevCheckpointHeight = checkpoint.ChainHeight
 		}
 	}
 
@@ -1842,25 +1842,25 @@ func New(config *Config) (*BlockDAG, error) {
 	adjustmentFactor := params.RetargetAdjustmentFactor
 	index := newBlockIndex(config.DB, params)
 	dag := BlockDAG{
-		checkpoints:         config.Checkpoints,
-		checkpointsByHeight: checkpointsByHeight,
-		db:                  config.DB,
-		dagParams:           params,
-		timeSource:          config.TimeSource,
-		sigCache:            config.SigCache,
-		indexManager:        config.IndexManager,
-		minRetargetTimespan: targetTimespan / adjustmentFactor,
-		maxRetargetTimespan: targetTimespan * adjustmentFactor,
-		blocksPerRetarget:   uint64(targetTimespan / targetTimePerBlock),
-		index:               index,
-		virtual:             newVirtualBlock(nil, params.K),
-		orphans:             make(map[daghash.Hash]*orphanBlock),
-		prevOrphans:         make(map[daghash.Hash][]*orphanBlock),
-		warningCaches:       newThresholdCaches(vbNumBits),
-		deploymentCaches:    newThresholdCaches(dagconfig.DefinedDeployments),
-		blockCount:          0,
-		SubnetworkStore:     newSubnetworkStore(config.DB),
-		subnetworkID:        config.SubnetworkID,
+		checkpoints:              config.Checkpoints,
+		checkpointsByChainHeight: checkpointsByHeight,
+		db:                       config.DB,
+		dagParams:                params,
+		timeSource:               config.TimeSource,
+		sigCache:                 config.SigCache,
+		indexManager:             config.IndexManager,
+		minRetargetTimespan:      targetTimespan / adjustmentFactor,
+		maxRetargetTimespan:      targetTimespan * adjustmentFactor,
+		blocksPerRetarget:        uint64(targetTimespan / targetTimePerBlock),
+		index:                    index,
+		virtual:                  newVirtualBlock(nil, params.K),
+		orphans:                  make(map[daghash.Hash]*orphanBlock),
+		prevOrphans:              make(map[daghash.Hash][]*orphanBlock),
+		warningCaches:            newThresholdCaches(vbNumBits),
+		deploymentCaches:         newThresholdCaches(dagconfig.DefinedDeployments),
+		blockCount:               0,
+		SubnetworkStore:          newSubnetworkStore(config.DB),
+		subnetworkID:             config.SubnetworkID,
 	}
 
 	dag.utxoDiffStore = newUTXODiffStore(&dag)

@@ -76,7 +76,6 @@ func (eft *estimateFeeTester) newBlock(txs []*wire.MsgTx) {
 		},
 		Transactions: txs,
 	})
-	block.SetHeight(eft.height)
 
 	eft.last = &lastBlock{block.Hash(), eft.last}
 

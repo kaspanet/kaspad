@@ -238,8 +238,8 @@ func newCheckpointFromStr(checkpoint string) (dagconfig.Checkpoint, error) {
 	}
 
 	return dagconfig.Checkpoint{
-		Height: uint64(height),
-		Hash:   hash,
+		ChainHeight: uint64(height),
+		Hash:        hash,
 	}, nil
 }
 

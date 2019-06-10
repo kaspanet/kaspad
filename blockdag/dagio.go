@@ -648,8 +648,6 @@ func dbFetchBlockByNode(dbTx database.Tx, node *blockNode) (*util.Block, error) 
 	if err != nil {
 		return nil, err
 	}
-	block.SetHeight(node.height)
-
 	return block, nil
 }
 

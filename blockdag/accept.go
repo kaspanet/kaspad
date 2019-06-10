@@ -28,15 +28,9 @@ func (dag *BlockDAG) maybeAcceptBlock(block *util.Block, flags BehaviorFlags) er
 		return err
 	}
 
-	bluestParent := parents.bluest()
-	blockHeight := uint64(0)
-	if !block.IsGenesis() {
-		blockHeight = parents.maxHeight() + 1
-	}
-	block.SetHeight(blockHeight)
-
 	// The block must pass all of the validation rules which depend on the
 	// position of the block within the block DAG.
+	bluestParent := parents.bluest()
 	err = dag.checkBlockContext(block, parents, bluestParent, flags)
 	if err != nil {
 		return err

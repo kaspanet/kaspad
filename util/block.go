@@ -45,7 +45,6 @@ type Block struct {
 	msgBlock        *wire.MsgBlock // Underlying MsgBlock
 	serializedBlock []byte         // Serialized bytes for the block
 	blockHash       *daghash.Hash  // Cached block hash
-	blockHeight     uint64         // Height in the DAG
 	chainHeight     uint64         // Selected-chain height
 	transactions    []*Tx          // Transactions
 	txnsGenerated   bool           // ALL wrapped transactions generated
@@ -194,21 +193,10 @@ func (b *Block) TxLoc() ([]wire.TxLoc, error) {
 	return txLocs, err
 }
 
-// Height returns the saved height of the block in the block chain.  This value
-// will be BlockHeightUnknown if it hasn't already explicitly been set.
-func (b *Block) Height() uint64 {
-	return b.blockHeight
-}
-
-// SetHeight sets the height of the block in the block chain.
-func (b *Block) SetHeight(height uint64) {
-	b.blockHeight = height
-}
-
 // ChainHeight returns the saved chan height of the block .  This value
 // will be BlockHeightUnknown if it hasn't already explicitly been set.
 func (b *Block) ChainHeight() uint64 {
-	return b.blockHeight
+	return b.chainHeight
 }
 
 // SetChainHeight sets the chain height of the block.
@@ -246,7 +234,6 @@ func (b *Block) Timestamp() time.Time {
 func NewBlock(msgBlock *wire.MsgBlock) *Block {
 	return &Block{
 		msgBlock:    msgBlock,
-		blockHeight: BlockHeightUnknown,
 		chainHeight: BlockHeightUnknown,
 	}
 }
@@ -274,8 +261,7 @@ func NewBlockFromReader(r io.Reader) (*Block, error) {
 	}
 
 	b := Block{
-		msgBlock:    &msgBlock,
-		blockHeight: BlockHeightUnknown,
+		msgBlock: &msgBlock,
 	}
 	return &b, nil
 }
@@ -286,6 +272,5 @@ func NewBlockFromBlockAndBytes(msgBlock *wire.MsgBlock, serializedBlock []byte) 
 	return &Block{
 		msgBlock:        msgBlock,
 		serializedBlock: serializedBlock,
-		blockHeight:     BlockHeightUnknown,
 	}
 }

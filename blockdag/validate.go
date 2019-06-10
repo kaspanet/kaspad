@@ -606,7 +606,7 @@ func (dag *BlockDAG) CheckBlockSanity(block *util.Block, powLimit *big.Int,
 //    the checkpoints are not performed.
 //
 // This function MUST be called with the dag state lock held (for writes).
-func (dag *BlockDAG) checkBlockHeaderContext(header *wire.BlockHeader, bluestParent *blockNode, blockHeight uint64, fastAdd bool) error {
+func (dag *BlockDAG) checkBlockHeaderContext(header *wire.BlockHeader, bluestParent *blockNode, blockChainHeight uint64, fastAdd bool) error {
 	if !fastAdd {
 		if err := dag.validateDifficulty(header, bluestParent); err != nil {
 			return err
@@ -617,15 +617,15 @@ func (dag *BlockDAG) checkBlockHeaderContext(header *wire.BlockHeader, bluestPar
 		}
 	}
 
-	return dag.validateCheckpoints(header, blockHeight)
+	return dag.validateCheckpoints(header, blockChainHeight)
 }
 
-func (dag *BlockDAG) validateCheckpoints(header *wire.BlockHeader, blockHeight uint64) error {
+func (dag *BlockDAG) validateCheckpoints(header *wire.BlockHeader, blockChainHeight uint64) error {
 	// Ensure dag matches up to predetermined checkpoints.
 	blockHash := header.BlockHash()
-	if !dag.verifyCheckpoint(blockHeight, blockHash) {
-		str := fmt.Sprintf("block at height %d does not match "+
-			"checkpoint hash", blockHeight)
+	if !dag.verifyCheckpoint(blockChainHeight, blockHash) {
+		str := fmt.Sprintf("block at chain height %d does not match "+
+			"checkpoint hash", blockChainHeight)
 		return ruleError(ErrBadCheckpoint, str)
 	}
 
@@ -637,10 +637,10 @@ func (dag *BlockDAG) validateCheckpoints(header *wire.BlockHeader, blockHeight u
 	if err != nil {
 		return err
 	}
-	if checkpointNode != nil && blockHeight < checkpointNode.height {
+	if checkpointNode != nil && blockChainHeight < checkpointNode.height {
 		str := fmt.Sprintf("block at height %d forks the main dag "+
 			"before the previous checkpoint at height %d",
-			blockHeight, checkpointNode.height)
+			blockChainHeight, checkpointNode.height)
 		return ruleError(ErrForkTooOld, str)
 	}
 
@@ -736,7 +736,7 @@ func (dag *BlockDAG) checkBlockContext(block *util.Block, parents blockSet, blue
 
 	// Perform all block header related validation checks.
 	header := &block.MsgBlock().Header
-	if err = dag.checkBlockHeaderContext(header, bluestParent, block.Height(), fastAdd); err != nil {
+	if err = dag.checkBlockHeaderContext(header, bluestParent, block.ChainHeight(), fastAdd); err != nil {
 		return err
 	}
 
@@ -997,7 +997,7 @@ func (dag *BlockDAG) checkConnectToPastUTXO(block *blockNode, pastUTXO UTXOSet,
 		// portion of block handling.
 		checkpoint := dag.LatestCheckpoint()
 		runScripts := true
-		if checkpoint != nil && block.height <= checkpoint.Height {
+		if checkpoint != nil && block.height <= checkpoint.ChainHeight {
 			runScripts = false
 		}
 

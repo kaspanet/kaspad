@@ -156,7 +156,7 @@ func TestFullBlocks(t *testing.T) {
 	testAcceptedBlock := func(item fullblocktests.AcceptedBlock) {
 		blockHeight := item.Height
 		block := util.NewBlock(item.Block)
-		block.SetHeight(blockHeight)
+		block.SetChainHeight(blockHeight)
 		t.Logf("Testing block %s (hash %s, height %d)",
 			item.Name, block.Hash(), blockHeight)
 
@@ -182,7 +182,7 @@ func TestFullBlocks(t *testing.T) {
 	testRejectedBlock := func(item fullblocktests.RejectedBlock) {
 		blockHeight := item.Height
 		block := util.NewBlock(item.Block)
-		block.SetHeight(blockHeight)
+		block.SetChainHeight(blockHeight)
 		t.Logf("Testing block %s (hash %s, height %d)",
 			item.Name, block.Hash(), blockHeight)
 
@@ -239,7 +239,7 @@ func TestFullBlocks(t *testing.T) {
 	testOrphanOrRejectedBlock := func(item fullblocktests.OrphanOrRejectedBlock) {
 		blockHeight := item.Height
 		block := util.NewBlock(item.Block)
-		block.SetHeight(blockHeight)
+		block.SetChainHeight(blockHeight)
 		t.Logf("Testing block %s (hash %s, height %d)",
 			item.Name, block.Hash(), blockHeight)
 
@@ -267,7 +267,7 @@ func TestFullBlocks(t *testing.T) {
 	testExpectedTip := func(item fullblocktests.ExpectedTip) {
 		blockHeight := item.Height
 		block := util.NewBlock(item.Block)
-		block.SetHeight(blockHeight)
+		block.SetChainHeight(blockHeight)
 		t.Logf("Testing tip for block %s (hash %s, height %d)",
 			item.Name, block.Hash(), blockHeight)
 

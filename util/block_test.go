@@ -29,12 +29,12 @@ func TestBlock(t *testing.T) {
 			spew.Sdump(msgBlock), spew.Sdump(&Block100000))
 	}
 
-	// Ensure block height set and get work properly.
-	wantHeight := uint64(100000)
-	b.SetHeight(wantHeight)
-	if gotHeight := b.Height(); gotHeight != wantHeight {
-		t.Errorf("Height: mismatched height - got %v, want %v",
-			gotHeight, wantHeight)
+	// Ensure block chain height set and get work properly.
+	wantChainHeight := uint64(100000)
+	b.SetChainHeight(wantChainHeight)
+	if gotChainHeight := b.ChainHeight(); gotChainHeight != wantChainHeight {
+		t.Errorf("ChainHeight: mismatched chain height - got %v, want %v",
+			gotChainHeight, wantChainHeight)
 	}
 
 	// Hash for block 100,000.

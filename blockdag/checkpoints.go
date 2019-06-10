@@ -64,16 +64,16 @@ func (dag *BlockDAG) LatestCheckpoint() *dagconfig.Checkpoint {
 	return &dag.checkpoints[len(dag.checkpoints)-1]
 }
 
-// verifyCheckpoint returns whether the passed block height and hash combination
+// verifyCheckpoint returns whether the passed block chain height and hash combination
 // match the checkpoint data.  It also returns true if there is no checkpoint
-// data for the passed block height.
-func (dag *BlockDAG) verifyCheckpoint(height uint64, hash *daghash.Hash) bool {
+// data for the passed block chain height.
+func (dag *BlockDAG) verifyCheckpoint(chainHeight uint64, hash *daghash.Hash) bool {
 	if !dag.HasCheckpoints() {
 		return true
 	}
 
-	// Nothing to check if there is no checkpoint data for the block height.
-	checkpoint, exists := dag.checkpointsByHeight[height]
+	// Nothing to check if there is no checkpoint data for the block chainHeight.
+	checkpoint, exists := dag.checkpointsByChainHeight[chainHeight]
 	if !exists {
 		return true
 	}
@@ -82,7 +82,7 @@ func (dag *BlockDAG) verifyCheckpoint(height uint64, hash *daghash.Hash) bool {
 		return false
 	}
 
-	log.Infof("Verified checkpoint at height %d/block %s", checkpoint.Height,
+	log.Infof("Verified checkpoint at chainHeight %d/block %s", checkpoint.ChainHeight,
 		checkpoint.Hash)
 	return true
 }
@@ -139,7 +139,7 @@ func (dag *BlockDAG) findPreviousCheckpoint() (*blockNode, error) {
 	// When there is a next checkpoint and the height of the current best
 	// chain does not exceed it, the current checkpoint lockin is still
 	// the latest known checkpoint.
-	if dag.selectedTip().height < dag.nextCheckpoint.Height {
+	if dag.selectedTip().height < dag.nextCheckpoint.ChainHeight {
 		return dag.checkpointNode, nil
 	}
 
@@ -216,13 +216,13 @@ func (dag *BlockDAG) IsCheckpointCandidate(block *util.Block) (bool, error) {
 		return false, nil
 	}
 
-	// Ensure the height of the passed block and the entry for the block in
-	// the main chain match.  This should always be the case unless the
+	// Ensure the chain height of the passed block and the entry for the block
+	// in the DAG match.  This should always be the case unless the
 	// caller provided an invalid block.
-	if node.height != block.Height() {
-		return false, fmt.Errorf("passed block height of %d does not "+
-			"match the main chain height of %d", block.Height(),
-			node.height)
+	if node.chainHeight != block.ChainHeight() {
+		return false, fmt.Errorf("passed block chain height of %d does not "+
+			"match the its height in the DAG: %d", block.ChainHeight(),
+			node.chainHeight)
 	}
 
 	// A checkpoint must be at least CheckpointConfirmations blocks

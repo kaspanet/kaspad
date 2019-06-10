@@ -138,20 +138,20 @@ func CreateBlock(parentBlock *util.Block, inclusionTxs []*util.Tx,
 	mineTo []wire.TxOut, net *dagconfig.Params) (*util.Block, error) {
 
 	var (
-		parentHash      *daghash.Hash
-		blockHeight     uint64
-		parentBlockTime time.Time
+		parentHash       *daghash.Hash
+		blockChainHeight uint64
+		parentBlockTime  time.Time
 	)
 
 	// If the parent block isn't specified, then we'll construct a block
 	// that builds off of the genesis block for the chain.
 	if parentBlock == nil {
 		parentHash = net.GenesisHash
-		blockHeight = 1
+		blockChainHeight = 1
 		parentBlockTime = net.GenesisBlock.Header.Timestamp.Add(time.Minute)
 	} else {
 		parentHash = parentBlock.Hash()
-		blockHeight = parentBlock.Height() + 1
+		blockChainHeight = parentBlock.ChainHeight() + 1
 		parentBlockTime = parentBlock.MsgBlock().Header.Timestamp
 	}
 
@@ -167,11 +167,11 @@ func CreateBlock(parentBlock *util.Block, inclusionTxs []*util.Tx,
 	}
 
 	extraNonce := uint64(0)
-	coinbaseScript, err := standardCoinbaseScript(blockHeight, extraNonce)
+	coinbaseScript, err := standardCoinbaseScript(blockChainHeight, extraNonce)
 	if err != nil {
 		return nil, err
 	}
-	coinbaseTx, err := createCoinbaseTx(coinbaseScript, blockHeight,
+	coinbaseTx, err := createCoinbaseTx(coinbaseScript, blockChainHeight,
 		miningAddr, mineTo, net)
 	if err != nil {
 		return nil, err
@@ -203,6 +203,5 @@ func CreateBlock(parentBlock *util.Block, inclusionTxs []*util.Tx,
 	}
 
 	utilBlock := util.NewBlock(&block)
-	utilBlock.SetHeight(blockHeight)
 	return utilBlock, nil
 }
