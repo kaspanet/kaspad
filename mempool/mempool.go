@@ -1181,7 +1181,7 @@ func (mp *TxPool) ProcessOrphans(acceptedTx *util.Tx) []*TxDesc {
 // the passed one being accepted.
 //
 // This function is safe for concurrent access.
-func (mp *TxPool) ProcessTransaction(tx *util.Tx, allowOrphan, rateLimit bool, tag Tag) ([]*TxDesc, error) {
+func (mp *TxPool) ProcessTransaction(tx *util.Tx, allowOrphan bool, tag Tag) ([]*TxDesc, error) {
 	log.Tracef("Processing transaction %s", tx.ID())
 
 	// Protect concurrent access.

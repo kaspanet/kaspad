@@ -3391,7 +3391,7 @@ func handleSendRawTransaction(s *Server, cmd interface{}, closeChan <-chan struc
 
 	// Use 0 for the tag to represent local node.
 	tx := util.NewTx(&msgTx)
-	acceptedTxs, err := s.cfg.TxMemPool.ProcessTransaction(tx, false, false, 0)
+	acceptedTxs, err := s.cfg.TxMemPool.ProcessTransaction(tx, false, 0)
 	if err != nil {
 		// When the error is a rule error, it means the transaction was
 		// simply rejected as opposed to something actually going wrong,
