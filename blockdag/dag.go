@@ -1095,10 +1095,10 @@ func updateTipsUTXO(dag *BlockDAG, virtualUTXO UTXOSet) error {
 //
 // This function MUST be called with the DAG state lock held (for reads).
 func (dag *BlockDAG) isCurrent() bool {
-	// Not current if the virtual's selected tip height is less than
+	// Not current if the virtual's selected tip chain height is less than
 	// the latest known good checkpoint (when checkpoints are enabled).
 	checkpoint := dag.LatestCheckpoint()
-	if checkpoint != nil && dag.selectedTip().height < checkpoint.ChainHeight {
+	if checkpoint != nil && dag.selectedTip().chainHeight < checkpoint.ChainHeight {
 		return false
 	}
 
@@ -1915,8 +1915,8 @@ func New(config *Config) (*BlockDAG, error) {
 	}
 
 	selectedTip := dag.selectedTip()
-	log.Infof("DAG state (height %d, hash %s)",
-		selectedTip.height, selectedTip.hash)
+	log.Infof("DAG state (chain height %d, hash %s)",
+		selectedTip.chainHeight, selectedTip.hash)
 
 	return &dag, nil
 }

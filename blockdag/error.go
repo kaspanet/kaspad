@@ -92,10 +92,6 @@ const (
 	// checkpoint height does not match the expected one.
 	ErrBadCheckpoint
 
-	// ErrForkTooOld indicates a block is attempting to fork the block chain
-	// before the most recent checkpoint.
-	ErrForkTooOld
-
 	// ErrCheckpointTimeTooOld indicates a block has a timestamp before the
 	// most recent checkpoint.
 	ErrCheckpointTimeTooOld
@@ -261,7 +257,6 @@ var errorCodeStrings = map[ErrorCode]string{
 	ErrHighHash:                  "ErrHighHash",
 	ErrBadMerkleRoot:             "ErrBadMerkleRoot",
 	ErrBadCheckpoint:             "ErrBadCheckpoint",
-	ErrForkTooOld:                "ErrForkTooOld",
 	ErrCheckpointTimeTooOld:      "ErrCheckpointTimeTooOld",
 	ErrNoTransactions:            "ErrNoTransactions",
 	ErrNoTxInputs:                "ErrNoTxInputs",

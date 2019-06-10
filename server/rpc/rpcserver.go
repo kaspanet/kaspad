@@ -2072,8 +2072,6 @@ func chainErrToGBTErrString(err error) string {
 		return "bad-txnmrklroot"
 	case blockdag.ErrBadCheckpoint:
 		return "bad-checkpoint"
-	case blockdag.ErrForkTooOld:
-		return "fork-too-old"
 	case blockdag.ErrCheckpointTimeTooOld:
 		return "checkpoint-time-too-old"
 	case blockdag.ErrNoTransactions:

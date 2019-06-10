@@ -621,27 +621,12 @@ func (dag *BlockDAG) checkBlockHeaderContext(header *wire.BlockHeader, bluestPar
 }
 
 func (dag *BlockDAG) validateCheckpoints(header *wire.BlockHeader, blockChainHeight uint64) error {
-	// Ensure dag matches up to predetermined checkpoints.
+	// Ensure DAG matches up to predetermined checkpoints.
 	blockHash := header.BlockHash()
 	if !dag.verifyCheckpoint(blockChainHeight, blockHash) {
 		str := fmt.Sprintf("block at chain height %d does not match "+
 			"checkpoint hash", blockChainHeight)
 		return ruleError(ErrBadCheckpoint, str)
-	}
-
-	// Find the previous checkpoint and prevent blocks which fork the main
-	// dag before it.  This prevents storage of new, otherwise valid,
-	// blocks which build off of old blocks that are likely at a much easier
-	// difficulty and therefore could be used to waste cache and disk space.
-	checkpointNode, err := dag.findPreviousCheckpoint()
-	if err != nil {
-		return err
-	}
-	if checkpointNode != nil && blockChainHeight < checkpointNode.height {
-		str := fmt.Sprintf("block at height %d forks the main dag "+
-			"before the previous checkpoint at height %d",
-			blockChainHeight, checkpointNode.height)
-		return ruleError(ErrForkTooOld, str)
 	}
 
 	return nil
@@ -997,7 +982,7 @@ func (dag *BlockDAG) checkConnectToPastUTXO(block *blockNode, pastUTXO UTXOSet,
 		// portion of block handling.
 		checkpoint := dag.LatestCheckpoint()
 		runScripts := true
-		if checkpoint != nil && block.height <= checkpoint.ChainHeight {
+		if checkpoint != nil && block.chainHeight <= checkpoint.ChainHeight {
 			runScripts = false
 		}
 

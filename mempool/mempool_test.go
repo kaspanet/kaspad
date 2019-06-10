@@ -1613,10 +1613,6 @@ func TestExtractRejectCode(t *testing.T) {
 			wireRejectCode:        wire.RejectCheckpoint,
 		},
 		{
-			blockdagRuleErrorCode: blockdag.ErrForkTooOld,
-			wireRejectCode:        wire.RejectCheckpoint,
-		},
-		{
 			blockdagRuleErrorCode: math.MaxUint32,
 			wireRejectCode:        wire.RejectInvalid,
 		},
