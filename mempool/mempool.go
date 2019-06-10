@@ -85,10 +85,6 @@ type Config struct {
 	// This can be nil if the address index is not enabled.
 	AddrIndex *indexers.AddrIndex
 
-	// FeeEstimatator provides a feeEstimator. If it is not nil, the mempool
-	// records all new transactions it observes into the feeEstimator.
-	FeeEstimator *FeeEstimator
-
 	// DAG is the BlockDAG we want to use (mainly for UTXO checks)
 	DAG *blockdag.BlockDAG
 }
@@ -731,11 +727,6 @@ func (mp *TxPool) addTransaction(tx *util.Tx, height uint64, blueScore uint64, f
 	// if enabled.
 	if mp.cfg.AddrIndex != nil {
 		mp.cfg.AddrIndex.AddUnconfirmedTx(tx, mp.mpUTXOSet)
-	}
-
-	// Record this tx for fee estimation if enabled.
-	if mp.cfg.FeeEstimator != nil {
-		mp.cfg.FeeEstimator.ObserveTransaction(txD)
 	}
 
 	return txD, nil

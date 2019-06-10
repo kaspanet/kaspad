@@ -284,10 +284,6 @@ type Server struct {
 	AddrIndex *indexers.AddrIndex
 	CfIndex   *indexers.CfIndex
 
-	// The fee estimator keeps track of how long transactions are left in
-	// the mempool before they are mined into blocks.
-	FeeEstimator *mempool.FeeEstimator
-
 	// cfCheckptCaches stores a cached slice of filter headers for cfcheckpt
 	// messages for each filter type.
 	cfCheckptCaches    map[wire.FilterType][]cfHeaderKV
@@ -2134,15 +2130,6 @@ func (s *Server) Start() {
 // Stop gracefully shuts down the server by stopping and disconnecting all
 // peers and the main listener.
 func (s *Server) Stop() error {
-
-	// Save fee estimator state in the database.
-	s.db.Update(func(dbTx database.Tx) error {
-		metadata := dbTx.Metadata()
-		metadata.Put(mempool.EstimateFeeDatabaseKey, s.FeeEstimator.Save())
-
-		return nil
-	})
-
 	// Signal the remaining goroutines to quit.
 	close(s.quit)
 	return nil
@@ -2405,36 +2392,6 @@ func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params
 		return nil, err
 	}
 
-	// Search for a FeeEstimator state in the database. If none can be found
-	// or if it cannot be loaded, create a new one.
-	db.Update(func(dbTx database.Tx) error {
-		metadata := dbTx.Metadata()
-		feeEstimationData := metadata.Get(mempool.EstimateFeeDatabaseKey)
-		if feeEstimationData != nil {
-			// delete it from the database so that we don't try to restore the
-			// same thing again somehow.
-			metadata.Delete(mempool.EstimateFeeDatabaseKey)
-
-			// If there is an error, log it and make a new fee estimator.
-			var err error
-			s.FeeEstimator, err = mempool.RestoreFeeEstimator(feeEstimationData)
-
-			if err != nil {
-				peerLog.Errorf("Failed to restore fee estimator %s", err)
-			}
-		}
-
-		return nil
-	})
-
-	// If no feeEstimator has been found, or if the one that has been found
-	// is behind somehow, create a new one and start over.
-	if s.FeeEstimator == nil || s.FeeEstimator.LastKnownHeight() != s.DAG.Height() { //TODO: (Ori) This is probably wrong. Done only for compilation
-		s.FeeEstimator = mempool.NewFeeEstimator(
-			mempool.DefaultEstimateFeeMaxRollback,
-			mempool.DefaultEstimateFeeMinRegisteredBlocks)
-	}
-
 	txC := mempool.Config{
 		Policy: mempool.Policy{
 			AcceptNonStd:    config.MainConfig().RelayNonStd,
@@ -2453,7 +2410,6 @@ func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params
 		IsDeploymentActive: s.DAG.IsDeploymentActive,
 		SigCache:           s.SigCache,
 		AddrIndex:          s.AddrIndex,
-		FeeEstimator:       s.FeeEstimator,
 		DAG:                s.DAG,
 	}
 	s.TxMemPool = mempool.New(&txC)
@@ -2467,7 +2423,6 @@ func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params
 		ChainParams:        s.DAGParams,
 		DisableCheckpoints: cfg.DisableCheckpoints,
 		MaxPeers:           cfg.MaxPeers,
-		FeeEstimator:       s.FeeEstimator,
 	})
 	if err != nil {
 		return nil, err

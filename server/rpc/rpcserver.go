@@ -142,7 +142,6 @@ var rpcHandlersBeforeInit = map[string]commandHandler{
 	"debugLevel":            handleDebugLevel,
 	"decodeRawTransaction":  handleDecodeRawTransaction,
 	"decodeScript":          handleDecodeScript,
-	"estimateFee":           handleEstimateFee,
 	"generate":              handleGenerate,
 	"getAllManualNodesInfo": handleGetAllManualNodesInfo,
 	"getBestBlock":          handleGetBestBlock,
@@ -267,7 +266,6 @@ var rpcLimited = map[string]struct{}{
 	"createRawTransaction":  {},
 	"decodeRawTransaction":  {},
 	"decodeScript":          {},
-	"estimateFee":           {},
 	"getBestBlock":          {},
 	"getBestBlockHash":      {},
 	"getBlock":              {},
@@ -869,28 +867,6 @@ func handleDecodeScript(s *Server, cmd interface{}, closeChan <-chan struct{}) (
 		reply.P2sh = p2sh.EncodeAddress()
 	}
 	return reply, nil
-}
-
-// handleEstimateFee handles estimateFee commands.
-func handleEstimateFee(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	c := cmd.(*btcjson.EstimateFeeCmd)
-
-	if s.cfg.FeeEstimator == nil {
-		return nil, errors.New("Fee estimation disabled")
-	}
-
-	if c.NumBlocks <= 0 {
-		return -1.0, errors.New("Parameter NumBlocks must be positive")
-	}
-
-	feeRate, err := s.cfg.FeeEstimator.EstimateFee(uint32(c.NumBlocks))
-
-	if err != nil {
-		return -1.0, err
-	}
-
-	// Convert to satoshis per kb.
-	return float64(feeRate), nil
 }
 
 // handleGenerate handles generate commands.
@@ -4278,10 +4254,6 @@ type rpcserverConfig struct {
 	TxIndex   *indexers.TxIndex
 	AddrIndex *indexers.AddrIndex
 	CfIndex   *indexers.CfIndex
-
-	// The fee estimator keeps track of how long transactions are left in
-	// the mempool before they are mined into blocks.
-	FeeEstimator *mempool.FeeEstimator
 }
 
 // setupRPCListeners returns a slice of listeners that are configured for use
@@ -4352,21 +4324,20 @@ func NewRPCServer(
 		return nil, errors.New("RPCS: No valid listen address")
 	}
 	cfg := &rpcserverConfig{
-		Listeners:    rpcListeners,
-		StartupTime:  startupTime,
-		ConnMgr:      &rpcConnManager{p2pServer},
-		SyncMgr:      &rpcSyncMgr{p2pServer, p2pServer.SyncManager},
-		TimeSource:   p2pServer.TimeSource,
-		DAGParams:    p2pServer.DAGParams,
-		DB:           db,
-		TxMemPool:    p2pServer.TxMemPool,
-		Generator:    blockTemplateGenerator,
-		CPUMiner:     cpuminer,
-		TxIndex:      p2pServer.TxIndex,
-		AddrIndex:    p2pServer.AddrIndex,
-		CfIndex:      p2pServer.CfIndex,
-		FeeEstimator: p2pServer.FeeEstimator,
-		DAG:          p2pServer.DAG,
+		Listeners:   rpcListeners,
+		StartupTime: startupTime,
+		ConnMgr:     &rpcConnManager{p2pServer},
+		SyncMgr:     &rpcSyncMgr{p2pServer, p2pServer.SyncManager},
+		TimeSource:  p2pServer.TimeSource,
+		DAGParams:   p2pServer.DAGParams,
+		DB:          db,
+		TxMemPool:   p2pServer.TxMemPool,
+		Generator:   blockTemplateGenerator,
+		CPUMiner:    cpuminer,
+		TxIndex:     p2pServer.TxIndex,
+		AddrIndex:   p2pServer.AddrIndex,
+		CfIndex:     p2pServer.CfIndex,
+		DAG:         p2pServer.DAG,
 	}
 	rpc := Server{
 		cfg:                    *cfg,

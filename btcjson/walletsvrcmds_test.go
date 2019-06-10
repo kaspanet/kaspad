@@ -103,19 +103,6 @@ func TestWalletSvrCmds(t *testing.T) {
 			},
 		},
 		{
-			name: "estimateFee",
-			newCmd: func() (interface{}, error) {
-				return btcjson.NewCmd("estimateFee", 6)
-			},
-			staticCmd: func() interface{} {
-				return btcjson.NewEstimateFeeCmd(6)
-			},
-			marshalled: `{"jsonrpc":"1.0","method":"estimateFee","params":[6],"id":1}`,
-			unmarshalled: &btcjson.EstimateFeeCmd{
-				NumBlocks: 6,
-			},
-		},
-		{
 			name: "estimatePriority",
 			newCmd: func() (interface{}, error) {
 				return btcjson.NewCmd("estimatePriority", 6)

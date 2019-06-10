@@ -113,15 +113,6 @@ var helpDescsEnUS = map[string]string{
 	"decodeScript--synopsis": "Returns a JSON object with information about the provided hex-encoded script.",
 	"decodeScript-hexScript": "Hex-encoded script",
 
-	// EstimateFeeCmd help.
-	"estimateFee--synopsis": "Estimate the fee per kilobyte in satoshis " +
-		"required for a transaction to be mined before a certain number of " +
-		"blocks have been generated.",
-	"estimateFee-numBlocks": "The maximum number of blocks which can be " +
-		"generated before the transaction is mined.",
-	"estimateFee--result0": "Estimated fee per kilobyte in satoshis for a block to " +
-		"be mined in the next NumBlocks blocks.",
-
 	// GenerateCmd help
 	"generate--synopsis": "Generates a set number of blocks (simnet or regtest only) and returns a JSON\n" +
 		" array of their hashes.",
@@ -677,7 +668,6 @@ var rpcResultTypes = map[string][]interface{}{
 	"debugLevel":            {(*string)(nil), (*string)(nil)},
 	"decodeRawTransaction":  {(*btcjson.TxRawDecodeResult)(nil)},
 	"decodeScript":          {(*btcjson.DecodeScriptResult)(nil)},
-	"estimateFee":           {(*float64)(nil)},
 	"generate":              {(*[]string)(nil)},
 	"getAllManualNodesInfo": {(*[]string)(nil), (*[]btcjson.GetManualNodeInfoResult)(nil)},
 	"getBestBlock":          {(*btcjson.GetBestBlockResult)(nil)},

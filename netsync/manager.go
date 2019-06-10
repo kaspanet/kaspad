@@ -173,9 +173,6 @@ type SyncManager struct {
 	headerList       *list.List
 	startHeader      *list.Element
 	nextCheckpoint   *dagconfig.Checkpoint
-
-	// An optional fee estimator.
-	feeEstimator *mempool.FeeEstimator
 }
 
 // resetHeaderState sets the headers-first mode state to values appropriate for
@@ -1244,20 +1241,6 @@ func (sm *SyncManager) handleBlockDAGNotification(notification *blockdag.Notific
 			sm.peerNotifier.TransactionConfirmed(msg.Tx)
 			sm.peerNotifier.AnnounceNewTransactions(msg.AcceptedTxs)
 		}
-
-		// Register block with the fee estimator, if it exists.
-		if sm.feeEstimator != nil {
-			err := sm.feeEstimator.RegisterBlock(block)
-
-			// If an error is somehow generated then the fee estimator
-			// has entered an invalid state. Since it doesn't know how
-			// to recover, create a new one.
-			if err != nil {
-				sm.feeEstimator = mempool.NewFeeEstimator(
-					mempool.DefaultEstimateFeeMaxRollback,
-					mempool.DefaultEstimateFeeMinRegisteredBlocks)
-			}
-		}
 	}
 }
 
@@ -1405,7 +1388,6 @@ func New(config *Config) (*SyncManager, error) {
 		msgChan:         make(chan interface{}, config.MaxPeers*3),
 		headerList:      list.New(),
 		quit:            make(chan struct{}),
-		feeEstimator:    config.FeeEstimator,
 	}
 
 	highestTipHash := sm.dag.HighestTipHash()
