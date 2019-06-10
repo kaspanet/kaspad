@@ -229,14 +229,14 @@ func (ef *FeeEstimator) RegisterBlock(block *util.Block) error {
 	// The previous sorted list is invalid, so delete it.
 	ef.cached = nil
 
-	height := block.Height()
-	if height != ef.lastKnownBlueScore+1 && ef.lastKnownBlueScore != blockdag.UnminedBlueScore {
-		return fmt.Errorf("intermediate block not recorded; current height is %d; new height is %d",
-			ef.lastKnownBlueScore, height)
+	blueScore := block.ChainHeight() // TODO: (Stas) This is wrong. Change it once we have have a proper fee-estimation algorithm.
+	if blueScore != ef.lastKnownBlueScore+1 && ef.lastKnownBlueScore != blockdag.UnminedBlueScore {
+		return fmt.Errorf("intermediate block not recorded; current blueScore is %d; new blueScore is %d",
+			ef.lastKnownBlueScore, blueScore)
 	}
 
-	// Update the last known height.
-	ef.lastKnownBlueScore = height
+	// Update the last known blueScore.
+	ef.lastKnownBlueScore = blueScore
 	ef.numBlocksRegistered++
 
 	// Randomly order txs in block.
@@ -266,7 +266,7 @@ func (ef *FeeEstimator) RegisterBlock(block *util.Block) error {
 		}
 
 		// Put the observed tx in the oppropriate bin.
-		blocksToConfirm := height - o.observed - 1
+		blocksToConfirm := blueScore - o.observed - 1
 
 		// This shouldn't happen if the fee estimator works correctly,
 		// but return an error if it does.
@@ -286,7 +286,7 @@ func (ef *FeeEstimator) RegisterBlock(block *util.Block) error {
 			continue
 		}
 
-		o.mined = height
+		o.mined = blueScore
 
 		replacementCounts[blocksToConfirm]++
 
@@ -309,7 +309,7 @@ func (ef *FeeEstimator) RegisterBlock(block *util.Block) error {
 
 	// Go through the mempool for txs that have been in too long.
 	for hash, o := range ef.observed {
-		if o.mined == blockdag.UnminedBlueScore && height-o.observed >= estimateFeeDepth {
+		if o.mined == blockdag.UnminedBlueScore && blueScore-o.observed >= estimateFeeDepth {
 			delete(ef.observed, hash)
 		}
 	}
