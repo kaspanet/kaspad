@@ -12,7 +12,7 @@ services:
       "--addrindex",
       # "--generate",
       "--nodnsseed",
-      "--miningaddr=dagtest:qrm4zaetvny2yuh4wudf8y43fd20lunkxs8quragg8",
+      "--miningaddr=dagtest:qrgufg4qzfqacfzrf6xvx46aqedr5nke3qv6a74fex",
       "--rpcuser=user",
       "--rpcpass=pass",
       "--rpclisten=0.0.0.0:18334",
@@ -35,7 +35,7 @@ services:
       "--connect=first",
       "--rpcuser=user",
       "--rpcpass=pass",
-      "--miningaddr=dagtest:qrm4zaetvny2yuh4wudf8y43fd20lunkxs8quragg8",
+      "--miningaddr=dagtest:qrgufg4qzfqacfzrf6xvx46aqedr5nke3qv6a74fex",
       "--rpclisten=0.0.0.0:18334",
       "--rpccert=/go/src/github.com/daglabs/btcd/docker/rpc.cert",
       "--rpckey=/go/src/github.com/daglabs/btcd/docker/rpc.key"
@@ -63,7 +63,7 @@ services:
       "--connect=first",
       "--rpcuser=user",
       "--rpcpass=pass",
-      "--miningaddr=dagtest:qrm4zaetvny2yuh4wudf8y43fd20lunkxs8quragg8",
+      "--miningaddr=dagtest:qrgufg4qzfqacfzrf6xvx46aqedr5nke3qv6a74fex",
       "--rpclisten=0.0.0.0:18334",
       "--rpccert=/go/src/github.com/daglabs/btcd/docker/rpc.cert",
       "--rpckey=/go/src/github.com/daglabs/btcd/docker/rpc.key"
