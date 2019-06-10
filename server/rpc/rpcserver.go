@@ -1047,7 +1047,7 @@ func handleGetBestBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (
 	// the best block.
 	result := &btcjson.GetBestBlockResult{
 		Hash:   s.cfg.DAG.HighestTipHash().String(),
-		Height: s.cfg.DAG.Height(), //TODO: (Ori) This is probably wrong. Done only for compilation
+		Height: s.cfg.DAG.ChainHeight(), //TODO: (Ori) This is probably wrong. Done only for compilation
 	}
 	return result, nil
 }
@@ -1159,7 +1159,7 @@ func handleGetBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 
 	// Get the hashes for the next blocks unless there are none.
 	var nextHashStrings []string
-	if blockHeight < s.cfg.DAG.Height() { //TODO: (Ori) This is probably wrong. Done only for compilation
+	if blockHeight < s.cfg.DAG.ChainHeight() { //TODO: (Ori) This is probably wrong. Done only for compilation
 		childHashes, err := s.cfg.DAG.ChildHashesByHash(hash)
 		if err != nil {
 			context := "No next block"
@@ -1371,7 +1371,7 @@ func handleGetBlockHeader(s *Server, cmd interface{}, closeChan <-chan struct{})
 
 	// Get the hashes for the next blocks unless there are none.
 	var nextHashStrings []string
-	if blockHeight < s.cfg.DAG.Height() { //TODO: (Ori) This is probably wrong. Done only for compilation
+	if blockHeight < s.cfg.DAG.ChainHeight() { //TODO: (Ori) This is probably wrong. Done only for compilation
 		childHashes, err := s.cfg.DAG.ChildHashesByHash(hash)
 		if err != nil {
 			context := "No next block"
@@ -1981,8 +1981,8 @@ func handleGetBlockTemplateRequest(s *Server, request *btcjson.TemplateRequest, 
 	}
 
 	// No point in generating or accepting work before the chain is synced.
-	currentHeight := s.cfg.DAG.Height()
-	if currentHeight != 0 && !s.cfg.SyncMgr.IsCurrent() {
+	currentChainHeight := s.cfg.DAG.ChainHeight()
+	if currentChainHeight != 0 && !s.cfg.SyncMgr.IsCurrent() {
 		return nil, &btcjson.RPCError{
 			Code:    btcjson.ErrRPCClientInInitialDownload,
 			Message: "Bitcoin is downloading blocks...",
@@ -2430,7 +2430,7 @@ func handleGetMiningInfo(s *Server, cmd interface{}, closeChan <-chan struct{}) 
 	}
 
 	result := btcjson.GetMiningInfoResult{
-		Blocks:           int64(s.cfg.DAG.Height()), //TODO: (Ori) This is wrong. Done only for compilation
+		Blocks:           int64(s.cfg.DAG.BlockCount()),
 		CurrentBlockSize: uint64(selectedBlock.MsgBlock().SerializeSize()),
 		CurrentBlockTx:   uint64(len(selectedBlock.MsgBlock().Transactions)),
 		Difficulty:       getDifficultyRatio(s.cfg.DAG.CurrentBits(), s.cfg.DAGParams),

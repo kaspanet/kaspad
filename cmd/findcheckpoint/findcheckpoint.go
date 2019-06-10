@@ -162,7 +162,7 @@ func main() {
 
 	// Get the latest block hash and height from the database and report
 	// status.
-	fmt.Printf("Block database loaded with block height %d\n", dag.Height())
+	fmt.Printf("Block database loaded with block chain height %d\n", dag.ChainHeight())
 
 	// Find checkpoint candidates.
 	highestTipHash := dag.HighestTipHash()

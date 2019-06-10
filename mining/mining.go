@@ -361,10 +361,6 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 	g.dag.RLock()
 	defer g.dag.RUnlock()
 
-	// Extend the most recently known best block.
-	nextBlockHeight := g.dag.Height() + 1
-	nextBlockBlueScore := g.dag.VirtualBlueScore()
-
 	// Create a standard coinbase transaction paying to the provided
 	// address.  NOTE: The coinbase value will be updated to include the
 	// fees from the selected transactions later after they have actually
@@ -373,15 +369,16 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 	// ensure the transaction is not a duplicate transaction (paying the
 	// same value to the same public key address would otherwise be an
 	// identical transaction for block version 1).
+	nextBlockBlueScore := g.dag.VirtualBlueScore()
 	extraNonce, err := random.Uint64()
 	if err != nil {
 		return nil, err
 	}
-	coinbaseScript, err := StandardCoinbaseScript(nextBlockHeight, extraNonce)
+	coinbaseScript, err := StandardCoinbaseScript(nextBlockBlueScore, extraNonce)
 	if err != nil {
 		return nil, err
 	}
-	coinbaseTx, err := CreateCoinbaseTx(g.dagParams, coinbaseScript, nextBlockHeight, payToAddress)
+	coinbaseTx, err := CreateCoinbaseTx(g.dagParams, coinbaseScript, nextBlockBlueScore, payToAddress)
 	if err != nil {
 		return nil, err
 	}
@@ -590,7 +587,7 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 	for _, tx := range blockTxns {
 		msgBlock.AddTransaction(tx.MsgTx())
 	}
-	utxoCommitment, err := g.buildUTXOCommitment(msgBlock.Transactions, nextBlockHeight)
+	utxoCommitment, err := g.buildUTXOCommitment(msgBlock.Transactions, nextBlockBlueScore)
 	if err != nil {
 		return nil, err
 	}
@@ -622,7 +619,6 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 		Block:           &msgBlock,
 		Fees:            txFees,
 		SigOpCounts:     txSigOpCounts,
-		Height:          nextBlockHeight,
 		ValidPayAddress: payToAddress != nil,
 	}, nil
 }
@@ -697,9 +693,9 @@ func (g *BlkTmplGenerator) UpdateExtraNonce(msgBlock *wire.MsgBlock, blockBlueSc
 	return nil
 }
 
-// DAGHeight returns the DAG's height
-func (g *BlkTmplGenerator) DAGHeight() uint64 {
-	return g.dag.Height()
+// VirtualBlueScore returns the virtual block's current blue score
+func (g *BlkTmplGenerator) VirtualBlueScore() uint64 {
+	return g.dag.VirtualBlueScore()
 }
 
 // TipHashes returns the hashes of the DAG's tips

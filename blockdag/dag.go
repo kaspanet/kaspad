@@ -1285,11 +1285,6 @@ func (dag *BlockDAG) IsInSelectedPathChain(blockHash *daghash.Hash) bool {
 	return dag.virtual.selectedPathChainSet.containsHash(blockHash)
 }
 
-// Height returns the height of the highest tip in the DAG
-func (dag *BlockDAG) Height() uint64 {
-	return dag.virtual.tips().maxHeight()
-}
-
 // ChainHeight return the chain-height of the selected tip. In other words - it returns
 // the length of the dag's selected-parent chain
 func (dag *BlockDAG) ChainHeight() uint64 {

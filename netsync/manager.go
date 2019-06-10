@@ -282,13 +282,13 @@ func (sm *SyncManager) startSync() {
 		// not support the headers-first approach so do normal block
 		// downloads when in regression test mode.
 		if sm.nextCheckpoint != nil &&
-			sm.dag.Height() < sm.nextCheckpoint.ChainHeight &&
+			sm.dag.ChainHeight() < sm.nextCheckpoint.ChainHeight &&
 			sm.chainParams != &dagconfig.RegressionNetParams { //TODO: (Ori) This is probably wrong. Done only for compilation
 
 			bestPeer.PushGetHeadersMsg(locator, sm.nextCheckpoint.Hash)
 			sm.headersFirstMode = true
 			log.Infof("Downloading headers for blocks %d to "+
-				"%d from peer %s", sm.dag.Height()+1,
+				"%d from peer %s", sm.dag.ChainHeight()+1,
 				sm.nextCheckpoint.ChainHeight, bestPeer.Addr()) //TODO: (Ori) This is probably wrong. Done only for compilation
 		} else {
 			bestPeer.PushGetBlocksMsg(locator, &daghash.ZeroHash)
@@ -393,7 +393,7 @@ func (sm *SyncManager) handleDonePeerMsg(peer *peerpkg.Peer) {
 		sm.syncPeer = nil
 		if sm.headersFirstMode {
 			highestTipHash := sm.dag.HighestTipHash()
-			sm.resetHeaderState(highestTipHash, sm.dag.Height()) //TODO: (Ori) This is probably wrong. Done only for compilation
+			sm.resetHeaderState(highestTipHash, sm.dag.ChainHeight()) //TODO: (Ori) This is probably wrong. Done only for compilation
 		}
 		sm.startSync()
 	}
@@ -1392,10 +1392,10 @@ func New(config *Config) (*SyncManager, error) {
 
 	highestTipHash := sm.dag.HighestTipHash()
 	if !config.DisableCheckpoints {
-		// Initialize the next checkpoint based on the current height.
-		sm.nextCheckpoint = sm.findNextHeaderCheckpoint(sm.dag.Height()) //TODO: (Ori) This is probably wrong. Done only for compilation
+		// Initialize the next checkpoint based on the current chain height.
+		sm.nextCheckpoint = sm.findNextHeaderCheckpoint(sm.dag.ChainHeight()) //TODO: (Ori) This is probably wrong. Done only for compilation
 		if sm.nextCheckpoint != nil {
-			sm.resetHeaderState(highestTipHash, sm.dag.Height()) //TODO: (Ori) This is probably wrong. Done only for compilation)
+			sm.resetHeaderState(highestTipHash, sm.dag.ChainHeight()) //TODO: (Ori) This is probably wrong. Done only for compilation)
 		}
 	} else {
 		log.Info("Checkpoints are disabled")

@@ -181,7 +181,7 @@ func TestNewBlockTemplate(t *testing.T) {
 		Value:    1,
 	}
 	nonFinalizedTx := wire.NewNativeMsgTx(wire.TxVersion, []*wire.TxIn{txIn}, []*wire.TxOut{txOut})
-	nonFinalizedTx.LockTime = uint64(dag.Height() + 2)
+	nonFinalizedTx.LockTime = uint64(dag.ChainHeight() + 2)
 
 	existingSubnetwork := &subnetworkid.SubnetworkID{0xff}
 	nonExistingSubnetwork := &subnetworkid.SubnetworkID{0xfe}
