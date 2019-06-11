@@ -389,7 +389,7 @@ func (dag *BlockDAG) calcSequenceLock(node *blockNode, utxoSet UTXOSet, tx *util
 			return sequenceLock, ruleError(ErrMissingTxOut, str)
 		}
 
-		// If the input blue score is set to the mempool height, then we
+		// If the input blue score is set to the mempool blue score, then we
 		// assume the transaction makes it into the next block when
 		// evaluating its sequence blocks.
 		inputBlueScore := entry.BlockBlueScore()

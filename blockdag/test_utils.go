@@ -139,7 +139,7 @@ func createTxForTest(numInputs uint32, numOutputs uint32, outputValue uint64, su
 // createCoinbaseTxForTest returns a coinbase transaction with the requested number of
 // outputs paying an appropriate subsidy based on the passed block blueScore to the
 // address associated with the harness.  It automatically uses a standard
-// signature script that starts with the block height
+// signature script that starts with the block blue score
 func createCoinbaseTxForTest(blueScore uint64, numOutputs uint32, extraNonce int64, params *dagconfig.Params) (*wire.MsgTx, error) {
 	// Create standard coinbase script.
 	coinbaseScript, err := txscript.NewScriptBuilder().
