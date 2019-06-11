@@ -1046,7 +1046,7 @@ func handleGetBestBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (
 	// hash, or both but require the block SHA.  This gets both for
 	// the best block.
 	result := &btcjson.GetBestBlockResult{
-		Hash:   s.cfg.DAG.HighestTipHash().String(),
+		Hash:   s.cfg.DAG.SelectedTipHash().String(),
 		Height: s.cfg.DAG.ChainHeight(), //TODO: (Ori) This is probably wrong. Done only for compilation
 	}
 	return result, nil
@@ -1054,7 +1054,7 @@ func handleGetBestBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (
 
 // handleGetBestBlockHash implements the getBestBlockHash command.
 func handleGetBestBlockHash(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	return s.cfg.DAG.HighestTipHash().String(), nil
+	return s.cfg.DAG.SelectedTipHash().String(), nil
 }
 
 // getDifficultyRatio returns the proof-of-work difficulty as a multiple of the
@@ -2420,8 +2420,8 @@ func handleGetMiningInfo(s *Server, cmd interface{}, closeChan <-chan struct{}) 
 		}
 	}
 
-	highestTipHash := s.cfg.DAG.HighestTipHash()
-	selectedBlock, err := s.cfg.DAG.BlockByHash(highestTipHash)
+	selectedTipHash := s.cfg.DAG.SelectedTipHash()
+	selectedBlock, err := s.cfg.DAG.BlockByHash(selectedTipHash)
 	if err != nil {
 		return nil, &btcjson.RPCError{
 			Code:    btcjson.ErrRPCInternal.Code,
@@ -2713,7 +2713,7 @@ func handleGetTxOut(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 			return nil, internalRPCError(errStr, "")
 		}
 
-		bestBlockHash = s.cfg.DAG.HighestTipHash().String()
+		bestBlockHash = s.cfg.DAG.SelectedTipHash().String()
 		value = txOut.Value
 		pkScript = txOut.PkScript
 		isCoinbase = mtx.IsCoinBase()
@@ -2743,7 +2743,7 @@ func handleGetTxOut(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 			confirmations = &txConfirmations
 		}
 
-		bestBlockHash = s.cfg.DAG.HighestTipHash().String()
+		bestBlockHash = s.cfg.DAG.SelectedTipHash().String()
 		value = entry.Amount()
 		pkScript = entry.PkScript()
 		isCoinbase = entry.IsBlockReward()

@@ -1306,12 +1306,6 @@ func (dag *BlockDAG) TipHashes() []*daghash.Hash {
 	return dag.virtual.tips().hashes()
 }
 
-// HighestTipHash returns the hash of the highest tip.
-// This function is a placeholder for places that aren't DAG-compatible, and it's needed to be removed in the future
-func (dag *BlockDAG) HighestTipHash() *daghash.Hash {
-	return dag.virtual.tips().highest().hash
-}
-
 // CurrentBits returns the bits of the tip with the lowest bits, which also means it has highest difficulty.
 func (dag *BlockDAG) CurrentBits() uint32 {
 	tips := dag.virtual.tips()

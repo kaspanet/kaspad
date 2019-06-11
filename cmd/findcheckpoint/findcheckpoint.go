@@ -165,8 +165,8 @@ func main() {
 	fmt.Printf("Block database loaded with block chain height %d\n", dag.ChainHeight())
 
 	// Find checkpoint candidates.
-	highestTipHash := dag.HighestTipHash()
-	candidates, err := findCandidates(dag, highestTipHash)
+	selectedTipHash := dag.SelectedTipHash()
+	candidates, err := findCandidates(dag, selectedTipHash)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Unable to identify candidates:", err)
 		return

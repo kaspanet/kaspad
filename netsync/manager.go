@@ -392,8 +392,8 @@ func (sm *SyncManager) handleDonePeerMsg(peer *peerpkg.Peer) {
 	if sm.syncPeer == peer {
 		sm.syncPeer = nil
 		if sm.headersFirstMode {
-			highestTipHash := sm.dag.HighestTipHash()
-			sm.resetHeaderState(highestTipHash, sm.dag.ChainHeight()) //TODO: (Ori) This is probably wrong. Done only for compilation
+			selectedTipHash := sm.dag.SelectedTipHash()
+			sm.resetHeaderState(selectedTipHash, sm.dag.ChainHeight()) //TODO: (Ori) This is probably wrong. Done only for compilation
 		}
 		sm.startSync()
 	}
@@ -1390,12 +1390,12 @@ func New(config *Config) (*SyncManager, error) {
 		quit:            make(chan struct{}),
 	}
 
-	highestTipHash := sm.dag.HighestTipHash()
+	selectedTipHash := sm.dag.SelectedTipHash()
 	if !config.DisableCheckpoints {
 		// Initialize the next checkpoint based on the current chain height.
 		sm.nextCheckpoint = sm.findNextHeaderCheckpoint(sm.dag.ChainHeight()) //TODO: (Ori) This is probably wrong. Done only for compilation
 		if sm.nextCheckpoint != nil {
-			sm.resetHeaderState(highestTipHash, sm.dag.ChainHeight()) //TODO: (Ori) This is probably wrong. Done only for compilation)
+			sm.resetHeaderState(selectedTipHash, sm.dag.ChainHeight()) //TODO: (Ori) This is probably wrong. Done only for compilation)
 		}
 	} else {
 		log.Info("Checkpoints are disabled")
