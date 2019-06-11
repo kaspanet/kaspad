@@ -849,8 +849,8 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rejectDupOrphans bo
 		return nil, nil, txRuleError(wire.RejectInvalid, str)
 	}
 
-	// A standalone transaction will be mined into the next block at best,
-	// so its blue score is at least the current blue score of the virtual.
+	// We take the blue score of the current virtual block to validate
+	// the transaction as though it was mined on top of the current tips
 	nextBlockBlueScore := mp.cfg.DAG.VirtualBlueScore()
 
 	medianTimePast := mp.cfg.MedianTimePast()

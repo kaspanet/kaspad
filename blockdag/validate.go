@@ -44,7 +44,7 @@ const (
 	baseSubsidy = 50 * util.SatoshiPerBitcoin
 )
 
-// isNullOutpoint determines whether or not a previous transaction output point
+// isNullOutpoint determines whether or not a previous transaction outpoint
 // is set.
 func isNullOutpoint(outpoint *wire.Outpoint) bool {
 	if outpoint.Index == math.MaxUint32 && outpoint.TxID == daghash.ZeroTxID {
