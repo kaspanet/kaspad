@@ -1150,8 +1150,8 @@ func handleGetBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 		return nil, internalRPCError(err.Error(), context)
 	}
 
-	// Get the block height from chain.
-	blockHeight, err := s.cfg.DAG.BlockHeightByHash(hash)
+	// Get the block chain height.
+	blockChainHeight, err := s.cfg.DAG.BlockChainHeightByHash(hash)
 	if err != nil {
 		context := "Failed to obtain block height"
 		return nil, internalRPCError(err.Error(), context)
@@ -1159,7 +1159,7 @@ func handleGetBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 
 	// Get the hashes for the next blocks unless there are none.
 	var nextHashStrings []string
-	if blockHeight < s.cfg.DAG.ChainHeight() { //TODO: (Ori) This is probably wrong. Done only for compilation
+	if blockChainHeight < s.cfg.DAG.ChainHeight() { //TODO: (Ori) This is probably wrong. Done only for compilation
 		childHashes, err := s.cfg.DAG.ChildHashesByHash(hash)
 		if err != nil {
 			context := "No next block"
@@ -1186,7 +1186,7 @@ func handleGetBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 		Nonce:                blockHeader.Nonce,
 		Time:                 blockHeader.Timestamp.Unix(),
 		Confirmations:        blockConfirmations,
-		Height:               blockHeight,
+		Height:               blockChainHeight,
 		Size:                 int32(len(blkBytes)),
 		Bits:                 strconv.FormatInt(int64(blockHeader.Bits), 16),
 		Difficulty:           getDifficultyRatio(blockHeader.Bits, params),
@@ -1362,8 +1362,8 @@ func handleGetBlockHeader(s *Server, cmd interface{}, closeChan <-chan struct{})
 
 	// The verbose flag is set, so generate the JSON object and return it.
 
-	// Get the block height from chain.
-	blockHeight, err := s.cfg.DAG.BlockHeightByHash(hash)
+	// Get the block chain height from chain.
+	blockChainHeight, err := s.cfg.DAG.BlockChainHeightByHash(hash)
 	if err != nil {
 		context := "Failed to obtain block height"
 		return nil, internalRPCError(err.Error(), context)
@@ -1371,7 +1371,7 @@ func handleGetBlockHeader(s *Server, cmd interface{}, closeChan <-chan struct{})
 
 	// Get the hashes for the next blocks unless there are none.
 	var nextHashStrings []string
-	if blockHeight < s.cfg.DAG.ChainHeight() { //TODO: (Ori) This is probably wrong. Done only for compilation
+	if blockChainHeight < s.cfg.DAG.ChainHeight() { //TODO: (Ori) This is probably wrong. Done only for compilation
 		childHashes, err := s.cfg.DAG.ChildHashesByHash(hash)
 		if err != nil {
 			context := "No next block"
@@ -1390,7 +1390,7 @@ func handleGetBlockHeader(s *Server, cmd interface{}, closeChan <-chan struct{})
 	blockHeaderReply := btcjson.GetBlockHeaderVerboseResult{
 		Hash:                 c.Hash,
 		Confirmations:        blockConfirmations,
-		Height:               blockHeight,
+		Height:               blockChainHeight,
 		Version:              blockHeader.Version,
 		VersionHex:           fmt.Sprintf("%08x", blockHeader.Version),
 		HashMerkleRoot:       blockHeader.HashMerkleRoot.String(),

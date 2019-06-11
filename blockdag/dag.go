@@ -1415,18 +1415,18 @@ func (dag *BlockDAG) blockLocator(node *blockNode) BlockLocator {
 	return locator
 }
 
-// BlockHeightByHash returns the height of the block with the given hash in the
-// DAG.
+// BlockChainHeightByHash returns the chain height of the block with the given
+// hash in the DAG.
 //
 // This function is safe for concurrent access.
-func (dag *BlockDAG) BlockHeightByHash(hash *daghash.Hash) (uint64, error) {
+func (dag *BlockDAG) BlockChainHeightByHash(hash *daghash.Hash) (uint64, error) {
 	node := dag.index.LookupNode(hash)
 	if node == nil {
 		str := fmt.Sprintf("block %s is not in the DAG", hash)
 		return 0, errNotInDAG(str)
 	}
 
-	return node.height, nil
+	return node.chainHeight, nil
 }
 
 // ChildHashesByHash returns the child hashes of the block with the given hash in the

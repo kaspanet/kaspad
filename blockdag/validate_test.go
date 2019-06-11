@@ -490,7 +490,7 @@ func TestPastMedianTime(t *testing.T) {
 	}
 
 	// Checks that a block is valid if it has timestamp equals to past median time
-	height := tip.height + 1
+	chainHeight := tip.chainHeight + 1
 	node := newTestNode(setFromSlice(tip),
 		blockVersion,
 		0,
@@ -498,14 +498,14 @@ func TestPastMedianTime(t *testing.T) {
 		dagconfig.MainNetParams.K)
 
 	header := node.Header()
-	err := dag.checkBlockHeaderContext(header, node.parents.bluest(), height, false)
+	err := dag.checkBlockHeaderContext(header, node.parents.bluest(), chainHeight, false)
 	if err != nil {
 		t.Errorf("TestPastMedianTime: unexpected error from checkBlockHeaderContext: %v"+
 			"(a block with timestamp equals to past median time should be valid)", err)
 	}
 
 	// Checks that a block is valid if its timestamp is after past median time
-	height = tip.height + 1
+	chainHeight = tip.chainHeight + 1
 	node = newTestNode(setFromSlice(tip),
 		blockVersion,
 		0,
@@ -513,14 +513,14 @@ func TestPastMedianTime(t *testing.T) {
 		dagconfig.MainNetParams.K)
 
 	header = node.Header()
-	err = dag.checkBlockHeaderContext(header, node.parents.bluest(), height, false)
+	err = dag.checkBlockHeaderContext(header, node.parents.bluest(), chainHeight, false)
 	if err != nil {
 		t.Errorf("TestPastMedianTime: unexpected error from checkBlockHeaderContext: %v"+
 			"(a block with timestamp bigger than past median time should be valid)", err)
 	}
 
 	// Checks that a block is invalid if its timestamp is before past median time
-	height = tip.height + 1
+	chainHeight = tip.chainHeight + 1
 	node = newTestNode(setFromSlice(tip),
 		blockVersion,
 		0,
@@ -528,7 +528,7 @@ func TestPastMedianTime(t *testing.T) {
 		dagconfig.MainNetParams.K)
 
 	header = node.Header()
-	err = dag.checkBlockHeaderContext(header, node.parents.bluest(), height, false)
+	err = dag.checkBlockHeaderContext(header, node.parents.bluest(), chainHeight, false)
 	if err == nil {
 		t.Errorf("TestPastMedianTime: unexpected success: block should be invalid if its timestamp is before past median time")
 	}
