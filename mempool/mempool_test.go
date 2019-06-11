@@ -330,7 +330,7 @@ func newPoolHarness(t *testing.T, dagParams *dagconfig.Params, numOutputs uint32
 				MaxTxVersion:    1,
 			},
 			DAGParams:              &params,
-			BestHeight:             chain.BestHeight,
+			DAGChainHeight:         chain.BestHeight,
 			MedianTimePast:         chain.MedianTimePast,
 			CalcSequenceLockNoLock: calcSequenceLock,
 			SigCache:               nil,

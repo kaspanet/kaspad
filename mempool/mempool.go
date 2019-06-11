@@ -57,9 +57,9 @@ type Config struct {
 	// associated with.
 	DAGParams *dagconfig.Params
 
-	// BestHeight defines the function to use to access the block height of
+	// DAGChainHeight defines the function to use to access the block height of
 	// the current best chain.
-	BestHeight func() uint64
+	DAGChainHeight func() uint64
 
 	// MedianTimePast defines the function to use in order to access the
 	// median time past calculated from the point-of-view of the current
@@ -1024,7 +1024,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rejectDupOrphans bo
 	}
 
 	// Add to transaction pool.
-	bestHeight := mp.cfg.BestHeight()
+	bestHeight := mp.cfg.DAGChainHeight()
 	txD, err := mp.addTransaction(tx, bestHeight, nextBlockBlueScore, txFee, parentsInPool)
 	if err != nil {
 		return nil, nil, err
