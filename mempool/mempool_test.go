@@ -109,6 +109,9 @@ type poolHarness struct {
 	txPool *TxPool
 }
 
+// txRelayFeeForTest defines a convenient relay fee amount to pay for test transactions
+var txRelayFeeForTest = util.Amount(calcMinRequiredTxRelayFee(1000, DefaultMinRelayTxFee))
+
 // CreateCoinbaseTx returns a coinbase transaction with the requested number of
 // outputs paying an appropriate subsidy based on the passed block blue score to the
 // address associated with the harness.  It automatically uses a standard
@@ -163,7 +166,7 @@ func (p *poolHarness) CreateSignedTxForSubnetwork(inputs []spendableOutpoint, nu
 	for _, input := range inputs {
 		totalInput += input.amount
 	}
-	totalInput -= DefaultMinRelayTxFee
+	totalInput -= txRelayFeeForTest
 	amountPerOutput := uint64(totalInput) / uint64(numOutputs)
 	remainder := uint64(totalInput) - amountPerOutput*uint64(numOutputs)
 
@@ -220,7 +223,7 @@ func (p *poolHarness) CreateTxChain(firstOutput spendableOutpoint, numTxns uint3
 		// Create the transaction using the previous transaction output
 		// and paying the full amount (minus fees) to the payment address
 		// associated with the harness.
-		spendableAmount = spendableAmount - DefaultMinRelayTxFee
+		spendableAmount = spendableAmount - txRelayFeeForTest
 
 		txIn := &wire.TxIn{
 			PreviousOutpoint: prevOutpoint,
@@ -479,7 +482,7 @@ func TestProcessTransaction(t *testing.T) {
 	harness := tc.harness
 
 	//Checks that a transaction cannot be added to the transaction pool if it's already there
-	tx, err := harness.createTx(spendableOuts[0], uint64(DefaultMinRelayTxFee), 1)
+	tx, err := harness.createTx(spendableOuts[0], uint64(txRelayFeeForTest), 1)
 	if err != nil {
 		t.Fatalf("unable to create transaction: %v", err)
 	}
@@ -764,7 +767,7 @@ func TestAddrIndex(t *testing.T) {
 	})
 	defer guard.Unpatch()
 
-	tx, err := harness.createTx(spendableOuts[0], uint64(DefaultMinRelayTxFee), 1)
+	tx, err := harness.createTx(spendableOuts[0], uint64(txRelayFeeForTest), 1)
 	if err != nil {
 		t.Fatalf("unable to create transaction: %v", err)
 	}
@@ -796,13 +799,13 @@ func TestDoubleSpends(t *testing.T) {
 	harness := tc.harness
 
 	//Add two transactions to the mempool
-	tx1, err := harness.createTx(spendableOuts[0], uint64(DefaultMinRelayTxFee), 1)
+	tx1, err := harness.createTx(spendableOuts[0], uint64(txRelayFeeForTest), 1)
 	if err != nil {
 		t.Fatalf("unable to create transaction: %v", err)
 	}
 	harness.txPool.ProcessTransaction(tx1, true, 0)
 
-	tx2, err := harness.createTx(spendableOuts[1], uint64(DefaultMinRelayTxFee)+1, 1)
+	tx2, err := harness.createTx(spendableOuts[1], uint64(txRelayFeeForTest)+1, 1)
 	if err != nil {
 		t.Fatalf("unable to create transaction: %v", err)
 	}
@@ -811,7 +814,7 @@ func TestDoubleSpends(t *testing.T) {
 	testPoolMembership(tc, tx2, false, true, false)
 
 	//Spends the same outpoint as tx2
-	tx3, err := harness.createTx(spendableOuts[0], uint64(DefaultMinRelayTxFee)+2, 1) //We put here different fee to create different transaction hash
+	tx3, err := harness.createTx(spendableOuts[0], uint64(txRelayFeeForTest)+2, 1) // We put here different fee to create different transaction hash
 	if err != nil {
 		t.Fatalf("unable to create transaction: %v", err)
 	}
@@ -862,7 +865,7 @@ func TestFetchTransaction(t *testing.T) {
 		t.Errorf("FetchTransaction: expected an error, not nil")
 	}
 
-	tx, err := harness.createTx(spendableOuts[0], uint64(DefaultMinRelayTxFee), 1)
+	tx, err := harness.createTx(spendableOuts[0], uint64(txRelayFeeForTest), 1)
 	if err != nil {
 		t.Fatalf("unable to create transaction: %v", err)
 	}
@@ -1647,8 +1650,9 @@ func TestHandleNewBlock(t *testing.T) {
 
 	// Create orphan transaction and add it to UTXO set
 	txID := blockTx1.ID()
+
 	orphanTx, err := harness.CreateSignedTx([]spendableOutpoint{{
-		amount:   util.Amount(2500000000) - DefaultMinRelayTxFee,
+		amount:   util.Amount(2500000000 - txRelayFeeForTest),
 		outpoint: wire.Outpoint{TxID: *txID, Index: 0},
 	}}, 1)
 	if err != nil {
