@@ -242,8 +242,8 @@ func TestCalcSequenceLock(t *testing.T) {
 	msgTx := wire.NewNativeMsgTx(wire.TxVersion, nil, []*wire.TxOut{{PkScript: nil, Value: 10}})
 	targetTx := util.NewTx(msgTx)
 	utxoSet := NewFullUTXOSet()
-	height := uint64(numBlocksToGenerate) - 4
-	if isAccepted, err := utxoSet.AddTx(targetTx.MsgTx(), height); err != nil {
+	blueScore := uint64(numBlocksToGenerate) - 4
+	if isAccepted, err := utxoSet.AddTx(targetTx.MsgTx(), blueScore); err != nil {
 		t.Fatalf("AddTx unexpectedly failed. Error: %s", err)
 	} else if !isAccepted {
 		t.Fatalf("AddTx unexpectedly didn't add tx %s", targetTx.ID())
@@ -481,7 +481,7 @@ func TestCalcSequenceLock(t *testing.T) {
 				test.name, seqLock.Seconds, test.want.Seconds)
 		}
 		if seqLock.BlockBlueScore != test.want.BlockBlueScore {
-			t.Fatalf("test '%s' got chain-height of %v want chain-height of %v ",
+			t.Fatalf("test '%s' got blue score of %v want blue score of %v ",
 				test.name, seqLock.BlockBlueScore, test.want.BlockBlueScore)
 		}
 	}

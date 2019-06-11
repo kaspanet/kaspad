@@ -412,9 +412,9 @@ func (dag *BlockDAG) calcSequenceLock(node *blockNode, utxoSet UTXOSet, tx *util
 			// This input requires a relative time lock expressed
 			// in seconds before it can be spent.  Therefore, we
 			// need to query for the block prior to the one in
-			// which this input was included within so we can
+			// which this input was accepted within so we can
 			// compute the past median time for the block prior to
-			// the one which included this referenced output.
+			// the one which accepted this referenced output.
 			blockNode := dag.oldestChainBlockWithBlueScoreGreaterThan(inputBlueScore).selectedParent
 			medianTime := blockNode.PastMedianTime()
 
@@ -1817,7 +1817,7 @@ func New(config *Config) (*BlockDAG, error) {
 			checkpoint := &config.Checkpoints[i]
 			if checkpoint.ChainHeight <= prevCheckpointHeight {
 				return nil, AssertError("blockdag.New " +
-					"checkpoints are not sorted by height")
+					"checkpoints are not sorted by chain height")
 			}
 
 			checkpointsByHeight[checkpoint.ChainHeight] = checkpoint
