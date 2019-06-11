@@ -415,7 +415,10 @@ func (dag *BlockDAG) calcSequenceLock(node *blockNode, utxoSet UTXOSet, tx *util
 			// which this input was accepted within so we can
 			// compute the past median time for the block prior to
 			// the one which accepted this referenced output.
-			blockNode := dag.oldestChainBlockWithBlueScoreGreaterThan(inputBlueScore).selectedParent
+			blockNode := node
+			for blockNode.selectedParent.blueScore > inputBlueScore {
+				blockNode = blockNode.selectedParent
+			}
 			medianTime := blockNode.PastMedianTime()
 
 			// Time based relative time-locks as defined by BIP 68
@@ -1268,14 +1271,14 @@ func (dag *BlockDAG) acceptingBlock(node *blockNode) (*blockNode, error) {
 }
 
 // oldestChainBlockWithBlueScoreGreaterThan finds the oldest chain block with a blue score
-// greater than blueScore
+// greater than blueScore. If no such block exists, this method returns nil
 func (dag *BlockDAG) oldestChainBlockWithBlueScoreGreaterThan(blueScore uint64) *blockNode {
 	chainBlockIndex := sort.Search(len(dag.virtual.selectedPathChainSlice), func(i int) bool {
 		selectedPathNode := dag.virtual.selectedPathChainSlice[i]
 		return selectedPathNode.blueScore > blueScore
 	})
 	if chainBlockIndex == len(dag.virtual.selectedPathChainSlice) {
-		chainBlockIndex = len(dag.virtual.selectedPathChainSlice) - 1
+		return nil
 	}
 	return dag.virtual.selectedPathChainSlice[chainBlockIndex]
 }
