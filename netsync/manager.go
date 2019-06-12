@@ -596,7 +596,7 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 		// update the chain state.
 		blockBlueScore, err := sm.dag.BlockBlueScoreByHash(blockHash)
 		if err != nil {
-			log.Errorf("Failed to get blue hash for block %s: %s", blockHash, err)
+			log.Errorf("Failed to get blue score for block %s: %s", blockHash, err)
 		}
 		sm.progressLogger.LogBlockBlueScore(bmsg.block, blockBlueScore)
 
