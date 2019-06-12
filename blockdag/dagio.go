@@ -635,7 +635,7 @@ func (dag *BlockDAG) deserializeBlockNode(blockRow []byte) (*blockNode, error) {
 
 // dbFetchBlockByNode uses an existing database transaction to retrieve the
 // raw block for the provided node, deserialize it, and return a util.Block
-// with the height set.
+// of it.
 func dbFetchBlockByNode(dbTx database.Tx, node *blockNode) (*util.Block, error) {
 	// Load the raw block bytes from the database.
 	blockBytes, err := dbTx.FetchBlock(node.hash)
@@ -643,7 +643,7 @@ func dbFetchBlockByNode(dbTx database.Tx, node *blockNode) (*util.Block, error) 
 		return nil, err
 	}
 
-	// Create the encapsulated block and set the height appropriately.
+	// Create the encapsulated block.
 	block, err := util.NewBlockFromBytes(blockBytes)
 	if err != nil {
 		return nil, err
@@ -698,7 +698,7 @@ func dbStoreBlockNode(dbTx database.Tx, node *blockNode) error {
 
 	// Write block header data to block index bucket.
 	blockIndexBucket := dbTx.Metadata().Bucket(blockIndexBucketName)
-	key := blockIndexKey(node.hash, uint32(node.chainHeight))
+	key := blockIndexKey(node.hash)
 	return blockIndexBucket.Put(key, value)
 }
 
@@ -716,22 +716,18 @@ func dbStoreBlock(dbTx database.Tx, block *util.Block) error {
 }
 
 // blockIndexKey generates the binary key for an entry in the block index
-// bucket. The key is composed of the block chain height encoded as a
-// big-endian 32-bit unsigned int followed by the 32 byte block hash.
-func blockIndexKey(blockHash *daghash.Hash, blockChainHeight uint32) []byte {
-	indexKey := make([]byte, daghash.HashSize+4)
-	binary.BigEndian.PutUint32(indexKey[0:4], blockChainHeight)
-	copy(indexKey[4:daghash.HashSize+4], blockHash[:])
+// bucket. The key is composed only of the 32 byte block hash.
+func blockIndexKey(blockHash *daghash.Hash) []byte {
+	indexKey := make([]byte, daghash.HashSize)
+	copy(indexKey[:], blockHash[:])
 	return indexKey
 }
 
-// BlockByHash returns the block from the main chain with the given hash with
-// the appropriate chain height set.
+// BlockByHash returns the block from the DAG with the given hash.
 //
 // This function is safe for concurrent access.
 func (dag *BlockDAG) BlockByHash(hash *daghash.Hash) (*util.Block, error) {
-	// Lookup the block hash in block index and ensure it is in the best
-	// chain.
+	// Lookup the block hash in block index and ensure it is in the DAG
 	node := dag.index.LookupNode(hash)
 	if node == nil {
 		str := fmt.Sprintf("block %s is not in the main chain", hash)

@@ -1810,21 +1810,21 @@ func New(config *Config) (*BlockDAG, error) {
 		return nil, AssertError("BlockDAG.New timesource is nil")
 	}
 
-	// Generate a checkpoint by height map from the provided checkpoints
-	// and assert the provided checkpoints are sorted by height as required.
-	var checkpointsByHeight map[uint64]*dagconfig.Checkpoint
-	var prevCheckpointHeight uint64
+	// Generate a checkpoint by chain height map from the provided checkpoints
+	// and assert the provided checkpoints are sorted by chain height as required.
+	var checkpointsByChainHeight map[uint64]*dagconfig.Checkpoint
+	var prevCheckpointChainHeight uint64
 	if len(config.Checkpoints) > 0 {
-		checkpointsByHeight = make(map[uint64]*dagconfig.Checkpoint)
+		checkpointsByChainHeight = make(map[uint64]*dagconfig.Checkpoint)
 		for i := range config.Checkpoints {
 			checkpoint := &config.Checkpoints[i]
-			if checkpoint.ChainHeight <= prevCheckpointHeight {
+			if checkpoint.ChainHeight <= prevCheckpointChainHeight {
 				return nil, AssertError("blockdag.New " +
 					"checkpoints are not sorted by chain height")
 			}
 
-			checkpointsByHeight[checkpoint.ChainHeight] = checkpoint
-			prevCheckpointHeight = checkpoint.ChainHeight
+			checkpointsByChainHeight[checkpoint.ChainHeight] = checkpoint
+			prevCheckpointChainHeight = checkpoint.ChainHeight
 		}
 	}
 
@@ -1835,7 +1835,7 @@ func New(config *Config) (*BlockDAG, error) {
 	index := newBlockIndex(config.DB, params)
 	dag := BlockDAG{
 		checkpoints:              config.Checkpoints,
-		checkpointsByChainHeight: checkpointsByHeight,
+		checkpointsByChainHeight: checkpointsByChainHeight,
 		db:                       config.DB,
 		dagParams:                params,
 		timeSource:               config.TimeSource,

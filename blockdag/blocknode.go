@@ -258,5 +258,5 @@ func (node *blockNode) finalityScore() uint64 {
 
 // String returns a string that contains the block hash and chain height.
 func (node blockNode) String() string {
-	return fmt.Sprintf("%s (%d)", node.hash, node.chainHeight)
+	return fmt.Sprintf("blockNode (hash: %s)", node.hash)
 }
