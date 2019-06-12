@@ -594,7 +594,11 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 	} else {
 		// When the block is not an orphan, log information about it and
 		// update the chain state.
-		sm.progressLogger.LogBlockChainHeight(bmsg.block)
+		blockBlueScore, err := sm.dag.BlockBlueScoreByHash(blockHash)
+		if err != nil {
+			log.Errorf("Failed to get blue hash for block %s: %s", blockHash, err)
+		}
+		sm.progressLogger.LogBlockBlueScore(bmsg.block, blockBlueScore)
 
 		// Clear the rejected transactions.
 		sm.rejectedTxns = make(map[daghash.TxID]struct{})

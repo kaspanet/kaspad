@@ -1187,6 +1187,16 @@ func (dag *BlockDAG) GetUTXOEntry(outpoint wire.Outpoint) (*UTXOEntry, bool) {
 	return dag.virtual.utxoSet.get(outpoint)
 }
 
+// BlockBlueScoreByHash returns the blue score of a block with the given hash.
+func (dag *BlockDAG) BlockBlueScoreByHash(hash *daghash.Hash) (uint64, error) {
+	node := dag.index.LookupNode(hash)
+	if node == nil {
+		return 0, fmt.Errorf("block %s is unknown", hash)
+	}
+
+	return node.blueScore, nil
+}
+
 // BlockConfirmationsByHash returns the confirmations number for a block with the
 // given hash. See blockConfirmations for further details.
 func (dag *BlockDAG) BlockConfirmationsByHash(hash *daghash.Hash) (uint64, error) {
