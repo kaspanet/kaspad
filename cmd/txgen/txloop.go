@@ -30,13 +30,13 @@ const (
 	// PkScript bytes.
 	outputSize uint64 = 8 + 1 + 25
 
-	txLifeSpan                                     = 1000
-	requiredConfirmations                          = 10
+	txLifeSpan                                  = 1000
+	requiredConfirmations                       = 10
 	approximateConfirmationsForCoinbaseMaturity = 150
-	searchRawTransactionResultCount                = 1000
-	searchRawTransactionMaxResults                 = 5000
-	txMaxQueueLength                               = 10000
-	maxResendDepth                                 = 500
+	searchRawTransactionResultCount             = 1000
+	searchRawTransactionMaxResults              = 5000
+	txMaxQueueLength                            = 10000
+	maxResendDepth                              = 500
 )
 
 type walletTransaction struct {
