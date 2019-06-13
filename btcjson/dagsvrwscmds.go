@@ -80,9 +80,9 @@ func NewStopNotifyNewTransactionsCmd() *StopNotifyNewTransactionsCmd {
 	return &StopNotifyNewTransactionsCmd{}
 }
 
-// OutPoint describes a transaction outpoint that will be marshalled to and
+// Outpoint describes a transaction outpoint that will be marshalled to and
 // from JSON.
-type OutPoint struct {
+type Outpoint struct {
 	TxID  string `json:"txid"`
 	Index uint32 `json:"index"`
 }
@@ -95,7 +95,7 @@ type OutPoint struct {
 type LoadTxFilterCmd struct {
 	Reload    bool
 	Addresses []string
-	OutPoints []OutPoint
+	Outpoints []Outpoint
 }
 
 // NewLoadTxFilterCmd returns a new instance which can be used to issue a
@@ -103,11 +103,11 @@ type LoadTxFilterCmd struct {
 //
 // NOTE: This is a btcd extension ported from github.com/decred/dcrd/dcrjson
 // and requires a websocket connection.
-func NewLoadTxFilterCmd(reload bool, addresses []string, outPoints []OutPoint) *LoadTxFilterCmd {
+func NewLoadTxFilterCmd(reload bool, addresses []string, outpoints []Outpoint) *LoadTxFilterCmd {
 	return &LoadTxFilterCmd{
 		Reload:    reload,
 		Addresses: addresses,
-		OutPoints: outPoints,
+		Outpoints: outpoints,
 	}
 }
 

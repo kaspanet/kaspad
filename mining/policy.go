@@ -52,7 +52,7 @@ func calcInputValueAge(tx *wire.MsgTx, utxoSet blockdag.UTXOSet, nextBlockHeight
 	for _, txIn := range tx.TxIn {
 		// Don't attempt to accumulate the total input age if the
 		// referenced transaction output doesn't exist.
-		entry, ok := utxoSet.Get(txIn.PreviousOutPoint)
+		entry, ok := utxoSet.Get(txIn.PreviousOutpoint)
 		if ok {
 			// Inputs with dependencies currently in the mempool
 			// have their block height set to a special constant.

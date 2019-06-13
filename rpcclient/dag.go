@@ -594,6 +594,41 @@ func (c *Client) EstimateFee(numBlocks int64) (float64, error) {
 	return c.EstimateFeeAsync(numBlocks).Receive()
 }
 
+// FutureGetSubnetworkResult is a future promise to deliver the result of a
+// GetSubnetworkAsync RPC invocation (or an applicable error).
+type FutureGetSubnetworkResult chan *response
+
+func (r FutureGetSubnetworkResult) Receive() (*btcjson.GetSubnetworkResult, error) {
+	res, err := receiveFuture(r)
+	if err != nil {
+		return nil, err
+	}
+
+	// Unmarshal result as a getSubnetwork result object.
+	var getSubnetworkResult *btcjson.GetSubnetworkResult
+	err = json.Unmarshal(res, &getSubnetworkResult)
+	if err != nil {
+		return nil, err
+	}
+
+	return getSubnetworkResult, nil
+}
+
+// GetSubnetworkAsync returns an instance of a type that can be used to get the result
+// of the RPC at some future time by invoking the Receive function on the
+// returned instance.
+//
+// See GetSubnetwork for the blocking version and more details.
+func (c *Client) GetSubnetworkAsync(subnetworkID string) FutureGetSubnetworkResult {
+	cmd := btcjson.NewGetSubnetworkCmd(subnetworkID)
+	return c.sendCmd(cmd)
+}
+
+// GetSubnetwork provides information about a subnetwork given its ID.
+func (c *Client) GetSubnetwork(subnetworkID string) (*btcjson.GetSubnetworkResult, error) {
+	return c.GetSubnetworkAsync(subnetworkID).Receive()
+}
+
 // FutureGetTxOutResult is a future promise to deliver the result of a
 // GetTxOutAsync RPC invocation (or an applicable error).
 type FutureGetTxOutResult chan *response

@@ -130,7 +130,7 @@ func NewMsgTxWithInputCoins(txVersion int32, inputCoins Coins) *wire.MsgTx {
 	txIn := make([]*wire.TxIn, len(coins))
 	for i, coin := range coins {
 		txIn[i] = &wire.TxIn{
-			PreviousOutPoint: wire.OutPoint{
+			PreviousOutpoint: wire.Outpoint{
 				TxID:  *coin.ID(),
 				Index: coin.Index(),
 			},

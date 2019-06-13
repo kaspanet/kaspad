@@ -198,7 +198,7 @@ func TestChainedTransactions(t *testing.T) {
 		t.Fatalf("Failed to build signature script: %s", err)
 	}
 	txIn := &wire.TxIn{
-		PreviousOutPoint: wire.OutPoint{TxID: *cbTx.TxID(), Index: 0},
+		PreviousOutpoint: wire.Outpoint{TxID: *cbTx.TxID(), Index: 0},
 		SignatureScript:  signatureScript,
 		Sequence:         wire.MaxTxInSequenceNum,
 	}
@@ -209,7 +209,7 @@ func TestChainedTransactions(t *testing.T) {
 	tx := wire.NewNativeMsgTx(wire.TxVersion, []*wire.TxIn{txIn}, []*wire.TxOut{txOut})
 
 	chainedTxIn := &wire.TxIn{
-		PreviousOutPoint: wire.OutPoint{TxID: *tx.TxID(), Index: 0},
+		PreviousOutpoint: wire.Outpoint{TxID: *tx.TxID(), Index: 0},
 		SignatureScript:  signatureScript,
 		Sequence:         wire.MaxTxInSequenceNum,
 	}
@@ -245,7 +245,7 @@ func TestChainedTransactions(t *testing.T) {
 	}
 
 	nonChainedTxIn := &wire.TxIn{
-		PreviousOutPoint: wire.OutPoint{TxID: *cbTx.TxID(), Index: 0},
+		PreviousOutpoint: wire.Outpoint{TxID: *cbTx.TxID(), Index: 0},
 		SignatureScript:  signatureScript,
 		Sequence:         wire.MaxTxInSequenceNum,
 	}
@@ -316,7 +316,7 @@ func TestGasLimit(t *testing.T) {
 	cbTxID := fundsBlock.Transactions[0].TxID()
 
 	tx1In := &wire.TxIn{
-		PreviousOutPoint: *wire.NewOutPoint(cbTxID, 0),
+		PreviousOutpoint: *wire.NewOutpoint(cbTxID, 0),
 		Sequence:         wire.MaxTxInSequenceNum,
 		SignatureScript:  signatureScript,
 	}
@@ -327,7 +327,7 @@ func TestGasLimit(t *testing.T) {
 	tx1 := wire.NewSubnetworkMsgTx(wire.TxVersion, []*wire.TxIn{tx1In}, []*wire.TxOut{tx1Out}, subnetworkID, 10000, []byte{})
 
 	tx2In := &wire.TxIn{
-		PreviousOutPoint: *wire.NewOutPoint(cbTxID, 1),
+		PreviousOutpoint: *wire.NewOutpoint(cbTxID, 1),
 		Sequence:         wire.MaxTxInSequenceNum,
 		SignatureScript:  signatureScript,
 	}
@@ -357,7 +357,7 @@ func TestGasLimit(t *testing.T) {
 	}
 
 	overflowGasTxIn := &wire.TxIn{
-		PreviousOutPoint: *wire.NewOutPoint(cbTxID, 1),
+		PreviousOutpoint: *wire.NewOutpoint(cbTxID, 1),
 		Sequence:         wire.MaxTxInSequenceNum,
 		SignatureScript:  signatureScript,
 	}
@@ -389,7 +389,7 @@ func TestGasLimit(t *testing.T) {
 
 	nonExistentSubnetwork := &subnetworkid.SubnetworkID{123}
 	nonExistentSubnetworkTxIn := &wire.TxIn{
-		PreviousOutPoint: *wire.NewOutPoint(cbTxID, 0),
+		PreviousOutpoint: *wire.NewOutpoint(cbTxID, 0),
 		Sequence:         wire.MaxTxInSequenceNum,
 		SignatureScript:  signatureScript,
 	}

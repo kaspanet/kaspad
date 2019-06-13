@@ -491,10 +491,23 @@ type GetRawTransactionCmd struct {
 //
 // The parameters which are pointers indicate they are optional.  Passing nil
 // for optional parameters will use the default value.
-func NewGetRawTransactionCmd(txHash string, verbose *int) *GetRawTransactionCmd {
+func NewGetRawTransactionCmd(txID string, verbose *int) *GetRawTransactionCmd {
 	return &GetRawTransactionCmd{
-		TxID:    txHash,
+		TxID:    txID,
 		Verbose: verbose,
+	}
+}
+
+// GetSubnetworkCmd defines the getSubnetwork JSON-RPC command.
+type GetSubnetworkCmd struct {
+	SubnetworkID string
+}
+
+// NewGetSubnetworkCmd returns a new instance which can be used to issue a
+// getSubnetworkCmd command.
+func NewGetSubnetworkCmd(subnetworkID string) *GetSubnetworkCmd {
+	return &GetSubnetworkCmd{
+		SubnetworkID: subnetworkID,
 	}
 }
 
@@ -792,6 +805,7 @@ func init() {
 	MustRegisterCmd("getPeerInfo", (*GetPeerInfoCmd)(nil), flags)
 	MustRegisterCmd("getRawMempool", (*GetRawMempoolCmd)(nil), flags)
 	MustRegisterCmd("getRawTransaction", (*GetRawTransactionCmd)(nil), flags)
+	MustRegisterCmd("getSubnetwork", (*GetSubnetworkCmd)(nil), flags)
 	MustRegisterCmd("getTxOut", (*GetTxOutCmd)(nil), flags)
 	MustRegisterCmd("getTxOutProof", (*GetTxOutProofCmd)(nil), flags)
 	MustRegisterCmd("getTxOutSetInfo", (*GetTxOutSetInfoCmd)(nil), flags)

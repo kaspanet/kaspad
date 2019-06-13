@@ -143,6 +143,7 @@ type GetBlockTemplateResult struct {
 	SizeLimit            int64                      `json:"sizeLimit,omitempty"`
 	Transactions         []GetBlockTemplateResultTx `json:"transactions"`
 	AcceptedIDMerkleRoot string                     `json:"acceptedIdMerkleRoot"`
+	UTXOCommitment       string                     `json:"utxoCommitment"`
 	Version              int32                      `json:"version"`
 	CoinbaseAux          *GetBlockTemplateResultAux `json:"coinbaseAux,omitempty"`
 	CoinbaseTxn          *GetBlockTemplateResultTx  `json:"coinbaseTxn,omitempty"`
@@ -276,10 +277,16 @@ type ScriptPubKeyResult struct {
 	Addresses []string `json:"addresses,omitempty"`
 }
 
+// GetSubnetworkResult models the data from the getSubnetwork command.
+type GetSubnetworkResult struct {
+	GasLimit uint64 `json:"gasLimit"`
+}
+
 // GetTxOutResult models the data from the gettxout command.
 type GetTxOutResult struct {
 	BestBlock     string             `json:"bestBlock"`
-	Confirmations int64              `json:"confirmations"`
+	Confirmations *uint64            `json:"confirmations,omitempty"`
+	IsInMempool   bool               `json:"isInMempool"`
 	Value         float64            `json:"value"`
 	ScriptPubKey  ScriptPubKeyResult `json:"scriptPubKey"`
 	Coinbase      bool               `json:"coinbase"`
@@ -455,8 +462,9 @@ type TxRawResult struct {
 	Vin           []Vin   `json:"vin"`
 	Vout          []Vout  `json:"vout"`
 	BlockHash     string  `json:"blockHash,omitempty"`
-	Confirmations uint64  `json:"confirmations,omitempty"`
-	AcceptedBy    *string `json:"acceptedBy"`
+	Confirmations *uint64 `json:"confirmations,omitempty"`
+	AcceptedBy    *string `json:"acceptedBy,omitempty"`
+	IsInMempool   bool    `json:"isInMempool"`
 	Time          uint64  `json:"time,omitempty"`
 	BlockTime     uint64  `json:"blockTime,omitempty"`
 }
@@ -473,7 +481,8 @@ type SearchRawTransactionsResult struct {
 	Vin           []VinPrevOut `json:"vin"`
 	Vout          []Vout       `json:"vout"`
 	BlockHash     string       `json:"blockHash,omitempty"`
-	Confirmations uint64       `json:"confirmations,omitempty"`
+	Confirmations *uint64      `json:"confirmations,omitempty"`
+	IsInMempool   bool         `json:"isInMempool"`
 	Time          uint64       `json:"time,omitempty"`
 	Blocktime     uint64       `json:"blockTime,omitempty"`
 }

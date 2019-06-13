@@ -420,8 +420,8 @@ func TestFilterBloomMatch(t *testing.T) {
 		t.Errorf("TestFilterBloomMatch NewHashFromStr failed: %v\n", err)
 		return
 	}
-	outpoint := wire.NewOutPoint(txID, 0)
-	f.AddOutPoint(outpoint)
+	outpoint := wire.NewOutpoint(txID, 0)
+	f.AddOutpoint(outpoint)
 	if !f.MatchTxAndUpdate(tx) {
 		t.Errorf("TestFilterBloomMatch didn't match outpoint %s", inputStr)
 	}
@@ -457,8 +457,8 @@ func TestFilterBloomMatch(t *testing.T) {
 		t.Errorf("TestFilterBloomMatch NewHashFromStr failed: %v\n", err)
 		return
 	}
-	outpoint = wire.NewOutPoint(txID, 1)
-	f.AddOutPoint(outpoint)
+	outpoint = wire.NewOutpoint(txID, 1)
+	f.AddOutpoint(outpoint)
 	if f.MatchTxAndUpdate(tx) {
 		t.Errorf("TestFilterBloomMatch matched outpoint %s", inputStr)
 	}
@@ -470,8 +470,8 @@ func TestFilterBloomMatch(t *testing.T) {
 		t.Errorf("TestFilterBloomMatch NewHashFromStr failed: %v\n", err)
 		return
 	}
-	outpoint = wire.NewOutPoint(txID, 0)
-	f.AddOutPoint(outpoint)
+	outpoint = wire.NewOutpoint(txID, 0)
+	f.AddOutpoint(outpoint)
 	if f.MatchTxAndUpdate(tx) {
 		t.Errorf("TestFilterBloomMatch matched outpoint %s", inputStr)
 	}
@@ -506,9 +506,9 @@ func TestFilterInsertUpdateNone(t *testing.T) {
 		t.Errorf("TestFilterInsertUpdateNone NewHashFromStr failed: %v", err)
 		return
 	}
-	outpoint := wire.NewOutPoint(txID, 0)
+	outpoint := wire.NewOutpoint(txID, 0)
 
-	if f.MatchesOutPoint(outpoint) {
+	if f.MatchesOutpoint(outpoint) {
 		t.Errorf("TestFilterInsertUpdateNone matched outpoint %s", inputStr)
 		return
 	}
@@ -519,9 +519,9 @@ func TestFilterInsertUpdateNone(t *testing.T) {
 		t.Errorf("TestFilterInsertUpdateNone NewHashFromStr failed: %v", err)
 		return
 	}
-	outpoint = wire.NewOutPoint(txID, 0)
+	outpoint = wire.NewOutpoint(txID, 0)
 
-	if f.MatchesOutPoint(outpoint) {
+	if f.MatchesOutpoint(outpoint) {
 		t.Errorf("TestFilterInsertUpdateNone matched outpoint %s", inputStr)
 		return
 	}
@@ -836,8 +836,8 @@ func TestFilterInsertP2PubKeyOnly(t *testing.T) {
 		t.Errorf("TestMerkleBlockP2PubKeyOnly NewHashFromStr failed: %v", err)
 		return
 	}
-	outpoint := wire.NewOutPoint(txID, 0)
-	if !f.MatchesOutPoint(outpoint) {
+	outpoint := wire.NewOutpoint(txID, 0)
+	if !f.MatchesOutpoint(outpoint) {
 		t.Errorf("TestMerkleBlockP2PubKeyOnly didn't match the generation "+
 			"outpoint %s", inputStr)
 		return
@@ -850,8 +850,8 @@ func TestFilterInsertP2PubKeyOnly(t *testing.T) {
 		t.Errorf("TestMerkleBlockP2PubKeyOnly NewHashFromStr failed: %v", err)
 		return
 	}
-	outpoint = wire.NewOutPoint(txID, 0)
-	if f.MatchesOutPoint(outpoint) {
+	outpoint = wire.NewOutpoint(txID, 0)
+	if f.MatchesOutpoint(outpoint) {
 		t.Errorf("TestMerkleBlockP2PubKeyOnly matched outpoint %s", inputStr)
 		return
 	}

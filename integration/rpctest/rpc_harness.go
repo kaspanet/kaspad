@@ -342,7 +342,7 @@ func (h *Harness) ConfirmedBalance() util.Amount {
 //
 // This function is safe for concurrent access.
 func (h *Harness) SendOutputs(targetOutputs []*wire.TxOut,
-	feeRate util.Amount) (*daghash.Hash, error) {
+	feeRate util.Amount) (*daghash.TxID, error) {
 
 	return h.wallet.SendOutputs(targetOutputs, feeRate)
 }

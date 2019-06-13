@@ -175,10 +175,10 @@ type TxPool struct {
 	cfg           Config
 	pool          map[daghash.TxID]*TxDesc
 	depends       map[daghash.TxID]*TxDesc
-	dependsByPrev map[wire.OutPoint]map[daghash.TxID]*TxDesc
+	dependsByPrev map[wire.Outpoint]map[daghash.TxID]*TxDesc
 	orphans       map[daghash.TxID]*orphanTx
-	orphansByPrev map[wire.OutPoint]map[daghash.TxID]*util.Tx
-	outpoints     map[wire.OutPoint]*util.Tx
+	orphansByPrev map[wire.Outpoint]map[daghash.TxID]*util.Tx
+	outpoints     map[wire.Outpoint]*util.Tx
 	pennyTotal    float64 // exponentially decaying total for penny spends.
 	lastPennyUnix int64   // unix time of last ``penny spend''
 
@@ -208,21 +208,21 @@ func (mp *TxPool) removeOrphan(tx *util.Tx, removeRedeemers bool) {
 
 	// Remove the reference from the previous orphan index.
 	for _, txIn := range otx.tx.MsgTx().TxIn {
-		orphans, exists := mp.orphansByPrev[txIn.PreviousOutPoint]
+		orphans, exists := mp.orphansByPrev[txIn.PreviousOutpoint]
 		if exists {
 			delete(orphans, *txID)
 
 			// Remove the map entry altogether if there are no
 			// longer any orphans which depend on it.
 			if len(orphans) == 0 {
-				delete(mp.orphansByPrev, txIn.PreviousOutPoint)
+				delete(mp.orphansByPrev, txIn.PreviousOutpoint)
 			}
 		}
 	}
 
 	// Remove any orphans that redeem outputs from this one if requested.
 	if removeRedeemers {
-		prevOut := wire.OutPoint{TxID: *txID}
+		prevOut := wire.Outpoint{TxID: *txID}
 		for txOutIdx := range tx.MsgTx().TxOut {
 			prevOut.Index = uint32(txOutIdx)
 			for _, orphan := range mp.orphansByPrev[prevOut] {
@@ -335,11 +335,11 @@ func (mp *TxPool) addOrphan(tx *util.Tx, tag Tag) {
 		expiration: time.Now().Add(orphanTTL),
 	}
 	for _, txIn := range tx.MsgTx().TxIn {
-		if _, exists := mp.orphansByPrev[txIn.PreviousOutPoint]; !exists {
-			mp.orphansByPrev[txIn.PreviousOutPoint] =
+		if _, exists := mp.orphansByPrev[txIn.PreviousOutpoint]; !exists {
+			mp.orphansByPrev[txIn.PreviousOutpoint] =
 				make(map[daghash.TxID]*util.Tx)
 		}
-		mp.orphansByPrev[txIn.PreviousOutPoint][*tx.ID()] = tx
+		mp.orphansByPrev[txIn.PreviousOutpoint][*tx.ID()] = tx
 	}
 
 	log.Debugf("Stored orphan transaction %s (total: %d)", tx.ID(),
@@ -384,7 +384,7 @@ func (mp *TxPool) maybeAddOrphan(tx *util.Tx, tag Tag) error {
 func (mp *TxPool) removeOrphanDoubleSpends(tx *util.Tx) {
 	msgTx := tx.MsgTx()
 	for _, txIn := range msgTx.TxIn {
-		for _, orphan := range mp.orphansByPrev[txIn.PreviousOutPoint] {
+		for _, orphan := range mp.orphansByPrev[txIn.PreviousOutpoint] {
 			mp.removeOrphan(orphan, true)
 		}
 	}
@@ -483,16 +483,51 @@ func (mp *TxPool) HaveTransaction(hash *daghash.TxID) bool {
 	return haveTx
 }
 
+// removeTransactions is the internal function which implements the public
+// RemoveTransactions.  See the comment for RemoveTransactions for more details.
+//
+// This method, in contrast to removeTransaction (singular), creates one utxoDiff
+// and calls removeTransactionWithDiff on it for every transaction. This is an
+// optimization to save us a good amount of allocations (specifically in
+// UTXODiff.WithDiff) every time we accept a block.
+//
+// This function MUST be called with the mempool lock held (for writes).
+func (mp *TxPool) removeTransactions(txs []*util.Tx) error {
+	diff := blockdag.NewUTXODiff()
+
+	for _, tx := range txs {
+		txID := tx.ID()
+
+		if _, exists := mp.fetchTransaction(txID); !exists {
+			continue
+		}
+
+		err := mp.removeTransactionWithDiff(tx, diff, false)
+		if err != nil {
+			return err
+		}
+	}
+
+	var err error
+	mp.mpUTXOSet, err = mp.mpUTXOSet.WithDiff(diff)
+	if err != nil {
+		return err
+	}
+	atomic.StoreInt64(&mp.lastUpdated, time.Now().Unix())
+
+	return nil
+}
+
 // removeTransaction is the internal function which implements the public
 // RemoveTransaction.  See the comment for RemoveTransaction for more details.
 //
 // This function MUST be called with the mempool lock held (for writes).
-func (mp *TxPool) removeTransaction(tx *util.Tx, removeRedeemers bool, restoreInputs bool) error {
+func (mp *TxPool) removeTransaction(tx *util.Tx, removeDependants bool, restoreInputs bool) error {
 	txID := tx.ID()
-	if removeRedeemers {
+	if removeDependants {
 		// Remove any transactions which rely on this one.
 		for i := uint32(0); i < uint32(len(tx.MsgTx().TxOut)); i++ {
-			prevOut := wire.OutPoint{TxID: *txID, Index: i}
+			prevOut := wire.Outpoint{TxID: *txID, Index: i}
 			if txRedeemer, exists := mp.outpoints[prevOut]; exists {
 				err := mp.removeTransaction(txRedeemer, true, false)
 				if err != nil {
@@ -502,104 +537,152 @@ func (mp *TxPool) removeTransaction(tx *util.Tx, removeRedeemers bool, restoreIn
 		}
 	}
 
-	msgTx := tx.MsgTx()
+	if _, exists := mp.fetchTransaction(txID); !exists {
+		return nil
+	}
 
-	// Remove the transaction if needed.
-	if txDesc, exists := mp.fetchTransaction(txID); exists {
-		// Remove unconfirmed address index entries associated with the
-		// transaction if enabled.
-		if mp.cfg.AddrIndex != nil {
-			mp.cfg.AddrIndex.RemoveUnconfirmedTx(txID)
+	diff := blockdag.NewUTXODiff()
+	err := mp.removeTransactionWithDiff(tx, diff, restoreInputs)
+	if err != nil {
+		return err
+	}
+
+	mp.mpUTXOSet, err = mp.mpUTXOSet.WithDiff(diff)
+	if err != nil {
+		return err
+	}
+	atomic.StoreInt64(&mp.lastUpdated, time.Now().Unix())
+
+	return nil
+}
+
+// removeTransactionWithDiff removes the transaction tx from the mempool while
+// updating the UTXODiff diff with appropriate changes. diff is later meant to
+// be withDiff'd against the mempool UTXOSet to update it.
+//
+// This method assumes that tx exists in the mempool.
+func (mp *TxPool) removeTransactionWithDiff(tx *util.Tx, diff *blockdag.UTXODiff, restoreInputs bool) error {
+	txID := tx.ID()
+
+	// Remove unconfirmed address index entries associated with the
+	// transaction if enabled.
+	if mp.cfg.AddrIndex != nil {
+		mp.cfg.AddrIndex.RemoveUnconfirmedTx(txID)
+	}
+
+	err := mp.removeTransactionUTXOEntriesFromDiff(tx, diff)
+	if err != nil {
+		return fmt.Errorf("could not remove UTXOEntry from diff: %s", err)
+	}
+
+	err = mp.markTransactionOutputsUnspent(tx, diff, restoreInputs)
+	if err != nil {
+		return fmt.Errorf("could not mark transaction output as unspent: %s", err)
+	}
+
+	txDesc, _ := mp.fetchTransaction(txID)
+	if txDesc.depCount == 0 {
+		delete(mp.pool, *txID)
+	} else {
+		delete(mp.depends, *txID)
+	}
+
+	mp.processRemovedTransactionDependencies(tx)
+
+	return nil
+}
+
+// removeTransactionUTXOEntriesFromDiff removes tx's UTXOEntries from the diff
+func (mp *TxPool) removeTransactionUTXOEntriesFromDiff(tx *util.Tx, diff *blockdag.UTXODiff) error {
+	for idx := range tx.MsgTx().TxOut {
+		outpoint := *wire.NewOutpoint(tx.ID(), uint32(idx))
+		entry, exists := mp.mpUTXOSet.Get(outpoint)
+		if exists {
+			err := diff.RemoveEntry(outpoint, entry)
+			if err != nil {
+				return err
+			}
 		}
+	}
+	return nil
+}
 
-		diff := blockdag.NewUTXODiff()
-
-		for idx := range msgTx.TxOut {
-			outPoint := *wire.NewOutPoint(txID, uint32(idx))
-			entry, exists := mp.mpUTXOSet.Get(outPoint)
-			if exists {
-				err := diff.RemoveEntry(outPoint, entry)
+// markTransactionOutputsUnspent updates the mempool so that tx's TXOs are unspent
+// Iff restoreInputs is true then the inputs are restored back into the supplied diff
+func (mp *TxPool) markTransactionOutputsUnspent(tx *util.Tx, diff *blockdag.UTXODiff, restoreInputs bool) error {
+	for _, txIn := range tx.MsgTx().TxIn {
+		if restoreInputs {
+			if prevTxDesc, exists := mp.pool[txIn.PreviousOutpoint.TxID]; exists {
+				prevOut := prevTxDesc.Tx.MsgTx().TxOut[txIn.PreviousOutpoint.Index]
+				entry := blockdag.NewUTXOEntry(prevOut, false, blockdag.UnminedChainHeight)
+				err := diff.AddEntry(txIn.PreviousOutpoint, entry)
+				if err != nil {
+					return err
+				}
+			}
+			if prevTxDesc, exists := mp.depends[txIn.PreviousOutpoint.TxID]; exists {
+				prevOut := prevTxDesc.Tx.MsgTx().TxOut[txIn.PreviousOutpoint.Index]
+				entry := blockdag.NewUTXOEntry(prevOut, false, blockdag.UnminedChainHeight)
+				err := diff.AddEntry(txIn.PreviousOutpoint, entry)
 				if err != nil {
 					return err
 				}
 			}
 		}
-
-		// Mark the referenced outpoints as unspent by the pool.
-		for _, txIn := range msgTx.TxIn {
-			if restoreInputs {
-				if prevTxDesc, exists := mp.pool[txIn.PreviousOutPoint.TxID]; exists {
-					prevOut := prevTxDesc.Tx.MsgTx().TxOut[txIn.PreviousOutPoint.Index]
-					entry := blockdag.NewUTXOEntry(prevOut, false, blockdag.UnminedChainHeight)
-					err := diff.AddEntry(txIn.PreviousOutPoint, entry)
-					if err != nil {
-						return err
-					}
-				}
-				if prevTxDesc, exists := mp.depends[txIn.PreviousOutPoint.TxID]; exists {
-					prevOut := prevTxDesc.Tx.MsgTx().TxOut[txIn.PreviousOutPoint.Index]
-					entry := blockdag.NewUTXOEntry(prevOut, false, blockdag.UnminedChainHeight)
-					err := diff.AddEntry(txIn.PreviousOutPoint, entry)
-					if err != nil {
-						return err
-					}
-				}
-			}
-			delete(mp.outpoints, txIn.PreviousOutPoint)
-		}
-
-		if txDesc.depCount == 0 {
-			delete(mp.pool, *txID)
-		} else {
-			delete(mp.depends, *txID)
-		}
-
-		// Process dependent transactions
-		prevOut := wire.OutPoint{TxID: *txID}
-		for txOutIdx := range msgTx.TxOut {
-			// Skip to the next available output if there are none.
-			prevOut.Index = uint32(txOutIdx)
-			depends, exists := mp.dependsByPrev[prevOut]
-			if !exists {
-				continue
-			}
-
-			// Move independent transactions into main pool
-			for _, txD := range depends {
-				txD.depCount--
-				if txD.depCount == 0 {
-					// Transaction may be already removed by recursive calls, if removeRedeemers is true.
-					// So avoid moving it into main pool
-					if _, ok := mp.depends[*txD.Tx.ID()]; ok {
-						delete(mp.depends, *txD.Tx.ID())
-						mp.pool[*txD.Tx.ID()] = txD
-					}
-				}
-			}
-			delete(mp.dependsByPrev, prevOut)
-		}
-
-		var err error
-		mp.mpUTXOSet, err = mp.mpUTXOSet.WithDiff(diff)
-		if err != nil {
-			return err
-		}
-		atomic.StoreInt64(&mp.lastUpdated, time.Now().Unix())
+		delete(mp.outpoints, txIn.PreviousOutpoint)
 	}
 	return nil
 }
 
+// processRemovedTransactionDependencies processes the dependencies of a
+// transaction tx that was just now removed from the mempool
+func (mp *TxPool) processRemovedTransactionDependencies(tx *util.Tx) {
+	prevOut := wire.Outpoint{TxID: *tx.ID()}
+	for txOutIdx := range tx.MsgTx().TxOut {
+		// Skip to the next available output if there are none.
+		prevOut.Index = uint32(txOutIdx)
+		depends, exists := mp.dependsByPrev[prevOut]
+		if !exists {
+			continue
+		}
+
+		// Move independent transactions into main pool
+		for _, txD := range depends {
+			txD.depCount--
+			if txD.depCount == 0 {
+				// Transaction may be already removed by recursive calls, if removeRedeemers is true.
+				// So avoid moving it into main pool
+				if _, ok := mp.depends[*txD.Tx.ID()]; ok {
+					delete(mp.depends, *txD.Tx.ID())
+					mp.pool[*txD.Tx.ID()] = txD
+				}
+			}
+		}
+		delete(mp.dependsByPrev, prevOut)
+	}
+}
+
 // RemoveTransaction removes the passed transaction from the mempool. When the
-// removeRedeemers flag is set, any transactions that redeem outputs from the
-// removed transaction will also be removed recursively from the mempool, as
-// they would otherwise become orphans.
+// removeDependants flag is set, any transactions that depend on the removed
+// transaction (that is to say, redeem outputs from it) will also be removed
+// recursively from the mempool, as they would otherwise become orphans.
 //
 // This function is safe for concurrent access.
-func (mp *TxPool) RemoveTransaction(tx *util.Tx, removeRedeemers bool, restoreInputs bool) error {
+func (mp *TxPool) RemoveTransaction(tx *util.Tx, removeDependants bool, restoreInputs bool) error {
 	// Protect concurrent access.
 	mp.mtx.Lock()
 	defer mp.mtx.Unlock()
-	return mp.removeTransaction(tx, removeRedeemers, restoreInputs)
+	return mp.removeTransaction(tx, removeDependants, restoreInputs)
+}
+
+// RemoveTransactions removes the passed transactions from the mempool.
+//
+// This function is safe for concurrent access.
+func (mp *TxPool) RemoveTransactions(txs []*util.Tx) error {
+	// Protect concurrent access.
+	mp.mtx.Lock()
+	defer mp.mtx.Unlock()
+	return mp.removeTransactions(txs)
 }
 
 // RemoveDoubleSpends removes all transactions which spend outputs spent by the
@@ -614,7 +697,7 @@ func (mp *TxPool) RemoveDoubleSpends(tx *util.Tx) {
 	mp.mtx.Lock()
 	defer mp.mtx.Unlock()
 	for _, txIn := range tx.MsgTx().TxIn {
-		if txRedeemer, ok := mp.outpoints[txIn.PreviousOutPoint]; ok {
+		if txRedeemer, ok := mp.outpoints[txIn.PreviousOutpoint]; ok {
 			if !txRedeemer.ID().IsEqual(tx.ID()) {
 				mp.removeTransaction(txRedeemer, true, false)
 			}
@@ -627,7 +710,7 @@ func (mp *TxPool) RemoveDoubleSpends(tx *util.Tx) {
 // helper for maybeAcceptTransaction.
 //
 // This function MUST be called with the mempool lock held (for writes).
-func (mp *TxPool) addTransaction(tx *util.Tx, height uint64, fee uint64, parentsInPool []*wire.OutPoint) (*TxDesc, error) {
+func (mp *TxPool) addTransaction(tx *util.Tx, height uint64, fee uint64, parentsInPool []*wire.Outpoint) (*TxDesc, error) {
 	// Add the transaction to the pool and mark the referenced outpoints
 	// as spent by the pool.
 	txD := &TxDesc{
@@ -646,16 +729,16 @@ func (mp *TxPool) addTransaction(tx *util.Tx, height uint64, fee uint64, parents
 		mp.pool[*tx.ID()] = txD
 	} else {
 		mp.depends[*tx.ID()] = txD
-		for _, previousOutPoint := range parentsInPool {
-			if _, exists := mp.dependsByPrev[*previousOutPoint]; !exists {
-				mp.dependsByPrev[*previousOutPoint] = make(map[daghash.TxID]*TxDesc)
+		for _, previousOutpoint := range parentsInPool {
+			if _, exists := mp.dependsByPrev[*previousOutpoint]; !exists {
+				mp.dependsByPrev[*previousOutpoint] = make(map[daghash.TxID]*TxDesc)
 			}
-			mp.dependsByPrev[*previousOutPoint][*tx.ID()] = txD
+			mp.dependsByPrev[*previousOutpoint][*tx.ID()] = txD
 		}
 	}
 
 	for _, txIn := range tx.MsgTx().TxIn {
-		mp.outpoints[txIn.PreviousOutPoint] = tx
+		mp.outpoints[txIn.PreviousOutpoint] = tx
 	}
 	if isAccepted, err := mp.mpUTXOSet.AddTx(tx.MsgTx(), blockdag.UnminedChainHeight); err != nil {
 		return nil, err
@@ -686,10 +769,10 @@ func (mp *TxPool) addTransaction(tx *util.Tx, height uint64, fee uint64, parents
 // This function MUST be called with the mempool lock held (for reads).
 func (mp *TxPool) checkPoolDoubleSpend(tx *util.Tx) error {
 	for _, txIn := range tx.MsgTx().TxIn {
-		if txR, exists := mp.outpoints[txIn.PreviousOutPoint]; exists {
+		if txR, exists := mp.outpoints[txIn.PreviousOutpoint]; exists {
 			str := fmt.Sprintf("output %s already spent by "+
 				"transaction %s in the memory pool",
-				txIn.PreviousOutPoint, txR.ID())
+				txIn.PreviousOutpoint, txR.ID())
 			return txRuleError(wire.RejectDuplicate, str)
 		}
 	}
@@ -700,7 +783,7 @@ func (mp *TxPool) checkPoolDoubleSpend(tx *util.Tx) error {
 // CheckSpend checks whether the passed outpoint is already spent by a
 // transaction in the mempool. If that's the case the spending transaction will
 // be returned, if not nil will be returned.
-func (mp *TxPool) CheckSpend(op wire.OutPoint) *util.Tx {
+func (mp *TxPool) CheckSpend(op wire.Outpoint) *util.Tx {
 	mp.mtx.RLock()
 	txR := mp.outpoints[op]
 	mp.mtx.RUnlock()
@@ -774,7 +857,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rateLimit, rejectDu
 
 	// Check that transaction does not overuse GAS
 	msgTx := tx.MsgTx()
-	if !msgTx.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) {
+	if !msgTx.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) && !msgTx.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDRegistry) {
 		gasLimit, err := mp.cfg.DAG.SubnetworkStore.GasLimit(&msgTx.SubnetworkID)
 		if err != nil {
 			return nil, nil, err
@@ -837,7 +920,7 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rateLimit, rejectDu
 
 	// Don't allow the transaction if it exists in the DAG and is
 	// not already fully spent.
-	prevOut := wire.OutPoint{TxID: *txID}
+	prevOut := wire.Outpoint{TxID: *txID}
 	for txOutIdx := range tx.MsgTx().TxOut {
 		prevOut.Index = uint32(txOutIdx)
 		_, ok := mp.mpUTXOSet.Get(prevOut)
@@ -852,18 +935,18 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rateLimit, rejectDu
 	// is not handled by this function, and the caller should use
 	// maybeAddOrphan if this behavior is desired.
 	var missingParents []*daghash.TxID
-	var parentsInPool []*wire.OutPoint
+	var parentsInPool []*wire.Outpoint
 	for _, txIn := range tx.MsgTx().TxIn {
-		if _, ok := mp.mpUTXOSet.Get(txIn.PreviousOutPoint); !ok {
+		if _, ok := mp.mpUTXOSet.Get(txIn.PreviousOutpoint); !ok {
 			// Must make a copy of the hash here since the iterator
 			// is replaced and taking its address directly would
 			// result in all of the entries pointing to the same
 			// memory location and thus all be the final hash.
-			txIDCopy := txIn.PreviousOutPoint.TxID
+			txIDCopy := txIn.PreviousOutpoint.TxID
 			missingParents = append(missingParents, &txIDCopy)
 		}
-		if mp.isTransactionInPool(&txIn.PreviousOutPoint.TxID) {
-			parentsInPool = append(parentsInPool, &txIn.PreviousOutPoint)
+		if mp.isTransactionInPool(&txIn.PreviousOutpoint.TxID) {
+			parentsInPool = append(parentsInPool, &txIn.PreviousOutpoint)
 		}
 	}
 	if len(missingParents) > 0 {
@@ -1059,7 +1142,7 @@ func (mp *TxPool) processOrphans(acceptedTx *util.Tx) []*TxDesc {
 		firstElement := processList.Remove(processList.Front())
 		processItem := firstElement.(*util.Tx)
 
-		prevOut := wire.OutPoint{TxID: *processItem.ID()}
+		prevOut := wire.Outpoint{TxID: *processItem.ID()}
 		for txOutIdx := range processItem.MsgTx().TxOut {
 			// Look up all orphans that redeem the output that is
 			// now available.  This will typically only be one, but
@@ -1318,7 +1401,7 @@ func (mp *TxPool) RawMempoolVerbose() map[string]*btcjson.GetRawMempoolVerboseRe
 			Depends:          make([]string, 0),
 		}
 		for _, txIn := range tx.MsgTx().TxIn {
-			txID := &txIn.PreviousOutPoint.TxID
+			txID := &txIn.PreviousOutpoint.TxID
 			if mp.haveTransaction(txID) {
 				mpd.Depends = append(mpd.Depends,
 					txID.String())
@@ -1344,7 +1427,6 @@ func (mp *TxPool) LastUpdated() time.Time {
 // from the mempool transactions that double spend a
 // transaction that is already in the DAG
 func (mp *TxPool) HandleNewBlock(block *util.Block, txChan chan NewBlockMsg) error {
-
 	oldUTXOSet := mp.mpUTXOSet
 
 	// Remove all of the transactions (except the coinbase) in the
@@ -1354,12 +1436,12 @@ func (mp *TxPool) HandleNewBlock(block *util.Block, txChan chan NewBlockMsg) err
 	// no longer an orphan. Transactions which depend on a confirmed
 	// transaction are NOT removed recursively because they are still
 	// valid.
+	err := mp.RemoveTransactions(block.Transactions()[util.FeeTransactionIndex:])
+	if err != nil {
+		mp.mpUTXOSet = oldUTXOSet
+		return err
+	}
 	for _, tx := range block.Transactions()[util.FeeTransactionIndex:] {
-		err := mp.RemoveTransaction(tx, false, false)
-		if err != nil {
-			mp.mpUTXOSet = oldUTXOSet
-			return err
-		}
 		mp.RemoveDoubleSpends(tx)
 		mp.RemoveOrphan(tx)
 		acceptedTxs := mp.ProcessOrphans(tx)
@@ -1380,11 +1462,11 @@ func New(cfg *Config) *TxPool {
 		cfg:            *cfg,
 		pool:           make(map[daghash.TxID]*TxDesc),
 		depends:        make(map[daghash.TxID]*TxDesc),
-		dependsByPrev:  make(map[wire.OutPoint]map[daghash.TxID]*TxDesc),
+		dependsByPrev:  make(map[wire.Outpoint]map[daghash.TxID]*TxDesc),
 		orphans:        make(map[daghash.TxID]*orphanTx),
-		orphansByPrev:  make(map[wire.OutPoint]map[daghash.TxID]*util.Tx),
+		orphansByPrev:  make(map[wire.Outpoint]map[daghash.TxID]*util.Tx),
 		nextExpireScan: time.Now().Add(orphanExpireScanInterval),
-		outpoints:      make(map[wire.OutPoint]*util.Tx),
+		outpoints:      make(map[wire.Outpoint]*util.Tx),
 		mpUTXOSet:      mpUTXO,
 	}
 }

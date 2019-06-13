@@ -161,11 +161,11 @@ func (bf *Filter) Matches(data []byte) bool {
 	return match
 }
 
-// matchesOutPoint returns true if the bloom filter might contain the passed
+// matchesOutpoint returns true if the bloom filter might contain the passed
 // outpoint and false if it definitely does not.
 //
 // This function MUST be called with the filter lock held.
-func (bf *Filter) matchesOutPoint(outpoint *wire.OutPoint) bool {
+func (bf *Filter) matchesOutpoint(outpoint *wire.Outpoint) bool {
 	// Serialize
 	var buf [daghash.HashSize + 4]byte
 	copy(buf[:], outpoint.TxID[:])
@@ -174,13 +174,13 @@ func (bf *Filter) matchesOutPoint(outpoint *wire.OutPoint) bool {
 	return bf.matches(buf[:])
 }
 
-// MatchesOutPoint returns true if the bloom filter might contain the passed
+// MatchesOutpoint returns true if the bloom filter might contain the passed
 // outpoint and false if it definitely does not.
 //
 // This function is safe for concurrent access.
-func (bf *Filter) MatchesOutPoint(outpoint *wire.OutPoint) bool {
+func (bf *Filter) MatchesOutpoint(outpoint *wire.Outpoint) bool {
 	bf.mtx.Lock()
-	match := bf.matchesOutPoint(outpoint)
+	match := bf.matchesOutpoint(outpoint)
 	bf.mtx.Unlock()
 	return match
 }
@@ -224,10 +224,10 @@ func (bf *Filter) AddHash(hash *daghash.Hash) {
 	bf.mtx.Unlock()
 }
 
-// addOutPoint adds the passed transaction outpoint to the bloom filter.
+// addOutpoint adds the passed transaction outpoint to the bloom filter.
 //
 // This function MUST be called with the filter lock held.
-func (bf *Filter) addOutPoint(outpoint *wire.OutPoint) {
+func (bf *Filter) addOutpoint(outpoint *wire.Outpoint) {
 	// Serialize
 	var buf [daghash.HashSize + 4]byte
 	copy(buf[:], outpoint.TxID[:])
@@ -236,12 +236,12 @@ func (bf *Filter) addOutPoint(outpoint *wire.OutPoint) {
 	bf.add(buf[:])
 }
 
-// AddOutPoint adds the passed transaction outpoint to the bloom filter.
+// AddOutpoint adds the passed transaction outpoint to the bloom filter.
 //
 // This function is safe for concurrent access.
-func (bf *Filter) AddOutPoint(outpoint *wire.OutPoint) {
+func (bf *Filter) AddOutpoint(outpoint *wire.Outpoint) {
 	bf.mtx.Lock()
-	bf.addOutPoint(outpoint)
+	bf.addOutpoint(outpoint)
 	bf.mtx.Unlock()
 }
 
@@ -253,13 +253,13 @@ func (bf *Filter) AddOutPoint(outpoint *wire.OutPoint) {
 func (bf *Filter) maybeAddOutpoint(pkScript []byte, outTxID *daghash.TxID, outIdx uint32) {
 	switch bf.msgFilterLoad.Flags {
 	case wire.BloomUpdateAll:
-		outpoint := wire.NewOutPoint(outTxID, outIdx)
-		bf.addOutPoint(outpoint)
+		outpoint := wire.NewOutpoint(outTxID, outIdx)
+		bf.addOutpoint(outpoint)
 	case wire.BloomUpdateP2PubkeyOnly:
 		class := txscript.GetScriptClass(pkScript)
 		if class == txscript.PubKeyTy || class == txscript.MultiSigTy {
-			outpoint := wire.NewOutPoint(outTxID, outIdx)
-			bf.addOutPoint(outpoint)
+			outpoint := wire.NewOutpoint(outTxID, outIdx)
+			bf.addOutpoint(outpoint)
 		}
 	}
 }
@@ -311,7 +311,7 @@ func (bf *Filter) matchTxAndUpdate(tx *util.Tx) bool {
 	// Check if the filter matches any outpoints this transaction spends or
 	// any any data elements in the signature scripts of any of the inputs.
 	for _, txin := range tx.MsgTx().TxIn {
-		if bf.matchesOutPoint(&txin.PreviousOutPoint) {
+		if bf.matchesOutpoint(&txin.PreviousOutpoint) {
 			return true
 		}
 

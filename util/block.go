@@ -46,6 +46,7 @@ type Block struct {
 	serializedBlock []byte         // Serialized bytes for the block
 	blockHash       *daghash.Hash  // Cached block hash
 	blockHeight     uint64         // Height in the DAG
+	chainHeight     uint64         // Selected-chain height
 	transactions    []*Tx          // Transactions
 	txnsGenerated   bool           // ALL wrapped transactions generated
 }
@@ -204,6 +205,17 @@ func (b *Block) SetHeight(height uint64) {
 	b.blockHeight = height
 }
 
+// ChainHeight returns the saved chan height of the block .  This value
+// will be BlockHeightUnknown if it hasn't already explicitly been set.
+func (b *Block) ChainHeight() uint64 {
+	return b.blockHeight
+}
+
+// SetChainHeight sets the chain height of the block.
+func (b *Block) SetChainHeight(chainHeight uint64) {
+	b.chainHeight = chainHeight
+}
+
 // IsGenesis returns whether or not this block is the genesis block.
 func (b *Block) IsGenesis() bool {
 	return b.MsgBlock().Header.IsGenesis()
@@ -235,6 +247,7 @@ func NewBlock(msgBlock *wire.MsgBlock) *Block {
 	return &Block{
 		msgBlock:    msgBlock,
 		blockHeight: BlockHeightUnknown,
+		chainHeight: BlockHeightUnknown,
 	}
 }
 

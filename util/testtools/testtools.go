@@ -59,7 +59,7 @@ func RegisterSubnetworkForTest(dag *blockdag.BlockDAG, params *dagconfig.Params,
 		return nil, fmt.Errorf("Failed to build signature script: %s", err)
 	}
 	txIn := &wire.TxIn{
-		PreviousOutPoint: *wire.NewOutPoint(fundsBlockCbTx.TxID(), 0),
+		PreviousOutpoint: *wire.NewOutpoint(fundsBlockCbTx.TxID(), 0),
 		Sequence:         wire.MaxTxInSequenceNum,
 		SignatureScript:  signatureScript,
 	}

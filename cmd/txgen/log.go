@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/btcsuite/btclog"
+	"github.com/daglabs/btcd/util/panics"
 	"github.com/jrick/logrotate/rotator"
 	"os"
 	"path/filepath"
@@ -22,6 +23,7 @@ var (
 	backendLog = btclog.NewBackend(logWriter{})
 	LogRotator *rotator.Rotator
 	log        = backendLog.Logger("TXGN")
+	spawn      = panics.GoroutineWrapperFunc(log)
 	initiated  = false
 )
 

@@ -84,6 +84,10 @@ const (
 	// the expected value.
 	ErrBadMerkleRoot
 
+	// ErrBadUTXOCommitment indicates the calculated UTXO commitment does not match
+	// the expected value.
+	ErrBadUTXOCommitment
+
 	// ErrBadCheckpoint indicates a block that is expected to be at a
 	// checkpoint height does not match the expected one.
 	ErrBadCheckpoint

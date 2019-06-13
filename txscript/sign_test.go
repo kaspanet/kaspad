@@ -101,21 +101,21 @@ func TestSignTxOutput(t *testing.T) {
 	}
 	txIns := []*wire.TxIn{
 		{
-			PreviousOutPoint: wire.OutPoint{
+			PreviousOutpoint: wire.Outpoint{
 				TxID:  daghash.TxID{},
 				Index: 0,
 			},
 			Sequence: 4294967295,
 		},
 		{
-			PreviousOutPoint: wire.OutPoint{
+			PreviousOutpoint: wire.Outpoint{
 				TxID:  daghash.TxID{},
 				Index: 1,
 			},
 			Sequence: 4294967295,
 		},
 		{
-			PreviousOutPoint: wire.OutPoint{
+			PreviousOutpoint: wire.Outpoint{
 				TxID:  daghash.TxID{},
 				Index: 2,
 			},
@@ -1361,7 +1361,7 @@ type tstSigScript struct {
 	scriptAtWrongIndex bool
 }
 
-var coinbaseOutPoint = &wire.OutPoint{
+var coinbaseOutpoint = &wire.Outpoint{
 	Index: (1 << 32) - 1,
 }
 
@@ -1621,7 +1621,7 @@ nexttest:
 
 		txIns := []*wire.TxIn{}
 		for range sigScriptTests[i].inputs {
-			txIns = append(txIns, wire.NewTxIn(coinbaseOutPoint, nil))
+			txIns = append(txIns, wire.NewTxIn(coinbaseOutpoint, nil))
 		}
 		tx := wire.NewNativeMsgTx(wire.TxVersion, txIns, txOuts)
 

@@ -45,31 +45,31 @@ func TestTx(t *testing.T) {
 			maxPayload, wantPayload)
 	}
 
-	// Ensure we get the same transaction output point data back out.
+	// Ensure we get the same transaction outpoint data back out.
 	// NOTE: This is a block hash and made up index, but we're only
 	// testing package functionality.
 	prevOutIndex := uint32(1)
-	prevOut := NewOutPoint(txID, prevOutIndex)
+	prevOut := NewOutpoint(txID, prevOutIndex)
 	if !prevOut.TxID.IsEqual(txID) {
-		t.Errorf("NewOutPoint: wrong ID - got %v, want %v",
+		t.Errorf("NewOutpoint: wrong ID - got %v, want %v",
 			spew.Sprint(&prevOut.TxID), spew.Sprint(txID))
 	}
 	if prevOut.Index != prevOutIndex {
-		t.Errorf("NewOutPoint: wrong index - got %v, want %v",
+		t.Errorf("NewOutpoint: wrong index - got %v, want %v",
 			prevOut.Index, prevOutIndex)
 	}
 	prevOutStr := fmt.Sprintf("%s:%d", txID.String(), prevOutIndex)
 	if s := prevOut.String(); s != prevOutStr {
-		t.Errorf("OutPoint.String: unexpected result - got %v, "+
+		t.Errorf("Outpoint.String: unexpected result - got %v, "+
 			"want %v", s, prevOutStr)
 	}
 
 	// Ensure we get the same transaction input back out.
 	sigScript := []byte{0x04, 0x31, 0xdc, 0x00, 0x1b, 0x01, 0x62}
 	txIn := NewTxIn(prevOut, sigScript)
-	if !reflect.DeepEqual(&txIn.PreviousOutPoint, prevOut) {
+	if !reflect.DeepEqual(&txIn.PreviousOutpoint, prevOut) {
 		t.Errorf("NewTxIn: wrong prev outpoint - got %v, want %v",
-			spew.Sprint(&txIn.PreviousOutPoint),
+			spew.Sprint(&txIn.PreviousOutpoint),
 			spew.Sprint(prevOut))
 	}
 	if !bytes.Equal(txIn.SignatureScript, sigScript) {
@@ -138,7 +138,7 @@ func TestTxHashAndID(t *testing.T) {
 
 	// First transaction from block 113875.
 	txIn := &TxIn{
-		PreviousOutPoint: OutPoint{
+		PreviousOutpoint: Outpoint{
 			TxID:  daghash.TxID{},
 			Index: 0xffffffff,
 		},
@@ -192,7 +192,7 @@ func TestTxHashAndID(t *testing.T) {
 	}
 	payload := []byte{1, 2, 3}
 	txIns := []*TxIn{&TxIn{
-		PreviousOutPoint: OutPoint{
+		PreviousOutpoint: Outpoint{
 			Index: 0,
 			TxID:  daghash.TxID{1, 2, 3},
 		},
@@ -845,7 +845,7 @@ func underlyingArrayAddress(buf []byte) uint64 {
 // multiTx is a MsgTx with an input and output and used in various tests.
 var multiTxIns = []*TxIn{
 	{
-		PreviousOutPoint: OutPoint{
+		PreviousOutpoint: Outpoint{
 			TxID:  daghash.TxID{},
 			Index: 0xffffffff,
 		},

@@ -55,12 +55,12 @@ out:
 		case txVI := <-v.validateChan:
 			// Ensure the referenced input utxo is available.
 			txIn := txVI.txIn
-			entry, ok := v.utxoSet.Get(txIn.PreviousOutPoint)
+			entry, ok := v.utxoSet.Get(txIn.PreviousOutpoint)
 			if !ok {
 				str := fmt.Sprintf("unable to find unspent "+
 					"output %s referenced from "+
 					"transaction %s:%d",
-					txIn.PreviousOutPoint, txVI.tx.ID(),
+					txIn.PreviousOutpoint, txVI.tx.ID(),
 					txVI.txInIndex)
 				err := ruleError(ErrMissingTxOut, str)
 				v.sendResult(err)
@@ -78,7 +78,7 @@ out:
 					"%s (input script bytes %x, prev "+
 					"output script bytes %x)",
 					txVI.tx.ID(), txVI.txInIndex,
-					txIn.PreviousOutPoint, err, sigScript, pkScript)
+					txIn.PreviousOutpoint, err, sigScript, pkScript)
 				err := ruleError(ErrScriptMalformed, str)
 				v.sendResult(err)
 				break out
@@ -91,7 +91,7 @@ out:
 					"%s (input script bytes %x, prev output "+
 					"script bytes %x)",
 					txVI.tx.ID(), txVI.txInIndex,
-					txIn.PreviousOutPoint, err, sigScript, pkScript)
+					txIn.PreviousOutpoint, err, sigScript, pkScript)
 				err := ruleError(ErrScriptValidation, str)
 				v.sendResult(err)
 				break out
@@ -186,7 +186,7 @@ func ValidateTransactionScripts(tx *util.Tx, utxoSet UTXOSet, flags txscript.Scr
 	txValItems := make([]*txValidateItem, 0, len(txIns))
 	for txInIdx, txIn := range txIns {
 		// Skip block reward transactions.
-		if txIn.PreviousOutPoint.Index == math.MaxUint32 {
+		if txIn.PreviousOutpoint.Index == math.MaxUint32 {
 			continue
 		}
 
@@ -216,7 +216,7 @@ func checkBlockScripts(block *blockNode, utxoSet UTXOSet, transactions []*util.T
 	for _, tx := range transactions {
 		for txInIdx, txIn := range tx.MsgTx().TxIn {
 			// Skip block reward transactions.
-			if txIn.PreviousOutPoint.Index == math.MaxUint32 {
+			if txIn.PreviousOutpoint.Index == math.MaxUint32 {
 				continue
 			}
 

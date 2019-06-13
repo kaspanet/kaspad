@@ -77,7 +77,7 @@ var (
 		Transactions: []*wire.MsgTx{{
 			Version: 1,
 			TxIn: []*wire.TxIn{{
-				PreviousOutPoint: wire.OutPoint{
+				PreviousOutpoint: wire.Outpoint{
 					TxID:  daghash.TxID{},
 					Index: 0xffffffff,
 				},

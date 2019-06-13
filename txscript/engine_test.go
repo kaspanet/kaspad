@@ -27,7 +27,7 @@ func TestBadPC(t *testing.T) {
 	// tx with almost empty scripts.
 	txIns := []*wire.TxIn{
 		{
-			PreviousOutPoint: wire.OutPoint{
+			PreviousOutpoint: wire.Outpoint{
 				TxID: daghash.TxID([32]byte{
 					0xc9, 0x97, 0xa5, 0xe5,
 					0x6e, 0x10, 0x41, 0x02,
@@ -97,7 +97,7 @@ func TestCheckErrorCondition(t *testing.T) {
 	for i, test := range tests {
 		func() {
 			txIns := []*wire.TxIn{{
-				PreviousOutPoint: wire.OutPoint{
+				PreviousOutpoint: wire.Outpoint{
 					TxID: daghash.TxID([32]byte{
 						0xc9, 0x97, 0xa5, 0xe5,
 						0x6e, 0x10, 0x41, 0x02,
@@ -392,7 +392,7 @@ func TestDisasmPC(t *testing.T) {
 
 	// tx with almost empty scripts.
 	txIns := []*wire.TxIn{{
-		PreviousOutPoint: wire.OutPoint{
+		PreviousOutpoint: wire.Outpoint{
 			TxID: daghash.TxID([32]byte{
 				0xc9, 0x97, 0xa5, 0xe5,
 				0x6e, 0x10, 0x41, 0x02,
@@ -452,7 +452,7 @@ func TestDisasmScript(t *testing.T) {
 
 	// tx with almost empty scripts.
 	txIns := []*wire.TxIn{{
-		PreviousOutPoint: wire.OutPoint{
+		PreviousOutpoint: wire.Outpoint{
 			TxID: daghash.TxID([32]byte{
 				0xc9, 0x97, 0xa5, 0xe5,
 				0x6e, 0x10, 0x41, 0x02,

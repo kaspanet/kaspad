@@ -216,13 +216,13 @@ func parseExpectedResult(expected string) ([]ErrorCode, error) {
 // signature and public key scripts.
 func createSpendingTx(sigScript, pkScript []byte) *wire.MsgTx {
 
-	outPoint := wire.NewOutPoint(&daghash.TxID{}, ^uint32(0))
-	txIn := wire.NewTxIn(outPoint, []byte{Op0, Op0})
+	outpoint := wire.NewOutpoint(&daghash.TxID{}, ^uint32(0))
+	txIn := wire.NewTxIn(outpoint, []byte{Op0, Op0})
 	txOut := wire.NewTxOut(0, pkScript)
 	coinbaseTx := wire.NewNativeMsgTx(wire.TxVersion, []*wire.TxIn{txIn}, []*wire.TxOut{txOut})
 
-	outPoint = wire.NewOutPoint(coinbaseTx.TxID(), 0)
-	txIn = wire.NewTxIn(outPoint, sigScript)
+	outpoint = wire.NewOutpoint(coinbaseTx.TxID(), 0)
+	txIn = wire.NewTxIn(outpoint, sigScript)
 	txOut = wire.NewTxOut(0, nil)
 	spendingTx := wire.NewNativeMsgTx(wire.TxVersion, []*wire.TxIn{txIn}, []*wire.TxOut{txOut})
 

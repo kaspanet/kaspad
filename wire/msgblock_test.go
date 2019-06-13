@@ -516,7 +516,7 @@ var blockOne = MsgBlock{
 		NewNativeMsgTx(1,
 			[]*TxIn{
 				{
-					PreviousOutPoint: OutPoint{
+					PreviousOutpoint: Outpoint{
 						TxID:  daghash.TxID{},
 						Index: 0xffffffff,
 					},

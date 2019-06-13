@@ -96,22 +96,22 @@ func (r FutureGetRawTransactionResult) Receive() (*util.Tx, error) {
 // the returned instance.
 //
 // See GetRawTransaction for the blocking version and more details.
-func (c *Client) GetRawTransactionAsync(txHash *daghash.Hash) FutureGetRawTransactionResult {
-	hash := ""
-	if txHash != nil {
-		hash = txHash.String()
+func (c *Client) GetRawTransactionAsync(txID *daghash.TxID) FutureGetRawTransactionResult {
+	id := ""
+	if txID != nil {
+		id = txID.String()
 	}
 
-	cmd := btcjson.NewGetRawTransactionCmd(hash, btcjson.Int(0))
+	cmd := btcjson.NewGetRawTransactionCmd(id, btcjson.Int(0))
 	return c.sendCmd(cmd)
 }
 
-// GetRawTransaction returns a transaction given its hash.
+// GetRawTransaction returns a transaction given its ID.
 //
 // See GetRawTransactionVerbose to obtain additional information about the
 // transaction.
-func (c *Client) GetRawTransaction(txHash *daghash.Hash) (*util.Tx, error) {
-	return c.GetRawTransactionAsync(txHash).Receive()
+func (c *Client) GetRawTransaction(txID *daghash.TxID) (*util.Tx, error) {
+	return c.GetRawTransactionAsync(txID).Receive()
 }
 
 // FutureGetRawTransactionVerboseResult is a future promise to deliver the
@@ -142,13 +142,13 @@ func (r FutureGetRawTransactionVerboseResult) Receive() (*btcjson.TxRawResult, e
 // function on the returned instance.
 //
 // See GetRawTransactionVerbose for the blocking version and more details.
-func (c *Client) GetRawTransactionVerboseAsync(txHash *daghash.Hash) FutureGetRawTransactionVerboseResult {
-	hash := ""
-	if txHash != nil {
-		hash = txHash.String()
+func (c *Client) GetRawTransactionVerboseAsync(txID *daghash.TxID) FutureGetRawTransactionVerboseResult {
+	id := ""
+	if txID != nil {
+		id = txID.String()
 	}
 
-	cmd := btcjson.NewGetRawTransactionCmd(hash, btcjson.Int(1))
+	cmd := btcjson.NewGetRawTransactionCmd(id, btcjson.Int(1))
 	return c.sendCmd(cmd)
 }
 
@@ -156,8 +156,8 @@ func (c *Client) GetRawTransactionVerboseAsync(txHash *daghash.Hash) FutureGetRa
 // its hash.
 //
 // See GetRawTransaction to obtain only the transaction already deserialized.
-func (c *Client) GetRawTransactionVerbose(txHash *daghash.Hash) (*btcjson.TxRawResult, error) {
-	return c.GetRawTransactionVerboseAsync(txHash).Receive()
+func (c *Client) GetRawTransactionVerbose(txID *daghash.TxID) (*btcjson.TxRawResult, error) {
+	return c.GetRawTransactionVerboseAsync(txID).Receive()
 }
 
 // FutureDecodeRawTransactionResult is a future promise to deliver the result
@@ -264,20 +264,20 @@ type FutureSendRawTransactionResult chan *response
 // Receive waits for the response promised by the future and returns the result
 // of submitting the encoded transaction to the server which then relays it to
 // the network.
-func (r FutureSendRawTransactionResult) Receive() (*daghash.Hash, error) {
+func (r FutureSendRawTransactionResult) Receive() (*daghash.TxID, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return nil, err
 	}
 
 	// Unmarshal result as a string.
-	var txHashStr string
-	err = json.Unmarshal(res, &txHashStr)
+	var txIDStr string
+	err = json.Unmarshal(res, &txIDStr)
 	if err != nil {
 		return nil, err
 	}
 
-	return daghash.NewHashFromStr(txHashStr)
+	return daghash.NewTxIDFromStr(txIDStr)
 }
 
 // SendRawTransactionAsync returns an instance of a type that can be used to get
@@ -302,7 +302,7 @@ func (c *Client) SendRawTransactionAsync(tx *wire.MsgTx, allowHighFees bool) Fut
 
 // SendRawTransaction submits the encoded transaction to the server which will
 // then relay it to the network.
-func (c *Client) SendRawTransaction(tx *wire.MsgTx, allowHighFees bool) (*daghash.Hash, error) {
+func (c *Client) SendRawTransaction(tx *wire.MsgTx, allowHighFees bool) (*daghash.TxID, error) {
 	return c.SendRawTransactionAsync(tx, allowHighFees).Receive()
 }
 

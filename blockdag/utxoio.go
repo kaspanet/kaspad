@@ -100,17 +100,17 @@ func deserializeDiffEntries(r io.Reader) (utxoCollection, error) {
 	}
 	collection := utxoCollection{}
 	for i := uint64(0); i < count; i++ {
-		outPointSize, err := wire.ReadVarInt(r)
+		outpointSize, err := wire.ReadVarInt(r)
 		if err != nil {
 			return nil, err
 		}
 
-		serializedOutPoint := make([]byte, outPointSize)
-		err = binary.Read(r, byteOrder, serializedOutPoint)
+		serializedOutpoint := make([]byte, outpointSize)
+		err = binary.Read(r, byteOrder, serializedOutpoint)
 		if err != nil {
 			return nil, err
 		}
-		outPoint, err := deserializeOutPoint(serializedOutPoint)
+		outpoint, err := deserializeOutpoint(serializedOutpoint)
 		if err != nil {
 			return nil, err
 		}
@@ -128,7 +128,7 @@ func deserializeDiffEntries(r io.Reader) (utxoCollection, error) {
 		if err != nil {
 			return nil, err
 		}
-		collection.add(*outPoint, utxoEntry)
+		collection.add(*outpoint, utxoEntry)
 	}
 	return collection, nil
 }
@@ -179,8 +179,8 @@ func serializeUTXOCollection(w io.Writer, collection utxoCollection) error {
 	if err != nil {
 		return err
 	}
-	for outPoint, utxoEntry := range collection {
-		err := serializeUTXO(w, utxoEntry, &outPoint)
+	for outpoint, utxoEntry := range collection {
+		err := serializeUTXO(w, utxoEntry, &outpoint)
 		if err != nil {
 			return err
 		}
@@ -212,14 +212,14 @@ func serializeMultiset(w io.Writer, ms *btcec.Multiset) error {
 }
 
 // serializeUTXO serializes a utxo entry-outpoint pair
-func serializeUTXO(w io.Writer, entry *UTXOEntry, outPoint *wire.OutPoint) error {
-	serializedOutPoint := *outpointKey(*outPoint)
-	err := wire.WriteVarInt(w, uint64(len(serializedOutPoint)))
+func serializeUTXO(w io.Writer, entry *UTXOEntry, outpoint *wire.Outpoint) error {
+	serializedOutpoint := *outpointKey(*outpoint)
+	err := wire.WriteVarInt(w, uint64(len(serializedOutpoint)))
 	if err != nil {
 		return err
 	}
 
-	err = binary.Write(w, byteOrder, serializedOutPoint)
+	err = binary.Write(w, byteOrder, serializedOutpoint)
 	if err != nil {
 		return err
 	}
@@ -256,10 +256,10 @@ func serializeUTXOEntry(entry *UTXOEntry) []byte {
 	return serialized
 }
 
-// deserializeOutPoint decodes an outPoint from the passed serialized byte
-// slice into a new wire.OutPoint using a format that is suitable for long-
+// deserializeOutpoint decodes an outpoint from the passed serialized byte
+// slice into a new wire.Outpoint using a format that is suitable for long-
 // term storage. this format is described in detail above.
-func deserializeOutPoint(serialized []byte) (*wire.OutPoint, error) {
+func deserializeOutpoint(serialized []byte) (*wire.Outpoint, error) {
 	if len(serialized) <= daghash.HashSize {
 		return nil, errDeserialize("unexpected end of data")
 	}
@@ -267,7 +267,7 @@ func deserializeOutPoint(serialized []byte) (*wire.OutPoint, error) {
 	txID := daghash.TxID{}
 	txID.SetBytes(serialized[:daghash.HashSize])
 	index, _ := deserializeVLQ(serialized[daghash.HashSize:])
-	return wire.NewOutPoint(&txID, uint32(index)), nil
+	return wire.NewOutpoint(&txID, uint32(index)), nil
 }
 
 // deserializeUTXOEntry decodes a UTXO entry from the passed serialized byte

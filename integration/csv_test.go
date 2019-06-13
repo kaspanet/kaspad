@@ -27,7 +27,7 @@ import (
 // makeTestOutput creates an on-chain output paying to a freshly generated
 // p2pkh output with the specified amount.
 func makeTestOutput(r *rpctest.Harness, t *testing.T,
-	amt util.Amount) (*btcec.PrivateKey, *wire.OutPoint, []byte, error) {
+	amt util.Amount) (*btcec.PrivateKey, *wire.Outpoint, []byte, error) {
 
 	// Create a fresh key, then send some coins to an address spendable by
 	// that key.
@@ -76,7 +76,7 @@ func makeTestOutput(r *rpctest.Harness, t *testing.T,
 		outputIndex = 1
 	}
 
-	utxo := &wire.OutPoint{
+	utxo := &wire.Outpoint{
 		TxID:  fundTx.TxID(),
 		Index: outputIndex,
 	}
@@ -131,7 +131,7 @@ func TestBIP0113(t *testing.T) {
 	// past.
 	tx := wire.NewMsgTx(1)
 	tx.AddTxIn(&wire.TxIn{
-		PreviousOutPoint: *testOutput,
+		PreviousOutpoint: *testOutput,
 	})
 	tx.AddTxOut(&wire.TxOut{
 		PkScript: addrScript,
@@ -193,7 +193,7 @@ func TestBIP0113(t *testing.T) {
 		// MTP.
 		tx = wire.NewMsgTx(1)
 		tx.AddTxIn(&wire.TxIn{
-			PreviousOutPoint: *testOutput,
+			PreviousOutpoint: *testOutput,
 		})
 		tx.AddTxOut(&wire.TxOut{
 			PkScript: addrScript,
@@ -238,7 +238,7 @@ func TestBIP0113(t *testing.T) {
 // pkScript with the specified time-lock.
 func createCSVOutput(r *rpctest.Harness, t *testing.T,
 	numSatoshis util.Amount, timeLock int64,
-	isSeconds bool) ([]byte, *wire.OutPoint, *wire.MsgTx, error) {
+	isSeconds bool) ([]byte, *wire.Outpoint, *wire.MsgTx, error) {
 
 	// Convert the time-lock to the proper sequence lock based according to
 	// if the lock is seconds or time based.
@@ -281,7 +281,7 @@ func createCSVOutput(r *rpctest.Harness, t *testing.T,
 		outputIndex = 1
 	}
 
-	utxo := &wire.OutPoint{
+	utxo := &wire.Outpoint{
 		TxID:  tx.TxID(),
 		Index: outputIndex,
 	}
@@ -292,13 +292,13 @@ func createCSVOutput(r *rpctest.Harness, t *testing.T,
 // spendCSVOutput spends an output previously created by the createCSVOutput
 // function. The sigScript is a trivial push of OP_TRUE followed by the
 // redeemScript to pass P2SH evaluation.
-func spendCSVOutput(redeemScript []byte, csvUTXO *wire.OutPoint,
+func spendCSVOutput(redeemScript []byte, csvUTXO *wire.Outpoint,
 	sequence uint64, targetOutput *wire.TxOut,
 	txVersion int32) (*wire.MsgTx, error) {
 
 	tx := wire.NewMsgTx(txVersion)
 	tx.AddTxIn(&wire.TxIn{
-		PreviousOutPoint: *csvUTXO,
+		PreviousOutpoint: *csvUTXO,
 		Sequence:         sequence,
 	})
 	tx.AddTxOut(targetOutput)
@@ -396,7 +396,7 @@ func TestBIP0068AndCsv(t *testing.T) {
 	const numTests = 7
 	type csvOutput struct {
 		RedeemScript []byte
-		Utxo         *wire.OutPoint
+		Utxo         *wire.Outpoint
 		Timelock     int64
 	}
 	var spendableInputs [numTests]csvOutput

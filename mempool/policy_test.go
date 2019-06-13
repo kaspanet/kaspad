@@ -283,10 +283,10 @@ func TestCheckTransactionStandard(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewShaHashFromStr: unexpected error: %v", err)
 	}
-	dummyPrevOut := wire.OutPoint{TxID: *prevOutTxID, Index: 1}
+	dummyPrevOut := wire.Outpoint{TxID: *prevOutTxID, Index: 1}
 	dummySigScript := bytes.Repeat([]byte{0x00}, 65)
 	dummyTxIn := wire.TxIn{
-		PreviousOutPoint: dummyPrevOut,
+		PreviousOutpoint: dummyPrevOut,
 		SignatureScript:  dummySigScript,
 		Sequence:         wire.MaxTxInSequenceNum,
 	}
@@ -327,7 +327,7 @@ func TestCheckTransactionStandard(t *testing.T) {
 		{
 			name: "Transaction is not finalized",
 			tx: wire.NewNativeMsgTxWithLocktime(1, []*wire.TxIn{{
-				PreviousOutPoint: dummyPrevOut,
+				PreviousOutpoint: dummyPrevOut,
 				SignatureScript:  dummySigScript,
 				Sequence:         0,
 			}}, []*wire.TxOut{&dummyTxOut}, 300001),
@@ -349,7 +349,7 @@ func TestCheckTransactionStandard(t *testing.T) {
 		{
 			name: "Signature script size is too large",
 			tx: wire.NewNativeMsgTx(1, []*wire.TxIn{{
-				PreviousOutPoint: dummyPrevOut,
+				PreviousOutpoint: dummyPrevOut,
 				SignatureScript: bytes.Repeat([]byte{0x00},
 					maxStandardSigScriptSize+1),
 				Sequence: wire.MaxTxInSequenceNum,
@@ -361,7 +361,7 @@ func TestCheckTransactionStandard(t *testing.T) {
 		{
 			name: "Signature script that does more than push data",
 			tx: wire.NewNativeMsgTx(1, []*wire.TxIn{{
-				PreviousOutPoint: dummyPrevOut,
+				PreviousOutpoint: dummyPrevOut,
 				SignatureScript: []byte{
 					txscript.OpCheckSigVerify},
 				Sequence: wire.MaxTxInSequenceNum,

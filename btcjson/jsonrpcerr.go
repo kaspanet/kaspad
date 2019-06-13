@@ -65,17 +65,18 @@ const (
 // server are most likely to see.  Generally, the codes should match one of the
 // more general errors above.
 const (
-	ErrRPCBlockNotFound     RPCErrorCode = -5
-	ErrRPCBlockCount        RPCErrorCode = -5
-	ErrRPCBestBlockHash     RPCErrorCode = -5
-	ErrRPCDifficulty        RPCErrorCode = -5
-	ErrRPCOutOfRange        RPCErrorCode = -1
-	ErrRPCNoTxInfo          RPCErrorCode = -5
-	ErrRPCNoCFIndex         RPCErrorCode = -5
-	ErrRPCNoNewestBlockInfo RPCErrorCode = -5
-	ErrRPCInvalidTxVout     RPCErrorCode = -5
-	ErrRPCRawTxString       RPCErrorCode = -32602
-	ErrRPCDecodeHexString   RPCErrorCode = -22
+	ErrRPCBlockNotFound      RPCErrorCode = -5
+	ErrRPCBlockCount         RPCErrorCode = -5
+	ErrRPCBestBlockHash      RPCErrorCode = -5
+	ErrRPCDifficulty         RPCErrorCode = -5
+	ErrRPCOutOfRange         RPCErrorCode = -1
+	ErrRPCNoTxInfo           RPCErrorCode = -5
+	ErrRPCNoCFIndex          RPCErrorCode = -5
+	ErrRPCNoNewestBlockInfo  RPCErrorCode = -5
+	ErrRPCInvalidTxVout      RPCErrorCode = -5
+	ErrRPCSubnetworkNotFound RPCErrorCode = -5
+	ErrRPCRawTxString        RPCErrorCode = -32602
+	ErrRPCDecodeHexString    RPCErrorCode = -22
 )
 
 // Errors that are specific to btcd.

@@ -183,7 +183,7 @@ func feeInputAndOutputForBlueBlock(dag *BlockDAG, blueBlock *blockNode, txsAccep
 
 	txIn := &wire.TxIn{
 		SignatureScript: []byte{},
-		PreviousOutPoint: wire.OutPoint{
+		PreviousOutpoint: wire.Outpoint{
 			TxID:  daghash.TxID(*blueBlock.hash),
 			Index: math.MaxUint32,
 		},

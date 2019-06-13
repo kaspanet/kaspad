@@ -121,7 +121,7 @@ func TestDAGSvrWsCmds(t *testing.T) {
 			},
 			staticCmd: func() interface{} {
 				addrs := []string{"1Address"}
-				ops := []btcjson.OutPoint{{
+				ops := []btcjson.Outpoint{{
 					TxID:  "0000000000000000000000000000000000000000000000000000000000000123",
 					Index: 0,
 				}}
@@ -131,7 +131,7 @@ func TestDAGSvrWsCmds(t *testing.T) {
 			unmarshalled: &btcjson.LoadTxFilterCmd{
 				Reload:    false,
 				Addresses: []string{"1Address"},
-				OutPoints: []btcjson.OutPoint{{TxID: "0000000000000000000000000000000000000000000000000000000000000123", Index: 0}},
+				Outpoints: []btcjson.Outpoint{{TxID: "0000000000000000000000000000000000000000000000000000000000000123", Index: 0}},
 			},
 		},
 		{

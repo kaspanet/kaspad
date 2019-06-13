@@ -70,7 +70,10 @@ func PrepareBlockForTest(dag *blockdag.BlockDAG, params *dagconfig.Params, paren
 	}
 
 	// In order of creating deterministic coinbase tx ids.
-	blockTemplateGenerator.UpdateExtraNonce(template.Block, dag.Height()+1, GenerateDeterministicExtraNonceForTest())
+	err = blockTemplateGenerator.UpdateExtraNonce(template.Block, dag.Height()+1, GenerateDeterministicExtraNonceForTest())
+	if err != nil {
+		return nil, err
+	}
 
 	txsToAdd := make([]*wire.MsgTx, 0)
 	for _, tx := range transactions {
@@ -108,19 +111,18 @@ func PrepareBlockForTest(dag *blockdag.BlockDAG, params *dagconfig.Params, paren
 			template.Block.Transactions = append(template.Block.Transactions, tx)
 		}
 	}
-	updateMerkleRoots := coinbaseOutputs != 1 || (forceTransactions && len(txsToAdd) > 0)
-	if updateMerkleRoots {
+	updateHeaderFields := coinbaseOutputs != 1 || (forceTransactions && len(txsToAdd) > 0)
+	if updateHeaderFields {
 		utilTxs := make([]*util.Tx, len(template.Block.Transactions))
 		for i, tx := range template.Block.Transactions {
 			utilTxs[i] = util.NewTx(tx)
 		}
 		template.Block.Header.HashMerkleRoot = blockdag.BuildHashMerkleTreeStore(utilTxs).Root()
 
-		acceptedIDMerkleRoot, err := dag.NextAcceptedIDMerkleRoot()
+		template.Block.Header.UTXOCommitment, err = blockTemplateGenerator.buildUTXOCommitment(template.Block.Transactions, dag.Height()+1)
 		if err != nil {
 			return nil, err
 		}
-		template.Block.Header.AcceptedIDMerkleRoot = acceptedIDMerkleRoot
 	}
 	return template.Block, nil
 }

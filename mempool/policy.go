@@ -94,7 +94,7 @@ func checkInputsStandard(tx *util.Tx, utxoSet blockdag.UTXOSet) error {
 		// It is safe to elide existence and index checks here since
 		// they have already been checked prior to calling this
 		// function.
-		entry, _ := utxoSet.Get(txIn.PreviousOutPoint)
+		entry, _ := utxoSet.Get(txIn.PreviousOutpoint)
 		originPkScript := entry.PkScript()
 		switch txscript.GetScriptClass(originPkScript) {
 		case txscript.ScriptHashTy:
