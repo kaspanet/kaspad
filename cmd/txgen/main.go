@@ -52,7 +52,7 @@ func main() {
 	defer disconnect(client)
 
 	spawn(func() {
-		err := txLoop(client)
+		err := txLoop(client, cfg)
 		if err != nil {
 			panic(err)
 		}

@@ -2,8 +2,6 @@ package main
 
 import (
 	"fmt"
-
-	"github.com/daglabs/btcd/blockdag"
 	"github.com/daglabs/btcd/btcec"
 	"github.com/daglabs/btcd/txscript"
 	"github.com/daglabs/btcd/wire"
@@ -14,12 +12,8 @@ func buildSubnetworkRegistryTx(cfg *config, fundingOutpoint *wire.Outpoint, fund
 		PreviousOutpoint: *fundingOutpoint,
 		Sequence:         wire.MaxTxInSequenceNum,
 	}
-	pkScript, err := txscript.PayToScriptHashScript(blockdag.OpTrueScript)
-	if err != nil {
-		return nil, err
-	}
 	txOut := &wire.TxOut{
-		PkScript: pkScript,
+		PkScript: fundingTx.TxOut[fundingOutpoint.Index].PkScript,
 		Value:    fundingTx.TxOut[fundingOutpoint.Index].Value - cfg.RegistryTxFee,
 	}
 	registryTx := wire.NewRegistryMsgTx(1, []*wire.TxIn{txIn}, []*wire.TxOut{txOut}, cfg.GasLimit)

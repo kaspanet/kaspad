@@ -154,11 +154,14 @@ type subnetwork struct {
 }
 
 func newSubnetwork(tx *wire.MsgTx) *subnetwork {
-	gasLimit := binary.LittleEndian.Uint64(tx.Payload[:8])
-
 	return &subnetwork{
-		gasLimit: gasLimit,
+		gasLimit: ExtractGasLimit(tx),
 	}
+}
+
+// ExtractGasLimit extracts the gas limit from the transaction payload
+func ExtractGasLimit(tx *wire.MsgTx) uint64 {
+	return binary.LittleEndian.Uint64(tx.Payload[:8])
 }
 
 // serializeSubnetwork serializes a subnetwork into the following binary format:

@@ -1200,7 +1200,19 @@ func (dag *BlockDAG) GetUTXOEntry(outpoint wire.Outpoint) (*UTXOEntry, bool) {
 
 // BlockConfirmationsByHash returns the confirmations number for a block with the
 // given hash. See blockConfirmations for further details.
+//
+// This function is safe for concurrent access
 func (dag *BlockDAG) BlockConfirmationsByHash(hash *daghash.Hash) (uint64, error) {
+	dag.dagLock.RLock()
+	defer dag.dagLock.RUnlock()
+
+	return dag.BlockConfirmationsByHashNoLock(hash)
+}
+
+// BlockConfirmationsByHashNoLock is lock free version of BlockConfirmationsByHash
+//
+// This function is unsafe for concurrent access.
+func (dag *BlockDAG) BlockConfirmationsByHashNoLock(hash *daghash.Hash) (uint64, error) {
 	if hash.IsEqual(&daghash.ZeroHash) {
 		return 0, nil
 	}
@@ -1292,6 +1304,8 @@ func (dag *BlockDAG) oldestChainBlockWithBlueScoreGreaterThan(blueScore uint64) 
 }
 
 // IsInSelectedPathChain returns whether or not a block hash is found in the selected path
+//
+// This method MUST be called with the DAG lock held
 func (dag *BlockDAG) IsInSelectedPathChain(blockHash *daghash.Hash) bool {
 	return dag.virtual.selectedPathChainSet.containsHash(blockHash)
 }
