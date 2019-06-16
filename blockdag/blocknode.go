@@ -5,7 +5,6 @@
 package blockdag
 
 import (
-	"fmt"
 	"sort"
 	"time"
 

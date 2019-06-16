@@ -1283,11 +1283,11 @@ func (dag *BlockDAG) acceptingBlock(node *blockNode) (*blockNode, error) {
 // oldestChainBlockWithBlueScoreGreaterThan finds the oldest chain block with a blue score
 // greater than blueScore. If no such block exists, this method returns nil
 func (dag *BlockDAG) oldestChainBlockWithBlueScoreGreaterThan(blueScore uint64) *blockNode {
-	chainBlockIndex := sort.Search(len(dag.virtual.selectedPathChainSlice), func(i int) bool {
+	chainBlockIndex, ok := util.SearchSlice(len(dag.virtual.selectedPathChainSlice), func(i int) bool {
 		selectedPathNode := dag.virtual.selectedPathChainSlice[i]
 		return selectedPathNode.blueScore > blueScore
 	})
-	if chainBlockIndex == len(dag.virtual.selectedPathChainSlice) {
+	if !ok {
 		return nil
 	}
 	return dag.virtual.selectedPathChainSlice[chainBlockIndex]
