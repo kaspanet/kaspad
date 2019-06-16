@@ -12,10 +12,6 @@ import (
 )
 
 const (
-	// MaxDataCarrierSize is the maximum number of bytes allowed in pushed
-	// data to be considered a nulldata transaction
-	MaxDataCarrierSize = 80
-
 	// StandardVerifyFlags are the script flags which are used when
 	// executing transaction scripts to enforce additional checks which
 	// are required for the script to be considered standard.  These checks
@@ -39,7 +35,6 @@ const (
 	PubKeyHashTy                     // Pay pubkey hash.
 	ScriptHashTy                     // Pay to script hash.
 	MultiSigTy                       // Multi signature.
-	NullDataTy                       // Empty data-only (provably prunable).
 )
 
 // scriptClassToName houses the human-readable strings which describe each
@@ -50,7 +45,6 @@ var scriptClassToName = []string{
 	PubKeyHashTy:  "pubkeyhash",
 	ScriptHashTy:  "scripthash",
 	MultiSigTy:    "multisig",
-	NullDataTy:    "nulldata",
 }
 
 // String implements the Stringer interface by returning the name of
@@ -118,24 +112,6 @@ func isMultiSig(pops []parsedOpcode) bool {
 	return true
 }
 
-// isNullData returns true if the passed script is a null data transaction,
-// false otherwise.
-func isNullData(pops []parsedOpcode) bool {
-	// A nulldata transaction is either a single OP_RETURN or an
-	// OP_RETURN SMALLDATA (where SMALLDATA is a data push up to
-	// MaxDataCarrierSize bytes).
-	l := len(pops)
-	if l == 1 && pops[0].opcode.value == OpReturn {
-		return true
-	}
-
-	return l == 2 &&
-		pops[0].opcode.value == OpReturn &&
-		(isSmallInt(pops[1].opcode) || pops[1].opcode.value <=
-			OpPushData4) &&
-		len(pops[1].data) <= MaxDataCarrierSize
-}
-
 // scriptType returns the type of the script being inspected from the known
 // standard types.
 func typeOfScript(pops []parsedOpcode) ScriptClass {
@@ -147,8 +123,6 @@ func typeOfScript(pops []parsedOpcode) ScriptClass {
 		return ScriptHashTy
 	} else if isMultiSig(pops) {
 		return MultiSigTy
-	} else if isNullData(pops) {
-		return NullDataTy
 	}
 	return NonStandardTy
 }
@@ -191,8 +165,6 @@ func expectedInputs(pops []parsedOpcode, class ScriptClass) int {
 		// for the extra push that is required to compensate.
 		return asSmallInt(pops[0].opcode) + 1
 
-	case NullDataTy:
-		fallthrough
 	default:
 		return -1
 	}
@@ -376,19 +348,6 @@ func PayToScriptHashSignatureScript(redeemScript []byte, signature []byte) ([]by
 	return signatureScript, nil
 }
 
-// NullDataScript creates a provably-prunable script containing OP_RETURN
-// followed by the passed data.  An Error with the error code ErrTooMuchNullData
-// will be returned if the length of the passed data exceeds MaxDataCarrierSize.
-func NullDataScript(data []byte) ([]byte, error) {
-	if len(data) > MaxDataCarrierSize {
-		str := fmt.Sprintf("data size %d is larger than max "+
-			"allowed size %d", len(data), MaxDataCarrierSize)
-		return nil, scriptError(ErrTooMuchNullData, str)
-	}
-
-	return NewScriptBuilder().AddOp(OpReturn).AddData(data).Script()
-}
-
 // MultiSigScript returns a valid script for a multisignature redemption where
 // nrequired of the keys in pubkeys are required to have signed the transaction
 // for success.  An Error with the error code ErrTooManyRequiredSigs will be
@@ -499,10 +458,6 @@ func ExtractPkScriptAddrs(pkScript []byte, chainParams *dagconfig.Params) (Scrip
 				addrs = append(addrs, addr)
 			}
 		}
-
-	case NullDataTy:
-		// Null data transactions have no addresses or required
-		// signatures.
 
 	case NonStandardTy:
 		// Don't attempt to extract addresses or required signatures for

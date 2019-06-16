@@ -817,75 +817,9 @@ var scriptClassTests = []struct {
 	},
 
 	{
-		// Nulldata with no data at all.
-		name:   "nulldata no data",
-		script: "RETURN",
-		class:  NullDataTy,
-	},
-	{
-		// Nulldata with single zero push.
-		name:   "nulldata zero",
+		// Nulldata. It is standard in BTC but not in DAGCoin
+		name:   "nulldata ",
 		script: "RETURN 0",
-		class:  NullDataTy,
-	},
-	{
-		// Nulldata with small integer push.
-		name:   "nulldata small int",
-		script: "RETURN 1",
-		class:  NullDataTy,
-	},
-	{
-		// Nulldata with max small integer push.
-		name:   "nulldata max small int",
-		script: "RETURN 16",
-		class:  NullDataTy,
-	},
-	{
-		// Nulldata with small data push.
-		name:   "nulldata small data",
-		script: "RETURN DATA_8 0x046708afdb0fe554",
-		class:  NullDataTy,
-	},
-	{
-		// Canonical nulldata with 60-byte data push.
-		name: "canonical nulldata 60-byte push",
-		script: "RETURN 0x3c 0x046708afdb0fe5548271967f1a67130b7105cd" +
-			"6a828e03909a67962e0ea1f61deb649f6bc3f4cef3046708afdb" +
-			"0fe5548271967f1a67130b7105cd6a",
-		class: NullDataTy,
-	},
-	{
-		// Non-canonical nulldata with 60-byte data push.
-		name: "non-canonical nulldata 60-byte push",
-		script: "RETURN PUSHDATA1 0x3c 0x046708afdb0fe5548271967f1a67" +
-			"130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef3" +
-			"046708afdb0fe5548271967f1a67130b7105cd6a",
-		class: NullDataTy,
-	},
-	{
-		// Nulldata with max allowed data to be considered standard.
-		name: "nulldata max standard push",
-		script: "RETURN PUSHDATA1 0x50 0x046708afdb0fe5548271967f1a67" +
-			"130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef3" +
-			"046708afdb0fe5548271967f1a67130b7105cd6a828e03909a67" +
-			"962e0ea1f61deb649f6bc3f4cef3",
-		class: NullDataTy,
-	},
-	{
-		// Nulldata with more than max allowed data to be considered
-		// standard (so therefore nonstandard)
-		name: "nulldata exceed max standard push",
-		script: "RETURN PUSHDATA1 0x51 0x046708afdb0fe5548271967f1a67" +
-			"130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef3" +
-			"046708afdb0fe5548271967f1a67130b7105cd6a828e03909a67" +
-			"962e0ea1f61deb649f6bc3f4cef308",
-		class: NonStandardTy,
-	},
-	{
-		// Almost nulldata, but add an additional opcode after the data
-		// to make it nonstandard.
-		name:   "almost nulldata",
-		script: "RETURN 4 TRUE",
 		class:  NonStandardTy,
 	},
 
@@ -997,11 +931,6 @@ func TestStringifyClass(t *testing.T) {
 			stringed: "multisig",
 		},
 		{
-			name:     "nulldataty",
-			class:    NullDataTy,
-			stringed: "nulldata",
-		},
-		{
 			name:     "broken",
 			class:    ScriptClass(255),
 			stringed: "Invalid",
@@ -1013,92 +942,6 @@ func TestStringifyClass(t *testing.T) {
 		if typeString != test.stringed {
 			t.Errorf("%s: got %#q, want %#q", test.name,
 				typeString, test.stringed)
-		}
-	}
-}
-
-// TestNullDataScript tests whether NullDataScript returns a valid script.
-func TestNullDataScript(t *testing.T) {
-	tests := []struct {
-		name     string
-		data     []byte
-		expected []byte
-		err      error
-		class    ScriptClass
-	}{
-		{
-			name:     "small int",
-			data:     hexToBytes("01"),
-			expected: mustParseShortForm("RETURN 1"),
-			err:      nil,
-			class:    NullDataTy,
-		},
-		{
-			name:     "max small int",
-			data:     hexToBytes("10"),
-			expected: mustParseShortForm("RETURN 16"),
-			err:      nil,
-			class:    NullDataTy,
-		},
-		{
-			name: "data of size before OP_PUSHDATA1 is needed",
-			data: hexToBytes("0102030405060708090a0b0c0d0e0f10111" +
-				"2131415161718"),
-			expected: mustParseShortForm("RETURN 0x18 0x01020304" +
-				"05060708090a0b0c0d0e0f101112131415161718"),
-			err:   nil,
-			class: NullDataTy,
-		},
-		{
-			name: "just right",
-			data: hexToBytes("000102030405060708090a0b0c0d0e0f101" +
-				"112131415161718191a1b1c1d1e1f202122232425262" +
-				"728292a2b2c2d2e2f303132333435363738393a3b3c3" +
-				"d3e3f404142434445464748494a4b4c4d4e4f"),
-			expected: mustParseShortForm("RETURN PUSHDATA1 0x50 " +
-				"0x000102030405060708090a0b0c0d0e0f101112131" +
-				"415161718191a1b1c1d1e1f20212223242526272829" +
-				"2a2b2c2d2e2f303132333435363738393a3b3c3d3e3" +
-				"f404142434445464748494a4b4c4d4e4f"),
-			err:   nil,
-			class: NullDataTy,
-		},
-		{
-			name: "too big",
-			data: hexToBytes("000102030405060708090a0b0c0d0e0f101" +
-				"112131415161718191a1b1c1d1e1f202122232425262" +
-				"728292a2b2c2d2e2f303132333435363738393a3b3c3" +
-				"d3e3f404142434445464748494a4b4c4d4e4f50"),
-			expected: nil,
-			err:      scriptError(ErrTooMuchNullData, ""),
-			class:    NonStandardTy,
-		},
-	}
-
-	for i, test := range tests {
-		script, err := NullDataScript(test.data)
-		if e := checkScriptError(err, test.err); e != nil {
-			t.Errorf("NullDataScript: #%d (%s): %v", i, test.name,
-				e)
-			continue
-
-		}
-
-		// Check that the expected result was returned.
-		if !bytes.Equal(script, test.expected) {
-			t.Errorf("NullDataScript: #%d (%s) wrong result\n"+
-				"got: %x\nwant: %x", i, test.name, script,
-				test.expected)
-			continue
-		}
-
-		// Check that the script has the correct type.
-		scriptType := GetScriptClass(script)
-		if scriptType != test.class {
-			t.Errorf("GetScriptClass: #%d (%s) wrong result -- "+
-				"got: %v, want: %v", i, test.name, scriptType,
-				test.class)
-			continue
 		}
 	}
 }

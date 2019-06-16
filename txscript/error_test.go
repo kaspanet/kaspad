@@ -21,7 +21,6 @@ func TestErrorCodeStringer(t *testing.T) {
 		{ErrInvalidIndex, "ErrInvalidIndex"},
 		{ErrUnsupportedAddress, "ErrUnsupportedAddress"},
 		{ErrTooManyRequiredSigs, "ErrTooManyRequiredSigs"},
-		{ErrTooMuchNullData, "ErrTooMuchNullData"},
 		{ErrNotMultisigScript, "ErrNotMultisigScript"},
 		{ErrEarlyReturn, "ErrEarlyReturn"},
 		{ErrEmptyStack, "ErrEmptyStack"},

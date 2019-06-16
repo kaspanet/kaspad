@@ -43,10 +43,6 @@ const (
 	// provided public keys.
 	ErrTooManyRequiredSigs
 
-	// ErrTooMuchNullData is returned from NullDataScript when the length of
-	// the provided data exceeds MaxDataCarrierSize.
-	ErrTooMuchNullData
-
 	// ------------------------------------------
 	// Failures related to final execution state.
 	// ------------------------------------------
@@ -239,7 +235,6 @@ var errorCodeStrings = map[ErrorCode]string{
 	ErrUnsupportedAddress:        "ErrUnsupportedAddress",
 	ErrNotMultisigScript:         "ErrNotMultisigScript",
 	ErrTooManyRequiredSigs:       "ErrTooManyRequiredSigs",
-	ErrTooMuchNullData:           "ErrTooMuchNullData",
 	ErrEarlyReturn:               "ErrEarlyReturn",
 	ErrEmptyStack:                "ErrEmptyStack",
 	ErrEvalFalse:                 "ErrEvalFalse",

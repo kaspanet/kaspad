@@ -163,11 +163,6 @@ func TestScriptCompression(t *testing.T) {
 			compressed:   hexToBytes("293302aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaac"),
 		},
 		{
-			name:         "null data",
-			uncompressed: hexToBytes("6a200102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20"),
-			compressed:   hexToBytes("286a200102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20"),
-		},
-		{
 			name:         "requires 2 size bytes - data push 200 bytes",
 			uncompressed: append(hexToBytes("4cc8"), bytes.Repeat([]byte{0x00}, 200)...),
 			// [0x80, 0x50] = 208 as a variable length quantity
@@ -265,7 +260,7 @@ func TestAmountCompression(t *testing.T) {
 		compressed   uint64
 	}{
 		{
-			name:         "0 BTC (sometimes used in nulldata)",
+			name:         "0 BTC",
 			uncompressed: 0,
 			compressed:   0,
 		},
@@ -343,12 +338,6 @@ func TestCompressedTxOut(t *testing.T) {
 		pkScript   []byte
 		compressed []byte
 	}{
-		{
-			name:       "nulldata with 0 BTC",
-			amount:     0,
-			pkScript:   hexToBytes("6a200102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20"),
-			compressed: hexToBytes("00286a200102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20"),
-		},
 		{
 			name:       "pay-to-pubkey-hash dust",
 			amount:     546,
