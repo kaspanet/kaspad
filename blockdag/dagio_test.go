@@ -51,10 +51,10 @@ func TestUtxoSerialization(t *testing.T) {
 		{
 			name: "blue score 1, coinbase",
 			entry: &UTXOEntry{
-				amount:           5000000000,
-				pkScript:         hexToBytes("410496b538e853519c726a2c91e61ec11600ae1390813a627c66fb8be7947be63c52da7589379515d4e0a604f8141781e62294721166bf621e73a82cbf2342c858eeac"),
+				amount:         5000000000,
+				pkScript:       hexToBytes("410496b538e853519c726a2c91e61ec11600ae1390813a627c66fb8be7947be63c52da7589379515d4e0a604f8141781e62294721166bf621e73a82cbf2342c858eeac"),
 				blockBlueScore: 1,
-				packedFlags:      tfCoinbase,
+				packedFlags:    tfCoinbase,
 			},
 			serialized: hexToBytes("03320496b538e853519c726a2c91e61ec11600ae1390813a627c66fb8be7947be63c52"),
 		},

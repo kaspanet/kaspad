@@ -810,7 +810,7 @@ func TestDoubleSpends(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unable to create transaction: %v", err)
 	}
-	_, err = harness.txPool.ProcessTransaction(tx1, true, false, 0)
+	_, err = harness.txPool.ProcessTransaction(tx1, true, 0)
 	if err != nil {
 		t.Fatalf("ProcessTransaction: %s", err)
 	}
@@ -819,7 +819,7 @@ func TestDoubleSpends(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unable to create transaction: %v", err)
 	}
-	_, err = harness.txPool.ProcessTransaction(tx2, true, false, 0)
+	_, err = harness.txPool.ProcessTransaction(tx2, true, 0)
 	if err != nil {
 		t.Fatalf("ProcessTransaction: %s", err)
 	}
