@@ -92,9 +92,9 @@ const (
 	// checkpoint height does not match the expected one.
 	ErrBadCheckpoint
 
-	// ErrCheckpointTimeTooOld indicates a block has a timestamp before the
-	// most recent checkpoint.
-	ErrCheckpointTimeTooOld
+	// ErrFinalityPointTimeTooOld indicates a block has a timestamp before the
+	// last finality point.
+	ErrFinalityPointTimeTooOld
 
 	// ErrNoTransactions indicates the block does not have a least one
 	// transaction.  A valid block must have at least the coinbase
@@ -257,7 +257,7 @@ var errorCodeStrings = map[ErrorCode]string{
 	ErrHighHash:                  "ErrHighHash",
 	ErrBadMerkleRoot:             "ErrBadMerkleRoot",
 	ErrBadCheckpoint:             "ErrBadCheckpoint",
-	ErrCheckpointTimeTooOld:      "ErrCheckpointTimeTooOld",
+	ErrFinalityPointTimeTooOld:   "ErrFinalityPointTimeTooOld",
 	ErrNoTransactions:            "ErrNoTransactions",
 	ErrNoTxInputs:                "ErrNoTxInputs",
 	ErrTxTooBig:                  "ErrTxTooBig",

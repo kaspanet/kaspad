@@ -28,9 +28,13 @@ func RegisterSubnetworkForTest(dag *blockdag.BlockDAG, params *dagconfig.Params,
 	}
 
 	addBlockToDAG := func(block *util.Block) error {
-		isOrphan, err := dag.ProcessBlock(block, blockdag.BFNoPoWCheck)
+		isOrphan, delay, err := dag.ProcessBlock(block, blockdag.BFNoPoWCheck)
 		if err != nil {
 			return err
+		}
+
+		if delay != 0 {
+			return fmt.Errorf("ProcessBlock: unexpected returned %s delay", delay)
 		}
 
 		if isOrphan {

@@ -125,9 +125,14 @@ func TestNewBlockTemplate(t *testing.T) {
 		t.Fatalf("NewBlockTemplate: %v", err)
 	}
 
-	isOrphan, err := dag.ProcessBlock(util.NewBlock(template1.Block), blockdag.BFNoPoWCheck)
+	isOrphan, delay, err := dag.ProcessBlock(util.NewBlock(template1.Block), blockdag.BFNoPoWCheck)
 	if err != nil {
 		t.Fatalf("ProcessBlock: %v", err)
+	}
+
+	if delay != 0 {
+		t.Fatalf("ProcessBlock incorrectly returned that template1 "+
+			"has a %s delay", delay)
 	}
 
 	if isOrphan {

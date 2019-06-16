@@ -33,6 +33,10 @@ const (
 	// unorphaned
 	BFWasUnorphaned
 
+	// BFWasUnorphaned may be set to indicate that a block was just now
+	// finished the delay
+	BFAfterDelay
+
 	// BFNone is a convenience value to specifically indicate no flags.
 	BFNone BehaviorFlags = 0
 )
@@ -134,35 +138,41 @@ func (dag *BlockDAG) processOrphans(hash *daghash.Hash, flags BehaviorFlags) err
 // whether or not the block is an orphan.
 //
 // This function is safe for concurrent access.
-func (dag *BlockDAG) ProcessBlock(block *util.Block, flags BehaviorFlags) (bool, error) {
+func (dag *BlockDAG) ProcessBlock(block *util.Block, flags BehaviorFlags) (bool, time.Duration, error) {
 	dag.dagLock.Lock()
 	defer dag.dagLock.Unlock()
 
-	fastAdd := flags&BFFastAdd == BFFastAdd
+	isDelayedBlock := flags&BFAfterDelay == BFAfterDelay
 
 	blockHash := block.Hash()
 	log.Tracef("Processing block %s", blockHash)
 
-	// The block must not already exist in the main chain or side chains.
+	// The block must not already exist in the DAG.
 	exists, err := dag.BlockExists(blockHash)
 	if err != nil {
-		return false, err
+		return false, 0, err
 	}
 	if exists {
 		str := fmt.Sprintf("already have block %s", blockHash)
-		return false, ruleError(ErrDuplicateBlock, str)
+		return false, 0, ruleError(ErrDuplicateBlock, str)
 	}
 
 	// The block must not already exist as an orphan.
 	if _, exists := dag.orphans[*blockHash]; exists {
 		str := fmt.Sprintf("already have block (orphan) %s", blockHash)
-		return false, ruleError(ErrDuplicateBlock, str)
+		return false, 0, ruleError(ErrDuplicateBlock, str)
 	}
 
-	// Perform preliminary sanity checks on the block and its transactions.
-	err = dag.checkBlockSanity(block, flags)
-	if err != nil {
-		return false, err
+	if !isDelayedBlock {
+		// Perform preliminary sanity checks on the block and its transactions.
+		delay, err := dag.checkBlockSanity(block, flags)
+		if err != nil {
+			return false, 0, err
+		}
+
+		if delay != 0 {
+			return false, delay, err
+		}
 	}
 
 	// Find the previous checkpoint and perform some additional checks based
@@ -172,36 +182,14 @@ func (dag *BlockDAG) ProcessBlock(block *util.Block, flags BehaviorFlags) (bool,
 	// used to eat memory, and ensuring expected (versus claimed) proof of
 	// work requirements since the previous checkpoint are met.
 	blockHeader := &block.MsgBlock().Header
-	checkpointNode, err := dag.findPreviousCheckpoint()
-	if err != nil {
-		return false, err
-	}
-	if checkpointNode != nil {
+	if dag.lastFinalityPoint != nil {
 		// Ensure the block timestamp is after the checkpoint timestamp.
-		checkpointTime := time.Unix(checkpointNode.timestamp, 0)
-		if blockHeader.Timestamp.Before(checkpointTime) {
+		lastFinalityPoint := time.Unix(dag.lastFinalityPoint.timestamp, 0)
+		if blockHeader.Timestamp.Before(lastFinalityPoint) {
 			str := fmt.Sprintf("block %s has timestamp %s before "+
-				"last checkpoint timestamp %s", blockHash,
-				blockHeader.Timestamp, checkpointTime)
-			return false, ruleError(ErrCheckpointTimeTooOld, str)
-		}
-		if !fastAdd {
-			// Even though the checks prior to now have already ensured the
-			// proof of work exceeds the claimed amount, the claimed amount
-			// is a field in the block header which could be forged.  This
-			// check ensures the proof of work is at least the minimum
-			// expected based on elapsed time since the last checkpoint and
-			// maximum adjustment allowed by the retarget rules.
-			duration := blockHeader.Timestamp.Sub(checkpointTime)
-			requiredTarget := util.CompactToBig(dag.calcEasiestDifficulty(
-				checkpointNode.bits, duration))
-			currentTarget := util.CompactToBig(blockHeader.Bits)
-			if currentTarget.Cmp(requiredTarget) > 0 {
-				str := fmt.Sprintf("block target difficulty of %064x "+
-					"is too low when compared to the previous "+
-					"checkpoint", currentTarget)
-				return false, ruleError(ErrDifficultyTooLow, str)
-			}
+				"last finality point timestamp %s", blockHash,
+				blockHeader.Timestamp, lastFinalityPoint)
+			return false, 0, ruleError(ErrFinalityPointTimeTooOld, str)
 		}
 	}
 
@@ -210,7 +198,7 @@ func (dag *BlockDAG) ProcessBlock(block *util.Block, flags BehaviorFlags) (bool,
 	for _, parentHash := range blockHeader.ParentHashes {
 		parentExists, err := dag.BlockExists(parentHash)
 		if err != nil {
-			return false, err
+			return false, 0, err
 		}
 
 		if !parentExists {
@@ -222,14 +210,14 @@ func (dag *BlockDAG) ProcessBlock(block *util.Block, flags BehaviorFlags) (bool,
 		log.Infof("Adding orphan block %s", blockHash)
 		dag.addOrphanBlock(block)
 
-		return true, nil
+		return true, 0, nil
 	}
 
 	// The block has passed all context independent checks and appears sane
 	// enough to potentially accept it into the block DAG.
 	err = dag.maybeAcceptBlock(block, flags)
 	if err != nil {
-		return false, err
+		return false, 0, err
 	}
 
 	// Accept any orphan blocks that depend on this block (they are
@@ -237,10 +225,10 @@ func (dag *BlockDAG) ProcessBlock(block *util.Block, flags BehaviorFlags) (bool,
 	// there are no more.
 	err = dag.processOrphans(blockHash, flags)
 	if err != nil {
-		return false, err
+		return false, 0, err
 	}
 
 	log.Debugf("Accepted block %s", blockHash)
 
-	return false, nil
+	return false, 0, nil
 }

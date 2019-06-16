@@ -255,9 +255,13 @@ func (tc *testContext) mineTransactions(transactions []*util.Tx, coinbaseOutputs
 		tc.t.Fatalf("PrepareBlockForTest: %s", err)
 	}
 	utilBlock := util.NewBlock(block)
-	isOrphan, err := tc.harness.txPool.cfg.DAG.ProcessBlock(utilBlock, blockdag.BFNoPoWCheck)
+	isOrphan, delay, err := tc.harness.txPool.cfg.DAG.ProcessBlock(utilBlock, blockdag.BFNoPoWCheck)
 	if err != nil {
 		tc.t.Fatalf("ProcessBlock: %s", err)
+	}
+	if delay != 0 {
+		tc.t.Fatalf("ProcessBlock incorrectly returned that block %s "+
+			"has a %s delay", block.BlockHash(), delay)
 	}
 	if isOrphan {
 		tc.t.Fatalf("block %s was unexpectedly orphan", block.BlockHash())
@@ -1576,7 +1580,7 @@ func TestExtractRejectCode(t *testing.T) {
 			wireRejectCode:        wire.RejectObsolete,
 		},
 		{
-			blockdagRuleErrorCode: blockdag.ErrCheckpointTimeTooOld,
+			blockdagRuleErrorCode: blockdag.ErrFinalityPointTimeTooOld,
 			wireRejectCode:        wire.RejectCheckpoint,
 		},
 		{

@@ -48,6 +48,8 @@ var (
 )
 
 const phantomK = 10
+const difficultyAdjustmentWindowSize = 2640
+const timestampDeviationTolerance = 13
 
 // Checkpoint identifies a known good point in the block chain.  Using
 // checkpoints allows a few optimizations for old blocks during initial download
@@ -136,32 +138,17 @@ type Params struct {
 	// is reduced.
 	SubsidyReductionInterval uint64
 
-	// TargetTimespan is the desired amount of time that should elapse
-	// before the block difficulty requirement is examined to determine how
-	// it should be changed in order to maintain the desired block
-	// generation rate.
-	TargetTimespan time.Duration
-
 	// TargetTimePerBlock is the desired amount of time to generate each
 	// block.
 	TargetTimePerBlock time.Duration
 
-	// RetargetAdjustmentFactor is the adjustment factor used to limit
-	// the minimum and maximum amount of adjustment that can occur between
-	// difficulty retargets.
-	RetargetAdjustmentFactor int64
+	// TimestampDeviationTolerance is the maximum offset a block timestamp
+	// is allowed to be in the future before it gets delayed
+	TimestampDeviationTolerance uint64
 
-	// ReduceMinDifficulty defines whether the network should reduce the
-	// minimum required difficulty after a long enough period of time has
-	// passed without finding a block.  This is really only useful for test
-	// networks and should not be set on a main network.
-	ReduceMinDifficulty bool
-
-	// MinDiffReductionTime is the amount of time after which the minimum
-	// required difficulty should be reduced when a block hasn't been found.
-	//
-	// NOTE: This only applies if ReduceMinDifficulty is true.
-	MinDiffReductionTime time.Duration
+	// DifficultyAdjustmentWindowSize is the size of window that is inspected
+	// to calculate the required difficulty of each block.
+	DifficultyAdjustmentWindowSize uint64
 
 	// GenerateSupported specifies whether or not CPU mining is allowed.
 	GenerateSupported bool
@@ -217,18 +204,16 @@ var MainNetParams = Params{
 	DNSSeeds:    []string{},
 
 	// DAG parameters
-	GenesisBlock:             &genesisBlock,
-	GenesisHash:              &genesisHash,
-	PowLimit:                 mainPowLimit,
-	PowLimitBits:             0x207fffff,
-	BlockRewardMaturity:      100,
-	SubsidyReductionInterval: 210000,
-	TargetTimespan:           time.Hour * 1,   // 1 hour
-	TargetTimePerBlock:       time.Second * 1, // 1 second
-	RetargetAdjustmentFactor: 4,               // 25% less, 400% more
-	ReduceMinDifficulty:      false,
-	MinDiffReductionTime:     0,
-	GenerateSupported:        false,
+	GenesisBlock:                   &genesisBlock,
+	GenesisHash:                    &genesisHash,
+	PowLimit:                       mainPowLimit,
+	PowLimitBits:                   0x207fffff,
+	BlockRewardMaturity:            100,
+	SubsidyReductionInterval:       210000,
+	TargetTimePerBlock:             time.Second * 1, // 1 second
+	DifficultyAdjustmentWindowSize: difficultyAdjustmentWindowSize,
+	TimestampDeviationTolerance:    timestampDeviationTolerance,
+	GenerateSupported:              false,
 
 	// Checkpoints ordered from oldest to newest.
 	Checkpoints: nil,
@@ -280,18 +265,16 @@ var RegressionNetParams = Params{
 	DNSSeeds:    []string{},
 
 	// Chain parameters
-	GenesisBlock:             &regTestGenesisBlock,
-	GenesisHash:              &regTestGenesisHash,
-	PowLimit:                 regressionPowLimit,
-	PowLimitBits:             0x207fffff,
-	BlockRewardMaturity:      100,
-	SubsidyReductionInterval: 150,
-	TargetTimespan:           time.Hour * 1,   // 1 hour
-	TargetTimePerBlock:       time.Second * 1, // 1 second
-	RetargetAdjustmentFactor: 4,               // 25% less, 400% more
-	ReduceMinDifficulty:      true,
-	MinDiffReductionTime:     time.Minute * 20, // TargetTimePerBlock * 2
-	GenerateSupported:        true,
+	GenesisBlock:                   &regTestGenesisBlock,
+	GenesisHash:                    &regTestGenesisHash,
+	PowLimit:                       regressionPowLimit,
+	PowLimitBits:                   0x207fffff,
+	BlockRewardMaturity:            100,
+	SubsidyReductionInterval:       150,
+	TargetTimePerBlock:             time.Second * 1, // 1 second
+	DifficultyAdjustmentWindowSize: difficultyAdjustmentWindowSize,
+	TimestampDeviationTolerance:    timestampDeviationTolerance,
+	GenerateSupported:              true,
 
 	// Checkpoints ordered from oldest to newest.
 	Checkpoints: nil,
@@ -343,18 +326,16 @@ var TestNet3Params = Params{
 	DNSSeeds:    []string{},
 
 	// Chain parameters
-	GenesisBlock:             &testNet3GenesisBlock,
-	GenesisHash:              &testNet3GenesisHash,
-	PowLimit:                 testNet3PowLimit,
-	PowLimitBits:             0x207fffff,
-	BlockRewardMaturity:      100,
-	SubsidyReductionInterval: 210000,
-	TargetTimespan:           time.Hour * 1,   // 1 hour
-	TargetTimePerBlock:       time.Second * 1, // 1 second
-	RetargetAdjustmentFactor: 4,               // 25% less, 400% more
-	ReduceMinDifficulty:      true,
-	MinDiffReductionTime:     time.Minute * 20, // TargetTimePerBlock * 2
-	GenerateSupported:        true,
+	GenesisBlock:                   &testNet3GenesisBlock,
+	GenesisHash:                    &testNet3GenesisHash,
+	PowLimit:                       testNet3PowLimit,
+	PowLimitBits:                   0x207fffff,
+	BlockRewardMaturity:            100,
+	SubsidyReductionInterval:       210000,
+	TargetTimePerBlock:             time.Second * 1, // 1 second
+	DifficultyAdjustmentWindowSize: difficultyAdjustmentWindowSize,
+	TimestampDeviationTolerance:    timestampDeviationTolerance,
+	GenerateSupported:              true,
 
 	// Checkpoints ordered from oldest to newest.
 	Checkpoints: nil,
@@ -410,18 +391,16 @@ var SimNetParams = Params{
 	DNSSeeds:    []string{}, // NOTE: There must NOT be any seeds.
 
 	// Chain parameters
-	GenesisBlock:             &simNetGenesisBlock,
-	GenesisHash:              &simNetGenesisHash,
-	PowLimit:                 simNetPowLimit,
-	PowLimitBits:             0x207fffff,
-	BlockRewardMaturity:      100,
-	SubsidyReductionInterval: 210000,
-	TargetTimespan:           time.Hour * 1,   // 1 hour
-	TargetTimePerBlock:       time.Second * 1, // 1 second
-	RetargetAdjustmentFactor: 4,               // 25% less, 400% more
-	ReduceMinDifficulty:      true,
-	MinDiffReductionTime:     time.Minute * 20, // TargetTimePerBlock * 2
-	GenerateSupported:        true,
+	GenesisBlock:                   &simNetGenesisBlock,
+	GenesisHash:                    &simNetGenesisHash,
+	PowLimit:                       simNetPowLimit,
+	PowLimitBits:                   0x207fffff,
+	BlockRewardMaturity:            100,
+	SubsidyReductionInterval:       210000,
+	TargetTimePerBlock:             time.Second * 1, // 1 second
+	DifficultyAdjustmentWindowSize: difficultyAdjustmentWindowSize,
+	TimestampDeviationTolerance:    timestampDeviationTolerance,
+	GenerateSupported:              true,
 
 	// Checkpoints ordered from oldest to newest.
 	Checkpoints: nil,
@@ -469,18 +448,16 @@ var DevNetParams = Params{
 	DNSSeeds:    []string{"devnet-dnsseed.daglabs.com"},
 
 	// Chain parameters
-	GenesisBlock:             &devNetGenesisBlock,
-	GenesisHash:              &devNetGenesisHash,
-	PowLimit:                 devNetPowLimit,
-	PowLimitBits:             util.BigToCompact(devNetPowLimit), // 0x1e7fffff
-	BlockRewardMaturity:      100,
-	SubsidyReductionInterval: 210000,
-	TargetTimespan:           time.Hour * 1,   // 1 hour
-	TargetTimePerBlock:       time.Second * 1, // 1 second
-	RetargetAdjustmentFactor: 4,               // 25% less, 400% more
-	ReduceMinDifficulty:      true,
-	MinDiffReductionTime:     time.Minute * 20, // TargetTimePerBlock * 2
-	GenerateSupported:        true,
+	GenesisBlock:                   &devNetGenesisBlock,
+	GenesisHash:                    &devNetGenesisHash,
+	PowLimit:                       devNetPowLimit,
+	PowLimitBits:                   util.BigToCompact(devNetPowLimit), // 0x1e7fffff
+	BlockRewardMaturity:            100,
+	SubsidyReductionInterval:       210000,
+	TargetTimePerBlock:             time.Second * 1, // 1 second
+	DifficultyAdjustmentWindowSize: difficultyAdjustmentWindowSize,
+	TimestampDeviationTolerance:    timestampDeviationTolerance,
+	GenerateSupported:              true,
 
 	// Checkpoints ordered from oldest to newest.
 	Checkpoints: nil,

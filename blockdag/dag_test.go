@@ -59,9 +59,13 @@ func TestBlockCount(t *testing.T) {
 	dag.TestSetBlockRewardMaturity(1)
 
 	for i := 1; i < len(blocks); i++ {
-		isOrphan, err := dag.ProcessBlock(blocks[i], BFNone)
+		isOrphan, delay, err := dag.ProcessBlock(blocks[i], BFNone)
 		if err != nil {
 			t.Fatalf("ProcessBlock fail on block %v: %v\n", i, err)
+		}
+		if delay != 0 {
+			t.Fatalf("ProcessBlock incorrectly returned that block %d "+
+				"has a %s delay", i, delay)
 		}
 		if isOrphan {
 			t.Fatalf("ProcessBlock incorrectly returned block %v "+
@@ -108,9 +112,13 @@ func TestHaveBlock(t *testing.T) {
 	dag.TestSetBlockRewardMaturity(1)
 
 	for i := 1; i < len(blocks); i++ {
-		isOrphan, err := dag.ProcessBlock(blocks[i], BFNone)
+		isOrphan, delay, err := dag.ProcessBlock(blocks[i], BFNone)
 		if err != nil {
 			t.Fatalf("ProcessBlock fail on block %v: %v\n", i, err)
+		}
+		if delay != 0 {
+			t.Fatalf("ProcessBlock incorrectly returned that block %d "+
+				"has a %s delay", i, delay)
 		}
 		if isOrphan {
 			t.Fatalf("ProcessBlock incorrectly returned block %v "+
@@ -130,11 +138,15 @@ func TestHaveBlock(t *testing.T) {
 		}
 		blocks = append(blocks, blockTmp...)
 	}
-	isOrphan, err := dag.ProcessBlock(blocks[6], BFNone)
+	isOrphan, delay, err := dag.ProcessBlock(blocks[6], BFNone)
 
 	// Block 3C should fail to connect since its parents are related. (It points to 1 and 2, and 1 is the parent of 2)
 	if err == nil {
 		t.Fatalf("ProcessBlock for block 3C has no error when expected to have an error\n")
+	}
+	if delay != 0 {
+		t.Fatalf("ProcessBlock incorrectly returned that block 3C "+
+			"has a %s delay", delay)
 	}
 	if isOrphan {
 		t.Fatalf("ProcessBlock incorrectly returned block 3C " +
@@ -153,7 +165,7 @@ func TestHaveBlock(t *testing.T) {
 		}
 		blocks = append(blocks, blockTmp...)
 	}
-	isOrphan, err = dag.ProcessBlock(blocks[7], BFNone)
+	isOrphan, delay, err = dag.ProcessBlock(blocks[7], BFNone)
 
 	// Block 3D should fail to connect since it has a transaction with the same input twice
 	if err == nil {
@@ -166,15 +178,23 @@ func TestHaveBlock(t *testing.T) {
 	if !ok || rErr.ErrorCode != ErrDuplicateTxInputs {
 		t.Fatalf("ProcessBlock for block 3D expected error code %s but got %s\n", ErrDuplicateTxInputs, rErr.ErrorCode)
 	}
+	if delay != 0 {
+		t.Fatalf("ProcessBlock incorrectly returned that block 3D "+
+			"has a %s delay", delay)
+	}
 	if isOrphan {
 		t.Fatalf("ProcessBlock incorrectly returned block 3D " +
 			"is an orphan\n")
 	}
 
 	// Insert an orphan block.
-	isOrphan, err = dag.ProcessBlock(util.NewBlock(&Block100000), BFNoPoWCheck)
+	isOrphan, delay, err = dag.ProcessBlock(util.NewBlock(&Block100000), BFNoPoWCheck)
 	if err != nil {
-		t.Fatalf("Unable to process block: %v", err)
+		t.Fatalf("Unable to process block 100000: %v", err)
+	}
+	if delay != 0 {
+		t.Fatalf("ProcessBlock incorrectly returned that block 100000 "+
+			"has a %s delay", delay)
 	}
 	if !isOrphan {
 		t.Fatalf("ProcessBlock indicated block is an not orphan when " +
@@ -812,7 +832,12 @@ func testErrorThroughPatching(t *testing.T, expectedErrorMessage string, targetF
 	err = nil
 	for i := 1; i < len(blocks); i++ {
 		var isOrphan bool
-		isOrphan, err = dag.ProcessBlock(blocks[i], BFNone)
+		var delay time.Duration
+		isOrphan, delay, err = dag.ProcessBlock(blocks[i], BFNone)
+		if delay != 0 {
+			t.Fatalf("ProcessBlock incorrectly returned that block %d "+
+				"has a %s delay", i, delay)
+		}
 		if isOrphan {
 			t.Fatalf("ProcessBlock incorrectly returned block %v "+
 				"is an orphan\n", i)

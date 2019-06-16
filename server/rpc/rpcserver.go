@@ -1698,16 +1698,16 @@ func (state *gbtWorkState) updateBlockTemplate(s *Server, useCoinbaseValue bool)
 // and returned to the caller.
 //
 // This function MUST be called with the state locked.
-func (state *gbtWorkState) blockTemplateResult(useCoinbaseValue bool, submitOld *bool) (*btcjson.GetBlockTemplateResult, error) {
+func (state *gbtWorkState) blockTemplateResult(dag *blockdag.BlockDAG, useCoinbaseValue bool, submitOld *bool) (*btcjson.GetBlockTemplateResult, error) {
 	// Ensure the timestamps are still in valid range for the template.
 	// This should really only ever happen if the local clock is changed
 	// after the template is generated, but it's important to avoid serving
-	// invalid block templates.
+	// block templates that will be delayed on other nodes.
 	template := state.template
 	msgBlock := template.Block
 	header := &msgBlock.Header
 	adjustedTime := state.timeSource.AdjustedTime()
-	maxTime := adjustedTime.Add(time.Second * blockdag.MaxTimeOffsetSeconds)
+	maxTime := adjustedTime.Add(time.Second * time.Duration(dag.TimestampDeviationTolerance))
 	if header.Timestamp.After(maxTime) {
 		return nil, &btcjson.RPCError{
 			Code: btcjson.ErrRPCOutOfRange,
@@ -1858,7 +1858,7 @@ func handleGetBlockTemplateLongPoll(s *Server, longPollID string, useCoinbaseVal
 	// the caller is invalid.
 	parentHashes, lastGenerated, err := decodeLongPollID(longPollID)
 	if err != nil {
-		result, err := state.blockTemplateResult(useCoinbaseValue, nil)
+		result, err := state.blockTemplateResult(s.cfg.DAG, useCoinbaseValue, nil)
 		if err != nil {
 			state.Unlock()
 			return nil, err
@@ -1879,7 +1879,7 @@ func handleGetBlockTemplateLongPoll(s *Server, longPollID string, useCoinbaseVal
 		// old block template depending on whether or not a solution has
 		// already been found and added to the block chain.
 		submitOld := areHashesEqual
-		result, err := state.blockTemplateResult(useCoinbaseValue,
+		result, err := state.blockTemplateResult(s.cfg.DAG, useCoinbaseValue,
 			&submitOld)
 		if err != nil {
 			state.Unlock()
@@ -1920,7 +1920,7 @@ func handleGetBlockTemplateLongPoll(s *Server, longPollID string, useCoinbaseVal
 	// block template depending on whether or not a solution has already
 	// been found and added to the block chain.
 	submitOld := areHashesEqual
-	result, err := state.blockTemplateResult(useCoinbaseValue, &submitOld)
+	result, err := state.blockTemplateResult(s.cfg.DAG, useCoinbaseValue, &submitOld)
 	if err != nil {
 		return nil, err
 	}
@@ -2011,7 +2011,7 @@ func handleGetBlockTemplateRequest(s *Server, request *btcjson.TemplateRequest, 
 	if err := state.updateBlockTemplate(s, useCoinbaseValue); err != nil {
 		return nil, err
 	}
-	return state.blockTemplateResult(useCoinbaseValue, nil)
+	return state.blockTemplateResult(s.cfg.DAG, useCoinbaseValue, nil)
 }
 
 // chainErrToGBTErrString converts an error returned from btcchain to a string
@@ -2048,7 +2048,7 @@ func chainErrToGBTErrString(err error) string {
 		return "bad-txnmrklroot"
 	case blockdag.ErrBadCheckpoint:
 		return "bad-checkpoint"
-	case blockdag.ErrCheckpointTimeTooOld:
+	case blockdag.ErrFinalityPointTimeTooOld:
 		return "checkpoint-time-too-old"
 	case blockdag.ErrNoTransactions:
 		return "bad-txns-none"

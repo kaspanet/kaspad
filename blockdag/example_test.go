@@ -58,10 +58,14 @@ func ExampleBlockDAG_ProcessBlock() {
 	// cause an error by trying to process the genesis block which already
 	// exists.
 	genesisBlock := util.NewBlock(dagconfig.MainNetParams.GenesisBlock)
-	isOrphan, err := chain.ProcessBlock(genesisBlock,
+	isOrphan, delay, err := chain.ProcessBlock(genesisBlock,
 		blockdag.BFNone)
 	if err != nil {
 		fmt.Printf("Failed to process block: %v\n", err)
+		return
+	}
+	if delay != 0 {
+		fmt.Printf("Block got %s delay", delay)
 		return
 	}
 	fmt.Printf("Block accepted. Is it an orphan?: %v", isOrphan)

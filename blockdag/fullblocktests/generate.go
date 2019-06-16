@@ -69,6 +69,7 @@ type AcceptedBlock struct {
 	Block    *wire.MsgBlock
 	Height   uint64
 	IsOrphan bool
+	Delay    time.Duration
 }
 
 // Ensure AcceptedBlock implements the TestInstance interface.

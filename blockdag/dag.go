@@ -76,9 +76,9 @@ type BlockDAG struct {
 	// parameters.  They are also set when the instance is created and
 	// can't be changed afterwards, so there is no need to protect them with
 	// a separate mutex.
-	minRetargetTimespan int64  // target timespan / adjustment factor
-	maxRetargetTimespan int64  // target timespan * adjustment factor
-	blocksPerRetarget   uint64 // target timespan / target time per block
+	targetTimePerBlock             uint64 // The target delay between blocks (in seconds)
+	difficultyAdjustmentWindowSize uint64
+	TimestampDeviationTolerance    uint64
 
 	// dagLock protects concurrent access to the vast majority of the
 	// fields in this struct below this point.
@@ -419,7 +419,7 @@ func (dag *BlockDAG) calcSequenceLock(node *blockNode, utxoSet UTXOSet, tx *util
 			for blockNode.selectedParent.blueScore > inputBlueScore {
 				blockNode = blockNode.selectedParent
 			}
-			medianTime := blockNode.PastMedianTime()
+			medianTime := blockNode.PastMedianTime(dag)
 
 			// Time based relative time-locks as defined by BIP 68
 			// have a time granularity of RelativeLockSeconds, so
@@ -1084,7 +1084,10 @@ func updateTipsUTXO(dag *BlockDAG, virtualUTXO UTXOSet) error {
 		if err != nil {
 			return err
 		}
-		dag.utxoDiffStore.setBlockDiff(tip, diff)
+		err = dag.utxoDiffStore.setBlockDiff(tip, diff)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -1175,7 +1178,7 @@ func (dag *BlockDAG) UTXOSet() *FullUTXOSet {
 
 // CalcPastMedianTime returns the past median time of the DAG.
 func (dag *BlockDAG) CalcPastMedianTime() time.Time {
-	return dag.virtual.tips().bluest().PastMedianTime()
+	return dag.virtual.tips().bluest().PastMedianTime(dag)
 }
 
 // GetUTXOEntry returns the requested unspent transaction output. The returned
@@ -1853,30 +1856,28 @@ func New(config *Config) (*BlockDAG, error) {
 	}
 
 	params := config.DAGParams
-	targetTimespan := int64(params.TargetTimespan / time.Second)
-	targetTimePerBlock := int64(params.TargetTimePerBlock / time.Second)
-	adjustmentFactor := params.RetargetAdjustmentFactor
+	targetTimePerBlock := uint64(params.TargetTimePerBlock / time.Second)
 	index := newBlockIndex(config.DB, params)
 	dag := BlockDAG{
-		checkpoints:              config.Checkpoints,
-		checkpointsByChainHeight: checkpointsByChainHeight,
-		db:                       config.DB,
-		dagParams:                params,
-		timeSource:               config.TimeSource,
-		sigCache:                 config.SigCache,
-		indexManager:             config.IndexManager,
-		minRetargetTimespan:      targetTimespan / adjustmentFactor,
-		maxRetargetTimespan:      targetTimespan * adjustmentFactor,
-		blocksPerRetarget:        uint64(targetTimespan / targetTimePerBlock),
-		index:                    index,
-		virtual:                  newVirtualBlock(nil, params.K),
-		orphans:                  make(map[daghash.Hash]*orphanBlock),
-		prevOrphans:              make(map[daghash.Hash][]*orphanBlock),
-		warningCaches:            newThresholdCaches(vbNumBits),
-		deploymentCaches:         newThresholdCaches(dagconfig.DefinedDeployments),
-		blockCount:               0,
-		SubnetworkStore:          newSubnetworkStore(config.DB),
-		subnetworkID:             config.SubnetworkID,
+		checkpoints:                    config.Checkpoints,
+		checkpointsByChainHeight:       checkpointsByChainHeight,
+		db:                             config.DB,
+		dagParams:                      params,
+		timeSource:                     config.TimeSource,
+		sigCache:                       config.SigCache,
+		indexManager:                   config.IndexManager,
+		targetTimePerBlock:             targetTimePerBlock,
+		difficultyAdjustmentWindowSize: params.DifficultyAdjustmentWindowSize,
+		TimestampDeviationTolerance:    params.TimestampDeviationTolerance,
+		index:                          index,
+		virtual:                        newVirtualBlock(nil, params.K),
+		orphans:                        make(map[daghash.Hash]*orphanBlock),
+		prevOrphans:                    make(map[daghash.Hash][]*orphanBlock),
+		warningCaches:                  newThresholdCaches(vbNumBits),
+		deploymentCaches:               newThresholdCaches(dagconfig.DefinedDeployments),
+		blockCount:                     0,
+		SubnetworkStore:                newSubnetworkStore(config.DB),
+		subnetworkID:                   config.SubnetworkID,
 	}
 
 	dag.utxoDiffStore = newUTXODiffStore(&dag)
@@ -1911,9 +1912,13 @@ func New(config *Config) (*BlockDAG, error) {
 	if genesis == nil {
 		genesisBlock := util.NewBlock(dag.dagParams.GenesisBlock)
 		var isOrphan bool
-		isOrphan, err = dag.ProcessBlock(genesisBlock, BFNone)
+		var delay time.Duration
+		isOrphan, delay, err = dag.ProcessBlock(genesisBlock, BFNone)
 		if err != nil {
 			return nil, err
+		}
+		if delay != 0 {
+			return nil, errors.New("Genesis block shouldn't be in the future")
 		}
 		if isOrphan {
 			return nil, errors.New("Genesis block is unexpectedly orphan")

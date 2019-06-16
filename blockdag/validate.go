@@ -24,20 +24,11 @@ const (
 	// allowed for a block.  It is a fraction of the max block payload size.
 	MaxSigOpsPerBlock = wire.MaxBlockPayload / 50
 
-	// MaxTimeOffsetSeconds is the maximum number of seconds a block time
-	// is allowed to be ahead of the current time.  This is currently 2
-	// hours.
-	MaxTimeOffsetSeconds = 2 * 60 * 60
-
 	// MinCoinbaseScriptLen is the minimum length a coinbase script can be.
 	MinCoinbaseScriptLen = 2
 
 	// MaxCoinbaseScriptLen is the maximum length a coinbase script can be.
 	MaxCoinbaseScriptLen = 100
-
-	// medianTimeBlocks is the number of previous blocks which should be
-	// used to calculate the median time used to validate block timestamps.
-	medianTimeBlocks = 51
 
 	// baseSubsidy is the starting subsidy amount for mined blocks.  This
 	// value is halved every SubsidyHalvingInterval blocks.
@@ -402,23 +393,23 @@ func CountP2SHSigOps(tx *util.Tx, isBlockReward bool, utxoSet UTXOSet) (int, err
 //
 // The flags do not modify the behavior of this function directly, however they
 // are needed to pass along to checkProofOfWork.
-func (dag *BlockDAG) checkBlockHeaderSanity(header *wire.BlockHeader, flags BehaviorFlags) error {
+func (dag *BlockDAG) checkBlockHeaderSanity(header *wire.BlockHeader, flags BehaviorFlags) (time.Duration, error) {
 	// Ensure the proof of work bits in the block header is in min/max range
 	// and the block hash is less than the target value described by the
 	// bits.
 	err := dag.checkProofOfWork(header, flags)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	if len(header.ParentHashes) == 0 {
 		if !header.BlockHash().IsEqual(dag.dagParams.GenesisHash) {
-			return ruleError(ErrNoParents, "block has no parents")
+			return 0, ruleError(ErrNoParents, "block has no parents")
 		}
 	} else {
 		err = checkBlockParentsOrder(header)
 		if err != nil {
-			return err
+			return 0, err
 		}
 	}
 
@@ -430,19 +421,17 @@ func (dag *BlockDAG) checkBlockHeaderSanity(header *wire.BlockHeader, flags Beha
 	if !header.Timestamp.Equal(time.Unix(header.Timestamp.Unix(), 0)) {
 		str := fmt.Sprintf("block timestamp of %s has a higher "+
 			"precision than one second", header.Timestamp)
-		return ruleError(ErrInvalidTime, str)
+		return 0, ruleError(ErrInvalidTime, str)
 	}
 
 	// Ensure the block time is not too far in the future.
 	maxTimestamp := dag.timeSource.AdjustedTime().Add(time.Second *
-		MaxTimeOffsetSeconds)
+		time.Duration(dag.TimestampDeviationTolerance*dag.targetTimePerBlock))
 	if header.Timestamp.After(maxTimestamp) {
-		str := fmt.Sprintf("block timestamp of %s is too far in the "+
-			"future", header.Timestamp)
-		return ruleError(ErrTimeTooNew, str)
+		return maxTimestamp.Sub(header.Timestamp), nil
 	}
 
-	return nil
+	return 0, nil
 }
 
 //checkBlockParentsOrder ensures that the block's parents are ordered by hash
@@ -465,18 +454,18 @@ func checkBlockParentsOrder(header *wire.BlockHeader) error {
 //
 // The flags do not modify the behavior of this function directly, however they
 // are needed to pass along to checkBlockHeaderSanity.
-func (dag *BlockDAG) checkBlockSanity(block *util.Block, flags BehaviorFlags) error {
+func (dag *BlockDAG) checkBlockSanity(block *util.Block, flags BehaviorFlags) (time.Duration, error) {
 	msgBlock := block.MsgBlock()
 	header := &msgBlock.Header
-	err := dag.checkBlockHeaderSanity(header, flags)
+	delay, err := dag.checkBlockHeaderSanity(header, flags)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	// A block must have at least one transaction.
 	numTx := len(msgBlock.Transactions)
 	if numTx == 0 {
-		return ruleError(ErrNoTransactions, "block does not contain "+
+		return 0, ruleError(ErrNoTransactions, "block does not contain "+
 			"any transactions")
 	}
 
@@ -485,7 +474,7 @@ func (dag *BlockDAG) checkBlockSanity(block *util.Block, flags BehaviorFlags) er
 	if numTx > wire.MaxBlockPayload {
 		str := fmt.Sprintf("block contains too many transactions - "+
 			"got %d, max %d", numTx, wire.MaxBlockPayload)
-		return ruleError(ErrBlockTooBig, str)
+		return 0, ruleError(ErrBlockTooBig, str)
 	}
 
 	// A block must not exceed the maximum allowed block payload when
@@ -494,19 +483,19 @@ func (dag *BlockDAG) checkBlockSanity(block *util.Block, flags BehaviorFlags) er
 	if serializedSize > wire.MaxBlockPayload {
 		str := fmt.Sprintf("serialized block is too big - got %d, "+
 			"max %d", serializedSize, wire.MaxBlockPayload)
-		return ruleError(ErrBlockTooBig, str)
+		return 0, ruleError(ErrBlockTooBig, str)
 	}
 
 	// The first transaction in a block must be a coinbase.
 	transactions := block.Transactions()
 	if !IsCoinBase(transactions[0]) {
-		return ruleError(ErrFirstTxNotCoinbase, "first transaction in "+
+		return 0, ruleError(ErrFirstTxNotCoinbase, "first transaction in "+
 			"block is not a coinbase")
 	}
 
 	isGenesis := block.MsgBlock().Header.IsGenesis()
 	if !isGenesis && !IsFeeTransaction(transactions[1]) {
-		return ruleError(ErrSecondTxNotFeeTransaction, "second transaction in "+
+		return 0, ruleError(ErrSecondTxNotFeeTransaction, "second transaction in "+
 			"block is not a fee transaction")
 	}
 
@@ -521,15 +510,15 @@ func (dag *BlockDAG) checkBlockSanity(block *util.Block, flags BehaviorFlags) er
 		if IsCoinBase(tx) {
 			str := fmt.Sprintf("block contains second coinbase at "+
 				"index %d", i+2)
-			return ruleError(ErrMultipleCoinbases, str)
+			return 0, ruleError(ErrMultipleCoinbases, str)
 		}
 		if IsFeeTransaction(tx) {
 			str := fmt.Sprintf("block contains second fee transaction at "+
 				"index %d", i+2)
-			return ruleError(ErrMultipleFeeTransactions, str)
+			return 0, ruleError(ErrMultipleFeeTransactions, str)
 		}
 		if subnetworkid.Less(&tx.MsgTx().SubnetworkID, &transactions[i].MsgTx().SubnetworkID) {
-			return ruleError(ErrTransactionsNotSorted, "transactions must be sorted by subnetwork")
+			return 0, ruleError(ErrTransactionsNotSorted, "transactions must be sorted by subnetwork")
 		}
 	}
 
@@ -538,7 +527,7 @@ func (dag *BlockDAG) checkBlockSanity(block *util.Block, flags BehaviorFlags) er
 	for _, tx := range transactions {
 		err := CheckTransactionSanity(tx, dag.subnetworkID)
 		if err != nil {
-			return err
+			return 0, err
 		}
 	}
 
@@ -554,7 +543,7 @@ func (dag *BlockDAG) checkBlockSanity(block *util.Block, flags BehaviorFlags) er
 		str := fmt.Sprintf("block hash merkle root is invalid - block "+
 			"header indicates %s, but calculated value is %s",
 			header.HashMerkleRoot, calculatedHashMerkleRoot)
-		return ruleError(ErrBadMerkleRoot, str)
+		return 0, ruleError(ErrBadMerkleRoot, str)
 	}
 
 	// Check for duplicate transactions.  This check will be fairly quick
@@ -566,7 +555,7 @@ func (dag *BlockDAG) checkBlockSanity(block *util.Block, flags BehaviorFlags) er
 		if _, exists := existingTxIDs[*id]; exists {
 			str := fmt.Sprintf("block contains duplicate "+
 				"transaction %s", id)
-			return ruleError(ErrDuplicateTx, str)
+			return 0, ruleError(ErrDuplicateTx, str)
 		}
 		existingTxIDs[*id] = struct{}{}
 	}
@@ -583,17 +572,17 @@ func (dag *BlockDAG) checkBlockSanity(block *util.Block, flags BehaviorFlags) er
 			str := fmt.Sprintf("block contains too many signature "+
 				"operations - got %d, max %d", totalSigOps,
 				MaxSigOpsPerBlock)
-			return ruleError(ErrTooManySigOps, str)
+			return 0, ruleError(ErrTooManySigOps, str)
 		}
 	}
 
-	return nil
+	return delay, nil
 }
 
 // CheckBlockSanity performs some preliminary checks on a block to ensure it is
 // sane before continuing with block processing.  These checks are context free.
 func (dag *BlockDAG) CheckBlockSanity(block *util.Block, powLimit *big.Int,
-	timeSource MedianTimeSource) error {
+	timeSource MedianTimeSource) (time.Duration, error) {
 
 	return dag.checkBlockSanity(block, BFNone)
 }
@@ -612,7 +601,7 @@ func (dag *BlockDAG) checkBlockHeaderContext(header *wire.BlockHeader, bluestPar
 			return err
 		}
 
-		if err := validateMedianTime(header, bluestParent); err != nil {
+		if err := validateMedianTime(dag, header, bluestParent); err != nil {
 			return err
 		}
 	}
@@ -632,11 +621,11 @@ func (dag *BlockDAG) validateCheckpoints(header *wire.BlockHeader, blockChainHei
 	return nil
 }
 
-func validateMedianTime(header *wire.BlockHeader, bluestParent *blockNode) error {
+func validateMedianTime(dag *BlockDAG, header *wire.BlockHeader, bluestParent *blockNode) error {
 	if !header.IsGenesis() {
 		// Ensure the timestamp for the block header is not before the
 		// median time of the last several blocks (medianTimeBlocks).
-		medianTime := bluestParent.PastMedianTime()
+		medianTime := bluestParent.PastMedianTime(dag)
 		if header.Timestamp.Before(medianTime) {
 			str := fmt.Sprintf("block timestamp of %s is not after expected %s", header.Timestamp, medianTime)
 			return ruleError(ErrTimeTooOld, str)
@@ -650,11 +639,8 @@ func (dag *BlockDAG) validateDifficulty(header *wire.BlockHeader, bluestParent *
 	// Ensure the difficulty specified in the block header matches
 	// the calculated difficulty based on the previous block and
 	// difficulty retarget rules.
-	expectedDifficulty, err := dag.calcNextRequiredDifficulty(bluestParent,
+	expectedDifficulty := dag.calcNextRequiredDifficulty(bluestParent,
 		header.Timestamp)
-	if err != nil {
-		return err
-	}
 	blockDifficulty := header.Bits
 	if blockDifficulty != expectedDifficulty {
 		str := fmt.Sprintf("block difficulty of %d is not the expected value of %d", blockDifficulty, expectedDifficulty)
@@ -731,7 +717,7 @@ func (dag *BlockDAG) checkBlockContext(block *util.Block, parents blockSet, blue
 func (dag *BlockDAG) validateAllTxsFinalized(block *util.Block, node *blockNode, bluestParent *blockNode) error {
 	blockTime := block.MsgBlock().Header.Timestamp
 	if !block.IsGenesis() {
-		blockTime = bluestParent.PastMedianTime()
+		blockTime = bluestParent.PastMedianTime(dag)
 	}
 
 	// Ensure all transactions in the block are finalized.
@@ -992,7 +978,7 @@ func (dag *BlockDAG) checkConnectToPastUTXO(block *blockNode, pastUTXO UTXOSet,
 		// in order to determine if transactions in the current block are final.
 		medianTime := block.Header().Timestamp
 		if !block.isGenesis() {
-			medianTime = block.selectedParent.PastMedianTime()
+			medianTime = block.selectedParent.PastMedianTime(dag)
 		}
 
 		// We also enforce the relative sequence number based
@@ -1088,9 +1074,13 @@ func (dag *BlockDAG) CheckConnectBlockTemplateNoLock(block *util.Block) error {
 
 	header := block.MsgBlock().Header
 
-	err := dag.checkBlockSanity(block, flags)
+	delay, err := dag.checkBlockSanity(block, flags)
 	if err != nil {
 		return err
+	}
+
+	if delay != 0 {
+		return fmt.Errorf("Block timestamp is greater in %s than alloed", delay)
 	}
 
 	parents, err := lookupParentNodes(block, dag)

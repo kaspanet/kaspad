@@ -98,10 +98,13 @@ func TestCheckConnectBlockTemplate(t *testing.T) {
 	}
 
 	for i := 1; i <= 3; i++ {
-		_, err := dag.ProcessBlock(blocks[i], BFNone)
+		_, delay, err := dag.ProcessBlock(blocks[i], BFNone)
 		if err != nil {
 			t.Fatalf("CheckConnectBlockTemplate: Received unexpected error "+
 				"processing block %d: %v", i, err)
+		}
+		if delay != 0 {
+			t.Fatalf("CheckConnectBlockTemplate: block %d has an unexpected %d delay", i, delay)
 		}
 	}
 
@@ -164,7 +167,6 @@ func TestCheckBlockSanity(t *testing.T) {
 	}
 	defer teardownFunc()
 
-	powLimit := dagconfig.MainNetParams.PowLimit
 	block := util.NewBlock(&Block100000)
 	timeSource := NewMedianTime()
 	if len(block.Transactions()) < 3 {
