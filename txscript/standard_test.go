@@ -818,7 +818,7 @@ var scriptClassTests = []struct {
 
 	{
 		// Nulldata. It is standard in BTC but not in DAGCoin
-		name:   "nulldata ",
+		name:   "nulldata",
 		script: "RETURN 0",
 		class:  NonStandardTy,
 	},
