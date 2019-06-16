@@ -173,9 +173,6 @@ type SyncManager struct {
 	headerList       *list.List
 	startHeader      *list.Element
 	nextCheckpoint   *dagconfig.Checkpoint
-
-	// An optional fee estimator.
-	feeEstimator *mempool.FeeEstimator
 }
 
 // resetHeaderState sets the headers-first mode state to values appropriate for
@@ -207,14 +204,14 @@ func (sm *SyncManager) findNextHeaderCheckpoint(height uint64) *dagconfig.Checkp
 	// There is no next checkpoint if the height is already after the final
 	// checkpoint.
 	finalCheckpoint := &checkpoints[len(checkpoints)-1]
-	if height >= finalCheckpoint.Height {
+	if height >= finalCheckpoint.ChainHeight {
 		return nil
 	}
 
 	// Find the next checkpoint.
 	nextCheckpoint := finalCheckpoint
 	for i := len(checkpoints) - 2; i >= 0; i-- {
-		if height >= checkpoints[i].Height {
+		if height >= checkpoints[i].ChainHeight {
 			break
 		}
 		nextCheckpoint = &checkpoints[i]
@@ -285,14 +282,14 @@ func (sm *SyncManager) startSync() {
 		// not support the headers-first approach so do normal block
 		// downloads when in regression test mode.
 		if sm.nextCheckpoint != nil &&
-			sm.dag.Height() < sm.nextCheckpoint.Height &&
+			sm.dag.ChainHeight() < sm.nextCheckpoint.ChainHeight &&
 			sm.chainParams != &dagconfig.RegressionNetParams { //TODO: (Ori) This is probably wrong. Done only for compilation
 
 			bestPeer.PushGetHeadersMsg(locator, sm.nextCheckpoint.Hash)
 			sm.headersFirstMode = true
 			log.Infof("Downloading headers for blocks %d to "+
-				"%d from peer %s", sm.dag.Height()+1,
-				sm.nextCheckpoint.Height, bestPeer.Addr()) //TODO: (Ori) This is probably wrong. Done only for compilation
+				"%d from peer %s", sm.dag.ChainHeight()+1,
+				sm.nextCheckpoint.ChainHeight, bestPeer.Addr()) //TODO: (Ori) This is probably wrong. Done only for compilation
 		} else {
 			bestPeer.PushGetBlocksMsg(locator, &daghash.ZeroHash)
 		}
@@ -395,8 +392,8 @@ func (sm *SyncManager) handleDonePeerMsg(peer *peerpkg.Peer) {
 	if sm.syncPeer == peer {
 		sm.syncPeer = nil
 		if sm.headersFirstMode {
-			highestTipHash := sm.dag.HighestTipHash()
-			sm.resetHeaderState(highestTipHash, sm.dag.Height()) //TODO: (Ori) This is probably wrong. Done only for compilation
+			selectedTipHash := sm.dag.SelectedTipHash()
+			sm.resetHeaderState(selectedTipHash, sm.dag.ChainHeight()) //TODO: (Ori) This is probably wrong. Done only for compilation
 		}
 		sm.startSync()
 	}
@@ -432,7 +429,7 @@ func (sm *SyncManager) handleTxMsg(tmsg *txMsg) {
 	// Process the transaction to include validation, insertion in the
 	// memory pool, orphan handling, etc.
 	acceptedTxs, err := sm.txMemPool.ProcessTransaction(tmsg.tx,
-		true, true, mempool.Tag(peer.ID()))
+		true, mempool.Tag(peer.ID()))
 
 	// Remove transaction from request maps. Either the mempool/chain
 	// already knows about it and as such we shouldn't have any more
@@ -597,7 +594,11 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 	} else {
 		// When the block is not an orphan, log information about it and
 		// update the chain state.
-		sm.progressLogger.LogBlockHeight(bmsg.block)
+		blockBlueScore, err := sm.dag.BlueScoreByBlockHash(blockHash)
+		if err != nil {
+			log.Errorf("Failed to get blue score for block %s: %s", blockHash, err)
+		}
+		sm.progressLogger.LogBlockBlueScore(bmsg.block, blockBlueScore)
 
 		// Clear the rejected transactions.
 		sm.rejectedTxns = make(map[daghash.TxID]struct{})
@@ -634,7 +635,7 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 	// there is a next checkpoint, get the next round of headers by asking
 	// for headers starting from the block after this one up to the next
 	// checkpoint.
-	prevHeight := sm.nextCheckpoint.Height
+	prevHeight := sm.nextCheckpoint.ChainHeight
 	parentHash := sm.nextCheckpoint.Hash
 	sm.nextCheckpoint = sm.findNextHeaderCheckpoint(prevHeight)
 	if sm.nextCheckpoint != nil {
@@ -646,7 +647,7 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 			return
 		}
 		log.Infof("Downloading headers for blocks %d to %d from "+
-			"peer %s", prevHeight+1, sm.nextCheckpoint.Height,
+			"peer %s", prevHeight+1, sm.nextCheckpoint.ChainHeight,
 			sm.syncPeer.Addr())
 		return
 	}
@@ -805,7 +806,7 @@ func (sm *SyncManager) handleHeadersMsg(hmsg *headersMsg) {
 		}
 
 		// Verify the header at the next checkpoint height matches.
-		if node.height == sm.nextCheckpoint.Height {
+		if node.height == sm.nextCheckpoint.ChainHeight {
 			if node.hash.IsEqual(sm.nextCheckpoint.Hash) {
 				receivedCheckpoint = true
 				log.Infof("Verified downloaded block "+
@@ -1244,20 +1245,6 @@ func (sm *SyncManager) handleBlockDAGNotification(notification *blockdag.Notific
 			sm.peerNotifier.TransactionConfirmed(msg.Tx)
 			sm.peerNotifier.AnnounceNewTransactions(msg.AcceptedTxs)
 		}
-
-		// Register block with the fee estimator, if it exists.
-		if sm.feeEstimator != nil {
-			err := sm.feeEstimator.RegisterBlock(block)
-
-			// If an error is somehow generated then the fee estimator
-			// has entered an invalid state. Since it doesn't know how
-			// to recover, create a new one.
-			if err != nil {
-				sm.feeEstimator = mempool.NewFeeEstimator(
-					mempool.DefaultEstimateFeeMaxRollback,
-					mempool.DefaultEstimateFeeMinRegisteredBlocks)
-			}
-		}
 	}
 }
 
@@ -1405,15 +1392,14 @@ func New(config *Config) (*SyncManager, error) {
 		msgChan:         make(chan interface{}, config.MaxPeers*3),
 		headerList:      list.New(),
 		quit:            make(chan struct{}),
-		feeEstimator:    config.FeeEstimator,
 	}
 
-	highestTipHash := sm.dag.HighestTipHash()
+	selectedTipHash := sm.dag.SelectedTipHash()
 	if !config.DisableCheckpoints {
-		// Initialize the next checkpoint based on the current height.
-		sm.nextCheckpoint = sm.findNextHeaderCheckpoint(sm.dag.Height()) //TODO: (Ori) This is probably wrong. Done only for compilation
+		// Initialize the next checkpoint based on the current chain height.
+		sm.nextCheckpoint = sm.findNextHeaderCheckpoint(sm.dag.ChainHeight()) //TODO: (Ori) This is probably wrong. Done only for compilation
 		if sm.nextCheckpoint != nil {
-			sm.resetHeaderState(highestTipHash, sm.dag.Height()) //TODO: (Ori) This is probably wrong. Done only for compilation)
+			sm.resetHeaderState(selectedTipHash, sm.dag.ChainHeight()) //TODO: (Ori) This is probably wrong. Done only for compilation)
 		}
 	} else {
 		log.Info("Checkpoints are disabled")

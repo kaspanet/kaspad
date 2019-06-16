@@ -435,7 +435,7 @@ func (h *Harness) GenerateAndSubmitBlockWithCustomCoinbaseOutputs(
 		return nil, err
 	}
 	parentBlock := util.NewBlock(mBlock)
-	parentBlock.SetHeight(parentBlockHeight)
+	parentBlock.SetChainHeight(parentBlockHeight)
 
 	// Create a new block including the specified transactions
 	newBlock, err := CreateBlock(parentBlock, txns, blockVersion,

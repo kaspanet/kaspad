@@ -142,7 +142,6 @@ var rpcHandlersBeforeInit = map[string]commandHandler{
 	"debugLevel":            handleDebugLevel,
 	"decodeRawTransaction":  handleDecodeRawTransaction,
 	"decodeScript":          handleDecodeScript,
-	"estimateFee":           handleEstimateFee,
 	"generate":              handleGenerate,
 	"getAllManualNodesInfo": handleGetAllManualNodesInfo,
 	"getBestBlock":          handleGetBestBlock,
@@ -267,7 +266,6 @@ var rpcLimited = map[string]struct{}{
 	"createRawTransaction":  {},
 	"decodeRawTransaction":  {},
 	"decodeScript":          {},
-	"estimateFee":           {},
 	"getBestBlock":          {},
 	"getBestBlockHash":      {},
 	"getBlock":              {},
@@ -871,28 +869,6 @@ func handleDecodeScript(s *Server, cmd interface{}, closeChan <-chan struct{}) (
 	return reply, nil
 }
 
-// handleEstimateFee handles estimateFee commands.
-func handleEstimateFee(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	c := cmd.(*btcjson.EstimateFeeCmd)
-
-	if s.cfg.FeeEstimator == nil {
-		return nil, errors.New("Fee estimation disabled")
-	}
-
-	if c.NumBlocks <= 0 {
-		return -1.0, errors.New("Parameter NumBlocks must be positive")
-	}
-
-	feeRate, err := s.cfg.FeeEstimator.EstimateFee(uint32(c.NumBlocks))
-
-	if err != nil {
-		return -1.0, err
-	}
-
-	// Convert to satoshis per kb.
-	return float64(feeRate), nil
-}
-
 // handleGenerate handles generate commands.
 func handleGenerate(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
 	// Respond with an error if there are no addresses to pay the
@@ -1070,15 +1046,15 @@ func handleGetBestBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (
 	// hash, or both but require the block SHA.  This gets both for
 	// the best block.
 	result := &btcjson.GetBestBlockResult{
-		Hash:   s.cfg.DAG.HighestTipHash().String(),
-		Height: s.cfg.DAG.Height(), //TODO: (Ori) This is probably wrong. Done only for compilation
+		Hash:   s.cfg.DAG.SelectedTipHash().String(),
+		Height: s.cfg.DAG.ChainHeight(), //TODO: (Ori) This is probably wrong. Done only for compilation
 	}
 	return result, nil
 }
 
 // handleGetBestBlockHash implements the getBestBlockHash command.
 func handleGetBestBlockHash(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	return s.cfg.DAG.HighestTipHash().String(), nil
+	return s.cfg.DAG.SelectedTipHash().String(), nil
 }
 
 // getDifficultyRatio returns the proof-of-work difficulty as a multiple of the
@@ -1174,17 +1150,16 @@ func handleGetBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 		return nil, internalRPCError(err.Error(), context)
 	}
 
-	// Get the block height from chain.
-	blockHeight, err := s.cfg.DAG.BlockHeightByHash(hash)
+	// Get the block chain height.
+	blockChainHeight, err := s.cfg.DAG.BlockChainHeightByHash(hash)
 	if err != nil {
 		context := "Failed to obtain block height"
 		return nil, internalRPCError(err.Error(), context)
 	}
-	blk.SetHeight(blockHeight)
 
 	// Get the hashes for the next blocks unless there are none.
 	var nextHashStrings []string
-	if blockHeight < s.cfg.DAG.Height() { //TODO: (Ori) This is probably wrong. Done only for compilation
+	if blockChainHeight < s.cfg.DAG.ChainHeight() { //TODO: (Ori) This is probably wrong. Done only for compilation
 		childHashes, err := s.cfg.DAG.ChildHashesByHash(hash)
 		if err != nil {
 			context := "No next block"
@@ -1211,7 +1186,7 @@ func handleGetBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 		Nonce:                blockHeader.Nonce,
 		Time:                 blockHeader.Timestamp.Unix(),
 		Confirmations:        blockConfirmations,
-		Height:               blockHeight,
+		Height:               blockChainHeight,
 		Size:                 int32(len(blkBytes)),
 		Bits:                 strconv.FormatInt(int64(blockHeader.Bits), 16),
 		Difficulty:           getDifficultyRatio(blockHeader.Bits, params),
@@ -1387,8 +1362,8 @@ func handleGetBlockHeader(s *Server, cmd interface{}, closeChan <-chan struct{})
 
 	// The verbose flag is set, so generate the JSON object and return it.
 
-	// Get the block height from chain.
-	blockHeight, err := s.cfg.DAG.BlockHeightByHash(hash)
+	// Get the block chain height from chain.
+	blockChainHeight, err := s.cfg.DAG.BlockChainHeightByHash(hash)
 	if err != nil {
 		context := "Failed to obtain block height"
 		return nil, internalRPCError(err.Error(), context)
@@ -1396,7 +1371,7 @@ func handleGetBlockHeader(s *Server, cmd interface{}, closeChan <-chan struct{})
 
 	// Get the hashes for the next blocks unless there are none.
 	var nextHashStrings []string
-	if blockHeight < s.cfg.DAG.Height() { //TODO: (Ori) This is probably wrong. Done only for compilation
+	if blockChainHeight < s.cfg.DAG.ChainHeight() { //TODO: (Ori) This is probably wrong. Done only for compilation
 		childHashes, err := s.cfg.DAG.ChildHashesByHash(hash)
 		if err != nil {
 			context := "No next block"
@@ -1415,7 +1390,7 @@ func handleGetBlockHeader(s *Server, cmd interface{}, closeChan <-chan struct{})
 	blockHeaderReply := btcjson.GetBlockHeaderVerboseResult{
 		Hash:                 c.Hash,
 		Confirmations:        blockConfirmations,
-		Height:               blockHeight,
+		Height:               blockChainHeight,
 		Version:              blockHeader.Version,
 		VersionHex:           fmt.Sprintf("%08x", blockHeader.Version),
 		HashMerkleRoot:       blockHeader.HashMerkleRoot.String(),
@@ -2006,8 +1981,8 @@ func handleGetBlockTemplateRequest(s *Server, request *btcjson.TemplateRequest, 
 	}
 
 	// No point in generating or accepting work before the chain is synced.
-	currentHeight := s.cfg.DAG.Height()
-	if currentHeight != 0 && !s.cfg.SyncMgr.IsCurrent() {
+	currentChainHeight := s.cfg.DAG.ChainHeight()
+	if currentChainHeight != 0 && !s.cfg.SyncMgr.IsCurrent() {
 		return nil, &btcjson.RPCError{
 			Code:    btcjson.ErrRPCClientInInitialDownload,
 			Message: "Bitcoin is downloading blocks...",
@@ -2073,8 +2048,6 @@ func chainErrToGBTErrString(err error) string {
 		return "bad-txnmrklroot"
 	case blockdag.ErrBadCheckpoint:
 		return "bad-checkpoint"
-	case blockdag.ErrForkTooOld:
-		return "fork-too-old"
 	case blockdag.ErrCheckpointTimeTooOld:
 		return "checkpoint-time-too-old"
 	case blockdag.ErrNoTransactions:
@@ -2441,8 +2414,8 @@ func handleGetMiningInfo(s *Server, cmd interface{}, closeChan <-chan struct{}) 
 		}
 	}
 
-	highestTipHash := s.cfg.DAG.HighestTipHash()
-	selectedBlock, err := s.cfg.DAG.BlockByHash(highestTipHash)
+	selectedTipHash := s.cfg.DAG.SelectedTipHash()
+	selectedBlock, err := s.cfg.DAG.BlockByHash(selectedTipHash)
 	if err != nil {
 		return nil, &btcjson.RPCError{
 			Code:    btcjson.ErrRPCInternal.Code,
@@ -2451,7 +2424,7 @@ func handleGetMiningInfo(s *Server, cmd interface{}, closeChan <-chan struct{}) 
 	}
 
 	result := btcjson.GetMiningInfoResult{
-		Blocks:           int64(s.cfg.DAG.Height()), //TODO: (Ori) This is wrong. Done only for compilation
+		Blocks:           int64(s.cfg.DAG.BlockCount()),
 		CurrentBlockSize: uint64(selectedBlock.MsgBlock().SerializeSize()),
 		CurrentBlockTx:   uint64(len(selectedBlock.MsgBlock().Transactions)),
 		Difficulty:       getDifficultyRatio(s.cfg.DAG.CurrentBits(), s.cfg.DAGParams),
@@ -2734,7 +2707,7 @@ func handleGetTxOut(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 			return nil, internalRPCError(errStr, "")
 		}
 
-		bestBlockHash = s.cfg.DAG.HighestTipHash().String()
+		bestBlockHash = s.cfg.DAG.SelectedTipHash().String()
 		value = txOut.Value
 		pkScript = txOut.PkScript
 		isCoinbase = mtx.IsCoinBase()
@@ -2764,7 +2737,7 @@ func handleGetTxOut(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 			confirmations = &txConfirmations
 		}
 
-		bestBlockHash = s.cfg.DAG.HighestTipHash().String()
+		bestBlockHash = s.cfg.DAG.SelectedTipHash().String()
 		value = entry.Amount()
 		pkScript = entry.PkScript()
 		isCoinbase = entry.IsCoinbase()
@@ -3369,7 +3342,7 @@ func handleSendRawTransaction(s *Server, cmd interface{}, closeChan <-chan struc
 
 	// Use 0 for the tag to represent local node.
 	tx := util.NewTx(&msgTx)
-	acceptedTxs, err := s.cfg.TxMemPool.ProcessTransaction(tx, false, false, 0)
+	acceptedTxs, err := s.cfg.TxMemPool.ProcessTransaction(tx, false, 0)
 	if err != nil {
 		// When the error is a rule error, it means the transaction was
 		// simply rejected as opposed to something actually going wrong,
@@ -4259,10 +4232,6 @@ type rpcserverConfig struct {
 	TxIndex   *indexers.TxIndex
 	AddrIndex *indexers.AddrIndex
 	CfIndex   *indexers.CfIndex
-
-	// The fee estimator keeps track of how long transactions are left in
-	// the mempool before they are mined into blocks.
-	FeeEstimator *mempool.FeeEstimator
 }
 
 // setupRPCListeners returns a slice of listeners that are configured for use
@@ -4333,21 +4302,20 @@ func NewRPCServer(
 		return nil, errors.New("RPCS: No valid listen address")
 	}
 	cfg := &rpcserverConfig{
-		Listeners:    rpcListeners,
-		StartupTime:  startupTime,
-		ConnMgr:      &rpcConnManager{p2pServer},
-		SyncMgr:      &rpcSyncMgr{p2pServer, p2pServer.SyncManager},
-		TimeSource:   p2pServer.TimeSource,
-		DAGParams:    p2pServer.DAGParams,
-		DB:           db,
-		TxMemPool:    p2pServer.TxMemPool,
-		Generator:    blockTemplateGenerator,
-		CPUMiner:     cpuminer,
-		TxIndex:      p2pServer.TxIndex,
-		AddrIndex:    p2pServer.AddrIndex,
-		CfIndex:      p2pServer.CfIndex,
-		FeeEstimator: p2pServer.FeeEstimator,
-		DAG:          p2pServer.DAG,
+		Listeners:   rpcListeners,
+		StartupTime: startupTime,
+		ConnMgr:     &rpcConnManager{p2pServer},
+		SyncMgr:     &rpcSyncMgr{p2pServer, p2pServer.SyncManager},
+		TimeSource:  p2pServer.TimeSource,
+		DAGParams:   p2pServer.DAGParams,
+		DB:          db,
+		TxMemPool:   p2pServer.TxMemPool,
+		Generator:   blockTemplateGenerator,
+		CPUMiner:    cpuminer,
+		TxIndex:     p2pServer.TxIndex,
+		AddrIndex:   p2pServer.AddrIndex,
+		CfIndex:     p2pServer.CfIndex,
+		DAG:         p2pServer.DAG,
 	}
 	rpc := Server{
 		cfg:                    *cfg,

@@ -63,14 +63,14 @@ type BlockDAG struct {
 	// The following fields are set when the instance is created and can't
 	// be changed afterwards, so there is no need to protect them with a
 	// separate mutex.
-	checkpoints         []dagconfig.Checkpoint
-	checkpointsByHeight map[uint64]*dagconfig.Checkpoint
-	db                  database.DB
-	dagParams           *dagconfig.Params
-	timeSource          MedianTimeSource
-	sigCache            *txscript.SigCache
-	indexManager        IndexManager
-	genesis             *blockNode
+	checkpoints              []dagconfig.Checkpoint
+	checkpointsByChainHeight map[uint64]*dagconfig.Checkpoint
+	db                       database.DB
+	dagParams                *dagconfig.Params
+	timeSource               MedianTimeSource
+	sigCache                 *txscript.SigCache
+	indexManager             IndexManager
+	genesis                  *blockNode
 
 	// The following fields are calculated based upon the provided chain
 	// parameters.  They are also set when the instance is created and
@@ -329,14 +329,14 @@ func (dag *BlockDAG) addOrphanBlock(block *util.Block) {
 }
 
 // SequenceLock represents the converted relative lock-time in seconds, and
-// absolute block-chain-height for a transaction input's relative lock-times.
+// absolute block-blue-score for a transaction input's relative lock-times.
 // According to SequenceLock, after the referenced input has been confirmed
 // within a block, a transaction spending that input can be included into a
 // block either after 'seconds' (according to past median time), or once the
-// 'BlockChainHeight' has been reached.
+// 'BlockBlueScore' has been reached.
 type SequenceLock struct {
-	Seconds          int64
-	BlockChainHeight int64
+	Seconds        int64
+	BlockBlueScore int64
 }
 
 // CalcSequenceLock computes a relative lock-time SequenceLock for the passed
@@ -369,7 +369,7 @@ func (dag *BlockDAG) calcSequenceLock(node *blockNode, utxoSet UTXOSet, tx *util
 	// A value of -1 for each relative lock type represents a relative time
 	// lock value that will allow a transaction to be included in a block
 	// at any given height or time.
-	sequenceLock := &SequenceLock{Seconds: -1, BlockChainHeight: -1}
+	sequenceLock := &SequenceLock{Seconds: -1, BlockBlueScore: -1}
 
 	// Sequence locks don't apply to coinbase transactions Therefore, we
 	// return sequence lock values of -1 indicating that this transaction
@@ -377,10 +377,6 @@ func (dag *BlockDAG) calcSequenceLock(node *blockNode, utxoSet UTXOSet, tx *util
 	if tx.IsCoinBase() {
 		return sequenceLock, nil
 	}
-
-	// Grab the next height from the PoV of the passed blockNode to use for
-	// inputs present in the mempool.
-	nextChainHeight := node.chainHeight + 1
 
 	mTx := tx.MsgTx()
 	for txInIndex, txIn := range mTx.TxIn {
@@ -393,12 +389,12 @@ func (dag *BlockDAG) calcSequenceLock(node *blockNode, utxoSet UTXOSet, tx *util
 			return sequenceLock, ruleError(ErrMissingTxOut, str)
 		}
 
-		// If the input chain-height is set to the mempool height, then we
+		// If the input blue score is set to the mempool blue score, then we
 		// assume the transaction makes it into the next block when
 		// evaluating its sequence blocks.
-		inputChainHeight := entry.BlockChainHeight()
+		inputBlueScore := entry.BlockBlueScore()
 		if entry.IsUnmined() {
-			inputChainHeight = nextChainHeight
+			inputBlueScore = dag.virtual.blueScore
 		}
 
 		// Given a sequence number, we apply the relative time lock
@@ -416,14 +412,13 @@ func (dag *BlockDAG) calcSequenceLock(node *blockNode, utxoSet UTXOSet, tx *util
 			// This input requires a relative time lock expressed
 			// in seconds before it can be spent.  Therefore, we
 			// need to query for the block prior to the one in
-			// which this input was included within so we can
+			// which this input was accepted within so we can
 			// compute the past median time for the block prior to
-			// the one which included this referenced output.
-			prevInputChainHeight := inputChainHeight - 1
-			if prevInputChainHeight < 0 {
-				prevInputChainHeight = 0
+			// the one which accepted this referenced output.
+			blockNode := node
+			for blockNode.selectedParent.blueScore > inputBlueScore {
+				blockNode = blockNode.selectedParent
 			}
-			blockNode := node.SelectedAncestor(prevInputChainHeight)
 			medianTime := blockNode.PastMedianTime()
 
 			// Time based relative time-locks as defined by BIP 68
@@ -440,12 +435,12 @@ func (dag *BlockDAG) calcSequenceLock(node *blockNode, utxoSet UTXOSet, tx *util
 		default:
 			// The relative lock-time for this input is expressed
 			// in blocks so we calculate the relative offset from
-			// the input's height as its converted absolute
+			// the input's blue score as its converted absolute
 			// lock-time. We subtract one from the relative lock in
 			// order to maintain the original lockTime semantics.
-			blockChainHeight := int64(inputChainHeight) + relativeLock - 1
-			if blockChainHeight > sequenceLock.BlockChainHeight {
-				sequenceLock.BlockChainHeight = blockChainHeight
+			blockBlueScore := int64(inputBlueScore) + relativeLock - 1
+			if blockBlueScore > sequenceLock.BlockBlueScore {
+				sequenceLock.BlockBlueScore = blockBlueScore
 			}
 		}
 	}
@@ -973,7 +968,7 @@ func (node *blockNode) applyBlueBlocks(selectedParentUTXO UTXOSet, blueBlocks []
 			if isSelectedParent {
 				isAccepted = true
 			} else {
-				isAccepted, err = pastUTXO.AddTx(tx.MsgTx(), node.height)
+				isAccepted, err = pastUTXO.AddTx(tx.MsgTx(), node.blueScore)
 				if err != nil {
 					return nil, nil, err
 				}
@@ -1109,10 +1104,10 @@ func updateTipsUTXO(dag *BlockDAG, virtualUTXO UTXOSet) error {
 //
 // This function MUST be called with the DAG state lock held (for reads).
 func (dag *BlockDAG) isCurrent() bool {
-	// Not current if the virtual's selected tip height is less than
+	// Not current if the virtual's selected tip chain height is less than
 	// the latest known good checkpoint (when checkpoints are enabled).
 	checkpoint := dag.LatestCheckpoint()
-	if checkpoint != nil && dag.selectedTip().height < checkpoint.Height {
+	if checkpoint != nil && dag.selectedTip().chainHeight < checkpoint.ChainHeight {
 		return false
 	}
 
@@ -1196,6 +1191,16 @@ func (dag *BlockDAG) CalcPastMedianTime() time.Time {
 // any) is NOT.
 func (dag *BlockDAG) GetUTXOEntry(outpoint wire.Outpoint) (*UTXOEntry, bool) {
 	return dag.virtual.utxoSet.get(outpoint)
+}
+
+// BlueScoreByBlockHash returns the blue score of a block with the given hash.
+func (dag *BlockDAG) BlueScoreByBlockHash(hash *daghash.Hash) (uint64, error) {
+	node := dag.index.LookupNode(hash)
+	if node == nil {
+		return 0, fmt.Errorf("block %s is unknown", hash)
+	}
+
+	return node.blueScore, nil
 }
 
 // BlockConfirmationsByHash returns the confirmations number for a block with the
@@ -1294,12 +1299,15 @@ func (dag *BlockDAG) acceptingBlock(node *blockNode) (*blockNode, error) {
 }
 
 // oldestChainBlockWithBlueScoreGreaterThan finds the oldest chain block with a blue score
-// greater than blueScore
+// greater than blueScore. If no such block exists, this method returns nil
 func (dag *BlockDAG) oldestChainBlockWithBlueScoreGreaterThan(blueScore uint64) *blockNode {
-	chainBlockIndex := sort.Search(len(dag.virtual.selectedPathChainSlice), func(i int) bool {
+	chainBlockIndex, ok := util.SearchSlice(len(dag.virtual.selectedPathChainSlice), func(i int) bool {
 		selectedPathNode := dag.virtual.selectedPathChainSlice[i]
 		return selectedPathNode.blueScore > blueScore
 	})
+	if !ok {
+		return nil
+	}
 	return dag.virtual.selectedPathChainSlice[chainBlockIndex]
 }
 
@@ -1310,15 +1318,15 @@ func (dag *BlockDAG) IsInSelectedPathChain(blockHash *daghash.Hash) bool {
 	return dag.virtual.selectedPathChainSet.containsHash(blockHash)
 }
 
-// Height returns the height of the highest tip in the DAG
-func (dag *BlockDAG) Height() uint64 {
-	return dag.virtual.tips().maxHeight()
-}
-
 // ChainHeight return the chain-height of the selected tip. In other words - it returns
 // the length of the dag's selected-parent chain
 func (dag *BlockDAG) ChainHeight() uint64 {
 	return dag.selectedTip().chainHeight
+}
+
+// VirtualBlueScore returns the blue score of the current virtual block
+func (dag *BlockDAG) VirtualBlueScore() uint64 {
+	return dag.virtual.blueScore
 }
 
 // BlockCount returns the number of blocks in the DAG
@@ -1329,12 +1337,6 @@ func (dag *BlockDAG) BlockCount() uint64 {
 // TipHashes returns the hashes of the DAG's tips
 func (dag *BlockDAG) TipHashes() []*daghash.Hash {
 	return dag.virtual.tips().hashes()
-}
-
-// HighestTipHash returns the hash of the highest tip.
-// This function is a placeholder for places that aren't DAG-compatible, and it's needed to be removed in the future
-func (dag *BlockDAG) HighestTipHash() *daghash.Hash {
-	return dag.virtual.tips().highest().hash
 }
 
 // CurrentBits returns the bits of the tip with the lowest bits, which also means it has highest difficulty.
@@ -1446,18 +1448,18 @@ func (dag *BlockDAG) blockLocator(node *blockNode) BlockLocator {
 	return locator
 }
 
-// BlockHeightByHash returns the height of the block with the given hash in the
-// DAG.
+// BlockChainHeightByHash returns the chain height of the block with the given
+// hash in the DAG.
 //
 // This function is safe for concurrent access.
-func (dag *BlockDAG) BlockHeightByHash(hash *daghash.Hash) (uint64, error) {
+func (dag *BlockDAG) BlockChainHeightByHash(hash *daghash.Hash) (uint64, error) {
 	node := dag.index.LookupNode(hash)
 	if node == nil {
 		str := fmt.Sprintf("block %s is not in the DAG", hash)
 		return 0, errNotInDAG(str)
 	}
 
-	return node.height, nil
+	return node.chainHeight, nil
 }
 
 // ChildHashesByHash returns the child hashes of the block with the given hash in the
@@ -1838,21 +1840,21 @@ func New(config *Config) (*BlockDAG, error) {
 		return nil, AssertError("BlockDAG.New timesource is nil")
 	}
 
-	// Generate a checkpoint by height map from the provided checkpoints
-	// and assert the provided checkpoints are sorted by height as required.
-	var checkpointsByHeight map[uint64]*dagconfig.Checkpoint
-	var prevCheckpointHeight uint64
+	// Generate a checkpoint by chain height map from the provided checkpoints
+	// and assert the provided checkpoints are sorted by chain height as required.
+	var checkpointsByChainHeight map[uint64]*dagconfig.Checkpoint
+	var prevCheckpointChainHeight uint64
 	if len(config.Checkpoints) > 0 {
-		checkpointsByHeight = make(map[uint64]*dagconfig.Checkpoint)
+		checkpointsByChainHeight = make(map[uint64]*dagconfig.Checkpoint)
 		for i := range config.Checkpoints {
 			checkpoint := &config.Checkpoints[i]
-			if checkpoint.Height <= prevCheckpointHeight {
+			if checkpoint.ChainHeight <= prevCheckpointChainHeight {
 				return nil, AssertError("blockdag.New " +
-					"checkpoints are not sorted by height")
+					"checkpoints are not sorted by chain height")
 			}
 
-			checkpointsByHeight[checkpoint.Height] = checkpoint
-			prevCheckpointHeight = checkpoint.Height
+			checkpointsByChainHeight[checkpoint.ChainHeight] = checkpoint
+			prevCheckpointChainHeight = checkpoint.ChainHeight
 		}
 	}
 
@@ -1862,25 +1864,25 @@ func New(config *Config) (*BlockDAG, error) {
 	adjustmentFactor := params.RetargetAdjustmentFactor
 	index := newBlockIndex(config.DB, params)
 	dag := BlockDAG{
-		checkpoints:         config.Checkpoints,
-		checkpointsByHeight: checkpointsByHeight,
-		db:                  config.DB,
-		dagParams:           params,
-		timeSource:          config.TimeSource,
-		sigCache:            config.SigCache,
-		indexManager:        config.IndexManager,
-		minRetargetTimespan: targetTimespan / adjustmentFactor,
-		maxRetargetTimespan: targetTimespan * adjustmentFactor,
-		blocksPerRetarget:   uint64(targetTimespan / targetTimePerBlock),
-		index:               index,
-		virtual:             newVirtualBlock(nil, params.K),
-		orphans:             make(map[daghash.Hash]*orphanBlock),
-		prevOrphans:         make(map[daghash.Hash][]*orphanBlock),
-		warningCaches:       newThresholdCaches(vbNumBits),
-		deploymentCaches:    newThresholdCaches(dagconfig.DefinedDeployments),
-		blockCount:          0,
-		SubnetworkStore:     newSubnetworkStore(config.DB),
-		subnetworkID:        config.SubnetworkID,
+		checkpoints:              config.Checkpoints,
+		checkpointsByChainHeight: checkpointsByChainHeight,
+		db:                       config.DB,
+		dagParams:                params,
+		timeSource:               config.TimeSource,
+		sigCache:                 config.SigCache,
+		indexManager:             config.IndexManager,
+		minRetargetTimespan:      targetTimespan / adjustmentFactor,
+		maxRetargetTimespan:      targetTimespan * adjustmentFactor,
+		blocksPerRetarget:        uint64(targetTimespan / targetTimePerBlock),
+		index:                    index,
+		virtual:                  newVirtualBlock(nil, params.K),
+		orphans:                  make(map[daghash.Hash]*orphanBlock),
+		prevOrphans:              make(map[daghash.Hash][]*orphanBlock),
+		warningCaches:            newThresholdCaches(vbNumBits),
+		deploymentCaches:         newThresholdCaches(dagconfig.DefinedDeployments),
+		blockCount:               0,
+		SubnetworkStore:          newSubnetworkStore(config.DB),
+		subnetworkID:             config.SubnetworkID,
 	}
 
 	dag.utxoDiffStore = newUTXODiffStore(&dag)
@@ -1935,8 +1937,8 @@ func New(config *Config) (*BlockDAG, error) {
 	}
 
 	selectedTip := dag.selectedTip()
-	log.Infof("DAG state (height %d, hash %s)",
-		selectedTip.height, selectedTip.hash)
+	log.Infof("DAG state (chain height %d, hash %s)",
+		selectedTip.chainHeight, selectedTip.hash)
 
 	return &dag, nil
 }

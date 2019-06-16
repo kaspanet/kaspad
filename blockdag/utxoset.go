@@ -13,16 +13,16 @@ import (
 )
 
 const (
-	// UnminedChainHeight is the chain-height used for the "block" height field of the
+	// UnminedBlueScore is the blue score used for the "block" blueScore field of the
 	// contextual transaction information provided in a transaction store
 	// when it has not yet been mined into a block.
-	UnminedChainHeight = math.MaxUint64
+	UnminedBlueScore = math.MaxUint64
 )
 
 // UTXOEntry houses details about an individual transaction output in a utxo
-// set such as whether or not it was contained in a coinbase tx, the height of
-// the block that contains the tx, whether or not it is spent, its public key
-// script, and how much it pays.
+// set such as whether or not it was contained in a coinbase tx, the blue
+// score of the block that contains the tx, its public key script, and how
+// much it pays.
 type UTXOEntry struct {
 	// NOTE: Additions, deletions, or modifications to the order of the
 	// definitions in this struct should not be changed without considering
@@ -30,9 +30,9 @@ type UTXOEntry struct {
 	// specifically crafted to result in minimal padding.  There will be a
 	// lot of these in memory, so a few extra bytes of padding adds up.
 
-	amount           uint64
-	pkScript         []byte // The public key script for the output.
-	blockChainHeight uint64 // Chain-height of block containing tx.
+	amount         uint64
+	pkScript       []byte // The public key script for the output.
+	blockBlueScore uint64 // Blue score of the block containing the tx.
 
 	// packedFlags contains additional info about output such as whether it
 	// is a coinbase, and whether it has been modified
@@ -47,9 +47,9 @@ func (entry *UTXOEntry) IsCoinbase() bool {
 	return entry.packedFlags&tfCoinbase == tfCoinbase
 }
 
-// BlockChainHeight returns the chain-height of the block containing the output.
-func (entry *UTXOEntry) BlockChainHeight() uint64 {
-	return entry.blockChainHeight
+// BlockBlueScore returns the blue score of the block containing the output.
+func (entry *UTXOEntry) BlockBlueScore() uint64 {
+	return entry.blockBlueScore
 }
 
 // Amount returns the amount of the output.
@@ -65,7 +65,7 @@ func (entry *UTXOEntry) PkScript() []byte {
 // IsUnmined returns true iff this UTXOEntry has still not been mined,
 // a.k.a. still in the mempool.
 func (entry *UTXOEntry) IsUnmined() bool {
-	return entry.blockChainHeight == UnminedChainHeight
+	return entry.blockBlueScore == UnminedBlueScore
 }
 
 // txoFlags is a bitmask defining additional information and state for a
@@ -76,6 +76,21 @@ const (
 	// tfCoinbase indicates that a txout was contained in a coinbase tx.
 	tfCoinbase txoFlags = 1 << iota
 )
+
+// NewUTXOEntry creates a new utxoEntry representing the given txOut
+func NewUTXOEntry(txOut *wire.TxOut, isCoinbase bool, blockBlueScore uint64) *UTXOEntry {
+	entry := &UTXOEntry{
+		amount:         txOut.Value,
+		pkScript:       txOut.PkScript,
+		blockBlueScore: blockBlueScore,
+	}
+
+	if isCoinbase {
+		entry.packedFlags |= tfCoinbase
+	}
+
+	return entry
+}
 
 // utxoCollection represents a set of UTXOs indexed by their outpoints
 type utxoCollection map[wire.Outpoint]*UTXOEntry
@@ -362,21 +377,6 @@ func (d UTXODiff) String() string {
 	return fmt.Sprintf("toAdd: %s; toRemove: %s, Multiset-Hash: %s", d.toAdd, d.toRemove, d.diffMultiset.Hash())
 }
 
-// NewUTXOEntry creates a new utxoEntry representing the given txOut
-func NewUTXOEntry(txOut *wire.TxOut, isCoinbase bool, blockChainHeight uint64) *UTXOEntry {
-	entry := &UTXOEntry{
-		amount:           txOut.Value,
-		pkScript:         txOut.PkScript,
-		blockChainHeight: blockChainHeight,
-	}
-
-	if isCoinbase {
-		entry.packedFlags |= tfCoinbase
-	}
-
-	return entry
-}
-
 // UTXOSet represents a set of unspent transaction outputs
 // Every DAG has exactly one fullUTXOSet.
 // When a new block arrives, it is validated and applied to the fullUTXOSet in the following manner:
@@ -394,11 +394,11 @@ type UTXOSet interface {
 	diffFrom(other UTXOSet) (*UTXODiff, error)
 	WithDiff(utxoDiff *UTXODiff) (UTXOSet, error)
 	diffFromTx(tx *wire.MsgTx, node *blockNode) (*UTXODiff, error)
-	AddTx(tx *wire.MsgTx, blockHeight uint64) (ok bool, err error)
+	AddTx(tx *wire.MsgTx, blockBlueScore uint64) (ok bool, err error)
 	clone() UTXOSet
 	Get(outpoint wire.Outpoint) (*UTXOEntry, bool)
 	Multiset() *btcec.Multiset
-	WithTransactions(transactions []*wire.MsgTx, blockHeight uint64, ignoreDoubleSpends bool) (UTXOSet, error)
+	WithTransactions(transactions []*wire.MsgTx, blockBlueScore uint64, ignoreDoubleSpends bool) (UTXOSet, error)
 }
 
 // diffFromTx is a common implementation for diffFromTx, that works
@@ -423,7 +423,7 @@ func diffFromTx(u UTXOSet, tx *wire.MsgTx, containingNode *blockNode) (*UTXODiff
 		}
 	}
 	for i, txOut := range tx.TxOut {
-		entry := NewUTXOEntry(txOut, isCoinbase, containingNode.height)
+		entry := NewUTXOEntry(txOut, isCoinbase, containingNode.blueScore)
 		outpoint := *wire.NewOutpoint(tx.TxID(), uint32(i))
 		err := diff.AddEntry(outpoint, entry)
 		if err != nil {
@@ -470,7 +470,7 @@ func (fus *FullUTXOSet) WithDiff(other *UTXODiff) (UTXOSet, error) {
 // AddTx adds a transaction to this utxoSet and returns isAccepted=true iff it's valid in this UTXO's context.
 // It returns error if something unexpected happens, such as serialization error (isAccepted=false doesn't
 // necessarily means there's an error).
-func (fus *FullUTXOSet) AddTx(tx *wire.MsgTx, blockHeight uint64) (isAccepted bool, err error) {
+func (fus *FullUTXOSet) AddTx(tx *wire.MsgTx, blueScore uint64) (isAccepted bool, err error) {
 	isCoinbase := tx.IsCoinBase()
 	if !isCoinbase {
 		if !fus.containsInputs(tx) {
@@ -488,7 +488,7 @@ func (fus *FullUTXOSet) AddTx(tx *wire.MsgTx, blockHeight uint64) (isAccepted bo
 
 	for i, txOut := range tx.TxOut {
 		outpoint := *wire.NewOutpoint(tx.TxID(), uint32(i))
-		entry := NewUTXOEntry(txOut, isCoinbase, blockHeight)
+		entry := NewUTXOEntry(txOut, isCoinbase, blueScore)
 
 		err := fus.addAndUpdateMultiset(outpoint, entry)
 		if err != nil {
@@ -560,10 +560,10 @@ func (fus *FullUTXOSet) removeAndUpdateMultiset(outpoint wire.Outpoint) error {
 }
 
 // WithTransactions returns a new UTXO Set with the added transactions
-func (fus *FullUTXOSet) WithTransactions(transactions []*wire.MsgTx, blockHeight uint64, ignoreDoubleSpends bool) (UTXOSet, error) {
+func (fus *FullUTXOSet) WithTransactions(transactions []*wire.MsgTx, blockBlueScore uint64, ignoreDoubleSpends bool) (UTXOSet, error) {
 	diffSet := NewDiffUTXOSet(fus, NewUTXODiff())
 	for _, tx := range transactions {
-		isAccepted, err := diffSet.AddTx(tx, blockHeight)
+		isAccepted, err := diffSet.AddTx(tx, blockBlueScore)
 		if err != nil {
 			return nil, err
 		}
@@ -614,13 +614,13 @@ func (dus *DiffUTXOSet) WithDiff(other *UTXODiff) (UTXOSet, error) {
 }
 
 // AddTx adds a transaction to this utxoSet and returns true iff it's valid in this UTXO's context
-func (dus *DiffUTXOSet) AddTx(tx *wire.MsgTx, blockHeight uint64) (bool, error) {
+func (dus *DiffUTXOSet) AddTx(tx *wire.MsgTx, blockBlueScore uint64) (bool, error) {
 	isCoinbase := tx.IsCoinBase()
 	if !isCoinbase && !dus.containsInputs(tx) {
 		return false, nil
 	}
 
-	err := dus.appendTx(tx, blockHeight, isCoinbase)
+	err := dus.appendTx(tx, blockBlueScore, isCoinbase)
 	if err != nil {
 		return false, err
 	}
@@ -628,7 +628,7 @@ func (dus *DiffUTXOSet) AddTx(tx *wire.MsgTx, blockHeight uint64) (bool, error) 
 	return true, nil
 }
 
-func (dus *DiffUTXOSet) appendTx(tx *wire.MsgTx, blockHeight uint64, isCoinbase bool) error {
+func (dus *DiffUTXOSet) appendTx(tx *wire.MsgTx, blockBlueScore uint64, isCoinbase bool) error {
 	if !isCoinbase {
 		for _, txIn := range tx.TxIn {
 			outpoint := *wire.NewOutpoint(&txIn.PreviousOutpoint.TxID, txIn.PreviousOutpoint.Index)
@@ -645,7 +645,7 @@ func (dus *DiffUTXOSet) appendTx(tx *wire.MsgTx, blockHeight uint64, isCoinbase 
 
 	for i, txOut := range tx.TxOut {
 		outpoint := *wire.NewOutpoint(tx.TxID(), uint32(i))
-		entry := NewUTXOEntry(txOut, isCoinbase, blockHeight)
+		entry := NewUTXOEntry(txOut, isCoinbase, blockBlueScore)
 
 		err := dus.UTXODiff.AddEntry(outpoint, entry)
 		if err != nil {
@@ -723,10 +723,10 @@ func (dus *DiffUTXOSet) Multiset() *btcec.Multiset {
 }
 
 // WithTransactions returns a new UTXO Set with the added transactions
-func (dus *DiffUTXOSet) WithTransactions(transactions []*wire.MsgTx, blockHeight uint64, ignoreDoubleSpends bool) (UTXOSet, error) {
+func (dus *DiffUTXOSet) WithTransactions(transactions []*wire.MsgTx, blockBlueScore uint64, ignoreDoubleSpends bool) (UTXOSet, error) {
 	diffSet := NewDiffUTXOSet(dus.base, dus.UTXODiff.clone())
 	for _, tx := range transactions {
-		isAccepted, err := diffSet.AddTx(tx, blockHeight)
+		isAccepted, err := diffSet.AddTx(tx, blockBlueScore)
 		if err != nil {
 			return nil, err
 		}

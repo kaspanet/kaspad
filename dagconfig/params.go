@@ -57,8 +57,8 @@ const phantomK = 10
 // documentation for blockchain.IsCheckpointCandidate for details on the
 // selection criteria.
 type Checkpoint struct {
-	Height uint64
-	Hash   *daghash.Hash
+	ChainHeight uint64
+	Hash        *daghash.Hash
 }
 
 // ConsensusDeployment defines details related to a specific consensus rule

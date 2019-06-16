@@ -5,7 +5,6 @@
 package blockdag
 
 import (
-	"fmt"
 	"sort"
 	"time"
 
@@ -256,7 +255,7 @@ func (node *blockNode) finalityScore() uint64 {
 	return node.blueScore / FinalityInterval
 }
 
-// String returns a string that contains the block hash and height.
+// String returns a string that contains the block hash.
 func (node blockNode) String() string {
-	return fmt.Sprintf("%s (%d)", node.hash, node.height)
+	return node.hash.String()
 }

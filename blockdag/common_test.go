@@ -75,7 +75,6 @@ func loadBlocks(filename string) (blocks []*util.Block, err error) {
 		if err != nil {
 			return
 		}
-		block.SetHeight(height)
 		blocks = append(blocks, block)
 	}
 

@@ -37,10 +37,10 @@ func newBlockProgressLogger(progressMessage string, logger btclog.Logger) *block
 	}
 }
 
-// LogBlockHeight logs a new block height as an information message to show
-// progress to the user. In order to prevent spam, it limits logging to one
-// message every 10 seconds with duration and totals included.
-func (b *blockProgressLogger) LogBlockHeight(block *util.Block) {
+// LogBlockBlueScore logs a new block blue score as an information message
+// to show progress to the user. In order to prevent spam, it limits logging to
+// one message every 10 seconds with duration and totals included.
+func (b *blockProgressLogger) LogBlockBlueScore(block *util.Block, blueScore uint64) {
 	b.Lock()
 	defer b.Unlock()
 
@@ -66,9 +66,9 @@ func (b *blockProgressLogger) LogBlockHeight(block *util.Block) {
 	if b.receivedLogTx == 1 {
 		txStr = "transaction"
 	}
-	b.subsystemLogger.Infof("%s %d %s in the last %s (%d %s, height %d, %s)",
+	b.subsystemLogger.Infof("%s %d %s in the last %s (%d %s, blue score %d, %s)",
 		b.progressAction, b.receivedLogBlocks, blockStr, tDuration, b.receivedLogTx,
-		txStr, block.Height(), block.MsgBlock().Header.Timestamp)
+		txStr, blueScore, block.MsgBlock().Header.Timestamp)
 
 	b.receivedLogBlocks = 0
 	b.receivedLogTx = 0

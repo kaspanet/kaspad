@@ -284,10 +284,6 @@ type Server struct {
 	AddrIndex *indexers.AddrIndex
 	CfIndex   *indexers.CfIndex
 
-	// The fee estimator keeps track of how long transactions are left in
-	// the mempool before they are mined into blocks.
-	FeeEstimator *mempool.FeeEstimator
-
 	// cfCheckptCaches stores a cached slice of filter headers for cfcheckpt
 	// messages for each filter type.
 	cfCheckptCaches    map[wire.FilterType][]cfHeaderKV
@@ -2134,15 +2130,6 @@ func (s *Server) Start() {
 // Stop gracefully shuts down the server by stopping and disconnecting all
 // peers and the main listener.
 func (s *Server) Stop() error {
-
-	// Save fee estimator state in the database.
-	s.db.Update(func(dbTx database.Tx) error {
-		metadata := dbTx.Metadata()
-		metadata.Put(mempool.EstimateFeeDatabaseKey, s.FeeEstimator.Save())
-
-		return nil
-	})
-
 	// Signal the remaining goroutines to quit.
 	close(s.quit)
 	return nil
@@ -2405,49 +2392,17 @@ func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params
 		return nil, err
 	}
 
-	// Search for a FeeEstimator state in the database. If none can be found
-	// or if it cannot be loaded, create a new one.
-	db.Update(func(dbTx database.Tx) error {
-		metadata := dbTx.Metadata()
-		feeEstimationData := metadata.Get(mempool.EstimateFeeDatabaseKey)
-		if feeEstimationData != nil {
-			// delete it from the database so that we don't try to restore the
-			// same thing again somehow.
-			metadata.Delete(mempool.EstimateFeeDatabaseKey)
-
-			// If there is an error, log it and make a new fee estimator.
-			var err error
-			s.FeeEstimator, err = mempool.RestoreFeeEstimator(feeEstimationData)
-
-			if err != nil {
-				peerLog.Errorf("Failed to restore fee estimator %s", err)
-			}
-		}
-
-		return nil
-	})
-
-	// If no feeEstimator has been found, or if the one that has been found
-	// is behind somehow, create a new one and start over.
-	if s.FeeEstimator == nil || s.FeeEstimator.LastKnownHeight() != s.DAG.Height() { //TODO: (Ori) This is probably wrong. Done only for compilation
-		s.FeeEstimator = mempool.NewFeeEstimator(
-			mempool.DefaultEstimateFeeMaxRollback,
-			mempool.DefaultEstimateFeeMinRegisteredBlocks)
-	}
-
 	txC := mempool.Config{
 		Policy: mempool.Policy{
-			DisableRelayPriority: config.MainConfig().NoRelayPriority,
-			AcceptNonStd:         config.MainConfig().RelayNonStd,
-			FreeTxRelayLimit:     config.MainConfig().FreeTxRelayLimit,
-			MaxOrphanTxs:         config.MainConfig().MaxOrphanTxs,
-			MaxOrphanTxSize:      config.DefaultMaxOrphanTxSize,
-			MaxSigOpsPerTx:       blockdag.MaxSigOpsPerBlock / 5,
-			MinRelayTxFee:        config.MainConfig().MinRelayTxFee,
-			MaxTxVersion:         1,
+			AcceptNonStd:    config.MainConfig().RelayNonStd,
+			MaxOrphanTxs:    config.MainConfig().MaxOrphanTxs,
+			MaxOrphanTxSize: config.DefaultMaxOrphanTxSize,
+			MaxSigOpsPerTx:  blockdag.MaxSigOpsPerBlock / 5,
+			MinRelayTxFee:   config.MainConfig().MinRelayTxFee,
+			MaxTxVersion:    1,
 		},
 		DAGParams:      dagParams,
-		BestHeight:     func() uint64 { return s.DAG.Height() }, //TODO: (Ori) This is probably wrong. Done only for compilation
+		DAGChainHeight: func() uint64 { return s.DAG.ChainHeight() },
 		MedianTimePast: func() time.Time { return s.DAG.CalcPastMedianTime() },
 		CalcSequenceLockNoLock: func(tx *util.Tx, utxoSet blockdag.UTXOSet) (*blockdag.SequenceLock, error) {
 			return s.DAG.CalcSequenceLockNoLock(tx, utxoSet, true)
@@ -2455,7 +2410,6 @@ func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params
 		IsDeploymentActive: s.DAG.IsDeploymentActive,
 		SigCache:           s.SigCache,
 		AddrIndex:          s.AddrIndex,
-		FeeEstimator:       s.FeeEstimator,
 		DAG:                s.DAG,
 	}
 	s.TxMemPool = mempool.New(&txC)
@@ -2469,7 +2423,6 @@ func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params
 		ChainParams:        s.DAGParams,
 		DisableCheckpoints: cfg.DisableCheckpoints,
 		MaxPeers:           cfg.MaxPeers,
-		FeeEstimator:       s.FeeEstimator,
 	})
 	if err != nil {
 		return nil, err
@@ -2805,7 +2758,7 @@ func (s checkpointSorter) Swap(i, j int) {
 // Less returns whether the checkpoint with index i should sort before the
 // checkpoint with index j.  It is part of the sort.Interface implementation.
 func (s checkpointSorter) Less(i, j int) bool {
-	return s[i].Height < s[j].Height
+	return s[i].ChainHeight < s[j].ChainHeight
 }
 
 // mergeCheckpoints returns two slices of checkpoints merged into one slice
@@ -2818,7 +2771,7 @@ func mergeCheckpoints(defaultCheckpoints, additional []dagconfig.Checkpoint) []d
 	// leaving the most recently-specified checkpoint.
 	extra := make(map[uint64]dagconfig.Checkpoint)
 	for _, checkpoint := range additional {
-		extra[checkpoint.Height] = checkpoint
+		extra[checkpoint.ChainHeight] = checkpoint
 	}
 
 	// Add all default checkpoints that do not have an override in the
@@ -2826,7 +2779,7 @@ func mergeCheckpoints(defaultCheckpoints, additional []dagconfig.Checkpoint) []d
 	numDefault := len(defaultCheckpoints)
 	checkpoints := make([]dagconfig.Checkpoint, 0, numDefault+len(extra))
 	for _, checkpoint := range defaultCheckpoints {
-		if _, exists := extra[checkpoint.Height]; !exists {
+		if _, exists := extra[checkpoint.ChainHeight]; !exists {
 			checkpoints = append(checkpoints, checkpoint)
 		}
 	}

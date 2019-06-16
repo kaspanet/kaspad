@@ -23,10 +23,6 @@ import (
 )
 
 const (
-	// MinHighPriority is the minimum priority value that allows a
-	// transaction to be considered high priority.
-	MinHighPriority = util.SatoshiPerBitcoin * 144.0 / 250
-
 	// blockHeaderOverhead is the max number of bytes it takes to serialize
 	// a block header and max possible transaction count.
 	blockHeaderOverhead = wire.MaxBlockHeaderPayload + wire.MaxVarIntPayload
@@ -82,7 +78,6 @@ type TxSource interface {
 type txPrioItem struct {
 	tx       *util.Tx
 	fee      uint64
-	priority float64
 	feePerKB uint64
 }
 
@@ -140,44 +135,21 @@ func (pq *txPriorityQueue) SetLessFunc(lessFunc txPriorityQueueLessFunc) {
 	heap.Init(pq)
 }
 
-// txPQByPriority sorts a txPriorityQueue by transaction priority and then fees
-// per kilobyte.
-func txPQByPriority(pq *txPriorityQueue, i, j int) bool {
-	// Using > here so that pop gives the highest priority item as opposed
-	// to the lowest.  Sort by priority first, then fee.
-	if pq.items[i].priority == pq.items[j].priority {
-		return pq.items[i].feePerKB > pq.items[j].feePerKB
-	}
-	return pq.items[i].priority > pq.items[j].priority
-
-}
-
-// txPQByFee sorts a txPriorityQueue by fees per kilobyte and then transaction
-// priority.
+// txPQByFee sorts a txPriorityQueue by fees per kilobyte
 func txPQByFee(pq *txPriorityQueue, i, j int) bool {
-	// Using > here so that pop gives the highest fee item as opposed
-	// to the lowest.  Sort by fee first, then priority.
-	if pq.items[i].feePerKB == pq.items[j].feePerKB {
-		return pq.items[i].priority > pq.items[j].priority
-	}
 	return pq.items[i].feePerKB > pq.items[j].feePerKB
 }
 
 // newTxPriorityQueue returns a new transaction priority queue that reserves the
-// passed amount of space for the elements.  The new priority queue uses either
-// the txPQByPriority or the txPQByFee compare function depending on the
-// sortByFee parameter and is already initialized for use with heap.Push/Pop.
+// passed amount of space for the elements.  The new priority queue uses the
+// txPQByFee compare function and is already initialized for use with heap.Push/Pop.
 // The priority queue can grow larger than the reserved space, but extra copies
 // of the underlying array can be avoided by reserving a sane value.
-func newTxPriorityQueue(reserve int, sortByFee bool) *txPriorityQueue {
+func newTxPriorityQueue(reserve int) *txPriorityQueue {
 	pq := &txPriorityQueue{
 		items: make([]*txPrioItem, 0, reserve),
 	}
-	if sortByFee {
-		pq.SetLessFunc(txPQByFee)
-	} else {
-		pq.SetLessFunc(txPQByPriority)
-	}
+	pq.SetLessFunc(txPQByFee)
 	return pq
 }
 
@@ -337,8 +309,7 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 	g.dag.RLock()
 	defer g.dag.RUnlock()
 
-	// Extend the most recently known best block.
-	nextBlockHeight := g.dag.Height() + 1
+	nextBlockBlueScore := g.dag.VirtualBlueScore()
 	coinbasePayloadPkScript, err := txscript.PayToAddrScript(payToAddress)
 	if err != nil {
 		return nil, err
@@ -366,8 +337,7 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 	// choose the initial sort order for the priority queue based on whether
 	// or not there is an area allocated for high-priority transactions.
 	sourceTxns := g.txSource.MiningDescs()
-	sortedByFee := g.policy.BlockPrioritySize == 0
-	priorityQueue := newTxPriorityQueue(len(sourceTxns), sortedByFee)
+	priorityQueue := newTxPriorityQueue(len(sourceTxns))
 
 	// Create a slice to hold the transactions to be included in the
 	// generated block with reserved space.  Also create a utxo view to
@@ -404,7 +374,7 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 			log.Tracef("Skipping coinbase tx %s", tx.ID())
 			continue
 		}
-		if !blockdag.IsFinalizedTransaction(tx, nextBlockHeight,
+		if !blockdag.IsFinalizedTransaction(tx, nextBlockBlueScore,
 			g.timeSource.AdjustedTime()) {
 
 			log.Tracef("Skipping non-finalized tx %s", tx.ID())
@@ -415,8 +385,6 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 		// value age sum as well as the adjusted transaction size.  The
 		// formula is: sum(inputValue * inputAge) / adjustedTxSize
 		prioItem := &txPrioItem{tx: tx}
-		prioItem.priority = CalcPriority(tx.MsgTx(), g.dag.UTXOSet(),
-			nextBlockHeight)
 
 		// Calculate the fee in Satoshi/kB.
 		prioItem.feePerKB = txDesc.FeePerKB
@@ -490,52 +458,9 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 			continue
 		}
 
-		// Skip free transactions once the block is larger than the
-		// minimum block size.
-		if sortedByFee &&
-			prioItem.feePerKB < uint64(g.policy.TxMinFreeFee) &&
-			blockPlusTxSize >= g.policy.BlockMinSize {
-
-			log.Tracef("Skipping tx %s with feePerKB %.2f "+
-				"< TxMinFreeFee %d and block size %d >= "+
-				"minBlockSize %d", tx.ID(), prioItem.feePerKB,
-				g.policy.TxMinFreeFee, blockPlusTxSize,
-				g.policy.BlockMinSize)
-			continue
-		}
-
-		// Prioritize by fee per kilobyte once the block is larger than
-		// the priority size or there are no more high-priority
-		// transactions.
-		if !sortedByFee && (blockPlusTxSize >= g.policy.BlockPrioritySize ||
-			prioItem.priority <= MinHighPriority) {
-
-			log.Tracef("Switching to sort by fees per kilobyte "+
-				"blockSize %d >= BlockPrioritySize %d || "+
-				"priority %.2f <= minHighPriority %.2f",
-				blockPlusTxSize, g.policy.BlockPrioritySize,
-				prioItem.priority, MinHighPriority)
-
-			sortedByFee = true
-			priorityQueue.SetLessFunc(txPQByFee)
-
-			// Put the transaction back into the priority queue and
-			// skip it so it is re-priortized by fees if it won't
-			// fit into the high-priority section or the priority
-			// is too low.  Otherwise this transaction will be the
-			// final one in the high-priority section, so just fall
-			// though to the code below so it is added now.
-			if blockPlusTxSize > g.policy.BlockPrioritySize ||
-				prioItem.priority < MinHighPriority {
-
-				heap.Push(priorityQueue, prioItem)
-				continue
-			}
-		}
-
 		// Ensure the transaction inputs pass all of the necessary
 		// preconditions before allowing it to be added to the block.
-		_, err = blockdag.CheckTransactionInputsAndCalulateFee(tx, nextBlockHeight,
+		_, err = blockdag.CheckTransactionInputsAndCalulateFee(tx, nextBlockBlueScore,
 			g.dag.UTXOSet(), g.dagParams, false)
 		if err != nil {
 			log.Tracef("Skipping tx %s due to error in "+
@@ -560,8 +485,8 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 		txFees = append(txFees, prioItem.fee)
 		txSigOpCounts = append(txSigOpCounts, numSigOps)
 
-		log.Tracef("Adding tx %s (priority %.2f, feePerKB %.2f)",
-			prioItem.tx.ID(), prioItem.priority, prioItem.feePerKB)
+		log.Tracef("Adding tx %s (feePerKB %.2f)",
+			prioItem.tx.ID(), prioItem.feePerKB)
 	}
 
 	// Now that the actual transactions have been selected, update the
@@ -607,7 +532,7 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 	for _, tx := range blockTxns {
 		msgBlock.AddTransaction(tx.MsgTx())
 	}
-	utxoCommitment, err := g.buildUTXOCommitment(msgBlock.Transactions, nextBlockHeight)
+	utxoCommitment, err := g.buildUTXOCommitment(msgBlock.Transactions, nextBlockBlueScore)
 	if err != nil {
 		return nil, err
 	}
@@ -621,11 +546,10 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 		Bits:                 reqDifficulty,
 	}
 
-	// Finally, perform a full check on the created block against the chain
-	// consensus rules to ensure it properly connects to the current best
-	// chain with no issues.
+	// Finally, perform a full check on the created block against the DAG
+	// consensus rules to ensure it properly connects to the DAG with no
+	// issues.
 	block := util.NewBlock(&msgBlock)
-	block.SetHeight(nextBlockHeight)
 
 	if err := g.dag.CheckConnectBlockTemplateNoLock(block); err != nil {
 		return nil, err
@@ -640,7 +564,6 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 		Block:           &msgBlock,
 		Fees:            txFees,
 		SigOpCounts:     txSigOpCounts,
-		Height:          nextBlockHeight,
 		ValidPayAddress: payToAddress != nil,
 	}, nil
 }
@@ -662,8 +585,8 @@ func CoinbasePayloadExtraData(extraNonce uint64) ([]byte, error) {
 	return w.Bytes(), nil
 }
 
-func (g *BlkTmplGenerator) buildUTXOCommitment(transactions []*wire.MsgTx, nextBlockHeight uint64) (*daghash.Hash, error) {
-	utxoWithTransactions, err := g.dag.UTXOSet().WithTransactions(transactions, nextBlockHeight, false)
+func (g *BlkTmplGenerator) buildUTXOCommitment(transactions []*wire.MsgTx, nextBlueScore uint64) (*daghash.Hash, error) {
+	utxoWithTransactions, err := g.dag.UTXOSet().WithTransactions(transactions, nextBlueScore, false)
 	if err != nil {
 		return nil, err
 	}
@@ -700,7 +623,7 @@ func (g *BlkTmplGenerator) UpdateBlockTime(msgBlock *wire.MsgBlock) error {
 // block by regenerating the coinbase script with the passed value and block
 // height.  It also recalculates and updates the new merkle root that results
 // from changing the coinbase script.
-func (g *BlkTmplGenerator) UpdateExtraNonce(msgBlock *wire.MsgBlock, blockHeight uint64, extraNonce uint64) error {
+func (g *BlkTmplGenerator) UpdateExtraNonce(msgBlock *wire.MsgBlock, blockBlueScore uint64, extraNonce uint64) error {
 	coinbasePayloadPkScript, _, err := blockdag.DeserializeCoinbasePayload(msgBlock.Transactions[util.CoinbaseTransactionIndex])
 	if err != nil {
 		return err
@@ -732,7 +655,7 @@ func (g *BlkTmplGenerator) UpdateExtraNonce(msgBlock *wire.MsgBlock, blockHeight
 	hashMerkleTree := blockdag.BuildHashMerkleTreeStore(block.Transactions())
 	msgBlock.Header.HashMerkleRoot = hashMerkleTree.Root()
 
-	utxoCommitment, err := g.buildUTXOCommitment(msgBlock.Transactions, blockHeight)
+	utxoCommitment, err := g.buildUTXOCommitment(msgBlock.Transactions, blockBlueScore)
 	if err != nil {
 		return err
 	}
@@ -742,9 +665,9 @@ func (g *BlkTmplGenerator) UpdateExtraNonce(msgBlock *wire.MsgBlock, blockHeight
 	return nil
 }
 
-// DAGHeight returns the DAG's height
-func (g *BlkTmplGenerator) DAGHeight() uint64 {
-	return g.dag.Height()
+// VirtualBlueScore returns the virtual block's current blue score
+func (g *BlkTmplGenerator) VirtualBlueScore() uint64 {
+	return g.dag.VirtualBlueScore()
 }
 
 // TipHashes returns the hashes of the DAG's tips

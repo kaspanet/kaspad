@@ -28,15 +28,9 @@ func (dag *BlockDAG) maybeAcceptBlock(block *util.Block, flags BehaviorFlags) er
 		return err
 	}
 
-	bluestParent := parents.bluest()
-	blockHeight := uint64(0)
-	if !block.IsGenesis() {
-		blockHeight = parents.maxHeight() + 1
-	}
-	block.SetHeight(blockHeight)
-
 	// The block must pass all of the validation rules which depend on the
 	// position of the block within the block DAG.
+	bluestParent := parents.bluest()
 	err = dag.checkBlockContext(block, parents, bluestParent, flags)
 	if err != nil {
 		return err
@@ -62,6 +56,14 @@ func (dag *BlockDAG) maybeAcceptBlock(block *util.Block, flags BehaviorFlags) er
 	blockHeader := &block.MsgBlock().Header
 	newNode := newBlockNode(blockHeader, parents, dag.dagParams.K)
 	newNode.status = statusDataStored
+
+	// Make sure that all the block's transactions are finalized
+	fastAdd := flags&BFFastAdd == BFFastAdd
+	if !fastAdd {
+		if err := dag.validateAllTxsFinalized(block, newNode, bluestParent); err != nil {
+			return err
+		}
+	}
 
 	dag.index.AddNode(newNode)
 	err = dag.index.flushToDB()

@@ -75,8 +75,8 @@ func calcSequenceLock(tx *util.Tx,
 	utxoSet blockdag.UTXOSet) (*blockdag.SequenceLock, error) {
 
 	return &blockdag.SequenceLock{
-		Seconds:          -1,
-		BlockChainHeight: -1,
+		Seconds:        -1,
+		BlockBlueScore: -1,
 	}, nil
 }
 
@@ -103,18 +103,21 @@ func txOutToSpendableOutpoint(tx *util.Tx, outputNum uint32) spendableOutpoint {
 type poolHarness struct {
 	signatureScript []byte
 	payScript       []byte
-	chainParams     *dagconfig.Params
+	dagParams       *dagconfig.Params
 
 	chain  *fakeChain
 	txPool *TxPool
 }
 
+// txRelayFeeForTest defines a convenient relay fee amount to pay for test transactions
+var txRelayFeeForTest = util.Amount(calcMinRequiredTxRelayFee(1000, DefaultMinRelayTxFee))
+
 // CreateCoinbaseTx returns a coinbase transaction with the requested number of
-// outputs paying an appropriate subsidy based on the passed block height to the
+// outputs paying an appropriate subsidy based on the passed block blue score to the
 // address associated with the harness.  It automatically uses a standard
 // signature script that starts with the block height that is required by
 // version 2 blocks.
-func (p *poolHarness) CreateCoinbaseTx(blockHeight uint64, numOutputs uint32) (*util.Tx, error) {
+func (p *poolHarness) CreateCoinbaseTx(blueScore uint64, numOutputs uint32) (*util.Tx, error) {
 	// Create standard coinbase script.
 	extraNonce := int64(0)
 	coinbaseScript, err := txscript.NewScriptBuilder().
@@ -133,7 +136,7 @@ func (p *poolHarness) CreateCoinbaseTx(blockHeight uint64, numOutputs uint32) (*
 	}}
 
 	txOuts := []*wire.TxOut{}
-	totalInput := blockdag.CalcBlockSubsidy(blockHeight, p.chainParams)
+	totalInput := blockdag.CalcBlockSubsidy(blueScore, p.dagParams)
 	amountPerOutput := totalInput / uint64(numOutputs)
 	remainder := totalInput - amountPerOutput*uint64(numOutputs)
 	for i := uint32(0); i < numOutputs; i++ {
@@ -163,10 +166,11 @@ func (p *poolHarness) CreateSignedTxForSubnetwork(inputs []spendableOutpoint, nu
 	for _, input := range inputs {
 		totalInput += input.amount
 	}
+	totalInput -= txRelayFeeForTest
 	amountPerOutput := uint64(totalInput) / uint64(numOutputs)
 	remainder := uint64(totalInput) - amountPerOutput*uint64(numOutputs)
 
-	txIns := []*wire.TxIn{}
+	var txIns []*wire.TxIn
 	for _, input := range inputs {
 		txIns = append(txIns, &wire.TxIn{
 			PreviousOutpoint: input.outpoint,
@@ -175,7 +179,7 @@ func (p *poolHarness) CreateSignedTxForSubnetwork(inputs []spendableOutpoint, nu
 		})
 	}
 
-	txOuts := []*wire.TxOut{}
+	var txOuts []*wire.TxOut
 	for i := uint32(0); i < numOutputs; i++ {
 		// Ensure the final output accounts for any remainder that might
 		// be left from splitting the input amount.
@@ -217,8 +221,10 @@ func (p *poolHarness) CreateTxChain(firstOutput spendableOutpoint, numTxns uint3
 	spendableAmount := firstOutput.amount
 	for i := uint32(0); i < numTxns; i++ {
 		// Create the transaction using the previous transaction output
-		// and paying the full amount to the payment address associated
-		// with the harness.
+		// and paying the full amount (minus fees) to the payment address
+		// associated with the harness.
+		spendableAmount = spendableAmount - txRelayFeeForTest
+
 		txIn := &wire.TxIn{
 			PreviousOutpoint: prevOutpoint,
 			SignatureScript:  p.signatureScript,
@@ -327,22 +333,20 @@ func newPoolHarness(t *testing.T, dagParams *dagconfig.Params, numOutputs uint32
 	harness := &poolHarness{
 		signatureScript: signatureScript,
 		payScript:       pkScript,
-		chainParams:     &params,
+		dagParams:       &params,
 
 		chain: chain,
 		txPool: New(&Config{
 			DAG: dag,
 			Policy: Policy{
-				DisableRelayPriority: true,
-				FreeTxRelayLimit:     15.0,
-				MaxOrphanTxs:         5,
-				MaxOrphanTxSize:      1000,
-				MaxSigOpsPerTx:       blockdag.MaxSigOpsPerBlock / 5,
-				MinRelayTxFee:        1000, // 1 Satoshi per byte
-				MaxTxVersion:         1,
+				MaxOrphanTxs:    5,
+				MaxOrphanTxSize: 1000,
+				MaxSigOpsPerTx:  blockdag.MaxSigOpsPerBlock / 5,
+				MinRelayTxFee:   1000, // 1 Satoshi per byte
+				MaxTxVersion:    1,
 			},
 			DAGParams:              &params,
-			BestHeight:             chain.BestHeight,
+			DAGChainHeight:         chain.BestHeight,
 			MedianTimePast:         chain.MedianTimePast,
 			CalcSequenceLockNoLock: calcSequenceLock,
 			SigCache:               nil,
@@ -452,13 +456,13 @@ func testPoolMembership(tc *testContext, tx *util.Tx, inOrphanPool, inTxPool boo
 }
 
 func (p *poolHarness) createTx(outpoint spendableOutpoint, fee uint64, numOutputs int64) (*util.Tx, error) {
-	txIns := []*wire.TxIn{&wire.TxIn{
+	txIns := []*wire.TxIn{{
 		PreviousOutpoint: outpoint.outpoint,
 		SignatureScript:  nil,
 		Sequence:         wire.MaxTxInSequenceNum,
 	}}
 
-	txOuts := []*wire.TxOut{}
+	var txOuts []*wire.TxOut
 	amountPerOutput := (uint64(outpoint.amount) - fee) / uint64(numOutputs)
 	for i := int64(0); i < numOutputs; i++ {
 		txOuts = append(txOuts, &wire.TxOut{
@@ -485,15 +489,15 @@ func TestProcessTransaction(t *testing.T) {
 	harness := tc.harness
 
 	//Checks that a transaction cannot be added to the transaction pool if it's already there
-	tx, err := harness.createTx(spendableOuts[0], 0, 1)
+	tx, err := harness.createTx(spendableOuts[0], uint64(txRelayFeeForTest), 1)
 	if err != nil {
 		t.Fatalf("unable to create transaction: %v", err)
 	}
-	_, err = harness.txPool.ProcessTransaction(tx, true, false, 0)
+	_, err = harness.txPool.ProcessTransaction(tx, true, 0)
 	if err != nil {
 		t.Errorf("ProcessTransaction: unexpected error: %v", err)
 	}
-	_, err = harness.txPool.ProcessTransaction(tx, true, false, 0)
+	_, err = harness.txPool.ProcessTransaction(tx, true, 0)
 	if err == nil {
 		t.Errorf("ProcessTransaction: expected an error, not nil")
 	}
@@ -512,21 +516,21 @@ func TestProcessTransaction(t *testing.T) {
 	//Checks that an orphaned transaction cannot be
 	//added to the orphan pool if MaxOrphanTxs is 0
 	harness.txPool.cfg.Policy.MaxOrphanTxs = 0
-	_, err = harness.txPool.ProcessTransaction(orphanedTx, true, false, 0)
+	_, err = harness.txPool.ProcessTransaction(orphanedTx, true, 0)
 	if err != nil {
 		t.Errorf("ProcessTransaction: unexpected error: %v", err)
 	}
 	testPoolMembership(tc, orphanedTx, false, false, false)
 
 	harness.txPool.cfg.Policy.MaxOrphanTxs = 5
-	_, err = harness.txPool.ProcessTransaction(orphanedTx, true, false, 0)
+	_, err = harness.txPool.ProcessTransaction(orphanedTx, true, 0)
 	if err != nil {
 		t.Errorf("ProcessTransaction: unexpected error: %v", err)
 	}
 
 	//Checks that an orphaned transaction cannot be
 	//added to the orphan pool if it's already there
-	_, err = harness.txPool.ProcessTransaction(tx, true, false, 0)
+	_, err = harness.txPool.ProcessTransaction(tx, true, 0)
 	if err == nil {
 		t.Errorf("ProcessTransaction: expected an error, not nil")
 	}
@@ -540,7 +544,7 @@ func TestProcessTransaction(t *testing.T) {
 	if err != nil {
 		t.Errorf("CreateCoinbaseTx: %v", err)
 	}
-	_, err = harness.txPool.ProcessTransaction(coinbase, true, false, 0)
+	_, err = harness.txPool.ProcessTransaction(coinbase, true, 0)
 	if err == nil {
 		t.Errorf("ProcessTransaction: expected an error, not nil")
 	}
@@ -551,7 +555,7 @@ func TestProcessTransaction(t *testing.T) {
 	//Checks that non standard transactions are rejected from the mempool
 	nonStdTx, err := harness.createTx(spendableOuts[0], 0, 1)
 	nonStdTx.MsgTx().Version = wire.TxVersion + 1
-	_, err = harness.txPool.ProcessTransaction(nonStdTx, true, false, 0)
+	_, err = harness.txPool.ProcessTransaction(nonStdTx, true, 0)
 	if err == nil {
 		t.Errorf("ProcessTransaction: expected an error, not nil")
 	}
@@ -565,7 +569,7 @@ func TestProcessTransaction(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unable to create transaction: %v", err)
 	}
-	_, err = harness.txPool.ProcessTransaction(bigLowFeeTx, true, false, 0)
+	_, err = harness.txPool.ProcessTransaction(bigLowFeeTx, true, 0)
 	if err == nil {
 		t.Errorf("ProcessTransaction: expected an error, not nil")
 	}
@@ -647,7 +651,7 @@ func TestProcessTransaction(t *testing.T) {
 		PkScript: dummyPkScript,
 	}}
 	nonStdSigScriptTx := util.NewTx(wire.NewNativeMsgTx(1, txIns, txOuts))
-	_, err = harness.txPool.ProcessTransaction(nonStdSigScriptTx, true, false, 0)
+	_, err = harness.txPool.ProcessTransaction(nonStdSigScriptTx, true, 0)
 	if err == nil {
 		t.Errorf("ProcessTransaction: expected an error, not nil")
 	}
@@ -666,7 +670,7 @@ func TestProcessTransaction(t *testing.T) {
 	//Checks that even if we accept non standard transactions, we reject by the MaxSigOpsPerTx consensus rule
 	harness.txPool.cfg.Policy.AcceptNonStd = true
 	harness.txPool.cfg.Policy.MaxSigOpsPerTx = 15
-	_, err = harness.txPool.ProcessTransaction(nonStdSigScriptTx, true, false, 0)
+	_, err = harness.txPool.ProcessTransaction(nonStdSigScriptTx, true, 0)
 	if err == nil {
 		t.Errorf("ProcessTransaction: expected an error, not nil")
 	}
@@ -687,7 +691,7 @@ func TestProcessTransaction(t *testing.T) {
 		Sequence:         wire.MaxTxInSequenceNum,
 	}},
 		nil))
-	_, err = harness.txPool.ProcessTransaction(noOutsTx, true, false, 0)
+	_, err = harness.txPool.ProcessTransaction(noOutsTx, true, 0)
 	if err != nil {
 		t.Errorf("ProcessTransaction: %v", err)
 	}
@@ -697,15 +701,15 @@ func TestProcessTransaction(t *testing.T) {
 		view blockdag.UTXOSet) (*blockdag.SequenceLock, error) {
 
 		return &blockdag.SequenceLock{
-			Seconds:          math.MaxInt64,
-			BlockChainHeight: math.MaxInt64,
+			Seconds:        math.MaxInt64,
+			BlockBlueScore: math.MaxInt64,
 		}, nil
 	}
 	tx, err = harness.createTx(spendableOuts[2], 0, 1)
 	if err != nil {
 		t.Fatalf("unable to create transaction: %v", err)
 	}
-	_, err = harness.txPool.ProcessTransaction(tx, true, false, 0)
+	_, err = harness.txPool.ProcessTransaction(tx, true, 0)
 	if err == nil {
 		t.Errorf("ProcessTransaction: expected an error, not nil")
 	}
@@ -718,32 +722,18 @@ func TestProcessTransaction(t *testing.T) {
 	}
 	harness.txPool.cfg.CalcSequenceLockNoLock = calcSequenceLock
 
-	// This is done in order to increase the input age, so the tx priority will be higher
-	harness.chain.SetHeight(curHeight + 100)
-	harness.txPool.cfg.Policy.DisableRelayPriority = false
-	//Transaction should be accepted to mempool although it has low fee, because its priority is above mining.MinHighPriority
-	tx, err = harness.createTx(spendableOuts[3], 0, 1)
-	if err != nil {
-		t.Fatalf("unable to create transaction: %v", err)
-	}
-	_, err = harness.txPool.ProcessTransaction(tx, true, false, 0)
-	if err != nil {
-		t.Errorf("ProcessTransaction: unexpected error: %v", err)
-	}
-
 	//Transaction should be rejected from mempool because it has low fee, and its priority is above mining.MinHighPriority
 	tx, err = harness.createTx(spendableOuts[4], 0, 1000)
 	if err != nil {
 		t.Fatalf("unable to create transaction: %v", err)
 	}
-	_, err = harness.txPool.ProcessTransaction(tx, true, false, 0)
+	_, err = harness.txPool.ProcessTransaction(tx, true, 0)
 	if err == nil {
 		t.Errorf("ProcessTransaction: expected an error, not nil")
 	}
 	if code, _ := extractRejectCode(err); code != wire.RejectInsufficientFee {
 		t.Errorf("Unexpected error code. Expected %v but got %v", wire.RejectInsufficientFee, code)
 	}
-	harness.txPool.cfg.Policy.DisableRelayPriority = true
 
 	txIns = []*wire.TxIn{{
 		PreviousOutpoint: spendableOuts[5].outpoint,
@@ -755,7 +745,7 @@ func TestProcessTransaction(t *testing.T) {
 		PkScript: dummyPkScript,
 	}}
 	tx = util.NewTx(wire.NewNativeMsgTx(1, txIns, txOuts))
-	_, err = harness.txPool.ProcessTransaction(tx, true, false, 0)
+	_, err = harness.txPool.ProcessTransaction(tx, true, 0)
 	fmt.Println(err)
 	if err == nil {
 		t.Errorf("ProcessTransaction: expected an error, not nil")
@@ -784,11 +774,11 @@ func TestAddrIndex(t *testing.T) {
 	})
 	defer guard.Unpatch()
 
-	tx, err := harness.createTx(spendableOuts[0], 0, 1)
+	tx, err := harness.createTx(spendableOuts[0], uint64(txRelayFeeForTest), 1)
 	if err != nil {
 		t.Fatalf("unable to create transaction: %v", err)
 	}
-	_, err = harness.txPool.ProcessTransaction(tx, true, false, 0)
+	_, err = harness.txPool.ProcessTransaction(tx, false, 0)
 	if err != nil {
 		t.Errorf("ProcessTransaction: unexpected error: %v", err)
 	}
@@ -807,34 +797,6 @@ func TestAddrIndex(t *testing.T) {
 	}
 }
 
-func TestFeeEstimatorCfg(t *testing.T) {
-	tc, spendableOuts, teardownFunc, err := newPoolHarness(t, &dagconfig.MainNetParams, 2, "TestFeeEstimatorCfg")
-	if err != nil {
-		t.Fatalf("unable to create test pool: %v", err)
-	}
-	defer teardownFunc()
-	harness := tc.harness
-	harness.txPool.cfg.FeeEstimator = &FeeEstimator{}
-	enteredObserveTransaction := false
-	guard := monkey.Patch((*FeeEstimator).ObserveTransaction, func(ef *FeeEstimator, t *TxDesc) {
-		enteredObserveTransaction = true
-	})
-	defer guard.Unpatch()
-
-	tx, err := harness.createTx(spendableOuts[0], 0, 1)
-	if err != nil {
-		t.Fatalf("unable to create transaction: %v", err)
-	}
-	_, err = harness.txPool.ProcessTransaction(tx, true, false, 0)
-	if err != nil {
-		t.Errorf("ProcessTransaction: unexpected error: %v", err)
-	}
-
-	if !enteredObserveTransaction {
-		t.Errorf("TestFeeEstimatorCfg: (*FeeEstimator).ObserveTransaction was not called")
-	}
-}
-
 func TestDoubleSpends(t *testing.T) {
 	tc, spendableOuts, teardownFunc, err := newPoolHarness(t, &dagconfig.SimNetParams, 2, "TestDoubleSpends")
 	if err != nil {
@@ -844,7 +806,7 @@ func TestDoubleSpends(t *testing.T) {
 	harness := tc.harness
 
 	//Add two transactions to the mempool
-	tx1, err := harness.createTx(spendableOuts[0], 0, 1)
+	tx1, err := harness.createTx(spendableOuts[0], uint64(txRelayFeeForTest), 1)
 	if err != nil {
 		t.Fatalf("unable to create transaction: %v", err)
 	}
@@ -853,7 +815,7 @@ func TestDoubleSpends(t *testing.T) {
 		t.Fatalf("ProcessTransaction: %s", err)
 	}
 
-	tx2, err := harness.createTx(spendableOuts[1], 1, 1)
+	tx2, err := harness.createTx(spendableOuts[1], uint64(txRelayFeeForTest)+1, 1)
 	if err != nil {
 		t.Fatalf("unable to create transaction: %v", err)
 	}
@@ -865,13 +827,13 @@ func TestDoubleSpends(t *testing.T) {
 	testPoolMembership(tc, tx2, false, true, false)
 
 	//Spends the same outpoint as tx2
-	tx3, err := harness.createTx(spendableOuts[0], 2, 1) //We put here different fee to create different transaction hash
+	tx3, err := harness.createTx(spendableOuts[0], uint64(txRelayFeeForTest)+2, 1) // We put here different fee to create different transaction hash
 	if err != nil {
 		t.Fatalf("unable to create transaction: %v", err)
 	}
 
 	//First we try to add it to the mempool and see it rejected
-	_, err = harness.txPool.ProcessTransaction(tx3, true, false, 0)
+	_, err = harness.txPool.ProcessTransaction(tx3, true, 0)
 	if err == nil {
 		t.Errorf("ProcessTransaction expected an error, not nil")
 	}
@@ -906,7 +868,7 @@ func TestFetchTransaction(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unable to create signed tx: %v", err)
 	}
-	harness.txPool.ProcessTransaction(orphanedTx, true, false, 0)
+	harness.txPool.ProcessTransaction(orphanedTx, true, 0)
 	testPoolMembership(tc, orphanedTx, true, false, false)
 	fetchedorphanedTx, err := harness.txPool.FetchTransaction(orphanedTx.ID())
 	if fetchedorphanedTx != nil {
@@ -916,11 +878,11 @@ func TestFetchTransaction(t *testing.T) {
 		t.Errorf("FetchTransaction: expected an error, not nil")
 	}
 
-	tx, err := harness.createTx(spendableOuts[0], 0, 1)
+	tx, err := harness.createTx(spendableOuts[0], uint64(txRelayFeeForTest), 1)
 	if err != nil {
 		t.Fatalf("unable to create transaction: %v", err)
 	}
-	harness.txPool.ProcessTransaction(tx, true, false, 0)
+	harness.txPool.ProcessTransaction(tx, true, 0)
 	testPoolMembership(tc, tx, false, true, false)
 	fetchedTx, err := harness.txPool.FetchTransaction(tx.ID())
 	if !reflect.DeepEqual(fetchedTx, tx) {
@@ -956,8 +918,7 @@ func TestSimpleOrphanChain(t *testing.T) {
 	// Ensure the orphans are accepted (only up to the maximum allowed so
 	// none are evicted).
 	for _, tx := range chainedTxns[1 : maxOrphans+1] {
-		acceptedTxns, err := harness.txPool.ProcessTransaction(tx, true,
-			false, 0)
+		acceptedTxns, err := harness.txPool.ProcessTransaction(tx, true, 0)
 		if err != nil {
 			t.Fatalf("ProcessTransaction: failed to accept valid "+
 				"orphan %v", err)
@@ -979,8 +940,7 @@ func TestSimpleOrphanChain(t *testing.T) {
 	// all get accepted.  Notice the accept orphans flag is also false here
 	// to ensure it has no bearing on whether or not already existing
 	// orphans in the pool are linked.
-	acceptedTxns, err := harness.txPool.ProcessTransaction(chainedTxns[0],
-		false, false, 0)
+	acceptedTxns, err := harness.txPool.ProcessTransaction(chainedTxns[0], false, 0)
 	if err != nil {
 		t.Fatalf("ProcessTransaction: failed to accept valid "+
 			"orphan %v", err)
@@ -1017,8 +977,7 @@ func TestOrphanReject(t *testing.T) {
 
 	// Ensure orphans are rejected when the allow orphans flag is not set.
 	for _, tx := range chainedTxns[1:] {
-		acceptedTxns, err := harness.txPool.ProcessTransaction(tx, false,
-			false, 0)
+		acceptedTxns, err := harness.txPool.ProcessTransaction(tx, false, 0)
 		if err == nil {
 			t.Fatalf("ProcessTransaction: did not fail on orphan "+
 				"%v when allow orphans flag is false", tx.ID())
@@ -1066,16 +1025,14 @@ func TestOrphanExpiration(t *testing.T) {
 		amount:   util.Amount(5000000000),
 		outpoint: wire.Outpoint{TxID: daghash.TxID{}, Index: 0},
 	}}, 1)
-	harness.txPool.ProcessTransaction(expiredTx, true,
-		false, 0)
+	harness.txPool.ProcessTransaction(expiredTx, true, 0)
 	harness.txPool.orphans[*expiredTx.ID()].expiration = time.Unix(0, 0)
 
 	tx1, err := harness.CreateSignedTx([]spendableOutpoint{{
 		amount:   util.Amount(5000000000),
 		outpoint: wire.Outpoint{TxID: daghash.TxID{1}, Index: 0},
 	}}, 1)
-	harness.txPool.ProcessTransaction(tx1, true,
-		false, 0)
+	harness.txPool.ProcessTransaction(tx1, true, 0)
 
 	//First check that expired orphan transactions are not removed before nextExpireScan
 	testPoolMembership(tc, tx1, true, false, false)
@@ -1089,8 +1046,7 @@ func TestOrphanExpiration(t *testing.T) {
 		amount:   util.Amount(5000000000),
 		outpoint: wire.Outpoint{TxID: daghash.TxID{2}, Index: 0},
 	}}, 1)
-	harness.txPool.ProcessTransaction(tx2, true,
-		false, 0)
+	harness.txPool.ProcessTransaction(tx2, true, 0)
 	//Check that only expired orphan transactions are removed
 	testPoolMembership(tc, tx1, true, false, false)
 	testPoolMembership(tc, tx2, true, false, false)
@@ -1116,14 +1072,12 @@ func TestMaxOrphanTxSize(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unable to create signed tx: %v", err)
 	}
-	harness.txPool.ProcessTransaction(tx, true,
-		false, 0)
+	harness.txPool.ProcessTransaction(tx, true, 0)
 
 	testPoolMembership(tc, tx, false, false, false)
 
 	harness.txPool.cfg.Policy.MaxOrphanTxSize = math.MaxInt32
-	harness.txPool.ProcessTransaction(tx, true,
-		false, 0)
+	harness.txPool.ProcessTransaction(tx, true, 0)
 	testPoolMembership(tc, tx, true, false, false)
 
 }
@@ -1142,8 +1096,7 @@ func TestRemoveTransaction(t *testing.T) {
 	}
 
 	for i, tx := range chainedTxns {
-		_, err := harness.txPool.ProcessTransaction(tx, true,
-			false, 0)
+		_, err := harness.txPool.ProcessTransaction(tx, true, 0)
 		if err != nil {
 			t.Fatalf("ProcessTransaction: %v", err)
 		}
@@ -1176,8 +1129,7 @@ func TestRemoveTransaction(t *testing.T) {
 	defer guard.Unpatch()
 
 	tx, err := harness.CreateSignedTx(outputs[1:], 1)
-	_, err = harness.txPool.ProcessTransaction(tx, true,
-		false, 0)
+	_, err = harness.txPool.ProcessTransaction(tx, true, 0)
 	if err != nil {
 		t.Fatalf("ProcessTransaction: %v", err)
 	}
@@ -1209,8 +1161,7 @@ func TestOrphanEviction(t *testing.T) {
 	// Add enough orphans to exceed the max allowed while ensuring they are
 	// all accepted.  This will cause an eviction.
 	for _, tx := range chainedTxns[1:] {
-		acceptedTxns, err := harness.txPool.ProcessTransaction(tx, true,
-			false, 0)
+		acceptedTxns, err := harness.txPool.ProcessTransaction(tx, true, 0)
 		if err != nil {
 			t.Fatalf("ProcessTransaction: failed to accept valid "+
 				"orphan %v", err)
@@ -1266,8 +1217,7 @@ func TestRemoveOrphansByTag(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unable to create signed tx: %v", err)
 	}
-	harness.txPool.ProcessTransaction(orphanedTx1, true,
-		false, 1)
+	harness.txPool.ProcessTransaction(orphanedTx1, true, 1)
 	orphanedTx2, err := harness.CreateSignedTx([]spendableOutpoint{{
 		amount:   util.Amount(5000000000),
 		outpoint: wire.Outpoint{TxID: daghash.TxID{2}, Index: 2},
@@ -1275,8 +1225,7 @@ func TestRemoveOrphansByTag(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unable to create signed tx: %v", err)
 	}
-	harness.txPool.ProcessTransaction(orphanedTx2, true,
-		false, 1)
+	harness.txPool.ProcessTransaction(orphanedTx2, true, 1)
 	orphanedTx3, err := harness.CreateSignedTx([]spendableOutpoint{{
 		amount:   util.Amount(5000000000),
 		outpoint: wire.Outpoint{TxID: daghash.TxID{3}, Index: 3},
@@ -1284,8 +1233,7 @@ func TestRemoveOrphansByTag(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unable to create signed tx: %v", err)
 	}
-	harness.txPool.ProcessTransaction(orphanedTx3, true,
-		false, 1)
+	harness.txPool.ProcessTransaction(orphanedTx3, true, 1)
 
 	orphanedTx4, err := harness.CreateSignedTx([]spendableOutpoint{{
 		amount:   util.Amount(5000000000),
@@ -1294,8 +1242,7 @@ func TestRemoveOrphansByTag(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unable to create signed tx: %v", err)
 	}
-	harness.txPool.ProcessTransaction(orphanedTx4, true,
-		false, 2)
+	harness.txPool.ProcessTransaction(orphanedTx4, true, 2)
 
 	harness.txPool.RemoveOrphansByTag(1)
 	testPoolMembership(tc, orphanedTx1, false, false, false)
@@ -1328,8 +1275,7 @@ func TestBasicOrphanRemoval(t *testing.T) {
 	// Ensure the orphans are accepted (only up to the maximum allowed so
 	// none are evicted).
 	for _, tx := range chainedTxns[1 : maxOrphans+1] {
-		acceptedTxns, err := harness.txPool.ProcessTransaction(tx, true,
-			false, 0)
+		acceptedTxns, err := harness.txPool.ProcessTransaction(tx, true, 0)
 		if err != nil {
 			t.Fatalf("ProcessTransaction: failed to accept valid "+
 				"orphan %v", err)
@@ -1402,8 +1348,7 @@ func TestOrphanChainRemoval(t *testing.T) {
 	// Ensure the orphans are accepted (only up to the maximum allowed so
 	// none are evicted).
 	for _, tx := range chainedTxns[1 : maxOrphans+1] {
-		acceptedTxns, err := harness.txPool.ProcessTransaction(tx, true,
-			false, 0)
+		acceptedTxns, err := harness.txPool.ProcessTransaction(tx, true, 0)
 		if err != nil {
 			t.Fatalf("ProcessTransaction: failed to accept valid "+
 				"orphan %v", err)
@@ -1464,8 +1409,7 @@ func TestMultiInputOrphanDoubleSpend(t *testing.T) {
 	// Start by adding the orphan transactions from the generated chain
 	// except the final one.
 	for _, tx := range chainedTxns[1:maxOrphans] {
-		acceptedTxns, err := harness.txPool.ProcessTransaction(tx, true,
-			false, 0)
+		acceptedTxns, err := harness.txPool.ProcessTransaction(tx, true, 0)
 		if err != nil {
 			t.Fatalf("ProcessTransaction: failed to accept valid "+
 				"orphan %v", err)
@@ -1490,8 +1434,7 @@ func TestMultiInputOrphanDoubleSpend(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unable to create signed tx: %v", err)
 	}
-	acceptedTxns, err := harness.txPool.ProcessTransaction(doubleSpendTx,
-		true, false, 0)
+	acceptedTxns, err := harness.txPool.ProcessTransaction(doubleSpendTx, true, 0)
 	if err != nil {
 		t.Fatalf("ProcessTransaction: failed to accept valid orphan %v",
 			err)
@@ -1509,8 +1452,7 @@ func TestMultiInputOrphanDoubleSpend(t *testing.T) {
 	//
 	// This will cause the shared output to become a concrete spend which
 	// will in turn must cause the double spending orphan to be removed.
-	acceptedTxns, err = harness.txPool.ProcessTransaction(chainedTxns[0],
-		false, false, 0)
+	acceptedTxns, err = harness.txPool.ProcessTransaction(chainedTxns[0], false, 0)
 	if err != nil {
 		t.Fatalf("ProcessTransaction: failed to accept valid tx %v", err)
 	}
@@ -1557,8 +1499,7 @@ func TestCheckSpend(t *testing.T) {
 		t.Fatalf("unable to create transaction chain: %v", err)
 	}
 	for _, tx := range chainedTxns {
-		_, err := harness.txPool.ProcessTransaction(tx, true,
-			false, 0)
+		_, err := harness.txPool.ProcessTransaction(tx, true, 0)
 		if err != nil {
 			t.Fatalf("ProcessTransaction: failed to accept "+
 				"tx: %v", err)
@@ -1616,7 +1557,7 @@ func TestCount(t *testing.T) {
 	}
 
 	for i, tx := range chainedTxns {
-		_, err = harness.txPool.ProcessTransaction(tx, true, false, 0)
+		_, err = harness.txPool.ProcessTransaction(tx, true, 0)
 		if err != nil {
 			t.Errorf("ProcessTransaction: unexpected error: %v", err)
 		}
@@ -1657,10 +1598,6 @@ func TestExtractRejectCode(t *testing.T) {
 		},
 		{
 			blockdagRuleErrorCode: blockdag.ErrBadCheckpoint,
-			wireRejectCode:        wire.RejectCheckpoint,
-		},
-		{
-			blockdagRuleErrorCode: blockdag.ErrForkTooOld,
 			wireRejectCode:        wire.RejectCheckpoint,
 		},
 		{
@@ -1726,14 +1663,15 @@ func TestHandleNewBlock(t *testing.T) {
 
 	// Create orphan transaction and add it to UTXO set
 	txID := blockTx1.ID()
+
 	orphanTx, err := harness.CreateSignedTx([]spendableOutpoint{{
-		amount:   util.Amount(2500000000),
+		amount:   util.Amount(2500000000 - txRelayFeeForTest),
 		outpoint: wire.Outpoint{TxID: *txID, Index: 0},
 	}}, 1)
 	if err != nil {
 		t.Fatalf("unable to create signed tx: %v", err)
 	}
-	_, err = harness.txPool.ProcessTransaction(orphanTx, true, false, 0)
+	_, err = harness.txPool.ProcessTransaction(orphanTx, true, 0)
 	if err != nil {
 		t.Fatalf("ProcessTransaction: unexpected error: %v", err)
 	}
@@ -1765,9 +1703,9 @@ func TestHandleNewBlock(t *testing.T) {
 	}()
 
 	// process messages pushed by HandleNewBlock
-	blockTransnactions := make(map[daghash.TxID]int)
+	blockTransactions := make(map[daghash.TxID]int)
 	for msg := range ch {
-		blockTransnactions[*msg.Tx.ID()] = 1
+		blockTransactions[*msg.Tx.ID()] = 1
 		if *msg.Tx.ID() != *blockTx1.ID() {
 			if len(msg.AcceptedTxs) != 0 {
 				t.Fatalf("Expected amount of accepted transactions 0. Got: %v", len(msg.AcceptedTxs))
@@ -1787,15 +1725,15 @@ func TestHandleNewBlock(t *testing.T) {
 	}
 
 	// Validate messages pushed by HandleNewBlock into the channel
-	if len(blockTransnactions) != 2 {
-		t.Fatalf("Wrong size of blockTransnactions after new block handling")
+	if len(blockTransactions) != 2 {
+		t.Fatalf("Wrong size of blockTransactions after new block handling")
 	}
 
-	if _, ok := blockTransnactions[*blockTx1.ID()]; !ok {
+	if _, ok := blockTransactions[*blockTx1.ID()]; !ok {
 		t.Fatalf("Transaction 1 of new block is not handled")
 	}
 
-	if _, ok := blockTransnactions[*blockTx2.ID()]; !ok {
+	if _, ok := blockTransactions[*blockTx2.ID()]; !ok {
 		t.Fatalf("Transaction 2 of new block is not handled")
 	}
 
@@ -1892,7 +1830,7 @@ func TestTransactionGas(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unable to create transaction: %v", err)
 	}
-	_, err = harness.txPool.ProcessTransaction(tx, true, false, 0)
+	_, err = harness.txPool.ProcessTransaction(tx, true, 0)
 	if err != nil {
 		t.Errorf("ProcessTransaction: unexpected error: %v", err)
 	}
@@ -1902,7 +1840,7 @@ func TestTransactionGas(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unable to create transaction: %v", err)
 	}
-	_, err = harness.txPool.ProcessTransaction(tx, true, false, 0)
+	_, err = harness.txPool.ProcessTransaction(tx, true, 0)
 	if err == nil {
 		t.Error("ProcessTransaction did not return error, expecting ErrInvalidGas")
 	}

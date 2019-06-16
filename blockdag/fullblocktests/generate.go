@@ -274,7 +274,7 @@ func uniqueOpReturnScript() []byte {
 
 // createCoinbaseTx returns a coinbase transaction paying an appropriate
 // subsidy based on the passed block height.
-func (g *testGenerator) createCoinbaseTx(blockHeight uint64) *wire.MsgTx {
+func (g *testGenerator) createCoinbaseTx(blueScore uint64) *wire.MsgTx {
 	extraNonce := uint64(0)
 	coinbaseScript, err := standardCoinbaseScript(extraNonce)
 	if err != nil {
@@ -290,7 +290,7 @@ func (g *testGenerator) createCoinbaseTx(blockHeight uint64) *wire.MsgTx {
 		SignatureScript: coinbaseScript,
 	}
 	txOut := &wire.TxOut{
-		Value:    blockdag.CalcBlockSubsidy(blockHeight, g.params),
+		Value:    blockdag.CalcBlockSubsidy(blueScore, g.params),
 		PkScript: opTrueScript,
 	}
 	return wire.NewNativeMsgTx(1, []*wire.TxIn{txIn}, []*wire.TxOut{txOut})

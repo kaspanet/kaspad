@@ -13,7 +13,7 @@ import (
 
 func TestAncestorErrors(t *testing.T) {
 	node := newTestNode(newSet(), int32(0x10000000), 0, time.Unix(0, 0), dagconfig.MainNetParams.K)
-	node.height = 2
+	node.chainHeight = 2
 	ancestor := node.SelectedAncestor(3)
 	if ancestor != nil {
 		t.Errorf("TestAncestorErrors: Ancestor() unexpectedly returned a node. Expected: <nil>")

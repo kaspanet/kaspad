@@ -51,20 +51,20 @@ func findCandidates(dag *blockdag.BlockDAG, highestTipHash *daghash.Hash) ([]*da
 		// Set the latest checkpoint to the genesis block if there isn't
 		// already one.
 		latestCheckpoint = &dagconfig.Checkpoint{
-			Hash:   activeNetParams.GenesisHash,
-			Height: 0,
+			Hash:        activeNetParams.GenesisHash,
+			ChainHeight: 0,
 		}
 	}
 
 	// The latest known block must be at least the last known checkpoint
 	// plus required checkpoint confirmations.
 	checkpointConfirmations := uint64(blockdag.CheckpointConfirmations)
-	requiredHeight := latestCheckpoint.Height + checkpointConfirmations
-	if block.Height() < requiredHeight {
-		return nil, fmt.Errorf("the block database is only at height "+
-			"%d which is less than the latest checkpoint height "+
+	requiredChainHeight := latestCheckpoint.ChainHeight + checkpointConfirmations
+	if block.ChainHeight() < requiredChainHeight {
+		return nil, fmt.Errorf("the block database is only at chain "+
+			"height %d which is less than the latest checkpoint chain height "+
 			"of %d plus required confirmations of %d",
-			block.Height(), latestCheckpoint.Height,
+			block.ChainHeight(), latestCheckpoint.ChainHeight,
 			checkpointConfirmations)
 	}
 
@@ -72,11 +72,11 @@ func findCandidates(dag *blockdag.BlockDAG, highestTipHash *daghash.Hash) ([]*da
 	// genesis block, so long as the DAG has at least the required number
 	// of confirmations (which is enforced above).
 	if len(activeNetParams.Checkpoints) == 0 {
-		requiredHeight = 1
+		requiredChainHeight = 1
 	}
 
 	// Indeterminate progress setup.
-	numBlocksToTest := block.Height() - requiredHeight
+	numBlocksToTest := block.ChainHeight() - requiredChainHeight
 	progressInterval := (numBlocksToTest / 100) + 1 // min 1
 	fmt.Print("Searching for candidates")
 	defer fmt.Println()
@@ -84,7 +84,7 @@ func findCandidates(dag *blockdag.BlockDAG, highestTipHash *daghash.Hash) ([]*da
 	// Loop backwards through the DAG to find checkpoint candidates.
 	candidates := make([]*dagconfig.Checkpoint, 0, cfg.NumCandidates)
 	numTested := uint64(0)
-	for len(candidates) < cfg.NumCandidates && block.Height() > requiredHeight {
+	for len(candidates) < cfg.NumCandidates && block.ChainHeight() > requiredChainHeight {
 		// Display progress.
 		if numTested%progressInterval == 0 {
 			fmt.Print(".")
@@ -100,8 +100,8 @@ func findCandidates(dag *blockdag.BlockDAG, highestTipHash *daghash.Hash) ([]*da
 		// checkpoint candidate.
 		if isCandidate {
 			checkpoint := dagconfig.Checkpoint{
-				Height: block.Height(),
-				Hash:   block.Hash(),
+				ChainHeight: block.ChainHeight(),
+				Hash:        block.Hash(),
 			}
 			candidates = append(candidates, &checkpoint)
 		}
@@ -123,12 +123,12 @@ func findCandidates(dag *blockdag.BlockDAG, highestTipHash *daghash.Hash) ([]*da
 func showCandidate(candidateNum int, checkpoint *dagconfig.Checkpoint) {
 	if cfg.UseGoOutput {
 		fmt.Printf("Candidate %d -- {%d, newShaHashFromStr(\"%s\")},\n",
-			candidateNum, checkpoint.Height, checkpoint.Hash)
+			candidateNum, checkpoint.ChainHeight, checkpoint.Hash)
 		return
 	}
 
-	fmt.Printf("Candidate %d -- Height: %d, Hash: %s\n", candidateNum,
-		checkpoint.Height, checkpoint.Hash)
+	fmt.Printf("Candidate %d -- ChainHeight: %d, Hash: %s\n", candidateNum,
+		checkpoint.ChainHeight, checkpoint.Hash)
 
 }
 
@@ -162,11 +162,11 @@ func main() {
 
 	// Get the latest block hash and height from the database and report
 	// status.
-	fmt.Printf("Block database loaded with block height %d\n", dag.Height())
+	fmt.Printf("Block database loaded with block chain height %d\n", dag.ChainHeight())
 
 	// Find checkpoint candidates.
-	highestTipHash := dag.HighestTipHash()
-	candidates, err := findCandidates(dag, highestTipHash)
+	selectedTipHash := dag.SelectedTipHash()
+	candidates, err := findCandidates(dag, selectedTipHash)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Unable to identify candidates:", err)
 		return
