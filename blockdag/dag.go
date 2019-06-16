@@ -759,7 +759,7 @@ func (dag *BlockDAG) NextBlockCoinbaseTransactionNoLock(pkScript []byte, extraDa
 	if err != nil {
 		return nil, err
 	}
-	return dag.virtual.blockNode.buildCoinbaseTransaction(dag, txsAcceptanceData, pkScript, extraData)
+	return dag.virtual.blockNode.expectedCoinbaseTransaction(dag, txsAcceptanceData, pkScript, extraData)
 }
 
 // NextAcceptedIDMerkleRoot prepares the acceptedIDMerkleRoot for the next mined block

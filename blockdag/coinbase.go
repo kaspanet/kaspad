@@ -134,7 +134,7 @@ func (node *blockNode) validateCoinbaseTransaction(dag *BlockDAG, block *util.Bl
 	if err != nil {
 		return err
 	}
-	expectedCoinbaseTransaction, err := node.buildCoinbaseTransaction(dag, txsAcceptanceData, pkScript, extraData)
+	expectedCoinbaseTransaction, err := node.expectedCoinbaseTransaction(dag, txsAcceptanceData, pkScript, extraData)
 	if err != nil {
 		return err
 	}
@@ -146,8 +146,8 @@ func (node *blockNode) validateCoinbaseTransaction(dag *BlockDAG, block *util.Bl
 	return nil
 }
 
-// buildCoinbaseTransaction returns the coinbase transaction for the current block
-func (node *blockNode) buildCoinbaseTransaction(dag *BlockDAG, txsAcceptanceData MultiBlockTxsAcceptanceData, pkScript []byte, extraData []byte) (*util.Tx, error) {
+// expectedCoinbaseTransaction returns the coinbase transaction for the current block
+func (node *blockNode) expectedCoinbaseTransaction(dag *BlockDAG, txsAcceptanceData MultiBlockTxsAcceptanceData, pkScript []byte, extraData []byte) (*util.Tx, error) {
 	bluesFeeData, err := node.getBluesFeeData(dag)
 	if err != nil {
 		return nil, err
@@ -193,9 +193,32 @@ func SerializeCoinbasePayload(pkScript []byte, extraData []byte) ([]byte, error)
 	return w.Bytes(), nil
 }
 
+// DeserializeCoinbasePayload deserialize the coinbase payload to its component (pkScript and extra data).
+func DeserializeCoinbasePayload(tx *wire.MsgTx) (pkScript []byte, extraData []byte, err error) {
+	r := bytes.NewReader(tx.Payload)
+	pkScriptLen, err := wire.ReadVarInt(r)
+	if err != nil {
+		return nil, nil, err
+	}
+	pkScript = make([]byte, pkScriptLen)
+	_, err = r.Read(pkScript)
+	if err != nil {
+		return nil, nil, err
+	}
+	extraData = make([]byte, r.Len())
+	if r.Len() != 0 {
+		_, err = r.Read(extraData)
+		if err != nil {
+			return nil, nil, err
+		}
+	}
+	return pkScript, extraData, nil
+}
+
 // feeInputAndOutputForBlueBlock calculates the input and output that should go into the coinbase transaction of blueBlock
 // If blueBlock gets no fee - returns only txIn and nil for txOut
-func coinbaseInputAndOutputForBlueBlock(dag *BlockDAG, blueBlock *blockNode, txsAcceptanceData MultiBlockTxsAcceptanceData, feeData map[daghash.Hash]compactFeeData) (
+func coinbaseInputAndOutputForBlueBlock(dag *BlockDAG, blueBlock *blockNode,
+	txsAcceptanceData MultiBlockTxsAcceptanceData, feeData map[daghash.Hash]compactFeeData) (
 	*wire.TxIn, *wire.TxOut, error) {
 
 	blockTxsAcceptanceData, ok := txsAcceptanceData[*blueBlock.hash]
@@ -222,7 +245,7 @@ func coinbaseInputAndOutputForBlueBlock(dag *BlockDAG, blueBlock *blockNode, txs
 		Sequence: wire.MaxTxInSequenceNum,
 	}
 
-	totalFees := CalcBlockSubsidy(blueBlock.height, dag.dagParams)
+	totalFees := uint64(0)
 	feeIterator := blockFeeData.iterator()
 
 	for _, txAcceptanceData := range blockTxsAcceptanceData {
@@ -235,7 +258,9 @@ func coinbaseInputAndOutputForBlueBlock(dag *BlockDAG, blueBlock *blockNode, txs
 		}
 	}
 
-	if totalFees == 0 {
+	totalReward := CalcBlockSubsidy(blueBlock.height, dag.dagParams) + totalFees
+
+	if totalReward == 0 {
 		return txIn, nil, nil
 	}
 
@@ -246,31 +271,9 @@ func coinbaseInputAndOutputForBlueBlock(dag *BlockDAG, blueBlock *blockNode, txs
 	}
 
 	txOut := &wire.TxOut{
-		Value:    totalFees,
+		Value:    totalReward,
 		PkScript: pkScript,
 	}
 
 	return txIn, txOut, nil
-}
-
-// DeserializeCoinbasePayload deserialize the coinbase payload to its component (pkScript and extra data).
-func DeserializeCoinbasePayload(tx *wire.MsgTx) (pkScript []byte, extraData []byte, err error) {
-	r := bytes.NewReader(tx.Payload)
-	pkScriptLen, err := wire.ReadVarInt(r)
-	if err != nil {
-		return nil, nil, err
-	}
-	pkScript = make([]byte, pkScriptLen)
-	_, err = r.Read(pkScript)
-	if err != nil {
-		return nil, nil, err
-	}
-	extraData = make([]byte, r.Len())
-	if r.Len() != 0 {
-		_, err = r.Read(extraData)
-		if err != nil {
-			return nil, nil, err
-		}
-	}
-	return pkScript, extraData, nil
 }

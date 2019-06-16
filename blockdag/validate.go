@@ -30,7 +30,7 @@ const (
 	MaxTimeOffsetSeconds = 2 * 60 * 60
 
 	// MaxCoinbasePayloadLen is the maximum length a coinbase payload can be.
-	MaxCoinbasePayloadLen = 100
+	MaxCoinbasePayloadLen = 150
 
 	// medianTimeBlocks is the number of previous blocks which should be
 	// used to calculate the median time used to validate block timestamps.
