@@ -6,7 +6,6 @@ package blockdag
 
 import (
 	"math"
-	"reflect"
 	"testing"
 	"time"
 
@@ -22,8 +21,8 @@ import (
 func TestSequenceLocksActive(t *testing.T) {
 	seqLock := func(h int64, s int64) *SequenceLock {
 		return &SequenceLock{
-			Seconds:          s,
-			BlockChainHeight: h,
+			Seconds:        s,
+			BlockBlueScore: h,
 		}
 	}
 
@@ -126,7 +125,6 @@ func TestCheckConnectBlockTemplate(t *testing.T) {
 	}
 
 	// Block 3a should connect even though it does not build on dag tips.
-	blocks[5].SetHeight(3) // set height manually because it was set to 0 in loadBlocks
 	err = dag.CheckConnectBlockTemplateNoLock(blocks[5])
 	if err != nil {
 		t.Fatal("CheckConnectBlockTemplate: Recieved unexpected error on " +
@@ -137,7 +135,6 @@ func TestCheckConnectBlockTemplate(t *testing.T) {
 	invalidPowMsgBlock := *blocks[4].MsgBlock()
 	invalidPowMsgBlock.Header.Nonce++
 	invalidPowBlock := util.NewBlock(&invalidPowMsgBlock)
-	invalidPowBlock.SetHeight(blocks[4].Height())
 	err = dag.CheckConnectBlockTemplateNoLock(invalidPowBlock)
 	if err != nil {
 		t.Fatalf("CheckConnectBlockTemplate: Received unexpected error on "+
@@ -476,74 +473,6 @@ func TestCheckBlockSanity(t *testing.T) {
 	}
 }
 
-// TestCheckSerializedHeight tests the checkSerializedHeight function with
-// various serialized heights and also does negative tests to ensure errors
-// and handled properly.
-func TestCheckSerializedHeight(t *testing.T) {
-	// Create an empty coinbase template to be used in the tests below.
-	coinbaseOutpoint := wire.NewOutpoint(&daghash.TxID{}, math.MaxUint32)
-	coinbaseTx := wire.NewNativeMsgTx(1, []*wire.TxIn{wire.NewTxIn(coinbaseOutpoint, nil)}, nil)
-
-	// Expected rule errors.
-	missingHeightError := RuleError{
-		ErrorCode: ErrMissingCoinbaseHeight,
-	}
-	badHeightError := RuleError{
-		ErrorCode: ErrBadCoinbaseHeight,
-	}
-
-	tests := []struct {
-		sigScript  []byte // Serialized data
-		wantHeight uint64 // Expected height
-		err        error  // Expected error type
-	}{
-		// No serialized height length.
-		{[]byte{}, 0, missingHeightError},
-		// Serialized height length with no height bytes.
-		{[]byte{0x02}, 0, missingHeightError},
-		// Serialized height length with too few height bytes.
-		{[]byte{0x02, 0x4a}, 0, missingHeightError},
-		// Serialized height that needs 2 bytes to encode.
-		{[]byte{0x02, 0x4a, 0x52}, 21066, nil},
-		// Serialized height that needs 2 bytes to encode, but backwards
-		// endianness.
-		{[]byte{0x02, 0x4a, 0x52}, 19026, badHeightError},
-		// Serialized height that needs 3 bytes to encode.
-		{[]byte{0x03, 0x40, 0x0d, 0x03}, 200000, nil},
-		// Serialized height that needs 3 bytes to encode, but backwards
-		// endianness.
-		{[]byte{0x03, 0x40, 0x0d, 0x03}, 1074594560, badHeightError},
-	}
-
-	t.Logf("Running %d tests", len(tests))
-	for i, test := range tests {
-		msgTx := coinbaseTx.Copy()
-		msgTx.TxIn[0].SignatureScript = test.sigScript
-
-		msgBlock := wire.NewMsgBlock(wire.NewBlockHeader(1, []*daghash.Hash{}, &daghash.Hash{}, &daghash.Hash{}, &daghash.Hash{}, 0, 0))
-		msgBlock.AddTransaction(msgTx)
-		block := util.NewBlock(msgBlock)
-		block.SetHeight(test.wantHeight)
-
-		err := checkSerializedHeight(block)
-		if reflect.TypeOf(err) != reflect.TypeOf(test.err) {
-			t.Errorf("checkSerializedHeight #%d wrong error type "+
-				"got: %v <%T>, want: %T", i, err, err, test.err)
-			continue
-		}
-
-		if rerr, ok := err.(RuleError); ok {
-			trerr := test.err.(RuleError)
-			if rerr.ErrorCode != trerr.ErrorCode {
-				t.Errorf("checkSerializedHeight #%d wrong "+
-					"error code got: %v, want: %v", i,
-					rerr.ErrorCode, trerr.ErrorCode)
-				continue
-			}
-		}
-	}
-}
-
 func TestPastMedianTime(t *testing.T) {
 	dag := newTestDAG(&dagconfig.MainNetParams)
 	tip := dag.genesis
@@ -561,7 +490,7 @@ func TestPastMedianTime(t *testing.T) {
 	}
 
 	// Checks that a block is valid if it has timestamp equals to past median time
-	height := tip.height + 1
+	chainHeight := tip.chainHeight + 1
 	node := newTestNode(setFromSlice(tip),
 		blockVersion,
 		0,
@@ -569,14 +498,14 @@ func TestPastMedianTime(t *testing.T) {
 		dagconfig.MainNetParams.K)
 
 	header := node.Header()
-	err := dag.checkBlockHeaderContext(header, node.parents.bluest(), height, false)
+	err := dag.checkBlockHeaderContext(header, node.parents.bluest(), chainHeight, false)
 	if err != nil {
 		t.Errorf("TestPastMedianTime: unexpected error from checkBlockHeaderContext: %v"+
 			"(a block with timestamp equals to past median time should be valid)", err)
 	}
 
 	// Checks that a block is valid if its timestamp is after past median time
-	height = tip.height + 1
+	chainHeight = tip.chainHeight + 1
 	node = newTestNode(setFromSlice(tip),
 		blockVersion,
 		0,
@@ -584,14 +513,14 @@ func TestPastMedianTime(t *testing.T) {
 		dagconfig.MainNetParams.K)
 
 	header = node.Header()
-	err = dag.checkBlockHeaderContext(header, node.parents.bluest(), height, false)
+	err = dag.checkBlockHeaderContext(header, node.parents.bluest(), chainHeight, false)
 	if err != nil {
 		t.Errorf("TestPastMedianTime: unexpected error from checkBlockHeaderContext: %v"+
 			"(a block with timestamp bigger than past median time should be valid)", err)
 	}
 
 	// Checks that a block is invalid if its timestamp is before past median time
-	height = tip.height + 1
+	chainHeight = tip.chainHeight + 1
 	node = newTestNode(setFromSlice(tip),
 		blockVersion,
 		0,
@@ -599,7 +528,7 @@ func TestPastMedianTime(t *testing.T) {
 		dagconfig.MainNetParams.K)
 
 	header = node.Header()
-	err = dag.checkBlockHeaderContext(header, node.parents.bluest(), height, false)
+	err = dag.checkBlockHeaderContext(header, node.parents.bluest(), chainHeight, false)
 	if err == nil {
 		t.Errorf("TestPastMedianTime: unexpected success: block should be invalid if its timestamp is before past median time")
 	}
@@ -730,7 +659,7 @@ func TestCheckTransactionSanity(t *testing.T) {
 			test.extraModificationsFunc(tx)
 		}
 
-		err := CheckTransactionSanity(util.NewTx(tx), &test.nodeSubnetworkID, false)
+		err := CheckTransactionSanity(util.NewTx(tx), &test.nodeSubnetworkID)
 		if e := checkRuleError(err, test.expectedErr); e != nil {
 			t.Errorf("TestCheckTransactionSanity: '%s': %v", test.name, e)
 			continue

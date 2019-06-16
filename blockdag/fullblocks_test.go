@@ -156,7 +156,7 @@ func TestFullBlocks(t *testing.T) {
 	testAcceptedBlock := func(item fullblocktests.AcceptedBlock) {
 		blockHeight := item.Height
 		block := util.NewBlock(item.Block)
-		block.SetHeight(blockHeight)
+		block.SetChainHeight(blockHeight)
 		t.Logf("Testing block %s (hash %s, height %d)",
 			item.Name, block.Hash(), blockHeight)
 
@@ -182,7 +182,7 @@ func TestFullBlocks(t *testing.T) {
 	testRejectedBlock := func(item fullblocktests.RejectedBlock) {
 		blockHeight := item.Height
 		block := util.NewBlock(item.Block)
-		block.SetHeight(blockHeight)
+		block.SetChainHeight(blockHeight)
 		t.Logf("Testing block %s (hash %s, height %d)",
 			item.Name, block.Hash(), blockHeight)
 
@@ -239,7 +239,7 @@ func TestFullBlocks(t *testing.T) {
 	testOrphanOrRejectedBlock := func(item fullblocktests.OrphanOrRejectedBlock) {
 		blockHeight := item.Height
 		block := util.NewBlock(item.Block)
-		block.SetHeight(blockHeight)
+		block.SetChainHeight(blockHeight)
 		t.Logf("Testing block %s (hash %s, height %d)",
 			item.Name, block.Hash(), blockHeight)
 
@@ -267,18 +267,18 @@ func TestFullBlocks(t *testing.T) {
 	testExpectedTip := func(item fullblocktests.ExpectedTip) {
 		blockHeight := item.Height
 		block := util.NewBlock(item.Block)
-		block.SetHeight(blockHeight)
+		block.SetChainHeight(blockHeight)
 		t.Logf("Testing tip for block %s (hash %s, height %d)",
 			item.Name, block.Hash(), blockHeight)
 
 		// Ensure hash and height match.
-		if dag.HighestTipHash() != item.Block.BlockHash() ||
-			dag.Height() != blockHeight { //TODO: (Ori) the use of dag.Height() and virtualBlock.HighestTipHash() is wrong, and was done only for compilation
+		if dag.SelectedTipHash() != item.Block.BlockHash() ||
+			dag.ChainHeight() != blockHeight { //TODO: (Ori) the use of dag.ChainHeight() and virtualBlock.HighestTipHash() is wrong, and was done only for compilation
 
 			t.Fatalf("block %q (hash %s, height %d) should be "+
 				"the current tip -- got (hash %s, height %d)",
-				item.Name, block.Hash(), blockHeight, dag.HighestTipHash(),
-				dag.Height()) //TODO: (Ori) the use of dag.Height() and virtualBlock.HighestTipHash() is wrong, and was done only for compilation
+				item.Name, block.Hash(), blockHeight, dag.SelectedTipHash(),
+				dag.ChainHeight()) //TODO: (Ori) the use of dag.ChainHeight() and virtualBlock.HighestTipHash() is wrong, and was done only for compilation
 		}
 	}
 

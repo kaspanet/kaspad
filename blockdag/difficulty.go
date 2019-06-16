@@ -147,7 +147,7 @@ func (dag *BlockDAG) calcNextRequiredDifficulty(bluestParent *blockNode, newBloc
 	// newTarget since conversion to the compact representation loses
 	// precision.
 	newTargetBits := util.BigToCompact(newTarget)
-	log.Debugf("Difficulty retarget at block height %d", bluestParent.height+1)
+	log.Debugf("Difficulty retarget at block chain height %d", dag.virtual.chainHeight)
 	log.Debugf("Old target %08x (%064x)", bluestParent.bits, oldTarget)
 	log.Debugf("New target %08x (%064x)", newTargetBits, util.CompactToBig(newTargetBits))
 	log.Debugf("Actual timespan %s, adjusted timespan %s, target timespan %s",

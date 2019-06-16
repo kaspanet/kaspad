@@ -46,9 +46,7 @@ func PrepareBlockForTest(dag *blockdag.BlockDAG, params *dagconfig.Params, paren
 	oldVirtual := blockdag.SetVirtualForTest(dag, newVirtual)
 	defer blockdag.SetVirtualForTest(dag, oldVirtual)
 	policy := Policy{
-		BlockMaxSize:      50000,
-		BlockPrioritySize: 750000,
-		TxMinFreeFee:      util.Amount(0),
+		BlockMaxSize: 50000,
 	}
 
 	txSource := &fakeTxSource{
@@ -70,7 +68,7 @@ func PrepareBlockForTest(dag *blockdag.BlockDAG, params *dagconfig.Params, paren
 	}
 
 	// In order of creating deterministic coinbase tx ids.
-	err = blockTemplateGenerator.UpdateExtraNonce(template.Block, dag.Height()+1, GenerateDeterministicExtraNonceForTest())
+	err = blockTemplateGenerator.UpdateExtraNonce(template.Block, dag.VirtualBlueScore(), GenerateDeterministicExtraNonceForTest())
 	if err != nil {
 		return nil, err
 	}
@@ -119,7 +117,7 @@ func PrepareBlockForTest(dag *blockdag.BlockDAG, params *dagconfig.Params, paren
 		}
 		template.Block.Header.HashMerkleRoot = blockdag.BuildHashMerkleTreeStore(utilTxs).Root()
 
-		template.Block.Header.UTXOCommitment, err = blockTemplateGenerator.buildUTXOCommitment(template.Block.Transactions, dag.Height()+1)
+		template.Block.Header.UTXOCommitment, err = blockTemplateGenerator.buildUTXOCommitment(template.Block.Transactions, dag.VirtualBlueScore())
 		if err != nil {
 			return nil, err
 		}

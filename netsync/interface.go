@@ -32,6 +32,4 @@ type Config struct {
 
 	DisableCheckpoints bool
 	MaxPeers           int
-
-	FeeEstimator *mempool.FeeEstimator
 }

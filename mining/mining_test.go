@@ -28,18 +28,11 @@ func TestTxFeePrioHeap(t *testing.T) {
 	// Create some fake priority items that exercise the expected sort
 	// edge conditions.
 	testItems := []*txPrioItem{
-		{feePerKB: 5678, priority: 3},
-		{feePerKB: 5678, priority: 1},
-		{feePerKB: 5678, priority: 1}, // Duplicate fee and prio
-		{feePerKB: 5678, priority: 5},
-		{feePerKB: 5678, priority: 2},
-		{feePerKB: 1234, priority: 3},
-		{feePerKB: 1234, priority: 1},
-		{feePerKB: 1234, priority: 5},
-		{feePerKB: 1234, priority: 5}, // Duplicate fee and prio
-		{feePerKB: 1234, priority: 2},
-		{feePerKB: 10000, priority: 0}, // Higher fee, smaller prio
-		{feePerKB: 0, priority: 10000}, // Higher prio, lower fee
+		{feePerKB: 5678},
+		{feePerKB: 5678}, // Duplicate fee
+		{feePerKB: 1234},
+		{feePerKB: 10000}, // High fee
+		{feePerKB: 0},     // Zero fee
 	}
 
 	// Add random data in addition to the edge conditions already manually
@@ -54,21 +47,14 @@ func TestTxFeePrioHeap(t *testing.T) {
 	for i := 0; i < 1000; i++ {
 		testItems = append(testItems, &txPrioItem{
 			feePerKB: uint64(prng.Float64() * util.SatoshiPerBitcoin),
-			priority: prng.Float64() * 100,
 		})
 	}
 
-	// Test sorting by fee per KB then priority.
+	// Test sorting by fee per KB
 	var highest *txPrioItem
-	priorityQueue := newTxPriorityQueue(len(testItems), true)
-	for i := 0; i < len(testItems); i++ {
-		prioItem := testItems[i]
-		if highest == nil {
-			highest = prioItem
-		}
-		if prioItem.feePerKB >= highest.feePerKB &&
-			prioItem.priority > highest.priority {
-
+	priorityQueue := newTxPriorityQueue(len(testItems))
+	for _, prioItem := range testItems {
+		if highest == nil || prioItem.feePerKB >= highest.feePerKB {
 			highest = prioItem
 		}
 		heap.Push(priorityQueue, prioItem)
@@ -76,44 +62,10 @@ func TestTxFeePrioHeap(t *testing.T) {
 
 	for i := 0; i < len(testItems); i++ {
 		prioItem := heap.Pop(priorityQueue).(*txPrioItem)
-		if prioItem.feePerKB >= highest.feePerKB &&
-			prioItem.priority > highest.priority {
-
-			t.Fatalf("fee sort: item (fee per KB: %v, "+
-				"priority: %v) higher than than prev "+
-				"(fee per KB: %v, priority %v)",
-				prioItem.feePerKB, prioItem.priority,
-				highest.feePerKB, highest.priority)
-		}
-		highest = prioItem
-	}
-
-	// Test sorting by priority then fee per KB.
-	highest = nil
-	priorityQueue = newTxPriorityQueue(len(testItems), false)
-	for i := 0; i < len(testItems); i++ {
-		prioItem := testItems[i]
-		if highest == nil {
-			highest = prioItem
-		}
-		if prioItem.priority >= highest.priority &&
-			prioItem.feePerKB > highest.feePerKB {
-
-			highest = prioItem
-		}
-		heap.Push(priorityQueue, prioItem)
-	}
-
-	for i := 0; i < len(testItems); i++ {
-		prioItem := heap.Pop(priorityQueue).(*txPrioItem)
-		if prioItem.priority >= highest.priority &&
-			prioItem.feePerKB > highest.feePerKB {
-
-			t.Fatalf("priority sort: item (fee per KB: %v, "+
-				"priority: %v) higher than than prev "+
-				"(fee per KB: %v, priority %v)",
-				prioItem.feePerKB, prioItem.priority,
-				highest.feePerKB, highest.priority)
+		if prioItem.feePerKB > highest.feePerKB {
+			t.Fatalf("fee sort: item (fee per KB: %v) "+
+				"higher than than prev (fee per KB: %v)",
+				prioItem.feePerKB, highest.feePerKB)
 		}
 		highest = prioItem
 	}
@@ -137,9 +89,7 @@ func TestNewBlockTemplate(t *testing.T) {
 	}
 
 	policy := Policy{
-		BlockMaxSize:      50000,
-		BlockPrioritySize: 750000,
-		TxMinFreeFee:      util.Amount(0),
+		BlockMaxSize: 50000,
 	}
 
 	// First we create a block to have coinbase funds for the rest of the test.
@@ -148,10 +98,10 @@ func TestNewBlockTemplate(t *testing.T) {
 	}
 
 	var createCoinbaseTxPatch *monkey.PatchGuard
-	createCoinbaseTxPatch = monkey.Patch(CreateCoinbaseTx, func(params *dagconfig.Params, coinbaseScript []byte, nextBlockHeight uint64, addr util.Address) (*util.Tx, error) {
+	createCoinbaseTxPatch = monkey.Patch(CreateCoinbaseTx, func(params *dagconfig.Params, coinbaseScript []byte, nextBlueScore uint64, addr util.Address) (*util.Tx, error) {
 		createCoinbaseTxPatch.Unpatch()
 		defer createCoinbaseTxPatch.Restore()
-		tx, err := CreateCoinbaseTx(params, coinbaseScript, nextBlockHeight, addr)
+		tx, err := CreateCoinbaseTx(params, coinbaseScript, nextBlueScore, addr)
 		if err != nil {
 			return nil, err
 		}
@@ -184,13 +134,13 @@ func TestNewBlockTemplate(t *testing.T) {
 		t.Fatalf("ProcessBlock: template1 got unexpectedly orphan")
 	}
 
-	cbScript, err := StandardCoinbaseScript(dag.Height()+1, 0)
+	cbScript, err := StandardCoinbaseScript(dag.VirtualBlueScore(), 0)
 	if err != nil {
 		t.Fatalf("standardCoinbaseScript: %v", err)
 	}
 
 	// We want to check that the miner filters coinbase transaction
-	cbTx, err := CreateCoinbaseTx(&params, cbScript, dag.Height()+1, nil)
+	cbTx, err := CreateCoinbaseTx(&params, cbScript, dag.VirtualBlueScore(), nil)
 	if err != nil {
 		t.Fatalf("createCoinbaseTx: %v", err)
 	}
@@ -231,7 +181,7 @@ func TestNewBlockTemplate(t *testing.T) {
 		Value:    1,
 	}
 	nonFinalizedTx := wire.NewNativeMsgTx(wire.TxVersion, []*wire.TxIn{txIn}, []*wire.TxOut{txOut})
-	nonFinalizedTx.LockTime = uint64(dag.Height() + 2)
+	nonFinalizedTx.LockTime = uint64(dag.ChainHeight() + 2)
 
 	existingSubnetwork := &subnetworkid.SubnetworkID{0xff}
 	nonExistingSubnetwork := &subnetworkid.SubnetworkID{0xfe}

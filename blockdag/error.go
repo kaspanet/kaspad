@@ -92,10 +92,6 @@ const (
 	// checkpoint height does not match the expected one.
 	ErrBadCheckpoint
 
-	// ErrForkTooOld indicates a block is attempting to fork the block chain
-	// before the most recent checkpoint.
-	ErrForkTooOld
-
 	// ErrCheckpointTimeTooOld indicates a block has a timestamp before the
 	// most recent checkpoint.
 	ErrCheckpointTimeTooOld
@@ -176,15 +172,15 @@ const (
 	// not match the expected value of the subsidy plus the sum of all fees.
 	ErrBadCoinbaseValue
 
-	// ErrMissingCoinbaseHeight indicates the coinbase transaction for a
-	// block does not start with the serialized block block height as
+	// ErrMissingCoinbaseBlueScore indicates the coinbase transaction for a
+	// block does not start with the serialized block blue score as
 	// required for version 2 and higher blocks.
-	ErrMissingCoinbaseHeight
+	ErrMissingCoinbaseBlueScore
 
-	// ErrBadCoinbaseHeight indicates the serialized block height in the
+	// ErrBadCoinbaseBlueScore indicates the serialized block blue score in the
 	// coinbase transaction for version 2 and higher blocks does not match
 	// the expected value.
-	ErrBadCoinbaseHeight
+	ErrBadCoinbaseBlueScore
 
 	// ErrSecondTxNotFeeTransaction indicates the second transaction in
 	// a block is not a fee transaction.
@@ -261,7 +257,6 @@ var errorCodeStrings = map[ErrorCode]string{
 	ErrHighHash:                  "ErrHighHash",
 	ErrBadMerkleRoot:             "ErrBadMerkleRoot",
 	ErrBadCheckpoint:             "ErrBadCheckpoint",
-	ErrForkTooOld:                "ErrForkTooOld",
 	ErrCheckpointTimeTooOld:      "ErrCheckpointTimeTooOld",
 	ErrNoTransactions:            "ErrNoTransactions",
 	ErrNoTxInputs:                "ErrNoTxInputs",
@@ -281,8 +276,8 @@ var errorCodeStrings = map[ErrorCode]string{
 	ErrMultipleCoinbases:         "ErrMultipleCoinbases",
 	ErrBadCoinbaseScriptLen:      "ErrBadCoinbaseScriptLen",
 	ErrBadCoinbaseValue:          "ErrBadCoinbaseValue",
-	ErrMissingCoinbaseHeight:     "ErrMissingCoinbaseHeight",
-	ErrBadCoinbaseHeight:         "ErrBadCoinbaseHeight",
+	ErrMissingCoinbaseBlueScore:  "ErrMissingCoinbaseBlueScore",
+	ErrBadCoinbaseBlueScore:      "ErrBadCoinbaseBlueScore",
 	ErrSecondTxNotFeeTransaction: "ErrSecondTxNotFeeTransaction",
 	ErrBadFeeTransaction:         "ErrBadFeeTransaction",
 	ErrMultipleFeeTransactions:   "ErrMultipleFeeTransactions",

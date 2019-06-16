@@ -873,7 +873,8 @@ testLoop:
 
 		// Apply all transactions to diffSet, in order, with the initial block height startHeight
 		for i, transaction := range test.toAdd {
-			_, err := diffSet.AddTx(transaction, test.startHeight+uint64(i))
+			height := test.startHeight + uint64(i)
+			_, err := diffSet.AddTx(transaction, height)
 			if err != nil {
 				t.Errorf("Error adding tx %s in test \"%s\": %s", transaction.TxID(), test.name, err)
 				continue testLoop
@@ -901,14 +902,14 @@ func TestDiffFromTx(t *testing.T) {
 	} else if !isAccepted {
 		t.Fatalf("AddTx unexpectedly didn't add tx %s", cbTx.TxID())
 	}
-	node := &blockNode{height: 2} //Fake node
+	node := &blockNode{blueScore: 2} //Fake node
 	cbOutpoint := wire.Outpoint{TxID: *cbTx.TxID(), Index: 0}
-	txIns := []*wire.TxIn{&wire.TxIn{
+	txIns := []*wire.TxIn{{
 		PreviousOutpoint: cbOutpoint,
 		SignatureScript:  nil,
 		Sequence:         wire.MaxTxInSequenceNum,
 	}}
-	txOuts := []*wire.TxOut{&wire.TxOut{
+	txOuts := []*wire.TxOut{{
 		PkScript: OpTrueScript,
 		Value:    uint64(1),
 	}}
@@ -930,12 +931,12 @@ func TestDiffFromTx(t *testing.T) {
 	}
 
 	//Test that we get an error if we don't have the outpoint inside the utxo set
-	invalidTxIns := []*wire.TxIn{&wire.TxIn{
+	invalidTxIns := []*wire.TxIn{{
 		PreviousOutpoint: wire.Outpoint{TxID: daghash.TxID{}, Index: 0},
 		SignatureScript:  nil,
 		Sequence:         wire.MaxTxInSequenceNum,
 	}}
-	invalidTxOuts := []*wire.TxOut{&wire.TxOut{
+	invalidTxOuts := []*wire.TxOut{{
 		PkScript: OpTrueScript,
 		Value:    uint64(1),
 	}}

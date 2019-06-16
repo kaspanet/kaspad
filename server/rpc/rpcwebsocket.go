@@ -757,20 +757,6 @@ func txHexString(tx *wire.MsgTx) string {
 	return hex.EncodeToString(buf.Bytes())
 }
 
-// blockDetails creates a BlockDetails struct to include in btcws notifications
-// from a block and a transaction's block index.
-func blockDetails(block *util.Block, txIndex int) *btcjson.BlockDetails {
-	if block == nil {
-		return nil
-	}
-	return &btcjson.BlockDetails{
-		Height: block.Height(),
-		Hash:   block.Hash().String(),
-		Index:  txIndex,
-		Time:   block.MsgBlock().Header.Timestamp.Unix(),
-	}
-}
-
 // notifyRelevantTxAccepted examines the inputs and outputs of the passed
 // transaction, notifying websocket clients of outputs spending to a watched
 // address and inputs spending a watched outpoint.  Any outputs paying to a
@@ -1517,21 +1503,6 @@ func handleNotifyNewTransactions(wsc *wsClient, icmd interface{}) (interface{}, 
 func handleStopNotifyNewTransactions(wsc *wsClient, icmd interface{}) (interface{}, error) {
 	wsc.server.ntfnMgr.UnregisterNewMempoolTxsUpdates(wsc)
 	return nil, nil
-}
-
-// deserializeOutpoints deserializes each serialized outpoint.
-func deserializeOutpoints(serializedOuts []btcjson.Outpoint) ([]*wire.Outpoint, error) {
-	outpoints := make([]*wire.Outpoint, 0, len(serializedOuts))
-	for i := range serializedOuts {
-		txID, err := daghash.NewTxIDFromStr(serializedOuts[i].TxID)
-		if err != nil {
-			return nil, rpcDecodeHexError(serializedOuts[i].TxID)
-		}
-		index := serializedOuts[i].Index
-		outpoints = append(outpoints, wire.NewOutpoint(txID, index))
-	}
-
-	return outpoints, nil
 }
 
 // rescanBlockFilter rescans a block for any relevant transactions for the
