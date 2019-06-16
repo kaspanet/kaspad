@@ -1187,8 +1187,8 @@ func (dag *BlockDAG) GetUTXOEntry(outpoint wire.Outpoint) (*UTXOEntry, bool) {
 	return dag.virtual.utxoSet.get(outpoint)
 }
 
-// BlockBlueScoreByHash returns the blue score of a block with the given hash.
-func (dag *BlockDAG) BlockBlueScoreByHash(hash *daghash.Hash) (uint64, error) {
+// BlueScoreByBlockHash returns the blue score of a block with the given hash.
+func (dag *BlockDAG) BlueScoreByBlockHash(hash *daghash.Hash) (uint64, error) {
 	node := dag.index.LookupNode(hash)
 	if node == nil {
 		return 0, fmt.Errorf("block %s is unknown", hash)

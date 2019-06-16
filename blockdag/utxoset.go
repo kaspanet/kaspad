@@ -21,8 +21,8 @@ const (
 
 // UTXOEntry houses details about an individual transaction output in a utxo
 // set such as whether or not it was contained in a block reward tx, the blue
-// score of the block that contains the tx, whether or not it is spent, its
-// public key script, and how much it pays.
+// score of the block that contains the tx, its public key script, and how
+// much it pays.
 type UTXOEntry struct {
 	// NOTE: Additions, deletions, or modifications to the order of the
 	// definitions in this struct should not be changed without considering

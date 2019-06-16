@@ -594,7 +594,7 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 	} else {
 		// When the block is not an orphan, log information about it and
 		// update the chain state.
-		blockBlueScore, err := sm.dag.BlockBlueScoreByHash(blockHash)
+		blockBlueScore, err := sm.dag.BlueScoreByBlockHash(blockHash)
 		if err != nil {
 			log.Errorf("Failed to get blue score for block %s: %s", blockHash, err)
 		}
