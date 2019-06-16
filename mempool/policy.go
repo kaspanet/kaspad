@@ -303,8 +303,7 @@ func checkTransactionStandard(tx *util.Tx, blueScore uint64,
 	}
 
 	// None of the output public key scripts can be a non-standard script or
-	// be "dust" (except when the script is a null data script).
-	numNullDataOutputs := 0
+	// be "dust".
 	for i, txOut := range msgTx.TxOut {
 		scriptClass := txscript.GetScriptClass(txOut.PkScript)
 		err := checkPkScriptStandard(txOut.PkScript, scriptClass)
@@ -320,23 +319,11 @@ func checkTransactionStandard(tx *util.Tx, blueScore uint64,
 			return txRuleError(rejectCode, str)
 		}
 
-		// Accumulate the number of outputs which only carry data.  For
-		// all other script types, ensure the output value is not
-		// "dust".
-		if scriptClass == txscript.NullDataTy {
-			numNullDataOutputs++
-		} else if isDust(txOut, policy.MinRelayTxFee) {
+		if isDust(txOut, policy.MinRelayTxFee) {
 			str := fmt.Sprintf("transaction output %d: payment "+
 				"of %d is dust", i, txOut.Value)
 			return txRuleError(wire.RejectDust, str)
 		}
-	}
-
-	// A standard transaction must not have more than one output script that
-	// only carries data.
-	if numNullDataOutputs > 1 {
-		str := "more than one transaction output in a nulldata script"
-		return txRuleError(wire.RejectNonstandard, str)
 	}
 
 	return nil

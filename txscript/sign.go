@@ -146,9 +146,6 @@ func sign(chainParams *dagconfig.Params, tx *wire.MsgTx, idx int,
 		signedScript, _ := signMultiSig(tx, idx, script, hashType,
 			addresses, nrequired, kdb)
 		return signedScript, class, addresses, nrequired, nil
-	case NullDataTy:
-		return nil, class, nil, 0,
-			errors.New("can't sign NULLDATA transactions")
 	default:
 		return nil, class, nil, 0,
 			errors.New("can't sign unknown transactions")

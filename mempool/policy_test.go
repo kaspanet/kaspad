@@ -381,19 +381,6 @@ func TestCheckTransactionStandard(t *testing.T) {
 			code:       wire.RejectNonstandard,
 		},
 		{
-			name: "More than one nulldata output",
-			tx: wire.NewNativeMsgTx(1, []*wire.TxIn{&dummyTxIn}, []*wire.TxOut{{
-				Value:    0,
-				PkScript: []byte{txscript.OpReturn},
-			}, {
-				Value:    0,
-				PkScript: []byte{txscript.OpReturn},
-			}}),
-			height:     300000,
-			isStandard: false,
-			code:       wire.RejectNonstandard,
-		},
-		{
 			name: "Dust output",
 			tx: wire.NewNativeMsgTx(1, []*wire.TxIn{&dummyTxIn}, []*wire.TxOut{{
 				Value:    0,
@@ -404,13 +391,14 @@ func TestCheckTransactionStandard(t *testing.T) {
 			code:       wire.RejectDust,
 		},
 		{
-			name: "One nulldata output with 0 amount (standard)",
+			name: "Nulldata transaction",
 			tx: wire.NewNativeMsgTx(1, []*wire.TxIn{&dummyTxIn}, []*wire.TxOut{{
 				Value:    0,
 				PkScript: []byte{txscript.OpReturn},
 			}}),
 			height:     300000,
-			isStandard: true,
+			isStandard: false,
+			code:       wire.RejectNonstandard,
 		},
 	}
 
