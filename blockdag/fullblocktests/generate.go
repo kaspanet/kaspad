@@ -910,7 +910,7 @@ func Generate(includeLargeReorg bool) (tests [][]TestInstance, err error) {
 	//   genesis -> bm0 -> bm1 -> ... -> bm99
 	// ---------------------------------------------------------------------
 
-	coinbaseMaturity := g.params.BlockRewardMaturity
+	coinbaseMaturity := g.params.BlockCoinbaseMaturity
 	var testInstances []TestInstance
 	for i := uint64(0); i < coinbaseMaturity; i++ {
 		blockName := fmt.Sprintf("bm%d", i)
@@ -1000,45 +1000,6 @@ func Generate(includeLargeReorg bool) (tests [][]TestInstance, err error) {
 	// ---------------------------------------------------------------------
 	// Too much proof-of-work coinbase tests.
 	// ---------------------------------------------------------------------
-
-	// Create a block that generates too coinbase.
-	//
-	//   ... -> b1(0) -> b2(1) -> b5(2) -> b6(3)
-	//                                         \-> b9(4)
-	//               \-> b3(1) -> b4(2)
-	g.setTip("b6")
-	g.nextBlock("b9", outs[4], additionalCoinbase(1))
-	rejected(blockdag.ErrBadCoinbaseValue)
-
-	// Create a fork that ends with block that generates too much coinbase.
-	//
-	//   ... -> b1(0) -> b2(1) -> b5(2) -> b6(3)
-	//                                 \-> b10(3) -> b11(4)
-	//               \-> b3(1) -> b4(2)
-	g.setTip("b5")
-	g.nextBlock("b10", outs[3])
-	acceptedToSideChainWithExpectedTip("b6")
-
-	g.nextBlock("b11", outs[4], additionalCoinbase(1))
-	rejected(blockdag.ErrBadCoinbaseValue)
-
-	// Create a fork that ends with block that generates too much coinbase
-	// as before, but with a valid fork first.
-	//
-	//   ... -> b1(0) -> b2(1) -> b5(2) -> b6(3)
-	//              |                  \-> b12(3) -> b13(4) -> b14(5)
-	//              |                      (b12 added last)
-	//               \-> b3(1) -> b4(2)
-	g.setTip("b5")
-	b12 := g.nextBlock("b12", outs[3])
-	b13 := g.nextBlock("b13", outs[4])
-	b14 := g.nextBlock("b14", outs[5], additionalCoinbase(1))
-	tests = append(tests, []TestInstance{
-		acceptBlock("b13", b13, true),
-		acceptBlock("b14", b14, true),
-		rejectBlock("b12", b12, blockdag.ErrBadCoinbaseValue),
-		expectTipBlock("b13", b13),
-	})
 
 	// ---------------------------------------------------------------------
 	// Checksig signature operation count tests.
@@ -1161,7 +1122,7 @@ func Generate(includeLargeReorg bool) (tests [][]TestInstance, err error) {
 	g.setTip("b15")
 	tooSmallCbScript := repeatOpcode(0x00, minCoinbaseScriptLen-1)
 	g.nextBlock("b26", outs[6], replaceCoinbaseSigScript(tooSmallCbScript))
-	rejected(blockdag.ErrBadCoinbaseScriptLen)
+	rejected(blockdag.ErrBadCoinbasePayloadLen)
 
 	// Parent was rejected, so this block must either be an orphan or
 	// outright rejected due to an invalid parent.
@@ -1177,7 +1138,7 @@ func Generate(includeLargeReorg bool) (tests [][]TestInstance, err error) {
 	g.setTip("b15")
 	tooLargeCbScript := repeatOpcode(0x00, maxCoinbaseScriptLen+1)
 	g.nextBlock("b28", outs[6], replaceCoinbaseSigScript(tooLargeCbScript))
-	rejected(blockdag.ErrBadCoinbaseScriptLen)
+	rejected(blockdag.ErrBadCoinbasePayloadLen)
 
 	// Parent was rejected, so this block must either be an orphan or
 	// outright rejected due to an invalid parent.
@@ -1847,7 +1808,7 @@ func Generate(includeLargeReorg bool) (tests [][]TestInstance, err error) {
 	//                 \-> b68(20)
 	g.setTip("b65")
 	g.nextBlock("b68", outs[20], additionalCoinbase(10), additionalSpendFee(9))
-	rejected(blockdag.ErrBadCoinbaseValue)
+	rejected(blockdag.ErrBadCoinbaseTransaction)
 
 	// Create block that pays 10 extra to the coinbase and a tx that pays
 	// the extra 10 fee.

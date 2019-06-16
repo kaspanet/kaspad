@@ -37,8 +37,8 @@ func (txs *fakeTxSource) HaveTransaction(txID *daghash.TxID) bool {
 	return false
 }
 
-// PrepareBlockForTest generates a block with the proper merkle roots, coinbase/fee transactions etc. This function is used for test purposes only
-func PrepareBlockForTest(dag *blockdag.BlockDAG, params *dagconfig.Params, parentHashes []*daghash.Hash, transactions []*wire.MsgTx, forceTransactions bool, coinbaseOutputs uint64) (*wire.MsgBlock, error) {
+// PrepareBlockForTest generates a block with the proper merkle roots, coinbase transaction etc. This function is used for test purposes only
+func PrepareBlockForTest(dag *blockdag.BlockDAG, params *dagconfig.Params, parentHashes []*daghash.Hash, transactions []*wire.MsgTx, forceTransactions bool) (*wire.MsgBlock, error) {
 	newVirtual, err := blockdag.GetVirtualFromParentsForTest(dag, parentHashes)
 	if err != nil {
 		return nil, err
@@ -64,7 +64,12 @@ func PrepareBlockForTest(dag *blockdag.BlockDAG, params *dagconfig.Params, paren
 	blockTemplateGenerator := NewBlkTmplGenerator(&policy,
 		params, txSource, dag, blockdag.NewMedianTime(), txscript.NewSigCache(100000))
 
-	template, err := blockTemplateGenerator.NewBlockTemplate(nil)
+	OpTrueAddr, err := OpTrueAddress(params.Prefix)
+	if err != nil {
+		return nil, err
+	}
+
+	template, err := blockTemplateGenerator.NewBlockTemplate(OpTrueAddr)
 	if err != nil {
 		return nil, err
 	}
@@ -91,27 +96,12 @@ func PrepareBlockForTest(dag *blockdag.BlockDAG, params *dagconfig.Params, paren
 			txsToAdd = append(txsToAdd, tx)
 		}
 	}
-	if coinbaseOutputs != 1 {
-		cb := template.Block.Transactions[0]
-		originalValue := cb.TxOut[0].Value
-		pkScript := cb.TxOut[0].PkScript
-		cb.TxOut = make([]*wire.TxOut, coinbaseOutputs)
-		if coinbaseOutputs != 0 {
-			newOutValue := originalValue / coinbaseOutputs
-			for i := uint64(0); i < coinbaseOutputs; i++ {
-				cb.TxOut[i] = &wire.TxOut{
-					Value:    newOutValue,
-					PkScript: pkScript,
-				}
-			}
-		}
-	}
 	if forceTransactions && len(txsToAdd) > 0 {
 		for _, tx := range txsToAdd {
 			template.Block.Transactions = append(template.Block.Transactions, tx)
 		}
 	}
-	updateHeaderFields := coinbaseOutputs != 1 || (forceTransactions && len(txsToAdd) > 0)
+	updateHeaderFields := forceTransactions && len(txsToAdd) > 0
 	if updateHeaderFields {
 		utilTxs := make([]*util.Tx, len(template.Block.Transactions))
 		for i, tx := range template.Block.Transactions {
@@ -131,6 +121,10 @@ func PrepareBlockForTest(dag *blockdag.BlockDAG, params *dagconfig.Params, paren
 func GenerateDeterministicExtraNonceForTest() uint64 {
 	extraNonceForTest++
 	return extraNonceForTest
+}
+
+func OpTrueAddress(prefix util.Bech32Prefix) (util.Address, error) {
+	return util.NewAddressScriptHash(blockdag.OpTrueScript, prefix)
 }
 
 var extraNonceForTest = uint64(0)

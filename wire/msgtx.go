@@ -288,52 +288,14 @@ func (msg *MsgTx) AddTxOut(to *TxOut) {
 	msg.TxOut = append(msg.TxOut, to)
 }
 
-// IsCoinBase determines whether or not a transaction is a coinbase.  A coinbase
-// is a special transaction created by miners that has no inputs.  This is
-// represented in the block dag by a transaction with a single input that has
-// a previous output transaction index set to the maximum value along with a
-// zero TxID.
-func (msg *MsgTx) IsCoinBase() bool {
-	// A coinbase transaction must only have one transaction input.
-	if len(msg.TxIn) != 1 {
-		return false
-	}
-
-	// A coinbase transaction must have no outputs
-	if len(msg.TxOut) != 0 {
-		return false
-	}
-
-	// A coinbase transaction must have subnetwork id SubnetworkIDCoinbase
-	if !msg.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDCoinbase) {
-		return false
-	}
-
-	// The previous output of a coinbase transaction must have a max value index and
-	// a zero TxID.
-	prevOut := &msg.TxIn[0].PreviousOutpoint
-	return prevOut.Index == math.MaxUint32 && prevOut.TxID == daghash.ZeroTxID
-}
-
-// IsFeeTransaction determines whether or not a transaction is a fee transaction.  A fee
-// transaction is a special transaction created by miners that distributes fees to the
-// previous blocks' miners.  Each input of the fee transaction should set index to maximum
+// IsCoinBase determines whether or not a transaction is a coinbase transaction.  A coinbase
+// transaction is a special transaction created by miners that distributes fees and block subsidy
+// to the previous blocks' miners, and to specify the pkScript that will be used to pay the current
+// miner in future blocks.  Each input of the coinbase transaction should set index to maximum
 // value and reference the relevant block id, instead of previous transaction id.
-func (msg *MsgTx) IsFeeTransaction() bool {
-	for _, txIn := range msg.TxIn {
-		// The previous output of a fee transaction have a max value index and
-		// a non-zero TxID (to differentiate from coinbase).
-		prevOut := txIn.PreviousOutpoint
-		if prevOut.Index != math.MaxUint32 || prevOut.TxID == daghash.ZeroTxID {
-			return false
-		}
-	}
-	return true
-}
-
-// IsBlockReward determines whether or not a transaction is a block reward (a fee transaction or a coinbase)
-func (msg *MsgTx) IsBlockReward() bool {
-	return msg.IsFeeTransaction() || msg.IsCoinBase()
+func (msg *MsgTx) IsCoinBase() bool {
+	// A coinbase transaction must have subnetwork id SubnetworkIDCoinbase
+	return msg.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDCoinbase)
 }
 
 // TxHash generates the Hash for the transaction.

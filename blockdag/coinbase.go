@@ -6,6 +6,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"github.com/daglabs/btcd/util/subnetworkid"
 	"io"
 	"math"
 
@@ -80,7 +81,7 @@ var feeBucket = []byte("fees")
 func (node *blockNode) getBluesFeeData(dag *BlockDAG) (map[daghash.Hash]compactFeeData, error) {
 	bluesFeeData := make(map[daghash.Hash]compactFeeData)
 
-	dag.db.View(func(dbTx database.Tx) error {
+	err := dag.db.View(func(dbTx database.Tx) error {
 		for _, blueBlock := range node.blues {
 			feeData, err := dbFetchFeeData(dbTx, blueBlock.hash)
 			if err != nil {
@@ -92,6 +93,9 @@ func (node *blockNode) getBluesFeeData(dag *BlockDAG) (map[daghash.Hash]compactF
 
 		return nil
 	})
+	if err != nil {
+		return nil, err
+	}
 
 	return bluesFeeData, nil
 }
@@ -119,26 +123,31 @@ func dbFetchFeeData(dbTx database.Tx, blockHash *daghash.Hash) (compactFeeData, 
 	return feeData, nil
 }
 
-// The following functions deal with building and validating the fee transaction
+// The following functions deal with building and validating the coinbase transaction
 
-func (node *blockNode) validateFeeTransaction(dag *BlockDAG, block *util.Block, txsAcceptanceData MultiBlockTxsAcceptanceData) error {
+func (node *blockNode) validateCoinbaseTransaction(dag *BlockDAG, block *util.Block, txsAcceptanceData MultiBlockTxsAcceptanceData) error {
 	if node.isGenesis() {
 		return nil
 	}
-	expectedFeeTransaction, err := node.buildFeeTransaction(dag, txsAcceptanceData)
+	blockCoinbaseTx := block.CoinbaseTransaction().MsgTx()
+	pkScript, extraData, err := DeserializeCoinbasePayload(blockCoinbaseTx)
+	if err != nil {
+		return err
+	}
+	expectedCoinbaseTransaction, err := node.buildCoinbaseTransaction(dag, txsAcceptanceData, pkScript, extraData)
 	if err != nil {
 		return err
 	}
 
-	if !expectedFeeTransaction.TxHash().IsEqual(block.FeeTransaction().Hash()) {
-		return ruleError(ErrBadFeeTransaction, "Fee transaction is not built as expected")
+	if !expectedCoinbaseTransaction.Hash().IsEqual(block.CoinbaseTransaction().Hash()) {
+		return ruleError(ErrBadCoinbaseTransaction, "Coinbase transaction is not built as expected")
 	}
 
 	return nil
 }
 
-// buildFeeTransaction returns the expected fee transaction for the current block
-func (node *blockNode) buildFeeTransaction(dag *BlockDAG, txsAcceptanceData MultiBlockTxsAcceptanceData) (*wire.MsgTx, error) {
+// buildCoinbaseTransaction returns the coinbase transaction for the current block
+func (node *blockNode) buildCoinbaseTransaction(dag *BlockDAG, txsAcceptanceData MultiBlockTxsAcceptanceData, pkScript []byte, extraData []byte) (*util.Tx, error) {
 	bluesFeeData, err := node.getBluesFeeData(dag)
 	if err != nil {
 		return nil, err
@@ -148,7 +157,7 @@ func (node *blockNode) buildFeeTransaction(dag *BlockDAG, txsAcceptanceData Mult
 	txOuts := []*wire.TxOut{}
 
 	for _, blue := range node.blues {
-		txIn, txOut, err := feeInputAndOutputForBlueBlock(blue, txsAcceptanceData, bluesFeeData)
+		txIn, txOut, err := coinbaseInputAndOutputForBlueBlock(dag, blue, txsAcceptanceData, bluesFeeData)
 		if err != nil {
 			return nil, err
 		}
@@ -157,13 +166,36 @@ func (node *blockNode) buildFeeTransaction(dag *BlockDAG, txsAcceptanceData Mult
 			txOuts = append(txOuts, txOut)
 		}
 	}
-	feeTx := wire.NewNativeMsgTx(wire.TxVersion, txIns, txOuts)
-	return txsort.Sort(feeTx), nil
+	payload, err := SerializeCoinbasePayload(pkScript, extraData)
+	if err != nil {
+		return nil, err
+	}
+	coinbaseTx := wire.NewSubnetworkMsgTx(wire.TxVersion, txIns, txOuts, subnetworkid.SubnetworkIDCoinbase, 0, payload)
+	sortedCoinbaseTx := txsort.Sort(coinbaseTx)
+	return util.NewTx(sortedCoinbaseTx), nil
 }
 
-// feeInputAndOutputForBlueBlock calculates the input and output that should go into the fee transaction of blueBlock
+// SerializeCoinbasePayload builds the coinbase payload based on the provided pkScript and extra data.
+func SerializeCoinbasePayload(pkScript []byte, extraData []byte) ([]byte, error) {
+	w := &bytes.Buffer{}
+	err := wire.WriteVarInt(w, uint64(len(pkScript)))
+	if err != nil {
+		return nil, err
+	}
+	_, err = w.Write(pkScript)
+	if err != nil {
+		return nil, err
+	}
+	_, err = w.Write(extraData)
+	if err != nil {
+		return nil, err
+	}
+	return w.Bytes(), nil
+}
+
+// feeInputAndOutputForBlueBlock calculates the input and output that should go into the coinbase transaction of blueBlock
 // If blueBlock gets no fee - returns only txIn and nil for txOut
-func feeInputAndOutputForBlueBlock(dag *BlockDAG, blueBlock *blockNode, txsAcceptanceData MultiBlockTxsAcceptanceData, feeData map[daghash.Hash]compactFeeData) (
+func coinbaseInputAndOutputForBlueBlock(dag *BlockDAG, blueBlock *blockNode, txsAcceptanceData MultiBlockTxsAcceptanceData, feeData map[daghash.Hash]compactFeeData) (
 	*wire.TxIn, *wire.TxOut, error) {
 
 	blockTxsAcceptanceData, ok := txsAcceptanceData[*blueBlock.hash]
@@ -207,8 +239,11 @@ func feeInputAndOutputForBlueBlock(dag *BlockDAG, blueBlock *blockNode, txsAccep
 		return txIn, nil, nil
 	}
 
-	// the scriptPubKey for the fee is the same as the coinbase's payload
-	pkScript := blockTxsAcceptanceData[0].Tx.MsgTx().Payload
+	// the PkScript for the coinbase is parsed from the coinbase payload
+	pkScript, _, err := DeserializeCoinbasePayload(blockTxsAcceptanceData[0].Tx.MsgTx())
+	if err != nil {
+		return nil, nil, err
+	}
 
 	txOut := &wire.TxOut{
 		Value:    totalFees,
@@ -216,4 +251,26 @@ func feeInputAndOutputForBlueBlock(dag *BlockDAG, blueBlock *blockNode, txsAccep
 	}
 
 	return txIn, txOut, nil
+}
+
+// DeserializeCoinbasePayload deserialize the coinbase payload to its component (pkScript and extra data).
+func DeserializeCoinbasePayload(tx *wire.MsgTx) (pkScript []byte, extraData []byte, err error) {
+	r := bytes.NewReader(tx.Payload)
+	pkScriptLen, err := wire.ReadVarInt(r)
+	if err != nil {
+		return nil, nil, err
+	}
+	pkScript = make([]byte, pkScriptLen)
+	_, err = r.Read(pkScript)
+	if err != nil {
+		return nil, nil, err
+	}
+	extraData = make([]byte, r.Len())
+	if r.Len() != 0 {
+		_, err = r.Read(extraData)
+		if err != nil {
+			return nil, nil, err
+		}
+	}
+	return pkScript, extraData, nil
 }

@@ -46,7 +46,7 @@ func TestFinality(t *testing.T) {
 	}
 	defer teardownFunc()
 	buildNodeToDag := func(parentHashes []*daghash.Hash) (*util.Block, error) {
-		msgBlock, err := mining.PrepareBlockForTest(dag, &params, parentHashes, nil, false, 1)
+		msgBlock, err := mining.PrepareBlockForTest(dag, &params, parentHashes, nil, false)
 		if err != nil {
 			return nil, err
 		}
@@ -145,7 +145,7 @@ func TestFinality(t *testing.T) {
 func TestSubnetworkRegistry(t *testing.T) {
 	params := dagconfig.SimNetParams
 	params.K = 1
-	params.BlockRewardMaturity = 1
+	params.BlockCoinbaseMaturity = 1
 	dag, teardownFunc, err := blockdag.DAGSetup("TestSubnetworkRegistry", blockdag.Config{
 		DAGParams: &params,
 	})
@@ -170,7 +170,7 @@ func TestSubnetworkRegistry(t *testing.T) {
 
 func TestChainedTransactions(t *testing.T) {
 	params := dagconfig.SimNetParams
-	params.BlockRewardMaturity = 1
+	params.BlockCoinbaseMaturity = 1
 	// Create a new database and dag instance to run tests against.
 	dag, teardownFunc, err := blockdag.DAGSetup("TestChainedTransactions", blockdag.Config{
 		DAGParams: &params,
@@ -180,7 +180,7 @@ func TestChainedTransactions(t *testing.T) {
 	}
 	defer teardownFunc()
 
-	block1, err := mining.PrepareBlockForTest(dag, &params, []*daghash.Hash{params.GenesisHash}, nil, false, 1)
+	block1, err := mining.PrepareBlockForTest(dag, &params, []*daghash.Hash{params.GenesisHash}, nil, false)
 	if err != nil {
 		t.Fatalf("PrepareBlockForTest: %v", err)
 	}
@@ -224,7 +224,7 @@ func TestChainedTransactions(t *testing.T) {
 	}
 	chainedTx := wire.NewNativeMsgTx(wire.TxVersion, []*wire.TxIn{chainedTxIn}, []*wire.TxOut{chainedTxOut})
 
-	block2, err := mining.PrepareBlockForTest(dag, &params, []*daghash.Hash{block1.BlockHash()}, []*wire.MsgTx{tx, chainedTx}, true, 1)
+	block2, err := mining.PrepareBlockForTest(dag, &params, []*daghash.Hash{block1.BlockHash()}, []*wire.MsgTx{tx, chainedTx}, true)
 	if err != nil {
 		t.Fatalf("PrepareBlockForTest: %v", err)
 	}
@@ -255,7 +255,7 @@ func TestChainedTransactions(t *testing.T) {
 	}
 	nonChainedTx := wire.NewNativeMsgTx(wire.TxVersion, []*wire.TxIn{nonChainedTxIn}, []*wire.TxOut{nonChainedTxOut})
 
-	block3, err := mining.PrepareBlockForTest(dag, &params, []*daghash.Hash{block1.BlockHash()}, []*wire.MsgTx{nonChainedTx}, false, 1)
+	block3, err := mining.PrepareBlockForTest(dag, &params, []*daghash.Hash{block1.BlockHash()}, []*wire.MsgTx{nonChainedTx}, false)
 	if err != nil {
 		t.Fatalf("PrepareBlockForTest: %v", err)
 	}
@@ -274,7 +274,7 @@ func TestChainedTransactions(t *testing.T) {
 func TestGasLimit(t *testing.T) {
 	params := dagconfig.SimNetParams
 	params.K = 1
-	params.BlockRewardMaturity = 1
+	params.BlockCoinbaseMaturity = 1
 	dag, teardownFunc, err := blockdag.DAGSetup("TestSubnetworkRegistry", blockdag.Config{
 		DAGParams: &params,
 	})
@@ -290,16 +290,21 @@ func TestGasLimit(t *testing.T) {
 		t.Fatalf("could not register network: %s", err)
 	}
 
-	fundsBlock, err := mining.PrepareBlockForTest(dag, &params, dag.TipHashes(), nil, false, 2)
-	if err != nil {
-		t.Fatalf("PrepareBlockForTest: %v", err)
-	}
-	isOrphan, err := dag.ProcessBlock(util.NewBlock(fundsBlock), blockdag.BFNoPoWCheck)
-	if err != nil {
-		t.Fatalf("ProcessBlock: %v", err)
-	}
-	if isOrphan {
-		t.Fatalf("ProcessBlock: funds block got unexpectedly orphan")
+	cbTxs := []*wire.MsgTx{}
+	for i := 0; i < 4; i++ {
+		fundsBlock, err := mining.PrepareBlockForTest(dag, &params, dag.TipHashes(), nil, false)
+		if err != nil {
+			t.Fatalf("PrepareBlockForTest: %v", err)
+		}
+		isOrphan, err := dag.ProcessBlock(util.NewBlock(fundsBlock), blockdag.BFNoPoWCheck)
+		if err != nil {
+			t.Fatalf("ProcessBlock: %v", err)
+		}
+		if isOrphan {
+			t.Fatalf("ProcessBlock: fundsBlock got unexpectedly orphan")
+		}
+
+		cbTxs = append(cbTxs, fundsBlock.Transactions[util.CoinbaseTransactionIndex])
 	}
 
 	signatureScript, err := txscript.PayToScriptHashSignatureScript(blockdag.OpTrueScript, nil)
@@ -312,37 +317,34 @@ func TestGasLimit(t *testing.T) {
 		t.Fatalf("Failed to build public key script: %s", err)
 	}
 
-	cbTxValue := fundsBlock.Transactions[0].TxOut[0].Value
-	cbTxID := fundsBlock.Transactions[0].TxID()
-
 	tx1In := &wire.TxIn{
-		PreviousOutpoint: *wire.NewOutpoint(cbTxID, 0),
+		PreviousOutpoint: *wire.NewOutpoint(cbTxs[0].TxID(), 0),
 		Sequence:         wire.MaxTxInSequenceNum,
 		SignatureScript:  signatureScript,
 	}
 	tx1Out := &wire.TxOut{
-		Value:    cbTxValue,
+		Value:    cbTxs[0].TxOut[0].Value,
 		PkScript: pkScript,
 	}
 	tx1 := wire.NewSubnetworkMsgTx(wire.TxVersion, []*wire.TxIn{tx1In}, []*wire.TxOut{tx1Out}, subnetworkID, 10000, []byte{})
 
 	tx2In := &wire.TxIn{
-		PreviousOutpoint: *wire.NewOutpoint(cbTxID, 1),
+		PreviousOutpoint: *wire.NewOutpoint(cbTxs[1].TxID(), 0),
 		Sequence:         wire.MaxTxInSequenceNum,
 		SignatureScript:  signatureScript,
 	}
 	tx2Out := &wire.TxOut{
-		Value:    cbTxValue,
+		Value:    cbTxs[1].TxOut[0].Value,
 		PkScript: pkScript,
 	}
 	tx2 := wire.NewSubnetworkMsgTx(wire.TxVersion, []*wire.TxIn{tx2In}, []*wire.TxOut{tx2Out}, subnetworkID, 10000, []byte{})
 
 	// Here we check that we can't process a block that has transactions that exceed the gas limit
-	overLimitBlock, err := mining.PrepareBlockForTest(dag, &params, dag.TipHashes(), []*wire.MsgTx{tx1, tx2}, true, 1)
+	overLimitBlock, err := mining.PrepareBlockForTest(dag, &params, dag.TipHashes(), []*wire.MsgTx{tx1, tx2}, true)
 	if err != nil {
 		t.Fatalf("PrepareBlockForTest: %v", err)
 	}
-	isOrphan, err = dag.ProcessBlock(util.NewBlock(overLimitBlock), blockdag.BFNoPoWCheck)
+	isOrphan, err := dag.ProcessBlock(util.NewBlock(overLimitBlock), blockdag.BFNoPoWCheck)
 	if err == nil {
 		t.Fatalf("ProcessBlock expected to have an error")
 	}
@@ -357,19 +359,19 @@ func TestGasLimit(t *testing.T) {
 	}
 
 	overflowGasTxIn := &wire.TxIn{
-		PreviousOutpoint: *wire.NewOutpoint(cbTxID, 1),
+		PreviousOutpoint: *wire.NewOutpoint(cbTxs[2].TxID(), 0),
 		Sequence:         wire.MaxTxInSequenceNum,
 		SignatureScript:  signatureScript,
 	}
 	overflowGasTxOut := &wire.TxOut{
-		Value:    cbTxValue,
+		Value:    cbTxs[2].TxOut[0].Value,
 		PkScript: pkScript,
 	}
 	overflowGasTx := wire.NewSubnetworkMsgTx(wire.TxVersion, []*wire.TxIn{overflowGasTxIn}, []*wire.TxOut{overflowGasTxOut},
 		subnetworkID, math.MaxUint64, []byte{})
 
 	// Here we check that we can't process a block that its transactions' gas overflows uint64
-	overflowGasBlock, err := mining.PrepareBlockForTest(dag, &params, dag.TipHashes(), []*wire.MsgTx{tx1, overflowGasTx}, true, 1)
+	overflowGasBlock, err := mining.PrepareBlockForTest(dag, &params, dag.TipHashes(), []*wire.MsgTx{tx1, overflowGasTx}, true)
 	if err != nil {
 		t.Fatalf("PrepareBlockForTest: %v", err)
 	}
@@ -389,18 +391,18 @@ func TestGasLimit(t *testing.T) {
 
 	nonExistentSubnetwork := &subnetworkid.SubnetworkID{123}
 	nonExistentSubnetworkTxIn := &wire.TxIn{
-		PreviousOutpoint: *wire.NewOutpoint(cbTxID, 0),
+		PreviousOutpoint: *wire.NewOutpoint(cbTxs[3].TxID(), 0),
 		Sequence:         wire.MaxTxInSequenceNum,
 		SignatureScript:  signatureScript,
 	}
 	nonExistentSubnetworkTxOut := &wire.TxOut{
-		Value:    cbTxValue,
+		Value:    cbTxs[3].TxOut[0].Value,
 		PkScript: pkScript,
 	}
 	nonExistentSubnetworkTx := wire.NewSubnetworkMsgTx(wire.TxVersion, []*wire.TxIn{nonExistentSubnetworkTxIn},
 		[]*wire.TxOut{nonExistentSubnetworkTxOut}, nonExistentSubnetwork, 1, []byte{})
 
-	nonExistentSubnetworkBlock, err := mining.PrepareBlockForTest(dag, &params, dag.TipHashes(), []*wire.MsgTx{nonExistentSubnetworkTx, overflowGasTx}, true, 1)
+	nonExistentSubnetworkBlock, err := mining.PrepareBlockForTest(dag, &params, dag.TipHashes(), []*wire.MsgTx{nonExistentSubnetworkTx, overflowGasTx}, true)
 	if err != nil {
 		t.Fatalf("PrepareBlockForTest: %v", err)
 	}
@@ -413,7 +415,7 @@ func TestGasLimit(t *testing.T) {
 	}
 
 	// Here we check that we can process a block with a transaction that doesn't exceed the gas limit
-	validBlock, err := mining.PrepareBlockForTest(dag, &params, dag.TipHashes(), []*wire.MsgTx{tx1}, true, 1)
+	validBlock, err := mining.PrepareBlockForTest(dag, &params, dag.TipHashes(), []*wire.MsgTx{tx1}, true)
 	if err != nil {
 		t.Fatalf("PrepareBlockForTest: %v", err)
 	}

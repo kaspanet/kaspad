@@ -191,9 +191,7 @@ func (m *CPUMiner) submitBlock(block *util.Block) bool {
 	}
 
 	// The block was accepted.
-	coinbaseTx := block.MsgBlock().Transactions[0].TxOut[0]
-	log.Infof("Block submitted via CPU miner accepted (hash %s, "+
-		"amount %d)", block.Hash(), util.Amount(coinbaseTx.Value))
+	log.Infof("Block submitted via CPU miner accepted (hash %s)", block.Hash())
 	return true
 }
 

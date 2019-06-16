@@ -239,39 +239,55 @@ func (p *poolHarness) CreateTxChain(firstOutput spendableOutpoint, numTxns uint3
 	return txChain, nil
 }
 
-func (tc *testContext) mineTransactions(transactions []*util.Tx, coinbaseOutputs uint64) *util.Block {
+func (tc *testContext) mineTransactions(transactions []*util.Tx, numberOfBlocks uint64) []spendableOutpoint {
+	var outpoints []spendableOutpoint
 	msgTxs := make([]*wire.MsgTx, len(transactions))
 	for i, tx := range transactions {
 		msgTxs[i] = tx.MsgTx()
 	}
-	block, err := mining.PrepareBlockForTest(tc.harness.txPool.cfg.DAG, tc.harness.txPool.cfg.DAGParams, tc.harness.txPool.cfg.DAG.TipHashes(), msgTxs, true, coinbaseOutputs)
-	if err != nil {
-		tc.t.Fatalf("PrepareBlockForTest: %s", err)
-	}
-	utilBlock := util.NewBlock(block)
-	isOrphan, err := tc.harness.txPool.cfg.DAG.ProcessBlock(utilBlock, blockdag.BFNoPoWCheck)
-	if err != nil {
-		tc.t.Fatalf("ProcessBlock: %s", err)
-	}
-	if isOrphan {
-		tc.t.Fatalf("block %s was unexpectedly orphan", block.BlockHash())
-	}
+	for i := uint64(0); i < numberOfBlocks; i++ {
+		var blockTxs []*wire.MsgTx
+		if i == 0 {
+			blockTxs = msgTxs
+		}
+		block, err := mining.PrepareBlockForTest(tc.harness.txPool.cfg.DAG, tc.harness.txPool.cfg.DAGParams, tc.harness.txPool.cfg.DAG.TipHashes(), blockTxs, true)
+		if err != nil {
+			tc.t.Fatalf("PrepareBlockForTest: %s", err)
+		}
+		utilBlock := util.NewBlock(block)
+		isOrphan, err := tc.harness.txPool.cfg.DAG.ProcessBlock(utilBlock, blockdag.BFNoPoWCheck)
+		if err != nil {
+			tc.t.Fatalf("ProcessBlock: %s", err)
+		}
+		if isOrphan {
+			tc.t.Fatalf("block %s was unexpectedly orphan", block.BlockHash())
+		}
 
-	// Handle new block by pool
-	ch := make(chan NewBlockMsg)
-	go func() {
-		err = tc.harness.txPool.HandleNewBlock(utilBlock, ch)
-		close(ch)
-	}()
+		// Handle new block by pool
+		ch := make(chan NewBlockMsg)
+		go func() {
+			err = tc.harness.txPool.HandleNewBlock(utilBlock, ch)
+			close(ch)
+		}()
 
-	// process messages pushed by HandleNewBlock
-	for range ch {
+		// process messages pushed by HandleNewBlock
+		for range ch {
+		}
+		// ensure that HandleNewBlock has not failed
+		if err != nil {
+			tc.t.Fatalf("HandleNewBlock failed to handle block %s", err)
+		}
+
+		coinbaseTx := block.Transactions[util.CoinbaseTransactionIndex]
+
+		for i, txOut := range coinbaseTx.TxOut {
+			outpoints = append(outpoints, spendableOutpoint{
+				outpoint: *wire.NewOutpoint(coinbaseTx.TxID(), uint32(i)),
+				amount:   util.Amount(txOut.Value),
+			})
+		}
 	}
-	// ensure that HandleNewBlock has not failed
-	if err != nil {
-		tc.t.Fatalf("HandleNewBlock failed to handle block %s", err)
-	}
-	return utilBlock
+	return outpoints
 }
 
 // newPoolHarness returns a new instance of a pool harness initialized with a
@@ -286,7 +302,7 @@ func newPoolHarness(t *testing.T, dagParams *dagconfig.Params, numOutputs uint32
 	}
 
 	params := *dagParams
-	params.BlockRewardMaturity = 0
+	params.BlockCoinbaseMaturity = 0
 
 	// Create a new database and chain instance to run tests against.
 	dag, teardownFunc, err := blockdag.DAGSetup(dbName, blockdag.Config{
@@ -311,7 +327,7 @@ func newPoolHarness(t *testing.T, dagParams *dagconfig.Params, numOutputs uint32
 	harness := &poolHarness{
 		signatureScript: signatureScript,
 		payScript:       pkScript,
-		chainParams:     dagParams,
+		chainParams:     &params,
 
 		chain: chain,
 		txPool: New(&Config{
@@ -325,7 +341,7 @@ func newPoolHarness(t *testing.T, dagParams *dagconfig.Params, numOutputs uint32
 				MinRelayTxFee:        1000, // 1 Satoshi per byte
 				MaxTxVersion:         1,
 			},
-			DAGParams:              dagParams,
+			DAGParams:              &params,
 			BestHeight:             chain.BestHeight,
 			MedianTimePast:         chain.MedianTimePast,
 			CalcSequenceLockNoLock: calcSequenceLock,
@@ -335,21 +351,12 @@ func newPoolHarness(t *testing.T, dagParams *dagconfig.Params, numOutputs uint32
 	}
 
 	tc := &testContext{harness: harness, t: t}
-	block := tc.mineTransactions(nil, uint64(numOutputs))
-	coinbase := block.Transactions()[0]
 
-	// Create a single coinbase transaction and add it to the harness
-	// chain's utxo set and set the harness chain height such that the
-	// coinbase will mature in the next block.  This ensures the txpool
-	// accepts transactions which spend immature coinbases that will become
-	// mature in the next block.
-	outpoints := make([]spendableOutpoint, 0, numOutputs)
+	// Mine numOutputs blocks to get numOutputs coinbase outpoints
+	outpoints := tc.mineTransactions(nil, uint64(numOutputs))
 	curHeight := harness.chain.BestHeight()
-	for i := uint32(0); i < numOutputs; i++ {
-		outpoints = append(outpoints, txOutToSpendableOutpoint(coinbase, i))
-	}
-	if dagParams.BlockRewardMaturity != 0 {
-		harness.chain.SetHeight(dagParams.BlockRewardMaturity + curHeight)
+	if params.BlockCoinbaseMaturity != 0 {
+		harness.chain.SetHeight(params.BlockCoinbaseMaturity + curHeight)
 	} else {
 		harness.chain.SetHeight(curHeight + 1)
 	}
@@ -468,7 +475,7 @@ func (p *poolHarness) createTx(outpoint spendableOutpoint, fee uint64, numOutput
 
 func TestProcessTransaction(t *testing.T) {
 	params := dagconfig.SimNetParams
-	params.BlockRewardMaturity = 0
+	params.BlockCoinbaseMaturity = 0
 	tc, spendableOuts, teardownFunc, err := newPoolHarness(t, &params, 6, "TestProcessTransaction")
 	if err != nil {
 		t.Fatalf("unable to create test pool: %v", err)
@@ -725,7 +732,7 @@ func TestProcessTransaction(t *testing.T) {
 	}
 
 	//Transaction should be rejected from mempool because it has low fee, and its priority is above mining.MinHighPriority
-	tx, err = harness.createTx(spendableOuts[4], 0, 100)
+	tx, err = harness.createTx(spendableOuts[4], 0, 1000)
 	if err != nil {
 		t.Fatalf("unable to create transaction: %v", err)
 	}
@@ -829,7 +836,7 @@ func TestFeeEstimatorCfg(t *testing.T) {
 }
 
 func TestDoubleSpends(t *testing.T) {
-	tc, spendableOuts, teardownFunc, err := newPoolHarness(t, &dagconfig.MainNetParams, 2, "TestDoubleSpends")
+	tc, spendableOuts, teardownFunc, err := newPoolHarness(t, &dagconfig.SimNetParams, 2, "TestDoubleSpends")
 	if err != nil {
 		t.Fatalf("unable to create test pool: %v", err)
 	}
@@ -841,13 +848,19 @@ func TestDoubleSpends(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unable to create transaction: %v", err)
 	}
-	harness.txPool.ProcessTransaction(tx1, true, false, 0)
+	_, err = harness.txPool.ProcessTransaction(tx1, true, false, 0)
+	if err != nil {
+		t.Fatalf("ProcessTransaction: %s", err)
+	}
 
 	tx2, err := harness.createTx(spendableOuts[1], 1, 1)
 	if err != nil {
 		t.Fatalf("unable to create transaction: %v", err)
 	}
-	harness.txPool.ProcessTransaction(tx2, true, false, 0)
+	_, err = harness.txPool.ProcessTransaction(tx2, true, false, 0)
+	if err != nil {
+		t.Fatalf("ProcessTransaction: %s", err)
+	}
 	testPoolMembership(tc, tx1, false, true, false)
 	testPoolMembership(tc, tx2, false, true, false)
 
@@ -1823,42 +1836,44 @@ var dummyBlock = wire.MsgBlock{
 			TxIn: []*wire.TxIn{
 				{
 					PreviousOutpoint: wire.Outpoint{
-						TxID:  daghash.TxID{},
+						TxID: daghash.TxID{
+							0x9b, 0x22, 0x59, 0x44, 0x66, 0xf0, 0xbe, 0x50,
+							0x7c, 0x1c, 0x8a, 0xf6, 0x06, 0x27, 0xe6, 0x33,
+							0x38, 0x7e, 0xd1, 0xd5, 0x8c, 0x42, 0x59, 0x1a,
+							0x31, 0xac, 0x9a, 0xa6, 0x2e, 0xd5, 0x2b, 0x0f,
+						},
 						Index: 0xffffffff,
 					},
-					SignatureScript: []byte{
-						0x04, 0x4c, 0x86, 0x04, 0x1b, 0x02, 0x06, 0x02,
-					},
-					Sequence: math.MaxUint64,
+					SignatureScript: nil,
+					Sequence:        math.MaxUint64,
 				},
 			},
 			TxOut: []*wire.TxOut{
 				{
 					Value: 0x12a05f200, // 5000000000
 					PkScript: []byte{
-						0x41, // OP_DATA_65
-						0x04, 0x1b, 0x0e, 0x8c, 0x25, 0x67, 0xc1, 0x25,
-						0x36, 0xaa, 0x13, 0x35, 0x7b, 0x79, 0xa0, 0x73,
-						0xdc, 0x44, 0x44, 0xac, 0xb8, 0x3c, 0x4e, 0xc7,
-						0xa0, 0xe2, 0xf9, 0x9d, 0xd7, 0x45, 0x75, 0x16,
-						0xc5, 0x81, 0x72, 0x42, 0xda, 0x79, 0x69, 0x24,
-						0xca, 0x4e, 0x99, 0x94, 0x7d, 0x08, 0x7f, 0xed,
-						0xf9, 0xce, 0x46, 0x7c, 0xb9, 0xf7, 0xc6, 0x28,
-						0x70, 0x78, 0xf8, 0x01, 0xdf, 0x27, 0x6f, 0xdf,
-						0x84, // 65-byte signature
-						0xac, // OP_CHECKSIG
+						0xa9, 0x14, 0xda, 0x17, 0x45, 0xe9, 0xb5, 0x49,
+						0xbd, 0x0b, 0xfa, 0x1a, 0x56, 0x99, 0x71, 0xc7,
+						0x7e, 0xba, 0x30, 0xcd, 0x5a, 0x4b, 0x87,
 					},
 				},
 			},
 			LockTime:     0,
-			SubnetworkID: *subnetworkid.SubnetworkIDNative,
+			SubnetworkID: *subnetworkid.SubnetworkIDCoinbase,
+			Payload:      []byte{0x00},
+			PayloadHash: &daghash.Hash{
+				0x14, 0x06, 0xe0, 0x58, 0x81, 0xe2, 0x99, 0x36,
+				0x77, 0x66, 0xd3, 0x13, 0xe2, 0x6c, 0x05, 0x56,
+				0x4e, 0xc9, 0x1b, 0xf7, 0x21, 0xd3, 0x17, 0x26,
+				0xbd, 0x6e, 0x46, 0xe6, 0x06, 0x89, 0x53, 0x9a,
+			},
 		},
 	},
 }
 
 func TestTransactionGas(t *testing.T) {
 	params := dagconfig.SimNetParams
-	params.BlockRewardMaturity = 1
+	params.BlockCoinbaseMaturity = 1
 	tc, spendableOuts, teardownFunc, err := newPoolHarness(t, &params, 6, "TestTransactionGas")
 	if err != nil {
 		t.Fatalf("unable to create test pool: %v", err)

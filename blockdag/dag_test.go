@@ -54,9 +54,9 @@ func TestBlockCount(t *testing.T) {
 	}
 	defer teardownFunc()
 
-	// Since we're not dealing with the real block DAG, set the block reward
+	// Since we're not dealing with the real block DAG, set the coinbase
 	// maturity to 1.
-	dag.TestSetBlockRewardMaturity(1)
+	dag.TestSetCoinbaseMaturity(1)
 
 	for i := 1; i < len(blocks); i++ {
 		isOrphan, err := dag.ProcessBlock(blocks[i], BFNone)
@@ -103,9 +103,9 @@ func TestHaveBlock(t *testing.T) {
 	}
 	defer teardownFunc()
 
-	// Since we're not dealing with the real block DAG, set the block reward
+	// Since we're not dealing with the real block DAG, set the coinbase
 	// maturity to 1.
-	dag.TestSetBlockRewardMaturity(1)
+	dag.TestSetCoinbaseMaturity(1)
 
 	for i := 1; i < len(blocks); i++ {
 		isOrphan, err := dag.ProcessBlock(blocks[i], BFNone)
@@ -189,10 +189,10 @@ func TestHaveBlock(t *testing.T) {
 		{hash: dagconfig.SimNetParams.GenesisHash.String(), want: true},
 
 		// Block 3b should be present (as a second child of Block 2).
-		{hash: "4bb2e2f55fabd67e217126dbc41e7101d0d6058800368c428cd6e397c111ee47", want: true},
+		{hash: "13580c9c2ed13caeedbad15167ee47bc1d26b4f88cc13054893a6d795c3baa7b", want: true},
 
 		// Block 100000 should be present (as an orphan).
-		{hash: "4e530ee9f967de3b2cd47ac5cd00109bb9ed7b0e30a60485c94badad29ecb4ce", want: true},
+		{hash: "01b4758d5e637d232b716cdc937335ebc5b8ea7f912b6a7fd2fc42b66b1d4d3e", want: true},
 
 		// Random hashes should not be available.
 		{hash: "123", want: false},
@@ -801,9 +801,9 @@ func testErrorThroughPatching(t *testing.T, expectedErrorMessage string, targetF
 	}
 	defer teardownFunc()
 
-	// Since we're not dealing with the real block DAG, set the block reward
+	// Since we're not dealing with the real block DAG, set the coinbase
 	// maturity to 1.
-	dag.TestSetBlockRewardMaturity(1)
+	dag.TestSetCoinbaseMaturity(1)
 
 	guard := monkey.Patch(targetFunction, replacementFunction)
 	defer guard.Unpatch()
@@ -883,7 +883,7 @@ func TestConfirmations(t *testing.T) {
 		t.Fatalf("Failed to setup DAG instance: %v", err)
 	}
 	defer teardownFunc()
-	dag.TestSetBlockRewardMaturity(1)
+	dag.TestSetCoinbaseMaturity(1)
 
 	// Check that the genesis block of a DAG with only the genesis block in it has confirmations = 1.
 	genesisConfirmations, err := dag.blockConfirmations(dag.genesis)
@@ -998,7 +998,7 @@ func TestAcceptingBlock(t *testing.T) {
 		t.Fatalf("Failed to setup DAG instance: %v", err)
 	}
 	defer teardownFunc()
-	dag.TestSetBlockRewardMaturity(1)
+	dag.TestSetCoinbaseMaturity(1)
 
 	// Check that the genesis block of a DAG with only the genesis block in it is accepted by the virtual.
 	genesisAcceptingBlock, err := dag.acceptingBlock(dag.genesis)
