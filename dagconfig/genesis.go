@@ -39,7 +39,7 @@ var genesisTxPayload = []byte{
 // the main network, regression test network, and test network (version 3).
 var genesisCoinbaseTx = wire.NewSubnetworkMsgTx(1, genesisTxIns, genesisTxOuts, subnetworkid.SubnetworkIDCoinbase, 0, genesisTxPayload)
 
-// genesisHash is the hash of the first block in the block chain for the main
+// genesisHash is the hash of the first block in the block DAG for the main
 // network (genesis block).
 var genesisHash = daghash.Hash([daghash.HashSize]byte{
 	0x9b, 0x22, 0x59, 0x44, 0x66, 0xf0, 0xbe, 0x50,
@@ -116,7 +116,7 @@ var simNetGenesisBlock = genesisBlock
 // the main network, regression test network, and test network (version 3).
 var devNetGenesisCoinbaseTx = genesisCoinbaseTx
 
-// devGenesisHash is the hash of the first block in the block chain for the development
+// devGenesisHash is the hash of the first block in the block DAG for the development
 // network (genesis block).
 var devNetGenesisHash = daghash.Hash([daghash.HashSize]byte{
 	0xf4, 0xd6, 0x37, 0x0b, 0xc6, 0x67, 0x41, 0x90,

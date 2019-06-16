@@ -211,8 +211,8 @@ type BlockTemplate struct {
 }
 
 // MinimumMedianTime returns the minimum allowed timestamp for a block building
-// on the end of the provided best chain.  In particular, it is one second after
-// the median timestamp of the last several blocks per the chain consensus
+// on the end of the DAG.  In particular, it is one second after
+// the median timestamp of the last several blocks per the DAG consensus
 // rules.
 func MinimumMedianTime(dagMedianTime time.Time) time.Time {
 	return dagMedianTime.Add(time.Second)
@@ -339,17 +339,7 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 
 	// Extend the most recently known best block.
 	nextBlockHeight := g.dag.Height() + 1
-
-	// Create a standard coinbase transaction paying to the provided
-	// address.  NOTE: The coinbase value will be updated to include the
-	// fees from the selected transactions later after they have actually
-	// been selected.  It is created here to detect any errors early
-	// before potentially doing a lot of work below.  The extra nonce helps
-	// ensure the transaction is not a duplicate transaction (paying the
-	// same value to the same public key address would otherwise be an
-	// identical transaction for block version 1).
-
-	coinbasePayloadPkScript, err := getCoinbasePayloadPkScript(payToAddress)
+	coinbasePayloadPkScript, err := txscript.PayToAddrScript(payToAddress)
 	if err != nil {
 		return nil, err
 	}
@@ -358,16 +348,15 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 	if err != nil {
 		return nil, err
 	}
-	coinbasePayloadExtraData, err := GetCoinbasePayloadExtraData(extraNonce)
+	coinbasePayloadExtraData, err := CoinbasePayloadExtraData(extraNonce)
 	if err != nil {
 		return nil, err
 	}
 
-	msgCoinbaseTx, err := g.dag.NextBlockCoinbaseTransactionNoLock(coinbasePayloadPkScript, coinbasePayloadExtraData)
+	coinbaseTx, err := g.dag.NextBlockCoinbaseTransactionNoLock(coinbasePayloadPkScript, coinbasePayloadExtraData)
 	if err != nil {
 		return nil, err
 	}
-	coinbaseTx := util.NewTx(msgCoinbaseTx)
 	numCoinbaseSigOps := int64(blockdag.CountSigOps(coinbaseTx))
 
 	// Get the current source transactions and create a priority queue to
@@ -411,7 +400,7 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 		// A block can't have more than one coinbase or contain
 		// non-finalized transactions.
 		tx := txDesc.Tx
-		if blockdag.IsCoinBase(tx) {
+		if tx.IsCoinBase() {
 			log.Tracef("Skipping coinbase tx %s", tx.ID())
 			continue
 		}
@@ -656,29 +645,9 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 	}, nil
 }
 
-func getCoinbasePayloadPkScript(addr util.Address) ([]byte, error) {
-	if addr != nil {
-		pkScript, err := txscript.PayToAddrScript(addr)
-		if err != nil {
-			return nil, err
-		}
-		return pkScript, nil
-	}
-	scriptBuilder := txscript.NewScriptBuilder()
-	opTrueScript, err := scriptBuilder.AddOp(txscript.OpTrue).Script()
-	if err != nil {
-		return nil, err
-	}
-	pkScript, err := txscript.PayToScriptHashScript(opTrueScript)
-	if err != nil {
-		return nil, err
-	}
-	return pkScript, nil
-}
-
-// GetCoinbasePayloadExtraData returns coinbase payload extra data parameter
+// CoinbasePayloadExtraData returns coinbase payload extra data parameter
 // which is built from extra nonce and coinbase flags.
-func GetCoinbasePayloadExtraData(extraNonce uint64) ([]byte, error) {
+func CoinbasePayloadExtraData(extraNonce uint64) ([]byte, error) {
 	extraNonceBytes := make([]byte, 8)
 	binary.LittleEndian.PutUint64(extraNonceBytes, extraNonce)
 	w := &bytes.Buffer{}
@@ -732,16 +701,16 @@ func (g *BlkTmplGenerator) UpdateBlockTime(msgBlock *wire.MsgBlock) error {
 // height.  It also recalculates and updates the new merkle root that results
 // from changing the coinbase script.
 func (g *BlkTmplGenerator) UpdateExtraNonce(msgBlock *wire.MsgBlock, blockHeight uint64, extraNonce uint64) error {
-	coinbasePayloadPkScript, _, err := blockdag.DeserializeCoinbasePayload(msgBlock.Transactions[0])
+	coinbasePayloadPkScript, _, err := blockdag.DeserializeCoinbasePayload(msgBlock.Transactions[util.CoinbaseTransactionIndex])
 	if err != nil {
 		return err
 	}
 
-	coinbasePayloadExtraData, err := GetCoinbasePayloadExtraData(extraNonce)
+	coinbasePayloadExtraData, err := CoinbasePayloadExtraData(extraNonce)
 	if err != nil {
 		return err
 	}
-	coinbasePayload, err := blockdag.BuildCoinbasePayload(coinbasePayloadPkScript, coinbasePayloadExtraData)
+	coinbasePayload, err := blockdag.SerializeCoinbasePayload(coinbasePayloadPkScript, coinbasePayloadExtraData)
 	if err != nil {
 		return err
 	}
@@ -751,12 +720,12 @@ func (g *BlkTmplGenerator) UpdateExtraNonce(msgBlock *wire.MsgBlock, blockHeight
 			len(coinbasePayload),
 			blockdag.MaxCoinbasePayloadLen)
 	}
-	oldCoinbaseTx := msgBlock.Transactions[0]
-	msgBlock.Transactions[0] = wire.NewSubnetworkMsgTx(oldCoinbaseTx.Version, oldCoinbaseTx.TxIn, oldCoinbaseTx.TxOut, &oldCoinbaseTx.SubnetworkID, oldCoinbaseTx.Gas, coinbasePayload)
+	oldCoinbaseTx := msgBlock.Transactions[util.CoinbaseTransactionIndex]
+	msgBlock.Transactions[util.CoinbaseTransactionIndex] = wire.NewSubnetworkMsgTx(oldCoinbaseTx.Version, oldCoinbaseTx.TxIn, oldCoinbaseTx.TxOut, &oldCoinbaseTx.SubnetworkID, oldCoinbaseTx.Gas, coinbasePayload)
 
 	// TODO(davec): A util.Block should use saved in the state to avoid
 	// recalculating all of the other transaction hashes.
-	// block.Transactions[0].InvalidateCache()
+	// block.Transactions[util.CoinbaseTransactionIndex].InvalidateCache()
 
 	// Recalculate the merkle roots with the updated extra nonce.
 	block := util.NewBlock(msgBlock)

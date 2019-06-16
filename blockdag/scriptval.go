@@ -180,7 +180,7 @@ func newTxValidator(utxoSet UTXOSet, flags txscript.ScriptFlags, sigCache *txscr
 // using multiple goroutines.
 func ValidateTransactionScripts(tx *util.Tx, utxoSet UTXOSet, flags txscript.ScriptFlags, sigCache *txscript.SigCache) error {
 	// Don't validate coinbase transaction scripts.
-	if IsCoinBase(tx) {
+	if tx.IsCoinBase() {
 		return nil
 	}
 
@@ -214,7 +214,7 @@ func checkBlockScripts(block *blockNode, utxoSet UTXOSet, transactions []*util.T
 	txValItems := make([]*txValidateItem, 0, numInputs)
 	for _, tx := range transactions {
 		// Skip coinbase transactions.
-		if IsCoinBase(tx) {
+		if tx.IsCoinBase() {
 			continue
 		}
 		for txInIdx, txIn := range tx.MsgTx().TxIn {

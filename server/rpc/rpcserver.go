@@ -1690,7 +1690,7 @@ func (state *gbtWorkState) updateBlockTemplate(s *Server, useCoinbaseValue bool)
 				context := "Failed to create pay-to-addr script"
 				return internalRPCError(err.Error(), context)
 			}
-			template.Block.Transactions[0].TxOut[0].PkScript = pkScript
+			template.Block.Transactions[util.CoinbaseTransactionIndex].TxOut[0].PkScript = pkScript
 			template.ValidPayAddress = true
 
 			// Update the merkle root.
@@ -1821,7 +1821,7 @@ func (state *gbtWorkState) blockTemplateResult(useCoinbaseValue bool, submitOld 
 
 	if useCoinbaseValue {
 		reply.CoinbaseAux = gbtCoinbaseAux
-		reply.CoinbaseValue = &msgBlock.Transactions[0].TxOut[0].Value
+		reply.CoinbaseValue = &msgBlock.Transactions[util.CoinbaseTransactionIndex].TxOut[0].Value
 	} else {
 		// Ensure the template has a valid payment address associated
 		// with it when a full coinbase is requested.
@@ -1836,7 +1836,7 @@ func (state *gbtWorkState) blockTemplateResult(useCoinbaseValue bool, submitOld 
 		}
 
 		// Serialize the transaction for conversion to hex.
-		tx := msgBlock.Transactions[0]
+		tx := msgBlock.Transactions[util.CoinbaseTransactionIndex]
 		txBuf := bytes.NewBuffer(make([]byte, 0, tx.SerializeSize()))
 		if err := tx.Serialize(txBuf); err != nil {
 			context := "Failed to serialize transaction"

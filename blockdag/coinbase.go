@@ -139,7 +139,7 @@ func (node *blockNode) validateCoinbaseTransaction(dag *BlockDAG, block *util.Bl
 		return err
 	}
 
-	if !expectedCoinbaseTransaction.TxHash().IsEqual(block.CoinbaseTransaction().Hash()) {
+	if !expectedCoinbaseTransaction.Hash().IsEqual(block.CoinbaseTransaction().Hash()) {
 		return ruleError(ErrBadCoinbaseTransaction, "Coinbase transaction is not built as expected")
 	}
 
@@ -147,7 +147,7 @@ func (node *blockNode) validateCoinbaseTransaction(dag *BlockDAG, block *util.Bl
 }
 
 // buildCoinbaseTransaction returns the coinbase transaction for the current block
-func (node *blockNode) buildCoinbaseTransaction(dag *BlockDAG, txsAcceptanceData MultiBlockTxsAcceptanceData, pkScript []byte, extraData []byte) (*wire.MsgTx, error) {
+func (node *blockNode) buildCoinbaseTransaction(dag *BlockDAG, txsAcceptanceData MultiBlockTxsAcceptanceData, pkScript []byte, extraData []byte) (*util.Tx, error) {
 	bluesFeeData, err := node.getBluesFeeData(dag)
 	if err != nil {
 		return nil, err
@@ -166,16 +166,17 @@ func (node *blockNode) buildCoinbaseTransaction(dag *BlockDAG, txsAcceptanceData
 			txOuts = append(txOuts, txOut)
 		}
 	}
-	payload, err := BuildCoinbasePayload(pkScript, extraData)
+	payload, err := SerializeCoinbasePayload(pkScript, extraData)
 	if err != nil {
 		return nil, err
 	}
-	feeTx := wire.NewSubnetworkMsgTx(wire.TxVersion, txIns, txOuts, subnetworkid.SubnetworkIDCoinbase, 0, payload)
-	return txsort.Sort(feeTx), nil
+	coinbaseTx := wire.NewSubnetworkMsgTx(wire.TxVersion, txIns, txOuts, subnetworkid.SubnetworkIDCoinbase, 0, payload)
+	sortedCoinbaseTx := txsort.Sort(coinbaseTx)
+	return util.NewTx(sortedCoinbaseTx), nil
 }
 
-// BuildCoinbasePayload builds the coinbase payload based on the provided pkScript and extra data.
-func BuildCoinbasePayload(pkScript []byte, extraData []byte) ([]byte, error) {
+// SerializeCoinbasePayload builds the coinbase payload based on the provided pkScript and extra data.
+func SerializeCoinbasePayload(pkScript []byte, extraData []byte) ([]byte, error) {
 	w := &bytes.Buffer{}
 	err := wire.WriteVarInt(w, uint64(len(pkScript)))
 	if err != nil {

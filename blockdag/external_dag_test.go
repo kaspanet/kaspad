@@ -304,7 +304,7 @@ func TestGasLimit(t *testing.T) {
 			t.Fatalf("ProcessBlock: fundsBlock got unexpectedly orphan")
 		}
 
-		cbTxs = append(cbTxs, fundsBlock.Transactions[0])
+		cbTxs = append(cbTxs, fundsBlock.Transactions[util.CoinbaseTransactionIndex])
 	}
 
 	signatureScript, err := txscript.PayToScriptHashSignatureScript(blockdag.OpTrueScript, nil)

@@ -374,7 +374,7 @@ func (dag *BlockDAG) calcSequenceLock(node *blockNode, utxoSet UTXOSet, tx *util
 	// Sequence locks don't apply to coinbase transactions Therefore, we
 	// return sequence lock values of -1 indicating that this transaction
 	// can be included within a block at any given height or time.
-	if IsCoinBase(tx) {
+	if tx.IsCoinBase() {
 		return sequenceLock, nil
 	}
 
@@ -749,7 +749,7 @@ func (dag *BlockDAG) updateFinalityPoint() {
 // NextBlockCoinbaseTransaction prepares the coinbase transaction for the next mined block
 //
 // This function CAN'T be called with the DAG lock held.
-func (dag *BlockDAG) NextBlockCoinbaseTransaction(pkScript []byte, extraData []byte) (*wire.MsgTx, error) {
+func (dag *BlockDAG) NextBlockCoinbaseTransaction(pkScript []byte, extraData []byte) (*util.Tx, error) {
 	dag.dagLock.RLock()
 	defer dag.dagLock.RUnlock()
 
@@ -759,7 +759,7 @@ func (dag *BlockDAG) NextBlockCoinbaseTransaction(pkScript []byte, extraData []b
 // NextBlockCoinbaseTransactionNoLock prepares the coinbase transaction for the next mined block
 //
 // This function MUST be called with the DAG read-lock held
-func (dag *BlockDAG) NextBlockCoinbaseTransactionNoLock(pkScript []byte, extraData []byte) (*wire.MsgTx, error) {
+func (dag *BlockDAG) NextBlockCoinbaseTransactionNoLock(pkScript []byte, extraData []byte) (*util.Tx, error) {
 	txsAcceptanceData, err := dag.TxsAcceptedByVirtual()
 	if err != nil {
 		return nil, err

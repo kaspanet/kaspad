@@ -50,15 +50,6 @@ func isNullOutpoint(outpoint *wire.Outpoint) bool {
 	return false
 }
 
-// IsCoinBase determines whether or not a transaction is a coinbase.  A coinbase
-// is a special transaction created by miners that has no inputs.  This is
-// represented in the block dag by a transaction with a single input that has
-// a previous output transaction index set to the maximum value along with a
-// zero hash.
-func IsCoinBase(tx *util.Tx) bool {
-	return tx.MsgTx().IsCoinBase()
-}
-
 // SequenceLockActive determines if a transaction's sequence locks have been
 // met, meaning that all the inputs of a given transaction have reached a
 // chain-height or time sufficient for their relative lock-time maturity.
@@ -133,7 +124,7 @@ func CalcBlockSubsidy(height uint64, dagParams *dagconfig.Params) uint64 {
 // CheckTransactionSanity performs some preliminary checks on a transaction to
 // ensure it is sane.  These checks are context free.
 func CheckTransactionSanity(tx *util.Tx, subnetworkID *subnetworkid.SubnetworkID) error {
-	isCoinbase := IsCoinBase(tx)
+	isCoinbase := tx.IsCoinBase()
 	// A transaction must have at least one input.
 	msgTx := tx.MsgTx()
 	if !isCoinbase && len(msgTx.TxIn) == 0 {
@@ -484,7 +475,7 @@ func (dag *BlockDAG) checkBlockSanity(block *util.Block, flags BehaviorFlags) er
 
 	// The first transaction in a block must be a coinbase.
 	transactions := block.Transactions()
-	if !IsCoinBase(transactions[util.CoinbaseTransactionIndex]) {
+	if !transactions[util.CoinbaseTransactionIndex].IsCoinBase() {
 		return ruleError(ErrFirstTxNotCoinbase, "first transaction in "+
 			"block is not a coinbase")
 	}
@@ -494,7 +485,7 @@ func (dag *BlockDAG) checkBlockSanity(block *util.Block, flags BehaviorFlags) er
 	// A block must not have more than one coinbase. And transactions must be
 	// ordered by subnetwork
 	for i, tx := range transactions[txOffset:] {
-		if IsCoinBase(tx) {
+		if tx.IsCoinBase() {
 			str := fmt.Sprintf("block contains second coinbase at "+
 				"index %d", i+2)
 			return ruleError(ErrMultipleCoinbases, str)
@@ -791,7 +782,7 @@ func CheckTransactionInputsAndCalulateFee(tx *util.Tx, txHeight uint64, utxoSet 
 	txFeeInSatoshi uint64, err error) {
 
 	// Coinbase transactions have no standard inputs to validate.
-	if IsCoinBase(tx) {
+	if tx.IsCoinBase() {
 		return 0, nil
 	}
 

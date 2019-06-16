@@ -150,7 +150,11 @@ func TestNewBlockTemplate(t *testing.T) {
 	blockTemplateGenerator := NewBlkTmplGenerator(&policy,
 		&params, txSource, dag, blockdag.NewMedianTime(), txscript.NewSigCache(100000))
 
-	template1, err := blockTemplateGenerator.NewBlockTemplate(nil)
+	OpTrueAddr, err := OpTrueAddress(params.Prefix)
+	if err != nil {
+		t.Fatalf("OpTrueAddress: %s", err)
+	}
+	template1, err := blockTemplateGenerator.NewBlockTemplate(OpTrueAddr)
 	if err != nil {
 		t.Fatalf("NewBlockTemplate: %v", err)
 	}
@@ -164,9 +168,9 @@ func TestNewBlockTemplate(t *testing.T) {
 	}
 
 	// We create another 4 blocks to in order to create more funds for tests.
-	cbTxs := []*wire.MsgTx{template1.Block.Transactions[0]}
+	cbTxs := []*wire.MsgTx{template1.Block.Transactions[util.CoinbaseTransactionIndex]}
 	for i := 0; i < 4; i++ {
-		template, err := blockTemplateGenerator.NewBlockTemplate(nil)
+		template, err := blockTemplateGenerator.NewBlockTemplate(OpTrueAddr)
 		if err != nil {
 			t.Fatalf("NewBlockTemplate: %v", err)
 		}
@@ -177,7 +181,7 @@ func TestNewBlockTemplate(t *testing.T) {
 		if isOrphan {
 			t.Fatalf("ProcessBlock: template got unexpectedly orphan")
 		}
-		cbTxs = append(cbTxs, template.Block.Transactions[0])
+		cbTxs = append(cbTxs, template.Block.Transactions[util.CoinbaseTransactionIndex])
 	}
 
 	// We want to check that the miner filters coinbase transaction
@@ -274,7 +278,7 @@ func TestNewBlockTemplate(t *testing.T) {
 
 	txSource.txDescs = []*TxDesc{
 		{
-			Tx: util.NewTx(cbTx),
+			Tx: cbTx,
 		},
 		{
 			Tx: util.NewTx(tx),
@@ -325,7 +329,7 @@ func TestNewBlockTemplate(t *testing.T) {
 	})
 	defer gasLimitPatch.Unpatch()
 
-	template3, err := blockTemplateGenerator.NewBlockTemplate(nil)
+	template3, err := blockTemplateGenerator.NewBlockTemplate(OpTrueAddr)
 	popPatch.Unpatch()
 	gasLimitPatch.Unpatch()
 

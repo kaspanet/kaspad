@@ -64,7 +64,12 @@ func PrepareBlockForTest(dag *blockdag.BlockDAG, params *dagconfig.Params, paren
 	blockTemplateGenerator := NewBlkTmplGenerator(&policy,
 		params, txSource, dag, blockdag.NewMedianTime(), txscript.NewSigCache(100000))
 
-	template, err := blockTemplateGenerator.NewBlockTemplate(nil)
+	OpTrueAddr, err := OpTrueAddress(params.Prefix)
+	if err != nil {
+		return nil, err
+	}
+
+	template, err := blockTemplateGenerator.NewBlockTemplate(OpTrueAddr)
 	if err != nil {
 		return nil, err
 	}
@@ -116,6 +121,10 @@ func PrepareBlockForTest(dag *blockdag.BlockDAG, params *dagconfig.Params, paren
 func GenerateDeterministicExtraNonceForTest() uint64 {
 	extraNonceForTest++
 	return extraNonceForTest
+}
+
+func OpTrueAddress(prefix util.Bech32Prefix) (util.Address, error) {
+	return util.NewAddressScriptHash(blockdag.OpTrueScript, prefix)
 }
 
 var extraNonceForTest = uint64(0)
