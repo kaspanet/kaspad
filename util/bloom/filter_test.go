@@ -834,7 +834,7 @@ func TestFilterInsertP2PubKeyOnly(t *testing.T) {
 	_, _ = bloom.NewMerkleBlock(block, f)
 
 	// We should match the generation pubkey
-	inputStr = "c2254e4d610867ee48decf60d8bd8e1d361eeeab5d1052ce3e98184a5b4d0923" //0st tx ID
+	inputStr = "c2254e4d610867ee48decf60d8bd8e1d361eeeab5d1052ce3e98184a5b4d0923" // 0st tx ID
 	txID, err := daghash.NewTxIDFromStr(inputStr)
 	if err != nil {
 		t.Errorf("TestFilterInsertP2PubKeyOnly NewHashFromStr failed: %v", err)
