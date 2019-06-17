@@ -47,7 +47,7 @@ func utxoEntryHeaderCode(entry *UTXOEntry) uint64 {
 	// encodes the blue score shifted over one bit and the block reward flag
 	// in the lowest bit.
 	headerCode := uint64(entry.BlockBlueScore()) << 1
-	if entry.IsBlockReward() {
+	if entry.IsCoinbase() {
 		headerCode |= 0x01
 	}
 
@@ -282,9 +282,9 @@ func deserializeUTXOEntry(serialized []byte) (*UTXOEntry, error) {
 
 	// Decode the header code.
 	//
-	// Bit 0 indicates whether the containing transaction is a block reward.
-	// Bits 1-x encode the blue score of the containing transaction.
-	isBlockReward := code&0x01 != 0
+	// Bit 0 indicates whether the containing transaction is a coinbase.
+	// Bits 1-x encode blue score of the containing transaction.
+	isCoinbase := code&0x01 != 0
 	blockBlueScore := code >> 1
 
 	// Decode the compressed unspent transaction output.
@@ -300,8 +300,8 @@ func deserializeUTXOEntry(serialized []byte) (*UTXOEntry, error) {
 		blockBlueScore: blockBlueScore,
 		packedFlags:    0,
 	}
-	if isBlockReward {
-		entry.packedFlags |= tfBlockReward
+	if isCoinbase {
+		entry.packedFlags |= tfCoinbase
 	}
 
 	return entry, nil

@@ -75,6 +75,15 @@ func (t *Tx) SetIndex(index int) {
 	t.txIndex = index
 }
 
+// IsCoinBase determines whether or not a transaction is a coinbase.  A coinbase
+// is a special transaction created by miners that has no inputs.  This is
+// represented in the block dag by a transaction with a single input that has
+// a previous output transaction index set to the maximum value along with a
+// zero hash.
+func (t *Tx) IsCoinBase() bool {
+	return t.MsgTx().IsCoinBase()
+}
+
 // NewTx returns a new instance of a bitcoin transaction given an underlying
 // wire.MsgTx.  See Tx.
 func NewTx(msgTx *wire.MsgTx) *Tx {

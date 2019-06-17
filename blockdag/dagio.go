@@ -135,7 +135,7 @@ func dbPutVersion(dbTx database.Tx, key []byte, version uint32) error {
 //     compressed script  []byte   variable
 //
 // The serialized header code format is:
-//   bit 0 - containing transaction is a block reward
+//   bit 0 - containing transaction is a coinbase
 //   bits 1-x - height of the block that contains the unspent txout
 //
 // Example 1:

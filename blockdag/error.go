@@ -141,7 +141,7 @@ const (
 	ErrOverwriteTx
 
 	// ErrImmatureSpend indicates a transaction is attempting to spend a
-	// block reward that has not yet reached the required maturity.
+	// coinbase that has not yet reached the required maturity.
 	ErrImmatureSpend
 
 	// ErrSpendTooHigh indicates a transaction is attempting to spend more
@@ -164,34 +164,12 @@ const (
 	// coinbase transaction.
 	ErrMultipleCoinbases
 
-	// ErrBadCoinbaseScriptLen indicates the length of the signature script
-	// for a coinbase transaction is not within the valid range.
-	ErrBadCoinbaseScriptLen
+	// ErrBadCoinbasePayloadLen indicates the length of the payload
+	// for a coinbase transaction is too high.
+	ErrBadCoinbasePayloadLen
 
-	// ErrBadCoinbaseValue indicates the amount of a coinbase value does
-	// not match the expected value of the subsidy plus the sum of all fees.
-	ErrBadCoinbaseValue
-
-	// ErrMissingCoinbaseBlueScore indicates the coinbase transaction for a
-	// block does not start with the serialized block blue score as
-	// required for version 2 and higher blocks.
-	ErrMissingCoinbaseBlueScore
-
-	// ErrBadCoinbaseBlueScore indicates the serialized block blue score in the
-	// coinbase transaction for version 2 and higher blocks does not match
-	// the expected value.
-	ErrBadCoinbaseBlueScore
-
-	// ErrSecondTxNotFeeTransaction indicates the second transaction in
-	// a block is not a fee transaction.
-	ErrSecondTxNotFeeTransaction
-
-	// ErrBadFeeTransaction indicates that the block's fee transaction is not build as expected
-	ErrBadFeeTransaction
-
-	// ErrMultipleFeeTransactions indicates a block contains more than one
-	// fee transaction.
-	ErrMultipleFeeTransactions
+	// ErrBadCoinbaseTransaction indicates that the block's coinbase transaction is not build as expected
+	ErrBadCoinbaseTransaction
 
 	// ErrScriptMalformed indicates a transaction script is malformed in
 	// some way.  For example, it might be longer than the maximum allowed
@@ -274,13 +252,8 @@ var errorCodeStrings = map[ErrorCode]string{
 	ErrTooManySigOps:             "ErrTooManySigOps",
 	ErrFirstTxNotCoinbase:        "ErrFirstTxNotCoinbase",
 	ErrMultipleCoinbases:         "ErrMultipleCoinbases",
-	ErrBadCoinbaseScriptLen:      "ErrBadCoinbaseScriptLen",
-	ErrBadCoinbaseValue:          "ErrBadCoinbaseValue",
-	ErrMissingCoinbaseBlueScore:  "ErrMissingCoinbaseBlueScore",
-	ErrBadCoinbaseBlueScore:      "ErrBadCoinbaseBlueScore",
-	ErrSecondTxNotFeeTransaction: "ErrSecondTxNotFeeTransaction",
-	ErrBadFeeTransaction:         "ErrBadFeeTransaction",
-	ErrMultipleFeeTransactions:   "ErrMultipleFeeTransactions",
+	ErrBadCoinbasePayloadLen:     "ErrBadCoinbasePayloadLen",
+	ErrBadCoinbaseTransaction:    "ErrBadCoinbaseTransaction",
 	ErrScriptMalformed:           "ErrScriptMalformed",
 	ErrScriptValidation:          "ErrScriptValidation",
 	ErrParentBlockUnknown:        "ErrParentBlockUnknown",

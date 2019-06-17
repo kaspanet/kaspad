@@ -29,11 +29,8 @@ const (
 	// hours.
 	MaxTimeOffsetSeconds = 2 * 60 * 60
 
-	// MinCoinbaseScriptLen is the minimum length a coinbase script can be.
-	MinCoinbaseScriptLen = 2
-
-	// MaxCoinbaseScriptLen is the maximum length a coinbase script can be.
-	MaxCoinbaseScriptLen = 100
+	// MaxCoinbasePayloadLen is the maximum length a coinbase payload can be.
+	MaxCoinbasePayloadLen = 150
 
 	// medianTimeBlocks is the number of previous blocks which should be
 	// used to calculate the median time used to validate block timestamps.
@@ -51,28 +48,6 @@ func isNullOutpoint(outpoint *wire.Outpoint) bool {
 		return true
 	}
 	return false
-}
-
-// IsCoinBase determines whether or not a transaction is a coinbase.  A coinbase
-// is a special transaction created by miners that has no inputs.  This is
-// represented in the block dag by a transaction with a single input that has
-// a previous output transaction index set to the maximum value along with a
-// zero hash.
-func IsCoinBase(tx *util.Tx) bool {
-	return tx.MsgTx().IsCoinBase()
-}
-
-// IsBlockReward determines whether or not a transaction is a block reward (a fee transaction or block reward)
-func IsBlockReward(tx *util.Tx) bool {
-	return tx.MsgTx().IsBlockReward()
-}
-
-// IsFeeTransaction determines whether or not a transaction is a fee transaction.  A fee
-// transaction is a special transaction created by miners that distributes fees to the
-// previous blocks' miners.  Each input of the fee transaction should set index to maximum
-// value and reference the relevant block id, instead of previous transaction id.
-func IsFeeTransaction(tx *util.Tx) bool {
-	return tx.MsgTx().IsFeeTransaction()
 }
 
 // SequenceLockActive determines if a transaction's sequence locks have been
@@ -149,9 +124,10 @@ func CalcBlockSubsidy(blueScore uint64, dagParams *dagconfig.Params) uint64 {
 // CheckTransactionSanity performs some preliminary checks on a transaction to
 // ensure it is sane.  These checks are context free.
 func CheckTransactionSanity(tx *util.Tx, subnetworkID *subnetworkid.SubnetworkID) error {
+	isCoinbase := tx.IsCoinBase()
 	// A transaction must have at least one input.
 	msgTx := tx.MsgTx()
-	if len(msgTx.TxIn) == 0 {
+	if !isCoinbase && len(msgTx.TxIn) == 0 {
 		return ruleError(ErrNoTxInputs, "transaction has no inputs")
 	}
 
@@ -210,14 +186,14 @@ func CheckTransactionSanity(tx *util.Tx, subnetworkID *subnetworkid.SubnetworkID
 		existingTxOut[txIn.PreviousOutpoint] = struct{}{}
 	}
 
-	// Coinbase script length must be between min and max length.
-	if IsCoinBase(tx) {
-		slen := len(msgTx.TxIn[0].SignatureScript)
-		if slen < MinCoinbaseScriptLen || slen > MaxCoinbaseScriptLen {
-			str := fmt.Sprintf("coinbase transaction script length "+
-				"of %d is out of range (min: %d, max: %d)",
-				slen, MinCoinbaseScriptLen, MaxCoinbaseScriptLen)
-			return ruleError(ErrBadCoinbaseScriptLen, str)
+	// Coinbase payload length must not exceed the max length.
+	if isCoinbase {
+		payloadLen := len(msgTx.Payload)
+		if payloadLen > MaxCoinbasePayloadLen {
+			str := fmt.Sprintf("coinbase transaction payload length "+
+				"of %d is out of range (max: %d)",
+				payloadLen, MaxCoinbasePayloadLen)
+			return ruleError(ErrBadCoinbasePayloadLen, str)
 		}
 	} else {
 		// Previous transaction outputs referenced by the inputs to this
@@ -241,9 +217,9 @@ func CheckTransactionSanity(tx *util.Tx, subnetworkID *subnetworkid.SubnetworkID
 		return ruleError(ErrInvalidPayloadHash, "unexpected non-empty payload hash in native subnetwork")
 	}
 
-	// Transactions in native and subnetwork registry subnetworks must have Gas = 0
+	// Transactions in native, registry and coinbase subnetworks must have Gas = 0
 	if (msgTx.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) ||
-		msgTx.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDRegistry)) &&
+		msgTx.SubnetworkID.IsBuiltIn()) &&
 		msgTx.Gas > 0 {
 
 		return ruleError(ErrInvalidGas, "transaction in the native or "+
@@ -265,10 +241,10 @@ func CheckTransactionSanity(tx *util.Tx, subnetworkID *subnetworkid.SubnetworkID
 				"with length != 8 bytes")
 	}
 
-	// If we are a partial node, only transactions on the Registry subnetwork
+	// If we are a partial node, only transactions on built in subnetworks
 	// or our own subnetwork may have a payload
 	isLocalNodeFull := subnetworkID == nil
-	shouldTxBeFull := msgTx.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDRegistry) ||
+	shouldTxBeFull := msgTx.SubnetworkID.IsBuiltIn() ||
 		msgTx.SubnetworkID.IsEqual(subnetworkID)
 	if !isLocalNodeFull && !shouldTxBeFull && len(msgTx.Payload) > 0 {
 		return ruleError(ErrInvalidPayload,
@@ -347,9 +323,9 @@ func CountSigOps(tx *util.Tx) int {
 // transactions which are of the pay-to-script-hash type.  This uses the
 // precise, signature operation counting mechanism from the script engine which
 // requires access to the input transaction scripts.
-func CountP2SHSigOps(tx *util.Tx, isBlockReward bool, utxoSet UTXOSet) (int, error) {
-	// Block reward transactions have no interesting inputs.
-	if isBlockReward {
+func CountP2SHSigOps(tx *util.Tx, isCoinbase bool, utxoSet UTXOSet) (int, error) {
+	// Coinbase transactions have no interesting inputs.
+	if isCoinbase {
 		return 0, nil
 	}
 
@@ -499,36 +475,22 @@ func (dag *BlockDAG) checkBlockSanity(block *util.Block, flags BehaviorFlags) er
 
 	// The first transaction in a block must be a coinbase.
 	transactions := block.Transactions()
-	if !IsCoinBase(transactions[0]) {
+	if !transactions[util.CoinbaseTransactionIndex].IsCoinBase() {
 		return ruleError(ErrFirstTxNotCoinbase, "first transaction in "+
 			"block is not a coinbase")
 	}
 
-	isGenesis := block.MsgBlock().Header.IsGenesis()
-	if !isGenesis && !IsFeeTransaction(transactions[1]) {
-		return ruleError(ErrSecondTxNotFeeTransaction, "second transaction in "+
-			"block is not a fee transaction")
-	}
-
-	txOffset := 2
-	if isGenesis {
-		txOffset = 1
-	}
+	txOffset := util.CoinbaseTransactionIndex + 1
 
 	// A block must not have more than one coinbase. And transactions must be
 	// ordered by subnetwork
 	for i, tx := range transactions[txOffset:] {
-		if IsCoinBase(tx) {
+		if tx.IsCoinBase() {
 			str := fmt.Sprintf("block contains second coinbase at "+
 				"index %d", i+2)
 			return ruleError(ErrMultipleCoinbases, str)
 		}
-		if IsFeeTransaction(tx) {
-			str := fmt.Sprintf("block contains second fee transaction at "+
-				"index %d", i+2)
-			return ruleError(ErrMultipleFeeTransactions, str)
-		}
-		if subnetworkid.Less(&tx.MsgTx().SubnetworkID, &transactions[i].MsgTx().SubnetworkID) {
+		if i != 0 && subnetworkid.Less(&tx.MsgTx().SubnetworkID, &transactions[i].MsgTx().SubnetworkID) {
 			return ruleError(ErrTransactionsNotSorted, "transactions must be sorted by subnetwork")
 		}
 	}
@@ -795,9 +757,8 @@ func ensureNoDuplicateTx(utxoSet UTXOSet, transactions []*util.Tx) error {
 func CheckTransactionInputsAndCalulateFee(tx *util.Tx, txBlueScore uint64, utxoSet UTXOSet, dagParams *dagconfig.Params, fastAdd bool) (
 	txFeeInSatoshi uint64, err error) {
 
-	// Block reward transactions (a.k.a. coinbase or fee transactions)
-	// have no standard inputs to validate.
-	if IsBlockReward(tx) {
+	// Coinbase transactions have no standard inputs to validate.
+	if tx.IsCoinBase() {
 		return 0, nil
 	}
 
@@ -815,7 +776,7 @@ func CheckTransactionInputsAndCalulateFee(tx *util.Tx, txBlueScore uint64, utxoS
 		}
 
 		if !fastAdd {
-			if err = validateBlockRewardMaturity(dagParams, entry, txBlueScore, txIn); err != nil {
+			if err = validateCoinbaseMaturity(dagParams, entry, txBlueScore, txIn); err != nil {
 				return 0, err
 			}
 		}
@@ -873,19 +834,19 @@ func CheckTransactionInputsAndCalulateFee(tx *util.Tx, txBlueScore uint64, utxoS
 	return txFeeInSatoshi, nil
 }
 
-func validateBlockRewardMaturity(dagParams *dagconfig.Params, entry *UTXOEntry, txBlueScore uint64, txIn *wire.TxIn) error {
+func validateCoinbaseMaturity(dagParams *dagconfig.Params, entry *UTXOEntry, txBlueScore uint64, txIn *wire.TxIn) error {
 	// Ensure the transaction is not spending coins which have not
-	// yet reached the required block reward maturity.
-	if entry.IsBlockReward() {
+	// yet reached the required coinbase maturity.
+	if entry.IsCoinbase() {
 		originBlueScore := entry.BlockBlueScore()
-		BlueScoreSincePrev := txBlueScore - originBlueScore
-		if BlueScoreSincePrev < dagParams.BlockRewardMaturity {
-			str := fmt.Sprintf("tried to spend block reward "+
+		blueScoreSincePrev := txBlueScore - originBlueScore
+		if blueScoreSincePrev < dagParams.BlockCoinbaseMaturity {
+			str := fmt.Sprintf("tried to spend coinbase "+
 				"transaction output %s from blue score %d "+
 				"to blue score %d before required maturity "+
 				"of %d", txIn.PreviousOutpoint,
 				originBlueScore, txBlueScore,
-				dagParams.BlockRewardMaturity)
+				dagParams.BlockCoinbaseMaturity)
 			return ruleError(ErrImmatureSpend, str)
 		}
 	}
@@ -926,7 +887,7 @@ func (dag *BlockDAG) checkConnectToPastUTXO(block *blockNode, pastUTXO UTXOSet,
 	// against all the inputs when the signature operations are out of
 	// bounds.
 	// In addition - add all fees into a fee accumulator, to be stored and checked
-	// when validating descendants' fee transactions.
+	// when validating descendants' coinbase transactions.
 	var totalFees uint64
 	compactFeeFactory := newCompactFeeFactory()
 
@@ -957,22 +918,6 @@ func (dag *BlockDAG) checkConnectToPastUTXO(block *blockNode, pastUTXO UTXOSet,
 	}
 
 	if !fastAdd {
-		// The total output values of the coinbase transaction must not exceed
-		// the expected subsidy value plus total transaction fees gained from
-		// mining the block.  It is safe to ignore overflow and out of range
-		// errors here because those error conditions would have already been
-		// caught by checkTransactionSanity.
-		var totalSatoshiOut uint64
-		for _, txOut := range transactions[0].MsgTx().TxOut {
-			totalSatoshiOut += txOut.Value
-		}
-		expectedSatoshiOut := CalcBlockSubsidy(block.blueScore, dag.dagParams)
-		if totalSatoshiOut > expectedSatoshiOut {
-			str := fmt.Sprintf("coinbase transaction for block pays %d "+
-				"which is more than expected value of %d",
-				totalSatoshiOut, expectedSatoshiOut)
-			return nil, ruleError(ErrBadCoinbaseValue, str)
-		}
 
 		// Don't run scripts if this node is before the latest known good
 		// checkpoint since the validity is verified via the checkpoints (all
@@ -1041,12 +986,11 @@ func validateSigopsCount(pastUTXO UTXOSet, transactions []*util.Tx) error {
 	for i, tx := range transactions {
 		numsigOps := CountSigOps(tx)
 		// Since the first transaction has already been verified to be a
-		// coinbase transaction, and the second transaction has already
-		// been verified to be a fee transaction, use i < 2 as an
-		// optimization for the flag to countP2SHSigOps for whether or
-		// not the transaction is a block reward transaction rather than
-		// having to do a full coinbase and fee transaction check again.
-		numP2SHSigOps, err := CountP2SHSigOps(tx, i < 2, pastUTXO)
+		// coinbase transaction, use i != util.CoinbaseTransactionIndex
+		// as an optimization for the flag to countP2SHSigOps for whether
+		// or not the transaction is a coinbase transaction rather than
+		// having to do a full coinbase check again.
+		numP2SHSigOps, err := CountP2SHSigOps(tx, i == util.CoinbaseTransactionIndex, pastUTXO)
 		if err != nil {
 			return err
 		}
