@@ -62,15 +62,22 @@ func calcAverageBlockWindowTarget(window []*blockNode) *big.Int {
 // while this function accepts any block node.
 func (dag *BlockDAG) calcNextRequiredDifficulty(bluestParent *blockNode, newBlockTime time.Time) uint32 {
 	// Genesis block.
-	if bluestParent == nil {
+	if bluestParent == nil || bluestParent.isGenesis() {
 		return dag.dagParams.PowLimitBits
 	}
 
 	window := blueBlockWindow(bluestParent, dag.difficultyAdjustmentWindowSize, false)
+
 	windowMinTimestamp, _, _ := calcBlockWindowMinMaxAndMedianTimestamps(window)
-	adjustmentFactor := windowMinTimestamp / int64(dag.targetTimePerBlock) / int64(len(window))
+	// Calculate new target difficulty as:
+	// averageWindowTarget * (windowMinTimestamp / (targetTimePerBlock * windowSize))
+	// The result uses integer division which means it will be slightly
+	// rounded down.
 	newTarget := calcAverageBlockWindowTarget(window)
-	newTarget.Mul(newTarget, big.NewInt(adjustmentFactor))
+	newTarget.
+		Mul(newTarget, big.NewInt(windowMinTimestamp)).
+		Div(newTarget, big.NewInt(dag.targetTimePerBlock)).
+		Div(newTarget, big.NewInt(int64(len(window))))
 	if newTarget.Cmp(dag.dagParams.PowLimit) > 0 {
 		newTarget.Set(dag.dagParams.PowLimit)
 	}

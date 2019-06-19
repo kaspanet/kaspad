@@ -76,7 +76,7 @@ type BlockDAG struct {
 	// parameters.  They are also set when the instance is created and
 	// can't be changed afterwards, so there is no need to protect them with
 	// a separate mutex.
-	targetTimePerBlock             uint64 // The target delay between blocks (in seconds)
+	targetTimePerBlock             int64 // The target delay between blocks (in seconds)
 	difficultyAdjustmentWindowSize uint64
 	TimestampDeviationTolerance    uint64
 
@@ -1862,7 +1862,7 @@ func New(config *Config) (*BlockDAG, error) {
 	}
 
 	params := config.DAGParams
-	targetTimePerBlock := uint64(params.TargetTimePerBlock / time.Second)
+	targetTimePerBlock := int64(params.TargetTimePerBlock / time.Second)
 	index := newBlockIndex(config.DB, params)
 	dag := BlockDAG{
 		checkpoints:                    config.Checkpoints,

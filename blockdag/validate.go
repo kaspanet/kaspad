@@ -402,7 +402,7 @@ func (dag *BlockDAG) checkBlockHeaderSanity(header *wire.BlockHeader, flags Beha
 
 	// Ensure the block time is not too far in the future.
 	maxTimestamp := dag.timeSource.AdjustedTime().Add(time.Second *
-		time.Duration(dag.TimestampDeviationTolerance*dag.targetTimePerBlock))
+		time.Duration(int64(dag.TimestampDeviationTolerance)*dag.targetTimePerBlock))
 	if header.Timestamp.After(maxTimestamp) {
 		return maxTimestamp.Sub(header.Timestamp), nil
 	}
