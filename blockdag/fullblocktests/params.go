@@ -121,11 +121,9 @@ var regressionNetParams = &dagconfig.Params{
 	PowLimitBits:             0x207fffff,
 	BlockCoinbaseMaturity:    100,
 	SubsidyReductionInterval: 150,
-	TargetTimespan:           time.Hour * 24 * 14, // 14 days
 	TargetTimePerBlock:       time.Second * 10,    // 10 seconds
-	RetargetAdjustmentFactor: 4,                   // 25% less, 400% more
-	ReduceMinDifficulty:      true,
-	MinDiffReductionTime:     time.Minute * 20, // TargetTimePerBlock * 2
+	DifficultyAdjustmentWindowSize: 2640,
+	TimestampDeviationTolerance: 132,
 	GenerateSupported:        true,
 
 	// Checkpoints ordered from oldest to newest.

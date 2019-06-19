@@ -269,6 +269,10 @@ func (tc *testContext) mineTransactions(transactions []*util.Tx, numberOfBlocks 
 			tc.t.Fatalf("ProcessBlock incorrectly returned that block %s "+
 				"has a %s delay", block.BlockHash(), delay)
 		}
+		if isOrphan {
+			tc.t.Fatalf("ProcessBlock incorrectly returned that block %s "+
+				"is an orphan", block.BlockHash())
+		}
 
 		// Handle new block by pool
 		ch := make(chan NewBlockMsg)

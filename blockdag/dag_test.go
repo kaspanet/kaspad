@@ -212,7 +212,7 @@ func TestHaveBlock(t *testing.T) {
 		{hash: "13580c9c2ed13caeedbad15167ee47bc1d26b4f88cc13054893a6d795c3baa7b", want: true},
 
 		// Block 100000 should be present (as an orphan).
-		{hash: "01b4758d5e637d232b716cdc937335ebc5b8ea7f912b6a7fd2fc42b66b1d4d3e", want: true},
+		{hash: "65b20b048a074793ebfd1196e49341c8d194dabfc6b44a4fd0c607406e122baf", want: true},
 
 		// Random hashes should not be available.
 		{hash: "123", want: false},
@@ -283,13 +283,13 @@ func TestCalcSequenceLock(t *testing.T) {
 	// Obtain the median time past from the PoV of the input created above.
 	// The MTP for the input is the MTP from the PoV of the block *prior*
 	// to the one that included it.
-	medianTime := node.RelativeAncestor(5).PastMedianTime().Unix()
+	medianTime := node.RelativeAncestor(5).PastMedianTime(dag).Unix()
 
 	// The median time calculated from the PoV of the best block in the
 	// test chain.  For unconfirmed inputs, this value will be used since
 	// the MTP will be calculated from the PoV of the yet-to-be-mined
 	// block.
-	nextMedianTime := node.PastMedianTime().Unix()
+	nextMedianTime := node.PastMedianTime(dag).Unix()
 	nextBlockChainHeight := int32(numBlocksToGenerate) + 1
 
 	// Add an additional transaction which will serve as our unconfirmed
@@ -513,7 +513,7 @@ func TestCalcPastMedianTime(t *testing.T) {
 	blockVersion := int32(0x10000000)
 
 	dag := newTestDAG(netParams)
-	numBlocks := uint32(60)
+	numBlocks := uint32(300)
 	nodes := make([]*blockNode, numBlocks)
 	nodes[0] = dag.genesis
 	blockTime := dag.genesis.Header().Timestamp
@@ -528,16 +528,16 @@ func TestCalcPastMedianTime(t *testing.T) {
 		expectedSecondsSinceGenesis int64
 	}{
 		{
-			blockNumber:                 50,
-			expectedSecondsSinceGenesis: 25,
+			blockNumber:                 262,
+			expectedSecondsSinceGenesis: 130,
 		},
 		{
-			blockNumber:                 59,
-			expectedSecondsSinceGenesis: 34,
+			blockNumber:                 270,
+			expectedSecondsSinceGenesis: 138,
 		},
 		{
-			blockNumber:                 40,
-			expectedSecondsSinceGenesis: 15,
+			blockNumber:                 240,
+			expectedSecondsSinceGenesis: 108,
 		},
 		{
 			blockNumber:                 5,
@@ -546,7 +546,7 @@ func TestCalcPastMedianTime(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		secondsSinceGenesis := nodes[test.blockNumber].PastMedianTime().Unix() - dag.genesis.Header().Timestamp.Unix()
+		secondsSinceGenesis := nodes[test.blockNumber].PastMedianTime(dag).Unix() - dag.genesis.Header().Timestamp.Unix()
 		if secondsSinceGenesis != test.expectedSecondsSinceGenesis {
 			t.Errorf("TestCalcPastMedianTime: expected past median time of block %v to be %v seconds from genesis but got %v", test.blockNumber, test.expectedSecondsSinceGenesis, secondsSinceGenesis)
 		}

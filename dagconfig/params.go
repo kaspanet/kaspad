@@ -49,7 +49,7 @@ var (
 
 const phantomK = 10
 const difficultyAdjustmentWindowSize = 2640
-const timestampDeviationTolerance = 13
+const timestampDeviationTolerance = 132
 
 // Checkpoint identifies a known good point in the block chain.  Using
 // checkpoints allows a few optimizations for old blocks during initial download

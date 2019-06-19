@@ -7,7 +7,6 @@ package blockdag
 import (
 	"fmt"
 	"math"
-	"math/big"
 	"sort"
 	"time"
 
@@ -543,8 +542,7 @@ func (dag *BlockDAG) checkBlockSanity(block *util.Block, flags BehaviorFlags) (t
 
 // CheckBlockSanity performs some preliminary checks on a block to ensure it is
 // sane before continuing with block processing.  These checks are context free.
-func (dag *BlockDAG) CheckBlockSanity(block *util.Block, powLimit *big.Int,
-	timeSource MedianTimeSource) (time.Duration, error) {
+func (dag *BlockDAG) CheckBlockSanity(block *util.Block, timeSource MedianTimeSource) (time.Duration, error) {
 
 	return dag.checkBlockSanity(block, BFNone)
 }
