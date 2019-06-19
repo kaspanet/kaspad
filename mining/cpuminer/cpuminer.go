@@ -204,8 +204,7 @@ func (m *CPUMiner) submitBlock(block *util.Block) bool {
 // This function will return early with false when conditions that trigger a
 // stale block such as a new block showing up or periodically when there are
 // new transactions and enough time has elapsed without finding a solution.
-func (m *CPUMiner) solveBlock(msgBlock *wire.MsgBlock, blueScore uint64,
-	ticker *time.Ticker, quit chan struct{}) bool {
+func (m *CPUMiner) solveBlock(msgBlock *wire.MsgBlock, ticker *time.Ticker, quit chan struct{}) bool {
 
 	// Create some convenience variables.
 	header := &msgBlock.Header
@@ -226,7 +225,7 @@ func (m *CPUMiner) solveBlock(msgBlock *wire.MsgBlock, blueScore uint64,
 	// Update the extra nonce in the block template with the
 	// new value by regenerating the coinbase script and
 	// setting the merkle root to the new value.
-	m.g.UpdateExtraNonce(msgBlock, blueScore, extraNonce)
+	m.g.UpdateExtraNonce(msgBlock, extraNonce)
 
 	// Search through the entire nonce range for a solution while
 	// periodically checking for early quit and stale block
@@ -345,7 +344,7 @@ out:
 		// with false when conditions that trigger a stale block, so
 		// a new block template can be generated.  When the return is
 		// true a solution was found, so submit the solved block.
-		if m.solveBlock(template.Block, currentBlueScore+1, ticker, quit) {
+		if m.solveBlock(template.Block, ticker, quit) {
 			block := util.NewBlock(template.Block)
 			m.submitBlock(block)
 		}
@@ -579,7 +578,6 @@ func (m *CPUMiner) GenerateNBlocks(n uint32) ([]*daghash.Hash, error) {
 		// be changing and this would otherwise end up building a new block
 		// template on a block that is in the process of becoming stale.
 		m.submitBlockLock.Lock()
-		currentBlueScore := m.g.VirtualBlueScore()
 
 		// Choose a payment address at random.
 		rand.Seed(time.Now().UnixNano())
@@ -601,7 +599,7 @@ func (m *CPUMiner) GenerateNBlocks(n uint32) ([]*daghash.Hash, error) {
 		// with false when conditions that trigger a stale block, so
 		// a new block template can be generated.  When the return is
 		// true a solution was found, so submit the solved block.
-		if m.solveBlock(template.Block, currentBlueScore, ticker, nil) {
+		if m.solveBlock(template.Block, ticker, nil) {
 			block := util.NewBlock(template.Block)
 			m.submitBlock(block)
 			blockHashes[i] = block.Hash()

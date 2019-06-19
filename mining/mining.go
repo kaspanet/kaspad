@@ -532,7 +532,7 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 	for _, tx := range blockTxns {
 		msgBlock.AddTransaction(tx.MsgTx())
 	}
-	utxoCommitment, err := g.buildUTXOCommitment(msgBlock.Transactions, nextBlockBlueScore)
+	utxoCommitment, err := g.buildUTXOCommitment(msgBlock.Transactions)
 	if err != nil {
 		return nil, err
 	}
@@ -585,8 +585,8 @@ func CoinbasePayloadExtraData(extraNonce uint64) ([]byte, error) {
 	return w.Bytes(), nil
 }
 
-func (g *BlkTmplGenerator) buildUTXOCommitment(transactions []*wire.MsgTx, nextBlueScore uint64) (*daghash.Hash, error) {
-	utxoWithTransactions, err := g.dag.UTXOSet().WithTransactions(transactions, nextBlueScore, false)
+func (g *BlkTmplGenerator) buildUTXOCommitment(transactions []*wire.MsgTx) (*daghash.Hash, error) {
+	utxoWithTransactions, err := g.dag.UTXOSet().WithTransactions(transactions, blockdag.UnacceptedBlueScore, false)
 	if err != nil {
 		return nil, err
 	}
@@ -623,7 +623,7 @@ func (g *BlkTmplGenerator) UpdateBlockTime(msgBlock *wire.MsgBlock) error {
 // block by regenerating the coinbase script with the passed value and block
 // height.  It also recalculates and updates the new merkle root that results
 // from changing the coinbase script.
-func (g *BlkTmplGenerator) UpdateExtraNonce(msgBlock *wire.MsgBlock, blockBlueScore uint64, extraNonce uint64) error {
+func (g *BlkTmplGenerator) UpdateExtraNonce(msgBlock *wire.MsgBlock, extraNonce uint64) error {
 	coinbasePayloadPkScript, _, err := blockdag.DeserializeCoinbasePayload(msgBlock.Transactions[util.CoinbaseTransactionIndex])
 	if err != nil {
 		return err
@@ -655,7 +655,7 @@ func (g *BlkTmplGenerator) UpdateExtraNonce(msgBlock *wire.MsgBlock, blockBlueSc
 	hashMerkleTree := blockdag.BuildHashMerkleTreeStore(block.Transactions())
 	msgBlock.Header.HashMerkleRoot = hashMerkleTree.Root()
 
-	utxoCommitment, err := g.buildUTXOCommitment(msgBlock.Transactions, blockBlueScore)
+	utxoCommitment, err := g.buildUTXOCommitment(msgBlock.Transactions)
 	if err != nil {
 		return err
 	}

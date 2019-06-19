@@ -15,12 +15,8 @@ import (
 const (
 	// UnminedBlueScore is the blue score used for the "block" blueScore field of the
 	// contextual transaction information provided in a transaction store
-	// when it has not yet been mined into a block.
-	UnminedBlueScore = math.MaxUint64
-
-	// UnacceptedBlueScore is the blue score used for transactions that have been
-	// included in a block but have not yet been accepted by any block.
-	UnacceptedBlueScore = 0
+	// when it has not yet been accepted by a block.
+	UnacceptedBlueScore = math.MaxUint64
 )
 
 // UTXOEntry houses details about an individual transaction output in a utxo
@@ -64,12 +60,6 @@ func (entry *UTXOEntry) Amount() uint64 {
 // PkScript returns the public key script for the output.
 func (entry *UTXOEntry) PkScript() []byte {
 	return entry.pkScript
-}
-
-// IsUnmined returns true iff this UTXOEntry has still not been mined,
-// a.k.a. still in the mempool.
-func (entry *UTXOEntry) IsUnmined() bool {
-	return entry.blockBlueScore == UnminedBlueScore
 }
 
 // IsUnaccepted returns true iff this UTXOEntry has been included in a block
@@ -404,6 +394,7 @@ type UTXOSet interface {
 	diffFrom(other UTXOSet) (*UTXODiff, error)
 	WithDiff(utxoDiff *UTXODiff) (UTXOSet, error)
 	diffFromTx(tx *wire.MsgTx, acceptingBlueScore uint64) (*UTXODiff, error)
+	diffFromAcceptanceData(tx *wire.MsgTx, acceptingBlueScore uint64) (*UTXODiff, error)
 	AddTx(tx *wire.MsgTx, blockBlueScore uint64) (ok bool, err error)
 	clone() UTXOSet
 	Get(outpoint wire.Outpoint) (*UTXOEntry, bool)
@@ -438,6 +429,32 @@ func diffFromTx(u UTXOSet, tx *wire.MsgTx, acceptingBlueScore uint64) (*UTXODiff
 		err := diff.AddEntry(outpoint, entry)
 		if err != nil {
 			return nil, err
+		}
+	}
+	return diff, nil
+}
+
+func diffFromAcceptedTx(u UTXOSet, tx *wire.MsgTx, acceptingBlueScore uint64) (*UTXODiff, error) {
+	diff := NewUTXODiff()
+	isCoinbase := tx.IsCoinBase()
+	for i, txOut := range tx.TxOut {
+		existingOutpoint := *wire.NewOutpoint(tx.TxID(), uint32(i))
+		existingEntry, ok := u.Get(existingOutpoint)
+		if !ok {
+			panic("AAA")
+		}
+		if existingEntry.blockBlueScore != UnacceptedBlueScore {
+			panic("AAB")
+		}
+		err := diff.RemoveEntry(existingOutpoint, existingEntry)
+		if err != nil {
+			panic("BBB")
+		}
+
+		newEntry := NewUTXOEntry(txOut, isCoinbase, acceptingBlueScore)
+		err = diff.AddEntry(existingOutpoint, newEntry)
+		if err != nil {
+			panic("CCC")
 		}
 	}
 	return diff, nil
@@ -524,6 +541,10 @@ func (fus *FullUTXOSet) containsInputs(tx *wire.MsgTx) bool {
 	}
 
 	return true
+}
+
+func (fus *FullUTXOSet) diffFromAcceptanceData(tx *wire.MsgTx, acceptingBlueScore uint64) (*UTXODiff, error) {
+	return diffFromAcceptedTx(fus, tx, acceptingBlueScore)
 }
 
 // clone returns a clone of this utxoSet
@@ -703,6 +724,10 @@ func (dus *DiffUTXOSet) meldToBase() error {
 // or an error if provided transaction is not valid in the context of this UTXOSet
 func (dus *DiffUTXOSet) diffFromTx(tx *wire.MsgTx, acceptingBlueScore uint64) (*UTXODiff, error) {
 	return diffFromTx(dus, tx, acceptingBlueScore)
+}
+
+func (dus *DiffUTXOSet) diffFromAcceptanceData(tx *wire.MsgTx, acceptingBlueScore uint64) (*UTXODiff, error) {
+	return diffFromAcceptedTx(dus, tx, acceptingBlueScore)
 }
 
 func (dus *DiffUTXOSet) String() string {

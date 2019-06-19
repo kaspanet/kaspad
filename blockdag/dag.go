@@ -393,7 +393,7 @@ func (dag *BlockDAG) calcSequenceLock(node *blockNode, utxoSet UTXOSet, tx *util
 		// assume the transaction makes it into the next block when
 		// evaluating its sequence blocks.
 		inputBlueScore := entry.BlockBlueScore()
-		if entry.IsUnmined() {
+		if entry.IsUnaccepted() {
 			inputBlueScore = dag.virtual.blueScore
 		}
 
@@ -850,13 +850,38 @@ func (node *blockNode) diffFromTxs(pastUTXO UTXOSet, transactions []*util.Tx) (*
 	diff := NewUTXODiff()
 
 	for _, tx := range transactions {
-		txDiff, err := pastUTXO.diffFromTx(tx.MsgTx(), node.blueScore)
+		txDiff, err := pastUTXO.diffFromTx(tx.MsgTx(), UnacceptedBlueScore)
 		if err != nil {
 			return nil, err
 		}
 		diff, err = diff.WithDiff(txDiff)
 		if err != nil {
 			return nil, err
+		}
+	}
+
+	return diff, nil
+}
+
+func (dag *BlockDAG) diffFromAcceptanceData(pastUTXO UTXOSet, blockTxsAcceptanceDatas MultiBlockTxsAcceptanceData) (*UTXODiff, error) {
+	diff := NewUTXODiff()
+
+	for blockHash, blockTxsAcceptanceData := range blockTxsAcceptanceDatas {
+		blueScore, err := dag.BlueScoreByBlockHash(&blockHash)
+		if err != nil {
+			return nil, err
+		}
+		for _, txAcceptanceData := range blockTxsAcceptanceData {
+			if txAcceptanceData.IsAccepted {
+				acceptanceDiff, err := pastUTXO.diffFromAcceptanceData(txAcceptanceData.Tx.MsgTx(), blueScore)
+				if err != nil {
+					return nil, err
+				}
+				diff, err = diff.WithDiff(acceptanceDiff)
+				if err != nil {
+					return nil, err
+				}
+			}
 		}
 	}
 
@@ -883,9 +908,20 @@ func (node *blockNode) verifyAndBuildUTXO(dag *BlockDAG, transactions []*util.Tx
 		return nil, nil, nil, err
 	}
 
-	diff, err := node.diffFromTxs(pastUTXO, transactions)
+	diffFromTxs, err := node.diffFromTxs(pastUTXO, transactions)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	//diffFromAcceptanceData, err := dag.diffFromAcceptanceData(pastUTXO, txsAcceptanceData)
+	//if err != nil {
+	//	return nil, nil, nil, err
+	//}
+	//diff, err := diffFromTxs.WithDiff(diffFromAcceptanceData)
+	//if err != nil {
+	//	return nil, nil, nil, err
+	//}
 
-	utxo, err := pastUTXO.WithDiff(diff)
+	utxo, err := pastUTXO.WithDiff(diffFromTxs)
 	if err != nil {
 		return nil, nil, nil, err
 	}

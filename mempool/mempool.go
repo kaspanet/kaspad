@@ -591,7 +591,7 @@ func (mp *TxPool) markTransactionOutputsUnspent(tx *util.Tx, diff *blockdag.UTXO
 		if restoreInputs {
 			if prevTxDesc, exists := mp.pool[txIn.PreviousOutpoint.TxID]; exists {
 				prevOut := prevTxDesc.Tx.MsgTx().TxOut[txIn.PreviousOutpoint.Index]
-				entry := blockdag.NewUTXOEntry(prevOut, false, blockdag.UnminedBlueScore)
+				entry := blockdag.NewUTXOEntry(prevOut, false, blockdag.UnacceptedBlueScore)
 				err := diff.AddEntry(txIn.PreviousOutpoint, entry)
 				if err != nil {
 					return err
@@ -599,7 +599,7 @@ func (mp *TxPool) markTransactionOutputsUnspent(tx *util.Tx, diff *blockdag.UTXO
 			}
 			if prevTxDesc, exists := mp.depends[txIn.PreviousOutpoint.TxID]; exists {
 				prevOut := prevTxDesc.Tx.MsgTx().TxOut[txIn.PreviousOutpoint.Index]
-				entry := blockdag.NewUTXOEntry(prevOut, false, blockdag.UnminedBlueScore)
+				entry := blockdag.NewUTXOEntry(prevOut, false, blockdag.UnacceptedBlueScore)
 				err := diff.AddEntry(txIn.PreviousOutpoint, entry)
 				if err != nil {
 					return err
@@ -716,7 +716,7 @@ func (mp *TxPool) addTransaction(tx *util.Tx, height uint64, blueScore uint64, f
 	for _, txIn := range tx.MsgTx().TxIn {
 		mp.outpoints[txIn.PreviousOutpoint] = tx
 	}
-	if isAccepted, err := mp.mpUTXOSet.AddTx(tx.MsgTx(), blockdag.UnminedBlueScore); err != nil {
+	if isAccepted, err := mp.mpUTXOSet.AddTx(tx.MsgTx(), blockdag.UnacceptedBlueScore); err != nil {
 		return nil, err
 	} else if !isAccepted {
 		return nil, fmt.Errorf("unexpectedly failed to add tx %s to the mempool utxo set", tx.ID())
