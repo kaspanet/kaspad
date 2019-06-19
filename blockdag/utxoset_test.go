@@ -903,7 +903,7 @@ func TestDiffFromTx(t *testing.T) {
 	} else if !isAccepted {
 		t.Fatalf("AddTx unexpectedly didn't add tx %s", cbTx.TxID())
 	}
-	node := &blockNode{blueScore: 2} //Fake node
+	acceptingBlueScore := uint64(2)
 	cbOutpoint := wire.Outpoint{TxID: *cbTx.TxID(), Index: 0}
 	txIns := []*wire.TxIn{{
 		PreviousOutpoint: cbOutpoint,
@@ -915,7 +915,7 @@ func TestDiffFromTx(t *testing.T) {
 		Value:    uint64(1),
 	}}
 	tx := wire.NewNativeMsgTx(wire.TxVersion, txIns, txOuts)
-	diff, err := fus.diffFromTx(tx, node)
+	diff, err := fus.diffFromTx(tx, acceptingBlueScore)
 	if err != nil {
 		t.Errorf("diffFromTx: %v", err)
 	}
@@ -942,7 +942,7 @@ func TestDiffFromTx(t *testing.T) {
 		Value:    uint64(1),
 	}}
 	invalidTx := wire.NewNativeMsgTx(wire.TxVersion, invalidTxIns, invalidTxOuts)
-	_, err = fus.diffFromTx(invalidTx, node)
+	_, err = fus.diffFromTx(invalidTx, acceptingBlueScore)
 	if err == nil {
 		t.Errorf("diffFromTx: expected an error but got <nil>")
 	}
@@ -958,7 +958,7 @@ func TestDiffFromTx(t *testing.T) {
 	} else if !isAccepted {
 		t.Fatalf("AddTx unexpectedly didn't add tx %s", tx.TxID())
 	}
-	_, err = dus.diffFromTx(tx, node)
+	_, err = dus.diffFromTx(tx, acceptingBlueScore)
 	if err == nil {
 		t.Errorf("diffFromTx: expected an error but got <nil>")
 	}

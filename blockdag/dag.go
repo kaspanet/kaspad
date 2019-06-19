@@ -850,7 +850,7 @@ func (node *blockNode) diffFromTxs(pastUTXO UTXOSet, transactions []*util.Tx) (*
 	diff := NewUTXODiff()
 
 	for _, tx := range transactions {
-		txDiff, err := pastUTXO.diffFromTx(tx.MsgTx(), node)
+		txDiff, err := pastUTXO.diffFromTx(tx.MsgTx(), node.blueScore)
 		if err != nil {
 			return nil, err
 		}

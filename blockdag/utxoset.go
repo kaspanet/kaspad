@@ -17,11 +17,15 @@ const (
 	// contextual transaction information provided in a transaction store
 	// when it has not yet been mined into a block.
 	UnminedBlueScore = math.MaxUint64
+
+	// UnacceptedBlueScore is the blue score used for transactions that have been
+	// included in a block but have not yet been accepted by any block.
+	UnacceptedBlueScore = 0
 )
 
 // UTXOEntry houses details about an individual transaction output in a utxo
 // set such as whether or not it was contained in a coinbase tx, the blue
-// score of the block that contains the tx, its public key script, and how
+// score of the block that accepts the tx, its public key script, and how
 // much it pays.
 type UTXOEntry struct {
 	// NOTE: Additions, deletions, or modifications to the order of the
@@ -32,7 +36,7 @@ type UTXOEntry struct {
 
 	amount         uint64
 	pkScript       []byte // The public key script for the output.
-	blockBlueScore uint64 // Blue score of the block containing the tx.
+	blockBlueScore uint64 // Blue score of the block accepting the tx.
 
 	// packedFlags contains additional info about output such as whether it
 	// is a coinbase, and whether it has been modified
@@ -47,7 +51,7 @@ func (entry *UTXOEntry) IsCoinbase() bool {
 	return entry.packedFlags&tfCoinbase == tfCoinbase
 }
 
-// BlockBlueScore returns the blue score of the block containing the output.
+// BlockBlueScore returns the blue score of the block accepting the output.
 func (entry *UTXOEntry) BlockBlueScore() uint64 {
 	return entry.blockBlueScore
 }
@@ -66,6 +70,12 @@ func (entry *UTXOEntry) PkScript() []byte {
 // a.k.a. still in the mempool.
 func (entry *UTXOEntry) IsUnmined() bool {
 	return entry.blockBlueScore == UnminedBlueScore
+}
+
+// IsUnaccepted returns true iff this UTXOEntry has been included in a block
+// but has not yet been accepted by any block.
+func (entry *UTXOEntry) IsUnaccepted() bool {
+	return entry.blockBlueScore == UnacceptedBlueScore
 }
 
 // txoFlags is a bitmask defining additional information and state for a
@@ -393,7 +403,7 @@ type UTXOSet interface {
 	fmt.Stringer
 	diffFrom(other UTXOSet) (*UTXODiff, error)
 	WithDiff(utxoDiff *UTXODiff) (UTXOSet, error)
-	diffFromTx(tx *wire.MsgTx, node *blockNode) (*UTXODiff, error)
+	diffFromTx(tx *wire.MsgTx, acceptingBlueScore uint64) (*UTXODiff, error)
 	AddTx(tx *wire.MsgTx, blockBlueScore uint64) (ok bool, err error)
 	clone() UTXOSet
 	Get(outpoint wire.Outpoint) (*UTXOEntry, bool)
@@ -405,7 +415,7 @@ type UTXOSet interface {
 // for both diff-based and full UTXO sets
 // Returns a diff that is equivalent to provided transaction,
 // or an error if provided transaction is not valid in the context of this UTXOSet
-func diffFromTx(u UTXOSet, tx *wire.MsgTx, containingNode *blockNode) (*UTXODiff, error) {
+func diffFromTx(u UTXOSet, tx *wire.MsgTx, acceptingBlueScore uint64) (*UTXODiff, error) {
 	diff := NewUTXODiff()
 	isCoinbase := tx.IsCoinBase()
 	if !isCoinbase {
@@ -423,7 +433,7 @@ func diffFromTx(u UTXOSet, tx *wire.MsgTx, containingNode *blockNode) (*UTXODiff
 		}
 	}
 	for i, txOut := range tx.TxOut {
-		entry := NewUTXOEntry(txOut, isCoinbase, containingNode.blueScore)
+		entry := NewUTXOEntry(txOut, isCoinbase, acceptingBlueScore)
 		outpoint := *wire.NewOutpoint(tx.TxID(), uint32(i))
 		err := diff.AddEntry(outpoint, entry)
 		if err != nil {
@@ -501,8 +511,8 @@ func (fus *FullUTXOSet) AddTx(tx *wire.MsgTx, blueScore uint64) (isAccepted bool
 
 // diffFromTx returns a diff that is equivalent to provided transaction,
 // or an error if provided transaction is not valid in the context of this UTXOSet
-func (fus *FullUTXOSet) diffFromTx(tx *wire.MsgTx, node *blockNode) (*UTXODiff, error) {
-	return diffFromTx(fus, tx, node)
+func (fus *FullUTXOSet) diffFromTx(tx *wire.MsgTx, acceptingBlueScore uint64) (*UTXODiff, error) {
+	return diffFromTx(fus, tx, acceptingBlueScore)
 }
 
 func (fus *FullUTXOSet) containsInputs(tx *wire.MsgTx) bool {
@@ -691,8 +701,8 @@ func (dus *DiffUTXOSet) meldToBase() error {
 
 // diffFromTx returns a diff that is equivalent to provided transaction,
 // or an error if provided transaction is not valid in the context of this UTXOSet
-func (dus *DiffUTXOSet) diffFromTx(tx *wire.MsgTx, node *blockNode) (*UTXODiff, error) {
-	return diffFromTx(dus, tx, node)
+func (dus *DiffUTXOSet) diffFromTx(tx *wire.MsgTx, acceptingBlueScore uint64) (*UTXODiff, error) {
+	return diffFromTx(dus, tx, acceptingBlueScore)
 }
 
 func (dus *DiffUTXOSet) String() string {
