@@ -261,7 +261,7 @@ func (m *memWallet) evalOutputs(outputs []*wire.TxOut, txID *daghash.TxID,
 			// future.
 			var maturityHeight uint64
 			if isCoinbase {
-				maturityHeight = m.currentHeight + m.net.BlockRewardMaturity
+				maturityHeight = m.currentHeight + m.net.BlockCoinbaseMaturity
 			}
 
 			op := wire.Outpoint{TxID: *txID, Index: uint32(i)}

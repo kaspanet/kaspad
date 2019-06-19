@@ -20,7 +20,7 @@ const (
 )
 
 // UTXOEntry houses details about an individual transaction output in a utxo
-// set such as whether or not it was contained in a block reward tx, the blue
+// set such as whether or not it was contained in a coinbase tx, the blue
 // score of the block that contains the tx, its public key script, and how
 // much it pays.
 type UTXOEntry struct {
@@ -35,16 +35,16 @@ type UTXOEntry struct {
 	blockBlueScore uint64 // Blue score of the block containing the tx.
 
 	// packedFlags contains additional info about output such as whether it
-	// is a block reward, and whether it has been modified
+	// is a coinbase, and whether it has been modified
 	// since it was loaded.  This approach is used in order to reduce memory
 	// usage since there will be a lot of these in memory.
 	packedFlags txoFlags
 }
 
-// IsBlockReward returns whether or not the output was contained in a block
+// IsCoinbase returns whether or not the output was contained in a block
 // reward transaction.
-func (entry *UTXOEntry) IsBlockReward() bool {
-	return entry.packedFlags&tfBlockReward == tfBlockReward
+func (entry *UTXOEntry) IsCoinbase() bool {
+	return entry.packedFlags&tfCoinbase == tfCoinbase
 }
 
 // BlockBlueScore returns the blue score of the block containing the output.
@@ -73,20 +73,20 @@ func (entry *UTXOEntry) IsUnmined() bool {
 type txoFlags uint8
 
 const (
-	// tfBlockReward indicates that a txout was contained in a block reward tx (coinbase or fee transaction).
-	tfBlockReward txoFlags = 1 << iota
+	// tfCoinbase indicates that a txout was contained in a coinbase tx.
+	tfCoinbase txoFlags = 1 << iota
 )
 
 // NewUTXOEntry creates a new utxoEntry representing the given txOut
-func NewUTXOEntry(txOut *wire.TxOut, isBlockReward bool, blockBlueScore uint64) *UTXOEntry {
+func NewUTXOEntry(txOut *wire.TxOut, isCoinbase bool, blockBlueScore uint64) *UTXOEntry {
 	entry := &UTXOEntry{
 		amount:         txOut.Value,
 		pkScript:       txOut.PkScript,
 		blockBlueScore: blockBlueScore,
 	}
 
-	if isBlockReward {
-		entry.packedFlags |= tfBlockReward
+	if isCoinbase {
+		entry.packedFlags |= tfCoinbase
 	}
 
 	return entry
@@ -407,8 +407,8 @@ type UTXOSet interface {
 // or an error if provided transaction is not valid in the context of this UTXOSet
 func diffFromTx(u UTXOSet, tx *wire.MsgTx, containingNode *blockNode) (*UTXODiff, error) {
 	diff := NewUTXODiff()
-	isBlockReward := tx.IsBlockReward()
-	if !isBlockReward {
+	isCoinbase := tx.IsCoinBase()
+	if !isCoinbase {
 		for _, txIn := range tx.TxIn {
 			if entry, ok := u.Get(txIn.PreviousOutpoint); ok {
 				err := diff.RemoveEntry(txIn.PreviousOutpoint, entry)
@@ -423,7 +423,7 @@ func diffFromTx(u UTXOSet, tx *wire.MsgTx, containingNode *blockNode) (*UTXODiff
 		}
 	}
 	for i, txOut := range tx.TxOut {
-		entry := NewUTXOEntry(txOut, isBlockReward, containingNode.blueScore)
+		entry := NewUTXOEntry(txOut, isCoinbase, containingNode.blueScore)
 		outpoint := *wire.NewOutpoint(tx.TxID(), uint32(i))
 		err := diff.AddEntry(outpoint, entry)
 		if err != nil {
@@ -471,8 +471,8 @@ func (fus *FullUTXOSet) WithDiff(other *UTXODiff) (UTXOSet, error) {
 // It returns error if something unexpected happens, such as serialization error (isAccepted=false doesn't
 // necessarily means there's an error).
 func (fus *FullUTXOSet) AddTx(tx *wire.MsgTx, blueScore uint64) (isAccepted bool, err error) {
-	isBlockReward := tx.IsBlockReward()
-	if !isBlockReward {
+	isCoinbase := tx.IsCoinBase()
+	if !isCoinbase {
 		if !fus.containsInputs(tx) {
 			return false, nil
 		}
@@ -488,7 +488,7 @@ func (fus *FullUTXOSet) AddTx(tx *wire.MsgTx, blueScore uint64) (isAccepted bool
 
 	for i, txOut := range tx.TxOut {
 		outpoint := *wire.NewOutpoint(tx.TxID(), uint32(i))
-		entry := NewUTXOEntry(txOut, isBlockReward, blueScore)
+		entry := NewUTXOEntry(txOut, isCoinbase, blueScore)
 
 		err := fus.addAndUpdateMultiset(outpoint, entry)
 		if err != nil {
@@ -615,12 +615,12 @@ func (dus *DiffUTXOSet) WithDiff(other *UTXODiff) (UTXOSet, error) {
 
 // AddTx adds a transaction to this utxoSet and returns true iff it's valid in this UTXO's context
 func (dus *DiffUTXOSet) AddTx(tx *wire.MsgTx, blockBlueScore uint64) (bool, error) {
-	isBlockReward := tx.IsBlockReward()
-	if !isBlockReward && !dus.containsInputs(tx) {
+	isCoinbase := tx.IsCoinBase()
+	if !isCoinbase && !dus.containsInputs(tx) {
 		return false, nil
 	}
 
-	err := dus.appendTx(tx, blockBlueScore, isBlockReward)
+	err := dus.appendTx(tx, blockBlueScore, isCoinbase)
 	if err != nil {
 		return false, err
 	}
@@ -628,8 +628,8 @@ func (dus *DiffUTXOSet) AddTx(tx *wire.MsgTx, blockBlueScore uint64) (bool, erro
 	return true, nil
 }
 
-func (dus *DiffUTXOSet) appendTx(tx *wire.MsgTx, blockBlueScore uint64, isBlockReward bool) error {
-	if !isBlockReward {
+func (dus *DiffUTXOSet) appendTx(tx *wire.MsgTx, blockBlueScore uint64, isCoinbase bool) error {
+	if !isCoinbase {
 		for _, txIn := range tx.TxIn {
 			outpoint := *wire.NewOutpoint(&txIn.PreviousOutpoint.TxID, txIn.PreviousOutpoint.Index)
 			entry, ok := dus.Get(outpoint)
@@ -645,7 +645,7 @@ func (dus *DiffUTXOSet) appendTx(tx *wire.MsgTx, blockBlueScore uint64, isBlockR
 
 	for i, txOut := range tx.TxOut {
 		outpoint := *wire.NewOutpoint(tx.TxID(), uint32(i))
-		entry := NewUTXOEntry(txOut, isBlockReward, blockBlueScore)
+		entry := NewUTXOEntry(txOut, isCoinbase, blockBlueScore)
 
 		err := dus.UTXODiff.AddEntry(outpoint, entry)
 		if err != nil {

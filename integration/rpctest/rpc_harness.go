@@ -232,7 +232,7 @@ func (h *Harness) SetUp(createTestChain bool, numMatureOutputs uint32) error {
 	// Create a test chain with the desired number of mature coinbase
 	// outputs.
 	if createTestChain && numMatureOutputs != 0 {
-		numToGenerate := (uint32(h.ActiveNet.BlockRewardMaturity) +
+		numToGenerate := (uint32(h.ActiveNet.BlockCoinbaseMaturity) +
 			numMatureOutputs)
 		_, err := h.Node.Generate(numToGenerate)
 		if err != nil {

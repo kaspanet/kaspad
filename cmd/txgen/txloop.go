@@ -30,13 +30,13 @@ const (
 	// PkScript bytes.
 	outputSize uint64 = 8 + 1 + 25
 
-	txLifeSpan                                     = 1000
-	requiredConfirmations                          = 10
-	approximateConfirmationsForBlockRewardMaturity = 150
-	searchRawTransactionResultCount                = 1000
-	searchRawTransactionMaxResults                 = 5000
-	txMaxQueueLength                               = 10000
-	maxResendDepth                                 = 500
+	txLifeSpan                                  = 1000
+	requiredConfirmations                       = 10
+	approximateConfirmationsForCoinbaseMaturity = 150
+	searchRawTransactionResultCount             = 1000
+	searchRawTransactionMaxResults              = 5000
+	txMaxQueueLength                            = 10000
+	maxResendDepth                              = 500
 )
 
 type walletTransaction struct {
@@ -386,10 +386,10 @@ func addTxOutsToUTXOSet(walletUTXOSet utxoSet, tx *wire.MsgTx) {
 }
 
 func isTxMatured(tx *wire.MsgTx, confirmations uint64) bool {
-	if !tx.IsBlockReward() {
+	if !tx.IsCoinBase() {
 		return confirmations >= requiredConfirmations
 	}
-	return confirmations >= approximateConfirmationsForBlockRewardMaturity
+	return confirmations >= approximateConfirmationsForCoinbaseMaturity
 }
 
 func calcUTXOSetFunds(walletUTXOSet utxoSet) uint64 {

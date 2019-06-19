@@ -9,7 +9,6 @@ import (
 
 	"github.com/daglabs/btcd/util/subnetworkid"
 
-	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/database"
 	_ "github.com/daglabs/btcd/database/ffldb" // blank import ffldb so that its init() function runs before tests
 	"github.com/daglabs/btcd/txscript"
@@ -134,48 +133,6 @@ func createTxForTest(numInputs uint32, numOutputs uint32, outputValue uint64, su
 	}
 
 	return wire.NewNativeMsgTx(wire.TxVersion, txIns, txOuts)
-}
-
-// createCoinbaseTxForTest returns a coinbase transaction with the requested number of
-// outputs paying an appropriate subsidy based on the passed block blueScore to the
-// address associated with the harness.  It automatically uses a standard
-// signature script that starts with the block blue score
-func createCoinbaseTxForTest(blueScore uint64, numOutputs uint32, extraNonce int64, params *dagconfig.Params) (*wire.MsgTx, error) {
-	// Create standard coinbase script.
-	coinbaseScript, err := txscript.NewScriptBuilder().
-		AddInt64(int64(blueScore)).AddInt64(extraNonce).Script()
-	if err != nil {
-		return nil, err
-	}
-
-	txIns := []*wire.TxIn{&wire.TxIn{
-		// Coinbase transactions have no inputs, so previous outpoint is
-		// zero hash and max index.
-		PreviousOutpoint: *wire.NewOutpoint(&daghash.TxID{},
-			wire.MaxPrevOutIndex),
-		SignatureScript: coinbaseScript,
-		Sequence:        wire.MaxTxInSequenceNum,
-	}}
-
-	txOuts := []*wire.TxOut{}
-
-	totalInput := CalcBlockSubsidy(blueScore, params)
-	amountPerOutput := totalInput / uint64(numOutputs)
-	remainder := totalInput - amountPerOutput*uint64(numOutputs)
-	for i := uint32(0); i < numOutputs; i++ {
-		// Ensure the final output accounts for any remainder that might
-		// be left from splitting the input amount.
-		amount := amountPerOutput
-		if i == numOutputs-1 {
-			amount = amountPerOutput + remainder
-		}
-		txOuts = append(txOuts, &wire.TxOut{
-			PkScript: OpTrueScript,
-			Value:    amount,
-		})
-	}
-
-	return wire.NewNativeMsgTx(wire.TxVersion, txIns, txOuts), nil
 }
 
 // SetVirtualForTest replaces the dag's virtual block. This function is used for test purposes only

@@ -90,10 +90,10 @@ func parseRawTransactionResult(result *btcjson.SearchRawTransactionsResult) (*wi
 }
 
 func isTxMatured(tx *wire.MsgTx, confirmations uint64) bool {
-	if !tx.IsBlockReward() {
+	if !tx.IsCoinBase() {
 		return confirmations >= minConfirmations
 	}
-	return confirmations >= activeNetParams.BlockRewardMaturity
+	return confirmations >= activeNetParams.BlockCoinbaseMaturity
 }
 
 func buildUTXOs(txs []*wire.MsgTx) map[wire.Outpoint]*wire.MsgTx {
