@@ -179,16 +179,16 @@ func newTestDAG(params *dagconfig.Params) *BlockDAG {
 
 	targetTimePerBlock := int64(params.TargetTimePerBlock / time.Second)
 	return &BlockDAG{
-		dagParams:           params,
-		timeSource:          NewMedianTime(),
+		dagParams:                      params,
+		timeSource:                     NewMedianTime(),
 		targetTimePerBlock:             targetTimePerBlock,
 		difficultyAdjustmentWindowSize: params.DifficultyAdjustmentWindowSize,
 		TimestampDeviationTolerance:    params.TimestampDeviationTolerance,
-		index:               index,
-		virtual:             newVirtualBlock(setFromSlice(node), params.K),
-		genesis:             index.LookupNode(params.GenesisHash),
-		warningCaches:       newThresholdCaches(vbNumBits),
-		deploymentCaches:    newThresholdCaches(dagconfig.DefinedDeployments),
+		index:                          index,
+		virtual:                        newVirtualBlock(setFromSlice(node), params.K),
+		genesis:                        index.LookupNode(params.GenesisHash),
+		warningCaches:                  newThresholdCaches(vbNumBits),
+		deploymentCaches:               newThresholdCaches(dagconfig.DefinedDeployments),
 	}
 }
 

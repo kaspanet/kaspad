@@ -12,8 +12,8 @@ import (
 	"github.com/daglabs/btcd/util"
 )
 
-func blueBlockWindow(startingNode *blockNode, windowSize uint64, fillBlankSpaceWithGenesis bool) []*blockNode {
-	window := make([]*blockNode, 0, windowSize)
+func blueBlockWindow(startingNode *blockNode, windowSize uint64, fillBlankSpaceWithGenesis bool) (window []*blockNode, ok bool) {
+	window = make([]*blockNode, 0, windowSize)
 	currentNode := startingNode
 	for uint64(len(window)) < windowSize {
 		if currentNode.selectedParent != nil {
@@ -26,12 +26,12 @@ func blueBlockWindow(startingNode *blockNode, windowSize uint64, fillBlankSpaceW
 			currentNode = currentNode.selectedParent
 		} else {
 			if !fillBlankSpaceWithGenesis {
-				break
+				return nil, false
 			}
 			window = append(window, currentNode)
 		}
 	}
-	return window
+	return window, true
 }
 
 func calcBlockWindowMinMaxAndMedianTimestamps(window []*blockNode) (min, max, median int64) {
@@ -62,24 +62,31 @@ func calcAverageBlockWindowTarget(window []*blockNode) *big.Int {
 // while this function accepts any block node.
 func (dag *BlockDAG) calcNextRequiredDifficulty(bluestParent *blockNode, newBlockTime time.Time) uint32 {
 	// Genesis block.
-	if bluestParent == nil || bluestParent.isGenesis() {
+	if bluestParent == nil {
 		return dag.dagParams.PowLimitBits
 	}
 
-	window := blueBlockWindow(bluestParent, dag.difficultyAdjustmentWindowSize, false)
+	// Fetch window of dag.difficultyAdjustmentWindowSize + 1 so we can have dag.difficultyAdjustmentWindowSize block intervals
+	timestampsWindow, ok := blueBlockWindow(bluestParent, dag.difficultyAdjustmentWindowSize+1, false)
+	if !ok {
+		return dag.dagParams.PowLimitBits
+	}
+	windowMinTimestamp, windowMaxTimeStamp, _ := calcBlockWindowMinMaxAndMedianTimestamps(timestampsWindow)
 
-	windowMinTimestamp, _, _ := calcBlockWindowMinMaxAndMedianTimestamps(window)
+	// Remove the last block from the window so to calculate the average target of dag.difficultyAdjustmentWindowSize blocks
+	targetsWindow := timestampsWindow[:len(timestampsWindow)-1]
+
 	// Calculate new target difficulty as:
 	// averageWindowTarget * (windowMinTimestamp / (targetTimePerBlock * windowSize))
 	// The result uses integer division which means it will be slightly
 	// rounded down.
-	newTarget := calcAverageBlockWindowTarget(window)
+	newTarget := calcAverageBlockWindowTarget(targetsWindow)
 	newTarget.
-		Mul(newTarget, big.NewInt(windowMinTimestamp)).
+		Mul(newTarget, big.NewInt(windowMaxTimeStamp-windowMinTimestamp)).
 		Div(newTarget, big.NewInt(dag.targetTimePerBlock)).
-		Div(newTarget, big.NewInt(int64(len(window))))
+		Div(newTarget, big.NewInt(int64(dag.difficultyAdjustmentWindowSize)))
 	if newTarget.Cmp(dag.dagParams.PowLimit) > 0 {
-		newTarget.Set(dag.dagParams.PowLimit)
+		return dag.dagParams.PowLimitBits
 	}
 	newTargetBits := util.BigToCompact(newTarget)
 	return newTargetBits

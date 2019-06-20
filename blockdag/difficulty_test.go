@@ -5,8 +5,12 @@
 package blockdag
 
 import (
+	"github.com/daglabs/btcd/dagconfig"
+	"github.com/daglabs/btcd/util/daghash"
+	"github.com/daglabs/btcd/wire"
 	"math/big"
 	"testing"
+	"time"
 
 	"github.com/daglabs/btcd/util"
 )
@@ -73,5 +77,60 @@ func TestCalcWork(t *testing.T) {
 				x, r.Int64(), test.out)
 			return
 		}
+	}
+}
+
+func TestDifficulty(t *testing.T) {
+	dag := newTestDAG(&dagconfig.SimNetParams)
+	nodes := make([]*blockNode, 0)
+	nonce := uint64(0)
+	zeroTime := time.Unix(0, 0)
+	addNode := func(parents blockSet, blockTime time.Time) *blockNode {
+		bluestParent := parents.bluest()
+		if blockTime == zeroTime {
+			blockTime = time.Unix(bluestParent.timestamp+1, 0)
+		}
+		header := &wire.BlockHeader{
+			ParentHashes:         parents.hashes(),
+			Bits:                 dag.calcNextRequiredDifficulty(bluestParent, blockTime),
+			Nonce:                nonce,
+			Timestamp:            blockTime,
+			HashMerkleRoot:       &daghash.ZeroHash,
+			AcceptedIDMerkleRoot: &daghash.ZeroHash,
+			UTXOCommitment:       &daghash.ZeroHash,
+		}
+		node := newBlockNode(header, parents, dag.dagParams.K)
+		node.updateParentsChildren()
+		nodes = append(nodes, node)
+		nonce++
+		return node
+	}
+	firstNode := addNode(setFromSlice(dag.genesis), zeroTime)
+	if firstNode.bits != dag.genesis.bits {
+		t.Fatalf("First block should have the same difficulty as genesis")
+	}
+	tip := firstNode
+	for i := 0; i < 2639; i++ {
+		tip = addNode(setFromSlice(tip), zeroTime)
+		if tip.bits != dag.genesis.bits {
+			t.Fatalf("%d: As long as the block rate remains the same, the difficulty shouldn't change", i)
+		}
+	}
+	nodeInThePast := addNode(setFromSlice(tip), zeroTime)
+	return
+	if nodeInThePast.bits == tip.bits{
+		t.Fatalf("As long as the block rate remains the same, the difficulty shouldn't change")
+	}
+	tip = nodeInThePast
+	for i := 0; i < 3000; i++ {
+		prevTip := tip
+		tip = addNode(setFromSlice(prevTip), zeroTime)
+		if tip.bits != prevTip.bits {
+			t.Fatalf("%d: As long as the block rate remains the same, the difficulty shouldn't change", i)
+		}
+	}
+	tip = addNode(setFromSlice(tip), zeroTime)
+	if tip.bits != dag.genesis.bits {
+		t.Fatalf("First block should have the same difficulty as genesis")
 	}
 }

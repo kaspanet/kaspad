@@ -208,7 +208,7 @@ var MainNetParams = Params{
 	GenesisHash:                    &genesisHash,
 	PowLimit:                       mainPowLimit,
 	PowLimitBits:                   0x207fffff,
-	BlockCoinbaseMaturity:            100,
+	BlockCoinbaseMaturity:          100,
 	SubsidyReductionInterval:       210000,
 	TargetTimePerBlock:             time.Second * 1, // 1 second
 	DifficultyAdjustmentWindowSize: difficultyAdjustmentWindowSize,
@@ -269,7 +269,7 @@ var RegressionNetParams = Params{
 	GenesisHash:                    &regTestGenesisHash,
 	PowLimit:                       regressionPowLimit,
 	PowLimitBits:                   0x207fffff,
-	BlockCoinbaseMaturity:            100,
+	BlockCoinbaseMaturity:          100,
 	SubsidyReductionInterval:       150,
 	TargetTimePerBlock:             time.Second * 1, // 1 second
 	DifficultyAdjustmentWindowSize: difficultyAdjustmentWindowSize,
@@ -330,7 +330,7 @@ var TestNet3Params = Params{
 	GenesisHash:                    &testNet3GenesisHash,
 	PowLimit:                       testNet3PowLimit,
 	PowLimitBits:                   0x207fffff,
-	BlockCoinbaseMaturity:            100,
+	BlockCoinbaseMaturity:          100,
 	SubsidyReductionInterval:       210000,
 	TargetTimePerBlock:             time.Second * 1, // 1 second
 	DifficultyAdjustmentWindowSize: difficultyAdjustmentWindowSize,
@@ -395,7 +395,7 @@ var SimNetParams = Params{
 	GenesisHash:                    &simNetGenesisHash,
 	PowLimit:                       simNetPowLimit,
 	PowLimitBits:                   0x207fffff,
-	BlockCoinbaseMaturity:            100,
+	BlockCoinbaseMaturity:          100,
 	SubsidyReductionInterval:       210000,
 	TargetTimePerBlock:             time.Second * 1, // 1 second
 	DifficultyAdjustmentWindowSize: difficultyAdjustmentWindowSize,
@@ -452,7 +452,7 @@ var DevNetParams = Params{
 	GenesisHash:                    &devNetGenesisHash,
 	PowLimit:                       devNetPowLimit,
 	PowLimitBits:                   util.BigToCompact(devNetPowLimit), // 0x1e7fffff
-	BlockCoinbaseMaturity:            100,
+	BlockCoinbaseMaturity:          100,
 	SubsidyReductionInterval:       210000,
 	TargetTimePerBlock:             time.Second * 1, // 1 second
 	DifficultyAdjustmentWindowSize: difficultyAdjustmentWindowSize,

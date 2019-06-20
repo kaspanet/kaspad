@@ -219,7 +219,7 @@ func (node *blockNode) RelativeAncestor(distance uint64) *blockNode {
 //
 // This function is safe for concurrent access.
 func (node *blockNode) PastMedianTime(dag *BlockDAG) time.Time {
-	window := blueBlockWindow(node, 2*dag.TimestampDeviationTolerance-1, true)
+	window, _ := blueBlockWindow(node, 2*dag.TimestampDeviationTolerance-1, true)
 	_, _, medianTimestamp := calcBlockWindowMinMaxAndMedianTimestamps(window)
 	return time.Unix(medianTimestamp, 0)
 }
