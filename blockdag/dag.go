@@ -797,7 +797,8 @@ func (dag *BlockDAG) TxsAcceptedByVirtual() (MultiBlockTxsAcceptanceData, error)
 // 2. Adds the new block to the DAG's tips.
 // 3. Updates the DAG's full UTXO set.
 // 4. Updates each of the tips' utxoDiff.
-// 5. Update the finality point of the DAG (if required).
+// 5. Applies the new virtual's blue score to all the unaccepted UTXOs
+// 6. Updates the finality point of the DAG (if required).
 //
 // It returns the diff in the virtual block's UTXO set.
 //
@@ -822,6 +823,16 @@ func (dag *BlockDAG) applyDAGChanges(node *blockNode, block *util.Block, newBloc
 	err = updateTipsUTXO(dag, newVirtualUTXO)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed updating the tips' UTXO: %s", err)
+	}
+
+	// Apply the new virtual's blue score to all the unaccepted UTXOs
+	diffFromAcceptanceData, err := dag.diffFromAcceptanceData(newVirtualUTXO, virtualTxsAcceptanceData)
+	if err != nil {
+		return nil, nil, err
+	}
+	newVirtualUTXO, err = newVirtualUTXO.WithDiff(diffFromAcceptanceData)
+	if err != nil {
+		return nil, nil, err
 	}
 
 	// It is now safe to meld the UTXO set to base.
@@ -912,14 +923,6 @@ func (node *blockNode) verifyAndBuildUTXO(dag *BlockDAG, transactions []*util.Tx
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	//diffFromAcceptanceData, err := dag.diffFromAcceptanceData(pastUTXO, txsAcceptanceData)
-	//if err != nil {
-	//	return nil, nil, nil, err
-	//}
-	//diff, err := diffFromTxs.WithDiff(diffFromAcceptanceData)
-	//if err != nil {
-	//	return nil, nil, nil, err
-	//}
 
 	utxo, err := pastUTXO.WithDiff(diffFromTxs)
 	if err != nil {

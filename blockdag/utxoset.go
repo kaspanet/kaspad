@@ -286,7 +286,12 @@ func (d *UTXODiff) WithDiff(diff *UTXODiff) (*UTXODiff, error) {
 		if !diff.toRemove.contains(outpoint) {
 			result.toAdd.add(outpoint, utxoEntry)
 		}
-		if diff.toAdd.contains(outpoint) {
+		if diffEntry, ok := diff.toAdd.get(outpoint); ok {
+			// An exception is made for entries with unequal blue scores
+			// These are just "updates" to accepted blue score
+			if diffEntry.blockBlueScore != utxoEntry.blockBlueScore {
+				continue
+			}
 			return nil, ruleError(ErrWithDiff, fmt.Sprintf("WithDiff: outpoint %s both in d.toAdd and in other.toAdd", outpoint))
 		}
 	}
@@ -299,7 +304,12 @@ func (d *UTXODiff) WithDiff(diff *UTXODiff) (*UTXODiff, error) {
 		if !diff.toAdd.contains(outpoint) {
 			result.toRemove.add(outpoint, utxoEntry)
 		}
-		if diff.toRemove.contains(outpoint) {
+		if diffEntry, ok := diff.toRemove.get(outpoint); ok {
+			// An exception is made for entries with unequal blue scores
+			// These are just "updates" to accepted blue score
+			if diffEntry.blockBlueScore != utxoEntry.blockBlueScore {
+				continue
+			}
 			return nil, ruleError(ErrWithDiff, "WithDiff: transaction both in d.toRemove and in other.toRemove")
 		}
 	}
@@ -434,27 +444,38 @@ func diffFromTx(u UTXOSet, tx *wire.MsgTx, acceptingBlueScore uint64) (*UTXODiff
 	return diff, nil
 }
 
+// diffFromAcceptedTx is a common implementation for diffFromAcceptedTx, that works
+// for both diff-based and full UTXO sets
+// Returns a diff that replaces an entry with UnacceptedBlueScore with real accepting blue score,
+// or an error if provided transaction is not valid in the context of this UTXOSet
 func diffFromAcceptedTx(u UTXOSet, tx *wire.MsgTx, acceptingBlueScore uint64) (*UTXODiff, error) {
 	diff := NewUTXODiff()
 	isCoinbase := tx.IsCoinBase()
 	for i, txOut := range tx.TxOut {
+		// Fetch any unaccepted transaction
 		existingOutpoint := *wire.NewOutpoint(tx.TxID(), uint32(i))
 		existingEntry, ok := u.Get(existingOutpoint)
 		if !ok {
-			panic("AAA")
+			return nil, fmt.Errorf("cannot accept outpoint %v because it doesn't exist in the given UTXO", txOut)
 		}
 		if existingEntry.blockBlueScore != UnacceptedBlueScore {
-			panic("AAB")
-		}
-		err := diff.RemoveEntry(existingOutpoint, existingEntry)
-		if err != nil {
-			panic("BBB")
+			continue
 		}
 
-		newEntry := NewUTXOEntry(txOut, isCoinbase, acceptingBlueScore)
-		err = diff.AddEntry(existingOutpoint, newEntry)
+		// Remove unaccepted entries
+		var err error
+		diff.toRemove.add(existingOutpoint, existingEntry)
+		diff.diffMultiset, err = removeUTXOFromMultiset(diff.diffMultiset, existingEntry, &existingOutpoint)
 		if err != nil {
-			panic("CCC")
+			return nil, err
+		}
+
+		// Add new entries with their accepting blue score
+		newEntry := NewUTXOEntry(txOut, isCoinbase, acceptingBlueScore)
+		diff.toAdd.add(existingOutpoint, newEntry)
+		diff.diffMultiset, err = addUTXOToMultiset(diff.diffMultiset, newEntry, &existingOutpoint)
+		if err != nil {
+			return nil, err
 		}
 	}
 	return diff, nil
