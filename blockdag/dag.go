@@ -877,14 +877,11 @@ func (node *blockNode) diffFromTxs(pastUTXO UTXOSet, transactions []*util.Tx) (*
 func (dag *BlockDAG) diffFromAcceptanceData(pastUTXO UTXOSet, blockTxsAcceptanceDatas MultiBlockTxsAcceptanceData) (*UTXODiff, error) {
 	diff := NewUTXODiff()
 
-	for blockHash, blockTxsAcceptanceData := range blockTxsAcceptanceDatas {
-		blueScore, err := dag.BlueScoreByBlockHash(&blockHash)
-		if err != nil {
-			return nil, err
-		}
+	virtualBlueScore := dag.virtual.blueScore
+	for _, blockTxsAcceptanceData := range blockTxsAcceptanceDatas {
 		for _, txAcceptanceData := range blockTxsAcceptanceData {
 			if txAcceptanceData.IsAccepted {
-				acceptanceDiff, err := pastUTXO.diffFromAcceptanceData(txAcceptanceData.Tx.MsgTx(), blueScore)
+				acceptanceDiff, err := pastUTXO.diffFromAcceptanceData(txAcceptanceData.Tx.MsgTx(), virtualBlueScore)
 				if err != nil {
 					return nil, err
 				}
