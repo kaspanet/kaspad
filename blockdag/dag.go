@@ -824,13 +824,10 @@ func (dag *BlockDAG) applyDAGChanges(node *blockNode, block *util.Block, newBloc
 	if err != nil {
 		return nil, nil, err
 	}
-	//log.Warnf("%s DIFF FROM ACC DATA: %s", node.hash, diffFromAcceptanceData)
-	//log.Warnf("%s NEW VIRTUAL UTXO BEFORE: %s", node.hash, newVirtualUTXO)
 	newVirtualUTXO, err = newVirtualUTXO.WithDiff(diffFromAcceptanceData)
 	if err != nil {
 		return nil, nil, err
 	}
-	//log.Warnf("%s NEW VIRTUAL UTXO AFTER: %s", node.hash, newVirtualUTXO)
 
 	// Apply new utxoDiffs to all the tips
 	err = updateTipsUTXO(dag, newVirtualUTXO)
@@ -845,7 +842,6 @@ func (dag *BlockDAG) applyDAGChanges(node *blockNode, block *util.Block, newBloc
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed melding the virtual UTXO: %s", err)
 	}
-	//log.Warnf("%s MELDED TO BASE: %s", node.hash, dag.virtual.utxoSet)
 
 	dag.index.SetStatusFlags(node, statusValid)
 
@@ -908,7 +904,6 @@ func (node *blockNode) verifyAndBuildUTXO(dag *BlockDAG, transactions []*util.Tx
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	//log.Warnf("%s PAST UTXO: %s", node.hash, pastUTXO)
 
 	err = node.validateAcceptedIDMerkleRoot(dag, txsAcceptanceData)
 	if err != nil {
@@ -920,43 +915,29 @@ func (node *blockNode) verifyAndBuildUTXO(dag *BlockDAG, transactions []*util.Tx
 		return nil, nil, nil, err
 	}
 
-	//plsdonotcompile
-	//// INSIDE PASTUTXO, WE HAVE:
-	//// IN THE BASE: (85519841ca65a353822ee13480034252aa66898e9122b51743a5e0fa2f48917b, 0) => 5000000000, bs: 122,
-	//// IN TOREMOVE: (85519841ca65a353822ee13480034252aa66898e9122b51743a5e0fa2f48917b, 0) => 5000000000, bs: 18446744073709551615
-	//// OBVIOUSLY THIS SHIT DOES NOT FLY
-	//// FIGURE OUT WHY THE BS IN TOREMOVE IS MAXUINT64
-	//plsdonotcompile
-
 	diffFromTxs, err := node.diffFromTxs(pastUTXO, transactions)
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	//log.Warnf("%s DIFF FROM TXS: %s", node.hash, diffFromTxs)
-	//log.Warnf("%s TXS ACCEPTANCE DATA: %s", node.hash, txsAcceptanceData.String())
 	diffFromAcceptanceData, err := node.diffFromAcceptanceData(pastUTXO, txsAcceptanceData)
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	//log.Warnf("%s DIFF FROM ACCEPTANCE DATA: %s", node.hash, diffFromAcceptanceData)
 	diff, err := diffFromTxs.WithDiff(diffFromAcceptanceData)
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	//log.Warnf("%s DIFF: %s", node.hash, diff)
 
 	utxo, err := pastUTXO.WithDiff(diff)
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	//log.Warnf("%s UTXO: %s", node.hash, utxo)
 
 	calculatedMultisetHash := utxo.Multiset().Hash()
 	if !calculatedMultisetHash.IsEqual(node.utxoCommitment) {
 		str := fmt.Sprintf("block %s UTXO commitment is invalid - block "+
 			"header indicates %s, but calculated value is %s", node.hash,
 			node.utxoCommitment, calculatedMultisetHash)
-		//log.Warnf(str)
 		return nil, nil, nil, ruleError(ErrBadUTXOCommitment, str)
 	}
 	return utxo, txsAcceptanceData, feeData, nil
@@ -1116,7 +1097,6 @@ func (dag *BlockDAG) pastUTXO(node *blockNode) (
 	if err != nil {
 		return nil, nil, err
 	}
-	//log.Warnf("%s SELECTED PARENT UTXO: %s", node.hash, selectedParentUTXO)
 
 	blueBlocks, err := node.fetchBlueBlocks(dag.db)
 	if err != nil {
@@ -1143,7 +1123,6 @@ func (dag *BlockDAG) restoreUTXO(node *blockNode) (UTXOSet, error) {
 
 	for i := len(stack) - 1; i >= 0; i-- {
 		diff, err := dag.utxoDiffStore.diffByNode(stack[i])
-		//log.Warnf("%s DIFF BY NODE %s: %s", node.hash, stack[i].hash, diff)
 		if err != nil {
 			return nil, err
 		}
@@ -1163,12 +1142,10 @@ func updateTipsUTXO(dag *BlockDAG, virtualUTXO UTXOSet) error {
 		if err != nil {
 			return err
 		}
-		//log.Warnf("%s TIP UTXO: %s", tip.hash, tipUTXO)
 		diff, err := virtualUTXO.diffFrom(tipUTXO)
 		if err != nil {
 			return err
 		}
-		//log.Warnf("%s SET BLOCK DIFF: %s", tip.hash, diff)
 		dag.utxoDiffStore.setBlockDiff(tip, diff)
 	}
 

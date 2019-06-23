@@ -591,9 +591,6 @@ func (g *BlkTmplGenerator) buildUTXOCommitment(transactions []*wire.MsgTx) (*dag
 		return nil, err
 	}
 
-	//log.Warnf("MINE g.dag.UTXOSet(): %s", g.dag.UTXOSet())
-	//log.Warnf("MINE utxoWithTransactions: %s", utxoWithTransactions)
-
 	return utxoWithTransactions.Multiset().Hash(), nil
 }
 
