@@ -100,7 +100,7 @@ func (uc utxoCollection) String() string {
 
 	i := 0
 	for outpoint, utxoEntry := range uc {
-		utxoStrings[i] = fmt.Sprintf("(%s, %d) => %d, bs: %d", outpoint.TxID, outpoint.Index, utxoEntry.amount, utxoEntry.blockBlueScore)
+		utxoStrings[i] = fmt.Sprintf("(%s, %d) => %d", outpoint.TxID, outpoint.Index, utxoEntry.amount)
 		i++
 	}
 
