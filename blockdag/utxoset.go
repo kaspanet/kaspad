@@ -100,7 +100,7 @@ func (uc utxoCollection) String() string {
 
 	i := 0
 	for outpoint, utxoEntry := range uc {
-		utxoStrings[i] = fmt.Sprintf("(%s, %d) => %d", outpoint.TxID, outpoint.Index, utxoEntry.amount)
+		utxoStrings[i] = fmt.Sprintf("(%s, %d) => %d, bs: %d", outpoint.TxID, outpoint.Index, utxoEntry.amount, utxoEntry.blockBlueScore)
 		i++
 	}
 
@@ -194,6 +194,8 @@ func (d *UTXODiff) diffFrom(other *UTXODiff) (*UTXODiff, error) {
 		diffMultiset: btcec.NewMultiset(btcec.S256()),
 	}
 
+	//log.Warnf("DIFF FROM START")
+
 	// Note that the following cases are not accounted for, as they are impossible
 	// as long as the base utxoSet is the same:
 	// - if utxoEntry is in d.toAdd and other.toRemove
@@ -203,7 +205,9 @@ func (d *UTXODiff) diffFrom(other *UTXODiff) (*UTXODiff, error) {
 	// If they are not in other.toAdd - should be added in result.toRemove
 	// If they are in other.toRemove - base utxoSet is not the same
 	for outpoint, utxoEntry := range d.toAdd {
-		if !other.toAdd.contains(outpoint) {
+		//log.Warnf("LOOP 1, ENTRY: %s", utxoEntry)
+		if diffEntry, ok := other.toAdd.get(outpoint); !ok || diffEntry.blockBlueScore != utxoEntry.blockBlueScore {
+			//log.Warnf("LOOP 1A, ENTRY: %s", utxoEntry)
 			result.toRemove.add(outpoint, utxoEntry)
 		}
 		if other.toRemove.contains(outpoint) {
@@ -215,7 +219,9 @@ func (d *UTXODiff) diffFrom(other *UTXODiff) (*UTXODiff, error) {
 	// If they are not in other.toRemove - should be added in result.toAdd
 	// If they are in other.toAdd - base utxoSet is not the same
 	for outpoint, utxoEntry := range d.toRemove {
-		if !other.toRemove.contains(outpoint) {
+		//log.Warnf("LOOP 2, ENTRY: %s", utxoEntry)
+		if diffEntry, ok := other.toRemove.get(outpoint); !ok || diffEntry.blockBlueScore != utxoEntry.blockBlueScore {
+			//log.Warnf("LOOP 2A, ENTRY: %s", utxoEntry)
 			result.toAdd.add(outpoint, utxoEntry)
 		}
 		if other.toAdd.contains(outpoint) {
@@ -226,7 +232,9 @@ func (d *UTXODiff) diffFrom(other *UTXODiff) (*UTXODiff, error) {
 	// All transactions in other.toAdd:
 	// If they are not in d.toAdd - should be added in result.toAdd
 	for outpoint, utxoEntry := range other.toAdd {
-		if !d.toAdd.contains(outpoint) {
+		//log.Warnf("LOOP 3, ENTRY: %s", utxoEntry)
+		if diffEntry, ok := d.toAdd.get(outpoint); !ok || diffEntry.blockBlueScore != utxoEntry.blockBlueScore {
+			//log.Warnf("LOOP 3A, ENTRY: %s", utxoEntry)
 			result.toAdd.add(outpoint, utxoEntry)
 		}
 	}
@@ -234,13 +242,17 @@ func (d *UTXODiff) diffFrom(other *UTXODiff) (*UTXODiff, error) {
 	// All transactions in other.toRemove:
 	// If they are not in d.toRemove - should be added in result.toRemove
 	for outpoint, utxoEntry := range other.toRemove {
-		if !d.toRemove.contains(outpoint) {
+		//log.Warnf("LOOP 4, ENTRY: %s", utxoEntry)
+		if diffEntry, ok := d.toRemove.get(outpoint); !ok || diffEntry.blockBlueScore != utxoEntry.blockBlueScore {
+			//log.Warnf("LOOP 4A, ENTRY: %s", utxoEntry)
 			result.toRemove.add(outpoint, utxoEntry)
 		}
 	}
 
 	// Create a new diffMultiset as the subtraction of the two diffs.
 	result.diffMultiset = other.diffMultiset.Subtract(d.diffMultiset)
+
+	//log.Warnf("DIFF FROM END")
 
 	return &result, nil
 }
@@ -404,7 +416,7 @@ type UTXOSet interface {
 	diffFrom(other UTXOSet) (*UTXODiff, error)
 	WithDiff(utxoDiff *UTXODiff) (UTXOSet, error)
 	diffFromTx(tx *wire.MsgTx, acceptingBlueScore uint64) (*UTXODiff, error)
-	diffFromAcceptanceData(tx *wire.MsgTx, acceptingBlueScore uint64) (*UTXODiff, error)
+	diffFromAcceptedTx(tx *wire.MsgTx, acceptingBlueScore uint64) (*UTXODiff, error)
 	AddTx(tx *wire.MsgTx, blockBlueScore uint64) (ok bool, err error)
 	clone() UTXOSet
 	Get(outpoint wire.Outpoint) (*UTXOEntry, bool)
@@ -457,6 +469,8 @@ func diffFromAcceptedTx(u UTXOSet, tx *wire.MsgTx, acceptingBlueScore uint64) (*
 		existingOutpoint := *wire.NewOutpoint(tx.TxID(), uint32(i))
 		existingEntry, ok := u.Get(existingOutpoint)
 		if !ok {
+			//log.Warnf("FUCK!!! U: %s", u)
+			//log.Warnf("FUCK!!! existingOutpoint: %s", existingOutpoint)
 			return nil, fmt.Errorf("cannot accept outpoint %v because it doesn't exist in the given UTXO", txOut)
 		}
 		if existingEntry.blockBlueScore != UnacceptedBlueScore {
@@ -565,7 +579,7 @@ func (fus *FullUTXOSet) containsInputs(tx *wire.MsgTx) bool {
 	return true
 }
 
-func (fus *FullUTXOSet) diffFromAcceptanceData(tx *wire.MsgTx, acceptingBlueScore uint64) (*UTXODiff, error) {
+func (fus *FullUTXOSet) diffFromAcceptedTx(tx *wire.MsgTx, acceptingBlueScore uint64) (*UTXODiff, error) {
 	return diffFromAcceptedTx(fus, tx, acceptingBlueScore)
 }
 
@@ -748,7 +762,7 @@ func (dus *DiffUTXOSet) diffFromTx(tx *wire.MsgTx, acceptingBlueScore uint64) (*
 	return diffFromTx(dus, tx, acceptingBlueScore)
 }
 
-func (dus *DiffUTXOSet) diffFromAcceptanceData(tx *wire.MsgTx, acceptingBlueScore uint64) (*UTXODiff, error) {
+func (dus *DiffUTXOSet) diffFromAcceptedTx(tx *wire.MsgTx, acceptingBlueScore uint64) (*UTXODiff, error) {
 	return diffFromAcceptedTx(dus, tx, acceptingBlueScore)
 }
 
@@ -764,7 +778,10 @@ func (dus *DiffUTXOSet) clone() UTXOSet {
 // Get returns the UTXOEntry associated with provided outpoint in this UTXOSet.
 // Returns false in second output if this UTXOEntry was not found
 func (dus *DiffUTXOSet) Get(outpoint wire.Outpoint) (*UTXOEntry, bool) {
-	if dus.UTXODiff.toRemove.contains(outpoint) {
+	if toRemoveEntry, ok := dus.UTXODiff.toRemove.get(outpoint); ok {
+		if toAddEntry, ok := dus.UTXODiff.toAdd.get(outpoint); ok && toAddEntry.blockBlueScore != toRemoveEntry.blockBlueScore {
+			return toAddEntry, true
+		}
 		return nil, false
 	}
 	if txOut, ok := dus.base.get(outpoint); ok {
