@@ -399,11 +399,12 @@ func (dag *BlockDAG) checkBlockHeaderSanity(header *wire.BlockHeader, flags Beha
 		return 0, ruleError(ErrInvalidTime, str)
 	}
 
-	// Ensure the block time is not too far in the future.
+	// Ensure the block time is not too far in the future. If it's too far, return
+	// the duration of time that should be waited before the block becomes valid.
 	maxTimestamp := dag.timeSource.AdjustedTime().Add(time.Second *
 		time.Duration(int64(dag.TimestampDeviationTolerance)*dag.targetTimePerBlock))
 	if header.Timestamp.After(maxTimestamp) {
-		return maxTimestamp.Sub(header.Timestamp), nil
+		return header.Timestamp.Sub(maxTimestamp), nil
 	}
 
 	return 0, nil
@@ -538,13 +539,6 @@ func (dag *BlockDAG) checkBlockSanity(block *util.Block, flags BehaviorFlags) (t
 	}
 
 	return delay, nil
-}
-
-// CheckBlockSanity performs some preliminary checks on a block to ensure it is
-// sane before continuing with block processing.  These checks are context free.
-func (dag *BlockDAG) CheckBlockSanity(block *util.Block, timeSource MedianTimeSource) (time.Duration, error) {
-
-	return dag.checkBlockSanity(block, BFNone)
 }
 
 // checkBlockHeaderContext performs several validation checks on the block header

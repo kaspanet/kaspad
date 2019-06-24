@@ -33,8 +33,8 @@ const (
 	// unorphaned
 	BFWasUnorphaned
 
-	// BFWasUnorphaned may be set to indicate that a block was just now
-	// finished the delay
+	// BFAfterDelay may be set to indicate that a that had timestamp too far
+	// in the future, just finished the delay
 	BFAfterDelay
 
 	// BFNone is a convenience value to specifically indicate no flags.

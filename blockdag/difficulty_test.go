@@ -114,7 +114,7 @@ func TestDifficulty(t *testing.T) {
 			t.Fatalf("As long as the bluest parent's blue score is less then the difficulty adjustment window size, the difficulty should be the same as genesis'")
 		}
 	}
-	for i := uint64(0); i < dag.difficultyAdjustmentWindowSize + 1000; i++ {
+	for i := uint64(0); i < dag.difficultyAdjustmentWindowSize+1000; i++ {
 		tip = addNode(setFromSlice(tip), zeroTime)
 		if tip.bits != dag.genesis.bits {
 			t.Fatalf("As long as the block rate remains the same, the difficulty shouldn't change")
@@ -150,7 +150,7 @@ func TestDifficulty(t *testing.T) {
 	// Add blocks until difficulty stabilizes
 	lastBits := tip.bits
 	sameBitsCount := uint64(0)
-	for sameBitsCount < dag.difficultyAdjustmentWindowSize + 1 {
+	for sameBitsCount < dag.difficultyAdjustmentWindowSize+1 {
 		tip = addNode(setFromSlice(tip), zeroTime)
 		if tip.bits == lastBits {
 			sameBitsCount++
@@ -177,18 +177,18 @@ func TestDifficulty(t *testing.T) {
 
 	splitNode := addNode(setFromSlice(tip), zeroTime)
 	tip = splitNode
-	for i := 0; i < 100; i++{
+	for i := 0; i < 100; i++ {
 		tip = addNode(setFromSlice(tip), zeroTime)
 	}
 	blueTip := tip
 
 	redChainTip := splitNode
-	for i := 0; i < 10; i++{
+	for i := 0; i < 10; i++ {
 		redChainTip = addNode(setFromSlice(redChainTip), redChainTip.PastMedianTime(dag))
 	}
 	tipWithRedPast := addNode(setFromSlice(redChainTip, blueTip), zeroTime)
 	tipWithoutRedPast := addNode(setFromSlice(blueTip), zeroTime)
-	if tipWithoutRedPast.bits != tipWithRedPast.bits{
+	if tipWithoutRedPast.bits != tipWithRedPast.bits {
 		t.Fatalf("tipWithoutRedPast.bits should be the same as tipWithRedPast.bits because red blocks shouldn't affect the difficulty")
 	}
 }

@@ -168,11 +168,10 @@ func TestCheckBlockSanity(t *testing.T) {
 	defer teardownFunc()
 
 	block := util.NewBlock(&Block100000)
-	timeSource := NewMedianTime()
 	if len(block.Transactions()) < 3 {
 		t.Fatalf("Too few transactions in block, expect at least 3, got %v", len(block.Transactions()))
 	}
-	delay, err := dag.CheckBlockSanity(block, timeSource)
+	delay, err := dag.checkBlockSanity(block, BFNone)
 	if err != nil {
 		t.Errorf("CheckBlockSanity: %v", err)
 	}
@@ -181,7 +180,7 @@ func TestCheckBlockSanity(t *testing.T) {
 	}
 	// Test with block with wrong transactions sorting order
 	blockWithWrongTxOrder := util.NewBlock(&BlockWithWrongTxOrder)
-	delay, err = dag.CheckBlockSanity(blockWithWrongTxOrder, timeSource)
+	delay, err = dag.checkBlockSanity(blockWithWrongTxOrder, BFNone)
 	if err == nil {
 		t.Errorf("CheckBlockSanity: transactions disorder is not detected")
 	}
@@ -199,7 +198,7 @@ func TestCheckBlockSanity(t *testing.T) {
 	// second fails.
 	timestamp := block.MsgBlock().Header.Timestamp
 	block.MsgBlock().Header.Timestamp = timestamp.Add(time.Nanosecond)
-	delay, err = dag.CheckBlockSanity(block, timeSource)
+	delay, err = dag.checkBlockSanity(block, BFNone)
 	if err == nil {
 		t.Errorf("CheckBlockSanity: error is nil when it shouldn't be")
 	}
@@ -474,7 +473,7 @@ func TestCheckBlockSanity(t *testing.T) {
 	}
 
 	btcutilInvalidBlock := util.NewBlock(&invalidParentsOrderBlock)
-	delay, err = dag.CheckBlockSanity(btcutilInvalidBlock, timeSource)
+	delay, err = dag.checkBlockSanity(btcutilInvalidBlock, BFNone)
 	if err == nil {
 		t.Errorf("CheckBlockSanity: error is nil when it shouldn't be")
 	}
@@ -484,6 +483,18 @@ func TestCheckBlockSanity(t *testing.T) {
 	}
 	if delay != 0 {
 		t.Errorf("CheckBlockSanity: unexpected return %s delay", delay)
+	}
+
+	blockInTheFuture := Block100000
+	expectedDelay := 10 * time.Second
+	now := time.Unix(time.Now().Unix(), 0)
+	blockInTheFuture.Header.Timestamp = now.Add(time.Duration(dag.TimestampDeviationTolerance)*time.Second + expectedDelay)
+	delay, err = dag.checkBlockSanity(util.NewBlock(&blockInTheFuture), BFNoPoWCheck)
+	if err != nil {
+		t.Errorf("CheckBlockSanity: %v", err)
+	}
+	if delay != expectedDelay {
+		t.Errorf("CheckBlockSanity: expected %s delay but got %s", expectedDelay, delay)
 	}
 }
 
