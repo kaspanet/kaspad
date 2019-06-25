@@ -126,7 +126,7 @@ func (p *poolHarness) CreateCoinbaseTx(blueScore uint64, numOutputs uint32) (*ut
 		return nil, err
 	}
 
-	txIns := []*wire.TxIn{&wire.TxIn{
+	txIns := []*wire.TxIn{{
 		// Coinbase transactions have no inputs, so previous outpoint is
 		// zero hash and max index.
 		PreviousOutpoint: *wire.NewOutpoint(&daghash.TxID{},

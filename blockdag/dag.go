@@ -915,20 +915,20 @@ func (node *blockNode) verifyAndBuildUTXO(dag *BlockDAG, transactions []*util.Tx
 		return nil, nil, nil, err
 	}
 
-	diffFromTxs, err := node.diffFromTxs(pastUTXO, transactions)
-	if err != nil {
-		return nil, nil, nil, err
-	}
 	diffFromAcceptanceData, err := node.diffFromAcceptanceData(pastUTXO, txsAcceptanceData)
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	diff, err := diffFromTxs.WithDiff(diffFromAcceptanceData)
+	utxo, err := pastUTXO.WithDiff(diffFromAcceptanceData)
 	if err != nil {
 		return nil, nil, nil, err
 	}
 
-	utxo, err := pastUTXO.WithDiff(diff)
+	diffFromTxs, err := node.diffFromTxs(utxo, transactions)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	utxo, err = utxo.WithDiff(diffFromTxs)
 	if err != nil {
 		return nil, nil, nil, err
 	}
