@@ -64,8 +64,8 @@ func TestBlockCount(t *testing.T) {
 			t.Fatalf("ProcessBlock fail on block %v: %v\n", i, err)
 		}
 		if delay != 0 {
-			t.Fatalf("ProcessBlock incorrectly returned that block %d "+
-				"has a %s delay", i, delay)
+			t.Fatalf("ProcessBlock: block %d "+
+				"is too far in the future", i)
 		}
 		if isOrphan {
 			t.Fatalf("ProcessBlock incorrectly returned block %v "+
@@ -117,8 +117,8 @@ func TestHaveBlock(t *testing.T) {
 			t.Fatalf("ProcessBlock fail on block %v: %v\n", i, err)
 		}
 		if delay != 0 {
-			t.Fatalf("ProcessBlock incorrectly returned that block %d "+
-				"has a %s delay", i, delay)
+			t.Fatalf("ProcessBlock: block %d "+
+				"is too far in the future", i)
 		}
 		if isOrphan {
 			t.Fatalf("ProcessBlock incorrectly returned block %v "+
@@ -145,8 +145,8 @@ func TestHaveBlock(t *testing.T) {
 		t.Fatalf("ProcessBlock for block 3C has no error when expected to have an error\n")
 	}
 	if delay != 0 {
-		t.Fatalf("ProcessBlock incorrectly returned that block 3C "+
-			"has a %s delay", delay)
+		t.Fatalf("ProcessBlock: block 3C " +
+			"is too far in the future")
 	}
 	if isOrphan {
 		t.Fatalf("ProcessBlock incorrectly returned block 3C " +
@@ -179,8 +179,8 @@ func TestHaveBlock(t *testing.T) {
 		t.Fatalf("ProcessBlock for block 3D expected error code %s but got %s\n", ErrDuplicateTxInputs, rErr.ErrorCode)
 	}
 	if delay != 0 {
-		t.Fatalf("ProcessBlock incorrectly returned that block 3D "+
-			"has a %s delay", delay)
+		t.Fatalf("ProcessBlock: block 3D " +
+			"is too far in the future")
 	}
 	if isOrphan {
 		t.Fatalf("ProcessBlock incorrectly returned block 3D " +
@@ -835,8 +835,8 @@ func testErrorThroughPatching(t *testing.T, expectedErrorMessage string, targetF
 		var delay time.Duration
 		isOrphan, delay, err = dag.ProcessBlock(blocks[i], BFNone)
 		if delay != 0 {
-			t.Fatalf("ProcessBlock incorrectly returned that block %d "+
-				"has a %s delay", i, delay)
+			t.Fatalf("ProcessBlock: block %d "+
+				"is too far in the future", i)
 		}
 		if isOrphan {
 			t.Fatalf("ProcessBlock incorrectly returned block %v "+

@@ -34,7 +34,7 @@ func RegisterSubnetworkForTest(dag *blockdag.BlockDAG, params *dagconfig.Params,
 		}
 
 		if delay != 0 {
-			return fmt.Errorf("ProcessBlock: unexpected returned %s delay", delay)
+			return fmt.Errorf("ProcessBlock: block is is too far in the future")
 		}
 
 		if isOrphan {

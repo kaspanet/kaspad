@@ -104,7 +104,7 @@ func TestCheckConnectBlockTemplate(t *testing.T) {
 				"processing block %d: %v", i, err)
 		}
 		if delay != 0 {
-			t.Fatalf("CheckConnectBlockTemplate: block %d has an unexpected %d delay", i, delay)
+			t.Fatalf("CheckConnectBlockTemplate: block %d is too far in the future", i)
 		}
 	}
 

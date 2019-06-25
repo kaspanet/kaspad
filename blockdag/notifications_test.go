@@ -45,8 +45,8 @@ func TestNotifications(t *testing.T) {
 		t.Fatalf("ProcessBlock fail on block 1: %v\n", err)
 	}
 	if delay != 0 {
-		t.Fatalf("ProcessBlock incorrectly returned that block 1 "+
-			"has a %s delay", delay)
+		t.Fatalf("ProcessBlock: block 1 " +
+			"is too far in the future")
 	}
 	if isOrphan {
 		t.Fatalf("ProcessBlock incorrectly returned block " +

@@ -31,7 +31,7 @@ func TestProcessBlock(t *testing.T) {
 		t.Errorf("ProcessBlock: %s", err)
 	}
 	if delay != 0 {
-		t.Errorf("ProcessBlock: unexpected returned %s delay", delay)
+		t.Errorf("ProcessBlock: block is too far in the future")
 	}
 	if !isOrphan {
 		t.Errorf("ProcessBlock: unexpected returned non orphan block")
@@ -49,7 +49,7 @@ func TestProcessBlock(t *testing.T) {
 		t.Errorf("ProcessBlock: %s", err)
 	}
 	if delay != 0 {
-		t.Errorf("ProcessBlock: unexpected returned %s delay", delay)
+		t.Errorf("ProcessBlock: block is too far in the future")
 	}
 	if !isOrphan {
 		t.Errorf("ProcessBlock: unexpected returned non orphan block")

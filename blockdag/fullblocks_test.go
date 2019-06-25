@@ -264,9 +264,8 @@ func TestFullBlocks(t *testing.T) {
 
 		if delay != 0 {
 			t.Fatalf("block %q (hash %s, height %d) "+
-				"has an unexpected %s delay",
-				item.Name, block.Hash(), blockHeight,
-				delay)
+				"is too far in the future",
+				item.Name, block.Hash(), blockHeight)
 		}
 
 		if !isOrphan {

@@ -266,8 +266,8 @@ func (tc *testContext) mineTransactions(transactions []*util.Tx, numberOfBlocks 
 			tc.t.Fatalf("ProcessBlock: %s", err)
 		}
 		if delay != 0 {
-			tc.t.Fatalf("ProcessBlock incorrectly returned that block %s "+
-				"has a %s delay", block.BlockHash(), delay)
+			tc.t.Fatalf("ProcessBlock: block %s "+
+				"is too far in the future", block.BlockHash())
 		}
 		if isOrphan {
 			tc.t.Fatalf("ProcessBlock incorrectly returned that block %s "+

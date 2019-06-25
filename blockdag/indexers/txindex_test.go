@@ -68,8 +68,8 @@ func TestTxIndexConnectBlock(t *testing.T) {
 			t.Fatalf("TestTxIndexConnectBlock: dag.ProcessBlock got unexpected error for block %v: %v", blockName, err)
 		}
 		if delay != 0 {
-			t.Fatalf("TestTxIndexConnectBlock: dag.ProcessBlock incorrectly returned that block %s "+
-				"has a %s delay", blockName, delay)
+			t.Fatalf("TestTxIndexConnectBlock: block %s "+
+				"is too far in the future", blockName)
 		}
 		if isOrphan {
 			t.Fatalf("TestTxIndexConnectBlock: block %v was unexpectedly orphan", blockName)

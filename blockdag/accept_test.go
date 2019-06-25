@@ -61,7 +61,7 @@ func TestMaybeAcceptBlockErrors(t *testing.T) {
 		t.Fatalf("TestMaybeAcceptBlockErrors: Valid block unexpectedly returned an error: %s", err)
 	}
 	if delay != 0 {
-		t.Fatalf("TestMaybeAcceptBlockErrors: block 1 got an unexpected %s delay", delay)
+		t.Fatalf("TestMaybeAcceptBlockErrors: block 1 is too far in the future")
 	}
 	if isOrphan {
 		t.Fatalf("TestMaybeAcceptBlockErrors: incorrectly returned block 1 is an orphan")

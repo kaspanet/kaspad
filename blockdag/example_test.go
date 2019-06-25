@@ -65,7 +65,7 @@ func ExampleBlockDAG_ProcessBlock() {
 		return
 	}
 	if delay != 0 {
-		fmt.Printf("Block got %s delay", delay)
+		fmt.Printf("Block is too far in the future")
 		return
 	}
 	fmt.Printf("Block accepted. Is it an orphan?: %v", isOrphan)

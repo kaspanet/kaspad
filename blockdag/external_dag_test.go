@@ -57,8 +57,8 @@ func TestFinality(t *testing.T) {
 			return nil, err
 		}
 		if delay != 0 {
-			return nil, fmt.Errorf("ProcessBlock incorrectly returned a block "+
-				"has a %s delay", delay)
+			return nil, fmt.Errorf("ProcessBlock: block " +
+				"is too far in the future")
 		}
 		if isOrphan {
 			return nil, fmt.Errorf("ProcessBlock: unexpected returned orphan block")
@@ -193,8 +193,8 @@ func TestChainedTransactions(t *testing.T) {
 		t.Fatalf("ProcessBlock: %v", err)
 	}
 	if delay != 0 {
-		t.Fatalf("ProcessBlock incorrectly returned that block1 "+
-			"has a %s delay", delay)
+		t.Fatalf("ProcessBlock: block1 " +
+			"is too far in the future")
 	}
 	if isOrphan {
 		t.Fatalf("ProcessBlock: block1 got unexpectedly orphaned")
@@ -249,8 +249,8 @@ func TestChainedTransactions(t *testing.T) {
 		t.Errorf("ProcessBlock expected a blockdag.RuleError but got %v", err)
 	}
 	if delay != 0 {
-		t.Fatalf("ProcessBlock incorrectly returned that block2 "+
-			"has a %s delay", delay)
+		t.Fatalf("ProcessBlock: block2 " +
+			"is too far in the future")
 	}
 	if isOrphan {
 		t.Errorf("ProcessBlock: block2 got unexpectedly orphaned")
@@ -278,8 +278,8 @@ func TestChainedTransactions(t *testing.T) {
 		t.Errorf("ProcessBlock: %v", err)
 	}
 	if delay != 0 {
-		t.Fatalf("ProcessBlock incorrectly returned that block3 "+
-			"has a %s delay", delay)
+		t.Fatalf("ProcessBlock: block3 " +
+			"is too far in the future")
 	}
 	if isOrphan {
 		t.Errorf("ProcessBlock: block3 got unexpectedly orphaned")
@@ -317,8 +317,8 @@ func TestGasLimit(t *testing.T) {
 			t.Fatalf("ProcessBlock: %v", err)
 		}
 		if delay != 0 {
-			t.Fatalf("ProcessBlock incorrectly returned that the funds block "+
-				"has a %s delay", delay)
+			t.Fatalf("ProcessBlock: the funds block " +
+				"is too far in the future")
 		}
 		if isOrphan {
 			t.Fatalf("ProcessBlock: fundsBlock got unexpectedly orphan")
@@ -375,8 +375,8 @@ func TestGasLimit(t *testing.T) {
 		t.Fatalf("ProcessBlock expected error code %s but got %s", blockdag.ErrInvalidGas, rErr.ErrorCode)
 	}
 	if delay != 0 {
-		t.Fatalf("ProcessBlock incorrectly returned that overLimitBlock "+
-			"has a %s delay", delay)
+		t.Fatalf("ProcessBlock: overLimitBlock " +
+			"is too far in the future")
 	}
 	if isOrphan {
 		t.Fatalf("ProcessBlock: overLimitBlock got unexpectedly orphan")
@@ -448,8 +448,8 @@ func TestGasLimit(t *testing.T) {
 		t.Fatalf("ProcessBlock: %v", err)
 	}
 	if delay != 0 {
-		t.Fatalf("ProcessBlock incorrectly returned that overLimitBlock "+
-			"has a %s delay", delay)
+		t.Fatalf("ProcessBlock: overLimitBlock " +
+			"is too far in the future")
 	}
 	if isOrphan {
 		t.Fatalf("ProcessBlock: overLimitBlock got unexpectedly orphan")

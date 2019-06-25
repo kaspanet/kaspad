@@ -115,8 +115,8 @@ func TestNewBlockTemplate(t *testing.T) {
 	}
 
 	if delay != 0 {
-		t.Fatalf("ProcessBlock incorrectly returned that template1 "+
-			"has a %s delay", delay)
+		t.Fatalf("ProcessBlock: template1 " +
+			"is too far in the future")
 	}
 
 	if isOrphan {
@@ -135,8 +135,8 @@ func TestNewBlockTemplate(t *testing.T) {
 			t.Fatalf("ProcessBlock: %v", err)
 		}
 		if delay != 0 {
-			t.Fatalf("ProcessBlock incorrectly returned that template "+
-				"has a %s delay", delay)
+			t.Fatalf("ProcessBlock: template " +
+				"is too far in the future")
 		}
 		if isOrphan {
 			t.Fatalf("ProcessBlock: template got unexpectedly orphan")
