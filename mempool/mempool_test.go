@@ -1811,7 +1811,7 @@ var dummyBlock = wire.MsgBlock{
 
 func TestTransactionGas(t *testing.T) {
 	params := dagconfig.SimNetParams
-	params.BlockCoinbaseMaturity = 1
+	params.BlockCoinbaseMaturity = 0
 	tc, spendableOuts, teardownFunc, err := newPoolHarness(t, &params, 6, "TestTransactionGas")
 	if err != nil {
 		t.Fatalf("unable to create test pool: %v", err)

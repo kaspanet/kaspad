@@ -165,5 +165,39 @@ func GetVirtualFromParentsForTest(dag *BlockDAG, parentHashes []*daghash.Hash) (
 	}
 	virtual.utxoSet = diffPastUTXO.base
 
+	acceptanceDiff := NewUTXODiff()
+	for outpoint, entry := range virtual.utxoSet.utxoCollection {
+		if entry.blockBlueScore != UnacceptedBlueScore {
+			continue
+		}
+
+		// Remove unaccepted entries
+		var err error
+		acceptanceDiff.toRemove.add(outpoint, entry)
+		acceptanceDiff.diffMultiset, err = removeUTXOFromMultiset(acceptanceDiff.diffMultiset, entry, &outpoint)
+		if err != nil {
+			return nil, err
+		}
+
+		// Add new entries with their accepting blue score
+		newEntry := *entry
+		newEntry.blockBlueScore = virtual.blueScore
+		acceptanceDiff.toAdd.add(outpoint, &newEntry)
+		acceptanceDiff.diffMultiset, err = addUTXOToMultiset(acceptanceDiff.diffMultiset, &newEntry, &outpoint)
+		if err != nil {
+			return nil, err
+		}
+	}
+	utxoWithAcceptance, err := virtual.utxoSet.WithDiff(acceptanceDiff)
+	if err != nil {
+		return nil, err
+	}
+	diffUTXOWithAcceptance := utxoWithAcceptance.(*DiffUTXOSet)
+	err = diffUTXOWithAcceptance.meldToBase()
+	if err != nil {
+		return nil, err
+	}
+	virtual.utxoSet = diffUTXOWithAcceptance.base
+
 	return virtual, nil
 }

@@ -145,7 +145,7 @@ func TestFinality(t *testing.T) {
 func TestSubnetworkRegistry(t *testing.T) {
 	params := dagconfig.SimNetParams
 	params.K = 1
-	params.BlockCoinbaseMaturity = 1
+	params.BlockCoinbaseMaturity = 0
 	dag, teardownFunc, err := blockdag.DAGSetup("TestSubnetworkRegistry", blockdag.Config{
 		DAGParams: &params,
 	})
@@ -170,7 +170,7 @@ func TestSubnetworkRegistry(t *testing.T) {
 
 func TestChainedTransactions(t *testing.T) {
 	params := dagconfig.SimNetParams
-	params.BlockCoinbaseMaturity = 1
+	params.BlockCoinbaseMaturity = 0
 	// Create a new database and dag instance to run tests against.
 	dag, teardownFunc, err := blockdag.DAGSetup("TestChainedTransactions", blockdag.Config{
 		DAGParams: &params,
@@ -274,7 +274,7 @@ func TestChainedTransactions(t *testing.T) {
 func TestGasLimit(t *testing.T) {
 	params := dagconfig.SimNetParams
 	params.K = 1
-	params.BlockCoinbaseMaturity = 1
+	params.BlockCoinbaseMaturity = 0
 	dag, teardownFunc, err := blockdag.DAGSetup("TestSubnetworkRegistry", blockdag.Config{
 		DAGParams: &params,
 	})
