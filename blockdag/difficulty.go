@@ -12,10 +12,10 @@ import (
 	"github.com/daglabs/btcd/util"
 )
 
-func blueBlockWindow(startingNode *blockNode, windowSize uint64, fillBlankSpaceWithGenesis bool) (window []*blockNode, ok bool) {
+func blueBlockWindow(startingNode *blockNode, windowSize uint64, padWithGenesis bool) (window []*blockNode, ok bool) {
 	window = make([]*blockNode, 0, windowSize)
 	currentNode := startingNode
-	for uint64(len(window)) < windowSize {
+	for uint64(len(window)) < windowSize && currentNode.selectedParent != nil {
 		if currentNode.selectedParent != nil {
 			for _, blue := range currentNode.blues {
 				window = append(window, blue)
@@ -25,12 +25,23 @@ func blueBlockWindow(startingNode *blockNode, windowSize uint64, fillBlankSpaceW
 			}
 			currentNode = currentNode.selectedParent
 		} else {
-			if !fillBlankSpaceWithGenesis {
+			if !padWithGenesis {
 				return nil, false
 			}
 			window = append(window, currentNode)
 		}
 	}
+
+	if uint64(len(window)) < windowSize {
+		if !padWithGenesis {
+			return nil, false
+		}
+		genesis := currentNode
+		for uint64(len(window)) < windowSize {
+			window = append(window, genesis)
+		}
+	}
+
 	return window, true
 }
 
