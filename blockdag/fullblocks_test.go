@@ -110,7 +110,7 @@ func DAGSetup(dbName string, params *dagconfig.Params) (*blockdag.BlockDAG, func
 	}
 
 	// Copy the chain params to ensure any modifications the tests do to
-	// the chain parameters do not affect the global instance.
+	// the DAG parameters do not affect the global instance.
 	paramsCopy := *params
 
 	// Create the main chain instance.

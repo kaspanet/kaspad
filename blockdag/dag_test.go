@@ -280,9 +280,9 @@ func TestCalcSequenceLock(t *testing.T) {
 	}
 	prevUtxoChainHeight := uint64(numBlocksToGenerate) - 4
 
-	// Obtain the median time past from the PoV of the input created above.
-	// The MTP for the input is the MTP from the PoV of the block *prior*
-	// to the one that included it.
+	// Obtain the past median time from the PoV of the input created above.
+	// The past median time for the input is the past median time from the PoV
+	// of the block *prior* to the one that included it.
 	medianTime := node.RelativeAncestor(5).PastMedianTime(dag).Unix()
 
 	// The median time calculated from the PoV of the best block in the

@@ -264,7 +264,7 @@ var RegressionNetParams = Params{
 	DefaultPort: "18444",
 	DNSSeeds:    []string{},
 
-	// Chain parameters
+	// DAG parameters
 	GenesisBlock:                   &regTestGenesisBlock,
 	GenesisHash:                    &regTestGenesisHash,
 	PowLimit:                       regressionPowLimit,
@@ -325,7 +325,7 @@ var TestNet3Params = Params{
 	DefaultPort: "18333",
 	DNSSeeds:    []string{},
 
-	// Chain parameters
+	// DAG parameters
 	GenesisBlock:                   &testNet3GenesisBlock,
 	GenesisHash:                    &testNet3GenesisHash,
 	PowLimit:                       testNet3PowLimit,
@@ -390,7 +390,7 @@ var SimNetParams = Params{
 	DefaultPort: "18555",
 	DNSSeeds:    []string{}, // NOTE: There must NOT be any seeds.
 
-	// Chain parameters
+	// DAG parameters
 	GenesisBlock:                   &simNetGenesisBlock,
 	GenesisHash:                    &simNetGenesisHash,
 	PowLimit:                       simNetPowLimit,
@@ -447,7 +447,7 @@ var DevNetParams = Params{
 	DefaultPort: "18333",
 	DNSSeeds:    []string{"devnet-dnsseed.daglabs.com"},
 
-	// Chain parameters
+	// DAG parameters
 	GenesisBlock:                   &devNetGenesisBlock,
 	GenesisHash:                    &devNetGenesisHash,
 	PowLimit:                       devNetPowLimit,

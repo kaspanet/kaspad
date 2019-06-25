@@ -175,15 +175,9 @@ func (dag *BlockDAG) ProcessBlock(block *util.Block, flags BehaviorFlags) (isOrp
 		}
 	}
 
-	// Find the previous checkpoint and perform some additional checks based
-	// on the checkpoint.  This provides a few nice properties such as
-	// preventing old side chain blocks before the last checkpoint,
-	// rejecting easy to mine, but otherwise bogus, blocks that could be
-	// used to eat memory, and ensuring expected (versus claimed) proof of
-	// work requirements since the previous checkpoint are met.
 	blockHeader := &block.MsgBlock().Header
 	if dag.lastFinalityPoint != nil {
-		// Ensure the block timestamp is after the checkpoint timestamp.
+		// Ensure the block timestamp is after the finality point timestamp.
 		lastFinalityPoint := time.Unix(dag.lastFinalityPoint.timestamp, 0)
 		if blockHeader.Timestamp.Before(lastFinalityPoint) {
 			str := fmt.Sprintf("block %s has timestamp %s before "+

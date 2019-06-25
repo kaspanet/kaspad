@@ -1877,7 +1877,7 @@ func handleGetBlockTemplateLongPoll(s *Server, longPollID string, useCoinbaseVal
 
 		// Include whether or not it is valid to submit work against the
 		// old block template depending on whether or not a solution has
-		// already been found and added to the block chain.
+		// already been found and added to the block DAG.
 		submitOld := areHashesEqual
 		result, err := state.blockTemplateResult(s.cfg.DAG, useCoinbaseValue,
 			&submitOld)
@@ -1918,7 +1918,7 @@ func handleGetBlockTemplateLongPoll(s *Server, longPollID string, useCoinbaseVal
 
 	// Include whether or not it is valid to submit work against the old
 	// block template depending on whether or not a solution has already
-	// been found and added to the block chain.
+	// been found and added to the block DAG.
 	submitOld := areHashesEqual
 	result, err := state.blockTemplateResult(s.cfg.DAG, useCoinbaseValue, &submitOld)
 	if err != nil {
@@ -2049,7 +2049,7 @@ func chainErrToGBTErrString(err error) string {
 	case blockdag.ErrBadCheckpoint:
 		return "bad-checkpoint"
 	case blockdag.ErrFinalityPointTimeTooOld:
-		return "checkpoint-time-too-old"
+		return "finality-point-time-too-old"
 	case blockdag.ErrNoTransactions:
 		return "bad-txns-none"
 	case blockdag.ErrNoTxInputs:
