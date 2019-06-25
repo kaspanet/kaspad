@@ -518,7 +518,7 @@ func TestPastMedianTime(t *testing.T) {
 	chainHeight := tip.chainHeight + 1
 	node := newTestNode(setFromSlice(tip),
 		blockVersion,
-		dag.dagParams.PowLimitBits,
+		dag.dagParams.PowMaxBits,
 		tip.PastMedianTime(dag),
 		dagconfig.MainNetParams.K)
 
@@ -533,7 +533,7 @@ func TestPastMedianTime(t *testing.T) {
 	chainHeight = tip.chainHeight + 1
 	node = newTestNode(setFromSlice(tip),
 		blockVersion,
-		dag.dagParams.PowLimitBits,
+		dag.dagParams.PowMaxBits,
 		tip.PastMedianTime(dag).Add(time.Second),
 		dagconfig.MainNetParams.K)
 

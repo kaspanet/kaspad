@@ -512,7 +512,7 @@ func (g *testGenerator) nextBlock(blockName string, spend *spendableOut, mungers
 			Version:        1,
 			ParentHashes:   []*daghash.Hash{g.tip.BlockHash()}, // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
 			HashMerkleRoot: calcHashMerkleRoot(txns),
-			Bits:           g.params.PowLimitBits,
+			Bits:           g.params.PowMaxBits,
 			Timestamp:      ts,
 			Nonce:          0, // To be solved.
 		},
@@ -1406,7 +1406,7 @@ func Generate(includeLargeReorg bool) (tests [][]TestInstance, err error) {
 			b46.Header.Nonce++
 			blockHash := b46.BlockHash()
 			hashNum := daghash.HashToBig(blockHash)
-			if hashNum.Cmp(g.params.PowLimit) >= 0 {
+			if hashNum.Cmp(g.params.PowMax) >= 0 {
 				break
 			}
 		}

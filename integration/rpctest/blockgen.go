@@ -191,13 +191,13 @@ func CreateBlock(parentBlock *util.Block, inclusionTxs []*util.Tx,
 		AcceptedIDMerkleRoot: &daghash.ZeroHash,
 		UTXOCommitment:       &daghash.ZeroHash,
 		Timestamp:            ts,
-		Bits:                 net.PowLimitBits,
+		Bits:                 net.PowMaxBits,
 	}
 	for _, tx := range blockTxns {
 		block.AddTransaction(tx.MsgTx())
 	}
 
-	found := solveBlock(&block.Header, net.PowLimit)
+	found := solveBlock(&block.Header, net.PowMax)
 	if !found {
 		return nil, errors.New("Unable to solve block")
 	}

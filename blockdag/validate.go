@@ -262,9 +262,9 @@ func (dag *BlockDAG) checkProofOfWork(header *wire.BlockHeader, flags BehaviorFl
 	}
 
 	// The target difficulty must be less than the maximum allowed.
-	if target.Cmp(dag.dagParams.PowLimit) > 0 {
+	if target.Cmp(dag.dagParams.PowMax) > 0 {
 		str := fmt.Sprintf("block target difficulty of %064x is "+
-			"higher than max of %064x", target, dag.dagParams.PowLimit)
+			"higher than max of %064x", target, dag.dagParams.PowMax)
 		return ruleError(ErrUnexpectedDifficulty, str)
 	}
 

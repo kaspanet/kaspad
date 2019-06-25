@@ -117,8 +117,8 @@ var regressionNetParams = &dagconfig.Params{
 	// DAG parameters
 	GenesisBlock:                   &regTestGenesisBlock,
 	GenesisHash:                    newHashFromStr("5bec7567af40504e0994db3b573c186fffcc4edefe096ff2e58d00523bd7e8a6"),
-	PowLimit:                       regressionPowLimit,
-	PowLimitBits:                   0x207fffff,
+	PowMax:                         regressionPowLimit,
+	PowMaxBits:                     0x207fffff,
 	BlockCoinbaseMaturity:          100,
 	SubsidyReductionInterval:       150,
 	TargetTimePerBlock:             time.Second * 10, // 10 seconds

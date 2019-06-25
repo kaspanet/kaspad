@@ -1064,7 +1064,7 @@ func getDifficultyRatio(bits uint32, params *dagconfig.Params) float64 {
 	// converted back to a number.  Note this is not the same as the proof of
 	// work limit directly because the block difficulty is encoded in a block
 	// with the compact form which loses precision.
-	max := util.CompactToBig(params.PowLimitBits)
+	max := util.CompactToBig(params.PowMaxBits)
 	target := util.CompactToBig(bits)
 
 	difficulty := new(big.Rat).SetFrac(max, target)

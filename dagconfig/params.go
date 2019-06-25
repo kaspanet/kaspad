@@ -24,27 +24,27 @@ var (
 	// the overhead of creating it multiple times.
 	bigOne = big.NewInt(1)
 
-	// mainPowLimit is the highest proof of work value a Bitcoin block can
+	// mainPowMax is the highest proof of work value a Bitcoin block can
 	// have for the main network.  It is the value 2^255 - 1.
-	mainPowLimit = new(big.Int).Sub(new(big.Int).Lsh(bigOne, 255), bigOne)
+	mainPowMax = new(big.Int).Sub(new(big.Int).Lsh(bigOne, 255), bigOne)
 
-	// regressionPowLimit is the highest proof of work value a Bitcoin block
+	// regressionPowMax is the highest proof of work value a Bitcoin block
 	// can have for the regression test network.  It is the value 2^255 - 1.
-	regressionPowLimit = new(big.Int).Sub(new(big.Int).Lsh(bigOne, 255), bigOne)
+	regressionPowMax = new(big.Int).Sub(new(big.Int).Lsh(bigOne, 255), bigOne)
 
-	// testNet3PowLimit is the highest proof of work value a Bitcoin block
+	// testNet3PowMax is the highest proof of work value a Bitcoin block
 	// can have for the test network (version 3).  It is the value
 	// 2^255 - 1.
-	testNet3PowLimit = new(big.Int).Sub(new(big.Int).Lsh(bigOne, 255), bigOne)
+	testNet3PowMax = new(big.Int).Sub(new(big.Int).Lsh(bigOne, 255), bigOne)
 
-	// simNetPowLimit is the highest proof of work value a Bitcoin block
+	// simNetPowMax is the highest proof of work value a Bitcoin block
 	// can have for the simulation test network.  It is the value 2^255 - 1.
-	simNetPowLimit = new(big.Int).Sub(new(big.Int).Lsh(bigOne, 255), bigOne)
+	simNetPowMax = new(big.Int).Sub(new(big.Int).Lsh(bigOne, 255), bigOne)
 
-	// devNetPowLimit is the highest proof of work value a Bitcoin block
+	// devNetPowMax is the highest proof of work value a Bitcoin block
 	// can have for the development network.  It is the value
 	// 2^239 - 1.
-	devNetPowLimit = new(big.Int).Sub(new(big.Int).Lsh(bigOne, 239), bigOne)
+	devNetPowMax = new(big.Int).Sub(new(big.Int).Lsh(bigOne, 239), bigOne)
 )
 
 const phantomK = 10
@@ -122,13 +122,13 @@ type Params struct {
 	// GenesisHash is the starting block hash.
 	GenesisHash *daghash.Hash
 
-	// PowLimit defines the highest allowed proof of work value for a block
+	// PowMax defines the highest allowed proof of work value for a block
 	// as a uint256.
-	PowLimit *big.Int
+	PowMax *big.Int
 
-	// PowLimitBits defines the highest allowed proof of work value for a
+	// PowMaxBits defines the highest allowed proof of work value for a
 	// block in compact form.
-	PowLimitBits uint32
+	PowMaxBits uint32
 
 	// BlockCoinbaseMaturity is the number of blocks required before newly mined
 	// coins can be spent.
@@ -206,8 +206,8 @@ var MainNetParams = Params{
 	// DAG parameters
 	GenesisBlock:                   &genesisBlock,
 	GenesisHash:                    &genesisHash,
-	PowLimit:                       mainPowLimit,
-	PowLimitBits:                   0x207fffff,
+	PowMax:                         mainPowMax,
+	PowMaxBits:                     0x207fffff,
 	BlockCoinbaseMaturity:          100,
 	SubsidyReductionInterval:       210000,
 	TargetTimePerBlock:             time.Second * 1, // 1 second
@@ -267,8 +267,8 @@ var RegressionNetParams = Params{
 	// DAG parameters
 	GenesisBlock:                   &regTestGenesisBlock,
 	GenesisHash:                    &regTestGenesisHash,
-	PowLimit:                       regressionPowLimit,
-	PowLimitBits:                   0x207fffff,
+	PowMax:                         regressionPowMax,
+	PowMaxBits:                     0x207fffff,
 	BlockCoinbaseMaturity:          100,
 	SubsidyReductionInterval:       150,
 	TargetTimePerBlock:             time.Second * 1, // 1 second
@@ -328,8 +328,8 @@ var TestNet3Params = Params{
 	// DAG parameters
 	GenesisBlock:                   &testNet3GenesisBlock,
 	GenesisHash:                    &testNet3GenesisHash,
-	PowLimit:                       testNet3PowLimit,
-	PowLimitBits:                   0x207fffff,
+	PowMax:                         testNet3PowMax,
+	PowMaxBits:                     0x207fffff,
 	BlockCoinbaseMaturity:          100,
 	SubsidyReductionInterval:       210000,
 	TargetTimePerBlock:             time.Second * 1, // 1 second
@@ -393,8 +393,8 @@ var SimNetParams = Params{
 	// DAG parameters
 	GenesisBlock:                   &simNetGenesisBlock,
 	GenesisHash:                    &simNetGenesisHash,
-	PowLimit:                       simNetPowLimit,
-	PowLimitBits:                   0x207fffff,
+	PowMax:                         simNetPowMax,
+	PowMaxBits:                     0x207fffff,
 	BlockCoinbaseMaturity:          100,
 	SubsidyReductionInterval:       210000,
 	TargetTimePerBlock:             time.Second * 1, // 1 second
@@ -450,8 +450,8 @@ var DevNetParams = Params{
 	// DAG parameters
 	GenesisBlock:                   &devNetGenesisBlock,
 	GenesisHash:                    &devNetGenesisHash,
-	PowLimit:                       devNetPowLimit,
-	PowLimitBits:                   util.BigToCompact(devNetPowLimit), // 0x1e7fffff
+	PowMax:                         devNetPowMax,
+	PowMaxBits:                     util.BigToCompact(devNetPowMax), // 0x1e7fffff
 	BlockCoinbaseMaturity:          100,
 	SubsidyReductionInterval:       210000,
 	TargetTimePerBlock:             time.Second * 1, // 1 second
