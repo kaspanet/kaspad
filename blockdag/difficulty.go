@@ -19,7 +19,7 @@ func blueBlockWindow(startingNode *blockNode, windowSize uint64, padWithGenesis 
 		if currentNode.selectedParent != nil {
 			for _, blue := range currentNode.blues {
 				window = append(window, blue)
-				if uint64(len(window)) < windowSize {
+				if uint64(len(window)) == windowSize {
 					break
 				}
 			}
