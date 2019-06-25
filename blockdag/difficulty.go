@@ -73,13 +73,13 @@ func averageBlockWindowTarget(window []*blockNode) *big.Int {
 func (dag *BlockDAG) requiredDifficulty(bluestParent *blockNode, newBlockTime time.Time) uint32 {
 	// Genesis block.
 	if bluestParent == nil {
-		return dag.dagParams.PowMaxBits
+		return dag.powMaxBits
 	}
 
 	// Fetch window of dag.difficultyAdjustmentWindowSize + 1 so we can have dag.difficultyAdjustmentWindowSize block intervals
 	timestampsWindow, ok := blueBlockWindow(bluestParent, dag.difficultyAdjustmentWindowSize+1, false)
 	if !ok {
-		return dag.dagParams.PowMaxBits
+		return dag.powMaxBits
 	}
 	windowMinTimestamp, windowMaxTimeStamp := blockWindowMinMaxTimestamps(timestampsWindow)
 
@@ -96,7 +96,7 @@ func (dag *BlockDAG) requiredDifficulty(bluestParent *blockNode, newBlockTime ti
 		Div(newTarget, big.NewInt(dag.targetTimePerBlock)).
 		Div(newTarget, big.NewInt(int64(dag.difficultyAdjustmentWindowSize)))
 	if newTarget.Cmp(dag.dagParams.PowMax) > 0 {
-		return dag.dagParams.PowMaxBits
+		return dag.powMaxBits
 	}
 	newTargetBits := util.BigToCompact(newTarget)
 	return newTargetBits

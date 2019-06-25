@@ -135,7 +135,7 @@ func createCoinbaseTx(coinbaseScript []byte, nextBlueScore uint64,
 // builds off of the genesis block for the specified chain.
 func CreateBlock(parentBlock *util.Block, inclusionTxs []*util.Tx,
 	blockVersion int32, blockTime time.Time, miningAddr util.Address,
-	mineTo []wire.TxOut, net *dagconfig.Params) (*util.Block, error) {
+	mineTo []wire.TxOut, net *dagconfig.Params, powMaxBits uint32) (*util.Block, error) {
 
 	var (
 		parentHash       *daghash.Hash
@@ -191,7 +191,7 @@ func CreateBlock(parentBlock *util.Block, inclusionTxs []*util.Tx,
 		AcceptedIDMerkleRoot: &daghash.ZeroHash,
 		UTXOCommitment:       &daghash.ZeroHash,
 		Timestamp:            ts,
-		Bits:                 net.PowMaxBits,
+		Bits:                 powMaxBits,
 	}
 	for _, tx := range blockTxns {
 		block.AddTransaction(tx.MsgTx())

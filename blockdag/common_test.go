@@ -184,6 +184,7 @@ func newTestDAG(params *dagconfig.Params) *BlockDAG {
 		targetTimePerBlock:             targetTimePerBlock,
 		difficultyAdjustmentWindowSize: params.DifficultyAdjustmentWindowSize,
 		TimestampDeviationTolerance:    params.TimestampDeviationTolerance,
+		powMaxBits:                     util.BigToCompact(params.PowMax),
 		index:                          index,
 		virtual:                        newVirtualBlock(setFromSlice(node), params.K),
 		genesis:                        index.LookupNode(params.GenesisHash),

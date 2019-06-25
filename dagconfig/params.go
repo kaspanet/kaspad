@@ -126,10 +126,6 @@ type Params struct {
 	// as a uint256.
 	PowMax *big.Int
 
-	// PowMaxBits defines the highest allowed proof of work value for a
-	// block in compact form.
-	PowMaxBits uint32
-
 	// BlockCoinbaseMaturity is the number of blocks required before newly mined
 	// coins can be spent.
 	BlockCoinbaseMaturity uint64
@@ -207,7 +203,6 @@ var MainNetParams = Params{
 	GenesisBlock:                   &genesisBlock,
 	GenesisHash:                    &genesisHash,
 	PowMax:                         mainPowMax,
-	PowMaxBits:                     0x207fffff,
 	BlockCoinbaseMaturity:          100,
 	SubsidyReductionInterval:       210000,
 	TargetTimePerBlock:             time.Second * 1, // 1 second
@@ -268,7 +263,6 @@ var RegressionNetParams = Params{
 	GenesisBlock:                   &regTestGenesisBlock,
 	GenesisHash:                    &regTestGenesisHash,
 	PowMax:                         regressionPowMax,
-	PowMaxBits:                     0x207fffff,
 	BlockCoinbaseMaturity:          100,
 	SubsidyReductionInterval:       150,
 	TargetTimePerBlock:             time.Second * 1, // 1 second
@@ -329,7 +323,6 @@ var TestNet3Params = Params{
 	GenesisBlock:                   &testNet3GenesisBlock,
 	GenesisHash:                    &testNet3GenesisHash,
 	PowMax:                         testNet3PowMax,
-	PowMaxBits:                     0x207fffff,
 	BlockCoinbaseMaturity:          100,
 	SubsidyReductionInterval:       210000,
 	TargetTimePerBlock:             time.Second * 1, // 1 second
@@ -394,7 +387,6 @@ var SimNetParams = Params{
 	GenesisBlock:                   &simNetGenesisBlock,
 	GenesisHash:                    &simNetGenesisHash,
 	PowMax:                         simNetPowMax,
-	PowMaxBits:                     0x207fffff,
 	BlockCoinbaseMaturity:          100,
 	SubsidyReductionInterval:       210000,
 	TargetTimePerBlock:             time.Second * 1, // 1 second
@@ -451,7 +443,6 @@ var DevNetParams = Params{
 	GenesisBlock:                   &devNetGenesisBlock,
 	GenesisHash:                    &devNetGenesisHash,
 	PowMax:                         devNetPowMax,
-	PowMaxBits:                     util.BigToCompact(devNetPowMax), // 0x1e7fffff
 	BlockCoinbaseMaturity:          100,
 	SubsidyReductionInterval:       210000,
 	TargetTimePerBlock:             time.Second * 1, // 1 second

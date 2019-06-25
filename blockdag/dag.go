@@ -72,13 +72,17 @@ type BlockDAG struct {
 	indexManager             IndexManager
 	genesis                  *blockNode
 
-	// The following fields are calculated based upon the provided chain
+	// The following fields are calculated based upon the provided DAG
 	// parameters.  They are also set when the instance is created and
 	// can't be changed afterwards, so there is no need to protect them with
 	// a separate mutex.
 	targetTimePerBlock             int64 // The target delay between blocks (in seconds)
 	difficultyAdjustmentWindowSize uint64
 	TimestampDeviationTolerance    uint64
+
+	// powMaxBits defines the highest allowed proof of work value for a
+	// block in compact form.
+	powMaxBits uint32
 
 	// dagLock protects concurrent access to the vast majority of the
 	// fields in this struct below this point.
@@ -1863,6 +1867,7 @@ func New(config *Config) (*BlockDAG, error) {
 
 	params := config.DAGParams
 	targetTimePerBlock := int64(params.TargetTimePerBlock / time.Second)
+
 	index := newBlockIndex(config.DB, params)
 	dag := BlockDAG{
 		checkpoints:                    config.Checkpoints,
@@ -1875,6 +1880,7 @@ func New(config *Config) (*BlockDAG, error) {
 		targetTimePerBlock:             targetTimePerBlock,
 		difficultyAdjustmentWindowSize: params.DifficultyAdjustmentWindowSize,
 		TimestampDeviationTolerance:    params.TimestampDeviationTolerance,
+		powMaxBits:                     util.BigToCompact(params.PowMax),
 		index:                          index,
 		virtual:                        newVirtualBlock(nil, params.K),
 		orphans:                        make(map[daghash.Hash]*orphanBlock),
