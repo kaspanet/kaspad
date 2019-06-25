@@ -5,8 +5,8 @@
 package blockdag
 
 import (
+	"math"
 	"math/big"
-	"sort"
 	"time"
 
 	"github.com/daglabs/btcd/util"
@@ -34,19 +34,21 @@ func blueBlockWindow(startingNode *blockNode, windowSize uint64, fillBlankSpaceW
 	return window, true
 }
 
-func calcBlockWindowMinMaxAndMedianTimestamps(window []*blockNode) (min, max, median int64) {
-	timestamps := make([]int64, len(window))
-	for i, node := range window {
-		timestamps[i] = node.timestamp
+func blockWindowMinMaxTimestamps(window []*blockNode) (min, max int64) {
+	min = math.MaxInt64
+	max = 0
+	for _, node := range window {
+		if node.timestamp < min {
+			min = node.timestamp
+		}
+		if node.timestamp > max {
+			max = node.timestamp
+		}
 	}
-	sort.Sort(timeSorter(timestamps))
-	min = timestamps[0]
-	max = timestamps[len(timestamps)-1]
-	median = timestamps[len(timestamps)/2]
 	return
 }
 
-func calcAverageBlockWindowTarget(window []*blockNode) *big.Int {
+func averageBlockWindowTarget(window []*blockNode) *big.Int {
 	averageTarget := big.NewInt(0)
 	for _, node := range window {
 		target := util.CompactToBig(node.bits)
@@ -71,7 +73,7 @@ func (dag *BlockDAG) calcNextRequiredDifficulty(bluestParent *blockNode, newBloc
 	if !ok {
 		return dag.dagParams.PowLimitBits
 	}
-	windowMinTimestamp, windowMaxTimeStamp, _ := calcBlockWindowMinMaxAndMedianTimestamps(timestampsWindow)
+	windowMinTimestamp, windowMaxTimeStamp := blockWindowMinMaxTimestamps(timestampsWindow)
 
 	// Remove the last block from the window so to calculate the average target of dag.difficultyAdjustmentWindowSize blocks
 	targetsWindow := timestampsWindow[:len(timestampsWindow)-1]
@@ -80,7 +82,7 @@ func (dag *BlockDAG) calcNextRequiredDifficulty(bluestParent *blockNode, newBloc
 	// averageWindowTarget * (windowMinTimestamp / (targetTimePerBlock * windowSize))
 	// The result uses integer division which means it will be slightly
 	// rounded down.
-	newTarget := calcAverageBlockWindowTarget(targetsWindow)
+	newTarget := averageBlockWindowTarget(targetsWindow)
 	newTarget.
 		Mul(newTarget, big.NewInt(windowMaxTimeStamp-windowMinTimestamp)).
 		Div(newTarget, big.NewInt(dag.targetTimePerBlock)).
