@@ -33,7 +33,7 @@ const (
 	// unorphaned
 	BFWasUnorphaned
 
-	// BFAfterDelay may be set to indicate that a that had timestamp too far
+	// BFAfterDelay may be set to indicate that a block had timestamp too far
 	// in the future, just finished the delay
 	BFAfterDelay
 
@@ -138,7 +138,7 @@ func (dag *BlockDAG) processOrphans(hash *daghash.Hash, flags BehaviorFlags) err
 // whether or not the block is an orphan.
 //
 // This function is safe for concurrent access.
-func (dag *BlockDAG) ProcessBlock(block *util.Block, flags BehaviorFlags) (bool, time.Duration, error) {
+func (dag *BlockDAG) ProcessBlock(block *util.Block, flags BehaviorFlags) (isOrphan bool, delay time.Duration, err error) {
 	dag.dagLock.Lock()
 	defer dag.dagLock.Unlock()
 

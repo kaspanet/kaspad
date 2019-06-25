@@ -368,11 +368,11 @@ func CountP2SHSigOps(tx *util.Tx, isCoinbase bool, utxoSet UTXOSet) (int, error)
 //
 // The flags do not modify the behavior of this function directly, however they
 // are needed to pass along to checkProofOfWork.
-func (dag *BlockDAG) checkBlockHeaderSanity(header *wire.BlockHeader, flags BehaviorFlags) (time.Duration, error) {
+func (dag *BlockDAG) checkBlockHeaderSanity(header *wire.BlockHeader, flags BehaviorFlags) (delay time.Duration, err error) {
 	// Ensure the proof of work bits in the block header is in min/max range
 	// and the block hash is less than the target value described by the
 	// bits.
-	err := dag.checkProofOfWork(header, flags)
+	err = dag.checkProofOfWork(header, flags)
 	if err != nil {
 		return 0, err
 	}

@@ -87,7 +87,7 @@ func (dag *BlockDAG) calcNextRequiredDifficulty(bluestParent *blockNode, newBloc
 	windowMinTimestamp, windowMaxTimeStamp := blockWindowMinMaxTimestamps(timestampsWindow)
 
 	// Remove the last block from the window so to calculate the average target of dag.difficultyAdjustmentWindowSize blocks
-	targetsWindow := timestampsWindow[:len(timestampsWindow)-1]
+	targetsWindow := timestampsWindow[:dag.difficultyAdjustmentWindowSize]
 
 	// Calculate new target difficulty as:
 	// averageWindowTarget * (windowMinTimestamp / (targetTimePerBlock * windowSize))
