@@ -132,7 +132,7 @@ func (bi *blockImporter) processBlock(serializedBlock []byte) (bool, error) {
 		return false, err
 	}
 	if delay != 0 {
-		return false, fmt.Errorf("import file contains a block with %d delay", delay)
+		return false, fmt.Errorf("import file contains a block that is too far in the future")
 	}
 	if isOrphan {
 		return false, fmt.Errorf("import file contains an orphan "+

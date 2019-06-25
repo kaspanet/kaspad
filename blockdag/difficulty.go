@@ -68,12 +68,9 @@ func averageBlockWindowTarget(window []*blockNode) *big.Int {
 	return averageTarget.Div(averageTarget, big.NewInt(int64(len(window))))
 }
 
-// calcNextRequiredDifficulty calculates the required difficulty for the block
-// after the passed previous block node based on the difficulty retarget rules.
-// This function differs from the exported CalcNextRequiredDifficulty in that
-// the exported version uses the current best chain as the previous block node
-// while this function accepts any block node.
-func (dag *BlockDAG) calcNextRequiredDifficulty(bluestParent *blockNode, newBlockTime time.Time) uint32 {
+// requiredDifficulty calculates the required difficulty for a
+// block given its bluest parent.
+func (dag *BlockDAG) requiredDifficulty(bluestParent *blockNode, newBlockTime time.Time) uint32 {
 	// Genesis block.
 	if bluestParent == nil {
 		return dag.dagParams.PowLimitBits
@@ -105,12 +102,11 @@ func (dag *BlockDAG) calcNextRequiredDifficulty(bluestParent *blockNode, newBloc
 	return newTargetBits
 }
 
-// CalcNextRequiredDifficulty calculates the required difficulty for the block
-// after the end of the current best chain based on the difficulty retarget
-// rules.
+// NextRequiredDifficulty calculates the required difficulty for a block that will
+// be built on top of the current tips.
 //
 // This function is safe for concurrent access.
-func (dag *BlockDAG) CalcNextRequiredDifficulty(timestamp time.Time) uint32 {
-	difficulty := dag.calcNextRequiredDifficulty(dag.selectedTip(), timestamp)
+func (dag *BlockDAG) NextRequiredDifficulty(timestamp time.Time) uint32 {
+	difficulty := dag.requiredDifficulty(dag.virtual.parents.bluest(), timestamp)
 	return difficulty
 }

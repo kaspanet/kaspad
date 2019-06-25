@@ -94,7 +94,7 @@ func TestDifficulty(t *testing.T) {
 		}
 		header := &wire.BlockHeader{
 			ParentHashes:         parents.hashes(),
-			Bits:                 dag.calcNextRequiredDifficulty(bluestParent, blockTime),
+			Bits:                 dag.requiredDifficulty(bluestParent, blockTime),
 			Nonce:                nonce,
 			Timestamp:            blockTime,
 			HashMerkleRoot:       &daghash.ZeroHash,

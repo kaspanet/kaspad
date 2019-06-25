@@ -593,7 +593,7 @@ func (dag *BlockDAG) validateDifficulty(header *wire.BlockHeader, bluestParent *
 	// Ensure the difficulty specified in the block header matches
 	// the calculated difficulty based on the previous block and
 	// difficulty retarget rules.
-	expectedDifficulty := dag.calcNextRequiredDifficulty(bluestParent,
+	expectedDifficulty := dag.requiredDifficulty(bluestParent,
 		header.Timestamp)
 	blockDifficulty := header.Bits
 	if blockDifficulty != expectedDifficulty {
@@ -1016,7 +1016,7 @@ func (dag *BlockDAG) CheckConnectBlockTemplateNoLock(block *util.Block) error {
 	}
 
 	if delay != 0 {
-		return fmt.Errorf("Block timestamp is greater in %s than alloed", delay)
+		return fmt.Errorf("Block timestamp is too far in the future")
 	}
 
 	parents, err := lookupParentNodes(block, dag)

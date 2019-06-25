@@ -499,7 +499,7 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 	// is potentially adjusted to ensure it comes after the median time of
 	// the last several blocks per the chain consensus rules.
 	ts := medianAdjustedTime(g.dag.CalcPastMedianTime(), g.timeSource)
-	reqDifficulty := g.dag.CalcNextRequiredDifficulty(ts)
+	requiredDifficulty := g.dag.NextRequiredDifficulty(ts)
 
 	// Calculate the next expected block version based on the state of the
 	// rule change deployments.
@@ -540,7 +540,7 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 		AcceptedIDMerkleRoot: acceptedIDMerkleRoot,
 		UTXOCommitment:       utxoCommitment,
 		Timestamp:            ts,
-		Bits:                 reqDifficulty,
+		Bits:                 requiredDifficulty,
 	}
 
 	// Finally, perform a full check on the created block against the DAG
