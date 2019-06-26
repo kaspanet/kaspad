@@ -49,11 +49,6 @@ const (
 	// considered dust and as a base for calculating minimum required fees
 	// for larger transactions.  This value is in Satoshi/1000 bytes.
 	DefaultMinRelayTxFee = util.Amount(1000)
-
-	// maxStandardMultiSigKeys is the maximum number of public keys allowed
-	// in a multi-signature transaction output script for it to be
-	// considered standard.
-	maxStandardMultiSigKeys = 3
 )
 
 // calcMinRequiredTxRelayFee returns the minimum transaction fee required for a
@@ -113,56 +108,6 @@ func checkInputsStandard(tx *util.Tx, utxoSet blockdag.UTXOSet) error {
 				"non-standard script form", i)
 			return txRuleError(wire.RejectNonstandard, str)
 		}
-	}
-
-	return nil
-}
-
-// checkPkScriptStandard performs a series of checks on a transaction output
-// script (public key script) to ensure it is a "standard" public key script.
-// A standard public key script is one that is a recognized form, and for
-// multi-signature scripts, only contains from 1 to maxStandardMultiSigKeys
-// public keys.
-func checkPkScriptStandard(pkScript []byte, scriptClass txscript.ScriptClass) error {
-	switch scriptClass {
-	case txscript.MultiSigTy:
-		numPubKeys, numSigs, err := txscript.CalcMultiSigStats(pkScript)
-		if err != nil {
-			str := fmt.Sprintf("multi-signature script parse "+
-				"failure: %s", err)
-			return txRuleError(wire.RejectNonstandard, str)
-		}
-
-		// A standard multi-signature public key script must contain
-		// from 1 to maxStandardMultiSigKeys public keys.
-		if numPubKeys < 1 {
-			str := "multi-signature script with no pubkeys"
-			return txRuleError(wire.RejectNonstandard, str)
-		}
-		if numPubKeys > maxStandardMultiSigKeys {
-			str := fmt.Sprintf("multi-signature script with %d "+
-				"public keys which is more than the allowed "+
-				"max of %d", numPubKeys, maxStandardMultiSigKeys)
-			return txRuleError(wire.RejectNonstandard, str)
-		}
-
-		// A standard multi-signature public key script must have at
-		// least 1 signature and no more signatures than available
-		// public keys.
-		if numSigs < 1 {
-			return txRuleError(wire.RejectNonstandard,
-				"multi-signature script with no signatures")
-		}
-		if numSigs > numPubKeys {
-			str := fmt.Sprintf("multi-signature script with %d "+
-				"signatures which is more than the available "+
-				"%d public keys", numSigs, numPubKeys)
-			return txRuleError(wire.RejectNonstandard, str)
-		}
-
-	case txscript.NonStandardTy:
-		return txRuleError(wire.RejectNonstandard,
-			"non-standard script form")
 	}
 
 	return nil
@@ -306,17 +251,9 @@ func checkTransactionStandard(tx *util.Tx, blueScore uint64,
 	// be "dust".
 	for i, txOut := range msgTx.TxOut {
 		scriptClass := txscript.GetScriptClass(txOut.PkScript)
-		err := checkPkScriptStandard(txOut.PkScript, scriptClass)
-		if err != nil {
-			// Attempt to extract a reject code from the error so
-			// it can be retained.  When not possible, fall back to
-			// a non standard error.
-			rejectCode := wire.RejectNonstandard
-			if rejCode, found := extractRejectCode(err); found {
-				rejectCode = rejCode
-			}
-			str := fmt.Sprintf("transaction output %d: %s", i, err)
-			return txRuleError(rejectCode, str)
+		if scriptClass == txscript.NonStandardTy {
+			str := fmt.Sprintf("transaction output %d: non-standard script form", i)
+			return txRuleError(wire.RejectNonstandard, str)
 		}
 
 		if isDust(txOut, policy.MinRelayTxFee) {

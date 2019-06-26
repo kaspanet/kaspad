@@ -56,46 +56,6 @@ func SignatureScript(tx *wire.MsgTx, idx int, script []byte, hashType SigHashTyp
 	return NewScriptBuilder().AddData(sig).AddData(pkData).Script()
 }
 
-func p2pkSignatureScript(tx *wire.MsgTx, idx int, script []byte, hashType SigHashType, privKey *btcec.PrivateKey) ([]byte, error) {
-	sig, err := RawTxInSignature(tx, idx, script, hashType, privKey)
-	if err != nil {
-		return nil, err
-	}
-
-	return NewScriptBuilder().AddData(sig).Script()
-}
-
-// signMultiSig signs as many of the outputs in the provided multisig script as
-// possible. It returns the generated script and a boolean if the script fulfils
-// the contract (i.e. nrequired signatures are provided).  Since it is arguably
-// legal to not be able to sign any of the outputs, no error is returned.
-func signMultiSig(tx *wire.MsgTx, idx int, script []byte, hashType SigHashType,
-	addresses []util.Address, nRequired int, kdb KeyDB) ([]byte, bool) {
-
-	builder := NewScriptBuilder()
-	signedCount := 0
-	for _, addr := range addresses {
-		key, _, err := kdb.GetKey(addr)
-		if err != nil {
-			continue
-		}
-		sig, err := RawTxInSignature(tx, idx, script, hashType, key)
-		if err != nil {
-			continue
-		}
-
-		builder.AddData(sig)
-		signedCount++
-		if signedCount == nRequired {
-			break
-		}
-
-	}
-
-	signedScript, _ := builder.Script()
-	return signedScript, signedCount == nRequired
-}
-
 func sign(chainParams *dagconfig.Params, tx *wire.MsgTx, idx int,
 	script []byte, hashType SigHashType, kdb KeyDB, sdb ScriptDB) ([]byte,
 	ScriptClass, []util.Address, int, error) {
@@ -107,20 +67,6 @@ func sign(chainParams *dagconfig.Params, tx *wire.MsgTx, idx int,
 	}
 
 	switch class {
-	case PubKeyTy:
-		// look up key for address
-		key, _, err := kdb.GetKey(addresses[0])
-		if err != nil {
-			return nil, class, nil, 0, err
-		}
-
-		signedScript, err := p2pkSignatureScript(tx, idx, script, hashType,
-			key)
-		if err != nil {
-			return nil, class, nil, 0, err
-		}
-
-		return signedScript, class, addresses, nrequired, nil
 	case PubKeyHashTy:
 		// look up key for address
 		key, compressed, err := kdb.GetKey(addresses[0])
@@ -142,10 +88,6 @@ func sign(chainParams *dagconfig.Params, tx *wire.MsgTx, idx int,
 		}
 
 		return script, class, addresses, nrequired, nil
-	case MultiSigTy:
-		signedScript, _ := signMultiSig(tx, idx, script, hashType,
-			addresses, nrequired, kdb)
-		return signedScript, class, addresses, nrequired, nil
 	default:
 		return nil, class, nil, 0,
 			errors.New("can't sign unknown transactions")
@@ -203,9 +145,6 @@ func mergeScripts(chainParams *dagconfig.Params, tx *wire.MsgTx, idx int,
 		builder.AddOps(mergedScript)
 		builder.AddData(script)
 		return builder.Script()
-	case MultiSigTy:
-		return mergeMultiSig(tx, idx, addresses, nRequired, pkScript,
-			sigScript, prevScript)
 
 	// It doesn't actually make sense to merge anything other than multiig
 	// and scripthash (because it could contain multisig). Everything else
@@ -219,120 +158,6 @@ func mergeScripts(chainParams *dagconfig.Params, tx *wire.MsgTx, idx int,
 		}
 		return prevScript, nil
 	}
-}
-
-// mergeMultiSig combines the two signature scripts sigScript and prevScript
-// that both provide signatures for pkScript in output idx of tx. addresses
-// and nRequired should be the results from extracting the addresses from
-// pkScript.
-func mergeMultiSig(tx *wire.MsgTx, idx int, addresses []util.Address,
-	nRequired int, pkScript, sigScript, prevScript []byte) ([]byte, error) {
-
-	pkPops, err := parseScript(pkScript)
-	if err != nil {
-		return nil, err
-	}
-
-	sigPops, err := parseScript(sigScript)
-	if err != nil || len(sigPops) == 0 {
-		return prevScript, nil
-	}
-
-	prevPops, err := parseScript(prevScript)
-	if err != nil || len(prevPops) == 0 {
-		return sigScript, nil
-	}
-
-	// Convenience function to avoid duplication.
-	extractSigs := func(pops []parsedOpcode, sigs [][]byte) [][]byte {
-		for _, pop := range pops {
-			if len(pop.data) != 0 {
-				sigs = append(sigs, pop.data)
-			}
-		}
-		return sigs
-	}
-
-	possibleSigs := make([][]byte, 0, len(sigPops)+len(prevPops))
-	possibleSigs = extractSigs(sigPops, possibleSigs)
-	possibleSigs = extractSigs(prevPops, possibleSigs)
-
-	// Now we need to match the signatures to pubkeys, the only real way to
-	// do that is to try to verify them all and match it to the pubkey
-	// that verifies it. we then can go through the addresses in order
-	// to build our script. Anything that doesn't parse or doesn't verify we
-	// throw away.
-	addrToSig := make(map[string][]byte)
-sigLoop:
-	for _, sig := range possibleSigs {
-
-		// can't have a valid signature that doesn't at least have a
-		// hashtype, in practise it is even longer than this. but
-		// that'll be checked next.
-		if len(sig) < 1 {
-			continue
-		}
-		tSig := sig[:len(sig)-1]
-		hashType := SigHashType(sig[len(sig)-1])
-
-		pSig, err := btcec.ParseDERSignature(tSig, btcec.S256())
-		if err != nil {
-			continue
-		}
-
-		// We have to do this each round since hash types may vary
-		// between signatures and so the hash will vary. We can,
-		// however, assume no sigs etc are in the script since that
-		// would make the transaction nonstandard and thus not
-		// MultiSigTy, so we just need to hash the full thing.
-		hash, err := calcSignatureHash(pkPops, hashType, tx, idx)
-		if err != nil {
-			return nil, err
-		}
-
-		for _, addr := range addresses {
-			// All multisig addresses should be pubkey addresses
-			// it is an error to call this internal function with
-			// bad input.
-			pkaddr := addr.(*util.AddressPubKey)
-
-			pubKey := pkaddr.PubKey()
-
-			// If it matches we put it in the map. We only
-			// can take one signature per public key so if we
-			// already have one, we can throw this away.
-			if pSig.Verify(hash, pubKey) {
-				aStr := addr.EncodeAddress()
-				if _, ok := addrToSig[aStr]; !ok {
-					addrToSig[aStr] = sig
-				}
-				continue sigLoop
-			}
-		}
-	}
-
-	builder := NewScriptBuilder()
-	doneSigs := 0
-	// This assumes that addresses are in the same order as in the script.
-	for _, addr := range addresses {
-		sig, ok := addrToSig[addr.EncodeAddress()]
-		if !ok {
-			continue
-		}
-		builder.AddData(sig)
-		doneSigs++
-		if doneSigs == nRequired {
-			break
-		}
-	}
-
-	// padding for missing ones.
-	for i := doneSigs; i < nRequired; i++ {
-		builder.AddOp(Op0)
-	}
-
-	script, _ := builder.Script()
-	return script, nil
 }
 
 // KeyDB is an interface type provided to SignTxOutput, it encapsulates

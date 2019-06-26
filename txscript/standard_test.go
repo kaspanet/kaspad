@@ -27,19 +27,6 @@ func mustParseShortForm(script string) []byte {
 	return s
 }
 
-// newAddressPubKey returns a new util.AddressPubKey from the provided
-// serialized public key.  It panics if an error occurs.  This is only used in
-// the tests as a helper since the only way it can fail is if there is an error
-// in the test source code.
-func newAddressPubKey(serializedPubKey []byte) util.Address {
-	addr, err := util.NewAddressPubKey(serializedPubKey, util.Bech32PrefixDAGCoin)
-	if err != nil {
-		panic("invalid public key in test source")
-	}
-
-	return addr
-}
-
 // newAddressPubKeyHash returns a new util.AddressPubKeyHash from the
 // provided hash.  It panics if an error occurs.  This is only used in the tests
 // as a helper since the only way it can fail is if there is an error in the
@@ -80,94 +67,6 @@ func TestExtractPkScriptAddrs(t *testing.T) {
 		class   ScriptClass
 	}{
 		{
-			name: "standard p2pk with compressed pubkey (0x02)",
-			script: hexToBytes("2102192d74d0cb94344c9569c2e779015" +
-				"73d8d7903c3ebec3a957724895dca52c6b4ac"),
-			addrs: []util.Address{
-				newAddressPubKey(hexToBytes("02192d74d0cb9434" +
-					"4c9569c2e77901573d8d7903c3ebec3a9577" +
-					"24895dca52c6b4")),
-			},
-			reqSigs: 1,
-			class:   PubKeyTy,
-		},
-		{
-			name: "standard p2pk with uncompressed pubkey (0x04)",
-			script: hexToBytes("410411db93e1dcdb8a016b49840f8c53b" +
-				"c1eb68a382e97b1482ecad7b148a6909a5cb2e0eaddf" +
-				"b84ccf9744464f82e160bfa9b8b64f9d4c03f999b864" +
-				"3f656b412a3ac"),
-			addrs: []util.Address{
-				newAddressPubKey(hexToBytes("0411db93e1dcdb8a" +
-					"016b49840f8c53bc1eb68a382e97b1482eca" +
-					"d7b148a6909a5cb2e0eaddfb84ccf9744464" +
-					"f82e160bfa9b8b64f9d4c03f999b8643f656" +
-					"b412a3")),
-			},
-			reqSigs: 1,
-			class:   PubKeyTy,
-		},
-		{
-			name: "standard p2pk with hybrid pubkey (0x06)",
-			script: hexToBytes("4106192d74d0cb94344c9569c2e779015" +
-				"73d8d7903c3ebec3a957724895dca52c6b40d4526483" +
-				"8c0bd96852662ce6a847b197376830160c6d2eb5e6a4" +
-				"c44d33f453eac"),
-			addrs: []util.Address{
-				newAddressPubKey(hexToBytes("06192d74d0cb9434" +
-					"4c9569c2e77901573d8d7903c3ebec3a9577" +
-					"24895dca52c6b40d45264838c0bd96852662" +
-					"ce6a847b197376830160c6d2eb5e6a4c44d3" +
-					"3f453e")),
-			},
-			reqSigs: 1,
-			class:   PubKeyTy,
-		},
-		{
-			name: "standard p2pk with compressed pubkey (0x03)",
-			script: hexToBytes("2103b0bd634234abbb1ba1e986e884185" +
-				"c61cf43e001f9137f23c2c409273eb16e65ac"),
-			addrs: []util.Address{
-				newAddressPubKey(hexToBytes("03b0bd634234abbb" +
-					"1ba1e986e884185c61cf43e001f9137f23c2" +
-					"c409273eb16e65")),
-			},
-			reqSigs: 1,
-			class:   PubKeyTy,
-		},
-		{
-			name: "2nd standard p2pk with uncompressed pubkey (0x04)",
-			script: hexToBytes("4104b0bd634234abbb1ba1e986e884185" +
-				"c61cf43e001f9137f23c2c409273eb16e6537a576782" +
-				"eba668a7ef8bd3b3cfb1edb7117ab65129b8a2e681f3" +
-				"c1e0908ef7bac"),
-			addrs: []util.Address{
-				newAddressPubKey(hexToBytes("04b0bd634234abbb" +
-					"1ba1e986e884185c61cf43e001f9137f23c2" +
-					"c409273eb16e6537a576782eba668a7ef8bd" +
-					"3b3cfb1edb7117ab65129b8a2e681f3c1e09" +
-					"08ef7b")),
-			},
-			reqSigs: 1,
-			class:   PubKeyTy,
-		},
-		{
-			name: "standard p2pk with hybrid pubkey (0x07)",
-			script: hexToBytes("4107b0bd634234abbb1ba1e986e884185" +
-				"c61cf43e001f9137f23c2c409273eb16e6537a576782" +
-				"eba668a7ef8bd3b3cfb1edb7117ab65129b8a2e681f3" +
-				"c1e0908ef7bac"),
-			addrs: []util.Address{
-				newAddressPubKey(hexToBytes("07b0bd634234abbb" +
-					"1ba1e986e884185c61cf43e001f9137f23c2" +
-					"c409273eb16e6537a576782eba668a7ef8bd" +
-					"3b3cfb1edb7117ab65129b8a2e681f3c1e09" +
-					"08ef7b")),
-			},
-			reqSigs: 1,
-			class:   PubKeyTy,
-		},
-		{
 			name: "standard p2pkh",
 			script: hexToBytes("76a914ad06dd6ddee55cbca9a9e3713bd" +
 				"7587509a3056488ac"),
@@ -188,64 +87,6 @@ func TestExtractPkScriptAddrs(t *testing.T) {
 			},
 			reqSigs: 1,
 			class:   ScriptHashTy,
-		},
-		// from real tx 60a20bd93aa49ab4b28d514ec10b06e1829ce6818ec06cd3aabd013ebcdc4bb1, vout 0
-		{
-			name: "standard 1 of 2 multisig",
-			script: hexToBytes("514104cc71eb30d653c0c3163990c47b9" +
-				"76f3fb3f37cccdcbedb169a1dfef58bbfbfaff7d8a47" +
-				"3e7e2e6d317b87bafe8bde97e3cf8f065dec022b51d1" +
-				"1fcdd0d348ac4410461cbdcc5409fb4b4d42b51d3338" +
-				"1354d80e550078cb532a34bfa2fcfdeb7d76519aecc6" +
-				"2770f5b0e4ef8551946d8a540911abe3e7854a26f39f" +
-				"58b25c15342af52ae"),
-			addrs: []util.Address{
-				newAddressPubKey(hexToBytes("04cc71eb30d653c0" +
-					"c3163990c47b976f3fb3f37cccdcbedb169a" +
-					"1dfef58bbfbfaff7d8a473e7e2e6d317b87b" +
-					"afe8bde97e3cf8f065dec022b51d11fcdd0d" +
-					"348ac4")),
-				newAddressPubKey(hexToBytes("0461cbdcc5409fb4" +
-					"b4d42b51d33381354d80e550078cb532a34b" +
-					"fa2fcfdeb7d76519aecc62770f5b0e4ef855" +
-					"1946d8a540911abe3e7854a26f39f58b25c1" +
-					"5342af")),
-			},
-			reqSigs: 1,
-			class:   MultiSigTy,
-		},
-		// from real tx d646f82bd5fbdb94a36872ce460f97662b80c3050ad3209bef9d1e398ea277ab, vin 1
-		{
-			name: "standard 2 of 3 multisig",
-			script: hexToBytes("524104cb9c3c222c5f7a7d3b9bd152f36" +
-				"3a0b6d54c9eb312c4d4f9af1e8551b6c421a6a4ab0e2" +
-				"9105f24de20ff463c1c91fcf3bf662cdde4783d4799f" +
-				"787cb7c08869b4104ccc588420deeebea22a7e900cc8" +
-				"b68620d2212c374604e3487ca08f1ff3ae12bdc63951" +
-				"4d0ec8612a2d3c519f084d9a00cbbe3b53d071e9b09e" +
-				"71e610b036aa24104ab47ad1939edcb3db65f7fedea6" +
-				"2bbf781c5410d3f22a7a3a56ffefb2238af8627363bd" +
-				"f2ed97c1f89784a1aecdb43384f11d2acc64443c7fc2" +
-				"99cef0400421a53ae"),
-			addrs: []util.Address{
-				newAddressPubKey(hexToBytes("04cb9c3c222c5f7a" +
-					"7d3b9bd152f363a0b6d54c9eb312c4d4f9af" +
-					"1e8551b6c421a6a4ab0e29105f24de20ff46" +
-					"3c1c91fcf3bf662cdde4783d4799f787cb7c" +
-					"08869b")),
-				newAddressPubKey(hexToBytes("04ccc588420deeeb" +
-					"ea22a7e900cc8b68620d2212c374604e3487" +
-					"ca08f1ff3ae12bdc639514d0ec8612a2d3c5" +
-					"19f084d9a00cbbe3b53d071e9b09e71e610b" +
-					"036aa2")),
-				newAddressPubKey(hexToBytes("04ab47ad1939edcb" +
-					"3db65f7fedea62bbf781c5410d3f22a7a3a5" +
-					"6ffefb2238af8627363bdf2ed97c1f89784a" +
-					"1aecdb43384f11d2acc64443c7fc299cef04" +
-					"00421a")),
-			},
-			reqSigs: 2,
-			class:   MultiSigTy,
 		},
 
 		// The below are nonstandard script due to things such as
@@ -288,40 +129,6 @@ func TestExtractPkScriptAddrs(t *testing.T) {
 			addrs:   nil,
 			reqSigs: 0,
 			class:   NonStandardTy,
-		},
-		// from real tx 691dd277dc0e90a462a3d652a1171686de49cf19067cd33c7df0392833fb986a, vout 0
-		// invalid public keys
-		{
-			name: "1 of 3 multisig with invalid pubkeys",
-			script: hexToBytes("51411c2200007353455857696b696c656" +
-				"16b73204361626c6567617465204261636b75700a0a6" +
-				"361626c65676174652d3230313031323034313831312" +
-				"e377a0a0a446f41776e6c6f61642074686520666f6c6" +
-				"c6f77696e67207472616e73616374696f6e732077697" +
-				"468205361746f736869204e616b616d6f746f2773206" +
-				"46f776e6c6f61416420746f6f6c2077686963680a636" +
-				"16e20626520666f756e6420696e207472616e7361637" +
-				"4696f6e2036633533636439383731313965663739376" +
-				"435616463636453ae"),
-			addrs:   []util.Address{},
-			reqSigs: 1,
-			class:   MultiSigTy,
-		},
-		// from real tx: 691dd277dc0e90a462a3d652a1171686de49cf19067cd33c7df0392833fb986a, vout 44
-		// invalid public keys
-		{
-			name: "1 of 3 multisig with invalid pubkeys 2",
-			script: hexToBytes("514134633365633235396337346461636" +
-				"536666430383862343463656638630a6336366263313" +
-				"93936633862393461333831316233363536313866653" +
-				"16539623162354136636163636539393361333938386" +
-				"134363966636336643664616266640a3236363363666" +
-				"13963663463303363363039633539336333653931666" +
-				"56465373032392131323364643432643235363339643" +
-				"338613663663530616234636434340a00000053ae"),
-			addrs:   []util.Address{},
-			reqSigs: 1,
-			class:   MultiSigTy,
 		},
 		{
 			name:    "empty script",
@@ -437,26 +244,6 @@ func TestCalcScriptInfo(t *testing.T) {
 				SigOps:         0,
 			},
 		},
-		{
-			// Script is invented, numbers all fake.
-			name: "multisig script",
-			// Extra 0 arg on the end for OP_CHECKMULTISIG bug.
-			sigScript: "1 1 1 0",
-			pkScript: "3 " +
-				"DATA_33 0x0102030405060708090a0b0c0d0e0f1011" +
-				"12131415161718191a1b1c1d1e1f2021 DATA_33 " +
-				"0x0102030405060708090a0b0c0d0e0f101112131415" +
-				"161718191a1b1c1d1e1f2021 DATA_33 0x010203040" +
-				"5060708090a0b0c0d0e0f101112131415161718191a1" +
-				"b1c1d1e1f2021 3 CHECKMULTISIG",
-			isP2SH: true,
-			scriptInfo: ScriptInfo{
-				PkScriptClass:  MultiSigTy,
-				NumInputs:      4,
-				ExpectedInputs: 4,
-				SigOps:         3,
-			},
-		},
 	}
 
 	for _, test := range tests {
@@ -528,29 +315,6 @@ func TestPayToAddrScript(t *testing.T) {
 		t.Fatalf("Unable to create script hash address: %v", err)
 	}
 
-	//  mainnet p2pk 13CG6SJ3yHUXo4Cr2RY4THLLJrNFuG3gUg
-	p2pkCompressedMain, err := util.NewAddressPubKey(hexToBytes("02192d"+
-		"74d0cb94344c9569c2e77901573d8d7903c3ebec3a957724895dca52c6b4"), util.Bech32PrefixDAGCoin)
-	if err != nil {
-		t.Fatalf("Unable to create pubkey address (compressed): %v",
-			err)
-	}
-	p2pkCompressed2Main, err := util.NewAddressPubKey(hexToBytes("03b0b"+
-		"d634234abbb1ba1e986e884185c61cf43e001f9137f23c2c409273eb16e65"), util.Bech32PrefixDAGCoin)
-	if err != nil {
-		t.Fatalf("Unable to create pubkey address (compressed 2): %v",
-			err)
-	}
-
-	p2pkUncompressedMain, err := util.NewAddressPubKey(hexToBytes("0411"+
-		"db93e1dcdb8a016b49840f8c53bc1eb68a382e97b1482ecad7b148a6909a5"+
-		"cb2e0eaddfb84ccf9744464f82e160bfa9b8b64f9d4c03f999b8643f656b4"+
-		"12a3"), util.Bech32PrefixDAGCoin)
-	if err != nil {
-		t.Fatalf("Unable to create pubkey address (uncompressed): %v",
-			err)
-	}
-
 	// Errors used in the tests below defined here for convenience and to
 	// keep the horizontal test size shorter.
 	errUnsupportedAddress := scriptError(ErrUnsupportedAddress, "")
@@ -574,34 +338,10 @@ func TestPayToAddrScript(t *testing.T) {
 				"6eb5b4 EQUAL",
 			nil,
 		},
-		// pay-to-pubkey address on mainnet. compressed key.
-		{
-			p2pkCompressedMain,
-			"DATA_33 0x02192d74d0cb94344c9569c2e77901573d8d7903c3" +
-				"ebec3a957724895dca52c6b4 CHECKSIG",
-			nil,
-		},
-		// pay-to-pubkey address on mainnet. compressed key (other way).
-		{
-			p2pkCompressed2Main,
-			"DATA_33 0x03b0bd634234abbb1ba1e986e884185c61cf43e001" +
-				"f9137f23c2c409273eb16e65 CHECKSIG",
-			nil,
-		},
-		// pay-to-pubkey address on mainnet. uncompressed key.
-		{
-			p2pkUncompressedMain,
-			"DATA_65 0x0411db93e1dcdb8a016b49840f8c53bc1eb68a382e" +
-				"97b1482ecad7b148a6909a5cb2e0eaddfb84ccf97444" +
-				"64f82e160bfa9b8b64f9d4c03f999b8643f656b412a3 " +
-				"CHECKSIG",
-			nil,
-		},
 
 		// Supported address types with nil pointers.
 		{(*util.AddressPubKeyHash)(nil), "", errUnsupportedAddress},
 		{(*util.AddressScriptHash)(nil), "", errUnsupportedAddress},
-		{(*util.AddressPubKey)(nil), "", errUnsupportedAddress},
 
 		// Unsupported address type.
 		{&bogusAddress{}, "", errUnsupportedAddress},
@@ -625,157 +365,6 @@ func TestPayToAddrScript(t *testing.T) {
 	}
 }
 
-// TestMultiSigScript ensures the MultiSigScript function returns the expected
-// scripts and errors.
-func TestMultiSigScript(t *testing.T) {
-	t.Parallel()
-
-	//  mainnet p2pk 13CG6SJ3yHUXo4Cr2RY4THLLJrNFuG3gUg
-	p2pkCompressedMain, err := util.NewAddressPubKey(hexToBytes("02192d"+
-		"74d0cb94344c9569c2e77901573d8d7903c3ebec3a957724895dca52c6b4"), util.Bech32PrefixDAGCoin)
-	if err != nil {
-		t.Fatalf("Unable to create pubkey address (compressed): %v",
-			err)
-	}
-	p2pkCompressed2Main, err := util.NewAddressPubKey(hexToBytes("03b0b"+
-		"d634234abbb1ba1e986e884185c61cf43e001f9137f23c2c409273eb16e65"), util.Bech32PrefixDAGCoin)
-	if err != nil {
-		t.Fatalf("Unable to create pubkey address (compressed 2): %v",
-			err)
-	}
-
-	p2pkUncompressedMain, err := util.NewAddressPubKey(hexToBytes("0411"+
-		"db93e1dcdb8a016b49840f8c53bc1eb68a382e97b1482ecad7b148a6909a5"+
-		"cb2e0eaddfb84ccf9744464f82e160bfa9b8b64f9d4c03f999b8643f656b4"+
-		"12a3"), util.Bech32PrefixDAGCoin)
-	if err != nil {
-		t.Fatalf("Unable to create pubkey address (uncompressed): %v",
-			err)
-	}
-
-	tests := []struct {
-		keys      []*util.AddressPubKey
-		nrequired int
-		expected  string
-		err       error
-	}{
-		{
-			[]*util.AddressPubKey{
-				p2pkCompressedMain,
-				p2pkCompressed2Main,
-			},
-			1,
-			"1 DATA_33 0x02192d74d0cb94344c9569c2e77901573d8d7903c" +
-				"3ebec3a957724895dca52c6b4 DATA_33 0x03b0bd634" +
-				"234abbb1ba1e986e884185c61cf43e001f9137f23c2c4" +
-				"09273eb16e65 2 CHECKMULTISIG",
-			nil,
-		},
-		{
-			[]*util.AddressPubKey{
-				p2pkCompressedMain,
-				p2pkCompressed2Main,
-			},
-			2,
-			"2 DATA_33 0x02192d74d0cb94344c9569c2e77901573d8d7903c" +
-				"3ebec3a957724895dca52c6b4 DATA_33 0x03b0bd634" +
-				"234abbb1ba1e986e884185c61cf43e001f9137f23c2c4" +
-				"09273eb16e65 2 CHECKMULTISIG",
-			nil,
-		},
-		{
-			[]*util.AddressPubKey{
-				p2pkCompressedMain,
-				p2pkCompressed2Main,
-			},
-			3,
-			"",
-			scriptError(ErrTooManyRequiredSigs, ""),
-		},
-		{
-			[]*util.AddressPubKey{
-				p2pkUncompressedMain,
-			},
-			1,
-			"1 DATA_65 0x0411db93e1dcdb8a016b49840f8c53bc1eb68a382" +
-				"e97b1482ecad7b148a6909a5cb2e0eaddfb84ccf97444" +
-				"64f82e160bfa9b8b64f9d4c03f999b8643f656b412a3 " +
-				"1 CHECKMULTISIG",
-			nil,
-		},
-		{
-			[]*util.AddressPubKey{
-				p2pkUncompressedMain,
-			},
-			2,
-			"",
-			scriptError(ErrTooManyRequiredSigs, ""),
-		},
-	}
-
-	t.Logf("Running %d tests", len(tests))
-	for i, test := range tests {
-		script, err := MultiSigScript(test.keys, test.nrequired)
-		if e := checkScriptError(err, test.err); e != nil {
-			t.Errorf("MultiSigScript #%d: %v", i, e)
-			continue
-		}
-
-		expected := mustParseShortForm(test.expected)
-		if !bytes.Equal(script, expected) {
-			t.Errorf("MultiSigScript #%d got: %x\nwant: %x",
-				i, script, expected)
-			continue
-		}
-	}
-}
-
-// TestCalcMultiSigStats ensures the CalcMutliSigStats function returns the
-// expected errors.
-func TestCalcMultiSigStats(t *testing.T) {
-	t.Parallel()
-
-	tests := []struct {
-		name   string
-		script string
-		err    error
-	}{
-		{
-			name: "short script",
-			script: "0x046708afdb0fe5548271967f1a67130b7105cd6a828" +
-				"e03909a67962e0ea1f61d",
-			err: scriptError(ErrMalformedPush, ""),
-		},
-		{
-			name: "stack underflow",
-			script: "RETURN DATA_41 0x046708afdb0fe5548271967f1a" +
-				"67130b7105cd6a828e03909a67962e0ea1f61deb649f6" +
-				"bc3f4cef308",
-			err: scriptError(ErrNotMultisigScript, ""),
-		},
-		{
-			name: "multisig script",
-			script: "0 DATA_72 0x30450220106a3e4ef0b51b764a2887226" +
-				"2ffef55846514dacbdcbbdd652c849d395b4384022100" +
-				"e03ae554c3cbb40600d31dd46fc33f25e47bf8525b1fe" +
-				"07282e3b6ecb5f3bb2801 1 DATA_33 0x0232abdc893e7f06" +
-				"31364d7fd01cb33d24da45329a00357b3a7886211ab414d55a" +
-				" 1 CHECKMULTISIG",
-			err: nil,
-		},
-	}
-
-	for i, test := range tests {
-		script := mustParseShortForm(test.script)
-		_, _, err := CalcMultiSigStats(script)
-		if e := checkScriptError(err, test.err); e != nil {
-			t.Errorf("CalcMultiSigStats #%d (%s): %v", i, test.name,
-				e)
-			continue
-		}
-	}
-}
-
 // scriptClassTests houses several test scripts used to ensure various class
 // determination is working as expected.  It's defined as a test global versus
 // inside a function scope since this spans both the standard tests and the
@@ -785,12 +374,13 @@ var scriptClassTests = []struct {
 	script string
 	class  ScriptClass
 }{
+	// p2pk. It is standard in BTC but not in DAGCoin
 	{
 		name: "Pay Pubkey",
 		script: "DATA_65 0x0411db93e1dcdb8a016b49840f8c53bc1eb68a382e" +
 			"97b1482ecad7b148a6909a5cb2e0eaddfb84ccf9744464f82e16" +
 			"0bfa9b8b64f9d4c03f999b8643f656b412a3 CHECKSIG",
-		class: PubKeyTy,
+		class: NonStandardTy,
 	},
 	// tx 599e47a8114fe098103663029548811d2651991b62397e057f0c863c2bc9f9ea
 	{
@@ -799,14 +389,12 @@ var scriptClassTests = []struct {
 			"c271ad504b EQUALVERIFY CHECKSIG",
 		class: PubKeyHashTy,
 	},
-	// part of tx 6d36bc17e947ce00bb6f12f8e7a56a1585c5a36188ffa2b05e10b4743273a74b
-	// codeseparator parts have been elided. (bitcoin core's checks for
-	// multisig type doesn't have codesep either).
+	// mutlisig. It is standard in BTC but not in DAGCoin
 	{
 		name: "multisig",
 		script: "1 DATA_33 0x0232abdc893e7f0631364d7fd01cb33d24da4" +
 			"5329a00357b3a7886211ab414d55a 1 CHECKMULTISIG",
-		class: MultiSigTy,
+		class: NonStandardTy,
 	},
 	// tx e5779b9e78f9650debc2893fd9636d827b26b4ddfa6a8172fe8708c924f5c39d
 	{
@@ -911,11 +499,6 @@ func TestStringifyClass(t *testing.T) {
 			stringed: "nonstandard",
 		},
 		{
-			name:     "pubkey",
-			class:    PubKeyTy,
-			stringed: "pubkey",
-		},
-		{
 			name:     "pubkeyhash",
 			class:    PubKeyHashTy,
 			stringed: "pubkeyhash",
@@ -924,11 +507,6 @@ func TestStringifyClass(t *testing.T) {
 			name:     "scripthash",
 			class:    ScriptHashTy,
 			stringed: "scripthash",
-		},
-		{
-			name:     "multisigty",
-			class:    MultiSigTy,
-			stringed: "multisig",
 		},
 		{
 			name:     "broken",
