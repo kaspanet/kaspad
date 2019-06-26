@@ -236,7 +236,7 @@ func (d *UTXODiff) diffFrom(other *UTXODiff) (*UTXODiff, error) {
 	// All transactions in other.toAdd:
 	// If they are not in d.toAdd - should be added in result.toAdd
 	for outpoint, utxoEntry := range other.toAdd {
-		if diffEntry, ok := d.toAdd.get(outpoint); !ok || diffEntry.blockBlueScore != utxoEntry.blockBlueScore {
+		if !d.toAdd.contains(outpoint) {
 			result.toAdd.add(outpoint, utxoEntry)
 		}
 	}
@@ -244,7 +244,7 @@ func (d *UTXODiff) diffFrom(other *UTXODiff) (*UTXODiff, error) {
 	// All transactions in other.toRemove:
 	// If they are not in d.toRemove - should be added in result.toRemove
 	for outpoint, utxoEntry := range other.toRemove {
-		if diffEntry, ok := d.toRemove.get(outpoint); !ok || diffEntry.blockBlueScore != utxoEntry.blockBlueScore {
+		if !d.toRemove.contains(outpoint) {
 			result.toRemove.add(outpoint, utxoEntry)
 		}
 	}
@@ -327,7 +327,7 @@ func (d *UTXODiff) WithDiff(diff *UTXODiff) (*UTXODiff, error) {
 	// All transactions in diff.toAdd:
 	// If they are not in d.toRemove - should be added in result.toAdd
 	for outpoint, utxoEntry := range diff.toAdd {
-		if diffEntry, ok := d.toRemove.get(outpoint); !ok || diffEntry.blockBlueScore != utxoEntry.blockBlueScore {
+		if !d.toRemove.contains(outpoint) {
 			result.toAdd.add(outpoint, utxoEntry)
 		}
 	}
@@ -335,7 +335,7 @@ func (d *UTXODiff) WithDiff(diff *UTXODiff) (*UTXODiff, error) {
 	// All transactions in diff.toRemove:
 	// If they are not in d.toAdd - should be added in result.toRemove
 	for outpoint, utxoEntry := range diff.toRemove {
-		if diffEntry, ok := d.toAdd.get(outpoint); !ok || diffEntry.blockBlueScore != utxoEntry.blockBlueScore {
+		if !d.toAdd.contains(outpoint) {
 			result.toRemove.add(outpoint, utxoEntry)
 		}
 	}
