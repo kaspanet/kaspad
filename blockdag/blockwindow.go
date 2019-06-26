@@ -9,8 +9,12 @@ import (
 
 type blockWindow []*blockNode
 
-func blueBlockWindow(startingNode *blockNode, windowSize uint64, padWithGenesis bool) (window blockWindow, ok bool) {
-	window = make(blockWindow, 0, windowSize)
+// blueBlockWindow returns a blockWindow of the given size that contains the
+// blues in the past of startindNode, sorted by phantom order.
+// If the number of blues in the past of startingNode is less then windowSize,
+// the window will be padded by genesis blocks to achieve a size of windowSize.
+func blueBlockWindow(startingNode *blockNode, windowSize uint64) blockWindow {
+	window := make(blockWindow, 0, windowSize)
 	currentNode := startingNode
 	for uint64(len(window)) < windowSize && currentNode.selectedParent != nil {
 		if currentNode.selectedParent != nil {
@@ -21,25 +25,17 @@ func blueBlockWindow(startingNode *blockNode, windowSize uint64, padWithGenesis 
 				}
 			}
 			currentNode = currentNode.selectedParent
-		} else {
-			if !padWithGenesis {
-				return nil, false
-			}
-			window = append(window, currentNode)
 		}
 	}
 
 	if uint64(len(window)) < windowSize {
-		if !padWithGenesis {
-			return nil, false
-		}
 		genesis := currentNode
 		for uint64(len(window)) < windowSize {
 			window = append(window, genesis)
 		}
 	}
 
-	return window, true
+	return window
 }
 
 func (window blockWindow) minMaxTimestamps() (min, max int64) {

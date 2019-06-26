@@ -15,15 +15,12 @@ import (
 // block given its bluest parent.
 func (dag *BlockDAG) requiredDifficulty(bluestParent *blockNode, newBlockTime time.Time) uint32 {
 	// Genesis block.
-	if bluestParent == nil {
+	if bluestParent == nil || bluestParent.blueScore < dag.difficultyAdjustmentWindowSize+1 {
 		return dag.powMaxBits
 	}
 
 	// Fetch window of dag.difficultyAdjustmentWindowSize + 1 so we can have dag.difficultyAdjustmentWindowSize block intervals
-	timestampsWindow, ok := blueBlockWindow(bluestParent, dag.difficultyAdjustmentWindowSize+1, false)
-	if !ok {
-		return dag.powMaxBits
-	}
+	timestampsWindow := blueBlockWindow(bluestParent, dag.difficultyAdjustmentWindowSize+1)
 	windowMinTimestamp, windowMaxTimeStamp := timestampsWindow.minMaxTimestamps()
 
 	// Remove the last block from the window so to calculate the average target of dag.difficultyAdjustmentWindowSize blocks
