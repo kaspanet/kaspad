@@ -5,6 +5,8 @@
 package blockdag
 
 import (
+	"bou.ke/monkey"
+	"errors"
 	"math"
 	"testing"
 	"time"
@@ -98,10 +100,13 @@ func TestCheckConnectBlockTemplate(t *testing.T) {
 	}
 
 	for i := 1; i <= 3; i++ {
-		_, err := dag.ProcessBlock(blocks[i], BFNone)
+		_, delay, err := dag.ProcessBlock(blocks[i], BFNone)
 		if err != nil {
 			t.Fatalf("CheckConnectBlockTemplate: Received unexpected error "+
 				"processing block %d: %v", i, err)
+		}
+		if delay != 0 {
+			t.Fatalf("CheckConnectBlockTemplate: block %d is too far in the future", i)
 		}
 	}
 
@@ -164,19 +169,20 @@ func TestCheckBlockSanity(t *testing.T) {
 	}
 	defer teardownFunc()
 
-	powLimit := dagconfig.MainNetParams.PowLimit
 	block := util.NewBlock(&Block100000)
-	timeSource := NewMedianTime()
 	if len(block.Transactions()) < 3 {
 		t.Fatalf("Too few transactions in block, expect at least 3, got %v", len(block.Transactions()))
 	}
-	err = dag.CheckBlockSanity(block, powLimit, timeSource)
+	delay, err := dag.checkBlockSanity(block, BFNone)
 	if err != nil {
 		t.Errorf("CheckBlockSanity: %v", err)
 	}
+	if delay != 0 {
+		t.Errorf("CheckBlockSanity: unexpected return %s delay", delay)
+	}
 	// Test with block with wrong transactions sorting order
 	blockWithWrongTxOrder := util.NewBlock(&BlockWithWrongTxOrder)
-	err = dag.CheckBlockSanity(blockWithWrongTxOrder, powLimit, timeSource)
+	delay, err = dag.checkBlockSanity(blockWithWrongTxOrder, BFNone)
 	if err == nil {
 		t.Errorf("CheckBlockSanity: transactions disorder is not detected")
 	}
@@ -186,14 +192,20 @@ func TestCheckBlockSanity(t *testing.T) {
 	} else if ruleErr.ErrorCode != ErrTransactionsNotSorted {
 		t.Errorf("CheckBlockSanity: wrong error returned, expect ErrTransactionsNotSorted, got %v, err %s", ruleErr.ErrorCode, err)
 	}
+	if delay != 0 {
+		t.Errorf("CheckBlockSanity: unexpected return %s delay", delay)
+	}
 
 	// Ensure a block that has a timestamp with a precision higher than one
 	// second fails.
 	timestamp := block.MsgBlock().Header.Timestamp
 	block.MsgBlock().Header.Timestamp = timestamp.Add(time.Nanosecond)
-	err = dag.CheckBlockSanity(block, powLimit, timeSource)
+	delay, err = dag.checkBlockSanity(block, BFNone)
 	if err == nil {
 		t.Errorf("CheckBlockSanity: error is nil when it shouldn't be")
+	}
+	if delay != 0 {
+		t.Errorf("CheckBlockSanity: unexpected return %s delay", delay)
 	}
 
 	var invalidParentsOrderBlock = wire.MsgBlock{
@@ -463,13 +475,28 @@ func TestCheckBlockSanity(t *testing.T) {
 	}
 
 	btcutilInvalidBlock := util.NewBlock(&invalidParentsOrderBlock)
-	err = dag.CheckBlockSanity(btcutilInvalidBlock, powLimit, timeSource)
+	delay, err = dag.checkBlockSanity(btcutilInvalidBlock, BFNone)
 	if err == nil {
 		t.Errorf("CheckBlockSanity: error is nil when it shouldn't be")
 	}
 	rError := err.(RuleError)
 	if rError.ErrorCode != ErrWrongParentsOrder {
 		t.Errorf("CheckBlockSanity: Expected error was ErrWrongParentsOrder but got %v", err)
+	}
+	if delay != 0 {
+		t.Errorf("CheckBlockSanity: unexpected return %s delay", delay)
+	}
+
+	blockInTheFuture := Block100000
+	expectedDelay := 10 * time.Second
+	now := time.Unix(time.Now().Unix(), 0)
+	blockInTheFuture.Header.Timestamp = now.Add(time.Duration(dag.TimestampDeviationTolerance)*time.Second + expectedDelay)
+	delay, err = dag.checkBlockSanity(util.NewBlock(&blockInTheFuture), BFNoPoWCheck)
+	if err != nil {
+		t.Errorf("CheckBlockSanity: %v", err)
+	}
+	if delay != expectedDelay {
+		t.Errorf("CheckBlockSanity: expected %s delay but got %s", expectedDelay, delay)
 	}
 }
 
@@ -493,8 +520,8 @@ func TestPastMedianTime(t *testing.T) {
 	chainHeight := tip.chainHeight + 1
 	node := newTestNode(setFromSlice(tip),
 		blockVersion,
-		0,
-		tip.PastMedianTime(),
+		dag.powMaxBits,
+		tip.PastMedianTime(dag),
 		dagconfig.MainNetParams.K)
 
 	header := node.Header()
@@ -508,8 +535,8 @@ func TestPastMedianTime(t *testing.T) {
 	chainHeight = tip.chainHeight + 1
 	node = newTestNode(setFromSlice(tip),
 		blockVersion,
-		0,
-		tip.PastMedianTime().Add(time.Second),
+		dag.powMaxBits,
+		tip.PastMedianTime(dag).Add(time.Second),
 		dagconfig.MainNetParams.K)
 
 	header = node.Header()
@@ -524,7 +551,7 @@ func TestPastMedianTime(t *testing.T) {
 	node = newTestNode(setFromSlice(tip),
 		blockVersion,
 		0,
-		tip.PastMedianTime().Add(-time.Second),
+		tip.PastMedianTime(dag).Add(-time.Second),
 		dagconfig.MainNetParams.K)
 
 	header = node.Header()
@@ -532,6 +559,17 @@ func TestPastMedianTime(t *testing.T) {
 	if err == nil {
 		t.Errorf("TestPastMedianTime: unexpected success: block should be invalid if its timestamp is before past median time")
 	}
+
+	guard := monkey.Patch(blockWindow.medianTimestamp, func(_ blockWindow) (int64, error) {
+		return 0, errors.New("medianTimestamp error")
+	})
+	defer guard.Unpatch()
+	defer func() {
+		if recover() == nil {
+			t.Errorf("Got no panic on PastMedianTime, while expected panic")
+		}
+	}()
+	node.PastMedianTime(dag)
 
 }
 
@@ -723,7 +761,7 @@ var Block100000 = wire.MsgBlock{
 			0x3c, 0xb1, 0x16, 0x8f, 0x5f, 0x6b, 0x45, 0x87,
 		},
 		UTXOCommitment: &daghash.ZeroHash,
-		Timestamp:      time.Unix(0x5c404bc3, 0),
+		Timestamp:      time.Unix(0x5cdac4b1, 0),
 		Bits:           0x207fffff,
 		Nonce:          0x00000001,
 	},

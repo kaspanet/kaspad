@@ -53,7 +53,7 @@ type Config struct {
 	// to policy.
 	Policy Policy
 
-	// DAGParams identifies which chain parameters the txpool is
+	// DAGParams identifies which DAG parameters the txpool is
 	// associated with.
 	DAGParams *dagconfig.Params
 

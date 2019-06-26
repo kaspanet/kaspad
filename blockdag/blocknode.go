@@ -5,7 +5,7 @@
 package blockdag
 
 import (
-	"sort"
+	"fmt"
 	"time"
 
 	"github.com/daglabs/btcd/util/daghash"
@@ -215,30 +215,16 @@ func (node *blockNode) RelativeAncestor(distance uint64) *blockNode {
 	return node.SelectedAncestor(node.chainHeight - distance)
 }
 
-// PastMedianTime returns the median time of the previous few blocks
+// CalcPastMedianTime returns the median time of the previous few blocks
 // prior to, and including, the block node.
 //
 // This function is safe for concurrent access.
-func (node *blockNode) PastMedianTime() time.Time {
-	// Create a slice of the previous few block timestamps used to calculate
-	// the median per the number defined by the constant medianTimeBlocks.
-	// If there aren't enough blocks yet - pad remaining with genesis block's timestamp.
-	timestamps := make([]int64, medianTimeBlocks)
-	iterNode := node
-	for i := 0; i < medianTimeBlocks; i++ {
-		timestamps[i] = iterNode.timestamp
-
-		if !iterNode.isGenesis() {
-			iterNode = iterNode.selectedParent
-		}
+func (node *blockNode) PastMedianTime(dag *BlockDAG) time.Time {
+	window := blueBlockWindow(node, 2*dag.TimestampDeviationTolerance-1)
+	medianTimestamp, err := window.medianTimestamp()
+	if err != nil {
+		panic(fmt.Sprintf("blueBlockWindow: %s", err))
 	}
-
-	sort.Sort(timeSorter(timestamps))
-
-	// Note: This works when medianTimeBlockCount is an odd number.
-	// If it is to be changed to an even number - must take avarage of two middle values
-	// Since medianTimeBlockCount is a constant, we can skip the odd/even check
-	medianTimestamp := timestamps[medianTimeBlocks/2]
 	return time.Unix(medianTimestamp, 0)
 }
 

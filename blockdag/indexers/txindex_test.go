@@ -63,9 +63,13 @@ func TestTxIndexConnectBlock(t *testing.T) {
 		}
 		utilBlock := util.NewBlock(block)
 		blocks[*block.BlockHash()] = utilBlock
-		isOrphan, err := dag.ProcessBlock(utilBlock, blockdag.BFNoPoWCheck)
+		isOrphan, delay, err := dag.ProcessBlock(utilBlock, blockdag.BFNoPoWCheck)
 		if err != nil {
 			t.Fatalf("TestTxIndexConnectBlock: dag.ProcessBlock got unexpected error for block %v: %v", blockName, err)
+		}
+		if delay != 0 {
+			t.Fatalf("TestTxIndexConnectBlock: block %s "+
+				"is too far in the future", blockName)
 		}
 		if isOrphan {
 			t.Fatalf("TestTxIndexConnectBlock: block %v was unexpectedly orphan", blockName)

@@ -110,7 +110,7 @@ func DAGSetup(dbName string, params *dagconfig.Params) (*blockdag.BlockDAG, func
 	}
 
 	// Copy the chain params to ensure any modifications the tests do to
-	// the chain parameters do not affect the global instance.
+	// the DAG parameters do not affect the global instance.
 	paramsCopy := *params
 
 	// Create the main chain instance.
@@ -160,12 +160,19 @@ func TestFullBlocks(t *testing.T) {
 		t.Logf("Testing block %s (hash %s, height %d)",
 			item.Name, block.Hash(), blockHeight)
 
-		isOrphan, err := dag.ProcessBlock(block,
+		isOrphan, delay, err := dag.ProcessBlock(block,
 			blockdag.BFNone)
 		if err != nil {
 			t.Fatalf("block %q (hash %s, height %d) should "+
 				"have been accepted: %v", item.Name,
 				block.Hash(), blockHeight, err)
+		}
+
+		if delay != item.Delay {
+			t.Fatalf("block %q (hash %s, height %d) unexpected "+
+				"delay -- got %v, want %v", item.Name,
+				block.Hash(), blockHeight, delay,
+				item.Delay)
 		}
 
 		if isOrphan != item.IsOrphan {
@@ -186,7 +193,7 @@ func TestFullBlocks(t *testing.T) {
 		t.Logf("Testing block %s (hash %s, height %d)",
 			item.Name, block.Hash(), blockHeight)
 
-		_, err := dag.ProcessBlock(block, blockdag.BFNone)
+		_, _, err := dag.ProcessBlock(block, blockdag.BFNone)
 		if err == nil {
 			t.Fatalf("block %q (hash %s, height %d) should not "+
 				"have been accepted", item.Name, block.Hash(),
@@ -243,7 +250,7 @@ func TestFullBlocks(t *testing.T) {
 		t.Logf("Testing block %s (hash %s, height %d)",
 			item.Name, block.Hash(), blockHeight)
 
-		isOrphan, err := dag.ProcessBlock(block, blockdag.BFNone)
+		isOrphan, delay, err := dag.ProcessBlock(block, blockdag.BFNone)
 		if err != nil {
 			// Ensure the error code is of the expected type.
 			if _, ok := err.(blockdag.RuleError); !ok {
@@ -253,6 +260,12 @@ func TestFullBlocks(t *testing.T) {
 					item.Name, block.Hash(), blockHeight,
 					err)
 			}
+		}
+
+		if delay != 0 {
+			t.Fatalf("block %q (hash %s, height %d) "+
+				"is too far in the future",
+				item.Name, block.Hash(), blockHeight)
 		}
 
 		if !isOrphan {

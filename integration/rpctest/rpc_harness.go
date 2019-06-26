@@ -76,7 +76,8 @@ type HarnessTestCase func(r *Harness, t *testing.T)
 type Harness struct {
 	// ActiveNet is the parameters of the blockchain the Harness belongs
 	// to.
-	ActiveNet *dagconfig.Params
+	ActiveNet  *dagconfig.Params
+	powMaxBits uint32
 
 	Node     *rpcclient.Client
 	node     *node
@@ -186,6 +187,7 @@ func New(activeNet *dagconfig.Params, handlers *rpcclient.NotificationHandlers,
 		maxConnRetries: 20,
 		testNodeDir:    nodeTestData,
 		ActiveNet:      activeNet,
+		powMaxBits:     util.BigToCompact(activeNet.PowMax),
 		nodeNum:        nodeNum,
 		wallet:         wallet,
 	}
@@ -439,7 +441,7 @@ func (h *Harness) GenerateAndSubmitBlockWithCustomCoinbaseOutputs(
 
 	// Create a new block including the specified transactions
 	newBlock, err := CreateBlock(parentBlock, txns, blockVersion,
-		blockTime, h.wallet.coinbaseAddr, mineTo, h.ActiveNet)
+		blockTime, h.wallet.coinbaseAddr, mineTo, h.ActiveNet, h.powMaxBits)
 	if err != nil {
 		return nil, err
 	}

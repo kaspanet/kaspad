@@ -40,13 +40,17 @@ func TestNotifications(t *testing.T) {
 		dag.Subscribe(callback)
 	}
 
-	isOrphan, err := dag.ProcessBlock(blocks[1], BFNone)
+	isOrphan, delay, err := dag.ProcessBlock(blocks[1], BFNone)
+	if err != nil {
+		t.Fatalf("ProcessBlock fail on block 1: %v\n", err)
+	}
+	if delay != 0 {
+		t.Fatalf("ProcessBlock: block 1 " +
+			"is too far in the future")
+	}
 	if isOrphan {
 		t.Fatalf("ProcessBlock incorrectly returned block " +
 			"is an orphan\n")
-	}
-	if err != nil {
-		t.Fatalf("ProcessBlock fail on block 1: %v\n", err)
 	}
 
 	if notificationCount != numSubscribers {

@@ -80,8 +80,8 @@ func extractRejectCode(err error) (wire.RejectCode, bool) {
 		case blockdag.ErrBlockVersionTooOld:
 			code = wire.RejectObsolete
 
-		// Rejected due to checkpoint.
-		case blockdag.ErrCheckpointTimeTooOld:
+		// Rejected due to being earlier than the last finality point.
+		case blockdag.ErrFinalityPointTimeTooOld:
 			fallthrough
 		case blockdag.ErrDifficultyTooLow:
 			fallthrough
