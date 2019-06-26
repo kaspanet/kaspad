@@ -203,7 +203,7 @@ func (d *UTXODiff) diffFrom(other *UTXODiff) (*UTXODiff, error) {
 	// If they are not in other.toAdd - should be added in result.toRemove
 	// If they are in other.toRemove - base utxoSet is not the same
 	for outpoint, utxoEntry := range d.toAdd {
-		if other.toAdd.contains(outpoint) {
+		if !other.toAdd.contains(outpoint) {
 			result.toRemove.add(outpoint, utxoEntry)
 		}
 		if diffEntry, ok := other.toRemove.get(outpoint); ok {
@@ -220,7 +220,7 @@ func (d *UTXODiff) diffFrom(other *UTXODiff) (*UTXODiff, error) {
 	// If they are not in other.toRemove - should be added in result.toAdd
 	// If they are in other.toAdd - base utxoSet is not the same
 	for outpoint, utxoEntry := range d.toRemove {
-		if other.toRemove.contains(outpoint) {
+		if !other.toRemove.contains(outpoint) {
 			result.toAdd.add(outpoint, utxoEntry)
 		}
 		if diffEntry, ok := other.toAdd.get(outpoint); ok {
