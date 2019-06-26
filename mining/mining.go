@@ -499,10 +499,7 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 	// is potentially adjusted to ensure it comes after the median time of
 	// the last several blocks per the chain consensus rules.
 	ts := medianAdjustedTime(g.dag.CalcPastMedianTime(), g.timeSource)
-	reqDifficulty, err := g.dag.CalcNextRequiredDifficulty(ts)
-	if err != nil {
-		return nil, err
-	}
+	requiredDifficulty := g.dag.NextRequiredDifficulty(ts)
 
 	// Calculate the next expected block version based on the state of the
 	// rule change deployments.
@@ -543,7 +540,7 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 		AcceptedIDMerkleRoot: acceptedIDMerkleRoot,
 		UTXOCommitment:       utxoCommitment,
 		Timestamp:            ts,
-		Bits:                 reqDifficulty,
+		Bits:                 requiredDifficulty,
 	}
 
 	// Finally, perform a full check on the created block against the DAG
@@ -606,15 +603,6 @@ func (g *BlkTmplGenerator) UpdateBlockTime(msgBlock *wire.MsgBlock) error {
 	dagMedianTime := g.dag.CalcPastMedianTime()
 	newTime := medianAdjustedTime(dagMedianTime, g.timeSource)
 	msgBlock.Header.Timestamp = newTime
-
-	// Recalculate the difficulty if running on a network that requires it.
-	if g.dagParams.ReduceMinDifficulty {
-		difficulty, err := g.dag.CalcNextRequiredDifficulty(newTime)
-		if err != nil {
-			return err
-		}
-		msgBlock.Header.Bits = difficulty
-	}
 
 	return nil
 }

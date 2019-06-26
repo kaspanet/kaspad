@@ -114,19 +114,16 @@ var regressionNetParams = &dagconfig.Params{
 	Net:         wire.TestNet,
 	DefaultPort: "18444",
 
-	// Chain parameters
-	GenesisBlock:             &regTestGenesisBlock,
-	GenesisHash:              newHashFromStr("5bec7567af40504e0994db3b573c186fffcc4edefe096ff2e58d00523bd7e8a6"),
-	PowLimit:                 regressionPowLimit,
-	PowLimitBits:             0x207fffff,
-	BlockCoinbaseMaturity:    100,
-	SubsidyReductionInterval: 150,
-	TargetTimespan:           time.Hour * 24 * 14, // 14 days
-	TargetTimePerBlock:       time.Second * 10,    // 10 seconds
-	RetargetAdjustmentFactor: 4,                   // 25% less, 400% more
-	ReduceMinDifficulty:      true,
-	MinDiffReductionTime:     time.Minute * 20, // TargetTimePerBlock * 2
-	GenerateSupported:        true,
+	// DAG parameters
+	GenesisBlock:                   &regTestGenesisBlock,
+	GenesisHash:                    newHashFromStr("5bec7567af40504e0994db3b573c186fffcc4edefe096ff2e58d00523bd7e8a6"),
+	PowMax:                         regressionPowLimit,
+	BlockCoinbaseMaturity:          100,
+	SubsidyReductionInterval:       150,
+	TargetTimePerBlock:             time.Second * 10, // 10 seconds
+	DifficultyAdjustmentWindowSize: 2640,
+	TimestampDeviationTolerance:    132,
+	GenerateSupported:              true,
 
 	// Checkpoints ordered from oldest to newest.
 	Checkpoints: nil,

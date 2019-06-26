@@ -177,20 +177,19 @@ func newTestDAG(params *dagconfig.Params) *BlockDAG {
 	index := newBlockIndex(nil, params)
 	index.AddNode(node)
 
-	targetTimespan := int64(params.TargetTimespan / time.Second)
 	targetTimePerBlock := int64(params.TargetTimePerBlock / time.Second)
-	adjustmentFactor := params.RetargetAdjustmentFactor
 	return &BlockDAG{
-		dagParams:           params,
-		timeSource:          NewMedianTime(),
-		minRetargetTimespan: targetTimespan / adjustmentFactor,
-		maxRetargetTimespan: targetTimespan * adjustmentFactor,
-		blocksPerRetarget:   uint64(targetTimespan / targetTimePerBlock),
-		index:               index,
-		virtual:             newVirtualBlock(setFromSlice(node), params.K),
-		genesis:             index.LookupNode(params.GenesisHash),
-		warningCaches:       newThresholdCaches(vbNumBits),
-		deploymentCaches:    newThresholdCaches(dagconfig.DefinedDeployments),
+		dagParams:                      params,
+		timeSource:                     NewMedianTime(),
+		targetTimePerBlock:             targetTimePerBlock,
+		difficultyAdjustmentWindowSize: params.DifficultyAdjustmentWindowSize,
+		TimestampDeviationTolerance:    params.TimestampDeviationTolerance,
+		powMaxBits:                     util.BigToCompact(params.PowMax),
+		index:                          index,
+		virtual:                        newVirtualBlock(setFromSlice(node), params.K),
+		genesis:                        index.LookupNode(params.GenesisHash),
+		warningCaches:                  newThresholdCaches(vbNumBits),
+		deploymentCaches:               newThresholdCaches(dagconfig.DefinedDeployments),
 	}
 }
 

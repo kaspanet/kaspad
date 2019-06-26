@@ -126,10 +126,13 @@ func (bi *blockImporter) processBlock(serializedBlock []byte) (bool, error) {
 
 	// Ensure the blocks follows all of the chain rules and match up to the
 	// known checkpoints.
-	isOrphan, err := bi.dag.ProcessBlock(block,
+	isOrphan, delay, err := bi.dag.ProcessBlock(block,
 		blockdag.BFFastAdd)
 	if err != nil {
 		return false, err
+	}
+	if delay != 0 {
+		return false, fmt.Errorf("import file contains a block that is too far in the future")
 	}
 	if isOrphan {
 		return false, fmt.Errorf("import file contains an orphan "+
