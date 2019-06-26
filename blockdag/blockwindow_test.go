@@ -127,9 +127,6 @@ func TestBlueBlockWindow(t *testing.T) {
 }
 
 func checkWindowIDs(window []*blockNode, expectedIDs []string, idByBlockMap map[*blockNode]string) error {
-	if len(window) != len(expectedIDs) {
-
-	}
 	ids := make([]string, len(window))
 	for i, node := range window {
 		ids[i] = idByBlockMap[node]
