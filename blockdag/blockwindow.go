@@ -1,6 +1,7 @@
 package blockdag
 
 import (
+	"errors"
 	"github.com/daglabs/btcd/util"
 	"math"
 	"math/big"
@@ -61,11 +62,14 @@ func (window blockWindow) averageTarget() *big.Int {
 	return averageTarget.Div(averageTarget, big.NewInt(int64(len(window))))
 }
 
-func (window blockWindow) medianTimestamp() int64 {
+func (window blockWindow) medianTimestamp() (int64, error) {
+	if len(window) == 0 {
+		return 0, errors.New("Cannot calculate median timestamp for an empty block window")
+	}
 	timestamps := make([]int64, len(window))
 	for i, node := range window {
 		timestamps[i] = node.timestamp
 	}
 	sort.Sort(timeSorter(timestamps))
-	return timestamps[len(timestamps)/2]
+	return timestamps[len(timestamps)/2], nil
 }

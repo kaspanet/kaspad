@@ -5,6 +5,7 @@
 package blockdag
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/daglabs/btcd/util/daghash"
@@ -214,13 +215,17 @@ func (node *blockNode) RelativeAncestor(distance uint64) *blockNode {
 	return node.SelectedAncestor(node.chainHeight - distance)
 }
 
-// PastMedianTime returns the median time of the previous few blocks
+// CalcPastMedianTime returns the median time of the previous few blocks
 // prior to, and including, the block node.
 //
 // This function is safe for concurrent access.
 func (node *blockNode) PastMedianTime(dag *BlockDAG) time.Time {
 	window := blueBlockWindow(node, 2*dag.TimestampDeviationTolerance-1)
-	return time.Unix(window.medianTimestamp(), 0)
+	medianTimestamp, err := window.medianTimestamp()
+	if err != nil {
+		panic(fmt.Sprintf("blueBlockWindow: %s", err))
+	}
+	return time.Unix(medianTimestamp, 0)
 }
 
 func (node *blockNode) ParentHashes() []*daghash.Hash {
