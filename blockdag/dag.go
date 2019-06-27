@@ -943,19 +943,6 @@ func (node *blockNode) verifyAndBuildUTXO(dag *BlockDAG, transactions []*util.Tx
 	return utxo, txsAcceptanceData, feeData, nil
 }
 
-func (m *MultiBlockTxsAcceptanceData) String() string {
-	str := ""
-	for a, b := range *m {
-		str += a.String() + ":"
-		for _, txaccdata := range b {
-			str += txaccdata.Tx.ID().String() + ","
-		}
-		str += "\n"
-	}
-
-	return str
-}
-
 // TxAcceptanceData stores a transaction together with an indication
 // if it was accepted or not by some block
 type TxAcceptanceData struct {
