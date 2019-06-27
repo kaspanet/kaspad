@@ -724,7 +724,7 @@ func (dus *DiffUTXOSet) containsInputs(tx *wire.MsgTx) bool {
 		isInBase := dus.base.contains(outpoint)
 		isInDiffToAdd := dus.UTXODiff.toAdd.contains(outpoint)
 		isInDiffToRemove := dus.UTXODiff.toRemove.contains(outpoint)
-		if (!isInBase && !isInDiffToAdd) || isInDiffToRemove {
+		if (!isInBase && !isInDiffToAdd) || (isInDiffToRemove && !(isInBase && isInDiffToAdd)) {
 			return false
 		}
 	}
