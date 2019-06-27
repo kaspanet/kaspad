@@ -775,6 +775,8 @@ func (dus *DiffUTXOSet) clone() UTXOSet {
 // Returns false in second output if this UTXOEntry was not found
 func (dus *DiffUTXOSet) Get(outpoint wire.Outpoint) (*UTXOEntry, bool) {
 	if toRemoveEntry, ok := dus.UTXODiff.toRemove.get(outpoint); ok {
+		// An exception is made for entries with unequal blue scores
+		// These are just "updates" to accepted blue score
 		if toAddEntry, ok := dus.UTXODiff.toAdd.get(outpoint); ok && toAddEntry.blockBlueScore != toRemoveEntry.blockBlueScore {
 			return toAddEntry, true
 		}
