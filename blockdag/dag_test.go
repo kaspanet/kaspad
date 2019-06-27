@@ -191,7 +191,7 @@ func TestHaveBlock(t *testing.T) {
 		// Block 3b should be present (as a second child of Block 2).
 		{hash: "6ffe9704c50b3f1892ce9e667337304ec0e9eb50a23673bc8ff7aaa20745ee4a", want: true},
 
-		// Block 100000 should be present (as an orphan).k
+		// Block 100000 should be present (as an orphan).
 		{hash: "01b4758d5e637d232b716cdc937335ebc5b8ea7f912b6a7fd2fc42b66b1d4d3e", want: true},
 
 		// Random hashes should not be available.
