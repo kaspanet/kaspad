@@ -21,7 +21,7 @@ func TestMaybeAcceptBlockErrors(t *testing.T) {
 	}
 	defer teardownFunc()
 
-	dag.TestSetCoinbaseMaturity(1)
+	dag.TestSetCoinbaseMaturity(0)
 
 	// Test rejecting the block if its parents are missing
 	orphanBlockFile := "blk_3B.dat"

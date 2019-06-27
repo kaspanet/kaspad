@@ -55,8 +55,8 @@ func TestBlockCount(t *testing.T) {
 	defer teardownFunc()
 
 	// Since we're not dealing with the real block DAG, set the coinbase
-	// maturity to 1.
-	dag.TestSetCoinbaseMaturity(1)
+	// maturity to 0.
+	dag.TestSetCoinbaseMaturity(0)
 
 	for i := 1; i < len(blocks); i++ {
 		isOrphan, err := dag.ProcessBlock(blocks[i], BFNone)
@@ -104,7 +104,7 @@ func TestHaveBlock(t *testing.T) {
 	defer teardownFunc()
 
 	// Since we're not dealing with the real block DAG, set the coinbase
-	// maturity to 1.
+	// maturity to 0.
 	dag.TestSetCoinbaseMaturity(0)
 
 	for i := 1; i < len(blocks); i++ {
@@ -803,8 +803,8 @@ func testErrorThroughPatching(t *testing.T, expectedErrorMessage string, targetF
 	defer teardownFunc()
 
 	// Since we're not dealing with the real block DAG, set the coinbase
-	// maturity to 1.
-	dag.TestSetCoinbaseMaturity(1)
+	// maturity to 0.
+	dag.TestSetCoinbaseMaturity(0)
 
 	guard := monkey.Patch(targetFunction, replacementFunction)
 	defer guard.Unpatch()
@@ -884,7 +884,7 @@ func TestConfirmations(t *testing.T) {
 		t.Fatalf("Failed to setup DAG instance: %v", err)
 	}
 	defer teardownFunc()
-	dag.TestSetCoinbaseMaturity(1)
+	dag.TestSetCoinbaseMaturity(0)
 
 	// Check that the genesis block of a DAG with only the genesis block in it has confirmations = 1.
 	genesisConfirmations, err := dag.blockConfirmations(dag.genesis)
@@ -999,7 +999,7 @@ func TestAcceptingBlock(t *testing.T) {
 		t.Fatalf("Failed to setup DAG instance: %v", err)
 	}
 	defer teardownFunc()
-	dag.TestSetCoinbaseMaturity(1)
+	dag.TestSetCoinbaseMaturity(0)
 
 	// Check that the genesis block of a DAG with only the genesis block in it is accepted by the virtual.
 	genesisAcceptingBlock, err := dag.acceptingBlock(dag.genesis)
