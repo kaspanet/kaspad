@@ -19,12 +19,7 @@ var (
 
 // privateKeyToP2pkhAddress generates p2pkh address from private key.
 func privateKeyToP2pkhAddress(key *btcec.PrivateKey, net *dagconfig.Params) (util.Address, error) {
-	serializedKey := key.PubKey().SerializeCompressed()
-	pubKeyAddr, err := util.NewAddressPubKey(serializedKey, net.Prefix)
-	if err != nil {
-		return nil, err
-	}
-	return pubKeyAddr.AddressPubKeyHash(), nil
+	return util.NewAddressPubKeyHashFromPublicKey(key.PubKey().SerializeCompressed(), net.Prefix)
 }
 
 func main() {

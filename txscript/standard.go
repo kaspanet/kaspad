@@ -31,20 +31,16 @@ type ScriptClass byte
 // Classes of script payment known about in the blockDAG.
 const (
 	NonStandardTy ScriptClass = iota // None of the recognized forms.
-	PubKeyTy                         // Pay pubkey.
 	PubKeyHashTy                     // Pay pubkey hash.
 	ScriptHashTy                     // Pay to script hash.
-	MultiSigTy                       // Multi signature.
 )
 
 // scriptClassToName houses the human-readable strings which describe each
 // script class.
 var scriptClassToName = []string{
 	NonStandardTy: "nonstandard",
-	PubKeyTy:      "pubkey",
 	PubKeyHashTy:  "pubkeyhash",
 	ScriptHashTy:  "scripthash",
-	MultiSigTy:    "multisig",
 }
 
 // String implements the Stringer interface by returning the name of
@@ -55,15 +51,6 @@ func (t ScriptClass) String() string {
 		return "Invalid"
 	}
 	return scriptClassToName[t]
-}
-
-// isPubkey returns true if the script passed is a pay-to-pubkey transaction,
-// false otherwise.
-func isPubkey(pops []parsedOpcode) bool {
-	// Valid pubkeys are either 33 or 65 bytes.
-	return len(pops) == 2 &&
-		(len(pops[0].data) == 33 || len(pops[0].data) == 65) &&
-		pops[1].opcode.value == OpCheckSig
 }
 
 // isPubkeyHash returns true if the script passed is a pay-to-pubkey-hash
@@ -78,51 +65,13 @@ func isPubkeyHash(pops []parsedOpcode) bool {
 
 }
 
-// isMultiSig returns true if the passed script is a multisig transaction, false
-// otherwise.
-func isMultiSig(pops []parsedOpcode) bool {
-	// The absolute minimum is 1 pubkey:
-	// OP_0/OP_1-16 <pubkey> OP_1 OP_CHECKMULTISIG
-	l := len(pops)
-	if l < 4 {
-		return false
-	}
-	if !isSmallInt(pops[0].opcode) {
-		return false
-	}
-	if !isSmallInt(pops[l-2].opcode) {
-		return false
-	}
-	if pops[l-1].opcode.value != OpCheckMultiSig {
-		return false
-	}
-
-	// Verify the number of pubkeys specified matches the actual number
-	// of pubkeys provided.
-	if l-2-1 != asSmallInt(pops[l-2].opcode) {
-		return false
-	}
-
-	for _, pop := range pops[1 : l-2] {
-		// Valid pubkeys are either 33 or 65 bytes.
-		if len(pop.data) != 33 && len(pop.data) != 65 {
-			return false
-		}
-	}
-	return true
-}
-
 // scriptType returns the type of the script being inspected from the known
 // standard types.
 func typeOfScript(pops []parsedOpcode) ScriptClass {
-	if isPubkey(pops) {
-		return PubKeyTy
-	} else if isPubkeyHash(pops) {
+	if isPubkeyHash(pops) {
 		return PubKeyHashTy
 	} else if isScriptHash(pops) {
 		return ScriptHashTy
-	} else if isMultiSig(pops) {
-		return MultiSigTy
 	}
 	return NonStandardTy
 }
@@ -145,8 +94,6 @@ func GetScriptClass(script []byte) ScriptClass {
 // while finding out the type).
 func expectedInputs(pops []parsedOpcode, class ScriptClass) int {
 	switch class {
-	case PubKeyTy:
-		return 1
 
 	case PubKeyHashTy:
 		return 2
@@ -154,16 +101,6 @@ func expectedInputs(pops []parsedOpcode, class ScriptClass) int {
 	case ScriptHashTy:
 		// Not including script.  That is handled by the caller.
 		return 1
-
-	case MultiSigTy:
-		// Standard multisig has a push a small number for the number
-		// of sigs and number of keys.  Check the first push instruction
-		// to see how many arguments are expected. typeOfScript already
-		// checked this so we know it'll be a small int.  Also, due to
-		// the original bitcoind bug where OP_CHECKMULTISIG pops an
-		// additional item from the stack, add an extra expected input
-		// for the extra push that is required to compensate.
-		return asSmallInt(pops[0].opcode) + 1
 
 	default:
 		return -1
@@ -242,32 +179,6 @@ func CalcScriptInfo(sigScript, pkScript []byte, isP2SH bool) (*ScriptInfo, error
 	return si, nil
 }
 
-// CalcMultiSigStats returns the number of public keys and signatures from
-// a multi-signature transaction script.  The passed script MUST already be
-// known to be a multi-signature script.
-func CalcMultiSigStats(script []byte) (int, int, error) {
-	pops, err := parseScript(script)
-	if err != nil {
-		return 0, 0, err
-	}
-
-	// A multi-signature script is of the pattern:
-	//  NUM_SIGS PUBKEY PUBKEY PUBKEY... NUM_PUBKEYS OP_CHECKMULTISIG
-	// Therefore the number of signatures is the oldest item on the stack
-	// and the number of pubkeys is the 2nd to last.  Also, the absolute
-	// minimum for a multi-signature script is 1 pubkey, so at least 4
-	// items must be on the stack per:
-	//  OP_1 PUBKEY OP_1 OP_CHECKMULTISIG
-	if len(pops) < 4 {
-		str := fmt.Sprintf("script %x is not a multisig script", script)
-		return 0, 0, scriptError(ErrNotMultisigScript, str)
-	}
-
-	numSigs := asSmallInt(pops[0].opcode)
-	numPubKeys := asSmallInt(pops[len(pops)-2].opcode)
-	return numPubKeys, numSigs, nil
-}
-
 // payToPubKeyHashScript creates a new script to pay a transaction
 // output to a 20-byte pubkey hash. It is expected that the input is a valid
 // hash.
@@ -310,13 +221,6 @@ func PayToAddrScript(addr util.Address) ([]byte, error) {
 				nilAddrErrStr)
 		}
 		return payToScriptHashScript(addr.ScriptAddress())
-
-	case *util.AddressPubKey:
-		if addr == nil {
-			return nil, scriptError(ErrUnsupportedAddress,
-				nilAddrErrStr)
-		}
-		return payToPubKeyScript(addr.ScriptAddress())
 	}
 
 	str := fmt.Sprintf("unable to generate payment script for unsupported "+
@@ -346,28 +250,6 @@ func PayToScriptHashSignatureScript(redeemScript []byte, signature []byte) ([]by
 	copy(signatureScript, signature)
 	copy(signatureScript[len(signature):], redeemScriptAsData)
 	return signatureScript, nil
-}
-
-// MultiSigScript returns a valid script for a multisignature redemption where
-// nrequired of the keys in pubkeys are required to have signed the transaction
-// for success.  An Error with the error code ErrTooManyRequiredSigs will be
-// returned if nrequired is larger than the number of keys provided.
-func MultiSigScript(pubkeys []*util.AddressPubKey, nrequired int) ([]byte, error) {
-	if len(pubkeys) < nrequired {
-		str := fmt.Sprintf("unable to generate multisig script with "+
-			"%d required signatures when there are only %d public "+
-			"keys available", nrequired, len(pubkeys))
-		return nil, scriptError(ErrTooManyRequiredSigs, str)
-	}
-
-	builder := NewScriptBuilder().AddInt64(int64(nrequired))
-	for _, key := range pubkeys {
-		builder.AddData(key.ScriptAddress())
-	}
-	builder.AddInt64(int64(len(pubkeys)))
-	builder.AddOp(OpCheckMultiSig)
-
-	return builder.Script()
 }
 
 // PushedData returns an array of byte slices containing any pushed data found
@@ -418,17 +300,6 @@ func ExtractPkScriptAddrs(pkScript []byte, chainParams *dagconfig.Params) (Scrip
 			addrs = append(addrs, addr)
 		}
 
-	case PubKeyTy:
-		// A pay-to-pubkey script is of the form:
-		//  <pubkey> OP_CHECKSIG
-		// Therefore the pubkey is the first item on the stack.
-		// Skip the pubkey if it's invalid for some reason.
-		requiredSigs = 1
-		addr, err := util.NewAddressPubKey(pops[0].data, chainParams.Prefix)
-		if err == nil {
-			addrs = append(addrs, addr)
-		}
-
 	case ScriptHashTy:
 		// A pay-to-script-hash script is of the form:
 		//  OP_HASH160 <scripthash> OP_EQUAL
@@ -439,24 +310,6 @@ func ExtractPkScriptAddrs(pkScript []byte, chainParams *dagconfig.Params) (Scrip
 			chainParams.Prefix)
 		if err == nil {
 			addrs = append(addrs, addr)
-		}
-
-	case MultiSigTy:
-		// A multi-signature script is of the form:
-		//  <numsigs> <pubkey> <pubkey> <pubkey>... <numpubkeys> OP_CHECKMULTISIG
-		// Therefore the number of required signatures is the 1st item
-		// on the stack and the number of public keys is the 2nd to last
-		// item on the stack.
-		requiredSigs = asSmallInt(pops[0].opcode)
-		numPubKeys := asSmallInt(pops[len(pops)-2].opcode)
-
-		// Extract the public keys while skipping any that are invalid.
-		addrs = make([]util.Address, 0, numPubKeys)
-		for i := 0; i < numPubKeys; i++ {
-			addr, err := util.NewAddressPubKey(pops[i+1].data, chainParams.Prefix)
-			if err == nil {
-				addrs = append(addrs, addr)
-			}
 		}
 
 	case NonStandardTy:

@@ -3557,7 +3557,7 @@ func handleVerifyMessage(s *Server, cmd interface{}, closeChan <-chan struct{}) 
 	} else {
 		serializedPK = pk.SerializeUncompressed()
 	}
-	address, err := util.NewAddressPubKey(serializedPK, params.Prefix)
+	address, err := util.NewAddressPubKeyHashFromPublicKey(serializedPK, params.Prefix)
 	if err != nil {
 		// Again mirror Bitcoin Core behavior, which treats error in public key
 		// reconstruction as invalid signature.

@@ -528,12 +528,6 @@ func addrToKey(addr util.Address) ([addrKeySize]byte, error) {
 		result[0] = addrKeyTypeScriptHash
 		copy(result[1:], addr.Hash160()[:])
 		return result, nil
-
-	case *util.AddressPubKey:
-		var result [addrKeySize]byte
-		result[0] = addrKeyTypePubKeyHash
-		copy(result[1:], addr.AddressPubKeyHash().Hash160()[:])
-		return result, nil
 	}
 
 	return [addrKeySize]byte{}, errUnsupportedAddressType

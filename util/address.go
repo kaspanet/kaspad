@@ -5,11 +5,9 @@
 package util
 
 import (
-	"encoding/hex"
 	"errors"
 	"fmt"
 
-	"github.com/daglabs/btcd/btcec"
 	"github.com/daglabs/btcd/util/bech32"
 	"golang.org/x/crypto/ripemd160"
 )
@@ -166,6 +164,11 @@ type AddressPubKeyHash struct {
 	hash   [ripemd160.Size]byte
 }
 
+func NewAddressPubKeyHashFromPublicKey(publicKey []byte, prefix Bech32Prefix) (*AddressPubKeyHash, error) {
+	pkHash := Hash160(publicKey)
+	return newAddressPubKeyHash(prefix, pkHash)
+}
+
 // NewAddressPubKeyHash returns a new AddressPubKeyHash.  pkHash mustbe 20
 // bytes.
 func NewAddressPubKeyHash(pkHash []byte, prefix Bech32Prefix) (*AddressPubKeyHash, error) {
@@ -285,135 +288,4 @@ func (a *AddressScriptHash) String() string {
 // keys).
 func (a *AddressScriptHash) Hash160() *[ripemd160.Size]byte {
 	return &a.hash
-}
-
-// PubKeyFormat describes what format to use for a pay-to-pubkey address.
-type PubKeyFormat int
-
-const (
-	// PKFUncompressed indicates the pay-to-pubkey address format is an
-	// uncompressed public key.
-	PKFUncompressed PubKeyFormat = iota
-
-	// PKFCompressed indicates the pay-to-pubkey address format is a
-	// compressed public key.
-	PKFCompressed
-
-	// PKFHybrid indicates the pay-to-pubkey address format is a hybrid
-	// public key.
-	PKFHybrid
-)
-
-// AddressPubKey is an Address for a pay-to-pubkey transaction.
-type AddressPubKey struct {
-	prefix       Bech32Prefix
-	pubKeyFormat PubKeyFormat
-	pubKey       *btcec.PublicKey
-	pubKeyHashID byte
-}
-
-// NewAddressPubKey returns a new AddressPubKey which represents a pay-to-pubkey
-// address.  The serializedPubKey parameter must be a valid pubkey and can be
-// uncompressed, compressed, or hybrid.
-func NewAddressPubKey(serializedPubKey []byte, prefix Bech32Prefix) (*AddressPubKey, error) {
-	pubKey, err := btcec.ParsePubKey(serializedPubKey, btcec.S256())
-	if err != nil {
-		return nil, err
-	}
-
-	// Set the format of the pubkey.  This probably should be returned
-	// from btcec, but do it here to avoid API churn.  We already know the
-	// pubkey is valid since it parsed above, so it's safe to simply examine
-	// the leading byte to get the format.
-	pkFormat := PKFUncompressed
-	switch serializedPubKey[0] {
-	case 0x02, 0x03:
-		pkFormat = PKFCompressed
-	case 0x06, 0x07:
-		pkFormat = PKFHybrid
-	}
-
-	return &AddressPubKey{
-		pubKeyFormat: pkFormat,
-		pubKey:       pubKey,
-		pubKeyHashID: pubKeyHashAddrID,
-		prefix:       prefix,
-	}, nil
-}
-
-// serialize returns the serialization of the public key according to the
-// format associated with the address.
-func (a *AddressPubKey) serialize() []byte {
-	switch a.pubKeyFormat {
-	default:
-		fallthrough
-	case PKFUncompressed:
-		return a.pubKey.SerializeUncompressed()
-
-	case PKFCompressed:
-		return a.pubKey.SerializeCompressed()
-
-	case PKFHybrid:
-		return a.pubKey.SerializeHybrid()
-	}
-}
-
-// EncodeAddress returns the string encoding of the public key as a
-// pay-to-pubkey-hash.  Note that the public key format (uncompressed,
-// compressed, etc) will change the resulting address.  This is expected since
-// pay-to-pubkey-hash is a hash of the serialized public key which obviously
-// differs with the format.  At the time of this writing, most Bitcoin addresses
-// are pay-to-pubkey-hash constructed from the uncompressed public key.
-//
-// Part of the Address interface.
-func (a *AddressPubKey) EncodeAddress() string {
-	return encodeAddress(a.prefix, Hash160(a.serialize()), a.pubKeyHashID)
-}
-
-// ScriptAddress returns the bytes to be included in a txout script to pay
-// to a public key.  Setting the public key format will affect the output of
-// this function accordingly.  Part of the Address interface.
-func (a *AddressPubKey) ScriptAddress() []byte {
-	return a.serialize()
-}
-
-// IsForPrefix returns whether or not the pay-to-pubkey address is associated
-// with the passed bitcoin network.
-func (a *AddressPubKey) IsForPrefix(prefix Bech32Prefix) bool {
-	return a.prefix == prefix
-}
-
-// String returns the hex-encoded human-readable string for the pay-to-pubkey
-// address.  This is not the same as calling EncodeAddress.
-func (a *AddressPubKey) String() string {
-	return hex.EncodeToString(a.serialize())
-}
-
-// Format returns the format (uncompressed, compressed, etc) of the
-// pay-to-pubkey address.
-func (a *AddressPubKey) Format() PubKeyFormat {
-	return a.pubKeyFormat
-}
-
-// SetFormat sets the format (uncompressed, compressed, etc) of the
-// pay-to-pubkey address.
-func (a *AddressPubKey) SetFormat(pkFormat PubKeyFormat) {
-	a.pubKeyFormat = pkFormat
-}
-
-// AddressPubKeyHash returns the pay-to-pubkey address converted to a
-// pay-to-pubkey-hash address.  Note that the public key format (uncompressed,
-// compressed, etc) will change the resulting address.  This is expected since
-// pay-to-pubkey-hash is a hash of the serialized public key which obviously
-// differs with the format.  At the time of this writing, most Bitcoin addresses
-// are pay-to-pubkey-hash constructed from the uncompressed public key.
-func (a *AddressPubKey) AddressPubKeyHash() *AddressPubKeyHash {
-	addr := &AddressPubKeyHash{prefix: a.prefix}
-	copy(addr.hash[:], Hash160(a.serialize()))
-	return addr
-}
-
-// PubKey returns the underlying public key for the address.
-func (a *AddressPubKey) PubKey() *btcec.PublicKey {
-	return a.pubKey
 }

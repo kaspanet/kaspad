@@ -12,7 +12,6 @@ interface. The functions are only exported while the tests are being run.
 package util
 
 import (
-	"github.com/daglabs/btcd/btcec"
 	"github.com/daglabs/btcd/util/bech32"
 	"golang.org/x/crypto/ripemd160"
 )
@@ -44,19 +43,6 @@ func TstAddressScriptHash(prefix Bech32Prefix, hash [ripemd160.Size]byte) *Addre
 	return &AddressScriptHash{
 		prefix: prefix,
 		hash:   hash,
-	}
-}
-
-// TstAddressPubKey makes an AddressPubKey, setting the unexported fields with
-// the parameters.
-func TstAddressPubKey(serializedPubKey []byte, pubKeyFormat PubKeyFormat,
-	netID byte) *AddressPubKey {
-
-	pubKey, _ := btcec.ParsePubKey(serializedPubKey, btcec.S256())
-	return &AddressPubKey{
-		pubKeyFormat: pubKeyFormat,
-		pubKey:       (*btcec.PublicKey)(pubKey),
-		pubKeyHashID: netID,
 	}
 }
 

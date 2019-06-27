@@ -11,9 +11,9 @@ func decodeKeys(cfg *config) (*btcec.PrivateKey, *util.AddressPubKeyHash, error)
 	privateKey, _ := btcec.PrivKeyFromBytes(btcec.S256(), privateKeyBytes)
 	serializedPrivateKey := privateKey.PubKey().SerializeCompressed()
 
-	pubKeyAddr, err := util.NewAddressPubKey(serializedPrivateKey, activeNetParams.Prefix)
+	addr, err := util.NewAddressPubKeyHashFromPublicKey(serializedPrivateKey, activeNetParams.Prefix)
 	if err != nil {
 		return nil, nil, err
 	}
-	return privateKey, pubKeyAddr.AddressPubKeyHash(), nil
+	return privateKey, addr, nil
 }
