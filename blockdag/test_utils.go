@@ -165,6 +165,7 @@ func GetVirtualFromParentsForTest(dag *BlockDAG, parentHashes []*daghash.Hash) (
 	}
 	virtual.utxoSet = diffPastUTXO.base
 
+	// Accept all the outpoints that were previously accepted by the original virtual
 	acceptanceDiff := NewUTXODiff()
 	for outpoint, entry := range virtual.utxoSet.utxoCollection {
 		if entry.blockBlueScore != UnacceptedBlueScore {
