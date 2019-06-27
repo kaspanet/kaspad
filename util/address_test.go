@@ -6,7 +6,6 @@ package util_test
 
 import (
 	"bytes"
-	"encoding/hex"
 	"fmt"
 	"reflect"
 	"strings"
@@ -232,17 +231,12 @@ func TestAddresses(t *testing.T) {
 
 			// Perform type-specific calculations.
 			var saddr []byte
-			switch d := decoded.(type) {
+			switch decoded.(type) {
 			case *util.AddressPubKeyHash:
 				saddr = util.TstAddressSAddr(encoded)
 
 			case *util.AddressScriptHash:
 				saddr = util.TstAddressSAddr(encoded)
-
-			case *util.AddressPubKey:
-				// Ignore the error here since the script
-				// address is checked below.
-				saddr, _ = hex.DecodeString(d.String())
 			}
 
 			// Check script address, as well as the Hash160 method for P2PKH and

@@ -24,30 +24,32 @@ var (
 	// the overhead of creating it multiple times.
 	bigOne = big.NewInt(1)
 
-	// mainPowLimit is the highest proof of work value a Bitcoin block can
+	// mainPowMax is the highest proof of work value a Bitcoin block can
 	// have for the main network.  It is the value 2^255 - 1.
-	mainPowLimit = new(big.Int).Sub(new(big.Int).Lsh(bigOne, 255), bigOne)
+	mainPowMax = new(big.Int).Sub(new(big.Int).Lsh(bigOne, 255), bigOne)
 
-	// regressionPowLimit is the highest proof of work value a Bitcoin block
+	// regressionPowMax is the highest proof of work value a Bitcoin block
 	// can have for the regression test network.  It is the value 2^255 - 1.
-	regressionPowLimit = new(big.Int).Sub(new(big.Int).Lsh(bigOne, 255), bigOne)
+	regressionPowMax = new(big.Int).Sub(new(big.Int).Lsh(bigOne, 255), bigOne)
 
-	// testNet3PowLimit is the highest proof of work value a Bitcoin block
+	// testNet3PowMax is the highest proof of work value a Bitcoin block
 	// can have for the test network (version 3).  It is the value
 	// 2^255 - 1.
-	testNet3PowLimit = new(big.Int).Sub(new(big.Int).Lsh(bigOne, 255), bigOne)
+	testNet3PowMax = new(big.Int).Sub(new(big.Int).Lsh(bigOne, 255), bigOne)
 
-	// simNetPowLimit is the highest proof of work value a Bitcoin block
+	// simNetPowMax is the highest proof of work value a Bitcoin block
 	// can have for the simulation test network.  It is the value 2^255 - 1.
-	simNetPowLimit = new(big.Int).Sub(new(big.Int).Lsh(bigOne, 255), bigOne)
+	simNetPowMax = new(big.Int).Sub(new(big.Int).Lsh(bigOne, 255), bigOne)
 
-	// devNetPowLimit is the highest proof of work value a Bitcoin block
+	// devNetPowMax is the highest proof of work value a Bitcoin block
 	// can have for the development network.  It is the value
 	// 2^239 - 1.
-	devNetPowLimit = new(big.Int).Sub(new(big.Int).Lsh(bigOne, 239), bigOne)
+	devNetPowMax = new(big.Int).Sub(new(big.Int).Lsh(bigOne, 239), bigOne)
 )
 
 const phantomK = 10
+const difficultyAdjustmentWindowSize = 2640
+const timestampDeviationTolerance = 132
 
 // Checkpoint identifies a known good point in the block chain.  Using
 // checkpoints allows a few optimizations for old blocks during initial download
@@ -120,13 +122,9 @@ type Params struct {
 	// GenesisHash is the starting block hash.
 	GenesisHash *daghash.Hash
 
-	// PowLimit defines the highest allowed proof of work value for a block
+	// PowMax defines the highest allowed proof of work value for a block
 	// as a uint256.
-	PowLimit *big.Int
-
-	// PowLimitBits defines the highest allowed proof of work value for a
-	// block in compact form.
-	PowLimitBits uint32
+	PowMax *big.Int
 
 	// BlockCoinbaseMaturity is the number of blocks required before newly mined
 	// coins can be spent.
@@ -136,32 +134,17 @@ type Params struct {
 	// is reduced.
 	SubsidyReductionInterval uint64
 
-	// TargetTimespan is the desired amount of time that should elapse
-	// before the block difficulty requirement is examined to determine how
-	// it should be changed in order to maintain the desired block
-	// generation rate.
-	TargetTimespan time.Duration
-
 	// TargetTimePerBlock is the desired amount of time to generate each
 	// block.
 	TargetTimePerBlock time.Duration
 
-	// RetargetAdjustmentFactor is the adjustment factor used to limit
-	// the minimum and maximum amount of adjustment that can occur between
-	// difficulty retargets.
-	RetargetAdjustmentFactor int64
+	// TimestampDeviationTolerance is the maximum offset a block timestamp
+	// is allowed to be in the future before it gets delayed
+	TimestampDeviationTolerance uint64
 
-	// ReduceMinDifficulty defines whether the network should reduce the
-	// minimum required difficulty after a long enough period of time has
-	// passed without finding a block.  This is really only useful for test
-	// networks and should not be set on a main network.
-	ReduceMinDifficulty bool
-
-	// MinDiffReductionTime is the amount of time after which the minimum
-	// required difficulty should be reduced when a block hasn't been found.
-	//
-	// NOTE: This only applies if ReduceMinDifficulty is true.
-	MinDiffReductionTime time.Duration
+	// DifficultyAdjustmentWindowSize is the size of window that is inspected
+	// to calculate the required difficulty of each block.
+	DifficultyAdjustmentWindowSize uint64
 
 	// GenerateSupported specifies whether or not CPU mining is allowed.
 	GenerateSupported bool
@@ -217,18 +200,15 @@ var MainNetParams = Params{
 	DNSSeeds:    []string{},
 
 	// DAG parameters
-	GenesisBlock:             &genesisBlock,
-	GenesisHash:              &genesisHash,
-	PowLimit:                 mainPowLimit,
-	PowLimitBits:             0x207fffff,
-	BlockCoinbaseMaturity:    100,
-	SubsidyReductionInterval: 210000,
-	TargetTimespan:           time.Hour * 1,   // 1 hour
-	TargetTimePerBlock:       time.Second * 1, // 1 second
-	RetargetAdjustmentFactor: 4,               // 25% less, 400% more
-	ReduceMinDifficulty:      false,
-	MinDiffReductionTime:     0,
-	GenerateSupported:        false,
+	GenesisBlock:                   &genesisBlock,
+	GenesisHash:                    &genesisHash,
+	PowMax:                         mainPowMax,
+	BlockCoinbaseMaturity:          100,
+	SubsidyReductionInterval:       210000,
+	TargetTimePerBlock:             time.Second * 1, // 1 second
+	DifficultyAdjustmentWindowSize: difficultyAdjustmentWindowSize,
+	TimestampDeviationTolerance:    timestampDeviationTolerance,
+	GenerateSupported:              false,
 
 	// Checkpoints ordered from oldest to newest.
 	Checkpoints: nil,
@@ -279,19 +259,16 @@ var RegressionNetParams = Params{
 	DefaultPort: "18444",
 	DNSSeeds:    []string{},
 
-	// Chain parameters
-	GenesisBlock:             &regTestGenesisBlock,
-	GenesisHash:              &regTestGenesisHash,
-	PowLimit:                 regressionPowLimit,
-	PowLimitBits:             0x207fffff,
-	BlockCoinbaseMaturity:    100,
-	SubsidyReductionInterval: 150,
-	TargetTimespan:           time.Hour * 1,   // 1 hour
-	TargetTimePerBlock:       time.Second * 1, // 1 second
-	RetargetAdjustmentFactor: 4,               // 25% less, 400% more
-	ReduceMinDifficulty:      true,
-	MinDiffReductionTime:     time.Minute * 20, // TargetTimePerBlock * 2
-	GenerateSupported:        true,
+	// DAG parameters
+	GenesisBlock:                   &regTestGenesisBlock,
+	GenesisHash:                    &regTestGenesisHash,
+	PowMax:                         regressionPowMax,
+	BlockCoinbaseMaturity:          100,
+	SubsidyReductionInterval:       150,
+	TargetTimePerBlock:             time.Second * 1, // 1 second
+	DifficultyAdjustmentWindowSize: difficultyAdjustmentWindowSize,
+	TimestampDeviationTolerance:    timestampDeviationTolerance,
+	GenerateSupported:              true,
 
 	// Checkpoints ordered from oldest to newest.
 	Checkpoints: nil,
@@ -342,19 +319,16 @@ var TestNet3Params = Params{
 	DefaultPort: "18333",
 	DNSSeeds:    []string{},
 
-	// Chain parameters
-	GenesisBlock:             &testNet3GenesisBlock,
-	GenesisHash:              &testNet3GenesisHash,
-	PowLimit:                 testNet3PowLimit,
-	PowLimitBits:             0x207fffff,
-	BlockCoinbaseMaturity:    100,
-	SubsidyReductionInterval: 210000,
-	TargetTimespan:           time.Hour * 1,   // 1 hour
-	TargetTimePerBlock:       time.Second * 1, // 1 second
-	RetargetAdjustmentFactor: 4,               // 25% less, 400% more
-	ReduceMinDifficulty:      true,
-	MinDiffReductionTime:     time.Minute * 20, // TargetTimePerBlock * 2
-	GenerateSupported:        true,
+	// DAG parameters
+	GenesisBlock:                   &testNet3GenesisBlock,
+	GenesisHash:                    &testNet3GenesisHash,
+	PowMax:                         testNet3PowMax,
+	BlockCoinbaseMaturity:          100,
+	SubsidyReductionInterval:       210000,
+	TargetTimePerBlock:             time.Second * 1, // 1 second
+	DifficultyAdjustmentWindowSize: difficultyAdjustmentWindowSize,
+	TimestampDeviationTolerance:    timestampDeviationTolerance,
+	GenerateSupported:              true,
 
 	// Checkpoints ordered from oldest to newest.
 	Checkpoints: nil,
@@ -409,19 +383,16 @@ var SimNetParams = Params{
 	DefaultPort: "18555",
 	DNSSeeds:    []string{}, // NOTE: There must NOT be any seeds.
 
-	// Chain parameters
-	GenesisBlock:             &simNetGenesisBlock,
-	GenesisHash:              &simNetGenesisHash,
-	PowLimit:                 simNetPowLimit,
-	PowLimitBits:             0x207fffff,
-	BlockCoinbaseMaturity:    100,
-	SubsidyReductionInterval: 210000,
-	TargetTimespan:           time.Hour * 1,   // 1 hour
-	TargetTimePerBlock:       time.Second * 1, // 1 second
-	RetargetAdjustmentFactor: 4,               // 25% less, 400% more
-	ReduceMinDifficulty:      true,
-	MinDiffReductionTime:     time.Minute * 20, // TargetTimePerBlock * 2
-	GenerateSupported:        true,
+	// DAG parameters
+	GenesisBlock:                   &simNetGenesisBlock,
+	GenesisHash:                    &simNetGenesisHash,
+	PowMax:                         simNetPowMax,
+	BlockCoinbaseMaturity:          100,
+	SubsidyReductionInterval:       210000,
+	TargetTimePerBlock:             time.Second * 1, // 1 second
+	DifficultyAdjustmentWindowSize: difficultyAdjustmentWindowSize,
+	TimestampDeviationTolerance:    timestampDeviationTolerance,
+	GenerateSupported:              true,
 
 	// Checkpoints ordered from oldest to newest.
 	Checkpoints: nil,
@@ -468,19 +439,16 @@ var DevNetParams = Params{
 	DefaultPort: "18333",
 	DNSSeeds:    []string{"devnet-dnsseed.daglabs.com"},
 
-	// Chain parameters
-	GenesisBlock:             &devNetGenesisBlock,
-	GenesisHash:              &devNetGenesisHash,
-	PowLimit:                 devNetPowLimit,
-	PowLimitBits:             util.BigToCompact(devNetPowLimit), // 0x1e7fffff
-	BlockCoinbaseMaturity:    100,
-	SubsidyReductionInterval: 210000,
-	TargetTimespan:           time.Hour * 1,   // 1 hour
-	TargetTimePerBlock:       time.Second * 1, // 1 second
-	RetargetAdjustmentFactor: 4,               // 25% less, 400% more
-	ReduceMinDifficulty:      true,
-	MinDiffReductionTime:     time.Minute * 20, // TargetTimePerBlock * 2
-	GenerateSupported:        true,
+	// DAG parameters
+	GenesisBlock:                   &devNetGenesisBlock,
+	GenesisHash:                    &devNetGenesisHash,
+	PowMax:                         devNetPowMax,
+	BlockCoinbaseMaturity:          100,
+	SubsidyReductionInterval:       210000,
+	TargetTimePerBlock:             time.Second * 1, // 1 second
+	DifficultyAdjustmentWindowSize: difficultyAdjustmentWindowSize,
+	TimestampDeviationTolerance:    timestampDeviationTolerance,
+	GenerateSupported:              true,
 
 	// Checkpoints ordered from oldest to newest.
 	Checkpoints: nil,

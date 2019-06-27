@@ -69,6 +69,7 @@ type AcceptedBlock struct {
 	Block    *wire.MsgBlock
 	Height   uint64
 	IsOrphan bool
+	Delay    time.Duration
 }
 
 // Ensure AcceptedBlock implements the TestInstance interface.
@@ -193,6 +194,8 @@ type testGenerator struct {
 
 	// Common key for any tests which require signed transactions.
 	privKey *btcec.PrivateKey
+
+	powMaxBits uint32
 }
 
 // makeTestGenerator returns a test generator instance initialized with the
@@ -210,6 +213,7 @@ func makeTestGenerator(params *dagconfig.Params) (testGenerator, error) {
 		tipName:      "genesis",
 		tipHeight:    0,
 		privKey:      privKey,
+		powMaxBits:   util.BigToCompact(params.PowMax),
 	}, nil
 }
 
@@ -511,7 +515,7 @@ func (g *testGenerator) nextBlock(blockName string, spend *spendableOut, mungers
 			Version:        1,
 			ParentHashes:   []*daghash.Hash{g.tip.BlockHash()}, // TODO: (Stas) This is wrong. Modified only to satisfy compilation.
 			HashMerkleRoot: calcHashMerkleRoot(txns),
-			Bits:           g.params.PowLimitBits,
+			Bits:           g.powMaxBits,
 			Timestamp:      ts,
 			Nonce:          0, // To be solved.
 		},
@@ -836,7 +840,7 @@ func Generate(includeLargeReorg bool) (tests [][]TestInstance, err error) {
 	// block to be the current tip of the block chain.
 	acceptBlock := func(blockName string, block *wire.MsgBlock, isOrphan bool) TestInstance {
 		blockHeight := g.blockHeights[blockName]
-		return AcceptedBlock{blockName, block, blockHeight, isOrphan}
+		return AcceptedBlock{blockName, block, blockHeight, isOrphan, 0}
 	}
 	rejectBlock := func(blockName string, block *wire.MsgBlock, code blockdag.ErrorCode) TestInstance {
 		blockHeight := g.blockHeights[blockName]
@@ -1405,7 +1409,7 @@ func Generate(includeLargeReorg bool) (tests [][]TestInstance, err error) {
 			b46.Header.Nonce++
 			blockHash := b46.BlockHash()
 			hashNum := daghash.HashToBig(blockHash)
-			if hashNum.Cmp(g.params.PowLimit) >= 0 {
+			if hashNum.Cmp(g.params.PowMax) >= 0 {
 				break
 			}
 		}

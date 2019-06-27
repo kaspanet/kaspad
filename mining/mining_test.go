@@ -109,10 +109,16 @@ func TestNewBlockTemplate(t *testing.T) {
 		t.Fatalf("NewBlockTemplate: %v", err)
 	}
 
-	isOrphan, err := dag.ProcessBlock(util.NewBlock(template1.Block), blockdag.BFNoPoWCheck)
+	isOrphan, delay, err := dag.ProcessBlock(util.NewBlock(template1.Block), blockdag.BFNoPoWCheck)
 	if err != nil {
 		t.Fatalf("ProcessBlock: %v", err)
 	}
+
+	if delay != 0 {
+		t.Fatalf("ProcessBlock: template1 " +
+			"is too far in the future")
+	}
+
 	if isOrphan {
 		t.Fatalf("ProcessBlock: template1 got unexpectedly orphan")
 	}
@@ -124,9 +130,13 @@ func TestNewBlockTemplate(t *testing.T) {
 		if err != nil {
 			t.Fatalf("NewBlockTemplate: %v", err)
 		}
-		isOrphan, err = dag.ProcessBlock(util.NewBlock(template.Block), blockdag.BFNoPoWCheck)
+		isOrphan, delay, err = dag.ProcessBlock(util.NewBlock(template.Block), blockdag.BFNoPoWCheck)
 		if err != nil {
 			t.Fatalf("ProcessBlock: %v", err)
+		}
+		if delay != 0 {
+			t.Fatalf("ProcessBlock: template " +
+				"is too far in the future")
 		}
 		if isOrphan {
 			t.Fatalf("ProcessBlock: template got unexpectedly orphan")

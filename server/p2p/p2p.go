@@ -562,7 +562,7 @@ func (sp *Peer) OnBlock(_ *peer.Peer, msg *wire.MsgBlock, buf []byte) {
 	// reference implementation processes blocks in the same
 	// thread and therefore blocks further messages until
 	// the bitcoin block has been fully processed.
-	sp.server.SyncManager.QueueBlock(block, sp.Peer, sp.blockProcessed)
+	sp.server.SyncManager.QueueBlock(block, sp.Peer, false, sp.blockProcessed)
 	<-sp.blockProcessed
 }
 

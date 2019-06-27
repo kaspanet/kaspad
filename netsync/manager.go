@@ -6,6 +6,7 @@ package netsync
 
 import (
 	"container/list"
+	"errors"
 	"fmt"
 	"net"
 	"sync"
@@ -49,9 +50,10 @@ type newPeerMsg struct {
 // blockMsg packages a bitcoin block message and the peer it came from together
 // so the block handler has access to that information.
 type blockMsg struct {
-	block *util.Block
-	peer  *peerpkg.Peer
-	reply chan struct{}
+	block          *util.Block
+	peer           *peerpkg.Peer
+	isDelayedBlock bool
+	reply          chan struct{}
 }
 
 // invMsg packages a bitcoin inv message and the peer it came from together
@@ -547,8 +549,12 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 		}
 	}
 
+	if bmsg.isDelayedBlock {
+		behaviorFlags |= blockdag.BFAfterDelay
+	}
+
 	// Process the block to include validation, orphan handling, etc.
-	isOrphan, err := sm.dag.ProcessBlock(bmsg.block, behaviorFlags)
+	isOrphan, delay, err := sm.dag.ProcessBlock(bmsg.block, behaviorFlags)
 
 	// Remove block from request maps. Either DAG knows about it and
 	// so we shouldn't have any more instances of trying to fetch it, or
@@ -582,6 +588,12 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 		return
 	}
 
+	if delay != 0 {
+		spawn(func() {
+			sm.QueueBlock(bmsg.block, bmsg.peer, true, make(chan struct{}))
+		})
+	}
+
 	// Request the parents for the orphan block from the peer that sent it.
 	if isOrphan {
 		missingAncestors, err := sm.dag.GetOrphanMissingAncestorHashes(blockHash)
@@ -593,7 +605,7 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 		sm.addBlocksToRequestQueue(state, missingAncestors, false)
 	} else {
 		// When the block is not an orphan, log information about it and
-		// update the chain state.
+		// update the DAG state.
 		blockBlueScore, err := sm.dag.BlueScoreByBlockHash(blockHash)
 		if err != nil {
 			log.Errorf("Failed to get blue score for block %s: %s", blockHash, err)
@@ -1172,12 +1184,18 @@ out:
 				msg.reply <- peerID
 
 			case processBlockMsg:
-				isOrphan, err := sm.dag.ProcessBlock(
+				isOrphan, delay, err := sm.dag.ProcessBlock(
 					msg.block, msg.flags)
 				if err != nil {
 					msg.reply <- processBlockResponse{
 						isOrphan: false,
 						err:      err,
+					}
+				}
+				if delay != 0 {
+					msg.reply <- processBlockResponse{
+						isOrphan: false,
+						err:      errors.New("Cannot process blocks from RPC beyond the allowed time offset"),
 					}
 				}
 
@@ -1273,14 +1291,14 @@ func (sm *SyncManager) QueueTx(tx *util.Tx, peer *peerpkg.Peer, done chan struct
 // QueueBlock adds the passed block message and peer to the block handling
 // queue. Responds to the done channel argument after the block message is
 // processed.
-func (sm *SyncManager) QueueBlock(block *util.Block, peer *peerpkg.Peer, done chan struct{}) {
+func (sm *SyncManager) QueueBlock(block *util.Block, peer *peerpkg.Peer, isDelayedBlock bool, done chan struct{}) {
 	// Don't accept more blocks if we're shutting down.
 	if atomic.LoadInt32(&sm.shutdown) != 0 {
 		done <- struct{}{}
 		return
 	}
 
-	sm.msgChan <- &blockMsg{block: block, peer: peer, reply: done}
+	sm.msgChan <- &blockMsg{block: block, peer: peer, isDelayedBlock: isDelayedBlock, reply: done}
 }
 
 // QueueInv adds the passed inv message and peer to the block handling queue.
