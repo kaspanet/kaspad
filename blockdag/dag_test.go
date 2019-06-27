@@ -105,7 +105,7 @@ func TestHaveBlock(t *testing.T) {
 
 	// Since we're not dealing with the real block DAG, set the coinbase
 	// maturity to 1.
-	dag.TestSetCoinbaseMaturity(1)
+	dag.TestSetCoinbaseMaturity(0)
 
 	for i := 1; i < len(blocks); i++ {
 		isOrphan, err := dag.ProcessBlock(blocks[i], BFNone)
@@ -189,9 +189,9 @@ func TestHaveBlock(t *testing.T) {
 		{hash: dagconfig.SimNetParams.GenesisHash.String(), want: true},
 
 		// Block 3b should be present (as a second child of Block 2).
-		{hash: "13580c9c2ed13caeedbad15167ee47bc1d26b4f88cc13054893a6d795c3baa7b", want: true},
+		{hash: "6ffe9704c50b3f1892ce9e667337304ec0e9eb50a23673bc8ff7aaa20745ee4a", want: true},
 
-		// Block 100000 should be present (as an orphan).
+		// Block 100000 should be present (as an orphan).k
 		{hash: "01b4758d5e637d232b716cdc937335ebc5b8ea7f912b6a7fd2fc42b66b1d4d3e", want: true},
 
 		// Random hashes should not be available.

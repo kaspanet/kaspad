@@ -78,7 +78,7 @@ func TestCheckConnectBlockTemplate(t *testing.T) {
 
 	// Since we're not dealing with the real block DAG, set the coinbase
 	// maturity to 1.
-	dag.TestSetCoinbaseMaturity(1)
+	dag.TestSetCoinbaseMaturity(0)
 
 	// Load up blocks such that there is a side chain.
 	// (genesis block) -> 1 -> 2 -> 3 -> 4
