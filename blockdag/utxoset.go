@@ -13,9 +13,9 @@ import (
 )
 
 const (
-	// UnminedBlueScore is the blue score used for the "block" blueScore field of the
-	// contextual transaction information provided in a transaction store
-	// when it has not yet been accepted by a block.
+	// UnacceptedBlueScore is the blue score used for the "block" blueScore
+	// field of the contextual transaction information provided in a
+	// transaction store when it has not yet been accepted by a block.
 	UnacceptedBlueScore = math.MaxUint64
 )
 
