@@ -16,17 +16,21 @@ type blockUTXODiffData struct {
 }
 
 type utxoDiffStore struct {
-	dag    *BlockDAG
-	dirty  map[daghash.Hash]struct{}
-	loaded map[daghash.Hash]*blockUTXODiffData
-	mtx    sync.RWMutex
+	dag      *BlockDAG
+	dirty    map[daghash.Hash]struct{}
+	toRemove map[daghash.Hash]struct{}
+	removed  map[daghash.Hash]struct{}
+	loaded   map[daghash.Hash]*blockUTXODiffData
+	mtx      sync.RWMutex
 }
 
 func newUTXODiffStore(dag *BlockDAG) *utxoDiffStore {
 	return &utxoDiffStore{
-		dag:    dag,
-		dirty:  make(map[daghash.Hash]struct{}),
-		loaded: make(map[daghash.Hash]*blockUTXODiffData),
+		dag:      dag,
+		dirty:    make(map[daghash.Hash]struct{}),
+		toRemove: make(map[daghash.Hash]struct{}),
+		removed:  make(map[daghash.Hash]struct{}),
+		loaded:   make(map[daghash.Hash]*blockUTXODiffData),
 	}
 }
 
@@ -62,6 +66,11 @@ func (diffStore *utxoDiffStore) setBlockDiffChild(node *blockNode, diffChild *bl
 	diffStore.loaded[*node.hash].diffChild = diffChild
 	diffStore.setBlockAsDirty(node.hash)
 	return nil
+}
+
+func (diffStore *utxoDiffStore) removeBlockDiffData(node *blockNode) {
+	delete(diffStore.loaded, *node.hash)
+	diffStore.toRemove[*node.hash] = struct{}{}
 }
 
 func (diffStore *utxoDiffStore) setBlockAsDirty(blockHash *daghash.Hash) {
@@ -136,7 +145,7 @@ func (diffStore *utxoDiffStore) diffDataFromDB(hash *daghash.Hash) (*blockUTXODi
 func (diffStore *utxoDiffStore) flushToDB(dbTx database.Tx) error {
 	diffStore.mtx.Lock()
 	defer diffStore.mtx.Unlock()
-	if len(diffStore.dirty) == 0 {
+	if len(diffStore.dirty) == 0 && len(diffStore.toRemove) == 0 {
 		return nil
 	}
 
@@ -147,11 +156,29 @@ func (diffStore *utxoDiffStore) flushToDB(dbTx database.Tx) error {
 			return err
 		}
 	}
+
+	for hash := range diffStore.toRemove {
+		err := dbRemoveDiffData(dbTx, &hash)
+		if err != nil {
+			return err
+		}
+		diffStore.removed[hash] = struct{}{}
+	}
 	return nil
 }
 
 func (diffStore *utxoDiffStore) clearDirtyEntries() {
 	diffStore.dirty = make(map[daghash.Hash]struct{})
+}
+
+func (diffStore *utxoDiffStore) clearRemovedEntries() {
+	diffStore.removed = make(map[daghash.Hash]struct{})
+}
+
+func (diffStore *utxoDiffStore) deleteRemovedEntriesFromToRemove() {
+	for hash := range diffStore.removed {
+		delete(diffStore.toRemove, hash)
+	}
 }
 
 // dbStoreDiffData stores the UTXO diff data to the database.
@@ -163,4 +190,8 @@ func dbStoreDiffData(dbTx database.Tx, hash *daghash.Hash, diffData *blockUTXODi
 	}
 
 	return dbTx.Metadata().Bucket(utxoDiffsBucketName).Put(hash[:], serializedDiffData)
+}
+
+func dbRemoveDiffData(dbTx database.Tx, hash *daghash.Hash) error {
+	return dbTx.Metadata().Bucket(utxoDiffsBucketName).Delete(hash[:])
 }

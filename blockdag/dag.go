@@ -657,9 +657,11 @@ func (dag *BlockDAG) saveChangesFromBlock(node *blockNode, block *util.Block, vi
 		return dbStoreFeeData(dbTx, block.Hash(), feeData)
 	})
 	if err != nil {
+		dag.utxoDiffStore.clearRemovedEntries()
 		return err
 	}
 	dag.utxoDiffStore.clearDirtyEntries()
+	dag.utxoDiffStore.deleteRemovedEntriesFromToRemove()
 	return nil
 }
 
@@ -743,6 +745,29 @@ func (dag *BlockDAG) updateFinalityPoint() {
 		newFinalityPoint = currentNode
 	}
 	dag.lastFinalityPoint = newFinalityPoint
+	spawn(func() {
+		dag.finalizeNodesBelowFinalityPoint(true)
+	})
+}
+
+func (dag *BlockDAG) finalizeNodesBelowFinalityPoint(deleteDiffData bool) {
+	queue := make([]*blockNode, 0, len(dag.lastFinalityPoint.parents))
+	for _, parent := range dag.lastFinalityPoint.parents {
+		queue = append(queue, parent)
+	}
+	for len(queue) > 0 {
+		var current *blockNode
+		current, queue = queue[0], queue[1:]
+		if !current.isFinalized {
+			current.isFinalized = true
+			if deleteDiffData {
+				dag.utxoDiffStore.removeBlockDiffData(current)
+			}
+			for _, parent := range current.parents {
+				queue = append(queue, parent)
+			}
+		}
+	}
 }
 
 // NextBlockCoinbaseTransaction prepares the coinbase transaction for the next mined block

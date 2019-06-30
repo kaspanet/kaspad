@@ -1116,3 +1116,95 @@ func TestAcceptingBlock(t *testing.T) {
 			"Want: nil, got: %s", redChainTipAcceptingBlock.hash)
 	}
 }
+
+func TestFinalizeNodesBelowFinalityPoint(t *testing.T) {
+	testFinalizeNodesBelowFinalityPoint(t, true)
+	testFinalizeNodesBelowFinalityPoint(t, false)
+}
+
+func testFinalizeNodesBelowFinalityPoint(t *testing.T, deleteDiffData bool) {
+	params := dagconfig.SimNetParams
+	params.K = 1
+	dag, teardownFunc, err := DAGSetup("TestAcceptingBlock", Config{
+		DAGParams: &params,
+	})
+	if err != nil {
+		t.Fatalf("Failed to setup DAG instance: %v", err)
+	}
+	defer teardownFunc()
+
+	blockVersion := int32(0x10000000)
+	blockTime := dag.genesis.Header().Timestamp
+
+	flushUTXODiffStore := func() {
+		err := dag.db.Update(func(dbTx database.Tx) error {
+			return dag.utxoDiffStore.flushToDB(dbTx)
+		})
+		if err != nil {
+			t.Fatalf("Error flushing utxoDiffStore data to DB: %s", err)
+		}
+		dag.utxoDiffStore.clearDirtyEntries()
+		dag.utxoDiffStore.clearRemovedEntries()
+	}
+
+	addNode := func(parent *blockNode) *blockNode {
+		blockTime = blockTime.Add(time.Second)
+		node := newTestNode(setFromSlice(parent), blockVersion, 0, blockTime, dag.dagParams.K)
+		node.updateParentsChildren()
+		dag.index.AddNode(node)
+
+		// Put dummy diff data in dag.utxoDiffStore
+		err := dag.utxoDiffStore.setBlockDiff(node, NewUTXODiff())
+		if err != nil {
+			t.Fatalf("setBlockDiff: %s", err)
+		}
+		flushUTXODiffStore()
+		return node
+	}
+
+	nodes := make([]*blockNode, 0, FinalityInterval)
+	currentNode := dag.genesis
+	nodes = append(nodes, currentNode)
+	for i := 0; i <= FinalityInterval*2; i++ {
+		currentNode = addNode(currentNode)
+		nodes = append(nodes, currentNode)
+	}
+
+	// Manually set the last finality point
+	dag.lastFinalityPoint = nodes[FinalityInterval-1]
+
+	dag.finalizeNodesBelowFinalityPoint(deleteDiffData)
+	flushUTXODiffStore()
+
+	for _, node := range nodes[:FinalityInterval-1] {
+		if !node.isFinalized {
+			t.Errorf("Node with blue score %d expected to be finalized", node.blueScore)
+		}
+		if _, ok := dag.utxoDiffStore.loaded[*node.hash]; deleteDiffData && ok {
+			t.Errorf("The diff data of node with blue score %d should have been unloaded if deleteDiffData is %T", node.blueScore, deleteDiffData)
+		} else if !deleteDiffData && !ok {
+			t.Errorf("The diff data of node with blue score %d shouldn't have been unloaded if deleteDiffData is %T", node.blueScore, deleteDiffData)
+		}
+		if diffData, err := dag.utxoDiffStore.diffDataFromDB(node.hash); err != nil {
+			t.Errorf("diffDataFromDB: %s", err)
+		} else if deleteDiffData && diffData != nil {
+			t.Errorf("The diff data of node with blue score %d should have been deleted from the database if deleteDiffData is %T", node.blueScore, deleteDiffData)
+		} else if !deleteDiffData && diffData == nil {
+			t.Errorf("The diff data of node with blue score %d shouldn't have been deleted from the database if deleteDiffData is %T", node.blueScore, deleteDiffData)
+		}
+	}
+
+	for _, node := range nodes[FinalityInterval-1:] {
+		if node.isFinalized {
+			t.Errorf("Node with blue score %d wasn't expected to be finalized", node.blueScore)
+		}
+		if _, ok := dag.utxoDiffStore.loaded[*node.hash]; !ok {
+			t.Errorf("The diff data of node with blue score %d shouldn't have been unloaded", node.blueScore)
+		}
+		if diffData, err := dag.utxoDiffStore.diffDataFromDB(node.hash); err != nil {
+			t.Errorf("diffDataFromDB: %s", err)
+		} else if diffData == nil {
+			t.Errorf("The diff data of node with blue score %d shouldn't have been deleted from the database", node.blueScore)
+		}
+	}
+}

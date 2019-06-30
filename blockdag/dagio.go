@@ -554,6 +554,7 @@ func (dag *BlockDAG) initDAGState() error {
 
 		// Set the last finality point
 		dag.lastFinalityPoint = dag.index.LookupNode(state.LastFinalityPoint)
+		dag.finalizeNodesBelowFinalityPoint(false)
 
 		return nil
 	})

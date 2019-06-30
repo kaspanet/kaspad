@@ -604,12 +604,18 @@ func (dag *BlockDAG) validateDifficulty(header *wire.BlockHeader, bluestParent *
 	return nil
 }
 
-// validateParents validates that no parent is an ancestor of another parent
+// validateParents validates that no parent is an ancestor of another parent, and no parent is finalized
 func validateParents(blockHeader *wire.BlockHeader, parents blockSet) error {
 	minHeight := uint64(math.MaxUint64)
 	queue := newDownHeap()
 	visited := newSet()
 	for _, parent := range parents {
+		// This is just an early check, because parent.isFinalized is not
+		// guaranteed to be up to date. There's need to run the full finality
+		// check later in dag.checkFinalityRules
+		if parent.isFinalized {
+			return ruleError(ErrFinality, fmt.Sprintf("block %s is a finalized parent of blcok %s", parent.hash, blockHeader.BlockHash()))
+		}
 		if parent.height < minHeight {
 			minHeight = parent.height
 		}
@@ -623,10 +629,10 @@ func validateParents(blockHeader *wire.BlockHeader, parents blockSet) error {
 	for queue.Len() > 0 {
 		current := queue.pop()
 		if parents.contains(current) {
-			return fmt.Errorf("block %s is both a parent of %s and an"+
+			return ruleError(ErrInvalidParentsRelation, fmt.Sprintf("block %s is both a parent of %s and an"+
 				" ancestor of another parent",
 				current.hash,
-				blockHeader.BlockHash())
+				blockHeader.BlockHash()))
 		}
 		if current.height > minHeight {
 			for _, parent := range current.parents {
