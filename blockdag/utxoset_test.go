@@ -292,6 +292,63 @@ func TestUTXODiffRules(t *testing.T) {
 				toRemove: utxoCollection{},
 			},
 		},
+		{
+			name: "one in both toAdd and toRemove in this, empty other",
+			this: &UTXODiff{
+				toAdd:    utxoCollection{outpoint0: utxoEntry0},
+				toRemove: utxoCollection{outpoint0: utxoEntry0},
+			},
+			other: &UTXODiff{
+				toAdd:    utxoCollection{},
+				toRemove: utxoCollection{},
+			},
+			expectedDiffFromResult: &UTXODiff{
+				toAdd:    utxoCollection{},
+				toRemove: utxoCollection{},
+			},
+			expectedWithDiffResult: &UTXODiff{
+				toAdd:    utxoCollection{},
+				toRemove: utxoCollection{},
+			},
+		},
+		{
+			name: "empty this, one in both toAdd and toRemove in other",
+			this: &UTXODiff{
+				toAdd:    utxoCollection{},
+				toRemove: utxoCollection{},
+			},
+			other: &UTXODiff{
+				toAdd:    utxoCollection{outpoint0: utxoEntry0},
+				toRemove: utxoCollection{outpoint0: utxoEntry0},
+			},
+			expectedDiffFromResult: &UTXODiff{
+				toAdd:    utxoCollection{},
+				toRemove: utxoCollection{},
+			},
+			expectedWithDiffResult: &UTXODiff{
+				toAdd:    utxoCollection{},
+				toRemove: utxoCollection{},
+			},
+		},
+		{
+			name: "one in both toAdd and toRemove in this, one in both toAdd and toRemove in other",
+			this: &UTXODiff{
+				toAdd:    utxoCollection{outpoint0: utxoEntry0},
+				toRemove: utxoCollection{outpoint0: utxoEntry0},
+			},
+			other: &UTXODiff{
+				toAdd:    utxoCollection{outpoint0: utxoEntry0},
+				toRemove: utxoCollection{outpoint0: utxoEntry0},
+			},
+			expectedDiffFromResult: &UTXODiff{
+				toAdd:    utxoCollection{},
+				toRemove: utxoCollection{},
+			},
+			expectedWithDiffResult: &UTXODiff{
+				toAdd:    utxoCollection{},
+				toRemove: utxoCollection{},
+			},
+		},
 	}
 
 	for _, test := range tests {
