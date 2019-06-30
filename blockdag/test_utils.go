@@ -154,51 +154,24 @@ func GetVirtualFromParentsForTest(dag *BlockDAG, parentHashes []*daghash.Hash) (
 	}
 	virtual := newVirtualBlock(parents, dag.dagParams.K)
 
-	pastUTXO, _, err := dag.pastUTXO(&virtual.blockNode)
+	pastUTXO, acceptanceData, err := dag.pastUTXO(&virtual.blockNode)
 	if err != nil {
 		return nil, err
 	}
-	diffPastUTXO := pastUTXO.clone().(*DiffUTXOSet)
-	err = diffPastUTXO.meldToBase()
+	diffFromAcceptanceData, err := virtual.blockNode.diffFromAcceptanceData(pastUTXO, acceptanceData)
 	if err != nil {
 		return nil, err
 	}
-	virtual.utxoSet = diffPastUTXO.base
-
-	// Accept all the outpoints that were previously accepted by the original virtual
-	acceptanceDiff := NewUTXODiff()
-	for outpoint, entry := range virtual.utxoSet.utxoCollection {
-		if entry.blockBlueScore != UnacceptedBlueScore {
-			continue
-		}
-
-		// Remove unaccepted entries
-		var err error
-		acceptanceDiff.toRemove.add(outpoint, entry)
-		acceptanceDiff.diffMultiset, err = removeUTXOFromMultiset(acceptanceDiff.diffMultiset, entry, &outpoint)
-		if err != nil {
-			return nil, err
-		}
-
-		// Add new entries with their accepting blue score
-		newEntry := *entry
-		newEntry.blockBlueScore = virtual.blueScore
-		acceptanceDiff.toAdd.add(outpoint, &newEntry)
-		acceptanceDiff.diffMultiset, err = addUTXOToMultiset(acceptanceDiff.diffMultiset, &newEntry, &outpoint)
-		if err != nil {
-			return nil, err
-		}
-	}
-	utxoWithAcceptance, err := virtual.utxoSet.WithDiff(acceptanceDiff)
+	utxo, err := pastUTXO.WithDiff(diffFromAcceptanceData)
 	if err != nil {
 		return nil, err
 	}
-	diffUTXOWithAcceptance := utxoWithAcceptance.(*DiffUTXOSet)
-	err = diffUTXOWithAcceptance.meldToBase()
+	diffUTXO := utxo.clone().(*DiffUTXOSet)
+	err = diffUTXO.meldToBase()
 	if err != nil {
 		return nil, err
 	}
-	virtual.utxoSet = diffUTXOWithAcceptance.base
+	virtual.utxoSet = diffUTXO.base
 
 	return virtual, nil
 }
