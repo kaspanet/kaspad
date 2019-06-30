@@ -818,17 +818,17 @@ func (dag *BlockDAG) applyDAGChanges(node *blockNode, block *util.Block, newBloc
 	dag.virtual.AddTip(node)
 
 	// Build a UTXO set for the new virtual block
-	newVirtualUTXO, virtualTxsAcceptanceData, err := dag.pastUTXO(&dag.virtual.blockNode)
+	newVirtualPastUTXO, virtualTxsAcceptanceData, err := dag.pastUTXO(&dag.virtual.blockNode)
 	if err != nil {
 		return nil, nil, fmt.Errorf("could not restore past UTXO for virtual %s: %s", dag.virtual, err)
 	}
 
 	// Apply the new virtual's blue score to all the unaccepted UTXOs
-	diffFromAcceptanceData, err := dag.virtual.diffFromAcceptanceData(newVirtualUTXO, virtualTxsAcceptanceData)
+	diffFromAcceptanceData, err := dag.virtual.diffFromAcceptanceData(newVirtualPastUTXO, virtualTxsAcceptanceData)
 	if err != nil {
 		return nil, nil, err
 	}
-	newVirtualUTXO, err = newVirtualUTXO.WithDiff(diffFromAcceptanceData)
+	newVirtualUTXO, err := newVirtualPastUTXO.WithDiff(diffFromAcceptanceData)
 	if err != nil {
 		return nil, nil, err
 	}
