@@ -364,7 +364,7 @@ func (d *UTXODiff) clone() *UTXODiff {
 
 // AddEntry adds a UTXOEntry to the diff
 func (d *UTXODiff) AddEntry(outpoint wire.Outpoint, entry *UTXOEntry) error {
-	if d.toRemove.contains(outpoint) {
+	if d.toRemove.containsWithBlueScore(outpoint, entry.blockBlueScore) {
 		d.toRemove.remove(outpoint)
 	} else if _, exists := d.toAdd[outpoint]; exists {
 		return fmt.Errorf("AddEntry: Cannot add outpoint %s twice", outpoint)
@@ -383,7 +383,7 @@ func (d *UTXODiff) AddEntry(outpoint wire.Outpoint, entry *UTXOEntry) error {
 
 // RemoveEntry removes a UTXOEntry from the diff
 func (d *UTXODiff) RemoveEntry(outpoint wire.Outpoint, entry *UTXOEntry) error {
-	if d.toAdd.contains(outpoint) {
+	if d.toAdd.containsWithBlueScore(outpoint, entry.blockBlueScore) {
 		d.toAdd.remove(outpoint)
 	} else if _, exists := d.toRemove[outpoint]; exists {
 		return fmt.Errorf("removeEntry: Cannot remove outpoint %s twice", outpoint)
@@ -481,17 +481,14 @@ func diffFromAcceptedTx(u UTXOSet, tx *wire.MsgTx, acceptingBlueScore uint64) (*
 		}
 
 		// Remove unaccepted entries
-		var err error
-		diff.toRemove.add(existingOutpoint, existingEntry)
-		diff.diffMultiset, err = removeUTXOFromMultiset(diff.diffMultiset, existingEntry, &existingOutpoint)
+		err := diff.RemoveEntry(existingOutpoint, existingEntry)
 		if err != nil {
 			return nil, err
 		}
 
 		// Add new entries with their accepting blue score
 		newEntry := NewUTXOEntry(txOut, isCoinbase, acceptingBlueScore)
-		diff.toAdd.add(existingOutpoint, newEntry)
-		diff.diffMultiset, err = addUTXOToMultiset(diff.diffMultiset, newEntry, &existingOutpoint)
+		err = diff.AddEntry(existingOutpoint, newEntry)
 		if err != nil {
 			return nil, err
 		}
