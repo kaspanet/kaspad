@@ -1403,7 +1403,7 @@ func (dag *BlockDAG) LatestBlockLocator() BlockLocator {
 }
 
 // blockLocator returns a block locator for the passed block node.  The passed
-// node can be nil in which case the block locator for the current tips will be
+// node can be nil in which case the block locator for the selected tip will be
 // returned.
 //
 // See the BlockLocator type comments for more details.
