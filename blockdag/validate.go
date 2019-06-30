@@ -610,9 +610,10 @@ func validateParents(blockHeader *wire.BlockHeader, parents blockSet) error {
 	queue := newDownHeap()
 	visited := newSet()
 	for _, parent := range parents {
-		// This is just an early check, because parent.isFinalized is not
-		// guaranteed to be up to date. There's need to run the full finality
-		// check later in dag.checkFinalityRules
+		//  Even if parent.isFinalized is false, there's still no guarantee that the parent isn't
+		// finalized, because isFinalized field is updated in finalizeNodesBelowFinalityPoint
+		// in another goroutine. This is why later the block is checked more thoroughly on the
+		// finality rules in dag.checkFinalityRules.
 		if parent.isFinalized {
 			return ruleError(ErrFinality, fmt.Sprintf("block %s is a finalized parent of blcok %s", parent.hash, blockHeader.BlockHash()))
 		}
