@@ -744,10 +744,13 @@ func (dag *BlockDAG) updateFinalityPoint() {
 		}
 		newFinalityPoint = currentNode
 	}
+	isChanged := dag.lastFinalityPoint != newFinalityPoint
 	dag.lastFinalityPoint = newFinalityPoint
-	spawn(func() {
-		dag.finalizeNodesBelowFinalityPoint(true)
-	})
+	if isChanged {
+		spawn(func() {
+			dag.finalizeNodesBelowFinalityPoint(true)
+		})
+	}
 }
 
 func (dag *BlockDAG) finalizeNodesBelowFinalityPoint(deleteDiffData bool) {
