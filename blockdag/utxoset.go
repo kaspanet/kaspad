@@ -476,9 +476,6 @@ func diffFromAcceptedTx(u UTXOSet, tx *wire.MsgTx, acceptingBlueScore uint64) (*
 		if !ok {
 			return nil, fmt.Errorf("cannot accept outpoint %s because it doesn't exist in the given UTXO", existingOutpoint)
 		}
-		if existingEntry.blockBlueScore != UnacceptedBlueScore {
-			continue
-		}
 
 		// Remove unaccepted entries
 		err := diff.RemoveEntry(existingOutpoint, existingEntry)
