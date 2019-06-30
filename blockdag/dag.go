@@ -878,6 +878,8 @@ func (node *blockNode) diffFromTxs(pastUTXO UTXOSet, transactions []*util.Tx) (*
 	return diff, nil
 }
 
+// diffFromAccpetanceData creates a diff that "updates" the blue scores of the given
+// UTXOSet with the node's blueScore according to the given acceptance data.
 func (node *blockNode) diffFromAcceptanceData(pastUTXO UTXOSet, blockTxsAcceptanceDatas MultiBlockTxsAcceptanceData) (*UTXODiff, error) {
 	diff := NewUTXODiff()
 

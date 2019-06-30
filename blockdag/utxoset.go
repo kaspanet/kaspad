@@ -463,9 +463,9 @@ func diffFromTx(u UTXOSet, tx *wire.MsgTx, acceptingBlueScore uint64) (*UTXODiff
 
 // diffFromAcceptedTx is a common implementation for diffFromAcceptedTx, that works
 // for both diff-based and full UTXO sets.
-// Returns a diff that replaces an entry containing UnacceptedBlueScore with an entry
-// containing real accepting blue score. Returns an error if the provided transaction's
-// entry is not Unaccepted or is otherwise not valid in the context of this UTXOSet.
+// Returns a diff that replaces an entry's b;pclBlueScore with the given acceptingBlueScore.
+// Returns an error if the provided transaction's entry is not valid in the context
+// of this UTXOSet.
 func diffFromAcceptedTx(u UTXOSet, tx *wire.MsgTx, acceptingBlueScore uint64) (*UTXODiff, error) {
 	diff := NewUTXODiff()
 	isCoinbase := tx.IsCoinBase()
