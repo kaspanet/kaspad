@@ -269,6 +269,7 @@ var errorCodeStrings = map[ErrorCode]string{
 	ErrInvalidGas:                "ErrInvalidGas",
 	ErrInvalidPayload:            "ErrInvalidPayload",
 	ErrInvalidPayloadHash:        "ErrInvalidPayloadHash",
+	ErrInvalidParentsRelation:    "ErrInvalidParentsRelation",
 }
 
 // String returns the ErrorCode as a human-readable name.
