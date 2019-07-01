@@ -614,7 +614,7 @@ func validateParents(blockHeader *wire.BlockHeader, parents blockSet) error {
 		// because the isFinalized field can be set to true in finalizeNodesBelowFinalityPoint
 		// in another goroutine, there's no guarantee that the parent won't be marked as
 		// finalized later on. That is to say, if isFinalized is true, we're 100% sure it's
-		// true, but if it's false, we can't be sure that it's actually finalized.
+		// true, but if it's false, we can't be sure that it's not actually finalized.
 		// This is why later the block is checked more thoroughly on the finality rules
 		// in dag.checkFinalityRules.
 		if parent.isFinalized {
