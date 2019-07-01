@@ -1125,7 +1125,7 @@ func TestFinalizeNodesBelowFinalityPoint(t *testing.T) {
 func testFinalizeNodesBelowFinalityPoint(t *testing.T, deleteDiffData bool) {
 	params := dagconfig.SimNetParams
 	params.K = 1
-	dag, teardownFunc, err := DAGSetup("TestAcceptingBlock", Config{
+	dag, teardownFunc, err := DAGSetup("testFinalizeNodesBelowFinalityPoint", Config{
 		DAGParams: &params,
 	})
 	if err != nil {

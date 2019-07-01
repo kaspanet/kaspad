@@ -610,12 +610,15 @@ func validateParents(blockHeader *wire.BlockHeader, parents blockSet) error {
 	queue := newDownHeap()
 	visited := newSet()
 	for _, parent := range parents {
-		//  Even if parent.isFinalized is false, there's still no guarantee that the parent isn't
-		// finalized, because isFinalized field is updated in finalizeNodesBelowFinalityPoint
-		// in another goroutine. This is why later the block is checked more thoroughly on the
-		// finality rules in dag.checkFinalityRules.
+		// Once parent.isFinalized is set to true, the value won't change again, but
+		// because the isFinalized field can be set to true in finalizeNodesBelowFinalityPoint
+		// in another goroutine, there's no guarantee that the parent won't be marked as
+		// finalized later on. That is to say, if isFinalized is true, we're 100% sure it's
+		// true, but if it's false, we can't be sure that it's actually finalized.
+		// This is why later the block is checked more thoroughly on the finality rules
+		// in dag.checkFinalityRules.
 		if parent.isFinalized {
-			return ruleError(ErrFinality, fmt.Sprintf("block %s is a finalized parent of blcok %s", parent.hash, blockHeader.BlockHash()))
+			return ruleError(ErrFinality, fmt.Sprintf("block %s is a finalized parent of block %s", parent.hash, blockHeader.BlockHash()))
 		}
 		if parent.height < minHeight {
 			minHeight = parent.height
