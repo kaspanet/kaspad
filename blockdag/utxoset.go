@@ -216,8 +216,12 @@ func (d *UTXODiff) diffFrom(other *UTXODiff) (*UTXODiff, error) {
 		}
 		if diffEntry, ok := other.toRemove.get(outpoint); ok {
 			// An exception is made for entries with unequal blue scores
+			// as long as the appropriate entry exists in either d.toRemove
+			// or other.toAdd.
 			// These are just "updates" to accepted blue score
-			if diffEntry.blockBlueScore != utxoEntry.blockBlueScore {
+			if diffEntry.blockBlueScore != utxoEntry.blockBlueScore &&
+				(d.toRemove.containsWithBlueScore(outpoint, diffEntry.blockBlueScore) ||
+					other.toAdd.containsWithBlueScore(outpoint, utxoEntry.blockBlueScore)) {
 				continue
 			}
 			return nil, fmt.Errorf("diffFrom: outpoint %s both in d.toAdd and in other.toRemove", outpoint)
@@ -233,8 +237,12 @@ func (d *UTXODiff) diffFrom(other *UTXODiff) (*UTXODiff, error) {
 		}
 		if diffEntry, ok := other.toAdd.get(outpoint); ok {
 			// An exception is made for entries with unequal blue scores
+			// as long as the appropriate entry exists in either d.toAdd
+			// or other.toRemove.
 			// These are just "updates" to accepted blue score
-			if diffEntry.blockBlueScore != utxoEntry.blockBlueScore {
+			if diffEntry.blockBlueScore != utxoEntry.blockBlueScore &&
+				(d.toAdd.containsWithBlueScore(outpoint, diffEntry.blockBlueScore) ||
+					other.toRemove.containsWithBlueScore(outpoint, utxoEntry.blockBlueScore)) {
 				continue
 			}
 			return nil, errors.New("diffFrom: transaction both in d.toRemove and in other.toAdd")
@@ -309,7 +317,9 @@ func (d *UTXODiff) WithDiff(diff *UTXODiff) (*UTXODiff, error) {
 			// as long as the appropriate entry exists in either d.toRemove
 			// or diff.toRemove.
 			// These are just "updates" to accepted blue score
-			if diffEntry.blockBlueScore != utxoEntry.blockBlueScore && (d.toRemove.containsWithBlueScore(outpoint, diffEntry.blockBlueScore) || diff.toRemove.containsWithBlueScore(outpoint, utxoEntry.blockBlueScore)) {
+			if diffEntry.blockBlueScore != utxoEntry.blockBlueScore &&
+				(d.toRemove.containsWithBlueScore(outpoint, diffEntry.blockBlueScore) ||
+					diff.toRemove.containsWithBlueScore(outpoint, utxoEntry.blockBlueScore)) {
 				continue
 			}
 			return nil, ruleError(ErrWithDiff, fmt.Sprintf("WithDiff: outpoint %s both in d.toAdd and in other.toAdd", outpoint))
@@ -330,7 +340,8 @@ func (d *UTXODiff) WithDiff(diff *UTXODiff) (*UTXODiff, error) {
 			// or diff.toAdd.
 			// These are just "updates" to accepted blue score
 			if diffEntry.blockBlueScore != utxoEntry.blockBlueScore &&
-				(d.toAdd.containsWithBlueScore(outpoint, diffEntry.blockBlueScore) || diff.toAdd.containsWithBlueScore(outpoint, utxoEntry.blockBlueScore)) {
+				(d.toAdd.containsWithBlueScore(outpoint, diffEntry.blockBlueScore) ||
+					diff.toAdd.containsWithBlueScore(outpoint, utxoEntry.blockBlueScore)) {
 				continue
 			}
 			return nil, ruleError(ErrWithDiff, "WithDiff: transaction both in d.toRemove and in other.toRemove")
