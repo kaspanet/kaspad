@@ -2,10 +2,9 @@ package blockdag_test
 
 import (
 	"fmt"
+	"github.com/daglabs/btcd/util/subnetworkid"
 	"math"
 	"testing"
-
-	"github.com/daglabs/btcd/util/subnetworkid"
 
 	"github.com/daglabs/btcd/util/daghash"
 	"github.com/daglabs/btcd/util/testtools"
@@ -116,7 +115,22 @@ func TestFinality(t *testing.T) {
 
 	// Here we check that a block with lower blue score than the last finality
 	// point will get rejected
-	_, err = buildNodeToDag([]*daghash.Hash{genesis.Hash()})
+	fakeCoinbaseTx, err := dag.NextBlockCoinbaseTransaction(nil, nil)
+	if err != nil {
+		t.Errorf("NextBlockCoinbaseTransaction: %s", err)
+	}
+	merkleRoot := blockdag.BuildHashMerkleTreeStore([]*util.Tx{fakeCoinbaseTx}).Root()
+	beforeFinalityBlock := wire.NewMsgBlock(&wire.BlockHeader{
+		Version:              0x10000000,
+		ParentHashes:         []*daghash.Hash{genesis.Hash()},
+		HashMerkleRoot:       merkleRoot,
+		AcceptedIDMerkleRoot: &daghash.ZeroHash,
+		UTXOCommitment:       &daghash.ZeroHash,
+		Timestamp:            dag.SelectedTipHeader().Timestamp,
+		Bits:                 genesis.MsgBlock().Header.Bits,
+	})
+	beforeFinalityBlock.AddTransaction(fakeCoinbaseTx.MsgTx())
+	_, _, err = dag.ProcessBlock(util.NewBlock(beforeFinalityBlock), blockdag.BFNoPoWCheck)
 	if err == nil {
 		t.Errorf("TestFinality: buildNodeToDag expected an error but got <nil>")
 	}
@@ -126,7 +140,7 @@ func TestFinality(t *testing.T) {
 			t.Errorf("TestFinality: buildNodeToDag expected an error with code %v but instead got %v", blockdag.ErrFinality, rErr.ErrorCode)
 		}
 	} else {
-		t.Errorf("TestFinality: buildNodeToDag got unexpected error: %v", rErr)
+		t.Errorf("TestFinality: buildNodeToDag got unexpected error: %v", err)
 	}
 
 	// Here we check that a block that doesn't have the last finality point in

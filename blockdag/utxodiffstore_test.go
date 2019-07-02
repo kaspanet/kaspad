@@ -2,13 +2,12 @@ package blockdag
 
 import (
 	"fmt"
-	"reflect"
-	"testing"
-
 	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/database"
 	"github.com/daglabs/btcd/util/daghash"
 	"github.com/daglabs/btcd/wire"
+	"reflect"
+	"testing"
 )
 
 func TestUTXODiffStore(t *testing.T) {

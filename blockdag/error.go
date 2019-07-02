@@ -218,6 +218,10 @@ const (
 	// ErrSubnetwork indicates that a block doesn't adhere to the subnetwork
 	// registry rules
 	ErrSubnetworkRegistry
+
+	// ErrInvalidParentsRelation indicates that one of the parents of a block
+	// is also an ancestor of another parent
+	ErrInvalidParentsRelation
 )
 
 // Map of ErrorCode values back to their constant names for pretty printing.
@@ -265,6 +269,7 @@ var errorCodeStrings = map[ErrorCode]string{
 	ErrInvalidGas:                "ErrInvalidGas",
 	ErrInvalidPayload:            "ErrInvalidPayload",
 	ErrInvalidPayloadHash:        "ErrInvalidPayloadHash",
+	ErrInvalidParentsRelation:    "ErrInvalidParentsRelation",
 }
 
 // String returns the ErrorCode as a human-readable name.

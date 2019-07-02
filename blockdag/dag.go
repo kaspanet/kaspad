@@ -721,27 +721,60 @@ func (dag *BlockDAG) checkFinalityRules(newNode *blockNode) error {
 // updateFinalityPoint updates the dag's last finality point if necessary.
 func (dag *BlockDAG) updateFinalityPoint() {
 	selectedTip := dag.selectedTip()
-	var newFinalityPoint *blockNode
 	// if the selected tip is the genesis block - it should be the new finality point
 	if selectedTip.isGenesis() {
-		newFinalityPoint = selectedTip
-	} else {
-		// We are looking for a new finality point only if the new block's finality score is higher
-		// by 2 than the existing finality point's
-		if selectedTip.finalityScore() < dag.lastFinalityPoint.finalityScore()+2 {
-			return
-		}
+		dag.lastFinalityPoint = selectedTip
+		return
+	}
+	// We are looking for a new finality point only if the new block's finality score is higher
+	// by 2 than the existing finality point's
+	if selectedTip.finalityScore() < dag.lastFinalityPoint.finalityScore()+2 {
+		return
+	}
 
-		var currentNode *blockNode
-		for currentNode = selectedTip.selectedParent; ; currentNode = currentNode.selectedParent {
-			// We look for the first node in the selected parent chain that has a higher finality score than the last finality point.
-			if currentNode.selectedParent.finalityScore() == dag.lastFinalityPoint.finalityScore() {
-				break
+	var currentNode *blockNode
+	for currentNode = selectedTip.selectedParent; ; currentNode = currentNode.selectedParent {
+		// We look for the first node in the selected parent chain that has a higher finality score than the last finality point.
+		if currentNode.selectedParent.finalityScore() == dag.lastFinalityPoint.finalityScore() {
+			break
+		}
+	}
+	dag.lastFinalityPoint = currentNode
+	spawn(func() {
+		dag.finalizeNodesBelowFinalityPoint(true)
+	})
+}
+
+func (dag *BlockDAG) finalizeNodesBelowFinalityPoint(deleteDiffData bool) {
+	queue := make([]*blockNode, 0, len(dag.lastFinalityPoint.parents))
+	for _, parent := range dag.lastFinalityPoint.parents {
+		queue = append(queue, parent)
+	}
+	var blockHashesToDelete []*daghash.Hash
+	if deleteDiffData {
+		blockHashesToDelete = make([]*daghash.Hash, 0, FinalityInterval)
+	}
+	for len(queue) > 0 {
+		var current *blockNode
+		current, queue = queue[0], queue[1:]
+		if !current.isFinalized {
+			current.isFinalized = true
+			if deleteDiffData {
+				blockHashesToDelete = append(blockHashesToDelete, current.hash)
+			}
+			for _, parent := range current.parents {
+				queue = append(queue, parent)
 			}
 		}
-		newFinalityPoint = currentNode
 	}
-	dag.lastFinalityPoint = newFinalityPoint
+	if deleteDiffData {
+		err := dag.db.Update(func(dbTx database.Tx) error {
+			return dag.utxoDiffStore.removeBlocksDiffData(dbTx, blockHashesToDelete)
+		})
+		if err != nil {
+			panic(fmt.Sprintf("Error removing diff data from utxoDiffStore: %s", err))
+		}
+	}
 }
 
 // NextBlockCoinbaseTransaction prepares the coinbase transaction for the next mined block

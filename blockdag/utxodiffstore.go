@@ -16,10 +16,11 @@ type blockUTXODiffData struct {
 }
 
 type utxoDiffStore struct {
-	dag    *BlockDAG
-	dirty  map[daghash.Hash]struct{}
-	loaded map[daghash.Hash]*blockUTXODiffData
-	mtx    sync.RWMutex
+	dag       *BlockDAG
+	dirty     map[daghash.Hash]struct{}
+	loaded    map[daghash.Hash]*blockUTXODiffData
+	mtx       sync.RWMutex
+	removeMtx sync.Mutex
 }
 
 func newUTXODiffStore(dag *BlockDAG) *utxoDiffStore {
@@ -61,6 +62,33 @@ func (diffStore *utxoDiffStore) setBlockDiffChild(node *blockNode, diffChild *bl
 
 	diffStore.loaded[*node.hash].diffChild = diffChild
 	diffStore.setBlockAsDirty(node.hash)
+	return nil
+}
+
+func (diffStore *utxoDiffStore) removeBlocksDiffData(dbTx database.Tx, blockHashes []*daghash.Hash) error {
+	diffStore.removeMtx.Lock()
+	defer diffStore.removeMtx.Unlock()
+	for _, hash := range blockHashes {
+		err := diffStore.removeBlockDiffData(dbTx, hash)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (diffStore *utxoDiffStore) removeBlockDiffData(dbTx database.Tx, blockHash *daghash.Hash) error {
+	// We use RLock here not because we aren't about to write into the map,
+	// but because RLock has a lower priority than Lock. In order to prevent
+	// concurrent writes, we employ a second lock around the entirety of
+	// removeBlocksDiffData.
+	diffStore.mtx.RLock()
+	defer diffStore.mtx.RUnlock()
+	delete(diffStore.loaded, *blockHash)
+	err := dbRemoveDiffData(dbTx, blockHash)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -163,4 +191,8 @@ func dbStoreDiffData(dbTx database.Tx, hash *daghash.Hash, diffData *blockUTXODi
 	}
 
 	return dbTx.Metadata().Bucket(utxoDiffsBucketName).Put(hash[:], serializedDiffData)
+}
+
+func dbRemoveDiffData(dbTx database.Tx, hash *daghash.Hash) error {
+	return dbTx.Metadata().Bucket(utxoDiffsBucketName).Delete(hash[:])
 }
