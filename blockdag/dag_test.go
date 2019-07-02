@@ -1144,7 +1144,6 @@ func testFinalizeNodesBelowFinalityPoint(t *testing.T, deleteDiffData bool) {
 			t.Fatalf("Error flushing utxoDiffStore data to DB: %s", err)
 		}
 		dag.utxoDiffStore.clearDirtyEntries()
-		dag.utxoDiffStore.clearRemovedEntries()
 	}
 
 	addNode := func(parent *blockNode) *blockNode {

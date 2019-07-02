@@ -16,21 +16,18 @@ type blockUTXODiffData struct {
 }
 
 type utxoDiffStore struct {
-	dag      *BlockDAG
-	dirty    map[daghash.Hash]struct{}
-	toRemove map[daghash.Hash]struct{}
-	removed  map[daghash.Hash]struct{}
-	loaded   map[daghash.Hash]*blockUTXODiffData
-	mtx      sync.RWMutex
+	dag       *BlockDAG
+	dirty     map[daghash.Hash]struct{}
+	loaded    map[daghash.Hash]*blockUTXODiffData
+	mtx       sync.RWMutex
+	removeMtx sync.Mutex
 }
 
 func newUTXODiffStore(dag *BlockDAG) *utxoDiffStore {
 	return &utxoDiffStore{
-		dag:      dag,
-		dirty:    make(map[daghash.Hash]struct{}),
-		toRemove: make(map[daghash.Hash]struct{}),
-		removed:  make(map[daghash.Hash]struct{}),
-		loaded:   make(map[daghash.Hash]*blockUTXODiffData),
+		dag:    dag,
+		dirty:  make(map[daghash.Hash]struct{}),
+		loaded: make(map[daghash.Hash]*blockUTXODiffData),
 	}
 }
 
@@ -68,9 +65,31 @@ func (diffStore *utxoDiffStore) setBlockDiffChild(node *blockNode, diffChild *bl
 	return nil
 }
 
-func (diffStore *utxoDiffStore) removeBlockDiffData(node *blockNode) {
-	delete(diffStore.loaded, *node.hash)
-	diffStore.toRemove[*node.hash] = struct{}{}
+func (diffStore *utxoDiffStore) removeBlocksDiffData(dbTx database.Tx, blockHashes []*daghash.Hash) error {
+	diffStore.removeMtx.Lock()
+	defer diffStore.removeMtx.Unlock()
+	for _, hash := range blockHashes {
+		err := diffStore.removeBlockDiffData(dbTx, hash)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (diffStore *utxoDiffStore) removeBlockDiffData(dbTx database.Tx, blockHash *daghash.Hash) error {
+	// We use RLock here not because we aren't about to write into the map,
+	// but because RLock has a lower priority than Lock. In order to prevent
+	// concurrent writes, we employ a second lock around the entirety of
+	// removeBlocksDiffData.
+	diffStore.mtx.RLock()
+	defer diffStore.mtx.RUnlock()
+	delete(diffStore.loaded, *blockHash)
+	err := dbRemoveDiffData(dbTx, blockHash)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (diffStore *utxoDiffStore) setBlockAsDirty(blockHash *daghash.Hash) {
@@ -145,7 +164,7 @@ func (diffStore *utxoDiffStore) diffDataFromDB(hash *daghash.Hash) (*blockUTXODi
 func (diffStore *utxoDiffStore) flushToDB(dbTx database.Tx) error {
 	diffStore.mtx.Lock()
 	defer diffStore.mtx.Unlock()
-	if len(diffStore.dirty) == 0 && len(diffStore.toRemove) == 0 {
+	if len(diffStore.dirty) == 0 {
 		return nil
 	}
 
@@ -156,29 +175,11 @@ func (diffStore *utxoDiffStore) flushToDB(dbTx database.Tx) error {
 			return err
 		}
 	}
-
-	for hash := range diffStore.toRemove {
-		err := dbRemoveDiffData(dbTx, &hash)
-		if err != nil {
-			return err
-		}
-		diffStore.removed[hash] = struct{}{}
-	}
 	return nil
 }
 
 func (diffStore *utxoDiffStore) clearDirtyEntries() {
 	diffStore.dirty = make(map[daghash.Hash]struct{})
-}
-
-func (diffStore *utxoDiffStore) clearRemovedEntries() {
-	diffStore.removed = make(map[daghash.Hash]struct{})
-}
-
-func (diffStore *utxoDiffStore) deleteRemovedEntriesFromToRemove() {
-	for hash := range diffStore.removed {
-		delete(diffStore.toRemove, hash)
-	}
 }
 
 // dbStoreDiffData stores the UTXO diff data to the database.

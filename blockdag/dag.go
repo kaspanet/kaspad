@@ -657,11 +657,9 @@ func (dag *BlockDAG) saveChangesFromBlock(node *blockNode, block *util.Block, vi
 		return dbStoreFeeData(dbTx, block.Hash(), feeData)
 	})
 	if err != nil {
-		dag.utxoDiffStore.clearRemovedEntries()
 		return err
 	}
 	dag.utxoDiffStore.clearDirtyEntries()
-	dag.utxoDiffStore.deleteRemovedEntriesFromToRemove()
 	return nil
 }
 
@@ -728,6 +726,8 @@ func (dag *BlockDAG) updateFinalityPoint() {
 	// if the selected tip is the genesis block - it should be the new finality point
 	if selectedTip.isGenesis() {
 		newFinalityPoint = selectedTip
+		dag.lastFinalityPoint = newFinalityPoint
+		return
 	} else {
 		// We are looking for a new finality point only if the new block's finality score is higher
 		// by 2 than the existing finality point's
@@ -744,13 +744,10 @@ func (dag *BlockDAG) updateFinalityPoint() {
 		}
 		newFinalityPoint = currentNode
 	}
-	isChanged := dag.lastFinalityPoint != newFinalityPoint
 	dag.lastFinalityPoint = newFinalityPoint
-	if isChanged {
-		spawn(func() {
-			dag.finalizeNodesBelowFinalityPoint(true)
-		})
-	}
+	spawn(func() {
+		dag.finalizeNodesBelowFinalityPoint(true)
+	})
 }
 
 func (dag *BlockDAG) finalizeNodesBelowFinalityPoint(deleteDiffData bool) {
@@ -758,17 +755,29 @@ func (dag *BlockDAG) finalizeNodesBelowFinalityPoint(deleteDiffData bool) {
 	for _, parent := range dag.lastFinalityPoint.parents {
 		queue = append(queue, parent)
 	}
+	var blockHashesToDelete []*daghash.Hash
+	if deleteDiffData {
+		blockHashesToDelete = make([]*daghash.Hash, 0, FinalityInterval)
+	}
 	for len(queue) > 0 {
 		var current *blockNode
 		current, queue = queue[0], queue[1:]
 		if !current.isFinalized {
 			current.isFinalized = true
 			if deleteDiffData {
-				dag.utxoDiffStore.removeBlockDiffData(current)
+				blockHashesToDelete = append(blockHashesToDelete, current.hash)
 			}
 			for _, parent := range current.parents {
 				queue = append(queue, parent)
 			}
+		}
+	}
+	if deleteDiffData {
+		err := dag.db.Update(func(dbTx database.Tx) error {
+			return dag.utxoDiffStore.removeBlocksDiffData(dbTx, blockHashesToDelete)
+		})
+		if err != nil {
+			panic(fmt.Sprintf("Error removing diff data from utxoDiffStore: %s", err))
 		}
 	}
 }
