@@ -921,6 +921,12 @@ func (node *blockNode) verifyAndBuildUTXO(dag *BlockDAG, transactions []*util.Tx
 		return nil, nil, nil, err
 	}
 
+	// We diffFrom the acceptanceData here to "replace" the blueScore that was diff-ed
+	// out of the virtual's UTXO in pastUTXO with this node's blueScore. Example:
+	// * virtualUTXO: base: { Tx1 blueScore: 50 }
+	// * pastUTXO: toAdd: { Tx1 blueScore: Unaccepted }, toRemove: { Tx1 blueScore: 50 }
+	// * diffFromAcceptanceData: toAdd: { Tx1 blueScore: 60 }, toRemove: { Tx1 blueScore: Unaccepted }
+	// * resultUTXO: base: { Tx1 blueScore: 60 }
 	diffFromAcceptanceData, err := node.diffFromAcceptanceData(pastUTXO, txsAcceptanceData)
 	if err != nil {
 		return nil, nil, nil, err
