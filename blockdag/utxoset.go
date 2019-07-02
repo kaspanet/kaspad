@@ -13,15 +13,15 @@ import (
 )
 
 const (
-	// UnminedBlueScore is the blue score used for the "block" blueScore field of the
-	// contextual transaction information provided in a transaction store
-	// when it has not yet been mined into a block.
-	UnminedBlueScore = math.MaxUint64
+	// UnacceptedBlueScore is the blue score used for the "block" blueScore
+	// field of the contextual transaction information provided in a
+	// transaction store when it has not yet been accepted by a block.
+	UnacceptedBlueScore = math.MaxUint64
 )
 
 // UTXOEntry houses details about an individual transaction output in a utxo
 // set such as whether or not it was contained in a coinbase tx, the blue
-// score of the block that contains the tx, its public key script, and how
+// score of the block that accepts the tx, its public key script, and how
 // much it pays.
 type UTXOEntry struct {
 	// NOTE: Additions, deletions, or modifications to the order of the
@@ -32,7 +32,7 @@ type UTXOEntry struct {
 
 	amount         uint64
 	pkScript       []byte // The public key script for the output.
-	blockBlueScore uint64 // Blue score of the block containing the tx.
+	blockBlueScore uint64 // Blue score of the block accepting the tx.
 
 	// packedFlags contains additional info about output such as whether it
 	// is a coinbase, and whether it has been modified
@@ -47,7 +47,7 @@ func (entry *UTXOEntry) IsCoinbase() bool {
 	return entry.packedFlags&tfCoinbase == tfCoinbase
 }
 
-// BlockBlueScore returns the blue score of the block containing the output.
+// BlockBlueScore returns the blue score of the block accepting the output.
 func (entry *UTXOEntry) BlockBlueScore() uint64 {
 	return entry.blockBlueScore
 }
@@ -62,10 +62,10 @@ func (entry *UTXOEntry) PkScript() []byte {
 	return entry.pkScript
 }
 
-// IsUnmined returns true iff this UTXOEntry has still not been mined,
-// a.k.a. still in the mempool.
-func (entry *UTXOEntry) IsUnmined() bool {
-	return entry.blockBlueScore == UnminedBlueScore
+// IsUnaccepted returns true iff this UTXOEntry has been included in a block
+// but has not yet been accepted by any block.
+func (entry *UTXOEntry) IsUnaccepted() bool {
+	return entry.blockBlueScore == UnacceptedBlueScore
 }
 
 // txoFlags is a bitmask defining additional information and state for a
@@ -100,7 +100,8 @@ func (uc utxoCollection) String() string {
 
 	i := 0
 	for outpoint, utxoEntry := range uc {
-		utxoStrings[i] = fmt.Sprintf("(%s, %d) => %d", outpoint.TxID, outpoint.Index, utxoEntry.amount)
+		utxoStrings[i] = fmt.Sprintf("(%s, %d) => %d, blueScore: %d",
+			outpoint.TxID, outpoint.Index, utxoEntry.amount, utxoEntry.blockBlueScore)
 		i++
 	}
 
@@ -131,6 +132,13 @@ func (uc utxoCollection) get(outpoint wire.Outpoint) (*UTXOEntry, bool) {
 func (uc utxoCollection) contains(outpoint wire.Outpoint) bool {
 	_, ok := uc[outpoint]
 	return ok
+}
+
+// containsWithBlueScore returns a boolean value indicating whether a UTXOEntry
+// is in the set and its blue score is equal to the given blue score.
+func (uc utxoCollection) containsWithBlueScore(outpoint wire.Outpoint, blueScore uint64) bool {
+	entry, ok := uc.get(outpoint)
+	return ok && entry.blockBlueScore == blueScore
 }
 
 // clone returns a clone of this collection
@@ -203,10 +211,19 @@ func (d *UTXODiff) diffFrom(other *UTXODiff) (*UTXODiff, error) {
 	// If they are not in other.toAdd - should be added in result.toRemove
 	// If they are in other.toRemove - base utxoSet is not the same
 	for outpoint, utxoEntry := range d.toAdd {
-		if !other.toAdd.contains(outpoint) {
+		if !other.toAdd.containsWithBlueScore(outpoint, utxoEntry.blockBlueScore) {
 			result.toRemove.add(outpoint, utxoEntry)
 		}
-		if other.toRemove.contains(outpoint) {
+		if diffEntry, ok := other.toRemove.get(outpoint); ok {
+			// An exception is made for entries with unequal blue scores
+			// as long as the appropriate entry exists in either d.toRemove
+			// or other.toAdd.
+			// These are just "updates" to accepted blue score
+			if diffEntry.blockBlueScore != utxoEntry.blockBlueScore &&
+				(d.toRemove.containsWithBlueScore(outpoint, diffEntry.blockBlueScore) ||
+					other.toAdd.containsWithBlueScore(outpoint, utxoEntry.blockBlueScore)) {
+				continue
+			}
 			return nil, fmt.Errorf("diffFrom: outpoint %s both in d.toAdd and in other.toRemove", outpoint)
 		}
 	}
@@ -215,10 +232,19 @@ func (d *UTXODiff) diffFrom(other *UTXODiff) (*UTXODiff, error) {
 	// If they are not in other.toRemove - should be added in result.toAdd
 	// If they are in other.toAdd - base utxoSet is not the same
 	for outpoint, utxoEntry := range d.toRemove {
-		if !other.toRemove.contains(outpoint) {
+		if !other.toRemove.containsWithBlueScore(outpoint, utxoEntry.blockBlueScore) {
 			result.toAdd.add(outpoint, utxoEntry)
 		}
-		if other.toAdd.contains(outpoint) {
+		if diffEntry, ok := other.toAdd.get(outpoint); ok {
+			// An exception is made for entries with unequal blue scores
+			// as long as the appropriate entry exists in either d.toAdd
+			// or other.toRemove.
+			// These are just "updates" to accepted blue score
+			if diffEntry.blockBlueScore != utxoEntry.blockBlueScore &&
+				(d.toAdd.containsWithBlueScore(outpoint, diffEntry.blockBlueScore) ||
+					other.toRemove.containsWithBlueScore(outpoint, utxoEntry.blockBlueScore)) {
+				continue
+			}
 			return nil, errors.New("diffFrom: transaction both in d.toRemove and in other.toAdd")
 		}
 	}
@@ -226,7 +252,7 @@ func (d *UTXODiff) diffFrom(other *UTXODiff) (*UTXODiff, error) {
 	// All transactions in other.toAdd:
 	// If they are not in d.toAdd - should be added in result.toAdd
 	for outpoint, utxoEntry := range other.toAdd {
-		if !d.toAdd.contains(outpoint) {
+		if !d.toAdd.containsWithBlueScore(outpoint, utxoEntry.blockBlueScore) {
 			result.toAdd.add(outpoint, utxoEntry)
 		}
 	}
@@ -234,7 +260,7 @@ func (d *UTXODiff) diffFrom(other *UTXODiff) (*UTXODiff, error) {
 	// All transactions in other.toRemove:
 	// If they are not in d.toRemove - should be added in result.toRemove
 	for outpoint, utxoEntry := range other.toRemove {
-		if !d.toRemove.contains(outpoint) {
+		if !d.toRemove.containsWithBlueScore(outpoint, utxoEntry.blockBlueScore) {
 			result.toRemove.add(outpoint, utxoEntry)
 		}
 	}
@@ -283,10 +309,19 @@ func (d *UTXODiff) WithDiff(diff *UTXODiff) (*UTXODiff, error) {
 	// If they are in diff.toAdd - should throw an error
 	// Otherwise - should be ignored
 	for outpoint, utxoEntry := range d.toAdd {
-		if !diff.toRemove.contains(outpoint) {
+		if !diff.toRemove.containsWithBlueScore(outpoint, utxoEntry.blockBlueScore) {
 			result.toAdd.add(outpoint, utxoEntry)
 		}
-		if diff.toAdd.contains(outpoint) {
+		if diffEntry, ok := diff.toAdd.get(outpoint); ok {
+			// An exception is made for entries with unequal blue scores
+			// as long as the appropriate entry exists in either d.toRemove
+			// or diff.toRemove.
+			// These are just "updates" to accepted blue score
+			if diffEntry.blockBlueScore != utxoEntry.blockBlueScore &&
+				(d.toRemove.containsWithBlueScore(outpoint, diffEntry.blockBlueScore) ||
+					diff.toRemove.containsWithBlueScore(outpoint, utxoEntry.blockBlueScore)) {
+				continue
+			}
 			return nil, ruleError(ErrWithDiff, fmt.Sprintf("WithDiff: outpoint %s both in d.toAdd and in other.toAdd", outpoint))
 		}
 	}
@@ -296,10 +331,19 @@ func (d *UTXODiff) WithDiff(diff *UTXODiff) (*UTXODiff, error) {
 	// If they are in diff.toRemove - should throw an error
 	// Otherwise - should be ignored
 	for outpoint, utxoEntry := range d.toRemove {
-		if !diff.toAdd.contains(outpoint) {
+		if !diff.toAdd.containsWithBlueScore(outpoint, utxoEntry.blockBlueScore) {
 			result.toRemove.add(outpoint, utxoEntry)
 		}
-		if diff.toRemove.contains(outpoint) {
+		if diffEntry, ok := diff.toRemove.get(outpoint); ok {
+			// An exception is made for entries with unequal blue scores
+			// as long as the appropriate entry exists in either d.toAdd
+			// or diff.toAdd.
+			// These are just "updates" to accepted blue score
+			if diffEntry.blockBlueScore != utxoEntry.blockBlueScore &&
+				(d.toAdd.containsWithBlueScore(outpoint, diffEntry.blockBlueScore) ||
+					diff.toAdd.containsWithBlueScore(outpoint, utxoEntry.blockBlueScore)) {
+				continue
+			}
 			return nil, ruleError(ErrWithDiff, "WithDiff: transaction both in d.toRemove and in other.toRemove")
 		}
 	}
@@ -307,7 +351,7 @@ func (d *UTXODiff) WithDiff(diff *UTXODiff) (*UTXODiff, error) {
 	// All transactions in diff.toAdd:
 	// If they are not in d.toRemove - should be added in result.toAdd
 	for outpoint, utxoEntry := range diff.toAdd {
-		if !d.toRemove.contains(outpoint) {
+		if !d.toRemove.containsWithBlueScore(outpoint, utxoEntry.blockBlueScore) {
 			result.toAdd.add(outpoint, utxoEntry)
 		}
 	}
@@ -315,7 +359,7 @@ func (d *UTXODiff) WithDiff(diff *UTXODiff) (*UTXODiff, error) {
 	// All transactions in diff.toRemove:
 	// If they are not in d.toAdd - should be added in result.toRemove
 	for outpoint, utxoEntry := range diff.toRemove {
-		if !d.toAdd.contains(outpoint) {
+		if !d.toAdd.containsWithBlueScore(outpoint, utxoEntry.blockBlueScore) {
 			result.toRemove.add(outpoint, utxoEntry)
 		}
 	}
@@ -337,7 +381,7 @@ func (d *UTXODiff) clone() *UTXODiff {
 
 // AddEntry adds a UTXOEntry to the diff
 func (d *UTXODiff) AddEntry(outpoint wire.Outpoint, entry *UTXOEntry) error {
-	if d.toRemove.contains(outpoint) {
+	if d.toRemove.containsWithBlueScore(outpoint, entry.blockBlueScore) {
 		d.toRemove.remove(outpoint)
 	} else if _, exists := d.toAdd[outpoint]; exists {
 		return fmt.Errorf("AddEntry: Cannot add outpoint %s twice", outpoint)
@@ -356,7 +400,7 @@ func (d *UTXODiff) AddEntry(outpoint wire.Outpoint, entry *UTXOEntry) error {
 
 // RemoveEntry removes a UTXOEntry from the diff
 func (d *UTXODiff) RemoveEntry(outpoint wire.Outpoint, entry *UTXOEntry) error {
-	if d.toAdd.contains(outpoint) {
+	if d.toAdd.containsWithBlueScore(outpoint, entry.blockBlueScore) {
 		d.toAdd.remove(outpoint)
 	} else if _, exists := d.toRemove[outpoint]; exists {
 		return fmt.Errorf("removeEntry: Cannot remove outpoint %s twice", outpoint)
@@ -393,7 +437,8 @@ type UTXOSet interface {
 	fmt.Stringer
 	diffFrom(other UTXOSet) (*UTXODiff, error)
 	WithDiff(utxoDiff *UTXODiff) (UTXOSet, error)
-	diffFromTx(tx *wire.MsgTx, node *blockNode) (*UTXODiff, error)
+	diffFromTx(tx *wire.MsgTx, acceptingBlueScore uint64) (*UTXODiff, error)
+	diffFromAcceptedTx(tx *wire.MsgTx, acceptingBlueScore uint64) (*UTXODiff, error)
 	AddTx(tx *wire.MsgTx, blockBlueScore uint64) (ok bool, err error)
 	clone() UTXOSet
 	Get(outpoint wire.Outpoint) (*UTXOEntry, bool)
@@ -405,7 +450,7 @@ type UTXOSet interface {
 // for both diff-based and full UTXO sets
 // Returns a diff that is equivalent to provided transaction,
 // or an error if provided transaction is not valid in the context of this UTXOSet
-func diffFromTx(u UTXOSet, tx *wire.MsgTx, containingNode *blockNode) (*UTXODiff, error) {
+func diffFromTx(u UTXOSet, tx *wire.MsgTx, acceptingBlueScore uint64) (*UTXODiff, error) {
 	diff := NewUTXODiff()
 	isCoinbase := tx.IsCoinBase()
 	if !isCoinbase {
@@ -423,9 +468,41 @@ func diffFromTx(u UTXOSet, tx *wire.MsgTx, containingNode *blockNode) (*UTXODiff
 		}
 	}
 	for i, txOut := range tx.TxOut {
-		entry := NewUTXOEntry(txOut, isCoinbase, containingNode.blueScore)
+		entry := NewUTXOEntry(txOut, isCoinbase, acceptingBlueScore)
 		outpoint := *wire.NewOutpoint(tx.TxID(), uint32(i))
 		err := diff.AddEntry(outpoint, entry)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return diff, nil
+}
+
+// diffFromAcceptedTx is a common implementation for diffFromAcceptedTx, that works
+// for both diff-based and full UTXO sets.
+// Returns a diff that replaces an entry's blockBlueScore with the given acceptingBlueScore.
+// Returns an error if the provided transaction's entry is not valid in the context
+// of this UTXOSet.
+func diffFromAcceptedTx(u UTXOSet, tx *wire.MsgTx, acceptingBlueScore uint64) (*UTXODiff, error) {
+	diff := NewUTXODiff()
+	isCoinbase := tx.IsCoinBase()
+	for i, txOut := range tx.TxOut {
+		// Fetch any unaccepted transaction
+		existingOutpoint := *wire.NewOutpoint(tx.TxID(), uint32(i))
+		existingEntry, ok := u.Get(existingOutpoint)
+		if !ok {
+			return nil, fmt.Errorf("cannot accept outpoint %s because it doesn't exist in the given UTXO", existingOutpoint)
+		}
+
+		// Remove unaccepted entries
+		err := diff.RemoveEntry(existingOutpoint, existingEntry)
+		if err != nil {
+			return nil, err
+		}
+
+		// Add new entries with their accepting blue score
+		newEntry := NewUTXOEntry(txOut, isCoinbase, acceptingBlueScore)
+		err = diff.AddEntry(existingOutpoint, newEntry)
 		if err != nil {
 			return nil, err
 		}
@@ -501,8 +578,8 @@ func (fus *FullUTXOSet) AddTx(tx *wire.MsgTx, blueScore uint64) (isAccepted bool
 
 // diffFromTx returns a diff that is equivalent to provided transaction,
 // or an error if provided transaction is not valid in the context of this UTXOSet
-func (fus *FullUTXOSet) diffFromTx(tx *wire.MsgTx, node *blockNode) (*UTXODiff, error) {
-	return diffFromTx(fus, tx, node)
+func (fus *FullUTXOSet) diffFromTx(tx *wire.MsgTx, acceptingBlueScore uint64) (*UTXODiff, error) {
+	return diffFromTx(fus, tx, acceptingBlueScore)
 }
 
 func (fus *FullUTXOSet) containsInputs(tx *wire.MsgTx) bool {
@@ -514,6 +591,10 @@ func (fus *FullUTXOSet) containsInputs(tx *wire.MsgTx) bool {
 	}
 
 	return true
+}
+
+func (fus *FullUTXOSet) diffFromAcceptedTx(tx *wire.MsgTx, acceptingBlueScore uint64) (*UTXODiff, error) {
+	return diffFromAcceptedTx(fus, tx, acceptingBlueScore)
 }
 
 // clone returns a clone of this utxoSet
@@ -661,7 +742,7 @@ func (dus *DiffUTXOSet) containsInputs(tx *wire.MsgTx) bool {
 		isInBase := dus.base.contains(outpoint)
 		isInDiffToAdd := dus.UTXODiff.toAdd.contains(outpoint)
 		isInDiffToRemove := dus.UTXODiff.toRemove.contains(outpoint)
-		if (!isInBase && !isInDiffToAdd) || isInDiffToRemove {
+		if (!isInBase && !isInDiffToAdd) || (isInDiffToRemove && !(isInBase && isInDiffToAdd)) {
 			return false
 		}
 	}
@@ -691,8 +772,12 @@ func (dus *DiffUTXOSet) meldToBase() error {
 
 // diffFromTx returns a diff that is equivalent to provided transaction,
 // or an error if provided transaction is not valid in the context of this UTXOSet
-func (dus *DiffUTXOSet) diffFromTx(tx *wire.MsgTx, node *blockNode) (*UTXODiff, error) {
-	return diffFromTx(dus, tx, node)
+func (dus *DiffUTXOSet) diffFromTx(tx *wire.MsgTx, acceptingBlueScore uint64) (*UTXODiff, error) {
+	return diffFromTx(dus, tx, acceptingBlueScore)
+}
+
+func (dus *DiffUTXOSet) diffFromAcceptedTx(tx *wire.MsgTx, acceptingBlueScore uint64) (*UTXODiff, error) {
+	return diffFromAcceptedTx(dus, tx, acceptingBlueScore)
 }
 
 func (dus *DiffUTXOSet) String() string {
@@ -707,7 +792,12 @@ func (dus *DiffUTXOSet) clone() UTXOSet {
 // Get returns the UTXOEntry associated with provided outpoint in this UTXOSet.
 // Returns false in second output if this UTXOEntry was not found
 func (dus *DiffUTXOSet) Get(outpoint wire.Outpoint) (*UTXOEntry, bool) {
-	if dus.UTXODiff.toRemove.contains(outpoint) {
+	if toRemoveEntry, ok := dus.UTXODiff.toRemove.get(outpoint); ok {
+		// An exception is made for entries with unequal blue scores
+		// These are just "updates" to accepted blue score
+		if toAddEntry, ok := dus.UTXODiff.toAdd.get(outpoint); ok && toAddEntry.blockBlueScore != toRemoveEntry.blockBlueScore {
+			return toAddEntry, true
+		}
 		return nil, false
 	}
 	if txOut, ok := dus.base.get(outpoint); ok {

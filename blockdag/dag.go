@@ -396,7 +396,7 @@ func (dag *BlockDAG) calcSequenceLock(node *blockNode, utxoSet UTXOSet, tx *util
 		// assume the transaction makes it into the next block when
 		// evaluating its sequence blocks.
 		inputBlueScore := entry.BlockBlueScore()
-		if entry.IsUnmined() {
+		if entry.IsUnaccepted() {
 			inputBlueScore = dag.virtual.blueScore
 		}
 
@@ -833,7 +833,8 @@ func (dag *BlockDAG) TxsAcceptedByVirtual() (MultiBlockTxsAcceptanceData, error)
 // 2. Adds the new block to the DAG's tips.
 // 3. Updates the DAG's full UTXO set.
 // 4. Updates each of the tips' utxoDiff.
-// 5. Update the finality point of the DAG (if required).
+// 5. Applies the new virtual's blue score to all the unaccepted UTXOs
+// 6. Updates the finality point of the DAG (if required).
 //
 // It returns the diff in the virtual block's UTXO set.
 //
@@ -849,9 +850,19 @@ func (dag *BlockDAG) applyDAGChanges(node *blockNode, block *util.Block, newBloc
 	dag.virtual.AddTip(node)
 
 	// Build a UTXO set for the new virtual block
-	newVirtualUTXO, virtualTxsAcceptanceData, err := dag.pastUTXO(&dag.virtual.blockNode)
+	newVirtualPastUTXO, virtualTxsAcceptanceData, err := dag.pastUTXO(&dag.virtual.blockNode)
 	if err != nil {
 		return nil, nil, fmt.Errorf("could not restore past UTXO for virtual %s: %s", dag.virtual, err)
+	}
+
+	// Apply the new virtual's blue score to all the unaccepted UTXOs
+	diffFromAcceptanceData, err := dag.virtual.diffFromAcceptanceData(newVirtualPastUTXO, virtualTxsAcceptanceData)
+	if err != nil {
+		return nil, nil, err
+	}
+	newVirtualUTXO, err := newVirtualPastUTXO.WithDiff(diffFromAcceptanceData)
+	if err != nil {
+		return nil, nil, err
 	}
 
 	// Apply new utxoDiffs to all the tips
@@ -886,13 +897,36 @@ func (node *blockNode) diffFromTxs(pastUTXO UTXOSet, transactions []*util.Tx) (*
 	diff := NewUTXODiff()
 
 	for _, tx := range transactions {
-		txDiff, err := pastUTXO.diffFromTx(tx.MsgTx(), node)
+		txDiff, err := pastUTXO.diffFromTx(tx.MsgTx(), UnacceptedBlueScore)
 		if err != nil {
 			return nil, err
 		}
 		diff, err = diff.WithDiff(txDiff)
 		if err != nil {
 			return nil, err
+		}
+	}
+
+	return diff, nil
+}
+
+// diffFromAccpetanceData creates a diff that "updates" the blue scores of the given
+// UTXOSet with the node's blueScore according to the given acceptance data.
+func (node *blockNode) diffFromAcceptanceData(pastUTXO UTXOSet, blockTxsAcceptanceDatas MultiBlockTxsAcceptanceData) (*UTXODiff, error) {
+	diff := NewUTXODiff()
+
+	for _, blockTxsAcceptanceData := range blockTxsAcceptanceDatas {
+		for _, txAcceptanceData := range blockTxsAcceptanceData {
+			if txAcceptanceData.IsAccepted {
+				acceptanceDiff, err := pastUTXO.diffFromAcceptedTx(txAcceptanceData.Tx.MsgTx(), node.blueScore)
+				if err != nil {
+					return nil, err
+				}
+				diff, err = diff.WithDiff(acceptanceDiff)
+				if err != nil {
+					return nil, err
+				}
+			}
 		}
 	}
 
@@ -919,17 +953,30 @@ func (node *blockNode) verifyAndBuildUTXO(dag *BlockDAG, transactions []*util.Tx
 		return nil, nil, nil, err
 	}
 
-	diff, err := node.diffFromTxs(pastUTXO, transactions)
+	// We diff from the acceptance data here to "replace" the blueScore that was diff-ed
+	// out of the virtual's UTXO in pastUTXO with this node's blueScore.
+	diffFromAcceptanceData, err := node.diffFromAcceptanceData(pastUTXO, txsAcceptanceData)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	utxo, err := pastUTXO.WithDiff(diffFromAcceptanceData)
+	if err != nil {
+		return nil, nil, nil, err
+	}
 
-	utxo, err := pastUTXO.WithDiff(diff)
+	diffFromTxs, err := node.diffFromTxs(utxo, transactions)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	utxo, err = utxo.WithDiff(diffFromTxs)
 	if err != nil {
 		return nil, nil, nil, err
 	}
 
 	calculatedMultisetHash := utxo.Multiset().Hash()
 	if !calculatedMultisetHash.IsEqual(node.utxoCommitment) {
-		str := fmt.Sprintf("block UTXO commitment is invalid - block "+
-			"header indicates %s, but calculated value is %s",
+		str := fmt.Sprintf("block %s UTXO commitment is invalid - block "+
+			"header indicates %s, but calculated value is %s", node.hash,
 			node.utxoCommitment, calculatedMultisetHash)
 		return nil, nil, nil, ruleError(ErrBadUTXOCommitment, str)
 	}

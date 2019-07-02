@@ -126,7 +126,7 @@ func (p *poolHarness) CreateCoinbaseTx(blueScore uint64, numOutputs uint32) (*ut
 		return nil, err
 	}
 
-	txIns := []*wire.TxIn{&wire.TxIn{
+	txIns := []*wire.TxIn{{
 		// Coinbase transactions have no inputs, so previous outpoint is
 		// zero hash and max index.
 		PreviousOutpoint: *wire.NewOutpoint(&daghash.TxID{},
@@ -1816,7 +1816,7 @@ var dummyBlock = wire.MsgBlock{
 
 func TestTransactionGas(t *testing.T) {
 	params := dagconfig.SimNetParams
-	params.BlockCoinbaseMaturity = 1
+	params.BlockCoinbaseMaturity = 0
 	tc, spendableOuts, teardownFunc, err := newPoolHarness(t, &params, 6, "TestTransactionGas")
 	if err != nil {
 		t.Fatalf("unable to create test pool: %v", err)
