@@ -32,19 +32,18 @@ const (
 )
 
 // BlockLocator is used to help locate a specific block.  The algorithm for
-// building the block locator is to add the hashes in reverse order until
-// the genesis block is reached.  In order to keep the list of locator hashes
-// to a reasonable number of entries, first the most recent previous 12 block
-// hashes are added, then the step is doubled each loop iteration to
-// exponentially decrease the number of hashes as a function of the distance
-// from the block being located.
+// building the block locator is to add block hashes in reverse order on the
+// block's selected parent chain until the genesis block is reached.
+// In order to keep the list of locator hashes to a reasonable number of entries,
+// the step between each entry is doubled each loop iteration to exponentially
+// decrease the number of hashes as a function of the distance from the block
+// being located.
 //
-// For example, assume a block chain with a side chain as depicted below:
+// For example, assume a selected parent chain with IDs as depicted below:
 // 	genesis -> 1 -> 2 -> ... -> 15 -> 16  -> 17  -> 18
-// 	                              \-> 16a -> 17a
 //
-// The block locator for block 17a would be the hashes of blocks:
-// [17a 16a 15 14 13 12 11 10 9 8 7 6 4 genesis]
+// The block locator for block 17 would be the hashes of blocks:
+//  [17 16 14 11 7 2 genesis]
 type BlockLocator []*daghash.Hash
 
 // orphanBlock represents a block that we don't yet have the parent for.  It
@@ -1376,8 +1375,8 @@ func (dag *BlockDAG) HeaderByHash(hash *daghash.Hash) (*wire.BlockHeader, error)
 // See BlockLocator for details on the algorithm used to create a block locator.
 //
 // In addition to the general algorithm referenced above, this function will
-// return the block locator for the selected tip if
-// the passed hash is not currently known.
+// return the block locator for the selected tip if the passed hash is not currently
+// known.
 //
 // This function is safe for concurrent access.
 func (dag *BlockDAG) BlockLocatorFromHash(hash *daghash.Hash) BlockLocator {
@@ -1393,8 +1392,7 @@ func (dag *BlockDAG) BlockLocatorFromHash(hash *daghash.Hash) BlockLocator {
 	return locator
 }
 
-// LatestBlockLocator returns a block locator for the latest known tip of the
-// main (best) chain.
+// LatestBlockLocator returns a block locator for the current tips of the DAG.
 //
 // This function is safe for concurrent access.
 func (dag *BlockDAG) LatestBlockLocator() BlockLocator {
@@ -1405,8 +1403,8 @@ func (dag *BlockDAG) LatestBlockLocator() BlockLocator {
 }
 
 // blockLocator returns a block locator for the passed block node.  The passed
-// node can be nil in which case the block locator for the current tip
-// associated with the view will be returned.
+// node can be nil in which case the block locator for the selected tip will be
+// returned.
 //
 // See the BlockLocator type comments for more details.
 //
@@ -1588,9 +1586,8 @@ func (dag *BlockDAG) locateInventory(locator BlockLocator, hashStop *daghash.Has
 		return stopNode, 1
 	}
 
-	// Find the most recent locator block hash in the main chain.  In the
-	// case none of the hashes in the locator are in the main chain, fall
-	// back to the genesis block.
+	// Find the most recent locator block hash in the DAG.  In the case none of
+	// the hashes in the locator are in the DAG, fall back to the genesis block.
 	startNode := dag.genesis
 	for _, hash := range locator {
 		node := dag.index.LookupNode(hash)
@@ -1629,9 +1626,8 @@ func (dag *BlockDAG) locateBlocks(locator BlockLocator, hashStop *daghash.Hash, 
 }
 
 func (dag *BlockDAG) locateBlockNodes(locator BlockLocator, hashStop *daghash.Hash, maxEntries uint32) []*blockNode {
-	// Find the first known block in the locator and the
-	// estimated number of nodes after it needed while respecting the stop hash
-	// and max entries.
+	// Find the first known block in the locator and the estimated number of
+	// nodes after it needed while respecting the stop hash and max entries.
 	node, estimatedEntries := dag.locateInventory(locator, hashStop, maxEntries)
 	if estimatedEntries == 0 {
 		return nil
