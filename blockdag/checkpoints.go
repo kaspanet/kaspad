@@ -6,8 +6,6 @@ package blockdag
 
 import (
 	"fmt"
-	"time"
-
 	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/txscript"
 	"github.com/daglabs/btcd/util"
@@ -237,23 +235,12 @@ func (dag *BlockDAG) IsCheckpointCandidate(block *util.Block) (bool, error) {
 	// This should always succeed since the check above already made sure it
 	// is CheckpointConfirmations back, but be safe in case the constant
 	// changes.
-	nextNode := node.diffChild
-	if nextNode == nil {
+	if len(node.children) == 0 {
 		return false, nil
 	}
 
 	// A checkpoint must be have at least one block before it.
 	if &node.selectedParent == nil {
-		return false, nil
-	}
-
-	// A checkpoint must have timestamps for the block and the blocks on
-	// either side of it in order (due to the median time allowance this is
-	// not always the case).
-	prevTime := time.Unix(node.selectedParent.timestamp, 0)
-	curTime := block.MsgBlock().Header.Timestamp
-	nextTime := time.Unix(nextNode.timestamp, 0)
-	if prevTime.After(curTime) || nextTime.Before(curTime) {
 		return false, nil
 	}
 

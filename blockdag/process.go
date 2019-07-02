@@ -175,21 +175,9 @@ func (dag *BlockDAG) ProcessBlock(block *util.Block, flags BehaviorFlags) (isOrp
 		}
 	}
 
-	blockHeader := &block.MsgBlock().Header
-	if dag.lastFinalityPoint != nil {
-		// Ensure the block timestamp is after the finality point timestamp.
-		lastFinalityPoint := time.Unix(dag.lastFinalityPoint.timestamp, 0)
-		if blockHeader.Timestamp.Before(lastFinalityPoint) {
-			str := fmt.Sprintf("block %s has timestamp %s before "+
-				"last finality point timestamp %s", blockHash,
-				blockHeader.Timestamp, lastFinalityPoint)
-			return false, 0, ruleError(ErrFinalityPointTimeTooOld, str)
-		}
-	}
-
 	// Handle orphan blocks.
 	allParentsExist := true
-	for _, parentHash := range blockHeader.ParentHashes {
+	for _, parentHash := range block.MsgBlock().Header.ParentHashes {
 		parentExists, err := dag.BlockExists(parentHash)
 		if err != nil {
 			return false, 0, err
