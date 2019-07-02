@@ -470,11 +470,8 @@ func areMultisetsEqual(a *btcec.Multiset, b *btcec.Multiset) bool {
 }
 
 func (d *UTXODiff) equal(other *UTXODiff) bool {
-	if d == nil {
-		return other == nil
-	}
-	if other == nil {
-		return false
+	if d == nil || other == nil {
+		return d == other
 	}
 
 	return reflect.DeepEqual(d.toAdd, other.toAdd) &&
