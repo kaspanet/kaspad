@@ -1,0 +1,5 @@
+1. To build docker image invoke following command from btcd root directory:
+    docker build -t jsonrpcifyer -f ./cmd/jsonrpcifyer/docker/Dockerfile .
+
+2. To run:
+    docker run -v ~/.btcd:/root/.btcd -t jsonrpcifyer
