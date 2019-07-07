@@ -1979,7 +1979,7 @@ func handleGetBlockTemplateRequest(s *Server, request *btcjson.TemplateRequest, 
 		}
 	}
 
-	// No point in generating or accepting work before the chain is synced.
+	// No point in generating or accepting work before the DAG is synced.
 	currentChainHeight := s.cfg.DAG.ChainHeight()
 	if currentChainHeight != 0 && !s.cfg.SyncMgr.IsCurrent() {
 		return nil, &btcjson.RPCError{
