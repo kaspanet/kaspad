@@ -2,10 +2,9 @@ package blockdag
 
 import (
 	"fmt"
-	"sync"
-
 	"github.com/daglabs/btcd/database"
 	"github.com/daglabs/btcd/util/daghash"
+	"github.com/daglabs/btcd/util/prioritylock"
 )
 
 var multisetPointSize = 32
@@ -16,11 +15,10 @@ type blockUTXODiffData struct {
 }
 
 type utxoDiffStore struct {
-	dag       *BlockDAG
-	dirty     map[daghash.Hash]struct{}
-	loaded    map[daghash.Hash]*blockUTXODiffData
-	mtx       sync.RWMutex
-	removeMtx sync.Mutex
+	dag    *BlockDAG
+	dirty  map[daghash.Hash]struct{}
+	loaded map[daghash.Hash]*blockUTXODiffData
+	mtx    *prioritylock.Mutex
 }
 
 func newUTXODiffStore(dag *BlockDAG) *utxoDiffStore {
@@ -28,12 +26,13 @@ func newUTXODiffStore(dag *BlockDAG) *utxoDiffStore {
 		dag:    dag,
 		dirty:  make(map[daghash.Hash]struct{}),
 		loaded: make(map[daghash.Hash]*blockUTXODiffData),
+		mtx:    prioritylock.New(),
 	}
 }
 
 func (diffStore *utxoDiffStore) setBlockDiff(node *blockNode, diff *UTXODiff) error {
-	diffStore.mtx.Lock()
-	defer diffStore.mtx.Unlock()
+	diffStore.mtx.HighPriorityLock()
+	defer diffStore.mtx.HighPriorityUnlock()
 	// load the diff data from DB to diffStore.loaded
 	_, exists, err := diffStore.diffDataByHash(node.hash)
 	if err != nil {
@@ -49,8 +48,8 @@ func (diffStore *utxoDiffStore) setBlockDiff(node *blockNode, diff *UTXODiff) er
 }
 
 func (diffStore *utxoDiffStore) setBlockDiffChild(node *blockNode, diffChild *blockNode) error {
-	diffStore.mtx.Lock()
-	defer diffStore.mtx.Unlock()
+	diffStore.mtx.HighPriorityLock()
+	defer diffStore.mtx.HighPriorityUnlock()
 	// load the diff data from DB to diffStore.loaded
 	_, exists, err := diffStore.diffDataByHash(node.hash)
 	if err != nil {
@@ -66,8 +65,6 @@ func (diffStore *utxoDiffStore) setBlockDiffChild(node *blockNode, diffChild *bl
 }
 
 func (diffStore *utxoDiffStore) removeBlocksDiffData(dbTx database.Tx, blockHashes []*daghash.Hash) error {
-	diffStore.removeMtx.Lock()
-	defer diffStore.removeMtx.Unlock()
 	for _, hash := range blockHashes {
 		err := diffStore.removeBlockDiffData(dbTx, hash)
 		if err != nil {
@@ -78,12 +75,8 @@ func (diffStore *utxoDiffStore) removeBlocksDiffData(dbTx database.Tx, blockHash
 }
 
 func (diffStore *utxoDiffStore) removeBlockDiffData(dbTx database.Tx, blockHash *daghash.Hash) error {
-	// We use RLock here not because we aren't about to write into the map,
-	// but because RLock has a lower priority than Lock. In order to prevent
-	// concurrent writes, we employ a second lock around the entirety of
-	// removeBlocksDiffData.
-	diffStore.mtx.RLock()
-	defer diffStore.mtx.RUnlock()
+	diffStore.mtx.LowPriorityLock()
+	defer diffStore.mtx.LowPriorityUnlock()
 	delete(diffStore.loaded, *blockHash)
 	err := dbRemoveDiffData(dbTx, blockHash)
 	if err != nil {
@@ -116,8 +109,8 @@ func diffNotFoundError(node *blockNode) error {
 }
 
 func (diffStore *utxoDiffStore) diffByNode(node *blockNode) (*UTXODiff, error) {
-	diffStore.mtx.RLock()
-	defer diffStore.mtx.RUnlock()
+	diffStore.mtx.HighPriorityReadLock()
+	defer diffStore.mtx.HighPriorityReadUnlock()
 	diffData, exists, err := diffStore.diffDataByHash(node.hash)
 	if err != nil {
 		return nil, err
@@ -129,8 +122,8 @@ func (diffStore *utxoDiffStore) diffByNode(node *blockNode) (*UTXODiff, error) {
 }
 
 func (diffStore *utxoDiffStore) diffChildByNode(node *blockNode) (*blockNode, error) {
-	diffStore.mtx.RLock()
-	defer diffStore.mtx.RUnlock()
+	diffStore.mtx.HighPriorityReadLock()
+	defer diffStore.mtx.HighPriorityReadUnlock()
 	diffData, exists, err := diffStore.diffDataByHash(node.hash)
 	if err != nil {
 		return nil, err
@@ -162,8 +155,8 @@ func (diffStore *utxoDiffStore) diffDataFromDB(hash *daghash.Hash) (*blockUTXODi
 // flushToDB writes all dirty diff data to the database. If all writes
 // succeed, this clears the dirty set.
 func (diffStore *utxoDiffStore) flushToDB(dbTx database.Tx) error {
-	diffStore.mtx.Lock()
-	defer diffStore.mtx.Unlock()
+	diffStore.mtx.HighPriorityLock()
+	defer diffStore.mtx.HighPriorityUnlock()
 	if len(diffStore.dirty) == 0 {
 		return nil
 	}
