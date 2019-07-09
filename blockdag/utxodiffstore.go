@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/daglabs/btcd/database"
 	"github.com/daglabs/btcd/util/daghash"
-	"github.com/daglabs/btcd/util/prioritylock"
+	"github.com/daglabs/btcd/util/locks"
 )
 
 var multisetPointSize = 32
@@ -18,7 +18,7 @@ type utxoDiffStore struct {
 	dag    *BlockDAG
 	dirty  map[daghash.Hash]struct{}
 	loaded map[daghash.Hash]*blockUTXODiffData
-	mtx    *prioritylock.Mutex
+	mtx    *locks.PriorityMutex
 }
 
 func newUTXODiffStore(dag *BlockDAG) *utxoDiffStore {
@@ -26,7 +26,7 @@ func newUTXODiffStore(dag *BlockDAG) *utxoDiffStore {
 		dag:    dag,
 		dirty:  make(map[daghash.Hash]struct{}),
 		loaded: make(map[daghash.Hash]*blockUTXODiffData),
-		mtx:    prioritylock.New(),
+		mtx:    locks.New(),
 	}
 }
 
