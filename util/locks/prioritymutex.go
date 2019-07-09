@@ -10,16 +10,16 @@ import (
 //  * Data mutex: The actual lock on the data structure. Its
 //    type is sync.RWMutex for its high priority read lock.
 //  * High priority waiting group: A waiting group that is being
-//    increased every time a high priority lock (read or write)
-//    is acquired, and decreased every time a high priority lock is
+//    incremented every time a high priority lock (read or write)
+//    is acquired, and decremented every time a high priority lock is
 //    unlocked. Low priority locks can start being held only
 //    when the waiting group is empty.
-//	* Low priority mutex: This mutex ensures that when the
+//  * Low priority mutex: This mutex ensures that when the
 //    waiting group is empty, only one low priority lock
 //    will be able to lock the data mutex.
 
 // PriorityMutex implements a lock with three priorities:
-//	* High priority write lock - locks the mutex with the highest priority.
+//  * High priority write lock - locks the mutex with the highest priority.
 //  * High priority read lock - locks the mutex with lower priority than
 //    the high priority write lock. Can be held concurrently with other
 //    with other read locks.
@@ -38,39 +38,39 @@ func NewPriorityMutex() *PriorityMutex {
 	return &lock
 }
 
-// LowPriorityLock will acquire a low-priority lock.
+// LowPriorityLock acquires a low-priority lock.
 func (mtx *PriorityMutex) LowPriorityLock() {
 	mtx.lowPriorityMutex.Lock()
 	mtx.highPriorityWaiting.Wait()
 	mtx.dataMutex.Lock()
 }
 
-// LowPriorityUnlock will unlock the low-priority lock
+// LowPriorityUnlock unlocks the low-priority lock
 func (mtx *PriorityMutex) LowPriorityUnlock() {
 	mtx.dataMutex.Unlock()
 	mtx.lowPriorityMutex.Unlock()
 }
 
-// HighPriorityLock will acquire a high-priority lock.
+// HighPriorityLock acquires a high-priority lock.
 func (mtx *PriorityMutex) HighPriorityLock() {
 	mtx.highPriorityWaiting.Add(1)
 	mtx.dataMutex.Lock()
 }
 
-// HighPriorityUnlock will unlock the high-priority lock
+// HighPriorityUnlock unlocks the high-priority lock
 func (mtx *PriorityMutex) HighPriorityUnlock() {
 	mtx.dataMutex.Unlock()
 	mtx.highPriorityWaiting.Done()
 }
 
-// HighPriorityReadLock will acquire a high-priority read
+// HighPriorityReadLock acquires a high-priority read
 // lock.
 func (mtx *PriorityMutex) HighPriorityReadLock() {
 	mtx.highPriorityWaiting.Add(1)
 	mtx.dataMutex.RLock()
 }
 
-// HighPriorityUnlock will unlock the high-priority read
+// HighPriorityUnlock unlocks the high-priority read
 // lock
 func (mtx *PriorityMutex) HighPriorityReadUnlock() {
 	mtx.highPriorityWaiting.Done()

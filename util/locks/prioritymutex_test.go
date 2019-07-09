@@ -74,7 +74,6 @@ func TestHighPriorityReadLock(t *testing.T) {
 	time.Sleep(time.Second)
 	mtx.LowPriorityUnlock()
 	waitForWaitGroup(t, &wg, 2*time.Second)
-
 }
 
 func waitForWaitGroup(t *testing.T, wg *sync.WaitGroup, timeout time.Duration) {
