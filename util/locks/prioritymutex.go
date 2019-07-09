@@ -31,7 +31,7 @@ type PriorityMutex struct {
 	lowPriorityMutex    sync.Mutex
 }
 
-func New() *PriorityMutex {
+func NewPriorityMutex() *PriorityMutex {
 	lock := PriorityMutex{
 		highPriorityWaiting: sync.WaitGroup{},
 	}

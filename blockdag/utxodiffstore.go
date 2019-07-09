@@ -26,7 +26,7 @@ func newUTXODiffStore(dag *BlockDAG) *utxoDiffStore {
 		dag:    dag,
 		dirty:  make(map[daghash.Hash]struct{}),
 		loaded: make(map[daghash.Hash]*blockUTXODiffData),
-		mtx:    locks.New(),
+		mtx:    locks.NewPriorityMutex(),
 	}
 }
 
