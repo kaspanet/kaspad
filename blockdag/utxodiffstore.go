@@ -75,7 +75,7 @@ func (diffStore *utxoDiffStore) removeBlocksDiffData(dbTx database.Tx, blockHash
 }
 
 func (diffStore *utxoDiffStore) removeBlockDiffData(dbTx database.Tx, blockHash *daghash.Hash) error {
-	diffStore.mtx.LowPriorityLock()
+	diffStore.mtx.LowPriorityWriteLock()
 	defer diffStore.mtx.LowPriorityUnlock()
 	delete(diffStore.loaded, *blockHash)
 	err := dbRemoveDiffData(dbTx, blockHash)

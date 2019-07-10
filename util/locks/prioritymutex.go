@@ -38,8 +38,8 @@ func NewPriorityMutex() *PriorityMutex {
 	return &lock
 }
 
-// LowPriorityLock acquires a low-priority lock.
-func (mtx *PriorityMutex) LowPriorityLock() {
+// LowPriorityWriteLock acquires a low-priority write lock.
+func (mtx *PriorityMutex) LowPriorityWriteLock() {
 	mtx.lowPriorityMutex.Lock()
 	mtx.highPriorityWaiting.Wait()
 	mtx.dataMutex.Lock()
