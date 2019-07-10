@@ -305,6 +305,11 @@ func (dag *BlockDAG) addOrphanBlock(block *util.Block) {
 
 	// Limit orphan blocks to prevent memory exhaustion.
 	if len(dag.orphans)+1 > maxOrphanBlocks {
+		// If the new orphan is newer than the newest orphan on the orphan
+		// pool, don't add it.
+		if block.Timestamp().After(dag.newestOrphan.block.Timestamp()) {
+			return
+		}
 		// Remove the newest orphan to make room for the added one.
 		dag.removeOrphanBlock(dag.newestOrphan)
 		dag.newestOrphan = nil
