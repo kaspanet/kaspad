@@ -45,20 +45,20 @@ func (mtx *PriorityMutex) LowPriorityWriteLock() {
 	mtx.dataMutex.Lock()
 }
 
-// LowPriorityUnlock unlocks the low-priority lock
-func (mtx *PriorityMutex) LowPriorityUnlock() {
+// LowPriorityWriteUnlock unlocks the low-priority write lock
+func (mtx *PriorityMutex) LowPriorityWriteUnlock() {
 	mtx.dataMutex.Unlock()
 	mtx.lowPriorityMutex.Unlock()
 }
 
-// HighPriorityLock acquires a high-priority lock.
-func (mtx *PriorityMutex) HighPriorityLock() {
+// HighPriorityWriteLock acquires a high-priority write lock.
+func (mtx *PriorityMutex) HighPriorityWriteLock() {
 	mtx.highPriorityWaiting.Add(1)
 	mtx.dataMutex.Lock()
 }
 
-// HighPriorityUnlock unlocks the high-priority lock
-func (mtx *PriorityMutex) HighPriorityUnlock() {
+// HighPriorityWriteUnlock unlocks the high-priority write lock
+func (mtx *PriorityMutex) HighPriorityWriteUnlock() {
 	mtx.dataMutex.Unlock()
 	mtx.highPriorityWaiting.Done()
 }
@@ -70,7 +70,7 @@ func (mtx *PriorityMutex) HighPriorityReadLock() {
 	mtx.dataMutex.RLock()
 }
 
-// HighPriorityUnlock unlocks the high-priority read
+// HighPriorityWriteUnlock unlocks the high-priority read
 // lock
 func (mtx *PriorityMutex) HighPriorityReadUnlock() {
 	mtx.highPriorityWaiting.Done()

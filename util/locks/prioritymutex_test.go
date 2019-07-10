@@ -14,10 +14,10 @@ func TestPriorityMutex(t *testing.T) {
 	wg := sync.WaitGroup{}
 	wg.Add(3)
 
-	mtx.HighPriorityLock()
+	mtx.HighPriorityWriteLock()
 	go func() {
 		mtx.LowPriorityWriteLock()
-		defer mtx.LowPriorityUnlock()
+		defer mtx.LowPriorityWriteUnlock()
 		sharedSlice = append(sharedSlice, 2)
 		lowPriorityLockAcquired = true
 		wg.Done()
@@ -31,8 +31,8 @@ func TestPriorityMutex(t *testing.T) {
 		wg.Done()
 	}()
 	go func() {
-		mtx.HighPriorityLock()
-		defer mtx.HighPriorityUnlock()
+		mtx.HighPriorityWriteLock()
+		defer mtx.HighPriorityWriteUnlock()
 		sharedSlice = append(sharedSlice, 1)
 		if lowPriorityLockAcquired {
 			t.Errorf("LowPriorityWriteLock unexpectedly released")
@@ -40,7 +40,7 @@ func TestPriorityMutex(t *testing.T) {
 		wg.Done()
 	}()
 	time.Sleep(time.Second)
-	mtx.HighPriorityUnlock()
+	mtx.HighPriorityWriteUnlock()
 	waitForWaitGroup(t, &wg, 2*time.Second)
 	expectedSlice := []int{1, 2}
 	if !reflect.DeepEqual(sharedSlice, expectedSlice) {
@@ -72,7 +72,7 @@ func TestHighPriorityReadLock(t *testing.T) {
 		wg.Done()
 	}()
 	time.Sleep(time.Second)
-	mtx.LowPriorityUnlock()
+	mtx.LowPriorityWriteUnlock()
 	waitForWaitGroup(t, &wg, 2*time.Second)
 }
 
