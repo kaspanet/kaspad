@@ -28,7 +28,7 @@ func TestGetData(t *testing.T) {
 
 	// Ensure max payload is expected value for latest protocol version.
 	// Num inventory vectors (varInt) + max allowed inventory vectors.
-	wantPayload := uint32(1800009)
+	wantPayload := uint32(4718601)
 	maxPayload := msg.MaxPayloadLength(pver)
 	if maxPayload != wantPayload {
 		t.Errorf("MaxPayloadLength: wrong max payload length for "+
@@ -176,7 +176,7 @@ func TestGetDataWireErrors(t *testing.T) {
 	hashStr := "3264bc2ac36a60840790ba1d475d01367e7c723da941069e9dc"
 	blockHash, err := daghash.NewHashFromStr(hashStr)
 	if err != nil {
-		t.Errorf("NewHashFromStr: %v", err)
+		t.Fatalf("NewHashFromStr: %v", err)
 	}
 
 	iv := NewInvVect(InvTypeBlock, blockHash)
@@ -200,9 +200,13 @@ func TestGetDataWireErrors(t *testing.T) {
 		maxGetData.AddInvVect(iv)
 	}
 	maxGetData.InvList = append(maxGetData.InvList, iv)
-	maxGetDataEncoded := []byte{
-		0xfd, 0x51, 0xc3, // Varint for number of inv vectors (50001)
+
+	w := &bytes.Buffer{}
+	err = WriteVarInt(w, MaxInvPerMsg+1)
+	if err != nil {
+		t.Fatalf("WriteVarInt: %s", err)
 	}
+	maxGetDataEncoded := w.Bytes()
 
 	tests := []struct {
 		in       *MsgGetData // Value to encode
@@ -218,7 +222,7 @@ func TestGetDataWireErrors(t *testing.T) {
 		// Force error in inventory list.
 		{baseGetData, baseGetDataEncoded, pver, 1, io.ErrShortWrite, io.EOF},
 		// Force error with greater than max inventory vectors.
-		{maxGetData, maxGetDataEncoded, pver, 3, wireErr, wireErr},
+		{maxGetData, maxGetDataEncoded, pver, 5, wireErr, wireErr},
 	}
 
 	t.Logf("Running %d tests", len(tests))
