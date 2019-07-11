@@ -54,26 +54,29 @@ func TestHighPriorityReadLock(t *testing.T) {
 	wg.Add(2)
 	mtx.LowPriorityWriteLock()
 	isReadLockHeld := false
+	ch := make(chan struct{})
 	go func() {
 		mtx.HighPriorityReadLock()
 		defer mtx.HighPriorityReadUnlock()
 		isReadLockHeld = true
-		time.Sleep(1000 * time.Millisecond)
+		ch <- struct{}{}
+		<-ch
 		isReadLockHeld = false
 		wg.Done()
 	}()
 	go func() {
-		time.Sleep(500 * time.Millisecond)
 		mtx.HighPriorityReadLock()
 		defer mtx.HighPriorityReadUnlock()
+		<-ch
 		if !isReadLockHeld {
 			t.Errorf("expected another read lock to be held concurrently")
 		}
+		ch <- struct{}{}
 		wg.Done()
 	}()
 	time.Sleep(time.Second)
 	mtx.LowPriorityWriteUnlock()
-	waitForWaitGroup(t, &wg, 2*time.Second)
+	waitForWaitGroup(t, &wg, time.Second)
 }
 
 func waitForWaitGroup(t *testing.T, wg *sync.WaitGroup, timeout time.Duration) {
