@@ -157,7 +157,7 @@ type SyncManager struct {
 	shutdown       int32
 	dag            *blockdag.BlockDAG
 	txMemPool      *mempool.TxPool
-	chainParams    *dagconfig.Params
+	dagParams      *dagconfig.Params
 	progressLogger *blockProgressLogger
 	msgChan        chan interface{}
 	wg             sync.WaitGroup
@@ -261,8 +261,6 @@ func (sm *SyncManager) startSync() {
 		// to send.
 		sm.requestedBlocks = make(map[daghash.Hash]struct{})
 
-		locator := sm.dag.LatestBlockLocator()
-
 		log.Infof("Syncing to block %s from peer %s",
 			bestPeer.SelectedTip(), bestPeer.Addr())
 
@@ -285,15 +283,16 @@ func (sm *SyncManager) startSync() {
 		// downloads when in regression test mode.
 		if sm.nextCheckpoint != nil &&
 			sm.dag.ChainHeight() < sm.nextCheckpoint.ChainHeight &&
-			sm.chainParams != &dagconfig.RegressionNetParams { //TODO: (Ori) This is probably wrong. Done only for compilation
+			sm.dagParams != &dagconfig.RegressionNetParams { //TODO: (Ori) This is probably wrong. Done only for compilation
 
+			locator := sm.dag.LatestBlockLocator()
 			bestPeer.PushGetHeadersMsg(locator, sm.nextCheckpoint.Hash)
 			sm.headersFirstMode = true
 			log.Infof("Downloading headers for blocks %d to "+
 				"%d from peer %s", sm.dag.ChainHeight()+1,
 				sm.nextCheckpoint.ChainHeight, bestPeer.Addr()) //TODO: (Ori) This is probably wrong. Done only for compilation
 		} else {
-			bestPeer.PushGetBlocksMsg(locator, &daghash.ZeroHash)
+			bestPeer.PushGetBlockLocatorMsg(sm.dagParams.GenesisHash, nil)
 		}
 		sm.syncPeer = bestPeer
 	} else {
@@ -307,7 +306,7 @@ func (sm *SyncManager) isSyncCandidate(peer *peerpkg.Peer) bool {
 	// Typically a peer is not a candidate for sync if it's not a full node,
 	// however regression test is special in that the regression tool is
 	// not a full node and still needs to be considered a sync candidate.
-	if sm.chainParams == &dagconfig.RegressionNetParams {
+	if sm.dagParams == &dagconfig.RegressionNetParams {
 		// The peer is not a candidate if it's not coming from localhost
 		// or the hostname can't be determined for some reason.
 		host, _, err := net.SplitHostPort(peer.Addr())
@@ -517,7 +516,7 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 		// the peer or ignore the block when we're in regression test
 		// mode in this case so the chain code is actually fed the
 		// duplicate blocks.
-		if sm.chainParams != &dagconfig.RegressionNetParams {
+		if sm.dagParams != &dagconfig.RegressionNetParams {
 			log.Warnf("Got unrequested block %s from %s -- "+
 				"disconnecting", blockHash, peer.Addr())
 			peer.Disconnect()
@@ -1401,7 +1400,7 @@ func New(config *Config) (*SyncManager, error) {
 		peerNotifier:    config.PeerNotifier,
 		dag:             config.DAG,
 		txMemPool:       config.TxMemPool,
-		chainParams:     config.ChainParams,
+		dagParams:       config.ChainParams,
 		rejectedTxns:    make(map[daghash.TxID]struct{}),
 		requestedTxns:   make(map[daghash.TxID]struct{}),
 		requestedBlocks: make(map[daghash.Hash]struct{}),
