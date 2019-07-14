@@ -65,7 +65,6 @@ func txLoop(client *txgenClient, cfg *config) error {
 	filterAddresses := []util.Address{p2pkhAddress}
 	var err error
 	primaryPkScript, err = txscript.PayToAddrScript(p2pkhAddress)
-
 	if err != nil {
 		return fmt.Errorf("failed to generate primaryPkScript to address: %s", err)
 	}
