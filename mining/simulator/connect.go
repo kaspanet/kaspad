@@ -27,7 +27,7 @@ func connectToServers(cfg *config, addressList []string) ([]*simulatorClient, er
 			User:           "user",
 			Pass:           "pass",
 			DisableTLS:     cfg.DisableTLS,
-			RequestTimeout: time.Second / 2,
+			RequestTimeout: time.Second * 10,
 		}
 
 		if !cfg.DisableTLS {
