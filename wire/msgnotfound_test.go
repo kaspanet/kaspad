@@ -28,7 +28,7 @@ func TestNotFound(t *testing.T) {
 
 	// Ensure max payload is expected value for latest protocol version.
 	// Num inventory vectors (varInt) + max allowed inventory vectors.
-	wantPayload := uint32(1800009)
+	wantPayload := uint32(2359305)
 	maxPayload := msg.MaxPayloadLength(pver)
 	if maxPayload != wantPayload {
 		t.Errorf("MaxPayloadLength: wrong max payload length for "+
@@ -191,9 +191,13 @@ func TestNotFoundWireErrors(t *testing.T) {
 		maxNotFound.AddInvVect(iv)
 	}
 	maxNotFound.InvList = append(maxNotFound.InvList, iv)
-	maxNotFoundEncoded := []byte{
-		0xfd, 0x51, 0xc3, // Varint for number of inv vectors (50001)
+
+	w := &bytes.Buffer{}
+	err = WriteVarInt(w, MaxInvPerMsg+1)
+	if err != nil {
+		t.Fatalf("WriteVarInt: %s", err)
 	}
+	maxNotFoundEncoded := w.Bytes()
 
 	tests := []struct {
 		in       *MsgNotFound // Value to encode
@@ -208,7 +212,7 @@ func TestNotFoundWireErrors(t *testing.T) {
 		// Force error in inventory list.
 		{baseNotFound, baseNotFoundEncoded, pver, 1, io.ErrShortWrite, io.EOF},
 		// Force error with greater than max inventory vectors.
-		{maxNotFound, maxNotFoundEncoded, pver, 3, wireErr, wireErr},
+		{maxNotFound, maxNotFoundEncoded, pver, 5, wireErr, wireErr},
 	}
 
 	t.Logf("Running %d tests", len(tests))

@@ -21,9 +21,6 @@ import (
 // backing array multiple times.
 const defaultTransactionAlloc = 2048
 
-// MaxBlocksPerMsg is the maximum number of blocks allowed per message.
-const MaxBlocksPerMsg = 500
-
 // MaxBlockPayload is the maximum bytes a block message can be in bytes.
 const MaxBlockPayload = 1000000
 
