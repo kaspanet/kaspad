@@ -22,18 +22,18 @@ func (wg *waitGroup) add() {
 
 func (wg *waitGroup) done() {
 	counter := atomic.AddInt64(&wg.counter, -1)
-	if counter == 0 {
-		wg.waitCond.Signal()
-	}
 	if counter < 0 {
 		panic("negative values for wg.counter are not allowed. This was likely caused by calling done() before add()")
+	}
+	if atomic.LoadInt64(&wg.counter) == 0 {
+		wg.waitCond.Signal()
 	}
 }
 
 func (wg *waitGroup) wait() {
 	wg.waitCond.L.Lock()
 	defer wg.waitCond.L.Unlock()
-	for wg.counter != 0 {
+	for atomic.LoadInt64(&wg.counter) != 0 {
 		wg.waitCond.Wait()
 	}
 }
