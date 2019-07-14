@@ -26,7 +26,7 @@ func (wg *waitGroup) done() {
 		wg.waitCond.Signal()
 	}
 	if counter < 0 {
-		panic("negative values for wg.counter are not allowed. It's probably because done() was called before add()")
+		panic("negative values for wg.counter are not allowed. This was likely caused by calling done() before add()")
 	}
 }
 
