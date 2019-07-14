@@ -27,52 +27,49 @@ import (
 //	  the read lock.
 type PriorityMutex struct {
 	dataMutex           sync.RWMutex
-	highPriorityWaiting sync.WaitGroup
-	lowPriorityMutex    sync.Mutex
+	highPriorityWaiting *waitGroup
 }
 
 func NewPriorityMutex() *PriorityMutex {
 	lock := PriorityMutex{
-		highPriorityWaiting: sync.WaitGroup{},
+		highPriorityWaiting: newWaitGroup(),
 	}
 	return &lock
 }
 
 // LowPriorityWriteLock acquires a low-priority write lock.
 func (mtx *PriorityMutex) LowPriorityWriteLock() {
-	mtx.lowPriorityMutex.Lock()
-	mtx.highPriorityWaiting.Wait()
+	mtx.highPriorityWaiting.wait()
 	mtx.dataMutex.Lock()
 }
 
 // LowPriorityWriteUnlock unlocks the low-priority write lock
 func (mtx *PriorityMutex) LowPriorityWriteUnlock() {
 	mtx.dataMutex.Unlock()
-	mtx.lowPriorityMutex.Unlock()
 }
 
 // HighPriorityWriteLock acquires a high-priority write lock.
 func (mtx *PriorityMutex) HighPriorityWriteLock() {
-	mtx.highPriorityWaiting.Add(1)
+	mtx.highPriorityWaiting.add()
 	mtx.dataMutex.Lock()
 }
 
 // HighPriorityWriteUnlock unlocks the high-priority write lock
 func (mtx *PriorityMutex) HighPriorityWriteUnlock() {
 	mtx.dataMutex.Unlock()
-	mtx.highPriorityWaiting.Done()
+	mtx.highPriorityWaiting.done()
 }
 
 // HighPriorityReadLock acquires a high-priority read
 // lock.
 func (mtx *PriorityMutex) HighPriorityReadLock() {
-	mtx.highPriorityWaiting.Add(1)
+	mtx.highPriorityWaiting.add()
 	mtx.dataMutex.RLock()
 }
 
 // HighPriorityWriteUnlock unlocks the high-priority read
 // lock
 func (mtx *PriorityMutex) HighPriorityReadUnlock() {
-	mtx.highPriorityWaiting.Done()
+	mtx.highPriorityWaiting.done()
 	mtx.dataMutex.RUnlock()
 }
