@@ -11,10 +11,10 @@ import (
 )
 
 var (
-	isRunning       int32
-	activeNetParams *dagconfig.Params = &dagconfig.DevNetParams
-	p2pkhAddress    util.Address
-	privateKey      *btcec.PrivateKey
+	activeNetParams  *dagconfig.Params = &dagconfig.DevNetParams
+	p2pkhAddress     util.Address
+	secondaryAddress util.Address
+	privateKey       *btcec.PrivateKey
 )
 
 // privateKeyToP2pkhAddress generates p2pkh address from private key.
@@ -39,6 +39,13 @@ func main() {
 	}
 
 	log.Infof("P2PKH address for private key: %s\n", p2pkhAddress)
+
+	if cfg.SecondaryAddress != "" {
+		secondaryAddress, err = util.DecodeAddress(cfg.SecondaryAddress, activeNetParams.Prefix)
+		if err != nil {
+			panic(fmt.Errorf("Failed to decode secondary address %s: %s", cfg.SecondaryAddress, err))
+		}
+	}
 
 	client, err := connectToServer(cfg)
 	if err != nil {

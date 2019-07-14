@@ -18,7 +18,7 @@ func main() {
 		os.Exit(1)
 	}
 	fmt.Printf("\nPrivate key (base-58): %s\n", base58.Encode(privateKey.Serialize()))
-	addr, err := util.NewAddressPubKeyHash(privateKey.PubKey().SerializeCompressed(), activeNetParams.Prefix)
+	addr, err := util.NewAddressPubKeyHashFromPublicKey(privateKey.PubKey().SerializeCompressed(), activeNetParams.Prefix)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to generate p2pkh address: %s", err)
 		os.Exit(1)
