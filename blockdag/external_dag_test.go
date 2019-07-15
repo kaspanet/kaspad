@@ -2,9 +2,10 @@ package blockdag_test
 
 import (
 	"fmt"
-	"github.com/daglabs/btcd/util/subnetworkid"
 	"math"
 	"testing"
+
+	"github.com/daglabs/btcd/util/subnetworkid"
 
 	"github.com/daglabs/btcd/util/daghash"
 	"github.com/daglabs/btcd/util/testtools"
@@ -380,7 +381,7 @@ func TestGasLimit(t *testing.T) {
 	}
 	isOrphan, delay, err := dag.ProcessBlock(util.NewBlock(overLimitBlock), blockdag.BFNoPoWCheck)
 	if err == nil {
-		t.Fatalf("ProcessBlock expected to have an error")
+		t.Fatalf("ProcessBlock expected to have an error in block that exceeds gas limit")
 	}
 	rErr, ok := err.(blockdag.RuleError)
 	if !ok {
@@ -447,9 +448,10 @@ func TestGasLimit(t *testing.T) {
 
 	// Here we check that we can't process a block with a transaction from a non-existent subnetwork
 	isOrphan, delay, err = dag.ProcessBlock(util.NewBlock(nonExistentSubnetworkBlock), blockdag.BFNoPoWCheck)
-	expectedErrStr := fmt.Sprintf("subnetwork '%s' not found", nonExistentSubnetwork)
+	expectedErrStr := fmt.Sprintf("Error getting gas limit for subnetworkID '%s': subnetwork '%s' not found",
+		nonExistentSubnetwork, nonExistentSubnetwork)
 	if err.Error() != expectedErrStr {
-		t.Fatalf("ProcessBlock expected error %v but got %v", expectedErrStr, err)
+		t.Fatalf("ProcessBlock expected error \"%v\" but got \"%v\"", expectedErrStr, err)
 	}
 
 	// Here we check that we can process a block with a transaction that doesn't exceed the gas limit

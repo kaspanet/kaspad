@@ -668,32 +668,44 @@ func (dag *BlockDAG) saveChangesFromBlock(node *blockNode, block *util.Block, vi
 }
 
 func (dag *BlockDAG) validateGasLimit(block *util.Block) error {
-	transactions := block.Transactions()
-	// Amount of gas consumed per sub-network shouldn't be more than the subnetwork's limit
-	gasUsageInAllSubnetworks := map[subnetworkid.SubnetworkID]uint64{}
-	for _, tx := range transactions {
-		msgTx := tx.MsgTx()
-		// In DAGCoin and Registry sub-networks all txs must have Gas = 0, and that is validated in checkTransactionSanity
-		// Therefore - no need to check them here.
-		if !msgTx.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) && !msgTx.SubnetworkID.IsBuiltIn() {
-			gasUsageInSubnetwork := gasUsageInAllSubnetworks[msgTx.SubnetworkID]
-			gasUsageInSubnetwork += msgTx.Gas
-			if gasUsageInSubnetwork < gasUsageInAllSubnetworks[msgTx.SubnetworkID] { // protect from overflows
-				str := fmt.Sprintf("Block gas usage in subnetwork with ID %s has overflown", msgTx.SubnetworkID)
-				return ruleError(ErrInvalidGas, str)
-			}
-			gasUsageInAllSubnetworks[msgTx.SubnetworkID] = gasUsageInSubnetwork
+	var currentSubnetworkID *subnetworkid.SubnetworkID
+	var currentSubnetworkGasLimit uint64
+	var currentGasUsage uint64
+	var err error
 
-			gasLimit, err := dag.SubnetworkStore.GasLimit(&msgTx.SubnetworkID)
+	// Since transactions in blocks are ordered by subnetworkID, and this was already validated in checkTransactionSanity,
+	// we can remember the gas limit only for the subnetwork currently being examined
+	for _, tx := range block.Transactions() {
+		msgTx := tx.MsgTx()
+
+		// In native and Built-In subnetworks all txs must have Gas = 0, and that was already validated in checkTransactionSanity
+		// Therefore - no need to check them here.
+		if msgTx.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) || msgTx.SubnetworkID.IsBuiltIn() {
+			continue
+		}
+
+		if !msgTx.SubnetworkID.IsEqual(currentSubnetworkID) {
+			currentSubnetworkID = &msgTx.SubnetworkID
+			currentGasUsage = 0
+			currentSubnetworkGasLimit, err = dag.SubnetworkStore.GasLimit(currentSubnetworkID)
 			if err != nil {
-				return err
-			}
-			if gasUsageInSubnetwork > gasLimit {
-				str := fmt.Sprintf("Block wastes too much gas in subnetwork with ID %s", msgTx.SubnetworkID)
-				return ruleError(ErrInvalidGas, str)
+				return fmt.Errorf("Error getting gas limit for subnetworkID '%s': %s", currentSubnetworkID, err)
 			}
 		}
+
+		newGasUsage := currentGasUsage + msgTx.Gas
+		if newGasUsage < currentGasUsage { // check for overflow
+			str := fmt.Sprintf("Block gas usage in subnetwork with ID %s has overflown", currentSubnetworkID)
+			return ruleError(ErrInvalidGas, str)
+		}
+		if newGasUsage > currentSubnetworkGasLimit {
+			str := fmt.Sprintf("Block wastes too much gas in subnetwork with ID %s", currentSubnetworkID)
+			return ruleError(ErrInvalidGas, str)
+		}
+
+		currentGasUsage = newGasUsage
 	}
+
 	return nil
 }
 
