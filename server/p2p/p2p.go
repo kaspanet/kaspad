@@ -697,7 +697,7 @@ func (sp *Peer) OnGetBlocks(_ *peer.Peer, msg *wire.MsgGetBlocks) {
 	// This mirrors the behavior in the reference implementation.
 	dag := sp.server.DAG
 	hashList := dag.LocateBlocks(msg.BlockLocatorHashes, msg.HashStop,
-		wire.MaxBlocksPerMsg)
+		wire.MaxInvPerMsg)
 
 	// Generate inventory message.
 	invMsg := wire.NewMsgInv()

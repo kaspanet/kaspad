@@ -23,6 +23,7 @@ var (
 type config struct {
 	Address               string  `long:"address" description:"An address to a JSON-RPC endpoints" required:"true"`
 	PrivateKey            string  `long:"private-key" description:"Private key" required:"true"`
+	SecondaryAddress      string  `long:"secondary-address" description:"An address that gets paid once per txgen run"`
 	CertificatePath       string  `long:"cert" description:"Path to certificate accepted by JSON-RPC endpoint"`
 	DisableTLS            bool    `long:"notls" description:"Disable TLS"`
 	TxInterval            uint64  `long:"tx-interval" description:"Transaction emission interval (in milliseconds)"`

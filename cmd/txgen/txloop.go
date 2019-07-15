@@ -37,6 +37,7 @@ const (
 	searchRawTransactionMaxResults              = 5000
 	txMaxQueueLength                            = 10000
 	maxResendDepth                              = 500
+	minSecondaryTxAmount                        = 100000000
 )
 
 type walletTransaction struct {
@@ -53,20 +54,31 @@ func isDust(value uint64) bool {
 }
 
 var (
-	random   = rand.New(rand.NewSource(time.Now().UnixNano()))
-	pkScript []byte
+	random                 = rand.New(rand.NewSource(time.Now().UnixNano()))
+	primaryPkScript        []byte
+	secondaryPkScript      []byte
+	sentToSecondaryAddress bool
 )
 
 // txLoop performs main loop of transaction generation
 func txLoop(client *txgenClient, cfg *config) error {
+	filterAddresses := []util.Address{p2pkhAddress}
 	var err error
-	pkScript, err = txscript.PayToAddrScript(p2pkhAddress)
-
+	primaryPkScript, err = txscript.PayToAddrScript(p2pkhAddress)
 	if err != nil {
-		return fmt.Errorf("failed to generate pkScript to address: %s", err)
+		return fmt.Errorf("failed to generate primaryPkScript to address: %s", err)
 	}
 
-	err = client.LoadTxFilter(true, []util.Address{p2pkhAddress}, nil)
+	if secondaryAddress != nil {
+		secondaryPkScript, err = txscript.PayToAddrScript(secondaryAddress)
+		if err != nil {
+			return fmt.Errorf("failed to generate primaryPkScript to address: %s", err)
+		}
+
+		filterAddresses = append(filterAddresses, secondaryAddress)
+	}
+
+	err = client.LoadTxFilter(true, filterAddresses, nil)
 	if err != nil {
 		return err
 	}
@@ -201,6 +213,54 @@ func randomWithAverageTarget(target uint64, allowZero bool) uint64 {
 	return uint64(math.Round(randomNum))
 }
 
+func createRandomTxFromFunds(walletUTXOSet utxoSet, cfg *config, gasLimitMap map[subnetworkid.SubnetworkID]uint64, funds uint64) (tx *wire.MsgTx, isSecondaryAddress bool, err error) {
+	if secondaryPkScript != nil && !sentToSecondaryAddress && funds > minSecondaryTxAmount {
+		tx, err = createTx(walletUTXOSet, minSecondaryTxAmount, cfg.AverageFeeRate, 1, 1, subnetworkid.SubnetworkIDNative, 0, 0, secondaryPkScript)
+		if err != nil {
+			return nil, false, err
+		}
+		return tx, true, nil
+	}
+
+	payloadSize := uint64(0)
+	gas := uint64(0)
+
+	// In Go map iteration is randomized, so if we want
+	// to choose a random element from a map we can
+	// just take the first iterated element.
+	chosenSubnetwork := subnetworkid.SubnetworkIDNative
+	chosenGasLimit := uint64(0)
+	for subnetworkID, gasLimit := range gasLimitMap {
+		chosenSubnetwork = &subnetworkID
+		chosenGasLimit = gasLimit
+		break
+	}
+
+	if !chosenSubnetwork.IsEqual(subnetworkid.SubnetworkIDNative) {
+		payloadSize = randomWithAverageTarget(cfg.AveragePayloadSize, true)
+		gas = randomWithAverageTarget(uint64(float64(chosenGasLimit)*cfg.AverageGasFraction), true)
+		if gas > chosenGasLimit {
+			gas = chosenGasLimit
+		}
+	}
+
+	targetNumberOfOutputs := randomWithAverageTarget(cfg.TargetNumberOfOutputs, false)
+	targetNumberOfInputs := randomWithAverageTarget(cfg.TargetNumberOfInputs, false)
+
+	feeRate := randomWithAverageTarget(cfg.AverageFeeRate, true)
+
+	amount := minSpendableAmount + uint64(random.Int63n(int64(maxSpendableAmount-minSpendableAmount)))
+	amount *= targetNumberOfOutputs
+	if amount > funds-minTxFee {
+		amount = funds - minTxFee
+	}
+	tx, err = createTx(walletUTXOSet, amount, feeRate, targetNumberOfOutputs, targetNumberOfInputs, chosenSubnetwork, payloadSize, gas, primaryPkScript)
+	if err != nil {
+		return nil, false, err
+	}
+	return tx, true, nil
+}
+
 func enqueueTransactions(client *txgenClient, blockAdded *blockAddedMsg, walletUTXOSet utxoSet, walletTxs map[daghash.TxID]*walletTransaction,
 	txChan chan *wire.MsgTx, cfg *config, gasLimitMap map[subnetworkid.SubnetworkID]uint64) error {
 	if err := applyConfirmedTransactionsAndResendNonAccepted(client, walletTxs, walletUTXOSet, blockAdded.chainHeight, txChan); err != nil {
@@ -208,50 +268,20 @@ func enqueueTransactions(client *txgenClient, blockAdded *blockAddedMsg, walletU
 	}
 
 	for funds := calcUTXOSetFunds(walletUTXOSet); !isDust(funds); funds = calcUTXOSetFunds(walletUTXOSet) {
-		payloadSize := uint64(0)
-		gas := uint64(0)
-
-		// In Go map iteration is randomized, so if we want
-		// to choose a random element from a map we can
-		// just take the first iterated element.
-		chosenSubnetwork := subnetworkid.SubnetworkIDNative
-		chosenGasLimit := uint64(0)
-		for subnetworkID, gasLimit := range gasLimitMap {
-			chosenSubnetwork = &subnetworkID
-			chosenGasLimit = gasLimit
-			break
-		}
-
-		if !chosenSubnetwork.IsEqual(subnetworkid.SubnetworkIDNative) {
-			payloadSize = randomWithAverageTarget(cfg.AveragePayloadSize, true)
-			gas = randomWithAverageTarget(uint64(float64(chosenGasLimit)*cfg.AverageGasFraction), true)
-			if gas > chosenGasLimit {
-				gas = chosenGasLimit
-			}
-		}
-
-		targetNumberOfOutputs := randomWithAverageTarget(cfg.TargetNumberOfOutputs, false)
-		targetNumberOfInputs := randomWithAverageTarget(cfg.TargetNumberOfInputs, false)
-
-		feeRate := randomWithAverageTarget(cfg.AverageFeeRate, true)
-
-		amount := minSpendableAmount + uint64(random.Int63n(int64(maxSpendableAmount-minSpendableAmount)))
-		amount *= targetNumberOfOutputs
-		if amount > funds-minTxFee {
-			amount = funds - minTxFee
-		}
-		tx, err := createTx(walletUTXOSet, amount, feeRate, targetNumberOfOutputs, targetNumberOfInputs, chosenSubnetwork, payloadSize, gas)
+		tx, isSecondaryAddress, err := createRandomTxFromFunds(walletUTXOSet, cfg, gasLimitMap, funds)
 		if err != nil {
 			return err
 		}
-
 		txChan <- tx
+		if isSecondaryAddress {
+			sentToSecondaryAddress = true
+		}
 	}
 	return nil
 }
 
 func createTx(walletUTXOSet utxoSet, minAmount uint64, feeRate uint64, targetNumberOfOutputs uint64, targetNumberOfInputs uint64,
-	subnetworkdID *subnetworkid.SubnetworkID, payloadSize uint64, gas uint64) (*wire.MsgTx, error) {
+	subnetworkdID *subnetworkid.SubnetworkID, payloadSize uint64, gas uint64, pkScript []byte) (*wire.MsgTx, error) {
 	var tx *wire.MsgTx
 	if subnetworkdID.IsEqual(subnetworkid.SubnetworkIDNative) {
 		tx = wire.NewNativeMsgTx(wire.TxVersion, nil, nil)
@@ -380,8 +410,10 @@ func removeTxInsFromUTXOSet(walletUTXOSet utxoSet, tx *wire.MsgTx) {
 
 func addTxOutsToUTXOSet(walletUTXOSet utxoSet, tx *wire.MsgTx) {
 	for i, txOut := range tx.TxOut {
-		outpoint := wire.Outpoint{TxID: *tx.TxID(), Index: uint32(i)}
-		walletUTXOSet[outpoint] = txOut
+		if bytes.Equal(txOut.PkScript, primaryPkScript) {
+			outpoint := wire.Outpoint{TxID: *tx.TxID(), Index: uint32(i)}
+			walletUTXOSet[outpoint] = txOut
+		}
 	}
 }
 

@@ -28,7 +28,7 @@ func TestInv(t *testing.T) {
 
 	// Ensure max payload is expected value for latest protocol version.
 	// Num inventory vectors (varInt) + max allowed inventory vectors.
-	wantPayload := uint32(1800009)
+	wantPayload := uint32(2359305)
 	maxPayload := msg.MaxPayloadLength(pver)
 	if maxPayload != wantPayload {
 		t.Errorf("MaxPayloadLength: wrong max payload length for "+
@@ -200,9 +200,13 @@ func TestInvWireErrors(t *testing.T) {
 		maxInv.AddInvVect(iv)
 	}
 	maxInv.InvList = append(maxInv.InvList, iv)
-	maxInvEncoded := []byte{
-		0xfd, 0x51, 0xc3, // Varint for number of inv vectors (50001)
+
+	w := &bytes.Buffer{}
+	err = WriteVarInt(w, MaxInvPerMsg+1)
+	if err != nil {
+		t.Fatalf("WriteVarInt: %s", err)
 	}
+	maxInvEncoded := w.Bytes()
 
 	tests := []struct {
 		in       *MsgInv // Value to encode
@@ -218,7 +222,7 @@ func TestInvWireErrors(t *testing.T) {
 		// Force error in inventory list.
 		{baseInv, baseInvEncoded, pver, 1, io.ErrShortWrite, io.EOF},
 		// Force error with greater than max inventory vectors.
-		{maxInv, maxInvEncoded, pver, 3, wireErr, wireErr},
+		{maxInv, maxInvEncoded, pver, 5, wireErr, wireErr},
 	}
 
 	t.Logf("Running %d tests", len(tests))
