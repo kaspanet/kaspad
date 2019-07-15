@@ -314,7 +314,7 @@ func TestGasLimit(t *testing.T) {
 	}
 	defer teardownFunc()
 
-	// First we prepare a subnetwrok and a block with coinbase outputs to fund our tests
+	// First we prepare a subnetwork and a block with coinbase outputs to fund our tests
 	gasLimit := uint64(12345)
 	subnetworkID, err := testtools.RegisterSubnetworkForTest(dag, &params, gasLimit)
 	if err != nil {
