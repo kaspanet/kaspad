@@ -1333,6 +1333,11 @@ func (dag *BlockDAG) BlockConfirmationsByHashNoLock(hash *daghash.Hash) (uint64,
 	return dag.blockConfirmations(node)
 }
 
+// UTXOCommitment returns a commitment to the dag's current UTXOSet
+func (dag *BlockDAG) UTXOCommitment() string {
+	return dag.UTXOSet().UTXOMultiset.Hash().String()
+}
+
 // blockConfirmations returns the current confirmations number of the given node
 // The confirmations number is defined as follows:
 // * If the node is red -> 0
