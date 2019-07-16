@@ -538,7 +538,10 @@ func (dag *BlockDAG) initDAGState() error {
 		}
 
 		// Apply the loaded utxoCollection to the virtual block.
-		dag.virtual.utxoSet.utxoCollection = fullUTXOCollection
+		dag.virtual.utxoSet, err = newFullUTXOSetFromUTXOCollection(fullUTXOCollection)
+		if err != nil {
+			return AssertError(fmt.Sprintf("Error loading UTXOSet: %s", err))
+		}
 
 		// Apply the stored tips to the virtual block.
 		tips := newSet()
