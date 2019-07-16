@@ -673,8 +673,8 @@ func (dag *BlockDAG) validateGasLimit(block *util.Block) error {
 	var currentGasUsage uint64
 	var err error
 
-	// Since transactions in blocks are ordered by subnetworkID, and this was already validated in checkTransactionSanity,
-	// we can remember the gas limit only for the subnetwork currently being examined
+	// We assume here that transactions are ordered by subnetworkID,
+	// since it was already validated in checkTransactionSanity
 	for _, tx := range block.Transactions() {
 		msgTx := tx.MsgTx()
 
