@@ -38,6 +38,7 @@ _testmain.go
 .vscode
 debug
 debug.test
+__debug_bin
 
 # CI
 version.txt
