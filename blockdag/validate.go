@@ -657,7 +657,8 @@ func validateParents(blockHeader *wire.BlockHeader, parents blockSet) error {
 // for how the flags modify its behavior.
 //
 // This function MUST be called with the dag state lock held (for writes).
-func (dag *BlockDAG) checkBlockContext(block *util.Block, parents blockSet, bluestParent *blockNode, flags BehaviorFlags) error {
+func (dag *BlockDAG) checkBlockContext(block *util.Block, parents blockSet, flags BehaviorFlags) error {
+	bluestParent := parents.bluest()
 	fastAdd := flags&BFFastAdd == BFFastAdd
 
 	err := validateParents(&block.MsgBlock().Header, parents)
@@ -1030,7 +1031,7 @@ func (dag *BlockDAG) CheckConnectBlockTemplateNoLock(block *util.Block) error {
 		return err
 	}
 
-	err = dag.checkBlockContext(block, parents, dag.selectedTip(), flags)
+	err = dag.checkBlockContext(block, parents, flags)
 	if err != nil {
 		return err
 	}
