@@ -9,27 +9,27 @@ import (
 	"testing"
 )
 
-type syncWgCompatible struct{
+type syncWgCompatible struct {
 	*waitGroup
 }
 
-func (swg *syncWgCompatible) Add(delta int){
-	for i := 0; i < delta; i++{
+func (swg *syncWgCompatible) Add(delta int) {
+	for i := 0; i < delta; i++ {
 		swg.add()
 	}
 }
 
-func (swg *syncWgCompatible) Done(){
+func (swg *syncWgCompatible) Done() {
 	swg.done()
 }
 
-func (swg *syncWgCompatible) Wait(){
+func (swg *syncWgCompatible) Wait() {
 	swg.wait()
 }
 
-func newSyncWgCompatible() *syncWgCompatible{
+func newSyncWgCompatible() *syncWgCompatible {
 	return &syncWgCompatible{
-		waitGroup:newWaitGroup(),
+		waitGroup: newWaitGroup(),
 	}
 }
 
@@ -83,11 +83,11 @@ func TestWaitGroupMisuse(t *testing.T) {
 	t.Fatal("Should panic")
 }
 
-func TestAddAfterWait(t *testing.T){
+func TestAddAfterWait(t *testing.T) {
 	wg := newSyncWgCompatible()
 	wg.add()
 	syncChan := make(chan struct{})
-	go func(){
+	go func() {
 		syncChan <- struct{}{}
 		wg.wait()
 		syncChan <- struct{}{}
@@ -129,7 +129,7 @@ func TestWaitGroupAlign(t *testing.T) {
 		x  byte
 		wg *syncWgCompatible
 	}
-	x := X{wg:newSyncWgCompatible()}
+	x := X{wg: newSyncWgCompatible()}
 	x.wg.Add(1)
 	go func(x *X) {
 		x.wg.Done()
