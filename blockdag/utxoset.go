@@ -524,6 +524,21 @@ func NewFullUTXOSet() *FullUTXOSet {
 	}
 }
 
+func newFullUTXOSetFromUTXOCollection(collection utxoCollection) (*FullUTXOSet, error) {
+	var err error
+	multiset := btcec.NewMultiset(btcec.S256())
+	for outpoint, utxoEntry := range collection {
+		multiset, err = addUTXOToMultiset(multiset, utxoEntry, &outpoint)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return &FullUTXOSet{
+		utxoCollection: collection,
+		UTXOMultiset:   multiset,
+	}, nil
+}
+
 // diffFrom returns the difference between this utxoSet and another
 // diffFrom can only work when other is a diffUTXOSet, and its base utxoSet is this.
 func (fus *FullUTXOSet) diffFrom(other UTXOSet) (*UTXODiff, error) {

@@ -30,8 +30,7 @@ func (dag *BlockDAG) maybeAcceptBlock(block *util.Block, flags BehaviorFlags) er
 
 	// The block must pass all of the validation rules which depend on the
 	// position of the block within the block DAG.
-	bluestParent := parents.bluest()
-	err = dag.checkBlockContext(block, parents, bluestParent, flags)
+	err = dag.checkBlockContext(block, parents, flags)
 	if err != nil {
 		return err
 	}
@@ -59,6 +58,7 @@ func (dag *BlockDAG) maybeAcceptBlock(block *util.Block, flags BehaviorFlags) er
 
 	// Make sure that all the block's transactions are finalized
 	fastAdd := flags&BFFastAdd == BFFastAdd
+	bluestParent := parents.bluest()
 	if !fastAdd {
 		if err := dag.validateAllTxsFinalized(block, newNode, bluestParent); err != nil {
 			return err
