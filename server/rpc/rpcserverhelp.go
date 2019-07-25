@@ -176,6 +176,7 @@ var helpDescsEnUS = map[string]string{
 	"getBlockDagInfoResult-tipHashes":            "The block hashes for the tips in the DAG",
 	"getBlockDagInfoResult-difficulty":           "The current chain difficulty",
 	"getBlockDagInfoResult-medianTime":           "The median time from the PoV of the best block in the chain",
+	"getBlockDagInfoResult-utxoCommitment":       "Commitment to the dag's UTXOSet",
 	"getBlockDagInfoResult-verificationProgress": "An estimate for how much of the best chain we've verified",
 	"getBlockDagInfoResult-pruned":               "A bool that indicates if the node is pruned or not",
 	"getBlockDagInfoResult-pruneHeight":          "The lowest block retained in the current pruned chain",

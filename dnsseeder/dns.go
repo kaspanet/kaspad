@@ -74,7 +74,7 @@ func (d *DNSServer) Start() {
 
 		wg.Add(1)
 
-		go d.handleDNSRequest(addr, authority, udpListen, b)
+		spawn(func() { d.handleDNSRequest(addr, authority, udpListen, b) })
 	}
 }
 
