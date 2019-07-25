@@ -9,50 +9,51 @@ import (
 	"testing"
 )
 
-type syncWgCompatible struct {
+// All of the tests, except TestAddAfterWait, are copied
+// from the native sync/waitgroup_test.go (with some
+// minor changes), to check that the new waitGroup
+// behaves the same, except the allowance of using add()
+// concurrently with wait()
+
+// syncWaitGroupCompatible is a type that created in order to
+// make the use of waitGroup similar to the native one, so it'll
+// be more convenient to use the same tests from sync/waitgroup_test.go
+type syncWaitGroupCompatible struct {
 	*waitGroup
 }
 
-func (swg *syncWgCompatible) Add(delta int) {
+func (swg *syncWaitGroupCompatible) add(delta int) {
 	for i := 0; i < delta; i++ {
-		swg.add()
+		swg.waitGroup.add()
 	}
 }
 
-func (swg *syncWgCompatible) Done() {
-	swg.done()
-}
-
-func (swg *syncWgCompatible) Wait() {
-	swg.wait()
-}
-
-func newSyncWgCompatible() *syncWgCompatible {
-	return &syncWgCompatible{
+func newSyncWgCompatible() *syncWaitGroupCompatible {
+	return &syncWaitGroupCompatible{
 		waitGroup: newWaitGroup(),
 	}
 }
 
-func testWaitGroup(t *testing.T, wg1 *syncWgCompatible, wg2 *syncWgCompatible) {
+func testWaitGroup(t *testing.T, wg1 *syncWaitGroupCompatible, wg2 *syncWaitGroupCompatible) {
 	n := 16
-	wg1.Add(n)
-	wg2.Add(n)
-	exited := make(chan bool, n)
+	wg1.add(n)
+	wg2.add(n)
+	exited := make(chan struct{}, n)
 	for i := 0; i != n; i++ {
 		go func(i int) {
-			wg1.Done()
-			wg2.Wait()
-			exited <- true
+			wg1.done()
+			wg2.wait()
+			exited <- struct{}{}
 		}(i)
 	}
-	wg1.Wait()
+	wg1.wait()
 	for i := 0; i != n; i++ {
 		select {
 		case <-exited:
-			t.Fatal("WaitGroup released group too soon")
+			t.Fatal("waitGroup released group too soon")
 		default:
 		}
-		wg2.Done()
+		wg2.done()
 	}
 	for i := 0; i != n; i++ {
 		<-exited // Will block if barrier fails to unlock someone.
@@ -77,15 +78,15 @@ func TestWaitGroupMisuse(t *testing.T) {
 		}
 	}()
 	wg := newSyncWgCompatible()
-	wg.Add(1)
-	wg.Done()
-	wg.Done()
-	t.Fatal("Should panic")
+	wg.add(1)
+	wg.done()
+	wg.done()
+	t.Fatal("Should panic, because wg.counter should be negative (-1), which is not allowed")
 }
 
 func TestAddAfterWait(t *testing.T) {
 	wg := newSyncWgCompatible()
-	wg.add()
+	wg.add(1)
 	syncChan := make(chan struct{})
 	go func() {
 		syncChan <- struct{}{}
@@ -93,7 +94,7 @@ func TestAddAfterWait(t *testing.T) {
 		syncChan <- struct{}{}
 	}()
 	<-syncChan
-	wg.add()
+	wg.add(1)
 	wg.done()
 	wg.done()
 	<-syncChan
@@ -105,19 +106,19 @@ func TestWaitGroupRace(t *testing.T) {
 		wg := newSyncWgCompatible()
 		n := new(int32)
 		// spawn goroutine 1
-		wg.Add(1)
+		wg.add(1)
 		go func() {
 			atomic.AddInt32(n, 1)
-			wg.Done()
+			wg.done()
 		}()
 		// spawn goroutine 2
-		wg.Add(1)
+		wg.add(1)
 		go func() {
 			atomic.AddInt32(n, 1)
-			wg.Done()
+			wg.done()
 		}()
 		// Wait for goroutine 1 and 2
-		wg.Wait()
+		wg.wait()
 		if atomic.LoadInt32(n) != 2 {
 			t.Fatal("Spurious wakeup from Wait")
 		}
@@ -127,63 +128,63 @@ func TestWaitGroupRace(t *testing.T) {
 func TestWaitGroupAlign(t *testing.T) {
 	type X struct {
 		x  byte
-		wg *syncWgCompatible
+		wg *syncWaitGroupCompatible
 	}
 	x := X{wg: newSyncWgCompatible()}
-	x.wg.Add(1)
+	x.wg.add(1)
 	go func(x *X) {
-		x.wg.Done()
+		x.wg.done()
 	}(&x)
-	x.wg.Wait()
+	x.wg.wait()
 }
 
 func BenchmarkWaitGroupUncontended(b *testing.B) {
 	type PaddedWaitGroup struct {
-		*syncWgCompatible
+		*syncWaitGroupCompatible
 		pad [128]uint8
 	}
 	b.RunParallel(func(pb *testing.PB) {
 		wg := PaddedWaitGroup{
-			syncWgCompatible: newSyncWgCompatible(),
+			syncWaitGroupCompatible: newSyncWgCompatible(),
 		}
 		for pb.Next() {
-			wg.Add(1)
-			wg.Done()
-			wg.Wait()
+			wg.add(1)
+			wg.done()
+			wg.wait()
 		}
 	})
 }
 
-func benchmarkWaitGroupAddDone(b *testing.B, localWork int) {
+func benchmarkWaitGroupAdddone(b *testing.B, localWork int) {
 	wg := newSyncWgCompatible()
 	b.RunParallel(func(pb *testing.PB) {
 		foo := 0
 		for pb.Next() {
-			wg.Add(1)
+			wg.add(1)
 			for i := 0; i < localWork; i++ {
 				foo *= 2
 				foo /= 2
 			}
-			wg.Done()
+			wg.done()
 		}
 		_ = foo
 	})
 }
 
-func BenchmarkWaitGroupAddDone(b *testing.B) {
-	benchmarkWaitGroupAddDone(b, 0)
+func BenchmarkWaitGroupAdddone(b *testing.B) {
+	benchmarkWaitGroupAdddone(b, 0)
 }
 
 func BenchmarkWaitGroupAddDoneWork(b *testing.B) {
-	benchmarkWaitGroupAddDone(b, 100)
+	benchmarkWaitGroupAdddone(b, 100)
 }
 
-func benchmarkWaitGroupWait(b *testing.B, localWork int) {
+func benchmarkWaitGroupwait(b *testing.B, localWork int) {
 	wg := newSyncWgCompatible()
 	b.RunParallel(func(pb *testing.PB) {
 		foo := 0
 		for pb.Next() {
-			wg.Wait()
+			wg.wait()
 			for i := 0; i < localWork; i++ {
 				foo *= 2
 				foo /= 2
@@ -193,24 +194,24 @@ func benchmarkWaitGroupWait(b *testing.B, localWork int) {
 	})
 }
 
-func BenchmarkWaitGroupWait(b *testing.B) {
-	benchmarkWaitGroupWait(b, 0)
+func BenchmarkWaitGroupwait(b *testing.B) {
+	benchmarkWaitGroupwait(b, 0)
 }
 
 func BenchmarkWaitGroupWaitWork(b *testing.B) {
-	benchmarkWaitGroupWait(b, 100)
+	benchmarkWaitGroupwait(b, 100)
 }
 
-func BenchmarkWaitGroupActuallyWait(b *testing.B) {
+func BenchmarkWaitGroupActuallywait(b *testing.B) {
 	b.ReportAllocs()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
 			wg := newSyncWgCompatible()
-			wg.Add(1)
+			wg.add(1)
 			go func() {
-				wg.Done()
+				wg.done()
 			}()
-			wg.Wait()
+			wg.wait()
 		}
 	})
 }

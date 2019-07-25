@@ -28,9 +28,9 @@ func (wg *waitGroup) done() {
 		panic("negative values for wg.counter are not allowed. This was likely caused by calling done() before add()")
 	}
 	if atomic.LoadInt64(&wg.counter) == 0 {
-		go func() {
+		spawn(func() {
 			wg.syncChannel <- struct{}{}
-		}()
+		})
 	}
 }
 

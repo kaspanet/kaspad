@@ -41,7 +41,7 @@ func TestPriorityMutex(t *testing.T) {
 	}()
 	time.Sleep(time.Second)
 	mtx.HighPriorityWriteUnlock()
-	waitForWaitGroup(t, &wg, 2*time.Second)
+	wg.Wait()
 	expectedSlice := []int{1, 2}
 	if !reflect.DeepEqual(sharedSlice, expectedSlice) {
 		t.Errorf("Expected the shared slice to be %d but got %d", expectedSlice, sharedSlice)
@@ -76,18 +76,5 @@ func TestHighPriorityReadLock(t *testing.T) {
 	}()
 	time.Sleep(time.Second)
 	mtx.LowPriorityWriteUnlock()
-	waitForWaitGroup(t, &wg, time.Second)
-}
-
-func waitForWaitGroup(t *testing.T, wg *sync.WaitGroup, timeout time.Duration) {
-	doneWaiting := make(chan struct{})
-	go func() {
-		wg.Wait()
-		doneWaiting <- struct{}{}
-	}()
-	select {
-	case <-time.Tick(timeout):
-		t.Fatalf("Unexpected timeout")
-	case <-doneWaiting:
-	}
+	wg.Wait()
 }
