@@ -3303,7 +3303,10 @@ func handleSearchRawTransactions(s *Server, cmd interface{}, closeChan <-chan st
 			result.BlockHash = blkHashStr
 		}
 
-		if s.cfg.TxIndex != nil {
+		// rtx.tx is only set when the transaction was retrieved from the mempool
+		result.IsInMempool = rtx.tx != nil
+
+		if s.cfg.TxIndex != nil && !result.IsInMempool {
 			confirmations, err := txConfirmations(s, mtx.TxID())
 			if err != nil {
 				context := "Failed to obtain block confirmations"
@@ -3311,9 +3314,6 @@ func handleSearchRawTransactions(s *Server, cmd interface{}, closeChan <-chan st
 			}
 			result.Confirmations = &confirmations
 		}
-
-		// rtx.tx is only set when the transaction was retrieved from the mempool
-		result.IsInMempool = rtx.tx != nil
 	}
 
 	return srtList, nil

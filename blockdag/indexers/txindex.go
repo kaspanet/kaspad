@@ -544,16 +544,16 @@ func dbFetchTxAcceptingBlock(dbTx database.Tx, txID *daghash.TxID, dag *blockdag
 	if bucket == nil {
 		return nil, database.Error{
 			ErrorCode: database.ErrCorruption,
-			Description: fmt.Sprintf("No accepting blocks "+
-				"were found for %s", txID),
+			Description: fmt.Sprintf("No accepting blocks bucket "+
+				"exists for %s", txID),
 		}
 	}
 	cursor := bucket.Cursor()
 	if !cursor.First() {
 		return nil, database.Error{
 			ErrorCode: database.ErrCorruption,
-			Description: fmt.Sprintf("No accepting blocks "+
-				"were found for %s", txID),
+			Description: fmt.Sprintf("Accepting blocks bucket is "+
+				"empty for %s", txID),
 		}
 	}
 	for ; cursor.Key() != nil; cursor.Next() {
