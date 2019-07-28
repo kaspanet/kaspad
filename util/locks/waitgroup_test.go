@@ -12,10 +12,10 @@ import (
 // All of the tests, except TestAddAfterWait, are copied
 // from the native sync/waitgroup_test.go (with some
 // minor changes), to check that the new waitGroup
-// behaves the same, except the allowance of using add()
+// behaves the same, except enabling the use of add()
 // concurrently with wait()
 
-// syncWaitGroupCompatible is a type that created in order to
+// syncWaitGroupCompatible is a type that was created in order to
 // make the use of waitGroup similar to the native one, so it'll
 // be more convenient to use the same tests from sync/waitgroup_test.go
 type syncWaitGroupCompatible struct {
