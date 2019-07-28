@@ -6,13 +6,15 @@ import (
 )
 
 type waitGroup struct {
-	counter  int64
-	waitCond *sync.Cond
+	counter     int64
+	waitLock    sync.Mutex
+	syncChannel chan struct{}
 }
 
 func newWaitGroup() *waitGroup {
 	return &waitGroup{
-		waitCond: sync.NewCond(&sync.Mutex{}),
+		waitLock:    sync.Mutex{},
+		syncChannel: make(chan struct{}),
 	}
 }
 
@@ -26,14 +28,16 @@ func (wg *waitGroup) done() {
 		panic("negative values for wg.counter are not allowed. This was likely caused by calling done() before add()")
 	}
 	if atomic.LoadInt64(&wg.counter) == 0 {
-		wg.waitCond.Signal()
+		spawn(func() {
+			wg.syncChannel <- struct{}{}
+		})
 	}
 }
 
 func (wg *waitGroup) wait() {
-	wg.waitCond.L.Lock()
-	defer wg.waitCond.L.Unlock()
+	wg.waitLock.Lock()
+	defer wg.waitLock.Unlock()
 	for atomic.LoadInt64(&wg.counter) != 0 {
-		wg.waitCond.Wait()
+		<-wg.syncChannel
 	}
 }

@@ -52,6 +52,7 @@ var (
 	bcdbLog = backendLog.Logger("BCDB")
 	btcdLog = backendLog.Logger("BTCD")
 	chanLog = backendLog.Logger("CHAN")
+	cnfgLog = backendLog.Logger("CNFG")
 	discLog = backendLog.Logger("DISC")
 	indxLog = backendLog.Logger("INDX")
 	minrLog = backendLog.Logger("MINR")
@@ -61,7 +62,7 @@ var (
 	srvrLog = backendLog.Logger("SRVR")
 	syncLog = backendLog.Logger("SYNC")
 	txmpLog = backendLog.Logger("TXMP")
-	cnfgLog = backendLog.Logger("CNFG")
+	utilLog = backendLog.Logger("UTIL")
 
 	initiated = false
 )
@@ -74,6 +75,7 @@ var SubsystemTags = struct {
 	BCDB,
 	BTCD,
 	CHAN,
+	CNFG,
 	DISC,
 	INDX,
 	MINR,
@@ -83,7 +85,7 @@ var SubsystemTags = struct {
 	SRVR,
 	SYNC,
 	TXMP,
-	CNFG string
+	UTIL string
 }{
 	ADXR: "ADXR",
 	AMGR: "AMGR",
@@ -91,6 +93,7 @@ var SubsystemTags = struct {
 	BCDB: "BCDB",
 	BTCD: "BTCD",
 	CHAN: "CHAN",
+	CNFG: "CNFG",
 	DISC: "DISC",
 	INDX: "INDX",
 	MINR: "MINR",
@@ -100,7 +103,7 @@ var SubsystemTags = struct {
 	SRVR: "SRVR",
 	SYNC: "SYNC",
 	TXMP: "TXMP",
-	CNFG: "CNFG",
+	UTIL: "UTIL",
 }
 
 // subsystemLoggers maps each subsystem identifier to its associated logger.
@@ -111,6 +114,7 @@ var subsystemLoggers = map[string]btclog.Logger{
 	SubsystemTags.BCDB: bcdbLog,
 	SubsystemTags.BTCD: btcdLog,
 	SubsystemTags.CHAN: chanLog,
+	SubsystemTags.CNFG: cnfgLog,
 	SubsystemTags.DISC: discLog,
 	SubsystemTags.INDX: indxLog,
 	SubsystemTags.MINR: minrLog,
@@ -120,7 +124,7 @@ var subsystemLoggers = map[string]btclog.Logger{
 	SubsystemTags.SRVR: srvrLog,
 	SubsystemTags.SYNC: syncLog,
 	SubsystemTags.TXMP: txmpLog,
-	SubsystemTags.CNFG: cnfgLog,
+	SubsystemTags.UTIL: utilLog,
 }
 
 // InitLogRotator initializes the logging rotater to write logs to logFile and
