@@ -11,8 +11,8 @@ import (
 	"github.com/daglabs/btcd/util/daghash"
 )
 
-// MsgGetHeaders implements the Message interface and represents a bitcoin
-// getheaders message.  It is used to request a list of block headers for
+// MsgBlockLocator implements the Message interface and represents a bitcoin
+// blocklocator message.  It is used to request a list of block headers for
 // blocks starting after the last known hash in the slice of block locator
 // hashes.  The list is returned via a headers message (MsgHeaders) and is
 // limited by a specific hash to stop at or the maximum number of block headers
@@ -38,7 +38,7 @@ func (msg *MsgBlockLocator) AddBlockLocatorHash(hash *daghash.Hash) error {
 	if len(msg.BlockLocatorHashes)+1 > MaxBlockLocatorsPerMsg {
 		str := fmt.Sprintf("too many block locator hashes for message [max %d]",
 			MaxBlockLocatorsPerMsg)
-		return messageError("MsgGetHeaders.AddBlockLocatorHash", str)
+		return messageError("MsgBlockLocator.AddBlockLocatorHash", str)
 	}
 
 	msg.BlockLocatorHashes = append(msg.BlockLocatorHashes, hash)
@@ -61,7 +61,7 @@ func (msg *MsgBlockLocator) BtcDecode(r io.Reader, pver uint32) error {
 	if count > MaxBlockLocatorsPerMsg {
 		str := fmt.Sprintf("too many block locator hashes for message "+
 			"[count %d, max %d]", count, MaxBlockLocatorsPerMsg)
-		return messageError("MsgGetHeaders.BtcDecode", str)
+		return messageError("MsgBlockLocator.BtcDecode", str)
 	}
 
 	// Create a contiguous slice of hashes to deserialize into in order to
@@ -74,7 +74,10 @@ func (msg *MsgBlockLocator) BtcDecode(r io.Reader, pver uint32) error {
 		if err != nil {
 			return err
 		}
-		msg.AddBlockLocatorHash(hash)
+		err = msg.AddBlockLocatorHash(hash)
+		if err != nil {
+			return err
+		}
 	}
 
 	msg.HashStop = &daghash.Hash{}
@@ -89,7 +92,7 @@ func (msg *MsgBlockLocator) BtcEncode(w io.Writer, pver uint32) error {
 	if count > MaxBlockLocatorsPerMsg {
 		str := fmt.Sprintf("too many block locator hashes for message "+
 			"[count %d, max %d]", count, MaxBlockLocatorsPerMsg)
-		return messageError("MsgGetHeaders.BtcEncode", str)
+		return messageError("MsgBlockLocator.BtcEncode", str)
 	}
 
 	err := WriteElement(w, msg.ProtocolVersion)
@@ -127,8 +130,8 @@ func (msg *MsgBlockLocator) MaxPayloadLength(pver uint32) uint32 {
 		daghash.HashSize) + daghash.HashSize
 }
 
-// NewMsgGetHeaders returns a new bitcoin getheaders message that conforms to
-// the Message interface.  See MsgGetHeaders for details.
+// NewMsgBlockLocator returns a new bitcoin getheaders message that conforms to
+// the Message interface.  See MsgBlockLocator for details.
 func NewMsgBlockLocator() *MsgBlockLocator{
 	return &MsgBlockLocator{
 		BlockLocatorHashes: make([]*daghash.Hash, 0,

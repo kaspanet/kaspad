@@ -1009,8 +1009,18 @@ func (sm *SyncManager) handleInvMsg(imsg *invMsg) {
 				// in the selected path chain, one up to the
 				// final one the remote peer knows about (zero
 				// stop hash).
-				locator := sm.dag.BlockLocatorFromHash(iv.Hash)
-				peer.PushGetBlocksMsg(locator, &daghash.ZeroHash)
+				locator, err := sm.dag.BlockLocatorFromHashes(iv.Hash)
+				if err != nil{
+					log.Errorf("Failed getting block locator for block %s: %s",
+						iv.Hash, err)
+					return
+				}
+				err = peer.PushGetBlocksMsg(locator, &daghash.ZeroHash)
+				if err != nil{
+					log.Errorf("Failed pushing get blocks message for peer %s: %s",
+						peer, err)
+					return
+				}
 			}
 		}
 	}

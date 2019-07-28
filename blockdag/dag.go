@@ -1471,7 +1471,7 @@ func (dag *BlockDAG) HeaderByHash(hash *daghash.Hash) (*wire.BlockHeader, error)
 	return node.Header(), nil
 }
 
-// BlockLocatorFromHash traverses the selected parent chain of the given block hash
+// BlockLocatorFromHashes traverses the selected parent chain of the given block hash
 // until it finds a block that exists in the virtual's selected parent chain, and
 // then it returns its block locator.
 // See BlockLocator for details on the algorithm used to create a block locator.
@@ -1481,27 +1481,24 @@ func (dag *BlockDAG) HeaderByHash(hash *daghash.Hash) (*wire.BlockHeader, error)
 // known.
 //
 // This function is safe for concurrent access.
-func (dag *BlockDAG) BlockLocatorFromHash(hash *daghash.Hash) BlockLocator {
+func (dag *BlockDAG) BlockLocatorFromHashes(startHash, stopHash *daghash.Hash) (BlockLocator, error) {
 	dag.dagLock.RLock()
 	defer dag.dagLock.RUnlock()
-	node := dag.index.LookupNode(hash)
-	if node != nil {
-		for !dag.IsInSelectedPathChain(node.hash) {
-			node = node.selectedParent
-		}
+	startNode := dag.index.LookupNode(startHash)
+	var stopNode *blockNode
+	if !stopHash.IsEqual(&daghash.ZeroHash){
+		stopNode = dag.index.LookupNode(stopHash)
 	}
-	locator := dag.blockLocator(node)
-	return locator
+	return dag.blockLocator(startNode, stopNode)
 }
 
 // LatestBlockLocator returns a block locator for the current tips of the DAG.
 //
 // This function is safe for concurrent access.
-func (dag *BlockDAG) LatestBlockLocator() BlockLocator {
+func (dag *BlockDAG) LatestBlockLocator() (BlockLocator, error) {
 	dag.dagLock.RLock()
 	defer dag.dagLock.RUnlock()
-	locator := dag.blockLocator(nil)
-	return locator
+	return dag.blockLocator(nil, nil)
 }
 
 // blockLocator returns a block locator for the passed block node.  The passed
@@ -1511,48 +1508,60 @@ func (dag *BlockDAG) LatestBlockLocator() BlockLocator {
 // See the BlockLocator type comments for more details.
 //
 // This function MUST be called with the DAG state lock held (for reads).
-func (dag *BlockDAG) blockLocator(node *blockNode) BlockLocator {
+func (dag *BlockDAG) blockLocator(startNode, stopNode *blockNode) (BlockLocator,error) {
 	// Use the selected tip if requested.
-	if node == nil {
-		node = dag.virtual.selectedParent
+	if startNode == nil {
+		startNode = dag.virtual.selectedParent
 	}
-	if node == nil {
-		return nil
+	if startNode == nil {
+		return nil, nil
+	}
+
+	if stopNode == nil{
+		stopNode = dag.genesis
+	}
+
+	if !dag.IsInSelectedPathChain(stopNode.hash){
+		return nil, fmt.Errorf("Couldn't find the stop node %s in the selected chain", stopNode.hash)
+	}
+
+	for !dag.IsInSelectedPathChain(startNode.hash) {
+		startNode = startNode.selectedParent
 	}
 
 	// Calculate the max number of entries that will ultimately be in the
 	// block locator.  See the description of the algorithm for how these
 	// numbers are derived.
 
-	// Requested hash itself + genesis block.
-	// Then floor(log2(height-10)) entries for the skip portion.
-	maxEntries := 2 + util.FastLog2Floor(node.height)
+	// Requested hash itself + stopNode.hash.
+	// Then floor(log2(startNode.chainHeight-stopNode.chainHeight)) entries for the skip portion.
+	maxEntries := 2 + util.FastLog2Floor(startNode.chainHeight - stopNode.chainHeight)
 	locator := make(BlockLocator, 0, maxEntries)
 
 	step := uint64(1)
-	for node != nil {
-		locator = append(locator, node.hash)
+	for node := startNode; node != nil; {
+		locator = append(locator, startNode.hash)
 
-		// Nothing more to add once the genesis block has been added.
-		if node.height == 0 {
+		// Nothing more to add once the stop node has been added.
+		if startNode.chainHeight == stopNode.chainHeight {
 			break
 		}
 
-		// Calculate height of previous node to include ensuring the
-		// final node is the genesis block.
-		height := node.height - step
-		if height < 0 {
-			height = 0
+		// Calculate chainHeight of previous node to include ensuring the
+		// final node is stopNode.
+		chainHeight := startNode.chainHeight - step
+		if chainHeight < stopNode.chainHeight {
+			chainHeight = stopNode.chainHeight
 		}
 
 		// walk backwards through the nodes to the correct ancestor.
-		node = node.SelectedAncestor(height)
+		node = startNode.SelectedAncestor(chainHeight)
 
 		// Double the distance between included hashes.
 		step *= 2
 	}
 
-	return locator
+	return locator, nil
 }
 
 // BlockChainHeightByHash returns the chain height of the block with the given
@@ -1691,12 +1700,18 @@ func (dag *BlockDAG) locateInventory(locator BlockLocator, hashStop *daghash.Has
 	// Find the most recent locator block hash in the DAG.  In the case none of
 	// the hashes in the locator are in the DAG, fall back to the genesis block.
 	startNode := dag.genesis
-	for _, hash := range locator {
+	nextBlockLocatorIndex := 0
+	for i, hash := range locator {
 		node := dag.index.LookupNode(hash)
 		if node != nil {
 			startNode = node
+			nextBlockLocatorIndex = i - 1
 			break
 		}
+	}
+	nextBlockLocatorNode := dag.index.LookupNode(locator[nextBlockLocatorIndex])
+	if nextBlockLocatorNode.blueScore - startNode.blueScore{
+
 	}
 
 	// Estimate how many entries are needed.

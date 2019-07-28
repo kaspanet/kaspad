@@ -907,6 +907,23 @@ func (p *Peer) PushGetBlocksMsg(locator blockdag.BlockLocator, stopHash *daghash
 	return nil
 }
 
+// PushBlockLocatorMsg sends a blocklocator message for the provided block locator.
+//
+// This function is safe for concurrent access.
+func (p *Peer) PushBlockLocatorMsg(locator blockdag.BlockLocator) error {
+
+	// Construct the blocklocator request and queue it to be sent.
+	msg := wire.NewMsgBlockLocator()
+	for _, hash := range locator {
+		err := msg.AddBlockLocatorHash(hash)
+		if err != nil {
+			return err
+		}
+	}
+	p.QueueMessage(msg, nil)
+	return nil
+}
+
 // PushGetHeadersMsg sends a getblocks message for the provided block locator
 // and stop hash.  It will ignore back-to-back duplicate requests.
 //

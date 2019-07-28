@@ -77,7 +77,10 @@ func (msg *MsgGetBlocks) BtcDecode(r io.Reader, pver uint32) error {
 		if err != nil {
 			return err
 		}
-		msg.AddBlockLocatorHash(hash)
+		err = msg.AddBlockLocatorHash(hash)
+		if err != nil {
+			return err
+		}
 	}
 
 	msg.HashStop = &daghash.Hash{}
