@@ -445,10 +445,10 @@ type Peer struct {
 
 	knownInventory     *mruInventoryMap
 	prevGetBlocksMtx   sync.Mutex
-	prevGetBlocksBegin *daghash.Hash
+	prevGetBlocksStart *daghash.Hash
 	prevGetBlocksStop  *daghash.Hash
 	prevGetHdrsMtx     sync.Mutex
-	prevGetHdrsBegin   *daghash.Hash
+	prevGetHdrsStart   *daghash.Hash
 	prevGetHdrsStop    *daghash.Hash
 
 	// These fields keep track of statistics for the peer and are protected
@@ -867,41 +867,28 @@ func (p *Peer) PushGetBlockLocatorMsg(startHash, stopHash *daghash.Hash) {
 // and stop hash.  It will ignore back-to-back duplicate requests.
 //
 // This function is safe for concurrent access.
-func (p *Peer) PushGetBlocksMsg(locator blockdag.BlockLocator, stopHash *daghash.Hash) error {
-	// Extract the begin hash from the block locator, if one was specified,
-	// to use for filtering duplicate getblocks requests.
-	var beginHash *daghash.Hash
-	if len(locator) > 0 {
-		beginHash = locator[0]
-	}
-
+func (p *Peer) PushGetBlocksMsg(startHash, stopHash *daghash.Hash) error {
 	// Filter duplicate getblocks requests.
 	p.prevGetBlocksMtx.Lock()
-	isDuplicate := p.prevGetBlocksStop != nil && p.prevGetBlocksBegin != nil &&
-		beginHash != nil && stopHash.IsEqual(p.prevGetBlocksStop) &&
-		beginHash.IsEqual(p.prevGetBlocksBegin)
+	isDuplicate := p.prevGetBlocksStop != nil && p.prevGetBlocksStart != nil &&
+		startHash != nil && stopHash.IsEqual(p.prevGetBlocksStop) &&
+		startHash.IsEqual(p.prevGetBlocksStart)
 	p.prevGetBlocksMtx.Unlock()
 
 	if isDuplicate {
 		log.Tracef("Filtering duplicate [getblocks] with begin "+
-			"hash %s, stop hash %s", beginHash, stopHash)
+			"hash %s, stop hash %s", startHash, stopHash)
 		return nil
 	}
 
 	// Construct the getblocks request and queue it to be sent.
-	msg := wire.NewMsgGetBlocks(stopHash)
-	for _, hash := range locator {
-		err := msg.AddBlockLocatorHash(hash)
-		if err != nil {
-			return err
-		}
-	}
+	msg := wire.NewMsgGetBlocks(startHash, stopHash)
 	p.QueueMessage(msg, nil)
 
 	// Update the previous getblocks request information for filtering
 	// duplicates.
 	p.prevGetBlocksMtx.Lock()
-	p.prevGetBlocksBegin = beginHash
+	p.prevGetBlocksStart = startHash
 	p.prevGetBlocksStop = stopHash
 	p.prevGetBlocksMtx.Unlock()
 	return nil
@@ -928,42 +915,29 @@ func (p *Peer) PushBlockLocatorMsg(locator blockdag.BlockLocator) error {
 // and stop hash.  It will ignore back-to-back duplicate requests.
 //
 // This function is safe for concurrent access.
-func (p *Peer) PushGetHeadersMsg(locator blockdag.BlockLocator, stopHash *daghash.Hash) error {
-	// Extract the begin hash from the block locator, if one was specified,
-	// to use for filtering duplicate getheaders requests.
-	var beginHash *daghash.Hash
-	if len(locator) > 0 {
-		beginHash = locator[0]
-	}
-
+func (p *Peer) PushGetHeadersMsg(startHash, stopHash *daghash.Hash) error {
 	// Filter duplicate getheaders requests.
 	p.prevGetHdrsMtx.Lock()
-	isDuplicate := p.prevGetHdrsStop != nil && p.prevGetHdrsBegin != nil &&
-		beginHash != nil && stopHash.IsEqual(p.prevGetHdrsStop) &&
-		beginHash.IsEqual(p.prevGetHdrsBegin)
+	isDuplicate := p.prevGetHdrsStop != nil && p.prevGetHdrsStart != nil &&
+		startHash != nil && stopHash.IsEqual(p.prevGetHdrsStop) &&
+		startHash.IsEqual(p.prevGetHdrsStart)
 	p.prevGetHdrsMtx.Unlock()
 
 	if isDuplicate {
 		log.Tracef("Filtering duplicate [getheaders] with begin hash %s",
-			beginHash)
+			startHash)
 		return nil
 	}
 
 	// Construct the getheaders request and queue it to be sent.
-	msg := wire.NewMsgGetHeaders()
+	msg := wire.NewMsgGetHeaders(startHash, stopHash)
 	msg.HashStop = stopHash
-	for _, hash := range locator {
-		err := msg.AddBlockLocatorHash(hash)
-		if err != nil {
-			return err
-		}
-	}
 	p.QueueMessage(msg, nil)
 
 	// Update the previous getheaders request information for filtering
 	// duplicates.
 	p.prevGetHdrsMtx.Lock()
-	p.prevGetHdrsBegin = beginHash
+	p.prevGetHdrsStart = startHash
 	p.prevGetHdrsStop = stopHash
 	p.prevGetHdrsMtx.Unlock()
 	return nil

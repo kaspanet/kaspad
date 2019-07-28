@@ -177,6 +177,40 @@ type SyncManager struct {
 	nextCheckpoint   *dagconfig.Checkpoint
 }
 
+func (sm *SyncManager) PushGetBlocksOrHeaders(peer *peerpkg.Peer, startHash *daghash.Hash) error{
+	// When the current height is less than a known checkpoint we
+	// can use block headers to learn about which blocks comprise
+	// the chain up to the checkpoint and perform less validation
+	// for them.  This is possible since each header contains the
+	// hash of the previous header and a merkle root.  Therefore if
+	// we validate all of the received headers link together
+	// properly and the checkpoint hashes match, we can be sure the
+	// hashes for the blocks in between are accurate.  Further, once
+	// the full blocks are downloaded, the merkle root is computed
+	// and compared against the value in the header which proves the
+	// full block hasn't been tampered with.
+	//
+	// Once we have passed the final checkpoint, or checkpoints are
+	// disabled, use standard inv messages learn about the blocks
+	// and fully validate them.  Finally, regression test mode does
+	// not support the headers-first approach so do normal block
+	// downloads when in regression test mode.
+	if sm.nextCheckpoint != nil &&
+		sm.dag.ChainHeight() < sm.nextCheckpoint.ChainHeight &&
+		sm.dagParams != &dagconfig.RegressionNetParams { //TODO: (Ori) This is probably wrong. Done only for compilation
+
+		err := peer.PushGetHeadersMsg(startHash, sm.nextCheckpoint.Hash)
+		if err != nil{
+			return err
+		}
+		sm.headersFirstMode = true
+		log.Infof("Downloading headers for blocks %d to "+
+			"%d from peer %s", sm.dag.ChainHeight()+1,
+			sm.nextCheckpoint.ChainHeight, peer.Addr()) //TODO: (Ori) This is probably wrong. Done only for compilation
+	}
+	return peer.PushGetBlocksMsg(startHash, &daghash.ZeroHash)
+}
+
 // resetHeaderState sets the headers-first mode state to values appropriate for
 // syncing from a new peer.
 func (sm *SyncManager) resetHeaderState(newestHash *daghash.Hash, newestHeight uint64) {
@@ -285,12 +319,7 @@ func (sm *SyncManager) startSync() {
 			sm.dag.ChainHeight() < sm.nextCheckpoint.ChainHeight &&
 			sm.dagParams != &dagconfig.RegressionNetParams { //TODO: (Ori) This is probably wrong. Done only for compilation
 
-			locator := sm.dag.LatestBlockLocator()
-			bestPeer.PushGetHeadersMsg(locator, sm.nextCheckpoint.Hash)
-			sm.headersFirstMode = true
-			log.Infof("Downloading headers for blocks %d to "+
-				"%d from peer %s", sm.dag.ChainHeight()+1,
-				sm.nextCheckpoint.ChainHeight, bestPeer.Addr()) //TODO: (Ori) This is probably wrong. Done only for compilation
+			bestPeer.PushGetBlockLocatorMsg(sm.dagParams.GenesisHash, sm.nextCheckpoint.Hash)
 		} else {
 			bestPeer.PushGetBlockLocatorMsg(sm.dagParams.GenesisHash, nil)
 		}
@@ -650,8 +679,7 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 	parentHash := sm.nextCheckpoint.Hash
 	sm.nextCheckpoint = sm.findNextHeaderCheckpoint(prevHeight)
 	if sm.nextCheckpoint != nil {
-		locator := blockdag.BlockLocator([]*daghash.Hash{parentHash})
-		err := peer.PushGetHeadersMsg(locator, sm.nextCheckpoint.Hash)
+		err := peer.PushGetHeadersMsg(parentHash, sm.nextCheckpoint.Hash)
 		if err != nil {
 			log.Warnf("Failed to send getheaders message to "+
 				"peer %s: %s", peer.Addr(), err)
@@ -669,8 +697,7 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 	sm.headersFirstMode = false
 	sm.headerList.Init()
 	log.Infof("Reached the final checkpoint -- switching to normal mode")
-	locator := blockdag.BlockLocator([]*daghash.Hash{blockHash})
-	err = peer.PushGetBlocksMsg(locator, &daghash.ZeroHash)
+	err = peer.PushGetBlocksMsg(blockHash, &daghash.ZeroHash)
 	if err != nil {
 		log.Warnf("Failed to send getblocks message to peer %s: %s",
 			peer.Addr(), err)
@@ -855,8 +882,7 @@ func (sm *SyncManager) handleHeadersMsg(hmsg *headersMsg) {
 	// This header is not a checkpoint, so request the next batch of
 	// headers starting from the latest known header and ending with the
 	// next checkpoint.
-	locator := blockdag.BlockLocator([]*daghash.Hash{finalHash})
-	err := peer.PushGetHeadersMsg(locator, sm.nextCheckpoint.Hash)
+	err := peer.PushGetHeadersMsg(finalHash, sm.nextCheckpoint.Hash)
 	if err != nil {
 		log.Warnf("Failed to send getheaders message to "+
 			"peer %s: %s", peer.Addr(), err)
@@ -1007,20 +1033,8 @@ func (sm *SyncManager) handleInvMsg(imsg *invMsg) {
 			if i == lastBlock && peer == sm.syncPeer {
 				// Request blocks after the first block's ancestor that exists
 				// in the selected path chain, one up to the
-				// final one the remote peer knows about (zero
-				// stop hash).
-				locator, err := sm.dag.BlockLocatorFromHashes(iv.Hash)
-				if err != nil{
-					log.Errorf("Failed getting block locator for block %s: %s",
-						iv.Hash, err)
-					return
-				}
-				err = peer.PushGetBlocksMsg(locator, &daghash.ZeroHash)
-				if err != nil{
-					log.Errorf("Failed pushing get blocks message for peer %s: %s",
-						peer, err)
-					return
-				}
+				// final one the remote peer knows about.
+				peer.PushGetBlockLocatorMsg(&daghash.ZeroHash, iv.Hash)
 			}
 		}
 	}

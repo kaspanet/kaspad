@@ -705,7 +705,7 @@ func (sp *Peer) OnGetBlockLocator(_ *peer.Peer, msg *wire.MsgGetBlockLocator) {
 
 // OnBlockLocator is invoked when a peer receives a blocklocator bitcoin
 // message.
-func (sp *Peer) OnBlockLocator(_ *peer.Peer, msg *wire.MsgGetBlocks) {
+func (sp *Peer) OnBlockLocator(_ *peer.Peer, msg *wire.MsgBlockLocator) {
 	// Find the most recent known block in the dag based on the block
 	// locator and fetch all of the block hashes after it until either
 	// wire.MaxBlocksPerMsg have been fetched or the provided stop hash is
@@ -717,19 +717,16 @@ func (sp *Peer) OnBlockLocator(_ *peer.Peer, msg *wire.MsgGetBlocks) {
 	//
 	// This mirrors the behavior in the reference implementation.
 	dag := sp.server.DAG
-	hashList := dag.LocateBlocks(msg.BlockLocatorHashes, msg.HashStop,
-		wire.MaxInvPerMsg)
-
-	// Generate inventory message.
-	invMsg := wire.NewMsgInv()
-	for i := range hashList {
-		iv := wire.NewInvVect(wire.InvTypeSyncBlock, hashList[i])
-		invMsg.AddInvVect(iv)
+	startHash, stopHash := dag.FindNextLocatorBoundaries(msg.BlockLocatorHashes)
+	if stopHash != nil{
+		sp.PushGetBlockLocatorMsg(startHash, stopHash)
+		return
 	}
-
-	// Send the inventory message if there is anything to send.
-	if len(invMsg.InvList) > 0 {
-		sp.QueueMessage(invMsg, nil)
+	err := sp.server.SyncManager.PushGetBlocksOrHeaders(sp.Peer, startHash)
+	if err != nil{
+		peerLog.Errorf("Failed pushing get blocks message for peer %s: %s",
+			sp, err)
+		return
 	}
 }
 
@@ -747,7 +744,7 @@ func (sp *Peer) OnGetBlocks(_ *peer.Peer, msg *wire.MsgGetBlocks) {
 	//
 	// This mirrors the behavior in the reference implementation.
 	dag := sp.server.DAG
-	hashList := dag.LocateBlocks(msg.BlockLocatorHashes, msg.HashStop,
+	hashList := dag.LocateBlocks(msg.HashStart, msg.HashStop,
 		wire.MaxInvPerMsg)
 
 	// Generate inventory message.
