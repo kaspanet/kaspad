@@ -6,21 +6,21 @@ import (
 )
 
 type MsgGetBlockLocator struct {
-	StartHash *daghash.Hash
-	StopHash *daghash.Hash
+	HashStart *daghash.Hash
+	HashStop  *daghash.Hash
 }
 
 // BtcDecode decodes r using the bitcoin protocol encoding into the receiver.
 // This is part of the Message interface implementation.
 func (msg *MsgGetBlockLocator) BtcDecode(r io.Reader, pver uint32) error {
-	msg.StartHash = &daghash.Hash{}
-	err := ReadElement(r, msg.StartHash)
+	msg.HashStart = &daghash.Hash{}
+	err := ReadElement(r, msg.HashStart)
 	if err != nil {
 		return err
 	}
 
-	msg.StopHash = &daghash.Hash{}
-	err = ReadElement(r, msg.StopHash)
+	msg.HashStop = &daghash.Hash{}
+	err = ReadElement(r, msg.HashStop)
 	if err != nil {
 		return err
 	}
@@ -30,12 +30,12 @@ func (msg *MsgGetBlockLocator) BtcDecode(r io.Reader, pver uint32) error {
 // BtcEncode encodes the receiver to w using the bitcoin protocol encoding.
 // This is part of the Message interface implementation.
 func (msg *MsgGetBlockLocator) BtcEncode(w io.Writer, pver uint32) error {
-	err := WriteElement(w, msg.StartHash)
+	err := WriteElement(w, msg.HashStart)
 	if err != nil {
 		return err
 	}
 
-	err = WriteElement(w, msg.StopHash)
+	err = WriteElement(w, msg.HashStop)
 	if err != nil {
 		return err
 	}
@@ -59,7 +59,7 @@ func (msg *MsgGetBlockLocator) MaxPayloadLength(pver uint32) uint32 {
 // fields.
 func NewMsgGetBlockLocator(startHash, stopHash *daghash.Hash) *MsgGetBlockLocator {
 	return &MsgGetBlockLocator{
-		StartHash:startHash,
-		StopHash:stopHash,
+		HashStart: startHash,
+		HashStop:  stopHash,
 	}
 }

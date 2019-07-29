@@ -300,16 +300,16 @@ func (c *Client) GetTopHeaders(startHash *daghash.Hash) ([]wire.BlockHeader, err
 //
 // NOTE: This is a btcsuite extension ported from
 // github.com/decred/dcrrpcclient.
-func (c *Client) GetHeadersAsync(blockLocators []*daghash.Hash, hashStop *daghash.Hash) FutureGetHeadersResult {
-	locators := make([]string, len(blockLocators))
-	for i := range blockLocators {
-		locators[i] = blockLocators[i].String()
+func (c *Client) GetHeadersAsync(hashStart, hashStop *daghash.Hash) FutureGetHeadersResult {
+	hashStartStr := ""
+	if hashStart != nil {
+		hashStartStr = hashStop.String()
 	}
-	hash := ""
+	hashStopStr := ""
 	if hashStop != nil {
-		hash = hashStop.String()
+		hashStopStr = hashStop.String()
 	}
-	cmd := btcjson.NewGetHeadersCmd(locators, hash)
+	cmd := btcjson.NewGetHeadersCmd(hashStartStr, hashStopStr)
 	return c.sendCmd(cmd)
 }
 
@@ -319,8 +319,8 @@ func (c *Client) GetHeadersAsync(blockLocators []*daghash.Hash, hashStop *daghas
 //
 // NOTE: This is a btcsuite extension ported from
 // github.com/decred/dcrrpcclient.
-func (c *Client) GetHeaders(blockLocators []*daghash.Hash, hashStop *daghash.Hash) ([]wire.BlockHeader, error) {
-	return c.GetHeadersAsync(blockLocators, hashStop).Receive()
+func (c *Client) GetHeaders(hashStart, hashStop *daghash.Hash) ([]wire.BlockHeader, error) {
+	return c.GetHeadersAsync(hashStart, hashStop).Receive()
 }
 
 // FutureExportWatchingWalletResult is a future promise to deliver the result of

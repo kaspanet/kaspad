@@ -33,13 +33,14 @@ const (
 
 // BlockLocator is used to help locate a specific block.  The algorithm for
 // building the block locator is to add block hashes in reverse order on the
-// block's selected parent chain until the genesis block is reached.
+// block's selected parent chain until the desired stop block is reached.
 // In order to keep the list of locator hashes to a reasonable number of entries,
 // the step between each entry is doubled each loop iteration to exponentially
 // decrease the number of hashes as a function of the distance from the block
 // being located.
 //
-// For example, assume a selected parent chain with IDs as depicted below:
+// For example, assume a selected parent chain with IDs as depicted below, and the
+// stop block is genesis:
 // 	genesis -> 1 -> 2 -> ... -> 15 -> 16  -> 17  -> 18
 //
 // The block locator for block 17 would be the hashes of blocks:
@@ -1471,9 +1472,7 @@ func (dag *BlockDAG) HeaderByHash(hash *daghash.Hash) (*wire.BlockHeader, error)
 	return node.Header(), nil
 }
 
-// BlockLocatorFromHashes traverses the selected parent chain of the given block hash
-// until it finds a block that exists in the virtual's selected parent chain, and
-// then it returns its block locator.
+// BlockLocatorFromHashes returns a block locator from start and stop hash.
 // See BlockLocator for details on the algorithm used to create a block locator.
 //
 // In addition to the general algorithm referenced above, this function will
@@ -1481,12 +1480,12 @@ func (dag *BlockDAG) HeaderByHash(hash *daghash.Hash) (*wire.BlockHeader, error)
 // known.
 //
 // This function is safe for concurrent access.
-func (dag *BlockDAG) BlockLocatorFromHashes(startHash, stopHash *daghash.Hash) (BlockLocator, error) {
+func (dag *BlockDAG) BlockLocatorFromHashes(startHash, stopHash *daghash.Hash) BlockLocator {
 	dag.dagLock.RLock()
 	defer dag.dagLock.RUnlock()
 	startNode := dag.index.LookupNode(startHash)
 	var stopNode *blockNode
-	if !stopHash.IsEqual(&daghash.ZeroHash){
+	if !stopHash.IsEqual(&daghash.ZeroHash) {
 		stopNode = dag.index.LookupNode(stopHash)
 	}
 	return dag.blockLocator(startNode, stopNode)
@@ -1495,36 +1494,36 @@ func (dag *BlockDAG) BlockLocatorFromHashes(startHash, stopHash *daghash.Hash) (
 // LatestBlockLocator returns a block locator for the current tips of the DAG.
 //
 // This function is safe for concurrent access.
-func (dag *BlockDAG) LatestBlockLocator() (BlockLocator, error) {
+func (dag *BlockDAG) LatestBlockLocator() BlockLocator {
 	dag.dagLock.RLock()
 	defer dag.dagLock.RUnlock()
 	return dag.blockLocator(nil, nil)
 }
 
-// blockLocator returns a block locator for the passed block node.  The passed
-// node can be nil in which case the block locator for the selected tip will be
-// returned.
+// blockLocator returns a block locator for the passed start and stop nodes.
+// The default value for the start node is the selected tip, and the default
+// values of the stop node is the genesis block.
 //
 // See the BlockLocator type comments for more details.
 //
 // This function MUST be called with the DAG state lock held (for reads).
-func (dag *BlockDAG) blockLocator(startNode, stopNode *blockNode) (BlockLocator,error) {
+func (dag *BlockDAG) blockLocator(startNode, stopNode *blockNode) BlockLocator {
 	// Use the selected tip if requested.
 	if startNode == nil {
 		startNode = dag.virtual.selectedParent
 	}
 	if startNode == nil {
-		return nil, nil
+		return nil
 	}
 
-	if stopNode == nil{
+	if stopNode == nil {
 		stopNode = dag.genesis
 	}
 
-	for ;!dag.IsInSelectedPathChain(stopNode.hash); stopNode = stopNode.selectedParent {
+	for ; !dag.IsInSelectedPathChain(stopNode.hash); stopNode = stopNode.selectedParent {
 	}
 
-	for ;!dag.IsInSelectedPathChain(startNode.hash); startNode = startNode.selectedParent {
+	for ; !dag.IsInSelectedPathChain(startNode.hash); startNode = startNode.selectedParent {
 	}
 
 	// Calculate the max number of entries that will ultimately be in the
@@ -1533,33 +1532,33 @@ func (dag *BlockDAG) blockLocator(startNode, stopNode *blockNode) (BlockLocator,
 
 	// Requested hash itself + stopNode.hash.
 	// Then floor(log2(startNode.chainHeight-stopNode.chainHeight)) entries for the skip portion.
-	maxEntries := 2 + util.FastLog2Floor(startNode.chainHeight - stopNode.chainHeight)
+	maxEntries := 2 + util.FastLog2Floor(startNode.chainHeight-stopNode.chainHeight)
 	locator := make(BlockLocator, 0, maxEntries)
 
 	step := uint64(1)
 	for node := startNode; node != nil; {
-		locator = append(locator, startNode.hash)
+		locator = append(locator, node.hash)
 
 		// Nothing more to add once the stop node has been added.
-		if startNode.chainHeight == stopNode.chainHeight {
+		if node.chainHeight == stopNode.chainHeight {
 			break
 		}
 
 		// Calculate chainHeight of previous node to include ensuring the
 		// final node is stopNode.
-		chainHeight := startNode.chainHeight - step
+		chainHeight := node.chainHeight - step
 		if chainHeight < stopNode.chainHeight {
 			chainHeight = stopNode.chainHeight
 		}
 
 		// walk backwards through the nodes to the correct ancestor.
-		node = startNode.SelectedAncestor(chainHeight)
+		node = node.SelectedAncestor(chainHeight)
 
 		// Double the distance between included hashes.
 		step *= 2
 	}
 
-	return locator, nil
+	return locator
 }
 
 // BlockChainHeightByHash returns the chain height of the block with the given
@@ -1666,49 +1665,40 @@ func (dag *BlockDAG) IntervalBlockHashes(endHash *daghash.Hash, interval uint64,
 	return hashes, nil
 }
 
-// FindNextLocatorBoundaries returns the node of the block after the first known block in
-// the locator along with the number of subsequent nodes needed to either reach
-// the provided stop hash or the provided max number of entries.
-//
-// In addition, there are two special cases:
-//
-// - When no locators are provided, the stop hash is treated as a request for
-//   that block, so it will either return the node associated with the stop hash
-//   if it is known, or nil if it is unknown
-// - When locators are provided, but none of them are known, nodes starting
-//   after the genesis block will be returned
-//
-// This is primarily a helper function for the locateBlocks and locateHeaders
-// functions.
+// FindNextLocatorBoundaries returns the first known block locator
+// hash, and the block locator hash before it. This is used to create the
+// next block locator to find the highest shared known chain block with the
+// sync peer. If the first hash in the block locator is known, it means that
+// we found the highest shared known chain block, so we only return its hash.
 //
 // This function MUST be called with the DAG state lock held (for reads).
 func (dag *BlockDAG) FindNextLocatorBoundaries(locator BlockLocator) (startHash, stopHash *daghash.Hash) {
 	// Find the most recent locator block hash in the DAG.  In the case none of
 	// the hashes in the locator are in the DAG, fall back to the genesis block.
 	startNode := dag.genesis
-	nextBlockLocatorIndex := 0
+	nextBlockLocatorIndex := int64(0)
 	for i, hash := range locator {
 		node := dag.index.LookupNode(hash)
 		if node != nil {
 			startNode = node
-			nextBlockLocatorIndex = i - 1
+			nextBlockLocatorIndex = int64(i) - 1
 			break
 		}
 	}
-	if len(locator) <= 1{
+	if nextBlockLocatorIndex > 0 {
 		return startNode.hash, nil
 	}
 	return startNode.hash, locator[nextBlockLocatorIndex]
 }
 
-// locateBlocks returns the hashes of the blocks after the first known block in
-// the locator until the provided stop hash is reached, or up to the provided
-// max number of block hashes.
+// locateBlocks returns the hashes of the blocks after the provided
+// start hash until the provided stop hash is reached, or up to the
+// provided max number of block hashes.
 //
 // See the comment on the exported function for more details on special cases.
 //
 // This function MUST be called with the DAG state lock held (for reads).
-func (dag *BlockDAG) locateBlocks(hashStart , hashStop *daghash.Hash, maxHashes uint64) []*daghash.Hash {
+func (dag *BlockDAG) locateBlocks(hashStart, hashStop *daghash.Hash, maxHashes uint64) []*daghash.Hash {
 	nodes := dag.locateBlockNodes(hashStart, hashStop, maxHashes)
 	hashes := make([]*daghash.Hash, len(nodes))
 	for i, node := range nodes {
@@ -1717,7 +1707,7 @@ func (dag *BlockDAG) locateBlocks(hashStart , hashStop *daghash.Hash, maxHashes 
 	return hashes
 }
 
-func (dag *BlockDAG) locateBlockNodes(hashStart , hashStop *daghash.Hash, maxEntries uint64) []*blockNode {
+func (dag *BlockDAG) locateBlockNodes(hashStart, hashStop *daghash.Hash, maxEntries uint64) []*blockNode {
 	// Find the first known block in the locator and the estimated number of
 	// nodes after it needed while respecting the stop hash and max entries.
 	startNode := dag.index.LookupNode(hashStart)
@@ -1725,23 +1715,23 @@ func (dag *BlockDAG) locateBlockNodes(hashStart , hashStop *daghash.Hash, maxEnt
 		return nil
 	}
 	stopNode := dag.index.LookupNode(hashStop)
-	if stopNode == nil{
+	if stopNode == nil {
 		stopNode = dag.selectedTip()
 	}
 
-	for ;stopNode.blueScore - startNode.blueScore + 1 > maxEntries; stopNode = stopNode.selectedParent{
+	for ; stopNode.blueScore-startNode.blueScore+1 > maxEntries; stopNode = stopNode.selectedParent {
 	}
 
 	// Populate and return the found nodes.
-	nodes := make([]*blockNode, 0, stopNode.blueScore - startNode.blueScore + 1)
+	nodes := make([]*blockNode, 0, stopNode.blueScore-startNode.blueScore+1)
 	nodes = append(nodes, stopNode)
-	for current := stopNode; current.selectedParent != nil; current = current.selectedParent{
-		for _, blue := range current.blues{
+	for current := stopNode; current.selectedParent != nil; current = current.selectedParent {
+		for _, blue := range current.blues {
 			nodes = append(nodes, blue)
 		}
 	}
-	reversedNodes := make([]*blockNode,len(nodes))
-	for i, node := range nodes{
+	reversedNodes := make([]*blockNode, len(nodes))
+	for i, node := range nodes {
 		reversedNodes[i] = node
 	}
 	return reversedNodes
@@ -1834,7 +1824,7 @@ func (dag *BlockDAG) RUnlock() {
 // This function is safe for concurrent access.
 func (dag *BlockDAG) LocateHeaders(hashStart, hashStop *daghash.Hash) []*wire.BlockHeader {
 	dag.dagLock.RLock()
-	headers := dag.locateHeaders(hashStart, hashStop, wire.MaxBlockHeadersPerMsg)
+	headers := dag.locateHeaders(hashStart, hashStop, FinalityInterval)
 	dag.dagLock.RUnlock()
 	return headers
 }

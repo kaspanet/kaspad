@@ -686,11 +686,7 @@ func (sp *Peer) OnGetData(_ *peer.Peer, msg *wire.MsgGetData) {
 // message.
 func (sp *Peer) OnGetBlockLocator(_ *peer.Peer, msg *wire.MsgGetBlockLocator) {
 	dag := sp.server.DAG
-	locator, err := dag.BlockLocatorFromHashes(msg.StartHash, msg.StopHash)
-	if err != nil {
-		peerLog.Errorf("Error getting block locator between %s and %s: %s", msg.StartHash, msg.StopHash, err)
-		return
-	}
+	locator := dag.BlockLocatorFromHashes(msg.HashStart, msg.HashStop)
 
 	// Send the block locator if there is anything to send.
 	if locator != nil {
@@ -718,12 +714,12 @@ func (sp *Peer) OnBlockLocator(_ *peer.Peer, msg *wire.MsgBlockLocator) {
 	// This mirrors the behavior in the reference implementation.
 	dag := sp.server.DAG
 	startHash, stopHash := dag.FindNextLocatorBoundaries(msg.BlockLocatorHashes)
-	if stopHash != nil{
+	if stopHash != nil {
 		sp.PushGetBlockLocatorMsg(startHash, stopHash)
 		return
 	}
 	err := sp.server.SyncManager.PushGetBlocksOrHeaders(sp.Peer, startHash)
-	if err != nil{
+	if err != nil {
 		peerLog.Errorf("Failed pushing get blocks message for peer %s: %s",
 			sp, err)
 		return
@@ -745,7 +741,7 @@ func (sp *Peer) OnGetBlocks(_ *peer.Peer, msg *wire.MsgGetBlocks) {
 	// This mirrors the behavior in the reference implementation.
 	dag := sp.server.DAG
 	hashList := dag.LocateBlocks(msg.HashStart, msg.HashStop,
-		wire.MaxInvPerMsg)
+		blockdag.FinalityInterval)
 
 	// Generate inventory message.
 	invMsg := wire.NewMsgInv()
@@ -779,7 +775,7 @@ func (sp *Peer) OnGetHeaders(_ *peer.Peer, msg *wire.MsgGetHeaders) {
 	//
 	// This mirrors the behavior in the reference implementation.
 	dag := sp.server.DAG
-	headers := dag.LocateHeaders(msg.BlockLocatorHashes, msg.HashStop)
+	headers := dag.LocateHeaders(msg.HashStart, msg.HashStop)
 
 	// Send found headers to the requesting peer.
 	blockHeaders := make([]*wire.BlockHeader, len(headers))

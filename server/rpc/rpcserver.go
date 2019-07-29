@@ -2318,24 +2318,21 @@ func handleGetTopHeaders(s *Server, cmd interface{}, closeChan <-chan struct{}) 
 func handleGetHeaders(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
 	c := cmd.(*btcjson.GetHeadersCmd)
 
-	// Fetch the requested headers from chain while respecting the provided
-	// block locators and stop hash.
-	blockLocators := make([]*daghash.Hash, len(c.BlockLocators))
-	for i := range c.BlockLocators {
-		blockLocator, err := daghash.NewHashFromStr(c.BlockLocators[i])
-		if err != nil {
-			return nil, rpcDecodeHexError(c.BlockLocators[i])
-		}
-		blockLocators[i] = blockLocator
-	}
-	var hashStop daghash.Hash
-	if c.HashStop != "" {
-		err := daghash.Decode(&hashStop, c.HashStop)
+	hashStart := &daghash.ZeroHash
+	if c.HashStart != "" {
+		err := daghash.Decode(hashStart, c.HashStop)
 		if err != nil {
 			return nil, rpcDecodeHexError(c.HashStop)
 		}
 	}
-	headers := s.cfg.SyncMgr.LocateHeaders(blockLocators, &hashStop)
+	hashStop := &daghash.ZeroHash
+	if c.HashStop != "" {
+		err := daghash.Decode(hashStop, c.HashStop)
+		if err != nil {
+			return nil, rpcDecodeHexError(c.HashStop)
+		}
+	}
+	headers := s.cfg.SyncMgr.LocateHeaders(hashStart, hashStop)
 
 	// Return the serialized block headers as hex-encoded strings.
 	hexBlockHeaders := make([]string, len(headers))
@@ -4185,7 +4182,7 @@ type rpcserverSyncManager interface {
 	// block in the provided locators until the provided stop hash or the
 	// current tip is reached, up to a max of wire.MaxBlockHeadersPerMsg
 	// hashes.
-	LocateHeaders(locators []*daghash.Hash, hashStop *daghash.Hash) []*wire.BlockHeader
+	LocateHeaders(hashStart, hashStop *daghash.Hash) []*wire.BlockHeader
 }
 
 // rpcserverConfig is a descriptor containing the RPC server configuration.

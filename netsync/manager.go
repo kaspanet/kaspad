@@ -177,7 +177,7 @@ type SyncManager struct {
 	nextCheckpoint   *dagconfig.Checkpoint
 }
 
-func (sm *SyncManager) PushGetBlocksOrHeaders(peer *peerpkg.Peer, startHash *daghash.Hash) error{
+func (sm *SyncManager) PushGetBlocksOrHeaders(peer *peerpkg.Peer, startHash *daghash.Hash) error {
 	// When the current height is less than a known checkpoint we
 	// can use block headers to learn about which blocks comprise
 	// the chain up to the checkpoint and perform less validation
@@ -200,7 +200,7 @@ func (sm *SyncManager) PushGetBlocksOrHeaders(peer *peerpkg.Peer, startHash *dag
 		sm.dagParams != &dagconfig.RegressionNetParams { //TODO: (Ori) This is probably wrong. Done only for compilation
 
 		err := peer.PushGetHeadersMsg(startHash, sm.nextCheckpoint.Hash)
-		if err != nil{
+		if err != nil {
 			return err
 		}
 		sm.headersFirstMode = true

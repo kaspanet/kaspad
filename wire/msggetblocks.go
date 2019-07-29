@@ -26,8 +26,8 @@ import (
 // exponentially decrease the number of hashes the further away from head and
 // closer to the genesis block you get.
 type MsgGetBlocks struct {
-	HashStart       *daghash.Hash
-	HashStop        *daghash.Hash
+	HashStart *daghash.Hash
+	HashStop  *daghash.Hash
 }
 
 // BtcDecode decodes r using the bitcoin protocol encoding into the receiver.
@@ -72,7 +72,7 @@ func (msg *MsgGetBlocks) MaxPayloadLength(pver uint32) uint32 {
 // fields.
 func NewMsgGetBlocks(hashStart, hashStop *daghash.Hash) *MsgGetBlocks {
 	return &MsgGetBlocks{
-		HashStart:       hashStart,
-		HashStop:        hashStop,
+		HashStart: hashStart,
+		HashStop:  hashStop,
 	}
 }
