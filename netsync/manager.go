@@ -967,9 +967,13 @@ func (sm *SyncManager) handleInvMsg(imsg *invMsg) {
 		}
 		if !haveInv {
 			if iv.Type == wire.InvTypeTx {
-				// Skip the transaction if it has already been
-				// rejected.
+				// Skip the transaction if it has already been rejected.
 				if _, exists := sm.rejectedTxns[daghash.TxID(*iv.Hash)]; exists {
+					continue
+				}
+
+				// Skip the transaction if it had previously been requested.
+				if _, exists := state.requestedTxns[daghash.TxID(*iv.Hash)]; exists {
 					continue
 				}
 			}
