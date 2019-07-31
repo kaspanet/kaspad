@@ -160,6 +160,12 @@ func TestFinality(t *testing.T) {
 	}
 }
 
+func TestFinalityInterval(t *testing.T) {
+	if blockdag.FinalityInterval > wire.MaxInvPerMsg {
+		t.Errorf("blockdag.FinalityInterval should be lower or equal to wire.MaxInvPerMsg")
+	}
+}
+
 // TestSubnetworkRegistry tests the full subnetwork registry flow
 func TestSubnetworkRegistry(t *testing.T) {
 	params := dagconfig.SimNetParams

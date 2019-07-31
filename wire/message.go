@@ -57,7 +57,8 @@ const (
 	CmdCFilter         = "cfilter"
 	CmdCFHeaders       = "cfheaders"
 	CmdCFCheckpt       = "cfcheckpt"
-	CmdGetBlockLocator = "getblocklocator"
+	CmdGetBlockLocator = "getblklocatr"
+	CmdBlockLocator    = "blklocatr"
 )
 
 // Message is an interface that describes a bitcoin message.  A type that
@@ -99,6 +100,12 @@ func makeEmptyMessage(command string) (Message, error) {
 
 	case CmdGetData:
 		msg = &MsgGetData{}
+
+	case CmdGetBlockLocator:
+		msg = &MsgGetBlockLocator{}
+
+	case CmdBlockLocator:
+		msg = &MsgBlockLocator{}
 
 	case CmdNotFound:
 		msg = &MsgNotFound{}

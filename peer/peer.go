@@ -137,6 +137,12 @@ type MessageListeners struct {
 	// OnInv is invoked when a peer receives an inv bitcoin message.
 	OnInv func(p *Peer, msg *wire.MsgInv)
 
+	// OnGetBlockLocator is invoked when a peer receives a getblocklocator bitcoin message.
+	OnGetBlockLocator func(p *Peer, msg *wire.MsgGetBlockLocator)
+
+	// OnBlockLocator is invoked when a peer receives a blocklocator bitcoin message.
+	OnBlockLocator func(p *Peer, msg *wire.MsgBlockLocator)
+
 	// OnHeaders is invoked when a peer receives a headers bitcoin message.
 	OnHeaders func(p *Peer, msg *wire.MsgHeaders)
 
@@ -858,8 +864,14 @@ func (p *Peer) PushAddrMsg(addresses []*wire.NetAddress, subnetworkID *subnetwor
 	return msg.AddrList, nil
 }
 
-func (p *Peer) PushGetBlockLocatorMsg(startHash, stopHash *daghash.Hash) {
-	msg := wire.NewMsgGetBlockLocator(startHash, stopHash)
+func (p *Peer) PushGetBlockLocatorMsg(hashStart, hashStop *daghash.Hash) {
+	msg := wire.NewMsgGetBlockLocator()
+	if hashStart != nil {
+		msg.HashStart = hashStart
+	}
+	if hashStop != nil {
+		msg.HashStop = hashStop
+	}
 	p.QueueMessage(msg, nil)
 }
 
@@ -915,30 +927,29 @@ func (p *Peer) PushBlockLocatorMsg(locator blockdag.BlockLocator) error {
 // and stop hash.  It will ignore back-to-back duplicate requests.
 //
 // This function is safe for concurrent access.
-func (p *Peer) PushGetHeadersMsg(startHash, stopHash *daghash.Hash) error {
+func (p *Peer) PushGetHeadersMsg(hashStart, hashStop *daghash.Hash) error {
 	// Filter duplicate getheaders requests.
 	p.prevGetHdrsMtx.Lock()
 	isDuplicate := p.prevGetHdrsStop != nil && p.prevGetHdrsStart != nil &&
-		startHash != nil && stopHash.IsEqual(p.prevGetHdrsStop) &&
-		startHash.IsEqual(p.prevGetHdrsStart)
+		hashStart != nil && hashStop.IsEqual(p.prevGetHdrsStop) &&
+		hashStart.IsEqual(p.prevGetHdrsStart)
 	p.prevGetHdrsMtx.Unlock()
 
 	if isDuplicate {
 		log.Tracef("Filtering duplicate [getheaders] with begin hash %s",
-			startHash)
+			hashStart)
 		return nil
 	}
 
 	// Construct the getheaders request and queue it to be sent.
-	msg := wire.NewMsgGetHeaders(startHash, stopHash)
-	msg.HashStop = stopHash
+	msg := wire.NewMsgGetHeaders(hashStart, hashStop)
 	p.QueueMessage(msg, nil)
 
 	// Update the previous getheaders request information for filtering
 	// duplicates.
 	p.prevGetHdrsMtx.Lock()
-	p.prevGetHdrsStart = startHash
-	p.prevGetHdrsStop = stopHash
+	p.prevGetHdrsStart = hashStart
+	p.prevGetHdrsStop = hashStop
 	p.prevGetHdrsMtx.Unlock()
 	return nil
 }
@@ -1513,6 +1524,16 @@ out:
 				p.cfg.Listeners.OnGetData(p, msg)
 			}
 
+		case *wire.MsgGetBlockLocator:
+			if p.cfg.Listeners.OnGetBlockLocator != nil {
+				p.cfg.Listeners.OnGetBlockLocator(p, msg)
+			}
+
+		case *wire.MsgBlockLocator:
+			if p.cfg.Listeners.OnBlockLocator != nil {
+				p.cfg.Listeners.OnBlockLocator(p, msg)
+			}
+
 		case *wire.MsgGetBlocks:
 			if p.cfg.Listeners.OnGetBlocks != nil {
 				p.cfg.Listeners.OnGetBlocks(p, msg)
@@ -1744,26 +1765,6 @@ cleanup:
 	log.Tracef("Peer queue handler done for %s", p)
 }
 
-// shouldLogWriteError returns whether or not the passed error, which is
-// expected to have come from writing to the remote peer in the outHandler,
-// should be logged.
-func (p *Peer) shouldLogWriteError(err error) bool {
-	// No logging when the peer is being forcibly disconnected.
-	if atomic.LoadInt32(&p.disconnect) != 0 {
-		return false
-	}
-
-	// No logging when the remote peer has been disconnected.
-	if err == io.EOF {
-		return false
-	}
-	if opErr, ok := err.(*net.OpError); ok && !opErr.Temporary() {
-		return false
-	}
-
-	return true
-}
-
 // outHandler handles all outgoing messages for the peer.  It must be run as a
 // goroutine.  It uses a buffered channel to serialize output messages while
 // allowing the sender to continue running asynchronously.
@@ -1785,10 +1786,8 @@ out:
 			err := p.writeMessage(msg.msg)
 			if err != nil {
 				p.Disconnect()
-				if p.shouldLogWriteError(err) {
-					log.Errorf("Failed to send message to "+
-						"%s: %s", p, err)
-				}
+				log.Errorf("Failed to send message to "+
+					"%s: %s", p, err)
 				if msg.doneChan != nil {
 					msg.doneChan <- struct{}{}
 				}

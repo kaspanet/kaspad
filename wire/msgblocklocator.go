@@ -32,7 +32,6 @@ const MaxBlockLocatorsPerMsg = 500
 // exponentially decrease the number of hashes the further away from head and
 // closer to the genesis block you get.
 type MsgBlockLocator struct {
-	ProtocolVersion    uint32
 	BlockLocatorHashes []*daghash.Hash
 	HashStop           *daghash.Hash
 }
@@ -52,10 +51,6 @@ func (msg *MsgBlockLocator) AddBlockLocatorHash(hash *daghash.Hash) error {
 // BtcDecode decodes r using the bitcoin protocol encoding into the receiver.
 // This is part of the Message interface implementation.
 func (msg *MsgBlockLocator) BtcDecode(r io.Reader, pver uint32) error {
-	err := ReadElement(r, &msg.ProtocolVersion)
-	if err != nil {
-		return err
-	}
 
 	// Read num block locator hashes and limit to max.
 	count, err := ReadVarInt(r)
@@ -99,12 +94,7 @@ func (msg *MsgBlockLocator) BtcEncode(w io.Writer, pver uint32) error {
 		return messageError("MsgBlockLocator.BtcEncode", str)
 	}
 
-	err := WriteElement(w, msg.ProtocolVersion)
-	if err != nil {
-		return err
-	}
-
-	err = WriteVarInt(w, uint64(count))
+	err := WriteVarInt(w, uint64(count))
 	if err != nil {
 		return err
 	}
@@ -122,7 +112,7 @@ func (msg *MsgBlockLocator) BtcEncode(w io.Writer, pver uint32) error {
 // Command returns the protocol command string for the message.  This is part
 // of the Message interface implementation.
 func (msg *MsgBlockLocator) Command() string {
-	return CmdGetHeaders
+	return CmdBlockLocator
 }
 
 // MaxPayloadLength returns the maximum length the payload can be for the

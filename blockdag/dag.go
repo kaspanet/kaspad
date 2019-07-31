@@ -1672,7 +1672,7 @@ func (dag *BlockDAG) IntervalBlockHashes(endHash *daghash.Hash, interval uint64,
 // we found the highest shared known chain block, so we only return its hash.
 //
 // This function MUST be called with the DAG state lock held (for reads).
-func (dag *BlockDAG) FindNextLocatorBoundaries(locator BlockLocator) (startHash, stopHash *daghash.Hash) {
+func (dag *BlockDAG) FindNextLocatorBoundaries(locator BlockLocator) (hashStart, hashStop *daghash.Hash) {
 	// Find the most recent locator block hash in the DAG.  In the case none of
 	// the hashes in the locator are in the DAG, fall back to the genesis block.
 	startNode := dag.genesis
@@ -1685,7 +1685,7 @@ func (dag *BlockDAG) FindNextLocatorBoundaries(locator BlockLocator) (startHash,
 			break
 		}
 	}
-	if nextBlockLocatorIndex > 0 {
+	if nextBlockLocatorIndex < 0 {
 		return startNode.hash, nil
 	}
 	return startNode.hash, locator[nextBlockLocatorIndex]
@@ -1694,8 +1694,6 @@ func (dag *BlockDAG) FindNextLocatorBoundaries(locator BlockLocator) (startHash,
 // locateBlocks returns the hashes of the blocks after the provided
 // start hash until the provided stop hash is reached, or up to the
 // provided max number of block hashes.
-//
-// See the comment on the exported function for more details on special cases.
 //
 // This function MUST be called with the DAG state lock held (for reads).
 func (dag *BlockDAG) locateBlocks(hashStart, hashStop *daghash.Hash, maxHashes uint64) []*daghash.Hash {
@@ -1708,8 +1706,6 @@ func (dag *BlockDAG) locateBlocks(hashStart, hashStop *daghash.Hash, maxHashes u
 }
 
 func (dag *BlockDAG) locateBlockNodes(hashStart, hashStop *daghash.Hash, maxEntries uint64) []*blockNode {
-	// Find the first known block in the locator and the estimated number of
-	// nodes after it needed while respecting the stop hash and max entries.
 	startNode := dag.index.LookupNode(hashStart)
 	if startNode == nil {
 		return nil
@@ -1737,17 +1733,9 @@ func (dag *BlockDAG) locateBlockNodes(hashStart, hashStop *daghash.Hash, maxEntr
 	return reversedNodes
 }
 
-// LocateBlocks returns the hashes of the blocks after the first known block in
-// the locator until the provided stop hash is reached, or up to the provided
-// max number of block hashes.
-//
-// In addition, there are two special cases:
-//
-// - When no locators are provided, the stop hash is treated as a request for
-//   that block, so it will either return the stop hash itself if it is known,
-//   or nil if it is unknown
-// - When locators are provided, but none of them are known, hashes starting
-//   after the genesis block will be returned
+// LocateBlocks returns the hashes of the blocks after the provided
+// start hash until the provided stop hash is reached, or up to the
+// provided max number of block hashes.
 //
 // This function is safe for concurrent access.
 func (dag *BlockDAG) LocateBlocks(hashStart, hashStop *daghash.Hash, maxHashes uint64) []*daghash.Hash {
@@ -1757,11 +1745,9 @@ func (dag *BlockDAG) LocateBlocks(hashStart, hashStop *daghash.Hash, maxHashes u
 	return hashes
 }
 
-// locateHeaders returns the headers of the blocks after the first known block
-// in the locator until the provided stop hash is reached, or up to the provided
-// max number of block headers.
-//
-// See the comment on the exported function for more details on special cases.
+// locateHeaders returns the headers of the blocks after the provided
+// start hash until the provided stop hash is reached, or up to the
+// provided max number of block headers.
 //
 // This function MUST be called with the DAG state lock held (for reads).
 func (dag *BlockDAG) locateHeaders(hashStart, hashStop *daghash.Hash, maxHeaders uint64) []*wire.BlockHeader {
@@ -1809,17 +1795,9 @@ func (dag *BlockDAG) RUnlock() {
 	dag.dagLock.RUnlock()
 }
 
-// LocateHeaders returns the headers of the blocks after the first known block
-// in the locator until the provided stop hash is reached, or up to a max of
-// wire.MaxBlockHeadersPerMsg headers.
-//
-// In addition, there are two special cases:
-//
-// - When no locators are provided, the stop hash is treated as a request for
-//   that header, so it will either return the header for the stop hash itself
-//   if it is known, or nil if it is unknown
-// - When locators are provided, but none of them are known, headers starting
-//   after the genesis block will be returned
+// LocateHeaders returns the headers of the blocks after the provided
+// start hash until the provided stop hash is reached, or up to the
+// provided max number of block headers.
 //
 // This function is safe for concurrent access.
 func (dag *BlockDAG) LocateHeaders(hashStart, hashStop *daghash.Hash) []*wire.BlockHeader {

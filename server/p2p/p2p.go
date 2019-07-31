@@ -713,12 +713,12 @@ func (sp *Peer) OnBlockLocator(_ *peer.Peer, msg *wire.MsgBlockLocator) {
 	//
 	// This mirrors the behavior in the reference implementation.
 	dag := sp.server.DAG
-	startHash, stopHash := dag.FindNextLocatorBoundaries(msg.BlockLocatorHashes)
-	if stopHash != nil {
-		sp.PushGetBlockLocatorMsg(startHash, stopHash)
+	hashStart, hashStop := dag.FindNextLocatorBoundaries(msg.BlockLocatorHashes)
+	if hashStop != nil {
+		sp.PushGetBlockLocatorMsg(hashStart, hashStop)
 		return
 	}
-	err := sp.server.SyncManager.PushGetBlocksOrHeaders(sp.Peer, startHash)
+	err := sp.server.SyncManager.PushGetBlocksOrHeaders(sp.Peer, hashStart)
 	if err != nil {
 		peerLog.Errorf("Failed pushing get blocks message for peer %s: %s",
 			sp, err)
@@ -1815,26 +1815,28 @@ func disconnectPeer(peerList map[int32]*Peer, compareFunc func(*Peer) bool, when
 func newPeerConfig(sp *Peer) *peer.Config {
 	return &peer.Config{
 		Listeners: peer.MessageListeners{
-			OnVersion:      sp.OnVersion,
-			OnMemPool:      sp.OnMemPool,
-			OnTx:           sp.OnTx,
-			OnBlock:        sp.OnBlock,
-			OnInv:          sp.OnInv,
-			OnHeaders:      sp.OnHeaders,
-			OnGetData:      sp.OnGetData,
-			OnGetBlocks:    sp.OnGetBlocks,
-			OnGetHeaders:   sp.OnGetHeaders,
-			OnGetCFilters:  sp.OnGetCFilters,
-			OnGetCFHeaders: sp.OnGetCFHeaders,
-			OnGetCFCheckpt: sp.OnGetCFCheckpt,
-			OnFeeFilter:    sp.OnFeeFilter,
-			OnFilterAdd:    sp.OnFilterAdd,
-			OnFilterClear:  sp.OnFilterClear,
-			OnFilterLoad:   sp.OnFilterLoad,
-			OnGetAddr:      sp.OnGetAddr,
-			OnAddr:         sp.OnAddr,
-			OnRead:         sp.OnRead,
-			OnWrite:        sp.OnWrite,
+			OnVersion:         sp.OnVersion,
+			OnMemPool:         sp.OnMemPool,
+			OnTx:              sp.OnTx,
+			OnBlock:           sp.OnBlock,
+			OnInv:             sp.OnInv,
+			OnHeaders:         sp.OnHeaders,
+			OnGetData:         sp.OnGetData,
+			OnGetBlockLocator: sp.OnGetBlockLocator,
+			OnBlockLocator:    sp.OnBlockLocator,
+			OnGetBlocks:       sp.OnGetBlocks,
+			OnGetHeaders:      sp.OnGetHeaders,
+			OnGetCFilters:     sp.OnGetCFilters,
+			OnGetCFHeaders:    sp.OnGetCFHeaders,
+			OnGetCFCheckpt:    sp.OnGetCFCheckpt,
+			OnFeeFilter:       sp.OnFeeFilter,
+			OnFilterAdd:       sp.OnFilterAdd,
+			OnFilterClear:     sp.OnFilterClear,
+			OnFilterLoad:      sp.OnFilterLoad,
+			OnGetAddr:         sp.OnGetAddr,
+			OnAddr:            sp.OnAddr,
+			OnRead:            sp.OnRead,
+			OnWrite:           sp.OnWrite,
 
 			// Note: The reference client currently bans peers that send alerts
 			// not signed with its key.  We could verify against their key, but

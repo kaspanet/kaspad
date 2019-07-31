@@ -514,11 +514,11 @@ func TestPeerListeners(t *testing.T) {
 		},
 		{
 			"OnGetBlocks",
-			wire.NewMsgGetBlocks(&daghash.Hash{}),
+			wire.NewMsgGetBlocks(&daghash.Hash{}, &daghash.Hash{}),
 		},
 		{
 			"OnGetHeaders",
-			wire.NewMsgGetHeaders(),
+			wire.NewMsgGetHeaders(&daghash.Hash{}, &daghash.Hash{}),
 		},
 		{
 			"OnGetCFilters",
@@ -694,7 +694,7 @@ func TestOutboundPeer(t *testing.T) {
 	p2.QueueMessage(wire.NewMsgPing(1), nil)
 	p2.QueueMessage(wire.NewMsgMemPool(), nil)
 	p2.QueueMessage(wire.NewMsgGetData(), nil)
-	p2.QueueMessage(wire.NewMsgGetHeaders(), nil)
+	p2.QueueMessage(wire.NewMsgGetHeaders(&daghash.ZeroHash, &daghash.ZeroHash), nil)
 	p2.QueueMessage(wire.NewMsgFeeFilter(20000), nil)
 
 	p2.Disconnect()

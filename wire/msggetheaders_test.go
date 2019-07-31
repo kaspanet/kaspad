@@ -20,76 +20,37 @@ func TestGetHeaders(t *testing.T) {
 
 	// Block 99500 hash.
 	hashStr := "000000000002e7ad7b9eef9479e4aabc65cb831269cc20d2632c13684406dee0"
-	locatorHash, err := daghash.NewHashFromStr(hashStr)
+	hashStart, err := daghash.NewHashFromStr(hashStr)
 	if err != nil {
 		t.Errorf("NewHashFromStr: %v", err)
 	}
 
 	// Ensure the command is expected value.
 	wantCmd := "getheaders"
-	msg := NewMsgGetHeaders()
+	msg := NewMsgGetHeaders(hashStart, &daghash.ZeroHash)
 	if cmd := msg.Command(); cmd != wantCmd {
 		t.Errorf("NewMsgGetHeaders: wrong command - got %v want %v",
 			cmd, wantCmd)
 	}
 
-	// Ensure max payload is expected value for latest protocol version.
-	// Protocol version 4 bytes + num hashes (varInt) + max block locator
-	// hashes + hash stop.
-	wantPayload := uint32(16045)
+	// Ensure max payload is hash start (32 bytes) + hash stop (32 bytes)..
+	wantPayload := uint32(64)
 	maxPayload := msg.MaxPayloadLength(pver)
 	if maxPayload != wantPayload {
 		t.Errorf("MaxPayloadLength: wrong max payload length for "+
 			"protocol version %d - got %v, want %v", pver,
 			maxPayload, wantPayload)
 	}
-
-	// Ensure block locator hashes are added properly.
-	err = msg.AddBlockLocatorHash(locatorHash)
-	if err != nil {
-		t.Errorf("AddBlockLocatorHash: %v", err)
-	}
-	if msg.BlockLocatorHashes[0] != locatorHash {
-		t.Errorf("AddBlockLocatorHash: wrong block locator added - "+
-			"got %v, want %v",
-			spew.Sprint(msg.BlockLocatorHashes[0]),
-			spew.Sprint(locatorHash))
-	}
-
-	// Ensure adding more than the max allowed block locator hashes per
-	// message returns an error.
-	for i := 0; i < MaxBlockLocatorsPerMsg; i++ {
-		err = msg.AddBlockLocatorHash(locatorHash)
-	}
-	if err == nil {
-		t.Errorf("AddBlockLocatorHash: expected error on too many " +
-			"block locator hashes not received")
-	}
 }
 
-// TestGetHeadersWire tests the MsgGetHeaders wire encode and decode for various
-// numbers of block locator hashes and protocol versions.
+// TestGetHeadersWire tests the MsgGetHeaders wire encode and decode.
 func TestGetHeadersWire(t *testing.T) {
-	// Set protocol inside getheaders message.  Use protocol version 1
-	// specifically here instead of the latest because the test data is
-	// using bytes encoded with that protocol version.
-	pver := uint32(1)
-
-	// Block 99499 hash.
 	hashStr := "2710f40c87ec93d010a6fd95f42c59a2cbacc60b18cf6b7957535"
-	hashLocator, err := daghash.NewHashFromStr(hashStr)
+	hashStart, err := daghash.NewHashFromStr(hashStr)
 	if err != nil {
 		t.Errorf("NewHashFromStr: %v", err)
 	}
 
-	// Block 99500 hash.
-	hashStr = "2e7ad7b9eef9479e4aabc65cb831269cc20d2632c13684406dee0"
-	hashLocator2, err := daghash.NewHashFromStr(hashStr)
-	if err != nil {
-		t.Errorf("NewHashFromStr: %v", err)
-	}
-
-	// Block 100000 hash.
 	hashStr = "3ba27aa200b1cecaad478d2b00432346c3f1f3986da1afd33e506"
 	hashStop, err := daghash.NewHashFromStr(hashStr)
 	if err != nil {
@@ -97,11 +58,12 @@ func TestGetHeadersWire(t *testing.T) {
 	}
 
 	// MsgGetHeaders message with no block locators or stop hash.
-	noLocators := NewMsgGetHeaders()
-	noLocators.ProtocolVersion = pver
-	noLocatorsEncoded := []byte{
-		0x01, 0x00, 0x00, 0x00, // Protocol version 1
-		0x00, // Varint for number of block locator hashes
+	noHashStartAndStopHash := NewMsgGetHeaders(&daghash.ZeroHash, &daghash.ZeroHash)
+	noHashStartAndStopHashEncoded := []byte{
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Hash start
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -109,22 +71,12 @@ func TestGetHeadersWire(t *testing.T) {
 	}
 
 	// MsgGetHeaders message with multiple block locators and a stop hash.
-	multiLocators := NewMsgGetHeaders()
-	multiLocators.ProtocolVersion = pver
-	multiLocators.HashStop = hashStop
-	multiLocators.AddBlockLocatorHash(hashLocator2)
-	multiLocators.AddBlockLocatorHash(hashLocator)
-	multiLocatorsEncoded := []byte{
-		0x01, 0x00, 0x00, 0x00, // Protocol version 1
-		0x02, // Varint for number of block locator hashes
-		0xe0, 0xde, 0x06, 0x44, 0x68, 0x13, 0x2c, 0x63,
-		0xd2, 0x20, 0xcc, 0x69, 0x12, 0x83, 0xcb, 0x65,
-		0xbc, 0xaa, 0xe4, 0x79, 0x94, 0xef, 0x9e, 0x7b,
-		0xad, 0xe7, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, // Block 99500 hash
+	withHashStartAndStopHash := NewMsgGetHeaders(hashStart, hashStop)
+	withHashStartAndStopHashEncoded := []byte{
 		0x35, 0x75, 0x95, 0xb7, 0xf6, 0x8c, 0xb1, 0x60,
 		0xcc, 0xba, 0x2c, 0x9a, 0xc5, 0x42, 0x5f, 0xd9,
 		0x6f, 0x0a, 0x01, 0x3d, 0xc9, 0x7e, 0xc8, 0x40,
-		0x0f, 0x71, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, // Block 99499 hash
+		0x0f, 0x71, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, // Hash start
 		0x06, 0xe5, 0x33, 0xfd, 0x1a, 0xda, 0x86, 0x39,
 		0x1f, 0x3f, 0x6c, 0x34, 0x32, 0x04, 0xb0, 0xd2,
 		0x78, 0xd4, 0xaa, 0xec, 0x1c, 0x0b, 0x20, 0xaa,
@@ -137,19 +89,19 @@ func TestGetHeadersWire(t *testing.T) {
 		buf  []byte         // Wire encoding
 		pver uint32         // Protocol version for wire encoding
 	}{
-		// Latest protocol version with no block locators.
+		// Message with no hash start and hash stop.
 		{
-			noLocators,
-			noLocators,
-			noLocatorsEncoded,
+			noHashStartAndStopHash,
+			noHashStartAndStopHash,
+			noHashStartAndStopHashEncoded,
 			ProtocolVersion,
 		},
 
-		// Latest protocol version with multiple block locators.
+		// Message with hash start and hash stop.
 		{
-			multiLocators,
-			multiLocators,
-			multiLocatorsEncoded,
+			withHashStartAndStopHash,
+			withHashStartAndStopHash,
+			withHashStartAndStopHashEncoded,
 			ProtocolVersion,
 		},
 	}
@@ -188,27 +140,15 @@ func TestGetHeadersWire(t *testing.T) {
 // TestGetHeadersWireErrors performs negative tests against wire encode and
 // decode of MsgGetHeaders to confirm error paths work correctly.
 func TestGetHeadersWireErrors(t *testing.T) {
-	// Set protocol inside getheaders message.  Use protocol version 1
-	// specifically here instead of the latest because the test data is
-	// using bytes encoded with that protocol version.
+	// Set protocol inside getheaders message.
 	pver := ProtocolVersion
-	wireErr := &MessageError{}
 
-	// Block 99499 hash.
 	hashStr := "2710f40c87ec93d010a6fd95f42c59a2cbacc60b18cf6b7957535"
-	hashLocator, err := daghash.NewHashFromStr(hashStr)
+	hashStart, err := daghash.NewHashFromStr(hashStr)
 	if err != nil {
 		t.Errorf("NewHashFromStr: %v", err)
 	}
 
-	// Block 99500 hash.
-	hashStr = "2e7ad7b9eef9479e4aabc65cb831269cc20d2632c13684406dee0"
-	hashLocator2, err := daghash.NewHashFromStr(hashStr)
-	if err != nil {
-		t.Errorf("NewHashFromStr: %v", err)
-	}
-
-	// Block 100000 hash.
 	hashStr = "3ba27aa200b1cecaad478d2b00432346c3f1f3986da1afd33e506"
 	hashStop, err := daghash.NewHashFromStr(hashStr)
 	if err != nil {
@@ -216,39 +156,16 @@ func TestGetHeadersWireErrors(t *testing.T) {
 	}
 
 	// MsgGetHeaders message with multiple block locators and a stop hash.
-	baseGetHeaders := NewMsgGetHeaders()
-	baseGetHeaders.ProtocolVersion = pver
-	baseGetHeaders.HashStop = hashStop
-	baseGetHeaders.AddBlockLocatorHash(hashLocator2)
-	baseGetHeaders.AddBlockLocatorHash(hashLocator)
+	baseGetHeaders := NewMsgGetHeaders(hashStart, hashStop)
 	baseGetHeadersEncoded := []byte{
-		0x01, 0x00, 0x00, 0x00, // Protocol version 1
-		0x02, // Varint for number of block locator hashes
-		0xe0, 0xde, 0x06, 0x44, 0x68, 0x13, 0x2c, 0x63,
-		0xd2, 0x20, 0xcc, 0x69, 0x12, 0x83, 0xcb, 0x65,
-		0xbc, 0xaa, 0xe4, 0x79, 0x94, 0xef, 0x9e, 0x7b,
-		0xad, 0xe7, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, // Block 99500 hash
 		0x35, 0x75, 0x95, 0xb7, 0xf6, 0x8c, 0xb1, 0x60,
 		0xcc, 0xba, 0x2c, 0x9a, 0xc5, 0x42, 0x5f, 0xd9,
 		0x6f, 0x0a, 0x01, 0x3d, 0xc9, 0x7e, 0xc8, 0x40,
-		0x0f, 0x71, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, // Block 99499 hash
+		0x0f, 0x71, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, // Hash start
 		0x06, 0xe5, 0x33, 0xfd, 0x1a, 0xda, 0x86, 0x39,
 		0x1f, 0x3f, 0x6c, 0x34, 0x32, 0x04, 0xb0, 0xd2,
 		0x78, 0xd4, 0xaa, 0xec, 0x1c, 0x0b, 0x20, 0xaa,
 		0x27, 0xba, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, // Hash stop
-	}
-
-	// Message that forces an error by having more than the max allowed
-	// block locator hashes.
-	maxGetHeaders := NewMsgGetHeaders()
-	for i := 0; i < MaxBlockLocatorsPerMsg; i++ {
-		maxGetHeaders.AddBlockLocatorHash(mainNetGenesisHash)
-	}
-	maxGetHeaders.BlockLocatorHashes = append(maxGetHeaders.BlockLocatorHashes,
-		mainNetGenesisHash)
-	maxGetHeadersEncoded := []byte{
-		0x01, 0x00, 0x00, 0x00, // Protocol version 1
-		0xfd, 0xf5, 0x01, // Varint for number of block loc hashes (501)
 	}
 
 	tests := []struct {
@@ -259,16 +176,10 @@ func TestGetHeadersWireErrors(t *testing.T) {
 		writeErr error          // Expected write error
 		readErr  error          // Expected read error
 	}{
-		// Force error in protocol version.
+		// Force error in start hash.
 		{baseGetHeaders, baseGetHeadersEncoded, pver, 0, io.ErrShortWrite, io.EOF},
-		// Force error in block locator hash count.
-		{baseGetHeaders, baseGetHeadersEncoded, pver, 4, io.ErrShortWrite, io.EOF},
-		// Force error in block locator hashes.
-		{baseGetHeaders, baseGetHeadersEncoded, pver, 5, io.ErrShortWrite, io.EOF},
 		// Force error in stop hash.
-		{baseGetHeaders, baseGetHeadersEncoded, pver, 69, io.ErrShortWrite, io.EOF},
-		// Force error with greater than max block locator hashes.
-		{maxGetHeaders, maxGetHeadersEncoded, pver, 7, wireErr, wireErr},
+		{baseGetHeaders, baseGetHeadersEncoded, pver, 32, io.ErrShortWrite, io.EOF},
 	}
 
 	t.Logf("Running %d tests", len(tests))

@@ -51,7 +51,7 @@ func TestMessage(t *testing.T) {
 	msgVerack := NewMsgVerAck()
 	msgGetAddr := NewMsgGetAddr(false, nil)
 	msgAddr := NewMsgAddr(false, nil)
-	msgGetBlocks := NewMsgGetBlocks(&daghash.Hash{})
+	msgGetBlocks := NewMsgGetBlocks(&daghash.Hash{}, &daghash.Hash{})
 	msgBlock := &blockOne
 	msgInv := NewMsgInv()
 	msgGetData := NewMsgGetData()
@@ -59,7 +59,9 @@ func TestMessage(t *testing.T) {
 	msgTx := NewNativeMsgTx(1, nil, nil)
 	msgPing := NewMsgPing(123123)
 	msgPong := NewMsgPong(123123)
-	msgGetHeaders := NewMsgGetHeaders()
+	msgGetHeaders := NewMsgGetHeaders(&daghash.Hash{}, &daghash.Hash{})
+	msgGetBlockLocator := NewMsgGetBlockLocator()
+	msgBlockLocator := NewMsgBlockLocator()
 	msgSendHeaders := NewMsgSendHeaders()
 	msgFeeFilter := NewMsgFeeFilter(123456)
 	msgHeaders := NewMsgHeaders()
@@ -90,7 +92,7 @@ func TestMessage(t *testing.T) {
 		{msgVerack, msgVerack, pver, MainNet, 24},
 		{msgGetAddr, msgGetAddr, pver, MainNet, 26},
 		{msgAddr, msgAddr, pver, MainNet, 27},
-		{msgGetBlocks, msgGetBlocks, pver, MainNet, 61},
+		{msgGetBlocks, msgGetBlocks, pver, MainNet, 88},
 		{msgBlock, msgBlock, pver, MainNet, 372},
 		{msgInv, msgInv, pver, MainNet, 25},
 		{msgGetData, msgGetData, pver, MainNet, 25},
@@ -98,7 +100,9 @@ func TestMessage(t *testing.T) {
 		{msgTx, msgTx, pver, MainNet, 58},
 		{msgPing, msgPing, pver, MainNet, 32},
 		{msgPong, msgPong, pver, MainNet, 32},
-		{msgGetHeaders, msgGetHeaders, pver, MainNet, 61},
+		{msgGetHeaders, msgGetHeaders, pver, MainNet, 88},
+		{msgGetBlockLocator, msgGetBlockLocator, pver, MainNet, 88},
+		{msgBlockLocator, msgBlockLocator, pver, MainNet, 57},
 		{msgSendHeaders, msgSendHeaders, pver, MainNet, 24},
 		{msgFeeFilter, msgFeeFilter, pver, MainNet, 32},
 		{msgHeaders, msgHeaders, pver, MainNet, 25},

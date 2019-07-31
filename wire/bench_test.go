@@ -377,18 +377,12 @@ func BenchmarkWriteBlockHeader(b *testing.B) {
 }
 
 // BenchmarkDecodeGetHeaders performs a benchmark on how long it takes to
-// decode a getheaders message with the maximum number of block locator hashes.
+// decode a getheaders message.
 func BenchmarkDecodeGetHeaders(b *testing.B) {
-	// Create a message with the maximum number of block locators.
 	pver := ProtocolVersion
 	var m MsgGetHeaders
-	for i := 0; i < MaxBlockLocatorsPerMsg; i++ {
-		hash, err := daghash.NewHashFromStr(fmt.Sprintf("%x", i))
-		if err != nil {
-			b.Fatalf("NewHashFromStr: unexpected error: %v", err)
-		}
-		m.AddBlockLocatorHash(hash)
-	}
+	m.HashStart = &daghash.Hash{1}
+	m.HashStop = &daghash.Hash{1}
 
 	// Serialize it so the bytes are available to test the decode below.
 	var bb bytes.Buffer
@@ -446,18 +440,12 @@ func BenchmarkDecodeHeaders(b *testing.B) {
 }
 
 // BenchmarkDecodeGetBlocks performs a benchmark on how long it takes to
-// decode a getblocks message with the maximum number of block locator hashes.
+// decode a getblocks message.
 func BenchmarkDecodeGetBlocks(b *testing.B) {
-	// Create a message with the maximum number of block locators.
 	pver := ProtocolVersion
 	var m MsgGetBlocks
-	for i := 0; i < MaxBlockLocatorsPerMsg; i++ {
-		hash, err := daghash.NewHashFromStr(fmt.Sprintf("%x", i))
-		if err != nil {
-			b.Fatalf("NewHashFromStr: unexpected error: %v", err)
-		}
-		m.AddBlockLocatorHash(hash)
-	}
+	m.HashStart = &daghash.Hash{1}
+	m.HashStop = &daghash.Hash{1}
 
 	// Serialize it so the bytes are available to test the decode below.
 	var bb bytes.Buffer
