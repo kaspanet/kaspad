@@ -5,14 +5,14 @@
 package serverutils
 
 import (
-	"github.com/btcsuite/btclog"
+	"github.com/daglabs/btcd/logs"
 	"github.com/daglabs/btcd/logger"
 )
 
 // log is a logger that is initialized with no output filters.  This
 // means the package will not perform any logging by default until the caller
 // requests it.
-var srvLog, peerLog, rpcsLog btclog.Logger
+var srvLog, peerLog, rpcsLog logs.Logger
 
 func init() {
 	srvLog, _ = logger.Get(logger.SubsystemTags.SRVR)

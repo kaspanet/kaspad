@@ -71,7 +71,7 @@ func parseConfig() (*config, error) {
 		cfg.TargetNumberOfInputs = defaultTargetNumberOfInputs
 	}
 
-	initLogRotator(defaultLogFile)
+	initLogRotators(defaultLogFile)
 
 	return cfg, nil
 }

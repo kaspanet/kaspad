@@ -5,14 +5,14 @@
 package signal
 
 import (
-	"github.com/btcsuite/btclog"
+	"github.com/daglabs/btcd/logs"
 	"github.com/daglabs/btcd/logger"
 )
 
 // log is a logger that is initialized with no output filters.  This
 // means the package will not perform any logging by default until the caller
 // requests it.
-var btcdLog btclog.Logger
+var btcdLog logs.Logger
 
 func init() {
 	btcdLog, _ = logger.Get(logger.SubsystemTags.BTCD)

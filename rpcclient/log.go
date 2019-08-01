@@ -5,14 +5,14 @@
 package rpcclient
 
 import (
-	"github.com/btcsuite/btclog"
+	"github.com/daglabs/btcd/logs"
 	"github.com/daglabs/btcd/util/panics"
 )
 
 // log is a logger that is initialized with no output filters.  This
 // means the package will not perform any logging by default until the caller
 // requests it.
-var log btclog.Logger
+var log logs.Logger
 var spawn func(func())
 
 // The default amount of logging is none.
@@ -23,12 +23,12 @@ func init() {
 // DisableLog disables all library log output.  Logging output is disabled
 // by default until UseLogger is called.
 func DisableLog() {
-	log = btclog.Disabled
+	log = logs.Disabled
 	spawn = panics.GoroutineWrapperFunc(log)
 }
 
 // UseLogger uses a specified Logger to output package logging info.
-func UseLogger(logger btclog.Logger) {
+func UseLogger(logger logs.Logger) {
 	log = logger
 	spawn = panics.GoroutineWrapperFunc(log)
 }

@@ -12,7 +12,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/btcsuite/btclog"
+	"github.com/daglabs/btcd/logs"
 	"github.com/jrick/logrotate/rotator"
 )
 
@@ -28,6 +28,18 @@ func (logWriter) Write(p []byte) (n int, err error) {
 	return len(p), nil
 }
 
+// errLogWriter implements an io.Writer that outputs to both standard output and
+// the write-end pipe of an initialized log rotator.
+type errLogWriter struct{}
+
+func (errLogWriter) Write(p []byte) (n int, err error) {
+	if initiated {
+		os.Stdout.Write(p)
+		ErrLogRotator.Write(p)
+	}
+	return len(p), nil
+}
+
 // Loggers per subsystem.  A single backend logger is created and all subsytem
 // loggers created from it will write to the backend.  When adding new
 // subsystems, add the subsystem logger variable here and to the
@@ -35,16 +47,20 @@ func (logWriter) Write(p []byte) (n int, err error) {
 //
 // Loggers can not be used before the log rotator has been initialized with a
 // log file.  This must be performed early during application startup by calling
-// InitLogRotator.
+// InitLogRotators.
 var (
 	// backendLog is the logging backend used to create all subsystem loggers.
 	// The backend must not be used before the log rotator has been initialized,
 	// or data races and/or nil pointer dereferences will occur.
-	backendLog = btclog.NewBackend(logWriter{})
+	backendLog = logs.NewBackend([]*logs.BackendWriter{
+		logs.NewAllLevelsBackendWriter(logWriter{}),
+		logs.NewErrorBackendWriter(errLogWriter{}),
+	})
 
 	// LogRotator is one of the logging outputs.  It should be closed on
 	// application shutdown.
 	LogRotator *rotator.Rotator
+	ErrLogRotator *rotator.Rotator
 
 	adxrLog = backendLog.Logger("ADXR")
 	amgrLog = backendLog.Logger("AMGR")
@@ -107,7 +123,7 @@ var SubsystemTags = struct {
 }
 
 // subsystemLoggers maps each subsystem identifier to its associated logger.
-var subsystemLoggers = map[string]btclog.Logger{
+var subsystemLoggers = map[string]logs.Logger{
 	SubsystemTags.ADXR: adxrLog,
 	SubsystemTags.AMGR: amgrLog,
 	SubsystemTags.CMGR: cmgrLog,
@@ -127,11 +143,16 @@ var subsystemLoggers = map[string]btclog.Logger{
 	SubsystemTags.UTIL: utilLog,
 }
 
-// InitLogRotator initializes the logging rotater to write logs to logFile and
+// InitLogRotators initializes the logging rotater to write logs to logFile and
 // create roll files in the same directory.  It must be called before the
 // package-global log rotater variables are used.
-func InitLogRotator(logFile string) {
+func InitLogRotators(logFile, errLogFile string) {
 	initiated = true
+	LogRotator = initLogRotator(logFile)
+	ErrLogRotator = initLogRotator(errLogFile)
+}
+
+func initLogRotator(logFile string) *rotator.Rotator{
 	logDir, _ := filepath.Split(logFile)
 	err := os.MkdirAll(logDir, 0700)
 	if err != nil {
@@ -143,8 +164,7 @@ func InitLogRotator(logFile string) {
 		fmt.Fprintf(os.Stderr, "failed to create file rotator: %s\n", err)
 		os.Exit(1)
 	}
-
-	LogRotator = r
+	return r
 }
 
 // SetLogLevel sets the logging level for provided subsystem.  Invalid
@@ -158,7 +178,7 @@ func SetLogLevel(subsystemID string, logLevel string) {
 	}
 
 	// Defaults to info if the log level is invalid.
-	level, _ := btclog.LevelFromString(logLevel)
+	level, _ := logs.LevelFromString(logLevel)
 	logger.SetLevel(level)
 }
 
@@ -206,7 +226,7 @@ func SupportedSubsystems() []string {
 }
 
 // Get returns a logger of a specific sub system
-func Get(tag string) (logger btclog.Logger, ok bool) {
+func Get(tag string) (logger logs.Logger, ok bool) {
 	logger, ok = subsystemLoggers[tag]
 	return
 }

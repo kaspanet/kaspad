@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/btcsuite/btclog"
+	"github.com/daglabs/btcd/logs"
 	"github.com/daglabs/btcd/util/panics"
 	"github.com/jrick/logrotate/rotator"
 )
@@ -20,16 +20,30 @@ func (logWriter) Write(p []byte) (n int, err error) {
 	return len(p), nil
 }
 
+// errLogWriter implements an io.Writer that outputs to both standard output and
+// the write-end pipe of an initialized log rotator.
+type errLogWriter struct{}
+
+func (errLogWriter) Write(p []byte) (n int, err error) {
+	if initiated {
+		os.Stdout.Write(p)
+		ErrLogRotator.Write(p)
+	}
+	return len(p), nil
+}
+
 var (
-	backendLog = btclog.NewBackend(logWriter{})
-	LogRotator *rotator.Rotator
+	backendLog = logs.NewBackend([]*logs.BackendWriter{
+		logs.NewAllLevelsBackendWriter(logWriter{}),
+		logs.NewErrorBackendWriter(errLogWriter{}),
+	})
+	ErrLogRotator, LogRotator *rotator.Rotator
 	log        = backendLog.Logger("SEED")
 	spawn      = panics.GoroutineWrapperFunc(log)
 	initiated  = false
 )
 
-func initLogRotator(logFile string) {
-	initiated = true
+func initLogRotator(logFile string) *rotator.Rotator {
 	logDir, _ := filepath.Split(logFile)
 	err := os.MkdirAll(logDir, 0700)
 	if err != nil {
@@ -41,6 +55,11 @@ func initLogRotator(logFile string) {
 		fmt.Fprintf(os.Stderr, "failed to create file rotator: %s\n", err)
 		os.Exit(1)
 	}
+	return r
+}
 
-	LogRotator = r
+func initLogRotators(logFile, errLogFile string) {
+	initiated = true
+	LogRotator = initLogRotator(logFile)
+	ErrLogRotator = initLogRotator(errLogFile)
 }

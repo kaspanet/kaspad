@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/btcsuite/btclog"
+	"github.com/daglabs/btcd/logs"
 	"github.com/daglabs/btcd/logger"
 	"github.com/daglabs/btcd/txscript"
 	"github.com/daglabs/btcd/util/daghash"
@@ -26,7 +26,7 @@ const (
 // log is a logger that is initialized with no output filters.  This
 // means the package will not perform any logging by default until the caller
 // requests it.
-var log btclog.Logger
+var log logs.Logger
 var spawn func(func())
 
 // The default amount of logging is none.

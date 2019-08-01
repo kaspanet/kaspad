@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/btcsuite/btclog"
+	"github.com/daglabs/btcd/logs"
 	"os"
 )
 
@@ -12,6 +12,8 @@ func (logWriter) Write(p []byte) (n int, err error) {
 }
 
 var (
-	backendLog = btclog.NewBackend(logWriter{})
+	backendLog = logs.NewBackend([]*logs.BackendWriter{
+		logs.NewAllLevelsBackendWriter(logWriter{}),
+	})
 	log        = backendLog.Logger("ASUB")
 )
