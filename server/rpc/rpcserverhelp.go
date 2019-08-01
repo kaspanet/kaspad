@@ -402,7 +402,7 @@ var helpDescsEnUS = map[string]string{
 
 	// GetTopHeadersCmd help.
 	"getTopHeaders--synopsis": "Returns the top block headers starting with the provided start hash (not inclusive)",
-	"getTopHeaders-startHash": "Block hash to start including block headers from; if not found, it'll start from the virtual.",
+	"getTopHeaders-hashStart": "Block hash to start including block headers from; if not found, it'll start from the virtual.",
 	"getTopHeaders--result0":  "Serialized block headers of all located blocks, limited to some arbitrary maximum number of hashes (currently 2000, which matches the wire protocol headers message, but this is not guaranteed)",
 
 	// GetHeadersCmd help.

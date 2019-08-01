@@ -1512,18 +1512,17 @@ func (dag *BlockDAG) blockLocator(startNode, stopNode *blockNode) BlockLocator {
 	if startNode == nil {
 		startNode = dag.virtual.selectedParent
 	}
-	if startNode == nil {
-		return nil
-	}
 
 	if stopNode == nil {
 		stopNode = dag.genesis
 	}
 
-	for ; !dag.IsInSelectedPathChain(stopNode.hash); stopNode = stopNode.selectedParent {
+	for !dag.IsInSelectedPathChain(stopNode.hash) {
+		stopNode = stopNode.selectedParent
 	}
 
-	for ; !dag.IsInSelectedPathChain(startNode.hash); startNode = startNode.selectedParent {
+	for !dag.IsInSelectedPathChain(startNode.hash) {
+		startNode = startNode.selectedParent
 	}
 
 	// Calculate the max number of entries that will ultimately be in the

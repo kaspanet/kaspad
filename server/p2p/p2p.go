@@ -729,17 +729,18 @@ func (sp *Peer) OnBlockLocator(_ *peer.Peer, msg *wire.MsgBlockLocator) {
 // OnGetBlocks is invoked when a peer receives a getblocks bitcoin
 // message.
 func (sp *Peer) OnGetBlocks(_ *peer.Peer, msg *wire.MsgGetBlocks) {
-	// Find the most recent known block in the dag based on the block
-	// locator and fetch all of the block hashes after it until either
-	// wire.MaxBlocksPerMsg have been fetched or the provided stop hash is
-	// encountered.
-	//
-	// Use the block after the genesis block if no other blocks in the
-	// provided locator are known.  This does mean the client will start
-	// over with the genesis block if unknown block locators are provided.
-	//
-	// This mirrors the behavior in the reference implementation.
+	// Find the blue future between msg.HashStart and msg.HashStop
+	// and send the invs to the requesting peer.
 	dag := sp.server.DAG
+	// We want to prevent a situation where the syncing peer needs
+	// to call getblocks once again, but the block we sent him
+	// won't affect his selected chain, so next time it'll try
+	// to find the highest shared chain block, it'll find the
+	// same one as before.
+	// To prevent that we use blockdag.FinalityInterval as maxHashes.
+	// This way, if one getblocks is not enough to get the peer
+	// synced, we can know for sure that its selected chain will
+	// change, so we'll have higher shared chain block.
 	hashList := dag.LocateBlocks(msg.HashStart, msg.HashStop,
 		blockdag.FinalityInterval)
 

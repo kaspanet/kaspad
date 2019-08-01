@@ -904,7 +904,6 @@ func (p *Peer) PushGetBlocksMsg(startHash, stopHash *daghash.Hash) error {
 //
 // This function is safe for concurrent access.
 func (p *Peer) PushBlockLocatorMsg(locator blockdag.BlockLocator) error {
-
 	// Construct the blklocatr request and queue it to be sent.
 	msg := wire.NewMsgBlockLocator()
 	for _, hash := range locator {
