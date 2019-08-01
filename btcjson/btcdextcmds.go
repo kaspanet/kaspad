@@ -108,7 +108,7 @@ func NewGetTopHeadersCmd(startHash *string) *GetTopHeadersCmd {
 // NOTE: This is a btcsuite extension ported from
 // github.com/decred/dcrd/dcrjson.
 type GetHeadersCmd struct {
-	HashStart string `json:"hashStop"`
+	HashStart string `json:"hashStart"`
 	HashStop  string `json:"hashStop"`
 }
 

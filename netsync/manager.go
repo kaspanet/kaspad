@@ -321,7 +321,7 @@ func (sm *SyncManager) startSync() {
 
 			bestPeer.PushGetBlockLocatorMsg(sm.dagParams.GenesisHash, sm.nextCheckpoint.Hash)
 		} else {
-			bestPeer.PushGetBlockLocatorMsg(sm.dagParams.GenesisHash, nil)
+			bestPeer.PushGetBlockLocatorMsg(sm.dagParams.GenesisHash, &daghash.ZeroHash)
 		}
 		sm.syncPeer = bestPeer
 	} else {

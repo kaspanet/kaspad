@@ -60,7 +60,7 @@ func TestMessage(t *testing.T) {
 	msgPing := NewMsgPing(123123)
 	msgPong := NewMsgPong(123123)
 	msgGetHeaders := NewMsgGetHeaders(&daghash.Hash{}, &daghash.Hash{})
-	msgGetBlockLocator := NewMsgGetBlockLocator()
+	msgGetBlockLocator := NewMsgGetBlockLocator(&daghash.ZeroHash, &daghash.ZeroHash)
 	msgBlockLocator := NewMsgBlockLocator()
 	msgSendHeaders := NewMsgSendHeaders()
 	msgFeeFilter := NewMsgFeeFilter(123456)
@@ -102,7 +102,7 @@ func TestMessage(t *testing.T) {
 		{msgPong, msgPong, pver, MainNet, 32},
 		{msgGetHeaders, msgGetHeaders, pver, MainNet, 88},
 		{msgGetBlockLocator, msgGetBlockLocator, pver, MainNet, 88},
-		{msgBlockLocator, msgBlockLocator, pver, MainNet, 57},
+		{msgBlockLocator, msgBlockLocator, pver, MainNet, 25},
 		{msgSendHeaders, msgSendHeaders, pver, MainNet, 24},
 		{msgFeeFilter, msgFeeFilter, pver, MainNet, 32},
 		{msgHeaders, msgHeaders, pver, MainNet, 25},

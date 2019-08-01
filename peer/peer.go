@@ -137,10 +137,10 @@ type MessageListeners struct {
 	// OnInv is invoked when a peer receives an inv bitcoin message.
 	OnInv func(p *Peer, msg *wire.MsgInv)
 
-	// OnGetBlockLocator is invoked when a peer receives a getblocklocator bitcoin message.
+	// OnGetBlockLocator is invoked when a peer receives a getblklocatr bitcoin message.
 	OnGetBlockLocator func(p *Peer, msg *wire.MsgGetBlockLocator)
 
-	// OnBlockLocator is invoked when a peer receives a blocklocator bitcoin message.
+	// OnBlockLocator is invoked when a peer receives a blklocatr bitcoin message.
 	OnBlockLocator func(p *Peer, msg *wire.MsgBlockLocator)
 
 	// OnHeaders is invoked when a peer receives a headers bitcoin message.
@@ -865,13 +865,7 @@ func (p *Peer) PushAddrMsg(addresses []*wire.NetAddress, subnetworkID *subnetwor
 }
 
 func (p *Peer) PushGetBlockLocatorMsg(hashStart, hashStop *daghash.Hash) {
-	msg := wire.NewMsgGetBlockLocator()
-	if hashStart != nil {
-		msg.HashStart = hashStart
-	}
-	if hashStop != nil {
-		msg.HashStop = hashStop
-	}
+	msg := wire.NewMsgGetBlockLocator(hashStart, hashStop)
 	p.QueueMessage(msg, nil)
 }
 
@@ -906,12 +900,12 @@ func (p *Peer) PushGetBlocksMsg(startHash, stopHash *daghash.Hash) error {
 	return nil
 }
 
-// PushBlockLocatorMsg sends a blocklocator message for the provided block locator.
+// PushBlockLocatorMsg sends a blklocatr message for the provided block locator.
 //
 // This function is safe for concurrent access.
 func (p *Peer) PushBlockLocatorMsg(locator blockdag.BlockLocator) error {
 
-	// Construct the blocklocator request and queue it to be sent.
+	// Construct the blklocatr request and queue it to be sent.
 	msg := wire.NewMsgBlockLocator()
 	for _, hash := range locator {
 		err := msg.AddBlockLocatorHash(hash)

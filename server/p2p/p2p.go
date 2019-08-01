@@ -682,7 +682,7 @@ func (sp *Peer) OnGetData(_ *peer.Peer, msg *wire.MsgGetData) {
 	}
 }
 
-// OnGetBlockLocator is invoked when a peer receives a getblocklocator bitcoin
+// OnGetBlockLocator is invoked when a peer receives a getblklocatr bitcoin
 // message.
 func (sp *Peer) OnGetBlockLocator(_ *peer.Peer, msg *wire.MsgGetBlockLocator) {
 	dag := sp.server.DAG
@@ -699,7 +699,7 @@ func (sp *Peer) OnGetBlockLocator(_ *peer.Peer, msg *wire.MsgGetBlockLocator) {
 	}
 }
 
-// OnBlockLocator is invoked when a peer receives a blocklocator bitcoin
+// OnBlockLocator is invoked when a peer receives a blklocatr bitcoin
 // message.
 func (sp *Peer) OnBlockLocator(_ *peer.Peer, msg *wire.MsgBlockLocator) {
 	// Find the most recent known block in the dag based on the block

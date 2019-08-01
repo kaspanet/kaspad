@@ -1,7 +1,3 @@
-// Copyright (c) 2013-2016 The btcsuite developers
-// Use of this source code is governed by an ISC
-// license that can be found in the LICENSE file.
-
 package wire
 
 import (
@@ -16,24 +12,10 @@ import (
 const MaxBlockLocatorsPerMsg = 500
 
 // MsgBlockLocator implements the Message interface and represents a bitcoin
-// blocklocator message.  It is used to request a list of block headers for
-// blocks starting after the last known hash in the slice of block locator
-// hashes.  The list is returned via a headers message (MsgHeaders) and is
-// limited by a specific hash to stop at or the maximum number of block headers
-// per message, which is currently 2000.
-//
-// Set the HashStop field to the hash at which to stop and use
-// AddBlockLocatorHash to build up the list of block locator hashes.
-//
-// The algorithm for building the block locator hashes should be to add the
-// hashes in reverse order until you reach the genesis block.  In order to keep
-// the list of locator hashes to a resonable number of entries, first add the
-// most recent 10 block hashes, then double the step each loop iteration to
-// exponentially decrease the number of hashes the further away from head and
-// closer to the genesis block you get.
+// blklocatr message.  It is used to find the highest known chain block with
+// a peer that is syncing with you.
 type MsgBlockLocator struct {
 	BlockLocatorHashes []*daghash.Hash
-	HashStop           *daghash.Hash
 }
 
 // AddBlockLocatorHash adds a new block locator hash to the message.
@@ -78,9 +60,7 @@ func (msg *MsgBlockLocator) BtcDecode(r io.Reader, pver uint32) error {
 			return err
 		}
 	}
-
-	msg.HashStop = &daghash.Hash{}
-	return ReadElement(r, msg.HashStop)
+	return nil
 }
 
 // BtcEncode encodes the receiver to w using the bitcoin protocol encoding.
@@ -105,8 +85,7 @@ func (msg *MsgBlockLocator) BtcEncode(w io.Writer, pver uint32) error {
 			return err
 		}
 	}
-
-	return WriteElement(w, msg.HashStop)
+	return nil
 }
 
 // Command returns the protocol command string for the message.  This is part
@@ -119,17 +98,16 @@ func (msg *MsgBlockLocator) Command() string {
 // receiver.  This is part of the Message interface implementation.
 func (msg *MsgBlockLocator) MaxPayloadLength(pver uint32) uint32 {
 	// Num block locator hashes (varInt) + max allowed block
-	// locators + hash stop.
+	// locators.
 	return MaxVarIntPayload + (MaxBlockLocatorsPerMsg *
-		daghash.HashSize) + daghash.HashSize
+		daghash.HashSize)
 }
 
-// NewMsgBlockLocator returns a new bitcoin getheaders message that conforms to
+// NewMsgBlockLocator returns a new bitcoin blklocatr message that conforms to
 // the Message interface.  See MsgBlockLocator for details.
 func NewMsgBlockLocator() *MsgBlockLocator {
 	return &MsgBlockLocator{
 		BlockLocatorHashes: make([]*daghash.Hash, 0,
 			MaxBlockLocatorsPerMsg),
-		HashStop: &daghash.ZeroHash,
 	}
 }
