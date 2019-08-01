@@ -216,19 +216,18 @@ func CheckTransactionSanity(tx *util.Tx, subnetworkID *subnetworkid.SubnetworkID
 			"registry subnetworks has gas > 0 ")
 	}
 
+	if msgTx.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDRegistry) {
+		err := validateSubnetworkRegistryTransaction(msgTx)
+		if err != nil {
+			return err
+		}
+	}
+
 	if msgTx.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) &&
 		len(msgTx.Payload) > 0 {
 
 		return ruleError(ErrInvalidPayload,
 			"transaction in the native subnetwork includes a payload")
-	}
-
-	if msgTx.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDRegistry) &&
-		len(msgTx.Payload) != 8 {
-
-		return ruleError(ErrInvalidPayload,
-			"transaction in the subnetwork registry include a payload "+
-				"with length != 8 bytes")
 	}
 
 	// If we are a partial node, only transactions on built in subnetworks
