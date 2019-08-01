@@ -1714,13 +1714,13 @@ func (dag *BlockDAG) locateBlockNodes(hashStart, hashStop *daghash.Hash, maxEntr
 		stopNode = dag.selectedTip()
 	}
 
-	for ; stopNode.blueScore-startNode.blueScore+1 > maxEntries; stopNode = stopNode.selectedParent {
+	for stopNode.blueScore-startNode.blueScore+1 > maxEntries {
+		stopNode = stopNode.selectedParent
 	}
-
 	// Populate and return the found nodes.
 	nodes := make([]*blockNode, 0, stopNode.blueScore-startNode.blueScore+1)
 	nodes = append(nodes, stopNode)
-	for current := stopNode; current.selectedParent != nil; current = current.selectedParent {
+	for current := stopNode; current != startNode; current = current.selectedParent {
 		for _, blue := range current.blues {
 			nodes = append(nodes, blue)
 		}
