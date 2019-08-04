@@ -1761,6 +1761,7 @@ func (state *gbtWorkState) blockTemplateResult(dag *blockdag.BlockDAG, useCoinba
 			Data:    hex.EncodeToString(txBuf.Bytes()),
 			ID:      txID.String(),
 			Depends: depends,
+			Mass:    template.TxMasses[i],
 			Fee:     template.Fees[i],
 			SigOps:  template.SigOpCounts[i],
 		}
@@ -1822,6 +1823,7 @@ func (state *gbtWorkState) blockTemplateResult(dag *blockdag.BlockDAG, useCoinba
 			Data:    hex.EncodeToString(txBuf.Bytes()),
 			ID:      tx.TxID().String(),
 			Depends: []int64{},
+			Mass:    template.TxMasses[0],
 			Fee:     template.Fees[0],
 			SigOps:  template.SigOpCounts[0],
 		}

@@ -47,10 +47,9 @@ const (
 	defaultMaxRPCWebsockets      = 25
 	defaultMaxRPCConcurrentReqs  = 20
 	defaultDbType                = "ffldb"
-	defaultBlockMinSize          = 0
-	defaultBlockMaxSize          = 750000
-	blockMaxSizeMin              = 1000
-	blockMaxSizeMax              = wire.MaxBlockPayload - 1000
+	defaultBlockMaxMass          = 750000
+	blockMaxMassMin              = 1000
+	blockMaxMassMax              = wire.MaxBlockPayload - 1000
 	defaultGenerate              = false
 	defaultMaxOrphanTransactions = 100
 	//DefaultMaxOrphanTxSize is the default maximum size for an orphan transaction
@@ -148,8 +147,7 @@ type configFlags struct {
 	MaxOrphanTxs         int           `long:"maxorphantx" description:"Max number of orphan transactions to keep in memory"`
 	Generate             bool          `long:"generate" description:"Generate (mine) bitcoins using the CPU"`
 	MiningAddrs          []string      `long:"miningaddr" description:"Add the specified payment address to the list of addresses to use for generated blocks -- At least one address is required if the generate option is set"`
-	BlockMinSize         uint32        `long:"blockminsize" description:"Mininum block size in bytes to be used when creating a block"`
-	BlockMaxSize         uint32        `long:"blockmaxsize" description:"Maximum block size in bytes to be used when creating a block"`
+	BlockMaxMass         uint64        `long:"blockmaxmass" description:"Maximum block mass to be used when creating a block"`
 	UserAgentComments    []string      `long:"uacomment" description:"Comment to add to the user agent -- See BIP 14 for more information."`
 	NoPeerBloomFilters   bool          `long:"nopeerbloomfilters" description:"Disable bloom filtering support"`
 	EnableCFilters       bool          `long:"enablecfilters" description:"Enable committed filtering (CF) support"`
@@ -312,8 +310,7 @@ func loadConfig() (*Config, []string, error) {
 		DbType:               defaultDbType,
 		RPCKey:               defaultRPCKeyFile,
 		RPCCert:              defaultRPCCertFile,
-		BlockMinSize:         defaultBlockMinSize,
-		BlockMaxSize:         defaultBlockMaxSize,
+		BlockMaxMass:         defaultBlockMaxMass,
 		MaxOrphanTxs:         defaultMaxOrphanTransactions,
 		SigCacheMaxSize:      defaultSigCacheMaxSize,
 		Generate:             defaultGenerate,
@@ -660,13 +657,13 @@ func loadConfig() (*Config, []string, error) {
 	}
 
 	// Limit the max block size to a sane value.
-	if cfg.BlockMaxSize < blockMaxSizeMin || cfg.BlockMaxSize >
-		blockMaxSizeMax {
+	if cfg.BlockMaxMass < blockMaxMassMin || cfg.BlockMaxMass >
+		blockMaxMassMax {
 
 		str := "%s: The blockmaxsize option must be in between %d " +
 			"and %d -- parsed [%d]"
-		err := fmt.Errorf(str, funcName, blockMaxSizeMin,
-			blockMaxSizeMax, cfg.BlockMaxSize)
+		err := fmt.Errorf(str, funcName, blockMaxMassMin,
+			blockMaxMassMax, cfg.BlockMaxMass)
 		fmt.Fprintln(os.Stderr, err)
 		fmt.Fprintln(os.Stderr, usageMessage)
 		return nil, nil, err
@@ -681,9 +678,6 @@ func loadConfig() (*Config, []string, error) {
 		fmt.Fprintln(os.Stderr, usageMessage)
 		return nil, nil, err
 	}
-
-	// Limit minimum block sizes to max block size.
-	cfg.BlockMinSize = minUint32(cfg.BlockMinSize, cfg.BlockMaxSize)
 
 	// Look for illegal characters in the user agent comments.
 	for _, uaComment := range cfg.UserAgentComments {

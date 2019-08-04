@@ -29,6 +29,11 @@ const (
 	// baseSubsidy is the starting subsidy amount for mined blocks.  This
 	// value is halved every SubsidyHalvingInterval blocks.
 	baseSubsidy = 50 * util.SatoshiPerBitcoin
+
+	massPerTxSize       = 1
+	massPerPKScriptSize = 10
+	massPerSigOp        = 10000
+	maxMassPerBlock     = 10000000
 )
 
 // isNullOutpoint determines whether or not a previous transaction outpoint
@@ -359,6 +364,72 @@ func CountP2SHSigOps(tx *util.Tx, isCoinbase bool, utxoSet UTXOSet) (int, error)
 	}
 
 	return totalSigOps, nil
+}
+
+func validateTxMass(tx *util.Tx, utxoSet UTXOSet) error {
+	txMass, err := CountTxMass(tx, utxoSet)
+	if err != nil {
+		return err
+	}
+	if txMass > maxMassPerBlock {
+		return fmt.Errorf("tx %s has mass %d, which is above the "+
+			"allowed limit of %d", tx.ID(), txMass, maxMassPerBlock)
+	}
+	return nil
+}
+
+func validateBlockMass(pastUTXO UTXOSet, transactions []*util.Tx) error {
+	totalMass := uint64(0)
+	for _, tx := range transactions {
+		txMass, err := CountTxMass(tx, pastUTXO)
+		if err != nil {
+			return err
+		}
+		totalMass += txMass
+	}
+	if totalMass > maxMassPerBlock {
+		return fmt.Errorf("block has total mass %d, which is "+
+			"above the allowed limit of %d", totalMass, maxMassPerBlock)
+	}
+	return nil
+}
+
+func CountTxMass(tx *util.Tx, utxoSet UTXOSet) (uint64, error) {
+	txSize := tx.MsgTx().SerializeSize()
+	txSizeMass := txSize * massPerTxSize
+
+	if tx.IsCoinBase() {
+		return uint64(txSizeMass), nil
+	}
+
+	pkScriptSize := 0
+	for _, txOut := range tx.MsgTx().TxOut {
+		pkScriptSize += len(txOut.PkScript)
+	}
+	pkScriptSizeMass := pkScriptSize * massPerPKScriptSize
+
+	sigOpsCount := 0
+	for txInIndex, txIn := range tx.MsgTx().TxIn {
+		// Ensure the referenced input transaction is available.
+		entry, ok := utxoSet.Get(txIn.PreviousOutpoint)
+		if !ok {
+			str := fmt.Sprintf("output %s referenced from "+
+				"transaction %s:%d either does not exist or "+
+				"has already been spent", txIn.PreviousOutpoint,
+				tx.ID(), txInIndex)
+			return 0, ruleError(ErrMissingTxOut, str)
+		}
+
+		// Count the precise number of signature operations in the
+		// referenced public key script.
+		pkScript := entry.PkScript()
+		sigScript := txIn.SignatureScript
+		isP2SH := txscript.IsPayToScriptHash(pkScript)
+		sigOpsCount += txscript.GetPreciseSigOpCount(sigScript, pkScript, isP2SH)
+	}
+	sigOpsCountMass := sigOpsCount * massPerSigOp
+
+	return uint64(txSizeMass + pkScriptSizeMass + sigOpsCountMass), nil
 }
 
 // checkBlockHeaderSanity performs some preliminary checks on a block header to
@@ -859,6 +930,10 @@ func (dag *BlockDAG) checkConnectToPastUTXO(block *blockNode, pastUTXO UTXOSet,
 		}
 
 		if err := validateSigopsCount(pastUTXO, transactions); err != nil {
+			return nil, err
+		}
+
+		if err := validateBlockMass(pastUTXO, transactions); err != nil {
 			return nil, err
 		}
 	}

@@ -121,6 +121,7 @@ type GetBlockTemplateResultTx struct {
 	Data    string  `json:"data"`
 	ID      string  `json:"id"`
 	Depends []int64 `json:"depends"`
+	Mass    uint64  `json:"mass"`
 	Fee     uint64  `json:"fee"`
 	SigOps  int64   `json:"sigOps"`
 }
