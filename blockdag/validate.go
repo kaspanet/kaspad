@@ -369,8 +369,11 @@ func CountP2SHSigOps(tx *util.Tx, isCoinbase bool, utxoSet UTXOSet) (int, error)
 	return totalSigOps, nil
 }
 
+// ValidateTxMass makes sure that the given transaction's mass does not exceed
+// the maximum allowed limit. Currently, it is equivalent to the block mass limit.
+// See CalcTxMass for further details.
 func ValidateTxMass(tx *util.Tx, utxoSet UTXOSet) error {
-	txMass, err := CountTxMass(tx, utxoSet)
+	txMass, err := CalcTxMass(tx, utxoSet)
 	if err != nil {
 		return err
 	}
@@ -385,7 +388,7 @@ func ValidateTxMass(tx *util.Tx, utxoSet UTXOSet) error {
 func validateBlockMass(pastUTXO UTXOSet, transactions []*util.Tx) error {
 	totalMass := uint64(0)
 	for _, tx := range transactions {
-		txMass, err := CountTxMass(tx, pastUTXO)
+		txMass, err := CalcTxMass(tx, pastUTXO)
 		if err != nil {
 			return err
 		}
@@ -399,7 +402,14 @@ func validateBlockMass(pastUTXO UTXOSet, transactions []*util.Tx) error {
 	return nil
 }
 
-func CountTxMass(tx *util.Tx, utxoSet UTXOSet) (uint64, error) {
+// CalcTxMass sums up and returns the "mass" of a transaction. This number
+// is an approximation of how many resources (CPU, RAM, etc.) it would take
+// to process the transaction.
+// The following properties are considered in the calculation:
+// * The transaction length in bytes
+// * The sum of all output scripts in bytes
+// * The sum of all input sigOps
+func CalcTxMass(tx *util.Tx, utxoSet UTXOSet) (uint64, error) {
 	txSize := tx.MsgTx().SerializeSize()
 	txSizeMass := txSize * massPerTxSize
 

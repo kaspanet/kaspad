@@ -334,7 +334,7 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 	if err != nil {
 		return nil, err
 	}
-	coinbaseTxMass, err := blockdag.CountTxMass(coinbaseTx, nextBlockUTXO)
+	coinbaseTxMass, err := blockdag.CalcTxMass(coinbaseTx, nextBlockUTXO)
 	if err != nil {
 		return nil, err
 	}
@@ -434,10 +434,10 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 
 		// Enforce maximum transaction mass per block. Also check
 		// for overflow.
-		txMass, err := blockdag.CountTxMass(tx, g.dag.UTXOSet())
+		txMass, err := blockdag.CalcTxMass(tx, g.dag.UTXOSet())
 		if err != nil {
 			log.Tracef("Skipping tx %s due to error in "+
-				"CountTxMass: %s", tx.ID(), err)
+				"CalcTxMass: %s", tx.ID(), err)
 			continue
 		}
 		if blockMass+txMass < blockMass ||
