@@ -688,15 +688,21 @@ func (mp *TxPool) RemoveDoubleSpends(tx *util.Tx) {
 //
 // This function MUST be called with the mempool lock held (for writes).
 func (mp *TxPool) addTransaction(tx *util.Tx, height uint64, blueScore uint64, fee uint64, parentsInPool []*wire.Outpoint) (*TxDesc, error) {
+	selectionValue, err := mp.calcTxSelectionValue(tx, fee)
+	if err != nil {
+		return nil, err
+	}
+
 	// Add the transaction to the pool and mark the referenced outpoints
 	// as spent by the pool.
 	txD := &TxDesc{
 		TxDesc: mining.TxDesc{
-			Tx:       tx,
-			Added:    time.Now(),
-			Height:   height,
-			Fee:      fee,
-			FeePerKB: fee * 1000 / uint64(tx.MsgTx().SerializeSize()),
+			Tx:             tx,
+			Added:          time.Now(),
+			Height:         height,
+			Fee:            fee,
+			FeePerKB:       fee * 1000 / uint64(tx.MsgTx().SerializeSize()),
+			SelectionValue: selectionValue,
 		},
 		depCount: len(parentsInPool),
 	}
@@ -730,6 +736,31 @@ func (mp *TxPool) addTransaction(tx *util.Tx, height uint64, blueScore uint64, f
 	}
 
 	return txD, nil
+}
+
+func (mp *TxPool) calcTxSelectionValue(tx *util.Tx, fee uint64) (uint64, error) {
+	mass, err := blockdag.CalcTxMass(tx, mp.mpUTXOSet)
+	if err != nil {
+		return 0, err
+	}
+	massLimit := uint64(wire.MaxMassPerBlock)
+
+	msgTx := tx.MsgTx()
+	if msgTx.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) ||
+		msgTx.SubnetworkID.IsBuiltIn() {
+		return uint64(float64(fee) / (float64(mass) / float64(massLimit))), nil
+	}
+
+	gas := msgTx.Gas
+	subnetworkId, err := blockdag.TxToSubnetworkID(msgTx)
+	if err != nil {
+		return 0, err
+	}
+	gasLimit, err := mp.cfg.DAG.SubnetworkStore.GasLimit(subnetworkId)
+	if err != nil {
+		return 0, err
+	}
+	return uint64(float64(fee) / (float64(mass)/float64(massLimit) + float64(gas)/float64(gasLimit))), nil
 }
 
 // checkPoolDoubleSpend checks whether or not the passed transaction is
