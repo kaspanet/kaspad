@@ -28,7 +28,6 @@ import (
 	"github.com/daglabs/btcd/util/network"
 	"github.com/daglabs/btcd/util/subnetworkid"
 	"github.com/daglabs/btcd/version"
-	"github.com/daglabs/btcd/wire"
 	"github.com/jessevdk/go-flags"
 )
 
@@ -49,7 +48,7 @@ const (
 	defaultDbType                = "ffldb"
 	defaultBlockMaxMass          = 750000
 	blockMaxMassMin              = 1000
-	blockMaxMassMax              = wire.MaxBlockPayload - 1000
+	blockMaxMassMax              = 10000000
 	defaultGenerate              = false
 	defaultMaxOrphanTransactions = 100
 	//DefaultMaxOrphanTxSize is the default maximum size for an orphan transaction
@@ -147,7 +146,7 @@ type configFlags struct {
 	MaxOrphanTxs         int           `long:"maxorphantx" description:"Max number of orphan transactions to keep in memory"`
 	Generate             bool          `long:"generate" description:"Generate (mine) bitcoins using the CPU"`
 	MiningAddrs          []string      `long:"miningaddr" description:"Add the specified payment address to the list of addresses to use for generated blocks -- At least one address is required if the generate option is set"`
-	BlockMaxMass         uint64        `long:"blockmaxmass" description:"Maximum block mass to be used when creating a block"`
+	BlockMaxMass         uint64        `long:"blockmaxmass" description:"Maximum transaction mass to be used when creating a block"`
 	UserAgentComments    []string      `long:"uacomment" description:"Comment to add to the user agent -- See BIP 14 for more information."`
 	NoPeerBloomFilters   bool          `long:"nopeerbloomfilters" description:"Disable bloom filtering support"`
 	EnableCFilters       bool          `long:"enablecfilters" description:"Enable committed filtering (CF) support"`
@@ -656,11 +655,11 @@ func loadConfig() (*Config, []string, error) {
 		return nil, nil, err
 	}
 
-	// Limit the max block size to a sane value.
+	// Limit the max block mass to a sane value.
 	if cfg.BlockMaxMass < blockMaxMassMin || cfg.BlockMaxMass >
 		blockMaxMassMax {
 
-		str := "%s: The blockmaxsize option must be in between %d " +
+		str := "%s: The blockmaxmass option must be in between %d " +
 			"and %d -- parsed [%d]"
 		err := fmt.Errorf(str, funcName, blockMaxMassMin,
 			blockMaxMassMax, cfg.BlockMaxMass)
