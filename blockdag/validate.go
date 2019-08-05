@@ -31,8 +31,8 @@ const (
 	baseSubsidy = 50 * util.SatoshiPerBitcoin
 
 	// the following are used when calculating a transaction's mass
-	massPerTxSize       = 1
-	massPerPKScriptSize = 10
+	massPerTxByte       = 1
+	massPerPKScriptByte = 10
 	massPerSigOp        = 10000
 
 	// maxMassPerBlock is the maximum total transaction mass a block may contain.
@@ -393,11 +393,12 @@ func validateBlockMass(pastUTXO UTXOSet, transactions []*util.Tx) error {
 			return err
 		}
 		totalMass += txMass
-	}
-	if totalMass > maxMassPerBlock {
-		str := fmt.Sprintf("block has total mass %d, which is "+
-			"above the allowed limit of %d", totalMass, maxMassPerBlock)
-		return ruleError(ErrMassTooHigh, str)
+
+		if totalMass > maxMassPerBlock {
+			str := fmt.Sprintf("block has total mass %d, which is "+
+				"above the allowed limit of %d", totalMass, maxMassPerBlock)
+			return ruleError(ErrMassTooHigh, str)
+		}
 	}
 	return nil
 }
@@ -407,21 +408,19 @@ func validateBlockMass(pastUTXO UTXOSet, transactions []*util.Tx) error {
 // to process the transaction.
 // The following properties are considered in the calculation:
 // * The transaction length in bytes
-// * The sum of all output scripts in bytes
-// * The sum of all input sigOps
+// * The length of all output scripts in bytes
+// * The count of all input sigOps
 func CalcTxMass(tx *util.Tx, utxoSet UTXOSet) (uint64, error) {
 	txSize := tx.MsgTx().SerializeSize()
-	txSizeMass := txSize * massPerTxSize
 
 	if tx.IsCoinBase() {
-		return uint64(txSizeMass), nil
+		return uint64(txSize * massPerTxByte), nil
 	}
 
 	pkScriptSize := 0
 	for _, txOut := range tx.MsgTx().TxOut {
 		pkScriptSize += len(txOut.PkScript)
 	}
-	pkScriptSizeMass := pkScriptSize * massPerPKScriptSize
 
 	sigOpsCount := 0
 	for txInIndex, txIn := range tx.MsgTx().TxIn {
@@ -442,9 +441,10 @@ func CalcTxMass(tx *util.Tx, utxoSet UTXOSet) (uint64, error) {
 		isP2SH := txscript.IsPayToScriptHash(pkScript)
 		sigOpsCount += txscript.GetPreciseSigOpCount(sigScript, pkScript, isP2SH)
 	}
-	sigOpsCountMass := sigOpsCount * massPerSigOp
 
-	return uint64(txSizeMass + pkScriptSizeMass + sigOpsCountMass), nil
+	return uint64(txSize*massPerTxByte +
+		pkScriptSize*massPerPKScriptByte +
+		sigOpsCount*massPerSigOp), nil
 }
 
 // checkBlockHeaderSanity performs some preliminary checks on a block header to
