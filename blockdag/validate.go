@@ -366,14 +366,15 @@ func CountP2SHSigOps(tx *util.Tx, isCoinbase bool, utxoSet UTXOSet) (int, error)
 	return totalSigOps, nil
 }
 
-func validateTxMass(tx *util.Tx, utxoSet UTXOSet) error {
+func ValidateTxMass(tx *util.Tx, utxoSet UTXOSet) error {
 	txMass, err := CountTxMass(tx, utxoSet)
 	if err != nil {
 		return err
 	}
 	if txMass > maxMassPerBlock {
-		return fmt.Errorf("tx %s has mass %d, which is above the "+
+		str := fmt.Sprintf("tx %s has mass %d, which is above the "+
 			"allowed limit of %d", tx.ID(), txMass, maxMassPerBlock)
+		return ruleError(ErrMassTooHigh, str)
 	}
 	return nil
 }
@@ -388,8 +389,9 @@ func validateBlockMass(pastUTXO UTXOSet, transactions []*util.Tx) error {
 		totalMass += txMass
 	}
 	if totalMass > maxMassPerBlock {
-		return fmt.Errorf("block has total mass %d, which is "+
+		str := fmt.Sprintf("block has total mass %d, which is "+
 			"above the allowed limit of %d", totalMass, maxMassPerBlock)
+		return ruleError(ErrMassTooHigh, str)
 	}
 	return nil
 }

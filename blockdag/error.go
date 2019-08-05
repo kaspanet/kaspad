@@ -156,6 +156,10 @@ const (
 	// for a transaction or block exceed the maximum allowed limits.
 	ErrTooManySigOps
 
+	// ErrMassTooHigh indicates the mass of a transaction or block exceed
+	// the maximum allowed limits.
+	ErrMassTooHigh
+
 	// ErrFirstTxNotCoinbase indicates the first transaction in a block
 	// is not a coinbase transaction.
 	ErrFirstTxNotCoinbase

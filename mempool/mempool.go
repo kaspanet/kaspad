@@ -938,6 +938,16 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rejectDupOrphans bo
 			"transaction's sequence locks on inputs not met")
 	}
 
+	// Don't allow transactions that exceed the maximum allowed
+	// transaction mass.
+	err = blockdag.ValidateTxMass(tx, mp.mpUTXOSet)
+	if err != nil {
+		if ruleError, ok := err.(blockdag.RuleError); ok {
+			return nil, nil, dagRuleError(ruleError)
+		}
+		return nil, nil, err
+	}
+
 	// Perform several checks on the transaction inputs using the invariant
 	// rules in blockchain for what transactions are allowed into blocks.
 	// Also returns the fees associated with the transaction which will be
