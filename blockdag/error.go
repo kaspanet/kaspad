@@ -37,9 +37,9 @@ const (
 	// exists.
 	ErrDuplicateBlock ErrorCode = iota
 
-	// ErrBlockTooBig indicates the serialized block size exceeds the
-	// maximum allowed size.
-	ErrBlockTooBig
+	// ErrBlockMassTooHigh indicates the mass of a block exceeds the maximum
+	// allowed limits.
+	ErrBlockMassTooHigh
 
 	// ErrBlockVersionTooOld indicates the block version is too old and is
 	// no longer accepted since the majority of the network has upgraded
@@ -105,9 +105,9 @@ const (
 	// valid transaction must have at least one input.
 	ErrNoTxInputs
 
-	// ErrTxTooBig indicates a transaction exceeds the maximum allowed size
-	// when serialized.
-	ErrTxTooBig
+	// ErrTxMassTooHigh indicates the mass of a transaction exceeds the maximum
+	// allowed limits.
+	ErrTxMassTooHigh
 
 	// ErrBadTxOutValue indicates an output value for a transaction is
 	// invalid in some way such as being out of range.
@@ -155,10 +155,6 @@ const (
 	// ErrTooManySigOps indicates the total number of signature operations
 	// for a transaction or block exceed the maximum allowed limits.
 	ErrTooManySigOps
-
-	// ErrMassTooHigh indicates the mass of a transaction or block exceed
-	// the maximum allowed limits.
-	ErrMassTooHigh
 
 	// ErrFirstTxNotCoinbase indicates the first transaction in a block
 	// is not a coinbase transaction.
@@ -231,7 +227,7 @@ const (
 // Map of ErrorCode values back to their constant names for pretty printing.
 var errorCodeStrings = map[ErrorCode]string{
 	ErrDuplicateBlock:            "ErrDuplicateBlock",
-	ErrBlockTooBig:               "ErrBlockTooBig",
+	ErrBlockMassTooHigh:          "ErrBlockMassTooHigh",
 	ErrBlockVersionTooOld:        "ErrBlockVersionTooOld",
 	ErrInvalidTime:               "ErrInvalidTime",
 	ErrTimeTooOld:                "ErrTimeTooOld",
@@ -246,7 +242,7 @@ var errorCodeStrings = map[ErrorCode]string{
 	ErrFinalityPointTimeTooOld:   "ErrFinalityPointTimeTooOld",
 	ErrNoTransactions:            "ErrNoTransactions",
 	ErrNoTxInputs:                "ErrNoTxInputs",
-	ErrTxTooBig:                  "ErrTxTooBig",
+	ErrTxMassTooHigh:             "ErrTxMassTooHigh",
 	ErrBadTxOutValue:             "ErrBadTxOutValue",
 	ErrDuplicateTxInputs:         "ErrDuplicateTxInputs",
 	ErrBadTxInput:                "ErrBadTxInput",

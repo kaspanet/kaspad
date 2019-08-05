@@ -20,8 +20,8 @@ import (
 
 const (
 	// MaxSigOpsPerBlock is the maximum number of signature operations
-	// allowed for a block.  It is a fraction of the max block payload size.
-	MaxSigOpsPerBlock = wire.MaxBlockPayload / 50
+	// allowed for a block.  It is a fraction of the max block transaction mass.
+	MaxSigOpsPerBlock = wire.MaxMassPerBlock / 50
 
 	// MaxCoinbasePayloadLen is the maximum length a coinbase payload can be.
 	MaxCoinbasePayloadLen = 150
@@ -34,9 +34,6 @@ const (
 	massPerTxByte       = 1
 	massPerPKScriptByte = 10
 	massPerSigOp        = 10000
-
-	// maxMassPerBlock is the maximum total transaction mass a block may contain.
-	maxMassPerBlock = 10000000
 )
 
 // isNullOutpoint determines whether or not a previous transaction outpoint
@@ -129,13 +126,13 @@ func CheckTransactionSanity(tx *util.Tx, subnetworkID *subnetworkid.SubnetworkID
 		return ruleError(ErrNoTxInputs, "transaction has no inputs")
 	}
 
-	// A transaction must not exceed the maximum allowed block payload when
+	// A transaction must not exceed the maximum allowed block mass when
 	// serialized.
 	serializedTxSize := msgTx.SerializeSize()
-	if serializedTxSize > wire.MaxBlockPayload {
+	if serializedTxSize > wire.MaxMassPerBlock {
 		str := fmt.Sprintf("serialized transaction is too big - got "+
-			"%d, max %d", serializedTxSize, wire.MaxBlockPayload)
-		return ruleError(ErrTxTooBig, str)
+			"%d, max %d", serializedTxSize, wire.MaxMassPerBlock)
+		return ruleError(ErrTxMassTooHigh, str)
 	}
 
 	// Ensure the transaction amounts are in range.  Each transaction
@@ -377,10 +374,10 @@ func ValidateTxMass(tx *util.Tx, utxoSet UTXOSet) error {
 	if err != nil {
 		return err
 	}
-	if txMass > maxMassPerBlock {
+	if txMass > wire.MaxMassPerBlock {
 		str := fmt.Sprintf("tx %s has mass %d, which is above the "+
-			"allowed limit of %d", tx.ID(), txMass, maxMassPerBlock)
-		return ruleError(ErrMassTooHigh, str)
+			"allowed limit of %d", tx.ID(), txMass, wire.MaxMassPerBlock)
+		return ruleError(ErrTxMassTooHigh, str)
 	}
 	return nil
 }
@@ -394,10 +391,10 @@ func validateBlockMass(pastUTXO UTXOSet, transactions []*util.Tx) error {
 		}
 		totalMass += txMass
 
-		if totalMass > maxMassPerBlock {
+		if totalMass > wire.MaxMassPerBlock {
 			str := fmt.Sprintf("block has total mass %d, which is "+
-				"above the allowed limit of %d", totalMass, maxMassPerBlock)
-			return ruleError(ErrMassTooHigh, str)
+				"above the allowed limit of %d", totalMass, wire.MaxMassPerBlock)
+			return ruleError(ErrBlockMassTooHigh, str)
 		}
 	}
 	return nil
@@ -530,21 +527,12 @@ func (dag *BlockDAG) checkBlockSanity(block *util.Block, flags BehaviorFlags) (t
 			"any transactions")
 	}
 
-	// A block must not have more transactions than the max block payload or
-	// else it is certainly over the block size limit.
-	if numTx > wire.MaxBlockPayload {
+	// A block must not have more transactions than the max block mass or
+	// else it is certainly over the block mass limit.
+	if numTx > wire.MaxMassPerBlock {
 		str := fmt.Sprintf("block contains too many transactions - "+
-			"got %d, max %d", numTx, wire.MaxBlockPayload)
-		return 0, ruleError(ErrBlockTooBig, str)
-	}
-
-	// A block must not exceed the maximum allowed block payload when
-	// serialized.
-	serializedSize := msgBlock.SerializeSize()
-	if serializedSize > wire.MaxBlockPayload {
-		str := fmt.Sprintf("serialized block is too big - got %d, "+
-			"max %d", serializedSize, wire.MaxBlockPayload)
-		return 0, ruleError(ErrBlockTooBig, str)
+			"got %d, max %d", numTx, wire.MaxMassPerBlock)
+		return 0, ruleError(ErrBlockMassTooHigh, str)
 	}
 
 	// The first transaction in a block must be a coinbase.
