@@ -46,7 +46,7 @@ const (
 	defaultMaxRPCWebsockets      = 25
 	defaultMaxRPCConcurrentReqs  = 20
 	defaultDbType                = "ffldb"
-	defaultBlockMaxMass          = 750000
+	defaultBlockMaxMass          = 10000000
 	blockMaxMassMin              = 1000
 	blockMaxMassMax              = 10000000
 	defaultGenerate              = false
