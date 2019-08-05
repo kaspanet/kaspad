@@ -489,7 +489,7 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 		}
 
 		// Add the transaction to the block, increment counters, and
-		// save the fees and signature operation counts to the block
+		// save the masses, fees, and signature operation counts to the block
 		// template.
 		blockTxns = append(blockTxns, tx)
 		blockMass += txMass
