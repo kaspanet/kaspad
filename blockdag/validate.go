@@ -30,10 +30,13 @@ const (
 	// value is halved every SubsidyHalvingInterval blocks.
 	baseSubsidy = 50 * util.SatoshiPerBitcoin
 
+	// the following are used when calculating a transaction's mass
 	massPerTxSize       = 1
 	massPerPKScriptSize = 10
 	massPerSigOp        = 10000
-	maxMassPerBlock     = 10000000
+
+	// maxMassPerBlock is the maximum total transaction mass a block may contain.
+	maxMassPerBlock = 10000000
 )
 
 // isNullOutpoint determines whether or not a previous transaction outpoint
