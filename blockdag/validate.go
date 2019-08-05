@@ -391,7 +391,9 @@ func validateBlockMass(pastUTXO UTXOSet, transactions []*util.Tx) error {
 		}
 		totalMass += txMass
 
-		if totalMass > wire.MaxMassPerBlock {
+		// We could potentially overflow the accumulator so check for
+		// overflow as well.
+		if totalMass < txMass || totalMass > wire.MaxMassPerBlock {
 			str := fmt.Sprintf("block has total mass %d, which is "+
 				"above the allowed limit of %d", totalMass, wire.MaxMassPerBlock)
 			return ruleError(ErrBlockMassTooHigh, str)
