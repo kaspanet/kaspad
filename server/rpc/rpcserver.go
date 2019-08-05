@@ -1761,6 +1761,7 @@ func (state *gbtWorkState) blockTemplateResult(dag *blockdag.BlockDAG, useCoinba
 			Data:    hex.EncodeToString(txBuf.Bytes()),
 			ID:      txID.String(),
 			Depends: depends,
+			Mass:    template.TxMasses[i],
 			Fee:     template.Fees[i],
 			SigOps:  template.SigOpCounts[i],
 		}
@@ -1779,7 +1780,7 @@ func (state *gbtWorkState) blockTemplateResult(dag *blockdag.BlockDAG, useCoinba
 		Height:               template.Height,
 		ParentHashes:         daghash.Strings(header.ParentHashes),
 		SigOpLimit:           blockdag.MaxSigOpsPerBlock,
-		SizeLimit:            wire.MaxBlockPayload,
+		MassLimit:            wire.MaxMassPerBlock,
 		Transactions:         transactions,
 		AcceptedIDMerkleRoot: header.AcceptedIDMerkleRoot.String(),
 		UTXOCommitment:       header.UTXOCommitment.String(),
@@ -1822,6 +1823,7 @@ func (state *gbtWorkState) blockTemplateResult(dag *blockdag.BlockDAG, useCoinba
 			Data:    hex.EncodeToString(txBuf.Bytes()),
 			ID:      tx.TxID().String(),
 			Depends: []int64{},
+			Mass:    template.TxMasses[0],
 			Fee:     template.Fees[0],
 			SigOps:  template.SigOpCounts[0],
 		}
@@ -2028,8 +2030,8 @@ func chainErrToGBTErrString(err error) string {
 	switch ruleErr.ErrorCode {
 	case blockdag.ErrDuplicateBlock:
 		return "duplicate"
-	case blockdag.ErrBlockTooBig:
-		return "bad-blk-length"
+	case blockdag.ErrBlockMassTooHigh:
+		return "bad-blk-mass"
 	case blockdag.ErrBlockVersionTooOld:
 		return "bad-version"
 	case blockdag.ErrInvalidTime:
@@ -2054,8 +2056,8 @@ func chainErrToGBTErrString(err error) string {
 		return "bad-txns-none"
 	case blockdag.ErrNoTxInputs:
 		return "bad-txns-noinputs"
-	case blockdag.ErrTxTooBig:
-		return "bad-txns-size"
+	case blockdag.ErrTxMassTooHigh:
+		return "bad-txns-mass"
 	case blockdag.ErrBadTxOutValue:
 		return "bad-txns-outputvalue"
 	case blockdag.ErrDuplicateTxInputs:

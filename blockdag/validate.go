@@ -20,8 +20,8 @@ import (
 
 const (
 	// MaxSigOpsPerBlock is the maximum number of signature operations
-	// allowed for a block.  It is a fraction of the max block payload size.
-	MaxSigOpsPerBlock = wire.MaxBlockPayload / 50
+	// allowed for a block.  It is a fraction of the max block transaction mass.
+	MaxSigOpsPerBlock = wire.MaxMassPerBlock / 50
 
 	// MaxCoinbasePayloadLen is the maximum length a coinbase payload can be.
 	MaxCoinbasePayloadLen = 150
@@ -29,6 +29,11 @@ const (
 	// baseSubsidy is the starting subsidy amount for mined blocks.  This
 	// value is halved every SubsidyHalvingInterval blocks.
 	baseSubsidy = 50 * util.SatoshiPerBitcoin
+
+	// the following are used when calculating a transaction's mass
+	massPerTxByte       = 1
+	massPerPKScriptByte = 10
+	massPerSigOp        = 10000
 )
 
 // isNullOutpoint determines whether or not a previous transaction outpoint
@@ -121,13 +126,13 @@ func CheckTransactionSanity(tx *util.Tx, subnetworkID *subnetworkid.SubnetworkID
 		return ruleError(ErrNoTxInputs, "transaction has no inputs")
 	}
 
-	// A transaction must not exceed the maximum allowed block payload when
+	// A transaction must not exceed the maximum allowed block mass when
 	// serialized.
 	serializedTxSize := msgTx.SerializeSize()
-	if serializedTxSize > wire.MaxBlockPayload {
+	if serializedTxSize > wire.MaxMassPerBlock {
 		str := fmt.Sprintf("serialized transaction is too big - got "+
-			"%d, max %d", serializedTxSize, wire.MaxBlockPayload)
-		return ruleError(ErrTxTooBig, str)
+			"%d, max %d", serializedTxSize, wire.MaxMassPerBlock)
+		return ruleError(ErrTxMassTooHigh, str)
 	}
 
 	// Ensure the transaction amounts are in range.  Each transaction
@@ -361,6 +366,86 @@ func CountP2SHSigOps(tx *util.Tx, isCoinbase bool, utxoSet UTXOSet) (int, error)
 	return totalSigOps, nil
 }
 
+// ValidateTxMass makes sure that the given transaction's mass does not exceed
+// the maximum allowed limit. Currently, it is equivalent to the block mass limit.
+// See CalcTxMass for further details.
+func ValidateTxMass(tx *util.Tx, utxoSet UTXOSet) error {
+	txMass, err := CalcTxMass(tx, utxoSet)
+	if err != nil {
+		return err
+	}
+	if txMass > wire.MaxMassPerBlock {
+		str := fmt.Sprintf("tx %s has mass %d, which is above the "+
+			"allowed limit of %d", tx.ID(), txMass, wire.MaxMassPerBlock)
+		return ruleError(ErrTxMassTooHigh, str)
+	}
+	return nil
+}
+
+func validateBlockMass(pastUTXO UTXOSet, transactions []*util.Tx) error {
+	totalMass := uint64(0)
+	for _, tx := range transactions {
+		txMass, err := CalcTxMass(tx, pastUTXO)
+		if err != nil {
+			return err
+		}
+		totalMass += txMass
+
+		// We could potentially overflow the accumulator so check for
+		// overflow as well.
+		if totalMass < txMass || totalMass > wire.MaxMassPerBlock {
+			str := fmt.Sprintf("block has total mass %d, which is "+
+				"above the allowed limit of %d", totalMass, wire.MaxMassPerBlock)
+			return ruleError(ErrBlockMassTooHigh, str)
+		}
+	}
+	return nil
+}
+
+// CalcTxMass sums up and returns the "mass" of a transaction. This number
+// is an approximation of how many resources (CPU, RAM, etc.) it would take
+// to process the transaction.
+// The following properties are considered in the calculation:
+// * The transaction length in bytes
+// * The length of all output scripts in bytes
+// * The count of all input sigOps
+func CalcTxMass(tx *util.Tx, utxoSet UTXOSet) (uint64, error) {
+	txSize := tx.MsgTx().SerializeSize()
+
+	if tx.IsCoinBase() {
+		return uint64(txSize * massPerTxByte), nil
+	}
+
+	pkScriptSize := 0
+	for _, txOut := range tx.MsgTx().TxOut {
+		pkScriptSize += len(txOut.PkScript)
+	}
+
+	sigOpsCount := 0
+	for txInIndex, txIn := range tx.MsgTx().TxIn {
+		// Ensure the referenced input transaction is available.
+		entry, ok := utxoSet.Get(txIn.PreviousOutpoint)
+		if !ok {
+			str := fmt.Sprintf("output %s referenced from "+
+				"transaction %s:%d either does not exist or "+
+				"has already been spent", txIn.PreviousOutpoint,
+				tx.ID(), txInIndex)
+			return 0, ruleError(ErrMissingTxOut, str)
+		}
+
+		// Count the precise number of signature operations in the
+		// referenced public key script.
+		pkScript := entry.PkScript()
+		sigScript := txIn.SignatureScript
+		isP2SH := txscript.IsPayToScriptHash(pkScript)
+		sigOpsCount += txscript.GetPreciseSigOpCount(sigScript, pkScript, isP2SH)
+	}
+
+	return uint64(txSize*massPerTxByte +
+		pkScriptSize*massPerPKScriptByte +
+		sigOpsCount*massPerSigOp), nil
+}
+
 // checkBlockHeaderSanity performs some preliminary checks on a block header to
 // ensure it is sane before continuing with processing.  These checks are
 // context free.
@@ -444,21 +529,12 @@ func (dag *BlockDAG) checkBlockSanity(block *util.Block, flags BehaviorFlags) (t
 			"any transactions")
 	}
 
-	// A block must not have more transactions than the max block payload or
-	// else it is certainly over the block size limit.
-	if numTx > wire.MaxBlockPayload {
+	// A block must not have more transactions than the max block mass or
+	// else it is certainly over the block mass limit.
+	if numTx > wire.MaxMassPerBlock {
 		str := fmt.Sprintf("block contains too many transactions - "+
-			"got %d, max %d", numTx, wire.MaxBlockPayload)
-		return 0, ruleError(ErrBlockTooBig, str)
-	}
-
-	// A block must not exceed the maximum allowed block payload when
-	// serialized.
-	serializedSize := msgBlock.SerializeSize()
-	if serializedSize > wire.MaxBlockPayload {
-		str := fmt.Sprintf("serialized block is too big - got %d, "+
-			"max %d", serializedSize, wire.MaxBlockPayload)
-		return 0, ruleError(ErrBlockTooBig, str)
+			"got %d, max %d", numTx, wire.MaxMassPerBlock)
+		return 0, ruleError(ErrBlockMassTooHigh, str)
 	}
 
 	// The first transaction in a block must be a coinbase.
@@ -859,6 +935,10 @@ func (dag *BlockDAG) checkConnectToPastUTXO(block *blockNode, pastUTXO UTXOSet,
 		}
 
 		if err := validateSigopsCount(pastUTXO, transactions); err != nil {
+			return nil, err
+		}
+
+		if err := validateBlockMass(pastUTXO, transactions); err != nil {
 			return nil, err
 		}
 	}

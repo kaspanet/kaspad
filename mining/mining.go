@@ -162,6 +162,10 @@ type BlockTemplate struct {
 	// requirement.
 	Block *wire.MsgBlock
 
+	// TxMasses contains the mass of each transaction in the generated
+	// template performs.
+	TxMasses []uint64
+
 	// Fees contains the amount of fees each transaction in the generated
 	// template pays in base units.  Since the first transaction is the
 	// coinbase, the first entry (offset 0) will contain the negative of the
@@ -279,7 +283,7 @@ func NewBlkTmplGenerator(policy *Policy, params *dagconfig.Params,
 // nonzero, in which case the block will be filled with the low-fee/free
 // transactions until the block size reaches that minimum size.
 //
-// Any transactions which would cause the block to exceed the BlockMaxSize
+// Any transactions which would cause the block to exceed the BlockMaxMass
 // policy setting, exceed the maximum allowed signature operations per block, or
 // otherwise cause the block to be invalid are skipped.
 //
@@ -294,7 +298,7 @@ func NewBlkTmplGenerator(policy *Policy, params *dagconfig.Params,
 //  |-----------------------------------|   | --
 //  |                                   |   |
 //  |                                   |   |
-//  |                                   |   |--- policy.BlockMaxSize
+//  |                                   |   |--- policy.BlockMaxMass
 //  |  Transactions prioritized by fee  |   |
 //  |  until <= policy.TxMinFreeFee     |   |
 //  |                                   |   |
@@ -310,6 +314,8 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 	defer g.dag.RUnlock()
 
 	nextBlockBlueScore := g.dag.VirtualBlueScore()
+	nextBlockUTXO := g.dag.UTXOSet()
+
 	coinbasePayloadPkScript, err := txscript.PayToAddrScript(payToAddress)
 	if err != nil {
 		return nil, err
@@ -325,6 +331,10 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 	}
 
 	coinbaseTx, err := g.dag.NextBlockCoinbaseTransactionNoLock(coinbasePayloadPkScript, coinbasePayloadExtraData)
+	if err != nil {
+		return nil, err
+	}
+	coinbaseTxMass, err := blockdag.CalcTxMass(coinbaseTx, nextBlockUTXO)
 	if err != nil {
 		return nil, err
 	}
@@ -346,21 +356,20 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 	blockTxns := make([]*util.Tx, 0, len(sourceTxns)+1)
 	blockTxns = append(blockTxns, coinbaseTx)
 
-	// The starting block size is the size of the block header plus the max
-	// possible transaction count size, plus the size of the coinbase
-	// transaction.
-	blockSize := blockHeaderOverhead + uint32(coinbaseTx.MsgTx().SerializeSize())
+	blockMass := coinbaseTxMass
 	blockSigOps := numCoinbaseSigOps
 	totalFees := uint64(0)
 
-	// Create slices to hold the fees and number of signature operations
-	// for each of the selected transactions and add an entry for the
-	// coinbase.  This allows the code below to simply append details about
-	// a transaction as it is selected for inclusion in the final block.
+	// Create slices to hold the mass, the fees, and number of signature
+	// operations for each of the selected transactions and add an entry for
+	// the coinbase.  This allows the code below to simply append details
+	// about a transaction as it is selected for inclusion in the final block.
 	// However, since the total fees aren't known yet, use a dummy value for
 	// the coinbase fee which will be updated later.
+	txMasses := make([]uint64, 0, len(sourceTxns)+1)
 	txFees := make([]uint64, 0, len(sourceTxns)+1)
 	txSigOpCounts := make([]int64, 0, len(sourceTxns)+1)
+	txMasses = append(txMasses, coinbaseTxMass)
 	txFees = append(txFees, 0) // For coinbase tx
 	txSigOpCounts = append(txSigOpCounts, numCoinbaseSigOps)
 
@@ -423,18 +432,22 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 			gasUsageMap[subnetworkID] = gasUsage + txGas
 		}
 
-		// Enforce maximum block size.  Also check for overflow.
-		txSize := uint32(tx.MsgTx().SerializeSize())
-		blockPlusTxSize := blockSize + txSize
-		if blockPlusTxSize < blockSize ||
-			blockPlusTxSize >= g.policy.BlockMaxSize {
-
+		// Enforce maximum transaction mass per block. Also check
+		// for overflow.
+		txMass, err := blockdag.CalcTxMass(tx, g.dag.UTXOSet())
+		if err != nil {
+			log.Tracef("Skipping tx %s due to error in "+
+				"CalcTxMass: %s", tx.ID(), err)
+			continue
+		}
+		if blockMass+txMass < blockMass ||
+			blockMass >= g.policy.BlockMaxMass {
 			log.Tracef("Skipping tx %s because it would exceed "+
-				"the max block size", tx.ID())
+				"the max block mass", tx.ID())
 			continue
 		}
 
-		// Enforce maximum signature operations per block.  Also check
+		// Enforce maximum signature operations per block. Also check
 		// for overflow.
 		numSigOps := int64(blockdag.CountSigOps(tx))
 		if blockSigOps+numSigOps < blockSigOps ||
@@ -476,24 +489,19 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 		}
 
 		// Add the transaction to the block, increment counters, and
-		// save the fees and signature operation counts to the block
+		// save the masses, fees, and signature operation counts to the block
 		// template.
 		blockTxns = append(blockTxns, tx)
-		blockSize += txSize
-		blockSigOps += int64(numSigOps)
+		blockMass += txMass
+		blockSigOps += numSigOps
 		totalFees += prioItem.fee
+		txMasses = append(txMasses, txMass)
 		txFees = append(txFees, prioItem.fee)
 		txSigOpCounts = append(txSigOpCounts, numSigOps)
 
 		log.Tracef("Adding tx %s (feePerKB %.2f)",
 			prioItem.tx.ID(), prioItem.feePerKB)
 	}
-
-	// Now that the actual transactions have been selected, update the
-	// block size for the real transaction count and coinbase value with
-	// the total fees accordingly.
-	blockSize -= wire.MaxVarIntPayload -
-		uint32(wire.VarIntSerializeSize(uint64(len(blockTxns))))
 
 	// Calculate the required difficulty for the block.  The timestamp
 	// is potentially adjusted to ensure it comes after the median time of
@@ -553,12 +561,13 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 	}
 
 	log.Debugf("Created new block template (%d transactions, %d in fees, "+
-		"%d signature operations, %d bytes, target difficulty %064x)",
-		len(msgBlock.Transactions), totalFees, blockSigOps, blockSize,
+		"%d signature operations, %d mass, target difficulty %064x)",
+		len(msgBlock.Transactions), totalFees, blockSigOps, blockMass,
 		util.CompactToBig(msgBlock.Header.Bits))
 
 	return &BlockTemplate{
 		Block:           &msgBlock,
+		TxMasses:        txMasses,
 		Fees:            txFees,
 		SigOpCounts:     txSigOpCounts,
 		ValidPayAddress: payToAddress != nil,

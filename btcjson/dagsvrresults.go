@@ -121,6 +121,7 @@ type GetBlockTemplateResultTx struct {
 	Data    string  `json:"data"`
 	ID      string  `json:"id"`
 	Depends []int64 `json:"depends"`
+	Mass    uint64  `json:"mass"`
 	Fee     uint64  `json:"fee"`
 	SigOps  int64   `json:"sigOps"`
 }
@@ -141,7 +142,7 @@ type GetBlockTemplateResult struct {
 	Height               uint64                     `json:"height"`
 	ParentHashes         []string                   `json:"parentHashes"`
 	SigOpLimit           int64                      `json:"sigOpLimit,omitempty"`
-	SizeLimit            int64                      `json:"sizeLimit,omitempty"`
+	MassLimit            int64                      `json:"massLimit,omitempty"`
 	Transactions         []GetBlockTemplateResultTx `json:"transactions"`
 	AcceptedIDMerkleRoot string                     `json:"acceptedIdMerkleRoot"`
 	UTXOCommitment       string                     `json:"utxoCommitment"`
