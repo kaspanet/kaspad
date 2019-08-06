@@ -230,7 +230,7 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 	g.dag.RLock()
 	defer g.dag.RUnlock()
 
-	selectionResult, err := g.selectTxs(payToAddress)
+	txsForBlockTemplate, err := g.selectTxs(payToAddress)
 	if err != nil {
 		return nil, fmt.Errorf("failed to select txs: %s", err)
 	}
@@ -249,7 +249,7 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 	}
 
 	// Sort transactions by subnetwork ID before building Merkle tree
-	selectedTxs := selectionResult.selectedTxs
+	selectedTxs := txsForBlockTemplate.selectedTxs
 	sort.Slice(selectedTxs, func(i, j int) bool {
 		if selectedTxs[i].MsgTx().SubnetworkID.IsEqual(subnetworkid.SubnetworkIDCoinbase) {
 			return true
@@ -295,15 +295,15 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 
 	log.Debugf("Created new block template (%d transactions, %d in fees, "+
 		"%d signature operations, %d mass, target difficulty %064x)",
-		len(msgBlock.Transactions), selectionResult.totalFees,
-		selectionResult.blockSigOps, selectionResult.blockMass,
+		len(msgBlock.Transactions), txsForBlockTemplate.totalFees,
+		txsForBlockTemplate.blockSigOps, txsForBlockTemplate.blockMass,
 		util.CompactToBig(msgBlock.Header.Bits))
 
 	return &BlockTemplate{
 		Block:           &msgBlock,
-		TxMasses:        selectionResult.txMasses,
-		Fees:            selectionResult.txFees,
-		SigOpCounts:     selectionResult.txSigOpCounts,
+		TxMasses:        txsForBlockTemplate.txMasses,
+		Fees:            txsForBlockTemplate.txFees,
+		SigOpCounts:     txsForBlockTemplate.txSigOpCounts,
 		ValidPayAddress: payToAddress != nil,
 	}, nil
 }

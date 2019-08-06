@@ -8,7 +8,7 @@ import (
 	"github.com/daglabs/btcd/util/subnetworkid"
 )
 
-type txSelectionResult struct {
+type txsForBlockTemplate struct {
 	selectedTxs   []*util.Tx
 	txMasses      []uint64
 	txFees        []uint64
@@ -18,7 +18,24 @@ type txSelectionResult struct {
 	blockSigOps   int64
 }
 
-func (g *BlkTmplGenerator) selectTxs(payToAddress util.Address) (*txSelectionResult, error) {
+func (g *BlkTmplGenerator) selectTxs(payToAddress util.Address) (*txsForBlockTemplate, error) {
+	// Fetch the source transactions. We expect here that the transactions
+	// have previously been sorted by selection value.
+	sourceTxns := g.txSource.MiningDescs()
+
+	// Create the result object and initialize all the slices to have
+	// the max amount of txs, which are the source tx + coinbase.
+	// The result object holds the mass, the fees, and number of signature
+	// operations for each of the selected transactions and adds an entry for
+	// the coinbase.  This allows the code below to simply append details
+	// about a transaction as it is selected for inclusion in the final block.
+	result := &txsForBlockTemplate{
+		selectedTxs:   make([]*util.Tx, 0, len(sourceTxns)+1),
+		txMasses:      make([]uint64, 0, len(sourceTxns)+1),
+		txFees:        make([]uint64, 0, len(sourceTxns)+1),
+		txSigOpCounts: make([]int64, 0, len(sourceTxns)+1),
+	}
+
 	nextBlockUTXO := g.dag.UTXOSet()
 	nextBlockBlueScore := g.dag.VirtualBlueScore()
 
@@ -44,38 +61,13 @@ func (g *BlkTmplGenerator) selectTxs(payToAddress util.Address) (*txSelectionRes
 	}
 	numCoinbaseSigOps := int64(blockdag.CountSigOps(coinbaseTx))
 
-	// TODO: THIS COMMENT IS WRONG
-	// Get the current source transactions and create a priority queue to
-	// hold the transactions which are ready for inclusion into a block
-	// along with some priority related and fee metadata.  Reserve the same
-	// number of items that are available for the priority queue.  Also,
-	// choose the initial sort order for the priority queue based on whether
-	// or not there is an area allocated for high-priority transactions.
-	sourceTxns := g.txSource.MiningDescs()
-
-	result := &txSelectionResult{
-		selectedTxs:   make([]*util.Tx, 0, len(sourceTxns)+1),
-		txMasses:      make([]uint64, 0, len(sourceTxns)+1),
-		txFees:        make([]uint64, 0, len(sourceTxns)+1),
-		txSigOpCounts: make([]int64, 0, len(sourceTxns)+1),
-	}
-
-	// Create a slice to hold the transactions to be included in the
-	// generated block with reserved space.  Also create a utxo view to
-	// house all of the input transactions so multiple lookups can be
-	// avoided.
+	// Add the coinbase to the result object. Note that since the total fees
+	// aren't known yet, we use a dummy value for the coinbase fee which will
+	// be updated later.
 	result.selectedTxs = append(result.selectedTxs, coinbaseTx)
-
 	result.blockMass = coinbaseTxMass
 	result.blockSigOps = numCoinbaseSigOps
 	result.totalFees = uint64(0)
-
-	// Create slices to hold the mass, the fees, and number of signature
-	// operations for each of the selected transactions and add an entry for
-	// the coinbase.  This allows the code below to simply append details
-	// about a transaction as it is selected for inclusion in the final block.
-	// However, since the total fees aren't known yet, use a dummy value for
-	// the coinbase fee which will be updated later.
 	result.txMasses = append(result.txMasses, coinbaseTxMass)
 	result.txFees = append(result.txFees, 0) // For coinbase tx
 	result.txSigOpCounts = append(result.txSigOpCounts, numCoinbaseSigOps)
