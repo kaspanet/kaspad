@@ -3203,10 +3203,7 @@ func handleSearchRawTransactions(s *Server, cmd interface{}, closeChan <-chan st
 
 	// Address has never been used if neither source yielded any results.
 	if len(addressTxns) == 0 {
-		return nil, &btcjson.RPCError{
-			Code:    btcjson.ErrRPCNoTxInfo,
-			Message: "No information available about address",
-		}
+		return []btcjson.SearchRawTransactionsResult{}, nil
 	}
 
 	// Serialize all of the transactions to hex.
