@@ -37,6 +37,10 @@ const (
 	// in the future, just finished the delay
 	BFAfterDelay
 
+	// BFIsSync may be set to indicate that the block was sent as part of the
+	// netsync process
+	BFIsSync
+
 	// BFNone is a convenience value to specifically indicate no flags.
 	BFNone BehaviorFlags = 0
 )
@@ -189,7 +193,11 @@ func (dag *BlockDAG) ProcessBlock(block *util.Block, flags BehaviorFlags) (isOrp
 	}
 
 	if !allParentsExist {
-		log.Infof("Adding orphan block %s", blockHash)
+		if flags&BFIsSync == BFIsSync {
+			log.Debugf("Adding orphan block %s. This is normal part of netsync process", blockHash)
+		} else {
+			log.Infof("Adding orphan block %s", blockHash)
+		}
 		dag.addOrphanBlock(block)
 
 		return true, 0, nil

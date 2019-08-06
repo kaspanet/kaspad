@@ -552,6 +552,9 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 	if bmsg.isDelayedBlock {
 		behaviorFlags |= blockdag.BFAfterDelay
 	}
+	if bmsg.peer == sm.syncPeer {
+		behaviorFlags |= blockdag.BFIsSync
+	}
 
 	// Process the block to include validation, orphan handling, etc.
 	isOrphan, delay, err := sm.dag.ProcessBlock(bmsg.block, behaviorFlags)
