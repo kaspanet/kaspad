@@ -752,11 +752,7 @@ func (mp *TxPool) calcTxSelectionValue(tx *util.Tx, fee uint64) (uint64, error) 
 	}
 
 	gas := msgTx.Gas
-	subnetworkId, err := blockdag.TxToSubnetworkID(msgTx)
-	if err != nil {
-		return 0, err
-	}
-	gasLimit, err := mp.cfg.DAG.SubnetworkStore.GasLimit(subnetworkId)
+	gasLimit, err := mp.cfg.DAG.SubnetworkStore.GasLimit(&msgTx.SubnetworkID)
 	if err != nil {
 		return 0, err
 	}
