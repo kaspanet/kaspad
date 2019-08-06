@@ -16,7 +16,6 @@ import (
 	"github.com/daglabs/btcd/txscript"
 	"github.com/daglabs/btcd/util"
 	"github.com/daglabs/btcd/util/daghash"
-	"github.com/daglabs/btcd/util/random"
 	"github.com/daglabs/btcd/util/subnetworkid"
 	"github.com/daglabs/btcd/wire"
 )
@@ -231,178 +230,9 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 	g.dag.RLock()
 	defer g.dag.RUnlock()
 
-	nextBlockBlueScore := g.dag.VirtualBlueScore()
-	nextBlockUTXO := g.dag.UTXOSet()
-
-	coinbasePayloadPkScript, err := txscript.PayToAddrScript(payToAddress)
+	selectionResult, err := g.selectTxs(payToAddress)
 	if err != nil {
-		return nil, err
-	}
-
-	extraNonce, err := random.Uint64()
-	if err != nil {
-		return nil, err
-	}
-	coinbasePayloadExtraData, err := CoinbasePayloadExtraData(extraNonce)
-	if err != nil {
-		return nil, err
-	}
-
-	coinbaseTx, err := g.dag.NextBlockCoinbaseTransactionNoLock(coinbasePayloadPkScript, coinbasePayloadExtraData)
-	if err != nil {
-		return nil, err
-	}
-	coinbaseTxMass, err := blockdag.CalcTxMass(coinbaseTx, nextBlockUTXO)
-	if err != nil {
-		return nil, err
-	}
-	numCoinbaseSigOps := int64(blockdag.CountSigOps(coinbaseTx))
-
-	// TODO: THIS COMMENT IS WRONG
-	// Get the current source transactions and create a priority queue to
-	// hold the transactions which are ready for inclusion into a block
-	// along with some priority related and fee metadata.  Reserve the same
-	// number of items that are available for the priority queue.  Also,
-	// choose the initial sort order for the priority queue based on whether
-	// or not there is an area allocated for high-priority transactions.
-	sourceTxns := g.txSource.MiningDescs()
-
-	// Create a slice to hold the transactions to be included in the
-	// generated block with reserved space.  Also create a utxo view to
-	// house all of the input transactions so multiple lookups can be
-	// avoided.
-	blockTxns := make([]*util.Tx, 0, len(sourceTxns)+1)
-	blockTxns = append(blockTxns, coinbaseTx)
-
-	blockMass := coinbaseTxMass
-	blockSigOps := numCoinbaseSigOps
-	totalFees := uint64(0)
-
-	// Create slices to hold the mass, the fees, and number of signature
-	// operations for each of the selected transactions and add an entry for
-	// the coinbase.  This allows the code below to simply append details
-	// about a transaction as it is selected for inclusion in the final block.
-	// However, since the total fees aren't known yet, use a dummy value for
-	// the coinbase fee which will be updated later.
-	txMasses := make([]uint64, 0, len(sourceTxns)+1)
-	txFees := make([]uint64, 0, len(sourceTxns)+1)
-	txSigOpCounts := make([]int64, 0, len(sourceTxns)+1)
-	txMasses = append(txMasses, coinbaseTxMass)
-	txFees = append(txFees, 0) // For coinbase tx
-	txSigOpCounts = append(txSigOpCounts, numCoinbaseSigOps)
-
-	// Create map of GAS usage per subnetwork
-	gasUsageMap := make(map[subnetworkid.SubnetworkID]uint64)
-
-	log.Debugf("Considering %d transactions for inclusion to new block",
-		len(sourceTxns))
-
-	// Choose which transactions make it into the block.
-	for _, txDesc := range sourceTxns {
-		tx := txDesc.Tx
-
-		// A block can't have more than one coinbase or contain
-		// non-finalized transactions.
-		if tx.IsCoinBase() {
-			log.Tracef("Skipping coinbase tx %s", tx.ID())
-			continue
-		}
-		if !blockdag.IsFinalizedTransaction(tx, nextBlockBlueScore,
-			g.timeSource.AdjustedTime()) {
-
-			log.Tracef("Skipping non-finalized tx %s", tx.ID())
-			continue
-		}
-
-		if !tx.MsgTx().SubnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) && !tx.MsgTx().SubnetworkID.IsBuiltIn() {
-			subnetworkID := tx.MsgTx().SubnetworkID
-			gasUsage, ok := gasUsageMap[subnetworkID]
-			if !ok {
-				gasUsage = 0
-			}
-			gasLimit, err := g.dag.SubnetworkStore.GasLimit(&subnetworkID)
-			if err != nil {
-				log.Errorf("Cannot get GAS limit for subnetwork %s", subnetworkID)
-				continue
-			}
-			txGas := tx.MsgTx().Gas
-			if gasLimit-gasUsage < txGas {
-				log.Tracef("Transaction %s (GAS=%d) ignored because gas overusage (GASUsage=%d) in subnetwork %s (GASLimit=%d)",
-					tx.MsgTx().TxID(), txGas, gasUsage, subnetworkID, gasLimit)
-				continue
-			}
-			gasUsageMap[subnetworkID] = gasUsage + txGas
-		}
-
-		// Enforce maximum transaction mass per block. Also check
-		// for overflow.
-		txMass, err := blockdag.CalcTxMass(tx, g.dag.UTXOSet())
-		if err != nil {
-			log.Tracef("Skipping tx %s due to error in "+
-				"CalcTxMass: %s", tx.ID(), err)
-			continue
-		}
-		if blockMass+txMass < blockMass ||
-			blockMass >= g.policy.BlockMaxMass {
-			log.Tracef("Skipping tx %s because it would exceed "+
-				"the max block mass", tx.ID())
-			continue
-		}
-
-		// Enforce maximum signature operations per block. Also check
-		// for overflow.
-		numSigOps := int64(blockdag.CountSigOps(tx))
-		if blockSigOps+numSigOps < blockSigOps ||
-			blockSigOps+numSigOps > blockdag.MaxSigOpsPerBlock {
-			log.Tracef("Skipping tx %s because it would exceed "+
-				"the maximum sigops per block", tx.ID())
-			continue
-		}
-		numP2SHSigOps, err := blockdag.CountP2SHSigOps(tx, false,
-			g.dag.UTXOSet())
-		if err != nil {
-			log.Tracef("Skipping tx %s due to error in "+
-				"GetSigOpCost: %s", tx.ID(), err)
-			continue
-		}
-		numSigOps += int64(numP2SHSigOps)
-		if blockSigOps+numSigOps < blockSigOps ||
-			blockSigOps+numSigOps > blockdag.MaxSigOpsPerBlock {
-			log.Tracef("Skipping tx %s because it would "+
-				"exceed the maximum sigops per block", tx.ID())
-			continue
-		}
-
-		// Ensure the transaction inputs pass all of the necessary
-		// preconditions before allowing it to be added to the block.
-		_, err = blockdag.CheckTransactionInputsAndCalulateFee(tx, nextBlockBlueScore,
-			g.dag.UTXOSet(), g.dagParams, false)
-		if err != nil {
-			log.Tracef("Skipping tx %s due to error in "+
-				"CheckTransactionInputs: %s", tx.ID(), err)
-			continue
-		}
-		err = blockdag.ValidateTransactionScripts(tx, g.dag.UTXOSet(),
-			txscript.StandardVerifyFlags, g.sigCache)
-		if err != nil {
-			log.Tracef("Skipping tx %s due to error in "+
-				"ValidateTransactionScripts: %s", tx.ID(), err)
-			continue
-		}
-
-		// Add the transaction to the block, increment counters, and
-		// save the masses, fees, and signature operation counts to the block
-		// template.
-		blockTxns = append(blockTxns, tx)
-		blockMass += txMass
-		blockSigOps += numSigOps
-		totalFees += txDesc.Fee
-		txMasses = append(txMasses, txMass)
-		txFees = append(txFees, txDesc.Fee)
-		txSigOpCounts = append(txSigOpCounts, numSigOps)
-
-		log.Tracef("Adding tx %s (feePerKB %.2f)",
-			tx.ID(), txDesc.FeePerKB)
+		return nil, fmt.Errorf("failed to select txs: %s", err)
 	}
 
 	// Calculate the required difficulty for the block.  The timestamp
@@ -419,24 +249,25 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 	}
 
 	// Sort transactions by subnetwork ID before building Merkle tree
-	sort.Slice(blockTxns, func(i, j int) bool {
-		if blockTxns[i].MsgTx().SubnetworkID.IsEqual(subnetworkid.SubnetworkIDCoinbase) {
+	selectedTxs := selectionResult.selectedTxs
+	sort.Slice(selectedTxs, func(i, j int) bool {
+		if selectedTxs[i].MsgTx().SubnetworkID.IsEqual(subnetworkid.SubnetworkIDCoinbase) {
 			return true
 		}
-		if blockTxns[j].MsgTx().SubnetworkID.IsEqual(subnetworkid.SubnetworkIDCoinbase) {
+		if selectedTxs[j].MsgTx().SubnetworkID.IsEqual(subnetworkid.SubnetworkIDCoinbase) {
 			return false
 		}
-		return subnetworkid.Less(&blockTxns[i].MsgTx().SubnetworkID, &blockTxns[j].MsgTx().SubnetworkID)
+		return subnetworkid.Less(&selectedTxs[i].MsgTx().SubnetworkID, &selectedTxs[j].MsgTx().SubnetworkID)
 	})
 
 	// Create a new block ready to be solved.
-	hashMerkleTree := blockdag.BuildHashMerkleTreeStore(blockTxns)
+	hashMerkleTree := blockdag.BuildHashMerkleTreeStore(selectedTxs)
 	acceptedIDMerkleRoot, err := g.dag.NextAcceptedIDMerkleRootNoLock()
 	if err != nil {
 		return nil, err
 	}
 	var msgBlock wire.MsgBlock
-	for _, tx := range blockTxns {
+	for _, tx := range selectedTxs {
 		msgBlock.AddTransaction(tx.MsgTx())
 	}
 	utxoCommitment, err := g.buildUTXOCommitment(msgBlock.Transactions)
@@ -464,14 +295,15 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 
 	log.Debugf("Created new block template (%d transactions, %d in fees, "+
 		"%d signature operations, %d mass, target difficulty %064x)",
-		len(msgBlock.Transactions), totalFees, blockSigOps, blockMass,
+		len(msgBlock.Transactions), selectionResult.totalFees,
+		selectionResult.blockSigOps, selectionResult.blockMass,
 		util.CompactToBig(msgBlock.Header.Bits))
 
 	return &BlockTemplate{
 		Block:           &msgBlock,
-		TxMasses:        txMasses,
-		Fees:            txFees,
-		SigOpCounts:     txSigOpCounts,
+		TxMasses:        selectionResult.txMasses,
+		Fees:            selectionResult.txFees,
+		SigOpCounts:     selectionResult.txSigOpCounts,
 		ValidPayAddress: payToAddress != nil,
 	}, nil
 }
