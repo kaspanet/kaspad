@@ -5,9 +5,7 @@
 package mining
 
 import (
-	"container/heap"
 	"errors"
-	"math/rand"
 	"testing"
 
 	"github.com/daglabs/btcd/util/subnetworkid"
@@ -21,55 +19,6 @@ import (
 
 	"github.com/daglabs/btcd/util"
 )
-
-// TestTxFeePrioHeap ensures the priority queue for transaction fees and
-// priorities works as expected.
-func TestTxFeePrioHeap(t *testing.T) {
-	// Create some fake priority items that exercise the expected sort
-	// edge conditions.
-	testItems := []*txPrioItem{
-		{feePerKB: 5678},
-		{feePerKB: 5678}, // Duplicate fee
-		{feePerKB: 1234},
-		{feePerKB: 10000}, // High fee
-		{feePerKB: 0},     // Zero fee
-	}
-
-	// Add random data in addition to the edge conditions already manually
-	// specified.
-	randSeed := rand.Int63()
-	defer func() {
-		if t.Failed() {
-			t.Logf("Random numbers using seed: %v", randSeed)
-		}
-	}()
-	prng := rand.New(rand.NewSource(randSeed))
-	for i := 0; i < 1000; i++ {
-		testItems = append(testItems, &txPrioItem{
-			feePerKB: uint64(prng.Float64() * util.SatoshiPerBitcoin),
-		})
-	}
-
-	// Test sorting by fee per KB
-	var highest *txPrioItem
-	priorityQueue := newTxPriorityQueue(len(testItems))
-	for _, prioItem := range testItems {
-		if highest == nil || prioItem.feePerKB >= highest.feePerKB {
-			highest = prioItem
-		}
-		heap.Push(priorityQueue, prioItem)
-	}
-
-	for i := 0; i < len(testItems); i++ {
-		prioItem := heap.Pop(priorityQueue).(*txPrioItem)
-		if prioItem.feePerKB > highest.feePerKB {
-			t.Fatalf("fee sort: item (fee per KB: %v) "+
-				"higher than than prev (fee per KB: %v)",
-				prioItem.feePerKB, highest.feePerKB)
-		}
-		highest = prioItem
-	}
-}
 
 func TestNewBlockTemplate(t *testing.T) {
 	params := dagconfig.SimNetParams
@@ -184,7 +133,7 @@ func TestNewBlockTemplate(t *testing.T) {
 		Value:    1,
 	}
 	nonFinalizedTx := wire.NewNativeMsgTx(wire.TxVersion, []*wire.TxIn{txIn}, []*wire.TxOut{txOut})
-	nonFinalizedTx.LockTime = uint64(dag.ChainHeight() + 2)
+	nonFinalizedTx.LockTime = dag.ChainHeight() + 2
 
 	existingSubnetwork := &subnetworkid.SubnetworkID{0xff}
 	nonExistingSubnetwork := &subnetworkid.SubnetworkID{0xfe}
@@ -257,29 +206,6 @@ func TestNewBlockTemplate(t *testing.T) {
 		},
 	}
 
-	// Here we check that the miner's priorty queue has the expected transactions after filtering.
-	popReturnedUnexpectedValue := false
-	expectedPops := map[daghash.TxID]bool{
-		*tx.TxID():                      false,
-		*subnetworkTx1.TxID():           false,
-		*subnetworkTx2.TxID():           false,
-		*nonExistingSubnetworkTx.TxID(): false,
-	}
-	var popPatch *monkey.PatchGuard
-	popPatch = monkey.Patch((*txPriorityQueue).Pop, func(pq *txPriorityQueue) interface{} {
-		popPatch.Unpatch()
-		defer popPatch.Restore()
-
-		item, ok := pq.Pop().(*txPrioItem)
-		if _, expected := expectedPops[*item.tx.ID()]; expected && ok {
-			expectedPops[*item.tx.ID()] = true
-		} else {
-			popReturnedUnexpectedValue = true
-		}
-		return item
-	})
-	defer popPatch.Unpatch()
-
 	// Here we define nonExistingSubnetwork to be non-exist, and existingSubnetwork to have a gas limit of 90
 	gasLimitPatch := monkey.Patch((*blockdag.SubnetworkStore).GasLimit, func(_ *blockdag.SubnetworkStore, subnetworkID *subnetworkid.SubnetworkID) (uint64, error) {
 		if subnetworkID.IsEqual(nonExistingSubnetwork) {
@@ -290,21 +216,10 @@ func TestNewBlockTemplate(t *testing.T) {
 	defer gasLimitPatch.Unpatch()
 
 	template3, err := blockTemplateGenerator.NewBlockTemplate(OpTrueAddr)
-	popPatch.Unpatch()
 	gasLimitPatch.Unpatch()
 
 	if err != nil {
 		t.Errorf("NewBlockTemplate: unexpected error: %v", err)
-	}
-
-	if popReturnedUnexpectedValue {
-		t.Errorf("(*txPriorityQueue).Pop returned unexpected value")
-	}
-
-	for id, popped := range expectedPops {
-		if !popped {
-			t.Errorf("tx %v was expected to pop, but wasn't", id)
-		}
 	}
 
 	expectedTxs := map[daghash.TxID]bool{

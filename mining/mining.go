@@ -6,7 +6,6 @@ package mining
 
 import (
 	"bytes"
-	"container/heap"
 	"encoding/binary"
 	"fmt"
 	"sort"
@@ -23,10 +22,6 @@ import (
 )
 
 const (
-	// blockHeaderOverhead is the max number of bytes it takes to serialize
-	// a block header and max possible transaction count.
-	blockHeaderOverhead = wire.MaxBlockHeaderPayload + wire.MaxVarIntPayload
-
 	// CoinbaseFlags is added to the coinbase script of a generated block
 	// and is used to monitor BIP16 support as well as blocks that are
 	// generated via btcd.
@@ -74,87 +69,6 @@ type TxSource interface {
 	// HaveTransaction returns whether or not the passed transaction hash
 	// exists in the source pool.
 	HaveTransaction(txID *daghash.TxID) bool
-}
-
-// txPrioItem houses a transaction along with extra information that allows the
-// transaction to be prioritized and track dependencies on other transactions
-// which have not been mined into a block yet.
-type txPrioItem struct {
-	tx       *util.Tx
-	fee      uint64
-	feePerKB uint64
-}
-
-// txPriorityQueueLessFunc describes a function that can be used as a compare
-// function for a transaction priority queue (txPriorityQueue).
-type txPriorityQueueLessFunc func(*txPriorityQueue, int, int) bool
-
-// txPriorityQueue implements a priority queue of txPrioItem elements that
-// supports an arbitrary compare function as defined by txPriorityQueueLessFunc.
-type txPriorityQueue struct {
-	lessFunc txPriorityQueueLessFunc
-	items    []*txPrioItem
-}
-
-// Len returns the number of items in the priority queue.  It is part of the
-// heap.Interface implementation.
-func (pq *txPriorityQueue) Len() int {
-	return len(pq.items)
-}
-
-// Less returns whether the item in the priority queue with index i should sort
-// before the item with index j by deferring to the assigned less function.  It
-// is part of the heap.Interface implementation.
-func (pq *txPriorityQueue) Less(i, j int) bool {
-	return pq.lessFunc(pq, i, j)
-}
-
-// Swap swaps the items at the passed indices in the priority queue.  It is
-// part of the heap.Interface implementation.
-func (pq *txPriorityQueue) Swap(i, j int) {
-	pq.items[i], pq.items[j] = pq.items[j], pq.items[i]
-}
-
-// Push pushes the passed item onto the priority queue.  It is part of the
-// heap.Interface implementation.
-func (pq *txPriorityQueue) Push(x interface{}) {
-	pq.items = append(pq.items, x.(*txPrioItem))
-}
-
-// Pop removes the highest priority item (according to Less) from the priority
-// queue and returns it.  It is part of the heap.Interface implementation.
-func (pq *txPriorityQueue) Pop() interface{} {
-	n := len(pq.items)
-	item := pq.items[n-1]
-	pq.items[n-1] = nil
-	pq.items = pq.items[0 : n-1]
-	return item
-}
-
-// SetLessFunc sets the compare function for the priority queue to the provided
-// function.  It also invokes heap.Init on the priority queue using the new
-// function so it can immediately be used with heap.Push/Pop.
-func (pq *txPriorityQueue) SetLessFunc(lessFunc txPriorityQueueLessFunc) {
-	pq.lessFunc = lessFunc
-	heap.Init(pq)
-}
-
-// txPQByFee sorts a txPriorityQueue by fees per kilobyte
-func txPQByFee(pq *txPriorityQueue, i, j int) bool {
-	return pq.items[i].feePerKB > pq.items[j].feePerKB
-}
-
-// newTxPriorityQueue returns a new transaction priority queue that reserves the
-// passed amount of space for the elements.  The new priority queue uses the
-// txPQByFee compare function and is already initialized for use with heap.Push/Pop.
-// The priority queue can grow larger than the reserved space, but extra copies
-// of the underlying array can be avoided by reserving a sane value.
-func newTxPriorityQueue(reserve int) *txPriorityQueue {
-	pq := &txPriorityQueue{
-		items: make([]*txPrioItem, 0, reserve),
-	}
-	pq.SetLessFunc(txPQByFee)
-	return pq
 }
 
 // BlockTemplate houses a block that has yet to be solved along with additional
@@ -344,6 +258,7 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 	}
 	numCoinbaseSigOps := int64(blockdag.CountSigOps(coinbaseTx))
 
+	// TODO: THIS COMMENT IS WRONG
 	// Get the current source transactions and create a priority queue to
 	// hold the transactions which are ready for inclusion into a block
 	// along with some priority related and fee metadata.  Reserve the same
@@ -351,7 +266,6 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 	// choose the initial sort order for the priority queue based on whether
 	// or not there is an area allocated for high-priority transactions.
 	sourceTxns := g.txSource.MiningDescs()
-	priorityQueue := newTxPriorityQueue(len(sourceTxns))
 
 	// Create a slice to hold the transactions to be included in the
 	// generated block with reserved space.  Also create a utxo view to
@@ -377,12 +291,18 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 	txFees = append(txFees, 0) // For coinbase tx
 	txSigOpCounts = append(txSigOpCounts, numCoinbaseSigOps)
 
+	// Create map of GAS usage per subnetwork
+	gasUsageMap := make(map[subnetworkid.SubnetworkID]uint64)
+
 	log.Debugf("Considering %d transactions for inclusion to new block",
 		len(sourceTxns))
+
+	// Choose which transactions make it into the block.
 	for _, txDesc := range sourceTxns {
+		tx := txDesc.Tx
+
 		// A block can't have more than one coinbase or contain
 		// non-finalized transactions.
-		tx := txDesc.Tx
 		if tx.IsCoinBase() {
 			log.Tracef("Skipping coinbase tx %s", tx.ID())
 			continue
@@ -393,28 +313,6 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 			log.Tracef("Skipping non-finalized tx %s", tx.ID())
 			continue
 		}
-
-		// Calculate the final transaction priority using the input
-		// value age sum as well as the adjusted transaction size.  The
-		// formula is: sum(inputValue * inputAge) / adjustedTxSize
-		prioItem := &txPrioItem{tx: tx}
-
-		// Calculate the fee in Satoshi/kB.
-		prioItem.feePerKB = txDesc.FeePerKB
-		prioItem.fee = txDesc.Fee
-
-		heap.Push(priorityQueue, prioItem)
-	}
-
-	// Create map of GAS usage per subnetwork
-	gasUsageMap := make(map[subnetworkid.SubnetworkID]uint64)
-
-	// Choose which transactions make it into the block.
-	for priorityQueue.Len() > 0 {
-		// Grab the highest priority (or highest fee per kilobyte
-		// depending on the sort order) transaction.
-		prioItem := heap.Pop(priorityQueue).(*txPrioItem)
-		tx := prioItem.tx
 
 		if !tx.MsgTx().SubnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) && !tx.MsgTx().SubnetworkID.IsBuiltIn() {
 			subnetworkID := tx.MsgTx().SubnetworkID
@@ -498,13 +396,13 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 		blockTxns = append(blockTxns, tx)
 		blockMass += txMass
 		blockSigOps += numSigOps
-		totalFees += prioItem.fee
+		totalFees += txDesc.Fee
 		txMasses = append(txMasses, txMass)
-		txFees = append(txFees, prioItem.fee)
+		txFees = append(txFees, txDesc.Fee)
 		txSigOpCounts = append(txSigOpCounts, numSigOps)
 
 		log.Tracef("Adding tx %s (feePerKB %.2f)",
-			prioItem.tx.ID(), prioItem.feePerKB)
+			tx.ID(), txDesc.FeePerKB)
 	}
 
 	// Calculate the required difficulty for the block.  The timestamp
