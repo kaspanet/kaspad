@@ -7,6 +7,7 @@ package mempool
 import (
 	"container/list"
 	"fmt"
+	"sort"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -1321,7 +1322,8 @@ func (mp *TxPool) TxDescs() []*TxDesc {
 }
 
 // MiningDescs returns a slice of mining descriptors for all the transactions
-// in the pool.
+// in the pool. The descriptors are sorted by value for the sake of transaction
+// selection.
 //
 // This is part of the mining.TxSource interface implementation and is safe for
 // concurrent access as required by the interface contract.
@@ -1334,6 +1336,9 @@ func (mp *TxPool) MiningDescs() []*mining.TxDesc {
 		i++
 	}
 	mp.mtx.RUnlock()
+
+	// Sort the descs by selection value.
+	sort.Slice(descs, func(i, j int) bool { return descs[i].SelectionValue < descs[j].SelectionValue })
 
 	return descs
 }
