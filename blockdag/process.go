@@ -193,11 +193,13 @@ func (dag *BlockDAG) ProcessBlock(block *util.Block, flags BehaviorFlags) (isOrp
 	}
 
 	if !allParentsExist {
-		// Some orphans during netsync are a normal part of the process
-		// Therefore, if we are during netsync - don't report orphans to default logs
+		// Some orphans during netsync are a normal part of the process, since the anticone
+		// of the chain-split is never explicitly requested.
+		// Therefore, if we are during netsync - don't report orphans to default logs.
 		//
-		// However, if we see much more than K orphans, it's not normal even during netsync,
-		// and therefore reported as a potential problem
+		// The number K*2 was chosen since in peace times anticone is limited to K blocks,
+		// while some red block can make it a bit bigger, but much more than that indicates
+		// there might be some problem with the netsync process.
 		if flags&BFIsSync == BFIsSync && uint32(len(dag.orphans)) < dag.dagParams.K*2 {
 			log.Debugf("Adding orphan block %s. This is normal part of netsync process", blockHash)
 		} else {
