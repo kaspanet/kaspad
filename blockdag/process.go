@@ -193,7 +193,12 @@ func (dag *BlockDAG) ProcessBlock(block *util.Block, flags BehaviorFlags) (isOrp
 	}
 
 	if !allParentsExist {
-		if flags&BFIsSync == BFIsSync {
+		// Some orphans during netsync are a normal part of the process
+		// Therefore, if we are during netsync - don't report orphans to default logs
+		//
+		// However, if we see much more than K orphans, it's not normal even during netsync,
+		// and therefore reported as a potential problem
+		if flags&BFIsSync == BFIsSync && uint32(len(dag.orphans)) < dag.dagParams.K*2 {
 			log.Debugf("Adding orphan block %s. This is normal part of netsync process", blockHash)
 		} else {
 			log.Infof("Adding orphan block %s", blockHash)
