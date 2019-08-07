@@ -48,7 +48,7 @@ type TxDesc struct {
 
 	// SelectionValue is a number by which transactions are selected to be
 	// mined into a block.
-	SelectionValue uint64
+	SelectionValue float64
 }
 
 // TxSource represents a source of transactions to consider for inclusion in

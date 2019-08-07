@@ -739,7 +739,7 @@ func (mp *TxPool) addTransaction(tx *util.Tx, height uint64, blueScore uint64, f
 	return txD, nil
 }
 
-func (mp *TxPool) calcTxSelectionValue(tx *util.Tx, fee uint64) (uint64, error) {
+func (mp *TxPool) calcTxSelectionValue(tx *util.Tx, fee uint64) (float64, error) {
 	mass, err := blockdag.CalcTxMass(tx, mp.mpUTXOSet)
 	if err != nil {
 		return 0, err
@@ -749,7 +749,7 @@ func (mp *TxPool) calcTxSelectionValue(tx *util.Tx, fee uint64) (uint64, error) 
 	msgTx := tx.MsgTx()
 	if msgTx.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) ||
 		msgTx.SubnetworkID.IsBuiltIn() {
-		return uint64(float64(fee) / (float64(mass) / float64(massLimit))), nil
+		return float64(fee) / (float64(mass) / float64(massLimit)), nil
 	}
 
 	gas := msgTx.Gas
@@ -757,7 +757,7 @@ func (mp *TxPool) calcTxSelectionValue(tx *util.Tx, fee uint64) (uint64, error) 
 	if err != nil {
 		return 0, err
 	}
-	return uint64(float64(fee) / (float64(mass)/float64(massLimit) + float64(gas)/float64(gasLimit))), nil
+	return float64(fee) / (float64(mass)/float64(massLimit) + float64(gas)/float64(gasLimit)), nil
 }
 
 // checkPoolDoubleSpend checks whether or not the passed transaction is
