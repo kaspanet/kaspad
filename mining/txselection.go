@@ -118,11 +118,14 @@ func (g *BlkTmplGenerator) selectTxs(payToAddress util.Address) (*txsForBlockTem
 			continue
 		}
 
-		subnetworkID := tx.MsgTx().SubnetworkID
-		gasLimit, err := g.dag.SubnetworkStore.GasLimit(&subnetworkID)
-		if err != nil {
-			log.Errorf("Cannot get GAS limit for subnetwork %s", subnetworkID)
-			continue
+		gasLimit := uint64(0)
+		if !tx.MsgTx().SubnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) && !tx.MsgTx().SubnetworkID.IsBuiltIn() {
+			subnetworkID := tx.MsgTx().SubnetworkID
+			gasLimit, err = g.dag.SubnetworkStore.GasLimit(&subnetworkID)
+			if err != nil {
+				log.Errorf("Cannot get GAS limit for subnetwork %s", subnetworkID)
+				continue
+			}
 		}
 
 		numP2SHSigOps, err := blockdag.CountP2SHSigOps(tx, false,
