@@ -89,7 +89,7 @@ func TestNewBlockTemplate(t *testing.T) {
 	}
 
 	policy := Policy{
-		BlockMaxSize: 50000,
+		BlockMaxMass: 50000,
 	}
 
 	// First we create a block to have coinbase funds for the rest of the test.

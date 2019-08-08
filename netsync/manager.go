@@ -563,6 +563,9 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 	if bmsg.isDelayedBlock {
 		behaviorFlags |= blockdag.BFAfterDelay
 	}
+	if bmsg.peer == sm.syncPeer {
+		behaviorFlags |= blockdag.BFIsSync
+	}
 
 	// Process the block to include validation, orphan handling, etc.
 	isOrphan, delay, err := sm.dag.ProcessBlock(bmsg.block, behaviorFlags)
@@ -975,9 +978,13 @@ func (sm *SyncManager) handleInvMsg(imsg *invMsg) {
 		}
 		if !haveInv {
 			if iv.Type == wire.InvTypeTx {
-				// Skip the transaction if it has already been
-				// rejected.
+				// Skip the transaction if it has already been rejected.
 				if _, exists := sm.rejectedTxns[daghash.TxID(*iv.Hash)]; exists {
+					continue
+				}
+
+				// Skip the transaction if it had previously been requested.
+				if _, exists := state.requestedTxns[daghash.TxID(*iv.Hash)]; exists {
 					continue
 				}
 			}

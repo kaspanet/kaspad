@@ -16,7 +16,7 @@ func TestErrorCodeStringer(t *testing.T) {
 		want string
 	}{
 		{ErrDuplicateBlock, "ErrDuplicateBlock"},
-		{ErrBlockTooBig, "ErrBlockTooBig"},
+		{ErrBlockMassTooHigh, "ErrBlockMassTooHigh"},
 		{ErrBlockVersionTooOld, "ErrBlockVersionTooOld"},
 		{ErrInvalidTime, "ErrInvalidTime"},
 		{ErrTimeTooOld, "ErrTimeTooOld"},
@@ -31,7 +31,7 @@ func TestErrorCodeStringer(t *testing.T) {
 		{ErrFinalityPointTimeTooOld, "ErrFinalityPointTimeTooOld"},
 		{ErrNoTransactions, "ErrNoTransactions"},
 		{ErrNoTxInputs, "ErrNoTxInputs"},
-		{ErrTxTooBig, "ErrTxTooBig"},
+		{ErrTxMassTooHigh, "ErrTxMassTooHigh"},
 		{ErrBadTxOutValue, "ErrBadTxOutValue"},
 		{ErrDuplicateTxInputs, "ErrDuplicateTxInputs"},
 		{ErrBadTxInput, "ErrBadTxInput"},

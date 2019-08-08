@@ -8,11 +8,7 @@ package mining
 // the generation of block templates.  See the documentation for
 // NewBlockTemplate for more details on each of these parameters are used.
 type Policy struct {
-	// BlockMinSize is the minimum block size to be used when generating
-	// a block template.
-	BlockMinSize uint32
-
-	// BlockMaxSize is the maximum block size to be used when generating a
+	// BlockMaxMass is the maximum block mass to be used when generating a
 	// block template.
-	BlockMaxSize uint32
+	BlockMaxMass uint64
 }

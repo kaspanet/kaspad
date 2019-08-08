@@ -46,7 +46,7 @@ func PrepareBlockForTest(dag *blockdag.BlockDAG, params *dagconfig.Params, paren
 	oldVirtual := blockdag.SetVirtualForTest(dag, newVirtual)
 	defer blockdag.SetVirtualForTest(dag, oldVirtual)
 	policy := Policy{
-		BlockMaxSize: 50000,
+		BlockMaxMass: 50000,
 	}
 
 	txSource := &fakeTxSource{
