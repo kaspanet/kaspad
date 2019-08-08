@@ -93,7 +93,7 @@ func invSummary(invList []*wire.InvVect) string {
 // locatorSummary returns a block locator as a human-readable string.
 func locatorSummary(locator []*daghash.Hash) string {
 	if len(locator) > 0 {
-		return fmt.Sprintf("locator first hash: %s, last hash: %s", locator[0], locator[len(locator) - 1])
+		return fmt.Sprintf("locator first hash: %s, last hash: %s", locator[0], locator[len(locator)-1])
 	}
 
 	return fmt.Sprintf("no locator")
