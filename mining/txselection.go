@@ -10,19 +10,13 @@ import (
 	"math/rand"
 )
 
-type txsForBlockTemplate struct {
-	selectedTxs   []*util.Tx
-	txMasses      []uint64
-	txFees        []uint64
-	txSigOpCounts []int64
-	blockMass     uint64
-	totalFees     uint64
-	blockSigOps   int64
-}
-
 const (
+	// alpha is used when determining a candidate transaction's
+	// initial p value.
 	alpha = 3
 
+	// rebalanceThreshold is a percentage of the candidate transaction
+	// collection under which we don't rebalance. See selectTxs for details.
 	rebalanceThreshold = 0.95
 )
 
@@ -38,6 +32,31 @@ type candidateTx struct {
 	numP2SHSigOps int
 }
 
+type txsForBlockTemplate struct {
+	selectedTxs   []*util.Tx
+	txMasses      []uint64
+	txFees        []uint64
+	txSigOpCounts []int64
+	blockMass     uint64
+	totalFees     uint64
+	blockSigOps   int64
+}
+
+// selectTxs implements a probabilistic transaction selection algorithm.
+// The algorithm, roughly, is as follows:
+// 1. We assign a probability to each transaction equal to:
+//    (candidateTx.Value^alpha) / Σ(tx.Value^alpha)
+//    Where the sum in the denominator is equal to 1.
+// 2. We draw a random number in [0,1) and select a transaction accordingly.
+// 3. If it's valid, add it to the result and remove it from the candidates.
+// 4. Continue iterating the above until we have either selected all
+//    available transactions or ran out of gas/block space.
+//
+// Note that we make two optimizations here:
+// * Draw a number in [0,Σ(tx.Value^alpha)) to avoid normalization
+// * Instead of removing a candidate after each iteration, mark it as "used"
+//   and only rebalance once rebalanceThreshold * Σ(tx.Value^alpha) of all
+//   candidate transactions were marked as "used".
 func (g *BlkTmplGenerator) selectTxs(payToAddress util.Address) (*txsForBlockTemplate, error) {
 	// Fetch the source transactions. We expect here that the transactions
 	// have previously been sorted by selection value.
@@ -106,7 +125,6 @@ func (g *BlkTmplGenerator) selectTxs(payToAddress util.Address) (*txsForBlockTem
 		}
 		if !blockdag.IsFinalizedTransaction(tx, nextBlockBlueScore,
 			g.timeSource.AdjustedTime()) {
-
 			log.Tracef("Skipping non-finalized tx %s", tx.ID())
 			continue
 		}

@@ -739,6 +739,9 @@ func (mp *TxPool) addTransaction(tx *util.Tx, height uint64, blueScore uint64, f
 	return txD, nil
 }
 
+// calcTxSelectionValue calculates a value to be used in transaction selection.
+// The higher the number the more likely it is that the transaction will be
+// included in the block.
 func (mp *TxPool) calcTxSelectionValue(tx *util.Tx, fee uint64) (float64, error) {
 	mass, err := blockdag.CalcTxMass(tx, mp.mpUTXOSet)
 	if err != nil {
