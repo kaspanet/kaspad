@@ -45,17 +45,17 @@ things such as protocol version and supported services with each other.  Once
 the initial handshake is complete, the following chart indicates message
 interactions in no particular order.
 
-	Peer A Sends                          Peer B Responds
+	Peer A Sends                            Peer B Responds
 	----------------------------------------------------------------------------
-	getaddr message (MsgGetAddr)          addr message (MsgAddr)
-	getblocks message (MsgGetBlocks)      inv message (MsgInv)
-	inv message (MsgInv)                  getdata message (MsgGetData)
-	getdata message (MsgGetData)          block message (MsgBlock) -or-
-	                                      tx message (MsgTx) -or-
-	                                      notfound message (MsgNotFound)
-	getheaders message (MsgGetHeaders)    headers message (MsgHeaders)
-	ping message (MsgPing)                pong message (MsgHeaders)* -or-
-	                                      (none -- Ability to send message is enough)
+	getaddr message (MsgGetAddr)            addr message (MsgAddr)
+	getblockinvs message (MsgGetBlockInvs)  inv message (MsgInv)
+	inv message (MsgInv)                    getdata message (MsgGetData)
+	getdata message (MsgGetData)            block message (MsgBlock) -or-
+	                                        tx message (MsgTx) -or-
+	                                        notfound message (MsgNotFound)
+	getheaders message (MsgGetHeaders)      headers message (MsgHeaders)
+	ping message (MsgPing)                  pong message (MsgHeaders)* -or-
+	                                        (none -- Ability to send message is enough)
 
 	NOTES:
 	* The pong message was not added until later protocol versions as defined

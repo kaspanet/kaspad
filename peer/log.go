@@ -178,7 +178,7 @@ func messageSummary(msg wire.Message) string {
 	case *wire.MsgGetData:
 		return invSummary(msg.InvList)
 
-	case *wire.MsgGetBlocks:
+	case *wire.MsgGetBlockInvs:
 		return locatorSummary(msg.BlockLocatorHashes, msg.HashStop)
 
 	case *wire.MsgGetHeaders:
