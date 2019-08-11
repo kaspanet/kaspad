@@ -235,7 +235,7 @@ func TestSelectTxs(t *testing.T) {
 
 			// Load the txSource with transactions as defined in test.sourceTxs.
 			// Note that we're saving the definition index in the msgTx payload
-			// so that we may use it in massPatch.
+			// so that we may use it in massPatch and feePatch.
 			// We're also saving for later the util.txs that we expect to be selected
 			txSource.txDescs = make([]*TxDesc, len(test.sourceTxs))
 			expectedSelectedTxs := make([]*util.Tx, 0, len(test.sourceTxs))
