@@ -7,13 +7,9 @@ package rpcclient
 
 import (
 	"bytes"
-	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
-	"fmt"
-
 	"github.com/daglabs/btcd/btcjson"
-	"github.com/daglabs/btcd/util"
 	"github.com/daglabs/btcd/util/daghash"
 	"github.com/daglabs/btcd/wire"
 )
@@ -64,86 +60,6 @@ func (c *Client) DebugLevelAsync(levelSpec string) FutureDebugLevelResult {
 // NOTE: This is a btcd extension.
 func (c *Client) DebugLevel(levelSpec string) (string, error) {
 	return c.DebugLevelAsync(levelSpec).Receive()
-}
-
-// FutureCreateEncryptedWalletResult is a future promise to deliver the error
-// result of a CreateEncryptedWalletAsync RPC invocation.
-type FutureCreateEncryptedWalletResult chan *response
-
-// Receive waits for and returns the error response promised by the future.
-func (r FutureCreateEncryptedWalletResult) Receive() error {
-	_, err := receiveFuture(r)
-	return err
-}
-
-// CreateEncryptedWalletAsync returns an instance of a type that can be used to
-// get the result of the RPC at some future time by invoking the Receive
-// function on the returned instance.
-//
-// See CreateEncryptedWallet for the blocking version and more details.
-//
-// NOTE: This is a btcwallet extension.
-func (c *Client) CreateEncryptedWalletAsync(passphrase string) FutureCreateEncryptedWalletResult {
-	cmd := btcjson.NewCreateEncryptedWalletCmd(passphrase)
-	return c.sendCmd(cmd)
-}
-
-// CreateEncryptedWallet requests the creation of an encrypted wallet.  Wallets
-// managed by btcwallet are only written to disk with encrypted private keys,
-// and generating wallets on the fly is impossible as it requires user input for
-// the encryption passphrase.  This RPC specifies the passphrase and instructs
-// the wallet creation.  This may error if a wallet is already opened, or the
-// new wallet cannot be written to disk.
-//
-// NOTE: This is a btcwallet extension.
-func (c *Client) CreateEncryptedWallet(passphrase string) error {
-	return c.CreateEncryptedWalletAsync(passphrase).Receive()
-}
-
-// FutureListAddressTransactionsResult is a future promise to deliver the result
-// of a ListAddressTransactionsAsync RPC invocation (or an applicable error).
-type FutureListAddressTransactionsResult chan *response
-
-// Receive waits for the response promised by the future and returns information
-// about all transactions associated with the provided addresses.
-func (r FutureListAddressTransactionsResult) Receive() ([]btcjson.ListTransactionsResult, error) {
-	res, err := receiveFuture(r)
-	if err != nil {
-		return nil, err
-	}
-
-	// Unmarshal the result as an array of listtransactions objects.
-	var transactions []btcjson.ListTransactionsResult
-	err = json.Unmarshal(res, &transactions)
-	if err != nil {
-		return nil, err
-	}
-	return transactions, nil
-}
-
-// ListAddressTransactionsAsync returns an instance of a type that can be used
-// to get the result of the RPC at some future time by invoking the Receive
-// function on the returned instance.
-//
-// See ListAddressTransactions for the blocking version and more details.
-//
-// NOTE: This is a btcd extension.
-func (c *Client) ListAddressTransactionsAsync(addresses []util.Address, account string) FutureListAddressTransactionsResult {
-	// Convert addresses to strings.
-	addrs := make([]string, 0, len(addresses))
-	for _, addr := range addresses {
-		addrs = append(addrs, addr.EncodeAddress())
-	}
-	cmd := btcjson.NewListAddressTransactionsCmd(addrs, &account)
-	return c.sendCmd(cmd)
-}
-
-// ListAddressTransactions returns information about all transactions associated
-// with the provided addresses.
-//
-// NOTE: This is a btcwallet extension.
-func (c *Client) ListAddressTransactions(addresses []util.Address, account string) ([]btcjson.ListTransactionsResult, error) {
-	return c.ListAddressTransactionsAsync(addresses, account).Receive()
 }
 
 // FutureGetBestBlockResult is a future promise to deliver the result of a
@@ -321,75 +237,6 @@ func (c *Client) GetHeadersAsync(blockLocators []*daghash.Hash, stopHash *daghas
 // github.com/decred/dcrrpcclient.
 func (c *Client) GetHeaders(blockLocators []*daghash.Hash, stopHash *daghash.Hash) ([]wire.BlockHeader, error) {
 	return c.GetHeadersAsync(blockLocators, stopHash).Receive()
-}
-
-// FutureExportWatchingWalletResult is a future promise to deliver the result of
-// an ExportWatchingWalletAsync RPC invocation (or an applicable error).
-type FutureExportWatchingWalletResult chan *response
-
-// Receive waits for the response promised by the future and returns the
-// exported wallet.
-func (r FutureExportWatchingWalletResult) Receive() ([]byte, []byte, error) {
-	res, err := receiveFuture(r)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	// Unmarshal result as a JSON object.
-	var obj map[string]interface{}
-	err = json.Unmarshal(res, &obj)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	// Check for the wallet and tx string fields in the object.
-	base64Wallet, ok := obj["wallet"].(string)
-	if !ok {
-		return nil, nil, fmt.Errorf("unexpected response type for "+
-			"exportwatchingwallet 'wallet' field: %T\n",
-			obj["wallet"])
-	}
-	base64TxStore, ok := obj["tx"].(string)
-	if !ok {
-		return nil, nil, fmt.Errorf("unexpected response type for "+
-			"exportwatchingwallet 'tx' field: %T\n",
-			obj["tx"])
-	}
-
-	walletBytes, err := base64.StdEncoding.DecodeString(base64Wallet)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	txStoreBytes, err := base64.StdEncoding.DecodeString(base64TxStore)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	return walletBytes, txStoreBytes, nil
-
-}
-
-// ExportWatchingWalletAsync returns an instance of a type that can be used to
-// get the result of the RPC at some future time by invoking the Receive
-// function on the returned instance.
-//
-// See ExportWatchingWallet for the blocking version and more details.
-//
-// NOTE: This is a btcwallet extension.
-func (c *Client) ExportWatchingWalletAsync(account string) FutureExportWatchingWalletResult {
-	cmd := btcjson.NewExportWatchingWalletCmd(&account, btcjson.Bool(true))
-	return c.sendCmd(cmd)
-}
-
-// ExportWatchingWallet returns the raw bytes for a watching-only version of
-// wallet.bin and tx.bin, respectively, for the specified account that can be
-// used by btcwallet to enable a wallet which does not have the private keys
-// necessary to spend funds.
-//
-// NOTE: This is a btcwallet extension.
-func (c *Client) ExportWatchingWallet(account string) ([]byte, []byte, error) {
-	return c.ExportWatchingWalletAsync(account).Receive()
 }
 
 // FutureSessionResult is a future promise to deliver the result of a

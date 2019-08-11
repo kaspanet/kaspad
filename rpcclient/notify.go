@@ -218,59 +218,6 @@ func (c *Client) handleNotification(ntfn *rawNotification) {
 
 		c.ntfnHandlers.OnTxAcceptedVerbose(rawTx)
 
-	// OnBtcdConnected
-	case btcjson.BtcdConnectedNtfnMethod:
-		// Ignore the notification if the client is not interested in
-		// it.
-		if c.ntfnHandlers.OnBtcdConnected == nil {
-			return
-		}
-
-		connected, err := parseBtcdConnectedNtfnParams(ntfn.Params)
-		if err != nil {
-			log.Warnf("Received invalid btcd connected "+
-				"notification: %s", err)
-			return
-		}
-
-		c.ntfnHandlers.OnBtcdConnected(connected)
-
-	// OnAccountBalance
-	case btcjson.AccountBalanceNtfnMethod:
-		// Ignore the notification if the client is not interested in
-		// it.
-		if c.ntfnHandlers.OnAccountBalance == nil {
-			return
-		}
-
-		account, bal, conf, err := parseAccountBalanceNtfnParams(ntfn.Params)
-		if err != nil {
-			log.Warnf("Received invalid account balance "+
-				"notification: %s", err)
-			return
-		}
-
-		c.ntfnHandlers.OnAccountBalance(account, bal, conf)
-
-	// OnWalletLockState
-	case btcjson.WalletLockStateNtfnMethod:
-		// Ignore the notification if the client is not interested in
-		// it.
-		if c.ntfnHandlers.OnWalletLockState == nil {
-			return
-		}
-
-		// The account name is not notified, so the return value is
-		// discarded.
-		_, locked, err := parseWalletLockStateNtfnParams(ntfn.Params)
-		if err != nil {
-			log.Warnf("Received invalid wallet lock state "+
-				"notification: %s", err)
-			return
-		}
-
-		c.ntfnHandlers.OnWalletLockState(locked)
-
 	// OnUnknownNotification
 	default:
 		if c.ntfnHandlers.OnUnknownNotification == nil {

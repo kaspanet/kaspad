@@ -15,49 +15,6 @@ import (
 	"github.com/daglabs/btcd/wire"
 )
 
-// SigHashType enumerates the available signature hashing types that the
-// SignRawTransaction function accepts.
-type SigHashType string
-
-// Constants used to indicate the signature hash type for SignRawTransaction.
-const (
-	// SigHashAll indicates ALL of the outputs should be signed.
-	SigHashAll SigHashType = "ALL"
-
-	// SigHashNone indicates NONE of the outputs should be signed.  This
-	// can be thought of as specifying the signer does not care where the
-	// bitcoins go.
-	SigHashNone SigHashType = "NONE"
-
-	// SigHashSingle indicates that a SINGLE output should be signed.  This
-	// can be thought of specifying the signer only cares about where ONE of
-	// the outputs goes, but not any of the others.
-	SigHashSingle SigHashType = "SINGLE"
-
-	// SigHashAllAnyoneCanPay indicates that signer does not care where the
-	// other inputs to the transaction come from, so it allows other people
-	// to add inputs.  In addition, it uses the SigHashAll signing method
-	// for outputs.
-	SigHashAllAnyoneCanPay SigHashType = "ALL|ANYONECANPAY"
-
-	// SigHashNoneAnyoneCanPay indicates that signer does not care where the
-	// other inputs to the transaction come from, so it allows other people
-	// to add inputs.  In addition, it uses the SigHashNone signing method
-	// for outputs.
-	SigHashNoneAnyoneCanPay SigHashType = "NONE|ANYONECANPAY"
-
-	// SigHashSingleAnyoneCanPay indicates that signer does not care where
-	// the other inputs to the transaction come from, so it allows other
-	// people to add inputs.  In addition, it uses the SigHashSingle signing
-	// method for outputs.
-	SigHashSingleAnyoneCanPay SigHashType = "SINGLE|ANYONECANPAY"
-)
-
-// String returns the SighHashType in human-readable form.
-func (s SigHashType) String() string {
-	return string(s)
-}
-
 // FutureGetRawTransactionResult is a future promise to deliver the result of a
 // GetRawTransactionAsync RPC invocation (or an applicable error).
 type FutureGetRawTransactionResult chan *response
@@ -304,41 +261,6 @@ func (c *Client) SendRawTransactionAsync(tx *wire.MsgTx, allowHighFees bool) Fut
 // then relay it to the network.
 func (c *Client) SendRawTransaction(tx *wire.MsgTx, allowHighFees bool) (*daghash.TxID, error) {
 	return c.SendRawTransactionAsync(tx, allowHighFees).Receive()
-}
-
-// FutureSignRawTransactionResult is a future promise to deliver the result
-// of one of the SignRawTransactionAsync family of RPC invocations (or an
-// applicable error).
-type FutureSignRawTransactionResult chan *response
-
-// Receive waits for the response promised by the future and returns the
-// signed transaction as well as whether or not all inputs are now signed.
-func (r FutureSignRawTransactionResult) Receive() (*wire.MsgTx, bool, error) {
-	res, err := receiveFuture(r)
-	if err != nil {
-		return nil, false, err
-	}
-
-	// Unmarshal as a signrawtransaction result.
-	var signRawTxResult btcjson.SignRawTransactionResult
-	err = json.Unmarshal(res, &signRawTxResult)
-	if err != nil {
-		return nil, false, err
-	}
-
-	// Decode the serialized transaction hex to raw bytes.
-	serializedTx, err := hex.DecodeString(signRawTxResult.Hex)
-	if err != nil {
-		return nil, false, err
-	}
-
-	// Deserialize the transaction and return it.
-	var msgTx wire.MsgTx
-	if err := msgTx.Deserialize(bytes.NewReader(serializedTx)); err != nil {
-		return nil, false, err
-	}
-
-	return &msgTx, signRawTxResult.Complete, nil
 }
 
 // FutureSearchRawTransactionsResult is a future promise to deliver the result
