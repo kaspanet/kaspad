@@ -409,7 +409,7 @@ var helpDescsEnUS = map[string]string{
 	// GetHeadersCmd help.
 	"getHeaders--synopsis":     "Returns block headers starting with the first known block hash from the request",
 	"getHeaders-blockLocators": "JSON array of hex-encoded hashes of blocks.  Headers are returned starting from the first known hash in this list",
-	"getHeaders-hashStop":      "Block hash to stop including block headers for; if not found, all headers to the latest known block are returned.",
+	"getHeaders-stopHash":      "Block hash to stop including block headers for; if not found, all headers to the latest known block are returned.",
 	"getHeaders--result0":      "Serialized block headers of all located blocks, limited to some arbitrary maximum number of hashes (currently 2000, which matches the wire protocol headers message, but this is not guaranteed)",
 
 	// GetInfoCmd help.

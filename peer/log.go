@@ -179,10 +179,10 @@ func messageSummary(msg wire.Message) string {
 		return invSummary(msg.InvList)
 
 	case *wire.MsgGetBlocks:
-		return locatorSummary(msg.BlockLocatorHashes, msg.HashStop)
+		return locatorSummary(msg.BlockLocatorHashes, msg.StopHash)
 
 	case *wire.MsgGetHeaders:
-		return locatorSummary(msg.BlockLocatorHashes, msg.HashStop)
+		return locatorSummary(msg.BlockLocatorHashes, msg.StopHash)
 
 	case *wire.MsgHeaders:
 		return fmt.Sprintf("num %d", len(msg.Headers))
