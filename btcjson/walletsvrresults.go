@@ -153,9 +153,3 @@ type ValidateAddressWalletResult struct {
 	Script       string   `json:"script,omitempty"`
 	SigsRequired int32    `json:"sigsRequired,omitempty"`
 }
-
-// GetBestBlockResult models the data from the getbestblock command.
-type GetBestBlockResult struct {
-	Hash   string `json:"hash"`
-	Height uint64 `json:"height"`
-}

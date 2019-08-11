@@ -502,3 +502,9 @@ type ValidateAddressResult struct {
 	IsValid bool   `json:"isValid"`
 	Address string `json:"address,omitempty"`
 }
+
+// GetBestBlockResult models the data from the getbestblock command.
+type GetBestBlockResult struct {
+	Hash   string `json:"hash"`
+	Height uint64 `json:"height"`
+}
