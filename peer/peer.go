@@ -929,7 +929,7 @@ func (p *Peer) PushGetHeadersMsg(locator blockdag.BlockLocator, stopHash *daghas
 
 	// Construct the getheaders request and queue it to be sent.
 	msg := wire.NewMsgGetHeaders()
-	msg.HashStop = stopHash
+	msg.StopHash = stopHash
 	for _, hash := range locator {
 		err := msg.AddBlockLocatorHash(hash)
 		if err != nil {

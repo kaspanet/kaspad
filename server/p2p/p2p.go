@@ -696,7 +696,7 @@ func (sp *Peer) OnGetBlockInvs(_ *peer.Peer, msg *wire.MsgGetBlockInvs) {
 	//
 	// This mirrors the behavior in the reference implementation.
 	dag := sp.server.DAG
-	hashList := dag.LocateBlocks(msg.BlockLocatorHashes, msg.HashStop,
+	hashList := dag.LocateBlocks(msg.BlockLocatorHashes, msg.StopHash,
 		wire.MaxInvPerMsg)
 
 	// Generate inventory message.
@@ -731,7 +731,7 @@ func (sp *Peer) OnGetHeaders(_ *peer.Peer, msg *wire.MsgGetHeaders) {
 	//
 	// This mirrors the behavior in the reference implementation.
 	dag := sp.server.DAG
-	headers := dag.LocateHeaders(msg.BlockLocatorHashes, msg.HashStop)
+	headers := dag.LocateHeaders(msg.BlockLocatorHashes, msg.StopHash)
 
 	// Send found headers to the requesting peer.
 	blockHeaders := make([]*wire.BlockHeader, len(headers))

@@ -27,16 +27,16 @@ func TestGetBlockInvs(t *testing.T) {
 
 	// Block 100000 hash.
 	hashStr = "3ba27aa200b1cecaad478d2b00432346c3f1f3986da1afd33e506"
-	hashStop, err := daghash.NewHashFromStr(hashStr)
+	stopHash, err := daghash.NewHashFromStr(hashStr)
 	if err != nil {
 		t.Errorf("NewHashFromStr: %v", err)
 	}
 
 	// Ensure we get the same data back out.
-	msg := NewMsgGetBlockInvs(hashStop)
-	if !msg.HashStop.IsEqual(hashStop) {
+	msg := NewMsgGetBlockInvs(stopHash)
+	if !msg.StopHash.IsEqual(stopHash) {
 		t.Errorf("NewMsgGetBlockInvs: wrong stop hash - got %v, want %v",
-			msg.HashStop, hashStop)
+			msg.StopHash, stopHash)
 	}
 
 	// Ensure the command is expected value.
@@ -102,7 +102,7 @@ func TestGetBlockInvsWire(t *testing.T) {
 
 	// Block 100000 hash.
 	hashStr = "3ba27aa200b1cecaad478d2b00432346c3f1f3986da1afd33e506"
-	hashStop, err := daghash.NewHashFromStr(hashStr)
+	stopHash, err := daghash.NewHashFromStr(hashStr)
 	if err != nil {
 		t.Errorf("NewHashFromStr: %v", err)
 	}
@@ -120,7 +120,7 @@ func TestGetBlockInvsWire(t *testing.T) {
 	}
 
 	// MsgGetBlockInvs message with multiple block locators and a stop hash.
-	multiLocators := NewMsgGetBlockInvs(hashStop)
+	multiLocators := NewMsgGetBlockInvs(stopHash)
 	multiLocators.AddBlockLocatorHash(hashLocator2)
 	multiLocators.AddBlockLocatorHash(hashLocator)
 	multiLocators.ProtocolVersion = pver
@@ -220,13 +220,13 @@ func TestGetBlockInvsWireErrors(t *testing.T) {
 
 	// Block 100000 hash.
 	hashStr = "3ba27aa200b1cecaad478d2b00432346c3f1f3986da1afd33e506"
-	hashStop, err := daghash.NewHashFromStr(hashStr)
+	stopHash, err := daghash.NewHashFromStr(hashStr)
 	if err != nil {
 		t.Errorf("NewHashFromStr: %v", err)
 	}
 
 	// MsgGetBlockInvs message with multiple block locators and a stop hash.
-	baseGetBlockInvs := NewMsgGetBlockInvs(hashStop)
+	baseGetBlockInvs := NewMsgGetBlockInvs(stopHash)
 	baseGetBlockInvs.ProtocolVersion = pver
 	baseGetBlockInvs.AddBlockLocatorHash(hashLocator2)
 	baseGetBlockInvs.AddBlockLocatorHash(hashLocator)
@@ -249,7 +249,7 @@ func TestGetBlockInvsWireErrors(t *testing.T) {
 
 	// Message that forces an error by having more than the max allowed
 	// block locator hashes.
-	maxGetBlockInvs := NewMsgGetBlockInvs(hashStop)
+	maxGetBlockInvs := NewMsgGetBlockInvs(stopHash)
 	for i := 0; i < MaxBlockLocatorsPerMsg; i++ {
 		maxGetBlockInvs.AddBlockLocatorHash(mainNetGenesisHash)
 	}

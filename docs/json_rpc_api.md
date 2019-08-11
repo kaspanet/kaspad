@@ -681,7 +681,7 @@ The following is an overview of the RPC methods which are implemented by btcd, b
 |   |   |
 |---|---|
 |Method|getheaders|
-|Parameters|1. Block Locators (JSON array, required)<br />&nbsp;`[ (json array of strings)`<br />&nbsp;&nbsp;`"blocklocator", (string) the known block hash`<br />&nbsp;&nbsp;`...`<br />&nbsp;`]`<br />2. hashstop (string) - last desired block's hash|
+|Parameters|1. Block Locators (JSON array, required)<br />&nbsp;`[ (json array of strings)`<br />&nbsp;&nbsp;`"blocklocator", (string) the known block hash`<br />&nbsp;&nbsp;`...`<br />&nbsp;`]`<br />2. stophash (string) - last desired block's hash|
 |Description|Returns block headers starting with the first known block hash from the request.|
 |Returns|`[ (json array of strings)`<br />&nbsp;&nbsp;`"blockheader",`<br />&nbsp;&nbsp;`...`<br />`]`|
 |Example Return|`[`<br />&nbsp;&nbsp;`"0000002099417930b2ae09feda10e38b58c0f6bb44b4d60fa33f0e000000000000000000d53...",`<br />&nbsp;&nbsp;`"000000203ba25a173bfd24d09e0c76002a910b685ca297bd09a17b020000000000000000702..."`<br />`]`|

@@ -91,7 +91,7 @@ func TestGetHeadersWire(t *testing.T) {
 
 	// Block 100000 hash.
 	hashStr = "3ba27aa200b1cecaad478d2b00432346c3f1f3986da1afd33e506"
-	hashStop, err := daghash.NewHashFromStr(hashStr)
+	stopHash, err := daghash.NewHashFromStr(hashStr)
 	if err != nil {
 		t.Errorf("NewHashFromStr: %v", err)
 	}
@@ -111,7 +111,7 @@ func TestGetHeadersWire(t *testing.T) {
 	// MsgGetHeaders message with multiple block locators and a stop hash.
 	multiLocators := NewMsgGetHeaders()
 	multiLocators.ProtocolVersion = pver
-	multiLocators.HashStop = hashStop
+	multiLocators.StopHash = stopHash
 	multiLocators.AddBlockLocatorHash(hashLocator2)
 	multiLocators.AddBlockLocatorHash(hashLocator)
 	multiLocatorsEncoded := []byte{
@@ -210,7 +210,7 @@ func TestGetHeadersWireErrors(t *testing.T) {
 
 	// Block 100000 hash.
 	hashStr = "3ba27aa200b1cecaad478d2b00432346c3f1f3986da1afd33e506"
-	hashStop, err := daghash.NewHashFromStr(hashStr)
+	stopHash, err := daghash.NewHashFromStr(hashStr)
 	if err != nil {
 		t.Errorf("NewHashFromStr: %v", err)
 	}
@@ -218,7 +218,7 @@ func TestGetHeadersWireErrors(t *testing.T) {
 	// MsgGetHeaders message with multiple block locators and a stop hash.
 	baseGetHeaders := NewMsgGetHeaders()
 	baseGetHeaders.ProtocolVersion = pver
-	baseGetHeaders.HashStop = hashStop
+	baseGetHeaders.StopHash = stopHash
 	baseGetHeaders.AddBlockLocatorHash(hashLocator2)
 	baseGetHeaders.AddBlockLocatorHash(hashLocator)
 	baseGetHeadersEncoded := []byte{

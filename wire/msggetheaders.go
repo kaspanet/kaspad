@@ -18,7 +18,7 @@ import (
 // limited by a specific hash to stop at or the maximum number of block headers
 // per message, which is currently 2000.
 //
-// Set the HashStop field to the hash at which to stop and use
+// Set the StopHash field to the hash at which to stop and use
 // AddBlockLocatorHash to build up the list of block locator hashes.
 //
 // The algorithm for building the block locator hashes should be to add the
@@ -30,7 +30,7 @@ import (
 type MsgGetHeaders struct {
 	ProtocolVersion    uint32
 	BlockLocatorHashes []*daghash.Hash
-	HashStop           *daghash.Hash
+	StopHash           *daghash.Hash
 }
 
 // AddBlockLocatorHash adds a new block locator hash to the message.
@@ -77,8 +77,8 @@ func (msg *MsgGetHeaders) BtcDecode(r io.Reader, pver uint32) error {
 		msg.AddBlockLocatorHash(hash)
 	}
 
-	msg.HashStop = &daghash.Hash{}
-	return ReadElement(r, msg.HashStop)
+	msg.StopHash = &daghash.Hash{}
+	return ReadElement(r, msg.StopHash)
 }
 
 // BtcEncode encodes the receiver to w using the bitcoin protocol encoding.
@@ -109,7 +109,7 @@ func (msg *MsgGetHeaders) BtcEncode(w io.Writer, pver uint32) error {
 		}
 	}
 
-	return WriteElement(w, msg.HashStop)
+	return WriteElement(w, msg.StopHash)
 }
 
 // Command returns the protocol command string for the message.  This is part
@@ -133,6 +133,6 @@ func NewMsgGetHeaders() *MsgGetHeaders {
 	return &MsgGetHeaders{
 		BlockLocatorHashes: make([]*daghash.Hash, 0,
 			MaxBlockLocatorsPerMsg),
-		HashStop: &daghash.ZeroHash,
+		StopHash: &daghash.ZeroHash,
 	}
 }

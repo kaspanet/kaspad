@@ -21,7 +21,7 @@ const MaxBlockLocatorsPerMsg = 500
 // returned via an inv message (MsgInv) and is limited by a specific hash to
 // stop at or the maximum number of blocks per message, which is currently 500.
 //
-// Set the HashStop field to the hash at which to stop and use
+// Set the StopHash field to the hash at which to stop and use
 // AddBlockLocatorHash to build up the list of block locator hashes.
 //
 // The algorithm for building the block locator hashes should be to add the
@@ -33,7 +33,7 @@ const MaxBlockLocatorsPerMsg = 500
 type MsgGetBlockInvs struct {
 	ProtocolVersion    uint32
 	BlockLocatorHashes []*daghash.Hash
-	HashStop           *daghash.Hash
+	StopHash           *daghash.Hash
 }
 
 // AddBlockLocatorHash adds a new block locator hash to the message.
@@ -80,8 +80,8 @@ func (msg *MsgGetBlockInvs) BtcDecode(r io.Reader, pver uint32) error {
 		msg.AddBlockLocatorHash(hash)
 	}
 
-	msg.HashStop = &daghash.Hash{}
-	return ReadElement(r, msg.HashStop)
+	msg.StopHash = &daghash.Hash{}
+	return ReadElement(r, msg.StopHash)
 }
 
 // BtcEncode encodes the receiver to w using the bitcoin protocol encoding.
@@ -111,7 +111,7 @@ func (msg *MsgGetBlockInvs) BtcEncode(w io.Writer, pver uint32) error {
 		}
 	}
 
-	return WriteElement(w, msg.HashStop)
+	return WriteElement(w, msg.StopHash)
 }
 
 // Command returns the protocol command string for the message.  This is part
@@ -131,10 +131,10 @@ func (msg *MsgGetBlockInvs) MaxPayloadLength(pver uint32) uint32 {
 // NewMsgGetBlockInvs returns a new bitcoin getblockinvs message that conforms
 // to the Message interface using the passed parameters and defaults for the
 // remaining fields.
-func NewMsgGetBlockInvs(hashStop *daghash.Hash) *MsgGetBlockInvs {
+func NewMsgGetBlockInvs(stopHash *daghash.Hash) *MsgGetBlockInvs {
 	return &MsgGetBlockInvs{
 		ProtocolVersion:    ProtocolVersion,
 		BlockLocatorHashes: make([]*daghash.Hash, 0, MaxBlockLocatorsPerMsg),
-		HashStop:           hashStop,
+		StopHash:           stopHash,
 	}
 }
