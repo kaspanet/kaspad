@@ -45,10 +45,6 @@ type TxDesc struct {
 
 	// FeePerKB is the fee the transaction pays in Satoshi per 1000 bytes.
 	FeePerKB uint64
-
-	// SelectionValue is a number by which transactions are selected to be
-	// mined into a block.
-	SelectionValue float64
 }
 
 // TxSource represents a source of transactions to consider for inclusion in

@@ -7,7 +7,6 @@ package mempool
 import (
 	"container/list"
 	"fmt"
-	"sort"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -689,21 +688,15 @@ func (mp *TxPool) RemoveDoubleSpends(tx *util.Tx) {
 //
 // This function MUST be called with the mempool lock held (for writes).
 func (mp *TxPool) addTransaction(tx *util.Tx, height uint64, blueScore uint64, fee uint64, parentsInPool []*wire.Outpoint) (*TxDesc, error) {
-	selectionValue, err := mp.calcTxSelectionValue(tx, fee)
-	if err != nil {
-		return nil, err
-	}
-
 	// Add the transaction to the pool and mark the referenced outpoints
 	// as spent by the pool.
 	txD := &TxDesc{
 		TxDesc: mining.TxDesc{
-			Tx:             tx,
-			Added:          time.Now(),
-			Height:         height,
-			Fee:            fee,
-			FeePerKB:       fee * 1000 / uint64(tx.MsgTx().SerializeSize()),
-			SelectionValue: selectionValue,
+			Tx:       tx,
+			Added:    time.Now(),
+			Height:   height,
+			Fee:      fee,
+			FeePerKB: fee * 1000 / uint64(tx.MsgTx().SerializeSize()),
 		},
 		depCount: len(parentsInPool),
 	}
@@ -737,30 +730,6 @@ func (mp *TxPool) addTransaction(tx *util.Tx, height uint64, blueScore uint64, f
 	}
 
 	return txD, nil
-}
-
-// calcTxSelectionValue calculates a value to be used in transaction selection.
-// The higher the number the more likely it is that the transaction will be
-// included in the block.
-func (mp *TxPool) calcTxSelectionValue(tx *util.Tx, fee uint64) (float64, error) {
-	mass, err := blockdag.CalcTxMass(tx, mp.mpUTXOSet)
-	if err != nil {
-		return 0, err
-	}
-	massLimit := uint64(wire.MaxMassPerBlock)
-
-	msgTx := tx.MsgTx()
-	if msgTx.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) ||
-		msgTx.SubnetworkID.IsBuiltIn() {
-		return float64(fee) / (float64(mass) / float64(massLimit)), nil
-	}
-
-	gas := msgTx.Gas
-	gasLimit, err := mp.cfg.DAG.SubnetworkStore.GasLimit(&msgTx.SubnetworkID)
-	if err != nil {
-		return 0, err
-	}
-	return float64(fee) / (float64(mass)/float64(massLimit) + float64(gas)/float64(gasLimit)), nil
 }
 
 // checkPoolDoubleSpend checks whether or not the passed transaction is
@@ -1325,8 +1294,7 @@ func (mp *TxPool) TxDescs() []*TxDesc {
 }
 
 // MiningDescs returns a slice of mining descriptors for all the transactions
-// in the pool. The descriptors are sorted by value for the sake of transaction
-// selection.
+// in the pool.
 //
 // This is part of the mining.TxSource interface implementation and is safe for
 // concurrent access as required by the interface contract.
@@ -1339,9 +1307,6 @@ func (mp *TxPool) MiningDescs() []*mining.TxDesc {
 		i++
 	}
 	mp.mtx.RUnlock()
-
-	// Sort the descs by selection value.
-	sort.Slice(descs, func(i, j int) bool { return descs[i].SelectionValue < descs[j].SelectionValue })
 
 	return descs
 }

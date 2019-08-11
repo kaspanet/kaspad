@@ -6,8 +6,10 @@ import (
 	"github.com/daglabs/btcd/util"
 	"github.com/daglabs/btcd/util/random"
 	"github.com/daglabs/btcd/util/subnetworkid"
+	"github.com/daglabs/btcd/wire"
 	"math"
 	"math/rand"
+	"sort"
 )
 
 const (
@@ -26,6 +28,8 @@ type candidateTx struct {
 	start   float64
 	end     float64
 	wasUsed bool
+
+	selectionValue float64
 
 	txMass        uint64
 	gasLimit      uint64
@@ -58,8 +62,7 @@ type txsForBlockTemplate struct {
 //   and only rebalance once rebalanceThreshold * Σ(tx.Value^alpha) of all
 //   candidate transactions were marked as "used".
 func (g *BlkTmplGenerator) selectTxs(payToAddress util.Address) (*txsForBlockTemplate, error) {
-	// Fetch the source transactions. We expect here that the transactions
-	// have previously been sorted by selection value.
+	// Fetch the source transactions.
 	sourceTxns := g.txSource.MiningDescs()
 
 	// Create the result object and initialize all the slices to have
@@ -171,13 +174,27 @@ func (g *BlkTmplGenerator) selectTxs(payToAddress util.Address) (*txsForBlockTem
 			continue
 		}
 
+		// Calculate the tx selection value
+		selectionValue, err := g.calcTxSelectionValue(tx, txDesc.Fee)
+		if err != nil {
+			log.Tracef("Skipping tx %s due to error in "+
+				"calcTxSelectionValue: %s", tx.ID(), err)
+			continue
+		}
+
 		candidateTxs = append(candidateTxs, &candidateTx{
-			txDesc:        txDesc,
-			txMass:        txMass,
-			gasLimit:      gasLimit,
-			numP2SHSigOps: numP2SHSigOps,
+			txDesc:         txDesc,
+			selectionValue: selectionValue,
+			txMass:         txMass,
+			gasLimit:       gasLimit,
+			numP2SHSigOps:  numP2SHSigOps,
 		})
 	}
+
+	// Sort the candidate txs by selection value.
+	sort.Slice(candidateTxs, func(i, j int) bool {
+		return candidateTxs[i].selectionValue < candidateTxs[j].selectionValue
+	})
 
 	usedCount, usedP := 0, 0.0
 	candidateTxs, totalP := rebalanceCandidates(candidateTxs, usedCount, true)
@@ -284,6 +301,30 @@ func (g *BlkTmplGenerator) selectTxs(payToAddress util.Address) (*txsForBlockTem
 	return result, nil
 }
 
+// calcTxSelectionValue calculates a value to be used in transaction selection.
+// The higher the number the more likely it is that the transaction will be
+// included in the block.
+func (g *BlkTmplGenerator) calcTxSelectionValue(tx *util.Tx, fee uint64) (float64, error) {
+	mass, err := blockdag.CalcTxMass(tx, g.dag.UTXOSet())
+	if err != nil {
+		return 0, err
+	}
+	massLimit := uint64(wire.MaxMassPerBlock)
+
+	msgTx := tx.MsgTx()
+	if msgTx.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) ||
+		msgTx.SubnetworkID.IsBuiltIn() {
+		return float64(fee) / (float64(mass) / float64(massLimit)), nil
+	}
+
+	gas := msgTx.Gas
+	gasLimit, err := g.dag.SubnetworkStore.GasLimit(&msgTx.SubnetworkID)
+	if err != nil {
+		return 0, err
+	}
+	return float64(fee) / (float64(mass)/float64(massLimit) + float64(gas)/float64(gasLimit)), nil
+}
+
 func rebalanceCandidates(oldCandidateTxs []*candidateTx, usedCount int, isFirstRun bool) (
 	candidateTxs []*candidateTx, totalP float64) {
 
@@ -301,7 +342,7 @@ func rebalanceCandidates(oldCandidateTxs []*candidateTx, usedCount int, isFirstR
 
 	for _, candidateTx := range candidateTxs {
 		if isFirstRun {
-			candidateTx.p = math.Pow(candidateTx.txDesc.SelectionValue, alpha)
+			candidateTx.p = math.Pow(candidateTx.selectionValue, alpha)
 		}
 		candidateTx.start = totalP
 		candidateTx.end = totalP + candidateTx.p
