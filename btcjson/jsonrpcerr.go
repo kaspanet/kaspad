@@ -81,6 +81,5 @@ const (
 
 // Errors that are specific to btcd.
 const (
-	ErrRPCNoWallet      RPCErrorCode = -1
 	ErrRPCUnimplemented RPCErrorCode = -1
 )

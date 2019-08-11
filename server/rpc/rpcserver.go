@@ -121,13 +121,6 @@ var (
 		Code:    btcjson.ErrRPCUnimplemented,
 		Message: "Command unimplemented",
 	}
-
-	// ErrRPCNoWallet is an error returned to RPC clients when the provided
-	// command is recognized as a wallet command.
-	ErrRPCNoWallet = &btcjson.RPCError{
-		Code:    btcjson.ErrRPCNoWallet,
-		Message: "This implementation does not implement wallet commands",
-	}
 )
 
 type commandHandler func(*Server, interface{}, <-chan struct{}) (interface{}, error)
@@ -186,54 +179,6 @@ var rpcHandlersBeforeInit = map[string]commandHandler{
 	"verifyMessage":         handleVerifyMessage,
 	"version":               handleVersion,
 	"flushDbCache":          handleFlushDBCache,
-}
-
-// list of commands that we recognize, but for which btcd has no support because
-// it lacks support for wallet functionality. For these commands the user
-// should ask a connected instance of btcwallet.
-var rpcAskWallet = map[string]struct{}{
-	"addMultisigAddress":     {},
-	"backupWallet":           {},
-	"createEncryptedWallet":  {},
-	"createMultisig":         {},
-	"dumpPrivKey":            {},
-	"dumpWallet":             {},
-	"encryptWallet":          {},
-	"getAccount":             {},
-	"getAccountAddress":      {},
-	"getAddressesByAccount":  {},
-	"getBalance":             {},
-	"getNewAddress":          {},
-	"getRawChangeAddress":    {},
-	"getReceivedByAccount":   {},
-	"getReceivedByAddress":   {},
-	"getTransaction":         {},
-	"getTxOutSetInfo":        {},
-	"getUnconfirmedBalance":  {},
-	"getWalletInfo":          {},
-	"importPrivKey":          {},
-	"importWallet":           {},
-	"keyPoolRefill":          {},
-	"listAccounts":           {},
-	"listAddressGroupings":   {},
-	"listLockUnspent":        {},
-	"listReceivedByAccount":  {},
-	"listReceivedByAddress":  {},
-	"listSinceBlock":         {},
-	"listTransactions":       {},
-	"listUnspent":            {},
-	"lockUnspent":            {},
-	"move":                   {},
-	"sendFrom":               {},
-	"sendMany":               {},
-	"sendToAddress":          {},
-	"setAccount":             {},
-	"setTxFee":               {},
-	"signMessage":            {},
-	"signRawTransaction":     {},
-	"walletLock":             {},
-	"walletPassphrase":       {},
-	"walletPassphraseChange": {},
 }
 
 // Commands that are currently unimplemented, but should ultimately be.
@@ -361,13 +306,6 @@ func newGbtWorkState(timeSource blockdag.MedianTimeSource) *gbtWorkState {
 // supported but are not yet implemented.
 func handleUnimplemented(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
 	return nil, ErrRPCUnimplemented
-}
-
-// handleAskWallet is the handler for commands that are recognized as valid, but
-// are unable to answer correctly since it involves wallet state.
-// These commands will be implemented in btcwallet.
-func handleAskWallet(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	return nil, ErrRPCNoWallet
 }
 
 // handleAddManualNode handles addManualNode commands.
@@ -3800,11 +3738,6 @@ type parsedRPCCmd struct {
 func (s *Server) standardCmdResult(cmd *parsedRPCCmd, closeChan <-chan struct{}) (interface{}, error) {
 	handler, ok := rpcHandlers[cmd.method]
 	if ok {
-		goto handled
-	}
-	_, ok = rpcAskWallet[cmd.method]
-	if ok {
-		handler = handleAskWallet
 		goto handled
 	}
 	_, ok = rpcUnimplemented[cmd.method]
