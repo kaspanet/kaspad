@@ -40,7 +40,6 @@ var (
 func listCommands() {
 	const (
 		categoryChain uint8 = iota
-		categoryWallet
 		numCategories
 	)
 
@@ -69,16 +68,12 @@ func listCommands() {
 
 		// Categorize the command based on the usage flags.
 		category := categoryChain
-		if flags&btcjson.UFWalletOnly != 0 {
-			category = categoryWallet
-		}
 		categorized[category] = append(categorized[category], usage)
 	}
 
 	// Display the command according to their categories.
 	categoryTitles := make([]string, numCategories)
 	categoryTitles[categoryChain] = "Chain Server Commands:"
-	categoryTitles[categoryWallet] = "Wallet Server Commands (--wallet):"
 	for category := uint8(0); category < numCategories; category++ {
 		fmt.Println(categoryTitles[category])
 		for _, usage := range categorized[category] {

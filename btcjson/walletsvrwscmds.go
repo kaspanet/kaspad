@@ -112,17 +112,3 @@ type WalletIsLockedCmd struct{}
 func NewWalletIsLockedCmd() *WalletIsLockedCmd {
 	return &WalletIsLockedCmd{}
 }
-
-func init() {
-	// The commands in this file are only usable with a wallet server via
-	// websockets.
-	flags := UFWalletOnly | UFWebsocketOnly
-
-	MustRegisterCmd("createEncryptedWallet", (*CreateEncryptedWalletCmd)(nil), flags)
-	MustRegisterCmd("exportWatchingWallet", (*ExportWatchingWalletCmd)(nil), flags)
-	MustRegisterCmd("getUnconfirmedBalance", (*GetUnconfirmedBalanceCmd)(nil), flags)
-	MustRegisterCmd("listAddressTransactions", (*ListAddressTransactionsCmd)(nil), flags)
-	MustRegisterCmd("listAllTransactions", (*ListAllTransactionsCmd)(nil), flags)
-	MustRegisterCmd("recoverAddresses", (*RecoverAddressesCmd)(nil), flags)
-	MustRegisterCmd("walletIsLocked", (*WalletIsLockedCmd)(nil), flags)
-}
