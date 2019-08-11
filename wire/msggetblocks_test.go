@@ -27,16 +27,16 @@ func TestGetBlocks(t *testing.T) {
 
 	// Block 100000 hash.
 	hashStr = "3ba27aa200b1cecaad478d2b00432346c3f1f3986da1afd33e506"
-	hashStop, err := daghash.NewHashFromStr(hashStr)
+	stopHash, err := daghash.NewHashFromStr(hashStr)
 	if err != nil {
 		t.Errorf("NewHashFromStr: %v", err)
 	}
 
 	// Ensure we get the same data back out.
-	msg := NewMsgGetBlocks(hashStop)
-	if !msg.HashStop.IsEqual(hashStop) {
+	msg := NewMsgGetBlocks(stopHash)
+	if !msg.StopHash.IsEqual(stopHash) {
 		t.Errorf("NewMsgGetBlocks: wrong stop hash - got %v, want %v",
-			msg.HashStop, hashStop)
+			msg.StopHash, stopHash)
 	}
 
 	// Ensure the command is expected value.
@@ -102,7 +102,7 @@ func TestGetBlocksWire(t *testing.T) {
 
 	// Block 100000 hash.
 	hashStr = "3ba27aa200b1cecaad478d2b00432346c3f1f3986da1afd33e506"
-	hashStop, err := daghash.NewHashFromStr(hashStr)
+	stopHash, err := daghash.NewHashFromStr(hashStr)
 	if err != nil {
 		t.Errorf("NewHashFromStr: %v", err)
 	}
@@ -120,7 +120,7 @@ func TestGetBlocksWire(t *testing.T) {
 	}
 
 	// MsgGetBlocks message with multiple block locators and a stop hash.
-	multiLocators := NewMsgGetBlocks(hashStop)
+	multiLocators := NewMsgGetBlocks(stopHash)
 	multiLocators.AddBlockLocatorHash(hashLocator2)
 	multiLocators.AddBlockLocatorHash(hashLocator)
 	multiLocators.ProtocolVersion = pver
@@ -220,13 +220,13 @@ func TestGetBlocksWireErrors(t *testing.T) {
 
 	// Block 100000 hash.
 	hashStr = "3ba27aa200b1cecaad478d2b00432346c3f1f3986da1afd33e506"
-	hashStop, err := daghash.NewHashFromStr(hashStr)
+	stopHash, err := daghash.NewHashFromStr(hashStr)
 	if err != nil {
 		t.Errorf("NewHashFromStr: %v", err)
 	}
 
 	// MsgGetBlocks message with multiple block locators and a stop hash.
-	baseGetBlocks := NewMsgGetBlocks(hashStop)
+	baseGetBlocks := NewMsgGetBlocks(stopHash)
 	baseGetBlocks.ProtocolVersion = pver
 	baseGetBlocks.AddBlockLocatorHash(hashLocator2)
 	baseGetBlocks.AddBlockLocatorHash(hashLocator)
@@ -249,7 +249,7 @@ func TestGetBlocksWireErrors(t *testing.T) {
 
 	// Message that forces an error by having more than the max allowed
 	// block locator hashes.
-	maxGetBlocks := NewMsgGetBlocks(hashStop)
+	maxGetBlocks := NewMsgGetBlocks(stopHash)
 	for i := 0; i < MaxBlockLocatorsPerMsg; i++ {
 		maxGetBlocks.AddBlockLocatorHash(mainNetGenesisHash)
 	}
