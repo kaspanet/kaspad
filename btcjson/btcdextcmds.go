@@ -109,7 +109,7 @@ func NewGetTopHeadersCmd(startHash *string) *GetTopHeadersCmd {
 // github.com/decred/dcrd/dcrjson.
 type GetHeadersCmd struct {
 	BlockLocators []string `json:"blockLocators"`
-	HashStop      string   `json:"hashStop"`
+	StopHash      string   `json:"stopHash"`
 }
 
 // NewGetHeadersCmd returns a new instance which can be used to issue a
@@ -117,10 +117,10 @@ type GetHeadersCmd struct {
 //
 // NOTE: This is a btcsuite extension ported from
 // github.com/decred/dcrd/dcrjson.
-func NewGetHeadersCmd(blockLocators []string, hashStop string) *GetHeadersCmd {
+func NewGetHeadersCmd(blockLocators []string, stopHash string) *GetHeadersCmd {
 	return &GetHeadersCmd{
 		BlockLocators: blockLocators,
-		HashStop:      hashStop,
+		StopHash:      stopHash,
 	}
 }
 

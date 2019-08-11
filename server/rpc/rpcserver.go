@@ -2330,14 +2330,14 @@ func handleGetHeaders(s *Server, cmd interface{}, closeChan <-chan struct{}) (in
 		}
 		blockLocators[i] = blockLocator
 	}
-	var hashStop daghash.Hash
-	if c.HashStop != "" {
-		err := daghash.Decode(&hashStop, c.HashStop)
+	var stopHash daghash.Hash
+	if c.StopHash != "" {
+		err := daghash.Decode(&stopHash, c.StopHash)
 		if err != nil {
-			return nil, rpcDecodeHexError(c.HashStop)
+			return nil, rpcDecodeHexError(c.StopHash)
 		}
 	}
-	headers := s.cfg.SyncMgr.LocateHeaders(blockLocators, &hashStop)
+	headers := s.cfg.SyncMgr.LocateHeaders(blockLocators, &stopHash)
 
 	// Return the serialized block headers as hex-encoded strings.
 	hexBlockHeaders := make([]string, len(headers))
@@ -3203,10 +3203,7 @@ func handleSearchRawTransactions(s *Server, cmd interface{}, closeChan <-chan st
 
 	// Address has never been used if neither source yielded any results.
 	if len(addressTxns) == 0 {
-		return nil, &btcjson.RPCError{
-			Code:    btcjson.ErrRPCNoTxInfo,
-			Message: "No information available about address",
-		}
+		return []btcjson.SearchRawTransactionsResult{}, nil
 	}
 
 	// Serialize all of the transactions to hex.
@@ -4187,7 +4184,7 @@ type rpcserverSyncManager interface {
 	// block in the provided locators until the provided stop hash or the
 	// current tip is reached, up to a max of wire.MaxBlockHeadersPerMsg
 	// hashes.
-	LocateHeaders(locators []*daghash.Hash, hashStop *daghash.Hash) []*wire.BlockHeader
+	LocateHeaders(locators []*daghash.Hash, stopHash *daghash.Hash) []*wire.BlockHeader
 }
 
 // rpcserverConfig is a descriptor containing the RPC server configuration.

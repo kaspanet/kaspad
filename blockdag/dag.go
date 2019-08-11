@@ -1675,10 +1675,10 @@ func (dag *BlockDAG) IntervalBlockHashes(endHash *daghash.Hash, interval uint64,
 // functions.
 //
 // This function MUST be called with the DAG state lock held (for reads).
-func (dag *BlockDAG) locateInventory(locator BlockLocator, hashStop *daghash.Hash, maxEntries uint32) (*blockNode, uint32) {
+func (dag *BlockDAG) locateInventory(locator BlockLocator, stopHash *daghash.Hash, maxEntries uint32) (*blockNode, uint32) {
 	// There are no block locators so a specific block is being requested
 	// as identified by the stop hash.
-	stopNode := dag.index.LookupNode(hashStop)
+	stopNode := dag.index.LookupNode(stopHash)
 	if len(locator) == 0 {
 		if stopNode == nil {
 			// No blocks with the stop hash were found so there is
@@ -1718,8 +1718,8 @@ func (dag *BlockDAG) locateInventory(locator BlockLocator, hashStop *daghash.Has
 // See the comment on the exported function for more details on special cases.
 //
 // This function MUST be called with the DAG state lock held (for reads).
-func (dag *BlockDAG) locateBlocks(locator BlockLocator, hashStop *daghash.Hash, maxHashes uint32) []*daghash.Hash {
-	nodes := dag.locateBlockNodes(locator, hashStop, maxHashes)
+func (dag *BlockDAG) locateBlocks(locator BlockLocator, stopHash *daghash.Hash, maxHashes uint32) []*daghash.Hash {
+	nodes := dag.locateBlockNodes(locator, stopHash, maxHashes)
 	hashes := make([]*daghash.Hash, len(nodes))
 	for i, node := range nodes {
 		hashes[i] = node.hash
@@ -1727,14 +1727,14 @@ func (dag *BlockDAG) locateBlocks(locator BlockLocator, hashStop *daghash.Hash, 
 	return hashes
 }
 
-func (dag *BlockDAG) locateBlockNodes(locator BlockLocator, hashStop *daghash.Hash, maxEntries uint32) []*blockNode {
+func (dag *BlockDAG) locateBlockNodes(locator BlockLocator, stopHash *daghash.Hash, maxEntries uint32) []*blockNode {
 	// Find the first known block in the locator and the estimated number of
 	// nodes after it needed while respecting the stop hash and max entries.
-	node, estimatedEntries := dag.locateInventory(locator, hashStop, maxEntries)
+	node, estimatedEntries := dag.locateInventory(locator, stopHash, maxEntries)
 	if estimatedEntries == 0 {
 		return nil
 	}
-	stopNode := dag.index.LookupNode(hashStop)
+	stopNode := dag.index.LookupNode(stopHash)
 
 	// Populate and return the found nodes.
 	nodes := make([]*blockNode, 0, estimatedEntries)
@@ -1748,7 +1748,7 @@ func (dag *BlockDAG) locateBlockNodes(locator BlockLocator, hashStop *daghash.Ha
 		if !visited.contains(current) {
 			visited.add(current)
 			isBeforeStop := (stopNode == nil) || (current.height < stopNode.height)
-			if isBeforeStop || current.hash.IsEqual(hashStop) {
+			if isBeforeStop || current.hash.IsEqual(stopHash) {
 				nodes = append(nodes, current)
 			}
 			if isBeforeStop {
@@ -1772,9 +1772,9 @@ func (dag *BlockDAG) locateBlockNodes(locator BlockLocator, hashStop *daghash.Ha
 //   after the genesis block will be returned
 //
 // This function is safe for concurrent access.
-func (dag *BlockDAG) LocateBlocks(locator BlockLocator, hashStop *daghash.Hash, maxHashes uint32) []*daghash.Hash {
+func (dag *BlockDAG) LocateBlocks(locator BlockLocator, stopHash *daghash.Hash, maxHashes uint32) []*daghash.Hash {
 	dag.dagLock.RLock()
-	hashes := dag.locateBlocks(locator, hashStop, maxHashes)
+	hashes := dag.locateBlocks(locator, stopHash, maxHashes)
 	dag.dagLock.RUnlock()
 	return hashes
 }
@@ -1786,8 +1786,8 @@ func (dag *BlockDAG) LocateBlocks(locator BlockLocator, hashStop *daghash.Hash, 
 // See the comment on the exported function for more details on special cases.
 //
 // This function MUST be called with the DAG state lock held (for reads).
-func (dag *BlockDAG) locateHeaders(locator BlockLocator, hashStop *daghash.Hash, maxHeaders uint32) []*wire.BlockHeader {
-	nodes := dag.locateBlockNodes(locator, hashStop, maxHeaders)
+func (dag *BlockDAG) locateHeaders(locator BlockLocator, stopHash *daghash.Hash, maxHeaders uint32) []*wire.BlockHeader {
+	nodes := dag.locateBlockNodes(locator, stopHash, maxHeaders)
 	headers := make([]*wire.BlockHeader, len(nodes))
 	for i, node := range nodes {
 		headers[i] = node.Header()
@@ -1844,9 +1844,9 @@ func (dag *BlockDAG) RUnlock() {
 //   after the genesis block will be returned
 //
 // This function is safe for concurrent access.
-func (dag *BlockDAG) LocateHeaders(locator BlockLocator, hashStop *daghash.Hash) []*wire.BlockHeader {
+func (dag *BlockDAG) LocateHeaders(locator BlockLocator, stopHash *daghash.Hash) []*wire.BlockHeader {
 	dag.dagLock.RLock()
-	headers := dag.locateHeaders(locator, hashStop, wire.MaxBlockHeadersPerMsg)
+	headers := dag.locateHeaders(locator, stopHash, wire.MaxBlockHeadersPerMsg)
 	dag.dagLock.RUnlock()
 	return headers
 }
