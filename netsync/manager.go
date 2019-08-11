@@ -293,7 +293,7 @@ func (sm *SyncManager) startSync() {
 				"%d from peer %s", sm.dag.ChainHeight()+1,
 				sm.nextCheckpoint.ChainHeight, bestPeer.Addr()) //TODO: (Ori) This is probably wrong. Done only for compilation
 		} else {
-			bestPeer.PushGetBlocksMsg(locator, &daghash.ZeroHash)
+			bestPeer.PushGetBlockInvsMsg(locator, &daghash.ZeroHash)
 		}
 		sm.syncPeer = bestPeer
 	} else {
@@ -674,9 +674,9 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 	sm.headerList.Init()
 	log.Infof("Reached the final checkpoint -- switching to normal mode")
 	locator := blockdag.BlockLocator([]*daghash.Hash{blockHash})
-	err = peer.PushGetBlocksMsg(locator, &daghash.ZeroHash)
+	err = peer.PushGetBlockInvsMsg(locator, &daghash.ZeroHash)
 	if err != nil {
-		log.Warnf("Failed to send getblocks message to peer %s: %s",
+		log.Warnf("Failed to send getblockinvs message to peer %s: %s",
 			peer.Addr(), err)
 		return
 	}
@@ -1018,7 +1018,7 @@ func (sm *SyncManager) handleInvMsg(imsg *invMsg) {
 				// final one the remote peer knows about (zero
 				// stop hash).
 				locator := sm.dag.BlockLocatorFromHash(iv.Hash)
-				peer.PushGetBlocksMsg(locator, &daghash.ZeroHash)
+				peer.PushGetBlockInvsMsg(locator, &daghash.ZeroHash)
 			}
 		}
 	}

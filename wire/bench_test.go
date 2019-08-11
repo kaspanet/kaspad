@@ -445,12 +445,12 @@ func BenchmarkDecodeHeaders(b *testing.B) {
 	}
 }
 
-// BenchmarkDecodeGetBlocks performs a benchmark on how long it takes to
-// decode a getblocks message with the maximum number of block locator hashes.
-func BenchmarkDecodeGetBlocks(b *testing.B) {
+// BenchmarkDecodeGetBlockInvs performs a benchmark on how long it takes to
+// decode a getblockinvs message with the maximum number of block locator hashes.
+func BenchmarkDecodeGetBlockInvs(b *testing.B) {
 	// Create a message with the maximum number of block locators.
 	pver := ProtocolVersion
-	var m MsgGetBlocks
+	var m MsgGetBlockInvs
 	for i := 0; i < MaxBlockLocatorsPerMsg; i++ {
 		hash, err := daghash.NewHashFromStr(fmt.Sprintf("%x", i))
 		if err != nil {
@@ -462,12 +462,12 @@ func BenchmarkDecodeGetBlocks(b *testing.B) {
 	// Serialize it so the bytes are available to test the decode below.
 	var bb bytes.Buffer
 	if err := m.BtcEncode(&bb, pver); err != nil {
-		b.Fatalf("MsgGetBlocks.BtcEncode: unexpected error: %v", err)
+		b.Fatalf("MsgGetBlockInvs.BtcEncode: unexpected error: %v", err)
 	}
 	buf := bb.Bytes()
 
 	r := bytes.NewReader(buf)
-	var msg MsgGetBlocks
+	var msg MsgGetBlockInvs
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		r.Seek(0, 0)
