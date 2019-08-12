@@ -409,8 +409,8 @@ func TestSelectTxs(t *testing.T) {
 					gas:  8,
 					fee:  100,
 
-					// Expected probability: 0.95
-					expectedMinSelectedTimes: 90,
+					// Expected probability: 0.98
+					expectedMinSelectedTimes: 95,
 					expectedMaxSelectedTimes: 100,
 				},
 				{
@@ -418,9 +418,9 @@ func TestSelectTxs(t *testing.T) {
 					gas:  16,
 					fee:  100,
 
-					// Expected probability: 0.90
-					expectedMinSelectedTimes: 85,
-					expectedMaxSelectedTimes: 95,
+					// Expected probability: 0.92
+					expectedMinSelectedTimes: 87,
+					expectedMaxSelectedTimes: 97,
 				},
 				{
 					mass: 32,
