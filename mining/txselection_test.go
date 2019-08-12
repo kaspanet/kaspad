@@ -98,9 +98,11 @@ func TestSelectTxs(t *testing.T) {
 			gasLimit:  10,
 			txDefinitions: []*testTxDescDefinition{
 				{
-					mass:                     0,
-					gas:                      0,
-					fee:                      0,
+					mass: 0,
+					gas:  0,
+					fee:  0,
+
+					// Expected probability: 0
 					expectedMinSelectedTimes: 0,
 					expectedMaxSelectedTimes: 0,
 				},
@@ -113,9 +115,11 @@ func TestSelectTxs(t *testing.T) {
 			gasLimit:  100,
 			txDefinitions: []*testTxDescDefinition{
 				{
-					mass:                     10,
-					gas:                      10,
-					fee:                      10,
+					mass: 10,
+					gas:  10,
+					fee:  10,
+
+					// Expected probability: 1
 					expectedMinSelectedTimes: 1,
 					expectedMaxSelectedTimes: 1,
 				},
@@ -128,16 +132,20 @@ func TestSelectTxs(t *testing.T) {
 			gasLimit:  2,
 			txDefinitions: []*testTxDescDefinition{
 				{
-					mass:                     10,
-					gas:                      10,
-					fee:                      100,
+					mass: 10,
+					gas:  10,
+					fee:  100,
+
+					// Expected probability: 0
 					expectedMinSelectedTimes: 0,
 					expectedMaxSelectedTimes: 0,
 				},
 				{
-					mass:                     5,
-					gas:                      5,
-					fee:                      50,
+					mass: 5,
+					gas:  5,
+					fee:  50,
+
+					// Expected probability: 0
 					expectedMinSelectedTimes: 0,
 					expectedMaxSelectedTimes: 0,
 				},
@@ -150,23 +158,29 @@ func TestSelectTxs(t *testing.T) {
 			gasLimit:  2,
 			txDefinitions: []*testTxDescDefinition{
 				{
-					mass:                     0,
-					gas:                      0,
-					fee:                      1,
+					mass: 0,
+					gas:  0,
+					fee:  1,
+
+					// Expected probability: 1
 					expectedMinSelectedTimes: 1,
 					expectedMaxSelectedTimes: 1,
 				},
 				{
-					mass:                     10,
-					gas:                      10,
-					fee:                      100,
+					mass: 10,
+					gas:  10,
+					fee:  100,
+
+					// Expected probability: 0
 					expectedMinSelectedTimes: 0,
 					expectedMaxSelectedTimes: 0,
 				},
 				{
-					mass:                     5,
-					gas:                      5,
-					fee:                      50,
+					mass: 5,
+					gas:  5,
+					fee:  50,
+
+					// Expected probability: 0
 					expectedMinSelectedTimes: 0,
 					expectedMaxSelectedTimes: 0,
 				},
@@ -179,37 +193,47 @@ func TestSelectTxs(t *testing.T) {
 			gasLimit:  10,
 			txDefinitions: []*testTxDescDefinition{
 				{
-					mass:                     100,
-					gas:                      1,
-					fee:                      100,
+					mass: 100,
+					gas:  1,
+					fee:  100,
+
+					// Expected probability: 1
 					expectedMinSelectedTimes: 1,
 					expectedMaxSelectedTimes: 1,
 				},
 				{
-					mass:                     0,
-					gas:                      1,
-					fee:                      1,
+					mass: 0,
+					gas:  1,
+					fee:  1,
+
+					// Expected probability: 1
 					expectedMinSelectedTimes: 1,
 					expectedMaxSelectedTimes: 1,
 				},
 				{
-					mass:                     2,
-					gas:                      1,
-					fee:                      100,
+					mass: 2,
+					gas:  1,
+					fee:  100,
+
+					// Expected probability: 1
 					expectedMinSelectedTimes: 1,
 					expectedMaxSelectedTimes: 1,
 				},
 				{
-					mass:                     3,
-					gas:                      1,
-					fee:                      100,
+					mass: 3,
+					gas:  1,
+					fee:  100,
+
+					// Expected probability: 1
 					expectedMinSelectedTimes: 1,
 					expectedMaxSelectedTimes: 1,
 				},
 				{
-					mass:                     4,
-					gas:                      1,
-					fee:                      100,
+					mass: 4,
+					gas:  1,
+					fee:  100,
+
+					// Expected probability: 1
 					expectedMinSelectedTimes: 1,
 					expectedMaxSelectedTimes: 1,
 				},
@@ -222,37 +246,47 @@ func TestSelectTxs(t *testing.T) {
 			gasLimit:  math.MaxUint64,
 			txDefinitions: []*testTxDescDefinition{
 				{
-					mass:                     1,
-					gas:                      100,
-					fee:                      100,
+					mass: 1,
+					gas:  100,
+					fee:  100,
+
+					// Expected probability: 1
 					expectedMinSelectedTimes: 1,
 					expectedMaxSelectedTimes: 1,
 				},
 				{
-					mass:                     1,
-					gas:                      0,
-					fee:                      1,
+					mass: 1,
+					gas:  0,
+					fee:  1,
+
+					// Expected probability: 1
 					expectedMinSelectedTimes: 1,
 					expectedMaxSelectedTimes: 1,
 				},
 				{
-					mass:                     1,
-					gas:                      2,
-					fee:                      100,
+					mass: 1,
+					gas:  2,
+					fee:  100,
+
+					// Expected probability: 1
 					expectedMinSelectedTimes: 1,
 					expectedMaxSelectedTimes: 1,
 				},
 				{
-					mass:                     1,
-					gas:                      3,
-					fee:                      100,
+					mass: 1,
+					gas:  3,
+					fee:  100,
+
+					// Expected probability: 1
 					expectedMinSelectedTimes: 1,
 					expectedMaxSelectedTimes: 1,
 				},
 				{
-					mass:                     1,
-					gas:                      4,
-					fee:                      100,
+					mass: 1,
+					gas:  4,
+					fee:  100,
+
+					// Expected probability: 1
 					expectedMinSelectedTimes: 1,
 					expectedMaxSelectedTimes: 1,
 				},
