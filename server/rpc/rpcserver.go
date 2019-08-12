@@ -1920,15 +1920,6 @@ func handleGetBlockTemplateRequest(s *Server, request *btcjson.TemplateRequest, 
 		}
 	}
 
-	// No point in generating or accepting work before the DAG is synced.
-	currentChainHeight := s.cfg.DAG.ChainHeight()
-	if currentChainHeight != 0 && !s.cfg.SyncMgr.IsCurrent() {
-		return nil, &btcjson.RPCError{
-			Code:    btcjson.ErrRPCClientInInitialDownload,
-			Message: "Bitcoin is downloading blocks...",
-		}
-	}
-
 	// When a long poll ID was provided, this is a long poll request by the
 	// client to be notified when block template referenced by the ID should
 	// be replaced with a new one.
@@ -2114,9 +2105,11 @@ func handleGetBlockTemplate(s *Server, cmd interface{}, closeChan <-chan struct{
 	}
 
 	// No point in generating templates or processing proposals before
-	// the DAG is synced.
+	// the DAG is synced. Note that we make a special check for when
+	// we have nothing besides the genesis block (chainHeight == 0),
+	// because in that state IsCurrent may still return true.
 	currentChainHeight := s.cfg.DAG.ChainHeight()
-	if currentChainHeight != 0 && !s.cfg.SyncMgr.IsCurrent() {
+	if !s.cfg.SyncMgr.IsCurrent() && currentChainHeight != 0 {
 		return nil, &btcjson.RPCError{
 			Code:    btcjson.ErrRPCClientInInitialDownload,
 			Message: "Bitcoin is downloading blocks...",
