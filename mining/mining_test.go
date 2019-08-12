@@ -187,22 +187,28 @@ func TestNewBlockTemplate(t *testing.T) {
 
 	txSource.txDescs = []*TxDesc{
 		{
-			Tx: cbTx,
+			Tx:  cbTx,
+			Fee: 1,
 		},
 		{
-			Tx: util.NewTx(tx),
+			Tx:  util.NewTx(tx),
+			Fee: 1,
 		},
 		{
-			Tx: util.NewTx(nonFinalizedTx),
+			Tx:  util.NewTx(nonFinalizedTx),
+			Fee: 1,
 		},
 		{
-			Tx: util.NewTx(subnetworkTx1),
+			Tx:  util.NewTx(subnetworkTx1),
+			Fee: 1,
 		},
 		{
-			Tx: util.NewTx(subnetworkTx2),
+			Tx:  util.NewTx(subnetworkTx2),
+			Fee: 1,
 		},
 		{
-			Tx: util.NewTx(nonExistingSubnetworkTx),
+			Tx:  util.NewTx(nonExistingSubnetworkTx),
+			Fee: 1,
 		},
 	}
 
