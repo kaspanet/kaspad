@@ -337,6 +337,68 @@ func TestSelectTxs(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:      "distributed selection probability",
+			runTimes:  100,
+			massLimit: 32,
+			gasLimit:  32,
+			txDefinitions: []*testTxDescDefinition{
+				{
+					mass: 1,
+					gas:  1,
+					fee:  100,
+
+					// Expected probability: 1
+					expectedMinSelectedTimes: 95,
+					expectedMaxSelectedTimes: 100,
+				},
+				{
+					mass: 2,
+					gas:  2,
+					fee:  100,
+
+					// Expected probability: 1
+					expectedMinSelectedTimes: 95,
+					expectedMaxSelectedTimes: 100,
+				},
+				{
+					mass: 4,
+					gas:  4,
+					fee:  100,
+
+					// Expected probability: 1
+					expectedMinSelectedTimes: 95,
+					expectedMaxSelectedTimes: 100,
+				},
+				{
+					mass: 8,
+					gas:  8,
+					fee:  100,
+
+					// Expected probability: 0.95
+					expectedMinSelectedTimes: 90,
+					expectedMaxSelectedTimes: 100,
+				},
+				{
+					mass: 16,
+					gas:  16,
+					fee:  100,
+
+					// Expected probability: 0.90
+					expectedMinSelectedTimes: 85,
+					expectedMaxSelectedTimes: 95,
+				},
+				{
+					mass: 32,
+					gas:  32,
+					fee:  100,
+
+					// Expected probability: 0
+					expectedMinSelectedTimes: 0,
+					expectedMaxSelectedTimes: 5,
+				},
+			},
+		},
 	}
 
 	for _, test := range tests {
