@@ -2113,6 +2113,16 @@ func handleGetBlockTemplate(s *Server, cmd interface{}, closeChan <-chan struct{
 		mode = request.Mode
 	}
 
+	// No point in generating templates or processing proposals before
+	// the DAG is synced.
+	currentChainHeight := s.cfg.DAG.ChainHeight()
+	if currentChainHeight != 0 && !s.cfg.SyncMgr.IsCurrent() {
+		return nil, &btcjson.RPCError{
+			Code:    btcjson.ErrRPCClientInInitialDownload,
+			Message: "Bitcoin is downloading blocks...",
+		}
+	}
+
 	switch mode {
 	case "template":
 		return handleGetBlockTemplateRequest(s, request, closeChan)
