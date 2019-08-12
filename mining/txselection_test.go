@@ -10,7 +10,6 @@ import (
 	"github.com/daglabs/btcd/util/subnetworkid"
 	"github.com/daglabs/btcd/wire"
 	"math"
-	"strings"
 	"testing"
 )
 
@@ -19,7 +18,14 @@ type testTxDescDefinition struct {
 	mass uint64
 	gas  uint64
 
-	isExpectedToBeSelected bool
+	expectedMinSelectedTimes uint64
+	expectedMaxSelectedTimes uint64
+
+	tx *util.Tx
+}
+
+func (dd testTxDescDefinition) String() string {
+	return fmt.Sprintf("[fee: %d, gas: %d, mass: %d]", dd.fee, dd.gas, dd.mass)
 }
 
 func TestSelectTxs(t *testing.T) {
@@ -72,158 +78,262 @@ func TestSelectTxs(t *testing.T) {
 	}
 
 	tests := []struct {
-		name      string
-		massLimit uint64
-		gasLimit  uint64
-		sourceTxs []testTxDescDefinition
+		name          string
+		runTimes      int
+		massLimit     uint64
+		gasLimit      uint64
+		txDefinitions []*testTxDescDefinition
 	}{
 		{
-			name:      "no source txs",
-			massLimit: 10,
-			gasLimit:  10,
-			sourceTxs: []testTxDescDefinition{},
+			name:          "no source txs",
+			runTimes:      1,
+			massLimit:     10,
+			gasLimit:      10,
+			txDefinitions: []*testTxDescDefinition{},
 		},
 		{
 			name:      "zero fee",
+			runTimes:  1,
 			massLimit: 10,
 			gasLimit:  10,
-			sourceTxs: []testTxDescDefinition{
+			txDefinitions: []*testTxDescDefinition{
 				{
-					mass:                   0,
-					gas:                    0,
-					fee:                    0,
-					isExpectedToBeSelected: false,
+					mass:                     0,
+					gas:                      0,
+					fee:                      0,
+					expectedMinSelectedTimes: 0,
+					expectedMaxSelectedTimes: 0,
 				},
 			},
 		},
 		{
 			name:      "single transaction",
+			runTimes:  1,
 			massLimit: 100,
 			gasLimit:  100,
-			sourceTxs: []testTxDescDefinition{
+			txDefinitions: []*testTxDescDefinition{
 				{
-					mass:                   10,
-					gas:                    10,
-					fee:                    10,
-					isExpectedToBeSelected: true,
+					mass:                     10,
+					gas:                      10,
+					fee:                      10,
+					expectedMinSelectedTimes: 1,
+					expectedMaxSelectedTimes: 1,
 				},
 			},
 		},
 		{
 			name:      "none fit, limited gas and mass",
+			runTimes:  1,
 			massLimit: 2,
 			gasLimit:  2,
-			sourceTxs: []testTxDescDefinition{
+			txDefinitions: []*testTxDescDefinition{
 				{
-					mass:                   10,
-					gas:                    10,
-					fee:                    100,
-					isExpectedToBeSelected: false,
+					mass:                     10,
+					gas:                      10,
+					fee:                      100,
+					expectedMinSelectedTimes: 0,
+					expectedMaxSelectedTimes: 0,
 				},
 				{
-					mass:                   5,
-					gas:                    5,
-					fee:                    50,
-					isExpectedToBeSelected: false,
+					mass:                     5,
+					gas:                      5,
+					fee:                      50,
+					expectedMinSelectedTimes: 0,
+					expectedMaxSelectedTimes: 0,
 				},
 			},
 		},
 		{
 			name:      "only one fits, limited gas and mass",
+			runTimes:  1,
 			massLimit: 2,
 			gasLimit:  2,
-			sourceTxs: []testTxDescDefinition{
+			txDefinitions: []*testTxDescDefinition{
 				{
-					mass:                   0,
-					gas:                    0,
-					fee:                    1,
-					isExpectedToBeSelected: true,
+					mass:                     0,
+					gas:                      0,
+					fee:                      1,
+					expectedMinSelectedTimes: 1,
+					expectedMaxSelectedTimes: 1,
 				},
 				{
-					mass:                   10,
-					gas:                    10,
-					fee:                    100,
-					isExpectedToBeSelected: false,
+					mass:                     10,
+					gas:                      10,
+					fee:                      100,
+					expectedMinSelectedTimes: 0,
+					expectedMaxSelectedTimes: 0,
 				},
 				{
-					mass:                   5,
-					gas:                    5,
-					fee:                    50,
-					isExpectedToBeSelected: false,
+					mass:                     5,
+					gas:                      5,
+					fee:                      50,
+					expectedMinSelectedTimes: 0,
+					expectedMaxSelectedTimes: 0,
 				},
 			},
 		},
 		{
 			name:      "all fit, limited gas",
+			runTimes:  1,
 			massLimit: wire.MaxMassPerBlock,
 			gasLimit:  10,
-			sourceTxs: []testTxDescDefinition{
+			txDefinitions: []*testTxDescDefinition{
 				{
-					mass:                   100,
-					gas:                    1,
-					fee:                    100,
-					isExpectedToBeSelected: true,
+					mass:                     100,
+					gas:                      1,
+					fee:                      100,
+					expectedMinSelectedTimes: 1,
+					expectedMaxSelectedTimes: 1,
 				},
 				{
-					mass:                   0,
-					gas:                    1,
-					fee:                    1,
-					isExpectedToBeSelected: true,
+					mass:                     0,
+					gas:                      1,
+					fee:                      1,
+					expectedMinSelectedTimes: 1,
+					expectedMaxSelectedTimes: 1,
 				},
 				{
-					mass:                   2,
-					gas:                    1,
-					fee:                    100,
-					isExpectedToBeSelected: true,
+					mass:                     2,
+					gas:                      1,
+					fee:                      100,
+					expectedMinSelectedTimes: 1,
+					expectedMaxSelectedTimes: 1,
 				},
 				{
-					mass:                   3,
-					gas:                    1,
-					fee:                    100,
-					isExpectedToBeSelected: true,
+					mass:                     3,
+					gas:                      1,
+					fee:                      100,
+					expectedMinSelectedTimes: 1,
+					expectedMaxSelectedTimes: 1,
 				},
 				{
-					mass:                   4,
-					gas:                    1,
-					fee:                    100,
-					isExpectedToBeSelected: true,
+					mass:                     4,
+					gas:                      1,
+					fee:                      100,
+					expectedMinSelectedTimes: 1,
+					expectedMaxSelectedTimes: 1,
 				},
 			},
 		},
 		{
 			name:      "all fit, limited mass",
+			runTimes:  1,
 			massLimit: 10,
 			gasLimit:  math.MaxUint64,
-			sourceTxs: []testTxDescDefinition{
+			txDefinitions: []*testTxDescDefinition{
 				{
-					mass:                   1,
-					gas:                    100,
-					fee:                    100,
-					isExpectedToBeSelected: true,
+					mass:                     1,
+					gas:                      100,
+					fee:                      100,
+					expectedMinSelectedTimes: 1,
+					expectedMaxSelectedTimes: 1,
 				},
 				{
-					mass:                   1,
-					gas:                    0,
-					fee:                    1,
-					isExpectedToBeSelected: true,
+					mass:                     1,
+					gas:                      0,
+					fee:                      1,
+					expectedMinSelectedTimes: 1,
+					expectedMaxSelectedTimes: 1,
 				},
 				{
-					mass:                   1,
-					gas:                    2,
-					fee:                    100,
-					isExpectedToBeSelected: true,
+					mass:                     1,
+					gas:                      2,
+					fee:                      100,
+					expectedMinSelectedTimes: 1,
+					expectedMaxSelectedTimes: 1,
 				},
 				{
-					mass:                   1,
-					gas:                    3,
-					fee:                    100,
-					isExpectedToBeSelected: true,
+					mass:                     1,
+					gas:                      3,
+					fee:                      100,
+					expectedMinSelectedTimes: 1,
+					expectedMaxSelectedTimes: 1,
 				},
 				{
-					mass:                   1,
-					gas:                    4,
-					fee:                    100,
-					isExpectedToBeSelected: true,
+					mass:                     1,
+					gas:                      4,
+					fee:                      100,
+					expectedMinSelectedTimes: 1,
+					expectedMaxSelectedTimes: 1,
+				},
+			},
+		},
+		{
+			name:      "equal selection probability",
+			runTimes:  1000,
+			massLimit: 100,
+			gasLimit:  100,
+			txDefinitions: []*testTxDescDefinition{
+				{
+					mass: 75,
+					gas:  75,
+					fee:  100,
+
+					// Expected probability: 0.25
+					expectedMinSelectedTimes: 200,
+					expectedMaxSelectedTimes: 400,
+				},
+				{
+					mass: 75,
+					gas:  75,
+					fee:  100,
+
+					// Expected probability: 0.25
+					expectedMinSelectedTimes: 200,
+					expectedMaxSelectedTimes: 400,
+				},
+				{
+					mass: 75,
+					gas:  75,
+					fee:  100,
+
+					// Expected probability: 0.25
+					expectedMinSelectedTimes: 200,
+					expectedMaxSelectedTimes: 400,
+				},
+				{
+					mass: 75,
+					gas:  75,
+					fee:  100,
+
+					// Expected probability: 0.25
+					expectedMinSelectedTimes: 200,
+					expectedMaxSelectedTimes: 400,
+				},
+			},
+		},
+		{
+			name:      "unequal selection probability",
+			runTimes:  1000,
+			massLimit: 100,
+			gasLimit:  100,
+			txDefinitions: []*testTxDescDefinition{
+				{
+					mass: 50,
+					gas:  50,
+					fee:  100,
+
+					// Expected probability: 0.33
+					expectedMinSelectedTimes: 280,
+					expectedMaxSelectedTimes: 380,
+				},
+				{
+					mass: 100,
+					gas:  0,
+					fee:  100,
+
+					// Expected probability: 0.50
+					expectedMinSelectedTimes: 450,
+					expectedMaxSelectedTimes: 550,
+				},
+				{
+					mass: 0,
+					gas:  100,
+					fee:  100,
+
+					// Expected probability: 0.50
+					expectedMinSelectedTimes: 450,
+					expectedMaxSelectedTimes: 550,
 				},
 			},
 		},
@@ -238,10 +348,10 @@ func TestSelectTxs(t *testing.T) {
 			// We use the first payload byte to resolve which definition to use.
 			massPatch := monkey.Patch(blockdag.CalcTxMass, func(tx *util.Tx, _ blockdag.UTXOSet) (uint64, error) {
 				if tx.IsCoinBase() {
-					return 1, nil
+					return 0, nil
 				}
 				index := tx.MsgTx().Payload[0]
-				definition := test.sourceTxs[index]
+				definition := test.txDefinitions[index]
 				return definition.mass, nil
 			})
 			defer massPatch.Unpatch()
@@ -256,21 +366,22 @@ func TestSelectTxs(t *testing.T) {
 			// We use the first payload byte to resolve which definition to use.
 			feePatch := monkey.Patch(blockdag.CheckTransactionInputsAndCalulateFee, func(tx *util.Tx, _ uint64, _ blockdag.UTXOSet, _ *dagconfig.Params, _ bool) (txFeeInSatoshi uint64, err error) {
 				if tx.IsCoinBase() {
-					return 1, nil
+					return 0, nil
 				}
 				index := tx.MsgTx().Payload[0]
-				definition := test.sourceTxs[index]
+				definition := test.txDefinitions[index]
 				return definition.fee, nil
 			})
 			defer feePatch.Unpatch()
 
-			// Load the txSource with transactions as defined in test.sourceTxs.
+			// Load the txSource with transactions as defined in test.txDefinitions.
 			// Note that we're saving the definition index in the msgTx payload
 			// so that we may use it in massPatch and feePatch.
-			// We're also saving for later the util.txs that we expect to be selected
-			txSource.txDescs = make([]*TxDesc, len(test.sourceTxs))
-			expectedSelectedTxs := make([]*util.Tx, 0, len(test.sourceTxs))
-			for i, definition := range test.sourceTxs {
+			// We also initialize a map that keeps track of how many times a tx
+			// has been selected.
+			txSource.txDescs = make([]*TxDesc, len(test.txDefinitions))
+			selectedTxCountMap := make(map[*util.Tx]uint64, len(test.txDefinitions))
+			for i, definition := range test.txDefinitions {
 				txIn := &wire.TxIn{
 					PreviousOutpoint: wire.Outpoint{
 						TxID:  *template.Block.Transactions[util.CoinbaseTransactionIndex].TxID(),
@@ -293,56 +404,39 @@ func TestSelectTxs(t *testing.T) {
 				}
 				txSource.txDescs[i] = &txDesc
 
-				if definition.isExpectedToBeSelected {
-					expectedSelectedTxs = append(expectedSelectedTxs, tx)
+				definition.tx = tx
+				selectedTxCountMap[tx] = 0
+			}
+
+			// Run selectTxs test.runTimes times
+			for i := 0; i < test.runTimes; i++ {
+				result, err := blockTemplateGenerator.selectTxs(OpTrueAddr)
+				if err != nil {
+					t.Errorf("selectTxs unexpectedly failed in test '%s': %s",
+						test.name, err)
+					return
+				}
+
+				// Increment the counts of all the selected transactions.
+				// Ignore the first transactions because it's the coinbase.
+				for _, selectedTx := range result.selectedTxs[1:] {
+					selectedTxCountMap[selectedTx]++
 				}
 			}
 
-			result, err := blockTemplateGenerator.selectTxs(OpTrueAddr)
-			if err != nil {
-				t.Errorf("selectTxs unexpectedly failed in test '%s': %s",
-					test.name, err)
-				return
-			}
-
-			// Ignore the first transactions because it's the coinbase.
-			selectedTxs := result.selectedTxs[1:]
-
-			// Check whether expectedSelectedTxs and selectedTxs contain
-			// the same txs.
-			areLengthsEqual := len(expectedSelectedTxs) == len(selectedTxs)
-			areEqual := areLengthsEqual
-			if areLengthsEqual {
-				for _, expectedTx := range expectedSelectedTxs {
-					wasFound := false
-					for _, selectedTx := range selectedTxs {
-						if expectedTx == selectedTx {
-							wasFound = true
-							break
-						}
-					}
-					if !wasFound {
-						areEqual = false
-						break
-					}
+			// Make sure that each transaction has not been selected either
+			// too little or too much.
+			for i, definition := range test.txDefinitions {
+				tx := definition.tx
+				count := selectedTxCountMap[tx]
+				min := definition.expectedMinSelectedTimes
+				max := definition.expectedMaxSelectedTimes
+				if count < min || count > max {
+					t.Errorf("unexpected selected tx count "+
+						"in test '%s' for tx %d:%s. Want: %d <= count <= %d, got: %d",
+						test.name, i, definition, min, max, count)
 				}
-			}
-
-			if !areEqual {
-				t.Errorf("unexpected selected txs in test '%s'. Want: [%s], got: [%s] ",
-					test.name, formatTxs(expectedSelectedTxs), formatTxs(selectedTxs))
 			}
 		}()
 	}
-}
-
-func formatTxs(txs []*util.Tx) string {
-	strs := make([]string, len(txs))
-	for i, tx := range txs {
-		mass, _ := blockdag.CalcTxMass(tx, nil)
-		fee, _ := blockdag.CheckTransactionInputsAndCalulateFee(tx, 0, nil, nil, false)
-		strs[i] = fmt.Sprintf("[mass: %d, gas: %d, fee: %d]",
-			mass, tx.MsgTx().Gas, fee)
-	}
-	return strings.Join(strs, ", ")
 }

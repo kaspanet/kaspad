@@ -6,7 +6,6 @@ import (
 	"github.com/daglabs/btcd/util"
 	"github.com/daglabs/btcd/util/random"
 	"github.com/daglabs/btcd/util/subnetworkid"
-	"github.com/daglabs/btcd/wire"
 	"math"
 	"math/rand"
 	"sort"
@@ -237,7 +236,7 @@ func (g *BlkTmplGenerator) selectTxs(payToAddress util.Address) (*txsForBlockTem
 		// Enforce maximum transaction mass per block. Also check
 		// for overflow.
 		if result.blockMass+selectedTx.txMass < result.blockMass ||
-			result.blockMass+selectedTx.txMass >= g.policy.BlockMaxMass {
+			result.blockMass+selectedTx.txMass > g.policy.BlockMaxMass {
 			log.Tracef("Tx %s would exceed the max block mass. "+
 				"As such, stopping.", tx.ID())
 			break
@@ -314,7 +313,7 @@ func (g *BlkTmplGenerator) calcTxSelectionValue(tx *util.Tx, fee uint64) (float6
 	if err != nil {
 		return 0, err
 	}
-	massLimit := uint64(wire.MaxMassPerBlock)
+	massLimit := g.policy.BlockMaxMass
 
 	msgTx := tx.MsgTx()
 	if msgTx.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) ||
@@ -333,8 +332,16 @@ func (g *BlkTmplGenerator) calcTxSelectionValue(tx *util.Tx, fee uint64) (float6
 func rebalanceCandidates(oldCandidateTxs []*candidateTx, usedCount int, isFirstRun bool) (
 	candidateTxs []*candidateTx, totalP float64) {
 
-	candidateTxs = make([]*candidateTx, 0, len(oldCandidateTxs)-usedCount)
+	totalP = 0.0
 
+	// Return early if all candidates were used
+	newCandidateTxsLen := len(oldCandidateTxs) - usedCount
+	if newCandidateTxsLen <= 0 {
+		candidateTxs = []*candidateTx{}
+		return
+	}
+
+	candidateTxs = make([]*candidateTx, 0, newCandidateTxsLen)
 	for _, candidateTx := range oldCandidateTxs {
 		if candidateTx.wasUsed {
 			continue
@@ -342,8 +349,6 @@ func rebalanceCandidates(oldCandidateTxs []*candidateTx, usedCount int, isFirstR
 
 		candidateTxs = append(candidateTxs, candidateTx)
 	}
-
-	totalP = 0.0
 
 	for _, candidateTx := range candidateTxs {
 		if isFirstRun {
