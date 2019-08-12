@@ -132,6 +132,11 @@ func (g *BlkTmplGenerator) selectTxs(payToAddress util.Address) (*txsForBlockTem
 			continue
 		}
 
+		if txDesc.Fee == 0 {
+			log.Tracef("Skipped zero-fee tx %s", tx.ID())
+			continue
+		}
+
 		txMass, err := blockdag.CalcTxMass(tx, g.dag.UTXOSet())
 		if err != nil {
 			log.Tracef("Skipping tx %s due to error in "+

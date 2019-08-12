@@ -72,11 +72,89 @@ func TestSelectTxs(t *testing.T) {
 	}
 
 	tests := []struct {
+		name      string
 		massLimit uint64
 		gasLimit  uint64
 		sourceTxs []testTxDescDefinition
 	}{
 		{
+			name:      "no source txs",
+			massLimit: 10,
+			gasLimit:  10,
+			sourceTxs: []testTxDescDefinition{},
+		},
+		{
+			name:      "zero fee",
+			massLimit: 10,
+			gasLimit:  10,
+			sourceTxs: []testTxDescDefinition{
+				{
+					mass:                   0,
+					gas:                    0,
+					fee:                    0,
+					isExpectedToBeSelected: false,
+				},
+			},
+		},
+		{
+			name:      "single transaction",
+			massLimit: 100,
+			gasLimit:  100,
+			sourceTxs: []testTxDescDefinition{
+				{
+					mass:                   10,
+					gas:                    10,
+					fee:                    10,
+					isExpectedToBeSelected: true,
+				},
+			},
+		},
+		{
+			name:      "none fit, limited gas and mass",
+			massLimit: 2,
+			gasLimit:  2,
+			sourceTxs: []testTxDescDefinition{
+				{
+					mass:                   10,
+					gas:                    10,
+					fee:                    100,
+					isExpectedToBeSelected: false,
+				},
+				{
+					mass:                   5,
+					gas:                    5,
+					fee:                    50,
+					isExpectedToBeSelected: false,
+				},
+			},
+		},
+		{
+			name:      "only one fits, limited gas and mass",
+			massLimit: 2,
+			gasLimit:  2,
+			sourceTxs: []testTxDescDefinition{
+				{
+					mass:                   0,
+					gas:                    0,
+					fee:                    1,
+					isExpectedToBeSelected: true,
+				},
+				{
+					mass:                   10,
+					gas:                    10,
+					fee:                    100,
+					isExpectedToBeSelected: false,
+				},
+				{
+					mass:                   5,
+					gas:                    5,
+					fee:                    50,
+					isExpectedToBeSelected: false,
+				},
+			},
+		},
+		{
+			name:      "all fit, limited gas",
 			massLimit: wire.MaxMassPerBlock,
 			gasLimit:  10,
 			sourceTxs: []testTxDescDefinition{
@@ -113,6 +191,7 @@ func TestSelectTxs(t *testing.T) {
 			},
 		},
 		{
+			name:      "all fit, limited mass",
 			massLimit: 10,
 			gasLimit:  math.MaxUint64,
 			sourceTxs: []testTxDescDefinition{
@@ -145,54 +224,6 @@ func TestSelectTxs(t *testing.T) {
 					gas:                    4,
 					fee:                    100,
 					isExpectedToBeSelected: true,
-				},
-			},
-		},
-		{
-			massLimit: 2,
-			gasLimit:  2,
-			sourceTxs: []testTxDescDefinition{
-				{
-					mass:                   0,
-					gas:                    0,
-					fee:                    0,
-					isExpectedToBeSelected: false,
-				},
-				{
-					mass:                   10,
-					gas:                    10,
-					fee:                    100,
-					isExpectedToBeSelected: false,
-				},
-				{
-					mass:                   5,
-					gas:                    5,
-					fee:                    50,
-					isExpectedToBeSelected: false,
-				},
-			},
-		},
-		{
-			massLimit: 2,
-			gasLimit:  2,
-			sourceTxs: []testTxDescDefinition{
-				{
-					mass:                   0,
-					gas:                    0,
-					fee:                    1,
-					isExpectedToBeSelected: true,
-				},
-				{
-					mass:                   10,
-					gas:                    10,
-					fee:                    100,
-					isExpectedToBeSelected: false,
-				},
-				{
-					mass:                   5,
-					gas:                    5,
-					fee:                    50,
-					isExpectedToBeSelected: false,
 				},
 			},
 		},
@@ -269,7 +300,8 @@ func TestSelectTxs(t *testing.T) {
 
 			result, err := blockTemplateGenerator.selectTxs(OpTrueAddr)
 			if err != nil {
-				t.Errorf("selectTxs unexpectedly failed: %s", err)
+				t.Errorf("selectTxs unexpectedly failed in test '%s': %s",
+					test.name, err)
 				return
 			}
 
@@ -297,8 +329,8 @@ func TestSelectTxs(t *testing.T) {
 			}
 
 			if !areEqual {
-				t.Errorf("unexpected selected txs. Want: [%s], got: [%s] ",
-					formatTxs(expectedSelectedTxs), formatTxs(selectedTxs))
+				t.Errorf("unexpected selected txs in test '%s'. Want: [%s], got: [%s] ",
+					test.name, formatTxs(expectedSelectedTxs), formatTxs(selectedTxs))
 			}
 		}()
 	}
