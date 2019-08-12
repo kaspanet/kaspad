@@ -108,25 +108,6 @@ type NotificationHandlers struct {
 	// made to register for the notification and the function is non-nil.
 	OnTxAcceptedVerbose func(txDetails *btcjson.TxRawResult)
 
-	// OnBtcdConnected is invoked when a wallet connects or disconnects from
-	// btcd.
-	//
-	// This will only be available when client is connected to a wallet
-	// server such as btcwallet.
-	OnBtcdConnected func(connected bool)
-
-	// OnAccountBalance is invoked with account balance updates.
-	//
-	// This will only be available when speaking to a wallet server
-	// such as btcwallet.
-	OnAccountBalance func(account string, balance util.Amount, confirmed bool)
-
-	// OnWalletLockState is invoked when a wallet is locked or unlocked.
-	//
-	// This will only be available when client is connected to a wallet
-	// server such as btcwallet.
-	OnWalletLockState func(locked bool)
-
 	// OnUnknownNotification is invoked when an unrecognized notification
 	// is received.  This typically means the notification handling code
 	// for this package needs to be updated for a new notification type or
@@ -217,59 +198,6 @@ func (c *Client) handleNotification(ntfn *rawNotification) {
 		}
 
 		c.ntfnHandlers.OnTxAcceptedVerbose(rawTx)
-
-	// OnBtcdConnected
-	case btcjson.BtcdConnectedNtfnMethod:
-		// Ignore the notification if the client is not interested in
-		// it.
-		if c.ntfnHandlers.OnBtcdConnected == nil {
-			return
-		}
-
-		connected, err := parseBtcdConnectedNtfnParams(ntfn.Params)
-		if err != nil {
-			log.Warnf("Received invalid btcd connected "+
-				"notification: %s", err)
-			return
-		}
-
-		c.ntfnHandlers.OnBtcdConnected(connected)
-
-	// OnAccountBalance
-	case btcjson.AccountBalanceNtfnMethod:
-		// Ignore the notification if the client is not interested in
-		// it.
-		if c.ntfnHandlers.OnAccountBalance == nil {
-			return
-		}
-
-		account, bal, conf, err := parseAccountBalanceNtfnParams(ntfn.Params)
-		if err != nil {
-			log.Warnf("Received invalid account balance "+
-				"notification: %s", err)
-			return
-		}
-
-		c.ntfnHandlers.OnAccountBalance(account, bal, conf)
-
-	// OnWalletLockState
-	case btcjson.WalletLockStateNtfnMethod:
-		// Ignore the notification if the client is not interested in
-		// it.
-		if c.ntfnHandlers.OnWalletLockState == nil {
-			return
-		}
-
-		// The account name is not notified, so the return value is
-		// discarded.
-		_, locked, err := parseWalletLockStateNtfnParams(ntfn.Params)
-		if err != nil {
-			log.Warnf("Received invalid wallet lock state "+
-				"notification: %s", err)
-			return
-		}
-
-		c.ntfnHandlers.OnWalletLockState(locked)
 
 	// OnUnknownNotification
 	default:
@@ -511,85 +439,6 @@ func parseTxAcceptedVerboseNtfnParams(params []json.RawMessage) (*btcjson.TxRawR
 	// types for all details about the transaction (i.e. decoding hashes
 	// from their string encoding).
 	return &rawTx, nil
-}
-
-// parseBtcdConnectedNtfnParams parses out the connection status of btcd
-// and btcwallet from the parameters of a btcdconnected notification.
-func parseBtcdConnectedNtfnParams(params []json.RawMessage) (bool, error) {
-	if len(params) != 1 {
-		return false, wrongNumParams(len(params))
-	}
-
-	// Unmarshal first parameter as a boolean.
-	var connected bool
-	err := json.Unmarshal(params[0], &connected)
-	if err != nil {
-		return false, err
-	}
-
-	return connected, nil
-}
-
-// parseAccountBalanceNtfnParams parses out the account name, total balance,
-// and whether or not the balance is confirmed or unconfirmed from the
-// parameters of an accountbalance notification.
-func parseAccountBalanceNtfnParams(params []json.RawMessage) (account string,
-	balance util.Amount, confirmed bool, err error) {
-
-	if len(params) != 3 {
-		return "", 0, false, wrongNumParams(len(params))
-	}
-
-	// Unmarshal first parameter as a string.
-	err = json.Unmarshal(params[0], &account)
-	if err != nil {
-		return "", 0, false, err
-	}
-
-	// Unmarshal second parameter as a floating point number.
-	var fbal float64
-	err = json.Unmarshal(params[1], &fbal)
-	if err != nil {
-		return "", 0, false, err
-	}
-
-	// Unmarshal third parameter as a boolean.
-	err = json.Unmarshal(params[2], &confirmed)
-	if err != nil {
-		return "", 0, false, err
-	}
-
-	// Bounds check amount.
-	bal, err := util.NewAmount(fbal)
-	if err != nil {
-		return "", 0, false, err
-	}
-
-	return account, bal, confirmed, nil
-}
-
-// parseWalletLockStateNtfnParams parses out the account name and locked
-// state of an account from the parameters of a walletlockstate notification.
-func parseWalletLockStateNtfnParams(params []json.RawMessage) (account string,
-	locked bool, err error) {
-
-	if len(params) != 2 {
-		return "", false, wrongNumParams(len(params))
-	}
-
-	// Unmarshal first parameter as a string.
-	err = json.Unmarshal(params[0], &account)
-	if err != nil {
-		return "", false, err
-	}
-
-	// Unmarshal second parameter as a boolean.
-	err = json.Unmarshal(params[1], &locked)
-	if err != nil {
-		return "", false, err
-	}
-
-	return account, locked, nil
 }
 
 // FutureNotifyBlocksResult is a future promise to deliver the result of a

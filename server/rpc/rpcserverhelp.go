@@ -46,8 +46,7 @@ var helpDescsEnUS = map[string]string{
 
 	// CreateRawTransactionCmd help.
 	"createRawTransaction--synopsis": "Returns a new transaction spending the provided inputs and sending to the provided addresses.\n" +
-		"The transaction inputs are not signed in the created transaction.\n" +
-		"The signrawtransaction RPC command provided by wallet must be used to sign the resulting transaction.",
+		"The transaction inputs are not signed in the created transaction, and as such must be signed separately.",
 	"createRawTransaction-inputs":         "The inputs to the transaction",
 	"createRawTransaction-amounts":        "JSON object with the destination addresses as keys and amounts as values",
 	"createRawTransaction-amounts--key":   "address",
@@ -381,25 +380,6 @@ var helpDescsEnUS = map[string]string{
 	"infoDagResult-devNet":          "Whether or not server is using devnet",
 	"infoDagResult-relayFee":        "The minimum relay fee for non-free transactions in BTC/KB",
 	"infoDagResult-errors":          "Any current errors",
-
-	// InfoWalletResult help.
-	"infoWalletResult-version":         "The version of the server",
-	"infoWalletResult-protocolVersion": "The latest supported protocol version",
-	"infoWalletResult-walletVersion":   "The version of the wallet server",
-	"infoWalletResult-balance":         "The total bitcoin balance of the wallet",
-	"infoWalletResult-blocks":          "The number of blocks processed",
-	"infoWalletResult-timeOffset":      "The time offset",
-	"infoWalletResult-connections":     "The number of connected peers",
-	"infoWalletResult-proxy":           "The proxy used by the server",
-	"infoWalletResult-difficulty":      "The current target difficulty",
-	"infoWalletResult-testNet":         "Whether or not server is using testnet",
-	"infoWalletResult-devNet":          "Whether or not server is using devnet",
-	"infoWalletResult-keypoolOldest":   "Seconds since 1 Jan 1970 GMT of the oldest pre-generated key in the key pool",
-	"infoWalletResult-keypoolSize":     "The number of new keys that are pre-generated",
-	"infoWalletResult-unlockedUntil":   "The timestamp in seconds since 1 Jan 1970 GMT that the wallet is unlocked for transfers, or 0 if the wallet is locked",
-	"infoWalletResult-payTxFee":        "The transaction fee set in BTC/KB",
-	"infoWalletResult-relayFee":        "The minimum relay fee for non-free transactions in BTC/KB",
-	"infoWalletResult-errors":          "Any current errors",
 
 	// GetTopHeadersCmd help.
 	"getTopHeaders--synopsis": "Returns the top block headers starting with the provided start hash (not inclusive)",
