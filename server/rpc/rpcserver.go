@@ -2191,16 +2191,70 @@ func handleGetCFilterHeader(s *Server, cmd interface{}, closeChan <-chan struct{
 // handleGetChainFromBlock implements the getChainFromBlock command.
 func handleGetChainFromBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
 	c := cmd.(*btcjson.GetChainFromBlockCmd)
-	var startHash daghash.Hash
+	var startHash *daghash.Hash
 	if c.StartHash != nil {
-		err := daghash.Decode(&startHash, *c.StartHash)
+		err := daghash.Decode(startHash, *c.StartHash)
 		if err != nil {
 			return nil, rpcDecodeHexError(*c.StartHash)
 		}
 	}
 
+	s.cfg.DAG.RLock()
+	defer s.cfg.DAG.RUnlock()
+
+	// If startHash is not in the selected path chain, there's nothing
+	// to do; return an error.
+	if !s.cfg.DAG.IsInSelectedPathChain(startHash) {
+		return nil, &btcjson.RPCError{
+			Code:    btcjson.ErrRPCBlockNotFound,
+			Message: "Block not found in selected path chain",
+		}
+	}
+
+	// Retrieve the selected path chain. Note that it's ordered from the
+	// virtual to startHash (exclusive).
+	selectedPathChain := s.cfg.DAG.SelectedPathChain(startHash)
+
+	// Collect chainBlocks from the virtual to startHash (exclusive).
+	chainBlocks := make([]btcjson.ChainBlock, 0, len(selectedPathChain))
+	for _, hash := range selectedPathChain {
+		acceptanceData, err := s.cfg.DAG.BluesTxsAcceptanceData(hash)
+		if err != nil {
+			return nil, &btcjson.RPCError{
+				Code:    btcjson.ErrRPCInternal.Code,
+				Message: fmt.Sprintf("could not retrieve acceptance data for block %s.", hash),
+			}
+		}
+
+		acceptedBlocks := make([]btcjson.AcceptedBlock, 0, len(acceptanceData))
+		for blockHash, blockAcceptanceData := range acceptanceData {
+			acceptedTxIds := make([]string, 0, len(blockAcceptanceData))
+			for _, txAcceptanceData := range blockAcceptanceData {
+				if txAcceptanceData.IsAccepted {
+					acceptedTxIds = append(acceptedTxIds, txAcceptanceData.Tx.Hash().String())
+				}
+			}
+			acceptedBlock := btcjson.AcceptedBlock{
+				Hash:          blockHash.String(),
+				AcceptedTxIds: acceptedTxIds,
+			}
+			acceptedBlocks = append(acceptedBlocks, acceptedBlock)
+		}
+
+		chainBlock := btcjson.ChainBlock{
+			Hash:           hash.String(),
+			AcceptedBlocks: acceptedBlocks,
+		}
+		chainBlocks = append(chainBlocks, chainBlock)
+	}
+
+	// Reverse the chainBlocks slice so that it ends with the virtual block.
+	for left, right := 0, len(chainBlocks)-1; left < right; left, right = left+1, right-1 {
+		chainBlocks[left], chainBlocks[right] = chainBlocks[right], chainBlocks[left]
+	}
+
 	result := &btcjson.GetChainFromBlockResult{
-		SelectedParentChain: nil,
+		SelectedParentChain: chainBlocks,
 		Blocks:              nil,
 	}
 	return result, nil
