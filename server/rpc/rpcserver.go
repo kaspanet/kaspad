@@ -147,6 +147,7 @@ var rpcHandlersBeforeInit = map[string]commandHandler{
 	"getBlockTemplate":      handleGetBlockTemplate,
 	"getCFilter":            handleGetCFilter,
 	"getCFilterHeader":      handleGetCFilterHeader,
+	"getChainFromBlock":     handleGetChainFromBlock,
 	"getConnectionCount":    handleGetConnectionCount,
 	"getCurrentNet":         handleGetCurrentNet,
 	"getDifficulty":         handleGetDifficulty,
@@ -219,6 +220,7 @@ var rpcLimited = map[string]struct{}{
 	"getBlockHeader":        {},
 	"getCFilter":            {},
 	"getCFilterHeader":      {},
+	"getChainFromBlock":     {},
 	"getCurrentNet":         {},
 	"getDifficulty":         {},
 	"getHeaders":            {},
@@ -2184,6 +2186,22 @@ func handleGetCFilterHeader(s *Server, cmd interface{}, closeChan <-chan struct{
 
 	hash.SetBytes(headerBytes)
 	return hash.String(), nil
+}
+
+// handleGetChainFromBlock implements the getChainFromBlock command.
+func handleGetChainFromBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
+	c := cmd.(*btcjson.GetChainFromBlockCmd)
+	var startHash daghash.Hash
+	err := daghash.Decode(&startHash, c.StartHash)
+	if err != nil {
+		return nil, rpcDecodeHexError(c.StartHash)
+	}
+
+	result := &btcjson.GetChainFromBlockResult{
+		SelectedParentChain: nil,
+		Blocks:              nil,
+	}
+	return result, nil
 }
 
 // handleGetConnectionCount implements the getConnectionCount command.

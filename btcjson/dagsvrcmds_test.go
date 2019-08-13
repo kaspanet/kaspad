@@ -22,7 +22,7 @@ import (
 func TestDAGSvrCmds(t *testing.T) {
 	t.Parallel()
 
-	testID := int(1)
+	testID := 1
 	tests := []struct {
 		name         string
 		newCmd       func() (interface{}, error)
@@ -350,6 +350,20 @@ func TestDAGSvrCmds(t *testing.T) {
 			unmarshalled: &btcjson.GetCFilterHeaderCmd{
 				Hash:       "123",
 				FilterType: wire.GCSFilterExtended,
+			},
+		},
+		{
+			name: "getChainFromBlock",
+			newCmd: func() (interface{}, error) {
+				return btcjson.NewCmd("getChainFromBlock", "123", true)
+			},
+			staticCmd: func() interface{} {
+				return btcjson.NewGetChainFromBlockCmd("123", true)
+			},
+			marshalled: `{"jsonrpc":"1.0","method":"getChainFromBlock","params":["123",true],"id":1}`,
+			unmarshalled: &btcjson.GetChainFromBlockCmd{
+				StartHash:     "123",
+				IncludeBlocks: true,
 			},
 		},
 		{
