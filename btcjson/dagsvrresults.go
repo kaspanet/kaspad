@@ -508,3 +508,16 @@ type GetBestBlockResult struct {
 	Hash   string `json:"hash"`
 	Height uint64 `json:"height"`
 }
+
+// ChainBlock models a block that is part of the selected parent chain.
+type ChainBlock struct {
+	Hash           string          `json:"hash"`
+	AcceptedBlocks []AcceptedBlock `json:"acceptedBlocks"`
+}
+
+// AcceptedBlock models a block that is included in the blues of a selected
+// chain block.
+type AcceptedBlock struct {
+	Hash          string   `json:"hash"`
+	AcceptedTxIds []string `json:"acceptedTxIds"`
+}
