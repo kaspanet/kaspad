@@ -1089,6 +1089,18 @@ func handleGetBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 		return nil, internalRPCError(err.Error(), context)
 	}
 
+	blockReply, err := buildGetBlockVerboseResult(s, blk, c.VerboseTx == nil || !*c.VerboseTx)
+	if err != nil {
+		return nil, err
+	}
+	return blockReply, nil
+}
+
+func buildGetBlockVerboseResult(s *Server, block *util.Block, isVerboseTx bool) (*btcjson.GetBlockVerboseResult, error) {
+	hash := block.Hash()
+	params := s.cfg.DAGParams
+	blockHeader := block.MsgBlock().Header
+
 	// Get the block chain height.
 	blockChainHeight, err := s.cfg.DAG.BlockChainHeightByHash(hash)
 	if err != nil {
@@ -1113,10 +1125,8 @@ func handleGetBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 		return nil, internalRPCError(err.Error(), context)
 	}
 
-	params := s.cfg.DAGParams
-	blockHeader := &blk.MsgBlock().Header
-	blockReply := btcjson.GetBlockVerboseResult{
-		Hash:                 c.Hash,
+	result := &btcjson.GetBlockVerboseResult{
+		Hash:                 hash.String(),
 		Version:              blockHeader.Version,
 		VersionHex:           fmt.Sprintf("%08x", blockHeader.Version),
 		HashMerkleRoot:       blockHeader.HashMerkleRoot.String(),
@@ -1126,22 +1136,22 @@ func handleGetBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 		Time:                 blockHeader.Timestamp.Unix(),
 		Confirmations:        blockConfirmations,
 		Height:               blockChainHeight,
-		Size:                 int32(len(blkBytes)),
+		Size:                 int32(block.MsgBlock().SerializeSize()),
 		Bits:                 strconv.FormatInt(int64(blockHeader.Bits), 16),
 		Difficulty:           getDifficultyRatio(blockHeader.Bits, params),
 		NextHashes:           nextHashStrings,
 	}
 
-	if c.VerboseTx == nil || !*c.VerboseTx {
-		transactions := blk.Transactions()
+	if isVerboseTx {
+		transactions := block.Transactions()
 		txNames := make([]string, len(transactions))
 		for i, tx := range transactions {
 			txNames[i] = tx.ID().String()
 		}
 
-		blockReply.Tx = txNames
+		result.Tx = txNames
 	} else {
-		txns := blk.Transactions()
+		txns := block.Transactions()
 		rawTxns := make([]btcjson.TxRawResult, len(txns))
 		for i, tx := range txns {
 			var acceptingBlock *daghash.Hash
@@ -1158,16 +1168,16 @@ func handleGetBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 				confirmations = &txConfirmations
 			}
 			rawTxn, err := createTxRawResult(params, tx.MsgTx(), tx.ID().String(),
-				blockHeader, hash.String(), acceptingBlock, confirmations, false)
+				&blockHeader, hash.String(), acceptingBlock, confirmations, false)
 			if err != nil {
 				return nil, err
 			}
 			rawTxns[i] = *rawTxn
 		}
-		blockReply.RawTx = rawTxns
+		result.RawTx = rawTxns
 	}
 
-	return blockReply, nil
+	return result, nil
 }
 
 // softForkStatus converts a ThresholdState state into a human readable string
