@@ -2192,9 +2192,11 @@ func handleGetCFilterHeader(s *Server, cmd interface{}, closeChan <-chan struct{
 func handleGetChainFromBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
 	c := cmd.(*btcjson.GetChainFromBlockCmd)
 	var startHash daghash.Hash
-	err := daghash.Decode(&startHash, c.StartHash)
-	if err != nil {
-		return nil, rpcDecodeHexError(c.StartHash)
+	if c.StartHash != nil {
+		err := daghash.Decode(&startHash, *c.StartHash)
+		if err != nil {
+			return nil, rpcDecodeHexError(*c.StartHash)
+		}
 	}
 
 	result := &btcjson.GetChainFromBlockResult{

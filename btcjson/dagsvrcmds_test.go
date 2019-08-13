@@ -358,12 +358,12 @@ func TestDAGSvrCmds(t *testing.T) {
 				return btcjson.NewCmd("getChainFromBlock", "123", true)
 			},
 			staticCmd: func() interface{} {
-				return btcjson.NewGetChainFromBlockCmd("123", true)
+				return btcjson.NewGetChainFromBlockCmd(btcjson.String("123"), btcjson.Bool(true))
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"getChainFromBlock","params":["123",true],"id":1}`,
 			unmarshalled: &btcjson.GetChainFromBlockCmd{
-				StartHash:     "123",
-				IncludeBlocks: true,
+				StartHash:     btcjson.String("123"),
+				IncludeBlocks: btcjson.Bool(true),
 			},
 		},
 		{
