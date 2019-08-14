@@ -47,9 +47,9 @@ type txsForBlockTemplate struct {
 	txMasses      []uint64
 	txFees        []uint64
 	txSigOpCounts []int64
-	blockMass     uint64
+	totalMass     uint64
 	totalFees     uint64
-	blockSigOps   int64
+	totalSigOps   int64
 }
 
 // selectTxs implements a probabilistic transaction selection algorithm.
@@ -111,8 +111,8 @@ func (g *BlkTmplGenerator) selectTxs(payToAddress util.Address) (*txsForBlockTem
 
 	// Add the coinbase to the result object.
 	txsForBlockTemplate.selectedTxs = append(txsForBlockTemplate.selectedTxs, coinbaseTx)
-	txsForBlockTemplate.blockMass = coinbaseTxMass
-	txsForBlockTemplate.blockSigOps = numCoinbaseSigOps
+	txsForBlockTemplate.totalMass = coinbaseTxMass
+	txsForBlockTemplate.totalSigOps = numCoinbaseSigOps
 	txsForBlockTemplate.totalFees = uint64(0)
 	txsForBlockTemplate.txMasses = append(txsForBlockTemplate.txMasses, coinbaseTxMass)
 	txsForBlockTemplate.txFees = append(txsForBlockTemplate.txFees, 0) // For coinbase tx
@@ -245,8 +245,8 @@ func (g *BlkTmplGenerator) selectTxs(payToAddress util.Address) (*txsForBlockTem
 
 		// Enforce maximum transaction mass per block. Also check
 		// for overflow.
-		if txsForBlockTemplate.blockMass+selectedTx.txMass < txsForBlockTemplate.blockMass ||
-			txsForBlockTemplate.blockMass+selectedTx.txMass > g.policy.BlockMaxMass {
+		if txsForBlockTemplate.totalMass+selectedTx.txMass < txsForBlockTemplate.totalMass ||
+			txsForBlockTemplate.totalMass+selectedTx.txMass > g.policy.BlockMaxMass {
 			log.Tracef("Tx %s would exceed the max block mass. "+
 				"As such, stopping.", tx.ID())
 			break
@@ -280,15 +280,15 @@ func (g *BlkTmplGenerator) selectTxs(payToAddress util.Address) (*txsForBlockTem
 		// Enforce maximum signature operations per block. Also check
 		// for overflow.
 		numSigOps := int64(blockdag.CountSigOps(tx))
-		if txsForBlockTemplate.blockSigOps+numSigOps < txsForBlockTemplate.blockSigOps ||
-			txsForBlockTemplate.blockSigOps+numSigOps > blockdag.MaxSigOpsPerBlock {
+		if txsForBlockTemplate.totalSigOps+numSigOps < txsForBlockTemplate.totalSigOps ||
+			txsForBlockTemplate.totalSigOps+numSigOps > blockdag.MaxSigOpsPerBlock {
 			log.Tracef("Tx %s would exceed the maximum sigops per"+
 				"block. As such, stopping.", tx.ID())
 			break
 		}
 		numSigOps += int64(selectedTx.numP2SHSigOps)
-		if txsForBlockTemplate.blockSigOps+numSigOps < txsForBlockTemplate.blockSigOps ||
-			txsForBlockTemplate.blockSigOps+numSigOps > blockdag.MaxSigOpsPerBlock {
+		if txsForBlockTemplate.totalSigOps+numSigOps < txsForBlockTemplate.totalSigOps ||
+			txsForBlockTemplate.totalSigOps+numSigOps > blockdag.MaxSigOpsPerBlock {
 			log.Tracef("Tx %s would exceed the maximum sigops per "+
 				"block. As such, stopping.", tx.ID())
 			break
@@ -298,8 +298,8 @@ func (g *BlkTmplGenerator) selectTxs(payToAddress util.Address) (*txsForBlockTem
 		// save the masses, fees, and signature operation counts to the
 		// result.
 		txsForBlockTemplate.selectedTxs = append(txsForBlockTemplate.selectedTxs, tx)
-		txsForBlockTemplate.blockMass += selectedTx.txMass
-		txsForBlockTemplate.blockSigOps += numSigOps
+		txsForBlockTemplate.totalMass += selectedTx.txMass
+		txsForBlockTemplate.totalSigOps += numSigOps
 		txsForBlockTemplate.totalFees += selectedTx.txDesc.Fee
 		txsForBlockTemplate.txMasses = append(txsForBlockTemplate.txMasses, selectedTx.txMass)
 		txsForBlockTemplate.txFees = append(txsForBlockTemplate.txFees, selectedTx.txDesc.Fee)
