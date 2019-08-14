@@ -207,7 +207,7 @@ func (g *BlkTmplGenerator) selectTxs(payToAddress util.Address) (*txsForBlockTem
 	})
 
 	usedCount, usedP := 0, 0.0
-	candidateTxs, totalP := rebalanceCandidates(candidateTxs, usedCount, true)
+	candidateTxs, totalP := rebalanceCandidates(candidateTxs, true)
 	gasUsageMap := make(map[subnetworkid.SubnetworkID]uint64)
 
 	markCandidateTxUsed := func(candidateTx *candidateTx) {
@@ -220,10 +220,10 @@ func (g *BlkTmplGenerator) selectTxs(payToAddress util.Address) (*txsForBlockTem
 		len(candidateTxs))
 
 	// Choose which transactions make it into the block.
-	for len(candidateTxs) > 0 {
+	for len(candidateTxs)-usedCount > 0 {
 		// Rebalance the candidates if it's required
 		if usedP > 0 && usedP >= rebalanceThreshold*totalP {
-			candidateTxs, totalP = rebalanceCandidates(candidateTxs, usedCount, false)
+			candidateTxs, totalP = rebalanceCandidates(candidateTxs, false)
 			usedCount, usedP = 0, 0.0
 
 			// Break if we now ran out of transactions
@@ -338,19 +338,12 @@ func (g *BlkTmplGenerator) calcTxValue(tx *util.Tx, fee uint64) (float64, error)
 	return float64(fee) / (float64(mass)/float64(massLimit) + float64(gas)/float64(gasLimit)), nil
 }
 
-func rebalanceCandidates(oldCandidateTxs []*candidateTx, usedCount int, isFirstRun bool) (
+func rebalanceCandidates(oldCandidateTxs []*candidateTx, isFirstRun bool) (
 	candidateTxs []*candidateTx, totalP float64) {
 
 	totalP = 0.0
 
-	// Return early if all candidates were used
-	newCandidateTxsLen := len(oldCandidateTxs) - usedCount
-	if newCandidateTxsLen <= 0 {
-		candidateTxs = []*candidateTx{}
-		return
-	}
-
-	candidateTxs = make([]*candidateTx, 0, newCandidateTxsLen)
+	candidateTxs = make([]*candidateTx, 0, len(oldCandidateTxs))
 	for _, candidateTx := range oldCandidateTxs {
 		if candidateTx.wasUsed {
 			continue
