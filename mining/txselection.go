@@ -35,7 +35,7 @@ type candidateTx struct {
 	end     float64
 	wasUsed bool
 
-	selectionValue float64
+	txValue float64
 
 	txMass        uint64
 	gasLimit      uint64
@@ -184,26 +184,26 @@ func (g *BlkTmplGenerator) selectTxs(payToAddress util.Address) (*txsForBlockTem
 			continue
 		}
 
-		// Calculate the tx selection value
-		selectionValue, err := g.calcTxSelectionValue(tx, txDesc.Fee)
+		// Calculate the tx value
+		txValue, err := g.calcTxValue(tx, txDesc.Fee)
 		if err != nil {
 			log.Warnf("Skipping tx %s due to error in "+
-				"calcTxSelectionValue: %s", tx.ID(), err)
+				"calcTxValue: %s", tx.ID(), err)
 			continue
 		}
 
 		candidateTxs = append(candidateTxs, &candidateTx{
-			txDesc:         txDesc,
-			selectionValue: selectionValue,
-			txMass:         txMass,
-			gasLimit:       gasLimit,
-			numP2SHSigOps:  numP2SHSigOps,
+			txDesc:        txDesc,
+			txValue:       txValue,
+			txMass:        txMass,
+			gasLimit:      gasLimit,
+			numP2SHSigOps: numP2SHSigOps,
 		})
 	}
 
-	// Sort the candidate txs by selection value.
+	// Sort the candidate txs by their values.
 	sort.Slice(candidateTxs, func(i, j int) bool {
-		return candidateTxs[i].selectionValue < candidateTxs[j].selectionValue
+		return candidateTxs[i].txValue < candidateTxs[j].txValue
 	})
 
 	usedCount, usedP := 0, 0.0
@@ -311,10 +311,10 @@ func (g *BlkTmplGenerator) selectTxs(payToAddress util.Address) (*txsForBlockTem
 	return txsForBlockTemplate, nil
 }
 
-// calcTxSelectionValue calculates a value to be used in transaction selection.
+// calcTxValue calculates a value to be used in transaction selection.
 // The higher the number the more likely it is that the transaction will be
 // included in the block.
-func (g *BlkTmplGenerator) calcTxSelectionValue(tx *util.Tx, fee uint64) (float64, error) {
+func (g *BlkTmplGenerator) calcTxValue(tx *util.Tx, fee uint64) (float64, error) {
 	mass, err := blockdag.CalcTxMass(tx, g.dag.UTXOSet())
 	if err != nil {
 		return 0, err
@@ -358,7 +358,7 @@ func rebalanceCandidates(oldCandidateTxs []*candidateTx, usedCount int, isFirstR
 
 	for _, candidateTx := range candidateTxs {
 		if isFirstRun {
-			candidateTx.p = math.Pow(candidateTx.selectionValue, alpha)
+			candidateTx.p = math.Pow(candidateTx.txValue, alpha)
 		}
 		candidateTx.start = totalP
 		candidateTx.end = totalP + candidateTx.p
