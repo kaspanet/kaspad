@@ -109,9 +109,7 @@ func (g *BlkTmplGenerator) selectTxs(payToAddress util.Address) (*txsForBlockTem
 	}
 	numCoinbaseSigOps := int64(blockdag.CountSigOps(coinbaseTx))
 
-	// Add the coinbase to the result object. Note that since the total fees
-	// aren't known yet, we use a dummy value for the coinbase fee which will
-	// be updated later.
+	// Add the coinbase to the result object.
 	txsForBlockTemplate.selectedTxs = append(txsForBlockTemplate.selectedTxs, coinbaseTx)
 	txsForBlockTemplate.blockMass = coinbaseTxMass
 	txsForBlockTemplate.blockSigOps = numCoinbaseSigOps
@@ -129,23 +127,23 @@ func (g *BlkTmplGenerator) selectTxs(payToAddress util.Address) (*txsForBlockTem
 		// A block can't have more than one coinbase or contain
 		// non-finalized transactions.
 		if tx.IsCoinBase() {
-			log.Tracef("Skipping coinbase tx %s", tx.ID())
+			log.Warnf("Skipping coinbase tx %s", tx.ID())
 			continue
 		}
 		if !blockdag.IsFinalizedTransaction(tx, nextBlockBlueScore,
 			g.timeSource.AdjustedTime()) {
-			log.Tracef("Skipping non-finalized tx %s", tx.ID())
+			log.Warnf("Skipping non-finalized tx %s", tx.ID())
 			continue
 		}
 
 		if txDesc.Fee == 0 {
-			log.Tracef("Skipped zero-fee tx %s", tx.ID())
+			log.Warnf("Skipped zero-fee tx %s", tx.ID())
 			continue
 		}
 
 		txMass, err := blockdag.CalcTxMass(tx, g.dag.UTXOSet())
 		if err != nil {
-			log.Tracef("Skipping tx %s due to error in "+
+			log.Warnf("Skipping tx %s due to error in "+
 				"CalcTxMass: %s", tx.ID(), err)
 			continue
 		}
@@ -155,7 +153,8 @@ func (g *BlkTmplGenerator) selectTxs(payToAddress util.Address) (*txsForBlockTem
 			subnetworkID := tx.MsgTx().SubnetworkID
 			gasLimit, err = g.dag.SubnetworkStore.GasLimit(&subnetworkID)
 			if err != nil {
-				log.Errorf("Cannot get GAS limit for subnetwork %s", subnetworkID)
+				log.Warnf("Skipping tx %s due to error in "+
+					"GasLimit: %s", tx.ID(), err)
 				continue
 			}
 		}
@@ -163,7 +162,7 @@ func (g *BlkTmplGenerator) selectTxs(payToAddress util.Address) (*txsForBlockTem
 		numP2SHSigOps, err := blockdag.CountP2SHSigOps(tx, false,
 			g.dag.UTXOSet())
 		if err != nil {
-			log.Tracef("Skipping tx %s due to error in "+
+			log.Warnf("Skipping tx %s due to error in "+
 				"GetSigOpCost: %s", tx.ID(), err)
 			continue
 		}
@@ -173,14 +172,14 @@ func (g *BlkTmplGenerator) selectTxs(payToAddress util.Address) (*txsForBlockTem
 		_, err = blockdag.CheckTransactionInputsAndCalulateFee(tx, nextBlockBlueScore,
 			g.dag.UTXOSet(), g.dagParams, false)
 		if err != nil {
-			log.Tracef("Skipping tx %s due to error in "+
+			log.Warnf("Skipping tx %s due to error in "+
 				"CheckTransactionInputs: %s", tx.ID(), err)
 			continue
 		}
 		err = blockdag.ValidateTransactionScripts(tx, g.dag.UTXOSet(),
 			txscript.StandardVerifyFlags, g.sigCache)
 		if err != nil {
-			log.Tracef("Skipping tx %s due to error in "+
+			log.Warnf("Skipping tx %s due to error in "+
 				"ValidateTransactionScripts: %s", tx.ID(), err)
 			continue
 		}
@@ -188,7 +187,7 @@ func (g *BlkTmplGenerator) selectTxs(payToAddress util.Address) (*txsForBlockTem
 		// Calculate the tx selection value
 		selectionValue, err := g.calcTxSelectionValue(tx, txDesc.Fee)
 		if err != nil {
-			log.Tracef("Skipping tx %s due to error in "+
+			log.Warnf("Skipping tx %s due to error in "+
 				"calcTxSelectionValue: %s", tx.ID(), err)
 			continue
 		}
