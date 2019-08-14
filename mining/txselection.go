@@ -216,18 +216,22 @@ func (g *BlkTmplGenerator) selectTxs(payToAddress util.Address) (*txsForBlockTem
 		usedP += candidateTx.p
 	}
 
-	rebalanceIfRequired := func() {
-		if usedP >= rebalanceThreshold*totalP {
-			candidateTxs, totalP = rebalanceCandidates(candidateTxs, usedCount, false)
-			usedCount, usedP = 0, 0.0
-		}
-	}
-
 	log.Debugf("Considering %d transactions for inclusion to new block",
 		len(candidateTxs))
 
 	// Choose which transactions make it into the block.
 	for len(candidateTxs) > 0 {
+		// Rebalance the candidates if it's required
+		if usedP > 0 && usedP >= rebalanceThreshold*totalP {
+			candidateTxs, totalP = rebalanceCandidates(candidateTxs, usedCount, false)
+			usedCount, usedP = 0, 0.0
+
+			// Break if we now ran out of transactions
+			if len(candidateTxs) == 0 {
+				break
+			}
+		}
+
 		// Select a candidate tx at random
 		r := rand.Float64()
 		r *= totalP
@@ -267,7 +271,6 @@ func (g *BlkTmplGenerator) selectTxs(payToAddress util.Address) (*txsForBlockTem
 						markCandidateTxUsed(candidateTx)
 					}
 				}
-				rebalanceIfRequired()
 				continue
 			}
 			gasUsageMap[subnetworkID] = gasUsage + txGas
@@ -305,7 +308,6 @@ func (g *BlkTmplGenerator) selectTxs(payToAddress util.Address) (*txsForBlockTem
 			tx.ID(), selectedTx.txDesc.FeePerKB)
 
 		markCandidateTxUsed(selectedTx)
-		rebalanceIfRequired()
 	}
 
 	return txsForBlockTemplate, nil
