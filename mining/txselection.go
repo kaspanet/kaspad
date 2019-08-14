@@ -261,7 +261,8 @@ func (g *BlkTmplGenerator) selectTxs(payToAddress util.Address) (*txsForBlockTem
 				gasUsage = 0
 			}
 			txGas := tx.MsgTx().Gas
-			if gasUsage+txGas > selectedTx.gasLimit {
+			if gasUsage+txGas < gasUsage ||
+				gasUsage+txGas > selectedTx.gasLimit {
 				log.Tracef("Tx %s would exceed the gas limit in "+
 					"subnetwork %s. Removing all remaining txs from this "+
 					"subnetwork.",
