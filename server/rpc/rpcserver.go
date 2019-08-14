@@ -2221,11 +2221,10 @@ func handleGetChainFromBlock(s *Server, cmd interface{}, closeChan <-chan struct
 		}
 	}
 
-	// Retrieve the selected path chain. Note that it's ordered from the
-	// virtual to startHash (exclusive).
+	// Retrieve the selected path chain.
 	selectedPathChain := s.cfg.DAG.SelectedPathChain(startHash)
 
-	// Collect chainBlocks from the virtual to startHash (exclusive).
+	// Collect chainBlocks.
 	chainBlocks := make([]btcjson.ChainBlock, 0, len(selectedPathChain))
 	for _, hash := range selectedPathChain {
 		acceptanceData, err := s.cfg.DAG.BluesTxsAcceptanceData(hash)
@@ -2258,15 +2257,34 @@ func handleGetChainFromBlock(s *Server, cmd interface{}, closeChan <-chan struct
 		chainBlocks = append(chainBlocks, chainBlock)
 	}
 
-	// Reverse the chainBlocks slice so that it ends with the virtual block.
-	for left, right := 0, len(chainBlocks)-1; left < right; left, right = left+1, right-1 {
-		chainBlocks[left], chainBlocks[right] = chainBlocks[right], chainBlocks[left]
-	}
-
 	result := &btcjson.GetChainFromBlockResult{
 		SelectedParentChain: chainBlocks,
 		Blocks:              nil,
 	}
+
+	// If the user specified to include the blocks, collect them as well.
+	if c.IncludeBlocks != nil && *c.IncludeBlocks {
+		getBlockVerboseResults := make([]btcjson.GetBlockVerboseResult, 0, len(selectedPathChain))
+		for _, blockHash := range selectedPathChain {
+			block, err := s.cfg.DAG.BlockByHash(blockHash)
+			if err != nil {
+				return nil, &btcjson.RPCError{
+					Code:    btcjson.ErrRPCInternal.Code,
+					Message: fmt.Sprintf("could not retrieve block %s.", blockHash),
+				}
+			}
+			getBlockVerboseResult, err := buildGetBlockVerboseResult(s, block, false)
+			if err != nil {
+				return nil, &btcjson.RPCError{
+					Code:    btcjson.ErrRPCInternal.Code,
+					Message: fmt.Sprintf("could not build getBlockVerboseResult for block %s.", blockHash),
+				}
+			}
+			getBlockVerboseResults = append(getBlockVerboseResults, *getBlockVerboseResult)
+		}
+		result.Blocks = getBlockVerboseResults
+	}
+
 	return result, nil
 }
 

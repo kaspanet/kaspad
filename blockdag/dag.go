@@ -1426,8 +1426,8 @@ func (dag *BlockDAG) IsInSelectedPathChain(blockHash *daghash.Hash) bool {
 	return dag.virtual.selectedPathChainSet.containsHash(blockHash)
 }
 
-// SelectedPathChain returns the selected path chain starting from the virtual down to
-// startHash (exclusive). If startHash is nil or is not in the selected path chain, the
+// SelectedPathChain returns the selected path chain starting from startHash (exclusive) up
+// to the virtual (inclusive). If startHash is nil or is not in the selected path chain, the
 // virtual block is used.
 //
 // This method MUST be called with the DAG lock held
@@ -1444,6 +1444,12 @@ func (dag *BlockDAG) SelectedPathChain(startHash *daghash.Hash) []*daghash.Hash 
 		}
 		hashes = append(hashes, node.hash)
 	}
+
+	// Reverse the hashes slice so that it ends with the virtual block.
+	for left, right := 0, len(hashes)-1; left < right; left, right = left+1, right-1 {
+		hashes[left], hashes[right] = hashes[right], hashes[left]
+	}
+
 	return hashes
 }
 
