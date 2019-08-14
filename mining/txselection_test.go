@@ -418,8 +418,8 @@ func TestSelectTxs(t *testing.T) {
 					gas:  16,
 					fee:  100,
 
-					// Expected probability: 0.92
-					expectedMinSelectedTimes: 85,
+					// Expected probability: 0.90
+					expectedMinSelectedTimes: 80,
 					expectedMaxSelectedTimes: 100,
 				},
 				{

@@ -69,23 +69,43 @@ type txsForBlockTemplate struct {
 //   candidate transactions were marked as "used".
 func (g *BlkTmplGenerator) selectTxs(payToAddress util.Address) (*txsForBlockTemplate, error) {
 	// Fetch the source transactions.
-	sourceTxns := g.txSource.MiningDescs()
+	sourceTxs := g.txSource.MiningDescs()
 
-	// Create the result object and initialize all the slices to have
-	// the max amount of txs, which are the source tx + coinbase.
-	// The result object holds the mass, the fees, and number of signature
-	// operations for each of the selected transactions and adds an entry for
-	// the coinbase.  This allows the code below to simply append details
-	// about a transaction as it is selected for inclusion in the final block.
-	txsForBlockTemplate := &txsForBlockTemplate{
-		selectedTxs:   make([]*util.Tx, 0, len(sourceTxns)+1),
-		txMasses:      make([]uint64, 0, len(sourceTxns)+1),
-		txFees:        make([]uint64, 0, len(sourceTxns)+1),
-		txSigOpCounts: make([]int64, 0, len(sourceTxns)+1),
+	// Create a new txsForBlockTemplate struct, onto which all selectedTxs
+	// will be appended.
+	txsForBlockTemplate, err := g.newTxsForBlockTemplate(payToAddress, sourceTxs)
+	if err != nil {
+		return nil, err
 	}
 
-	nextBlockUTXO := g.dag.UTXOSet()
-	nextBlockBlueScore := g.dag.VirtualBlueScore()
+	// Collect candidateTxs while excluding txs that will certainly not
+	// be selected.
+	candidateTxs := g.collectCandidatesTxs(sourceTxs)
+
+	log.Debugf("Considering %d transactions for inclusion to new block",
+		len(candidateTxs))
+
+	// Choose which transactions make it into the block.
+	g.iterateCandidateTxs(candidateTxs, txsForBlockTemplate)
+
+	return txsForBlockTemplate, nil
+}
+
+// newTxsForBlockTemplate creates a txsForBlockTemplate and initializes it
+// with a coinbase transaction.
+func (g *BlkTmplGenerator) newTxsForBlockTemplate(payToAddress util.Address, sourceTxs []*TxDesc) (*txsForBlockTemplate, error) {
+	// Create a new txsForBlockTemplate struct and initialize all the slices
+	// to have the max amount of txs, which are the source txs + coinbase.
+	// The struct holds the mass, the fees, and number of signature operations
+	// for each of the selected transactions and adds an entry for the coinbase.
+	// This allows the code below to simply append details about a transaction
+	// as it is selected for inclusion in the final block.
+	txsForBlockTemplate := &txsForBlockTemplate{
+		selectedTxs:   make([]*util.Tx, 0, len(sourceTxs)+1),
+		txMasses:      make([]uint64, 0, len(sourceTxs)+1),
+		txFees:        make([]uint64, 0, len(sourceTxs)+1),
+		txSigOpCounts: make([]int64, 0, len(sourceTxs)+1),
+	}
 
 	coinbasePayloadPkScript, err := txscript.PayToAddrScript(payToAddress)
 	if err != nil {
@@ -103,13 +123,13 @@ func (g *BlkTmplGenerator) selectTxs(payToAddress util.Address) (*txsForBlockTem
 	if err != nil {
 		return nil, err
 	}
-	coinbaseTxMass, err := blockdag.CalcTxMass(coinbaseTx, nextBlockUTXO)
+	coinbaseTxMass, err := blockdag.CalcTxMass(coinbaseTx, g.dag.UTXOSet())
 	if err != nil {
 		return nil, err
 	}
 	numCoinbaseSigOps := int64(blockdag.CountSigOps(coinbaseTx))
 
-	// Add the coinbase to the result object.
+	// Add the coinbase.
 	txsForBlockTemplate.selectedTxs = append(txsForBlockTemplate.selectedTxs, coinbaseTx)
 	txsForBlockTemplate.totalMass = coinbaseTxMass
 	txsForBlockTemplate.totalSigOps = numCoinbaseSigOps
@@ -118,10 +138,16 @@ func (g *BlkTmplGenerator) selectTxs(payToAddress util.Address) (*txsForBlockTem
 	txsForBlockTemplate.txFees = append(txsForBlockTemplate.txFees, 0) // For coinbase tx
 	txsForBlockTemplate.txSigOpCounts = append(txsForBlockTemplate.txSigOpCounts, numCoinbaseSigOps)
 
-	// Collect candidateTxs while excluding txs that will certainly not
-	// be selected.
-	candidateTxs := make([]*candidateTx, 0, len(sourceTxns))
-	for _, txDesc := range sourceTxns {
+	return txsForBlockTemplate, nil
+}
+
+// collectCandidateTxs goes over the sourceTxs and collects only the ones that
+// may be included in the next block.
+func (g *BlkTmplGenerator) collectCandidatesTxs(sourceTxs []*TxDesc) []*candidateTx {
+	nextBlockBlueScore := g.dag.VirtualBlueScore()
+
+	candidateTxs := make([]*candidateTx, 0, len(sourceTxs))
+	for _, txDesc := range sourceTxs {
 		tx := txDesc.Tx
 
 		// A block can't have more than one coinbase or contain
@@ -206,6 +232,37 @@ func (g *BlkTmplGenerator) selectTxs(payToAddress util.Address) (*txsForBlockTem
 		return candidateTxs[i].txValue < candidateTxs[j].txValue
 	})
 
+	return candidateTxs
+}
+
+// calcTxValue calculates a value to be used in transaction selection.
+// The higher the number the more likely it is that the transaction will be
+// included in the block.
+func (g *BlkTmplGenerator) calcTxValue(tx *util.Tx, fee uint64) (float64, error) {
+	mass, err := blockdag.CalcTxMass(tx, g.dag.UTXOSet())
+	if err != nil {
+		return 0, err
+	}
+	massLimit := g.policy.BlockMaxMass
+
+	msgTx := tx.MsgTx()
+	if msgTx.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) ||
+		msgTx.SubnetworkID.IsBuiltIn() {
+		return float64(fee) / (float64(mass) / float64(massLimit)), nil
+	}
+
+	gas := msgTx.Gas
+	gasLimit, err := g.dag.SubnetworkStore.GasLimit(&msgTx.SubnetworkID)
+	if err != nil {
+		return 0, err
+	}
+	return float64(fee) / (float64(mass)/float64(massLimit) + float64(gas)/float64(gasLimit)), nil
+}
+
+// iterateCandidateTxs loops over the candidate transactions and appends the
+// ones that will be included in the next block into txsForBlockTemplates.
+// See selectTxs for further details.
+func (g *BlkTmplGenerator) iterateCandidateTxs(candidateTxs []*candidateTx, txsForBlockTemplate *txsForBlockTemplate) {
 	usedCount, usedP := 0, 0.0
 	candidateTxs, totalP := rebalanceCandidates(candidateTxs, true)
 	gasUsageMap := make(map[subnetworkid.SubnetworkID]uint64)
@@ -216,10 +273,6 @@ func (g *BlkTmplGenerator) selectTxs(payToAddress util.Address) (*txsForBlockTem
 		usedP += candidateTx.p
 	}
 
-	log.Debugf("Considering %d transactions for inclusion to new block",
-		len(candidateTxs))
-
-	// Choose which transactions make it into the block.
 	for len(candidateTxs)-usedCount > 0 {
 		// Rebalance the candidates if it's required
 		if usedP > 0 && usedP >= rebalanceThreshold*totalP {
@@ -310,32 +363,6 @@ func (g *BlkTmplGenerator) selectTxs(payToAddress util.Address) (*txsForBlockTem
 
 		markCandidateTxUsed(selectedTx)
 	}
-
-	return txsForBlockTemplate, nil
-}
-
-// calcTxValue calculates a value to be used in transaction selection.
-// The higher the number the more likely it is that the transaction will be
-// included in the block.
-func (g *BlkTmplGenerator) calcTxValue(tx *util.Tx, fee uint64) (float64, error) {
-	mass, err := blockdag.CalcTxMass(tx, g.dag.UTXOSet())
-	if err != nil {
-		return 0, err
-	}
-	massLimit := g.policy.BlockMaxMass
-
-	msgTx := tx.MsgTx()
-	if msgTx.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) ||
-		msgTx.SubnetworkID.IsBuiltIn() {
-		return float64(fee) / (float64(mass) / float64(massLimit)), nil
-	}
-
-	gas := msgTx.Gas
-	gasLimit, err := g.dag.SubnetworkStore.GasLimit(&msgTx.SubnetworkID)
-	if err != nil {
-		return 0, err
-	}
-	return float64(fee) / (float64(mass)/float64(massLimit) + float64(gas)/float64(gasLimit)), nil
 }
 
 func rebalanceCandidates(oldCandidateTxs []*candidateTx, isFirstRun bool) (
