@@ -2109,8 +2109,8 @@ func handleGetBlockTemplate(s *Server, cmd interface{}, closeChan <-chan struct{
 	// we have nothing besides the genesis block (chainHeight == 0),
 	// because in that state IsCurrent may still return true.
 	currentChainHeight := s.cfg.DAG.ChainHeight()
-	if (!s.cfg.SyncMgr.IsCurrent() && currentChainHeight != 0) ||
-		(!s.cfg.CPUMiner.ShouldMineOnGenesis() && currentChainHeight == 0) {
+	if (currentChainHeight != 0 && !s.cfg.SyncMgr.IsCurrent()) ||
+		(currentChainHeight == 0 && !s.cfg.CPUMiner.ShouldMineOnGenesis()) {
 		return nil, &btcjson.RPCError{
 			Code:    btcjson.ErrRPCClientInInitialDownload,
 			Message: "Bitcoin is downloading blocks...",
