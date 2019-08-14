@@ -337,6 +337,8 @@ type GetChainFromBlockCmd struct {
 	IncludeBlocks *bool   `json:"includeBlocks"`
 }
 
+// NewGetChainFromBlockCmd returns a new instance which can be used to issue a
+// GetChainFromBlock JSON-RPC command.
 func NewGetChainFromBlockCmd(startHash *string, includeBlocks *bool) *GetChainFromBlockCmd {
 	return &GetChainFromBlockCmd{
 		StartHash:     startHash,
