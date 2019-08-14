@@ -56,9 +56,9 @@ type txsForBlockTemplate struct {
 // The algorithm, roughly, is as follows:
 // 1. We assign a probability to each transaction equal to:
 //    (candidateTx.Value^alpha) / Σ(tx.Value^alpha)
-//    Where the sum in the denominator is equal to 1.
+//    Where the sum of the probabilities of all txs is 1.
 // 2. We draw a random number in [0,1) and select a transaction accordingly.
-// 3. If it's valid, add it to the result and remove it from the candidates.
+// 3. If it's valid, add it to the selectedTxs and remove it from the candidates.
 // 4. Continue iterating the above until we have either selected all
 //    available transactions or ran out of gas/block space.
 //
@@ -77,7 +77,7 @@ func (g *BlkTmplGenerator) selectTxs(payToAddress util.Address) (*txsForBlockTem
 	// operations for each of the selected transactions and adds an entry for
 	// the coinbase.  This allows the code below to simply append details
 	// about a transaction as it is selected for inclusion in the final block.
-	result := &txsForBlockTemplate{
+	txsForBlockTemplate := &txsForBlockTemplate{
 		selectedTxs:   make([]*util.Tx, 0, len(sourceTxns)+1),
 		txMasses:      make([]uint64, 0, len(sourceTxns)+1),
 		txFees:        make([]uint64, 0, len(sourceTxns)+1),
@@ -112,13 +112,13 @@ func (g *BlkTmplGenerator) selectTxs(payToAddress util.Address) (*txsForBlockTem
 	// Add the coinbase to the result object. Note that since the total fees
 	// aren't known yet, we use a dummy value for the coinbase fee which will
 	// be updated later.
-	result.selectedTxs = append(result.selectedTxs, coinbaseTx)
-	result.blockMass = coinbaseTxMass
-	result.blockSigOps = numCoinbaseSigOps
-	result.totalFees = uint64(0)
-	result.txMasses = append(result.txMasses, coinbaseTxMass)
-	result.txFees = append(result.txFees, 0) // For coinbase tx
-	result.txSigOpCounts = append(result.txSigOpCounts, numCoinbaseSigOps)
+	txsForBlockTemplate.selectedTxs = append(txsForBlockTemplate.selectedTxs, coinbaseTx)
+	txsForBlockTemplate.blockMass = coinbaseTxMass
+	txsForBlockTemplate.blockSigOps = numCoinbaseSigOps
+	txsForBlockTemplate.totalFees = uint64(0)
+	txsForBlockTemplate.txMasses = append(txsForBlockTemplate.txMasses, coinbaseTxMass)
+	txsForBlockTemplate.txFees = append(txsForBlockTemplate.txFees, 0) // For coinbase tx
+	txsForBlockTemplate.txSigOpCounts = append(txsForBlockTemplate.txSigOpCounts, numCoinbaseSigOps)
 
 	// Collect candidateTxs while excluding txs that will certainly not
 	// be selected.
@@ -242,8 +242,8 @@ func (g *BlkTmplGenerator) selectTxs(payToAddress util.Address) (*txsForBlockTem
 
 		// Enforce maximum transaction mass per block. Also check
 		// for overflow.
-		if result.blockMass+selectedTx.txMass < result.blockMass ||
-			result.blockMass+selectedTx.txMass > g.policy.BlockMaxMass {
+		if txsForBlockTemplate.blockMass+selectedTx.txMass < txsForBlockTemplate.blockMass ||
+			txsForBlockTemplate.blockMass+selectedTx.txMass > g.policy.BlockMaxMass {
 			log.Tracef("Tx %s would exceed the max block mass. "+
 				"As such, stopping.", tx.ID())
 			break
@@ -277,15 +277,15 @@ func (g *BlkTmplGenerator) selectTxs(payToAddress util.Address) (*txsForBlockTem
 		// Enforce maximum signature operations per block. Also check
 		// for overflow.
 		numSigOps := int64(blockdag.CountSigOps(tx))
-		if result.blockSigOps+numSigOps < result.blockSigOps ||
-			result.blockSigOps+numSigOps > blockdag.MaxSigOpsPerBlock {
+		if txsForBlockTemplate.blockSigOps+numSigOps < txsForBlockTemplate.blockSigOps ||
+			txsForBlockTemplate.blockSigOps+numSigOps > blockdag.MaxSigOpsPerBlock {
 			log.Tracef("Tx %s would exceed the maximum sigops per"+
 				"block. As such, stopping.", tx.ID())
 			break
 		}
 		numSigOps += int64(selectedTx.numP2SHSigOps)
-		if result.blockSigOps+numSigOps < result.blockSigOps ||
-			result.blockSigOps+numSigOps > blockdag.MaxSigOpsPerBlock {
+		if txsForBlockTemplate.blockSigOps+numSigOps < txsForBlockTemplate.blockSigOps ||
+			txsForBlockTemplate.blockSigOps+numSigOps > blockdag.MaxSigOpsPerBlock {
 			log.Tracef("Tx %s would exceed the maximum sigops per "+
 				"block. As such, stopping.", tx.ID())
 			break
@@ -294,13 +294,13 @@ func (g *BlkTmplGenerator) selectTxs(payToAddress util.Address) (*txsForBlockTem
 		// Add the transaction to the result, increment counters, and
 		// save the masses, fees, and signature operation counts to the
 		// result.
-		result.selectedTxs = append(result.selectedTxs, tx)
-		result.blockMass += selectedTx.txMass
-		result.blockSigOps += numSigOps
-		result.totalFees += selectedTx.txDesc.Fee
-		result.txMasses = append(result.txMasses, selectedTx.txMass)
-		result.txFees = append(result.txFees, selectedTx.txDesc.Fee)
-		result.txSigOpCounts = append(result.txSigOpCounts, numSigOps)
+		txsForBlockTemplate.selectedTxs = append(txsForBlockTemplate.selectedTxs, tx)
+		txsForBlockTemplate.blockMass += selectedTx.txMass
+		txsForBlockTemplate.blockSigOps += numSigOps
+		txsForBlockTemplate.totalFees += selectedTx.txDesc.Fee
+		txsForBlockTemplate.txMasses = append(txsForBlockTemplate.txMasses, selectedTx.txMass)
+		txsForBlockTemplate.txFees = append(txsForBlockTemplate.txFees, selectedTx.txDesc.Fee)
+		txsForBlockTemplate.txSigOpCounts = append(txsForBlockTemplate.txSigOpCounts, numSigOps)
 
 		log.Tracef("Adding tx %s (feePerKB %.2f)",
 			tx.ID(), selectedTx.txDesc.FeePerKB)
@@ -309,7 +309,7 @@ func (g *BlkTmplGenerator) selectTxs(payToAddress util.Address) (*txsForBlockTem
 		rebalanceIfRequired()
 	}
 
-	return result, nil
+	return txsForBlockTemplate, nil
 }
 
 // calcTxSelectionValue calculates a value to be used in transaction selection.
