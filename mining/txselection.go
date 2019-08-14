@@ -12,12 +12,19 @@ import (
 )
 
 const (
-	// alpha is used when determining a candidate transaction's
+	// alpha is a coefficient that defines how uniform the distribution of
+	// candidate transactions should be. A smaller alpha makes the distribution
+	// more uniform. Alpha is used when determining a candidate transaction's
 	// initial p value.
 	alpha = 3
 
-	// rebalanceThreshold is a percentage of the candidate transaction
-	// collection under which we don't rebalance. See selectTxs for details.
+	// rebalanceThreshold is the percentage of candidate transactions under which
+	// we don't rebalance. Rebalancing is a heavy operation so we prefer to avoid
+	// rebalancing very often. On the other hand, if we don't rebalance often enough
+	// we risk having too many collisions.
+	// The value is derived from the max probability of collision. That is to say,
+	// if rebalanceThreshold is 0.95, there's a 1-in-20 chance of collision.
+	// See selectTxs for further details.
 	rebalanceThreshold = 0.95
 )
 
