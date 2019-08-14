@@ -392,6 +392,12 @@ func rebalanceCandidates(oldCandidateTxs []*candidateTx, isFirstRun bool) (
 	return
 }
 
+// findTx finds the candidateTx in which's range r falls.
+// For example, if we have candidateTxs with starts and ends:
+// * tx1: start 0,   end 100
+// * tx2: start 100, end 105
+// * tx3: start 105, end 2000
+// And r=102, then findTx will return tx2.
 func findTx(candidateTxs []*candidateTx, r float64) *candidateTx {
 	min := 0
 	max := len(candidateTxs) - 1
