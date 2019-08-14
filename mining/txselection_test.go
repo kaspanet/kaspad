@@ -158,9 +158,9 @@ func TestSelectTxs(t *testing.T) {
 			gasLimit:  2,
 			txDefinitions: []*testTxDescDefinition{
 				{
-					mass: 0,
-					gas:  0,
-					fee:  1,
+					mass: 1,
+					gas:  1,
+					fee:  50,
 
 					// Expected probability: 1
 					expectedMinSelectedTimes: 1,

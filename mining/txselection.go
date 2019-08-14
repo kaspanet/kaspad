@@ -227,9 +227,10 @@ func (g *BlkTmplGenerator) collectCandidatesTxs(sourceTxs []*TxDesc) []*candidat
 		})
 	}
 
-	// Sort the candidate txs by their values.
+	// Sort the candidate txs by subnetworkID.
 	sort.Slice(candidateTxs, func(i, j int) bool {
-		return candidateTxs[i].txValue < candidateTxs[j].txValue
+		return subnetworkid.Less(&candidateTxs[i].txDesc.Tx.MsgTx().SubnetworkID,
+			&candidateTxs[j].txDesc.Tx.MsgTx().SubnetworkID)
 	})
 
 	return candidateTxs
@@ -321,6 +322,12 @@ func (g *BlkTmplGenerator) iterateCandidateTxs(candidateTxs []*candidateTx, txsF
 					"subnetwork.",
 					tx.MsgTx().TxID(), subnetworkID)
 				for _, candidateTx := range candidateTxs {
+					// candidateTxs are ordered by subnetwork, so we can safely assume
+					// that transactions after subnetworkID will not be relevant.
+					if subnetworkid.Less(&subnetworkID, &candidateTx.txDesc.Tx.MsgTx().SubnetworkID) {
+						break
+					}
+
 					if candidateTx.txDesc.Tx.MsgTx().SubnetworkID.IsEqual(&subnetworkID) {
 						markCandidateTxUsed(candidateTx)
 					}
