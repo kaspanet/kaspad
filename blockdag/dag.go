@@ -1438,18 +1438,20 @@ func (dag *BlockDAG) SelectedPathChain(startHash *daghash.Hash) ([]*daghash.Hash
 		return nil, fmt.Errorf("startHash %s is not the selected path chain", startHash)
 	}
 
-	hashes := make([]*daghash.Hash, 0, len(dag.virtual.selectedPathChainSlice))
-	for i := len(dag.virtual.selectedPathChainSlice) - 1; i >= 0; i-- {
-		node := dag.virtual.selectedPathChainSlice[i]
+	// Find the index of the startHash in the selectedPathChainSlice
+	startHashIndex := len(dag.virtual.selectedPathChainSlice) - 1
+	for startHashIndex >= 0 {
+		node := dag.virtual.selectedPathChainSlice[startHashIndex]
 		if node.hash.IsEqual(startHash) {
 			break
 		}
-		hashes = append(hashes, node.hash)
+		startHashIndex--
 	}
 
-	// Reverse the hashes slice so that it ends with the virtual block.
-	for left, right := 0, len(hashes)-1; left < right; left, right = left+1, right-1 {
-		hashes[left], hashes[right] = hashes[right], hashes[left]
+	// Copy all the hashes starting from startHashIndex (exclusive)
+	hashes := make([]*daghash.Hash, len(dag.virtual.selectedPathChainSlice)-startHashIndex)
+	for i, node := range dag.virtual.selectedPathChainSlice[startHashIndex+1:] {
+		hashes[i] = node.hash
 	}
 
 	return hashes, nil
