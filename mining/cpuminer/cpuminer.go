@@ -618,6 +618,13 @@ func (m *CPUMiner) GenerateNBlocks(n uint32) ([]*daghash.Hash, error) {
 	}
 }
 
+// ShouldMineOnGenesis checks if the node is connected to at least one
+// peer, and at least one of its peers knows of any blocks that were mined
+// on top of the genesis block.
+func (m *CPUMiner) ShouldMineOnGenesis() bool {
+	return m.cfg.ShouldMineOnGenesis()
+}
+
 // New returns a new instance of a CPU miner for the provided configuration.
 // Use Start to begin the mining process.  See the documentation for CPUMiner
 // type for more details.
