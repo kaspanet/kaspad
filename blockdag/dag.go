@@ -1427,13 +1427,15 @@ func (dag *BlockDAG) IsInSelectedPathChain(blockHash *daghash.Hash) bool {
 }
 
 // SelectedPathChain returns the selected path chain starting from startHash (exclusive) up
-// to the virtual (inclusive). If startHash is nil or is not in the selected path chain, the
-// virtual block is used.
+// to the virtual (inclusive). If startHash is nil then the virtual block is used.
 //
 // This method MUST be called with the DAG lock held
-func (dag *BlockDAG) SelectedPathChain(startHash *daghash.Hash) []*daghash.Hash {
-	if startHash == nil || !dag.IsInSelectedPathChain(startHash) {
+func (dag *BlockDAG) SelectedPathChain(startHash *daghash.Hash) ([]*daghash.Hash, error) {
+	if startHash == nil {
 		startHash = dag.genesis.hash
+	}
+	if !dag.IsInSelectedPathChain(startHash) {
+		return nil, fmt.Errorf("startHash %s is not the selected path chain", startHash)
 	}
 
 	hashes := make([]*daghash.Hash, 0, len(dag.virtual.selectedPathChainSlice))
@@ -1450,7 +1452,7 @@ func (dag *BlockDAG) SelectedPathChain(startHash *daghash.Hash) []*daghash.Hash 
 		hashes[left], hashes[right] = hashes[right], hashes[left]
 	}
 
-	return hashes
+	return hashes, nil
 }
 
 // BluesTxsAcceptanceData returns the acceptance data of all the transactions that

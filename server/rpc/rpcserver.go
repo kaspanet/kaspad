@@ -2222,7 +2222,13 @@ func handleGetChainFromBlock(s *Server, cmd interface{}, closeChan <-chan struct
 	}
 
 	// Retrieve the selected path chain.
-	selectedPathChain := s.cfg.DAG.SelectedPathChain(startHash)
+	selectedPathChain, err := s.cfg.DAG.SelectedPathChain(startHash)
+	if err != nil {
+		return nil, &btcjson.RPCError{
+			Code:    btcjson.ErrRPCInternal.Code,
+			Message: fmt.Sprintf("could not retrieve selected parent chain: %s", err),
+		}
+	}
 
 	// Collect chainBlocks.
 	chainBlocks := make([]btcjson.ChainBlock, 0, len(selectedPathChain))
