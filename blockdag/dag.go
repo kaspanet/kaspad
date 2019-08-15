@@ -1427,7 +1427,7 @@ func (dag *BlockDAG) IsInSelectedPathChain(blockHash *daghash.Hash) bool {
 }
 
 // SelectedPathChain returns the selected path chain starting from startHash (exclusive) up
-// to the virtual (inclusive). If startHash is nil then the virtual block is used.
+// to the virtual (exclusive). If startHash is nil then the genesis block is used.
 //
 // This method MUST be called with the DAG lock held
 func (dag *BlockDAG) SelectedPathChain(startHash *daghash.Hash) ([]*daghash.Hash, error) {
