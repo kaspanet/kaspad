@@ -160,7 +160,7 @@ func TestSelectTxs(t *testing.T) {
 				{
 					mass: 1,
 					gas:  1,
-					fee:  50,
+					fee:  100,
 
 					// Expected probability: 1
 					expectedMinSelectedTimes: 1,
@@ -176,9 +176,9 @@ func TestSelectTxs(t *testing.T) {
 					expectedMaxSelectedTimes: 0,
 				},
 				{
-					mass: 5,
-					gas:  5,
-					fee:  50,
+					mass: 10,
+					gas:  10,
+					fee:  100,
 
 					// Expected probability: 0
 					expectedMinSelectedTimes: 0,
@@ -348,8 +348,8 @@ func TestSelectTxs(t *testing.T) {
 					fee:  100,
 
 					// Expected probability: 0.33
-					expectedMinSelectedTimes: 280,
-					expectedMaxSelectedTimes: 380,
+					expectedMinSelectedTimes: 230,
+					expectedMaxSelectedTimes: 430,
 				},
 				{
 					mass: 100,
@@ -357,8 +357,8 @@ func TestSelectTxs(t *testing.T) {
 					fee:  100,
 
 					// Expected probability: 0.50
-					expectedMinSelectedTimes: 450,
-					expectedMaxSelectedTimes: 550,
+					expectedMinSelectedTimes: 400,
+					expectedMaxSelectedTimes: 600,
 				},
 				{
 					mass: 0,
@@ -366,8 +366,8 @@ func TestSelectTxs(t *testing.T) {
 					fee:  100,
 
 					// Expected probability: 0.50
-					expectedMinSelectedTimes: 450,
-					expectedMaxSelectedTimes: 550,
+					expectedMinSelectedTimes: 400,
+					expectedMaxSelectedTimes: 600,
 				},
 			},
 		},
@@ -419,7 +419,7 @@ func TestSelectTxs(t *testing.T) {
 					fee:  100,
 
 					// Expected probability: 0.90
-					expectedMinSelectedTimes: 80,
+					expectedMinSelectedTimes: 75,
 					expectedMaxSelectedTimes: 100,
 				},
 				{
