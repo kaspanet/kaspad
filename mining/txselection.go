@@ -86,7 +86,7 @@ func (g *BlkTmplGenerator) selectTxs(payToAddress util.Address) (*txsForBlockTem
 		len(candidateTxs))
 
 	// Choose which transactions make it into the block.
-	g.iterateCandidateTxs(candidateTxs, txsForBlockTemplate)
+	g.populateTemplateFromCandidates(candidateTxs, txsForBlockTemplate)
 
 	return txsForBlockTemplate, nil
 }
@@ -260,10 +260,11 @@ func (g *BlkTmplGenerator) calcTxValue(tx *util.Tx, fee uint64) (float64, error)
 	return float64(fee) / (float64(mass)/float64(massLimit) + float64(gas)/float64(gasLimit)), nil
 }
 
-// iterateCandidateTxs loops over the candidate transactions and appends the
-// ones that will be included in the next block into txsForBlockTemplates.
+// populateTemplateFromCandidates loops over the candidate transactions
+// and appends the ones that will be included in the next block into
+// txsForBlockTemplates.
 // See selectTxs for further details.
-func (g *BlkTmplGenerator) iterateCandidateTxs(candidateTxs []*candidateTx, txsForBlockTemplate *txsForBlockTemplate) {
+func (g *BlkTmplGenerator) populateTemplateFromCandidates(candidateTxs []*candidateTx, txsForBlockTemplate *txsForBlockTemplate) {
 	usedCount, usedP := 0, 0.0
 	candidateTxs, totalP := rebalanceCandidates(candidateTxs, true)
 	gasUsageMap := make(map[subnetworkid.SubnetworkID]uint64)

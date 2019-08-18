@@ -1001,6 +1001,12 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rejectDupOrphans bo
 		return nil, nil, txRuleError(wire.RejectNonstandard, str)
 	}
 
+	// Don't allow transactions with 0 fees.
+	if txFee == 0 {
+		str := fmt.Sprintf("transaction %s has 0 fees", txID)
+		return nil, nil, txRuleError(wire.RejectInsufficientFee, str)
+	}
+
 	// Don't allow transactions with fees too low to get into a mined block.
 	//
 	// Most miners allow a free transaction area in blocks they mine to go
