@@ -2216,17 +2216,17 @@ func handleGetChainFromBlock(s *Server, cmd interface{}, closeChan <-chan struct
 	s.cfg.DAG.RLock()
 	defer s.cfg.DAG.RUnlock()
 
-	// If startHash is not in the selected path chain, there's nothing
+	// If startHash is not in the selected parent chain, there's nothing
 	// to do; return an error.
-	if !s.cfg.DAG.IsInSelectedPathChain(startHash) {
+	if !s.cfg.DAG.IsInSelectedParentChain(startHash) {
 		return nil, &btcjson.RPCError{
 			Code:    btcjson.ErrRPCBlockNotFound,
-			Message: "Block not found in selected path chain",
+			Message: "Block not found in selected parent chain",
 		}
 	}
 
-	// Retrieve the selected path chain.
-	selectedPathChain, err := s.cfg.DAG.SelectedPathChain(startHash)
+	// Retrieve the selected parent chain.
+	selectedPathChain, err := s.cfg.DAG.SelectedParentChain(startHash)
 	if err != nil {
 		return nil, &btcjson.RPCError{
 			Code:    btcjson.ErrRPCInternal.Code,
