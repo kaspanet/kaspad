@@ -158,7 +158,7 @@ func (g *BlkTmplGenerator) collectCandidatesTxs(sourceTxs []*TxDesc) []*candidat
 		}
 		if !blockdag.IsFinalizedTransaction(tx, nextBlockBlueScore,
 			g.timeSource.AdjustedTime()) {
-			log.Warnf("Skipping non-finalized tx %s", tx.ID())
+			log.Debugf("Skipping non-finalized tx %s", tx.ID())
 			continue
 		}
 
