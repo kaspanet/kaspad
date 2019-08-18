@@ -30,15 +30,16 @@ const (
 
 type candidateTx struct {
 	txDesc  *TxDesc
-	p       float64
-	start   float64
-	end     float64
-	wasUsed bool
-
 	txValue float64
 
 	txMass   uint64
 	gasLimit uint64
+
+	p     float64
+	start float64
+	end   float64
+
+	isMarkedForDeletion bool
 }
 
 type txsForBlockTemplate struct {
@@ -254,7 +255,7 @@ func (g *BlkTmplGenerator) populateTemplateFromCandidates(candidateTxs []*candid
 	gasUsageMap := make(map[subnetworkid.SubnetworkID]uint64)
 
 	markCandidateTxUsed := func(candidateTx *candidateTx) {
-		candidateTx.wasUsed = true
+		candidateTx.isMarkedForDeletion = true
 		usedCount++
 		usedP += candidateTx.p
 	}
@@ -276,8 +277,9 @@ func (g *BlkTmplGenerator) populateTemplateFromCandidates(candidateTxs []*candid
 		r *= totalP
 		selectedTx := findTx(candidateTxs, r)
 
-		// If wasUsed is set, it means we got a collision - ignore and select another Tx
-		if selectedTx.wasUsed == true {
+		// If isMarkedForDeletion is set, it means we got a collision.
+		// Ignore and select another Tx.
+		if selectedTx.isMarkedForDeletion == true {
 			continue
 		}
 		tx := selectedTx.txDesc.Tx
@@ -345,7 +347,7 @@ func rebalanceCandidates(oldCandidateTxs []*candidateTx, isFirstRun bool) (
 
 	candidateTxs = make([]*candidateTx, 0, len(oldCandidateTxs))
 	for _, candidateTx := range oldCandidateTxs {
-		if candidateTx.wasUsed {
+		if candidateTx.isMarkedForDeletion {
 			continue
 		}
 
