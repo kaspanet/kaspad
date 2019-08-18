@@ -1716,7 +1716,6 @@ func (state *gbtWorkState) blockTemplateResult(dag *blockdag.BlockDAG, useCoinba
 		CurTime:              header.Timestamp.Unix(),
 		Height:               template.Height,
 		ParentHashes:         daghash.Strings(header.ParentHashes),
-		SigOpLimit:           blockdag.MaxSigOpsPerBlock,
 		MassLimit:            wire.MaxMassPerBlock,
 		Transactions:         transactions,
 		AcceptedIDMerkleRoot: header.AcceptedIDMerkleRoot.String(),

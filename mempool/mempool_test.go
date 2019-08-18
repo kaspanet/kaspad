@@ -346,7 +346,6 @@ func newPoolHarness(t *testing.T, dagParams *dagconfig.Params, numOutputs uint32
 			Policy: Policy{
 				MaxOrphanTxs:    5,
 				MaxOrphanTxSize: 1000,
-				MaxSigOpsPerTx:  blockdag.MaxSigOpsPerBlock / 5,
 				MinRelayTxFee:   1000, // 1 Satoshi per byte
 				MaxTxVersion:    1,
 			},
@@ -671,23 +670,6 @@ func TestProcessTransaction(t *testing.T) {
 	if expectedErrStr != err.Error() {
 		t.Errorf("Unexpected error message. Expected \"%s\" but got \"%s\"", expectedErrStr, err.Error())
 	}
-
-	//Checks that even if we accept non standard transactions, we reject by the MaxSigOpsPerTx consensus rule
-	harness.txPool.cfg.Policy.AcceptNonStd = true
-	harness.txPool.cfg.Policy.MaxSigOpsPerTx = 15
-	_, err = harness.txPool.ProcessTransaction(nonStdSigScriptTx, true, 0)
-	if err == nil {
-		t.Errorf("ProcessTransaction: expected an error, not nil")
-	}
-	if code, _ := extractRejectCode(err); code != wire.RejectNonstandard {
-		t.Errorf("Unexpected error code. Expected %v but got %v", wire.RejectNonstandard, code)
-	}
-	expectedErrStr = fmt.Sprintf("transaction %v sigop count is too high: %v > %v",
-		nonStdSigScriptTx.ID(), 16, 15)
-	if expectedErrStr != err.Error() {
-		t.Errorf("Unexpected error message. Expected \"%s\" but got \"%s\"", expectedErrStr, err.Error())
-	}
-	harness.txPool.cfg.Policy.AcceptNonStd = false
 
 	//Checks that a transaction with no outputs will not get rejected
 	noOutsTx := util.NewTx(wire.NewNativeMsgTx(1, []*wire.TxIn{{

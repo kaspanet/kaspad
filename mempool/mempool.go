@@ -111,11 +111,6 @@ type Policy struct {
 	// of big orphans.
 	MaxOrphanTxSize int
 
-	// MaxSigOpsPerTx is the maximum number of signature operations
-	// in a single transaction we will relay or mine.  It is a fraction
-	// of the max signature operations for a block.
-	MaxSigOpsPerTx int
-
 	// MinRelayTxFee defines the minimum transaction fee in BTC/kB to be
 	// considered a non-zero fee.
 	MinRelayTxFee util.Amount
@@ -982,24 +977,6 @@ func (mp *TxPool) maybeAcceptTransaction(tx *util.Tx, isNew, rejectDupOrphans bo
 	// NOTE: if you modify this code to accept non-standard transactions,
 	// you should add code here to check that the transaction does a
 	// reasonable number of ECDSA signature verifications.
-
-	// Don't allow transactions with an excessive number of signature
-	// operations which would result in making it impossible to mine.  Since
-	// the coinbase address itself can contain signature operations, the
-	// maximum allowed signature operations per transaction is less than
-	// the maximum allowed signature operations per block.
-	sigOpCount, err := blockdag.CountP2SHSigOps(tx, false, mp.mpUTXOSet)
-	if err != nil {
-		if cerr, ok := err.(blockdag.RuleError); ok {
-			return nil, nil, dagRuleError(cerr)
-		}
-		return nil, nil, err
-	}
-	if sigOpCount > mp.cfg.Policy.MaxSigOpsPerTx {
-		str := fmt.Sprintf("transaction %s sigop count is too high: %d > %d",
-			txID, sigOpCount, mp.cfg.Policy.MaxSigOpsPerTx)
-		return nil, nil, txRuleError(wire.RejectNonstandard, str)
-	}
 
 	// Don't allow transactions with 0 fees.
 	if txFee == 0 {
