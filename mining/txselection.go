@@ -62,9 +62,10 @@ type txsForBlockTemplate struct {
 //
 // Note that we make two optimizations here:
 // * Draw a number in [0,Σ(tx.Value^alpha)) to avoid normalization
-// * Instead of removing a candidate after each iteration, mark it as "used"
-//   and only rebalance once rebalanceThreshold * Σ(tx.Value^alpha) of all
-//   candidate transactions were marked as "used".
+// * Instead of removing a candidate after each iteration, mark it as "used".
+//   Once the sum of probabilities of "used" transactions is greater than
+//   rebalanceThreshold percent of the sum of probabilities of all transactions,
+//   rebalance.
 func (g *BlkTmplGenerator) selectTxs(payToAddress util.Address) (*txsForBlockTemplate, error) {
 	// Fetch the source transactions.
 	sourceTxs := g.txSource.MiningDescs()
