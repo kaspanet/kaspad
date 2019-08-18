@@ -242,7 +242,7 @@ func (g *BlkTmplGenerator) populateTemplateFromCandidates(candidateTxs []*candid
 
 	for len(candidateTxs)-usedCount > 0 {
 		// Rebalance the candidates if it's required
-		if usedP > 0 && usedP >= rebalanceThreshold*totalP {
+		if usedP >= rebalanceThreshold*totalP {
 			candidateTxs, totalP = rebalanceCandidates(candidateTxs, false)
 			usedCount, usedP = 0, 0.0
 
