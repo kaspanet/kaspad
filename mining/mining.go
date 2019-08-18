@@ -85,10 +85,6 @@ type BlockTemplate struct {
 	// sum of the fees of all other transactions.
 	Fees []uint64
 
-	// SigOpCounts contains the number of signature operations each
-	// transaction in the generated template performs.
-	SigOpCounts []int64
-
 	// Height is the height at which the block template connects to the DAG
 	Height uint64
 
@@ -290,16 +286,14 @@ func (g *BlkTmplGenerator) NewBlockTemplate(payToAddress util.Address) (*BlockTe
 	}
 
 	log.Debugf("Created new block template (%d transactions, %d in fees, "+
-		"%d signature operations, %d mass, target difficulty %064x)",
+		"%d mass, target difficulty %064x)",
 		len(msgBlock.Transactions), txsForBlockTemplate.totalFees,
-		txsForBlockTemplate.totalSigOps, txsForBlockTemplate.totalMass,
-		util.CompactToBig(msgBlock.Header.Bits))
+		txsForBlockTemplate.totalMass, util.CompactToBig(msgBlock.Header.Bits))
 
 	return &BlockTemplate{
 		Block:           &msgBlock,
 		TxMasses:        txsForBlockTemplate.txMasses,
 		Fees:            txsForBlockTemplate.txFees,
-		SigOpCounts:     txsForBlockTemplate.txSigOpCounts,
 		ValidPayAddress: payToAddress != nil,
 	}, nil
 }

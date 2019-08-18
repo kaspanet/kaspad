@@ -37,19 +37,16 @@ type candidateTx struct {
 
 	txValue float64
 
-	txMass        uint64
-	gasLimit      uint64
-	numP2SHSigOps int
+	txMass   uint64
+	gasLimit uint64
 }
 
 type txsForBlockTemplate struct {
-	selectedTxs   []*util.Tx
-	txMasses      []uint64
-	txFees        []uint64
-	txSigOpCounts []int64
-	totalMass     uint64
-	totalFees     uint64
-	totalSigOps   int64
+	selectedTxs []*util.Tx
+	txMasses    []uint64
+	txFees      []uint64
+	totalMass   uint64
+	totalFees   uint64
 }
 
 // selectTxs implements a probabilistic transaction selection algorithm.
@@ -101,10 +98,9 @@ func (g *BlkTmplGenerator) newTxsForBlockTemplate(payToAddress util.Address, sou
 	// This allows the code below to simply append details about a transaction
 	// as it is selected for inclusion in the final block.
 	txsForBlockTemplate := &txsForBlockTemplate{
-		selectedTxs:   make([]*util.Tx, 0, len(sourceTxs)+1),
-		txMasses:      make([]uint64, 0, len(sourceTxs)+1),
-		txFees:        make([]uint64, 0, len(sourceTxs)+1),
-		txSigOpCounts: make([]int64, 0, len(sourceTxs)+1),
+		selectedTxs: make([]*util.Tx, 0, len(sourceTxs)+1),
+		txMasses:    make([]uint64, 0, len(sourceTxs)+1),
+		txFees:      make([]uint64, 0, len(sourceTxs)+1),
 	}
 
 	coinbasePayloadPkScript, err := txscript.PayToAddrScript(payToAddress)
@@ -127,16 +123,13 @@ func (g *BlkTmplGenerator) newTxsForBlockTemplate(payToAddress util.Address, sou
 	if err != nil {
 		return nil, err
 	}
-	numCoinbaseSigOps := int64(blockdag.CountSigOps(coinbaseTx))
 
 	// Add the coinbase.
 	txsForBlockTemplate.selectedTxs = append(txsForBlockTemplate.selectedTxs, coinbaseTx)
 	txsForBlockTemplate.totalMass = coinbaseTxMass
-	txsForBlockTemplate.totalSigOps = numCoinbaseSigOps
 	txsForBlockTemplate.totalFees = uint64(0)
 	txsForBlockTemplate.txMasses = append(txsForBlockTemplate.txMasses, coinbaseTxMass)
 	txsForBlockTemplate.txFees = append(txsForBlockTemplate.txFees, 0) // For coinbase tx
-	txsForBlockTemplate.txSigOpCounts = append(txsForBlockTemplate.txSigOpCounts, numCoinbaseSigOps)
 
 	return txsForBlockTemplate, nil
 }
@@ -185,14 +178,6 @@ func (g *BlkTmplGenerator) collectCandidatesTxs(sourceTxs []*TxDesc) []*candidat
 			}
 		}
 
-		numP2SHSigOps, err := blockdag.CountP2SHSigOps(tx, false,
-			g.dag.UTXOSet())
-		if err != nil {
-			log.Warnf("Skipping tx %s due to error in "+
-				"GetSigOpCost: %s", tx.ID(), err)
-			continue
-		}
-
 		// Ensure the transaction inputs pass all of the necessary
 		// preconditions before allowing it to be added to the block.
 		_, err = blockdag.CheckTransactionInputsAndCalulateFee(tx, nextBlockBlueScore,
@@ -219,11 +204,10 @@ func (g *BlkTmplGenerator) collectCandidatesTxs(sourceTxs []*TxDesc) []*candidat
 		}
 
 		candidateTxs = append(candidateTxs, &candidateTx{
-			txDesc:        txDesc,
-			txValue:       txValue,
-			txMass:        txMass,
-			gasLimit:      gasLimit,
-			numP2SHSigOps: numP2SHSigOps,
+			txDesc:   txDesc,
+			txValue:  txValue,
+			txMass:   txMass,
+			gasLimit: gasLimit,
 		})
 	}
 
@@ -338,33 +322,14 @@ func (g *BlkTmplGenerator) populateTemplateFromCandidates(candidateTxs []*candid
 			gasUsageMap[subnetworkID] = gasUsage + txGas
 		}
 
-		// Enforce maximum signature operations per block. Also check
-		// for overflow.
-		numSigOps := int64(blockdag.CountSigOps(tx))
-		if txsForBlockTemplate.totalSigOps+numSigOps < txsForBlockTemplate.totalSigOps ||
-			txsForBlockTemplate.totalSigOps+numSigOps > blockdag.MaxSigOpsPerBlock {
-			log.Tracef("Tx %s would exceed the maximum sigops per"+
-				"block. As such, stopping.", tx.ID())
-			break
-		}
-		numSigOps += int64(selectedTx.numP2SHSigOps)
-		if txsForBlockTemplate.totalSigOps+numSigOps < txsForBlockTemplate.totalSigOps ||
-			txsForBlockTemplate.totalSigOps+numSigOps > blockdag.MaxSigOpsPerBlock {
-			log.Tracef("Tx %s would exceed the maximum sigops per "+
-				"block. As such, stopping.", tx.ID())
-			break
-		}
-
 		// Add the transaction to the result, increment counters, and
 		// save the masses, fees, and signature operation counts to the
 		// result.
 		txsForBlockTemplate.selectedTxs = append(txsForBlockTemplate.selectedTxs, tx)
 		txsForBlockTemplate.totalMass += selectedTx.txMass
-		txsForBlockTemplate.totalSigOps += numSigOps
 		txsForBlockTemplate.totalFees += selectedTx.txDesc.Fee
 		txsForBlockTemplate.txMasses = append(txsForBlockTemplate.txMasses, selectedTx.txMass)
 		txsForBlockTemplate.txFees = append(txsForBlockTemplate.txFees, selectedTx.txDesc.Fee)
-		txsForBlockTemplate.txSigOpCounts = append(txsForBlockTemplate.txSigOpCounts, numSigOps)
 
 		log.Tracef("Adding tx %s (feePerKB %.2f)",
 			tx.ID(), selectedTx.txDesc.FeePerKB)

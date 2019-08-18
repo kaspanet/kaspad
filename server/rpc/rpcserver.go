@@ -1701,7 +1701,6 @@ func (state *gbtWorkState) blockTemplateResult(dag *blockdag.BlockDAG, useCoinba
 			Depends: depends,
 			Mass:    template.TxMasses[i],
 			Fee:     template.Fees[i],
-			SigOps:  template.SigOpCounts[i],
 		}
 		transactions = append(transactions, resultTx)
 	}
@@ -1763,7 +1762,6 @@ func (state *gbtWorkState) blockTemplateResult(dag *blockdag.BlockDAG, useCoinba
 			Depends: []int64{},
 			Mass:    template.TxMasses[0],
 			Fee:     template.Fees[0],
-			SigOps:  template.SigOpCounts[0],
 		}
 
 		reply.CoinbaseTxn = &resultTx
