@@ -62,8 +62,8 @@ type txsForBlockTemplate struct {
 //
 // Note that we make two optimizations here:
 // * Draw a number in [0,Σ(tx.Value^alpha)) to avoid normalization
-// * Instead of removing a candidate after each iteration, mark it as "used".
-//   Once the sum of probabilities of "used" transactions is greater than
+// * Instead of removing a candidate after each iteration, mark it for deletion.
+//   Once the sum of probabilities of marked transactions is greater than
 //   rebalanceThreshold percent of the sum of probabilities of all transactions,
 //   rebalance.
 func (g *BlkTmplGenerator) selectTxs(payToAddress util.Address) (*txsForBlockTemplate, error) {
