@@ -1727,7 +1727,7 @@ func (dag *BlockDAG) locateBlockNodes(hashStart, hashStop *daghash.Hash, maxEntr
 	}
 	reversedNodes := make([]*blockNode, len(nodes))
 	for i, node := range nodes {
-		reversedNodes[i] = node
+		reversedNodes[len(reversedNodes) - i - 1] = node
 	}
 	return reversedNodes
 }
