@@ -93,16 +93,15 @@ func (g *BlkTmplGenerator) selectTxs(payToAddress util.Address) (*txsForBlockTem
 // newTxsForBlockTemplate creates a txsForBlockTemplate and initializes it
 // with a coinbase transaction.
 func (g *BlkTmplGenerator) newTxsForBlockTemplate(payToAddress util.Address, sourceTxs []*TxDesc) (*txsForBlockTemplate, error) {
-	// Create a new txsForBlockTemplate struct and initialize all the slices
-	// to have the max amount of txs, which are the source txs + coinbase.
-	// The struct holds the mass, the fees, and number of signature operations
-	// for each of the selected transactions and adds an entry for the coinbase.
-	// This allows the code below to simply append details about a transaction
-	// as it is selected for inclusion in the final block.
+	// Create a new txsForBlockTemplate struct. The struct holds the mass,
+	// the fees, and number of signature operations for each of the selected
+	// transactions and adds an entry for the coinbase. This allows the code
+	// below to simply append details about a transaction as it is selected
+	// for inclusion in the final block.
 	txsForBlockTemplate := &txsForBlockTemplate{
-		selectedTxs: make([]*util.Tx, 0, len(sourceTxs)+1),
-		txMasses:    make([]uint64, 0, len(sourceTxs)+1),
-		txFees:      make([]uint64, 0, len(sourceTxs)+1),
+		selectedTxs: make([]*util.Tx, 0),
+		txMasses:    make([]uint64, 0),
+		txFees:      make([]uint64, 0),
 	}
 
 	coinbasePayloadPkScript, err := txscript.PayToAddrScript(payToAddress)
