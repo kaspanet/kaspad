@@ -1475,54 +1475,6 @@ func (dag *BlockDAG) BluesTxsAcceptanceData(blockHash *daghash.Hash) (MultiBlock
 	return bluesTxsAcceptanceData, nil
 }
 
-// SelectedPathChain returns the selected path chain starting from startHash (exclusive) up
-// to the virtual (exclusive). If startHash is nil then the genesis block is used.
-//
-// This method MUST be called with the DAG lock held
-func (dag *BlockDAG) SelectedPathChain(startHash *daghash.Hash) ([]*daghash.Hash, error) {
-	if startHash == nil {
-		startHash = dag.genesis.hash
-	}
-	if !dag.IsInSelectedPathChain(startHash) {
-		return nil, fmt.Errorf("startHash %s is not the selected path chain", startHash)
-	}
-
-	// Find the index of the startHash in the selectedPathChainSlice
-	startHashIndex := len(dag.virtual.selectedPathChainSlice) - 1
-	for startHashIndex >= 0 {
-		node := dag.virtual.selectedPathChainSlice[startHashIndex]
-		if node.hash.IsEqual(startHash) {
-			break
-		}
-		startHashIndex--
-	}
-
-	// Copy all the hashes starting from startHashIndex (exclusive)
-	hashes := make([]*daghash.Hash, len(dag.virtual.selectedPathChainSlice)-startHashIndex)
-	for i, node := range dag.virtual.selectedPathChainSlice[startHashIndex+1:] {
-		hashes[i] = node.hash
-	}
-
-	return hashes, nil
-}
-
-// BluesTxsAcceptanceData returns the acceptance data of all the transactions that
-// were accepted by the block with hash blockHash.
-func (dag *BlockDAG) BluesTxsAcceptanceData(blockHash *daghash.Hash) (MultiBlockTxsAcceptanceData, error) {
-	node := dag.index.LookupNode(blockHash)
-	if node == nil {
-		err := fmt.Errorf("block %s is not known", blockHash)
-		return nil, err
-	}
-
-	_, bluesTxsAcceptanceData, err := dag.pastUTXO(node)
-	if err != nil {
-		return nil, err
-	}
-
-	return bluesTxsAcceptanceData, nil
-}
-
 // ChainHeight return the chain-height of the selected tip. In other words - it returns
 // the length of the dag's selected-parent chain
 func (dag *BlockDAG) ChainHeight() uint64 {
