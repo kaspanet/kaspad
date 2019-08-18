@@ -381,8 +381,8 @@ func BenchmarkWriteBlockHeader(b *testing.B) {
 func BenchmarkDecodeGetHeaders(b *testing.B) {
 	pver := ProtocolVersion
 	var m MsgGetHeaders
-	m.HashStart = &daghash.Hash{1}
-	m.HashStop = &daghash.Hash{1}
+	m.StartHash = &daghash.Hash{1}
+	m.StopHash = &daghash.Hash{1}
 
 	// Serialize it so the bytes are available to test the decode below.
 	var bb bytes.Buffer
@@ -439,23 +439,23 @@ func BenchmarkDecodeHeaders(b *testing.B) {
 	}
 }
 
-// BenchmarkDecodeGetBlocks performs a benchmark on how long it takes to
-// decode a getblocks message.
-func BenchmarkDecodeGetBlocks(b *testing.B) {
+// BenchmarkDecodeGetBlockInvs performs a benchmark on how long it takes to
+// decode a getblockinvs message.
+func BenchmarkDecodeGetBlockInvs(b *testing.B) {
 	pver := ProtocolVersion
-	var m MsgGetBlocks
-	m.HashStart = &daghash.Hash{1}
-	m.HashStop = &daghash.Hash{1}
+	var m MsgGetBlockInvs
+	m.StartHash = &daghash.Hash{1}
+	m.StopHash = &daghash.Hash{1}
 
 	// Serialize it so the bytes are available to test the decode below.
 	var bb bytes.Buffer
 	if err := m.BtcEncode(&bb, pver); err != nil {
-		b.Fatalf("MsgGetBlocks.BtcEncode: unexpected error: %v", err)
+		b.Fatalf("MsgGetBlockInvs.BtcEncode: unexpected error: %v", err)
 	}
 	buf := bb.Bytes()
 
 	r := bytes.NewReader(buf)
-	var msg MsgGetBlocks
+	var msg MsgGetBlockInvs
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		r.Seek(0, 0)

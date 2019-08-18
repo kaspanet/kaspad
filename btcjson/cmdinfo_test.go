@@ -90,11 +90,6 @@ func TestMethodUsageFlags(t *testing.T) {
 			method: "getBlock",
 			flags:  0,
 		},
-		{
-			name:   "walletPassphrase",
-			method: "walletPassphrase",
-			flags:  btcjson.UFWalletOnly,
-		},
 	}
 
 	t.Logf("Running %d tests", len(tests))

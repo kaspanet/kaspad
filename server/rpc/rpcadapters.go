@@ -275,6 +275,6 @@ func (b *rpcSyncMgr) SyncPeerID() int32 {
 //
 // This function is safe for concurrent access and is part of the
 // rpcserverSyncManager interface implementation.
-func (b *rpcSyncMgr) LocateHeaders(hashStart, hashStop *daghash.Hash) []*wire.BlockHeader {
-	return b.server.DAG.LocateHeaders(hashStart, hashStop)
+func (b *rpcSyncMgr) LocateHeaders(startHash, stopHash *daghash.Hash) []*wire.BlockHeader {
+	return b.server.DAG.LocateHeaders(startHash, stopHash)
 }

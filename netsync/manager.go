@@ -208,7 +208,7 @@ func (sm *SyncManager) PushGetBlocksOrHeaders(peer *peerpkg.Peer, startHash *dag
 			"%d from peer %s", sm.dag.ChainHeight()+1,
 			sm.nextCheckpoint.ChainHeight, peer.Addr()) //TODO: (Ori) This is probably wrong. Done only for compilation
 	}
-	return peer.PushGetBlocksMsg(startHash, &daghash.ZeroHash)
+	return peer.PushGetBlockInvsMsg(startHash, &daghash.ZeroHash)
 }
 
 // resetHeaderState sets the headers-first mode state to values appropriate for
@@ -683,9 +683,9 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 	sm.headersFirstMode = false
 	sm.headerList.Init()
 	log.Infof("Reached the final checkpoint -- switching to normal mode")
-	err = peer.PushGetBlocksMsg(blockHash, &daghash.ZeroHash)
+	err = peer.PushGetBlockInvsMsg(blockHash, &daghash.ZeroHash)
 	if err != nil {
-		log.Warnf("Failed to send getblocks message to peer %s: %s",
+		log.Warnf("Failed to send getblockinvs message to peer %s: %s",
 			peer.Addr(), err)
 		return
 	}

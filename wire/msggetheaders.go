@@ -17,7 +17,7 @@ import (
 // limited by a specific hash to stop at or the maximum number of block headers
 // per message, which is currently 2000.
 //
-// Set the HashStop field to the hash at which to stop and use
+// Set the StopHash field to the hash at which to stop and use
 // AddBlockLocatorHash to build up the list of block locator hashes.
 //
 // The algorithm for building the block locator hashes should be to add the
@@ -27,32 +27,32 @@ import (
 // exponentially decrease the number of hashes the further away from head and
 // closer to the genesis block you get.
 type MsgGetHeaders struct {
-	HashStart *daghash.Hash
-	HashStop  *daghash.Hash
+	StartHash *daghash.Hash
+	StopHash  *daghash.Hash
 }
 
 // BtcDecode decodes r using the bitcoin protocol encoding into the receiver.
 // This is part of the Message interface implementation.
 func (msg *MsgGetHeaders) BtcDecode(r io.Reader, pver uint32) error {
-	msg.HashStart = &daghash.Hash{}
-	err := ReadElement(r, msg.HashStart)
+	msg.StartHash = &daghash.Hash{}
+	err := ReadElement(r, msg.StartHash)
 	if err != nil {
 		return err
 	}
 
-	msg.HashStop = &daghash.Hash{}
-	return ReadElement(r, msg.HashStop)
+	msg.StopHash = &daghash.Hash{}
+	return ReadElement(r, msg.StopHash)
 }
 
 // BtcEncode encodes the receiver to w using the bitcoin protocol encoding.
 // This is part of the Message interface implementation.
 func (msg *MsgGetHeaders) BtcEncode(w io.Writer, pver uint32) error {
-	err := WriteElement(w, msg.HashStart)
+	err := WriteElement(w, msg.StartHash)
 	if err != nil {
 		return err
 	}
 
-	return WriteElement(w, msg.HashStop)
+	return WriteElement(w, msg.StopHash)
 }
 
 // Command returns the protocol command string for the message.  This is part
@@ -70,9 +70,9 @@ func (msg *MsgGetHeaders) MaxPayloadLength(pver uint32) uint32 {
 
 // NewMsgGetHeaders returns a new bitcoin getheaders message that conforms to
 // the Message interface.  See MsgGetHeaders for details.
-func NewMsgGetHeaders(hashStart, hashStop *daghash.Hash) *MsgGetHeaders {
+func NewMsgGetHeaders(startHash, stopHash *daghash.Hash) *MsgGetHeaders {
 	return &MsgGetHeaders{
-		HashStart: hashStart,
-		HashStop:  hashStop,
+		StartHash: startHash,
+		StopHash:  stopHash,
 	}
 }

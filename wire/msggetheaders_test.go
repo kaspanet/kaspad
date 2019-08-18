@@ -46,13 +46,13 @@ func TestGetHeaders(t *testing.T) {
 // TestGetHeadersWire tests the MsgGetHeaders wire encode and decode.
 func TestGetHeadersWire(t *testing.T) {
 	hashStr := "2710f40c87ec93d010a6fd95f42c59a2cbacc60b18cf6b7957535"
-	hashStart, err := daghash.NewHashFromStr(hashStr)
+	startHash, err := daghash.NewHashFromStr(hashStr)
 	if err != nil {
 		t.Errorf("NewHashFromStr: %v", err)
 	}
 
 	hashStr = "3ba27aa200b1cecaad478d2b00432346c3f1f3986da1afd33e506"
-	hashStop, err := daghash.NewHashFromStr(hashStr)
+	stopHash, err := daghash.NewHashFromStr(hashStr)
 	if err != nil {
 		t.Errorf("NewHashFromStr: %v", err)
 	}
@@ -71,7 +71,7 @@ func TestGetHeadersWire(t *testing.T) {
 	}
 
 	// MsgGetHeaders message with multiple block locators and a stop hash.
-	withHashStartAndStopHash := NewMsgGetHeaders(hashStart, hashStop)
+	withHashStartAndStopHash := NewMsgGetHeaders(startHash, stopHash)
 	withHashStartAndStopHashEncoded := []byte{
 		0x35, 0x75, 0x95, 0xb7, 0xf6, 0x8c, 0xb1, 0x60,
 		0xcc, 0xba, 0x2c, 0x9a, 0xc5, 0x42, 0x5f, 0xd9,
@@ -144,19 +144,19 @@ func TestGetHeadersWireErrors(t *testing.T) {
 	pver := ProtocolVersion
 
 	hashStr := "2710f40c87ec93d010a6fd95f42c59a2cbacc60b18cf6b7957535"
-	hashStart, err := daghash.NewHashFromStr(hashStr)
+	startHash, err := daghash.NewHashFromStr(hashStr)
 	if err != nil {
 		t.Errorf("NewHashFromStr: %v", err)
 	}
 
 	hashStr = "3ba27aa200b1cecaad478d2b00432346c3f1f3986da1afd33e506"
-	hashStop, err := daghash.NewHashFromStr(hashStr)
+	stopHash, err := daghash.NewHashFromStr(hashStr)
 	if err != nil {
 		t.Errorf("NewHashFromStr: %v", err)
 	}
 
 	// MsgGetHeaders message with multiple block locators and a stop hash.
-	baseGetHeaders := NewMsgGetHeaders(hashStart, hashStop)
+	baseGetHeaders := NewMsgGetHeaders(startHash, stopHash)
 	baseGetHeadersEncoded := []byte{
 		0x35, 0x75, 0x95, 0xb7, 0xf6, 0x8c, 0xb1, 0x60,
 		0xcc, 0xba, 0x2c, 0x9a, 0xc5, 0x42, 0x5f, 0xd9,

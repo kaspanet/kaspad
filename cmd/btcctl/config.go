@@ -15,7 +15,7 @@ import (
 
 	"github.com/daglabs/btcd/btcjson"
 	"github.com/daglabs/btcd/util"
-	flags "github.com/jessevdk/go-flags"
+	"github.com/jessevdk/go-flags"
 )
 
 const (
@@ -26,13 +26,11 @@ const (
 )
 
 var (
-	btcdHomeDir           = util.AppDataDir("btcd", false)
-	btcctlHomeDir         = util.AppDataDir("btcctl", false)
-	btcwalletHomeDir      = util.AppDataDir("btcwallet", false)
-	defaultConfigFile     = filepath.Join(btcctlHomeDir, "btcctl.conf")
-	defaultRPCServer      = "localhost"
-	defaultRPCCertFile    = filepath.Join(btcdHomeDir, "rpc.cert")
-	defaultWalletCertFile = filepath.Join(btcwalletHomeDir, "rpc.cert")
+	btcdHomeDir        = util.AppDataDir("btcd", false)
+	btcctlHomeDir      = util.AppDataDir("btcctl", false)
+	defaultConfigFile  = filepath.Join(btcctlHomeDir, "btcctl.conf")
+	defaultRPCServer   = "localhost"
+	defaultRPCCertFile = filepath.Join(btcdHomeDir, "rpc.cert")
 )
 
 // listCommands categorizes and lists all of the usable commands along with
@@ -40,7 +38,6 @@ var (
 func listCommands() {
 	const (
 		categoryChain uint8 = iota
-		categoryWallet
 		numCategories
 	)
 
@@ -69,16 +66,12 @@ func listCommands() {
 
 		// Categorize the command based on the usage flags.
 		category := categoryChain
-		if flags&btcjson.UFWalletOnly != 0 {
-			category = categoryWallet
-		}
 		categorized[category] = append(categorized[category], usage)
 	}
 
 	// Display the command according to their categories.
 	categoryTitles := make([]string, numCategories)
 	categoryTitles[categoryChain] = "Chain Server Commands:"
-	categoryTitles[categoryWallet] = "Wallet Server Commands (--wallet):"
 	for category := uint8(0); category < numCategories; category++ {
 		fmt.Println(categoryTitles[category])
 		for _, usage := range categorized[category] {
@@ -107,12 +100,11 @@ type config struct {
 	SimNet        bool   `long:"simnet" description:"Connect to the simulation test network"`
 	DevNet        bool   `long:"devnet" description:"Connect to the development test network"`
 	TLSSkipVerify bool   `long:"skipverify" description:"Do not verify tls certificates (not recommended!)"`
-	Wallet        bool   `long:"wallet" description:"Connect to wallet"`
 }
 
 // normalizeAddress returns addr with the passed default port appended if
 // there is not already a port specified.
-func normalizeAddress(addr string, useTestNet3, useSimNet, useDevNet, useWallet bool) string {
+func normalizeAddress(addr string, useTestNet3, useSimNet, useDevNet bool) string {
 	_, _, err := net.SplitHostPort(addr)
 	if err != nil {
 		var defaultPort string
@@ -120,23 +112,11 @@ func normalizeAddress(addr string, useTestNet3, useSimNet, useDevNet, useWallet 
 		case useDevNet:
 			fallthrough
 		case useTestNet3:
-			if useWallet {
-				defaultPort = "18332"
-			} else {
-				defaultPort = "18334"
-			}
+			defaultPort = "18334"
 		case useSimNet:
-			if useWallet {
-				defaultPort = "18554"
-			} else {
-				defaultPort = "18556"
-			}
+			defaultPort = "18556"
 		default:
-			if useWallet {
-				defaultPort = "8332"
-			} else {
-				defaultPort = "8334"
-			}
+			defaultPort = "8334"
 		}
 
 		return net.JoinHostPort(addr, defaultPort)
@@ -215,12 +195,7 @@ func loadConfig() (*config, []string, error) {
 
 	if _, err := os.Stat(preCfg.ConfigFile); os.IsNotExist(err) {
 		// Use config file for RPC server to create default btcctl config
-		var serverConfigPath string
-		if preCfg.Wallet {
-			serverConfigPath = filepath.Join(btcwalletHomeDir, "btcwallet.conf")
-		} else {
-			serverConfigPath = filepath.Join(btcdHomeDir, "btcd.conf")
-		}
+		serverConfigPath := filepath.Join(btcdHomeDir, "btcd.conf")
 
 		err := createDefaultConfigFile(preCfg.ConfigFile, serverConfigPath)
 		if err != nil {
@@ -268,26 +243,20 @@ func loadConfig() (*config, []string, error) {
 		return nil, nil, err
 	}
 
-	// Override the RPC certificate if the --wallet flag was specified and
-	// the user did not specify one.
-	if cfg.Wallet && cfg.RPCCert == defaultRPCCertFile {
-		cfg.RPCCert = defaultWalletCertFile
-	}
-
 	// Handle environment variable expansion in the RPC certificate path.
 	cfg.RPCCert = cleanAndExpandPath(cfg.RPCCert)
 
-	// Add default port to RPC server based on --testnet and --wallet flags
+	// Add default port to RPC server based on --testnet and --simnet flags
 	// if needed.
 	cfg.RPCServer = normalizeAddress(cfg.RPCServer, cfg.TestNet3,
-		cfg.SimNet, cfg.DevNet, cfg.Wallet)
+		cfg.SimNet, cfg.DevNet)
 
 	return &cfg, remainingArgs, nil
 }
 
 // createDefaultConfig creates a basic config file at the given destination path.
-// For this it tries to read the config file for the RPC server (either btcd or
-// btcwallet), and extract the RPC user and password from it.
+// For this it tries to read the config file for the RPC server and extract the
+// RPC user and password from it.
 func createDefaultConfigFile(destinationPath, serverConfigPath string) error {
 	// Read the RPC server config
 	serverConfigFile, err := os.Open(serverConfigPath)

@@ -32,7 +32,7 @@ const (
 	CmdVerAck          = "verack"
 	CmdGetAddr         = "getaddr"
 	CmdAddr            = "addr"
-	CmdGetBlocks       = "getblocks"
+	CmdGetBlockInvs    = "getblockinvs"
 	CmdInv             = "inv"
 	CmdGetData         = "getdata"
 	CmdNotFound        = "notfound"
@@ -89,8 +89,8 @@ func makeEmptyMessage(command string) (Message, error) {
 	case CmdAddr:
 		msg = &MsgAddr{}
 
-	case CmdGetBlocks:
-		msg = &MsgGetBlocks{}
+	case CmdGetBlockInvs:
+		msg = &MsgGetBlockInvs{}
 
 	case CmdBlock:
 		msg = &MsgBlock{}

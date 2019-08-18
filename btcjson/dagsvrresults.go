@@ -502,3 +502,28 @@ type ValidateAddressResult struct {
 	IsValid bool   `json:"isValid"`
 	Address string `json:"address,omitempty"`
 }
+
+// GetBestBlockResult models the data from the getbestblock command.
+type GetBestBlockResult struct {
+	Hash   string `json:"hash"`
+	Height uint64 `json:"height"`
+}
+
+// ChainBlock models a block that is part of the selected parent chain.
+type ChainBlock struct {
+	Hash           string          `json:"hash"`
+	AcceptedBlocks []AcceptedBlock `json:"acceptedBlocks"`
+}
+
+// AcceptedBlock models a block that is included in the blues of a selected
+// chain block.
+type AcceptedBlock struct {
+	Hash          string   `json:"hash"`
+	AcceptedTxIds []string `json:"acceptedTxIds"`
+}
+
+// GetChainFromBlockResult models the data from the getChainFromBlock command.
+type GetChainFromBlockResult struct {
+	SelectedParentChain []ChainBlock            `json:"selectedParentChain"`
+	Blocks              []GetBlockVerboseResult `json:"blocks"`
+}

@@ -167,17 +167,17 @@ func messageSummary(msg wire.Message) string {
 	case *wire.MsgGetData:
 		return invSummary(msg.InvList)
 
-	case *wire.MsgGetBlocks:
-		return fmt.Sprintf("hash start %s, hash stop %s", msg.HashStart,
-			msg.HashStop)
+	case *wire.MsgGetBlockInvs:
+		return fmt.Sprintf("start hash %s, stop hash %s", msg.StartHash,
+			msg.StopHash)
 
 	case *wire.MsgGetHeaders:
-		return fmt.Sprintf("hash start %s, hash stop %s", msg.HashStart,
-			msg.HashStop)
+		return fmt.Sprintf("start hash %s, stop hash %s", msg.StartHash,
+			msg.StopHash)
 
 	case *wire.MsgGetBlockLocator:
-		return fmt.Sprintf("hash start %s, hash stop %s", msg.HashStart,
-			msg.HashStop)
+		return fmt.Sprintf("hash start %s, hash stop %s", msg.StartHash,
+			msg.StopHash)
 
 	case *wire.MsgBlockLocator:
 		if len(msg.BlockLocatorHashes) > 0 {

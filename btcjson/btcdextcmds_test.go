@@ -22,7 +22,7 @@ import (
 func TestBtcdExtCmds(t *testing.T) {
 	t.Parallel()
 
-	testID := int(1)
+	testID := 1
 	tests := []struct {
 		name         string
 		newCmd       func() (interface{}, error)
@@ -149,8 +149,8 @@ func TestBtcdExtCmds(t *testing.T) {
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"getHeaders","params":["",""],"id":1}`,
 			unmarshalled: &btcjson.GetHeadersCmd{
-				HashStart: "",
-				HashStop:  "",
+				StartHash: "",
+				StopHash:  "",
 			},
 		},
 		{
@@ -166,8 +166,8 @@ func TestBtcdExtCmds(t *testing.T) {
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"getHeaders","params":["000000000000000001f1739002418e2f9a84c47a4fd2a0eb7a787a6b7dc12f16","000000000000000000ba33b33e1fad70b69e234fc24414dd47113bff38f523f7"],"id":1}`,
 			unmarshalled: &btcjson.GetHeadersCmd{
-				HashStart: "000000000000000001f1739002418e2f9a84c47a4fd2a0eb7a787a6b7dc12f16",
-				HashStop:  "000000000000000000ba33b33e1fad70b69e234fc24414dd47113bff38f523f7",
+				StartHash: "000000000000000001f1739002418e2f9a84c47a4fd2a0eb7a787a6b7dc12f16",
+				StopHash:  "000000000000000000ba33b33e1fad70b69e234fc24414dd47113bff38f523f7",
 			},
 		},
 		{

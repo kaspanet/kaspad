@@ -682,11 +682,11 @@ func (sp *Peer) OnGetData(_ *peer.Peer, msg *wire.MsgGetData) {
 	}
 }
 
-// OnGetBlockLocator is invoked when a peer receives a getblklocatr bitcoin
+// OnGetBlockLocator is invoked when a peer receives a getlocator bitcoin
 // message.
 func (sp *Peer) OnGetBlockLocator(_ *peer.Peer, msg *wire.MsgGetBlockLocator) {
 	dag := sp.server.DAG
-	locator := dag.BlockLocatorFromHashes(msg.HashStart, msg.HashStop)
+	locator := dag.BlockLocatorFromHashes(msg.StartHash, msg.StopHash)
 
 	if len(locator) == 0 {
 		peerLog.Infof("Couldn't build a block locator between blocks %s and %s"+
@@ -702,7 +702,7 @@ func (sp *Peer) OnGetBlockLocator(_ *peer.Peer, msg *wire.MsgGetBlockLocator) {
 	}
 }
 
-// OnBlockLocator is invoked when a peer receives a blklocatr bitcoin
+// OnBlockLocator is invoked when a peer receives a locator bitcoin
 // message.
 func (sp *Peer) OnBlockLocator(_ *peer.Peer, msg *wire.MsgBlockLocator) {
 	// Find the most recent known block in the dag based on the block
@@ -729,11 +729,11 @@ func (sp *Peer) OnBlockLocator(_ *peer.Peer, msg *wire.MsgBlockLocator) {
 	}
 }
 
-// OnGetBlocks is invoked when a peer receives a getblocks bitcoin
+// OnGetBlockInvs is invoked when a peer receives a getblockinvs bitcoin
 // message.
-// It finds the blue future between msg.HashStart and msg.HashStop
+// It finds the blue future between msg.StartHash and msg.StopHash
 // and send the invs to the requesting peer.
-func (sp *Peer) OnGetBlocks(_ *peer.Peer, msg *wire.MsgGetBlocks) {
+func (sp *Peer) OnGetBlockInvs(_ *peer.Peer, msg *wire.MsgGetBlockInvs) {
 	dag := sp.server.DAG
 	// We want to prevent a situation where the syncing peer needs
 	// to call getblocks once again, but the block we sent him
@@ -744,7 +744,7 @@ func (sp *Peer) OnGetBlocks(_ *peer.Peer, msg *wire.MsgGetBlocks) {
 	// This way, if one getblocks is not enough to get the peer
 	// synced, we can know for sure that its selected chain will
 	// change, so we'll have higher shared chain block.
-	hashList := dag.LocateBlocks(msg.HashStart, msg.HashStop,
+	hashList := dag.LocateBlocks(msg.StartHash, msg.StopHash,
 		wire.MaxInvPerMsg)
 
 	// Generate inventory message.
@@ -779,7 +779,7 @@ func (sp *Peer) OnGetHeaders(_ *peer.Peer, msg *wire.MsgGetHeaders) {
 	//
 	// This mirrors the behavior in the reference implementation.
 	dag := sp.server.DAG
-	headers := dag.LocateHeaders(msg.HashStart, msg.HashStop)
+	headers := dag.LocateHeaders(msg.StartHash, msg.StopHash)
 
 	// Send found headers to the requesting peer.
 	blockHeaders := make([]*wire.BlockHeader, len(headers))
@@ -1828,7 +1828,7 @@ func newPeerConfig(sp *Peer) *peer.Config {
 			OnGetData:         sp.OnGetData,
 			OnGetBlockLocator: sp.OnGetBlockLocator,
 			OnBlockLocator:    sp.OnBlockLocator,
-			OnGetBlocks:       sp.OnGetBlocks,
+			OnGetBlockInvs:    sp.OnGetBlockInvs,
 			OnGetHeaders:      sp.OnGetHeaders,
 			OnGetCFilters:     sp.OnGetCFilters,
 			OnGetCFHeaders:    sp.OnGetCFHeaders,

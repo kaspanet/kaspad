@@ -42,7 +42,7 @@ A quick overview of the major features peer provides are as follows:
    - Does not invoke the related callbacks for older protocol versions
  - Snapshottable peer statistics such as the total number of bytes read and
    written, the remote address, user agent, and negotiated protocol version
- - Helper functions pushing addresses, getblocks, getheaders, and reject
+ - Helper functions pushing addresses, getblockinvs, getheaders, and reject
    messages
    - These could all be sent manually via the standard message output function,
      but the helpers provide additional nice functionality such as duplicate
@@ -109,7 +109,7 @@ of a most-recently used algorithm.
 Message Sending Helper Functions
 
 In addition to the bare QueueMessage function previously described, the
-PushAddrMsg, PushGetBlocksMsg, PushGetHeadersMsg, and PushRejectMsg functions
+PushAddrMsg, PushGetBlockInvsMsg, PushGetHeadersMsg, and PushRejectMsg functions
 are provided as a convenience.  While it is of course possible to create and
 send these message manually via QueueMessage, these helper functions provided
 additional useful functionality that is typically desired.
@@ -120,7 +120,7 @@ there are too many.  This allows the caller to simply provide a slice of known
 addresses, such as that returned by the addrmgr package, without having to worry
 about the details.
 
-Next, the PushGetBlocksMsg and PushGetHeadersMsg functions will construct proper
+Next, the PushGetBlockInvsMsg and PushGetHeadersMsg functions will construct proper
 messages using a block locator and ignore back to back duplicate requests.
 
 Finally, the PushRejectMsg function can be used to easily create and send an
