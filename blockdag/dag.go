@@ -1382,9 +1382,9 @@ func (dag *BlockDAG) acceptingBlock(node *blockNode) (*blockNode, error) {
 	}
 
 	// If the node is a chain-block itself, the accepting block is its chain-child
-	if dag.IsInSelectedPathChain(node.hash) {
+	if dag.IsInSelectedParentChain(node.hash) {
 		for _, child := range node.children {
-			if dag.IsInSelectedPathChain(child.hash) {
+			if dag.IsInSelectedParentChain(child.hash) {
 				return child, nil
 			}
 		}
@@ -1409,21 +1409,70 @@ func (dag *BlockDAG) acceptingBlock(node *blockNode) (*blockNode, error) {
 // oldestChainBlockWithBlueScoreGreaterThan finds the oldest chain block with a blue score
 // greater than blueScore. If no such block exists, this method returns nil
 func (dag *BlockDAG) oldestChainBlockWithBlueScoreGreaterThan(blueScore uint64) *blockNode {
-	chainBlockIndex, ok := util.SearchSlice(len(dag.virtual.selectedPathChainSlice), func(i int) bool {
-		selectedPathNode := dag.virtual.selectedPathChainSlice[i]
+	chainBlockIndex, ok := util.SearchSlice(len(dag.virtual.selectedParentChainSlice), func(i int) bool {
+		selectedPathNode := dag.virtual.selectedParentChainSlice[i]
 		return selectedPathNode.blueScore > blueScore
 	})
 	if !ok {
 		return nil
 	}
-	return dag.virtual.selectedPathChainSlice[chainBlockIndex]
+	return dag.virtual.selectedParentChainSlice[chainBlockIndex]
 }
 
-// IsInSelectedPathChain returns whether or not a block hash is found in the selected path
+// IsInSelectedParentChain returns whether or not a block hash is found in the selected
+// parent chain.
 //
 // This method MUST be called with the DAG lock held
-func (dag *BlockDAG) IsInSelectedPathChain(blockHash *daghash.Hash) bool {
-	return dag.virtual.selectedPathChainSet.containsHash(blockHash)
+func (dag *BlockDAG) IsInSelectedParentChain(blockHash *daghash.Hash) bool {
+	return dag.virtual.selectedParentChainSet.containsHash(blockHash)
+}
+
+// SelectedParentChain returns the selected parent chain starting from startHash (exclusive) up
+// to the virtual (exclusive). If startHash is nil then the genesis block is used.
+//
+// This method MUST be called with the DAG lock held
+func (dag *BlockDAG) SelectedParentChain(startHash *daghash.Hash) ([]*daghash.Hash, error) {
+	if startHash == nil {
+		startHash = dag.genesis.hash
+	}
+	if !dag.IsInSelectedParentChain(startHash) {
+		return nil, fmt.Errorf("startHash %s is not the selected parent chain", startHash)
+	}
+
+	// Find the index of the startHash in the selectedParentChainSlice
+	startHashIndex := len(dag.virtual.selectedParentChainSlice) - 1
+	for startHashIndex >= 0 {
+		node := dag.virtual.selectedParentChainSlice[startHashIndex]
+		if node.hash.IsEqual(startHash) {
+			break
+		}
+		startHashIndex--
+	}
+
+	// Copy all the hashes starting from startHashIndex (exclusive)
+	hashes := make([]*daghash.Hash, len(dag.virtual.selectedParentChainSlice)-startHashIndex)
+	for i, node := range dag.virtual.selectedParentChainSlice[startHashIndex+1:] {
+		hashes[i] = node.hash
+	}
+
+	return hashes, nil
+}
+
+// BluesTxsAcceptanceData returns the acceptance data of all the transactions that
+// were accepted by the block with hash blockHash.
+func (dag *BlockDAG) BluesTxsAcceptanceData(blockHash *daghash.Hash) (MultiBlockTxsAcceptanceData, error) {
+	node := dag.index.LookupNode(blockHash)
+	if node == nil {
+		err := fmt.Errorf("block %s is not known", blockHash)
+		return nil, err
+	}
+
+	_, bluesTxsAcceptanceData, err := dag.pastUTXO(node)
+	if err != nil {
+		return nil, err
+	}
+
+	return bluesTxsAcceptanceData, nil
 }
 
 // SelectedPathChain returns the selected path chain starting from startHash (exclusive) up
@@ -1534,7 +1583,7 @@ func (dag *BlockDAG) BlockLocatorFromHash(hash *daghash.Hash) BlockLocator {
 	defer dag.dagLock.RUnlock()
 	node := dag.index.LookupNode(hash)
 	if node != nil {
-		for !dag.IsInSelectedPathChain(node.hash) {
+		for !dag.IsInSelectedParentChain(node.hash) {
 			node = node.selectedParent
 		}
 	}

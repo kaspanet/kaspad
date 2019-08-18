@@ -2216,32 +2216,55 @@ func handleGetChainFromBlock(s *Server, cmd interface{}, closeChan <-chan struct
 	s.cfg.DAG.RLock()
 	defer s.cfg.DAG.RUnlock()
 
-	// If startHash is not in the selected path chain, there's nothing
+	// If startHash is not in the selected parent chain, there's nothing
 	// to do; return an error.
-	if !s.cfg.DAG.IsInSelectedPathChain(startHash) {
+	if !s.cfg.DAG.IsInSelectedParentChain(startHash) {
 		return nil, &btcjson.RPCError{
 			Code:    btcjson.ErrRPCBlockNotFound,
-			Message: "Block not found in selected path chain",
+			Message: "Block not found in selected parent chain",
 		}
 	}
 
-	// Retrieve the selected path chain.
-	selectedPathChain, err := s.cfg.DAG.SelectedPathChain(startHash)
+	// Retrieve the selected parent chain.
+	selectedParentChain, err := s.cfg.DAG.SelectedParentChain(startHash)
 	if err != nil {
-		return nil, &btcjson.RPCError{
-			Code:    btcjson.ErrRPCInternal.Code,
-			Message: fmt.Sprintf("could not retrieve selected parent chain: %s", err),
-		}
+		return nil, err
 	}
 
 	// Collect chainBlocks.
-	chainBlocks := make([]btcjson.ChainBlock, 0, len(selectedPathChain))
-	for _, hash := range selectedPathChain {
+	chainBlocks, err := collectChainBlocks(s, selectedParentChain)
+	if err != nil {
+		return nil, &btcjson.RPCError{
+			Code:    btcjson.ErrRPCInternal.Code,
+			Message: fmt.Sprintf("could not collect chain blocks: %s", err),
+		}
+	}
+
+	result := &btcjson.GetChainFromBlockResult{
+		SelectedParentChain: chainBlocks,
+		Blocks:              nil,
+	}
+
+	// If the user specified to include the blocks, collect them as well.
+	if c.IncludeBlocks != nil && *c.IncludeBlocks {
+		getBlockVerboseResults, err := hashesToGetBlockVerboseResults(s, selectedParentChain)
+		if err != nil {
+			return nil, err
+		}
+		result.Blocks = getBlockVerboseResults
+	}
+
+	return result, nil
+}
+
+func collectChainBlocks(s *Server, selectedParentChain []*daghash.Hash) ([]btcjson.ChainBlock, error) {
+	chainBlocks := make([]btcjson.ChainBlock, 0, len(selectedParentChain))
+	for _, hash := range selectedParentChain {
 		acceptanceData, err := s.cfg.DAG.BluesTxsAcceptanceData(hash)
 		if err != nil {
 			return nil, &btcjson.RPCError{
 				Code:    btcjson.ErrRPCInternal.Code,
-				Message: fmt.Sprintf("could not retrieve acceptance data for block %s.", hash),
+				Message: fmt.Sprintf("could not retrieve acceptance data for block %s", hash),
 			}
 		}
 
@@ -2266,36 +2289,29 @@ func handleGetChainFromBlock(s *Server, cmd interface{}, closeChan <-chan struct
 		}
 		chainBlocks = append(chainBlocks, chainBlock)
 	}
+	return chainBlocks, nil
+}
 
-	result := &btcjson.GetChainFromBlockResult{
-		SelectedParentChain: chainBlocks,
-		Blocks:              nil,
-	}
-
-	// If the user specified to include the blocks, collect them as well.
-	if c.IncludeBlocks != nil && *c.IncludeBlocks {
-		getBlockVerboseResults := make([]btcjson.GetBlockVerboseResult, 0, len(selectedPathChain))
-		for _, blockHash := range selectedPathChain {
-			block, err := s.cfg.DAG.BlockByHash(blockHash)
-			if err != nil {
-				return nil, &btcjson.RPCError{
-					Code:    btcjson.ErrRPCInternal.Code,
-					Message: fmt.Sprintf("could not retrieve block %s.", blockHash),
-				}
+func hashesToGetBlockVerboseResults(s *Server, hashes []*daghash.Hash) ([]btcjson.GetBlockVerboseResult, error) {
+	getBlockVerboseResults := make([]btcjson.GetBlockVerboseResult, 0, len(hashes))
+	for _, blockHash := range hashes {
+		block, err := s.cfg.DAG.BlockByHash(blockHash)
+		if err != nil {
+			return nil, &btcjson.RPCError{
+				Code:    btcjson.ErrRPCInternal.Code,
+				Message: fmt.Sprintf("could not retrieve block %s.", blockHash),
 			}
-			getBlockVerboseResult, err := buildGetBlockVerboseResult(s, block, false)
-			if err != nil {
-				return nil, &btcjson.RPCError{
-					Code:    btcjson.ErrRPCInternal.Code,
-					Message: fmt.Sprintf("could not build getBlockVerboseResult for block %s.", blockHash),
-				}
-			}
-			getBlockVerboseResults = append(getBlockVerboseResults, *getBlockVerboseResult)
 		}
-		result.Blocks = getBlockVerboseResults
+		getBlockVerboseResult, err := buildGetBlockVerboseResult(s, block, false)
+		if err != nil {
+			return nil, &btcjson.RPCError{
+				Code:    btcjson.ErrRPCInternal.Code,
+				Message: fmt.Sprintf("could not build getBlockVerboseResult for block %s.", blockHash),
+			}
+		}
+		getBlockVerboseResults = append(getBlockVerboseResults, *getBlockVerboseResult)
 	}
-
-	return result, nil
+	return getBlockVerboseResults, nil
 }
 
 // handleGetConnectionCount implements the getConnectionCount command.

@@ -352,7 +352,7 @@ var helpDescsEnUS = map[string]string{
 
 	// GetChainFromBlockCmd help.
 	"getChainFromBlock--synopsis":     "Return the selected parent chain starting from startHash up to the virtual.",
-	"getChainFromBlock-startHash":     "Hash of the bottom of the requested chain. If this hash is unknown or not chain block - returns error.",
+	"getChainFromBlock-startHash":     "Hash of the bottom of the requested chain. If this hash is unknown or is not a chain block - returns an error.",
 	"getChainFromBlock-includeBlocks": "If set to true - the block contents would be also included.",
 	"getChainFromBlock--result0":      "The selected parent chain.",
 
