@@ -254,7 +254,7 @@ func (g *BlkTmplGenerator) populateTemplateFromCandidates(candidateTxs []*candid
 	candidateTxs, totalP := rebalanceCandidates(candidateTxs, true)
 	gasUsageMap := make(map[subnetworkid.SubnetworkID]uint64)
 
-	markCandidateTxUsed := func(candidateTx *candidateTx) {
+	markCandidateTxForDeletion := func(candidateTx *candidateTx) {
 		candidateTx.isMarkedForDeletion = true
 		usedCount++
 		usedP += candidateTx.p
@@ -316,7 +316,7 @@ func (g *BlkTmplGenerator) populateTemplateFromCandidates(candidateTxs []*candid
 					}
 
 					if candidateTx.txDesc.Tx.MsgTx().SubnetworkID.IsEqual(&subnetworkID) {
-						markCandidateTxUsed(candidateTx)
+						markCandidateTxForDeletion(candidateTx)
 					}
 				}
 				continue
@@ -336,7 +336,7 @@ func (g *BlkTmplGenerator) populateTemplateFromCandidates(candidateTxs []*candid
 		log.Tracef("Adding tx %s (feePerKB %.2f)",
 			tx.ID(), selectedTx.txDesc.FeePerKB)
 
-		markCandidateTxUsed(selectedTx)
+		markCandidateTxForDeletion(selectedTx)
 	}
 }
 
