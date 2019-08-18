@@ -331,6 +331,21 @@ func NewGetCFilterHeaderCmd(hash string,
 	}
 }
 
+// GetChainFromBlockCmd defines the getChainFromBlock JSON-RPC command.
+type GetChainFromBlockCmd struct {
+	StartHash     *string `json:"startHash"`
+	IncludeBlocks *bool   `json:"includeBlocks"`
+}
+
+// NewGetChainFromBlockCmd returns a new instance which can be used to issue a
+// GetChainFromBlock JSON-RPC command.
+func NewGetChainFromBlockCmd(startHash *string, includeBlocks *bool) *GetChainFromBlockCmd {
+	return &GetChainFromBlockCmd{
+		StartHash:     startHash,
+		IncludeBlocks: includeBlocks,
+	}
+}
+
 // GetDAGTipsCmd defines the getDagTips JSON-RPC command.
 type GetDAGTipsCmd struct{}
 
@@ -789,6 +804,7 @@ func init() {
 	MustRegisterCmd("getBlockTemplate", (*GetBlockTemplateCmd)(nil), flags)
 	MustRegisterCmd("getCFilter", (*GetCFilterCmd)(nil), flags)
 	MustRegisterCmd("getCFilterHeader", (*GetCFilterHeaderCmd)(nil), flags)
+	MustRegisterCmd("getChainFromBlock", (*GetChainFromBlockCmd)(nil), flags)
 	MustRegisterCmd("getDagTips", (*GetDAGTipsCmd)(nil), flags)
 	MustRegisterCmd("getConnectionCount", (*GetConnectionCountCmd)(nil), flags)
 	MustRegisterCmd("getDifficulty", (*GetDifficultyCmd)(nil), flags)

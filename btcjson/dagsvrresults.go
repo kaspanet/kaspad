@@ -521,3 +521,9 @@ type AcceptedBlock struct {
 	Hash          string   `json:"hash"`
 	AcceptedTxIds []string `json:"acceptedTxIds"`
 }
+
+// GetChainFromBlockResult models the data from the getChainFromBlock command.
+type GetChainFromBlockResult struct {
+	SelectedParentChain []ChainBlock            `json:"selectedParentChain"`
+	Blocks              []GetBlockVerboseResult `json:"blocks"`
+}

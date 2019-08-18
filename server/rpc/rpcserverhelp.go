@@ -90,6 +90,14 @@ var helpDescsEnUS = map[string]string{
 	"vout-n":            "The index of this transaction output",
 	"vout-scriptPubKey": "The public key script used to pay coins as a JSON object",
 
+	// ChainBlock help.
+	"chainBlock-hash":           "The hash of the chain block",
+	"chainBlock-acceptedBlocks": "The blocks accepted by this chain block",
+
+	// AcceptedBlock help.
+	"acceptedBlock-hash":          "The hash of the accepted block",
+	"acceptedBlock-acceptedTxIds": "The transactions in this block accepted by the chain block",
+
 	// TxRawDecodeResult help.
 	"txRawDecodeResult-txId":     "The hash of the transaction",
 	"txRawDecodeResult-version":  "The transaction version",
@@ -341,6 +349,16 @@ var helpDescsEnUS = map[string]string{
 	"getCFilter-filterType": "The type of filter to return (0=regular, 1=extended)",
 	"getCFilter-hash":       "The hash of the block",
 	"getCFilter--result0":   "The block's committed filter",
+
+	// GetChainFromBlockCmd help.
+	"getChainFromBlock--synopsis":     "Return the selected parent chain starting from startHash up to the virtual.",
+	"getChainFromBlock-startHash":     "Hash of the bottom of the requested chain. If this hash is unknown or is not a chain block - returns an error.",
+	"getChainFromBlock-includeBlocks": "If set to true - the block contents would be also included.",
+	"getChainFromBlock--result0":      "The selected parent chain.",
+
+	// GetChainFromBlockResult help.
+	"getChainFromBlockResult-selectedParentChain": "List of ChainBlocks from Virtual.SelectedTip to StartHash (excluding StartHash) ordered bottom-to-top.",
+	"getChainFromBlockResult-blocks":              "If includeBlocks=true - contains the contents of all chain and accepted blocks in the SelectedParentChain. Otherwise - omitted.",
 
 	// GetCFilterHeaderCmd help.
 	"getCFilterHeader--synopsis":  "Returns a block's compact filter header given its hash.",
@@ -662,6 +680,7 @@ var rpcResultTypes = map[string][]interface{}{
 	"getBlockDagInfo":       {(*btcjson.GetBlockDAGInfoResult)(nil)},
 	"getCFilter":            {(*string)(nil)},
 	"getCFilterHeader":      {(*string)(nil)},
+	"getChainFromBlock":     {(*btcjson.GetChainFromBlockResult)(nil)},
 	"getConnectionCount":    {(*int32)(nil)},
 	"getCurrentNet":         {(*uint32)(nil)},
 	"getDifficulty":         {(*float64)(nil)},

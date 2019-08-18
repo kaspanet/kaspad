@@ -15,14 +15,14 @@ type virtualBlock struct {
 	utxoSet  *FullUTXOSet
 	blockNode
 
-	// selectedPathChainSet is a block set that includes all the blocks
+	// selectedParentChainSet is a block set that includes all the blocks
 	// that belong to the chain of selected parents from the virtual block.
-	selectedPathChainSet blockSet
+	selectedParentChainSet blockSet
 
-	// selectedPathChainSlice is an ordered slice that includes all the
+	// selectedParentChainSlice is an ordered slice that includes all the
 	// blocks that belong the the chain of selected parents from the
 	// virtual block.
-	selectedPathChainSlice []*blockNode
+	selectedParentChainSlice []*blockNode
 }
 
 // newVirtualBlock creates and returns a new VirtualBlock.
@@ -31,8 +31,8 @@ func newVirtualBlock(tips blockSet, phantomK uint32) *virtualBlock {
 	var virtual virtualBlock
 	virtual.phantomK = phantomK
 	virtual.utxoSet = NewFullUTXOSet()
-	virtual.selectedPathChainSet = newSet()
-	virtual.selectedPathChainSlice = nil
+	virtual.selectedParentChainSet = newSet()
+	virtual.selectedParentChainSlice = nil
 	virtual.setTips(tips)
 
 	return &virtual
@@ -41,10 +41,10 @@ func newVirtualBlock(tips blockSet, phantomK uint32) *virtualBlock {
 // clone creates and returns a clone of the virtual block.
 func (v *virtualBlock) clone() *virtualBlock {
 	return &virtualBlock{
-		phantomK:             v.phantomK,
-		utxoSet:              v.utxoSet,
-		blockNode:            v.blockNode,
-		selectedPathChainSet: v.selectedPathChainSet,
+		phantomK:               v.phantomK,
+		utxoSet:                v.utxoSet,
+		blockNode:              v.blockNode,
+		selectedParentChainSet: v.selectedParentChainSet,
 	}
 }
 
@@ -56,10 +56,10 @@ func (v *virtualBlock) clone() *virtualBlock {
 func (v *virtualBlock) setTips(tips blockSet) {
 	oldSelectedParent := v.selectedParent
 	v.blockNode = *newBlockNode(nil, tips, v.phantomK)
-	v.updateSelectedPathSet(oldSelectedParent)
+	v.updateSelectedParentSet(oldSelectedParent)
 }
 
-// updateSelectedPathSet updates the selectedPathSet to match the
+// updateSelectedParentSet updates the selectedParentSet to match the
 // new selected parent of the virtual block.
 // Every time the new selected parent is not a child of
 // the old one, it updates the selected path by removing from
@@ -67,11 +67,11 @@ func (v *virtualBlock) setTips(tips blockSet) {
 // parent and are not selected ancestors of the new one, and adding
 // blocks that are selected ancestors of the new selected parent
 // and aren't selected ancestors of the old one.
-func (v *virtualBlock) updateSelectedPathSet(oldSelectedParent *blockNode) {
+func (v *virtualBlock) updateSelectedParentSet(oldSelectedParent *blockNode) {
 	var intersectionNode *blockNode
 	nodesToAdd := make([]*blockNode, 0)
 	for node := v.blockNode.selectedParent; intersectionNode == nil && node != nil; node = node.selectedParent {
-		if v.selectedPathChainSet.contains(node) {
+		if v.selectedParentChainSet.contains(node) {
 			intersectionNode = node
 		} else {
 			nodesToAdd = append(nodesToAdd, node)
@@ -79,19 +79,19 @@ func (v *virtualBlock) updateSelectedPathSet(oldSelectedParent *blockNode) {
 	}
 
 	if intersectionNode == nil && oldSelectedParent != nil {
-		panic("updateSelectedPathSet: Cannot find intersection node. The block index may be corrupted.")
+		panic("updateSelectedParentSet: Cannot find intersection node. The block index may be corrupted.")
 	}
 
 	// Remove the nodes in the set from the oldSelectedParent down to the intersectionNode
 	removeCount := 0
 	if intersectionNode != nil {
 		for node := oldSelectedParent; !node.hash.IsEqual(intersectionNode.hash); node = node.selectedParent {
-			v.selectedPathChainSet.remove(node)
+			v.selectedParentChainSet.remove(node)
 			removeCount++
 		}
 	}
 	// Remove the last removeCount nodes from the slice
-	v.selectedPathChainSlice = v.selectedPathChainSlice[:len(v.selectedPathChainSlice)-removeCount]
+	v.selectedParentChainSlice = v.selectedParentChainSlice[:len(v.selectedParentChainSlice)-removeCount]
 
 	// Reverse nodesToAdd, since we collected them in reverse order
 	for left, right := 0, len(nodesToAdd)-1; left < right; left, right = left+1, right-1 {
@@ -99,9 +99,9 @@ func (v *virtualBlock) updateSelectedPathSet(oldSelectedParent *blockNode) {
 	}
 	// Add the nodes to the set and to the slice
 	for _, node := range nodesToAdd {
-		v.selectedPathChainSet.add(node)
+		v.selectedParentChainSet.add(node)
 	}
-	v.selectedPathChainSlice = append(v.selectedPathChainSlice, nodesToAdd...)
+	v.selectedParentChainSlice = append(v.selectedParentChainSlice, nodesToAdd...)
 }
 
 // SetTips replaces the tips of the virtual block with the blocks in the
