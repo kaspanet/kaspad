@@ -688,14 +688,17 @@ func (sp *Peer) OnGetBlockLocator(_ *peer.Peer, msg *wire.MsgGetBlockLocator) {
 	dag := sp.server.DAG
 	locator := dag.BlockLocatorFromHashes(msg.HashStart, msg.HashStop)
 
-	// Send the block locator if there is anything to send.
-	if locator != nil {
-		err := sp.PushBlockLocatorMsg(locator)
-		if err != nil {
-			peerLog.Errorf("Failed to send block locator message to peer %s: %s",
-				sp, err)
-			return
-		}
+	if len(locator) == 0 {
+		peerLog.Infof("Couldn't build a block locator between blocks %s and %s"+
+			" that was requested from peer %s",
+			sp)
+		return
+	}
+	err := sp.PushBlockLocatorMsg(locator)
+	if err != nil {
+		peerLog.Errorf("Failed to send block locator message to peer %s: %s",
+			sp, err)
+		return
 	}
 }
 
@@ -714,11 +717,11 @@ func (sp *Peer) OnBlockLocator(_ *peer.Peer, msg *wire.MsgBlockLocator) {
 	// This mirrors the behavior in the reference implementation.
 	dag := sp.server.DAG
 	hashStart, hashStop := dag.FindNextLocatorBoundaries(msg.BlockLocatorHashes)
-	if hashStop != nil {
+	if hashStart != nil {
 		sp.PushGetBlockLocatorMsg(hashStart, hashStop)
 		return
 	}
-	err := sp.server.SyncManager.PushGetBlocksOrHeaders(sp.Peer, hashStart)
+	err := sp.server.SyncManager.PushGetBlocksOrHeaders(sp.Peer, hashStop)
 	if err != nil {
 		peerLog.Errorf("Failed pushing get blocks message for peer %s: %s",
 			sp, err)
@@ -728,9 +731,9 @@ func (sp *Peer) OnBlockLocator(_ *peer.Peer, msg *wire.MsgBlockLocator) {
 
 // OnGetBlocks is invoked when a peer receives a getblocks bitcoin
 // message.
+// It finds the blue future between msg.HashStart and msg.HashStop
+// and send the invs to the requesting peer.
 func (sp *Peer) OnGetBlocks(_ *peer.Peer, msg *wire.MsgGetBlocks) {
-	// Find the blue future between msg.HashStart and msg.HashStop
-	// and send the invs to the requesting peer.
 	dag := sp.server.DAG
 	// We want to prevent a situation where the syncing peer needs
 	// to call getblocks once again, but the block we sent him
@@ -742,7 +745,7 @@ func (sp *Peer) OnGetBlocks(_ *peer.Peer, msg *wire.MsgGetBlocks) {
 	// synced, we can know for sure that its selected chain will
 	// change, so we'll have higher shared chain block.
 	hashList := dag.LocateBlocks(msg.HashStart, msg.HashStop,
-		blockdag.FinalityInterval)
+		wire.MaxInvPerMsg)
 
 	// Generate inventory message.
 	invMsg := wire.NewMsgInv()

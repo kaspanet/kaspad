@@ -20,7 +20,7 @@ type MsgBlockLocator struct {
 
 // AddBlockLocatorHash adds a new block locator hash to the message.
 func (msg *MsgBlockLocator) AddBlockLocatorHash(hash *daghash.Hash) error {
-	if len(msg.BlockLocatorHashes)+1 > MaxBlockLocatorsPerMsg {
+	if len(msg.BlockLocatorHashes) >= MaxBlockLocatorsPerMsg {
 		str := fmt.Sprintf("too many block locator hashes for message [max %d]",
 			MaxBlockLocatorsPerMsg)
 		return messageError("MsgBlockLocator.AddBlockLocatorHash", str)
@@ -33,7 +33,6 @@ func (msg *MsgBlockLocator) AddBlockLocatorHash(hash *daghash.Hash) error {
 // BtcDecode decodes r using the bitcoin protocol encoding into the receiver.
 // This is part of the Message interface implementation.
 func (msg *MsgBlockLocator) BtcDecode(r io.Reader, pver uint32) error {
-
 	// Read num block locator hashes and limit to max.
 	count, err := ReadVarInt(r)
 	if err != nil {

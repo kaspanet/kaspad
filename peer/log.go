@@ -12,7 +12,6 @@ import (
 	"github.com/btcsuite/btclog"
 	"github.com/daglabs/btcd/logger"
 	"github.com/daglabs/btcd/txscript"
-	"github.com/daglabs/btcd/util/daghash"
 	"github.com/daglabs/btcd/util/panics"
 	"github.com/daglabs/btcd/wire"
 )
@@ -88,16 +87,6 @@ func invSummary(invList []*wire.InvVect) string {
 
 	// More than one inv item.
 	return fmt.Sprintf("size %d", invLen)
-}
-
-// locatorSummary returns a block locator as a human-readable string.
-func locatorSummary(locator []*daghash.Hash) string {
-	if len(locator) > 0 {
-		return fmt.Sprintf("locator first hash: %s, last hash: %s", locator[0], locator[len(locator)-1])
-	}
-
-	return fmt.Sprintf("no locator")
-
 }
 
 // sanitizeString strips any characters which are even remotely dangerous, such
@@ -191,7 +180,10 @@ func messageSummary(msg wire.Message) string {
 			msg.HashStop)
 
 	case *wire.MsgBlockLocator:
-		return locatorSummary(msg.BlockLocatorHashes)
+		if len(msg.BlockLocatorHashes) > 0 {
+			return fmt.Sprintf("locator first hash: %s, last hash: %s", msg.BlockLocatorHashes[0], msg.BlockLocatorHashes[len(msg.BlockLocatorHashes)-1])
+		}
+		return fmt.Sprintf("no locator")
 
 	case *wire.MsgHeaders:
 		return fmt.Sprintf("num %d", len(msg.Headers))

@@ -1517,6 +1517,14 @@ func (dag *BlockDAG) blockLocator(startNode, stopNode *blockNode) BlockLocator {
 		stopNode = dag.genesis
 	}
 
+	// We use the selected parent of the start node, so the
+	// block locator won't contain the start node.
+	startNode = startNode.selectedParent
+
+	// If the start node or the stop node are not in the
+	// virtual's selected parent chain, we replace them with their
+	// closest selected parent that is part of the virtual's
+	// selected parent chain.
 	for !dag.IsInSelectedPathChain(stopNode.hash) {
 		stopNode = stopNode.selectedParent
 	}
@@ -1674,20 +1682,20 @@ func (dag *BlockDAG) IntervalBlockHashes(endHash *daghash.Hash, interval uint64,
 func (dag *BlockDAG) FindNextLocatorBoundaries(locator BlockLocator) (hashStart, hashStop *daghash.Hash) {
 	// Find the most recent locator block hash in the DAG.  In the case none of
 	// the hashes in the locator are in the DAG, fall back to the genesis block.
-	startNode := dag.genesis
-	nextBlockLocatorIndex := int64(0)
+	stopNode := dag.genesis
+	nextBlockLocatorIndex := int64(len(locator) - 1)
 	for i, hash := range locator {
 		node := dag.index.LookupNode(hash)
 		if node != nil {
-			startNode = node
+			stopNode = node
 			nextBlockLocatorIndex = int64(i) - 1
 			break
 		}
 	}
 	if nextBlockLocatorIndex < 0 {
-		return startNode.hash, nil
+		return nil, stopNode.hash
 	}
-	return startNode.hash, locator[nextBlockLocatorIndex]
+	return locator[nextBlockLocatorIndex], stopNode.hash
 }
 
 // locateBlocks returns the hashes of the blocks after the provided
@@ -1727,7 +1735,7 @@ func (dag *BlockDAG) locateBlockNodes(hashStart, hashStop *daghash.Hash, maxEntr
 	}
 	reversedNodes := make([]*blockNode, len(nodes))
 	for i, node := range nodes {
-		reversedNodes[len(reversedNodes) - i - 1] = node
+		reversedNodes[len(reversedNodes)-i-1] = node
 	}
 	return reversedNodes
 }

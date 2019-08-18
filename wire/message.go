@@ -57,8 +57,8 @@ const (
 	CmdCFilter         = "cfilter"
 	CmdCFHeaders       = "cfheaders"
 	CmdCFCheckpt       = "cfcheckpt"
-	CmdGetBlockLocator = "getblklocatr"
-	CmdBlockLocator    = "blklocatr"
+	CmdGetBlockLocator = "getlocator"
+	CmdBlockLocator    = "locator"
 )
 
 // Message is an interface that describes a bitcoin message.  A type that

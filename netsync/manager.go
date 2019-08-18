@@ -180,7 +180,7 @@ type SyncManager struct {
 func (sm *SyncManager) PushGetBlocksOrHeaders(peer *peerpkg.Peer, startHash *daghash.Hash) error {
 	// When the current height is less than a known checkpoint we
 	// can use block headers to learn about which blocks comprise
-	// the chain up to the checkpoint and perform less validation
+	// the DAG up to the checkpoint and perform less validation
 	// for them.  This is possible since each header contains the
 	// hash of the previous header and a merkle root.  Therefore if
 	// we validate all of the received headers link together
@@ -197,8 +197,8 @@ func (sm *SyncManager) PushGetBlocksOrHeaders(peer *peerpkg.Peer, startHash *dag
 	// downloads when in regression test mode.
 	if sm.nextCheckpoint != nil &&
 		sm.dag.ChainHeight() < sm.nextCheckpoint.ChainHeight &&
-		sm.dagParams != &dagconfig.RegressionNetParams { //TODO: (Ori) This is probably wrong. Done only for compilation
-
+		sm.dagParams != &dagconfig.RegressionNetParams {
+		//TODO: (Ori) This is probably wrong. Done only for compilation
 		err := peer.PushGetHeadersMsg(startHash, sm.nextCheckpoint.Hash)
 		if err != nil {
 			return err
@@ -300,11 +300,11 @@ func (sm *SyncManager) startSync() {
 
 		if sm.nextCheckpoint != nil &&
 			sm.dag.ChainHeight() < sm.nextCheckpoint.ChainHeight &&
-			sm.dagParams != &dagconfig.RegressionNetParams { //TODO: (Ori) This is probably wrong. Done only for compilation
-
-			bestPeer.PushGetBlockLocatorMsg(sm.dagParams.GenesisHash, sm.nextCheckpoint.Hash)
+			sm.dagParams != &dagconfig.RegressionNetParams {
+			//TODO: (Ori) This is probably wrong. Done only for compilation
+			bestPeer.PushGetBlockLocatorMsg(sm.nextCheckpoint.Hash, sm.dagParams.GenesisHash)
 		} else {
-			bestPeer.PushGetBlockLocatorMsg(sm.dagParams.GenesisHash, &daghash.ZeroHash)
+			bestPeer.PushGetBlockLocatorMsg(&daghash.ZeroHash, sm.dagParams.GenesisHash)
 		}
 		sm.syncPeer = bestPeer
 	} else {
@@ -1024,7 +1024,7 @@ func (sm *SyncManager) handleInvMsg(imsg *invMsg) {
 				// Request blocks after the first block's ancestor that exists
 				// in the selected path chain, one up to the
 				// final one the remote peer knows about.
-				peer.PushGetBlockLocatorMsg(&daghash.ZeroHash, iv.Hash)
+				peer.PushGetBlockLocatorMsg(iv.Hash, &daghash.ZeroHash)
 			}
 		}
 	}

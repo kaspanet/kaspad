@@ -882,7 +882,7 @@ func (p *Peer) PushGetBlocksMsg(startHash, stopHash *daghash.Hash) error {
 	p.prevGetBlocksMtx.Unlock()
 
 	if isDuplicate {
-		log.Tracef("Filtering duplicate [getblocks] with begin "+
+		log.Tracef("Filtering duplicate [getblocks] with start "+
 			"hash %s, stop hash %s", startHash, stopHash)
 		return nil
 	}
@@ -929,7 +929,7 @@ func (p *Peer) PushGetHeadersMsg(hashStart, hashStop *daghash.Hash) error {
 	p.prevGetHdrsMtx.Unlock()
 
 	if isDuplicate {
-		log.Tracef("Filtering duplicate [getheaders] with begin hash %s",
+		log.Tracef("Filtering duplicate [getheaders] with start hash %s",
 			hashStart)
 		return nil
 	}
