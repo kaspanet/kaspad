@@ -93,12 +93,6 @@ func TestNewBlockTemplate(t *testing.T) {
 		cbTxs = append(cbTxs, template.Block.Transactions[util.CoinbaseTransactionIndex])
 	}
 
-	// We want to check that the miner filters coinbase transaction
-	cbTx, err := dag.NextBlockCoinbaseTransaction(nil, nil)
-	if err != nil {
-		t.Fatalf("createCoinbaseTx: %v", err)
-	}
-
 	signatureScript, err := txscript.PayToScriptHashSignatureScript(blockdag.OpTrueScript, nil)
 	if err != nil {
 		t.Fatalf("Error creating signature script: %s", err)
@@ -186,10 +180,6 @@ func TestNewBlockTemplate(t *testing.T) {
 		[]byte{})
 
 	txSource.txDescs = []*TxDesc{
-		{
-			Tx:  cbTx,
-			Fee: 1,
-		},
 		{
 			Tx:  util.NewTx(tx),
 			Fee: 1,

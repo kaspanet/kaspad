@@ -145,18 +145,14 @@ func (g *BlkTmplGenerator) collectCandidatesTxs(sourceTxs []*TxDesc) []*candidat
 	for _, txDesc := range sourceTxs {
 		tx := txDesc.Tx
 
-		// A block can't have more than one coinbase or contain
-		// non-finalized transactions.
-		if tx.IsCoinBase() {
-			log.Warnf("Skipping coinbase tx %s", tx.ID())
-			continue
-		}
+		// A block can't contain non-finalized transactions.
 		if !blockdag.IsFinalizedTransaction(tx, nextBlockBlueScore,
 			g.timeSource.AdjustedTime()) {
 			log.Debugf("Skipping non-finalized tx %s", tx.ID())
 			continue
 		}
 
+		// A block can't contain zero-fee transactions.
 		if txDesc.Fee == 0 {
 			log.Warnf("Skipped zero-fee tx %s", tx.ID())
 			continue
@@ -178,23 +174,6 @@ func (g *BlkTmplGenerator) collectCandidatesTxs(sourceTxs []*TxDesc) []*candidat
 					"GasLimit: %s", tx.ID(), err)
 				continue
 			}
-		}
-
-		// Ensure the transaction inputs pass all of the necessary
-		// preconditions before allowing it to be added to the block.
-		_, err = blockdag.CheckTransactionInputsAndCalulateFee(tx, nextBlockBlueScore,
-			g.dag.UTXOSet(), g.dagParams, false)
-		if err != nil {
-			log.Warnf("Skipping tx %s due to error in "+
-				"CheckTransactionInputs: %s", tx.ID(), err)
-			continue
-		}
-		err = blockdag.ValidateTransactionScripts(tx, g.dag.UTXOSet(),
-			txscript.StandardVerifyFlags, g.sigCache)
-		if err != nil {
-			log.Warnf("Skipping tx %s due to error in "+
-				"ValidateTransactionScripts: %s", tx.ID(), err)
-			continue
 		}
 
 		// Calculate the tx value
