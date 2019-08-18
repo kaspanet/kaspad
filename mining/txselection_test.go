@@ -529,7 +529,8 @@ func TestSelectTxs(t *testing.T) {
 				max := definition.expectedMaxSelectedTimes
 				if count < min || count > max {
 					t.Errorf("unexpected selected tx count "+
-						"in test '%s' for tx %d:%s. Want: %d <= count <= %d, got: %d",
+						"in test '%s' for tx %d:%s. Want: %d <= count <= %d, got: %d. "+
+						"Note that this test is probabilistic and has a low chance to erroneously fail",
 						test.name, i, definition, min, max, count)
 				}
 			}
