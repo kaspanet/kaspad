@@ -123,7 +123,6 @@ type GetBlockTemplateResultTx struct {
 	Depends []int64 `json:"depends"`
 	Mass    uint64  `json:"mass"`
 	Fee     uint64  `json:"fee"`
-	SigOps  int64   `json:"sigOps"`
 }
 
 // GetBlockTemplateResultAux models the coinbaseaux field of the
@@ -141,7 +140,6 @@ type GetBlockTemplateResult struct {
 	CurTime              int64                      `json:"curTime"`
 	Height               uint64                     `json:"height"`
 	ParentHashes         []string                   `json:"parentHashes"`
-	SigOpLimit           int64                      `json:"sigOpLimit,omitempty"`
 	MassLimit            int64                      `json:"massLimit,omitempty"`
 	Transactions         []GetBlockTemplateResultTx `json:"transactions"`
 	AcceptedIDMerkleRoot string                     `json:"acceptedIdMerkleRoot"`

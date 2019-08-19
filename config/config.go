@@ -655,6 +655,15 @@ func loadConfig() (*Config, []string, error) {
 		return nil, nil, err
 	}
 
+	// Disallow 0 and negative min tx fees.
+	if cfg.MinRelayTxFee <= 0 {
+		str := "%s: The minrelaytxfee option must greater than 0 -- parsed [%d]"
+		err := fmt.Errorf(str, funcName, cfg.MinRelayTxFee)
+		fmt.Fprintln(os.Stderr, err)
+		fmt.Fprintln(os.Stderr, usageMessage)
+		return nil, nil, err
+	}
+
 	// Limit the max block mass to a sane value.
 	if cfg.BlockMaxMass < blockMaxMassMin || cfg.BlockMaxMass >
 		blockMaxMassMax {
