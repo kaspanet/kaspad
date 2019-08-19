@@ -55,7 +55,8 @@ func PrepareBlockForTest(dag *blockdag.BlockDAG, params *dagconfig.Params, paren
 
 	for i, tx := range transactions {
 		txSource.txDescs[i] = &TxDesc{
-			Tx: util.NewTx(tx),
+			Tx:  util.NewTx(tx),
+			Fee: 1,
 		}
 	}
 

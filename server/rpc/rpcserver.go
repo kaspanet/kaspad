@@ -1713,7 +1713,6 @@ func (state *gbtWorkState) blockTemplateResult(dag *blockdag.BlockDAG, useCoinba
 			Depends: depends,
 			Mass:    template.TxMasses[i],
 			Fee:     template.Fees[i],
-			SigOps:  template.SigOpCounts[i],
 		}
 		transactions = append(transactions, resultTx)
 	}
@@ -1729,7 +1728,6 @@ func (state *gbtWorkState) blockTemplateResult(dag *blockdag.BlockDAG, useCoinba
 		CurTime:              header.Timestamp.Unix(),
 		Height:               template.Height,
 		ParentHashes:         daghash.Strings(header.ParentHashes),
-		SigOpLimit:           blockdag.MaxSigOpsPerBlock,
 		MassLimit:            wire.MaxMassPerBlock,
 		Transactions:         transactions,
 		AcceptedIDMerkleRoot: header.AcceptedIDMerkleRoot.String(),
@@ -1775,7 +1773,6 @@ func (state *gbtWorkState) blockTemplateResult(dag *blockdag.BlockDAG, useCoinba
 			Depends: []int64{},
 			Mass:    template.TxMasses[0],
 			Fee:     template.Fees[0],
-			SigOps:  template.SigOpCounts[0],
 		}
 
 		reply.CoinbaseTxn = &resultTx

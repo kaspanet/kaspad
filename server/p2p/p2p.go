@@ -2397,7 +2397,6 @@ func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params
 			AcceptNonStd:    config.MainConfig().RelayNonStd,
 			MaxOrphanTxs:    config.MainConfig().MaxOrphanTxs,
 			MaxOrphanTxSize: config.DefaultMaxOrphanTxSize,
-			MaxSigOpsPerTx:  blockdag.MaxSigOpsPerBlock / 5,
 			MinRelayTxFee:   config.MainConfig().MinRelayTxFee,
 			MaxTxVersion:    1,
 		},

@@ -19,10 +19,6 @@ import (
 )
 
 const (
-	// MaxSigOpsPerBlock is the maximum number of signature operations
-	// allowed for a block.  It is a fraction of the max block transaction mass.
-	MaxSigOpsPerBlock = wire.MaxMassPerBlock / 50
-
 	// MaxCoinbasePayloadLen is the maximum length a coinbase payload can be.
 	MaxCoinbasePayloadLen = 150
 
@@ -597,22 +593,6 @@ func (dag *BlockDAG) checkBlockSanity(block *util.Block, flags BehaviorFlags) (t
 		existingTxIDs[*id] = struct{}{}
 	}
 
-	// The number of signature operations must be less than the maximum
-	// allowed per block.
-	totalSigOps := 0
-	for _, tx := range transactions {
-		// We could potentially overflow the accumulator so check for
-		// overflow.
-		lastSigOps := totalSigOps
-		totalSigOps += CountSigOps(tx)
-		if totalSigOps < lastSigOps || totalSigOps > MaxSigOpsPerBlock {
-			str := fmt.Sprintf("block contains too many signature "+
-				"operations - got %d, max %d", totalSigOps,
-				MaxSigOpsPerBlock)
-			return 0, ruleError(ErrTooManySigOps, str)
-		}
-	}
-
 	return delay, nil
 }
 
@@ -934,10 +914,6 @@ func (dag *BlockDAG) checkConnectToPastUTXO(block *blockNode, pastUTXO UTXOSet,
 			return nil, err
 		}
 
-		if err := validateSigopsCount(pastUTXO, transactions); err != nil {
-			return nil, err
-		}
-
 		if err := validateBlockMass(pastUTXO, transactions); err != nil {
 			return nil, err
 		}
@@ -1037,42 +1013,6 @@ func (dag *BlockDAG) checkConnectToPastUTXO(block *blockNode, pastUTXO UTXOSet,
 
 	}
 	return feeData, nil
-}
-
-func validateSigopsCount(pastUTXO UTXOSet, transactions []*util.Tx) error {
-	// The number of signature operations must be less than the maximum
-	// allowed per block.  Note that the preliminary sanity checks on a
-	// block also include a check similar to this one, but this check
-	// expands the count to include a precise count of pay-to-script-hash
-	// signature operations in each of the input transaction public key
-	// scripts.
-	totalSigOps := 0
-	for i, tx := range transactions {
-		numsigOps := CountSigOps(tx)
-		// Since the first transaction has already been verified to be a
-		// coinbase transaction, use i != util.CoinbaseTransactionIndex
-		// as an optimization for the flag to countP2SHSigOps for whether
-		// or not the transaction is a coinbase transaction rather than
-		// having to do a full coinbase check again.
-		numP2SHSigOps, err := CountP2SHSigOps(tx, i == util.CoinbaseTransactionIndex, pastUTXO)
-		if err != nil {
-			return err
-		}
-		numsigOps += numP2SHSigOps
-
-		// Check for overflow or going over the limits.  We have to do
-		// this on every loop iteration to avoid overflow.
-		lastSigops := totalSigOps
-		totalSigOps += numsigOps
-		if totalSigOps < lastSigops || totalSigOps > MaxSigOpsPerBlock {
-			str := fmt.Sprintf("block contains too many "+
-				"signature operations - got %d, max %d",
-				totalSigOps, MaxSigOpsPerBlock)
-			return ruleError(ErrTooManySigOps, str)
-		}
-	}
-
-	return nil
 }
 
 // CheckConnectBlockTemplate fully validates that connecting the passed block to
