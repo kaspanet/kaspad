@@ -9,13 +9,15 @@ import (
 )
 
 const (
-	defaultLogFilename = "txgen.log"
+	defaultLogFilename    = "txgen.log"
+	defaultErrLogFilename = "txgen_err.log"
 )
 
 var (
 	// Default configuration options
 	defaultHomeDir                      = util.AppDataDir("txgen", false)
 	defaultLogFile                      = filepath.Join(defaultHomeDir, defaultLogFilename)
+	defaultErrLogFile                   = filepath.Join(defaultHomeDir, defaultErrLogFilename)
 	defaultTargetNumberOfOutputs uint64 = 1
 	defaultTargetNumberOfInputs  uint64 = 1
 )
@@ -71,7 +73,7 @@ func parseConfig() (*config, error) {
 		cfg.TargetNumberOfInputs = defaultTargetNumberOfInputs
 	}
 
-	initLogRotators(defaultLogFile)
+	initLogRotators(defaultLogFile, defaultErrLogFile)
 
 	return cfg, nil
 }

@@ -19,6 +19,7 @@ import (
 const (
 	defaultConfigFilename = "dnsseeder.conf"
 	defaultLogFilename    = "dnsseeder.log"
+	defaultErrLogFilename = "dnsseeder_err.log"
 	defaultListenPort     = "5354"
 )
 
@@ -30,6 +31,7 @@ var (
 	defaultHomeDir    = util.AppDataDir("dnsseeder", false)
 	defaultConfigFile = filepath.Join(defaultHomeDir, defaultConfigFilename)
 	defaultLogFile    = filepath.Join(defaultHomeDir, defaultLogFilename)
+	defaultErrLogFile = filepath.Join(defaultHomeDir, defaultErrLogFilename)
 )
 
 // config defines the configuration options for hardforkdemo.
@@ -132,7 +134,7 @@ func loadConfig() (*config, error) {
 		activeNetParams = &dagconfig.DevNetParams
 	}
 
-	initLogRotators(defaultLogFile)
+	initLogRotators(defaultLogFile, defaultErrLogFile)
 
 	return &cfg, nil
 }

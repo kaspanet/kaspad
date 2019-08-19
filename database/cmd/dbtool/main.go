@@ -64,7 +64,7 @@ func loadBlockDB() (database.DB, error) {
 // around the fact that deferred functions do not run when os.Exit() is called.
 func realMain() error {
 	// Setup logging.
-	backendLogger := logs.NewBackend(os.Stdout)
+	backendLogger := logs.NewBackend([]*logs.BackendWriter{logs.NewAllLevelsBackendWriter(os.Stdout)})
 	defer os.Stdout.Sync()
 	log = backendLogger.Logger("MAIN")
 	dbLog, _ := logger.Get(logger.SubsystemTags.BCDB)
