@@ -135,7 +135,7 @@ func TestGetBlockLocatorWire(t *testing.T) {
 // TestGetBlockLocatorWireErrors performs negative tests against wire encode and
 // decode of MsgGetBlockLocator to confirm error paths work correctly.
 func TestGetBlockLocatorWireErrors(t *testing.T) {
-	// Set protocol inside getblklocatr message.
+	// Set protocol inside getlocator message.
 	pver := ProtocolVersion
 
 	hashStr := "2710f40c87ec93d010a6fd95f42c59a2cbacc60b18cf6b7957535"

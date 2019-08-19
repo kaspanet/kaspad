@@ -177,7 +177,7 @@ type SyncManager struct {
 	nextCheckpoint   *dagconfig.Checkpoint
 }
 
-func (sm *SyncManager) PushGetBlocksOrHeaders(peer *peerpkg.Peer, startHash *daghash.Hash) error {
+func (sm *SyncManager) PushGetBlockInvsOrHeaders(peer *peerpkg.Peer, startHash *daghash.Hash) error {
 	// When the current height is less than a known checkpoint we
 	// can use block headers to learn about which blocks comprise
 	// the DAG up to the checkpoint and perform less validation

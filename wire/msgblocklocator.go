@@ -12,7 +12,7 @@ import (
 const MaxBlockLocatorsPerMsg = 500
 
 // MsgBlockLocator implements the Message interface and represents a bitcoin
-// blklocatr message.  It is used to find the highest known chain block with
+// locator message.  It is used to find the highest known chain block with
 // a peer that is syncing with you.
 type MsgBlockLocator struct {
 	BlockLocatorHashes []*daghash.Hash
@@ -102,7 +102,7 @@ func (msg *MsgBlockLocator) MaxPayloadLength(pver uint32) uint32 {
 		daghash.HashSize)
 }
 
-// NewMsgBlockLocator returns a new bitcoin blklocatr message that conforms to
+// NewMsgBlockLocator returns a new bitcoin locator message that conforms to
 // the Message interface.  See MsgBlockLocator for details.
 func NewMsgBlockLocator() *MsgBlockLocator {
 	return &MsgBlockLocator{

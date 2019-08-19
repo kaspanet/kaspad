@@ -117,11 +117,10 @@ func (dag *BlockDAG) blockLocator(startNode, stopNode *blockNode) BlockLocator {
 	return locator
 }
 
-// FindNextLocatorBoundaries returns the first known block locator
-// hash, and the block locator hash before it. This is used to create the
+// FindNextLocatorBoundaries returns the lowest unknown block locator, hash
+// and the highest known block locator hash. This is used to create the
 // next block locator to find the highest shared known chain block with the
-// sync peer. If the first hash in the block locator is known, it means that
-// we found the highest shared known chain block, so we only return its hash.
+// sync peer.
 //
 // This function MUST be called with the DAG state lock held (for reads).
 func (dag *BlockDAG) FindNextLocatorBoundaries(locator BlockLocator) (startHash, stopHash *daghash.Hash) {
