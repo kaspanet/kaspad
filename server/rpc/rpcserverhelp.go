@@ -401,14 +401,14 @@ var helpDescsEnUS = map[string]string{
 
 	// GetTopHeadersCmd help.
 	"getTopHeaders--synopsis": "Returns the top block headers starting with the provided start hash (not inclusive)",
-	"getTopHeaders-startHash": "Block hash to stop including block headers for; if not found, all headers to the latest known block are returned.",
+	"getTopHeaders-startHash": "Block hash to start including block headers from; if not found, it'll start from the virtual.",
 	"getTopHeaders--result0":  "Serialized block headers of all located blocks, limited to some arbitrary maximum number of hashes (currently 2000, which matches the wire protocol headers message, but this is not guaranteed)",
 
 	// GetHeadersCmd help.
-	"getHeaders--synopsis":     "Returns block headers starting with the first known block hash from the request",
-	"getHeaders-blockLocators": "JSON array of hex-encoded hashes of blocks.  Headers are returned starting from the first known hash in this list",
-	"getHeaders-stopHash":      "Block hash to stop including block headers for; if not found, all headers to the latest known block are returned.",
-	"getHeaders--result0":      "Serialized block headers of all located blocks, limited to some arbitrary maximum number of hashes (currently 2000, which matches the wire protocol headers message, but this is not guaranteed)",
+	"getHeaders--synopsis": "Returns block headers starting with the first known block hash from the request",
+	"getHeaders-startHash": "Block hash to start including headers from; if not found, it'll start from the genesis block.",
+	"getHeaders-stopHash":  "Block hash to stop including block headers for; if not found, all headers to the latest known block are returned.",
+	"getHeaders--result0":  "Serialized block headers of all located blocks, limited to some arbitrary maximum number of hashes (currently 2000, which matches the wire protocol headers message, but this is not guaranteed)",
 
 	// GetInfoCmd help.
 	"getInfo--synopsis": "Returns a JSON object containing various state info.",

@@ -12,8 +12,7 @@ import (
 // sendheaders message.  It is used to request the peer send block headers
 // rather than inventory vectors.
 //
-// This message has no payload and was not added until protocol versions
-// starting with SendHeadersVersion.
+// This message has no payload.
 type MsgSendHeaders struct{}
 
 // BtcDecode decodes r using the bitcoin protocol encoding into the receiver.

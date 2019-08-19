@@ -28,35 +28,37 @@ const MaxMessagePayload = (1024 * 1024 * 32) // 32MB
 
 // Commands used in bitcoin message headers which describe the type of message.
 const (
-	CmdVersion      = "version"
-	CmdVerAck       = "verack"
-	CmdGetAddr      = "getaddr"
-	CmdAddr         = "addr"
-	CmdGetBlockInvs = "getblockinvs"
-	CmdInv          = "inv"
-	CmdGetData      = "getdata"
-	CmdNotFound     = "notfound"
-	CmdBlock        = "block"
-	CmdTx           = "tx"
-	CmdGetHeaders   = "getheaders"
-	CmdHeaders      = "headers"
-	CmdPing         = "ping"
-	CmdPong         = "pong"
-	CmdAlert        = "alert"
-	CmdMemPool      = "mempool"
-	CmdFilterAdd    = "filteradd"
-	CmdFilterClear  = "filterclear"
-	CmdFilterLoad   = "filterload"
-	CmdMerkleBlock  = "merkleblock"
-	CmdReject       = "reject"
-	CmdSendHeaders  = "sendheaders"
-	CmdFeeFilter    = "feefilter"
-	CmdGetCFilters  = "getcfilters"
-	CmdGetCFHeaders = "getcfheaders"
-	CmdGetCFCheckpt = "getcfcheckpt"
-	CmdCFilter      = "cfilter"
-	CmdCFHeaders    = "cfheaders"
-	CmdCFCheckpt    = "cfcheckpt"
+	CmdVersion         = "version"
+	CmdVerAck          = "verack"
+	CmdGetAddr         = "getaddr"
+	CmdAddr            = "addr"
+	CmdGetBlockInvs    = "getblockinvs"
+	CmdInv             = "inv"
+	CmdGetData         = "getdata"
+	CmdNotFound        = "notfound"
+	CmdBlock           = "block"
+	CmdTx              = "tx"
+	CmdGetHeaders      = "getheaders"
+	CmdHeaders         = "headers"
+	CmdPing            = "ping"
+	CmdPong            = "pong"
+	CmdAlert           = "alert"
+	CmdMemPool         = "mempool"
+	CmdFilterAdd       = "filteradd"
+	CmdFilterClear     = "filterclear"
+	CmdFilterLoad      = "filterload"
+	CmdMerkleBlock     = "merkleblock"
+	CmdReject          = "reject"
+	CmdSendHeaders     = "sendheaders"
+	CmdFeeFilter       = "feefilter"
+	CmdGetCFilters     = "getcfilters"
+	CmdGetCFHeaders    = "getcfheaders"
+	CmdGetCFCheckpt    = "getcfcheckpt"
+	CmdCFilter         = "cfilter"
+	CmdCFHeaders       = "cfheaders"
+	CmdCFCheckpt       = "cfcheckpt"
+	CmdGetBlockLocator = "getlocator"
+	CmdBlockLocator    = "locator"
 )
 
 // Message is an interface that describes a bitcoin message.  A type that
@@ -98,6 +100,12 @@ func makeEmptyMessage(command string) (Message, error) {
 
 	case CmdGetData:
 		msg = &MsgGetData{}
+
+	case CmdGetBlockLocator:
+		msg = &MsgGetBlockLocator{}
+
+	case CmdBlockLocator:
+		msg = &MsgBlockLocator{}
 
 	case CmdNotFound:
 		msg = &MsgNotFound{}

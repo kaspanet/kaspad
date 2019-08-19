@@ -269,12 +269,12 @@ func (b *rpcSyncMgr) SyncPeerID() int32 {
 	return b.syncMgr.SyncPeerID()
 }
 
-// LocateBlocks returns the hashes of the blocks after the first known block in
-// the provided locators until the provided stop hash or the current tip is
-// reached, up to a max of wire.MaxBlockHeadersPerMsg hashes.
+// GetBlueBlocksHeadersBetween returns the headers of the blocks after the provided
+// start hash until the provided stop hash is reached, or up to the
+// provided max number of block headers.
 //
 // This function is safe for concurrent access and is part of the
 // rpcserverSyncManager interface implementation.
-func (b *rpcSyncMgr) LocateHeaders(locators []*daghash.Hash, stopHash *daghash.Hash) []*wire.BlockHeader {
-	return b.server.DAG.LocateHeaders(locators, stopHash)
+func (b *rpcSyncMgr) GetBlueBlocksHeadersBetween(startHash, stopHash *daghash.Hash) []*wire.BlockHeader {
+	return b.server.DAG.GetBlueBlocksHeadersBetween(startHash, stopHash)
 }
