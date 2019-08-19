@@ -33,6 +33,7 @@ var (
 // reconnect.
 type notificationState struct {
 	notifyBlocks            bool
+	notifyChainChanges      bool
 	notifyNewTx             bool
 	notifyNewTxVerbose      bool
 	notifyNewTxSubnetworkID *string
@@ -42,6 +43,7 @@ type notificationState struct {
 func (s *notificationState) Copy() *notificationState {
 	var stateCopy notificationState
 	stateCopy.notifyBlocks = s.notifyBlocks
+	stateCopy.notifyChainChanges = s.notifyChainChanges
 	stateCopy.notifyNewTx = s.notifyNewTx
 	stateCopy.notifyNewTxVerbose = s.notifyNewTxVerbose
 	stateCopy.notifyNewTxSubnetworkID = s.notifyNewTxSubnetworkID
@@ -88,6 +90,13 @@ type NotificationHandlers struct {
 	// receives the block's height, header, and relevant transactions.
 	OnFilteredBlockAdded func(height uint64, header *wire.BlockHeader,
 		txs []*util.Tx)
+
+	// OnChainChanged is invoked when the selected parent chain of the
+	// DAG had changed. It will only be invoked if a preceding call to
+	// NotifyChainChanges has been made to register for the notification and the
+	// function is non-nil.
+	OnChainChanged func(removedChainBlockHashes []*daghash.Hash,
+		addedChainBlocks []*util.Block)
 
 	// OnRelevantTxAccepted is invoked when an unmined transaction passes
 	// the client's transaction filter.
@@ -486,6 +495,53 @@ func (c *Client) NotifyBlocksAsync() FutureNotifyBlocksResult {
 // NOTE: This is a btcd extension and requires a websocket connection.
 func (c *Client) NotifyBlocks() error {
 	return c.NotifyBlocksAsync().Receive()
+}
+
+// FutureNotifyChainChangesResult is a future promise to deliver the result of a
+// NotifyChainChangesAsync RPC invocation (or an applicable error).
+type FutureNotifyChainChangesResult chan *response
+
+// Receive waits for the response promised by the future and returns an error
+// if the registration was not successful.
+func (r FutureNotifyChainChangesResult) Receive() error {
+	_, err := receiveFuture(r)
+	return err
+}
+
+// NotifyChainChangesAsync returns an instance of a type that can be used to get the
+// result of the RPC at some future time by invoking the Receive function on
+// the returned instance.
+//
+// See NotifyChainChanges for the blocking version and more details.
+//
+// NOTE: This is a btcd extension and requires a websocket connection.
+func (c *Client) NotifyChainChangesAsync() FutureNotifyBlocksResult {
+	// Not supported in HTTP POST mode.
+	if c.config.HTTPPostMode {
+		return newFutureError(ErrWebsocketsRequired)
+	}
+
+	// Ignore the notification if the client is not interested in
+	// notifications.
+	if c.ntfnHandlers == nil {
+		return newNilFutureResult()
+	}
+
+	cmd := btcjson.NewNotifyChainChangesCmd()
+	return c.sendCmd(cmd)
+}
+
+// NotifyChainChanges registers the client to receive notifications when the
+// selected parent chain changes. The notifications are delivered to the
+// notification handlers associated with the client. Calling this function has
+// no effect if there are no notification handlers and will result in an error
+// if the client is configured to run in HTTP POST mode.
+//
+// The notifications delivered as a result of this call will be via OnBlockAdded
+//
+// NOTE: This is a btcd extension and requires a websocket connection.
+func (c *Client) NotifyChainChanges() error {
+	return c.NotifyChainChangesAsync().Receive()
 }
 
 // newOutpointFromWire constructs the btcjson representation of a transaction

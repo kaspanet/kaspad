@@ -64,6 +64,28 @@ func TestDAGSvrWsCmds(t *testing.T) {
 			unmarshalled: &btcjson.StopNotifyBlocksCmd{},
 		},
 		{
+			name: "notifyChainChanges",
+			newCmd: func() (interface{}, error) {
+				return btcjson.NewCmd("notifyChainChanges")
+			},
+			staticCmd: func() interface{} {
+				return btcjson.NewNotifyChainChangesCmd()
+			},
+			marshalled:   `{"jsonrpc":"1.0","method":"notifyChainChanges","params":[],"id":1}`,
+			unmarshalled: &btcjson.NotifyChainChangesCmd{},
+		},
+		{
+			name: "stopNotifyBlocks",
+			newCmd: func() (interface{}, error) {
+				return btcjson.NewCmd("stopNotifyChainChanges")
+			},
+			staticCmd: func() interface{} {
+				return btcjson.NewStopNotifyChainChangesCmd()
+			},
+			marshalled:   `{"jsonrpc":"1.0","method":"stopNotifyChainChanges","params":[],"id":1}`,
+			unmarshalled: &btcjson.StopNotifyChainChangesCmd{},
+		},
+		{
 			name: "notifyNewTransactions",
 			newCmd: func() (interface{}, error) {
 				return btcjson.NewCmd("notifyNewTransactions")

@@ -68,9 +68,11 @@ var wsHandlersBeforeInit = map[string]wsCommandHandler{
 	"loadTxFilter":              handleLoadTxFilter,
 	"help":                      handleWebsocketHelp,
 	"notifyBlocks":              handleNotifyBlocks,
+	"notifyChainChanges":        handleNotifyChainChanges,
 	"notifyNewTransactions":     handleNotifyNewTransactions,
 	"session":                   handleSession,
 	"stopNotifyBlocks":          handleStopNotifyBlocks,
+	"stopNotifyChainChanges":    handleStopNotifyChainChanges,
 	"stopNotifyNewTransactions": handleStopNotifyNewTransactions,
 	"rescanBlocks":              handleRescanBlocks,
 }
@@ -382,6 +384,10 @@ func (f *wsClientFilter) removeUnspentOutpoint(op *wire.Outpoint) {
 
 // Notification types
 type notificationBlockAdded util.Block
+type notificationChainChanged struct {
+	removedChainBlockHashes []*daghash.Hash
+	addedChainBlocks        []*util.Block
+}
 type notificationTxAcceptedByMempool struct {
 	isNew bool
 	tx    *util.Tx
@@ -392,6 +398,8 @@ type notificationRegisterClient wsClient
 type notificationUnregisterClient wsClient
 type notificationRegisterBlocks wsClient
 type notificationUnregisterBlocks wsClient
+type notificationRegisterChainChanges wsClient
+type notificationUnregisterChainChanges wsClient
 type notificationRegisterNewMempoolTxs wsClient
 type notificationUnregisterNewMempoolTxs wsClient
 
@@ -409,6 +417,7 @@ func (m *wsNotificationManager) notificationHandler() {
 	// Where possible, the quit channel is used as the unique id for a client
 	// since it is quite a bit more efficient than using the entire struct.
 	blockNotifications := make(map[chan struct{}]*wsClient)
+	chainChangeNotifications := make(map[chan struct{}]*wsClient)
 	txNotifications := make(map[chan struct{}]*wsClient)
 
 out:
@@ -428,6 +437,10 @@ out:
 						block)
 				}
 
+			case *notificationChainChanged:
+				m.notifyChainChanged(chainChangeNotifications,
+					n.removedChainBlockHashes, n.addedChainBlocks)
+
 			case *notificationTxAcceptedByMempool:
 				if n.isNew && len(txNotifications) != 0 {
 					m.notifyForNewTx(txNotifications, n.tx)
@@ -442,6 +455,14 @@ out:
 				wsc := (*wsClient)(n)
 				delete(blockNotifications, wsc.quit)
 
+			case *notificationRegisterChainChanges:
+				wsc := (*wsClient)(n)
+				chainChangeNotifications[wsc.quit] = wsc
+
+			case *notificationUnregisterChainChanges:
+				wsc := (*wsClient)(n)
+				delete(chainChangeNotifications, wsc.quit)
+
 			case *notificationRegisterClient:
 				wsc := (*wsClient)(n)
 				clients[wsc.quit] = wsc
@@ -451,6 +472,7 @@ out:
 				// Remove any requests made by the client as well as
 				// the client itself.
 				delete(blockNotifications, wsc.quit)
+				delete(chainChangeNotifications, wsc.quit)
 				delete(txNotifications, wsc.quit)
 				delete(clients, wsc.quit)
 
@@ -499,6 +521,37 @@ func (m *wsNotificationManager) RegisterBlockUpdates(wsc *wsClient) {
 // websocket client.
 func (m *wsNotificationManager) UnregisterBlockUpdates(wsc *wsClient) {
 	m.queueNotification <- (*notificationUnregisterBlocks)(wsc)
+}
+
+// RegisterChainChanges requests chain change notifications to the passed
+// websocket client.
+func (m *wsNotificationManager) RegisterChainChanges(wsc *wsClient) {
+	m.queueNotification <- (*notificationRegisterChainChanges)(wsc)
+}
+
+// UnregisterChainChanges removes chain change notifications for the passed
+// websocket client.
+func (m *wsNotificationManager) UnregisterChainChanges(wsc *wsClient) {
+	m.queueNotification <- (*notificationUnregisterChainChanges)(wsc)
+}
+
+// notifyChainChanged notifies websocket clients that have registered for
+// chain changes.
+func (m *wsNotificationManager) notifyChainChanged(clients map[chan struct{}]*wsClient,
+	removedChainBlockHashes []*daghash.Hash, addChainBlocks []*util.Block) {
+
+	ntfn := btcjson.NewChainChangedNtfn(removedChainBlockHashes, nil)
+
+	for _, wsc := range clients {
+		// Marshal and queue notification.
+		marshalledJSON, err := btcjson.MarshalCmd(nil, ntfn)
+		if err != nil {
+			log.Errorf("Failed to marshal filtered block "+
+				"connected notification: %s", err)
+			return
+		}
+		wsc.QueueNotification(marshalledJSON)
+	}
 }
 
 // subscribedClients returns the set of all websocket client quit channels that
@@ -1380,6 +1433,13 @@ func handleNotifyBlocks(wsc *wsClient, icmd interface{}) (interface{}, error) {
 	return nil, nil
 }
 
+// handleNotifyChainChanges implements the notifyChainChanges command extension for
+// websocket connections.
+func handleNotifyChainChanges(wsc *wsClient, icmd interface{}) (interface{}, error) {
+	wsc.server.ntfnMgr.RegisterChainChanges(wsc)
+	return nil, nil
+}
+
 // handleSession implements the session command extension for websocket
 // connections.
 func handleSession(wsc *wsClient, icmd interface{}) (interface{}, error) {
@@ -1390,6 +1450,13 @@ func handleSession(wsc *wsClient, icmd interface{}) (interface{}, error) {
 // websocket connections.
 func handleStopNotifyBlocks(wsc *wsClient, icmd interface{}) (interface{}, error) {
 	wsc.server.ntfnMgr.UnregisterBlockUpdates(wsc)
+	return nil, nil
+}
+
+// handleStopNotifyChainChanges implements the stopNotifyChainChanges command extension for
+// websocket connections.
+func handleStopNotifyChainChanges(wsc *wsClient, icmd interface{}) (interface{}, error) {
+	wsc.server.ntfnMgr.UnregisterChainChanges(wsc)
 	return nil, nil
 }
 

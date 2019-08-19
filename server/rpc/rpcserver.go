@@ -198,6 +198,7 @@ var rpcLimited = map[string]struct{}{
 	// Websockets commands
 	"loadTxFilter":          {},
 	"notifyBlocks":          {},
+	"notifyChainChanges":    {},
 	"notifyNewTransactions": {},
 	"notifyReceived":        {},
 	"notifySpent":           {},
