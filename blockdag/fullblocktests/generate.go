@@ -1106,7 +1106,7 @@ func Generate(includeLargeReorg bool) (tests [][]TestInstance, err error) {
 		replaceSpendScript(sizePadScript)(b)
 	})
 	g.assertTipBlockSize(maxBlockSize + 1)
-	rejected(blockdag.ErrBlockTooBig)
+	rejected(blockdag.ErrBlockMassTooHigh)
 
 	// Parent was rejected, so this block must either be an orphan or
 	// outright rejected due to an invalid parent.

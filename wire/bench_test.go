@@ -377,18 +377,12 @@ func BenchmarkWriteBlockHeader(b *testing.B) {
 }
 
 // BenchmarkDecodeGetHeaders performs a benchmark on how long it takes to
-// decode a getheaders message with the maximum number of block locator hashes.
+// decode a getheaders message.
 func BenchmarkDecodeGetHeaders(b *testing.B) {
-	// Create a message with the maximum number of block locators.
 	pver := ProtocolVersion
 	var m MsgGetHeaders
-	for i := 0; i < MaxBlockLocatorsPerMsg; i++ {
-		hash, err := daghash.NewHashFromStr(fmt.Sprintf("%x", i))
-		if err != nil {
-			b.Fatalf("NewHashFromStr: unexpected error: %v", err)
-		}
-		m.AddBlockLocatorHash(hash)
-	}
+	m.StartHash = &daghash.Hash{1}
+	m.StopHash = &daghash.Hash{1}
 
 	// Serialize it so the bytes are available to test the decode below.
 	var bb bytes.Buffer
@@ -445,29 +439,23 @@ func BenchmarkDecodeHeaders(b *testing.B) {
 	}
 }
 
-// BenchmarkDecodeGetBlocks performs a benchmark on how long it takes to
-// decode a getblocks message with the maximum number of block locator hashes.
-func BenchmarkDecodeGetBlocks(b *testing.B) {
-	// Create a message with the maximum number of block locators.
+// BenchmarkDecodeGetBlockInvs performs a benchmark on how long it takes to
+// decode a getblockinvs message.
+func BenchmarkDecodeGetBlockInvs(b *testing.B) {
 	pver := ProtocolVersion
-	var m MsgGetBlocks
-	for i := 0; i < MaxBlockLocatorsPerMsg; i++ {
-		hash, err := daghash.NewHashFromStr(fmt.Sprintf("%x", i))
-		if err != nil {
-			b.Fatalf("NewHashFromStr: unexpected error: %v", err)
-		}
-		m.AddBlockLocatorHash(hash)
-	}
+	var m MsgGetBlockInvs
+	m.StartHash = &daghash.Hash{1}
+	m.StopHash = &daghash.Hash{1}
 
 	// Serialize it so the bytes are available to test the decode below.
 	var bb bytes.Buffer
 	if err := m.BtcEncode(&bb, pver); err != nil {
-		b.Fatalf("MsgGetBlocks.BtcEncode: unexpected error: %v", err)
+		b.Fatalf("MsgGetBlockInvs.BtcEncode: unexpected error: %v", err)
 	}
 	buf := bb.Bytes()
 
 	r := bytes.NewReader(buf)
-	var msg MsgGetBlocks
+	var msg MsgGetBlockInvs
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		r.Seek(0, 0)

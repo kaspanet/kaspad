@@ -375,7 +375,7 @@ func TestPeerListeners(t *testing.T) {
 			OnGetData: func(p *peer.Peer, msg *wire.MsgGetData) {
 				ok <- msg
 			},
-			OnGetBlocks: func(p *peer.Peer, msg *wire.MsgGetBlocks) {
+			OnGetBlockInvs: func(p *peer.Peer, msg *wire.MsgGetBlockInvs) {
 				ok <- msg
 			},
 			OnGetHeaders: func(p *peer.Peer, msg *wire.MsgGetHeaders) {
@@ -513,12 +513,12 @@ func TestPeerListeners(t *testing.T) {
 			wire.NewMsgGetData(),
 		},
 		{
-			"OnGetBlocks",
-			wire.NewMsgGetBlocks(&daghash.Hash{}),
+			"OnGetBlockInvs",
+			wire.NewMsgGetBlockInvs(&daghash.Hash{}, &daghash.Hash{}),
 		},
 		{
 			"OnGetHeaders",
-			wire.NewMsgGetHeaders(),
+			wire.NewMsgGetHeaders(&daghash.Hash{}, &daghash.Hash{}),
 		},
 		{
 			"OnGetCFilters",
@@ -677,8 +677,8 @@ func TestOutboundPeer(t *testing.T) {
 		t.Errorf("PushAddrMsg: unexpected err %v\n", err)
 		return
 	}
-	if err := p2.PushGetBlocksMsg(nil, &daghash.Hash{}); err != nil {
-		t.Errorf("PushGetBlocksMsg: unexpected err %v\n", err)
+	if err := p2.PushGetBlockInvsMsg(nil, &daghash.Hash{}); err != nil {
+		t.Errorf("PushGetBlockInvsMsg: unexpected err %v\n", err)
 		return
 	}
 	if err := p2.PushGetHeadersMsg(nil, &daghash.Hash{}); err != nil {
@@ -694,7 +694,7 @@ func TestOutboundPeer(t *testing.T) {
 	p2.QueueMessage(wire.NewMsgPing(1), nil)
 	p2.QueueMessage(wire.NewMsgMemPool(), nil)
 	p2.QueueMessage(wire.NewMsgGetData(), nil)
-	p2.QueueMessage(wire.NewMsgGetHeaders(), nil)
+	p2.QueueMessage(wire.NewMsgGetHeaders(&daghash.ZeroHash, &daghash.ZeroHash), nil)
 	p2.QueueMessage(wire.NewMsgFeeFilter(20000), nil)
 
 	p2.Disconnect()

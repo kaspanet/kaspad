@@ -28,15 +28,12 @@ func newSubnetworkStore(db database.DB) *SubnetworkStore {
 // subnetwork based on it.
 // This function returns an error if one or more transactions are invalid
 func registerSubnetworks(dbTx database.Tx, txs []*util.Tx) error {
-	validSubnetworkRegistryTxs := make([]*wire.MsgTx, 0)
+	subnetworkRegistryTxs := make([]*wire.MsgTx, 0)
 	for _, tx := range txs {
 		msgTx := tx.MsgTx()
+
 		if msgTx.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDRegistry) {
-			err := validateSubnetworkRegistryTransaction(msgTx)
-			if err != nil {
-				return err
-			}
-			validSubnetworkRegistryTxs = append(validSubnetworkRegistryTxs, msgTx)
+			subnetworkRegistryTxs = append(subnetworkRegistryTxs, msgTx)
 		}
 
 		if subnetworkid.Less(subnetworkid.SubnetworkIDRegistry, &msgTx.SubnetworkID) {
@@ -47,7 +44,7 @@ func registerSubnetworks(dbTx database.Tx, txs []*util.Tx) error {
 		}
 	}
 
-	for _, registryTx := range validSubnetworkRegistryTxs {
+	for _, registryTx := range subnetworkRegistryTxs {
 		subnetworkID, err := TxToSubnetworkID(registryTx)
 		if err != nil {
 			return err

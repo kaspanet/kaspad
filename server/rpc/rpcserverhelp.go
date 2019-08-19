@@ -46,8 +46,7 @@ var helpDescsEnUS = map[string]string{
 
 	// CreateRawTransactionCmd help.
 	"createRawTransaction--synopsis": "Returns a new transaction spending the provided inputs and sending to the provided addresses.\n" +
-		"The transaction inputs are not signed in the created transaction.\n" +
-		"The signrawtransaction RPC command provided by wallet must be used to sign the resulting transaction.",
+		"The transaction inputs are not signed in the created transaction, and as such must be signed separately.",
 	"createRawTransaction-inputs":         "The inputs to the transaction",
 	"createRawTransaction-amounts":        "JSON object with the destination addresses as keys and amounts as values",
 	"createRawTransaction-amounts--key":   "address",
@@ -90,6 +89,14 @@ var helpDescsEnUS = map[string]string{
 	"vout-value":        "The amount in BTC",
 	"vout-n":            "The index of this transaction output",
 	"vout-scriptPubKey": "The public key script used to pay coins as a JSON object",
+
+	// ChainBlock help.
+	"chainBlock-hash":           "The hash of the chain block",
+	"chainBlock-acceptedBlocks": "The blocks accepted by this chain block",
+
+	// AcceptedBlock help.
+	"acceptedBlock-hash":          "The hash of the accepted block",
+	"acceptedBlock-acceptedTxIds": "The transactions in this block accepted by the chain block",
 
 	// TxRawDecodeResult help.
 	"txRawDecodeResult-txId":     "The hash of the transaction",
@@ -283,7 +290,7 @@ var helpDescsEnUS = map[string]string{
 	"templateRequest-capabilities": "List of capabilities",
 	"templateRequest-longPollId":   "The long poll ID of a job to monitor for expiration; required and valid only for long poll requests ",
 	"templateRequest-sigOpLimit":   "Number of signature operations allowed in blocks (this parameter is ignored)",
-	"templateRequest-sizeLimit":    "Number of bytes allowed in blocks (this parameter is ignored)",
+	"templateRequest-massLimit":    "Max transaction mass allowed in blocks (this parameter is ignored)",
 	"templateRequest-maxVersion":   "Highest supported block version number (this parameter is ignored)",
 	"templateRequest-target":       "The desired target for the block template (this parameter is ignored)",
 	"templateRequest-data":         "Hex-encoded block data (only for mode=proposal)",
@@ -294,6 +301,7 @@ var helpDescsEnUS = map[string]string{
 	"getBlockTemplateResultTx-hash":    "Hex-encoded transaction hash (little endian if treated as a 256-bit number)",
 	"getBlockTemplateResultTx-id":      "Hex-encoded transaction ID (little endian if treated as a 256-bit number)",
 	"getBlockTemplateResultTx-depends": "Other transactions before this one (by 1-based index in the 'transactions'  list) that must be present in the final block if this one is",
+	"getBlockTemplateResultTx-mass":    "Total mass of all transactions in the block",
 	"getBlockTemplateResultTx-fee":     "Difference in value between transaction inputs and outputs (in Satoshi)",
 	"getBlockTemplateResultTx-sigOps":  "Total number of signature operations as counted for purposes of block limits",
 
@@ -305,8 +313,8 @@ var helpDescsEnUS = map[string]string{
 	"getBlockTemplateResult-curTime":              "Current time as seen by the server (recommended for block time); must fall within mintime/maxtime rules",
 	"getBlockTemplateResult-height":               "Height of the block to be solved",
 	"getBlockTemplateResult-parentHashes":         "Hex-encoded big-endian hashes of the parent blocks",
-	"getBlockTemplateResult-sigOpLimit":           "Number of sigops allowed in blocks ",
-	"getBlockTemplateResult-sizeLimit":            "Number of bytes allowed in blocks",
+	"getBlockTemplateResult-sigOpLimit":           "Number of sigops allowed in blocks",
+	"getBlockTemplateResult-massLimit":            "Max transaction mass allowed in blocks",
 	"getBlockTemplateResult-transactions":         "Array of transactions as JSON objects",
 	"getBlockTemplateResult-acceptedIdMerkleRoot": "The root of the merkle tree of transaction IDs accepted by this block",
 	"getBlockTemplateResult-utxoCommitment":       "An ECMH UTXO commitment of this block",
@@ -341,6 +349,16 @@ var helpDescsEnUS = map[string]string{
 	"getCFilter-filterType": "The type of filter to return (0=regular, 1=extended)",
 	"getCFilter-hash":       "The hash of the block",
 	"getCFilter--result0":   "The block's committed filter",
+
+	// GetChainFromBlockCmd help.
+	"getChainFromBlock--synopsis":     "Return the selected parent chain starting from startHash up to the virtual.",
+	"getChainFromBlock-startHash":     "Hash of the bottom of the requested chain. If this hash is unknown or is not a chain block - returns an error.",
+	"getChainFromBlock-includeBlocks": "If set to true - the block contents would be also included.",
+	"getChainFromBlock--result0":      "The selected parent chain.",
+
+	// GetChainFromBlockResult help.
+	"getChainFromBlockResult-selectedParentChain": "List of ChainBlocks from Virtual.SelectedTip to StartHash (excluding StartHash) ordered bottom-to-top.",
+	"getChainFromBlockResult-blocks":              "If includeBlocks=true - contains the contents of all chain and accepted blocks in the SelectedParentChain. Otherwise - omitted.",
 
 	// GetCFilterHeaderCmd help.
 	"getCFilterHeader--synopsis":  "Returns a block's compact filter header given its hash.",
@@ -381,35 +399,16 @@ var helpDescsEnUS = map[string]string{
 	"infoDagResult-relayFee":        "The minimum relay fee for non-free transactions in BTC/KB",
 	"infoDagResult-errors":          "Any current errors",
 
-	// InfoWalletResult help.
-	"infoWalletResult-version":         "The version of the server",
-	"infoWalletResult-protocolVersion": "The latest supported protocol version",
-	"infoWalletResult-walletVersion":   "The version of the wallet server",
-	"infoWalletResult-balance":         "The total bitcoin balance of the wallet",
-	"infoWalletResult-blocks":          "The number of blocks processed",
-	"infoWalletResult-timeOffset":      "The time offset",
-	"infoWalletResult-connections":     "The number of connected peers",
-	"infoWalletResult-proxy":           "The proxy used by the server",
-	"infoWalletResult-difficulty":      "The current target difficulty",
-	"infoWalletResult-testNet":         "Whether or not server is using testnet",
-	"infoWalletResult-devNet":          "Whether or not server is using devnet",
-	"infoWalletResult-keypoolOldest":   "Seconds since 1 Jan 1970 GMT of the oldest pre-generated key in the key pool",
-	"infoWalletResult-keypoolSize":     "The number of new keys that are pre-generated",
-	"infoWalletResult-unlockedUntil":   "The timestamp in seconds since 1 Jan 1970 GMT that the wallet is unlocked for transfers, or 0 if the wallet is locked",
-	"infoWalletResult-payTxFee":        "The transaction fee set in BTC/KB",
-	"infoWalletResult-relayFee":        "The minimum relay fee for non-free transactions in BTC/KB",
-	"infoWalletResult-errors":          "Any current errors",
-
 	// GetTopHeadersCmd help.
 	"getTopHeaders--synopsis": "Returns the top block headers starting with the provided start hash (not inclusive)",
-	"getTopHeaders-startHash": "Block hash to stop including block headers for; if not found, all headers to the latest known block are returned.",
+	"getTopHeaders-startHash": "Block hash to start including block headers from; if not found, it'll start from the virtual.",
 	"getTopHeaders--result0":  "Serialized block headers of all located blocks, limited to some arbitrary maximum number of hashes (currently 2000, which matches the wire protocol headers message, but this is not guaranteed)",
 
 	// GetHeadersCmd help.
-	"getHeaders--synopsis":     "Returns block headers starting with the first known block hash from the request",
-	"getHeaders-blockLocators": "JSON array of hex-encoded hashes of blocks.  Headers are returned starting from the first known hash in this list",
-	"getHeaders-hashStop":      "Block hash to stop including block headers for; if not found, all headers to the latest known block are returned.",
-	"getHeaders--result0":      "Serialized block headers of all located blocks, limited to some arbitrary maximum number of hashes (currently 2000, which matches the wire protocol headers message, but this is not guaranteed)",
+	"getHeaders--synopsis": "Returns block headers starting with the first known block hash from the request",
+	"getHeaders-startHash": "Block hash to start including headers from; if not found, it'll start from the genesis block.",
+	"getHeaders-stopHash":  "Block hash to stop including block headers for; if not found, all headers to the latest known block are returned.",
+	"getHeaders--result0":  "Serialized block headers of all located blocks, limited to some arbitrary maximum number of hashes (currently 2000, which matches the wire protocol headers message, but this is not guaranteed)",
 
 	// GetInfoCmd help.
 	"getInfo--synopsis": "Returns a JSON object containing various state info.",
@@ -681,6 +680,7 @@ var rpcResultTypes = map[string][]interface{}{
 	"getBlockDagInfo":       {(*btcjson.GetBlockDAGInfoResult)(nil)},
 	"getCFilter":            {(*string)(nil)},
 	"getCFilterHeader":      {(*string)(nil)},
+	"getChainFromBlock":     {(*btcjson.GetChainFromBlockResult)(nil)},
 	"getConnectionCount":    {(*int32)(nil)},
 	"getCurrentNet":         {(*uint32)(nil)},
 	"getDifficulty":         {(*float64)(nil)},

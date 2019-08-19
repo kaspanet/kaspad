@@ -47,7 +47,7 @@ A quick overview of the major features peer provides are as follows:
    - Does not invoke the related callbacks for older protocol versions
  - Snapshottable peer statistics such as the total number of bytes read and
    written, the remote address, user agent, and negotiated protocol version
- - Helper functions pushing addresses, getblocks, getheaders, and reject
+ - Helper functions pushing addresses, getblockinvs, getheaders, and reject
    messages
    - These could all be sent manually via the standard message output function,
      but the helpers provide additional nice functionality such as duplicate

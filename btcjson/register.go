@@ -19,15 +19,11 @@ import (
 type UsageFlag uint32
 
 const (
-	// UFWalletOnly indicates that the command can only be used with an RPC
-	// server that supports wallet commands.
-	UFWalletOnly UsageFlag = 1 << iota
-
 	// UFWebsocketOnly indicates that the command can only be used when
 	// communicating with an RPC server over websockets.  This typically
 	// applies to notifications and notification registration functions
 	// since neiher makes since when using a single-shot HTTP-POST request.
-	UFWebsocketOnly
+	UFWebsocketOnly UsageFlag = 1 << iota
 
 	// UFNotification indicates that the command is actually a notification.
 	// This means when it is marshalled, the ID must be nil.
@@ -41,7 +37,6 @@ const (
 
 // Map of UsageFlag values back to their constant names for pretty printing.
 var usageFlagStrings = map[UsageFlag]string{
-	UFWalletOnly:    "UFWalletOnly",
 	UFWebsocketOnly: "UFWebsocketOnly",
 	UFNotification:  "UFNotification",
 }
@@ -55,7 +50,7 @@ func (fl UsageFlag) String() string {
 
 	// Add individual bit flags.
 	s := ""
-	for flag := UFWalletOnly; flag < highestUsageFlagBit; flag <<= 1 {
+	for flag := UFWebsocketOnly; flag < highestUsageFlagBit; flag <<= 1 {
 		if fl&flag == flag {
 			s += usageFlagStrings[flag] + "|"
 			fl -= flag

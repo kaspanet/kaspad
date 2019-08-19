@@ -123,14 +123,14 @@ func TestSelectedPath(t *testing.T) {
 		virtual.AddTip(tip)
 	}
 	// For now we don't have any DAG, just chain, the selected path should include all the blocks on the chain.
-	if !reflect.DeepEqual(virtual.selectedPathChainSet, firstPath) {
+	if !reflect.DeepEqual(virtual.selectedParentChainSet, firstPath) {
 		t.Fatalf("TestSelectedPath: selectedPathSet doesn't include the expected values. got %v, want %v", virtual.selectedParent, firstPath)
 	}
-	// We expect that selectedPathChainSlice should have all the blocks we've added so far
+	// We expect that selectedParentChainSlice should have all the blocks we've added so far
 	wantLen := 11
-	gotLen := len(virtual.selectedPathChainSlice)
+	gotLen := len(virtual.selectedParentChainSlice)
 	if wantLen != gotLen {
-		t.Fatalf("TestSelectedPath: selectedPathChainSlice doesn't have the expected length. got %d, want %d", gotLen, wantLen)
+		t.Fatalf("TestSelectedPath: selectedParentChainSlice doesn't have the expected length. got %d, want %d", gotLen, wantLen)
 	}
 
 	secondPath := initialPath.clone()
@@ -141,14 +141,14 @@ func TestSelectedPath(t *testing.T) {
 		virtual.AddTip(tip)
 	}
 	// Because we added a chain that is much longer than the previous chain, the selected path should be re-organized.
-	if !reflect.DeepEqual(virtual.selectedPathChainSet, secondPath) {
+	if !reflect.DeepEqual(virtual.selectedParentChainSet, secondPath) {
 		t.Fatalf("TestSelectedPath: selectedPathSet didn't handle the re-org as expected. got %v, want %v", virtual.selectedParent, firstPath)
 	}
-	// We expect that selectedPathChainSlice should have all the blocks we've added so far except the old chain
+	// We expect that selectedParentChainSlice should have all the blocks we've added so far except the old chain
 	wantLen = 106
-	gotLen = len(virtual.selectedPathChainSlice)
+	gotLen = len(virtual.selectedParentChainSlice)
 	if wantLen != gotLen {
-		t.Fatalf("TestSelectedPath: selectedPathChainSlice doesn't have"+
+		t.Fatalf("TestSelectedPath: selectedParentChainSlice doesn't have"+
 			"the expected length, possibly because it didn't handle the re-org as expected. got %d, want %d", gotLen, wantLen)
 	}
 
@@ -158,23 +158,23 @@ func TestSelectedPath(t *testing.T) {
 		virtual.AddTip(tip)
 	}
 	// Because we added a very short chain, the selected path should not be affected.
-	if !reflect.DeepEqual(virtual.selectedPathChainSet, secondPath) {
+	if !reflect.DeepEqual(virtual.selectedParentChainSet, secondPath) {
 		t.Fatalf("TestSelectedPath: selectedPathSet did an unexpected re-org. got %v, want %v", virtual.selectedParent, firstPath)
 	}
-	// We expect that selectedPathChainSlice not to change
+	// We expect that selectedParentChainSlice not to change
 	wantLen = 106
-	gotLen = len(virtual.selectedPathChainSlice)
+	gotLen = len(virtual.selectedParentChainSlice)
 	if wantLen != gotLen {
-		t.Fatalf("TestSelectedPath: selectedPathChainSlice doesn't"+
+		t.Fatalf("TestSelectedPath: selectedParentChainSlice doesn't"+
 			"have the expected length, possibly due to unexpected did an unexpected re-org. got %d, want %d", gotLen, wantLen)
 	}
 
-	// We call updateSelectedPathSet manually without updating the tips, to check if it panics
+	// We call updateSelectedParentSet manually without updating the tips, to check if it panics
 	virtual2 := newVirtualBlock(nil, phantomK)
 	defer func() {
 		if r := recover(); r == nil {
-			t.Fatalf("updateSelectedPathSet didn't panic")
+			t.Fatalf("updateSelectedParentSet didn't panic")
 		}
 	}()
-	virtual2.updateSelectedPathSet(buildNode(setFromSlice()))
+	virtual2.updateSelectedParentSet(buildNode(setFromSlice()))
 }

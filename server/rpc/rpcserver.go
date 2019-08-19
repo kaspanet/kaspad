@@ -121,13 +121,6 @@ var (
 		Code:    btcjson.ErrRPCUnimplemented,
 		Message: "Command unimplemented",
 	}
-
-	// ErrRPCNoWallet is an error returned to RPC clients when the provided
-	// command is recognized as a wallet command.
-	ErrRPCNoWallet = &btcjson.RPCError{
-		Code:    btcjson.ErrRPCNoWallet,
-		Message: "This implementation does not implement wallet commands",
-	}
 )
 
 type commandHandler func(*Server, interface{}, <-chan struct{}) (interface{}, error)
@@ -154,6 +147,7 @@ var rpcHandlersBeforeInit = map[string]commandHandler{
 	"getBlockTemplate":      handleGetBlockTemplate,
 	"getCFilter":            handleGetCFilter,
 	"getCFilterHeader":      handleGetCFilterHeader,
+	"getChainFromBlock":     handleGetChainFromBlock,
 	"getConnectionCount":    handleGetConnectionCount,
 	"getCurrentNet":         handleGetCurrentNet,
 	"getDifficulty":         handleGetDifficulty,
@@ -186,54 +180,6 @@ var rpcHandlersBeforeInit = map[string]commandHandler{
 	"verifyMessage":         handleVerifyMessage,
 	"version":               handleVersion,
 	"flushDbCache":          handleFlushDBCache,
-}
-
-// list of commands that we recognize, but for which btcd has no support because
-// it lacks support for wallet functionality. For these commands the user
-// should ask a connected instance of btcwallet.
-var rpcAskWallet = map[string]struct{}{
-	"addMultisigAddress":     {},
-	"backupWallet":           {},
-	"createEncryptedWallet":  {},
-	"createMultisig":         {},
-	"dumpPrivKey":            {},
-	"dumpWallet":             {},
-	"encryptWallet":          {},
-	"getAccount":             {},
-	"getAccountAddress":      {},
-	"getAddressesByAccount":  {},
-	"getBalance":             {},
-	"getNewAddress":          {},
-	"getRawChangeAddress":    {},
-	"getReceivedByAccount":   {},
-	"getReceivedByAddress":   {},
-	"getTransaction":         {},
-	"getTxOutSetInfo":        {},
-	"getUnconfirmedBalance":  {},
-	"getWalletInfo":          {},
-	"importPrivKey":          {},
-	"importWallet":           {},
-	"keyPoolRefill":          {},
-	"listAccounts":           {},
-	"listAddressGroupings":   {},
-	"listLockUnspent":        {},
-	"listReceivedByAccount":  {},
-	"listReceivedByAddress":  {},
-	"listSinceBlock":         {},
-	"listTransactions":       {},
-	"listUnspent":            {},
-	"lockUnspent":            {},
-	"move":                   {},
-	"sendFrom":               {},
-	"sendMany":               {},
-	"sendToAddress":          {},
-	"setAccount":             {},
-	"setTxFee":               {},
-	"signMessage":            {},
-	"signRawTransaction":     {},
-	"walletLock":             {},
-	"walletPassphrase":       {},
-	"walletPassphraseChange": {},
 }
 
 // Commands that are currently unimplemented, but should ultimately be.
@@ -274,6 +220,7 @@ var rpcLimited = map[string]struct{}{
 	"getBlockHeader":        {},
 	"getCFilter":            {},
 	"getCFilterHeader":      {},
+	"getChainFromBlock":     {},
 	"getCurrentNet":         {},
 	"getDifficulty":         {},
 	"getHeaders":            {},
@@ -361,13 +308,6 @@ func newGbtWorkState(timeSource blockdag.MedianTimeSource) *gbtWorkState {
 // supported but are not yet implemented.
 func handleUnimplemented(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
 	return nil, ErrRPCUnimplemented
-}
-
-// handleAskWallet is the handler for commands that are recognized as valid, but
-// are unable to answer correctly since it involves wallet state.
-// These commands will be implemented in btcwallet.
-func handleAskWallet(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	return nil, ErrRPCNoWallet
 }
 
 // handleAddManualNode handles addManualNode commands.
@@ -1149,6 +1089,18 @@ func handleGetBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 		return nil, internalRPCError(err.Error(), context)
 	}
 
+	blockReply, err := buildGetBlockVerboseResult(s, blk, c.VerboseTx == nil || !*c.VerboseTx)
+	if err != nil {
+		return nil, err
+	}
+	return blockReply, nil
+}
+
+func buildGetBlockVerboseResult(s *Server, block *util.Block, isVerboseTx bool) (*btcjson.GetBlockVerboseResult, error) {
+	hash := block.Hash()
+	params := s.cfg.DAGParams
+	blockHeader := block.MsgBlock().Header
+
 	// Get the block chain height.
 	blockChainHeight, err := s.cfg.DAG.BlockChainHeightByHash(hash)
 	if err != nil {
@@ -1173,10 +1125,8 @@ func handleGetBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 		return nil, internalRPCError(err.Error(), context)
 	}
 
-	params := s.cfg.DAGParams
-	blockHeader := &blk.MsgBlock().Header
-	blockReply := btcjson.GetBlockVerboseResult{
-		Hash:                 c.Hash,
+	result := &btcjson.GetBlockVerboseResult{
+		Hash:                 hash.String(),
 		Version:              blockHeader.Version,
 		VersionHex:           fmt.Sprintf("%08x", blockHeader.Version),
 		HashMerkleRoot:       blockHeader.HashMerkleRoot.String(),
@@ -1186,22 +1136,22 @@ func handleGetBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 		Time:                 blockHeader.Timestamp.Unix(),
 		Confirmations:        blockConfirmations,
 		Height:               blockChainHeight,
-		Size:                 int32(len(blkBytes)),
+		Size:                 int32(block.MsgBlock().SerializeSize()),
 		Bits:                 strconv.FormatInt(int64(blockHeader.Bits), 16),
 		Difficulty:           getDifficultyRatio(blockHeader.Bits, params),
 		NextHashes:           nextHashStrings,
 	}
 
-	if c.VerboseTx == nil || !*c.VerboseTx {
-		transactions := blk.Transactions()
+	if isVerboseTx {
+		transactions := block.Transactions()
 		txNames := make([]string, len(transactions))
 		for i, tx := range transactions {
 			txNames[i] = tx.ID().String()
 		}
 
-		blockReply.Tx = txNames
+		result.Tx = txNames
 	} else {
-		txns := blk.Transactions()
+		txns := block.Transactions()
 		rawTxns := make([]btcjson.TxRawResult, len(txns))
 		for i, tx := range txns {
 			var acceptingBlock *daghash.Hash
@@ -1218,16 +1168,16 @@ func handleGetBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 				confirmations = &txConfirmations
 			}
 			rawTxn, err := createTxRawResult(params, tx.MsgTx(), tx.ID().String(),
-				blockHeader, hash.String(), acceptingBlock, confirmations, false)
+				&blockHeader, hash.String(), acceptingBlock, confirmations, false)
 			if err != nil {
 				return nil, err
 			}
 			rawTxns[i] = *rawTxn
 		}
-		blockReply.RawTx = rawTxns
+		result.RawTx = rawTxns
 	}
 
-	return blockReply, nil
+	return result, nil
 }
 
 // softForkStatus converts a ThresholdState state into a human readable string
@@ -1761,8 +1711,8 @@ func (state *gbtWorkState) blockTemplateResult(dag *blockdag.BlockDAG, useCoinba
 			Data:    hex.EncodeToString(txBuf.Bytes()),
 			ID:      txID.String(),
 			Depends: depends,
+			Mass:    template.TxMasses[i],
 			Fee:     template.Fees[i],
-			SigOps:  template.SigOpCounts[i],
 		}
 		transactions = append(transactions, resultTx)
 	}
@@ -1778,8 +1728,7 @@ func (state *gbtWorkState) blockTemplateResult(dag *blockdag.BlockDAG, useCoinba
 		CurTime:              header.Timestamp.Unix(),
 		Height:               template.Height,
 		ParentHashes:         daghash.Strings(header.ParentHashes),
-		SigOpLimit:           blockdag.MaxSigOpsPerBlock,
-		SizeLimit:            wire.MaxBlockPayload,
+		MassLimit:            wire.MaxMassPerBlock,
 		Transactions:         transactions,
 		AcceptedIDMerkleRoot: header.AcceptedIDMerkleRoot.String(),
 		UTXOCommitment:       header.UTXOCommitment.String(),
@@ -1822,8 +1771,8 @@ func (state *gbtWorkState) blockTemplateResult(dag *blockdag.BlockDAG, useCoinba
 			Data:    hex.EncodeToString(txBuf.Bytes()),
 			ID:      tx.TxID().String(),
 			Depends: []int64{},
+			Mass:    template.TxMasses[0],
 			Fee:     template.Fees[0],
-			SigOps:  template.SigOpCounts[0],
 		}
 
 		reply.CoinbaseTxn = &resultTx
@@ -1980,15 +1929,6 @@ func handleGetBlockTemplateRequest(s *Server, request *btcjson.TemplateRequest, 
 		}
 	}
 
-	// No point in generating or accepting work before the DAG is synced.
-	currentChainHeight := s.cfg.DAG.ChainHeight()
-	if currentChainHeight != 0 && !s.cfg.SyncMgr.IsCurrent() {
-		return nil, &btcjson.RPCError{
-			Code:    btcjson.ErrRPCClientInInitialDownload,
-			Message: "Bitcoin is downloading blocks...",
-		}
-	}
-
 	// When a long poll ID was provided, this is a long poll request by the
 	// client to be notified when block template referenced by the ID should
 	// be replaced with a new one.
@@ -2028,8 +1968,8 @@ func chainErrToGBTErrString(err error) string {
 	switch ruleErr.ErrorCode {
 	case blockdag.ErrDuplicateBlock:
 		return "duplicate"
-	case blockdag.ErrBlockTooBig:
-		return "bad-blk-length"
+	case blockdag.ErrBlockMassTooHigh:
+		return "bad-blk-mass"
 	case blockdag.ErrBlockVersionTooOld:
 		return "bad-version"
 	case blockdag.ErrInvalidTime:
@@ -2054,8 +1994,8 @@ func chainErrToGBTErrString(err error) string {
 		return "bad-txns-none"
 	case blockdag.ErrNoTxInputs:
 		return "bad-txns-noinputs"
-	case blockdag.ErrTxTooBig:
-		return "bad-txns-size"
+	case blockdag.ErrTxMassTooHigh:
+		return "bad-txns-mass"
 	case blockdag.ErrBadTxOutValue:
 		return "bad-txns-outputvalue"
 	case blockdag.ErrDuplicateTxInputs:
@@ -2173,6 +2113,19 @@ func handleGetBlockTemplate(s *Server, cmd interface{}, closeChan <-chan struct{
 		mode = request.Mode
 	}
 
+	// No point in generating templates or processing proposals before
+	// the DAG is synced. Note that we make a special check for when
+	// we have nothing besides the genesis block (chainHeight == 0),
+	// because in that state IsCurrent may still return true.
+	currentChainHeight := s.cfg.DAG.ChainHeight()
+	if (currentChainHeight != 0 && !s.cfg.SyncMgr.IsCurrent()) ||
+		(currentChainHeight == 0 && !s.cfg.CPUMiner.ShouldMineOnGenesis()) {
+		return nil, &btcjson.RPCError{
+			Code:    btcjson.ErrRPCClientInInitialDownload,
+			Message: "Bitcoin is downloading blocks...",
+		}
+	}
+
 	switch mode {
 	case "template":
 		return handleGetBlockTemplateRequest(s, request, closeChan)
@@ -2244,6 +2197,118 @@ func handleGetCFilterHeader(s *Server, cmd interface{}, closeChan <-chan struct{
 
 	hash.SetBytes(headerBytes)
 	return hash.String(), nil
+}
+
+// handleGetChainFromBlock implements the getChainFromBlock command.
+func handleGetChainFromBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
+	c := cmd.(*btcjson.GetChainFromBlockCmd)
+	var startHash *daghash.Hash
+	if c.StartHash != nil {
+		err := daghash.Decode(startHash, *c.StartHash)
+		if err != nil {
+			return nil, rpcDecodeHexError(*c.StartHash)
+		}
+	}
+
+	s.cfg.DAG.RLock()
+	defer s.cfg.DAG.RUnlock()
+
+	// If startHash is not in the selected parent chain, there's nothing
+	// to do; return an error.
+	if !s.cfg.DAG.IsInSelectedParentChain(startHash) {
+		return nil, &btcjson.RPCError{
+			Code:    btcjson.ErrRPCBlockNotFound,
+			Message: "Block not found in selected parent chain",
+		}
+	}
+
+	// Retrieve the selected parent chain.
+	selectedParentChain, err := s.cfg.DAG.SelectedParentChain(startHash)
+	if err != nil {
+		return nil, err
+	}
+
+	// Collect chainBlocks.
+	chainBlocks, err := collectChainBlocks(s, selectedParentChain)
+	if err != nil {
+		return nil, &btcjson.RPCError{
+			Code:    btcjson.ErrRPCInternal.Code,
+			Message: fmt.Sprintf("could not collect chain blocks: %s", err),
+		}
+	}
+
+	result := &btcjson.GetChainFromBlockResult{
+		SelectedParentChain: chainBlocks,
+		Blocks:              nil,
+	}
+
+	// If the user specified to include the blocks, collect them as well.
+	if c.IncludeBlocks != nil && *c.IncludeBlocks {
+		getBlockVerboseResults, err := hashesToGetBlockVerboseResults(s, selectedParentChain)
+		if err != nil {
+			return nil, err
+		}
+		result.Blocks = getBlockVerboseResults
+	}
+
+	return result, nil
+}
+
+func collectChainBlocks(s *Server, selectedParentChain []*daghash.Hash) ([]btcjson.ChainBlock, error) {
+	chainBlocks := make([]btcjson.ChainBlock, 0, len(selectedParentChain))
+	for _, hash := range selectedParentChain {
+		acceptanceData, err := s.cfg.DAG.BluesTxsAcceptanceData(hash)
+		if err != nil {
+			return nil, &btcjson.RPCError{
+				Code:    btcjson.ErrRPCInternal.Code,
+				Message: fmt.Sprintf("could not retrieve acceptance data for block %s", hash),
+			}
+		}
+
+		acceptedBlocks := make([]btcjson.AcceptedBlock, 0, len(acceptanceData))
+		for blockHash, blockAcceptanceData := range acceptanceData {
+			acceptedTxIds := make([]string, 0, len(blockAcceptanceData))
+			for _, txAcceptanceData := range blockAcceptanceData {
+				if txAcceptanceData.IsAccepted {
+					acceptedTxIds = append(acceptedTxIds, txAcceptanceData.Tx.Hash().String())
+				}
+			}
+			acceptedBlock := btcjson.AcceptedBlock{
+				Hash:          blockHash.String(),
+				AcceptedTxIds: acceptedTxIds,
+			}
+			acceptedBlocks = append(acceptedBlocks, acceptedBlock)
+		}
+
+		chainBlock := btcjson.ChainBlock{
+			Hash:           hash.String(),
+			AcceptedBlocks: acceptedBlocks,
+		}
+		chainBlocks = append(chainBlocks, chainBlock)
+	}
+	return chainBlocks, nil
+}
+
+func hashesToGetBlockVerboseResults(s *Server, hashes []*daghash.Hash) ([]btcjson.GetBlockVerboseResult, error) {
+	getBlockVerboseResults := make([]btcjson.GetBlockVerboseResult, 0, len(hashes))
+	for _, blockHash := range hashes {
+		block, err := s.cfg.DAG.BlockByHash(blockHash)
+		if err != nil {
+			return nil, &btcjson.RPCError{
+				Code:    btcjson.ErrRPCInternal.Code,
+				Message: fmt.Sprintf("could not retrieve block %s.", blockHash),
+			}
+		}
+		getBlockVerboseResult, err := buildGetBlockVerboseResult(s, block, false)
+		if err != nil {
+			return nil, &btcjson.RPCError{
+				Code:    btcjson.ErrRPCInternal.Code,
+				Message: fmt.Sprintf("could not build getBlockVerboseResult for block %s.", blockHash),
+			}
+		}
+		getBlockVerboseResults = append(getBlockVerboseResults, *getBlockVerboseResult)
+	}
+	return getBlockVerboseResults, nil
 }
 
 // handleGetConnectionCount implements the getConnectionCount command.
@@ -2318,24 +2383,21 @@ func handleGetTopHeaders(s *Server, cmd interface{}, closeChan <-chan struct{}) 
 func handleGetHeaders(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
 	c := cmd.(*btcjson.GetHeadersCmd)
 
-	// Fetch the requested headers from chain while respecting the provided
-	// block locators and stop hash.
-	blockLocators := make([]*daghash.Hash, len(c.BlockLocators))
-	for i := range c.BlockLocators {
-		blockLocator, err := daghash.NewHashFromStr(c.BlockLocators[i])
+	startHash := &daghash.ZeroHash
+	if c.StartHash != "" {
+		err := daghash.Decode(startHash, c.StartHash)
 		if err != nil {
-			return nil, rpcDecodeHexError(c.BlockLocators[i])
-		}
-		blockLocators[i] = blockLocator
-	}
-	var hashStop daghash.Hash
-	if c.HashStop != "" {
-		err := daghash.Decode(&hashStop, c.HashStop)
-		if err != nil {
-			return nil, rpcDecodeHexError(c.HashStop)
+			return nil, rpcDecodeHexError(c.StopHash)
 		}
 	}
-	headers := s.cfg.SyncMgr.LocateHeaders(blockLocators, &hashStop)
+	stopHash := &daghash.ZeroHash
+	if c.StopHash != "" {
+		err := daghash.Decode(stopHash, c.StopHash)
+		if err != nil {
+			return nil, rpcDecodeHexError(c.StopHash)
+		}
+	}
+	headers := s.cfg.SyncMgr.GetBlueBlocksHeadersBetween(startHash, stopHash)
 
 	// Return the serialized block headers as hex-encoded strings.
 	hexBlockHeaders := make([]string, len(headers))
@@ -3201,10 +3263,7 @@ func handleSearchRawTransactions(s *Server, cmd interface{}, closeChan <-chan st
 
 	// Address has never been used if neither source yielded any results.
 	if len(addressTxns) == 0 {
-		return nil, &btcjson.RPCError{
-			Code:    btcjson.ErrRPCNoTxInfo,
-			Message: "No information available about address",
-		}
+		return []btcjson.SearchRawTransactionsResult{}, nil
 	}
 
 	// Serialize all of the transactions to hex.
@@ -3803,11 +3862,6 @@ func (s *Server) standardCmdResult(cmd *parsedRPCCmd, closeChan <-chan struct{})
 	if ok {
 		goto handled
 	}
-	_, ok = rpcAskWallet[cmd.method]
-	if ok {
-		handler = handleAskWallet
-		goto handled
-	}
 	_, ok = rpcUnimplemented[cmd.method]
 	if ok {
 		handler = handleUnimplemented
@@ -4181,11 +4235,11 @@ type rpcserverSyncManager interface {
 	// used to sync from or 0 if there is none.
 	SyncPeerID() int32
 
-	// LocateHeaders returns the headers of the blocks after the first known
+	// GetBlueBlocksHeadersBetween returns the headers of the blocks after the first known
 	// block in the provided locators until the provided stop hash or the
 	// current tip is reached, up to a max of wire.MaxBlockHeadersPerMsg
 	// hashes.
-	LocateHeaders(locators []*daghash.Hash, hashStop *daghash.Hash) []*wire.BlockHeader
+	GetBlueBlocksHeadersBetween(startHash, stopHash *daghash.Hash) []*wire.BlockHeader
 }
 
 // rpcserverConfig is a descriptor containing the RPC server configuration.

@@ -137,6 +137,12 @@ type MessageListeners struct {
 	// OnInv is invoked when a peer receives an inv bitcoin message.
 	OnInv func(p *Peer, msg *wire.MsgInv)
 
+	// OnGetBlockLocator is invoked when a peer receives a getlocator bitcoin message.
+	OnGetBlockLocator func(p *Peer, msg *wire.MsgGetBlockLocator)
+
+	// OnBlockLocator is invoked when a peer receives a locator bitcoin message.
+	OnBlockLocator func(p *Peer, msg *wire.MsgBlockLocator)
+
 	// OnHeaders is invoked when a peer receives a headers bitcoin message.
 	OnHeaders func(p *Peer, msg *wire.MsgHeaders)
 
@@ -147,9 +153,9 @@ type MessageListeners struct {
 	// OnGetData is invoked when a peer receives a getdata bitcoin message.
 	OnGetData func(p *Peer, msg *wire.MsgGetData)
 
-	// OnGetBlocks is invoked when a peer receives a getblocks bitcoin
+	// OnGetBlockInvs is invoked when a peer receives a getblockinvs bitcoin
 	// message.
-	OnGetBlocks func(p *Peer, msg *wire.MsgGetBlocks)
+	OnGetBlockInvs func(p *Peer, msg *wire.MsgGetBlockInvs)
 
 	// OnGetHeaders is invoked when a peer receives a getheaders bitcoin
 	// message.
@@ -443,13 +449,13 @@ type Peer struct {
 	sendHeadersPreferred bool   // peer sent a sendheaders message
 	verAckReceived       bool
 
-	knownInventory     *mruInventoryMap
-	prevGetBlocksMtx   sync.Mutex
-	prevGetBlocksBegin *daghash.Hash
-	prevGetBlocksStop  *daghash.Hash
-	prevGetHdrsMtx     sync.Mutex
-	prevGetHdrsBegin   *daghash.Hash
-	prevGetHdrsStop    *daghash.Hash
+	knownInventory        *mruInventoryMap
+	prevGetBlockInvsMtx   sync.Mutex
+	prevGetBlockInvsStart *daghash.Hash
+	prevGetBlockInvsStop  *daghash.Hash
+	prevGetHdrsMtx        sync.Mutex
+	prevGetHdrsStart      *daghash.Hash
+	prevGetHdrsStop       *daghash.Hash
 
 	// These fields keep track of statistics for the peer and are protected
 	// by the statsMtx mutex.
@@ -858,33 +864,48 @@ func (p *Peer) PushAddrMsg(addresses []*wire.NetAddress, subnetworkID *subnetwor
 	return msg.AddrList, nil
 }
 
-// PushGetBlocksMsg sends a getblocks message for the provided block locator
+func (p *Peer) PushGetBlockLocatorMsg(startHash, stopHash *daghash.Hash) {
+	msg := wire.NewMsgGetBlockLocator(startHash, stopHash)
+	p.QueueMessage(msg, nil)
+}
+
+// PushGetBlockInvsMsg sends a getblockinvs message for the provided block locator
 // and stop hash.  It will ignore back-to-back duplicate requests.
 //
 // This function is safe for concurrent access.
-func (p *Peer) PushGetBlocksMsg(locator blockdag.BlockLocator, stopHash *daghash.Hash) error {
-	// Extract the begin hash from the block locator, if one was specified,
-	// to use for filtering duplicate getblocks requests.
-	var beginHash *daghash.Hash
-	if len(locator) > 0 {
-		beginHash = locator[0]
-	}
-
-	// Filter duplicate getblocks requests.
-	p.prevGetBlocksMtx.Lock()
-	isDuplicate := p.prevGetBlocksStop != nil && p.prevGetBlocksBegin != nil &&
-		beginHash != nil && stopHash.IsEqual(p.prevGetBlocksStop) &&
-		beginHash.IsEqual(p.prevGetBlocksBegin)
-	p.prevGetBlocksMtx.Unlock()
+func (p *Peer) PushGetBlockInvsMsg(startHash, stopHash *daghash.Hash) error {
+	// Filter duplicate getblockinvs requests.
+	p.prevGetBlockInvsMtx.Lock()
+	isDuplicate := p.prevGetBlockInvsStop != nil && p.prevGetBlockInvsStart != nil &&
+		startHash != nil && stopHash.IsEqual(p.prevGetBlockInvsStop) &&
+		startHash.IsEqual(p.prevGetBlockInvsStart)
+	p.prevGetBlockInvsMtx.Unlock()
 
 	if isDuplicate {
-		log.Tracef("Filtering duplicate [getblocks] with begin "+
-			"hash %s, stop hash %s", beginHash, stopHash)
+		log.Tracef("Filtering duplicate [getblockinvs] with start "+
+			"hash %s, stop hash %s", startHash, stopHash)
 		return nil
 	}
 
-	// Construct the getblocks request and queue it to be sent.
-	msg := wire.NewMsgGetBlocks(stopHash)
+	// Construct the getblockinvs request and queue it to be sent.
+	msg := wire.NewMsgGetBlockInvs(startHash, stopHash)
+	p.QueueMessage(msg, nil)
+
+	// Update the previous getblockinvs request information for filtering
+	// duplicates.
+	p.prevGetBlockInvsMtx.Lock()
+	p.prevGetBlockInvsStart = startHash
+	p.prevGetBlockInvsStop = stopHash
+	p.prevGetBlockInvsMtx.Unlock()
+	return nil
+}
+
+// PushBlockLocatorMsg sends a locator message for the provided block locator.
+//
+// This function is safe for concurrent access.
+func (p *Peer) PushBlockLocatorMsg(locator blockdag.BlockLocator) error {
+	// Construct the locator request and queue it to be sent.
+	msg := wire.NewMsgBlockLocator()
 	for _, hash := range locator {
 		err := msg.AddBlockLocatorHash(hash)
 		if err != nil {
@@ -892,56 +913,35 @@ func (p *Peer) PushGetBlocksMsg(locator blockdag.BlockLocator, stopHash *daghash
 		}
 	}
 	p.QueueMessage(msg, nil)
-
-	// Update the previous getblocks request information for filtering
-	// duplicates.
-	p.prevGetBlocksMtx.Lock()
-	p.prevGetBlocksBegin = beginHash
-	p.prevGetBlocksStop = stopHash
-	p.prevGetBlocksMtx.Unlock()
 	return nil
 }
 
-// PushGetHeadersMsg sends a getblocks message for the provided block locator
+// PushGetHeadersMsg sends a getblockinvs message for the provided block locator
 // and stop hash.  It will ignore back-to-back duplicate requests.
 //
 // This function is safe for concurrent access.
-func (p *Peer) PushGetHeadersMsg(locator blockdag.BlockLocator, stopHash *daghash.Hash) error {
-	// Extract the begin hash from the block locator, if one was specified,
-	// to use for filtering duplicate getheaders requests.
-	var beginHash *daghash.Hash
-	if len(locator) > 0 {
-		beginHash = locator[0]
-	}
-
+func (p *Peer) PushGetHeadersMsg(startHash, stopHash *daghash.Hash) error {
 	// Filter duplicate getheaders requests.
 	p.prevGetHdrsMtx.Lock()
-	isDuplicate := p.prevGetHdrsStop != nil && p.prevGetHdrsBegin != nil &&
-		beginHash != nil && stopHash.IsEqual(p.prevGetHdrsStop) &&
-		beginHash.IsEqual(p.prevGetHdrsBegin)
+	isDuplicate := p.prevGetHdrsStop != nil && p.prevGetHdrsStart != nil &&
+		startHash != nil && stopHash.IsEqual(p.prevGetHdrsStop) &&
+		startHash.IsEqual(p.prevGetHdrsStart)
 	p.prevGetHdrsMtx.Unlock()
 
 	if isDuplicate {
-		log.Tracef("Filtering duplicate [getheaders] with begin hash %s",
-			beginHash)
+		log.Tracef("Filtering duplicate [getheaders] with start hash %s",
+			startHash)
 		return nil
 	}
 
 	// Construct the getheaders request and queue it to be sent.
-	msg := wire.NewMsgGetHeaders()
-	msg.HashStop = stopHash
-	for _, hash := range locator {
-		err := msg.AddBlockLocatorHash(hash)
-		if err != nil {
-			return err
-		}
-	}
+	msg := wire.NewMsgGetHeaders(startHash, stopHash)
 	p.QueueMessage(msg, nil)
 
 	// Update the previous getheaders request information for filtering
 	// duplicates.
 	p.prevGetHdrsMtx.Lock()
-	p.prevGetHdrsBegin = beginHash
+	p.prevGetHdrsStart = startHash
 	p.prevGetHdrsStop = stopHash
 	p.prevGetHdrsMtx.Unlock()
 	return nil
@@ -1211,7 +1211,7 @@ func (p *Peer) maybeAddDeadline(pendingResponses map[string]time.Time, msgCmd st
 		// Expects an inv message.
 		pendingResponses[wire.CmdInv] = deadline
 
-	case wire.CmdGetBlocks:
+	case wire.CmdGetBlockInvs:
 		// Expects an inv message.
 		pendingResponses[wire.CmdInv] = deadline
 
@@ -1517,9 +1517,19 @@ out:
 				p.cfg.Listeners.OnGetData(p, msg)
 			}
 
-		case *wire.MsgGetBlocks:
-			if p.cfg.Listeners.OnGetBlocks != nil {
-				p.cfg.Listeners.OnGetBlocks(p, msg)
+		case *wire.MsgGetBlockLocator:
+			if p.cfg.Listeners.OnGetBlockLocator != nil {
+				p.cfg.Listeners.OnGetBlockLocator(p, msg)
+			}
+
+		case *wire.MsgBlockLocator:
+			if p.cfg.Listeners.OnBlockLocator != nil {
+				p.cfg.Listeners.OnBlockLocator(p, msg)
+			}
+
+		case *wire.MsgGetBlockInvs:
+			if p.cfg.Listeners.OnGetBlockInvs != nil {
+				p.cfg.Listeners.OnGetBlockInvs(p, msg)
 			}
 
 		case *wire.MsgGetHeaders:
@@ -1748,26 +1758,6 @@ cleanup:
 	log.Tracef("Peer queue handler done for %s", p)
 }
 
-// shouldLogWriteError returns whether or not the passed error, which is
-// expected to have come from writing to the remote peer in the outHandler,
-// should be logged.
-func (p *Peer) shouldLogWriteError(err error) bool {
-	// No logging when the peer is being forcibly disconnected.
-	if atomic.LoadInt32(&p.disconnect) != 0 {
-		return false
-	}
-
-	// No logging when the remote peer has been disconnected.
-	if err == io.EOF {
-		return false
-	}
-	if opErr, ok := err.(*net.OpError); ok && !opErr.Temporary() {
-		return false
-	}
-
-	return true
-}
-
 // outHandler handles all outgoing messages for the peer.  It must be run as a
 // goroutine.  It uses a buffered channel to serialize output messages while
 // allowing the sender to continue running asynchronously.
@@ -1789,10 +1779,8 @@ out:
 			err := p.writeMessage(msg.msg)
 			if err != nil {
 				p.Disconnect()
-				if p.shouldLogWriteError(err) {
-					log.Errorf("Failed to send message to "+
-						"%s: %s", p, err)
-				}
+				log.Errorf("Failed to send message to "+
+					"%s: %s", p, err)
 				if msg.doneChan != nil {
 					msg.doneChan <- struct{}{}
 				}

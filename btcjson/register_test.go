@@ -21,13 +21,12 @@ func TestUsageFlagStringer(t *testing.T) {
 		want string
 	}{
 		{0, "0x0"},
-		{btcjson.UFWalletOnly, "UFWalletOnly"},
 		{btcjson.UFWebsocketOnly, "UFWebsocketOnly"},
 		{btcjson.UFNotification, "UFNotification"},
-		{btcjson.UFWalletOnly | btcjson.UFWebsocketOnly,
-			"UFWalletOnly|UFWebsocketOnly"},
-		{btcjson.UFWalletOnly | btcjson.UFWebsocketOnly | (1 << 31),
-			"UFWalletOnly|UFWebsocketOnly|0x80000000"},
+		{btcjson.UFWebsocketOnly | btcjson.UFNotification,
+			"UFWebsocketOnly|UFNotification"},
+		{btcjson.UFWebsocketOnly | btcjson.UFNotification | (1 << 31),
+			"UFWebsocketOnly|UFNotification|0x80000000"},
 	}
 
 	// Detect additional usage flags that don't have the stringer added.

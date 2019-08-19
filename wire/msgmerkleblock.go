@@ -133,7 +133,7 @@ func (msg *MsgMerkleBlock) Command() string {
 // MaxPayloadLength returns the maximum length the payload can be for the
 // receiver.  This is part of the Message interface implementation.
 func (msg *MsgMerkleBlock) MaxPayloadLength(pver uint32) uint32 {
-	return MaxBlockPayload
+	return MaxMessagePayload
 }
 
 // NewMsgMerkleBlock returns a new bitcoin merkleblock message that conforms to

@@ -160,6 +160,16 @@ func TestFinality(t *testing.T) {
 	}
 }
 
+// TestFinalityInterval tests that the finality interval is
+// smaller then wire.MaxInvPerMsg, so when a peer receives
+// a getblocks message it should always be able to send
+// all the necessary invs.
+func TestFinalityInterval(t *testing.T) {
+	if blockdag.FinalityInterval > wire.MaxInvPerMsg {
+		t.Errorf("blockdag.FinalityInterval should be lower or equal to wire.MaxInvPerMsg")
+	}
+}
+
 // TestSubnetworkRegistry tests the full subnetwork registry flow
 func TestSubnetworkRegistry(t *testing.T) {
 	params := dagconfig.SimNetParams

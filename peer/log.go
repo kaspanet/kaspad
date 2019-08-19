@@ -12,7 +12,6 @@ import (
 	"github.com/daglabs/btcd/logs"
 	"github.com/daglabs/btcd/logger"
 	"github.com/daglabs/btcd/txscript"
-	"github.com/daglabs/btcd/util/daghash"
 	"github.com/daglabs/btcd/util/panics"
 	"github.com/daglabs/btcd/wire"
 )
@@ -88,16 +87,6 @@ func invSummary(invList []*wire.InvVect) string {
 
 	// More than one inv item.
 	return fmt.Sprintf("size %d", invLen)
-}
-
-// locatorSummary returns a block locator as a human-readable string.
-func locatorSummary(locator []*daghash.Hash, stopHash *daghash.Hash) string {
-	if len(locator) > 0 {
-		return fmt.Sprintf("locator %s, stop %s", locator[0], stopHash)
-	}
-
-	return fmt.Sprintf("no locator, stop %s", stopHash)
-
 }
 
 // sanitizeString strips any characters which are even remotely dangerous, such
@@ -178,11 +167,23 @@ func messageSummary(msg wire.Message) string {
 	case *wire.MsgGetData:
 		return invSummary(msg.InvList)
 
-	case *wire.MsgGetBlocks:
-		return locatorSummary(msg.BlockLocatorHashes, msg.HashStop)
+	case *wire.MsgGetBlockInvs:
+		return fmt.Sprintf("start hash %s, stop hash %s", msg.StartHash,
+			msg.StopHash)
 
 	case *wire.MsgGetHeaders:
-		return locatorSummary(msg.BlockLocatorHashes, msg.HashStop)
+		return fmt.Sprintf("start hash %s, stop hash %s", msg.StartHash,
+			msg.StopHash)
+
+	case *wire.MsgGetBlockLocator:
+		return fmt.Sprintf("start hash %s, stop hash %s", msg.StartHash,
+			msg.StopHash)
+
+	case *wire.MsgBlockLocator:
+		if len(msg.BlockLocatorHashes) > 0 {
+			return fmt.Sprintf("locator first hash: %s, last hash: %s", msg.BlockLocatorHashes[0], msg.BlockLocatorHashes[len(msg.BlockLocatorHashes)-1])
+		}
+		return fmt.Sprintf("no locator")
 
 	case *wire.MsgHeaders:
 		return fmt.Sprintf("num %d", len(msg.Headers))

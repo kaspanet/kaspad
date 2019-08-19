@@ -157,7 +157,7 @@ type SyncManager struct {
 	shutdown       int32
 	dag            *blockdag.BlockDAG
 	txMemPool      *mempool.TxPool
-	chainParams    *dagconfig.Params
+	dagParams      *dagconfig.Params
 	progressLogger *blockProgressLogger
 	msgChan        chan interface{}
 	wg             sync.WaitGroup
@@ -175,6 +175,40 @@ type SyncManager struct {
 	headerList       *list.List
 	startHeader      *list.Element
 	nextCheckpoint   *dagconfig.Checkpoint
+}
+
+func (sm *SyncManager) PushGetBlockInvsOrHeaders(peer *peerpkg.Peer, startHash *daghash.Hash) error {
+	// When the current height is less than a known checkpoint we
+	// can use block headers to learn about which blocks comprise
+	// the DAG up to the checkpoint and perform less validation
+	// for them.  This is possible since each header contains the
+	// hash of the previous header and a merkle root.  Therefore if
+	// we validate all of the received headers link together
+	// properly and the checkpoint hashes match, we can be sure the
+	// hashes for the blocks in between are accurate.  Further, once
+	// the full blocks are downloaded, the merkle root is computed
+	// and compared against the value in the header which proves the
+	// full block hasn't been tampered with.
+	//
+	// Once we have passed the final checkpoint, or checkpoints are
+	// disabled, use standard inv messages learn about the blocks
+	// and fully validate them.  Finally, regression test mode does
+	// not support the headers-first approach so do normal block
+	// downloads when in regression test mode.
+	if sm.nextCheckpoint != nil &&
+		sm.dag.ChainHeight() < sm.nextCheckpoint.ChainHeight &&
+		sm.dagParams != &dagconfig.RegressionNetParams {
+		//TODO: (Ori) This is probably wrong. Done only for compilation
+		err := peer.PushGetHeadersMsg(startHash, sm.nextCheckpoint.Hash)
+		if err != nil {
+			return err
+		}
+		sm.headersFirstMode = true
+		log.Infof("Downloading headers for blocks %d to "+
+			"%d from peer %s", sm.dag.ChainHeight()+1,
+			sm.nextCheckpoint.ChainHeight, peer.Addr()) //TODO: (Ori) This is probably wrong. Done only for compilation
+	}
+	return peer.PushGetBlockInvsMsg(startHash, &daghash.ZeroHash)
 }
 
 // resetHeaderState sets the headers-first mode state to values appropriate for
@@ -261,39 +295,16 @@ func (sm *SyncManager) startSync() {
 		// to send.
 		sm.requestedBlocks = make(map[daghash.Hash]struct{})
 
-		locator := sm.dag.LatestBlockLocator()
-
 		log.Infof("Syncing to block %s from peer %s",
 			bestPeer.SelectedTip(), bestPeer.Addr())
 
-		// When the current height is less than a known checkpoint we
-		// can use block headers to learn about which blocks comprise
-		// the chain up to the checkpoint and perform less validation
-		// for them.  This is possible since each header contains the
-		// hash of the previous header and a merkle root.  Therefore if
-		// we validate all of the received headers link together
-		// properly and the checkpoint hashes match, we can be sure the
-		// hashes for the blocks in between are accurate.  Further, once
-		// the full blocks are downloaded, the merkle root is computed
-		// and compared against the value in the header which proves the
-		// full block hasn't been tampered with.
-		//
-		// Once we have passed the final checkpoint, or checkpoints are
-		// disabled, use standard inv messages learn about the blocks
-		// and fully validate them.  Finally, regression test mode does
-		// not support the headers-first approach so do normal block
-		// downloads when in regression test mode.
 		if sm.nextCheckpoint != nil &&
 			sm.dag.ChainHeight() < sm.nextCheckpoint.ChainHeight &&
-			sm.chainParams != &dagconfig.RegressionNetParams { //TODO: (Ori) This is probably wrong. Done only for compilation
-
-			bestPeer.PushGetHeadersMsg(locator, sm.nextCheckpoint.Hash)
-			sm.headersFirstMode = true
-			log.Infof("Downloading headers for blocks %d to "+
-				"%d from peer %s", sm.dag.ChainHeight()+1,
-				sm.nextCheckpoint.ChainHeight, bestPeer.Addr()) //TODO: (Ori) This is probably wrong. Done only for compilation
+			sm.dagParams != &dagconfig.RegressionNetParams {
+			//TODO: (Ori) This is probably wrong. Done only for compilation
+			bestPeer.PushGetBlockLocatorMsg(sm.nextCheckpoint.Hash, sm.dagParams.GenesisHash)
 		} else {
-			bestPeer.PushGetBlocksMsg(locator, &daghash.ZeroHash)
+			bestPeer.PushGetBlockLocatorMsg(&daghash.ZeroHash, sm.dagParams.GenesisHash)
 		}
 		sm.syncPeer = bestPeer
 	} else {
@@ -307,7 +318,7 @@ func (sm *SyncManager) isSyncCandidate(peer *peerpkg.Peer) bool {
 	// Typically a peer is not a candidate for sync if it's not a full node,
 	// however regression test is special in that the regression tool is
 	// not a full node and still needs to be considered a sync candidate.
-	if sm.chainParams == &dagconfig.RegressionNetParams {
+	if sm.dagParams == &dagconfig.RegressionNetParams {
 		// The peer is not a candidate if it's not coming from localhost
 		// or the hostname can't be determined for some reason.
 		host, _, err := net.SplitHostPort(peer.Addr())
@@ -517,7 +528,7 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 		// the peer or ignore the block when we're in regression test
 		// mode in this case so the chain code is actually fed the
 		// duplicate blocks.
-		if sm.chainParams != &dagconfig.RegressionNetParams {
+		if sm.dagParams != &dagconfig.RegressionNetParams {
 			log.Warnf("Got unrequested block %s from %s -- "+
 				"disconnecting", blockHash, peer.Addr())
 			peer.Disconnect()
@@ -551,6 +562,9 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 
 	if bmsg.isDelayedBlock {
 		behaviorFlags |= blockdag.BFAfterDelay
+	}
+	if bmsg.peer == sm.syncPeer {
+		behaviorFlags |= blockdag.BFIsSync
 	}
 
 	// Process the block to include validation, orphan handling, etc.
@@ -651,8 +665,7 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 	parentHash := sm.nextCheckpoint.Hash
 	sm.nextCheckpoint = sm.findNextHeaderCheckpoint(prevHeight)
 	if sm.nextCheckpoint != nil {
-		locator := blockdag.BlockLocator([]*daghash.Hash{parentHash})
-		err := peer.PushGetHeadersMsg(locator, sm.nextCheckpoint.Hash)
+		err := peer.PushGetHeadersMsg(parentHash, sm.nextCheckpoint.Hash)
 		if err != nil {
 			log.Warnf("Failed to send getheaders message to "+
 				"peer %s: %s", peer.Addr(), err)
@@ -670,10 +683,9 @@ func (sm *SyncManager) handleBlockMsg(bmsg *blockMsg) {
 	sm.headersFirstMode = false
 	sm.headerList.Init()
 	log.Infof("Reached the final checkpoint -- switching to normal mode")
-	locator := blockdag.BlockLocator([]*daghash.Hash{blockHash})
-	err = peer.PushGetBlocksMsg(locator, &daghash.ZeroHash)
+	err = peer.PushGetBlockInvsMsg(blockHash, &daghash.ZeroHash)
 	if err != nil {
-		log.Warnf("Failed to send getblocks message to peer %s: %s",
+		log.Warnf("Failed to send getblockinvs message to peer %s: %s",
 			peer.Addr(), err)
 		return
 	}
@@ -856,8 +868,7 @@ func (sm *SyncManager) handleHeadersMsg(hmsg *headersMsg) {
 	// This header is not a checkpoint, so request the next batch of
 	// headers starting from the latest known header and ending with the
 	// next checkpoint.
-	locator := blockdag.BlockLocator([]*daghash.Hash{finalHash})
-	err := peer.PushGetHeadersMsg(locator, sm.nextCheckpoint.Hash)
+	err := peer.PushGetHeadersMsg(finalHash, sm.nextCheckpoint.Hash)
 	if err != nil {
 		log.Warnf("Failed to send getheaders message to "+
 			"peer %s: %s", peer.Addr(), err)
@@ -967,9 +978,13 @@ func (sm *SyncManager) handleInvMsg(imsg *invMsg) {
 		}
 		if !haveInv {
 			if iv.Type == wire.InvTypeTx {
-				// Skip the transaction if it has already been
-				// rejected.
+				// Skip the transaction if it has already been rejected.
 				if _, exists := sm.rejectedTxns[daghash.TxID(*iv.Hash)]; exists {
+					continue
+				}
+
+				// Skip the transaction if it had previously been requested.
+				if _, exists := state.requestedTxns[daghash.TxID(*iv.Hash)]; exists {
 					continue
 				}
 			}
@@ -1008,10 +1023,8 @@ func (sm *SyncManager) handleInvMsg(imsg *invMsg) {
 			if i == lastBlock && peer == sm.syncPeer {
 				// Request blocks after the first block's ancestor that exists
 				// in the selected path chain, one up to the
-				// final one the remote peer knows about (zero
-				// stop hash).
-				locator := sm.dag.BlockLocatorFromHash(iv.Hash)
-				peer.PushGetBlocksMsg(locator, &daghash.ZeroHash)
+				// final one the remote peer knows about.
+				peer.PushGetBlockLocatorMsg(iv.Hash, &daghash.ZeroHash)
 			}
 		}
 	}
@@ -1401,7 +1414,7 @@ func New(config *Config) (*SyncManager, error) {
 		peerNotifier:    config.PeerNotifier,
 		dag:             config.DAG,
 		txMemPool:       config.TxMemPool,
-		chainParams:     config.ChainParams,
+		dagParams:       config.ChainParams,
 		rejectedTxns:    make(map[daghash.TxID]struct{}),
 		requestedTxns:   make(map[daghash.TxID]struct{}),
 		requestedBlocks: make(map[daghash.Hash]struct{}),

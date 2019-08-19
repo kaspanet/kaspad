@@ -121,8 +121,8 @@ type GetBlockTemplateResultTx struct {
 	Data    string  `json:"data"`
 	ID      string  `json:"id"`
 	Depends []int64 `json:"depends"`
+	Mass    uint64  `json:"mass"`
 	Fee     uint64  `json:"fee"`
-	SigOps  int64   `json:"sigOps"`
 }
 
 // GetBlockTemplateResultAux models the coinbaseaux field of the
@@ -140,8 +140,7 @@ type GetBlockTemplateResult struct {
 	CurTime              int64                      `json:"curTime"`
 	Height               uint64                     `json:"height"`
 	ParentHashes         []string                   `json:"parentHashes"`
-	SigOpLimit           int64                      `json:"sigOpLimit,omitempty"`
-	SizeLimit            int64                      `json:"sizeLimit,omitempty"`
+	MassLimit            int64                      `json:"massLimit,omitempty"`
 	Transactions         []GetBlockTemplateResultTx `json:"transactions"`
 	AcceptedIDMerkleRoot string                     `json:"acceptedIdMerkleRoot"`
 	UTXOCommitment       string                     `json:"utxoCommitment"`
@@ -500,4 +499,29 @@ type TxRawDecodeResult struct {
 type ValidateAddressResult struct {
 	IsValid bool   `json:"isValid"`
 	Address string `json:"address,omitempty"`
+}
+
+// GetBestBlockResult models the data from the getbestblock command.
+type GetBestBlockResult struct {
+	Hash   string `json:"hash"`
+	Height uint64 `json:"height"`
+}
+
+// ChainBlock models a block that is part of the selected parent chain.
+type ChainBlock struct {
+	Hash           string          `json:"hash"`
+	AcceptedBlocks []AcceptedBlock `json:"acceptedBlocks"`
+}
+
+// AcceptedBlock models a block that is included in the blues of a selected
+// chain block.
+type AcceptedBlock struct {
+	Hash          string   `json:"hash"`
+	AcceptedTxIds []string `json:"acceptedTxIds"`
+}
+
+// GetChainFromBlockResult models the data from the getChainFromBlock command.
+type GetChainFromBlockResult struct {
+	SelectedParentChain []ChainBlock            `json:"selectedParentChain"`
+	Blocks              []GetBlockVerboseResult `json:"blocks"`
 }

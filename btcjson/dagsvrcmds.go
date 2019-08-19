@@ -222,10 +222,10 @@ type TemplateRequest struct {
 	// Optional long polling.
 	LongPollID string `json:"longPollId,omitempty"`
 
-	// Optional template tweaking.  SigOpLimit and SizeLimit can be int64
+	// Optional template tweaking.  SigOpLimit and MassLimit can be int64
 	// or bool.
 	SigOpLimit interface{} `json:"sigOpLimit,omitempty"`
-	SizeLimit  interface{} `json:"sizeLimit,omitempty"`
+	MassLimit  interface{} `json:"massLimit,omitempty"`
 	MaxVersion uint32      `json:"maxVersion,omitempty"`
 
 	// Basic pool extension from BIP 0023.
@@ -257,7 +257,7 @@ func convertTemplateRequestField(fieldName string, iface interface{}) (interface
 }
 
 // UnmarshalJSON provides a custom Unmarshal method for TemplateRequest.  This
-// is necessary because the SigOpLimit and SizeLimit fields can only be specific
+// is necessary because the SigOpLimit and MassLimit fields can only be specific
 // types.
 func (t *TemplateRequest) UnmarshalJSON(data []byte) error {
 	type templateRequest TemplateRequest
@@ -274,12 +274,12 @@ func (t *TemplateRequest) UnmarshalJSON(data []byte) error {
 	}
 	request.SigOpLimit = val
 
-	// The SizeLimit field can only be nil, bool, or int64.
-	val, err = convertTemplateRequestField("sizeLimit", request.SizeLimit)
+	// The MassLimit field can only be nil, bool, or int64.
+	val, err = convertTemplateRequestField("massLimit", request.MassLimit)
 	if err != nil {
 		return err
 	}
-	request.SizeLimit = val
+	request.MassLimit = val
 
 	return nil
 }
@@ -328,6 +328,21 @@ func NewGetCFilterHeaderCmd(hash string,
 	return &GetCFilterHeaderCmd{
 		Hash:       hash,
 		FilterType: filterType,
+	}
+}
+
+// GetChainFromBlockCmd defines the getChainFromBlock JSON-RPC command.
+type GetChainFromBlockCmd struct {
+	StartHash     *string `json:"startHash"`
+	IncludeBlocks *bool   `json:"includeBlocks"`
+}
+
+// NewGetChainFromBlockCmd returns a new instance which can be used to issue a
+// GetChainFromBlock JSON-RPC command.
+func NewGetChainFromBlockCmd(startHash *string, includeBlocks *bool) *GetChainFromBlockCmd {
+	return &GetChainFromBlockCmd{
+		StartHash:     startHash,
+		IncludeBlocks: includeBlocks,
 	}
 }
 
@@ -789,6 +804,7 @@ func init() {
 	MustRegisterCmd("getBlockTemplate", (*GetBlockTemplateCmd)(nil), flags)
 	MustRegisterCmd("getCFilter", (*GetCFilterCmd)(nil), flags)
 	MustRegisterCmd("getCFilterHeader", (*GetCFilterHeaderCmd)(nil), flags)
+	MustRegisterCmd("getChainFromBlock", (*GetChainFromBlockCmd)(nil), flags)
 	MustRegisterCmd("getDagTips", (*GetDAGTipsCmd)(nil), flags)
 	MustRegisterCmd("getConnectionCount", (*GetConnectionCountCmd)(nil), flags)
 	MustRegisterCmd("getDifficulty", (*GetDifficultyCmd)(nil), flags)
