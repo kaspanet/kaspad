@@ -1635,7 +1635,7 @@ func (dag *BlockDAG) getBlueBlocksBetween(startHash, stopHash *daghash.Hash, max
 
 	// In order to get no more then maxEntries of blue blocks from
 	// the future of the start node (including itself), we iterate
-	// the selected parent chain of the stopNode and adds the blues
+	// the selected parent chain of the stopNode and add the blues
 	// each node (including the stopNode itself). This is why the
 	// number of returned blocks will be
 	// stopNode.blueScore-startNode.blueScore+1.
