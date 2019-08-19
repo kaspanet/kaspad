@@ -86,7 +86,7 @@ func (dag *BlockDAG) blockLocator(startNode, stopNode *blockNode) BlockLocator {
 	// block locator.  See the description of the algorithm for how these
 	// numbers are derived.
 
-	// Requested hash itself + stopNode.hash.
+	// startNode.hash + stopNode.hash.
 	// Then floor(log2(startNode.chainHeight-stopNode.chainHeight)) entries for the skip portion.
 	maxEntries := 2 + util.FastLog2Floor(startNode.chainHeight-stopNode.chainHeight)
 	locator := make(BlockLocator, 0, maxEntries)
@@ -102,13 +102,13 @@ func (dag *BlockDAG) blockLocator(startNode, stopNode *blockNode) BlockLocator {
 
 		// Calculate chainHeight of previous node to include ensuring the
 		// final node is stopNode.
-		chainHeight := node.chainHeight - step
-		if chainHeight < stopNode.chainHeight {
-			chainHeight = stopNode.chainHeight
+		nextChainHeight := node.chainHeight - step
+		if nextChainHeight < stopNode.chainHeight {
+			nextChainHeight = stopNode.chainHeight
 		}
 
 		// walk backwards through the nodes to the correct ancestor.
-		node = node.SelectedAncestor(chainHeight)
+		node = node.SelectedAncestor(nextChainHeight)
 
 		// Double the distance between included hashes.
 		step *= 2
