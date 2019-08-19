@@ -75,7 +75,7 @@ func TestDAGSvrWsCmds(t *testing.T) {
 			unmarshalled: &btcjson.NotifyChainChangesCmd{},
 		},
 		{
-			name: "stopNotifyBlocks",
+			name: "stopNotifyChainChanges",
 			newCmd: func() (interface{}, error) {
 				return btcjson.NewCmd("stopNotifyChainChanges")
 			},
