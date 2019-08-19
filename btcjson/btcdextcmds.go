@@ -92,14 +92,14 @@ func NewGetCurrentNetCmd() *GetCurrentNetCmd {
 
 // GetTopHeadersCmd defined the getTopHeaders JSON-RPC command.
 type GetTopHeadersCmd struct {
-	HashStart *string `json:"hashStart"`
+	StartHash *string `json:"startHash"`
 }
 
 // NewGetTopHeadersCmd returns a new instance which can be used to issue a
 // getTopHeaders JSON-RPC command.
 func NewGetTopHeadersCmd(startHash *string) *GetTopHeadersCmd {
 	return &GetTopHeadersCmd{
-		HashStart: startHash,
+		StartHash: startHash,
 	}
 }
 

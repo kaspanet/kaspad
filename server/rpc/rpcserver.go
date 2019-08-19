@@ -2351,11 +2351,11 @@ func handleGetTopHeaders(s *Server, cmd interface{}, closeChan <-chan struct{}) 
 	c := cmd.(*btcjson.GetTopHeadersCmd)
 
 	var startHash *daghash.Hash
-	if c.HashStart != nil {
+	if c.StartHash != nil {
 		startHash = &daghash.Hash{}
-		err := daghash.Decode(startHash, *c.HashStart)
+		err := daghash.Decode(startHash, *c.StartHash)
 		if err != nil {
-			return nil, rpcDecodeHexError(*c.HashStart)
+			return nil, rpcDecodeHexError(*c.StartHash)
 		}
 	}
 	headers, err := s.cfg.DAG.GetTopHeaders(startHash)

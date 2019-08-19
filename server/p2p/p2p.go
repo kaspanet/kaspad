@@ -716,12 +716,12 @@ func (sp *Peer) OnBlockLocator(_ *peer.Peer, msg *wire.MsgBlockLocator) {
 	//
 	// This mirrors the behavior in the reference implementation.
 	dag := sp.server.DAG
-	hashStart, hashStop := dag.FindNextLocatorBoundaries(msg.BlockLocatorHashes)
-	if hashStart != nil {
-		sp.PushGetBlockLocatorMsg(hashStart, hashStop)
+	startHash, stopHash := dag.FindNextLocatorBoundaries(msg.BlockLocatorHashes)
+	if startHash != nil {
+		sp.PushGetBlockLocatorMsg(startHash, stopHash)
 		return
 	}
-	err := sp.server.SyncManager.PushGetBlocksOrHeaders(sp.Peer, hashStop)
+	err := sp.server.SyncManager.PushGetBlocksOrHeaders(sp.Peer, stopHash)
 	if err != nil {
 		peerLog.Errorf("Failed pushing get blocks message for peer %s: %s",
 			sp, err)

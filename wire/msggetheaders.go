@@ -64,7 +64,7 @@ func (msg *MsgGetHeaders) Command() string {
 // MaxPayloadLength returns the maximum length the payload can be for the
 // receiver.  This is part of the Message interface implementation.
 func (msg *MsgGetHeaders) MaxPayloadLength(pver uint32) uint32 {
-	// start hash + hash stop.
+	// start hash + stop hash.
 	return 2 * daghash.HashSize
 }
 

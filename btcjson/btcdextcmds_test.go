@@ -195,7 +195,7 @@ func TestBtcdExtCmds(t *testing.T) {
 			},
 			marshalled: `{"jsonrpc":"1.0","method":"getTopHeaders","params":["000000000000000000ba33b33e1fad70b69e234fc24414dd47113bff38f523f7"],"id":1}`,
 			unmarshalled: &btcjson.GetTopHeadersCmd{
-				HashStart: btcjson.String("000000000000000000ba33b33e1fad70b69e234fc24414dd47113bff38f523f7"),
+				StartHash: btcjson.String("000000000000000000ba33b33e1fad70b69e234fc24414dd47113bff38f523f7"),
 			},
 		},
 		{

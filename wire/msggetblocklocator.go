@@ -57,9 +57,9 @@ func (msg *MsgGetBlockLocator) MaxPayloadLength(pver uint32) uint32 {
 // NewMsgGetBlockLocator returns a new getblklocatr message that conforms to the
 // Message interface using the passed parameters and defaults for the remaining
 // fields.
-func NewMsgGetBlockLocator(hashStart, hashStop *daghash.Hash) *MsgGetBlockLocator {
+func NewMsgGetBlockLocator(startHash, stopHash *daghash.Hash) *MsgGetBlockLocator {
 	return &MsgGetBlockLocator{
-		StartHash: hashStart,
-		StopHash:  hashStop,
+		StartHash: startHash,
+		StopHash:  stopHash,
 	}
 }

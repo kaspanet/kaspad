@@ -15,20 +15,20 @@ func TestGetBlockLocator(t *testing.T) {
 	pver := ProtocolVersion
 
 	hashStr := "000000000002e7ad7b9eef9479e4aabc65cb831269cc20d2632c13684406dee0"
-	hashStart, err := daghash.NewHashFromStr(hashStr)
+	startHash, err := daghash.NewHashFromStr(hashStr)
 	if err != nil {
 		t.Errorf("NewHashFromStr: %v", err)
 	}
 
 	// Ensure the command is expected value.
 	wantCmd := "getlocator"
-	msg := NewMsgGetBlockLocator(hashStart, &daghash.ZeroHash)
+	msg := NewMsgGetBlockLocator(startHash, &daghash.ZeroHash)
 	if cmd := msg.Command(); cmd != wantCmd {
 		t.Errorf("NewMsgGetBlockLocator: wrong command - got %v want %v",
 			cmd, wantCmd)
 	}
 
-	// Ensure max payload is hash start (32 bytes) + hash stop (32 bytes)..
+	// Ensure max payload is start hash (32 bytes) + stop hash (32 bytes)..
 	wantPayload := uint32(64)
 	maxPayload := msg.MaxPayloadLength(pver)
 	if maxPayload != wantPayload {
@@ -41,41 +41,41 @@ func TestGetBlockLocator(t *testing.T) {
 // TestGetBlockLocatorWire tests the MsgGetBlockLocator wire encode and decode.
 func TestGetBlockLocatorWire(t *testing.T) {
 	hashStr := "2710f40c87ec93d010a6fd95f42c59a2cbacc60b18cf6b7957535"
-	hashStart, err := daghash.NewHashFromStr(hashStr)
+	startHash, err := daghash.NewHashFromStr(hashStr)
 	if err != nil {
 		t.Errorf("NewHashFromStr: %v", err)
 	}
 
 	hashStr = "3ba27aa200b1cecaad478d2b00432346c3f1f3986da1afd33e506"
-	hashStop, err := daghash.NewHashFromStr(hashStr)
+	stopHash, err := daghash.NewHashFromStr(hashStr)
 	if err != nil {
 		t.Errorf("NewHashFromStr: %v", err)
 	}
 
 	// MsgGetBlockLocator message with no block locators or stop hash.
-	noHashStartAndStopHash := NewMsgGetBlockLocator(&daghash.ZeroHash, &daghash.ZeroHash)
-	noHashStartAndStopHashEncoded := []byte{
+	noStartAndStopHash := NewMsgGetBlockLocator(&daghash.ZeroHash, &daghash.ZeroHash)
+	noStartAndStopHashEncoded := []byte{
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Hash start
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Start hash
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Hash stop
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Stop hash
 	}
 
 	// MsgGetBlockLocator message with multiple block locators and a stop hash.
-	withHashStartAndStopHash := NewMsgGetBlockLocator(hashStart, hashStop)
-	withHashStartAndStopHashEncoded := []byte{
+	withStartAndStopHash := NewMsgGetBlockLocator(startHash, stopHash)
+	withStartAndStopHashEncoded := []byte{
 		0x35, 0x75, 0x95, 0xb7, 0xf6, 0x8c, 0xb1, 0x60,
 		0xcc, 0xba, 0x2c, 0x9a, 0xc5, 0x42, 0x5f, 0xd9,
 		0x6f, 0x0a, 0x01, 0x3d, 0xc9, 0x7e, 0xc8, 0x40,
-		0x0f, 0x71, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, // Hash start
+		0x0f, 0x71, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, // Start hash
 		0x06, 0xe5, 0x33, 0xfd, 0x1a, 0xda, 0x86, 0x39,
 		0x1f, 0x3f, 0x6c, 0x34, 0x32, 0x04, 0xb0, 0xd2,
 		0x78, 0xd4, 0xaa, 0xec, 0x1c, 0x0b, 0x20, 0xaa,
-		0x27, 0xba, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, // Hash stop
+		0x27, 0xba, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, // Stop hash
 	}
 
 	tests := []struct {
@@ -84,19 +84,19 @@ func TestGetBlockLocatorWire(t *testing.T) {
 		buf  []byte              // Wire encoding
 		pver uint32              // Protocol version for wire encoding
 	}{
-		// Message with no hash start and hash stop.
+		// Message with no start hash and stop hash.
 		{
-			noHashStartAndStopHash,
-			noHashStartAndStopHash,
-			noHashStartAndStopHashEncoded,
+			noStartAndStopHash,
+			noStartAndStopHash,
+			noStartAndStopHashEncoded,
 			ProtocolVersion,
 		},
 
-		// Message with hash start and hash stop.
+		// Message with start hash and stop hash.
 		{
-			withHashStartAndStopHash,
-			withHashStartAndStopHash,
-			withHashStartAndStopHashEncoded,
+			withStartAndStopHash,
+			withStartAndStopHash,
+			withStartAndStopHashEncoded,
 			ProtocolVersion,
 		},
 	}
@@ -139,28 +139,28 @@ func TestGetBlockLocatorWireErrors(t *testing.T) {
 	pver := ProtocolVersion
 
 	hashStr := "2710f40c87ec93d010a6fd95f42c59a2cbacc60b18cf6b7957535"
-	hashStart, err := daghash.NewHashFromStr(hashStr)
+	startHash, err := daghash.NewHashFromStr(hashStr)
 	if err != nil {
 		t.Errorf("NewHashFromStr: %v", err)
 	}
 
 	hashStr = "3ba27aa200b1cecaad478d2b00432346c3f1f3986da1afd33e506"
-	hashStop, err := daghash.NewHashFromStr(hashStr)
+	stopHash, err := daghash.NewHashFromStr(hashStr)
 	if err != nil {
 		t.Errorf("NewHashFromStr: %v", err)
 	}
 
 	// MsgGetBlockLocator message with multiple block locators and a stop hash.
-	baseGetBlockLocator := NewMsgGetBlockLocator(hashStart, hashStop)
+	baseGetBlockLocator := NewMsgGetBlockLocator(startHash, stopHash)
 	baseGetBlockLocatorEncoded := []byte{
 		0x35, 0x75, 0x95, 0xb7, 0xf6, 0x8c, 0xb1, 0x60,
 		0xcc, 0xba, 0x2c, 0x9a, 0xc5, 0x42, 0x5f, 0xd9,
 		0x6f, 0x0a, 0x01, 0x3d, 0xc9, 0x7e, 0xc8, 0x40,
-		0x0f, 0x71, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, // Hash start
+		0x0f, 0x71, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, // Start hash
 		0x06, 0xe5, 0x33, 0xfd, 0x1a, 0xda, 0x86, 0x39,
 		0x1f, 0x3f, 0x6c, 0x34, 0x32, 0x04, 0xb0, 0xd2,
 		0x78, 0xd4, 0xaa, 0xec, 0x1c, 0x0b, 0x20, 0xaa,
-		0x27, 0xba, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, // Hash stop
+		0x27, 0xba, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, // Stop hash
 	}
 
 	tests := []struct {

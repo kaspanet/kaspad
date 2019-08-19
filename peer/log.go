@@ -176,7 +176,7 @@ func messageSummary(msg wire.Message) string {
 			msg.StopHash)
 
 	case *wire.MsgGetBlockLocator:
-		return fmt.Sprintf("hash start %s, hash stop %s", msg.StartHash,
+		return fmt.Sprintf("start hash %s, stop hash %s", msg.StartHash,
 			msg.StopHash)
 
 	case *wire.MsgBlockLocator:
