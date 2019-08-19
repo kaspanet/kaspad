@@ -59,7 +59,7 @@ var (
 
 	// LogRotator is one of the logging outputs.  It should be closed on
 	// application shutdown.
-	LogRotator *rotator.Rotator
+	LogRotator    *rotator.Rotator
 	ErrLogRotator *rotator.Rotator
 
 	adxrLog = backendLog.Logger("ADXR")
@@ -154,7 +154,7 @@ func InitLogRotators(logFile, errLogFile string) {
 	ErrLogRotator = initLogRotator(errLogFile)
 }
 
-func initLogRotator(logFile string) *rotator.Rotator{
+func initLogRotator(logFile string) *rotator.Rotator {
 	logDir, _ := filepath.Split(logFile)
 	err := os.MkdirAll(logDir, 0700)
 	if err != nil {

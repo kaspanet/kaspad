@@ -10,9 +10,9 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/daglabs/btcd/logs"
 	"github.com/daglabs/btcd/database"
 	"github.com/daglabs/btcd/logger"
+	"github.com/daglabs/btcd/logs"
 	"github.com/daglabs/btcd/util/panics"
 	flags "github.com/jessevdk/go-flags"
 )

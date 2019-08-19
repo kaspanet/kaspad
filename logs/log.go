@@ -133,19 +133,19 @@ func NewBackend(writers []*BackendWriter, opts ...BackendOption) *Backend {
 	return b
 }
 
-type BackendWriter struct{
+type BackendWriter struct {
 	io.Writer
 	logLevel Level
 }
 
-func NewAllLevelsBackendWriter(w io.Writer) *BackendWriter{
+func NewAllLevelsBackendWriter(w io.Writer) *BackendWriter {
 	return &BackendWriter{
 		Writer:   w,
 		logLevel: 0,
 	}
 }
 
-func NewErrorBackendWriter(w io.Writer) *BackendWriter{
+func NewErrorBackendWriter(w io.Writer) *BackendWriter {
 	return &BackendWriter{
 		Writer:   w,
 		logLevel: LevelWarn,
@@ -156,9 +156,9 @@ func NewErrorBackendWriter(w io.Writer) *BackendWriter{
 // the backend's Writer.  Backend provides atomic writes to the Writer from all
 // subsystems.
 type Backend struct {
-	writers      []*BackendWriter
-	mu          sync.Mutex // ensures atomic writes
-	flag        uint32
+	writers []*BackendWriter
+	mu      sync.Mutex // ensures atomic writes
+	flag    uint32
 }
 
 // BackendOption is a function used to modify the behavior of a Backend.
@@ -327,8 +327,8 @@ func (b *Backend) printf(lvl Level, tag string, format string, args ...interface
 
 func (b *Backend) write(lvl Level, bytesToWrite []byte) {
 	b.mu.Lock()
-	for _, w := range b.writers{
-		if lvl >= w.logLevel{
+	for _, w := range b.writers {
+		if lvl >= w.logLevel {
 			w.Write(bytesToWrite)
 		}
 	}

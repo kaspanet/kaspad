@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/daglabs/btcd/logs"
 	"github.com/daglabs/btcd/logger"
+	"github.com/daglabs/btcd/logs"
 	"github.com/daglabs/btcd/txscript"
 	"github.com/daglabs/btcd/util/panics"
 	"github.com/daglabs/btcd/wire"

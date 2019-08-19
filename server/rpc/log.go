@@ -5,8 +5,8 @@
 package rpc
 
 import (
-	"github.com/daglabs/btcd/logs"
 	"github.com/daglabs/btcd/logger"
+	"github.com/daglabs/btcd/logs"
 	"github.com/daglabs/btcd/util/panics"
 )
 

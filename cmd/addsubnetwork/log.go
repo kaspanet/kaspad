@@ -15,5 +15,5 @@ var (
 	backendLog = logs.NewBackend([]*logs.BackendWriter{
 		logs.NewAllLevelsBackendWriter(logWriter{}),
 	})
-	log        = backendLog.Logger("ASUB")
+	log = backendLog.Logger("ASUB")
 )

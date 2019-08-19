@@ -5,8 +5,8 @@
 package config
 
 import (
-	"github.com/daglabs/btcd/logs"
 	"github.com/daglabs/btcd/logger"
+	"github.com/daglabs/btcd/logs"
 )
 
 // log is a logger that is initialized with no output filters.  This

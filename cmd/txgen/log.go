@@ -37,9 +37,9 @@ var (
 		logs.NewErrorBackendWriter(errLogWriter{}),
 	})
 	ErrLogRotator, LogRotator *rotator.Rotator
-	log        = backendLog.Logger("TXGN")
-	spawn      = panics.GoroutineWrapperFunc(log)
-	initiated  = false
+	log                       = backendLog.Logger("TXGN")
+	spawn                     = panics.GoroutineWrapperFunc(log)
+	initiated                 = false
 )
 
 func initLogRotator(logFile string) *rotator.Rotator {
