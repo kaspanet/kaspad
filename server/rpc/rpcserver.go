@@ -2384,24 +2384,21 @@ func handleGetTopHeaders(s *Server, cmd interface{}, closeChan <-chan struct{}) 
 func handleGetHeaders(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
 	c := cmd.(*btcjson.GetHeadersCmd)
 
-	// Fetch the requested headers from chain while respecting the provided
-	// block locators and stop hash.
-	blockLocators := make([]*daghash.Hash, len(c.BlockLocators))
-	for i := range c.BlockLocators {
-		blockLocator, err := daghash.NewHashFromStr(c.BlockLocators[i])
-		if err != nil {
-			return nil, rpcDecodeHexError(c.BlockLocators[i])
-		}
-		blockLocators[i] = blockLocator
-	}
-	var stopHash daghash.Hash
-	if c.StopHash != "" {
-		err := daghash.Decode(&stopHash, c.StopHash)
+	startHash := &daghash.ZeroHash
+	if c.StartHash != "" {
+		err := daghash.Decode(startHash, c.StartHash)
 		if err != nil {
 			return nil, rpcDecodeHexError(c.StopHash)
 		}
 	}
-	headers := s.cfg.SyncMgr.LocateHeaders(blockLocators, &stopHash)
+	stopHash := &daghash.ZeroHash
+	if c.StopHash != "" {
+		err := daghash.Decode(stopHash, c.StopHash)
+		if err != nil {
+			return nil, rpcDecodeHexError(c.StopHash)
+		}
+	}
+	headers := s.cfg.SyncMgr.GetBlueBlocksHeadersBetween(startHash, stopHash)
 
 	// Return the serialized block headers as hex-encoded strings.
 	hexBlockHeaders := make([]string, len(headers))
@@ -4239,11 +4236,11 @@ type rpcserverSyncManager interface {
 	// used to sync from or 0 if there is none.
 	SyncPeerID() int32
 
-	// LocateHeaders returns the headers of the blocks after the first known
+	// GetBlueBlocksHeadersBetween returns the headers of the blocks after the first known
 	// block in the provided locators until the provided stop hash or the
 	// current tip is reached, up to a max of wire.MaxBlockHeadersPerMsg
 	// hashes.
-	LocateHeaders(locators []*daghash.Hash, stopHash *daghash.Hash) []*wire.BlockHeader
+	GetBlueBlocksHeadersBetween(startHash, stopHash *daghash.Hash) []*wire.BlockHeader
 }
 
 // rpcserverConfig is a descriptor containing the RPC server configuration.

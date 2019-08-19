@@ -14,26 +14,37 @@ import (
 	"github.com/davecgh/go-spew/spew"
 )
 
-// TestGetHeaders tests the MsgGetHeader API.
-func TestGetHeaders(t *testing.T) {
+// TestGetBlockInvs tests the MsgGetBlockInvs API.
+func TestGetBlockInvs(t *testing.T) {
 	pver := ProtocolVersion
 
-	// Block 99500 hash.
 	hashStr := "000000000002e7ad7b9eef9479e4aabc65cb831269cc20d2632c13684406dee0"
 	startHash, err := daghash.NewHashFromStr(hashStr)
 	if err != nil {
 		t.Errorf("NewHashFromStr: %v", err)
 	}
 
+	hashStr = "3ba27aa200b1cecaad478d2b00432346c3f1f3986da1afd33e506"
+	stopHash, err := daghash.NewHashFromStr(hashStr)
+	if err != nil {
+		t.Errorf("NewHashFromStr: %v", err)
+	}
+
+	// Ensure we get the same data back out.
+	msg := NewMsgGetBlockInvs(startHash, stopHash)
+	if !msg.StopHash.IsEqual(stopHash) {
+		t.Errorf("NewMsgGetBlockInvs: wrong stop hash - got %v, want %v",
+			msg.StopHash, stopHash)
+	}
+
 	// Ensure the command is expected value.
-	wantCmd := "getheaders"
-	msg := NewMsgGetHeaders(startHash, &daghash.ZeroHash)
+	wantCmd := "getblockinvs"
 	if cmd := msg.Command(); cmd != wantCmd {
-		t.Errorf("NewMsgGetHeaders: wrong command - got %v want %v",
+		t.Errorf("NewMsgGetBlockInvs: wrong command - got %v want %v",
 			cmd, wantCmd)
 	}
 
-	// Ensure max payload is start hash (32 bytes) + stop hash (32 bytes)..
+	// Ensure max payload is start hash (32 bytes) + stop hash (32 bytes).
 	wantPayload := uint32(64)
 	maxPayload := msg.MaxPayloadLength(pver)
 	if maxPayload != wantPayload {
@@ -43,8 +54,9 @@ func TestGetHeaders(t *testing.T) {
 	}
 }
 
-// TestGetHeadersWire tests the MsgGetHeaders wire encode and decode.
-func TestGetHeadersWire(t *testing.T) {
+// TestGetBlockInvsWire tests the MsgGetBlockInvs wire encode and decode for various
+// numbers of block locator hashes and protocol versions.
+func TestGetBlockInvsWire(t *testing.T) {
 	hashStr := "2710f40c87ec93d010a6fd95f42c59a2cbacc60b18cf6b7957535"
 	startHash, err := daghash.NewHashFromStr(hashStr)
 	if err != nil {
@@ -57,9 +69,9 @@ func TestGetHeadersWire(t *testing.T) {
 		t.Errorf("NewHashFromStr: %v", err)
 	}
 
-	// MsgGetHeaders message with no block locators or stop hash.
-	noStartAndStopHash := NewMsgGetHeaders(&daghash.ZeroHash, &daghash.ZeroHash)
-	noStartAndStopHashEncoded := []byte{
+	// MsgGetBlocks message with no start or stop hash.
+	noStartOrStop := NewMsgGetBlockInvs(&daghash.Hash{}, &daghash.Hash{})
+	noStartOrStopEncoded := []byte{
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -70,8 +82,8 @@ func TestGetHeadersWire(t *testing.T) {
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Stop hash
 	}
 
-	// MsgGetHeaders message with multiple block locators and a stop hash.
-	withStartAndStopHash := NewMsgGetHeaders(startHash, stopHash)
+	// MsgGetBlockInvs message with a start hash and a stop hash.
+	withStartAndStopHash := NewMsgGetBlockInvs(startHash, stopHash)
 	withStartAndStopHashEncoded := []byte{
 		0x35, 0x75, 0x95, 0xb7, 0xf6, 0x8c, 0xb1, 0x60,
 		0xcc, 0xba, 0x2c, 0x9a, 0xc5, 0x42, 0x5f, 0xd9,
@@ -84,20 +96,20 @@ func TestGetHeadersWire(t *testing.T) {
 	}
 
 	tests := []struct {
-		in   *MsgGetHeaders // Message to encode
-		out  *MsgGetHeaders // Expected decoded message
-		buf  []byte         // Wire encoding
-		pver uint32         // Protocol version for wire encoding
+		in   *MsgGetBlockInvs // Message to encode
+		out  *MsgGetBlockInvs // Expected decoded message
+		buf  []byte           // Wire encoding
+		pver uint32           // Protocol version for wire encoding
 	}{
-		// Message with no start hash and stop hash.
+		// Latest protocol version with no block locators.
 		{
-			noStartAndStopHash,
-			noStartAndStopHash,
-			noStartAndStopHashEncoded,
+			noStartOrStop,
+			noStartOrStop,
+			noStartOrStopEncoded,
 			ProtocolVersion,
 		},
 
-		// Message with start hash and stop hash.
+		// Latest protocol version with multiple block locators.
 		{
 			withStartAndStopHash,
 			withStartAndStopHash,
@@ -122,7 +134,7 @@ func TestGetHeadersWire(t *testing.T) {
 		}
 
 		// Decode the message from wire format.
-		var msg MsgGetHeaders
+		var msg MsgGetBlockInvs
 		rbuf := bytes.NewReader(test.buf)
 		err = msg.BtcDecode(rbuf, test.pver)
 		if err != nil {
@@ -137,9 +149,9 @@ func TestGetHeadersWire(t *testing.T) {
 	}
 }
 
-// TestGetHeadersWireErrors performs negative tests against wire encode and
-// decode of MsgGetHeaders to confirm error paths work correctly.
-func TestGetHeadersWireErrors(t *testing.T) {
+// TestGetBlockInvsWireErrors performs negative tests against wire encode and
+// decode of MsgGetBlockInvs to confirm error paths work correctly.
+func TestGetBlockInvsWireErrors(t *testing.T) {
 	// Set protocol inside getheaders message.
 	pver := ProtocolVersion
 
@@ -155,9 +167,9 @@ func TestGetHeadersWireErrors(t *testing.T) {
 		t.Errorf("NewHashFromStr: %v", err)
 	}
 
-	// MsgGetHeaders message with multiple block locators and a stop hash.
-	baseGetHeaders := NewMsgGetHeaders(startHash, stopHash)
-	baseGetHeadersEncoded := []byte{
+	// MsgGetBlockInvs message with multiple block locators and a stop hash.
+	baseGetBlocks := NewMsgGetBlockInvs(startHash, stopHash)
+	baseGetBlocksEncoded := []byte{
 		0x35, 0x75, 0x95, 0xb7, 0xf6, 0x8c, 0xb1, 0x60,
 		0xcc, 0xba, 0x2c, 0x9a, 0xc5, 0x42, 0x5f, 0xd9,
 		0x6f, 0x0a, 0x01, 0x3d, 0xc9, 0x7e, 0xc8, 0x40,
@@ -169,17 +181,17 @@ func TestGetHeadersWireErrors(t *testing.T) {
 	}
 
 	tests := []struct {
-		in       *MsgGetHeaders // Value to encode
-		buf      []byte         // Wire encoding
-		pver     uint32         // Protocol version for wire encoding
-		max      int            // Max size of fixed buffer to induce errors
-		writeErr error          // Expected write error
-		readErr  error          // Expected read error
+		in       *MsgGetBlockInvs // Value to encode
+		buf      []byte           // Wire encoding
+		pver     uint32           // Protocol version for wire encoding
+		max      int              // Max size of fixed buffer to induce errors
+		writeErr error            // Expected write error
+		readErr  error            // Expected read error
 	}{
 		// Force error in start hash.
-		{baseGetHeaders, baseGetHeadersEncoded, pver, 0, io.ErrShortWrite, io.EOF},
+		{baseGetBlocks, baseGetBlocksEncoded, pver, 0, io.ErrShortWrite, io.EOF},
 		// Force error in stop hash.
-		{baseGetHeaders, baseGetHeadersEncoded, pver, 32, io.ErrShortWrite, io.EOF},
+		{baseGetBlocks, baseGetBlocksEncoded, pver, 32, io.ErrShortWrite, io.EOF},
 	}
 
 	t.Logf("Running %d tests", len(tests))
@@ -204,7 +216,7 @@ func TestGetHeadersWireErrors(t *testing.T) {
 		}
 
 		// Decode from wire format.
-		var msg MsgGetHeaders
+		var msg MsgGetBlockInvs
 		r := newFixedReader(test.max, test.buf)
 		err = msg.BtcDecode(r, test.pver)
 		if reflect.TypeOf(err) != reflect.TypeOf(test.readErr) {

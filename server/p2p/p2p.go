@@ -682,21 +682,80 @@ func (sp *Peer) OnGetData(_ *peer.Peer, msg *wire.MsgGetData) {
 	}
 }
 
+// OnGetBlockLocator is invoked when a peer receives a getlocator bitcoin
+// message.
+func (sp *Peer) OnGetBlockLocator(_ *peer.Peer, msg *wire.MsgGetBlockLocator) {
+	locator := sp.server.DAG.BlockLocatorFromHashes(msg.StartHash, msg.StopHash)
+
+	if len(locator) == 0 {
+		peerLog.Infof("Couldn't build a block locator between blocks %s and %s"+
+			" that was requested from peer %s",
+			sp)
+		return
+	}
+	err := sp.PushBlockLocatorMsg(locator)
+	if err != nil {
+		peerLog.Errorf("Failed to send block locator message to peer %s: %s",
+			sp, err)
+		return
+	}
+}
+
+// OnBlockLocator is invoked when a peer receives a locator bitcoin
+// message.
+func (sp *Peer) OnBlockLocator(_ *peer.Peer, msg *wire.MsgBlockLocator) {
+	// Find the highest known shared block between the peers, and asks
+	// the block and its future from the peer. If the block is not
+	// found, create a lower resolution block locator and send it to
+	// the peer in order to find it in the next iteration.
+	dag := sp.server.DAG
+	if len(msg.BlockLocatorHashes) == 0 {
+		peerLog.Warnf("Got empty block locator from peer %s",
+			sp)
+		return
+	}
+	// If the first hash of the block locator is known, it means we found
+	// the highest shared block.
+	firstHash := msg.BlockLocatorHashes[0]
+	exists, err := dag.BlockExists(firstHash)
+	if err != nil {
+		peerLog.Errorf("Error checking if first hash in the block"+
+			" locator (%s) exists in the dag: %s",
+			msg.BlockLocatorHashes[0], sp, err)
+		return
+	}
+	if exists {
+		err := sp.server.SyncManager.PushGetBlockInvsOrHeaders(sp.Peer, firstHash)
+		if err != nil {
+			peerLog.Errorf("Failed pushing get blocks message for peer %s: %s",
+				sp, err)
+			return
+		}
+		return
+	}
+	startHash, stopHash := dag.FindNextLocatorBoundaries(msg.BlockLocatorHashes)
+	if startHash == nil {
+		panic("Couldn't find any unknown hashes in the block locator.")
+	}
+	sp.PushGetBlockLocatorMsg(startHash, stopHash)
+}
+
 // OnGetBlockInvs is invoked when a peer receives a getblockinvs bitcoin
 // message.
+// It finds the blue future between msg.StartHash and msg.StopHash
+// and send the invs to the requesting peer.
 func (sp *Peer) OnGetBlockInvs(_ *peer.Peer, msg *wire.MsgGetBlockInvs) {
-	// Find the most recent known block in the dag based on the block
-	// locator and fetch all of the block hashes after it until either
-	// wire.MaxBlocksPerMsg have been fetched or the provided stop hash is
-	// encountered.
-	//
-	// Use the block after the genesis block if no other blocks in the
-	// provided locator are known.  This does mean the client will start
-	// over with the genesis block if unknown block locators are provided.
-	//
-	// This mirrors the behavior in the reference implementation.
 	dag := sp.server.DAG
-	hashList := dag.LocateBlocks(msg.BlockLocatorHashes, msg.StopHash,
+	// We want to prevent a situation where the syncing peer needs
+	// to call getblocks once again, but the block we sent him
+	// won't affect his selected chain, so next time it'll try
+	// to find the highest shared chain block, it'll find the
+	// same one as before.
+	// To prevent that we use blockdag.FinalityInterval as maxHashes.
+	// This way, if one getblocks is not enough to get the peer
+	// synced, we can know for sure that its selected chain will
+	// change, so we'll have higher shared chain block.
+	hashList := dag.GetBlueBlocksHashesBetween(msg.StartHash, msg.StopHash,
 		wire.MaxInvPerMsg)
 
 	// Generate inventory message.
@@ -728,10 +787,8 @@ func (sp *Peer) OnGetHeaders(_ *peer.Peer, msg *wire.MsgGetHeaders) {
 	// Use the block after the genesis block if no other blocks in the
 	// provided locator are known.  This does mean the client will start
 	// over with the genesis block if unknown block locators are provided.
-	//
-	// This mirrors the behavior in the reference implementation.
 	dag := sp.server.DAG
-	headers := dag.LocateHeaders(msg.BlockLocatorHashes, msg.StopHash)
+	headers := dag.GetBlueBlocksHeadersBetween(msg.StartHash, msg.StopHash)
 
 	// Send found headers to the requesting peer.
 	blockHeaders := make([]*wire.BlockHeader, len(headers))
@@ -1771,26 +1828,28 @@ func disconnectPeer(peerList map[int32]*Peer, compareFunc func(*Peer) bool, when
 func newPeerConfig(sp *Peer) *peer.Config {
 	return &peer.Config{
 		Listeners: peer.MessageListeners{
-			OnVersion:      sp.OnVersion,
-			OnMemPool:      sp.OnMemPool,
-			OnTx:           sp.OnTx,
-			OnBlock:        sp.OnBlock,
-			OnInv:          sp.OnInv,
-			OnHeaders:      sp.OnHeaders,
-			OnGetData:      sp.OnGetData,
-			OnGetBlockInvs: sp.OnGetBlockInvs,
-			OnGetHeaders:   sp.OnGetHeaders,
-			OnGetCFilters:  sp.OnGetCFilters,
-			OnGetCFHeaders: sp.OnGetCFHeaders,
-			OnGetCFCheckpt: sp.OnGetCFCheckpt,
-			OnFeeFilter:    sp.OnFeeFilter,
-			OnFilterAdd:    sp.OnFilterAdd,
-			OnFilterClear:  sp.OnFilterClear,
-			OnFilterLoad:   sp.OnFilterLoad,
-			OnGetAddr:      sp.OnGetAddr,
-			OnAddr:         sp.OnAddr,
-			OnRead:         sp.OnRead,
-			OnWrite:        sp.OnWrite,
+			OnVersion:         sp.OnVersion,
+			OnMemPool:         sp.OnMemPool,
+			OnTx:              sp.OnTx,
+			OnBlock:           sp.OnBlock,
+			OnInv:             sp.OnInv,
+			OnHeaders:         sp.OnHeaders,
+			OnGetData:         sp.OnGetData,
+			OnGetBlockLocator: sp.OnGetBlockLocator,
+			OnBlockLocator:    sp.OnBlockLocator,
+			OnGetBlockInvs:    sp.OnGetBlockInvs,
+			OnGetHeaders:      sp.OnGetHeaders,
+			OnGetCFilters:     sp.OnGetCFilters,
+			OnGetCFHeaders:    sp.OnGetCFHeaders,
+			OnGetCFCheckpt:    sp.OnGetCFCheckpt,
+			OnFeeFilter:       sp.OnFeeFilter,
+			OnFilterAdd:       sp.OnFilterAdd,
+			OnFilterClear:     sp.OnFilterClear,
+			OnFilterLoad:      sp.OnFilterLoad,
+			OnGetAddr:         sp.OnGetAddr,
+			OnAddr:            sp.OnAddr,
+			OnRead:            sp.OnRead,
+			OnWrite:           sp.OnWrite,
 
 			// Note: The reference client currently bans peers that send alerts
 			// not signed with its key.  We could verify against their key, but
