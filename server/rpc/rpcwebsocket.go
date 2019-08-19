@@ -212,6 +212,24 @@ func (m *wsNotificationManager) NotifyBlockAdded(block *util.Block) {
 	}
 }
 
+// NotifyChainChanged passes changes to the selected parent chain of
+// the blockDAG to the notification manager for processing.
+func (m *wsNotificationManager) NotifyChainChanged(removedChainBlockHashes []*daghash.Hash,
+	addedChainBlockHashes []*daghash.Hash) {
+	n := &notificationChainChanged{
+		removedChainBlockHashes: removedChainBlockHashes,
+		addedChainBlocksHashes:  addedChainBlockHashes,
+	}
+	// As NotifyChainChanged will be called by the DAG manager
+	// and the RPC server may no longer be running, use a select
+	// statement to unblock enqueuing the notification once the RPC
+	// server has begun shutting down.
+	select {
+	case m.queueNotification <- n:
+	case <-m.quit:
+	}
+}
+
 // NotifyMempoolTx passes a transaction accepted by mempool to the
 // notification manager for transaction notification processing.  If
 // isNew is true, the tx is is a new transaction, rather than one
@@ -386,7 +404,7 @@ func (f *wsClientFilter) removeUnspentOutpoint(op *wire.Outpoint) {
 type notificationBlockAdded util.Block
 type notificationChainChanged struct {
 	removedChainBlockHashes []*daghash.Hash
-	addedChainBlocks        []*util.Block
+	addedChainBlocksHashes  []*daghash.Hash
 }
 type notificationTxAcceptedByMempool struct {
 	isNew bool
@@ -439,7 +457,7 @@ out:
 
 			case *notificationChainChanged:
 				m.notifyChainChanged(chainChangeNotifications,
-					n.removedChainBlockHashes, n.addedChainBlocks)
+					n.removedChainBlockHashes, n.addedChainBlocksHashes)
 
 			case *notificationTxAcceptedByMempool:
 				if n.isNew && len(txNotifications) != 0 {
@@ -538,9 +556,23 @@ func (m *wsNotificationManager) UnregisterChainChanges(wsc *wsClient) {
 // notifyChainChanged notifies websocket clients that have registered for
 // chain changes.
 func (m *wsNotificationManager) notifyChainChanged(clients map[chan struct{}]*wsClient,
-	removedChainBlockHashes []*daghash.Hash, addChainBlocks []*util.Block) {
+	removedChainBlockHashes []*daghash.Hash, addedChainBlockHashes []*daghash.Hash) {
 
-	ntfn := btcjson.NewChainChangedNtfn(removedChainBlockHashes, nil)
+	// Collect removed chain hashes.
+	removedChainHashes := make([]daghash.Hash, 0, len(removedChainBlockHashes))
+	for i, hash := range removedChainBlockHashes {
+		removedChainHashes[i] = *hash
+	}
+
+	// Collect added chain blocks.
+	addedChainBlocks, err := collectChainBlocks(m.server, addedChainBlockHashes)
+	if err != nil {
+		log.Errorf("Failed to collect chain blocks: %s", err)
+		return
+	}
+
+	// Create the notification.
+	ntfn := btcjson.NewChainChangedNtfn(removedChainHashes, addedChainBlocks)
 
 	for _, wsc := range clients {
 		// Marshal and queue notification.

@@ -7,6 +7,7 @@ package blockdag
 import (
 	"fmt"
 	"github.com/daglabs/btcd/util"
+	"github.com/daglabs/btcd/util/daghash"
 )
 
 // NotificationType represents the type of a notification message.
@@ -21,12 +22,17 @@ const (
 	// NTBlockAdded indicates the associated block was added into
 	// the blockDAG.
 	NTBlockAdded NotificationType = iota
+
+	// NTChainChanged indicates that selected parent
+	// chain had changed.
+	NTChainChanged
 )
 
 // notificationTypeStrings is a map of notification types back to their constant
 // names for pretty printing.
 var notificationTypeStrings = map[NotificationType]string{
-	NTBlockAdded: "NTBlockAdded",
+	NTBlockAdded:   "NTBlockAdded",
+	NTChainChanged: "NTChainChanged",
 }
 
 // String returns the NotificationType in human-readable form.
@@ -73,4 +79,11 @@ func (dag *BlockDAG) sendNotification(typ NotificationType, data interface{}) {
 type BlockAddedNotificationData struct {
 	Block         *util.Block
 	WasUnorphaned bool
+}
+
+// ChainChangedNotificationData defines data to be sent along with a ChainChanged
+// notification
+type ChainChangedNotificationData struct {
+	RemovedChainBlockHashes []*daghash.Hash
+	AddedChainBlockHashes   []*daghash.Hash
 }

@@ -52,14 +52,14 @@ func NewFilteredBlockAddedNtfn(chainHeight uint64, header string, subscribedTxs 
 // ChainChangedNtfn defines the chainChanged JSON-RPC
 // notification.
 type ChainChangedNtfn struct {
-	RemovedChainBlockHashes []*daghash.Hash
-	AddedChainBlocks        []*GetBlockVerboseResult
+	RemovedChainBlockHashes []daghash.Hash
+	AddedChainBlocks        []ChainBlock
 }
 
 // NewChainChangedNtfn returns a new instance which can be used to
 // issue a chainChanged JSON-RPC notification.
-func NewChainChangedNtfn(removedChainBlockHashes []*daghash.Hash,
-	addedChainBlocks []*GetBlockVerboseResult) *ChainChangedNtfn {
+func NewChainChangedNtfn(removedChainBlockHashes []daghash.Hash,
+	addedChainBlocks []ChainBlock) *ChainChangedNtfn {
 	return &ChainChangedNtfn{
 		RemovedChainBlockHashes: removedChainBlockHashes,
 		AddedChainBlocks:        addedChainBlocks,
