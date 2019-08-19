@@ -2400,7 +2400,7 @@ func handleGetHeaders(s *Server, cmd interface{}, closeChan <-chan struct{}) (in
 			return nil, rpcDecodeHexError(c.StopHash)
 		}
 	}
-	headers := s.cfg.SyncMgr.LocateHeaders(startHash, stopHash)
+	headers := s.cfg.SyncMgr.GetBlueBlocksHeadersBetween(startHash, stopHash)
 
 	// Return the serialized block headers as hex-encoded strings.
 	hexBlockHeaders := make([]string, len(headers))
@@ -4242,7 +4242,7 @@ type rpcserverSyncManager interface {
 	// block in the provided locators until the provided stop hash or the
 	// current tip is reached, up to a max of wire.MaxBlockHeadersPerMsg
 	// hashes.
-	LocateHeaders(startHash, stopHash *daghash.Hash) []*wire.BlockHeader
+	GetBlueBlocksHeadersBetween(startHash, stopHash *daghash.Hash) []*wire.BlockHeader
 }
 
 // rpcserverConfig is a descriptor containing the RPC server configuration.
