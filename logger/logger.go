@@ -143,9 +143,11 @@ var subsystemLoggers = map[string]logs.Logger{
 	SubsystemTags.UTIL: utilLog,
 }
 
-// InitLogRotators initializes the logging rotater to write logs to logFile and
-// create roll files in the same directory.  It must be called before the
-// package-global log rotater variables are used.
+// InitLogRotators initializes the logging rotaters to
+// write logs to logFile, errLogFile, and create roll
+// files in the same directory.  It must be called
+// before the package-global log rotater variables
+// are used.
 func InitLogRotators(logFile, errLogFile string) {
 	initiated = true
 	LogRotator = initLogRotator(logFile)

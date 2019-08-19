@@ -660,7 +660,7 @@ func loadConfig() (*Config, []string, error) {
 
 	// Disallow 0 and negative min tx fees.
 	if cfg.MinRelayTxFee <= 0 {
-		str := "%s: The minrelaytxfee option must greater than 0 -- parsed [%d]"
+		str := "%s: The minrelaytxfee option must be greater than 0 -- parsed [%d]"
 		err := fmt.Errorf(str, funcName, cfg.MinRelayTxFee)
 		fmt.Fprintln(os.Stderr, err)
 		fmt.Fprintln(os.Stderr, usageMessage)
