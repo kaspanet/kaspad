@@ -1747,13 +1747,13 @@ func (dag *BlockDAG) FindNextLocatorBoundaries(locator BlockLocator) (startHash,
 	return locator[nextBlockLocatorIndex], stopNode.hash
 }
 
-// locateBlocks returns the hashes of the blocks after the provided
+// getBlueBlocksHashesBetween returns the hashes of the blocks after the provided
 // start hash until the provided stop hash is reached, or up to the
 // provided max number of block hashes.
 //
 // This function MUST be called with the DAG state lock held (for reads).
-func (dag *BlockDAG) locateBlocks(startHash, stopHash *daghash.Hash, maxHashes uint64) []*daghash.Hash {
-	nodes := dag.locateBlockNodes(startHash, stopHash, maxHashes)
+func (dag *BlockDAG) getBlueBlocksHashesBetween(startHash, stopHash *daghash.Hash, maxHashes uint64) []*daghash.Hash {
+	nodes := dag.getBlueBlocksBetween(startHash, stopHash, maxHashes)
 	hashes := make([]*daghash.Hash, len(nodes))
 	for i, node := range nodes {
 		hashes[i] = node.hash
@@ -1761,7 +1761,7 @@ func (dag *BlockDAG) locateBlocks(startHash, stopHash *daghash.Hash, maxHashes u
 	return hashes
 }
 
-func (dag *BlockDAG) locateBlockNodes(startHash, stopHash *daghash.Hash, maxEntries uint64) []*blockNode {
+func (dag *BlockDAG) getBlueBlocksBetween(startHash, stopHash *daghash.Hash, maxEntries uint64) []*blockNode {
 	startNode := dag.index.LookupNode(startHash)
 	if startNode == nil {
 		return nil
@@ -1771,9 +1771,21 @@ func (dag *BlockDAG) locateBlockNodes(startHash, stopHash *daghash.Hash, maxEntr
 		stopNode = dag.selectedTip()
 	}
 
+	// In order to get no more then maxEntries of blue blocks from
+	// the future of the start node (including itself), we iterate
+	// the selected parent chain of the stopNode and adds the blues
+	// each node (including the stopNode itself). This is why the
+	// number of returned blocks will be
+	// stopNode.blueScore-startNode.blueScore+1.
+	// If stopNode.blueScore-startNode.blueScore+1 > maxEntries, we
+	// first iterate on the selected parent chain of the stop node
+	// until we find a new stop node
+	// where stopNode.blueScore-startNode.blueScore+1 <= maxEntries
+
 	for stopNode.blueScore-startNode.blueScore+1 > maxEntries {
 		stopNode = stopNode.selectedParent
 	}
+
 	// Populate and return the found nodes.
 	nodes := make([]*blockNode, 0, stopNode.blueScore-startNode.blueScore+1)
 	nodes = append(nodes, stopNode)
@@ -1789,25 +1801,25 @@ func (dag *BlockDAG) locateBlockNodes(startHash, stopHash *daghash.Hash, maxEntr
 	return reversedNodes
 }
 
-// LocateBlocks returns the hashes of the blocks after the provided
-// start hash until the provided stop hash is reached, or up to the
+// GetBlueBlocksHashesBetween returns the hashes of the blue blocks after the
+// provided start hash until the provided stop hash is reached, or up to the
 // provided max number of block hashes.
 //
 // This function is safe for concurrent access.
-func (dag *BlockDAG) LocateBlocks(startHash, stopHash *daghash.Hash, maxHashes uint64) []*daghash.Hash {
+func (dag *BlockDAG) GetBlueBlocksHashesBetween(startHash, stopHash *daghash.Hash, maxHashes uint64) []*daghash.Hash {
 	dag.dagLock.RLock()
-	hashes := dag.locateBlocks(startHash, stopHash, maxHashes)
+	hashes := dag.getBlueBlocksHashesBetween(startHash, stopHash, maxHashes)
 	dag.dagLock.RUnlock()
 	return hashes
 }
 
-// locateHeaders returns the headers of the blocks after the provided
-// start hash until the provided stop hash is reached, or up to the
+// getBlueBlocksHeadersBetween returns the headers of the blue blocks after the
+// provided start hash until the provided stop hash is reached, or up to the
 // provided max number of block headers.
 //
 // This function MUST be called with the DAG state lock held (for reads).
-func (dag *BlockDAG) locateHeaders(startHash, stopHash *daghash.Hash, maxHeaders uint64) []*wire.BlockHeader {
-	nodes := dag.locateBlockNodes(startHash, stopHash, maxHeaders)
+func (dag *BlockDAG) getBlueBlocksHeadersBetween(startHash, stopHash *daghash.Hash, maxHeaders uint64) []*wire.BlockHeader {
+	nodes := dag.getBlueBlocksBetween(startHash, stopHash, maxHeaders)
 	headers := make([]*wire.BlockHeader, len(nodes))
 	for i, node := range nodes {
 		headers[i] = node.Header()
@@ -1851,14 +1863,14 @@ func (dag *BlockDAG) RUnlock() {
 	dag.dagLock.RUnlock()
 }
 
-// LocateHeaders returns the headers of the blocks after the provided
+// GetBlueBlocksHeadersBetween returns the headers of the blocks after the provided
 // start hash until the provided stop hash is reached, or up to the
 // provided max number of block headers.
 //
 // This function is safe for concurrent access.
-func (dag *BlockDAG) LocateHeaders(startHash, stopHash *daghash.Hash) []*wire.BlockHeader {
+func (dag *BlockDAG) GetBlueBlocksHeadersBetween(startHash, stopHash *daghash.Hash) []*wire.BlockHeader {
 	dag.dagLock.RLock()
-	headers := dag.locateHeaders(startHash, stopHash, wire.MaxInvPerMsg)
+	headers := dag.getBlueBlocksHeadersBetween(startHash, stopHash, wire.MaxBlockHeadersPerMsg)
 	dag.dagLock.RUnlock()
 	return headers
 }

@@ -744,7 +744,7 @@ func (sp *Peer) OnGetBlockInvs(_ *peer.Peer, msg *wire.MsgGetBlockInvs) {
 	// This way, if one getblocks is not enough to get the peer
 	// synced, we can know for sure that its selected chain will
 	// change, so we'll have higher shared chain block.
-	hashList := dag.LocateBlocks(msg.StartHash, msg.StopHash,
+	hashList := dag.GetBlueBlocksHashesBetween(msg.StartHash, msg.StopHash,
 		wire.MaxInvPerMsg)
 
 	// Generate inventory message.
@@ -779,7 +779,7 @@ func (sp *Peer) OnGetHeaders(_ *peer.Peer, msg *wire.MsgGetHeaders) {
 	//
 	// This mirrors the behavior in the reference implementation.
 	dag := sp.server.DAG
-	headers := dag.LocateHeaders(msg.StartHash, msg.StopHash)
+	headers := dag.GetBlueBlocksHeadersBetween(msg.StartHash, msg.StopHash)
 
 	// Send found headers to the requesting peer.
 	blockHeaders := make([]*wire.BlockHeader, len(headers))
