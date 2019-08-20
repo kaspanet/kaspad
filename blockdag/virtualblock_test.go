@@ -215,7 +215,7 @@ func TestChainChangedNotification(t *testing.T) {
 		correspondingRemovedNode := toBeRemovedNodes[len(toBeRemovedNodes)-1-i]
 		if !removedHash.IsEqual(correspondingRemovedNode.hash) {
 			t.Fatalf("TestChainChangedNotification: wrong removed hash. "+
-				"Got: %s, want: %s", removedHash, correspondingRemovedNode)
+				"Got: %s, want: %s", removedHash, correspondingRemovedNode.hash)
 		}
 	}
 
@@ -228,7 +228,7 @@ func TestChainChangedNotification(t *testing.T) {
 		correspondingAddedNode := toBeAddedNodes[i]
 		if !addedHash.IsEqual(correspondingAddedNode.hash) {
 			t.Fatalf("TestChainChangedNotification: wrong added hash. "+
-				"Got: %s, want: %s", addedHash, correspondingAddedNode)
+				"Got: %s, want: %s", addedHash, correspondingAddedNode.hash)
 		}
 	}
 }
