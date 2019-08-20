@@ -96,7 +96,7 @@ type NotificationHandlers struct {
 	// NotifyChainChanges has been made to register for the notification and the
 	// function is non-nil.
 	OnChainChanged func(removedChainBlockHashes []*daghash.Hash,
-		addedChainBlocks []*util.Block)
+		addedChainBlocks []*btcjson.ChainBlock)
 
 	// OnRelevantTxAccepted is invoked when an unmined transaction passes
 	// the client's transaction filter.

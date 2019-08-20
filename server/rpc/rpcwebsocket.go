@@ -578,8 +578,8 @@ func (m *wsNotificationManager) notifyChainChanged(clients map[chan struct{}]*ws
 		// Marshal and queue notification.
 		marshalledJSON, err := btcjson.MarshalCmd(nil, ntfn)
 		if err != nil {
-			log.Errorf("Failed to marshal filtered block "+
-				"connected notification: %s", err)
+			log.Errorf("Failed to marshal chain changed "+
+				"notification: %s", err)
 			return
 		}
 		wsc.QueueNotification(marshalledJSON)

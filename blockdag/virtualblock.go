@@ -102,7 +102,7 @@ func (v *virtualBlock) updateSelectedParentSet(oldSelectedParent *blockNode) *Ch
 		nodesToAdd[left], nodesToAdd[right] = nodesToAdd[right], nodesToAdd[left]
 	}
 	// Add the nodes to the set and to the slice
-	// Also, save the hashes of the added blocks toaddedChainBlockHashes
+	// Also, save the hashes of the added blocks to addedChainBlockHashes
 	var addedChainBlockHashes []*daghash.Hash
 	for _, node := range nodesToAdd {
 		v.selectedParentChainSet.add(node)
