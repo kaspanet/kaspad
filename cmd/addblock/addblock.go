@@ -69,10 +69,10 @@ func realMain() error {
 	cfg = tcfg
 
 	// Setup logging.
-	backendLogger := logs.NewBackend([]*logs.BackendWriter{logs.NewAllLevelsBackendWriter(os.Stdout)})
+	backendLogger := logs.NewBackend()
 	defer os.Stdout.Sync()
 	log = backendLogger.Logger("MAIN")
-	spawn = panics.GoroutineWrapperFunc(log)
+	spawn = panics.GoroutineWrapperFunc(log, backendLogger)
 
 	// Load the block database.
 	db, err := loadBlockDB()

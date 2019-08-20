@@ -35,8 +35,9 @@ package logs
 import (
 	"bytes"
 	"fmt"
-	"io"
+	"github.com/jrick/logrotate/rotator"
 	"os"
+	"path/filepath"
 	"runtime"
 	"strings"
 	"sync"
@@ -124,41 +125,27 @@ func (l Level) String() string {
 	return levelStrs[l]
 }
 
-// NewBackend creates a logger backend from a Writer.
-func NewBackend(writers []*BackendWriter, opts ...BackendOption) *Backend {
-	b := &Backend{writers: writers, flag: defaultFlags}
+// NewBackend creates a new logger backend.
+func NewBackend(opts ...BackendOption) *Backend {
+	b := &Backend{flag: defaultFlags}
 	for _, o := range opts {
 		o(b)
 	}
 	return b
 }
 
-type BackendWriter struct {
-	io.Writer
+type backendLogRotator struct {
+	*rotator.Rotator
 	logLevel Level
-}
-
-func NewAllLevelsBackendWriter(w io.Writer) *BackendWriter {
-	return &BackendWriter{
-		Writer:   w,
-		logLevel: 0,
-	}
-}
-
-func NewErrorBackendWriter(w io.Writer) *BackendWriter {
-	return &BackendWriter{
-		Writer:   w,
-		logLevel: LevelWarn,
-	}
 }
 
 // Backend is a logging backend.  Subsystems created from the backend write to
 // the backend's Writer.  Backend provides atomic writes to the Writer from all
 // subsystems.
 type Backend struct {
-	writers []*BackendWriter
-	mu      sync.Mutex // ensures atomic writes
-	flag    uint32
+	rotators []*backendLogRotator
+	mu       sync.Mutex // ensures atomic writes
+	flag     uint32
 }
 
 // BackendOption is a function used to modify the behavior of a Backend.
@@ -276,6 +263,25 @@ func callsite(flag uint32) (string, int) {
 	return file, line
 }
 
+// AddLogFile adds a file which the log will write into on a certain
+// log level. It'll create the file if it doesn't exist.
+func (b *Backend) AddLogFile(logFile string, logLevel Level) error {
+	logDir, _ := filepath.Split(logFile)
+	err := os.MkdirAll(logDir, 0700)
+	if err != nil {
+		return fmt.Errorf("failed to create log directory: %s\n", err)
+	}
+	r, err := rotator.New(logFile, 10*1024, false, 3)
+	if err != nil {
+		return fmt.Errorf("failed to create file rotator: %s\n", err)
+	}
+	b.rotators = append(b.rotators, &backendLogRotator{
+		Rotator:  r,
+		logLevel: logLevel,
+	})
+	return nil
+}
+
 // print outputs a log message to the writer associated with the backend after
 // creating a prefix for the given level and tag according to the formatHeader
 // function and formatting the provided arguments using the default formatting
@@ -327,12 +333,19 @@ func (b *Backend) printf(lvl Level, tag string, format string, args ...interface
 
 func (b *Backend) write(lvl Level, bytesToWrite []byte) {
 	b.mu.Lock()
-	for _, w := range b.writers {
-		if lvl >= w.logLevel {
-			w.Write(bytesToWrite)
+	os.Stdout.Write(bytesToWrite)
+	for _, r := range b.rotators {
+		if lvl >= r.logLevel {
+			r.Write(bytesToWrite)
 		}
 	}
 	b.mu.Unlock()
+}
+
+func (b *Backend) Close() {
+	for _, r := range b.rotators {
+		r.Close()
+	}
 }
 
 // Logger returns a new logger for a particular subsystem that writes to the
@@ -499,5 +512,5 @@ func (l *slog) SetLevel(level Level) {
 var Disabled Logger
 
 func init() {
-	Disabled = &slog{lvl: LevelOff, b: NewBackend([]*BackendWriter{})}
+	Disabled = &slog{lvl: LevelOff, b: NewBackend()}
 }

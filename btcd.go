@@ -6,6 +6,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/daglabs/btcd/logger"
 	"net"
 	"net/http"
 	_ "net/http/pprof"
@@ -56,7 +57,7 @@ func btcdMain(serverChan chan<- *server.Server) error {
 		return err
 	}
 	cfg = config.MainConfig()
-	defer panics.HandlePanic(btcdLog)
+	defer panics.HandlePanic(btcdLog, logger.BackendLog)
 
 	// Get a channel that will be closed when a shutdown signal has been
 	// triggered either from an OS signal such as SIGINT (Ctrl+C) or from

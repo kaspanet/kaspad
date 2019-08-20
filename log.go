@@ -11,5 +11,5 @@ import (
 )
 
 var btcdLog, _ = logger.Get(logger.SubsystemTags.BTCD)
-var spawn = panics.GoroutineWrapperFunc(btcdLog)
+var spawn = panics.GoroutineWrapperFunc(btcdLog, logger.BackendLog)
 var srvrLog, _ = logger.Get(logger.SubsystemTags.SRVR)

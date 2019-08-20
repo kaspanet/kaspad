@@ -24,13 +24,13 @@ func init() {
 // by default until UseLogger is called.
 func DisableLog() {
 	log = logs.Disabled
-	spawn = panics.GoroutineWrapperFunc(log)
+	spawn = panics.GoroutineWrapperFunc(log, nil)
 }
 
 // UseLogger uses a specified Logger to output package logging info.
-func UseLogger(logger logs.Logger) {
+func UseLogger(logger logs.Logger, backendLog *logs.Backend) {
 	log = logger
-	spawn = panics.GoroutineWrapperFunc(log)
+	spawn = panics.GoroutineWrapperFunc(log, backendLog)
 }
 
 // LogClosure is a closure that can be printed with %s to be used to

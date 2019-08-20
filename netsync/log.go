@@ -18,5 +18,5 @@ var spawn func(func())
 
 func init() {
 	log, _ = logger.Get(logger.SubsystemTags.SYNC)
-	spawn = panics.GoroutineWrapperFunc(log)
+	spawn = panics.GoroutineWrapperFunc(log, logger.BackendLog)
 }

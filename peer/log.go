@@ -31,7 +31,7 @@ var spawn func(func())
 // The default amount of logging is none.
 func init() {
 	log, _ = logger.Get(logger.SubsystemTags.PEER)
-	spawn = panics.GoroutineWrapperFunc(log)
+	spawn = panics.GoroutineWrapperFunc(log, logger.BackendLog)
 }
 
 // LogClosure is a closure that can be printed with %s to be used to

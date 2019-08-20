@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	defer panics.HandlePanic(log)
+	defer panics.HandlePanic(log, backendLog)
 	cfg, err := parseConfig()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error parsing command-line arguments: %s", err)

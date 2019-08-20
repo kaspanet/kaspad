@@ -19,5 +19,5 @@ var spawn func(func())
 // The default amount of logging is none.
 func init() {
 	log, _ = logger.Get(logger.SubsystemTags.INDX)
-	spawn = panics.GoroutineWrapperFunc(log)
+	spawn = panics.GoroutineWrapperFunc(log, logger.BackendLog)
 }

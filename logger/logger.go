@@ -8,37 +8,11 @@ package logger
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 	"sort"
 	"strings"
 
 	"github.com/daglabs/btcd/logs"
-	"github.com/jrick/logrotate/rotator"
 )
-
-// logWriter implements an io.Writer that outputs to both standard output and
-// the write-end pipe of an initialized log rotator.
-type logWriter struct{}
-
-func (logWriter) Write(p []byte) (n int, err error) {
-	if initiated {
-		os.Stdout.Write(p)
-		LogRotator.Write(p)
-	}
-	return len(p), nil
-}
-
-// errLogWriter implements an io.Writer that outputs to both standard output and
-// the write-end pipe of an initialized log rotator.
-type errLogWriter struct{}
-
-func (errLogWriter) Write(p []byte) (n int, err error) {
-	if initiated {
-		os.Stdout.Write(p)
-		ErrLogRotator.Write(p)
-	}
-	return len(p), nil
-}
 
 // Loggers per subsystem.  A single backend logger is created and all subsytem
 // loggers created from it will write to the backend.  When adding new
@@ -49,38 +23,28 @@ func (errLogWriter) Write(p []byte) (n int, err error) {
 // log file.  This must be performed early during application startup by calling
 // InitLogRotators.
 var (
-	// backendLog is the logging backend used to create all subsystem loggers.
+	// BackendLog is the logging backend used to create all subsystem loggers.
 	// The backend must not be used before the log rotator has been initialized,
 	// or data races and/or nil pointer dereferences will occur.
-	backendLog = logs.NewBackend([]*logs.BackendWriter{
-		logs.NewAllLevelsBackendWriter(logWriter{}),
-		logs.NewErrorBackendWriter(errLogWriter{}),
-	})
+	BackendLog = logs.NewBackend()
 
-	// LogRotator is one of the logging outputs.  It should be closed on
-	// application shutdown.
-	LogRotator    *rotator.Rotator
-	ErrLogRotator *rotator.Rotator
-
-	adxrLog = backendLog.Logger("ADXR")
-	amgrLog = backendLog.Logger("AMGR")
-	cmgrLog = backendLog.Logger("CMGR")
-	bcdbLog = backendLog.Logger("BCDB")
-	btcdLog = backendLog.Logger("BTCD")
-	chanLog = backendLog.Logger("CHAN")
-	cnfgLog = backendLog.Logger("CNFG")
-	discLog = backendLog.Logger("DISC")
-	indxLog = backendLog.Logger("INDX")
-	minrLog = backendLog.Logger("MINR")
-	peerLog = backendLog.Logger("PEER")
-	rpcsLog = backendLog.Logger("RPCS")
-	scrpLog = backendLog.Logger("SCRP")
-	srvrLog = backendLog.Logger("SRVR")
-	syncLog = backendLog.Logger("SYNC")
-	txmpLog = backendLog.Logger("TXMP")
-	utilLog = backendLog.Logger("UTIL")
-
-	initiated = false
+	adxrLog = BackendLog.Logger("ADXR")
+	amgrLog = BackendLog.Logger("AMGR")
+	cmgrLog = BackendLog.Logger("CMGR")
+	bcdbLog = BackendLog.Logger("BCDB")
+	btcdLog = BackendLog.Logger("BTCD")
+	chanLog = BackendLog.Logger("CHAN")
+	cnfgLog = BackendLog.Logger("CNFG")
+	discLog = BackendLog.Logger("DISC")
+	indxLog = BackendLog.Logger("INDX")
+	minrLog = BackendLog.Logger("MINR")
+	peerLog = BackendLog.Logger("PEER")
+	rpcsLog = BackendLog.Logger("RPCS")
+	scrpLog = BackendLog.Logger("SCRP")
+	srvrLog = BackendLog.Logger("SRVR")
+	syncLog = BackendLog.Logger("SYNC")
+	txmpLog = BackendLog.Logger("TXMP")
+	utilLog = BackendLog.Logger("UTIL")
 )
 
 // SubsystemTags is an enum of all sub system tags
@@ -149,24 +113,16 @@ var subsystemLoggers = map[string]logs.Logger{
 // before the package-global log rotater variables
 // are used.
 func InitLogRotators(logFile, errLogFile string) {
-	initiated = true
-	LogRotator = initLogRotator(logFile)
-	ErrLogRotator = initLogRotator(errLogFile)
-}
-
-func initLogRotator(logFile string) *rotator.Rotator {
-	logDir, _ := filepath.Split(logFile)
-	err := os.MkdirAll(logDir, 0700)
+	err := BackendLog.AddLogFile(logFile, logs.LevelTrace)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to create log directory: %s\n", err)
+		fmt.Fprintf(os.Stderr, "Error adding log file %s as log rotator for level %s", logFile, logs.LevelTrace)
 		os.Exit(1)
 	}
-	r, err := rotator.New(logFile, 10*1024, false, 3)
+	err = BackendLog.AddLogFile(errLogFile, logs.LevelWarn)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to create file rotator: %s\n", err)
+		fmt.Fprintf(os.Stderr, "Error adding log file %s as log rotator for level %s", errLogFile, logs.LevelWarn)
 		os.Exit(1)
 	}
-	return r
 }
 
 // SetLogLevel sets the logging level for provided subsystem.  Invalid

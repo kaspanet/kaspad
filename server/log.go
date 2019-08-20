@@ -24,5 +24,5 @@ func init() {
 	rpcsLog, _ = logger.Get(logger.SubsystemTags.RPCS)
 	amgrLog, _ = logger.Get(logger.SubsystemTags.AMGR)
 
-	spawn = panics.GoroutineWrapperFunc(srvrLog)
+	spawn = panics.GoroutineWrapperFunc(srvrLog, logger.BackendLog)
 }
