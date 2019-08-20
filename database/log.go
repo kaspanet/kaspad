@@ -6,15 +6,6 @@ package database
 
 import (
 	"github.com/daglabs/btcd/logger"
-	"github.com/daglabs/btcd/logs"
 )
 
-// log is a logger that is initialized with no output filters.  This
-// means the package will not perform any logging by default until the caller
-// requests it.
-var log logs.Logger
-
-// The default amount of logging is none.
-func init() {
-	log, _ = logger.Get(logger.SubsystemTags.BCDB)
-}
+var log, _ = logger.Get(logger.SubsystemTags.BCDB)

@@ -32,7 +32,7 @@ func (s *Server) Start() {
 		return
 	}
 
-	srvrLog.Trace("Starting server")
+	log.Trace("Starting server")
 
 	// Server startup time. Used for the uptime command for uptime calculation.
 	s.startupTime = time.Now().Unix()
@@ -56,11 +56,11 @@ func (s *Server) Start() {
 func (s *Server) Stop() error {
 	// Make sure this only happens once.
 	if atomic.AddInt32(&s.shutdown, 1) != 1 {
-		srvrLog.Infof("Server is already in the process of shutting down")
+		log.Infof("Server is already in the process of shutting down")
 		return nil
 	}
 
-	srvrLog.Warnf("Server shutting down")
+	log.Warnf("Server shutting down")
 
 	// Stop the CPU miner if needed
 	s.cpuminer.Stop()

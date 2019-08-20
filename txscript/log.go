@@ -6,17 +6,9 @@ package txscript
 
 import (
 	"github.com/daglabs/btcd/logger"
-	"github.com/daglabs/btcd/logs"
 )
 
-// log is a logger that is initialized with no output filters.  This
-// means the package will not perform any logging by default until the caller
-// requests it.
-var log logs.Logger
-
-func init() {
-	log, _ = logger.Get(logger.SubsystemTags.SCRP)
-}
+var log, _ = logger.Get(logger.SubsystemTags.SCRP)
 
 // LogClosure is a closure that can be printed with %s to be used to
 // generate expensive-to-create data for a detailed log level and avoid doing

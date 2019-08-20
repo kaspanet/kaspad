@@ -6,17 +6,8 @@ package addrmgr
 
 import (
 	"github.com/daglabs/btcd/logger"
-	"github.com/daglabs/btcd/logs"
 	"github.com/daglabs/btcd/util/panics"
 )
 
-// log is a logger that is initialized with no output filters.  This
-// means the package will not perform any logging by default until the caller
-// requests it.
-var log logs.Logger
-var spawn func(func())
-
-func init() {
-	log, _ = logger.Get(logger.SubsystemTags.ADXR)
-	spawn = panics.GoroutineWrapperFunc(log, logger.BackendLog)
-}
+var log, _ = logger.Get(logger.SubsystemTags.ADXR)
+var spawn = panics.GoroutineWrapperFunc(log, logger.BackendLog)

@@ -6,16 +6,6 @@ package serverutils
 
 import (
 	"github.com/daglabs/btcd/logger"
-	"github.com/daglabs/btcd/logs"
 )
 
-// log is a logger that is initialized with no output filters.  This
-// means the package will not perform any logging by default until the caller
-// requests it.
-var srvLog, peerLog, rpcsLog logs.Logger
-
-func init() {
-	srvLog, _ = logger.Get(logger.SubsystemTags.SRVR)
-	peerLog, _ = logger.Get(logger.SubsystemTags.PEER)
-	rpcsLog, _ = logger.Get(logger.SubsystemTags.RPCS)
-}
+var log, _ = logger.Get(logger.SubsystemTags.RPCS)
