@@ -179,7 +179,7 @@ func TestSelectedPath(t *testing.T) {
 	virtual2.updateSelectedParentSet(buildNode(setFromSlice()))
 }
 
-func TestChainChangedNotification(t *testing.T) {
+func TestChainUpdates(t *testing.T) {
 	phantomK := uint32(1)
 	buildNode := buildNodeGenerator(phantomK, false)
 	genesis := buildNode(setFromSlice())
@@ -204,30 +204,30 @@ func TestChainChangedNotification(t *testing.T) {
 	}
 
 	// Set the virtual tip to be the tip of the toBeAdded chain
-	chainChangedNotificationData := virtual.setTips(setFromSlice(toBeAddedTip))
+	chainUpdates := virtual.setTips(setFromSlice(toBeAddedTip))
 
 	// Make sure that the removed blocks are as expected (in reverse order)
-	if len(chainChangedNotificationData.RemovedChainBlockHashes) != len(toBeRemovedNodes) {
-		t.Fatalf("TestChainChangedNotification: wrong removed amount. "+
-			"Got: %d, want: %d", len(chainChangedNotificationData.RemovedChainBlockHashes), len(toBeRemovedNodes))
+	if len(chainUpdates.RemovedChainBlockHashes) != len(toBeRemovedNodes) {
+		t.Fatalf("TestChainUpdates: wrong removed amount. "+
+			"Got: %d, want: %d", len(chainUpdates.RemovedChainBlockHashes), len(toBeRemovedNodes))
 	}
-	for i, removedHash := range chainChangedNotificationData.RemovedChainBlockHashes {
+	for i, removedHash := range chainUpdates.RemovedChainBlockHashes {
 		correspondingRemovedNode := toBeRemovedNodes[len(toBeRemovedNodes)-1-i]
 		if !removedHash.IsEqual(correspondingRemovedNode.hash) {
-			t.Fatalf("TestChainChangedNotification: wrong removed hash. "+
+			t.Fatalf("TestChainUpdates: wrong removed hash. "+
 				"Got: %s, want: %s", removedHash, correspondingRemovedNode.hash)
 		}
 	}
 
 	// Make sure that the added blocks are as expected (in forward order)
-	if len(chainChangedNotificationData.AddedChainBlockHashes) != len(toBeAddedNodes) {
-		t.Fatalf("TestChainChangedNotification: wrong added amount. "+
-			"Got: %d, want: %d", len(chainChangedNotificationData.RemovedChainBlockHashes), len(toBeAddedNodes))
+	if len(chainUpdates.AddedChainBlockHashes) != len(toBeAddedNodes) {
+		t.Fatalf("TestChainUpdates: wrong added amount. "+
+			"Got: %d, want: %d", len(chainUpdates.RemovedChainBlockHashes), len(toBeAddedNodes))
 	}
-	for i, addedHash := range chainChangedNotificationData.AddedChainBlockHashes {
+	for i, addedHash := range chainUpdates.AddedChainBlockHashes {
 		correspondingAddedNode := toBeAddedNodes[i]
 		if !addedHash.IsEqual(correspondingAddedNode.hash) {
-			t.Fatalf("TestChainChangedNotification: wrong added hash. "+
+			t.Fatalf("TestChainUpdates: wrong added hash. "+
 				"Got: %s, want: %s", addedHash, correspondingAddedNode.hash)
 		}
 	}

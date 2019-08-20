@@ -7,7 +7,6 @@ package blockdag
 import (
 	"fmt"
 	"github.com/daglabs/btcd/util"
-	"github.com/daglabs/btcd/util/daghash"
 )
 
 // NotificationType represents the type of a notification message.
@@ -84,6 +83,5 @@ type BlockAddedNotificationData struct {
 // ChainChangedNotificationData defines data to be sent along with a ChainChanged
 // notification
 type ChainChangedNotificationData struct {
-	RemovedChainBlockHashes []*daghash.Hash
-	AddedChainBlockHashes   []*daghash.Hash
+	ChainUpdates *ChainUpdates
 }
