@@ -134,7 +134,7 @@ func loadConfig() (*config, error) {
 		activeNetParams = &dagconfig.DevNetParams
 	}
 
-	initLogRotators(defaultLogFile, defaultErrLogFile)
+	initLog(defaultLogFile, defaultErrLogFile)
 
 	return &cfg, nil
 }

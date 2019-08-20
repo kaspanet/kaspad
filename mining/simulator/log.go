@@ -14,7 +14,7 @@ var (
 	spawn      = panics.GoroutineWrapperFunc(log, backendLog)
 )
 
-func initLogRotators(logFile, errLogFile string) {
+func initLog(logFile, errLogFile string) {
 	err := backendLog.AddLogFile(logFile, logs.LevelTrace)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error adding log file %s as log rotator for level %s", logFile, logs.LevelTrace)

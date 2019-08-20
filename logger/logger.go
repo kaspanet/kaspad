@@ -21,7 +21,7 @@ import (
 //
 // Loggers can not be used before the log rotator has been initialized with a
 // log file.  This must be performed early during application startup by calling
-// InitLogRotators.
+// InitLog.
 var (
 	// BackendLog is the logging backend used to create all subsystem loggers.
 	// The backend must not be used before the log rotator has been initialized,
@@ -107,12 +107,8 @@ var subsystemLoggers = map[string]logs.Logger{
 	SubsystemTags.UTIL: utilLog,
 }
 
-// InitLogRotators initializes the logging rotaters to
-// write logs to logFile, errLogFile, and create roll
-// files in the same directory.  It must be called
-// before the package-global log rotater variables
-// are used.
-func InitLogRotators(logFile, errLogFile string) {
+// InitLog attaches log file and error log file to the backend log.
+func InitLog(logFile, errLogFile string) {
 	err := BackendLog.AddLogFile(logFile, logs.LevelTrace)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error adding log file %s as log rotator for level %s", logFile, logs.LevelTrace)

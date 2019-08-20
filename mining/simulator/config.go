@@ -44,7 +44,7 @@ func parseConfig() (*config, error) {
 		return nil, errors.New("--cert should be omitted if --notls is used")
 	}
 
-	initLogRotators(defaultLogFile, defaultErrLogFile)
+	initLog(defaultLogFile, defaultErrLogFile)
 
 	return cfg, nil
 }
