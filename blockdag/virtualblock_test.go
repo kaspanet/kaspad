@@ -206,6 +206,7 @@ func TestChainChangedNotification(t *testing.T) {
 	// Set the virtual tip to be the tip of the toBeAdded chain
 	chainChangedNotificationData := virtual.setTips(setFromSlice(toBeAddedTip))
 
+	// Make sure that the removed blocks are as expected (in reverse order)
 	if len(chainChangedNotificationData.RemovedChainBlockHashes) != len(toBeRemovedNodes) {
 		t.Fatalf("TestChainChangedNotification: wrong removed amount. "+
 			"Got: %d, want: %d", len(chainChangedNotificationData.RemovedChainBlockHashes), len(toBeRemovedNodes))
@@ -218,6 +219,7 @@ func TestChainChangedNotification(t *testing.T) {
 		}
 	}
 
+	// Make sure that the added blocks are as expected (in forward order)
 	if len(chainChangedNotificationData.AddedChainBlockHashes) != len(toBeAddedNodes) {
 		t.Fatalf("TestChainChangedNotification: wrong added amount. "+
 			"Got: %d, want: %d", len(chainChangedNotificationData.RemovedChainBlockHashes), len(toBeAddedNodes))
