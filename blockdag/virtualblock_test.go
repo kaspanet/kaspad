@@ -192,7 +192,7 @@ func TestChainChangedNotification(t *testing.T) {
 		toBeRemovedNodes = append(toBeRemovedNodes, toBeRemovedTip)
 	}
 
-	// Create a VirtualBlock with initialNode
+	// Create a VirtualBlock with the toBeRemoved chain
 	virtual := newVirtualBlock(setFromSlice(toBeRemovedNodes...), phantomK)
 
 	// Create a chain to be added
