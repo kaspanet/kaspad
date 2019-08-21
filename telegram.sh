@@ -11,9 +11,6 @@ PR_AUTHOR="$4"
 PR_TITLE="$5"
 PR_LINK="$6"
 
-# Start atd
-service atd start
-
 # Build the failure message
 MESSAGE="*${PR_AUTHOR}*:
 Build *FAILED* for pull request '${PR_TITLE}'

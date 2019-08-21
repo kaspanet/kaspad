@@ -14,6 +14,9 @@ export ECR_SERVER=${ECR_SERVER:-"$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.ama
 CF_PARAM=TaskImage
 IMAGE_NAME=${ECR_SERVER}/${SERVICE_NAME}
 
+# Start atd
+service atd start
+
 # Sends a Telegram notification with some details about the failure
 # All variables in this function are set by Jenkins
 notify_telegram() {
