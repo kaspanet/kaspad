@@ -17,7 +17,9 @@ IMAGE_NAME=${ECR_SERVER}/${SERVICE_NAME}
 # Sends a Telegram notification with some details about the failure
 # All variables in this function are set by Jenkins
 notify_telegram() {
-  echo "aaaaa!!!!! ${TELEGRAM_API_TOKEN} ${TELEGRAM_CHAT_ID}"
+  echo "I AM HERE!"
+  pwd
+  echo "woop woop"
   echo "./telegram.sh \
     '${TELEGRAM_API_TOKEN}' \
     '${TELEGRAM_CHAT_ID}' \

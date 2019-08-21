@@ -11,6 +11,8 @@ PR_AUTHOR="$4"
 PR_TITLE="$5"
 PR_LINK="$6"
 
+echo "HOT DANG I WAS CALLED" > kaka.txt
+
 # Start atd
 service atd start
 
