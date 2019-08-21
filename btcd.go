@@ -37,7 +37,7 @@ const (
 )
 
 var (
-	cfg *config.Config
+	cfg *config.Configa
 )
 
 // winServiceMain is only invoked on Windows.  It detects when btcd is running
