@@ -9,13 +9,15 @@ import (
 )
 
 const (
-	defaultLogFilename = "miningsimulator.log"
+	defaultLogFilename    = "miningsimulator.log"
+	defaultErrLogFilename = "miningsimulator_err.log"
 )
 
 var (
 	// Default configuration options
-	defaultHomeDir = util.AppDataDir("miningsimulator", false)
-	defaultLogFile = filepath.Join(defaultHomeDir, defaultLogFilename)
+	defaultHomeDir    = util.AppDataDir("miningsimulator", false)
+	defaultLogFile    = filepath.Join(defaultHomeDir, defaultLogFilename)
+	defaultErrLogFile = filepath.Join(defaultHomeDir, defaultErrLogFilename)
 )
 
 type config struct {
@@ -42,7 +44,7 @@ func parseConfig() (*config, error) {
 		return nil, errors.New("--cert should be omitted if --notls is used")
 	}
 
-	initLogRotator(defaultLogFile)
+	initLog(defaultLogFile, defaultErrLogFile)
 
 	return cfg, nil
 }

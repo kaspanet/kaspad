@@ -2,45 +2,26 @@ package main
 
 import (
 	"fmt"
-	"os"
-	"path/filepath"
-
-	"github.com/btcsuite/btclog"
+	"github.com/daglabs/btcd/logs"
 	"github.com/daglabs/btcd/util/panics"
-	"github.com/jrick/logrotate/rotator"
+	"os"
 )
-
-type logWriter struct{}
-
-func (logWriter) Write(p []byte) (n int, err error) {
-	if initiated {
-		os.Stdout.Write(p)
-		LogRotator.Write(p)
-	}
-	return len(p), nil
-}
 
 var (
-	backendLog = btclog.NewBackend(logWriter{})
-	LogRotator *rotator.Rotator
+	backendLog = logs.NewBackend()
 	log        = backendLog.Logger("SEED")
-	spawn      = panics.GoroutineWrapperFunc(log)
-	initiated  = false
+	spawn      = panics.GoroutineWrapperFunc(log, backendLog)
 )
 
-func initLogRotator(logFile string) {
-	initiated = true
-	logDir, _ := filepath.Split(logFile)
-	err := os.MkdirAll(logDir, 0700)
+func initLog(logFile, errLogFile string) {
+	err := backendLog.AddLogFile(logFile, logs.LevelTrace)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to create log directory: %s\n", err)
+		fmt.Fprintf(os.Stderr, "Error adding log file %s as log rotator for level %s: %s", logFile, logs.LevelTrace, err)
 		os.Exit(1)
 	}
-	r, err := rotator.New(logFile, 10*1024, false, 3)
+	err = backendLog.AddLogFile(errLogFile, logs.LevelWarn)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to create file rotator: %s\n", err)
+		fmt.Fprintf(os.Stderr, "Error adding log file %s as log rotator for level %s: %s", errLogFile, logs.LevelWarn, err)
 		os.Exit(1)
 	}
-
-	LogRotator = r
 }

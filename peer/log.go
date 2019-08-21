@@ -9,7 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/btcsuite/btclog"
 	"github.com/daglabs/btcd/logger"
 	"github.com/daglabs/btcd/txscript"
 	"github.com/daglabs/btcd/util/panics"
@@ -22,17 +21,8 @@ const (
 	maxRejectReasonLen = 250
 )
 
-// log is a logger that is initialized with no output filters.  This
-// means the package will not perform any logging by default until the caller
-// requests it.
-var log btclog.Logger
-var spawn func(func())
-
-// The default amount of logging is none.
-func init() {
-	log, _ = logger.Get(logger.SubsystemTags.PEER)
-	spawn = panics.GoroutineWrapperFunc(log)
-}
+var log, _ = logger.Get(logger.SubsystemTags.PEER)
+var spawn = panics.GoroutineWrapperFunc(log, logger.BackendLog)
 
 // LogClosure is a closure that can be printed with %s to be used to
 // generate expensive-to-create data for a detailed log level and avoid doing

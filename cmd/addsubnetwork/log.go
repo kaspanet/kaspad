@@ -1,17 +1,10 @@
 package main
 
 import (
-	"github.com/btcsuite/btclog"
-	"os"
+	"github.com/daglabs/btcd/logs"
 )
 
-type logWriter struct{}
-
-func (logWriter) Write(p []byte) (n int, err error) {
-	return os.Stdout.Write(p)
-}
-
 var (
-	backendLog = btclog.NewBackend(logWriter{})
+	backendLog = logs.NewBackend()
 	log        = backendLog.Logger("ASUB")
 )

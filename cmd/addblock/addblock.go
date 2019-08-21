@@ -9,9 +9,9 @@ import (
 	"path/filepath"
 	"runtime"
 
-	"github.com/btcsuite/btclog"
 	"github.com/daglabs/btcd/database"
 	"github.com/daglabs/btcd/limits"
+	"github.com/daglabs/btcd/logs"
 	"github.com/daglabs/btcd/util/panics"
 )
 
@@ -22,7 +22,7 @@ const (
 
 var (
 	cfg   *config
-	log   btclog.Logger
+	log   logs.Logger
 	spawn func(func())
 )
 
@@ -69,10 +69,10 @@ func realMain() error {
 	cfg = tcfg
 
 	// Setup logging.
-	backendLogger := btclog.NewBackend(os.Stdout)
+	backendLogger := logs.NewBackend()
 	defer os.Stdout.Sync()
 	log = backendLogger.Logger("MAIN")
-	spawn = panics.GoroutineWrapperFunc(log)
+	spawn = panics.GoroutineWrapperFunc(log, backendLogger)
 
 	// Load the block database.
 	db, err := loadBlockDB()

@@ -37,6 +37,7 @@ const (
 	defaultLogLevel       = "info"
 	defaultLogDirname     = "logs"
 	defaultLogFilename    = "btcd.log"
+	defaultErrLogFilename = "btcd_err.log"
 	defaultMaxPeers       = 125
 	defaultBanDuration    = time.Hour * 24
 	defaultBanThreshold   = 100
@@ -492,7 +493,7 @@ func loadConfig() (*Config, []string, error) {
 
 	// Initialize log rotation.  After log rotation has been initialized, the
 	// logger variables may be used.
-	logger.InitLogRotator(filepath.Join(cfg.LogDir, defaultLogFilename))
+	logger.InitLog(filepath.Join(cfg.LogDir, defaultLogFilename), filepath.Join(cfg.LogDir, defaultErrLogFilename))
 
 	// Parse, validate, and set debug log level(s).
 	if err := logger.ParseAndSetDebugLevels(cfg.DebugLevel); err != nil {
@@ -659,7 +660,7 @@ func loadConfig() (*Config, []string, error) {
 
 	// Disallow 0 and negative min tx fees.
 	if cfg.MinRelayTxFee <= 0 {
-		str := "%s: The minrelaytxfee option must greater than 0 -- parsed [%d]"
+		str := "%s: The minrelaytxfee option must be greater than 0 -- parsed [%d]"
 		err := fmt.Errorf(str, funcName, cfg.MinRelayTxFee)
 		fmt.Fprintln(os.Stderr, err)
 		fmt.Fprintln(os.Stderr, usageMessage)

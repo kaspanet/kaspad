@@ -5,18 +5,9 @@
 package cpuminer
 
 import (
-	"github.com/btcsuite/btclog"
 	"github.com/daglabs/btcd/logger"
 	"github.com/daglabs/btcd/util/panics"
 )
 
-// log is a logger that is initialized with no output filters.  This
-// means the package will not perform any logging by default until the caller
-// requests it.
-var log btclog.Logger
-var spawn func(func())
-
-func init() {
-	log, _ = logger.Get(logger.SubsystemTags.MINR)
-	spawn = panics.GoroutineWrapperFunc(log)
-}
+var log, _ = logger.Get(logger.SubsystemTags.MINR)
+var spawn = panics.GoroutineWrapperFunc(log, logger.BackendLog)

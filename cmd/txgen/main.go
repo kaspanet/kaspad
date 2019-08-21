@@ -23,7 +23,7 @@ func privateKeyToP2pkhAddress(key *btcec.PrivateKey, net *dagconfig.Params) (uti
 }
 
 func main() {
-	defer panics.HandlePanic(log)
+	defer panics.HandlePanic(log, backendLog)
 
 	cfg, err := parseConfig()
 	if err != nil {

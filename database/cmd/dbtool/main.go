@@ -5,16 +5,16 @@
 package main
 
 import (
+	"github.com/daglabs/btcd/util/panics"
 	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
 
-	"github.com/btcsuite/btclog"
 	"github.com/daglabs/btcd/database"
 	"github.com/daglabs/btcd/logger"
-	"github.com/daglabs/btcd/util/panics"
-	flags "github.com/jessevdk/go-flags"
+	"github.com/daglabs/btcd/logs"
+	"github.com/jessevdk/go-flags"
 )
 
 const (
@@ -23,8 +23,8 @@ const (
 )
 
 var (
-	log             btclog.Logger
-	spawn           = panics.GoroutineWrapperFunc(log)
+	log             logs.Logger
+	spawn           func(func())
 	shutdownChannel = make(chan error)
 )
 
@@ -64,11 +64,12 @@ func loadBlockDB() (database.DB, error) {
 // around the fact that deferred functions do not run when os.Exit() is called.
 func realMain() error {
 	// Setup logging.
-	backendLogger := btclog.NewBackend(os.Stdout)
+	backendLogger := logs.NewBackend()
 	defer os.Stdout.Sync()
 	log = backendLogger.Logger("MAIN")
+	spawn = panics.GoroutineWrapperFunc(log, backendLogger)
 	dbLog, _ := logger.Get(logger.SubsystemTags.BCDB)
-	dbLog.SetLevel(btclog.LevelDebug)
+	dbLog.SetLevel(logs.LevelDebug)
 
 	// Setup the parser options and commands.
 	appName := filepath.Base(os.Args[0])
