@@ -111,12 +111,12 @@ var subsystemLoggers = map[string]logs.Logger{
 func InitLog(logFile, errLogFile string) {
 	err := BackendLog.AddLogFile(logFile, logs.LevelTrace)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error adding log file %s as log rotator for level %s", logFile, logs.LevelTrace)
+		fmt.Fprintf(os.Stderr, "Error adding log file %s as log rotator for level %s: %s", logFile, logs.LevelTrace, err)
 		os.Exit(1)
 	}
 	err = BackendLog.AddLogFile(errLogFile, logs.LevelWarn)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error adding log file %s as log rotator for level %s", errLogFile, logs.LevelWarn)
+		fmt.Fprintf(os.Stderr, "Error adding log file %s as log rotator for level %s: %s", errLogFile, logs.LevelWarn, err)
 		os.Exit(1)
 	}
 }
