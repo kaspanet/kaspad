@@ -13,9 +13,6 @@ PR_LINK="$6"
 
 echo "HOT DANG I WAS CALLED" > kaka.txt
 
-# Start atd
-service atd start
-
 # Build the failure message
 MESSAGE="*${PR_AUTHOR}*:
 Build *FAILED* for pull request '${PR_TITLE}'
