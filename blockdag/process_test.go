@@ -2,6 +2,7 @@ package blockdag
 
 import (
 	"bou.ke/monkey"
+	"fmt"
 	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/util"
 	"testing"
@@ -56,5 +57,11 @@ func TestProcessBlock(t *testing.T) {
 	}
 	if called {
 		t.Errorf("ProcessBlock: Didn't expected checkBlockSanity to be called")
+	}
+
+	isOrphan, delay, err = dag.ProcessBlock(util.NewBlock(dagconfig.SimNetParams.GenesisBlock), BFNone)
+	expectedErrMsg := fmt.Sprintf("already have block %s", dagconfig.SimNetParams.GenesisHash)
+	if err == nil || err.Error() != expectedErrMsg {
+		t.Errorf("ProcessBlock: Expected error \"%s\" but got \"%s\"", expectedErrMsg, err)
 	}
 }
