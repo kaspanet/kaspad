@@ -4425,8 +4425,8 @@ func (s *Server) handleBlockDAGNotification(notification *blockdag.Notification)
 		}
 
 		// Notify registered websocket clients of chain changes.
-		s.ntfnMgr.NotifyChainChanged(data.ChainUpdates.RemovedChainBlockHashes,
-			data.ChainUpdates.AddedChainBlockHashes)
+		s.ntfnMgr.NotifyChainChanged(data.RemovedChainBlockHashes,
+			data.AddedChainBlockHashes)
 	}
 }
 

@@ -54,7 +54,7 @@ func (v *virtualBlock) clone() *virtualBlock {
 // is up to the caller to ensure the lock is held.
 //
 // This function MUST be called with the view mutex locked (for writes).
-func (v *virtualBlock) setTips(tips blockSet) *ChainUpdates {
+func (v *virtualBlock) setTips(tips blockSet) *chainUpdates {
 	oldSelectedParent := v.selectedParent
 	v.blockNode = *newBlockNode(nil, tips, v.phantomK)
 	return v.updateSelectedParentSet(oldSelectedParent)
@@ -68,7 +68,7 @@ func (v *virtualBlock) setTips(tips blockSet) *ChainUpdates {
 // parent and are not selected ancestors of the new one, and adding
 // blocks that are selected ancestors of the new selected parent
 // and aren't selected ancestors of the old one.
-func (v *virtualBlock) updateSelectedParentSet(oldSelectedParent *blockNode) *ChainUpdates {
+func (v *virtualBlock) updateSelectedParentSet(oldSelectedParent *blockNode) *chainUpdates {
 	var intersectionNode *blockNode
 	nodesToAdd := make([]*blockNode, 0)
 	for node := v.blockNode.selectedParent; intersectionNode == nil && node != nil; node = node.selectedParent {
@@ -110,9 +110,9 @@ func (v *virtualBlock) updateSelectedParentSet(oldSelectedParent *blockNode) *Ch
 	}
 	v.selectedParentChainSlice = append(v.selectedParentChainSlice, nodesToAdd...)
 
-	return &ChainUpdates{
-		RemovedChainBlockHashes: removedChainBlockHashes,
-		AddedChainBlockHashes:   addedChainBlockHashes,
+	return &chainUpdates{
+		removedChainBlockHashes: removedChainBlockHashes,
+		addedChainBlockHashes:   addedChainBlockHashes,
 	}
 }
 
@@ -132,7 +132,7 @@ func (v *virtualBlock) SetTips(tips blockSet) {
 // is up to the caller to ensure the lock is held.
 //
 // This function MUST be called with the view mutex locked (for writes).
-func (v *virtualBlock) addTip(newTip *blockNode) *ChainUpdates {
+func (v *virtualBlock) addTip(newTip *blockNode) *chainUpdates {
 	updatedTips := v.tips().clone()
 	for _, parent := range newTip.parents {
 		updatedTips.remove(parent)
@@ -147,7 +147,7 @@ func (v *virtualBlock) addTip(newTip *blockNode) *ChainUpdates {
 // from the set.
 //
 // This function is safe for concurrent access.
-func (v *virtualBlock) AddTip(newTip *blockNode) *ChainUpdates {
+func (v *virtualBlock) AddTip(newTip *blockNode) *chainUpdates {
 	v.mtx.Lock()
 	defer v.mtx.Unlock()
 	return v.addTip(newTip)

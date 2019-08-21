@@ -39,11 +39,11 @@ type orphanBlock struct {
 	expiration time.Time
 }
 
-// ChainUpdates represents the updates made to the selected parent chain after
+// chainUpdates represents the updates made to the selected parent chain after
 // a block had been added to the DAG.
-type ChainUpdates struct {
-	RemovedChainBlockHashes []*daghash.Hash
-	AddedChainBlockHashes   []*daghash.Hash
+type chainUpdates struct {
+	removedChainBlockHashes []*daghash.Hash
+	addedChainBlockHashes   []*daghash.Hash
 }
 
 // BlockDAG provides functions for working with the bitcoin block chain.
@@ -475,7 +475,7 @@ func LockTimeToSequence(isSeconds bool, locktime uint64) uint64 {
 //
 // This function MUST be called with the DAG state lock held (for writes).
 func (dag *BlockDAG) addBlock(node *blockNode, parentNodes blockSet,
-	block *util.Block, flags BehaviorFlags) (*ChainUpdates, error) {
+	block *util.Block, flags BehaviorFlags) (*chainUpdates, error) {
 	// Skip checks if node has already been fully validated.
 	fastAdd := flags&BFFastAdd == BFFastAdd || dag.index.NodeStatus(node).KnownValid()
 
@@ -544,7 +544,7 @@ func (node *blockNode) validateAcceptedIDMerkleRoot(dag *BlockDAG, txsAcceptance
 //
 // This function MUST be called with the DAG state lock held (for writes).
 func (dag *BlockDAG) connectBlock(node *blockNode,
-	block *util.Block, fastAdd bool) (*ChainUpdates, error) {
+	block *util.Block, fastAdd bool) (*chainUpdates, error) {
 	// No warnings about unknown rules or versions until the DAG is
 	// current.
 	if dag.isCurrent() {
@@ -854,7 +854,7 @@ func (dag *BlockDAG) TxsAcceptedByVirtual() (MultiBlockTxsAcceptanceData, error)
 // This function MUST be called with the DAG state lock held (for writes).
 func (dag *BlockDAG) applyDAGChanges(node *blockNode, block *util.Block, newBlockUTXO UTXOSet, fastAdd bool) (
 	virtualUTXODiff *UTXODiff, virtualTxsAcceptanceData MultiBlockTxsAcceptanceData,
-	chainUpdates *ChainUpdates, err error) {
+	chainUpdates *chainUpdates, err error) {
 
 	if err = node.updateParents(dag, newBlockUTXO); err != nil {
 		return nil, nil, nil, fmt.Errorf("failed updating parents of %s: %s", node, err)
