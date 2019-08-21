@@ -198,6 +198,7 @@ var rpcLimited = map[string]struct{}{
 	// Websockets commands
 	"loadTxFilter":          {},
 	"notifyBlocks":          {},
+	"notifyChainChanges":    {},
 	"notifyNewTransactions": {},
 	"notifyReceived":        {},
 	"notifySpent":           {},
@@ -4416,6 +4417,16 @@ func (s *Server) handleBlockDAGNotification(notification *blockdag.Notification)
 
 		// Notify registered websocket clients of incoming block.
 		s.ntfnMgr.NotifyBlockAdded(block)
+	case blockdag.NTChainChanged:
+		data, ok := notification.Data.(*blockdag.ChainChangedNotificationData)
+		if !ok {
+			log.Warnf("Chain changed notification data is of wrong type.")
+			break
+		}
+
+		// Notify registered websocket clients of chain changes.
+		s.ntfnMgr.NotifyChainChanged(data.RemovedChainBlockHashes,
+			data.AddedChainBlockHashes)
 	}
 }
 

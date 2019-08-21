@@ -41,6 +41,24 @@ func NewStopNotifyBlocksCmd() *StopNotifyBlocksCmd {
 	return &StopNotifyBlocksCmd{}
 }
 
+// NotifyChainChangesCmd defines the notifyChainChanges JSON-RPC command.
+type NotifyChainChangesCmd struct{}
+
+// NewNotifyChainChangesCmd returns a new instance which can be used to issue a
+// notifyChainChanges JSON-RPC command.
+func NewNotifyChainChangesCmd() *NotifyChainChangesCmd {
+	return &NotifyChainChangesCmd{}
+}
+
+// StopNotifyChainChangesCmd defines the stopNotifyChainChanges JSON-RPC command.
+type StopNotifyChainChangesCmd struct{}
+
+// NewStopNotifyChainChangesCmd returns a new instance which can be used to issue a
+// stopNotifyChainChanges JSON-RPC command.
+func NewStopNotifyChainChangesCmd() *StopNotifyChainChangesCmd {
+	return &StopNotifyChainChangesCmd{}
+}
+
 // NotifyNewTransactionsCmd defines the notifyNewTransactions JSON-RPC command.
 type NotifyNewTransactionsCmd struct {
 	Verbose    *bool `jsonrpcdefault:"false"`
@@ -136,9 +154,11 @@ func init() {
 	MustRegisterCmd("authenticate", (*AuthenticateCmd)(nil), flags)
 	MustRegisterCmd("loadTxFilter", (*LoadTxFilterCmd)(nil), flags)
 	MustRegisterCmd("notifyBlocks", (*NotifyBlocksCmd)(nil), flags)
+	MustRegisterCmd("notifyChainChanges", (*NotifyChainChangesCmd)(nil), flags)
 	MustRegisterCmd("notifyNewTransactions", (*NotifyNewTransactionsCmd)(nil), flags)
 	MustRegisterCmd("session", (*SessionCmd)(nil), flags)
 	MustRegisterCmd("stopNotifyBlocks", (*StopNotifyBlocksCmd)(nil), flags)
+	MustRegisterCmd("stopNotifyChainChanges", (*StopNotifyChainChangesCmd)(nil), flags)
 	MustRegisterCmd("stopNotifyNewTransactions", (*StopNotifyNewTransactionsCmd)(nil), flags)
 	MustRegisterCmd("rescanBlocks", (*RescanBlocksCmd)(nil), flags)
 }

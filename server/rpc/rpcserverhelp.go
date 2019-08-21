@@ -607,6 +607,12 @@ var helpDescsEnUS = map[string]string{
 	// StopNotifyBlocksCmd help.
 	"stopNotifyBlocks--synopsis": "Cancel registered notifications for whenever a block is connected or disconnected from the main (best) chain.",
 
+	// NotifyChainChangesCmd help.
+	"notifyChainChanges--synopsis": "Request notifications for whenever the selected parent chain changes.",
+
+	// StopNotifyChainChangesCmd help.
+	"stopNotifyChainChanges--synopsis": "Cancel registered notifications for whenever the selected parent chain changes.",
+
 	// NotifyNewTransactionsCmd help.
 	"notifyNewTransactions--synopsis":  "Send either a txaccepted or a txacceptedverbose notification when a new transaction is accepted into the mempool.",
 	"notifyNewTransactions-verbose":    "Specifies which type of notification to receive. If verbose is true, then the caller receives txacceptedverbose, otherwise the caller receives txaccepted",
@@ -719,6 +725,8 @@ var rpcResultTypes = map[string][]interface{}{
 	"session":                   {(*btcjson.SessionResult)(nil)},
 	"notifyBlocks":              nil,
 	"stopNotifyBlocks":          nil,
+	"notifyChainChanges":        nil,
+	"stopNotifyChainChanges":    nil,
 	"notifyNewTransactions":     nil,
 	"stopNotifyNewTransactions": nil,
 	"rescanBlocks":              {(*[]btcjson.RescannedBlock)(nil)},

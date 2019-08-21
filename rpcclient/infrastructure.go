@@ -254,6 +254,9 @@ func (c *Client) trackRegisteredNtfns(cmd interface{}) {
 	case *btcjson.NotifyBlocksCmd:
 		c.ntfnState.notifyBlocks = true
 
+	case *btcjson.NotifyChainChangesCmd:
+		c.ntfnState.notifyChainChanges = true
+
 	case *btcjson.NotifyNewTransactionsCmd:
 		if bcmd.Verbose != nil && *bcmd.Verbose {
 			c.ntfnState.notifyNewTxVerbose = true
@@ -512,6 +515,14 @@ func (c *Client) reregisterNtfns() error {
 	if stateCopy.notifyBlocks {
 		log.Debugf("Reregistering [notifyblocks]")
 		if err := c.NotifyBlocks(); err != nil {
+			return err
+		}
+	}
+
+	// Reregister notifychainchanges if needed.
+	if stateCopy.notifyChainChanges {
+		log.Debugf("Reregistering [notifychainchanges]")
+		if err := c.NotifyChainChanges(); err != nil {
 			return err
 		}
 	}

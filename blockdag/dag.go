@@ -39,6 +39,13 @@ type orphanBlock struct {
 	expiration time.Time
 }
 
+// chainUpdates represents the updates made to the selected parent chain after
+// a block had been added to the DAG.
+type chainUpdates struct {
+	removedChainBlockHashes []*daghash.Hash
+	addedChainBlockHashes   []*daghash.Hash
+}
+
 // BlockDAG provides functions for working with the bitcoin block chain.
 // It includes functionality such as rejecting duplicate blocks, ensuring blocks
 // follow all rules, orphan handling, checkpoint handling, and best chain
@@ -467,17 +474,18 @@ func LockTimeToSequence(isSeconds bool, locktime uint64) uint64 {
 //    This is useful when using checkpoints.
 //
 // This function MUST be called with the DAG state lock held (for writes).
-func (dag *BlockDAG) addBlock(node *blockNode, parentNodes blockSet, block *util.Block, flags BehaviorFlags) error {
+func (dag *BlockDAG) addBlock(node *blockNode, parentNodes blockSet,
+	block *util.Block, flags BehaviorFlags) (*chainUpdates, error) {
 	// Skip checks if node has already been fully validated.
 	fastAdd := flags&BFFastAdd == BFFastAdd || dag.index.NodeStatus(node).KnownValid()
 
 	// Connect the block to the DAG.
-	err := dag.connectBlock(node, block, fastAdd)
+	chainUpdates, err := dag.connectBlock(node, block, fastAdd)
 	if err != nil {
 		if _, ok := err.(RuleError); ok {
 			dag.index.SetStatusFlags(node, statusValidateFailed)
 		} else {
-			return err
+			return nil, err
 		}
 	} else {
 		dag.blockCount++
@@ -491,9 +499,11 @@ func (dag *BlockDAG) addBlock(node *blockNode, parentNodes blockSet, block *util
 		log.Warnf("Error flushing block index changes to disk: %s",
 			writeErr)
 	}
-
 	// If dag.connectBlock returned a rule error, return it here after updating DB
-	return err
+	if err != nil {
+		return nil, err
+	}
+	return chainUpdates, nil
 }
 
 func calculateAcceptedIDMerkleRoot(txsAcceptanceData MultiBlockTxsAcceptanceData) *daghash.Hash {
@@ -533,47 +543,48 @@ func (node *blockNode) validateAcceptedIDMerkleRoot(dag *BlockDAG, txsAcceptance
 // connectBlock handles connecting the passed node/block to the DAG.
 //
 // This function MUST be called with the DAG state lock held (for writes).
-func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block, fastAdd bool) error {
+func (dag *BlockDAG) connectBlock(node *blockNode,
+	block *util.Block, fastAdd bool) (*chainUpdates, error) {
 	// No warnings about unknown rules or versions until the DAG is
 	// current.
 	if dag.isCurrent() {
 		// Warn if any unknown new rules are either about to activate or
 		// have already been activated.
 		if err := dag.warnUnknownRuleActivations(node); err != nil {
-			return err
+			return nil, err
 		}
 
 		// Warn if a high enough percentage of the last blocks have
 		// unexpected versions.
 		if err := dag.warnUnknownVersions(node); err != nil {
-			return err
+			return nil, err
 		}
 	}
 
 	if err := dag.checkFinalityRules(node); err != nil {
-		return err
+		return nil, err
 	}
 
 	if err := dag.validateGasLimit(block); err != nil {
-		return err
+		return nil, err
 	}
 
 	newBlockUTXO, txsAcceptanceData, newBlockFeeData, err := node.verifyAndBuildUTXO(dag, block.Transactions(), fastAdd)
 	if err != nil {
 		newErrString := fmt.Sprintf("error verifying UTXO for %s: %s", node, err)
 		if err, ok := err.(RuleError); ok {
-			return ruleError(err.ErrorCode, newErrString)
+			return nil, ruleError(err.ErrorCode, newErrString)
 		}
-		return errors.New(newErrString)
+		return nil, errors.New(newErrString)
 	}
 
 	err = node.validateCoinbaseTransaction(dag, block, txsAcceptanceData)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// Apply all changes to the DAG.
-	virtualUTXODiff, virtualTxsAcceptanceData, err := dag.applyDAGChanges(node, block, newBlockUTXO, fastAdd)
+	virtualUTXODiff, virtualTxsAcceptanceData, chainUpdates, err := dag.applyDAGChanges(node, block, newBlockUTXO, fastAdd)
 	if err != nil {
 		// Since all validation logic has already ran, if applyDAGChanges errors out,
 		// this means we have a problem in the internal structure of the DAG - a problem which is
@@ -584,10 +595,10 @@ func (dag *BlockDAG) connectBlock(node *blockNode, block *util.Block, fastAdd bo
 
 	err = dag.saveChangesFromBlock(node, block, virtualUTXODiff, txsAcceptanceData, virtualTxsAcceptanceData, newBlockFeeData)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return chainUpdates, nil
 }
 
 func (dag *BlockDAG) saveChangesFromBlock(node *blockNode, block *util.Block, virtualUTXODiff *UTXODiff,
@@ -842,35 +853,36 @@ func (dag *BlockDAG) TxsAcceptedByVirtual() (MultiBlockTxsAcceptanceData, error)
 //
 // This function MUST be called with the DAG state lock held (for writes).
 func (dag *BlockDAG) applyDAGChanges(node *blockNode, block *util.Block, newBlockUTXO UTXOSet, fastAdd bool) (
-	virtualUTXODiff *UTXODiff, virtualTxsAcceptanceData MultiBlockTxsAcceptanceData, err error) {
+	virtualUTXODiff *UTXODiff, virtualTxsAcceptanceData MultiBlockTxsAcceptanceData,
+	chainUpdates *chainUpdates, err error) {
 
 	if err = node.updateParents(dag, newBlockUTXO); err != nil {
-		return nil, nil, fmt.Errorf("failed updating parents of %s: %s", node, err)
+		return nil, nil, nil, fmt.Errorf("failed updating parents of %s: %s", node, err)
 	}
 
 	// Update the virtual block's parents (the DAG tips) to include the new block.
-	dag.virtual.AddTip(node)
+	chainUpdates = dag.virtual.AddTip(node)
 
 	// Build a UTXO set for the new virtual block
 	newVirtualPastUTXO, virtualTxsAcceptanceData, err := dag.pastUTXO(&dag.virtual.blockNode)
 	if err != nil {
-		return nil, nil, fmt.Errorf("could not restore past UTXO for virtual %s: %s", dag.virtual, err)
+		return nil, nil, nil, fmt.Errorf("could not restore past UTXO for virtual %s: %s", dag.virtual, err)
 	}
 
 	// Apply the new virtual's blue score to all the unaccepted UTXOs
 	diffFromAcceptanceData, err := dag.virtual.diffFromAcceptanceData(newVirtualPastUTXO, virtualTxsAcceptanceData)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 	newVirtualUTXO, err := newVirtualPastUTXO.WithDiff(diffFromAcceptanceData)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	// Apply new utxoDiffs to all the tips
 	err = updateTipsUTXO(dag, newVirtualUTXO)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed updating the tips' UTXO: %s", err)
+		return nil, nil, nil, fmt.Errorf("failed updating the tips' UTXO: %s", err)
 	}
 
 	// It is now safe to meld the UTXO set to base.
@@ -878,7 +890,7 @@ func (dag *BlockDAG) applyDAGChanges(node *blockNode, block *util.Block, newBloc
 	virtualUTXODiff = diffSet.UTXODiff
 	err = dag.meldVirtualUTXO(diffSet)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed melding the virtual UTXO: %s", err)
+		return nil, nil, nil, fmt.Errorf("failed melding the virtual UTXO: %s", err)
 	}
 
 	dag.index.SetStatusFlags(node, statusValid)
@@ -886,7 +898,7 @@ func (dag *BlockDAG) applyDAGChanges(node *blockNode, block *util.Block, newBloc
 	// And now we can update the finality point of the DAG (if required)
 	dag.updateFinalityPoint()
 
-	return virtualUTXODiff, virtualTxsAcceptanceData, nil
+	return virtualUTXODiff, virtualTxsAcceptanceData, chainUpdates, nil
 }
 
 func (dag *BlockDAG) meldVirtualUTXO(newVirtualUTXODiffSet *DiffUTXOSet) error {

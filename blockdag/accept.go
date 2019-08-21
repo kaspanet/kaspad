@@ -75,7 +75,7 @@ func (dag *BlockDAG) maybeAcceptBlock(block *util.Block, flags BehaviorFlags) er
 
 	// Connect the passed block to the DAG. This also handles validation of the
 	// transaction scripts.
-	err = dag.addBlock(newNode, parents, block, flags)
+	chainUpdates, err := dag.addBlock(newNode, parents, block, flags)
 	if err != nil {
 		return err
 	}
@@ -87,6 +87,10 @@ func (dag *BlockDAG) maybeAcceptBlock(block *util.Block, flags BehaviorFlags) er
 	dag.sendNotification(NTBlockAdded, &BlockAddedNotificationData{
 		Block:         block,
 		WasUnorphaned: flags&BFWasUnorphaned != 0,
+	})
+	dag.sendNotification(NTChainChanged, &ChainChangedNotificationData{
+		RemovedChainBlockHashes: chainUpdates.removedChainBlockHashes,
+		AddedChainBlockHashes:   chainUpdates.addedChainBlockHashes,
 	})
 	dag.dagLock.Lock()
 

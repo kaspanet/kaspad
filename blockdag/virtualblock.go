@@ -5,6 +5,7 @@
 package blockdag
 
 import (
+	"github.com/daglabs/btcd/util/daghash"
 	"sync"
 )
 
@@ -53,10 +54,10 @@ func (v *virtualBlock) clone() *virtualBlock {
 // is up to the caller to ensure the lock is held.
 //
 // This function MUST be called with the view mutex locked (for writes).
-func (v *virtualBlock) setTips(tips blockSet) {
+func (v *virtualBlock) setTips(tips blockSet) *chainUpdates {
 	oldSelectedParent := v.selectedParent
 	v.blockNode = *newBlockNode(nil, tips, v.phantomK)
-	v.updateSelectedParentSet(oldSelectedParent)
+	return v.updateSelectedParentSet(oldSelectedParent)
 }
 
 // updateSelectedParentSet updates the selectedParentSet to match the
@@ -67,7 +68,7 @@ func (v *virtualBlock) setTips(tips blockSet) {
 // parent and are not selected ancestors of the new one, and adding
 // blocks that are selected ancestors of the new selected parent
 // and aren't selected ancestors of the old one.
-func (v *virtualBlock) updateSelectedParentSet(oldSelectedParent *blockNode) {
+func (v *virtualBlock) updateSelectedParentSet(oldSelectedParent *blockNode) *chainUpdates {
 	var intersectionNode *blockNode
 	nodesToAdd := make([]*blockNode, 0)
 	for node := v.blockNode.selectedParent; intersectionNode == nil && node != nil; node = node.selectedParent {
@@ -83,10 +84,13 @@ func (v *virtualBlock) updateSelectedParentSet(oldSelectedParent *blockNode) {
 	}
 
 	// Remove the nodes in the set from the oldSelectedParent down to the intersectionNode
+	// Also, save the hashes of the removed blocks to removedChainBlockHashes
 	removeCount := 0
+	var removedChainBlockHashes []*daghash.Hash
 	if intersectionNode != nil {
 		for node := oldSelectedParent; !node.hash.IsEqual(intersectionNode.hash); node = node.selectedParent {
 			v.selectedParentChainSet.remove(node)
+			removedChainBlockHashes = append(removedChainBlockHashes, node.hash)
 			removeCount++
 		}
 	}
@@ -98,10 +102,18 @@ func (v *virtualBlock) updateSelectedParentSet(oldSelectedParent *blockNode) {
 		nodesToAdd[left], nodesToAdd[right] = nodesToAdd[right], nodesToAdd[left]
 	}
 	// Add the nodes to the set and to the slice
+	// Also, save the hashes of the added blocks to addedChainBlockHashes
+	var addedChainBlockHashes []*daghash.Hash
 	for _, node := range nodesToAdd {
 		v.selectedParentChainSet.add(node)
+		addedChainBlockHashes = append(addedChainBlockHashes, node.hash)
 	}
 	v.selectedParentChainSlice = append(v.selectedParentChainSlice, nodesToAdd...)
+
+	return &chainUpdates{
+		removedChainBlockHashes: removedChainBlockHashes,
+		addedChainBlockHashes:   addedChainBlockHashes,
+	}
 }
 
 // SetTips replaces the tips of the virtual block with the blocks in the
@@ -120,14 +132,14 @@ func (v *virtualBlock) SetTips(tips blockSet) {
 // is up to the caller to ensure the lock is held.
 //
 // This function MUST be called with the view mutex locked (for writes).
-func (v *virtualBlock) addTip(newTip *blockNode) {
+func (v *virtualBlock) addTip(newTip *blockNode) *chainUpdates {
 	updatedTips := v.tips().clone()
 	for _, parent := range newTip.parents {
 		updatedTips.remove(parent)
 	}
 
 	updatedTips.add(newTip)
-	v.setTips(updatedTips)
+	return v.setTips(updatedTips)
 }
 
 // AddTip adds the given tip to the set of tips in the virtual block.
@@ -135,10 +147,10 @@ func (v *virtualBlock) addTip(newTip *blockNode) {
 // from the set.
 //
 // This function is safe for concurrent access.
-func (v *virtualBlock) AddTip(newTip *blockNode) {
+func (v *virtualBlock) AddTip(newTip *blockNode) *chainUpdates {
 	v.mtx.Lock()
-	v.addTip(newTip)
-	v.mtx.Unlock()
+	defer v.mtx.Unlock()
+	return v.addTip(newTip)
 }
 
 // tips returns the current tip block nodes for the DAG.  It will return

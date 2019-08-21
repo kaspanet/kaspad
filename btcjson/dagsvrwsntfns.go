@@ -8,6 +8,8 @@
 
 package btcjson
 
+import "github.com/daglabs/btcd/util/daghash"
+
 const (
 	// FilteredBlockAddedNtfnMethod is the new method used for
 	// notifications from the dag server that a block has been connected.
@@ -44,6 +46,23 @@ func NewFilteredBlockAddedNtfn(chainHeight uint64, header string, subscribedTxs 
 		ChainHeight:   chainHeight,
 		Header:        header,
 		SubscribedTxs: subscribedTxs,
+	}
+}
+
+// ChainChangedNtfn defines the chainChanged JSON-RPC
+// notification.
+type ChainChangedNtfn struct {
+	RemovedChainBlockHashes []daghash.Hash
+	AddedChainBlocks        []ChainBlock
+}
+
+// NewChainChangedNtfn returns a new instance which can be used to
+// issue a chainChanged JSON-RPC notification.
+func NewChainChangedNtfn(removedChainBlockHashes []daghash.Hash,
+	addedChainBlocks []ChainBlock) *ChainChangedNtfn {
+	return &ChainChangedNtfn{
+		RemovedChainBlockHashes: removedChainBlockHashes,
+		AddedChainBlocks:        addedChainBlocks,
 	}
 }
 

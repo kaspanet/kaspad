@@ -178,3 +178,57 @@ func TestSelectedPath(t *testing.T) {
 	}()
 	virtual2.updateSelectedParentSet(buildNode(setFromSlice()))
 }
+
+func TestChainUpdates(t *testing.T) {
+	phantomK := uint32(1)
+	buildNode := buildNodeGenerator(phantomK, false)
+	genesis := buildNode(setFromSlice())
+
+	// Create a chain to be removed
+	var toBeRemovedNodes []*blockNode
+	toBeRemovedTip := genesis
+	for i := 0; i < 5; i++ {
+		toBeRemovedTip = buildNode(setFromSlice(toBeRemovedTip))
+		toBeRemovedNodes = append(toBeRemovedNodes, toBeRemovedTip)
+	}
+
+	// Create a VirtualBlock with the toBeRemoved chain
+	virtual := newVirtualBlock(setFromSlice(toBeRemovedNodes...), phantomK)
+
+	// Create a chain to be added
+	var toBeAddedNodes []*blockNode
+	toBeAddedTip := genesis
+	for i := 0; i < 8; i++ {
+		toBeAddedTip = buildNode(setFromSlice(toBeAddedTip))
+		toBeAddedNodes = append(toBeAddedNodes, toBeAddedTip)
+	}
+
+	// Set the virtual tip to be the tip of the toBeAdded chain
+	chainUpdates := virtual.setTips(setFromSlice(toBeAddedTip))
+
+	// Make sure that the removed blocks are as expected (in reverse order)
+	if len(chainUpdates.removedChainBlockHashes) != len(toBeRemovedNodes) {
+		t.Fatalf("TestChainUpdates: wrong removed amount. "+
+			"Got: %d, want: %d", len(chainUpdates.removedChainBlockHashes), len(toBeRemovedNodes))
+	}
+	for i, removedHash := range chainUpdates.removedChainBlockHashes {
+		correspondingRemovedNode := toBeRemovedNodes[len(toBeRemovedNodes)-1-i]
+		if !removedHash.IsEqual(correspondingRemovedNode.hash) {
+			t.Fatalf("TestChainUpdates: wrong removed hash. "+
+				"Got: %s, want: %s", removedHash, correspondingRemovedNode.hash)
+		}
+	}
+
+	// Make sure that the added blocks are as expected (in forward order)
+	if len(chainUpdates.addedChainBlockHashes) != len(toBeAddedNodes) {
+		t.Fatalf("TestChainUpdates: wrong added amount. "+
+			"Got: %d, want: %d", len(chainUpdates.removedChainBlockHashes), len(toBeAddedNodes))
+	}
+	for i, addedHash := range chainUpdates.addedChainBlockHashes {
+		correspondingAddedNode := toBeAddedNodes[i]
+		if !addedHash.IsEqual(correspondingAddedNode.hash) {
+			t.Fatalf("TestChainUpdates: wrong added hash. "+
+				"Got: %s, want: %s", addedHash, correspondingAddedNode.hash)
+		}
+	}
+}
