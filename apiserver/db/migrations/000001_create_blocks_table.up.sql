@@ -1,12 +1,12 @@
 CREATE TABLE `blocks`
 (
     `id`                      BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-    `block_hash`              VARCHAR(32)     NOT NULL,
+    `block_hash`              CHAR(64)     NOT NULL,
     `accepting_block_id`      BIGINT UNSIGNED NULL,
     `version`                 INT             NOT NULL,
-    `hash_merkle_root`        VARCHAR(32)     NOT NULL,
-    `accepted_id_merkle_root` VARCHAR(32)     NOT NULL,
-    `utxo_commitment`         VARCHAR(32)     NOT NULL,
+    `hash_merkle_root`        CHAR(64)     NOT NULL,
+    `accepted_id_merkle_root` CHAR(64)     NOT NULL,
+    `utxo_commitment`         CHAR(64)     NOT NULL,
     `timestamp`               DATETIME        NOT NULL,
     `bits`                    INT UNSIGNED    NOT NULL,
     `nonce`                   BIGINT UNSIGNED NOT NULL,
