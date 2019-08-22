@@ -11,18 +11,14 @@ require (
 	github.com/btcsuite/websocket v0.0.0-20150119174127-31079b680792
 	github.com/btcsuite/winsvc v1.0.0
 	github.com/davecgh/go-spew v1.1.1
-	github.com/fsnotify/fsnotify v1.4.7 // indirect
 	github.com/golang/protobuf v1.3.1 // indirect
-	github.com/hpcloud/tail v1.0.0 // indirect
 	github.com/jessevdk/go-flags v1.4.0
+	github.com/jinzhu/gorm v1.9.10 // indirect
 	github.com/jrick/logrotate v1.0.0
 	github.com/kkdai/bstream v0.0.0-20181106074824-b3251f7901ec
 	github.com/miekg/dns v1.1.6
 	github.com/stretchr/testify v1.3.0 // indirect
-	golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2
-	golang.org/x/net v0.0.0-20190311183353-d8887717615a // indirect
+	golang.org/x/crypto v0.0.0-20190325154230-a5d413f7728c
 	golang.org/x/sync v0.0.0-20190412183630-56d357773e84 // indirect
 	golang.org/x/sys v0.0.0-20190312061237-fead79001313 // indirect
-	gopkg.in/fsnotify.v1 v1.4.7 // indirect
-	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
 )
