@@ -2,6 +2,7 @@ CREATE TABLE `blocks`
 (
     `id`                      BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     `block_hash`              VARCHAR(32)     NOT NULL,
+    `accepting_block_id`      BIGINT UNSIGNED NULL,
     `version`                 INT             NOT NULL,
     `hash_merkle_root`        VARCHAR(32)     NOT NULL,
     `accepted_id_merkle_root` VARCHAR(32)     NOT NULL,
@@ -14,5 +15,8 @@ CREATE TABLE `blocks`
     PRIMARY KEY (`id`),
     UNIQUE INDEX `idx_blocks_block_hash` (`block_hash`),
     INDEX `idx_blocks_timestamp` (`timestamp`),
-    INDEX `idx_blocks_is_chain_block` (`is_chain_block`)
+    INDEX `idx_blocks_is_chain_block` (`is_chain_block`),
+    CONSTRAINT `fk_blocks_accepting_block_id`
+        FOREIGN KEY (`accepting_block_id`)
+            REFERENCES `blocks` (`id`)
 );
