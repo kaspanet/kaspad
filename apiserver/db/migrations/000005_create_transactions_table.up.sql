@@ -12,9 +12,6 @@ CREATE TABLE `transactions`
     PRIMARY KEY (`id`),
     UNIQUE INDEX `idx_transactions_transaction_hash` (`transaction_hash`),
     INDEX `idx_transactions_transaction_id` (`transaction_id`),
-    CONSTRAINT `fk_transactions_block_id`
-        FOREIGN KEY (`block_id`)
-            REFERENCES `blocks` (`id`),
     CONSTRAINT `fk_transactions_accepting_block_id`
         FOREIGN KEY (`accepting_block_id`)
             REFERENCES `blocks` (`id`)
