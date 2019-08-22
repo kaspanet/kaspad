@@ -6,7 +6,7 @@ CREATE TABLE `transactions_outputs`
     `value`             BIGINT UNSIGNED NOT NULL,
     `pk_script` BLOB            NOT NULL,
     PRIMARY KEY (`id`),
-    INDEX `transaction_id_IDX` (`transaction_id`),
+    INDEX `idx_transactions_outputs_transaction_id` (`transaction_id`),
     CONSTRAINT `fk_transactions_outputs_transaction_id`
         FOREIGN KEY (`transaction_id`)
             REFERENCES `transactions` (`id`)

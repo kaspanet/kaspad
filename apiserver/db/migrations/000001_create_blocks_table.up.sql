@@ -12,7 +12,7 @@ CREATE TABLE `blocks`
     `blue_score`              BIGINT UNSIGNED NOT NULL,
     `is_chain_block`          TINYINT         NOT NULL,
     PRIMARY KEY (`id`),
-    UNIQUE INDEX `block_hash_UNIQUE` (`block_hash`),
+    UNIQUE INDEX `idx_blocks_block_hash` (`block_hash`),
     INDEX `idx_blocks_timestamp` (`timestamp`),
     INDEX `idx_blocks_is_chain_block` (`is_chain_block`)
 );

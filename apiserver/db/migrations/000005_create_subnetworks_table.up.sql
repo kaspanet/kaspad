@@ -4,5 +4,5 @@ CREATE TABLE `subnetworks`
     `subnetwork_id` VARCHAR(32)     NOT NULL,
     `gas_limit`     BIGINT UNSIGNED NOT NULL,
     PRIMARY KEY (`id`),
-    UNIQUE INDEX `subnetwork_id_UNIQUE` (`subnetwork_id`)
+    UNIQUE INDEX `idx_subnetworks_subnetwork_id` (`subnetwork_id`)
 );
