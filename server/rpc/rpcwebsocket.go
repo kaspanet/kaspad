@@ -559,7 +559,7 @@ func (m *wsNotificationManager) notifyChainChanged(clients map[chan struct{}]*ws
 	removedChainBlockHashes []*daghash.Hash, addedChainBlockHashes []*daghash.Hash) {
 
 	// Collect removed chain hashes.
-	removedChainHashes := make([]daghash.Hash, 0, len(removedChainBlockHashes))
+	removedChainHashes := make([]daghash.Hash, len(removedChainBlockHashes))
 	for i, hash := range removedChainBlockHashes {
 		removedChainHashes[i] = *hash
 	}
