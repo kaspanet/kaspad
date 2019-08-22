@@ -1,7 +1,6 @@
 CREATE TABLE `transactions`
 (
     `id`               BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-    `block_id`         BIGINT UNSIGNED NOT NULL,
     `accepting_block_id`         BIGINT UNSIGNED NULL,
     `transaction_hash` CHAR(64)     NOT NULL,
     `transaction_id`   CHAR(64)     NOT NULL,
