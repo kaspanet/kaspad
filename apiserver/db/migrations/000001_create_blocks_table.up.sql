@@ -13,6 +13,6 @@ CREATE TABLE `blocks`
     `is_chain_block`          TINYINT         NOT NULL,
     PRIMARY KEY (`id`),
     UNIQUE INDEX `block_hash_UNIQUE` (`block_hash`),
-    INDEX `timestamp_IDX` (`timestamp`),
-    INDEX `is_chain_block_IDX` (`is_chain_block`)
+    INDEX `idx_blocks_timestamp` (`timestamp`),
+    INDEX `idx_blocks_is_chain_block` (`is_chain_block`)
 );

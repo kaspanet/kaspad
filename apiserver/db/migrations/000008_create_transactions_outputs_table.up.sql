@@ -4,7 +4,7 @@ CREATE TABLE `transactions_outputs`
     `transaction_id`    BIGINT UNSIGNED NOT NULL,
     `index`             INT UNSIGNED    NOT NULL,
     `value`             BIGINT UNSIGNED NOT NULL,
-    `public_key_script` BLOB            NOT NULL,
+    `pk_script` BLOB            NOT NULL,
     PRIMARY KEY (`id`),
     INDEX `transaction_id_IDX` (`transaction_id`),
     CONSTRAINT `fk_transactions_outputs_transaction_id`
