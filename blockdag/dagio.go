@@ -453,6 +453,7 @@ func (dag *BlockDAG) initDAGState() error {
 
 		var i int32
 		var lastNode *blockNode
+		var unprocessedBlockNodes []*blockNode
 		cursor := blockIndexBucket.Cursor()
 		for ok := cursor.First(); ok; ok = cursor.Next() {
 			node, err := dag.deserializeBlockNode(cursor.Value())
@@ -461,31 +462,10 @@ func (dag *BlockDAG) initDAGState() error {
 			}
 
 			// Check to see if this node had been stored in the the block DB
-			// but not yet accepted. If so, attempt to accept it.
+			// but not yet accepted. If so, add it to a slice to be processed later.
 			if node.status == statusDataStored {
-				// Check to see if the block exists in the block DB. If it's
-				// not, the database has certainly been corrupted.
-				blockExists, err := dbTx.HasBlock(node.hash)
-				if err != nil {
-					return AssertError(fmt.Sprintf("initDAGState: HasBlock "+
-						"for block %s failed: %s", node.hash, err))
-				}
-				if !blockExists {
-					return AssertError(fmt.Sprintf("initDAGState: block %s "+
-						"exists in block index but not in block db", node.hash))
-				}
-
-				// Attempt to accept the block. If it fails, continue without adding
-				// it to the block index. Otherwise, update the reference of the newly
-				// accepted blockNode.
-				block, err := dbFetchBlockByNode(dbTx, node)
-				err = dag.maybeAcceptBlock(block, BFNone)
-				if err != nil {
-					log.Warnf("Block %s, which was not previously processed, "+
-						"failed to be accepted to the DAG: %s", node.hash, err)
-					continue
-				}
-				node.status = statusValid
+				unprocessedBlockNodes = append(unprocessedBlockNodes, node)
+				continue
 			}
 
 			if lastNode == nil {
@@ -586,6 +566,36 @@ func (dag *BlockDAG) initDAGState() error {
 		// Set the last finality point
 		dag.lastFinalityPoint = dag.index.LookupNode(state.LastFinalityPoint)
 		dag.finalizeNodesBelowFinalityPoint(false)
+
+		// Go over any unprocessed blockNodes and process them now. We
+		// lock the dagLock here because maybeAcceptBlock must be called with
+		// the dagLock held.
+		dag.dagLock.Lock()
+		for _, node := range unprocessedBlockNodes {
+			// Check to see if the block exists in the block DB. If it's
+			// not, the database has certainly been corrupted.
+			blockExists, err := dbTx.HasBlock(node.hash)
+			if err != nil {
+				return AssertError(fmt.Sprintf("initDAGState: HasBlock "+
+					"for block %s failed: %s", node.hash, err))
+			}
+			if !blockExists {
+				return AssertError(fmt.Sprintf("initDAGState: block %s "+
+					"exists in block index but not in block db", node.hash))
+			}
+
+			// Attempt to accept the block. If it fails, continue without adding
+			// it to the block index. Otherwise, update the reference of the newly
+			// accepted blockNode.
+			block, err := dbFetchBlockByNode(dbTx, node)
+			err = dag.maybeAcceptBlock(block, BFNone)
+			if err != nil {
+				log.Warnf("Block %s, which was not previously processed, "+
+					"failed to be accepted to the DAG: %s", node.hash, err)
+				continue
+			}
+		}
+		dag.dagLock.Unlock()
 
 		return nil
 	})

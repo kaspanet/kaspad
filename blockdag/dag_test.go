@@ -898,11 +898,84 @@ func TestNew(t *testing.T) {
 	}
 }
 
+func TestAcceptingInInit(t *testing.T) {
+	// Create the root directory for test databases.
+	if !fileExists(testDbRoot) {
+		if err := os.MkdirAll(testDbRoot, 0700); err != nil {
+			t.Fatalf("unable to create test db "+
+				"root: %s", err)
+		}
+	}
+
+	// Create a test database
+	dbPath := filepath.Join(testDbRoot, "TestAcceptingInInit")
+	_ = os.RemoveAll(dbPath)
+	db, err := database.Create(testDbType, dbPath, blockDataNet)
+	if err != nil {
+		t.Fatalf("error creating db: %s", err)
+	}
+	defer func() {
+		db.Close()
+		os.RemoveAll(dbPath)
+		os.RemoveAll(testDbRoot)
+	}()
+
+	// Create a DAG to add the test block into
+	config := &Config{
+		DAGParams:  &dagconfig.SimNetParams,
+		DB:         db,
+		TimeSource: NewMedianTime(),
+		SigCache:   txscript.NewSigCache(1000),
+	}
+	dag, err := New(config)
+	if err != nil {
+		t.Fatalf("failed to create dag instance: %s", err)
+	}
+
+	// Load the test block
+	blocks, err := loadBlocks("blk_0_to_4.dat")
+	if err != nil {
+		t.Fatalf("Error loading file: %v\n", err)
+	}
+	genesisBlock := blocks[0]
+	testBlock := blocks[1]
+
+	// Create a test blockNode with an unvalidated status
+	genesisNode := dag.index.LookupNode(genesisBlock.Hash())
+	testNode := newBlockNode(&testBlock.MsgBlock().Header, setFromSlice(genesisNode), dag.dagParams.K)
+	testNode.status = statusDataStored
+
+	// Manually add the test block to the database
+	err = db.Update(func(dbTx database.Tx) error {
+		err := dbStoreBlock(dbTx, testBlock)
+		if err != nil {
+			return err
+		}
+		return dbStoreBlockNode(dbTx, testNode)
+	})
+	if err != nil {
+		t.Fatalf("Failed to update block index: %s", err)
+	}
+
+	// Create a new DAG. We expect this DAG to process the
+	// test node
+	dag, err = New(config)
+	if err != nil {
+		t.Fatalf("failed to create dag instance: %s", err)
+	}
+
+	// Make sure that the test node's status is valid
+	testNode = dag.index.LookupNode(testBlock.Hash())
+	if testNode.status&statusValid == 0 {
+		t.Fatalf("testNode is unexpectedly invalid")
+	}
+}
+
 func TestConfirmations(t *testing.T) {
 	// Create a new database and DAG instance to run tests against.
 	params := dagconfig.SimNetParams
 	params.K = 1
-	dag, teardownFunc, err := DAGSetup("TestBlockCount", Config{
+	dag, teardownFunc, err := DAGSetup("TestConfirmations", Config{
 		DAGParams: &params,
 	})
 	if err != nil {
