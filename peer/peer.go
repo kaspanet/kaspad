@@ -228,7 +228,7 @@ type Config struct {
 
 	// SelectedTip specifies a callback which provides the selected tip
 	// to the peer as needed.
-	BlockExists func(*daghash.Hash) (bool, error)
+	BlockExists func(*daghash.Hash) bool
 
 	// HostToNetAddress returns the netaddress for the given host. This can be
 	// nil in  which case the host will be parsed as an IP address.
@@ -683,12 +683,8 @@ func (p *Peer) SelectedTip() *daghash.Hash {
 // IsSyncCandidate returns whether or not this peer is a sync candidate.
 //
 // This function is safe for concurrent access.
-func (p *Peer) IsSyncCandidate() (bool, error) {
-	exists, err := p.cfg.BlockExists(p.selectedTip)
-	if err != nil {
-		return false, err
-	}
-	return !exists, nil
+func (p *Peer) IsSyncCandidate() bool {
+	return !p.cfg.BlockExists(p.selectedTip)
 }
 
 // LastSend returns the last send time of the peer.

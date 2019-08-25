@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/daglabs/btcd/database"
 	"github.com/daglabs/btcd/util"
 	"github.com/daglabs/btcd/util/daghash"
 )
@@ -49,20 +48,8 @@ const (
 // the DAG.
 //
 // This function is safe for concurrent access.
-func (dag *BlockDAG) BlockExists(hash *daghash.Hash) (bool, error) {
-	// Check block index first (could be main chain or side chain blocks).
-	if dag.index.HaveBlock(hash) {
-		return true, nil
-	}
-
-	// Check in the database.
-	var exists bool
-	err := dag.db.View(func(dbTx database.Tx) error {
-		var err error
-		exists, err = dbTx.HasBlock(hash)
-		return err
-	})
-	return exists, err
+func (dag *BlockDAG) BlockExists(hash *daghash.Hash) bool {
+	return dag.index.HaveBlock(hash)
 }
 
 // processOrphans determines if there are any orphans which depend on the passed
@@ -152,11 +139,7 @@ func (dag *BlockDAG) ProcessBlock(block *util.Block, flags BehaviorFlags) (isOrp
 	log.Tracef("Processing block %s", blockHash)
 
 	// The block must not already exist in the DAG.
-	exists, err := dag.BlockExists(blockHash)
-	if err != nil {
-		return false, 0, err
-	}
-	if exists {
+	if dag.BlockExists(blockHash) {
 		str := fmt.Sprintf("already have block %s", blockHash)
 		return false, 0, ruleError(ErrDuplicateBlock, str)
 	}
@@ -182,12 +165,7 @@ func (dag *BlockDAG) ProcessBlock(block *util.Block, flags BehaviorFlags) (isOrp
 	// Handle orphan blocks.
 	allParentsExist := true
 	for _, parentHash := range block.MsgBlock().Header.ParentHashes {
-		parentExists, err := dag.BlockExists(parentHash)
-		if err != nil {
-			return false, 0, err
-		}
-
-		if !parentExists {
+		if !dag.BlockExists(parentHash) {
 			allParentsExist = false
 		}
 	}
