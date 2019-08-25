@@ -460,6 +460,34 @@ func (dag *BlockDAG) initDAGState() error {
 				return err
 			}
 
+			// Check to see if this node had been stored in the the block DB
+			// but not yet accepted. If so, attempt to accept it.
+			if node.status == statusDataStored {
+				// Check to see if the block exists in the block DB. If it's
+				// not, the database has certainly been corrupted.
+				blockExists, err := dbTx.HasBlock(node.hash)
+				if err != nil {
+					return AssertError(fmt.Sprintf("initDAGState: HasBlock "+
+						"for block %s failed: %s", node.hash, err))
+				}
+				if !blockExists {
+					return AssertError(fmt.Sprintf("initDAGState: block %s "+
+						"exists in block index but not in block db", node.hash))
+				}
+
+				// Attempt to accept the block. If it fails, continue without adding
+				// it to the block index. Otherwise, update the reference of the newly
+				// accepted blockNode.
+				block, err := dbFetchBlockByNode(dbTx, node)
+				err = dag.maybeAcceptBlock(block, BFNone)
+				if err != nil {
+					log.Warnf("Block %s, which was not previously processed, "+
+						"failed to be accepted to the DAG: %s", node.hash, err)
+					continue
+				}
+				node.status = statusValid
+			}
+
 			if lastNode == nil {
 				if !node.hash.IsEqual(dag.dagParams.GenesisHash) {
 					return AssertError(fmt.Sprintf("initDAGState: Expected "+
@@ -485,36 +513,6 @@ func (dag *BlockDAG) initDAGState() error {
 			lastNode = node
 			i++
 		}
-
-		//cursor = blockIndexBucket.Cursor()
-		//for ok := cursor.First(); ok; ok = cursor.Next() {
-		//	node, err := dag.deserializeBlockNode(cursor.Value())
-		//	if err != nil {
-		//		return err
-		//	}
-		//	haveBlock := dag.index.HaveBlock(node.hash)
-		//	var exists bool
-		//	err = dag.db.View(func(dbTx database.Tx) error {
-		//		var err error
-		//		exists, err = dbTx.HasBlock(node.hash)
-		//		return err
-		//	})
-		//	if err != nil {
-		//		return err
-		//	}
-		//	log.Infof("aaaaa!!! %s haveBlock: %t exists: %t", node.hash, haveBlock, exists)
-		//	if node.hash.String() == "0000314a79a3de9fa54382f77372900c6b5ee97b7a589263c61e46d71e6a6815" {
-		//		log.Infof("AAAAAAAAAAAAAAAAA!!!!!")
-		//	}
-		//}
-
-		hash, _ := daghash.NewHashFromStr("0000314a79a3de9fa54382f77372900c6b5ee97b7a589263c61e46d71e6a6815")
-		dag.db.View(func(dbTx database.Tx) error {
-			var err error
-			exists, err := dbTx.HasBlock(hash)
-			log.Infof("AAAAAAAAAAAAAAAAA!!!!! %t", exists)
-			return err
-		})
 
 		// Load all of the known UTXO entries and construct the full
 		// UTXO set accordingly.  Since the number of entries is already
