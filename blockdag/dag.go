@@ -495,10 +495,14 @@ func (dag *BlockDAG) addBlock(node *blockNode, parentNodes blockSet,
 	// it fails to write, it's not the end of the world. If the block is
 	// invalid, the worst that can happen is we revalidate the block
 	// after a restart.
-	if writeErr := dag.index.flushToDB(); writeErr != nil {
+	writeErr := dag.db.Update(func(dbTx database.Tx) error {
+		return dag.index.flushToDB(dbTx)
+	})
+	if writeErr != nil {
 		log.Warnf("Error flushing block index changes to disk: %s",
 			writeErr)
 	}
+
 	// If dag.connectBlock returned a rule error, return it here after updating DB
 	if err != nil {
 		return nil, err
@@ -605,15 +609,15 @@ func (dag *BlockDAG) saveChangesFromBlock(node *blockNode, block *util.Block, vi
 	txsAcceptanceData MultiBlockTxsAcceptanceData, virtualTxsAcceptanceData MultiBlockTxsAcceptanceData,
 	feeData compactFeeData) error {
 
-	// Write any block status changes to DB before updating the DAG state.
-	err := dag.index.flushToDB()
-	if err != nil {
-		return err
-	}
-
 	// Atomically insert info into the database.
-	err = dag.db.Update(func(dbTx database.Tx) error {
-		err := dag.utxoDiffStore.flushToDB(dbTx)
+	err := dag.db.Update(func(dbTx database.Tx) error {
+		// Write any block status changes to DB before updating the DAG state.
+		err := dag.index.flushToDB(dbTx)
+		if err != nil {
+			return err
+		}
+
+		err = dag.utxoDiffStore.flushToDB(dbTx)
 		if err != nil {
 			return err
 		}

@@ -486,6 +486,36 @@ func (dag *BlockDAG) initDAGState() error {
 			i++
 		}
 
+		//cursor = blockIndexBucket.Cursor()
+		//for ok := cursor.First(); ok; ok = cursor.Next() {
+		//	node, err := dag.deserializeBlockNode(cursor.Value())
+		//	if err != nil {
+		//		return err
+		//	}
+		//	haveBlock := dag.index.HaveBlock(node.hash)
+		//	var exists bool
+		//	err = dag.db.View(func(dbTx database.Tx) error {
+		//		var err error
+		//		exists, err = dbTx.HasBlock(node.hash)
+		//		return err
+		//	})
+		//	if err != nil {
+		//		return err
+		//	}
+		//	log.Infof("aaaaa!!! %s haveBlock: %t exists: %t", node.hash, haveBlock, exists)
+		//	if node.hash.String() == "0000314a79a3de9fa54382f77372900c6b5ee97b7a589263c61e46d71e6a6815" {
+		//		log.Infof("AAAAAAAAAAAAAAAAA!!!!!")
+		//	}
+		//}
+
+		hash, _ := daghash.NewHashFromStr("0000314a79a3de9fa54382f77372900c6b5ee97b7a589263c61e46d71e6a6815")
+		dag.db.View(func(dbTx database.Tx) error {
+			var err error
+			exists, err := dbTx.HasBlock(hash)
+			log.Infof("AAAAAAAAAAAAAAAAA!!!!! %t", exists)
+			return err
+		})
+
 		// Load all of the known UTXO entries and construct the full
 		// UTXO set accordingly.  Since the number of entries is already
 		// known, perform a single alloc for them versus a whole bunch

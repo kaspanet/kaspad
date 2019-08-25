@@ -116,28 +116,23 @@ func (bi *blockIndex) UnsetStatusFlags(node *blockNode, flags blockStatus) {
 
 // flushToDB writes all dirty block nodes to the database. If all writes
 // succeed, this clears the dirty set.
-func (bi *blockIndex) flushToDB() error {
+func (bi *blockIndex) flushToDB(dbTx database.Tx) error {
 	bi.Lock()
 	if len(bi.dirty) == 0 {
 		bi.Unlock()
 		return nil
 	}
 
-	err := bi.db.Update(func(dbTx database.Tx) error {
-		for node := range bi.dirty {
-			err := dbStoreBlockNode(dbTx, node)
-			if err != nil {
-				return err
-			}
+	for node := range bi.dirty {
+		err := dbStoreBlockNode(dbTx, node)
+		if err != nil {
+			return err
 		}
-		return nil
-	})
-
-	// If write was successful, clear the dirty set.
-	if err == nil {
-		bi.dirty = make(map[*blockNode]struct{})
 	}
 
+	// If write was successful, clear the dirty set.
+	bi.dirty = make(map[*blockNode]struct{})
+
 	bi.Unlock()
-	return err
+	return nil
 }
