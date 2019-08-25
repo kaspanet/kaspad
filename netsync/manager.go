@@ -271,14 +271,7 @@ func (sm *SyncManager) startSync() {
 			continue
 		}
 
-		isCandidate, err := peer.IsSyncCandidate()
-		if err != nil {
-			log.Errorf("Failed to check if peer %s is"+
-				"a sync candidate: %s", peer, err)
-			return
-		}
-
-		if !isCandidate {
+		if !peer.IsSyncCandidate() {
 			state.syncCandidate = false
 			continue
 		}
@@ -887,7 +880,7 @@ func (sm *SyncManager) haveInventory(invVect *wire.InvVect) (bool, error) {
 		fallthrough
 	case wire.InvTypeBlock:
 		// Ask DAG if the block is known to it in any form (in DAG or as an orphan).
-		return sm.dag.HaveBlock(invVect.Hash)
+		return sm.dag.HaveBlock(invVect.Hash), nil
 
 	case wire.InvTypeTx:
 		// Ask the transaction memory pool if the transaction is known
