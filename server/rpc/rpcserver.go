@@ -3537,7 +3537,10 @@ func handleSubmitBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (i
 	// nodes.  This will in turn relay it to the network like normal.
 	_, err = s.cfg.SyncMgr.SubmitBlock(block, blockdag.BFNone)
 	if err != nil {
-		return fmt.Sprintf("rejected: %s", err.Error()), nil
+		return nil, &btcjson.RPCError{
+			Code:    btcjson.ErrRPCVerify,
+			Message: err.Error(),
+		}
 	}
 
 	log.Infof("Accepted block %s via submitBlock", block.Hash())
