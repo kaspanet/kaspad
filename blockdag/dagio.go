@@ -573,7 +573,7 @@ func (dag *BlockDAG) initDAGState() error {
 		dag.dagLock.Lock()
 		for _, node := range unprocessedBlockNodes {
 			// Check to see if the block exists in the block DB. If it's
-			// not, the database has certainly been corrupted.
+			// doesn't, the database has certainly been corrupted.
 			blockExists, err := dbTx.HasBlock(node.hash)
 			if err != nil {
 				return AssertError(fmt.Sprintf("initDAGState: HasBlock "+
@@ -584,9 +584,7 @@ func (dag *BlockDAG) initDAGState() error {
 					"exists in block index but not in block db", node.hash))
 			}
 
-			// Attempt to accept the block. If it fails, continue without adding
-			// it to the block index. Otherwise, update the reference of the newly
-			// accepted blockNode.
+			// Attempt to accept the block.
 			block, err := dbFetchBlockByNode(dbTx, node)
 			err = dag.maybeAcceptBlock(block, BFNone)
 			if err != nil {
