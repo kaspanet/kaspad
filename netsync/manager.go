@@ -1034,7 +1034,7 @@ func (sm *SyncManager) handleInvMsg(imsg *invMsg) {
 
 func (sm *SyncManager) addInvsToGetDataMessageFromQueue(gdmsg *wire.MsgGetData, state *peerSyncState, requestQueue []*wire.InvVect) ([]*wire.InvVect, error) {
 	var invsNum int
-	leftSpaceInGdmsg := wire.MaxInvPerMsg - len(gdmsg.InvList)
+	leftSpaceInGdmsg := wire.MaxInvPerGetDataMsg - len(gdmsg.InvList)
 	if len(requestQueue) > leftSpaceInGdmsg {
 		invsNum = leftSpaceInGdmsg
 	} else {
