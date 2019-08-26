@@ -35,7 +35,6 @@ package logs
 import (
 	"bytes"
 	"fmt"
-	"github.com/jrick/logrotate/rotator"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -43,6 +42,8 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/jrick/logrotate/rotator"
 )
 
 // defaultFlags specifies changes to the default logger behavior.  It is set
@@ -269,11 +270,11 @@ func (b *Backend) AddLogFile(logFile string, logLevel Level) error {
 	logDir, _ := filepath.Split(logFile)
 	err := os.MkdirAll(logDir, 0700)
 	if err != nil {
-		return fmt.Errorf("failed to create log directory: %s\n", err)
+		return fmt.Errorf("failed to create log directory: %s", err)
 	}
 	r, err := rotator.New(logFile, 10*1024, false, 3)
 	if err != nil {
-		return fmt.Errorf("failed to create file rotator: %s\n", err)
+		return fmt.Errorf("failed to create file rotator: %s", err)
 	}
 	b.rotators = append(b.rotators, &backendLogRotator{
 		Rotator:  r,
@@ -342,6 +343,7 @@ func (b *Backend) write(lvl Level, bytesToWrite []byte) {
 	b.mu.Unlock()
 }
 
+// Close finalizes all log rotators for this backend
 func (b *Backend) Close() {
 	for _, r := range b.rotators {
 		r.Close()

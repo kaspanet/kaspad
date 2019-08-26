@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -48,7 +47,7 @@ func (s *server) start() error {
 
 	rpcClient, err := rpcclient.New(s.rpcConnConfig, nil)
 	if err != nil {
-		return errors.New(fmt.Sprintf("failed to create RPC client: %s", err))
+		return fmt.Errorf("failed to create RPC client: %s", err)
 	}
 	s.rpcClient = rpcClient
 
@@ -103,18 +102,18 @@ func (s *server) forwardRequest(request *http.Request) ([]byte, error) {
 
 	requestBody, err := ioutil.ReadAll(request.Body)
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("failed to read request body: %s", err))
+		return nil, fmt.Errorf("failed to read request body: %s", err)
 	}
 
 	var jsonRPCParams []json.RawMessage
 	err = json.Unmarshal(requestBody, &jsonRPCParams)
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("failed to parse params: %s", err))
+		return nil, fmt.Errorf("failed to parse params: %s", err)
 	}
 
 	response, err := s.rpcClient.RawRequest(jsonRPCMethod, jsonRPCParams)
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("request to rpc server failed: %s", err))
+		return nil, fmt.Errorf("request to rpc server failed: %s", err)
 	}
 
 	return response, nil

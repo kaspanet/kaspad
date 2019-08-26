@@ -177,6 +177,10 @@ type SyncManager struct {
 	nextCheckpoint   *dagconfig.Checkpoint
 }
 
+// PushGetBlockInvsOrHeaders sends a getblockinvs or getheaders message according to checkpoint status
+// for the provided start hash.
+//
+// This function is safe for concurrent access.
 func (sm *SyncManager) PushGetBlockInvsOrHeaders(peer *peerpkg.Peer, startHash *daghash.Hash) error {
 	// When the current height is less than a known checkpoint we
 	// can use block headers to learn about which blocks comprise
