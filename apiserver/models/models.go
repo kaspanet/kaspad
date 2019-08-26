@@ -18,7 +18,7 @@ type Block struct {
 	Nonce                uint64
 	BlueScore            uint64
 	IsChainBlock         bool
-	Parents              []ParentBlock
+	ParentBlocks         []Block `gorm:"many2many:parent_blocks;"`
 }
 
 type ParentBlock struct {
@@ -50,14 +50,19 @@ type Transaction struct {
 	Gas              uint64
 	PayloadHash      string
 	Payload          []byte
+	Blocks           []Block `gorm:"many2many:transactions_to_blocks;"`
 }
 
-type TransactionsToBlock struct {
+type TransactionBlock struct {
 	TransactionID uint64
 	Transaction   Transaction
 	BlockID       uint64
 	Block         Block
 	Index         uint32
+}
+
+func (TransactionBlock) TableName() string {
+	return "transactions_to_blocks"
 }
 
 type TransactionOutput struct {
@@ -68,7 +73,7 @@ type TransactionOutput struct {
 	PkScript      []byte
 }
 
-type TransactionInputs struct {
+type TransactionInput struct {
 	TransactionID       uint64
 	Transaction         Transaction
 	TransactionOutputID uint64
