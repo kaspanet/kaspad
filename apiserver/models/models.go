@@ -1,15 +1,14 @@
 package models
 
 import (
-	"github.com/jinzhu/gorm"
 	"time"
 )
 
 type Block struct {
-	gorm.Model
-	ID                   uint
+	ID                   uint64 `gorm:"primary_key"`
 	BlockHash            string
 	AcceptingBlockID     uint64
+	AcceptingBlock       *Block
 	Version              int32
 	HashMerkleRoot       string
 	AcceptedIDMerkleRoot string
@@ -19,30 +18,31 @@ type Block struct {
 	Nonce                uint64
 	BlueScore            uint64
 	IsChainBlock         bool
+	Parents              []ParentBlock
 }
 
 type ParentBlock struct {
-	gorm.Model
 	BlockID       uint64
+	Block         Block
 	ParentBlockID uint64
+	ParentBlock   Block
 }
 
 type RawBlock struct {
-	gorm.Model
 	BlockID   uint64
+	Block     Block
 	BlockData []byte
 }
 
 type Subnetwork struct {
-	gorm.Model
-	ID           uint64
+	ID           uint64 `gorm:"primary_key"`
 	SubnetworkID []byte
 }
 
-type Transactions struct {
-	gorm.Model
-	ID               uint64
+type Transaction struct {
+	ID               uint64 `gorm:"primary_key"`
 	AcceptingBlockID uint64
+	AcceptingBlock   Block
 	TransactionHash  string
 	TransactionID    string
 	LockTime         uint64
@@ -52,32 +52,35 @@ type Transactions struct {
 	Payload          []byte
 }
 
-type TransactionsToBlocks struct {
-	gorm.Model
+type TransactionsToBlock struct {
 	TransactionID uint64
+	Transaction   Transaction
 	BlockID       uint64
+	Block         Block
 	Index         uint32
 }
 
-type TransactionOutputs struct {
-	gorm.Model
+type TransactionOutput struct {
 	TransactionID uint64
+	Transaction   Transaction
 	Index         uint32
 	Value         uint64
 	PkScript      []byte
 }
 
 type TransactionInputs struct {
-	gorm.Model
 	TransactionID       uint64
+	Transaction         Transaction
 	TransactionOutputID uint64
+	TransactionOutput   TransactionOutput
 	Index               uint32
 	SignatureScript     []byte
 	Sequence            uint64
 }
 
 type UTXO struct {
-	gorm.Model
 	TransactionOutputID uint64
+	TransactionOutput   TransactionOutput
 	AcceptingBlockID    uint64
+	AcceptingBlock      Block
 }
