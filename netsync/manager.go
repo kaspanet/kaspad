@@ -1085,7 +1085,7 @@ func (sm *SyncManager) addInvsToGetDataMessageFromQueue(gdmsg *wire.MsgGetData, 
 			}
 		}
 
-		if len(requestQueue) >= wire.MaxInvPerMsg {
+		if len(requestQueue) >= wire.MaxInvPerGetDataMsg {
 			break
 		}
 	}
