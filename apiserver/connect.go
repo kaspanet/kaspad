@@ -11,7 +11,7 @@ func connectToServer(cfg *config) (*apiServerClient, error) {
 	var cert []byte
 	if !cfg.DisableTLS {
 		var err error
-		cert, err = ioutil.ReadFile(cfg.CertificatePath)
+		cert, err = ioutil.ReadFile(cfg.RPCCert)
 		if err != nil {
 			return nil, fmt.Errorf("Error reading certificates file: %s", err)
 		}
@@ -20,8 +20,8 @@ func connectToServer(cfg *config) (*apiServerClient, error) {
 	connCfg := &rpcclient.ConnConfig{
 		Host:       cfg.Address,
 		Endpoint:   "ws",
-		User:       "user",
-		Pass:       "pass",
+		User:       cfg.RPCUser,
+		Pass:       cfg.RPCPassword,
 		DisableTLS: cfg.DisableTLS,
 	}
 

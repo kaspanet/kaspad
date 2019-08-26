@@ -21,9 +21,12 @@ var (
 )
 
 type config struct {
-	Address         string `long:"address" description:"An address to a JSON-RPC endpoints" required:"true"`
-	CertificatePath string `long:"cert" description:"Path to certificate accepted by JSON-RPC endpoint"`
-	DisableTLS      bool   `long:"notls" description:"Disable TLS"`
+	Address     string `long:"address" description:"An address to a JSON-RPC endpoints" required:"true"`
+	RPCUser     string `short:"u" long:"rpcuser" description:"RPC username" required:"true"`
+	RPCPassword string `short:"P" long:"rpcpass" default-mask:"-" description:"RPC password" required:"true"`
+	RPCServer   string `short:"s" long:"rpcserver" description:"RPC server to connect to" required:"true"`
+	RPCCert     string `short:"c" long:"rpccert" description:"RPC server certificate chain for validation"`
+	DisableTLS  bool   `long:"notls" description:"Disable TLS"`
 }
 
 func parseConfig() (*config, error) {
@@ -35,11 +38,11 @@ func parseConfig() (*config, error) {
 		return nil, err
 	}
 
-	if cfg.CertificatePath == "" && !cfg.DisableTLS {
+	if cfg.RPCCert == "" && !cfg.DisableTLS {
 		return nil, errors.New("--notls has to be disabled if --cert is used")
 	}
 
-	if cfg.CertificatePath != "" && cfg.DisableTLS {
+	if cfg.RPCCert != "" && cfg.DisableTLS {
 		return nil, errors.New("--cert should be omitted if --notls is used")
 	}
 
