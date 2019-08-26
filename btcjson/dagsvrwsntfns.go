@@ -29,6 +29,8 @@ const (
 	// from the dag server that inform a client that a transaction that
 	// matches the loaded filter was accepted by the mempool.
 	RelevantTxAcceptedNtfnMethod = "relevantTxAccepted"
+
+	ChainChangedNtfnMethod = "chainChanged"
 )
 
 // FilteredBlockAddedNtfn defines the filteredBlockAdded JSON-RPC
@@ -123,4 +125,5 @@ func init() {
 	MustRegisterCmd(TxAcceptedNtfnMethod, (*TxAcceptedNtfn)(nil), flags)
 	MustRegisterCmd(TxAcceptedVerboseNtfnMethod, (*TxAcceptedVerboseNtfn)(nil), flags)
 	MustRegisterCmd(RelevantTxAcceptedNtfnMethod, (*RelevantTxAcceptedNtfn)(nil), flags)
+	MustRegisterCmd(ChainChangedNtfnMethod, (*ChainChangedNtfn)(nil), flags)
 }

@@ -138,6 +138,14 @@ func (c *Client) handleNotification(ntfn *rawNotification) {
 
 	switch ntfn.Method {
 
+	// ChainChangedNtfnMethod
+	case btcjson.ChainChangedNtfnMethod:
+		// Ignore the notification if the client is not interested in
+		// it.
+		if c.ntfnHandlers.OnChainChanged == nil {
+			return
+		}
+
 	// OnFilteredBlockAdded
 	case btcjson.FilteredBlockAddedNtfnMethod:
 		// Ignore the notification if the client is not interested in
