@@ -567,39 +567,44 @@ func (dag *BlockDAG) initDAGState() error {
 		dag.lastFinalityPoint = dag.index.LookupNode(state.LastFinalityPoint)
 		dag.finalizeNodesBelowFinalityPoint(false)
 
-		// Go over any unprocessed blockNodes and process them now. We
-		// lock the dagLock here because maybeAcceptBlock must be called with
-		// the dagLock held.
-		err = func() error {
-			dag.dagLock.Lock()
-			defer dag.dagLock.Unlock()
-
-			for _, node := range unprocessedBlockNodes {
-				// Check to see if the block exists in the block DB. If it's
-				// doesn't, the database has certainly been corrupted.
-				blockExists, err := dbTx.HasBlock(node.hash)
-				if err != nil {
-					return AssertError(fmt.Sprintf("initDAGState: HasBlock "+
-						"for block %s failed: %s", node.hash, err))
-				}
-				if !blockExists {
-					return AssertError(fmt.Sprintf("initDAGState: block %s "+
-						"exists in block index but not in block db", node.hash))
-				}
-
-				// Attempt to accept the block.
-				block, err := dbFetchBlockByNode(dbTx, node)
-				err = dag.maybeAcceptBlock(block, BFNone)
-				if err != nil {
-					log.Warnf("Block %s, which was not previously processed, "+
-						"failed to be accepted to the DAG: %s", node.hash, err)
-					continue
-				}
+		// Go over any unprocessed blockNodes and process them now.
+		for _, node := range unprocessedBlockNodes {
+			// Check to see if the block exists in the block DB. If it's
+			// doesn't, the database has certainly been corrupted.
+			blockExists, err := dbTx.HasBlock(node.hash)
+			if err != nil {
+				return AssertError(fmt.Sprintf("initDAGState: HasBlock "+
+					"for block %s failed: %s", node.hash, err))
 			}
-			return nil
-		}()
+			if !blockExists {
+				return AssertError(fmt.Sprintf("initDAGState: block %s "+
+					"exists in block index but not in block db", node.hash))
+			}
 
-		return err
+			// Attempt to accept the block.
+			block, err := dbFetchBlockByNode(dbTx, node)
+			isOrphan, delay, err := dag.ProcessBlock(block, BFWasStored)
+			if err != nil {
+				log.Warnf("Block %s, which was not previously processed, "+
+					"failed to be accepted to the DAG: %s", node.hash, err)
+				continue
+			}
+
+			// If the block is an orphan or is delayed then it couldn't have
+			// possibly been written to the block index in the first place.
+			if isOrphan {
+				return AssertError(fmt.Sprintf("Block %s, which was not "+
+					"previously processed, turned out to be an orphan, which is "+
+					"impossible.", node.hash))
+			}
+			if delay != 0 {
+				return AssertError(fmt.Sprintf("Block %s, which was not "+
+					"previously processed, turned out to be delayed, which is "+
+					"impossible.", node.hash))
+			}
+		}
+
+		return nil
 	})
 }
 
