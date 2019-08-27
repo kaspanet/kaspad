@@ -15,6 +15,7 @@ const (
 var (
 	// Default configuration options
 	defaultLogDir = util.AppDataDir("apiserver", false)
+	defaultDBHost = "localhost:3306"
 )
 
 type config struct {
@@ -24,11 +25,15 @@ type config struct {
 	RPCServer   string `short:"s" long:"rpcserver" description:"RPC server to connect to" required:"true"`
 	RPCCert     string `short:"c" long:"rpccert" description:"RPC server certificate chain for validation"`
 	DisableTLS  bool   `long:"notls" description:"Disable TLS"`
+	DBHost      string `long:"dbhost" description:"Database host"`
+	DBUser      string `long:"dbuser" description:"Database user" required:"true"`
+	DBPassword  string `long:"dbpass" description:"Database password" required:"true"`
 }
 
 func parseConfig() (*config, error) {
 	cfg := &config{
 		LogDir: defaultLogDir,
+		DBHost: defaultDBHost,
 	}
 	parser := flags.NewParser(cfg, flags.PrintErrors|flags.HelpFlag)
 	_, err := parser.Parse()
