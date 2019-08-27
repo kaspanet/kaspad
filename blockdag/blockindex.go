@@ -118,8 +118,8 @@ func (bi *blockIndex) UnsetStatusFlags(node *blockNode, flags blockStatus) {
 // succeed, this clears the dirty set.
 func (bi *blockIndex) flushToDB(dbTx database.Tx) error {
 	bi.Lock()
+	defer bi.Unlock()
 	if len(bi.dirty) == 0 {
-		bi.Unlock()
 		return nil
 	}
 
@@ -132,7 +132,5 @@ func (bi *blockIndex) flushToDB(dbTx database.Tx) error {
 
 	// If write was successful, clear the dirty set.
 	bi.dirty = make(map[*blockNode]struct{})
-
-	bi.Unlock()
 	return nil
 }

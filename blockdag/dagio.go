@@ -570,32 +570,36 @@ func (dag *BlockDAG) initDAGState() error {
 		// Go over any unprocessed blockNodes and process them now. We
 		// lock the dagLock here because maybeAcceptBlock must be called with
 		// the dagLock held.
-		dag.dagLock.Lock()
-		for _, node := range unprocessedBlockNodes {
-			// Check to see if the block exists in the block DB. If it's
-			// doesn't, the database has certainly been corrupted.
-			blockExists, err := dbTx.HasBlock(node.hash)
-			if err != nil {
-				return AssertError(fmt.Sprintf("initDAGState: HasBlock "+
-					"for block %s failed: %s", node.hash, err))
-			}
-			if !blockExists {
-				return AssertError(fmt.Sprintf("initDAGState: block %s "+
-					"exists in block index but not in block db", node.hash))
-			}
+		err = func() error {
+			dag.dagLock.Lock()
+			defer dag.dagLock.Unlock()
 
-			// Attempt to accept the block.
-			block, err := dbFetchBlockByNode(dbTx, node)
-			err = dag.maybeAcceptBlock(block, BFNone)
-			if err != nil {
-				log.Warnf("Block %s, which was not previously processed, "+
-					"failed to be accepted to the DAG: %s", node.hash, err)
-				continue
-			}
-		}
-		dag.dagLock.Unlock()
+			for _, node := range unprocessedBlockNodes {
+				// Check to see if the block exists in the block DB. If it's
+				// doesn't, the database has certainly been corrupted.
+				blockExists, err := dbTx.HasBlock(node.hash)
+				if err != nil {
+					return AssertError(fmt.Sprintf("initDAGState: HasBlock "+
+						"for block %s failed: %s", node.hash, err))
+				}
+				if !blockExists {
+					return AssertError(fmt.Sprintf("initDAGState: block %s "+
+						"exists in block index but not in block db", node.hash))
+				}
 
-		return nil
+				// Attempt to accept the block.
+				block, err := dbFetchBlockByNode(dbTx, node)
+				err = dag.maybeAcceptBlock(block, BFNone)
+				if err != nil {
+					log.Warnf("Block %s, which was not previously processed, "+
+						"failed to be accepted to the DAG: %s", node.hash, err)
+					continue
+				}
+			}
+			return nil
+		}()
+
+		return err
 	})
 }
 
