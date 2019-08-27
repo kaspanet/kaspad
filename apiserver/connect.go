@@ -6,21 +6,21 @@ import (
 	"io/ioutil"
 )
 
-func connectToServer(cfg *config) (*txgenClient, error) {
+func connectToServer(cfg *config) (*apiServerClient, error) {
 	var cert []byte
 	if !cfg.DisableTLS {
 		var err error
-		cert, err = ioutil.ReadFile(cfg.CertificatePath)
+		cert, err = ioutil.ReadFile(cfg.RPCCert)
 		if err != nil {
 			return nil, fmt.Errorf("Error reading certificates file: %s", err)
 		}
 	}
 
 	connCfg := &rpcclient.ConnConfig{
-		Host:       cfg.Address,
+		Host:       cfg.RPCServer,
 		Endpoint:   "ws",
-		User:       "user",
-		Pass:       "pass",
+		User:       cfg.RPCUser,
+		Pass:       cfg.RPCPassword,
 		DisableTLS: cfg.DisableTLS,
 	}
 
@@ -28,12 +28,12 @@ func connectToServer(cfg *config) (*txgenClient, error) {
 		connCfg.Certificates = cert
 	}
 
-	client, err := newTxgenClient(connCfg)
+	client, err := newAPIServerClient(connCfg)
 	if err != nil {
-		return nil, fmt.Errorf("Error connecting to address %s: %s", cfg.Address, err)
+		return nil, fmt.Errorf("Error connecting to address %s: %s", cfg.RPCServer, err)
 	}
 
-	log.Infof("Connected to server %s", cfg.Address)
+	log.Infof("Connected to server %s", cfg.RPCServer)
 
 	return client, nil
 }
