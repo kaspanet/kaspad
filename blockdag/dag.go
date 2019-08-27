@@ -601,10 +601,9 @@ func (dag *BlockDAG) saveChangesFromBlock(node *blockNode, block *util.Block, vi
 	if err != nil {
 		return err
 	}
-
 	// Atomically insert info into the database.
 	err = dag.db.Update(func(dbTx database.Tx) error {
-		err = dag.utxoDiffStore.flushToDB(dbTx)
+		err := dag.utxoDiffStore.flushToDB(dbTx)
 		if err != nil {
 			return err
 		}
