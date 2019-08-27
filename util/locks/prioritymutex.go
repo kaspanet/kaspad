@@ -31,6 +31,7 @@ type PriorityMutex struct {
 	lowPriorityMutex    sync.Mutex
 }
 
+// NewPriorityMutex returns a new priority mutex
 func NewPriorityMutex() *PriorityMutex {
 	lock := PriorityMutex{
 		highPriorityWaiting: newWaitGroup(),
@@ -70,7 +71,7 @@ func (mtx *PriorityMutex) HighPriorityReadLock() {
 	mtx.dataMutex.RLock()
 }
 
-// HighPriorityWriteUnlock unlocks the high-priority read
+// HighPriorityReadUnlock unlocks the high-priority read
 // lock
 func (mtx *PriorityMutex) HighPriorityReadUnlock() {
 	mtx.highPriorityWaiting.done()

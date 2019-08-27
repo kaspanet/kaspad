@@ -67,7 +67,7 @@ func IsValidIDType(id interface{}) bool {
 // requests, however this struct it being exported in case the caller wants to
 // construct raw requests for some reason.
 type Request struct {
-	JsonRPC string            `json:"jsonrpc"`
+	JSONRPC string            `json:"jsonrpc"`
 	Method  string            `json:"method"`
 	Params  []json.RawMessage `json:"params"`
 	ID      interface{}       `json:"id"`
@@ -98,7 +98,7 @@ func NewRequest(id interface{}, method string, params []interface{}) (*Request, 
 	}
 
 	return &Request{
-		JsonRPC: "1.0",
+		JSONRPC: "1.0",
 		ID:      id,
 		Method:  method,
 		Params:  rawParams,

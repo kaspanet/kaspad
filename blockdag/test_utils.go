@@ -135,15 +135,18 @@ func createTxForTest(numInputs uint32, numOutputs uint32, outputValue uint64, su
 	return wire.NewNativeMsgTx(wire.TxVersion, txIns, txOuts)
 }
 
+// VirtualForTest is an exported version for virtualBlock, so that it can be returned by exported test_util methods
+type VirtualForTest *virtualBlock
+
 // SetVirtualForTest replaces the dag's virtual block. This function is used for test purposes only
-func SetVirtualForTest(dag *BlockDAG, virtual *virtualBlock) *virtualBlock {
+func SetVirtualForTest(dag *BlockDAG, virtual VirtualForTest) VirtualForTest {
 	oldVirtual := dag.virtual
 	dag.virtual = virtual
-	return oldVirtual
+	return VirtualForTest(oldVirtual)
 }
 
 // GetVirtualFromParentsForTest generates a virtual block with the given parents.
-func GetVirtualFromParentsForTest(dag *BlockDAG, parentHashes []*daghash.Hash) (*virtualBlock, error) {
+func GetVirtualFromParentsForTest(dag *BlockDAG, parentHashes []*daghash.Hash) (VirtualForTest, error) {
 	parents := newSet()
 	for _, hash := range parentHashes {
 		parent := dag.index.LookupNode(hash)
@@ -173,5 +176,5 @@ func GetVirtualFromParentsForTest(dag *BlockDAG, parentHashes []*daghash.Hash) (
 	}
 	virtual.utxoSet = diffUTXO.base
 
-	return virtual, nil
+	return VirtualForTest(virtual), nil
 }

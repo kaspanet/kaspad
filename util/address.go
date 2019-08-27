@@ -164,6 +164,7 @@ type AddressPubKeyHash struct {
 	hash   [ripemd160.Size]byte
 }
 
+// NewAddressPubKeyHashFromPublicKey returns a new AddressPubKeyHash from given public key
 func NewAddressPubKeyHashFromPublicKey(publicKey []byte, prefix Bech32Prefix) (*AddressPubKeyHash, error) {
 	pkHash := Hash160(publicKey)
 	return newAddressPubKeyHash(prefix, pkHash)

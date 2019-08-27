@@ -122,6 +122,7 @@ func GenerateDeterministicExtraNonceForTest() uint64 {
 	return extraNonceForTest
 }
 
+// OpTrueAddress returns an address pointing to a P2SH anyone-can-spend script
 func OpTrueAddress(prefix util.Bech32Prefix) (util.Address, error) {
 	return util.NewAddressScriptHash(blockdag.OpTrueScript, prefix)
 }

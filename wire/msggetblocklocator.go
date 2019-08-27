@@ -1,10 +1,16 @@
 package wire
 
 import (
-	"github.com/daglabs/btcd/util/daghash"
 	"io"
+
+	"github.com/daglabs/btcd/util/daghash"
 )
 
+// MsgGetBlockLocator implements the Message interface and represents a bitcoin
+// getlocator message.  It is used to request a block locator between start and stop hash.
+// The locator is returned via a locator message (MsgBlockLocator).
+//
+// This message has no payload.
 type MsgGetBlockLocator struct {
 	StartHash *daghash.Hash
 	StopHash  *daghash.Hash

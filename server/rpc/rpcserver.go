@@ -3995,7 +3995,7 @@ func (s *Server) jsonRPCRead(w http.ResponseWriter, r *http.Request, isAdmin boo
 		//
 		// RPC quirks can be enabled by the user to avoid compatibility issues
 		// with software relying on Core's behavior.
-		if request.ID == nil && !(config.MainConfig().RPCQuirks && request.JsonRPC == "") {
+		if request.ID == nil && !(config.MainConfig().RPCQuirks && request.JSONRPC == "") {
 			return
 		}
 

@@ -860,6 +860,10 @@ func (p *Peer) PushAddrMsg(addresses []*wire.NetAddress, subnetworkID *subnetwor
 	return msg.AddrList, nil
 }
 
+// PushGetBlockLocatorMsg sends a getlocator message for the provided start
+// and stop hash.
+//
+// This function is safe for concurrent access.
 func (p *Peer) PushGetBlockLocatorMsg(startHash, stopHash *daghash.Hash) {
 	msg := wire.NewMsgGetBlockLocator(startHash, stopHash)
 	p.QueueMessage(msg, nil)
