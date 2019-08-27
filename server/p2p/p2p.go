@@ -314,7 +314,7 @@ func (sp *Peer) selectedTip() *daghash.Hash {
 
 // blockExists determines whether a block with the given hash exists in
 // the DAG.
-func (sp *Peer) blockExists(hash *daghash.Hash) (bool, error) {
+func (sp *Peer) blockExists(hash *daghash.Hash) bool {
 	return sp.server.DAG.BlockExists(hash)
 }
 
@@ -717,14 +717,7 @@ func (sp *Peer) OnBlockLocator(_ *peer.Peer, msg *wire.MsgBlockLocator) {
 	// If the first hash of the block locator is known, it means we found
 	// the highest shared block.
 	firstHash := msg.BlockLocatorHashes[0]
-	exists, err := dag.BlockExists(firstHash)
-	if err != nil {
-		peerLog.Errorf("Error checking if first hash in the block"+
-			" locator (%s) exists in the dag: %s",
-			msg.BlockLocatorHashes[0], sp, err)
-		return
-	}
-	if exists {
+	if dag.BlockExists(firstHash) {
 		err := sp.server.SyncManager.PushGetBlockInvsOrHeaders(sp.Peer, firstHash)
 		if err != nil {
 			peerLog.Errorf("Failed pushing get blocks message for peer %s: %s",

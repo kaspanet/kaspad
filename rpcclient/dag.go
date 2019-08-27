@@ -561,6 +561,8 @@ func (c *Client) GetRawMempoolVerbose() (map[string]btcjson.GetRawMempoolVerbose
 // GetSubnetworkAsync RPC invocation (or an applicable error).
 type FutureGetSubnetworkResult chan *response
 
+// Receive waits for the response promised by the future and returns information
+// regarding the requested subnetwork
 func (r FutureGetSubnetworkResult) Receive() (*btcjson.GetSubnetworkResult, error) {
 	res, err := receiveFuture(r)
 	if err != nil {

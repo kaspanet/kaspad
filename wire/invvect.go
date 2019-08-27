@@ -16,6 +16,10 @@ const (
 	// single bitcoin inv message.
 	MaxInvPerMsg = 1 << 16
 
+	// MaxInvPerGetDataMsg is the maximum number of inventory vectors that can
+	// be in a single getData message.
+	MaxInvPerGetDataMsg = 50
+
 	// Maximum payload size for an inventory vector.
 	maxInvVectPayload = 4 + daghash.HashSize
 )

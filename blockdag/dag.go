@@ -154,12 +154,9 @@ type BlockDAG struct {
 // be in, like part of the DAG or the orphan pool.
 //
 // This function is safe for concurrent access.
-func (dag *BlockDAG) HaveBlock(hash *daghash.Hash) (bool, error) {
-	exists, err := dag.BlockExists(hash)
-	if err != nil {
-		return false, err
-	}
-	return exists || dag.IsKnownOrphan(hash), nil
+func (dag *BlockDAG) HaveBlock(hash *daghash.Hash) bool {
+	exists := dag.BlockExists(hash)
+	return exists || dag.IsKnownOrphan(hash)
 }
 
 // HaveBlocks returns whether or not the DAG instances has all blocks represented
@@ -167,18 +164,15 @@ func (dag *BlockDAG) HaveBlock(hash *daghash.Hash) (bool, error) {
 // be in, like part of the DAG or the orphan pool.
 //
 // This function is safe for concurrent access.
-func (dag *BlockDAG) HaveBlocks(hashes []*daghash.Hash) (bool, error) {
+func (dag *BlockDAG) HaveBlocks(hashes []*daghash.Hash) bool {
 	for _, hash := range hashes {
-		haveBlock, err := dag.HaveBlock(hash)
-		if err != nil {
-			return false, err
-		}
+		haveBlock := dag.HaveBlock(hash)
 		if !haveBlock {
-			return false, nil
+			return false
 		}
 	}
 
-	return true, nil
+	return true
 }
 
 // IsKnownOrphan returns whether the passed hash is currently a known orphan.
@@ -225,11 +219,7 @@ func (dag *BlockDAG) GetOrphanMissingAncestorHashes(hash *daghash.Hash) ([]*dagh
 					queue = append(queue, parentHash)
 				}
 			} else {
-				existsInDag, err := dag.BlockExists(current)
-				if err != nil {
-					return nil, err
-				}
-				if !existsInDag {
+				if !dag.BlockExists(current) {
 					missingAncestorsHashes = append(missingAncestorsHashes, current)
 				}
 			}

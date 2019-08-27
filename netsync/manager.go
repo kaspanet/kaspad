@@ -177,6 +177,10 @@ type SyncManager struct {
 	nextCheckpoint   *dagconfig.Checkpoint
 }
 
+// PushGetBlockInvsOrHeaders sends a getblockinvs or getheaders message according to checkpoint status
+// for the provided start hash.
+//
+// This function is safe for concurrent access.
 func (sm *SyncManager) PushGetBlockInvsOrHeaders(peer *peerpkg.Peer, startHash *daghash.Hash) error {
 	// When the current height is less than a known checkpoint we
 	// can use block headers to learn about which blocks comprise
@@ -271,14 +275,7 @@ func (sm *SyncManager) startSync() {
 			continue
 		}
 
-		isCandidate, err := peer.IsSyncCandidate()
-		if err != nil {
-			log.Errorf("Failed to check if peer %s is"+
-				"a sync candidate: %s", peer, err)
-			return
-		}
-
-		if !isCandidate {
+		if !peer.IsSyncCandidate() {
 			state.syncCandidate = false
 			continue
 		}
@@ -887,7 +884,7 @@ func (sm *SyncManager) haveInventory(invVect *wire.InvVect) (bool, error) {
 		fallthrough
 	case wire.InvTypeBlock:
 		// Ask DAG if the block is known to it in any form (in DAG or as an orphan).
-		return sm.dag.HaveBlock(invVect.Hash)
+		return sm.dag.HaveBlock(invVect.Hash), nil
 
 	case wire.InvTypeTx:
 		// Ask the transaction memory pool if the transaction is known
@@ -1037,7 +1034,7 @@ func (sm *SyncManager) handleInvMsg(imsg *invMsg) {
 
 func (sm *SyncManager) addInvsToGetDataMessageFromQueue(gdmsg *wire.MsgGetData, state *peerSyncState, requestQueue []*wire.InvVect) ([]*wire.InvVect, error) {
 	var invsNum int
-	leftSpaceInGdmsg := wire.MaxInvPerMsg - len(gdmsg.InvList)
+	leftSpaceInGdmsg := wire.MaxInvPerGetDataMsg - len(gdmsg.InvList)
 	if len(requestQueue) > leftSpaceInGdmsg {
 		invsNum = leftSpaceInGdmsg
 	} else {
@@ -1045,7 +1042,7 @@ func (sm *SyncManager) addInvsToGetDataMessageFromQueue(gdmsg *wire.MsgGetData, 
 	}
 	invsToAdd := make([]*wire.InvVect, 0, invsNum)
 
-	for len(requestQueue) != 0 {
+	for len(requestQueue) != 0 && len(invsToAdd) < invsNum {
 		iv := requestQueue[0]
 		requestQueue[0] = nil
 		requestQueue = requestQueue[1:]

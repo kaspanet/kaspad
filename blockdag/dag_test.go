@@ -224,10 +224,7 @@ func TestHaveBlock(t *testing.T) {
 			t.Fatalf("NewHashFromStr: %v", err)
 		}
 
-		result, err := dag.HaveBlock(hash)
-		if err != nil {
-			t.Fatalf("HaveBlock #%d unexpected error: %v", i, err)
-		}
+		result := dag.HaveBlock(hash)
 		if result != test.want {
 			t.Fatalf("HaveBlock #%d got %v want %v", i, result,
 				test.want)

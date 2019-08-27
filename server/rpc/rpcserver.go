@@ -3537,7 +3537,10 @@ func handleSubmitBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (i
 	// nodes.  This will in turn relay it to the network like normal.
 	_, err = s.cfg.SyncMgr.SubmitBlock(block, blockdag.BFNone)
 	if err != nil {
-		return fmt.Sprintf("rejected: %s", err.Error()), nil
+		return nil, &btcjson.RPCError{
+			Code:    btcjson.ErrRPCVerify,
+			Message: fmt.Sprintf("Block rejected. Reason: %s", err),
+		}
 	}
 
 	log.Infof("Accepted block %s via submitBlock", block.Hash())
@@ -3992,7 +3995,7 @@ func (s *Server) jsonRPCRead(w http.ResponseWriter, r *http.Request, isAdmin boo
 		//
 		// RPC quirks can be enabled by the user to avoid compatibility issues
 		// with software relying on Core's behavior.
-		if request.ID == nil && !(config.MainConfig().RPCQuirks && request.JsonRPC == "") {
+		if request.ID == nil && !(config.MainConfig().RPCQuirks && request.JSONRPC == "") {
 			return
 		}
 

@@ -18,6 +18,7 @@ import (
 	"github.com/miekg/dns"
 )
 
+// Node repesents a node in the DAGCoin network
 type Node struct {
 	Addr         *wire.NetAddress
 	Services     wire.ServiceFlag
@@ -27,6 +28,8 @@ type Node struct {
 	SubnetworkID *subnetworkid.SubnetworkID
 }
 
+// Manager is dnsseeder's main worker-type, storing all information required
+// for operation
 type Manager struct {
 	mtx sync.RWMutex
 
@@ -118,6 +121,7 @@ func isRoutable(addr net.IP) bool {
 	return true
 }
 
+// NewManager constructs and returns a new dnsseeder manager, with the provided dataDir
 func NewManager(dataDir string) (*Manager, error) {
 	amgr := Manager{
 		nodes:     make(map[string]*Node),
@@ -142,6 +146,8 @@ func NewManager(dataDir string) (*Manager, error) {
 	return &amgr, nil
 }
 
+// AddAddresses adds an address to this dnsseeder manager, and returns the number of
+// address currently held
 func (m *Manager) AddAddresses(addrs []*wire.NetAddress) int {
 	var count int
 
@@ -245,6 +251,7 @@ func (m *Manager) GoodAddresses(qtype uint16, services wire.ServiceFlag, include
 	return addrs
 }
 
+// Attempt updates the last connection attempt for the specified ip address to now
 func (m *Manager) Attempt(ip net.IP) {
 	m.mtx.Lock()
 	node, exists := m.nodes[ip.String()]
@@ -254,6 +261,7 @@ func (m *Manager) Attempt(ip net.IP) {
 	m.mtx.Unlock()
 }
 
+// Good updates the last successful connection attempt for the specified ip address to now
 func (m *Manager) Good(ip net.IP, services wire.ServiceFlag, subnetworkid *subnetworkid.SubnetworkID) {
 	m.mtx.Lock()
 	node, exists := m.nodes[ip.String()]
