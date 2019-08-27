@@ -1038,7 +1038,7 @@ func (sm *SyncManager) addInvsToGetDataMessageFromQueue(gdmsg *wire.MsgGetData, 
 	}
 	invsToAdd := make([]*wire.InvVect, 0, invsNum)
 
-	for len(requestQueue) != 0 {
+	for len(requestQueue) != 0 && len(invsToAdd) < wire.MaxInvPerGetDataMsg {
 		iv := requestQueue[0]
 		requestQueue[0] = nil
 		requestQueue = requestQueue[1:]
@@ -1085,7 +1085,7 @@ func (sm *SyncManager) addInvsToGetDataMessageFromQueue(gdmsg *wire.MsgGetData, 
 			}
 		}
 
-		if len(requestQueue) >= wire.MaxInvPerGetDataMsg {
+		if len(requestQueue) >= wire.MaxInvPerMsg {
 			break
 		}
 	}
