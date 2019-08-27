@@ -489,7 +489,6 @@ func (dag *BlockDAG) addBlock(node *blockNode, parentNodes blockSet,
 		log.Warnf("Error flushing block index changes to disk: %s",
 			writeErr)
 	}
-
 	// If dag.connectBlock returned a rule error, return it here after updating DB
 	if err != nil {
 		return nil, err
@@ -601,6 +600,7 @@ func (dag *BlockDAG) saveChangesFromBlock(node *blockNode, block *util.Block, vi
 	if err != nil {
 		return err
 	}
+
 	// Atomically insert info into the database.
 	err = dag.db.Update(func(dbTx database.Tx) error {
 		err := dag.utxoDiffStore.flushToDB(dbTx)
