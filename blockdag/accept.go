@@ -54,7 +54,7 @@ func (dag *BlockDAG) maybeAcceptBlock(block *util.Block, flags BehaviorFlags) er
 		if err != nil {
 			return err
 		}
-		return dag.index.flushToDB(dbTx)
+		return dag.index.flushToDBWithTx(dbTx)
 	})
 	if err != nil {
 		return err

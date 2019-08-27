@@ -31,9 +31,7 @@ func TestFlushToDBErrors(t *testing.T) {
 	defer teardownFunc()
 
 	// Call flushToDB without anything to flush. This should succeed
-	err = dag.db.Update(func(dbTx database.Tx) error {
-		return dag.index.flushToDB(dbTx)
-	})
+	err = dag.index.flushToDB()
 	if err != nil {
 		t.Errorf("TestFlushToDBErrors: flushToDB without anything to flush: "+
 			"Unexpected flushToDB error: %s", err)
@@ -48,9 +46,7 @@ func TestFlushToDBErrors(t *testing.T) {
 		return errors.New(databaseErrorMessage)
 	})
 	defer guard.Unpatch()
-	err = dag.db.Update(func(dbTx database.Tx) error {
-		return dag.index.flushToDB(dbTx)
-	})
+	err = dag.index.flushToDB()
 	if err == nil {
 		t.Errorf("TestFlushToDBErrors: flushToDB failure due to database error: "+
 			"Expected: %s, got: <nil>", databaseErrorMessage)

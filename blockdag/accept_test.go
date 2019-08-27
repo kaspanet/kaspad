@@ -126,7 +126,7 @@ func TestMaybeAcceptBlockErrors(t *testing.T) {
 
 	// Test rejecting the node due to index error
 	indexErrorMessage := "index error"
-	guard = monkey.Patch((*blockIndex).flushToDB, func(_ *blockIndex, _ database.Tx) error {
+	guard = monkey.Patch((*blockIndex).flushToDB, func(_ *blockIndex) error {
 		return errors.New(indexErrorMessage)
 	})
 	defer guard.Unpatch()
