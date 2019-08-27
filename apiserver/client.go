@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"github.com/daglabs/btcd/btcjson"
 	"github.com/daglabs/btcd/util/daghash"
 
 	"github.com/daglabs/btcd/rpcclient"
@@ -23,7 +22,7 @@ type blockAddedMsg struct {
 
 type chainChangedMsg struct {
 	removedChainBlockHashes []*daghash.Hash
-	addedChainBlocks        []*btcjson.ChainBlock
+	addedChainBlocks        []*rpcclient.ChainBlock
 }
 
 func newAPIServerClient(connCfg *rpcclient.ConnConfig) (*apiServerClient, error) {
@@ -40,7 +39,7 @@ func newAPIServerClient(connCfg *rpcclient.ConnConfig) (*apiServerClient, error)
 			}
 		},
 		OnChainChanged: func(removedChainBlockHashes []*daghash.Hash,
-			addedChainBlocks []*btcjson.ChainBlock) {
+			addedChainBlocks []*rpcclient.ChainBlock) {
 			client.onChainChanged <- &chainChangedMsg{
 				removedChainBlockHashes: removedChainBlockHashes,
 				addedChainBlocks:        addedChainBlocks,

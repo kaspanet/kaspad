@@ -28,6 +28,9 @@ const (
 	// matches the loaded filter was accepted by the mempool.
 	RelevantTxAcceptedNtfnMethod = "relevantTxAccepted"
 
+	// ChainChangedNtfnMethod is the new method used for notifications
+	// from the dag server that inform a client that the selected chain
+	// has changed.
 	ChainChangedNtfnMethod = "chainChanged"
 )
 
@@ -52,7 +55,15 @@ func NewFilteredBlockAddedNtfn(chainHeight uint64, header string, subscribedTxs 
 // ChainChangedNtfn defines the chainChanged JSON-RPC
 // notification.
 type ChainChangedNtfn struct {
-	RemovedChainBlockHashes []string `json:"removedChainBlockHashes"`
+	ChainChangedRawParam ChainChangedRawParam
+}
+
+// ChainChangedRawParam is the first parameter
+// of ChainChangedNtfn which contains all the
+// remove chain block hashes and the added
+// chain blocks.
+type ChainChangedRawParam struct {
+	RemovedChainBlockHashes []string     `json:"removedChainBlockHashes"`
 	AddedChainBlocks        []ChainBlock `json:"addedChainBlocks"`
 }
 
@@ -60,10 +71,10 @@ type ChainChangedNtfn struct {
 // issue a chainChanged JSON-RPC notification.
 func NewChainChangedNtfn(removedChainBlockHashes []string,
 	addedChainBlocks []ChainBlock) *ChainChangedNtfn {
-	return &ChainChangedNtfn{
+	return &ChainChangedNtfn{ChainChangedRawParam: ChainChangedRawParam{
 		RemovedChainBlockHashes: removedChainBlockHashes,
 		AddedChainBlocks:        addedChainBlocks,
-	}
+	}}
 }
 
 // BlockDetails describes details of a tx in a block.
