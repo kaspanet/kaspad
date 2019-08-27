@@ -147,7 +147,7 @@ func NewManager(dataDir string) (*Manager, error) {
 }
 
 // AddAddresses adds an address to this dnsseeder manager, and returns the number of
-// adress currently held
+// address currently held
 func (m *Manager) AddAddresses(addrs []*wire.NetAddress) int {
 	var count int
 
@@ -251,7 +251,7 @@ func (m *Manager) GoodAddresses(qtype uint16, services wire.ServiceFlag, include
 	return addrs
 }
 
-// Attempt updates the last connection attempt to given ip to now
+// Attempt updates the last connection attempt for specified ip address to now
 func (m *Manager) Attempt(ip net.IP) {
 	m.mtx.Lock()
 	node, exists := m.nodes[ip.String()]
@@ -261,7 +261,7 @@ func (m *Manager) Attempt(ip net.IP) {
 	m.mtx.Unlock()
 }
 
-// Good updates the last successful connection attemp to given ip to now
+// Good updates the last successfull connection attempt for specified ip address to now
 func (m *Manager) Good(ip net.IP, services wire.ServiceFlag, subnetworkid *subnetworkid.SubnetworkID) {
 	m.mtx.Lock()
 	node, exists := m.nodes[ip.String()]
