@@ -26,7 +26,7 @@ type chainChangedMsg struct {
 	addedChainBlocks        []*btcjson.ChainBlock
 }
 
-func newApiServerClient(connCfg *rpcclient.ConnConfig) (*apiServerClient, error) {
+func newAPIServerClient(connCfg *rpcclient.ConnConfig) (*apiServerClient, error) {
 	client := &apiServerClient{
 		onBlockAdded:   make(chan *blockAddedMsg),
 		onChainChanged: make(chan *chainChangedMsg),

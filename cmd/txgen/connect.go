@@ -7,7 +7,6 @@ import (
 )
 
 func connectToServer(cfg *config) (*txgenClient, error) {
-
 	var cert []byte
 	if !cfg.DisableTLS {
 		var err error

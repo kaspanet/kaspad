@@ -3,9 +3,8 @@ package main
 import (
 	"errors"
 	"github.com/daglabs/btcd/util"
-	"path/filepath"
-
 	"github.com/jessevdk/go-flags"
+	"path/filepath"
 )
 
 const (
@@ -15,13 +14,11 @@ const (
 
 var (
 	// Default configuration options
-	defaultHomeDir    = util.AppDataDir("apiserver", false)
-	defaultLogFile    = filepath.Join(defaultHomeDir, defaultLogFilename)
-	defaultErrLogFile = filepath.Join(defaultHomeDir, defaultErrLogFilename)
+	defaultLogDir = util.AppDataDir("apiserver", false)
 )
 
 type config struct {
-	Address     string `long:"address" description:"An address to a JSON-RPC endpoints" required:"true"`
+	LogDir      string `long:"logdir" description:"Directory to log output."`
 	RPCUser     string `short:"u" long:"rpcuser" description:"RPC username" required:"true"`
 	RPCPassword string `short:"P" long:"rpcpass" default-mask:"-" description:"RPC password" required:"true"`
 	RPCServer   string `short:"s" long:"rpcserver" description:"RPC server to connect to" required:"true"`
@@ -30,7 +27,9 @@ type config struct {
 }
 
 func parseConfig() (*config, error) {
-	cfg := &config{}
+	cfg := &config{
+		LogDir: defaultLogDir,
+	}
 	parser := flags.NewParser(cfg, flags.PrintErrors|flags.HelpFlag)
 	_, err := parser.Parse()
 
@@ -46,7 +45,9 @@ func parseConfig() (*config, error) {
 		return nil, errors.New("--cert should be omitted if --notls is used")
 	}
 
-	initLog(defaultLogFile, defaultErrLogFile)
+	logFile := filepath.Join(cfg.LogDir, defaultLogFilename)
+	errLogFile := filepath.Join(cfg.LogDir, defaultErrLogFilename)
+	initLog(logFile, errLogFile)
 
 	return cfg, nil
 }

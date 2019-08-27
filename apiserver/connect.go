@@ -7,7 +7,6 @@ import (
 )
 
 func connectToServer(cfg *config) (*apiServerClient, error) {
-
 	var cert []byte
 	if !cfg.DisableTLS {
 		var err error
@@ -18,7 +17,7 @@ func connectToServer(cfg *config) (*apiServerClient, error) {
 	}
 
 	connCfg := &rpcclient.ConnConfig{
-		Host:       cfg.Address,
+		Host:       cfg.RPCServer,
 		Endpoint:   "ws",
 		User:       cfg.RPCUser,
 		Pass:       cfg.RPCPassword,
@@ -29,12 +28,12 @@ func connectToServer(cfg *config) (*apiServerClient, error) {
 		connCfg.Certificates = cert
 	}
 
-	client, err := newApiServerClient(connCfg)
+	client, err := newAPIServerClient(connCfg)
 	if err != nil {
-		return nil, fmt.Errorf("Error connecting to address %s: %s", cfg.Address, err)
+		return nil, fmt.Errorf("Error connecting to address %s: %s", cfg.RPCServer, err)
 	}
 
-	log.Infof("Connected to server %s", cfg.Address)
+	log.Infof("Connected to server %s", cfg.RPCServer)
 
 	return client, nil
 }
