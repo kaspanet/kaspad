@@ -4,6 +4,7 @@ import (
 	"time"
 )
 
+// Block is the gorm model for the 'blocks' table
 type Block struct {
 	ID                   uint64 `gorm:"primary_key"`
 	BlockHash            string
@@ -21,6 +22,7 @@ type Block struct {
 	ParentBlocks         []Block `gorm:"many2many:parent_blocks;"`
 }
 
+// ParentBlock is the gorm model for the 'parent_blocks' table
 type ParentBlock struct {
 	BlockID       uint64
 	Block         Block
@@ -28,17 +30,20 @@ type ParentBlock struct {
 	ParentBlock   Block
 }
 
+// RawBlock is the gorm model for the 'raw_blocks' table
 type RawBlock struct {
 	BlockID   uint64
 	Block     Block
 	BlockData []byte
 }
 
+// Subnetwork is the gorm model for the 'subnetworks' table
 type Subnetwork struct {
 	ID           uint64 `gorm:"primary_key"`
 	SubnetworkID []byte
 }
 
+// Transaction is the gorm model for the 'transactions' table
 type Transaction struct {
 	ID               uint64 `gorm:"primary_key"`
 	AcceptingBlockID uint64
@@ -53,6 +58,7 @@ type Transaction struct {
 	Blocks           []Block `gorm:"many2many:transactions_to_blocks;"`
 }
 
+// TransactionBlock is the gorm model for the 'transactions_to_blocks' table
 type TransactionBlock struct {
 	TransactionID uint64
 	Transaction   Transaction
@@ -61,10 +67,13 @@ type TransactionBlock struct {
 	Index         uint32
 }
 
+// TableName returns the table name associated to the
+// TransactionBlock gorm model
 func (TransactionBlock) TableName() string {
 	return "transactions_to_blocks"
 }
 
+// TransactionOutput is the gorm model for the 'transaction_outputs' table
 type TransactionOutput struct {
 	TransactionID uint64
 	Transaction   Transaction
@@ -73,6 +82,7 @@ type TransactionOutput struct {
 	PkScript      []byte
 }
 
+// TransactionInput is the gorm model for the 'transaction_inputs' table
 type TransactionInput struct {
 	TransactionID       uint64
 	Transaction         Transaction
@@ -83,6 +93,7 @@ type TransactionInput struct {
 	Sequence            uint64
 }
 
+// UTXO is the gorm model for the 'utxos' table
 type UTXO struct {
 	TransactionOutputID uint64
 	TransactionOutput   TransactionOutput
