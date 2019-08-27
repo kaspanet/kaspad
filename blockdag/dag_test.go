@@ -895,6 +895,10 @@ func TestNew(t *testing.T) {
 	}
 }
 
+// TestAcceptingInInit makes sure that blocks that were stored but not
+// yet fully processed do get correctly processed on DAG init. This may
+// occur when the node shuts down improperly while a block is being
+// validated.
 func TestAcceptingInInit(t *testing.T) {
 	// Create the root directory for test databases.
 	if !fileExists(testDbRoot) {

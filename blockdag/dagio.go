@@ -569,7 +569,7 @@ func (dag *BlockDAG) initDAGState() error {
 
 		// Go over any unprocessed blockNodes and process them now.
 		for _, node := range unprocessedBlockNodes {
-			// Check to see if the block exists in the block DB. If it's
+			// Check to see if the block exists in the block DB. If it
 			// doesn't, the database has certainly been corrupted.
 			blockExists, err := dbTx.HasBlock(node.hash)
 			if err != nil {
