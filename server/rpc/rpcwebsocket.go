@@ -559,9 +559,9 @@ func (m *wsNotificationManager) notifyChainChanged(clients map[chan struct{}]*ws
 	removedChainBlockHashes []*daghash.Hash, addedChainBlockHashes []*daghash.Hash) {
 
 	// Collect removed chain hashes.
-	removedChainHashes := make([]daghash.Hash, len(removedChainBlockHashes))
+	removedChainHashesStrs := make([]string, len(removedChainBlockHashes))
 	for i, hash := range removedChainBlockHashes {
-		removedChainHashes[i] = *hash
+		removedChainHashesStrs[i] = hash.String()
 	}
 
 	// Collect added chain blocks.
@@ -572,7 +572,7 @@ func (m *wsNotificationManager) notifyChainChanged(clients map[chan struct{}]*ws
 	}
 
 	// Create the notification.
-	ntfn := btcjson.NewChainChangedNtfn(removedChainHashes, addedChainBlocks)
+	ntfn := btcjson.NewChainChangedNtfn(removedChainHashesStrs, addedChainBlocks)
 
 	for _, wsc := range clients {
 		// Marshal and queue notification.
