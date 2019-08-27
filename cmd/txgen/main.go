@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+
 	"github.com/daglabs/btcd/btcec"
 	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/signal"
@@ -11,7 +12,7 @@ import (
 )
 
 var (
-	activeNetParams  *dagconfig.Params = &dagconfig.DevNetParams
+	activeNetParams  = &dagconfig.DevNetParams
 	p2pkhAddress     util.Address
 	secondaryAddress util.Address
 	privateKey       *btcec.PrivateKey
