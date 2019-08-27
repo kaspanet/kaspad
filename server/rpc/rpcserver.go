@@ -3539,7 +3539,7 @@ func handleSubmitBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (i
 	if err != nil {
 		return nil, &btcjson.RPCError{
 			Code:    btcjson.ErrRPCVerify,
-			Message: err.Error(),
+			Message: fmt.Sprintf("Block rejected. Reason: %s", err),
 		}
 	}
 
