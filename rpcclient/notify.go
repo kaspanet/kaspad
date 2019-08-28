@@ -146,7 +146,7 @@ func (c *Client) handleNotification(ntfn *rawNotification) {
 			return
 		}
 
-		removedChainBlockHashes, addedChainBlocks, err := parseChainChangedParamsfunc(ntfn.Params)
+		removedChainBlockHashes, addedChainBlocks, err := parseChainChangedParams(ntfn.Params)
 		if err != nil {
 			log.Warnf("Received invalid chain changed "+
 				"notification: %s", err)
@@ -256,10 +256,10 @@ type ChainBlock struct {
 // chain block.
 type AcceptedBlock struct {
 	Hash          *daghash.Hash
-	AcceptedTxIds []*daghash.TxID
+	AcceptedTxIDs []*daghash.TxID
 }
 
-func parseChainChangedParamsfunc(params []json.RawMessage) (removedChainBlockHashes []*daghash.Hash, addedChainBlocks []*ChainBlock,
+func parseChainChangedParams(params []json.RawMessage) (removedChainBlockHashes []*daghash.Hash, addedChainBlocks []*ChainBlock,
 	err error) {
 
 	if len(params) != 1 {
@@ -294,7 +294,7 @@ func parseChainChangedParamsfunc(params []json.RawMessage) (removedChainBlockHas
 		chainBlock.Hash = hash
 		for j, jsonAcceptedBlock := range jsonChainBlock.AcceptedBlocks {
 			acceptedBlock := &AcceptedBlock{
-				AcceptedTxIds: make([]*daghash.TxID, len(jsonAcceptedBlock.AcceptedTxIds)),
+				AcceptedTxIDs: make([]*daghash.TxID, len(jsonAcceptedBlock.AcceptedTxIds)),
 			}
 			hash, err := daghash.NewHashFromStr(jsonAcceptedBlock.Hash)
 			if err != nil {
@@ -306,7 +306,7 @@ func parseChainChangedParamsfunc(params []json.RawMessage) (removedChainBlockHas
 				if err != nil {
 					return nil, nil, err
 				}
-				acceptedBlock.AcceptedTxIds[k] = txID
+				acceptedBlock.AcceptedTxIDs[k] = txID
 			}
 			chainBlock.AcceptedBlocks[j] = acceptedBlock
 		}
