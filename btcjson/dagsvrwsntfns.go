@@ -8,8 +8,6 @@
 
 package btcjson
 
-import "github.com/daglabs/btcd/util/daghash"
-
 const (
 	// FilteredBlockAddedNtfnMethod is the new method used for
 	// notifications from the dag server that a block has been connected.
@@ -29,6 +27,11 @@ const (
 	// from the dag server that inform a client that a transaction that
 	// matches the loaded filter was accepted by the mempool.
 	RelevantTxAcceptedNtfnMethod = "relevantTxAccepted"
+
+	// ChainChangedNtfnMethod is the new method used for notifications
+	// from the dag server that inform a client that the selected chain
+	// has changed.
+	ChainChangedNtfnMethod = "chainChanged"
 )
 
 // FilteredBlockAddedNtfn defines the filteredBlockAdded JSON-RPC
@@ -52,18 +55,26 @@ func NewFilteredBlockAddedNtfn(chainHeight uint64, header string, subscribedTxs 
 // ChainChangedNtfn defines the chainChanged JSON-RPC
 // notification.
 type ChainChangedNtfn struct {
-	RemovedChainBlockHashes []daghash.Hash
-	AddedChainBlocks        []ChainBlock
+	ChainChangedRawParam ChainChangedRawParam
+}
+
+// ChainChangedRawParam is the first parameter
+// of ChainChangedNtfn which contains all the
+// remove chain block hashes and the added
+// chain blocks.
+type ChainChangedRawParam struct {
+	RemovedChainBlockHashes []string     `json:"removedChainBlockHashes"`
+	AddedChainBlocks        []ChainBlock `json:"addedChainBlocks"`
 }
 
 // NewChainChangedNtfn returns a new instance which can be used to
 // issue a chainChanged JSON-RPC notification.
-func NewChainChangedNtfn(removedChainBlockHashes []daghash.Hash,
+func NewChainChangedNtfn(removedChainBlockHashes []string,
 	addedChainBlocks []ChainBlock) *ChainChangedNtfn {
-	return &ChainChangedNtfn{
+	return &ChainChangedNtfn{ChainChangedRawParam: ChainChangedRawParam{
 		RemovedChainBlockHashes: removedChainBlockHashes,
 		AddedChainBlocks:        addedChainBlocks,
-	}
+	}}
 }
 
 // BlockDetails describes details of a tx in a block.
@@ -123,4 +134,5 @@ func init() {
 	MustRegisterCmd(TxAcceptedNtfnMethod, (*TxAcceptedNtfn)(nil), flags)
 	MustRegisterCmd(TxAcceptedVerboseNtfnMethod, (*TxAcceptedVerboseNtfn)(nil), flags)
 	MustRegisterCmd(RelevantTxAcceptedNtfnMethod, (*RelevantTxAcceptedNtfn)(nil), flags)
+	MustRegisterCmd(ChainChangedNtfnMethod, (*ChainChangedNtfn)(nil), flags)
 }

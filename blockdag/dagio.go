@@ -453,11 +453,19 @@ func (dag *BlockDAG) initDAGState() error {
 
 		var i int32
 		var lastNode *blockNode
+		var unprocessedBlockNodes []*blockNode
 		cursor := blockIndexBucket.Cursor()
 		for ok := cursor.First(); ok; ok = cursor.Next() {
 			node, err := dag.deserializeBlockNode(cursor.Value())
 			if err != nil {
 				return err
+			}
+
+			// Check to see if this node had been stored in the the block DB
+			// but not yet accepted. If so, add it to a slice to be processed later.
+			if node.status == statusDataStored {
+				unprocessedBlockNodes = append(unprocessedBlockNodes, node)
+				continue
 			}
 
 			if lastNode == nil {
@@ -558,6 +566,43 @@ func (dag *BlockDAG) initDAGState() error {
 		// Set the last finality point
 		dag.lastFinalityPoint = dag.index.LookupNode(state.LastFinalityPoint)
 		dag.finalizeNodesBelowFinalityPoint(false)
+
+		// Go over any unprocessed blockNodes and process them now.
+		for _, node := range unprocessedBlockNodes {
+			// Check to see if the block exists in the block DB. If it
+			// doesn't, the database has certainly been corrupted.
+			blockExists, err := dbTx.HasBlock(node.hash)
+			if err != nil {
+				return AssertError(fmt.Sprintf("initDAGState: HasBlock "+
+					"for block %s failed: %s", node.hash, err))
+			}
+			if !blockExists {
+				return AssertError(fmt.Sprintf("initDAGState: block %s "+
+					"exists in block index but not in block db", node.hash))
+			}
+
+			// Attempt to accept the block.
+			block, err := dbFetchBlockByNode(dbTx, node)
+			isOrphan, delay, err := dag.ProcessBlock(block, BFWasStored)
+			if err != nil {
+				log.Warnf("Block %s, which was not previously processed, "+
+					"failed to be accepted to the DAG: %s", node.hash, err)
+				continue
+			}
+
+			// If the block is an orphan or is delayed then it couldn't have
+			// possibly been written to the block index in the first place.
+			if isOrphan {
+				return AssertError(fmt.Sprintf("Block %s, which was not "+
+					"previously processed, turned out to be an orphan, which is "+
+					"impossible.", node.hash))
+			}
+			if delay != 0 {
+				return AssertError(fmt.Sprintf("Block %s, which was not "+
+					"previously processed, turned out to be delayed, which is "+
+					"impossible.", node.hash))
+			}
+		}
 
 		return nil
 	})
