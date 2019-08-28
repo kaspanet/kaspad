@@ -719,8 +719,8 @@ func (sp *Peer) OnBlockLocator(_ *peer.Peer, msg *wire.MsgBlockLocator) {
 	firstHash := msg.BlockLocatorHashes[0]
 	if dag.BlockExists(firstHash) {
 		if dag.IsKnownFinalizedBlock(firstHash) {
-			peerLog.Warnf("Cannot sync with peer if the highest" +
-				" shared chain block (%s) is below the finality point")
+			peerLog.Warnf("Cannot sync with peer %s because the highest"+
+				" shared chain block (%s) is below the finality point", firstHash, sp)
 			sp.Disconnect()
 			return
 		}
