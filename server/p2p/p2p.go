@@ -718,6 +718,12 @@ func (sp *Peer) OnBlockLocator(_ *peer.Peer, msg *wire.MsgBlockLocator) {
 	// the highest shared block.
 	firstHash := msg.BlockLocatorHashes[0]
 	if dag.BlockExists(firstHash) {
+		if dag.IsKnownFinalizedBlock(firstHash) {
+			peerLog.Warnf("Cannot sync with peer if the highest" +
+				" shared chain block (%s) is below the finality point")
+			sp.Disconnect()
+			return
+		}
 		err := sp.server.SyncManager.PushGetBlockInvsOrHeaders(sp.Peer, firstHash)
 		if err != nil {
 			peerLog.Errorf("Failed pushing get blocks message for peer %s: %s",
