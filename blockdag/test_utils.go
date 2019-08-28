@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sync"
 
 	"github.com/daglabs/btcd/util/subnetworkid"
 
@@ -60,6 +61,16 @@ func DAGSetup(dbName string, config Config) (*BlockDAG, func(), error) {
 
 	var teardown func()
 
+	// To make sure that the teardown function is not called before any goroutines finished to run -
+	// overwrite `spawn` to count the number of running goroutines
+	spawnWaitGroup := sync.WaitGroup{}
+	oldSpawn := spawn
+	spawn = func(f func()) {
+		spawnWaitGroup.Add(1)
+		oldSpawn(f)
+		spawnWaitGroup.Done()
+	}
+
 	if config.DB == nil {
 		// Create the root directory for test databases.
 		if !fileExists(testDbRoot) {
@@ -81,6 +92,7 @@ func DAGSetup(dbName string, config Config) (*BlockDAG, func(), error) {
 		// Setup a teardown function for cleaning up.  This function is
 		// returned to the caller to be invoked when it is done testing.
 		teardown = func() {
+			spawnWaitGroup.Wait()
 			config.DB.Close()
 			os.RemoveAll(dbPath)
 			os.RemoveAll(testDbRoot)
