@@ -35,6 +35,11 @@ func (dag *BlockDAG) maybeAcceptBlock(block *util.Block, flags BehaviorFlags) er
 		return err
 	}
 
+	// Create a new block node for the block and add it to the node index.
+	newNode := newBlockNode(&block.MsgBlock().Header, parents, dag.dagParams.K)
+	newNode.status = statusDataStored
+	dag.index.AddNode(newNode)
+
 	// Insert the block into the database if it's not already there.  Even
 	// though it is possible the block will ultimately fail to connect, it
 	// has already passed all proof-of-work and validity tests which means
@@ -45,16 +50,15 @@ func (dag *BlockDAG) maybeAcceptBlock(block *util.Block, flags BehaviorFlags) er
 	// such as making blocks that never become part of the DAG or
 	// blocks that fail to connect available for further analysis.
 	err = dag.db.Update(func(dbTx database.Tx) error {
-		return dbStoreBlock(dbTx, block)
+		err := dbStoreBlock(dbTx, block)
+		if err != nil {
+			return err
+		}
+		return dag.index.flushToDBWithTx(dbTx)
 	})
 	if err != nil {
 		return err
 	}
-
-	// Create a new block node for the block and add it to the node index.
-	blockHeader := &block.MsgBlock().Header
-	newNode := newBlockNode(blockHeader, parents, dag.dagParams.K)
-	newNode.status = statusDataStored
 
 	// Make sure that all the block's transactions are finalized
 	fastAdd := flags&BFFastAdd == BFFastAdd
@@ -63,12 +67,6 @@ func (dag *BlockDAG) maybeAcceptBlock(block *util.Block, flags BehaviorFlags) er
 		if err := dag.validateAllTxsFinalized(block, newNode, bluestParent); err != nil {
 			return err
 		}
-	}
-
-	dag.index.AddNode(newNode)
-	err = dag.index.flushToDB()
-	if err != nil {
-		return err
 	}
 
 	block.SetChainHeight(newNode.chainHeight)
