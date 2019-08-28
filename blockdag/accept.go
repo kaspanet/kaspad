@@ -12,7 +12,7 @@ import (
 
 func (dag *BlockDAG) addNodeToIndexWithInvalidAncestor(block *util.Block) error {
 	blockHeader := &block.MsgBlock().Header
-	newNode := newBlockNode(blockHeader, make(blockSet), dag.dagParams.K)
+	newNode := newBlockNode(blockHeader, newSet(), dag.dagParams.K)
 	newNode.status = statusInvalidAncestor
 	dag.index.AddNode(newNode)
 	return dag.index.flushToDB()
