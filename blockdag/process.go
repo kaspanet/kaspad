@@ -40,6 +40,10 @@ const (
 	// netsync process
 	BFIsSync
 
+	// BFWasStored is set to indicate that the block was previously stored
+	// in the block index but was never fully processed
+	BFWasStored
+
 	// BFNone is a convenience value to specifically indicate no flags.
 	BFNone BehaviorFlags = 0
 )
@@ -134,12 +138,13 @@ func (dag *BlockDAG) ProcessBlock(block *util.Block, flags BehaviorFlags) (isOrp
 	defer dag.dagLock.Unlock()
 
 	isDelayedBlock := flags&BFAfterDelay == BFAfterDelay
+	wasBlockStored := flags&BFWasStored == BFWasStored
 
 	blockHash := block.Hash()
 	log.Tracef("Processing block %s", blockHash)
 
 	// The block must not already exist in the DAG.
-	if dag.BlockExists(blockHash) {
+	if dag.BlockExists(blockHash) && !wasBlockStored {
 		str := fmt.Sprintf("already have block %s", blockHash)
 		return false, 0, ruleError(ErrDuplicateBlock, str)
 	}
