@@ -517,7 +517,7 @@ type ChainBlock struct {
 // chain block.
 type AcceptedBlock struct {
 	Hash          string   `json:"hash"`
-	AcceptedTxIds []string `json:"acceptedTxIds"`
+	AcceptedTxIDs []string `json:"acceptedTxIds"`
 }
 
 // GetChainFromBlockResult models the data from the getChainFromBlock command.

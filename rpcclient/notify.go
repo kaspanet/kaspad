@@ -96,7 +96,7 @@ type NotificationHandlers struct {
 	// NotifyChainChanges has been made to register for the notification and the
 	// function is non-nil.
 	OnChainChanged func(removedChainBlockHashes []*daghash.Hash,
-		addedChainBlocks []*btcjson.ChainBlock)
+		addedChainBlocks []*ChainBlock)
 
 	// OnRelevantTxAccepted is invoked when an unmined transaction passes
 	// the client's transaction filter.
@@ -137,6 +137,23 @@ func (c *Client) handleNotification(ntfn *rawNotification) {
 	}
 
 	switch ntfn.Method {
+
+	// ChainChangedNtfnMethod
+	case btcjson.ChainChangedNtfnMethod:
+		// Ignore the notification if the client is not interested in
+		// it.
+		if c.ntfnHandlers.OnChainChanged == nil {
+			return
+		}
+
+		removedChainBlockHashes, addedChainBlocks, err := parseChainChangedParams(ntfn.Params)
+		if err != nil {
+			log.Warnf("Received invalid chain changed "+
+				"notification: %s", err)
+			return
+		}
+
+		c.ntfnHandlers.OnChainChanged(removedChainBlockHashes, addedChainBlocks)
 
 	// OnFilteredBlockAdded
 	case btcjson.FilteredBlockAddedNtfnMethod:
@@ -229,46 +246,74 @@ func (e wrongNumParams) Error() string {
 	return fmt.Sprintf("wrong number of parameters (%d)", e)
 }
 
-// parseDAGNtfnParams parses out the block hash and height from the parameters
-// of blockadded.
-func parseDAGNtfnParams(params []json.RawMessage) (*daghash.Hash,
-	int32, time.Time, error) {
+// ChainBlock models a block that is part of the selected parent chain.
+type ChainBlock struct {
+	Hash           *daghash.Hash
+	AcceptedBlocks []*AcceptedBlock
+}
 
-	if len(params) != 3 {
-		return nil, 0, time.Time{}, wrongNumParams(len(params))
+// AcceptedBlock models a block that is included in the blues of a selected
+// chain block.
+type AcceptedBlock struct {
+	Hash          *daghash.Hash
+	AcceptedTxIDs []*daghash.TxID
+}
+
+func parseChainChangedParams(params []json.RawMessage) (removedChainBlockHashes []*daghash.Hash, addedChainBlocks []*ChainBlock,
+	err error) {
+
+	if len(params) != 1 {
+		return nil, nil, wrongNumParams(len(params))
 	}
 
-	// Unmarshal first parameter as a string.
-	var blockHashStr string
-	err := json.Unmarshal(params[0], &blockHashStr)
+	// Unmarshal first parameter as a raw transaction result object.
+	var rawParam btcjson.ChainChangedRawParam
+	err = json.Unmarshal(params[0], &rawParam)
 	if err != nil {
-		return nil, 0, time.Time{}, err
+		return nil, nil, err
 	}
 
-	// Unmarshal second parameter as an integer.
-	var blockHeight int32
-	err = json.Unmarshal(params[1], &blockHeight)
-	if err != nil {
-		return nil, 0, time.Time{}, err
+	removedChainBlockHashes = make([]*daghash.Hash, len(rawParam.RemovedChainBlockHashes))
+	for i, hashStr := range rawParam.RemovedChainBlockHashes {
+		hash, err := daghash.NewHashFromStr(hashStr)
+		if err != nil {
+			return nil, nil, err
+		}
+		removedChainBlockHashes[i] = hash
 	}
 
-	// Unmarshal third parameter as unix time.
-	var blockTimeUnix int64
-	err = json.Unmarshal(params[2], &blockTimeUnix)
-	if err != nil {
-		return nil, 0, time.Time{}, err
+	addedChainBlocks = make([]*ChainBlock, len(rawParam.AddedChainBlocks))
+	for i, jsonChainBlock := range rawParam.AddedChainBlocks {
+		chainBlock := &ChainBlock{
+			AcceptedBlocks: make([]*AcceptedBlock, len(jsonChainBlock.AcceptedBlocks)),
+		}
+		hash, err := daghash.NewHashFromStr(jsonChainBlock.Hash)
+		if err != nil {
+			return nil, nil, err
+		}
+		chainBlock.Hash = hash
+		for j, jsonAcceptedBlock := range jsonChainBlock.AcceptedBlocks {
+			acceptedBlock := &AcceptedBlock{
+				AcceptedTxIDs: make([]*daghash.TxID, len(jsonAcceptedBlock.AcceptedTxIDs)),
+			}
+			hash, err := daghash.NewHashFromStr(jsonAcceptedBlock.Hash)
+			if err != nil {
+				return nil, nil, err
+			}
+			acceptedBlock.Hash = hash
+			for k, txIDStr := range jsonAcceptedBlock.AcceptedTxIDs {
+				txID, err := daghash.NewTxIDFromStr(txIDStr)
+				if err != nil {
+					return nil, nil, err
+				}
+				acceptedBlock.AcceptedTxIDs[k] = txID
+			}
+			chainBlock.AcceptedBlocks[j] = acceptedBlock
+		}
+		addedChainBlocks[i] = chainBlock
 	}
 
-	// Create hash from block hash string.
-	blockHash, err := daghash.NewHashFromStr(blockHashStr)
-	if err != nil {
-		return nil, 0, time.Time{}, err
-	}
-
-	// Create time.Time from unix time.
-	blockTime := time.Unix(blockTimeUnix, 0)
-
-	return blockHash, blockHeight, blockTime, nil
+	return removedChainBlockHashes, addedChainBlocks, nil
 }
 
 // parseFilteredBlockAddedParams parses out the parameters included in a
