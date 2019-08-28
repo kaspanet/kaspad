@@ -1207,7 +1207,7 @@ func testFinalizeNodesBelowFinalityPoint(t *testing.T, deleteDiffData bool) {
 
 func TestDAGIndexFailedStatus(t *testing.T) {
 	params := dagconfig.SimNetParams
-	dag, teardownFunc, err := DAGSetup("testFinalizeNodesBelowFinalityPoint", Config{
+	dag, teardownFunc, err := DAGSetup("TestDAGIndexFailedStatus", Config{
 		DAGParams: &params,
 	})
 	if err != nil {
@@ -1277,5 +1277,33 @@ func TestDAGIndexFailedStatus(t *testing.T) {
 	}
 	if invalidBlockChildNode.status&statusInvalidAncestor != statusInvalidAncestor {
 		t.Fatalf("invalidBlockNode status to have %b flags raised (got %b)", statusInvalidAncestor, invalidBlockChildNode.status)
+	}
+
+	invalidMsgBlockGrandChild := wire.NewMsgBlock(
+		wire.NewBlockHeader(1, []*daghash.Hash{
+			invalidBlockChild.Hash(),
+		}, hashMerkleRoot, &daghash.Hash{}, &daghash.Hash{}, dag.genesis.bits, 0),
+	)
+	invalidMsgBlockGrandChild.AddTransaction(invalidCbTx)
+	invalidBlockGrandChild := util.NewBlock(invalidMsgBlockGrandChild)
+
+	isOrphan, delay, err = dag.ProcessBlock(invalidBlockGrandChild, BFNoPoWCheck)
+	if rErr, ok := err.(RuleError); !ok || rErr.ErrorCode != ErrInvalidAncestorBlock {
+		t.Fatalf("ProcessBlock: expected a rule error but got %s instead", err)
+	}
+	if delay != 0 {
+		t.Fatalf("ProcessBlock: invalidBlockGrandChild " +
+			"is too far in the future")
+	}
+	if isOrphan {
+		t.Fatalf("ProcessBlock incorrectly returned invalidBlockGrandChild " +
+			"is an orphan\n")
+	}
+	invalidBlockGrandChildNode := dag.index.LookupNode(invalidBlockGrandChild.Hash())
+	if invalidBlockGrandChildNode == nil {
+		t.Fatalf("invalidBlockGrandChild wasn't added to the block index as expected")
+	}
+	if invalidBlockGrandChildNode.status&statusInvalidAncestor != statusInvalidAncestor {
+		t.Fatalf("invalidBlockGrandChildNode status to have %b flags raised (got %b)", statusInvalidAncestor, invalidBlockGrandChildNode.status)
 	}
 }
