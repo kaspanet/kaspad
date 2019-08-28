@@ -294,14 +294,14 @@ func parseChainChangedParams(params []json.RawMessage) (removedChainBlockHashes 
 		chainBlock.Hash = hash
 		for j, jsonAcceptedBlock := range jsonChainBlock.AcceptedBlocks {
 			acceptedBlock := &AcceptedBlock{
-				AcceptedTxIDs: make([]*daghash.TxID, len(jsonAcceptedBlock.AcceptedTxIds)),
+				AcceptedTxIDs: make([]*daghash.TxID, len(jsonAcceptedBlock.AcceptedTxIDs)),
 			}
 			hash, err := daghash.NewHashFromStr(jsonAcceptedBlock.Hash)
 			if err != nil {
 				return nil, nil, err
 			}
 			acceptedBlock.Hash = hash
-			for k, txIDStr := range jsonAcceptedBlock.AcceptedTxIds {
+			for k, txIDStr := range jsonAcceptedBlock.AcceptedTxIDs {
 				txID, err := daghash.NewTxIDFromStr(txIDStr)
 				if err != nil {
 					return nil, nil, err

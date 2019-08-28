@@ -2276,7 +2276,7 @@ func collectChainBlocks(s *Server, selectedParentChain []*daghash.Hash) ([]btcjs
 			}
 			acceptedBlock := btcjson.AcceptedBlock{
 				Hash:          blockHash.String(),
-				AcceptedTxIds: acceptedTxIds,
+				AcceptedTxIDs: acceptedTxIds,
 			}
 			acceptedBlocks = append(acceptedBlocks, acceptedBlock)
 		}
