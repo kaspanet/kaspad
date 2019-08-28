@@ -14,6 +14,17 @@ func main() {
 		panic(fmt.Errorf("Error parsing command-line arguments: %s", err))
 	}
 
+	db, err := connectToDB(cfg)
+	if err != nil {
+		panic(fmt.Errorf("Error connecting to database: %s", err))
+	}
+	defer func() {
+		err := db.Close()
+		if err != nil {
+			panic(fmt.Errorf("Error closing the database: %s", err))
+		}
+	}()
+
 	client, err := connectToServer(cfg)
 	if err != nil {
 		panic(fmt.Errorf("Error connecting to servers: %s", err))
