@@ -6,10 +6,17 @@ package blockdag
 
 import (
 	"fmt"
-
 	"github.com/daglabs/btcd/database"
 	"github.com/daglabs/btcd/util"
 )
+
+func (dag *BlockDAG) addNodeToIndexWithInvalidAncestor(block *util.Block) error {
+	blockHeader := &block.MsgBlock().Header
+	newNode := newBlockNode(blockHeader, make(blockSet), dag.dagParams.K)
+	newNode.status = statusInvalidAncestor
+	dag.index.AddNode(newNode)
+	return dag.index.flushToDB()
+}
 
 // maybeAcceptBlock potentially accepts a block into the block DAG. It
 // performs several validation checks which depend on its position within
@@ -21,10 +28,14 @@ import (
 //
 // This function MUST be called with the dagLock held (for writes).
 func (dag *BlockDAG) maybeAcceptBlock(block *util.Block, flags BehaviorFlags) error {
-	// The height of this block is one more than the referenced previous
-	// block.
 	parents, err := lookupParentNodes(block, dag)
 	if err != nil {
+		if rErr, ok := err.(RuleError); ok && rErr.ErrorCode == ErrInvalidAncestorBlock {
+			err := dag.addNodeToIndexWithInvalidAncestor(block)
+			if err != nil {
+				return err
+			}
+		}
 		return err
 	}
 
