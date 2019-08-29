@@ -1281,3 +1281,106 @@ func testFinalizeNodesBelowFinalityPoint(t *testing.T, deleteDiffData bool) {
 		}
 	}
 }
+
+func TestDAGIndexFailedStatus(t *testing.T) {
+	params := dagconfig.SimNetParams
+	dag, teardownFunc, err := DAGSetup("TestDAGIndexFailedStatus", Config{
+		DAGParams: &params,
+	})
+	if err != nil {
+		t.Fatalf("Failed to setup DAG instance: %v", err)
+	}
+	defer teardownFunc()
+
+	invalidCbTx := wire.NewSubnetworkMsgTx(wire.TxVersion, []*wire.TxIn{}, []*wire.TxOut{}, subnetworkid.SubnetworkIDCoinbase, 0, []byte{})
+	txs := []*util.Tx{util.NewTx(invalidCbTx)}
+	hashMerkleRoot := BuildHashMerkleTreeStore(txs).Root()
+	invalidMsgBlock := wire.NewMsgBlock(
+		wire.NewBlockHeader(
+			1,
+			[]*daghash.Hash{params.GenesisHash}, hashMerkleRoot,
+			&daghash.Hash{},
+			&daghash.Hash{},
+			dag.genesis.bits,
+			0),
+	)
+	invalidMsgBlock.AddTransaction(invalidCbTx)
+	invalidBlock := util.NewBlock(invalidMsgBlock)
+	isOrphan, delay, err := dag.ProcessBlock(invalidBlock, BFNoPoWCheck)
+
+	if _, ok := err.(RuleError); !ok {
+		t.Fatalf("ProcessBlock: expected a rule error but got %s instead", err)
+	}
+	if delay != 0 {
+		t.Fatalf("ProcessBlock: invalidBlock " +
+			"is too far in the future")
+	}
+	if isOrphan {
+		t.Fatalf("ProcessBlock incorrectly returned invalidBlock " +
+			"is an orphan\n")
+	}
+
+	invalidBlockNode := dag.index.LookupNode(invalidBlock.Hash())
+	if invalidBlockNode == nil {
+		t.Fatalf("invalidBlockNode wasn't added to the block index as expected")
+	}
+	if invalidBlockNode.status&statusValidateFailed != statusValidateFailed {
+		t.Fatalf("invalidBlockNode status to have %b flags raised (got: %b)", statusValidateFailed, invalidBlockNode.status)
+	}
+
+	invalidMsgBlockChild := wire.NewMsgBlock(
+		wire.NewBlockHeader(1, []*daghash.Hash{
+			invalidBlock.Hash(),
+		}, hashMerkleRoot, &daghash.Hash{}, &daghash.Hash{}, dag.genesis.bits, 0),
+	)
+	invalidMsgBlockChild.AddTransaction(invalidCbTx)
+	invalidBlockChild := util.NewBlock(invalidMsgBlockChild)
+
+	isOrphan, delay, err = dag.ProcessBlock(invalidBlockChild, BFNoPoWCheck)
+	if rErr, ok := err.(RuleError); !ok || rErr.ErrorCode != ErrInvalidAncestorBlock {
+		t.Fatalf("ProcessBlock: expected a rule error but got %s instead", err)
+	}
+	if delay != 0 {
+		t.Fatalf("ProcessBlock: invalidBlockChild " +
+			"is too far in the future")
+	}
+	if isOrphan {
+		t.Fatalf("ProcessBlock incorrectly returned invalidBlockChild " +
+			"is an orphan\n")
+	}
+	invalidBlockChildNode := dag.index.LookupNode(invalidBlockChild.Hash())
+	if invalidBlockChildNode == nil {
+		t.Fatalf("invalidBlockChild wasn't added to the block index as expected")
+	}
+	if invalidBlockChildNode.status&statusInvalidAncestor != statusInvalidAncestor {
+		t.Fatalf("invalidBlockNode status to have %b flags raised (got %b)", statusInvalidAncestor, invalidBlockChildNode.status)
+	}
+
+	invalidMsgBlockGrandChild := wire.NewMsgBlock(
+		wire.NewBlockHeader(1, []*daghash.Hash{
+			invalidBlockChild.Hash(),
+		}, hashMerkleRoot, &daghash.Hash{}, &daghash.Hash{}, dag.genesis.bits, 0),
+	)
+	invalidMsgBlockGrandChild.AddTransaction(invalidCbTx)
+	invalidBlockGrandChild := util.NewBlock(invalidMsgBlockGrandChild)
+
+	isOrphan, delay, err = dag.ProcessBlock(invalidBlockGrandChild, BFNoPoWCheck)
+	if rErr, ok := err.(RuleError); !ok || rErr.ErrorCode != ErrInvalidAncestorBlock {
+		t.Fatalf("ProcessBlock: expected a rule error but got %s instead", err)
+	}
+	if delay != 0 {
+		t.Fatalf("ProcessBlock: invalidBlockGrandChild " +
+			"is too far in the future")
+	}
+	if isOrphan {
+		t.Fatalf("ProcessBlock incorrectly returned invalidBlockGrandChild " +
+			"is an orphan\n")
+	}
+	invalidBlockGrandChildNode := dag.index.LookupNode(invalidBlockGrandChild.Hash())
+	if invalidBlockGrandChildNode == nil {
+		t.Fatalf("invalidBlockGrandChild wasn't added to the block index as expected")
+	}
+	if invalidBlockGrandChildNode.status&statusInvalidAncestor != statusInvalidAncestor {
+		t.Fatalf("invalidBlockGrandChildNode status to have %b flags raised (got %b)", statusInvalidAncestor, invalidBlockGrandChildNode.status)
+	}
+}

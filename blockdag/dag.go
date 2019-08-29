@@ -780,6 +780,15 @@ func (dag *BlockDAG) finalizeNodesBelowFinalityPoint(deleteDiffData bool) {
 	}
 }
 
+// IsKnownFinalizedBlock returns whether the block is below the finality point.
+// IsKnownFinalizedBlock might be false-negative because node finality status is
+// updated in a separate goroutine. To get a definite answer if a block
+// is finalized or not, use dag.checkFinalityRules.
+func (dag *BlockDAG) IsKnownFinalizedBlock(blockHash *daghash.Hash) bool {
+	node := dag.index.LookupNode(blockHash)
+	return node != nil && node.isFinalized
+}
+
 // NextBlockCoinbaseTransaction prepares the coinbase transaction for the next mined block
 //
 // This function CAN'T be called with the DAG lock held.
