@@ -214,6 +214,41 @@ func (c *Client) GetBlockCount() (int64, error) {
 	return c.GetBlockCountAsync().Receive()
 }
 
+// FutureGetChainFromBlockResult is a future promise to deliver the result of a
+// GetChainFromBlockAsync RPC invocation (or an applicable error).
+type FutureGetChainFromBlockResult chan *response
+
+// Receive waits for the response promised by the future and returns the selected
+// parent chain starting from startHash up to the virtual.
+func (r FutureGetChainFromBlockResult) Receive() (*btcjson.GetChainFromBlockResult, error) {
+	res, err := receiveFuture(r)
+	if err != nil {
+		return nil, err
+	}
+
+	var result btcjson.GetChainFromBlockResult
+	if err := json.Unmarshal(res, &result); err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
+// GetChainFromBlockAsync returns an instance of a type that can be used to get the
+// result of the RPC at some future time by invoking the Receive function on the
+// returned instance.
+//
+// See GetChainFromBlock for the blocking version and more details.
+func (c *Client) GetChainFromBlockAsync(startHash *string, includeBlocks *bool) FutureGetChainFromBlockResult {
+	cmd := btcjson.NewGetChainFromBlockCmd(startHash, includeBlocks)
+	return c.sendCmd(cmd)
+}
+
+// GetChainFromBlock returns the selected parent chain starting from startHash
+// up to the virtual.
+func (c *Client) GetChainFromBlock(startHash *string, includeBlocks *bool) (*btcjson.GetChainFromBlockResult, error) {
+	return c.GetChainFromBlockAsync(startHash, includeBlocks).Receive()
+}
+
 // FutureGetDifficultyResult is a future promise to deliver the result of a
 // GetDifficultyAsync RPC invocation (or an applicable error).
 type FutureGetDifficultyResult chan *response
