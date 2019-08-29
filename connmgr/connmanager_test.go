@@ -269,7 +269,11 @@ func TestRetryPermanent(t *testing.T) {
 	gotState = cr.State()
 	wantState = ConnPending
 	if gotState != wantState {
-		t.Fatalf("retry: %v - want state %v, got state %v", cr.Addr, wantState, gotState)
+		// There is a small chance that connection has already been established,
+		// so check for that as well
+		if gotState != ConnEstablished {
+			t.Fatalf("retry: %v - want state %v, got state %v", cr.Addr, wantState, gotState)
+		}
 	}
 
 	gotConnReq = <-connected
