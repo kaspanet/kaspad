@@ -68,10 +68,6 @@ const (
 	// is closed.
 	rpcAuthTimeoutSeconds = 10
 
-	// uint256Size is the number of bytes needed to represent an unsigned
-	// 256-bit integer.
-	uint256Size = 32
-
 	// gbtNonceRange is two 64-bit big-endian hexadecimal integers which
 	// represent the valid ranges of nonces returned by the getBlockTemplate
 	// RPC.
@@ -85,6 +81,10 @@ const (
 
 	// maxProtocolVersion is the max protocol version the server supports.
 	maxProtocolVersion = 70002
+
+	// maxBlocksInGetChainFromBlockResult is the max amount of blocks that
+	// are allowed in a GetChainFromBlockResult.
+	maxBlocksInGetChainFromBlockResult = 1000
 )
 
 var (
@@ -2227,6 +2227,11 @@ func handleGetChainFromBlock(s *Server, cmd interface{}, closeChan <-chan struct
 	selectedParentChain, err := s.cfg.DAG.SelectedParentChain(startHash)
 	if err != nil {
 		return nil, err
+	}
+
+	// Limit the amount of blocks in the response
+	if len(selectedParentChain) > maxBlocksInGetChainFromBlockResult {
+		selectedParentChain = selectedParentChain[:maxBlocksInGetChainFromBlockResult]
 	}
 
 	// Collect chainBlocks.
