@@ -25,7 +25,7 @@ func getRequestID(r *http.Request) uint64 {
 	return id.(uint64)
 }
 
-func addRequestMetaDataMiddleware(next http.Handler) http.Handler {
+func addRequestMetadataMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		r = associateRequestID(r)
 		next.ServeHTTP(w, r)

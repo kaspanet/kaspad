@@ -22,7 +22,7 @@ func mainHandler(w http.ResponseWriter, r *http.Request) {
 // function to gracefully shutdown it.
 func Start(listenAddr string) func() {
 	router := mux.NewRouter()
-	router.Use(addRequestMetaDataMiddleware)
+	router.Use(addRequestMetadataMiddleware)
 	router.Use(recoveryMiddleware)
 	router.Use(loggingMiddleware)
 	router.HandleFunc("/", mainHandler)
