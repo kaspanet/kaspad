@@ -11,16 +11,13 @@ require (
 	github.com/btcsuite/websocket v0.0.0-20150119174127-31079b680792
 	github.com/btcsuite/winsvc v1.0.0
 	github.com/davecgh/go-spew v1.1.1
-	github.com/golang/protobuf v1.3.1 // indirect
+	github.com/golang-migrate/migrate/v4 v4.6.1
 	github.com/gorilla/handlers v1.4.2
-	github.com/gorilla/mux v1.6.2
+	github.com/gorilla/mux v1.7.1
 	github.com/jessevdk/go-flags v1.4.0
 	github.com/jinzhu/gorm v1.9.10
 	github.com/jrick/logrotate v1.0.0
 	github.com/kkdai/bstream v0.0.0-20181106074824-b3251f7901ec
 	github.com/miekg/dns v1.1.6
-	github.com/stretchr/testify v1.3.0 // indirect
-	golang.org/x/crypto v0.0.0-20190325154230-a5d413f7728c
-	golang.org/x/sync v0.0.0-20190412183630-56d357773e84 // indirect
-	golang.org/x/sys v0.0.0-20190312061237-fead79001313 // indirect
+	golang.org/x/crypto v0.0.0-20190426145343-a29dc8fdc734
 )

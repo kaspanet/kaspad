@@ -1,4 +1,4 @@
-package main
+package config
 
 import (
 	"errors"
@@ -20,23 +20,26 @@ var (
 	defaultHTTPListen = "0.0.0.0:8080"
 )
 
-type config struct {
+// Config defines the configuration options for the API server.
+type Config struct {
 	LogDir      string `long:"logdir" description:"Directory to log output."`
 	RPCUser     string `short:"u" long:"rpcuser" description:"RPC username" required:"true"`
 	RPCPassword string `short:"P" long:"rpcpass" default-mask:"-" description:"RPC password" required:"true"`
 	RPCServer   string `short:"s" long:"rpcserver" description:"RPC server to connect to" required:"true"`
 	RPCCert     string `short:"c" long:"rpccert" description:"RPC server certificate chain for validation"`
 	DisableTLS  bool   `long:"notls" description:"Disable TLS"`
-	DBHost      string `long:"dbhost" description:"Database host"`
+	DBAddress   string `long:"dbaddress" description:"Database address"`
 	DBUser      string `long:"dbuser" description:"Database user" required:"true"`
 	DBPassword  string `long:"dbpass" description:"Database password" required:"true"`
+	DBName      string `long:"dbname" description:"Database name" required:"true"`
 	HTTPListen  string `long:"listen" description:"HTTP address to listen on (default: 0.0.0.0:8080)"`
 }
 
-func parseConfig() (*config, error) {
-	cfg := &config{
+// ParseConfig parses the CLI arguments and returns a config struct.
+func ParseConfig() (*Config, error) {
+	cfg := &Config{
 		LogDir:     defaultLogDir,
-		DBHost:     defaultDBAddr,
+		DBAddress:  defaultDBAddr,
 		HTTPListen: defaultHTTPListen,
 	}
 	parser := flags.NewParser(cfg, flags.PrintErrors|flags.HelpFlag)

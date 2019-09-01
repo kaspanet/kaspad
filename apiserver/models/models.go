@@ -19,6 +19,7 @@ type Block struct {
 	Nonce                uint64
 	BlueScore            uint64
 	IsChainBlock         bool
+	Mass                 uint64
 	ParentBlocks         []Block `gorm:"many2many:parent_blocks;"`
 }
 
@@ -40,22 +41,26 @@ type RawBlock struct {
 // Subnetwork is the gorm model for the 'subnetworks' table
 type Subnetwork struct {
 	ID           uint64 `gorm:"primary_key"`
-	SubnetworkID []byte
+	SubnetworkID string
 }
 
 // Transaction is the gorm model for the 'transactions' table
 type Transaction struct {
-	ID               uint64 `gorm:"primary_key"`
-	AcceptingBlockID uint64
-	AcceptingBlock   Block
-	TransactionHash  string
-	TransactionID    string
-	LockTime         uint64
-	SubnetworkID     uint64
-	Gas              uint64
-	PayloadHash      string
-	Payload          []byte
-	Blocks           []Block `gorm:"many2many:transactions_to_blocks;"`
+	ID                 uint64 `gorm:"primary_key"`
+	AcceptingBlockID   uint64
+	AcceptingBlock     Block
+	TransactionHash    string
+	TransactionID      string
+	LockTime           uint64
+	SubnetworkID       uint64
+	Subnetwork         Subnetwork
+	Gas                uint64
+	PayloadHash        string
+	Payload            []byte
+	Mass               uint64
+	Blocks             []Block `gorm:"many2many:transactions_to_blocks;"`
+	TransactionOutputs []TransactionOutput
+	TransactionInputs  []TransactionInput
 }
 
 // TransactionBlock is the gorm model for the 'transactions_to_blocks' table

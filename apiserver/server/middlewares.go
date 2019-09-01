@@ -1,8 +1,8 @@
 package server
 
 import (
-	"fmt"
 	"net/http"
+	"runtime/debug"
 )
 
 var nextRequestID uint64 = 1
@@ -27,22 +27,21 @@ func loggingMiddleware(next http.Handler) http.Handler {
 func recoveryMiddleware(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := newAPIServerContext(r.Context())
-		var errStr string
 		defer func() {
 			recoveryErr := recover()
 			if recoveryErr != nil {
-				switch t := recoveryErr.(type) {
-				case string:
-					errStr = t
-				case error:
-					errStr = t.Error()
-				default:
-					errStr = "unknown error"
-				}
-				ctx.errorf("got error: %s", errStr)
-				http.Error(w, fmt.Sprintf("got error in request %d: %s", ctx.requestID(), errStr), http.StatusInternalServerError)
+				log.Criticalf("Fatal error: %s", recoveryErr)
+				log.Criticalf("Stack trace: %s", debug.Stack())
+				sendErr(ctx, w, newHandleError(http.StatusInternalServerError, "A server error occurred."))
 			}
 		}()
+		h.ServeHTTP(w, r)
+	})
+}
+
+func setJSONMiddleware(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		h.ServeHTTP(w, r)
 	})
 }

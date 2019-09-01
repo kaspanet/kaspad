@@ -2,11 +2,12 @@ package main
 
 import (
 	"fmt"
+	"github.com/daglabs/btcd/apiserver/config"
 	"github.com/daglabs/btcd/rpcclient"
 	"io/ioutil"
 )
 
-func connectToServer(cfg *config) (*apiServerClient, error) {
+func connectToServer(cfg *config.Config) (*apiServerClient, error) {
 	var cert []byte
 	if !cfg.DisableTLS {
 		var err error
