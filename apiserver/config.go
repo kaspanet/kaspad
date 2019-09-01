@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"github.com/daglabs/btcd/apiserver/logger"
 	"github.com/daglabs/btcd/util"
 	"github.com/jessevdk/go-flags"
 	"path/filepath"
@@ -14,8 +15,9 @@ const (
 
 var (
 	// Default configuration options
-	defaultLogDir = util.AppDataDir("apiserver", false)
-	defaultDBHost = "localhost:3306"
+	defaultLogDir     = util.AppDataDir("apiserver", false)
+	defaultDBAddr     = "localhost:3306"
+	defaultHTTPListen = "0.0.0.0:8080"
 )
 
 type config struct {
@@ -28,12 +30,14 @@ type config struct {
 	DBHost      string `long:"dbhost" description:"Database host"`
 	DBUser      string `long:"dbuser" description:"Database user" required:"true"`
 	DBPassword  string `long:"dbpass" description:"Database password" required:"true"`
+	HTTPListen  string `long:"listen" description:"HTTP address to listen on (default: 0.0.0.0:8080)"`
 }
 
 func parseConfig() (*config, error) {
 	cfg := &config{
-		LogDir: defaultLogDir,
-		DBHost: defaultDBHost,
+		LogDir:     defaultLogDir,
+		DBHost:     defaultDBAddr,
+		HTTPListen: defaultHTTPListen,
 	}
 	parser := flags.NewParser(cfg, flags.PrintErrors|flags.HelpFlag)
 	_, err := parser.Parse()
@@ -52,7 +56,7 @@ func parseConfig() (*config, error) {
 
 	logFile := filepath.Join(cfg.LogDir, defaultLogFilename)
 	errLogFile := filepath.Join(cfg.LogDir, defaultErrLogFilename)
-	initLog(logFile, errLogFile)
+	logger.InitLog(logFile, errLogFile)
 
 	return cfg, nil
 }
