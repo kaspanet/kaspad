@@ -9,7 +9,7 @@ var nextRequestID uint64 = 1
 
 func addRequestMetadataMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		rCtx := newCustomContext(r.Context()).setRequestID(nextRequestID)
+		rCtx := newAPIServerContext(r.Context()).setRequestID(nextRequestID)
 		r.WithContext(rCtx)
 		nextRequestID++
 		next.ServeHTTP(w, r)
@@ -18,15 +18,15 @@ func addRequestMetadataMiddleware(next http.Handler) http.Handler {
 
 func loggingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context().(customContext)
-		ctx.infof("Method: %s URI: %s", ctx.requestID(), r.Method, r.RequestURI)
+		ctx := newAPIServerContext(r.Context())
+		ctx.infof("Method: %s URI: %s", r.Method, r.RequestURI)
 		next.ServeHTTP(w, r)
 	})
 }
 
 func recoveryMiddleware(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context().(customContext)
+		ctx := newAPIServerContext(r.Context())
 		var errStr string
 		defer func() {
 			recoveryErr := recover()

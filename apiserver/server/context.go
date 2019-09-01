@@ -11,49 +11,52 @@ const (
 	contextKeyRequestID contextKey = "REQUEST_ID"
 )
 
-type customContext struct {
+type apiServerContext struct {
 	context.Context
 }
 
-func newCustomContext(ctx context.Context) *customContext {
-	return &customContext{Context: ctx}
+func newAPIServerContext(ctx context.Context) *apiServerContext {
+	if asCtx, ok := ctx.(*apiServerContext); ok {
+		return asCtx
+	}
+	return &apiServerContext{Context: ctx}
 }
 
-func (ctx *customContext) setRequestID(requestID uint64) context.Context {
+func (ctx *apiServerContext) setRequestID(requestID uint64) context.Context {
 	context.WithValue(ctx, contextKeyRequestID, nextRequestID)
 	return ctx
 }
 
-func (ctx *customContext) requestID() uint64 {
+func (ctx *apiServerContext) requestID() uint64 {
 	id := ctx.Value(contextKeyRequestID)
 	return id.(uint64)
 }
 
-func (ctx *customContext) getLogString(format string, params ...interface{}) string {
+func (ctx *apiServerContext) getLogString(format string, params ...interface{}) string {
 	params = append(params, ctx.requestID())
-	return fmt.Sprintf("Request %d: "+format, params)
+	return fmt.Sprintf("RID %d: "+format, params)
 }
 
-func (ctx *customContext) tracef(format string, params ...interface{}) {
+func (ctx *apiServerContext) tracef(format string, params ...interface{}) {
 	log.Tracef(ctx.getLogString(format, params))
 }
 
-func (ctx *customContext) debugf(format string, params ...interface{}) {
+func (ctx *apiServerContext) debugf(format string, params ...interface{}) {
 	log.Debugf(ctx.getLogString(format, params))
 }
 
-func (ctx *customContext) infof(format string, params ...interface{}) {
+func (ctx *apiServerContext) infof(format string, params ...interface{}) {
 	log.Infof(ctx.getLogString(format, params))
 }
 
-func (ctx *customContext) warnf(format string, params ...interface{}) {
+func (ctx *apiServerContext) warnf(format string, params ...interface{}) {
 	log.Warnf(ctx.getLogString(format, params))
 }
 
-func (ctx *customContext) errorf(format string, params ...interface{}) {
+func (ctx *apiServerContext) errorf(format string, params ...interface{}) {
 	log.Errorf(ctx.getLogString(format, params))
 }
 
-func (ctx *customContext) criticalf(format string, params ...interface{}) {
+func (ctx *apiServerContext) criticalf(format string, params ...interface{}) {
 	log.Criticalf(ctx.getLogString(format, params))
 }
