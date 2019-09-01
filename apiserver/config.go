@@ -30,7 +30,7 @@ type config struct {
 	DBHost      string `long:"dbhost" description:"Database host"`
 	DBUser      string `long:"dbuser" description:"Database user" required:"true"`
 	DBPassword  string `long:"dbpass" description:"Database password" required:"true"`
-	HTTPListen  string `long:"httplisten" description:"HTTP address to listen on (default: 0.0.0.0:8080)"`
+	HTTPListen  string `long:"listen" description:"HTTP address to listen on (default: 0.0.0.0:8080)"`
 }
 
 func parseConfig() (*config, error) {
