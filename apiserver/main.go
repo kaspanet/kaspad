@@ -31,11 +31,19 @@ func main() {
 	}
 	defer disconnect(client)
 
-	baka, err := client.GetChainFromBlock(true, nil)
-	log.Warnf("aaaa, %+v", baka)
+	doneChan := make(chan struct{}, 1)
+	spawn(func() {
+		err := blockLoop(client, doneChan)
+		if err != nil {
+			panic(err)
+		}
+	})
 
 	interrupt := signal.InterruptListener()
 	<-interrupt
+
+	// Gracefully stop blockLoop
+	doneChan <- struct{}{}
 }
 
 func disconnect(client *apiServerClient) {
