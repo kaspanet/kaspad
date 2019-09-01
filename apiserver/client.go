@@ -9,6 +9,12 @@ import (
 	"github.com/daglabs/btcd/wire"
 )
 
+const (
+	// notificationBufferLength is the length of the buffers for onBlockAdded
+	// and onChainChanged notifications.
+	notificationBufferLength = 120
+)
+
 type apiServerClient struct {
 	*rpcclient.Client
 	onBlockAdded   chan *blockAddedMsg
@@ -27,8 +33,8 @@ type chainChangedMsg struct {
 
 func newAPIServerClient(connCfg *rpcclient.ConnConfig) (*apiServerClient, error) {
 	client := &apiServerClient{
-		onBlockAdded:   make(chan *blockAddedMsg),
-		onChainChanged: make(chan *chainChangedMsg),
+		onBlockAdded:   make(chan *blockAddedMsg, notificationBufferLength),
+		onChainChanged: make(chan *chainChangedMsg, notificationBufferLength),
 	}
 	notificationHandlers := &rpcclient.NotificationHandlers{
 		OnFilteredBlockAdded: func(height uint64, header *wire.BlockHeader,

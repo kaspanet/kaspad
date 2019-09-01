@@ -2216,7 +2216,7 @@ func handleGetChainFromBlock(s *Server, cmd interface{}, closeChan <-chan struct
 
 	// If startHash is not in the selected parent chain, there's nothing
 	// to do; return an error.
-	if !s.cfg.DAG.IsInSelectedParentChain(startHash) {
+	if startHash != nil && !s.cfg.DAG.IsInSelectedParentChain(startHash) {
 		return nil, &btcjson.RPCError{
 			Code:    btcjson.ErrRPCBlockNotFound,
 			Message: "Block not found in selected parent chain",
@@ -2249,7 +2249,7 @@ func handleGetChainFromBlock(s *Server, cmd interface{}, closeChan <-chan struct
 	}
 
 	// If the user specified to include the blocks, collect them as well.
-	if c.IncludeBlocks != nil && *c.IncludeBlocks {
+	if c.IncludeBlocks {
 		getBlockVerboseResults, err := hashesToGetBlockVerboseResults(s, selectedParentChain)
 		if err != nil {
 			return nil, err

@@ -31,6 +31,9 @@ func main() {
 	}
 	defer disconnect(client)
 
+	baka, err := client.GetChainFromBlock(true, nil)
+	log.Warnf("aaaa, %+v", baka)
+
 	interrupt := signal.InterruptListener()
 	<-interrupt
 }

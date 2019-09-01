@@ -333,16 +333,16 @@ func NewGetCFilterHeaderCmd(hash string,
 
 // GetChainFromBlockCmd defines the getChainFromBlock JSON-RPC command.
 type GetChainFromBlockCmd struct {
+	IncludeBlocks bool    `json:"includeBlocks"`
 	StartHash     *string `json:"startHash"`
-	IncludeBlocks *bool   `json:"includeBlocks"`
 }
 
 // NewGetChainFromBlockCmd returns a new instance which can be used to issue a
 // GetChainFromBlock JSON-RPC command.
-func NewGetChainFromBlockCmd(startHash *string, includeBlocks *bool) *GetChainFromBlockCmd {
+func NewGetChainFromBlockCmd(includeBlocks bool, startHash *string) *GetChainFromBlockCmd {
 	return &GetChainFromBlockCmd{
-		StartHash:     startHash,
 		IncludeBlocks: includeBlocks,
+		StartHash:     startHash,
 	}
 }
 

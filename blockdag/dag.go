@@ -1446,7 +1446,7 @@ func (dag *BlockDAG) SelectedParentChain(startHash *daghash.Hash) ([]*daghash.Ha
 	}
 
 	// Copy all the hashes starting from startHashIndex (exclusive)
-	hashes := make([]*daghash.Hash, len(dag.virtual.selectedParentChainSlice)-startHashIndex)
+	hashes := make([]*daghash.Hash, len(dag.virtual.selectedParentChainSlice)-startHashIndex-1)
 	for i, node := range dag.virtual.selectedParentChainSlice[startHashIndex+1:] {
 		hashes[i] = node.hash
 	}
@@ -1459,8 +1459,7 @@ func (dag *BlockDAG) SelectedParentChain(startHash *daghash.Hash) ([]*daghash.Ha
 func (dag *BlockDAG) BluesTxsAcceptanceData(blockHash *daghash.Hash) (MultiBlockTxsAcceptanceData, error) {
 	node := dag.index.LookupNode(blockHash)
 	if node == nil {
-		err := fmt.Errorf("block %s is not known", blockHash)
-		return nil, err
+		return nil, fmt.Errorf("block %s is not known", blockHash)
 	}
 
 	_, bluesTxsAcceptanceData, err := dag.pastUTXO(node)

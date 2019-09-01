@@ -78,10 +78,6 @@ func (diffStore *utxoDiffStore) removeBlockDiffData(dbTx database.Tx, blockHash 
 	diffStore.mtx.LowPriorityWriteLock()
 	defer diffStore.mtx.LowPriorityWriteUnlock()
 	delete(diffStore.loaded, *blockHash)
-	err := dbRemoveDiffData(dbTx, blockHash)
-	if err != nil {
-		return err
-	}
 	return nil
 }
 
@@ -184,8 +180,4 @@ func dbStoreDiffData(dbTx database.Tx, hash *daghash.Hash, diffData *blockUTXODi
 	}
 
 	return dbTx.Metadata().Bucket(utxoDiffsBucketName).Put(hash[:], serializedDiffData)
-}
-
-func dbRemoveDiffData(dbTx database.Tx, hash *daghash.Hash) error {
-	return dbTx.Metadata().Bucket(utxoDiffsBucketName).Delete(hash[:])
 }

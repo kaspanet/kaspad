@@ -238,15 +238,15 @@ func (r FutureGetChainFromBlockResult) Receive() (*btcjson.GetChainFromBlockResu
 // returned instance.
 //
 // See GetChainFromBlock for the blocking version and more details.
-func (c *Client) GetChainFromBlockAsync(startHash *string, includeBlocks *bool) FutureGetChainFromBlockResult {
-	cmd := btcjson.NewGetChainFromBlockCmd(startHash, includeBlocks)
+func (c *Client) GetChainFromBlockAsync(includeBlocks bool, startHash *string) FutureGetChainFromBlockResult {
+	cmd := btcjson.NewGetChainFromBlockCmd(includeBlocks, startHash)
 	return c.sendCmd(cmd)
 }
 
 // GetChainFromBlock returns the selected parent chain starting from startHash
 // up to the virtual.
-func (c *Client) GetChainFromBlock(startHash *string, includeBlocks *bool) (*btcjson.GetChainFromBlockResult, error) {
-	return c.GetChainFromBlockAsync(startHash, includeBlocks).Receive()
+func (c *Client) GetChainFromBlock(includeBlocks bool, startHash *string) (*btcjson.GetChainFromBlockResult, error) {
+	return c.GetChainFromBlockAsync(includeBlocks, startHash).Receive()
 }
 
 // FutureGetDifficultyResult is a future promise to deliver the result of a
