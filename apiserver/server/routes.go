@@ -7,7 +7,11 @@ import (
 	"net/http"
 )
 
-func makeHandler(handler func(vars map[string]string, ctx *apiServerContext) (interface{}, *handlerError)) func(w http.ResponseWriter, r *http.Request) {
+const (
+	routeParamTxID = "txID"
+)
+
+func makeHandler(handler func(vars map[string]string, ctx *apiServerContext) (interface{}, *handlerError)) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := newAPIServerContext(r.Context())
 		response, hErr := handler(mux.Vars(r), ctx)
@@ -36,5 +40,5 @@ func mainHandler(vars map[string]string, ctx *apiServerContext) (interface{}, *h
 
 func addRoutes(router *mux.Router) {
 	router.HandleFunc("/", makeHandler(mainHandler))
-	router.HandleFunc("/transaction/id/{txID}", makeHandler(getTransactionByIDHandler)).Methods("GET")
+	router.HandleFunc(fmt.Sprintf("/transaction/id/{%s}", routeParamTxID), makeHandler(getTransactionByIDHandler)).Methods("GET")
 }

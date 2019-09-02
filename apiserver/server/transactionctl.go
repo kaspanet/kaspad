@@ -40,7 +40,7 @@ type transactionInputResponse struct {
 }
 
 func getTransactionByIDHandler(vars map[string]string, ctx *apiServerContext) (interface{}, *handlerError) {
-	txID := vars["txID"]
+	txID := vars[routeParamTxID]
 	if len(txID) != daghash.TxIDSize*2 {
 		return nil, newHandleError(http.StatusUnprocessableEntity, fmt.Sprintf("The given txid is not a hex-encoded %d-byte hash.", daghash.TxIDSize))
 	}
