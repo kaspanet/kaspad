@@ -2205,6 +2205,7 @@ func handleGetChainFromBlock(s *Server, cmd interface{}, closeChan <-chan struct
 	c := cmd.(*btcjson.GetChainFromBlockCmd)
 	var startHash *daghash.Hash
 	if c.StartHash != nil {
+		startHash = &daghash.Hash{}
 		err := daghash.Decode(startHash, *c.StartHash)
 		if err != nil {
 			return nil, rpcDecodeHexError(*c.StartHash)
