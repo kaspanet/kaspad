@@ -50,7 +50,7 @@ const (
 	defaultBlockMaxMass          = 10000000
 	blockMaxMassMin              = 1000
 	blockMaxMassMax              = 10000000
-	defaultMinRelayTxFee         = 1000 // 1 satoshi per byte
+	defaultMinRelayTxFee         = 1e-5 // 1 satoshi per byte
 	defaultGenerate              = false
 	defaultMaxOrphanTransactions = 100
 	//DefaultMaxOrphanTxSize is the default maximum size for an orphan transaction

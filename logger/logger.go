@@ -24,8 +24,6 @@ import (
 // InitLog.
 var (
 	// BackendLog is the logging backend used to create all subsystem loggers.
-	// The backend must not be used before the log rotator has been initialized,
-	// or data races and/or nil pointer dereferences will occur.
 	BackendLog = logs.NewBackend()
 
 	adxrLog = BackendLog.Logger("ADXR")
