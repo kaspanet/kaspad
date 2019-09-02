@@ -22,7 +22,8 @@ func ConnectToDB(cfg *config.Config) error {
 		return fmt.Errorf("Error checking whether the database is current: %s", err)
 	}
 	if !isCurrent {
-		return fmt.Errorf("Database is not current")
+		return fmt.Errorf("Database is not current. Please migrate" +
+			" the database and start again.")
 	}
 
 	DB, err = gorm.Open("mysql", connectionString)
