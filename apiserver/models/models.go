@@ -100,3 +100,9 @@ type UTXO struct {
 	AcceptingBlockID    uint64
 	AcceptingBlock      Block
 }
+
+// Address is the gorm model for the 'utxos' table
+type Address struct {
+	ID      uint64 `gorm:"primary_key"`
+	Address string
+}
