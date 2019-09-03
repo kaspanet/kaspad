@@ -1,4 +1,4 @@
-CREATE TABLE `transactions_outputs`
+CREATE TABLE `transaction_outputs`
 (
     `id`                BIGINT UNSIGNED NOT NULL,
     `transaction_id`    BIGINT UNSIGNED NOT NULL,

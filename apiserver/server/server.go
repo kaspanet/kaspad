@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"fmt"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"net/http"
@@ -11,13 +10,6 @@ import (
 
 const gracefulShutdownTimeout = 30 * time.Second
 
-func mainHandler(w http.ResponseWriter, r *http.Request) {
-	_, err := fmt.Fprintf(w, "API Server is running")
-	if err != nil {
-		panic(err)
-	}
-}
-
 // Start starts the HTTP REST server and returns a
 // function to gracefully shutdown it.
 func Start(listenAddr string) func() {
@@ -25,7 +17,8 @@ func Start(listenAddr string) func() {
 	router.Use(addRequestMetadataMiddleware)
 	router.Use(recoveryMiddleware)
 	router.Use(loggingMiddleware)
-	router.HandleFunc("/", mainHandler)
+	router.Use(setJSONMiddleware)
+	addRoutes(router)
 	httpServer := &http.Server{
 		Addr:    listenAddr,
 		Handler: handlers.CORS()(router),
@@ -38,7 +31,7 @@ func Start(listenAddr string) func() {
 		defer cancel()
 		err := httpServer.Shutdown(ctx)
 		if err != nil {
-			log.Errorf("Error shutting down http httpServer: %s", err)
+			log.Errorf("Error shutting down HTTP server: %s", err)
 		}
 	}
 }
