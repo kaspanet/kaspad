@@ -41,6 +41,7 @@ type transactionInputResponse struct {
 	Sequence                       uint64 `json:"sequence"`
 }
 
+// GetTransactionByIDHandler returns a transaction by a given transaction ID.
 func GetTransactionByIDHandler(txID string) (interface{}, *utils.HandlerError) {
 	if len(txID) != daghash.TxIDSize*2 {
 		return nil, utils.NewHandlerError(http.StatusUnprocessableEntity, fmt.Sprintf("The given txid is not a hex-encoded %d-byte hash.", daghash.TxIDSize))
@@ -54,6 +55,7 @@ func GetTransactionByIDHandler(txID string) (interface{}, *utils.HandlerError) {
 	return convertTxModelToTxResponse(tx), nil
 }
 
+// GetTransactionByHashHandler returns a transaction by a given transaction hash.
 func GetTransactionByHashHandler(txHash string) (interface{}, *utils.HandlerError) {
 	if len(txHash) != daghash.HashSize*2 {
 		return nil, utils.NewHandlerError(http.StatusUnprocessableEntity, fmt.Sprintf("The given txhash is not a hex-encoded %d-byte hash.", daghash.HashSize))

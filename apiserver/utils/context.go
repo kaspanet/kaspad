@@ -11,52 +11,69 @@ const (
 	contextKeyRequestID contextKey = "REQUEST_ID"
 )
 
-type ApiServerContext struct {
+// APIServerContext is a context.Context wrapper that
+// enables custom logs with request ID.
+type APIServerContext struct {
 	context.Context
 }
 
-func NewAPIServerContext(ctx context.Context) *ApiServerContext {
-	if asCtx, ok := ctx.(*ApiServerContext); ok {
+// ToAPIServerContext takes a context.Context instance
+// and converts it to *ApiServerContext.
+func ToAPIServerContext(ctx context.Context) *APIServerContext {
+	if asCtx, ok := ctx.(*APIServerContext); ok {
 		return asCtx
 	}
-	return &ApiServerContext{Context: ctx}
+	return &APIServerContext{Context: ctx}
 }
 
-func (ctx *ApiServerContext) SetRequestID(requestID uint64) context.Context {
+// SetRequestID associates a request ID for the context.
+func (ctx *APIServerContext) SetRequestID(requestID uint64) context.Context {
 	context.WithValue(ctx, contextKeyRequestID, requestID)
 	return ctx
 }
 
-func (ctx *ApiServerContext) requestID() uint64 {
+func (ctx *APIServerContext) requestID() uint64 {
 	id := ctx.Value(contextKeyRequestID)
 	uint64ID, _ := id.(uint64)
 	return uint64ID
 }
 
-func (ctx *ApiServerContext) getLogString(format string, params ...interface{}) string {
+func (ctx *APIServerContext) getLogString(format string, params ...interface{}) string {
 	return fmt.Sprintf("RID %d: ", ctx.requestID()) + fmt.Sprintf(format, params...)
 }
 
-func (ctx *ApiServerContext) Tracef(format string, params ...interface{}) {
-	log.Tracef(ctx.getLogString(format, params...))
+// Tracef writes a customized formatted context
+// related log with log level 'Trace'.
+func (ctx *APIServerContext) Tracef(format string, params ...interface{}) {
+	log.Trace(ctx.getLogString(format, params...))
 }
 
-func (ctx *ApiServerContext) Debugf(format string, params ...interface{}) {
-	log.Debugf(ctx.getLogString(format, params...))
+// Debugf writes a customized formatted context
+// related log with log level 'Debug'.
+func (ctx *APIServerContext) Debugf(format string, params ...interface{}) {
+	log.Debug(ctx.getLogString(format, params...))
 }
 
-func (ctx *ApiServerContext) Infof(format string, params ...interface{}) {
-	log.Infof(ctx.getLogString(format, params...))
+// Infof writes a customized formatted context
+// related log with log level 'Info'.
+func (ctx *APIServerContext) Infof(format string, params ...interface{}) {
+	log.Info(ctx.getLogString(format, params...))
 }
 
-func (ctx *ApiServerContext) Warnf(format string, params ...interface{}) {
-	log.Warnf(ctx.getLogString(format, params...))
+// Warnf writes a customized formatted context
+// related log with log level 'Warn'.
+func (ctx *APIServerContext) Warnf(format string, params ...interface{}) {
+	log.Warn(ctx.getLogString(format, params...))
 }
 
-func (ctx *ApiServerContext) Errorf(format string, params ...interface{}) {
-	log.Errorf(ctx.getLogString(format, params...))
+// Errorf writes a customized formatted context
+// related log with log level 'Error'.
+func (ctx *APIServerContext) Errorf(format string, params ...interface{}) {
+	log.Error(ctx.getLogString(format, params...))
 }
 
-func (ctx *ApiServerContext) Criticalf(format string, params ...interface{}) {
+// Criticalf writes a customized formatted context
+// related log with log level 'Critical'.
+func (ctx *APIServerContext) Criticalf(format string, params ...interface{}) {
 	log.Criticalf(ctx.getLogString(format, params...))
 }
