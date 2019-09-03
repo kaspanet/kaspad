@@ -80,6 +80,7 @@ func (TransactionBlock) TableName() string {
 
 // TransactionOutput is the gorm model for the 'transaction_outputs' table
 type TransactionOutput struct {
+	ID            uint64 `gorm:"primary_key"`
 	TransactionID uint64
 	Transaction   Transaction
 	Index         uint32
@@ -89,6 +90,7 @@ type TransactionOutput struct {
 
 // TransactionInput is the gorm model for the 'transaction_inputs' table
 type TransactionInput struct {
+	ID                  uint64 `gorm:"primary_key"`
 	TransactionID       uint64
 	Transaction         Transaction
 	TransactionOutputID uint64
