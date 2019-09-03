@@ -13,9 +13,9 @@ import (
 // DB is the API server database.
 var DB *gorm.DB
 
-// ConnectToDB connects to the database mentioned in
+// Connect connects to the database mentioned in
 // config variable.
-func ConnectToDB(cfg *config.Config) error {
+func Connect(cfg *config.Config) error {
 	connectionString := buildConnectionString(cfg)
 	isCurrent, err := isCurrent(connectionString)
 	if err != nil {

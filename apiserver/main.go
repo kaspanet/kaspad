@@ -16,12 +16,12 @@ import (
 func main() {
 	defer panics.HandlePanic(log, logger.BackendLog)
 
-	cfg, err := config.ParseConfig()
+	cfg, err := config.Parse()
 	if err != nil {
 		panic(fmt.Errorf("Error parsing command-line arguments: %s", err))
 	}
 
-	err = database.ConnectToDB(cfg)
+	err = database.Connect(cfg)
 	if err != nil {
 		panic(fmt.Errorf("Error connecting to database: %s", err))
 	}

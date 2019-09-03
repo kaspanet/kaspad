@@ -35,8 +35,8 @@ type Config struct {
 	HTTPListen  string `long:"listen" description:"HTTP address to listen on (default: 0.0.0.0:8080)"`
 }
 
-// ParseConfig parses the CLI arguments and returns a config struct.
-func ParseConfig() (*Config, error) {
+// Parse parses the CLI arguments and returns a config struct.
+func Parse() (*Config, error) {
 	cfg := &Config{
 		LogDir:     defaultLogDir,
 		DBAddress:  defaultDBAddr,
