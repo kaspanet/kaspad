@@ -10,7 +10,8 @@ import (
 )
 
 const (
-	routeParamTxID = "txID"
+	routeParamTxID   = "txID"
+	routeParamTxHash = "txHash"
 )
 
 func makeHandler(handler func(vars map[string]string, ctx *utils.ApiServerContext) (interface{}, *utils.HandlerError)) func(http.ResponseWriter, *http.Request) {
@@ -49,10 +50,18 @@ func mainHandler(_ map[string]string, _ *utils.ApiServerContext) (interface{}, *
 
 func addRoutes(router *mux.Router) {
 	router.HandleFunc("/", makeHandler(mainHandler))
+
 	router.HandleFunc(
 		fmt.Sprintf("/transaction/id/{%s}", routeParamTxID),
 		makeHandler(func(vars map[string]string, ctx *utils.ApiServerContext) (interface{}, *utils.HandlerError) {
 			return controllers.GetTransactionByIDHandler(vars[routeParamTxID])
+		})).
+		Methods("GET")
+
+	router.HandleFunc(
+		fmt.Sprintf("/transaction/hash/{%s}", routeParamTxHash),
+		makeHandler(func(vars map[string]string, ctx *utils.ApiServerContext) (interface{}, *utils.HandlerError) {
+			return controllers.GetTransactionByHashHandler(vars[routeParamTxHash])
 		})).
 		Methods("GET")
 }
