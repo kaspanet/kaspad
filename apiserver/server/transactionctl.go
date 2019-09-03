@@ -10,36 +10,36 @@ import (
 )
 
 type transactionResponse struct {
-	TransactionHash         string
-	TransactionID           string
-	AcceptingBlockHash      string
-	AcceptingBlockBlueScore uint64
-	SubnetworkID            string
-	LockTime                uint64
-	Gas                     uint64
-	PayloadHash             string
-	Payload                 string
-	Inputs                  []*transactionInputResponse
-	Outputs                 []*transactionOutputResponse
-	Mass                    uint64
+	TransactionHash         string                       `json:"transactionHash"`
+	TransactionID           string                       `json:"transactionId"`
+	AcceptingBlockHash      string                       `json:"acceptingBlockHash,omitempty"`
+	AcceptingBlockBlueScore uint64                       `json:"acceptingBlockBlueScore,omitempty"`
+	SubnetworkID            string                       `json:"subnetworkId"`
+	LockTime                uint64                       `json:"lockTime"`
+	Gas                     uint64                       `json:"gas,omitempty"`
+	PayloadHash             string                       `json:"payloadHash,omitempty"`
+	Payload                 string                       `json:"payload,omitempty"`
+	Inputs                  []*transactionInputResponse  `json:"inputs"`
+	Outputs                 []*transactionOutputResponse `json:"outputs"`
+	Mass                    uint64                       `json:"mass"`
 }
 
 type transactionOutputResponse struct {
-	TransactionID string
-	Value         uint64
-	PkScript      string
-	Address       string
+	TransactionID string `json:"transactionId,omitempty"`
+	Value         uint64 `json:"value"`
+	PkScript      string `json:"pkScript"`
+	Address       string `json:"address"`
 }
 
 type transactionInputResponse struct {
-	TransactionID                  string
-	PreviousTransactionID          string
-	PreviousTransactionOutputIndex uint32
-	ScriptSig                      string
-	Sequence                       uint64
+	TransactionID                  string `json:"transactionId,omitempty"`
+	PreviousTransactionID          string `json:"previousTransactionId"`
+	PreviousTransactionOutputIndex uint32 `json:"previousTransactionOutputIndex"`
+	SignatureScript                string `json:"signatureScript"`
+	Sequence                       uint64 `json:"sequence"`
 }
 
-func getTransactionByIDHandler(vars map[string]string, ctx *apiServerContext) (interface{}, *handlerError) {
+func getTransactionByIDHandler(vars map[string]string, _ *apiServerContext) (interface{}, *handlerError) {
 	txID := vars[routeParamTxID]
 	if len(txID) != daghash.TxIDSize*2 {
 		return nil, newHandleError(http.StatusUnprocessableEntity, fmt.Sprintf("The given txid is not a hex-encoded %d-byte hash.", daghash.TxIDSize))
@@ -49,8 +49,6 @@ func getTransactionByIDHandler(vars map[string]string, ctx *apiServerContext) (i
 		Preload("AcceptingBlock").
 		Preload("Subnetwork").
 		Preload("TransactionOutputs").
-		Preload("TransactionInputs").
-		Preload("TransactionInputs.TransactionOutput").
 		Preload("TransactionInputs.TransactionOutput.Transaction").
 		First(&tx)
 	if tx.ID == 0 {
@@ -76,18 +74,16 @@ func convertTxModelToTxResponse(tx *models.Transaction) *transactionResponse {
 	}
 	for i, txOut := range tx.TransactionOutputs {
 		txRes.Outputs[i] = &transactionOutputResponse{
-			TransactionID: tx.TransactionID,
-			Value:         txOut.Value,
-			PkScript:      hex.EncodeToString(txOut.PkScript),
-			Address:       "", // TODO: Fill it when there's an addrindex in the DB.
+			Value:    txOut.Value,
+			PkScript: hex.EncodeToString(txOut.PkScript),
+			Address:  "", // TODO: Fill it when there's an addrindex in the DB.
 		}
 	}
 	for i, txIn := range tx.TransactionInputs {
 		txRes.Inputs[i] = &transactionInputResponse{
-			TransactionID:                  tx.TransactionID,
 			PreviousTransactionID:          txIn.TransactionOutput.Transaction.TransactionID,
 			PreviousTransactionOutputIndex: txIn.TransactionOutput.Index,
-			ScriptSig:                      hex.EncodeToString(txIn.SignatureScript),
+			SignatureScript:                hex.EncodeToString(txIn.SignatureScript),
 			Sequence:                       txIn.Sequence,
 		}
 	}
