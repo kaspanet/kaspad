@@ -1,10 +1,11 @@
-package server
+package controllers
 
 import (
 	"encoding/hex"
 	"fmt"
 	"github.com/daglabs/btcd/apiserver/database"
 	"github.com/daglabs/btcd/apiserver/models"
+	"github.com/daglabs/btcd/apiserver/utils"
 	"github.com/daglabs/btcd/util/daghash"
 	"net/http"
 )
@@ -39,10 +40,9 @@ type transactionInputResponse struct {
 	Sequence                       uint64 `json:"sequence"`
 }
 
-func getTransactionByIDHandler(vars map[string]string, _ *apiServerContext) (interface{}, *handlerError) {
-	txID := vars[routeParamTxID]
+func GetTransactionByIDHandler(txID string) (interface{}, *utils.HandlerError) {
 	if len(txID) != daghash.TxIDSize*2 {
-		return nil, newHandleError(http.StatusUnprocessableEntity, fmt.Sprintf("The given txid is not a hex-encoded %d-byte hash.", daghash.TxIDSize))
+		return nil, utils.NewHandlerError(http.StatusUnprocessableEntity, fmt.Sprintf("The given txid is not a hex-encoded %d-byte hash.", daghash.TxIDSize))
 	}
 	tx := &models.Transaction{}
 	database.DB.Where("transaction_id = ?", txID).
@@ -52,7 +52,7 @@ func getTransactionByIDHandler(vars map[string]string, _ *apiServerContext) (int
 		Preload("TransactionInputs.TransactionOutput.Transaction").
 		First(&tx)
 	if tx.ID == 0 {
-		return nil, newHandleError(http.StatusNotFound, "No transaction with the given txid was found.")
+		return nil, utils.NewHandlerError(http.StatusNotFound, "No transaction with the given txid was found.")
 	}
 	return convertTxModelToTxResponse(tx), nil
 }
