@@ -175,13 +175,15 @@ var helpDescsEnUS = map[string]string{
 
 	// GetBlocksCmd help.
 	"getBlocks--synopsis":     "Return the blocks starting from startHash up to the virtual ordered by blue score.",
-	"getBlocks-startHash":     "Hash of the block with the bottom blue score. If this hash is unknown - returns an error.",
 	"getBlocks-includeBlocks": "If set to true - the block contents would be also included.",
+	"getBlocks-verboseBlocks": "If set to true - each block is returned as a JSON object",
+	"getBlocks-startHash":     "Hash of the block with the bottom blue score. If this hash is unknown - returns an error.",
 	"getBlocks--result0":      "Blocks starting from startHash.",
 
 	// GetChainFromBlockResult help.
-	"getBlocksResult-hashes": "List of hashes from StartHash (excluding StartHash) ordered by smallest blue score to greatest.",
-	"getBlocksResult-blocks": "If includeBlocks=true - contains the contents of all chain and accepted blocks in the SelectedParentChain. Otherwise - omitted.",
+	"getBlocksResult-hashes":    "List of hashes from StartHash (excluding StartHash) ordered by smallest blue score to greatest.",
+	"getBlocksResult-blocks":    "If includeBlocks=true - contains the block contents. Otherwise - omitted.",
+	"getBlocksResult-rawBlocks": "If includeBlocks=true and verboseBlocks=true - each block is returned as a JSON object. Otherwise - hex encoded string.",
 
 	// GetBlockChainInfoCmd help.
 	"getBlockDagInfo--synopsis": "Returns information about the current blockDAG state and the status of any active soft-fork deployments.",

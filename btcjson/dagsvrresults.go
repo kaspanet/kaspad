@@ -530,6 +530,7 @@ type GetChainFromBlockResult struct {
 
 // GetBlocksResult models the data from the getBlocks command.
 type GetBlocksResult struct {
-	Hashes []string                `json:"hashes"`
-	Blocks []GetBlockVerboseResult `json:"blocks"`
+	Hashes    []string                `json:"hashes"`
+	Blocks    []string                `json:"blocks"`
+	RawBlocks []GetBlockVerboseResult `json:"rawBlocks"`
 }

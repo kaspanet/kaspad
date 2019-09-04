@@ -193,14 +193,15 @@ func TestDAGSvrCmds(t *testing.T) {
 		{
 			name: "getBlocks",
 			newCmd: func() (interface{}, error) {
-				return btcjson.NewCmd("getBlocks", true, "123")
+				return btcjson.NewCmd("getBlocks", true, true, "123")
 			},
 			staticCmd: func() interface{} {
-				return btcjson.NewGetBlocksCmd(true, btcjson.String("123"))
+				return btcjson.NewGetBlocksCmd(true, true, btcjson.String("123"))
 			},
-			marshalled: `{"jsonrpc":"1.0","method":"getBlocks","params":[true,"123"],"id":1}`,
+			marshalled: `{"jsonrpc":"1.0","method":"getBlocks","params":[true,true,"123"],"id":1}`,
 			unmarshalled: &btcjson.GetBlocksCmd{
 				IncludeBlocks: true,
+				VerboseBlocks: true,
 				StartHash:     btcjson.String("123"),
 			},
 		},

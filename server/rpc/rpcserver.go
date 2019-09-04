@@ -1255,11 +1255,19 @@ func handleGetBlocks(s *Server, cmd interface{}, closeChan <-chan struct{}) (int
 
 	// If the user specified to include the blocks, collect them as well.
 	if c.IncludeBlocks {
-		getBlockVerboseResults, err := hashesToGetBlockVerboseResults(s, blockHashes)
-		if err != nil {
-			return nil, err
+		if c.VerboseBlocks {
+			getBlockVerboseResults, err := hashesToGetBlockVerboseResults(s, blockHashes)
+			if err != nil {
+				return nil, err
+			}
+			result.RawBlocks = getBlockVerboseResults
+		} else {
+			blocks, err := hashesToBlockStrings(s, blockHashes)
+			if err != nil {
+				return nil, err
+			}
+			result.Blocks = blocks
 		}
-		result.Blocks = getBlockVerboseResults
 	}
 
 	return result, nil
@@ -2359,6 +2367,24 @@ func collectChainBlocks(s *Server, selectedParentChain []*daghash.Hash) ([]btcjs
 		chainBlocks = append(chainBlocks, chainBlock)
 	}
 	return chainBlocks, nil
+}
+
+func hashesToBlockStrings(s *Server, hashes []*daghash.Hash) ([]string, error) {
+	blocks := make([]string, len(hashes))
+	err := s.cfg.DB.View(func(dbTx database.Tx) error {
+		for i, hash := range hashes {
+			blockBytes, err := dbTx.FetchBlock(hash)
+			if err != nil {
+				return err
+			}
+			blocks[i] = hex.EncodeToString(blockBytes)
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return blocks, nil
 }
 
 func hashesToGetBlockVerboseResults(s *Server, hashes []*daghash.Hash) ([]btcjson.GetBlockVerboseResult, error) {
