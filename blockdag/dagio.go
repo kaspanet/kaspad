@@ -800,9 +800,13 @@ func (dag *BlockDAG) BlockByHash(hash *daghash.Hash) (*util.Block, error) {
 	return block, err
 }
 
+// BlockHashesFrom returns a slice of blocks starting from startHash
+// ordered by blueScore.
+//
+// This method MUST be called with the DAG lock held
 func (dag *BlockDAG) BlockHashesFrom(startHash *daghash.Hash, limit int) ([]*daghash.Hash, error) {
 	if !dag.BlockExists(startHash) {
-		return nil, fmt.Errorf("")
+		return nil, fmt.Errorf("block %s not found", startHash)
 	}
 	blueScore, err := dag.BlueScoreByBlockHash(startHash)
 	if err != nil {
