@@ -14,10 +14,10 @@ const (
 	routeParamTxHash = "txHash"
 )
 
-func makeHandler(handler func(vars map[string]string, ctx *utils.APIServerContext) (interface{}, *utils.HandlerError)) func(http.ResponseWriter, *http.Request) {
+func makeHandler(handler func(routeParams map[string]string, queryParams map[string][]string, ctx *utils.APIServerContext) (interface{}, *utils.HandlerError)) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := utils.ToAPIServerContext(r.Context())
-		response, hErr := handler(mux.Vars(r), ctx)
+		response, hErr := handler(mux.Vars(r), r.URL.Query(), ctx)
 		if hErr != nil {
 			sendErr(ctx, w, hErr)
 			return
@@ -44,7 +44,7 @@ func sendJSONResponse(w http.ResponseWriter, response interface{}) {
 	}
 }
 
-func mainHandler(_ map[string]string, _ *utils.APIServerContext) (interface{}, *utils.HandlerError) {
+func mainHandler(_ map[string]string, _ map[string][]string, _ *utils.APIServerContext) (interface{}, *utils.HandlerError) {
 	return "API server is running", nil
 }
 
@@ -53,15 +53,15 @@ func addRoutes(router *mux.Router) {
 
 	router.HandleFunc(
 		fmt.Sprintf("/transaction/id/{%s}", routeParamTxID),
-		makeHandler(func(vars map[string]string, ctx *utils.APIServerContext) (interface{}, *utils.HandlerError) {
-			return controllers.GetTransactionByIDHandler(vars[routeParamTxID])
+		makeHandler(func(routeParams map[string]string, queryParams map[string][]string, ctx *utils.APIServerContext) (interface{}, *utils.HandlerError) {
+			return controllers.GetTransactionByIDHandler(routeParams[routeParamTxID])
 		})).
 		Methods("GET")
 
 	router.HandleFunc(
 		fmt.Sprintf("/transaction/hash/{%s}", routeParamTxHash),
-		makeHandler(func(vars map[string]string, ctx *utils.APIServerContext) (interface{}, *utils.HandlerError) {
-			return controllers.GetTransactionByHashHandler(vars[routeParamTxHash])
+		makeHandler(func(routeParams map[string]string, queryParams map[string][]string, ctx *utils.APIServerContext) (interface{}, *utils.HandlerError) {
+			return controllers.GetTransactionByHashHandler(routeParams[routeParamTxHash])
 		})).
 		Methods("GET")
 }
