@@ -109,6 +109,41 @@ func (c *Client) GetBlock(blockHash *daghash.Hash, subnetworkID *string) (*wire.
 	return c.GetBlockAsync(blockHash, subnetworkID).Receive()
 }
 
+// FutureGetBlocksResult is a future promise to deliver the result of a
+// GetBlocksAsync RPC invocation (or an applicable error).
+type FutureGetBlocksResult chan *response
+
+// Receive waits for the response promised by the future and returns the blocks
+// starting from startHash up to the virtual ordered by blue score.
+func (r FutureGetBlocksResult) Receive() (*btcjson.GetBlocksResult, error) {
+	res, err := receiveFuture(r)
+	if err != nil {
+		return nil, err
+	}
+
+	var result btcjson.GetBlocksResult
+	if err := json.Unmarshal(res, &result); err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
+// GetBlocksAsync returns an instance of a type that can be used to get the
+// result of the RPC at some future time by invoking the Receive function on the
+// returned instance.
+//
+// See GetBlocks for the blocking version and more details.
+func (c *Client) GetBlocksAsync(includeBlocks bool, startHash *string) FutureGetBlocksResult {
+	cmd := btcjson.NewGetBlocksCmd(includeBlocks, startHash)
+	return c.sendCmd(cmd)
+}
+
+// GetBlocks returns the blocks starting from startHash up to the virtual ordered
+// by blue score.
+func (c *Client) GetBlocks(includeBlocks bool, startHash *string) (*btcjson.GetBlocksResult, error) {
+	return c.GetBlocksAsync(includeBlocks, startHash).Receive()
+}
+
 // FutureGetBlockVerboseResult is a future promise to deliver the result of a
 // GetBlockVerboseAsync RPC invocation (or an applicable error).
 type FutureGetBlockVerboseResult chan *response

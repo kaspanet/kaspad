@@ -801,10 +801,13 @@ func (dag *BlockDAG) BlockByHash(hash *daghash.Hash) (*util.Block, error) {
 }
 
 // BlockHashesFrom returns a slice of blocks starting from startHash
-// ordered by blueScore.
+// ordered by blueScore. If startHash is nil then the genesis block is used.
 //
 // This method MUST be called with the DAG lock held
 func (dag *BlockDAG) BlockHashesFrom(startHash *daghash.Hash, limit int) ([]*daghash.Hash, error) {
+	if startHash == nil {
+		startHash = dag.genesis.hash
+	}
 	if !dag.BlockExists(startHash) {
 		return nil, fmt.Errorf("block %s not found", startHash)
 	}
