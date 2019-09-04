@@ -1,4 +1,4 @@
-FROM golang:1.12-alpine 
+FROM golang:1.13-alpine 
 
 ENV PATH="${GOPATH}/bin:${PATH}"
 
@@ -11,10 +11,6 @@ RUN apk add --no-cache curl git openssh binutils gcc musl-dev tini bash
 RUN apk add --no-cache libc6-compat
 
 RUN go get github.com/derekparker/delve/cmd/dlv
-
-# GO111MODULE=on forces Go to use the go-module system
-# TODO: remove this once Go 1.13 is released
-ENV GO111MODULE=on
 
 COPY go.mod .
 COPY go.sum .
