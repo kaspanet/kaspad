@@ -64,11 +64,13 @@ func DAGSetup(dbName string, config Config) (*BlockDAG, func(), error) {
 	// To make sure that the teardown function is not called before any goroutines finished to run -
 	// overwrite `spawn` to count the number of running goroutines
 	spawnWaitGroup := sync.WaitGroup{}
-	oldSpawn := spawn
+	realSpawn := spawn
 	spawn = func(f func()) {
 		spawnWaitGroup.Add(1)
-		oldSpawn(f)
-		spawnWaitGroup.Done()
+		realSpawn(func() {
+			f()
+			spawnWaitGroup.Done()
+		})
 	}
 
 	if config.DB == nil {
@@ -93,6 +95,7 @@ func DAGSetup(dbName string, config Config) (*BlockDAG, func(), error) {
 		// returned to the caller to be invoked when it is done testing.
 		teardown = func() {
 			spawnWaitGroup.Wait()
+			spawn = realSpawn
 			config.DB.Close()
 			os.RemoveAll(dbPath)
 			os.RemoveAll(testDbRoot)
