@@ -805,8 +805,13 @@ func (dag *BlockDAG) BlockByHash(hash *daghash.Hash) (*util.Block, error) {
 //
 // This method MUST be called with the DAG lock held
 func (dag *BlockDAG) BlockHashesFrom(startHash *daghash.Hash, limit int) ([]*daghash.Hash, error) {
+	blockHashes := make([]*daghash.Hash, 0, limit)
 	if startHash == nil {
 		startHash = dag.genesis.hash
+
+		// If we're starting from the beginning we should include the
+		// genesis hash in the result
+		blockHashes = append(blockHashes, dag.genesis.hash)
 	}
 	if !dag.BlockExists(startHash) {
 		return nil, fmt.Errorf("block %s not found", startHash)
@@ -816,7 +821,6 @@ func (dag *BlockDAG) BlockHashesFrom(startHash *daghash.Hash, limit int) ([]*dag
 		return nil, err
 	}
 
-	blockHashes := make([]*daghash.Hash, 0, limit)
 	err = dag.index.db.View(func(dbTx database.Tx) error {
 		blockIndexBucket := dbTx.Metadata().Bucket(blockIndexBucketName)
 		startKey := blockIndexKey(startHash, blueScore)

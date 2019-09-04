@@ -8,7 +8,7 @@ import (
 type Block struct {
 	ID                   uint64 `gorm:"primary_key"`
 	BlockHash            string
-	AcceptingBlockID     uint64
+	AcceptingBlockID     *uint64
 	AcceptingBlock       *Block
 	Version              int32
 	HashMerkleRoot       string
@@ -40,14 +40,14 @@ type RawBlock struct {
 // Subnetwork is the gorm model for the 'subnetworks' table
 type Subnetwork struct {
 	ID           uint64 `gorm:"primary_key"`
-	SubnetworkID []byte
+	SubnetworkID string
 }
 
 // Transaction is the gorm model for the 'transactions' table
 type Transaction struct {
 	ID               uint64 `gorm:"primary_key"`
-	AcceptingBlockID uint64
-	AcceptingBlock   Block
+	AcceptingBlockID *uint64
+	AcceptingBlock   *Block
 	TransactionHash  string
 	TransactionID    string
 	LockTime         uint64
@@ -75,6 +75,7 @@ func (TransactionBlock) TableName() string {
 
 // TransactionOutput is the gorm model for the 'transaction_outputs' table
 type TransactionOutput struct {
+	ID            uint64
 	TransactionID uint64
 	Transaction   Transaction
 	Index         uint32

@@ -675,7 +675,7 @@ func createVoutList(mtx *wire.MsgTx, chainParams *dagconfig.Params, filterAddrMa
 
 		var vout btcjson.Vout
 		vout.N = uint32(i)
-		vout.Value = util.Amount(v.Value).ToBTC()
+		vout.Value = v.Value
 		vout.ScriptPubKey.Addresses = encodedAddrs
 		vout.ScriptPubKey.Asm = disbuf
 		vout.ScriptPubKey.Hex = hex.EncodeToString(v.PkScript)

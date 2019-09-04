@@ -39,7 +39,7 @@ func main() {
 
 	doneChan := make(chan struct{}, 1)
 	spawn(func() {
-		err := blockLoop(client, doneChan)
+		err := blockLoop(client, db, doneChan)
 		if err != nil {
 			panic(err)
 		}
