@@ -173,6 +173,16 @@ var helpDescsEnUS = map[string]string{
 	"getBlock-acceptedTx":  "Specifies if the transaction got accepted",
 	"getBlock--result0":    "Hex-encoded bytes of the serialized block",
 
+	// GetBlocksCmd help.
+	"getBlocks--synopsis":     "Return the blocks starting from startHash up to the virtual ordered by blue score.",
+	"getBlocks-startHash":     "Hash of the block with the bottom blue score. If this hash is unknown - returns an error.",
+	"getBlocks-includeBlocks": "If set to true - the block contents would be also included.",
+	"getBlocks--result0":      "Blocks starting from startHash.",
+
+	// GetChainFromBlockResult help.
+	"getBlocksResult-hashes": "List of hashes from StartHash (excluding StartHash) ordered by smallest blue score to greatest.",
+	"getBlocksResult-blocks": "If includeBlocks=true - contains the contents of all chain and accepted blocks in the SelectedParentChain. Otherwise - omitted.",
+
 	// GetBlockChainInfoCmd help.
 	"getBlockDagInfo--synopsis": "Returns information about the current blockDAG state and the status of any active soft-fork deployments.",
 
@@ -244,6 +254,8 @@ var helpDescsEnUS = map[string]string{
 	"getBlockVerboseResult-versionHex":           "The block version in hexadecimal",
 	"getBlockVerboseResult-hashMerkleRoot":       "Merkle tree reference to hash of all transactions for the block",
 	"getBlockVerboseResult-acceptedIdMerkleRoot": "Merkle tree reference to hash all transactions accepted form the block blues",
+	"getBlockVerboseResult-utxoCommitment":       "An ECMH UTXO commitment of this block",
+	"getBlockVerboseResult-blueScore":            "The block blue score",
 	"getBlockVerboseResult-tx":                   "The transaction hashes (only when verbosetx=false)",
 	"getBlockVerboseResult-rawRx":                "The transactions as JSON objects (only when verbosetx=true)",
 	"getBlockVerboseResult-time":                 "The block time in seconds since 1 Jan 1970 GMT",
@@ -679,6 +691,7 @@ var rpcResultTypes = map[string][]interface{}{
 	"getBestBlock":          {(*btcjson.GetBestBlockResult)(nil)},
 	"getBestBlockHash":      {(*string)(nil)},
 	"getBlock":              {(*string)(nil), (*btcjson.GetBlockVerboseResult)(nil)},
+	"getBlocks":             {(*btcjson.GetBlocksResult)(nil)},
 	"getBlockCount":         {(*int64)(nil)},
 	"getBlockHash":          {(*string)(nil)},
 	"getBlockHeader":        {(*string)(nil), (*btcjson.GetBlockHeaderVerboseResult)(nil)},

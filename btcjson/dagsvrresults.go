@@ -33,10 +33,12 @@ type GetBlockVerboseResult struct {
 	Confirmations        uint64        `json:"confirmations"`
 	Size                 int32         `json:"size"`
 	Height               uint64        `json:"height"`
+	BlueScore            uint64        `json:"blueScore"`
 	Version              int32         `json:"version"`
 	VersionHex           string        `json:"versionHex"`
 	HashMerkleRoot       string        `json:"hashMerkleRoot"`
 	AcceptedIDMerkleRoot string        `json:"acceptedIdMerkleRoot"`
+	UTXOCommitment       string        `json:"utxoCommitment"`
 	Tx                   []string      `json:"tx,omitempty"`
 	RawTx                []TxRawResult `json:"rawRx,omitempty"`
 	Time                 int64         `json:"time"`
@@ -524,4 +526,10 @@ type AcceptedBlock struct {
 type GetChainFromBlockResult struct {
 	SelectedParentChain []ChainBlock            `json:"selectedParentChain"`
 	Blocks              []GetBlockVerboseResult `json:"blocks"`
+}
+
+// GetBlocksResult models the data from the getBlocks command.
+type GetBlocksResult struct {
+	Hashes []string                `json:"hashes"`
+	Blocks []GetBlockVerboseResult `json:"blocks"`
 }

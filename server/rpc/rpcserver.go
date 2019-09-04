@@ -85,6 +85,10 @@ const (
 	// maxBlocksInGetChainFromBlockResult is the max amount of blocks that
 	// are allowed in a GetChainFromBlockResult.
 	maxBlocksInGetChainFromBlockResult = 1000
+
+	// maxBlocksInGetBlocksResult is the max amount of blocks that are
+	// allowed in a GetBlocksResult.
+	maxBlocksInGetBlocksResult = 1000
 )
 
 var (
@@ -140,6 +144,7 @@ var rpcHandlersBeforeInit = map[string]commandHandler{
 	"getBestBlock":          handleGetBestBlock,
 	"getBestBlockHash":      handleGetBestBlockHash,
 	"getBlock":              handleGetBlock,
+	"getBlocks":             handleGetBlocks,
 	"getBlockDagInfo":       handleGetBlockDAGInfo,
 	"getBlockCount":         handleGetBlockCount,
 	"getBlockHash":          handleGetBlockHash,
@@ -216,6 +221,7 @@ var rpcLimited = map[string]struct{}{
 	"getBestBlock":          {},
 	"getBestBlockHash":      {},
 	"getBlock":              {},
+	"getBlocks":             {},
 	"getBlockCount":         {},
 	"getBlockHash":          {},
 	"getBlockHeader":        {},
@@ -1126,17 +1132,25 @@ func buildGetBlockVerboseResult(s *Server, block *util.Block, isVerboseTx bool) 
 		return nil, internalRPCError(err.Error(), context)
 	}
 
+	blockBlueScore, err := s.cfg.DAG.BlueScoreByBlockHash(hash)
+	if err != nil {
+		context := "Could not get block blue score"
+		return nil, internalRPCError(err.Error(), context)
+	}
+
 	result := &btcjson.GetBlockVerboseResult{
 		Hash:                 hash.String(),
 		Version:              blockHeader.Version,
 		VersionHex:           fmt.Sprintf("%08x", blockHeader.Version),
 		HashMerkleRoot:       blockHeader.HashMerkleRoot.String(),
 		AcceptedIDMerkleRoot: blockHeader.AcceptedIDMerkleRoot.String(),
+		UTXOCommitment:       blockHeader.UTXOCommitment.String(),
 		ParentHashes:         daghash.Strings(blockHeader.ParentHashes),
 		Nonce:                blockHeader.Nonce,
 		Time:                 blockHeader.Timestamp.Unix(),
 		Confirmations:        blockConfirmations,
 		Height:               blockChainHeight,
+		BlueScore:            blockBlueScore,
 		Size:                 int32(block.MsgBlock().SerializeSize()),
 		Bits:                 strconv.FormatInt(int64(blockHeader.Bits), 16),
 		Difficulty:           getDifficultyRatio(blockHeader.Bits, params),
@@ -1198,6 +1212,57 @@ func softForkStatus(state blockdag.ThresholdState) (string, error) {
 	default:
 		return "", fmt.Errorf("unknown deployment state: %s", state)
 	}
+}
+
+func handleGetBlocks(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
+	c := cmd.(*btcjson.GetBlocksCmd)
+	var startHash *daghash.Hash
+	if c.StartHash != nil {
+		startHash = &daghash.Hash{}
+		err := daghash.Decode(startHash, *c.StartHash)
+		if err != nil {
+			return nil, rpcDecodeHexError(*c.StartHash)
+		}
+	}
+
+	s.cfg.DAG.RLock()
+	defer s.cfg.DAG.RUnlock()
+
+	// If startHash is not in the DAG, there's nothing to do; return an error.
+	if startHash != nil && !s.cfg.DAG.HaveBlock(startHash) {
+		return nil, &btcjson.RPCError{
+			Code:    btcjson.ErrRPCBlockNotFound,
+			Message: "Block not found",
+		}
+	}
+
+	// Retrieve the block hashes.
+	blockHashes, err := s.cfg.DAG.BlockHashesFrom(startHash, maxBlocksInGetBlocksResult)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert the hashes to strings
+	hashes := make([]string, len(blockHashes))
+	for i, blockHash := range blockHashes {
+		hashes[i] = blockHash.String()
+	}
+
+	result := &btcjson.GetBlocksResult{
+		Hashes: hashes,
+		Blocks: nil,
+	}
+
+	// If the user specified to include the blocks, collect them as well.
+	if c.IncludeBlocks {
+		getBlockVerboseResults, err := hashesToGetBlockVerboseResults(s, blockHashes)
+		if err != nil {
+			return nil, err
+		}
+		result.Blocks = getBlockVerboseResults
+	}
+
+	return result, nil
 }
 
 // handleGetBlockDAGInfo implements the getBlockDagInfo command.

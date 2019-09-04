@@ -775,6 +775,10 @@ func blockIndexKey(blockHash *daghash.Hash, blueScore uint64) []byte {
 	return indexKey
 }
 
+func blockHashFromBlockIndexKey(blockIndexKey []byte) (*daghash.Hash, error) {
+	return daghash.NewHash(blockIndexKey[8 : daghash.HashSize+8])
+}
+
 // BlockByHash returns the block from the DAG with the given hash.
 //
 // This function is safe for concurrent access.
@@ -794,4 +798,39 @@ func (dag *BlockDAG) BlockByHash(hash *daghash.Hash) (*util.Block, error) {
 		return err
 	})
 	return block, err
+}
+
+func (dag *BlockDAG) BlockHashesFrom(startHash *daghash.Hash, limit int) ([]*daghash.Hash, error) {
+	if !dag.BlockExists(startHash) {
+		return nil, fmt.Errorf("")
+	}
+	blueScore, err := dag.BlueScoreByBlockHash(startHash)
+	if err != nil {
+		return nil, err
+	}
+
+	blockHashes := make([]*daghash.Hash, 0, limit)
+	err = dag.index.db.View(func(dbTx database.Tx) error {
+		blockIndexBucket := dbTx.Metadata().Bucket(blockIndexBucketName)
+		startKey := blockIndexKey(startHash, blueScore)
+
+		cursor := blockIndexBucket.Cursor()
+		cursor.Seek(startKey)
+		for ok := cursor.Next(); ok; ok = cursor.Next() {
+			key := cursor.Key()
+			blockHash, err := blockHashFromBlockIndexKey(key)
+			if err != nil {
+				return err
+			}
+			blockHashes = append(blockHashes, blockHash)
+			if len(blockHashes) == limit {
+				break
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return blockHashes, nil
 }
