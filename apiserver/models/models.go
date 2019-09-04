@@ -86,6 +86,8 @@ type TransactionOutput struct {
 	Index         uint32
 	Value         uint64
 	PkScript      []byte
+	AddressID     uint64
+	Address       Address
 }
 
 // TransactionInput is the gorm model for the 'transaction_inputs' table

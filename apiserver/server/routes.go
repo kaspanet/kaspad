@@ -10,8 +10,14 @@ import (
 )
 
 const (
-	routeParamTxID   = "txID"
-	routeParamTxHash = "txHash"
+	routeParamTxID    = "txID"
+	routeParamTxHash  = "txHash"
+	routeParamAddress = "address"
+)
+
+const (
+	queryParamSkip  = "skip"
+	queryParamLimit = "limit"
 )
 
 func makeHandler(handler func(vars map[string]string, ctx *utils.APIServerContext) (interface{}, *utils.HandlerError)) func(http.ResponseWriter, *http.Request) {
@@ -62,6 +68,13 @@ func addRoutes(router *mux.Router) {
 		fmt.Sprintf("/transaction/hash/{%s}", routeParamTxHash),
 		makeHandler(func(vars map[string]string, ctx *utils.APIServerContext) (interface{}, *utils.HandlerError) {
 			return controllers.GetTransactionByHashHandler(vars[routeParamTxHash])
+		})).
+		Methods("GET")
+
+	router.HandleFunc(
+		fmt.Sprintf("/transactions/address/{%s}", routeParamAddress),
+		makeHandler(func(vars map[string]string, ctx *utils.APIServerContext) (interface{}, *utils.HandlerError) {
+			return controllers.GetTransactionsByAddressHandler(vars[routeParamAddress])
 		})).
 		Methods("GET")
 }
