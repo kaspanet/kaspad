@@ -15,6 +15,10 @@ func blockLoop(client *apiServerClient, db *gorm.DB, doneChan chan struct{}) err
 		return err
 	}
 	log.Infof("aaaa %d %d %d", len(hashes), len(blocks), len(rawBlocks))
+	err = insertSubnetworks(client, db, rawBlocks)
+	if err != nil {
+		return err
+	}
 	err = insertBlocks(db, blocks, rawBlocks)
 	if err != nil {
 		return err
@@ -60,8 +64,32 @@ func collectCurrentBlocks(client *apiServerClient) (
 	return hashes, blocks, rawBlocks, nil
 }
 
+func insertSubnetworks(client *apiServerClient, db *gorm.DB, rawBlocks []btcjson.GetBlockVerboseResult) error {
+	db = db.Begin()
+	for _, rawBlock := range rawBlocks {
+		for _, transaction := range rawBlock.RawTx {
+			// Insert the subnetwork
+			var dbSubnetwork models.Subnetwork
+			db.Where(&models.Subnetwork{SubnetworkID: transaction.Subnetwork}).First(&dbSubnetwork)
+			if dbSubnetwork.ID == 0 {
+				subnetwork, err := client.GetSubnetwork(transaction.Subnetwork)
+				if err != nil {
+					return err
+				}
+				dbSubnetwork = models.Subnetwork{
+					SubnetworkID: transaction.Subnetwork,
+					GasLimit:     subnetwork.GasLimit,
+				}
+				db.Create(&dbSubnetwork)
+			}
+		}
+	}
+	db.Commit()
+	return nil
+}
+
 func insertBlocks(db *gorm.DB, blocks []string, rawBlocks []btcjson.GetBlockVerboseResult) error {
-	db.Begin()
+	db = db.Begin()
 	for i, rawBlock := range rawBlocks {
 		// Insert the block
 		var dbBlock models.Block
@@ -104,7 +132,7 @@ func insertBlocks(db *gorm.DB, blocks []string, rawBlocks []btcjson.GetBlockVerb
 		// Insert the block data
 		var dbRawBlock models.RawBlock
 		db.Where(&models.RawBlock{BlockID: dbBlock.ID}).First(&dbRawBlock)
-		if dbRawBlock.BlockID != 0 {
+		if dbRawBlock.BlockID == 0 {
 			blockData, err := hex.DecodeString(blocks[i])
 			if err != nil {
 				return err
@@ -117,20 +145,13 @@ func insertBlocks(db *gorm.DB, blocks []string, rawBlocks []btcjson.GetBlockVerb
 		}
 
 		for i, transaction := range rawBlock.RawTx {
-			// Insert the subnetwork
-			var dbSubnetwork models.Subnetwork
-			db.Where(&models.Subnetwork{SubnetworkID: transaction.Subnetwork}).First(&dbSubnetwork)
-			if dbSubnetwork.ID == 0 {
-				dbSubnetwork = models.Subnetwork{
-					SubnetworkID: transaction.Subnetwork,
-				}
-				db.Create(&dbSubnetwork)
-			}
-
 			// Insert the transaction
 			var dbTransaction models.Transaction
 			db.Where(&models.Transaction{TransactionID: transaction.TxID}).First(&dbTransaction)
 			if dbTransaction.ID == 0 {
+				var dbSubnetwork models.Subnetwork
+				db.Where(&models.Subnetwork{SubnetworkID: transaction.Subnetwork}).First(&dbSubnetwork)
+
 				payload, err := hex.DecodeString(transaction.Payload)
 				if err != nil {
 					return err

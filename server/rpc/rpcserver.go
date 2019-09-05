@@ -2807,12 +2807,17 @@ func handleGetSubnetwork(s *Server, cmd interface{}, closeChan <-chan struct{}) 
 		return nil, rpcDecodeHexError(c.SubnetworkID)
 	}
 
-	gasLimit, err := s.cfg.DAG.SubnetworkStore.GasLimit(subnetworkID)
-	if err != nil {
-		return nil, &btcjson.RPCError{
-			Code:    btcjson.ErrRPCSubnetworkNotFound,
-			Message: "Subnetwork not found.",
+	var gasLimit *uint64
+	if !subnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) &&
+		!subnetworkID.IsBuiltIn() {
+		limit, err := s.cfg.DAG.SubnetworkStore.GasLimit(subnetworkID)
+		if err != nil {
+			return nil, &btcjson.RPCError{
+				Code:    btcjson.ErrRPCSubnetworkNotFound,
+				Message: "Subnetwork not found.",
+			}
 		}
+		gasLimit = &limit
 	}
 
 	subnetworkReply := &btcjson.GetSubnetworkResult{

@@ -279,7 +279,7 @@ type ScriptPubKeyResult struct {
 
 // GetSubnetworkResult models the data from the getSubnetwork command.
 type GetSubnetworkResult struct {
-	GasLimit uint64 `json:"gasLimit"`
+	GasLimit *uint64 `json:"gasLimit"`
 }
 
 // GetTxOutResult models the data from the gettxout command.
