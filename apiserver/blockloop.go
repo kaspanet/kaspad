@@ -10,7 +10,8 @@ import (
 )
 
 func blockLoop(client *apiServerClient, db *gorm.DB, doneChan chan struct{}) error {
-	hashes, blocks, rawBlocks, err := collectCurrentBlocks(client)
+	mostRecentBlockHash := findMostRecentBlockHash(db)
+	hashes, blocks, rawBlocks, err := collectCurrentBlocks(client, mostRecentBlockHash)
 	if err != nil {
 		return err
 	}
@@ -39,9 +40,18 @@ loop:
 	return nil
 }
 
-func collectCurrentBlocks(client *apiServerClient) (
+func findMostRecentBlockHash(db *gorm.DB) *string {
+	var block models.Block
+	db.Order("blue_score DESC").First(&block)
+
+	if block.ID == 0 {
+		return nil
+	}
+	return &block.BlockHash
+}
+
+func collectCurrentBlocks(client *apiServerClient, startHash *string) (
 	hashes []string, blocks []string, rawBlocks []btcjson.GetBlockVerboseResult, err error) {
-	var startHash *string
 	for {
 		BlocksResult, err := client.GetBlocks(true, false, startHash)
 		if err != nil {
