@@ -7,6 +7,7 @@ import (
 	"github.com/daglabs/btcd/apiserver/utils"
 	"github.com/gorilla/mux"
 	"net/http"
+	"strconv"
 )
 
 const (
@@ -73,8 +74,24 @@ func addRoutes(router *mux.Router) {
 
 	router.HandleFunc(
 		fmt.Sprintf("/transactions/address/{%s}", routeParamAddress),
-		makeHandler(func(vars map[string]string, ctx *utils.APIServerContext) (interface{}, *utils.HandlerError) {
-			return controllers.GetTransactionsByAddressHandler(vars[routeParamAddress])
+		makeHandler(func(routeParams map[string]string, queryParams map[string][]string, ctx *utils.APIServerContext) (interface{}, *utils.HandlerError) {
+			skip := 0
+			limit := 100
+			if len(queryParams[queryParamSkip]) == 1 {
+				var err error
+				skip, err = strconv.Atoi(queryParams[queryParamSkip][0])
+				if err != nil {
+					return nil, utils.NewHandlerError(http.StatusUnprocessableEntity, fmt.Sprintf("Couldn't parse the '%s' query parameter: %s", queryParamSkip, err))
+				}
+			}
+			if len(queryParams[queryParamLimit]) == 1 {
+				var err error
+				skip, err = strconv.Atoi(queryParams[queryParamLimit][0])
+				if err != nil {
+					return nil, utils.NewHandlerError(http.StatusUnprocessableEntity, fmt.Sprintf("Couldn't parse the '%s' query parameter: %s", queryParamLimit, err))
+				}
+			}
+			return controllers.GetTransactionsByAddressHandler(routeParams[routeParamAddress], uint64(skip), uint64(limit))
 		})).
 		Methods("GET")
 }
