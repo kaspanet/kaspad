@@ -450,7 +450,7 @@ func collectTransactions(client *txgenClient, gasLimitMap map[subnetworkid.Subne
 		for _, result := range results {
 			// Mempool transactions and red block transactions bring about unnecessary complexity, so
 			// simply don't bother processing them
-			if *result.Confirmations == 0 {
+			if result.IsInMempool || *result.Confirmations == 0 {
 				continue
 			}
 
