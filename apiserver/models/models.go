@@ -41,6 +41,7 @@ type RawBlock struct {
 type Subnetwork struct {
 	ID           uint64 `gorm:"primary_key"`
 	SubnetworkID string
+	GasLimit     *uint64
 }
 
 // Transaction is the gorm model for the 'transactions' table
