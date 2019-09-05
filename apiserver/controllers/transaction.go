@@ -18,7 +18,7 @@ func GetTransactionByIDHandler(txID string) (interface{}, *utils.HandlerError) {
 		return nil, utils.NewHandlerError(http.StatusUnprocessableEntity, fmt.Sprintf("The given txid is not a hex-encoded %d-byte hash.", daghash.TxIDSize))
 	}
 	tx := &models.Transaction{}
-	db := database.DB.Where("transaction_id = ?", txID)
+	db := database.DB.Where(&models.Transaction{TransactionID: txID})
 	addTxPreloadedFields(db).First(&tx)
 	if tx.ID == 0 {
 		return nil, utils.NewHandlerError(http.StatusNotFound, "No transaction with the given txid was found.")
@@ -33,7 +33,7 @@ func GetTransactionByHashHandler(txHash string) (interface{}, *utils.HandlerErro
 	}
 	tx := &models.Transaction{}
 	db := database.DB.
-		Where("transaction_hash = ?", txHash)
+		Where(&models.Transaction{TransactionHash: txHash})
 	addTxPreloadedFields(db).First(&tx)
 	if tx.ID == 0 {
 		return nil, utils.NewHandlerError(http.StatusNotFound, "No transaction with the given txhash was found.")
