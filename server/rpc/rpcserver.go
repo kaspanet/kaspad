@@ -1130,6 +1130,8 @@ func buildGetBlockVerboseResult(s *Server, block *util.Block, isVerboseTx bool) 
 		return nil, internalRPCError(err.Error(), context)
 	}
 
+	isChainBlock := s.cfg.DAG.IsInSelectedParentChain(hash)
+
 	result := &btcjson.GetBlockVerboseResult{
 		Hash:                 hash.String(),
 		Version:              blockHeader.Version,
@@ -1143,6 +1145,7 @@ func buildGetBlockVerboseResult(s *Server, block *util.Block, isVerboseTx bool) 
 		Confirmations:        blockConfirmations,
 		Height:               blockChainHeight,
 		BlueScore:            blockBlueScore,
+		IsChainBlock:         isChainBlock,
 		Size:                 int32(block.MsgBlock().SerializeSize()),
 		Bits:                 strconv.FormatInt(int64(blockHeader.Bits), 16),
 		Difficulty:           getDifficultyRatio(blockHeader.Bits, params),

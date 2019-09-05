@@ -258,6 +258,7 @@ var helpDescsEnUS = map[string]string{
 	"getBlockVerboseResult-acceptedIdMerkleRoot": "Merkle tree reference to hash all transactions accepted form the block blues",
 	"getBlockVerboseResult-utxoCommitment":       "An ECMH UTXO commitment of this block",
 	"getBlockVerboseResult-blueScore":            "The block blue score",
+	"getBlockVerboseResult-isChainBlock":         "Whether the block is in the selected parent chain",
 	"getBlockVerboseResult-tx":                   "The transaction hashes (only when verbosetx=false)",
 	"getBlockVerboseResult-rawRx":                "The transactions as JSON objects (only when verbosetx=true)",
 	"getBlockVerboseResult-time":                 "The block time in seconds since 1 Jan 1970 GMT",

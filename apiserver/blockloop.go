@@ -119,6 +119,7 @@ func insertBlocks(db *gorm.DB, blocks []string, rawBlocks []btcjson.GetBlockVerb
 				Bits:                 uint32(bits),
 				Nonce:                rawBlock.Nonce,
 				BlueScore:            rawBlock.BlueScore,
+				IsChainBlock:         rawBlock.IsChainBlock,
 			}
 			db.Create(&dbBlock)
 		}
