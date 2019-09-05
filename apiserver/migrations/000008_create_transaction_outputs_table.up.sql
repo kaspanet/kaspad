@@ -1,6 +1,6 @@
 CREATE TABLE `transaction_outputs`
 (
-    `id`             BIGINT UNSIGNED NOT NULL,
+    `id`             BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     `transaction_id` BIGINT UNSIGNED NOT NULL,
     `index`          INT UNSIGNED    NOT NULL,
     `value`          BIGINT UNSIGNED NOT NULL,
