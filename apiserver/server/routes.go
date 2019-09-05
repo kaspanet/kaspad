@@ -10,8 +10,9 @@ import (
 )
 
 const (
-	routeParamTxID   = "txID"
-	routeParamTxHash = "txHash"
+	routeParamTxID      = "txID"
+	routeParamTxHash    = "txHash"
+	routeParamBlockHash = "blockHash"
 )
 
 func makeHandler(handler func(routeParams map[string]string, queryParams map[string][]string, ctx *utils.APIServerContext) (interface{}, *utils.HandlerError)) func(http.ResponseWriter, *http.Request) {
@@ -64,4 +65,13 @@ func addRoutes(router *mux.Router) {
 			return controllers.GetTransactionByHashHandler(routeParams[routeParamTxHash])
 		})).
 		Methods("GET")
+
+	router.HandleFunc(
+		fmt.Sprintf("/block/{%s}", routeParamBlockHash),
+		makeHandler(getBlockByHashHandler)).
+		Methods("GET")
+}
+
+func getBlockByHashHandler(routeParams map[string]string, _ map[string][]string, _ *utils.APIServerContext) (interface{}, *utils.HandlerError) {
+	return controllers.GetBlockByHashHandler(routeParams[routeParamBlockHash])
 }

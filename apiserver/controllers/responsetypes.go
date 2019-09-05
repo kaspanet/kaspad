@@ -3,6 +3,7 @@ package controllers
 import (
 	"encoding/hex"
 	"github.com/daglabs/btcd/apiserver/models"
+	"github.com/daglabs/btcd/btcjson"
 )
 
 type transactionResponse struct {
@@ -33,6 +34,21 @@ type transactionInputResponse struct {
 	PreviousTransactionOutputIndex uint32 `json:"previousTransactionOutputIndex"`
 	SignatureScript                string `json:"signatureScript"`
 	Sequence                       uint64 `json:"sequence"`
+}
+
+type blockResponse struct {
+	BlockHash            string
+	Version              int32
+	HashMerkleRoot       string
+	AcceptedIDMerkleRoot string
+	UTXOCommitment       string
+	Timestamp            uint64
+	Bits                 uint32
+	Nonce                uint64
+	AcceptingBlockHash   *string
+	BlueScore            uint64
+	IsChainBlock         bool
+	Mass                 uint64
 }
 
 func convertTxModelToTxResponse(tx *models.Transaction) *transactionResponse {
@@ -66,4 +82,24 @@ func convertTxModelToTxResponse(tx *models.Transaction) *transactionResponse {
 		}
 	}
 	return txRes
+}
+
+func convertBlockModelToBlockResponse(block *models.Block) *blockResponse {
+	blockRes := &blockResponse{
+		BlockHash:            block.BlockHash,
+		Version:              block.Version,
+		HashMerkleRoot:       block.HashMerkleRoot,
+		AcceptedIDMerkleRoot: block.AcceptedIDMerkleRoot,
+		UTXOCommitment:       block.UTXOCommitment,
+		Timestamp:            uint64(block.Timestamp.Unix()),
+		Bits:                 block.Bits,
+		Nonce:                block.Nonce,
+		BlueScore:            block.BlueScore,
+		IsChainBlock:         block.IsChainBlock,
+		Mass:                 block.Mass,
+	}
+	if block.AcceptingBlock != nil {
+		blockRes.AcceptingBlockHash = btcjson.String(block.AcceptingBlock.BlockHash)
+	}
+	return blockRes
 }
