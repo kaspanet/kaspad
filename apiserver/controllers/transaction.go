@@ -57,7 +57,8 @@ func GetTransactionsByAddressHandler(address string, skip uint64, limit uint64) 
 		Where("`out_addresses`.`address` = ?", address).
 		Or("`in_addresses`.`address` = ?", address).
 		Limit(limit).
-		Offset(skip)
+		Offset(skip).
+		Order("`transactions`.`id` ASC")
 	addTxPreloadedFields(query).Find(&txs)
 	txResponses := make([]*transactionResponse, len(txs))
 	for i, tx := range txs {
