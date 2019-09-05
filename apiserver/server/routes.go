@@ -21,6 +21,8 @@ const (
 	queryParamLimit = "limit"
 )
 
+const defaultGetTransactionsLimit = 100
+
 func makeHandler(handler func(routeParams map[string]string, queryParams map[string][]string, ctx *utils.APIServerContext) (interface{}, *utils.HandlerError)) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := utils.ToAPIServerContext(r.Context())
@@ -76,7 +78,7 @@ func addRoutes(router *mux.Router) {
 		fmt.Sprintf("/transactions/address/{%s}", routeParamAddress),
 		makeHandler(func(routeParams map[string]string, queryParams map[string][]string, ctx *utils.APIServerContext) (interface{}, *utils.HandlerError) {
 			skip := 0
-			limit := 100
+			limit := defaultGetTransactionsLimit
 			if len(queryParams[queryParamSkip]) == 1 {
 				var err error
 				skip, err = strconv.Atoi(queryParams[queryParamSkip][0])
