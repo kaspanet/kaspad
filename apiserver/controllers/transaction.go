@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"encoding/hex"
 	"fmt"
 	"github.com/daglabs/btcd/apiserver/database"
 	"github.com/daglabs/btcd/apiserver/models"
@@ -14,7 +15,7 @@ const maximumGetTransactionsLimit = 1000
 
 // GetTransactionByIDHandler returns a transaction by a given transaction ID.
 func GetTransactionByIDHandler(txID string) (interface{}, *utils.HandlerError) {
-	if len(txID) != daghash.TxIDSize*2 {
+	if bytes, err := hex.DecodeString(txID); err != nil || len(bytes) != daghash.TxIDSize {
 		return nil, utils.NewHandlerError(http.StatusUnprocessableEntity, fmt.Sprintf("The given txid is not a hex-encoded %d-byte hash.", daghash.TxIDSize))
 	}
 	tx := &models.Transaction{}
@@ -28,7 +29,7 @@ func GetTransactionByIDHandler(txID string) (interface{}, *utils.HandlerError) {
 
 // GetTransactionByHashHandler returns a transaction by a given transaction hash.
 func GetTransactionByHashHandler(txHash string) (interface{}, *utils.HandlerError) {
-	if len(txHash) != daghash.HashSize*2 {
+	if bytes, err := hex.DecodeString(txHash); err != nil || len(bytes) != daghash.HashSize {
 		return nil, utils.NewHandlerError(http.StatusUnprocessableEntity, fmt.Sprintf("The given txhash is not a hex-encoded %d-byte hash.", daghash.HashSize))
 	}
 	tx := &models.Transaction{}
