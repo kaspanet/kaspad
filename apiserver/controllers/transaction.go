@@ -68,8 +68,7 @@ func GetTransactionsByAddressHandler(address string, skip uint64, limit uint64) 
 	return txResponses, nil
 }
 
-// GetUTXOsByAddressHandler searches for all UTXOs
-// that belong to a certain address.
+// GetUTXOsByAddressHandler searches for all UTXOs that belong to a certain address.
 func GetUTXOsByAddressHandler(address string) (interface{}, *utils.HandlerError) {
 	utxos := []*models.UTXO{}
 	database.DB.
@@ -82,9 +81,10 @@ func GetUTXOsByAddressHandler(address string) (interface{}, *utils.HandlerError)
 	UTXOsResponses := make([]*transactionOutputResponse, len(utxos))
 	for i, utxo := range utxos {
 		UTXOsResponses[i] = &transactionOutputResponse{
-			Value:              utxo.TransactionOutput.Value,
-			PkScript:           hex.EncodeToString(utxo.TransactionOutput.PkScript),
-			AcceptingBlockHash: utxo.AcceptingBlock.BlockHash,
+			Value:                   utxo.TransactionOutput.Value,
+			PkScript:                hex.EncodeToString(utxo.TransactionOutput.PkScript),
+			AcceptingBlockHash:      utxo.AcceptingBlock.BlockHash,
+			AcceptingBlockBlueScore: utxo.AcceptingBlock.BlueScore,
 		}
 	}
 	return UTXOsResponses, nil
