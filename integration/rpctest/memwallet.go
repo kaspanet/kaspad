@@ -246,7 +246,7 @@ func (m *memWallet) evalOutputs(outputs []*wire.TxOut, txID *daghash.TxID,
 	isCoinbase bool, undo *undoEntry) {
 
 	for i, output := range outputs {
-		pkScript := output.PkScript
+		pkScript := output.ScriptPubKey
 
 		// Scan all the addresses we currently control to see if the
 		// output is paying to us.
@@ -388,8 +388,8 @@ func (m *memWallet) fundTx(tx *wire.MsgTx, amt util.Amount, feeRate util.Amount)
 				return err
 			}
 			changeOutput := &wire.TxOut{
-				Value:    uint64(changeVal),
-				PkScript: pkScript,
+				Value:        uint64(changeVal),
+				ScriptPubKey: pkScript,
 			}
 			tx.AddTxOut(changeOutput)
 		}

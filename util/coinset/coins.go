@@ -380,13 +380,13 @@ func (c *SimpleCoin) Value() util.Amount {
 	return util.Amount(c.txOut().Value)
 }
 
-// PkScript returns the outpoint script of the Coin.
+// ScriptPubKey returns the outpoint script of the Coin.
 //
 // This can be used to determine what type of script the Coin uses
 // and extract standard addresses if possible using
 // txscript.ExtractPkScriptAddrs for example.
 func (c *SimpleCoin) PkScript() []byte {
-	return c.txOut().PkScript
+	return c.txOut().ScriptPubKey
 }
 
 // NumConfs returns the number of confirmations that the transaction the Coin references

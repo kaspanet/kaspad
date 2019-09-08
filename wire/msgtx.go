@@ -67,7 +67,7 @@ const (
 	maxTxInPerMessage = (MaxMessagePayload / minTxInPayload) + 1
 
 	// MinTxOutPayload is the minimum payload size for a transaction output.
-	// Value 8 bytes + Varint for PkScript length 1 byte.
+	// Value 8 bytes + Varint for ScriptPubKey length 1 byte.
 	MinTxOutPayload = 9
 
 	// maxTxOutPerMessage is the maximum number of transactions outputs that
@@ -240,24 +240,24 @@ func NewTxIn(prevOut *Outpoint, signatureScript []byte) *TxIn {
 
 // TxOut defines a bitcoin transaction output.
 type TxOut struct {
-	Value    uint64
-	PkScript []byte
+	Value        uint64
+	ScriptPubKey []byte
 }
 
 // SerializeSize returns the number of bytes it would take to serialize the
 // the transaction output.
 func (t *TxOut) SerializeSize() int {
-	// Value 8 bytes + serialized varint size for the length of PkScript +
-	// PkScript bytes.
-	return 8 + VarIntSerializeSize(uint64(len(t.PkScript))) + len(t.PkScript)
+	// Value 8 bytes + serialized varint size for the length of ScriptPubKey +
+	// ScriptPubKey bytes.
+	return 8 + VarIntSerializeSize(uint64(len(t.ScriptPubKey))) + len(t.ScriptPubKey)
 }
 
 // NewTxOut returns a new bitcoin transaction output with the provided
 // transaction value and public key script.
 func NewTxOut(value uint64, pkScript []byte) *TxOut {
 	return &TxOut{
-		Value:    value,
-		PkScript: pkScript,
+		Value:        value,
+		ScriptPubKey: pkScript,
 	}
 }
 
@@ -377,9 +377,9 @@ func (msg *MsgTx) Copy() *MsgTx {
 
 	// Deep copy the old TxOut data.
 	for _, oldTxOut := range msg.TxOut {
-		// Deep copy the old PkScript
+		// Deep copy the old ScriptPubKey
 		var newScript []byte
-		oldScript := oldTxOut.PkScript
+		oldScript := oldTxOut.ScriptPubKey
 		oldScriptLen := len(oldScript)
 		if oldScriptLen > 0 {
 			newScript = make([]byte, oldScriptLen)
@@ -389,8 +389,8 @@ func (msg *MsgTx) Copy() *MsgTx {
 		// Create new txOut with the deep copied data and append it to
 		// new Tx.
 		newTxOut := TxOut{
-			Value:    oldTxOut.Value,
-			PkScript: newScript,
+			Value:        oldTxOut.Value,
+			ScriptPubKey: newScript,
 		}
 		newTx.TxOut = append(newTx.TxOut, &newTxOut)
 	}
@@ -437,10 +437,10 @@ func (msg *MsgTx) BtcDecode(r io.Reader, pver uint32) error {
 			scriptPool.Return(txIn.SignatureScript)
 		}
 		for _, txOut := range msg.TxOut {
-			if txOut == nil || txOut.PkScript == nil {
+			if txOut == nil || txOut.ScriptPubKey == nil {
 				continue
 			}
-			scriptPool.Return(txOut.PkScript)
+			scriptPool.Return(txOut.ScriptPubKey)
 		}
 	}
 
@@ -491,7 +491,7 @@ func (msg *MsgTx) BtcDecode(r io.Reader, pver uint32) error {
 			returnScriptBuffers()
 			return err
 		}
-		totalScriptSize += uint64(len(to.PkScript))
+		totalScriptSize += uint64(len(to.ScriptPubKey))
 	}
 
 	lockTime, err := binaryserializer.Uint64(r, littleEndian)
@@ -567,14 +567,14 @@ func (msg *MsgTx) BtcDecode(r io.Reader, pver uint32) error {
 	for i := 0; i < len(msg.TxOut); i++ {
 		// Copy the public key script into the contiguous buffer at the
 		// appropriate offset.
-		pkScript := msg.TxOut[i].PkScript
+		pkScript := msg.TxOut[i].ScriptPubKey
 		copy(scripts[offset:], pkScript)
 
 		// Reset the public key script of the transaction output to the
 		// slice of the contiguous buffer where the script lives.
 		scriptSize := uint64(len(pkScript))
 		end := offset + scriptSize
-		msg.TxOut[i].PkScript = scripts[offset:end:end]
+		msg.TxOut[i].ScriptPubKey = scripts[offset:end:end]
 		offset += scriptSize
 
 		// Return the temporary script buffer to the pool.
@@ -797,10 +797,10 @@ func (msg *MsgTx) PkScriptLocs() []int {
 		// The offset of the script in the transaction output is:
 		//
 		// Value 8 bytes + serialized varint size for the length of
-		// PkScript.
-		n += 8 + VarIntSerializeSize(uint64(len(txOut.PkScript)))
+		// ScriptPubKey.
+		n += 8 + VarIntSerializeSize(uint64(len(txOut.ScriptPubKey)))
 		pkScriptLocs[i] = n
-		n += len(txOut.PkScript)
+		n += len(txOut.ScriptPubKey)
 	}
 
 	return pkScriptLocs
@@ -978,7 +978,7 @@ func readTxOut(r io.Reader, pver uint32, version int32, to *TxOut) error {
 		return err
 	}
 
-	to.PkScript, err = readScript(r, pver, MaxMessagePayload,
+	to.ScriptPubKey, err = readScript(r, pver, MaxMessagePayload,
 		"transaction output public key script")
 	return err
 }
@@ -991,5 +991,5 @@ func WriteTxOut(w io.Writer, pver uint32, version int32, to *TxOut) error {
 		return err
 	}
 
-	return WriteVarBytes(w, pver, to.PkScript)
+	return WriteVarBytes(w, pver, to.ScriptPubKey)
 }

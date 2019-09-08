@@ -277,7 +277,7 @@ func (bf *Filter) matchTxAndUpdate(tx *util.Tx) bool {
 	// from the client and avoids some potential races that could otherwise
 	// occur.
 	for i, txOut := range tx.MsgTx().TxOut {
-		pushedData, err := txscript.PushedData(txOut.PkScript)
+		pushedData, err := txscript.PushedData(txOut.ScriptPubKey)
 		if err != nil {
 			continue
 		}
@@ -288,7 +288,7 @@ func (bf *Filter) matchTxAndUpdate(tx *util.Tx) bool {
 			}
 
 			matched = true
-			bf.maybeAddOutpoint(txOut.PkScript, tx.ID(), uint32(i))
+			bf.maybeAddOutpoint(txOut.ScriptPubKey, tx.ID(), uint32(i))
 			break
 		}
 	}

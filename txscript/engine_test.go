@@ -45,8 +45,8 @@ func TestBadPC(t *testing.T) {
 		},
 	}
 	txOuts := []*wire.TxOut{{
-		Value:    1000000000,
-		PkScript: nil,
+		Value:        1000000000,
+		ScriptPubKey: nil,
 	}}
 	tx := wire.NewNativeMsgTx(1, txIns, txOuts)
 	pkScript := mustParseShortForm("NOP")
@@ -114,8 +114,8 @@ func TestCheckErrorCondition(t *testing.T) {
 				Sequence:        4294967295,
 			}}
 			txOuts := []*wire.TxOut{{
-				Value:    1000000000,
-				PkScript: nil,
+				Value:        1000000000,
+				ScriptPubKey: nil,
 			}}
 			tx := wire.NewNativeMsgTx(1, txIns, txOuts)
 
@@ -409,8 +409,8 @@ func TestDisasmPC(t *testing.T) {
 		Sequence:        4294967295,
 	}}
 	txOuts := []*wire.TxOut{{
-		Value:    1000000000,
-		PkScript: nil,
+		Value:        1000000000,
+		ScriptPubKey: nil,
 	}}
 	tx := wire.NewNativeMsgTx(1, txIns, txOuts)
 
@@ -469,8 +469,8 @@ func TestDisasmScript(t *testing.T) {
 		Sequence:        4294967295,
 	}}
 	txOuts := []*wire.TxOut{{
-		Value:    1000000000,
-		PkScript: nil,
+		Value:        1000000000,
+		ScriptPubKey: nil,
 	}}
 	tx := wire.NewNativeMsgTx(1, txIns, txOuts)
 	pkScript := mustParseShortForm("OP_DROP NOP TRUE")

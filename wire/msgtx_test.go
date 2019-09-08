@@ -99,9 +99,9 @@ func TestTx(t *testing.T) {
 			txOut.Value, txValue)
 
 	}
-	if !bytes.Equal(txOut.PkScript, pkScript) {
+	if !bytes.Equal(txOut.ScriptPubKey, pkScript) {
 		t.Errorf("NewTxOut: wrong pk script - got %v, want %v",
-			spew.Sdump(txOut.PkScript),
+			spew.Sdump(txOut.ScriptPubKey),
 			spew.Sdump(pkScript))
 	}
 
@@ -147,7 +147,7 @@ func TestTxHashAndID(t *testing.T) {
 	}
 	txOut := &TxOut{
 		Value: 5000000000,
-		PkScript: []byte{
+		ScriptPubKey: []byte{
 			0x41, // OP_DATA_65
 			0x04, 0xd6, 0x4b, 0xdf, 0xd0, 0x9e, 0xb1, 0xc5,
 			0xfe, 0x29, 0x5a, 0xbd, 0xeb, 0x1d, 0xca, 0x42,
@@ -212,14 +212,14 @@ func TestTxHashAndID(t *testing.T) {
 	txOuts := []*TxOut{
 		{
 			Value: 244623243,
-			PkScript: []byte{
+			ScriptPubKey: []byte{
 				0x76, 0xA9, 0x14, 0xBA, 0xDE, 0xEC, 0xFD, 0xEF, 0x05, 0x07, 0x24, 0x7F, 0xC8, 0xF7, 0x42, 0x41,
 				0xD7, 0x3B, 0xC0, 0x39, 0x97, 0x2D, 0x7B, 0x88, 0xAC,
 			},
 		},
 		{
 			Value: 44602432,
-			PkScript: []byte{
+			ScriptPubKey: []byte{
 				0x76, 0xA9, 0x14, 0xC1, 0x09, 0x32, 0x48, 0x3F, 0xEC, 0x93, 0xED, 0x51, 0xF5, 0xFE, 0x95, 0xE7,
 				0x25, 0x59, 0xF2, 0xCC, 0x70, 0x43, 0xF9, 0x88, 0xAC,
 			},
@@ -515,7 +515,7 @@ func TestTxSerialize(t *testing.T) {
 			continue
 		}
 		for j, loc := range pkScriptLocs {
-			wantPkScript := test.in.TxOut[j].PkScript
+			wantPkScript := test.in.TxOut[j].ScriptPubKey
 			gotPkScript := test.buf[loc : loc+len(wantPkScript)]
 			if !bytes.Equal(gotPkScript, wantPkScript) {
 				t.Errorf("PkScriptLocs #%d:%d\n unexpected "+
@@ -857,7 +857,7 @@ var multiTxIns = []*TxIn{
 var multiTxOuts = []*TxOut{
 	{
 		Value: 0x12a05f200,
-		PkScript: []byte{
+		ScriptPubKey: []byte{
 			0x41, // OP_DATA_65
 			0x04, 0xd6, 0x4b, 0xdf, 0xd0, 0x9e, 0xb1, 0xc5,
 			0xfe, 0x29, 0x5a, 0xbd, 0xeb, 0x1d, 0xca, 0x42,
@@ -873,7 +873,7 @@ var multiTxOuts = []*TxOut{
 	},
 	{
 		Value: 0x5f5e100,
-		PkScript: []byte{
+		ScriptPubKey: []byte{
 			0x41, // OP_DATA_65
 			0x04, 0xd6, 0x4b, 0xdf, 0xd0, 0x9e, 0xb1, 0xc5,
 			0xfe, 0x29, 0x5a, 0xbd, 0xeb, 0x1d, 0xca, 0x42,

@@ -419,8 +419,8 @@ func testGenerateAndSubmitBlockWithCustomCoinbaseOutputs(r *Harness,
 	// time, and a burn output.
 	block, err := r.GenerateAndSubmitBlockWithCustomCoinbaseOutputs(txns,
 		-1, time.Time{}, []wire.TxOut{{
-			Value:    0,
-			PkScript: []byte{},
+			Value:        0,
+			ScriptPubKey: []byte{},
 		}})
 	if err != nil {
 		t.Fatalf("unable to generate block: %v", err)
@@ -445,8 +445,8 @@ func testGenerateAndSubmitBlockWithCustomCoinbaseOutputs(r *Harness,
 	targetBlockVersion := int32(1337)
 	block, err = r.GenerateAndSubmitBlockWithCustomCoinbaseOutputs(nil,
 		targetBlockVersion, timestamp, []wire.TxOut{{
-			Value:    0,
-			PkScript: []byte{},
+			Value:        0,
+			ScriptPubKey: []byte{},
 		}})
 	if err != nil {
 		t.Fatalf("unable to generate block: %v", err)

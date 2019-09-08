@@ -272,7 +272,7 @@ func PushedData(script []byte) ([][]byte, error) {
 }
 
 // ExtractPkScriptAddrs returns the type of script, addresses and required
-// signatures associated with the passed PkScript.  Note that it only works for
+// signatures associated with the passed ScriptPubKey.  Note that it only works for
 // 'standard' transaction script types.  Any data such as public keys which are
 // invalid are omitted from the results.
 func ExtractPkScriptAddrs(pkScript []byte, chainParams *dagconfig.Params) (ScriptClass, []util.Address, int, error) {

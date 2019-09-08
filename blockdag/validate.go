@@ -302,7 +302,7 @@ func CountSigOps(tx *util.Tx) int {
 	// Accumulate the number of signature operations in all transaction
 	// outputs.
 	for _, txOut := range msgTx.TxOut {
-		numSigOps := txscript.GetSigOpCount(txOut.PkScript)
+		numSigOps := txscript.GetSigOpCount(txOut.ScriptPubKey)
 		totalSigOps += numSigOps
 	}
 
@@ -414,7 +414,7 @@ func CalcTxMass(tx *util.Tx, utxoSet UTXOSet) (uint64, error) {
 
 	pkScriptSize := 0
 	for _, txOut := range tx.MsgTx().TxOut {
-		pkScriptSize += len(txOut.PkScript)
+		pkScriptSize += len(txOut.ScriptPubKey)
 	}
 
 	sigOpsCount := 0

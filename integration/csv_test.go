@@ -46,7 +46,7 @@ func makeTestOutput(r *rpctest.Harness, t *testing.T,
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	output := &wire.TxOut{PkScript: selfAddrScript, Value: 1e8}
+	output := &wire.TxOut{ScriptPubKey: selfAddrScript, Value: 1e8}
 
 	// Next, create and broadcast a transaction paying to the output.
 	fundTx, err := r.CreateTransaction([]*wire.TxOut{output}, 10)
@@ -70,7 +70,7 @@ func makeTestOutput(r *rpctest.Harness, t *testing.T,
 	// generated above, this is needed in order to create a proper utxo for
 	// this output.
 	var outputIndex uint32
-	if bytes.Equal(fundTx.TxOut[0].PkScript, selfAddrScript) {
+	if bytes.Equal(fundTx.TxOut[0].ScriptPubKey, selfAddrScript) {
 		outputIndex = 0
 	} else {
 		outputIndex = 1
@@ -134,8 +134,8 @@ func TestBIP0113(t *testing.T) {
 		PreviousOutpoint: *testOutput,
 	})
 	tx.AddTxOut(&wire.TxOut{
-		PkScript: addrScript,
-		Value:    outputValue - 1000,
+		ScriptPubKey: addrScript,
+		Value:        outputValue - 1000,
 	})
 
 	// We set the lock-time of the transaction to just one minute after the
@@ -196,8 +196,8 @@ func TestBIP0113(t *testing.T) {
 			PreviousOutpoint: *testOutput,
 		})
 		tx.AddTxOut(&wire.TxOut{
-			PkScript: addrScript,
-			Value:    outputValue - 1000,
+			ScriptPubKey: addrScript,
+			Value:        outputValue - 1000,
 		})
 		tx.LockTime = medianTimePast + timeLockDelta
 		sigScript, err = txscript.SignatureScript(tx, 0, testPkScript,
@@ -265,8 +265,8 @@ func createCSVOutput(r *rpctest.Harness, t *testing.T,
 		return nil, nil, nil, err
 	}
 	output := &wire.TxOut{
-		PkScript: p2shScript,
-		Value:    int64(numSatoshis),
+		ScriptPubKey: p2shScript,
+		Value:        int64(numSatoshis),
 	}
 
 	// Finally create a valid transaction which creates the output crafted
@@ -277,7 +277,7 @@ func createCSVOutput(r *rpctest.Harness, t *testing.T,
 	}
 
 	var outputIndex uint32
-	if !bytes.Equal(tx.TxOut[0].PkScript, p2shScript) {
+	if !bytes.Equal(tx.TxOut[0].ScriptPubKey, p2shScript) {
 		outputIndex = 1
 	}
 
@@ -375,8 +375,8 @@ func TestBIP0068AndCsv(t *testing.T) {
 	)
 
 	sweepOutput := &wire.TxOut{
-		Value:    outputAmt - 5000,
-		PkScript: harnessScript,
+		Value:        outputAmt - 5000,
+		ScriptPubKey: harnessScript,
 	}
 
 	// With the height at 104 we need 200 blocks to be mined after the

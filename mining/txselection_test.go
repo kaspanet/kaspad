@@ -487,8 +487,8 @@ func TestSelectTxs(t *testing.T) {
 					SignatureScript: signatureScript,
 				}
 				txOut := &wire.TxOut{
-					PkScript: pkScript,
-					Value:    1,
+					ScriptPubKey: pkScript,
+					Value:        1,
 				}
 				msgTx := wire.NewSubnetworkMsgTx(
 					wire.TxVersion, []*wire.TxIn{txIn}, []*wire.TxOut{txOut},

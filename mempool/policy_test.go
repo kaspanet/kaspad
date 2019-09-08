@@ -109,40 +109,40 @@ func TestDust(t *testing.T) {
 		{
 			// Any value is allowed with a zero relay fee.
 			"zero value with zero relay fee",
-			wire.TxOut{Value: 0, PkScript: pkScript},
+			wire.TxOut{Value: 0, ScriptPubKey: pkScript},
 			0,
 			false,
 		},
 		{
 			// Zero value is dust with any relay fee"
 			"zero value with very small tx fee",
-			wire.TxOut{Value: 0, PkScript: pkScript},
+			wire.TxOut{Value: 0, ScriptPubKey: pkScript},
 			1,
 			true,
 		},
 		{
 			"38 byte public key script with value 584",
-			wire.TxOut{Value: 584, PkScript: pkScript},
+			wire.TxOut{Value: 584, ScriptPubKey: pkScript},
 			1000,
 			true,
 		},
 		{
 			"38 byte public key script with value 585",
-			wire.TxOut{Value: 585, PkScript: pkScript},
+			wire.TxOut{Value: 585, ScriptPubKey: pkScript},
 			1000,
 			false,
 		},
 		{
 			// Maximum allowed value is never dust.
 			"max satoshi amount is never dust",
-			wire.TxOut{Value: util.MaxSatoshi, PkScript: pkScript},
+			wire.TxOut{Value: util.MaxSatoshi, ScriptPubKey: pkScript},
 			util.MaxSatoshi,
 			false,
 		},
 		{
 			// Maximum int64 value causes overflow.
 			"maximum int64 value",
-			wire.TxOut{Value: 1<<63 - 1, PkScript: pkScript},
+			wire.TxOut{Value: 1<<63 - 1, ScriptPubKey: pkScript},
 			1<<63 - 1,
 			true,
 		},
@@ -150,7 +150,7 @@ func TestDust(t *testing.T) {
 			// Unspendable pkScript due to an invalid public key
 			// script.
 			"unspendable pkScript",
-			wire.TxOut{Value: 5000, PkScript: []byte{0x01}},
+			wire.TxOut{Value: 5000, ScriptPubKey: []byte{0x01}},
 			0, // no relay fee
 			true,
 		},
@@ -189,8 +189,8 @@ func TestCheckTransactionStandard(t *testing.T) {
 		t.Fatalf("PayToAddrScript: unexpected error: %v", err)
 	}
 	dummyTxOut := wire.TxOut{
-		Value:    100000000, // 1 BTC
-		PkScript: dummyPkScript,
+		Value:        100000000, // 1 BTC
+		ScriptPubKey: dummyPkScript,
 	}
 
 	tests := []struct {
@@ -228,7 +228,7 @@ func TestCheckTransactionStandard(t *testing.T) {
 			name: "Transaction size is too large",
 			tx: wire.NewNativeMsgTx(1, []*wire.TxIn{&dummyTxIn}, []*wire.TxOut{{
 				Value: 0,
-				PkScript: bytes.Repeat([]byte{0x00},
+				ScriptPubKey: bytes.Repeat([]byte{0x00},
 					MaxStandardTxSize+1),
 			}}),
 			height:     300000,
@@ -262,8 +262,8 @@ func TestCheckTransactionStandard(t *testing.T) {
 		{
 			name: "Valid but non standard public key script",
 			tx: wire.NewNativeMsgTx(1, []*wire.TxIn{&dummyTxIn}, []*wire.TxOut{{
-				Value:    100000000,
-				PkScript: []byte{txscript.OpTrue},
+				Value:        100000000,
+				ScriptPubKey: []byte{txscript.OpTrue},
 			}}),
 			height:     300000,
 			isStandard: false,
@@ -272,8 +272,8 @@ func TestCheckTransactionStandard(t *testing.T) {
 		{
 			name: "Dust output",
 			tx: wire.NewNativeMsgTx(1, []*wire.TxIn{&dummyTxIn}, []*wire.TxOut{{
-				Value:    0,
-				PkScript: dummyPkScript,
+				Value:        0,
+				ScriptPubKey: dummyPkScript,
 			}}),
 			height:     300000,
 			isStandard: false,
@@ -282,8 +282,8 @@ func TestCheckTransactionStandard(t *testing.T) {
 		{
 			name: "Nulldata transaction",
 			tx: wire.NewNativeMsgTx(1, []*wire.TxIn{&dummyTxIn}, []*wire.TxOut{{
-				Value:    0,
-				PkScript: []byte{txscript.OpReturn},
+				Value:        0,
+				ScriptPubKey: []byte{txscript.OpReturn},
 			}}),
 			height:     300000,
 			isStandard: false,

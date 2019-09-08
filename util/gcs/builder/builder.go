@@ -340,7 +340,7 @@ func BuildBasicFilter(block *wire.MsgBlock) (*gcs.Filter, error) {
 		// For each output in a transaction, we'll add each of the
 		// individual data pushes within the script.
 		for _, txOut := range tx.TxOut {
-			b.AddEntry(txOut.PkScript)
+			b.AddEntry(txOut.ScriptPubKey)
 		}
 	}
 

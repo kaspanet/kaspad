@@ -116,8 +116,8 @@ func createCoinbaseTx(coinbaseScript []byte, nextBlueScore uint64,
 	txOuts := []*wire.TxOut{}
 	if len(mineTo) == 0 {
 		txOuts = append(txOuts, &wire.TxOut{
-			Value:    blockdag.CalcBlockSubsidy(nextBlueScore, net),
-			PkScript: pkScript,
+			Value:        blockdag.CalcBlockSubsidy(nextBlueScore, net),
+			ScriptPubKey: pkScript,
 		})
 	} else {
 		for i := range mineTo {

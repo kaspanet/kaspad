@@ -73,8 +73,8 @@ func RegisterSubnetworkForTest(dag *blockdag.BlockDAG, params *dagconfig.Params,
 		return nil, err
 	}
 	txOut := &wire.TxOut{
-		PkScript: pkScript,
-		Value:    fundsBlockCbTx.TxOut[0].Value,
+		ScriptPubKey: pkScript,
+		Value:        fundsBlockCbTx.TxOut[0].Value,
 	}
 	registryTx := wire.NewRegistryMsgTx(1, []*wire.TxIn{txIn}, []*wire.TxOut{txOut}, gasLimit)
 

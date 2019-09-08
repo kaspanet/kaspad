@@ -57,7 +57,7 @@ func (entry *UTXOEntry) Amount() uint64 {
 	return entry.amount
 }
 
-// PkScript returns the public key script for the output.
+// ScriptPubKey returns the public key script for the output.
 func (entry *UTXOEntry) PkScript() []byte {
 	return entry.pkScript
 }
@@ -81,7 +81,7 @@ const (
 func NewUTXOEntry(txOut *wire.TxOut, isCoinbase bool, blockBlueScore uint64) *UTXOEntry {
 	entry := &UTXOEntry{
 		amount:         txOut.Value,
-		pkScript:       txOut.PkScript,
+		pkScript:       txOut.ScriptPubKey,
 		blockBlueScore: blockBlueScore,
 	}
 

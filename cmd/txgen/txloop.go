@@ -26,8 +26,8 @@ const (
 	// spendSize is the largest number of bytes of a sigScript
 	// which spends a p2pkh output: OP_DATA_73 <sig> OP_DATA_33 <pubkey>
 	spendSize uint64 = 1 + 73 + 1 + 33
-	// Value 8 bytes + serialized varint size for the length of PkScript +
-	// PkScript bytes.
+	// Value 8 bytes + serialized varint size for the length of ScriptPubKey +
+	// ScriptPubKey bytes.
 	outputSize uint64 = 8 + 1 + 25
 
 	txLifeSpan                                  = 1000
@@ -307,8 +307,8 @@ func createTx(walletUTXOSet utxoSet, minAmount uint64, feeRate uint64, targetNum
 
 	for i := uint64(0); i < numOuts; i++ {
 		tx.AddTxOut(&wire.TxOut{
-			Value:    funds / numOuts,
-			PkScript: pkScript,
+			Value:        funds / numOuts,
+			ScriptPubKey: pkScript,
 		})
 	}
 
@@ -328,7 +328,7 @@ func signTx(walletUTXOSet utxoSet, tx *wire.MsgTx) error {
 		outpoint := txIn.PreviousOutpoint
 		prevOut := walletUTXOSet[outpoint]
 
-		sigScript, err := txscript.SignatureScript(tx, i, prevOut.PkScript,
+		sigScript, err := txscript.SignatureScript(tx, i, prevOut.ScriptPubKey,
 			txscript.SigHashAll, privateKey, true)
 		if err != nil {
 			return fmt.Errorf("Failed to sign transaction: %s", err)
@@ -410,7 +410,7 @@ func removeTxInsFromUTXOSet(walletUTXOSet utxoSet, tx *wire.MsgTx) {
 
 func addTxOutsToUTXOSet(walletUTXOSet utxoSet, tx *wire.MsgTx) {
 	for i, txOut := range tx.TxOut {
-		if bytes.Equal(txOut.PkScript, primaryPkScript) {
+		if bytes.Equal(txOut.ScriptPubKey, primaryPkScript) {
 			outpoint := wire.Outpoint{TxID: *tx.TxID(), Index: uint32(i)}
 			walletUTXOSet[outpoint] = txOut
 		}

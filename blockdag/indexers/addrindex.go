@@ -677,7 +677,7 @@ func (idx *AddrIndex) indexBlock(data writeIndexData, block *util.Block, dag *bl
 		}
 
 		for _, txOut := range tx.MsgTx().TxOut {
-			idx.indexPkScript(data, txOut.PkScript, txIdx)
+			idx.indexPkScript(data, txOut.ScriptPubKey, txIdx)
 		}
 	}
 }
@@ -848,7 +848,7 @@ func (idx *AddrIndex) AddUnconfirmedTx(tx *util.Tx, utxoSet blockdag.UTXOSet) {
 
 	// Index addresses of all created outputs.
 	for _, txOut := range tx.MsgTx().TxOut {
-		idx.indexUnconfirmedAddresses(txOut.PkScript, tx)
+		idx.indexUnconfirmedAddresses(txOut.ScriptPubKey, tx)
 	}
 }
 

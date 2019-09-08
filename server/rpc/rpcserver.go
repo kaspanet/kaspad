@@ -637,13 +637,13 @@ func createVoutList(mtx *wire.MsgTx, chainParams *dagconfig.Params, filterAddrMa
 	for i, v := range mtx.TxOut {
 		// The disassembled string will contain [error] inline if the
 		// script doesn't fully parse, so ignore the error here.
-		disbuf, _ := txscript.DisasmString(v.PkScript)
+		disbuf, _ := txscript.DisasmString(v.ScriptPubKey)
 
 		// Ignore the error here since an error means the script
 		// couldn't parse and there is no additional information about
 		// it anyways.
 		scriptClass, addrs, reqSigs, _ := txscript.ExtractPkScriptAddrs(
-			v.PkScript, chainParams)
+			v.ScriptPubKey, chainParams)
 
 		// Encode the addresses while checking if the address passes the
 		// filter when needed.
@@ -672,7 +672,7 @@ func createVoutList(mtx *wire.MsgTx, chainParams *dagconfig.Params, filterAddrMa
 		vout.Value = util.Amount(v.Value).ToBTC()
 		vout.ScriptPubKey.Addresses = encodedAddrs
 		vout.ScriptPubKey.Asm = disbuf
-		vout.ScriptPubKey.Hex = hex.EncodeToString(v.PkScript)
+		vout.ScriptPubKey.Hex = hex.EncodeToString(v.ScriptPubKey)
 		vout.ScriptPubKey.Type = scriptClass.String()
 		vout.ScriptPubKey.ReqSigs = int32(reqSigs)
 
@@ -1616,7 +1616,7 @@ func (state *gbtWorkState) updateBlockTemplate(s *Server, useCoinbaseValue bool)
 				context := "Failed to create pay-to-addr script"
 				return internalRPCError(err.Error(), context)
 			}
-			template.Block.Transactions[util.CoinbaseTransactionIndex].TxOut[0].PkScript = pkScript
+			template.Block.Transactions[util.CoinbaseTransactionIndex].TxOut[0].ScriptPubKey = pkScript
 			template.ValidPayAddress = true
 
 			// Update the merkle root.
@@ -2772,7 +2772,7 @@ func handleGetTxOut(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 
 		bestBlockHash = s.cfg.DAG.SelectedTipHash().String()
 		value = txOut.Value
-		pkScript = txOut.PkScript
+		pkScript = txOut.ScriptPubKey
 		isCoinbase = mtx.IsCoinBase()
 		isInMempool = true
 	} else {
@@ -3053,7 +3053,7 @@ func createVinListPrevOut(s *Server, mtx *wire.MsgTx, chainParams *dagconfig.Par
 		// couldn't parse and there is no additional information about
 		// it anyways.
 		_, addrs, _, _ := txscript.ExtractPkScriptAddrs(
-			originTxOut.PkScript, chainParams)
+			originTxOut.ScriptPubKey, chainParams)
 
 		// Encode the addresses while checking if the address passes the
 		// filter when needed.

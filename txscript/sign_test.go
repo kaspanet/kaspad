@@ -812,7 +812,7 @@ var sigScriptTests = []tstSigScript{
 		scriptAtWrongIndex: false,
 	},
 	{
-		name: "short PkScript",
+		name: "short ScriptPubKey",
 		inputs: []tstInput{
 			{
 				txout:              wire.NewTxOut(coinbaseVal, shortPkScript),
@@ -897,7 +897,7 @@ nexttest:
 				idx = j
 			}
 			script, err = SignatureScript(tx, idx,
-				sigScriptTests[i].inputs[j].txout.PkScript,
+				sigScriptTests[i].inputs[j].txout.ScriptPubKey,
 				sigScriptTests[i].hashType, privKey,
 				sigScriptTests[i].compress)
 
@@ -931,7 +931,7 @@ nexttest:
 		var scriptFlags ScriptFlags
 		for j := range tx.TxIn {
 			vm, err := NewEngine(sigScriptTests[i].
-				inputs[j].txout.PkScript, tx, j, scriptFlags, nil)
+				inputs[j].txout.ScriptPubKey, tx, j, scriptFlags, nil)
 			if err != nil {
 				t.Errorf("cannot create script vm for test %v: %v",
 					sigScriptTests[i].name, err)
