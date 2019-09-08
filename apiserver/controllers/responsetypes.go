@@ -36,6 +36,10 @@ type transactionInputResponse struct {
 	Address                        string `json:"address"`
 }
 
+type feeEstimateResponse struct {
+	HighPriority, NormalPriority, LowPriority float64
+}
+
 func convertTxModelToTxResponse(tx *models.Transaction) *transactionResponse {
 	txRes := &transactionResponse{
 		TransactionHash:         tx.TransactionHash,
