@@ -21,10 +21,11 @@ type transactionResponse struct {
 }
 
 type transactionOutputResponse struct {
-	TransactionID string `json:"transactionId,omitempty"`
-	Value         uint64 `json:"value"`
-	PkScript      string `json:"pkScript"`
-	Address       string `json:"address"`
+	TransactionID      string `json:"transactionId,omitempty"`
+	Value              uint64 `json:"value"`
+	PkScript           string `json:"pkScript"`
+	Address            string `json:"address,omitempty"`
+	AcceptingBlockHash string `json:"acceptingBlockHash,omitempty"`
 }
 
 type transactionInputResponse struct {

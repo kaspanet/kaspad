@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"encoding/hex"
 	"fmt"
 	"github.com/daglabs/btcd/apiserver/database"
 	"github.com/daglabs/btcd/apiserver/models"
@@ -65,6 +66,28 @@ func GetTransactionsByAddressHandler(address string, skip uint64, limit uint64) 
 		txResponses[i] = convertTxModelToTxResponse(tx)
 	}
 	return txResponses, nil
+}
+
+// GetUTXOsByAddressHandler searches for all UTXOs
+// that belong to a certain address.
+func GetUTXOsByAddressHandler(address string) (interface{}, *utils.HandlerError) {
+	utxos := []*models.UTXO{}
+	database.DB.
+		Joins("LEFT JOIN `transaction_outputs` ON `transaction_outputs`.`id` = `utxos`.`transaction_output_id`").
+		Joins("LEFT JOIN `addresses` ON `addresses`.`id` = `transaction_outputs`.`address_id`").
+		Where("`addresses`.`address` = ?", address).
+		Preload("AcceptingBlock").
+		Preload("TransactionOutput").
+		Find(&utxos)
+	UTXOsResponses := make([]*transactionOutputResponse, len(utxos))
+	for i, utxo := range utxos {
+		UTXOsResponses[i] = &transactionOutputResponse{
+			Value:              utxo.TransactionOutput.Value,
+			PkScript:           hex.EncodeToString(utxo.TransactionOutput.PkScript),
+			AcceptingBlockHash: utxo.AcceptingBlock.BlockHash,
+		}
+	}
+	return UTXOsResponses, nil
 }
 
 func addTxPreloadedFields(query *gorm.DB) *gorm.DB {
