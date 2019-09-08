@@ -11,9 +11,10 @@ import (
 )
 
 const (
-	routeParamTxID    = "txID"
-	routeParamTxHash  = "txHash"
-	routeParamAddress = "address"
+	routeParamTxID      = "txID"
+	routeParamTxHash    = "txHash"
+	routeParamAddress   = "address"
+	routeParamBlockHash = "blockHash"
 )
 
 const (
@@ -79,6 +80,11 @@ func addRoutes(router *mux.Router) {
 		fmt.Sprintf("/utxos/address/{%s}", routeParamAddress),
 		makeHandler(getUTXOsByAddressHandler)).
 		Methods("GET")
+
+	router.HandleFunc(
+		fmt.Sprintf("/block/{%s}", routeParamBlockHash),
+		makeHandler(getBlockByHashHandler)).
+		Methods("GET")
 }
 
 func getTransactionByIDHandler(routeParams map[string]string, _ map[string][]string, _ *utils.APIServerContext) (interface{}, *utils.HandlerError) {
@@ -119,4 +125,8 @@ func getTransactionsByAddressHandler(routeParams map[string]string, queryParams 
 
 func getUTXOsByAddressHandler(routeParams map[string]string, _ map[string][]string, _ *utils.APIServerContext) (interface{}, *utils.HandlerError) {
 	return controllers.GetUTXOsByAddressHandler(routeParams[routeParamAddress])
+}
+
+func getBlockByHashHandler(routeParams map[string]string, _ map[string][]string, _ *utils.APIServerContext) (interface{}, *utils.HandlerError) {
+	return controllers.GetBlockByHashHandler(routeParams[routeParamBlockHash])
 }
