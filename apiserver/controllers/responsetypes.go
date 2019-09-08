@@ -3,6 +3,7 @@ package controllers
 import (
 	"encoding/hex"
 	"github.com/daglabs/btcd/apiserver/models"
+	"github.com/daglabs/btcd/btcjson"
 )
 
 type transactionResponse struct {
@@ -21,10 +22,12 @@ type transactionResponse struct {
 }
 
 type transactionOutputResponse struct {
-	TransactionID string `json:"transactionId,omitempty"`
-	Value         uint64 `json:"value"`
-	PkScript      string `json:"pkScript"`
-	Address       string `json:"address"`
+	TransactionID           string `json:"transactionId,omitempty"`
+	Value                   uint64 `json:"value"`
+	PkScript                string `json:"pkScript"`
+	Address                 string `json:"address,omitempty"`
+	AcceptingBlockHash      string `json:"acceptingBlockHash,omitempty"`
+	AcceptingBlockBlueScore uint64 `json:"acceptingBlockBlueScore,omitempty"`
 }
 
 type transactionInputResponse struct {
@@ -33,6 +36,22 @@ type transactionInputResponse struct {
 	PreviousTransactionOutputIndex uint32 `json:"previousTransactionOutputIndex"`
 	SignatureScript                string `json:"signatureScript"`
 	Sequence                       uint64 `json:"sequence"`
+	Address                        string `json:"address"`
+}
+
+type blockResponse struct {
+	BlockHash            string
+	Version              int32
+	HashMerkleRoot       string
+	AcceptedIDMerkleRoot string
+	UTXOCommitment       string
+	Timestamp            uint64
+	Bits                 uint32
+	Nonce                uint64
+	AcceptingBlockHash   *string
+	BlueScore            uint64
+	IsChainBlock         bool
+	Mass                 uint64
 }
 
 func convertTxModelToTxResponse(tx *models.Transaction) *transactionResponse {
@@ -46,15 +65,15 @@ func convertTxModelToTxResponse(tx *models.Transaction) *transactionResponse {
 		Gas:                     tx.Gas,
 		PayloadHash:             tx.PayloadHash,
 		Payload:                 hex.EncodeToString(tx.Payload),
-		Inputs:                  make([]*transactionInputResponse, len(tx.TransactionOutputs)),
-		Outputs:                 make([]*transactionOutputResponse, len(tx.TransactionInputs)),
+		Inputs:                  make([]*transactionInputResponse, len(tx.TransactionInputs)),
+		Outputs:                 make([]*transactionOutputResponse, len(tx.TransactionOutputs)),
 		Mass:                    tx.Mass,
 	}
 	for i, txOut := range tx.TransactionOutputs {
 		txRes.Outputs[i] = &transactionOutputResponse{
 			Value:    txOut.Value,
 			PkScript: hex.EncodeToString(txOut.PkScript),
-			Address:  "", // TODO: Fill it when there's an addrindex in the DB.
+			Address:  txOut.Address.Address,
 		}
 	}
 	for i, txIn := range tx.TransactionInputs {
@@ -63,7 +82,28 @@ func convertTxModelToTxResponse(tx *models.Transaction) *transactionResponse {
 			PreviousTransactionOutputIndex: txIn.TransactionOutput.Index,
 			SignatureScript:                hex.EncodeToString(txIn.SignatureScript),
 			Sequence:                       txIn.Sequence,
+			Address:                        txIn.TransactionOutput.Address.Address,
 		}
 	}
 	return txRes
+}
+
+func convertBlockModelToBlockResponse(block *models.Block) *blockResponse {
+	blockRes := &blockResponse{
+		BlockHash:            block.BlockHash,
+		Version:              block.Version,
+		HashMerkleRoot:       block.HashMerkleRoot,
+		AcceptedIDMerkleRoot: block.AcceptedIDMerkleRoot,
+		UTXOCommitment:       block.UTXOCommitment,
+		Timestamp:            uint64(block.Timestamp.Unix()),
+		Bits:                 block.Bits,
+		Nonce:                block.Nonce,
+		BlueScore:            block.BlueScore,
+		IsChainBlock:         block.IsChainBlock,
+		Mass:                 block.Mass,
+	}
+	if block.AcceptingBlock != nil {
+		blockRes.AcceptingBlockHash = btcjson.String(block.AcceptingBlock.BlockHash)
+	}
+	return blockRes
 }
