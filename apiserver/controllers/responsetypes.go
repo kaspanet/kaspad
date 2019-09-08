@@ -34,6 +34,7 @@ type transactionInputResponse struct {
 	PreviousTransactionOutputIndex uint32 `json:"previousTransactionOutputIndex"`
 	SignatureScript                string `json:"signatureScript"`
 	Sequence                       uint64 `json:"sequence"`
+	Address                        string `json:"address"`
 }
 
 type blockResponse struct {
@@ -62,15 +63,15 @@ func convertTxModelToTxResponse(tx *models.Transaction) *transactionResponse {
 		Gas:                     tx.Gas,
 		PayloadHash:             tx.PayloadHash,
 		Payload:                 hex.EncodeToString(tx.Payload),
-		Inputs:                  make([]*transactionInputResponse, len(tx.TransactionOutputs)),
-		Outputs:                 make([]*transactionOutputResponse, len(tx.TransactionInputs)),
+		Inputs:                  make([]*transactionInputResponse, len(tx.TransactionInputs)),
+		Outputs:                 make([]*transactionOutputResponse, len(tx.TransactionOutputs)),
 		Mass:                    tx.Mass,
 	}
 	for i, txOut := range tx.TransactionOutputs {
 		txRes.Outputs[i] = &transactionOutputResponse{
 			Value:    txOut.Value,
 			PkScript: hex.EncodeToString(txOut.PkScript),
-			Address:  "", // TODO: Fill it when there's an addrindex in the DB.
+			Address:  txOut.Address.Address,
 		}
 	}
 	for i, txIn := range tx.TransactionInputs {
@@ -79,6 +80,7 @@ func convertTxModelToTxResponse(tx *models.Transaction) *transactionResponse {
 			PreviousTransactionOutputIndex: txIn.TransactionOutput.Index,
 			SignatureScript:                hex.EncodeToString(txIn.SignatureScript),
 			Sequence:                       txIn.Sequence,
+			Address:                        txIn.TransactionOutput.Address.Address,
 		}
 	}
 	return txRes

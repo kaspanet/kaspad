@@ -86,6 +86,8 @@ type TransactionOutput struct {
 	Index         uint32
 	Value         uint64
 	PkScript      []byte
+	AddressID     uint64
+	Address       Address
 }
 
 // TransactionInput is the gorm model for the 'transaction_inputs' table
@@ -106,4 +108,10 @@ type UTXO struct {
 	TransactionOutput   TransactionOutput
 	AcceptingBlockID    uint64
 	AcceptingBlock      Block
+}
+
+// Address is the gorm model for the 'utxos' table
+type Address struct {
+	ID      uint64 `gorm:"primary_key"`
+	Address string
 }
