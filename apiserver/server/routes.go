@@ -87,12 +87,20 @@ func getTransactionByHashHandler(routeParams map[string]string, _ map[string][]s
 func getTransactionsByAddressHandler(routeParams map[string]string, queryParams map[string][]string, _ *utils.APIServerContext) (interface{}, *utils.HandlerError) {
 	skip := 0
 	limit := defaultGetTransactionsLimit
+	if len(queryParams[queryParamSkip]) > 1 {
+		return nil, utils.NewHandlerError(http.StatusUnprocessableEntity, fmt.Sprintf("Couldn't parse the '%s' query parameter:"+
+			" expected a single value but got an array", queryParamSkip))
+	}
 	if len(queryParams[queryParamSkip]) == 1 {
 		var err error
 		skip, err = strconv.Atoi(queryParams[queryParamSkip][0])
 		if err != nil {
 			return nil, utils.NewHandlerError(http.StatusUnprocessableEntity, fmt.Sprintf("Couldn't parse the '%s' query parameter: %s", queryParamSkip, err))
 		}
+	}
+	if len(queryParams[queryParamLimit]) > 1 {
+		return nil, utils.NewHandlerError(http.StatusUnprocessableEntity, fmt.Sprintf("Couldn't parse the '%s' query parameter:"+
+			" expected a single value but got an array", queryParamLimit))
 	}
 	if len(queryParams[queryParamLimit]) == 1 {
 		var err error
