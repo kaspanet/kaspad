@@ -77,6 +77,11 @@ func addRoutes(router *mux.Router) {
 		Methods("GET")
 
 	router.HandleFunc(
+		fmt.Sprintf("/utxos/address/{%s}", routeParamAddress),
+		makeHandler(getUTXOsByAddressHandler)).
+		Methods("GET")
+
+	router.HandleFunc(
 		fmt.Sprintf("/block/{%s}", routeParamBlockHash),
 		makeHandler(getBlockByHashHandler)).
 		Methods("GET")
@@ -116,6 +121,10 @@ func getTransactionsByAddressHandler(routeParams map[string]string, queryParams 
 		}
 	}
 	return controllers.GetTransactionsByAddressHandler(routeParams[routeParamAddress], uint64(skip), uint64(limit))
+}
+
+func getUTXOsByAddressHandler(routeParams map[string]string, _ map[string][]string, _ *utils.APIServerContext) (interface{}, *utils.HandlerError) {
+	return controllers.GetUTXOsByAddressHandler(routeParams[routeParamAddress])
 }
 
 func getBlockByHashHandler(routeParams map[string]string, _ map[string][]string, _ *utils.APIServerContext) (interface{}, *utils.HandlerError) {
