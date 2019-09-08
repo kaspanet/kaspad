@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"encoding/hex"
 	"fmt"
 	"github.com/daglabs/btcd/apiserver/database"
 	"github.com/daglabs/btcd/apiserver/models"
@@ -14,6 +15,9 @@ import (
 func GetTransactionByIDHandler(txID string) (interface{}, *utils.HandlerError) {
 	if len(txID) != daghash.TxIDSize*2 {
 		return nil, utils.NewHandlerError(http.StatusUnprocessableEntity, fmt.Sprintf("The given txid is not a hex-encoded %d-byte hash.", daghash.TxIDSize))
+	}
+	if err := validateHex(txID); err != nil {
+		return nil, utils.NewHandlerError(http.StatusUnprocessableEntity, fmt.Sprintf("Coulldn't parse the given txid: %s", err))
 	}
 	tx := &models.Transaction{}
 	db := database.DB.Where("transaction_id = ?", txID)
@@ -29,6 +33,9 @@ func GetTransactionByHashHandler(txHash string) (interface{}, *utils.HandlerErro
 	if len(txHash) != daghash.HashSize*2 {
 		return nil, utils.NewHandlerError(http.StatusUnprocessableEntity, fmt.Sprintf("The given txhash is not a hex-encoded %d-byte hash.", daghash.HashSize))
 	}
+	if err := validateHex(txHash); err != nil {
+		return nil, utils.NewHandlerError(http.StatusUnprocessableEntity, fmt.Sprintf("Coulldn't parse the given txhash: %s", err))
+	}
 	tx := &models.Transaction{}
 	db := database.DB.Where("transaction_hash = ?", txHash)
 	addTxPreloadedFields(db).First(&tx)
@@ -36,6 +43,11 @@ func GetTransactionByHashHandler(txHash string) (interface{}, *utils.HandlerErro
 		return nil, utils.NewHandlerError(http.StatusNotFound, "No transaction with the given txhash was found.")
 	}
 	return convertTxModelToTxResponse(tx), nil
+}
+
+func validateHex(hexStr string) error {
+	_, err := hex.DecodeString(hexStr)
+	return err
 }
 
 func addTxPreloadedFields(db *gorm.DB) *gorm.DB {

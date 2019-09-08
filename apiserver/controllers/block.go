@@ -14,6 +14,9 @@ func GetBlockByHashHandler(blockHash string) (interface{}, *utils.HandlerError) 
 	if len(blockHash) != daghash.HashSize*2 {
 		return nil, utils.NewHandlerError(http.StatusUnprocessableEntity, fmt.Sprintf("The given block hash is not a hex-encoded %d-byte hash.", daghash.HashSize))
 	}
+	if err := validateHex(blockHash); err != nil {
+		return nil, utils.NewHandlerError(http.StatusUnprocessableEntity, fmt.Sprintf("Coulldn't parse the given block hash: %s", err))
+	}
 	block := &models.Block{}
 	database.DB.Where(&models.Block{BlockHash: blockHash}).Preload("AcceptingBlock").First(block)
 	if block.ID == 0 {
