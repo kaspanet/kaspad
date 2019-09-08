@@ -15,11 +15,8 @@ const maximumGetTransactionsLimit = 1000
 
 // GetTransactionByIDHandler returns a transaction by a given transaction ID.
 func GetTransactionByIDHandler(txID string) (interface{}, *utils.HandlerError) {
-	if len(txID) != daghash.TxIDSize*2 {
+	if bytes, err := hex.DecodeString(txID); err != nil || len(bytes) != daghash.TxIDSize {
 		return nil, utils.NewHandlerError(http.StatusUnprocessableEntity, fmt.Sprintf("The given txid is not a hex-encoded %d-byte hash.", daghash.TxIDSize))
-	}
-	if err := validateHex(txID); err != nil {
-		return nil, utils.NewHandlerError(http.StatusUnprocessableEntity, fmt.Sprintf("Coulldn't parse the given txid: %s", err))
 	}
 	tx := &models.Transaction{}
 	query := database.DB.Where(&models.Transaction{TransactionID: txID})
@@ -32,11 +29,8 @@ func GetTransactionByIDHandler(txID string) (interface{}, *utils.HandlerError) {
 
 // GetTransactionByHashHandler returns a transaction by a given transaction hash.
 func GetTransactionByHashHandler(txHash string) (interface{}, *utils.HandlerError) {
-	if len(txHash) != daghash.HashSize*2 {
+	if bytes, err := hex.DecodeString(txHash); err != nil || len(bytes) != daghash.HashSize {
 		return nil, utils.NewHandlerError(http.StatusUnprocessableEntity, fmt.Sprintf("The given txhash is not a hex-encoded %d-byte hash.", daghash.HashSize))
-	}
-	if err := validateHex(txHash); err != nil {
-		return nil, utils.NewHandlerError(http.StatusUnprocessableEntity, fmt.Sprintf("Coulldn't parse the given txhash: %s", err))
 	}
 	tx := &models.Transaction{}
 	query := database.DB.
@@ -72,11 +66,6 @@ func GetTransactionsByAddressHandler(address string, skip uint64, limit uint64) 
 		txResponses[i] = convertTxModelToTxResponse(tx)
 	}
 	return txResponses, nil
-}
-
-func validateHex(hexStr string) error {
-	_, err := hex.DecodeString(hexStr)
-	return err
 }
 
 func addTxPreloadedFields(query *gorm.DB) *gorm.DB {

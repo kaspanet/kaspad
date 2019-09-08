@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"encoding/hex"
 	"fmt"
 	"github.com/daglabs/btcd/apiserver/database"
 	"github.com/daglabs/btcd/apiserver/models"
@@ -11,11 +12,8 @@ import (
 
 // GetBlockByHashHandler returns a block by a given hash.
 func GetBlockByHashHandler(blockHash string) (interface{}, *utils.HandlerError) {
-	if len(blockHash) != daghash.HashSize*2 {
+	if bytes, err := hex.DecodeString(blockHash); err != nil || len(bytes) != daghash.HashSize {
 		return nil, utils.NewHandlerError(http.StatusUnprocessableEntity, fmt.Sprintf("The given block hash is not a hex-encoded %d-byte hash.", daghash.HashSize))
-	}
-	if err := validateHex(blockHash); err != nil {
-		return nil, utils.NewHandlerError(http.StatusUnprocessableEntity, fmt.Sprintf("Coulldn't parse the given block hash: %s", err))
 	}
 	block := &models.Block{}
 	database.DB.Where(&models.Block{BlockHash: blockHash}).Preload("AcceptingBlock").First(block)
