@@ -6,5 +6,5 @@ CREATE TABLE `utxos`
     INDEX `idx_utxos_accepting_block_id` (`accepting_block_id`),
     CONSTRAINT `fk_utxos_transaction_output_id`
         FOREIGN KEY (`transaction_output_id`)
-            REFERENCES `transactions_outputs` (`id`)
+            REFERENCES `transaction_outputs` (`id`)
 );
