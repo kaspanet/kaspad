@@ -545,7 +545,7 @@ func handleCreateRawTransaction(s *Server, cmd interface{}, closeChan <-chan str
 		}
 
 		// Create a new script which pays to the provided address.
-		pkScript, err := txscript.PayToAddrScript(addr)
+		scriptPubKey, err := txscript.PayToAddrScript(addr)
 		if err != nil {
 			context := "Failed to generate pay-to-address script"
 			return nil, internalRPCError(err.Error(), context)
@@ -558,7 +558,7 @@ func handleCreateRawTransaction(s *Server, cmd interface{}, closeChan <-chan str
 			return nil, internalRPCError(err.Error(), context)
 		}
 
-		txOut := wire.NewTxOut(uint64(satoshi), pkScript)
+		txOut := wire.NewTxOut(uint64(satoshi), scriptPubKey)
 		mtx.AddTxOut(txOut)
 	}
 
@@ -642,7 +642,7 @@ func createVoutList(mtx *wire.MsgTx, chainParams *dagconfig.Params, filterAddrMa
 		// Ignore the error here since an error means the script
 		// couldn't parse and there is no additional information about
 		// it anyways.
-		scriptClass, addrs, reqSigs, _ := txscript.ExtractPkScriptAddrs(
+		scriptClass, addrs, reqSigs, _ := txscript.ExtractScriptPubKeyAddrs(
 			v.ScriptPubKey, chainParams)
 
 		// Encode the addresses while checking if the address passes the
@@ -783,7 +783,7 @@ func handleDecodeScript(s *Server, cmd interface{}, closeChan <-chan struct{}) (
 	// Get information about the script.
 	// Ignore the error here since an error means the script couldn't parse
 	// and there is no additinal information about it anyways.
-	scriptClass, addrs, reqSigs, _ := txscript.ExtractPkScriptAddrs(script,
+	scriptClass, addrs, reqSigs, _ := txscript.ExtractScriptPubKeyAddrs(script,
 		s.cfg.DAGParams)
 	addresses := make([]string, len(addrs))
 	for i, addr := range addrs {
@@ -1611,12 +1611,12 @@ func (state *gbtWorkState) updateBlockTemplate(s *Server, useCoinbaseValue bool)
 
 			// Update the block coinbase output of the template to
 			// pay to the randomly selected payment address.
-			pkScript, err := txscript.PayToAddrScript(payToAddr)
+			scriptPubKey, err := txscript.PayToAddrScript(payToAddr)
 			if err != nil {
 				context := "Failed to create pay-to-addr script"
 				return internalRPCError(err.Error(), context)
 			}
-			template.Block.Transactions[util.CoinbaseTransactionIndex].TxOut[0].ScriptPubKey = pkScript
+			template.Block.Transactions[util.CoinbaseTransactionIndex].TxOut[0].ScriptPubKey = scriptPubKey
 			template.ValidPayAddress = true
 
 			// Update the merkle root.
@@ -2739,7 +2739,7 @@ func handleGetTxOut(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 	var bestBlockHash string
 	var confirmations *uint64
 	var value uint64
-	var pkScript []byte
+	var scriptPubKey []byte
 	var isCoinbase bool
 	isInMempool := false
 	includeMempool := true
@@ -2772,7 +2772,7 @@ func handleGetTxOut(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 
 		bestBlockHash = s.cfg.DAG.SelectedTipHash().String()
 		value = txOut.Value
-		pkScript = txOut.ScriptPubKey
+		scriptPubKey = txOut.ScriptPubKey
 		isCoinbase = mtx.IsCoinBase()
 		isInMempool = true
 	} else {
@@ -2802,19 +2802,19 @@ func handleGetTxOut(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 
 		bestBlockHash = s.cfg.DAG.SelectedTipHash().String()
 		value = entry.Amount()
-		pkScript = entry.PkScript()
+		scriptPubKey = entry.ScriptPubKey()
 		isCoinbase = entry.IsCoinbase()
 	}
 
 	// Disassemble script into single line printable format.
 	// The disassembled string will contain [error] inline if the script
 	// doesn't fully parse, so ignore the error here.
-	disbuf, _ := txscript.DisasmString(pkScript)
+	disbuf, _ := txscript.DisasmString(scriptPubKey)
 
 	// Get further info about the script.
 	// Ignore the error here since an error means the script couldn't parse
 	// and there is no additional information about it anyways.
-	scriptClass, addrs, reqSigs, _ := txscript.ExtractPkScriptAddrs(pkScript,
+	scriptClass, addrs, reqSigs, _ := txscript.ExtractScriptPubKeyAddrs(scriptPubKey,
 		s.cfg.DAGParams)
 	addresses := make([]string, len(addrs))
 	for i, addr := range addrs {
@@ -2828,7 +2828,7 @@ func handleGetTxOut(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 		Value:         util.Amount(value).ToBTC(),
 		ScriptPubKey: btcjson.ScriptPubKeyResult{
 			Asm:       disbuf,
-			Hex:       hex.EncodeToString(pkScript),
+			Hex:       hex.EncodeToString(scriptPubKey),
 			ReqSigs:   int32(reqSigs),
 			Type:      scriptClass.String(),
 			Addresses: addresses,
@@ -3052,7 +3052,7 @@ func createVinListPrevOut(s *Server, mtx *wire.MsgTx, chainParams *dagconfig.Par
 		// Ignore the error here since an error means the script
 		// couldn't parse and there is no additional information about
 		// it anyways.
-		_, addrs, _, _ := txscript.ExtractPkScriptAddrs(
+		_, addrs, _, _ := txscript.ExtractScriptPubKeyAddrs(
 			originTxOut.ScriptPubKey, chainParams)
 
 		// Encode the addresses while checking if the address passes the

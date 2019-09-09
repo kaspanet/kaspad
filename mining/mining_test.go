@@ -32,9 +32,9 @@ func TestNewBlockTemplate(t *testing.T) {
 	}
 	defer teardownFunc()
 
-	pkScript, err := txscript.NewScriptBuilder().AddOp(txscript.OpTrue).Script()
+	scriptPubKey, err := txscript.NewScriptBuilder().AddOp(txscript.OpTrue).Script()
 	if err != nil {
-		t.Fatalf("Failed to create pkScript: %v", err)
+		t.Fatalf("Failed to create scriptPubKey: %v", err)
 	}
 
 	policy := Policy{
@@ -108,7 +108,7 @@ func TestNewBlockTemplate(t *testing.T) {
 		SignatureScript: signatureScript,
 	}
 	txOut := &wire.TxOut{
-		ScriptPubKey: pkScript,
+		ScriptPubKey: scriptPubKey,
 		Value:        1,
 	}
 	tx := wire.NewNativeMsgTx(wire.TxVersion, []*wire.TxIn{txIn}, []*wire.TxOut{txOut})
@@ -123,7 +123,7 @@ func TestNewBlockTemplate(t *testing.T) {
 		SignatureScript: signatureScript,
 	}
 	txOut = &wire.TxOut{
-		ScriptPubKey: pkScript,
+		ScriptPubKey: scriptPubKey,
 		Value:        1,
 	}
 	nonFinalizedTx := wire.NewNativeMsgTx(wire.TxVersion, []*wire.TxIn{txIn}, []*wire.TxOut{txOut})
@@ -142,7 +142,7 @@ func TestNewBlockTemplate(t *testing.T) {
 		SignatureScript: signatureScript,
 	}
 	txOut = &wire.TxOut{
-		ScriptPubKey: pkScript,
+		ScriptPubKey: scriptPubKey,
 		Value:        1,
 	}
 	nonExistingSubnetworkTx := wire.NewSubnetworkMsgTx(wire.TxVersion, []*wire.TxIn{txIn}, []*wire.TxOut{txOut},
@@ -158,7 +158,7 @@ func TestNewBlockTemplate(t *testing.T) {
 		SignatureScript: signatureScript,
 	}
 	txOut = &wire.TxOut{
-		ScriptPubKey: pkScript,
+		ScriptPubKey: scriptPubKey,
 		Value:        1,
 	}
 	subnetworkTx1 := wire.NewSubnetworkMsgTx(wire.TxVersion, []*wire.TxIn{txIn}, []*wire.TxOut{txOut}, existingSubnetwork, 1, []byte{})
@@ -172,7 +172,7 @@ func TestNewBlockTemplate(t *testing.T) {
 		SignatureScript: signatureScript,
 	}
 	txOut = &wire.TxOut{
-		ScriptPubKey: pkScript,
+		ScriptPubKey: scriptPubKey,
 		Value:        1,
 	}
 	subnetworkTx2 := wire.NewSubnetworkMsgTx(wire.TxVersion, []*wire.TxIn{txIn}, []*wire.TxOut{txOut}, existingSubnetwork,

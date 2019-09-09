@@ -250,7 +250,7 @@ func (bf *Filter) AddOutpoint(outpoint *wire.Outpoint) {
 // script.
 //
 // This function MUST be called with the filter lock held.
-func (bf *Filter) maybeAddOutpoint(pkScript []byte, outTxID *daghash.TxID, outIdx uint32) {
+func (bf *Filter) maybeAddOutpoint(scriptPubKey []byte, outTxID *daghash.TxID, outIdx uint32) {
 	if bf.msgFilterLoad.Flags == wire.BloomUpdateAll {
 		outpoint := wire.NewOutpoint(outTxID, outIdx)
 		bf.addOutpoint(outpoint)

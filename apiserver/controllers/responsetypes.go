@@ -24,7 +24,7 @@ type transactionResponse struct {
 type transactionOutputResponse struct {
 	TransactionID           string `json:"transactionId,omitempty"`
 	Value                   uint64 `json:"value"`
-	ScriptPubKey  string `json:"scriptPubKey"`
+	ScriptPubKey            string `json:"scriptPubKey"`
 	Address                 string `json:"address,omitempty"`
 	AcceptingBlockHash      string `json:"acceptingBlockHash,omitempty"`
 	AcceptingBlockBlueScore uint64 `json:"acceptingBlockBlueScore,omitempty"`

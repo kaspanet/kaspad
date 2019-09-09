@@ -100,7 +100,7 @@ func createCoinbaseTx(coinbaseScript []byte, nextBlueScore uint64,
 	net *dagconfig.Params) (*util.Tx, error) {
 
 	// Create the script to pay to the provided payment address.
-	pkScript, err := txscript.PayToAddrScript(addr)
+	scriptPubKey, err := txscript.PayToAddrScript(addr)
 	if err != nil {
 		return nil, err
 	}
@@ -117,7 +117,7 @@ func createCoinbaseTx(coinbaseScript []byte, nextBlueScore uint64,
 	if len(mineTo) == 0 {
 		txOuts = append(txOuts, &wire.TxOut{
 			Value:        blockdag.CalcBlockSubsidy(nextBlueScore, net),
-			ScriptPubKey: pkScript,
+			ScriptPubKey: scriptPubKey,
 		})
 	} else {
 		for i := range mineTo {

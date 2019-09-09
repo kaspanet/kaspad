@@ -90,11 +90,11 @@ func checkInputsStandard(tx *util.Tx, utxoSet blockdag.UTXOSet) error {
 		// they have already been checked prior to calling this
 		// function.
 		entry, _ := utxoSet.Get(txIn.PreviousOutpoint)
-		originPkScript := entry.PkScript()
-		switch txscript.GetScriptClass(originPkScript) {
+		originScriptPubKey := entry.ScriptPubKey()
+		switch txscript.GetScriptClass(originScriptPubKey) {
 		case txscript.ScriptHashTy:
 			numSigOps := txscript.GetPreciseSigOpCount(
-				txIn.SignatureScript, originPkScript, true)
+				txIn.SignatureScript, originScriptPubKey, true)
 			if numSigOps > maxStandardP2SHSigOps {
 				str := fmt.Sprintf("transaction input #%d has "+
 					"%d signature operations which is more "+

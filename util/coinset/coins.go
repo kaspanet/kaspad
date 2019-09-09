@@ -20,7 +20,7 @@ type Coin interface {
 	ID() *daghash.TxID
 	Index() uint32
 	Value() util.Amount
-	PkScript() []byte
+	ScriptPubKey() []byte
 	NumConfs() int64
 	ValueAge() int64
 }
@@ -384,8 +384,8 @@ func (c *SimpleCoin) Value() util.Amount {
 //
 // This can be used to determine what type of script the Coin uses
 // and extract standard addresses if possible using
-// txscript.ExtractPkScriptAddrs for example.
-func (c *SimpleCoin) PkScript() []byte {
+// txscript.ExtractScriptPubKeyAddrs for example.
+func (c *SimpleCoin) ScriptPubKey() []byte {
 	return c.txOut().ScriptPubKey
 }
 

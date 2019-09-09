@@ -94,7 +94,7 @@ func TestCalcMinRequiredTxRelayFee(t *testing.T) {
 
 // TestDust tests the isDust API.
 func TestDust(t *testing.T) {
-	pkScript := []byte{0x76, 0xa9, 0x21, 0x03, 0x2f, 0x7e, 0x43,
+	scriptPubKey := []byte{0x76, 0xa9, 0x21, 0x03, 0x2f, 0x7e, 0x43,
 		0x0a, 0xa4, 0xc9, 0xd1, 0x59, 0x43, 0x7e, 0x84, 0xb9,
 		0x75, 0xdc, 0x76, 0xd9, 0x00, 0x3b, 0xf0, 0x92, 0x2c,
 		0xf3, 0xaa, 0x45, 0x28, 0x46, 0x4b, 0xab, 0x78, 0x0d,
@@ -109,47 +109,47 @@ func TestDust(t *testing.T) {
 		{
 			// Any value is allowed with a zero relay fee.
 			"zero value with zero relay fee",
-			wire.TxOut{Value: 0, ScriptPubKey: pkScript},
+			wire.TxOut{Value: 0, ScriptPubKey: scriptPubKey},
 			0,
 			false,
 		},
 		{
 			// Zero value is dust with any relay fee"
 			"zero value with very small tx fee",
-			wire.TxOut{Value: 0, ScriptPubKey: pkScript},
+			wire.TxOut{Value: 0, ScriptPubKey: scriptPubKey},
 			1,
 			true,
 		},
 		{
 			"38 byte public key script with value 584",
-			wire.TxOut{Value: 584, ScriptPubKey: pkScript},
+			wire.TxOut{Value: 584, ScriptPubKey: scriptPubKey},
 			1000,
 			true,
 		},
 		{
 			"38 byte public key script with value 585",
-			wire.TxOut{Value: 585, ScriptPubKey: pkScript},
+			wire.TxOut{Value: 585, ScriptPubKey: scriptPubKey},
 			1000,
 			false,
 		},
 		{
 			// Maximum allowed value is never dust.
 			"max satoshi amount is never dust",
-			wire.TxOut{Value: util.MaxSatoshi, ScriptPubKey: pkScript},
+			wire.TxOut{Value: util.MaxSatoshi, ScriptPubKey: scriptPubKey},
 			util.MaxSatoshi,
 			false,
 		},
 		{
 			// Maximum int64 value causes overflow.
 			"maximum int64 value",
-			wire.TxOut{Value: 1<<63 - 1, ScriptPubKey: pkScript},
+			wire.TxOut{Value: 1<<63 - 1, ScriptPubKey: scriptPubKey},
 			1<<63 - 1,
 			true,
 		},
 		{
-			// Unspendable pkScript due to an invalid public key
+			// Unspendable scriptPubKey due to an invalid public key
 			// script.
-			"unspendable pkScript",
+			"unspendable scriptPubKey",
 			wire.TxOut{Value: 5000, ScriptPubKey: []byte{0x01}},
 			0, // no relay fee
 			true,
@@ -184,13 +184,13 @@ func TestCheckTransactionStandard(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewAddressPubKeyHash: unexpected error: %v", err)
 	}
-	dummyPkScript, err := txscript.PayToAddrScript(addr)
+	dummyScriptPubKey, err := txscript.PayToAddrScript(addr)
 	if err != nil {
 		t.Fatalf("PayToAddrScript: unexpected error: %v", err)
 	}
 	dummyTxOut := wire.TxOut{
 		Value:        100000000, // 1 BTC
-		ScriptPubKey: dummyPkScript,
+		ScriptPubKey: dummyScriptPubKey,
 	}
 
 	tests := []struct {
@@ -273,7 +273,7 @@ func TestCheckTransactionStandard(t *testing.T) {
 			name: "Dust output",
 			tx: wire.NewNativeMsgTx(1, []*wire.TxIn{&dummyTxIn}, []*wire.TxOut{{
 				Value:        0,
-				ScriptPubKey: dummyPkScript,
+				ScriptPubKey: dummyScriptPubKey,
 			}}),
 			height:     300000,
 			isStandard: false,

@@ -82,7 +82,7 @@ func GetUTXOsByAddressHandler(address string) (interface{}, *utils.HandlerError)
 	for i, utxo := range utxos {
 		UTXOsResponses[i] = &transactionOutputResponse{
 			Value:                   utxo.TransactionOutput.Value,
-			PkScript:                hex.EncodeToString(utxo.TransactionOutput.PkScript),
+			ScriptPubKey:            hex.EncodeToString(utxo.TransactionOutput.ScriptPubKey),
 			AcceptingBlockHash:      utxo.AcceptingBlock.BlockHash,
 			AcceptingBlockBlueScore: utxo.AcceptingBlock.BlueScore,
 		}

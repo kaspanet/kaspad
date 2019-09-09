@@ -247,12 +247,12 @@ func TestChainedTransactions(t *testing.T) {
 		Sequence:         wire.MaxTxInSequenceNum,
 	}
 
-	pkScript, err := txscript.PayToScriptHashScript(blockdag.OpTrueScript)
+	scriptPubKey, err := txscript.PayToScriptHashScript(blockdag.OpTrueScript)
 	if err != nil {
 		t.Fatalf("Failed to build public key script: %s", err)
 	}
 	chainedTxOut := &wire.TxOut{
-		ScriptPubKey: pkScript,
+		ScriptPubKey: scriptPubKey,
 		Value:        uint64(1),
 	}
 	chainedTx := wire.NewNativeMsgTx(wire.TxVersion, []*wire.TxIn{chainedTxIn}, []*wire.TxOut{chainedTxOut})
@@ -287,7 +287,7 @@ func TestChainedTransactions(t *testing.T) {
 		Sequence:         wire.MaxTxInSequenceNum,
 	}
 	nonChainedTxOut := &wire.TxOut{
-		ScriptPubKey: pkScript,
+		ScriptPubKey: scriptPubKey,
 		Value:        uint64(1),
 	}
 	nonChainedTx := wire.NewNativeMsgTx(wire.TxVersion, []*wire.TxIn{nonChainedTxIn}, []*wire.TxOut{nonChainedTxOut})
@@ -357,7 +357,7 @@ func TestGasLimit(t *testing.T) {
 		t.Fatalf("Failed to build signature script: %s", err)
 	}
 
-	pkScript, err := txscript.PayToScriptHashScript(blockdag.OpTrueScript)
+	scriptPubKey, err := txscript.PayToScriptHashScript(blockdag.OpTrueScript)
 	if err != nil {
 		t.Fatalf("Failed to build public key script: %s", err)
 	}
@@ -369,7 +369,7 @@ func TestGasLimit(t *testing.T) {
 	}
 	tx1Out := &wire.TxOut{
 		Value:        cbTxs[0].TxOut[0].Value,
-		ScriptPubKey: pkScript,
+		ScriptPubKey: scriptPubKey,
 	}
 	tx1 := wire.NewSubnetworkMsgTx(wire.TxVersion, []*wire.TxIn{tx1In}, []*wire.TxOut{tx1Out}, subnetworkID, 10000, []byte{})
 
@@ -380,7 +380,7 @@ func TestGasLimit(t *testing.T) {
 	}
 	tx2Out := &wire.TxOut{
 		Value:        cbTxs[1].TxOut[0].Value,
-		ScriptPubKey: pkScript,
+		ScriptPubKey: scriptPubKey,
 	}
 	tx2 := wire.NewSubnetworkMsgTx(wire.TxVersion, []*wire.TxIn{tx2In}, []*wire.TxOut{tx2Out}, subnetworkID, 10000, []byte{})
 
@@ -414,7 +414,7 @@ func TestGasLimit(t *testing.T) {
 	}
 	overflowGasTxOut := &wire.TxOut{
 		Value:        cbTxs[2].TxOut[0].Value,
-		ScriptPubKey: pkScript,
+		ScriptPubKey: scriptPubKey,
 	}
 	overflowGasTx := wire.NewSubnetworkMsgTx(wire.TxVersion, []*wire.TxIn{overflowGasTxIn}, []*wire.TxOut{overflowGasTxOut},
 		subnetworkID, math.MaxUint64, []byte{})
@@ -446,7 +446,7 @@ func TestGasLimit(t *testing.T) {
 	}
 	nonExistentSubnetworkTxOut := &wire.TxOut{
 		Value:        cbTxs[3].TxOut[0].Value,
-		ScriptPubKey: pkScript,
+		ScriptPubKey: scriptPubKey,
 	}
 	nonExistentSubnetworkTx := wire.NewSubnetworkMsgTx(wire.TxVersion, []*wire.TxIn{nonExistentSubnetworkTxIn},
 		[]*wire.TxOut{nonExistentSubnetworkTxOut}, nonExistentSubnetwork, 1, []byte{})

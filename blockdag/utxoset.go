@@ -31,7 +31,7 @@ type UTXOEntry struct {
 	// lot of these in memory, so a few extra bytes of padding adds up.
 
 	amount         uint64
-	pkScript       []byte // The public key script for the output.
+	scriptPubKey   []byte // The public key script for the output.
 	blockBlueScore uint64 // Blue score of the block accepting the tx.
 
 	// packedFlags contains additional info about output such as whether it
@@ -58,8 +58,8 @@ func (entry *UTXOEntry) Amount() uint64 {
 }
 
 // ScriptPubKey returns the public key script for the output.
-func (entry *UTXOEntry) PkScript() []byte {
-	return entry.pkScript
+func (entry *UTXOEntry) ScriptPubKey() []byte {
+	return entry.scriptPubKey
 }
 
 // IsUnaccepted returns true iff this UTXOEntry has been included in a block
@@ -81,7 +81,7 @@ const (
 func NewUTXOEntry(txOut *wire.TxOut, isCoinbase bool, blockBlueScore uint64) *UTXOEntry {
 	entry := &UTXOEntry{
 		amount:         txOut.Value,
-		pkScript:       txOut.ScriptPubKey,
+		scriptPubKey:   txOut.ScriptPubKey,
 		blockBlueScore: blockBlueScore,
 	}
 

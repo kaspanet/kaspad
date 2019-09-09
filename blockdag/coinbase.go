@@ -175,7 +175,7 @@ func (node *blockNode) expectedCoinbaseTransaction(dag *BlockDAG, txsAcceptanceD
 	return util.NewTx(sortedCoinbaseTx), nil
 }
 
-// SerializeCoinbasePayload builds the coinbase payload based on the provided pkScript and extra data.
+// SerializeCoinbasePayload builds the coinbase payload based on the provided scriptPubKey and extra data.
 func SerializeCoinbasePayload(scriptPubKey []byte, extraData []byte) ([]byte, error) {
 	w := &bytes.Buffer{}
 	err := wire.WriteVarInt(w, uint64(len(scriptPubKey)))
@@ -193,14 +193,14 @@ func SerializeCoinbasePayload(scriptPubKey []byte, extraData []byte) ([]byte, er
 	return w.Bytes(), nil
 }
 
-// DeserializeCoinbasePayload deserialize the coinbase payload to its component (pkScript and extra data).
+// DeserializeCoinbasePayload deserialize the coinbase payload to its component (scriptPubKey and extra data).
 func DeserializeCoinbasePayload(tx *wire.MsgTx) (scriptPubKey []byte, extraData []byte, err error) {
 	r := bytes.NewReader(tx.Payload)
-	pkScriptLen, err := wire.ReadVarInt(r)
+	scriptPubKeyLen, err := wire.ReadVarInt(r)
 	if err != nil {
 		return nil, nil, err
 	}
-	scriptPubKey = make([]byte, pkScriptLen)
+	scriptPubKey = make([]byte, scriptPubKeyLen)
 	_, err = r.Read(scriptPubKey)
 	if err != nil {
 		return nil, nil, err
@@ -265,14 +265,14 @@ func coinbaseInputAndOutputForBlueBlock(dag *BlockDAG, blueBlock *blockNode,
 	}
 
 	// the ScriptPubKey for the coinbase is parsed from the coinbase payload
-	pkScript, _, err := DeserializeCoinbasePayload(blockTxsAcceptanceData[0].Tx.MsgTx())
+	scriptPubKey, _, err := DeserializeCoinbasePayload(blockTxsAcceptanceData[0].Tx.MsgTx())
 	if err != nil {
 		return nil, nil, err
 	}
 
 	txOut := &wire.TxOut{
 		Value:        totalReward,
-		ScriptPubKey: pkScript,
+		ScriptPubKey: scriptPubKey,
 	}
 
 	return txIn, txOut, nil

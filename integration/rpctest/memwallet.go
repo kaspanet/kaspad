@@ -36,7 +36,7 @@ var (
 // height of the transaction is recorded in order to properly observe the
 // maturity period of direct coinbase outputs.
 type utxo struct {
-	pkScript       []byte
+	scriptPubKey   []byte
 	value          util.Amount
 	keyIndex       uint32
 	maturityHeight uint64
@@ -246,13 +246,13 @@ func (m *memWallet) evalOutputs(outputs []*wire.TxOut, txID *daghash.TxID,
 	isCoinbase bool, undo *undoEntry) {
 
 	for i, output := range outputs {
-		pkScript := output.ScriptPubKey
+		scriptPubKey := output.ScriptPubKey
 
 		// Scan all the addresses we currently control to see if the
 		// output is paying to us.
 		for keyIndex, addr := range m.addrs {
 			pkHash := addr.ScriptAddress()
-			if !bytes.Contains(pkScript, pkHash) {
+			if !bytes.Contains(scriptPubKey, pkHash) {
 				continue
 			}
 
@@ -269,7 +269,7 @@ func (m *memWallet) evalOutputs(outputs []*wire.TxOut, txID *daghash.TxID,
 				value:          util.Amount(output.Value),
 				keyIndex:       keyIndex,
 				maturityHeight: maturityHeight,
-				pkScript:       pkScript,
+				scriptPubKey:   scriptPubKey,
 			}
 			undo.utxosCreated = append(undo.utxosCreated, op)
 		}
@@ -383,13 +383,13 @@ func (m *memWallet) fundTx(tx *wire.MsgTx, amt util.Amount, feeRate util.Amount)
 			if err != nil {
 				return err
 			}
-			pkScript, err := txscript.PayToAddrScript(addr)
+			scriptPubKey, err := txscript.PayToAddrScript(addr)
 			if err != nil {
 				return err
 			}
 			changeOutput := &wire.TxOut{
 				Value:        uint64(changeVal),
-				ScriptPubKey: pkScript,
+				ScriptPubKey: scriptPubKey,
 			}
 			tx.AddTxOut(changeOutput)
 		}
@@ -458,7 +458,7 @@ func (m *memWallet) CreateTransaction(outputs []*wire.TxOut, feeRate util.Amount
 			return nil, err
 		}
 
-		sigScript, err := txscript.SignatureScript(tx, i, utxo.pkScript,
+		sigScript, err := txscript.SignatureScript(tx, i, utxo.scriptPubKey,
 			txscript.SigHashAll, privKey, true)
 		if err != nil {
 			return nil, err

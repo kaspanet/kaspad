@@ -68,8 +68,8 @@ out:
 
 			// Create a new script engine for the script pair.
 			sigScript := txIn.SignatureScript
-			pkScript := entry.PkScript()
-			vm, err := txscript.NewEngine(pkScript, txVI.tx.MsgTx(),
+			scriptPubKey := entry.ScriptPubKey()
+			vm, err := txscript.NewEngine(scriptPubKey, txVI.tx.MsgTx(),
 				txVI.txInIndex, v.flags, v.sigCache)
 			if err != nil {
 				str := fmt.Sprintf("failed to parse input "+
@@ -77,7 +77,7 @@ out:
 					"%s (input script bytes %x, prev "+
 					"output script bytes %x)",
 					txVI.tx.ID(), txVI.txInIndex,
-					txIn.PreviousOutpoint, err, sigScript, pkScript)
+					txIn.PreviousOutpoint, err, sigScript, scriptPubKey)
 				err := ruleError(ErrScriptMalformed, str)
 				v.sendResult(err)
 				break out
@@ -90,7 +90,7 @@ out:
 					"%s (input script bytes %x, prev output "+
 					"script bytes %x)",
 					txVI.tx.ID(), txVI.txInIndex,
-					txIn.PreviousOutpoint, err, sigScript, pkScript)
+					txIn.PreviousOutpoint, err, sigScript, scriptPubKey)
 				err := ruleError(ErrScriptValidation, str)
 				v.sendResult(err)
 				break out

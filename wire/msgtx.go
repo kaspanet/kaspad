@@ -254,10 +254,10 @@ func (t *TxOut) SerializeSize() int {
 
 // NewTxOut returns a new bitcoin transaction output with the provided
 // transaction value and public key script.
-func NewTxOut(value uint64, pkScript []byte) *TxOut {
+func NewTxOut(value uint64, scriptPubKey []byte) *TxOut {
 	return &TxOut{
 		Value:        value,
-		ScriptPubKey: pkScript,
+		ScriptPubKey: scriptPubKey,
 	}
 }
 
@@ -290,7 +290,7 @@ func (msg *MsgTx) AddTxOut(to *TxOut) {
 
 // IsCoinBase determines whether or not a transaction is a coinbase transaction.  A coinbase
 // transaction is a special transaction created by miners that distributes fees and block subsidy
-// to the previous blocks' miners, and to specify the pkScript that will be used to pay the current
+// to the previous blocks' miners, and to specify the scriptPubKey that will be used to pay the current
 // miner in future blocks.  Each input of the coinbase transaction should set index to maximum
 // value and reference the relevant block id, instead of previous transaction id.
 func (msg *MsgTx) IsCoinBase() bool {
@@ -567,18 +567,18 @@ func (msg *MsgTx) BtcDecode(r io.Reader, pver uint32) error {
 	for i := 0; i < len(msg.TxOut); i++ {
 		// Copy the public key script into the contiguous buffer at the
 		// appropriate offset.
-		pkScript := msg.TxOut[i].ScriptPubKey
-		copy(scripts[offset:], pkScript)
+		scriptPubKey := msg.TxOut[i].ScriptPubKey
+		copy(scripts[offset:], scriptPubKey)
 
 		// Reset the public key script of the transaction output to the
 		// slice of the contiguous buffer where the script lives.
-		scriptSize := uint64(len(pkScript))
+		scriptSize := uint64(len(scriptPubKey))
 		end := offset + scriptSize
 		msg.TxOut[i].ScriptPubKey = scripts[offset:end:end]
 		offset += scriptSize
 
 		// Return the temporary script buffer to the pool.
-		scriptPool.Return(pkScript)
+		scriptPool.Return(scriptPubKey)
 	}
 
 	return nil
@@ -768,11 +768,11 @@ func (msg *MsgTx) MaxPayloadLength(pver uint32) uint32 {
 	return MaxMessagePayload
 }
 
-// PkScriptLocs returns a slice containing the start of each public key script
+// ScriptPubKeyLocs returns a slice containing the start of each public key script
 // within the raw serialized transaction.  The caller can easily obtain the
 // length of each script by using len on the script available via the
 // appropriate transaction output entry.
-func (msg *MsgTx) PkScriptLocs() []int {
+func (msg *MsgTx) ScriptPubKeyLocs() []int {
 	numTxOut := len(msg.TxOut)
 	if numTxOut == 0 {
 		return nil
@@ -792,18 +792,18 @@ func (msg *MsgTx) PkScriptLocs() []int {
 	}
 
 	// Calculate and set the appropriate offset for each public key script.
-	pkScriptLocs := make([]int, numTxOut)
+	scriptPubKeyLocs := make([]int, numTxOut)
 	for i, txOut := range msg.TxOut {
 		// The offset of the script in the transaction output is:
 		//
 		// Value 8 bytes + serialized varint size for the length of
 		// ScriptPubKey.
 		n += 8 + VarIntSerializeSize(uint64(len(txOut.ScriptPubKey)))
-		pkScriptLocs[i] = n
+		scriptPubKeyLocs[i] = n
 		n += len(txOut.ScriptPubKey)
 	}
 
-	return pkScriptLocs
+	return scriptPubKeyLocs
 }
 
 // IsSubnetworkCompatible return true iff subnetworkID is one or more of the following:

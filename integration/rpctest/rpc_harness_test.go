@@ -32,7 +32,7 @@ func testSendOutputs(r *Harness, t *testing.T) {
 		// coinbase outputs.
 		addrScript, err := txscript.PayToAddrScript(addr)
 		if err != nil {
-			t.Fatalf("unable to generate pkscript to addr: %v", err)
+			t.Fatalf("unable to generate scriptPubKey to addr: %v", err)
 		}
 		output := wire.NewTxOut(int64(amt), addrScript)
 		txid, err := r.SendOutputs([]*wire.TxOut{output}, 10)
@@ -203,7 +203,7 @@ func testJoinMempools(r *Harness, t *testing.T) {
 	addr, err := r.NewAddress()
 	addrScript, err := txscript.PayToAddrScript(addr)
 	if err != nil {
-		t.Fatalf("unable to generate pkscript to addr: %v", err)
+		t.Fatalf("unable to generate scriptPubKey to addr: %v", err)
 	}
 	output := wire.NewTxOut(5e8, addrScript)
 	testTx, err := r.CreateTransaction([]*wire.TxOut{output}, 10)
@@ -331,11 +331,11 @@ func testGenerateAndSubmitBlock(r *Harness, t *testing.T) {
 	if err != nil {
 		t.Fatalf("unable to generate new address: %v", err)
 	}
-	pkScript, err := txscript.PayToAddrScript(addr)
+	scriptPubKey, err := txscript.PayToAddrScript(addr)
 	if err != nil {
 		t.Fatalf("unable to create script: %v", err)
 	}
-	output := wire.NewTxOut(util.SatoshiPerBitcoin, pkScript)
+	output := wire.NewTxOut(util.SatoshiPerBitcoin, scriptPubKey)
 
 	const numTxns = 5
 	txns := make([]*util.Tx, 0, numTxns)
@@ -398,11 +398,11 @@ func testGenerateAndSubmitBlockWithCustomCoinbaseOutputs(r *Harness,
 	if err != nil {
 		t.Fatalf("unable to generate new address: %v", err)
 	}
-	pkScript, err := txscript.PayToAddrScript(addr)
+	scriptPubKey, err := txscript.PayToAddrScript(addr)
 	if err != nil {
 		t.Fatalf("unable to create script: %v", err)
 	}
-	output := wire.NewTxOut(util.SatoshiPerBitcoin, pkScript)
+	output := wire.NewTxOut(util.SatoshiPerBitcoin, scriptPubKey)
 
 	const numTxns = 5
 	txns := make([]*util.Tx, 0, numTxns)
@@ -516,12 +516,12 @@ func testMemWalletLockedOutputs(r *Harness, t *testing.T) {
 	if err != nil {
 		t.Fatalf("unable to generate new address: %v", err)
 	}
-	pkScript, err := txscript.PayToAddrScript(addr)
+	scriptPubKey, err := txscript.PayToAddrScript(addr)
 	if err != nil {
 		t.Fatalf("unable to create script: %v", err)
 	}
 	outputAmt := util.Amount(50 * util.SatoshiPerBitcoin)
-	output := wire.NewTxOut(int64(outputAmt), pkScript)
+	output := wire.NewTxOut(int64(outputAmt), scriptPubKey)
 	tx, err := r.CreateTransaction([]*wire.TxOut{output}, 10)
 	if err != nil {
 		t.Fatalf("unable to create transaction: %v", err)

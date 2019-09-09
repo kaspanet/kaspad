@@ -410,9 +410,9 @@ func additionalSpendFee(fee util.Amount) func(*wire.MsgBlock) {
 
 // replaceSpendScript returns a function that itself takes a block and modifies
 // it by replacing the public key script of the spending transaction.
-func replaceSpendScript(pkScript []byte) func(*wire.MsgBlock) {
+func replaceSpendScript(scriptPubKey []byte) func(*wire.MsgBlock) {
 	return func(b *wire.MsgBlock) {
-		b.Transactions[1].TxOut[0].ScriptPubKey = pkScript
+		b.Transactions[1].TxOut[0].ScriptPubKey = scriptPubKey
 	}
 }
 
