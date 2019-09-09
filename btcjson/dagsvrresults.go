@@ -525,8 +525,9 @@ type AcceptedBlock struct {
 
 // GetChainFromBlockResult models the data from the getChainFromBlock command.
 type GetChainFromBlockResult struct {
-	SelectedParentChain []ChainBlock            `json:"selectedParentChain"`
-	Blocks              []GetBlockVerboseResult `json:"blocks"`
+	RemovedChainBlockHashes []string                `json:"removedChainBlockHashes"`
+	AddedChainBlocks        []ChainBlock            `json:"addedChainBlocks"`
+	Blocks                  []GetBlockVerboseResult `json:"blocks"`
 }
 
 // GetBlocksResult models the data from the getBlocks command.

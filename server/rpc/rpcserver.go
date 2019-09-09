@@ -2285,26 +2285,26 @@ func handleGetChainFromBlock(s *Server, cmd interface{}, closeChan <-chan struct
 
 	// If startHash is not in the selected parent chain, there's nothing
 	// to do; return an error.
-	if startHash != nil && !s.cfg.DAG.IsInSelectedParentChain(startHash) {
+	if startHash != nil && !s.cfg.DAG.BlockExists(startHash) {
 		return nil, &btcjson.RPCError{
 			Code:    btcjson.ErrRPCBlockNotFound,
-			Message: "Block not found in selected parent chain",
+			Message: "Block not found in the DAG",
 		}
 	}
 
 	// Retrieve the selected parent chain.
-	selectedParentChain, err := s.cfg.DAG.SelectedParentChain(startHash)
+	removedChainHashes, addedChainHashes, err := s.cfg.DAG.SelectedParentChain(startHash)
 	if err != nil {
 		return nil, err
 	}
 
 	// Limit the amount of blocks in the response
-	if len(selectedParentChain) > maxBlocksInGetChainFromBlockResult {
-		selectedParentChain = selectedParentChain[:maxBlocksInGetChainFromBlockResult]
+	if len(addedChainHashes) > maxBlocksInGetChainFromBlockResult {
+		addedChainHashes = addedChainHashes[:maxBlocksInGetChainFromBlockResult]
 	}
 
-	// Collect chainBlocks.
-	chainBlocks, err := collectChainBlocks(s, selectedParentChain)
+	// Collect addedChainBlocks.
+	addedChainBlocks, err := collectChainBlocks(s, addedChainHashes)
 	if err != nil {
 		return nil, &btcjson.RPCError{
 			Code:    btcjson.ErrRPCInternal.Code,
@@ -2312,14 +2312,21 @@ func handleGetChainFromBlock(s *Server, cmd interface{}, closeChan <-chan struct
 		}
 	}
 
+	// Collect removedHashes.
+	removedHashes := make([]string, len(removedChainHashes))
+	for i, hash := range removedChainHashes {
+		removedHashes[i] = hash.String()
+	}
+
 	result := &btcjson.GetChainFromBlockResult{
-		SelectedParentChain: chainBlocks,
-		Blocks:              nil,
+		RemovedChainBlockHashes: removedHashes,
+		AddedChainBlocks:        addedChainBlocks,
+		Blocks:                  nil,
 	}
 
 	// If the user specified to include the blocks, collect them as well.
 	if c.IncludeBlocks {
-		getBlockVerboseResults, err := hashesToGetBlockVerboseResults(s, selectedParentChain)
+		getBlockVerboseResults, err := hashesToGetBlockVerboseResults(s, addedChainHashes)
 		if err != nil {
 			return nil, err
 		}
@@ -2329,9 +2336,9 @@ func handleGetChainFromBlock(s *Server, cmd interface{}, closeChan <-chan struct
 	return result, nil
 }
 
-func collectChainBlocks(s *Server, selectedParentChain []*daghash.Hash) ([]btcjson.ChainBlock, error) {
-	chainBlocks := make([]btcjson.ChainBlock, 0, len(selectedParentChain))
-	for _, hash := range selectedParentChain {
+func collectChainBlocks(s *Server, hashes []*daghash.Hash) ([]btcjson.ChainBlock, error) {
+	chainBlocks := make([]btcjson.ChainBlock, 0, len(hashes))
+	for _, hash := range hashes {
 		acceptanceData, err := s.cfg.DAG.BluesTxsAcceptanceData(hash)
 		if err != nil {
 			return nil, &btcjson.RPCError{

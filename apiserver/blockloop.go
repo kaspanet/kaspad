@@ -22,6 +22,15 @@ func blockLoop(client *apiServerClient, db *gorm.DB, doneChan chan struct{}) err
 		return err
 	}
 
+	removedChainHashes, addedChainBlocks, err := collectSelectedParentChainBlocks(client, mostRecentBlockHash)
+	if err != nil {
+		return err
+	}
+	err = insertSelectedParentChainBlocks(db, removedChainHashes, addedChainBlocks)
+	if err != nil {
+		return nil
+	}
+
 loop:
 	for {
 		select {
@@ -79,6 +88,24 @@ func collectCurrentBlocks(client *apiServerClient, startHash *string) (
 		rawBlocks = append(rawBlocks, RawBlocksResult.RawBlocks...)
 	}
 	return blocks, rawBlocks, nil
+}
+
+func collectSelectedParentChainBlocks(client *apiServerClient, startHash *string) (
+	removedChainHashes []string, addedChainBlocks []btcjson.ChainBlock, err error) {
+	for {
+		chainFromBlockResult, err := client.GetChainFromBlock(false, startHash)
+		if err != nil {
+			return nil, nil, err
+		}
+		if len(chainFromBlockResult.AddedChainBlocks) == 0 {
+			break
+		}
+
+		startHash = &chainFromBlockResult.AddedChainBlocks[len(chainFromBlockResult.AddedChainBlocks)].Hash
+		removedChainHashes = append(removedChainHashes, chainFromBlockResult.RemovedChainBlockHashes...)
+		addedChainBlocks = append(addedChainBlocks, chainFromBlockResult.AddedChainBlocks...)
+	}
+	return removedChainHashes, addedChainBlocks, nil
 }
 
 func fetchBlock(client *apiServerClient, blockHash *daghash.Hash) (
@@ -267,6 +294,20 @@ func insertBlock(client *apiServerClient, db *gorm.DB, block string, rawBlock bt
 				db.Create(&dbTransactionOutput)
 			}
 		}
+	}
+
+	db.Commit()
+	return nil
+}
+
+func insertSelectedParentChainBlocks(db *gorm.DB, removedChainHashes []string, addedChainBlocks []btcjson.ChainBlock) error {
+	db = db.Begin()
+	for _, removedHash := range removedChainHashes {
+		log.Warnf("RRRRemoved!!! %s", removedHash)
+
+	}
+	for _, addedBlock := range addedChainBlocks {
+		log.Warnf("AAAAdded!!! %+v", addedBlock)
 	}
 
 	db.Commit()

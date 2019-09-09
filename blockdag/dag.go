@@ -1423,16 +1423,29 @@ func (dag *BlockDAG) IsInSelectedParentChain(blockHash *daghash.Hash) bool {
 	return dag.virtual.selectedParentChainSet.containsHash(blockHash)
 }
 
-// SelectedParentChain returns the selected parent chain starting from startHash (exclusive) up
-// to the virtual (exclusive). If startHash is nil then the genesis block is used.
+// SelectedParentChain returns the selected parent chain starting from startHash (exclusive)
+// up to the virtual (exclusive). If startHash is nil then the genesis block is used. If
+// startHash is not within the select parent chain, go down its own selected parent chain,
+// while collecting each block hash in removedChainHashes, until reaching a block within
+// the main selected parent chain.
 //
 // This method MUST be called with the DAG lock held
-func (dag *BlockDAG) SelectedParentChain(startHash *daghash.Hash) ([]*daghash.Hash, error) {
+func (dag *BlockDAG) SelectedParentChain(startHash *daghash.Hash) ([]*daghash.Hash, []*daghash.Hash, error) {
 	if startHash == nil {
 		startHash = dag.genesis.hash
 	}
-	if !dag.IsInSelectedParentChain(startHash) {
-		return nil, fmt.Errorf("startHash %s is not the selected parent chain", startHash)
+	if dag.BlockExists(startHash) {
+		return nil, nil, fmt.Errorf("startHash %s does not exist in the DAG", startHash)
+	}
+
+	// If startHash is not in the selected parent chain, go down its selected parent chain
+	// until we find a block that is in the main selected parent chain.
+	var removedChainHashes []*daghash.Hash
+	for !dag.IsInSelectedParentChain(startHash) {
+		removedChainHashes = append(removedChainHashes, startHash)
+
+		node := dag.index.LookupNode(startHash)
+		startHash = node.selectedParent.hash
 	}
 
 	// Find the index of the startHash in the selectedParentChainSlice
@@ -1445,13 +1458,13 @@ func (dag *BlockDAG) SelectedParentChain(startHash *daghash.Hash) ([]*daghash.Ha
 		startHashIndex--
 	}
 
-	// Copy all the hashes starting from startHashIndex (exclusive)
-	hashes := make([]*daghash.Hash, len(dag.virtual.selectedParentChainSlice)-startHashIndex-1)
+	// Copy all the addedChainHashes starting from startHashIndex (exclusive)
+	addedChainHashes := make([]*daghash.Hash, len(dag.virtual.selectedParentChainSlice)-startHashIndex-1)
 	for i, node := range dag.virtual.selectedParentChainSlice[startHashIndex+1:] {
-		hashes[i] = node.hash
+		addedChainHashes[i] = node.hash
 	}
 
-	return hashes, nil
+	return removedChainHashes, addedChainHashes, nil
 }
 
 // BluesTxsAcceptanceData returns the acceptance data of all the transactions that

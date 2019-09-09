@@ -372,8 +372,9 @@ var helpDescsEnUS = map[string]string{
 	"getChainFromBlock--result0":      "The selected parent chain.",
 
 	// GetChainFromBlockResult help.
-	"getChainFromBlockResult-selectedParentChain": "List of ChainBlocks from Virtual.SelectedTip to StartHash (excluding StartHash) ordered bottom-to-top.",
-	"getChainFromBlockResult-blocks":              "If includeBlocks=true - contains the contents of all chain and accepted blocks in the SelectedParentChain. Otherwise - omitted.",
+	"getChainFromBlockResult-removedChainBlockHashes": "List chain-block hashes that were re-orged out in top-to-bottom order",
+	"getChainFromBlockResult-addedChainBlocks":        "List of ChainBlocks from Virtual.SelectedTip to StartHash (excluding StartHash) ordered bottom-to-top.",
+	"getChainFromBlockResult-blocks":                  "If includeBlocks=true - contains the contents of all chain and accepted blocks in the AddedChainBlocks. Otherwise - omitted.",
 
 	// GetCFilterHeaderCmd help.
 	"getCFilterHeader--synopsis":  "Returns a block's compact filter header given its hash.",
