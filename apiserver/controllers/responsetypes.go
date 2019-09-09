@@ -3,6 +3,7 @@ package controllers
 import (
 	"encoding/hex"
 	"github.com/daglabs/btcd/apiserver/models"
+	"github.com/daglabs/btcd/btcjson"
 )
 
 type transactionResponse struct {
@@ -21,10 +22,12 @@ type transactionResponse struct {
 }
 
 type transactionOutputResponse struct {
-	TransactionID string `json:"transactionId,omitempty"`
-	Value         uint64 `json:"value"`
-	ScriptPubKey  string `json:"pkScript"`
-	Address       string `json:"address"`
+	TransactionID           string `json:"transactionId,omitempty"`
+	Value                   uint64 `json:"value"`
+	ScriptPubKey  string `json:"scriptPubKey"`
+	Address                 string `json:"address,omitempty"`
+	AcceptingBlockHash      string `json:"acceptingBlockHash,omitempty"`
+	AcceptingBlockBlueScore uint64 `json:"acceptingBlockBlueScore,omitempty"`
 }
 
 type transactionInputResponse struct {
@@ -34,6 +37,25 @@ type transactionInputResponse struct {
 	SignatureScript                string `json:"signatureScript"`
 	Sequence                       uint64 `json:"sequence"`
 	Address                        string `json:"address"`
+}
+
+type blockResponse struct {
+	BlockHash            string
+	Version              int32
+	HashMerkleRoot       string
+	AcceptedIDMerkleRoot string
+	UTXOCommitment       string
+	Timestamp            uint64
+	Bits                 uint32
+	Nonce                uint64
+	AcceptingBlockHash   *string
+	BlueScore            uint64
+	IsChainBlock         bool
+	Mass                 uint64
+}
+
+type feeEstimateResponse struct {
+	HighPriority, NormalPriority, LowPriority float64
 }
 
 func convertTxModelToTxResponse(tx *models.Transaction) *transactionResponse {
@@ -68,4 +90,24 @@ func convertTxModelToTxResponse(tx *models.Transaction) *transactionResponse {
 		}
 	}
 	return txRes
+}
+
+func convertBlockModelToBlockResponse(block *models.Block) *blockResponse {
+	blockRes := &blockResponse{
+		BlockHash:            block.BlockHash,
+		Version:              block.Version,
+		HashMerkleRoot:       block.HashMerkleRoot,
+		AcceptedIDMerkleRoot: block.AcceptedIDMerkleRoot,
+		UTXOCommitment:       block.UTXOCommitment,
+		Timestamp:            uint64(block.Timestamp.Unix()),
+		Bits:                 block.Bits,
+		Nonce:                block.Nonce,
+		BlueScore:            block.BlueScore,
+		IsChainBlock:         block.IsChainBlock,
+		Mass:                 block.Mass,
+	}
+	if block.AcceptingBlock != nil {
+		blockRes.AcceptingBlockHash = btcjson.String(block.AcceptingBlock.BlockHash)
+	}
+	return blockRes
 }

@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"encoding/hex"
 	"fmt"
 	"github.com/daglabs/btcd/apiserver/database"
 	"github.com/daglabs/btcd/apiserver/models"
@@ -14,7 +15,7 @@ const maximumGetTransactionsLimit = 1000
 
 // GetTransactionByIDHandler returns a transaction by a given transaction ID.
 func GetTransactionByIDHandler(txID string) (interface{}, *utils.HandlerError) {
-	if len(txID) != daghash.TxIDSize*2 {
+	if bytes, err := hex.DecodeString(txID); err != nil || len(bytes) != daghash.TxIDSize {
 		return nil, utils.NewHandlerError(http.StatusUnprocessableEntity, fmt.Sprintf("The given txid is not a hex-encoded %d-byte hash.", daghash.TxIDSize))
 	}
 	tx := &models.Transaction{}
@@ -28,7 +29,7 @@ func GetTransactionByIDHandler(txID string) (interface{}, *utils.HandlerError) {
 
 // GetTransactionByHashHandler returns a transaction by a given transaction hash.
 func GetTransactionByHashHandler(txHash string) (interface{}, *utils.HandlerError) {
-	if len(txHash) != daghash.HashSize*2 {
+	if bytes, err := hex.DecodeString(txHash); err != nil || len(bytes) != daghash.HashSize {
 		return nil, utils.NewHandlerError(http.StatusUnprocessableEntity, fmt.Sprintf("The given txhash is not a hex-encoded %d-byte hash.", daghash.HashSize))
 	}
 	tx := &models.Transaction{}
@@ -65,6 +66,28 @@ func GetTransactionsByAddressHandler(address string, skip uint64, limit uint64) 
 		txResponses[i] = convertTxModelToTxResponse(tx)
 	}
 	return txResponses, nil
+}
+
+// GetUTXOsByAddressHandler searches for all UTXOs that belong to a certain address.
+func GetUTXOsByAddressHandler(address string) (interface{}, *utils.HandlerError) {
+	utxos := []*models.UTXO{}
+	database.DB.
+		Joins("LEFT JOIN `transaction_outputs` ON `transaction_outputs`.`id` = `utxos`.`transaction_output_id`").
+		Joins("LEFT JOIN `addresses` ON `addresses`.`id` = `transaction_outputs`.`address_id`").
+		Where("`addresses`.`address` = ?", address).
+		Preload("AcceptingBlock").
+		Preload("TransactionOutput").
+		Find(&utxos)
+	UTXOsResponses := make([]*transactionOutputResponse, len(utxos))
+	for i, utxo := range utxos {
+		UTXOsResponses[i] = &transactionOutputResponse{
+			Value:                   utxo.TransactionOutput.Value,
+			PkScript:                hex.EncodeToString(utxo.TransactionOutput.PkScript),
+			AcceptingBlockHash:      utxo.AcceptingBlock.BlockHash,
+			AcceptingBlockBlueScore: utxo.AcceptingBlock.BlueScore,
+		}
+	}
+	return UTXOsResponses, nil
 }
 
 func addTxPreloadedFields(query *gorm.DB) *gorm.DB {
