@@ -85,6 +85,11 @@ func addRoutes(router *mux.Router) {
 		fmt.Sprintf("/block/{%s}", routeParamBlockHash),
 		makeHandler(getBlockByHashHandler)).
 		Methods("GET")
+
+	router.HandleFunc(
+		"/fee-estimates",
+		makeHandler(getFeeEstimatesHandler)).
+		Methods("GET")
 }
 
 func getTransactionByIDHandler(routeParams map[string]string, _ map[string][]string, _ *utils.APIServerContext) (interface{}, *utils.HandlerError) {
@@ -129,4 +134,8 @@ func getUTXOsByAddressHandler(routeParams map[string]string, _ map[string][]stri
 
 func getBlockByHashHandler(routeParams map[string]string, _ map[string][]string, _ *utils.APIServerContext) (interface{}, *utils.HandlerError) {
 	return controllers.GetBlockByHashHandler(routeParams[routeParamBlockHash])
+}
+
+func getFeeEstimatesHandler(_ map[string]string, _ map[string][]string, _ *utils.APIServerContext) (interface{}, *utils.HandlerError) {
+	return controllers.GetFeeEstimatesHandler()
 }
