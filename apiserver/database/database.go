@@ -1,17 +1,27 @@
 package database
 
 import (
+	"errors"
 	"fmt"
+	"os"
+
 	"github.com/daglabs/btcd/apiserver/config"
 	"github.com/golang-migrate/migrate/v4/source"
 	"github.com/jinzhu/gorm"
-	"os"
 
 	"github.com/golang-migrate/migrate/v4"
 )
 
-// DB is the API server database.
-var DB *gorm.DB
+// db is the API server database.
+var db *gorm.DB
+
+// DB returns a reference to the database connection
+func DB() (*gorm.DB, error) {
+	if db == nil {
+		return nil, errors.New("Database is not connected")
+	}
+	return db, nil
+}
 
 // Connect connects to the database mentioned in
 // config variable.
@@ -26,7 +36,7 @@ func Connect(cfg *config.Config) error {
 			" the database and start again.")
 	}
 
-	DB, err = gorm.Open("mysql", connectionString)
+	db, err = gorm.Open("mysql", connectionString)
 	if err != nil {
 		return err
 	}

@@ -3,12 +3,13 @@ package controllers
 import (
 	"encoding/hex"
 	"fmt"
+	"net/http"
+
 	"github.com/daglabs/btcd/apiserver/database"
 	"github.com/daglabs/btcd/apiserver/models"
 	"github.com/daglabs/btcd/apiserver/utils"
 	"github.com/daglabs/btcd/util/daghash"
 	"github.com/jinzhu/gorm"
-	"net/http"
 )
 
 const maximumGetTransactionsLimit = 1000
@@ -16,10 +17,17 @@ const maximumGetTransactionsLimit = 1000
 // GetTransactionByIDHandler returns a transaction by a given transaction ID.
 func GetTransactionByIDHandler(txID string) (interface{}, *utils.HandlerError) {
 	if bytes, err := hex.DecodeString(txID); err != nil || len(bytes) != daghash.TxIDSize {
-		return nil, utils.NewHandlerError(http.StatusUnprocessableEntity, fmt.Sprintf("The given txid is not a hex-encoded %d-byte hash.", daghash.TxIDSize))
+		return nil, utils.NewHandlerError(http.StatusUnprocessableEntity,
+			fmt.Sprintf("The given txid is not a hex-encoded %d-byte hash.", daghash.TxIDSize))
 	}
+
+	db, err := database.DB()
+	if err != nil {
+		return nil, utils.NewHandlerError(500, "Internal server error occured")
+	}
+
 	tx := &models.Transaction{}
-	query := database.DB.Where(&models.Transaction{TransactionID: txID})
+	query := db.Where(&models.Transaction{TransactionID: txID})
 	addTxPreloadedFields(query).First(&tx)
 	if tx.ID == 0 {
 		return nil, utils.NewHandlerError(http.StatusNotFound, "No transaction with the given txid was found.")
@@ -30,11 +38,17 @@ func GetTransactionByIDHandler(txID string) (interface{}, *utils.HandlerError) {
 // GetTransactionByHashHandler returns a transaction by a given transaction hash.
 func GetTransactionByHashHandler(txHash string) (interface{}, *utils.HandlerError) {
 	if bytes, err := hex.DecodeString(txHash); err != nil || len(bytes) != daghash.HashSize {
-		return nil, utils.NewHandlerError(http.StatusUnprocessableEntity, fmt.Sprintf("The given txhash is not a hex-encoded %d-byte hash.", daghash.HashSize))
+		return nil, utils.NewHandlerError(http.StatusUnprocessableEntity,
+			fmt.Sprintf("The given txhash is not a hex-encoded %d-byte hash.", daghash.HashSize))
 	}
+
+	db, err := database.DB()
+	if err != nil {
+		return nil, utils.NewHandlerError(500, "Internal server error occured")
+	}
+
 	tx := &models.Transaction{}
-	query := database.DB.
-		Where(&models.Transaction{TransactionHash: txHash})
+	query := db.Where(&models.Transaction{TransactionHash: txHash})
 	addTxPreloadedFields(query).First(&tx)
 	if tx.ID == 0 {
 		return nil, utils.NewHandlerError(http.StatusNotFound, "No transaction with the given txhash was found.")
@@ -46,10 +60,17 @@ func GetTransactionByHashHandler(txHash string) (interface{}, *utils.HandlerErro
 // where the given address is either an input or an output.
 func GetTransactionsByAddressHandler(address string, skip uint64, limit uint64) (interface{}, *utils.HandlerError) {
 	if limit > maximumGetTransactionsLimit {
-		return nil, utils.NewHandlerError(http.StatusUnprocessableEntity, fmt.Sprintf("The maximum allowed value for the limit is %d", maximumGetTransactionsLimit))
+		return nil, utils.NewHandlerError(http.StatusUnprocessableEntity,
+			fmt.Sprintf("The maximum allowed value for the limit is %d", maximumGetTransactionsLimit))
 	}
+
+	db, err := database.DB()
+	if err != nil {
+		return nil, utils.NewHandlerError(500, "Internal server error occured")
+	}
+
 	txs := []*models.Transaction{}
-	query := database.DB.
+	query := db.
 		Joins("LEFT JOIN `transaction_outputs` ON `transaction_outputs`.`transaction_id` = `transactions`.`id`").
 		Joins("LEFT JOIN `addresses` AS `out_addresses` ON `out_addresses`.`id` = `transaction_outputs`.`address_id`").
 		Joins("LEFT JOIN `transaction_inputs` ON `transaction_inputs`.`transaction_id` = `transactions`.`id`").
@@ -70,8 +91,13 @@ func GetTransactionsByAddressHandler(address string, skip uint64, limit uint64) 
 
 // GetUTXOsByAddressHandler searches for all UTXOs that belong to a certain address.
 func GetUTXOsByAddressHandler(address string) (interface{}, *utils.HandlerError) {
+	db, err := database.DB()
+	if err != nil {
+		return nil, utils.NewHandlerError(500, "Internal server error occured")
+	}
+
 	utxos := []*models.UTXO{}
-	database.DB.
+	db.
 		Joins("LEFT JOIN `transaction_outputs` ON `transaction_outputs`.`id` = `utxos`.`transaction_output_id`").
 		Joins("LEFT JOIN `addresses` ON `addresses`.`id` = `transaction_outputs`.`address_id`").
 		Where("`addresses`.`address` = ?", address).
