@@ -86,6 +86,11 @@ func addRoutes(router *mux.Router) {
 		fmt.Sprintf("/block/{%s}", routeParamBlockHash),
 		makeHandler(getBlockByHashHandler)).
 		Methods("GET")
+
+	router.HandleFunc(
+		"/transaction",
+		makeHandler(postTransactionHandler)).
+		Methods("POST")
 }
 
 func getTransactionByIDHandler(routeParams map[string]string, _ map[string][]string, _ *utils.APIServerContext) (interface{}, *utils.HandlerError) {

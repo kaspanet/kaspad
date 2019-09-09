@@ -3,12 +3,13 @@ package controllers
 import (
 	"encoding/hex"
 	"fmt"
+	"net/http"
+
 	"github.com/daglabs/btcd/apiserver/database"
 	"github.com/daglabs/btcd/apiserver/models"
 	"github.com/daglabs/btcd/apiserver/utils"
 	"github.com/daglabs/btcd/util/daghash"
 	"github.com/jinzhu/gorm"
-	"net/http"
 )
 
 const maximumGetTransactionsLimit = 1000
@@ -97,4 +98,7 @@ func addTxPreloadedFields(query *gorm.DB) *gorm.DB {
 		Preload("TransactionOutputs.Address").
 		Preload("TransactionInputs.TransactionOutput.Transaction").
 		Preload("TransactionInputs.TransactionOutput.Address")
+}
+
+func PostTransaction(client *apiServerClient, transactionData string) {
 }
