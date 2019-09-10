@@ -9,6 +9,7 @@ CREATE TABLE `transactions`
     `gas`              BIGINT UNSIGNED NOT NULL,
     `payload_hash`     CHAR(64)     NOT NULL,
     `payload`          BLOB            NOT NULL,
+    `mass`          BIGINT            NOT NULL,
     PRIMARY KEY (`id`),
     UNIQUE INDEX `idx_transactions_transaction_hash` (`transaction_hash`),
     INDEX `idx_transactions_transaction_id` (`transaction_id`),

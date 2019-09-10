@@ -1,35 +1,39 @@
-package main
+package database
 
 import (
 	"fmt"
+	"github.com/daglabs/btcd/apiserver/config"
 	"github.com/golang-migrate/migrate/v4/source"
 	"github.com/jinzhu/gorm"
-	_ "github.com/jinzhu/gorm/dialects/mysql"
 	"os"
 
 	"github.com/golang-migrate/migrate/v4"
-	_ "github.com/golang-migrate/migrate/v4/database/mysql"
-	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
 
-func connectToDB(cfg *config) (*gorm.DB, error) {
+// DB is the API server database.
+var DB *gorm.DB
+
+// Connect connects to the database mentioned in
+// config variable.
+func Connect(cfg *config.Config) error {
 	connectionString := buildConnectionString(cfg)
 	isCurrent, err := isCurrent(connectionString)
 	if err != nil {
-		return nil, fmt.Errorf("Error checking whether the database is current: %s", err)
+		return fmt.Errorf("Error checking whether the database is current: %s", err)
 	}
 	if !isCurrent {
-		return nil, fmt.Errorf("Database is not current")
+		return fmt.Errorf("Database is not current. Please migrate" +
+			" the database and start again.")
 	}
 
-	db, err := gorm.Open("mysql", connectionString)
+	DB, err = gorm.Open("mysql", connectionString)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return db, nil
+	return nil
 }
 
-func buildConnectionString(cfg *config) string {
+func buildConnectionString(cfg *config.Config) string {
 	return fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8&parseTime=True",
 		cfg.DBUser, cfg.DBPassword, cfg.DBAddress, cfg.DBName)
 }

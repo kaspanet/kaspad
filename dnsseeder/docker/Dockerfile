@@ -1,5 +1,5 @@
 # -- multistage docker build: stage #1: build stage
-FROM golang:1.12-alpine AS build
+FROM golang:1.13-alpine AS build
 
 RUN mkdir -p /go/src/github.com/daglabs/btcd
 
@@ -11,10 +11,6 @@ RUN go get -u golang.org/x/lint/golint \
       github.com/opennota/check/cmd/aligncheck \
       github.com/opennota/check/cmd/structcheck \
       github.com/opennota/check/cmd/varcheck
-
-# GO111MODULE=on forces Go to use the go-module system
-# TODO: remove this once Go 1.13 is released
-ENV GO111MODULE=on
 
 COPY go.mod .
 COPY go.sum .
