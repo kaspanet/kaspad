@@ -326,9 +326,63 @@ func updateSelectedParentChain(db *gorm.DB, removedChainHashes []string, addedCh
 	for _, removedHash := range removedChainHashes {
 		log.Warnf("RRRRemoved!!! %s", removedHash)
 
+		var dbBlock models.Block
+		db.Where(&models.Block{BlockHash: removedHash}).First(&dbBlock)
+		if dbBlock.ID == 0 {
+			// FUCK!
+		}
+
+		var dbUTXOs []models.UTXO
+		db.Where(&models.UTXO{AcceptingBlockID: dbBlock.ID}).Find(&dbUTXOs)
+		for _, dbUTXO := range dbUTXOs {
+			var dbTransactionOutput models.TransactionOutput
+			db.Where(&models.TransactionOutput{ID: dbUTXO.TransactionOutputID}).First(&dbTransactionOutput)
+			if dbTransactionOutput.ID == 0 {
+				// FUCK
+			}
+
+			var dbTransaction models.Transaction
+			db.Where(&models.Transaction{ID: dbTransactionOutput.TransactionID}).First(&dbTransaction)
+			if dbTransaction.ID == 0 {
+				// FUCK
+			}
+
+		}
 	}
 	for _, addedBlock := range addedChainBlocks {
 		log.Warnf("AAAAdded!!! %+v", addedBlock)
+
+		for _, acceptedBlock := range addedBlock.AcceptedBlocks {
+			var dbAcceptingBlock models.Block
+			db.Where(&models.Block{BlockHash: acceptedBlock.Hash}).First(dbAcceptingBlock)
+			if dbAcceptingBlock.ID == 0 {
+				// FUCK
+			}
+
+			for _, acceptedTxID := range acceptedBlock.AcceptedTxIDs {
+				var dbTransaction models.Transaction
+				db.Where(&models.Transaction{TransactionID: acceptedTxID}).First(&dbTransaction)
+				if dbTransaction.ID == 0 {
+					// FUCK
+				}
+
+				var dbTransactionInputs []models.TransactionInput
+				db.Where(&models.TransactionInput{TransactionID: dbTransaction.ID}).Find(&dbTransactionInputs)
+				for _, dbTransactionInput := range dbTransactionInputs {
+					db.Delete(&models.UTXO{TransactionOutputID: dbTransactionInput.TransactionOutputID})
+				}
+
+				var dbTransactionOutputs []models.TransactionOutput
+				db.Where(&models.TransactionOutput{TransactionID: dbTransaction.ID}).Find(&dbTransactionOutputs)
+				for _, dbTransactionOutput := range dbTransactionOutputs {
+					dbUTXO := models.UTXO{
+						TransactionOutputID: dbTransactionOutput.ID,
+						AcceptingBlockID:    dbAcceptingBlock.ID,
+					}
+					db.Create(&dbUTXO)
+				}
+			}
+		}
 	}
 
 	db.Commit()
