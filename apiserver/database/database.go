@@ -43,6 +43,14 @@ func Connect(cfg *config.Config) error {
 	return nil
 }
 
+// Close closes the connection to the database
+func Close() error {
+	if db != nil {
+		return db.Close()
+	}
+	return nil
+}
+
 func buildConnectionString(cfg *config.Config) string {
 	return fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8&parseTime=True",
 		cfg.DBUser, cfg.DBPassword, cfg.DBAddress, cfg.DBName)
