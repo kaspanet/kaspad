@@ -45,10 +45,12 @@ func Connect(cfg *config.Config) error {
 
 // Close closes the connection to the database
 func Close() error {
-	if db != nil {
-		return db.Close()
+	if db == nil {
+		return nil
 	}
-	return nil
+	err := db.Close()
+	db = nil
+	return err
 }
 
 func buildConnectionString(cfg *config.Config) string {
