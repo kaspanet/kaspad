@@ -3,6 +3,7 @@ package server
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"strconv"
 
@@ -25,18 +26,30 @@ const (
 
 const defaultGetTransactionsLimit = 100
 
-func makeHandler(
-	handler func(ctx *utils.APIServerContext, routeParams map[string]string, queryParams map[string][]string) (
-		interface{}, *utils.HandlerError)) func(http.ResponseWriter, *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
+type handlerFunc func(ctx *utils.APIServerContext, routeParams map[string]string, queryParams map[string][]string, requestBody []byte) (
+	interface{}, *utils.HandlerError)
 
+func makeHandler(handler handlerFunc) func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := utils.ToAPIServerContext(r.Context())
-		response, hErr := handler(ctx, mux.Vars(r), r.URL.Query())
+
+		var requestBody []byte
+		if r.Method == "POST" {
+			var err error
+			requestBody, err = ioutil.ReadAll(r.Body)
+			if err != nil {
+				sendErr(ctx, w, utils.NewHandlerError(500, "Internal server error occured"))
+			}
+		}
+
+		response, hErr := handler(ctx, mux.Vars(r), r.URL.Query(), requestBody)
 		if hErr != nil {
 			sendErr(ctx, w, hErr)
 			return
 		}
-		sendJSONResponse(w, response)
+		if response != nil {
+			sendJSONResponse(w, response)
+		}
 	}
 }
 
@@ -58,7 +71,7 @@ func sendJSONResponse(w http.ResponseWriter, response interface{}) {
 	}
 }
 
-func mainHandler(_ *utils.APIServerContext, _ map[string]string, _ map[string][]string) (interface{}, *utils.HandlerError) {
+func mainHandler(_ *utils.APIServerContext, _ map[string]string, _ map[string][]string, _ []byte) (interface{}, *utils.HandlerError) {
 	return "API server is running", nil
 }
 
@@ -96,15 +109,15 @@ func addRoutes(router *mux.Router) {
 		Methods("GET")
 }
 
-func getTransactionByIDHandler(_ *utils.APIServerContext, routeParams map[string]string, _ map[string][]string) (interface{}, *utils.HandlerError) {
+func getTransactionByIDHandler(_ *utils.APIServerContext, routeParams map[string]string, _ map[string][]string, _ []byte) (interface{}, *utils.HandlerError) {
 	return controllers.GetTransactionByIDHandler(routeParams[routeParamTxID])
 }
 
-func getTransactionByHashHandler(_ *utils.APIServerContext, routeParams map[string]string, _ map[string][]string) (interface{}, *utils.HandlerError) {
+func getTransactionByHashHandler(_ *utils.APIServerContext, routeParams map[string]string, _ map[string][]string, _ []byte) (interface{}, *utils.HandlerError) {
 	return controllers.GetTransactionByHashHandler(routeParams[routeParamTxHash])
 }
 
-func getTransactionsByAddressHandler(_ *utils.APIServerContext, routeParams map[string]string, queryParams map[string][]string) (interface{}, *utils.HandlerError) {
+func getTransactionsByAddressHandler(_ *utils.APIServerContext, routeParams map[string]string, queryParams map[string][]string, _ []byte) (interface{}, *utils.HandlerError) {
 	skip := 0
 	limit := defaultGetTransactionsLimit
 	if len(queryParams[queryParamSkip]) > 1 {
@@ -132,14 +145,18 @@ func getTransactionsByAddressHandler(_ *utils.APIServerContext, routeParams map[
 	return controllers.GetTransactionsByAddressHandler(routeParams[routeParamAddress], uint64(skip), uint64(limit))
 }
 
-func getUTXOsByAddressHandler(_ *utils.APIServerContext, routeParams map[string]string, _ map[string][]string) (interface{}, *utils.HandlerError) {
+func getUTXOsByAddressHandler(_ *utils.APIServerContext, routeParams map[string]string, _ map[string][]string, _ []byte) (interface{}, *utils.HandlerError) {
 	return controllers.GetUTXOsByAddressHandler(routeParams[routeParamAddress])
 }
 
-func getBlockByHashHandler(_ *utils.APIServerContext, routeParams map[string]string, _ map[string][]string) (interface{}, *utils.HandlerError) {
+func getBlockByHashHandler(_ *utils.APIServerContext, routeParams map[string]string, _ map[string][]string, _ []byte) (interface{}, *utils.HandlerError) {
 	return controllers.GetBlockByHashHandler(routeParams[routeParamBlockHash])
 }
 
-func getFeeEstimatesHandler(_ *utils.APIServerContext, _ map[string]string, _ map[string][]string) (interface{}, *utils.HandlerError) {
+func getFeeEstimatesHandler(_ *utils.APIServerContext, _ map[string]string, _ map[string][]string, _ []byte) (interface{}, *utils.HandlerError) {
 	return controllers.GetFeeEstimatesHandler()
+}
+
+func postTransactionHandler(_ *utils.APIServerContext, _ map[string]string, _ map[string][]string, requestBody []byte) (interface{}, *utils.HandlerError) {
+	return nil, controllers.PostTransaction(requestBody)
 }
