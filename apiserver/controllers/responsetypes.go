@@ -54,6 +54,10 @@ type blockResponse struct {
 	Mass                 uint64
 }
 
+type feeEstimateResponse struct {
+	HighPriority, NormalPriority, LowPriority float64
+}
+
 func convertTxModelToTxResponse(tx *models.Transaction) *transactionResponse {
 	txRes := &transactionResponse{
 		TransactionHash:         tx.TransactionHash,
