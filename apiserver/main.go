@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+
 	"github.com/daglabs/btcd/apiserver/config"
 	"github.com/daglabs/btcd/apiserver/database"
 	"github.com/daglabs/btcd/apiserver/jsonrpc"
@@ -27,7 +28,7 @@ func main() {
 		panic(fmt.Errorf("Error connecting to database: %s", err))
 	}
 	defer func() {
-		err := database.DB.Close()
+		err := database.Close()
 		if err != nil {
 			panic(fmt.Errorf("Error closing the database: %s", err))
 		}
