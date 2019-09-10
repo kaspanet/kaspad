@@ -1,14 +1,18 @@
 package controllers
 
 import (
+	"bytes"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"net/http"
 
 	"github.com/daglabs/btcd/apiserver/database"
+	"github.com/daglabs/btcd/apiserver/jsonrpc"
 	"github.com/daglabs/btcd/apiserver/models"
 	"github.com/daglabs/btcd/apiserver/utils"
 	"github.com/daglabs/btcd/util/daghash"
+	"github.com/daglabs/btcd/wire"
 	"github.com/jinzhu/gorm"
 )
 
@@ -125,5 +129,35 @@ func addTxPreloadedFields(query *gorm.DB) *gorm.DB {
 		Preload("TransactionInputs.TransactionOutput.Address")
 }
 
-func PostTransaction(client *apiServerClient, transactionData string) {
+// PostTransaction forwards a raw transaction to the JSON-RPC API server
+func PostTransaction(requestBody []byte) *utils.HandlerError {
+	client, err := jsonrpc.GetClient()
+	if err != nil {
+		return utils.NewHandlerError(500, "Internal server error occured")
+	}
+
+	rawTx := &RawTransaction{}
+	err = json.Unmarshal(requestBody, rawTx)
+	if err != nil {
+		return utils.NewHandlerError(422, "The request body is not in the correct format")
+	}
+
+	txBytes, err := hex.DecodeString(rawTx.RawTransaction)
+	if err != nil {
+		return utils.NewHandlerError(422, "The raw transaction is not a hex-encoded transaction")
+	}
+
+	txReader := bytes.NewReader(txBytes)
+	tx := &wire.MsgTx{}
+	err = tx.BtcDecode(txReader, 0)
+	if err != nil {
+		return utils.NewHandlerError(422, "Error parsing raw transaction.")
+	}
+
+	_, err = client.SendRawTransaction(tx, true)
+	if err != nil {
+		return utils.NewHandlerError(500, "Internal server error occured")
+	}
+
+	return nil
 }
