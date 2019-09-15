@@ -9,6 +9,7 @@ import (
 	"github.com/daglabs/btcd/apiserver/models"
 	"github.com/daglabs/btcd/btcjson"
 	"github.com/daglabs/btcd/util/daghash"
+	"github.com/daglabs/btcd/util/subnetworkid"
 	"github.com/jinzhu/gorm"
 	"strconv"
 	"time"
@@ -280,39 +281,44 @@ func insertBlock(client *jsonrpc.Client, db *gorm.DB, block string, rawBlock btc
 			db.Create(&dbTransactionBlock)
 		}
 
+		// Check whether this transaction is coinbase
+		subnetwork, err := subnetworkid.NewFromStr(transaction.Subnetwork)
+		if err != nil {
+			return err
+		}
+		isCoinbase := subnetwork.IsEqual(subnetworkid.SubnetworkIDCoinbase)
+
 		// Insert the transaction inputs
-		for _, input := range transaction.Vin {
-			if input.IsCoinBase() {
-				continue
-			}
-
-			var dbOutputTransaction models.Transaction
-			db.Where(&models.Transaction{TransactionID: input.TxID}).First(&dbOutputTransaction)
-			if dbOutputTransaction.ID == 0 {
-				return fmt.Errorf("missing output transaction for txID: %s", input.TxID)
-			}
-
-			var dbOutputTransactionOutput models.TransactionOutput
-			db.Where(&models.TransactionOutput{TransactionID: dbOutputTransaction.ID, Index: input.Vout}).First(&dbOutputTransactionOutput)
-			if dbOutputTransactionOutput.ID == 0 {
-				return fmt.Errorf("missing output transaction output for txID: %s and index: %d", input.TxID, input.Vout)
-			}
-
-			var dbTransactionInput models.TransactionInput
-			db.Where(models.TransactionInput{TransactionID: dbTransaction.ID, TransactionOutputID: dbOutputTransactionOutput.ID}).First(&dbTransactionInput)
-			if dbTransactionInput.TransactionID == 0 {
-				scriptSig, err := hex.DecodeString(input.ScriptSig.Hex)
-				if err != nil {
-					return nil
+		if !isCoinbase {
+			for _, input := range transaction.Vin {
+				var dbOutputTransaction models.Transaction
+				db.Where(&models.Transaction{TransactionID: input.TxID}).First(&dbOutputTransaction)
+				if dbOutputTransaction.ID == 0 {
+					return fmt.Errorf("missing output transaction for txID: %s", input.TxID)
 				}
-				dbTransactionInput = models.TransactionInput{
-					TransactionID:       dbTransaction.ID,
-					TransactionOutputID: dbOutputTransactionOutput.ID,
-					Index:               input.Vout,
-					SignatureScript:     scriptSig,
-					Sequence:            input.Sequence,
+
+				var dbOutputTransactionOutput models.TransactionOutput
+				db.Where(&models.TransactionOutput{TransactionID: dbOutputTransaction.ID, Index: input.Vout}).First(&dbOutputTransactionOutput)
+				if dbOutputTransactionOutput.ID == 0 {
+					return fmt.Errorf("missing output transaction output for txID: %s and index: %d", input.TxID, input.Vout)
 				}
-				db.Create(&dbTransactionInput)
+
+				var dbTransactionInput models.TransactionInput
+				db.Where(models.TransactionInput{TransactionID: dbTransaction.ID, TransactionOutputID: dbOutputTransactionOutput.ID}).First(&dbTransactionInput)
+				if dbTransactionInput.TransactionID == 0 {
+					scriptSig, err := hex.DecodeString(input.ScriptSig.Hex)
+					if err != nil {
+						return nil
+					}
+					dbTransactionInput = models.TransactionInput{
+						TransactionID:       dbTransaction.ID,
+						TransactionOutputID: dbOutputTransactionOutput.ID,
+						Index:               input.Vout,
+						SignatureScript:     scriptSig,
+						Sequence:            input.Sequence,
+					}
+					db.Create(&dbTransactionInput)
+				}
 			}
 		}
 
