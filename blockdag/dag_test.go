@@ -256,7 +256,7 @@ func TestCalcSequenceLock(t *testing.T) {
 	// Create a utxo view with a fake utxo for the inputs used in the
 	// transactions created below.  This utxo is added such that it has an
 	// age of 4 blocks.
-	msgTx := wire.NewNativeMsgTx(wire.TxVersion, nil, []*wire.TxOut{{PkScript: nil, Value: 10}})
+	msgTx := wire.NewNativeMsgTx(wire.TxVersion, nil, []*wire.TxOut{{ScriptPubKey: nil, Value: 10}})
 	targetTx := util.NewTx(msgTx)
 	utxoSet := NewFullUTXOSet()
 	blueScore := uint64(numBlocksToGenerate) - 4
@@ -291,7 +291,7 @@ func TestCalcSequenceLock(t *testing.T) {
 
 	// Add an additional transaction which will serve as our unconfirmed
 	// output.
-	unConfTx := wire.NewNativeMsgTx(wire.TxVersion, nil, []*wire.TxOut{{PkScript: nil, Value: 5}})
+	unConfTx := wire.NewNativeMsgTx(wire.TxVersion, nil, []*wire.TxOut{{ScriptPubKey: nil, Value: 5}})
 	unConfUtxo := wire.Outpoint{
 		TxID:  *unConfTx.TxID(),
 		Index: 0,

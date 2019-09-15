@@ -13,12 +13,12 @@ func buildSubnetworkRegistryTx(cfg *config, fundingOutpoint *wire.Outpoint, fund
 		Sequence:         wire.MaxTxInSequenceNum,
 	}
 	txOut := &wire.TxOut{
-		PkScript: fundingTx.TxOut[fundingOutpoint.Index].PkScript,
-		Value:    fundingTx.TxOut[fundingOutpoint.Index].Value - cfg.RegistryTxFee,
+		ScriptPubKey: fundingTx.TxOut[fundingOutpoint.Index].ScriptPubKey,
+		Value:        fundingTx.TxOut[fundingOutpoint.Index].Value - cfg.RegistryTxFee,
 	}
 	registryTx := wire.NewRegistryMsgTx(1, []*wire.TxIn{txIn}, []*wire.TxOut{txOut}, cfg.GasLimit)
 
-	SignatureScript, err := txscript.SignatureScript(registryTx, 0, fundingTx.TxOut[fundingOutpoint.Index].PkScript,
+	SignatureScript, err := txscript.SignatureScript(registryTx, 0, fundingTx.TxOut[fundingOutpoint.Index].ScriptPubKey,
 		txscript.SigHashAll, privateKey, true)
 	if err != nil {
 		return nil, fmt.Errorf("failed to build signature script: %s", err)

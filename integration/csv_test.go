@@ -36,7 +36,7 @@ func makeTestOutput(r *rpctest.Harness, t *testing.T,
 		return nil, nil, nil, err
 	}
 
-	// Using the key created above, generate a pkScript which it's able to
+	// Using the key created above, generate a scriptPubKey which it's able to
 	// spend.
 	a, err := util.NewAddressPubKey(key.PubKey().SerializeCompressed(), r.ActiveNet)
 	if err != nil {
@@ -46,7 +46,7 @@ func makeTestOutput(r *rpctest.Harness, t *testing.T,
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	output := &wire.TxOut{PkScript: selfAddrScript, Value: 1e8}
+	output := &wire.TxOut{ScriptPubKey: selfAddrScript, Value: 1e8}
 
 	// Next, create and broadcast a transaction paying to the output.
 	fundTx, err := r.CreateTransaction([]*wire.TxOut{output}, 10)
@@ -70,7 +70,7 @@ func makeTestOutput(r *rpctest.Harness, t *testing.T,
 	// generated above, this is needed in order to create a proper utxo for
 	// this output.
 	var outputIndex uint32
-	if bytes.Equal(fundTx.TxOut[0].PkScript, selfAddrScript) {
+	if bytes.Equal(fundTx.TxOut[0].ScriptPubKey, selfAddrScript) {
 		outputIndex = 0
 	} else {
 		outputIndex = 1
@@ -109,7 +109,7 @@ func TestBIP0113(t *testing.T) {
 
 	// Create a fresh output for usage within the test below.
 	const outputValue = util.SatoshiPerBitcoin
-	outputKey, testOutput, testPkScript, err := makeTestOutput(r, t,
+	outputKey, testOutput, testScriptPubKey, err := makeTestOutput(r, t,
 		outputValue)
 	if err != nil {
 		t.Fatalf("unable to create test output: %v", err)
@@ -134,8 +134,8 @@ func TestBIP0113(t *testing.T) {
 		PreviousOutpoint: *testOutput,
 	})
 	tx.AddTxOut(&wire.TxOut{
-		PkScript: addrScript,
-		Value:    outputValue - 1000,
+		ScriptPubKey: addrScript,
+		Value:        outputValue - 1000,
 	})
 
 	// We set the lock-time of the transaction to just one minute after the
@@ -146,7 +146,7 @@ func TestBIP0113(t *testing.T) {
 	}
 	tx.LockTime = chainInfo.MedianTime + 1
 
-	sigScript, err := txscript.SignatureScript(tx, 0, testPkScript,
+	sigScript, err := txscript.SignatureScript(tx, 0, testScriptPubKey,
 		txscript.SigHashAll, outputKey, true)
 	if err != nil {
 		t.Fatalf("unable to generate sig: %v", err)
@@ -183,7 +183,7 @@ func TestBIP0113(t *testing.T) {
 		medianTimePast := chainInfo.MedianTime
 
 		// Create another test output to be spent shortly below.
-		outputKey, testOutput, testPkScript, err = makeTestOutput(r, t,
+		outputKey, testOutput, testScriptPubKey, err = makeTestOutput(r, t,
 			outputValue)
 		if err != nil {
 			t.Fatalf("unable to create test output: %v", err)
@@ -196,11 +196,11 @@ func TestBIP0113(t *testing.T) {
 			PreviousOutpoint: *testOutput,
 		})
 		tx.AddTxOut(&wire.TxOut{
-			PkScript: addrScript,
-			Value:    outputValue - 1000,
+			ScriptPubKey: addrScript,
+			Value:        outputValue - 1000,
 		})
 		tx.LockTime = medianTimePast + timeLockDelta
-		sigScript, err = txscript.SignatureScript(tx, 0, testPkScript,
+		sigScript, err = txscript.SignatureScript(tx, 0, testScriptPubKey,
 			txscript.SigHashAll, outputKey, true)
 		if err != nil {
 			t.Fatalf("unable to generate sig: %v", err)
@@ -235,7 +235,7 @@ func TestBIP0113(t *testing.T) {
 }
 
 // createCSVOutput creates an output paying to a trivially redeemable CSV
-// pkScript with the specified time-lock.
+// scriptPubKey with the specified time-lock.
 func createCSVOutput(r *rpctest.Harness, t *testing.T,
 	numSatoshis util.Amount, timeLock int64,
 	isSeconds bool) ([]byte, *wire.Outpoint, *wire.MsgTx, error) {
@@ -265,8 +265,8 @@ func createCSVOutput(r *rpctest.Harness, t *testing.T,
 		return nil, nil, nil, err
 	}
 	output := &wire.TxOut{
-		PkScript: p2shScript,
-		Value:    int64(numSatoshis),
+		ScriptPubKey: p2shScript,
+		Value:        int64(numSatoshis),
 	}
 
 	// Finally create a valid transaction which creates the output crafted
@@ -277,7 +277,7 @@ func createCSVOutput(r *rpctest.Harness, t *testing.T,
 	}
 
 	var outputIndex uint32
-	if !bytes.Equal(tx.TxOut[0].PkScript, p2shScript) {
+	if !bytes.Equal(tx.TxOut[0].ScriptPubKey, p2shScript) {
 		outputIndex = 1
 	}
 
@@ -366,7 +366,7 @@ func TestBIP0068AndCsv(t *testing.T) {
 	}
 	harnessScript, err := txscript.PayToAddrScript(harnessAddr)
 	if err != nil {
-		t.Fatalf("unable to generate pkScript: %v", err)
+		t.Fatalf("unable to generate scriptPubKey: %v", err)
 	}
 
 	const (
@@ -375,8 +375,8 @@ func TestBIP0068AndCsv(t *testing.T) {
 	)
 
 	sweepOutput := &wire.TxOut{
-		Value:    outputAmt - 5000,
-		PkScript: harnessScript,
+		Value:        outputAmt - 5000,
+		ScriptPubKey: harnessScript,
 	}
 
 	// With the height at 104 we need 200 blocks to be mined after the

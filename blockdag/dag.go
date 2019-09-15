@@ -792,22 +792,22 @@ func (dag *BlockDAG) IsKnownFinalizedBlock(blockHash *daghash.Hash) bool {
 // NextBlockCoinbaseTransaction prepares the coinbase transaction for the next mined block
 //
 // This function CAN'T be called with the DAG lock held.
-func (dag *BlockDAG) NextBlockCoinbaseTransaction(pkScript []byte, extraData []byte) (*util.Tx, error) {
+func (dag *BlockDAG) NextBlockCoinbaseTransaction(scriptPubKey []byte, extraData []byte) (*util.Tx, error) {
 	dag.dagLock.RLock()
 	defer dag.dagLock.RUnlock()
 
-	return dag.NextBlockCoinbaseTransactionNoLock(pkScript, extraData)
+	return dag.NextBlockCoinbaseTransactionNoLock(scriptPubKey, extraData)
 }
 
 // NextBlockCoinbaseTransactionNoLock prepares the coinbase transaction for the next mined block
 //
 // This function MUST be called with the DAG read-lock held
-func (dag *BlockDAG) NextBlockCoinbaseTransactionNoLock(pkScript []byte, extraData []byte) (*util.Tx, error) {
+func (dag *BlockDAG) NextBlockCoinbaseTransactionNoLock(scriptPubKey []byte, extraData []byte) (*util.Tx, error) {
 	txsAcceptanceData, err := dag.TxsAcceptedByVirtual()
 	if err != nil {
 		return nil, err
 	}
-	return dag.virtual.blockNode.expectedCoinbaseTransaction(dag, txsAcceptanceData, pkScript, extraData)
+	return dag.virtual.blockNode.expectedCoinbaseTransaction(dag, txsAcceptanceData, scriptPubKey, extraData)
 }
 
 // NextAcceptedIDMerkleRoot prepares the acceptedIDMerkleRoot for the next mined block

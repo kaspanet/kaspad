@@ -25,13 +25,13 @@ type TestCoin struct {
 	TxNumConfs int64
 }
 
-func (c *TestCoin) Hash() *daghash.Hash { return c.TxHash }
-func (c *TestCoin) ID() *daghash.TxID   { return c.TxID }
-func (c *TestCoin) Index() uint32       { return c.TxIndex }
-func (c *TestCoin) Value() util.Amount  { return c.TxValue }
-func (c *TestCoin) PkScript() []byte    { return nil }
-func (c *TestCoin) NumConfs() int64     { return c.TxNumConfs }
-func (c *TestCoin) ValueAge() int64     { return int64(c.TxValue) * c.TxNumConfs }
+func (c *TestCoin) Hash() *daghash.Hash  { return c.TxHash }
+func (c *TestCoin) ID() *daghash.TxID    { return c.TxID }
+func (c *TestCoin) Index() uint32        { return c.TxIndex }
+func (c *TestCoin) Value() util.Amount   { return c.TxValue }
+func (c *TestCoin) ScriptPubKey() []byte { return nil }
+func (c *TestCoin) NumConfs() int64      { return c.TxNumConfs }
+func (c *TestCoin) ValueAge() int64      { return int64(c.TxValue) * c.TxNumConfs }
 
 func NewCoin(index int64, value util.Amount, numConfs int64) coinset.Coin {
 	h := sha256.New()
@@ -240,13 +240,13 @@ var (
 		"6D3E3C6628B98D88ACE86EF102000000001976A914AC3F99" +
 		"5655E81B875B38B64351D6F896DDBFC68588AC0000000000" +
 		"000000000000000000000000000000000000000000000000"
-	testSimpleCoinTxValue0            = util.Amount(3500000)
-	testSimpleCoinTxValueAge0         = int64(testSimpleCoinTxValue0) * testSimpleCoinNumConfs
-	testSimpleCoinTxPkScript0Hex      = "76a914686dd149a79b4a559d561fbc396d3e3c6628b98d88ac"
-	testSimpleCoinTxPkScript0Bytes, _ = hex.DecodeString(testSimpleCoinTxPkScript0Hex)
-	testSimpleCoinTxBytes, _          = hex.DecodeString(testSimpleCoinTxHex)
-	testSimpleCoinTx, _               = util.NewTxFromBytes(testSimpleCoinTxBytes)
-	testSimpleCoin                    = &coinset.SimpleCoin{
+	testSimpleCoinTxValue0                = util.Amount(3500000)
+	testSimpleCoinTxValueAge0             = int64(testSimpleCoinTxValue0) * testSimpleCoinNumConfs
+	testSimpleCoinTxScriptPubKey0Hex      = "76a914686dd149a79b4a559d561fbc396d3e3c6628b98d88ac"
+	testSimpleCoinTxScriptPubKey0Bytes, _ = hex.DecodeString(testSimpleCoinTxScriptPubKey0Hex)
+	testSimpleCoinTxBytes, _              = hex.DecodeString(testSimpleCoinTxHex)
+	testSimpleCoinTx, _                   = util.NewTxFromBytes(testSimpleCoinTxBytes)
+	testSimpleCoin                        = &coinset.SimpleCoin{
 		Tx:         testSimpleCoinTx,
 		TxIndex:    0,
 		TxNumConfs: testSimpleCoinNumConfs,
@@ -263,8 +263,8 @@ func TestSimpleCoin(t *testing.T) {
 	if testSimpleCoin.Value() != testSimpleCoinTxValue0 {
 		t.Error("Different value of coin value than expected")
 	}
-	if !bytes.Equal(testSimpleCoin.PkScript(), testSimpleCoinTxPkScript0Bytes) {
-		t.Error("Different value of coin pkScript than expected")
+	if !bytes.Equal(testSimpleCoin.ScriptPubKey(), testSimpleCoinTxScriptPubKey0Bytes) {
+		t.Error("Different value of coin scriptPubKey than expected")
 	}
 	if testSimpleCoin.NumConfs() != 1 {
 		t.Error("Differet value of num confs than expected")

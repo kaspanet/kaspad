@@ -5,6 +5,7 @@ import (
 
 	"github.com/daglabs/btcd/apiserver/config"
 	"github.com/daglabs/btcd/apiserver/database"
+	"github.com/daglabs/btcd/apiserver/jsonrpc"
 	"github.com/daglabs/btcd/apiserver/server"
 	"github.com/daglabs/btcd/logger"
 	"github.com/daglabs/btcd/signal"
@@ -33,21 +34,15 @@ func main() {
 		}
 	}()
 
-	client, err := connectToServer(cfg)
+	err = jsonrpc.Connect(cfg)
 	if err != nil {
 		panic(fmt.Errorf("Error connecting to servers: %s", err))
 	}
+	defer jsonrpc.Close()
+
 	shutdownServer := server.Start(cfg.HTTPListen)
-	defer func() {
-		shutdownServer()
-		disconnectFromNode(client)
-	}()
+	defer shutdownServer()
 
 	interrupt := signal.InterruptListener()
 	<-interrupt
-}
-
-func disconnectFromNode(client *apiServerClient) {
-	log.Infof("Disconnecting client")
-	client.Disconnect()
 }

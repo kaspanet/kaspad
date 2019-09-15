@@ -179,7 +179,7 @@ func (dag *BlockDAG) findPreviousCheckpoint() (*blockNode, error) {
 func isNonstandardTransaction(tx *util.Tx) bool {
 	// Check all of the output public key scripts for non-standard scripts.
 	for _, txOut := range tx.MsgTx().TxOut {
-		scriptClass := txscript.GetScriptClass(txOut.PkScript)
+		scriptClass := txscript.GetScriptClass(txOut.ScriptPubKey)
 		if scriptClass == txscript.NonStandardTy {
 			return true
 		}

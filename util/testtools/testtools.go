@@ -68,13 +68,13 @@ func RegisterSubnetworkForTest(dag *blockdag.BlockDAG, params *dagconfig.Params,
 		SignatureScript:  signatureScript,
 	}
 
-	pkScript, err := txscript.PayToScriptHashScript(blockdag.OpTrueScript)
+	scriptPubKey, err := txscript.PayToScriptHashScript(blockdag.OpTrueScript)
 	if err != nil {
 		return nil, err
 	}
 	txOut := &wire.TxOut{
-		PkScript: pkScript,
-		Value:    fundsBlockCbTx.TxOut[0].Value,
+		ScriptPubKey: scriptPubKey,
+		Value:        fundsBlockCbTx.TxOut[0].Value,
 	}
 	registryTx := wire.NewRegistryMsgTx(1, []*wire.TxIn{txIn}, []*wire.TxOut{txOut}, gasLimit)
 

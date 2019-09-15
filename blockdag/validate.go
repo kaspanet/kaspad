@@ -27,9 +27,9 @@ const (
 	baseSubsidy = 50 * util.SatoshiPerBitcoin
 
 	// the following are used when calculating a transaction's mass
-	massPerTxByte       = 1
-	massPerPKScriptByte = 10
-	massPerSigOp        = 10000
+	massPerTxByte           = 1
+	massPerScriptPubKeyByte = 10
+	massPerSigOp            = 10000
 )
 
 // isNullOutpoint determines whether or not a previous transaction outpoint
@@ -302,7 +302,7 @@ func CountSigOps(tx *util.Tx) int {
 	// Accumulate the number of signature operations in all transaction
 	// outputs.
 	for _, txOut := range msgTx.TxOut {
-		numSigOps := txscript.GetSigOpCount(txOut.PkScript)
+		numSigOps := txscript.GetSigOpCount(txOut.ScriptPubKey)
 		totalSigOps += numSigOps
 	}
 
@@ -336,15 +336,15 @@ func CountP2SHSigOps(tx *util.Tx, isCoinbase bool, utxoSet UTXOSet) (int, error)
 
 		// We're only interested in pay-to-script-hash types, so skip
 		// this input if it's not one.
-		pkScript := entry.PkScript()
-		if !txscript.IsPayToScriptHash(pkScript) {
+		scriptPubKey := entry.ScriptPubKey()
+		if !txscript.IsPayToScriptHash(scriptPubKey) {
 			continue
 		}
 
 		// Count the precise number of signature operations in the
 		// referenced public key script.
 		sigScript := txIn.SignatureScript
-		numSigOps := txscript.GetPreciseSigOpCount(sigScript, pkScript,
+		numSigOps := txscript.GetPreciseSigOpCount(sigScript, scriptPubKey,
 			true)
 
 		// We could potentially overflow the accumulator so check for
@@ -412,9 +412,9 @@ func CalcTxMass(tx *util.Tx, utxoSet UTXOSet) (uint64, error) {
 		return uint64(txSize * massPerTxByte), nil
 	}
 
-	pkScriptSize := 0
+	scriptPubKeySize := 0
 	for _, txOut := range tx.MsgTx().TxOut {
-		pkScriptSize += len(txOut.PkScript)
+		scriptPubKeySize += len(txOut.ScriptPubKey)
 	}
 
 	sigOpsCount := 0
@@ -431,14 +431,14 @@ func CalcTxMass(tx *util.Tx, utxoSet UTXOSet) (uint64, error) {
 
 		// Count the precise number of signature operations in the
 		// referenced public key script.
-		pkScript := entry.PkScript()
+		scriptPubKey := entry.ScriptPubKey()
 		sigScript := txIn.SignatureScript
-		isP2SH := txscript.IsPayToScriptHash(pkScript)
-		sigOpsCount += txscript.GetPreciseSigOpCount(sigScript, pkScript, isP2SH)
+		isP2SH := txscript.IsPayToScriptHash(scriptPubKey)
+		sigOpsCount += txscript.GetPreciseSigOpCount(sigScript, scriptPubKey, isP2SH)
 	}
 
 	return uint64(txSize*massPerTxByte +
-		pkScriptSize*massPerPKScriptByte +
+		scriptPubKeySize*massPerScriptPubKeyByte +
 		sigOpsCount*massPerSigOp), nil
 }
 

@@ -337,7 +337,7 @@ func calcSignatureHash(script []parsedOpcode, hashType SigHashType, tx *wire.Msg
 		// All but current output get zeroed out.
 		for i := 0; i < idx; i++ {
 			txCopy.TxOut[i].Value = 0
-			txCopy.TxOut[i].PkScript = nil
+			txCopy.TxOut[i].ScriptPubKey = nil
 		}
 
 		// Sequence on all other inputs is 0, too.
@@ -472,8 +472,8 @@ func GetPreciseSigOpCount(scriptSig, scriptPubKey []byte, isP2SH bool) int {
 // IsUnspendable returns whether the passed public key script is unspendable, or
 // guaranteed to fail at execution.  This allows inputs to be pruned instantly
 // when entering the UTXO set.
-func IsUnspendable(pkScript []byte) bool {
-	pops, err := parseScript(pkScript)
+func IsUnspendable(scriptPubKey []byte) bool {
+	pops, err := parseScript(scriptPubKey)
 	if err != nil {
 		return true
 	}

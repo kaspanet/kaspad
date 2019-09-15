@@ -214,11 +214,11 @@ func parseExpectedResult(expected string) ([]ErrorCode, error) {
 
 // createSpendTx generates a basic spending transaction given the passed
 // signature and public key scripts.
-func createSpendingTx(sigScript, pkScript []byte) *wire.MsgTx {
+func createSpendingTx(sigScript, scriptPubKey []byte) *wire.MsgTx {
 
 	outpoint := wire.NewOutpoint(&daghash.TxID{}, ^uint32(0))
 	txIn := wire.NewTxIn(outpoint, []byte{Op0, Op0})
-	txOut := wire.NewTxOut(0, pkScript)
+	txOut := wire.NewTxOut(0, scriptPubKey)
 	coinbaseTx := wire.NewNativeMsgTx(wire.TxVersion, []*wire.TxIn{txIn}, []*wire.TxOut{txOut})
 
 	outpoint = wire.NewOutpoint(coinbaseTx.TxID(), 0)

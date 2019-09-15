@@ -86,10 +86,10 @@ func (s sortableInputSlice) Less(i, j int) bool {
 }
 
 // Output comparison function.
-// First sort based on amount (smallest first), then PkScript.
+// First sort based on amount (smallest first), then ScriptPubKey.
 func (s sortableOutputSlice) Less(i, j int) bool {
 	if s[i].Value == s[j].Value {
-		return bytes.Compare(s[i].PkScript, s[j].PkScript) < 0
+		return bytes.Compare(s[i].ScriptPubKey, s[j].ScriptPubKey) < 0
 	}
 	return s[i].Value < s[j].Value
 }

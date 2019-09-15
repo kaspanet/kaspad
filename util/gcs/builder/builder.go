@@ -322,7 +322,7 @@ func BuildBasicFilter(block *wire.MsgBlock) (*gcs.Filter, error) {
 
 	// In order to build a basic filter, we'll range over the entire block,
 	// adding the outpoint data as well as the data pushes within the
-	// pkScript.
+	// scriptPubKey.
 	for i, tx := range block.Transactions {
 		// First we'll compute the bash of the transaction and add that
 		// directly to the filter.
@@ -340,7 +340,7 @@ func BuildBasicFilter(block *wire.MsgBlock) (*gcs.Filter, error) {
 		// For each output in a transaction, we'll add each of the
 		// individual data pushes within the script.
 		for _, txOut := range tx.TxOut {
-			b.AddEntry(txOut.PkScript)
+			b.AddEntry(txOut.ScriptPubKey)
 		}
 	}
 
