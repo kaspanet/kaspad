@@ -620,13 +620,13 @@ func (idx *AddrIndex) Create(dbTx database.Tx) error {
 // stored in the order they appear in the block.
 type writeIndexData map[[addrKeySize]byte][]int
 
-// indexPkScript extracts all standard addresses from the passed public key
+// indexScriptPubKey extracts all standard addresses from the passed public key
 // script and maps each of them to the associated transaction using the passed
 // map.
-func (idx *AddrIndex) indexPkScript(data writeIndexData, pkScript []byte, txIdx int) {
+func (idx *AddrIndex) indexScriptPubKey(data writeIndexData, scriptPubKey []byte, txIdx int) {
 	// Nothing to index if the script is non-standard or otherwise doesn't
 	// contain any addresses.
-	_, addrs, _, err := txscript.ExtractPkScriptAddrs(pkScript,
+	_, addrs, _, err := txscript.ExtractScriptPubKeyAddrs(scriptPubKey,
 		idx.dagParams)
 	if err != nil || len(addrs) == 0 {
 		return
@@ -672,12 +672,12 @@ func (idx *AddrIndex) indexBlock(data writeIndexData, block *util.Block, dag *bl
 					continue
 				}
 
-				idx.indexPkScript(data, entry.PkScript(), txIdx)
+				idx.indexScriptPubKey(data, entry.ScriptPubKey(), txIdx)
 			}
 		}
 
 		for _, txOut := range tx.MsgTx().TxOut {
-			idx.indexPkScript(data, txOut.PkScript, txIdx)
+			idx.indexScriptPubKey(data, txOut.ScriptPubKey, txIdx)
 		}
 	}
 }
@@ -787,11 +787,11 @@ func (idx *AddrIndex) TxRegionsForAddress(dbTx database.Tx, addr util.Address, n
 // script to the transaction.
 //
 // This function is safe for concurrent access.
-func (idx *AddrIndex) indexUnconfirmedAddresses(pkScript []byte, tx *util.Tx) {
+func (idx *AddrIndex) indexUnconfirmedAddresses(scriptPubKey []byte, tx *util.Tx) {
 	// The error is ignored here since the only reason it can fail is if the
 	// script fails to parse and it was already validated before being
 	// admitted to the mempool.
-	_, addresses, _, _ := txscript.ExtractPkScriptAddrs(pkScript,
+	_, addresses, _, _ := txscript.ExtractScriptPubKeyAddrs(scriptPubKey,
 		idx.dagParams)
 	for _, addr := range addresses {
 		// Ignore unsupported address types.
@@ -843,12 +843,12 @@ func (idx *AddrIndex) AddUnconfirmedTx(tx *util.Tx, utxoSet blockdag.UTXOSet) {
 			// call out all inputs must be available.
 			continue
 		}
-		idx.indexUnconfirmedAddresses(entry.PkScript(), tx)
+		idx.indexUnconfirmedAddresses(entry.ScriptPubKey(), tx)
 	}
 
 	// Index addresses of all created outputs.
 	for _, txOut := range tx.MsgTx().TxOut {
-		idx.indexUnconfirmedAddresses(txOut.PkScript, tx)
+		idx.indexUnconfirmedAddresses(txOut.ScriptPubKey, tx)
 	}
 }
 

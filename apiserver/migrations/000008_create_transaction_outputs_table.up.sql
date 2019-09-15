@@ -4,7 +4,7 @@ CREATE TABLE `transaction_outputs`
     `transaction_id` BIGINT UNSIGNED NOT NULL,
     `index`          INT UNSIGNED    NOT NULL,
     `value`          BIGINT UNSIGNED NOT NULL,
-    `pk_script`      BLOB            NOT NULL,
+    `script_pub_key` BLOB            NOT NULL,
     `is_spent`       TINYINT         NOT NULL,
     `address_id`     BIGINT UNSIGNED NOT NULL,
     PRIMARY KEY (`id`),

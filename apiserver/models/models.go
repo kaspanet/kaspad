@@ -85,8 +85,8 @@ type TransactionOutput struct {
 	Transaction   Transaction
 	Index         uint32
 	Value         uint64
+	ScriptPubKey  []byte
 	IsSpent       bool
-	PkScript      []byte
 	AddressID     uint64
 	Address       Address
 }

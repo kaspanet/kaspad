@@ -35,7 +35,7 @@ func RawTxInSignature(tx *wire.MsgTx, idx int, script []byte,
 // from a previous output to the owner of privKey. tx must include all
 // transaction inputs and outputs, however txin scripts are allowed to be filled
 // or empty. The returned script is calculated to be used as the idx'th txin
-// sigscript for tx. script is the PkScript of the previous output being used
+// sigscript for tx. script is the ScriptPubKey of the previous output being used
 // as the idx'th input. privKey is serialized in either a compressed or
 // uncompressed format based on compress. This format must match the same format
 // used to generate the payment address, or the script validation will fail.
@@ -60,7 +60,7 @@ func sign(chainParams *dagconfig.Params, tx *wire.MsgTx, idx int,
 	script []byte, hashType SigHashType, kdb KeyDB, sdb ScriptDB) ([]byte,
 	ScriptClass, []util.Address, int, error) {
 
-	class, addresses, nrequired, err := ExtractPkScriptAddrs(script,
+	class, addresses, nrequired, err := ExtractScriptPubKeyAddrs(script,
 		chainParams)
 	if err != nil {
 		return nil, NonStandardTy, nil, 0, err
@@ -95,13 +95,13 @@ func sign(chainParams *dagconfig.Params, tx *wire.MsgTx, idx int,
 }
 
 // mergeScripts merges sigScript and prevScript assuming they are both
-// partial solutions for pkScript spending output idx of tx. class, addresses
-// and nrequired are the result of extracting the addresses from pkscript.
+// partial solutions for scriptPubKey spending output idx of tx. class, addresses
+// and nrequired are the result of extracting the addresses from scriptPubKey.
 // The return value is the best effort merging of the two scripts. Calling this
-// function with addresses, class and nrequired that do not match pkScript is
+// function with addresses, class and nrequired that do not match scriptPubKey is
 // an error and results in undefined behaviour.
 func mergeScripts(chainParams *dagconfig.Params, tx *wire.MsgTx, idx int,
-	pkScript []byte, class ScriptClass, addresses []util.Address,
+	scriptPubKey []byte, class ScriptClass, addresses []util.Address,
 	nRequired int, sigScript, prevScript []byte) ([]byte, error) {
 
 	// TODO: the scripthash and multisig paths here are overly
@@ -127,7 +127,7 @@ func mergeScripts(chainParams *dagconfig.Params, tx *wire.MsgTx, idx int,
 
 		// We already know this information somewhere up the stack.
 		class, addresses, nrequired, _ :=
-			ExtractPkScriptAddrs(script, chainParams)
+			ExtractScriptPubKeyAddrs(script, chainParams)
 
 		// regenerate scripts.
 		sigScript, _ := unparseScript(sigPops)
@@ -190,18 +190,18 @@ func (sc ScriptClosure) GetScript(address util.Address) ([]byte, error) {
 }
 
 // SignTxOutput signs output idx of the given tx to resolve the script given in
-// pkScript with a signature type of hashType. Any keys required will be
+// scriptPubKey with a signature type of hashType. Any keys required will be
 // looked up by calling getKey() with the string of the given address.
 // Any pay-to-script-hash signatures will be similarly looked up by calling
 // getScript. If previousScript is provided then the results in previousScript
 // will be merged in a type-dependent manner with the newly generated.
 // signature script.
 func SignTxOutput(chainParams *dagconfig.Params, tx *wire.MsgTx, idx int,
-	pkScript []byte, hashType SigHashType, kdb KeyDB, sdb ScriptDB,
+	scriptPubKey []byte, hashType SigHashType, kdb KeyDB, sdb ScriptDB,
 	previousScript []byte) ([]byte, error) {
 
 	sigScript, class, addresses, nrequired, err := sign(chainParams, tx,
-		idx, pkScript, hashType, kdb, sdb)
+		idx, scriptPubKey, hashType, kdb, sdb)
 	if err != nil {
 		return nil, err
 	}
@@ -224,6 +224,6 @@ func SignTxOutput(chainParams *dagconfig.Params, tx *wire.MsgTx, idx int,
 	}
 
 	// Merge scripts. with any previous data, if any.
-	return mergeScripts(chainParams, tx, idx, pkScript, class,
+	return mergeScripts(chainParams, tx, idx, scriptPubKey, class,
 		addresses, nrequired, sigScript, previousScript)
 }
