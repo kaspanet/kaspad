@@ -1434,7 +1434,7 @@ func (dag *BlockDAG) SelectedParentChain(startHash *daghash.Hash) ([]*daghash.Ha
 	if startHash == nil {
 		startHash = dag.genesis.hash
 	}
-	if dag.BlockExists(startHash) {
+	if !dag.BlockExists(startHash) {
 		return nil, nil, fmt.Errorf("startHash %s does not exist in the DAG", startHash)
 	}
 
