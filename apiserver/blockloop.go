@@ -3,6 +3,8 @@ package main
 import (
 	"bytes"
 	"encoding/hex"
+	"github.com/daglabs/btcd/apiserver/database"
+	"github.com/daglabs/btcd/apiserver/jsonrpc"
 	"github.com/daglabs/btcd/apiserver/models"
 	"github.com/daglabs/btcd/btcjson"
 	"github.com/daglabs/btcd/util/daghash"
@@ -11,9 +13,14 @@ import (
 	"time"
 )
 
-func blockLoop(client *apiServerClient, db *gorm.DB, doneChan chan struct{}) error {
+func blockLoop(doneChan chan struct{}) error {
+	client, err := jsonrpc.GetClient()
+	if err != nil {
+		return err
+	}
+	db := database.DB
 	mostRecentBlockHash := findMostRecentBlockHash(db)
-	err := SyncBlocks(client, db, mostRecentBlockHash)
+	err = SyncBlocks(client, db, mostRecentBlockHash)
 	if err != nil {
 		return err
 	}
@@ -26,8 +33,8 @@ func blockLoop(client *apiServerClient, db *gorm.DB, doneChan chan struct{}) err
 loop:
 	for {
 		select {
-		case blockAdded := <-client.onBlockAdded:
-			hash := blockAdded.header.BlockHash()
+		case blockAdded := <-client.OnBlockAdded:
+			hash := blockAdded.Header.BlockHash()
 			block, rawBlock, err := fetchBlock(client, hash)
 			if err != nil {
 				log.Warnf("Could not fetch block %s: %s", hash, err)
@@ -39,13 +46,13 @@ loop:
 				continue
 			}
 			log.Infof("Added block %s", hash)
-		case chainChanged := <-client.onChainChanged:
-			removedHashes := make([]string, len(chainChanged.removedChainBlockHashes))
-			for i, hash := range chainChanged.removedChainBlockHashes {
+		case chainChanged := <-client.OnChainChanged:
+			removedHashes := make([]string, len(chainChanged.RemovedChainBlockHashes))
+			for i, hash := range chainChanged.RemovedChainBlockHashes {
 				removedHashes[i] = hash.String()
 			}
-			addedBlocks := make([]btcjson.ChainBlock, len(chainChanged.addedChainBlocks))
-			for i, addedBlock := range chainChanged.addedChainBlocks {
+			addedBlocks := make([]btcjson.ChainBlock, len(chainChanged.AddedChainBlocks))
+			for i, addedBlock := range chainChanged.AddedChainBlocks {
 				acceptedBlocks := make([]btcjson.AcceptedBlock, len(addedBlock.AcceptedBlocks))
 				for j, acceptedBlock := range addedBlock.AcceptedBlocks {
 					acceptedTxIDs := make([]string, len(acceptedBlock.AcceptedTxIDs))
@@ -84,7 +91,7 @@ func findMostRecentBlockHash(db *gorm.DB) *string {
 	return &block.BlockHash
 }
 
-func SyncBlocks(client *apiServerClient, db *gorm.DB, startHash *string) error {
+func SyncBlocks(client *jsonrpc.Client, db *gorm.DB, startHash *string) error {
 	var blocks []string
 	var rawBlocks []btcjson.GetBlockVerboseResult
 	for {
@@ -109,7 +116,7 @@ func SyncBlocks(client *apiServerClient, db *gorm.DB, startHash *string) error {
 	return insertBlocks(client, db, blocks, rawBlocks)
 }
 
-func SyncSelectedParentChain(client *apiServerClient, db *gorm.DB, startHash *string) error {
+func SyncSelectedParentChain(client *jsonrpc.Client, db *gorm.DB, startHash *string) error {
 	for {
 		chainFromBlockResult, err := client.GetChainFromBlock(false, startHash)
 		if err != nil {
@@ -129,7 +136,7 @@ func SyncSelectedParentChain(client *apiServerClient, db *gorm.DB, startHash *st
 	return nil
 }
 
-func fetchBlock(client *apiServerClient, blockHash *daghash.Hash) (
+func fetchBlock(client *jsonrpc.Client, blockHash *daghash.Hash) (
 	block string, rawBlock *btcjson.GetBlockVerboseResult, err error) {
 	msgBlock, err := client.GetBlock(blockHash, nil)
 	if err != nil {
@@ -149,7 +156,7 @@ func fetchBlock(client *apiServerClient, blockHash *daghash.Hash) (
 	return block, rawBlock, nil
 }
 
-func insertBlocks(client *apiServerClient, db *gorm.DB, blocks []string, rawBlocks []btcjson.GetBlockVerboseResult) error {
+func insertBlocks(client *jsonrpc.Client, db *gorm.DB, blocks []string, rawBlocks []btcjson.GetBlockVerboseResult) error {
 	for i, rawBlock := range rawBlocks {
 		block := blocks[i]
 		err := insertBlock(client, db, block, rawBlock)
@@ -160,7 +167,7 @@ func insertBlocks(client *apiServerClient, db *gorm.DB, blocks []string, rawBloc
 	return nil
 }
 
-func insertBlock(client *apiServerClient, db *gorm.DB, block string, rawBlock btcjson.GetBlockVerboseResult) error {
+func insertBlock(client *jsonrpc.Client, db *gorm.DB, block string, rawBlock btcjson.GetBlockVerboseResult) error {
 	db = db.Begin()
 
 	// Insert the block
@@ -310,7 +317,8 @@ func insertBlock(client *apiServerClient, db *gorm.DB, block string, rawBlock bt
 					TransactionID: dbTransaction.ID,
 					Index:         output.N,
 					Value:         output.Value,
-					PkScript:      scriptPubKey,
+					IsSpent:       false,
+					ScriptPubKey:  scriptPubKey,
 				}
 				db.Create(&dbTransactionOutput)
 			}
@@ -326,63 +334,63 @@ func updateSelectedParentChain(db *gorm.DB, removedChainHashes []string, addedCh
 	for _, removedHash := range removedChainHashes {
 		log.Warnf("RRRRemoved!!! %s", removedHash)
 
-		var dbBlock models.Block
-		db.Where(&models.Block{BlockHash: removedHash}).First(&dbBlock)
-		if dbBlock.ID == 0 {
-			// FUCK!
-		}
-
-		var dbUTXOs []models.UTXO
-		db.Where(&models.UTXO{AcceptingBlockID: dbBlock.ID}).Find(&dbUTXOs)
-		for _, dbUTXO := range dbUTXOs {
-			var dbTransactionOutput models.TransactionOutput
-			db.Where(&models.TransactionOutput{ID: dbUTXO.TransactionOutputID}).First(&dbTransactionOutput)
-			if dbTransactionOutput.ID == 0 {
-				// FUCK
-			}
-
-			var dbTransaction models.Transaction
-			db.Where(&models.Transaction{ID: dbTransactionOutput.TransactionID}).First(&dbTransaction)
-			if dbTransaction.ID == 0 {
-				// FUCK
-			}
-
-		}
+		//var dbBlock models.Block
+		//db.Where(&models.Block{BlockHash: removedHash}).First(&dbBlock)
+		//if dbBlock.ID == 0 {
+		//	// FUCK!
+		//}
+		//
+		//var dbUTXOs []models.UTXO
+		//db.Where(&models.UTXO{AcceptingBlockID: dbBlock.ID}).Find(&dbUTXOs)
+		//for _, dbUTXO := range dbUTXOs {
+		//	var dbTransactionOutput models.TransactionOutput
+		//	db.Where(&models.TransactionOutput{ID: dbUTXO.TransactionOutputID}).First(&dbTransactionOutput)
+		//	if dbTransactionOutput.ID == 0 {
+		//		// FUCK
+		//	}
+		//
+		//	var dbTransaction models.Transaction
+		//	db.Where(&models.Transaction{ID: dbTransactionOutput.TransactionID}).First(&dbTransaction)
+		//	if dbTransaction.ID == 0 {
+		//		// FUCK
+		//	}
+		//
+		//}
 	}
 	for _, addedBlock := range addedChainBlocks {
 		log.Warnf("AAAAdded!!! %+v", addedBlock)
 
-		for _, acceptedBlock := range addedBlock.AcceptedBlocks {
-			var dbAcceptingBlock models.Block
-			db.Where(&models.Block{BlockHash: acceptedBlock.Hash}).First(dbAcceptingBlock)
-			if dbAcceptingBlock.ID == 0 {
-				// FUCK
-			}
-
-			for _, acceptedTxID := range acceptedBlock.AcceptedTxIDs {
-				var dbTransaction models.Transaction
-				db.Where(&models.Transaction{TransactionID: acceptedTxID}).First(&dbTransaction)
-				if dbTransaction.ID == 0 {
-					// FUCK
-				}
-
-				var dbTransactionInputs []models.TransactionInput
-				db.Where(&models.TransactionInput{TransactionID: dbTransaction.ID}).Find(&dbTransactionInputs)
-				for _, dbTransactionInput := range dbTransactionInputs {
-					db.Delete(&models.UTXO{TransactionOutputID: dbTransactionInput.TransactionOutputID})
-				}
-
-				var dbTransactionOutputs []models.TransactionOutput
-				db.Where(&models.TransactionOutput{TransactionID: dbTransaction.ID}).Find(&dbTransactionOutputs)
-				for _, dbTransactionOutput := range dbTransactionOutputs {
-					dbUTXO := models.UTXO{
-						TransactionOutputID: dbTransactionOutput.ID,
-						AcceptingBlockID:    dbAcceptingBlock.ID,
-					}
-					db.Create(&dbUTXO)
-				}
-			}
-		}
+		//for _, acceptedBlock := range addedBlock.AcceptedBlocks {
+		//	var dbAcceptingBlock models.Block
+		//	db.Where(&models.Block{BlockHash: acceptedBlock.Hash}).First(dbAcceptingBlock)
+		//	if dbAcceptingBlock.ID == 0 {
+		//		// FUCK
+		//	}
+		//
+		//	for _, acceptedTxID := range acceptedBlock.AcceptedTxIDs {
+		//		var dbTransaction models.Transaction
+		//		db.Where(&models.Transaction{TransactionID: acceptedTxID}).First(&dbTransaction)
+		//		if dbTransaction.ID == 0 {
+		//			// FUCK
+		//		}
+		//
+		//		var dbTransactionInputs []models.TransactionInput
+		//		db.Where(&models.TransactionInput{TransactionID: dbTransaction.ID}).Find(&dbTransactionInputs)
+		//		for _, dbTransactionInput := range dbTransactionInputs {
+		//			db.Delete(&models.UTXO{TransactionOutputID: dbTransactionInput.TransactionOutputID})
+		//		}
+		//
+		//		var dbTransactionOutputs []models.TransactionOutput
+		//		db.Where(&models.TransactionOutput{TransactionID: dbTransaction.ID}).Find(&dbTransactionOutputs)
+		//		for _, dbTransactionOutput := range dbTransactionOutputs {
+		//			dbUTXO := models.UTXO{
+		//				TransactionOutputID: dbTransactionOutput.ID,
+		//				AcceptingBlockID:    dbAcceptingBlock.ID,
+		//			}
+		//			db.Create(&dbUTXO)
+		//		}
+		//	}
+		//}
 	}
 
 	db.Commit()

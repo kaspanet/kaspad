@@ -16,8 +16,8 @@ import (
 // Client represents a connection to the JSON-RPC API of a full node
 type Client struct {
 	*rpcclient.Client
-	onBlockAdded   chan *blockAddedMsg
-	onChainChanged chan *chainChangedMsg
+	OnBlockAdded   chan *BlockAddedMsg
+	OnChainChanged chan *ChainChangedMsg
 }
 
 var client *Client
@@ -31,14 +31,14 @@ func GetClient() (*Client, error) {
 	return client, nil
 }
 
-type blockAddedMsg struct {
-	chainHeight uint64
-	header      *wire.BlockHeader
+type BlockAddedMsg struct {
+	ChainHeight uint64
+	Header      *wire.BlockHeader
 }
 
-type chainChangedMsg struct {
-	removedChainBlockHashes []*daghash.Hash
-	addedChainBlocks        []*rpcclient.ChainBlock
+type ChainChangedMsg struct {
+	RemovedChainBlockHashes []*daghash.Hash
+	AddedChainBlocks        []*rpcclient.ChainBlock
 }
 
 // Close closes the connection to the JSON-RPC API server
@@ -85,22 +85,22 @@ func Connect(cfg *config.Config) error {
 
 func newClient(connCfg *rpcclient.ConnConfig) (*Client, error) {
 	client = &Client{
-		onBlockAdded:   make(chan *blockAddedMsg),
-		onChainChanged: make(chan *chainChangedMsg),
+		OnBlockAdded:   make(chan *BlockAddedMsg),
+		OnChainChanged: make(chan *ChainChangedMsg),
 	}
 	notificationHandlers := &rpcclient.NotificationHandlers{
 		OnFilteredBlockAdded: func(height uint64, header *wire.BlockHeader,
 			txs []*util.Tx) {
-			client.onBlockAdded <- &blockAddedMsg{
-				chainHeight: height,
-				header:      header,
+			client.OnBlockAdded <- &BlockAddedMsg{
+				ChainHeight: height,
+				Header:      header,
 			}
 		},
 		OnChainChanged: func(removedChainBlockHashes []*daghash.Hash,
 			addedChainBlocks []*rpcclient.ChainBlock) {
-			client.onChainChanged <- &chainChangedMsg{
-				removedChainBlockHashes: removedChainBlockHashes,
-				addedChainBlocks:        addedChainBlocks,
+			client.OnChainChanged <- &ChainChangedMsg{
+				RemovedChainBlockHashes: removedChainBlockHashes,
+				AddedChainBlocks:        addedChainBlocks,
 			}
 		},
 	}
