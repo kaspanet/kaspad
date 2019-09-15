@@ -90,7 +90,7 @@ var (
 			}},
 			TxOut: []*wire.TxOut{{
 				Value: 0,
-				PkScript: fromHex("4104678afdb0fe5548271967f1" +
+				ScriptPubKey: fromHex("4104678afdb0fe5548271967f1" +
 					"a67130b7105cd6a828e03909a67962e0ea1f" +
 					"61deb649f6bc3f4cef38c4f35504e51ec138" +
 					"c4f35504e51ec112de5c384df7ba0b8d578a" +

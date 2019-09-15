@@ -24,7 +24,7 @@ type transactionResponse struct {
 type transactionOutputResponse struct {
 	TransactionID           string `json:"transactionId,omitempty"`
 	Value                   uint64 `json:"value"`
-	PkScript                string `json:"pkScript"`
+	ScriptPubKey            string `json:"scriptPubKey"`
 	Address                 string `json:"address,omitempty"`
 	AcceptingBlockHash      string `json:"acceptingBlockHash,omitempty"`
 	AcceptingBlockBlueScore uint64 `json:"acceptingBlockBlueScore,omitempty"`
@@ -75,9 +75,9 @@ func convertTxModelToTxResponse(tx *models.Transaction) *transactionResponse {
 	}
 	for i, txOut := range tx.TransactionOutputs {
 		txRes.Outputs[i] = &transactionOutputResponse{
-			Value:    txOut.Value,
-			PkScript: hex.EncodeToString(txOut.PkScript),
-			Address:  txOut.Address.Address,
+			Value:        txOut.Value,
+			ScriptPubKey: hex.EncodeToString(txOut.ScriptPubKey),
+			Address:      txOut.Address.Address,
 		}
 	}
 	for i, txIn := range tx.TransactionInputs {

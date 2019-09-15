@@ -294,8 +294,8 @@ func (g *testGenerator) createCoinbaseTx(blueScore uint64) *wire.MsgTx {
 		SignatureScript: coinbaseScript,
 	}
 	txOut := &wire.TxOut{
-		Value:    blockdag.CalcBlockSubsidy(blueScore, g.params),
-		PkScript: opTrueScript,
+		Value:        blockdag.CalcBlockSubsidy(blueScore, g.params),
+		ScriptPubKey: opTrueScript,
 	}
 	return wire.NewNativeMsgTx(1, []*wire.TxIn{txIn}, []*wire.TxOut{txOut})
 }
@@ -410,9 +410,9 @@ func additionalSpendFee(fee util.Amount) func(*wire.MsgBlock) {
 
 // replaceSpendScript returns a function that itself takes a block and modifies
 // it by replacing the public key script of the spending transaction.
-func replaceSpendScript(pkScript []byte) func(*wire.MsgBlock) {
+func replaceSpendScript(scriptPubKey []byte) func(*wire.MsgBlock) {
 	return func(b *wire.MsgBlock) {
-		b.Transactions[1].TxOut[0].PkScript = pkScript
+		b.Transactions[1].TxOut[0].ScriptPubKey = scriptPubKey
 	}
 }
 
@@ -684,7 +684,7 @@ func countBlockSigOps(block *wire.MsgBlock) int {
 			totalSigOps += numSigOps
 		}
 		for _, txOut := range tx.TxOut {
-			numSigOps := txscript.GetSigOpCount(txOut.PkScript)
+			numSigOps := txscript.GetSigOpCount(txOut.ScriptPubKey)
 			totalSigOps += numSigOps
 		}
 	}
@@ -777,7 +777,7 @@ func (g *testGenerator) assertTipBlockTxOutOpReturn(txIndex, txOutIndex uint32) 
 	}
 
 	txOut := tx.TxOut[txOutIndex]
-	if txOut.PkScript[0] != txscript.OpReturn {
+	if txOut.ScriptPubKey[0] != txscript.OpReturn {
 		panic(fmt.Sprintf("transaction index %d output %d in block %q "+
 			"(height %d) is not an OP_RETURN", txIndex, txOutIndex,
 			g.tipName, g.tipHeight))
@@ -1314,7 +1314,7 @@ func Generate(includeLargeReorg bool) (tests [][]TestInstance, err error) {
 		fill := maxBlockSigOps - (txnsNeeded * redeemScriptSigOps) + 1
 		finalTx := b.Transactions[len(b.Transactions)-1]
 		tx := createSpendTxForTx(finalTx, lowFee)
-		tx.TxOut[0].PkScript = repeatOpcode(txscript.OpCheckSig, fill)
+		tx.TxOut[0].ScriptPubKey = repeatOpcode(txscript.OpCheckSig, fill)
 		b.AddTransaction(tx)
 	})
 	rejected(blockdag.ErrTooManySigOps)
@@ -1348,7 +1348,7 @@ func Generate(includeLargeReorg bool) (tests [][]TestInstance, err error) {
 		}
 		finalTx := b.Transactions[len(b.Transactions)-1]
 		tx := createSpendTxForTx(finalTx, lowFee)
-		tx.TxOut[0].PkScript = repeatOpcode(txscript.OpCheckSig, fill)
+		tx.TxOut[0].ScriptPubKey = repeatOpcode(txscript.OpCheckSig, fill)
 		b.AddTransaction(tx)
 	})
 	accepted()
