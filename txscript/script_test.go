@@ -3816,10 +3816,10 @@ func TestGetPreciseSigOps(t *testing.T) {
 	// The signature in the p2sh script is nonsensical for the tests since
 	// this script will never be executed.  What matters is that it matches
 	// the right pattern.
-	pkScript := mustParseShortForm("HASH160 DATA_20 0x433ec2ac1ffa1b7b7d0" +
+	scriptPubKey := mustParseShortForm("HASH160 DATA_20 0x433ec2ac1ffa1b7b7d0" +
 		"27f564529c57197f9ae88 EQUAL")
 	for _, test := range tests {
-		count := GetPreciseSigOpCount(test.scriptSig, pkScript, true)
+		count := GetPreciseSigOpCount(test.scriptSig, scriptPubKey, true)
 		if count != test.nSigOps {
 			t.Errorf("%s: expected count of %d, got %d", test.name,
 				test.nSigOps, count)
@@ -3943,18 +3943,18 @@ func TestIsUnspendable(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name     string
-		pkScript []byte
-		expected bool
+		name         string
+		scriptPubKey []byte
+		expected     bool
 	}{
 		{
 			// Unspendable
-			pkScript: []byte{0x6a, 0x04, 0x74, 0x65, 0x73, 0x74},
-			expected: true,
+			scriptPubKey: []byte{0x6a, 0x04, 0x74, 0x65, 0x73, 0x74},
+			expected:     true,
 		},
 		{
 			// Spendable
-			pkScript: []byte{0x76, 0xa9, 0x14, 0x29, 0x95, 0xa0,
+			scriptPubKey: []byte{0x76, 0xa9, 0x14, 0x29, 0x95, 0xa0,
 				0xfe, 0x68, 0x43, 0xfa, 0x9b, 0x95, 0x45,
 				0x97, 0xf0, 0xdc, 0xa7, 0xa4, 0x4d, 0xf6,
 				0xfa, 0x0b, 0x5c, 0x88, 0xac},
@@ -3963,7 +3963,7 @@ func TestIsUnspendable(t *testing.T) {
 	}
 
 	for i, test := range tests {
-		res := IsUnspendable(test.pkScript)
+		res := IsUnspendable(test.scriptPubKey)
 		if res != test.expected {
 			t.Errorf("TestIsUnspendable #%d failed: got %v want %v",
 				i, res, test.expected)

@@ -333,29 +333,29 @@ func TestCompressedTxOut(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name       string
-		amount     uint64
-		pkScript   []byte
-		compressed []byte
+		name         string
+		amount       uint64
+		scriptPubKey []byte
+		compressed   []byte
 	}{
 		{
-			name:       "pay-to-pubkey-hash dust",
-			amount:     546,
-			pkScript:   hexToBytes("76a9141018853670f9f3b0582c5b9ee8ce93764ac32b9388ac"),
-			compressed: hexToBytes("a52f001018853670f9f3b0582c5b9ee8ce93764ac32b93"),
+			name:         "pay-to-pubkey-hash dust",
+			amount:       546,
+			scriptPubKey: hexToBytes("76a9141018853670f9f3b0582c5b9ee8ce93764ac32b9388ac"),
+			compressed:   hexToBytes("a52f001018853670f9f3b0582c5b9ee8ce93764ac32b93"),
 		},
 		{
-			name:       "pay-to-pubkey uncompressed 1 BTC",
-			amount:     100000000,
-			pkScript:   hexToBytes("4104192d74d0cb94344c9569c2e77901573d8d7903c3ebec3a957724895dca52c6b40d45264838c0bd96852662ce6a847b197376830160c6d2eb5e6a4c44d33f453eac"),
-			compressed: hexToBytes("0904192d74d0cb94344c9569c2e77901573d8d7903c3ebec3a957724895dca52c6b4"),
+			name:         "pay-to-pubkey uncompressed 1 BTC",
+			amount:       100000000,
+			scriptPubKey: hexToBytes("4104192d74d0cb94344c9569c2e77901573d8d7903c3ebec3a957724895dca52c6b40d45264838c0bd96852662ce6a847b197376830160c6d2eb5e6a4c44d33f453eac"),
+			compressed:   hexToBytes("0904192d74d0cb94344c9569c2e77901573d8d7903c3ebec3a957724895dca52c6b4"),
 		},
 	}
 
 	for _, test := range tests {
 		// Ensure the function to calculate the serialized size without
 		// actually serializing the txout is calculated properly.
-		gotSize := compressedTxOutSize(test.amount, test.pkScript)
+		gotSize := compressedTxOutSize(test.amount, test.scriptPubKey)
 		if gotSize != len(test.compressed) {
 			t.Errorf("compressedTxOutSize (%s): did not get "+
 				"expected size - got %d, want %d", test.name,
@@ -366,7 +366,7 @@ func TestCompressedTxOut(t *testing.T) {
 		// Ensure the txout compresses to the expected value.
 		gotCompressed := make([]byte, gotSize)
 		gotBytesWritten := putCompressedTxOut(gotCompressed,
-			test.amount, test.pkScript)
+			test.amount, test.scriptPubKey)
 		if !bytes.Equal(gotCompressed, test.compressed) {
 			t.Errorf("compressTxOut (%s): did not get expected "+
 				"bytes - got %x, want %x", test.name,
@@ -396,10 +396,10 @@ func TestCompressedTxOut(t *testing.T) {
 				test.name, gotAmount, test.amount)
 			continue
 		}
-		if !bytes.Equal(gotScript, test.pkScript) {
+		if !bytes.Equal(gotScript, test.scriptPubKey) {
 			t.Errorf("decodeCompressedTxOut (%s): did not get "+
 				"expected script - got %x, want %x",
-				test.name, gotScript, test.pkScript)
+				test.name, gotScript, test.scriptPubKey)
 			continue
 		}
 		if gotBytesRead != len(test.compressed) {

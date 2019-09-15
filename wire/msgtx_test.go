@@ -80,7 +80,7 @@ func TestTx(t *testing.T) {
 
 	// Ensure we get the same transaction output back out.
 	txValue := uint64(5000000000)
-	pkScript := []byte{
+	scriptPubKey := []byte{
 		0x41, // OP_DATA_65
 		0x04, 0xd6, 0x4b, 0xdf, 0xd0, 0x9e, 0xb1, 0xc5,
 		0xfe, 0x29, 0x5a, 0xbd, 0xeb, 0x1d, 0xca, 0x42,
@@ -93,16 +93,16 @@ func TestTx(t *testing.T) {
 		0xa6, // 65-byte signature
 		0xac, // OP_CHECKSIG
 	}
-	txOut := NewTxOut(txValue, pkScript)
+	txOut := NewTxOut(txValue, scriptPubKey)
 	if txOut.Value != txValue {
-		t.Errorf("NewTxOut: wrong pk script - got %v, want %v",
+		t.Errorf("NewTxOut: wrong scriptPubKey - got %v, want %v",
 			txOut.Value, txValue)
 
 	}
-	if !bytes.Equal(txOut.PkScript, pkScript) {
-		t.Errorf("NewTxOut: wrong pk script - got %v, want %v",
-			spew.Sdump(txOut.PkScript),
-			spew.Sdump(pkScript))
+	if !bytes.Equal(txOut.ScriptPubKey, scriptPubKey) {
+		t.Errorf("NewTxOut: wrong scriptPubKey - got %v, want %v",
+			spew.Sdump(txOut.ScriptPubKey),
+			spew.Sdump(scriptPubKey))
 	}
 
 	// Ensure transaction inputs are added properly.
@@ -147,7 +147,7 @@ func TestTxHashAndID(t *testing.T) {
 	}
 	txOut := &TxOut{
 		Value: 5000000000,
-		PkScript: []byte{
+		ScriptPubKey: []byte{
 			0x41, // OP_DATA_65
 			0x04, 0xd6, 0x4b, 0xdf, 0xd0, 0x9e, 0xb1, 0xc5,
 			0xfe, 0x29, 0x5a, 0xbd, 0xeb, 0x1d, 0xca, 0x42,
@@ -212,14 +212,14 @@ func TestTxHashAndID(t *testing.T) {
 	txOuts := []*TxOut{
 		{
 			Value: 244623243,
-			PkScript: []byte{
+			ScriptPubKey: []byte{
 				0x76, 0xA9, 0x14, 0xBA, 0xDE, 0xEC, 0xFD, 0xEF, 0x05, 0x07, 0x24, 0x7F, 0xC8, 0xF7, 0x42, 0x41,
 				0xD7, 0x3B, 0xC0, 0x39, 0x97, 0x2D, 0x7B, 0x88, 0xAC,
 			},
 		},
 		{
 			Value: 44602432,
-			PkScript: []byte{
+			ScriptPubKey: []byte{
 				0x76, 0xA9, 0x14, 0xC1, 0x09, 0x32, 0x48, 0x3F, 0xEC, 0x93, 0xED, 0x51, 0xF5, 0xFE, 0x95, 0xE7,
 				0x25, 0x59, 0xF2, 0xCC, 0x70, 0x43, 0xF9, 0x88, 0xAC,
 			},
@@ -352,9 +352,9 @@ func TestTxWireErrors(t *testing.T) {
 		{multiTx, multiTxEncoded, pver, 57, io.ErrShortWrite, io.EOF},
 		// Force error in transaction output value.
 		{multiTx, multiTxEncoded, pver, 58, io.ErrShortWrite, io.EOF},
-		// Force error in transaction output pk script length.
+		// Force error in transaction output scriptPubKey length.
 		{multiTx, multiTxEncoded, pver, 66, io.ErrShortWrite, io.EOF},
-		// Force error in transaction output pk script.
+		// Force error in transaction output scriptPubKey.
 		{multiTx, multiTxEncoded, pver, 67, io.ErrShortWrite, io.EOF},
 		// Force error in transaction output lock time.
 		{multiTx, multiTxEncoded, pver, 210, io.ErrShortWrite, io.EOF},
@@ -434,11 +434,11 @@ func TestTxSerialize(t *testing.T) {
 	}
 
 	tests := []struct {
-		name         string
-		in           *MsgTx // Message to encode
-		out          *MsgTx // Expected decoded message
-		buf          []byte // Serialized data
-		pkScriptLocs []int  // Expected output script locations
+		name             string
+		in               *MsgTx // Message to encode
+		out              *MsgTx // Expected decoded message
+		buf              []byte // Serialized data
+		scriptPubKeyLocs []int  // Expected output script locations
 	}{
 		// No transactions.
 		{
@@ -473,7 +473,7 @@ func TestTxSerialize(t *testing.T) {
 			multiTx,
 			multiTx,
 			multiTxEncoded,
-			multiTxPkScriptLocs,
+			multiTxScriptPubKeyLocs,
 		},
 	}
 
@@ -507,21 +507,21 @@ func TestTxSerialize(t *testing.T) {
 		}
 
 		// Ensure the public key script locations are accurate.
-		pkScriptLocs := test.in.PkScriptLocs()
-		if !reflect.DeepEqual(pkScriptLocs, test.pkScriptLocs) {
-			t.Errorf("PkScriptLocs #%d\n got: %s want: %s", i,
-				spew.Sdump(pkScriptLocs),
-				spew.Sdump(test.pkScriptLocs))
+		scriptPubKeyLocs := test.in.ScriptPubKeyLocs()
+		if !reflect.DeepEqual(scriptPubKeyLocs, test.scriptPubKeyLocs) {
+			t.Errorf("ScriptPubKeyLocs #%d\n got: %s want: %s", i,
+				spew.Sdump(scriptPubKeyLocs),
+				spew.Sdump(test.scriptPubKeyLocs))
 			continue
 		}
-		for j, loc := range pkScriptLocs {
-			wantPkScript := test.in.TxOut[j].PkScript
-			gotPkScript := test.buf[loc : loc+len(wantPkScript)]
-			if !bytes.Equal(gotPkScript, wantPkScript) {
-				t.Errorf("PkScriptLocs #%d:%d\n unexpected "+
+		for j, loc := range scriptPubKeyLocs {
+			wantScriptPubKey := test.in.TxOut[j].ScriptPubKey
+			gotScriptPubKey := test.buf[loc : loc+len(wantScriptPubKey)]
+			if !bytes.Equal(gotScriptPubKey, wantScriptPubKey) {
+				t.Errorf("ScriptPubKeyLocs #%d:%d\n unexpected "+
 					"script got: %s want: %s", i, j,
-					spew.Sdump(gotPkScript),
-					spew.Sdump(wantPkScript))
+					spew.Sdump(gotScriptPubKey),
+					spew.Sdump(wantScriptPubKey))
 			}
 		}
 	}
@@ -555,9 +555,9 @@ func TestTxSerializeErrors(t *testing.T) {
 		{multiTx, multiTxEncoded, 57, io.ErrShortWrite, io.EOF},
 		// Force error in transaction output value.
 		{multiTx, multiTxEncoded, 58, io.ErrShortWrite, io.EOF},
-		// Force error in transaction output pk script length.
+		// Force error in transaction output scriptPubKey length.
 		{multiTx, multiTxEncoded, 66, io.ErrShortWrite, io.EOF},
-		// Force error in transaction output pk script.
+		// Force error in transaction output scriptPubKey.
 		{multiTx, multiTxEncoded, 67, io.ErrShortWrite, io.EOF},
 		// Force error in transaction output lock time.
 		{multiTx, multiTxEncoded, 210, io.ErrShortWrite, io.EOF},
@@ -857,7 +857,7 @@ var multiTxIns = []*TxIn{
 var multiTxOuts = []*TxOut{
 	{
 		Value: 0x12a05f200,
-		PkScript: []byte{
+		ScriptPubKey: []byte{
 			0x41, // OP_DATA_65
 			0x04, 0xd6, 0x4b, 0xdf, 0xd0, 0x9e, 0xb1, 0xc5,
 			0xfe, 0x29, 0x5a, 0xbd, 0xeb, 0x1d, 0xca, 0x42,
@@ -873,7 +873,7 @@ var multiTxOuts = []*TxOut{
 	},
 	{
 		Value: 0x5f5e100,
-		PkScript: []byte{
+		ScriptPubKey: []byte{
 			0x41, // OP_DATA_65
 			0x04, 0xd6, 0x4b, 0xdf, 0xd0, 0x9e, 0xb1, 0xc5,
 			0xfe, 0x29, 0x5a, 0xbd, 0xeb, 0x1d, 0xca, 0x42,
@@ -905,7 +905,7 @@ var multiTxEncoded = []byte{
 	0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, // Sequence
 	0x02,                                           // Varint for number of output transactions
 	0x00, 0xf2, 0x05, 0x2a, 0x01, 0x00, 0x00, 0x00, // Transaction amount
-	0x43, // Varint for length of pk script
+	0x43, // Varint for length of scriptPubKey
 	0x41, // OP_DATA_65
 	0x04, 0xd6, 0x4b, 0xdf, 0xd0, 0x9e, 0xb1, 0xc5,
 	0xfe, 0x29, 0x5a, 0xbd, 0xeb, 0x1d, 0xca, 0x42,
@@ -918,7 +918,7 @@ var multiTxEncoded = []byte{
 	0xa6,                                           // 65-byte signature
 	0xac,                                           // OP_CHECKSIG
 	0x00, 0xe1, 0xf5, 0x05, 0x00, 0x00, 0x00, 0x00, // Transaction amount
-	0x43, // Varint for length of pk script
+	0x43, // Varint for length of scriptPubKey
 	0x41, // OP_DATA_65
 	0x04, 0xd6, 0x4b, 0xdf, 0xd0, 0x9e, 0xb1, 0xc5,
 	0xfe, 0x29, 0x5a, 0xbd, 0xeb, 0x1d, 0xca, 0x42,
@@ -936,6 +936,6 @@ var multiTxEncoded = []byte{
 	0x00, 0x00, 0x00, 0x00, // Sub Network ID
 }
 
-// multiTxPkScriptLocs is the location information for the public key scripts
+// multiTxScriptPubKeyLocs is the location information for the public key scripts
 // located in multiTx.
-var multiTxPkScriptLocs = []int{67, 143}
+var multiTxScriptPubKeyLocs = []int{67, 143}

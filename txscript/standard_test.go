@@ -54,9 +54,9 @@ func newAddressScriptHash(scriptHash []byte) util.Address {
 	return addr
 }
 
-// TestExtractPkScriptAddrs ensures that extracting the type, addresses, and
-// number of required signatures from PkScripts works as intended.
-func TestExtractPkScriptAddrs(t *testing.T) {
+// TestExtractScriptPubKeyAddrs ensures that extracting the type, addresses, and
+// number of required signatures from scriptPubKeys works as intended.
+func TestExtractScriptPubKeyAddrs(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
@@ -115,7 +115,7 @@ func TestExtractPkScriptAddrs(t *testing.T) {
 		},
 		// Note the technically the pubkey is the second item on the
 		// stack, but since the address extraction intentionally only
-		// works with standard PkScripts, this should not return any
+		// works with standard scriptPubKeys, this should not return any
 		// addresses.
 		{
 			name: "valid sigscript to reedeem p2pk - no addresses",
@@ -148,27 +148,27 @@ func TestExtractPkScriptAddrs(t *testing.T) {
 
 	t.Logf("Running %d tests.", len(tests))
 	for i, test := range tests {
-		class, addrs, reqSigs, err := ExtractPkScriptAddrs(
+		class, addrs, reqSigs, err := ExtractScriptPubKeyAddrs(
 			test.script, &dagconfig.MainNetParams)
 		if err != nil {
 		}
 
 		if !reflect.DeepEqual(addrs, test.addrs) {
-			t.Errorf("ExtractPkScriptAddrs #%d (%s) unexpected "+
+			t.Errorf("ExtractScriptPubKeyAddrs #%d (%s) unexpected "+
 				"addresses\ngot  %v\nwant %v", i, test.name,
 				addrs, test.addrs)
 			continue
 		}
 
 		if reqSigs != test.reqSigs {
-			t.Errorf("ExtractPkScriptAddrs #%d (%s) unexpected "+
+			t.Errorf("ExtractScriptPubKeyAddrs #%d (%s) unexpected "+
 				"number of required signatures - got %d, "+
 				"want %d", i, test.name, reqSigs, test.reqSigs)
 			continue
 		}
 
 		if class != test.class {
-			t.Errorf("ExtractPkScriptAddrs #%d (%s) unexpected "+
+			t.Errorf("ExtractScriptPubKeyAddrs #%d (%s) unexpected "+
 				"script type - got %s, want %s", i, test.name,
 				class, test.class)
 			continue
@@ -182,9 +182,9 @@ func TestCalcScriptInfo(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name      string
-		sigScript string
-		pkScript  string
+		name         string
+		sigScript    string
+		scriptPubKey string
 
 		isP2SH bool
 
@@ -194,10 +194,10 @@ func TestCalcScriptInfo(t *testing.T) {
 		{
 			// Invented scripts, the hashes do not match
 			// Truncated version of test below:
-			name: "pkscript doesn't parse",
+			name: "scriptPubKey doesn't parse",
 			sigScript: "1 81 DATA_8 2DUP EQUAL NOT VERIFY ABS " +
 				"SWAP ABS EQUAL",
-			pkScript: "HASH160 DATA_20 0xfe441065b6532231de2fac56" +
+			scriptPubKey: "HASH160 DATA_20 0xfe441065b6532231de2fac56" +
 				"3152205ec4f59c",
 			isP2SH:        true,
 			scriptInfoErr: scriptError(ErrMalformedPush, ""),
@@ -207,7 +207,7 @@ func TestCalcScriptInfo(t *testing.T) {
 			// Truncated version of p2sh script below.
 			sigScript: "1 81 DATA_8 2DUP EQUAL NOT VERIFY ABS " +
 				"SWAP ABS",
-			pkScript: "HASH160 DATA_20 0xfe441065b6532231de2fac56" +
+			scriptPubKey: "HASH160 DATA_20 0xfe441065b6532231de2fac56" +
 				"3152205ec4f59c74 EQUAL",
 			isP2SH:        true,
 			scriptInfoErr: scriptError(ErrMalformedPush, ""),
@@ -218,14 +218,14 @@ func TestCalcScriptInfo(t *testing.T) {
 			sigScript: "1 81 DATA_25 DUP HASH160 DATA_20 0x010203" +
 				"0405060708090a0b0c0d0e0f1011121314 EQUALVERIFY " +
 				"CHECKSIG",
-			pkScript: "HASH160 DATA_20 0xfe441065b6532231de2fac56" +
+			scriptPubKey: "HASH160 DATA_20 0xfe441065b6532231de2fac56" +
 				"3152205ec4f59c74 EQUAL",
 			isP2SH: true,
 			scriptInfo: ScriptInfo{
-				PkScriptClass:  ScriptHashTy,
-				NumInputs:      3,
-				ExpectedInputs: 3, // nonstandard p2sh.
-				SigOps:         1,
+				ScriptPubKeyClass: ScriptHashTy,
+				NumInputs:         3,
+				ExpectedInputs:    3, // nonstandard p2sh.
+				SigOps:            1,
 			},
 		},
 		{
@@ -234,23 +234,23 @@ func TestCalcScriptInfo(t *testing.T) {
 			name: "p2sh nonstandard script",
 			sigScript: "1 81 DATA_8 2DUP EQUAL NOT VERIFY ABS " +
 				"SWAP ABS EQUAL",
-			pkScript: "HASH160 DATA_20 0xfe441065b6532231de2fac56" +
+			scriptPubKey: "HASH160 DATA_20 0xfe441065b6532231de2fac56" +
 				"3152205ec4f59c74 EQUAL",
 			isP2SH: true,
 			scriptInfo: ScriptInfo{
-				PkScriptClass:  ScriptHashTy,
-				NumInputs:      3,
-				ExpectedInputs: -1, // nonstandard p2sh.
-				SigOps:         0,
+				ScriptPubKeyClass: ScriptHashTy,
+				NumInputs:         3,
+				ExpectedInputs:    -1, // nonstandard p2sh.
+				SigOps:            0,
 			},
 		},
 	}
 
 	for _, test := range tests {
 		sigScript := mustParseShortForm(test.sigScript)
-		pkScript := mustParseShortForm(test.pkScript)
+		scriptPubKey := mustParseShortForm(test.scriptPubKey)
 
-		si, err := CalcScriptInfo(sigScript, pkScript, test.isP2SH)
+		si, err := CalcScriptInfo(sigScript, scriptPubKey, test.isP2SH)
 		if e := checkScriptError(err, test.scriptInfoErr); e != nil {
 			t.Errorf("scriptinfo test %q: %v", test.name, e)
 			continue
@@ -349,7 +349,7 @@ func TestPayToAddrScript(t *testing.T) {
 
 	t.Logf("Running %d tests", len(tests))
 	for i, test := range tests {
-		pkScript, err := PayToAddrScript(test.in)
+		scriptPubKey, err := PayToAddrScript(test.in)
 		if e := checkScriptError(err, test.err); e != nil {
 			t.Errorf("PayToAddrScript #%d unexpected error - "+
 				"got %v, want %v", i, err, test.err)
@@ -357,9 +357,9 @@ func TestPayToAddrScript(t *testing.T) {
 		}
 
 		expected := mustParseShortForm(test.expected)
-		if !bytes.Equal(pkScript, expected) {
+		if !bytes.Equal(scriptPubKey, expected) {
 			t.Errorf("PayToAddrScript #%d got: %x\nwant: %x",
-				i, pkScript, expected)
+				i, scriptPubKey, expected)
 			continue
 		}
 	}

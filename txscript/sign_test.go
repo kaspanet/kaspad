@@ -53,10 +53,10 @@ func mkGetScript(scripts map[string][]byte) ScriptDB {
 	})
 }
 
-func checkScripts(msg string, tx *wire.MsgTx, idx int, sigScript, pkScript []byte) error {
+func checkScripts(msg string, tx *wire.MsgTx, idx int, sigScript, scriptPubKey []byte) error {
 	tx.TxIn[idx].SignatureScript = sigScript
 	var flags ScriptFlags
-	vm, err := NewEngine(pkScript, tx, idx,
+	vm, err := NewEngine(scriptPubKey, tx, idx,
 		flags, nil)
 	if err != nil {
 		return fmt.Errorf("failed to make script engine for %s: %v",
@@ -72,17 +72,17 @@ func checkScripts(msg string, tx *wire.MsgTx, idx int, sigScript, pkScript []byt
 	return nil
 }
 
-func signAndCheck(msg string, tx *wire.MsgTx, idx int, pkScript []byte,
+func signAndCheck(msg string, tx *wire.MsgTx, idx int, scriptPubKey []byte,
 	hashType SigHashType, kdb KeyDB, sdb ScriptDB,
 	previousScript []byte) error {
 
 	sigScript, err := SignTxOutput(&dagconfig.TestNet3Params, tx, idx,
-		pkScript, hashType, kdb, sdb, nil)
+		scriptPubKey, hashType, kdb, sdb, nil)
 	if err != nil {
 		return fmt.Errorf("failed to sign output %s: %v", msg, err)
 	}
 
-	return checkScripts(msg, tx, idx, sigScript, pkScript)
+	return checkScripts(msg, tx, idx, sigScript, scriptPubKey)
 }
 
 func TestSignTxOutput(t *testing.T) {
@@ -156,13 +156,13 @@ func TestSignTxOutput(t *testing.T) {
 				break
 			}
 
-			pkScript, err := PayToAddrScript(address)
+			scriptPubKey, err := PayToAddrScript(address)
 			if err != nil {
-				t.Errorf("failed to make pkscript "+
+				t.Errorf("failed to make scriptPubKey "+
 					"for %s: %v", msg, err)
 			}
 
-			if err := signAndCheck(msg, tx, i, pkScript, hashType,
+			if err := signAndCheck(msg, tx, i, scriptPubKey, hashType,
 				mkGetKey(map[string]addressToKey{
 					address.EncodeAddress(): {key, false},
 				}), mkGetScript(nil), nil); err != nil {
@@ -193,14 +193,14 @@ func TestSignTxOutput(t *testing.T) {
 				break
 			}
 
-			pkScript, err := PayToAddrScript(address)
+			scriptPubKey, err := PayToAddrScript(address)
 			if err != nil {
-				t.Errorf("failed to make pkscript "+
+				t.Errorf("failed to make scriptPubKey "+
 					"for %s: %v", msg, err)
 			}
 
 			sigScript, err := SignTxOutput(&dagconfig.TestNet3Params,
-				tx, i, pkScript, hashType,
+				tx, i, scriptPubKey, hashType,
 				mkGetKey(map[string]addressToKey{
 					address.EncodeAddress(): {key, false},
 				}), mkGetScript(nil), nil)
@@ -213,7 +213,7 @@ func TestSignTxOutput(t *testing.T) {
 			// by the above loop, this should be valid, now sign
 			// again and merge.
 			sigScript, err = SignTxOutput(&dagconfig.TestNet3Params,
-				tx, i, pkScript, hashType,
+				tx, i, scriptPubKey, hashType,
 				mkGetKey(map[string]addressToKey{
 					address.EncodeAddress(): {key, false},
 				}), mkGetScript(nil), sigScript)
@@ -223,7 +223,7 @@ func TestSignTxOutput(t *testing.T) {
 				break
 			}
 
-			err = checkScripts(msg, tx, i, sigScript, pkScript)
+			err = checkScripts(msg, tx, i, sigScript, scriptPubKey)
 			if err != nil {
 				t.Errorf("twice signed script invalid for "+
 					"%s: %v", msg, err)
@@ -254,13 +254,13 @@ func TestSignTxOutput(t *testing.T) {
 				break
 			}
 
-			pkScript, err := PayToAddrScript(address)
+			scriptPubKey, err := PayToAddrScript(address)
 			if err != nil {
-				t.Errorf("failed to make pkscript "+
+				t.Errorf("failed to make scriptPubKey "+
 					"for %s: %v", msg, err)
 			}
 
-			if err := signAndCheck(msg, tx, i, pkScript, hashType,
+			if err := signAndCheck(msg, tx, i, scriptPubKey, hashType,
 				mkGetKey(map[string]addressToKey{
 					address.EncodeAddress(): {key, true},
 				}), mkGetScript(nil), nil); err != nil {
@@ -292,14 +292,14 @@ func TestSignTxOutput(t *testing.T) {
 				break
 			}
 
-			pkScript, err := PayToAddrScript(address)
+			scriptPubKey, err := PayToAddrScript(address)
 			if err != nil {
-				t.Errorf("failed to make pkscript "+
+				t.Errorf("failed to make scriptPubKey "+
 					"for %s: %v", msg, err)
 			}
 
 			sigScript, err := SignTxOutput(&dagconfig.TestNet3Params,
-				tx, i, pkScript, hashType,
+				tx, i, scriptPubKey, hashType,
 				mkGetKey(map[string]addressToKey{
 					address.EncodeAddress(): {key, true},
 				}), mkGetScript(nil), nil)
@@ -312,7 +312,7 @@ func TestSignTxOutput(t *testing.T) {
 			// by the above loop, this should be valid, now sign
 			// again and merge.
 			sigScript, err = SignTxOutput(&dagconfig.TestNet3Params,
-				tx, i, pkScript, hashType,
+				tx, i, scriptPubKey, hashType,
 				mkGetKey(map[string]addressToKey{
 					address.EncodeAddress(): {key, true},
 				}), mkGetScript(nil), sigScript)
@@ -322,7 +322,7 @@ func TestSignTxOutput(t *testing.T) {
 				break
 			}
 
-			err = checkScripts(msg, tx, i, sigScript, pkScript)
+			err = checkScripts(msg, tx, i, sigScript, scriptPubKey)
 			if err != nil {
 				t.Errorf("twice signed script invalid for "+
 					"%s: %v", msg, err)
@@ -353,34 +353,34 @@ func TestSignTxOutput(t *testing.T) {
 				break
 			}
 
-			pkScript, err := PayToAddrScript(address)
+			scriptPubKey, err := PayToAddrScript(address)
 			if err != nil {
-				t.Errorf("failed to make pkscript "+
+				t.Errorf("failed to make scriptPubKey "+
 					"for %s: %v", msg, err)
 				break
 			}
 
 			scriptAddr, err := util.NewAddressScriptHash(
-				pkScript, util.Bech32PrefixDAGTest)
+				scriptPubKey, util.Bech32PrefixDAGTest)
 			if err != nil {
 				t.Errorf("failed to make p2sh addr for %s: %v",
 					msg, err)
 				break
 			}
 
-			scriptPkScript, err := PayToAddrScript(
+			scriptScriptPubKey, err := PayToAddrScript(
 				scriptAddr)
 			if err != nil {
-				t.Errorf("failed to make script pkscript for "+
+				t.Errorf("failed to make script scriptPubKey for "+
 					"%s: %v", msg, err)
 				break
 			}
 
-			if err := signAndCheck(msg, tx, i, scriptPkScript, hashType,
+			if err := signAndCheck(msg, tx, i, scriptScriptPubKey, hashType,
 				mkGetKey(map[string]addressToKey{
 					address.EncodeAddress(): {key, false},
 				}), mkGetScript(map[string][]byte{
-					scriptAddr.EncodeAddress(): pkScript,
+					scriptAddr.EncodeAddress(): scriptPubKey,
 				}), nil); err != nil {
 				t.Error(err)
 				break
@@ -409,35 +409,35 @@ func TestSignTxOutput(t *testing.T) {
 				break
 			}
 
-			pkScript, err := PayToAddrScript(address)
+			scriptPubKey, err := PayToAddrScript(address)
 			if err != nil {
-				t.Errorf("failed to make pkscript "+
+				t.Errorf("failed to make scriptPubKey "+
 					"for %s: %v", msg, err)
 				break
 			}
 
 			scriptAddr, err := util.NewAddressScriptHash(
-				pkScript, util.Bech32PrefixDAGTest)
+				scriptPubKey, util.Bech32PrefixDAGTest)
 			if err != nil {
 				t.Errorf("failed to make p2sh addr for %s: %v",
 					msg, err)
 				break
 			}
 
-			scriptPkScript, err := PayToAddrScript(
+			scriptScriptPubKey, err := PayToAddrScript(
 				scriptAddr)
 			if err != nil {
-				t.Errorf("failed to make script pkscript for "+
+				t.Errorf("failed to make script scriptPubKey for "+
 					"%s: %v", msg, err)
 				break
 			}
 
 			sigScript, err := SignTxOutput(&dagconfig.TestNet3Params,
-				tx, i, scriptPkScript, hashType,
+				tx, i, scriptScriptPubKey, hashType,
 				mkGetKey(map[string]addressToKey{
 					address.EncodeAddress(): {key, false},
 				}), mkGetScript(map[string][]byte{
-					scriptAddr.EncodeAddress(): pkScript,
+					scriptAddr.EncodeAddress(): scriptPubKey,
 				}), nil)
 			if err != nil {
 				t.Errorf("failed to sign output %s: %v", msg,
@@ -448,11 +448,11 @@ func TestSignTxOutput(t *testing.T) {
 			// by the above loop, this should be valid, now sign
 			// again and merge.
 			sigScript, err = SignTxOutput(&dagconfig.TestNet3Params,
-				tx, i, scriptPkScript, hashType,
+				tx, i, scriptScriptPubKey, hashType,
 				mkGetKey(map[string]addressToKey{
 					address.EncodeAddress(): {key, false},
 				}), mkGetScript(map[string][]byte{
-					scriptAddr.EncodeAddress(): pkScript,
+					scriptAddr.EncodeAddress(): scriptPubKey,
 				}), nil)
 			if err != nil {
 				t.Errorf("failed to sign output %s a "+
@@ -460,7 +460,7 @@ func TestSignTxOutput(t *testing.T) {
 				break
 			}
 
-			err = checkScripts(msg, tx, i, sigScript, scriptPkScript)
+			err = checkScripts(msg, tx, i, sigScript, scriptScriptPubKey)
 			if err != nil {
 				t.Errorf("twice signed script invalid for "+
 					"%s: %v", msg, err)
@@ -491,33 +491,33 @@ func TestSignTxOutput(t *testing.T) {
 				break
 			}
 
-			pkScript, err := PayToAddrScript(address)
+			scriptPubKey, err := PayToAddrScript(address)
 			if err != nil {
-				t.Errorf("failed to make pkscript "+
+				t.Errorf("failed to make scriptPubKey "+
 					"for %s: %v", msg, err)
 			}
 
 			scriptAddr, err := util.NewAddressScriptHash(
-				pkScript, util.Bech32PrefixDAGTest)
+				scriptPubKey, util.Bech32PrefixDAGTest)
 			if err != nil {
 				t.Errorf("failed to make p2sh addr for %s: %v",
 					msg, err)
 				break
 			}
 
-			scriptPkScript, err := PayToAddrScript(
+			scriptScriptPubKey, err := PayToAddrScript(
 				scriptAddr)
 			if err != nil {
-				t.Errorf("failed to make script pkscript for "+
+				t.Errorf("failed to make script scriptPubKey for "+
 					"%s: %v", msg, err)
 				break
 			}
 
-			if err := signAndCheck(msg, tx, i, scriptPkScript, hashType,
+			if err := signAndCheck(msg, tx, i, scriptScriptPubKey, hashType,
 				mkGetKey(map[string]addressToKey{
 					address.EncodeAddress(): {key, true},
 				}), mkGetScript(map[string][]byte{
-					scriptAddr.EncodeAddress(): pkScript,
+					scriptAddr.EncodeAddress(): scriptPubKey,
 				}), nil); err != nil {
 				t.Error(err)
 				break
@@ -547,34 +547,34 @@ func TestSignTxOutput(t *testing.T) {
 				break
 			}
 
-			pkScript, err := PayToAddrScript(address)
+			scriptPubKey, err := PayToAddrScript(address)
 			if err != nil {
-				t.Errorf("failed to make pkscript "+
+				t.Errorf("failed to make scriptPubKey "+
 					"for %s: %v", msg, err)
 			}
 
 			scriptAddr, err := util.NewAddressScriptHash(
-				pkScript, util.Bech32PrefixDAGTest)
+				scriptPubKey, util.Bech32PrefixDAGTest)
 			if err != nil {
 				t.Errorf("failed to make p2sh addr for %s: %v",
 					msg, err)
 				break
 			}
 
-			scriptPkScript, err := PayToAddrScript(
+			scriptScriptPubKey, err := PayToAddrScript(
 				scriptAddr)
 			if err != nil {
-				t.Errorf("failed to make script pkscript for "+
+				t.Errorf("failed to make script scriptPubKey for "+
 					"%s: %v", msg, err)
 				break
 			}
 
 			sigScript, err := SignTxOutput(&dagconfig.TestNet3Params,
-				tx, i, scriptPkScript, hashType,
+				tx, i, scriptScriptPubKey, hashType,
 				mkGetKey(map[string]addressToKey{
 					address.EncodeAddress(): {key, true},
 				}), mkGetScript(map[string][]byte{
-					scriptAddr.EncodeAddress(): pkScript,
+					scriptAddr.EncodeAddress(): scriptPubKey,
 				}), nil)
 			if err != nil {
 				t.Errorf("failed to sign output %s: %v", msg,
@@ -585,11 +585,11 @@ func TestSignTxOutput(t *testing.T) {
 			// by the above loop, this should be valid, now sign
 			// again and merge.
 			sigScript, err = SignTxOutput(&dagconfig.TestNet3Params,
-				tx, i, scriptPkScript, hashType,
+				tx, i, scriptScriptPubKey, hashType,
 				mkGetKey(map[string]addressToKey{
 					address.EncodeAddress(): {key, true},
 				}), mkGetScript(map[string][]byte{
-					scriptAddr.EncodeAddress(): pkScript,
+					scriptAddr.EncodeAddress(): scriptPubKey,
 				}), nil)
 			if err != nil {
 				t.Errorf("failed to sign output %s a "+
@@ -597,7 +597,7 @@ func TestSignTxOutput(t *testing.T) {
 				break
 			}
 
-			err = checkScripts(msg, tx, i, sigScript, scriptPkScript)
+			err = checkScripts(msg, tx, i, sigScript, scriptScriptPubKey)
 			if err != nil {
 				t.Errorf("twice signed script invalid for "+
 					"%s: %v", msg, err)
@@ -626,7 +626,7 @@ var coinbaseOutpoint = &wire.Outpoint{
 	Index: (1 << 32) - 1,
 }
 
-// Pregenerated private key, with associated public key and pkScripts
+// Pregenerated private key, with associated public key and scriptPubKeys
 // for the uncompressed and compressed hash160.
 var (
 	privKeyD = []byte{0x6b, 0x0f, 0xd8, 0xda, 0x54, 0x22, 0xd0, 0xb7,
@@ -641,13 +641,13 @@ var (
 		0x63, 0x32, 0x62, 0xaa, 0x60, 0xc6, 0x83, 0x30, 0xbd, 0x24,
 		0x7e, 0xef, 0xdb, 0x6f, 0x2e, 0x8d, 0x56, 0xf0, 0x3c, 0x9f,
 		0x6d, 0xb6, 0xf8}
-	uncompressedPkScript = []byte{0x76, 0xa9, 0x14, 0xd1, 0x7c, 0xb5,
+	uncompressedScriptPubKey = []byte{0x76, 0xa9, 0x14, 0xd1, 0x7c, 0xb5,
 		0xeb, 0xa4, 0x02, 0xcb, 0x68, 0xe0, 0x69, 0x56, 0xbf, 0x32,
 		0x53, 0x90, 0x0e, 0x0a, 0x86, 0xc9, 0xfa, 0x88, 0xac}
-	compressedPkScript = []byte{0x76, 0xa9, 0x14, 0x27, 0x4d, 0x9f, 0x7f,
+	compressedScriptPubKey = []byte{0x76, 0xa9, 0x14, 0x27, 0x4d, 0x9f, 0x7f,
 		0x61, 0x7e, 0x7c, 0x7a, 0x1c, 0x1f, 0xb2, 0x75, 0x79, 0x10,
 		0x43, 0x65, 0x68, 0x27, 0x9d, 0x86, 0x88, 0xac}
-	shortPkScript = []byte{0x76, 0xa9, 0x14, 0xd1, 0x7c, 0xb5,
+	shortScriptPubKey = []byte{0x76, 0xa9, 0x14, 0xd1, 0x7c, 0xb5,
 		0xeb, 0xa4, 0x02, 0xcb, 0x68, 0xe0, 0x69, 0x56, 0xbf, 0x32,
 		0x53, 0x90, 0x0e, 0x0a, 0x88, 0xac}
 	uncompressedAddrStr = "1L6fd93zGmtzkK6CsZFVVoCwzZV3MUtJ4F"
@@ -663,7 +663,7 @@ var sigScriptTests = []tstSigScript{
 		name: "one input uncompressed",
 		inputs: []tstInput{
 			{
-				txout:              wire.NewTxOut(coinbaseVal, uncompressedPkScript),
+				txout:              wire.NewTxOut(coinbaseVal, uncompressedScriptPubKey),
 				sigscriptGenerates: true,
 				inputValidates:     true,
 				indexOutOfRange:    false,
@@ -677,13 +677,13 @@ var sigScriptTests = []tstSigScript{
 		name: "two inputs uncompressed",
 		inputs: []tstInput{
 			{
-				txout:              wire.NewTxOut(coinbaseVal, uncompressedPkScript),
+				txout:              wire.NewTxOut(coinbaseVal, uncompressedScriptPubKey),
 				sigscriptGenerates: true,
 				inputValidates:     true,
 				indexOutOfRange:    false,
 			},
 			{
-				txout:              wire.NewTxOut(coinbaseVal+fee, uncompressedPkScript),
+				txout:              wire.NewTxOut(coinbaseVal+fee, uncompressedScriptPubKey),
 				sigscriptGenerates: true,
 				inputValidates:     true,
 				indexOutOfRange:    false,
@@ -697,7 +697,7 @@ var sigScriptTests = []tstSigScript{
 		name: "one input compressed",
 		inputs: []tstInput{
 			{
-				txout:              wire.NewTxOut(coinbaseVal, compressedPkScript),
+				txout:              wire.NewTxOut(coinbaseVal, compressedScriptPubKey),
 				sigscriptGenerates: true,
 				inputValidates:     true,
 				indexOutOfRange:    false,
@@ -711,13 +711,13 @@ var sigScriptTests = []tstSigScript{
 		name: "two inputs compressed",
 		inputs: []tstInput{
 			{
-				txout:              wire.NewTxOut(coinbaseVal, compressedPkScript),
+				txout:              wire.NewTxOut(coinbaseVal, compressedScriptPubKey),
 				sigscriptGenerates: true,
 				inputValidates:     true,
 				indexOutOfRange:    false,
 			},
 			{
-				txout:              wire.NewTxOut(coinbaseVal+fee, compressedPkScript),
+				txout:              wire.NewTxOut(coinbaseVal+fee, compressedScriptPubKey),
 				sigscriptGenerates: true,
 				inputValidates:     true,
 				indexOutOfRange:    false,
@@ -731,7 +731,7 @@ var sigScriptTests = []tstSigScript{
 		name: "hashType SigHashNone",
 		inputs: []tstInput{
 			{
-				txout:              wire.NewTxOut(coinbaseVal, uncompressedPkScript),
+				txout:              wire.NewTxOut(coinbaseVal, uncompressedScriptPubKey),
 				sigscriptGenerates: true,
 				inputValidates:     true,
 				indexOutOfRange:    false,
@@ -745,7 +745,7 @@ var sigScriptTests = []tstSigScript{
 		name: "hashType SigHashSingle",
 		inputs: []tstInput{
 			{
-				txout:              wire.NewTxOut(coinbaseVal, uncompressedPkScript),
+				txout:              wire.NewTxOut(coinbaseVal, uncompressedScriptPubKey),
 				sigscriptGenerates: true,
 				inputValidates:     true,
 				indexOutOfRange:    false,
@@ -759,7 +759,7 @@ var sigScriptTests = []tstSigScript{
 		name: "hashType SigHashAll | SigHashAnyoneCanPay",
 		inputs: []tstInput{
 			{
-				txout:              wire.NewTxOut(coinbaseVal, uncompressedPkScript),
+				txout:              wire.NewTxOut(coinbaseVal, uncompressedScriptPubKey),
 				sigscriptGenerates: true,
 				inputValidates:     true,
 				indexOutOfRange:    false,
@@ -773,7 +773,7 @@ var sigScriptTests = []tstSigScript{
 		name: "hashType SigHashAnyoneCanPay",
 		inputs: []tstInput{
 			{
-				txout:              wire.NewTxOut(coinbaseVal, uncompressedPkScript),
+				txout:              wire.NewTxOut(coinbaseVal, uncompressedScriptPubKey),
 				sigscriptGenerates: true,
 				inputValidates:     false,
 				indexOutOfRange:    false,
@@ -787,7 +787,7 @@ var sigScriptTests = []tstSigScript{
 		name: "hashType non-exist",
 		inputs: []tstInput{
 			{
-				txout:              wire.NewTxOut(coinbaseVal, uncompressedPkScript),
+				txout:              wire.NewTxOut(coinbaseVal, uncompressedScriptPubKey),
 				sigscriptGenerates: true,
 				inputValidates:     false,
 				indexOutOfRange:    false,
@@ -801,7 +801,7 @@ var sigScriptTests = []tstSigScript{
 		name: "invalid compression",
 		inputs: []tstInput{
 			{
-				txout:              wire.NewTxOut(coinbaseVal, uncompressedPkScript),
+				txout:              wire.NewTxOut(coinbaseVal, uncompressedScriptPubKey),
 				sigscriptGenerates: true,
 				inputValidates:     false,
 				indexOutOfRange:    false,
@@ -812,10 +812,10 @@ var sigScriptTests = []tstSigScript{
 		scriptAtWrongIndex: false,
 	},
 	{
-		name: "short PkScript",
+		name: "short ScriptPubKey",
 		inputs: []tstInput{
 			{
-				txout:              wire.NewTxOut(coinbaseVal, shortPkScript),
+				txout:              wire.NewTxOut(coinbaseVal, shortScriptPubKey),
 				sigscriptGenerates: false,
 				indexOutOfRange:    false,
 			},
@@ -828,13 +828,13 @@ var sigScriptTests = []tstSigScript{
 		name: "valid script at wrong index",
 		inputs: []tstInput{
 			{
-				txout:              wire.NewTxOut(coinbaseVal, uncompressedPkScript),
+				txout:              wire.NewTxOut(coinbaseVal, uncompressedScriptPubKey),
 				sigscriptGenerates: true,
 				inputValidates:     true,
 				indexOutOfRange:    false,
 			},
 			{
-				txout:              wire.NewTxOut(coinbaseVal+fee, uncompressedPkScript),
+				txout:              wire.NewTxOut(coinbaseVal+fee, uncompressedScriptPubKey),
 				sigscriptGenerates: true,
 				inputValidates:     true,
 				indexOutOfRange:    false,
@@ -848,13 +848,13 @@ var sigScriptTests = []tstSigScript{
 		name: "index out of range",
 		inputs: []tstInput{
 			{
-				txout:              wire.NewTxOut(coinbaseVal, uncompressedPkScript),
+				txout:              wire.NewTxOut(coinbaseVal, uncompressedScriptPubKey),
 				sigscriptGenerates: true,
 				inputValidates:     true,
 				indexOutOfRange:    false,
 			},
 			{
-				txout:              wire.NewTxOut(coinbaseVal+fee, uncompressedPkScript),
+				txout:              wire.NewTxOut(coinbaseVal+fee, uncompressedScriptPubKey),
 				sigscriptGenerates: true,
 				inputValidates:     true,
 				indexOutOfRange:    false,
@@ -897,7 +897,7 @@ nexttest:
 				idx = j
 			}
 			script, err = SignatureScript(tx, idx,
-				sigScriptTests[i].inputs[j].txout.PkScript,
+				sigScriptTests[i].inputs[j].txout.ScriptPubKey,
 				sigScriptTests[i].hashType, privKey,
 				sigScriptTests[i].compress)
 
@@ -931,7 +931,7 @@ nexttest:
 		var scriptFlags ScriptFlags
 		for j := range tx.TxIn {
 			vm, err := NewEngine(sigScriptTests[i].
-				inputs[j].txout.PkScript, tx, j, scriptFlags, nil)
+				inputs[j].txout.ScriptPubKey, tx, j, scriptFlags, nil)
 			if err != nil {
 				t.Errorf("cannot create script vm for test %v: %v",
 					sigScriptTests[i].name, err)

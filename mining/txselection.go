@@ -104,7 +104,7 @@ func (g *BlkTmplGenerator) newTxsForBlockTemplate(payToAddress util.Address, sou
 		txFees:      make([]uint64, 0),
 	}
 
-	coinbasePayloadPkScript, err := txscript.PayToAddrScript(payToAddress)
+	coinbasePayloadScriptPubKey, err := txscript.PayToAddrScript(payToAddress)
 	if err != nil {
 		return nil, err
 	}
@@ -116,7 +116,7 @@ func (g *BlkTmplGenerator) newTxsForBlockTemplate(payToAddress util.Address, sou
 	if err != nil {
 		return nil, err
 	}
-	coinbaseTx, err := g.dag.NextBlockCoinbaseTransactionNoLock(coinbasePayloadPkScript, coinbasePayloadExtraData)
+	coinbaseTx, err := g.dag.NextBlockCoinbaseTransactionNoLock(coinbasePayloadScriptPubKey, coinbasePayloadExtraData)
 	if err != nil {
 		return nil, err
 	}
