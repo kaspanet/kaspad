@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/hex"
+	"fmt"
 	"github.com/daglabs/btcd/apiserver/database"
 	"github.com/daglabs/btcd/apiserver/jsonrpc"
 	"github.com/daglabs/btcd/apiserver/models"
@@ -201,6 +202,9 @@ func insertBlock(client *jsonrpc.Client, db *gorm.DB, block string, rawBlock btc
 	for _, parentHash := range rawBlock.ParentHashes {
 		var dbParent models.Block
 		db.Where(&models.Block{BlockHash: parentHash}).First(&dbParent)
+		if dbParent.ID == 0 {
+			return fmt.Errorf("missing parent for hash: %s", parentHash)
+		}
 
 		var dbParentBlock models.ParentBlock
 		db.Where(&models.ParentBlock{BlockID: dbBlock.ID, ParentBlockID: dbParent.ID}).First(&dbParentBlock)
@@ -248,9 +252,6 @@ func insertBlock(client *jsonrpc.Client, db *gorm.DB, block string, rawBlock btc
 		var dbTransaction models.Transaction
 		db.Where(&models.Transaction{TransactionID: transaction.TxID}).First(&dbTransaction)
 		if dbTransaction.ID == 0 {
-			var dbSubnetwork models.Subnetwork
-			db.Where(&models.Subnetwork{SubnetworkID: transaction.Subnetwork}).First(&dbSubnetwork)
-
 			payload, err := hex.DecodeString(transaction.Payload)
 			if err != nil {
 				return err
@@ -287,9 +288,15 @@ func insertBlock(client *jsonrpc.Client, db *gorm.DB, block string, rawBlock btc
 
 			var dbOutputTransaction models.Transaction
 			db.Where(&models.Transaction{TransactionID: input.TxID}).First(&dbOutputTransaction)
+			if dbOutputTransaction.ID == 0 {
+				return fmt.Errorf("missing output transaction for txID: %s", input.TxID)
+			}
 
 			var dbOutputTransactionOutput models.TransactionOutput
 			db.Where(&models.TransactionOutput{TransactionID: dbOutputTransaction.ID, Index: input.Vout}).First(&dbOutputTransactionOutput)
+			if dbOutputTransactionOutput.ID == 0 {
+				return fmt.Errorf("missing output transaction output for txID: %s and index: %d", input.TxID, input.Vout)
+			}
 
 			var dbTransactionInput models.TransactionInput
 			db.Where(models.TransactionInput{TransactionID: dbTransaction.ID, TransactionOutputID: dbOutputTransactionOutput.ID}).First(&dbTransactionInput)
