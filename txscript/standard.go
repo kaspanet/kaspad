@@ -136,14 +136,14 @@ func CalcScriptInfo(sigScript, scriptPubKey []byte, isP2SH bool) (*ScriptInfo, e
 		return nil, err
 	}
 
-	pkPops, err := parseScript(scriptPubKey)
+	scriptPubKeyPops, err := parseScript(scriptPubKey)
 	if err != nil {
 		return nil, err
 	}
 
 	// Push only sigScript makes little sense.
 	si := new(ScriptInfo)
-	si.ScriptPubKeyClass = typeOfScript(pkPops)
+	si.ScriptPubKeyClass = typeOfScript(scriptPubKeyPops)
 
 	// Can't have a signature script that doesn't just push data.
 	if !isPushOnly(sigPops) {
@@ -151,7 +151,7 @@ func CalcScriptInfo(sigScript, scriptPubKey []byte, isP2SH bool) (*ScriptInfo, e
 			"signature script is not push only")
 	}
 
-	si.ExpectedInputs = expectedInputs(pkPops, si.ScriptPubKeyClass)
+	si.ExpectedInputs = expectedInputs(scriptPubKeyPops, si.ScriptPubKeyClass)
 
 	// All entries pushed to stack (or are OP_RESERVED and exec will fail).
 	si.NumInputs = len(sigPops)
@@ -173,7 +173,7 @@ func CalcScriptInfo(sigScript, scriptPubKey []byte, isP2SH bool) (*ScriptInfo, e
 		}
 		si.SigOps = getSigOpCount(shPops, true)
 	} else {
-		si.SigOps = getSigOpCount(pkPops, true)
+		si.SigOps = getSigOpCount(scriptPubKeyPops, true)
 	}
 
 	return si, nil
