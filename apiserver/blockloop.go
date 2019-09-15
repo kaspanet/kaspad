@@ -437,83 +437,15 @@ func updateSelectedParentChain(dbTx *gorm.DB, removedChainHashes []string, added
 	}
 
 	for _, removedHash := range removedChainHashes {
-		var dbBlock models.Block
-		dbTx.Where(&models.Block{BlockHash: removedHash}).First(&dbBlock)
-		if dbBlock.ID == 0 {
-			return fmt.Errorf("missing block for hash: %s", removedHash)
+		err := updateRemovedChainHashes(dbTx, removedHash)
+		if err != nil {
+			return err
 		}
-		if dbBlock.IsChainBlock == false {
-			return fmt.Errorf("block erroneously marked as not a chain block: %s", removedHash)
-		}
-
-		var dbTransactions []models.Transaction
-		dbTx.Where(&models.Transaction{AcceptingBlockID: &dbBlock.ID}).Preload("TransactionInputs").Find(&dbTransactions)
-		for _, dbTransaction := range dbTransactions {
-			for _, dbTransactionInput := range dbTransaction.TransactionInputs {
-				var dbTransactionOutput models.TransactionOutput
-				dbTx.Where(&models.TransactionOutput{ID: dbTransactionInput.TransactionOutputID}).First(&dbTransactionOutput)
-				if dbTransactionOutput.ID == 0 {
-					return fmt.Errorf("missing transaction output for transaction: %s index: %d",
-						dbTransaction.TransactionID, dbTransactionInput.Index)
-				}
-				if dbTransactionOutput.IsSpent == false {
-					return fmt.Errorf("cannot de-spend an unspent transaction output: %s index: %d",
-						dbTransaction.TransactionID, dbTransactionInput.Index)
-				}
-
-				dbTransactionOutput.IsSpent = false
-				dbTx.Save(&dbTransactionOutput)
-			}
-
-			dbTransaction.AcceptingBlockID = nil
-			dbTx.Save(&dbTransaction)
-		}
-
-		dbBlock.IsChainBlock = false
-		dbTx.Save(&dbBlock)
 	}
 	for _, addedBlock := range addedChainBlocks {
-		for _, acceptedBlock := range addedBlock.AcceptedBlocks {
-			var dbAcceptingBlock models.Block
-			dbTx.Where(&models.Block{BlockHash: acceptedBlock.Hash}).First(dbAcceptingBlock)
-			if dbAcceptingBlock.ID == 0 {
-				return fmt.Errorf("missing block for hash: %s", acceptedBlock.Hash)
-			}
-			if dbAcceptingBlock.IsChainBlock == true {
-				return fmt.Errorf("block erroneously marked as a chain block: %s", acceptedBlock.Hash)
-			}
-
-			for _, acceptedTxID := range acceptedBlock.AcceptedTxIDs {
-				var dbTransaction models.Transaction
-				dbTx.Where(&models.Transaction{TransactionID: acceptedTxID}).First(&dbTransaction)
-				if dbTransaction.ID == 0 {
-					return fmt.Errorf("missing transaction for txID: %s", acceptedTxID)
-				}
-
-				var dbTransactionInputs []models.TransactionInput
-				dbTx.Where(&models.TransactionInput{TransactionID: dbTransaction.ID}).Preload("TransactionInputs").Find(&dbTransactionInputs)
-				for _, dbTransactionInput := range dbTransactionInputs {
-					var dbTransactionOutput models.TransactionOutput
-					dbTx.Where(&models.TransactionOutput{ID: dbTransactionInput.TransactionOutputID}).First(&dbTransactionOutput)
-					if dbTransactionOutput.ID == 0 {
-						return fmt.Errorf("missing transaction output for transaction: %s index: %d",
-							dbTransaction.TransactionID, dbTransactionInput.Index)
-					}
-					if dbTransactionOutput.IsSpent == true {
-						return fmt.Errorf("cannot spend an already spent transaction output: %s index: %d",
-							dbTransaction.TransactionID, dbTransactionInput.Index)
-					}
-
-					dbTransactionOutput.IsSpent = true
-					dbTx.Save(&dbTransactionOutput)
-				}
-
-				dbTransaction.AcceptingBlockID = &dbAcceptingBlock.ID
-				dbTx.Save(&dbTransaction)
-			}
-
-			dbAcceptingBlock.IsChainBlock = true
-			dbTx.Save(&dbAcceptingBlock)
+		err := updateAddedChainBlocks(dbTx, &addedBlock)
+		if err != nil {
+			return err
 		}
 	}
 
@@ -521,6 +453,91 @@ func updateSelectedParentChain(dbTx *gorm.DB, removedChainHashes []string, added
 		dbTx.Commit()
 	}
 
+	return nil
+}
+
+func updateRemovedChainHashes(dbTx *gorm.DB, removedHash string) error {
+	var dbBlock models.Block
+	dbTx.Where(&models.Block{BlockHash: removedHash}).First(&dbBlock)
+	if dbBlock.ID == 0 {
+		return fmt.Errorf("missing block for hash: %s", removedHash)
+	}
+	if dbBlock.IsChainBlock == false {
+		return fmt.Errorf("block erroneously marked as not a chain block: %s", removedHash)
+	}
+
+	var dbTransactions []models.Transaction
+	dbTx.Where(&models.Transaction{AcceptingBlockID: &dbBlock.ID}).Preload("TransactionInputs").Find(&dbTransactions)
+	for _, dbTransaction := range dbTransactions {
+		for _, dbTransactionInput := range dbTransaction.TransactionInputs {
+			var dbTransactionOutput models.TransactionOutput
+			dbTx.Where(&models.TransactionOutput{ID: dbTransactionInput.TransactionOutputID}).First(&dbTransactionOutput)
+			if dbTransactionOutput.ID == 0 {
+				return fmt.Errorf("missing transaction output for transaction: %s index: %d",
+					dbTransaction.TransactionID, dbTransactionInput.Index)
+			}
+			if dbTransactionOutput.IsSpent == false {
+				return fmt.Errorf("cannot de-spend an unspent transaction output: %s index: %d",
+					dbTransaction.TransactionID, dbTransactionInput.Index)
+			}
+
+			dbTransactionOutput.IsSpent = false
+			dbTx.Save(&dbTransactionOutput)
+		}
+
+		dbTransaction.AcceptingBlockID = nil
+		dbTx.Save(&dbTransaction)
+	}
+
+	dbBlock.IsChainBlock = false
+	dbTx.Save(&dbBlock)
+
+	return nil
+}
+
+func updateAddedChainBlocks(dbTx *gorm.DB, addedBlock *btcjson.ChainBlock) error {
+	for _, acceptedBlock := range addedBlock.AcceptedBlocks {
+		var dbAcceptingBlock models.Block
+		dbTx.Where(&models.Block{BlockHash: acceptedBlock.Hash}).First(dbAcceptingBlock)
+		if dbAcceptingBlock.ID == 0 {
+			return fmt.Errorf("missing block for hash: %s", acceptedBlock.Hash)
+		}
+		if dbAcceptingBlock.IsChainBlock == true {
+			return fmt.Errorf("block erroneously marked as a chain block: %s", acceptedBlock.Hash)
+		}
+
+		for _, acceptedTxID := range acceptedBlock.AcceptedTxIDs {
+			var dbTransaction models.Transaction
+			dbTx.Where(&models.Transaction{TransactionID: acceptedTxID}).First(&dbTransaction)
+			if dbTransaction.ID == 0 {
+				return fmt.Errorf("missing transaction for txID: %s", acceptedTxID)
+			}
+
+			var dbTransactionInputs []models.TransactionInput
+			dbTx.Where(&models.TransactionInput{TransactionID: dbTransaction.ID}).Preload("TransactionInputs").Find(&dbTransactionInputs)
+			for _, dbTransactionInput := range dbTransactionInputs {
+				var dbTransactionOutput models.TransactionOutput
+				dbTx.Where(&models.TransactionOutput{ID: dbTransactionInput.TransactionOutputID}).First(&dbTransactionOutput)
+				if dbTransactionOutput.ID == 0 {
+					return fmt.Errorf("missing transaction output for transaction: %s index: %d",
+						dbTransaction.TransactionID, dbTransactionInput.Index)
+				}
+				if dbTransactionOutput.IsSpent == true {
+					return fmt.Errorf("cannot spend an already spent transaction output: %s index: %d",
+						dbTransaction.TransactionID, dbTransactionInput.Index)
+				}
+
+				dbTransactionOutput.IsSpent = true
+				dbTx.Save(&dbTransactionOutput)
+			}
+
+			dbTransaction.AcceptingBlockID = &dbAcceptingBlock.ID
+			dbTx.Save(&dbTransaction)
+		}
+
+		dbAcceptingBlock.IsChainBlock = true
+		dbTx.Save(&dbAcceptingBlock)
+	}
 	return nil
 }
 
