@@ -33,6 +33,7 @@ type Config struct {
 	DBPassword  string `long:"dbpass" description:"Database password" required:"true"`
 	DBName      string `long:"dbname" description:"Database name" required:"true"`
 	HTTPListen  string `long:"listen" description:"HTTP address to listen on (default: 0.0.0.0:8080)"`
+	Migrate     bool   `long:"migrate" description:"Migrate the database to the last version. The server will not start when using this flag."`
 }
 
 // Parse parses the CLI arguments and returns a config struct.

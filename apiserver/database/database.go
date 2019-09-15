@@ -27,13 +27,17 @@ func DB() (*gorm.DB, error) {
 // config variable.
 func Connect(cfg *config.Config) error {
 	connectionString := buildConnectionString(cfg)
-	isCurrent, err := isCurrent(connectionString)
+	migrator, driver, err := openMigrator(connectionString)
+	if err != nil {
+		return err
+	}
+	isCurrent, err := isCurrent(migrator, driver)
 	if err != nil {
 		return fmt.Errorf("Error checking whether the database is current: %s", err)
 	}
 	if !isCurrent {
 		return fmt.Errorf("Database is not current. Please migrate" +
-			" the database and start again.")
+			" the database by running the server with --migrate flag and then run it again.")
 	}
 
 	db, err = gorm.Open("mysql", connectionString)
@@ -60,17 +64,7 @@ func buildConnectionString(cfg *config.Config) string {
 
 // isCurrent resolves whether the database is on the latest
 // version of the schema.
-func isCurrent(connectionString string) (bool, error) {
-	driver, err := source.Open("file://migrations")
-	if err != nil {
-		return false, err
-	}
-	migrator, err := migrate.NewWithSourceInstance(
-		"migrations", driver, "mysql://"+connectionString)
-	if err != nil {
-		return false, err
-	}
-
+func isCurrent(migrator *migrate.Migrate, driver source.Driver) (bool, error) {
 	// Get the current version
 	version, isDirty, err := migrator.Version()
 	if err == migrate.ErrNilVersion {
@@ -91,4 +85,40 @@ func isCurrent(connectionString string) (bool, error) {
 		}
 	}
 	return false, err
+}
+
+func openMigrator(connectionString string) (*migrate.Migrate, source.Driver, error) {
+	driver, err := source.Open("file://migrations")
+	if err != nil {
+		return nil, nil, err
+	}
+	migrator, err := migrate.NewWithSourceInstance(
+		"migrations", driver, "mysql://"+connectionString)
+	if err != nil {
+		return nil, nil, err
+	}
+	return migrator, driver, nil
+}
+
+// Migrate database to the latest version.
+func Migrate(cfg *config.Config) error {
+	connectionString := buildConnectionString(cfg)
+	migrator, driver, err := openMigrator(connectionString)
+	if err != nil {
+		return err
+	}
+	isCurrent, err := isCurrent(migrator, driver)
+	if err != nil {
+		return fmt.Errorf("Error checking whether the database is current: %s", err)
+	}
+	if isCurrent {
+		log.Infof("Database is already up-to-date")
+		return nil
+	}
+	err = migrator.Up()
+	if err != nil {
+		return err
+	}
+	log.Infof("Database is up-to-date")
+	return nil
 }
