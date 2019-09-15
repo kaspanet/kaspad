@@ -11,8 +11,17 @@ import (
 	"github.com/daglabs/btcd/util/daghash"
 )
 
-const GetBlocksOrderAscending = "GetBlocksOrderAscending"
-const GetBlocksOrderDescending = "GetBlocksOrderDescending"
+const (
+	// GetBlocksOrderAscending is parameter that can be used
+	// in GetBlocksHandler to get blocks ordered in ascending
+	// order
+	GetBlocksOrderAscending = "GetBlocksOrderAscending"
+
+	// GetBlocksOrderDescending is parameter that can be used
+	// in GetBlocksHandler to get blocks ordered in descending
+	// order
+	GetBlocksOrderDescending = "GetBlocksOrderDescending"
+)
 
 const maximumGetBlocksLimit = 100
 
@@ -42,7 +51,11 @@ func GetBlocksHandler(order string, skip uint64, limit uint64) (interface{}, *ut
 		return nil, utils.NewHandlerError(http.StatusUnprocessableEntity, fmt.Sprintf("The maximum allowed value for the limit is %d", maximumGetTransactionsLimit))
 	}
 	blocks := []*models.Block{}
-	query := database.DB.
+	db, err := database.DB()
+	if err != nil {
+		return nil, utils.NewHandlerError(http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
+	}
+	query := db.
 		Limit(limit).
 		Offset(skip).
 		Preload("AcceptingBlock")
