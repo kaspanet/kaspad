@@ -196,7 +196,7 @@ func insertBlock(client *jsonrpc.Client, db *gorm.DB, block string, rawBlock btc
 			Bits:                 uint32(bits),
 			Nonce:                rawBlock.Nonce,
 			BlueScore:            rawBlock.BlueScore,
-			IsChainBlock:         rawBlock.IsChainBlock,
+			IsChainBlock:         false, // This must be false for updateSelectedParentChain to work properly
 		}
 		db.Create(&dbBlock)
 	}
@@ -377,6 +377,9 @@ func updateSelectedParentChain(db *gorm.DB, removedChainHashes []string, addedCh
 		if dbBlock.ID == 0 {
 			return fmt.Errorf("missing block for hash: %s", removedHash)
 		}
+		if dbBlock.IsChainBlock == false {
+			return fmt.Errorf("block erroneously marked as not a chain block: %s", removedHash)
+		}
 
 		var dbTransactions []models.Transaction
 		db.Where(&models.Transaction{AcceptingBlockID: &dbBlock.ID}).Preload("TransactionInputs").Find(&dbTransactions)
@@ -385,10 +388,12 @@ func updateSelectedParentChain(db *gorm.DB, removedChainHashes []string, addedCh
 				var dbTransactionOutput models.TransactionOutput
 				db.Where(&models.TransactionOutput{ID: dbTransactionInput.TransactionOutputID}).First(&dbTransactionOutput)
 				if dbTransactionOutput.ID == 0 {
-					return fmt.Errorf("missing transaction output for transaction: %s index: %d", dbTransaction.TransactionID, dbTransactionInput.Index)
+					return fmt.Errorf("missing transaction output for transaction: %s index: %d",
+						dbTransaction.TransactionID, dbTransactionInput.Index)
 				}
 				if dbTransactionOutput.IsSpent == false {
-					return fmt.Errorf("cannot de-spend an unspent transaction output")
+					return fmt.Errorf("cannot de-spend an unspent transaction output: %s index: %d",
+						dbTransaction.TransactionID, dbTransactionInput.Index)
 				}
 
 				dbTransactionOutput.IsSpent = false
@@ -398,6 +403,9 @@ func updateSelectedParentChain(db *gorm.DB, removedChainHashes []string, addedCh
 			dbTransaction.AcceptingBlockID = nil
 			db.Save(&dbTransaction)
 		}
+
+		dbBlock.IsChainBlock = false
+		db.Save(&dbBlock)
 	}
 	for _, addedBlock := range addedChainBlocks {
 		for _, acceptedBlock := range addedBlock.AcceptedBlocks {
@@ -405,6 +413,9 @@ func updateSelectedParentChain(db *gorm.DB, removedChainHashes []string, addedCh
 			db.Where(&models.Block{BlockHash: acceptedBlock.Hash}).First(dbAcceptingBlock)
 			if dbAcceptingBlock.ID == 0 {
 				return fmt.Errorf("missing block for hash: %s", acceptedBlock.Hash)
+			}
+			if dbAcceptingBlock.IsChainBlock == true {
+				return fmt.Errorf("block erroneously marked as a chain block: %s", acceptedBlock.Hash)
 			}
 
 			for _, acceptedTxID := range acceptedBlock.AcceptedTxIDs {
@@ -420,10 +431,12 @@ func updateSelectedParentChain(db *gorm.DB, removedChainHashes []string, addedCh
 					var dbTransactionOutput models.TransactionOutput
 					db.Where(&models.TransactionOutput{ID: dbTransactionInput.TransactionOutputID}).First(&dbTransactionOutput)
 					if dbTransactionOutput.ID == 0 {
-						return fmt.Errorf("missing transaction output for transaction: %s index: %d", dbTransaction.TransactionID, dbTransactionInput.Index)
+						return fmt.Errorf("missing transaction output for transaction: %s index: %d",
+							dbTransaction.TransactionID, dbTransactionInput.Index)
 					}
 					if dbTransactionOutput.IsSpent == true {
-						return fmt.Errorf("cannot spend an already spent transaction output")
+						return fmt.Errorf("cannot spend an already spent transaction output: %s index: %d",
+							dbTransaction.TransactionID, dbTransactionInput.Index)
 					}
 
 					dbTransactionOutput.IsSpent = true
@@ -433,6 +446,9 @@ func updateSelectedParentChain(db *gorm.DB, removedChainHashes []string, addedCh
 				dbTransaction.AcceptingBlockID = &dbAcceptingBlock.ID
 				db.Save(&dbTransaction)
 			}
+
+			dbAcceptingBlock.IsChainBlock = true
+			db.Save(&dbAcceptingBlock)
 		}
 	}
 
