@@ -36,13 +36,14 @@ func GetBlocksHandler(order string, skip uint64, limit uint64) (interface{}, *ut
 	blocks := []*models.Block{}
 	query := database.DB.
 		Limit(limit).
-		Offset(skip)
+		Offset(skip).
+		Preload("AcceptingBlock")
 	if order == GetBlocksOrderAscending {
 		query = query.Order("`id` ASC")
 	} else {
 		query = query.Order("`id` DESC")
 	}
-	addTxPreloadedFields(query).Find(&blocks)
+	query.Find(&blocks)
 	blockResponses := make([]*blockResponse, len(blocks))
 	for i, block := range blocks {
 		blockResponses[i] = convertBlockModelToBlockResponse(block)
