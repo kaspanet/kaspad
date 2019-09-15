@@ -109,9 +109,9 @@ func SyncSelectedParentChain(client *jsonrpc.Client, dbTx *gorm.DB, startHash *s
 			break
 		}
 
-		startHash = &chainFromBlockResult.AddedChainBlocks[len(chainFromBlockResult.AddedChainBlocks)].Hash
-		err = updateSelectedParentChain(dbTx,
-			chainFromBlockResult.RemovedChainBlockHashes, chainFromBlockResult.AddedChainBlocks)
+		startHash = &chainFromBlockResult.AddedChainBlocks[len(chainFromBlockResult.AddedChainBlocks)-1].Hash
+		err = updateSelectedParentChain(dbTx, chainFromBlockResult.RemovedChainBlockHashes,
+			chainFromBlockResult.AddedChainBlocks)
 		if err != nil {
 			return err
 		}
@@ -498,7 +498,7 @@ func updateRemovedChainHashes(dbTx *gorm.DB, removedHash string) error {
 func updateAddedChainBlocks(dbTx *gorm.DB, addedBlock *btcjson.ChainBlock) error {
 	for _, acceptedBlock := range addedBlock.AcceptedBlocks {
 		var dbAcceptingBlock models.Block
-		dbTx.Where(&models.Block{BlockHash: acceptedBlock.Hash}).First(dbAcceptingBlock)
+		dbTx.Where(&models.Block{BlockHash: acceptedBlock.Hash}).First(&dbAcceptingBlock)
 		if dbAcceptingBlock.ID == 0 {
 			return fmt.Errorf("missing block for hash: %s", acceptedBlock.Hash)
 		}
