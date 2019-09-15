@@ -344,30 +344,30 @@ func insertBlock(client *jsonrpc.Client, db *gorm.DB, block string, rawBlock btc
 func updateSelectedParentChain(db *gorm.DB, removedChainHashes []string, addedChainBlocks []btcjson.ChainBlock) error {
 	db = db.Begin()
 	for _, removedHash := range removedChainHashes {
-		log.Warnf("RRRRemoved!!! %s", removedHash)
+		var dbBlock models.Block
+		db.Where(&models.Block{BlockHash: removedHash}).First(&dbBlock)
+		if dbBlock.ID == 0 {
+			return fmt.Errorf("missing block for hash: %s", removedHash)
+		}
 
-		//var dbBlock models.Block
-		//db.Where(&models.Block{BlockHash: removedHash}).First(&dbBlock)
-		//if dbBlock.ID == 0 {
-		//	// FUCK!
-		//}
-		//
-		//var dbUTXOs []models.UTXO
-		//db.Where(&models.UTXO{AcceptingBlockID: dbBlock.ID}).Find(&dbUTXOs)
-		//for _, dbUTXO := range dbUTXOs {
-		//	var dbTransactionOutput models.TransactionOutput
-		//	db.Where(&models.TransactionOutput{ID: dbUTXO.TransactionOutputID}).First(&dbTransactionOutput)
-		//	if dbTransactionOutput.ID == 0 {
-		//		// FUCK
-		//	}
-		//
-		//	var dbTransaction models.Transaction
-		//	db.Where(&models.Transaction{ID: dbTransactionOutput.TransactionID}).First(&dbTransaction)
-		//	if dbTransaction.ID == 0 {
-		//		// FUCK
-		//	}
-		//
-		//}
+		var dbTransactions []models.Transaction
+		db.Where(&models.Transaction{AcceptingBlockID: &dbBlock.ID}).Preload("TransactionInputs").Find(&dbTransactions)
+		for _, dbTransaction := range dbTransactions {
+			for _, dbTransactionInput := range dbTransaction.TransactionInputs {
+				var dbTransactionOutput models.TransactionOutput
+				db.Where(&models.TransactionOutput{ID: dbTransactionInput.TransactionOutputID}).First(&dbTransactionOutput)
+				if dbTransactionOutput.ID == 0 {
+					return fmt.Errorf("missing transaction output for transaction: %s index: %d", dbTransaction.TransactionID, dbTransactionInput.Index)
+				}
+				if dbTransactionOutput.IsSpent == false {
+					return fmt.Errorf("cannot de-spend an unspent transaction output")
+				}
+				dbTransactionOutput.IsSpent = false
+				db.Save(&dbTransactionOutput)
+			}
+			dbTransaction.AcceptingBlockID = nil
+			db.Save(&dbTransaction)
+		}
 	}
 	for _, addedBlock := range addedChainBlocks {
 		log.Warnf("AAAAdded!!! %+v", addedBlock)
