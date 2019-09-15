@@ -70,21 +70,19 @@ func GetTransactionsByAddressHandler(address string, skip uint64, limit uint64) 
 
 // GetUTXOsByAddressHandler searches for all UTXOs that belong to a certain address.
 func GetUTXOsByAddressHandler(address string) (interface{}, *utils.HandlerError) {
-	utxos := []*models.UTXO{}
+	var transactionOutputs []*models.TransactionOutput
 	database.DB.
-		Joins("LEFT JOIN `transaction_outputs` ON `transaction_outputs`.`id` = `utxos`.`transaction_output_id`").
 		Joins("LEFT JOIN `addresses` ON `addresses`.`id` = `transaction_outputs`.`address_id`").
-		Where("`addresses`.`address` = ?", address).
-		Preload("AcceptingBlock").
-		Preload("TransactionOutput").
-		Find(&utxos)
-	UTXOsResponses := make([]*transactionOutputResponse, len(utxos))
-	for i, utxo := range utxos {
+		Where("`addresses`.`address` = ? AND `transaction_outputs`.`is_spent` = 0", address).
+		Preload("Transaction.AcceptingBlock").
+		Find(&transactionOutputs)
+	UTXOsResponses := make([]*transactionOutputResponse, len(transactionOutputs))
+	for i, transactionOutput := range transactionOutputs {
 		UTXOsResponses[i] = &transactionOutputResponse{
-			Value:                   utxo.TransactionOutput.Value,
-			PkScript:                hex.EncodeToString(utxo.TransactionOutput.PkScript),
-			AcceptingBlockHash:      utxo.AcceptingBlock.BlockHash,
-			AcceptingBlockBlueScore: utxo.AcceptingBlock.BlueScore,
+			Value:                   transactionOutput.Value,
+			PkScript:                hex.EncodeToString(transactionOutput.PkScript),
+			AcceptingBlockHash:      transactionOutput.Transaction.AcceptingBlock.BlockHash,
+			AcceptingBlockBlueScore: transactionOutput.Transaction.AcceptingBlock.BlueScore,
 		}
 	}
 	return UTXOsResponses, nil
