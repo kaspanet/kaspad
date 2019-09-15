@@ -18,7 +18,11 @@ func blockLoop(doneChan chan struct{}) error {
 	if err != nil {
 		return err
 	}
-	db := database.DB
+	db, err := database.DB()
+	if err != nil {
+		return err
+	}
+
 	mostRecentBlockHash := findMostRecentBlockHash(db)
 	err = SyncBlocks(client, db, mostRecentBlockHash)
 	if err != nil {
@@ -301,6 +305,7 @@ func insertBlock(client *jsonrpc.Client, db *gorm.DB, block string, rawBlock btc
 					SignatureScript:     scriptSig,
 					Sequence:            input.Sequence,
 				}
+				db.Create(&dbTransactionInput)
 			}
 		}
 
