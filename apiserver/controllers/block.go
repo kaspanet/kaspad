@@ -12,15 +12,15 @@ import (
 )
 
 const (
-	// GetBlocksOrderAscending is parameter that can be used
-	// in GetBlocksHandler to get blocks ordered in ascending
-	// order
-	GetBlocksOrderAscending = "GetBlocksOrderAscending"
+	// OrderAscending is parameter that can be used
+	// in a get list handler to get a list ordered
+	// in an ascending order.
+	OrderAscending = "asc"
 
-	// GetBlocksOrderDescending is parameter that can be used
-	// in GetBlocksHandler to get blocks ordered in descending
-	// order
-	GetBlocksOrderDescending = "GetBlocksOrderDescending"
+	// OrderDescending is parameter that can be used
+	// in a get list handler to get a list ordered
+	// in an ascending order.
+	OrderDescending = "desc"
 )
 
 const maximumGetBlocksLimit = 100
@@ -59,7 +59,7 @@ func GetBlocksHandler(order string, skip uint64, limit uint64) (interface{}, *ut
 		Limit(limit).
 		Offset(skip).
 		Preload("AcceptingBlock")
-	if order == GetBlocksOrderAscending {
+	if order == OrderAscending {
 		query = query.Order("`id` ASC")
 	} else {
 		query = query.Order("`id` DESC")

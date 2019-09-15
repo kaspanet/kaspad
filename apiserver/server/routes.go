@@ -24,27 +24,42 @@ const (
 	queryParamOrder = "order"
 )
 
-const queryParamOrderDescendingValue = "descending"
-
 const (
 	defaultGetTransactionsLimit = 100
 	defaultGetBlocksLimit       = 25
-	defaultGetBlocksOrder       = controllers.GetBlocksOrderAscending
+	defaultGetBlocksOrder       = controllers.OrderAscending
 )
 
 func makeHandler(
-	handler func(ctx *utils.APIServerContext, routeParams map[string]string, queryParams map[string][]string) (
+	handler func(ctx *utils.APIServerContext, routeParams map[string]string, queryParams map[string]string) (
 		interface{}, *utils.HandlerError)) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		ctx := utils.ToAPIServerContext(r.Context())
-		response, hErr := handler(ctx, mux.Vars(r), r.URL.Query())
+		flattenQueryParams, hErr := flattenQueryParams(r.URL.Query())
+		if hErr != nil {
+			sendErr(ctx, w, hErr)
+			return
+		}
+		response, hErr := handler(ctx, mux.Vars(r), flattenQueryParams)
 		if hErr != nil {
 			sendErr(ctx, w, hErr)
 			return
 		}
 		sendJSONResponse(w, response)
 	}
+}
+
+func flattenQueryParams(queryParams map[string][]string) (map[string]string, *utils.HandlerError) {
+	flattenedMap := make(map[string]string)
+	for param, valuesSlice := range queryParams {
+		if len(valuesSlice) > 1 {
+			return nil, utils.NewHandlerError(http.StatusUnprocessableEntity, fmt.Sprintf("Couldn't parse the '%s' query parameter:"+
+				" expected a single value but got multiple values", param))
+		}
+		flattenedMap[param] = valuesSlice[0]
+	}
+	return flattenedMap, nil
 }
 
 func sendErr(ctx *utils.APIServerContext, w http.ResponseWriter, hErr *utils.HandlerError) {
@@ -65,7 +80,7 @@ func sendJSONResponse(w http.ResponseWriter, response interface{}) {
 	}
 }
 
-func mainHandler(_ *utils.APIServerContext, _ map[string]string, _ map[string][]string) (interface{}, *utils.HandlerError) {
+func mainHandler(_ *utils.APIServerContext, _ map[string]string, _ map[string]string) (interface{}, *utils.HandlerError) {
 	return "API server is running", nil
 }
 
@@ -108,41 +123,27 @@ func addRoutes(router *mux.Router) {
 		Methods("GET")
 }
 
-func ensureQueryParamIsNotAnArray(queryParams map[string][]string, param string) *utils.HandlerError {
-	if len(queryParams[param]) > 1 {
-		return utils.NewHandlerError(http.StatusUnprocessableEntity, fmt.Sprintf("Couldn't parse the '%s' query parameter:"+
-			" expected a single value but got an array", param))
-	}
-	return nil
-}
-
-func getTransactionByIDHandler(_ *utils.APIServerContext, routeParams map[string]string, _ map[string][]string) (interface{}, *utils.HandlerError) {
+func getTransactionByIDHandler(_ *utils.APIServerContext, routeParams map[string]string, _ map[string]string) (interface{}, *utils.HandlerError) {
 	return controllers.GetTransactionByIDHandler(routeParams[routeParamTxID])
 }
 
-func getTransactionByHashHandler(_ *utils.APIServerContext, routeParams map[string]string, _ map[string][]string) (interface{}, *utils.HandlerError) {
+func getTransactionByHashHandler(_ *utils.APIServerContext, routeParams map[string]string, _ map[string]string) (interface{}, *utils.HandlerError) {
 	return controllers.GetTransactionByHashHandler(routeParams[routeParamTxHash])
 }
 
-func getTransactionsByAddressHandler(_ *utils.APIServerContext, routeParams map[string]string, queryParams map[string][]string) (interface{}, *utils.HandlerError) {
+func getTransactionsByAddressHandler(_ *utils.APIServerContext, routeParams map[string]string, queryParams map[string]string) (interface{}, *utils.HandlerError) {
 	skip := 0
 	limit := defaultGetTransactionsLimit
-	if err := ensureQueryParamIsNotAnArray(queryParams, queryParamSkip); err != nil {
-		return nil, err
-	}
-	if len(queryParams[queryParamSkip]) == 1 {
+	if _, ok := queryParams[queryParamSkip]; ok {
 		var err error
-		skip, err = strconv.Atoi(queryParams[queryParamSkip][0])
+		skip, err = strconv.Atoi(queryParams[queryParamSkip])
 		if err != nil {
 			return nil, utils.NewHandlerError(http.StatusUnprocessableEntity, fmt.Sprintf("Couldn't parse the '%s' query parameter: %s", queryParamSkip, err))
 		}
 	}
-	if err := ensureQueryParamIsNotAnArray(queryParams, queryParamLimit); err != nil {
-		return nil, err
-	}
-	if len(queryParams[queryParamLimit]) == 1 {
+	if _, ok := queryParams[queryParamLimit]; ok {
 		var err error
-		skip, err = strconv.Atoi(queryParams[queryParamLimit][0])
+		skip, err = strconv.Atoi(queryParams[queryParamLimit])
 		if err != nil {
 			return nil, utils.NewHandlerError(http.StatusUnprocessableEntity, fmt.Sprintf("Couldn't parse the '%s' query parameter: %s", queryParamLimit, err))
 		}
@@ -150,47 +151,41 @@ func getTransactionsByAddressHandler(_ *utils.APIServerContext, routeParams map[
 	return controllers.GetTransactionsByAddressHandler(routeParams[routeParamAddress], uint64(skip), uint64(limit))
 }
 
-func getUTXOsByAddressHandler(_ *utils.APIServerContext, routeParams map[string]string, _ map[string][]string) (interface{}, *utils.HandlerError) {
+func getUTXOsByAddressHandler(_ *utils.APIServerContext, routeParams map[string]string, _ map[string]string) (interface{}, *utils.HandlerError) {
 	return controllers.GetUTXOsByAddressHandler(routeParams[routeParamAddress])
 }
 
-func getBlockByHashHandler(_ *utils.APIServerContext, routeParams map[string]string, _ map[string][]string) (interface{}, *utils.HandlerError) {
+func getBlockByHashHandler(_ *utils.APIServerContext, routeParams map[string]string, _ map[string]string) (interface{}, *utils.HandlerError) {
 	return controllers.GetBlockByHashHandler(routeParams[routeParamBlockHash])
 }
 
-func getFeeEstimatesHandler(_ *utils.APIServerContext, _ map[string]string, _ map[string][]string) (interface{}, *utils.HandlerError) {
+func getFeeEstimatesHandler(_ *utils.APIServerContext, _ map[string]string, _ map[string]string) (interface{}, *utils.HandlerError) {
 	return controllers.GetFeeEstimatesHandler()
 }
 
-func getBlocksHandler(_ *utils.APIServerContext, _ map[string]string, queryParams map[string][]string) (interface{}, *utils.HandlerError) {
+func getBlocksHandler(_ *utils.APIServerContext, _ map[string]string, queryParams map[string]string) (interface{}, *utils.HandlerError) {
 	skip := 0
 	limit := defaultGetBlocksLimit
-	if err := ensureQueryParamIsNotAnArray(queryParams, queryParamSkip); err != nil {
-		return nil, err
-	}
-	if len(queryParams[queryParamSkip]) == 1 {
+	if _, ok := queryParams[queryParamSkip]; ok {
 		var err error
-		skip, err = strconv.Atoi(queryParams[queryParamSkip][0])
+		skip, err = strconv.Atoi(queryParams[queryParamSkip])
 		if err != nil {
 			return nil, utils.NewHandlerError(http.StatusUnprocessableEntity, fmt.Sprintf("Couldn't parse the '%s' query parameter: %s", queryParamSkip, err))
 		}
 	}
-	if err := ensureQueryParamIsNotAnArray(queryParams, queryParamLimit); err != nil {
-		return nil, err
-	}
-	if len(queryParams[queryParamLimit]) == 1 {
+	if _, ok := queryParams[queryParamLimit]; ok {
 		var err error
-		skip, err = strconv.Atoi(queryParams[queryParamLimit][0])
+		skip, err = strconv.Atoi(queryParams[queryParamLimit])
 		if err != nil {
 			return nil, utils.NewHandlerError(http.StatusUnprocessableEntity, fmt.Sprintf("Couldn't parse the '%s' query parameter: %s", queryParamLimit, err))
 		}
 	}
-	if err := ensureQueryParamIsNotAnArray(queryParams, queryParamOrder); err != nil {
-		return nil, err
-	}
 	order := defaultGetBlocksOrder
-	if len(queryParams[queryParamOrder]) == 1 && queryParams[queryParamOrder][0] == queryParamOrderDescendingValue {
-		order = controllers.GetBlocksOrderDescending
+	if orderParamValue, ok := queryParams[queryParamOrder]; ok {
+		if orderParamValue != controllers.OrderAscending && orderParamValue != controllers.OrderDescending {
+			return nil, utils.NewHandlerError(http.StatusUnprocessableEntity, fmt.Sprintf("%s is not a valid value for the '%s' query parameter", orderParamValue, queryParamLimit))
+		}
+		order = orderParamValue
 	}
 	return controllers.GetBlocksHandler(order, uint64(skip), uint64(limit))
 }
