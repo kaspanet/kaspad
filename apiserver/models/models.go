@@ -86,6 +86,7 @@ type TransactionOutput struct {
 	Index         uint32
 	Value         uint64
 	ScriptPubKey  []byte
+	IsSpent       bool
 	AddressID     uint64
 	Address       Address
 }
@@ -100,14 +101,6 @@ type TransactionInput struct {
 	Index               uint32
 	SignatureScript     []byte
 	Sequence            uint64
-}
-
-// UTXO is the gorm model for the 'utxos' table
-type UTXO struct {
-	TransactionOutputID uint64
-	TransactionOutput   TransactionOutput
-	AcceptingBlockID    uint64
-	AcceptingBlock      Block
 }
 
 // Address is the gorm model for the 'utxos' table

@@ -5,6 +5,7 @@ CREATE TABLE `transaction_outputs`
     `index`          INT UNSIGNED    NOT NULL,
     `value`          BIGINT UNSIGNED NOT NULL,
     `script_pub_key` BLOB            NOT NULL,
+    `is_spent`       TINYINT         NOT NULL,
     `address_id`     BIGINT UNSIGNED NOT NULL,
     PRIMARY KEY (`id`),
     INDEX `idx_transaction_outputs_transaction_id` (`transaction_id`),
