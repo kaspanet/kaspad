@@ -52,7 +52,7 @@ func TestUtxoSerialization(t *testing.T) {
 			name: "blue score 1, coinbase",
 			entry: &UTXOEntry{
 				amount:         5000000000,
-				pkScript:       hexToBytes("410496b538e853519c726a2c91e61ec11600ae1390813a627c66fb8be7947be63c52da7589379515d4e0a604f8141781e62294721166bf621e73a82cbf2342c858eeac"),
+				scriptPubKey:   hexToBytes("410496b538e853519c726a2c91e61ec11600ae1390813a627c66fb8be7947be63c52da7589379515d4e0a604f8141781e62294721166bf621e73a82cbf2342c858eeac"),
 				blockBlueScore: 1,
 				packedFlags:    tfCoinbase,
 			},
@@ -64,7 +64,7 @@ func TestUtxoSerialization(t *testing.T) {
 			name: "blue score 100001, not coinbase",
 			entry: &UTXOEntry{
 				amount:         1000000,
-				pkScript:       hexToBytes("76a914ee8bd501094a7d5ca318da2506de35e1cb025ddc88ac"),
+				scriptPubKey:   hexToBytes("76a914ee8bd501094a7d5ca318da2506de35e1cb025ddc88ac"),
 				blockBlueScore: 100001,
 				packedFlags:    0,
 			},
@@ -99,10 +99,10 @@ func TestUtxoSerialization(t *testing.T) {
 			continue
 		}
 
-		if !bytes.Equal(utxoEntry.PkScript(), test.entry.PkScript()) {
+		if !bytes.Equal(utxoEntry.ScriptPubKey(), test.entry.ScriptPubKey()) {
 			t.Errorf("deserializeUTXOEntry #%d (%s) mismatched "+
 				"scripts: got %x, want %x", i, test.name,
-				utxoEntry.PkScript(), test.entry.PkScript())
+				utxoEntry.ScriptPubKey(), test.entry.ScriptPubKey())
 			continue
 		}
 		if utxoEntry.BlockBlueScore() != test.entry.BlockBlueScore() {

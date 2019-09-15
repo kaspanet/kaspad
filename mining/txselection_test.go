@@ -72,9 +72,9 @@ func TestSelectTxs(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Error creating signature script: %s", err)
 	}
-	pkScript, err := txscript.NewScriptBuilder().AddOp(txscript.OpTrue).Script()
+	scriptPubKey, err := txscript.NewScriptBuilder().AddOp(txscript.OpTrue).Script()
 	if err != nil {
-		t.Fatalf("Failed to create pkScript: %v", err)
+		t.Fatalf("Failed to create scriptPubKey: %v", err)
 	}
 
 	tests := []struct {
@@ -487,8 +487,8 @@ func TestSelectTxs(t *testing.T) {
 					SignatureScript: signatureScript,
 				}
 				txOut := &wire.TxOut{
-					PkScript: pkScript,
-					Value:    1,
+					ScriptPubKey: scriptPubKey,
+					Value:        1,
 				}
 				msgTx := wire.NewSubnetworkMsgTx(
 					wire.TxVersion, []*wire.TxIn{txIn}, []*wire.TxOut{txOut},

@@ -147,8 +147,8 @@ func (p *poolHarness) CreateCoinbaseTx(blueScore uint64, numOutputs uint32) (*ut
 			amount = amountPerOutput + remainder
 		}
 		txOuts = append(txOuts, &wire.TxOut{
-			PkScript: p.payScript,
-			Value:    amount,
+			ScriptPubKey: p.payScript,
+			Value:        amount,
 		})
 	}
 
@@ -188,8 +188,8 @@ func (p *poolHarness) CreateSignedTxForSubnetwork(inputs []spendableOutpoint, nu
 			amount = amountPerOutput + remainder
 		}
 		txOuts = append(txOuts, &wire.TxOut{
-			PkScript: p.payScript,
-			Value:    amount,
+			ScriptPubKey: p.payScript,
+			Value:        amount,
 		})
 	}
 
@@ -231,8 +231,8 @@ func (p *poolHarness) CreateTxChain(firstOutput spendableOutpoint, numTxns uint3
 			Sequence:         wire.MaxTxInSequenceNum,
 		}
 		txOut := &wire.TxOut{
-			PkScript: p.payScript,
-			Value:    uint64(spendableAmount),
+			ScriptPubKey: p.payScript,
+			Value:        uint64(spendableAmount),
 		}
 		tx := wire.NewNativeMsgTx(wire.TxVersion, []*wire.TxIn{txIn}, []*wire.TxOut{txOut})
 
@@ -307,7 +307,7 @@ func (tc *testContext) mineTransactions(transactions []*util.Tx, numberOfBlocks 
 // outputs so the caller can easily create new valid transactions which build
 // off of it.
 func newPoolHarness(t *testing.T, dagParams *dagconfig.Params, numOutputs uint32, dbName string) (*testContext, []spendableOutpoint, func(), error) {
-	pkScript, err := txscript.PayToScriptHashScript(blockdag.OpTrueScript)
+	scriptPubKey, err := txscript.PayToScriptHashScript(blockdag.OpTrueScript)
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -337,7 +337,7 @@ func newPoolHarness(t *testing.T, dagParams *dagconfig.Params, numOutputs uint32
 	chain := &fakeChain{}
 	harness := &poolHarness{
 		signatureScript: signatureScript,
-		payScript:       pkScript,
+		payScript:       scriptPubKey,
 		dagParams:       &params,
 
 		chain: chain,
@@ -470,8 +470,8 @@ func (p *poolHarness) createTx(outpoint spendableOutpoint, fee uint64, numOutput
 	amountPerOutput := (uint64(outpoint.amount) - fee) / uint64(numOutputs)
 	for i := int64(0); i < numOutputs; i++ {
 		txOuts = append(txOuts, &wire.TxOut{
-			PkScript: p.payScript,
-			Value:    amountPerOutput,
+			ScriptPubKey: p.payScript,
+			Value:        amountPerOutput,
 		})
 	}
 	tx := wire.NewNativeMsgTx(wire.TxVersion, txIns, txOuts)
@@ -606,14 +606,14 @@ func TestProcessTransaction(t *testing.T) {
 		t.Fatalf("Script: error creating nonStdSigScript: %v", err)
 	}
 
-	p2shPKScript, err := txscript.NewScriptBuilder().
+	p2shScriptPubKey, err := txscript.NewScriptBuilder().
 		AddOp(txscript.OpHash160).
 		AddData(util.Hash160(nonStdSigScript)).
 		AddOp(txscript.OpEqual).
 		Script()
 
 	if err != nil {
-		t.Fatalf("Script: error creating p2shPKScript: %v", err)
+		t.Fatalf("Script: error creating p2shScriptPubKey: %v", err)
 	}
 
 	wrappedP2SHNonStdSigScript, err := txscript.NewScriptBuilder().AddData(nonStdSigScript).Script()
@@ -634,11 +634,11 @@ func TestProcessTransaction(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewAddressPubKeyHash: unexpected error: %v", err)
 	}
-	dummyPkScript, err := txscript.PayToAddrScript(addr)
+	dummyScriptPubKey, err := txscript.PayToAddrScript(addr)
 	if err != nil {
 		t.Fatalf("PayToAddrScript: unexpected error: %v", err)
 	}
-	p2shTx := util.NewTx(wire.NewNativeMsgTx(1, nil, []*wire.TxOut{{Value: 5000000000, PkScript: p2shPKScript}}))
+	p2shTx := util.NewTx(wire.NewNativeMsgTx(1, nil, []*wire.TxOut{{Value: 5000000000, ScriptPubKey: p2shScriptPubKey}}))
 	if isAccepted, err := harness.txPool.mpUTXOSet.AddTx(p2shTx.MsgTx(), curHeight+1); err != nil {
 		t.Fatalf("AddTx unexpectedly failed. Error: %s", err)
 	} else if !isAccepted {
@@ -651,8 +651,8 @@ func TestProcessTransaction(t *testing.T) {
 		Sequence:         wire.MaxTxInSequenceNum,
 	}}
 	txOuts := []*wire.TxOut{{
-		Value:    5000000000,
-		PkScript: dummyPkScript,
+		Value:        5000000000,
+		ScriptPubKey: dummyScriptPubKey,
 	}}
 	nonStdSigScriptTx := util.NewTx(wire.NewNativeMsgTx(1, txIns, txOuts))
 	_, err = harness.txPool.ProcessTransaction(nonStdSigScriptTx, true, 0)
@@ -728,8 +728,8 @@ func TestProcessTransaction(t *testing.T) {
 		Sequence:         wire.MaxTxInSequenceNum,
 	}}
 	txOuts = []*wire.TxOut{{
-		Value:    1,
-		PkScript: dummyPkScript,
+		Value:        1,
+		ScriptPubKey: dummyScriptPubKey,
 	}}
 	tx = util.NewTx(wire.NewNativeMsgTx(1, txIns, txOuts))
 	_, err = harness.txPool.ProcessTransaction(tx, true, 0)
@@ -1776,7 +1776,7 @@ var dummyBlock = wire.MsgBlock{
 			TxOut: []*wire.TxOut{
 				{
 					Value: 0x12a05f200, // 5000000000
-					PkScript: []byte{
+					ScriptPubKey: []byte{
 						0xa9, 0x14, 0xda, 0x17, 0x45, 0xe9, 0xb5, 0x49,
 						0xbd, 0x0b, 0xfa, 0x1a, 0x56, 0x99, 0x71, 0xc7,
 						0x7e, 0xba, 0x30, 0xcd, 0x5a, 0x4b, 0x87,

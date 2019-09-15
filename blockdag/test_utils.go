@@ -138,8 +138,8 @@ func createTxForTest(numInputs uint32, numOutputs uint32, outputValue uint64, su
 
 	for i := uint32(0); i < numOutputs; i++ {
 		txOuts = append(txOuts, &wire.TxOut{
-			PkScript: OpTrueScript,
-			Value:    outputValue,
+			ScriptPubKey: OpTrueScript,
+			Value:        outputValue,
 		})
 	}
 

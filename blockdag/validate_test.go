@@ -267,7 +267,7 @@ func TestCheckBlockSanity(t *testing.T) {
 				TxOut: []*wire.TxOut{
 					{
 						Value: 0x12a05f200, // 5000000000
-						PkScript: []byte{
+						ScriptPubKey: []byte{
 							0x51,
 						},
 					},
@@ -317,7 +317,7 @@ func TestCheckBlockSanity(t *testing.T) {
 				TxOut: []*wire.TxOut{
 					{
 						Value: 0x2123e300, // 556000000
-						PkScript: []byte{
+						ScriptPubKey: []byte{
 							0x76, // OP_DUP
 							0xa9, // OP_HASH160
 							0x14, // OP_DATA_20
@@ -330,7 +330,7 @@ func TestCheckBlockSanity(t *testing.T) {
 					},
 					{
 						Value: 0x108e20f00, // 4444000000
-						PkScript: []byte{
+						ScriptPubKey: []byte{
 							0x76, // OP_DUP
 							0xa9, // OP_HASH160
 							0x14, // OP_DATA_20
@@ -386,7 +386,7 @@ func TestCheckBlockSanity(t *testing.T) {
 				TxOut: []*wire.TxOut{
 					{
 						Value: 0xf4240, // 1000000
-						PkScript: []byte{
+						ScriptPubKey: []byte{
 							0x76, // OP_DUP
 							0xa9, // OP_HASH160
 							0x14, // OP_DATA_20
@@ -399,7 +399,7 @@ func TestCheckBlockSanity(t *testing.T) {
 					},
 					{
 						Value: 0x11d260c0, // 299000000
-						PkScript: []byte{
+						ScriptPubKey: []byte{
 							0x76, // OP_DUP
 							0xa9, // OP_HASH160
 							0x14, // OP_DATA_20
@@ -456,7 +456,7 @@ func TestCheckBlockSanity(t *testing.T) {
 				TxOut: []*wire.TxOut{
 					{
 						Value: 0xf4240, // 1000000
-						PkScript: []byte{
+						ScriptPubKey: []byte{
 							0x76, // OP_DUP
 							0xa9, // OP_HASH160
 							0x14, // OP_DATA_20
@@ -786,7 +786,7 @@ var Block100000 = wire.MsgBlock{
 			TxOut: []*wire.TxOut{
 				{
 					Value: 0x12a05f200, // 5000000000
-					PkScript: []byte{
+					ScriptPubKey: []byte{
 						0xa9, 0x14, 0xda, 0x17, 0x45, 0xe9, 0xb5, 0x49,
 						0xbd, 0x0b, 0xfa, 0x1a, 0x56, 0x99, 0x71, 0xc7,
 						0x7e, 0xba, 0x30, 0xcd, 0x5a, 0x4b, 0x87,
@@ -875,7 +875,7 @@ var Block100000 = wire.MsgBlock{
 			TxOut: []*wire.TxOut{
 				{
 					Value: 0x2123e300, // 556000000
-					PkScript: []byte{
+					ScriptPubKey: []byte{
 						0x76, // OP_DUP
 						0xa9, // OP_HASH160
 						0x14, // OP_DATA_20
@@ -888,7 +888,7 @@ var Block100000 = wire.MsgBlock{
 				},
 				{
 					Value: 0x108e20f00, // 4444000000
-					PkScript: []byte{
+					ScriptPubKey: []byte{
 						0x76, // OP_DUP
 						0xa9, // OP_HASH160
 						0x14, // OP_DATA_20
@@ -944,7 +944,7 @@ var Block100000 = wire.MsgBlock{
 			TxOut: []*wire.TxOut{
 				{
 					Value: 0xf4240, // 1000000
-					PkScript: []byte{
+					ScriptPubKey: []byte{
 						0x76, // OP_DUP
 						0xa9, // OP_HASH160
 						0x14, // OP_DATA_20
@@ -957,7 +957,7 @@ var Block100000 = wire.MsgBlock{
 				},
 				{
 					Value: 0x11d260c0, // 299000000
-					PkScript: []byte{
+					ScriptPubKey: []byte{
 						0x76, // OP_DUP
 						0xa9, // OP_HASH160
 						0x14, // OP_DATA_20
@@ -1014,7 +1014,7 @@ var Block100000 = wire.MsgBlock{
 			TxOut: []*wire.TxOut{
 				{
 					Value: 0xf4240, // 1000000
-					PkScript: []byte{
+					ScriptPubKey: []byte{
 						0x76, // OP_DUP
 						0xa9, // OP_HASH160
 						0x14, // OP_DATA_20
@@ -1093,7 +1093,7 @@ var BlockWithWrongTxOrder = wire.MsgBlock{
 			TxOut: []*wire.TxOut{
 				{
 					Value: 0x12a05f200, // 5000000000
-					PkScript: []byte{
+					ScriptPubKey: []byte{
 						0xa9, 0x14, 0xda, 0x17, 0x45, 0xe9, 0xb5, 0x49,
 						0xbd, 0x0b, 0xfa, 0x1a, 0x56, 0x99, 0x71, 0xc7,
 						0x7e, 0xba, 0x30, 0xcd, 0x5a, 0x4b, 0x87,
@@ -1182,7 +1182,7 @@ var BlockWithWrongTxOrder = wire.MsgBlock{
 			TxOut: []*wire.TxOut{
 				{
 					Value: 0x2123e300, // 556000000
-					PkScript: []byte{
+					ScriptPubKey: []byte{
 						0x76, // OP_DUP
 						0xa9, // OP_HASH160
 						0x14, // OP_DATA_20
@@ -1195,7 +1195,7 @@ var BlockWithWrongTxOrder = wire.MsgBlock{
 				},
 				{
 					Value: 0x108e20f00, // 4444000000
-					PkScript: []byte{
+					ScriptPubKey: []byte{
 						0x76, // OP_DUP
 						0xa9, // OP_HASH160
 						0x14, // OP_DATA_20
@@ -1253,7 +1253,7 @@ var BlockWithWrongTxOrder = wire.MsgBlock{
 			TxOut: []*wire.TxOut{
 				{
 					Value: 0xf4240, // 1000000
-					PkScript: []byte{
+					ScriptPubKey: []byte{
 						0x76, // OP_DUP
 						0xa9, // OP_HASH160
 						0x14, // OP_DATA_20
@@ -1266,7 +1266,7 @@ var BlockWithWrongTxOrder = wire.MsgBlock{
 				},
 				{
 					Value: 0x11d260c0, // 299000000
-					PkScript: []byte{
+					ScriptPubKey: []byte{
 						0x76, // OP_DUP
 						0xa9, // OP_HASH160
 						0x14, // OP_DATA_20
@@ -1323,7 +1323,7 @@ var BlockWithWrongTxOrder = wire.MsgBlock{
 			TxOut: []*wire.TxOut{
 				{
 					Value: 0xf4240, // 1000000
-					PkScript: []byte{
+					ScriptPubKey: []byte{
 						0x76, // OP_DUP
 						0xa9, // OP_HASH160
 						0x14, // OP_DATA_20

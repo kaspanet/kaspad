@@ -110,9 +110,9 @@ func expectedInputs(pops []parsedOpcode, class ScriptClass) int {
 // ScriptInfo houses information about a script pair that is determined by
 // CalcScriptInfo.
 type ScriptInfo struct {
-	// PkScriptClass is the class of the public key script and is equivalent
+	// ScriptPubKeyClass is the class of the public key script and is equivalent
 	// to calling GetScriptClass on it.
-	PkScriptClass ScriptClass
+	ScriptPubKeyClass ScriptClass
 
 	// NumInputs is the number of inputs provided by the public key script.
 	NumInputs int
@@ -128,22 +128,22 @@ type ScriptInfo struct {
 
 // CalcScriptInfo returns a structure providing data about the provided script
 // pair.  It will error if the pair is in someway invalid such that they can not
-// be analysed, i.e. if they do not parse or the pkScript is not a push-only
+// be analysed, i.e. if they do not parse or the scriptPubKey is not a push-only
 // script
-func CalcScriptInfo(sigScript, pkScript []byte, isP2SH bool) (*ScriptInfo, error) {
+func CalcScriptInfo(sigScript, scriptPubKey []byte, isP2SH bool) (*ScriptInfo, error) {
 	sigPops, err := parseScript(sigScript)
 	if err != nil {
 		return nil, err
 	}
 
-	pkPops, err := parseScript(pkScript)
+	scriptPubKeyPops, err := parseScript(scriptPubKey)
 	if err != nil {
 		return nil, err
 	}
 
 	// Push only sigScript makes little sense.
 	si := new(ScriptInfo)
-	si.PkScriptClass = typeOfScript(pkPops)
+	si.ScriptPubKeyClass = typeOfScript(scriptPubKeyPops)
 
 	// Can't have a signature script that doesn't just push data.
 	if !isPushOnly(sigPops) {
@@ -151,12 +151,12 @@ func CalcScriptInfo(sigScript, pkScript []byte, isP2SH bool) (*ScriptInfo, error
 			"signature script is not push only")
 	}
 
-	si.ExpectedInputs = expectedInputs(pkPops, si.PkScriptClass)
+	si.ExpectedInputs = expectedInputs(scriptPubKeyPops, si.ScriptPubKeyClass)
 
 	// All entries pushed to stack (or are OP_RESERVED and exec will fail).
 	si.NumInputs = len(sigPops)
 
-	if si.PkScriptClass == ScriptHashTy && isP2SH {
+	if si.ScriptPubKeyClass == ScriptHashTy && isP2SH {
 		// The pay-to-hash-script is the final data push of the
 		// signature script.
 		script := sigPops[len(sigPops)-1].data
@@ -173,7 +173,7 @@ func CalcScriptInfo(sigScript, pkScript []byte, isP2SH bool) (*ScriptInfo, error
 		}
 		si.SigOps = getSigOpCount(shPops, true)
 	} else {
-		si.SigOps = getSigOpCount(pkPops, true)
+		si.SigOps = getSigOpCount(scriptPubKeyPops, true)
 	}
 
 	return si, nil
@@ -271,17 +271,17 @@ func PushedData(script []byte) ([][]byte, error) {
 	return data, nil
 }
 
-// ExtractPkScriptAddrs returns the type of script, addresses and required
-// signatures associated with the passed PkScript.  Note that it only works for
+// ExtractScriptPubKeyAddrs returns the type of script, addresses and required
+// signatures associated with the passed ScriptPubKey.  Note that it only works for
 // 'standard' transaction script types.  Any data such as public keys which are
 // invalid are omitted from the results.
-func ExtractPkScriptAddrs(pkScript []byte, chainParams *dagconfig.Params) (ScriptClass, []util.Address, int, error) {
+func ExtractScriptPubKeyAddrs(scriptPubKey []byte, chainParams *dagconfig.Params) (ScriptClass, []util.Address, int, error) {
 	var addrs []util.Address
 	var requiredSigs int
 
 	// No valid addresses or required signatures if the script doesn't
 	// parse.
-	pops, err := parseScript(pkScript)
+	pops, err := parseScript(scriptPubKey)
 	if err != nil {
 		return NonStandardTy, nil, 0, err
 	}
@@ -340,8 +340,8 @@ type AtomicSwapDataPushes struct {
 //
 // This function is only defined in the txscript package due to API limitations
 // which prevent callers using txscript to parse nonstandard scripts.
-func ExtractAtomicSwapDataPushes(version uint16, pkScript []byte) (*AtomicSwapDataPushes, error) {
-	pops, err := parseScript(pkScript)
+func ExtractAtomicSwapDataPushes(version uint16, scriptPubKey []byte) (*AtomicSwapDataPushes, error) {
+	pops, err := parseScript(scriptPubKey)
 	if err != nil {
 		return nil, err
 	}

@@ -3,11 +3,12 @@ package server
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"strconv"
+
 	"github.com/daglabs/btcd/apiserver/controllers"
 	"github.com/daglabs/btcd/apiserver/utils"
 	"github.com/gorilla/mux"
-	"net/http"
-	"strconv"
 )
 
 const (
@@ -31,10 +32,13 @@ const (
 	defaultGetBlocksOrder       = controllers.GetBlocksOrderAscending
 )
 
-func makeHandler(handler func(routeParams map[string]string, queryParams map[string][]string, ctx *utils.APIServerContext) (interface{}, *utils.HandlerError)) func(http.ResponseWriter, *http.Request) {
+func makeHandler(
+	handler func(ctx *utils.APIServerContext, routeParams map[string]string, queryParams map[string][]string) (
+		interface{}, *utils.HandlerError)) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
+
 		ctx := utils.ToAPIServerContext(r.Context())
-		response, hErr := handler(mux.Vars(r), r.URL.Query(), ctx)
+		response, hErr := handler(ctx, mux.Vars(r), r.URL.Query())
 		if hErr != nil {
 			sendErr(ctx, w, hErr)
 			return
@@ -61,7 +65,7 @@ func sendJSONResponse(w http.ResponseWriter, response interface{}) {
 	}
 }
 
-func mainHandler(_ map[string]string, _ map[string][]string, _ *utils.APIServerContext) (interface{}, *utils.HandlerError) {
+func mainHandler(_ *utils.APIServerContext, _ map[string]string, _ map[string][]string) (interface{}, *utils.HandlerError) {
 	return "API server is running", nil
 }
 
@@ -112,15 +116,15 @@ func ensureQueryParamIsNotAnArray(queryParams map[string][]string, param string)
 	return nil
 }
 
-func getTransactionByIDHandler(routeParams map[string]string, _ map[string][]string, _ *utils.APIServerContext) (interface{}, *utils.HandlerError) {
+func getTransactionByIDHandler(_ *utils.APIServerContext, routeParams map[string]string, _ map[string][]string) (interface{}, *utils.HandlerError) {
 	return controllers.GetTransactionByIDHandler(routeParams[routeParamTxID])
 }
 
-func getTransactionByHashHandler(routeParams map[string]string, _ map[string][]string, _ *utils.APIServerContext) (interface{}, *utils.HandlerError) {
+func getTransactionByHashHandler(_ *utils.APIServerContext, routeParams map[string]string, _ map[string][]string) (interface{}, *utils.HandlerError) {
 	return controllers.GetTransactionByHashHandler(routeParams[routeParamTxHash])
 }
 
-func getTransactionsByAddressHandler(routeParams map[string]string, queryParams map[string][]string, _ *utils.APIServerContext) (interface{}, *utils.HandlerError) {
+func getTransactionsByAddressHandler(_ *utils.APIServerContext, routeParams map[string]string, queryParams map[string][]string) (interface{}, *utils.HandlerError) {
 	skip := 0
 	limit := defaultGetTransactionsLimit
 	if err := ensureQueryParamIsNotAnArray(queryParams, queryParamSkip); err != nil {
@@ -146,19 +150,19 @@ func getTransactionsByAddressHandler(routeParams map[string]string, queryParams 
 	return controllers.GetTransactionsByAddressHandler(routeParams[routeParamAddress], uint64(skip), uint64(limit))
 }
 
-func getUTXOsByAddressHandler(routeParams map[string]string, _ map[string][]string, _ *utils.APIServerContext) (interface{}, *utils.HandlerError) {
+func getUTXOsByAddressHandler(_ *utils.APIServerContext, routeParams map[string]string, _ map[string][]string) (interface{}, *utils.HandlerError) {
 	return controllers.GetUTXOsByAddressHandler(routeParams[routeParamAddress])
 }
 
-func getBlockByHashHandler(routeParams map[string]string, _ map[string][]string, _ *utils.APIServerContext) (interface{}, *utils.HandlerError) {
+func getBlockByHashHandler(_ *utils.APIServerContext, routeParams map[string]string, _ map[string][]string) (interface{}, *utils.HandlerError) {
 	return controllers.GetBlockByHashHandler(routeParams[routeParamBlockHash])
 }
 
-func getFeeEstimatesHandler(_ map[string]string, _ map[string][]string, _ *utils.APIServerContext) (interface{}, *utils.HandlerError) {
+func getFeeEstimatesHandler(_ *utils.APIServerContext, _ map[string]string, _ map[string][]string) (interface{}, *utils.HandlerError) {
 	return controllers.GetFeeEstimatesHandler()
 }
 
-func getBlocksHandler(_ map[string]string, queryParams map[string][]string, _ *utils.APIServerContext) (interface{}, *utils.HandlerError) {
+func getBlocksHandler(_ *utils.APIServerContext, _ map[string]string, queryParams map[string][]string) (interface{}, *utils.HandlerError) {
 	skip := 0
 	limit := defaultGetBlocksLimit
 	if err := ensureQueryParamIsNotAnArray(queryParams, queryParamSkip); err != nil {

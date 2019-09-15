@@ -45,14 +45,14 @@ func TestBadPC(t *testing.T) {
 		},
 	}
 	txOuts := []*wire.TxOut{{
-		Value:    1000000000,
-		PkScript: nil,
+		Value:        1000000000,
+		ScriptPubKey: nil,
 	}}
 	tx := wire.NewNativeMsgTx(1, txIns, txOuts)
-	pkScript := mustParseShortForm("NOP")
+	scriptPubKey := mustParseShortForm("NOP")
 
 	for _, test := range tests {
-		vm, err := NewEngine(pkScript, tx, 0, 0, nil)
+		vm, err := NewEngine(scriptPubKey, tx, 0, 0, nil)
 		if err != nil {
 			t.Errorf("Failed to create script: %v", err)
 		}
@@ -114,14 +114,14 @@ func TestCheckErrorCondition(t *testing.T) {
 				Sequence:        4294967295,
 			}}
 			txOuts := []*wire.TxOut{{
-				Value:    1000000000,
-				PkScript: nil,
+				Value:        1000000000,
+				ScriptPubKey: nil,
 			}}
 			tx := wire.NewNativeMsgTx(1, txIns, txOuts)
 
-			pkScript := mustParseShortForm(test.script)
+			scriptPubKey := mustParseShortForm(test.script)
 
-			vm, err := NewEngine(pkScript, tx, 0, 0, nil)
+			vm, err := NewEngine(scriptPubKey, tx, 0, 0, nil)
 			if err != nil {
 				t.Errorf("TestCheckErrorCondition: %d: failed to create script: %v", i, err)
 			}
@@ -409,14 +409,14 @@ func TestDisasmPC(t *testing.T) {
 		Sequence:        4294967295,
 	}}
 	txOuts := []*wire.TxOut{{
-		Value:    1000000000,
-		PkScript: nil,
+		Value:        1000000000,
+		ScriptPubKey: nil,
 	}}
 	tx := wire.NewNativeMsgTx(1, txIns, txOuts)
 
-	pkScript := mustParseShortForm("OP_DROP NOP TRUE")
+	scriptPubKey := mustParseShortForm("OP_DROP NOP TRUE")
 
-	vm, err := NewEngine(pkScript, tx, 0, 0, nil)
+	vm, err := NewEngine(scriptPubKey, tx, 0, 0, nil)
 	if err != nil {
 		t.Fatalf("failed to create script: %v", err)
 	}
@@ -469,13 +469,13 @@ func TestDisasmScript(t *testing.T) {
 		Sequence:        4294967295,
 	}}
 	txOuts := []*wire.TxOut{{
-		Value:    1000000000,
-		PkScript: nil,
+		Value:        1000000000,
+		ScriptPubKey: nil,
 	}}
 	tx := wire.NewNativeMsgTx(1, txIns, txOuts)
-	pkScript := mustParseShortForm("OP_DROP NOP TRUE")
+	scriptPubKey := mustParseShortForm("OP_DROP NOP TRUE")
 
-	vm, err := NewEngine(pkScript, tx, 0, 0, nil)
+	vm, err := NewEngine(scriptPubKey, tx, 0, 0, nil)
 	if err != nil {
 		t.Fatalf("failed to create script: %v", err)
 	}
