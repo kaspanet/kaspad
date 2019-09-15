@@ -20,7 +20,7 @@ func GetBlockByHashHandler(blockHash string) (interface{}, *utils.HandlerError) 
 
 	db, err := database.DB()
 	if err != nil {
-		return nil, utils.NewHandlerError(500, "Internal server error occured")
+		return nil, utils.NewHandlerError(http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
 	}
 
 	block := &models.Block{}
