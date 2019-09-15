@@ -202,14 +202,14 @@ func addBlock(client *jsonrpc.Client, dbTx *gorm.DB, block string, rawBlock btcj
 }
 
 func insertBlock(dbTx *gorm.DB, rawBlock btcjson.GetBlockVerboseResult) (*models.Block, error) {
-	var dbBlock *models.Block
+	var dbBlock models.Block
 	dbTx.Where(&models.Block{BlockHash: rawBlock.Hash}).First(&dbBlock)
 	if dbBlock.ID == 0 {
 		bits, err := strconv.ParseUint(rawBlock.Bits, 16, 32)
 		if err != nil {
 			return nil, err
 		}
-		dbBlock = &models.Block{
+		dbBlock = models.Block{
 			BlockHash:            rawBlock.Hash,
 			Version:              rawBlock.Version,
 			HashMerkleRoot:       rawBlock.HashMerkleRoot,
@@ -221,9 +221,9 @@ func insertBlock(dbTx *gorm.DB, rawBlock btcjson.GetBlockVerboseResult) (*models
 			BlueScore:            rawBlock.BlueScore,
 			IsChainBlock:         false, // This must be false for updateSelectedParentChain to work properly
 		}
-		dbTx.Create(dbBlock)
+		dbTx.Create(&dbBlock)
 	}
-	return dbBlock, nil
+	return &dbBlock, nil
 }
 
 func insertBlockParents(dbTx *gorm.DB, rawBlock btcjson.GetBlockVerboseResult, dbBlock *models.Block) error {
@@ -265,31 +265,31 @@ func insertBlockData(dbTx *gorm.DB, block string, dbBlock *models.Block) error {
 }
 
 func insertSubnetwork(dbTx *gorm.DB, transaction *btcjson.TxRawResult, client *jsonrpc.Client) (*models.Subnetwork, error) {
-	var dbSubnetwork *models.Subnetwork
+	var dbSubnetwork models.Subnetwork
 	dbTx.Where(&models.Subnetwork{SubnetworkID: transaction.Subnetwork}).First(&dbSubnetwork)
 	if dbSubnetwork.ID == 0 {
 		subnetwork, err := client.GetSubnetwork(transaction.Subnetwork)
 		if err != nil {
 			return nil, err
 		}
-		dbSubnetwork = &models.Subnetwork{
+		dbSubnetwork = models.Subnetwork{
 			SubnetworkID: transaction.Subnetwork,
 			GasLimit:     subnetwork.GasLimit,
 		}
 		dbTx.Create(&dbSubnetwork)
 	}
-	return dbSubnetwork, nil
+	return &dbSubnetwork, nil
 }
 
 func insertTransaction(dbTx *gorm.DB, transaction *btcjson.TxRawResult, dbSubnetwork *models.Subnetwork) (*models.Transaction, error) {
-	var dbTransaction *models.Transaction
+	var dbTransaction models.Transaction
 	dbTx.Where(&models.Transaction{TransactionID: transaction.TxID}).First(&dbTransaction)
 	if dbTransaction.ID == 0 {
 		payload, err := hex.DecodeString(transaction.Payload)
 		if err != nil {
 			return nil, err
 		}
-		dbTransaction = &models.Transaction{
+		dbTransaction = models.Transaction{
 			TransactionHash: transaction.Hash,
 			TransactionID:   transaction.TxID,
 			LockTime:        transaction.LockTime,
@@ -300,7 +300,7 @@ func insertTransaction(dbTx *gorm.DB, transaction *btcjson.TxRawResult, dbSubnet
 		}
 		dbTx.Create(&dbTransaction)
 	}
-	return dbTransaction, nil
+	return &dbTransaction, nil
 }
 
 func insertTransactionBlock(dbTx *gorm.DB, dbBlock *models.Block, dbTransaction *models.Transaction, index uint32) {
@@ -389,15 +389,15 @@ func insertAddress(dbTx *gorm.DB, scriptPubKey []byte) (*models.Address, error) 
 	}
 	address := addrs[0].EncodeAddress()
 
-	var dbAddress *models.Address
+	var dbAddress models.Address
 	dbTx.Where(&models.Address{Address: address}).First(&dbAddress)
 	if dbAddress.ID == 0 {
-		dbAddress = &models.Address{
+		dbAddress = models.Address{
 			Address: address,
 		}
 		dbTx.Create(&dbAddress)
 	}
-	return dbAddress, nil
+	return &dbAddress, nil
 }
 
 func insertTransactionOutput(dbTx *gorm.DB, dbTransaction *models.Transaction,
