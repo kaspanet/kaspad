@@ -90,11 +90,11 @@ func checkInputsStandard(tx *util.Tx, utxoSet blockdag.UTXOSet) error {
 		// they have already been checked prior to calling this
 		// function.
 		entry, _ := utxoSet.Get(txIn.PreviousOutpoint)
-		originPkScript := entry.PkScript()
-		switch txscript.GetScriptClass(originPkScript) {
+		originScriptPubKey := entry.ScriptPubKey()
+		switch txscript.GetScriptClass(originScriptPubKey) {
 		case txscript.ScriptHashTy:
 			numSigOps := txscript.GetPreciseSigOpCount(
-				txIn.SignatureScript, originPkScript, true)
+				txIn.SignatureScript, originScriptPubKey, true)
 			if numSigOps > maxStandardP2SHSigOps {
 				str := fmt.Sprintf("transaction input #%d has "+
 					"%d signature operations which is more "+
@@ -120,7 +120,7 @@ func checkInputsStandard(tx *util.Tx, utxoSet blockdag.UTXOSet) error {
 // minimum transaction relay fee, it is considered dust.
 func isDust(txOut *wire.TxOut, minRelayTxFee util.Amount) bool {
 	// Unspendable outputs are considered dust.
-	if txscript.IsUnspendable(txOut.PkScript) {
+	if txscript.IsUnspendable(txOut.ScriptPubKey) {
 		return true
 	}
 
@@ -250,7 +250,7 @@ func checkTransactionStandard(tx *util.Tx, blueScore uint64,
 	// None of the output public key scripts can be a non-standard script or
 	// be "dust".
 	for i, txOut := range msgTx.TxOut {
-		scriptClass := txscript.GetScriptClass(txOut.PkScript)
+		scriptClass := txscript.GetScriptClass(txOut.ScriptPubKey)
 		if scriptClass == txscript.NonStandardTy {
 			str := fmt.Sprintf("transaction output %d: non-standard script form", i)
 			return txRuleError(wire.RejectNonstandard, str)

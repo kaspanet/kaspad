@@ -130,11 +130,11 @@ func (node *blockNode) validateCoinbaseTransaction(dag *BlockDAG, block *util.Bl
 		return nil
 	}
 	blockCoinbaseTx := block.CoinbaseTransaction().MsgTx()
-	pkScript, extraData, err := DeserializeCoinbasePayload(blockCoinbaseTx)
+	scriptPubKey, extraData, err := DeserializeCoinbasePayload(blockCoinbaseTx)
 	if err != nil {
 		return err
 	}
-	expectedCoinbaseTransaction, err := node.expectedCoinbaseTransaction(dag, txsAcceptanceData, pkScript, extraData)
+	expectedCoinbaseTransaction, err := node.expectedCoinbaseTransaction(dag, txsAcceptanceData, scriptPubKey, extraData)
 	if err != nil {
 		return err
 	}
@@ -147,7 +147,7 @@ func (node *blockNode) validateCoinbaseTransaction(dag *BlockDAG, block *util.Bl
 }
 
 // expectedCoinbaseTransaction returns the coinbase transaction for the current block
-func (node *blockNode) expectedCoinbaseTransaction(dag *BlockDAG, txsAcceptanceData MultiBlockTxsAcceptanceData, pkScript []byte, extraData []byte) (*util.Tx, error) {
+func (node *blockNode) expectedCoinbaseTransaction(dag *BlockDAG, txsAcceptanceData MultiBlockTxsAcceptanceData, scriptPubKey []byte, extraData []byte) (*util.Tx, error) {
 	bluesFeeData, err := node.getBluesFeeData(dag)
 	if err != nil {
 		return nil, err
@@ -166,7 +166,7 @@ func (node *blockNode) expectedCoinbaseTransaction(dag *BlockDAG, txsAcceptanceD
 			txOuts = append(txOuts, txOut)
 		}
 	}
-	payload, err := SerializeCoinbasePayload(pkScript, extraData)
+	payload, err := SerializeCoinbasePayload(scriptPubKey, extraData)
 	if err != nil {
 		return nil, err
 	}
@@ -175,14 +175,14 @@ func (node *blockNode) expectedCoinbaseTransaction(dag *BlockDAG, txsAcceptanceD
 	return util.NewTx(sortedCoinbaseTx), nil
 }
 
-// SerializeCoinbasePayload builds the coinbase payload based on the provided pkScript and extra data.
-func SerializeCoinbasePayload(pkScript []byte, extraData []byte) ([]byte, error) {
+// SerializeCoinbasePayload builds the coinbase payload based on the provided scriptPubKey and extra data.
+func SerializeCoinbasePayload(scriptPubKey []byte, extraData []byte) ([]byte, error) {
 	w := &bytes.Buffer{}
-	err := wire.WriteVarInt(w, uint64(len(pkScript)))
+	err := wire.WriteVarInt(w, uint64(len(scriptPubKey)))
 	if err != nil {
 		return nil, err
 	}
-	_, err = w.Write(pkScript)
+	_, err = w.Write(scriptPubKey)
 	if err != nil {
 		return nil, err
 	}
@@ -193,15 +193,15 @@ func SerializeCoinbasePayload(pkScript []byte, extraData []byte) ([]byte, error)
 	return w.Bytes(), nil
 }
 
-// DeserializeCoinbasePayload deserialize the coinbase payload to its component (pkScript and extra data).
-func DeserializeCoinbasePayload(tx *wire.MsgTx) (pkScript []byte, extraData []byte, err error) {
+// DeserializeCoinbasePayload deserialize the coinbase payload to its component (scriptPubKey and extra data).
+func DeserializeCoinbasePayload(tx *wire.MsgTx) (scriptPubKey []byte, extraData []byte, err error) {
 	r := bytes.NewReader(tx.Payload)
-	pkScriptLen, err := wire.ReadVarInt(r)
+	scriptPubKeyLen, err := wire.ReadVarInt(r)
 	if err != nil {
 		return nil, nil, err
 	}
-	pkScript = make([]byte, pkScriptLen)
-	_, err = r.Read(pkScript)
+	scriptPubKey = make([]byte, scriptPubKeyLen)
+	_, err = r.Read(scriptPubKey)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -212,7 +212,7 @@ func DeserializeCoinbasePayload(tx *wire.MsgTx) (pkScript []byte, extraData []by
 			return nil, nil, err
 		}
 	}
-	return pkScript, extraData, nil
+	return scriptPubKey, extraData, nil
 }
 
 // feeInputAndOutputForBlueBlock calculates the input and output that should go into the coinbase transaction of blueBlock
@@ -264,15 +264,15 @@ func coinbaseInputAndOutputForBlueBlock(dag *BlockDAG, blueBlock *blockNode,
 		return txIn, nil, nil
 	}
 
-	// the PkScript for the coinbase is parsed from the coinbase payload
-	pkScript, _, err := DeserializeCoinbasePayload(blockTxsAcceptanceData[0].Tx.MsgTx())
+	// the ScriptPubKey for the coinbase is parsed from the coinbase payload
+	scriptPubKey, _, err := DeserializeCoinbasePayload(blockTxsAcceptanceData[0].Tx.MsgTx())
 	if err != nil {
 		return nil, nil, err
 	}
 
 	txOut := &wire.TxOut{
-		Value:    totalReward,
-		PkScript: pkScript,
+		Value:        totalReward,
+		ScriptPubKey: scriptPubKey,
 	}
 
 	return txIn, txOut, nil

@@ -71,7 +71,7 @@ func sendJSONResponse(w http.ResponseWriter, response interface{}) {
 	}
 }
 
-func mainHandler(_ *utils.APIServerContext, _ map[string]string, _ map[string][]string, _ []byte) (interface{}, *utils.HandlerError) {
+func mainHandler(_ *utils.APIServerContext, routeParams map[string]string, _ map[string][]string, _ []byte) (interface{}, *utils.HandlerError) {
 	return "API server is running", nil
 }
 

@@ -244,14 +244,14 @@ func serializeUTXOEntry(entry *UTXOEntry) []byte {
 
 	// Calculate the size needed to serialize the entry.
 	size := serializeSizeVLQ(headerCode) +
-		compressedTxOutSize(uint64(entry.Amount()), entry.PkScript())
+		compressedTxOutSize(uint64(entry.Amount()), entry.ScriptPubKey())
 
 	// Serialize the header code followed by the compressed unspent
 	// transaction output.
 	serialized := make([]byte, size)
 	offset := putVLQ(serialized, headerCode)
 	offset += putCompressedTxOut(serialized[offset:], uint64(entry.Amount()),
-		entry.PkScript())
+		entry.ScriptPubKey())
 
 	return serialized
 }
@@ -288,7 +288,7 @@ func deserializeUTXOEntry(serialized []byte) (*UTXOEntry, error) {
 	blockBlueScore := code >> 1
 
 	// Decode the compressed unspent transaction output.
-	amount, pkScript, _, err := decodeCompressedTxOut(serialized[offset:])
+	amount, scriptPubKey, _, err := decodeCompressedTxOut(serialized[offset:])
 	if err != nil {
 		return nil, errDeserialize(fmt.Sprintf("unable to decode "+
 			"UTXO: %s", err))
@@ -296,7 +296,7 @@ func deserializeUTXOEntry(serialized []byte) (*UTXOEntry, error) {
 
 	entry := &UTXOEntry{
 		amount:         amount,
-		pkScript:       pkScript,
+		scriptPubKey:   scriptPubKey,
 		blockBlueScore: blockBlueScore,
 		packedFlags:    0,
 	}

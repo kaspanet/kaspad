@@ -17,8 +17,8 @@ func TestUTXOCollection(t *testing.T) {
 	txID1, _ := daghash.NewTxIDFromStr("1111111111111111111111111111111111111111111111111111111111111111")
 	outpoint0 := *wire.NewOutpoint(txID0, 0)
 	outpoint1 := *wire.NewOutpoint(txID1, 0)
-	utxoEntry0 := NewUTXOEntry(&wire.TxOut{PkScript: []byte{}, Value: 10}, true, 0)
-	utxoEntry1 := NewUTXOEntry(&wire.TxOut{PkScript: []byte{}, Value: 20}, false, 1)
+	utxoEntry0 := NewUTXOEntry(&wire.TxOut{ScriptPubKey: []byte{}, Value: 10}, true, 0)
+	utxoEntry1 := NewUTXOEntry(&wire.TxOut{ScriptPubKey: []byte{}, Value: 20}, false, 1)
 
 	// For each of the following test cases, we will:
 	// .String() the given collection and compare it to expectedString
@@ -76,8 +76,8 @@ func TestUTXODiff(t *testing.T) {
 	txID1, _ := daghash.NewTxIDFromStr("1111111111111111111111111111111111111111111111111111111111111111")
 	outpoint0 := *wire.NewOutpoint(txID0, 0)
 	outpoint1 := *wire.NewOutpoint(txID1, 0)
-	utxoEntry0 := NewUTXOEntry(&wire.TxOut{PkScript: []byte{}, Value: 10}, true, 0)
-	utxoEntry1 := NewUTXOEntry(&wire.TxOut{PkScript: []byte{}, Value: 20}, false, 1)
+	utxoEntry0 := NewUTXOEntry(&wire.TxOut{ScriptPubKey: []byte{}, Value: 10}, true, 0)
+	utxoEntry1 := NewUTXOEntry(&wire.TxOut{ScriptPubKey: []byte{}, Value: 20}, false, 1)
 
 	// Test utxoDiff creation
 	diff := NewUTXODiff()
@@ -119,8 +119,8 @@ func TestUTXODiff(t *testing.T) {
 func TestUTXODiffRules(t *testing.T) {
 	txID0, _ := daghash.NewTxIDFromStr("0000000000000000000000000000000000000000000000000000000000000000")
 	outpoint0 := *wire.NewOutpoint(txID0, 0)
-	utxoEntry1 := NewUTXOEntry(&wire.TxOut{PkScript: []byte{}, Value: 10}, true, 10)
-	utxoEntry2 := NewUTXOEntry(&wire.TxOut{PkScript: []byte{}, Value: 10}, true, 20)
+	utxoEntry1 := NewUTXOEntry(&wire.TxOut{ScriptPubKey: []byte{}, Value: 10}, true, 10)
+	utxoEntry2 := NewUTXOEntry(&wire.TxOut{ScriptPubKey: []byte{}, Value: 10}, true, 20)
 
 	// For each of the following test cases, we will:
 	// this.diffFrom(other) and compare it to expectedDiffFromResult
@@ -537,8 +537,8 @@ func TestFullUTXOSet(t *testing.T) {
 	txID1, _ := daghash.NewTxIDFromStr("1111111111111111111111111111111111111111111111111111111111111111")
 	outpoint0 := *wire.NewOutpoint(txID0, 0)
 	outpoint1 := *wire.NewOutpoint(txID1, 0)
-	txOut0 := &wire.TxOut{PkScript: []byte{}, Value: 10}
-	txOut1 := &wire.TxOut{PkScript: []byte{}, Value: 20}
+	txOut0 := &wire.TxOut{ScriptPubKey: []byte{}, Value: 10}
+	txOut1 := &wire.TxOut{ScriptPubKey: []byte{}, Value: 20}
 	utxoEntry0 := NewUTXOEntry(txOut0, true, 0)
 	utxoEntry1 := NewUTXOEntry(txOut1, false, 1)
 	diff := addMultisetToDiff(t, &UTXODiff{
@@ -601,8 +601,8 @@ func TestDiffUTXOSet(t *testing.T) {
 	txID1, _ := daghash.NewTxIDFromStr("1111111111111111111111111111111111111111111111111111111111111111")
 	outpoint0 := *wire.NewOutpoint(txID0, 0)
 	outpoint1 := *wire.NewOutpoint(txID1, 0)
-	txOut0 := &wire.TxOut{PkScript: []byte{}, Value: 10}
-	txOut1 := &wire.TxOut{PkScript: []byte{}, Value: 20}
+	txOut0 := &wire.TxOut{ScriptPubKey: []byte{}, Value: 10}
+	txOut1 := &wire.TxOut{ScriptPubKey: []byte{}, Value: 20}
 	utxoEntry0 := NewUTXOEntry(txOut0, true, 0)
 	utxoEntry1 := NewUTXOEntry(txOut1, false, 1)
 	diff := addMultisetToDiff(t, &UTXODiff{
@@ -857,7 +857,7 @@ func TestDiffUTXOSet_addTx(t *testing.T) {
 	// coinbaseTX is coinbase. As such, it has exactly one input with hash zero and MaxUInt32 index
 	txID0, _ := daghash.NewTxIDFromStr("0000000000000000000000000000000000000000000000000000000000000000")
 	txIn0 := &wire.TxIn{SignatureScript: []byte{}, PreviousOutpoint: wire.Outpoint{TxID: *txID0, Index: math.MaxUint32}, Sequence: 0}
-	txOut0 := &wire.TxOut{PkScript: []byte{0}, Value: 10}
+	txOut0 := &wire.TxOut{ScriptPubKey: []byte{0}, Value: 10}
 	utxoEntry0 := NewUTXOEntry(txOut0, true, 0)
 	coinbaseTX := wire.NewSubnetworkMsgTx(1, []*wire.TxIn{txIn0}, []*wire.TxOut{txOut0}, subnetworkid.SubnetworkIDCoinbase, 0, nil)
 
@@ -865,7 +865,7 @@ func TestDiffUTXOSet_addTx(t *testing.T) {
 	id1 := coinbaseTX.TxID()
 	outpoint1 := *wire.NewOutpoint(id1, 0)
 	txIn1 := &wire.TxIn{SignatureScript: []byte{}, PreviousOutpoint: outpoint1, Sequence: 0}
-	txOut1 := &wire.TxOut{PkScript: []byte{1}, Value: 20}
+	txOut1 := &wire.TxOut{ScriptPubKey: []byte{1}, Value: 20}
 	utxoEntry1 := NewUTXOEntry(txOut1, false, 1)
 	transaction1 := wire.NewNativeMsgTx(1, []*wire.TxIn{txIn1}, []*wire.TxOut{txOut1})
 
@@ -873,7 +873,7 @@ func TestDiffUTXOSet_addTx(t *testing.T) {
 	id2 := transaction1.TxID()
 	outpoint2 := *wire.NewOutpoint(id2, 0)
 	txIn2 := &wire.TxIn{SignatureScript: []byte{}, PreviousOutpoint: outpoint2, Sequence: 0}
-	txOut2 := &wire.TxOut{PkScript: []byte{2}, Value: 30}
+	txOut2 := &wire.TxOut{ScriptPubKey: []byte{2}, Value: 30}
 	utxoEntry2 := NewUTXOEntry(txOut2, false, 2)
 	transaction2 := wire.NewNativeMsgTx(1, []*wire.TxIn{txIn2}, []*wire.TxOut{txOut2})
 
@@ -1027,7 +1027,7 @@ func TestDiffFromTx(t *testing.T) {
 
 	txID0, _ := daghash.NewTxIDFromStr("0000000000000000000000000000000000000000000000000000000000000000")
 	txIn0 := &wire.TxIn{SignatureScript: []byte{}, PreviousOutpoint: wire.Outpoint{TxID: *txID0, Index: math.MaxUint32}, Sequence: 0}
-	txOut0 := &wire.TxOut{PkScript: []byte{0}, Value: 10}
+	txOut0 := &wire.TxOut{ScriptPubKey: []byte{0}, Value: 10}
 	cbTx := wire.NewSubnetworkMsgTx(1, []*wire.TxIn{txIn0}, []*wire.TxOut{txOut0}, subnetworkid.SubnetworkIDCoinbase, 0, nil)
 	if isAccepted, err := fus.AddTx(cbTx, 1); err != nil {
 		t.Fatalf("AddTx unexpectedly failed. Error: %s", err)
@@ -1042,8 +1042,8 @@ func TestDiffFromTx(t *testing.T) {
 		Sequence:         wire.MaxTxInSequenceNum,
 	}}
 	txOuts := []*wire.TxOut{{
-		PkScript: OpTrueScript,
-		Value:    uint64(1),
+		ScriptPubKey: OpTrueScript,
+		Value:        uint64(1),
 	}}
 	tx := wire.NewNativeMsgTx(wire.TxVersion, txIns, txOuts)
 	diff, err := fus.diffFromTx(tx, acceptingBlueScore)
@@ -1069,8 +1069,8 @@ func TestDiffFromTx(t *testing.T) {
 		Sequence:         wire.MaxTxInSequenceNum,
 	}}
 	invalidTxOuts := []*wire.TxOut{{
-		PkScript: OpTrueScript,
-		Value:    uint64(1),
+		ScriptPubKey: OpTrueScript,
+		Value:        uint64(1),
 	}}
 	invalidTx := wire.NewNativeMsgTx(wire.TxVersion, invalidTxIns, invalidTxOuts)
 	_, err = fus.diffFromTx(invalidTx, acceptingBlueScore)
@@ -1116,8 +1116,8 @@ func TestUTXOSetAddEntry(t *testing.T) {
 	txID1, _ := daghash.NewTxIDFromStr("1111111111111111111111111111111111111111111111111111111111111111")
 	outpoint0 := wire.NewOutpoint(txID0, 0)
 	outpoint1 := wire.NewOutpoint(txID1, 0)
-	utxoEntry0 := NewUTXOEntry(&wire.TxOut{PkScript: []byte{}, Value: 10}, true, 0)
-	utxoEntry1 := NewUTXOEntry(&wire.TxOut{PkScript: []byte{}, Value: 20}, false, 1)
+	utxoEntry0 := NewUTXOEntry(&wire.TxOut{ScriptPubKey: []byte{}, Value: 10}, true, 0)
+	utxoEntry1 := NewUTXOEntry(&wire.TxOut{ScriptPubKey: []byte{}, Value: 20}, false, 1)
 
 	utxoDiff := NewUTXODiff()
 

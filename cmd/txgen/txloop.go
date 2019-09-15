@@ -26,8 +26,8 @@ const (
 	// spendSize is the largest number of bytes of a sigScript
 	// which spends a p2pkh output: OP_DATA_73 <sig> OP_DATA_33 <pubkey>
 	spendSize uint64 = 1 + 73 + 1 + 33
-	// Value 8 bytes + serialized varint size for the length of PkScript +
-	// PkScript bytes.
+	// Value 8 bytes + serialized varint size for the length of ScriptPubKey +
+	// ScriptPubKey bytes.
 	outputSize uint64 = 8 + 1 + 25
 
 	txLifeSpan                                  = 1000
@@ -55,8 +55,8 @@ func isDust(value uint64) bool {
 
 var (
 	random                 = rand.New(rand.NewSource(time.Now().UnixNano()))
-	primaryPkScript        []byte
-	secondaryPkScript      []byte
+	primaryScriptPubKey    []byte
+	secondaryScriptPubKey  []byte
 	sentToSecondaryAddress bool
 )
 
@@ -64,15 +64,15 @@ var (
 func txLoop(client *txgenClient, cfg *config) error {
 	filterAddresses := []util.Address{p2pkhAddress}
 	var err error
-	primaryPkScript, err = txscript.PayToAddrScript(p2pkhAddress)
+	primaryScriptPubKey, err = txscript.PayToAddrScript(p2pkhAddress)
 	if err != nil {
-		return fmt.Errorf("failed to generate primaryPkScript to address: %s", err)
+		return fmt.Errorf("failed to generate primaryScriptPubKey to address: %s", err)
 	}
 
 	if secondaryAddress != nil {
-		secondaryPkScript, err = txscript.PayToAddrScript(secondaryAddress)
+		secondaryScriptPubKey, err = txscript.PayToAddrScript(secondaryAddress)
 		if err != nil {
-			return fmt.Errorf("failed to generate primaryPkScript to address: %s", err)
+			return fmt.Errorf("failed to generate primaryScriptPubKey to address: %s", err)
 		}
 
 		filterAddresses = append(filterAddresses, secondaryAddress)
@@ -214,8 +214,8 @@ func randomWithAverageTarget(target uint64, allowZero bool) uint64 {
 }
 
 func createRandomTxFromFunds(walletUTXOSet utxoSet, cfg *config, gasLimitMap map[subnetworkid.SubnetworkID]uint64, funds uint64) (tx *wire.MsgTx, isSecondaryAddress bool, err error) {
-	if secondaryPkScript != nil && !sentToSecondaryAddress && funds > minSecondaryTxAmount {
-		tx, err = createTx(walletUTXOSet, minSecondaryTxAmount, cfg.AverageFeeRate, 1, 1, subnetworkid.SubnetworkIDNative, 0, 0, secondaryPkScript)
+	if secondaryScriptPubKey != nil && !sentToSecondaryAddress && funds > minSecondaryTxAmount {
+		tx, err = createTx(walletUTXOSet, minSecondaryTxAmount, cfg.AverageFeeRate, 1, 1, subnetworkid.SubnetworkIDNative, 0, 0, secondaryScriptPubKey)
 		if err != nil {
 			return nil, false, err
 		}
@@ -254,7 +254,7 @@ func createRandomTxFromFunds(walletUTXOSet utxoSet, cfg *config, gasLimitMap map
 	if amount > funds-minTxFee {
 		amount = funds - minTxFee
 	}
-	tx, err = createTx(walletUTXOSet, amount, feeRate, targetNumberOfOutputs, targetNumberOfInputs, chosenSubnetwork, payloadSize, gas, primaryPkScript)
+	tx, err = createTx(walletUTXOSet, amount, feeRate, targetNumberOfOutputs, targetNumberOfInputs, chosenSubnetwork, payloadSize, gas, primaryScriptPubKey)
 	if err != nil {
 		return nil, false, err
 	}
@@ -281,7 +281,7 @@ func enqueueTransactions(client *txgenClient, blockAdded *blockAddedMsg, walletU
 }
 
 func createTx(walletUTXOSet utxoSet, minAmount uint64, feeRate uint64, targetNumberOfOutputs uint64, targetNumberOfInputs uint64,
-	subnetworkdID *subnetworkid.SubnetworkID, payloadSize uint64, gas uint64, pkScript []byte) (*wire.MsgTx, error) {
+	subnetworkdID *subnetworkid.SubnetworkID, payloadSize uint64, gas uint64, scriptPubKey []byte) (*wire.MsgTx, error) {
 	var tx *wire.MsgTx
 	if subnetworkdID.IsEqual(subnetworkid.SubnetworkIDNative) {
 		tx = wire.NewNativeMsgTx(wire.TxVersion, nil, nil)
@@ -307,8 +307,8 @@ func createTx(walletUTXOSet utxoSet, minAmount uint64, feeRate uint64, targetNum
 
 	for i := uint64(0); i < numOuts; i++ {
 		tx.AddTxOut(&wire.TxOut{
-			Value:    funds / numOuts,
-			PkScript: pkScript,
+			Value:        funds / numOuts,
+			ScriptPubKey: scriptPubKey,
 		})
 	}
 
@@ -328,7 +328,7 @@ func signTx(walletUTXOSet utxoSet, tx *wire.MsgTx) error {
 		outpoint := txIn.PreviousOutpoint
 		prevOut := walletUTXOSet[outpoint]
 
-		sigScript, err := txscript.SignatureScript(tx, i, prevOut.PkScript,
+		sigScript, err := txscript.SignatureScript(tx, i, prevOut.ScriptPubKey,
 			txscript.SigHashAll, privateKey, true)
 		if err != nil {
 			return fmt.Errorf("Failed to sign transaction: %s", err)
@@ -410,7 +410,7 @@ func removeTxInsFromUTXOSet(walletUTXOSet utxoSet, tx *wire.MsgTx) {
 
 func addTxOutsToUTXOSet(walletUTXOSet utxoSet, tx *wire.MsgTx) {
 	for i, txOut := range tx.TxOut {
-		if bytes.Equal(txOut.PkScript, primaryPkScript) {
+		if bytes.Equal(txOut.ScriptPubKey, primaryScriptPubKey) {
 			outpoint := wire.Outpoint{TxID: *tx.TxID(), Index: uint32(i)}
 			walletUTXOSet[outpoint] = txOut
 		}
