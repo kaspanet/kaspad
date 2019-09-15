@@ -4,10 +4,12 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
+	"github.com/daglabs/btcd/apiserver/config"
 	"github.com/daglabs/btcd/apiserver/database"
 	"github.com/daglabs/btcd/apiserver/jsonrpc"
 	"github.com/daglabs/btcd/apiserver/models"
 	"github.com/daglabs/btcd/btcjson"
+	"github.com/daglabs/btcd/txscript"
 	"github.com/daglabs/btcd/util/daghash"
 	"github.com/daglabs/btcd/util/subnetworkid"
 	"github.com/jinzhu/gorm"
@@ -322,21 +324,41 @@ func insertBlock(client *jsonrpc.Client, db *gorm.DB, block string, rawBlock btc
 			}
 		}
 
-		// Insert the transaction outputs
 		for _, output := range transaction.Vout {
+			// Get the scriptPubKey
+			scriptPubKey, err := hex.DecodeString(output.ScriptPubKey.Hex)
+			if err != nil {
+				return err
+			}
+
+			// Extract the address
+			_, addrs, _, err := txscript.ExtractScriptPubKeyAddrs(scriptPubKey, &config.ActiveNetParams)
+			if err != nil {
+				return err
+			}
+			address := addrs[0].EncodeAddress()
+
+			// Insert the address
+			var dbAddress models.Address
+			db.Where(&models.Address{Address: address}).First(&dbAddress)
+			if dbAddress.ID == 0 {
+				dbAddress = models.Address{
+					Address: address,
+				}
+				db.Create(&dbAddress)
+			}
+
+			// Insert the transaction outputs
 			var dbTransactionOutput models.TransactionOutput
 			db.Where(&models.TransactionOutput{TransactionID: dbTransaction.ID, Index: output.N}).First(&dbTransactionOutput)
 			if dbTransactionOutput.TransactionID == 0 {
-				scriptPubKey, err := hex.DecodeString(output.ScriptPubKey.Hex)
-				if err != nil {
-					return err
-				}
 				dbTransactionOutput = models.TransactionOutput{
 					TransactionID: dbTransaction.ID,
 					Index:         output.N,
 					Value:         output.Value,
 					IsSpent:       false,
 					ScriptPubKey:  scriptPubKey,
+					AddressID:     dbAddress.ID,
 				}
 				db.Create(&dbTransactionOutput)
 			}
