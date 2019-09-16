@@ -36,12 +36,12 @@ func makeHandler(
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		ctx := utils.ToAPIServerContext(r.Context())
-		flattenQueryParams, hErr := flattenQueryParams(r.URL.Query())
+		flattenedQueryParams, hErr := flattenQueryParams(r.URL.Query())
 		if hErr != nil {
 			sendErr(ctx, w, hErr)
 			return
 		}
-		response, hErr := handler(ctx, mux.Vars(r), flattenQueryParams)
+		response, hErr := handler(ctx, mux.Vars(r), flattenedQueryParams)
 		if hErr != nil {
 			sendErr(ctx, w, hErr)
 			return
@@ -123,6 +123,17 @@ func addRoutes(router *mux.Router) {
 		Methods("GET")
 }
 
+func convertQueryParamToInt(queryParams map[string]string, param string, defaultValue int) (int, *utils.HandlerError) {
+	if _, ok := queryParams[param]; ok {
+		intValue, err := strconv.Atoi(queryParams[param])
+		if err != nil {
+			return 0, utils.NewHandlerError(http.StatusUnprocessableEntity, fmt.Sprintf("Couldn't parse the '%s' query parameter: %s", param, err))
+		}
+		return intValue, nil
+	}
+	return defaultValue, nil
+}
+
 func getTransactionByIDHandler(_ *utils.APIServerContext, routeParams map[string]string, _ map[string]string) (interface{}, *utils.HandlerError) {
 	return controllers.GetTransactionByIDHandler(routeParams[routeParamTxID])
 }
@@ -132,14 +143,13 @@ func getTransactionByHashHandler(_ *utils.APIServerContext, routeParams map[stri
 }
 
 func getTransactionsByAddressHandler(_ *utils.APIServerContext, routeParams map[string]string, queryParams map[string]string) (interface{}, *utils.HandlerError) {
-	skip := 0
-	limit := defaultGetTransactionsLimit
-	if _, ok := queryParams[queryParamSkip]; ok {
-		var err error
-		skip, err = strconv.Atoi(queryParams[queryParamSkip])
-		if err != nil {
-			return nil, utils.NewHandlerError(http.StatusUnprocessableEntity, fmt.Sprintf("Couldn't parse the '%s' query parameter: %s", queryParamSkip, err))
-		}
+	skip, hErr := convertQueryParamToInt(queryParams, queryParamSkip, 0)
+	if hErr != nil {
+		return nil, hErr
+	}
+	limit, hErr := convertQueryParamToInt(queryParams, queryParamLimit, defaultGetTransactionsLimit)
+	if hErr != nil {
+		return nil, hErr
 	}
 	if _, ok := queryParams[queryParamLimit]; ok {
 		var err error
@@ -164,21 +174,13 @@ func getFeeEstimatesHandler(_ *utils.APIServerContext, _ map[string]string, _ ma
 }
 
 func getBlocksHandler(_ *utils.APIServerContext, _ map[string]string, queryParams map[string]string) (interface{}, *utils.HandlerError) {
-	skip := 0
-	limit := defaultGetBlocksLimit
-	if _, ok := queryParams[queryParamSkip]; ok {
-		var err error
-		skip, err = strconv.Atoi(queryParams[queryParamSkip])
-		if err != nil {
-			return nil, utils.NewHandlerError(http.StatusUnprocessableEntity, fmt.Sprintf("Couldn't parse the '%s' query parameter: %s", queryParamSkip, err))
-		}
+	skip, hErr := convertQueryParamToInt(queryParams, queryParamSkip, 0)
+	if hErr != nil {
+		return nil, hErr
 	}
-	if _, ok := queryParams[queryParamLimit]; ok {
-		var err error
-		skip, err = strconv.Atoi(queryParams[queryParamLimit])
-		if err != nil {
-			return nil, utils.NewHandlerError(http.StatusUnprocessableEntity, fmt.Sprintf("Couldn't parse the '%s' query parameter: %s", queryParamLimit, err))
-		}
+	limit, hErr := convertQueryParamToInt(queryParams, queryParamLimit, defaultGetBlocksLimit)
+	if hErr != nil {
+		return nil, hErr
 	}
 	order := defaultGetBlocksOrder
 	if orderParamValue, ok := queryParams[queryParamOrder]; ok {
