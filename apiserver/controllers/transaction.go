@@ -23,7 +23,7 @@ func GetTransactionByIDHandler(txID string) (interface{}, *utils.HandlerError) {
 
 	db, err := database.DB()
 	if err != nil {
-		return nil, utils.NewHandlerError(http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
+		return nil, utils.NewInternalServerHandlerError(err.Error())
 	}
 
 	tx := &models.Transaction{}
@@ -44,7 +44,7 @@ func GetTransactionByHashHandler(txHash string) (interface{}, *utils.HandlerErro
 
 	db, err := database.DB()
 	if err != nil {
-		return nil, utils.NewHandlerError(http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
+		return nil, utils.NewInternalServerHandlerError(err.Error())
 	}
 
 	tx := &models.Transaction{}
@@ -66,7 +66,7 @@ func GetTransactionsByAddressHandler(address string, skip uint64, limit uint64) 
 
 	db, err := database.DB()
 	if err != nil {
-		return nil, utils.NewHandlerError(http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
+		return nil, utils.NewInternalServerHandlerError(err.Error())
 	}
 
 	txs := []*models.Transaction{}
@@ -93,7 +93,7 @@ func GetTransactionsByAddressHandler(address string, skip uint64, limit uint64) 
 func GetUTXOsByAddressHandler(address string) (interface{}, *utils.HandlerError) {
 	db, err := database.DB()
 	if err != nil {
-		return nil, utils.NewHandlerError(http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
+		return nil, utils.NewInternalServerHandlerError(err.Error())
 	}
 
 	var transactionOutputs []*models.TransactionOutput

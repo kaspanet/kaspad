@@ -34,7 +34,7 @@ func GetBlockByHashHandler(blockHash string) (interface{}, *utils.HandlerError) 
 
 	db, err := database.DB()
 	if err != nil {
-		return nil, utils.NewHandlerError(http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
+		return nil, utils.NewInternalServerHandlerError(err.Error())
 	}
 
 	block := &models.Block{}
