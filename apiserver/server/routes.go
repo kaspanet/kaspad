@@ -107,6 +107,11 @@ func addRoutes(router *mux.Router) {
 		"/fee-estimates",
 		makeHandler(getFeeEstimatesHandler)).
 		Methods("GET")
+
+	router.HandleFunc(
+		"/transaction",
+		makeHandler(postTransactionHandler)).
+		Methods("POST")
 }
 
 func getTransactionByIDHandler(_ *utils.APIServerContext, routeParams map[string]string, _ map[string][]string, _ []byte) (interface{}, *utils.HandlerError) {

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"time"
 
 	"github.com/daglabs/btcd/apiserver/config"
 	"github.com/daglabs/btcd/util/daghash"
@@ -63,11 +64,12 @@ func Connect(cfg *config.Config) error {
 	}
 
 	connCfg := &rpcclient.ConnConfig{
-		Host:       cfg.RPCServer,
-		Endpoint:   "ws",
-		User:       cfg.RPCUser,
-		Pass:       cfg.RPCPassword,
-		DisableTLS: cfg.DisableTLS,
+		Host:           cfg.RPCServer,
+		Endpoint:       "ws",
+		User:           cfg.RPCUser,
+		Pass:           cfg.RPCPassword,
+		DisableTLS:     cfg.DisableTLS,
+		RequestTimeout: time.Second * 5,
 	}
 
 	if !cfg.DisableTLS {
