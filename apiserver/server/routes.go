@@ -40,11 +40,19 @@ func makeHandler(
 	}
 }
 
+type clientError struct {
+	ErrorCode    int    `json:"errorCode"`
+	ErrorMessage string `json:"errorMessage"`
+}
+
 func sendErr(ctx *utils.APIServerContext, w http.ResponseWriter, hErr *utils.HandlerError) {
 	errMsg := fmt.Sprintf("got error: %s", hErr)
 	ctx.Warnf(errMsg)
-	w.WriteHeader(hErr.ErrorCode)
-	sendJSONResponse(w, hErr)
+	w.WriteHeader(hErr.Code)
+	sendJSONResponse(w, &clientError{
+		ErrorCode:    hErr.Code,
+		ErrorMessage: hErr.ClientMessage,
+	})
 }
 
 func sendJSONResponse(w http.ResponseWriter, response interface{}) {
