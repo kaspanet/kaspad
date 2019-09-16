@@ -119,6 +119,6 @@ func Migrate(cfg *config.Config) error {
 	if err != nil {
 		return err
 	}
-	log.Infof("Database is up-to-date")
+	log.Infof("Migrated database to the latest version")
 	return nil
 }
