@@ -28,7 +28,7 @@ func GetTransactionByIDHandler(txID string) (interface{}, *utils.HandlerError) {
 
 	db, err := database.DB()
 	if err != nil {
-		return nil, utils.NewInternalServerHandlerError(err.Error())
+		return nil, utils.NewHandlerError(http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
 	}
 
 	tx := &models.Transaction{}
@@ -49,7 +49,7 @@ func GetTransactionByHashHandler(txHash string) (interface{}, *utils.HandlerErro
 
 	db, err := database.DB()
 	if err != nil {
-		return nil, utils.NewInternalServerHandlerError(err.Error())
+		return nil, utils.NewHandlerError(http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
 	}
 
 	tx := &models.Transaction{}
@@ -71,7 +71,7 @@ func GetTransactionsByAddressHandler(address string, skip uint64, limit uint64) 
 
 	db, err := database.DB()
 	if err != nil {
-		return nil, utils.NewInternalServerHandlerError(err.Error())
+		return nil, utils.NewHandlerError(http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
 	}
 
 	txs := []*models.Transaction{}
@@ -98,7 +98,7 @@ func GetTransactionsByAddressHandler(address string, skip uint64, limit uint64) 
 func GetUTXOsByAddressHandler(address string) (interface{}, *utils.HandlerError) {
 	db, err := database.DB()
 	if err != nil {
-		return nil, utils.NewInternalServerHandlerError(err.Error())
+		return nil, utils.NewHandlerError(http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
 	}
 
 	var transactionOutputs []*models.TransactionOutput
@@ -133,25 +133,31 @@ func addTxPreloadedFields(query *gorm.DB) *gorm.DB {
 func PostTransaction(requestBody []byte) *utils.HandlerError {
 	client, err := jsonrpc.GetClient()
 	if err != nil {
-		return utils.NewHandlerError(http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
+		return utils.NewInternalServerHandlerError(err.Error())
 	}
 
 	rawTx := &RawTransaction{}
 	err = json.Unmarshal(requestBody, rawTx)
 	if err != nil {
-		return utils.NewHandlerError(http.StatusUnprocessableEntity, "The request body is not json-formatted")
+		return utils.NewHandlerErrorWithCustomClientMessage(http.StatusUnprocessableEntity,
+			fmt.Sprintf("Error unmarshalling request body: %s", err),
+			"The request body is not json-formatted")
 	}
 
 	txBytes, err := hex.DecodeString(rawTx.RawTransaction)
 	if err != nil {
-		return utils.NewHandlerError(http.StatusUnprocessableEntity, "The raw transaction is not a hex-encoded transaction")
+		return utils.NewHandlerErrorWithCustomClientMessage(http.StatusUnprocessableEntity,
+			fmt.Sprintf("Error decoding hex raw transaction: %s", err),
+			"The raw transaction is not a hex-encoded transaction")
 	}
 
 	txReader := bytes.NewReader(txBytes)
 	tx := &wire.MsgTx{}
 	err = tx.BtcDecode(txReader, 0)
 	if err != nil {
-		return utils.NewHandlerError(http.StatusUnprocessableEntity, "Error parsing raw transaction.")
+		return utils.NewHandlerErrorWithCustomClientMessage(http.StatusUnprocessableEntity,
+			fmt.Sprintf("Error decoding raw transaction: %s", err),
+			"Error decoding raw transaction")
 	}
 
 	_, err = client.SendRawTransaction(tx, true)
