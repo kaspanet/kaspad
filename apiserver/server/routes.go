@@ -41,8 +41,8 @@ func makeHandler(
 }
 
 type clientError struct {
-	ErrorCode    int
-	ErrorMessage string
+	ErrorCode    int    `json:"errorCode"`
+	ErrorMessage string `json:"errorMessage"`
 }
 
 func sendErr(ctx *utils.APIServerContext, w http.ResponseWriter, hErr *utils.HandlerError) {

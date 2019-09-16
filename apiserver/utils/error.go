@@ -5,9 +5,9 @@ import "net/http"
 // HandlerError is an error returned from
 // a rest route handler or a middleware.
 type HandlerError struct {
-	Code          int `json:"errorCode"`
+	Code          int
 	Message       string
-	ClientMessage string `json:"errorMessage"`
+	ClientMessage string
 }
 
 func (hErr *HandlerError) Error() string {
