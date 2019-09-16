@@ -33,7 +33,7 @@ func GetTransactionByIDHandler(txID string) (interface{}, *utils.HandlerError) {
 		return nil, utils.NewHandlerError(http.StatusNotFound, "No transaction with the given txid was found.")
 	}
 	if len(dbResult.GetErrors()) > 0 {
-		return nil, utils.NewHandleErrorFromDBErrors("Some errors where encountered when loading transaction from the database:", dbResult.GetErrors())
+		return nil, utils.NewHandlerErrorFromDBErrors("Some errors where encountered when loading transaction from the database:", dbResult.GetErrors())
 	}
 	return convertTxModelToTxResponse(tx), nil
 }
@@ -57,7 +57,7 @@ func GetTransactionByHashHandler(txHash string) (interface{}, *utils.HandlerErro
 		return nil, utils.NewHandlerError(http.StatusNotFound, "No transaction with the given txhash was found.")
 	}
 	if len(dbResult.GetErrors()) > 0 {
-		return nil, utils.NewHandleErrorFromDBErrors("Some errors where encountered when loading transaction from the database:", dbResult.GetErrors())
+		return nil, utils.NewHandlerErrorFromDBErrors("Some errors where encountered when loading transaction from the database:", dbResult.GetErrors())
 	}
 	return convertTxModelToTxResponse(tx), nil
 }
@@ -89,7 +89,7 @@ func GetTransactionsByAddressHandler(address string, skip uint64, limit uint64) 
 		Order("`transactions`.`id` ASC")
 	dbErrors := addTxPreloadedFields(query).Find(&txs).GetErrors()
 	if len(dbErrors) > 0 {
-		return nil, utils.NewHandleErrorFromDBErrors("Some errors where encountered when loading transactions from the database:", dbErrors)
+		return nil, utils.NewHandlerErrorFromDBErrors("Some errors where encountered when loading transactions from the database:", dbErrors)
 	}
 	txResponses := make([]*transactionResponse, len(txs))
 	for i, tx := range txs {
@@ -112,7 +112,7 @@ func GetUTXOsByAddressHandler(address string) (interface{}, *utils.HandlerError)
 		Preload("Transaction.AcceptingBlock").
 		Find(&transactionOutputs).GetErrors()
 	if len(dbErrors) > 0 {
-		return nil, utils.NewHandleErrorFromDBErrors("Some errors where encountered when loading UTXOs from the database:", dbErrors)
+		return nil, utils.NewHandlerErrorFromDBErrors("Some errors where encountered when loading UTXOs from the database:", dbErrors)
 	}
 
 	UTXOsResponses := make([]*transactionOutputResponse, len(transactionOutputs))

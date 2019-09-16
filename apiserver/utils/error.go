@@ -44,14 +44,20 @@ func NewInternalServerHandlerError(message string) *HandlerError {
 	return NewHandlerErrorWithCustomClientMessage(http.StatusInternalServerError, message, http.StatusText(http.StatusInternalServerError))
 }
 
-// NewHandleErrorFromDBErrors takes a slice of database errors and a prefix, and
-// returns an HandlerError with error code http.StatusInternalServerError with
-// all of the database errors formatted to one string with the given prefix
-func NewHandleErrorFromDBErrors(prefix string, dbErrors []error) *HandlerError {
+// NewErrorFromDBErrors takes a slice of database errors and a prefix, and
+// returns an error with all of the database errors formatted to one string with
+// the given prefix
+func NewErrorFromDBErrors(prefix string, dbErrors []error) error {
 	dbErrorsStrings := make([]string, len(dbErrors))
 	for i, dbErr := range dbErrors {
 		dbErrorsStrings[i] = fmt.Sprintf("\"%s\"", dbErr)
 	}
-	errMsg := fmt.Sprintf("%s [%s]", prefix, strings.Join(dbErrorsStrings, ","))
-	return NewInternalServerHandlerError(errMsg)
+	return fmt.Errorf("%s [%s]", prefix, strings.Join(dbErrorsStrings, ","))
+}
+
+// NewHandlerErrorFromDBErrors takes a slice of database errors and a prefix, and
+// returns an HandlerError with error code http.StatusInternalServerError with
+// all of the database errors formatted to one string with the given prefix
+func NewHandlerErrorFromDBErrors(prefix string, dbErrors []error) *HandlerError {
+	return NewInternalServerHandlerError(NewErrorFromDBErrors(prefix, dbErrors).Error())
 }

@@ -29,7 +29,7 @@ func GetBlockByHashHandler(blockHash string) (interface{}, *utils.HandlerError) 
 		return nil, utils.NewHandlerError(http.StatusNotFound, "No block with the given block hash was found.")
 	}
 	if len(dbResult.GetErrors()) > 0 {
-		return nil, utils.NewHandleErrorFromDBErrors("Some errors where encountered when loading transactions from the database:", dbResult.GetErrors())
+		return nil, utils.NewHandlerErrorFromDBErrors("Some errors where encountered when loading transactions from the database:", dbResult.GetErrors())
 	}
 	return convertBlockModelToBlockResponse(block), nil
 }
