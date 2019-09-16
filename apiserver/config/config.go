@@ -15,6 +15,7 @@ const (
 )
 
 var (
+	// ActiveNetParams are the currently active net params
 	ActiveNetParams dagconfig.Params
 )
 

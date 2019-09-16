@@ -31,11 +31,13 @@ func GetClient() (*Client, error) {
 	return client, nil
 }
 
+// BlockAddedMsg defines the message received in onBlockAdded
 type BlockAddedMsg struct {
 	ChainHeight uint64
 	Header      *wire.BlockHeader
 }
 
+// ChainChangedMsg defines the message received in onChainChanged
 type ChainChangedMsg struct {
 	RemovedChainBlockHashes []*daghash.Hash
 	AddedChainBlocks        []*rpcclient.ChainBlock

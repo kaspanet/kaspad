@@ -383,6 +383,8 @@ func validateBlockMass(pastUTXO UTXOSet, transactions []*util.Tx) error {
 	return err
 }
 
+// CalcBlockMass sums up and returns the "mass" of a block. See CalcTxMass
+// for further details.
 func CalcBlockMass(pastUTXO UTXOSet, transactions []*util.Tx) (uint64, error) {
 	totalMass := uint64(0)
 	for _, tx := range transactions {
