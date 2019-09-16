@@ -183,7 +183,7 @@ func getBlocksHandler(_ *utils.APIServerContext, _ map[string]string, queryParam
 	order := defaultGetBlocksOrder
 	if orderParamValue, ok := queryParams[queryParamOrder]; ok {
 		if orderParamValue != controllers.OrderAscending && orderParamValue != controllers.OrderDescending {
-			return nil, utils.NewHandlerError(http.StatusUnprocessableEntity, fmt.Sprintf("%s is not a valid value for the '%s' query parameter", orderParamValue, queryParamLimit))
+			return nil, utils.NewHandlerError(http.StatusUnprocessableEntity, fmt.Sprintf("'%s' is not a valid value for the '%s' query parameter", orderParamValue, queryParamLimit))
 		}
 		order = orderParamValue
 	}

@@ -23,7 +23,7 @@ const (
 	OrderDescending = "desc"
 )
 
-const maximumGetBlocksLimit = 100
+const maxGetBlocksLimit = 100
 
 // GetBlockByHashHandler returns a block by a given hash.
 func GetBlockByHashHandler(blockHash string) (interface{}, *utils.HandlerError) {
@@ -47,8 +47,8 @@ func GetBlockByHashHandler(blockHash string) (interface{}, *utils.HandlerError) 
 
 // GetBlocksHandler searches for all blocks
 func GetBlocksHandler(order string, skip uint64, limit uint64) (interface{}, *utils.HandlerError) {
-	if limit > maximumGetBlocksLimit {
-		return nil, utils.NewHandlerError(http.StatusUnprocessableEntity, fmt.Sprintf("The maximum allowed value for the limit is %d", maximumGetTransactionsLimit))
+	if limit > maxGetBlocksLimit {
+		return nil, utils.NewHandlerError(http.StatusUnprocessableEntity, fmt.Sprintf("The maximum allowed value for the limit is %d", maxGetTransactionsLimit))
 	}
 	blocks := []*models.Block{}
 	db, err := database.DB()
@@ -61,8 +61,10 @@ func GetBlocksHandler(order string, skip uint64, limit uint64) (interface{}, *ut
 		Preload("AcceptingBlock")
 	if order == OrderAscending {
 		query = query.Order("`id` ASC")
-	} else {
+	} else if order == OrderDescending {
 		query = query.Order("`id` DESC")
+	} else {
+		return nil, utils.NewHandlerError(http.StatusUnprocessableEntity, fmt.Sprintf("'%s' is not a valid order", order))
 	}
 	query.Find(&blocks)
 	blockResponses := make([]*blockResponse, len(blocks))
