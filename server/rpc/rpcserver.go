@@ -2352,7 +2352,7 @@ func collectChainBlocks(s *Server, hashes []*daghash.Hash) ([]btcjson.ChainBlock
 			acceptedTxIds := make([]string, 0, len(blockAcceptanceData))
 			for _, txAcceptanceData := range blockAcceptanceData {
 				if txAcceptanceData.IsAccepted {
-					acceptedTxIds = append(acceptedTxIds, txAcceptanceData.Tx.Hash().String())
+					acceptedTxIds = append(acceptedTxIds, txAcceptanceData.Tx.ID().String())
 				}
 			}
 			acceptedBlock := btcjson.AcceptedBlock{
