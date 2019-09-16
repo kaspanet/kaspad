@@ -57,12 +57,15 @@ func fetchInitialData(client *jsonrpc.Client) error {
 	}
 	dbTx := db.Begin()
 
-	mostRecentBlockHash := findMostRecentBlockHash(dbTx)
-	err = syncBlocks(client, dbTx, mostRecentBlockHash)
+	// Start syncing from the bluest block hash. We use blue score to
+	// simulate the "last" block we have because blue-block order is
+	// the order that the node uses in the various JSONRPC calls.
+	bluestBlockHash := findHashOfBluestBlock(dbTx)
+	err = syncBlocks(client, dbTx, bluestBlockHash)
 	if err != nil {
 		return err
 	}
-	err = syncSelectedParentChain(client, dbTx, mostRecentBlockHash)
+	err = syncSelectedParentChain(client, dbTx, bluestBlockHash)
 	if err != nil {
 		return err
 	}
@@ -71,9 +74,10 @@ func fetchInitialData(client *jsonrpc.Client) error {
 	return nil
 }
 
-// findMostRecentBlockHash finds the latest block available in
-// the database. If no such block exists, it returns nil.
-func findMostRecentBlockHash(dbTx *gorm.DB) *string {
+// findHashOfBluestBlock finds the block with the highest
+// blue score in the database. If no such block exists,
+// return nil.
+func findHashOfBluestBlock(dbTx *gorm.DB) *string {
 	var block models.Block
 	dbTx.Order("blue_score DESC").First(&block)
 
