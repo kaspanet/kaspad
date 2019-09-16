@@ -17,17 +17,20 @@ import (
 	"time"
 )
 
-func blockLoop(doneChan chan struct{}) error {
+// startSync starts syncing blocks from the node
+func startSync(doneChan chan struct{}) error {
 	client, err := jsonrpc.GetClient()
 	if err != nil {
 		return err
 	}
 
+	// Mass download missing data
 	err = fetchInitialData(client)
 	if err != nil {
 		return err
 	}
 
+	// Handle client notifications until we're told to stop
 loop:
 	for {
 		select {
@@ -36,13 +39,17 @@ loop:
 		case chainChanged := <-client.OnChainChanged:
 			handleChainChangedMsg(chainChanged)
 		case <-doneChan:
-			log.Infof("blockLoop stopped")
+			log.Infof("startSync stopped")
 			break loop
 		}
 	}
 	return nil
 }
 
+// fetchInitialData downloads all data that's currently missing from
+// the database. Note that its entirety is inside a single database
+// transaction. Meaning that if it fails in the middle, the database
+// will not be changed.
 func fetchInitialData(client *jsonrpc.Client) error {
 	db, err := database.DB()
 	if err != nil {
@@ -51,11 +58,11 @@ func fetchInitialData(client *jsonrpc.Client) error {
 	dbTx := db.Begin()
 
 	mostRecentBlockHash := findMostRecentBlockHash(dbTx)
-	err = SyncBlocks(client, dbTx, mostRecentBlockHash)
+	err = syncBlocks(client, dbTx, mostRecentBlockHash)
 	if err != nil {
 		return err
 	}
-	err = SyncSelectedParentChain(client, dbTx, mostRecentBlockHash)
+	err = syncSelectedParentChain(client, dbTx, mostRecentBlockHash)
 	if err != nil {
 		return err
 	}
@@ -64,6 +71,8 @@ func fetchInitialData(client *jsonrpc.Client) error {
 	return nil
 }
 
+// findMostRecentBlockHash finds the latest block available in
+// the database. If no such block exists, it returns nil.
 func findMostRecentBlockHash(dbTx *gorm.DB) *string {
 	var block models.Block
 	dbTx.Order("blue_score DESC").First(&block)
@@ -74,7 +83,9 @@ func findMostRecentBlockHash(dbTx *gorm.DB) *string {
 	return &block.BlockHash
 }
 
-func SyncBlocks(client *jsonrpc.Client, dbTx *gorm.DB, startHash *string) error {
+// syncBlocks attempts to download all DAG blocks starting with
+// startHash, and then inserts them into the database.
+func syncBlocks(client *jsonrpc.Client, dbTx *gorm.DB, startHash *string) error {
 	var blocks []string
 	var rawBlocks []btcjson.GetBlockVerboseResult
 	for {
@@ -99,7 +110,10 @@ func SyncBlocks(client *jsonrpc.Client, dbTx *gorm.DB, startHash *string) error 
 	return addBlocks(client, dbTx, blocks, rawBlocks)
 }
 
-func SyncSelectedParentChain(client *jsonrpc.Client, dbTx *gorm.DB, startHash *string) error {
+// syncSelectedParentChain attempts to download the selected parent
+// chain starting with startHash, and then updates the database
+// accordingly.
+func syncSelectedParentChain(client *jsonrpc.Client, dbTx *gorm.DB, startHash *string) error {
 	for {
 		chainFromBlockResult, err := client.GetChainFromBlock(false, startHash)
 		if err != nil {
@@ -119,6 +133,8 @@ func SyncSelectedParentChain(client *jsonrpc.Client, dbTx *gorm.DB, startHash *s
 	return nil
 }
 
+// fetchBlock downloads the serialized block and raw block data of
+// the block with hash blockHash.
 func fetchBlock(client *jsonrpc.Client, blockHash *daghash.Hash) (
 	block string, rawBlock *btcjson.GetBlockVerboseResult, err error) {
 	msgBlock, err := client.GetBlock(blockHash, nil)
@@ -139,6 +155,8 @@ func fetchBlock(client *jsonrpc.Client, blockHash *daghash.Hash) (
 	return block, rawBlock, nil
 }
 
+// addBlocks inserts data in the given blocks and rawBlocks pairwise
+// into the database. See addBlock for further details.
 func addBlocks(client *jsonrpc.Client, dbTx *gorm.DB, blocks []string, rawBlocks []btcjson.GetBlockVerboseResult) error {
 	for i, rawBlock := range rawBlocks {
 		block := blocks[i]
@@ -150,6 +168,11 @@ func addBlocks(client *jsonrpc.Client, dbTx *gorm.DB, blocks []string, rawBlocks
 	return nil
 }
 
+// addBlocks inserts all the data that could be gleaned out the serialized
+// block and raw block data into the database. This includes transactions,
+// subnetworks, and addresses.
+// Note that if this function may take a nil dbTx, in which case it would start
+// a database transaction by itself and commit it before returning.
 func addBlock(client *jsonrpc.Client, dbTx *gorm.DB, block string, rawBlock btcjson.GetBlockVerboseResult) error {
 	shouldCommit := false
 	if dbTx == nil {
@@ -427,6 +450,11 @@ func isTransactionCoinbase(transaction *btcjson.TxRawResult) (bool, error) {
 	return subnetwork.IsEqual(subnetworkid.SubnetworkIDCoinbase), nil
 }
 
+// updateSelectedParentChain updates the database to reflect the current selected
+// parent chain. First it "unaccepts" all removedChainHashes and then it "accepts"
+// all addChainBlocks.
+// Note that if this function may take a nil dbTx, in which case it would start
+// a database transaction by itself and commit it before returning.
 func updateSelectedParentChain(dbTx *gorm.DB, removedChainHashes []string, addedChainBlocks []btcjson.ChainBlock) error {
 	shouldCommit := false
 	if dbTx == nil {
@@ -458,6 +486,13 @@ func updateSelectedParentChain(dbTx *gorm.DB, removedChainHashes []string, added
 	return nil
 }
 
+// updateRemovedChainHashes "unaccepts" the block of the given removedHash.
+// That is to say, it marks it as not in the selected parent chain in the
+// following ways:
+// * All its TransactionOutputs are set IsSpent = false
+// * All its Transactions are set AcceptingBlockID = nil
+// * The block is set IsChainBlock = false
+// This function will return an error if any of the above are in an unexpected state
 func updateRemovedChainHashes(dbTx *gorm.DB, removedHash string) error {
 	var dbBlock models.Block
 	dbTx.Where(&models.Block{BlockHash: removedHash}).First(&dbBlock)
@@ -497,6 +532,12 @@ func updateRemovedChainHashes(dbTx *gorm.DB, removedHash string) error {
 	return nil
 }
 
+// updateAddedChainBlocks "accepts" the given addedBlock. That is to say,
+// it marks it as in the selected parent chain in the following ways:
+// * All its TransactionOutputs are set IsSpent = true
+// * All its Transactions are set AcceptingBlockID = addedBlock
+// * The block is set IsChainBlock = true
+// This function will return an error if any of the above are in an unexpected state
 func updateAddedChainBlocks(dbTx *gorm.DB, addedBlock *btcjson.ChainBlock) error {
 	for _, acceptedBlock := range addedBlock.AcceptedBlocks {
 		var dbAccepedBlock models.Block
@@ -543,6 +584,7 @@ func updateAddedChainBlocks(dbTx *gorm.DB, addedBlock *btcjson.ChainBlock) error
 	return nil
 }
 
+// handleBlockAddedMsg handles onBlockAdded messages
 func handleBlockAddedMsg(client *jsonrpc.Client, blockAdded *jsonrpc.BlockAddedMsg) {
 	hash := blockAdded.Header.BlockHash()
 	block, rawBlock, err := fetchBlock(client, hash)
@@ -558,7 +600,10 @@ func handleBlockAddedMsg(client *jsonrpc.Client, blockAdded *jsonrpc.BlockAddedM
 	log.Infof("Added block %s", hash)
 }
 
+// handleChainChangedMsg handles onChainChanged messages
 func handleChainChangedMsg(chainChanged *jsonrpc.ChainChangedMsg) {
+	// Convert the data in chainChanged to something we can feed into
+	// updateSelectedParentChain
 	removedHashes := make([]string, len(chainChanged.RemovedChainBlockHashes))
 	for i, hash := range chainChanged.RemovedChainBlockHashes {
 		removedHashes[i] = hash.String()

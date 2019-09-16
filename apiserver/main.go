@@ -45,7 +45,7 @@ func main() {
 
 	doneChan := make(chan struct{}, 1)
 	spawn(func() {
-		err := blockLoop(doneChan)
+		err := startSync(doneChan)
 		if err != nil {
 			panic(err)
 		}
@@ -54,6 +54,6 @@ func main() {
 	interrupt := signal.InterruptListener()
 	<-interrupt
 
-	// Gracefully stop blockLoop
+	// Gracefully stop syncing
 	doneChan <- struct{}{}
 }
