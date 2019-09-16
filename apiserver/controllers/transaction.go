@@ -28,9 +28,12 @@ func GetTransactionByIDHandler(txID string) (interface{}, *utils.HandlerError) {
 
 	tx := &models.Transaction{}
 	query := db.Where(&models.Transaction{TransactionID: txID})
-	addTxPreloadedFields(query).First(&tx)
-	if tx.ID == 0 {
+	dbResult := addTxPreloadedFields(query).First(&tx)
+	if dbResult.RecordNotFound() && len(dbResult.GetErrors()) == 1 {
 		return nil, utils.NewHandlerError(http.StatusNotFound, "No transaction with the given txid was found.")
+	}
+	if len(dbResult.GetErrors()) > 0 {
+		return nil, utils.NewHandleErrorFromDBErrors("Some errors where encountered when loading transaction from the database:", dbResult.GetErrors())
 	}
 	return convertTxModelToTxResponse(tx), nil
 }
@@ -49,9 +52,12 @@ func GetTransactionByHashHandler(txHash string) (interface{}, *utils.HandlerErro
 
 	tx := &models.Transaction{}
 	query := db.Where(&models.Transaction{TransactionHash: txHash})
-	addTxPreloadedFields(query).First(&tx)
-	if tx.ID == 0 {
+	dbResult := addTxPreloadedFields(query).First(&tx)
+	if dbResult.RecordNotFound() && len(dbResult.GetErrors()) == 1 {
 		return nil, utils.NewHandlerError(http.StatusNotFound, "No transaction with the given txhash was found.")
+	}
+	if len(dbResult.GetErrors()) > 0 {
+		return nil, utils.NewHandleErrorFromDBErrors("Some errors where encountered when loading transaction from the database:", dbResult.GetErrors())
 	}
 	return convertTxModelToTxResponse(tx), nil
 }
@@ -81,7 +87,10 @@ func GetTransactionsByAddressHandler(address string, skip uint64, limit uint64) 
 		Limit(limit).
 		Offset(skip).
 		Order("`transactions`.`id` ASC")
-	addTxPreloadedFields(query).Find(&txs)
+	dbErrors := addTxPreloadedFields(query).Find(&txs).GetErrors()
+	if len(dbErrors) > 0 {
+		return nil, utils.NewHandleErrorFromDBErrors("Some errors where encountered when loading transactions from the database:", dbErrors)
+	}
 	txResponses := make([]*transactionResponse, len(txs))
 	for i, tx := range txs {
 		txResponses[i] = convertTxModelToTxResponse(tx)
@@ -97,11 +106,14 @@ func GetUTXOsByAddressHandler(address string) (interface{}, *utils.HandlerError)
 	}
 
 	var transactionOutputs []*models.TransactionOutput
-	db.
+	dbErrors := db.
 		Joins("LEFT JOIN `addresses` ON `addresses`.`id` = `transaction_outputs`.`address_id`").
 		Where("`addresses`.`address` = ? AND `transaction_outputs`.`is_spent` = 0", address).
 		Preload("Transaction.AcceptingBlock").
-		Find(&transactionOutputs)
+		Find(&transactionOutputs).GetErrors()
+	if len(dbErrors) > 0 {
+		return nil, utils.NewHandleErrorFromDBErrors("Some errors where encountered when loading UTXOs from the database:", dbErrors)
+	}
 
 	UTXOsResponses := make([]*transactionOutputResponse, len(transactionOutputs))
 	for i, transactionOutput := range transactionOutputs {
