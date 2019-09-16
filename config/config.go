@@ -59,6 +59,7 @@ const (
 	sampleConfigFilename   = "sample-btcd.conf"
 	defaultTxIndex         = false
 	defaultAddrIndex       = false
+	defaultAcceptanceIndex = false
 )
 
 var (
@@ -159,6 +160,8 @@ type configFlags struct {
 	DropTxIndex          bool          `long:"droptxindex" description:"Deletes the hash-based transaction index from the database on start up and then exits."`
 	AddrIndex            bool          `long:"addrindex" description:"Maintain a full address-based transaction index which makes the searchrawtransactions RPC available"`
 	DropAddrIndex        bool          `long:"dropaddrindex" description:"Deletes the address-based transaction index from the database on start up and then exits."`
+	AcceptanceIndex      bool          `long:"acceptanceindex" description:"blah blah balh"`
+	DropAcceptanceIndex  bool          `long:"dropacceptanceindex" description:"blah blah balh"`
 	RelayNonStd          bool          `long:"relaynonstd" description:"Relay non-standard transactions regardless of the default settings for the active network."`
 	RejectNonStd         bool          `long:"rejectnonstd" description:"Reject non-standard transactions regardless of the default settings for the active network."`
 	Subnetwork           string        `long:"subnetwork" description:"If subnetwork ID is specified, than node will request and process only payloads from specified subnetwork. And if subnetwork ID is ommited, than payloads of all subnetworks are processed. Subnetworks with IDs 2 through 255 are reserved for future use and are currently not allowed."`
@@ -318,6 +321,7 @@ func loadConfig() (*Config, []string, error) {
 		Generate:             defaultGenerate,
 		TxIndex:              defaultTxIndex,
 		AddrIndex:            defaultAddrIndex,
+		AcceptanceIndex:      defaultAcceptanceIndex,
 	}
 
 	// Service options which are only added on Windows.
@@ -728,6 +732,16 @@ func loadConfig() (*Config, []string, error) {
 			"options may not be activated at the same time "+
 			"because the address index relies on the transaction "+
 			"index",
+			funcName)
+		fmt.Fprintln(os.Stderr, err)
+		fmt.Fprintln(os.Stderr, usageMessage)
+		return nil, nil, err
+	}
+
+	// --acceptanceindex and --dropacceptanceindex do not mix.
+	if cfg.AcceptanceIndex && cfg.DropAcceptanceIndex {
+		err := fmt.Errorf("%s: the --acceptanceindex and --dropacceptanceindex "+
+			"options may not be activated at the same time",
 			funcName)
 		fmt.Fprintln(os.Stderr, err)
 		fmt.Fprintln(os.Stderr, usageMessage)

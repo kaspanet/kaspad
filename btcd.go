@@ -148,6 +148,14 @@ func btcdMain(serverChan chan<- *server.Server) error {
 
 		return nil
 	}
+	if cfg.DropAcceptanceIndex {
+		if err := indexers.DropAcceptanceIndex(db, interrupt); err != nil {
+			btcdLog.Errorf("%s", err)
+			return err
+		}
+
+		return nil
+	}
 	if cfg.DropCfIndex {
 		if err := indexers.DropCfIndex(db, interrupt); err != nil {
 			btcdLog.Errorf("%s", err)
