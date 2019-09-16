@@ -220,6 +220,7 @@ func insertBlock(dbTx *gorm.DB, rawBlock btcjson.GetBlockVerboseResult) (*models
 			Nonce:                rawBlock.Nonce,
 			BlueScore:            rawBlock.BlueScore,
 			IsChainBlock:         false, // This must be false for updateSelectedParentChain to work properly
+			Mass:                 rawBlock.Mass,
 		}
 		dbTx.Create(&dbBlock)
 	}
@@ -295,6 +296,7 @@ func insertTransaction(dbTx *gorm.DB, transaction *btcjson.TxRawResult, dbSubnet
 			LockTime:        transaction.LockTime,
 			SubnetworkID:    dbSubnetwork.ID,
 			Gas:             transaction.Gas,
+			Mass:            transaction.Mass,
 			PayloadHash:     transaction.PayloadHash,
 			Payload:         payload,
 		}

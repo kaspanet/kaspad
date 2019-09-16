@@ -684,7 +684,7 @@ func createVoutList(mtx *wire.MsgTx, chainParams *dagconfig.Params, filterAddrMa
 // to a raw transaction JSON object.
 func createTxRawResult(dagParams *dagconfig.Params, mtx *wire.MsgTx,
 	txID string, blkHeader *wire.BlockHeader, blkHash string,
-	acceptingBlock *daghash.Hash, confirmations *uint64, isInMempool bool) (*btcjson.TxRawResult, error) {
+	acceptingBlock *daghash.Hash, confirmations *uint64, isInMempool bool, txMass uint64) (*btcjson.TxRawResult, error) {
 
 	mtxHex, err := messageToHex(mtx)
 	if err != nil {
@@ -707,6 +707,7 @@ func createTxRawResult(dagParams *dagconfig.Params, mtx *wire.MsgTx,
 		LockTime:    mtx.LockTime,
 		Subnetwork:  mtx.SubnetworkID.String(),
 		Gas:         mtx.Gas,
+		Mass:        txMass,
 		PayloadHash: payloadHash,
 		Payload:     hex.EncodeToString(mtx.Payload),
 	}
@@ -1130,6 +1131,12 @@ func buildGetBlockVerboseResult(s *Server, block *util.Block, isVerboseTx bool) 
 		return nil, internalRPCError(err.Error(), context)
 	}
 
+	blockMass, err := blockdag.CalcBlockMass(s.cfg.DAG.UTXOSet(), block.Transactions())
+	if err != nil {
+		context := "Could not get block mass"
+		return nil, internalRPCError(err.Error(), context)
+	}
+
 	isChainBlock := s.cfg.DAG.IsInSelectedParentChain(hash)
 
 	result := &btcjson.GetBlockVerboseResult{
@@ -1145,6 +1152,7 @@ func buildGetBlockVerboseResult(s *Server, block *util.Block, isVerboseTx bool) 
 		Confirmations:        blockConfirmations,
 		Height:               blockChainHeight,
 		BlueScore:            blockBlueScore,
+		Mass:                 blockMass,
 		IsChainBlock:         isChainBlock,
 		Size:                 int32(block.MsgBlock().SerializeSize()),
 		Bits:                 strconv.FormatInt(int64(blockHeader.Bits), 16),
@@ -1177,8 +1185,12 @@ func buildGetBlockVerboseResult(s *Server, block *util.Block, isVerboseTx bool) 
 				}
 				confirmations = &txConfirmations
 			}
+			txMass, err := blockdag.CalcTxMass(tx, s.cfg.DAG.UTXOSet())
+			if err != nil {
+				return nil, err
+			}
 			rawTxn, err := createTxRawResult(params, tx.MsgTx(), tx.ID().String(),
-				&blockHeader, hash.String(), acceptingBlock, confirmations, false)
+				&blockHeader, hash.String(), acceptingBlock, confirmations, false, txMass)
 			if err != nil {
 				return nil, err
 			}
@@ -2792,8 +2804,12 @@ func handleGetRawTransaction(s *Server, cmd interface{}, closeChan <-chan struct
 	if err != nil {
 		return nil, err
 	}
+	txMass, err := blockdag.CalcTxMass(tx, s.cfg.DAG.UTXOSet())
+	if err != nil {
+		return nil, err
+	}
 	rawTxn, err := createTxRawResult(s.cfg.DAGParams, mtx, txID.String(),
-		blkHeader, blkHashStr, nil, &confirmations, isInMempool)
+		blkHeader, blkHashStr, nil, &confirmations, isInMempool, txMass)
 	if err != nil {
 		return nil, err
 	}

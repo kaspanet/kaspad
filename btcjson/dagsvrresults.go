@@ -34,6 +34,7 @@ type GetBlockVerboseResult struct {
 	Size                 int32         `json:"size"`
 	Height               uint64        `json:"height"`
 	BlueScore            uint64        `json:"blueScore"`
+	Mass                 uint64        `json:"mass"`
 	IsChainBlock         bool          `json:"isChainBlock"`
 	Version              int32         `json:"version"`
 	VersionHex           string        `json:"versionHex"`
@@ -458,6 +459,7 @@ type TxRawResult struct {
 	LockTime      uint64  `json:"lockTime"`
 	Subnetwork    string  `json:"subnetwork"`
 	Gas           uint64  `json:"gas"`
+	Mass          uint64  `json:"mass"`
 	PayloadHash   string  `json:"payloadHash"`
 	Payload       string  `json:"payload"`
 	Vin           []Vin   `json:"vin"`
