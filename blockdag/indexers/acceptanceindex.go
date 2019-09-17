@@ -9,6 +9,7 @@ import (
 	"github.com/daglabs/btcd/database"
 	"github.com/daglabs/btcd/util"
 	"github.com/daglabs/btcd/util/daghash"
+	"github.com/daglabs/btcd/wire"
 )
 
 const (
@@ -83,17 +84,6 @@ func (idx *AcceptanceIndex) ConnectBlock(dbTx database.Tx, block *util.Block, _ 
 	return idx.dbPutTxsAcceptanceData(dbTx, block.Hash(), txsAcceptanceData)
 }
 
-func (idx *AcceptanceIndex) dbPutTxsAcceptanceData(dbTx database.Tx, hash *daghash.Hash,
-	txsAcceptanceData blockdag.MultiBlockTxsAcceptanceData) error {
-	serializedTxsAcceptanceData, err := idx.serializeMultiBlockTxsAcceptanceData(txsAcceptanceData)
-	if err != nil {
-		return err
-	}
-
-	bucket := dbTx.Metadata().Bucket(acceptanceIndexKey)
-	return bucket.Put(hash[:], serializedTxsAcceptanceData)
-}
-
 // TxsAcceptanceData returns the acceptance data of all the transactions that
 // were accepted by the block with hash blockHash.
 func (idx *AcceptanceIndex) TxsAcceptanceData(blockHash *daghash.Hash) (blockdag.MultiBlockTxsAcceptanceData, error) {
@@ -109,6 +99,17 @@ func (idx *AcceptanceIndex) TxsAcceptanceData(blockHash *daghash.Hash) (blockdag
 	return txsAcceptanceData, nil
 }
 
+func (idx *AcceptanceIndex) dbPutTxsAcceptanceData(dbTx database.Tx, hash *daghash.Hash,
+	txsAcceptanceData blockdag.MultiBlockTxsAcceptanceData) error {
+	serializedTxsAcceptanceData, err := serializeMultiBlockTxsAcceptanceData(txsAcceptanceData)
+	if err != nil {
+		return err
+	}
+
+	bucket := dbTx.Metadata().Bucket(acceptanceIndexKey)
+	return bucket.Put(hash[:], serializedTxsAcceptanceData)
+}
+
 func (idx *AcceptanceIndex) dbFetchTxsAcceptanceData(dbTx database.Tx,
 	hash *daghash.Hash) (blockdag.MultiBlockTxsAcceptanceData, error) {
 	bucket := dbTx.Metadata().Bucket(acceptanceIndexKey)
@@ -117,29 +118,67 @@ func (idx *AcceptanceIndex) dbFetchTxsAcceptanceData(dbTx database.Tx,
 		return nil, fmt.Errorf("no entry in the accpetance index for block with hash %s", hash)
 	}
 
-	return idx.deserializeMultiBlockTxsAcceptanceData(serializedTxsAcceptanceData)
+	return deserializeMultiBlockTxsAcceptanceData(serializedTxsAcceptanceData)
 }
 
-func (idx *AcceptanceIndex) serializeMultiBlockTxsAcceptanceData(
+type serializableTxAcceptanceData struct {
+	MsgTx      wire.MsgTx
+	IsAccepted bool
+}
+
+type serializableBlockTxsAcceptanceData []serializableTxAcceptanceData
+
+type serializableMultiBlockTxsAcceptanceData map[daghash.Hash]serializableBlockTxsAcceptanceData
+
+func serializeMultiBlockTxsAcceptanceData(
 	txsAcceptanceData blockdag.MultiBlockTxsAcceptanceData) ([]byte, error) {
+	// Convert MultiBlockTxsAcceptanceData to a serializable format
+	serializableData := make(serializableMultiBlockTxsAcceptanceData, len(txsAcceptanceData))
+	for hash, blockTxsAcceptanceData := range txsAcceptanceData {
+		serializableBlockData := make(serializableBlockTxsAcceptanceData, len(blockTxsAcceptanceData))
+		for i, txAcceptanceData := range blockTxsAcceptanceData {
+			serializableBlockData[i] = serializableTxAcceptanceData{
+				MsgTx:      *txAcceptanceData.Tx.MsgTx(),
+				IsAccepted: txAcceptanceData.IsAccepted,
+			}
+		}
+		serializableData[hash] = serializableBlockData
+	}
+
+	// Serialize
 	var buffer bytes.Buffer
 	encoder := gob.NewEncoder(&buffer)
-	err := encoder.Encode(txsAcceptanceData)
+	err := encoder.Encode(serializableData)
 	if err != nil {
 		return nil, err
 	}
 	return buffer.Bytes(), nil
 }
 
-func (idx *AcceptanceIndex) deserializeMultiBlockTxsAcceptanceData(
+func deserializeMultiBlockTxsAcceptanceData(
 	serializedTxsAcceptanceData []byte) (blockdag.MultiBlockTxsAcceptanceData, error) {
+	// Deserialize
 	buffer := bytes.NewBuffer(serializedTxsAcceptanceData)
 	decoder := gob.NewDecoder(buffer)
-
-	var txsAcceptanceData blockdag.MultiBlockTxsAcceptanceData
-	err := decoder.Decode(&txsAcceptanceData)
+	var serializedData serializableMultiBlockTxsAcceptanceData
+	err := decoder.Decode(&serializedData)
 	if err != nil {
 		return nil, err
 	}
+
+	// Convert serializable format to MultiBlockTxsAcceptanceData
+	txsAcceptanceData := make(blockdag.MultiBlockTxsAcceptanceData, len(serializedData))
+	for hash, serializableBlockData := range serializedData {
+		blockTxsAcceptanceData := make(blockdag.BlockTxsAcceptanceData, len(serializableBlockData))
+		for i, txData := range serializableBlockData {
+			msgTx := txData.MsgTx
+			blockTxsAcceptanceData[i] = blockdag.TxAcceptanceData{
+				Tx:         util.NewTx(&msgTx),
+				IsAccepted: txData.IsAccepted,
+			}
+		}
+		txsAcceptanceData[hash] = blockTxsAcceptanceData
+	}
+
 	return txsAcceptanceData, nil
 }
