@@ -2267,7 +2267,7 @@ func handleGetChainFromBlock(s *Server, cmd interface{}, closeChan <-chan struct
 func collectChainBlocks(s *Server, selectedParentChain []*daghash.Hash) ([]btcjson.ChainBlock, error) {
 	chainBlocks := make([]btcjson.ChainBlock, 0, len(selectedParentChain))
 	for _, hash := range selectedParentChain {
-		acceptanceData, err := s.cfg.DAG.BluesTxsAcceptanceData(hash)
+		acceptanceData, err := s.cfg.AcceptanceIndex.TxsAcceptanceData(hash)
 		if err != nil {
 			return nil, &btcjson.RPCError{
 				Code:    btcjson.ErrRPCInternal.Code,
