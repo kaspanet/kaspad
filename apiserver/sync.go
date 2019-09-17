@@ -8,6 +8,7 @@ import (
 	"github.com/daglabs/btcd/apiserver/database"
 	"github.com/daglabs/btcd/apiserver/jsonrpc"
 	"github.com/daglabs/btcd/apiserver/models"
+	"github.com/daglabs/btcd/apiserver/utils"
 	"github.com/daglabs/btcd/btcjson"
 	"github.com/daglabs/btcd/txscript"
 	"github.com/daglabs/btcd/util/daghash"
@@ -60,7 +61,10 @@ func fetchInitialData(client *jsonrpc.Client) error {
 	// Start syncing from the bluest block hash. We use blue score to
 	// simulate the "last" block we have because blue-block order is
 	// the order that the node uses in the various JSONRPC calls.
-	bluestBlockHash := findHashOfBluestBlock(dbTx)
+	bluestBlockHash, err := findHashOfBluestBlock(dbTx)
+	if err != nil {
+		return err
+	}
 	err = syncBlocks(client, dbTx, bluestBlockHash)
 	if err != nil {
 		return err
@@ -77,14 +81,16 @@ func fetchInitialData(client *jsonrpc.Client) error {
 // findHashOfBluestBlock finds the block with the highest
 // blue score in the database. If no such block exists,
 // return nil.
-func findHashOfBluestBlock(dbTx *gorm.DB) *string {
+func findHashOfBluestBlock(dbTx *gorm.DB) (*string, error) {
 	var block models.Block
-	dbTx.Order("blue_score DESC").First(&block)
-
-	if block.ID == 0 {
-		return nil
+	dbResult := dbTx.Order("blue_score DESC").First(&block)
+	if utils.IsDBError(dbResult) {
+		return nil, utils.NewErrorFromDBErrors("failed to find hash of bluest block: ", dbResult.GetErrors())
 	}
-	return &block.BlockHash
+	if utils.IsDBRecordNotFoundError(dbResult) {
+		return nil, nil
+	}
+	return &block.BlockHash, nil
 }
 
 // syncBlocks attempts to download all DAG blocks starting with
@@ -230,8 +236,11 @@ func addBlock(client *jsonrpc.Client, dbTx *gorm.DB, block string, rawBlock btcj
 
 func insertBlock(dbTx *gorm.DB, rawBlock btcjson.GetBlockVerboseResult) (*models.Block, error) {
 	var dbBlock models.Block
-	dbTx.Where(&models.Block{BlockHash: rawBlock.Hash}).First(&dbBlock)
-	if dbBlock.ID == 0 {
+	dbResult := dbTx.Where(&models.Block{BlockHash: rawBlock.Hash}).First(&dbBlock)
+	if utils.IsDBError(dbResult) {
+		return nil, utils.NewErrorFromDBErrors("failed to find block: ", dbResult.GetErrors())
+	}
+	if utils.IsDBRecordNotFoundError(dbResult) {
 		bits, err := strconv.ParseUint(rawBlock.Bits, 16, 32)
 		if err != nil {
 			return nil, err
@@ -249,7 +258,10 @@ func insertBlock(dbTx *gorm.DB, rawBlock btcjson.GetBlockVerboseResult) (*models
 			IsChainBlock:         false, // This must be false for updateSelectedParentChain to work properly
 			Mass:                 rawBlock.Mass,
 		}
-		dbTx.Create(&dbBlock)
+		dbResult := dbTx.Create(&dbBlock)
+		if utils.IsDBError(dbResult) {
+			return nil, utils.NewErrorFromDBErrors("failed to insert block: ", dbResult.GetErrors())
+		}
 	}
 	return &dbBlock, nil
 }

@@ -2,6 +2,7 @@ package utils
 
 import (
 	"fmt"
+	"github.com/jinzhu/gorm"
 	"strings"
 )
 
@@ -22,6 +23,16 @@ func NewHandlerError(code int, message string) *HandlerError {
 		ErrorCode:    code,
 		ErrorMessage: message,
 	}
+}
+
+// IsDBRecordNotFoundError returns true if the given dbResult is a RecordNotFound error
+func IsDBRecordNotFoundError(dbResult *gorm.DB) bool {
+	return dbResult.RecordNotFound() && len(dbResult.GetErrors()) == 1
+}
+
+// IsDBError returns true if the given dbResult is an error that isn't RecordNotFound
+func IsDBError(dbResult *gorm.DB) bool {
+	return !IsDBRecordNotFoundError(dbResult) && len(dbResult.GetErrors()) > 0
 }
 
 // NewErrorFromDBErrors takes a slice of database errors and a prefix, and
