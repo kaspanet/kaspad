@@ -14,7 +14,7 @@ import (
 
 const (
 	// acceptanceIndexName is the human-readable name for the index.
-	acceptanceIndexName = "address index"
+	acceptanceIndexName = "acceptance index"
 )
 
 var (
@@ -61,8 +61,8 @@ func (idx *AcceptanceIndex) Name() string {
 }
 
 // Create is invoked when the indexer manager determines the index needs
-// to be created for the first time.  It creates the bucket for the address
-// index.
+// to be created for the first time.  It creates the bucket for the
+// acceptance index.
 //
 // This is part of the Indexer interface.
 func (idx *AcceptanceIndex) Create(dbTx database.Tx) error {
