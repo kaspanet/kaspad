@@ -1118,6 +1118,10 @@ type ConnConfig struct {
 	// it doesn't get a response.
 	RequestTimeout time.Duration
 
+	// ConnectionTimeout is the time it'll take for to try to connect
+	// to the RPC server before the connection times out.
+	ConnectionTimeout time.Duration
+
 	// EnableBCInfoHacks is an option provided to enable compatibility hacks
 	// when connecting to blockchain.info RPC server
 	EnableBCInfoHacks bool
@@ -1153,7 +1157,7 @@ func newHTTPClient(config *ConnConfig) (*http.Client, error) {
 			Proxy:           proxyFunc,
 			TLSClientConfig: tlsConfig,
 		},
-		Timeout: config.RequestTimeout,
+		Timeout: config.ConnectionTimeout,
 	}
 
 	return &client, nil
@@ -1179,7 +1183,10 @@ func dial(config *ConnConfig) (*websocket.Conn, error) {
 
 	// Create a websocket dialer that will be used to make the connection.
 	// It is modified by the proxy setting below as needed.
-	dialer := websocket.Dialer{TLSClientConfig: tlsConfig}
+	dialer := websocket.Dialer{
+		TLSClientConfig:  tlsConfig,
+		HandshakeTimeout: config.ConnectionTimeout,
+	}
 
 	// Setup the proxy if one is configured.
 	if config.Proxy != "" {
