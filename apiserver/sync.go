@@ -93,22 +93,22 @@ func syncBlocks(client *jsonrpc.Client, dbTx *gorm.DB, startHash *string) error 
 	var blocks []string
 	var rawBlocks []btcjson.GetBlockVerboseResult
 	for {
-		BlocksResult, err := client.GetBlocks(true, false, startHash)
+		blocksResult, err := client.GetBlocks(true, false, startHash)
 		if err != nil {
 			return err
 		}
-		if len(BlocksResult.Hashes) == 0 {
+		if len(blocksResult.Hashes) == 0 {
 			break
 		}
 
-		RawBlocksResult, err := client.GetBlocks(true, true, startHash)
+		rawBlocksResult, err := client.GetBlocks(true, true, startHash)
 		if err != nil {
 			return err
 		}
 
-		startHash = &BlocksResult.Hashes[len(BlocksResult.Hashes)-1]
-		blocks = append(blocks, BlocksResult.Blocks...)
-		rawBlocks = append(rawBlocks, RawBlocksResult.RawBlocks...)
+		startHash = &blocksResult.Hashes[len(blocksResult.Hashes)-1]
+		blocks = append(blocks, blocksResult.Blocks...)
+		rawBlocks = append(rawBlocks, rawBlocksResult.RawBlocks...)
 	}
 
 	return addBlocks(client, dbTx, blocks, rawBlocks)
@@ -172,7 +172,7 @@ func addBlocks(client *jsonrpc.Client, dbTx *gorm.DB, blocks []string, rawBlocks
 	return nil
 }
 
-// addBlocks inserts all the data that could be gleaned out the serialized
+// addBlocks inserts all the data that could be gleaned out of the serialized
 // block and raw block data into the database. This includes transactions,
 // subnetworks, and addresses.
 // Note that if this function may take a nil dbTx, in which case it would start
