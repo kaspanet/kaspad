@@ -23,6 +23,9 @@ var (
 	acceptanceIndexKey = []byte("acceptanceidx")
 )
 
+// AcceptanceIndex implements a txAcceptanceData by block hash index. That is to say,
+// it stores a mapping between a block's hash and the set of transactions that the
+// block accepts among its blue blocks.
 type AcceptanceIndex struct {
 	db database.DB
 }
@@ -31,7 +34,7 @@ type AcceptanceIndex struct {
 // mapping between block hashes and their txAcceptanceData.
 //
 // It implements the Indexer interface which plugs into the IndexManager that in
-// turn is used by the blockchain package.  This allows the index to be
+// turn is used by the blockdag package. This allows the index to be
 // seamlessly maintained along with the DAG.
 func NewAcceptanceIndex(_ *dagconfig.Params) *AcceptanceIndex {
 	return &AcceptanceIndex{}
