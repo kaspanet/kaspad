@@ -3,6 +3,7 @@ package server
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"strconv"
 
@@ -30,23 +31,36 @@ const (
 	defaultGetBlocksOrder       = controllers.OrderAscending
 )
 
-func makeHandler(
-	handler func(ctx *utils.APIServerContext, routeParams map[string]string, queryParams map[string]string) (
-		interface{}, *utils.HandlerError)) func(http.ResponseWriter, *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
+type handlerFunc func(ctx *utils.APIServerContext, routeParams map[string]string, queryParams map[string]string, requestBody []byte) (
+	interface{}, *utils.HandlerError)
 
+func makeHandler(handler handlerFunc) func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := utils.ToAPIServerContext(r.Context())
+
+		var requestBody []byte
+		if r.Method == "POST" {
+			var err error
+			requestBody, err = ioutil.ReadAll(r.Body)
+			if err != nil {
+				sendErr(ctx, w, utils.NewHandlerError(500, "Internal server error occured"))
+			}
+		}
+
 		flattenedQueryParams, hErr := flattenQueryParams(r.URL.Query())
 		if hErr != nil {
 			sendErr(ctx, w, hErr)
 			return
 		}
-		response, hErr := handler(ctx, mux.Vars(r), flattenedQueryParams)
+
+		response, hErr := handler(ctx, mux.Vars(r), flattenedQueryParams, requestBody)
 		if hErr != nil {
 			sendErr(ctx, w, hErr)
 			return
 		}
-		sendJSONResponse(w, response)
+		if response != nil {
+			sendJSONResponse(w, response)
+		}
 	}
 }
 
@@ -88,7 +102,7 @@ func sendJSONResponse(w http.ResponseWriter, response interface{}) {
 	}
 }
 
-func mainHandler(_ *utils.APIServerContext, _ map[string]string, _ map[string]string) (interface{}, *utils.HandlerError) {
+func mainHandler(_ *utils.APIServerContext, routeParams map[string]string, _ map[string]string, _ []byte) (interface{}, *utils.HandlerError) {
 	return struct {
 		Message string `json:"message"`
 	}{
@@ -133,6 +147,11 @@ func addRoutes(router *mux.Router) {
 		"/fee-estimates",
 		makeHandler(getFeeEstimatesHandler)).
 		Methods("GET")
+
+	router.HandleFunc(
+		"/transaction",
+		makeHandler(postTransactionHandler)).
+		Methods("POST")
 }
 
 func convertQueryParamToInt(queryParams map[string]string, param string, defaultValue int) (int, *utils.HandlerError) {
@@ -146,15 +165,21 @@ func convertQueryParamToInt(queryParams map[string]string, param string, default
 	return defaultValue, nil
 }
 
-func getTransactionByIDHandler(_ *utils.APIServerContext, routeParams map[string]string, _ map[string]string) (interface{}, *utils.HandlerError) {
+func getTransactionByIDHandler(_ *utils.APIServerContext, routeParams map[string]string, _ map[string]string,
+	_ []byte) (interface{}, *utils.HandlerError) {
+
 	return controllers.GetTransactionByIDHandler(routeParams[routeParamTxID])
 }
 
-func getTransactionByHashHandler(_ *utils.APIServerContext, routeParams map[string]string, _ map[string]string) (interface{}, *utils.HandlerError) {
+func getTransactionByHashHandler(_ *utils.APIServerContext, routeParams map[string]string, _ map[string]string,
+	_ []byte) (interface{}, *utils.HandlerError) {
+
 	return controllers.GetTransactionByHashHandler(routeParams[routeParamTxHash])
 }
 
-func getTransactionsByAddressHandler(_ *utils.APIServerContext, routeParams map[string]string, queryParams map[string]string) (interface{}, *utils.HandlerError) {
+func getTransactionsByAddressHandler(_ *utils.APIServerContext, routeParams map[string]string, queryParams map[string]string,
+	_ []byte) (interface{}, *utils.HandlerError) {
+
 	skip, hErr := convertQueryParamToInt(queryParams, queryParamSkip, 0)
 	if hErr != nil {
 		return nil, hErr
@@ -167,25 +192,34 @@ func getTransactionsByAddressHandler(_ *utils.APIServerContext, routeParams map[
 		var err error
 		skip, err = strconv.Atoi(queryParams[queryParamLimit])
 		if err != nil {
-			return nil, utils.NewHandlerError(http.StatusUnprocessableEntity, fmt.Sprintf("Couldn't parse the '%s' query parameter: %s", queryParamLimit, err))
+			return nil, utils.NewHandlerError(http.StatusUnprocessableEntity,
+				fmt.Sprintf("Couldn't parse the '%s' query parameter: %s", queryParamLimit, err))
 		}
 	}
 	return controllers.GetTransactionsByAddressHandler(routeParams[routeParamAddress], uint64(skip), uint64(limit))
 }
 
-func getUTXOsByAddressHandler(_ *utils.APIServerContext, routeParams map[string]string, _ map[string]string) (interface{}, *utils.HandlerError) {
+func getUTXOsByAddressHandler(_ *utils.APIServerContext, routeParams map[string]string, _ map[string]string,
+	_ []byte) (interface{}, *utils.HandlerError) {
+
 	return controllers.GetUTXOsByAddressHandler(routeParams[routeParamAddress])
 }
 
-func getBlockByHashHandler(_ *utils.APIServerContext, routeParams map[string]string, _ map[string]string) (interface{}, *utils.HandlerError) {
+func getBlockByHashHandler(_ *utils.APIServerContext, routeParams map[string]string, _ map[string]string,
+	_ []byte) (interface{}, *utils.HandlerError) {
+
 	return controllers.GetBlockByHashHandler(routeParams[routeParamBlockHash])
 }
 
-func getFeeEstimatesHandler(_ *utils.APIServerContext, _ map[string]string, _ map[string]string) (interface{}, *utils.HandlerError) {
+func getFeeEstimatesHandler(_ *utils.APIServerContext, _ map[string]string, _ map[string]string,
+	_ []byte) (interface{}, *utils.HandlerError) {
+
 	return controllers.GetFeeEstimatesHandler()
 }
 
-func getBlocksHandler(_ *utils.APIServerContext, _ map[string]string, queryParams map[string]string) (interface{}, *utils.HandlerError) {
+func getBlocksHandler(_ *utils.APIServerContext, _ map[string]string, queryParams map[string]string,
+	_ []byte) (interface{}, *utils.HandlerError) {
+
 	skip, hErr := convertQueryParamToInt(queryParams, queryParamSkip, 0)
 	if hErr != nil {
 		return nil, hErr
@@ -202,4 +236,9 @@ func getBlocksHandler(_ *utils.APIServerContext, _ map[string]string, queryParam
 		order = orderParamValue
 	}
 	return controllers.GetBlocksHandler(order, uint64(skip), uint64(limit))
+}
+
+func postTransactionHandler(_ *utils.APIServerContext, _ map[string]string, _ map[string]string,
+	requestBody []byte) (interface{}, *utils.HandlerError) {
+	return nil, controllers.PostTransaction(requestBody)
 }

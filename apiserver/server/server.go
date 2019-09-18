@@ -2,10 +2,11 @@ package server
 
 import (
 	"context"
-	"github.com/gorilla/handlers"
-	"github.com/gorilla/mux"
 	"net/http"
 	"time"
+
+	"github.com/gorilla/handlers"
+	"github.com/gorilla/mux"
 )
 
 const gracefulShutdownTimeout = 30 * time.Second
@@ -26,6 +27,7 @@ func Start(listenAddr string) func() {
 	spawn(func() {
 		log.Errorf("%s", httpServer.ListenAndServe())
 	})
+
 	return func() {
 		ctx, cancel := context.WithTimeout(context.Background(), gracefulShutdownTimeout)
 		defer cancel()
