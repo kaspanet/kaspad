@@ -23,6 +23,14 @@ func main() {
 		panic(fmt.Errorf("Error parsing command-line arguments: %s", err))
 	}
 
+	if cfg.Migrate {
+		err := database.Migrate(cfg)
+		if err != nil {
+			panic(fmt.Errorf("Error migrating database: %s", err))
+		}
+		return
+	}
+
 	err = database.Connect(cfg)
 	if err != nil {
 		panic(fmt.Errorf("Error connecting to database: %s", err))

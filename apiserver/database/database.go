@@ -34,13 +34,17 @@ func (l gormLogger) Print(v ...interface{}) {
 // config variable.
 func Connect(cfg *config.Config) error {
 	connectionString := buildConnectionString(cfg)
-	isCurrent, err := isCurrent(connectionString)
+	migrator, driver, err := openMigrator(connectionString)
+	if err != nil {
+		return err
+	}
+	isCurrent, version, err := isCurrent(migrator, driver)
 	if err != nil {
 		return fmt.Errorf("Error checking whether the database is current: %s", err)
 	}
 	if !isCurrent {
-		return fmt.Errorf("Database is not current. Please migrate" +
-			" the database and start again.")
+		return fmt.Errorf("Database is not current (version %d). Please migrate"+
+			" the database by running the server with --migrate flag and then run it again.", version)
 	}
 
 	db, err = gorm.Open("mysql", connectionString)
@@ -68,35 +72,68 @@ func buildConnectionString(cfg *config.Config) string {
 
 // isCurrent resolves whether the database is on the latest
 // version of the schema.
-func isCurrent(connectionString string) (bool, error) {
-	driver, err := source.Open("file://migrations")
-	if err != nil {
-		return false, err
-	}
-	migrator, err := migrate.NewWithSourceInstance(
-		"migrations", driver, "mysql://"+connectionString)
-	if err != nil {
-		return false, err
-	}
-
+func isCurrent(migrator *migrate.Migrate, driver source.Driver) (bool, uint, error) {
 	// Get the current version
 	version, isDirty, err := migrator.Version()
 	if err == migrate.ErrNilVersion {
-		return false, nil
+		return false, 0, nil
 	}
 	if err != nil {
-		return false, err
+		return false, 0, err
 	}
 	if isDirty {
-		return false, fmt.Errorf("Database is dirty")
+		return false, 0, fmt.Errorf("Database is dirty")
 	}
 
 	// The database is current if Next returns ErrNotExist
 	_, err = driver.Next(version)
 	if pathErr, ok := err.(*os.PathError); ok {
 		if pathErr.Err == os.ErrNotExist {
-			return true, nil
+			return true, version, nil
 		}
 	}
-	return false, err
+	return false, version, err
+}
+
+func openMigrator(connectionString string) (*migrate.Migrate, source.Driver, error) {
+	driver, err := source.Open("file://migrations")
+	if err != nil {
+		return nil, nil, err
+	}
+	migrator, err := migrate.NewWithSourceInstance(
+		"migrations", driver, "mysql://"+connectionString)
+	if err != nil {
+		return nil, nil, err
+	}
+	return migrator, driver, nil
+}
+
+// Migrate database to the latest version.
+func Migrate(cfg *config.Config) error {
+	connectionString := buildConnectionString(cfg)
+	migrator, driver, err := openMigrator(connectionString)
+	if err != nil {
+		return err
+	}
+	isCurrent, version, err := isCurrent(migrator, driver)
+	if err != nil {
+		return fmt.Errorf("Error checking whether the database is current: %s", err)
+	}
+	if isCurrent {
+		log.Infof("Database is already up-to-date (version %d)", version)
+		return nil
+	}
+	err = migrator.Up()
+	if err != nil {
+		return err
+	}
+	version, isDirty, err := migrator.Version()
+	if err != nil {
+		return err
+	}
+	if isDirty {
+		return fmt.Errorf("error migrating database: database is dirty")
+	}
+	log.Infof("Migrated database to the latest version (version %d)", version)
+	return nil
 }
