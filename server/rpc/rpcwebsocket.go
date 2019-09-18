@@ -622,7 +622,7 @@ func (m *wsNotificationManager) subscribedClients(tx *util.Tx,
 	}
 
 	for i, output := range msgTx.TxOut {
-		_, addr, err := txscript.ExtractScriptPubKeyAddr(
+		_, addr, err := txscript.ExtractScriptPubKeyAddress(
 			output.ScriptPubKey, m.server.cfg.DAGParams)
 		if err != nil || addr == nil {
 			// Clients are not able to subscribe to
@@ -1593,7 +1593,7 @@ func rescanBlockFilter(filter *wsClientFilter, block *util.Block, params *dagcon
 
 		// Scan outputs.
 		for i, output := range msgTx.TxOut {
-			_, addr, err := txscript.ExtractScriptPubKeyAddr(
+			_, addr, err := txscript.ExtractScriptPubKeyAddress(
 				output.ScriptPubKey, params)
 			if err != nil {
 				continue

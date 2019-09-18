@@ -642,7 +642,7 @@ func createVoutList(mtx *wire.MsgTx, chainParams *dagconfig.Params, filterAddrMa
 		// Ignore the error here since an error means the script
 		// couldn't parse and there is no additional information about
 		// it anyways.
-		scriptClass, addr, _ := txscript.ExtractScriptPubKeyAddr(
+		scriptClass, addr, _ := txscript.ExtractScriptPubKeyAddress(
 			v.ScriptPubKey, chainParams)
 
 		// Encode the addresses while checking if the address passes the
@@ -778,7 +778,7 @@ func handleDecodeScript(s *Server, cmd interface{}, closeChan <-chan struct{}) (
 	// Get information about the script.
 	// Ignore the error here since an error means the script couldn't parse
 	// and there is no additinal information about it anyways.
-	scriptClass, addr, _ := txscript.ExtractScriptPubKeyAddr(script,
+	scriptClass, addr, _ := txscript.ExtractScriptPubKeyAddress(script,
 		s.cfg.DAGParams)
 	var address *string
 	if addr != nil {
@@ -2808,7 +2808,7 @@ func handleGetTxOut(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 	// Get further info about the script.
 	// Ignore the error here since an error means the script couldn't parse
 	// and there is no additional information about it anyways.
-	scriptClass, addr, _ := txscript.ExtractScriptPubKeyAddr(scriptPubKey,
+	scriptClass, addr, _ := txscript.ExtractScriptPubKeyAddress(scriptPubKey,
 		s.cfg.DAGParams)
 	var address *string
 	if addr != nil {
@@ -3045,7 +3045,7 @@ func createVinListPrevOut(s *Server, mtx *wire.MsgTx, chainParams *dagconfig.Par
 		// Ignore the error here since an error means the script
 		// couldn't parse and there is no additional information about
 		// it anyways.
-		_, addr, _ := txscript.ExtractScriptPubKeyAddr(
+		_, addr, _ := txscript.ExtractScriptPubKeyAddress(
 			originTxOut.ScriptPubKey, chainParams)
 
 		var encodedAddr *string

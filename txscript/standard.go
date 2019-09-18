@@ -271,13 +271,11 @@ func PushedData(script []byte) ([][]byte, error) {
 	return data, nil
 }
 
-// ExtractScriptPubKeyAddr returns the type of script, addresses and required
-// signatures associated with the passed ScriptPubKey.  Note that it only works for
-// 'standard' transaction script types.  Any data such as public keys which are
-// invalid are omitted from the results.
-func ExtractScriptPubKeyAddr(scriptPubKey []byte, chainParams *dagconfig.Params) (ScriptClass, util.Address, error) {
-	// No valid addresses or required signatures if the script doesn't
-	// parse.
+// ExtractScriptPubKeyAddress returns the type of script and its addresses.
+// Note that it only works for 'standard' transaction script types.  Any data such
+// as public keys which are invalid will return a nil address.
+func ExtractScriptPubKeyAddress(scriptPubKey []byte, chainParams *dagconfig.Params) (ScriptClass, util.Address, error) {
+	// No valid address if the script doesn't parse.
 	pops, err := parseScript(scriptPubKey)
 	if err != nil {
 		return NonStandardTy, nil, err

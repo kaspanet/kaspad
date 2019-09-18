@@ -60,7 +60,7 @@ func sign(chainParams *dagconfig.Params, tx *wire.MsgTx, idx int,
 	script []byte, hashType SigHashType, kdb KeyDB, sdb ScriptDB) ([]byte,
 	ScriptClass, util.Address, error) {
 
-	class, address, err := ExtractScriptPubKeyAddr(script,
+	class, address, err := ExtractScriptPubKeyAddress(script,
 		chainParams)
 	if err != nil {
 		return nil, NonStandardTy, nil, err
@@ -125,7 +125,7 @@ func mergeScripts(chainParams *dagconfig.Params, tx *wire.MsgTx, idx int,
 
 		// We already know this information somewhere up the stack.
 		class, _, _ :=
-			ExtractScriptPubKeyAddr(script, chainParams)
+			ExtractScriptPubKeyAddress(script, chainParams)
 
 		// regenerate scripts.
 		sigScript, _ := unparseScript(sigPops)

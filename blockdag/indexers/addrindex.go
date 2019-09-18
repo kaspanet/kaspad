@@ -626,7 +626,7 @@ type writeIndexData map[[addrKeySize]byte][]int
 func (idx *AddrIndex) indexScriptPubKey(data writeIndexData, scriptPubKey []byte, txIdx int) {
 	// Nothing to index if the script is non-standard or otherwise doesn't
 	// contain any addresses.
-	_, addr, err := txscript.ExtractScriptPubKeyAddr(scriptPubKey,
+	_, addr, err := txscript.ExtractScriptPubKeyAddress(scriptPubKey,
 		idx.dagParams)
 	if err != nil || addr == nil {
 		return
@@ -789,7 +789,7 @@ func (idx *AddrIndex) indexUnconfirmedAddresses(scriptPubKey []byte, tx *util.Tx
 	// The error is ignored here since the only reason it can fail is if the
 	// script fails to parse and it was already validated before being
 	// admitted to the mempool.
-	_, addr, _ := txscript.ExtractScriptPubKeyAddr(scriptPubKey,
+	_, addr, _ := txscript.ExtractScriptPubKeyAddress(scriptPubKey,
 		idx.dagParams)
 	// Ignore unsupported address types.
 	addrKey, err := addrToKey(addr)
