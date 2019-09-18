@@ -72,14 +72,3 @@ func IsDBRecordNotFoundError(dbResult *gorm.DB) bool {
 func IsDBError(dbResult *gorm.DB) bool {
 	return !IsDBRecordNotFoundError(dbResult) && len(dbResult.GetErrors()) > 0
 }
-
-// NewErrorFromDBErrors takes a slice of database errors and a prefix, and
-// returns an error with all of the database errors formatted to one string with
-// the given prefix
-func NewErrorFromDBErrors(prefix string, dbErrors []error) error {
-	dbErrorsStrings := make([]string, len(dbErrors))
-	for i, dbErr := range dbErrors {
-		dbErrorsStrings[i] = fmt.Sprintf("\"%s\"", dbErr)
-	}
-	return fmt.Errorf("%s [%s]", prefix, strings.Join(dbErrorsStrings, ","))
-}
