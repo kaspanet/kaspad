@@ -23,6 +23,13 @@ func DB() (*gorm.DB, error) {
 	return db, nil
 }
 
+type gormLogger struct{}
+
+func (l gormLogger) Print(v ...interface{}) {
+	str := fmt.Sprint(v...)
+	log.Errorf(str)
+}
+
 // Connect connects to the database mentioned in
 // config variable.
 func Connect(cfg *config.Config) error {
@@ -41,6 +48,7 @@ func Connect(cfg *config.Config) error {
 		return err
 	}
 
+	db.SetLogger(gormLogger{})
 	return nil
 }
 
