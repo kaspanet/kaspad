@@ -41,15 +41,14 @@ func startSync(doneChan chan struct{}) error {
 	nextChainChangedChan := make(chan *jsonrpc.ChainChangedMsg)
 	spawn(func() {
 		for chainChanged := range client.OnChainChanged {
-			for {
+			for range blockAddedMsgHandledChan {
 				canHandle, err := canHandleChainChangedMsg(chainChanged)
 				if err != nil {
-					return
+					panic(err)
 				}
 				if canHandle {
 					break
 				}
-				<-blockAddedMsgHandledChan
 			}
 			nextChainChangedChan <- chainChanged
 		}
