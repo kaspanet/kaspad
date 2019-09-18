@@ -368,13 +368,13 @@ var helpDescsEnUS = map[string]string{
 	"getCFilter--result0":   "The block's committed filter",
 
 	// GetChainFromBlockCmd help.
-	"getChainFromBlock--synopsis":     "Return the selected parent chain starting from startHash up to the virtual.",
+	"getChainFromBlock--synopsis":     "Return the selected parent chain starting from startHash up to the virtual. If startHash is not in the selected parent chain, it goes down the DAG until it does reach a hash in the selected parent chain while collecting hashes into removedChainBlockHashes.",
 	"getChainFromBlock-startHash":     "Hash of the bottom of the requested chain. If this hash is unknown or is not a chain block - returns an error.",
 	"getChainFromBlock-includeBlocks": "If set to true - the block contents would be also included.",
 	"getChainFromBlock--result0":      "The selected parent chain.",
 
 	// GetChainFromBlockResult help.
-	"getChainFromBlockResult-removedChainBlockHashes": "List chain-block hashes that were re-orged out in top-to-bottom order",
+	"getChainFromBlockResult-removedChainBlockHashes": "List chain-block hashes that were removed from the selected parent chain in top-to-bottom order",
 	"getChainFromBlockResult-addedChainBlocks":        "List of ChainBlocks from Virtual.SelectedTip to StartHash (excluding StartHash) ordered bottom-to-top.",
 	"getChainFromBlockResult-blocks":                  "If includeBlocks=true - contains the contents of all chain and accepted blocks in the AddedChainBlocks. Otherwise - omitted.",
 

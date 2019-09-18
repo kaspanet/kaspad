@@ -254,7 +254,9 @@ func (c *Client) GetBlockCount() (int64, error) {
 type FutureGetChainFromBlockResult chan *response
 
 // Receive waits for the response promised by the future and returns the selected
-// parent chain starting from startHash up to the virtual.
+// parent chain starting from startHash up to the virtual. If startHash is not in
+// the selected parent chain, it goes down the DAG until it does reach a hash in
+// the selected parent chain while collecting hashes into RemovedChainBlockHashes.
 func (r FutureGetChainFromBlockResult) Receive() (*btcjson.GetChainFromBlockResult, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
@@ -279,7 +281,9 @@ func (c *Client) GetChainFromBlockAsync(includeBlocks bool, startHash *string) F
 }
 
 // GetChainFromBlock returns the selected parent chain starting from startHash
-// up to the virtual.
+// up to the virtual. If startHash is not in the selected parent chain, it goes
+// down the DAG until it does reach a hash in the selected parent chain while
+// collecting hashes into RemovedChainBlockHashes.
 func (c *Client) GetChainFromBlock(includeBlocks bool, startHash *string) (*btcjson.GetChainFromBlockResult, error) {
 	return c.GetChainFromBlockAsync(includeBlocks, startHash).Receive()
 }
