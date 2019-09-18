@@ -37,10 +37,10 @@ func startSync(doneChan chan struct{}) error {
 	// client.OnChainChanged, make sure we're able to handle them, and
 	// only then push them into nextChainChangedChan for them to be
 	// actually handled.
+	blockAddedMsgHandledChan := make(chan struct{})
 	nextChainChangedChan := make(chan *jsonrpc.ChainChangedMsg)
 	spawn(func() {
-		for {
-			chainChanged := <-client.OnChainChanged
+		for chainChanged := range client.OnChainChanged {
 			for {
 				canHandle, err := canHandleChainChangedMsg(chainChanged)
 				if err != nil {
@@ -49,6 +49,7 @@ func startSync(doneChan chan struct{}) error {
 				if canHandle {
 					break
 				}
+				<-blockAddedMsgHandledChan
 			}
 			nextChainChangedChan <- chainChanged
 		}
@@ -60,6 +61,7 @@ loop:
 		select {
 		case blockAdded := <-client.OnBlockAdded:
 			handleBlockAddedMsg(client, blockAdded)
+			blockAddedMsgHandledChan <- struct{}{}
 		case chainChanged := <-nextChainChangedChan:
 			handleChainChangedMsg(chainChanged)
 		case <-doneChan:
