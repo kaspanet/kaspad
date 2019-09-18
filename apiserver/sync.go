@@ -202,6 +202,17 @@ func addBlocks(client *jsonrpc.Client, dbTx *gorm.DB, blocks []string, rawBlocks
 	return nil
 }
 
+func doesBlockExist(dbTx *gorm.DB, blockHash string) (bool, error) {
+	var dbBlock models.Block
+	dbResult := dbTx.
+		Where(&models.Block{BlockHash: blockHash}).
+		First(&dbBlock)
+	if utils.HasDBError(dbResult) {
+		return false, utils.NewErrorFromDBErrors("failed to find block: ", dbResult.GetErrors())
+	}
+	return utils.HasDBRecordNotFoundError(dbResult), nil
+}
+
 // addBlocks inserts all the data that could be gleaned out of the serialized
 // block and raw block data into the database. This includes transactions,
 // subnetworks, and addresses.
@@ -216,6 +227,18 @@ func addBlock(client *jsonrpc.Client, dbTx *gorm.DB, block string, rawBlock btcj
 		}
 		dbTx = db.Begin()
 		shouldCommit = true
+	}
+
+	// Skip this block if it already exists.
+	blockExists, err := doesBlockExist(dbTx, rawBlock.Hash)
+	if err != nil {
+		return err
+	}
+	if blockExists {
+		if shouldCommit {
+			dbTx.Commit()
+		}
+		return nil
 	}
 
 	dbBlock, err := insertBlock(dbTx, rawBlock)
@@ -262,35 +285,26 @@ func addBlock(client *jsonrpc.Client, dbTx *gorm.DB, block string, rawBlock btcj
 }
 
 func insertBlock(dbTx *gorm.DB, rawBlock btcjson.GetBlockVerboseResult) (*models.Block, error) {
-	var dbBlock models.Block
-	dbResult := dbTx.
-		Where(&models.Block{BlockHash: rawBlock.Hash}).
-		First(&dbBlock)
-	if utils.HasDBError(dbResult) {
-		return nil, utils.NewErrorFromDBErrors("failed to find block: ", dbResult.GetErrors())
+	bits, err := strconv.ParseUint(rawBlock.Bits, 16, 32)
+	if err != nil {
+		return nil, err
 	}
-	if utils.HasDBRecordNotFoundError(dbResult) {
-		bits, err := strconv.ParseUint(rawBlock.Bits, 16, 32)
-		if err != nil {
-			return nil, err
-		}
-		dbBlock = models.Block{
-			BlockHash:            rawBlock.Hash,
-			Version:              rawBlock.Version,
-			HashMerkleRoot:       rawBlock.HashMerkleRoot,
-			AcceptedIDMerkleRoot: rawBlock.AcceptedIDMerkleRoot,
-			UTXOCommitment:       rawBlock.UTXOCommitment,
-			Timestamp:            time.Unix(rawBlock.Time, 0),
-			Bits:                 uint32(bits),
-			Nonce:                rawBlock.Nonce,
-			BlueScore:            rawBlock.BlueScore,
-			IsChainBlock:         false, // This must be false for updateSelectedParentChain to work properly
-			Mass:                 rawBlock.Mass,
-		}
-		dbResult := dbTx.Create(&dbBlock)
-		if utils.HasDBError(dbResult) {
-			return nil, utils.NewErrorFromDBErrors("failed to insert block: ", dbResult.GetErrors())
-		}
+	dbBlock := models.Block{
+		BlockHash:            rawBlock.Hash,
+		Version:              rawBlock.Version,
+		HashMerkleRoot:       rawBlock.HashMerkleRoot,
+		AcceptedIDMerkleRoot: rawBlock.AcceptedIDMerkleRoot,
+		UTXOCommitment:       rawBlock.UTXOCommitment,
+		Timestamp:            time.Unix(rawBlock.Time, 0),
+		Bits:                 uint32(bits),
+		Nonce:                rawBlock.Nonce,
+		BlueScore:            rawBlock.BlueScore,
+		IsChainBlock:         false, // This must be false for updateSelectedParentChain to work properly
+		Mass:                 rawBlock.Mass,
+	}
+	dbResult := dbTx.Create(&dbBlock)
+	if utils.HasDBError(dbResult) {
+		return nil, utils.NewErrorFromDBErrors("failed to insert block: ", dbResult.GetErrors())
 	}
 	return &dbBlock, nil
 }
@@ -317,48 +331,30 @@ func insertBlockParents(dbTx *gorm.DB, rawBlock btcjson.GetBlockVerboseResult, d
 	}
 
 	for _, dbParent := range dbParents {
-		var dbParentBlock models.ParentBlock
-		dbResult = dbTx.
-			Where(&models.ParentBlock{BlockID: dbBlock.ID, ParentBlockID: dbParent.ID}).
-			First(&dbParentBlock)
-		if utils.HasDBError(dbResult) {
-			return utils.NewErrorFromDBErrors("failed to find parentBlock: ", dbResult.GetErrors())
+		dbParentBlock := models.ParentBlock{
+			BlockID:       dbBlock.ID,
+			ParentBlockID: dbParent.ID,
 		}
-		if utils.HasDBRecordNotFoundError(dbResult) {
-			dbParentBlock = models.ParentBlock{
-				BlockID:       dbBlock.ID,
-				ParentBlockID: dbParent.ID,
-			}
-			dbResult := dbTx.Create(&dbParentBlock)
-			if utils.HasDBError(dbResult) {
-				return utils.NewErrorFromDBErrors("failed to insert parentBlock: ", dbResult.GetErrors())
-			}
+		dbResult := dbTx.Create(&dbParentBlock)
+		if utils.HasDBError(dbResult) {
+			return utils.NewErrorFromDBErrors("failed to insert parentBlock: ", dbResult.GetErrors())
 		}
 	}
 	return nil
 }
 
 func insertBlockData(dbTx *gorm.DB, block string, dbBlock *models.Block) error {
-	var dbRawBlock models.RawBlock
-	dbResult := dbTx.
-		Where(&models.RawBlock{BlockID: dbBlock.ID}).
-		First(&dbRawBlock)
-	if utils.HasDBError(dbResult) {
-		return utils.NewErrorFromDBErrors("failed to find rawBlock: ", dbResult.GetErrors())
+	blockData, err := hex.DecodeString(block)
+	if err != nil {
+		return err
 	}
-	if utils.HasDBRecordNotFoundError(dbResult) {
-		blockData, err := hex.DecodeString(block)
-		if err != nil {
-			return err
-		}
-		dbRawBlock = models.RawBlock{
-			BlockID:   dbBlock.ID,
-			BlockData: blockData,
-		}
-		dbResult := dbTx.Create(&dbRawBlock)
-		if utils.HasDBError(dbResult) {
-			return utils.NewErrorFromDBErrors("failed to insert rawBlock: ", dbResult.GetErrors())
-		}
+	dbRawBlock := models.RawBlock{
+		BlockID:   dbBlock.ID,
+		BlockData: blockData,
+	}
+	dbResult := dbTx.Create(&dbRawBlock)
+	if utils.HasDBError(dbResult) {
+		return utils.NewErrorFromDBErrors("failed to insert rawBlock: ", dbResult.GetErrors())
 	}
 	return nil
 }
