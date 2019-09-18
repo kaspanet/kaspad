@@ -448,17 +448,11 @@ func isTransactionCoinbase(transaction *btcjson.TxRawResult) (bool, error) {
 }
 
 func insertTransactionInput(dbTx *gorm.DB, dbTransaction *models.Transaction, input *btcjson.Vin) error {
-	var dbOutputTransaction models.Transaction
-	dbResult := dbTx.Where(&models.Transaction{TransactionID: input.TxID}).First(&dbOutputTransaction)
-	if utils.IsDBError(dbResult) {
-		return utils.NewErrorFromDBErrors("failed to find transaction: ", dbResult.GetErrors())
-	}
-	if utils.IsDBRecordNotFoundError(dbResult) {
-		return fmt.Errorf("missing output transaction for txID: %s", input.TxID)
-	}
-
 	var dbPreviousTransactionOutput models.TransactionOutput
-	dbResult = dbTx.Where(&models.TransactionOutput{TransactionID: dbOutputTransaction.ID, Index: input.Vout}).First(&dbPreviousTransactionOutput)
+	dbResult := dbTx.
+		Joins("LEFT JOIN `transactions` ON `transactions`.`id` = `transaction_outputs`.`transaction_id`").
+		Where("`transactions`.`transactiond_id` = ? AND `transaction_outputs`.`index` = ?", input.TxID, input.Vout).
+		First(&dbPreviousTransactionOutput)
 	if utils.IsDBError(dbResult) {
 		return utils.NewErrorFromDBErrors("failed to find previous transactionOutput: ", dbResult.GetErrors())
 	}
