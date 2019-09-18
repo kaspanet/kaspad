@@ -115,6 +115,7 @@ func (idx *AcceptanceIndex) dbPutTxsAcceptanceData(dbTx database.Tx, hash *dagha
 
 func (idx *AcceptanceIndex) dbFetchTxsAcceptanceData(dbTx database.Tx,
 	hash *daghash.Hash) (blockdag.MultiBlockTxsAcceptanceData, error) {
+
 	bucket := dbTx.Metadata().Bucket(acceptanceIndexKey)
 	serializedTxsAcceptanceData := bucket.Get(hash[:])
 	if serializedTxsAcceptanceData == nil {
