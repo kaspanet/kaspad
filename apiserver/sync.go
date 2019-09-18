@@ -430,17 +430,17 @@ func insertTransactionInput(dbTx *gorm.DB, dbTransaction *models.Transaction, in
 		return fmt.Errorf("missing output transaction for txID: %s", input.TxID)
 	}
 
-	var dbOutputTransactionOutput models.TransactionOutput
-	dbResult = dbTx.Where(&models.TransactionOutput{TransactionID: dbOutputTransaction.ID, Index: input.Vout}).First(&dbOutputTransactionOutput)
+	var dbPreviousTransactionOutput models.TransactionOutput
+	dbResult = dbTx.Where(&models.TransactionOutput{TransactionID: dbOutputTransaction.ID, Index: input.Vout}).First(&dbPreviousTransactionOutput)
 	if utils.IsDBError(dbResult) {
-		return utils.NewErrorFromDBErrors("failed to find transactionOutput: ", dbResult.GetErrors())
+		return utils.NewErrorFromDBErrors("failed to find previous transactionOutput: ", dbResult.GetErrors())
 	}
 	if utils.IsDBRecordNotFoundError(dbResult) {
 		return fmt.Errorf("missing output transaction output for txID: %s and index: %d", input.TxID, input.Vout)
 	}
 
 	var dbTransactionInput models.TransactionInput
-	dbResult = dbTx.Where(models.TransactionInput{TransactionID: dbTransaction.ID, TransactionOutputID: dbOutputTransactionOutput.ID}).First(&dbTransactionInput)
+	dbResult = dbTx.Where(models.TransactionInput{TransactionID: dbTransaction.ID, PreviousTransactionOutputID: dbPreviousTransactionOutput.ID}).First(&dbTransactionInput)
 	if utils.IsDBError(dbResult) {
 		return utils.NewErrorFromDBErrors("failed to find transactionInput: ", dbResult.GetErrors())
 	}
@@ -450,11 +450,11 @@ func insertTransactionInput(dbTx *gorm.DB, dbTransaction *models.Transaction, in
 			return nil
 		}
 		dbTransactionInput = models.TransactionInput{
-			TransactionID:       dbTransaction.ID,
-			TransactionOutputID: dbOutputTransactionOutput.ID,
-			Index:               input.Vout,
-			SignatureScript:     scriptSig,
-			Sequence:            input.Sequence,
+			TransactionID:               dbTransaction.ID,
+			PreviousTransactionOutputID: dbPreviousTransactionOutput.ID,
+			Index:                       input.Vout,
+			SignatureScript:             scriptSig,
+			Sequence:                    input.Sequence,
 		}
 		dbResult := dbTx.Create(&dbTransactionInput)
 		if utils.IsDBError(dbResult) {
@@ -595,7 +595,7 @@ func updateRemovedChainHashes(dbTx *gorm.DB, removedHash string) error {
 	for _, dbTransaction := range dbTransactions {
 		for _, dbTransactionInput := range dbTransaction.TransactionInputs {
 			var dbTransactionOutput models.TransactionOutput
-			dbResult := dbTx.Where(&models.TransactionOutput{ID: dbTransactionInput.TransactionOutputID}).First(&dbTransactionOutput)
+			dbResult := dbTx.Where(&models.TransactionOutput{ID: dbTransactionInput.PreviousTransactionOutputID}).First(&dbTransactionOutput)
 			if utils.IsDBError(dbResult) {
 				return utils.NewErrorFromDBErrors("failed to find transactionOutput: ", dbResult.GetErrors())
 			}
@@ -668,7 +668,7 @@ func updateAddedChainBlocks(dbTx *gorm.DB, addedBlock *btcjson.ChainBlock) error
 			}
 			for _, dbTransactionInput := range dbTransactionInputs {
 				var dbTransactionOutput models.TransactionOutput
-				dbResult := dbTx.Where(&models.TransactionOutput{ID: dbTransactionInput.TransactionOutputID}).First(&dbTransactionOutput)
+				dbResult := dbTx.Where(&models.TransactionOutput{ID: dbTransactionInput.PreviousTransactionOutputID}).First(&dbTransactionOutput)
 				if utils.IsDBError(dbResult) {
 					return utils.NewErrorFromDBErrors("failed to find transactionOutput: ", dbResult.GetErrors())
 				}

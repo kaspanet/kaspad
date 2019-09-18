@@ -94,14 +94,14 @@ type TransactionOutput struct {
 
 // TransactionInput is the gorm model for the 'transaction_inputs' table
 type TransactionInput struct {
-	ID                  uint64 `gorm:"primary_key"`
-	TransactionID       uint64
-	Transaction         Transaction
-	TransactionOutputID uint64
-	TransactionOutput   TransactionOutput
-	Index               uint32
-	SignatureScript     []byte
-	Sequence            uint64
+	ID                          uint64 `gorm:"primary_key"`
+	TransactionID               uint64
+	Transaction                 Transaction
+	PreviousTransactionOutputID uint64
+	PreviousTransactionOutput   TransactionOutput
+	Index                       uint32
+	SignatureScript             []byte
+	Sequence                    uint64
 }
 
 // Address is the gorm model for the 'utxos' table

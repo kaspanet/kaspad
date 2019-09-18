@@ -120,6 +120,6 @@ func addTxPreloadedFields(query *gorm.DB) *gorm.DB {
 		Preload("Subnetwork").
 		Preload("TransactionOutputs").
 		Preload("TransactionOutputs.Address").
-		Preload("TransactionInputs.TransactionOutput.Transaction").
-		Preload("TransactionInputs.TransactionOutput.Address")
+		Preload("TransactionInputs.PreviousTransactionOutput.Transaction").
+		Preload("TransactionInputs.PreviousTransactionOutput.Address")
 }
