@@ -39,10 +39,10 @@ func GetBlockByHashHandler(blockHash string) (interface{}, *utils.HandlerError) 
 
 	block := &models.Block{}
 	dbResult := db.Where(&models.Block{BlockHash: blockHash}).Preload("AcceptingBlock").First(block)
-	if dbResult.RecordNotFound() && len(dbResult.GetErrors()) == 1 {
+	if utils.HasDBRecordNotFoundError(dbResult) {
 		return nil, utils.NewHandlerError(http.StatusNotFound, "No block with the given block hash was found.")
 	}
-	if len(dbResult.GetErrors()) > 0 {
+	if utils.HasDBError(dbResult) {
 		return nil, utils.NewHandlerErrorFromDBErrors("Some errors where encountered when loading transactions from the database:", dbResult.GetErrors())
 	}
 	return convertBlockModelToBlockResponse(block), nil

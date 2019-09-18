@@ -29,10 +29,10 @@ func GetTransactionByIDHandler(txID string) (interface{}, *utils.HandlerError) {
 	tx := &models.Transaction{}
 	query := db.Where(&models.Transaction{TransactionID: txID})
 	dbResult := addTxPreloadedFields(query).First(&tx)
-	if dbResult.RecordNotFound() && len(dbResult.GetErrors()) == 1 {
+	if utils.HasDBRecordNotFoundError(dbResult) {
 		return nil, utils.NewHandlerError(http.StatusNotFound, "No transaction with the given txid was found.")
 	}
-	if len(dbResult.GetErrors()) > 0 {
+	if utils.HasDBError(dbResult) {
 		return nil, utils.NewHandlerErrorFromDBErrors("Some errors where encountered when loading transaction from the database:", dbResult.GetErrors())
 	}
 	return convertTxModelToTxResponse(tx), nil
@@ -53,10 +53,10 @@ func GetTransactionByHashHandler(txHash string) (interface{}, *utils.HandlerErro
 	tx := &models.Transaction{}
 	query := db.Where(&models.Transaction{TransactionHash: txHash})
 	dbResult := addTxPreloadedFields(query).First(&tx)
-	if dbResult.RecordNotFound() && len(dbResult.GetErrors()) == 1 {
+	if utils.HasDBRecordNotFoundError(dbResult) {
 		return nil, utils.NewHandlerError(http.StatusNotFound, "No transaction with the given txhash was found.")
 	}
-	if len(dbResult.GetErrors()) > 0 {
+	if utils.HasDBError(dbResult) {
 		return nil, utils.NewHandlerErrorFromDBErrors("Some errors where encountered when loading transaction from the database:", dbResult.GetErrors())
 	}
 	return convertTxModelToTxResponse(tx), nil
@@ -87,9 +87,9 @@ func GetTransactionsByAddressHandler(address string, skip uint64, limit uint64) 
 		Limit(limit).
 		Offset(skip).
 		Order("`transactions`.`id` ASC")
-	dbErrors := addTxPreloadedFields(query).Find(&txs).GetErrors()
-	if len(dbErrors) > 0 {
-		return nil, utils.NewHandlerErrorFromDBErrors("Some errors where encountered when loading transactions from the database:", dbErrors)
+	dbResult := addTxPreloadedFields(query).Find(&txs)
+	if utils.HasDBError(dbResult) {
+		return nil, utils.NewHandlerErrorFromDBErrors("Some errors where encountered when loading transactions from the database:", dbResult.GetErrors())
 	}
 	txResponses := make([]*transactionResponse, len(txs))
 	for i, tx := range txs {
