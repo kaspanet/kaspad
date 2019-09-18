@@ -3,10 +3,9 @@ package jsonrpc
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
-
 	"github.com/daglabs/btcd/apiserver/config"
 	"github.com/daglabs/btcd/util/daghash"
+	"io/ioutil"
 
 	"github.com/daglabs/btcd/rpcclient"
 	"github.com/daglabs/btcd/util"

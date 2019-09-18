@@ -29,9 +29,9 @@ var (
 // Config defines the configuration options for the API server.
 type Config struct {
 	LogDir      string `long:"logdir" description:"Directory to log output."`
-	RPCUser     string `short:"u" long:"rpcuser" description:"RPC username" required:"true"`
-	RPCPassword string `short:"P" long:"rpcpass" default-mask:"-" description:"RPC password" required:"true"`
-	RPCServer   string `short:"s" long:"rpcserver" description:"RPC server to connect to" required:"true"`
+	RPCUser     string `short:"u" long:"rpcuser" description:"RPC username"`
+	RPCPassword string `short:"P" long:"rpcpass" default-mask:"-" description:"RPC password"`
+	RPCServer   string `short:"s" long:"rpcserver" description:"RPC server to connect to"`
 	RPCCert     string `short:"c" long:"rpccert" description:"RPC server certificate chain for validation"`
 	DisableTLS  bool   `long:"notls" description:"Disable TLS"`
 	DBAddress   string `long:"dbaddress" description:"Database address"`
@@ -39,6 +39,7 @@ type Config struct {
 	DBPassword  string `long:"dbpass" description:"Database password" required:"true"`
 	DBName      string `long:"dbname" description:"Database name" required:"true"`
 	HTTPListen  string `long:"listen" description:"HTTP address to listen on (default: 0.0.0.0:8080)"`
+	Migrate     bool   `long:"migrate" description:"Migrate the database to the latest version. The server will not start when using this flag."`
 	TestNet     bool   `long:"testnet" description:"Connect to testnet"`
 	SimNet      bool   `long:"simnet" description:"Connect to the simulation test network"`
 	DevNet      bool   `long:"devnet" description:"Connect to the development test network"`
@@ -56,6 +57,18 @@ func Parse() (*Config, error) {
 
 	if err != nil {
 		return nil, err
+	}
+
+	if !cfg.Migrate {
+		if cfg.RPCUser == "" {
+			return nil, errors.New("--rpcuser is required if --migrate flag is not used")
+		}
+		if cfg.RPCPassword == "" {
+			return nil, errors.New("--rpcpass is required if --migrate flag is not used")
+		}
+		if cfg.RPCServer == "" {
+			return nil, errors.New("--rpcserver is required if --migrate flag is not used")
+		}
 	}
 
 	if cfg.RPCCert == "" && !cfg.DisableTLS {

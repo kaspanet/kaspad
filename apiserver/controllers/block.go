@@ -11,6 +11,20 @@ import (
 	"github.com/daglabs/btcd/util/daghash"
 )
 
+const (
+	// OrderAscending is parameter that can be used
+	// in a get list handler to get a list ordered
+	// in an ascending order.
+	OrderAscending = "asc"
+
+	// OrderDescending is parameter that can be used
+	// in a get list handler to get a list ordered
+	// in an ascending order.
+	OrderDescending = "desc"
+)
+
+const maxGetBlocksLimit = 100
+
 // GetBlockByHashHandler returns a block by a given hash.
 func GetBlockByHashHandler(blockHash string) (interface{}, *utils.HandlerError) {
 	if bytes, err := hex.DecodeString(blockHash); err != nil || len(bytes) != daghash.HashSize {
@@ -20,13 +34,45 @@ func GetBlockByHashHandler(blockHash string) (interface{}, *utils.HandlerError) 
 
 	db, err := database.DB()
 	if err != nil {
-		return nil, utils.NewHandlerError(http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
+		return nil, utils.NewInternalServerHandlerError(err.Error())
 	}
 
 	block := &models.Block{}
-	db.Where(&models.Block{BlockHash: blockHash}).Preload("AcceptingBlock").First(block)
-	if block.ID == 0 {
+	dbResult := db.Where(&models.Block{BlockHash: blockHash}).Preload("AcceptingBlock").First(block)
+	if dbResult.RecordNotFound() && len(dbResult.GetErrors()) == 1 {
 		return nil, utils.NewHandlerError(http.StatusNotFound, "No block with the given block hash was found.")
 	}
+	if len(dbResult.GetErrors()) > 0 {
+		return nil, utils.NewHandlerErrorFromDBErrors("Some errors where encountered when loading transactions from the database:", dbResult.GetErrors())
+	}
 	return convertBlockModelToBlockResponse(block), nil
+}
+
+// GetBlocksHandler searches for all blocks
+func GetBlocksHandler(order string, skip uint64, limit uint64) (interface{}, *utils.HandlerError) {
+	if limit > maxGetBlocksLimit {
+		return nil, utils.NewHandlerError(http.StatusUnprocessableEntity, fmt.Sprintf("The maximum allowed value for the limit is %d", maxGetTransactionsLimit))
+	}
+	blocks := []*models.Block{}
+	db, err := database.DB()
+	if err != nil {
+		return nil, utils.NewHandlerError(http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
+	}
+	query := db.
+		Limit(limit).
+		Offset(skip).
+		Preload("AcceptingBlock")
+	if order == OrderAscending {
+		query = query.Order("`id` ASC")
+	} else if order == OrderDescending {
+		query = query.Order("`id` DESC")
+	} else {
+		return nil, utils.NewHandlerError(http.StatusUnprocessableEntity, fmt.Sprintf("'%s' is not a valid order", order))
+	}
+	query.Find(&blocks)
+	blockResponses := make([]*blockResponse, len(blocks))
+	for i, block := range blocks {
+		blockResponses[i] = convertBlockModelToBlockResponse(block)
+	}
+	return blockResponses, nil
 }

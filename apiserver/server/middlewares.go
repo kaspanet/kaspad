@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fmt"
 	"github.com/daglabs/btcd/apiserver/utils"
 	"net/http"
 	"runtime/debug"
@@ -31,9 +32,10 @@ func recoveryMiddleware(h http.Handler) http.Handler {
 		defer func() {
 			recoveryErr := recover()
 			if recoveryErr != nil {
-				log.Criticalf("Fatal error: %s", recoveryErr)
+				recoveryErrStr := fmt.Sprintf("%s", recoveryErr)
+				log.Criticalf("Fatal error: %s", recoveryErrStr)
 				log.Criticalf("Stack trace: %s", debug.Stack())
-				sendErr(ctx, w, utils.NewHandlerError(http.StatusInternalServerError, "A server error occurred."))
+				sendErr(ctx, w, utils.NewInternalServerHandlerError(recoveryErrStr))
 			}
 		}()
 		h.ServeHTTP(w, r)

@@ -12,7 +12,7 @@ import (
 	"github.com/jinzhu/gorm"
 )
 
-const maximumGetTransactionsLimit = 1000
+const maxGetTransactionsLimit = 1000
 
 // GetTransactionByIDHandler returns a transaction by a given transaction ID.
 func GetTransactionByIDHandler(txID string) (interface{}, *utils.HandlerError) {
@@ -23,14 +23,17 @@ func GetTransactionByIDHandler(txID string) (interface{}, *utils.HandlerError) {
 
 	db, err := database.DB()
 	if err != nil {
-		return nil, utils.NewHandlerError(http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
+		return nil, utils.NewInternalServerHandlerError(err.Error())
 	}
 
 	tx := &models.Transaction{}
 	query := db.Where(&models.Transaction{TransactionID: txID})
-	addTxPreloadedFields(query).First(&tx)
-	if tx.ID == 0 {
+	dbResult := addTxPreloadedFields(query).First(&tx)
+	if dbResult.RecordNotFound() && len(dbResult.GetErrors()) == 1 {
 		return nil, utils.NewHandlerError(http.StatusNotFound, "No transaction with the given txid was found.")
+	}
+	if len(dbResult.GetErrors()) > 0 {
+		return nil, utils.NewHandlerErrorFromDBErrors("Some errors where encountered when loading transaction from the database:", dbResult.GetErrors())
 	}
 	return convertTxModelToTxResponse(tx), nil
 }
@@ -44,14 +47,17 @@ func GetTransactionByHashHandler(txHash string) (interface{}, *utils.HandlerErro
 
 	db, err := database.DB()
 	if err != nil {
-		return nil, utils.NewHandlerError(http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
+		return nil, utils.NewInternalServerHandlerError(err.Error())
 	}
 
 	tx := &models.Transaction{}
 	query := db.Where(&models.Transaction{TransactionHash: txHash})
-	addTxPreloadedFields(query).First(&tx)
-	if tx.ID == 0 {
+	dbResult := addTxPreloadedFields(query).First(&tx)
+	if dbResult.RecordNotFound() && len(dbResult.GetErrors()) == 1 {
 		return nil, utils.NewHandlerError(http.StatusNotFound, "No transaction with the given txhash was found.")
+	}
+	if len(dbResult.GetErrors()) > 0 {
+		return nil, utils.NewHandlerErrorFromDBErrors("Some errors where encountered when loading transaction from the database:", dbResult.GetErrors())
 	}
 	return convertTxModelToTxResponse(tx), nil
 }
@@ -59,14 +65,14 @@ func GetTransactionByHashHandler(txHash string) (interface{}, *utils.HandlerErro
 // GetTransactionsByAddressHandler searches for all transactions
 // where the given address is either an input or an output.
 func GetTransactionsByAddressHandler(address string, skip uint64, limit uint64) (interface{}, *utils.HandlerError) {
-	if limit > maximumGetTransactionsLimit {
+	if limit > maxGetTransactionsLimit {
 		return nil, utils.NewHandlerError(http.StatusUnprocessableEntity,
-			fmt.Sprintf("The maximum allowed value for the limit is %d", maximumGetTransactionsLimit))
+			fmt.Sprintf("The maximum allowed value for the limit is %d", maxGetTransactionsLimit))
 	}
 
 	db, err := database.DB()
 	if err != nil {
-		return nil, utils.NewHandlerError(http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
+		return nil, utils.NewInternalServerHandlerError(err.Error())
 	}
 
 	txs := []*models.Transaction{}
@@ -81,7 +87,10 @@ func GetTransactionsByAddressHandler(address string, skip uint64, limit uint64) 
 		Limit(limit).
 		Offset(skip).
 		Order("`transactions`.`id` ASC")
-	addTxPreloadedFields(query).Find(&txs)
+	dbErrors := addTxPreloadedFields(query).Find(&txs).GetErrors()
+	if len(dbErrors) > 0 {
+		return nil, utils.NewHandlerErrorFromDBErrors("Some errors where encountered when loading transactions from the database:", dbErrors)
+	}
 	txResponses := make([]*transactionResponse, len(txs))
 	for i, tx := range txs {
 		txResponses[i] = convertTxModelToTxResponse(tx)
@@ -93,15 +102,18 @@ func GetTransactionsByAddressHandler(address string, skip uint64, limit uint64) 
 func GetUTXOsByAddressHandler(address string) (interface{}, *utils.HandlerError) {
 	db, err := database.DB()
 	if err != nil {
-		return nil, utils.NewHandlerError(http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
+		return nil, utils.NewInternalServerHandlerError(err.Error())
 	}
 
 	var transactionOutputs []*models.TransactionOutput
-	db.
+	dbErrors := db.
 		Joins("LEFT JOIN `addresses` ON `addresses`.`id` = `transaction_outputs`.`address_id`").
 		Where("`addresses`.`address` = ? AND `transaction_outputs`.`is_spent` = 0", address).
 		Preload("Transaction.AcceptingBlock").
-		Find(&transactionOutputs)
+		Find(&transactionOutputs).GetErrors()
+	if len(dbErrors) > 0 {
+		return nil, utils.NewHandlerErrorFromDBErrors("Some errors where encountered when loading UTXOs from the database:", dbErrors)
+	}
 
 	UTXOsResponses := make([]*transactionOutputResponse, len(transactionOutputs))
 	for i, transactionOutput := range transactionOutputs {
