@@ -153,7 +153,7 @@ func syncSelectedParentChain(client *jsonrpc.Client) error {
 }
 
 // findHashOfBluestBlock finds the block with the highest
-// blue score in the database. If no such block exists,
+// blue score in the database. If the database is empty,
 // return nil.
 func findHashOfBluestBlock(mustBeChainBlock bool) (*string, error) {
 	dbTx, err := database.DB()
