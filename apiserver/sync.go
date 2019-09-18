@@ -31,13 +31,36 @@ func startSync(doneChan chan struct{}) error {
 		return err
 	}
 
+	// ChainChangedMsgs must be processed in order and there may be times
+	// when we may not be able to process them (e.g. appropriate
+	// BlockAddedMsgs haven't arrived yet). As such, we pop messages from
+	// client.OnChainChanged, make sure we're able to handle them, and
+	// only then push them into nextChainChangedChan for them to be
+	// actually handled.
+	nextChainChangedChan := make(chan *jsonrpc.ChainChangedMsg)
+	spawn(func() {
+		for {
+			chainChanged := <-client.OnChainChanged
+			for {
+				canHandle, err := canHandleChainChangedMsg(chainChanged)
+				if err != nil {
+					return
+				}
+				if canHandle {
+					break
+				}
+			}
+			nextChainChangedChan <- chainChanged
+		}
+	})
+
 	// Handle client notifications until we're told to stop
 loop:
 	for {
 		select {
 		case blockAdded := <-client.OnBlockAdded:
 			handleBlockAddedMsg(client, blockAdded)
-		case chainChanged := <-client.OnChainChanged:
+		case chainChanged := <-nextChainChangedChan:
 			handleChainChangedMsg(chainChanged)
 		case <-doneChan:
 			log.Infof("startSync stopped")
@@ -718,6 +741,41 @@ func handleBlockAddedMsg(client *jsonrpc.Client, blockAdded *jsonrpc.BlockAddedM
 		return
 	}
 	log.Infof("Added block %s", hash)
+}
+
+// canHandleChainChangedMsg checks whether we have all the necessary data
+// to successfully handle a ChainChangedMsg.
+func canHandleChainChangedMsg(chainChanged *jsonrpc.ChainChangedMsg) (bool, error) {
+	dbTx, err := database.DB()
+	if err != nil {
+		return false, err
+	}
+
+	// Collect all the referenced block hashes
+	hashes := make(map[string]struct{})
+	for _, removedHash := range chainChanged.RemovedChainBlockHashes {
+		hashes[removedHash.String()] = struct{}{}
+	}
+	for _, addedBlock := range chainChanged.AddedChainBlocks {
+		hashes[addedBlock.Hash.String()] = struct{}{}
+		for _, acceptedBlock := range addedBlock.AcceptedBlocks {
+			hashes[acceptedBlock.Hash.String()] = struct{}{}
+		}
+	}
+
+	// Make sure that all the hashes exist in the database
+	for hash := range hashes {
+		var dbBlock []models.Block
+		dbResult := dbTx.Where(&models.Block{BlockHash: hash}).Find(&dbBlock)
+		if utils.IsDBError(dbResult) {
+			return false, utils.NewErrorFromDBErrors("failed to find block: ", dbResult.GetErrors())
+		}
+		if utils.IsDBRecordNotFoundError(dbResult) {
+			return false, nil
+		}
+	}
+
+	return true, nil
 }
 
 // handleChainChangedMsg handles onChainChanged messages
