@@ -593,7 +593,7 @@ func updateSelectedParentChain(dbTx *gorm.DB, removedChainHashes []string, added
 // updateRemovedChainHashes "unaccepts" the block of the given removedHash.
 // That is to say, it marks it as not in the selected parent chain in the
 // following ways:
-// * All its TransactionInputs.TransactionOutputs are set IsSpent = false
+// * All its TransactionInputs.OutputTransactionOutputs are set IsSpent = false
 // * All its Transactions are set AcceptingBlockID = nil
 // * The block is set IsChainBlock = false
 // This function will return an error if any of the above are in an unexpected state
@@ -611,28 +611,20 @@ func updateRemovedChainHashes(dbTx *gorm.DB, removedHash string) error {
 	}
 
 	var dbTransactions []models.Transaction
-	dbResult = dbTx.Where(&models.Transaction{AcceptingBlockID: &dbBlock.ID}).Preload("TransactionInputs").Find(&dbTransactions)
+	dbResult = dbTx.Where(&models.Transaction{AcceptingBlockID: &dbBlock.ID}).Preload("TransactionInputs.PreviousTransactionOutput").Find(&dbTransactions)
 	if utils.IsDBError(dbResult) {
 		return utils.NewErrorFromDBErrors("failed to find transactions: ", dbResult.GetErrors())
 	}
 	for _, dbTransaction := range dbTransactions {
 		for _, dbTransactionInput := range dbTransaction.TransactionInputs {
-			var dbTransactionOutput models.TransactionOutput
-			dbResult := dbTx.Where(&models.TransactionOutput{ID: dbTransactionInput.PreviousTransactionOutputID}).First(&dbTransactionOutput)
-			if utils.IsDBError(dbResult) {
-				return utils.NewErrorFromDBErrors("failed to find transactionOutput: ", dbResult.GetErrors())
-			}
-			if utils.IsDBRecordNotFoundError(dbResult) {
-				return fmt.Errorf("missing transaction output for transaction: %s index: %d",
-					dbTransaction.TransactionID, dbTransactionInput.Index)
-			}
-			if !dbTransactionOutput.IsSpent {
+			dbPreviousTransactionOutput := dbTransactionInput.PreviousTransactionOutput
+			if !dbPreviousTransactionOutput.IsSpent {
 				return fmt.Errorf("cannot de-spend an unspent transaction output: %s index: %d",
 					dbTransaction.TransactionID, dbTransactionInput.Index)
 			}
 
-			dbTransactionOutput.IsSpent = false
-			dbResult = dbTx.Save(&dbTransactionOutput)
+			dbPreviousTransactionOutput.IsSpent = false
+			dbResult = dbTx.Save(&dbPreviousTransactionOutput)
 			if utils.IsDBError(dbResult) {
 				return utils.NewErrorFromDBErrors("failed to update transactionOutput: ", dbResult.GetErrors())
 			}
@@ -656,7 +648,7 @@ func updateRemovedChainHashes(dbTx *gorm.DB, removedHash string) error {
 
 // updateAddedChainBlocks "accepts" the given addedBlock. That is to say,
 // it marks it as in the selected parent chain in the following ways:
-// * All its TransactionInputs.TransactionOutputs are set IsSpent = true
+// * All its TransactionInputs.PreviousTransactionOutputs are set IsSpent = true
 // * All its Transactions are set AcceptingBlockID = addedBlock
 // * The block is set IsChainBlock = true
 // This function will return an error if any of the above are in an unexpected state
@@ -674,38 +666,29 @@ func updateAddedChainBlocks(dbTx *gorm.DB, addedBlock *btcjson.ChainBlock) error
 			return fmt.Errorf("block erroneously marked as a chain block: %s", acceptedBlock.Hash)
 		}
 
-		for _, acceptedTxID := range acceptedBlock.AcceptedTxIDs {
-			var dbAcceptedTransaction models.Transaction
-			dbResult := dbTx.Where(&models.Transaction{TransactionID: acceptedTxID}).First(&dbAcceptedTransaction)
-			if utils.IsDBError(dbResult) {
-				return utils.NewErrorFromDBErrors("failed to find transaction: ", dbResult.GetErrors())
-			}
-			if utils.IsDBRecordNotFoundError(dbResult) {
-				return fmt.Errorf("missing transaction for txID: %s", acceptedTxID)
-			}
+		dbWhereTransactionIDsIn := make([]*models.Transaction, len(acceptedBlock.AcceptedTxIDs))
+		for i, acceptedTxID := range acceptedBlock.AcceptedTxIDs {
+			dbWhereTransactionIDsIn[i] = &models.Transaction{TransactionID: acceptedTxID}
+		}
+		var dbAcceptedTransactions []models.Transaction
+		dbResult = dbTx.Where(dbWhereTransactionIDsIn).Preload("TransactionInputs.PreviousTransactionOutput").First(&dbAcceptedTransactions)
+		if utils.IsDBError(dbResult) {
+			return utils.NewErrorFromDBErrors("failed to find transaction: ", dbResult.GetErrors())
+		}
+		if len(dbAcceptedTransactions) != len(acceptedBlock.AcceptedTxIDs) {
+			return fmt.Errorf("some transaction are missing for block: %s", acceptedBlock.Hash)
+		}
 
-			var dbTransactionInputs []models.TransactionInput
-			dbResult = dbTx.Where(&models.TransactionInput{TransactionID: dbAcceptedTransaction.ID}).Find(&dbTransactionInputs)
-			if utils.IsDBError(dbResult) {
-				return utils.NewErrorFromDBErrors("failed to find transactionInputs: ", dbResult.GetErrors())
-			}
-			for _, dbTransactionInput := range dbTransactionInputs {
-				var dbTransactionOutput models.TransactionOutput
-				dbResult := dbTx.Where(&models.TransactionOutput{ID: dbTransactionInput.PreviousTransactionOutputID}).First(&dbTransactionOutput)
-				if utils.IsDBError(dbResult) {
-					return utils.NewErrorFromDBErrors("failed to find transactionOutput: ", dbResult.GetErrors())
-				}
-				if utils.IsDBRecordNotFoundError(dbResult) {
-					return fmt.Errorf("missing transaction output for transaction: %s index: %d",
-						dbAcceptedTransaction.TransactionID, dbTransactionInput.Index)
-				}
-				if dbTransactionOutput.IsSpent {
+		for _, dbAcceptedTransaction := range dbAcceptedTransactions {
+			for _, dbTransactionInput := range dbAcceptedTransaction.TransactionInputs {
+				dbPreviousTransactionOutput := dbTransactionInput.PreviousTransactionOutput
+				if dbPreviousTransactionOutput.IsSpent {
 					return fmt.Errorf("cannot spend an already spent transaction output: %s index: %d",
 						dbAcceptedTransaction.TransactionID, dbTransactionInput.Index)
 				}
 
-				dbTransactionOutput.IsSpent = true
-				dbResult = dbTx.Save(&dbTransactionOutput)
+				dbPreviousTransactionOutput.IsSpent = true
+				dbResult = dbTx.Save(&dbPreviousTransactionOutput)
 				if utils.IsDBError(dbResult) {
 					return utils.NewErrorFromDBErrors("failed to update transactionOutput: ", dbResult.GetErrors())
 				}
