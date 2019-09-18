@@ -17,7 +17,7 @@ import (
 	"github.com/jinzhu/gorm"
 )
 
-const maximumGetTransactionsLimit = 1000
+const maxGetTransactionsLimit = 1000
 
 // GetTransactionByIDHandler returns a transaction by a given transaction ID.
 func GetTransactionByIDHandler(txID string) (interface{}, *utils.HandlerError) {
@@ -64,9 +64,9 @@ func GetTransactionByHashHandler(txHash string) (interface{}, *utils.HandlerErro
 // GetTransactionsByAddressHandler searches for all transactions
 // where the given address is either an input or an output.
 func GetTransactionsByAddressHandler(address string, skip uint64, limit uint64) (interface{}, *utils.HandlerError) {
-	if limit > maximumGetTransactionsLimit {
+	if limit > maxGetTransactionsLimit {
 		return nil, utils.NewHandlerError(http.StatusUnprocessableEntity,
-			fmt.Sprintf("The maximum allowed value for the limit is %d", maximumGetTransactionsLimit))
+			fmt.Sprintf("The maximum allowed value for the limit is %d", maxGetTransactionsLimit))
 	}
 
 	db, err := database.DB()
