@@ -178,7 +178,7 @@ var helpDescsEnUS = map[string]string{
 	"getBlocks-includeBlocks": "If set to true - the block contents would be also included.",
 	"getBlocks-verboseBlocks": "If set to true - each block is returned as a JSON object",
 	"getBlocks-startHash":     "Hash of the block with the bottom blue score. If this hash is unknown - returns an error.",
-	"getBlocks--result0":      "Blocks starting from startHash.",
+	"getBlocks--result0":      "Blocks starting from startHash. The result may contains up to 1000 blocks. For the remainder, call the command again with the bluest block's hash.",
 
 	// GetChainFromBlockResult help.
 	"getBlocksResult-hashes":    "List of hashes from StartHash (excluding StartHash) ordered by smallest blue score to greatest.",
@@ -371,7 +371,7 @@ var helpDescsEnUS = map[string]string{
 	"getChainFromBlock--synopsis":     "Return the selected parent chain starting from startHash up to the virtual. If startHash is not in the selected parent chain, it goes down the DAG until it does reach a hash in the selected parent chain while collecting hashes into removedChainBlockHashes.",
 	"getChainFromBlock-startHash":     "Hash of the bottom of the requested chain. If this hash is unknown or is not a chain block - returns an error.",
 	"getChainFromBlock-includeBlocks": "If set to true - the block contents would be also included.",
-	"getChainFromBlock--result0":      "The selected parent chain.",
+	"getChainFromBlock--result0":      "The selected parent chain. The result may contains up to 1000 blocks. For the remainder, call the command again with the bluest block's hash.",
 
 	// GetChainFromBlockResult help.
 	"getChainFromBlockResult-removedChainBlockHashes": "List chain-block hashes that were removed from the selected parent chain in top-to-bottom order",
