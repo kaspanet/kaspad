@@ -293,16 +293,20 @@ func insertBlock(dbTx *gorm.DB, rawBlock btcjson.GetBlockVerboseResult) (*models
 }
 
 func insertBlockParents(dbTx *gorm.DB, rawBlock btcjson.GetBlockVerboseResult, dbBlock *models.Block) error {
-	for _, parentHash := range rawBlock.ParentHashes {
-		var dbParent models.Block
-		dbResult := dbTx.Where(&models.Block{BlockHash: parentHash}).First(&dbParent)
-		if utils.IsDBError(dbResult) {
-			return utils.NewErrorFromDBErrors("failed to find parent hash: ", dbResult.GetErrors())
-		}
-		if utils.IsDBRecordNotFoundError(dbResult) {
-			return fmt.Errorf("missing parent for hash: %s", parentHash)
-		}
+	dbWhereBlockIDsIn := make([]*models.Block, len(rawBlock.ParentHashes))
+	for i, parentHash := range rawBlock.ParentHashes {
+		dbWhereBlockIDsIn[i] = &models.Block{BlockHash: parentHash}
+	}
+	var dbParents []models.Block
+	dbResult := dbTx.Where(dbWhereBlockIDsIn).First(&dbParents)
+	if utils.IsDBError(dbResult) {
+		return utils.NewErrorFromDBErrors("failed to find blocks: ", dbResult.GetErrors())
+	}
+	if len(dbParents) != len(rawBlock.ParentHashes) {
+		return fmt.Errorf("some parents are missing for block: %s", rawBlock.Hash)
+	}
 
+	for _, dbParent := range dbParents {
 		var dbParentBlock models.ParentBlock
 		dbResult = dbTx.Where(&models.ParentBlock{BlockID: dbBlock.ID, ParentBlockID: dbParent.ID}).First(&dbParentBlock)
 		if utils.IsDBError(dbResult) {
@@ -673,7 +677,7 @@ func updateAddedChainBlocks(dbTx *gorm.DB, addedBlock *btcjson.ChainBlock) error
 		var dbAcceptedTransactions []models.Transaction
 		dbResult = dbTx.Where(dbWhereTransactionIDsIn).Preload("TransactionInputs.PreviousTransactionOutput").First(&dbAcceptedTransactions)
 		if utils.IsDBError(dbResult) {
-			return utils.NewErrorFromDBErrors("failed to find transaction: ", dbResult.GetErrors())
+			return utils.NewErrorFromDBErrors("failed to find transactions: ", dbResult.GetErrors())
 		}
 		if len(dbAcceptedTransactions) != len(acceptedBlock.AcceptedTxIDs) {
 			return fmt.Errorf("some transaction are missing for block: %s", acceptedBlock.Hash)
