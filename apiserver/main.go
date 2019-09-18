@@ -21,9 +21,10 @@ func main() {
 
 	cfg, err := config.Parse()
 	if err != nil {
-		_, fErr := fmt.Fprintf(os.Stderr, "Error parsing command-line arguments: %s", err)
+		errString := fmt.Sprintf("Error parsing command-line arguments: %s", err)
+		_, fErr := fmt.Fprintf(os.Stderr, errString)
 		if fErr != nil {
-			panic(fmt.Errorf("Error parsing command-line arguments: %s", err))
+			panic(errString)
 		}
 		return
 	}
