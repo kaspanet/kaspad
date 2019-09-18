@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/daglabs/btcd/apiserver/config"
 	"github.com/daglabs/btcd/apiserver/database"
@@ -20,7 +21,12 @@ func main() {
 
 	cfg, err := config.Parse()
 	if err != nil {
-		panic(fmt.Errorf("Error parsing command-line arguments: %s", err))
+		errString := fmt.Sprintf("Error parsing command-line arguments: %s", err)
+		_, fErr := fmt.Fprintf(os.Stderr, errString)
+		if fErr != nil {
+			panic(errString)
+		}
+		return
 	}
 
 	if cfg.Migrate {
