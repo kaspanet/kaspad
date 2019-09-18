@@ -63,12 +63,12 @@ func NewHandlerErrorFromDBErrors(prefix string, dbErrors []error) *HandlerError 
 	return NewInternalServerHandlerError(NewErrorFromDBErrors(prefix, dbErrors).Error())
 }
 
-// IsDBRecordNotFoundError returns true if the given dbResult is a RecordNotFound error
-func IsDBRecordNotFoundError(dbResult *gorm.DB) bool {
+// HasDBRecordNotFoundError returns true if the given dbResult contains a RecordNotFound error
+func HasDBRecordNotFoundError(dbResult *gorm.DB) bool {
 	return dbResult.RecordNotFound() && len(dbResult.GetErrors()) == 1
 }
 
-// IsDBError returns true if the given dbResult is an error that isn't RecordNotFound
-func IsDBError(dbResult *gorm.DB) bool {
-	return !IsDBRecordNotFoundError(dbResult) && len(dbResult.GetErrors()) > 0
+// HasDBError returns true if the given dbResult contains an error that isn't RecordNotFound
+func HasDBError(dbResult *gorm.DB) bool {
+	return !HasDBRecordNotFoundError(dbResult) && len(dbResult.GetErrors()) > 0
 }
