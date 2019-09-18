@@ -295,6 +295,11 @@ func insertBlock(dbTx *gorm.DB, rawBlock btcjson.GetBlockVerboseResult) (*models
 }
 
 func insertBlockParents(dbTx *gorm.DB, rawBlock btcjson.GetBlockVerboseResult, dbBlock *models.Block) error {
+	// Exit early if this is the genesis block
+	if len(rawBlock.ParentHashes) == 0 {
+		return nil
+	}
+
 	dbWhereBlockIDsIn := make([]*models.Block, len(rawBlock.ParentHashes))
 	for i, parentHash := range rawBlock.ParentHashes {
 		dbWhereBlockIDsIn[i] = &models.Block{BlockHash: parentHash}
