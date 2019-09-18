@@ -313,31 +313,14 @@ type ScriptSig struct {
 // getrawtransaction, decoderawtransaction, and searchrawtransaction use the
 // same structure.
 type Vin struct {
-	Coinbase  string     `json:"coinbase"`
 	TxID      string     `json:"txId"`
 	Vout      uint32     `json:"vout"`
 	ScriptSig *ScriptSig `json:"scriptSig"`
 	Sequence  uint64     `json:"sequence"`
 }
 
-// IsCoinBase returns a bool to show if a Vin is a Coinbase one or not.
-func (v *Vin) IsCoinBase() bool {
-	return len(v.Coinbase) > 0
-}
-
 // MarshalJSON provides a custom Marshal method for Vin.
 func (v *Vin) MarshalJSON() ([]byte, error) {
-	if v.IsCoinBase() {
-		coinbaseStruct := struct {
-			Coinbase string `json:"coinbase"`
-			Sequence uint64 `json:"sequence"`
-		}{
-			Coinbase: v.Coinbase,
-			Sequence: v.Sequence,
-		}
-		return json.Marshal(coinbaseStruct)
-	}
-
 	txStruct := struct {
 		TxID      string     `json:"txId"`
 		Vout      uint32     `json:"vout"`
