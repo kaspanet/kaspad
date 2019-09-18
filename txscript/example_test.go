@@ -50,7 +50,7 @@ func ExamplePayToAddrScript() {
 
 // This example demonstrates extracting information from a standard public key
 // script.
-func ExampleExtractScriptPubKeyAddrs() {
+func ExampleExtractScriptPubKeyAddr() {
 	// Start with a standard pay-to-pubkey-hash script.
 	scriptHex := "76a914128004ff2fcaf13b2b91eb654b1dc2b674f7ec6188ac"
 	script, err := hex.DecodeString(scriptHex)
@@ -60,18 +60,16 @@ func ExampleExtractScriptPubKeyAddrs() {
 	}
 
 	// Extract and print details from the script.
-	scriptClass, addresses, reqSigs, err := txscript.ExtractScriptPubKeyAddrs(
+	scriptClass, address, err := txscript.ExtractScriptPubKeyAddr(
 		script, &dagconfig.MainNetParams)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 	fmt.Println("Script Class:", scriptClass)
-	fmt.Println("Addresses:", addresses)
-	fmt.Println("Required Signatures:", reqSigs)
+	fmt.Println("Address:", address)
 
 	// Output:
 	// Script Class: pubkeyhash
-	// Addresses: [dagcoin:qqfgqp8l9l90zwetj84k2jcac2m8falvvy9uastr55]
-	// Required Signatures: 1
+	// Address: dagcoin:qqfgqp8l9l90zwetj84k2jcac2m8falvvy9uastr55
 }

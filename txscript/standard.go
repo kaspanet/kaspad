@@ -271,19 +271,16 @@ func PushedData(script []byte) ([][]byte, error) {
 	return data, nil
 }
 
-// ExtractScriptPubKeyAddrs returns the type of script, addresses and required
+// ExtractScriptPubKeyAddr returns the type of script, addresses and required
 // signatures associated with the passed ScriptPubKey.  Note that it only works for
 // 'standard' transaction script types.  Any data such as public keys which are
 // invalid are omitted from the results.
-func ExtractScriptPubKeyAddrs(scriptPubKey []byte, chainParams *dagconfig.Params) (ScriptClass, []util.Address, int, error) {
-	var addrs []util.Address
-	var requiredSigs int
-
+func ExtractScriptPubKeyAddr(scriptPubKey []byte, chainParams *dagconfig.Params) (ScriptClass, util.Address, error) {
 	// No valid addresses or required signatures if the script doesn't
 	// parse.
 	pops, err := parseScript(scriptPubKey)
 	if err != nil {
-		return NonStandardTy, nil, 0, err
+		return NonStandardTy, nil, err
 	}
 
 	scriptClass := typeOfScript(pops)
@@ -292,32 +289,33 @@ func ExtractScriptPubKeyAddrs(scriptPubKey []byte, chainParams *dagconfig.Params
 		// A pay-to-pubkey-hash script is of the form:
 		//  OP_DUP OP_HASH160 <hash> OP_EQUALVERIFY OP_CHECKSIG
 		// Therefore the pubkey hash is the 3rd item on the stack.
-		// Skip the pubkey hash if it's invalid for some reason.
-		requiredSigs = 1
+		// If the pubkey hash is invalid for some reason, return a nil address.
 		addr, err := util.NewAddressPubKeyHash(pops[2].data,
 			chainParams.Prefix)
-		if err == nil {
-			addrs = append(addrs, addr)
+		if err != nil {
+			return scriptClass, nil, nil
 		}
+		return scriptClass, addr, nil
 
 	case ScriptHashTy:
 		// A pay-to-script-hash script is of the form:
 		//  OP_HASH160 <scripthash> OP_EQUAL
 		// Therefore the script hash is the 2nd item on the stack.
-		// Skip the script hash if it's invalid for some reason.
-		requiredSigs = 1
+		// If the script hash ss invalid for some reason, return a nil address.
 		addr, err := util.NewAddressScriptHashFromHash(pops[1].data,
 			chainParams.Prefix)
-		if err == nil {
-			addrs = append(addrs, addr)
+		if err != nil {
+			return scriptClass, nil, nil
 		}
+		return scriptClass, addr, nil
 
 	case NonStandardTy:
 		// Don't attempt to extract addresses or required signatures for
 		// nonstandard transactions.
+		return NonStandardTy, nil, nil
 	}
 
-	return scriptClass, addrs, requiredSigs, nil
+	return NonStandardTy, nil, fmt.Errorf("Cannot handle script class %s", scriptClass)
 }
 
 // AtomicSwapDataPushes houses the data pushes found in atomic swap contracts.

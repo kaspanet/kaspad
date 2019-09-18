@@ -622,9 +622,9 @@ func (m *wsNotificationManager) subscribedClients(tx *util.Tx,
 	}
 
 	for i, output := range msgTx.TxOut {
-		_, addrs, _, err := txscript.ExtractScriptPubKeyAddrs(
+		_, addr, err := txscript.ExtractScriptPubKeyAddr(
 			output.ScriptPubKey, m.server.cfg.DAGParams)
-		if err != nil {
+		if err != nil || addr == nil {
 			// Clients are not able to subscribe to
 			// nonstandard or non-address outputs.
 			continue
@@ -637,15 +637,13 @@ func (m *wsNotificationManager) subscribedClients(tx *util.Tx,
 				continue
 			}
 			filter.mu.Lock()
-			for _, a := range addrs {
-				if filter.existsAddress(a) {
-					subscribed[quitChan] = struct{}{}
-					op := wire.Outpoint{
-						TxID:  *tx.ID(),
-						Index: uint32(i),
-					}
-					filter.addUnspentOutpoint(&op)
+			if filter.existsAddress(addr) {
+				subscribed[quitChan] = struct{}{}
+				op := wire.Outpoint{
+					TxID:  *tx.ID(),
+					Index: uint32(i),
 				}
+				filter.addUnspentOutpoint(&op)
 			}
 			filter.mu.Unlock()
 		}
@@ -1595,13 +1593,13 @@ func rescanBlockFilter(filter *wsClientFilter, block *util.Block, params *dagcon
 
 		// Scan outputs.
 		for i, output := range msgTx.TxOut {
-			_, addrs, _, err := txscript.ExtractScriptPubKeyAddrs(
+			_, addr, err := txscript.ExtractScriptPubKeyAddr(
 				output.ScriptPubKey, params)
 			if err != nil {
 				continue
 			}
-			for _, a := range addrs {
-				if !filter.existsAddress(a) {
+			if addr != nil {
+				if !filter.existsAddress(addr) {
 					continue
 				}
 

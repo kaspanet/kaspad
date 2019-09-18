@@ -60,33 +60,26 @@ func TestExtractScriptPubKeyAddrs(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name    string
-		script  []byte
-		addrs   []util.Address
-		reqSigs int
-		class   ScriptClass
+		name   string
+		script []byte
+		addr   util.Address
+		class  ScriptClass
 	}{
 		{
 			name: "standard p2pkh",
 			script: hexToBytes("76a914ad06dd6ddee55cbca9a9e3713bd" +
 				"7587509a3056488ac"),
-			addrs: []util.Address{
-				newAddressPubKeyHash(hexToBytes("ad06dd6ddee5" +
-					"5cbca9a9e3713bd7587509a30564")),
-			},
-			reqSigs: 1,
-			class:   PubKeyHashTy,
+			addr: newAddressPubKeyHash(hexToBytes("ad06dd6ddee5" +
+				"5cbca9a9e3713bd7587509a30564")),
+			class: PubKeyHashTy,
 		},
 		{
 			name: "standard p2sh",
 			script: hexToBytes("a91463bcc565f9e68ee0189dd5cc67f1b" +
 				"0e5f02f45cb87"),
-			addrs: []util.Address{
-				newAddressScriptHash(hexToBytes("63bcc565f9e6" +
-					"8ee0189dd5cc67f1b0e5f02f45cb")),
-			},
-			reqSigs: 1,
-			class:   ScriptHashTy,
+			addr: newAddressScriptHash(hexToBytes("63bcc565f9e6" +
+				"8ee0189dd5cc67f1b0e5f02f45cb")),
+			class: ScriptHashTy,
 		},
 
 		// The below are nonstandard script due to things such as
@@ -99,9 +92,8 @@ func TestExtractScriptPubKeyAddrs(t *testing.T) {
 				"c1eb68a382e97b1482ecad7b148a6909a5cb2e0eaddf" +
 				"b84ccf9744464f82e160bfa9b8b64f9d4c03f999b864" +
 				"3f656b412a3"),
-			addrs:   nil,
-			reqSigs: 0,
-			class:   NonStandardTy,
+			addr:  nil,
+			class: NonStandardTy,
 		},
 		{
 			name: "valid signature from a sigscript - no addresses",
@@ -109,9 +101,8 @@ func TestExtractScriptPubKeyAddrs(t *testing.T) {
 				"3a1a25fdf3f4f7732e9d624c6c61548ab5fb8cd41022" +
 				"0181522ec8eca07de4860a4acdd12909d831cc56cbba" +
 				"c4622082221a8768d1d0901"),
-			addrs:   nil,
-			reqSigs: 0,
-			class:   NonStandardTy,
+			addr:  nil,
+			class: NonStandardTy,
 		},
 		// Note the technically the pubkey is the second item on the
 		// stack, but since the address extraction intentionally only
@@ -126,49 +117,39 @@ func TestExtractScriptPubKeyAddrs(t *testing.T) {
 				"523b6f9cb9f5bed06de1ba37e96a1bbd13745fcf9d11" +
 				"c25b1dff9a519675d198804ba9962d3eca2d5937d58e" +
 				"5a75a71042d40388a4d307f887d"),
-			addrs:   nil,
-			reqSigs: 0,
-			class:   NonStandardTy,
+			addr:  nil,
+			class: NonStandardTy,
 		},
 		{
-			name:    "empty script",
-			script:  []byte{},
-			addrs:   nil,
-			reqSigs: 0,
-			class:   NonStandardTy,
+			name:   "empty script",
+			script: []byte{},
+			addr:   nil,
+			class:  NonStandardTy,
 		},
 		{
-			name:    "script that does not parse",
-			script:  []byte{OpData45},
-			addrs:   nil,
-			reqSigs: 0,
-			class:   NonStandardTy,
+			name:   "script that does not parse",
+			script: []byte{OpData45},
+			addr:   nil,
+			class:  NonStandardTy,
 		},
 	}
 
 	t.Logf("Running %d tests.", len(tests))
 	for i, test := range tests {
-		class, addrs, reqSigs, err := ExtractScriptPubKeyAddrs(
+		class, addr, err := ExtractScriptPubKeyAddr(
 			test.script, &dagconfig.MainNetParams)
 		if err != nil {
 		}
 
-		if !reflect.DeepEqual(addrs, test.addrs) {
-			t.Errorf("ExtractScriptPubKeyAddrs #%d (%s) unexpected "+
-				"addresses\ngot  %v\nwant %v", i, test.name,
-				addrs, test.addrs)
-			continue
-		}
-
-		if reqSigs != test.reqSigs {
-			t.Errorf("ExtractScriptPubKeyAddrs #%d (%s) unexpected "+
-				"number of required signatures - got %d, "+
-				"want %d", i, test.name, reqSigs, test.reqSigs)
+		if !reflect.DeepEqual(addr, test.addr) {
+			t.Errorf("ExtractScriptPubKeyAddr #%d (%s) unexpected "+
+				"address\ngot  %v\nwant %v", i, test.name,
+				addr, test.addr)
 			continue
 		}
 
 		if class != test.class {
-			t.Errorf("ExtractScriptPubKeyAddrs #%d (%s) unexpected "+
+			t.Errorf("ExtractScriptPubKeyAddr #%d (%s) unexpected "+
 				"script type - got %s, want %s", i, test.name,
 				class, test.class)
 			continue

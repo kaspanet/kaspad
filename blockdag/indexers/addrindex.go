@@ -626,31 +626,29 @@ type writeIndexData map[[addrKeySize]byte][]int
 func (idx *AddrIndex) indexScriptPubKey(data writeIndexData, scriptPubKey []byte, txIdx int) {
 	// Nothing to index if the script is non-standard or otherwise doesn't
 	// contain any addresses.
-	_, addrs, _, err := txscript.ExtractScriptPubKeyAddrs(scriptPubKey,
+	_, addr, err := txscript.ExtractScriptPubKeyAddr(scriptPubKey,
 		idx.dagParams)
-	if err != nil || len(addrs) == 0 {
+	if err != nil || addr == nil {
 		return
 	}
 
-	for _, addr := range addrs {
-		addrKey, err := addrToKey(addr)
-		if err != nil {
-			// Ignore unsupported address types.
-			continue
-		}
-
-		// Avoid inserting the transaction more than once.  Since the
-		// transactions are indexed serially any duplicates will be
-		// indexed in a row, so checking the most recent entry for the
-		// address is enough to detect duplicates.
-		indexedTxns := data[addrKey]
-		numTxns := len(indexedTxns)
-		if numTxns > 0 && indexedTxns[numTxns-1] == txIdx {
-			continue
-		}
-		indexedTxns = append(indexedTxns, txIdx)
-		data[addrKey] = indexedTxns
+	addrKey, err := addrToKey(addr)
+	if err != nil {
+		// Ignore unsupported address types.
+		return
 	}
+
+	// Avoid inserting the transaction more than once.  Since the
+	// transactions are indexed serially any duplicates will be
+	// indexed in a row, so checking the most recent entry for the
+	// address is enough to detect duplicates.
+	indexedTxns := data[addrKey]
+	numTxns := len(indexedTxns)
+	if numTxns > 0 && indexedTxns[numTxns-1] == txIdx {
+		return
+	}
+	indexedTxns = append(indexedTxns, txIdx)
+	data[addrKey] = indexedTxns
 }
 
 // indexBlock extract all of the standard addresses from all of the transactions
@@ -791,33 +789,31 @@ func (idx *AddrIndex) indexUnconfirmedAddresses(scriptPubKey []byte, tx *util.Tx
 	// The error is ignored here since the only reason it can fail is if the
 	// script fails to parse and it was already validated before being
 	// admitted to the mempool.
-	_, addresses, _, _ := txscript.ExtractScriptPubKeyAddrs(scriptPubKey,
+	_, addr, _ := txscript.ExtractScriptPubKeyAddr(scriptPubKey,
 		idx.dagParams)
-	for _, addr := range addresses {
-		// Ignore unsupported address types.
-		addrKey, err := addrToKey(addr)
-		if err != nil {
-			continue
-		}
-
-		// Add a mapping from the address to the transaction.
-		idx.unconfirmedLock.Lock()
-		addrIndexEntry := idx.txnsByAddr[addrKey]
-		if addrIndexEntry == nil {
-			addrIndexEntry = make(map[daghash.TxID]*util.Tx)
-			idx.txnsByAddr[addrKey] = addrIndexEntry
-		}
-		addrIndexEntry[*tx.ID()] = tx
-
-		// Add a mapping from the transaction to the address.
-		addrsByTxEntry := idx.addrsByTx[*tx.ID()]
-		if addrsByTxEntry == nil {
-			addrsByTxEntry = make(map[[addrKeySize]byte]struct{})
-			idx.addrsByTx[*tx.ID()] = addrsByTxEntry
-		}
-		addrsByTxEntry[addrKey] = struct{}{}
-		idx.unconfirmedLock.Unlock()
+	// Ignore unsupported address types.
+	addrKey, err := addrToKey(addr)
+	if err != nil {
+		return
 	}
+
+	// Add a mapping from the address to the transaction.
+	idx.unconfirmedLock.Lock()
+	addrIndexEntry := idx.txnsByAddr[addrKey]
+	if addrIndexEntry == nil {
+		addrIndexEntry = make(map[daghash.TxID]*util.Tx)
+		idx.txnsByAddr[addrKey] = addrIndexEntry
+	}
+	addrIndexEntry[*tx.ID()] = tx
+
+	// Add a mapping from the transaction to the address.
+	addrsByTxEntry := idx.addrsByTx[*tx.ID()]
+	if addrsByTxEntry == nil {
+		addrsByTxEntry = make(map[[addrKeySize]byte]struct{})
+		idx.addrsByTx[*tx.ID()] = addrsByTxEntry
+	}
+	addrsByTxEntry[addrKey] = struct{}{}
+	idx.unconfirmedLock.Unlock()
 }
 
 // AddUnconfirmedTx adds all addresses related to the transaction to the
