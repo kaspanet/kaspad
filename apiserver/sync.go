@@ -72,54 +72,30 @@ loop:
 }
 
 // fetchInitialData downloads all data that's currently missing from
-// the database. Note that its entirety is inside a single database
-// transaction. Meaning that if it fails in the middle, the database
-// will not be changed.
+// the database.
 func fetchInitialData(client *jsonrpc.Client) error {
-	db, err := database.DB()
+	err := syncBlocks(client)
 	if err != nil {
 		return err
 	}
-	dbTx := db.Begin()
-
-	// Start syncing from the bluest block hash. We use blue score to
-	// simulate the "last" block we have because blue-block order is
-	// the order that the node uses in the various JSONRPC calls.
-	bluestBlockHash, err := findHashOfBluestBlock(dbTx)
+	err = syncSelectedParentChain(client)
 	if err != nil {
 		return err
 	}
-	err = syncBlocks(client, dbTx, bluestBlockHash)
-	if err != nil {
-		return err
-	}
-	err = syncSelectedParentChain(client, dbTx, bluestBlockHash)
-	if err != nil {
-		return err
-	}
-
-	dbTx.Commit()
 	return nil
 }
 
-// findHashOfBluestBlock finds the block with the highest
-// blue score in the database. If no such block exists,
-// return nil.
-func findHashOfBluestBlock(dbTx *gorm.DB) (*string, error) {
-	var block models.Block
-	dbResult := dbTx.Order("blue_score DESC").First(&block)
-	if utils.HasDBError(dbResult) {
-		return nil, utils.NewErrorFromDBErrors("failed to find hash of bluest block: ", dbResult.GetErrors())
-	}
-	if utils.HasDBRecordNotFoundError(dbResult) {
-		return nil, nil
-	}
-	return &block.BlockHash, nil
-}
-
 // syncBlocks attempts to download all DAG blocks starting with
-// startHash, and then inserts them into the database.
-func syncBlocks(client *jsonrpc.Client, dbTx *gorm.DB, startHash *string) error {
+// the bluest block, and then inserts them into the database.
+func syncBlocks(client *jsonrpc.Client) error {
+	// Start syncing from the bluest block hash. We use blue score to
+	// simulate the "last" block we have because blue-block order is
+	// the order that the node uses in the various JSONRPC calls.
+	startHash, err := findHashOfBluestBlock(false)
+	if err != nil {
+		return err
+	}
+
 	var blocks []string
 	var rawBlocks []btcjson.GetBlockVerboseResult
 	for {
@@ -141,13 +117,22 @@ func syncBlocks(client *jsonrpc.Client, dbTx *gorm.DB, startHash *string) error 
 		rawBlocks = append(rawBlocks, rawBlocksResult.RawBlocks...)
 	}
 
-	return addBlocks(client, dbTx, blocks, rawBlocks)
+	return addBlocks(client, blocks, rawBlocks)
 }
 
 // syncSelectedParentChain attempts to download the selected parent
-// chain starting with startHash, and then updates the database
-// accordingly.
-func syncSelectedParentChain(client *jsonrpc.Client, dbTx *gorm.DB, startHash *string) error {
+// chain starting with the bluest chain-block, and then updates the
+// database accordingly.
+func syncSelectedParentChain(client *jsonrpc.Client) error {
+	// Start syncing from the bluest chain-block hash. We use blue
+	// score to simulate the "last" block we have because blue-block
+	// order is the order that the node uses in the various JSONRPC
+	// calls.
+	startHash, err := findHashOfBluestBlock(true)
+	if err != nil {
+		return err
+	}
+
 	for {
 		chainFromBlockResult, err := client.GetChainFromBlock(false, startHash)
 		if err != nil {
@@ -158,13 +143,37 @@ func syncSelectedParentChain(client *jsonrpc.Client, dbTx *gorm.DB, startHash *s
 		}
 
 		startHash = &chainFromBlockResult.AddedChainBlocks[len(chainFromBlockResult.AddedChainBlocks)-1].Hash
-		err = updateSelectedParentChain(dbTx, chainFromBlockResult.RemovedChainBlockHashes,
+		err = updateSelectedParentChain(chainFromBlockResult.RemovedChainBlockHashes,
 			chainFromBlockResult.AddedChainBlocks)
 		if err != nil {
 			return err
 		}
 	}
 	return nil
+}
+
+// findHashOfBluestBlock finds the block with the highest
+// blue score in the database. If no such block exists,
+// return nil.
+func findHashOfBluestBlock(mustBeChainBlock bool) (*string, error) {
+	dbTx, err := database.DB()
+	if err != nil {
+		return nil, err
+	}
+
+	var block models.Block
+	dbQuery := dbTx.Order("blue_score DESC")
+	if mustBeChainBlock {
+		dbQuery.Where(&models.Block{IsChainBlock: true})
+	}
+	dbResult := dbQuery.First(&block)
+	if utils.HasDBError(dbResult) {
+		return nil, utils.NewErrorFromDBErrors("failed to find hash of bluest block: ", dbResult.GetErrors())
+	}
+	if utils.HasDBRecordNotFoundError(dbResult) {
+		return nil, nil
+	}
+	return &block.BlockHash, nil
 }
 
 // fetchBlock downloads the serialized block and raw block data of
@@ -191,10 +200,10 @@ func fetchBlock(client *jsonrpc.Client, blockHash *daghash.Hash) (
 
 // addBlocks inserts data in the given blocks and rawBlocks pairwise
 // into the database. See addBlock for further details.
-func addBlocks(client *jsonrpc.Client, dbTx *gorm.DB, blocks []string, rawBlocks []btcjson.GetBlockVerboseResult) error {
+func addBlocks(client *jsonrpc.Client, blocks []string, rawBlocks []btcjson.GetBlockVerboseResult) error {
 	for i, rawBlock := range rawBlocks {
 		block := blocks[i]
-		err := addBlock(client, dbTx, block, rawBlock)
+		err := addBlock(client, block, rawBlock)
 		if err != nil {
 			return err
 		}
@@ -218,15 +227,10 @@ func doesBlockExist(dbTx *gorm.DB, blockHash string) (bool, error) {
 // subnetworks, and addresses.
 // Note that if this function may take a nil dbTx, in which case it would start
 // a database transaction by itself and commit it before returning.
-func addBlock(client *jsonrpc.Client, dbTx *gorm.DB, block string, rawBlock btcjson.GetBlockVerboseResult) error {
-	shouldCommit := false
-	if dbTx == nil {
-		db, err := database.DB()
-		if err != nil {
-			return err
-		}
-		dbTx = db.Begin()
-		shouldCommit = true
+func addBlock(client *jsonrpc.Client, block string, rawBlock btcjson.GetBlockVerboseResult) error {
+	dbTx, err := database.DB()
+	if err != nil {
+		return err
 	}
 
 	// Skip this block if it already exists.
@@ -235,9 +239,7 @@ func addBlock(client *jsonrpc.Client, dbTx *gorm.DB, block string, rawBlock btcj
 		return err
 	}
 	if blockExists {
-		if shouldCommit {
-			dbTx.Commit()
-		}
+		dbTx.Commit()
 		return nil
 	}
 
@@ -277,10 +279,7 @@ func addBlock(client *jsonrpc.Client, dbTx *gorm.DB, block string, rawBlock btcj
 		}
 	}
 
-	if shouldCommit {
-		dbTx.Commit()
-	}
-
+	dbTx.Commit()
 	return nil
 }
 
@@ -579,16 +578,12 @@ func insertTransactionOutput(dbTx *gorm.DB, dbTransaction *models.Transaction,
 // all addChainBlocks.
 // Note that if this function may take a nil dbTx, in which case it would start
 // a database transaction by itself and commit it before returning.
-func updateSelectedParentChain(dbTx *gorm.DB, removedChainHashes []string, addedChainBlocks []btcjson.ChainBlock) error {
-	shouldCommit := false
-	if dbTx == nil {
-		db, err := database.DB()
-		if err != nil {
-			return err
-		}
-		dbTx = db.Begin()
-		shouldCommit = true
+func updateSelectedParentChain(removedChainHashes []string, addedChainBlocks []btcjson.ChainBlock) error {
+	db, err := database.DB()
+	if err != nil {
+		return err
 	}
+	dbTx := db.Begin()
 
 	for _, removedHash := range removedChainHashes {
 		err := updateRemovedChainHashes(dbTx, removedHash)
@@ -603,10 +598,7 @@ func updateSelectedParentChain(dbTx *gorm.DB, removedChainHashes []string, added
 		}
 	}
 
-	if shouldCommit {
-		dbTx.Commit()
-	}
-
+	dbTx.Commit()
 	return nil
 }
 
@@ -748,7 +740,7 @@ func handleBlockAddedMsg(client *jsonrpc.Client, blockAdded *jsonrpc.BlockAddedM
 		log.Warnf("Could not fetch block %s: %s", hash, err)
 		return
 	}
-	err = addBlock(client, nil, block, *rawBlock)
+	err = addBlock(client, block, *rawBlock)
 	if err != nil {
 		log.Warnf("Could not insert block %s: %s", hash, err)
 		return
@@ -820,7 +812,7 @@ func handleChainChangedMsg(chainChanged *jsonrpc.ChainChangedMsg) {
 		}
 	}
 
-	err := updateSelectedParentChain(nil, removedHashes, addedBlocks)
+	err := updateSelectedParentChain(removedHashes, addedBlocks)
 	if err != nil {
 		log.Warnf("Could not update selected parent chain: %s", err)
 		return
