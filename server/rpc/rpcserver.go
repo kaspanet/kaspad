@@ -3538,7 +3538,7 @@ func handleSendRawTransaction(s *Server, cmd interface{}, closeChan <-chan struc
 				tx.ID(), err)
 		}
 		return nil, &btcjson.RPCError{
-			Code:    btcjson.ErrRPCDeserialization,
+			Code:    btcjson.ErrRPCVerify,
 			Message: "TX rejected: " + err.Error(),
 		}
 	}

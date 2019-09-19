@@ -1,14 +1,19 @@
 package controllers
 
 import (
+	"bytes"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"net/http"
 
 	"github.com/daglabs/btcd/apiserver/database"
+	"github.com/daglabs/btcd/apiserver/jsonrpc"
 	"github.com/daglabs/btcd/apiserver/models"
 	"github.com/daglabs/btcd/apiserver/utils"
+	"github.com/daglabs/btcd/btcjson"
 	"github.com/daglabs/btcd/util/daghash"
+	"github.com/daglabs/btcd/wire"
 	"github.com/jinzhu/gorm"
 )
 
@@ -47,7 +52,7 @@ func GetTransactionByHashHandler(txHash string) (interface{}, *utils.HandlerErro
 
 	db, err := database.DB()
 	if err != nil {
-		return nil, utils.NewInternalServerHandlerError(err.Error())
+		return nil, utils.NewHandlerError(http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
 	}
 
 	tx := &models.Transaction{}
@@ -72,7 +77,7 @@ func GetTransactionsByAddressHandler(address string, skip uint64, limit uint64) 
 
 	db, err := database.DB()
 	if err != nil {
-		return nil, utils.NewInternalServerHandlerError(err.Error())
+		return nil, utils.NewHandlerError(http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
 	}
 
 	txs := []*models.Transaction{}
@@ -102,7 +107,7 @@ func GetTransactionsByAddressHandler(address string, skip uint64, limit uint64) 
 func GetUTXOsByAddressHandler(address string) (interface{}, *utils.HandlerError) {
 	db, err := database.DB()
 	if err != nil {
-		return nil, utils.NewInternalServerHandlerError(err.Error())
+		return nil, utils.NewHandlerError(http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
 	}
 
 	var transactionOutputs []*models.TransactionOutput
@@ -134,4 +139,46 @@ func addTxPreloadedFields(query *gorm.DB) *gorm.DB {
 		Preload("TransactionOutputs.Address").
 		Preload("TransactionInputs.PreviousTransactionOutput.Transaction").
 		Preload("TransactionInputs.PreviousTransactionOutput.Address")
+}
+
+// PostTransaction forwards a raw transaction to the JSON-RPC API server
+func PostTransaction(requestBody []byte) *utils.HandlerError {
+	client, err := jsonrpc.GetClient()
+	if err != nil {
+		return utils.NewInternalServerHandlerError(err.Error())
+	}
+
+	rawTx := &RawTransaction{}
+	err = json.Unmarshal(requestBody, rawTx)
+	if err != nil {
+		return utils.NewHandlerErrorWithCustomClientMessage(http.StatusUnprocessableEntity,
+			fmt.Sprintf("Error unmarshalling request body: %s", err),
+			"The request body is not json-formatted")
+	}
+
+	txBytes, err := hex.DecodeString(rawTx.RawTransaction)
+	if err != nil {
+		return utils.NewHandlerErrorWithCustomClientMessage(http.StatusUnprocessableEntity,
+			fmt.Sprintf("Error decoding hex raw transaction: %s", err),
+			"The raw transaction is not a hex-encoded transaction")
+	}
+
+	txReader := bytes.NewReader(txBytes)
+	tx := &wire.MsgTx{}
+	err = tx.BtcDecode(txReader, 0)
+	if err != nil {
+		return utils.NewHandlerErrorWithCustomClientMessage(http.StatusUnprocessableEntity,
+			fmt.Sprintf("Error decoding raw transaction: %s", err),
+			"Error decoding raw transaction")
+	}
+
+	_, err = client.SendRawTransaction(tx, true)
+	if err != nil {
+		if rpcErr, ok := err.(btcjson.RPCError); ok && rpcErr.Code == btcjson.ErrRPCVerify {
+			return utils.NewHandlerError(http.StatusInternalServerError, rpcErr.Message)
+		}
+		return utils.NewHandlerError(http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
+	}
+
+	return nil
 }

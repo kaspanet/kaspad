@@ -51,6 +51,7 @@ func Connect(cfg *config.Config) error {
 	if err != nil {
 		return err
 	}
+
 	db.SetLogger(gormLogger{})
 	return nil
 }
