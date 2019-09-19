@@ -15,8 +15,8 @@ const (
 )
 
 var (
-	// ActiveNetParams are the currently active net params
-	ActiveNetParams dagconfig.Params
+	// activeNetParams are the currently active net params
+	activeNetParams dagconfig.Params
 )
 
 var (
@@ -78,6 +78,19 @@ func Parse() (*Config, error) {
 		return nil, errors.New("--cert should be omitted if --notls is used")
 	}
 
+	err = resolveNetwork(cfg)
+	if err != nil {
+		return nil, err
+	}
+
+	logFile := filepath.Join(cfg.LogDir, defaultLogFilename)
+	errLogFile := filepath.Join(cfg.LogDir, defaultErrLogFilename)
+	logger.InitLog(logFile, errLogFile)
+
+	return cfg, nil
+}
+
+func resolveNetwork(cfg *Config) error {
 	// Multiple networks can't be selected simultaneously.
 	numNets := 0
 	if cfg.TestNet {
@@ -90,23 +103,24 @@ func Parse() (*Config, error) {
 		numNets++
 	}
 	if numNets > 1 {
-		return nil, errors.New("multiple net params (testnet, simnet, devnet, etc.) can't be used " +
+		return errors.New("multiple net params (testnet, simnet, devnet, etc.) can't be used " +
 			"together -- choose one of them")
 	}
 
-	ActiveNetParams = dagconfig.MainNetParams
+	activeNetParams = dagconfig.MainNetParams
 	switch {
 	case cfg.TestNet:
-		ActiveNetParams = dagconfig.TestNet3Params
+		activeNetParams = dagconfig.TestNet3Params
 	case cfg.SimNet:
-		ActiveNetParams = dagconfig.SimNetParams
+		activeNetParams = dagconfig.SimNetParams
 	case cfg.DevNet:
-		ActiveNetParams = dagconfig.DevNetParams
+		activeNetParams = dagconfig.DevNetParams
 	}
 
-	logFile := filepath.Join(cfg.LogDir, defaultLogFilename)
-	errLogFile := filepath.Join(cfg.LogDir, defaultErrLogFilename)
-	logger.InitLog(logFile, errLogFile)
+	return nil
+}
 
-	return cfg, nil
+// ActiveNetParams returns the currently active net params
+func ActiveNetParams() *dagconfig.Params {
+	return &activeNetParams
 }
