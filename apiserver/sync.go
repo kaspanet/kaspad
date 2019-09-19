@@ -489,11 +489,11 @@ func insertTransactionOutputs(dbTx *gorm.DB, transaction *btcjson.TxRawResult, d
 }
 
 func insertAddress(dbTx *gorm.DB, scriptPubKey []byte) (*models.Address, error) {
-	_, addrs, _, err := txscript.ExtractScriptPubKeyAddrs(scriptPubKey, config.ActiveNetParams())
+	_, addr, err := txscript.ExtractScriptPubKeyAddress(scriptPubKey, config.ActiveNetParams())
 	if err != nil {
 		return nil, err
 	}
-	address := addrs[0].EncodeAddress()
+	address := addr.EncodeAddress()
 
 	var dbAddress models.Address
 	dbResult := dbTx.
