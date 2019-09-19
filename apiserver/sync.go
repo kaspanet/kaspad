@@ -572,7 +572,7 @@ func updateSelectedParentChain(removedChainHashes []string, addedChainBlocks []b
 // updateRemovedChainHashes "unaccepts" the block of the given removedHash.
 // That is to say, it marks it as not in the selected parent chain in the
 // following ways:
-// * All its TransactionInputs.OutputTransactionOutputs are set IsSpent = false
+// * All its TransactionInputs.PreviousTransactionOutputs are set IsSpent = false
 // * All its Transactions are set AcceptingBlockID = nil
 // * The block is set IsChainBlock = false
 // This function will return an error if any of the above are in an unexpected state
