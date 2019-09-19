@@ -642,23 +642,19 @@ func createVoutList(mtx *wire.MsgTx, chainParams *dagconfig.Params, filterAddrMa
 		// Ignore the error here since an error means the script
 		// couldn't parse and there is no additional information about
 		// it anyways.
-		scriptClass, addrs, reqSigs, _ := txscript.ExtractScriptPubKeyAddrs(
+		scriptClass, addr, _ := txscript.ExtractScriptPubKeyAddress(
 			v.ScriptPubKey, chainParams)
 
 		// Encode the addresses while checking if the address passes the
 		// filter when needed.
 		passesFilter := len(filterAddrMap) == 0
-		encodedAddrs := make([]string, len(addrs))
-		for j, addr := range addrs {
-			encodedAddr := addr.EncodeAddress()
-			encodedAddrs[j] = encodedAddr
+		var encodedAddr *string
+		if addr != nil {
+			encodedAddr = btcjson.String(addr.EncodeAddress())
 
-			// No need to check the map again if the filter already
-			// passes.
-			if passesFilter {
-				continue
-			}
-			if _, exists := filterAddrMap[encodedAddr]; exists {
+			// If the filter doesn't already pass, make it pass if
+			// the address exists in the filter.
+			if _, exists := filterAddrMap[*encodedAddr]; exists {
 				passesFilter = true
 			}
 		}
@@ -670,11 +666,10 @@ func createVoutList(mtx *wire.MsgTx, chainParams *dagconfig.Params, filterAddrMa
 		var vout btcjson.Vout
 		vout.N = uint32(i)
 		vout.Value = util.Amount(v.Value).ToBTC()
-		vout.ScriptPubKey.Addresses = encodedAddrs
+		vout.ScriptPubKey.Address = encodedAddr
 		vout.ScriptPubKey.Asm = disbuf
 		vout.ScriptPubKey.Hex = hex.EncodeToString(v.ScriptPubKey)
 		vout.ScriptPubKey.Type = scriptClass.String()
-		vout.ScriptPubKey.ReqSigs = int32(reqSigs)
 
 		voutList = append(voutList, vout)
 	}
@@ -783,11 +778,11 @@ func handleDecodeScript(s *Server, cmd interface{}, closeChan <-chan struct{}) (
 	// Get information about the script.
 	// Ignore the error here since an error means the script couldn't parse
 	// and there is no additinal information about it anyways.
-	scriptClass, addrs, reqSigs, _ := txscript.ExtractScriptPubKeyAddrs(script,
+	scriptClass, addr, _ := txscript.ExtractScriptPubKeyAddress(script,
 		s.cfg.DAGParams)
-	addresses := make([]string, len(addrs))
-	for i, addr := range addrs {
-		addresses[i] = addr.EncodeAddress()
+	var address *string
+	if addr != nil {
+		address = btcjson.String(addr.EncodeAddress())
 	}
 
 	// Convert the script itself to a pay-to-script-hash address.
@@ -799,10 +794,9 @@ func handleDecodeScript(s *Server, cmd interface{}, closeChan <-chan struct{}) (
 
 	// Generate and return the reply.
 	reply := btcjson.DecodeScriptResult{
-		Asm:       disbuf,
-		ReqSigs:   int32(reqSigs),
-		Type:      scriptClass.String(),
-		Addresses: addresses,
+		Asm:     disbuf,
+		Type:    scriptClass.String(),
+		Address: address,
 	}
 	if scriptClass != txscript.ScriptHashTy {
 		reply.P2sh = p2sh.EncodeAddress()
@@ -2823,11 +2817,11 @@ func handleGetTxOut(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 	// Get further info about the script.
 	// Ignore the error here since an error means the script couldn't parse
 	// and there is no additional information about it anyways.
-	scriptClass, addrs, reqSigs, _ := txscript.ExtractScriptPubKeyAddrs(scriptPubKey,
+	scriptClass, addr, _ := txscript.ExtractScriptPubKeyAddress(scriptPubKey,
 		s.cfg.DAGParams)
-	addresses := make([]string, len(addrs))
-	for i, addr := range addrs {
-		addresses[i] = addr.EncodeAddress()
+	var address *string
+	if addr != nil {
+		address = btcjson.String(addr.EncodeAddress())
 	}
 
 	txOutReply := &btcjson.GetTxOutResult{
@@ -2836,11 +2830,10 @@ func handleGetTxOut(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 		IsInMempool:   isInMempool,
 		Value:         util.Amount(value).ToBTC(),
 		ScriptPubKey: btcjson.ScriptPubKeyResult{
-			Asm:       disbuf,
-			Hex:       hex.EncodeToString(scriptPubKey),
-			ReqSigs:   int32(reqSigs),
-			Type:      scriptClass.String(),
-			Addresses: addresses,
+			Asm:     disbuf,
+			Hex:     hex.EncodeToString(scriptPubKey),
+			Type:    scriptClass.String(),
+			Address: address,
 		},
 		Coinbase: isCoinbase,
 	}
@@ -3061,22 +3054,18 @@ func createVinListPrevOut(s *Server, mtx *wire.MsgTx, chainParams *dagconfig.Par
 		// Ignore the error here since an error means the script
 		// couldn't parse and there is no additional information about
 		// it anyways.
-		_, addrs, _, _ := txscript.ExtractScriptPubKeyAddrs(
+		_, addr, _ := txscript.ExtractScriptPubKeyAddress(
 			originTxOut.ScriptPubKey, chainParams)
 
-		// Encode the addresses while checking if the address passes the
-		// filter when needed.
-		encodedAddrs := make([]string, len(addrs))
-		for j, addr := range addrs {
-			encodedAddr := addr.EncodeAddress()
-			encodedAddrs[j] = encodedAddr
+		var encodedAddr *string
+		if addr != nil {
+			// Encode the address while checking if the address passes the
+			// filter when needed.
+			encodedAddr = btcjson.String(addr.EncodeAddress())
 
-			// No need to check the map again if the filter already
-			// passes.
-			if passesFilter {
-				continue
-			}
-			if _, exists := filterAddrMap[encodedAddr]; exists {
+			// If the filter doesn't already pass, make it pass if
+			// the address exists in the filter.
+			if _, exists := filterAddrMap[*encodedAddr]; exists {
 				passesFilter = true
 			}
 		}
@@ -3096,8 +3085,8 @@ func createVinListPrevOut(s *Server, mtx *wire.MsgTx, chainParams *dagconfig.Par
 		if vinExtra {
 			vinListEntry := &vinList[len(vinList)-1]
 			vinListEntry.PrevOut = &btcjson.PrevOut{
-				Addresses: encodedAddrs,
-				Value:     util.Amount(originTxOut.Value).ToBTC(),
+				Address: encodedAddr,
+				Value:   util.Amount(originTxOut.Value).ToBTC(),
 			}
 		}
 	}

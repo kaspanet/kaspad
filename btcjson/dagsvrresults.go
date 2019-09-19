@@ -56,11 +56,10 @@ type CreateMultiSigResult struct {
 
 // DecodeScriptResult models the data returned from the decodescript command.
 type DecodeScriptResult struct {
-	Asm       string   `json:"asm"`
-	Type      string   `json:"type"`
-	ReqSigs   int32    `json:"reqSigs,omitempty"`
-	Addresses []string `json:"addresses,omitempty"`
-	P2sh      string   `json:"p2sh,omitempty"`
+	Asm     string  `json:"asm"`
+	Type    string  `json:"type"`
+	Address *string `json:"address,omitempty"`
+	P2sh    string  `json:"p2sh,omitempty"`
 }
 
 // GetManualNodeInfoResultAddr models the data of the addresses portion of the
@@ -268,11 +267,10 @@ type GetRawMempoolVerboseResult struct {
 // ScriptPubKeyResult models the scriptPubKey data of a tx script.  It is
 // defined separately since it is used by multiple commands.
 type ScriptPubKeyResult struct {
-	Asm       string   `json:"asm"`
-	Hex       string   `json:"hex,omitempty"`
-	Type      string   `json:"type"`
-	ReqSigs   int32    `json:"reqSigs,omitempty"`
-	Addresses []string `json:"addresses,omitempty"`
+	Asm     string  `json:"asm"`
+	Hex     string  `json:"hex,omitempty"`
+	Type    string  `json:"type"`
+	Address *string `json:"address,omitempty"`
 }
 
 // GetSubnetworkResult models the data from the getSubnetwork command.
@@ -350,8 +348,8 @@ func (v *Vin) MarshalJSON() ([]byte, error) {
 
 // PrevOut represents previous output for an input Vin.
 type PrevOut struct {
-	Addresses []string `json:"addresses,omitempty"`
-	Value     float64  `json:"value"`
+	Address *string `json:"address,omitempty"`
+	Value   float64 `json:"value"`
 }
 
 // VinPrevOut is like Vin except it includes PrevOut.  It is used by searchrawtransaction

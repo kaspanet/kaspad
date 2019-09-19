@@ -60,8 +60,8 @@ var helpDescsEnUS = map[string]string{
 	"scriptSig-hex": "Hex-encoded bytes of the script",
 
 	// PrevOut help.
-	"prevOut-addresses": "previous output addresses",
-	"prevOut-value":     "previous output value",
+	"prevOut-address": "previous output address (if any)",
+	"prevOut-value":   "previous output value",
 
 	// VinPrevOut help.
 	"vinPrevOut-coinbase":  "The hex-encoded bytes of the signature script (coinbase txns only)",
@@ -79,11 +79,10 @@ var helpDescsEnUS = map[string]string{
 	"vin-sequence":  "The script sequence number",
 
 	// ScriptPubKeyResult help.
-	"scriptPubKeyResult-asm":       "Disassembly of the script",
-	"scriptPubKeyResult-hex":       "Hex-encoded bytes of the script",
-	"scriptPubKeyResult-type":      "The type of the script (e.g. 'pubkeyhash')",
-	"scriptPubKeyResult-reqSigs":   "The number of required signatures",
-	"scriptPubKeyResult-addresses": "The bitcoin addresses associated with this script",
+	"scriptPubKeyResult-asm":     "Disassembly of the script",
+	"scriptPubKeyResult-hex":     "Hex-encoded bytes of the script",
+	"scriptPubKeyResult-type":    "The type of the script (e.g. 'pubkeyhash')",
+	"scriptPubKeyResult-address": "The bitcoin address (if any) associated with this script",
 
 	// Vout help.
 	"vout-value":        "The amount in BTC",
@@ -110,11 +109,11 @@ var helpDescsEnUS = map[string]string{
 	"decodeRawTransaction-hexTx":     "Serialized, hex-encoded transaction",
 
 	// DecodeScriptResult help.
-	"decodeScriptResult-asm":       "Disassembly of the script",
-	"decodeScriptResult-type":      "The type of the script (e.g. 'pubkeyhash')",
-	"decodeScriptResult-reqSigs":   "The number of required signatures",
-	"decodeScriptResult-addresses": "The bitcoin addresses associated with this script",
-	"decodeScriptResult-p2sh":      "The script hash for use in pay-to-script-hash transactions (only present if the provided redeem script is not already a pay-to-script-hash script)",
+	"decodeScriptResult-asm":     "Disassembly of the script",
+	"decodeScriptResult-type":    "The type of the script (e.g. 'pubkeyhash')",
+	"decodeScriptResult-reqSigs": "The number of required signatures",
+	"decodeScriptResult-address": "The bitcoin address (if any) associated with this script",
+	"decodeScriptResult-p2sh":    "The script hash for use in pay-to-script-hash transactions (only present if the provided redeem script is not already a pay-to-script-hash script)",
 
 	// DecodeScriptCmd help.
 	"decodeScript--synopsis": "Returns a JSON object with information about the provided hex-encoded script.",
