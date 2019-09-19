@@ -1467,22 +1467,6 @@ func (dag *BlockDAG) SelectedParentChain(startHash *daghash.Hash) ([]*daghash.Ha
 	return removedChainHashes, addedChainHashes, nil
 }
 
-// BluesTxsAcceptanceData returns the acceptance data of all the transactions that
-// were accepted by the block with hash blockHash.
-func (dag *BlockDAG) BluesTxsAcceptanceData(blockHash *daghash.Hash) (MultiBlockTxsAcceptanceData, error) {
-	node := dag.index.LookupNode(blockHash)
-	if node == nil {
-		return nil, fmt.Errorf("block %s is not known", blockHash)
-	}
-
-	_, bluesTxsAcceptanceData, err := dag.pastUTXO(node)
-	if err != nil {
-		return nil, err
-	}
-
-	return bluesTxsAcceptanceData, nil
-}
-
 // ChainHeight return the chain-height of the selected tip. In other words - it returns
 // the length of the dag's selected-parent chain
 func (dag *BlockDAG) ChainHeight() uint64 {

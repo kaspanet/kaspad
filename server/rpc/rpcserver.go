@@ -68,6 +68,10 @@ const (
 	// is closed.
 	rpcAuthTimeoutSeconds = 10
 
+	// uint256Size is the number of bytes needed to represent an unsigned
+	// 256-bit integer.
+	uint256Size = 32
+
 	// gbtNonceRange is two 64-bit big-endian hexadecimal integers which
 	// represent the valid ranges of nonces returned by the getBlockTemplate
 	// RPC.
@@ -640,23 +644,19 @@ func createVoutList(mtx *wire.MsgTx, chainParams *dagconfig.Params, filterAddrMa
 		// Ignore the error here since an error means the script
 		// couldn't parse and there is no additional information about
 		// it anyways.
-		scriptClass, addrs, reqSigs, _ := txscript.ExtractScriptPubKeyAddrs(
+		scriptClass, addr, _ := txscript.ExtractScriptPubKeyAddress(
 			v.ScriptPubKey, chainParams)
 
 		// Encode the addresses while checking if the address passes the
 		// filter when needed.
 		passesFilter := len(filterAddrMap) == 0
-		encodedAddrs := make([]string, len(addrs))
-		for j, addr := range addrs {
-			encodedAddr := addr.EncodeAddress()
-			encodedAddrs[j] = encodedAddr
+		var encodedAddr *string
+		if addr != nil {
+			encodedAddr = btcjson.String(addr.EncodeAddress())
 
-			// No need to check the map again if the filter already
-			// passes.
-			if passesFilter {
-				continue
-			}
-			if _, exists := filterAddrMap[encodedAddr]; exists {
+			// If the filter doesn't already pass, make it pass if
+			// the address exists in the filter.
+			if _, exists := filterAddrMap[*encodedAddr]; exists {
 				passesFilter = true
 			}
 		}
@@ -668,11 +668,10 @@ func createVoutList(mtx *wire.MsgTx, chainParams *dagconfig.Params, filterAddrMa
 		var vout btcjson.Vout
 		vout.N = uint32(i)
 		vout.Value = v.Value
-		vout.ScriptPubKey.Addresses = encodedAddrs
+		vout.ScriptPubKey.Address = encodedAddr
 		vout.ScriptPubKey.Asm = disbuf
 		vout.ScriptPubKey.Hex = hex.EncodeToString(v.ScriptPubKey)
 		vout.ScriptPubKey.Type = scriptClass.String()
-		vout.ScriptPubKey.ReqSigs = int32(reqSigs)
 
 		voutList = append(voutList, vout)
 	}
@@ -782,11 +781,11 @@ func handleDecodeScript(s *Server, cmd interface{}, closeChan <-chan struct{}) (
 	// Get information about the script.
 	// Ignore the error here since an error means the script couldn't parse
 	// and there is no additinal information about it anyways.
-	scriptClass, addrs, reqSigs, _ := txscript.ExtractScriptPubKeyAddrs(script,
+	scriptClass, addr, _ := txscript.ExtractScriptPubKeyAddress(script,
 		s.cfg.DAGParams)
-	addresses := make([]string, len(addrs))
-	for i, addr := range addrs {
-		addresses[i] = addr.EncodeAddress()
+	var address *string
+	if addr != nil {
+		address = btcjson.String(addr.EncodeAddress())
 	}
 
 	// Convert the script itself to a pay-to-script-hash address.
@@ -798,10 +797,9 @@ func handleDecodeScript(s *Server, cmd interface{}, closeChan <-chan struct{}) (
 
 	// Generate and return the reply.
 	reply := btcjson.DecodeScriptResult{
-		Asm:       disbuf,
-		ReqSigs:   int32(reqSigs),
-		Type:      scriptClass.String(),
-		Addresses: addresses,
+		Asm:     disbuf,
+		Type:    scriptClass.String(),
+		Address: address,
 	}
 	if scriptClass != txscript.ScriptHashTy {
 		reply.P2sh = p2sh.EncodeAddress()
@@ -2282,6 +2280,15 @@ func handleGetCFilterHeader(s *Server, cmd interface{}, closeChan <-chan struct{
 
 // handleGetChainFromBlock implements the getChainFromBlock command.
 func handleGetChainFromBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
+	if s.cfg.AcceptanceIndex == nil {
+		return nil, &btcjson.RPCError{
+			Code: btcjson.ErrRPCNoAcceptanceIndex,
+			Message: "The acceptance index must be " +
+				"enabled to get the selected parent chain " +
+				"(specify --acceptanceindex)",
+		}
+	}
+
 	c := cmd.(*btcjson.GetChainFromBlockCmd)
 	var startHash *daghash.Hash
 	if c.StartHash != nil {
@@ -2351,7 +2358,7 @@ func handleGetChainFromBlock(s *Server, cmd interface{}, closeChan <-chan struct
 func collectChainBlocks(s *Server, hashes []*daghash.Hash) ([]btcjson.ChainBlock, error) {
 	chainBlocks := make([]btcjson.ChainBlock, 0, len(hashes))
 	for _, hash := range hashes {
-		acceptanceData, err := s.cfg.DAG.BluesTxsAcceptanceData(hash)
+		acceptanceData, err := s.cfg.AcceptanceIndex.TxsAcceptanceData(hash)
 		if err != nil {
 			return nil, &btcjson.RPCError{
 				Code:    btcjson.ErrRPCInternal.Code,
@@ -2934,11 +2941,11 @@ func handleGetTxOut(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 	// Get further info about the script.
 	// Ignore the error here since an error means the script couldn't parse
 	// and there is no additional information about it anyways.
-	scriptClass, addrs, reqSigs, _ := txscript.ExtractScriptPubKeyAddrs(scriptPubKey,
+	scriptClass, addr, _ := txscript.ExtractScriptPubKeyAddress(scriptPubKey,
 		s.cfg.DAGParams)
-	addresses := make([]string, len(addrs))
-	for i, addr := range addrs {
-		addresses[i] = addr.EncodeAddress()
+	var address *string
+	if addr != nil {
+		address = btcjson.String(addr.EncodeAddress())
 	}
 
 	txOutReply := &btcjson.GetTxOutResult{
@@ -2947,11 +2954,10 @@ func handleGetTxOut(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 		IsInMempool:   isInMempool,
 		Value:         util.Amount(value).ToBTC(),
 		ScriptPubKey: btcjson.ScriptPubKeyResult{
-			Asm:       disbuf,
-			Hex:       hex.EncodeToString(scriptPubKey),
-			ReqSigs:   int32(reqSigs),
-			Type:      scriptClass.String(),
-			Addresses: addresses,
+			Asm:     disbuf,
+			Hex:     hex.EncodeToString(scriptPubKey),
+			Type:    scriptClass.String(),
+			Address: address,
 		},
 		Coinbase: isCoinbase,
 	}
@@ -3172,22 +3178,18 @@ func createVinListPrevOut(s *Server, mtx *wire.MsgTx, chainParams *dagconfig.Par
 		// Ignore the error here since an error means the script
 		// couldn't parse and there is no additional information about
 		// it anyways.
-		_, addrs, _, _ := txscript.ExtractScriptPubKeyAddrs(
+		_, addr, _ := txscript.ExtractScriptPubKeyAddress(
 			originTxOut.ScriptPubKey, chainParams)
 
-		// Encode the addresses while checking if the address passes the
-		// filter when needed.
-		encodedAddrs := make([]string, len(addrs))
-		for j, addr := range addrs {
-			encodedAddr := addr.EncodeAddress()
-			encodedAddrs[j] = encodedAddr
+		var encodedAddr *string
+		if addr != nil {
+			// Encode the address while checking if the address passes the
+			// filter when needed.
+			encodedAddr = btcjson.String(addr.EncodeAddress())
 
-			// No need to check the map again if the filter already
-			// passes.
-			if passesFilter {
-				continue
-			}
-			if _, exists := filterAddrMap[encodedAddr]; exists {
+			// If the filter doesn't already pass, make it pass if
+			// the address exists in the filter.
+			if _, exists := filterAddrMap[*encodedAddr]; exists {
 				passesFilter = true
 			}
 		}
@@ -3207,8 +3209,8 @@ func createVinListPrevOut(s *Server, mtx *wire.MsgTx, chainParams *dagconfig.Par
 		if vinExtra {
 			vinListEntry := &vinList[len(vinList)-1]
 			vinListEntry.PrevOut = &btcjson.PrevOut{
-				Addresses: encodedAddrs,
-				Value:     util.Amount(originTxOut.Value).ToBTC(),
+				Address: encodedAddr,
+				Value:   util.Amount(originTxOut.Value).ToBTC(),
 			}
 		}
 	}
@@ -4407,9 +4409,10 @@ type rpcserverConfig struct {
 
 	// These fields define any optional indexes the RPC server can make use
 	// of to provide additional data when queried.
-	TxIndex   *indexers.TxIndex
-	AddrIndex *indexers.AddrIndex
-	CfIndex   *indexers.CfIndex
+	TxIndex         *indexers.TxIndex
+	AddrIndex       *indexers.AddrIndex
+	AcceptanceIndex *indexers.AcceptanceIndex
+	CfIndex         *indexers.CfIndex
 }
 
 // setupRPCListeners returns a slice of listeners that are configured for use
@@ -4480,20 +4483,21 @@ func NewRPCServer(
 		return nil, errors.New("RPCS: No valid listen address")
 	}
 	cfg := &rpcserverConfig{
-		Listeners:   rpcListeners,
-		StartupTime: startupTime,
-		ConnMgr:     &rpcConnManager{p2pServer},
-		SyncMgr:     &rpcSyncMgr{p2pServer, p2pServer.SyncManager},
-		TimeSource:  p2pServer.TimeSource,
-		DAGParams:   p2pServer.DAGParams,
-		DB:          db,
-		TxMemPool:   p2pServer.TxMemPool,
-		Generator:   blockTemplateGenerator,
-		CPUMiner:    cpuminer,
-		TxIndex:     p2pServer.TxIndex,
-		AddrIndex:   p2pServer.AddrIndex,
-		CfIndex:     p2pServer.CfIndex,
-		DAG:         p2pServer.DAG,
+		Listeners:       rpcListeners,
+		StartupTime:     startupTime,
+		ConnMgr:         &rpcConnManager{p2pServer},
+		SyncMgr:         &rpcSyncMgr{p2pServer, p2pServer.SyncManager},
+		TimeSource:      p2pServer.TimeSource,
+		DAGParams:       p2pServer.DAGParams,
+		DB:              db,
+		TxMemPool:       p2pServer.TxMemPool,
+		Generator:       blockTemplateGenerator,
+		CPUMiner:        cpuminer,
+		TxIndex:         p2pServer.TxIndex,
+		AddrIndex:       p2pServer.AddrIndex,
+		AcceptanceIndex: p2pServer.AcceptanceIndex,
+		CfIndex:         p2pServer.CfIndex,
+		DAG:             p2pServer.DAG,
 	}
 	rpc := Server{
 		cfg:                    *cfg,
