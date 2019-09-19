@@ -52,6 +52,47 @@ func fetchInitialData(client *jsonrpc.Client) error {
 	return nil
 }
 
+// sync keeps the API server in sync with the node via notifications
+func sync(client *jsonrpc.Client, doneChan chan struct{}) {
+	// ChainChangedMsgs must be processed in order and there may be times
+	// when we may not be able to process them (e.g. appropriate
+	// BlockAddedMsgs haven't arrived yet). As such, we pop messages from
+	// client.OnChainChanged, make sure we're able to handle them, and
+	// only then push them into nextChainChangedChan for them to be
+	// actually handled.
+	blockAddedMsgHandledChan := make(chan struct{})
+	nextChainChangedChan := make(chan *jsonrpc.ChainChangedMsg)
+	spawn(func() {
+		for chainChanged := range client.OnChainChanged {
+			for range blockAddedMsgHandledChan {
+				canHandle, err := canHandleChainChangedMsg(chainChanged)
+				if err != nil {
+					panic(err)
+				}
+				if canHandle {
+					break
+				}
+			}
+			nextChainChangedChan <- chainChanged
+		}
+	})
+
+	// Handle client notifications until we're told to stop
+loop:
+	for {
+		select {
+		case blockAdded := <-client.OnBlockAdded:
+			handleBlockAddedMsg(client, blockAdded)
+			blockAddedMsgHandledChan <- struct{}{}
+		case chainChanged := <-nextChainChangedChan:
+			handleChainChangedMsg(chainChanged)
+		case <-doneChan:
+			log.Infof("startSync stopped")
+			break loop
+		}
+	}
+}
+
 // syncBlocks attempts to download all DAG blocks starting with
 // the bluest block, and then inserts them into the database.
 func syncBlocks(client *jsonrpc.Client) error {
@@ -698,47 +739,6 @@ func updateAddedChainBlocks(dbTx *gorm.DB, addedBlock *btcjson.ChainBlock) error
 		}
 	}
 	return nil
-}
-
-// sync keeps the API server in sync with the node via notifications
-func sync(client *jsonrpc.Client, doneChan chan struct{}) {
-	// ChainChangedMsgs must be processed in order and there may be times
-	// when we may not be able to process them (e.g. appropriate
-	// BlockAddedMsgs haven't arrived yet). As such, we pop messages from
-	// client.OnChainChanged, make sure we're able to handle them, and
-	// only then push them into nextChainChangedChan for them to be
-	// actually handled.
-	blockAddedMsgHandledChan := make(chan struct{})
-	nextChainChangedChan := make(chan *jsonrpc.ChainChangedMsg)
-	spawn(func() {
-		for chainChanged := range client.OnChainChanged {
-			for range blockAddedMsgHandledChan {
-				canHandle, err := canHandleChainChangedMsg(chainChanged)
-				if err != nil {
-					panic(err)
-				}
-				if canHandle {
-					break
-				}
-			}
-			nextChainChangedChan <- chainChanged
-		}
-	})
-
-	// Handle client notifications until we're told to stop
-loop:
-	for {
-		select {
-		case blockAdded := <-client.OnBlockAdded:
-			handleBlockAddedMsg(client, blockAdded)
-			blockAddedMsgHandledChan <- struct{}{}
-		case chainChanged := <-nextChainChangedChan:
-			handleChainChangedMsg(chainChanged)
-		case <-doneChan:
-			log.Infof("startSync stopped")
-			break loop
-		}
-	}
 }
 
 // handleBlockAddedMsg handles onBlockAdded messages
