@@ -798,11 +798,26 @@ func canHandleChainChangedMsg(chainChanged *jsonrpc.ChainChangedMsg) (bool, erro
 func handleChainChangedMsg(chainChanged *jsonrpc.ChainChangedMsg) {
 	// Convert the data in chainChanged to something we can feed into
 	// updateSelectedParentChain
-	removedHashes := make([]string, len(chainChanged.RemovedChainBlockHashes))
+	removedHashes, addedBlocks := convertChainChangedMsg(chainChanged)
+
+	err := updateSelectedParentChain(removedHashes, addedBlocks)
+	if err != nil {
+		log.Warnf("Could not update selected parent chain: %s", err)
+		return
+	}
+	log.Infof("Chain changed: removed &d blocks and added %d block",
+		len(removedHashes), len(addedBlocks))
+}
+
+func convertChainChangedMsg(chainChanged *jsonrpc.ChainChangedMsg) (
+	removedHashes []string, addedBlocks []btcjson.ChainBlock) {
+
+	removedHashes = make([]string, len(chainChanged.RemovedChainBlockHashes))
 	for i, hash := range chainChanged.RemovedChainBlockHashes {
 		removedHashes[i] = hash.String()
 	}
-	addedBlocks := make([]btcjson.ChainBlock, len(chainChanged.AddedChainBlocks))
+
+	addedBlocks = make([]btcjson.ChainBlock, len(chainChanged.AddedChainBlocks))
 	for i, addedBlock := range chainChanged.AddedChainBlocks {
 		acceptedBlocks := make([]btcjson.AcceptedBlock, len(addedBlock.AcceptedBlocks))
 		for j, acceptedBlock := range addedBlock.AcceptedBlocks {
@@ -821,11 +836,5 @@ func handleChainChangedMsg(chainChanged *jsonrpc.ChainChangedMsg) {
 		}
 	}
 
-	err := updateSelectedParentChain(removedHashes, addedBlocks)
-	if err != nil {
-		log.Warnf("Could not update selected parent chain: %s", err)
-		return
-	}
-	log.Infof("Chain changed: removed &d blocks and added %d block",
-		len(removedHashes), len(addedBlocks))
+	return removedHashes, addedBlocks
 }
