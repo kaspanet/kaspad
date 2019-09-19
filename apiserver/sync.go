@@ -186,7 +186,7 @@ func doesBlockExist(dbTx *gorm.DB, blockHash string) (bool, error) {
 	if utils.HasDBError(dbResult) {
 		return false, utils.NewErrorFromDBErrors("failed to find block: ", dbResult.GetErrors())
 	}
-	return utils.HasDBRecordNotFoundError(dbResult), nil
+	return !utils.HasDBRecordNotFoundError(dbResult), nil
 }
 
 // addBlocks inserts all the data that could be gleaned out of the serialized
@@ -195,10 +195,11 @@ func doesBlockExist(dbTx *gorm.DB, blockHash string) (bool, error) {
 // Note that if this function may take a nil dbTx, in which case it would start
 // a database transaction by itself and commit it before returning.
 func addBlock(client *jsonrpc.Client, block string, rawBlock btcjson.GetBlockVerboseResult) error {
-	dbTx, err := database.DB()
+	db, err := database.DB()
 	if err != nil {
 		return err
 	}
+	dbTx := db.Begin()
 
 	// Skip this block if it already exists.
 	blockExists, err := doesBlockExist(dbTx, rawBlock.Hash)
