@@ -131,7 +131,7 @@ func findHashOfBluestBlock(mustBeChainBlock bool) (*string, error) {
 	var block models.Block
 	dbQuery := dbTx.Order("blue_score DESC")
 	if mustBeChainBlock {
-		dbQuery.Where(&models.Block{IsChainBlock: true})
+		dbQuery = dbQuery.Where(&models.Block{IsChainBlock: true})
 	}
 	dbResult := dbQuery.First(&block)
 	if utils.HasDBError(dbResult) {
