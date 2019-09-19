@@ -64,7 +64,8 @@ func sync(client *jsonrpc.Client, doneChan chan struct{}) {
 	nextChainChangedChan := make(chan *jsonrpc.ChainChangedMsg)
 	spawn(func() {
 		for chainChanged := range client.OnChainChanged {
-			for range blockAddedMsgHandledChan {
+			for {
+				<-blockAddedMsgHandledChan
 				canHandle, err := canHandleChainChangedMsg(chainChanged)
 				if err != nil {
 					panic(err)
@@ -175,10 +176,11 @@ func findHashOfBluestBlock(mustBeChainBlock bool) (*string, error) {
 		dbQuery = dbQuery.Where(&models.Block{IsChainBlock: true})
 	}
 	dbResult := dbQuery.First(&block)
-	if utils.HasDBError(dbResult) {
-		return nil, utils.NewErrorFromDBErrors("failed to find hash of bluest block: ", dbResult.GetErrors())
+	dbErrors := dbResult.GetErrors()
+	if utils.HasDBError(dbErrors) {
+		return nil, utils.NewErrorFromDBErrors("failed to find hash of bluest block: ", dbErrors)
 	}
-	if utils.HasDBRecordNotFoundError(dbResult) {
+	if utils.IsDBRecordNotFoundError(dbErrors) {
 		return nil, nil
 	}
 	return &block.BlockHash, nil
@@ -224,10 +226,11 @@ func doesBlockExist(dbTx *gorm.DB, blockHash string) (bool, error) {
 	dbResult := dbTx.
 		Where(&models.Block{BlockHash: blockHash}).
 		First(&dbBlock)
-	if utils.HasDBError(dbResult) {
-		return false, utils.NewErrorFromDBErrors("failed to find block: ", dbResult.GetErrors())
+	dbErrors := dbResult.GetErrors()
+	if utils.HasDBError(dbErrors) {
+		return false, utils.NewErrorFromDBErrors("failed to find block: ", dbErrors)
 	}
-	return !utils.HasDBRecordNotFoundError(dbResult), nil
+	return !utils.IsDBRecordNotFoundError(dbErrors), nil
 }
 
 // addBlocks inserts all the data that could be gleaned out of the serialized
@@ -311,8 +314,9 @@ func insertBlock(dbTx *gorm.DB, rawBlock btcjson.GetBlockVerboseResult) (*models
 		Mass:                 rawBlock.Mass,
 	}
 	dbResult := dbTx.Create(&dbBlock)
-	if utils.HasDBError(dbResult) {
-		return nil, utils.NewErrorFromDBErrors("failed to insert block: ", dbResult.GetErrors())
+	dbErrors := dbResult.GetErrors()
+	if utils.HasDBError(dbErrors) {
+		return nil, utils.NewErrorFromDBErrors("failed to insert block: ", dbErrors)
 	}
 	return &dbBlock, nil
 }
@@ -331,8 +335,9 @@ func insertBlockParents(dbTx *gorm.DB, rawBlock btcjson.GetBlockVerboseResult, d
 	dbResult := dbTx.
 		Where(dbWhereBlockIDsIn).
 		First(&dbParents)
-	if utils.HasDBError(dbResult) {
-		return utils.NewErrorFromDBErrors("failed to find blocks: ", dbResult.GetErrors())
+	dbErrors := dbResult.GetErrors()
+	if utils.HasDBError(dbErrors) {
+		return utils.NewErrorFromDBErrors("failed to find blocks: ", dbErrors)
 	}
 	if len(dbParents) != len(rawBlock.ParentHashes) {
 		return fmt.Errorf("some parents are missing for block: %s", rawBlock.Hash)
@@ -344,8 +349,9 @@ func insertBlockParents(dbTx *gorm.DB, rawBlock btcjson.GetBlockVerboseResult, d
 			ParentBlockID: dbParent.ID,
 		}
 		dbResult := dbTx.Create(&dbParentBlock)
-		if utils.HasDBError(dbResult) {
-			return utils.NewErrorFromDBErrors("failed to insert parentBlock: ", dbResult.GetErrors())
+		dbErrors := dbResult.GetErrors()
+		if utils.HasDBError(dbErrors) {
+			return utils.NewErrorFromDBErrors("failed to insert parentBlock: ", dbErrors)
 		}
 	}
 	return nil
@@ -361,8 +367,9 @@ func insertBlockData(dbTx *gorm.DB, block string, dbBlock *models.Block) error {
 		BlockData: blockData,
 	}
 	dbResult := dbTx.Create(&dbRawBlock)
-	if utils.HasDBError(dbResult) {
-		return utils.NewErrorFromDBErrors("failed to insert rawBlock: ", dbResult.GetErrors())
+	dbErrors := dbResult.GetErrors()
+	if utils.HasDBError(dbErrors) {
+		return utils.NewErrorFromDBErrors("failed to insert rawBlock: ", dbErrors)
 	}
 	return nil
 }
@@ -372,10 +379,11 @@ func insertSubnetwork(dbTx *gorm.DB, transaction *btcjson.TxRawResult, client *j
 	dbResult := dbTx.
 		Where(&models.Subnetwork{SubnetworkID: transaction.Subnetwork}).
 		First(&dbSubnetwork)
-	if utils.HasDBError(dbResult) {
-		return nil, utils.NewErrorFromDBErrors("failed to find subnetwork: ", dbResult.GetErrors())
+	dbErrors := dbResult.GetErrors()
+	if utils.HasDBError(dbErrors) {
+		return nil, utils.NewErrorFromDBErrors("failed to find subnetwork: ", dbErrors)
 	}
-	if utils.HasDBRecordNotFoundError(dbResult) {
+	if utils.IsDBRecordNotFoundError(dbErrors) {
 		subnetwork, err := client.GetSubnetwork(transaction.Subnetwork)
 		if err != nil {
 			return nil, err
@@ -385,8 +393,9 @@ func insertSubnetwork(dbTx *gorm.DB, transaction *btcjson.TxRawResult, client *j
 			GasLimit:     subnetwork.GasLimit,
 		}
 		dbResult := dbTx.Create(&dbSubnetwork)
-		if utils.HasDBError(dbResult) {
-			return nil, utils.NewErrorFromDBErrors("failed to insert subnetwork: ", dbResult.GetErrors())
+		dbErrors := dbResult.GetErrors()
+		if utils.HasDBError(dbErrors) {
+			return nil, utils.NewErrorFromDBErrors("failed to insert subnetwork: ", dbErrors)
 		}
 	}
 	return &dbSubnetwork, nil
@@ -397,10 +406,11 @@ func insertTransaction(dbTx *gorm.DB, transaction *btcjson.TxRawResult, dbSubnet
 	dbResult := dbTx.
 		Where(&models.Transaction{TransactionID: transaction.TxID}).
 		First(&dbTransaction)
-	if utils.HasDBError(dbResult) {
-		return nil, utils.NewErrorFromDBErrors("failed to find transaction: ", dbResult.GetErrors())
+	dbErrors := dbResult.GetErrors()
+	if utils.HasDBError(dbErrors) {
+		return nil, utils.NewErrorFromDBErrors("failed to find transaction: ", dbErrors)
 	}
-	if utils.HasDBRecordNotFoundError(dbResult) {
+	if utils.IsDBRecordNotFoundError(dbErrors) {
 		payload, err := hex.DecodeString(transaction.Payload)
 		if err != nil {
 			return nil, err
@@ -416,8 +426,9 @@ func insertTransaction(dbTx *gorm.DB, transaction *btcjson.TxRawResult, dbSubnet
 			Payload:         payload,
 		}
 		dbResult := dbTx.Create(&dbTransaction)
-		if utils.HasDBError(dbResult) {
-			return nil, utils.NewErrorFromDBErrors("failed to insert transaction: ", dbResult.GetErrors())
+		dbErrors := dbResult.GetErrors()
+		if utils.HasDBError(dbErrors) {
+			return nil, utils.NewErrorFromDBErrors("failed to insert transaction: ", dbErrors)
 		}
 	}
 	return &dbTransaction, nil
@@ -428,18 +439,20 @@ func insertTransactionBlock(dbTx *gorm.DB, dbBlock *models.Block, dbTransaction 
 	dbResult := dbTx.
 		Where(&models.TransactionBlock{TransactionID: dbTransaction.ID, BlockID: dbBlock.ID}).
 		First(&dbTransactionBlock)
-	if utils.HasDBError(dbResult) {
-		return utils.NewErrorFromDBErrors("failed to find transactionBlock: ", dbResult.GetErrors())
+	dbErrors := dbResult.GetErrors()
+	if utils.HasDBError(dbErrors) {
+		return utils.NewErrorFromDBErrors("failed to find transactionBlock: ", dbErrors)
 	}
-	if utils.HasDBRecordNotFoundError(dbResult) {
+	if utils.IsDBRecordNotFoundError(dbErrors) {
 		dbTransactionBlock = models.TransactionBlock{
 			TransactionID: dbTransaction.ID,
 			BlockID:       dbBlock.ID,
 			Index:         index,
 		}
 		dbResult := dbTx.Create(&dbTransactionBlock)
-		if utils.HasDBError(dbResult) {
-			return utils.NewErrorFromDBErrors("failed to insert transactionBlock: ", dbResult.GetErrors())
+		dbErrors := dbResult.GetErrors()
+		if utils.HasDBError(dbErrors) {
+			return utils.NewErrorFromDBErrors("failed to insert transactionBlock: ", dbErrors)
 		}
 	}
 	return nil
@@ -477,10 +490,11 @@ func insertTransactionInput(dbTx *gorm.DB, dbTransaction *models.Transaction, in
 		Joins("LEFT JOIN `transactions` ON `transactions`.`id` = `transaction_outputs`.`transaction_id`").
 		Where("`transactions`.`transactiond_id` = ? AND `transaction_outputs`.`index` = ?", input.TxID, input.Vout).
 		First(&dbPreviousTransactionOutput)
-	if utils.HasDBError(dbResult) {
-		return utils.NewErrorFromDBErrors("failed to find previous transactionOutput: ", dbResult.GetErrors())
+	dbErrors := dbResult.GetErrors()
+	if utils.HasDBError(dbErrors) {
+		return utils.NewErrorFromDBErrors("failed to find previous transactionOutput: ", dbErrors)
 	}
-	if utils.HasDBRecordNotFoundError(dbResult) {
+	if utils.IsDBRecordNotFoundError(dbErrors) {
 		return fmt.Errorf("missing output transaction output for txID: %s and index: %d", input.TxID, input.Vout)
 	}
 
@@ -488,10 +502,11 @@ func insertTransactionInput(dbTx *gorm.DB, dbTransaction *models.Transaction, in
 	dbResult = dbTx.
 		Where(models.TransactionInput{TransactionID: dbTransaction.ID, PreviousTransactionOutputID: dbPreviousTransactionOutput.ID}).
 		First(&dbTransactionInput)
-	if utils.HasDBError(dbResult) {
-		return utils.NewErrorFromDBErrors("failed to find transactionInput: ", dbResult.GetErrors())
+	dbErrors = dbResult.GetErrors()
+	if utils.HasDBError(dbErrors) {
+		return utils.NewErrorFromDBErrors("failed to find transactionInput: ", dbErrors)
 	}
-	if utils.HasDBRecordNotFoundError(dbResult) {
+	if utils.IsDBRecordNotFoundError(dbErrors) {
 		scriptSig, err := hex.DecodeString(input.ScriptSig.Hex)
 		if err != nil {
 			return nil
@@ -504,8 +519,9 @@ func insertTransactionInput(dbTx *gorm.DB, dbTransaction *models.Transaction, in
 			Sequence:                    input.Sequence,
 		}
 		dbResult := dbTx.Create(&dbTransactionInput)
-		if utils.HasDBError(dbResult) {
-			return utils.NewErrorFromDBErrors("failed to insert transactionInput: ", dbResult.GetErrors())
+		dbErrors := dbResult.GetErrors()
+		if utils.HasDBError(dbErrors) {
+			return utils.NewErrorFromDBErrors("failed to insert transactionInput: ", dbErrors)
 		}
 	}
 
@@ -541,16 +557,18 @@ func insertAddress(dbTx *gorm.DB, scriptPubKey []byte) (*models.Address, error) 
 	dbResult := dbTx.
 		Where(&models.Address{Address: address}).
 		First(&dbAddress)
-	if utils.HasDBError(dbResult) {
-		return nil, utils.NewErrorFromDBErrors("failed to find address: ", dbResult.GetErrors())
+	dbErrors := dbResult.GetErrors()
+	if utils.HasDBError(dbErrors) {
+		return nil, utils.NewErrorFromDBErrors("failed to find address: ", dbErrors)
 	}
-	if utils.HasDBRecordNotFoundError(dbResult) {
+	if utils.IsDBRecordNotFoundError(dbErrors) {
 		dbAddress = models.Address{
 			Address: address,
 		}
 		dbResult := dbTx.Create(&dbAddress)
-		if utils.HasDBError(dbResult) {
-			return nil, utils.NewErrorFromDBErrors("failed to insert address: ", dbResult.GetErrors())
+		dbErrors := dbResult.GetErrors()
+		if utils.HasDBError(dbErrors) {
+			return nil, utils.NewErrorFromDBErrors("failed to insert address: ", dbErrors)
 		}
 	}
 	return &dbAddress, nil
@@ -562,10 +580,11 @@ func insertTransactionOutput(dbTx *gorm.DB, dbTransaction *models.Transaction,
 	dbResult := dbTx.
 		Where(&models.TransactionOutput{TransactionID: dbTransaction.ID, Index: output.N}).
 		First(&dbTransactionOutput)
-	if utils.HasDBError(dbResult) {
-		return utils.NewErrorFromDBErrors("failed to find transactionOutput: ", dbResult.GetErrors())
+	dbErrors := dbResult.GetErrors()
+	if utils.HasDBError(dbErrors) {
+		return utils.NewErrorFromDBErrors("failed to find transactionOutput: ", dbErrors)
 	}
-	if utils.HasDBRecordNotFoundError(dbResult) {
+	if utils.IsDBRecordNotFoundError(dbErrors) {
 		dbTransactionOutput = models.TransactionOutput{
 			TransactionID: dbTransaction.ID,
 			Index:         output.N,
@@ -575,8 +594,9 @@ func insertTransactionOutput(dbTx *gorm.DB, dbTransaction *models.Transaction,
 			AddressID:     dbAddress.ID,
 		}
 		dbResult := dbTx.Create(&dbTransactionOutput)
-		if utils.HasDBError(dbResult) {
-			return utils.NewErrorFromDBErrors("failed to insert transactionOutput: ", dbResult.GetErrors())
+		dbErrors := dbResult.GetErrors()
+		if utils.HasDBError(dbErrors) {
+			return utils.NewErrorFromDBErrors("failed to insert transactionOutput: ", dbErrors)
 		}
 	}
 	return nil
@@ -623,10 +643,11 @@ func updateRemovedChainHashes(dbTx *gorm.DB, removedHash string) error {
 	dbResult := dbTx.
 		Where(&models.Block{BlockHash: removedHash}).
 		First(&dbBlock)
-	if utils.HasDBError(dbResult) {
-		return utils.NewErrorFromDBErrors("failed to find block: ", dbResult.GetErrors())
+	dbErrors := dbResult.GetErrors()
+	if utils.HasDBError(dbErrors) {
+		return utils.NewErrorFromDBErrors("failed to find block: ", dbErrors)
 	}
-	if utils.HasDBRecordNotFoundError(dbResult) {
+	if utils.IsDBRecordNotFoundError(dbErrors) {
 		return fmt.Errorf("missing block for hash: %s", removedHash)
 	}
 	if !dbBlock.IsChainBlock {
@@ -638,8 +659,9 @@ func updateRemovedChainHashes(dbTx *gorm.DB, removedHash string) error {
 		Where(&models.Transaction{AcceptingBlockID: &dbBlock.ID}).
 		Preload("TransactionInputs.PreviousTransactionOutput").
 		Find(&dbTransactions)
-	if utils.HasDBError(dbResult) {
-		return utils.NewErrorFromDBErrors("failed to find transactions: ", dbResult.GetErrors())
+	dbErrors = dbResult.GetErrors()
+	if utils.HasDBError(dbErrors) {
+		return utils.NewErrorFromDBErrors("failed to find transactions: ", dbErrors)
 	}
 	for _, dbTransaction := range dbTransactions {
 		for _, dbTransactionInput := range dbTransaction.TransactionInputs {
@@ -651,22 +673,25 @@ func updateRemovedChainHashes(dbTx *gorm.DB, removedHash string) error {
 
 			dbPreviousTransactionOutput.IsSpent = false
 			dbResult = dbTx.Save(&dbPreviousTransactionOutput)
-			if utils.HasDBError(dbResult) {
-				return utils.NewErrorFromDBErrors("failed to update transactionOutput: ", dbResult.GetErrors())
+			dbErrors = dbResult.GetErrors()
+			if utils.HasDBError(dbErrors) {
+				return utils.NewErrorFromDBErrors("failed to update transactionOutput: ", dbErrors)
 			}
 		}
 
 		dbTransaction.AcceptingBlockID = nil
 		dbResult := dbTx.Save(&dbTransaction)
-		if utils.HasDBError(dbResult) {
-			return utils.NewErrorFromDBErrors("failed to update transaction: ", dbResult.GetErrors())
+		dbErrors := dbResult.GetErrors()
+		if utils.HasDBError(dbErrors) {
+			return utils.NewErrorFromDBErrors("failed to update transaction: ", dbErrors)
 		}
 	}
 
 	dbBlock.IsChainBlock = false
 	dbResult = dbTx.Save(&dbBlock)
-	if utils.HasDBError(dbResult) {
-		return utils.NewErrorFromDBErrors("failed to update block: ", dbResult.GetErrors())
+	dbErrors = dbResult.GetErrors()
+	if utils.HasDBError(dbErrors) {
+		return utils.NewErrorFromDBErrors("failed to update block: ", dbErrors)
 	}
 
 	return nil
@@ -684,10 +709,11 @@ func updateAddedChainBlocks(dbTx *gorm.DB, addedBlock *btcjson.ChainBlock) error
 		dbResult := dbTx.
 			Where(&models.Block{BlockHash: acceptedBlock.Hash}).
 			First(&dbAccepedBlock)
-		if utils.HasDBError(dbResult) {
-			return utils.NewErrorFromDBErrors("failed to find block: ", dbResult.GetErrors())
+		dbErrors := dbResult.GetErrors()
+		if utils.HasDBError(dbErrors) {
+			return utils.NewErrorFromDBErrors("failed to find block: ", dbErrors)
 		}
-		if utils.HasDBRecordNotFoundError(dbResult) {
+		if utils.IsDBRecordNotFoundError(dbErrors) {
 			return fmt.Errorf("missing block for hash: %s", acceptedBlock.Hash)
 		}
 		if dbAccepedBlock.IsChainBlock {
@@ -703,8 +729,9 @@ func updateAddedChainBlocks(dbTx *gorm.DB, addedBlock *btcjson.ChainBlock) error
 			Where(dbWhereTransactionIDsIn).
 			Preload("TransactionInputs.PreviousTransactionOutput").
 			First(&dbAcceptedTransactions)
-		if utils.HasDBError(dbResult) {
-			return utils.NewErrorFromDBErrors("failed to find transactions: ", dbResult.GetErrors())
+		dbErrors = dbResult.GetErrors()
+		if utils.HasDBError(dbErrors) {
+			return utils.NewErrorFromDBErrors("failed to find transactions: ", dbErrors)
 		}
 		if len(dbAcceptedTransactions) != len(acceptedBlock.AcceptedTxIDs) {
 			return fmt.Errorf("some transaction are missing for block: %s", acceptedBlock.Hash)
@@ -720,22 +747,25 @@ func updateAddedChainBlocks(dbTx *gorm.DB, addedBlock *btcjson.ChainBlock) error
 
 				dbPreviousTransactionOutput.IsSpent = true
 				dbResult = dbTx.Save(&dbPreviousTransactionOutput)
-				if utils.HasDBError(dbResult) {
-					return utils.NewErrorFromDBErrors("failed to update transactionOutput: ", dbResult.GetErrors())
+				dbErrors = dbResult.GetErrors()
+				if utils.HasDBError(dbErrors) {
+					return utils.NewErrorFromDBErrors("failed to update transactionOutput: ", dbErrors)
 				}
 			}
 
 			dbAcceptedTransaction.AcceptingBlockID = &dbAccepedBlock.ID
 			dbResult = dbTx.Save(&dbAcceptedTransaction)
-			if utils.HasDBError(dbResult) {
-				return utils.NewErrorFromDBErrors("failed to update transaction: ", dbResult.GetErrors())
+			dbErrors = dbResult.GetErrors()
+			if utils.HasDBError(dbErrors) {
+				return utils.NewErrorFromDBErrors("failed to update transaction: ", dbErrors)
 			}
 		}
 
 		dbAccepedBlock.IsChainBlock = true
 		dbResult = dbTx.Save(&dbAccepedBlock)
-		if utils.HasDBError(dbResult) {
-			return utils.NewErrorFromDBErrors("failed to update block: ", dbResult.GetErrors())
+		dbErrors = dbResult.GetErrors()
+		if utils.HasDBError(dbErrors) {
+			return utils.NewErrorFromDBErrors("failed to update block: ", dbErrors)
 		}
 	}
 	return nil
@@ -788,8 +818,9 @@ func canHandleChainChangedMsg(chainChanged *jsonrpc.ChainChangedMsg) (bool, erro
 	dbResult := dbTx.
 		Where(dbWhereBlockHashesIn).
 		Count(&dbBlocksCount)
-	if utils.HasDBError(dbResult) {
-		return false, utils.NewErrorFromDBErrors("failed to find block count: ", dbResult.GetErrors())
+	dbErrors := dbResult.GetErrors()
+	if utils.HasDBError(dbErrors) {
+		return false, utils.NewErrorFromDBErrors("failed to find block count: ", dbErrors)
 	}
 	if len(hashes) != dbBlocksCount {
 		return false, nil
