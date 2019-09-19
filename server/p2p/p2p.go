@@ -280,9 +280,10 @@ type Server struct {
 	// if the associated index is not enabled.  These fields are set during
 	// initial creation of the server and never changed afterwards, so they
 	// do not need to be protected for concurrent access.
-	TxIndex   *indexers.TxIndex
-	AddrIndex *indexers.AddrIndex
-	CfIndex   *indexers.CfIndex
+	TxIndex         *indexers.TxIndex
+	AddrIndex       *indexers.AddrIndex
+	AcceptanceIndex *indexers.AcceptanceIndex
+	CfIndex         *indexers.CfIndex
 
 	// cfCheckptCaches stores a cached slice of filter headers for cfcheckpt
 	// messages for each filter type.
@@ -2415,6 +2416,11 @@ func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params
 		indxLog.Info("Address index is enabled")
 		s.AddrIndex = indexers.NewAddrIndex(dagParams)
 		indexes = append(indexes, s.AddrIndex)
+	}
+	if config.MainConfig().AcceptanceIndex {
+		indxLog.Info("acceptance index is enabled")
+		s.AcceptanceIndex = indexers.NewAcceptanceIndex(dagParams)
+		indexes = append(indexes, s.AcceptanceIndex)
 	}
 	if config.MainConfig().EnableCFilters {
 		indxLog.Info("cf index is enabled")

@@ -2202,6 +2202,15 @@ func handleGetCFilterHeader(s *Server, cmd interface{}, closeChan <-chan struct{
 
 // handleGetChainFromBlock implements the getChainFromBlock command.
 func handleGetChainFromBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
+	if s.cfg.AcceptanceIndex == nil {
+		return nil, &btcjson.RPCError{
+			Code: btcjson.ErrRPCNoAcceptanceIndex,
+			Message: "The acceptance index must be " +
+				"enabled to get the selected parent chain " +
+				"(specify --acceptanceindex)",
+		}
+	}
+
 	c := cmd.(*btcjson.GetChainFromBlockCmd)
 	var startHash *daghash.Hash
 	if c.StartHash != nil {
@@ -2258,7 +2267,7 @@ func handleGetChainFromBlock(s *Server, cmd interface{}, closeChan <-chan struct
 func collectChainBlocks(s *Server, selectedParentChain []*daghash.Hash) ([]btcjson.ChainBlock, error) {
 	chainBlocks := make([]btcjson.ChainBlock, 0, len(selectedParentChain))
 	for _, hash := range selectedParentChain {
-		acceptanceData, err := s.cfg.DAG.BluesTxsAcceptanceData(hash)
+		acceptanceData, err := s.cfg.AcceptanceIndex.TxsAcceptanceData(hash)
 		if err != nil {
 			return nil, &btcjson.RPCError{
 				Code:    btcjson.ErrRPCInternal.Code,
@@ -4287,9 +4296,10 @@ type rpcserverConfig struct {
 
 	// These fields define any optional indexes the RPC server can make use
 	// of to provide additional data when queried.
-	TxIndex   *indexers.TxIndex
-	AddrIndex *indexers.AddrIndex
-	CfIndex   *indexers.CfIndex
+	TxIndex         *indexers.TxIndex
+	AddrIndex       *indexers.AddrIndex
+	AcceptanceIndex *indexers.AcceptanceIndex
+	CfIndex         *indexers.CfIndex
 }
 
 // setupRPCListeners returns a slice of listeners that are configured for use
@@ -4360,20 +4370,21 @@ func NewRPCServer(
 		return nil, errors.New("RPCS: No valid listen address")
 	}
 	cfg := &rpcserverConfig{
-		Listeners:   rpcListeners,
-		StartupTime: startupTime,
-		ConnMgr:     &rpcConnManager{p2pServer},
-		SyncMgr:     &rpcSyncMgr{p2pServer, p2pServer.SyncManager},
-		TimeSource:  p2pServer.TimeSource,
-		DAGParams:   p2pServer.DAGParams,
-		DB:          db,
-		TxMemPool:   p2pServer.TxMemPool,
-		Generator:   blockTemplateGenerator,
-		CPUMiner:    cpuminer,
-		TxIndex:     p2pServer.TxIndex,
-		AddrIndex:   p2pServer.AddrIndex,
-		CfIndex:     p2pServer.CfIndex,
-		DAG:         p2pServer.DAG,
+		Listeners:       rpcListeners,
+		StartupTime:     startupTime,
+		ConnMgr:         &rpcConnManager{p2pServer},
+		SyncMgr:         &rpcSyncMgr{p2pServer, p2pServer.SyncManager},
+		TimeSource:      p2pServer.TimeSource,
+		DAGParams:       p2pServer.DAGParams,
+		DB:              db,
+		TxMemPool:       p2pServer.TxMemPool,
+		Generator:       blockTemplateGenerator,
+		CPUMiner:        cpuminer,
+		TxIndex:         p2pServer.TxIndex,
+		AddrIndex:       p2pServer.AddrIndex,
+		AcceptanceIndex: p2pServer.AcceptanceIndex,
+		CfIndex:         p2pServer.CfIndex,
+		DAG:             p2pServer.DAG,
 	}
 	rpc := Server{
 		cfg:                    *cfg,
