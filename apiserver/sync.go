@@ -765,7 +765,7 @@ func canHandleChainChangedMsg(chainChanged *jsonrpc.ChainChangedMsg) (bool, erro
 		return false, err
 	}
 
-	// Collect all the referenced block hashes
+	// Collect all unique referenced block hashes
 	hashes := make(map[string]struct{})
 	for _, removedHash := range chainChanged.RemovedChainBlockHashes {
 		hashes[removedHash.String()] = struct{}{}
@@ -778,17 +778,21 @@ func canHandleChainChangedMsg(chainChanged *jsonrpc.ChainChangedMsg) (bool, erro
 	}
 
 	// Make sure that all the hashes exist in the database
+	dbWhereBlockHashesIn := make([]*models.Block, len(hashes))
+	i := 0
 	for hash := range hashes {
-		var dbBlock []models.Block
-		dbResult := dbTx.
-			Where(&models.Block{BlockHash: hash}).
-			Find(&dbBlock)
-		if utils.HasDBError(dbResult) {
-			return false, utils.NewErrorFromDBErrors("failed to find block: ", dbResult.GetErrors())
-		}
-		if utils.HasDBRecordNotFoundError(dbResult) {
-			return false, nil
-		}
+		dbWhereBlockHashesIn[i] = &models.Block{BlockHash: hash}
+		i++
+	}
+	var dbBlocksCount int
+	dbResult := dbTx.
+		Where(dbWhereBlockHashesIn).
+		Count(&dbBlocksCount)
+	if utils.HasDBError(dbResult) {
+		return false, utils.NewErrorFromDBErrors("failed to find block count: ", dbResult.GetErrors())
+	}
+	if len(hashes) != dbBlocksCount {
+		return false, nil
 	}
 
 	return true, nil
