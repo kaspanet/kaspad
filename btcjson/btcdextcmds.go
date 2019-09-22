@@ -24,7 +24,7 @@ const (
 	NDisconnect NodeSubCmd = "disconnect"
 )
 
-// NodeCmd defines the dropnode JSON-RPC command.
+// NodeCmd defines the node JSON-RPC command.
 type NodeCmd struct {
 	SubCmd        NodeSubCmd `jsonrpcusage:"\"connect|remove|disconnect\""`
 	Target        string
