@@ -552,11 +552,11 @@ func insertAddress(dbTx *gorm.DB, scriptPubKey []byte) (*models.Address, error) 
 	if err != nil {
 		return nil, err
 	}
-	address := addr.EncodeAddress()
+	hexAddress := addr.EncodeAddress()
 
 	var dbAddress models.Address
 	dbResult := dbTx.
-		Where(&models.Address{Address: address}).
+		Where(&models.Address{Address: hexAddress}).
 		First(&dbAddress)
 	dbErrors := dbResult.GetErrors()
 	if utils.HasDBError(dbErrors) {
@@ -564,7 +564,7 @@ func insertAddress(dbTx *gorm.DB, scriptPubKey []byte) (*models.Address, error) 
 	}
 	if utils.IsDBRecordNotFoundError(dbErrors) {
 		dbAddress = models.Address{
-			Address: address,
+			Address: hexAddress,
 		}
 		dbResult := dbTx.Create(&dbAddress)
 		dbErrors := dbResult.GetErrors()
