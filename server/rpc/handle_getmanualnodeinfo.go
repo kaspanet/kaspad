@@ -22,12 +22,6 @@ func handleGetManualNodeInfo(s *Server, cmd interface{}, closeChan <-chan struct
 	return resultsDetailed[0], nil
 }
 
-// handleGetAllManualNodesInfo handles getAllManualNodesInfo commands.
-func handleGetAllManualNodesInfo(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	c := cmd.(*btcjson.GetAllManualNodesInfoCmd)
-	return getManualNodesInfo(s, c.Details, "")
-}
-
 // getManualNodesInfo handles getManualNodeInfo and getAllManualNodesInfo commands.
 func getManualNodesInfo(s *Server, detailsArg *bool, node string) (interface{}, error) {
 
