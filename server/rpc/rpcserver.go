@@ -68,10 +68,6 @@ const (
 	// is closed.
 	rpcAuthTimeoutSeconds = 10
 
-	// uint256Size is the number of bytes needed to represent an unsigned
-	// 256-bit integer.
-	uint256Size = 32
-
 	// gbtNonceRange is two 64-bit big-endian hexadecimal integers which
 	// represent the valid ranges of nonces returned by the getBlockTemplate
 	// RPC.

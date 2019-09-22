@@ -498,20 +498,21 @@ func insertTransactionInput(dbTx *gorm.DB, dbTransaction *models.Transaction, in
 		return fmt.Errorf("missing output transaction output for txID: %s and index: %d", input.TxID, input.Vout)
 	}
 
-	var dbTransactionInput models.TransactionInput
+	var dbTransactionInputCount int
 	dbResult = dbTx.
-		Where(models.TransactionInput{TransactionID: dbTransaction.ID, PreviousTransactionOutputID: dbPreviousTransactionOutput.ID}).
-		First(&dbTransactionInput)
+		Model(&models.TransactionInput{}).
+		Where(&models.TransactionInput{TransactionID: dbTransaction.ID, PreviousTransactionOutputID: dbPreviousTransactionOutput.ID}).
+		Count(&dbTransactionInputCount)
 	dbErrors = dbResult.GetErrors()
 	if utils.HasDBError(dbErrors) {
 		return utils.NewErrorFromDBErrors("failed to find transactionInput: ", dbErrors)
 	}
-	if utils.IsDBRecordNotFoundError(dbErrors) {
+	if dbTransactionInputCount == 0 {
 		scriptSig, err := hex.DecodeString(input.ScriptSig.Hex)
 		if err != nil {
 			return nil
 		}
-		dbTransactionInput = models.TransactionInput{
+		dbTransactionInput := models.TransactionInput{
 			TransactionID:               dbTransaction.ID,
 			PreviousTransactionOutputID: dbPreviousTransactionOutput.ID,
 			Index:                       input.Vout,
@@ -576,16 +577,17 @@ func insertAddress(dbTx *gorm.DB, scriptPubKey []byte) (*models.Address, error) 
 
 func insertTransactionOutput(dbTx *gorm.DB, dbTransaction *models.Transaction,
 	output *btcjson.Vout, scriptPubKey []byte, dbAddress *models.Address) error {
-	var dbTransactionOutput models.TransactionOutput
+	var dbTransactionOutputCount int
 	dbResult := dbTx.
+		Model(&models.TransactionOutput{}).
 		Where(&models.TransactionOutput{TransactionID: dbTransaction.ID, Index: output.N}).
-		First(&dbTransactionOutput)
+		Count(&dbTransactionOutputCount)
 	dbErrors := dbResult.GetErrors()
 	if utils.HasDBError(dbErrors) {
 		return utils.NewErrorFromDBErrors("failed to find transactionOutput: ", dbErrors)
 	}
-	if utils.IsDBRecordNotFoundError(dbErrors) {
-		dbTransactionOutput = models.TransactionOutput{
+	if dbTransactionOutputCount == 0 {
+		dbTransactionOutput := models.TransactionOutput{
 			TransactionID: dbTransaction.ID,
 			Index:         output.N,
 			Value:         output.Value,
