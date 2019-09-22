@@ -952,6 +952,12 @@ func (s *Server) handleBlockDAGNotification(notification *blockdag.Notification)
 			break
 		}
 
+		// If the acceptance index is off we aren't capable of serving
+		// ChainChanged notifications.
+		if s.cfg.AcceptanceIndex == nil {
+			break
+		}
+
 		// Notify registered websocket clients of chain changes.
 		s.ntfnMgr.NotifyChainChanged(data.RemovedChainBlockHashes,
 			data.AddedChainBlockHashes)
