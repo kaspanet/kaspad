@@ -2,6 +2,7 @@ package utils
 
 import (
 	"fmt"
+	"github.com/jinzhu/gorm"
 	"net/http"
 	"strings"
 )
@@ -60,4 +61,14 @@ func NewErrorFromDBErrors(prefix string, dbErrors []error) error {
 // all of the database errors formatted to one string with the given prefix
 func NewHandlerErrorFromDBErrors(prefix string, dbErrors []error) *HandlerError {
 	return NewInternalServerHandlerError(NewErrorFromDBErrors(prefix, dbErrors).Error())
+}
+
+// IsDBRecordNotFoundError returns true if the given dbErrors contains only a RecordNotFound error
+func IsDBRecordNotFoundError(dbErrors []error) bool {
+	return len(dbErrors) == 1 && gorm.IsRecordNotFoundError(dbErrors[0])
+}
+
+// HasDBError returns true if the given dbErrors contain any errors that aren't RecordNotFound
+func HasDBError(dbErrors []error) bool {
+	return !IsDBRecordNotFoundError(dbErrors) && len(dbErrors) > 0
 }

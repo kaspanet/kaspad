@@ -155,6 +155,23 @@ func NewGetBlockCmd(hash string, verbose, verboseTx *bool, subnetworkID *string)
 	}
 }
 
+// GetBlocksCmd defines the getBlocks JSON-RPC command.
+type GetBlocksCmd struct {
+	IncludeBlocks bool    `json:"includeBlocks"`
+	VerboseBlocks bool    `json:"verboseBlocks"`
+	StartHash     *string `json:"startHash"`
+}
+
+// NewGetBlocksCmd returns a new instance which can be used to issue a
+// GetGetBlocks JSON-RPC command.
+func NewGetBlocksCmd(includeBlocks bool, verboseBlocks bool, startHash *string) *GetBlocksCmd {
+	return &GetBlocksCmd{
+		IncludeBlocks: includeBlocks,
+		VerboseBlocks: verboseBlocks,
+		StartHash:     startHash,
+	}
+}
+
 // GetBlockDAGInfoCmd defines the getBlockDagInfo JSON-RPC command.
 type GetBlockDAGInfoCmd struct{}
 
@@ -333,16 +350,16 @@ func NewGetCFilterHeaderCmd(hash string,
 
 // GetChainFromBlockCmd defines the getChainFromBlock JSON-RPC command.
 type GetChainFromBlockCmd struct {
+	IncludeBlocks bool    `json:"includeBlocks"`
 	StartHash     *string `json:"startHash"`
-	IncludeBlocks *bool   `json:"includeBlocks"`
 }
 
 // NewGetChainFromBlockCmd returns a new instance which can be used to issue a
 // GetChainFromBlock JSON-RPC command.
-func NewGetChainFromBlockCmd(startHash *string, includeBlocks *bool) *GetChainFromBlockCmd {
+func NewGetChainFromBlockCmd(includeBlocks bool, startHash *string) *GetChainFromBlockCmd {
 	return &GetChainFromBlockCmd{
-		StartHash:     startHash,
 		IncludeBlocks: includeBlocks,
+		StartHash:     startHash,
 	}
 }
 
@@ -797,6 +814,7 @@ func init() {
 	MustRegisterCmd("getAllManualNodesInfo", (*GetAllManualNodesInfoCmd)(nil), flags)
 	MustRegisterCmd("getBestBlockHash", (*GetBestBlockHashCmd)(nil), flags)
 	MustRegisterCmd("getBlock", (*GetBlockCmd)(nil), flags)
+	MustRegisterCmd("getBlocks", (*GetBlocksCmd)(nil), flags)
 	MustRegisterCmd("getBlockDagInfo", (*GetBlockDAGInfoCmd)(nil), flags)
 	MustRegisterCmd("getBlockCount", (*GetBlockCountCmd)(nil), flags)
 	MustRegisterCmd("getBlockHash", (*GetBlockHashCmd)(nil), flags)

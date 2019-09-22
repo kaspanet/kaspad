@@ -172,6 +172,18 @@ var helpDescsEnUS = map[string]string{
 	"getBlock-acceptedTx":  "Specifies if the transaction got accepted",
 	"getBlock--result0":    "Hex-encoded bytes of the serialized block",
 
+	// GetBlocksCmd help.
+	"getBlocks--synopsis":     "Return the blocks starting from startHash up to the virtual ordered by blue score.",
+	"getBlocks-includeBlocks": "If set to true - the block contents would be also included.",
+	"getBlocks-verboseBlocks": "If set to true - each block is returned as a JSON object",
+	"getBlocks-startHash":     "Hash of the block with the bottom blue score. If this hash is unknown - returns an error.",
+	"getBlocks--result0":      "Blocks starting from startHash. The result may contains up to 1000 blocks. For the remainder, call the command again with the bluest block's hash.",
+
+	// GetChainFromBlockResult help.
+	"getBlocksResult-hashes":    "List of hashes from StartHash (excluding StartHash) ordered by smallest blue score to greatest.",
+	"getBlocksResult-blocks":    "If includeBlocks=true - contains the block contents. Otherwise - omitted.",
+	"getBlocksResult-rawBlocks": "If includeBlocks=true and verboseBlocks=true - each block is returned as a JSON object. Otherwise - hex encoded string.",
+
 	// GetBlockChainInfoCmd help.
 	"getBlockDagInfo--synopsis": "Returns information about the current blockDAG state and the status of any active soft-fork deployments.",
 
@@ -206,6 +218,7 @@ var helpDescsEnUS = map[string]string{
 	"txRawResult-lockTime":      "The transaction lock time",
 	"txRawResult-subnetwork":    "The transaction subnetwork",
 	"txRawResult-gas":           "The transaction gas",
+	"txRawResult-mass":          "The transaction mass",
 	"txRawResult-payloadHash":   "The transaction payload hash",
 	"txRawResult-payload":       "The transaction payload",
 	"txRawResult-vin":           "The transaction inputs as JSON objects",
@@ -238,11 +251,15 @@ var helpDescsEnUS = map[string]string{
 	"getBlockVerboseResult-hash":                 "The hash of the block (same as provided)",
 	"getBlockVerboseResult-confirmations":        "The number of confirmations",
 	"getBlockVerboseResult-size":                 "The size of the block",
+	"getBlockVerboseResult-mass":                 "The mass of the block",
 	"getBlockVerboseResult-height":               "The height of the block in the block chain",
 	"getBlockVerboseResult-version":              "The block version",
 	"getBlockVerboseResult-versionHex":           "The block version in hexadecimal",
 	"getBlockVerboseResult-hashMerkleRoot":       "Merkle tree reference to hash of all transactions for the block",
 	"getBlockVerboseResult-acceptedIdMerkleRoot": "Merkle tree reference to hash all transactions accepted form the block blues",
+	"getBlockVerboseResult-utxoCommitment":       "An ECMH UTXO commitment of this block",
+	"getBlockVerboseResult-blueScore":            "The block blue score",
+	"getBlockVerboseResult-isChainBlock":         "Whether the block is in the selected parent chain",
 	"getBlockVerboseResult-tx":                   "The transaction hashes (only when verbosetx=false)",
 	"getBlockVerboseResult-rawRx":                "The transactions as JSON objects (only when verbosetx=true)",
 	"getBlockVerboseResult-time":                 "The block time in seconds since 1 Jan 1970 GMT",
@@ -350,14 +367,15 @@ var helpDescsEnUS = map[string]string{
 	"getCFilter--result0":   "The block's committed filter",
 
 	// GetChainFromBlockCmd help.
-	"getChainFromBlock--synopsis":     "Return the selected parent chain starting from startHash up to the virtual.",
+	"getChainFromBlock--synopsis":     "Return the selected parent chain starting from startHash up to the virtual. If startHash is not in the selected parent chain, it goes down the DAG until it does reach a hash in the selected parent chain while collecting hashes into removedChainBlockHashes.",
 	"getChainFromBlock-startHash":     "Hash of the bottom of the requested chain. If this hash is unknown or is not a chain block - returns an error.",
 	"getChainFromBlock-includeBlocks": "If set to true - the block contents would be also included.",
-	"getChainFromBlock--result0":      "The selected parent chain.",
+	"getChainFromBlock--result0":      "The selected parent chain. The result may contains up to 1000 blocks. For the remainder, call the command again with the bluest block's hash.",
 
 	// GetChainFromBlockResult help.
-	"getChainFromBlockResult-selectedParentChain": "List of ChainBlocks from Virtual.SelectedTip to StartHash (excluding StartHash) ordered bottom-to-top.",
-	"getChainFromBlockResult-blocks":              "If includeBlocks=true - contains the contents of all chain and accepted blocks in the SelectedParentChain. Otherwise - omitted.",
+	"getChainFromBlockResult-removedChainBlockHashes": "List chain-block hashes that were removed from the selected parent chain in top-to-bottom order",
+	"getChainFromBlockResult-addedChainBlocks":        "List of ChainBlocks from Virtual.SelectedTip to StartHash (excluding StartHash) ordered bottom-to-top.",
+	"getChainFromBlockResult-blocks":                  "If includeBlocks=true - contains the contents of all chain and accepted blocks in the AddedChainBlocks. Otherwise - omitted.",
 
 	// GetCFilterHeaderCmd help.
 	"getCFilterHeader--synopsis":  "Returns a block's compact filter header given its hash.",
@@ -678,6 +696,7 @@ var rpcResultTypes = map[string][]interface{}{
 	"getBestBlock":          {(*btcjson.GetBestBlockResult)(nil)},
 	"getBestBlockHash":      {(*string)(nil)},
 	"getBlock":              {(*string)(nil), (*btcjson.GetBlockVerboseResult)(nil)},
+	"getBlocks":             {(*btcjson.GetBlocksResult)(nil)},
 	"getBlockCount":         {(*int64)(nil)},
 	"getBlockHash":          {(*string)(nil)},
 	"getBlockHeader":        {(*string)(nil), (*btcjson.GetBlockHeaderVerboseResult)(nil)},

@@ -23,14 +23,6 @@ func TestDAGSvrCustomResults(t *testing.T) {
 		expected string
 	}{
 		{
-			name: "custom vin marshal with coinbase",
-			result: &btcjson.Vin{
-				Coinbase: "021234",
-				Sequence: 4294967295,
-			},
-			expected: `{"coinbase":"021234","sequence":4294967295}`,
-		},
-		{
 			name: "custom vin marshal without coinbase",
 			result: &btcjson.Vin{
 				TxID: "123",

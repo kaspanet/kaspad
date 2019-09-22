@@ -379,11 +379,18 @@ func ValidateTxMass(tx *util.Tx, utxoSet UTXOSet) error {
 }
 
 func validateBlockMass(pastUTXO UTXOSet, transactions []*util.Tx) error {
+	_, err := CalcBlockMass(pastUTXO, transactions)
+	return err
+}
+
+// CalcBlockMass sums up and returns the "mass" of a block. See CalcTxMass
+// for further details.
+func CalcBlockMass(pastUTXO UTXOSet, transactions []*util.Tx) (uint64, error) {
 	totalMass := uint64(0)
 	for _, tx := range transactions {
 		txMass, err := CalcTxMass(tx, pastUTXO)
 		if err != nil {
-			return err
+			return 0, err
 		}
 		totalMass += txMass
 
@@ -392,10 +399,10 @@ func validateBlockMass(pastUTXO UTXOSet, transactions []*util.Tx) error {
 		if totalMass < txMass || totalMass > wire.MaxMassPerBlock {
 			str := fmt.Sprintf("block has total mass %d, which is "+
 				"above the allowed limit of %d", totalMass, wire.MaxMassPerBlock)
-			return ruleError(ErrBlockMassTooHigh, str)
+			return 0, ruleError(ErrBlockMassTooHigh, str)
 		}
 	}
-	return nil
+	return totalMass, nil
 }
 
 // CalcTxMass sums up and returns the "mass" of a transaction. This number

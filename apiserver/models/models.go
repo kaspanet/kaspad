@@ -8,7 +8,7 @@ import (
 type Block struct {
 	ID                   uint64 `gorm:"primary_key"`
 	BlockHash            string
-	AcceptingBlockID     uint64
+	AcceptingBlockID     *uint64
 	AcceptingBlock       *Block
 	Version              int32
 	HashMerkleRoot       string
@@ -42,13 +42,14 @@ type RawBlock struct {
 type Subnetwork struct {
 	ID           uint64 `gorm:"primary_key"`
 	SubnetworkID string
+	GasLimit     *uint64
 }
 
 // Transaction is the gorm model for the 'transactions' table
 type Transaction struct {
 	ID                 uint64 `gorm:"primary_key"`
-	AcceptingBlockID   uint64
-	AcceptingBlock     Block
+	AcceptingBlockID   *uint64
+	AcceptingBlock     *Block
 	TransactionHash    string
 	TransactionID      string
 	LockTime           uint64
@@ -93,14 +94,14 @@ type TransactionOutput struct {
 
 // TransactionInput is the gorm model for the 'transaction_inputs' table
 type TransactionInput struct {
-	ID                  uint64 `gorm:"primary_key"`
-	TransactionID       uint64
-	Transaction         Transaction
-	TransactionOutputID uint64
-	TransactionOutput   TransactionOutput
-	Index               uint32
-	SignatureScript     []byte
-	Sequence            uint64
+	ID                          uint64 `gorm:"primary_key"`
+	TransactionID               uint64
+	Transaction                 Transaction
+	PreviousTransactionOutputID uint64
+	PreviousTransactionOutput   TransactionOutput
+	Index                       uint32
+	SignatureScript             []byte
+	Sequence                    uint64
 }
 
 // Address is the gorm model for the 'utxos' table
