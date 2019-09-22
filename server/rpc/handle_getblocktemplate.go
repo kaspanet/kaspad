@@ -3,6 +3,7 @@ package rpc
 import (
 	"bytes"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"github.com/daglabs/btcd/blockdag"
 	"github.com/daglabs/btcd/btcjson"
@@ -14,6 +15,7 @@ import (
 	"github.com/daglabs/btcd/wire"
 	"math/rand"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 )
@@ -832,4 +834,45 @@ func (state *gbtWorkState) blockTemplateResult(dag *blockdag.BlockDAG, useCoinba
 	}
 
 	return &reply, nil
+}
+
+// encodeLongPollID encodes the passed details into an ID that can be used to
+// uniquely identify a block template.
+func encodeLongPollID(parentHashes []*daghash.Hash, lastGenerated time.Time) string {
+	return fmt.Sprintf("%s-%d", daghash.JoinHashesStrings(parentHashes, ""), lastGenerated.Unix())
+}
+
+// decodeLongPollID decodes an ID that is used to uniquely identify a block
+// template.  This is mainly used as a mechanism to track when to update clients
+// that are using long polling for block templates.  The ID consists of the
+// parent blocks hashes for the associated template and the time the associated
+// template was generated.
+func decodeLongPollID(longPollID string) ([]*daghash.Hash, int64, error) {
+	fields := strings.Split(longPollID, "-")
+	if len(fields) != 2 {
+		return nil, 0, errors.New("decodeLongPollID: invalid number of fields")
+	}
+
+	parentHashesStr := fields[0]
+	if len(parentHashesStr)%daghash.HashSize != 0 {
+		return nil, 0, errors.New("decodeLongPollID: invalid parent hashes format")
+	}
+	numberOfHashes := len(parentHashesStr) / daghash.HashSize
+
+	parentHashes := make([]*daghash.Hash, 0, numberOfHashes)
+
+	for i := 0; i < len(parentHashesStr); i += daghash.HashSize {
+		hash, err := daghash.NewHashFromStr(parentHashesStr[i : i+daghash.HashSize])
+		if err != nil {
+			return nil, 0, fmt.Errorf("decodeLongPollID: NewHashFromStr: %s", err)
+		}
+		parentHashes = append(parentHashes, hash)
+	}
+
+	lastGenerated, err := strconv.ParseInt(fields[1], 10, 64)
+	if err != nil {
+		return nil, 0, fmt.Errorf("decodeLongPollID: Cannot parse timestamp %s: %s", fields[1], err)
+	}
+
+	return parentHashes, lastGenerated, nil
 }
