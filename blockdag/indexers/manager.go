@@ -8,12 +8,17 @@ import (
 	"github.com/daglabs/btcd/blockdag"
 	"github.com/daglabs/btcd/database"
 	"github.com/daglabs/btcd/util"
+	"github.com/daglabs/btcd/util/daghash"
 )
 
 var (
 	// indexTipsBucketName is the name of the db bucket used to house the
 	// current tip of each index.
 	indexTipsBucketName = []byte("idxtips")
+
+	indexCurrentBlockIDBucketName = []byte("idxcurrentblockid")
+
+	currentBlockIDKey = []byte("currentblockid")
 )
 
 // Manager defines an index manager that manages multiple optional indexes and
@@ -146,6 +151,16 @@ func (m *Manager) Init(db database.DB, blockDAG *blockdag.BlockDAG, interrupt <-
 		if err != nil {
 			return err
 		}
+		if _, err := meta.CreateBucketIfNotExists(indexCurrentBlockIDBucketName); err != nil {
+			return err
+		}
+
+		if _, err := meta.CreateBucketIfNotExists(idByHashIndexBucketName); err != nil {
+			return err
+		}
+		if _, err := meta.CreateBucketIfNotExists(hashAndBlueScoreByIDIndexBucketName); err != nil {
+			return err
+		}
 
 		return m.maybeCreateIndexes(dbTx)
 	})
@@ -168,13 +183,42 @@ func (m *Manager) Init(db database.DB, blockDAG *blockdag.BlockDAG, interrupt <-
 // checks, and invokes each indexer.
 //
 // This is part of the blockchain.IndexManager interface.
-func (m *Manager) ConnectBlock(dbTx database.Tx, block *util.Block, dag *blockdag.BlockDAG,
+func (m *Manager) ConnectBlock(dbTx database.Tx, block *util.Block, blueScore uint64, dag *blockdag.BlockDAG,
 	txsAcceptanceData blockdag.MultiBlockTxsAcceptanceData, virtualTxsAcceptanceData blockdag.MultiBlockTxsAcceptanceData) error {
+	if len(m.enabledIndexes) == 0{
+		return nil
+	}
+	currentBlockID := dbFetchCurrentBlockID(dbTx)
+	newBlockID := currentBlockID + 1
+	serializedNewBlockID := serializeBlockID(newBlockID)
+
 	// Call each of the currently active optional indexes with the block
 	// being connected so they can update accordingly.
 	for _, index := range m.enabledIndexes {
 		// Notify the indexer with the connected block so it can index it.
-		if err := index.ConnectBlock(dbTx, block, dag, txsAcceptanceData, virtualTxsAcceptanceData); err != nil {
+		if err := index.ConnectBlock(dbTx, block, serializedNewBlockID, dag, txsAcceptanceData, virtualTxsAcceptanceData); err != nil {
+			return err
+		}
+	}
+
+	// Add the new block ID index entry for the block being connected and
+	// update the current internal block ID accordingly.
+	err := m.updateDBWithCurrentBlockID(dbTx, block.Hash(), blueScore, serializedNewBlockID)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (m *Manager) updateDBWithCurrentBlockID(dbTx database.Tx, blockHash *daghash.Hash, blueScore uint64, newBlockID []byte) error{
+	err := dbPutBlockIDIndexEntry(dbTx, blockHash, blueScore, newBlockID)
+	if err != nil {
+		return err
+	}
+
+	for _, index := range m.enabledIndexes {
+		err := dbTx.Metadata().Bucket(indexCurrentBlockIDBucketName).Put(index.Key(),newBlockID)
+		if err != nil{
 			return err
 		}
 	}

@@ -766,7 +766,7 @@ func (idx *AddrIndex) TxRegionsForAddress(dbTx database.Tx, addr util.Address, n
 		// the database transaction.
 		fetchBlockHash := func(id []byte) (*daghash.Hash, error) {
 			// Deserialize and populate the result.
-			return dbFetchBlockHashBySerializedID(dbTx, id)
+			return dbFetchBlockHashAndBlueScoreBySerializedID(dbTx, id)
 		}
 
 		var err error

@@ -747,7 +747,7 @@ func dbStoreBlockNode(dbTx database.Tx, node *blockNode) error {
 
 	// Write block header data to block index bucket.
 	blockIndexBucket := dbTx.Metadata().Bucket(blockIndexBucketName)
-	key := blockIndexKey(node.hash, node.blueScore)
+	key := BlockIndexKey(node.hash, node.blueScore)
 	return blockIndexBucket.Put(key, value)
 }
 
@@ -764,11 +764,11 @@ func dbStoreBlock(dbTx database.Tx, block *util.Block) error {
 	return dbTx.StoreBlock(block)
 }
 
-// blockIndexKey generates the binary key for an entry in the block index
+// BlockIndexKey generates the binary key for an entry in the block index
 // bucket. The key is composed of the block blue score encoded as a big-endian
 // 64-bit unsigned int followed by the 32 byte block hash.
 // The blue score component is important for iteration order.
-func blockIndexKey(blockHash *daghash.Hash, blueScore uint64) []byte {
+func BlockIndexKey(blockHash *daghash.Hash, blueScore uint64) []byte {
 	indexKey := make([]byte, daghash.HashSize+8)
 	binary.BigEndian.PutUint64(indexKey[0:8], blueScore)
 	copy(indexKey[8:daghash.HashSize+8], blockHash[:])

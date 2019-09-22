@@ -30,6 +30,9 @@ type AcceptanceIndex struct {
 	db database.DB
 }
 
+// Ensure the TxIndex type implements the Indexer interface.
+var _ Indexer = (*AcceptanceIndex)(nil)
+
 // NewAcceptanceIndex returns a new instance of an indexer that is used to create a
 // mapping between block hashes and their txAcceptanceData.
 //
@@ -82,9 +85,9 @@ func (idx *AcceptanceIndex) Init(db database.DB, _ *blockdag.BlockDAG) error {
 // connected to the DAG.
 //
 // This is part of the Indexer interface.
-func (idx *AcceptanceIndex) ConnectBlock(dbTx database.Tx, block *util.Block, _ *blockdag.BlockDAG,
+func (idx *AcceptanceIndex) ConnectBlock(dbTx database.Tx, block *util.Block, newBlockID []byte, _ *blockdag.BlockDAG,
 	txsAcceptanceData blockdag.MultiBlockTxsAcceptanceData, _ blockdag.MultiBlockTxsAcceptanceData) error {
-	return idx.dbPutTxsAcceptanceData(dbTx, block.Hash(), txsAcceptanceData)
+	return idx.dbPutTxsAcceptanceData(dbTx, newBlockID, txsAcceptanceData)
 }
 
 // TxsAcceptanceData returns the acceptance data of all the transactions that
@@ -102,7 +105,7 @@ func (idx *AcceptanceIndex) TxsAcceptanceData(blockHash *daghash.Hash) (blockdag
 	return txsAcceptanceData, nil
 }
 
-func (idx *AcceptanceIndex) dbPutTxsAcceptanceData(dbTx database.Tx, hash *daghash.Hash,
+func (idx *AcceptanceIndex) dbPutTxsAcceptanceData(dbTx database.Tx, newBlockID []byte,
 	txsAcceptanceData blockdag.MultiBlockTxsAcceptanceData) error {
 	serializedTxsAcceptanceData, err := serializeMultiBlockTxsAcceptanceData(txsAcceptanceData)
 	if err != nil {
@@ -110,7 +113,7 @@ func (idx *AcceptanceIndex) dbPutTxsAcceptanceData(dbTx database.Tx, hash *dagha
 	}
 
 	bucket := dbTx.Metadata().Bucket(acceptanceIndexKey)
-	return bucket.Put(hash[:], serializedTxsAcceptanceData)
+	return bucket.Put(newBlockID, serializedTxsAcceptanceData)
 }
 
 func (idx *AcceptanceIndex) dbFetchTxsAcceptanceData(dbTx database.Tx,
