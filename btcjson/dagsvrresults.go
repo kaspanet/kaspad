@@ -33,10 +33,14 @@ type GetBlockVerboseResult struct {
 	Confirmations        uint64        `json:"confirmations"`
 	Size                 int32         `json:"size"`
 	Height               uint64        `json:"height"`
+	BlueScore            uint64        `json:"blueScore"`
+	Mass                 uint64        `json:"mass"`
+	IsChainBlock         bool          `json:"isChainBlock"`
 	Version              int32         `json:"version"`
 	VersionHex           string        `json:"versionHex"`
 	HashMerkleRoot       string        `json:"hashMerkleRoot"`
 	AcceptedIDMerkleRoot string        `json:"acceptedIdMerkleRoot"`
+	UTXOCommitment       string        `json:"utxoCommitment"`
 	Tx                   []string      `json:"tx,omitempty"`
 	RawTx                []TxRawResult `json:"rawRx,omitempty"`
 	Time                 int64         `json:"time"`
@@ -275,7 +279,7 @@ type ScriptPubKeyResult struct {
 
 // GetSubnetworkResult models the data from the getSubnetwork command.
 type GetSubnetworkResult struct {
-	GasLimit uint64 `json:"gasLimit"`
+	GasLimit *uint64 `json:"gasLimit"`
 }
 
 // GetTxOutResult models the data from the gettxout command.
@@ -307,31 +311,14 @@ type ScriptSig struct {
 // getrawtransaction, decoderawtransaction, and searchrawtransaction use the
 // same structure.
 type Vin struct {
-	Coinbase  string     `json:"coinbase"`
 	TxID      string     `json:"txId"`
 	Vout      uint32     `json:"vout"`
 	ScriptSig *ScriptSig `json:"scriptSig"`
 	Sequence  uint64     `json:"sequence"`
 }
 
-// IsCoinBase returns a bool to show if a Vin is a Coinbase one or not.
-func (v *Vin) IsCoinBase() bool {
-	return len(v.Coinbase) > 0
-}
-
 // MarshalJSON provides a custom Marshal method for Vin.
 func (v *Vin) MarshalJSON() ([]byte, error) {
-	if v.IsCoinBase() {
-		coinbaseStruct := struct {
-			Coinbase string `json:"coinbase"`
-			Sequence uint64 `json:"sequence"`
-		}{
-			Coinbase: v.Coinbase,
-			Sequence: v.Sequence,
-		}
-		return json.Marshal(coinbaseStruct)
-	}
-
 	txStruct := struct {
 		TxID      string     `json:"txId"`
 		Vout      uint32     `json:"vout"`
@@ -399,7 +386,7 @@ func (v *VinPrevOut) MarshalJSON() ([]byte, error) {
 // Vout models parts of the tx data.  It is defined separately since both
 // getrawtransaction and decoderawtransaction use the same structure.
 type Vout struct {
-	Value        float64            `json:"value"`
+	Value        uint64             `json:"value"`
 	N            uint32             `json:"n"`
 	ScriptPubKey ScriptPubKeyResult `json:"scriptPubKey"`
 }
@@ -453,6 +440,7 @@ type TxRawResult struct {
 	LockTime      uint64  `json:"lockTime"`
 	Subnetwork    string  `json:"subnetwork"`
 	Gas           uint64  `json:"gas"`
+	Mass          uint64  `json:"mass"`
 	PayloadHash   string  `json:"payloadHash"`
 	Payload       string  `json:"payload"`
 	Vin           []Vin   `json:"vin"`
@@ -520,6 +508,14 @@ type AcceptedBlock struct {
 
 // GetChainFromBlockResult models the data from the getChainFromBlock command.
 type GetChainFromBlockResult struct {
-	SelectedParentChain []ChainBlock            `json:"selectedParentChain"`
-	Blocks              []GetBlockVerboseResult `json:"blocks"`
+	RemovedChainBlockHashes []string                `json:"removedChainBlockHashes"`
+	AddedChainBlocks        []ChainBlock            `json:"addedChainBlocks"`
+	Blocks                  []GetBlockVerboseResult `json:"blocks"`
+}
+
+// GetBlocksResult models the data from the getBlocks command.
+type GetBlocksResult struct {
+	Hashes    []string                `json:"hashes"`
+	Blocks    []string                `json:"blocks"`
+	RawBlocks []GetBlockVerboseResult `json:"rawBlocks"`
 }

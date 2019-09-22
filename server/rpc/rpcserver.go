@@ -68,10 +68,6 @@ const (
 	// is closed.
 	rpcAuthTimeoutSeconds = 10
 
-	// uint256Size is the number of bytes needed to represent an unsigned
-	// 256-bit integer.
-	uint256Size = 32
-
 	// gbtNonceRange is two 64-bit big-endian hexadecimal integers which
 	// represent the valid ranges of nonces returned by the getBlockTemplate
 	// RPC.
@@ -85,6 +81,14 @@ const (
 
 	// maxProtocolVersion is the max protocol version the server supports.
 	maxProtocolVersion = 70002
+
+	// maxBlocksInGetChainFromBlockResult is the max amount of blocks that
+	// are allowed in a GetChainFromBlockResult.
+	maxBlocksInGetChainFromBlockResult = 1000
+
+	// maxBlocksInGetBlocksResult is the max amount of blocks that are
+	// allowed in a GetBlocksResult.
+	maxBlocksInGetBlocksResult = 1000
 )
 
 var (
@@ -140,6 +144,7 @@ var rpcHandlersBeforeInit = map[string]commandHandler{
 	"getBestBlock":          handleGetBestBlock,
 	"getBestBlockHash":      handleGetBestBlockHash,
 	"getBlock":              handleGetBlock,
+	"getBlocks":             handleGetBlocks,
 	"getBlockDagInfo":       handleGetBlockDAGInfo,
 	"getBlockCount":         handleGetBlockCount,
 	"getBlockHash":          handleGetBlockHash,
@@ -216,6 +221,7 @@ var rpcLimited = map[string]struct{}{
 	"getBestBlock":          {},
 	"getBestBlockHash":      {},
 	"getBlock":              {},
+	"getBlocks":             {},
 	"getBlockCount":         {},
 	"getBlockHash":          {},
 	"getBlockHeader":        {},
@@ -602,15 +608,7 @@ func handleDebugLevel(s *Server, cmd interface{}, closeChan <-chan struct{}) (in
 // createVinList returns a slice of JSON objects for the inputs of the passed
 // transaction.
 func createVinList(mtx *wire.MsgTx) []btcjson.Vin {
-	// Coinbase transactions only have a single txin by definition.
 	vinList := make([]btcjson.Vin, len(mtx.TxIn))
-	if mtx.IsCoinBase() {
-		txIn := mtx.TxIn[0]
-		vinList[0].Coinbase = hex.EncodeToString(txIn.SignatureScript)
-		vinList[0].Sequence = txIn.Sequence
-		return vinList
-	}
-
 	for i, txIn := range mtx.TxIn {
 		// The disassembled string will contain [error] inline
 		// if the script doesn't fully parse, so ignore the
@@ -665,7 +663,7 @@ func createVoutList(mtx *wire.MsgTx, chainParams *dagconfig.Params, filterAddrMa
 
 		var vout btcjson.Vout
 		vout.N = uint32(i)
-		vout.Value = util.Amount(v.Value).ToBTC()
+		vout.Value = v.Value
 		vout.ScriptPubKey.Address = encodedAddr
 		vout.ScriptPubKey.Asm = disbuf
 		vout.ScriptPubKey.Hex = hex.EncodeToString(v.ScriptPubKey)
@@ -681,7 +679,7 @@ func createVoutList(mtx *wire.MsgTx, chainParams *dagconfig.Params, filterAddrMa
 // to a raw transaction JSON object.
 func createTxRawResult(dagParams *dagconfig.Params, mtx *wire.MsgTx,
 	txID string, blkHeader *wire.BlockHeader, blkHash string,
-	acceptingBlock *daghash.Hash, confirmations *uint64, isInMempool bool) (*btcjson.TxRawResult, error) {
+	acceptingBlock *daghash.Hash, confirmations *uint64, isInMempool bool, txMass uint64) (*btcjson.TxRawResult, error) {
 
 	mtxHex, err := messageToHex(mtx)
 	if err != nil {
@@ -704,6 +702,7 @@ func createTxRawResult(dagParams *dagconfig.Params, mtx *wire.MsgTx,
 		LockTime:    mtx.LockTime,
 		Subnetwork:  mtx.SubnetworkID.String(),
 		Gas:         mtx.Gas,
+		Mass:        txMass,
 		PayloadHash: payloadHash,
 		Payload:     hex.EncodeToString(mtx.Payload),
 	}
@@ -1120,17 +1119,35 @@ func buildGetBlockVerboseResult(s *Server, block *util.Block, isVerboseTx bool) 
 		return nil, internalRPCError(err.Error(), context)
 	}
 
+	blockBlueScore, err := s.cfg.DAG.BlueScoreByBlockHash(hash)
+	if err != nil {
+		context := "Could not get block blue score"
+		return nil, internalRPCError(err.Error(), context)
+	}
+
+	blockMass, err := blockdag.CalcBlockMass(s.cfg.DAG.UTXOSet(), block.Transactions())
+	if err != nil {
+		context := "Could not get block mass"
+		return nil, internalRPCError(err.Error(), context)
+	}
+
+	isChainBlock := s.cfg.DAG.IsInSelectedParentChain(hash)
+
 	result := &btcjson.GetBlockVerboseResult{
 		Hash:                 hash.String(),
 		Version:              blockHeader.Version,
 		VersionHex:           fmt.Sprintf("%08x", blockHeader.Version),
 		HashMerkleRoot:       blockHeader.HashMerkleRoot.String(),
 		AcceptedIDMerkleRoot: blockHeader.AcceptedIDMerkleRoot.String(),
+		UTXOCommitment:       blockHeader.UTXOCommitment.String(),
 		ParentHashes:         daghash.Strings(blockHeader.ParentHashes),
 		Nonce:                blockHeader.Nonce,
 		Time:                 blockHeader.Timestamp.Unix(),
 		Confirmations:        blockConfirmations,
 		Height:               blockChainHeight,
+		BlueScore:            blockBlueScore,
+		Mass:                 blockMass,
+		IsChainBlock:         isChainBlock,
 		Size:                 int32(block.MsgBlock().SerializeSize()),
 		Bits:                 strconv.FormatInt(int64(blockHeader.Bits), 16),
 		Difficulty:           getDifficultyRatio(blockHeader.Bits, params),
@@ -1162,8 +1179,12 @@ func buildGetBlockVerboseResult(s *Server, block *util.Block, isVerboseTx bool) 
 				}
 				confirmations = &txConfirmations
 			}
+			txMass, err := blockdag.CalcTxMass(tx, s.cfg.DAG.UTXOSet())
+			if err != nil {
+				return nil, err
+			}
 			rawTxn, err := createTxRawResult(params, tx.MsgTx(), tx.ID().String(),
-				&blockHeader, hash.String(), acceptingBlock, confirmations, false)
+				&blockHeader, hash.String(), acceptingBlock, confirmations, false, txMass)
 			if err != nil {
 				return nil, err
 			}
@@ -1192,6 +1213,65 @@ func softForkStatus(state blockdag.ThresholdState) (string, error) {
 	default:
 		return "", fmt.Errorf("unknown deployment state: %s", state)
 	}
+}
+
+func handleGetBlocks(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
+	c := cmd.(*btcjson.GetBlocksCmd)
+	var startHash *daghash.Hash
+	if c.StartHash != nil {
+		startHash = &daghash.Hash{}
+		err := daghash.Decode(startHash, *c.StartHash)
+		if err != nil {
+			return nil, rpcDecodeHexError(*c.StartHash)
+		}
+	}
+
+	s.cfg.DAG.RLock()
+	defer s.cfg.DAG.RUnlock()
+
+	// If startHash is not in the DAG, there's nothing to do; return an error.
+	if startHash != nil && !s.cfg.DAG.HaveBlock(startHash) {
+		return nil, &btcjson.RPCError{
+			Code:    btcjson.ErrRPCBlockNotFound,
+			Message: "Block not found",
+		}
+	}
+
+	// Retrieve the block hashes.
+	blockHashes, err := s.cfg.DAG.BlockHashesFrom(startHash, maxBlocksInGetBlocksResult)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert the hashes to strings
+	hashes := make([]string, len(blockHashes))
+	for i, blockHash := range blockHashes {
+		hashes[i] = blockHash.String()
+	}
+
+	result := &btcjson.GetBlocksResult{
+		Hashes: hashes,
+		Blocks: nil,
+	}
+
+	// If the user specified to include the blocks, collect them as well.
+	if c.IncludeBlocks {
+		if c.VerboseBlocks {
+			getBlockVerboseResults, err := hashesToGetBlockVerboseResults(s, blockHashes)
+			if err != nil {
+				return nil, err
+			}
+			result.RawBlocks = getBlockVerboseResults
+		} else {
+			blocks, err := hashesToBlockStrings(s, blockHashes)
+			if err != nil {
+				return nil, err
+			}
+			result.Blocks = blocks
+		}
+	}
+
+	return result, nil
 }
 
 // handleGetBlockDAGInfo implements the getBlockDagInfo command.
@@ -2208,6 +2288,7 @@ func handleGetChainFromBlock(s *Server, cmd interface{}, closeChan <-chan struct
 	c := cmd.(*btcjson.GetChainFromBlockCmd)
 	var startHash *daghash.Hash
 	if c.StartHash != nil {
+		startHash = &daghash.Hash{}
 		err := daghash.Decode(startHash, *c.StartHash)
 		if err != nil {
 			return nil, rpcDecodeHexError(*c.StartHash)
@@ -2219,21 +2300,26 @@ func handleGetChainFromBlock(s *Server, cmd interface{}, closeChan <-chan struct
 
 	// If startHash is not in the selected parent chain, there's nothing
 	// to do; return an error.
-	if !s.cfg.DAG.IsInSelectedParentChain(startHash) {
+	if startHash != nil && !s.cfg.DAG.BlockExists(startHash) {
 		return nil, &btcjson.RPCError{
 			Code:    btcjson.ErrRPCBlockNotFound,
-			Message: "Block not found in selected parent chain",
+			Message: "Block not found in the DAG",
 		}
 	}
 
 	// Retrieve the selected parent chain.
-	selectedParentChain, err := s.cfg.DAG.SelectedParentChain(startHash)
+	removedChainHashes, addedChainHashes, err := s.cfg.DAG.SelectedParentChain(startHash)
 	if err != nil {
 		return nil, err
 	}
 
-	// Collect chainBlocks.
-	chainBlocks, err := collectChainBlocks(s, selectedParentChain)
+	// Limit the amount of blocks in the response
+	if len(addedChainHashes) > maxBlocksInGetChainFromBlockResult {
+		addedChainHashes = addedChainHashes[:maxBlocksInGetChainFromBlockResult]
+	}
+
+	// Collect addedChainBlocks.
+	addedChainBlocks, err := collectChainBlocks(s, addedChainHashes)
 	if err != nil {
 		return nil, &btcjson.RPCError{
 			Code:    btcjson.ErrRPCInternal.Code,
@@ -2241,14 +2327,21 @@ func handleGetChainFromBlock(s *Server, cmd interface{}, closeChan <-chan struct
 		}
 	}
 
+	// Collect removedHashes.
+	removedHashes := make([]string, len(removedChainHashes))
+	for i, hash := range removedChainHashes {
+		removedHashes[i] = hash.String()
+	}
+
 	result := &btcjson.GetChainFromBlockResult{
-		SelectedParentChain: chainBlocks,
-		Blocks:              nil,
+		RemovedChainBlockHashes: removedHashes,
+		AddedChainBlocks:        addedChainBlocks,
+		Blocks:                  nil,
 	}
 
 	// If the user specified to include the blocks, collect them as well.
-	if c.IncludeBlocks != nil && *c.IncludeBlocks {
-		getBlockVerboseResults, err := hashesToGetBlockVerboseResults(s, selectedParentChain)
+	if c.IncludeBlocks {
+		getBlockVerboseResults, err := hashesToGetBlockVerboseResults(s, addedChainHashes)
 		if err != nil {
 			return nil, err
 		}
@@ -2258,9 +2351,9 @@ func handleGetChainFromBlock(s *Server, cmd interface{}, closeChan <-chan struct
 	return result, nil
 }
 
-func collectChainBlocks(s *Server, selectedParentChain []*daghash.Hash) ([]btcjson.ChainBlock, error) {
-	chainBlocks := make([]btcjson.ChainBlock, 0, len(selectedParentChain))
-	for _, hash := range selectedParentChain {
+func collectChainBlocks(s *Server, hashes []*daghash.Hash) ([]btcjson.ChainBlock, error) {
+	chainBlocks := make([]btcjson.ChainBlock, 0, len(hashes))
+	for _, hash := range hashes {
 		acceptanceData, err := s.cfg.AcceptanceIndex.TxsAcceptanceData(hash)
 		if err != nil {
 			return nil, &btcjson.RPCError{
@@ -2274,7 +2367,7 @@ func collectChainBlocks(s *Server, selectedParentChain []*daghash.Hash) ([]btcjs
 			acceptedTxIds := make([]string, 0, len(blockAcceptanceData))
 			for _, txAcceptanceData := range blockAcceptanceData {
 				if txAcceptanceData.IsAccepted {
-					acceptedTxIds = append(acceptedTxIds, txAcceptanceData.Tx.Hash().String())
+					acceptedTxIds = append(acceptedTxIds, txAcceptanceData.Tx.ID().String())
 				}
 			}
 			acceptedBlock := btcjson.AcceptedBlock{
@@ -2291,6 +2384,24 @@ func collectChainBlocks(s *Server, selectedParentChain []*daghash.Hash) ([]btcjs
 		chainBlocks = append(chainBlocks, chainBlock)
 	}
 	return chainBlocks, nil
+}
+
+func hashesToBlockStrings(s *Server, hashes []*daghash.Hash) ([]string, error) {
+	blocks := make([]string, len(hashes))
+	err := s.cfg.DB.View(func(dbTx database.Tx) error {
+		for i, hash := range hashes {
+			blockBytes, err := dbTx.FetchBlock(hash)
+			if err != nil {
+				return err
+			}
+			blocks[i] = hex.EncodeToString(blockBytes)
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return blocks, nil
 }
 
 func hashesToGetBlockVerboseResults(s *Server, hashes []*daghash.Hash) ([]btcjson.GetBlockVerboseResult, error) {
@@ -2696,8 +2807,12 @@ func handleGetRawTransaction(s *Server, cmd interface{}, closeChan <-chan struct
 	if err != nil {
 		return nil, err
 	}
+	txMass, err := blockdag.CalcTxMass(tx, s.cfg.DAG.UTXOSet())
+	if err != nil {
+		return nil, err
+	}
 	rawTxn, err := createTxRawResult(s.cfg.DAGParams, mtx, txID.String(),
-		blkHeader, blkHashStr, nil, &confirmations, isInMempool)
+		blkHeader, blkHashStr, nil, &confirmations, isInMempool, txMass)
 	if err != nil {
 		return nil, err
 	}
@@ -2713,12 +2828,17 @@ func handleGetSubnetwork(s *Server, cmd interface{}, closeChan <-chan struct{}) 
 		return nil, rpcDecodeHexError(c.SubnetworkID)
 	}
 
-	gasLimit, err := s.cfg.DAG.SubnetworkStore.GasLimit(subnetworkID)
-	if err != nil {
-		return nil, &btcjson.RPCError{
-			Code:    btcjson.ErrRPCSubnetworkNotFound,
-			Message: "Subnetwork not found.",
+	var gasLimit *uint64
+	if !subnetworkID.IsEqual(subnetworkid.SubnetworkIDNative) &&
+		!subnetworkID.IsBuiltIn() {
+		limit, err := s.cfg.DAG.SubnetworkStore.GasLimit(subnetworkID)
+		if err != nil {
+			return nil, &btcjson.RPCError{
+				Code:    btcjson.ErrRPCSubnetworkNotFound,
+				Message: "Subnetwork not found.",
+			}
 		}
+		gasLimit = &limit
 	}
 
 	subnetworkReply := &btcjson.GetSubnetworkResult{

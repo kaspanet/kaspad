@@ -82,11 +82,11 @@ func convertTxModelToTxResponse(tx *models.Transaction) *transactionResponse {
 	}
 	for i, txIn := range tx.TransactionInputs {
 		txRes.Inputs[i] = &transactionInputResponse{
-			PreviousTransactionID:          txIn.TransactionOutput.Transaction.TransactionID,
-			PreviousTransactionOutputIndex: txIn.TransactionOutput.Index,
+			PreviousTransactionID:          txIn.PreviousTransactionOutput.Transaction.TransactionID,
+			PreviousTransactionOutputIndex: txIn.PreviousTransactionOutput.Index,
 			SignatureScript:                hex.EncodeToString(txIn.SignatureScript),
 			Sequence:                       txIn.Sequence,
-			Address:                        txIn.TransactionOutput.Address.Address,
+			Address:                        txIn.PreviousTransactionOutput.Address.Address,
 		}
 	}
 	return txRes
