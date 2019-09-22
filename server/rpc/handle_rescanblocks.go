@@ -1,6 +1,7 @@
 package rpc
 
 import (
+	"fmt"
 	"github.com/daglabs/btcd/btcjson"
 	"github.com/daglabs/btcd/util/daghash"
 )
