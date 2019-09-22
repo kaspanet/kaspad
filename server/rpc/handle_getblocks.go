@@ -7,6 +7,12 @@ import (
 	"github.com/daglabs/btcd/util/daghash"
 )
 
+const (
+	// maxBlocksInGetBlocksResult is the max amount of blocks that are
+	// allowed in a GetBlocksResult.
+	maxBlocksInGetBlocksResult = 1000
+)
+
 func handleGetBlocks(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
 	c := cmd.(*btcjson.GetBlocksCmd)
 	var startHash *daghash.Hash

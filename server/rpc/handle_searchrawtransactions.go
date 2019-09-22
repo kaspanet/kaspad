@@ -3,11 +3,28 @@ package rpc
 import (
 	"bytes"
 	"encoding/hex"
+	"fmt"
 	"github.com/daglabs/btcd/btcjson"
+	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/database"
+	"github.com/daglabs/btcd/txscript"
 	"github.com/daglabs/btcd/util"
+	"github.com/daglabs/btcd/util/daghash"
 	"github.com/daglabs/btcd/wire"
 )
+
+// retrievedTx represents a transaction that was either loaded from the
+// transaction memory pool or from the database.  When a transaction is loaded
+// from the database, it is loaded with the raw serialized bytes while the
+// mempool has the fully deserialized structure.  This structure therefore will
+// have one of the two fields set depending on where is was retrieved from.
+// This is mainly done for efficiency to avoid extra serialization steps when
+// possible.
+type retrievedTx struct {
+	txBytes []byte
+	blkHash *daghash.Hash // Only set when transaction is in a block.
+	tx      *util.Tx
+}
 
 // handleSearchRawTransactions implements the searchRawTransactions command.
 func handleSearchRawTransactions(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
@@ -269,4 +286,189 @@ func handleSearchRawTransactions(s *Server, cmd interface{}, closeChan <-chan st
 	}
 
 	return srtList, nil
+}
+
+// createVinListPrevOut returns a slice of JSON objects for the inputs of the
+// passed transaction.
+func createVinListPrevOut(s *Server, mtx *wire.MsgTx, chainParams *dagconfig.Params, vinExtra bool, filterAddrMap map[string]struct{}) ([]btcjson.VinPrevOut, error) {
+	// Use a dynamically sized list to accommodate the address filter.
+	vinList := make([]btcjson.VinPrevOut, 0, len(mtx.TxIn))
+
+	// Lookup all of the referenced transaction outputs needed to populate the
+	// previous output information if requested. Coinbase transactions do not contain
+	// valid inputs: block hash instead of transaction ID.
+	var originOutputs map[wire.Outpoint]wire.TxOut
+	if !mtx.IsCoinBase() && (vinExtra || len(filterAddrMap) > 0) {
+		var err error
+		originOutputs, err = fetchInputTxos(s, mtx)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	for _, txIn := range mtx.TxIn {
+		// The disassembled string will contain [error] inline
+		// if the script doesn't fully parse, so ignore the
+		// error here.
+		disbuf, _ := txscript.DisasmString(txIn.SignatureScript)
+
+		// Create the basic input entry without the additional optional
+		// previous output details which will be added later if
+		// requested and available.
+		prevOut := &txIn.PreviousOutpoint
+		vinEntry := btcjson.VinPrevOut{
+			TxID:     prevOut.TxID.String(),
+			Vout:     prevOut.Index,
+			Sequence: txIn.Sequence,
+			ScriptSig: &btcjson.ScriptSig{
+				Asm: disbuf,
+				Hex: hex.EncodeToString(txIn.SignatureScript),
+			},
+		}
+
+		// Add the entry to the list now if it already passed the filter
+		// since the previous output might not be available.
+		passesFilter := len(filterAddrMap) == 0
+		if passesFilter {
+			vinList = append(vinList, vinEntry)
+		}
+
+		// Only populate previous output information if requested and
+		// available.
+		if len(originOutputs) == 0 {
+			continue
+		}
+		originTxOut, ok := originOutputs[*prevOut]
+		if !ok {
+			continue
+		}
+
+		// Ignore the error here since an error means the script
+		// couldn't parse and there is no additional information about
+		// it anyways.
+		_, addr, _ := txscript.ExtractScriptPubKeyAddress(
+			originTxOut.ScriptPubKey, chainParams)
+
+		var encodedAddr *string
+		if addr != nil {
+			// Encode the address while checking if the address passes the
+			// filter when needed.
+			encodedAddr = btcjson.String(addr.EncodeAddress())
+
+			// If the filter doesn't already pass, make it pass if
+			// the address exists in the filter.
+			if _, exists := filterAddrMap[*encodedAddr]; exists {
+				passesFilter = true
+			}
+		}
+
+		// Ignore the entry if it doesn't pass the filter.
+		if !passesFilter {
+			continue
+		}
+
+		// Add entry to the list if it wasn't already done above.
+		if len(filterAddrMap) != 0 {
+			vinList = append(vinList, vinEntry)
+		}
+
+		// Update the entry with previous output information if
+		// requested.
+		if vinExtra {
+			vinListEntry := &vinList[len(vinList)-1]
+			vinListEntry.PrevOut = &btcjson.PrevOut{
+				Address: encodedAddr,
+				Value:   util.Amount(originTxOut.Value).ToBTC(),
+			}
+		}
+	}
+
+	return vinList, nil
+}
+
+// fetchInputTxos fetches the outpoints from all transactions referenced by the
+// inputs to the passed transaction by checking the transaction mempool first
+// then the transaction index for those already mined into blocks.
+func fetchInputTxos(s *Server, tx *wire.MsgTx) (map[wire.Outpoint]wire.TxOut, error) {
+	mp := s.cfg.TxMemPool
+	originOutputs := make(map[wire.Outpoint]wire.TxOut)
+	for txInIndex, txIn := range tx.TxIn {
+		// Attempt to fetch and use the referenced transaction from the
+		// memory pool.
+		origin := &txIn.PreviousOutpoint
+		originTx, err := mp.FetchTransaction(&origin.TxID)
+		if err == nil {
+			txOuts := originTx.MsgTx().TxOut
+			if origin.Index >= uint32(len(txOuts)) {
+				errStr := fmt.Sprintf("unable to find output "+
+					"%s referenced from transaction %s:%d",
+					origin, tx.TxID(), txInIndex)
+				return nil, internalRPCError(errStr, "")
+			}
+
+			originOutputs[*origin] = *txOuts[origin.Index]
+			continue
+		}
+
+		// Look up the location of the transaction.
+		blockRegion, err := s.cfg.TxIndex.TxFirstBlockRegion(&origin.TxID)
+		if err != nil {
+			context := "Failed to retrieve transaction location"
+			return nil, internalRPCError(err.Error(), context)
+		}
+		if blockRegion == nil {
+			return nil, rpcNoTxInfoError(&origin.TxID)
+		}
+
+		// Load the raw transaction bytes from the database.
+		var txBytes []byte
+		err = s.cfg.DB.View(func(dbTx database.Tx) error {
+			var err error
+			txBytes, err = dbTx.FetchBlockRegion(blockRegion)
+			return err
+		})
+		if err != nil {
+			return nil, rpcNoTxInfoError(&origin.TxID)
+		}
+
+		// Deserialize the transaction
+		var msgTx wire.MsgTx
+		err = msgTx.Deserialize(bytes.NewReader(txBytes))
+		if err != nil {
+			context := "Failed to deserialize transaction"
+			return nil, internalRPCError(err.Error(), context)
+		}
+
+		// Add the referenced output to the map.
+		if origin.Index >= uint32(len(msgTx.TxOut)) {
+			errStr := fmt.Sprintf("unable to find output %s "+
+				"referenced from transaction %s:%d", origin,
+				tx.TxID(), txInIndex)
+			return nil, internalRPCError(errStr, "")
+		}
+		originOutputs[*origin] = *msgTx.TxOut[origin.Index]
+	}
+
+	return originOutputs, nil
+}
+
+// fetchMempoolTxnsForAddress queries the address index for all unconfirmed
+// transactions that involve the provided address.  The results will be limited
+// by the number to skip and the number requested.
+func fetchMempoolTxnsForAddress(s *Server, addr util.Address, numToSkip, numRequested uint32) ([]*util.Tx, uint32) {
+	// There are no entries to return when there are less available than the
+	// number being skipped.
+	mpTxns := s.cfg.AddrIndex.UnconfirmedTxnsForAddress(addr)
+	numAvailable := uint32(len(mpTxns))
+	if numToSkip > numAvailable {
+		return nil, numAvailable
+	}
+
+	// Filter the available entries based on the number to skip and number
+	// requested.
+	rangeEnd := numToSkip + numRequested
+	if rangeEnd > numAvailable {
+		rangeEnd = numAvailable
+	}
+	return mpTxns[numToSkip:rangeEnd], numToSkip
 }

@@ -2,6 +2,7 @@ package rpc
 
 import (
 	"fmt"
+	"github.com/daglabs/btcd/blockdag"
 	"github.com/daglabs/btcd/btcjson"
 	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/util/daghash"
@@ -76,4 +77,23 @@ func handleGetBlockDAGInfo(s *Server, cmd interface{}, closeChan <-chan struct{}
 	}
 
 	return dagInfo, nil
+}
+
+// softForkStatus converts a ThresholdState state into a human readable string
+// corresponding to the particular state.
+func softForkStatus(state blockdag.ThresholdState) (string, error) {
+	switch state {
+	case blockdag.ThresholdDefined:
+		return "defined", nil
+	case blockdag.ThresholdStarted:
+		return "started", nil
+	case blockdag.ThresholdLockedIn:
+		return "lockedin", nil
+	case blockdag.ThresholdActive:
+		return "active", nil
+	case blockdag.ThresholdFailed:
+		return "failed", nil
+	default:
+		return "", fmt.Errorf("unknown deployment state: %s", state)
+	}
 }

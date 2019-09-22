@@ -2,6 +2,14 @@ package rpc
 
 import "github.com/daglabs/btcd/btcjson"
 
+// API version constants
+const (
+	jsonrpcSemverString = "1.3.0"
+	jsonrpcSemverMajor  = 1
+	jsonrpcSemverMinor  = 3
+	jsonrpcSemverPatch  = 0
+)
+
 // handleVersion implements the version command.
 //
 // NOTE: This is a btcsuite extension ported from github.com/decred/dcrd.

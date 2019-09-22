@@ -6,6 +6,12 @@ import (
 	"github.com/daglabs/btcd/util/daghash"
 )
 
+const (
+	// maxBlocksInGetChainFromBlockResult is the max amount of blocks that
+	// are allowed in a GetChainFromBlockResult.
+	maxBlocksInGetChainFromBlockResult = 1000
+)
+
 // handleGetChainFromBlock implements the getChainFromBlock command.
 func handleGetChainFromBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (interface{}, error) {
 	if s.cfg.AcceptanceIndex == nil {
