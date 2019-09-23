@@ -54,10 +54,12 @@ type Indexer interface {
 	// block has been connected to the DAG.
 	ConnectBlock(dbTx database.Tx,
 		block *util.Block,
-		blockID []byte,
+		blockID uint64,
 		dag *blockdag.BlockDAG,
 		acceptedTxsData blockdag.MultiBlockTxsAcceptanceData,
 		virtualTxsAcceptanceData blockdag.MultiBlockTxsAcceptanceData) error
+
+	Recover(dbTx database.Tx, currentBlockID, lastKnownBlockID uint64) error
 }
 
 // AssertError identifies an error that indicates an internal code consistency

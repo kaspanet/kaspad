@@ -766,7 +766,7 @@ func (idx *AddrIndex) TxRegionsForAddress(dbTx database.Tx, addr util.Address, n
 		// the database transaction.
 		fetchBlockHash := func(id []byte) (*daghash.Hash, error) {
 			// Deserialize and populate the result.
-			return dbFetchBlockHashAndBlueScoreBySerializedID(dbTx, id)
+			return dbFetchBlockHashBySerializedID(dbTx, id)
 		}
 
 		var err error
@@ -897,6 +897,11 @@ func (idx *AddrIndex) UnconfirmedTxnsForAddress(addr util.Address) []*util.Tx {
 	}
 
 	return nil
+}
+
+func (idx *AddrIndex) Recover(dbTx database.Tx, currentBlockID, lastKnownBlockID uint64) error {
+	return errors.New("addrindex doesn't have recoverability capabilites." +
+		" To resume working drop the addrindex with --dropaddrindex")
 }
 
 // NewAddrIndex returns a new instance of an indexer that is used to create a

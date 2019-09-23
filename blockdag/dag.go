@@ -840,6 +840,15 @@ func (dag *BlockDAG) TxsAcceptedByVirtual() (MultiBlockTxsAcceptanceData, error)
 	return txsAcceptanceData, err
 }
 
+// TxsAcceptedByBlockHash retrieves transactions accepted by the given block
+//
+// This function MUST be called with the DAG read-lock held
+func (dag *BlockDAG) TxsAcceptedByBlockHash(blockHash *daghash.Hash) (MultiBlockTxsAcceptanceData, error) {
+	node := dag.index.LookupNode(blockHash)
+	_, txsAcceptanceData, err := dag.pastUTXO(node)
+	return txsAcceptanceData, err
+}
+
 // applyDAGChanges does the following:
 // 1. Connects each of the new block's parents to the block.
 // 2. Adds the new block to the DAG's tips.
@@ -1762,7 +1771,7 @@ type IndexManager interface {
 
 	// ConnectBlock is invoked when a new block has been connected to the
 	// DAG.
-	ConnectBlock(dbTx database.Tx, block *util.Block, blueScore uint64, acceptedTxsData MultiBlockTxsAcceptanceData, virtualTxsAcceptanceData MultiBlockTxsAcceptanceData) error
+	ConnectBlock(dbTx database.Tx, block *util.Block, dag *BlockDAG, acceptedTxsData MultiBlockTxsAcceptanceData, virtualTxsAcceptanceData MultiBlockTxsAcceptanceData) error
 }
 
 // Config is a descriptor which specifies the blockchain instance configuration.

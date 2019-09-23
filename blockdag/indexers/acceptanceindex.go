@@ -28,6 +28,7 @@ var (
 // block accepts among its blue blocks.
 type AcceptanceIndex struct {
 	db database.DB
+	dag *blockdag.BlockDAG
 }
 
 // Ensure the TxIndex type implements the Indexer interface.
@@ -76,8 +77,9 @@ func (idx *AcceptanceIndex) Create(dbTx database.Tx) error {
 // Init initializes the hash-based acceptance index.
 //
 // This is part of the Indexer interface.
-func (idx *AcceptanceIndex) Init(db database.DB, _ *blockdag.BlockDAG) error {
+func (idx *AcceptanceIndex) Init(db database.DB, dag *blockdag.BlockDAG) error {
 	idx.db = db
+	idx.dag = dag
 	return nil
 }
 
@@ -85,9 +87,9 @@ func (idx *AcceptanceIndex) Init(db database.DB, _ *blockdag.BlockDAG) error {
 // connected to the DAG.
 //
 // This is part of the Indexer interface.
-func (idx *AcceptanceIndex) ConnectBlock(dbTx database.Tx, block *util.Block, newBlockID []byte, _ *blockdag.BlockDAG,
+func (idx *AcceptanceIndex) ConnectBlock(dbTx database.Tx, _ *util.Block, newBlockID uint64, _ *blockdag.BlockDAG,
 	txsAcceptanceData blockdag.MultiBlockTxsAcceptanceData, _ blockdag.MultiBlockTxsAcceptanceData) error {
-	return idx.dbPutTxsAcceptanceData(dbTx, newBlockID, txsAcceptanceData)
+	return dbPutTxsAcceptanceData(dbTx, serializeBlockID(newBlockID), txsAcceptanceData)
 }
 
 // TxsAcceptanceData returns the acceptance data of all the transactions that
@@ -96,7 +98,7 @@ func (idx *AcceptanceIndex) TxsAcceptanceData(blockHash *daghash.Hash) (blockdag
 	var txsAcceptanceData blockdag.MultiBlockTxsAcceptanceData
 	err := idx.db.View(func(dbTx database.Tx) error {
 		var err error
-		txsAcceptanceData, err = idx.dbFetchTxsAcceptanceData(dbTx, blockHash)
+		txsAcceptanceData, err = dbFetchTxsAcceptanceDataByHash(dbTx, blockHash)
 		return err
 	})
 	if err != nil {
@@ -105,7 +107,25 @@ func (idx *AcceptanceIndex) TxsAcceptanceData(blockHash *daghash.Hash) (blockdag
 	return txsAcceptanceData, nil
 }
 
-func (idx *AcceptanceIndex) dbPutTxsAcceptanceData(dbTx database.Tx, newBlockID []byte,
+func (idx *AcceptanceIndex) Recover(dbTx database.Tx, currentBlockID, lastKnownBlockID uint64) error {
+	for blockID := currentBlockID + 1; blockID <= lastKnownBlockID; blockID++{
+		hash, err := dbFetchBlockHashByID(dbTx, currentBlockID)
+		if err != nil{
+			return err
+		}
+		txAcceptanceData, err := idx.dag.TxsAcceptedByBlockHash(hash)
+		if err != nil{
+			return err
+		}
+		err = idx.ConnectBlock(dbTx, nil, blockID, nil, txAcceptanceData, nil)
+		if err != nil{
+			return err
+		}
+	}
+	return nil
+}
+
+func dbPutTxsAcceptanceData(dbTx database.Tx, newBlockID []byte,
 	txsAcceptanceData blockdag.MultiBlockTxsAcceptanceData) error {
 	serializedTxsAcceptanceData, err := serializeMultiBlockTxsAcceptanceData(txsAcceptanceData)
 	if err != nil {
@@ -116,13 +136,24 @@ func (idx *AcceptanceIndex) dbPutTxsAcceptanceData(dbTx database.Tx, newBlockID 
 	return bucket.Put(newBlockID, serializedTxsAcceptanceData)
 }
 
-func (idx *AcceptanceIndex) dbFetchTxsAcceptanceData(dbTx database.Tx,
+func dbFetchTxsAcceptanceDataByHash(dbTx database.Tx,
 	hash *daghash.Hash) (blockdag.MultiBlockTxsAcceptanceData, error) {
 
+	blockID, err := dbFetchBlockIDByHash(dbTx, hash)
+	if err != nil{
+		return nil, err
+	}
+
+	return dbFetchTxsAcceptanceDataByID(dbTx, blockID)
+}
+
+func dbFetchTxsAcceptanceDataByID(dbTx database.Tx,
+	blockID uint64) (blockdag.MultiBlockTxsAcceptanceData, error) {
+	serializedBlockID := serializeBlockID(blockID)
 	bucket := dbTx.Metadata().Bucket(acceptanceIndexKey)
-	serializedTxsAcceptanceData := bucket.Get(hash[:])
+	serializedTxsAcceptanceData := bucket.Get(serializedBlockID)
 	if serializedTxsAcceptanceData == nil {
-		return nil, fmt.Errorf("no entry in the accpetance index for block with hash %s", hash)
+		return nil, fmt.Errorf("no entry in the accpetance index for block id %d", blockID)
 	}
 
 	return deserializeMultiBlockTxsAcceptanceData(serializedTxsAcceptanceData)
