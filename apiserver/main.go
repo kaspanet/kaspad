@@ -57,6 +57,17 @@ func main() {
 	shutdownServer := server.Start(cfg.HTTPListen)
 	defer shutdownServer()
 
+	doneChan := make(chan struct{}, 1)
+	spawn(func() {
+		err := startSync(doneChan)
+		if err != nil {
+			panic(err)
+		}
+	})
+
 	interrupt := signal.InterruptListener()
 	<-interrupt
+
+	// Gracefully stop syncing
+	doneChan <- struct{}{}
 }

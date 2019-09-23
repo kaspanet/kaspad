@@ -34,11 +34,12 @@ func GetTransactionByIDHandler(txID string) (interface{}, *utils.HandlerError) {
 	tx := &models.Transaction{}
 	query := db.Where(&models.Transaction{TransactionID: txID})
 	dbResult := addTxPreloadedFields(query).First(&tx)
-	if dbResult.RecordNotFound() && len(dbResult.GetErrors()) == 1 {
+	dbErrors := dbResult.GetErrors()
+	if utils.IsDBRecordNotFoundError(dbErrors) {
 		return nil, utils.NewHandlerError(http.StatusNotFound, "No transaction with the given txid was found.")
 	}
-	if len(dbResult.GetErrors()) > 0 {
-		return nil, utils.NewHandlerErrorFromDBErrors("Some errors where encountered when loading transaction from the database:", dbResult.GetErrors())
+	if utils.HasDBError(dbErrors) {
+		return nil, utils.NewHandlerErrorFromDBErrors("Some errors where encountered when loading transaction from the database:", dbErrors)
 	}
 	return convertTxModelToTxResponse(tx), nil
 }
@@ -58,11 +59,12 @@ func GetTransactionByHashHandler(txHash string) (interface{}, *utils.HandlerErro
 	tx := &models.Transaction{}
 	query := db.Where(&models.Transaction{TransactionHash: txHash})
 	dbResult := addTxPreloadedFields(query).First(&tx)
-	if dbResult.RecordNotFound() && len(dbResult.GetErrors()) == 1 {
+	dbErrors := dbResult.GetErrors()
+	if utils.IsDBRecordNotFoundError(dbErrors) {
 		return nil, utils.NewHandlerError(http.StatusNotFound, "No transaction with the given txhash was found.")
 	}
-	if len(dbResult.GetErrors()) > 0 {
-		return nil, utils.NewHandlerErrorFromDBErrors("Some errors where encountered when loading transaction from the database:", dbResult.GetErrors())
+	if utils.HasDBError(dbErrors) {
+		return nil, utils.NewHandlerErrorFromDBErrors("Some errors where encountered when loading transaction from the database:", dbErrors)
 	}
 	return convertTxModelToTxResponse(tx), nil
 }
@@ -92,8 +94,9 @@ func GetTransactionsByAddressHandler(address string, skip uint64, limit uint64) 
 		Limit(limit).
 		Offset(skip).
 		Order("`transactions`.`id` ASC")
-	dbErrors := addTxPreloadedFields(query).Find(&txs).GetErrors()
-	if len(dbErrors) > 0 {
+	dbResult := addTxPreloadedFields(query).Find(&txs)
+	dbErrors := dbResult.GetErrors()
+	if utils.HasDBError(dbErrors) {
 		return nil, utils.NewHandlerErrorFromDBErrors("Some errors where encountered when loading transactions from the database:", dbErrors)
 	}
 	txResponses := make([]*transactionResponse, len(txs))
@@ -137,8 +140,8 @@ func addTxPreloadedFields(query *gorm.DB) *gorm.DB {
 		Preload("Subnetwork").
 		Preload("TransactionOutputs").
 		Preload("TransactionOutputs.Address").
-		Preload("TransactionInputs.TransactionOutput.Transaction").
-		Preload("TransactionInputs.TransactionOutput.Address")
+		Preload("TransactionInputs.PreviousTransactionOutput.Transaction").
+		Preload("TransactionInputs.PreviousTransactionOutput.Address")
 }
 
 // PostTransaction forwards a raw transaction to the JSON-RPC API server
