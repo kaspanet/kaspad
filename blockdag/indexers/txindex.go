@@ -5,6 +5,7 @@
 package indexers
 
 import (
+	"errors"
 	"fmt"
 	"github.com/daglabs/btcd/blockdag"
 	"github.com/daglabs/btcd/database"
@@ -162,7 +163,7 @@ func dbFetchFirstTxRegion(dbTx database.Tx, txID *daghash.TxID) (*database.Block
 	}
 
 	// Load the block hash associated with the block ID.
-	hash, err := dbFetchBlockHashAndBlueScoreBySerializedID(dbTx, blockIDBytes)
+	hash, err := dbFetchBlockHashBySerializedID(dbTx, blockIDBytes)
 	if err != nil {
 		return nil, database.Error{
 			ErrorCode: database.ErrCorruption,
@@ -314,9 +315,9 @@ func (idx *TxIndex) Create(dbTx database.Tx) error {
 // for every transaction in the passed block.
 //
 // This is part of the Indexer interface.
-func (idx *TxIndex) ConnectBlock(dbTx database.Tx, block *util.Block, newBlockID uint64, dag *blockdag.BlockDAG,
+func (idx *TxIndex) ConnectBlock(dbTx database.Tx, block *util.Block, newBlockID []byte, dag *blockdag.BlockDAG,
 	acceptedTxsData blockdag.MultiBlockTxsAcceptanceData, virtualTxsAcceptanceData blockdag.MultiBlockTxsAcceptanceData) error {
-	if err := dbAddTxIndexEntries(dbTx, block, newBlockID, acceptedTxsData); err != nil {
+	if err := dbAddTxIndexEntries(dbTx, block, deserializeBlockID(newBlockID), acceptedTxsData); err != nil {
 		return err
 	}
 
@@ -368,7 +369,7 @@ func dbFetchTxBlocks(dbTx database.Tx, txHash *daghash.Hash) ([]*daghash.Hash, e
 		}
 	}
 	err := bucket.ForEach(func(blockIDBytes, _ []byte) error {
-		blockHash, _, err := dbFetchBlockHashAndBlueScoreBySerializedID(dbTx, blockIDBytes)
+		blockHash, err := dbFetchBlockHashBySerializedID(dbTx, blockIDBytes)
 		if err != nil {
 			return err
 		}
@@ -416,7 +417,7 @@ func dbFetchTxAcceptingBlock(dbTx database.Tx, txID *daghash.TxID, dag *blockdag
 		}
 	}
 	for ; cursor.Key() != nil; cursor.Next() {
-		blockHash, err := dbFetchBlockHashAndBlueScoreBySerializedID(dbTx, cursor.Key())
+		blockHash, err := dbFetchBlockHashBySerializedID(dbTx, cursor.Key())
 		if err != nil {
 			return nil, err
 		}
@@ -453,4 +454,9 @@ func DropTxIndex(db database.DB, interrupt <-chan struct{}) error {
 	}
 
 	return dropIndex(db, acceptingBlocksIndexKey, txIndexName, interrupt)
+}
+
+func (idx *TxIndex) Recover(dbTx database.Tx, currentBlockID, lastKnownBlockID uint64) error {
+		return errors.New("txindex doesn't have recoverability capabilites." +
+			" To resume working drop the txindex with --droptxindex")
 }

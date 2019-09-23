@@ -2,7 +2,6 @@ package indexers
 
 import (
 	"fmt"
-	"github.com/daglabs/btcd/blockdag"
 	"github.com/daglabs/btcd/database"
 	"github.com/daglabs/btcd/util/daghash"
 )
@@ -13,9 +12,9 @@ var(
 // the block hash -> block id index.
 idByHashIndexBucketName = []byte("idbyhashidx")
 
-// hashAndBlueScoreByIDIndexBucketName is the name of the db bucket used to house
-// the block id -> (block hash, blue score) index.
-hashAndBlueScoreByIDIndexBucketName = []byte("hashbluescorebyididx")
+// hashByIDIndexBucketName is the name of the db bucket used to house
+// the block id -> block hash index.
+hashByIDIndexBucketName = []byte("hashbyididx")
 
 )
 
@@ -45,17 +44,17 @@ func dropBlockIDIndex(db database.DB) error {
 			return err
 		}
 
-		return meta.DeleteBucket(hashAndBlueScoreByIDIndexBucketName)
+		return meta.DeleteBucket(hashByIDIndexBucketName)
 	})
 }
 
-// dbFetchBlockHashAndBlueScoreBySerializedID uses an existing database transaction to
+// dbFetchBlockHashBySerializedID uses an existing database transaction to
 // retrieve the hash for the provided serialized block id from the index.
-func dbFetchBlockHashAndBlueScoreBySerializedID(dbTx database.Tx, serializedID []byte) (*daghash.Hash, uint64, error) {
-	idIndex := dbTx.Metadata().Bucket(hashAndBlueScoreByIDIndexBucketName)
-	blueScoreHash := idIndex.Get(serializedID)
+func dbFetchBlockHashBySerializedID(dbTx database.Tx, serializedID []byte) (*daghash.Hash, error) {
+	idIndex := dbTx.Metadata().Bucket(hashByIDIndexBucketName)
+	hashBytes := idIndex.Get(serializedID)
 	if hashBytes == nil {
-		return nil,0, fmt.Errorf("no entry in the block ID index for block with id %d", deserializeBlockID(serializedID))
+		return nil, fmt.Errorf("no entry in the block ID index for block with id %d", byteOrder.Uint64(serializedID))
 	}
 
 	var hash daghash.Hash
@@ -66,7 +65,7 @@ func dbFetchBlockHashAndBlueScoreBySerializedID(dbTx database.Tx, serializedID [
 // dbPutBlockIDIndexEntry uses an existing database transaction to update or add
 // the index entries for the hash to id and id to hash mappings for the provided
 // values.
-func dbPutBlockIDIndexEntry(dbTx database.Tx, hash *daghash.Hash, blueScore uint64, serializedID []byte) error {
+func dbPutBlockIDIndexEntry(dbTx database.Tx, hash *daghash.Hash, serializedID []byte) error {
 	// Add the block hash to ID mapping to the index.
 	meta := dbTx.Metadata()
 	hashIndex := meta.Bucket(idByHashIndexBucketName)
@@ -74,12 +73,9 @@ func dbPutBlockIDIndexEntry(dbTx database.Tx, hash *daghash.Hash, blueScore uint
 		return err
 	}
 
-	blueScoreHash := blockdag.BlockIndexKey(hash, blueScore)
-	byteOrder.PutUint64(blueScoreHash[daghash.HashSize:daghash.HashSize + blueScoreSize], blueScore)
-
 	// Add the block ID to hash mapping to the index.
-	idIndex := meta.Bucket(hashAndBlueScoreByIDIndexBucketName)
-	return idIndex.Put(serializedID[:], blueScoreHash)
+	idIndex := meta.Bucket(hashByIDIndexBucketName)
+	return idIndex.Put(serializedID[:], hash[:])
 }
 
 func dbFetchCurrentBlockID(dbTx database.Tx) uint64 {
@@ -98,4 +94,10 @@ func serializeBlockID(blockID uint64) []byte{
 	serializedBlockID := make([]byte, blockIDSize)
 	byteOrder.PutUint64(serializedBlockID, blockID)
 	return serializedBlockID
+}
+
+// dbFetchBlockHashByID uses an existing database transaction to retrieve the
+// hash for the provided block id from the index.
+func dbFetchBlockHashByID(dbTx database.Tx, id uint64) (*daghash.Hash, error) {
+	return dbFetchBlockHashBySerializedID(dbTx, serializeBlockID(id))
 }

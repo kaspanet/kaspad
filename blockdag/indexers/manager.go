@@ -158,7 +158,7 @@ func (m *Manager) Init(db database.DB, blockDAG *blockdag.BlockDAG, interrupt <-
 		if _, err := meta.CreateBucketIfNotExists(idByHashIndexBucketName); err != nil {
 			return err
 		}
-		if _, err := meta.CreateBucketIfNotExists(hashAndBlueScoreByIDIndexBucketName); err != nil {
+		if _, err := meta.CreateBucketIfNotExists(hashByIDIndexBucketName); err != nil {
 			return err
 		}
 
@@ -178,16 +178,27 @@ func (m *Manager) Init(db database.DB, blockDAG *blockdag.BlockDAG, interrupt <-
 	return nil
 }
 
+func (m *Manager) recoverIfNeeded(dbTx database.Tx) error{
+	lastKnownBlockID := dbFetchCurrentBlockID(dbTx)
+	for _, indexer := range m.enabledIndexes {
+		serializedCurrentIdxBlockID := dbTx.Metadata().Bucket(indexCurrentBlockIDBucketName).Get(indexer.Key())
+		currentIdxBlockID := deserializeBlockID(serializedCurrentIdxBlockID)
+		if lastKnownBlockID > currentIdxBlockID{
+			err := indexer.Recover(dbTx, currentIdxBlockID, lastKnownBlockID)
+			if err != nil{
+				return err
+			}
+		}
+	}
+}
+
 // ConnectBlock must be invoked when a block is extending the main chain.  It
 // keeps track of the state of each index it is managing, performs some sanity
 // checks, and invokes each indexer.
 //
 // This is part of the blockchain.IndexManager interface.
-func (m *Manager) ConnectBlock(dbTx database.Tx, block *util.Block, blueScore uint64, dag *blockdag.BlockDAG,
+func (m *Manager) ConnectBlock(dbTx database.Tx, block *util.Block, dag *blockdag.BlockDAG,
 	txsAcceptanceData blockdag.MultiBlockTxsAcceptanceData, virtualTxsAcceptanceData blockdag.MultiBlockTxsAcceptanceData) error {
-	if len(m.enabledIndexes) == 0{
-		return nil
-	}
 	currentBlockID := dbFetchCurrentBlockID(dbTx)
 	newBlockID := currentBlockID + 1
 	serializedNewBlockID := serializeBlockID(newBlockID)
@@ -203,15 +214,15 @@ func (m *Manager) ConnectBlock(dbTx database.Tx, block *util.Block, blueScore ui
 
 	// Add the new block ID index entry for the block being connected and
 	// update the current internal block ID accordingly.
-	err := m.updateDBWithCurrentBlockID(dbTx, block.Hash(), blueScore, serializedNewBlockID)
+	err := m.updateDBWithCurrentBlockID(dbTx, block.Hash(), serializedNewBlockID)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (m *Manager) updateDBWithCurrentBlockID(dbTx database.Tx, blockHash *daghash.Hash, blueScore uint64, newBlockID []byte) error{
-	err := dbPutBlockIDIndexEntry(dbTx, blockHash, blueScore, newBlockID)
+func (m *Manager) updateDBWithCurrentBlockID(dbTx database.Tx, blockHash *daghash.Hash, newBlockID []byte) error{
+	err := dbPutBlockIDIndexEntry(dbTx, blockHash, newBlockID)
 	if err != nil {
 		return err
 	}

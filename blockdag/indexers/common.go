@@ -58,6 +58,8 @@ type Indexer interface {
 		dag *blockdag.BlockDAG,
 		acceptedTxsData blockdag.MultiBlockTxsAcceptanceData,
 		virtualTxsAcceptanceData blockdag.MultiBlockTxsAcceptanceData) error
+
+	Recover(dbTx database.Tx, currentBlockID, lastKnownBlockID uint64) error
 }
 
 // AssertError identifies an error that indicates an internal code consistency

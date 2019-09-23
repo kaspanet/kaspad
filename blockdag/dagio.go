@@ -775,8 +775,8 @@ func BlockIndexKey(blockHash *daghash.Hash, blueScore uint64) []byte {
 	return indexKey
 }
 
-func blockHashFromBlockIndexKey(blockIndexKey []byte) (*daghash.Hash, error) {
-	return daghash.NewHash(blockIndexKey[8 : daghash.HashSize+8])
+func blockHashFromBlockIndexKey(BlockIndexKey []byte) (*daghash.Hash, error) {
+	return daghash.NewHash(BlockIndexKey[8 : daghash.HashSize+8])
 }
 
 // BlockByHash returns the block from the DAG with the given hash.
@@ -823,7 +823,7 @@ func (dag *BlockDAG) BlockHashesFrom(startHash *daghash.Hash, limit int) ([]*dag
 
 	err = dag.index.db.View(func(dbTx database.Tx) error {
 		blockIndexBucket := dbTx.Metadata().Bucket(blockIndexBucketName)
-		startKey := blockIndexKey(startHash, blueScore)
+		startKey := BlockIndexKey(startHash, blueScore)
 
 		cursor := blockIndexBucket.Cursor()
 		cursor.Seek(startKey)
