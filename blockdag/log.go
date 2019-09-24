@@ -9,5 +9,5 @@ import (
 	"github.com/daglabs/btcd/util/panics"
 )
 
-var log, _ = logger.Get(logger.SubsystemTags.CHAN)
+var log, _ = logger.Get(logger.SubsystemTags.BDAG)
 var spawn = panics.GoroutineWrapperFunc(log, logger.BackendLog)

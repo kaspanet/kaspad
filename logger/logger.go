@@ -31,7 +31,7 @@ var (
 	cmgrLog = BackendLog.Logger("CMGR")
 	bcdbLog = BackendLog.Logger("BCDB")
 	btcdLog = BackendLog.Logger("BTCD")
-	chanLog = BackendLog.Logger("CHAN")
+	bdagLog = BackendLog.Logger("BDAG")
 	cnfgLog = BackendLog.Logger("CNFG")
 	discLog = BackendLog.Logger("DISC")
 	indxLog = BackendLog.Logger("INDX")
@@ -52,7 +52,7 @@ var SubsystemTags = struct {
 	CMGR,
 	BCDB,
 	BTCD,
-	CHAN,
+	BDAG,
 	CNFG,
 	DISC,
 	INDX,
@@ -70,7 +70,7 @@ var SubsystemTags = struct {
 	CMGR: "CMGR",
 	BCDB: "BCDB",
 	BTCD: "BTCD",
-	CHAN: "CHAN",
+	BDAG: "BDAG",
 	CNFG: "CNFG",
 	DISC: "DISC",
 	INDX: "INDX",
@@ -91,7 +91,7 @@ var subsystemLoggers = map[string]logs.Logger{
 	SubsystemTags.CMGR: cmgrLog,
 	SubsystemTags.BCDB: bcdbLog,
 	SubsystemTags.BTCD: btcdLog,
-	SubsystemTags.CHAN: chanLog,
+	SubsystemTags.BDAG: bdagLog,
 	SubsystemTags.CNFG: cnfgLog,
 	SubsystemTags.DISC: discLog,
 	SubsystemTags.INDX: indxLog,
