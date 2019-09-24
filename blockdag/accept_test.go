@@ -2,6 +2,7 @@ package blockdag
 
 import (
 	"errors"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -25,7 +26,7 @@ func TestMaybeAcceptBlockErrors(t *testing.T) {
 
 	// Test rejecting the block if its parents are missing
 	orphanBlockFile := "blk_3B.dat"
-	loadedBlocks, err := loadBlocks(orphanBlockFile)
+	loadedBlocks, err := LoadBlocks(filepath.Join("testdata/", orphanBlockFile))
 	if err != nil {
 		t.Fatalf("TestMaybeAcceptBlockErrors: "+
 			"Error loading file '%s': %s\n", orphanBlockFile, err)
@@ -48,7 +49,7 @@ func TestMaybeAcceptBlockErrors(t *testing.T) {
 
 	// Test rejecting the block if its parents are invalid
 	blocksFile := "blk_0_to_4.dat"
-	blocks, err := loadBlocks(blocksFile)
+	blocks, err := LoadBlocks(filepath.Join("testdata/", blocksFile))
 	if err != nil {
 		t.Fatalf("TestMaybeAcceptBlockErrors: "+
 			"Error loading file '%s': %s\n", blocksFile, err)

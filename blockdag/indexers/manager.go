@@ -17,8 +17,6 @@ var (
 	indexTipsBucketName = []byte("idxtips")
 
 	indexCurrentBlockIDBucketName = []byte("idxcurrentblockid")
-
-	currentBlockIDKey = []byte("currentblockid")
 )
 
 // Manager defines an index manager that manages multiple optional indexes and
@@ -155,13 +153,6 @@ func (m *Manager) Init(db database.DB, blockDAG *blockdag.BlockDAG, interrupt <-
 			return err
 		}
 
-		if _, err := meta.CreateBucketIfNotExists(idByHashIndexBucketName); err != nil {
-			return err
-		}
-		if _, err := meta.CreateBucketIfNotExists(hashByIDIndexBucketName); err != nil {
-			return err
-		}
-
 		return m.maybeCreateIndexes(dbTx)
 	})
 	if err != nil {
@@ -175,21 +166,27 @@ func (m *Manager) Init(db database.DB, blockDAG *blockdag.BlockDAG, interrupt <-
 		}
 	}
 
-	return nil
+	return m.recoverIfNeeded()
 }
 
-func (m *Manager) recoverIfNeeded(dbTx database.Tx) error{
-	lastKnownBlockID := dbFetchCurrentBlockID(dbTx)
-	for _, indexer := range m.enabledIndexes {
-		serializedCurrentIdxBlockID := dbTx.Metadata().Bucket(indexCurrentBlockIDBucketName).Get(indexer.Key())
-		currentIdxBlockID := deserializeBlockID(serializedCurrentIdxBlockID)
-		if lastKnownBlockID > currentIdxBlockID{
-			err := indexer.Recover(dbTx, currentIdxBlockID, lastKnownBlockID)
-			if err != nil{
-				return err
+func (m *Manager) recoverIfNeeded() error {
+	return m.db.Update(func(dbTx database.Tx) error {
+		lastKnownBlockID := blockdag.DBFetchCurrentBlockID(dbTx)
+		for _, indexer := range m.enabledIndexes {
+			serializedCurrentIdxBlockID := dbTx.Metadata().Bucket(indexCurrentBlockIDBucketName).Get(indexer.Key())
+			currentIdxBlockID := uint64(0)
+			if serializedCurrentIdxBlockID != nil {
+				currentIdxBlockID = blockdag.DeserializeBlockID(serializedCurrentIdxBlockID)
+			}
+			if lastKnownBlockID > currentIdxBlockID {
+				err := indexer.Recover(dbTx, currentIdxBlockID, lastKnownBlockID)
+				if err != nil {
+					return err
+				}
 			}
 		}
-	}
+		return nil
+	})
 }
 
 // ConnectBlock must be invoked when a block is extending the main chain.  It
@@ -197,39 +194,32 @@ func (m *Manager) recoverIfNeeded(dbTx database.Tx) error{
 // checks, and invokes each indexer.
 //
 // This is part of the blockchain.IndexManager interface.
-func (m *Manager) ConnectBlock(dbTx database.Tx, block *util.Block, dag *blockdag.BlockDAG,
+func (m *Manager) ConnectBlock(dbTx database.Tx, block *util.Block, blockID uint64, dag *blockdag.BlockDAG,
 	txsAcceptanceData blockdag.MultiBlockTxsAcceptanceData, virtualTxsAcceptanceData blockdag.MultiBlockTxsAcceptanceData) error {
-	currentBlockID := dbFetchCurrentBlockID(dbTx)
-	newBlockID := currentBlockID + 1
-	serializedNewBlockID := serializeBlockID(newBlockID)
 
 	// Call each of the currently active optional indexes with the block
 	// being connected so they can update accordingly.
 	for _, index := range m.enabledIndexes {
 		// Notify the indexer with the connected block so it can index it.
-		if err := index.ConnectBlock(dbTx, block, newBlockID, dag, txsAcceptanceData, virtualTxsAcceptanceData); err != nil {
+		if err := index.ConnectBlock(dbTx, block, blockID, dag, txsAcceptanceData, virtualTxsAcceptanceData); err != nil {
 			return err
 		}
 	}
 
 	// Add the new block ID index entry for the block being connected and
 	// update the current internal block ID accordingly.
-	err := m.updateDBWithCurrentBlockID(dbTx, block.Hash(), serializedNewBlockID)
+	err := m.updateIndexersWithCurrentBlockID(dbTx, block.Hash(), blockID)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (m *Manager) updateDBWithCurrentBlockID(dbTx database.Tx, blockHash *daghash.Hash, newBlockID []byte) error{
-	err := dbPutBlockIDIndexEntry(dbTx, blockHash, newBlockID)
-	if err != nil {
-		return err
-	}
-
+func (m *Manager) updateIndexersWithCurrentBlockID(dbTx database.Tx, blockHash *daghash.Hash, blockID uint64) error {
+	serializedBlockID := blockdag.SerializeBlockID(blockID)
 	for _, index := range m.enabledIndexes {
-		err := dbTx.Metadata().Bucket(indexCurrentBlockIDBucketName).Put(index.Key(),newBlockID)
-		if err != nil{
+		err := dbTx.Metadata().Bucket(indexCurrentBlockIDBucketName).Put(index.Key(), serializedBlockID)
+		if err != nil {
 			return err
 		}
 	}
@@ -370,13 +360,6 @@ func dropIndex(db database.DB, idxKey []byte, idxName string, interrupt <-chan s
 			}
 			return bucket.DeleteBucket(bucketName[len(bucketName)-1])
 		})
-	}
-
-	// Call extra index specific deinitialization for the transaction index.
-	if idxName == txIndexName {
-		if err := dropBlockIDIndex(db); err != nil {
-			return err
-		}
 	}
 
 	// Remove the index tip, index bucket, and in-progress drop flag now

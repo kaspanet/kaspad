@@ -3,9 +3,14 @@ package blockdag
 // This file functions are not considered safe for regular use, and should be used for test purposes only.
 
 import (
+	"compress/bzip2"
+	"encoding/binary"
 	"fmt"
+	"github.com/daglabs/btcd/util"
+	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 
 	"github.com/daglabs/btcd/util/subnetworkid"
@@ -41,14 +46,18 @@ func isSupportedDbType(dbType string) bool {
 	return false
 }
 
-// filesExists returns whether or not the named file or directory exists.
-func fileExists(name string) bool {
+// FileExists returns whether or not the named file or directory exists.
+func FileExists(name string) bool {
 	if _, err := os.Stat(name); err != nil {
 		if os.IsNotExist(err) {
 			return false
 		}
 	}
 	return true
+}
+
+func TestDBPath(dbName string) string {
+	return filepath.Join(testDbRoot, dbName)
 }
 
 // DAGSetup is used to create a new db and chain instance with the genesis
@@ -75,7 +84,7 @@ func DAGSetup(dbName string, config Config) (*BlockDAG, func(), error) {
 
 	if config.DB == nil {
 		// Create the root directory for test databases.
-		if !fileExists(testDbRoot) {
+		if !FileExists(testDbRoot) {
 			if err := os.MkdirAll(testDbRoot, 0700); err != nil {
 				err := fmt.Errorf("unable to create test db "+
 					"root: %s", err)
@@ -83,7 +92,7 @@ func DAGSetup(dbName string, config Config) (*BlockDAG, func(), error) {
 			}
 		}
 
-		dbPath := filepath.Join(testDbRoot, dbName)
+		dbPath := TestDBPath(dbName)
 		_ = os.RemoveAll(dbPath)
 		var err error
 		config.DB, err = database.Create(testDbType, dbPath, blockDataNet)
@@ -99,6 +108,12 @@ func DAGSetup(dbName string, config Config) (*BlockDAG, func(), error) {
 			config.DB.Close()
 			os.RemoveAll(dbPath)
 			os.RemoveAll(testDbRoot)
+		}
+	} else {
+		teardown = func() {
+			spawnWaitGroup.Wait()
+			spawn = realSpawn
+			config.DB.Close()
 		}
 	}
 
@@ -192,4 +207,60 @@ func GetVirtualFromParentsForTest(dag *BlockDAG, parentHashes []*daghash.Hash) (
 	virtual.utxoSet = diffUTXO.base
 
 	return VirtualForTest(virtual), nil
+}
+
+// LoadBlocks reads files containing bitcoin block data (gzipped but otherwise
+// in the format bitcoind writes) from disk and returns them as an array of
+// util.Block.  This is largely borrowed from the test code in btcdb.
+func LoadBlocks(filename string) (blocks []*util.Block, err error) {
+	var network = wire.MainNet
+	var dr io.Reader
+	var fi io.ReadCloser
+
+	fi, err = os.Open(filename)
+	if err != nil {
+		return
+	}
+
+	if strings.HasSuffix(filename, ".bz2") {
+		dr = bzip2.NewReader(fi)
+	} else {
+		dr = fi
+	}
+	defer fi.Close()
+
+	var block *util.Block
+
+	err = nil
+	for height := uint64(0); err == nil; height++ {
+		var rintbuf uint32
+		err = binary.Read(dr, binary.LittleEndian, &rintbuf)
+		if err == io.EOF {
+			// hit end of file at expected offset: no warning
+			height--
+			err = nil
+			break
+		}
+		if err != nil {
+			break
+		}
+		if rintbuf != uint32(network) {
+			break
+		}
+		err = binary.Read(dr, binary.LittleEndian, &rintbuf)
+		blocklen := rintbuf
+
+		rbytes := make([]byte, blocklen)
+
+		// read block
+		dr.Read(rbytes)
+
+		block, err = util.NewBlockFromBytes(rbytes)
+		if err != nil {
+			return
+		}
+		blocks = append(blocks, block)
+	}
+
+	return
 }

@@ -1,4 +1,4 @@
-package indexers
+package blockdag
 
 import (
 	"fmt"
@@ -6,33 +6,34 @@ import (
 	"github.com/daglabs/btcd/util/daghash"
 )
 
-var(
+var (
 
-// idByHashIndexBucketName is the name of the db bucket used to house
-// the block hash -> block id index.
-idByHashIndexBucketName = []byte("idbyhashidx")
+	// idByHashIndexBucketName is the name of the db bucket used to house
+	// the block hash -> block id index.
+	idByHashIndexBucketName = []byte("idbyhashidx")
 
-// hashByIDIndexBucketName is the name of the db bucket used to house
-// the block id -> block hash index.
-hashByIDIndexBucketName = []byte("hashbyididx")
+	// hashByIDIndexBucketName is the name of the db bucket used to house
+	// the block id -> block hash index.
+	hashByIDIndexBucketName = []byte("hashbyididx")
 
+	currentBlockIDKey = []byte("currentblockid")
 )
 
-const(
-	blockIDSize = 8 // 8 bytes for block ID
+const (
+	blockIDSize   = 8 // 8 bytes for block ID
 	blueScoreSize = 8 // 8 bytes for blue score
 )
 
-// dbFetchBlockIDByHash uses an existing database transaction to retrieve the
+// DBFetchBlockIDByHash uses an existing database transaction to retrieve the
 // block id for the provided hash from the index.
-func dbFetchBlockIDByHash(dbTx database.Tx, hash *daghash.Hash) (uint64, error) {
+func DBFetchBlockIDByHash(dbTx database.Tx, hash *daghash.Hash) (uint64, error) {
 	hashIndex := dbTx.Metadata().Bucket(idByHashIndexBucketName)
 	serializedID := hashIndex.Get(hash[:])
 	if serializedID == nil {
 		return 0, fmt.Errorf("no entry in the block ID index for block with hash %s", hash)
 	}
 
-	return deserializeBlockID(serializedID), nil
+	return DeserializeBlockID(serializedID), nil
 }
 
 // dropBlockIDIndex drops the internal block id index.
@@ -48,9 +49,9 @@ func dropBlockIDIndex(db database.DB) error {
 	})
 }
 
-// dbFetchBlockHashBySerializedID uses an existing database transaction to
+// DBFetchBlockHashBySerializedID uses an existing database transaction to
 // retrieve the hash for the provided serialized block id from the index.
-func dbFetchBlockHashBySerializedID(dbTx database.Tx, serializedID []byte) (*daghash.Hash, error) {
+func DBFetchBlockHashBySerializedID(dbTx database.Tx, serializedID []byte) (*daghash.Hash, error) {
 	idIndex := dbTx.Metadata().Bucket(hashByIDIndexBucketName)
 	hashBytes := idIndex.Get(serializedID)
 	if hashBytes == nil {
@@ -78,26 +79,41 @@ func dbPutBlockIDIndexEntry(dbTx database.Tx, hash *daghash.Hash, serializedID [
 	return idIndex.Put(serializedID[:], hash[:])
 }
 
-func dbFetchCurrentBlockID(dbTx database.Tx) uint64 {
+func DBFetchCurrentBlockID(dbTx database.Tx) uint64 {
 	serializedID := dbTx.Metadata().Get(currentBlockIDKey)
-	if serializedID == nil{
+	if serializedID == nil {
 		return 0
 	}
-	return deserializeBlockID(serializedID)
+	return DeserializeBlockID(serializedID)
 }
 
-func deserializeBlockID(serializedID []byte) uint64{
+func DeserializeBlockID(serializedID []byte) uint64 {
 	return byteOrder.Uint64(serializedID)
 }
 
-func serializeBlockID(blockID uint64) []byte{
+func SerializeBlockID(blockID uint64) []byte {
 	serializedBlockID := make([]byte, blockIDSize)
 	byteOrder.PutUint64(serializedBlockID, blockID)
 	return serializedBlockID
 }
 
-// dbFetchBlockHashByID uses an existing database transaction to retrieve the
+// DBFetchBlockHashByID uses an existing database transaction to retrieve the
 // hash for the provided block id from the index.
-func dbFetchBlockHashByID(dbTx database.Tx, id uint64) (*daghash.Hash, error) {
-	return dbFetchBlockHashBySerializedID(dbTx, serializeBlockID(id))
+func DBFetchBlockHashByID(dbTx database.Tx, id uint64) (*daghash.Hash, error) {
+	return DBFetchBlockHashBySerializedID(dbTx, SerializeBlockID(id))
+}
+
+func createBlockID(dbTx database.Tx, blockHash *daghash.Hash) (uint64, error) {
+	currentBlockID := DBFetchCurrentBlockID(dbTx)
+	newBlockID := currentBlockID + 1
+	serializedNewBlockID := SerializeBlockID(newBlockID)
+	err := dbTx.Metadata().Put(currentBlockIDKey, serializedNewBlockID)
+	if err != nil {
+		return 0, err
+	}
+	err = dbPutBlockIDIndexEntry(dbTx, blockHash, serializedNewBlockID)
+	if err != nil {
+		return 0, err
+	}
+	return newBlockID, nil
 }

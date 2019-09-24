@@ -5,7 +5,6 @@ import (
 	"encoding/gob"
 	"fmt"
 	"github.com/daglabs/btcd/blockdag"
-	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/database"
 	"github.com/daglabs/btcd/util"
 	"github.com/daglabs/btcd/util/daghash"
@@ -27,7 +26,7 @@ var (
 // it stores a mapping between a block's hash and the set of transactions that the
 // block accepts among its blue blocks.
 type AcceptanceIndex struct {
-	db database.DB
+	db  database.DB
 	dag *blockdag.BlockDAG
 }
 
@@ -40,7 +39,7 @@ var _ Indexer = (*AcceptanceIndex)(nil)
 // It implements the Indexer interface which plugs into the IndexManager that in
 // turn is used by the blockdag package. This allows the index to be
 // seamlessly maintained along with the DAG.
-func NewAcceptanceIndex(_ *dagconfig.Params) *AcceptanceIndex {
+func NewAcceptanceIndex() *AcceptanceIndex {
 	return &AcceptanceIndex{}
 }
 
@@ -87,9 +86,9 @@ func (idx *AcceptanceIndex) Init(db database.DB, dag *blockdag.BlockDAG) error {
 // connected to the DAG.
 //
 // This is part of the Indexer interface.
-func (idx *AcceptanceIndex) ConnectBlock(dbTx database.Tx, _ *util.Block, newBlockID uint64, _ *blockdag.BlockDAG,
+func (idx *AcceptanceIndex) ConnectBlock(dbTx database.Tx, _ *util.Block, blockID uint64, _ *blockdag.BlockDAG,
 	txsAcceptanceData blockdag.MultiBlockTxsAcceptanceData, _ blockdag.MultiBlockTxsAcceptanceData) error {
-	return dbPutTxsAcceptanceData(dbTx, serializeBlockID(newBlockID), txsAcceptanceData)
+	return dbPutTxsAcceptanceData(dbTx, blockID, txsAcceptanceData)
 }
 
 // TxsAcceptanceData returns the acceptance data of all the transactions that
@@ -108,24 +107,24 @@ func (idx *AcceptanceIndex) TxsAcceptanceData(blockHash *daghash.Hash) (blockdag
 }
 
 func (idx *AcceptanceIndex) Recover(dbTx database.Tx, currentBlockID, lastKnownBlockID uint64) error {
-	for blockID := currentBlockID + 1; blockID <= lastKnownBlockID; blockID++{
-		hash, err := dbFetchBlockHashByID(dbTx, currentBlockID)
-		if err != nil{
+	for blockID := currentBlockID + 1; blockID <= lastKnownBlockID; blockID++ {
+		hash, err := blockdag.DBFetchBlockHashByID(dbTx, currentBlockID)
+		if err != nil {
 			return err
 		}
 		txAcceptanceData, err := idx.dag.TxsAcceptedByBlockHash(hash)
-		if err != nil{
+		if err != nil {
 			return err
 		}
 		err = idx.ConnectBlock(dbTx, nil, blockID, nil, txAcceptanceData, nil)
-		if err != nil{
+		if err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func dbPutTxsAcceptanceData(dbTx database.Tx, newBlockID []byte,
+func dbPutTxsAcceptanceData(dbTx database.Tx, blockID uint64,
 	txsAcceptanceData blockdag.MultiBlockTxsAcceptanceData) error {
 	serializedTxsAcceptanceData, err := serializeMultiBlockTxsAcceptanceData(txsAcceptanceData)
 	if err != nil {
@@ -133,14 +132,14 @@ func dbPutTxsAcceptanceData(dbTx database.Tx, newBlockID []byte,
 	}
 
 	bucket := dbTx.Metadata().Bucket(acceptanceIndexKey)
-	return bucket.Put(newBlockID, serializedTxsAcceptanceData)
+	return bucket.Put(blockdag.SerializeBlockID(blockID), serializedTxsAcceptanceData)
 }
 
 func dbFetchTxsAcceptanceDataByHash(dbTx database.Tx,
 	hash *daghash.Hash) (blockdag.MultiBlockTxsAcceptanceData, error) {
 
-	blockID, err := dbFetchBlockIDByHash(dbTx, hash)
-	if err != nil{
+	blockID, err := blockdag.DBFetchBlockIDByHash(dbTx, hash)
+	if err != nil {
 		return nil, err
 	}
 
@@ -149,7 +148,7 @@ func dbFetchTxsAcceptanceDataByHash(dbTx database.Tx,
 
 func dbFetchTxsAcceptanceDataByID(dbTx database.Tx,
 	blockID uint64) (blockdag.MultiBlockTxsAcceptanceData, error) {
-	serializedBlockID := serializeBlockID(blockID)
+	serializedBlockID := blockdag.SerializeBlockID(blockID)
 	bucket := dbTx.Metadata().Bucket(acceptanceIndexKey)
 	serializedTxsAcceptanceData := bucket.Get(serializedBlockID)
 	if serializedTxsAcceptanceData == nil {

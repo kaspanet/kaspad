@@ -1995,7 +1995,6 @@ func (db *db) Close() error {
 }
 
 // FlushCache flushes the db cache to the disk.
-// TODO: (Ori) This is a temporary function for dev use. It needs to be removed.
 func (db *db) FlushCache() error {
 	return db.cache.flush()
 }

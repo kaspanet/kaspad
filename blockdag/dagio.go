@@ -335,6 +335,13 @@ func (dag *BlockDAG) createDAGState() error {
 		if err := dbPutLocalSubnetworkID(dbTx, dag.subnetworkID); err != nil {
 			return err
 		}
+
+		if _, err := meta.CreateBucketIfNotExists(idByHashIndexBucketName); err != nil {
+			return err
+		}
+		if _, err := meta.CreateBucketIfNotExists(hashByIDIndexBucketName); err != nil {
+			return err
+		}
 		return nil
 	})
 

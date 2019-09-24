@@ -107,8 +107,7 @@ func dbPutIncludingBlocksEntry(dbTx database.Tx, txID *daghash.TxID, blockID uin
 	if err != nil {
 		return err
 	}
-	blockIDBytes := make([]byte, blockIDSize)
-	byteOrder.PutUint64(blockIDBytes, blockID)
+	blockIDBytes := blockdag.SerializeBlockID(blockID)
 	return bucket.Put(blockIDBytes, serializedData)
 }
 
@@ -117,8 +116,7 @@ func dbPutAcceptingBlocksEntry(dbTx database.Tx, txID *daghash.TxID, blockID uin
 	if err != nil {
 		return err
 	}
-	blockIDBytes := make([]byte, blockIDSize)
-	byteOrder.PutUint64(blockIDBytes, blockID)
+	blockIDBytes := blockdag.SerializeBlockID(blockID)
 	return bucket.Put(blockIDBytes, serializedData)
 }
 
@@ -163,7 +161,7 @@ func dbFetchFirstTxRegion(dbTx database.Tx, txID *daghash.TxID) (*database.Block
 	}
 
 	// Load the block hash associated with the block ID.
-	hash, err := dbFetchBlockHashBySerializedID(dbTx, blockIDBytes)
+	hash, err := blockdag.DBFetchBlockHashBySerializedID(dbTx, blockIDBytes)
 	if err != nil {
 		return nil, database.Error{
 			ErrorCode: database.ErrCorruption,
@@ -214,14 +212,13 @@ func dbAddTxIndexEntries(dbTx database.Tx, block *util.Block, blockID uint64, tx
 		if includingBlockHash.IsEqual(block.Hash()) {
 			includingBlockID = blockID
 		} else {
-			includingBlockID, err = dbFetchBlockIDByHash(dbTx, &includingBlockHash)
+			includingBlockID, err = blockdag.DBFetchBlockIDByHash(dbTx, &includingBlockHash)
 			if err != nil {
 				return err
 			}
 		}
 
-		includingBlockIDBytes := make([]byte, blockIDSize)
-		byteOrder.PutUint64(includingBlockIDBytes, includingBlockID)
+		includingBlockIDBytes := blockdag.SerializeBlockID(includingBlockID)
 
 		for _, txAcceptanceData := range blockTxsAcceptanceData {
 			err = dbPutAcceptingBlocksEntry(dbTx, txAcceptanceData.Tx.ID(), blockID, includingBlockIDBytes)
@@ -255,7 +252,7 @@ func updateTxsAcceptedByVirtual(virtualTxsAcceptanceData blockdag.MultiBlockTxsA
 // TxIndex implements a transaction by hash index.  That is to say, it supports
 // querying all transactions by their hash.
 type TxIndex struct {
-	db         database.DB
+	db database.DB
 }
 
 // Ensure the TxIndex type implements the Indexer interface.
@@ -369,7 +366,7 @@ func dbFetchTxBlocks(dbTx database.Tx, txHash *daghash.Hash) ([]*daghash.Hash, e
 		}
 	}
 	err := bucket.ForEach(func(blockIDBytes, _ []byte) error {
-		blockHash, err := dbFetchBlockHashBySerializedID(dbTx, blockIDBytes)
+		blockHash, err := blockdag.DBFetchBlockHashBySerializedID(dbTx, blockIDBytes)
 		if err != nil {
 			return err
 		}
@@ -417,7 +414,7 @@ func dbFetchTxAcceptingBlock(dbTx database.Tx, txID *daghash.TxID, dag *blockdag
 		}
 	}
 	for ; cursor.Key() != nil; cursor.Next() {
-		blockHash, err := dbFetchBlockHashBySerializedID(dbTx, cursor.Key())
+		blockHash, err := blockdag.DBFetchBlockHashBySerializedID(dbTx, cursor.Key())
 		if err != nil {
 			return nil, err
 		}
@@ -457,6 +454,6 @@ func DropTxIndex(db database.DB, interrupt <-chan struct{}) error {
 }
 
 func (idx *TxIndex) Recover(dbTx database.Tx, currentBlockID, lastKnownBlockID uint64) error {
-		return errors.New("txindex doesn't have recoverability capabilites." +
-			" To resume working drop the txindex with --droptxindex")
+	return errors.New("txindex doesn't have recoverability capabilites." +
+		" To resume working drop the txindex with --droptxindex")
 }

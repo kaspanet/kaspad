@@ -38,7 +38,7 @@ func TestBlockCount(t *testing.T) {
 
 	var blocks []*util.Block
 	for _, file := range testFiles {
-		blockTmp, err := loadBlocks(file)
+		blockTmp, err := LoadBlocks(filepath.Join("testdata/", file))
 		if err != nil {
 			t.Fatalf("Error loading file: %v\n", err)
 		}
@@ -91,7 +91,7 @@ func TestHaveBlock(t *testing.T) {
 
 	var blocks []*util.Block
 	for _, file := range testFiles {
-		blockTmp, err := loadBlocks(file)
+		blockTmp, err := LoadBlocks(filepath.Join("testdata/", file))
 		if err != nil {
 			t.Fatalf("Error loading file: %v\n", err)
 		}
@@ -132,7 +132,7 @@ func TestHaveBlock(t *testing.T) {
 	}
 
 	for _, file := range testFiles {
-		blockTmp, err := loadBlocks(file)
+		blockTmp, err := LoadBlocks(filepath.Join("testdata/", file))
 		if err != nil {
 			t.Fatalf("Error loading file: %v\n", err)
 		}
@@ -159,7 +159,7 @@ func TestHaveBlock(t *testing.T) {
 	}
 
 	for _, file := range testFiles {
-		blockTmp, err := loadBlocks(file)
+		blockTmp, err := LoadBlocks(filepath.Join("testdata/", file))
 		if err != nil {
 			t.Fatalf("Error loading file: %v\n", err)
 		}
@@ -803,7 +803,7 @@ func testErrorThroughPatching(t *testing.T, expectedErrorMessage string, targetF
 
 	var blocks []*util.Block
 	for _, file := range testFiles {
-		blockTmp, err := loadBlocks(file)
+		blockTmp, err := LoadBlocks(filepath.Join("testdata/", file))
 		if err != nil {
 			t.Fatalf("Error loading file: %v\n", err)
 		}
@@ -855,7 +855,7 @@ func testErrorThroughPatching(t *testing.T, expectedErrorMessage string, targetF
 
 func TestNew(t *testing.T) {
 	// Create the root directory for test databases.
-	if !fileExists(testDbRoot) {
+	if !FileExists(testDbRoot) {
 		if err := os.MkdirAll(testDbRoot, 0700); err != nil {
 			t.Fatalf("unable to create test db "+
 				"root: %s", err)
@@ -901,7 +901,7 @@ func TestNew(t *testing.T) {
 // validated.
 func TestAcceptingInInit(t *testing.T) {
 	// Create the root directory for test databases.
-	if !fileExists(testDbRoot) {
+	if !FileExists(testDbRoot) {
 		if err := os.MkdirAll(testDbRoot, 0700); err != nil {
 			t.Fatalf("unable to create test db "+
 				"root: %s", err)
@@ -934,7 +934,7 @@ func TestAcceptingInInit(t *testing.T) {
 	}
 
 	// Load the test block
-	blocks, err := loadBlocks("blk_0_to_4.dat")
+	blocks, err := LoadBlocks("testdata/blk_0_to_4.dat")
 	if err != nil {
 		t.Fatalf("Error loading file: %v\n", err)
 	}

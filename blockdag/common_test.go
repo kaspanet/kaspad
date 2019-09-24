@@ -23,66 +23,8 @@ import (
 	"github.com/daglabs/btcd/wire"
 )
 
-// loadBlocks reads files containing bitcoin block data (gzipped but otherwise
-// in the format bitcoind writes) from disk and returns them as an array of
-// util.Block.  This is largely borrowed from the test code in btcdb.
-func loadBlocks(filename string) (blocks []*util.Block, err error) {
-	filename = filepath.Join("testdata/", filename)
-
-	var network = wire.MainNet
-	var dr io.Reader
-	var fi io.ReadCloser
-
-	fi, err = os.Open(filename)
-	if err != nil {
-		return
-	}
-
-	if strings.HasSuffix(filename, ".bz2") {
-		dr = bzip2.NewReader(fi)
-	} else {
-		dr = fi
-	}
-	defer fi.Close()
-
-	var block *util.Block
-
-	err = nil
-	for height := uint64(0); err == nil; height++ {
-		var rintbuf uint32
-		err = binary.Read(dr, binary.LittleEndian, &rintbuf)
-		if err == io.EOF {
-			// hit end of file at expected offset: no warning
-			height--
-			err = nil
-			break
-		}
-		if err != nil {
-			break
-		}
-		if rintbuf != uint32(network) {
-			break
-		}
-		err = binary.Read(dr, binary.LittleEndian, &rintbuf)
-		blocklen := rintbuf
-
-		rbytes := make([]byte, blocklen)
-
-		// read block
-		dr.Read(rbytes)
-
-		block, err = util.NewBlockFromBytes(rbytes)
-		if err != nil {
-			return
-		}
-		blocks = append(blocks, block)
-	}
-
-	return
-}
-
 func loadBlocksWithLog(t *testing.T, filename string) ([]*util.Block, error) {
-	blocks, err := loadBlocks(filename)
+	blocks, err := LoadBlocks(filename)
 	if err == nil {
 		t.Logf("Loaded %d blocks from file %s", len(blocks), filename)
 		for i, b := range blocks {

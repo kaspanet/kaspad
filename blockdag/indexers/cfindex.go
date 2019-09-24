@@ -204,7 +204,7 @@ func storeFilter(dbTx database.Tx, block *util.Block, f *gcs.Filter,
 // ConnectBlock is invoked by the index manager when a new block has been
 // connected to the main chain. This indexer adds a hash-to-cf mapping for
 // every passed block. This is part of the Indexer interface.
-func (idx *CfIndex) ConnectBlock(dbTx database.Tx, block *util.Block,
+func (idx *CfIndex) ConnectBlock(dbTx database.Tx, block *util.Block, _ uint64,
 	_ *blockdag.BlockDAG, _ blockdag.MultiBlockTxsAcceptanceData, _ blockdag.MultiBlockTxsAcceptanceData) error {
 
 	f, err := builder.BuildBasicFilter(block.MsgBlock())
@@ -338,6 +338,11 @@ func (idx *CfIndex) FilterHashByBlockHash(h *daghash.Hash,
 func (idx *CfIndex) FilterHashesByBlockHashes(blockHashes []*daghash.Hash,
 	filterType wire.FilterType) ([][]byte, error) {
 	return idx.entriesByBlockHashes(cfHashKeys, filterType, blockHashes)
+}
+
+func (idx *CfIndex) Recover(dbTx database.Tx, currentBlockID, lastKnownBlockID uint64) error {
+	return errors.New("cfindex doesn't have recoverability capabilites." +
+		" To resume working drop the addrindex with --dropcfindex")
 }
 
 // NewCfIndex returns a new instance of an indexer that is used to create a

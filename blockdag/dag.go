@@ -633,11 +633,16 @@ func (dag *BlockDAG) saveChangesFromBlock(node *blockNode, block *util.Block, vi
 			return err
 		}
 
+		blockID, err := createBlockID(dbTx, block.Hash())
+		if err != nil {
+			return err
+		}
+
 		// Allow the index manager to call each of the currently active
 		// optional indexes with the block being connected so they can
 		// update themselves accordingly.
 		if dag.indexManager != nil {
-			err := dag.indexManager.ConnectBlock(dbTx, block, dag, txsAcceptanceData, virtualTxsAcceptanceData)
+			err := dag.indexManager.ConnectBlock(dbTx, block, blockID, dag, txsAcceptanceData, virtualTxsAcceptanceData)
 			if err != nil {
 				return err
 			}
@@ -1758,6 +1763,11 @@ func (dag *BlockDAG) SubnetworkID() *subnetworkid.SubnetworkID {
 	return dag.subnetworkID
 }
 
+// FlushDBCache flushes the db cache to the disk.
+func (dag *BlockDAG) FlushDBCache() error {
+	return dag.db.FlushCache()
+}
+
 // IndexManager provides a generic interface that is called when blocks are
 // connected and disconnected to and from the tip of the main chain for the
 // purpose of supporting optional indexes.
@@ -1771,7 +1781,7 @@ type IndexManager interface {
 
 	// ConnectBlock is invoked when a new block has been connected to the
 	// DAG.
-	ConnectBlock(dbTx database.Tx, block *util.Block, dag *BlockDAG, acceptedTxsData MultiBlockTxsAcceptanceData, virtualTxsAcceptanceData MultiBlockTxsAcceptanceData) error
+	ConnectBlock(dbTx database.Tx, block *util.Block, blockID uint64, dag *BlockDAG, acceptedTxsData MultiBlockTxsAcceptanceData, virtualTxsAcceptanceData MultiBlockTxsAcceptanceData) error
 }
 
 // Config is a descriptor which specifies the blockchain instance configuration.
