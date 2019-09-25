@@ -1763,11 +1763,6 @@ func (dag *BlockDAG) SubnetworkID() *subnetworkid.SubnetworkID {
 	return dag.subnetworkID
 }
 
-// FlushDBCache flushes the db cache to the disk.
-func (dag *BlockDAG) FlushDBCache() error {
-	return dag.db.FlushCache()
-}
-
 // IndexManager provides a generic interface that is called when blocks are
 // connected and disconnected to and from the tip of the main chain for the
 // purpose of supporting optional indexes.

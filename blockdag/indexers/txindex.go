@@ -33,20 +33,12 @@ var txsAcceptedByVirtual map[daghash.TxID]bool
 
 // -----------------------------------------------------------------------------
 // The transaction index consists of an entry for every transaction in the DAG.
-// In order to significantly optimize the space requirements a separate
-// index which provides an internal mapping between each block that has been
-// indexed and a unique ID for use within the hash to location mappings.  The ID
-// is simply a sequentially incremented uint64.  This is useful because it is
-// only 8 bytes versus 32 bytes hashes and thus saves a ton of space in the
-// index.
 //
-// There are four buckets used in total. The first bucket maps the hash of
+// There are two buckets used in total. The first bucket maps the hash of
 // each transaction to its location in each block it's included in. The second bucket
 // contains all of the blocks that from their viewpoint the transaction has been
 // accepted (i.e. the transaction is found in their blue set without double spends),
-// and their blue block (or themselves) that included the transaction. The third
-// bucket maps the hash of each block to the unique ID and the fourth maps
-// that ID back to the block hash.
+// and their blue block (or themselves) that included the transaction.
 //
 // NOTE: Although it is technically possible for multiple transactions to have
 // the same hash as long as the previous transaction with the same hash is fully
@@ -77,24 +69,6 @@ var txsAcceptedByVirtual map[daghash.TxID]bool
 //   -----
 //   Total: 16 bytes
 //
-// The serialized format for keys and values in the block hash to ID bucket is:
-//   <hash> = <ID>
-//
-//   Field           Type              Size
-//   hash            daghash.Hash     32 bytes
-//   ID              uint64            8 bytes
-//   -----
-//   Total: 40 bytes
-//
-// The serialized format for keys and values in the ID to block hash bucket is:
-//   <ID> = <hash>
-//
-//   Field           Type              Size
-//   ID              uint64            8 bytes
-//   hash            daghash.Hash     32 bytes
-//   -----
-//   Total: 40 bytes
-//
 // -----------------------------------------------------------------------------
 
 func putIncludingBlocksEntry(target []byte, txLoc wire.TxLoc) {
@@ -107,8 +81,7 @@ func dbPutIncludingBlocksEntry(dbTx database.Tx, txID *daghash.TxID, blockID uin
 	if err != nil {
 		return err
 	}
-	blockIDBytes := blockdag.SerializeBlockID(blockID)
-	return bucket.Put(blockIDBytes, serializedData)
+	return bucket.Put(blockdag.SerializeBlockID(blockID), serializedData)
 }
 
 func dbPutAcceptingBlocksEntry(dbTx database.Tx, txID *daghash.TxID, blockID uint64, serializedData []byte) error {
@@ -116,8 +89,7 @@ func dbPutAcceptingBlocksEntry(dbTx database.Tx, txID *daghash.TxID, blockID uin
 	if err != nil {
 		return err
 	}
-	blockIDBytes := blockdag.SerializeBlockID(blockID)
-	return bucket.Put(blockIDBytes, serializedData)
+	return bucket.Put(blockdag.SerializeBlockID(blockID), serializedData)
 }
 
 // dbFetchFirstTxRegion uses an existing database transaction to fetch the block
@@ -145,7 +117,7 @@ func dbFetchFirstTxRegion(dbTx database.Tx, txID *daghash.TxID) (*database.Block
 				"was found for %s", txID),
 		}
 	}
-	blockIDBytes := cursor.Key()
+	serializedBlockID := cursor.Key()
 	serializedData := cursor.Value()
 	if len(serializedData) == 0 {
 		return nil, nil
@@ -161,7 +133,7 @@ func dbFetchFirstTxRegion(dbTx database.Tx, txID *daghash.TxID) (*database.Block
 	}
 
 	// Load the block hash associated with the block ID.
-	hash, err := blockdag.DBFetchBlockHashBySerializedID(dbTx, blockIDBytes)
+	hash, err := blockdag.DBFetchBlockHashBySerializedID(dbTx, serializedBlockID)
 	if err != nil {
 		return nil, database.Error{
 			ErrorCode: database.ErrCorruption,
@@ -218,10 +190,10 @@ func dbAddTxIndexEntries(dbTx database.Tx, block *util.Block, blockID uint64, tx
 			}
 		}
 
-		includingBlockIDBytes := blockdag.SerializeBlockID(includingBlockID)
+		serializedIncludingBlockID := blockdag.SerializeBlockID(includingBlockID)
 
 		for _, txAcceptanceData := range blockTxsAcceptanceData {
-			err = dbPutAcceptingBlocksEntry(dbTx, txAcceptanceData.Tx.ID(), blockID, includingBlockIDBytes)
+			err = dbPutAcceptingBlocksEntry(dbTx, txAcceptanceData.Tx.ID(), blockID, serializedIncludingBlockID)
 			if err != nil {
 				return err
 			}
@@ -312,9 +284,9 @@ func (idx *TxIndex) Create(dbTx database.Tx) error {
 // for every transaction in the passed block.
 //
 // This is part of the Indexer interface.
-func (idx *TxIndex) ConnectBlock(dbTx database.Tx, block *util.Block, newBlockID uint64, dag *blockdag.BlockDAG,
+func (idx *TxIndex) ConnectBlock(dbTx database.Tx, block *util.Block, blockID uint64, dag *blockdag.BlockDAG,
 	acceptedTxsData blockdag.MultiBlockTxsAcceptanceData, virtualTxsAcceptanceData blockdag.MultiBlockTxsAcceptanceData) error {
-	if err := dbAddTxIndexEntries(dbTx, block, newBlockID, acceptedTxsData); err != nil {
+	if err := dbAddTxIndexEntries(dbTx, block, blockID, acceptedTxsData); err != nil {
 		return err
 	}
 
@@ -365,8 +337,8 @@ func dbFetchTxBlocks(dbTx database.Tx, txHash *daghash.Hash) ([]*daghash.Hash, e
 				"were found for %s", txHash),
 		}
 	}
-	err := bucket.ForEach(func(blockIDBytes, _ []byte) error {
-		blockHash, err := blockdag.DBFetchBlockHashBySerializedID(dbTx, blockIDBytes)
+	err := bucket.ForEach(func(serializedBlockID, _ []byte) error {
+		blockHash, err := blockdag.DBFetchBlockHashBySerializedID(dbTx, serializedBlockID)
 		if err != nil {
 			return err
 		}
@@ -453,6 +425,10 @@ func DropTxIndex(db database.DB, interrupt <-chan struct{}) error {
 	return dropIndex(db, acceptingBlocksIndexKey, txIndexName, interrupt)
 }
 
+// Recover is invoked when the indexer wasn't on for several blocks and it
+// needs to complete the gaps.
+//
+// This is part of the Indexer interface.
 func (idx *TxIndex) Recover(dbTx database.Tx, currentBlockID, lastKnownBlockID uint64) error {
 	return errors.New("txindex doesn't have recoverability capabilites." +
 		" To resume working drop the txindex with --droptxindex")

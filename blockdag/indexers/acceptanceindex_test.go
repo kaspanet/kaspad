@@ -117,7 +117,7 @@ func TestAcceptanceIndexRecover(t *testing.T) {
 		}
 	}
 
-	err = db1DAG.FlushDBCache()
+	err = db1.FlushCache()
 	if err != nil {
 		t.Fatalf("Error flushing database to disk: %s", err)
 	}
@@ -186,7 +186,7 @@ func TestAcceptanceIndexRecover(t *testing.T) {
 		}
 	}
 
-	err = db2DAG.FlushDBCache()
+	err = db2.FlushCache()
 	if err != nil {
 		t.Fatalf("Error flushing database to disk: %s", err)
 	}

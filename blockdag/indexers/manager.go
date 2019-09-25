@@ -371,6 +371,10 @@ func dropIndex(db database.DB, idxKey []byte, idxName string, interrupt <-chan s
 			return err
 		}
 
+		if err := meta.Bucket(indexCurrentBlockIDBucketName).Delete(idxKey); err != nil {
+			return err
+		}
+
 		return indexesBucket.Delete(indexDropKey(idxKey))
 	})
 	if err != nil {

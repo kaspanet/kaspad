@@ -56,10 +56,6 @@ func FileExists(name string) bool {
 	return true
 }
 
-func TestDBPath(dbName string) string {
-	return filepath.Join(testDbRoot, dbName)
-}
-
 // DAGSetup is used to create a new db and chain instance with the genesis
 // block already inserted.  In addition to the new chain instance, it returns
 // a teardown function the caller should invoke when done testing to clean up.
@@ -92,7 +88,7 @@ func DAGSetup(dbName string, config Config) (*BlockDAG, func(), error) {
 			}
 		}
 
-		dbPath := TestDBPath(dbName)
+		dbPath := filepath.Join(testDbRoot, dbName)
 		_ = os.RemoveAll(dbPath)
 		var err error
 		config.DB, err = database.Create(testDbType, dbPath, blockDataNet)

@@ -19,10 +19,35 @@ var (
 	currentBlockIDKey = []byte("currentblockid")
 )
 
-const (
-	blockIDSize   = 8 // 8 bytes for block ID
-	blueScoreSize = 8 // 8 bytes for blue score
-)
+// -----------------------------------------------------------------------------
+// This is a mapping between block hashes and unique IDs. The ID
+// is simply a sequentially incremented uint64 that is used instead of block hash
+// for the indexers. This is useful because it is only 8 bytes versus 32 bytes
+// hashes and thus saves a ton of space in the index.
+// It consists of two buckets: the first bucket maps the hash of each
+// block to the unique ID and the second maps that ID back to the block hash.
+//
+// The serialized format for keys and values in the block hash to ID bucket is:
+//   <hash> = <ID>
+//
+//   Field           Type              Size
+//   hash            daghash.Hash     32 bytes
+//   ID              uint64            8 bytes
+//   -----
+//   Total: 40 bytes
+//
+// The serialized format for keys and values in the ID to block hash bucket is:
+//   <ID> = <hash>
+//
+//   Field           Type              Size
+//   ID              uint64            8 bytes
+//   hash            daghash.Hash     32 bytes
+//   -----
+//   Total: 40 bytes
+//
+// -----------------------------------------------------------------------------
+
+const blockIDSize = 8 // 8 bytes for block ID
 
 // DBFetchBlockIDByHash uses an existing database transaction to retrieve the
 // block id for the provided hash from the index.
@@ -34,19 +59,6 @@ func DBFetchBlockIDByHash(dbTx database.Tx, hash *daghash.Hash) (uint64, error) 
 	}
 
 	return DeserializeBlockID(serializedID), nil
-}
-
-// dropBlockIDIndex drops the internal block id index.
-func dropBlockIDIndex(db database.DB) error {
-	return db.Update(func(dbTx database.Tx) error {
-		meta := dbTx.Metadata()
-		err := meta.DeleteBucket(idByHashIndexBucketName)
-		if err != nil {
-			return err
-		}
-
-		return meta.DeleteBucket(hashByIDIndexBucketName)
-	})
 }
 
 // DBFetchBlockHashBySerializedID uses an existing database transaction to
@@ -79,6 +91,7 @@ func dbPutBlockIDIndexEntry(dbTx database.Tx, hash *daghash.Hash, serializedID [
 	return idIndex.Put(serializedID[:], hash[:])
 }
 
+// DBFetchCurrentBlockID returns the last known block ID.
 func DBFetchCurrentBlockID(dbTx database.Tx) uint64 {
 	serializedID := dbTx.Metadata().Get(currentBlockIDKey)
 	if serializedID == nil {
@@ -87,10 +100,12 @@ func DBFetchCurrentBlockID(dbTx database.Tx) uint64 {
 	return DeserializeBlockID(serializedID)
 }
 
+// DeserializeBlockID returns a deserialized block id
 func DeserializeBlockID(serializedID []byte) uint64 {
 	return byteOrder.Uint64(serializedID)
 }
 
+// SerializeBlockID returns a serialized block id
 func SerializeBlockID(blockID uint64) []byte {
 	serializedBlockID := make([]byte, blockIDSize)
 	byteOrder.PutUint64(serializedBlockID, blockID)
