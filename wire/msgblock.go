@@ -21,8 +21,11 @@ import (
 // backing array multiple times.
 const defaultTransactionAlloc = 2048
 
-// MaxMassPerBlock is the maximum total transaction mass a block may contain.
+// MaxMassPerBlock is the maximum total transaction mass a block may have.
 const MaxMassPerBlock = 10000000
+
+// MaxMassPerTx is the maximum total mass a transaction may have.
+const MaxMassPerTx = MaxMassPerBlock / 2
 
 // maxTxPerBlock is the maximum number of transactions that could
 // possibly fit into a block.

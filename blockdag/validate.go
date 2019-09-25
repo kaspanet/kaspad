@@ -125,7 +125,7 @@ func CheckTransactionSanity(tx *util.Tx, subnetworkID *subnetworkid.SubnetworkID
 	// A transaction must not exceed the maximum allowed block mass when
 	// serialized.
 	serializedTxSize := msgTx.SerializeSize()
-	if serializedTxSize*massPerTxByte > wire.MaxMassPerBlock {
+	if serializedTxSize*massPerTxByte > wire.MaxMassPerTx {
 		str := fmt.Sprintf("serialized transaction is too big - got "+
 			"%d, max %d", serializedTxSize, wire.MaxMassPerBlock)
 		return ruleError(ErrTxMassTooHigh, str)
