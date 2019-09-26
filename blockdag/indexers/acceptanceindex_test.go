@@ -242,7 +242,7 @@ func TestAcceptanceIndexRecover(t *testing.T) {
 	}
 }
 
-// This function is copied and modified from this stackoverflow function: https://stackoverflow.com/a/56314145/2413761
+// This function is copied and modified from this stackoverflow answer: https://stackoverflow.com/a/56314145/2413761
 func copyDirectory(scrDir, dest string) error {
 	entries, err := ioutil.ReadDir(scrDir)
 	if err != nil {
@@ -294,7 +294,7 @@ func copyDirectory(scrDir, dest string) error {
 	return nil
 }
 
-// This function is copied and modified from this stackoverflow function: https://stackoverflow.com/a/56314145/2413761
+// This function is copied and modified from this stackoverflow answer: https://stackoverflow.com/a/56314145/2413761
 func copyFile(srcFile, dstFile string) error {
 	out, err := os.Create(dstFile)
 	defer out.Close()
@@ -316,7 +316,7 @@ func copyFile(srcFile, dstFile string) error {
 	return nil
 }
 
-// This function is copied and modified from this stackoverflow function: https://stackoverflow.com/a/56314145/2413761
+// This function is copied and modified from this stackoverflow answer: https://stackoverflow.com/a/56314145/2413761
 func createIfNotExists(dir string, perm os.FileMode) error {
 	if blockdag.FileExists(dir) {
 		return nil
@@ -329,7 +329,7 @@ func createIfNotExists(dir string, perm os.FileMode) error {
 	return nil
 }
 
-// This function is copied and modified from this stackoverflow function: https://stackoverflow.com/a/56314145/2413761
+// This function is copied and modified from this stackoverflow answer: https://stackoverflow.com/a/56314145/2413761
 func copySymLink(source, dest string) error {
 	link, err := os.Readlink(source)
 	if err != nil {

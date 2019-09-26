@@ -26,9 +26,9 @@ var (
 // hashes and thus saves a ton of space when a block is referenced in an index.
 // It consists of three buckets: the first bucket maps the hash of each
 // block to the unique ID and the second maps that ID back to the block hash.
-// The third bucket contains the last received block ID, and is when starting
-// the node to check that the enabled indexes are up to date with the latest
-// received block, and if not, initiate recovery process.
+// The third bucket contains the last received block ID, and is used
+// when starting the node to check that the enabled indexes are up to date
+// with the latest received block, and if not, initiate recovery process.
 //
 // The serialized format for keys and values in the block hash to ID bucket is:
 //   <hash> = <ID>
