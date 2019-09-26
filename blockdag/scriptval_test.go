@@ -6,6 +6,7 @@ package blockdag
 
 import (
 	"fmt"
+	"path/filepath"
 	"runtime"
 	"testing"
 
@@ -20,7 +21,7 @@ func TestCheckBlockScripts(t *testing.T) {
 
 	testBlockNum := 277647
 	blockDataFile := fmt.Sprintf("%d.dat", testBlockNum)
-	blocks, err := loadBlocks(blockDataFile)
+	blocks, err := LoadBlocks(filepath.Join("testdata/", blockDataFile))
 	if err != nil {
 		t.Errorf("Error loading file: %v\n", err)
 		return

@@ -52,7 +52,16 @@ type Indexer interface {
 
 	// ConnectBlock is invoked when the index manager is notified that a new
 	// block has been connected to the DAG.
-	ConnectBlock(dbTx database.Tx, block *util.Block, dag *blockdag.BlockDAG, _ blockdag.MultiBlockTxsAcceptanceData, _ blockdag.MultiBlockTxsAcceptanceData) error
+	ConnectBlock(dbTx database.Tx,
+		block *util.Block,
+		blockID uint64,
+		dag *blockdag.BlockDAG,
+		acceptedTxsData blockdag.MultiBlockTxsAcceptanceData,
+		virtualTxsAcceptanceData blockdag.MultiBlockTxsAcceptanceData) error
+
+	// Recover is invoked when the indexer wasn't turned on for several blocks
+	// and the indexer needs to close the gaps.
+	Recover(dbTx database.Tx, currentBlockID, lastKnownBlockID uint64) error
 }
 
 // AssertError identifies an error that indicates an internal code consistency

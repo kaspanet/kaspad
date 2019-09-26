@@ -685,18 +685,12 @@ func (idx *AddrIndex) indexBlock(data writeIndexData, block *util.Block, dag *bl
 // the transactions in the block involve.
 //
 // This is part of the Indexer interface.
-func (idx *AddrIndex) ConnectBlock(dbTx database.Tx, block *util.Block, dag *blockdag.BlockDAG,
+func (idx *AddrIndex) ConnectBlock(dbTx database.Tx, block *util.Block, blockID uint64, dag *blockdag.BlockDAG,
 	_ blockdag.MultiBlockTxsAcceptanceData, _ blockdag.MultiBlockTxsAcceptanceData) error {
 
 	// The offset and length of the transactions within the serialized
 	// block.
 	txLocs, err := block.TxLoc()
-	if err != nil {
-		return err
-	}
-
-	// Get the internal block ID associated with the block.
-	blockID, err := dbFetchBlockIDByHash(dbTx, block.Hash())
 	if err != nil {
 		return err
 	}
@@ -766,7 +760,7 @@ func (idx *AddrIndex) TxRegionsForAddress(dbTx database.Tx, addr util.Address, n
 		// the database transaction.
 		fetchBlockHash := func(id []byte) (*daghash.Hash, error) {
 			// Deserialize and populate the result.
-			return dbFetchBlockHashBySerializedID(dbTx, id)
+			return blockdag.DBFetchBlockHashBySerializedID(dbTx, id)
 		}
 
 		var err error
@@ -897,6 +891,15 @@ func (idx *AddrIndex) UnconfirmedTxnsForAddress(addr util.Address) []*util.Tx {
 	}
 
 	return nil
+}
+
+// Recover is invoked when the indexer wasn't turned on for several blocks
+// and the indexer needs to close the gaps.
+//
+// This is part of the Indexer interface.
+func (idx *AddrIndex) Recover(dbTx database.Tx, currentBlockID, lastKnownBlockID uint64) error {
+	return fmt.Errorf("addrindex was turned off for %d blocks and can't be recovered."+
+		" To resume working drop the addrindex with --dropaddrindex", lastKnownBlockID-currentBlockID)
 }
 
 // NewAddrIndex returns a new instance of an indexer that is used to create a

@@ -1638,7 +1638,7 @@ func NewServer(listenAddrs []string, db database.DB, dagParams *dagconfig.Params
 	}
 	if config.MainConfig().AcceptanceIndex {
 		indxLog.Info("acceptance index is enabled")
-		s.AcceptanceIndex = indexers.NewAcceptanceIndex(dagParams)
+		s.AcceptanceIndex = indexers.NewAcceptanceIndex()
 		indexes = append(indexes, s.AcceptanceIndex)
 	}
 	if config.MainConfig().EnableCFilters {

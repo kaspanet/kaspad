@@ -8,6 +8,7 @@ import (
 	"bou.ke/monkey"
 	"errors"
 	"math"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -92,7 +93,7 @@ func TestCheckConnectBlockTemplate(t *testing.T) {
 
 	var blocks []*util.Block
 	for _, file := range testFiles {
-		blockTmp, err := loadBlocks(file)
+		blockTmp, err := LoadBlocks(filepath.Join("testdata/", file))
 		if err != nil {
 			t.Fatalf("Error loading file: %v\n", err)
 		}

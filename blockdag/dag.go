@@ -633,11 +633,16 @@ func (dag *BlockDAG) saveChangesFromBlock(node *blockNode, block *util.Block, vi
 			return err
 		}
 
+		blockID, err := createBlockID(dbTx, block.Hash())
+		if err != nil {
+			return err
+		}
+
 		// Allow the index manager to call each of the currently active
 		// optional indexes with the block being connected so they can
 		// update themselves accordingly.
 		if dag.indexManager != nil {
-			err := dag.indexManager.ConnectBlock(dbTx, block, dag, txsAcceptanceData, virtualTxsAcceptanceData)
+			err := dag.indexManager.ConnectBlock(dbTx, block, blockID, dag, txsAcceptanceData, virtualTxsAcceptanceData)
 			if err != nil {
 				return err
 			}
@@ -837,6 +842,15 @@ func (dag *BlockDAG) NextAcceptedIDMerkleRootNoLock() (*daghash.Hash, error) {
 // This function MUST be called with the DAG read-lock held
 func (dag *BlockDAG) TxsAcceptedByVirtual() (MultiBlockTxsAcceptanceData, error) {
 	_, txsAcceptanceData, err := dag.pastUTXO(&dag.virtual.blockNode)
+	return txsAcceptanceData, err
+}
+
+// TxsAcceptedByBlockHash retrieves transactions accepted by the given block
+//
+// This function MUST be called with the DAG read-lock held
+func (dag *BlockDAG) TxsAcceptedByBlockHash(blockHash *daghash.Hash) (MultiBlockTxsAcceptanceData, error) {
+	node := dag.index.LookupNode(blockHash)
+	_, txsAcceptanceData, err := dag.pastUTXO(node)
 	return txsAcceptanceData, err
 }
 
@@ -1762,7 +1776,7 @@ type IndexManager interface {
 
 	// ConnectBlock is invoked when a new block has been connected to the
 	// DAG.
-	ConnectBlock(database.Tx, *util.Block, *BlockDAG, MultiBlockTxsAcceptanceData, MultiBlockTxsAcceptanceData) error
+	ConnectBlock(dbTx database.Tx, block *util.Block, blockID uint64, dag *BlockDAG, acceptedTxsData MultiBlockTxsAcceptanceData, virtualTxsAcceptanceData MultiBlockTxsAcceptanceData) error
 }
 
 // Config is a descriptor which specifies the blockchain instance configuration.
