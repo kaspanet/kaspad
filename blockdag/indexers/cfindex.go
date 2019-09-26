@@ -340,8 +340,8 @@ func (idx *CfIndex) FilterHashesByBlockHashes(blockHashes []*daghash.Hash,
 	return idx.entriesByBlockHashes(cfHashKeys, filterType, blockHashes)
 }
 
-// Recover is invoked when the indexer wasn't on for several blocks and it
-// needs to complete the gaps.
+// Recover is invoked when the indexer wasn't turned on for several blocks
+// and the indexer needs to close the gaps.
 //
 // This is part of the Indexer interface.
 func (idx *CfIndex) Recover(dbTx database.Tx, currentBlockID, lastKnownBlockID uint64) error {

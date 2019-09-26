@@ -56,6 +56,19 @@ func TestAcceptanceIndexSerializationAnDeserialization(t *testing.T) {
 	}
 }
 
+// TestAcceptanceIndexRecover tests the recoverability of the
+// acceptance index.
+// It does it by following these steps:
+// * It creates a DAG with enabled acceptance index (let's call it dag1) and
+//   make it process some blocks.
+// * It creates a copy of dag1 (let's call it dag2), and disables the acceptance
+//   index in it.
+// * It processes two more blocks in both dag1 and dag2.
+// * A copy of dag2 is created (let's call it dag3) with enabled
+//   acceptance index
+// * It checks that the two missing blocks are added to dag3 acceptance index by
+//   comparing dag1's last block acceptance data and dag3's last block acceptance
+//   data.
 func TestAcceptanceIndexRecover(t *testing.T) {
 	params := &dagconfig.SimNetParams
 	params.BlockCoinbaseMaturity = 0
@@ -76,7 +89,6 @@ func TestAcceptanceIndexRecover(t *testing.T) {
 
 	db1AcceptanceIndex := NewAcceptanceIndex()
 	db1IndexManager := NewManager([]Indexer{db1AcceptanceIndex})
-
 	db1Path, err := ioutil.TempDir("", "TestAcceptanceIndexRecover1")
 	if err != nil {
 		t.Fatalf("Error creating temporary directory: %s", err)
@@ -230,6 +242,7 @@ func TestAcceptanceIndexRecover(t *testing.T) {
 	}
 }
 
+// This function is copied and modified from this stackoverflow function: https://stackoverflow.com/a/56314145/2413761
 func copyDirectory(scrDir, dest string) error {
 	entries, err := ioutil.ReadDir(scrDir)
 	if err != nil {
@@ -281,6 +294,7 @@ func copyDirectory(scrDir, dest string) error {
 	return nil
 }
 
+// This function is copied and modified from this stackoverflow function: https://stackoverflow.com/a/56314145/2413761
 func copyFile(srcFile, dstFile string) error {
 	out, err := os.Create(dstFile)
 	defer out.Close()
@@ -302,6 +316,7 @@ func copyFile(srcFile, dstFile string) error {
 	return nil
 }
 
+// This function is copied and modified from this stackoverflow function: https://stackoverflow.com/a/56314145/2413761
 func createIfNotExists(dir string, perm os.FileMode) error {
 	if blockdag.FileExists(dir) {
 		return nil
@@ -314,6 +329,7 @@ func createIfNotExists(dir string, perm os.FileMode) error {
 	return nil
 }
 
+// This function is copied and modified from this stackoverflow function: https://stackoverflow.com/a/56314145/2413761
 func copySymLink(source, dest string) error {
 	link, err := os.Readlink(source)
 	if err != nil {
