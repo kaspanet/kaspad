@@ -898,8 +898,8 @@ func (idx *AddrIndex) UnconfirmedTxnsForAddress(addr util.Address) []*util.Tx {
 //
 // This is part of the Indexer interface.
 func (idx *AddrIndex) Recover(dbTx database.Tx, currentBlockID, lastKnownBlockID uint64) error {
-	return errors.New("addrindex doesn't have recoverability capabilites." +
-		" To resume working drop the addrindex with --dropaddrindex")
+	return fmt.Errorf("addrindex was turned off for %d blocks and can't be recovered."+
+		" To resume working drop the addrindex with --dropaddrindex", lastKnownBlockID-currentBlockID)
 }
 
 // NewAddrIndex returns a new instance of an indexer that is used to create a
