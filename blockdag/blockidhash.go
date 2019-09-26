@@ -7,7 +7,6 @@ import (
 )
 
 var (
-
 	// idByHashIndexBucketName is the name of the db bucket used to house
 	// the block hash -> block id index.
 	idByHashIndexBucketName = []byte("idbyhashidx")

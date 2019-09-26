@@ -30,7 +30,7 @@ type AcceptanceIndex struct {
 	dag *blockdag.BlockDAG
 }
 
-// Ensure the TxIndex type implements the Indexer interface.
+// Ensure the AcceptanceIndex type implements the Indexer interface.
 var _ Indexer = (*AcceptanceIndex)(nil)
 
 // NewAcceptanceIndex returns a new instance of an indexer that is used to create a

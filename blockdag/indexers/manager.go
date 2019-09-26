@@ -169,6 +169,9 @@ func (m *Manager) Init(db database.DB, blockDAG *blockdag.BlockDAG, interrupt <-
 	return m.recoverIfNeeded()
 }
 
+// recoverIfNeeded checks if the node worked for some time
+// without one of the current enabled indexes, and if it's
+// the case, recovers the missing blocks from the index.
 func (m *Manager) recoverIfNeeded() error {
 	return m.db.Update(func(dbTx database.Tx) error {
 		lastKnownBlockID := blockdag.DBFetchCurrentBlockID(dbTx)

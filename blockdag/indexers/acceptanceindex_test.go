@@ -17,7 +17,7 @@ import (
 	"testing"
 )
 
-func TestAcceptanceIndexSerializationAnDeserialization(t *testing.T) {
+func TestAcceptanceIndexSerializationAndDeserialization(t *testing.T) {
 	txsAcceptanceData := blockdag.MultiBlockTxsAcceptanceData{}
 
 	// Create test data
@@ -41,18 +41,18 @@ func TestAcceptanceIndexSerializationAnDeserialization(t *testing.T) {
 	// Serialize
 	serializedTxsAcceptanceData, err := serializeMultiBlockTxsAcceptanceData(txsAcceptanceData)
 	if err != nil {
-		t.Fatalf("TestAcceptanceIndexSerializationAnDeserialization: serialization failed: %s", err)
+		t.Fatalf("TestAcceptanceIndexSerializationAndDeserialization: serialization failed: %s", err)
 	}
 
 	// Deserialize
 	deserializedTxsAcceptanceData, err := deserializeMultiBlockTxsAcceptanceData(serializedTxsAcceptanceData)
 	if err != nil {
-		t.Fatalf("TestAcceptanceIndexSerializationAnDeserialization: deserialization failed: %s", err)
+		t.Fatalf("TestAcceptanceIndexSerializationAndDeserialization: deserialization failed: %s", err)
 	}
 
 	// Check that they're the same
 	if !reflect.DeepEqual(txsAcceptanceData, deserializedTxsAcceptanceData) {
-		t.Fatalf("TestAcceptanceIndexSerializationAnDeserialization: original data and deseralize data aren't equal")
+		t.Fatalf("TestAcceptanceIndexSerializationAndDeserialization: original data and deseralize data aren't equal")
 	}
 }
 
