@@ -178,7 +178,7 @@ type ConnManager struct {
 	start        int32
 	stop         int32
 
-	newConnMtx sync.Mutex
+	newConnReqMtx sync.Mutex
 
 	cfg            Config
 	wg             sync.WaitGroup
@@ -361,8 +361,8 @@ out:
 // NewConnReq creates a new connection request and connects to the
 // corresponding address.
 func (cm *ConnManager) NewConnReq() {
-	cm.newConnMtx.Lock()
-	defer cm.newConnMtx.Unlock()
+	cm.newConnReqMtx.Lock()
+	defer cm.newConnReqMtx.Unlock()
 	if atomic.LoadInt32(&cm.stop) != 0 {
 		return
 	}
