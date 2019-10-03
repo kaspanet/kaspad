@@ -1116,18 +1116,16 @@ func (s *Server) inboundPeerConnected(conn net.Conn) {
 // request instance and the connection itself, and finally notifies the address
 // manager of the attempt.
 func (s *Server) outboundPeerConnected(state *peerState, msg *outboundPeerConnectedMsg) {
-	c := msg.connReq
-	conn := msg.conn
-	sp := newServerPeer(s, c.Permanent)
-	p, err := peer.NewOutboundPeer(newPeerConfig(sp), c.Addr.String())
+	sp := newServerPeer(s, msg.connReq.Permanent)
+	outboundPeer, err := peer.NewOutboundPeer(newPeerConfig(sp), msg.connReq.Addr.String())
 	if err != nil {
-		srvrLog.Debugf("Cannot create outbound peer %s: %s", c.Addr, err)
-		s.connManager.Disconnect(c.ID())
+		srvrLog.Debugf("Cannot create outbound peer %s: %s", msg.connReq.Addr, err)
+		s.connManager.Disconnect(msg.connReq.ID())
 	}
-	sp.Peer = p
-	sp.connReq = c
-	sp.isWhitelisted = isWhitelisted(conn.RemoteAddr())
-	sp.AssociateConnection(conn)
+	sp.Peer = outboundPeer
+	sp.connReq = msg.connReq
+	sp.isWhitelisted = isWhitelisted(msg.conn.RemoteAddr())
+	sp.AssociateConnection(msg.conn)
 	spawn(func() {
 		s.peerDoneHandler(sp)
 	})
