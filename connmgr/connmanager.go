@@ -178,6 +178,8 @@ type ConnManager struct {
 	start        int32
 	stop         int32
 
+	newConnReqMtx sync.Mutex
+
 	cfg            Config
 	wg             sync.WaitGroup
 	failedAttempts uint64
@@ -270,7 +272,7 @@ out:
 				delete(pending, connReq.id)
 
 				if cm.cfg.OnConnection != nil {
-					go cm.cfg.OnConnection(connReq, msg.conn)
+					cm.cfg.OnConnection(connReq, msg.conn)
 				}
 
 			case handleDisconnected:
@@ -359,6 +361,8 @@ out:
 // NewConnReq creates a new connection request and connects to the
 // corresponding address.
 func (cm *ConnManager) NewConnReq() {
+	cm.newConnReqMtx.Lock()
+	defer cm.newConnReqMtx.Unlock()
 	if atomic.LoadInt32(&cm.stop) != 0 {
 		return
 	}
