@@ -273,11 +273,6 @@ var helpDescsEnUS = map[string]string{
 	"getBlockCount--synopsis": "Returns the number of blocks in the longest block chain.",
 	"getBlockCount--result0":  "The current block count",
 
-	// GetBlockHashCmd help.
-	"getBlockHash--synopsis": "Returns hash of the block in best block chain at the given height.",
-	"getBlockHash-index":     "The block height",
-	"getBlockHash--result0":  "The block hash",
-
 	// GetBlockHeaderCmd help.
 	"getBlockHeader--synopsis":   "Returns information about a block header given its hash.",
 	"getBlockHeader-hash":        "The hash of the block",
@@ -674,12 +669,6 @@ var helpDescsEnUS = map[string]string{
 	"versionResult-patch":         "The patch component of the JSON-RPC API version",
 	"versionResult-prerelease":    "Prerelease info about the current build",
 	"versionResult-buildMetadata": "Metadata about the current build",
-
-	// TODO: (Ori) This is a temporary rpc command for dev use. It needs to be removed.
-	"flushDbCache--synopsis":       "No Synopsis",
-	"flushDbCache--result0--desc":  "No Result",
-	"flushDbCache--result0--value": "No Value",
-	"flushDbCache--result0--key":   "No Key",
 }
 
 // rpcResultTypes specifies the result types that each RPC command can return.
@@ -698,7 +687,6 @@ var rpcResultTypes = map[string][]interface{}{
 	"getBlock":              {(*string)(nil), (*btcjson.GetBlockVerboseResult)(nil)},
 	"getBlocks":             {(*btcjson.GetBlocksResult)(nil)},
 	"getBlockCount":         {(*int64)(nil)},
-	"getBlockHash":          {(*string)(nil)},
 	"getBlockHeader":        {(*string)(nil), (*btcjson.GetBlockHeaderVerboseResult)(nil)},
 	"getBlockTemplate":      {(*btcjson.GetBlockTemplateResult)(nil), (*string)(nil), nil},
 	"getBlockDagInfo":       {(*btcjson.GetBlockDAGInfoResult)(nil)},
@@ -736,7 +724,6 @@ var rpcResultTypes = map[string][]interface{}{
 	"validateAddress":       {(*btcjson.ValidateAddressResult)(nil)},
 	"verifyMessage":         {(*bool)(nil)},
 	"version":               {(*map[string]btcjson.VersionResult)(nil)},
-	"flushDbCache":          {(*map[string]struct{})(nil)},
 
 	// Websocket commands.
 	"loadTxFilter":              nil,
