@@ -72,7 +72,6 @@ var rpcHandlersBeforeInit = map[string]commandHandler{
 	"getBlocks":             handleGetBlocks,
 	"getBlockDagInfo":       handleGetBlockDAGInfo,
 	"getBlockCount":         handleGetBlockCount,
-	"getBlockHash":          handleGetBlockHash,
 	"getBlockHeader":        handleGetBlockHeader,
 	"getBlockTemplate":      handleGetBlockTemplate,
 	"getCFilter":            handleGetCFilter,
@@ -109,7 +108,6 @@ var rpcHandlersBeforeInit = map[string]commandHandler{
 	"validateAddress":       handleValidateAddress,
 	"verifyMessage":         handleVerifyMessage,
 	"version":               handleVersion,
-	"flushDbCache":          handleFlushDBCache,
 }
 
 // Commands that are currently unimplemented, but should ultimately be.

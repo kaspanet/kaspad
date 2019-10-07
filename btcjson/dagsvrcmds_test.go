@@ -228,17 +228,6 @@ func TestDAGSvrCmds(t *testing.T) {
 			unmarshalled: &btcjson.GetBlockCountCmd{},
 		},
 		{
-			name: "getBlockHash",
-			newCmd: func() (interface{}, error) {
-				return btcjson.NewCmd("getBlockHash", 123)
-			},
-			staticCmd: func() interface{} {
-				return btcjson.NewGetBlockHashCmd(123)
-			},
-			marshalled:   `{"jsonrpc":"1.0","method":"getBlockHash","params":[123],"id":1}`,
-			unmarshalled: &btcjson.GetBlockHashCmd{Index: 123},
-		},
-		{
 			name: "getBlockHeader",
 			newCmd: func() (interface{}, error) {
 				return btcjson.NewCmd("getBlockHeader", "123")
