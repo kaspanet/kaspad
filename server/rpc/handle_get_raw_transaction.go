@@ -6,6 +6,7 @@ import (
 	"github.com/daglabs/btcd/blockdag"
 	"github.com/daglabs/btcd/btcjson"
 	"github.com/daglabs/btcd/database"
+	"github.com/daglabs/btcd/util"
 	"github.com/daglabs/btcd/util/daghash"
 	"github.com/daglabs/btcd/wire"
 )
@@ -27,10 +28,10 @@ func handleGetRawTransaction(s *Server, cmd interface{}, closeChan <-chan struct
 
 	// Try to fetch the transaction from the memory pool and if that fails,
 	// try the block database.
-	var mtx *wire.MsgTx
+	var msgTx *wire.MsgTx
 	var blkHash *daghash.Hash
 	isInMempool := false
-	tx, err := s.cfg.TxMemPool.FetchTransaction(txID)
+	mempoolTx, err := s.cfg.TxMemPool.FetchTransaction(txID)
 	if err != nil {
 		if s.cfg.TxIndex == nil {
 			return nil, &btcjson.RPCError{
@@ -73,13 +74,13 @@ func handleGetRawTransaction(s *Server, cmd interface{}, closeChan <-chan struct
 		blkHash = blockRegion.Hash
 
 		// Deserialize the transaction
-		var msgTx wire.MsgTx
-		err = msgTx.Deserialize(bytes.NewReader(txBytes))
+		var mtx wire.MsgTx
+		err = mtx.Deserialize(bytes.NewReader(txBytes))
 		if err != nil {
 			context := "Failed to deserialize transaction"
 			return nil, internalRPCError(err.Error(), context)
 		}
-		mtx = &msgTx
+		msgTx = &mtx
 	} else {
 		// When the verbose flag isn't set, simply return the
 		// network-serialized transaction as a hex-encoded string.
@@ -89,14 +90,14 @@ func handleGetRawTransaction(s *Server, cmd interface{}, closeChan <-chan struct
 			// string and it would result in returning an empty
 			// string to the client instead of nothing (nil) in the
 			// case of an error.
-			mtxHex, err := messageToHex(tx.MsgTx())
+			mtxHex, err := messageToHex(mempoolTx.MsgTx())
 			if err != nil {
 				return nil, err
 			}
 			return mtxHex, nil
 		}
 
-		mtx = tx.MsgTx()
+		msgTx = mempoolTx.MsgTx()
 		isInMempool = true
 	}
 
@@ -115,15 +116,15 @@ func handleGetRawTransaction(s *Server, cmd interface{}, closeChan <-chan struct
 		blkHashStr = blkHash.String()
 	}
 
-	confirmations, err := txConfirmations(s, mtx.TxID())
+	confirmations, err := txConfirmations(s, msgTx.TxID())
 	if err != nil {
 		return nil, err
 	}
-	txMass, err := blockdag.CalcTxMass(tx, s.cfg.DAG.UTXOSet())
+	txMass, err := blockdag.CalcTxMass(util.NewTx(msgTx), s.cfg.DAG.UTXOSet())
 	if err != nil {
 		return nil, err
 	}
-	rawTxn, err := createTxRawResult(s.cfg.DAGParams, mtx, txID.String(),
+	rawTxn, err := createTxRawResult(s.cfg.DAGParams, msgTx, txID.String(),
 		blkHeader, blkHashStr, nil, &confirmations, isInMempool, txMass)
 	if err != nil {
 		return nil, err
