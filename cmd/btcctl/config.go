@@ -96,7 +96,7 @@ type config struct {
 	Proxy         string `long:"proxy" description:"Connect via SOCKS5 proxy (eg. 127.0.0.1:9050)"`
 	ProxyUser     string `long:"proxyuser" description:"Username for proxy server"`
 	ProxyPass     string `long:"proxypass" default-mask:"-" description:"Password for proxy server"`
-	TestNet3      bool   `long:"testnet" description:"Connect to testnet"`
+	TestNet       bool   `long:"testnet" description:"Connect to testnet"`
 	SimNet        bool   `long:"simnet" description:"Connect to the simulation test network"`
 	DevNet        bool   `long:"devnet" description:"Connect to the development test network"`
 	TLSSkipVerify bool   `long:"skipverify" description:"Do not verify tls certificates (not recommended!)"`
@@ -104,14 +104,14 @@ type config struct {
 
 // normalizeAddress returns addr with the passed default port appended if
 // there is not already a port specified.
-func normalizeAddress(addr string, useTestNet3, useSimNet, useDevNet bool) string {
+func normalizeAddress(addr string, useTestNet, useSimNet, useDevNet bool) string {
 	_, _, err := net.SplitHostPort(addr)
 	if err != nil {
 		var defaultPort string
 		switch {
 		case useDevNet:
 			fallthrough
-		case useTestNet3:
+		case useTestNet:
 			defaultPort = "18334"
 		case useSimNet:
 			defaultPort = "18556"
@@ -226,7 +226,7 @@ func loadConfig() (*config, []string, error) {
 
 	// Multiple networks can't be selected simultaneously.
 	numNets := 0
-	if cfg.TestNet3 {
+	if cfg.TestNet {
 		numNets++
 	}
 	if cfg.SimNet {
@@ -248,7 +248,7 @@ func loadConfig() (*config, []string, error) {
 
 	// Add default port to RPC server based on --testnet and --simnet flags
 	// if needed.
-	cfg.RPCServer = normalizeAddress(cfg.RPCServer, cfg.TestNet3,
+	cfg.RPCServer = normalizeAddress(cfg.RPCServer, cfg.TestNet,
 		cfg.SimNet, cfg.DevNet)
 
 	return &cfg, remainingArgs, nil

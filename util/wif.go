@@ -64,7 +64,7 @@ func (w *WIF) IsForNet(privateKeyID byte) bool {
 // sequence:
 //
 //  * 1 byte to identify the network, must be 0x80 for mainnet or 0xef for
-//    either testnet3 or the regression test network
+//    either testnet or the regression test network
 //  * 32 bytes of a binary-encoded, big-endian, zero-padded private key
 //  * Optional 1 byte (equal to 0x01) if the address being imported or exported
 //    was created by taking the RIPEMD160 after SHA256 hash of a serialized

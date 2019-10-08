@@ -36,7 +36,7 @@ var genesisTxPayload = []byte{
 }
 
 // genesisCoinbaseTx is the coinbase transaction for the genesis blocks for
-// the main network, regression test network, and test network (version 3).
+// the main network, regression test network, and test network.
 var genesisCoinbaseTx = wire.NewSubnetworkMsgTx(1, genesisTxIns, genesisTxOuts, subnetworkid.SubnetworkIDCoinbase, 0, genesisTxPayload)
 
 // genesisHash is the hash of the first block in the block DAG for the main
@@ -86,18 +86,18 @@ var regTestGenesisMerkleRoot = genesisMerkleRoot
 // as the public transaction ledger for the regression test network.
 var regTestGenesisBlock = genesisBlock
 
-// testNet3GenesisHash is the hash of the first block in the block chain for the
-// test network (version 3).
-var testNet3GenesisHash = genesisHash
+// testNetGenesisHash is the hash of the first block in the block chain for the
+// test network.
+var testNetGenesisHash = genesisHash
 
-// testNet3GenesisMerkleRoot is the hash of the first transaction in the genesis
-// block for the test network (version 3).  It is the same as the merkle root
-// for the main network.
-var testNet3GenesisMerkleRoot = genesisMerkleRoot
+// testNetGenesisMerkleRoot is the hash of the first transaction in the genesis
+// block for the test network.  It is the same as the merkle root for the main
+// network.
+var testNetGenesisMerkleRoot = genesisMerkleRoot
 
-// testNet3GenesisBlock defines the genesis block of the block chain which
-// serves as the public transaction ledger for the test network (version 3).
-var testNet3GenesisBlock = genesisBlock
+// testNetGenesisBlock defines the genesis block of the block chain which
+// serves as the public transaction ledger for the test network.
+var testNetGenesisBlock = genesisBlock
 
 // simNetGenesisHash is the hash of the first block in the block chain for the
 // simulation test network.
@@ -113,7 +113,7 @@ var simNetGenesisMerkleRoot = genesisMerkleRoot
 var simNetGenesisBlock = genesisBlock
 
 // devNetGenesisCoinbaseTx is the coinbase transaction for the genesis blocks for
-// the main network, regression test network, and test network (version 3).
+// the main network, regression test network, and test network.
 var devNetGenesisCoinbaseTx = genesisCoinbaseTx
 
 // devGenesisHash is the hash of the first block in the block DAG for the development
