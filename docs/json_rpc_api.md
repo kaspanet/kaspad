@@ -621,7 +621,7 @@ The following is an overview of the RPC methods which are implemented by btcd, b
 |Parameters|None|
 |Description|Get bitcoin network btcd is running on.|
 |Returns|numeric|
-|Example Return|`3652501241` (mainnet)<br />`118034699` (testnet3)|
+|Example Return|`3652501241` (mainnet)<br />`118034699` (testnet)|
 [Return to Overview](#ExtMethodOverview)<br />
 
 ***

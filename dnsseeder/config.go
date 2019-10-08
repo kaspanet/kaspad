@@ -129,7 +129,7 @@ func loadConfig() (*config, error) {
 		fmt.Fprintln(os.Stderr, err)
 		return nil, err
 	} else if cfg.TestNet {
-		activeNetParams = &dagconfig.TestNet3Params
+		activeNetParams = &dagconfig.TestNetParams
 	} else if cfg.DevNet {
 		activeNetParams = &dagconfig.DevNetParams
 	}

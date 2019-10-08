@@ -2,7 +2,7 @@
 //
 // In addition to the main Bitcoin network, which is intended for the transfer
 // of monetary value, there also exists two currently active standard networks:
-// regression test and testnet (version 3).  These networks are incompatible
+// regression test and testnet.  These networks are incompatible
 // with each other (each sharing a different genesis block) and software should
 // handle errors where input intended for one network is used on an application
 // instance running on a different network.
@@ -39,7 +39,7 @@
 //
 //          // Modify active network parameters if operating on testnet.
 //          if *testnet {
-//                  chainParams = &dagconfig.TestNet3Params
+//                  chainParams = &dagconfig.TestNetParams
 //          }
 //
 //          // later...
@@ -57,5 +57,5 @@
 // a new Params struct may be created which defines the parameters for the
 // non-standard network.  As a general rule of thumb, all network parameters
 // should be unique to the network, but parameter collisions can still occur
-// (unfortunately, this is the case with regtest and testnet3 sharing magics).
+// (unfortunately, this is the case with regtest and testnet sharing magics).
 package dagconfig

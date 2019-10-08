@@ -76,7 +76,7 @@ func signAndCheck(msg string, tx *wire.MsgTx, idx int, scriptPubKey []byte,
 	hashType SigHashType, kdb KeyDB, sdb ScriptDB,
 	previousScript []byte) error {
 
-	sigScript, err := SignTxOutput(&dagconfig.TestNet3Params, tx, idx,
+	sigScript, err := SignTxOutput(&dagconfig.TestNetParams, tx, idx,
 		scriptPubKey, hashType, kdb, sdb, nil)
 	if err != nil {
 		return fmt.Errorf("failed to sign output %s: %v", msg, err)
@@ -199,7 +199,7 @@ func TestSignTxOutput(t *testing.T) {
 					"for %s: %v", msg, err)
 			}
 
-			sigScript, err := SignTxOutput(&dagconfig.TestNet3Params,
+			sigScript, err := SignTxOutput(&dagconfig.TestNetParams,
 				tx, i, scriptPubKey, hashType,
 				mkGetKey(map[string]addressToKey{
 					address.EncodeAddress(): {key, false},
@@ -212,7 +212,7 @@ func TestSignTxOutput(t *testing.T) {
 
 			// by the above loop, this should be valid, now sign
 			// again and merge.
-			sigScript, err = SignTxOutput(&dagconfig.TestNet3Params,
+			sigScript, err = SignTxOutput(&dagconfig.TestNetParams,
 				tx, i, scriptPubKey, hashType,
 				mkGetKey(map[string]addressToKey{
 					address.EncodeAddress(): {key, false},
@@ -298,7 +298,7 @@ func TestSignTxOutput(t *testing.T) {
 					"for %s: %v", msg, err)
 			}
 
-			sigScript, err := SignTxOutput(&dagconfig.TestNet3Params,
+			sigScript, err := SignTxOutput(&dagconfig.TestNetParams,
 				tx, i, scriptPubKey, hashType,
 				mkGetKey(map[string]addressToKey{
 					address.EncodeAddress(): {key, true},
@@ -311,7 +311,7 @@ func TestSignTxOutput(t *testing.T) {
 
 			// by the above loop, this should be valid, now sign
 			// again and merge.
-			sigScript, err = SignTxOutput(&dagconfig.TestNet3Params,
+			sigScript, err = SignTxOutput(&dagconfig.TestNetParams,
 				tx, i, scriptPubKey, hashType,
 				mkGetKey(map[string]addressToKey{
 					address.EncodeAddress(): {key, true},
@@ -432,7 +432,7 @@ func TestSignTxOutput(t *testing.T) {
 				break
 			}
 
-			sigScript, err := SignTxOutput(&dagconfig.TestNet3Params,
+			sigScript, err := SignTxOutput(&dagconfig.TestNetParams,
 				tx, i, scriptScriptPubKey, hashType,
 				mkGetKey(map[string]addressToKey{
 					address.EncodeAddress(): {key, false},
@@ -447,7 +447,7 @@ func TestSignTxOutput(t *testing.T) {
 
 			// by the above loop, this should be valid, now sign
 			// again and merge.
-			sigScript, err = SignTxOutput(&dagconfig.TestNet3Params,
+			sigScript, err = SignTxOutput(&dagconfig.TestNetParams,
 				tx, i, scriptScriptPubKey, hashType,
 				mkGetKey(map[string]addressToKey{
 					address.EncodeAddress(): {key, false},
@@ -569,7 +569,7 @@ func TestSignTxOutput(t *testing.T) {
 				break
 			}
 
-			sigScript, err := SignTxOutput(&dagconfig.TestNet3Params,
+			sigScript, err := SignTxOutput(&dagconfig.TestNetParams,
 				tx, i, scriptScriptPubKey, hashType,
 				mkGetKey(map[string]addressToKey{
 					address.EncodeAddress(): {key, true},
@@ -584,7 +584,7 @@ func TestSignTxOutput(t *testing.T) {
 
 			// by the above loop, this should be valid, now sign
 			// again and merge.
-			sigScript, err = SignTxOutput(&dagconfig.TestNet3Params,
+			sigScript, err = SignTxOutput(&dagconfig.TestNetParams,
 				tx, i, scriptScriptPubKey, hashType,
 				mkGetKey(map[string]addressToKey{
 					address.EncodeAddress(): {key, true},

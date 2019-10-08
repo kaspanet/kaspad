@@ -17,7 +17,7 @@ func handleGetInfo(s *Server, cmd interface{}, closeChan <-chan struct{}) (inter
 		Connections:     s.cfg.ConnMgr.ConnectedCount(),
 		Proxy:           config.MainConfig().Proxy,
 		Difficulty:      getDifficultyRatio(s.cfg.DAG.CurrentBits(), s.cfg.DAGParams),
-		TestNet:         config.MainConfig().TestNet3,
+		TestNet:         config.MainConfig().TestNet,
 		DevNet:          config.MainConfig().DevNet,
 		RelayFee:        config.MainConfig().MinRelayTxFee.ToBTC(),
 	}

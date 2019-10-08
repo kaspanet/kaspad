@@ -111,7 +111,7 @@ var (
 // allow them to change out from under the tests potentially invalidating them.
 var regressionNetParams = &dagconfig.Params{
 	Name:        "regtest",
-	Net:         wire.TestNet,
+	Net:         wire.RegTest,
 	DefaultPort: "18444",
 
 	// DAG parameters

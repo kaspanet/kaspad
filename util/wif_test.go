@@ -29,7 +29,7 @@ func TestEncodeDecodeWIF(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	wif2, err := NewWIF(priv2, dagconfig.TestNet3Params.PrivateKeyID, true)
+	wif2, err := NewWIF(priv2, dagconfig.TestNetParams.PrivateKeyID, true)
 	if err != nil {
 		t.Fatal(err)
 	}

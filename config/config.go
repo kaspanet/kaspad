@@ -134,7 +134,7 @@ type configFlags struct {
 	OnionProxyPass       string        `long:"onionpass" default-mask:"-" description:"Password for onion proxy server"`
 	NoOnion              bool          `long:"noonion" description:"Disable connecting to tor hidden services"`
 	TorIsolation         bool          `long:"torisolation" description:"Enable Tor stream isolation by randomizing user credentials for each connection."`
-	TestNet3             bool          `long:"testnet" description:"Use the test network"`
+	TestNet              bool          `long:"testnet" description:"Use the test network"`
 	RegressionTest       bool          `long:"regtest" description:"Use the regression test network"`
 	SimNet               bool          `long:"simnet" description:"Use the simulation test network"`
 	DevNet               bool          `long:"devnet" description:"Use the development test network"`
@@ -428,9 +428,9 @@ func loadConfig() (*Config, []string, error) {
 	numNets := 0
 	// Count number of network flags passed; assign active network params
 	// while we're at it
-	if cfg.TestNet3 {
+	if cfg.TestNet {
 		numNets++
-		activeNetParams = &dagconfig.TestNet3Params
+		activeNetParams = &dagconfig.TestNetParams
 	}
 	if cfg.RegressionTest {
 		numNets++
