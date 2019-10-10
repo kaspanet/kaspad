@@ -382,22 +382,6 @@ func (r FutureGetBlockHashResult) Receive() (*daghash.Hash, error) {
 	return daghash.NewHashFromStr(txHashStr)
 }
 
-// GetBlockHashAsync returns an instance of a type that can be used to get the
-// result of the RPC at some future time by invoking the Receive function on the
-// returned instance.
-//
-// See GetBlockHash for the blocking version and more details.
-func (c *Client) GetBlockHashAsync(blockHeight int64) FutureGetBlockHashResult {
-	cmd := btcjson.NewGetBlockHashCmd(blockHeight)
-	return c.sendCmd(cmd)
-}
-
-// GetBlockHash returns the hash of the block in the best block dag at the
-// given height.
-func (c *Client) GetBlockHash(blockHeight int64) (*daghash.Hash, error) {
-	return c.GetBlockHashAsync(blockHeight).Receive()
-}
-
 // FutureGetBlockHeaderResult is a future promise to deliver the result of a
 // GetBlockHeaderAsync RPC invocation (or an applicable error).
 type FutureGetBlockHeaderResult chan *response

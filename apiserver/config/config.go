@@ -110,7 +110,7 @@ func resolveNetwork(cfg *Config) error {
 	activeNetParams = dagconfig.MainNetParams
 	switch {
 	case cfg.TestNet:
-		activeNetParams = dagconfig.TestNet3Params
+		activeNetParams = dagconfig.TestNetParams
 	case cfg.SimNet:
 		activeNetParams = dagconfig.SimNetParams
 	case cfg.DevNet:

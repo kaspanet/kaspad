@@ -14,7 +14,6 @@ import (
 	"github.com/daglabs/btcd/database"
 	_ "github.com/daglabs/btcd/database/ffldb"
 	"github.com/daglabs/btcd/util"
-	"github.com/daglabs/btcd/wire"
 	flags "github.com/jessevdk/go-flags"
 )
 
@@ -38,7 +37,7 @@ var (
 type config struct {
 	DataDir        string `short:"b" long:"datadir" description:"Location of the btcd data directory"`
 	DbType         string `long:"dbtype" description:"Database backend to use for the Block Chain"`
-	TestNet3       bool   `long:"testnet" description:"Use the test network"`
+	TestNet        bool   `long:"testnet" description:"Use the test network"`
 	RegressionTest bool   `long:"regtest" description:"Use the regression test network"`
 	SimNet         bool   `long:"simnet" description:"Use the simulation test network"`
 	DevNet         bool   `long:"devnet" description:"Use the development test network"`
@@ -55,24 +54,6 @@ func validDbType(dbType string) bool {
 	}
 
 	return false
-}
-
-// netName returns the name used when referring to a bitcoin network.  At the
-// time of writing, btcd currently places blocks for testnet version 3 in the
-// data and log directory "testnet", which does not match the Name field of the
-// dagconfig parameters.  This function can be used to override this directory name
-// as "testnet" when the passed active network matches wire.TestNet3.
-//
-// A proper upgrade to move the data and log directories for this network to
-// "testnet3" is planned for the future, at which point this function can be
-// removed and the network parameter's name used instead.
-func netName(chainParams *dagconfig.Params) string {
-	switch chainParams.Net {
-	case wire.TestNet3:
-		return "testnet"
-	default:
-		return chainParams.Name
-	}
 }
 
 // loadConfig initializes and parses the config using command line options.
@@ -99,9 +80,9 @@ func loadConfig() (*config, []string, error) {
 	numNets := 0
 	// Count number of network flags passed; assign active network params
 	// while we're at it
-	if cfg.TestNet3 {
+	if cfg.TestNet {
 		numNets++
-		activeNetParams = &dagconfig.TestNet3Params
+		activeNetParams = &dagconfig.TestNetParams
 	}
 	if cfg.RegressionTest {
 		numNets++
@@ -140,7 +121,7 @@ func loadConfig() (*config, []string, error) {
 	// All data is specific to a network, so namespacing the data directory
 	// means each individual piece of serialized data does not have to
 	// worry about changing names per network and such.
-	cfg.DataDir = filepath.Join(cfg.DataDir, netName(activeNetParams))
+	cfg.DataDir = filepath.Join(cfg.DataDir, activeNetParams.Name)
 
 	// Validate the number of candidates.
 	if cfg.NumCandidates < minCandidates || cfg.NumCandidates > maxCandidates {

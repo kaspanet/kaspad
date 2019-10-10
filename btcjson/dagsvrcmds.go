@@ -190,19 +190,6 @@ func NewGetBlockCountCmd() *GetBlockCountCmd {
 	return &GetBlockCountCmd{}
 }
 
-// GetBlockHashCmd defines the getBlockHash JSON-RPC command.
-type GetBlockHashCmd struct {
-	Index int64
-}
-
-// NewGetBlockHashCmd returns a new instance which can be used to issue a
-// getBlockHash JSON-RPC command.
-func NewGetBlockHashCmd(index int64) *GetBlockHashCmd {
-	return &GetBlockHashCmd{
-		Index: index,
-	}
-}
-
 // GetBlockHeaderCmd defines the getBlockHeader JSON-RPC command.
 type GetBlockHeaderCmd struct {
 	Hash    string
@@ -216,17 +203,6 @@ func NewGetBlockHeaderCmd(hash string, verbose *bool) *GetBlockHeaderCmd {
 		Hash:    hash,
 		Verbose: verbose,
 	}
-}
-
-// FlushDBCacheCmd defines the flushDbCache JSON-RPC command.
-// TODO: (Ori) This is a temporary function for dev use. It needs to be removed.
-type FlushDBCacheCmd struct{}
-
-// NewFlushDBCacheCmd returns a new instance which can be used to issue a
-// flushDbCache JSON-RPC command.
-// TODO: (Ori) This is a temporary function for dev use. It needs to be removed.
-func NewFlushDBCacheCmd(hash string, verbose *bool) *FlushDBCacheCmd {
-	return &FlushDBCacheCmd{}
 }
 
 // TemplateRequest is a request object as defined in BIP22
@@ -817,7 +793,6 @@ func init() {
 	MustRegisterCmd("getBlocks", (*GetBlocksCmd)(nil), flags)
 	MustRegisterCmd("getBlockDagInfo", (*GetBlockDAGInfoCmd)(nil), flags)
 	MustRegisterCmd("getBlockCount", (*GetBlockCountCmd)(nil), flags)
-	MustRegisterCmd("getBlockHash", (*GetBlockHashCmd)(nil), flags)
 	MustRegisterCmd("getBlockHeader", (*GetBlockHeaderCmd)(nil), flags)
 	MustRegisterCmd("getBlockTemplate", (*GetBlockTemplateCmd)(nil), flags)
 	MustRegisterCmd("getCFilter", (*GetCFilterCmd)(nil), flags)
@@ -858,5 +833,4 @@ func init() {
 	MustRegisterCmd("validateAddress", (*ValidateAddressCmd)(nil), flags)
 	MustRegisterCmd("verifyMessage", (*VerifyMessageCmd)(nil), flags)
 	MustRegisterCmd("verifyTxOutProof", (*VerifyTxOutProofCmd)(nil), flags)
-	MustRegisterCmd("flushDbCache", (*FlushDBCacheCmd)(nil), flags)
 }

@@ -20,29 +20,28 @@ import (
 // These variables are the chain proof-of-work limit parameters for each default
 // network.
 var (
-	// bigOne is 1 represented as a big.Int.  It is defined here to avoid
+	// bigOne is 1 represented as a big.Int. It is defined here to avoid
 	// the overhead of creating it multiple times.
 	bigOne = big.NewInt(1)
 
 	// mainPowMax is the highest proof of work value a Bitcoin block can
-	// have for the main network.  It is the value 2^255 - 1.
+	// have for the main network. It is the value 2^255 - 1.
 	mainPowMax = new(big.Int).Sub(new(big.Int).Lsh(bigOne, 255), bigOne)
 
 	// regressionPowMax is the highest proof of work value a Bitcoin block
-	// can have for the regression test network.  It is the value 2^255 - 1.
+	// can have for the regression test network. It is the value 2^255 - 1.
 	regressionPowMax = new(big.Int).Sub(new(big.Int).Lsh(bigOne, 255), bigOne)
 
-	// testNet3PowMax is the highest proof of work value a Bitcoin block
-	// can have for the test network (version 3).  It is the value
-	// 2^255 - 1.
-	testNet3PowMax = new(big.Int).Sub(new(big.Int).Lsh(bigOne, 255), bigOne)
+	// testNetPowMax is the highest proof of work value a Bitcoin block
+	// can have for the test network. It is the value 2^255 - 1.
+	testNetPowMax = new(big.Int).Sub(new(big.Int).Lsh(bigOne, 255), bigOne)
 
 	// simNetPowMax is the highest proof of work value a Bitcoin block
-	// can have for the simulation test network.  It is the value 2^255 - 1.
+	// can have for the simulation test network. It is the value 2^255 - 1.
 	simNetPowMax = new(big.Int).Sub(new(big.Int).Lsh(bigOne, 255), bigOne)
 
 	// devNetPowMax is the highest proof of work value a Bitcoin block
-	// can have for the development network.  It is the value
+	// can have for the development network. It is the value
 	// 2^239 - 1.
 	devNetPowMax = new(big.Int).Sub(new(big.Int).Lsh(bigOne, 239), bigOne)
 )
@@ -254,7 +253,7 @@ var MainNetParams = Params{
 var RegressionNetParams = Params{
 	K:           phantomK,
 	Name:        "regtest",
-	Net:         wire.TestNet,
+	Net:         wire.RegTest,
 	RPCPort:     "18334",
 	DefaultPort: "18444",
 	DNSSeeds:    []string{},
@@ -308,21 +307,19 @@ var RegressionNetParams = Params{
 	HDCoinType: 1,
 }
 
-// TestNet3Params defines the network parameters for the test Bitcoin network
-// (version 3).  Not to be confused with the regression test network, this
-// network is sometimes simply called "testnet".
-var TestNet3Params = Params{
+// TestNetParams defines the network parameters for the test Bitcoin network.
+var TestNetParams = Params{
 	K:           phantomK,
-	Name:        "testnet3",
-	Net:         wire.TestNet3,
+	Name:        "testnet",
+	Net:         wire.TestNet,
 	RPCPort:     "18334",
 	DefaultPort: "18333",
 	DNSSeeds:    []string{},
 
 	// DAG parameters
-	GenesisBlock:                   &testNet3GenesisBlock,
-	GenesisHash:                    &testNet3GenesisHash,
-	PowMax:                         testNet3PowMax,
+	GenesisBlock:                   &testNetGenesisBlock,
+	GenesisHash:                    &testNetGenesisHash,
+	PowMax:                         testNetPowMax,
 	BlockCoinbaseMaturity:          100,
 	SubsidyReductionInterval:       210000,
 	TargetTimePerBlock:             time.Second * 1, // 1 second
@@ -547,7 +544,7 @@ func newHashFromStr(hexStr string) *daghash.Hash {
 func init() {
 	// Register all default networks when the package is initialized.
 	mustRegister(&MainNetParams)
-	mustRegister(&TestNet3Params)
+	mustRegister(&TestNetParams)
 	mustRegister(&RegressionNetParams)
 	mustRegister(&SimNetParams)
 }
