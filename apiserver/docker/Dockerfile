@@ -14,7 +14,7 @@ RUN go mod download
 
 COPY . .
 
-RUN cd dnsseeder && CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o dnsseeder .
+RUN cd apiserver && CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o apiserver .
 
 # --- multistage docker build: stage #2: runtime image
 FROM alpine
@@ -22,7 +22,7 @@ WORKDIR /app
 
 RUN apk add --no-cache tini
 
-COPY --from=build /go/src/github.com/daglabs/btcd/dnsseeder/ /app/
+COPY --from=build /go/src/github.com/daglabs/btcd/apiserver/ /app/
 
 ENTRYPOINT ["/sbin/tini", "--"]
-CMD ["/app/dnsseeder"]
+CMD ["/app/apiserver"]
