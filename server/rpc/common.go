@@ -240,7 +240,12 @@ func buildGetBlockVerboseResult(s *Server, block *util.Block, isVerboseTx bool) 
 		return nil, internalRPCError(err.Error(), context)
 	}
 
-	blockMass, err := blockdag.CalcBlockMass(s.cfg.DAG.UTXOSet(), block.Transactions())
+	pastUTXO, err := s.cfg.DAG.BlockPastUTXO(block.Hash())
+	if err != nil {
+		context := "Could not get block past utxo"
+		return nil, internalRPCError(err.Error(), context)
+	}
+	blockMass, err := blockdag.CalcBlockMass(pastUTXO, block.Transactions())
 	if err != nil {
 		context := "Could not get block mass"
 		return nil, internalRPCError(err.Error(), context)
@@ -294,7 +299,7 @@ func buildGetBlockVerboseResult(s *Server, block *util.Block, isVerboseTx bool) 
 				}
 				confirmations = &txConfirmations
 			}
-			txMass, err := blockdag.CalcTxMass(tx, s.cfg.DAG.UTXOSet())
+			txMass, err := blockdag.CalcTxMassFromUTXOSet(tx, pastUTXO)
 			if err != nil {
 				return nil, err
 			}

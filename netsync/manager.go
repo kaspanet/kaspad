@@ -1154,6 +1154,8 @@ func (sm *SyncManager) limitHashMap(m map[daghash.Hash]struct{}, limit int) {
 	}
 }
 
+var txMsgI = 0
+
 // blockHandler is the main handler for the sync manager.  It must be run as a
 // goroutine.  It processes block and inv messages in a separate goroutine
 // from the peer handlers so the block (MsgBlock) messages are handled by a
@@ -1171,6 +1173,7 @@ out:
 
 			case *txMsg:
 				sm.handleTxMsg(msg)
+				log.Criticalf("txMsgI: %d", txMsgI)
 				msg.reply <- struct{}{}
 
 			case *blockMsg:

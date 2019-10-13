@@ -373,7 +373,7 @@ func (dag *BlockDAG) calcSequenceLock(node *blockNode, utxoSet UTXOSet, tx *util
 		entry, ok := utxoSet.Get(txIn.PreviousOutpoint)
 		if !ok {
 			str := fmt.Sprintf("output %s referenced from "+
-				"transaction %s:%d either does not exist or "+
+				"transaction %s input %d either does not exist or "+
 				"has already been spent", txIn.PreviousOutpoint,
 				tx.ID(), txInIndex)
 			return sequenceLock, ruleError(ErrMissingTxOut, str)
@@ -852,6 +852,15 @@ func (dag *BlockDAG) TxsAcceptedByBlockHash(blockHash *daghash.Hash) (MultiBlock
 	node := dag.index.LookupNode(blockHash)
 	_, txsAcceptanceData, err := dag.pastUTXO(node)
 	return txsAcceptanceData, err
+}
+
+// BlockPastUTXO retrieves the past UTXO of this block
+//
+// This function MUST be called with the DAG read-lock held
+func (dag *BlockDAG) BlockPastUTXO(blockHash *daghash.Hash) (UTXOSet, error) {
+	node := dag.index.LookupNode(blockHash)
+	pastUTXO, _, err := dag.pastUTXO(node)
+	return pastUTXO, err
 }
 
 // applyDAGChanges does the following:

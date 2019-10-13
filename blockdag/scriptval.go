@@ -58,7 +58,7 @@ out:
 			if !ok {
 				str := fmt.Sprintf("unable to find unspent "+
 					"output %s referenced from "+
-					"transaction %s:%d",
+					"transaction %s input %d",
 					txIn.PreviousOutpoint, txVI.tx.ID(),
 					txVI.txInIndex)
 				err := ruleError(ErrMissingTxOut, str)
