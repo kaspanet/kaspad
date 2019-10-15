@@ -120,7 +120,7 @@ func (g *BlkTmplGenerator) newTxsForBlockTemplate(payToAddress util.Address, sou
 	if err != nil {
 		return nil, err
 	}
-	coinbaseTxMass, err := blockdag.CalcTxMass(coinbaseTx, g.dag.UTXOSet())
+	coinbaseTxMass, err := blockdag.CalcTxMassFromUTXOSet(coinbaseTx, g.dag.UTXOSet())
 	if err != nil {
 		return nil, err
 	}
@@ -157,7 +157,7 @@ func (g *BlkTmplGenerator) collectCandidatesTxs(sourceTxs []*TxDesc) []*candidat
 			continue
 		}
 
-		txMass, err := blockdag.CalcTxMass(tx, g.dag.UTXOSet())
+		txMass, err := blockdag.CalcTxMassFromUTXOSet(tx, g.dag.UTXOSet())
 		if err != nil {
 			log.Warnf("Skipping tx %s due to error in "+
 				"CalcTxMass: %s", tx.ID(), err)
@@ -204,7 +204,7 @@ func (g *BlkTmplGenerator) collectCandidatesTxs(sourceTxs []*TxDesc) []*candidat
 // The higher the number the more likely it is that the transaction will be
 // included in the block.
 func (g *BlkTmplGenerator) calcTxValue(tx *util.Tx, fee uint64) (float64, error) {
-	mass, err := blockdag.CalcTxMass(tx, g.dag.UTXOSet())
+	mass, err := blockdag.CalcTxMassFromUTXOSet(tx, g.dag.UTXOSet())
 	if err != nil {
 		return 0, err
 	}
