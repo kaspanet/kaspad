@@ -52,8 +52,8 @@ func TestRegister(t *testing.T) {
 					err:    ErrDuplicateNet,
 				},
 				{
-					name:   "duplicate testnet3",
-					params: &TestNet3Params,
+					name:   "duplicate testnet",
+					params: &TestNetParams,
 					err:    ErrDuplicateNet,
 				},
 				{
@@ -69,8 +69,8 @@ func TestRegister(t *testing.T) {
 					err:  nil,
 				},
 				{
-					priv: TestNet3Params.HDKeyIDPair.PrivateKeyID[:],
-					want: TestNet3Params.HDKeyIDPair.PublicKeyID[:],
+					priv: TestNetParams.HDKeyIDPair.PrivateKeyID[:],
+					want: TestNetParams.HDKeyIDPair.PublicKeyID[:],
 					err:  nil,
 				},
 				{
@@ -128,8 +128,8 @@ func TestRegister(t *testing.T) {
 					err:    ErrDuplicateNet,
 				},
 				{
-					name:   "duplicate testnet3",
-					params: &TestNet3Params,
+					name:   "duplicate testnet",
+					params: &TestNetParams,
 					err:    ErrDuplicateNet,
 				},
 				{
@@ -150,8 +150,8 @@ func TestRegister(t *testing.T) {
 					err:  nil,
 				},
 				{
-					priv: TestNet3Params.HDKeyIDPair.PrivateKeyID[:],
-					want: TestNet3Params.HDKeyIDPair.PublicKeyID[:],
+					priv: TestNetParams.HDKeyIDPair.PrivateKeyID[:],
+					want: TestNetParams.HDKeyIDPair.PublicKeyID[:],
 					err:  nil,
 				},
 				{

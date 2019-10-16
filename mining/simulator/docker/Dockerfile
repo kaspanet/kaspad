@@ -25,5 +25,4 @@ RUN apk add --no-cache tini
 COPY --from=build /go/src/github.com/daglabs/btcd/mining/simulator/mining_simulator /app/
 
 ENTRYPOINT ["/sbin/tini", "--"]
-
 CMD ["/app/mining_simulator"]

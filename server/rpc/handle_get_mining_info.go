@@ -50,7 +50,7 @@ func handleGetMiningInfo(s *Server, cmd interface{}, closeChan <-chan struct{}) 
 		HashesPerSec:     int64(s.cfg.CPUMiner.HashesPerSecond()),
 		NetworkHashPS:    networkHashesPerSec,
 		PooledTx:         uint64(s.cfg.TxMemPool.Count()),
-		TestNet:          config.MainConfig().TestNet3,
+		TestNet:          config.MainConfig().TestNet,
 		DevNet:           config.MainConfig().DevNet,
 	}
 	return &result, nil

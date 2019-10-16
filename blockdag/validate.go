@@ -284,89 +284,11 @@ func (dag *BlockDAG) checkProofOfWork(header *wire.BlockHeader, flags BehaviorFl
 	return nil
 }
 
-// CountSigOps returns the number of signature operations for all transaction
-// input and output scripts in the provided transaction.  This uses the
-// quicker, but imprecise, signature operation counting mechanism from
-// txscript.
-func CountSigOps(tx *util.Tx) int {
-	msgTx := tx.MsgTx()
-
-	// Accumulate the number of signature operations in all transaction
-	// inputs.
-	totalSigOps := 0
-	for _, txIn := range msgTx.TxIn {
-		numSigOps := txscript.GetSigOpCount(txIn.SignatureScript)
-		totalSigOps += numSigOps
-	}
-
-	// Accumulate the number of signature operations in all transaction
-	// outputs.
-	for _, txOut := range msgTx.TxOut {
-		numSigOps := txscript.GetSigOpCount(txOut.ScriptPubKey)
-		totalSigOps += numSigOps
-	}
-
-	return totalSigOps
-}
-
-// CountP2SHSigOps returns the number of signature operations for all input
-// transactions which are of the pay-to-script-hash type.  This uses the
-// precise, signature operation counting mechanism from the script engine which
-// requires access to the input transaction scripts.
-func CountP2SHSigOps(tx *util.Tx, isCoinbase bool, utxoSet UTXOSet) (int, error) {
-	// Coinbase transactions have no interesting inputs.
-	if isCoinbase {
-		return 0, nil
-	}
-
-	// Accumulate the number of signature operations in all transaction
-	// inputs.
-	msgTx := tx.MsgTx()
-	totalSigOps := 0
-	for txInIndex, txIn := range msgTx.TxIn {
-		// Ensure the referenced input transaction is available.
-		entry, ok := utxoSet.Get(txIn.PreviousOutpoint)
-		if !ok {
-			str := fmt.Sprintf("output %s referenced from "+
-				"transaction %s:%d either does not exist or "+
-				"has already been spent", txIn.PreviousOutpoint,
-				tx.ID(), txInIndex)
-			return 0, ruleError(ErrMissingTxOut, str)
-		}
-
-		// We're only interested in pay-to-script-hash types, so skip
-		// this input if it's not one.
-		scriptPubKey := entry.ScriptPubKey()
-		if !txscript.IsPayToScriptHash(scriptPubKey) {
-			continue
-		}
-
-		// Count the precise number of signature operations in the
-		// referenced public key script.
-		sigScript := txIn.SignatureScript
-		numSigOps := txscript.GetPreciseSigOpCount(sigScript, scriptPubKey,
-			true)
-
-		// We could potentially overflow the accumulator so check for
-		// overflow.
-		lastSigOps := totalSigOps
-		totalSigOps += numSigOps
-		if totalSigOps < lastSigOps {
-			str := fmt.Sprintf("the public key script from output "+
-				"%s contains too many signature operations - "+
-				"overflow", txIn.PreviousOutpoint)
-			return 0, ruleError(ErrTooManySigOps, str)
-		}
-	}
-
-	return totalSigOps, nil
-}
-
 // ValidateTxMass makes sure that the given transaction's mass does not exceed
 // the maximum allowed limit. Currently, it is equivalent to the block mass limit.
 // See CalcTxMass for further details.
 func ValidateTxMass(tx *util.Tx, utxoSet UTXOSet) error {
-	txMass, err := CalcTxMass(tx, utxoSet)
+	txMass, err := CalcTxMassFromUTXOSet(tx, utxoSet)
 	if err != nil {
 		return err
 	}
@@ -388,7 +310,7 @@ func validateBlockMass(pastUTXO UTXOSet, transactions []*util.Tx) error {
 func CalcBlockMass(pastUTXO UTXOSet, transactions []*util.Tx) (uint64, error) {
 	totalMass := uint64(0)
 	for _, tx := range transactions {
-		txMass, err := CalcTxMass(tx, pastUTXO)
+		txMass, err := CalcTxMassFromUTXOSet(tx, pastUTXO)
 		if err != nil {
 			return 0, err
 		}
@@ -405,6 +327,29 @@ func CalcBlockMass(pastUTXO UTXOSet, transactions []*util.Tx) (uint64, error) {
 	return totalMass, nil
 }
 
+// CalcTxMassFromUTXOSet calculates the transaction mass based on the
+// UTXO set in its past.
+//
+// See CalcTxMass for more details.
+func CalcTxMassFromUTXOSet(tx *util.Tx, utxoSet UTXOSet) (uint64, error) {
+	if tx.IsCoinBase() {
+		return CalcTxMass(tx, nil), nil
+	}
+	previousScriptPubKeys := make([][]byte, len(tx.MsgTx().TxIn))
+	for txInIndex, txIn := range tx.MsgTx().TxIn {
+		entry, ok := utxoSet.Get(txIn.PreviousOutpoint)
+		if !ok {
+			str := fmt.Sprintf("output %s referenced from "+
+				"transaction %s input %d either does not exist or "+
+				"has already been spent", txIn.PreviousOutpoint,
+				tx.ID(), txInIndex)
+			return 0, ruleError(ErrMissingTxOut, str)
+		}
+		previousScriptPubKeys[txInIndex] = entry.ScriptPubKey()
+	}
+	return CalcTxMass(tx, previousScriptPubKeys), nil
+}
+
 // CalcTxMass sums up and returns the "mass" of a transaction. This number
 // is an approximation of how many resources (CPU, RAM, etc.) it would take
 // to process the transaction.
@@ -412,11 +357,11 @@ func CalcBlockMass(pastUTXO UTXOSet, transactions []*util.Tx) (uint64, error) {
 // * The transaction length in bytes
 // * The length of all output scripts in bytes
 // * The count of all input sigOps
-func CalcTxMass(tx *util.Tx, utxoSet UTXOSet) (uint64, error) {
+func CalcTxMass(tx *util.Tx, previousScriptPubKeys [][]byte) uint64 {
 	txSize := tx.MsgTx().SerializeSize()
 
 	if tx.IsCoinBase() {
-		return uint64(txSize * massPerTxByte), nil
+		return uint64(txSize * massPerTxByte)
 	}
 
 	scriptPubKeySize := 0
@@ -426,27 +371,16 @@ func CalcTxMass(tx *util.Tx, utxoSet UTXOSet) (uint64, error) {
 
 	sigOpsCount := 0
 	for txInIndex, txIn := range tx.MsgTx().TxIn {
-		// Ensure the referenced input transaction is available.
-		entry, ok := utxoSet.Get(txIn.PreviousOutpoint)
-		if !ok {
-			str := fmt.Sprintf("output %s referenced from "+
-				"transaction %s:%d either does not exist or "+
-				"has already been spent", txIn.PreviousOutpoint,
-				tx.ID(), txInIndex)
-			return 0, ruleError(ErrMissingTxOut, str)
-		}
-
 		// Count the precise number of signature operations in the
 		// referenced public key script.
-		scriptPubKey := entry.ScriptPubKey()
 		sigScript := txIn.SignatureScript
-		isP2SH := txscript.IsPayToScriptHash(scriptPubKey)
-		sigOpsCount += txscript.GetPreciseSigOpCount(sigScript, scriptPubKey, isP2SH)
+		isP2SH := txscript.IsPayToScriptHash(previousScriptPubKeys[txInIndex])
+		sigOpsCount += txscript.GetPreciseSigOpCount(sigScript, previousScriptPubKeys[txInIndex], isP2SH)
 	}
 
 	return uint64(txSize*massPerTxByte +
 		scriptPubKeySize*massPerScriptPubKeyByte +
-		sigOpsCount*massPerSigOp), nil
+		sigOpsCount*massPerSigOp)
 }
 
 // checkBlockHeaderSanity performs some preliminary checks on a block header to
@@ -816,7 +750,7 @@ func CheckTransactionInputsAndCalulateFee(tx *util.Tx, txBlueScore uint64, utxoS
 		entry, ok := utxoSet.Get(txIn.PreviousOutpoint)
 		if !ok {
 			str := fmt.Sprintf("output %s referenced from "+
-				"transaction %s:%d either does not exist or "+
+				"transaction %s input %d either does not exist or "+
 				"has already been spent", txIn.PreviousOutpoint,
 				tx.ID(), txInIndex)
 			return 0, ruleError(ErrMissingTxOut, str)

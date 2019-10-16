@@ -442,7 +442,7 @@ func TestSelectTxs(t *testing.T) {
 
 			// Force the mass to be as defined in the definition.
 			// We use the first payload byte to resolve which definition to use.
-			massPatch := monkey.Patch(blockdag.CalcTxMass, func(tx *util.Tx, _ blockdag.UTXOSet) (uint64, error) {
+			massPatch := monkey.Patch(blockdag.CalcTxMassFromUTXOSet, func(tx *util.Tx, _ blockdag.UTXOSet) (uint64, error) {
 				if tx.IsCoinBase() {
 					return 0, nil
 				}

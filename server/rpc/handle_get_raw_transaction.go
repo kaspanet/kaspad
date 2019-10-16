@@ -28,8 +28,9 @@ func handleGetRawTransaction(s *Server, cmd interface{}, closeChan <-chan struct
 
 	// Try to fetch the transaction from the memory pool and if that fails,
 	// try the block database.
-	var msgTx *wire.MsgTx
+	var tx *util.Tx
 	var blkHash *daghash.Hash
+	var txMass uint64
 	isInMempool := false
 	mempoolTx, err := s.cfg.TxMemPool.FetchTransaction(txID)
 	if err != nil {
@@ -42,25 +43,9 @@ func handleGetRawTransaction(s *Server, cmd interface{}, closeChan <-chan struct
 			}
 		}
 
-		// Look up the location of the transaction.
-		blockRegion, err := s.cfg.TxIndex.TxFirstBlockRegion(txID)
+		txBytes, txBlockHash, err := fetchTxBytesAndBlockHashFromTxIndex(s, txID)
 		if err != nil {
-			context := "Failed to retrieve transaction location"
-			return nil, internalRPCError(err.Error(), context)
-		}
-		if blockRegion == nil {
-			return nil, rpcNoTxInfoError(txID)
-		}
-
-		// Load the raw transaction bytes from the database.
-		var txBytes []byte
-		err = s.cfg.DB.View(func(dbTx database.Tx) error {
-			var err error
-			txBytes, err = dbTx.FetchBlockRegion(blockRegion)
-			return err
-		})
-		if err != nil {
-			return nil, rpcNoTxInfoError(txID)
+			return nil, err
 		}
 
 		// When the verbose flag isn't set, simply return the serialized
@@ -71,7 +56,7 @@ func handleGetRawTransaction(s *Server, cmd interface{}, closeChan <-chan struct
 		}
 
 		// Grab the block hash.
-		blkHash = blockRegion.Hash
+		blkHash = txBlockHash
 
 		// Deserialize the transaction
 		var mtx wire.MsgTx
@@ -80,7 +65,12 @@ func handleGetRawTransaction(s *Server, cmd interface{}, closeChan <-chan struct
 			context := "Failed to deserialize transaction"
 			return nil, internalRPCError(err.Error(), context)
 		}
-		msgTx = &mtx
+
+		tx = util.NewTx(&mtx)
+		txMass, err = calcTxMassFromTxIndex(s, tx)
+		if err != nil {
+			return nil, err
+		}
 	} else {
 		// When the verbose flag isn't set, simply return the
 		// network-serialized transaction as a hex-encoded string.
@@ -97,7 +87,13 @@ func handleGetRawTransaction(s *Server, cmd interface{}, closeChan <-chan struct
 			return mtxHex, nil
 		}
 
-		msgTx = mempoolTx.MsgTx()
+		var err error
+		txMass, err = blockdag.CalcTxMassFromUTXOSet(mempoolTx, s.cfg.DAG.UTXOSet())
+		if err != nil {
+			return nil, err
+		}
+
+		tx = mempoolTx
 		isInMempool = true
 	}
 
@@ -116,18 +112,58 @@ func handleGetRawTransaction(s *Server, cmd interface{}, closeChan <-chan struct
 		blkHashStr = blkHash.String()
 	}
 
-	confirmations, err := txConfirmations(s, msgTx.TxID())
+	confirmations, err := txConfirmations(s, tx.ID())
 	if err != nil {
 		return nil, err
 	}
-	txMass, err := blockdag.CalcTxMass(util.NewTx(msgTx), s.cfg.DAG.UTXOSet())
-	if err != nil {
-		return nil, err
-	}
-	rawTxn, err := createTxRawResult(s.cfg.DAGParams, msgTx, txID.String(),
+	rawTxn, err := createTxRawResult(s.cfg.DAGParams, tx.MsgTx(), txID.String(),
 		blkHeader, blkHashStr, nil, &confirmations, isInMempool, txMass)
 	if err != nil {
 		return nil, err
 	}
 	return *rawTxn, nil
+}
+
+func calcTxMassFromTxIndex(s *Server, tx *util.Tx) (uint64, error) {
+	if tx.IsCoinBase() {
+		return blockdag.CalcTxMass(tx, nil), nil
+	}
+	previousScriptPubKeys := make([][]byte, len(tx.MsgTx().TxIn))
+	for i, txIn := range tx.MsgTx().TxIn {
+		txBytes, _, err := fetchTxBytesAndBlockHashFromTxIndex(s, &txIn.PreviousOutpoint.TxID)
+		if err != nil {
+			return 0, err
+		}
+		var msgTx wire.MsgTx
+		err = msgTx.Deserialize(bytes.NewReader(txBytes))
+		if err != nil {
+			context := "Failed to deserialize transaction"
+			return 0, internalRPCError(err.Error(), context)
+		}
+		previousScriptPubKeys[i] = msgTx.TxOut[txIn.PreviousOutpoint.Index].ScriptPubKey
+	}
+	return blockdag.CalcTxMass(tx, previousScriptPubKeys), nil
+}
+
+func fetchTxBytesAndBlockHashFromTxIndex(s *Server, txID *daghash.TxID) ([]byte, *daghash.Hash, error) {
+	blockRegion, err := s.cfg.TxIndex.TxFirstBlockRegion(txID)
+	if err != nil {
+		context := "Failed to retrieve transaction location"
+		return nil, nil, internalRPCError(err.Error(), context)
+	}
+	if blockRegion == nil {
+		return nil, nil, rpcNoTxInfoError(txID)
+	}
+
+	// Load the raw transaction bytes from the database.
+	var txBytes []byte
+	err = s.cfg.DB.View(func(dbTx database.Tx) error {
+		var err error
+		txBytes, err = dbTx.FetchBlockRegion(blockRegion)
+		return err
+	})
+	if err != nil {
+		return nil, nil, rpcNoTxInfoError(txID)
+	}
+	return txBytes, blockRegion.Hash, nil
 }
