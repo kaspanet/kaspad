@@ -38,6 +38,7 @@ import (
 func TestFinality(t *testing.T) {
 	params := dagconfig.SimNetParams
 	params.K = 1
+	params.FinalityInterval = 100
 	dag, teardownFunc, err := blockdag.DAGSetup("TestFinality", blockdag.Config{
 		DAGParams: &params,
 	})
