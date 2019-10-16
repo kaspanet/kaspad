@@ -232,8 +232,8 @@ func (node *blockNode) isGenesis() bool {
 	return len(node.parents) == 0
 }
 
-func (node *blockNode) finalityScore() uint64 {
-	return node.blueScore / FinalityInterval
+func (node *blockNode) finalityScore(dag *BlockDAG) uint64 {
+	return node.blueScore / uint64(dag.dagParams.FinalityInterval)
 }
 
 // String returns a string that contains the block hash.
