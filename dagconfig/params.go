@@ -208,7 +208,7 @@ var MainNetParams = Params{
 	BlockCoinbaseMaturity:          100,
 	SubsidyReductionInterval:       210000,
 	TargetTimePerBlock:             time.Second * 1, // 1 second
-	FinalityInterval:				1000,
+	FinalityInterval:               1000,
 	DifficultyAdjustmentWindowSize: difficultyAdjustmentWindowSize,
 	TimestampDeviationTolerance:    timestampDeviationTolerance,
 	GenerateSupported:              false,
@@ -269,7 +269,7 @@ var RegressionNetParams = Params{
 	BlockCoinbaseMaturity:          100,
 	SubsidyReductionInterval:       150,
 	TargetTimePerBlock:             time.Second * 1, // 1 second
-	FinalityInterval:				1000,
+	FinalityInterval:               1000,
 	DifficultyAdjustmentWindowSize: difficultyAdjustmentWindowSize,
 	TimestampDeviationTolerance:    timestampDeviationTolerance,
 	GenerateSupported:              true,
@@ -328,7 +328,7 @@ var TestNetParams = Params{
 	BlockCoinbaseMaturity:          100,
 	SubsidyReductionInterval:       210000,
 	TargetTimePerBlock:             time.Second * 1, // 1 second
-	FinalityInterval:				1000,
+	FinalityInterval:               1000,
 	DifficultyAdjustmentWindowSize: difficultyAdjustmentWindowSize,
 	TimestampDeviationTolerance:    timestampDeviationTolerance,
 	GenerateSupported:              true,
@@ -393,7 +393,7 @@ var SimNetParams = Params{
 	BlockCoinbaseMaturity:          100,
 	SubsidyReductionInterval:       210000,
 	TargetTimePerBlock:             time.Second * 1, // 1 second
-	FinalityInterval:				1000,
+	FinalityInterval:               1000,
 	DifficultyAdjustmentWindowSize: difficultyAdjustmentWindowSize,
 	TimestampDeviationTolerance:    timestampDeviationTolerance,
 	GenerateSupported:              true,
@@ -450,7 +450,7 @@ var DevNetParams = Params{
 	BlockCoinbaseMaturity:          100,
 	SubsidyReductionInterval:       210000,
 	TargetTimePerBlock:             time.Second * 1, // 1 second
-	FinalityInterval:				1000,
+	FinalityInterval:               1000,
 	DifficultyAdjustmentWindowSize: difficultyAdjustmentWindowSize,
 	TimestampDeviationTolerance:    timestampDeviationTolerance,
 	GenerateSupported:              true,

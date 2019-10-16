@@ -1234,7 +1234,7 @@ func testFinalizeNodesBelowFinalityPoint(t *testing.T, deleteDiffData bool) {
 		flushUTXODiffStore()
 		return node
 	}
-	finalityInterval :=  dag.dagParams.FinalityInterval
+	finalityInterval := dag.dagParams.FinalityInterval
 	nodes := make([]*blockNode, 0, finalityInterval)
 	currentNode := dag.genesis
 	nodes = append(nodes, currentNode)
