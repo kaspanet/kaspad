@@ -28,7 +28,7 @@ const (
 	maxOrphanBlocks = 100
 
 	// FinalityInterval is the interval that determines the finality window of the DAG.
-	FinalityInterval = 100
+	FinalityInterval = 1000
 )
 
 // orphanBlock represents a block that we don't yet have the parent for.  It
