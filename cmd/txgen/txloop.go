@@ -374,11 +374,15 @@ func isFunded(tx *wire.MsgTx, feeRate uint64, targetNumberOfOutputs uint64, amou
 
 func calcFee(msgTx *wire.MsgTx, feeRate uint64, numberOfOutputs uint64, walletUTXOSet utxoSet) uint64 {
 	txMass := calcTxMass(msgTx, walletUTXOSet)
-	reqFee := (txMass + numberOfOutputs*outputSize) * feeRate
+	reqFee := (txMass + outputTotalSize(numberOfOutputs)) * feeRate
 	if reqFee < minTxFee {
 		return minTxFee
 	}
 	return reqFee
+}
+
+func outputTotalSize(numberOfOutputs uint64) uint64 {
+	return numberOfOutputs*outputSize + uint64(wire.VarIntSerializeSize(numberOfOutputs))
 }
 
 func calcTxMass(msgTx *wire.MsgTx, walletUTXOSet utxoSet) uint64 {
