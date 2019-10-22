@@ -26,9 +26,6 @@ const (
 	// maxOrphanBlocks is the maximum number of orphan blocks that can be
 	// queued.
 	maxOrphanBlocks = 100
-
-	// FinalityInterval is the interval that determines the finality window of the DAG.
-	FinalityInterval = 100
 )
 
 // orphanBlock represents a block that we don't yet have the parent for.  It
@@ -736,14 +733,14 @@ func (dag *BlockDAG) updateFinalityPoint() {
 	}
 	// We are looking for a new finality point only if the new block's finality score is higher
 	// by 2 than the existing finality point's
-	if selectedTip.finalityScore() < dag.lastFinalityPoint.finalityScore()+2 {
+	if selectedTip.finalityScore(dag) < dag.lastFinalityPoint.finalityScore(dag)+2 {
 		return
 	}
 
 	var currentNode *blockNode
 	for currentNode = selectedTip.selectedParent; ; currentNode = currentNode.selectedParent {
 		// We look for the first node in the selected parent chain that has a higher finality score than the last finality point.
-		if currentNode.selectedParent.finalityScore() == dag.lastFinalityPoint.finalityScore() {
+		if currentNode.selectedParent.finalityScore(dag) == dag.lastFinalityPoint.finalityScore(dag) {
 			break
 		}
 	}
@@ -760,7 +757,7 @@ func (dag *BlockDAG) finalizeNodesBelowFinalityPoint(deleteDiffData bool) {
 	}
 	var blockHashesToDelete []*daghash.Hash
 	if deleteDiffData {
-		blockHashesToDelete = make([]*daghash.Hash, 0, FinalityInterval)
+		blockHashesToDelete = make([]*daghash.Hash, 0, dag.dagParams.FinalityInterval)
 	}
 	for len(queue) > 0 {
 		var current *blockNode

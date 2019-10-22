@@ -1022,7 +1022,7 @@ out:
 			c.SendMessage(reply, nil)
 			continue
 		}
-		log.Debugf("Received command <%s> from %s", cmd.method, c.addr)
+		log.Debugf("Websocket server received command <%s> from %s", cmd.method, c.addr)
 
 		// Check auth.  The client is immediately disconnected if the
 		// first request of an unauthentiated websocket client is not

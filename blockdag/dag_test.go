@@ -1234,22 +1234,22 @@ func testFinalizeNodesBelowFinalityPoint(t *testing.T, deleteDiffData bool) {
 		flushUTXODiffStore()
 		return node
 	}
-
-	nodes := make([]*blockNode, 0, FinalityInterval)
+	finalityInterval := dag.dagParams.FinalityInterval
+	nodes := make([]*blockNode, 0, finalityInterval)
 	currentNode := dag.genesis
 	nodes = append(nodes, currentNode)
-	for i := 0; i <= FinalityInterval*2; i++ {
+	for i := 0; i <= finalityInterval*2; i++ {
 		currentNode = addNode(currentNode)
 		nodes = append(nodes, currentNode)
 	}
 
 	// Manually set the last finality point
-	dag.lastFinalityPoint = nodes[FinalityInterval-1]
+	dag.lastFinalityPoint = nodes[finalityInterval-1]
 
 	dag.finalizeNodesBelowFinalityPoint(deleteDiffData)
 	flushUTXODiffStore()
 
-	for _, node := range nodes[:FinalityInterval-1] {
+	for _, node := range nodes[:finalityInterval-1] {
 		if !node.isFinalized {
 			t.Errorf("Node with blue score %d expected to be finalized", node.blueScore)
 		}
@@ -1267,7 +1267,7 @@ func testFinalizeNodesBelowFinalityPoint(t *testing.T, deleteDiffData bool) {
 		}
 	}
 
-	for _, node := range nodes[FinalityInterval-1:] {
+	for _, node := range nodes[finalityInterval-1:] {
 		if node.isFinalized {
 			t.Errorf("Node with blue score %d wasn't expected to be finalized", node.blueScore)
 		}

@@ -20,13 +20,13 @@ import (
 
 // TestFinality checks that the finality mechanism works as expected.
 // This is how the flow goes:
-// 1) We build a chain of blockdag.FinalityInterval blocks and call its tip altChainTip.
-// 2) We build another chain (let's call it mainChain) of 2 * blockdag.FinalityInterval
+// 1) We build a chain of params.FinalityInterval blocks and call its tip altChainTip.
+// 2) We build another chain (let's call it mainChain) of 2 * params.FinalityInterval
 // blocks, which points to genesis, and then we check that the block in that
-// chain with height of blockdag.FinalityInterval is marked as finality point (This is
+// chain with height of params.FinalityInterval is marked as finality point (This is
 // very predictable, because the blue score of each new block in a chain is the
 // parents plus one).
-// 3) We make a new child to block with height (2 * blockdag.FinalityInterval - 1)
+// 3) We make a new child to block with height (2 * params.FinalityInterval - 1)
 // in mainChain, and we check that connecting it to the DAG
 // doesn't affect the last finality point.
 // 4) We make a block that points to genesis, and check that it
@@ -38,6 +38,7 @@ import (
 func TestFinality(t *testing.T) {
 	params := dagconfig.SimNetParams
 	params.K = 1
+	params.FinalityInterval = 100
 	dag, teardownFunc, err := blockdag.DAGSetup("TestFinality", blockdag.Config{
 		DAGParams: &params,
 	})
@@ -70,8 +71,8 @@ func TestFinality(t *testing.T) {
 	genesis := util.NewBlock(params.GenesisBlock)
 	currentNode := genesis
 
-	// First we build a chain of blockdag.FinalityInterval blocks for future use
-	for i := 0; i < blockdag.FinalityInterval; i++ {
+	// First we build a chain of params.FinalityInterval blocks for future use
+	for i := 0; i < params.FinalityInterval; i++ {
 		currentNode, err = buildNodeToDag([]*daghash.Hash{currentNode.Hash()})
 		if err != nil {
 			t.Fatalf("TestFinality: buildNodeToDag unexpectedly returned an error: %v", err)
@@ -80,10 +81,10 @@ func TestFinality(t *testing.T) {
 
 	altChainTip := currentNode
 
-	// Now we build a new chain of 2 * blockdag.FinalityInterval blocks, pointed to genesis, and
-	// we expect the block with height 1 * blockdag.FinalityInterval to be the last finality point
+	// Now we build a new chain of 2 * params.FinalityInterval blocks, pointed to genesis, and
+	// we expect the block with height 1 * params.FinalityInterval to be the last finality point
 	currentNode = genesis
-	for i := 0; i < blockdag.FinalityInterval; i++ {
+	for i := 0; i < params.FinalityInterval; i++ {
 		currentNode, err = buildNodeToDag([]*daghash.Hash{currentNode.Hash()})
 		if err != nil {
 			t.Fatalf("TestFinality: buildNodeToDag unexpectedly returned an error: %v", err)
@@ -92,7 +93,7 @@ func TestFinality(t *testing.T) {
 
 	expectedFinalityPoint := currentNode
 
-	for i := 0; i < blockdag.FinalityInterval; i++ {
+	for i := 0; i < params.FinalityInterval; i++ {
 		currentNode, err = buildNodeToDag([]*daghash.Hash{currentNode.Hash()})
 		if err != nil {
 			t.Fatalf("TestFinality: buildNodeToDag unexpectedly returned an error: %v", err)
@@ -165,8 +166,9 @@ func TestFinality(t *testing.T) {
 // a getblocks message it should always be able to send
 // all the necessary invs.
 func TestFinalityInterval(t *testing.T) {
-	if blockdag.FinalityInterval > wire.MaxInvPerMsg {
-		t.Errorf("blockdag.FinalityInterval should be lower or equal to wire.MaxInvPerMsg")
+	params := dagconfig.SimNetParams
+	if params.FinalityInterval > wire.MaxInvPerMsg {
+		t.Errorf("dagconfig.SimNetParams.FinalityInterval should be lower or equal to wire.MaxInvPerMsg")
 	}
 }
 

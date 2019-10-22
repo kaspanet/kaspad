@@ -551,6 +551,7 @@ func (s *Server) jsonRPCRead(w http.ResponseWriter, r *http.Request, isAdmin boo
 			if parsedCmd.err != nil {
 				jsonErr = parsedCmd.err
 			} else {
+				log.Debugf("HTTP server received command <%s> from %s", parsedCmd.method, r.RemoteAddr)
 				result, jsonErr = s.standardCmdResult(parsedCmd, closeChan)
 			}
 		}
