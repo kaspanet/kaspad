@@ -1,4 +1,4 @@
-package controllers
+package apimodels
 
 // RawTransaction represents a raw transaction posted to the API server
 type RawTransaction struct {

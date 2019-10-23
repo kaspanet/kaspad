@@ -204,9 +204,13 @@ func updateWalletTxs(blockAdded *blockAddedMsg, walletTxs map[daghash.TxID]*wall
 	}
 }
 
-func randomWithAverageTarget(target uint64, allowZero bool) uint64 {
+func randomWithAverageTarget(target float64) float64 {
 	randomFraction := random.Float64()
-	randomNum := randomFraction * float64(target*2)
+	return randomFraction * float64(target*2)
+}
+
+func randomIntegerWithAverageTarget(target uint64, allowZero bool) uint64 {
+	randomNum := randomWithAverageTarget(float64(target))
 	if !allowZero && randomNum < 1 {
 		randomNum = 1
 	}
@@ -237,17 +241,17 @@ func createRandomTxFromFunds(walletUTXOSet utxoSet, cfg *config, gasLimitMap map
 	}
 
 	if !chosenSubnetwork.IsEqual(subnetworkid.SubnetworkIDNative) {
-		payloadSize = randomWithAverageTarget(cfg.AveragePayloadSize, true)
-		gas = randomWithAverageTarget(uint64(float64(chosenGasLimit)*cfg.AverageGasFraction), true)
+		payloadSize = randomIntegerWithAverageTarget(cfg.AveragePayloadSize, true)
+		gas = randomIntegerWithAverageTarget(uint64(float64(chosenGasLimit)*cfg.AverageGasFraction), true)
 		if gas > chosenGasLimit {
 			gas = chosenGasLimit
 		}
 	}
 
-	targetNumberOfOutputs := randomWithAverageTarget(cfg.TargetNumberOfOutputs, false)
-	targetNumberOfInputs := randomWithAverageTarget(cfg.TargetNumberOfInputs, false)
+	targetNumberOfOutputs := randomIntegerWithAverageTarget(cfg.TargetNumberOfOutputs, false)
+	targetNumberOfInputs := randomIntegerWithAverageTarget(cfg.TargetNumberOfInputs, false)
 
-	feeRate := randomWithAverageTarget(cfg.AverageFeeRate, true)
+	feeRate := randomWithAverageTarget(cfg.AverageFeeRate)
 
 	amount := minSpendableAmount + uint64(random.Int63n(int64(maxSpendableAmount-minSpendableAmount)))
 	amount *= targetNumberOfOutputs
@@ -280,7 +284,7 @@ func enqueueTransactions(client *txgenClient, blockAdded *blockAddedMsg, walletU
 	return nil
 }
 
-func createTx(walletUTXOSet utxoSet, minAmount uint64, feeRate uint64, targetNumberOfOutputs uint64, targetNumberOfInputs uint64,
+func createTx(walletUTXOSet utxoSet, minAmount uint64, feeRate float64, targetNumberOfOutputs uint64, targetNumberOfInputs uint64,
 	subnetworkdID *subnetworkid.SubnetworkID, payloadSize uint64, gas uint64, scriptPubKey []byte) (*wire.MsgTx, error) {
 	var tx *wire.MsgTx
 	if subnetworkdID.IsEqual(subnetworkid.SubnetworkIDNative) {
@@ -340,7 +344,7 @@ func signTx(walletUTXOSet utxoSet, tx *wire.MsgTx) error {
 	return nil
 }
 
-func fundTx(walletUTXOSet utxoSet, tx *wire.MsgTx, amount uint64, feeRate uint64, targetNumberOfOutputs uint64, targetNumberOfInputs uint64) (uint64, error) {
+func fundTx(walletUTXOSet utxoSet, tx *wire.MsgTx, amount uint64, feeRate float64, targetNumberOfOutputs uint64, targetNumberOfInputs uint64) (uint64, error) {
 
 	amountSelected := uint64(0)
 
@@ -367,15 +371,15 @@ func fundTx(walletUTXOSet utxoSet, tx *wire.MsgTx, amount uint64, feeRate uint64
 
 // Check if the transaction has enough funds to cover the fee
 // required for the txn.
-func isFunded(tx *wire.MsgTx, feeRate uint64, targetNumberOfOutputs uint64, amountSelected uint64, targetAmount uint64, walletUTXOSet utxoSet) bool {
+func isFunded(tx *wire.MsgTx, feeRate float64, targetNumberOfOutputs uint64, amountSelected uint64, targetAmount uint64, walletUTXOSet utxoSet) bool {
 	reqFee := calcFee(tx, feeRate, targetNumberOfOutputs, walletUTXOSet)
 	return amountSelected > reqFee && amountSelected-reqFee >= targetAmount
 }
 
-func calcFee(msgTx *wire.MsgTx, feeRate uint64, numberOfOutputs uint64, walletUTXOSet utxoSet) uint64 {
+func calcFee(msgTx *wire.MsgTx, feeRate float64, numberOfOutputs uint64, walletUTXOSet utxoSet) uint64 {
 	txMass := calcTxMass(msgTx, walletUTXOSet)
 	txMassWithOutputs := txMass + outputsTotalSize(numberOfOutputs)
-	reqFee := txMassWithOutputs * feeRate
+	reqFee := uint64(float64(txMassWithOutputs) * feeRate)
 	if reqFee < minTxFee {
 		return minTxFee
 	}
