@@ -1,9 +1,9 @@
 package main
 
 import (
+	"encoding/hex"
 	"fmt"
 	"os"
-	"encoding/hex"
 
 	"github.com/daglabs/btcd/btcec"
 	"github.com/daglabs/btcd/dagconfig"
