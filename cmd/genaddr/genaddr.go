@@ -28,5 +28,7 @@ func main() {
 		fmt.Fprintf(os.Stderr, "Failed to generate p2pkh address: %s", err)
 		os.Exit(1)
 	}
-	fmt.Printf("Address: %s\n\n", addr)
+	fmt.Printf("Address: %s\n", addr)
+	hash160 := addr.Hash160()[:]
+	fmt.Printf("H160 of address (base 58): %s\n\n", base58.Encode(hash160))
 }
