@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"encoding/hex"
 
 	"github.com/daglabs/btcd/btcec"
 	"github.com/daglabs/btcd/dagconfig"
@@ -30,5 +31,5 @@ func main() {
 	}
 	fmt.Printf("Address: %s\n", addr)
 	hash160 := addr.Hash160()[:]
-	fmt.Printf("H160 of address (base 58): %s\n\n", base58.Encode(hash160))
+	fmt.Printf("Hash160 of address (hex): %s\n\n", hex.EncodeToString(hash160))
 }
