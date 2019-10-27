@@ -302,7 +302,7 @@ func createTx(walletUTXOSet utxoSet, minAmount uint64, feeRate uint64, targetNum
 		numOuts = maxNumOuts
 	}
 
-	fee := calcFee(tx, feeRate, numOuts)
+	fee := calcFee(tx, feeRate, numOuts, walletUTXOSet)
 	funds -= fee
 
 	for i := uint64(0); i < numOuts; i++ {
@@ -350,15 +350,15 @@ func fundTx(walletUTXOSet utxoSet, tx *wire.MsgTx, amount uint64, feeRate uint64
 		// Add the selected output to the transaction
 		tx.AddTxIn(wire.NewTxIn(&outpoint, nil))
 
-		// Check if transaction has enought funds. If we don't have enough
+		// Check if transaction has enough funds. If we don't have enough
 		// coins from he current amount selected to pay the fee, or we have
 		// less inputs then the targeted amount, continue to grab more coins.
-		if uint64(len(tx.TxIn)) >= targetNumberOfInputs && isFunded(tx, feeRate, targetNumberOfOutputs, amountSelected, amount) {
+		if uint64(len(tx.TxIn)) >= targetNumberOfInputs && isFunded(tx, feeRate, targetNumberOfOutputs, amountSelected, amount, walletUTXOSet) {
 			break
 		}
 	}
 
-	if !isFunded(tx, feeRate, targetNumberOfOutputs, amountSelected, amount) {
+	if !isFunded(tx, feeRate, targetNumberOfOutputs, amountSelected, amount, walletUTXOSet) {
 		return 0, fmt.Errorf("not enough funds for coin selection")
 	}
 
@@ -367,18 +367,38 @@ func fundTx(walletUTXOSet utxoSet, tx *wire.MsgTx, amount uint64, feeRate uint64
 
 // Check if the transaction has enough funds to cover the fee
 // required for the txn.
-func isFunded(tx *wire.MsgTx, feeRate uint64, targetNumberOfOutputs uint64, amountSelected uint64, targetAmount uint64) bool {
-	reqFee := calcFee(tx, feeRate, targetNumberOfOutputs)
+func isFunded(tx *wire.MsgTx, feeRate uint64, targetNumberOfOutputs uint64, amountSelected uint64, targetAmount uint64, walletUTXOSet utxoSet) bool {
+	reqFee := calcFee(tx, feeRate, targetNumberOfOutputs, walletUTXOSet)
 	return amountSelected > reqFee && amountSelected-reqFee >= targetAmount
 }
 
-func calcFee(tx *wire.MsgTx, feeRate uint64, numberOfOutputs uint64) uint64 {
-	txSize := uint64(tx.SerializeSize()) + spendSize*uint64(len(tx.TxIn)) + numberOfOutputs*outputSize + 1
-	reqFee := uint64(txSize) * feeRate
+func calcFee(msgTx *wire.MsgTx, feeRate uint64, numberOfOutputs uint64, walletUTXOSet utxoSet) uint64 {
+	txMass := calcTxMass(msgTx, walletUTXOSet)
+	txMassWithOutputs := txMass + outputsTotalSize(numberOfOutputs)
+	reqFee := txMassWithOutputs * feeRate
 	if reqFee < minTxFee {
 		return minTxFee
 	}
 	return reqFee
+}
+
+func outputsTotalSize(numberOfOutputs uint64) uint64 {
+	return numberOfOutputs*outputSize + uint64(wire.VarIntSerializeSize(numberOfOutputs))
+}
+
+func calcTxMass(msgTx *wire.MsgTx, walletUTXOSet utxoSet) uint64 {
+	previousScriptPubKeys := getPreviousScriptPubKeys(msgTx, walletUTXOSet)
+	return blockdag.CalcTxMass(util.NewTx(msgTx), previousScriptPubKeys)
+}
+
+func getPreviousScriptPubKeys(msgTx *wire.MsgTx, walletUTXOSet utxoSet) [][]byte {
+	previousScriptPubKeys := make([][]byte, len(msgTx.TxIn))
+	for i, txIn := range msgTx.TxIn {
+		outpoint := txIn.PreviousOutpoint
+		prevOut := walletUTXOSet[outpoint]
+		previousScriptPubKeys[i] = prevOut.ScriptPubKey
+	}
+	return previousScriptPubKeys
 }
 
 func applyConfirmedTransactionsAndResendNonAccepted(client *txgenClient, walletTxs map[daghash.TxID]*walletTransaction, walletUTXOSet utxoSet,
