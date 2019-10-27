@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/hex"
 	"fmt"
 	"os"
 
@@ -28,5 +29,7 @@ func main() {
 		fmt.Fprintf(os.Stderr, "Failed to generate p2pkh address: %s", err)
 		os.Exit(1)
 	}
-	fmt.Printf("Public key: %s\n\n", addr)
+	fmt.Printf("Address: %s\n", addr)
+	hash160 := addr.Hash160()[:]
+	fmt.Printf("Hash160 of address (hex): %s\n\n", hex.EncodeToString(hash160))
 }
