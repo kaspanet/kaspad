@@ -13,27 +13,41 @@ then
 	echo ""
 	echo -e "\t--rm\t\tRemove dockers prior to running them, to clear data"
 	echo -e "\t--debug\t\tEnable debugging on second server. Server will not start until debugger is attached"
+	echo -e "\t--no-build\t\tRun without building docker images"
+	echo -e "\t--only-build\t\tBuild docker images without running"
 	exit
+fi
+
+if [[ $* == *--no-build* ]] && [[ $* == *--only-build* ]]
+then
+  echo "--no-build and --only-build may not be passed together"
+  exit
 fi
 
 export SERVICE_NAME=btcd
 export GIT_COMMIT=$(git rev-parse --short=12 HEAD)
 
-docker build -t "${SERVICE_NAME}:${GIT_COMMIT}" . \
-  -f docker/Dockerfile.dev \
-  || fatal 'Failed to build the docker image'
-docker tag "${SERVICE_NAME}:${GIT_COMMIT}" "${SERVICE_NAME}:latest"
-
-cd docker
-
-if [[ $* == *--rm* ]]
+if [[ $* != *--no-build* ]]
 then
-	docker-compose rm -f
+  docker build -t "${SERVICE_NAME}:${GIT_COMMIT}" . \
+    -f docker/Dockerfile.dev \
+    || fatal 'Failed to build the docker image'
+  docker tag "${SERVICE_NAME}:${GIT_COMMIT}" "${SERVICE_NAME}:latest"
 fi
 
-if [[ $* == *--debug* ]]
+if [[ $* != *--only-build* ]]
 then
-	docker-compose up first second-debug
-else
-	docker-compose up first second
+  cd docker
+
+  if [[ $* == *--rm* ]]
+  then
+    docker-compose rm -f
+  fi
+
+  if [[ $* == *--debug* ]]
+  then
+    docker-compose up first second-debug
+  else
+    docker-compose up first second
+  fi
 fi
