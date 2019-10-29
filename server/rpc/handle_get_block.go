@@ -22,6 +22,15 @@ func handleGetBlock(s *Server, cmd interface{}, closeChan <-chan struct{}) (inte
 	if err != nil {
 		return nil, rpcDecodeHexError(c.Hash)
 	}
+
+	// Return an appropriate error if the block is an orphan
+	if s.cfg.DAG.IsKnownOrphan(hash) {
+		return nil, &btcjson.RPCError{
+			Code:    btcjson.ErrRPCOrphanBlock,
+			Message: "Block is an orphan",
+		}
+	}
+
 	var blkBytes []byte
 	err = s.cfg.DB.View(func(dbTx database.Tx) error {
 		var err error
