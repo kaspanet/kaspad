@@ -45,8 +45,8 @@ func parsePrivateKey(privateKeyHex string) (*btcec.PrivateKey, error) {
 	return privateKey, err
 }
 
-func parseTransaction(hexTransaction string) (*wire.MsgTx, error) {
-	serializedTx, err := hex.DecodeString(hexTransaction)
+func parseTransaction(transactionHex string) (*wire.MsgTx, error) {
+	serializedTx, err := hex.DecodeString(transactionHex)
 	var transaction wire.MsgTx
 	err = transaction.Deserialize(bytes.NewReader(serializedTx))
 	return &transaction, err
@@ -58,9 +58,9 @@ func createScriptPubKey(publicKey *btcec.PublicKey) ([]byte, error) {
 	return scriptPubKey, err
 }
 
-func signTransaction(transaction *wire.MsgTx, privateKey *btcec.PrivateKey, payToAddressScript []byte) error {
+func signTransaction(transaction *wire.MsgTx, privateKey *btcec.PrivateKey, scriptPubKey []byte) error {
 	for i, transactionInput := range transaction.TxIn {
-		signatureScript, err := txscript.SignatureScript(transaction, i, payToAddressScript, txscript.SigHashAll, privateKey, true)
+		signatureScript, err := txscript.SignatureScript(transaction, i, scriptPubKey, txscript.SigHashAll, privateKey, true)
 		if err != nil {
 			return err
 		}
