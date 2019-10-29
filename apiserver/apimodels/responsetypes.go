@@ -41,21 +41,23 @@ type TransactionInputResponse struct {
 
 // BlockResponse is a json representation of a block
 type BlockResponse struct {
-	BlockHash            string
-	Version              int32
-	HashMerkleRoot       string
-	AcceptedIDMerkleRoot string
-	UTXOCommitment       string
-	Timestamp            uint64
-	Bits                 uint32
-	Nonce                uint64
-	AcceptingBlockHash   *string
-	BlueScore            uint64
-	IsChainBlock         bool
-	Mass                 uint64
+	BlockHash            string  `json:"blockHash"`
+	Version              int32   `json:"version"`
+	HashMerkleRoot       string  `json:"hashMerkleRoot"`
+	AcceptedIDMerkleRoot string  `json:"acceptedIDMerkleRoot"`
+	UTXOCommitment       string  `json:"utxoCommitment"`
+	Timestamp            uint64  `json:"timestamp"`
+	Bits                 uint32  `json:"bits"`
+	Nonce                uint64  `json:"nonce"`
+	AcceptingBlockHash   *string `json:"acceptingBlockHash"`
+	BlueScore            uint64  `json:"blueScore"`
+	IsChainBlock         bool    `json:"isChainBlock"`
+	Mass                 uint64  `json:"mass"`
 }
 
 // FeeEstimateResponse is a json representation of a fee estimate
 type FeeEstimateResponse struct {
-	HighPriority, NormalPriority, LowPriority float64
+	HighPriority   float64 `json:"highPriority"`
+	NormalPriority float64 `json:"normalPriority"`
+	LowPriority    float64 `json:"lowPriority"`
 }
