@@ -16,26 +16,32 @@ func main() {
 	if err != nil {
 		printErrorAndExit(err, "Failed to parse arguments")
 	}
+
 	privateKey, err := parsePrivateKey(cfg.PrivateKey)
 	if err != nil {
 		printErrorAndExit(err, "Failed to decode private key")
 	}
+
 	transaction, err := parseTransaction(cfg.Transaction)
 	if err != nil {
 		printErrorAndExit(err, "Failed to decode transaction")
 	}
+
 	scriptPubKey, err := createScriptPubKey(privateKey.PubKey())
 	if err != nil {
 		printErrorAndExit(err, "Failed to create scriptPubKey")
 	}
+
 	err = signTransaction(transaction, privateKey, scriptPubKey)
 	if err != nil {
 		printErrorAndExit(err, "Failed to sign transaction")
 	}
+
 	serializedTransaction, err := serializeTransaction(transaction)
 	if err != nil {
 		printErrorAndExit(err, "Failed to serialize transaction")
 	}
+	
 	fmt.Printf("Signed Transaction (hex): %s\n\n", serializedTransaction)
 }
 
