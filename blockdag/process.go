@@ -112,8 +112,8 @@ func (dag *BlockDAG) processOrphans(hash *daghash.Hash, flags BehaviorFlags) err
 			// Potentially accept the block into the block DAG.
 			err = dag.maybeAcceptBlock(orphan.block, flags|BFWasUnorphaned)
 			if err != nil {
-				// Since we don't want to fail the original block because of
-				// a bad child, only return an error if it's not a RuleError.
+				// Since we don't want to reject the original block because of
+				// a bad unorphaned child, only return an error if it's not a RuleError.
 				if _, ok := err.(RuleError); !ok {
 					return err
 				}
