@@ -23,11 +23,11 @@ func parseTransaction(hexString string) *wire.MsgTx {
 	serializedTx, err := hex.DecodeString(hexString)
 	exitIfError(err, "Failed to decode transaction")
 
-	var mtx wire.MsgTx
-	err = mtx.Deserialize(bytes.NewReader(serializedTx))
+	var transaction wire.MsgTx
+	err = transaction.Deserialize(bytes.NewReader(serializedTx))
 	exitIfError(err, "Failed to decode transaction")
 
-	return &mtx
+	return &transaction
 }
 
 func createPayToAddressScript(publicKey *btcec.PublicKey) []byte {
@@ -38,17 +38,17 @@ func createPayToAddressScript(publicKey *btcec.PublicKey) []byte {
 	return payToAddrScript
 }
 
-func signTransaction(msgTx *wire.MsgTx, privateKey *btcec.PrivateKey, payToAddressScript []byte) {
-	for i, txIn := range msgTx.TxIn {
-		signatureScript, err := txscript.SignatureScript(msgTx, i, payToAddressScript, txscript.SigHashAll, privateKey, true)
+func signTransaction(transaction *wire.MsgTx, privateKey *btcec.PrivateKey, payToAddressScript []byte) {
+	for i, transactionInput := range transaction.TxIn {
+		signatureScript, err := txscript.SignatureScript(transaction, i, payToAddressScript, txscript.SigHashAll, privateKey, true)
 		exitIfError(err, "Failed to sign transaction")
-		txIn.SignatureScript = signatureScript
+		transactionInput.SignatureScript = signatureScript
 	}
 }
 
-func serializeTransaction(msgTx *wire.MsgTx) string {
-	buf := bytes.NewBuffer(make([]byte, 0, msgTx.SerializeSize()))
-	err := msgTx.Serialize(buf)
+func serializeTransaction(transaction *wire.MsgTx) string {
+	buf := bytes.NewBuffer(make([]byte, 0, transaction.SerializeSize()))
+	err := transaction.Serialize(buf)
 	serializedTransaction := hex.EncodeToString(buf.Bytes())
 	exitIfError(err, "Failed to serialize transaction")
 
@@ -65,8 +65,8 @@ func exitIfError(err error, message string) {
 func main() {
 	cfg := parseCommandLine()
 	privateKey, publicKey := parsePrivateKey(cfg.PrivateKey)
-	msgTx := parseTransaction(cfg.Transaction)
+	transaction := parseTransaction(cfg.Transaction)
 	payToAddressScript := createPayToAddressScript(publicKey)
-	signTransaction(msgTx, privateKey, payToAddressScript)
-	fmt.Printf("Signed Transaction (hex): %s\n\n", serializeTransaction(msgTx))
+	signTransaction(transaction, privateKey, payToAddressScript)
+	fmt.Printf("Signed Transaction (hex): %s\n\n", serializeTransaction(transaction))
 }
