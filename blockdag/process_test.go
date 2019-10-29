@@ -90,13 +90,14 @@ func TestProcessOrphans(t *testing.T) {
 	// Get a reference to a parent block
 	parentBlock := blocks[1]
 
-	// Get a reference to a child block and mess with it to make sure it gets rejected
+	// Get a reference to a child block and mess with it so that:
+	// a. It gets added to the orphan pool
+	// b. It gets rejected once it's unorphaned
 	childBlock := blocks[2]
-	childBlock.MsgBlock().Header.Nonce = 3
 	childBlock.MsgBlock().Header.UTXOCommitment = &daghash.ZeroHash
 
 	// Process the child block so that it gets added to the orphan pool
-	isOrphan, delay, err := dag.ProcessBlock(childBlock, BFNone)
+	isOrphan, delay, err := dag.ProcessBlock(childBlock, BFNoPoWCheck)
 	if err != nil {
 		t.Fatalf("TestProcessOrphans: child block unexpectedly returned an error: %s", err)
 	}
@@ -107,7 +108,7 @@ func TestProcessOrphans(t *testing.T) {
 		t.Fatalf("TestProcessOrphans: incorrectly returned that child block is not an orphan")
 	}
 
-	// Process the parent block
+	// Process the parent block. Note that this will attempt to unorphan the child block
 	isOrphan, delay, err = dag.ProcessBlock(parentBlock, BFNone)
 	if err != nil {
 		t.Fatalf("TestProcessOrphans: parent block unexpectedly returned an error: %s", err)
