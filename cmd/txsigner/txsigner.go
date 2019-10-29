@@ -41,7 +41,7 @@ func main() {
 	if err != nil {
 		printErrorAndExit(err, "Failed to serialize transaction")
 	}
-	
+
 	fmt.Printf("Signed Transaction (hex): %s\n\n", serializedTransaction)
 }
 
