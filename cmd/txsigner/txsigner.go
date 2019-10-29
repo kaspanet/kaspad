@@ -5,68 +5,78 @@ import (
 	"encoding/hex"
 	"fmt"
 	"github.com/daglabs/btcd/btcec"
-	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/txscript"
 	"github.com/daglabs/btcd/util"
 	"github.com/daglabs/btcd/wire"
 	"os"
 )
 
-func parsePrivateKey(privateKeyHex string) (*btcec.PrivateKey, *btcec.PublicKey) {
-	privateKeyBytes, err := hex.DecodeString(privateKeyHex)
-	exitIfError(err, "Failed to decode private key")
-	privateKey, publicKey := btcec.PrivKeyFromBytes(btcec.S256(), privateKeyBytes)
-	return privateKey, publicKey
+func main() {
+	cfg, err := parseCommandLine()
+	if err != nil {
+		printErrorAndExit(err, "Failed to parse arguments")
+	}
+	privateKey, err := parsePrivateKey(cfg.PrivateKey)
+	if err != nil {
+		printErrorAndExit(err, "Failed to decode private key")
+	}
+	transaction, err := parseTransaction(cfg.Transaction)
+	if err != nil {
+		printErrorAndExit(err, "Failed to decode transaction")
+	}
+	scriptPubKey, err := createScriptPubKey(privateKey.PubKey())
+	if err != nil {
+		printErrorAndExit(err, "Failed to create scriptPubKey")
+	}
+	err = signTransaction(transaction, privateKey, scriptPubKey)
+	if err != nil {
+		printErrorAndExit(err, "Failed to sign transaction")
+	}
+	serializedTransaction, err := serializeTransaction(transaction)
+	if err != nil {
+		printErrorAndExit(err, "Failed to serialize transaction")
+	}
+	fmt.Printf("Signed Transaction (hex): %s\n\n", serializedTransaction)
 }
 
-func parseTransaction(hexString string) *wire.MsgTx {
-	serializedTx, err := hex.DecodeString(hexString)
-	exitIfError(err, "Failed to decode transaction")
+func parsePrivateKey(privateKeyHex string) (*btcec.PrivateKey, error) {
+	privateKeyBytes, err := hex.DecodeString(privateKeyHex)
+	privateKey, _ := btcec.PrivKeyFromBytes(btcec.S256(), privateKeyBytes)
+	return privateKey, err
+}
 
+func parseTransaction(hexTransaction string) (*wire.MsgTx, error) {
+	serializedTx, err := hex.DecodeString(hexTransaction)
 	var transaction wire.MsgTx
 	err = transaction.Deserialize(bytes.NewReader(serializedTx))
-	exitIfError(err, "Failed to decode transaction")
-
-	return &transaction
+	return &transaction, err
 }
 
-func createPayToAddressScript(publicKey *btcec.PublicKey) []byte {
-	activeNetParams := &dagconfig.DevNetParams
+func createScriptPubKey(publicKey *btcec.PublicKey) ([]byte, error) {
 	p2pkhAddress, err := util.NewAddressPubKeyHashFromPublicKey(publicKey.SerializeCompressed(), activeNetParams.Prefix)
-	payToAddrScript, err := txscript.PayToAddrScript(p2pkhAddress)
-	exitIfError(err, "Failed to create pay-to-address-script")
-	return payToAddrScript
+	scriptPubKey, err := txscript.PayToAddrScript(p2pkhAddress)
+	return scriptPubKey, err
 }
 
-func signTransaction(transaction *wire.MsgTx, privateKey *btcec.PrivateKey, payToAddressScript []byte) {
+func signTransaction(transaction *wire.MsgTx, privateKey *btcec.PrivateKey, payToAddressScript []byte) error {
 	for i, transactionInput := range transaction.TxIn {
 		signatureScript, err := txscript.SignatureScript(transaction, i, payToAddressScript, txscript.SigHashAll, privateKey, true)
-		exitIfError(err, "Failed to sign transaction")
+		if err != nil {
+			return err
+		}
 		transactionInput.SignatureScript = signatureScript
 	}
+	return nil
 }
 
-func serializeTransaction(transaction *wire.MsgTx) string {
+func serializeTransaction(transaction *wire.MsgTx) (string, error) {
 	buf := bytes.NewBuffer(make([]byte, 0, transaction.SerializeSize()))
 	err := transaction.Serialize(buf)
 	serializedTransaction := hex.EncodeToString(buf.Bytes())
-	exitIfError(err, "Failed to serialize transaction")
-
-	return serializedTransaction
+	return serializedTransaction, err
 }
 
-func exitIfError(err error, message string) {
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "%s: %s", message, err)
-		os.Exit(1)
-	}
-}
-
-func main() {
-	cfg := parseCommandLine()
-	privateKey, publicKey := parsePrivateKey(cfg.PrivateKey)
-	transaction := parseTransaction(cfg.Transaction)
-	payToAddressScript := createPayToAddressScript(publicKey)
-	signTransaction(transaction, privateKey, payToAddressScript)
-	fmt.Printf("Signed Transaction (hex): %s\n\n", serializeTransaction(transaction))
+func printErrorAndExit(err error, message string) {
+	fmt.Fprintf(os.Stderr, "%s: %s", message, err)
+	os.Exit(1)
 }
