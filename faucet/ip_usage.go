@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-const day = time.Hour * 24
+const timeBetweenRequests = time.Hour * 24
 
 type ipUse struct {
 	IP      string
@@ -29,7 +29,7 @@ func validateIPUsage(r *http.Request) *httpserverutils.HandlerError {
 		return httpserverutils.NewInternalServerHandlerError(err.Error())
 	}
 	now := time.Now()
-	timeBefore24Hours := now.Add(-day)
+	timeBefore24Hours := now.Add(-timeBetweenRequests)
 	var count int
 	ip, err := ipFromRequest(r)
 	if err != nil {
