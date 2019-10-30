@@ -14,13 +14,13 @@ then
 	echo -e "\t--rm\t\tRemove dockers prior to running them, to clear data"
 	echo -e "\t--debug\t\tEnable debugging on second server. Server will not start until debugger is attached"
 	echo -e "\t--no-build\t\tRun without building docker images"
-	echo -e "\t--only-build\t\tBuild docker images without running"
+	echo -e "\t--no-run\t\tBuild docker images without running"
 	exit
 fi
 
-if [[ $* == *--no-build* ]] && [[ $* == *--only-build* ]]
+if [[ $* == *--no-build* ]] && [[ $* == *--no-run* ]]
 then
-  echo "--no-build and --only-build may not be passed together"
+  echo "--no-build and --no-run may not be passed together"
   exit
 fi
 
@@ -35,7 +35,7 @@ then
   docker tag "${SERVICE_NAME}:${GIT_COMMIT}" "${SERVICE_NAME}:latest"
 fi
 
-if [[ $* != *--only-build* ]]
+if [[ $* != *--no-run* ]]
 then
   cd docker
 
