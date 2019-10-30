@@ -86,7 +86,7 @@ func postToAPIServer(serverPath string, data interface{}) error {
 	if err != nil {
 		return err
 	}
-	resp, err := http.Post(postAPIURL, "encoding/json", r)
+	resp, err := http.Post(postAPIURL, "application/json", r)
 	if err != nil {
 		return errors.WithStack(err)
 	}
