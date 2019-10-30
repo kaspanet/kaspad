@@ -20,7 +20,7 @@ var (
 	errExcessivelyPaddedValue = errors.New("value is excessively padded")
 )
 
-// Signature is a type representing either an ecdsa or schnorr signature.
+// Signature is a type representing a Schnorr signature.
 type Signature struct {
 	R *big.Int
 	S *big.Int
@@ -35,13 +35,13 @@ var (
 	oneInitializer = []byte{0x01}
 )
 
-// Serialize returns the a serialized signature depending on the SignatureType.
+// Serialize returns the a serialized signature.
 
 func (sig *Signature) Serialize() []byte {
 	return append(padIntBytes(sig.R), padIntBytes(sig.S)...)
 }
 
-// Verify verifies Schnorr signature It returns true if the signature
+// Verify verifies digital signature It returns true if the signature
 // is valid, false otherwise.
 func (sig *Signature) Verify(hash []byte, pubKey *PublicKey) bool {
 	return verifySchnorr(pubKey, hash, sig.R, sig.S)
@@ -244,14 +244,14 @@ func nonceRFC6979(privkey *big.Int, hash []byte, additionalData []byte) *big.Int
 	}
 }
 
-//mac returns an HMAC of the given key and message.
+// mac returns an HMAC of the given key and message.
 func mac(alg func() hash.Hash, k, m []byte) []byte {
 	h := hmac.New(alg, k)
 	h.Write(m)
 	return h.Sum(nil)
 }
 
-//https://tools.ietf.org/html/rfc6979#section-2.3.3
+// https://tools.ietf.org/html/rfc6979#section-2.3.3
 func int2octets(v *big.Int, rolen int) []byte {
 	out := v.Bytes()
 

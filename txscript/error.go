@@ -174,10 +174,6 @@ const (
 	// SigHashSingle points to a non-existing output
 	ErrInvalidSigHashSingleIndex
 
-	// ErrSigDER is returned when a signature is not a canonically-encoded
-	// DER signature.
-	ErrSigDER
-
 	// ErrSigLength is return when Schnorr signature is of incorrect length
 	ErrSigLength
 
@@ -263,7 +259,7 @@ var errorCodeStrings = map[ErrorCode]string{
 	ErrMinimalData:               "ErrMinimalData",
 	ErrInvalidSigHashType:        "ErrInvalidSigHashType",
 	ErrInvalidSigHashSingleIndex: "ErrInvalidSigHashSingleIndex",
-	ErrSigDER:                    "ErrSigDER",
+	ErrSigLength:                 "ErrSigLength",
 	ErrSigHighS:                  "ErrSigHighS",
 	ErrNotPushOnly:               "ErrNotPushOnly",
 	ErrPubKeyFormat:              "ErrPubKeyFormat",
