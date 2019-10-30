@@ -7,7 +7,7 @@ import (
 	"github.com/daglabs/btcd/btcjson"
 )
 
-func convertTxModelToTxResponse(tx *dbmodels.Transaction) *apimodels.TransactionResponse {
+func convertTxDBModelToTxResponse(tx *dbmodels.Transaction) *apimodels.TransactionResponse {
 	txRes := &apimodels.TransactionResponse{
 		TransactionHash:         tx.TransactionHash,
 		TransactionID:           tx.TransactionID,

@@ -44,7 +44,7 @@ func GetTransactionByIDHandler(txID string) (interface{}, *httpserverutils.Handl
 	if httpserverutils.HasDBError(dbErrors) {
 		return nil, httpserverutils.NewHandlerErrorFromDBErrors("Some errors were encountered when loading transaction from the database:", dbErrors)
 	}
-	return convertTxModelToTxResponse(tx), nil
+	return convertTxDBModelToTxResponse(tx), nil
 }
 
 // GetTransactionByHashHandler returns a transaction by a given transaction hash.
@@ -69,7 +69,7 @@ func GetTransactionByHashHandler(txHash string) (interface{}, *httpserverutils.H
 	if httpserverutils.HasDBError(dbErrors) {
 		return nil, httpserverutils.NewHandlerErrorFromDBErrors("Some errors were encountered when loading transaction from the database:", dbErrors)
 	}
-	return convertTxModelToTxResponse(tx), nil
+	return convertTxDBModelToTxResponse(tx), nil
 }
 
 // GetTransactionsByAddressHandler searches for all transactions
@@ -104,7 +104,7 @@ func GetTransactionsByAddressHandler(address string, skip uint64, limit uint64) 
 	}
 	txResponses := make([]*apimodels.TransactionResponse, len(txs))
 	for i, tx := range txs {
-		txResponses[i] = convertTxModelToTxResponse(tx)
+		txResponses[i] = convertTxDBModelToTxResponse(tx)
 	}
 	return txResponses, nil
 }
