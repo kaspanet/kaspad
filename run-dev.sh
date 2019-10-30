@@ -9,7 +9,7 @@ set -e
 if [[ $* == *--help* ]]
 then
 	echo "Usage:"
-	echo -e "\t./run-def.sh [--rm] [--debug]"
+	echo -e "\t./run-dev.sh [--rm] [--debug]"
 	echo ""
 	echo -e "\t--rm\t\tRemove dockers prior to running them, to clear data"
 	echo -e "\t--debug\t\tEnable debugging on second server. Server will not start until debugger is attached"
