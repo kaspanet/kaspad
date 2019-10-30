@@ -47,7 +47,7 @@ func Connect() error {
 	}
 	if !isCurrent {
 		return fmt.Errorf("Database is not current (version %d). Please migrate"+
-			" the database by running the server with --migrate flag and then run it again.", version)
+			" the database by running the faucet with --migrate flag and then run it again.", version)
 	}
 
 	db, err = gorm.Open("mysql", connectionString)
