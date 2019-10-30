@@ -8,6 +8,8 @@ import (
 	"time"
 )
 
+const day = time.Hour * 24
+
 type ipUse struct {
 	IP      string
 	LastUse time.Time
@@ -27,7 +29,7 @@ func validateIPUsage(r *http.Request) *httpserverutils.HandlerError {
 		return httpserverutils.NewInternalServerHandlerError(err.Error())
 	}
 	now := time.Now()
-	timeBefore24Hours := now.Add(-time.Hour * 24)
+	timeBefore24Hours := now.Add(-day)
 	var count int
 	ip, err := ipFromRequest(r)
 	if err != nil {
