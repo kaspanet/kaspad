@@ -18,12 +18,6 @@ then
 	exit
 fi
 
-if [[ $* == *--no-build* ]] && [[ $* == *--no-run* ]]
-then
-  echo "--no-build and --no-run may not be passed together"
-  exit
-fi
-
 export SERVICE_NAME=btcd
 export GIT_COMMIT=$(git rev-parse --short=12 HEAD)
 
@@ -35,15 +29,15 @@ then
   docker tag "${SERVICE_NAME}:${GIT_COMMIT}" "${SERVICE_NAME}:latest"
 fi
 
+cd docker
+
+if [[ $* == *--rm* ]]
+then
+  docker-compose rm -f -s -v
+fi
+
 if [[ $* != *--no-run* ]]
 then
-  cd docker
-
-  if [[ $* == *--rm* ]]
-  then
-    docker-compose rm -f -s -v
-  fi
-
   if [[ $* == *--debug* ]]
   then
     docker-compose up first second-debug
