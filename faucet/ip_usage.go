@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-const timeBetweenRequests = time.Hour * 24
+const minRequestInterval = time.Hour * 24
 
 type ipUse struct {
 	IP      string
@@ -29,13 +29,13 @@ func validateIPUsage(r *http.Request) *httpserverutils.HandlerError {
 		return httpserverutils.NewInternalServerHandlerError(err.Error())
 	}
 	now := time.Now()
-	timeBefore24Hours := now.Add(-timeBetweenRequests)
+	timeBeforeMinRequestInterval := now.Add(-minRequestInterval)
 	var count int
 	ip, err := ipFromRequest(r)
 	if err != nil {
 		return httpserverutils.NewInternalServerHandlerError(err.Error())
 	}
-	dbResult := db.Model(&ipUse{}).Where(&ipUse{IP: ip}).Where("last_use BETWEEN ? AND ?", timeBefore24Hours, now).Count(&count)
+	dbResult := db.Model(&ipUse{}).Where(&ipUse{IP: ip}).Where("last_use BETWEEN ? AND ?", timeBeforeMinRequestInterval, now).Count(&count)
 	dbErrors := dbResult.GetErrors()
 	if httpserverutils.HasDBError(dbErrors) {
 		return httpserverutils.NewHandlerErrorFromDBErrors("Some errors were encountered when checking the last use of an IP:", dbResult.GetErrors())
