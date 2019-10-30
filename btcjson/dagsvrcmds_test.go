@@ -1049,21 +1049,6 @@ func TestDAGSvrCmds(t *testing.T) {
 			},
 		},
 		{
-			name: "verifyMessage",
-			newCmd: func() (interface{}, error) {
-				return btcjson.NewCmd("verifyMessage", "1Address", "301234", "test")
-			},
-			staticCmd: func() interface{} {
-				return btcjson.NewVerifyMessageCmd("1Address", "301234", "test")
-			},
-			marshalled: `{"jsonrpc":"1.0","method":"verifyMessage","params":["1Address","301234","test"],"id":1}`,
-			unmarshalled: &btcjson.VerifyMessageCmd{
-				Address:   "1Address",
-				Signature: "301234",
-				Message:   "test",
-			},
-		},
-		{
 			name: "verifyTxOutProof",
 			newCmd: func() (interface{}, error) {
 				return btcjson.NewCmd("verifyTxOutProof", "test")

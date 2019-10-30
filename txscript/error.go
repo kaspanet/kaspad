@@ -178,6 +178,9 @@ const (
 	// DER signature.
 	ErrSigDER
 
+	// ErrSigLength is return when Schnorr signature is of incorrect length
+	ErrSigLength
+
 	// ErrSigHighS is returned when the ScriptVerifyLowS flag is set and the
 	// script contains any signatures whose S values are higher than the
 	// half order.

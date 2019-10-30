@@ -106,7 +106,6 @@ var rpcHandlersBeforeInit = map[string]commandHandler{
 	"submitBlock":           handleSubmitBlock,
 	"uptime":                handleUptime,
 	"validateAddress":       handleValidateAddress,
-	"verifyMessage":         handleVerifyMessage,
 	"version":               handleVersion,
 }
 

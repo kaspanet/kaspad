@@ -749,23 +749,6 @@ func NewValidateAddressCmd(address string) *ValidateAddressCmd {
 	}
 }
 
-// VerifyMessageCmd defines the verifyMessage JSON-RPC command.
-type VerifyMessageCmd struct {
-	Address   string
-	Signature string
-	Message   string
-}
-
-// NewVerifyMessageCmd returns a new instance which can be used to issue a
-// verifyMessage JSON-RPC command.
-func NewVerifyMessageCmd(address, signature, message string) *VerifyMessageCmd {
-	return &VerifyMessageCmd{
-		Address:   address,
-		Signature: signature,
-		Message:   message,
-	}
-}
-
 // VerifyTxOutProofCmd defines the verifyTxOutProof JSON-RPC command.
 type VerifyTxOutProofCmd struct {
 	Proof string
@@ -831,6 +814,5 @@ func init() {
 	MustRegisterCmd("submitBlock", (*SubmitBlockCmd)(nil), flags)
 	MustRegisterCmd("uptime", (*UptimeCmd)(nil), flags)
 	MustRegisterCmd("validateAddress", (*ValidateAddressCmd)(nil), flags)
-	MustRegisterCmd("verifyMessage", (*VerifyMessageCmd)(nil), flags)
 	MustRegisterCmd("verifyTxOutProof", (*VerifyTxOutProofCmd)(nil), flags)
 }
