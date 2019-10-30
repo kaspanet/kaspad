@@ -313,6 +313,11 @@ func insertBlock(dbTx *gorm.DB, rawBlock btcjson.GetBlockVerboseResult) (*models
 		IsChainBlock:         false, // This must be false for updateSelectedParentChain to work properly
 		Mass:                 rawBlock.Mass,
 	}
+
+	// Set genesis block as the initial chain block
+	if len(rawBlock.ParentHashes) == 0 {
+		dbBlock.IsChainBlock = true
+	}
 	dbResult := dbTx.Create(&dbBlock)
 	dbErrors := dbResult.GetErrors()
 	if utils.HasDBError(dbErrors) {
@@ -689,6 +694,16 @@ func updateRemovedChainHashes(dbTx *gorm.DB, removedHash string) error {
 		}
 	}
 
+	dbResult = dbTx.
+		Model(&dbmodels.Block{}).
+		Where(&dbmodels.Block{AcceptingBlockID: btcjson.Uint64(dbBlock.ID)}).
+		Updates(map[string]interface{}{"AcceptingBlockID": nil})
+
+	dbErrors = dbResult.GetErrors()
+	if httpserverutils.HasDBError(dbErrors) {
+		return httpserverutils.NewErrorFromDBErrors("failed to update blocks: ", dbErrors)
+	}
+
 	dbBlock.IsChainBlock = false
 	dbResult = dbTx.Save(&dbBlock)
 	dbErrors = dbResult.GetErrors()
@@ -706,6 +721,21 @@ func updateRemovedChainHashes(dbTx *gorm.DB, removedHash string) error {
 // * The block is set IsChainBlock = true
 // This function will return an error if any of the above are in an unexpected state
 func updateAddedChainBlocks(dbTx *gorm.DB, addedBlock *btcjson.ChainBlock) error {
+	var dbAddedBlock dbmodels.Block
+	dbResult := dbTx.
+		Where(&dbmodels.Block{BlockHash: addedBlock.Hash}).
+		First(&dbAddedBlock)
+	dbErrors := dbResult.GetErrors()
+	if httpserverutils.HasDBError(dbErrors) {
+		return httpserverutils.NewErrorFromDBErrors("failed to find block: ", dbErrors)
+	}
+	if httpserverutils.IsDBRecordNotFoundError(dbErrors) {
+		return fmt.Errorf("missing block for hash: %s", addedBlock.Hash)
+	}
+	if dbAddedBlock.IsChainBlock {
+		return fmt.Errorf("block erroneously marked as a chain block: %s", addedBlock.Hash)
+	}
+
 	for _, acceptedBlock := range addedBlock.AcceptedBlocks {
 		var dbAccepedBlock models.Block
 		dbResult := dbTx.
@@ -718,8 +748,8 @@ func updateAddedChainBlocks(dbTx *gorm.DB, addedBlock *btcjson.ChainBlock) error
 		if utils.IsDBRecordNotFoundError(dbErrors) {
 			return fmt.Errorf("missing block for hash: %s", acceptedBlock.Hash)
 		}
-		if dbAccepedBlock.IsChainBlock {
-			return fmt.Errorf("block erroneously marked as a chain block: %s", acceptedBlock.Hash)
+		if dbAccepedBlock.AcceptingBlockID != nil && *dbAccepedBlock.AcceptingBlockID == dbAddedBlock.ID {
+			return fmt.Errorf("block %s erroneously marked as accepted by %s", acceptedBlock.Hash, addedBlock.Hash)
 		}
 
 		dbWhereTransactionIDsIn := make([]*models.Transaction, len(acceptedBlock.AcceptedTxIDs))
@@ -763,13 +793,21 @@ func updateAddedChainBlocks(dbTx *gorm.DB, addedBlock *btcjson.ChainBlock) error
 			}
 		}
 
-		dbAccepedBlock.IsChainBlock = true
+		dbAccepedBlock.AcceptingBlockID = btcjson.Uint64(dbAddedBlock.ID)
 		dbResult = dbTx.Save(&dbAccepedBlock)
 		dbErrors = dbResult.GetErrors()
 		if utils.HasDBError(dbErrors) {
 			return utils.NewErrorFromDBErrors("failed to update block: ", dbErrors)
 		}
 	}
+
+	dbAddedBlock.IsChainBlock = true
+	dbResult = dbTx.Save(&dbAddedBlock)
+	dbErrors = dbResult.GetErrors()
+	if httpserverutils.HasDBError(dbErrors) {
+		return httpserverutils.NewErrorFromDBErrors("failed to update block: ", dbErrors)
+	}
+
 	return nil
 }
 
