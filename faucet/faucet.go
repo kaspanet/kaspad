@@ -33,7 +33,9 @@ const (
 
 type utxoSet map[wire.Outpoint]*blockdag.UTXOEntry
 
-func apiURL(serverPath string) (string, error) {
+// apiURL returns a full concatenated URL from the base
+// API server URL and the given path.
+func apiURL(requestPath string) (string, error) {
 	cfg, err := config.MainConfig()
 	if err != nil {
 		return "", err
@@ -42,12 +44,14 @@ func apiURL(serverPath string) (string, error) {
 	if err != nil {
 		return "", errors.WithStack(err)
 	}
-	u.Path = path.Join(u.Path, serverPath)
+	u.Path = path.Join(u.Path, requestPath)
 	return u.String(), nil
 }
 
-func getFromAPIServer(serverPath string) ([]byte, error) {
-	getAPIURL, err := apiURL(serverPath)
+// getFromAPIServer makes an HTTP GET request to the API server
+// to the given request path, and returns the response body.
+func getFromAPIServer(requestPath string) ([]byte, error) {
+	getAPIURL, err := apiURL(requestPath)
 	if err != nil {
 		return nil, err
 	}
@@ -76,13 +80,16 @@ func getFromAPIServer(serverPath string) ([]byte, error) {
 	return body, nil
 }
 
-func postToAPIServer(serverPath string, data interface{}) error {
+// getFromAPIServer makes an HTTP POST request to the API server
+// to the given request path. It converts the given data to JSON,
+// and post it as the POST data.
+func postToAPIServer(requestPath string, data interface{}) error {
 	dataBytes, err := json.Marshal(data)
 	if err != nil {
 		return errors.WithStack(err)
 	}
 	r := bytes.NewReader(dataBytes)
-	postAPIURL, err := apiURL(serverPath)
+	postAPIURL, err := apiURL(requestPath)
 	if err != nil {
 		return err
 	}
@@ -112,10 +119,10 @@ func postToAPIServer(serverPath string, data interface{}) error {
 }
 
 func isUTXOMatured(entry *blockdag.UTXOEntry, confirmations uint64) bool {
-	if !entry.IsCoinbase() {
-		return confirmations >= requiredConfirmations
+	if entry.IsCoinbase() {
+		return confirmations >= config.ActiveNetParams().BlockCoinbaseMaturity
 	}
-	return confirmations >= approximateConfirmationsForCoinbaseMaturity
+	return confirmations >= requiredConfirmations
 }
 
 func getWalletUTXOSet() (utxoSet, error) {
@@ -144,9 +151,10 @@ func getWalletUTXOSet() (utxoSet, error) {
 		}
 		outpoint := wire.NewOutpoint(txID, utxoResponse.Index)
 		utxoEntry := blockdag.NewUTXOEntry(txOut, *utxoResponse.IsCoinbase, utxoResponse.AcceptingBlockBlueScore)
-		if isUTXOMatured(utxoEntry, *utxoResponse.Confirmations) {
-			walletUTXOSet[*outpoint] = utxoEntry
+		if !isUTXOMatured(utxoEntry, *utxoResponse.Confirmations) {
+			continue
 		}
+		walletUTXOSet[*outpoint] = utxoEntry
 	}
 	return walletUTXOSet, nil
 }
@@ -222,6 +230,7 @@ func signTx(walletUTXOSet utxoSet, tx *wire.MsgTx) error {
 
 func fundTx(walletUTXOSet utxoSet, tx *wire.MsgTx, amount uint64) (netAmount uint64, isChangeOutputRequired bool, err error) {
 	amountSelected := uint64(0)
+	isTxFunded := false
 	for outpoint, entry := range walletUTXOSet {
 		amountSelected += entry.Amount()
 
@@ -231,7 +240,7 @@ func fundTx(walletUTXOSet utxoSet, tx *wire.MsgTx, amount uint64) (netAmount uin
 		// Check if transaction has enough funds. If we don't have enough
 		// coins from the current amount selected to pay the fee continue
 		// to grab more coins.
-		isTxFunded, _, _, err := isFunded(tx, amountSelected, amount, walletUTXOSet)
+		isTxFunded, isChangeOutputRequired, netAmount, err = isFundedAndIsChangeOutputRequired(tx, amountSelected, amount, walletUTXOSet)
 		if err != nil {
 			return 0, false, err
 		}
@@ -240,10 +249,6 @@ func fundTx(walletUTXOSet utxoSet, tx *wire.MsgTx, amount uint64) (netAmount uin
 		}
 	}
 
-	isTxFunded, isChangeOutputRequired, netAmount, err := isFunded(tx, amountSelected, amount, walletUTXOSet)
-	if err != nil {
-		return 0, false, err
-	}
 	if !isTxFunded {
 		return 0, false, errors.Errorf("not enough funds for coin selection")
 	}
@@ -251,17 +256,22 @@ func fundTx(walletUTXOSet utxoSet, tx *wire.MsgTx, amount uint64) (netAmount uin
 	return netAmount, isChangeOutputRequired, nil
 }
 
-// Check if the transaction has enough funds to cover the fee
-// required for the txn.
-func isFunded(tx *wire.MsgTx, amountSelected uint64, targetAmount uint64, walletUTXOSet utxoSet) (isTxFunded, isChangeOutputRequired bool, netAmount uint64, err error) {
-	isFundedWithOneOutput, oneOutputFee, err := isFundedWithTargetOutputs(tx, 1, amountSelected, targetAmount, walletUTXOSet)
+// isFundedAndIsChangeOutputRequired returns three values and an error:
+// * isTxFunded is whether the transaction inputs cover the target amount + the required fee.
+// * isChangeOutputRequired  is whether it is profitable to add an additional change
+//   output to the transaction.
+// * netAmount is the amount of coins that will be eventually sent to the recipient. If no
+//   change output is needed, the netAmount will be usually a little bit higher than the
+//   targetAmount. Otherwise, it'll be the same as the targetAmount.
+func isFundedAndIsChangeOutputRequired(tx *wire.MsgTx, amountSelected uint64, targetAmount uint64, walletUTXOSet utxoSet) (isTxFunded, isChangeOutputRequired bool, netAmount uint64, err error) {
+	isFundedWithOneOutput, oneOutputFee, err := isFundedWithNumberOfOutputs(tx, 1, amountSelected, targetAmount, walletUTXOSet)
 	if err != nil {
 		return false, false, 0, err
 	}
 	if !isFundedWithOneOutput {
 		return false, false, 0, nil
 	}
-	isFundedWithTwoOutputs, twoOutputsFee, err := isFundedWithTargetOutputs(tx, 2, amountSelected, targetAmount, walletUTXOSet)
+	isFundedWithTwoOutputs, twoOutputsFee, err := isFundedWithNumberOfOutputs(tx, 2, amountSelected, targetAmount, walletUTXOSet)
 	if err != nil {
 		return false, false, 0, err
 	}
@@ -271,10 +281,10 @@ func isFunded(tx *wire.MsgTx, amountSelected uint64, targetAmount uint64, wallet
 	return true, false, amountSelected - oneOutputFee, nil
 }
 
-// Check if the transaction has enough funds to cover the fee
-// required for the txn.
-func isFundedWithTargetOutputs(tx *wire.MsgTx, targetNumberOfOutputs uint64, amountSelected uint64, targetAmount uint64, walletUTXOSet utxoSet) (isTxFunded bool, fee uint64, err error) {
-	reqFee, err := calcFee(tx, targetNumberOfOutputs, walletUTXOSet)
+// isFundedWithNumberOfOutputs returns whether the transaction inputs cover
+// the target amount + the required fee with the assumed number of outputs.
+func isFundedWithNumberOfOutputs(tx *wire.MsgTx, numberOfOutputs uint64, amountSelected uint64, targetAmount uint64, walletUTXOSet utxoSet) (isTxFunded bool, fee uint64, err error) {
+	reqFee, err := calcFee(tx, numberOfOutputs, walletUTXOSet)
 	if err != nil {
 		return false, 0, err
 	}

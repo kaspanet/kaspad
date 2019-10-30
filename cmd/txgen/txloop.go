@@ -347,6 +347,7 @@ func signTx(walletUTXOSet utxoSet, tx *wire.MsgTx) error {
 func fundTx(walletUTXOSet utxoSet, tx *wire.MsgTx, amount uint64, feeRate float64, targetNumberOfOutputs uint64, targetNumberOfInputs uint64) (uint64, error) {
 
 	amountSelected := uint64(0)
+	isTxFunded := false
 
 	for outpoint, output := range walletUTXOSet {
 		amountSelected += output.Value
@@ -357,19 +358,20 @@ func fundTx(walletUTXOSet utxoSet, tx *wire.MsgTx, amount uint64, feeRate float6
 		// Check if transaction has enough funds. If we don't have enough
 		// coins from he current amount selected to pay the fee, or we have
 		// less inputs then the targeted amount, continue to grab more coins.
-		if uint64(len(tx.TxIn)) >= targetNumberOfInputs && isFunded(tx, feeRate, targetNumberOfOutputs, amountSelected, amount, walletUTXOSet) {
+		isTxFunded = isFunded(tx, feeRate, targetNumberOfOutputs, amountSelected, amount, walletUTXOSet)
+		if uint64(len(tx.TxIn)) >= targetNumberOfInputs && isTxFunded {
 			break
 		}
 	}
 
-	if !isFunded(tx, feeRate, targetNumberOfOutputs, amountSelected, amount, walletUTXOSet) {
+	if !isTxFunded {
 		return 0, fmt.Errorf("not enough funds for coin selection")
 	}
 
 	return amountSelected, nil
 }
 
-// Check if the transaction has enough funds to cover the fee
+// isFunded checks if the transaction has enough funds to cover the fee
 // required for the txn.
 func isFunded(tx *wire.MsgTx, feeRate float64, targetNumberOfOutputs uint64, amountSelected uint64, targetAmount uint64, walletUTXOSet utxoSet) bool {
 	reqFee := calcFee(tx, feeRate, targetNumberOfOutputs, walletUTXOSet)

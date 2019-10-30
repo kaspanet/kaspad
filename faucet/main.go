@@ -26,11 +26,6 @@ var (
 	faucetScriptPubKey []byte
 )
 
-// privateKeyToP2pkhAddress generates p2pkh address from private key.
-func privateKeyToP2pkhAddress(key *btcec.PrivateKey, net *dagconfig.Params) (util.Address, error) {
-	return util.NewAddressPubKeyHashFromPublicKey(key.PubKey().SerializeCompressed(), net.Prefix)
-}
-
 func main() {
 	defer panics.HandlePanic(log, logger.BackendLog)
 
@@ -71,7 +66,7 @@ func main() {
 	privateKeyBytes := base58.Decode(cfg.PrivateKey)
 	faucetPrivateKey, _ = btcec.PrivKeyFromBytes(btcec.S256(), privateKeyBytes)
 
-	faucetAddress, err = privateKeyToP2pkhAddress(faucetPrivateKey, config.ActiveNetParams())
+	faucetAddress, err = privateKeyToP2PKHAddress(faucetPrivateKey, config.ActiveNetParams())
 	if err != nil {
 		panic(fmt.Errorf("Failed to get P2PKH address from private key: %s", err))
 	}
@@ -86,4 +81,9 @@ func main() {
 
 	interrupt := signal.InterruptListener()
 	<-interrupt
+}
+
+// privateKeyToP2PKHAddress generates p2pkh address from private key.
+func privateKeyToP2PKHAddress(key *btcec.PrivateKey, net *dagconfig.Params) (util.Address, error) {
+	return util.NewAddressPubKeyHashFromPublicKey(key.PubKey().SerializeCompressed(), net.Prefix)
 }
