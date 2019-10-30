@@ -25,8 +25,8 @@ func startHTTPServer(listenAddr string) func() {
 	router.Use(httpserverutils.LoggingMiddleware)
 	router.Use(httpserverutils.SetJSONMiddleware)
 	router.HandleFunc(
-		"/money_request",
-		httpserverutils.MakeHandler(moneyRequestHandler)).
+		"/request_money",
+		httpserverutils.MakeHandler(requestMoneyHandler)).
 		Methods("POST")
 	httpServer := &http.Server{
 		Addr:    listenAddr,
@@ -46,17 +46,17 @@ func startHTTPServer(listenAddr string) func() {
 	}
 }
 
-type moneyRequestData struct {
+type requestMoneyData struct {
 	Address string `json:"address"`
 }
 
-func moneyRequestHandler(_ *httpserverutils.ServerContext, r *http.Request, _ map[string]string, _ map[string]string,
+func requestMoneyHandler(_ *httpserverutils.ServerContext, r *http.Request, _ map[string]string, _ map[string]string,
 	requestBody []byte) (interface{}, *httpserverutils.HandlerError) {
 	hErr := validateIPUsage(r)
 	if hErr != nil {
 		return nil, hErr
 	}
-	requestData := &moneyRequestData{}
+	requestData := &requestMoneyData{}
 	err := json.Unmarshal(requestBody, requestData)
 	if err != nil {
 		return nil, httpserverutils.NewHandlerErrorWithCustomClientMessage(http.StatusUnprocessableEntity,
