@@ -600,13 +600,6 @@ var helpDescsEnUS = map[string]string{
 	"validateAddress--synopsis": "Verify an address is valid.",
 	"validateAddress-address":   "Bitcoin address to validate",
 
-	// VerifyMessageCmd help.
-	"verifyMessage--synopsis": "Verify a signed message.",
-	"verifyMessage-address":   "The bitcoin address to use for the signature",
-	"verifyMessage-signature": "The base-64 encoded signature provided by the signer",
-	"verifyMessage-message":   "The signed message",
-	"verifyMessage--result0":  "Whether or not the signature verified",
-
 	// -------- Websocket-specific help --------
 
 	// Session help.
@@ -722,7 +715,6 @@ var rpcResultTypes = map[string][]interface{}{
 	"submitBlock":           {nil, (*string)(nil)},
 	"uptime":                {(*int64)(nil)},
 	"validateAddress":       {(*btcjson.ValidateAddressResult)(nil)},
-	"verifyMessage":         {(*bool)(nil)},
 	"version":               {(*map[string]btcjson.VersionResult)(nil)},
 
 	// Websocket commands.

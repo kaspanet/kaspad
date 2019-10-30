@@ -164,7 +164,6 @@ var rpcLimited = map[string]struct{}{
 	"submitBlock":           {},
 	"uptime":                {},
 	"validateAddress":       {},
-	"verifyMessage":         {},
 	"version":               {},
 }
 
