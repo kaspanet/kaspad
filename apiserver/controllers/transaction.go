@@ -117,6 +117,7 @@ func fetchSelectedTipBlueScore() (uint64, *httpserverutils.HandlerError) {
 	block := &dbmodels.Block{}
 	dbResult := db.Order("blue_score DESC").
 		Where(&dbmodels.Block{IsChainBlock: true}).
+		Select("blue_score").
 		First(block)
 	dbErrors := dbResult.GetErrors()
 	if httpserverutils.HasDBError(dbErrors) {
