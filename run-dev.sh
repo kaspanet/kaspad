@@ -15,7 +15,13 @@ then
 	echo -e "\t--debug\t\tEnable debugging on second server. Server will not start until debugger is attached"
 	echo -e "\t--no-build\t\tRun without building docker images"
 	echo -e "\t--no-run\t\tBuild docker images without running"
+	echo -e "\t--cleanup\t\tAlias for --rm --no-run --no-build. Overrides all other flags"
 	exit
+fi
+
+if [[ $* == *--cleanup* ]]
+then
+  set -- "--rm --no-run --no-build"
 fi
 
 export SERVICE_NAME=btcd
