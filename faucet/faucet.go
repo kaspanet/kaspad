@@ -231,17 +231,20 @@ func fundTx(walletUTXOSet utxoSet, tx *wire.MsgTx, amount uint64) (netAmount uin
 		// Check if transaction has enough funds. If we don't have enough
 		// coins from the current amount selected to pay the fee continue
 		// to grab more coins.
-		if isTxFunded, _, _, err := isFunded(tx, amountSelected, amount, walletUTXOSet); err != nil {
+		isTxFunded, _, _, err := isFunded(tx, amountSelected, amount, walletUTXOSet)
+		if err != nil {
 			return 0, false, err
-		} else if isTxFunded {
+		}
+		if isTxFunded {
 			break
 		}
 	}
 
-	var isTxFunded bool
-	if isTxFunded, isChangeOutputRequired, netAmount, err = isFunded(tx, amountSelected, amount, walletUTXOSet); err != nil {
+	isTxFunded, isChangeOutputRequired, netAmount, err := isFunded(tx, amountSelected, amount, walletUTXOSet)
+	if err != nil {
 		return 0, false, err
-	} else if !isTxFunded {
+	}
+	if !isTxFunded {
 		return 0, false, errors.Errorf("not enough funds for coin selection")
 	}
 
