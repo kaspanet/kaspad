@@ -181,10 +181,6 @@ func createTx(address util.Address) (*wire.MsgTx, error) {
 }
 
 func createUnsignedTx(walletUTXOSet utxoSet, address util.Address) (*wire.MsgTx, error) {
-	walletUTXOSet, err := getWalletUTXOSet()
-	if err != nil {
-		return nil, err
-	}
 	tx := wire.NewNativeMsgTx(wire.TxVersion, nil, nil)
 	netAmount, isChangeOutputRequired, err := fundTx(walletUTXOSet, tx, sendAmount)
 	if err != nil {
