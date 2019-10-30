@@ -41,7 +41,7 @@ then
 
   if [[ $* == *--rm* ]]
   then
-    docker-compose rm -f
+    docker-compose rm -f -s -v
   fi
 
   if [[ $* == *--debug* ]]
