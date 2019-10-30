@@ -206,7 +206,7 @@ func updateWalletTxs(blockAdded *blockAddedMsg, walletTxs map[daghash.TxID]*wall
 
 func randomWithAverageTarget(target float64) float64 {
 	randomFraction := random.Float64()
-	return randomFraction * float64(target*2)
+	return randomFraction * target * 2
 }
 
 func randomIntegerWithAverageTarget(target uint64, allowZero bool) uint64 {
