@@ -33,7 +33,7 @@ func validateIPUsage(r *http.Request) *httpserverutils.HandlerError {
 	if err != nil {
 		return httpserverutils.NewInternalServerHandlerError(err.Error())
 	}
-	dbResult := db.Model(&ipUse{}).Where(&ipUse{IP: ip}).Where("last_use BETWEEN ? AND ?", now, timeBefore24Hours).Count(&count)
+	dbResult := db.Model(&ipUse{}).Where(&ipUse{IP: ip}).Where("last_use BETWEEN ? AND ?", timeBefore24Hours, now).Count(&count)
 	dbErrors := dbResult.GetErrors()
 	if httpserverutils.HasDBError(dbErrors) {
 		return httpserverutils.NewHandlerErrorFromDBErrors("Some errors were encountered when checking the last use of an IP:", dbResult.GetErrors())
@@ -50,22 +50,14 @@ func updateIPUsage(r *http.Request) *httpserverutils.HandlerError {
 		return httpserverutils.NewInternalServerHandlerError(err.Error())
 	}
 
-	dbTx := db.Begin()
 	ip, err := ipFromRequest(r)
 	if err != nil {
 		return httpserverutils.NewInternalServerHandlerError(err.Error())
 	}
-	dbResult := db.Where(&ipUse{IP: ip}).Delete(&ipUse{})
+	dbResult := db.Where(&ipUse{IP: ip}).Assign(&ipUse{LastUse: time.Now()}).FirstOrCreate(&ipUse{})
 	dbErrors := dbResult.GetErrors()
 	if httpserverutils.HasDBError(dbErrors) {
-		return httpserverutils.NewHandlerErrorFromDBErrors("Some errors were encountered when checking the last use of an IP:", dbResult.GetErrors())
+		return httpserverutils.NewHandlerErrorFromDBErrors("Some errors were encountered when upserting the IP to the new date:", dbResult.GetErrors())
 	}
-	requestIPUse := &ipUse{IP: ip, LastUse: time.Now()}
-	dbResult = dbTx.Save(requestIPUse)
-	dbErrors = dbResult.GetErrors()
-	if httpserverutils.HasDBError(dbErrors) {
-		return httpserverutils.NewHandlerErrorFromDBErrors("Some errors were encountered when checking the last use of an IP:", dbResult.GetErrors())
-	}
-	dbTx.Commit()
 	return nil
 }
