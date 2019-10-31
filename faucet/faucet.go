@@ -27,8 +27,7 @@ const (
 	outputSize uint64 = 8 + 1 + 25
 	minTxFee   uint64 = 3000
 
-	requiredConfirmations                       = 10
-	approximateConfirmationsForCoinbaseMaturity = 150
+	requiredConfirmations = 10
 )
 
 type utxoSet map[wire.Outpoint]*blockdag.UTXOEntry
@@ -258,7 +257,7 @@ func fundTx(walletUTXOSet utxoSet, tx *wire.MsgTx, amount uint64) (netAmount uin
 
 // isFundedAndIsChangeOutputRequired returns three values and an error:
 // * isTxFunded is whether the transaction inputs cover the target amount + the required fee.
-// * isChangeOutputRequired  is whether it is profitable to add an additional change
+// * isChangeOutputRequired is whether it is profitable to add an additional change
 //   output to the transaction.
 // * netAmount is the amount of coins that will be eventually sent to the recipient. If no
 //   change output is needed, the netAmount will be usually a little bit higher than the
