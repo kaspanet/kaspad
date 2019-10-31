@@ -278,8 +278,8 @@ func isFundedAndIsChangeOutputRequired(tx *wire.MsgTx, amountSelected uint64, ta
 		return false, false, 0, err
 	}
 
-	// If it can be funded with two outputs, check if adding a change output worth it: e.g, check if
-	// the amount you save by not letting the recipient the whole inputs amount (minus fees) is greater
+	// If it can be funded with two outputs, check if adding a change output worth it: i.e. check if
+	// the amount you save by not sending the recipient the whole inputs amount (minus fees) is greater
 	// than the additional fee that is required by adding a change output. If this is the case, return
 	// isChangeOutputRequired as true.
 	if isFundedWithTwoOutputs && twoOutputsFee-oneOutputFee < targetAmount-amountSelected {
