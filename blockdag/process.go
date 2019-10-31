@@ -112,7 +112,12 @@ func (dag *BlockDAG) processOrphans(hash *daghash.Hash, flags BehaviorFlags) err
 			// Potentially accept the block into the block DAG.
 			err = dag.maybeAcceptBlock(orphan.block, flags|BFWasUnorphaned)
 			if err != nil {
-				return err
+				// Since we don't want to reject the original block because of
+				// a bad unorphaned child, only return an error if it's not a RuleError.
+				if _, ok := err.(RuleError); !ok {
+					return err
+				}
+				log.Warnf("Verification failed for orphan block %s: %s", orphanHash, err)
 			}
 
 			// Add this block to the list of blocks to process so

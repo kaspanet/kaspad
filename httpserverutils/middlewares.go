@@ -1,48 +1,56 @@
-package server
+package httpserverutils
 
 import (
 	"fmt"
-	"github.com/daglabs/btcd/apiserver/utils"
 	"net/http"
 	"runtime/debug"
 )
 
 var nextRequestID uint64 = 1
 
-func addRequestMetadataMiddleware(next http.Handler) http.Handler {
+// AddRequestMetadataMiddleware is a middleware that adds some
+// metadata to the context of every request.
+func AddRequestMetadataMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		rCtx := utils.ToAPIServerContext(r.Context()).SetRequestID(nextRequestID)
+		rCtx := ToServerContext(r.Context()).SetRequestID(nextRequestID)
 		r.WithContext(rCtx)
 		nextRequestID++
 		next.ServeHTTP(w, r)
 	})
 }
 
-func loggingMiddleware(next http.Handler) http.Handler {
+// LoggingMiddleware is a middleware that writes
+// logs for every request.
+func LoggingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := utils.ToAPIServerContext(r.Context())
+		ctx := ToServerContext(r.Context())
 		ctx.Infof("Method: %s URI: %s", r.Method, r.RequestURI)
 		next.ServeHTTP(w, r)
 	})
 }
 
-func recoveryMiddleware(h http.Handler) http.Handler {
+// RecoveryMiddleware is a middleware that recovers
+// from panics, log it, and sends Internal Server
+// Error to the client.
+func RecoveryMiddleware(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := utils.ToAPIServerContext(r.Context())
+		ctx := ToServerContext(r.Context())
 		defer func() {
 			recoveryErr := recover()
 			if recoveryErr != nil {
 				recoveryErrStr := fmt.Sprintf("%s", recoveryErr)
 				log.Criticalf("Fatal error: %s", recoveryErrStr)
 				log.Criticalf("Stack trace: %s", debug.Stack())
-				sendErr(ctx, w, utils.NewInternalServerHandlerError(recoveryErrStr))
+				SendErr(ctx, w, NewInternalServerHandlerError(recoveryErrStr))
 			}
 		}()
 		h.ServeHTTP(w, r)
 	})
 }
 
-func setJSONMiddleware(h http.Handler) http.Handler {
+// SetJSONMiddleware is a middleware that sets the content type of
+// every request to be application/json.
+func SetJSONMiddleware(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		h.ServeHTTP(w, r)

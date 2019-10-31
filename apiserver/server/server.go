@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"github.com/daglabs/btcd/httpserverutils"
 	"net/http"
 	"time"
 
@@ -15,10 +16,10 @@ const gracefulShutdownTimeout = 30 * time.Second
 // function to gracefully shutdown it.
 func Start(listenAddr string) func() {
 	router := mux.NewRouter()
-	router.Use(addRequestMetadataMiddleware)
-	router.Use(recoveryMiddleware)
-	router.Use(loggingMiddleware)
-	router.Use(setJSONMiddleware)
+	router.Use(httpserverutils.AddRequestMetadataMiddleware)
+	router.Use(httpserverutils.RecoveryMiddleware)
+	router.Use(httpserverutils.LoggingMiddleware)
+	router.Use(httpserverutils.SetJSONMiddleware)
 	addRoutes(router)
 	httpServer := &http.Server{
 		Addr:    listenAddr,
