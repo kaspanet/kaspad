@@ -27,9 +27,18 @@ const (
 	baseSubsidy = 50 * util.SatoshiPerBitcoin
 
 	// the following are used when calculating a transaction's mass
-	massPerTxByte           = 1
-	massPerScriptPubKeyByte = 10
-	massPerSigOp            = 10000
+
+	// MassPerTxByte is the number of grams that any byte
+	// adds to a transaction.
+	MassPerTxByte = 1
+
+	// MassPerScriptPubKeyByte is the number of grams that any
+	// scriptPubKey byte adds to a transaction.
+	MassPerScriptPubKeyByte = 10
+
+	// MassPerSigOp is the number of grams that any
+	// signature operation adds to a transaction.
+	MassPerSigOp = 10000
 )
 
 // isNullOutpoint determines whether or not a previous transaction outpoint
@@ -125,7 +134,7 @@ func CheckTransactionSanity(tx *util.Tx, subnetworkID *subnetworkid.SubnetworkID
 	// A transaction must not exceed the maximum allowed block mass when
 	// serialized.
 	serializedTxSize := msgTx.SerializeSize()
-	if serializedTxSize*massPerTxByte > wire.MaxMassPerTx {
+	if serializedTxSize*MassPerTxByte > wire.MaxMassPerTx {
 		str := fmt.Sprintf("serialized transaction is too big - got "+
 			"%d, max %d", serializedTxSize, wire.MaxMassPerBlock)
 		return ruleError(ErrTxMassTooHigh, str)
@@ -361,7 +370,7 @@ func CalcTxMass(tx *util.Tx, previousScriptPubKeys [][]byte) uint64 {
 	txSize := tx.MsgTx().SerializeSize()
 
 	if tx.IsCoinBase() {
-		return uint64(txSize * massPerTxByte)
+		return uint64(txSize * MassPerTxByte)
 	}
 
 	scriptPubKeySize := 0
@@ -378,9 +387,9 @@ func CalcTxMass(tx *util.Tx, previousScriptPubKeys [][]byte) uint64 {
 		sigOpsCount += txscript.GetPreciseSigOpCount(sigScript, previousScriptPubKeys[txInIndex], isP2SH)
 	}
 
-	return uint64(txSize*massPerTxByte +
-		scriptPubKeySize*massPerScriptPubKeyByte +
-		sigOpsCount*massPerSigOp)
+	return uint64(txSize*MassPerTxByte +
+		scriptPubKeySize*MassPerScriptPubKeyByte +
+		sigOpsCount*MassPerSigOp)
 }
 
 // checkBlockHeaderSanity performs some preliminary checks on a block header to

@@ -5,6 +5,7 @@ go 1.12
 require (
 	bou.ke/monkey v1.0.1
 	github.com/aead/siphash v1.0.1
+	github.com/aws/aws-lambda-go v1.13.2
 	github.com/btcsuite/go-socks v0.0.0-20170105172521-4720035b7bfd
 	github.com/btcsuite/goleveldb v1.0.0
 	github.com/btcsuite/websocket v0.0.0-20150119174127-31079b680792
@@ -18,5 +19,6 @@ require (
 	github.com/jrick/logrotate v1.0.0
 	github.com/kkdai/bstream v0.0.0-20181106074824-b3251f7901ec
 	github.com/miekg/dns v1.1.6
+	github.com/pkg/errors v0.8.1
 	golang.org/x/crypto v0.0.0-20190426145343-a29dc8fdc734
 )
