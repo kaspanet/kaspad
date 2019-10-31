@@ -47,7 +47,7 @@ func TestErrorCodeStringer(t *testing.T) {
 		{ErrMinimalData, "ErrMinimalData"},
 		{ErrInvalidSigHashType, "ErrInvalidSigHashType"},
 		{ErrInvalidSigHashSingleIndex, "ErrInvalidSigHashSingleIndex"},
-		{ErrSigDER, "ErrSigDER"},
+		{ErrSigLength, "ErrSigLength"},
 		{ErrSigHighS, "ErrSigHighS"},
 		{ErrNotPushOnly, "ErrNotPushOnly"},
 		{ErrPubKeyFormat, "ErrPubKeyFormat"},
