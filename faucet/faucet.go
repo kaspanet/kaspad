@@ -293,7 +293,7 @@ func isFundedWithNumberOfOutputs(tx *wire.MsgTx, numberOfOutputs uint64, amountS
 
 func calcFee(msgTx *wire.MsgTx, numberOfOutputs uint64, walletUTXOSet utxoSet) (uint64, error) {
 	txMass := calcTxMass(msgTx, walletUTXOSet)
-	txMassWithOutputs := txMass + outputsTotalSize(numberOfOutputs)
+	txMassWithOutputs := txMass + outputsTotalSize(numberOfOutputs)*blockdag.MassPerTxByte
 	cfg, err := config.MainConfig()
 	if err != nil {
 		return 0, err
