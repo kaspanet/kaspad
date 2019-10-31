@@ -264,6 +264,7 @@ func fundTx(walletUTXOSet utxoSet, tx *wire.MsgTx, amount uint64) (netAmount uin
 //   change output is needed, the netAmount will be usually a little bit higher than the
 //   targetAmount. Otherwise, it'll be the same as the targetAmount.
 func isFundedAndIsChangeOutputRequired(tx *wire.MsgTx, amountSelected uint64, targetAmount uint64, walletUTXOSet utxoSet) (isTxFunded, isChangeOutputRequired bool, netAmount uint64, err error) {
+	// First check if it can be funded with one output and the required fee for it.
 	isFundedWithOneOutput, oneOutputFee, err := isFundedWithNumberOfOutputs(tx, 1, amountSelected, targetAmount, walletUTXOSet)
 	if err != nil {
 		return false, false, 0, err
@@ -271,10 +272,17 @@ func isFundedAndIsChangeOutputRequired(tx *wire.MsgTx, amountSelected uint64, ta
 	if !isFundedWithOneOutput {
 		return false, false, 0, nil
 	}
+
+	// Now check if it can be funded with two outputs and the required fee for it.
 	isFundedWithTwoOutputs, twoOutputsFee, err := isFundedWithNumberOfOutputs(tx, 2, amountSelected, targetAmount, walletUTXOSet)
 	if err != nil {
 		return false, false, 0, err
 	}
+
+	// If it can be funded with two outputs, check if adding a change output worth it: e.g, check if
+	// the amount you save by not letting the recipient the whole inputs amount (minus fees) is greater
+	// than the additional fee that is required by adding a change output. If this is the case, return
+	// isChangeOutputRequired as true.
 	if isFundedWithTwoOutputs && twoOutputsFee-oneOutputFee < targetAmount-amountSelected {
 		return true, true, amountSelected - twoOutputsFee, nil
 	}
