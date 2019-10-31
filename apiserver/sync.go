@@ -761,7 +761,7 @@ func updateAddedChainBlocks(dbTx *gorm.DB, addedBlock *btcjson.ChainBlock) error
 		dbResult = dbTx.
 			Where("transaction_id in (?)", transactionIDsIn).
 			Preload("TransactionInputs.PreviousTransactionOutput").
-			First(&dbAcceptedTransactions)
+			Find(&dbAcceptedTransactions)
 		dbErrors = dbResult.GetErrors()
 		if httpserverutils.HasDBError(dbErrors) {
 			return httpserverutils.NewErrorFromDBErrors("failed to find transactions: ", dbErrors)
