@@ -75,6 +75,12 @@ type donePeerMsg struct {
 	peer *peerpkg.Peer
 }
 
+// removeFromSyncCandidatesMsg signifies to remove the given peer
+// from the sync candidates.
+type removeFromSyncCandidatesMsg struct {
+	peer *peerpkg.Peer
+}
+
 // txMsg packages a bitcoin tx message and the peer it came from together
 // so the block handler has access to that information.
 type txMsg struct {
@@ -396,6 +402,10 @@ func (sm *SyncManager) handleDonePeerMsg(peer *peerpkg.Peer) {
 		delete(sm.requestedBlocks, blockHash)
 	}
 
+	sm.stopSyncFromPeer(peer)
+}
+
+func (sm *SyncManager) stopSyncFromPeer(peer *peerpkg.Peer) {
 	// Attempt to find a new peer to sync from if the quitting peer is the
 	// sync peer.  Also, reset the headers-first state if in headers-first
 	// mode so
@@ -407,6 +417,11 @@ func (sm *SyncManager) handleDonePeerMsg(peer *peerpkg.Peer) {
 		}
 		sm.startSync()
 	}
+}
+
+func (sm *SyncManager) handleRemoveFromSyncCandidatesMsg(peer *peerpkg.Peer) {
+	sm.peerStates[peer].syncCandidate = false
+	sm.stopSyncFromPeer(peer)
 }
 
 // handleTxMsg handles transaction messages from all peers.
@@ -1186,6 +1201,9 @@ out:
 			case *donePeerMsg:
 				sm.handleDonePeerMsg(msg.peer)
 
+			case *removeFromSyncCandidatesMsg:
+				sm.handleRemoveFromSyncCandidatesMsg(msg.peer)
+
 			case getSyncPeerMsg:
 				var peerID int32
 				if sm.syncPeer != nil {
@@ -1342,6 +1360,17 @@ func (sm *SyncManager) DonePeer(peer *peerpkg.Peer) {
 	}
 
 	sm.msgChan <- &donePeerMsg{peer: peer}
+}
+
+// RemoveFromSyncCandidates tells the blockmanager to remove a peer as
+// a sync candidate.
+func (sm *SyncManager) RemoveFromSyncCandidates(peer *peerpkg.Peer) {
+	// Ignore if we are shutting down.
+	if atomic.LoadInt32(&sm.shutdown) != 0 {
+		return
+	}
+
+	sm.msgChan <- &removeFromSyncCandidatesMsg{peer: peer}
 }
 
 // Start begins the core block handler which processes block and inv messages.

@@ -281,7 +281,7 @@ func LoadAndSetMainConfig() error {
 	return nil
 }
 
-//MainConfig is a getter to the main config
+// MainConfig is a getter to the main config
 func MainConfig() *Config {
 	return mainCfg
 }

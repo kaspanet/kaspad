@@ -9,19 +9,19 @@ set -e
 if [[ $* == *--help* ]]
 then
 	echo "Usage:"
-	echo -e "\t./run-def.sh [--rm] [--debug]"
+	echo -e "\t./run-dev.sh [--rm] [--debug]"
 	echo ""
 	echo -e "\t--rm\t\tRemove dockers prior to running them, to clear data"
 	echo -e "\t--debug\t\tEnable debugging on second server. Server will not start until debugger is attached"
 	echo -e "\t--no-build\t\tRun without building docker images"
-	echo -e "\t--only-build\t\tBuild docker images without running"
+	echo -e "\t--no-run\t\tBuild docker images without running"
+	echo -e "\t--cleanup\t\tAlias for --rm --no-run --no-build. Overrides all other flags"
 	exit
 fi
 
-if [[ $* == *--no-build* ]] && [[ $* == *--only-build* ]]
+if [[ $* == *--cleanup* ]]
 then
-  echo "--no-build and --only-build may not be passed together"
-  exit
+  set -- "--rm --no-run --no-build"
 fi
 
 export SERVICE_NAME=btcd
@@ -35,15 +35,15 @@ then
   docker tag "${SERVICE_NAME}:${GIT_COMMIT}" "${SERVICE_NAME}:latest"
 fi
 
-if [[ $* != *--only-build* ]]
+cd docker
+
+if [[ $* == *--rm* ]]
 then
-  cd docker
+  docker-compose rm -f -s -v
+fi
 
-  if [[ $* == *--rm* ]]
-  then
-    docker-compose rm -f -s -v
-  fi
-
+if [[ $* != *--no-run* ]]
+then
   if [[ $* == *--debug* ]]
   then
     docker-compose up first second-debug

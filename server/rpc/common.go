@@ -365,7 +365,7 @@ func hashesToGetBlockVerboseResults(s *Server, hashes []*daghash.Hash) ([]btcjso
 		if err != nil {
 			return nil, &btcjson.RPCError{
 				Code:    btcjson.ErrRPCInternal.Code,
-				Message: fmt.Sprintf("could not build getBlockVerboseResult for block %s.", blockHash),
+				Message: fmt.Sprintf("could not build getBlockVerboseResult for block %s: %s", blockHash, err),
 			}
 		}
 		getBlockVerboseResults = append(getBlockVerboseResults, *getBlockVerboseResult)
