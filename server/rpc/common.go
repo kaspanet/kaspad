@@ -210,6 +210,11 @@ func buildGetBlockVerboseResult(s *Server, block *util.Block, isVerboseTx bool) 
 	params := s.cfg.DAGParams
 	blockHeader := block.MsgBlock().Header
 
+	if s.cfg.DAG.IsKnownFinalizedBlock(hash) {
+		context := "Failed to obtain block verbose"
+		return nil, internalRPCError("Cannot get block verbose of a finalized block", context)
+	}
+
 	// Get the block chain height.
 	blockChainHeight, err := s.cfg.DAG.BlockChainHeightByHash(hash)
 	if err != nil {
