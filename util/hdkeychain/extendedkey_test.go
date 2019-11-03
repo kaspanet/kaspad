@@ -11,7 +11,7 @@ package hdkeychain
 import (
 	"bytes"
 	"encoding/hex"
-	"fmt"
+	"github.com/daglabs/btcd/testutil"
 	"github.com/pkg/errors"
 	"math"
 	"reflect"
@@ -518,19 +518,6 @@ tests:
 	}
 }
 
-func areErrorsEqual(err1, err2 error) bool {
-	if err1 == nil && err2 == nil {
-		return true
-	}
-	if err1 == nil && err2 != nil {
-		return false
-	}
-	if fmt.Sprintf("%T", err1) != fmt.Sprintf("%T", err2) {
-		return false
-	}
-	return err1.Error() == err2.Error()
-}
-
 // TestGenenerateSeed ensures the GenerateSeed function works as intended.
 func TestGenenerateSeed(t *testing.T) {
 	wantErr := errors.New("seed length must be between 128 and 512 bits")
@@ -554,7 +541,7 @@ func TestGenenerateSeed(t *testing.T) {
 
 	for i, test := range tests {
 		seed, err := GenerateSeed(test.length)
-		if !areErrorsEqual(err, test.err) {
+		if !testutil.AreErrorsEqual(err, test.err) {
 			t.Errorf("GenerateSeed #%d (%s): unexpected error -- "+
 				"want %v, got %v", i, test.name, test.err, err)
 			continue
@@ -884,7 +871,7 @@ func TestErrors(t *testing.T) {
 
 	for i, test := range tests {
 		extKey, err := NewKeyFromString(test.key)
-		if !areErrorsEqual(err, test.err) {
+		if !testutil.AreErrorsEqual(err, test.err) {
 			t.Errorf("NewKeyFromString #%d (%s): mismatched error "+
 				"-- got: %v, want: %v", i, test.name, err,
 				test.err)
@@ -967,7 +954,7 @@ func TestZero(t *testing.T) {
 
 		wantErr = errors.New("pubkey string is empty")
 		_, err = key.ECPubKey()
-		if !areErrorsEqual(err, wantErr) {
+		if !testutil.AreErrorsEqual(err, wantErr) {
 			t.Errorf("ECPubKey #%d (%s): mismatched error: want "+
 				"%v, got %v", i, testName, wantErr, err)
 			return false
