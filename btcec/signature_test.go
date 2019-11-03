@@ -12,7 +12,6 @@ import (
 	"fmt"
 	"github.com/pkg/errors"
 	"math/big"
-	"reflect"
 	"testing"
 )
 
@@ -565,6 +564,19 @@ var recoveryTests = []struct {
 	},
 }
 
+func areErrorsEqual(err1, err2 error) bool {
+	if err1 == nil && err2 == nil {
+		return true
+	}
+	if err1 == nil && err2 != nil {
+		return false
+	}
+	if fmt.Sprintf("%T", err1) != fmt.Sprintf("%T", err2) {
+		return false
+	}
+	return err1.Error() == err2.Error()
+}
+
 func TestRecoverCompact(t *testing.T) {
 	for i, test := range recoveryTests {
 		msg := decodeHex(test.msg)
@@ -576,7 +588,7 @@ func TestRecoverCompact(t *testing.T) {
 		pub, _, err := RecoverCompact(S256(), sig, msg)
 
 		// Verify that returned error matches as expected.
-		if !reflect.DeepEqual(test.err, err) {
+		if !areErrorsEqual(test.err, err) {
 			t.Errorf("unexpected error returned from pubkey "+
 				"recovery #%d: wanted %v, got %v",
 				i, test.err, err)
