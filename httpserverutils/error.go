@@ -1,6 +1,7 @@
-package utils
+package httpserverutils
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/jinzhu/gorm"
 	"net/http"
@@ -71,4 +72,40 @@ func IsDBRecordNotFoundError(dbErrors []error) bool {
 // HasDBError returns true if the given dbErrors contain any errors that aren't RecordNotFound
 func HasDBError(dbErrors []error) bool {
 	return !IsDBRecordNotFoundError(dbErrors) && len(dbErrors) > 0
+}
+
+// ClientError is the http response that is sent to the
+// client in case of an error.
+type ClientError struct {
+	ErrorCode    int    `json:"errorCode"`
+	ErrorMessage string `json:"errorMessage"`
+}
+
+func (err *ClientError) Error() string {
+	return fmt.Sprintf("%s (Code: %d)", err.ErrorMessage, err.ErrorCode)
+}
+
+// SendErr takes a HandlerError and create a ClientError out of it that is sent
+// to the http client.
+func SendErr(ctx *ServerContext, w http.ResponseWriter, hErr *HandlerError) {
+	errMsg := fmt.Sprintf("got error: %s", hErr)
+	ctx.Warnf(errMsg)
+	w.WriteHeader(hErr.Code)
+	SendJSONResponse(w, &ClientError{
+		ErrorCode:    hErr.Code,
+		ErrorMessage: hErr.ClientMessage,
+	})
+}
+
+// SendJSONResponse encodes the given response to JSON format and
+// sends it to the client
+func SendJSONResponse(w http.ResponseWriter, response interface{}) {
+	b, err := json.Marshal(response)
+	if err != nil {
+		panic(err)
+	}
+	_, err = fmt.Fprintf(w, string(b))
+	if err != nil {
+		panic(err)
+	}
 }

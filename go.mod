@@ -5,6 +5,7 @@ go 1.12
 require (
 	bou.ke/monkey v1.0.1
 	github.com/aead/siphash v1.0.1
+	github.com/aws/aws-lambda-go v1.13.2
 	github.com/btcsuite/go-socks v0.0.0-20170105172521-4720035b7bfd
 	github.com/btcsuite/goleveldb v1.0.0
 	github.com/btcsuite/websocket v0.0.0-20150119174127-31079b680792

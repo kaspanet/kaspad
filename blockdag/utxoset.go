@@ -15,7 +15,7 @@ const (
 	// UnacceptedBlueScore is the blue score used for the "block" blueScore
 	// field of the contextual transaction information provided in a
 	// transaction store when it has not yet been accepted by a block.
-	UnacceptedBlueScore = math.MaxUint64
+	UnacceptedBlueScore uint64 = math.MaxUint64
 )
 
 // UTXOEntry houses details about an individual transaction output in a utxo

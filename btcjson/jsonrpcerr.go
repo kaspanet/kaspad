@@ -65,6 +65,7 @@ const (
 	ErrRPCSubnetworkNotFound RPCErrorCode = -5
 	ErrRPCRawTxString        RPCErrorCode = -32602
 	ErrRPCDecodeHexString    RPCErrorCode = -22
+	ErrRPCOrphanBlock        RPCErrorCode = -6
 )
 
 // Errors that are specific to btcd.
