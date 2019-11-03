@@ -8,7 +8,7 @@ import (
 	"github.com/golang/groupcache/lru"
 )
 
-const ecmhCacheSize = 1 >> 22
+const ecmhCacheSize = 4_000_000
 
 var ecmhCache = lru.New(ecmhCacheSize)
 
