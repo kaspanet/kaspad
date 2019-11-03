@@ -1,7 +1,6 @@
 package blockdag
 
 import (
-	"bytes"
 	"fmt"
 	"github.com/pkg/errors"
 	"math"
@@ -843,19 +842,17 @@ func (dus *DiffUTXOSet) WithTransactions(transactions []*wire.MsgTx, blockBlueSc
 }
 
 func addUTXOToMultiset(ms *btcec.Multiset, entry *UTXOEntry, outpoint *wire.Outpoint) (*btcec.Multiset, error) {
-	w := &bytes.Buffer{}
-	err := serializeUTXO(w, entry, outpoint)
+	utxoMS, err := utxoMultiset(entry, outpoint)
 	if err != nil {
 		return nil, err
 	}
-	return ms.Add(w.Bytes()), nil
+	return ms.Union(utxoMS), nil
 }
 
 func removeUTXOFromMultiset(ms *btcec.Multiset, entry *UTXOEntry, outpoint *wire.Outpoint) (*btcec.Multiset, error) {
-	w := &bytes.Buffer{}
-	err := serializeUTXO(w, entry, outpoint)
+	utxoMS, err := utxoMultiset(entry, outpoint)
 	if err != nil {
 		return nil, err
 	}
-	return ms.Remove(w.Bytes()), nil
+	return ms.Subtract(utxoMS), nil
 }

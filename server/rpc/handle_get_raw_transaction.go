@@ -3,6 +3,7 @@ package rpc
 import (
 	"bytes"
 	"encoding/hex"
+
 	"github.com/daglabs/btcd/blockdag"
 	"github.com/daglabs/btcd/btcjson"
 	"github.com/daglabs/btcd/database"
@@ -112,9 +113,12 @@ func handleGetRawTransaction(s *Server, cmd interface{}, closeChan <-chan struct
 		blkHashStr = blkHash.String()
 	}
 
-	confirmations, err := txConfirmations(s, tx.ID())
-	if err != nil {
-		return nil, err
+	var confirmations uint64
+	if !isInMempool {
+		confirmations, err = txConfirmations(s, tx.ID())
+		if err != nil {
+			return nil, err
+		}
 	}
 	rawTxn, err := createTxRawResult(s.cfg.DAGParams, tx.MsgTx(), txID.String(),
 		blkHeader, blkHashStr, nil, &confirmations, isInMempool, txMass)
