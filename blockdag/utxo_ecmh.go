@@ -20,8 +20,7 @@ func utxoMultiset(entry *UTXOEntry, outpoint *wire.Outpoint) (*btcec.Multiset, e
 	}
 	serializedUTXO := w.Bytes()
 	utxoHash := daghash.DoubleHashH(serializedUTXO)
-	cachedMSPoint, ok := ecmhCache.Get(utxoHash)
-	if ok {
+	if cachedMSPoint, ok := ecmhCache.Get(utxoHash); ok {
 		return cachedMSPoint.(*btcec.Multiset), nil
 	}
 	msPoint := btcec.NewMultiset(btcec.S256()).Add(serializedUTXO)
