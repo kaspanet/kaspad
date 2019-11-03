@@ -3,7 +3,6 @@ package rpc
 import (
 	"bytes"
 	"encoding/hex"
-	"errors"
 	"fmt"
 	"github.com/daglabs/btcd/blockdag"
 	"github.com/daglabs/btcd/btcjson"
@@ -12,6 +11,7 @@ import (
 	"github.com/daglabs/btcd/util"
 	"github.com/daglabs/btcd/util/daghash"
 	"github.com/daglabs/btcd/wire"
+	"github.com/pkg/errors"
 	"math/big"
 	"strconv"
 )
@@ -384,7 +384,7 @@ func txConfirmations(s *Server, txID *daghash.TxID) (uint64, error) {
 
 	acceptingBlock, err := s.cfg.TxIndex.BlockThatAcceptedTx(s.cfg.DAG, txID)
 	if err != nil {
-		return 0, fmt.Errorf("could not get block that accepted tx %s: %s", txID, err)
+		return 0, errors.Errorf("could not get block that accepted tx %s: %s", txID, err)
 	}
 	if acceptingBlock == nil {
 		return 0, nil
@@ -392,7 +392,7 @@ func txConfirmations(s *Server, txID *daghash.TxID) (uint64, error) {
 
 	confirmations, err := s.cfg.DAG.BlockConfirmationsByHash(acceptingBlock)
 	if err != nil {
-		return 0, fmt.Errorf("could not get confirmations for block that accepted tx %s: %s", txID, err)
+		return 0, errors.Errorf("could not get confirmations for block that accepted tx %s: %s", txID, err)
 	}
 
 	return confirmations, nil

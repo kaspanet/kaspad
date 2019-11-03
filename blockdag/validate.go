@@ -6,6 +6,7 @@ package blockdag
 
 import (
 	"fmt"
+	"github.com/pkg/errors"
 	"math"
 	"sort"
 	"time"
@@ -899,12 +900,12 @@ func (dag *BlockDAG) checkConnectToPastUTXO(block *blockNode, pastUTXO UTXOSet,
 
 		err = compactFeeFactory.add(txFee)
 		if err != nil {
-			return nil, fmt.Errorf("error adding tx %s fee to compactFeeFactory: %s", tx.ID(), err)
+			return nil, errors.Errorf("error adding tx %s fee to compactFeeFactory: %s", tx.ID(), err)
 		}
 	}
 	feeData, err := compactFeeFactory.data()
 	if err != nil {
-		return nil, fmt.Errorf("error getting bytes of fee data: %s", err)
+		return nil, errors.Errorf("error getting bytes of fee data: %s", err)
 	}
 
 	if !fastAdd {
@@ -992,7 +993,7 @@ func (dag *BlockDAG) CheckConnectBlockTemplateNoLock(block *util.Block) error {
 	}
 
 	if delay != 0 {
-		return fmt.Errorf("Block timestamp is too far in the future")
+		return errors.Errorf("Block timestamp is too far in the future")
 	}
 
 	parents, err := lookupParentNodes(block, dag)

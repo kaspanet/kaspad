@@ -6,7 +6,7 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
+	"github.com/pkg/errors"
 	"net"
 	"os"
 	"path/filepath"
@@ -328,7 +328,7 @@ func (m *Manager) deserializePeers() error {
 	}
 	r, err := os.Open(filePath)
 	if err != nil {
-		return fmt.Errorf("%s error opening file: %v", filePath, err)
+		return errors.Errorf("%s error opening file: %v", filePath, err)
 	}
 	defer r.Close()
 
@@ -336,7 +336,7 @@ func (m *Manager) deserializePeers() error {
 	dec := json.NewDecoder(r)
 	err = dec.Decode(&nodes)
 	if err != nil {
-		return fmt.Errorf("error reading %s: %v", filePath, err)
+		return errors.Errorf("error reading %s: %v", filePath, err)
 	}
 
 	l := len(nodes)

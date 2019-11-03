@@ -17,6 +17,7 @@ import (
 	"compress/bzip2"
 	"encoding/binary"
 	"fmt"
+	"github.com/pkg/errors"
 	"io"
 	"os"
 	"path/filepath"
@@ -41,7 +42,7 @@ var (
 	blockDataFile = filepath.Join("..", "testdata", "blocks1-256.bz2")
 
 	// errSubTestFail is used to signal that a sub test returned false.
-	errSubTestFail = fmt.Errorf("sub test failure")
+	errSubTestFail = errors.Errorf("sub test failure")
 )
 
 // loadBlocks loads the blocks contained in the testdata directory and returns
@@ -427,7 +428,7 @@ func testBucketInterface(tc *testContext, bucket database.Bucket) bool {
 
 		// Ensure errors returned from the user-supplied ForEach
 		// function are returned.
-		forEachError := fmt.Errorf("example foreach error")
+		forEachError := errors.Errorf("example foreach error")
 		err := bucket.ForEach(func(k, v []byte) error {
 			return forEachError
 		})
@@ -443,12 +444,12 @@ func testBucketInterface(tc *testContext, bucket database.Bucket) bool {
 		err = bucket.ForEach(func(k, v []byte) error {
 			wantV, found := lookupKey(k, expectedKeyValues)
 			if !found {
-				return fmt.Errorf("ForEach: key '%s' should "+
+				return errors.Errorf("ForEach: key '%s' should "+
 					"exist", k)
 			}
 
 			if !reflect.DeepEqual(v, wantV) {
-				return fmt.Errorf("ForEach: value for key '%s' "+
+				return errors.Errorf("ForEach: value for key '%s' "+
 					"does not match - got %s, want %s", k,
 					v, wantV)
 			}
@@ -935,12 +936,12 @@ func testMetadataTxInterface(tc *testContext) bool {
 	err = tc.db.View(func(dbTx database.Tx) error {
 		metadataBucket := dbTx.Metadata()
 		if metadataBucket == nil {
-			return fmt.Errorf("Metadata: unexpected nil bucket")
+			return errors.Errorf("Metadata: unexpected nil bucket")
 		}
 
 		bucket1 := metadataBucket.Bucket(bucket1Name)
 		if bucket1 == nil {
-			return fmt.Errorf("Bucket1: unexpected nil bucket")
+			return errors.Errorf("Bucket1: unexpected nil bucket")
 		}
 
 		tc.isWritable = false
@@ -959,7 +960,7 @@ func testMetadataTxInterface(tc *testContext) bool {
 
 	// Ensure errors returned from the user-supplied View function are
 	// returned.
-	viewError := fmt.Errorf("example view error")
+	viewError := errors.Errorf("example view error")
 	err = tc.db.View(func(dbTx database.Tx) error {
 		return viewError
 	})
@@ -972,16 +973,16 @@ func testMetadataTxInterface(tc *testContext) bool {
 	// Test the bucket interface via a managed read-write transaction.
 	// Also, put a series of values and force a rollback so the following
 	// code can ensure the values were not stored.
-	forceRollbackError := fmt.Errorf("force rollback")
+	forceRollbackError := errors.Errorf("force rollback")
 	err = tc.db.Update(func(dbTx database.Tx) error {
 		metadataBucket := dbTx.Metadata()
 		if metadataBucket == nil {
-			return fmt.Errorf("Metadata: unexpected nil bucket")
+			return errors.Errorf("Metadata: unexpected nil bucket")
 		}
 
 		bucket1 := metadataBucket.Bucket(bucket1Name)
 		if bucket1 == nil {
-			return fmt.Errorf("Bucket1: unexpected nil bucket")
+			return errors.Errorf("Bucket1: unexpected nil bucket")
 		}
 
 		tc.isWritable = true
@@ -1011,7 +1012,7 @@ func testMetadataTxInterface(tc *testContext) bool {
 	err = tc.db.View(func(dbTx database.Tx) error {
 		metadataBucket := dbTx.Metadata()
 		if metadataBucket == nil {
-			return fmt.Errorf("Metadata: unexpected nil bucket")
+			return errors.Errorf("Metadata: unexpected nil bucket")
 		}
 
 		if !testGetValues(tc, metadataBucket, rollbackValues(keyValues)) {
@@ -1031,12 +1032,12 @@ func testMetadataTxInterface(tc *testContext) bool {
 	err = tc.db.Update(func(dbTx database.Tx) error {
 		metadataBucket := dbTx.Metadata()
 		if metadataBucket == nil {
-			return fmt.Errorf("Metadata: unexpected nil bucket")
+			return errors.Errorf("Metadata: unexpected nil bucket")
 		}
 
 		bucket1 := metadataBucket.Bucket(bucket1Name)
 		if bucket1 == nil {
-			return fmt.Errorf("Bucket1: unexpected nil bucket")
+			return errors.Errorf("Bucket1: unexpected nil bucket")
 		}
 
 		if !testPutValues(tc, bucket1, keyValues) {
@@ -1056,12 +1057,12 @@ func testMetadataTxInterface(tc *testContext) bool {
 	err = tc.db.View(func(dbTx database.Tx) error {
 		metadataBucket := dbTx.Metadata()
 		if metadataBucket == nil {
-			return fmt.Errorf("Metadata: unexpected nil bucket")
+			return errors.Errorf("Metadata: unexpected nil bucket")
 		}
 
 		bucket1 := metadataBucket.Bucket(bucket1Name)
 		if bucket1 == nil {
-			return fmt.Errorf("Bucket1: unexpected nil bucket")
+			return errors.Errorf("Bucket1: unexpected nil bucket")
 		}
 
 		if !testGetValues(tc, bucket1, toGetValues(keyValues)) {
@@ -1081,12 +1082,12 @@ func testMetadataTxInterface(tc *testContext) bool {
 	err = tc.db.Update(func(dbTx database.Tx) error {
 		metadataBucket := dbTx.Metadata()
 		if metadataBucket == nil {
-			return fmt.Errorf("Metadata: unexpected nil bucket")
+			return errors.Errorf("Metadata: unexpected nil bucket")
 		}
 
 		bucket1 := metadataBucket.Bucket(bucket1Name)
 		if bucket1 == nil {
-			return fmt.Errorf("Bucket1: unexpected nil bucket")
+			return errors.Errorf("Bucket1: unexpected nil bucket")
 		}
 
 		if !testDeleteValues(tc, bucket1, keyValues) {
@@ -1533,7 +1534,7 @@ func testBlockIOTxInterface(tc *testContext) bool {
 	// fetching APIs work properly on them within the transaction before a
 	// commit or rollback.  Then, force a rollback so the code below can
 	// ensure none of the data actually gets stored.
-	forceRollbackError := fmt.Errorf("force rollback")
+	forceRollbackError := errors.Errorf("force rollback")
 	err = tc.db.Update(func(dbTx database.Tx) error {
 		// Store all blocks in the same transaction.
 		for i, block := range tc.blocks {
@@ -2102,7 +2103,7 @@ func testConcurrecy(tc *testContext) bool {
 			// place, the data it added should not be visible.
 			val := dbTx.Metadata().Get(concurrentKey)
 			if val != nil {
-				return fmt.Errorf("%s should not be visible",
+				return errors.Errorf("%s should not be visible",
 					concurrentKey)
 			}
 			return nil

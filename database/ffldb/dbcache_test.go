@@ -2,7 +2,7 @@ package ffldb
 
 import (
 	"bytes"
-	"errors"
+	"github.com/pkg/errors"
 	"testing"
 
 	"bou.ke/monkey"

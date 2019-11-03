@@ -2,8 +2,7 @@ package ffldb
 
 import (
 	"bytes"
-	"errors"
-	"fmt"
+	"github.com/pkg/errors"
 	"testing"
 
 	"bou.ke/monkey"
@@ -622,11 +621,11 @@ func TestDeleteDoubleNestedBucket(t *testing.T) {
 		metadata := dbTx.Metadata()
 		firstBucket, err := metadata.CreateBucket(firstKey)
 		if err != nil {
-			return fmt.Errorf("Error creating first bucket: %s", err)
+			return errors.Errorf("Error creating first bucket: %s", err)
 		}
 		secondBucket, err := firstBucket.CreateBucket(secondKey)
 		if err != nil {
-			return fmt.Errorf("Error creating second bucket: %s", err)
+			return errors.Errorf("Error creating second bucket: %s", err)
 		}
 		secondBucket.Put(key, value)
 
@@ -635,11 +634,11 @@ func TestDeleteDoubleNestedBucket(t *testing.T) {
 		for ok := c.First(); ok && !bytes.Equal(c.Key(), key); ok = c.Next() {
 		}
 		if !bytes.Equal(c.Key(), key) {
-			return fmt.Errorf("Couldn't find key to extract rawKey")
+			return errors.Errorf("Couldn't find key to extract rawKey")
 		}
 		rawKey = c.(*cursor).rawKey()
 		if dbTx.(*transaction).fetchKey(rawKey) == nil {
-			return fmt.Errorf("rawKey not found")
+			return errors.Errorf("rawKey not found")
 		}
 
 		// extract rawSecondKey from cursor and make sure it's in raw database
@@ -647,11 +646,11 @@ func TestDeleteDoubleNestedBucket(t *testing.T) {
 		for ok := c.First(); ok && !bytes.Equal(c.Key(), secondKey); ok = c.Next() {
 		}
 		if !bytes.Equal(c.Key(), secondKey) {
-			return fmt.Errorf("Couldn't find secondKey to extract rawSecondKey")
+			return errors.Errorf("Couldn't find secondKey to extract rawSecondKey")
 		}
 		rawSecondKey = c.(*cursor).rawKey()
 		if dbTx.(*transaction).fetchKey(rawSecondKey) == nil {
-			return fmt.Errorf("rawSecondKey not found for some reason")
+			return errors.Errorf("rawSecondKey not found for some reason")
 		}
 
 		return nil

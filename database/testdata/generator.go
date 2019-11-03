@@ -20,12 +20,12 @@ func main() {
 
 	out, err := os.Create(targetFile)
 	if err != nil {
-		panic(fmt.Errorf("error reading target file: %s", err))
+		panic(errors.Errorf("error reading target file: %s", err))
 	}
 	defer func() {
 		err := out.Close()
 		if err != nil {
-			panic(fmt.Errorf("error closing target file: %s", err))
+			panic(errors.Errorf("error closing target file: %s", err))
 		}
 	}()
 
@@ -65,24 +65,24 @@ func writeBlock(out *os.File, block *wire.MsgBlock) {
 
 	err := block.Serialize(buf)
 	if err != nil {
-		panic(fmt.Errorf("error serializing block: %s", err))
+		panic(errors.Errorf("error serializing block: %s", err))
 	}
 
 	err = binary.Write(out, binary.LittleEndian, blockLen)
 	if err != nil {
-		panic(fmt.Errorf("error writing blockLen: %s", err))
+		panic(errors.Errorf("error writing blockLen: %s", err))
 	}
 
 	_, err = out.Write(buf.Bytes())
 	if err != nil {
-		panic(fmt.Errorf("error writing block: %s", err))
+		panic(errors.Errorf("error writing block: %s", err))
 	}
 }
 
 func writeNet(out *os.File) {
 	err := binary.Write(out, binary.LittleEndian, wire.MainNet)
 	if err != nil {
-		panic(fmt.Errorf("error writing net to file: %s", err))
+		panic(errors.Errorf("error writing net to file: %s", err))
 	}
 }
 

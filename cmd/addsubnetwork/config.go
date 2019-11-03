@@ -1,10 +1,9 @@
 package main
 
 import (
-	"errors"
-	"fmt"
 	"github.com/daglabs/btcd/dagconfig"
 	"github.com/jessevdk/go-flags"
+	"github.com/pkg/errors"
 )
 
 type config struct {
@@ -74,14 +73,14 @@ func parseConfig() (*config, error) {
 	}
 
 	if cfg.GasLimit < 0 {
-		return nil, fmt.Errorf("gaslimit may not be smaller than 0")
+		return nil, errors.Errorf("gaslimit may not be smaller than 0")
 	}
 	if cfg.GasLimit == 0 {
 		cfg.GasLimit = defaultSubnetworkGasLimit
 	}
 
 	if cfg.RegistryTxFee < 0 {
-		return nil, fmt.Errorf("regtxfee may not be smaller than 0")
+		return nil, errors.Errorf("regtxfee may not be smaller than 0")
 	}
 	if cfg.RegistryTxFee == 0 {
 		cfg.RegistryTxFee = defaultRegistryTxFee

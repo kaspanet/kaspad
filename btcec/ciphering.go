@@ -12,7 +12,7 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"crypto/sha512"
-	"errors"
+	"github.com/pkg/errors"
 	"io"
 )
 

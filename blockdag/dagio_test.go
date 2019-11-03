@@ -6,7 +6,7 @@ package blockdag
 
 import (
 	"bytes"
-	"errors"
+	"github.com/pkg/errors"
 	"reflect"
 	"testing"
 

@@ -9,6 +9,7 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
+	"github.com/pkg/errors"
 	"io"
 	"sync"
 
@@ -418,7 +419,7 @@ func (dag *BlockDAG) initDAGState() error {
 				localSubnetworkID.SetBytes(localSubnetworkIDBytes)
 			}
 			if !localSubnetworkID.IsEqual(dag.subnetworkID) {
-				return fmt.Errorf("Cannot start btcd with subnetwork ID %s because"+
+				return errors.Errorf("Cannot start btcd with subnetwork ID %s because"+
 					" its database is already built with subnetwork ID %s. If you"+
 					" want to switch to a new database, please reset the"+
 					" database by starting btcd with --reset-db flag", dag.subnetworkID, localSubnetworkID)
@@ -821,7 +822,7 @@ func (dag *BlockDAG) BlockHashesFrom(startHash *daghash.Hash, limit int) ([]*dag
 		blockHashes = append(blockHashes, dag.genesis.hash)
 	}
 	if !dag.BlockExists(startHash) {
-		return nil, fmt.Errorf("block %s not found", startHash)
+		return nil, errors.Errorf("block %s not found", startHash)
 	}
 	blueScore, err := dag.BlueScoreByBlockHash(startHash)
 	if err != nil {

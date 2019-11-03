@@ -3,12 +3,12 @@ package indexers
 import (
 	"bytes"
 	"encoding/gob"
-	"fmt"
 	"github.com/daglabs/btcd/blockdag"
 	"github.com/daglabs/btcd/database"
 	"github.com/daglabs/btcd/util"
 	"github.com/daglabs/btcd/util/daghash"
 	"github.com/daglabs/btcd/wire"
+	"github.com/pkg/errors"
 )
 
 const (
@@ -156,7 +156,7 @@ func dbFetchTxsAcceptanceDataByID(dbTx database.Tx,
 	bucket := dbTx.Metadata().Bucket(acceptanceIndexKey)
 	serializedTxsAcceptanceData := bucket.Get(serializedBlockID)
 	if serializedTxsAcceptanceData == nil {
-		return nil, fmt.Errorf("no entry in the accpetance index for block id %d", blockID)
+		return nil, errors.Errorf("no entry in the accpetance index for block id %d", blockID)
 	}
 
 	return deserializeMultiBlockTxsAcceptanceData(serializedTxsAcceptanceData)

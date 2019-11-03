@@ -1,8 +1,8 @@
 package main
 
 import (
-	"errors"
 	"github.com/daglabs/btcd/util"
+	"github.com/pkg/errors"
 	"path/filepath"
 
 	"github.com/jessevdk/go-flags"

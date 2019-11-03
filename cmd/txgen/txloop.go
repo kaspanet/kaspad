@@ -3,7 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/hex"
-	"fmt"
+	"github.com/pkg/errors"
 	"math"
 	"math/rand"
 	"time"
@@ -66,13 +66,13 @@ func txLoop(client *txgenClient, cfg *config) error {
 	var err error
 	primaryScriptPubKey, err = txscript.PayToAddrScript(p2pkhAddress)
 	if err != nil {
-		return fmt.Errorf("failed to generate primaryScriptPubKey to address: %s", err)
+		return errors.Errorf("failed to generate primaryScriptPubKey to address: %s", err)
 	}
 
 	if secondaryAddress != nil {
 		secondaryScriptPubKey, err = txscript.PayToAddrScript(secondaryAddress)
 		if err != nil {
-			return fmt.Errorf("failed to generate primaryScriptPubKey to address: %s", err)
+			return errors.Errorf("failed to generate primaryScriptPubKey to address: %s", err)
 		}
 
 		filterAddresses = append(filterAddresses, secondaryAddress)
@@ -120,7 +120,7 @@ func updateSubnetworks(txs []*util.Tx, gasLimitMap map[subnetworkid.SubnetworkID
 		if msgTx.SubnetworkID.IsEqual(subnetworkid.SubnetworkIDRegistry) {
 			subnetworkID, err := blockdag.TxToSubnetworkID(msgTx)
 			if err != nil {
-				return fmt.Errorf("could not build subnetwork ID: %s", err)
+				return errors.Errorf("could not build subnetwork ID: %s", err)
 			}
 			gasLimit := blockdag.ExtractGasLimit(msgTx)
 			log.Infof("Found subnetwork %s with gas limit %d", subnetworkID, gasLimit)
@@ -335,7 +335,7 @@ func signTx(walletUTXOSet utxoSet, tx *wire.MsgTx) error {
 		sigScript, err := txscript.SignatureScript(tx, i, prevOut.ScriptPubKey,
 			txscript.SigHashAll, privateKey, true)
 		if err != nil {
-			return fmt.Errorf("Failed to sign transaction: %s", err)
+			return errors.Errorf("Failed to sign transaction: %s", err)
 		}
 
 		txIn.SignatureScript = sigScript
@@ -365,7 +365,7 @@ func fundTx(walletUTXOSet utxoSet, tx *wire.MsgTx, amount uint64, feeRate float6
 	}
 
 	if !isTxFunded {
-		return 0, fmt.Errorf("not enough funds for coin selection")
+		return 0, errors.Errorf("not enough funds for coin selection")
 	}
 
 	return amountSelected, nil
@@ -482,7 +482,7 @@ func collectTransactions(client *txgenClient, gasLimitMap map[subnetworkid.Subne
 
 			tx, err := parseRawTransactionResult(result)
 			if err != nil {
-				return nil, fmt.Errorf("failed to process SearchRawTransactionResult: %s", err)
+				return nil, errors.Errorf("failed to process SearchRawTransactionResult: %s", err)
 			}
 			if tx == nil {
 				continue
@@ -516,13 +516,13 @@ func collectTransactions(client *txgenClient, gasLimitMap map[subnetworkid.Subne
 func parseRawTransactionResult(result *btcjson.SearchRawTransactionsResult) (*wire.MsgTx, error) {
 	txBytes, err := hex.DecodeString(result.Hex)
 	if err != nil {
-		return nil, fmt.Errorf("failed to decode transaction bytes: %s", err)
+		return nil, errors.Errorf("failed to decode transaction bytes: %s", err)
 	}
 	var tx wire.MsgTx
 	reader := bytes.NewReader(txBytes)
 	err = tx.Deserialize(reader)
 	if err != nil {
-		return nil, fmt.Errorf("failed to deserialize transaction: %s", err)
+		return nil, errors.Errorf("failed to deserialize transaction: %s", err)
 	}
 	return &tx, nil
 }

@@ -13,8 +13,7 @@ import (
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
-	"errors"
-	"fmt"
+	"github.com/pkg/errors"
 	"math/big"
 	"net"
 	"os"
@@ -45,7 +44,7 @@ func NewTLSCertPair(organization string, validUntil time.Time, extraHosts []stri
 	serialNumberLimit := new(big.Int).Lsh(big.NewInt(1), 128)
 	serialNumber, err := rand.Int(rand.Reader, serialNumberLimit)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to generate serial number: %s", err)
+		return nil, nil, errors.Errorf("failed to generate serial number: %s", err)
 	}
 
 	host, err := os.Hostname()
@@ -120,24 +119,24 @@ func NewTLSCertPair(organization string, validUntil time.Time, extraHosts []stri
 	derBytes, err := x509.CreateCertificate(rand.Reader, &template,
 		&template, &priv.PublicKey, priv)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to create certificate: %s", err)
+		return nil, nil, errors.Errorf("failed to create certificate: %s", err)
 	}
 
 	certBuf := &bytes.Buffer{}
 	err = pem.Encode(certBuf, &pem.Block{Type: "CERTIFICATE", Bytes: derBytes})
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to encode certificate: %s", err)
+		return nil, nil, errors.Errorf("failed to encode certificate: %s", err)
 	}
 
 	keybytes, err := x509.MarshalECPrivateKey(priv)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to marshal private key: %s", err)
+		return nil, nil, errors.Errorf("failed to marshal private key: %s", err)
 	}
 
 	keyBuf := &bytes.Buffer{}
 	err = pem.Encode(keyBuf, &pem.Block{Type: "EC PRIVATE KEY", Bytes: keybytes})
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to encode private key: %s", err)
+		return nil, nil, errors.Errorf("failed to encode private key: %s", err)
 	}
 
 	return certBuf.Bytes(), keyBuf.Bytes(), nil

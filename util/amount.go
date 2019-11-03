@@ -5,7 +5,7 @@
 package util
 
 import (
-	"errors"
+	"github.com/pkg/errors"
 	"math"
 	"strconv"
 )

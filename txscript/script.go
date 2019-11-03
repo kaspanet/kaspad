@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"github.com/pkg/errors"
 
 	"github.com/daglabs/btcd/util/daghash"
 	"github.com/daglabs/btcd/wire"
@@ -287,7 +288,7 @@ func shallowCopyTx(tx *wire.MsgTx) wire.MsgTx {
 func CalcSignatureHash(script []byte, hashType SigHashType, tx *wire.MsgTx, idx int) ([]byte, error) {
 	parsedScript, err := parseScript(script)
 	if err != nil {
-		return nil, fmt.Errorf("cannot parse output script: %s", err)
+		return nil, errors.Errorf("cannot parse output script: %s", err)
 	}
 	return calcSignatureHash(parsedScript, hashType, tx, idx)
 }

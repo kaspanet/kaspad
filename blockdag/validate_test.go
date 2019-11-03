@@ -6,7 +6,7 @@ package blockdag
 
 import (
 	"bou.ke/monkey"
-	"errors"
+	"github.com/pkg/errors"
 	"math"
 	"path/filepath"
 	"testing"

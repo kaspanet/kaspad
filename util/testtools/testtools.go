@@ -1,9 +1,8 @@
 package testtools
 
 import (
-	"fmt"
-
 	"github.com/daglabs/btcd/dagconfig"
+	"github.com/pkg/errors"
 
 	"github.com/daglabs/btcd/mining"
 	"github.com/daglabs/btcd/util/daghash"
@@ -34,11 +33,11 @@ func RegisterSubnetworkForTest(dag *blockdag.BlockDAG, params *dagconfig.Params,
 		}
 
 		if delay != 0 {
-			return fmt.Errorf("ProcessBlock: block is is too far in the future")
+			return errors.Errorf("ProcessBlock: block is is too far in the future")
 		}
 
 		if isOrphan {
-			return fmt.Errorf("ProcessBlock: unexpected returned orphan block")
+			return errors.Errorf("ProcessBlock: unexpected returned orphan block")
 		}
 
 		return nil
@@ -47,12 +46,12 @@ func RegisterSubnetworkForTest(dag *blockdag.BlockDAG, params *dagconfig.Params,
 	// Create a block in order to fund later transactions
 	fundsBlock, err := buildNextBlock(dag.TipHashes(), []*wire.MsgTx{})
 	if err != nil {
-		return nil, fmt.Errorf("could not build funds block: %s", err)
+		return nil, errors.Errorf("could not build funds block: %s", err)
 	}
 
 	err = addBlockToDAG(fundsBlock)
 	if err != nil {
-		return nil, fmt.Errorf("could not add funds block to DAG: %s", err)
+		return nil, errors.Errorf("could not add funds block to DAG: %s", err)
 	}
 
 	fundsBlockCbTx := fundsBlock.Transactions()[0].MsgTx()
@@ -60,7 +59,7 @@ func RegisterSubnetworkForTest(dag *blockdag.BlockDAG, params *dagconfig.Params,
 	// Create a block with a valid subnetwork registry transaction
 	signatureScript, err := txscript.PayToScriptHashSignatureScript(blockdag.OpTrueScript, nil)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to build signature script: %s", err)
+		return nil, errors.Errorf("Failed to build signature script: %s", err)
 	}
 	txIn := &wire.TxIn{
 		PreviousOutpoint: *wire.NewOutpoint(fundsBlockCbTx.TxID(), 0),
@@ -81,17 +80,17 @@ func RegisterSubnetworkForTest(dag *blockdag.BlockDAG, params *dagconfig.Params,
 	// Add it to the DAG
 	registryBlock, err := buildNextBlock([]*daghash.Hash{fundsBlock.Hash()}, []*wire.MsgTx{registryTx})
 	if err != nil {
-		return nil, fmt.Errorf("could not build registry block: %s", err)
+		return nil, errors.Errorf("could not build registry block: %s", err)
 	}
 	err = addBlockToDAG(registryBlock)
 	if err != nil {
-		return nil, fmt.Errorf("could not add registry block to DAG: %s", err)
+		return nil, errors.Errorf("could not add registry block to DAG: %s", err)
 	}
 
 	// Build a subnetwork ID from the registry transaction
 	subnetworkID, err := blockdag.TxToSubnetworkID(registryTx)
 	if err != nil {
-		return nil, fmt.Errorf("could not build subnetwork ID: %s", err)
+		return nil, errors.Errorf("could not build subnetwork ID: %s", err)
 	}
 	return subnetworkID, nil
 }

@@ -5,8 +5,7 @@
 package connmgr
 
 import (
-	"errors"
-	"fmt"
+	"github.com/pkg/errors"
 	"io"
 	"net"
 	"sync/atomic"
@@ -434,7 +433,7 @@ func TestRemovePendingConnection(t *testing.T) {
 	wait := make(chan struct{})
 	indefiniteDialer := func(addr net.Addr) (net.Conn, error) {
 		<-wait
-		return nil, fmt.Errorf("error")
+		return nil, errors.Errorf("error")
 	}
 	cmgr, err := New(&Config{
 		Dial: indefiniteDialer,
@@ -494,7 +493,7 @@ func TestCancelIgnoreDelayedConnection(t *testing.T) {
 		default:
 		}
 
-		return nil, fmt.Errorf("error")
+		return nil, errors.Errorf("error")
 	}
 
 	connected := make(chan *ConnReq)

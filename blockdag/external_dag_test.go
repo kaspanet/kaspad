@@ -2,6 +2,7 @@ package blockdag_test
 
 import (
 	"fmt"
+	"github.com/pkg/errors"
 	"math"
 	"testing"
 
@@ -58,11 +59,11 @@ func TestFinality(t *testing.T) {
 			return nil, err
 		}
 		if delay != 0 {
-			return nil, fmt.Errorf("ProcessBlock: block " +
+			return nil, errors.Errorf("ProcessBlock: block " +
 				"is too far in the future")
 		}
 		if isOrphan {
-			return nil, fmt.Errorf("ProcessBlock: unexpected returned orphan block")
+			return nil, errors.Errorf("ProcessBlock: unexpected returned orphan block")
 		}
 
 		return block, nil

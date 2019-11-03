@@ -1,8 +1,8 @@
 package main
 
 import (
-	"fmt"
 	"github.com/daglabs/btcd/rpcclient"
+	"github.com/pkg/errors"
 	"io/ioutil"
 )
 
@@ -12,7 +12,7 @@ func connectToServer(cfg *config) (*txgenClient, error) {
 		var err error
 		cert, err = ioutil.ReadFile(cfg.CertificatePath)
 		if err != nil {
-			return nil, fmt.Errorf("Error reading certificates file: %s", err)
+			return nil, errors.Errorf("Error reading certificates file: %s", err)
 		}
 	}
 
@@ -30,7 +30,7 @@ func connectToServer(cfg *config) (*txgenClient, error) {
 
 	client, err := newTxgenClient(connCfg)
 	if err != nil {
-		return nil, fmt.Errorf("Error connecting to address %s: %s", cfg.Address, err)
+		return nil, errors.Errorf("Error connecting to address %s: %s", cfg.Address, err)
 	}
 
 	log.Infof("Connected to server %s", cfg.Address)

@@ -5,7 +5,7 @@
 package rpctest
 
 import (
-	"fmt"
+	"github.com/pkg/errors"
 	"go/build"
 	"os/exec"
 	"path/filepath"
@@ -48,12 +48,12 @@ func btcdExecutablePath() (string, error) {
 	// this is a forked repo.
 	_, rpctestDir, _, ok := runtime.Caller(1)
 	if !ok {
-		return "", fmt.Errorf("Cannot get path to btcd source code")
+		return "", errors.Errorf("Cannot get path to btcd source code")
 	}
 	btcdPkgPath := filepath.Join(rpctestDir, "..", "..", "..")
 	btcdPkg, err := build.ImportDir(btcdPkgPath, build.FindOnly)
 	if err != nil {
-		return "", fmt.Errorf("Failed to build btcd: %s", err)
+		return "", errors.Errorf("Failed to build btcd: %s", err)
 	}
 
 	// Build btcd and output an executable in a static temp path.
@@ -64,7 +64,7 @@ func btcdExecutablePath() (string, error) {
 	cmd := exec.Command("go", "build", "-o", outputPath, btcdPkg.ImportPath)
 	err = cmd.Run()
 	if err != nil {
-		return "", fmt.Errorf("Failed to build btcd: %s", err)
+		return "", errors.Errorf("Failed to build btcd: %s", err)
 	}
 
 	// Save executable path so future calls do not recompile.

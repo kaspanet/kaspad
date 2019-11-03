@@ -7,6 +7,7 @@ package logger
 
 import (
 	"fmt"
+	"github.com/pkg/errors"
 	"os"
 	"sort"
 	"strings"
@@ -193,7 +194,7 @@ func ParseAndSetDebugLevels(debugLevel string) error {
 		// Validate debug log level.
 		if !validLogLevel(debugLevel) {
 			str := "The specified debug level [%s] is invalid"
-			return fmt.Errorf(str, debugLevel)
+			return errors.Errorf(str, debugLevel)
 		}
 
 		// Change the logging level for all subsystems.
@@ -208,7 +209,7 @@ func ParseAndSetDebugLevels(debugLevel string) error {
 		if !strings.Contains(logLevelPair, "=") {
 			str := "The specified debug level contains an invalid " +
 				"subsystem/level pair [%s]"
-			return fmt.Errorf(str, logLevelPair)
+			return errors.Errorf(str, logLevelPair)
 		}
 
 		// Extract the specified subsystem and log level.
@@ -219,13 +220,13 @@ func ParseAndSetDebugLevels(debugLevel string) error {
 		if _, exists := Get(subsysID); !exists {
 			str := "The specified subsystem [%s] is invalid -- " +
 				"supported subsytems %s"
-			return fmt.Errorf(str, subsysID, strings.Join(SupportedSubsystems(), ", "))
+			return errors.Errorf(str, subsysID, strings.Join(SupportedSubsystems(), ", "))
 		}
 
 		// Validate log level.
 		if !validLogLevel(logLevel) {
 			str := "The specified debug level [%s] is invalid"
-			return fmt.Errorf(str, logLevel)
+			return errors.Errorf(str, logLevel)
 		}
 
 		SetLogLevel(subsysID, logLevel)

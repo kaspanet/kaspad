@@ -6,6 +6,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/pkg/errors"
 	"io/ioutil"
 	"net"
 	"os"
@@ -238,7 +239,7 @@ func loadConfig() (*config, []string, error) {
 	if numNets > 1 {
 		str := "%s: The multiple net params (testnet, simnet, devnet etc.) can't be used " +
 			"together -- choose one of them"
-		err := fmt.Errorf(str, "loadConfig")
+		err := errors.Errorf(str, "loadConfig")
 		fmt.Fprintln(os.Stderr, err)
 		return nil, nil, err
 	}

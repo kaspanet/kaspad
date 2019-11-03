@@ -6,7 +6,7 @@ package network
 
 import (
 	"encoding/binary"
-	"errors"
+	"github.com/pkg/errors"
 	"net"
 )
 

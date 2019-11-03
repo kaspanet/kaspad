@@ -11,7 +11,7 @@ package hdkeychain
 import (
 	"bytes"
 	"encoding/hex"
-	"errors"
+	"github.com/pkg/errors"
 	"math"
 	"reflect"
 	"testing"

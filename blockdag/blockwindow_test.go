@@ -1,9 +1,9 @@
 package blockdag
 
 import (
-	"fmt"
 	"github.com/daglabs/btcd/dagconfig"
 	"github.com/daglabs/btcd/util/daghash"
+	"github.com/pkg/errors"
 	"reflect"
 	"testing"
 	"time"
@@ -132,7 +132,7 @@ func checkWindowIDs(window []*blockNode, expectedIDs []string, idByBlockMap map[
 		ids[i] = idByBlockMap[node]
 	}
 	if !reflect.DeepEqual(ids, expectedIDs) {
-		return fmt.Errorf("window expected to have blocks %s but got %s", expectedIDs, ids)
+		return errors.Errorf("window expected to have blocks %s but got %s", expectedIDs, ids)
 	}
 	return nil
 }

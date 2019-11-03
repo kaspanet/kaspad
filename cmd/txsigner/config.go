@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/daglabs/btcd/dagconfig"
 	"github.com/jessevdk/go-flags"
+	"github.com/pkg/errors"
 	"os"
 )
 
@@ -46,7 +47,7 @@ func parseCommandLine() (*config, error) {
 	if numNets > 1 {
 		str := "%s: The testnet, regtest, simnet and devent params can't be " +
 			"used together -- choose one of the four"
-		err := fmt.Errorf(str, funcName)
+		err := errors.Errorf(str, funcName)
 		fmt.Fprintln(os.Stderr, err)
 		parser.WriteHelp(os.Stderr)
 		return nil, err

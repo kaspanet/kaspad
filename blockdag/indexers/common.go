@@ -9,11 +9,10 @@ package indexers
 
 import (
 	"encoding/binary"
-	"errors"
-
 	"github.com/daglabs/btcd/blockdag"
 	"github.com/daglabs/btcd/database"
 	"github.com/daglabs/btcd/util"
+	"github.com/pkg/errors"
 )
 
 var (

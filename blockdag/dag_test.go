@@ -5,8 +5,8 @@
 package blockdag
 
 import (
-	"errors"
 	"fmt"
+	"github.com/pkg/errors"
 	"os"
 	"path/filepath"
 	"reflect"

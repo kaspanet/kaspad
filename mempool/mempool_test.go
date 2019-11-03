@@ -6,8 +6,8 @@ package mempool
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
+	"github.com/pkg/errors"
 	"math"
 	"reflect"
 	"runtime"
@@ -320,7 +320,7 @@ func newPoolHarness(t *testing.T, dagParams *dagconfig.Params, numOutputs uint32
 		DAGParams: &params,
 	})
 	if err != nil {
-		return nil, nil, nil, fmt.Errorf("Failed to setup DAG instance: %v", err)
+		return nil, nil, nil, errors.Errorf("Failed to setup DAG instance: %v", err)
 	}
 	defer func() {
 		if err != nil {
@@ -330,7 +330,7 @@ func newPoolHarness(t *testing.T, dagParams *dagconfig.Params, numOutputs uint32
 
 	signatureScript, err := txscript.PayToScriptHashSignatureScript(blockdag.OpTrueScript, nil)
 	if err != nil {
-		return nil, nil, nil, fmt.Errorf("Failed to build harness signature script: %s", err)
+		return nil, nil, nil, errors.Errorf("Failed to build harness signature script: %s", err)
 	}
 
 	// Create a new fake chain and harness bound to it.

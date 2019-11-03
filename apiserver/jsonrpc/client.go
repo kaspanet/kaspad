@@ -1,8 +1,7 @@
 package jsonrpc
 
 import (
-	"errors"
-	"fmt"
+	"github.com/pkg/errors"
 	"io/ioutil"
 	"time"
 
@@ -61,7 +60,7 @@ func Connect(cfg *config.Config) error {
 		var err error
 		cert, err = ioutil.ReadFile(cfg.RPCCert)
 		if err != nil {
-			return fmt.Errorf("Error reading certificates file: %s", err)
+			return errors.Errorf("Error reading certificates file: %s", err)
 		}
 	}
 
@@ -81,7 +80,7 @@ func Connect(cfg *config.Config) error {
 	var err error
 	client, err = newClient(connCfg)
 	if err != nil {
-		return fmt.Errorf("Error connecting to address %s: %s", cfg.RPCServer, err)
+		return errors.Errorf("Error connecting to address %s: %s", cfg.RPCServer, err)
 	}
 
 	return nil
@@ -111,14 +110,14 @@ func newClient(connCfg *rpcclient.ConnConfig) (*Client, error) {
 	var err error
 	client.Client, err = rpcclient.New(connCfg, notificationHandlers)
 	if err != nil {
-		return nil, fmt.Errorf("Error connecting to address %s: %s", connCfg.Host, err)
+		return nil, errors.Errorf("Error connecting to address %s: %s", connCfg.Host, err)
 	}
 
 	if err = client.NotifyBlocks(); err != nil {
-		return nil, fmt.Errorf("Error while registering client %s for block notifications: %s", client.Host(), err)
+		return nil, errors.Errorf("Error while registering client %s for block notifications: %s", client.Host(), err)
 	}
 	if err = client.NotifyChainChanges(); err != nil {
-		return nil, fmt.Errorf("Error while registering client %s for chain changes notifications: %s", client.Host(), err)
+		return nil, errors.Errorf("Error while registering client %s for chain changes notifications: %s", client.Host(), err)
 	}
 
 	return client, nil

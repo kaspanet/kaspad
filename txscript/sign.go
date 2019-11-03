@@ -5,8 +5,7 @@
 package txscript
 
 import (
-	"errors"
-	"fmt"
+	"github.com/pkg/errors"
 
 	"github.com/daglabs/btcd/btcec"
 	"github.com/daglabs/btcd/dagconfig"
@@ -25,7 +24,7 @@ func RawTxInSignature(tx *wire.MsgTx, idx int, script []byte,
 	}
 	signature, err := key.Sign(hash)
 	if err != nil {
-		return nil, fmt.Errorf("cannot sign tx input: %s", err)
+		return nil, errors.Errorf("cannot sign tx input: %s", err)
 	}
 
 	return append(signature.Serialize(), byte(hashType)), nil

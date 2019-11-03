@@ -10,8 +10,7 @@ import (
 	"crypto/elliptic"
 	"crypto/hmac"
 	"crypto/sha256"
-	"errors"
-	"fmt"
+	"github.com/pkg/errors"
 	"hash"
 	"math/big"
 )
@@ -181,7 +180,7 @@ func parseSig(sigStr []byte, curve elliptic.Curve, der bool) (*Signature, error)
 
 	// sanity check length parsing
 	if index != len(sigStr) {
-		return nil, fmt.Errorf("malformed signature: bad final length %d != %d",
+		return nil, errors.Errorf("malformed signature: bad final length %d != %d",
 			index, len(sigStr))
 	}
 

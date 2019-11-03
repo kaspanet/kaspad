@@ -6,7 +6,7 @@ package base58
 
 import (
 	"crypto/sha256"
-	"errors"
+	"github.com/pkg/errors"
 )
 
 // ErrChecksum indicates that the checksum of a check-encoded string does not verify against

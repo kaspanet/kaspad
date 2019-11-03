@@ -7,7 +7,7 @@
 package limits
 
 import (
-	"fmt"
+	"github.com/pkg/errors"
 	"syscall"
 )
 
@@ -29,7 +29,7 @@ func SetLimits() error {
 		return nil
 	}
 	if rLimit.Max < fileLimitMin {
-		err = fmt.Errorf("need at least %d file descriptors",
+		err = errors.Errorf("need at least %d file descriptors",
 			fileLimitMin)
 		return err
 	}

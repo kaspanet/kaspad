@@ -6,7 +6,7 @@ package main
 
 import (
 	"encoding/hex"
-	"errors"
+	"github.com/pkg/errors"
 	"strconv"
 	"time"
 

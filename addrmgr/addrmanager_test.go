@@ -5,8 +5,8 @@
 package addrmgr
 
 import (
-	"errors"
 	"fmt"
+	"github.com/pkg/errors"
 	"net"
 	"reflect"
 	"testing"
@@ -113,7 +113,7 @@ func TestStartStop(t *testing.T) {
 }
 
 func TestAddAddressByIP(t *testing.T) {
-	fmtErr := fmt.Errorf("")
+	fmtErr := errors.Errorf("")
 	addrErr := &net.AddrError{}
 	var tests = []struct {
 		addrIP string

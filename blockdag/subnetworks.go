@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"github.com/pkg/errors"
 
 	"github.com/daglabs/btcd/util"
 
@@ -57,7 +58,7 @@ func registerSubnetworks(dbTx database.Tx, txs []*util.Tx) error {
 			createdSubnetwork := newSubnetwork(registryTx)
 			err := dbRegisterSubnetwork(dbTx, subnetworkID, createdSubnetwork)
 			if err != nil {
-				return fmt.Errorf("failed registering subnetwork"+
+				return errors.Errorf("failed registering subnetwork"+
 					"for tx '%s': %s", registryTx.TxHash(), err)
 			}
 		}
@@ -94,10 +95,10 @@ func (s *SubnetworkStore) subnetwork(subnetworkID *subnetworkid.SubnetworkID) (*
 		return nil
 	})
 	if dbErr != nil {
-		return nil, fmt.Errorf("could not retrieve subnetwork '%d': %s", subnetworkID, dbErr)
+		return nil, errors.Errorf("could not retrieve subnetwork '%d': %s", subnetworkID, dbErr)
 	}
 	if err != nil {
-		return nil, fmt.Errorf("could not retrieve subnetwork '%d': %s", subnetworkID, err)
+		return nil, errors.Errorf("could not retrieve subnetwork '%d': %s", subnetworkID, err)
 	}
 
 	return sNet, nil
@@ -111,7 +112,7 @@ func (s *SubnetworkStore) GasLimit(subnetworkID *subnetworkid.SubnetworkID) (uin
 		return 0, err
 	}
 	if sNet == nil {
-		return 0, fmt.Errorf("subnetwork '%s' not found", subnetworkID)
+		return 0, errors.Errorf("subnetwork '%s' not found", subnetworkID)
 	}
 
 	return sNet.gasLimit, nil
@@ -122,14 +123,14 @@ func dbRegisterSubnetwork(dbTx database.Tx, subnetworkID *subnetworkid.Subnetwor
 	// Serialize the subnetwork
 	serializedSubnetwork, err := serializeSubnetwork(network)
 	if err != nil {
-		return fmt.Errorf("failed to serialize sub-netowrk '%s': %s", subnetworkID, err)
+		return errors.Errorf("failed to serialize sub-netowrk '%s': %s", subnetworkID, err)
 	}
 
 	// Store the subnetwork
 	subnetworksBucket := dbTx.Metadata().Bucket(subnetworksBucketName)
 	err = subnetworksBucket.Put(subnetworkID[:], serializedSubnetwork)
 	if err != nil {
-		return fmt.Errorf("failed to write sub-netowrk '%s': %s", subnetworkID, err)
+		return errors.Errorf("failed to write sub-netowrk '%s': %s", subnetworkID, err)
 	}
 
 	return nil
@@ -169,7 +170,7 @@ func serializeSubnetwork(sNet *subnetwork) ([]byte, error) {
 	// Write the gas limit
 	err := binary.Write(serializedSNet, byteOrder, sNet.gasLimit)
 	if err != nil {
-		return nil, fmt.Errorf("failed to serialize subnetwork: %s", err)
+		return nil, errors.Errorf("failed to serialize subnetwork: %s", err)
 	}
 
 	return serializedSNet.Bytes(), nil
@@ -184,7 +185,7 @@ func deserializeSubnetwork(serializedSNetBytes []byte) (*subnetwork, error) {
 	var gasLimit uint64
 	err := binary.Read(serializedSNet, byteOrder, &gasLimit)
 	if err != nil {
-		return nil, fmt.Errorf("failed to deserialize subnetwork: %s", err)
+		return nil, errors.Errorf("failed to deserialize subnetwork: %s", err)
 	}
 
 	return &subnetwork{

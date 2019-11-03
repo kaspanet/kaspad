@@ -5,8 +5,8 @@
 package cpuminer
 
 import (
-	"errors"
 	"fmt"
+	"github.com/pkg/errors"
 	"math/rand"
 	"runtime"
 	"sync"

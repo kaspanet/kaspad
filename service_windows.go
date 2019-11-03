@@ -139,7 +139,7 @@ func installService() error {
 	service, err := serviceManager.OpenService(svcName)
 	if err == nil {
 		service.Close()
-		return fmt.Errorf("service %s already exists", svcName)
+		return errors.Errorf("service %s already exists", svcName)
 	}
 
 	// Install the service.
@@ -175,7 +175,7 @@ func removeService() error {
 	// Ensure the service exists.
 	service, err := serviceManager.OpenService(svcName)
 	if err != nil {
-		return fmt.Errorf("service %s is not installed", svcName)
+		return errors.Errorf("service %s is not installed", svcName)
 	}
 	defer service.Close()
 
@@ -194,13 +194,13 @@ func startService() error {
 
 	service, err := serviceManager.OpenService(svcName)
 	if err != nil {
-		return fmt.Errorf("could not access service: %s", err)
+		return errors.Errorf("could not access service: %s", err)
 	}
 	defer service.Close()
 
 	err = service.Start(os.Args)
 	if err != nil {
-		return fmt.Errorf("could not start service: %s", err)
+		return errors.Errorf("could not start service: %s", err)
 	}
 
 	return nil
@@ -219,26 +219,26 @@ func controlService(c svc.Cmd, to svc.State) error {
 
 	service, err := serviceManager.OpenService(svcName)
 	if err != nil {
-		return fmt.Errorf("could not access service: %s", err)
+		return errors.Errorf("could not access service: %s", err)
 	}
 	defer service.Close()
 
 	status, err := service.Control(c)
 	if err != nil {
-		return fmt.Errorf("could not send control=%d: %s", c, err)
+		return errors.Errorf("could not send control=%d: %s", c, err)
 	}
 
 	// Send the control message.
 	timeout := time.Now().Add(10 * time.Second)
 	for status.State != to {
 		if timeout.Before(time.Now()) {
-			return fmt.Errorf("timeout waiting for service to go "+
+			return errors.Errorf("timeout waiting for service to go "+
 				"to state=%d", to)
 		}
 		time.Sleep(300 * time.Millisecond)
 		status, err = service.Query()
 		if err != nil {
-			return fmt.Errorf("could not retrieve service "+
+			return errors.Errorf("could not retrieve service "+
 				"status: %s", err)
 		}
 	}
@@ -265,7 +265,7 @@ func performServiceCommand(command string) error {
 		err = controlService(svc.Stop, svc.Stopped)
 
 	default:
-		err = fmt.Errorf("invalid service command [%s]", command)
+		err = errors.Errorf("invalid service command [%s]", command)
 	}
 
 	return err

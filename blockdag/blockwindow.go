@@ -1,8 +1,8 @@
 package blockdag
 
 import (
-	"errors"
 	"github.com/daglabs/btcd/util"
+	"github.com/pkg/errors"
 	"math"
 	"math/big"
 	"sort"

@@ -11,6 +11,7 @@ import (
 	"compress/bzip2"
 	"encoding/binary"
 	"fmt"
+	"github.com/pkg/errors"
 	"hash/crc32"
 	"io"
 	"os"
@@ -34,7 +35,7 @@ var (
 	blockDataFile = filepath.Join("..", "testdata", "blocks1-256.bz2")
 
 	// errSubTestFail is used to signal that a sub test returned false.
-	errSubTestFail = fmt.Errorf("sub test failure")
+	errSubTestFail = errors.Errorf("sub test failure")
 )
 
 // loadBlocks loads the blocks contained in the testdata directory and returns

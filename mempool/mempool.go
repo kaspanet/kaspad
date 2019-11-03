@@ -7,6 +7,7 @@ package mempool
 import (
 	"container/list"
 	"fmt"
+	"github.com/pkg/errors"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -544,12 +545,12 @@ func (mp *TxPool) removeTransactionWithDiff(tx *util.Tx, diff *blockdag.UTXODiff
 
 	err := mp.removeTransactionUTXOEntriesFromDiff(tx, diff)
 	if err != nil {
-		return fmt.Errorf("could not remove UTXOEntry from diff: %s", err)
+		return errors.Errorf("could not remove UTXOEntry from diff: %s", err)
 	}
 
 	err = mp.markTransactionOutputsUnspent(tx, diff, restoreInputs)
 	if err != nil {
-		return fmt.Errorf("could not mark transaction output as unspent: %s", err)
+		return errors.Errorf("could not mark transaction output as unspent: %s", err)
 	}
 
 	txDesc, _ := mp.fetchTransaction(txID)
@@ -714,7 +715,7 @@ func (mp *TxPool) addTransaction(tx *util.Tx, height uint64, blueScore uint64, f
 	if isAccepted, err := mp.mpUTXOSet.AddTx(tx.MsgTx(), blockdag.UnacceptedBlueScore); err != nil {
 		return nil, err
 	} else if !isAccepted {
-		return nil, fmt.Errorf("unexpectedly failed to add tx %s to the mempool utxo set", tx.ID())
+		return nil, errors.Errorf("unexpectedly failed to add tx %s to the mempool utxo set", tx.ID())
 	}
 	atomic.StoreInt64(&mp.lastUpdated, time.Now().Unix())
 
@@ -780,7 +781,7 @@ func (mp *TxPool) FetchTransaction(txID *daghash.TxID) (*util.Tx, error) {
 		return txDesc.Tx, nil
 	}
 
-	return nil, fmt.Errorf("transaction is not in the pool")
+	return nil, errors.Errorf("transaction is not in the pool")
 }
 
 // maybeAcceptTransaction is the internal function which implements the public

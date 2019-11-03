@@ -5,8 +5,7 @@
 package indexers
 
 import (
-	"errors"
-	"fmt"
+	"github.com/pkg/errors"
 
 	"github.com/daglabs/btcd/blockdag"
 	"github.com/daglabs/btcd/dagconfig"
@@ -346,7 +345,7 @@ func (idx *CfIndex) FilterHashesByBlockHashes(blockHashes []*daghash.Hash,
 //
 // This is part of the Indexer interface.
 func (idx *CfIndex) Recover(dbTx database.Tx, currentBlockID, lastKnownBlockID uint64) error {
-	return fmt.Errorf("cfindex was turned off for %d blocks and can't be recovered."+
+	return errors.Errorf("cfindex was turned off for %d blocks and can't be recovered."+
 		" To resume working drop the cfindex with --dropcfindex", lastKnownBlockID-currentBlockID)
 }
 

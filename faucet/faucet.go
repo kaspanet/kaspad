@@ -219,7 +219,7 @@ func signTx(walletUTXOSet utxoSet, tx *wire.MsgTx) error {
 		sigScript, err := txscript.SignatureScript(tx, i, walletUTXOSet[outpoint].ScriptPubKey(),
 			txscript.SigHashAll, faucetPrivateKey, true)
 		if err != nil {
-			return fmt.Errorf("Failed to sign transaction: %s", err)
+			return errors.Errorf("Failed to sign transaction: %s", err)
 		}
 		txIn.SignatureScript = sigScript
 	}

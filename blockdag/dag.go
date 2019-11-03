@@ -5,8 +5,8 @@
 package blockdag
 
 import (
-	"errors"
 	"fmt"
+	"github.com/pkg/errors"
 	"math"
 	"sort"
 	"sync"
@@ -677,7 +677,7 @@ func (dag *BlockDAG) validateGasLimit(block *util.Block) error {
 			currentGasUsage = 0
 			currentSubnetworkGasLimit, err = dag.SubnetworkStore.GasLimit(currentSubnetworkID)
 			if err != nil {
-				return fmt.Errorf("Error getting gas limit for subnetworkID '%s': %s", currentSubnetworkID, err)
+				return errors.Errorf("Error getting gas limit for subnetworkID '%s': %s", currentSubnetworkID, err)
 			}
 		}
 
@@ -848,7 +848,7 @@ func (dag *BlockDAG) TxsAcceptedByVirtual() (MultiBlockTxsAcceptanceData, error)
 func (dag *BlockDAG) TxsAcceptedByBlockHash(blockHash *daghash.Hash) (MultiBlockTxsAcceptanceData, error) {
 	node := dag.index.LookupNode(blockHash)
 	if node == nil {
-		return nil, fmt.Errorf("Couldn't find block %s", blockHash)
+		return nil, errors.Errorf("Couldn't find block %s", blockHash)
 	}
 	_, txsAcceptanceData, err := dag.pastUTXO(node)
 	return txsAcceptanceData, err
@@ -860,7 +860,7 @@ func (dag *BlockDAG) TxsAcceptedByBlockHash(blockHash *daghash.Hash) (MultiBlock
 func (dag *BlockDAG) BlockPastUTXO(blockHash *daghash.Hash) (UTXOSet, error) {
 	node := dag.index.LookupNode(blockHash)
 	if node == nil {
-		return nil, fmt.Errorf("Couldn't find block %s", blockHash)
+		return nil, errors.Errorf("Couldn't find block %s", blockHash)
 	}
 	pastUTXO, _, err := dag.pastUTXO(node)
 	return pastUTXO, err
@@ -882,7 +882,7 @@ func (dag *BlockDAG) applyDAGChanges(node *blockNode, block *util.Block, newBloc
 	chainUpdates *chainUpdates, err error) {
 
 	if err = node.updateParents(dag, newBlockUTXO); err != nil {
-		return nil, nil, nil, fmt.Errorf("failed updating parents of %s: %s", node, err)
+		return nil, nil, nil, errors.Errorf("failed updating parents of %s: %s", node, err)
 	}
 
 	// Update the virtual block's parents (the DAG tips) to include the new block.
@@ -891,7 +891,7 @@ func (dag *BlockDAG) applyDAGChanges(node *blockNode, block *util.Block, newBloc
 	// Build a UTXO set for the new virtual block
 	newVirtualPastUTXO, virtualTxsAcceptanceData, err := dag.pastUTXO(&dag.virtual.blockNode)
 	if err != nil {
-		return nil, nil, nil, fmt.Errorf("could not restore past UTXO for virtual %s: %s", dag.virtual, err)
+		return nil, nil, nil, errors.Errorf("could not restore past UTXO for virtual %s: %s", dag.virtual, err)
 	}
 
 	// Apply the new virtual's blue score to all the unaccepted UTXOs
@@ -907,7 +907,7 @@ func (dag *BlockDAG) applyDAGChanges(node *blockNode, block *util.Block, newBloc
 	// Apply new utxoDiffs to all the tips
 	err = updateTipsUTXO(dag, newVirtualUTXO)
 	if err != nil {
-		return nil, nil, nil, fmt.Errorf("failed updating the tips' UTXO: %s", err)
+		return nil, nil, nil, errors.Errorf("failed updating the tips' UTXO: %s", err)
 	}
 
 	// It is now safe to meld the UTXO set to base.
@@ -915,7 +915,7 @@ func (dag *BlockDAG) applyDAGChanges(node *blockNode, block *util.Block, newBloc
 	virtualUTXODiff = diffSet.UTXODiff
 	err = dag.meldVirtualUTXO(diffSet)
 	if err != nil {
-		return nil, nil, nil, fmt.Errorf("failed melding the virtual UTXO: %s", err)
+		return nil, nil, nil, errors.Errorf("failed melding the virtual UTXO: %s", err)
 	}
 
 	dag.index.SetStatusFlags(node, statusValid)
@@ -1322,7 +1322,7 @@ func (dag *BlockDAG) GetUTXOEntry(outpoint wire.Outpoint) (*UTXOEntry, bool) {
 func (dag *BlockDAG) BlueScoreByBlockHash(hash *daghash.Hash) (uint64, error) {
 	node := dag.index.LookupNode(hash)
 	if node == nil {
-		return 0, fmt.Errorf("block %s is unknown", hash)
+		return 0, errors.Errorf("block %s is unknown", hash)
 	}
 
 	return node.blueScore, nil
@@ -1349,7 +1349,7 @@ func (dag *BlockDAG) BlockConfirmationsByHashNoLock(hash *daghash.Hash) (uint64,
 
 	node := dag.index.LookupNode(hash)
 	if node == nil {
-		return 0, fmt.Errorf("block %s is unknown", hash)
+		return 0, errors.Errorf("block %s is unknown", hash)
 	}
 
 	return dag.blockConfirmations(node)
@@ -1400,7 +1400,7 @@ func (dag *BlockDAG) acceptingBlock(node *blockNode) (*blockNode, error) {
 			return nil, errors.New("cannot get acceptingBlock for virtual")
 		}
 		// A childless block that isn't a tip or the virtual can never happen. Panicking
-		panic(fmt.Errorf("got childless block %s that is neither a tip nor the virtual", node.hash))
+		panic(errors.Errorf("got childless block %s that is neither a tip nor the virtual", node.hash))
 	}
 
 	// If the node is a chain-block itself, the accepting block is its chain-child
@@ -1410,7 +1410,7 @@ func (dag *BlockDAG) acceptingBlock(node *blockNode) (*blockNode, error) {
 				return child, nil
 			}
 		}
-		return nil, fmt.Errorf("chain block %s does not have a chain child", node.hash)
+		return nil, errors.Errorf("chain block %s does not have a chain child", node.hash)
 	}
 
 	// Find the only chain block that may contain the node in its blues
@@ -1461,7 +1461,7 @@ func (dag *BlockDAG) SelectedParentChain(startHash *daghash.Hash) ([]*daghash.Ha
 		startHash = dag.genesis.hash
 	}
 	if !dag.BlockExists(startHash) {
-		return nil, nil, fmt.Errorf("startHash %s does not exist in the DAG", startHash)
+		return nil, nil, errors.Errorf("startHash %s does not exist in the DAG", startHash)
 	}
 
 	// If startHash is not in the selected parent chain, go down its selected parent chain
@@ -1531,7 +1531,7 @@ func (dag *BlockDAG) CurrentBits() uint32 {
 func (dag *BlockDAG) HeaderByHash(hash *daghash.Hash) (*wire.BlockHeader, error) {
 	node := dag.index.LookupNode(hash)
 	if node == nil {
-		err := fmt.Errorf("block %s is not known", hash)
+		err := errors.Errorf("block %s is not known", hash)
 		return &wire.BlockHeader{}, err
 	}
 
@@ -1578,24 +1578,24 @@ func (dag *BlockDAG) HeightToHashRange(startHeight uint64,
 
 	endNode := dag.index.LookupNode(endHash)
 	if endNode == nil {
-		return nil, fmt.Errorf("no known block header with hash %s", endHash)
+		return nil, errors.Errorf("no known block header with hash %s", endHash)
 	}
 	if !dag.index.NodeStatus(endNode).KnownValid() {
-		return nil, fmt.Errorf("block %s is not yet validated", endHash)
+		return nil, errors.Errorf("block %s is not yet validated", endHash)
 	}
 	endHeight := endNode.height
 
 	if startHeight < 0 {
-		return nil, fmt.Errorf("start height (%d) is below 0", startHeight)
+		return nil, errors.Errorf("start height (%d) is below 0", startHeight)
 	}
 	if startHeight > endHeight {
-		return nil, fmt.Errorf("start height (%d) is past end height (%d)",
+		return nil, errors.Errorf("start height (%d) is past end height (%d)",
 			startHeight, endHeight)
 	}
 
 	resultsLength := int(endHeight - startHeight + 1)
 	if resultsLength > maxResults {
-		return nil, fmt.Errorf("number of results (%d) would exceed max (%d)",
+		return nil, errors.Errorf("number of results (%d) would exceed max (%d)",
 			resultsLength, maxResults)
 	}
 
@@ -1618,10 +1618,10 @@ func (dag *BlockDAG) IntervalBlockHashes(endHash *daghash.Hash, interval uint64,
 
 	endNode := dag.index.LookupNode(endHash)
 	if endNode == nil {
-		return nil, fmt.Errorf("no known block header with hash %s", endHash)
+		return nil, errors.Errorf("no known block header with hash %s", endHash)
 	}
 	if !dag.index.NodeStatus(endNode).KnownValid() {
-		return nil, fmt.Errorf("block %s is not yet validated", endHash)
+		return nil, errors.Errorf("block %s is not yet validated", endHash)
 	}
 	endHeight := endNode.height
 
@@ -1728,7 +1728,7 @@ func (dag *BlockDAG) GetTopHeaders(startHash *daghash.Hash) ([]*wire.BlockHeader
 	if startHash != nil {
 		startNode = dag.index.LookupNode(startHash)
 		if startNode == nil {
-			return nil, fmt.Errorf("Couldn't find the start hash %s in the dag", startHash)
+			return nil, errors.Errorf("Couldn't find the start hash %s in the dag", startHash)
 		}
 	}
 	headers := make([]*wire.BlockHeader, 0, startNode.blueScore)

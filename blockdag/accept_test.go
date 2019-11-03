@@ -1,7 +1,7 @@
 package blockdag
 
 import (
-	"errors"
+	"github.com/pkg/errors"
 	"path/filepath"
 	"strings"
 	"testing"
