@@ -419,7 +419,7 @@ func applyConfirmedTransactionsAndResendNonAccepted(client *txgenClient, walletT
 			if isTxMatured(msgTx, *txResult.Confirmations) {
 				walletTx.confirmed = true
 				addTxOutsToUTXOSet(walletUTXOSet, msgTx)
-			} else if *txResult.Confirmations == 0 && !txResult.IsInMempool && blockChainHeight-maxResendDepth > walletTx.chainHeight {
+			} else if !msgTx.IsCoinBase() && *txResult.Confirmations == 0 && !txResult.IsInMempool && blockChainHeight-maxResendDepth > walletTx.chainHeight {
 				log.Infof("Transaction %s was not accepted in the DAG. Resending", txID)
 				txChan <- msgTx
 			}
