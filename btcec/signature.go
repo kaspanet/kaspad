@@ -36,7 +36,6 @@ var (
 )
 
 // Serialize returns the a serialized signature.
-
 func (sig *Signature) Serialize() []byte {
 	return append(padIntBytes(sig.R), padIntBytes(sig.S)...)
 }
